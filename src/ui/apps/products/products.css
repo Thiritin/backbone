@@ -12,7 +12,7 @@
 .side-item .prd-mark svg.lucide { width: 10px; height: 10px; }
 
 .prd-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
-.prd-card { display: grid; gap: 10px; align-content: start; padding: 12px 14px; border-radius: 10px; border: 0.5px solid var(--line-strong); background: var(--field); font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.prd-card { display: grid; gap: 10px; align-content: start; padding: 12px 14px; border-radius: var(--ar-card); border: var(--ar-bw) solid var(--line-strong); background: var(--field); font: inherit; color: inherit; text-align: left; cursor: pointer; }
 .prd-card:hover { border-color: var(--accent); }
 .prd-card[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
 .prd-card-h { display: flex; align-items: center; gap: 8px; }
@@ -32,7 +32,7 @@
 .vm-brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 14px; }
 .vm-brand b { display: block; font-size: 14px; font-weight: 700; letter-spacing: -0.01em; }
 .vm-brand span { font-size: 11.5px; color: var(--text-3); }
-.vm-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 16px; border-bottom: 0.5px solid var(--line); flex: none; }
+.vm-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 16px; border-bottom: var(--ar-bw) solid var(--line); flex: none; }
 .vm-detail { grid-auto-rows: max-content; }
 .vm-detail .seg { flex-wrap: wrap; }
 .vm-detail .fin-facts .span { grid-column: 1 / -1; overflow-wrap: anywhere; }
@@ -50,7 +50,23 @@
 .rate-row .price-input input { width: 72px; }
 .rate-row .rate-ref { grid-area: ref; font-size: 11.5px; color: var(--text-3); }
 .rate-row .pill { grid-area: pill; justify-self: end; }
-.rate-from { display: grid; gap: 4px; margin: 0; padding-top: 10px; border-top: 0.5px solid var(--line); font-size: 12.5px; }
+.rate-from { display: grid; gap: 4px; margin: 0; padding-top: 10px; border-top: var(--ar-bw) solid var(--line); font-size: 12.5px; }
 .rate-from > div { display: flex; justify-content: space-between; gap: 8px; }
 .rate-from dt { color: var(--text-2); }
 .rate-from dd { margin: 0; font-weight: 600; }
+
+.vm-tools { background-image: var(--ar-head); }
+
+/* Panthera and Leapard: product tiles are lightly shaded boxes with a gel selection ring. */
+:root[data-os="aqua"] .prd-card:not([aria-pressed="true"]),
+:root[data-os="leopard"] .prd-card:not([aria-pressed="true"]) { background: linear-gradient(var(--field), color-mix(in oklch, var(--field), var(--text) 4%)); box-shadow: var(--ar-lift); }
+:root[data-os="aqua"] .prd-mark,
+:root[data-os="leopard"] .prd-mark { border-radius: 18%; box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.4), 0 1px 2px oklch(0 0 0 / 0.3); }
+:root[data-os="aqua"] .prd-spark polyline { stroke-width: 1.5; }
+
+/* Yosemighty: round product marks, flat tiles. */
+:root[data-os="yosemite"] .prd-mark { border-radius: 50%; }
+
+/* Tahoo: glass product tiles. */
+:root[data-os="tahoe"] .prd-card:not([aria-pressed="true"]) { background: color-mix(in oklch, var(--field), transparent 30%); box-shadow: var(--ar-lift); }
+:root[data-os="tahoe"] .prd-mark { border-radius: 30%; box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.4); }

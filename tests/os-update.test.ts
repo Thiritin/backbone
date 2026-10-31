@@ -25,7 +25,7 @@ describe("Pear OS updates", () => {
   });
 
   it("ships a wallpaper for every release", () => {
-    for (const r of OS_RELEASES) expect(existsSync(`public/wallpapers/${r.id}.jpg`), r.id).toBe(true);
+    for (const r of OS_RELEASES) expect(existsSync(`public/wallpapers/${r.id}.webp`), r.id).toBe(true);
   });
 
   it("loads saves from before the field on the first release", () => {

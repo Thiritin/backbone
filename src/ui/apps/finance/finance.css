@@ -1,11 +1,11 @@
-.fin-bar { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-bottom: 0.5px solid var(--line); flex: none; }
+.fin-bar { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-bottom: var(--ar-bw) solid var(--line); flex: none; }
 .fin-h { font-size: 12.5px; font-weight: 650; padding: 16px 16px 10px; }
 .fin-neg { color: var(--bad-text); }
 .fin-cards { grid-auto-flow: row; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
 .fin-cards dd { font-size: 19px; white-space: nowrap; }
 .fin-grid-cards { overflow: visible; padding-top: 0; }
 
-.fin-pnl tbody th { position: static; height: 30px; padding: 0 10px; font-size: 12px; font-weight: 450; color: var(--text); background: none; border-bottom: 0.5px solid var(--line); white-space: nowrap; }
+.fin-pnl tbody th { position: static; height: 30px; padding: 0 10px; font-size: 12px; font-weight: 450; color: var(--text); background: none; border-bottom: var(--ar-bw) solid var(--line); white-space: nowrap; }
 .fin-pnl td { height: 30px; font-size: 12px; }
 .fin-pnl .fin-sec th { height: 34px; padding-top: 10px; font-size: 11.5px; font-weight: 650; color: var(--text-3); }
 .fin-pnl .fin-total th, .fin-pnl .fin-total td { font-weight: 650; }
@@ -28,3 +28,5 @@
 .fin-zero { stroke: var(--line-strong); stroke-width: 1; }
 .fin-hover { fill: var(--hover); }
 .fin-axis { fill: var(--text-3); font-size: 10.5px; font-family: var(--font-num); }
+
+.fin-bar { background-image: var(--ar-head); }
