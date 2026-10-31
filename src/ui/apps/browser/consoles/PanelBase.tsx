@@ -22,6 +22,7 @@ import { disk, ram } from "../../hw";
 import { VM_STATE, vmLabel, vmState } from "../../products/parts";
 import { hoursText } from "../../vms/migrate";
 import { useHolds } from "./Holds";
+import { HostSettings } from "./HostSettings";
 import { eraOf } from "../sites/era";
 
 export type Tab = "objects" | "nodes" | "software" | "tasks" | "logs" | "licence";
@@ -236,7 +237,7 @@ export function useSoftware(game: GameState, c: Cluster, f: ConsoleFeatures): { 
   ];
   return {
     facts: facts.filter((x): x is Fact => !!x), actions: actions.filter((a): a is PanelAction => !!a),
-    note: f.update && !due ? t("browser-consoles-2.upToDate") : null, panel: sizing && c.vm ? <Resize game={game} host={c} done={() => setSizing(false)} /> : null,
+    note: f.update && !due ? t("browser-consoles-2.upToDate") : null, panel: <>{sizing && c.vm ? <Resize game={game} host={c} done={() => setSizing(false)} /> : null}<HostSettings game={game} c={c} /></>,
   };
 }
 
