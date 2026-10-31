@@ -238,7 +238,7 @@ function TicketRow({ tk, active, timers, onOpen }: { tk: Ticket; active: boolean
   const K = kindOf(tk.kind);
   return (
     <button role="listitem" className={`tk${active ? " active" : ""}${tk.unread ? " unread" : ""}`} onClick={() => onOpen(tk)} onContextMenu={menuOn(() => ticketMenu(game, tk))}>
-      <span className="who">{tk.unread && <i className="dot" aria-label={t("support.unread")} />}{tk.notice ? <Sender id={tk.notice.sender} /> : <span>{order ? requestName(order) : tk.kind === "sponsor" ? subjectParams(game, tk).event : tk.kind === "pear" ? t("walk.from") : c?.name}</span>}</span>
+      <span className="who">{tk.unread && <i className="dot" aria-label={t("support.unread")} />}{tk.notice ? <Sender id={tk.notice.sender} /> : <span>{order ? requestName(order) : tk.kind === "sponsor" ? subjectParams(game, tk).event : tk.mail ? tk.mail.from : tk.kind === "pear" ? t("walk.from") : c?.name}</span>}</span>
       {timers ? <Sla tk={tk} hour={game.hour} /> : <span className="sla num">{stamp(tk.status === "open" ? tk.createdAt : tk.updatedAt)}</span>}
       <span className="subj">{order ? need(order) : subjectOf(game, tk)}</span>
       <span className="meta"><span className="type" style={{ "--k": KINDS.findIndex((x) => x.id === tk.kind) } as CSSProperties}><K.icon />{K.label}</span>{tk.work && <span className="pill accent">{t("support.queued")}</span>}</span>
@@ -389,7 +389,7 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
 
       <div className="thread">
         <div className={sent ? "msg you" : "msg"}>
-          <div className="from">{sender ? sender.name : sent ? t("support.you") : tk.kind === "sponsor" ? p.event : tk.kind === "pear" ? t("walk.from") : c?.name} · <span className="num">{stamp(tk.createdAt)}</span></div>
+          <div className="from">{sender ? sender.name : sent ? t("support.you") : tk.kind === "sponsor" ? p.event : tk.mail ? tk.mail.from : tk.kind === "pear" ? t("walk.from") : c?.name} · <span className="num">{stamp(tk.createdAt)}</span></div>
           <p>{t(`ticket.${tk.kind}.${tk.topic}.text`, p)}</p>
         </div>
         {tk.replies.map((r, i) => (

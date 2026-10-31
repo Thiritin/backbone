@@ -27,11 +27,14 @@ export function NoteApp({ id }: { id: string }) {
   useEffect(() => flush, []);
 
   if (!doc) return null;
+  // The bank's TAN list is printed: it shows the list as it stands and takes no typing.
+  const printed = id === "tans";
   return (
     <textarea
       className="note-body"
       aria-label={doc.title}
-      value={body}
+      value={printed ? doc.body : body}
+      readOnly={printed}
       spellCheck
       onChange={(e) => { pending.current = e.target.value; setBody(e.target.value); }}
     />
@@ -48,6 +51,7 @@ export function NoteTitle({ id }: { id: string }) {
       className="note-title"
       aria-label={t("apps.note.title")}
       maxLength={80}
+      readOnly={id === "tans"}
       value={draft ?? doc.title}
       size={Math.max(4, (draft ?? doc.title).length)}
       onPointerDown={(e) => e.stopPropagation()}
