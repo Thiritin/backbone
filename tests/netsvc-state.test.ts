@@ -19,7 +19,7 @@ describe("netsvc state", () => {
     const data = JSON.parse(serialize(newGame(1))) as Record<string, unknown>;
     delete data.netsvc;
     const s = deserialize(JSON.stringify(data));
-    expect(s.netsvc).toEqual({ mail: {}, relay: {}, quotas: {}, zones: {}, vpn: {}, broken: {} });
+    expect(s.netsvc).toEqual({ mail: {}, relay: {}, quotas: {}, zones: {}, vpn: {}, buckets: {}, ec: {}, shares: {}, policy: { shareExpiryDays: 0 }, broken: {} });
   });
 
   it("takes a service offline while it is marked broken", () => {
