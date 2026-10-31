@@ -22,4 +22,6 @@ export const ORDERS_EN: Record<string, (p: Params) => string> = {
   "event.orderQuoted.text": (p) => `Automation sent ${p.name} a quote of ${euroCents(Number(p.price))} a month for ${p.spec}.`,
   "event.orderFailed.title": () => "Setup failed",
   "event.orderFailed.text": (p) => `The order of ${p.name} could not be set up, and the customer went elsewhere. It was for ${p.spec}.`,
+  "event.orderDeclined.title": () => "Order declined",
+  "event.orderDeclined.text": (p) => `The order of ${p.name} was declined in the review.`,
 };

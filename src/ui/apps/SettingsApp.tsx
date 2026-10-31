@@ -2,7 +2,7 @@ import { ChevronRight } from "lucide-react";
 import { useRef, useState, type CSSProperties } from "react";
 import { canAutomate } from "../../sim/30-market/manual";
 import { setCompany } from "../../sim/90-actions/company";
-import { setAutoOrders } from "../../sim/90-actions/orders";
+import { setAutoOrders, setReviewOrders } from "../../sim/90-actions/orders";
 import { t } from "../../i18n/en";
 import { APPS, appFor, appTitle } from "./registry";
 import { CompanyFields } from "./company";
@@ -46,15 +46,17 @@ export function SettingsApp() {
         <CompanyFields company={{ ...game.company, name }} onCommit={commitName}
           onChange={(p) => (p.name !== undefined ? setName(p.name) : act(setCompany, p))} />
       </div>
-      {canAutomate(game) && <>
-        <h2 data-section="Orders">{t("apps.settings.orders")}</h2>
-        <div className="settings-group">
-          <div className="settings-line">
-            <span>{t("apps.settings.autoOrders")}</span>
-            <input type="checkbox" role="switch" className="switch" aria-label={t("apps.settings.autoOrders")} checked={game.autoOrders} onChange={(e) => act(setAutoOrders, e.target.checked)} />
-          </div>
+      <h2 data-section="Orders">{t("apps.settings.orders")}</h2>
+      <div className="settings-group">
+        {canAutomate(game) && <div className="settings-line">
+          <span>{t("apps.settings.autoOrders")}</span>
+          <input type="checkbox" role="switch" className="switch" aria-label={t("apps.settings.autoOrders")} checked={game.autoOrders} onChange={(e) => act(setAutoOrders, e.target.checked)} />
+        </div>}
+        <div className="settings-line">
+          <span>{t("apps.settings.reviewOrders")}</span>
+          <input type="checkbox" role="switch" className="switch" aria-label={t("apps.settings.reviewOrders")} checked={game.reviewOrders} onChange={(e) => act(setReviewOrders, e.target.checked)} />
         </div>
-      </>}
+      </div>
       <h2 data-section="Appearance">{t("apps.settings.appearance")}</h2>
       <div className="settings-group settings-line">
         <span>{t("apps.settings.theme")}</span>

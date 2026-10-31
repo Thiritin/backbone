@@ -136,6 +136,7 @@ export default {
   "apps.settings.company": () => "Company",
   "apps.settings.orders": () => "Orders",
   "apps.settings.autoOrders": () => "Place orders automatically",
+  "apps.settings.reviewOrders": () => "Review server orders by hand",
   "apps.settings.game": () => "Game",
   "apps.settings.export": () => "Export progress",
   "apps.settings.appearance": () => "Appearance",

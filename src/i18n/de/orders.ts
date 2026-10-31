@@ -20,4 +20,6 @@ export default {
   "event.orderQuoted.text": (p) => `Die Automatisierung hat ${p.name} ein Angebot über ${euroCents(Number(p.price))} im Monat für ${p.spec} geschickt.`,
   "event.orderFailed.title": () => "Einrichtung fehlgeschlagen",
   "event.orderFailed.text": (p) => `Die Bestellung von ${p.name} konnte nicht eingerichtet werden, und der Kunde ist woanders hin. Es ging um ${p.spec}.`,
+  "event.orderDeclined.title": () => "Bestellung abgelehnt",
+  "event.orderDeclined.text": (p) => `Die Bestellung von ${p.name} wurde bei der Prüfung abgelehnt.`,
 } satisfies Dict;
