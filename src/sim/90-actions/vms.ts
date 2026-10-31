@@ -106,7 +106,7 @@ export function migrateWorkload(s: GameState, id: string, toId: string, announce
   const { w, c } = found, vmHost = s.clusters.find((x) => x.id === toId && x.vm), to = vmHost ?? clusterOf(s, toId, c.kind) ?? clusterOf(s, toId);
   const d = s.devices.find((x) => x.id === toId);
   if (!to || (!vmHost && !d)) return fail("error.notNode");
-  if (quorumBlock(s, c)) return fail("error.noQuorum");
+  { const q = quorumBlock(s, c); if (q) return fail(q); }
   if (c.kind === "panel" && to.id !== c.id) return migrateWebspace(s, id, to.id, announced);
   if (w.deviceId === toId || w.clusterId === vmHost?.id) return fail("error.sameHost");
   if (w.template) return fail("error.isTemplate");
@@ -191,7 +191,7 @@ export function restoreWorkload(s: GameState, id: string): ActionResult {
   if (!found) return fail("error.unknownWorkload");
   const { w, c } = found;
   if (!lostDisk(s, w)) return fail("error.notLost");
-  if (quorumBlock(s, c)) return fail("error.noQuorum");
+  { const q = quorumBlock(s, c); if (q) return fail(q); }
   if (!controlPlaneUp(s, c)) return fail("error.controlPlaneDown");
   const target = backupTarget(s, c, w), point = usablePoint(s, c, w);
   if (w.backupAt !== null && (!target || !controlPlaneUp(s, target))) return fail("error.backupUnavailable");

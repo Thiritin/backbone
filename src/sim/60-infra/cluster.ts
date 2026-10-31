@@ -16,6 +16,7 @@ import { hasPublicAddress, sellsFrom } from "./addresses";
 import { coverage } from "./maintenance";
 import type { PackageDef } from "../80-business/packages";
 import type { BackupJob, RestorePoint } from "./backups";
+import type { Ceph, Replica } from "./replica";
 
 // Active takes new workloads, cordoned keeps its own, draining moves them off, maintenance is empty after a drain.
 export type NodeState = "active" | "cordoned" | "draining" | "maintenance";
@@ -42,6 +43,8 @@ export interface Cluster {
   ramGuard?: boolean;
   // A free server that casts one extra vote in a Proxmocks cluster (quorum.ts); missing is none.
   qdevice?: string | null;
+  // A Proxmocks shared storage pool built from the node disks (replica.ts); missing is none.
+  ceph?: Ceph;
   // The player's cap on booked vCPU per physical vCPU for a panel host; missing or null is no cap (oversell.ts).
   oversell?: number | null;
   // The update channel; missing is Release (channel.ts).
@@ -76,6 +79,8 @@ export interface Workload extends Resources, Partial<MachineState> {
   stopped: boolean; busyUntil: number; backupAt: number | null; stuck?: boolean;
   // Restore points the backup jobs wrote; backupAt is the newest one's hour.
   points?: RestorePoint[];
+  // A copy of the disk on a second node of the cluster, refreshed on a schedule (replica.ts).
+  replica?: Replica | null;
   // The sold size when a package booked less; the service uses the sold size times its load.
   promised?: Resources;
   // vmNNN for the player's own VMs; a customer workload carries its service's hostname.
@@ -144,7 +149,10 @@ export const cardsFree = (s: GameState, d: Device): number =>
 // What the workloads on a server book; web spaces inside a panel VM count in the VM's booking, a disk on a datastore on the datastore.
 export function nodeUsed(s: GameState, deviceId: string): Resources {
   const used = { ...ZERO };
-  for (const w of s.workloads) if (w.deviceId === deviceId && w.clusterId) { const b = booked(s, w); for (const k of KEYS) used[k] += w.datastore && k === "diskGb" ? 0 : b[k]; }
+  for (const w of s.workloads) {
+    if (w.replica?.toNode === deviceId) used.diskGb += w.diskGb;
+    if (w.deviceId === deviceId && w.clusterId) { const b = booked(s, w); for (const k of KEYS) used[k] += w.datastore && k === "diskGb" ? 0 : b[k]; }
+  }
   return used;
 }
 

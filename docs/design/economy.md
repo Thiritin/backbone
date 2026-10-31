@@ -1821,6 +1821,12 @@ A datastore is a server attached to a VMwhere cluster as shared storage for VM d
 
 A Proxmocks cluster of two or more nodes holds quorum while more than half of its votes are up. Every node casts one vote, and a QDevice (a free server in the cluster's zone with no software, set with `setQdevice`) casts one more. Without quorum the cluster is read-only: creating or deleting VMs, migrating, snapshots, restores, node state changes, backup jobs and datastore attachment refuse with `error.noQuorum`, and failover is suspended. Running VMs stay up. A two-node cluster loses quorum when either node dies; a third node or a QDevice prevents that.
 
+### Storage replication and Ceph
+
+A VM of a Proxmocks cluster (from the year of its cluster support) can replicate its disk to another active node with `setReplication`: every 15 minutes, hourly or daily (03:00 UTC). The replica books the VM's disk on the target node and each copy sends `BACKUP_CHANGED` of the filled disk over the LAN. When the VM's node dies with its data (`lostDisk`), failover restarts the VM on the replica node and closes the loss with the data written since the last copy lost (the lag since `lastAt` plus half an interval). A disk on shared storage or a Ceph pool takes no replica.
+
+A cluster of three or more Proxmocks nodes can build a Ceph pool with `setCeph` (size 2 or 3). Its capacity is the usable disk of all nodes divided by the size, and it must hold the disks of the cluster's VMs. Every node down costs one copy: at one copy the pool is read-only (mutating actions refuse with `error.cephReadOnly`). VMs on the pool fail over like VMs on a datastore, also when the dead node lost its data. After a node returns the pool rebalances for `diskUsed / (Gbit * LAN_GB_PER_HOUR)` hours, with a warning alarm.
+
 ### Snapshots
 
 A snapshot freezes a VM's disk on a VMwhere cluster and, for the player's own VMs, its installed OS and software. Values live in `src/sim/10-catalog/platforms.ts`.

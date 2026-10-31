@@ -4,6 +4,8 @@ import type { SimEvent } from "../88-tick/tick";
 import { softwareById } from "../10-catalog/platforms";
 import { balances, datastoreOn, diskMovesLive, insideVm, isOwnVm, liveBetween, lostDisk, moveControlPlaneOff, pickNode, type Cluster, type Workload } from "./cluster";
 import { quorate } from "./quorum";
+import { cephCopies, cephOn, replicaReady, replicaStale, replicaTick } from "./replica";
+import { settleLoss } from "../90-actions/vms";
 import { working } from "./status";
 import { nodeUsage } from "./usage";
 
@@ -29,8 +31,19 @@ function failover(s: GameState, c: Cluster, events: SimEvent[]) {
   if (!dead.size || !quorate(s, c)) return;
   if (c.controlPlane && dead.has(c.controlPlane)) moveControlPlaneOff(s, c.id, c.controlPlane);
   let moved = 0, stuck = 0;
-  const shared = (w: Workload) => !(c.platform && softwareById(c.platform).datastores) || (datastoreOn(c, w) && working(s, w.datastore!));
-  for (const w of s.workloads.filter((x) => x.clusterId === c.id && x.deviceId && dead.has(x.deviceId) && !x.template && !lostDisk(s, x) && shared(x))) {
+  const pool = cephOn(c) && cephCopies(s, c) >= 1;
+  const shared = (w: Workload) => pool || !(c.platform && softwareById(c.platform).datastores) || (datastoreOn(c, w) && working(s, w.datastore!));
+  const viaReplica = (w: Workload) => !w.datastore && !pool && replicaReady(s, w) && !dead.has(w.replica!.toNode);
+  for (const w of s.workloads.filter((x) => x.clusterId === c.id && x.deviceId && dead.has(x.deviceId) && !x.template && (((pool || !lostDisk(s, x)) && shared(x)) || viaReplica(x)))) {
+    // A replica takes over on its own node, from the last copy: what was written since is gone.
+    if (!pool && viaReplica(w) && (lostDisk(s, w) || !shared(w))) {
+      const lag = replicaStale(s, w);
+      patch(s, w.id, { deviceId: w.replica!.toNode, placedAt: s.hour, replica: null, stuck: undefined });
+      settleLoss(s, w, s.hour, s.hour - lag);
+      for (const id of servicesIn(s, w)) s.downHours = { ...s.downHours, [id]: (s.downHours[id] ?? 0) + FAILOVER_MINUTES / 60 };
+      moved++;
+      continue;
+    }
     const to = pickNode(s, cluster(s, c.id), w, w.deviceId, "spread");
     if (!to) {
       if (!w.stuck) stuck++;
@@ -81,5 +94,6 @@ export function haTick(s: GameState): SimEvent[] {
   }
   // A clustered panel host restarts the web spaces of a failed server on the others without any research.
   for (const c of s.clusters.filter((x) => x.kind === "panel" && x.nodes.length > 1)) failover(s, c, events);
+  replicaTick(s);
   return events;
 }

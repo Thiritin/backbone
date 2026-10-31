@@ -33,7 +33,7 @@ export function attachDatastore(s: GameState, clusterId: string, deviceId: strin
   if (!c) return fail("error.unknownCluster");
   if (c.kind !== "cloud" || !c.platform || !softwareById(c.platform).datastores) return fail("error.noDatastores");
   if (!controlPlaneUp(s, c)) return fail("error.controlPlaneDown");
-  if (quorumBlock(s, c)) return fail("error.noQuorum");
+  { const q = quorumBlock(s, c); if (q) return fail(q); }
   if (c.datastores.length >= DATASTORES_MAX) return fail("error.datastoresFull");
   if (!(protocol in DATASTORE_FROM) || yearOf(s.hour) < DATASTORE_FROM[protocol]) return fail("error.protocolTooNew");
   const bad = datastoreBlock(s, c, deviceId);

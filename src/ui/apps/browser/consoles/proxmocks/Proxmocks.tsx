@@ -13,6 +13,7 @@ import { PackagesScreen } from "../PackageForms";
 import { JobsPanel, PointsPanel } from "../backup/Jobs";
 import { quorate } from "../../../../../sim/60-infra/quorum";
 import { ClusterInfo } from "./Cluster";
+import { CephPanel, Replication, StorageList } from "./Storage";
 
 // docs/design/software.md, section 9: the grey ExtJS manager from 2008, the flat white one with the orange mark from 2015.
 const ERAS = erasFrom(2008, 2015);
@@ -53,7 +54,7 @@ export function VmSummary({ game, c, v }: { game: GameState; c: Cluster; v: Vm }
 export function Proxmocks(p: PanelProps) {
   const era = eraAt(ERAS, p.game), { game, c, f } = p, openConsole = useStore((s) => s.openConsole);
   const open = parseCreate("proxmocks", p.path), [sel, setSel] = useState<Sel>(open?.screen === "create" ? { kind: "new" } : open?.screen === "packages" ? { kind: "plans" } : ALL), [tab, setTab] = useState("Summary");
-  const tabNames: Record<string, string> = { Summary: t("browser-consoles-2.summary"), Console: t("browser-consoles-2.console"), Hardware: t("browser-consoles-2.hardware"), Options: t("browser-consoles-2.options"), Backup: t("browser-consoles-2.backup"), Updates: t("browser-consoles-2.updates"), Cluster: t("browser-consoles-2.cluster") };
+  const tabNames: Record<string, string> = { Summary: t("browser-consoles-2.summary"), Console: t("browser-consoles-2.console"), Hardware: t("browser-consoles-2.hardware"), Options: t("browser-consoles-2.options"), Backup: t("browser-consoles-2.backup"), Updates: t("browser-consoles-2.updates"), Cluster: t("browser-consoles-2.cluster"), Replication: t("pmx.replication"), Ceph: "Ceph", Storage: t("pmx.storage") };
   const { vms, dialog } = useVms(game, c, f), sw = useSoftware(game, c, f), nv = useNewVm(game, c, open?.screen === "create" ? open.order : undefined);
   if (!p.signedIn) return (
     <div className="cx pmx pmx-login" data-era={era}>
@@ -67,8 +68,8 @@ export function Proxmocks(p: PanelProps) {
   const pick = (s: Sel, tb = "Summary") => { setSel(s); setTab(tb); };
   const vm = sel.kind === "vm" ? vms.find((v) => v.id === sel.id) : undefined;
   const node = sel.kind === "node" ? sel.id : null;
-  const tabs = vm ? ["Summary", "Console", "Hardware", "Options", "Backup"]
-    : node ? ["Summary", "Updates"] : ["Summary", ...(f.cluster ? ["Cluster"] : []), ...(f.backups ? ["Backup"] : [])];
+  const tabs = vm ? ["Summary", "Console", "Hardware", "Options", "Backup", ...(c.nodes.length > 1 ? ["Replication"] : [])]
+    : node ? ["Summary", "Updates"] : ["Summary", ...(f.cluster ? ["Cluster", "Replication", "Ceph", "Storage"] : []), ...(f.backups ? ["Backup"] : [])];
   const shown = tabs.includes(tab) ? tab : "Summary";
   const nodes = c.nodes.map((n) => game.devices.find((d) => d.id === n.deviceId)!).filter(Boolean);
   const title = sel.kind === "plans" ? t("pkg.pmxPlans") : vm ? t("browser-consoles-2.vmTitle", { id: vmid(vm), name: vm.name, node: vm.node }) : node ? t("browser-consoles-2.nodeTitle", { name: nodes.find((d) => d.id === node)?.hostname ?? "" }) : t("browser-consoles-2.datacenter");
@@ -147,6 +148,10 @@ export function Proxmocks(p: PanelProps) {
                 </>
               )}
               {!vm && shown === "Cluster" && <><ClusterInfo game={game} c={c} /><NodeList game={game} c={c} f={f} /></>}
+              {vm && shown === "Replication" && <Replication game={game} c={c} w={vm.w} />}
+              {!vm && shown === "Replication" && <Replication game={game} c={c} />}
+              {!vm && shown === "Ceph" && <CephPanel game={game} c={c} />}
+              {!vm && shown === "Storage" && <StorageList game={game} c={c} />}
               {!vm && shown === "Backup" && <JobsPanel game={game} source={c} skin="proxmocks" />}
               {node && shown === "Updates" && (
                 <>

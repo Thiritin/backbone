@@ -2,6 +2,7 @@
 import type { GameState } from "../50-state";
 import { modelById } from "../10-catalog/hardware";
 import { serverTaken, type Cluster } from "./cluster";
+import { cephReadOnly } from "./replica";
 import { locationOf, working } from "./status";
 
 const isQuorumCluster = (c: Cluster): boolean => c.kind === "cloud" && c.platform === "proxmocks" && c.nodes.length >= 2;
@@ -19,7 +20,8 @@ export const quorate = (s: GameState, c: Cluster): boolean => {
 };
 
 // The error a mutating action returns on a cluster without quorum, else null.
-export const quorumBlock = (s: GameState, c: Cluster | undefined): string | null => (c && !quorate(s, c) ? "error.noQuorum" : null);
+export const quorumBlock = (s: GameState, c: Cluster | undefined): string | null =>
+  !c ? null : !quorate(s, c) ? "error.noQuorum" : cephReadOnly(s, c) ? "error.cephReadOnly" : null;
 
 // Why a server cannot be the cluster's QDevice, or null.
 export function qdeviceBlock(s: GameState, c: Cluster, deviceId: string): string | null {

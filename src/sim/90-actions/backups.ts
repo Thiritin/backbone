@@ -15,7 +15,7 @@ export type JobDraft = Partial<Omit<BackupJob, "keep">> & { keep?: Partial<Backu
 export function saveJob(s: GameState, clusterId: string, draft: JobDraft): ActionResult {
   const c = s.clusters.find((x) => x.id === clusterId);
   if (!c) return fail("error.unknownCluster");
-  if (quorumBlock(s, c)) return fail("error.noQuorum");
+  { const q = quorumBlock(s, c); if (q) return fail(q); }
   const old = draft.id ? c.jobs.find((j) => j.id === draft.id) : undefined;
   if (draft.id && !old) return fail("error.unknownJob");
   if (!old && c.jobs.length >= MAX_JOBS) return fail("error.jobLimit");
