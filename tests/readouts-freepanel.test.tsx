@@ -18,7 +18,7 @@ describe("FreePanel module tree", () => {
   it("opens on System Information with its categories in both eras", () => {
     for (const year of [2008, 2022]) {
       const html = render(year);
-      for (const text of ["Dashboard", "Virtualmin", "List Virtual Servers", "Software and updates", "System Logs", "Webmin Actions Log", "Check Licence", "CPU load average", "Real memory", "Package updates", "panel.example.com"]) {
+      for (const text of ["Dashboard", "Virtualmen", "List Virtual Servers", "Software and updates", "System Logs", "FreePanel Actions Log", "Check Licence", "CPU load average", "Real memory", "Package updates", "panel.example.com"]) {
         expect(html, `${year} ${text}`).toContain(text);
       }
     }

@@ -7,7 +7,7 @@ import { useStore } from "../../../../store";
 
 const DAEMONS = ["web", "mail", "name", "ssh", "panel"] as const;
 
-// WHM > Service Configuration > Service Manager: only the web server has a switch in the sim.
+// WHN > Service Configuration > Service Manager: only the web server has a switch in the sim.
 export function ServiceManager({ game, c }: { game: GameState; c: Cluster }) {
   const act = useStore((s) => s.act), off = game.security.offline.includes(c.id);
   return (

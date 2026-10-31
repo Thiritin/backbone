@@ -11,7 +11,7 @@ import { Bar, Facts, type Fact } from "../PanelBase";
 const pct = (x: number) => `${Math.round(x * 100)}%`;
 const avg = (xs: number[]) => (xs.length ? xs.reduce((n, x) => n + x, 0) / xs.length : 0);
 
-// Webmin's System Information dashboard, read from the host's own machine.
+// FreePanel's System Information dashboard, read from the host's own machine.
 export function SystemInfo({ game, c, host }: { game: GameState; c: Cluster; host: string }) {
   const w = c.vm ? vmById(game, c.vm) : undefined, device = game.devices.find((d) => d.id === c.nodes[0]?.deviceId);
   const machine = w ?? device, os = machine?.os, stats = c.vm ? vmStats(game, c.vm) : null;
