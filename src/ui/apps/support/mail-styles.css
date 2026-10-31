@@ -59,13 +59,13 @@ svg.lucide.mark.dim { opacity: 0.55; }
 .sup[data-style="lookout"] .tk .meta { margin-top: 0; }
 :root[data-theme="dark"] .sup[data-style="lookout"] { --accent: oklch(0.68 0.13 252); --accent-soft: oklch(0.32 0.06 252); --brand-bg: oklch(0.38 0.12 252); }
 
-/* Notmail: a blue web mail bar with an orange accent. */
-.sup[data-style="notmail"] { --accent: oklch(0.65 0.17 50); --accent-ink: white; --accent-soft: oklch(0.95 0.035 60); --brand-bg: linear-gradient(oklch(0.58 0.14 250), oklch(0.48 0.15 252)); --brand-ink: white; }
-.sup[data-style="notmail"] .sup-brand { border-bottom: 3px solid var(--accent); }
-.sup[data-style="notmail"] .sup-list-h { margin: -8px -8px 6px; padding: 10px 14px; background: oklch(0.95 0.02 250); border-bottom: var(--ar-bw) solid var(--line); }
-.sup[data-style="notmail"] .tk { border-radius: 4px; }
-:root[data-theme="dark"] .sup[data-style="notmail"] { --accent: oklch(0.72 0.15 55); --accent-ink: oklch(0.2 0.03 55); --accent-soft: oklch(0.33 0.05 55); --brand-bg: linear-gradient(oklch(0.42 0.12 250), oklch(0.36 0.12 252)); }
-:root[data-theme="dark"] .sup[data-style="notmail"] .sup-list-h { background: var(--win-side); }
+/* GMix: a blue web mail bar with an orange accent. */
+.sup[data-style="gmix"] { --accent: oklch(0.65 0.17 50); --accent-ink: white; --accent-soft: oklch(0.95 0.035 60); --brand-bg: linear-gradient(oklch(0.58 0.14 250), oklch(0.48 0.15 252)); --brand-ink: white; }
+.sup[data-style="gmix"] .sup-brand { border-bottom: 3px solid var(--accent); }
+.sup[data-style="gmix"] .sup-list-h { margin: -8px -8px 6px; padding: 10px 14px; background: oklch(0.95 0.02 250); border-bottom: var(--ar-bw) solid var(--line); }
+.sup[data-style="gmix"] .tk { border-radius: 4px; }
+:root[data-theme="dark"] .sup[data-style="gmix"] { --accent: oklch(0.72 0.15 55); --accent-ink: oklch(0.2 0.03 55); --accent-soft: oklch(0.33 0.05 55); --brand-bg: linear-gradient(oklch(0.42 0.12 250), oklch(0.36 0.12 252)); }
+:root[data-theme="dark"] .sup[data-style="gmix"] .sup-list-h { background: var(--win-side); }
 
 /* Pear Mail: a plain light list under a grey toolbar. */
 .sup[data-style="pear"] .sup-list-h, .sup[data-style="ionose"] .sup-list-h { margin: -8px -8px 6px; padding: 10px 14px; background: var(--win-side); border-bottom: var(--ar-bw) solid var(--line); }
