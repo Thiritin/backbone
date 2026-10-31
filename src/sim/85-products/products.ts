@@ -4,6 +4,8 @@ import { cpuModel, isFresh, skuOf, topBoost } from "../10-catalog/cpus";
 import { genOf, modelById } from "../10-catalog/hardware";
 import { balancerIn, isService, softwareById } from "../10-catalog/platforms";
 import { BACKUP_HOUR, slowTolerance } from "../10-catalog/usage";
+import { tierOf } from "../60-infra/licence";
+import { TRIAL_DAYS, LAPSE_GRACE_DAYS, topTier } from "../10-catalog/licence-tiers";
 import { APP_SUITE_FEE, licensingAt, SERVER_OS, serverOsAt, serverOsById, type LicenseEra, type LicenseKind, type ServerOsId } from "../10-catalog/server-os";
 import { homeLineById } from "../20-world/datacenters";
 import type { Customer, Product } from "../30-customers/customers";
@@ -61,8 +63,14 @@ function units(s: GameState, c: Cluster, kind: LicenseKind): number {
   if (kind === "core") return c.nodes.reduce((n, x) => n + installedCores(s.devices.find((d) => d.id === x.deviceId)!), 0);
   return 0;
 }
-const softwareFee = (s: GameState, c: Cluster, id: string | null): number => {
+// The monthly fee of a panel edition: nothing during the trial, after a lapse or once the trial ended without a tier.
+export const softwareFee = (s: GameState, c: Cluster, id: string | null): number => {
   if (!id) return 0;
+  const tier = id === c.panel ? tierOf(c) : undefined;
+  if (tier) {
+    if (c.licence && (c.licence.trialUntil !== null || c.licence.lapsedAt !== null)) return 0;
+    return Math.round(tier.fee * (tier.kind === "account" ? units(s, c, "account") : 1) * 100) / 100;
+  }
   const era = licensingAt(softwareById(id), yearOf(s.hour));
   return Math.round(era.fee * units(s, c, era.kind) * 100) / 100;
 };
@@ -186,7 +194,9 @@ function finishSwitches(s: GameState, events: SimEvent[]) {
   for (const c of s.clusters) {
     if (!c.switching || c.switching.doneAt > s.hour) continue;
     const { kind, to } = c.switching, fresh = !(kind === "cloud" ? c.platform : c.panel);
-    s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, switching: null, version: yearOf(s.hour), updatedAt: s.hour, ...(kind === "cloud" ? { platform: to } : { panel: to }) } : x));
+    // A licensed panel starts on a free trial of its top tier.
+    const licence = kind === "panel" && topTier(to) ? { tier: topTier(to)!.id, trialUntil: s.hour + TRIAL_DAYS * 24, lapsedAt: null } : undefined;
+    s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, switching: null, version: yearOf(s.hour), updatedAt: s.hour, ...(kind === "cloud" ? { platform: to } : { panel: to, licence }) } : x));
     events.push({ app: "Locations", key: fresh ? "event.installed" : "event.switched", params: { cluster: c.name, name: softwareById(to).name } });
     const d = fresh ? s.devices.find((x) => x.id === c.controlPlane) : undefined;
     if (d?.bootFrom === "usb") Object.assign(d, { bootFrom: "disk", bootUntil: nowHours(s) + bootHours(s, d) });
@@ -346,6 +356,26 @@ function billLicenses(s: GameState) {
   s.ledger = [...s.ledger, ...lines];
 }
 
+// On the 1st a panel whose licence the cash cannot pay lapses; a lapse that cash recovers within a week is paid and cleared.
+export function licenceTick(s: GameState): void {
+  for (const c of s.clusters) {
+    const lic = c.licence;
+    if (!lic || !tierOf(c)) continue;
+    const set = (patch: Partial<typeof lic>) => { s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, licence: { ...lic, ...patch } } : x)); };
+    if (lic.lapsedAt !== null && s.hour - lic.lapsedAt <= LAPSE_GRACE_DAYS * 24) {
+      const fee = softwareFee(s, { ...c, licence: { ...lic, lapsedAt: null } }, c.panel);
+      if (s.cash >= fee) { set({ lapsedAt: null }); payLicence(s, c, fee); }
+    } else if (lic.lapsedAt === null && lic.trialUntil === null && isMonthStart(s.hour) && s.cash < softwareFee(s, c, c.panel)) set({ lapsedAt: s.hour });
+  }
+}
+
+// Charges a licence fee at once, as the monthly line does.
+export function payLicence(s: GameState, c: Cluster, fee: number): void {
+  if (fee <= 0) return;
+  s.cash = Math.round((s.cash - fee) * 100) / 100;
+  s.ledger = [...s.ledger, { hour: s.hour, category: "licenses", key: "ledger.license", params: { cluster: c.name, name: softwareById(c.panel!).name }, amount: -fee }];
+}
+
 // Hourly: finishes software switches, opens incident reports for lost disks, runs backups, slows overloaded nodes, bills licenses.
 export function productsTick(s: GameState): SimEvent[] {
   const events: SimEvent[] = [];
@@ -354,6 +384,7 @@ export function productsTick(s: GameState): SimEvent[] {
   reportLosses(s, events);
   runBackups(s, events);
   overload(s);
+  licenceTick(s);
   if (isMonthStart(s.hour)) {
     monthlyReviews(s, events);
     billLicenses(s);

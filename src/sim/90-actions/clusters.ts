@@ -12,6 +12,7 @@ import { serverOsAt } from "../10-catalog/server-os";
 import { freezeTick } from "../60-infra/usage";
 import { PHP_UPGRADE_HOURS } from "../60-infra/php";
 import { withinOversell } from "../60-infra/oversell";
+import { licenceBlock } from "../60-infra/licence";
 import { markPatched, patchOut, vulnerable } from "../60-infra/security";
 import {
   anchorOf, clusterOf, clustersOf, dropCluster, gameFirst, controlPlaneUp, controlPlaneUse, fitsControlPlane, HA_OFF, hostOfVm, hostsOfVm, insideVm, isOwnVm, KEYS, vmCap, moveOff, noRoomError, nodeTakes, pickNode, serverTaken,
@@ -388,7 +389,7 @@ export function placeService(s: GameState, serviceId: string, clusterId: string 
   if (workloadsOf(s, v.id).length) return fail("error.placed");
   const spec = PRODUCTS[v.product], size = sizeOf(v.spec);
   const inZone = (az: string) => v.zone === null || v.zone === az;
-  let w: Workload | null = null, az = "", capped = false;
+  let w: Workload | null = null, az = "", capped = false, blocked = "";
   if (spec.runsOn === "none") return { ok: true };
   if (spec.runsOn === "cluster") {
     const candidates = s.clusters.filter((x) => (clusterId ? x.id === clusterId : inZone(x.az)) && supports(x, v.product)).sort((a, b) => gameFirst(a, b) || betterHost(s)(a, b));
@@ -396,7 +397,8 @@ export function placeService(s: GameState, serviceId: string, clusterId: string 
     for (const roomyOnly of [true, false]) {
       for (const c of candidates) {
         const disk = withDatastore(s, c, size);
-        const room = withinOversell(s, c, disk);
+        const room = withinOversell(s, c, disk), why = licenceBlock(s, c);
+        if (why) { blocked = why; continue; }
         if (!room) capped = true;
         const node = controlPlaneUp(s, c) && room ? pickNode(s, deviceId ? { ...c, nodes: c.nodes.filter((n) => n.deviceId === deviceId) } : c, disk, null, c.placement, roomyOnly) : null;
         if (node) { w = workload(s, v.id, { ...disk, clusterId: c.id, deviceId: c.vm ? null : node }); az = c.az; break; }
@@ -404,6 +406,7 @@ export function placeService(s: GameState, serviceId: string, clusterId: string 
       if (w) break;
     }
     const target = clusterId ? s.clusters.find((x) => x.id === clusterId) : undefined;
+    if (!w && blocked) return fail(blocked);
     if (!w && capped) return fail("error.oversellCap");
     if (!w) return fail(target && supports(target, v.product) && !controlPlaneUp(s, target) ? "error.controlPlaneDown" : noRoomError(s, v.product, clusterId));
   } else if (spec.runsOn === "server") {

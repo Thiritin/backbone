@@ -1,4 +1,5 @@
 import { dateOf, yearOf } from "../00-core/time";
+import { licenceExpired } from "../60-infra/licence";
 import { autoUpdates, clustersIn, conflict, phpAt, runsOn, SOFTWARE, softwareById, type SoftwareKind } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
 import { anchorOf, clustersOf, clustersOn, dropCluster, machineOf, workloadsOn, type Cluster } from "../60-infra/cluster";
@@ -116,6 +117,7 @@ export const updateDue = (s: GameState, c: Cluster): boolean =>
 export function updateSoftware(s: GameState, clusterId: string): ActionResult {
   const c = s.clusters.find((x) => x.id === clusterId), family = c && familyOf(c);
   if (!c || !family) return { ok: false, error: c ? "error.noSoftware" : "error.unknownCluster" };
+  if (licenceExpired(s, c)) return { ok: false, error: "error.licenceExpired" };
   if (!updateDue(s, c)) return { ok: false, error: "error.upToDate" };
   const sw = softwareById(family), hours = UPDATE_MINUTES[sw.kind] / 60;
   const live = sw.kind === "cloud" && sw.live && c.nodes.length > 1;

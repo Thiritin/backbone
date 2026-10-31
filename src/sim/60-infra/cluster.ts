@@ -1,6 +1,7 @@
 import { modelById } from "../10-catalog/hardware";
 import { START_YEAR, yearOf } from "../00-core/time";
 import { GPU_SKILL } from "../10-catalog/research";
+import { topTier } from "../10-catalog/licence-tiers";
 import { backsUp, balancerIn, fcGbit, IN_VM, isService, kindsServing, kindServing, phpAt, softwareById, type DatastoreProtocol, type SoftwareKind } from "../10-catalog/platforms";
 import { OVERCOMMIT, PRODUCTS, type Resources } from "../10-catalog/products";
 import type { Product } from "../30-customers/customers";
@@ -38,6 +39,8 @@ export interface Cluster {
   ramGuard?: boolean;
   // The player's cap on booked vCPU per physical vCPU for a panel host; missing or null is no cap (oversell.ts).
   oversell?: number | null;
+  // The edition of a licensed panel: trialUntil is the end of the free trial until a tier is chosen, lapsedAt the hour an unpaid licence expired. Missing is the top tier without expiry.
+  licence?: { tier: string; trialUntil: number | null; lapsedAt: number | null };
   // Compatibility mode lets VMs move live between nodes of different CPU vendors, at COMPAT_VCPU of every node's vCPU.
   compat?: boolean;
   // Whether the software updates itself at AUTO_UPDATE_HOUR when an update is due (software.ts).
@@ -92,6 +95,7 @@ export const clusterDefaults = (c: Partial<Cluster> & Pick<Cluster, "nodes">, ho
   panel: null, platform: null, vm: null, switching: null, appSuite: false, datastores: [], backup: { targetId: null, every: "off" }, php: phpAt(yearOf(hour)), phpUntil: -1,
   version: c.switching ? yearOf(c.switching.doneAt) : Math.max(START_YEAR, yearOf(hour) - 2), updatedAt: c.switching?.doneAt ?? hour, ...c,
   ha: { ...HA_OFF, ...c.ha },
+  ...(c.licence || !topTier(c.panel ?? null) ? {} : { licence: { tier: topTier(c.panel ?? null)!.id, trialUntil: null, lapsedAt: null } }),
   controlPlane: c.controlPlane === undefined ? c.nodes[0]?.deviceId ?? null : c.controlPlane,
 }) as Cluster;
 export const workloadDefaults = (w: Partial<Workload>): Workload => ({ stopped: false, busyUntil: 0, backupAt: null, ...w }) as Workload;
