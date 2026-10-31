@@ -32,6 +32,7 @@ import type { Rates } from "./10-catalog/products";
 import type { Domain } from "./30-customers/registry";
 import { newChadUsage, type ChadUsage } from "./47-staff/chad";
 import { newIps, type Ips } from "./60-infra/addresses";
+import { newNetSvc, type NetSvc } from "./60-infra/netsvc";
 import type { CompanyMail } from "./80-business/mail";
 import type { Registrar } from "./30-customers/registrar";
 import type { Listing } from "./10-catalog/used";
@@ -259,6 +260,8 @@ export interface GameState {
   chadUsage: ChadUsage;
   // Public addresses, the LIR membership and its blocks (60-infra/addresses.ts).
   ips: Ips;
+  // Mail queues and broken DNS, certificates and storage sets of the infrastructure consoles (60-infra/netsvc.ts).
+  netsvc: NetSvc;
   // News already published, as "<id>@<hour>" (80-business/news.ts).
   news: string[];
   // Next server number, next own-VM number and next service number (30-customers/hostnames.ts).
@@ -346,6 +349,7 @@ export const newGame = (seed: number): GameState => ({
   registrar: null,
   chadUsage: newChadUsage(),
   ips: newIps(),
+  netsvc: newNetSvc(),
   news: [],
   nextNode: 1, nextVm: 1, nextHostNo: firstHostNo(seed),
   used: [], usedRep: 0,

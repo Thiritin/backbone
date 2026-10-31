@@ -1,3 +1,4 @@
 /* The CLI listing on a host page: a terminal printout, light on dark whatever the desktop theme. */
 .br-error:has(.hc) { max-width: 720px; }
 .hc { margin: 0; padding: 14px 16px; overflow-x: auto; background: #101214; color: #cfd6d1; border-radius: 6px; font: 12px/1.5 ui-monospace, "DejaVu Sans Mono", Menlo, monospace; white-space: pre; }
+.hc-actions { display: flex; gap: 8px; margin-top: 10px; }
