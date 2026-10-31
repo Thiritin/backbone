@@ -5,6 +5,7 @@ export default {
   "support.cause.generator": () => "Fallo del grupo electrógeno",
   "support.cause.feed": () => "Fallo de la acometida",
   "support.cause.seizure": () => "Servidor incautado",
+  "support.cause.heat": () => "Sobrecalentamiento",
   "support.until": (p) => `Hasta ${p.day}`,
   "support.dark": (p) => `${p.d} a oscuras`,
   "support.noDowntime": () => "Sin caídas",
