@@ -7,7 +7,8 @@ import type { Resources } from "../../../sim/10-catalog/products";
 import type { Product } from "../../../sim/30-customers/customers";
 import { registryCost, registryOf } from "../../../sim/30-customers/registry";
 import { wholesale } from "../../../sim/30-customers/registrar";
-import { setupFee, sizeOf } from "../../../sim/30-market/spec";
+import { offerPrice, setupFee, sizeOf } from "../../../sim/30-market/spec";
+import { shopActive } from "../../../sim/80-business/shop";
 import { canAutomate, hostFor, invoiceOf, stepsDone } from "../../../sim/30-market/manual";
 import type { SalesRequest } from "../../../sim/30-market/market";
 import { isFinal, type Ticket } from "../../../sim/40-support/tickets";
@@ -123,7 +124,7 @@ function QuoteFields({ tk, r, locked }: { tk: Ticket; r: SalesRequest; locked: b
   const game = useStore((s) => s.game);
   const act = useStore((s) => s.act);
   const fee = setupFee(game, r.product);
-  const [price, setPrice] = useState(r.counter ?? r.quote ?? r.reference), [setup, setSetup] = useState(r.setup ?? fee);
+  const [price, setPrice] = useState(r.counter ?? r.quote ?? (shopActive(game) ? offerPrice(game, r.product, r.spec, r.sla) : r.reference)), [setup, setSetup] = useState(r.setup ?? fee);
   return (
     <div className="step-row">
       <PriceField value={price} reference={r.reference} onChange={setPrice} disabled={locked} />
