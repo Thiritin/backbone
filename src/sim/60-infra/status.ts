@@ -6,7 +6,7 @@ import { partPrice } from "../10-catalog/parts";
 import { BASEMENT, capacityAt, datacenterById, EXTRA_STEP_KW, extraStepPrice, homeLineById, inUs, MOVE, rackUnits, regionOf, SHARE_RACKS, spacePrice, type Datacenter } from "../20-world/datacenters";
 import { CITY_TLD } from "../30-customers/domains";
 import { serverOsById } from "../10-catalog/server-os";
-import type { Component, Device, End, GameState, Location, NetFail, SpaceKind } from "../50-state";
+import type { Component, Device, End, GameState, Location, NetFail, Rack, SpaceKind } from "../50-state";
 
 export interface LinkStatus { online: boolean; gbit: number; warning: "bondNotGrouped" | null }
 
@@ -229,6 +229,8 @@ export const psusOf = (d: Device) => d.components.filter((c) => c.kind === "psu"
 export const isPlugged = (c: Component) => c.plugged !== false;
 // A device gets power through a plugged-in supply that has not failed; one without supplies needs none.
 export const pluggedIn = (d: Device) => { const p = psusOf(d); return !p.length || p.some((c) => isPlugged(c) && c.failedAt === null); };
+// A server with two live supplies in a rack with feed B splits its draw over both feeds; everything else hangs on feed A.
+export const dualFed = (rack: Rack, d: Device): boolean => rack.feedB && psusOf(d).filter((c) => isPlugged(c) && c.failedAt === null).length >= 2;
 
 // The servers that run at least one workload; the rest draw their idle power. Working GPU cards add their watts either way.
 // A server under burn-in draws full power and takes no customers.
@@ -248,20 +250,28 @@ const circuitKw = (loc: Location): number => BASEMENT.kw + (loc.extraCircuit ? E
 function computeRackPower(s: GameState, rackId: string): RackPower {
   const rack = s.racks.find((r) => r.id === rackId);
   const loc = rack && s.locations.find((l) => l.id === rack.locationId);
-  if (!rack || !loc) return { watts: 0, limitWatts: 0, tripped: false };
+  if (!rack || !loc) return { watts: 0, a: 0, b: 0, limitWatts: 0, tripped: false };
   const busy = busyDevices(s);
-  const watts = rack.arriveAt === null ? s.devices.filter((d) => d.rackId === rackId && d.on && pluggedIn(d) && !chassisOut(s, d)).reduce((sum, d) => sum + drawWatts(d, busy), 0)
-    + s.workloads.reduce((sum, w) => sum + (w.rackId === rackId ? w.watts : 0), 0) : 0;
+  let a = 0, b = 0;
+  if (rack.arriveAt === null) {
+    for (const d of s.devices) {
+      if (d.rackId !== rackId || !d.on || !pluggedIn(d) || chassisOut(s, d)) continue;
+      const w = drawWatts(d, busy);
+      if (dualFed(rack, d)) { a += w / 2; b += w / 2; } else a += w;
+    }
+    a += s.workloads.reduce((sum, w) => sum + (w.rackId === rackId ? w.watts : 0), 0);
+  }
   const share = SHARE_RACKS.find((m) => m.id === rack.model)?.size ?? 1;
   // A high-density feed doubles a position's limit; the basement's extra circuit adds another household circuit.
   const kw = loc.dc ? datacenterById(loc.dc).kwPerPosition * (rack.highDensity ? 2 : 1) : circuitKw(loc);
   // A flat-rate contract's kW replaces the position's limit.
   const limitWatts = rack.flatKw ? Math.round(1000 * rack.flatKw) : Math.round((1000 * kw) / share) + Math.round(1000 * rack.extraKw);
-  return { watts, limitWatts, tripped: watts > limitWatts };
+  return { watts: a + b, a, b, limitWatts, tripped: a > limitWatts || b > limitWatts };
 }
 
 // Link and rack power results memoised for one sweep. Only for code that reads the infrastructure and never changes it.
-type RackPower = { watts: number; limitWatts: number; tripped: boolean };
+// a and b are the draw on each feed; limitWatts is the limit of one feed.
+type RackPower = { watts: number; a: number; b: number; limitWatts: number; tripped: boolean };
 let memo: { s: GameState; link: Map<string, LinkStatus>; power: Map<string, RackPower> } | null = null;
 export function readOnlySweep<T>(s: GameState, fn: () => T): T {
   if (memo) return fn();
@@ -394,7 +404,7 @@ export const haltHours = (s: GameState, d: Device): number => (HALT_MINUTES + (d
 // A device works when it has power, is switched on, and no failure or power-off swap has taken it down.
 export function working(s: GameState, deviceId: string): boolean {
   const d = s.devices.find((x) => x.id === deviceId);
-  if (!d || !d.on || d.hung || d.stuck || d.locked || booting(s, d) || halting(d) || !powered(s, deviceId) || failedDown(d)) return false;
+  if (!d || !d.on || d.hung || d.stuck || d.locked || booting(s, d) || halting(d) || !powered(s, deviceId) || failedDown(d) || d.maintenance?.mount) return false;
   const swap = d.maintenance && d.components.find((c) => c.id === d.maintenance!.componentId);
   return !(swap && !hotSwappable(d, swap));
 }

@@ -14,4 +14,6 @@ export default {
   "alarm.diskHigh": (p) => `El uso del datastore de ${p.host} está al ${p.percent} %.`,
   "alarm.vmStuck": (p) => `La máquina virtual ${p.vm} no pudo reiniciarse en otro host.`,
   "alarm.noFailover": (p) => `Recursos insuficientes para conmutar ${p.host}: ${p.need} GB de memoria asignados, ${p.free} GB libres en los demás hosts.`,
+  "alarm.feedHigh": (p) => `La acometida ${p.feed} de ${p.rack} está al ${p.percent}% de su límite.`,
+  "alarm.noFeedFailover": (p) => `Potencia insuficiente para conmutar ${p.rack}: las acometidas A y B consumen juntas el ${p.percent}% del límite de una acometida.`,
 } satisfies Dict;

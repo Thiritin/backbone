@@ -52,7 +52,7 @@ describe("components and failure rates", () => {
     expect(modelById("part-hdd")).toMatchObject({ kind: "part", price: 120, height: 0 });
     expect(withServer(newGame(1)).devices[0].components.every((c) => c.installedAt === 0 && c.failedAt === null)).toBe(true);
   });
-  it("uses the rate before and after the life expectancy, the manufacturer factor and double while hot", () => {
+  it("uses the rate before and after the life expectancy, the manufacturer factor and the hours run hot", () => {
     const s = rich();
     const d = dev(s, "dev3");
     // The preset's Seagull drive fails 1.2 times as often as the kind's rate (families.ts).
@@ -64,7 +64,8 @@ describe("components and failure rates", () => {
     expect(failureChance(s, { ...d, brand: "SuperMacro" }, hdd)).toBeCloseTo((0.08 * 1.3 * f) / 8760, 12);
     fail(s, "dev3", comp(s, "dev3", "fan").id);
     expect(deviceHealth(s, "dev3").state).toBe("hot");
-    expect(failureChance(s, dev(s, "dev3"), hdd)).toBeCloseTo((0.08 * 2 * f) / 8760, 12);
+    expect(failureChance(s, dev(s, "dev3"), hdd)).toBeCloseTo((0.08 * f) / 8760, 12);
+    expect(failureChance(s, { ...dev(s, "dev3"), hotHours: 100 }, hdd)).toBeCloseTo((0.08 * 2 * f) / 8760, 12);
     // After 5 years only the drive is past its life; fans last 6.
     expect(deviceHealth(s, "dev3").worn.map((c) => c.kind)).toEqual(["hdd"]);
     expect(COMPONENTS.cpu).toEqual({ life: 7, before: 0.0005, after: 0.002, price: 400, hotSwap: "no" });

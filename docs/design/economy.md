@@ -753,6 +753,39 @@ The balance model books 6 staff minutes per customer and month for payments, whi
 
 **Working hours.** Each employee works their team's shifts: per weekday a start hour and 1 to 12 hours, and a shift may run past midnight. The salary is for 40 hours a week; each hour on shift earns salary / 173, paid at the month start, so pay follows the hours actually worked. An action starts only if it ends within the shift; whatever is left waits for the next shift. Technicians on shift handle operations at their location; when nobody there is on shift, the on-call technician covers.
 
+## Fraud and chargebacks
+
+A small share of standard orders is paid with a stolen card or a stolen PayPail account. Sales leads are never fraudulent. The share is rolled once per order:
+
+| Product | Share of order form orders |
+| --- | --- |
+| GPU servers | 6% |
+| VPS and cloud | 5% |
+| Dedicated servers | 4% |
+| VPN | 3% |
+| Game servers | 2% |
+| Web hosting | 1% |
+| Everything else | 0.5% |
+
+| Years | Factor |
+| --- | --- |
+| 2005 to 2009 | 1 |
+| 2010 to 2016 | 1.3, as online card payments spread |
+| 2017 and 2018 | 2, while crypto mining pays for stolen servers |
+| From 2019 | 1.2, after strong customer authentication |
+
+An order by email pays its invoice by bank transfer and carries a fifth of the share.
+
+**The fraudster.** The customer pays every invoice on time and behaves like a shady customer ([Notices and legal requests](#notices-and-legal-requests)): abuse reports, copyright notices, legal requests and spam from their addresses. 30 to 60 days after signing up the card holder disputes the payments.
+
+**Chargeback.** Every paid invoice of the customer is taken back from the account and written off, PayPail charges a €15 fee, and the customer and their services are gone.
+
+**PayPail.** On the first of each month PayPail counts the chargebacks of the last 90 days. With at least 3 chargebacks that are more than 1% of the invoice payments in the same window, the first month brings a warning. A second month in a row brings a €250 monitoring fee every month and raises the chargeback fee to €25. A month below the line clears both.
+
+**Order review.** The setting Review server orders by hand holds VPS, cloud, GPU and dedicated orders for staff, also with order automation on: they arrive in Support like orders without automation and run step by step. The account step takes 10 minutes more and declines 70% of the fraudulent orders and 3% of honest ones, who go elsewhere.
+
+The balance model takes two months of payments and the fee off the revenue of each fraudulent signup and never reviews orders.
+
 ## Datacenters and space
 
 **Racks.** Racks keep their price over the years: 24U €350, 42U €800, 47U €1,000. The basement only fits a 24U rack.
@@ -990,7 +1023,7 @@ Only devices that are switched on and have a plugged-in, working power supply co
 | Chip shortage | Servers, chassis, switches, firewalls, routers, NICs | Mar 2021 | Sep 2021 | Jul 2022 | Jan 2023 | 6 | 6 days |
 | AI memory crunch | RAM, SSDs, NVMe drives, every server | Jan 2025 | Oct 2025 | Oct 2026 | Jan 2027 | 5 | 5 days |
 
-Anchors: the flood took out about a quarter of world HDD output and drive lead times stretched from days to weeks into early 2012; in the chip shortage, server and switch lead times went from 4 to 8 weeks to 6 to 12 months; in the 2025 to 2026 AI crunch, DRAM and enterprise SSD makers put buyers on allocation with lead times of months. Real waits of months would stop a game month (12 real hours at 1x) dead, so the peaks are 4 to 6 times the normal wait, which turns a one-day delivery into most of a game week. Until it arrives a unit is in transit and cannot be mounted, sold or shipped; the Cart shows the wait as "Arrives in 3 days". A company that owns no server yet gets its orders at once, so the first server is in the stockroom the moment it is bought (the starter rule). Spares taken out of a device go to storage at once. Bought hardware goes to storage, and mounting it into a rack is instant and free. Resale value falls in a straight line from 100% to 80% of the price over the first month, then in a straight line to 20% over the next 24 months, and stays at 20%. Racks sell the same way; spare parts sell at the current part price. A spare-parts kit costs 5% of the device's price and turns a repair into a 2-hour task.
+Anchors: the flood took out about a quarter of world HDD output and drive lead times stretched from days to weeks into early 2012; in the chip shortage, server and switch lead times went from 4 to 8 weeks to 6 to 12 months; in the 2025 to 2026 AI crunch, DRAM and enterprise SSD makers put buyers on allocation with lead times of months. Real waits of months would stop a game month (12 real hours at 1x) dead, so the peaks are 4 to 6 times the normal wait, which turns a one-day delivery into most of a game week. Until it arrives a unit is in transit and cannot be mounted, sold or shipped; the Cart shows the wait as "Arrives in 3 days". A company that owns no server yet gets its orders at once, so the first server is in the stockroom the moment it is bought (the starter rule). Spares taken out of a device go to storage at once. Bought hardware goes to storage. Mounting it into a rack, and taking it out again, is hand work of 30 minutes for a 1U device and 15 minutes more for each further unit (`mountHours`); a stack is one job for the sum. In the basement the founder does it at once and for free. At a datacenter it gets done like a repair: by remote hands after their response time at their hourly rate for at least one hour, by the player on site, by a friend after the drive, or by a technician at that location from the queue at no fee. A device that is being mounted cannot be switched on and does not work until the work is done; a device that is being taken out waits in storage until then and cannot be mounted or shipped. Resale value falls in a straight line from 100% to 80% of the price over the first month, then in a straight line to 20% over the next 24 months, and stays at 20%. Racks sell the same way; spare parts sell at the current part price. A spare-parts kit costs 5% of the device's price and turns a repair into a 2-hour task.
 
 **Failures.** Each device has a base annual failure rate (AFR), raised in its first 3 months and again after 3 years of age:
 
@@ -1006,11 +1039,10 @@ Here a is the age in years, and the chance of failing in any game hour is AFR ÷
 | Access or core switch | 2% | Everything wired only to it goes offline |
 | Edge router | 1.5% | Its uplinks go down; traffic spills to other exits if there are any |
 | UPS | 3% | The next grid outage takes the room down |
-| Cooling unit | 5% | The room overheats; servers start failing at 4× their rate after 2 hours |
 
 Without a spare kit in stock, a repair waits for a delivery first.
 
-**Components.** Each component's chance of failing in a year depends on whether it is past its life expectancy, and is multiplied by the manufacturer's failure factor and by 2 while the device runs hot from a failed fan. The chance per game hour is the yearly rate ÷ 8,760.
+**Components.** Each component's chance of failing in a year depends on whether it is past its life expectancy, and is multiplied by the manufacturer's failure factor and by 1 + the device's hot hours ÷ 100 (see Cooling and overheating). The chance per game hour is the yearly rate ÷ 8,760.
 
 | Component | Life expectancy | Yearly failure rate before | After | Part price | Swap while running |
 | --- | --- | --- | --- | --- | --- |
@@ -1025,6 +1057,22 @@ Without a spare kit in stock, a repair waits for a delivery first.
 | Network card | 10 years | 0.3% | 1% | €80 | No |
 
 A server has 4 fans; a switch or router 2 fans, 1 or 2 power supplies and a board that fails like a mainboard. The part price column is the reference price of an unsized spare and sets the insurance premium; the shop sells parts at the prices of Part prices by year.
+
+**Cooling and overheating.** Each location keeps a room temperature: 22 °C in a datacenter hall, and in the basement 22 + 5 · cos((month − 6.5) · π / 6), from 17 in January to 27 in July. A server's inlet adds up to 3 °C as its rack nears its power limit and 6 °C behind a failed fan. On top of that the room carries heat H, which the sim steps every game minute (60 steps when an hour is ticked at once):
+
+```math
+\frac{dH}{dt} = \frac{0.5}{m}\,\big(P - C - s \cdot H\big) \quad \text{°C per minute}, \qquad H \ge 0
+```
+
+P is the kW the location's racks draw and m the room's mass: its positions in a hall, 4 in the basement. A hall's cooling C is 1.2 × the kW limits of its racks, so it never falls short while it works, and it sheds s = 0.02 kW per position and degree through the building. The basement has no cooling unit: it sheds C = 3 kW at its normal temperature and s = 0.2 kW more per degree, so a basement drawing 4.5 kW on its extra circuit settles 7.5 °C warmer. A hall's cooling fails 0.3 times a year per location for a log-normal duration (median 40 minutes, σ 1, 5 minutes to 8 hours); C is then 0. A full 3.3 kW position climbs 1.6 °C a minute and reaches 45 °C after about 14 minutes, a 0.3 kW position 0.15 °C a minute.
+
+| Inlet | Effect |
+| --- | --- |
+| 35 °C or more | The server throttles to 60% of its performance, which slows the customer apps on it (see Usage curves), and every hour counts as a hot hour |
+| 45 °C or more | The server shuts itself off with the same corruption roll as a pulled plug |
+| Below 30 °C after a shutdown | The server switches itself on and boots; the minutes it was off are recorded as an Overheating incident with the usual refund requests and reviews |
+
+Each hot hour adds 1% of a component's rate for good: 100 hot hours double every component's failure rate in the device.
 
 **Chassis slots.** Each server line has a fixed number of DIMM slots, drive bays, PCIe slots and power supply bays. Sockets are 2 (1 for ARM, backup and archive). The DIMM column interpolates between the generations given: G1 and G2 share the G1 value, G3 and G4 the G3 value, G5 and G6 the G5 value.
 
@@ -1150,9 +1198,11 @@ Used devices are never insured, cannot be leased and resell from the price paid 
 | Feed | Effect | Price |
 | --- | --- | --- |
 | Feed A | Included with every position, at the datacenter's kW per position | In the rent |
-| Feed B | Second feed; servers with two power supplies survive a feed failure. The load must fit one feed for that to hold | 40% of the position price per month |
+| Feed B | Second feed at the same limit as A; servers with two power supplies split their draw over both and survive a feed failure while A and B together fit one feed's limit | 40% of the position price per month |
 | High-density feed | Doubles the position's kW limit | 60% of the position price per month |
 | Basement circuit | One extra household circuit, +3 kW | €400 once |
+
+**Breakers.** Every feed, the basement circuit included, carries 80% of its limit continuously, as the electrical code rates a breaker for loads that run three hours or more. A feed above its limit trips at once; a feed above 80% of it trips after three hours there. Servers that hang on the tripped feed alone switch off and stay off. Single-supply servers, network gear and customer equipment hang on feed A. A dual-fed server draws half its power from each feed, so when a feed fails or trips its whole draw moves to the other one; when that exceeds one feed's limit, the other feed trips as well and every server in the rack goes dark for the outage. Customer colocation is only placed in a rack while its whole draw stays under 80% of one feed.
 
 **Monitoring.** Without monitoring, failures only show as lights on the device fronts. Monitoring is a tier 1 skill in Research.
 

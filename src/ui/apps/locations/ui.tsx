@@ -1,14 +1,20 @@
 import { X } from "lucide-react";
 import { useEffect, useRef, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
-import { BASEMENT, datacenterById, SHARE_RACKS, type Datacenter } from "../../../sim/20-world/datacenters";
+import { BASEMENT, CONTINUOUS, datacenterById, SHARE_RACKS, type Datacenter } from "../../../sim/20-world/datacenters";
 import type { GameState, Location } from "../../../sim/50-state";
 import { rackPower } from "../../../sim/60-infra/status";
+import { roomTemperature } from "../../../sim/60-infra/sensors";
+import { THERMAL } from "../../../sim/60-infra/thermal";
 import type { Usage } from "../../../sim/60-infra/usage";
 import { t } from "../../../i18n/en";
 import { LOCALE } from "../../../i18n/lang";
 
 export const dcOf = (l: Location): Datacenter | null => (l.dc ? datacenterById(l.dc) : null);
+export function RoomTemp({ g, loc }: { g: GameState; loc: Location }) {
+  const c = roomTemperature(g, loc);
+  return <span className={`num${c >= THERMAL.throttleC ? " pill warn" : ""}`}>{c.toLocaleString(LOCALE, { maximumFractionDigits: 1 })} °C</span>;
+}
 export const providerOf = (l: Location) => dcOf(l)?.provider ?? null;
 export const Zone = ({ loc }: { loc: Location }) => <span className="loc-az num">{loc.az}</span>;
 export const LocName = ({ loc }: { loc: Location }) => <span className="loc-name">{loc.name}<Zone loc={loc} /></span>;
@@ -99,8 +105,8 @@ export function UsageBars({ usage, only, wide }: { usage: Usage; only?: (keyof U
 export function PowerMeter({ watts, limit, tripped }: { watts: number; limit: number; tripped?: boolean }) {
   const f = limit ? Math.min(1, watts / limit) : 0;
   return (
-    <span className={`loc-meter${tripped ? " tripped" : ""}`}>
-      <span className="loc-meter-bar"><span style={{ width: `${f * 100}%` }} /></span>
+    <span className={`loc-meter${tripped ? " tripped" : f > CONTINUOUS.share ? " over" : ""}`}>
+      <span className="loc-meter-bar"><span style={{ width: `${f * 100}%` }} /><i style={{ left: `${CONTINUOUS.share * 100}%` }} /></span>
       <span className="num">{Math.round(watts).toLocaleString(LOCALE)} / {Math.round(limit).toLocaleString(LOCALE)} W</span>
     </span>
   );

@@ -29,6 +29,8 @@ export interface SalesRequest {
   quote: number | null; counter: number | null; replyAt: number | null; attempts: number; thread: SalesMessage[];
   // Web hosting only: the domain the service will carry.
   domain?: string;
+  // Paid with a stolen card or account; hidden like shady.
+  fraud?: boolean;
   // An email order: whether the customer owns the domain already, its first invoice and the route chosen for its setup
   // ("auto", a cluster id or a node's device id).
   owned?: boolean; invoiceId?: string; route?: string;

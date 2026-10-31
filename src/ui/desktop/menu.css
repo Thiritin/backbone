@@ -11,6 +11,7 @@
 .menu-title { grid-column: 1; display: flex; align-items: center; gap: 16px; font-size: 44px; font-weight: 700; letter-spacing: -0.03em; }
 .menu-logo { border-radius: 14px; box-shadow: 0 8px 28px -6px oklch(0 0 0 / 0.6); }
 .menu-bars { grid-column: 1; grid-row: 2; align-self: end; display: grid; gap: 6px; width: 320px; }
+.menu-bars .btn:not(.primary) { color: var(--text); }
 .menu-bars .btn { height: 40px; width: 100%; justify-content: space-between; padding: 0 14px; font-size: 13px; }
 .menu-bars .btn span { display: grid; text-align: left; }
 .menu-bars .btn small { font-size: 11px; font-weight: 400; color: var(--text-3); }

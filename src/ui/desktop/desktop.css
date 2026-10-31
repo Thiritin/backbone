@@ -3,6 +3,8 @@
 #root { position: fixed; inset: 0; }
 button { font: inherit; color: inherit; cursor: default; }
 .wallpaper-host { position: absolute; inset: 0; }
+.wallpaper-host.photo { background: oklch(0.2 0.05 265) center / cover no-repeat; }
+:root[data-theme="dark"] .wallpaper-host.photo { filter: brightness(0.7); }
 .windows { position: absolute; inset: 0; z-index: 10; isolation: isolate; pointer-events: none; }
 .windows > .window { pointer-events: auto; }
 

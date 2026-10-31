@@ -5,6 +5,7 @@ export default {
   "support.cause.generator": () => "Falha do gerador",
   "support.cause.feed": () => "Falha na alimentação",
   "support.cause.seizure": () => "Servidor apreendido",
+  "support.cause.heat": () => "Sobreaquecimento",
   "support.until": (p) => `Até ${p.day}`,
   "support.dark": (p) => `${p.d} às escuras`,
   "support.noDowntime": () => "Sem indisponibilidade",

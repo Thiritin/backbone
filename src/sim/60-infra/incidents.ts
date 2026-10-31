@@ -11,7 +11,7 @@ import type { SimEvent } from "../88-tick/tick";
 import { insideVm, isOwnVm, moveControlPlaneOff, pickNode, vmOf, type Workload } from "./cluster";
 import type { Incident } from "./ops";
 import { losePower } from "./power";
-import { bootHours, deviceWatts, HOURS_PER_YEAR, isPlugged, locationOf, psusOf } from "./status";
+import { bootHours, deviceWatts, dualFed, HOURS_PER_YEAR, locationOf, rackPower } from "./status";
 
 export const GRID = {
   // Outages a year: the household line in the basement fails more often than a datacenter's utility feed.
@@ -24,6 +24,8 @@ export const GRID = {
   // A datacenter feed fails on its own, behind the site's UPS and generator.
   feedPerYear: 0.3, feedMedianMinutes: 30,
 };
+// A datacenter hall's cooling fails at times; the room then heats up (thermal.ts).
+export const COOLING = { perYear: 0.3, medianMinutes: 40, sigma: 1, maxMinutes: 8 * 60 };
 export const REFUND_CHANCE = { low: 0.1, medium: 0.15, high: 0.3 } as const;
 // An outage this long or longer brings refund requests.
 export const REFUND_MIN_DARK = 60;
@@ -120,14 +122,15 @@ export function gridOutage(s: GameState, loc: Location, minutes: number, r: Rng,
   return inc;
 }
 
-// One feed of a rack fails. Servers with a live supply on each feed of a dual-fed rack stay up, single-supply servers
-// hang on feed A, and the rack's own UPS carries what it can.
+// One feed of a rack fails. Dual-fed servers move their whole load to the other feed, single-supply servers hang on feed A,
+// and the rack's own UPS carries what it can. A surviving feed that cannot carry the moved load trips and the rack goes dark.
 export function feedFailure(s: GameState, rack: Rack, feed: "A" | "B", minutes: number, r: Rng, events: SimEvent[]): Incident {
   const loc = s.locations.find((l) => l.id === rack.locationId)!;
   const inRack = s.devices.filter((d) => d.rackId === rack.id);
-  const dual = (d: Device) => rack.feedB && psusOf(d).filter((c) => isPlugged(c) && c.failedAt === null).length >= 2;
   const dark = Math.max(0, Math.round(minutes - upsOf(inRack)));
-  const here = dark && feed === "A" ? inRack.filter((d) => d.on && !dual(d) && !modelById(d.model).batteryWh) : [];
+  const p = rackPower(s, rack.id);
+  const cascade = !!dark && rack.feedB && (feed === "A" ? 2 * p.b : p.a + p.b) > p.limitWatts;
+  const here = dark && (feed === "A" || cascade) ? inRack.filter((d) => d.on && (cascade || !dualFed(rack, d)) && !modelById(d.model).batteryWh) : [];
   const ids = new Set(here.map((d) => d.id));
   const workloads = s.workloads.filter((w) => onDevices(s, w, ids));
   cutPower(s, here, dark);
@@ -135,8 +138,20 @@ export function feedFailure(s: GameState, rack: Rack, feed: "A" | "B", minutes: 
     hour: s.hour, cause: "feed", locationId: loc.id, minutes, dark: here.length ? dark : 0, devices: here.map((d) => d.label ?? d.name),
     customers: customersOf(s, workloads).map((c) => c.id), agency: null, returnAt: null,
   });
-  events.push({ app: "Support", key: here.length ? "event.feedDark" : "event.feedCarried", params: { rack: rack.name, feed, minutes: here.length ? dark : minutes } });
+  events.push({ app: "Support", key: cascade ? "event.feedCascade" : here.length ? "event.feedDark" : "event.feedCarried", params: { rack: rack.name, feed, minutes: here.length ? dark : minutes } });
   outageFallout(s, workloads, dark, r, events);
+  return inc;
+}
+
+// Servers that shut themselves off from heat are back after dark minutes.
+export function heatIncident(s: GameState, loc: Location, devices: Device[], hour: number, dark: number, events: SimEvent[]): Incident {
+  const ids = new Set(devices.map((d) => d.id));
+  const workloads = s.workloads.filter((w) => onDevices(s, w, ids));
+  const inc = record(s, {
+    hour, cause: "heat", locationId: loc.id, minutes: dark, dark, devices: devices.map((d) => d.label ?? d.name),
+    customers: customersOf(s, workloads).map((c) => c.id), agency: null, returnAt: null,
+  });
+  outageFallout(s, workloads, dark, hashRng(s.seed, s.hour, Number(loc.id.replace(/\D/g, "")) || 0, 95), events);
   return inc;
 }
 
@@ -148,6 +163,14 @@ export function gridTick(s: GameState): SimEvent[] {
     if (rand(r) >= (loc.dc ? GRID.datacenterPerYear : GRID.basementPerYear) / HOURS_PER_YEAR) return;
     const minutes = Math.max(5, Math.min(GRID.maxMinutes, Math.round(GRID.medianMinutes * Math.exp(GRID.sigma * normal(r)))));
     gridOutage(s, loc, minutes, r, events);
+  });
+  s.locations.forEach((loc, i) => {
+    if (!loc.dc || loc.readyAt > s.hour || !s.devices.some((d) => d.rackId && locationOf(s, d)?.id === loc.id)) return;
+    const r = hashRng(s.seed, s.hour, i, 94);
+    if (rand(r) >= COOLING.perYear / HOURS_PER_YEAR) return;
+    const minutes = Math.max(5, Math.min(COOLING.maxMinutes, Math.round(COOLING.medianMinutes * Math.exp(COOLING.sigma * normal(r)))));
+    s.ops = { ...s.ops, cooling: { ...s.ops.cooling, [loc.id]: s.hour + minutes / 60 } };
+    events.push({ app: "Support", key: "event.coolingFailed", params: { location: loc.name, minutes } });
   });
   for (const rack of s.racks) {
     const loc = s.locations.find((l) => l.id === rack.locationId);

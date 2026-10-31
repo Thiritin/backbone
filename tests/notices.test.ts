@@ -260,6 +260,6 @@ describe("saves", () => {
     const s = readyGame(1);
     const raw = JSON.parse(serialize(s));
     delete raw.ops;
-    expect(deserialize(JSON.stringify(raw)).ops).toEqual({ incidents: [], seized: [], dark: {}, takedowns: {} });
+    expect(deserialize(JSON.stringify(raw)).ops).toEqual({ incidents: [], seized: [], dark: {}, takedowns: {}, heat: {}, cooling: {} });
   });
 });

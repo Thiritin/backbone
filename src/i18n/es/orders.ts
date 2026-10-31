@@ -20,4 +20,6 @@ export default {
   "event.orderQuoted.text": (p) => `La automatización envió a ${p.name} un presupuesto de ${euroCents(Number(p.price))} al mes por ${p.spec}.`,
   "event.orderFailed.title": () => "Fallo en la configuración",
   "event.orderFailed.text": (p) => `No se pudo configurar el pedido de ${p.name}, y el cliente se fue a otro sitio. Era por ${p.spec}.`,
+  "event.orderDeclined.title": () => "Pedido rechazado",
+  "event.orderDeclined.text": (p) => `El pedido de ${p.name} fue rechazado en la revisión.`,
 } satisfies Dict;

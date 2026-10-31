@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { Logo } from "../../art/logos";
 import { cityNamed, WorldMap, type Marker } from "../../map/WorldMap";
 import { day, readyIn } from "../hw";
-import { backupLabel, dcOf, exchangeLabel, Facts, feedsLabel, locationPower, PowerMeter, providerOf, spaceLabel, spaceSize, Zone } from "./ui";
+import { backupLabel, dcOf, exchangeLabel, Facts, feedsLabel, locationPower, PowerMeter, providerOf, RoomTemp, spaceLabel, spaceSize, Zone } from "./ui";
 import { Hourglass } from "lucide-react";
 import { datacenterById, homeLineById } from "../../../sim/20-world/datacenters";
 import { addLocation, leaveWaitlist } from "../../../sim/90-actions/hardware";
@@ -71,6 +71,7 @@ function LocationCard({ game, loc, onOpen }: { game: GameState; loc: Location; o
         [t("locations-2.exchange"), exchangeLabel(dc)],
       ]} />
       <div className="loc-row"><span className="loc-k">{t("locations-2.power")}</span><PowerMeter watts={power.watts} limit={power.limit} tripped={power.tripped} /></div>
+      <div className="loc-row"><span className="loc-k">{t("locations-2.temperature")}</span><span className="grow" /><RoomTemp g={game} loc={loc} /></div>
       {arriving.map((r) => <div key={r.id} className="loc-row"><span className="loc-k">{t("locations-2.inTransit")}</span>{r.name}<span className="grow" /><span className="num">{day(r.arriveAt!)}</span></div>)}
     </div>
   );

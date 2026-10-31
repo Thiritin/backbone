@@ -1,9 +1,11 @@
 # Changelog
 
-Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so the bullets are written when a release is cut, from the pull requests and commits merged since the last one.
+Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
 ## 2026-10-31
 
+- Every update is now named after its date, such as Version 2026.10.31.
+- The main menu buttons are now readable in light mode.
 - The main menu now has sounds: a soft tick when you move over an option, a chime when you choose one and a falling tone when you go back.
 - The main menu now shows each version of the changelog as a collapsible entry and marks the versions you have not read yet as new.
 - Settings on the main menu is now its own page with language and theme, and the menu background shows the game desktop as it looks in 2018.

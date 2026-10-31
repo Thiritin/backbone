@@ -1,6 +1,6 @@
 import type { Device, GameState } from "../50-state";
 
-export type IncidentCause = "grid" | "generator" | "feed" | "seizure";
+export type IncidentCause = "grid" | "generator" | "feed" | "heat" | "seizure";
 // minutes is how long the grid was out and dark how many of them reached the servers; a seizure lasts until returnAt.
 // customers holds customer ids.
 export interface Incident {
@@ -9,8 +9,12 @@ export interface Incident {
 }
 export interface Seized { device: Device; locationId: string; at: number; returnAt: number; agency: string }
 // dark: hour until which a location has no power. takedowns: hour until which a service is taken down.
-export interface Ops { incidents: Incident[]; seized: Seized[]; dark: Record<string, number>; takedowns: Record<string, number> }
+// heat: degrees a room runs above its normal temperature. cooling: hour until which a location's cooling is out.
+export interface Ops {
+  incidents: Incident[]; seized: Seized[]; dark: Record<string, number>; takedowns: Record<string, number>;
+  heat: Record<string, number>; cooling: Record<string, number>;
+}
 
-export const newOps = (): Ops => ({ incidents: [], seized: [], dark: {}, takedowns: {} });
+export const newOps = (): Ops => ({ incidents: [], seized: [], dark: {}, takedowns: {}, heat: {}, cooling: {} });
 
 export const takenDown = (s: GameState, serviceId: string): boolean => (s.ops.takedowns[serviceId] ?? 0) > s.hour;

@@ -3,7 +3,8 @@
 import type { GameState } from "../50-state";
 import { booked, controlPlanesOn, KEYS, type Cluster, type NodeState } from "./cluster";
 import { HOT_RAM } from "./ha";
-import { working } from "./status";
+import { rackPower, working } from "./status";
+import { CONTINUOUS } from "../20-world/datacenters";
 import { nodeUsage } from "./usage";
 
 // Booked vCPUs per core a mixed cluster still runs at its peak (economy.md, Usage curves: mixing peaks near 0.5 load),
@@ -12,7 +13,7 @@ export const CPU_RATIO = 2;
 export const DISK_FULL = 0.9;
 
 export type Severity = "warning" | "critical";
-export interface Alarm { severity: Severity; on: { kind: "cluster" | "host" | "vm"; id: string }; key: string; params: Record<string, string | number> }
+export interface Alarm { severity: Severity; on: { kind: "cluster" | "host" | "vm" | "rack"; id: string }; key: string; params: Record<string, string | number> }
 export interface Amount { capacity: number; allocated: number; used: number }
 export type Amounts = Record<(typeof KEYS)[number], Amount>;
 export interface HostSummary { deviceId: string; name: string; state: NodeState; up: boolean; vms: number; use: Amounts }
@@ -72,3 +73,15 @@ export function clusterSummary(s: GameState, clusterId: string): ClusterSummary 
 
 // How many alarms an inventory object carries: a host its own, a cluster all of its own, its hosts' and its VMs'.
 export const alarmCount = (sum: ClusterSummary, id?: string): number => (id ? sum.alarms.filter((a) => a.on.id === id).length : sum.alarms.length);
+
+// A rack's power alarms: a feed above its continuous load, and feeds that together draw more than one feed can carry alone.
+export function rackAlarms(s: GameState, rackId: string): Alarm[] {
+  const rack = s.racks.find((r) => r.id === rackId), p = rackPower(s, rackId);
+  if (!rack || !p.limitWatts) return [];
+  const on = { kind: "rack", id: rackId } as const, out: Alarm[] = [];
+  for (const [feed, load] of [["A", p.a], ["B", p.b]] as const) {
+    if (load > CONTINUOUS.share * p.limitWatts) out.push({ severity: "critical", on, key: "alarm.feedHigh", params: { rack: rack.name, feed, percent: Math.round((100 * load) / p.limitWatts) } });
+  }
+  if (rack.feedB && p.watts > p.limitWatts) out.push({ severity: "warning", on, key: "alarm.noFeedFailover", params: { rack: rack.name, percent: Math.round((100 * p.watts) / p.limitWatts) } });
+  return out;
+}
