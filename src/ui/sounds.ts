@@ -112,7 +112,23 @@ function rattle(c: AudioContext, out: AudioNode, at: number, peak: number, hz = 
   src.start(at);
 }
 
+// Menu sounds are recorded files (Kenney, CC0) rather than synthesised tones.
+const FILES = new Set<string>(["hover", "select", "back"]);
+const clips: Record<string, HTMLAudioElement> = {};
+
+function playFile(kind: string, volume: number): void {
+  try {
+    const clip = (clips[kind] ??= new Audio(`sounds/${kind}.mp3`));
+    clip.volume = Math.min(1, volume);
+    clip.currentTime = 0;
+    void clip.play().catch(() => {});
+  } catch {
+    // No audio available.
+  }
+}
+
 export function playSound(kind: Sound | UiSound, volume: number, profit = false, era = "aqua"): void {
+  if (FILES.has(kind)) return volume > 0 ? playFile(kind, volume) : undefined;
   const c = audio();
   if (!c || volume <= 0) return;
   try {
@@ -155,17 +171,6 @@ export function playSound(kind: Sound | UiSound, volume: number, profit = false,
         break;
       case "minimize":
         sweep(c, out, 2400, 500, t, 0.25 * voiceOf(era).len, 0.05);
-        break;
-      case "hover":
-        tone(c, out, 1900, t, 0.04, 0.012, "triangle");
-        break;
-      case "select":
-        tone(c, out, 660, t, 0.12, 0.04, "triangle");
-        tone(c, out, 990, t + 0.07, 0.2, 0.04, "triangle");
-        break;
-      case "back":
-        tone(c, out, 880, t, 0.1, 0.035, "triangle");
-        tone(c, out, 587, t + 0.06, 0.16, 0.035, "triangle");
         break;
       case "menu":
         note(c, out, voiceOf(era), 2600, t, 0.02, 0.008);
