@@ -56,6 +56,8 @@ export default {
   "sim.skill.shops.about": () => "Aprendes a manejar un sistema de pedidos y aprovisionamiento que vende desde el stock y pasa los pedidos a tus servidores.",
   "sim.skill.provisioning.name": () => "Automatización del aprovisionamiento",
   "sim.skill.provisioning.about": () => "Tu equipo aprende a presupuestar los correos de pedido con tus tarifas, a colocar los pedidos nuevos en un servidor adecuado sin que nadie elija el host, y a llevar un pedido aceptado de la cuenta a la puesta en marcha por sí solo.",
+  "sim.skill.fraudScreening.name": () => "Detección de fraude",
+  "sim.skill.fraudScreening.about": () => "Aprendes a que MaxMined puntúe cada pedido al llegar y rechace los que parecen pagados con tarjetas robadas, por una pequeña tarifa por comprobación.",
   "sim.skill.knowledgeBase.name": () => "Documentación",
   "sim.skill.knowledgeBase.about": () => "Tu equipo aprende a dejar por escrito las respuestas a las preguntas comunes, para que los clientes las encuentren antes de escribir.",
   "sim.skill.market.name": () => "Estudio de mercado",

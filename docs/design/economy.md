@@ -784,7 +784,9 @@ An order by email pays its invoice by bank transfer and carries a fifth of the s
 
 **Order review.** The setting Review server orders by hand holds VPS, cloud, GPU and dedicated orders for staff, also with order automation on: they arrive in Support like orders without automation and run step by step. The account step takes 10 minutes more and declines 70% of the fraudulent orders and 3% of honest ones, who go elsewhere.
 
-The balance model takes two months of payments and the fee off the revenue of each fraudulent signup and never reviews orders.
+**Order screening.** The skill Fraud screening (from 2008) adds the setting Screen orders with MaxMined. The scoring service MaxMined scores every standard order when it arrives, by email, form or shop; sales leads skip it. It declines 80% of the fraudulent orders and 1% of honest ones, which count as lost sales with the reason Declined. It takes no staff time and leaves order automation running. Each check costs €0.08 in 2026 with m = 2 (about €0.15 in 2008), billed on the first of the month as one fee line. With order review on as well, review only sees the orders the screen let through, so 94% of the fraud on server orders is caught and about 4% of honest server orders are declined.
+
+The balance model takes two months of payments and the fee off the revenue of each fraudulent signup and never reviews or screens orders.
 
 ## Datacenters and space
 
@@ -2154,12 +2156,13 @@ A first-year company earns about 300 know-how; a company with 10,000 customers e
 | Network operations | 2 | 300 | 14 days | Monitoring | Network |
 | Product management | 1 | 100 | 7 days | | Products |
 | Provisioning automation | 2 | 150 | 10 days | Product management | Automatic setup of orders, the Place orders automatically switch |
+| Fraud screening | 2 | 200 | 7 days, from 2008 | Product management | The Screen orders with MaxMined switch |
 | Marketing campaigns | 2 | 300 | 14 days | Marketing basics, Employee management | Marketing |
 | Market research | 3 | 800 | 21 days | Product management, Marketing campaigns | Market |
 | Virtualization | 3 | 400 | 14 days | Product management, Monitoring | Virtual machines |
 | Automation | 3 | 1,500 | 21 days | Employee management, Monitoring | ChadGPT Support, Clipsy Reminders |
 
-The whole tree costs 3,750 know-how and 121 days of training.
+The whole tree costs 3,950 know-how and 128 days of training.
 
 Product management was tier 2 at 200 know-how and 14 days after Marketing basics. The happiness run showed a careful first-year company earns 15 to 40 know-how a month, so the 250 know-how path landed in September to November. As a tier 1 skill at 100 know-how and 7 days, the same company learns it between early May and early July (median early June).
 

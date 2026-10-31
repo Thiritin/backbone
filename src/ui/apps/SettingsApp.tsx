@@ -2,7 +2,8 @@ import { ChevronRight } from "lucide-react";
 import { useRef, useState, type CSSProperties } from "react";
 import { canAutomate } from "../../sim/30-market/manual";
 import { setCompany } from "../../sim/90-actions/company";
-import { setAutoOrders, setReviewOrders } from "../../sim/90-actions/orders";
+import { setAutoOrders, setReviewOrders, setScreenOrders } from "../../sim/90-actions/orders";
+import { SCREENING_SKILL } from "../../sim/45-billing/fraud";
 import { t } from "../../i18n/en";
 import { APPS, appFor, appTitle } from "./registry";
 import { CompanyFields } from "./company";
@@ -56,6 +57,10 @@ export function SettingsApp() {
           <span>{t("apps.settings.reviewOrders")}</span>
           <input type="checkbox" role="switch" className="switch" aria-label={t("apps.settings.reviewOrders")} checked={game.reviewOrders} onChange={(e) => act(setReviewOrders, e.target.checked)} />
         </div>
+        {game.unlocks.includes(SCREENING_SKILL) && <div className="settings-line">
+          <span>{t("apps.settings.screenOrders")}</span>
+          <input type="checkbox" role="switch" className="switch" aria-label={t("apps.settings.screenOrders")} checked={game.screenOrders} onChange={(e) => act(setScreenOrders, e.target.checked)} />
+        </div>}
       </div>
       <h2 data-section="Appearance">{t("apps.settings.appearance")}</h2>
       <div className="settings-group settings-line">

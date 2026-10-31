@@ -67,6 +67,8 @@
 .cx-state.accent { background: color-mix(in oklab, var(--info) 16%, transparent); color: var(--info); }
 .cx-bar { display: block; width: 120px; height: 5px; margin-bottom: 3px; border-radius: 3px; background: var(--hover); overflow: hidden; }
 .cx-bar i { display: block; height: 100%; background: var(--accent); }
+.cx-bar[data-level="warn"] i { background: var(--warn); }
+.cx-bar[data-level="bad"] i { background: var(--bad); }
 .cx-use { font-size: 11.5px; color: var(--muted); }
 .cx-open td { background: var(--bg); }
 .cx-inline { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
@@ -96,3 +98,4 @@
 .cx-summary { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin: 0; font-size: 12px; }
 .cx-summary dt { color: var(--muted); }
 .cx-summary dd { margin: 0; }
+.cx-log { margin: 8px 0 0; padding: 8px 10px; max-height: 360px; overflow: auto; border: 1px solid var(--line); border-radius: 4px; font: 11.5px/1.5 var(--mono, monospace); white-space: pre-wrap; word-break: break-all; }

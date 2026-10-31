@@ -32,7 +32,7 @@ const GROUPS: Record<string, NotifyType[]> = {
     type("Hand work", "workDone"),
     type("Workloads and migrations", "migrated", "migrationFailed", "failedOver", "failoverStuck"),
     type("Backups", "backupFailed"),
-    type("Installs", "installed", "switched"),
+    type("Installs", "installed", "switched", "updateBroke"),
     type("Uplinks and peering", "uplinkReady", "peeringRequest"),
     type("Attacks and saturation", "ddos", "saturated"),
     type("Addresses", "addressListed"),
