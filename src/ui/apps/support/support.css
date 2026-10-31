@@ -4,8 +4,8 @@
 .sup-logo { width: 28px; height: 28px; border-radius: calc(var(--ar-pane) - 1px); display: grid; place-items: center; flex: none; background: var(--tile); box-shadow: inset 0 0 0 0.5px oklch(0 0 0 / 0.12); }
 .sup-logo svg.lucide { width: 20px; height: 20px; }
 .sup-settings { flex: none; margin-left: auto; }
-.sup .sup-brand .btn.sup-settings { color: inherit; background: color-mix(in oklch, var(--brand-ink, var(--text)) 12%, transparent); border-color: color-mix(in oklch, var(--brand-ink, var(--text)) 22%, transparent); }
-.sup .sup-brand .btn.sup-settings:hover { background: color-mix(in oklch, var(--brand-ink, var(--text)) 20%, transparent); }
+:root .sup .sup-brand .btn.sup-settings:not(.web-view *) { color: inherit; background: color-mix(in oklch, var(--brand-ink, var(--text)) 12%, transparent); border-color: color-mix(in oklch, var(--brand-ink, var(--text)) 22%, transparent); }
+:root .sup .sup-brand .btn.sup-settings:not(.web-view *):hover { background: color-mix(in oklch, var(--brand-ink, var(--text)) 20%, transparent); }
 .sup button.side-item, .sup button.tk { width: 100%; border: 0; background: none; font: inherit; color: inherit; text-align: left; }
 .sup-side button.side-item.active { background: var(--accent); color: var(--accent-ink); }
 .sup-side button.side-item:hover:not(.active) { background: var(--hover); }
