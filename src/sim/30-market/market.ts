@@ -35,6 +35,8 @@ export interface SalesRequest {
   // An email order: whether the customer owns the domain already, its first invoice and the route chosen for its setup
   // ("auto", a cluster id or a node's device id).
   owned?: boolean; invoiceId?: string; route?: string;
+  // The package name and web hosting username the provision step uses.
+  pkg?: string; username?: string;
   // Placed through the order form: the website's prices are the quote and ordering is the acceptance.
   form?: boolean;
   // Taken by a shop system rather than the hand-rolled form; a shop order that cannot be placed is cancelled, never lost.

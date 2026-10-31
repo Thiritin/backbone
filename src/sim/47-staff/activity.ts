@@ -8,7 +8,7 @@ export const ACTION_MINUTES = {
   // A technician does one operation per work hour.
   techOp: 60,
   // The steps of a custom order (30-market/manual.ts).
-  orderQuote: 5, orderAccount: 5, orderInvoice: 10, orderDomain: 5, orderProvision: 15,
+  orderQuote: 5, orderAccount: 5, orderInvoice: 10, orderDomain: 5, orderProvision: 15, orderProvisionPackage: 8,
 };
 
 // key and params are an i18n line; serviceId null is the whole customer, as for invoices.
