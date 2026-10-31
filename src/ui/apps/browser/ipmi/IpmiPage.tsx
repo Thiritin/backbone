@@ -7,7 +7,7 @@ import { drivesOf, raidUsable } from "../../../../sim/60-infra/status";
 import { rebuildHours } from "../../../../sim/88-tick/tick";
 import { setRebuildRate } from "../../../../sim/90-actions/hardware";
 import { consoleName } from "../../console/ConsoleWindow";
-import { sensorsOf } from "../../../../sim/60-infra/sensors";
+import { sensorRows } from "../../../../sim/80-business/readouts";
 import { booting, halting } from "../../../../sim/60-infra/status";
 import { powerCycle, reset, setPower, shutdown } from "../../../../sim/90-actions/hardware";
 import { useSessionState } from "../../../session";
@@ -82,15 +82,22 @@ function PowerTab({ game, d }: { game: GameState; d: Device }) {
 
 const PSU_STATE = { ok: t("misc1.ipmi.ok"), failed: t("misc1.ipmi.failed"), unplugged: t("misc1.ipmi.noInput") } as const;
 
+const UNIT = { inlet: " °C", fan: " RPM", power: " W", load: " %", psu: "" } as const;
+
 function SensorsTab({ game, d }: { game: GameState; d: Device }) {
-  const s = sensorsOf(game, d);
   return (
     <table className="bmc-table">
-      <thead><tr><th>{t("misc1.ipmi.sensor")}</th><th>{t("misc1.ipmi.reading")}</th></tr></thead>
+      <thead><tr><th>{t("misc1.ipmi.sensor")}</th><th>{t("misc1.ipmi.reading")}</th><th>{t("readouts.sensor.status")}</th><th>{t("readouts.sensor.lower")}</th><th>{t("readouts.sensor.upper")}</th></tr></thead>
       <tbody>
-        <tr><td>{t("misc1.ipmi.inlet")}</td><td className="num">{s.inletC.toFixed(1)} °C</td></tr>
-        {s.fans.map((f, i) => <tr key={f.id}><td>{t("misc1.ipmi.fan", { n: i + 1 })}</td><td className={`num${f.rpm === 0 ? " bad" : ""}`}>{f.rpm} RPM</td></tr>)}
-        {s.psus.map((p, i) => <tr key={p.id}><td>{t("misc1.ipmi.psu", { n: i + 1 })}</td><td className={p.state === "ok" ? "" : "bad"}>{PSU_STATE[p.state]}</td></tr>)}
+        {sensorRows(game, d).map((r) => (
+          <tr key={`${r.kind}${r.n}`} data-status={r.status}>
+            <td>{t(`readouts.sensor.${r.kind}`, { n: r.n })}</td>
+            <td className="num">{r.psu ? PSU_STATE[r.psu] : `${r.kind === "inlet" ? r.value!.toFixed(1) : r.value}${UNIT[r.kind]}`}</td>
+            <td>{t(`readouts.sensor.${r.status}`)}</td>
+            <td className="num">{r.lower === null ? "" : `${r.lower}${UNIT[r.kind]}`}</td>
+            <td className="num">{r.upper === null ? "" : `${r.upper}${UNIT[r.kind]}`}</td>
+          </tr>
+        ))}
       </tbody>
     </table>
   );
