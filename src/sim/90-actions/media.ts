@@ -7,7 +7,9 @@ import { homeLineById } from "../20-world/datacenters";
 import { imageExists, type OsImage, type ServerOsId } from "../10-catalog/server-os";
 import type { GameState } from "../50-state";
 import { handJob, playerAt, present, type How } from "../60-infra/handwork";
-import { locationOf } from "../60-infra/status";
+import { consoleVia } from "../60-infra/oob";
+import { pushLog } from "../60-infra/power";
+import { booting, locationOf } from "../60-infra/status";
 import type { ActionResult } from "./hardware";
 
 export const PLUG_HOURS = 2 / 60;
@@ -52,7 +54,7 @@ const stickInstalling = (s: GameState): boolean => {
 export function plugStick(s: GameState, deviceId: string, how: How | boolean = false): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
-  if (modelById(d.model).kind !== "server" || !d.rackId) return fail("error.notServer");
+  if (modelById(d.model).kind !== "server" || !d.rackId) return fail("error.noController");
   if (s.media.stick.in === d.id) return fail("error.stickIn");
   if (stickInstalling(s)) return fail("error.stickInstalling");
   const loc = locationOf(s, d);
@@ -76,5 +78,24 @@ export function unplugStick(s: GameState): ActionResult {
   if (loc?.dc && !present(s, loc.id)) return fail("error.notThere");
   if (stickInstalling(s)) return fail("error.stickInstalling");
   s.media.stick = { ...s.media.stick, in: null };
+  return { ok: true };
+}
+
+// Mounts a downloaded image through the server's management controller, or ejects it with null. A server that waits at its
+// boot menu or setup takes the image as its boot source at once, as the stick does.
+export function mountVirtualMedia(s: GameState, deviceId: string, image: OsImage | null): ActionResult {
+  const d = s.devices.find((x) => x.id === deviceId);
+  if (!d) return fail("error.unknownDevice");
+  if (consoleVia(s, d.id)?.kind !== "bmc") return fail("error.noController");
+  if (image === null) {
+    if (!d.virtualMedia) return fail("error.noVirtualMedia");
+    delete d.virtualMedia;
+    pushLog(d, s.hour, "readouts.ipmi.ejected");
+    return { ok: true };
+  }
+  if (!s.media.images.includes(image)) return fail("error.noImage");
+  d.virtualMedia = image;
+  if (d.on && (d.setup || d.stuck || booting(s, d))) d.bootFrom = "usb";
+  pushLog(d, s.hour, "readouts.ipmi.mounted");
   return { ok: true };
 }
