@@ -33,3 +33,5 @@
 :root[data-os="bigsur"] .wx-now strong, :root[data-os="tahoe"] .wx-now strong { font-size: 44px; }
 :root[data-os="bigsur"] .wx-list, :root[data-os="tahoe"] .wx-list { border-radius: 18px; backdrop-filter: blur(20px); }
 :root[data-os="tahoe"] .wx-list, :root[data-os="tahoe"] .wx-now { box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.4), 0 4px 14px oklch(0 0 0 / 0.12); }
+.wx-head { margin: 6px 4px 0; font-size: 12px; font-weight: 600; opacity: 0.7; }
+.wx-city { grid-template-columns: 24px 1fr auto; }

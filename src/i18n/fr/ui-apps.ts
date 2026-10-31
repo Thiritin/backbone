@@ -289,6 +289,7 @@ export default {
   "weather.sky.snow": () => "Neige",
   "weather.drive": () => "Y aller",
   "weather.driveCost": (p) => `${p.hours} h, ${p.fee}`,
+  "weather.cities": () => "Villes de datacenters",
   "weather.here": () => "Ici",
   "weather.degrees": (p) => `${p.value}°C`,
 } satisfies Dict;

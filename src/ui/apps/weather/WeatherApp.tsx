@@ -2,6 +2,7 @@ import { Car } from "lucide-react";
 import { t } from "../../../i18n/en";
 import { LOCALE } from "../../../i18n/lang";
 import { euro } from "../../../sim/00-core/money";
+import { DATACENTERS } from "../../../sim/20-world/datacenters";
 import { sky, temperature } from "../../../sim/20-world/weather";
 import { playerAt } from "../../../sim/60-infra/handwork";
 import { drive, travelTo } from "../../../sim/90-actions/travel";
@@ -11,6 +12,8 @@ import "./weather.css";
 
 export const degrees = (city: string, hour: number): string =>
   t("weather.degrees", { value: new Intl.NumberFormat(LOCALE).format(temperature(city, hour)) });
+
+const CITIES = [...new Set(DATACENTERS.map((d) => d.city))].sort();
 
 export function WeatherApp() {
   const game = useStore((s) => s.game);
@@ -40,6 +43,16 @@ export function WeatherApp() {
             </li>
           );
         })}
+      </ul>
+      <h3 className="wx-head">{t("weather.cities")}</h3>
+      <ul className="wx-list">
+        {CITIES.filter((c) => c !== "Frankfurt").map((c) => (
+          <li key={c} className="wx-row wx-city">
+            <SkyIcon kind={sky(c, game.hour)} />
+            <div className="wx-place"><b>{c}</b><span>{t(`weather.sky.${sky(c, game.hour)}`)}</span></div>
+            <strong>{degrees(c, game.hour)}</strong>
+          </li>
+        ))}
       </ul>
     </div>
   );
