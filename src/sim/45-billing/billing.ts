@@ -9,6 +9,7 @@ import type { SimEvent } from "../88-tick/tick";
 import { metrics } from "../metrics";
 import { logActivity } from "../47-staff/activity";
 import { mailDelay } from "../80-business/mail";
+import { sweepGroups } from "../60-infra/status";
 
 export type InvoiceStatus = "open" | "overdue" | "paid" | "writtenOff";
 // key and params are an i18n line text; serviceId is null for fees.
@@ -104,8 +105,11 @@ export function dueStep(inv: Invoice, hour: number): number | null {
   return hour >= inv.dueAt + STEPS[i].days * DAY ? i : null;
 }
 
-export const isSuspended = (s: GameState, customerId: string): boolean =>
-  s.heldCustomers.includes(customerId) || s.invoices.some((i) => i.customerId === customerId && i.suspended && isUnpaid(i));
+export const isSuspended = (s: GameState, customerId: string): boolean => {
+  if (s.heldCustomers.includes(customerId)) return true;
+  const suspended = sweepGroups(s, "suspended", () => s.invoices.filter((i) => i.suspended && isUnpaid(i)), (i) => i.customerId);
+  return suspended ? suspended.has(customerId) : s.invoices.some((i) => i.customerId === customerId && i.suspended && isUnpaid(i));
+};
 
 export type HoldReason = "payment" | "abuse" | "manual";
 

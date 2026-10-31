@@ -11,7 +11,7 @@ import { setCompany } from "../src/sim/90-actions/company";
 import { buyDevice, connect, mountDevice, orderHomeLine, setPlugged } from "../src/sim/90-actions/hardware";
 import { startChallenge } from "../src/sim/90-actions/start";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { buildLeaderboard, replay, runFile, runFileName, verify, type Verified } from "../src/sim/92-run/run";
+import { buildLeaderboard, mismatches, replay, runFile, runFileName, verify, type Verified } from "../src/sim/92-run/run";
 import { POWER_ACTION } from "../src/ui/apps/locations/power";
 import { useStore } from "../src/ui/store";
 
@@ -33,6 +33,8 @@ function shortGame(): GameState {
   play(24 * 6);
   ok(store().act(mountDevice, srv, "rack2", 1));
   for (const c of store().game.devices.find((d) => d.id === srv)!.components) if (c.kind === "psu") ok(store().act(setPlugged, srv, c.id, true));
+  ok(store().act(mountDevice, "dev5", "rack2", 24));
+  ok(store().act(connect, { device: "dev5", port: 4 }, { device: "dev6", port: 0 }));
   ok(store().act(connect, { device: srv, port: 0 }, { device: "dev5", port: 0 }));
   ok(store().act(orderHomeLine, "dsl-16"));
   play(24 * 9);
@@ -46,7 +48,7 @@ describe("action log", () => {
     const s = shortGame();
     const psus = s.log.filter((e) => e.name === "setPlugged").length;
     expect(psus).toBeGreaterThan(0);
-    expect(s.log.map((e) => e.name)).toEqual(["setCompany", "buyDevice", "mountDevice", ...Array(psus).fill("setPlugged"), "connect", "orderHomeLine", "installPanel"]);
+    expect(s.log.map((e) => e.name)).toEqual(["setCompany", "buyDevice", "mountDevice", ...Array(psus).fill("setPlugged"), "mountDevice", "connect", "connect", "orderHomeLine", "installPanel"]);
     expect(s.log[1]).toEqual({ hour: 0, minute: 0, name: "buyDevice", args: ["g1-compute", "Dwell", 1, "loc1"] });
     expect(store().act(mountDevice, "nope", "rack2", 1).ok).toBe(false);
     expect(store().game.log).toHaveLength(s.log.length);
@@ -102,11 +104,12 @@ describe("replay", () => {
     expect(scores(end).netWorth).not.toBeNull();
     const run = runFile(end, "test");
     expect(run.claimed).toEqual(scores(end));
-    const { verified, errors } = verify(run);
-    expect(errors).toEqual([]);
+    // The claim only feeds the comparison, so one replay of an edited claim also shows the honest one passes.
+    const { verified, errors } = verify({ ...run, claimed: { ...run.claimed, netWorth: run.claimed.netWorth! + 500 } });
+    expect(errors).toHaveLength(1);
+    expect(mismatches(run.claimed, verified.scores)).toEqual([]);
     expect(verified.company.name).toBe("Kellerkind Hosting");
     expect(verified.ghost.length).toBeGreaterThan(100);
-    expect(verify({ ...run, claimed: { ...run.claimed, netWorth: run.claimed.netWorth! + 500 } }).errors).toHaveLength(1);
     expect(() => replay({ ...run, seed: run.seed + 1 })).toThrow();
     expect(() => replay({ ...run, actions: [{ ...run.actions[0], name: "noSuchAction" }] })).toThrow();
     expect(runFileName(end)).toBe(`kellerkind-hosting-${end.seed}.run.json`);

@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Colo provider site mockup</title>
+<style>
+  :root { --win:#ececec; --line:#b9b9b9; --text:#111; --muted:#666; --ok:#2e8b3a; --warn:#c7791a; --bad:#b4302a; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:13px/1.45 "Lucida Grande","Helvetica Neue",Arial,sans-serif; color:var(--text); background:radial-gradient(circle at 30% 20%, #7fa6d8, #2f4f7f 70%); min-height:100vh; padding:24px 16px; }
+  .pick { display:flex; gap:6px; flex-wrap:wrap; max-width:960px; margin:0 auto 16px; }
+  .pick button { font:inherit; font-size:12px; padding:5px 10px; border:1px solid #2b5ea8; border-radius:4px; background:linear-gradient(#fdfdfd,#d9d9d9); cursor:pointer; }
+  .pick button.on { background:#3875d7; color:#fff; }
+  .win { max-width:960px; margin:0 auto; background:var(--win); border-radius:6px; box-shadow:0 18px 40px rgba(0,0,0,.45); overflow:hidden; }
+  .title { height:22px; background:linear-gradient(#e8e8e8,#cfcfcf); border-bottom:1px solid #999; display:flex; align-items:center; justify-content:center; position:relative; font-size:12px; color:#333; }
+  .lights { position:absolute; left:8px; top:4px; display:flex; gap:6px; }
+  .lights i { width:12px; height:12px; border-radius:50%; display:block; border:1px solid rgba(0,0,0,.35); }
+  .lights i:nth-child(1){background:#ff5f57}.lights i:nth-child(2){background:#febc2e}.lights i:nth-child(3){background:#28c840}
+  .bar { display:flex; gap:6px; padding:6px 8px; background:linear-gradient(#f4f4f4,#d8d8d8); border-bottom:1px solid #9a9a9a; align-items:center; }
+  .bar .nav { width:22px; height:20px; border:1px solid #888; border-radius:3px; background:#fafafa; text-align:center; line-height:18px; color:#555; }
+  .bar .url { flex:1; height:22px; border:1px solid #888; border-radius:3px; background:#fff; padding:0 8px; line-height:20px; font-size:12px; color:#333; display:flex; justify-content:space-between; }
+  .bar .url .lock { color:var(--ok); }
+  .page { background:#fff; min-height:560px; display:none; }
+  .page.on { display:block; }
+
+  /* premium skin: Equinox */
+  .eq { font-family:"Helvetica Neue",Arial,sans-serif; }
+  .eq .head { background:#111; color:#fff; padding:0 28px; height:52px; display:flex; align-items:center; gap:28px; }
+  .eq .logo { font-weight:bold; font-size:18px; letter-spacing:1px; color:#e6412a; }
+  .eq .logo b { color:#fff; }
+  .eq .head a { color:#ddd; text-decoration:none; font-size:12px; text-transform:uppercase; letter-spacing:.5px; }
+  .eq .head a.on { color:#fff; border-bottom:2px solid #e6412a; padding-bottom:3px; }
+  .eq .head .right { margin-left:auto; }
+  .eq .hero { background:linear-gradient(120deg,#1c1c1c,#3a3a3a 60%,#5a2a22); color:#fff; padding:48px 28px; }
+  .eq .hero h1 { margin:0 0 8px; font-size:30px; font-weight:300; }
+  .eq .hero p { margin:0 0 20px; color:#ccc; max-width:520px; }
+  .eq .cta { display:inline-block; background:#e6412a; color:#fff; padding:9px 18px; text-decoration:none; font-weight:bold; }
+  .eq .cols { display:grid; grid-template-columns:repeat(3,1fr); gap:24px; padding:28px; }
+  .eq .cols h3 { margin:0 0 6px; font-size:14px; }
+  .eq .cols p { margin:0; color:#555; }
+  .eq .foot { border-top:1px solid #ddd; padding:14px 28px; color:#888; font-size:11px; display:flex; justify-content:space-between; }
+  .eq .body { padding:24px 28px; }
+  .eq h2 { margin:0 0 14px; font-weight:300; font-size:22px; }
+  table.t { width:100%; border-collapse:collapse; font-size:12px; }
+  table.t th { text-align:left; border-bottom:2px solid #333; padding:6px 8px; font-weight:bold; }
+  table.t td { border-bottom:1px solid #e3e3e3; padding:7px 8px; vertical-align:top; }
+  table.t td.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .pill { display:inline-block; font-size:11px; padding:1px 7px; border-radius:9px; background:#eee; color:#444; }
+  .pill.ok { background:#dff2e0; color:var(--ok); }
+  .pill.warn { background:#fbe9d2; color:var(--warn); }
+  .pill.bad { background:#f6d9d7; color:var(--bad); }
+  .btn { display:inline-block; font:inherit; font-size:12px; padding:6px 14px; border:1px solid #888; border-radius:3px; background:linear-gradient(#fdfdfd,#d9d9d9); cursor:pointer; text-decoration:none; color:#111; }
+  .btn.pri { background:#e6412a; border-color:#b8321f; color:#fff; font-weight:bold; }
+  .btn.danger { color:var(--bad); }
+  .steps { display:flex; gap:8px; margin:0 0 18px; font-size:12px; color:#999; }
+  .steps span { padding:4px 10px; border:1px solid #ddd; border-radius:12px; }
+  .steps span.done { border-color:var(--ok); color:var(--ok); }
+  .steps span.now { border-color:#111; color:#111; font-weight:bold; }
+  .sum { display:grid; grid-template-columns:1fr 320px; gap:28px; }
+  .box { border:1px solid #ddd; padding:14px 16px; }
+  .box h4 { margin:0 0 8px; font-size:13px; }
+  .kv { display:grid; grid-template-columns:1fr auto; row-gap:5px; font-size:12px; }
+  .kv .num { text-align:right; font-variant-numeric:tabular-nums; }
+  .kv .total { border-top:1px solid #333; padding-top:5px; font-weight:bold; }
+  .field { margin:0 0 10px; font-size:12px; }
+  .field label { display:block; color:#555; margin-bottom:3px; }
+  .field input, .field select { font:inherit; font-size:12px; padding:5px 7px; border:1px solid #aaa; border-radius:2px; width:100%; background:#fff; }
+  .field.row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+  /* portal */
+  .portal { display:grid; grid-template-columns:200px 1fr; min-height:508px; }
+  .portal .side { background:#f4f4f4; border-right:1px solid #ddd; padding:16px 0; }
+  .portal .side a { display:block; padding:7px 20px; color:#333; text-decoration:none; font-size:12px; }
+  .portal .side a.on { background:#fff; border-left:3px solid #e6412a; font-weight:bold; }
+  .portal .side .who { padding:0 20px 14px; color:#666; font-size:11px; border-bottom:1px solid #ddd; margin-bottom:10px; }
+  .portal .main { padding:22px 26px; }
+  .portal h2 { margin:0 0 14px; font-size:18px; font-weight:300; }
+  .portal h3 { margin:20px 0 8px; font-size:13px; }
+  .notice { border-left:3px solid var(--warn); background:#fff8ee; padding:10px 14px; margin:0 0 14px; font-size:12px; }
+
+  /* cancel sheet */
+  .veil { position:absolute; inset:0; background:rgba(0,0,0,.35); display:flex; align-items:center; justify-content:center; }
+  .sheet { background:#fff; width:460px; border:1px solid #777; box-shadow:0 10px 30px rgba(0,0,0,.4); }
+  .sheet .hd { padding:12px 16px; border-bottom:1px solid #ddd; font-weight:bold; }
+  .sheet .bd { padding:14px 16px; font-size:12px; }
+  .sheet .bd p { margin:0 0 10px; }
+  .sheet .bd ul { margin:0 0 10px; padding-left:18px; }
+  .sheet .ft { padding:10px 16px; border-top:1px solid #ddd; display:flex; justify-content:flex-end; gap:8px; }
+  .offer { border:1px dashed #e6412a; padding:10px 12px; margin:0 0 10px; background:#fff5f3; }
+  .rel { position:relative; }
+
+  /* budget skin: Hetzler */
+  .hz { font-family:Verdana,Arial,sans-serif; font-size:12px; }
+  .hz .head { background:#d50c2d; color:#fff; padding:8px 18px; display:flex; align-items:center; gap:18px; }
+  .hz .logo { font-weight:bold; font-size:17px; }
+  .hz .head a { color:#fff; text-decoration:none; font-size:12px; }
+  .hz .head a.on { text-decoration:underline; }
+  .hz .head .right { margin-left:auto; }
+  .hz .body { display:grid; grid-template-columns:160px 1fr; }
+  .hz .menu { background:#f0f0f0; border-right:1px solid #ccc; padding:10px 0; min-height:508px; }
+  .hz .menu a { display:block; padding:4px 12px; color:#d50c2d; text-decoration:none; }
+  .hz .menu a.on { font-weight:bold; color:#111; }
+  .hz .content { padding:16px 20px; }
+  .hz h2 { margin:0 0 10px; font-size:16px; color:#d50c2d; }
+  .hz table.t th { border-bottom:1px solid #999; background:#f3f3f3; }
+  .hz .btn.pri { background:#d50c2d; border-color:#a4001d; }
+  .hz .foot { border-top:1px solid #ccc; padding:8px 18px; color:#888; font-size:11px; background:#f7f7f7; }
+</style>
+</head>
+<body>
+<div class="pick" id="pick">
+  <button data-p="home" class="on">1 Provider home</button>
+  <button data-p="sites">2 Sites and prices</button>
+  <button data-p="order">3 Order, summary</button>
+  <button data-p="contracts">4 Portal: contracts</button>
+  <button data-p="cancel">5 Portal: cancel</button>
+  <button data-p="budget">6 Budget skin</button>
+</div>
+
+<div class="win">
+  <div class="title"><div class="lights"><i></i><i></i><i></i></div>Browser</div>
+  <div class="bar"><span class="nav">&lsaquo;</span><span class="nav">&rsaquo;</span><span class="url" id="url"><span>http://www.equinox.com/</span><span class="lock"></span></span></div>
+
+  <!-- 1 home -->
+  <div class="page eq on" data-p="home" data-url="http://www.equinox.com/">
+    <div class="head"><span class="logo">EQUI<b>NOX</b></span><a class="on">Home</a><a>Sites</a><a>Colocation</a><a>Interconnection</a><a>Company</a><a class="right">Customer portal</a></div>
+    <div class="hero">
+      <h1>The world's interconnection company.</h1>
+      <p>Twelve sites across Europe and North America with carrier-neutral access to more than 300 networks. Your servers belong where the internet meets.</p>
+      <a class="cta">Find a site</a>
+    </div>
+    <div class="cols">
+      <div><h3>Certified and redundant</h3><p>A and B power feeds, N+1 generators and ISO 27001 on every site.</p></div>
+      <div><h3>On-site exchange</h3><p>Order a cross-connect to DE-CIX, AMS-IX or LINX from your portal and it is live the next day.</p></div>
+      <div><h3>Remote hands around the clock</h3><p>Trained technicians within two hours, billed per hour on your monthly invoice.</p></div>
+    </div>
+    <div class="foot"><span>Equinox Inc. All rights reserved.</span><span>Legal &middot; Privacy &middot; Contact</span></div>
+  </div>
+
+  <!-- 2 sites -->
+  <div class="page eq" data-p="sites" data-url="http://www.equinox.com/sites/fra1">
+    <div class="head"><span class="logo">EQUI<b>NOX</b></span><a>Home</a><a class="on">Sites</a><a>Colocation</a><a>Interconnection</a><a>Company</a><a class="right">Customer portal</a></div>
+    <div class="body">
+      <h2>FRA1 Frankfurt</h2>
+      <table class="t" style="margin-bottom:22px">
+        <tr><td>Carriers</td><td>64</td><td>Exchange</td><td>DE-CIX, on site</td></tr>
+        <tr><td>Power feeds</td><td>A and B</td><td>Backup</td><td>N+1 generators</td></tr>
+        <tr><td>Certified</td><td>ISO 27001</td><td>Green power</td><td>No</td></tr>
+        <tr><td>Remote hands</td><td>120 &euro; per hour, 2 hours response</td><td>Cross-connect</td><td>250 &euro; setup, 90 &euro; per month</td></tr>
+      </table>
+      <h2>Space and prices</h2>
+      <table class="t">
+        <tr><th>Space</th><th>Power</th><th>Ready in</th><th class="num">Setup</th><th class="num">Per month</th><th>Availability</th><th></th></tr>
+        <tr><td>1/8 rack, 5 U</td><td>0.5 kW</td><td>2 days</td><td class="num">0 &euro;</td><td class="num">98 &euro;</td><td><span class="pill ok">Available</span></td><td><a class="btn pri">Order</a></td></tr>
+        <tr><td>1/4 rack, 10 U</td><td>1 kW</td><td>2 days</td><td class="num">0 &euro;</td><td class="num">172 &euro;</td><td><span class="pill ok">Available</span></td><td><a class="btn pri">Order</a></td></tr>
+        <tr><td>1/2 rack, 21 U</td><td>2 kW</td><td>2 days</td><td class="num">0 &euro;</td><td class="num">294 &euro;</td><td><span class="pill warn">2 left</span></td><td><a class="btn pri">Order</a></td></tr>
+        <tr><td>Full rack, 42 U</td><td>4 kW</td><td>2 days</td><td class="num">250 &euro;</td><td class="num">539 &euro;</td><td><span class="pill ok">Available</span></td><td><a class="btn pri">Order</a></td></tr>
+        <tr><td>Cage, 4 racks</td><td>16 kW</td><td>30 days</td><td class="num">2,500 &euro;</td><td class="num">1,666 &euro;</td><td><span class="pill bad">Waitlist</span></td><td><a class="btn">Join waitlist</a></td></tr>
+        <tr><td>Cage, 8 racks</td><td>32 kW</td><td>30 days</td><td class="num">2,500 &euro;</td><td class="num">3,136 &euro;</td><td><span class="pill ok">Available</span></td><td><a class="btn pri">Order</a></td></tr>
+        <tr><td>Suite, 20 racks</td><td>80 kW</td><td>90 days</td><td class="num">15,000 &euro;</td><td class="num">7,350 &euro;</td><td><span class="pill">On request</span></td><td><a class="btn">Contact sales</a></td></tr>
+      </table>
+    </div>
+    <div class="foot"><span>Equinox Inc. All rights reserved.</span><span>Legal &middot; Privacy &middot; Contact</span></div>
+  </div>
+
+  <!-- 3 order -->
+  <div class="page eq" data-p="order" data-url="http://www.equinox.com/order?dc=fra1&space=share&size=2">
+    <div class="head"><span class="logo">EQUI<b>NOX</b></span><a>Home</a><a>Sites</a><a class="on">Colocation</a><a>Interconnection</a><a>Company</a><a class="right">Customer portal</a></div>
+    <div class="body">
+      <h2>Order colocation</h2>
+      <div class="steps"><span class="done">1 Space</span><span class="done">2 Your details</span><span class="now">3 Summary</span></div>
+      <div class="sum">
+        <div>
+          <div class="box" style="margin-bottom:14px">
+            <h4>Customer</h4>
+            <div class="field row"><div><label>Company</label><input value="Kellerhost GmbH"></div><div><label>Contact</label><input value="Martin Becker"></div></div>
+            <div class="field row"><div><label>Street</label><input value="Hauptstrasse 12"></div><div><label>City</label><input value="51063 Koeln"></div></div>
+            <div class="field row"><div><label>Email</label><input value="noc@kellerhost.de"></div><div><label>Payment</label><select><option>Direct debit, monthly</option><option>Invoice, 14 days</option></select></div></div>
+          </div>
+          <div class="box">
+            <h4>Terms</h4>
+            <div class="kv">
+              <span>Contract</span><span class="num">Monthly, renews automatically</span>
+              <span>Notice period</span><span class="num">1 month to the end of a month</span>
+              <span>Ready</span><span class="num">Wed 18 May 2005</span>
+              <span>Access</span><span class="num">Badge sent to the contact address</span>
+            </div>
+          </div>
+        </div>
+        <div class="box">
+          <h4>FRA1 Frankfurt, 1/2 rack</h4>
+          <div class="kv">
+            <span>21 U, 2 kW, feed A</span><span class="num">294.00 &euro;</span>
+            <span>Feed B</span><span class="num">45.00 &euro;</span>
+            <span>Setup</span><span class="num">0.00 &euro;</span>
+            <span class="total">Per month</span><span class="num total">339.00 &euro;</span>
+            <span>Due now</span><span class="num">0.00 &euro;</span>
+          </div>
+          <p style="font-size:12px;color:#555;margin:12px 0">The first invoice arrives on the first of the next month, prorated.</p>
+          <a class="btn pri" style="display:block;text-align:center">Place order</a>
+        </div>
+      </div>
+    </div>
+    <div class="foot"><span>Equinox Inc. All rights reserved.</span><span>Legal &middot; Privacy &middot; Contact</span></div>
+  </div>
+
+  <!-- 4 portal contracts -->
+  <div class="page eq" data-p="contracts" data-url="http://portal.equinox.com/contracts/c-104">
+    <div class="head"><span class="logo">EQUI<b>NOX</b></span><a class="right">Kellerhost GmbH &middot; Sign out</a></div>
+    <div class="portal">
+      <div class="side">
+        <div class="who">Customer 48112<br>Kellerhost GmbH</div>
+        <a class="on">Contracts</a><a>Invoices</a><a>Services</a><a>Tickets</a><a>Account</a>
+      </div>
+      <div class="main">
+        <h2>Contract C-104, FRA1 Frankfurt</h2>
+        <table class="t">
+          <tr><th>Space</th><th>Since</th><th class="num">Per month</th><th>Next invoice</th><th>Status</th><th></th></tr>
+          <tr><td>1/2 rack, 21 U, position 14</td><td>18 May 2005</td><td class="num">339.00 &euro;</td><td>1 Aug 2005</td><td><span class="pill ok">Active</span></td><td><a class="btn danger">Cancel</a></td></tr>
+        </table>
+        <h3>Power</h3>
+        <table class="t">
+          <tr><th>Item</th><th>Value</th><th class="num">Per month</th><th></th></tr>
+          <tr><td>Feed A</td><td>2 kW included, 1.4 kW used</td><td class="num">included</td><td></td></tr>
+          <tr><td>Feed B</td><td>Active</td><td class="num">45.00 &euro;</td><td><a class="btn">Remove</a></td></tr>
+          <tr><td>Extra power</td><td>0 kW</td><td class="num">0.00 &euro;</td><td><a class="btn">Add 0.25 kW</a></td></tr>
+          <tr><td>Flat-rate power</td><td>Metered</td><td class="num"></td><td><a class="btn">Switch to flat 2 kW</a></td></tr>
+        </table>
+        <h3>Cross-connects</h3>
+        <table class="t">
+          <tr><th>To</th><th>Since</th><th class="num">Per month</th><th>Status</th><th></th></tr>
+          <tr><td>DE-CIX</td><td>2 Jun 2005</td><td class="num">90.00 &euro;</td><td><span class="pill ok">Live</span></td><td><a class="btn">Cancel</a></td></tr>
+          <tr><td colspan="4"></td><td><a class="btn pri">Order cross-connect</a></td></tr>
+        </table>
+        <h3>Remote hands</h3>
+        <table class="t">
+          <tr><th>Ticket</th><th>Work</th><th>Opened</th><th>Status</th><th class="num">Billed</th></tr>
+          <tr><td>RH-2211</td><td>Swap disk, server web-02</td><td>14 Jul 2005</td><td><span class="pill ok">Done</span></td><td class="num">120.00 &euro;</td></tr>
+          <tr><td>RH-2240</td><td>Reboot and check console, db-01</td><td>22 Jul 2005</td><td><span class="pill warn">Scheduled</span></td><td class="num"></td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5 cancel -->
+  <div class="page eq rel" data-p="cancel" data-url="http://portal.equinox.com/contracts/c-104/cancel">
+    <div class="head"><span class="logo">EQUI<b>NOX</b></span><a class="right">Kellerhost GmbH &middot; Sign out</a></div>
+    <div class="portal">
+      <div class="side">
+        <div class="who">Customer 48112<br>Kellerhost GmbH</div>
+        <a class="on">Contracts</a><a>Invoices</a><a>Services</a><a>Tickets</a><a>Account</a>
+      </div>
+      <div class="main">
+        <h2>Contract C-104, FRA1 Frankfurt</h2>
+        <table class="t">
+          <tr><th>Space</th><th>Since</th><th class="num">Per month</th><th>Next invoice</th><th>Status</th><th></th></tr>
+          <tr><td>1/2 rack, 21 U, position 14</td><td>18 May 2005</td><td class="num">339.00 &euro;</td><td>1 Aug 2005</td><td><span class="pill ok">Active</span></td><td><a class="btn danger">Cancel</a></td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="veil">
+      <div class="sheet">
+        <div class="hd">Cancel contract C-104</div>
+        <div class="bd">
+          <p>The notice period is one month to the end of a month. The contract ends on <b>31 August 2005</b> and the last invoice covers August.</p>
+          <p>By that date the space must be handed back empty:</p>
+          <ul><li>3 servers are still installed in position 14.</li><li>2 units are in the on-site storage.</li><li>The DE-CIX cross-connect ends with the contract.</li></ul>
+          <div class="offer"><b>Stay another year and August is on us.</b> Keep the contract and the next invoice drops to 45.00 &euro;.</div>
+          <p>You can revoke the cancellation from the contract page until 31 August 2005.</p>
+        </div>
+        <div class="ft"><a class="btn">Keep contract</a><a class="btn pri">Cancel contract</a></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6 budget skin -->
+  <div class="page hz" data-p="budget" data-url="http://www.hetzler.de/colocation/">
+    <div class="head"><span class="logo">HETZLER</span><a>Dedicated</a><a class="on">Colocation</a><a>Domains</a><a>Support</a><a class="right">Robot login</a></div>
+    <div class="body">
+      <div class="menu"><a>Overview</a><a class="on">Prices</a><a>Sites</a><a>Order</a><a>FAQ</a><a>Terms</a></div>
+      <div class="content">
+        <h2>Colocation prices, NBG1 Nuremberg</h2>
+        <table class="t">
+          <tr><th>Space</th><th>Power</th><th class="num">Setup</th><th class="num">Per month</th><th></th></tr>
+          <tr><td>1/4 rack, 10 U</td><td>1 kW</td><td class="num">49 &euro;</td><td class="num">69 &euro;</td><td><a class="btn pri">Order</a></td></tr>
+          <tr><td>1/2 rack, 21 U</td><td>2 kW</td><td class="num">49 &euro;</td><td class="num">129 &euro;</td><td><a class="btn pri">Order</a></td></tr>
+          <tr><td>Full rack, 42 U</td><td>4 kW</td><td class="num">99 &euro;</td><td class="num">239 &euro;</td><td><a class="btn pri">Order</a></td></tr>
+          <tr><td>Cage, 4 racks</td><td>12 kW</td><td class="num">499 &euro;</td><td class="num">799 &euro;</td><td><span class="pill">Not offered</span></td></tr>
+        </table>
+        <p>Single power feed. Remote hands 39 &euro; per hour, response within 8 hours. No exchange on site; transit via two carriers. Notice period one month.</p>
+        <p>Prices include VAT. Invoices are paid by direct debit on the first of the month.</p>
+      </div>
+    </div>
+    <div class="foot">Hetzler Online GmbH &middot; Impressum &middot; AGB &middot; Datenschutz</div>
+  </div>
+</div>
+
+<script>
+  const pages = [...document.querySelectorAll('.page')], url = document.querySelector('#url span');
+  document.getElementById('pick').addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    document.querySelectorAll('#pick button').forEach((x) => x.classList.toggle('on', x === b));
+    pages.forEach((p) => { const on = p.dataset.p === b.dataset.p; p.classList.toggle('on', on); if (on) url.textContent = p.dataset.url; });
+  });
+</script>
+</body>
+</html>

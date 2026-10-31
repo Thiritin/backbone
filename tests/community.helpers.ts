@@ -9,11 +9,19 @@ export const readyGame = (seed: number) => { const s = fresh(seed); s.unlocks = 
 export const runTo = (s: GameState, hour: number, events: SimEvent[] = []) => { while (s.hour < hour) events.push(...tick(s)); };
 export const ticketOf = (s: GameState) => s.tickets.find((t) => t.kind === "sponsor" && t.status === "open")!;
 
+// Waiting for the first request takes weeks of ticks, so each seed waits once and later calls get a copy.
+const firstRequest = new Map<string, GameState>();
+
 // The first request of a new company, optionally swapped for another event.
 export function asked(seed: number, event?: string, roomy = true): GameState {
-  const s = readyGame(seed);
-  if (roomy) for (const c of s.devices.find((d) => d.id === "dev3")!.components) if (c.kind === "ram") c.size = 16;
-  while (!s.sponsorships.length) tick(s);
+  const key = `${seed}:${roomy}`;
+  if (!firstRequest.has(key)) {
+    const g = readyGame(seed);
+    if (roomy) for (const c of g.devices.find((d) => d.id === "dev3")!.components) if (c.kind === "ram") c.size = 16;
+    while (!g.sponsorships.length) tick(g);
+    firstRequest.set(key, g);
+  }
+  const s = structuredClone(firstRequest.get(key)!);
   if (event) {
     // The mirror is a storage service, which needs storage server software.
     if (event === "mirror") panelVm(s, s.clusters.find((c) => c.kind === "cloud")!.id, "vsftpeed", { vcpu: 1, ramGb: 2, diskGb: 600 });

@@ -35,6 +35,6 @@ export default {
   "error.needsInternet": () => "Das Internet erreicht diesen Host noch nicht.",
   "error.needsBgpRouter": () => "Braucht an diesem Standort einen Router mit vollständiger Routing-Tabelle.",
   "error.basementOnly": () => "Nur der Keller nimmt diesen Router.",
-  "error.panelRouter": () => "Dieser Router ersetzt den Router im Keller und gehört in kein Rack.",
+  "error.noRouter": () => "Hier ist kein Router eingebaut.",
   "error.notOfficeRouter": () => "Nur ein Router fürs kleine Büro ersetzt den Router im Keller.",
 } satisfies Dict;

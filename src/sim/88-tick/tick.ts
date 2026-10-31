@@ -18,6 +18,7 @@ import { fairsTick } from "../80-business/fairs";
 import { communityTick } from "../80-business/sponsoring";
 import { marketingTick } from "../80-business/marketing";
 import { newsTick } from "../80-business/news";
+import { walkTick } from "../80-business/walk";
 import { salesTick } from "../30-market/sales";
 import { usedTick } from "../80-business/used";
 import { ordersTick } from "../30-market/manual";
@@ -50,7 +51,7 @@ import { capacityAt, DATACENTERS, datacenterById, flatMonthly, homeLineById, HOU
 import type { Component, Device, GameState, LedgerEntry } from "../50-state";
 import { scoreTick } from "../80-business/scores";
 import { trendTick } from "../80-business/trend";
-import { arrayLost, busyDevices, dcAvailability, drawWatts, driveGb, drivesOf, fits, isDrive, HOURS_PER_YEAR, locationOf, locationRent, powered } from "../60-infra/status";
+import { arrayLost, busyDevices, dcAvailability, drawWatts, driveGb, drivesOf, fits, isDrive, HOURS_PER_YEAR, locationOf, locationRent, powered, readOnlySweep } from "../60-infra/status";
 
 export interface SimEvent {
   app: string;
@@ -71,7 +72,7 @@ export function endLease(s: GameState, leaseId: string) {
 export function powerPerHour(s: GameState): number {
   const price = businessPowerPrice(yearOf(s.hour));
   const busy = busyDevices(s), flat = new Set(s.racks.filter((r) => r.flatKw).map((r) => r.id));
-  return s.devices.filter((d) => d.on && !flat.has(d.rackId ?? "") && powered(s, d.id)).reduce((sum, d) => {
+  return readOnlySweep(s, () => s.devices.filter((d) => d.on && !flat.has(d.rackId ?? "") && powered(s, d.id))).reduce((sum, d) => {
     const loc = locationOf(s, d)!;
     return sum + (drawWatts(d, busy) / 1000) * price * (loc.dc ? datacenterById(loc.dc).powerFactor : HOUSEHOLD_FACTOR);
   }, 0);
@@ -158,12 +159,13 @@ export function failComponents(s: GameState, d: Device, ids: string[], events: S
 }
 
 function wear(s: GameState, events: SimEvent[]) {
-  s.devices = s.devices.map((d) => {
+  // powered() reads the devices from before this sweep, so its rack power can be memoised.
+  s.devices = readOnlySweep(s, () => s.devices.map((d) => {
     if (!d.components.length || !d.on || !powered(s, d.id)) return d;
     if (throttled(s, d)) d = { ...d, hotHours: (d.hotHours ?? 0) + 1 };
     const broke = d.components.filter((c) => c.failedAt === null && rand(s.rng) < failureChance(s, d, c));
     return broke.length ? failComponents(s, d, broke.map((c) => c.id), events) : d;
-  });
+  }));
 }
 
 // Finished swaps put a new component in; a drive in an array that survived starts a rebuild. Finished rebuilds end.
@@ -329,6 +331,7 @@ export function tick(state: GameState): SimEvent[] {
   events.push(...fairsTick(state));
   events.push(...marketingTick(state));
   events.push(...newsTick(state));
+  events.push(...walkTick(state));
   events.push(...salesTick(state));
   events.push(...usedTick(state));
   scoreTick(state);

@@ -13,6 +13,18 @@ export type ConsoleLook =
 // How a console moves objects to another host: a panel by hand, a hypervisor live or cold.
 export type MigrateMode = "hand" | "live" | "cold";
 
+// Which label set a look's suspend, unsuspend and terminate buttons use (keys host.<group>.suspend and so on).
+const HOLD_GROUP: Record<ConsoleLook, string> = {
+  cpanic: "cpanic", pleskit: "pleskit", directadmen: "directadmin", freepanel: "freepanel", game: "game", proxmocks: "lock",
+  horizont: "vm", vsphear: "vm", hypervee: "vm", openveezee: "vm", mail: "mail",
+};
+export const holdLabels = (look: ConsoleLook): { suspend: string; unsuspend: string; terminate: string } => {
+  const g = HOLD_GROUP[look];
+  return { suspend: `host.${g}.suspend`, unsuspend: `host.${g}.unsuspend`, terminate: `host.${g}.terminate` };
+};
+// The consoles that ask for a reason before suspending.
+export const holdAsksReason = (look: ConsoleLook): boolean => look === "cpanic" || look === "pleskit" || look === "directadmen";
+
 export interface ConsoleFeatures {
   look: ConsoleLook;
   create: boolean; delete: boolean; stop: boolean; start: boolean;
