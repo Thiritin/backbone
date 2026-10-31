@@ -43,7 +43,7 @@ const portFace = (model: DeviceModel, name: string, w: number, h: number) => swi
 const mirror = <T extends Spot>(spots: Map<number, T>, w: number) => new Map([...spots].map(([i, s]) => [i, { ...s, x: w - s.x - s.w }]));
 const mirroredLayout = (model: DeviceModel, name: string, w: number, h: number): Map<number, Spot> => {
   if (model.kind === "server") return nicLayout(model, w, h);
-  if (model.kind === "gateway") return gatewayLayout(model, name, w, h);
+  if ((model.kind === "gateway" || model.kind === "jack")) return gatewayLayout(model, name, w, h);
   return new Map(patchLayout(name, w, h, model.ports.length, 2).map((p, k) => [k, p]));
 };
 const reversed = (model: DeviceModel) => model.kind === "switch" || model.kind === "firewall";
@@ -58,7 +58,7 @@ export const portSpots = (model: DeviceModel, name: string, side: Side, w: numbe
 // Power supplies stand at the left end of the face they are on, in the lowest unit, true to size: a 1U module is
 // about 70 by 38 mm with an IEC C14 inlet of 24 by 16 mm.
 export function psuBoxes(model: DeviceModel, w: number, h: number) {
-  if (model.chassis || model.kind === "gateway" || model.kind === "patch" || model.kind === "pdu" || isMgmtModel(model)) return [];
+  if (model.chassis || (model.kind === "gateway" || model.kind === "jack") || model.kind === "patch" || model.kind === "pdu" || isMgmtModel(model)) return [];
   const mm =mmOf(model, h), u = h / Math.max(1, model.height), ph = Math.min(u - 3, 38 * mm), pw = Math.min(70 * mm, (w * 0.4) / Math.max(1, model.psus));
   const iw = 24 * mm, ih = 16 * mm;
   return Array.from({ length: model.psus }, (_, k) => {
@@ -212,7 +212,7 @@ export function Back(p: FrontProps) {
   if (reversed(model)) return <PortFace {...p} />;
   if (model.kind === "pdu") return <Pdu {...p} />;
   if (isMgmtModel(model)) return <MgmtBack {...p} />;
-  const spots = model.kind === "server" || model.kind === "gateway" ? mirroredLayout(model, name, w, h) : new Map<number, Spot>();
+  const spots = model.kind === "server" || (model.kind === "gateway" || model.kind === "jack") ? mirroredLayout(model, name, w, h) : new Map<number, Spot>();
   const psus = psuBoxes(model, w, h), used = psus.length ? psus[psus.length - 1].x + psus[psus.length - 1].w : 0;
   const gx = w * 0.5, grille = Math.max(0, w * 0.5 - 14 - used);
   const fs = fsz(Math.min(h, 24));
@@ -221,7 +221,7 @@ export function Back(p: FrontProps) {
       <rect x="0" y="0.5" width={w} height={h - 1} rx="1.5" fill="oklch(0.24 0.006 255)" stroke="var(--metal-line)" />
       <g transform={`matrix(-1 0 0 1 ${w} 0)`}>
         {model.kind === "patch" && <Jacks w={w} h={h} name={name} ports={ports} n={model.ports.length} rows={2} />}
-        {model.kind !== "gateway" && model.kind !== "patch" && <rect x={gx} y="3" width={grille} height={h - 6} rx="1" fill="url(#bb-perf)" opacity="0.35" />}
+        {model.kind !== "gateway" && model.kind !== "jack" && model.kind !== "patch" && <rect x={gx} y="3" width={grille} height={h - 6} rx="1" fill="url(#bb-perf)" opacity="0.35" />}
         {p.parts && p.parts.fans.length > 0 && <Fans x={gx} w={grille} h={model.kind === "server" && model.height > 1 ? h - h / model.height : h} lamps={p.parts.fans} on={state !== "off"} />}
         {[...spots].map(([i, s]) => (
           <g key={i}>
@@ -229,11 +229,11 @@ export function Back(p: FrontProps) {
             {p.lights?.[i] && <rect x={s.x + s.w * 0.62} y={s.y + 1} width={s.w * 0.26} height="1.4" {...ledProps(p.lights[i], name, i)} />}
           </g>
         ))}
-        {model.kind === "gateway" && <rect x={w - 20} y={h / 2 - 3} width="8" height="6" rx="1" fill="oklch(0.1 0.004 255)" />}
+        {(model.kind === "gateway" || model.kind === "jack") && <rect x={w - 20} y={h / 2 - 3} width="8" height="6" rx="1" fill="oklch(0.1 0.004 255)" />}
       </g>
       <PortNums model={model} spots={mirror(mirroredLayout(model, name, w, h), w)} h={model.kind === "server" ? h / Math.max(1, model.height) : h} below={(i) => model.kind === "patch" && i >= model.ports.length / 2} />
       <OobJacks model={model} name={name} w={w} h={h} />
-      {model.kind !== "gateway" && model.kind !== "patch" && <Psus model={model} w={w} h={h} on={state !== "off"} lamps={p.parts?.psus} />}
+      {model.kind !== "gateway" && model.kind !== "jack" && model.kind !== "patch" && <Psus model={model} w={w} h={h} on={state !== "off"} lamps={p.parts?.psus} />}
       <AssetTag x={w - 8} y={Math.min(h / 2, fs + 2)} text={name} h={h} anchor="end" />
     </>
   );

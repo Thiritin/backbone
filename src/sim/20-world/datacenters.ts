@@ -38,6 +38,7 @@ export const PROVIDERS: Provider[] = [
   { id: "digitalreality", name: "Digital Reality" },
   { id: "corespite", name: "CoreSpite" },
   { id: "telex", name: "Telex" },
+  { id: "myloch", name: "myLoch" },
 ];
 
 type Row = [id: string, name: string, provider: string, city: string, carriers: number, exchange: string | null, onSite: boolean,
@@ -67,6 +68,7 @@ const ROWS: Row[] = [
   ["equinox-du1", "Equinox DU1", "equinox", "Düsseldorf", 18, "ECKS-IX", true, true, "ups+generator", true, 8, 650, 1.35, 220, 140, 1, true, true, "metered"],
   ["interaction-dus", "Interaction DUS", "interaction", "Düsseldorf", 14, "ECKS-IX", false, true, "ups+generator", false, 6, 520, 1.3, 180, 110, 2, true, true, "metered"],
   ["ntd-dus1", "NTD Düsseldorf 1", "ntd", "Düsseldorf", 10, "ECKS-IX", false, true, "ups+generator", true, 6, 430, 1.25, 140, 100, 2, true, true, "metered"],
+  ["myloch-dus", "myLoch DUS", "myloch", "Düsseldorf", 8, "ECKS-IX", false, true, "ups+generator", false, 6, 380, 1.2, 120, 80, 4, true, true, "both"],
   ["skyblink-eygelshoven", "SkyBlink Eygelshoven", "skyblink", "Kerkrade", 20, null, false, true, "ups+generator", true, 6, 300, 1.15, 60, 60, 2, true, false, "both"],
   ["hetzler-nbg", "Hetzler NBG", "hetzler", "Nuremberg", 1, null, false, false, "ups+generator", true, 4, 170, 1.1, 80, 60, 8, false, false, "flat"],
   ["boris-nbg", "Boris Network NBG", "borisnet", "Nuremberg", 10, "N-ICKS", true, true, "ups+generator", true, 6, 420, 1.25, 150, 100, 2, true, true, "metered"],
@@ -90,7 +92,7 @@ const SIZE_OF: Record<string, Datacenter["size"]> = {
   equinox: "large", interaction: "large", globalsnitch: "large", tellyhouse: "large", data5: "large",
   hetzler: "medium", ironmolehill: "medium", ntd: "medium", nextlair: "medium", arubaba: "medium",
   mainqubes: "small", spree: "small", docklands: "small", greenchz: "small",
-  digitalreality: "large", borisnet: "medium", corespite: "medium", telex: "medium", skyblink: "small",
+  digitalreality: "large", borisnet: "medium", corespite: "medium", telex: "medium", skyblink: "small", myloch: "small",
 };
 
 const topPrice = (city: string) => Math.max(...ROWS.filter((r) => r[3] === city).map((r) => r[11]));

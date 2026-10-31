@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-31
 
+- Düsseldorf has a fourth datacenter, myLoch DUS, the cheapest rack space in town with power billed by the kWh or as a flat rate.
 - Every update is now named after its date, such as Version 2026.10.31.
 - The main menu buttons are now readable in light mode.
 - The menu bar now shows the temperature in Frankfurt for the current date, and clicking it opens a Weather app with the weather at your locations and a link to drive to each one.

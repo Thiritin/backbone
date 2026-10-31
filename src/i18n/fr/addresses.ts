@@ -35,6 +35,6 @@ export default {
   "error.needsInternet": () => "Internet n'atteint pas encore cet hôte.",
   "error.needsBgpRouter": () => "Nécessite un routeur avec table de routage complète sur ce site.",
   "error.basementOnly": () => "Seul le sous-sol accepte ce routeur.",
-  "error.panelRouter": () => "Ce routeur remplace celui du sous-sol et ne va pas dans une baie.",
+  "error.noRouter": () => "Aucun routeur n'est monté ici.",
   "error.notOfficeRouter": () => "Seul un routeur de petit bureau remplace celui du sous-sol.",
 } satisfies Dict;
