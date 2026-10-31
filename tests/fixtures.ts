@@ -88,6 +88,13 @@ export function withServer(s: GameState): GameState {
   return s;
 }
 
+// The basement router's one web share moved to the machine.
+export function shareWith(s: GameState, id: string): void {
+  const r = s.devices.find((d) => d.id === "dev5")!;
+  r.lan = { ...r.lan!, shares: [] };
+  if (!setPortShare(s, "dev5", id, "web").ok) throw new Error(`no share for ${id}`);
+}
+
 // The servers with the hypervisor already installed, joined into one cluster under the name; returns the cluster id.
 export function hypervisor(s: GameState, deviceIds: string[], name?: string, platform = "proxmocks"): string {
   const [id] = deviceIds.map((d) => done(s, must(installHypervisor(s, bootedFor(s, d, platform), platform)), { platform }));

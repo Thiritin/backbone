@@ -46,7 +46,7 @@ describe("addresses", () => {
   it("gives every server a private address and a public IPv4: the line's shared one at home, its own in a datacenter", () => {
     const s = withServer(newGame(1));
     addressTick(s);
-    expect(machineAddress(s, BASEMENT_SERVER)).toMatch(/^192\.168\.1\.\d+$/);
+    expect(machineAddress(s, BASEMENT_SERVER)).toMatch(/^192\.168\.178\.\d+$/);
     expect(publicV4(s, BASEMENT_SERVER)).toEqual({ ip: sharedAddress(s)!.ip, shared: true });
     const { srv } = datacenter(s);
     addressTick(s);

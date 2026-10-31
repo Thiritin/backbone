@@ -1,5 +1,6 @@
 // Values come from docs/design/economy.md (Server generations, Server lines, Manufacturers, Switches, Security appliances, Patch panels and gateways).
 import { hourOf } from "../00-core/time";
+import type { RouterLan } from "../50-state";
 import { GENERATIONS } from "./economy";
 import { cardAt, cardOf, gpuOffers, gpuPrice } from "./gpu";
 import { DDR_BY_GEN, defaultFamily, familiesOn, familyById, familySizes, isRamFamily, PART_MAKERS } from "./families";
@@ -236,6 +237,10 @@ export interface DeviceModel {
   supportYears: number;
   server?: ServerSpec;
   layer?: 2 | 3;
+  // Switches: a managed one has a management address, port groups, VLANs and a web interface; an unmanaged one forwards between all ports.
+  managed?: boolean;
+  // A desktop box that stands on a 1U shelf.
+  shelf?: true;
   // Firewalls cap every link through them at this speed; ipsGbit is what they inspect, sessions the connections they track.
   throughputGbit?: number;
   ipsGbit?: number;
@@ -482,7 +487,7 @@ const TWINS: DeviceModel[] = SERVERS.filter((m) => m.id.endsWith("-twin-node")).
   };
 });
 
-type Extra = Partial<Pick<DeviceModel, "layer" | "throughputGbit" | "ipsGbit" | "sessions" | "batteryWh" | "brand" | "fullTable" | "bgpSessions" | "outlets" | "psus" | "oob" | "atx" | "failYearly" | "until" | "supportYears">>;
+type Extra = Partial<Pick<DeviceModel, "layer" | "managed" | "shelf" | "throughputGbit" | "ipsGbit" | "sessions" | "batteryWh" | "brand" | "fullTable" | "bgpSessions" | "outlets" | "psus" | "oob" | "atx" | "failYearly" | "until" | "supportYears">>;
 // Years on sale after launch and years of support after that (economy.md, Hardware lifecycle); other kinds never end.
 const LIFE: Partial<Record<DeviceKind, { sale: number; support: number }>> = {
   switch: { sale: 6, support: 5 }, firewall: { sale: 6, support: 5 }, gateway: { sale: 6, support: 5 }, ups: { sale: 8, support: 3 }, pdu: { sale: 8, support: 3 },
@@ -511,7 +516,10 @@ const net = (brand: string, kind: "switch" | "firewall", id: string, name: strin
   const life = NET_LIFE[brand];
   return other(id, name, kind, 1, p, watts, price, from, { brand, until: NEWEST.has(id) ? null : from + life.sale, supportYears: life.support, ...extra });
 };
-const sw = (brand: string, id: string, name: string, from: number, p: PortSpec[], watts: number, price: number, layer: 2 | 3 = 2): DeviceModel => net(brand, "switch", id, name, from, p, watts, price, { layer });
+const sw = (brand: string, id: string, name: string, from: number, p: PortSpec[], watts: number, price: number, layer: 2 | 3 = 2): DeviceModel => net(brand, "switch", id, name, from, p, watts, price, { layer, managed: true });
+// An unmanaged switch: no management ports, no firmware, no settings. A desktop one stands on a shelf.
+const dumb = (brand: string, id: string, name: string, from: number, p: PortSpec[], watts: number, price: number, shelf: boolean): DeviceModel =>
+  net(brand, "switch", id, name, from, p, watts, price, { layer: 2, managed: false, oob: [], ...(shelf ? { shelf: true as const } : {}) });
 // A firewall caps every link at its throughput; ipsGbit is what it inspects, sessions the connections it tracks.
 const fw = (brand: string, id: string, name: string, from: number, p: PortSpec[], watts: number, price: number, tp: number, ips: number, sessions: number): DeviceModel =>
   net(brand, "firewall", id, name, from, p, watts, price, { throughputGbit: tp, ipsGbit: ips, sessions });
@@ -604,7 +612,12 @@ const SWITCHES: DeviceModel[] = [
   sw("D-Lunk", "dl-dgs1510-28x", "DGS-1510-28X", 2015, copper(24, 4), 30, 350),
   sw("D-Lunk", "dl-dgs1210-08", "DGS-1210-08", 2012, ports(8, 1), 5, 50),
   sw("D-Lunk", "dl-dgs1510-52x", "DGS-1510-52X", 2016, copper(48, 4), 50, 600),
+  dumb("D-Lunk", "dl-des1008d", "DES-1008D", 2005, ports(8, 0.1, "rj45"), 3, 25, true),
+  dumb("Nettgear", "ng-gs108", "GS108", 2005, ports(8, 1), 4, 75, true),
+  dumb("D-Lunk", "dl-dgs1024d", "DGS-1024D", 2006, ports(24, 1), 15, 180, false),
+  dumb("Nettgear", "ng-gs116", "GS116", 2008, ports(16, 1), 8, 110, true),
 ];
+export const isManaged = (m: DeviceModel): boolean => m.kind === "switch" && !!m.managed;
 // Parodies: PIXel, ASAP and Firepowder (PIX, ASA, Firepower), FortiGoat (FortiGate), PA, SRX, pfSinse on Netgoat boxes
 // (pfSense, Netgate), SoPhosphate (Sophos). Every year sells a firewall under 1000 euro and a datacenter one.
 const FIREWALLS: DeviceModel[] = [
@@ -760,6 +773,9 @@ export const hasFirmware = (m: DeviceModel): boolean => m.kind !== "server" && o
 export const oobPortOf = (m: DeviceModel, port: number): OobPort | undefined => (isOobPort(port) ? oobPorts(m)[port - OOB_PORT] : undefined);
 // A small-office router: it stands on a shelf in the basement rack and takes the line on its DSL port.
 export const isOfficeRouter = (m: DeviceModel): boolean => m.kind === "gateway" && m.brand === "AVN";
+// The network a Fritz!Bocks comes with.
+export const homeLan = (): RouterLan =>
+  ({ cidr: "192.168.178.0/24", gateway: "192.168.178.1", pool: ["192.168.178.20", "192.168.178.200"], leaseHours: 240, reservations: [], leases: [], shares: [] });
 export const wanPort = (m: DeviceModel): number => m.ports.findIndex((p) => p.media === "dsl");
 export const jacksOf =(m: DeviceModel): number => m.ports.length / 2;
 // Jacks on a 24-port panel; use jacksOf for the 48-port panels.

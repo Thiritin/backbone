@@ -103,9 +103,10 @@ describe("add-on KVMs", () => {
     piKvn(s);
     const kvm = dev(s, "dev90");
     expect(failureChance(s, kvm, kvm.components[0]) * 8760).toBeCloseTo(0.04);
-    expect(resolve(s, `http://${addressOf(s, "dev90")}/`)).toMatchObject({ page: { kind: "kvm", deviceId: "dev90" }, load: "fast" });
+    const ip = addressOf(s, "dev90");
+    expect(resolve(s, `http://${ip}/`)).toMatchObject({ page: { kind: "kvm", deviceId: "dev90" }, load: "fast" });
     kvm.on = false;
-    expect(resolve(s, `http://${addressOf(s, "dev90")}/`).load).toBe("down");
+    expect(resolve(s, `http://${ip}/`).load).toBe("down");
   });
 });
 

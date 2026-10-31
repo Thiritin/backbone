@@ -1,10 +1,11 @@
 // docs/design/lan.md, The derived layer: the broadcast domain each router serves, the leases it hands out and the address
 // every device holds. Every machine takes its address by DHCP; a lease is granted the moment a client is in the router's
 // domain, and the hourly tick stores and renews it.
-import { BMC_NAME, hasBmc, isOfficeRouter, isOobPort, jacksOf, modelById, OOB_PORT, oobPortOf, oobPorts, wanPort, type DeviceModel } from "../10-catalog/hardware";
-import { homeLan, type Device, type End, type GameState, type PortShare, type RouterLan } from "../50-state";
+import { BMC_NAME, hasBmc, homeLan, isManaged, isOfficeRouter, isOobPort, jacksOf, modelById, OOB_PORT, oobPortOf, oobPorts, wanPort, type DeviceModel } from "../10-catalog/hardware";
+import type { Device, End, GameState, PortShare, RouterLan } from "../50-state";
 import { mountedRouter } from "./routers";
 import { locationOf, peerOf, powered, sweepMemo, working } from "./status";
+import { egress, ingress, MGMT_VLAN, switchIp } from "./switches";
 
 export type Iface = "eth" | "bmc";
 export interface Grant { mac: string; ip: string; name: string; deviceId: string | null; iface: Iface }
@@ -42,27 +43,39 @@ export function macOf(s: GameState, id: string, iface: Iface = "eth"): string {
 }
 
 // The DHCP clients in a router's broadcast domain, in device order: every end its LAN ports reach through powered switches,
-// firewalls, OOB switches and patch panels. A server asks with its NIC and, on standby
-// power, its management controller; KVMs, console servers and OOB switches with their network jack.
+// firewalls, OOB switches and patch panels. The router sends untagged frames, and managed switches forward them only within
+// a VLAN (switches.ts). A server asks with its NIC on an untagged port and, on standby power, its management controller;
+// KVMs, console servers and OOB switches with their network jack; a managed switch with its interface in MGMT_VLAN.
 function clients(s: GameState, routerId: string): Grant[] {
   const router = s.devices.find((d) => d.id === routerId), rm = router && modelById(router.model);
   if (!router || !rm || !working(s, routerId)) return [];
   const found = new Set<string>(), seen = new Set<string>([routerId]);
-  const queue: End[] = rm.ports.flatMap((_, port) => (port === wanPort(rm) ? [] : peerOf(s, { device: routerId, port }) ?? []));
+  const queue: { at: End; tag: number | null }[] = rm.ports.flatMap((_, port) => {
+    const at = port === wanPort(rm) ? null : peerOf(s, { device: routerId, port });
+    return at ? [{ at, tag: null }] : [];
+  });
   while (queue.length) {
-    const at = queue.shift()!, d = s.devices.find((x) => x.id === at.device);
+    const { at, tag } = queue.shift()!, d = s.devices.find((x) => x.id === at.device);
     if (!d) continue;
-    const m = modelById(d.model), key = m.kind === "patch" ? `${d.id}:${at.port}` : d.id;
-    if (seen.has(key)) continue;
+    const m = modelById(d.model), sw = isManaged(m) && working(s, d.id) ? d : null;
+    const vlan = sw ? ingress(sw, at.port, tag) : tag;
+    const key = `${m.kind === "patch" ? `${d.id}:${at.port}` : d.id}:${vlan}`;
+    if (vlan === undefined || seen.has(key)) continue;
     seen.add(key);
     let exits: number[] = [];
     if (m.kind === "patch") exits = [at.port < jacksOf(m) ? at.port + jacksOf(m) : at.port - jacksOf(m)];
     else if (m.kind === "server" || m.kind === "kvm" || m.kind === "console") {
-      if (m.kind === "server" ? !isOobPort(at.port) : oobPortOf(m, at.port) === "net") found.add(d.id);
+      if (vlan === null && (m.kind === "server" ? !isOobPort(at.port) : oobPortOf(m, at.port) === "net")) found.add(d.id);
     } else if (!working(s, d.id)) continue;
     else if (m.kind === "oob") { found.add(d.id); exits = oobPorts(m).map((_, i) => OOB_PORT + i); }
-    else if ((m.kind === "switch" || m.kind === "firewall") && !isOobPort(at.port)) exits = m.ports.map((_, i) => i);
-    for (const port of exits) { const p = peerOf(s, { device: d.id, port }); if (p) queue.push(p); }
+    else if ((m.kind === "switch" || m.kind === "firewall") && !isOobPort(at.port)) {
+      exits = m.ports.map((_, i) => i);
+      if (sw && vlan === MGMT_VLAN) found.add(d.id);
+    }
+    for (const port of exits) {
+      const out = sw ? egress(sw, port, vlan!) : vlan, p = peerOf(s, { device: d.id, port });
+      if (p && out !== undefined) queue.push({ at: p, tag: out });
+    }
   }
   const home = locationOf(s, router), desk = isOfficeRouter(rm) && home && mountedRouter(s, home.id)?.id === routerId;
   const out: Grant[] = desk ? [{ mac: macOf(s, DESK_NAME), ip: "", name: DESK_NAME, deviceId: null, iface: "eth" }] : [];
@@ -114,14 +127,15 @@ export function gatewayOf(s: GameState, deviceId: string, iface: Iface = "eth"):
   return dhcpRouters(s).find((r) => grantsOf(s, r.id).has(mac))?.id ?? null;
 }
 
-// The address a device's interface holds; null without one.
+// The address a device's interface holds; null without one. A managed switch without a lease answers on its factory address.
 export function addressOf(s: GameState, id: string, iface: Iface = "eth"): string | null {
   const mac = macOf(s, id, iface);
   for (const r of dhcpRouters(s)) {
     const g = grantsOf(s, r.id).get(mac);
     if (g) return g.ip;
   }
-  return null;
+  const d = iface === "eth" ? s.devices.find((x) => x.id === id) : undefined;
+  return d ? switchIp(d) : null;
 }
 
 // What answers on an address: a router on its own address, or the device whose interface holds it.

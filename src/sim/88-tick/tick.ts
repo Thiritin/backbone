@@ -26,6 +26,7 @@ import { registrarTick } from "../30-customers/registrar";
 import { mailTick } from "../80-business/mail";
 import { computeTick } from "../60-infra/cluster";
 import { haltTick, powerTick, pushLog, tripTick } from "../60-infra/power";
+import { loadSaved } from "../60-infra/switches";
 import { installNetTick } from "../60-infra/oob";
 import { haTick } from "../60-infra/ha";
 import { migrationTick } from "../60-infra/migration";
@@ -146,6 +147,7 @@ export function failComponents(s: GameState, d: Device, ids: string[], events: S
   const next: Device = { ...d, components: d.components.map((c) => (broke.includes(c) ? { ...c, failedAt: s.hour } : c)) };
   for (const c of broke) pushLog(next, s.hour, `ipmi.log.failed.${c.kind}`);
   if (broke.some(isDrive) && arrayLost(next)) Object.assign(next, { dataLost: s.hour, rebuild: null });
+  if (broke.some((c) => c.kind === "psu") && !next.components.some((c) => c.kind === "psu" && c.failedAt === null)) loadSaved(next);
   if (d.refund && s.hour < d.refund.until) {
     s.cash = Math.round((s.cash + d.refund.amount) * 100) / 100;
     s.ledger = [...s.ledger, { hour: s.hour, category: "hardware", key: "ledger.usedRefund", params: { device: d.label ?? d.name }, amount: d.refund.amount }];

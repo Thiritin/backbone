@@ -44,7 +44,7 @@ describe("DHCP on the basement router", () => {
     unplug(s, "dev3");
     expect(linkStatus(s, "dev3").online).toBe(false);
     second(s);
-    expect(addressOf(s, "dev9")).toBe("192.168.178.22");
+    expect(addressOf(s, "dev9")).toBe("192.168.178.23");
     hours(s, 241);
     expect(leasesOf(s, "dev5").some((l) => l.mac === macOf(s, "dev3"))).toBe(false);
     s.cables.push({ id: "cab-back", a: { device: "dev3", port: 0 }, b: { device: "dev4", port: 0 }, kind: "copper", color: null });

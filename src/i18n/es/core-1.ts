@@ -74,6 +74,8 @@ export default {
   "error.speedMismatch": () => "Ambos puertos deben funcionar a la misma velocidad.",
   "error.notServer": () => "Solo los servidores tienen modo bond.",
   "error.notSwitch": () => "Solo los switches tienen grupos de puertos.",
+  "error.unmanaged": () => "Los switches no gestionables no tienen ajustes.",
+  "error.vlanRange": () => "Los ID de VLAN van del 1 al 4094.",
   "error.groupSize": () => "Un grupo de puertos tiene de 2 a 8 puertos.",
   "ledger.lease": (p) => `${p.lessor}, pago ${p.paid} de ${p.months}`,
   "ledger.leaseBuyout": (p) => `${p.lessor}, compra final`,

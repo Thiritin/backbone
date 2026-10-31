@@ -9,6 +9,7 @@ import type { GameState } from "../50-state";
 import { isOwnVm, workloadOnline, workloadsOf, type Workload } from "../60-infra/cluster";
 import { machineAddress } from "../60-infra/addresses";
 import { deskReaches, FRITZ_HOST, holderOf } from "../60-infra/lan";
+import { isManaged, modelById } from "../10-catalog/hardware";
 import { mountedRouter } from "../60-infra/routers";
 import { isMgmtDevice, oobUp } from "../60-infra/oob";
 import { linkStatus, powered, working } from "../60-infra/status";
@@ -32,6 +33,7 @@ export type Page =
   | { kind: "ipmi"; deviceId: string }
   | { kind: "kvm"; deviceId: string }
   | { kind: "router"; deviceId: string }
+  | { kind: "switch"; deviceId: string }
   | { kind: "video" }
   | { kind: "phishing"; sender: string }
   | { kind: "sponsorboard" }
@@ -177,8 +179,9 @@ export function resolve(s: GameState, raw: string): Resolved {
     // The management controller answers on standby power, so a switched-off server still has its page; a hung one answers nothing.
     if (d && at.iface === "bmc") return out({ kind: "ipmi", deviceId: d.id }, powered(s, d.id) && !d.bmcHung ? "fast" : "down");
     if (d && isMgmtDevice(d)) return out({ kind: "kvm", deviceId: d.id }, oobUp(s, d.id) ? "fast" : "down");
+    if (d && isManaged(modelById(d.model))) return out({ kind: "switch", deviceId: d.id }, working(s, d.id) ? "fast" : "down");
     const m = machineOf(s, name, true);
-    return m ? { url, host, path, ...machinePage(s, m, port, path) } : out({ kind: "notfound" });
+    return m ? { url, host, path, ...machinePage(s, m, port, path) } : out({ kind: "notfound" }, "down");
   }
   if (s.company.domain && name.endsWith(`.${domain}`)) {
     const m = machineOf(s, name.slice(0, -domain.length - 1), false);

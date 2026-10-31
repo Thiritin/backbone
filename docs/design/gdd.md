@@ -204,7 +204,7 @@ Switches come in several sizes: 8, 24 and 48 copper ports, each with a few SFP c
 
 **Patch panels.** A patch panel sits at the top of a rack, and the player decides what each jack is for: a carrier's cross-connect, a link to another rack, or a colocation customer's line. Incoming cables land on the back of the panel, and short patch cables connect the front jacks to switch ports. Re-patching a jack is quicker than pulling a new cable through the trays.
 
-**Port groups.** Two to eight ports going to the same device can be bundled into a group (LACP). The group adds up their bandwidth and stays up when one cable or port fails. Both ends must be grouped, or the link falls back to a single port.
+**Port groups.** Two to eight ports going to the same device can be bundled into a group (LACP). The group adds up their bandwidth and stays up when one cable or port fails. Both ends must be grouped, or the link falls back to a single port. Groups are set in a managed switch's web interface in the Browser (docs/design/lan.md), next to its VLANs and the configuration save; an unmanaged switch has no groups and forwards between all its ports.
 
 **Server network cards.** A server's network ports are bonded in one of two modes, set in the inspector:
 
