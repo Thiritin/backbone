@@ -11,6 +11,9 @@ import { bootLines } from "../../../console/lunix";
 import { Chart, Donut, niceMax } from "../Chart";
 import { AlarmList, ConsoleThumb, isoName, MediaMenu, NodeList, ResourceBars, summaryOf, TaskLog, tasks, Toolbar, useNewVm, useVms, vmFacts, Wizard, type Vm } from "../HypervisorBase";
 import { Actions, Backups, erasFrom, eraAt, Facts, LoginForm, useSoftware, type PanelProps } from "../PanelBase";
+import { parseCreate } from "../../../../../sim/80-business/consoles";
+import { packagesOf } from "../../../../../sim/80-business/packages";
+import { PackagesScreen } from "../PackageForms";
 import "./horizont.css";
 
 // docs/design/software.md, section 9: the purple dashboard from 2010, the dark-sidebar one with the red mark from 2016.
@@ -20,7 +23,7 @@ const FLAVORS: [string, Resources][] = [
   ["m1.large", { vcpu: 4, ramGb: 8, diskGb: 80 }], ["m1.xlarge", { vcpu: 8, ramGb: 16, diskGb: 160 }],
 ];
 const same = (a: Resources, b: Resources) => a.vcpu === b.vcpu && a.ramGb === b.ramGb && a.diskGb === b.diskGb;
-const flavorOf = (r: Resources) => FLAVORS.find(([, x]) => same(x, r))?.[0] ?? t("browser-consoles-1.hzCustomFlavor", { spec: `${r.vcpu}/${r.ramGb}/${r.diskGb}` });
+const flavorOf = (r: Resources, c: Cluster) => FLAVORS.find(([, x]) => same(x, r))?.[0] ?? packagesOf(c).find((q) => same(q.spec, r))?.name ?? t("browser-consoles-1.hzCustomFlavor", { spec: `${r.vcpu}/${r.ramGb}/${r.diskGb}` });
 const QUOTA_INSTANCES = 10;
 
 // The project Overview: the limit pies, then the day's usage summary and the usage per instance.
@@ -86,13 +89,13 @@ export function InstanceOverview({ game, v, flavor }: { game: GameState; v: Vm; 
   );
 }
 
-type Page = "overview" | "instances" | "images" | "keys" | "hypervisors" | "system" | { vm: string; tab: "Overview" | "Log" | "Console" };
+type Page = "overview" | "flavors" | "instances" | "images" | "keys" | "hypervisors" | "system" | { vm: string; tab: "Overview" | "Log" | "Console" };
 const TAB_LABELS = { Overview: () => t("browser-consoles-1.hzOverview"), Log: () => t("browser-consoles-1.hzLog"), Console: () => t("browser-consoles-1.console") };
 
 export function Horizont(p: PanelProps) {
   const era = eraAt(ERAS, p.game), { game, c, f } = p, openConsole = useStore((s) => s.openConsole);
-  const [page, setPage] = useState<Page>("instances"), [launching, setLaunching] = useState(false);
-  const { vms, dialog } = useVms(game, c, f), sw = useSoftware(game, c, f), nv = useNewVm(game, c), health = summaryOf(game, c, null);
+  const link = parseCreate("openstash", p.path), [page, setPage] = useState<Page>(link?.screen === "packages" ? "flavors" : "instances"), [launching, setLaunching] = useState(link?.screen === "create");
+  const { vms, dialog } = useVms(game, c, f), sw = useSoftware(game, c, f), nv = useNewVm(game, c, link?.screen === "create" ? link.order : undefined), health = summaryOf(game, c, null);
   if (!p.signedIn) return (
     <div className="cx hz hz-login" data-era={era}>
       <LoginForm className="hz-card" onLogin={p.login} button={t("browser-consoles-1.hvConnectBtn")}>
@@ -103,10 +106,10 @@ export function Horizont(p: PanelProps) {
     </div>
   );
   const vm = typeof page === "object" ? vms.find((v) => v.id === page.vm) : undefined, facts = vm && vmFacts(game, vm);
-  const finish = () => { const id = nv.create(); if (id) { setLaunching(false); setPage({ vm: id, tab: "Overview" }); } };
+  const finish = () => { if (nv.ordered) { if (nv.submit()) { setLaunching(false); setPage("instances"); } return; } const id = nv.create(); if (id) { setLaunching(false); setPage({ vm: id, tab: "Overview" }); } };
   const nav: [string, string, [Page, string][]][] = [
     ["Project", t("browser-consoles-1.hzProject"), [["overview", t("browser-consoles-1.hzOverview")], ["instances", t("browser-consoles-1.hzInstances")], ["images", t("browser-consoles-1.hzImages")], ["keys", t("browser-consoles-1.hzKeyPairs")]]],
-    ["Admin", t("browser-consoles-1.hzAdmin"), [["hypervisors", t("browser-consoles-1.hzHypervisors")], ["system", t("browser-consoles-1.hzSystemInfo")]]],
+    ["Admin", t("browser-consoles-1.hzAdmin"), [["flavors", t("pkg.hzFlavors")], ["hypervisors", t("browser-consoles-1.hzHypervisors")], ["system", t("browser-consoles-1.hzSystemInfo")]]],
   ];
   return (
     <div className="cx cx-hv hz" data-era={era}>
@@ -128,6 +131,18 @@ export function Horizont(p: PanelProps) {
               <TaskLog game={game} c={c} vms={vms} title={t("browser-consoles-1.hzRecentEvents")} className="cx-tasks hz-tasks" />
             </>
           )}
+          {page === "flavors" && (
+            <>
+              <div className="cx-hv-head"><h1>{t("pkg.hzFlavors")}</h1></div>
+              <table className="cx-table hz-table">
+                <thead><tr><th>{t("browser-consoles-1.name")}</th><th>{t("browser-consoles-1.hzVcpus")}</th><th>{t("browser-consoles-1.hzRam")}</th><th>{t("browser-consoles-1.hzRootDisk")}</th><th>{t("pkg.hzPublic")}</th></tr></thead>
+                <tbody>
+                  {FLAVORS.map(([name, r]) => <tr key={name}><td>{name}</td><td className="num">{r.vcpu}</td><td className="num">{r.ramGb} GB</td><td className="num">{r.diskGb} GB</td><td>{t("pkg.yes")}</td></tr>)}
+                </tbody>
+              </table>
+              <PackagesScreen game={game} c={c} />
+            </>
+          )}
           {page === "instances" && (
             <>
               <div className="cx-hv-head"><h1>{t("browser-consoles-1.hzInstances")}</h1>{f.create && <button className="cx-btn primary" onClick={() => setLaunching(true)}>{t("browser-consoles-1.hzLaunchInstance")}</button>}</div>
@@ -138,7 +153,7 @@ export function Horizont(p: PanelProps) {
                   {vms.map((v) => (
                     <tr key={v.id}>
                       <td><button className="hz-a" onClick={() => setPage({ vm: v.id, tab: "Overview" })}>{v.name}</button>{v.sub && <span className="cx-sub">{v.sub}</span>}</td>
-                      <td>{v.media ? isoName(v.media) : "-"}</td><td className="num">{v.ip}</td><td className="num">{flavorOf(v.w)}</td>
+                      <td>{v.media ? isoName(v.media) : "-"}</td><td className="num">{v.ip}</td><td className="num">{flavorOf(v.w, c)}</td>
                       <td><span className={`cx-state ${v.tone}`}>{v.tone === "bad" ? t("browser-consoles-1.error") : t("browser-consoles-1.active")}</span></td><td>{v.st === "stopped" ? t("browser-consoles-1.hzShutdown") : v.state}</td>
                     </tr>
                   ))}
@@ -151,7 +166,7 @@ export function Horizont(p: PanelProps) {
               <div className="cx-hv-head"><h1>{vm.name}</h1><Toolbar actions={vm.actions} className="cx-toolbar hz-tools" labels={{ start: t("browser-consoles-1.hzStartInstance"), stop: t("browser-consoles-1.hzShutOffInstance"), reset: t("browser-consoles-1.hzHardReboot"), resize: t("browser-consoles-1.hzResizeInstance"), migrate: t("browser-consoles-1.hzLiveMigrate"), delete: t("browser-consoles-1.hzDeleteInstance"), console: t("browser-consoles-1.console") }} /></div>
               {vm.panel}
               <nav className="cx-hv-tabs hz-tabs">{(["Overview", "Log", "Console"] as const).map((x) => <button key={x} aria-pressed={page.tab === x} onClick={() => setPage({ vm: vm.id, tab: x })}>{TAB_LABELS[x]()}</button>)}</nav>
-              {page.tab === "Overview" && <InstanceOverview game={game} v={vm} flavor={flavorOf(vm.w)} />}
+              {page.tab === "Overview" && <InstanceOverview game={game} v={vm} flavor={flavorOf(vm.w, c)} />}
               {page.tab === "Log" && (
                 <>
                   <h4 className="cx-h">{t("browser-consoles-1.hzConsoleLog")}</h4>
@@ -201,7 +216,7 @@ export function Horizont(p: PanelProps) {
       {launching && (
         <div className="cx-wiz-back">
           <Wizard title={t("browser-consoles-1.hzLaunchInstance")} className="hz-wiz" finish={t("browser-consoles-1.hzLaunchInstance")} onCancel={() => setLaunching(false)} onFinish={finish} steps={[
-            { id: "details", label: t("browser-consoles-1.hzDetails"), body: <Facts facts={[{ label: t("browser-consoles-1.hzProject"), value: "admin" }, { label: t("browser-consoles-1.hzAvailabilityZone"), value: "nova" }, { label: t("browser-consoles-1.hzCount"), value: "1", num: true }]} /> },
+            { id: "details", label: t("browser-consoles-1.hzDetails"), body: <><div className="hz-order">{nv.orderFields}</div><Facts facts={[{ label: t("browser-consoles-1.hzProject"), value: "admin" }, { label: t("browser-consoles-1.hzAvailabilityZone"), value: "nova" }, { label: t("browser-consoles-1.hzCount"), value: "1", num: true }]} /></> },
             { id: "source", label: t("browser-consoles-1.hzSource"), body: nv.isoPick(t("browser-consoles-1.hzImage"), t("browser-consoles-1.none")) },
             { id: "flavor", label: t("browser-consoles-1.hzFlavor"), body: (
               <table className="cx-table hz-table">

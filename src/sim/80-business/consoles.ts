@@ -119,12 +119,14 @@ export const CREATE_PATH: Record<string, string> = {
 export const PACKAGES_PATH: Record<string, string> = {
   cpanic: "/scripts/addpkg", tcadmen: "/Services/Defaults", proxmocks: "/?plans=1", directadmen: "/CMD_PACKAGES_USER", pleskit: "/admin/service-plan/list",
   freepanel: "/virtual-server/edit_plan.cgi", multikraft: "/plans", pterodaktyl: "/admin/nests",
+  vmwhere: "/ui/app/vm-classes", hypervee: "/library/hardware-profiles", openveezee: "/plans", openstash: "/admin/flavors",
 };
 
 // The products each console has a create form for; a console gains its entry in the milestone that draws its form.
 const CREATE_FORMS: Record<string, Product[]> = {
   cpanic: ["webHosting"], proxmocks: ["vps", "gameServer", "cloud"], tcadmen: ["gameServer"],
   directadmen: ["webHosting"], pleskit: ["webHosting"], freepanel: ["webHosting"], multikraft: ["gameServer"], pterodaktyl: ["gameServer"],
+  vmwhere: ["vps", "gameServer", "cloud"], hypervee: ["vps", "gameServer", "cloud"], openveezee: ["vps", "gameServer", "cloud"], openstash: ["vps", "gameServer", "cloud"],
 };
 export const createFormFor = (family: string | null, product: Product): boolean => !!family && !!CREATE_FORMS[family]?.includes(product);
 

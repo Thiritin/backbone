@@ -71,4 +71,11 @@ export default {
   "pkg.ptCreate": () => "Criar novo servidor",
   "pkg.account": () => "Conta",
   "pkg.settings": () => "Definições",
+  "pkg.vswClasses": () => "Classes de VM",
+  "pkg.vswCustomerOrder": () => "Pedido do cliente",
+  "pkg.hvProfiles": () => "Perfis de hardware",
+  "pkg.ovzPlans": () => "Planos",
+  "pkg.hzFlavors": () => "Flavors",
+  "pkg.hzPublic": () => "Público",
+  "pkg.yes": () => "Sim",
 } satisfies Dict;

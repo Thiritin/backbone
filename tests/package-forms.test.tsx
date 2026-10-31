@@ -117,6 +117,35 @@ describe("create account form", () => {
     expect(html).toContain("Tiny");
   });
 
+  it.each([
+    ["vmwhere", "/ui/app/vm-classes", "pkg.vswClasses", "/ui/app/vm/new"],
+    ["hypervee", "/library/hardware-profiles", "pkg.hvProfiles", "/vm/new"],
+    ["openveezee", "/plans", "pkg.ovzPlans", "/virtual-servers/create"],
+    ["openstash", "/admin/flavors", "pkg.hzFlavors", "/project/instances/launch"],
+  ])("draws the %s package screen and the Order field on its create form", (platform, plans, key, create) => {
+    const { s, id, req, host } = order(51, true, "vps");
+    const c = s.clusters.find((x) => x.id === host)!;
+    c.platform = platform;
+    addPackage(s, host, { name: "Tiny", product: "vps", spec: req().spec });
+    expect(createFormFor(familyOf(c), "vps")).toBe(true);
+    expect(createLink(s, host, id)).toContain(`${create}?order=${id}`);
+    const list = console_(s, c, plans);
+    expect(list).toContain(t(key));
+    expect(list).toContain("Tiny");
+    const html = console_(s, c, `${create}?order=${id}`);
+    expect(html).toContain(`<option value="${id}" selected="">`);
+    expect(console_(s, c, create)).not.toContain(`<option value="${id}" selected="">`);
+  });
+
+  it("lists the built-in Horizont flavors as public rows and names a stored flavor", () => {
+    const { s, req, host } = order(52, true, "vps");
+    const c = s.clusters.find((x) => x.id === host)!;
+    c.platform = "openstash";
+    addPackage(s, host, { name: "Odd", product: "vps", spec: { ...req().spec, vcpu: 3, ramGb: 6, diskGb: 33 } });
+    const html = console_(s, c, "/admin/flavors");
+    for (const f of ["m1.tiny", "m1.small", "m1.medium", "m1.large", "m1.xlarge", "Odd"]) expect(html).toContain(f);
+  });
+
   it("draws the TCAdmen service defaults and Add Service form", () => {
     const { s, req } = order(44, true, "vps");
     const game = panelVm(s, s.clusters.find((c) => c.kind === "cloud")!.id, "tcadmen");
