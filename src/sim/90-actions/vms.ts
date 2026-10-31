@@ -6,6 +6,7 @@ import type { GameState } from "../50-state";
 import {
   bookable, clusterOf, controlPlaneUp, diskMovesLive, insideVm, isOwnVm, liveBetween, lostDisk, noRoomError, nodeTakes, nodeUsed, pickNode, supports, vmOf, vmRoom, type Cluster, type Workload,
 } from "../60-infra/cluster";
+import { backupTarget } from "../60-infra/backups";
 import { renumber, renumberError } from "../60-infra/addresses";
 import { handJob, type How } from "../60-infra/handwork";
 import { migrationHours } from "../60-infra/migration";
@@ -189,7 +190,7 @@ export function restoreWorkload(s: GameState, id: string): ActionResult {
   const { w, c } = found;
   if (!lostDisk(s, w)) return fail("error.notLost");
   if (!controlPlaneUp(s, c)) return fail("error.controlPlaneDown");
-  const target = s.clusters.find((x) => x.id === c.backup.targetId);
+  const target = backupTarget(s, c, w);
   if (w.backupAt !== null && (!target || !controlPlaneUp(s, target))) return fail("error.backupUnavailable");
   const node = pickNode(s, c, w);
   if (!node) return fail("error.noCapacity");

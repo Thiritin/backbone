@@ -17,7 +17,7 @@ export function BackupConsole(p: PanelProps) {
       <LoginForm className="bk-card" onLogin={p.login} button={t("browser-consoles-1.logIn")}>{logo}<div className="cx-host">{p.host}</div></LoginForm>
     </div>
   );
-  const jobs = p.game.clusters.filter((c) => c.backup.targetId === p.c.id);
+  const jobs = p.game.clusters.flatMap((c) => c.jobs.filter((j) => j.targetId === p.c.id).map((j) => ({ c, j })));
   const pool = backupPool(p.game, p.c.id);
   const nav: [Tab, string, LucideIcon][] = [["objects", t("browser-consoles-1.bkJobs"), Archive], ["nodes", t("browser-consoles-1.bkRepository"), HardDrive], ["software", t("browser-consoles-1.settings"), Settings], ...pages.map((g) => [g.id, g.label, FileText] as [Tab, string, LucideIcon])];
   return (
@@ -29,13 +29,13 @@ export function BackupConsole(p: PanelProps) {
           <table className="cx-table">
             <thead><tr><th>{t("browser-consoles-1.bkJob")}</th><th>{t("browser-consoles-1.bkSource")}</th><th>{t("browser-consoles-1.bkSchedule")}</th><th>{t("browser-consoles-1.bkLastRun")}</th><th>{t("browser-consoles-1.size")}</th></tr></thead>
             <tbody>
-              {jobs.map((c) => {
-                const ws = p.game.workloads.filter((w) => w.clusterId === c.id), last = Math.max(-1, ...ws.map((w) => w.backupAt ?? -1));
+              {jobs.map(({ c, j }) => {
+                const ws = p.game.workloads.filter((w) => w.clusterId === c.id), last = j.lastRun ?? -1;
                 return (
-                  <tr key={c.id}>
+                  <tr key={j.id}>
                     <td><b>{c.name}</b></td>
                     <td>{softwareById(c.panel ?? c.platform!).name}</td>
-                    <td className="cx-cap">{c.backup.every}</td>
+                    <td className="cx-cap">{j.every}</td>
                     <td className="num">{last < 0 ? t("browser-consoles-1.never") : t("browser-consoles-1.hoursAgo", { n: p.game.hour - last })}</td>
                     <td className="num">{disk(Math.round(ws.reduce((n, w) => n + w.diskGb, 0)))}</td>
                   </tr>

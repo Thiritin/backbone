@@ -15,6 +15,7 @@ import { COMPAT_VCPU } from "../10-catalog/cpus";
 import { hasPublicAddress, sellsFrom } from "./addresses";
 import { coverage } from "./maintenance";
 import type { PackageDef } from "../80-business/packages";
+import type { BackupJob, RestorePoint } from "./backups";
 
 // Active takes new workloads, cordoned keeps its own, draining moves them off, maintenance is empty after a drain.
 export type NodeState = "active" | "cordoned" | "draining" | "maintenance";
@@ -36,7 +37,8 @@ export interface Cluster {
   id: string; name: string; az: string; kind: SoftwareKind; placement: Placement; nodes: ClusterNode[];
   panel: string | null; platform: string | null; vm: string | null; controlPlane: string | null;
   switching: { kind: SoftwareKind; to: string; doneAt: number } | null;
-  backup: { targetId: string | null; every: BackupEvery };
+  // Backup jobs, up to MAX_JOBS (backups.ts).
+  jobs: BackupJob[];
   ramGuard?: boolean;
   // The player's cap on booked vCPU per physical vCPU for a panel host; missing or null is no cap (oversell.ts).
   oversell?: number | null;
@@ -70,6 +72,8 @@ export interface Datastore { deviceId: string; protocol: DatastoreProtocol; read
 export interface Workload extends Resources, Partial<MachineState> {
   id: string; serviceId: string; clusterId: string | null; deviceId: string | null; rackId: string | null; slot: number; units: number; watts: number; placedAt: number;
   stopped: boolean; busyUntil: number; backupAt: number | null; stuck?: boolean;
+  // Restore points the backup jobs wrote; backupAt is the newest one's hour.
+  points?: RestorePoint[];
   // The sold size when a package booked less; the service uses the sold size times its load.
   promised?: Resources;
   // vmNNN for the player's own VMs; a customer workload carries its service's hostname.
@@ -99,7 +103,7 @@ export const deltaGb = (w: Workload): number => w.snapshots?.reduce((n, x) => n 
 // Old saves are converted by upgradeCompute; this fills the fields every cluster has.
 // Software of a save from before versions runs its install year, or two years before the save while no install date is known.
 export const clusterDefaults = (c: Partial<Cluster> & Pick<Cluster, "nodes">, hour = 0): Cluster => ({
-  panel: null, platform: null, vm: null, switching: null, appSuite: false, datastores: [], packages: [], backup: { targetId: null, every: "off" }, php: phpAt(yearOf(hour)), phpUntil: -1,
+  panel: null, platform: null, vm: null, switching: null, appSuite: false, datastores: [], packages: [], jobs: [], php: phpAt(yearOf(hour)), phpUntil: -1,
   version: c.switching ? yearOf(c.switching.doneAt) : Math.max(START_YEAR, yearOf(hour) - 2), updatedAt: c.switching?.doneAt ?? hour, ...c,
   ha: { ...HA_OFF, ...c.ha },
   ...(c.licence || !topTier(c.panel ?? null) ? {} : { licence: { tier: topTier(c.panel ?? null)!.id, trialUntil: null, lapsedAt: null } }),
@@ -356,7 +360,10 @@ export const stripSoftware = (s: GameState, c: Cluster, machineId: string) =>
 export function dropCluster(s: GameState, id: string) {
   const c = s.clusters.find((x) => x.id === id);
   if (c) for (const m of machinesOf(c)) stripSoftware(s, c, m);
-  s.clusters = s.clusters.filter((x) => x.id !== id).map((x) => (x.backup.targetId === id ? { ...x, backup: { targetId: null, every: "off" } } : x));
+  const old = s.clusters;
+  s.clusters = s.clusters.filter((x) => x.id !== id).map((x) => ({ ...x, jobs: x.jobs.filter((j) => j.targetId !== id) }));
+  const gone = new Set(old.flatMap((x) => x.jobs.filter((j) => j.targetId === id).map((j) => j.id)));
+  if (gone.size) s.workloads = s.workloads.map((w) => (w.points?.some((p) => gone.has(p.jobId)) ? { ...w, points: w.points.filter((p) => !gone.has(p.jobId)), backupAt: w.points.filter((p) => !gone.has(p.jobId)).reduce<number | null>((n, p) => (n === null || p.at > n ? p.at : n), null) } : w));
   const drop = (ids: string[]) => ids.filter((x) => x !== id);
   if (s.company.mail.kind === "self" && s.company.mail.clusterId === id) s.company = { ...s.company, mail: { kind: "free" } };
   s.security = { ...s.security, offline: drop(s.security.offline), hacked: drop(s.security.hacked), patched: drop(s.security.patched) };

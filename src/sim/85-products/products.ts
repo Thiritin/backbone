@@ -1,9 +1,9 @@
 import { chance, hashRng } from "../00-core/rng";
-import { dateOf, hourOf, isMonthStart, monthIndexOf, nowHours, yearOf } from "../00-core/time";
+import { hourOf, isMonthStart, monthIndexOf, nowHours, yearOf } from "../00-core/time";
 import { cpuModel, isFresh, skuOf, topBoost } from "../10-catalog/cpus";
 import { genOf, modelById } from "../10-catalog/hardware";
 import { balancerIn, isService, softwareById } from "../10-catalog/platforms";
-import { BACKUP_HOUR, slowTolerance } from "../10-catalog/usage";
+import { slowTolerance } from "../10-catalog/usage";
 import { channelOf, EDGE_HOWTO } from "../60-infra/channel";
 import { tierOf } from "../60-infra/licence";
 import { TRIAL_DAYS, LAPSE_GRACE_DAYS, topTier } from "../10-catalog/licence-tiers";
@@ -12,12 +12,13 @@ import { homeLineById } from "../20-world/datacenters";
 import type { Customer, Product } from "../30-customers/customers";
 import { bump, createTicket, slowed } from "../40-support/tickets";
 import type { Device, GameState, Location } from "../50-state";
-import { backsUpCluster, controlPlaneUp, insideVm, isOwnVm, lostDisk, servedBy, vmOf, vmRoom, type Cluster, type Workload } from "../60-infra/cluster";
+import { insideVm, isOwnVm, lostDisk, servedBy, vmOf, type Cluster, type Workload } from "../60-infra/cluster";
 import { exitsOf } from "../60-infra/network";
+import { backupTarget, repoRoom, repoUsed, runBackups } from "../60-infra/backups";
 import { bootHours, customerWorkloads, liveServices } from "../60-infra/status";
 import { hostPerf, phpTickets } from "../60-infra/php";
 import { welcomeFriends } from "../90-actions/start";
-import { deviceVendor, installedCores, perCoreOf, raidUsable } from "../60-infra/status";
+import { deviceVendor, installedCores, perCoreOf } from "../60-infra/status";
 import { diskFill, nodeUsage } from "../60-infra/usage";
 import { addAwareness, addReview, announceReview, starsFor } from "../80-business/marketing";
 import type { SimEvent } from "../88-tick/tick";
@@ -29,8 +30,6 @@ export const LOSS_RESTORED_MAX = -40;
 export const REVIEW_CHANCE = 0.1;
 export const UNHAPPY_REVIEW_CHANCE = 0.2;
 export const UNHAPPY = 40;
-// Backup jobs start at BACKUP_HOUR, weekly ones on Sundays; the pool holds a full copy plus the extra days kept.
-export const BACKUP_POOL = 1.3;
 // GB moved per hour over a 1 Gbit/s link inside a zone and over the internet to another zone.
 export const LAN_GB_PER_HOUR = 450;
 export const WAN_GB_PER_HOUR = 45;
@@ -157,22 +156,15 @@ export function howToFactor(s: GameState, customerId: string): number {
   return factors.length ? factors.reduce((a, b) => a + b, 0) / factors.length : 1;
 }
 
-// Backup space a target cluster needs for every cluster backing up to it, and the free disk its nodes have.
+// Space the restore points written to a target cluster take, and the free disk its nodes have.
 export function backupPool(s: GameState, targetId: string): { need: number; room: number } {
   const target = s.clusters.find((c) => c.id === targetId);
-  const sources = new Set(s.clusters.filter((c) => c.backup.targetId === targetId && c.backup.every !== "off").map((c) => c.id));
-  const need = s.workloads.filter((w) => w.clusterId && sources.has(w.clusterId)).reduce((n, w) => n + w.diskGb * diskFill(s, w, s.hour) * BACKUP_POOL, 0);
-  const vm = target?.vm ? vmRoom(s, target) : null;
-  const room = vm ? vm.cap.diskGb - vm.used.diskGb : (target?.nodes ?? []).reduce((n, x) => {
-    const d = s.devices.find((y) => y.id === x.deviceId);
-    return d ? n + raidUsable(d) - nodeUsage(s, d.id).used.diskGb : n;
-  }, 0);
-  return { need, room };
+  return { need: repoUsed(s, targetId), room: target ? repoRoom(s, target) : 0 };
 }
 
 // Hours a restore of a workload takes from its cluster's backup target.
 export function restoreHours(s: GameState, w: Workload): number {
-  const c = s.clusters.find((x) => x.id === w.clusterId), target = c && s.clusters.find((x) => x.id === c.backup.targetId);
+  const c = s.clusters.find((x) => x.id === w.clusterId), target = c && backupTarget(s, c, w);
   const rate = target && target.az === c.az ? LAN_GB_PER_HOUR : WAN_GB_PER_HOUR;
   return Math.max(1, Math.ceil((w.diskGb * diskFill(s, w, w.backupAt ?? s.hour)) / rate));
 }
@@ -241,21 +233,6 @@ export function reportLoss(s: GameState, d: Device, lost: Workload[], hour: numb
   }
   s.lossReports = [...s.lossReports, { id: `loss${s.nextId++}`, hour, deviceId: d.id, items }];
   events.push({ app: "Locations", key: "event.dataLoss", params: { device: d.label ?? d.name, count: items.length } });
-}
-
-function runBackups(s: GameState, events: SimEvent[]) {
-  const d = dateOf(s.hour);
-  if (d.getUTCHours() !== BACKUP_HOUR) return;
-  for (const c of s.clusters) {
-    const target = s.clusters.find((x) => x.id === c.backup.targetId);
-    if (c.backup.every === "off" || !target || (c.backup.every === "weekly" && d.getUTCDay() !== 0)) continue;
-    const pool = backupPool(s, target.id);
-    if (!backsUpCluster(s, c, target) || !controlPlaneUp(s, target) || pool.need > pool.room) {
-      events.push({ app: "Locations", key: "event.backupFailed", params: { cluster: c.name, target: target.name } });
-      continue;
-    }
-    s.workloads = s.workloads.map((w) => (w.clusterId === c.id && !lostDisk(s, w) && w.busyUntil <= s.hour ? { ...w, backupAt: s.hour } : w));
-  }
 }
 
 // The speed a customer workload runs at, 1 when nothing slows it: the slowest of its node, its panel host and, for a game

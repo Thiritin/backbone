@@ -21,6 +21,7 @@ import {
 import { burning, freeSlots, installedRamGb, locationOf, rackPower, working } from "../60-infra/status";
 import { addService } from "./customers";
 import { assignService } from "../60-infra/addresses";
+import { deleteJob, saveJob } from "./backups";
 import type { ActionResult } from "./hardware";
 import { migrateWorkload } from "./vms";
 import { buyLicenses, licenseDue } from "../85-products/products";
@@ -33,7 +34,7 @@ export const PANEL_VM_MIN: Resources = { vcpu: 1, ramGb: 1, diskGb: 10 };
 
 const blank = (s: GameState, id: string, name: string, az: string, kind: SoftwareKind): Cluster => ({
   id, name, az, kind, placement: "pack", nodes: [], panel: null, platform: null, vm: null, controlPlane: null, switching: null, appSuite: false, datastores: [], packages: [],
-  backup: { targetId: null, every: "off" }, php: phpAt(yearOf(s.hour)), phpUntil: -1, ha: { ...HA_OFF }, version: yearOf(s.hour), updatedAt: s.hour,
+  jobs: [], php: phpAt(yearOf(s.hour)), phpUntil: -1, ha: { ...HA_OFF }, version: yearOf(s.hour), updatedAt: s.hour,
 });
 // The name a cluster in one of the player's VMs gets, by the kind of its software.
 const PREFIX: Record<SoftwareKind, string> = { panel: "Web", cloud: "Cloud", game: "Game", mail: "Mail", dns: "DNS", vpn: "VPN", storage: "Storage", backup: "Backup" };
@@ -216,15 +217,16 @@ export function moveControlPlane(s: GameState, clusterId: string, deviceId: stri
   return { ok: true };
 }
 
-// Backups of every workload in the cluster, daily or weekly at night, to a cluster whose backup software reads it.
+// The cluster's first backup job: off removes it, anything else points it at a target on that schedule.
 export function setBackup(s: GameState, clusterId: string, targetId: string | null, every: BackupEvery): ActionResult {
   const c = s.clusters.find((x) => x.id === clusterId), t = s.clusters.find((x) => x.id === targetId);
   if (!c) return fail("error.unknownCluster");
   if (targetId !== null && (!t || t.id === c.id || t.kind !== "backup")) return fail("error.backupTarget");
   if (t && !backsUpCluster(s, c, t)) return fail("error.backupIncompatible");
   if (every !== "off" && targetId === null) return fail("error.backupTarget");
-  update(s, clusterId, (c) => ({ ...c, backup: { targetId, every } }));
-  return { ok: true };
+  const first = c.jobs[0];
+  if (every === "off") return first ? deleteJob(s, clusterId, first.id) : { ok: true };
+  return saveJob(s, clusterId, { id: first?.id, targetId: targetId!, every });
 }
 
 const update = (s: GameState, id: string, fn: (c: Cluster) => Cluster) => {

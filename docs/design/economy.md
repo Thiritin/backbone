@@ -1819,6 +1819,24 @@ A snapshot freezes a VM's disk on a VMwhere cluster and, for the player's own VM
 - **Revert** clears the corruption of a pulled plug when the snapshot is older than the corruption, and closes the loss report item as a restore from backup would. An own VM gets its OS and software back as they were; a VM that hosts a panel needs that panel in the snapshot.
 - **Loss.** A disk lost with its server or datastore loses its snapshots, and a lost disk cannot revert. A VM that leaves VMwhere loses its snapshots.
 
+### Backup jobs and restore points
+
+A cluster has up to 4 backup jobs. Each job copies a set of its workloads (all by default) to a backup cluster at its hour (02:00 by default), daily or weekly on Sundays, and writes one restore point per workload.
+
+| Value | Amount |
+| --- | --- |
+| Default retention | keep last 3, weekly 0 |
+| Retention range | last 1 to 14, weekly 0 to 8 |
+| First point of a job | a full copy: the disk size times the fill |
+| Later points | an increment of 10% of the full copy |
+| Pruning | the newest `last` points stay, plus the newest point of each of `weekly` older weeks; the oldest point kept becomes the full copy |
+| Repository use | the sum of all restore points written to the cluster; the old flat 1.3 pool factor is gone |
+| Full repository | the run stops, the job is marked failed with reason full and the failure alert goes out |
+| Target not reachable | the run fails with reason unreachable |
+| Restore | uses the newest point, so the age penalty in Data loss and backups is unchanged |
+
+A save from before jobs turns its single schedule into one job named Backup and gives each backed-up workload one point.
+
 ### Templates
 
 A template is a stopped own VM on a VMwhere cluster kept to clone ready VMs from. Actions live in `src/sim/90-actions/templates.ts`.
