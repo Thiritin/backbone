@@ -90,6 +90,7 @@ export function deserialize(raw: string): GameState {
     // Saves from before the trade office count as registered in the first hour.
     registration: data.registration === undefined ? legacyRegistration(base.seed) : data.registration,
     ips: { ...base.ips, ...data.ips },
+    netsvc: { ...base.netsvc, ...data.netsvc },
     marketing: { ...base.marketing, ...data.marketing, awareness: { ...base.marketing.awareness, ...data.marketing?.awareness } },
     // Saves from before the Pear Store keep every widget they showed.
     // The Research app was called Unlocks.
