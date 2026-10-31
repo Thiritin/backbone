@@ -1,8 +1,8 @@
 // The steps of a custom order, domain renewals and upgrades of custom services (30-market/manual.ts).
-import { DOMAIN_FEE, domainOf, extend } from "../30-customers/registry";
+import { authCode, DOMAIN_FEE, domainOf, extend } from "../30-customers/registry";
 import type { SalesRequest } from "../30-market/market";
 import type { Address } from "../30-customers/addresses";
-import { canAutomate, draftInvoice, firstLines, invoiceOf, issueInvoice, resize, stepError, stepMinutes, type OrderStep } from "../30-market/manual";
+import { canAutomate, draftInvoice, firstLines, invoiceOf, issueInvoice, resize, shopRegisters, stepError, stepMinutes, type OrderStep } from "../30-market/manual";
 import { offerPrice, setupFee } from "../30-market/spec";
 import type { Quote } from "../30-market/quotes";
 import { orderOf } from "../30-market/orders";
@@ -19,6 +19,7 @@ import { find, queue } from "./support";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 const ADDRESS_FIELDS = ["contact", "street", "zip", "city", "email"] as const;
+const OWNER_FIELDS = [...ADDRESS_FIELDS, "company"] as const;
 const validPrice = (monthly: number, reference: number) => Number.isFinite(monthly) && monthly > 0 && monthly <= 100 * Math.max(1, reference);
 
 function step(s: GameState, ticketId: string, which: OrderStep, route?: string, extra: Partial<Pick<SalesRequest, "pkg" | "username">> = {}): ActionResult {
@@ -41,7 +42,20 @@ export function createAccount(s: GameState, ticketId: string, address?: Address)
   if (done.ok) editRequest(s, orderOf(s, f.t)!.id, () => ({ address: { ...address, company: address.company?.trim() || undefined } }));
   return done;
 }
-export const registerOrderDomain = (s: GameState, ticketId: string): ActionResult => step(s, ticketId, "domain");
+// Registers or transfers the order's domain from the registrar's form: the owner must match the customer record and a
+// transfer needs the code from the order email. A shop with the registrar module needs neither.
+export function registerOrderDomain(s: GameState, ticketId: string, owner?: Address, auth?: string): ActionResult {
+  const f = find(s, ticketId);
+  if ("error" in f) return f.error;
+  const error = stepError(s, f.t, "domain");
+  if (error) return fail(error);
+  const r = orderOf(s, f.t)!, c = s.customers.find((x) => x.id === r.customerId)!;
+  if (!shopRegisters(s, r)) {
+    if (!owner || OWNER_FIELDS.some((k) => (owner[k] ?? "").trim() !== (c.address[k] ?? ""))) return fail("error.ownerMismatch");
+    if (r.owned && auth?.trim().toUpperCase() !== authCode(s.seed, r.id)) return fail("error.authCode");
+  }
+  return step(s, ticketId, "domain");
+}
 // Sets the order up on a cluster or panel host of the city; "auto" lets the game pick and needs the provisioning skill.
 // opts picks a package of the host to book and, for web hosting, the account's username.
 export function provisionOrder(s: GameState, ticketId: string, route: string, opts?: { package?: string; username?: string }): ActionResult {

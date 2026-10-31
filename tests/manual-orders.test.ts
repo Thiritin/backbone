@@ -19,7 +19,7 @@ import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { SKILLS } from "../src/sim/10-catalog/research";
 import { research } from "../src/sim/90-actions/store";
 import { setRate } from "../src/sim/90-actions/rates";
-import { mailed, panelVm, readyGame } from "./fixtures";
+import { mailed, owner, panelVm, readyGame } from "./fixtures";
 
 const MONDAY_9 = 48 + 9;
 const run = (s: GameState, hours: number) => { for (let i = 0; i < hours; i++) tick(s); };
@@ -95,7 +95,7 @@ describe("custom orders", () => {
     expect(confirmOrder(s, a.id)).toEqual({ ok: false, error: "error.needsAccount" });
     done(s, createAccount(s, a.id, mailed(s, a.id)));
     expect(createAccount(s, a.id, mailed(s, a.id))).toEqual({ ok: false, error: "error.stepDone" });
-    expect(registerOrderDomain(s, a.id)).toEqual({ ok: false, error: "error.needsInvoice" });
+    expect(registerOrderDomain(s, a.id, ...owner(s, a.id))).toEqual({ ok: false, error: "error.needsInvoice" });
     expect(provisionOrder(s, a.id, hostId)).toEqual({ ok: false, error: "error.needsInvoice" });
     done(s, confirmOrder(s, a.id));
     expect(provisionOrder(s, a.id, hostId)).toEqual({ ok: false, error: "error.needsDomain" });
@@ -118,7 +118,7 @@ describe("custom orders", () => {
     expect(tk()).toMatchObject({ status: "open", unread: true });
     expect(tk().dueAt).toBeGreaterThan(s.hour);
     const cash = s.cash;
-    done(s, registerOrderDomain(s, id));
+    done(s, registerOrderDomain(s, id, ...owner(s, id)));
     expect(domainOf(s, req().domain!)).toMatchObject({ customerId: c.id, transfer: !!req().owned });
     // The registrar bills the registry cost at the month start, not at the registration.
     expect(s.cash).toBeCloseTo(cash, 2);
@@ -210,7 +210,7 @@ describe("domains", () => {
     done(s, confirmOrder(s, o.id));
     payNow(s, o.req().invoiceId!);
     run(s, 1);
-    done(s, registerOrderDomain(s, o.id));
+    done(s, registerOrderDomain(s, o.id, ...owner(s, o.id)));
     done(s, provisionOrder(s, o.id, host(s, o)));
     return { s, ...o };
   }
@@ -385,7 +385,7 @@ describe("quote first", () => {
     const o = accepted(s, web, 12);
     done(s, createAccount(s, o.id, mailed(s, o.id)));
     done(s, confirmOrder(s, o.id));
-    done(s, registerOrderDomain(s, o.id));
+    done(s, registerOrderDomain(s, o.id, ...owner(s, o.id)));
     const hosts = routeOptions(s, "webHosting", "Frankfurt", o.req().spec!);
     expect(hosts.map((h) => h.id).sort()).toEqual([first, second].sort());
     for (const h of hosts) {
