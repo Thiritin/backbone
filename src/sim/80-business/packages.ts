@@ -40,3 +40,19 @@ export const defaultSpecFor = (product: Product, year: number): Spec => sizeSpec
 // The clusters that lack a package of the name.
 export const missingOn = (s: GameState, clusterIds: string[], name: string): string[] =>
   clusterIds.filter((id) => { const c = s.clusters.find((x) => x.id === id); return !c || !packageNamed(c, name); });
+
+// Web hosting usernames: 8 characters before 2012, 16 from then on.
+export const usernameMax = (year: number): number => (year < 2012 ? 8 : 16);
+// The error key for a username that cannot be used, or null.
+export function usernameError(s: GameState, name: string, year: number): string | null {
+  if (!/^[a-z][a-z0-9]*$/.test(name) || name.length > usernameMax(year)) return "error.username";
+  return s.services.some((v) => !v.endedAt && v.username === name) ? "error.usernameTaken" : null;
+}
+// The domain's letters and digits up to the length limit, with a number added on a clash.
+export function suggestedUsername(s: GameState, domain: string, year: number): string {
+  const max = usernameMax(year), base = (domain.split(".")[0].toLowerCase().replace(/[^a-z0-9]/g, "").replace(/^[0-9]+/, "") || "user").slice(0, max);
+  for (let i = 1; ; i++) {
+    const n = i === 1 ? base : base.slice(0, max - String(i).length) + i;
+    if (!usernameError(s, n, year)) return n;
+  }
+}

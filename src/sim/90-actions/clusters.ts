@@ -385,7 +385,7 @@ export function placeService(s: GameState, serviceId: string, clusterId: string 
   const v = s.services.find((x) => x.id === serviceId);
   if (!v || v.endedAt !== null) return fail("error.unknownService");
   if (workloadsOf(s, v.id).length) return fail("error.placed");
-  const spec = PRODUCTS[v.product], size = sizeOf(v.spec);
+  const spec = PRODUCTS[v.product], size = v.pkgBook ?? sizeOf(v.spec);
   const inZone = (az: string) => v.zone === null || v.zone === az;
   let w: Workload | null = null, az = "";
   if (spec.runsOn === "none") return { ok: true };
@@ -419,13 +419,16 @@ export function placeService(s: GameState, serviceId: string, clusterId: string 
     }
     if (!w) return fail("error.noRackSpace");
   }
+  if (v.pkgBook && (["vcpu", "ramGb", "diskGb"] as const).some((k) => size[k] < v.spec[k])) w = { ...w, promised: sizeOf(v.spec) };
   s.workloads = [...s.workloads, w];
   if (v.zone === null) s.services = s.services.map((x) => (x.id === v.id ? { ...x, zone: az } : x));
   return { ok: true, id: w.id };
 }
 
 // spec defaults to the line's smallest size this year.
-export interface Order { label: string; zone?: string | null; clusterId?: string | null; sla?: Sla; price?: number; spec?: Spec; deviceId?: string | null }
+export interface Order { label: string; zone?: string | null; clusterId?: string | null; sla?: Sla; price?: number; spec?: Spec; deviceId?: string | null;
+  // A package the order books: its name, what it books and the sold size when that is more. username is web hosting's login.
+  pkg?: { name: string; book: Resources; promised?: Resources }; username?: string }
 
 // Signs a contract with the catalog's terms and places it; nothing is recorded when it can't be placed.
 // price is per hour for hourly products and per year for yearly ones; it defaults to the market reference.
@@ -436,6 +439,7 @@ export function provisionService(s: GameState, customerId: string, product: Prod
   const price = order.price ?? (spec.period === "hour" ? reference / 730 : reference);
   const nextId = s.nextId;
   const id = addService(s, customerId, product, order.label, price, spec.period, spec.commitMonths, order.zone ?? null, want, sla);
+  if (order.pkg || order.username) s.services = s.services.map((v) => (v.id === id ? { ...v, ...(order.pkg && { pkg: order.pkg.name, pkgBook: order.pkg.book }), ...(order.username && { username: order.username }) } : v));
   const placed = placeService(s, id, order.clusterId ?? null, order.deviceId ?? null);
   const noAddress = placed.ok ? assignService(s, id) : null;
   if (noAddress) {

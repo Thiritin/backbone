@@ -63,6 +63,8 @@ export interface Datastore { deviceId: string; protocol: DatastoreProtocol; read
 export interface Workload extends Resources, Partial<MachineState> {
   id: string; serviceId: string; clusterId: string | null; deviceId: string | null; rackId: string | null; slot: number; units: number; watts: number; placedAt: number;
   stopped: boolean; busyUntil: number; backupAt: number | null; stuck?: boolean;
+  // The sold size when a package booked less; the service uses the sold size times its load.
+  promised?: Resources;
   // vmNNN for the player's own VMs; a customer workload carries its service's hostname.
   hostname?: string;
   // The installer ISO of an operating system loaded in one of the player's own VMs (90-actions/console.ts); the VM boots

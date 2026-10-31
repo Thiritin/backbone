@@ -77,7 +77,8 @@ export function workloadUse(s: GameState, w: Workload, hour: number = s.hour): R
     return u;
   }
   const load = workloadLoad(s, w, hour), lost = lostDisk(s, w);
-  return { vcpu: booked(s, w).vcpu * load, ramGb: w.stopped || lost ? 0 : w.ramGb * (RAM_BASE + (1 - RAM_BASE) * load), diskGb: lost ? 0 : w.diskGb * diskFill(s, w, hour) };
+  const grow = (k: "vcpu" | "ramGb" | "diskGb") => (w.promised && w[k] > 0 ? w.promised[k] / w[k] : 1);
+  return { vcpu: booked(s, w).vcpu * grow("vcpu") * load, ramGb: w.stopped || lost ? 0 : w.ramGb * grow("ramGb") * (RAM_BASE + (1 - RAM_BASE) * load), diskGb: lost ? 0 : w.diskGb * grow("diskGb") * diskFill(s, w, hour) };
 }
 
 // What a node physically has and uses at an hour, and the performance its workloads get: CPU contention slows everyone by
