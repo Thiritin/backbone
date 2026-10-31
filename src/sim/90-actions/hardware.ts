@@ -300,10 +300,11 @@ function carry(s: GameState, chassis: Device) {
 }
 const withNodes = (s: GameState, d: Device): Device[] => [d, ...nodesOf(s, d.id)];
 
-function mountError(s: GameState, d: Device, rackId: string, slot: number): string | null {
+export function mountError(s: GameState, d: Device, rackId: string, slot: number): string | null {
   if (d.chassisId) return "error.inChassis";
   if (d.transitTo) return "error.inTransit";
   if (!d.store) return "error.alreadyMounted";
+  if (d.maintenance) return "error.handWork";
   if (modelById(d.model).kind === "part") return "error.notMountable";
   if (isOfficeRouter(modelById(d.model))) return "error.panelRouter";
   const spot = spotOf(s, rackId);
@@ -327,17 +328,38 @@ function mount(s: GameState, d: Device, rackId: string, slot: number) {
   for (const n of nodesOf(s, d.id)) if (!n.name.startsWith(`${base}-`)) n.name = nextName(`${base}-${roleOf(n.model)}`, s.devices.map((x) => x.name));
 }
 
-export function mountDevice(s: GameState, deviceId: string, rackId: string, slot: number): ActionResult {
+// Hours to rack, cable and set up a device: 30 minutes for 1U, 15 more for each further unit.
+export const mountHours = (modelId: string): number => 0.25 + 0.25 * modelById(modelId).height;
+
+// At a datacenter racking and unracking is hand work: the devices are busy until it is done. In the basement it is done at once.
+function rackWork(s: GameState, devices: Device[], locationId: string, how: How | boolean): ActionResult | (() => void) {
+  const loc = s.locations.find((l) => l.id === locationId);
+  if (!loc?.dc) return () => {};
+  const work = devices.reduce((n, d) => n + mountHours(d.model), 0);
+  const job = handJob(s, devices.map((d) => d.label ?? d.name).join(", "), loc, how, work);
+  if ("error" in job) return fail(job.error);
+  if (s.cash < job.cost) return fail("error.noCash");
+  return () => {
+    const doneAt = s.hour + job.commit();
+    for (const d of devices) d.maintenance = { componentId: "", partId: "", doneAt, mount: true };
+  };
+}
+
+// how picks who does the hand work at a datacenter: remote hands by default, the player, a friend, or a technician (true).
+export function mountDevice(s: GameState, deviceId: string, rackId: string, slot: number, how: How | boolean = false): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
   const error = mountError(s, d, rackId, slot);
   if (error) return fail(error);
+  const done = rackWork(s, [d], d.store!, how);
+  if (typeof done !== "function") return done;
   mount(s, d, rackId, slot);
+  done();
   return { ok: true, id: d.id };
 }
 
 // Stored units go into the lowest free run of slots, or the run starting at fromSlot, each directly on top of the previous one.
-export function mountStack(s: GameState, modelId: string, brand: string, rackId: string, count: number, fromSlot?: number): ActionResult {
+export function mountStack(s: GameState, modelId: string, brand: string, rackId: string, count: number, fromSlot?: number, how: How | boolean = false): ActionResult {
   const rack = spotOf(s, rackId);
   if (!rack) return fail("error.unknownRack");
   if (rack.moving) return fail("error.rackMoving");
@@ -346,7 +368,7 @@ export function mountStack(s: GameState, modelId: string, brand: string, rackId:
   if (isOfficeRouter(modelById(modelId))) return fail("error.panelRouter");
   if (modelById(modelId).kind === "pdu" && (count > 1 || hasPdu(s, rackId))) return fail("error.pduInstalled");
   const same = (d: Device) => d.model === modelId && d.brand === brand;
-  const stored = s.devices.filter((d) => same(d) && d.store === rack.locationId);
+  const stored = s.devices.filter((d) => same(d) && d.store === rack.locationId && !d.maintenance);
   if (!Number.isInteger(count) || count < 1 || stored.length < count) {
     return fail(s.devices.filter((d) => same(d) && d.store).length >= count ? "error.notInZone" : "error.notInStorage");
   }
@@ -354,7 +376,10 @@ export function mountStack(s: GameState, modelId: string, brand: string, rackId:
   const free = new Set(freeSlots(s, rackId, h));
   const start = [...free].filter((slot) => fromSlot === undefined || slot === fromSlot).find((slot) => Array.from({ length: count }, (_, i) => slot + i * h).every((x) => free.has(x)));
   if (start === undefined) return fail("error.noRoom");
+  const done = rackWork(s, stored.slice(0, count), rack.locationId, how);
+  if (typeof done !== "function") return done;
   stored.slice(0, count).forEach((d, i) => mount(s, d, rackId, start + i * h));
+  done();
   return { ok: true, id: stored[0].id };
 }
 
@@ -374,17 +399,21 @@ export function moveInRack(s: GameState, deviceId: string, slot: number): Action
   return { ok: true };
 }
 
-export function unmountDevice(s: GameState, deviceId: string): ActionResult {
+export function unmountDevice(s: GameState, deviceId: string, how: How | boolean = false): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
   if (d.chassisId) return fail("error.inChassis");
   if (!d.rackId) return fail("error.notMounted");
   const rack = spotOf(s, d.rackId)!;
   if (rack.moving) return fail("error.rackMoving");
+  if (d.maintenance) return fail("error.handWork");
   if (withNodes(s, d).some((x) => serverTaken(s, x.id))) return fail("error.serverInUse");
+  const done = rackWork(s, [d], rack.locationId, how);
+  if (typeof done !== "function") return done;
   unplug(s, new Set(withNodes(s, d).map((x) => x.id)));
   Object.assign(d, { rackId: null, slot: 0, store: rack.locationId });
   carry(s, d);
+  done();
   return { ok: true };
 }
 
@@ -395,6 +424,7 @@ export function shipStock(s: GameState, deviceIds: string[], toLocationId: strin
   if (units.some((d) => !d)) return fail("error.unknownDevice");
   if (units.some((d) => d!.chassisId)) return fail("error.inChassis");
   if (units.some((d) => !d!.store)) return fail("error.notInStorage");
+  if (units.some((d) => d!.maintenance)) return fail("error.handWork");
   const from = units[0]!.store!;
   if (units.some((d) => d!.store !== from)) return fail("error.mixedZones");
   const to = s.locations.find((l) => l.id === toLocationId);
@@ -568,6 +598,7 @@ export function setPower(s: GameState, deviceId: string, on: boolean): ActionRes
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
   if (!d.rackId && !d.panel) return fail("error.notMounted");
+  if (on && d.maintenance?.mount) return fail("error.handWork");
   if (on && !d.on) bootUp(s, d);
   else if (!on && d.on) pullPlug(s, d);
   return { ok: true };

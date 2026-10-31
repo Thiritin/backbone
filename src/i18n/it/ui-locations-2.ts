@@ -302,6 +302,8 @@ export default {
   "locations-2.techOp.recover": () => "Recupera",
   "locations-2.techOp.boot": () => "Continua l'avvio",
   "locations-2.techOp.gear": () => "Recupera",
+  "locations-2.techOp.mount": () => "Monta",
+  "locations-2.techOp.unmount": () => "Smonta",
   "locations-2.queued": () => "In coda",
   "locations-2.techSlot": (p) => `${p.name}${Number(p.onCall) ? " (reperibile)" : ""}, ${p.time}`,
   "locations-2.cancelQueued": (p) => `Annulla operazione in coda: ${p.what}`,

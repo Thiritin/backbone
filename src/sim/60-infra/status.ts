@@ -393,7 +393,7 @@ export const haltHours = (s: GameState, d: Device): number => (HALT_MINUTES + (d
 // A device works when it has power, is switched on, and no failure or power-off swap has taken it down.
 export function working(s: GameState, deviceId: string): boolean {
   const d = s.devices.find((x) => x.id === deviceId);
-  if (!d || !d.on || d.hung || d.stuck || d.locked || booting(s, d) || halting(d) || !powered(s, deviceId) || failedDown(d)) return false;
+  if (!d || !d.on || d.hung || d.stuck || d.locked || booting(s, d) || halting(d) || !powered(s, deviceId) || failedDown(d) || d.maintenance?.mount) return false;
   const swap = d.maintenance && d.components.find((c) => c.id === d.maintenance!.componentId);
   return !(swap && !hotSwappable(d, swap));
 }
