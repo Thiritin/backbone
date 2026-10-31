@@ -118,7 +118,7 @@ export function shownTemplates(s: GameState, t: Ticket, all: boolean): string[] 
 // A customer who cannot pay yet (boss, access) has no right reply: only unsuspending or keeping the suspension settles it.
 const RIGHT: Record<string, string> = {
   suspended: "resend", upload: "ftp", email: "mail", phone: "mail", dns: "dns", ssl: "ssl", ssh: "ssh", panel: "panel", addon: "addon", php: "php", charge: "explain", alreadyPaid: "foundPayment", copy: "resend", delay: "extension", price: "newPrice", grow: "offer", disk: "offer", cpu: "offer", full: "offer", more: "offer",
-  spam: "warn", attack: "warn", forgot: "awaitPayment", onWay: "awaitPayment", bounce: "mail", mailFull: "offer", quotaFull: "offer", dnsChange: "dns", certLost: "offer", bucketPublic: "offer", linkExpired: "offer",
+  spam: "warn", attack: "warn", forgot: "awaitPayment", onWay: "awaitPayment", bounce: "mail", mailFull: "offer", quotaFull: "offer", dnsChange: "dns", certLost: "offer", bucketPublic: "offer", linkExpired: "offer", phpBroken: "php",
 };
 
 export function rightTemplate(s: GameState, t: Ticket): string {

@@ -5,6 +5,7 @@ import { yearOf } from "../00-core/time";
 import { asImage } from "../10-catalog/server-os";
 import { capacityAt, DATACENTERS, DEFAULT_HOME_LINE, LEAD_DAYS, nextAz, seedDcs, SHARE_RACKS, spacePrice } from "../20-world/datacenters";
 import { fillAddresses } from "../60-infra/addresses";
+import { mergeWebPanel } from "../60-infra/webpanel";
 import { skillById, skillFor } from "../10-catalog/research";
 import { STARTER_APPS, WIDGETS } from "../10-catalog/store";
 import { WALK } from "../80-business/walk";
@@ -101,6 +102,7 @@ export function deserialize(raw: string): GameState {
     registration: data.registration === undefined ? legacyRegistration(base.seed) : data.registration,
     ips: { ...base.ips, ...data.ips },
     netsvc: { ...base.netsvc, ...data.netsvc },
+    webpanel: mergeWebPanel(base.webpanel, data.webpanel),
     marketing: { ...base.marketing, ...data.marketing, awareness: { ...base.marketing.awareness, ...data.marketing?.awareness } },
     // Saves from before the Pear Store keep every widget they showed.
     // The Research app was called Unlocks.

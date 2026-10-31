@@ -33,6 +33,7 @@ import type { Domain } from "./30-customers/registry";
 import { newChadUsage, type ChadUsage } from "./47-staff/chad";
 import { newIps, type Ips } from "./60-infra/addresses";
 import { newNetSvc, type NetSvc } from "./60-infra/netsvc";
+import { newWebPanel, type WebPanel } from "./60-infra/webpanel";
 import type { CompanyMail } from "./80-business/mail";
 import type { Registrar } from "./30-customers/registrar";
 import type { Listing } from "./10-catalog/used";
@@ -275,6 +276,8 @@ export interface GameState {
   ips: Ips;
   // Mail queues and broken DNS, certificates and storage sets of the infrastructure consoles (60-infra/netsvc.ts).
   netsvc: NetSvc;
+  // PHP pools, certificates, bans, transfers and resellers of the web panel consoles (60-infra/webpanel.ts).
+  webpanel: WebPanel;
   // News already published, as "<id>@<hour>" (80-business/news.ts).
   news: string[];
   // Next server number, next own-VM number and next service number (30-customers/hostnames.ts).
@@ -367,6 +370,7 @@ export const newGame = (seed: number): GameState => ({
   chadUsage: newChadUsage(),
   ips: newIps(),
   netsvc: newNetSvc(),
+  webpanel: newWebPanel(),
   news: [],
   nextNode: 1, nextVm: 1, nextHostNo: firstHostNo(seed),
   used: [], usedRep: 0,

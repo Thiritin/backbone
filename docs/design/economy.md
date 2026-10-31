@@ -1860,6 +1860,21 @@ A cluster runs its oldest node's version. With b the number of newer versions ou
 
 A request that needs a supported version asks for the oldest one still supported and is lost when it would land on the old cluster. Through 2005 to 2009 the catalogue moves slowly, so a cluster set up in 2005 is unsupported from 2010; from 2015 a new version comes every year, and a cluster left alone for three years starts losing sales.
 
+### Legacy versions on a panel host
+
+A panel host keeps up to two older versions besides its newest, and each account runs one of them (the newest unless the player moves it). The ticket and abuse rows above use the oldest version an account on the host still runs, b counted from that version. The sales row keeps using the newest version.
+
+| Effect | Value |
+| --- | --- |
+| Versions kept besides the newest | At most 2 |
+| Installing or removing a version | A rebuild: the host's sites run at 70% for an hour |
+| A CMS release runs on | PHP up to the version of the release year + 2; static sites run on any |
+| A site on a newer version than its release runs on | Slowed every day, and 35% write in once per version (drawn per site) |
+| Upgrading with Keep | The old version stays installed and takes the accounts that would break |
+| An advisory | Applies to a host when any installed version is affected |
+
+The rows for tickets, abuse and advisories are the price of keeping a legacy version; the rebuild and the lost sites are the price of not keeping one.
+
 ## Security advisories
 
 Four scripted PHP vulnerabilities, modelled on real ones. Each fires on its date for a player with web sites on a cluster node running an affected version; a player without one never sees it.
