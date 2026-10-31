@@ -70,7 +70,6 @@ export default {
   "bank.site.term": () => "Durata",
   "bank.finance.noLoans": () => "Nessun prestito",
   "bank.catTransfers": () => "Bonifici",
-  "bank.pay.title": () => "Debiti verso fornitori",
   "bank.pay.supplier": () => "Fornitore",
   "bank.pay.number": () => "Fattura",
   "bank.pay.due": () => "Scadenza",

@@ -70,7 +70,6 @@ export default {
   "bank.site.term": () => "Plazo",
   "bank.finance.noLoans": () => "Sin préstamos",
   "bank.catTransfers": () => "Transferencias",
-  "bank.pay.title": () => "Cuentas a pagar",
   "bank.pay.supplier": () => "Proveedor",
   "bank.pay.number": () => "Factura",
   "bank.pay.due": () => "Vencimiento",

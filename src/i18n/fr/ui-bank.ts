@@ -70,7 +70,6 @@ export default {
   "bank.site.term": () => "Durée",
   "bank.finance.noLoans": () => "Aucun prêt",
   "bank.catTransfers": () => "Virements",
-  "bank.pay.title": () => "Dettes fournisseurs",
   "bank.pay.supplier": () => "Fournisseur",
   "bank.pay.number": () => "Facture",
   "bank.pay.due": () => "Échéance",

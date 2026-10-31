@@ -19,7 +19,8 @@ export function payUrl(s: GameState, p: Payable): string {
   return `www.${bankOf(s)!.host}/banking/transfer?${q}`;
 }
 
-export function Payables({ game }: { game: GameState }) {
+export function PayablesTab() {
+  const game = useStore((s) => s.game);
   const openApp = useStore((s) => s.openApp), act = useStore((s) => s.act);
   const rows = [...game.payables].reverse();
   const status = (p: Payable) => p.paidAt !== null ? t("bank.pay.paid") : p.sent >= p.amount - 0.005 ? t("bank.pay.sent") : overdue(game, p) ? t("bank.pay.overdue") : t("bank.pay.open");

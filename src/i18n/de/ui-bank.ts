@@ -70,7 +70,6 @@ export default {
   "bank.site.term": () => "Laufzeit",
   "bank.finance.noLoans": () => "Keine Kredite",
   "bank.catTransfers": () => "Überweisungen",
-  "bank.pay.title": () => "Verbindlichkeiten",
   "bank.pay.supplier": () => "Lieferant",
   "bank.pay.number": () => "Rechnung",
   "bank.pay.due": () => "Fällig",

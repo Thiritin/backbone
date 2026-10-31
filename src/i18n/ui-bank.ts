@@ -70,7 +70,6 @@ export default {
   "bank.site.term": () => "Term",
   "bank.finance.noLoans": () => "No loans",
   "bank.catTransfers": () => "Transfers",
-  "bank.pay.title": () => "Payables",
   "bank.pay.supplier": () => "Supplier",
   "bank.pay.number": () => "Invoice",
   "bank.pay.due": () => "Due",
