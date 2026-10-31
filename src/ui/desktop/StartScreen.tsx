@@ -53,7 +53,7 @@ function SettingsPage({ onBack }: { onBack: () => void }) {
   const { theme, setTheme } = useStore();
   return (
     <section className="menu-page">
-      <button className="btn ghost" {...hear} onClick={choose(onBack, "back")}><ChevronLeft />{t("desktop.start.back")}<span className="menu-page-title">{t("desktop.start.settings")}</span></button>
+      <button className="btn ghost" {...hear} onClick={choose(onBack, "back")}><ChevronLeft />{t("desktop.start.back")}</button>
       <h3>{t("desktop.menu.language")}</h3>
       <div className="picks">
         {Object.entries(LANGS).map(([id, name]) => (
