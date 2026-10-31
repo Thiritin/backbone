@@ -45,7 +45,9 @@ export function Desktop() {
 
   return (
     <div className="desktop">
-      <div className="wallpaper-host" dangerouslySetInnerHTML={{ __html: wallpaperSvg() }} />
+      {started
+        ? <div className="wallpaper-host photo" style={{ backgroundImage: `url(${import.meta.env.BASE_URL}wallpapers/${os}.jpg)` }} />
+        : <div className="wallpaper-host" dangerouslySetInnerHTML={{ __html: wallpaperSvg() }} />}
       {started ? <Shell theme={theme} onTheme={() => setTheme(theme === "dark" ? "light" : "dark")} /> : <StartScreen />}
       <EarlyAccess />
     </div>
