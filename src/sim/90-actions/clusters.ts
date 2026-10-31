@@ -1,4 +1,6 @@
+import { createGameServer } from "../60-infra/games";
 import { betterHost } from "../60-infra/routes";
+import { keepPhp } from "../60-infra/webpanel";
 import { yearOf } from "../00-core/time";
 import { CONTINUOUS } from "../20-world/datacenters";
 import { modelById } from "../10-catalog/hardware";
@@ -265,12 +267,14 @@ export const leave = (s: GameState, clusterId: string, deviceId: string) => {
 export const phpDue = (s: GameState, c: Cluster): boolean => c.kind === "panel" && (c.php !== phpAt(yearOf(s.hour)) || (patchOut(s) && vulnerable(s, c)));
 
 // One panel host to the current PHP version with any released security patch; its sites run slower for the next hour.
-export function upgradePhp(s: GameState, hostId: string): ActionResult {
+// With keep the previous version stays installed in the pool and takes the accounts whose app does not run on the new one.
+export function upgradePhp(s: GameState, hostId: string, keep?: boolean): ActionResult {
   const c = s.clusters.find((x) => x.id === hostId);
   if (!c) return fail("error.unknownCluster");
   if (c.kind !== "panel") return fail("error.notPanelHost");
   if (!phpDue(s, c)) return fail(vulnerable(s, c) ? "error.patchPending" : "error.phpCurrent");
   update(s, c.id, (x) => ({ ...x, php: phpAt(yearOf(s.hour)), phpUntil: s.hour + PHP_UPGRADE_HOURS }));
+  if (keep && c.php !== phpAt(yearOf(s.hour))) keepPhp(s, c.id, c.php);
   markPatched(s, c.id);
   return { ok: true };
 }
@@ -435,7 +439,9 @@ export function placeService(s: GameState, serviceId: string, clusterId: string 
 // spec defaults to the line's smallest size this year.
 export interface Order { label: string; zone?: string | null; clusterId?: string | null; sla?: Sla; price?: number; spec?: Spec; deviceId?: string | null;
   // A package the order books: its name, what it books and the sold size when that is more. username is web hosting's login.
-  pkg?: { name: string; book: Resources; promised?: Resources }; username?: string }
+  pkg?: { name: string; book: Resources; promised?: Resources }; username?: string;
+  // Game servers: the title, when the buyer names one.
+  title?: string }
 
 // Signs a contract with the catalog's terms and places it; nothing is recorded when it can't be placed.
 // price is per hour for hourly products and per year for yearly ones; it defaults to the market reference.
@@ -457,5 +463,6 @@ export function provisionService(s: GameState, customerId: string, product: Prod
     Object.assign(s, { services: s.services.filter((v) => v.id !== id), nextId });
     return placed;
   }
+  if (product === "gameServer") createGameServer(s, id, order.title);
   return { ok: true, id };
 }

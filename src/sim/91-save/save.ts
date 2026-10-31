@@ -5,10 +5,12 @@ import { yearOf } from "../00-core/time";
 import { asImage } from "../10-catalog/server-os";
 import { capacityAt, DATACENTERS, DEFAULT_HOME_LINE, LEAD_DAYS, nextAz, seedDcs, SHARE_RACKS, spacePrice } from "../20-world/datacenters";
 import { fillAddresses } from "../60-infra/addresses";
+import { mergeWebPanel } from "../60-infra/webpanel";
 import { skillById, skillFor } from "../10-catalog/research";
 import { STARTER_APPS, WIDGETS } from "../10-catalog/store";
 import { WALK } from "../80-business/walk";
 import { legacyRegistration } from "../80-business/office";
+import { legacyBank } from "../46-finance/bank";
 import type { Employee } from "../47-staff/staff";
 import { device, deviceDefaults, fillCards, fillSizes, newGame, SAVE_VERSION, type Device, type GameState, type Location } from "../50-state";
 import { dropCluster, workloadDefaults } from "../60-infra/cluster";
@@ -101,6 +103,7 @@ export function deserialize(raw: string): GameState {
     registration: data.registration === undefined ? legacyRegistration(base.seed) : data.registration,
     ips: { ...base.ips, ...data.ips },
     netsvc: { ...base.netsvc, ...data.netsvc },
+    webpanel: mergeWebPanel(base.webpanel, data.webpanel),
     marketing: { ...base.marketing, ...data.marketing, awareness: { ...base.marketing.awareness, ...data.marketing?.awareness } },
     // Saves from before the Pear Store keep every widget they showed.
     // The Research app was called Unlocks.
@@ -123,6 +126,8 @@ export function deserialize(raw: string): GameState {
     invoices: (data.invoices ?? []).map((i) => ({ ...i, suspendedAt: i.suspendedAt ?? (i.suspended ? data.hour ?? 0 : null), extendedUntil: i.extendedUntil ?? null })),
   })))), data.marketing?.lines), data.marketing?.designYear), data.marketing?.launched)), data.registrar)), bare);
   legacyLeads(s);
+  // Saves from before banks hold their account at Sparklasse; the next hour brings its welcome email and TAN list.
+  if (data.bank === undefined) s.bank = legacyBank(s);
   shelveRouter(s);
   // Machines from before one-time licenses hold theirs for free, since the fee was never charged.
   if (!data.licenses) s.licenses = heldLicenses(s);

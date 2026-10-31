@@ -1,0 +1,49 @@
+/* Online banking in 2005: a framed page with a logo bar, a link column and dense 11 px tables. The bank's skin sets the colours. */
+.bks { min-height: 100%; background: var(--bg); color: #111; font: 11px/1.35 Verdana, Geneva, Tahoma, sans-serif; display: flex; flex-direction: column; }
+.bks-head { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: var(--bar); color: #fff; border-bottom: 2px solid var(--accent); }
+.bks-logo { width: 26px; height: 26px; display: grid; place-items: center; background: #fff; color: var(--bar); font: bold 18px Arial, Helvetica, sans-serif; border-radius: 3px; }
+.bks-name { font: bold 17px Arial, Helvetica, sans-serif; letter-spacing: 0.01em; }
+.bks-grow { flex: 1; }
+.bks-who { font-size: 10px; opacity: 0.9; }
+.bks-cols { display: flex; flex: 1; min-height: 0; }
+.bks-nav { width: 150px; flex: none; display: flex; flex-direction: column; padding: 8px 0; background: #f2f2f2; border-right: 3px double #bbb; }
+.bks-nav a { padding: 3px 10px; color: #003399; text-decoration: none; border-bottom: 1px dotted #ccc; }
+.bks-nav a:hover { text-decoration: underline; }
+.bks-nav a[aria-current] { font-weight: bold; color: #000; background: #fff; border-left: 4px solid var(--accent); padding-left: 6px; }
+.bks-main { flex: 1; min-width: 0; padding: 10px 12px 14px; overflow: auto; }
+.bks-box { border: 1px solid #b5b5b5; background: #fff; margin: 0 0 10px; }
+.bks-box h2 { margin: 0; padding: 2px 6px; font-size: 11px; color: #fff; background: var(--accent); }
+.bks-box > :not(h2) { margin: 6px; }
+.bks-box > table { width: calc(100% - 12px); }
+.bks-form { display: grid; grid-template-columns: max-content 220px; gap: 4px 10px; align-items: center; }
+.bks-form label { display: contents; }
+.bks-form input, .bks select { font: 11px Verdana, Geneva, sans-serif; padding: 1px 2px; border: 1px solid #7f9db9; background: #fff; color: #000; border-radius: 0; }
+.bks-form > button, .bks-form > .bks-row, .bks-form > p { grid-column: 2; justify-self: start; }
+.bks-row { display: flex; align-items: center; gap: 6px; }
+.bks-btn { font: 11px Verdana, Geneva, sans-serif; padding: 1px 8px; border: 1px solid #555; background: linear-gradient(#fff, #d8d8d8); color: #000; border-radius: 2px; cursor: pointer; }
+.bks-btn.primary { font-weight: bold; }
+.bks-head .bks-btn { border-color: #fff; }
+.bks-table { border-collapse: collapse; width: 100%; }
+.bks-table td, .bks-table th { padding: 2px 5px; text-align: left; vertical-align: top; }
+.bks-rows { border: 1px solid #b5b5b5; background: #fff; }
+.bks-rows th { background: #e4e4e4; border-bottom: 1px solid #b5b5b5; font-weight: bold; }
+.bks-rows tbody tr:nth-child(even) td { background: #f4f4f4; }
+.bks .r { text-align: right; }
+.bks .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.bks .neg { color: #c00000; }
+.bks-error { color: #c00000; font-weight: bold; }
+.bks-ok { color: #006600; font-weight: bold; }
+.bks-foot { padding: 4px 10px; font-size: 9px; color: #666; border-top: 1px solid #ccc; background: #f2f2f2; }
+/* Per-bank frames. */
+.bks-branch .bks-head { border-bottom-width: 4px; }
+.bks-branch .bks-logo { border-radius: 50%; }
+.bks-frames .bks-nav { background: var(--bar); border-right-color: var(--accent); }
+.bks-frames .bks-nav a { color: #fff; border-bottom-color: rgba(255, 255, 255, 0.25); }
+.bks-frames .bks-nav a[aria-current] { color: #000; }
+.bks-corporate .bks-head { background: #fff; color: var(--bar); border-bottom: 1px solid #999; }
+.bks-corporate .bks-logo { background: var(--bar); color: #fff; border-radius: 0; }
+.bks-plain .bks-head { color: #003366; }
+.bks-plain .bks-logo { background: #003366; color: var(--bar); }
+.bks-web .bks-name { font-family: "Trebuchet MS", Verdana, sans-serif; text-transform: lowercase; }
+.bks-startup .bks-head, .bks-fintech .bks-head { padding: 10px 14px; }
+.bks-startup, .bks-fintech { font-size: 12px; font-family: Helvetica, Arial, sans-serif; }

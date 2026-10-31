@@ -1,4 +1,5 @@
 // Traffic, exits, routing, billing, peering and DDoS per zone. Values come from docs/design/economy.md (Traffic and bandwidth).
+import { lineFactor } from "../46-finance/payables";
 import { hashRng, rand } from "../00-core/rng";
 import { isMonthStart, yearOf } from "../00-core/time";
 import {
@@ -122,7 +123,7 @@ export function peersVia(s: GameState, exchange: string): Peer[] {
 interface Exit { id: string; tier: number; cap: number; used: number; share: number }
 
 export function exitsOf(s: GameState, loc: Location): Exit[] {
-  if (!loc.dc) return [{ id: "home", tier: 2, cap: Math.min(homeLineById(s.homeLine.id).up, routerMbps(s, loc)), used: 0, share: 1 }];
+  if (!loc.dc) return [{ id: "home", tier: 2, cap: Math.min(homeLineById(s.homeLine.id).up * lineFactor(s), routerMbps(s, loc)), used: 0, share: 1 }];
   const exits: Exit[] = [];
   const seen = new Set<string>();
   for (const u of s.network.uplinks.filter((x) => x.locationId === loc.id)) {

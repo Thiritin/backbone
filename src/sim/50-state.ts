@@ -17,6 +17,7 @@ import type { TechOp, TechRules } from "./47-staff/technicians";
 import type { ActivityEntry } from "./47-staff/activity";
 import { newMarketing, type Marketing } from "./80-business/marketing";
 import type { Cluster, Workload } from "./60-infra/cluster";
+import type { GameServer } from "./60-infra/games";
 import type { Maintenance } from "./60-infra/maintenance";
 import type { FrontOp } from "./60-infra/power";
 import { newNetwork, type Network } from "./60-infra/network";
@@ -34,11 +35,14 @@ import type { Domain } from "./30-customers/registry";
 import { newChadUsage, type ChadUsage } from "./47-staff/chad";
 import { newIps, type Ips } from "./60-infra/addresses";
 import { newNetSvc, type NetSvc } from "./60-infra/netsvc";
+import { newWebPanel, type WebPanel } from "./60-infra/webpanel";
 import type { CompanyMail } from "./80-business/mail";
 import type { Registrar } from "./30-customers/registrar";
 import type { Listing } from "./10-catalog/used";
 import { firstHostNo } from "./30-customers/hostnames";
 import { newShop, type ShopState } from "./80-business/shop";
+import type { BankAccount } from "./46-finance/bank";
+import type { Payable } from "./46-finance/payables";
 import type { TrendPoint } from "./80-business/trend";
 
 // 3: GPU line servers carry their preset cards.
@@ -166,8 +170,6 @@ export interface GameState {
   transfers: Transfer[];
   // Quotes written in Books for order tickets.
   quotes: Quote[];
-  // Lexwear modules the company owns, by id.
-  modules: string[];
   // Hour up to which each yearly service is invoiced.
   yearlyBilledUntil: Record<string, number>;
   loans: Loan[];
@@ -189,6 +191,8 @@ export interface GameState {
   heldCustomers: string[];
   // Panel hosts: services the player holds offline one by one, with the reason shown in the consoles.
   heldServices: Record<string, HoldReason>;
+  // Game servers: the title, slots and state of each game server service on a game panel.
+  gameServers: GameServer[];
   // Support: tickets, the minute the player's queued replies finish, and the hour each offline service went down.
   tickets: Ticket[];
   playerBusyUntil: number;
@@ -280,6 +284,8 @@ export interface GameState {
   ips: Ips;
   // Mail queues and broken DNS, certificates and storage sets of the infrastructure consoles (60-infra/netsvc.ts).
   netsvc: NetSvc;
+  // PHP pools, certificates, bans, transfers and resellers of the web panel consoles (60-infra/webpanel.ts).
+  webpanel: WebPanel;
   // News already published, as "<id>@<hour>" (80-business/news.ts).
   news: string[];
   // Next server number, next own-VM number and next service number (30-customers/hostnames.ts).
@@ -301,6 +307,12 @@ export interface GameState {
   registration: Registration | null;
   // Apps that arrived by their trigger (80-business/walk.ts), installed or offered once.
   arrived: string[];
+  // The company's bank account (46-finance/bank.ts); null until the registration opens it.
+  bank: BankAccount | null;
+  // Supplier invoices to pay by transfer (46-finance/payables.ts).
+  payables: Payable[];
+  // Bought software modules by id; "hbci" lets Books talk to the bank.
+  modules: string[];
 }
 
 export interface LogEntry { hour: number; minute?: number; name: string; args: unknown[] }
@@ -351,11 +363,11 @@ export const newGame = (seed: number): GameState => ({
   customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], files: {},
   invoices: [], transfers: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   quotes: [],
-  modules: [],
   billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 }, autoOrders: false, reviewOrders: false, screenOrders: false, screenChecks: 0, chargebackStrikes: 0,
   shop: newShop(),
   heldCustomers: [],
   heldServices: {},
+  gameServers: [],
   tickets: [], playerBusyUntil: 0, friendFavours: { year: 0, used: 0 }, player: { at: "loc1", until: 0, doing: "work" }, downSince: {}, frozen: [],
   company: { name: "Basement Hosting", logo: "server", color: "oklch(0.55 0.15 255)", domain: null, mail: { kind: "free" }, tagline: "" },
   homeLine: { id: MOMS_DSL.id, next: null },
@@ -374,10 +386,14 @@ export const newGame = (seed: number): GameState => ({
   chadUsage: newChadUsage(),
   ips: newIps(),
   netsvc: newNetSvc(),
+  webpanel: newWebPanel(),
   news: [],
   nextNode: 1, nextVm: 1, nextHostNo: firstHostNo(seed),
   used: [], usedRep: 0,
   log: [], challenge: null, registration: null, arrived: [], score: { netWorth: null, level3: null, happySum: 0, happyHours: 0 }, trend: [],
+  bank: null,
+  payables: [],
+  modules: [],
 });
 
 export const guideDoc = (): Doc => ({ id: "guide", kind: "guide", title: t("doc.guide"), body: "", x: 16, y: 46 });

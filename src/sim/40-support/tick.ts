@@ -7,6 +7,7 @@ import { serviceFqdn } from "../30-customers/hostnames";
 import { grantExtension, serviceHeld, KEEP_SUSPENDED_HAPPINESS, UNSUSPEND_HAPPINESS } from "../45-billing/billing";
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
+import { fullBoost, fullServer } from "../60-infra/games";
 import { takenDown } from "../60-infra/ops";
 import { liveServices, readOnlySweep } from "../60-infra/status";
 import { coverage } from "../60-infra/maintenance";
@@ -170,9 +171,9 @@ function monthly(s: GameState): void {
     const p = profileStats(c.profile);
     const cancels = c.happiness < 15 || chance(s.rng, p.churn + 0.5 * Math.max(0, (50 - c.happiness) / 50));
     if (cancels && !s.tickets.some((t) => t.customerId === c.id && t.kind === "cancellation" && !isFinal(t))) createTicket(s, c, "cancellation", null).topic = cancelReason(s, c);
-    else if (chance(s.rng, UPGRADE_CHANCE[p.budget])) {
-      const grow = activeServices(s.services, c.id).filter(expandable);
-      if (grow.length) createTicket(s, c, "upgrade", grow[Math.floor(rand(s.rng) * grow.length)].id, TOPICS.upgrade[0]);
+    else if (chance(s.rng, UPGRADE_CHANCE[p.budget] * fullBoost(s, c.id))) {
+      const grow = activeServices(s.services, c.id).filter(expandable), full = fullServer(s, c.id);
+      if (grow.length) createTicket(s, c, "upgrade", (grow.find((v) => v.id === full?.serviceId) ?? grow[Math.floor(rand(s.rng) * grow.length)]).id, TOPICS.upgrade[0]);
     }
   }
 }

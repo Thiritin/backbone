@@ -102,7 +102,8 @@ export function financeTick(s: GameState): SimEvent[] {
       } else if (profit < 0) events.push({ app: "Finance", key: "event.taxLoss", params: { year, carry } });
     }
   }
-  if (s.cash >= 0) s.brokeSince = null;
+  // The overdraft keeps the company solvent down to its limit.
+  if (s.cash >= -(s.bank?.overdraft ?? 0)) s.brokeSince = null;
   else if (s.brokeSince === null) {
     s.brokeSince = s.hour;
     events.push({ app: "Finance", key: "event.cashNegative", params: { days: INSOLVENT_DAYS } });

@@ -1,5 +1,6 @@
 import type { ComponentType } from "react";
 import { isUnpaid } from "../../../sim/45-billing/billing";
+import { overdue } from "../../../sim/46-finance/payables";
 import type { GameState } from "../../../sim/50-state";
 import { t } from "../../../i18n/en";
 import { useSessionState } from "../../session";
@@ -9,6 +10,7 @@ import { CustomersTab } from "./CustomersTab";
 import { InvoicesTab } from "./InvoicesTab";
 import { QuotesTab } from "./QuotesTab";
 import { NEW } from "./NewCustomer";
+import { PayablesTab } from "./PayablesTab";
 import { RemindersTab } from "./RemindersTab";
 import "../billing/billing.css";
 import "./books.css";
@@ -24,6 +26,7 @@ const TABS: { id: string; count: (s: GameState) => number; body: ComponentType<{
   { id: "invoices", count: drafts, body: InvoicesTab },
   { id: "bank", count: unmatched, body: BankTab },
   { id: "reminders", count: late, body: RemindersTab },
+  { id: "payables", count: (s) => s.payables.filter((p) => overdue(s, p)).length, body: PayablesTab },
 ];
 
 export function BooksApp() {

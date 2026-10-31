@@ -66,6 +66,8 @@ describe("save", () => {
       // The company domain and the NameCheep contract come with the load.
       registrar: { id: "nameCheep", since: 5000, tier: 0, billed: true, transfer: null }, company: { ...fresh.company, domain: "basement-hosting.de" },
       domains: [expect.objectContaining({ name: "basement-hosting.de", customerId: null })],
+      // Saves from before banks hold their account at Sparklasse.
+      bank: expect.objectContaining({ id: "sparklasse", welcomed: false }),
     });
     expect(s.devices.map((d) => d.model)).toEqual(["home-router", "line-jack"]);
     tick(s);

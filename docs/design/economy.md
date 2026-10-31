@@ -941,7 +941,7 @@ Prices between the years are straight lines. Anchors: RIPE NCC's last /8 policy 
 
 **IPv6.** Datacenters offer it from 2010, home lines from 2013 (Telekom dual stack, December 2012). One address per machine, €0.10 a month at a provider, free on a home line.
 
-**Own networks.** With a rented location the company can join RIPE NCC as a LIR: €2,000 sign-up, €1,400 a year, an AS number and the free allocation of the year, a /21 (2,048 addresses) until September 2012, a /22 (1,024) until November 2019 and a /24 (256) after. More /24s come from the transfer market at a price per address: €7 (2014), €10 (2016), €17 (2018), €22 (2020), €40 (2021), €50 (2022), €35 (2024), €30 (2026). A block is announced from one rented location, where its addresses become free; own addresses cost nothing a month.
+**Own networks.** With a rented location the company can join RIPE NCC as a LIR: €2,000 sign-up, €1,400 a year, an AS number and the free allocation of the year, a /21 (2,048 addresses) until September 2012, a /22 (1,024) until November 2019 and a /24 (256) after. More /24s come from the transfer market at a price per address: €7 (2014), €10 (2016), €17 (2018), €22 (2020), €40 (2021), €50 (2022), €35 (2024), €30 (2026). A block is announced from one rented location, where its addresses become free; own addresses cost nothing a month. The company announces it from its own router with a full table, or the provider announces it under the company's AS for a one-off €250 setup fee.
 
 **Reputation.** Every IPv4 has a mail reputation from 0 to 100: 80 when new, 70 on a static line, 20 on a dynamic line, whose addresses always sit on dynamic-range blocklists. Each 1,000 spam mails a day cost 5 points; a compromised panel host sends 12,000 a day and a spamming customer 2,000. Abuse reports cost points too: phishing 15, spam 10, attack 5, copyright 3. Below 30 the address is listed and stays listed until it is back at 50; a clean day adds 1 point. A delist request, once the spam stopped, clears the listing after 24 hours and adds 20 points. Mail customers behind a listed address write in about bounced mail with a 1% chance a day.
 
@@ -1641,6 +1641,20 @@ Anchors: cPanel could copy accounts between servers with WHM's "Copy an account"
 
 **Migration offers.** The player can ask a customer to agree to a move (gdd.md, Support, Migration offers). The customer answers when their reply time is up: below happiness 40 they decline, otherwise they accept and name a window from the segment of Noticing outages. Players want the first 02:00 to 06:00 after the answer, businesses the next weekday from 18:00 to 22:00 (never the day of the answer), private customers any time, so their move runs at once. The accepted move runs at the first hour of the window as the move above, with its downtime. A customer whose service moves from the basement into a datacenter gains 5 happiness. A move that has not run within 48 hours of the window's start costs 10 happiness and reopens the ticket. The numbers are `DECLINE_BELOW`, `BASEMENT_BONUS`, `MISSED_PENALTY` and `MISSED_AFTER_HOURS` in `src/sim/90-actions/moves.ts`, the windows `MOVE_WINDOW` in `src/sim/10-catalog/attention.ts`.
 
+### SSL certificates and AutoSSL
+
+From 2016 every web space on a panel host has a certificate of its own that lives 90 days; a domain with a certificate bought through the registrar is not affected. The first expiry of each domain is spread over the first 90 days. A certificate that runs out slows the site until it is renewed.
+
+| Effect | Value |
+| --- | --- |
+| AutoSSL (cPanic hosts only, switched on by the player) | Renews in the last 30 days; each daily attempt fails with 3% and is retried the next day |
+| Without AutoSSL, the customer renews on the last day | High skill 60%, medium 30%, low 5% |
+| Expiry | The site is slowed every day, the customer loses 12 happiness once and 60% open a ticket |
+| Renewing by hand (any panel) | 5 minutes of the player's time; ends the incident and gives +5 happiness if a ticket was open |
+| Check now (cPanic with AutoSSL on) | 5 minutes of the player's time; renews every certificate due within 30 days |
+
+AutoSSL is what makes the per-web-space cPanic licence worth its price: a host of 200 web spaces sees about 800 renewals a year, and most of them lapse without it.
+
 ## Staff: salaries, skill growth and quitting
 
 A junior support agent hired in 2005 costs the company about €2,600 a month. A senior asks about 37% more, which is less than the gap in work rate, so juniors win only if they stay.
@@ -1859,6 +1873,21 @@ A cluster runs its oldest node's version. With b the number of newer versions ou
 | Performance of a node's sites in the hour after its upgrade | 70% |
 
 A request that needs a supported version asks for the oldest one still supported and is lost when it would land on the old cluster. Through 2005 to 2009 the catalogue moves slowly, so a cluster set up in 2005 is unsupported from 2010; from 2015 a new version comes every year, and a cluster left alone for three years starts losing sales.
+
+### Legacy versions on a panel host
+
+A panel host keeps up to two older versions besides its newest, and each account runs one of them (the newest unless the player moves it). The ticket and abuse rows above use the oldest version an account on the host still runs, b counted from that version. The sales row keeps using the newest version.
+
+| Effect | Value |
+| --- | --- |
+| Versions kept besides the newest | At most 2 |
+| Installing or removing a version | A rebuild: the host's sites run at 70% for an hour |
+| A CMS release runs on | PHP up to the version of the release year + 2; static sites run on any |
+| A site on a newer version than its release runs on | Slowed every day, and 35% write in once per version (drawn per site) |
+| Upgrading with Keep | The old version stays installed and takes the accounts that would break |
+| An advisory | Applies to a host when any installed version is affected |
+
+The rows for tickets, abuse and advisories are the price of keeping a legacy version; the rebuild and the lost sites are the price of not keeping one.
 
 ## Security advisories
 
