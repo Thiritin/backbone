@@ -16,6 +16,8 @@ import type { GameState } from "../../../../../sim/50-state";
 import { vmStats } from "../../../../../sim/60-infra/stats";
 import { clusterSummary, type Alarm, type Amount, type Amounts, type Severity } from "../../../../../sim/60-infra/alarms";
 import { withDatastore, bookable, datastoreCapacity, datastoreGbit, datastoreUsed, nodeUsed, type Cluster, type NodeState } from "../../../../../sim/60-infra/cluster";
+import { COMPAT_VCPU } from "../../../../../sim/10-catalog/cpus";
+import { setCompatMode } from "../../../../../sim/90-actions/cpus";
 import { Chart, niceMax } from "../Chart";
 import { nodeName, AlarmList, ALL, AMOUNT, amountText, AppSuiteTile, CapacityBar, SEV_GLYPH, summaryOf, worst, ConsoleThumb, isoName, MediaMenu, NodeList, SizeFields, suiteSoftware, TaskLog, Toolbar, useNewVm, useVms, vmFacts, windoorsLicence, Wizard, type Sel, type Vm } from "../HypervisorBase";
 import { Actions, Backups, Bar, erasFrom, eraAt, Facts, LoginForm, useSoftware, type PanelProps } from "../PanelBase";
@@ -100,7 +102,7 @@ const Use = ({ k, a }: { k: keyof Amounts; a: Amount }) => (
 
 // The cluster or host Summary tab: capacity like vSphere's resource meters, the host table, triggered alarms and every VM.
 function ClusterSummaryView({ game, c, node, vms, pick }: { game: GameState; c: Cluster; node: string | null; vms: Vm[]; pick: (s: Sel) => void }) {
-  const { sum, use, alarms } = summaryOf(game, c, node);
+  const { sum, use, alarms } = summaryOf(game, c, node), act = useStore((s) => s.act);
   const rows: [string, keyof Amounts][] = [["CPU", "vcpu"], [t("browser-consoles-2.memoryCaps"), "ramGb"], [t("browser-consoles-2.storageCaps"), "diskGb"]];
   return (
     <>
@@ -115,6 +117,13 @@ function ClusterSummaryView({ game, c, node, vms, pick }: { game: GameState; c: 
           <h4>{t("browser-consoles-2.triggeredAlarms", { n: alarms.length })}</h4>
           <AlarmList game={game} c={c} alarms={alarms} className="cx-table vsw-alarms" />
         </section>
+        {!node && (
+          <section className="vsw-portlet">
+            <h4>{t("readouts.evc")}</h4>
+            <Facts facts={[{ label: t("browser-consoles-2.status"), value: c.compat ? t("readouts.evc.on") : t("readouts.evc.off") }, { label: t("readouts.evc.cost"), value: `${Math.round((1 - COMPAT_VCPU) * 100)} %`, num: true }]} />
+            <div className="cx-tools"><button className="cx-btn" onClick={() => act(setCompatMode, c.id, !c.compat)}>{c.compat ? t("readouts.evc.disable") : t("readouts.evc.enable")}</button></div>
+          </section>
+        )}
       </div>
       {!node && (
         <table className="cx-table">
