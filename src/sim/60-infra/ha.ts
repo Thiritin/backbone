@@ -3,6 +3,7 @@ import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { softwareById } from "../10-catalog/platforms";
 import { balances, datastoreOn, diskMovesLive, insideVm, isOwnVm, liveBetween, lostDisk, moveControlPlaneOff, pickNode, type Cluster, type Workload } from "./cluster";
+import { quorate } from "./quorum";
 import { working } from "./status";
 import { nodeUsage } from "./usage";
 
@@ -25,7 +26,7 @@ const servicesIn = (s: GameState, w: Workload): string[] =>
 // on a working datastore restarts; one with its disk on the dead node waits for the node. A template stays where it is.
 function failover(s: GameState, c: Cluster, events: SimEvent[]) {
   const dead = new Set(c.nodes.filter((n) => !working(s, n.deviceId)).map((n) => n.deviceId));
-  if (!dead.size) return;
+  if (!dead.size || !quorate(s, c)) return;
   if (c.controlPlane && dead.has(c.controlPlane)) moveControlPlaneOff(s, c.id, c.controlPlane);
   let moved = 0, stuck = 0;
   const shared = (w: Workload) => !(c.platform && softwareById(c.platform).datastores) || (datastoreOn(c, w) && working(s, w.datastore!));

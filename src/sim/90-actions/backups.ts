@@ -4,6 +4,7 @@ import { diskFill } from "../60-infra/usage";
 import { backsUpCluster, controlPlaneUp } from "../60-infra/cluster";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
+import { quorumBlock } from "../60-infra/quorum";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, Math.round(n)));
@@ -14,6 +15,7 @@ export type JobDraft = Partial<Omit<BackupJob, "keep">> & { keep?: Partial<Backu
 export function saveJob(s: GameState, clusterId: string, draft: JobDraft): ActionResult {
   const c = s.clusters.find((x) => x.id === clusterId);
   if (!c) return fail("error.unknownCluster");
+  if (quorumBlock(s, c)) return fail("error.noQuorum");
   const old = draft.id ? c.jobs.find((j) => j.id === draft.id) : undefined;
   if (draft.id && !old) return fail("error.unknownJob");
   if (!old && c.jobs.length >= MAX_JOBS) return fail("error.jobLimit");

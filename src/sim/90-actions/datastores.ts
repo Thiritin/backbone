@@ -9,6 +9,7 @@ import {
 import { locationOf, raidUsable } from "../60-infra/status";
 import { LAN_GB_PER_HOUR } from "../85-products/products";
 import type { ActionResult } from "./hardware";
+import { quorumBlock } from "../60-infra/quorum";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 const update = (s: GameState, id: string, datastores: Datastore[]) => {
@@ -32,6 +33,7 @@ export function attachDatastore(s: GameState, clusterId: string, deviceId: strin
   if (!c) return fail("error.unknownCluster");
   if (c.kind !== "cloud" || !c.platform || !softwareById(c.platform).datastores) return fail("error.noDatastores");
   if (!controlPlaneUp(s, c)) return fail("error.controlPlaneDown");
+  if (quorumBlock(s, c)) return fail("error.noQuorum");
   if (c.datastores.length >= DATASTORES_MAX) return fail("error.datastoresFull");
   if (!(protocol in DATASTORE_FROM) || yearOf(s.hour) < DATASTORE_FROM[protocol]) return fail("error.protocolTooNew");
   const bad = datastoreBlock(s, c, deviceId);

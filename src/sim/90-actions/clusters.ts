@@ -28,6 +28,7 @@ import type { ActionResult } from "./hardware";
 import { migrateWorkload } from "./vms";
 import { buyLicenses, licenseDue } from "../85-products/products";
 import { sizeOf } from "../30-market/spec";
+import { quorumBlock } from "../60-infra/quorum";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 // economy.md, Panel VMs: the size the setup and the Products app suggest, and the smallest the player can book.
@@ -101,6 +102,7 @@ export function createVm(s: GameState, clusterId: string, size: Resources): Acti
   if (!c) return fail("error.unknownCluster");
   if (c.kind !== "cloud" || (!c.platform && c.switching?.kind !== "cloud")) return fail("error.needsPlatform");
   if (c.platform && !controlPlaneUp(s, c)) return fail("error.controlPlaneDown");
+  if (quorumBlock(s, c)) return fail("error.noQuorum");
   if (KEYS.some((k) => !Number.isFinite(size[k]) || size[k] < PANEL_VM_MIN[k])) return fail("error.vmSize");
   const disk = withDatastore(s, c, size), node = pickNode(s, c, disk);
   if (!node) return fail("error.noCapacity");
@@ -113,6 +115,7 @@ export function createVm(s: GameState, clusterId: string, size: Resources): Acti
 export function deleteVm(s: GameState, vmId: string): ActionResult {
   const vm = vmById(s, vmId);
   if (!vm || !isOwnVm(vm)) return fail("error.notOwnVm");
+  if (quorumBlock(s, s.clusters.find((x) => x.id === vm.clusterId))) return fail("error.noQuorum");
   if (insideVm(s, vm.id).length) return fail("error.softwareInUse");
   for (const h of hostsOfVm(s, vm.id)) dropCluster(s, h.id);
   s.workloads = s.workloads.filter((w) => w.id !== vm.id);
@@ -307,6 +310,7 @@ const nodeOf = (s: GameState, deviceId: string, clusterId?: string): Cluster | u
 const nodeAction = (s: GameState, deviceId: string, state: "active" | "cordoned", clusterId?: string): ActionResult => {
   const c = nodeOf(s, deviceId, clusterId);
   if (!c) return fail("error.notNode");
+  if (quorumBlock(s, c)) return fail("error.noQuorum");
   setNodeState(s, deviceId, state, c.id);
   return { ok: true };
 };
@@ -317,6 +321,7 @@ export const uncordon = (s: GameState, deviceId: string, clusterId?: string): Ac
 export function drain(s: GameState, deviceId: string, clusterId?: string): ActionResult {
   const c = nodeOf(s, deviceId, clusterId);
   if (!c) return fail("error.notNode");
+  if (quorumBlock(s, c)) return fail("error.noQuorum");
   setNodeState(s, deviceId, "draining", c.id);
   moveOff(s, s.clusters.find((x) => x.id === c.id)!, deviceId);
   return { ok: true };
@@ -326,6 +331,7 @@ export function drain(s: GameState, deviceId: string, clusterId?: string): Actio
 export function evacuate(s: GameState, deviceId: string, clusterId?: string): ActionResult {
   const c = nodeOf(s, deviceId, clusterId);
   if (!c) return fail("error.notNode");
+  if (quorumBlock(s, c)) return fail("error.noQuorum");
   setNodeState(s, deviceId, "draining", c.id);
   for (const w of s.workloads.filter((x) => x.deviceId === deviceId && x.clusterId === c.id)) {
     const to = pickNode(s, s.clusters.find((x) => x.id === c.id)!, w, deviceId);

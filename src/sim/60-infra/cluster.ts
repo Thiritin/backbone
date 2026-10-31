@@ -40,6 +40,8 @@ export interface Cluster {
   // Backup jobs, up to MAX_JOBS (backups.ts).
   jobs: BackupJob[];
   ramGuard?: boolean;
+  // A free server that casts one extra vote in a Proxmocks cluster (quorum.ts); missing is none.
+  qdevice?: string | null;
   // The player's cap on booked vCPU per physical vCPU for a panel host; missing or null is no cap (oversell.ts).
   oversell?: number | null;
   // The update channel; missing is Release (channel.ts).
@@ -150,7 +152,7 @@ type Disk = Resources & { datastore?: string };
 export const datastoreOn = (c: Cluster, r: Disk): boolean => !!r.datastore && c.datastores.some((x) => x.deviceId === r.datastore);
 // What a VM books on a node of the cluster: none of its disk while that is on one of the cluster's datastores.
 const onNode = (c: Cluster | undefined, r: Disk): Resources => (c && datastoreOn(c, r) ? { ...r, diskGb: 0 } : r);
-export const isDatastore = (s: GameState, deviceId: string): boolean => s.clusters.some((c) => c.datastores.some((x) => x.deviceId === deviceId));
+export const isDatastore = (s: GameState, deviceId: string): boolean => s.clusters.some((c) => c.datastores.some((x) => x.deviceId === deviceId) || c.qdevice === deviceId);
 export const datastoreUsed = (s: GameState, deviceId: string): number => s.workloads.reduce((n, w) => n + (w.datastore === deviceId ? w.diskGb + deltaGb(w) : 0), 0);
 export const datastoreCapacity = (s: GameState, deviceId: string): number => {
   const d = s.devices.find((x) => x.id === deviceId);

@@ -11,6 +11,8 @@ import { t } from "../../../../../i18n/en";
 import { parseCreate } from "../../../../../sim/80-business/consoles";
 import { PackagesScreen } from "../PackageForms";
 import { JobsPanel, PointsPanel } from "../backup/Jobs";
+import { quorate } from "../../../../../sim/60-infra/quorum";
+import { ClusterInfo } from "./Cluster";
 
 // docs/design/software.md, section 9: the grey ExtJS manager from 2008, the flat white one with the orange mark from 2015.
 const ERAS = erasFrom(2008, 2015);
@@ -84,6 +86,7 @@ export function Proxmocks(p: PanelProps) {
       <div className="cx-hv-body">
         <aside className="cx-hv-tree pmx-tree">
           <div className="pmx-view">{t("browser-consoles-2.serverView")}</div>
+          {!quorate(game, c) && <div className="pmx-noquorum" role="alert">{t("pmx.noQuorum")}</div>}
           <ul>
             <li><button aria-pressed={sel.kind === "all"} onClick={() => pick(ALL)}><i>▤</i>{t("browser-consoles-2.datacenter")}</button>
               <ul>
@@ -143,7 +146,7 @@ export function Proxmocks(p: PanelProps) {
                   </table>
                 </>
               )}
-              {!vm && shown === "Cluster" && <NodeList game={game} c={c} f={f} />}
+              {!vm && shown === "Cluster" && <><ClusterInfo game={game} c={c} /><NodeList game={game} c={c} f={f} /></>}
               {!vm && shown === "Backup" && <JobsPanel game={game} source={c} skin="proxmocks" />}
               {node && shown === "Updates" && (
                 <>

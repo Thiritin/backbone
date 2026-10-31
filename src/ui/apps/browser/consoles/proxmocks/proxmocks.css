@@ -80,3 +80,4 @@
 .pmx-plans[aria-pressed="true"] { background: #cbe0f7; }
 .pmx-plans i { font-style: normal; }
 .pmx-order { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.pmx-noquorum { margin: 0 0 6px; padding: 4px 8px; background: #fbe3e1; color: #a1241b; font-weight: 700; font-size: 12px; }

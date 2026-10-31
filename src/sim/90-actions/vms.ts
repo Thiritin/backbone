@@ -17,6 +17,7 @@ import {
   LAN_GB_PER_HOUR, LOSS_NO_BACKUP, LOSS_RESTORED, LOSS_RESTORED_MAX, lossReview, moveGbit, restoreHours, type LossItem,
 } from "../85-products/products";
 import type { ActionResult } from "./hardware";
+import { quorumBlock } from "../60-infra/quorum";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 // Below 10 Gbit/s a move between zones is cold: the workload is offline for the whole transfer.
@@ -105,6 +106,7 @@ export function migrateWorkload(s: GameState, id: string, toId: string, announce
   const { w, c } = found, vmHost = s.clusters.find((x) => x.id === toId && x.vm), to = vmHost ?? clusterOf(s, toId, c.kind) ?? clusterOf(s, toId);
   const d = s.devices.find((x) => x.id === toId);
   if (!to || (!vmHost && !d)) return fail("error.notNode");
+  if (quorumBlock(s, c)) return fail("error.noQuorum");
   if (c.kind === "panel" && to.id !== c.id) return migrateWebspace(s, id, to.id, announced);
   if (w.deviceId === toId || w.clusterId === vmHost?.id) return fail("error.sameHost");
   if (w.template) return fail("error.isTemplate");
@@ -189,6 +191,7 @@ export function restoreWorkload(s: GameState, id: string): ActionResult {
   if (!found) return fail("error.unknownWorkload");
   const { w, c } = found;
   if (!lostDisk(s, w)) return fail("error.notLost");
+  if (quorumBlock(s, c)) return fail("error.noQuorum");
   if (!controlPlaneUp(s, c)) return fail("error.controlPlaneDown");
   const target = backupTarget(s, c, w), point = usablePoint(s, c, w);
   if (w.backupAt !== null && (!target || !controlPlaneUp(s, target))) return fail("error.backupUnavailable");

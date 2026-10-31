@@ -1817,6 +1817,10 @@ A datastore is a server attached to a VMwhere cluster as shared storage for VM d
 - **Failure.** A datastore server that stops working takes every VM on it down. A datastore that loses its data loses every disk on it.
 - **Detaching** needs the datastore empty.
 
+### Proxmocks cluster quorum
+
+A Proxmocks cluster of two or more nodes holds quorum while more than half of its votes are up. Every node casts one vote, and a QDevice (a free server in the cluster's zone with no software, set with `setQdevice`) casts one more. Without quorum the cluster is read-only: creating or deleting VMs, migrating, snapshots, restores, node state changes, backup jobs and datastore attachment refuse with `error.noQuorum`, and failover is suspended. Running VMs stay up. A two-node cluster loses quorum when either node dies; a third node or a QDevice prevents that.
+
 ### Snapshots
 
 A snapshot freezes a VM's disk on a VMwhere cluster and, for the player's own VMs, its installed OS and software. Values live in `src/sim/10-catalog/platforms.ts`.
