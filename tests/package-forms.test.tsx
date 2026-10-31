@@ -115,4 +115,15 @@ describe("create account form", () => {
     expect(html).toContain("VM Plans");
     expect(html).toContain("Tiny");
   });
+
+  it("draws the TCAdmen service defaults and Add Service form", () => {
+    const { s, req } = order(44, true, "vps");
+    const game = panelVm(s, s.clusters.find((c) => c.kind === "cloud")!.id, "tcadmen");
+    const c = s.clusters.find((x) => x.id === game)!;
+    addPackage(s, game, { name: "Slots8", product: "gameServer", spec: req().spec });
+    expect(console_(s, c, "/Services/Defaults")).toContain("Slots8");
+    const add = console_(s, c, "/Services/Create");
+    expect(add).toContain(t("pkg.order"));
+    expect(add).toContain(t("pkg.custom"));
+  });
 });
