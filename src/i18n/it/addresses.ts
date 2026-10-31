@@ -7,6 +7,7 @@ export default {
   "ledger.lirSignup": () => "Quota di iscrizione RIPE NCC",
   "ledger.lirYearly": () => "Quota annuale RIPE NCC",
   "ledger.blockBought": (p) => `Blocco di ${p.size} indirizzi IP`,
+  "ledger.providerRouting": (p) => `Instradamento del provider per ${p.prefix}`,
   "error.needsStaticLine": () => "Serve una linea business con indirizzi IP statici.",
   "sales.need.ipv4": (p) => `Serve un indirizzo IPv4 libero a ${p.city}`,
   "sales.need.ipv6": (p) => `Serve IPv6 a ${p.city}`,

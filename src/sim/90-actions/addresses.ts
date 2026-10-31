@@ -1,6 +1,6 @@
 import { hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
-import { freeBlock, LIR_FEES, transferPrice } from "../10-catalog/addresses";
+import { freeBlock, LIR_FEES, PROVIDER_ROUTING_SETUP, transferPrice } from "../10-catalog/addresses";
 import type { GameState } from "../50-state";
 import { buyLineExtra, buyProvider, dynamicLine, holderOf, lineActive, machineLocation, takeAddress, v6Offered } from "../60-infra/addresses";
 import { delistHours, spamSenders } from "../60-infra/netsvc-mail";
@@ -104,12 +104,17 @@ function addBlock(s: GameState, size: number, prefix: number): void {
 }
 
 // Announces a block from a rented location; its addresses become free there. A block with addresses in use stays put.
-export function announceBlock(s: GameState, blockId: string, locationId: string): ActionResult {
+// byProvider: the provider announces it from its own routers for a setup fee, so no own BGP router is needed.
+export function announceBlock(s: GameState, blockId: string, locationId: string, byProvider = false): ActionResult {
   const b = s.ips.blocks.find((x) => x.id === blockId), loc = s.locations.find((l) => l.id === locationId);
   if (!b) return fail("error.unknownBlock");
   if (!loc?.dc) return fail("error.lirNeedsDatacenter");
-  if (!fullTableAt(s, locationId)) return fail("error.needsBgpRouter");
+  if (!byProvider && !fullTableAt(s, locationId)) return fail("error.needsBgpRouter");
   if (s.ips.addresses.some((a) => a.blockId === b.id && a.holder)) return fail("error.addressInUse");
-  s.ips = { ...s.ips, blocks: s.ips.blocks.map((x) => (x.id === b.id ? { ...x, locationId } : x)), addresses: s.ips.addresses.filter((a) => a.blockId !== b.id) };
+  if (byProvider) {
+    if (s.cash < PROVIDER_ROUTING_SETUP) return fail("error.noCash");
+    book(s, "ledger.providerRouting", { prefix: b.prefix }, PROVIDER_ROUTING_SETUP);
+  }
+  s.ips = { ...s.ips, blocks: s.ips.blocks.map((x) => (x.id === b.id ? { ...x, locationId, byProvider } : x)), addresses: s.ips.addresses.filter((a) => a.blockId !== b.id) };
   return { ok: true };
 }
