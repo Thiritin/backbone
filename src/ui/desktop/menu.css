@@ -63,3 +63,5 @@
 @keyframes mbd-blink { 50% { opacity: 0; } }
 @keyframes mbd-load { from { transform: scaleX(0.75); transform-origin: left; } to { transform: scaleX(1.12); transform-origin: left; } }
 @media (prefers-reduced-motion: reduce) { .mbd-meter i, .mbd-caret { animation: none; } }
+
+.menu .btn, .menu summary, .menu select, .menu .seg button { cursor: pointer; }
