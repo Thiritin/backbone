@@ -61,9 +61,9 @@ const cents = round2;
 
 // A running service's Mbit/s this hour: its GB per month, grown 20% a year since it started, spread over the month's seconds and
 // shaped by its activity and night job.
-export function serviceMbps(s: GameState, v: Service): number {
+export function serviceMbps(s: GameState, v: Service, hour: number = s.hour): number {
   const c = s.customers.find((x) => x.id === v.customerId);
-  return (v.spec.trafficGb * Math.pow(TRAFFIC_GROWTH, Math.max(0, s.hour - v.startedAt) / 8760) * 8000) / (730 * 3600) * (c ? trafficShape(s.seed, v, c.profile, s.hour) : 1);
+  return (v.spec.trafficGb * Math.pow(TRAFFIC_GROWTH, Math.max(0, hour - v.startedAt) / 8760) * 8000) / (730 * 3600) * (c ? trafficShape(s.seed, v, c.profile, hour) : 1);
 }
 
 export const zoneOf = (s: GameState, v: Service): Location | undefined => (v.zone ? s.locations.find((l) => l.az === v.zone) : undefined);
