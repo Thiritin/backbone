@@ -1,0 +1,27 @@
+import type { Dict } from "../lang";
+
+export default {
+  "books.tab.quotes": () => "Presupuestos",
+  "orderSteps.orderEmail": () => "Correo del pedido",
+  "orderSteps.from": (p) => `De: ${p.name}`,
+  "orderSteps.field.contact": () => "Contacto",
+  "orderSteps.field.company": () => "Empresa",
+  "orderSteps.field.street": () => "Calle",
+  "orderSteps.field.zip": () => "Código postal",
+  "orderSteps.field.city": () => "Ciudad",
+  "orderSteps.field.email": () => "Correo",
+  "orderSteps.saveCustomer": () => "Guardar cliente",
+  "orderSteps.createQuote": () => "Crear presupuesto",
+  "orderSteps.noQuotes": () => "Aún no hay presupuestos.",
+  "orderSteps.quote": (p) => `Presupuesto ${p.number}`,
+  "orderSteps.status.draft": () => "Borrador",
+  "orderSteps.status.sent": () => "Enviado",
+  "orderSteps.status.accepted": () => "Aceptado",
+  "orderSteps.status.countered": () => "Contraoferta",
+  "orderSteps.status.declined": () => "Rechazado",
+  "orderSteps.sendQuote": () => "Enviar presupuesto",
+  "orderSteps.convert": () => "Convertir en factura",
+  "orderSteps.attachments": () => "Adjuntos",
+  "orderSteps.createCustomer": () => "Crear cliente",
+  "orderSteps.openInvoice": () => "Abrir factura",
+} satisfies Dict;

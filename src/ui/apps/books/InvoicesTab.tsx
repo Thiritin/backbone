@@ -1,8 +1,8 @@
 import { Receipt, Send } from "lucide-react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { euroCents } from "../../../sim/00-core/money";
 import { addressFor, type Address } from "../../../sim/30-customers/addresses";
-import { invoiceTotal, type Invoice, type InvoiceStatus } from "../../../sim/45-billing/billing";
+import { invoiceTotal, type Invoice, type InvoiceLine, type InvoiceStatus } from "../../../sim/45-billing/billing";
 import type { GameState } from "../../../sim/50-state";
 import { sendInvoice } from "../../../sim/90-actions/billing";
 import { t } from "../../../i18n/en";
@@ -53,32 +53,36 @@ export function InvoicesTab({ focus }: { focus: string | null }) {
 
 const lines = (a: Address) => [a.company, a.contact, a.street, `${a.zip} ${a.city}`].filter(Boolean) as string[];
 
-// The invoice as an A4 page, scaled to the pane.
+// A document of the company as an A4 page, scaled to the pane: an invoice or a quote.
+export function Page({ game, title, to, items, footer }: { game: GameState; title: string; to?: Address; items: InvoiceLine[]; footer: ReactNode }) {
+  const own = addressFor(game.seed, 0, game.registration?.owner ?? game.company.name, game.company.name, game.locations[0]?.city ?? "Frankfurt");
+  return (
+    <article className="books-a4" aria-label={title}>
+      <header>
+        <h2>{title}</h2>
+        <p className="books-from">{[game.company.name, own.street, `${own.zip} ${own.city}`].join(" · ")}</p>
+      </header>
+      {to && <address>{lines(to).map((l) => <div key={l}>{l}</div>)}</address>}
+      <table>
+        <thead><tr><th>{t("books.col.item")}</th><th className="r">{t("books.col.amount")}</th></tr></thead>
+        <tbody>
+          {items.map((l, n) => <tr key={n}><td>{t(l.key, l.params)}</td><td className="r num">{euroCents(l.amount)}</td></tr>)}
+          <tr className="books-total"><td>{t("books.total")}</td><td className="r num">{euroCents(items.reduce((n, l) => n + l.amount, 0))}</td></tr>
+        </tbody>
+      </table>
+      <footer>{footer}</footer>
+    </article>
+  );
+}
+
 function Preview({ inv, game }: { inv: Invoice; game: GameState }) {
   const act = useStore((s) => s.act);
   const c = game.customers.find((x) => x.id === inv.customerId);
-  const own = addressFor(game.seed, 0, game.registration?.owner ?? game.company.name, game.company.name, game.locations[0]?.city ?? "Frankfurt");
   return (
     <div className="books-preview">
-      <article className="books-a4" aria-label={t("books.invoice", { number: inv.number })}>
-        <header>
-          <h2>{t("books.invoice", { number: inv.number })}</h2>
-          <p className="books-from">{[game.company.name, own.street, `${own.zip} ${own.city}`].join(" · ")}</p>
-        </header>
-        {c && <address>{lines(c.address).map((l) => <div key={l}>{l}</div>)}</address>}
-        <table>
-          <thead><tr><th>{t("books.col.item")}</th><th className="r">{t("books.col.amount")}</th></tr></thead>
-          <tbody>
-            {inv.lines.map((l, n) => <tr key={n}><td>{t(l.key, l.params)}</td><td className="r num">{euroCents(l.amount)}</td></tr>)}
-            <tr className="books-total"><td>{t("books.total")}</td><td className="r num">{euroCents(invoiceTotal(inv))}</td></tr>
-          </tbody>
-        </table>
-        <footer>
-          {inv.status === "draft" ? <span>{formatDay(inv.issuedAt)}</span> : (
-            <><StatusPill inv={inv} /><span className="num">{inv.paidAt !== null ? t("books.paidOn", { date: formatDay(inv.paidAt) }) : t("books.dueOn", { date: formatDay(inv.dueAt) })}</span></>
-          )}
-        </footer>
-      </article>
+      <Page game={game} title={t("books.invoice", { number: inv.number })} to={c?.address} items={inv.lines} footer={inv.status === "draft" ? <span>{formatDay(inv.issuedAt)}</span> : (
+        <><StatusPill inv={inv} /><span className="num">{inv.paidAt !== null ? t("books.paidOn", { date: formatDay(inv.paidAt) }) : t("books.dueOn", { date: formatDay(inv.dueAt) })}</span></>
+      )} />
       {inv.status === "draft" && <button className="btn primary" onClick={() => act(sendInvoice, inv.id)}><Send />{t("books.sendPdf")}</button>}
     </div>
   );

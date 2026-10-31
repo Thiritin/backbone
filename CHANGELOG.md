@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- The weather in the menu bar shows the name of the place you are at again, after the temperature.
+- The bank's welcome email now lists your account number, PIN and login address on their own lines.
 - Lexwear now sells modules for Books on lexwear.de: Monthly run, Match by reference and Automatic reminders take over the back office once you enter the licence key from Lexwear's email.
 - Bookkeepers can now be trained to send draft invoices and match incoming payments, including odd amounts, and a second bookkeeper gets through twice as much.
 - The hand-rolled order form is now a shop you buy once for 900 euro with no monthly fee, and it takes orders right away.
@@ -11,6 +13,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Game servers now run a named game such as Counter-Strife or Blockcraft, and the game panels sell them by slots or by RAM.
 - The weather app fills its whole window again and lists all your locations.
 - Bank account fees now depend on your legal form: a limited company pays more, branch banks charge partnerships and limited companies for every booking, and netbunk opens no account for a limited company.
+- Order emails are now signed with the customer's postal address, and Create customer opens Books with the email beside the form, where a click on a line fills the field you are in.
+- Quotes are now documents in Books that you drag onto the order ticket, an accepted quote converts to the first invoice that you send and match like any other, and the Lexwear module Helpdesk link does the quote, account and invoice from the ticket.
 - Datacenter providers now announce your own IP block under your AS number for a one-off setup fee, so you no longer need your own BGP router for it.
 
 ## 2026-10-31
