@@ -23,7 +23,7 @@ export interface HandTask {
   // The location the hands work at when it is not the device's own, like the far end of a server move.
   at?: string;
   // The technician operation that does the same work, when there is one.
-  tech?: { kind: OpKind; componentId?: string | null; partId?: string | null; slot?: number };
+  tech?: { kind: OpKind; componentId?: string | null; partId?: string | null; slot?: number; count?: number };
   onDone?: () => void;
 }
 
@@ -92,7 +92,7 @@ function HandPopover({ task, x, y, onClose }: { task: HandTask; x: number; y: nu
     <div ref={ref} className="hand-pop" role="dialog" aria-label={task.title} style={at ?? { visibility: "hidden" }}>
       <strong>{task.title}</strong>
       <p>{"cost" in trial ? tr("locations-1.remoteHandsQuote", { loc: loc.name, cost: euro(trial.cost), wait: w.hands.wait }) : tr(trial.error)}</p>
-      {slot && t && <button className="hand-pop-alt" onClick={() => { if (act(queueOperation, t.kind, device.id, t.componentId ?? null, t.partId ?? null, t.slot ?? 0).ok) onClose(); }}>{tr("locations-1.technician", { name: slot.name.split(" ")[0], time: slotTime(game.hour, slot.hour) })}</button>}
+      {slot && t && <button className="hand-pop-alt" onClick={() => { if (act(queueOperation, t.kind, device.id, t.componentId ?? null, t.partId ?? null, t.slot ?? 0, t.count ?? 1).ok) onClose(); }}>{tr("locations-1.technician", { name: slot.name.split(" ")[0], time: slotTime(game.hour, slot.hour) })}</button>}
       {fare && <button className="hand-pop-alt" onClick={() => go("self")}>{tr("locations-1.driveYourself", { hours: fare.hours, fee: euro(fare.fee) })}</button>}
       {w.friend && w.friend.left > 0 && <button className="hand-pop-alt" onClick={() => go("friend")}>{tr("locations-1.sendFriend", { fee: euro(w.friend.fee), left: w.friend.left, total: FAVOURS_PER_YEAR })}</button>}
       <div className="hand-pop-actions">
