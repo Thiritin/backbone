@@ -1,5 +1,6 @@
 import { createGameServer } from "../60-infra/games";
 import { betterHost } from "../60-infra/routes";
+import { keepPhp } from "../60-infra/webpanel";
 import { yearOf } from "../00-core/time";
 import { CONTINUOUS } from "../20-world/datacenters";
 import { modelById } from "../10-catalog/hardware";
@@ -266,12 +267,14 @@ export const leave = (s: GameState, clusterId: string, deviceId: string) => {
 export const phpDue = (s: GameState, c: Cluster): boolean => c.kind === "panel" && (c.php !== phpAt(yearOf(s.hour)) || (patchOut(s) && vulnerable(s, c)));
 
 // One panel host to the current PHP version with any released security patch; its sites run slower for the next hour.
-export function upgradePhp(s: GameState, hostId: string): ActionResult {
+// With keep the previous version stays installed in the pool and takes the accounts whose app does not run on the new one.
+export function upgradePhp(s: GameState, hostId: string, keep?: boolean): ActionResult {
   const c = s.clusters.find((x) => x.id === hostId);
   if (!c) return fail("error.unknownCluster");
   if (c.kind !== "panel") return fail("error.notPanelHost");
   if (!phpDue(s, c)) return fail(vulnerable(s, c) ? "error.patchPending" : "error.phpCurrent");
   update(s, c.id, (x) => ({ ...x, php: phpAt(yearOf(s.hour)), phpUntil: s.hour + PHP_UPGRADE_HOURS }));
+  if (keep && c.php !== phpAt(yearOf(s.hour))) keepPhp(s, c.id, c.php);
   markPatched(s, c.id);
   return { ok: true };
 }
