@@ -46,7 +46,7 @@
 }
 
 /* Backdrop: the 2018 desktop, drawn with the shell classes. */
-.mbd { position: absolute; inset: 0; pointer-events: none; }
+.mbd { position: absolute; inset: 0; pointer-events: none; filter: blur(6px); transform: scale(1.03); }
 .mbd .menubar, .mbd .dock { position: absolute; }
 .mbd .window { position: absolute; }
 .mbd-term { background: oklch(0.16 0.01 255); }
