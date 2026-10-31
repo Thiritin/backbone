@@ -207,7 +207,7 @@ export const useStore = create<Store>((set, get) => ({
   closeAlert: (resume) => set(({ resume: speed }) => (resume ? { alert: null, speed } : { alert: null })),
   explain: null,
   setExplain: (explain) => set({ explain }),
-  started: false,
+  started: initial.loaded,
   canContinue: initial.loaded,
   unseen: 0,
   cart: [],
