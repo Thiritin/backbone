@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { GameState } from "../../../../../sim/50-state";
+import type { Resources } from "../../../../../sim/10-catalog/products";
 import type { Cluster } from "../../../../../sim/60-infra/cluster";
 import { vmStats } from "../../../../../sim/60-infra/stats";
 import { nodeUsage } from "../../../../../sim/60-infra/usage";
@@ -12,8 +13,8 @@ import { AlarmList, ConsoleThumb, isoName, MediaMenu, NodeList, ResourceBars, su
 import { Actions, Backups, erasFrom, eraAt, Facts, LoginForm, useSoftware, type PanelProps } from "../PanelBase";
 import { parseCreate } from "../../../../../sim/80-business/consoles";
 import { packagesOf } from "../../../../../sim/80-business/packages";
-=======
->>>>>>> origin/packages-3
+import { PackagesScreen } from "../PackageForms";
+import { flavorCounts, FLAVORS, flavorOf as baseFlavorOf, same } from "./flavors";
 import "./horizont.css";
 
 // docs/design/software.md, section 9: the purple dashboard from 2010, the dark-sidebar one with the red mark from 2016.
@@ -125,7 +126,6 @@ export function Horizont(p: PanelProps) {
               <Overview game={game} c={c} vms={vms} />
               <TaskLog game={game} c={c} vms={vms} title={t("browser-consoles-1.hzRecentEvents")} className="cx-tasks hz-tasks" />
             </>
-          )}
           )}
           {page === "instances" && (
             <>
