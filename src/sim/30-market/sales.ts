@@ -30,7 +30,7 @@ import { grownSpec, setupPremium, sizeOf, specFor, specText } from "./spec";
 import { acceptQuote, resize, specParams } from "./manual";
 import { logActivity } from "../47-staff/activity";
 import type { ActionResult } from "../90-actions/hardware";
-import { forSale, inStock, shopActive, soldOutVisit } from "../80-business/shop";
+import { forSale, inStock, shopStocked, soldOutVisit } from "../80-business/shop";
 import {
   acceptChance, acceptMid, FORUM_AWARENESS, FORUM_PROFILES, leadFlows, missingFor, needFor, referenceFor,
   requestName, share, values, type Need, type SalesMessage, type SalesRequest,
@@ -118,7 +118,7 @@ function newLeads(s: GameState, events: SimEvent[]): void {
       // Email orders thin out while delivery is impaired, and businesses shy away from a freemail address.
       if (!form && mailShare(s, f.profile) < 1 && rand(s.rng) >= mailShare(s, f.profile)) continue;
       // A shop sells only what is in stock; a sold-out visitor leaves no request.
-      const spec = form && shopActive(s) ? nextSpec(s, need, f.profile) : undefined;
+      const spec = form && shopStocked(s) ? nextSpec(s, need, f.profile) : undefined;
       if (spec && !inStock(s, { city: f.city, product: need.product, spec })) {
         soldOutVisit(s, need.product);
         continue;

@@ -15,6 +15,7 @@ import { noticedHours } from "../10-catalog/attention";
 import { dcPerTb } from "../10-catalog/network";
 import { OVER_DRIFT, PAST_MAX_DRIFT, TOLERANCE } from "../30-customers/pricing";
 import { OFFER, ORGANIC_CONSIDER, REFERRAL_LEADS, SPILL_SHARE } from "../30-market/market";
+import { HAND_ROLLED } from "../10-catalog/shops";
 import { BUDGETS, OWNED, PLATFORMS, SATURATION, WEBSITE_LEADS } from "../80-business/marketing";
 import { generationOf, penaltyFor, SITE_RENT } from "../80-business/website";
 import { annuity, baseRate, LOAN_AMOUNTS, MIN_LIMIT, RISK_PREMIUM } from "../45-billing/billing";
@@ -211,7 +212,7 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
 
     // Leads (Market and leads), as 30-market/market.ts leadFlows: organic by awareness and referrals from happy customers,
     // capped per city, plus website and search campaign leads, of which 10% spill to cities without a location.
-    if (!website && rackUnlocked && cash > 3000 + OWNED.website.setup + OWNED.orderForm.setup) { website = true; designYear = generationOf(year); cash -= OWNED.website.setup + OWNED.orderForm.setup; }
+    if (!website && rackUnlocked && cash > 3000 + OWNED.website.setup + HAND_ROLLED.setup) { website = true; designYear = generationOf(year); cash -= OWNED.website.setup + HAND_ROLLED.setup; }
     // The bot redesigns once the site is 2 generations behind; its site stays on the rented host.
     if (website && generationOf(year) - designYear >= 8 && cash > 5000) { designYear = generationOf(year); cash -= OWNED.website.setup; }
     // The search campaign: the largest preset budget within the bot's ad share, spread over every profile and city.
@@ -422,7 +423,7 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     const leasing = leases.reduce((a, l) => a + l.payment, 0);
     for (let l = leases.length - 1; l >= 0; l--) if (leases[l].until <= month + 1) leases.splice(l, 1);
     const depreciation = servers.reduce((a, s) => a + (!s.leasedUntil && month - s.bought < 60 ? s.price / 60 : 0), 0);
-    const marketing = website ? OWNED.website.upkeep + OWNED.orderForm.upkeep + SITE_RENT : 0;
+    const marketing = website ? OWNED.website.upkeep + SITE_RENT : 0;
     // Domain registration: the registrar bills one twelfth of the yearly wholesale of the company domain and of the domains of web
     // customers who ordered by email, who pay the yearly fee in return. The company books Hosted Exchange for the owner and every
     // employee (Company email).

@@ -32,6 +32,8 @@ export interface ShopState {
 export const newShop = (): ShopState => ({ variant: null, owned: false, since: 0, readyAt: 0, modules: {}, stock: {}, soldOut: {}, groups: [] });
 
 export const shopActive = (s: GameState): boolean => s.shop.variant !== null && s.hour >= s.shop.readyAt;
+// A real shop system takes orders from stock and server groups; the hand-rolled form sells from everything.
+export const shopStocked = (s: GameState): boolean => shopActive(s) && s.shop.variant !== "handRolled";
 
 // A manual-stock shop starts each line at this many units.
 export const START_STOCK = 10;
@@ -61,7 +63,7 @@ export const groupOf = (s: GameState, clusterId: string): ServerGroup | undefine
 // Installations in a group that sells the line.
 export const forSale = (s: GameState, p: Product): Set<string> => new Set(s.shop.groups.filter((g) => g.sale.includes(p)).flatMap((g) => g.members));
 // Whether automatic provisioning may use this target: hardware targets always, software only in a deploy group.
-export const deployable = (s: GameState, clusterId: string | null): boolean => !clusterId || !s.shop.variant || !!groupOf(s, clusterId)?.deploy;
+export const deployable = (s: GameState, clusterId: string | null): boolean => !clusterId || !s.shop.variant || s.shop.variant === "handRolled" || !!groupOf(s, clusterId)?.deploy;
 
 export function takeStock(s: GameState, p: Product): void {
   const n = stockOf(s, p);

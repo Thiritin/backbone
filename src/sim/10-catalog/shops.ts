@@ -1,7 +1,7 @@
 // Shop systems: the order form and provisioning software a hoster runs next to the website (docs/design/shop.md).
 import { SOFTWARE, type SoftwareKind } from "./platforms";
 
-export type ShopId = "modemBill" | "clientExit" | "whmCache" | "blessta" | "hostBull" | "ubersmyth" | "orderBocks" | "boxBillin";
+export type ShopId = "handRolled" | "modemBill" | "clientExit" | "whmCache" | "blessta" | "hostBull" | "ubersmyth" | "orderBocks" | "boxBillin";
 
 // Module ids are software ids plus these four for products that run on no software.
 export const HARDWARE_MODULES = ["registrar", "ssl", "dedicated", "colo"] as const;
@@ -33,6 +33,7 @@ export interface ShopVariant {
 }
 
 export const SHOPS: ShopVariant[] = [
+  { id: "handRolled", name: "Hand-rolled order form", maker: "", from: 2005, setup: 900, monthly: 0, yearly: 0, includes: [], extra: 400, autoStock: false },
   { id: "modemBill", name: "ModemBill", maker: "ModemBill Inc.", from: 2005, until: 2010, setup: 300, monthly: 0, yearly: 0, includes: [["cpanic", 2005], ["pleskit", 2005], ["registrar", 2005]], extra: null, autoStock: false },
   { id: "clientExit", name: "ClientExit", maker: "Newedge", from: 2005, setup: 250, monthly: 0, yearly: 60, includes: [["cpanic", 2005], ["directadmen", 2005], ["registrar", 2005]], extra: 150, autoStock: true },
   { id: "whmCache", name: "WHMCache", maker: "WHMCache Ltd", from: 2005, setup: 0, monthly: 15, yearly: 0, own: { price: 450, yearly: 90 }, includes: [["panel", 2005], ["registrar", 2005], ["ssl", 2005], ["game", 2008]], extra: 200, autoStock: true },
@@ -47,6 +48,7 @@ export const shopById = (id: ShopId): ShopVariant => SHOPS.find((x) => x.id === 
 
 // The hand-rolled order form has no modules; each software needs a custom script.
 export const CUSTOM_SCRIPT = 400;
+export const HAND_ROLLED = SHOPS[0];
 // Days a new shop needs before it takes orders.
 export const SHOP_SETUP_HOURS = 72;
 // WHMCache's lease from 2020 by active customers: up to each count, then per further 1,000.

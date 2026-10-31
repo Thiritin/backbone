@@ -1,6 +1,6 @@
 // Choosing a shop system, buying its modules and setting stock (docs/design/shop.md).
 import { yearOf } from "../00-core/time";
-import { CUSTOM_SCRIPT, MODULE_IDS, SHOP_SETUP_HOURS, shopById, SHOPS, type ShopId } from "../10-catalog/shops";
+import { MODULE_IDS, SHOP_SETUP_HOURS, shopById, SHOPS, type ShopId } from "../10-catalog/shops";
 import { PRODUCTS } from "../10-catalog/products";
 import type { Product } from "../30-customers/customers";
 import type { GameState } from "../50-state";
@@ -22,7 +22,7 @@ function pay(s: GameState, amount: number, key: string, params: Record<string, s
 export function chooseShop(s: GameState, id: ShopId, own = false): ActionResult {
   const v = SHOPS.find((x) => x.id === id), year = yearOf(s.hour);
   if (!v) return fail("error.unknownShop");
-  if (!s.unlocks.includes("shops")) return fail("error.needsShopSkill");
+  if (id !== "handRolled" && !s.unlocks.includes("shops")) return fail("error.needsShopSkill");
   if (!owns(s, "website")) return fail("error.needsWebsite");
   if (s.shop.variant === id) return fail("error.shopInUse");
   if (year < v.from || (v.until !== undefined && year > v.until)) return fail("error.shopNotSold");
@@ -30,8 +30,9 @@ export function chooseShop(s: GameState, id: ShopId, own = false): ActionResult 
   const price = own && v.own ? v.own.price : v.setup;
   if (s.cash < price) return fail("error.noCash");
   pay(s, price, "ledger.shopSetup", { name: v.name });
-  s.marketing = { ...s.marketing, owned: s.marketing.owned.filter((c) => c !== "orderForm") };
-  s.shop = { ...newShop(), variant: id, owned: own, since: s.hour, readyAt: s.hour + SHOP_SETUP_HOURS, groups: s.shop.groups.length ? s.shop.groups : firstGroups(s) };
+  const first = s.shop.variant === null;
+  const base = first && id === "handRolled" ? s.shop : newShop();
+  s.shop = { ...base, variant: id, owned: own, since: s.hour, readyAt: first && id === "handRolled" ? s.hour : s.hour + SHOP_SETUP_HOURS, groups: s.shop.groups.length || id === "handRolled" ? s.shop.groups : firstGroups(s) };
   return { ok: true, id };
 }
 
@@ -40,12 +41,12 @@ export function buyModule(s: GameState, module: string): ActionResult {
   if (!MODULE_IDS.includes(module)) return fail("error.unknownModule");
   if (hasModule(s, module) || s.shop.modules[module] !== undefined) return fail("error.moduleOwned");
   const v = s.shop.variant && shopById(s.shop.variant);
-  if (!v && !owns(s, "orderForm")) return fail("error.needsOrderForm");
-  if (v && v.extra === null) return fail("error.moduleNotSold");
-  const price = v ? v.extra! : CUSTOM_SCRIPT;
+  if (!v) return fail("error.needsOrderForm");
+  if (v.extra === null) return fail("error.moduleNotSold");
+  const price = v.extra;
   if (s.cash < price) return fail("error.noCash");
   pay(s, price, "ledger.shopModule", { module });
-  s.shop = { ...s.shop, modules: { ...s.shop.modules, [module]: s.hour + (v?.extraHours ?? 0) } };
+  s.shop = { ...s.shop, modules: { ...s.shop.modules, [module]: s.hour + (v.extraHours ?? 0) } };
   return { ok: true, id: module };
 }
 

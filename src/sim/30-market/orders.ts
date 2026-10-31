@@ -16,7 +16,7 @@ import type { SimEvent } from "../88-tick/tick";
 import type { ActionResult } from "../90-actions/hardware";
 import { missingFor, needFor, referenceFor, REQUEST_HOURS, requestName, senderFor, type SalesRequest } from "./market";
 import { addRequest, cancelShopOrder, editRequest, fulfil, loseRequest, nextSpec, say, targetFor } from "./sales";
-import { deployable, hasModule, moduleFor, shopActive, takeStock } from "../80-business/shop";
+import { deployable, hasModule, moduleFor, shopStocked, takeStock } from "../80-business/shop";
 import { companyParams, variant } from "../40-support/replies";
 import { failsScreen, reviewing, rollFraud, screening } from "../45-billing/fraud";
 
@@ -58,7 +58,7 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
   const key = s.nextId, spec = given ?? nextSpec(s, need, profile), reference = referenceFor(s, profile, need.product, spec, need.sla), discount = discountFor(s, profile);
   // One in three web customers already owns the domain they name.
   const owned = !lead && email && need.product === "webHosting" && rand(hashRng(s.seed, key, 229)) < 1 / 3;
-  const shop = !email && shopActive(s);
+  const shop = !email && shopStocked(s);
   const fraud = !lead && rollFraud(s, key, need.product, yearOf(s.hour), email);
   const screened = !lead && screening(s);
   if (screened) s.screenChecks++;
