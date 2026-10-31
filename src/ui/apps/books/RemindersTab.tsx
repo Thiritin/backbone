@@ -31,7 +31,7 @@ export function RemindersTab({ focus }: { focus: string | null }) {
   const name = (id: string) => game.customers.find((c) => c.id === id)?.name ?? id;
   return (
     <>
-      <div className="fin-toolbar"><Locked label={t("books.autoReminders")} /></div>
+      <div className="fin-toolbar"><Locked id="auto-reminders" label={t("books.autoReminders")} /></div>
       <div className="fin-scroll">
         <table className="table fin-table">
           <thead>

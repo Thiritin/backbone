@@ -5,6 +5,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-01
 
 - A new game now starts with no money: you first open a business account on a bank's website, where your €3,500 savings arrive, and then register the company at the trade office for a €40 fee paid by bank transfer.
+- Lexwear now sells modules for Books on lexwear.de: Monthly run, Match by reference and Automatic reminders take over the back office once you enter the licence key from Lexwear's email.
+- Bookkeepers can now be trained to send draft invoices and match incoming payments, including odd amounts, and a second bookkeeper gets through twice as much.
 - The hand-rolled order form is now a shop you buy once for 900 euro with no monthly fee, and it takes orders right away.
 - Panel hosts can keep up to two older PHP versions next to the newest, and you install them and pick one per domain in EasyApachy and Custom Build.
 - Game servers now run a named game such as Counter-Strife or Blockcraft, and the game panels sell them by slots or by RAM.
