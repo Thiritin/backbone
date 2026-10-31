@@ -21,6 +21,7 @@ const GROUPS: Record<string, NotifyType[]> = {
   Browser: [
     type("Domains", "registrarTier", "domainsTransferred"),
     type("Trade office", "officeOpen"),
+    type("Site", "siteDown"),
   ],
   Locations: [
     type("Planned maintenance", "maintenanceStart", "maintenanceEnd"),
@@ -38,7 +39,6 @@ const GROUPS: Record<string, NotifyType[]> = {
   ],
   Security: [type("Advisories", "vuln.announced", "vuln.poc", "vuln.warning", "vuln.patch"), type("Compromises", "vuln.hacked", "oobHacked", "siteHacked", "siteLeft", "breachPress", "breachFine", "shopBreach"), type("Open vulnerabilities", "vulnOpen", "vulnCritical")],
   Marketing: [type("Reviews", "review"), type("Campaigns and bills", "fairDone", "fairMissed", "marketingBills", "platformDropped"), type("Community events", "sponsorDone", "sponsorFailed", "halfAccepted", "halfDeclined"), type("Sponsor board", "boardDropped", "boardDone"), type("Website", "siteBuilt")],
-  Website: [type("Site", "siteDown")],
   Staff: [
     type("Hiring and leaving", "quit", "raise", "salaries"),
     type("Training", "trained", "trainerDone"),
