@@ -42,7 +42,7 @@ export function NewCustomer({ game, initial, onDone }: { game: GameState; initia
     <form className="books-new" onSubmit={(e) => { e.preventDefault(); if (o && act(createAccount, o.ticketId, form).ok) onDone(); }}>
       <div className="books-new-head">
         <h2>{t("pkg.newCustomer")}</h2>
-        <OrderPicker choices={choices} value={ticket} onChange={(id) => { setTicket(id); setForm(EMPTY); setFocus("contact"); }} className="field" />
+        <OrderPicker choices={choices} value={ticket} onChange={(id) => { setTicket(id); setForm(EMPTY); setFocus("contact"); }} className="books-pick" />
       </div>
       <div className="books-new-split">
         <section className="books-mail" aria-label={t("orderSteps.orderEmail")}>
@@ -56,8 +56,8 @@ export function NewCustomer({ game, initial, onDone }: { game: GameState; initia
         </section>
         <fieldset className="books-new-form">
           {FIELDS.map((k) => (
-            <label key={k} className="field">{t(`orderSteps.field.${k}`)}
-              <input ref={(el) => { refs.current[k] = el; }} value={form[k] ?? ""} className={form[k] || k === "company" ? "" : "need"} onFocus={() => setFocus(k)}
+            <label key={k} className="books-f">{t(`orderSteps.field.${k}`)}
+              <input ref={(el) => { refs.current[k] = el; }} value={form[k] ?? ""} className={`field${form[k] || k === "company" ? "" : " need"}`} onFocus={() => setFocus(k)}
                 onChange={(e) => setForm({ ...form, [k]: e.target.value })} />
             </label>
           ))}

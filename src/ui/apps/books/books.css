@@ -50,8 +50,8 @@
 .books-mail-l { border: 0; background: none; font: inherit; color: inherit; text-align: left; padding: 1px 4px; margin: 0 -4px; border-radius: 3px; cursor: pointer; }
 .books-mail-l:hover { background: var(--ar-sel, var(--accent)); color: var(--ar-sel-ink, var(--accent-ink)); }
 .books-new-form { margin: 0; padding: 0; border: 0; display: grid; gap: 8px; }
-.books-new-form .field { display: grid; gap: 3px; }
-.books-new-form input.need { border-color: var(--warn, #c90); }
+.books-f { display: grid; gap: 3px; }
+.books-new-form .field.need { border-color: var(--warn, #c90); }
 .books-pick { display: flex; align-items: center; gap: 8px; }
 .books-drag { cursor: grab; }
 .books-quote-edit { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }

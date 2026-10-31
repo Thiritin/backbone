@@ -291,8 +291,7 @@ function OrderThread({ tk, r, gates }: { tk: Ticket; r: SalesRequest; gates: Gat
         {r.thread.map((m, i) => (
           <div key={i} className={`msg${m.from === "you" ? " you" : ""}`}>
             <div className="from">{m.from === "you" ? m.by ?? t("support.you") : r.contact} · <span className="num">{stamp(m.hour)}</span></div>
-            <p>{t(m.key, m.params)}{i === 0 && r.kind !== "expansion" && ` ${t(`request.use.${r.profile}`)}`}</p>
-            {i === 0 && r.kind === "order" && <address className="mail-sig">{addressLines(mailedAddress(game.seed, r)).map((l) => <div key={l}>{l}</div>)}</address>}
+            <p>{t(m.key, m.params)}{i === 0 && r.kind !== "expansion" && ` ${t(`request.use.${r.profile}`)}`}{i === 0 && r.kind === "order" && `\n\n${addressLines(mailedAddress(game.seed, r)).join("\n")}`}</p>
           </div>
         ))}
         {tk.work && <div className="event"><span>{t("support.queuedUntil", { time: stamp(tk.work.doneAt / 60) })}</span></div>}

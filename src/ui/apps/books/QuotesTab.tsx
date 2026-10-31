@@ -42,8 +42,8 @@ export function QuotesTab({ focus }: { focus: string | null }) {
   return (
     <>
       <div className="fin-toolbar">
-        <label className="field books-pick">{t("pkg.order")}
-          <select value={ticket || open[0]?.id || ""} onChange={(e) => setTicket(e.target.value)} disabled={!open.length}>
+        <label className="books-pick">{t("pkg.order")}
+          <select className="field" value={ticket || open[0]?.id || ""} onChange={(e) => setTicket(e.target.value)} disabled={!open.length}>
             {open.map((tk) => { const r = orderOf(game, tk)!; return <option key={tk.id} value={tk.id}>{[requestName(r), r.domain].filter(Boolean).join(" · ")}</option>; })}
           </select>
         </label>

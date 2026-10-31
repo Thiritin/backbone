@@ -11,6 +11,7 @@ import { sizeOf } from "../../../sim/30-market/spec";
 import { canAutomate, hostFor, invoiceOf, stepsDone } from "../../../sim/30-market/manual";
 import type { SalesRequest } from "../../../sim/30-market/market";
 import { isFinal, type Ticket } from "../../../sim/40-support/tickets";
+import type { InvoiceStatus } from "../../../sim/45-billing/billing";
 import type { GameState } from "../../../sim/50-state";
 import { betterHost, hostQuality, routeOptions } from "../../../sim/60-infra/routes";
 import { attachQuote, createQuote, invoiceOrder, offerUpgrade, provisionOrder, registerOrderDomain } from "../../../sim/90-actions/orders";
@@ -146,7 +147,8 @@ function Attachments({ tk, locked, open }: { tk: Ticket; locked: boolean; open: 
 }
 
 const PROVISION: Partial<Record<Product, string>> = { webHosting: t("support.provisionWeb"), vps: t("support.provisionVps"), gameServer: t("support.provisionGame") };
-const INVOICE: Record<string, { label: string; pill: string }> = {
+const INVOICE: Record<InvoiceStatus, { label: string; pill: string }> = {
+  draft: { label: t("books.status.draft"), pill: "" },
   open: { label: t("support.invoice.open"), pill: "accent" }, overdue: { label: t("support.invoice.overdue"), pill: "warn" }, paid: { label: t("support.invoice.paid"), pill: "ok" }, writtenOff: { label: t("support.invoice.writtenOff"), pill: "" },
 };
 
