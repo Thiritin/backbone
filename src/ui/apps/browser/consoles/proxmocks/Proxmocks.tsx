@@ -7,6 +7,7 @@ import { Chart, niceMax } from "../Chart";
 import { AlarmList, ALL, MediaMenu, NodeList, osText, ResourceBars, summaryOf, SizeFields, TaskLog, Toolbar, useNewVm, useVms, vmFacts, Wizard, type Sel, type Vm } from "../HypervisorBase";
 import { Actions, Backups, erasFrom, eraAt, Facts, LoginForm, useSoftware, type PanelProps } from "../PanelBase";
 import "./proxmocks.css";
+import { t } from "../../../../../i18n/en";
 
 // docs/design/software.md, section 9: the grey ExtJS manager from 2008, the flat white one with the orange mark from 2015.
 const ERAS = erasFrom(2008, 2015);
@@ -20,26 +21,26 @@ export function VmSummary({ game, c, v }: { game: GameState; c: Cluster; v: Vm }
   return (
     <>
       <section className="pmx-panel">
-        <h4>Status</h4>
+        <h4>{t("browser-consoles-2.status")}</h4>
         <table className="pmx-status"><tbody>
-          <tr><th>Status</th><td>{v.st === "stopped" ? "stopped" : v.st === "running" ? "running" : v.state}</td></tr>
-          <tr><th>HA State</th><td>{c.ha.failover ? "started" : "none"}</td></tr>
-          <tr><th>Node</th><td>{v.node}</td></tr>
-          <tr><th>CPU usage</th><td className="num">{(now.cpu * 100).toFixed(2)}% of {w.vcpu} CPU(s)</td></tr>
-          <tr><th>Memory usage</th><td className="num">{(now.ram * 100).toFixed(2)}% ({gib(now.ram * w.ramGb)} of {gib(w.ramGb)})</td></tr>
-          <tr><th>Bootdisk size</th><td className="num">{gib(w.diskGb)}</td></tr>
-          <tr><th>IPs</th><td className="num">{v.ip || "No network information"}</td></tr>
+          <tr><th>{t("browser-consoles-2.status")}</th><td>{v.st === "stopped" ? t("browser-consoles-2.stopped") : v.st === "running" ? t("browser-consoles-2.running") : v.state}</td></tr>
+          <tr><th>{t("browser-consoles-2.haState")}</th><td>{c.ha.failover ? t("browser-consoles-2.started") : t("browser-consoles-2.none")}</td></tr>
+          <tr><th>{t("browser-consoles-2.node")}</th><td>{v.node}</td></tr>
+          <tr><th>{t("browser-consoles-2.cpuUsage")}</th><td className="num">{t("browser-consoles-2.cpuOfCpus", { pct: (now.cpu * 100).toFixed(2), cpus: w.vcpu })}</td></tr>
+          <tr><th>{t("browser-consoles-2.memoryUsage")}</th><td className="num">{(now.ram * 100).toFixed(2)}% ({t("browser-consoles-2.of", { used: gib(now.ram * w.ramGb), total: gib(w.ramGb) })})</td></tr>
+          <tr><th>{t("browser-consoles-2.bootdiskSize")}</th><td className="num">{gib(w.diskGb)}</td></tr>
+          <tr><th>{t("browser-consoles-2.ips")}</th><td className="num">{v.ip || t("browser-consoles-2.noNetworkInfo")}</td></tr>
         </tbody></table>
       </section>
       <div className="pmx-range">
-        <select value={range} onChange={(e) => setRange(e.target.value)} aria-label="Timeframe">
-          <option value="hour">Hour (average)</option><option value="day">Day (average)</option>
+        <select value={range} onChange={(e) => setRange(e.target.value)} aria-label={t("browser-consoles-2.timeframe")}>
+          <option value="hour">{t("browser-consoles-2.hourAverage")}</option><option value="day">{t("browser-consoles-2.dayAverage")}</option>
         </select>
       </div>
-      <Chart className="pmx-graph" kind="area" title="CPU usage" values={ring.map((x) => x.cpu)} end={end} slots={slots} />
-      <Chart className="pmx-graph" kind="area" title="Memory usage" unit="GiB" values={ring.map((x) => x.ram * w.ramGb)} max={niceMax([w.ramGb])} end={end} slots={slots} />
-      <Chart className="pmx-graph" kind="area" title="Network traffic" unit="Mbit/s" values={net} max={niceMax(net)} end={end} slots={slots} />
-      <Chart className="pmx-graph" kind="area" title="Disk usage" values={ring.map((x) => x.disk)} end={end} slots={slots} />
+      <Chart className="pmx-graph" kind="area" title={t("browser-consoles-2.chartCpu")} values={ring.map((x) => x.cpu)} end={end} slots={slots} />
+      <Chart className="pmx-graph" kind="area" title={t("browser-consoles-2.chartMemory")} unit="GiB" values={ring.map((x) => x.ram * w.ramGb)} max={niceMax([w.ramGb])} end={end} slots={slots} />
+      <Chart className="pmx-graph" kind="area" title={t("browser-consoles-2.networkTraffic")} unit="Mbit/s" values={net} max={niceMax(net)} end={end} slots={slots} />
+      <Chart className="pmx-graph" kind="area" title={t("browser-consoles-2.diskUsage")} values={ring.map((x) => x.disk)} end={end} slots={slots} />
     </>
   );
 }
@@ -47,40 +48,41 @@ export function VmSummary({ game, c, v }: { game: GameState; c: Cluster; v: Vm }
 export function Proxmocks(p: PanelProps) {
   const era = eraAt(ERAS, p.game), { game, c, f } = p, openConsole = useStore((s) => s.openConsole);
   const [sel, setSel] = useState<Sel>(ALL), [tab, setTab] = useState("Summary");
+  const tabNames: Record<string, string> = { Summary: t("browser-consoles-2.summary"), Console: t("browser-consoles-2.console"), Hardware: t("browser-consoles-2.hardware"), Options: t("browser-consoles-2.options"), Backup: t("browser-consoles-2.backup"), Updates: t("browser-consoles-2.updates"), Cluster: t("browser-consoles-2.cluster") };
   const { vms, dialog } = useVms(game, c, f), sw = useSoftware(game, c, f), nv = useNewVm(game, c);
   if (!p.signedIn) return (
     <div className="cx pmx pmx-login" data-era={era}>
-      <LoginForm className="pmx-card" onLogin={p.login} button="Login">
+      <LoginForm className="pmx-card" onLogin={p.login} button={t("browser-consoles-2.login")}>
         <div className="pmx-card-h">Proxmocks VE Login</div>
         <div className="cx-host">{p.host}</div>
-        <label className="cx-field">Realm<select defaultValue="pam"><option value="pam">Lunix PAM standard authentication</option><option value="pve">Proxmocks VE authentication server</option></select></label>
+        <label className="cx-field">{t("browser-consoles-2.realm")}<select defaultValue="pam"><option value="pam">{t("browser-consoles-2.pamAuth")}</option><option value="pve">{t("browser-consoles-2.pveAuth")}</option></select></label>
       </LoginForm>
     </div>
   );
-  const pick = (s: Sel, t = "Summary") => { setSel(s); setTab(t); };
+  const pick = (s: Sel, tb = "Summary") => { setSel(s); setTab(tb); };
   const vm = sel.kind === "vm" ? vms.find((v) => v.id === sel.id) : undefined;
   const node = sel.kind === "node" ? sel.id : null;
   const tabs = vm ? ["Summary", "Console", "Hardware", "Options", "Backup"]
     : node ? ["Summary", "Updates"] : ["Summary", ...(f.cluster ? ["Cluster"] : []), ...(f.backups ? ["Backup"] : [])];
   const shown = tabs.includes(tab) ? tab : "Summary";
   const nodes = c.nodes.map((n) => game.devices.find((d) => d.id === n.deviceId)!).filter(Boolean);
-  const title = vm ? `Virtual Machine ${vmid(vm)} (${vm.name}) on node '${vm.node}'` : node ? `Node '${nodes.find((d) => d.id === node)?.hostname ?? ""}'` : "Datacenter";
+  const title = vm ? t("browser-consoles-2.vmTitle", { id: vmid(vm), name: vm.name, node: vm.node }) : node ? t("browser-consoles-2.nodeTitle", { name: nodes.find((d) => d.id === node)?.hostname ?? "" }) : t("browser-consoles-2.datacenter");
   const finish = () => { const id = nv.create(); if (id) pick({ kind: "vm", id }); };
   const facts = vm && vmFacts(game, vm), health = summaryOf(game, c, node);
   return (
     <div className="cx cx-hv pmx" data-era={era}>
       <header className="pmx-top">
-        <span className="pmx-logo"><b>PROXMOCKS</b> Virtual Environment</span>
+        <span className="pmx-logo"><b>PROXMOCKS</b> {t("browser-consoles-2.virtualEnvironment")}</span>
         <span className="pmx-ver num">{c.version}</span>
         <span className="cx-host">{p.host}</span>
-        {f.create && <button className="pmx-create" onClick={() => setSel({ kind: "new" })}>Create VM</button>}
-        <button className="pmx-out" onClick={p.logout}>Logout</button>
+        {f.create && <button className="pmx-create" onClick={() => setSel({ kind: "new" })}>{t("browser-consoles-2.createVm")}</button>}
+        <button className="pmx-out" onClick={p.logout}>{t("browser-consoles-2.logout")}</button>
       </header>
       <div className="cx-hv-body">
         <aside className="cx-hv-tree pmx-tree">
-          <div className="pmx-view">Server View</div>
+          <div className="pmx-view">{t("browser-consoles-2.serverView")}</div>
           <ul>
-            <li><button aria-pressed={sel.kind === "all"} onClick={() => pick(ALL)}><i>▤</i>Datacenter</button>
+            <li><button aria-pressed={sel.kind === "all"} onClick={() => pick(ALL)}><i>▤</i>{t("browser-consoles-2.datacenter")}</button>
               <ul>
                 {nodes.map((d) => (
                   <li key={d.id}>
@@ -102,29 +104,29 @@ export function Proxmocks(p: PanelProps) {
             {vm && <Toolbar actions={vm.actions} className="cx-toolbar pmx-tools" />}
           </div>
           <div className="pmx-pane">
-            <nav className="pmx-tabs">{tabs.map((t) => <button key={t} aria-pressed={t === shown} onClick={() => setTab(t)}>{t}</button>)}</nav>
+            <nav className="pmx-tabs">{tabs.map((tb) => <button key={tb} aria-pressed={tb === shown} onClick={() => setTab(tb)}>{tabNames[tb]}</button>)}</nav>
             <main className="cx-hv-main">
               {vm && vm.panel}
               {vm && shown === "Summary" && <VmSummary game={game} c={c} v={vm} />}
-              {vm && shown === "Console" && <div className="pmx-console"><button className="cx-btn primary" disabled={!vm.own} onClick={() => openConsole(vm.id)}>&gt;_ Console</button></div>}
+              {vm && shown === "Console" && <div className="pmx-console"><button className="cx-btn primary" disabled={!vm.own} onClick={() => openConsole(vm.id)}>&gt;_ {t("browser-consoles-2.console")}</button></div>}
               {vm && facts && shown === "Hardware" && (
                 <>
-                  <Facts facts={[facts.memory, facts.cpu, { ...facts.disk, label: "Hard Disk (scsi0)" }, { ...facts.media, label: "CD/DVD Drive (ide2)" }, { label: "Network Device (net0)", value: "virtio, bridge=vmbr0" }]} />
-                  <MediaMenu game={game} v={vm} label="CD/DVD Drive (ide2)" none="Do not use any media" />
+                  <Facts facts={[facts.memory, facts.cpu, { ...facts.disk, label: t("browser-consoles-2.hardDiskScsi") }, { ...facts.media, label: t("browser-consoles-2.cdDvdDrive") }, { label: t("browser-consoles-2.networkDevice"), value: "virtio, bridge=vmbr0" }]} />
+                  <MediaMenu game={game} v={vm} label={t("browser-consoles-2.cdDvdDrive")} none={t("browser-consoles-2.noMedia")} />
                 </>
               )}
-              {vm && shown === "Options" && <Facts facts={[{ label: "Name", value: vm.name }, { label: "OS Type", value: vm.own ? osText(vm.w) : vm.sub }, { label: "Boot Order", value: vm.media ? "ide2, scsi0" : "scsi0" }]} />}
+              {vm && shown === "Options" && <Facts facts={[{ label: t("browser-consoles-2.name"), value: vm.name }, { label: t("browser-consoles-2.osType"), value: vm.own ? osText(vm.w) : vm.sub }, { label: t("browser-consoles-2.bootOrder"), value: vm.media ? "ide2, scsi0" : "scsi0" }]} />}
               {vm && facts && shown === "Backup" && <Facts facts={[facts.backup]} />}
               {!vm && shown === "Summary" && (
                 <>
                   <section className="pmx-panel">
-                    <h4>{node ? "Status" : "Health"}</h4>
-                    <ResourceBars use={health.use} labels={["CPU", "Memory", "Storage"]} className="cx-hv-bars pmx-res" />
+                    <h4>{node ? t("browser-consoles-2.status") : t("browser-consoles-2.health")}</h4>
+                    <ResourceBars use={health.use} labels={["CPU", t("browser-consoles-2.memory"), t("browser-consoles-2.storage")]} className="cx-hv-bars pmx-res" />
                     <AlarmList game={game} c={c} alarms={health.alarms} className="cx-table pmx-alarms" />
                   </section>
                   <NodeList game={game} c={c} f={{ ...f, cluster: false }} className="cx-table" />
                   <table className="cx-table">
-                    <thead><tr><th>ID</th><th>Name</th><th>Node</th><th>Status</th><th>CPU</th><th>Memory</th></tr></thead>
+                    <thead><tr><th>ID</th><th>{t("browser-consoles-2.name")}</th><th>{t("browser-consoles-2.node")}</th><th>{t("browser-consoles-2.status")}</th><th>CPU</th><th>{t("browser-consoles-2.memory")}</th></tr></thead>
                     <tbody>
                       {vms.filter((v) => !node || v.w.deviceId === node).map((v) => (
                         <tr key={v.id} onClick={() => pick({ kind: "vm", id: v.id })}>
@@ -148,17 +150,17 @@ export function Proxmocks(p: PanelProps) {
           </div>
         </section>
       </div>
-      <TaskLog game={game} c={c} vms={vms} title="Tasks" className="cx-tasks pmx-tasks" />
+      <TaskLog game={game} c={c} vms={vms} title={t("browser-consoles-2.tasks")} className="cx-tasks pmx-tasks" />
       {sel.kind === "new" && (
         <div className="cx-wiz-back">
-          <Wizard title="Create: Virtual Machine" numbered className="cx-wiz-tabs pmx-wiz" finish="Finish" onCancel={() => setSel(ALL)} onFinish={finish} steps={[
-            { id: "general", label: "General", body: <Facts facts={[{ label: "Node", value: nodes.length === 1 ? nodes[0].hostname ?? nodes[0].name : "Any" }, { label: "Resource Pool", value: c.name }]} /> },
-            { id: "os", label: "OS", body: nv.isoPick("ISO image") },
-            { id: "disk", label: "Hard Disk", body: <SizeFields size={nv.size} set={nv.setSize} only="diskGb" labels={["", "", "Disk size (GiB)"]} /> },
-            { id: "cpu", label: "CPU", body: <SizeFields size={nv.size} set={nv.setSize} only="vcpu" labels={["Cores", "", ""]} /> },
-            { id: "memory", label: "Memory", body: <SizeFields size={nv.size} set={nv.setSize} only="ramGb" labels={["", "Memory (GiB)", ""]} /> },
-            { id: "network", label: "Network", body: <Facts facts={[{ label: "Bridge", value: "vmbr0" }, { label: "Model", value: "VirtIO (paravirtualized)" }]} /> },
-            { id: "confirm", label: "Confirm", body: <Facts facts={[{ label: "cores", value: String(nv.size.vcpu), num: true }, { label: "memory", value: `${nv.size.ramGb} GiB`, num: true }, { label: "scsi0", value: `${nv.size.diskGb} GiB`, num: true }, { label: "ide2", value: nv.isoLabel ?? "none", num: true }]} /> },
+          <Wizard title={t("browser-consoles-2.createVm")} numbered className="cx-wiz-tabs pmx-wiz" finish={t("browser-consoles-2.finish")} onCancel={() => setSel(ALL)} onFinish={finish} steps={[
+            { id: "general", label: t("browser-consoles-2.general"), body: <Facts facts={[{ label: t("browser-consoles-2.node"), value: nodes.length === 1 ? nodes[0].hostname ?? nodes[0].name : t("browser-consoles-2.any") }, { label: t("browser-consoles-2.resourcePool"), value: c.name }]} /> },
+            { id: "os", label: t("browser-consoles-2.os"), body: nv.isoPick(t("browser-consoles-2.isoImage")) },
+            { id: "disk", label: t("browser-consoles-2.hardDisk"), body: <SizeFields size={nv.size} set={nv.setSize} only="diskGb" labels={["", "", t("browser-consoles-2.diskSizeGib")]} /> },
+            { id: "cpu", label: "CPU", body: <SizeFields size={nv.size} set={nv.setSize} only="vcpu" labels={[t("browser-consoles-2.cores"), "", ""]} /> },
+            { id: "memory", label: t("browser-consoles-2.memory"), body: <SizeFields size={nv.size} set={nv.setSize} only="ramGb" labels={["", t("browser-consoles-2.memoryGib"), ""]} /> },
+            { id: "network", label: t("browser-consoles-2.network"), body: <Facts facts={[{ label: t("browser-consoles-2.bridge"), value: "vmbr0" }, { label: t("browser-consoles-2.model"), value: "VirtIO (paravirtualized)" }]} /> },
+            { id: "confirm", label: t("browser-consoles-2.confirm"), body: <Facts facts={[{ label: "cores", value: String(nv.size.vcpu), num: true }, { label: "memory", value: `${nv.size.ramGb} GiB`, num: true }, { label: "scsi0", value: `${nv.size.diskGb} GiB`, num: true }, { label: "ide2", value: nv.isoLabel ?? "none", num: true }]} /> },
           ]} />
         </div>
       )}

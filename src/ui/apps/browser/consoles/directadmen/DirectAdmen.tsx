@@ -1,6 +1,7 @@
 import { Search } from "lucide-react";
 import { useState } from "react";
 import { Backups, erasFrom, eraAt, LoginForm, Nodes, RowsTable, usePanelTab, useRows, useSoftware, type PanelProps } from "../PanelBase";
+import { t } from "../../../../../i18n/en";
 import "./directadmen.css";
 
 // docs/design/software.md, section 10: the enhanced skin's three link columns until 2018, then a dark bar, cards and a search.
@@ -12,46 +13,46 @@ export function DirectAdmen(p: PanelProps) {
   const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f);
   if (!p.signedIn) return (
     <div className="cx da da-login" data-era={era}>
-      <LoginForm className="da-card" onLogin={p.login} button="Login">
+      <LoginForm className="da-card" onLogin={p.login} button={t("browser-consoles-2.login")}>
         <div className="da-logo">DirectAdmen</div>
         <div className="cx-host">{p.host}</div>
       </LoginForm>
     </div>
   );
   const shown = rows.filter((r) => r.name.toLowerCase().includes(q.toLowerCase()));
-  const crumb = tab === "objects" ? "Web spaces" : tab === "nodes" ? "Nodes" : null;
+  const crumb = tab === "objects" ? t("browser-consoles-2.webSpaces") : tab === "nodes" ? t("browser-consoles-2.nodes") : null;
   return (
     <div className="cx da" data-era={era}>
       <header className="da-top">
         <span className="da-logo">DirectAdmen</span>
-        <span className="da-level">Admin Level</span>
+        <span className="da-level">{t("browser-consoles-2.adminLevel")}</span>
         {era === "late" && (
           <label className="da-search"><Search size={14} aria-hidden />
-            <input placeholder="Search" value={q} onChange={(e) => { setQ(e.target.value); setTab("objects"); }} />
+            <input placeholder={t("browser-consoles-2.search")} value={q} onChange={(e) => { setQ(e.target.value); setTab("objects"); }} />
           </label>
         )}
         <span className="cx-host">{p.host}</span>
-        <button className="da-link" onClick={p.logout}>Logout</button>
+        <button className="da-link" onClick={p.logout}>{t("browser-consoles-2.logout")}</button>
       </header>
       <main className="da-main">
-        <nav className="da-crumb"><button className="da-link" onClick={() => setTab("software")}>Home</button>{crumb && <> » {crumb}</>}</nav>
-        {tab === "objects" && <RowsTable rows={shown} name="Domain" />}
+        <nav className="da-crumb"><button className="da-link" onClick={() => setTab("software")}>{t("browser-consoles-2.home")}</button>{crumb && <> » {crumb}</>}</nav>
+        {tab === "objects" && <RowsTable rows={shown} name={t("browser-consoles-2.domain")} />}
         {tab === "nodes" && <Nodes game={p.game} c={p.c} />}
         {tab === "software" && (
           <>
             <div className="da-cols">
               <section>
-                <h2>Server Manager</h2>
-                <button className="da-link" onClick={() => setTab("objects")}>Show all web spaces</button>
-                {p.f.cluster && <button className="da-link" onClick={() => setTab("nodes")}>Nodes</button>}
+                <h2>{t("browser-consoles-2.serverManager")}</h2>
+                <button className="da-link" onClick={() => setTab("objects")}>{t("browser-consoles-2.showAllWebSpaces")}</button>
+                {p.f.cluster && <button className="da-link" onClick={() => setTab("nodes")}>{t("browser-consoles-2.nodes")}</button>}
               </section>
               <section>
-                <h2>Server Tools</h2>
+                <h2>{t("browser-consoles-2.serverTools")}</h2>
                 {sw.note && <span className="cx-note">{sw.note}</span>}
                 {sw.actions.map((a) => <button key={a.id} className={`da-link ${a.tone ?? ""}`} onClick={a.run}>{a.label}</button>)}
               </section>
               <section>
-                <h2>Server Info</h2>
+                <h2>{t("browser-consoles-2.serverInfo")}</h2>
                 <dl>{sw.facts.map((x) => <div key={x.label}><dt>{x.label}</dt><dd className={x.num ? "num" : undefined}>{x.value}</dd></div>)}</dl>
               </section>
             </div>

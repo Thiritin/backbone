@@ -33,3 +33,9 @@ it("switches the language t() reads", async () => {
   await loadLang("en");
   expect(t("event.review.title")).toBe(en["event.review.title"]({}));
 });
+
+it("defines every key the code passes to t()", () => {
+  const files = import.meta.glob<string>(["../src/**/*.ts", "../src/**/*.tsx", "!../src/i18n/**"], { eager: true, query: "?raw", import: "default" });
+  const used = new Set(Object.values(files).flatMap((src) => [...src.matchAll(/\bt\("([\w.-]+)"/g)].map((m) => m[1])));
+  expect([...used].filter((k) => !en[k])).toEqual([]);
+});
