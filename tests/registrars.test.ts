@@ -221,8 +221,8 @@ describe("company domain", () => {
 });
 
 describe("tutorial", () => {
-  it("runs register, company, buyServer, mountServer, internet, setup, website, domain, launch, email, firstCustomer", () => {
-    expect(TUTORIAL).toEqual(["register", "company", "buyServer", "mountServer", "internet", "setup", "website", "domain", "launch", "email", "firstCustomer"]);
+  it("runs register, company, buyServer, mountServer, mountRouter, internet, setup, website, domain, launch, email, firstCustomer", () => {
+    expect(TUTORIAL).toEqual(["register", "company", "buyServer", "mountServer", "mountRouter", "internet", "setup", "website", "domain", "launch", "email", "firstCustomer"]);
   });
 
   it("starts with the Marketing app installed for free", () => {

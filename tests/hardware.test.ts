@@ -36,8 +36,8 @@ describe("catalog", () => {
     for (const m of MODELS) {
       expect(m.idleWatts).toBeLessThanOrEqual(m.watts);
       expect(m.ports.length > 0).toBe(!["part", "ups", "pdu", "kvm", "console", "oob", "chassis"].includes(m.kind));
-      // Panel gateways (provided or small-office) and parts take no rack units; rack gateways, UPS units and PDUs take their own height.
-      expect(m.height).toBe(m.kind === "part" || (m.kind === "gateway" && (!m.price || m.brand === "AVN")) ? 0 : ["server", "gateway", "ups", "pdu", "kvm", "chassis"].includes(m.kind) ? m.height : 1);
+      // The handoff, the line jack and parts take no rack units; small-office routers stand on a 1U shelf; rack gateways, UPS units and PDUs take their own height.
+      expect(m.height).toBe(m.kind === "part" || m.kind === "jack" || m.id === "handoff" ? 0 : m.brand === "AVN" ? 1 : ["server", "gateway", "ups", "pdu", "kvm", "chassis"].includes(m.kind) ? m.height : 1);
     }
     expect(() => modelById("nope")).toThrow();
   });
@@ -82,16 +82,18 @@ describe("catalog", () => {
 });
 
 describe("new game", () => {
-  it("starts with an empty basement rack and the home router", () => {
+  it("starts with an empty basement rack, the line jack and the flat's router in storage", () => {
     const s = newGame(3);
     expect(s.cash).toBe(START_CASH);
     expect(s.locations).toEqual([{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: "Basement", space: "basement", positions: 1, readyAt: 0, extraCircuit: false }]);
     expect(s.racks).toEqual([{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null, overSince: { a: null, b: null } }]);
     expect(s.devices.map((d) => [d.model, d.brand, d.name, d.rackId, d.panel, d.price, d.boughtAt])).toEqual([
-      ["home-router", "Sysko", "fra1-gw-01", null, "loc1", 0, 0],
+      ["home-router", "AVN", "fra1-gw-01", null, null, 0, 0],
+      ["line-jack", "", "fra1-line-01", null, "loc1", 0, 0],
     ]);
+    expect(s.devices[0].store).toBe("loc1");
     expect(freeSlots(s, "rack2", 1)).toEqual(Array.from({ length: 24 }, (_, i) => i + 1));
-    expect(portPeers(s, "dev5")).toEqual([null, null, null, null]);
+    expect(portPeers(s, "dev5")).toEqual([null, null, null, null, null]);
   });
 });
 
@@ -161,12 +163,12 @@ describe("mounting", () => {
     ok(setPortGroup(s, "dev4", [2, 3]));
     ok(unmountDevice(s, "dev4"));
     expect(dev(s, "dev4")).toMatchObject({ rackId: null, panel: null, name: "fra1-sw-01", groups: [[2, 3]] });
-    expect(s.cables).toEqual([]);
+    expect(s.cables.map((c) => c.id)).toEqual(["cab-line"]);
     expect(linkStatus(s, "dev3").online).toBe(false);
     ok(unmountDevice(s, "dev3"));
     expect(dev(s, "dev3").bond).toBe("balance");
     expect(err(unmountDevice(s, "dev3"))).toBe("error.notMounted");
-    expect(err(unmountDevice(s, "dev5"))).toBe("error.notMounted");
+    expect(err(unmountDevice(s, "dev6"))).toBe("error.notMounted");
     expect(err(unmountDevice(s, "x"))).toBe("error.unknownDevice");
     ok(mountDevice(s, "dev4", "rack2", 10));
     expect(dev(s, "dev4").name).toBe("fra1-sw-01");
@@ -177,8 +179,8 @@ describe("sellDevice", () => {
   it("sells a mounted device after unplugging it, and a stored one", () => {
     const s = atYear(2005, 5000);
     ok(sellDevice(s, "dev3"));
-    expect(s.devices.map((d) => d.id)).toEqual(["dev4", "dev5"]);
-    expect(s.cables.map((c) => c.id)).toEqual(["cab7"]);
+    expect(s.devices.map((d) => d.id)).toEqual(["dev4", "dev5", "dev6"]);
+    expect(s.cables.map((c) => c.id)).toEqual(["cab-line", "cab7"]);
     expect(s.cash).toBe(7500);
     expect(s.ledger.at(-1)).toEqual({ hour: 0, category: "sales", key: "ledger.sale", params: { device: "fra1-srv-01" }, amount: 2500 });
     const stored = ok(buyDevice(s, "sw-24", "Sysko", 1, "loc1"));

@@ -1,4 +1,5 @@
-import { brandsOf, fillCpus, MODELS, modelById, RENAMED_MODELS } from "../10-catalog/hardware";
+import { brandsOf, fillCpus, isOfficeRouter, MODELS, modelById, RENAMED_MODELS, wanPort } from "../10-catalog/hardware";
+import { freeSlots } from "../60-infra/status";
 import { leave } from "../90-actions/clusters";
 import { yearOf } from "../00-core/time";
 import { asImage } from "../10-catalog/server-os";
@@ -8,7 +9,7 @@ import { skillById, skillFor } from "../10-catalog/research";
 import { STARTER_APPS, WIDGETS } from "../10-catalog/store";
 import { legacyRegistration } from "../80-business/office";
 import type { Employee } from "../47-staff/staff";
-import { deviceDefaults, fillCards, fillSizes, newGame, SAVE_VERSION, type Device, type GameState, type Location } from "../50-state";
+import { device, deviceDefaults, fillCards, fillSizes, newGame, SAVE_VERSION, type Device, type GameState, type Location } from "../50-state";
 import { dropCluster, workloadDefaults } from "../60-infra/cluster";
 import { upgradeCompute } from "./compute";
 import { fillDomains } from "../30-customers/domains";
@@ -57,7 +58,7 @@ export function deserialize(raw: string): GameState {
     const defaults = deviceDefaults(model, d.boughtAt ?? 0);
     const sized = fillCpus(modelById(model), fillSizes(model, d.components ?? defaults.components));
     return {
-      ...defaults, ...d, model, brand: maker(model, d.brand), components: (data.version ?? 1) < 3 ? fillCards(model, sized) : sized, lease: d.lease ?? null, store: stored(d), transitTo: d.transitTo ?? null, arriveAt: d.arriveAt ?? null,
+      ...defaults, ...d, model, brand: model === "home-router" ? "AVN" : maker(model, d.brand), components: (data.version ?? 1) < 3 ? fillCards(model, sized) : sized, lease: d.lease ?? null, store: stored(d), transitTo: d.transitTo ?? null, arriveAt: d.arriveAt ?? null,
     };
   });
   const racks = (data.racks ?? base.racks).map((r) => ({ ...r, provided: r.provided ?? false, feedB: r.feedB ?? false, highDensity: r.highDensity ?? false, extraKw: r.extraKw ?? 0, extraKwAt: r.extraKwAt ?? null, flatKw: r.flatKw ?? 0, flatKwAt: r.flatKwAt ?? null, overSince: r.overSince ?? { a: null, b: null } }));
@@ -112,6 +113,7 @@ export function deserialize(raw: string): GameState {
     invoices: (data.invoices ?? []).map((i) => ({ ...i, suspendedAt: i.suspendedAt ?? (i.suspended ? data.hour ?? 0 : null), extendedUntil: i.extendedUntil ?? null })),
   })))), data.marketing?.lines), data.marketing?.designYear), data.marketing?.launched)), data.registrar)), bare);
   legacyLeads(s);
+  shelveRouter(s);
   // Machines from before one-time licenses hold theirs for free, since the fee was never charged.
   if (!data.licenses) s.licenses = heldLicenses(s);
   const media = data.media ?? base.media;
@@ -136,4 +138,18 @@ function dropGone(gone: Set<string>, s: GameState): GameState {
   const held = (id: string | null) => !id || gone.has(id) || vms.has(id) ? null : id;
   s.ips = { ...s.ips, addresses: s.ips.addresses.map((a) => ({ ...a, holder: held(a.holder) })) };
   return s;
+}
+
+// Saves from before routers stood in the rack: the basement router leaves the carrier panel for the lowest free unit of a
+// basement rack (storage when none has room), and a line jack on the panel gets a cable to the router's DSL port.
+function shelveRouter(s: GameState): void {
+  const loc = s.locations.find((l) => !l.dc);
+  if (!loc || s.devices.some((d) => d.model === "line-jack")) return;
+  const jack = device(`dev${s.nextId++}`, "line-jack", "", null, 0, loc.id, `${loc.az}-line-01`, 0);
+  s.devices = [...s.devices, jack];
+  const gw = s.devices.find((d) => d.panel === loc.id && isOfficeRouter(modelById(d.model)));
+  if (!gw) return;
+  const rack = s.racks.find((r) => r.locationId === loc.id && r.arriveAt === null && freeSlots(s, r.id, 1).length);
+  Object.assign(gw, rack ? { panel: null, rackId: rack.id, slot: freeSlots(s, rack.id, 1)[0] } : { panel: null, store: loc.id });
+  if (rack) s.cables = [...s.cables, { id: `cab${s.nextId++}`, a: { device: jack.id, port: 0 }, b: { device: gw.id, port: wanPort(modelById(gw.model)) }, kind: "copper", color: null }];
 }
