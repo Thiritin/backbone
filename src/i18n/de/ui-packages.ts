@@ -78,4 +78,7 @@ export default {
   "pkg.hzFlavors": () => "Flavors",
   "pkg.hzPublic": () => "Öffentlich",
   "pkg.yes": () => "Ja",
+  "pkg.changePlan": () => "Paket ändern",
+  "pkg.changeCpanic": () => "Konto hoch- oder herabstufen",
+  "pkg.changeDa": () => "Benutzerpaket ändern",
 } satisfies Dict;

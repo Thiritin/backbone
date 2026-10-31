@@ -9,7 +9,7 @@ import type { GameState } from "../../../../sim/50-state";
 import type { Cluster } from "../../../../sim/60-infra/cluster";
 import { belowFloor, covers, defaultSpecFor, packageNamed, packageProducts, packageUse, packagesOf, type PackageDef } from "../../../../sim/80-business/packages";
 import { provisionOrder } from "../../../../sim/90-actions/orders";
-import { addPackage, copyPackages, deletePackage, editPackage } from "../../../../sim/90-actions/packages";
+import { addPackage, changePackage, copyPackages, deletePackage, editPackage } from "../../../../sim/90-actions/packages";
 import { useStore } from "../../../store";
 
 const num = (n: number) => `${+n.toFixed(2)}`;
@@ -176,5 +176,28 @@ export function ProvisionForm({ game, c, products, order, sections, className = 
         {tk?.work && <span className="cx-note">{t("pkg.queued")}</span>}
       </div>
     </form>
+  );
+}
+
+// The packages of the host a customer's service could be moved to: its product, not below the floor of what it was sold.
+export function planChoices(game: GameState, c: Cluster, serviceId: string | null | undefined): PackageDef[] {
+  const v = game.services.find((x) => x.id === serviceId && x.endedAt === null);
+  return v ? packagesOf(c).filter((p) => p.product === v.product && !belowFloor(p, v.spec)) : [];
+}
+
+// The inline form under an account row that books another package on it.
+export function ChangePackage({ game, c, serviceId, label = t("pkg.changePlan"), done }: { game: GameState; c: Cluster; serviceId: string; label?: string; done: () => void }) {
+  const act = useStore((s) => s.act), v = game.services.find((x) => x.id === serviceId), [name, setName] = useState(v?.pkg ?? "");
+  return (
+    <div className="cx-inline">
+      <label className="cx-field">{t("pkg.package")}
+        <select value={name} onChange={(e) => setName(e.target.value)}>
+          {!v?.pkg && <option value="">{t("pkg.custom")}</option>}
+          {planChoices(game, c, serviceId).map((p) => <option key={p.name} value={p.name}>{p.name}</option>)}
+        </select>
+      </label>
+      <button className="cx-btn primary" disabled={!name || name === v?.pkg} onClick={() => act(changePackage, serviceId, name).ok && done()}>{label}</button>
+      <button className="cx-btn" onClick={done}>{t("browser-consoles-2.cancel")}</button>
+    </div>
   );
 }

@@ -78,4 +78,7 @@ export default {
   "pkg.hzFlavors": () => "Flavors",
   "pkg.hzPublic": () => "Public",
   "pkg.yes": () => "Oui",
+  "pkg.changePlan": () => "Changer de forfait",
+  "pkg.changeCpanic": () => "Changer le forfait d'un compte",
+  "pkg.changeDa": () => "Modifier le forfait de l'utilisateur",
 } satisfies Dict;

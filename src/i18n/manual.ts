@@ -40,6 +40,7 @@ export const MANUAL_EN: Record<string, (p: Params) => string> = {
   "ledger.domainTransfer": (p) => `Transfer of ${p.domain} to ${p.registry}`,
   "ledger.domainRenewal": (p) => `Renewal of ${p.domain} at ${p.registry}`,
   "activity.renewDomain": (p) => `Renewed ${p.domain} for a year`,
+  "activity.changePackage": (p) => `Moved to package ${p.pkg}`,
   "activity.upgrade": (p) => `Upgraded the service at ${euroCents(Number(p.price))} a month`,
   "event.orderAccepted.title": () => "Quote accepted",
   "event.orderAccepted.text": (p) => `${p.name} accepted the quote.`,

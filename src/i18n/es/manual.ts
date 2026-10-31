@@ -38,6 +38,7 @@ export default {
   "ledger.domainTransfer": (p) => `Traslado de ${p.domain} a ${p.registry}`,
   "ledger.domainRenewal": (p) => `Renovación de ${p.domain} en ${p.registry}`,
   "activity.renewDomain": (p) => `${p.domain} renovado por un año`,
+  "activity.changePackage": (p) => `Cambiado al paquete ${p.pkg}`,
   "activity.upgrade": (p) => `Servicio ampliado a ${euroCents(Number(p.price))} al mes`,
   "event.orderAccepted.title": () => "Presupuesto aceptado",
   "event.orderAccepted.text": (p) => `${p.name} ha aceptado el presupuesto.`,

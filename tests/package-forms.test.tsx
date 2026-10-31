@@ -12,7 +12,7 @@ import { consoleFeatures, createFormFor, createLink } from "../src/sim/80-busine
 import { tick } from "../src/sim/88-tick/tick";
 import { confirmOrder, createAccount, provisionOrder, quoteOrder, registerOrderDomain } from "../src/sim/90-actions/orders";
 import { addPackage } from "../src/sim/90-actions/packages";
-import { ProvisionForm } from "../src/ui/apps/browser/consoles/PackageForms";
+import { ChangePackage, planChoices, ProvisionForm } from "../src/ui/apps/browser/consoles/PackageForms";
 import { accountChoices, NewCustomer } from "../src/ui/apps/customers/NewCustomer";
 import { panelVm, readyGame } from "./fixtures";
 
@@ -144,6 +144,15 @@ describe("create account form", () => {
     addPackage(s, host, { name: "Odd", product: "vps", spec: { ...req().spec, vcpu: 3, ramGb: 6, diskGb: 33 } });
     const html = console_(s, c, "/admin/flavors");
     for (const f of ["m1.tiny", "m1.small", "m1.medium", "m1.large", "m1.xlarge", "Odd"]) expect(html).toContain(f);
+  });
+
+  it("offers the change package form for a running account", () => {
+    const { s, id, req, host } = order(53, true);
+    addPackage(s, host, { name: "Big", product: "webHosting", spec: { ...req().spec, vcpu: req().spec.vcpu * 2 } });
+    must(provisionOrder(s, id, host));
+    const c = s.clusters.find((x) => x.id === host)!, sid = req().serviceId!;
+    expect(planChoices(s, c, sid).map((p) => p.name)).toEqual(["Big"]);
+    expect(renderToString(<ChangePackage game={s} c={c} serviceId={sid} done={() => {}} />)).toContain(t("pkg.changePlan"));
   });
 
   it("draws the TCAdmen service defaults and Add Service form", () => {
