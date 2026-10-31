@@ -100,6 +100,8 @@ export interface Device extends MachineState { id: string; model: string; brand:
   burnin: { until: number; full: boolean } | null; burnedInAt: number | null;
   // Buyer protection from a board or eBuy purchase: the first failure before the hour refunds this much.
   refund?: { until: number; amount: number } | null;
+  // thermal.ts: the game minute the server shut itself off from heat, and the hours it ran throttling hot.
+  overheatedAt?: number; hotHours?: number;
 }
 // paid counts the monthly payments made so far; the lease ends after months payments.
 export interface Lease { id: string; lessor: string; monthly: number; months: number; startedAt: number; paid: number; devices: string[] }

@@ -62,11 +62,11 @@ function uncleanStop(s: GameState, d: Device): "ipmi.log.resync" | "ipmi.log.cor
   return "ipmi.log.corrupted";
 }
 
-export function losePower(s: GameState, d: Device): void {
+export function losePower(s: GameState, d: Device, key = "ipmi.log.pulled"): void {
   const outcome = uncleanStop(s, d);
   d.hung = false;
   rollStuck(s, d);
-  pushLog(d, s.hour, "ipmi.log.pulled");
+  pushLog(d, s.hour, key);
   if (outcome) pushLog(d, s.hour, outcome);
 }
 

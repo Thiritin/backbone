@@ -10,6 +10,7 @@ export const IPMI_EN: Record<string, (p: Params) => string> = {
   "ipmi.log.powerOn": () => "Power on",
   "ipmi.log.shutdown": () => "Graceful shutdown",
   "ipmi.log.pulled": () => "Power lost",
+  "ipmi.log.overheat": () => "Shut down from heat",
   "ipmi.log.reset": () => "Hard reset",
   "ipmi.log.cycle": () => "Power cycle",
   "ipmi.log.resync": () => "Array resync started",

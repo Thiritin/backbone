@@ -5,6 +5,7 @@ export default {
   "support.cause.generator": () => "Generator failure",
   "support.cause.feed": () => "Feed failure",
   "support.cause.seizure": () => "Server seized",
+  "support.cause.heat": () => "Overheating",
   "support.until": (p) => `Until ${p.day}`,
   "support.dark": (p) => `${p.d} dark`,
   "support.noDowntime": () => "No downtime",
