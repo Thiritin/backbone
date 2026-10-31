@@ -108,6 +108,25 @@ export function packageOptions(c: Cluster, o: OrderChoice): { pkg: PackageDef; o
   return [...mine.filter((p) => covers(p, o.spec)).map((pkg) => ({ pkg, oversells: false })), ...mine.filter((p) => !covers(p, o.spec)).map((pkg) => ({ pkg, oversells: true }))];
 }
 
+// The host or node a form can book on: the installation itself, and each node of a hypervisor cluster.
+export const hostChoices = (game: GameState, c: Cluster): { id: string; label: string }[] =>
+  [{ id: c.id, label: c.name }, ...(c.kind === "cloud" && c.nodes.length > 1 ? c.nodes.map((n) => ({ id: n.deviceId, label: game.devices.find((d) => d.id === n.deviceId)?.hostname ?? n.deviceId })) : [])];
+
+// The Package select: custom first, then the packages that cover the order, then the smaller ones marked.
+export function PlanSelect({ c, o, value, onChange, label = t("pkg.package") }: { c: Cluster; o: OrderChoice | undefined; value: string; onChange: (name: string) => void; label?: string }) {
+  return (
+    <label className="cx-field">{label}
+      <select value={value} onChange={(e) => onChange(e.target.value)}>
+        <option value="">{t("pkg.custom")}</option>
+        {(o ? packageOptions(c, o) : []).map(({ pkg: p, oversells }) => <option key={p.name} value={p.name}>{oversells ? t("pkg.oversells", { name: p.name }) : p.name}</option>)}
+      </select>
+    </label>
+  );
+}
+
+// The products the hypervisor forms take orders for.
+export const HYPERVISOR_ORDERS: Product[] = ["vps", "gameServer", "cloud"];
+
 // The create-account form: the Order field fills the fixed facts, the player picks host, package and username.
 // sections are the console's own names for the three groups; without them the fields sit in one list.
 export function ProvisionForm({ game, c, products, order, sections, className = "cx-form", button = t("pkg.create") }: {
@@ -115,10 +134,10 @@ export function ProvisionForm({ game, c, products, order, sections, className = 
 }) {
   const act = useStore((s) => s.act), choices = orderChoices(game, products);
   const [ticket, setTicket] = useState(choices.some((o) => o.ticketId === order) ? order! : ""), [pkg, setPkg] = useState(""), [user, setUser] = useState<string | null>(null);
-  const hosts = [{ id: c.id, label: c.name }, ...(c.kind === "cloud" && c.nodes.length > 1 ? c.nodes.map((n) => ({ id: n.deviceId, label: game.devices.find((d) => d.id === n.deviceId)?.hostname ?? n.deviceId })) : [])];
+  const hosts = hostChoices(game, c);
   const [route, setRoute] = useState(c.id);
   const o = choices.find((x) => x.ticketId === ticket), tk = game.tickets.find((x) => x.id === ticket), web = o?.product === "webHosting";
-  const username = user ?? o?.suggestedUsername ?? "", offered = o ? packageOptions(c, o) : [];
+  const username = user ?? o?.suggestedUsername ?? "";
   const group = (title: string | undefined, body: ReactNode) => (title ? <fieldset className="cx-group"><legend>{title}</legend>{body}</fieldset> : <>{body}</>);
   const run = () => o && act(provisionOrder, o.ticketId, route, { package: pkg || undefined, username: web ? username : undefined });
   return (
@@ -149,12 +168,7 @@ export function ProvisionForm({ game, c, products, order, sections, className = 
           <label className="cx-field">{t("pkg.node")}
             <select value={route} onChange={(e) => setRoute(e.target.value)}>{hosts.map((h) => <option key={h.id} value={h.id}>{h.label}</option>)}</select>
           </label>
-          <label className="cx-field">{t("pkg.package")}
-            <select value={pkg} onChange={(e) => setPkg(e.target.value)}>
-              <option value="">{t("pkg.custom")}</option>
-              {offered.map(({ pkg: p, oversells }) => <option key={p.name} value={p.name}>{oversells ? t("pkg.oversells", { name: p.name }) : p.name}</option>)}
-            </select>
-          </label>
+          <PlanSelect c={c} o={o} value={pkg} onChange={setPkg} />
         </>
       ))}
       <div className="cx-tools">

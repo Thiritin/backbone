@@ -29,6 +29,9 @@ import { bootLines } from "../../console/lunix";
 import { useHandWork } from "../../locations/HandSheet";
 import { VM_STATE, vmLabel, vmState, type VmState } from "../../products/parts";
 import { Bar, Migrate, Resize, type Fact, type PanelAction } from "./PanelBase";
+import { HYPERVISOR_ORDERS, hostChoices, OrderPicker, PlanSelect } from "./PackageForms";
+import { orderChoices } from "../../../../sim/30-market/manual";
+import { provisionOrder } from "../../../../sim/90-actions/orders";
 import "./hypervisor.css";
 
 // Toolbar glyphs; the consoles draw no images.
@@ -182,8 +185,11 @@ export interface Step { id: string; label: string; body: ReactNode }
 
 // The new VM a wizard books: its size, the ISO it boots and, on a VMwhere cluster with the App Suite, the software it
 // deploys with. create returns the new VM's id.
-export function useNewVm(game: GameState, c: Cluster) {
+export function useNewVm(game: GameState, c: Cluster, order?: string) {
   const act = useStore((s) => s.act), [size, setSize] = useState<Resources>(PANEL_VM_SIZE);
+  const choices = orderChoices(game, HYPERVISOR_ORDERS), [ticket, setTicket] = useState(choices.some((o) => o.ticketId === order) ? order! : "");
+  const [pkg, setPkg] = useState(""), [route, setRoute] = useState(c.id), picked = choices.find((o) => o.ticketId === ticket);
+  const hosts = hostChoices(game, c);
   const [iso, setIso] = useState<OsImage | "">(""), [suite, setSuite] = useState<string | null>(null);
   const create = (): string | null => {
     const r = suite ? act(deployFromSuite, c.id, size, suite) : act(createVm, c.id, size);
@@ -200,7 +206,18 @@ export function useNewVm(game: GameState, c: Cluster) {
       </select>
     </label>
   );
-  return { size, setSize, iso, isoLabel: iso ? isoName(iso) : null, isoPick, suite, setSuite, create };
+  // With an order picked the machine is the customer's: the order's own size and the chosen package are booked.
+  const submit = (): boolean => !!picked && act(provisionOrder, picked.ticketId, route, { package: pkg || undefined }).ok;
+  const orderFields = (
+    <>
+      <OrderPicker choices={choices} value={ticket} onChange={(id) => { setTicket(id); setPkg(""); }} />
+      {picked && <PlanSelect c={c} o={picked} value={pkg} onChange={setPkg} label={t("pkg.package")} />}
+      {picked && hosts.length > 1 && (
+        <label className="cx-field">{t("pkg.node")}<select value={route} onChange={(e) => setRoute(e.target.value)}>{hosts.map((h) => <option key={h.id} value={h.id}>{h.label}</option>)}</select></label>
+      )}
+    </>
+  );
+  return { ordered: !!picked, submit, orderFields, size, setSize, iso, isoLabel: iso ? isoName(iso) : null, isoPick, suite, setSuite, create };
 }
 
 // A step wizard: the step list or tab row, the current step, Back, Next and the finish button on the last step.
@@ -410,7 +427,7 @@ export function Toolbar({ actions, className = "cx-toolbar", labels = {} }: { ac
 }
 
 // What a console has selected: the whole cluster, one node, one VM, or the new VM wizard.
-export type Sel = { kind: "all" } | { kind: "node"; id: string } | { kind: "vm"; id: string } | { kind: "new" };
+export type Sel = { kind: "all" } | { kind: "node"; id: string } | { kind: "vm"; id: string } | { kind: "new" } | { kind: "plans" };
 export const ALL: Sel = { kind: "all" };
 
 // The VM's screen shrunk to a thumbnail, as a summary page shows it; a click opens the console.
