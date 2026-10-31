@@ -302,6 +302,8 @@ export default {
   "locations-2.techOp.recover": () => "Retten",
   "locations-2.techOp.boot": () => "Start fortsetzen",
   "locations-2.techOp.gear": () => "Retten",
+  "locations-2.techOp.mount": () => "Einbauen",
+  "locations-2.techOp.unmount": () => "Ausbauen",
   "locations-2.queued": () => "In Warteschlange",
   "locations-2.techSlot": (p) => `${p.name}${Number(p.onCall) ? " (Bereitschaft)" : ""}, ${p.time}`,
   "locations-2.cancelQueued": (p) => `Vorgemerkt abbrechen: ${p.what}`,

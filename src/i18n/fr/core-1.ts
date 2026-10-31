@@ -150,6 +150,7 @@ export default {
   "error.unknownRate": () => "Cette vitesse de reconstruction n'existe pas.",
   "error.unknownComponent": () => "Ce composant n'existe plus.",
   "error.busy": () => "Un remplacement est déjà en cours sur cet appareil.",
+  "error.handWork": () => "Une intervention sur cet appareil est encore en cours.",
   "error.noPart": () => "Le stock de cette zone ne contient aucune pièce de rechange adaptée.",
   "error.powerOffFirst": () => "Éteins d'abord l'appareil.",
   "error.unplugFirst": () => "Débranche d'abord les cordons d'alimentation de l'appareil.",

@@ -302,6 +302,8 @@ export default {
   "locations-2.techOp.recover": () => "Recuperar",
   "locations-2.techOp.boot": () => "Continuar arranque",
   "locations-2.techOp.gear": () => "Recuperar",
+  "locations-2.techOp.mount": () => "Montar",
+  "locations-2.techOp.unmount": () => "Desmontar",
   "locations-2.queued": () => "Em fila",
   "locations-2.techSlot": (p) => `${p.name}${Number(p.onCall) ? " (de prevenção)" : ""}, ${p.time}`,
   "locations-2.cancelQueued": (p) => `Cancelar tarefa em fila: ${p.what}`,

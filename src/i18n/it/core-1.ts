@@ -150,6 +150,7 @@ export default {
   "error.unknownRate": () => "Questa velocità di ricostruzione non esiste.",
   "error.unknownComponent": () => "Questo componente non esiste più.",
   "error.busy": () => "È già in corso una sostituzione su questo dispositivo.",
+  "error.handWork": () => "Un intervento su questo dispositivo è ancora in corso.",
   "error.noPart": () => "Il magazzino di questa zona non ha un ricambio adatto.",
   "error.powerOffFirst": () => "Spegni prima il dispositivo.",
   "error.unplugFirst": () => "Scollega prima i cavi di alimentazione del dispositivo.",
