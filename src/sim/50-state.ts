@@ -311,7 +311,7 @@ export const device = (id: string, model: string, brand: string, rackId: string 
 // Starting infrastructure: an empty 24U basement rack and the home router. The player buys, mounts and cables the first server.
 export const newGame = (seed: number): GameState => ({
   version: SAVE_VERSION, seed, rng: createRng(seed), hour: 0, minute: 0, cash: START_CASH, nextId: 8,
-  locations: [{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: "Basement", space: "basement", positions: 1, readyAt: 0, extraCircuit: false }],
+  locations: [{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: t("location.basement"), space: "basement", positions: 1, readyAt: 0, extraCircuit: false }],
   racks: [{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null }],
   devices: [device("dev5", "home-router", "Sysko", null, 0, "loc1", "fra1-gw-01", 0)],
   cables: [],

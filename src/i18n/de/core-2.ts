@@ -157,6 +157,7 @@ export default {
   "outcome.unsuspended": () => "Dienste wieder online mit Zahlungsaufschub",
   "outcome.kept": () => "Dienste bleiben gesperrt",
   "doc.guide": () => "Erste Schritte",
+  "location.basement": () => "Keller",
   "os.current": () => "Pear OS ist auf dem neuesten Stand",
   "doc.untitled": () => "Ohne Titel",
   "guide.step.register": () => "Firma anmelden",

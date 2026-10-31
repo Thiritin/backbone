@@ -158,6 +158,7 @@ export default {
   "outcome.unsuspended": () => "Services rétablis avec un délai de paiement",
   "outcome.kept": () => "Services toujours suspendus",
   "doc.guide": () => "Premiers pas",
+  "location.basement": () => "Sous-sol",
   "os.current": () => "Pear OS est à jour",
   "doc.untitled": () => "Sans titre",
   "guide.step.register": () => "Immatriculer ton entreprise",

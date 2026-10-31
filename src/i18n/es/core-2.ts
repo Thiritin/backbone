@@ -158,6 +158,7 @@ export default {
   "outcome.unsuspended": () => "Servicios de nuevo en línea con prórroga de pago",
   "outcome.kept": () => "Los servicios siguen suspendidos",
   "doc.guide": () => "Primeros pasos",
+  "location.basement": () => "Sótano",
   "os.current": () => "Pear OS está al día",
   "doc.untitled": () => "Sin título",
   "guide.step.register": () => "Registra tu empresa",

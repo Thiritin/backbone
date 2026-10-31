@@ -419,6 +419,7 @@ export const en: Record<string, (p: Params) => string> = {
   "outcome.unsuspended": () => "Services back online with a payment extension",
   "outcome.kept": () => "Services stay suspended",
   "doc.guide": () => "Getting started",
+  "location.basement": () => "Basement",
   "os.current": () => "Pear OS is up to date",
   "doc.untitled": () => "Untitled",
   "guide.step.register": () => "Register your company",

@@ -158,6 +158,7 @@ export default {
   "outcome.unsuspended": () => "Serviços de novo online com prazo de pagamento",
   "outcome.kept": () => "Os serviços continuam suspensos",
   "doc.guide": () => "Primeiros passos",
+  "location.basement": () => "Cave",
   "os.current": () => "O Pear OS está atualizado",
   "doc.untitled": () => "Sem título",
   "guide.step.register": () => "Regista a tua empresa",
