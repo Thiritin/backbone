@@ -2,6 +2,7 @@ import { LogOut, Search } from "lucide-react";
 import { useState } from "react";
 import { Backups, erasFrom, eraAt, Facts, LoginForm, Nodes, RowsTable, Tiles, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
 import { t } from "../../../../../i18n/en";
+import { useReadoutPages } from "../Readouts";
 import "./cpanic.css";
 
 // docs/design/software.md, section 10: the x3 manager until 2014, then the flat one with grouped sections.
@@ -9,7 +10,7 @@ const ERAS = erasFrom(2005, 2014);
 
 export function CPanic(p: PanelProps) {
   const era = eraAt(ERAS, p.game), [tab, setTab] = usePanelTab(p.f), [q, setQ] = useState("");
-  const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f);
+  const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f);
   if (!p.signedIn) return (
     <div className="cx cp cp-login" data-era={era}>
       <LoginForm className="cp-card" onLogin={p.login} button={t("browser-consoles-1.logIn")}>
@@ -22,6 +23,7 @@ export function CPanic(p: PanelProps) {
     [t("browser-consoles-1.cpAccountInfo"), [["objects", t("browser-consoles-1.cpListAccounts")]]],
     ...(p.f.cluster ? [[t("browser-consoles-1.cpClusters"), [["nodes", t("browser-consoles-1.cpClusterStatus")]]] as [string, [Tab, string][]]] : []),
     [t("browser-consoles-1.cpServerConfig"), [["software", t("browser-consoles-1.cpSoftwareUpdates")]]],
+    ...(pages.length ? [[t("readouts.serverStatus"), pages.map((g) => [g.id, g.label] as [Tab, string])] as [string, [Tab, string][]]] : []),
   ];
   const title = menu.flatMap(([, items]) => items).find(([id]) => id === tab)?.[1];
   return (
@@ -48,6 +50,7 @@ export function CPanic(p: PanelProps) {
           <h1>{title}</h1>
           {tab === "objects" && <RowsTable rows={rows} name={t("browser-consoles-1.domain")} />}
           {tab === "nodes" && <Nodes game={p.game} c={p.c} />}
+          {pages.find((g) => g.id === tab)?.body}
           {tab === "software" && (
             <>
               <h2>{t("browser-consoles-1.cpServerInfo")}</h2>
