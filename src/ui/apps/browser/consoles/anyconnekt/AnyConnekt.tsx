@@ -5,6 +5,7 @@ import { Actions, erasFrom, eraAt, Facts, LoginForm, RowLines, usePanelTab, useR
 import { useReadoutPages } from "../Readouts";
 import { t } from "../../../../../i18n/en";
 import { tenants } from "../services";
+import { VpnReadout } from "../ServiceReadouts";
 import "./anyconnekt.css";
 
 // docs/design/software.md, section 10: the blue device-manager tabs until 2016, then flat white and teal.
@@ -50,6 +51,7 @@ export function AnyConnekt(p: PanelProps) {
               </tbody>
             </table>
           ))}
+          {box(t("readouts.vpn.sessions"), <VpnReadout game={p.game} c={p.c} />)}
         </>}
         {pages.filter((g) => g.id === tab).map((g) => <div key={g.id}>{g.body}</div>)}
         {tab === "software" && box(t("browser-consoles-1.softwareUpdates"), <><Facts facts={sw.facts} /><Actions actions={sw.actions}>{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>{sw.panel}</>)}

@@ -3,6 +3,7 @@ import { LogOut } from "lucide-react";
 import { Actions, erasFrom, eraAt, Facts, LoginForm, RowLines, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
 import { useReadoutPages } from "../Readouts";
 import { tenants } from "../services";
+import { VpnReadout } from "../ServiceReadouts";
 import "./openveepeen.css";
 
 // docs/design/software.md, section 10: the orange and grey admin with a left menu until 2017, then dark with orange cards.
@@ -55,6 +56,7 @@ export function OpenVeePeeN(p: PanelProps) {
                 </section>
               ))}
             </div>)}
+          {tab === "objects" && <VpnReadout game={p.game} c={p.c} />}
           {pages.filter((g) => g.id === tab).map((g) => <div key={g.id}>{g.body}</div>)}
           {tab === "software" && <><Facts facts={sw.facts} /><Actions actions={sw.actions}>{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>{sw.panel}</>}
         </main>

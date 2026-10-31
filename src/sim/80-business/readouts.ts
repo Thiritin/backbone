@@ -3,7 +3,9 @@ import { softwareById } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
 import type { Cluster, Workload } from "../60-infra/cluster";
 import { serviceMbps } from "../60-infra/network";
-import { workloadLoad, workloadUse } from "../60-infra/usage";
+import { diskFill, workloadLoad, workloadUse } from "../60-infra/usage";
+import { ascii, companyDomain } from "../30-customers/domains";
+import { controlPlaneUp, workloadOnline } from "../60-infra/cluster";
 import { hashRng, rand } from "../00-core/rng";
 import { familyOf, openVulns } from "../60-infra/vulns";
 import { autoUpdates } from "../10-catalog/platforms";
@@ -132,4 +134,50 @@ export function advisorChecks(s: GameState, c: Cluster): { score: number; checks
   if (family && autoUpdates(softwareById(family), yearOf(s.hour)) && !c.autoUpdate) checks.push({ kind: "auto", penalty: 5, count: 1 });
   if (s.security.offline.includes(c.id)) checks.push({ kind: "offline", penalty: 5, count: 1 });
   return { score: Math.max(0, Math.min(100, 100 - checks.reduce((n, x) => n + x.penalty, 0))), checks };
+}
+
+// Infrastructure readouts (plan 3.13 to 3.16): all derived from the seed and the hour, so a render never changes.
+export const QUERIES_PER_ZONE_HOUR = 90, STORAGE_DAYS = 30, SERIES_HOURS = 24;
+export type SeriesKind = "queries" | "mbit" | "storage";
+
+// Oldest first and ending now: queries and Mbit/s hourly, storage fill in GB once a day.
+export function seriesOf(s: GameState, ws: Workload[], kind: SeriesKind, points: number = kind === "storage" ? STORAGE_DAYS : SERIES_HOURS): number[] {
+  const step = kind === "storage" ? 24 : 1;
+  return Array.from({ length: points }, (_, i) => {
+    const h = s.hour - (points - 1 - i) * step;
+    return ws.reduce((n, w) => {
+      const v = s.services.find((x) => x.id === w.serviceId);
+      if (kind === "storage") return n + diskFill(s, w, h) * w.diskGb;
+      if (!v || !workloadOnline(s, w)) return n;
+      if (kind === "mbit") return n + serviceMbps(s, v, h);
+      return n + (v.spec.zones ?? 0) * QUERIES_PER_ZONE_HOUR * workloadLoad(s, w, h) * Math.pow(1.2, h / 8760);
+    }, 0);
+  });
+}
+
+export type MailCheck = "pass" | "missing" | "unchecked";
+export const DKIM_FROM = 2007, DMARC_FROM = 2012;
+
+// Pass when the company runs a working name server and mail server for the domain; Missing without a name server; Not checked when the zone is hosted elsewhere.
+export function mailChecks(s: GameState, domain: string): { spf: MailCheck; dkim: MailCheck; dmarc: MailCheck } {
+  const dns = s.clusters.filter((c) => c.kind === "dns"), mailUp = s.clusters.some((c) => c.kind === "mail" && controlPlaneUp(s, c));
+  const base: MailCheck = domain !== companyDomain(s) ? "unchecked" : !dns.length ? "missing" : !mailUp || !dns.some((c) => controlPlaneUp(s, c)) ? "unchecked" : "pass";
+  const year = yearOf(s.hour), era = (from: number): MailCheck => (base === "pass" && year < from ? "missing" : base);
+  return { spf: base, dkim: era(DKIM_FROM), dmarc: era(DMARC_FROM) };
+}
+
+export interface VpnSession { workloadId: string; user: string; realIp: string; vpnIp: string; since: number; rxMb: number; txMb: number }
+
+// Per tenant: users x min(1, load x 1.2) sessions, each with a seeded address and a connected-since hour; nothing while the workload is down.
+export function vpnSessions(s: GameState, c: Cluster, hour: number = s.hour): VpnSession[] {
+  return s.workloads.filter((w) => w.clusterId === c.id).flatMap((w) => {
+    const v = s.services.find((x) => x.id === w.serviceId), cu = v && s.customers.find((x) => x.id === v.customerId);
+    if (!v || !cu || !workloadOnline(s, w)) return [];
+    const n = Math.round((v.spec.users ?? 0) * Math.min(1, workloadLoad(s, w, hour) * 1.2)), mbit = serviceMbps(s, v, hour) / Math.max(1, n);
+    const stem = ascii(cu.name.split(" ")[0]).toLowerCase() || "user";
+    return Array.from({ length: n }, (_, i) => {
+      const r = hashRng(s.seed, idNumber(w.id), i + 1), hours = 1 + Math.floor(rand(r) * 23), a = Math.floor(rand(r) * 1e9);
+      return { workloadId: w.id, user: `${stem}${i + 1}`, realIp: `${1 + (a % 222)}.${(a >> 8) % 256}.${(a >> 16) % 256}.${1 + (a >> 4) % 254}`, vpnIp: `10.8.${idNumber(w.id) % 256}.${i + 2}`, since: hour - hours, rxMb: Math.round(mbit * hours * 360), txMb: Math.round(mbit * hours * 90) };
+    });
+  });
 }

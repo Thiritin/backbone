@@ -3,6 +3,7 @@ import { LogOut } from "lucide-react";
 import { Actions, erasFrom, eraAt, Facts, LoginForm, RowLines, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
 import { useReadoutPages } from "../Readouts";
 import { tenants } from "../services";
+import { DnsStatistics } from "../ServiceReadouts";
 import "./powerdnz.css";
 
 // docs/design/software.md, section 10: white with an orange bar and one zone table until 2016, then a dark header and cards.
@@ -45,6 +46,7 @@ export function PowerDnz(p: PanelProps) {
               </tbody>
             </table>
           </section>
+          <section className="pd-box"><h2>{t("readouts.dns.statistics")}</h2><DnsStatistics game={p.game} c={p.c} table={era === "early"} /></section>
         </>}
         {pages.filter((g) => g.id === tab).map((g) => <div key={g.id}>{g.body}</div>)}
         {tab === "software" && <section className="pd-box"><h2>{t("browser-consoles-2.server")}</h2><Facts facts={sw.facts} /><Actions actions={sw.actions}>{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>{sw.panel}</section>}
