@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- The weather in the menu bar shows the name of the place you are at again, after the temperature.
 - The bank's welcome email now lists your account number, PIN and login address on their own lines.
 - Lexwear now sells modules for Books on lexwear.de: Monthly run, Match by reference and Automatic reminders take over the back office once you enter the licence key from Lexwear's email.
 - Bookkeepers can now be trained to send draft invoices and match incoming payments, including odd amounts, and a second bookkeeper gets through twice as much.

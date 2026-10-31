@@ -65,7 +65,7 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
       {item("window", t("desktop.menu.window"), windows.map((w) => (w.doc ? [docTitle(w.doc), () => openDoc(w.doc!)] : w.console ? [t("desktop.menu.console"), () => openConsole(w.console!)] : [appName(w), () => openApp(w.app)]) as [string, () => void]))}
       <span className="mb-spacer" />
       <button className="mb-item mb-place" onClick={() => openApp("Weather")}>
-        <SkyIcon kind={sky(here.city, game.hour)} />{degrees(here.city, game.hour)}
+        <SkyIcon kind={sky(here.city, game.hour)} />{degrees(here.city, game.hour)} {here.name}
       </button>
       <span className="mb-sep" />
       <div className="speed" role="group" aria-label={t("desktop.menu.speed")}>
