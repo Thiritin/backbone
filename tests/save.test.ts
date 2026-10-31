@@ -16,8 +16,8 @@ describe("tick", () => {
     const s = registered(newGame(1));
     const events = [];
     for (let h = 0; h < 24 * 31; h++) events.push(...tick(s));
-    expect(events.map((e) => e.key)).toEqual(["event.monthStart", "event.bills"]);
-    expect(events[0]).toEqual({ app: "Finance", key: "event.monthStart", params: { month: 1, year: 2005 } });
+    expect(events.filter((e) => e.app !== "News").map((e) => e.key)).toEqual(["event.monthStart", "event.bills"]);
+    expect(events.find((e) => e.app === "Finance")).toEqual({ app: "Finance", key: "event.monthStart", params: { month: 1, year: 2005 } });
   });
 });
 

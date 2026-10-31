@@ -230,6 +230,7 @@ describe("tutorial", () => {
     expect(s.installed).not.toContain("Marketing");
     const raw = JSON.parse(serialize(s));
     delete raw.registration;
+    delete raw.arrived;
     raw.installed = raw.installed.filter((id: string) => id !== "Marketing");
     expect(deserialize(JSON.stringify(raw)).installed).toContain("Marketing");
   });

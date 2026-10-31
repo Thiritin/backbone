@@ -3,7 +3,7 @@
 import { t } from "../../i18n/en";
 import { dateOf, yearOf } from "../00-core/time";
 import type { Doc, GameState } from "../50-state";
-import { checkDone, TUTORIAL } from "../checklist";
+import { checkDone, guideSteps } from "../checklist";
 
 export const DESK = "desk";
 export const DESKTOP = "/home/you/Desktop";
@@ -70,7 +70,7 @@ export function desktopFiles(s: GameState): { path: string; doc: Doc }[] {
 
 // Getting started as text: its steps, the done ones ticked.
 export const guideText = (s: GameState) =>
-  `${t("doc.guide")}\n\n${TUTORIAL.map((id) => `[${checkDone(s, id) ? "x" : " "}] ${t(`guide.step.${id}`)}`).join("\n")}\n`;
+  `${t("doc.guide")}\n\n${guideSteps(s).map((id) => `[${checkDone(s, id) ? "x" : " "}] ${t(`guide.step.${id}`)}`).join("\n")}\n`;
 
 // Getting started follows the game, so the terminal only reads it.
 export const readOnly = (s: GameState, host: string, path: string) =>
