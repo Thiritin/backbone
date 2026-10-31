@@ -6,9 +6,9 @@ import { supportApp } from "./support/desk";
 import { t } from "../../i18n/en";
 import { OFFICE_URL } from "../../sim/80-business/office";
 import type { GameState } from "../../sim/50-state";
-import type { TUTORIAL } from "../../sim/checklist";
+import type { GUIDE } from "../../sim/checklist";
 
-export type StepId = (typeof TUTORIAL)[number];
+export type StepId = (typeof GUIDE)[number];
 export interface Step { title: string; text: string; app: string; focus?: { kind: string; id: string } }
 
 // The Wikipedio article that explains a step.
@@ -61,5 +61,17 @@ export function stepOf(s: GameState, id: StepId): Step {
       return { title: t("guide.step.email"), text: t("apps.guide.step.email", { app: mailApp }), app: "Support", focus: { kind: "mailSetup", id: "" } };
     case "firstCustomer":
       return { title: t("guide.step.firstCustomer"), text: t("apps.guide.step.firstCustomer", { app: mailApp }), app: "Support" };
+    case "loan":
+      return { title: t("guide.step.loan"), text: t("apps.guide.step.loan"), app: "Finance" };
+    case "tenCustomers":
+      return { title: t("guide.step.tenCustomers"), text: t("apps.guide.step.tenCustomers"), app: "Customers" };
+    case "research":
+      return { title: t("guide.step.research"), text: t("apps.guide.step.research"), app: "Research" };
+    case "patch":
+      return { title: t("guide.step.patch"), text: t("apps.guide.step.patch"), app: "Security" };
+    case "hire":
+      return { title: t("guide.step.hire"), text: t("apps.guide.step.hire"), app: "Staff" };
+    case "study":
+      return { title: t("guide.step.study"), text: t("apps.guide.step.study"), app: "Market" };
   }
 }

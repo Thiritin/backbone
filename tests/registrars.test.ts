@@ -225,11 +225,12 @@ describe("tutorial", () => {
     expect(TUTORIAL).toEqual(["register", "company", "buyServer", "mountServer", "mountRouter", "internet", "setup", "findAddress", "shareWeb", "website", "domain", "launch", "email", "firstCustomer"]);
   });
 
-  it("starts with the Marketing app installed for free", () => {
+  it("starts without Marketing and gives it to old registered saves", () => {
     const s = registered(newGame(1));
-    expect(s.installed).toContain("Marketing");
+    expect(s.installed).not.toContain("Marketing");
     const raw = JSON.parse(serialize(s));
     delete raw.registration;
+    delete raw.arrived;
     raw.installed = raw.installed.filter((id: string) => id !== "Marketing");
     expect(deserialize(JSON.stringify(raw)).installed).toContain("Marketing");
   });

@@ -22,7 +22,7 @@ The game opens paused on Saturday 1 January 2005 at 00:00. The Welcome sheet ask
 **On screen.**
 
 - **Menu bar:** paused, the date and €3,500 cash.
-- **Dock:** only the Browser. The [tutorial](tutorial.md) has the player register the company at the trade office, which opens at 08:00 on Monday 3 January, and the registration fills the dock with the starter apps.
+- **Dock:** only the Browser. The [tutorial](tutorial.md) has the player register the company at the trade office, which opens at 08:00 on Monday 3 January, and the registration fills the dock with the starter apps. Finance, Customers, Marketing and the rest arrive later, each when its problem does, as the tutorial lists.
 - **Locations window, open on the basement:** an empty 24U rack, a line jack on the carrier panel and the flat's Fritz!Bocks 5050 in storage. The router has four LAN ports and a DSL port. There is no server and no internet line.
 - **Desktop:** the "Getting started" document.
 
