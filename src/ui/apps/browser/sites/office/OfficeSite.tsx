@@ -126,23 +126,22 @@ function Forms({ game }: { game: GameState }) {
   return (
     <>
       <p className="to-closed">{t("paperwork.of.final")}</p>
-      <table className="to-hours">
-        <thead><tr><th>{t("paperwork.of.form")}</th><th>{t("paperwork.of.sendTo")}</th><th>{t("paperwork.of.fee")}</th><th /></tr></thead>
-        <tbody>
-          {next.map((f) => {
-            const err = applyError(game, f), have = game.docs.some((d) => d.form?.form === f);
-            return (
-              <tr key={f}>
-                <td>{t(`doc.form.${f}`)}</td>
-                <td>{FILED_WITH[f]}</td>
-                <td>{fee(f)}</td>
-                <td>{err === "error.changePending" ? t("paperwork.of.pending") : err ? t(err) : have ? t("paperwork.of.downloaded")
-                  : <a href="#download" onClick={(e) => { e.preventDefault(); act(downloadForm, f); }}>{t("paperwork.of.download")}</a>}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      {next.map((f) => {
+        const err = applyError(game, f), have = game.docs.some((d) => d.form?.form === f);
+        return (
+          <fieldset key={f} className="to-form">
+            <legend>{t(`doc.form.${f}`)}</legend>
+            <table>
+              <tbody>
+                <tr><td>{t("paperwork.of.sendTo")}</td><td>{FILED_WITH[f]}</td></tr>
+                <tr><td>{t("paperwork.of.fee")}</td><td>{fee(f)}</td></tr>
+                <tr><td /><td>{err === "error.changePending" ? t("paperwork.of.pending") : err ? t(err) : have ? t("paperwork.of.downloaded")
+                  : <a href="#download" onClick={(e) => { e.preventDefault(); act(downloadForm, f); }}>{t("paperwork.of.download")}</a>}</td></tr>
+              </tbody>
+            </table>
+          </fieldset>
+        );
+      })}
     </>
   );
 }

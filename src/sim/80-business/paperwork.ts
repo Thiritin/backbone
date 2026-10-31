@@ -9,7 +9,7 @@ import type { GameState, LedgerEntry } from "../50-state";
 import { OFFICE_HOST } from "./office";
 
 export const FORM_RANK: Record<string, number> = { sole: 0, partnership: 1, limited: 2 };
-export const OFFICE_NAME = "Trade Office";
+export const OFFICE_NAME = "Gewerbeamt";
 export const NOTARY_NAME = "Dr. Ilse Stempel";
 export const REGISTER_NAME = "Handelsregistrar";
 export const CHAMBER_NAME = "IHQ";

@@ -32,9 +32,10 @@ export function FormDoc({ doc }: { doc: Doc }) {
         <p className="paper-note">{t("paperwork.of.final")}</p>
         <div className="paper-sign">
           {f.signed !== null
-            ? <><span className="paper-ink">{r?.owner}</span><small>{t("paperwork.doc.signedOn", { date: paperDay(f.signed) })}</small></>
+            ? <span className="paper-ink">{r?.owner}</span>
             : <button className="btn" onClick={() => act(signForm, doc.id)}>{t("paperwork.doc.sign")}</button>}
           <span className="paper-line">{t("paperwork.doc.signature")}</span>
+          {f.signed !== null && <small>{t("paperwork.doc.signedOn", { date: paperDay(f.signed) })}</small>}
         </div>
       </article>
     </div>

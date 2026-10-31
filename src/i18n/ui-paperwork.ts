@@ -4,7 +4,6 @@ export default {
   "apps.about.Post": () => "Shows the letters that arrive by post.",
   "apps.name.Post": () => "Post",
   "paperwork.of.final": () => "A change of legal form is final. The company cannot return to an earlier legal form.",
-  "paperwork.of.form": () => "Form",
   "paperwork.of.sendTo": () => "Send to",
   "paperwork.of.fee": () => "Fee",
   "paperwork.of.feeLimited": (p) => `${p.notary} notary, ${p.register} register entry, ${p.capital} share capital in the company account`,

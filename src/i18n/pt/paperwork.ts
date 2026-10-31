@@ -6,7 +6,7 @@ import { LOCALE } from "../lang";
 type Params = Record<string, string | number>;
 const day = (hour: string | number) => dateOf(Number(hour)).toLocaleDateString(LOCALE, { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" });
 const FORM: Record<string, string> = { sole: "empresário em nome individual", partnership: "sociedade em nome coletivo", limited: "sociedade por quotas" };
-const pay = (p: Params) => `Transfere ${euroCents(Number(p.amount))} até ${day(p.due)} para ${p.iban ? `o IBAN ${p.iban}` : `a conta ${p.account}, código do banco ${p.code}`}, com a referência ${p.number}.`;
+const pay = (p: Params) => `Transfira ${euroCents(Number(p.amount))} até ${day(p.due)} para ${p.iban ? `o IBAN ${p.iban}` : `a conta ${p.account}, código do banco ${p.code}`}, com a referência ${p.number}.`;
 
 export default {
   "doc.form.partnership": () => "Alteração de registo GA-2.pdf",
@@ -37,20 +37,20 @@ export default {
   "letter.registerInvoice.subject": (p) => `Fatura ${p.number}`,
   "letter.registerInvoice.body": (p) => `Pela inscrição de ${p.name} no registo comercial cobramos ${euroCents(Number(p.amount))}. ${pay(p)}`,
   "letter.chamberFee.subject": (p) => `Quota de associado ${p.year}`,
-  "letter.chamberFee.body": (p) => `Como atividade registada, ${p.name} é membro da câmara de comércio. Com ${p.staff} funcionários, a tua quota base para ${p.year} é de ${euroCents(Number(p.amount))}. ${pay(p)}`,
+  "letter.chamberFee.body": (p) => `Como atividade registada, ${p.name} é membro da câmara de comércio. Com ${p.staff} funcionários, a sua quota base para ${p.year} é de ${euroCents(Number(p.amount))}. ${pay(p)}`,
 
   "ticket.mail.bounce.subject": () => "Mensagem não entregue devolvida ao remetente",
-  "ticket.mail.bounce.text": (p) => `A tua mensagem para ${p.to} não foi entregue. O endereço não existe.`,
+  "ticket.mail.bounce.text": (p) => `A sua mensagem para ${p.to} não foi entregue. O endereço não existe.`,
   "ticket.mail.noForm.subject": (p) => `RE: ${p.subject}`,
-  "ticket.mail.noForm.text": () => "Obrigado pela tua mensagem. Não encontrámos nenhum pedido em anexo. Anexa o formulário assinado.",
+  "ticket.mail.noForm.text": () => "Obrigado pela sua mensagem. Não encontrámos nenhum pedido em anexo. Anexe o formulário assinado.",
   "ticket.mail.wrongDesk.subject": (p) => `RE: ${p.subject}`,
-  "ticket.mail.wrongDesk.text": () => "Obrigado pela tua mensagem. Este pedido não é da nossa competência. Envia-o para o endereço indicado no formulário.",
+  "ticket.mail.wrongDesk.text": () => "Obrigado pela sua mensagem. Este pedido não é da nossa competência. Envie-o para o endereço indicado no formulário.",
   "ticket.mail.unsigned.subject": (p) => `RE: ${p.subject}`,
-  "ticket.mail.unsigned.text": () => "Obrigado pelo teu pedido. O formulário não está assinado. Assina-o e envia-o novamente.",
+  "ticket.mail.unsigned.text": () => "Obrigado pelo seu pedido. O formulário não está assinado. Assine-o e envie-o novamente.",
   "ticket.mail.capital.subject": (p) => `RE: ${p.subject}`,
-  "ticket.mail.capital.text": (p) => `Obrigado pelo pacto social assinado. Uma sociedade por quotas precisa de um capital social de ${euro(Number(p.amount))} na sua conta antes de a podermos registar. Envia o pacto novamente quando o capital estiver disponível.`,
+  "ticket.mail.capital.text": (p) => `Obrigado pelo pacto social assinado. Uma sociedade por quotas precisa de um capital social de ${euro(Number(p.amount))} na sua conta antes de a podermos registar. Envie o pacto novamente quando o capital estiver disponível.`,
   "ticket.mail.notaryFiled.subject": (p) => `RE: ${p.subject}`,
   "ticket.mail.notaryFiled.text": (p) => `Obrigado pelo pacto social assinado de ${p.name}. Vamos depositá-lo no registo comercial no prazo de ${p.days} dias úteis. O registo confirmará a inscrição por carta.`,
   "ticket.mail.officeReceived.subject": (p) => `RE: ${p.subject}`,
-  "ticket.mail.officeReceived.text": (p) => `Recebemos a alteração do registo de ${p.name}. Vais receber a nossa confirmação por carta no prazo de ${p.days} dias úteis.`,
+  "ticket.mail.officeReceived.text": (p) => `Recebemos a alteração do registo de ${p.name}. Vai receber a nossa confirmação por carta no prazo de ${p.days} dias úteis.`,
 } satisfies Dict;

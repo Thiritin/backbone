@@ -14,7 +14,7 @@ The company's legal form only moves up: sole trader, then partnership, then limi
 
 | Role | Name in the game | Contact |
 |---|---|---|
-| Trade office (Gewerbeamt) | Trade Office | eservice@trade-office.gov |
+| Trade office | Gewerbeamt | eservice@trade-office.gov |
 | Notary | Dr. Ilse Stempel | kanzlei@stempel-notary.de |
 | Commercial register (Handelsregister) | Handelsregistrar | by letter only |
 | Chamber of commerce (IHK) | IHQ | by letter only |

@@ -6,7 +6,7 @@ import { LOCALE } from "../lang";
 type Params = Record<string, string | number>;
 const day = (hour: string | number) => dateOf(Number(hour)).toLocaleDateString(LOCALE, { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" });
 const FORM: Record<string, string> = { sole: "ditta individuale", partnership: "società di persone", limited: "SRL" };
-const pay = (p: Params) => `Ti preghiamo di bonificare ${euroCents(Number(p.amount))} entro il ${day(p.due)} su ${p.iban ? `IBAN ${p.iban}` : `conto ${p.account}, codice banca ${p.code}`}, indicando il riferimento ${p.number}.`;
+const pay = (p: Params) => `Vi preghiamo di bonificare ${euroCents(Number(p.amount))} entro il ${day(p.due)} su ${p.iban ? `IBAN ${p.iban}` : `conto ${p.account}, codice banca ${p.code}`}, indicando il riferimento ${p.number}.`;
 
 export default {
   "doc.form.partnership": () => "Variazione di iscrizione GA-2.pdf",
@@ -37,20 +37,20 @@ export default {
   "letter.registerInvoice.subject": (p) => `Fattura ${p.number}`,
   "letter.registerInvoice.body": (p) => `Per l'iscrizione di ${p.name} nel registro delle imprese addebitiamo ${euroCents(Number(p.amount))}. ${pay(p)}`,
   "letter.chamberFee.subject": (p) => `Quota associativa ${p.year}`,
-  "letter.chamberFee.body": (p) => `Come attività iscritta, ${p.name} è membro della camera di commercio. Con ${p.staff} dipendenti, il tuo diritto annuale per il ${p.year} è di ${euroCents(Number(p.amount))}. ${pay(p)}`,
+  "letter.chamberFee.body": (p) => `Come attività iscritta, ${p.name} è membro della camera di commercio. Con ${p.staff} dipendenti, il vostro diritto annuale per il ${p.year} è di ${euroCents(Number(p.amount))}. ${pay(p)}`,
 
   "ticket.mail.bounce.subject": () => "Messaggio non recapitato restituito al mittente",
-  "ticket.mail.bounce.text": (p) => `Il tuo messaggio a ${p.to} non è stato recapitato. L'indirizzo non esiste.`,
+  "ticket.mail.bounce.text": (p) => `Il vostro messaggio a ${p.to} non è stato recapitato. L'indirizzo non esiste.`,
   "ticket.mail.noForm.subject": (p) => `R: ${p.subject}`,
-  "ticket.mail.noForm.text": () => "Grazie per il messaggio. Nell'allegato non abbiamo trovato alcuna domanda. Allega il modulo firmato.",
+  "ticket.mail.noForm.text": () => "Grazie per il messaggio. Nell'allegato non abbiamo trovato alcuna domanda. Vi preghiamo di allegare il modulo firmato.",
   "ticket.mail.wrongDesk.subject": (p) => `R: ${p.subject}`,
-  "ticket.mail.wrongDesk.text": () => "Grazie per il messaggio. Questa domanda non è di nostra competenza. Inviala all'indirizzo indicato sul modulo.",
+  "ticket.mail.wrongDesk.text": () => "Grazie per il messaggio. Questa domanda non è di nostra competenza. Vi preghiamo di inviarla all'indirizzo indicato sul modulo.",
   "ticket.mail.unsigned.subject": (p) => `R: ${p.subject}`,
-  "ticket.mail.unsigned.text": () => "Grazie per la domanda. Il modulo non è firmato. Firmalo e invialo di nuovo.",
+  "ticket.mail.unsigned.text": () => "Grazie per la domanda. Il modulo non è firmato. Vi preghiamo di firmarlo e inviarlo di nuovo.",
   "ticket.mail.capital.subject": (p) => `R: ${p.subject}`,
-  "ticket.mail.capital.text": (p) => `Grazie per l'atto costitutivo firmato. Una SRL ha bisogno di un capitale sociale di ${euro(Number(p.amount))} sul suo conto prima che possiamo depositarla. Invia di nuovo l'atto quando il capitale è disponibile.`,
+  "ticket.mail.capital.text": (p) => `Grazie per l'atto costitutivo firmato. Una SRL ha bisogno di un capitale sociale di ${euro(Number(p.amount))} sul suo conto prima che possiamo depositarla. Vi preghiamo di inviare di nuovo l'atto quando il capitale è disponibile.`,
   "ticket.mail.notaryFiled.subject": (p) => `R: ${p.subject}`,
   "ticket.mail.notaryFiled.text": (p) => `Grazie per l'atto costitutivo firmato di ${p.name}. Lo depositeremo al registro delle imprese entro ${p.days} giorni lavorativi. Il registro confermerà l'iscrizione per lettera.`,
   "ticket.mail.officeReceived.subject": (p) => `R: ${p.subject}`,
-  "ticket.mail.officeReceived.text": (p) => `Abbiamo ricevuto la variazione di iscrizione di ${p.name}. Riceverai la nostra conferma per lettera entro ${p.days} giorni lavorativi.`,
+  "ticket.mail.officeReceived.text": (p) => `Abbiamo ricevuto la variazione di iscrizione di ${p.name}. Riceverete la nostra conferma per lettera entro ${p.days} giorni lavorativi.`,
 } satisfies Dict;
