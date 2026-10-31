@@ -32,7 +32,9 @@ import { grownSpec, setupPremium, sizeOf, specFor, specText } from "./spec";
 import { acceptQuote, resize, specParams } from "./manual";
 import { logActivity } from "../47-staff/activity";
 import type { ActionResult } from "../90-actions/hardware";
-import { forSale, inStock, shopStocked, soldOutVisit } from "../80-business/shop";
+import { forSale, inStock, shopStocked, soldOutVisit, type ShopProduct } from "../80-business/shop";
+import { chooseProduct, packageSpec } from "../80-business/portal";
+import { belowFloor, bookingFor, packageNamed } from "../80-business/packages";
 import {
   acceptChance, acceptMid, FORUM_AWARENESS, FORUM_PROFILES, leadFlows, missingFor, needFor, referenceFor,
   requestName, share, values, type Need, type SalesMessage, type SalesRequest,
@@ -120,12 +122,21 @@ function newLeads(s: GameState, events: SimEvent[]): void {
       // Email orders thin out while delivery is impaired, and businesses shy away from a freemail address.
       if (!form && mailShare(s, f.profile) < 1 && rand(s.rng) >= mailShare(s, f.profile)) continue;
       // A shop sells only what is in stock; a sold-out visitor leaves no request.
-      const spec = form && shopStocked(s) ? nextSpec(s, need, f.profile) : undefined;
-      if (spec && !inStock(s, { city: f.city, product: need.product, spec })) {
+      let spec = form && shopStocked(s) ? nextSpec(s, need, f.profile) : undefined, pick: ShopProduct | undefined;
+      // A line with plans sells the plan that fits the visitor; without plans it sells configurable options.
+      const plan = spec ? chooseProduct(s, { city: f.city, product: need.product, spec, reference: referenceFor(s, f.profile, need.product, spec, need.sla) }) : null;
+      if (plan === "soldOut") {
         soldOutVisit(s, need.product);
         continue;
       }
-      orderLead(s, f.profile, f.city, events, need, !form, spec);
+      if (plan) {
+        pick = plan;
+        spec = { ...spec!, ...packageSpec(s, plan) };
+      } else if (spec && !inStock(s, { city: f.city, product: need.product, spec })) {
+        soldOutVisit(s, need.product);
+        continue;
+      }
+      orderLead(s, f.profile, f.city, events, need, !form, spec, undefined, pick);
     }
   }
 }
@@ -161,14 +172,17 @@ const labelFor = (r: SalesRequest): string => {
 
 // The cluster or zone in the request's city where the service fits; null when nothing has room. A shop order only goes
 // to software in a server group that sells its line.
-export function targetFor(s: GameState, r: Pick<SalesRequest, "city" | "product" | "spec" | "shop">): { clusterId: string | null; zone: string | null } | null {
+export function targetFor(s: GameState, r: Pick<SalesRequest, "city" | "product" | "spec" | "shop" | "productId">): { clusterId: string | null; zone: string | null } | null {
   // Only zones with the addresses the service needs.
   const zones = s.locations.filter((l) => l.city === r.city && addressesFit(s, l, r.product, r.spec)).map((l) => l.az);
   const spec = PRODUCTS[r.product], size = sizeOf(r.spec);
   if (spec.runsOn === "cluster") {
     // A cluster with the RAM for it wins; with none, the first cluster with the disk takes it past its RAM.
-    const sold = r.shop ? forSale(s, r.product) : null;
-    const fit = [...s.clusters].sort((x, y) => gameFirst(x, y) || betterHost(s)(x, y)).filter((x) => zones.includes(x.az) && supports(x, r.product) && (!sold || sold.has(x.id)));
+    // A product sells from its own server group, and only from installations that have its package.
+    const prod = r.productId ? s.shop.products.find((p) => p.id === r.productId) : undefined;
+    const pg = prod?.serverGroupId ? s.shop.groups.find((g) => g.id === prod.serverGroupId) : undefined;
+    const sold = pg ? new Set(pg.members) : r.shop ? forSale(s, r.product) : null;
+    const fit = [...s.clusters].sort((x, y) => gameFirst(x, y) || betterHost(s)(x, y)).filter((x) => zones.includes(x.az) && supports(x, r.product) && (!sold || sold.has(x.id)) && (!prod?.packageName || packageNamed(x, prod.packageName)));
     const c = fit.find((x) => pickNode(s, x, withDatastore(s, x, size), null, x.placement, true)) ?? fit.find((x) => pickNode(s, x, withDatastore(s, x, size)));
     return c ? { clusterId: c.id, zone: c.az } : null;
   }
@@ -203,8 +217,10 @@ export function fulfil(s: GameState, r: SalesRequest): ActionResult {
     if (r.shady || r.fraud) s.customers = s.customers.map((c) => (c.id === customerId ? { ...c, ...hiddenTraits(s, r) } : c));
   }
   const target = targetFor(s, r);
+  const cluster = target?.clusterId ? s.clusters.find((x) => x.id === target.clusterId) : undefined;
+  const pkg = cluster && r.pkg ? packageNamed(cluster, r.pkg) : undefined, booking = pkg && !belowFloor(pkg, r.spec) ? bookingFor(pkg, r.spec) : null;
   const placed: ActionResult = target
-    ? provisionService(s, customerId, r.product, { label, spec: r.spec, sla: r.sla, price: r.quote! / 730, clusterId: target.clusterId, zone: target.zone })
+    ? provisionService(s, customerId, r.product, { label, spec: r.spec, sla: r.sla, price: r.quote! / 730, clusterId: target.clusterId, zone: target.zone, ...(booking && { pkg: { name: pkg!.name, ...booking } }) })
     : { ok: false, error: noRoomError(s, r.product) };
   if (!placed.ok) Object.assign(s, before);
   else if (r.kind !== "expansion") {
