@@ -22,10 +22,12 @@ import { VM_STATE, vmLabel, vmState } from "../../products/parts";
 import { hoursText } from "../../vms/migrate";
 import { eraOf } from "../sites/era";
 
-export type Tab = "objects" | "nodes" | "software" | "tasks" | "logs" | "licence";
+export type Tab = "objects" | "nodes" | "software" | "tasks" | "logs" | "licence" | "packages" | "create";
 
 // What ConsolePage hands a product console; the console draws its own login while signedIn is false.
-export interface PanelProps { game: GameState; c: Cluster; f: ConsoleFeatures; host: string; signedIn: boolean; login: () => void; logout: () => void }
+export interface PanelProps { game: GameState; c: Cluster; f: ConsoleFeatures; host: string; signedIn: boolean; login: () => void; logout: () => void;
+  // The address inside the console, which opens the create form or the packages screen.
+  path?: string }
 
 export const erasFrom = (early: number, late: number): { from: number; look: Look }[] => [{ from: early, look: "early" }, { from: late, look: "late" }];
 export const eraAt = (eras: { from: number; look: Look }[], game: GameState): Look => eraOf(eras, yearOf(game.hour));
@@ -109,7 +111,7 @@ export function Migrate({ game, w, c, done }: { game: GameState; w: Workload; c:
 }
 
 export interface Row {
-  id: string; name: string; sub: string; node: string; state: string; tone: string;
+  id: string; name: string; sub: string; pkg?: string; user?: string; node: string; state: string; tone: string;
   cpu: [number, number]; ram: [number, number]; disk: [number, number]; lead: [number, number]; usage: string;
   actions: PanelAction[]; panel: ReactNode;
 }
@@ -133,9 +135,9 @@ export function useRows(game: GameState, c: Cluster, f: ConsoleFeatures, node: s
     ];
     const o = open?.id === w.id ? open.kind : null;
     return {
-      id: w.id, state, tone,
+      id: w.id, state, tone, pkg: site?.pkg, user: site?.username,
       name: web ? site?.domain ?? w.hostname ?? "" : host?.name ?? w.hostname ?? vmLabel(game, w).name,
-      sub: host?.panel ? consoleTitle(host.panel) : "",
+      sub: [host?.panel ? consoleTitle(host.panel) : "", !web && site?.pkg].filter(Boolean).join(" · "),
       node: d ? d.hostname ?? d.label ?? d.name : "",
       cpu: [u.vcpu, w.vcpu], ram: [u.ramGb, w.ramGb], disk: [u.diskGb, w.diskGb], lead: web ? [u.diskGb, w.diskGb] : [u.vcpu, w.vcpu],
       usage: web ? t("browser-consoles-2.of", { used: disk(Math.round(u.diskGb)), total: disk(w.diskGb) }) : t("browser-consoles-2.usageVm", { cpu: num(u.vcpu), vcpu: w.vcpu, ram: ram(+u.ramGb.toFixed(1)), ramTotal: ram(w.ramGb) }),
@@ -149,16 +151,17 @@ export const cpuText = (r: Row) => t("browser-consoles-2.ofVcpu", { used: num(r.
 export const ramText = (r: Row) => t("browser-consoles-2.of", { used: ram(+r.ram[0].toFixed(1)), total: ram(r.ram[1]) });
 
 // The plain table most consoles show their objects in; name is the first column's heading.
-export function RowsTable({ rows, name, node = false, className = "cx-table" }: { rows: Row[]; name: string; node?: boolean; className?: string }) {
-  const span = node ? 5 : 4;
+export function RowsTable({ rows, name, node = false, className = "cx-table", extra = [] }: { rows: Row[]; name: string; node?: boolean; className?: string; extra?: ("user" | "pkg")[] }) {
+  const span = (node ? 5 : 4) + extra.length;
   return (
     <table className={className}>
-      <thead><tr><th>{name}</th>{node && <th>{t("browser-consoles-2.node")}</th>}<th>{t("browser-consoles-2.status")}</th><th>{t("browser-consoles-2.usage")}</th><th /></tr></thead>
+      <thead><tr><th>{name}</th>{extra.map((k) => <th key={k}>{t(k === "user" ? "pkg.username" : "pkg.package")}</th>)}{node && <th>{t("browser-consoles-2.node")}</th>}<th>{t("browser-consoles-2.status")}</th><th>{t("browser-consoles-2.usage")}</th><th /></tr></thead>
       <tbody>
         {rows.length === 0 && <tr><td colSpan={span} className="cx-empty">{t("browser-consoles-2.nothingHere")}</td></tr>}
         {rows.map((r) => (
           <RowLines key={r.id} r={r} span={span}>
             <td><b>{r.name}</b>{r.sub && <span className="cx-sub">{r.sub}</span>}</td>
+            {extra.map((k) => <td key={k}>{k === "user" ? r.user : r.pkg}</td>)}
             {node && <td>{r.node}</td>}
             <td><span className={`cx-state ${r.tone}`}>{r.state}</span></td>
             <td><Bar use={r.lead} /><span className="cx-use num">{r.usage}</span></td>

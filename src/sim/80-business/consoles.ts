@@ -1,5 +1,6 @@
 // GDD, Software choices (Consoles): what the web console of each piece of software offers. Pure; the browser draws it.
 import { isService, softwareById } from "../10-catalog/platforms";
+import type { Product } from "../30-customers/customers";
 import { fqdn } from "../30-customers/domains";
 import type { GameState } from "../50-state";
 import { clustersOf, hostsOfVm, isOwnVm, vmById, type Cluster } from "../60-infra/cluster";
@@ -107,4 +108,42 @@ export function consoleBookmarks(s: GameState): { title: string; url: string }[]
     const family = familyOf(c), host = family && consoleHost(s, c), at = consoleSuffix(s, c);
     return family && host && at !== null ? [{ title: `${consoleTitle(family)} ${c.name}${at}`, url: fqdn(s, host) + at }] : [];
   });
+}
+
+// The real-looking address of each console's create-account form, imitating the product it is named after.
+export const CREATE_PATH: Record<string, string> = {
+  cpanic: "/scripts/wwwacct", directadmin: "/CMD_ACCOUNT_USER", pleskit: "/admin/subscription/create", freepanel: "/virtual-server/domain_form.cgi",
+  tcadmen: "/Services/Create", multikraft: "/servers/create", pterodaktyl: "/admin/servers/new", proxmocks: "/?create=vm", vmwhere: "/ui/app/vm/new",
+  hypervee: "/vm/new", openveezee: "/virtual-servers/create", openstash: "/project/instances/launch",
+};
+export const PACKAGES_PATH: Record<string, string> = { cpanic: "/scripts/addpkg", tcadmen: "/Services/Defaults", proxmocks: "/?plans=1" };
+
+// The products each console has a create form for; a console gains its entry in the milestone that draws its form.
+const CREATE_FORMS: Record<string, Product[]> = {
+  cpanic: ["webHosting"], proxmocks: ["vps", "gameServer", "cloud"], tcadmen: ["gameServer"],
+};
+export const createFormFor = (family: string | null, product: Product): boolean => !!family && !!CREATE_FORMS[family]?.includes(product);
+
+export type CreateScreen = { screen: "create"; order?: string } | { screen: "packages" } | null;
+
+const same = (spec: string | undefined, u: URL): boolean => {
+  if (!spec) return false;
+  const w = new URL(spec, "http://x");
+  return w.pathname === u.pathname && [...w.searchParams].every(([k, v]) => u.searchParams.get(k) === v);
+};
+
+// Which of a console's own screens an address inside it names.
+export function parseCreate(family: string | null, path: string | undefined): CreateScreen {
+  if (!family || !path) return null;
+  const u = new URL(path, "http://x");
+  if (same(CREATE_PATH[family], u)) return { screen: "create", ...(u.searchParams.get("order") && { order: u.searchParams.get("order")! }) };
+  return same(PACKAGES_PATH[family], u) ? { screen: "packages" } : null;
+}
+
+// The address of a console's create form with an order picked, or null when the console has no form.
+export function createLink(s: GameState, clusterId: string, ticketId: string): string | null {
+  const c = s.clusters.find((x) => x.id === clusterId), family = c && familyOf(c), spec = family && CREATE_PATH[family];
+  const host = c && consoleHost(s, c), at = c && consoleSuffix(s, c);
+  if (!spec || host === null || host === undefined || at === null || at === undefined) return null;
+  return `${fqdn(s, host)}${at}${spec}${spec.includes("?") ? "&" : "?"}order=${ticketId}`;
 }

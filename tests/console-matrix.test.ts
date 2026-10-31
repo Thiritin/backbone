@@ -83,9 +83,9 @@ describe("console resolution", () => {
     const { s, bare, barePanel, mailVm } = lab(), node = s.devices.find((d) => d.id === "dev3")!, bareDev = s.devices.find((d) => d.id === bare)!;
     const panelVm = s.workloads.find((w) => !w.serviceId && s.clusters.some((c) => c.vm === w.id && c.panel === "freepanel"))!;
     const hypervisor = s.clusters.find((c) => c.platform)!;
-    expect(resolve(s, fqdn(s, node.hostname!)).page).toEqual({ kind: "console", hostname: node.hostname, clusterId: hypervisor.id, defaced: false });
+    expect(resolve(s, fqdn(s, node.hostname!)).page).toEqual({ kind: "console", hostname: node.hostname, clusterId: hypervisor.id, defaced: false, path: "/" });
     expect(resolve(s, fqdn(s, panelVm.hostname!)).page).toMatchObject({ kind: "console", defaced: false });
-    expect(resolve(s, fqdn(s, bareDev.hostname!)).page).toEqual({ kind: "console", hostname: bareDev.hostname, clusterId: barePanel, defaced: false });
+    expect(resolve(s, fqdn(s, bareDev.hostname!)).page).toEqual({ kind: "console", hostname: bareDev.hostname, clusterId: barePanel, defaced: false, path: "/" });
     const mail = s.workloads.find((w) => w.id === mailVm)!;
     expect(resolve(s, fqdn(s, mail.hostname!)).page).toMatchObject({ kind: "console", clusterId: s.clusters.find((c) => c.vm === mailVm)!.id });
   });
