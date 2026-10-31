@@ -1,6 +1,7 @@
 // Rear panels, power supplies and the place of every port on either side, so cables can be drawn to them.
 // Switches and firewalls mount reversed, as in real racks: their port face looks to the rack back, where the
 // server NICs are, and their power supplies and fans look to the rack front.
+import type { ReactNode } from "react";
 import { t } from "../../i18n/en";
 import type { DeviceModel } from "../../sim/10-catalog/hardware";
 import { BrandMark } from "./logos";
@@ -36,8 +37,29 @@ function nicLayout(model: DeviceModel, w: number, h: number): Map<number, Spot> 
   }));
 }
 
+// A desktop switch on a shelf: a box beside its power brick on the front, the same box seen from behind on the back.
+export function shelfBox(model: DeviceModel, side: Side, w: number, h: number): Spot {
+  const psu = psuBoxes(model, w, h).at(-1), bw = Math.min(w * 0.42, 40 + model.ports.length * 11), x = (psu ? psu.x + psu.w : 13) + 6;
+  return { x: side === "back" ? w - x - bw : x, y: h * 0.18, w: bw, h: h * 0.82 - 3 };
+}
+// One row of ports along the box.
+function shelfPorts(model: DeviceModel, w: number, h: number) {
+  const box = shelfBox(model, "back", w, h), n = model.ports.length, pw = Math.min(10, (box.w - 12) / n), ph = Math.min(box.h - 4, pw * 0.85);
+  return new Map(model.ports.map((_, i) => [i, { x: box.x + 6 + i * pw, y: box.y + (box.h - ph) / 2, w: pw - 1.6, h: ph, sfp: false, top: true }]));
+}
+function Shelf({ w, h, children }: { w: number; h: number; children: ReactNode }) {
+  return (
+    <>
+      <rect x="0" y={h - 3} width={w} height="2.5" rx="0.6" fill="var(--metal)" stroke="var(--metal-line)" strokeWidth="0.5" />
+      <rect x="0" y="1" width="3" height={h - 2} fill="var(--metal)" />
+      <rect x={w - 3} y="1" width="3" height={h - 2} fill="var(--metal)" />
+      {children}
+    </>
+  );
+}
+
 // A switch's port face: the asset tag and console port on the left, ports, then status lights and the maker mark.
-const portFace = (model: DeviceModel, name: string, w: number, h: number) => switchLayout(model, w - 30, h, switchX0(model, name, h) + 12);
+const portFace = (model: DeviceModel, name: string, w: number, h: number) => (model.shelf ? shelfPorts(model, w, h) : switchLayout(model, w - 30, h, switchX0(model, name, h) + 12));
 
 // A server's rear is the front seen from behind, so its parts are laid out in front coordinates and mirrored.
 const mirror = <T extends Spot>(spots: Map<number, T>, w: number) => new Map([...spots].map(([i, s]) => [i, { ...s, x: w - s.x - s.w }]));
@@ -149,6 +171,7 @@ function Fans({ x, w, h, lamps, on }: { x: number; w: number; h: number; lamps: 
 
 // The rear of a switch or firewall as seen from the rack front: power supplies, fans and the asset tag.
 export function SwitchRear(p: FrontProps) {
+  if (p.model.shelf) return <ShelfFront {...p} />;
   const { model, w, h, name, state } = p, psus = psuBoxes(model, w, h), x1 = psus.length ? psus[psus.length - 1].x + psus[psus.length - 1].w + 8 : 14;
   const fans = p.parts?.fans ?? [], fw = Math.min(w * 0.3, fans.length * h);
   return (
@@ -161,6 +184,33 @@ export function SwitchRear(p: FrontProps) {
       <LedPanel {...p} x={x1 + fw + 20} x2={w - 22 - (name ? tw(name, fsz(Math.min(h, 24)) * 0.9) + 4 : 0)} />
       <AssetTag x={w - 14} y={h / 2} text={name} h={h} anchor="end" />
     </>
+  );
+}
+
+// A desktop switch's front: its power brick, then the box with the power light, a light per port and the asset tag.
+function ShelfFront(p: FrontProps) {
+  const { model, w, h, name, state, blink, lights = [] } = p, box = shelfBox(model, "front", w, h), step = Math.min(6, (box.w - 30) / model.ports.length);
+  return (
+    <Shelf w={w} h={h}>
+      <Psus model={model} w={w} h={h} on={state !== "off"} lamps={p.parts?.psus} />
+      <rect x={box.x} y={box.y} width={box.w} height={box.h} rx="1.5" fill="oklch(0.3 0.008 255)" stroke="var(--metal-line)" />
+      <circle cx={box.x + 6} cy={box.y + box.h / 2} r="1.3" fill={LED[state]} className={blink ? "led-blink" : undefined} />
+      {model.ports.map((_, i) => <circle key={i} cx={box.x + 14 + i * step} cy={box.y + box.h / 2} r="1" {...(state === "off" ? { fill: LED.off } : ledProps(lights[i], name, i))} />)}
+      <AssetTag x={w - 8} y={h / 2} text={name} h={h} anchor="end" />
+    </Shelf>
+  );
+}
+
+// A desktop switch's back: the box with its ports and the maker mark.
+function ShelfBack(p: FrontProps) {
+  const { model, w, h, name, ports, brand } = p, box = shelfBox(model, "back", w, h), at = shelfPorts(model, w, h);
+  return (
+    <Shelf w={w} h={h}>
+      <rect x={box.x} y={box.y} width={box.w} height={box.h} rx="1.5" fill="oklch(0.27 0.008 255)" stroke="var(--metal-line)" />
+      <SwitchPorts at={at} ports={ports} lights={p.lights} name={name} />
+      <AssetTag x={8} y={h / 2} text={name} h={h} />
+      {h >= 14 && <BrandMark brand={brand} x={box.x - 12} y={h / 2 - 4} size={8} />}
+    </Shelf>
   );
 }
 
@@ -190,6 +240,7 @@ function LedPanel({ model, name, h, lights = [], state, x, x2 }: FrontProps & { 
 
 // The port face of a switch or firewall: asset tag, console port, ports, status lights and the maker mark.
 function PortFace(p: FrontProps) {
+  if (p.model.shelf) return <ShelfBack {...p} />;
   const { model, w, h, name, ports, state, blink, brand } = p, at = portFace(model, name, w, h);
   return (
     <>

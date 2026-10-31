@@ -8,6 +8,7 @@ import { serviceOnline } from "../40-support/status";
 import type { GameState } from "../50-state";
 import { isOwnVm, workloadOnline, workloadsOf, type Workload } from "../60-infra/cluster";
 import { ipmiIp, oobIp, privateIp } from "../60-infra/addresses";
+import { switchIp } from "../60-infra/switches";
 import { oobUp } from "../60-infra/oob";
 import { linkStatus, powered, working } from "../60-infra/status";
 import { nodeUsage } from "../60-infra/usage";
@@ -29,6 +30,7 @@ export type Page =
   | { kind: "console"; hostname: string; clusterId: string; defaced: boolean }
   | { kind: "ipmi"; deviceId: string }
   | { kind: "kvm"; deviceId: string }
+  | { kind: "switch"; deviceId: string }
   | { kind: "video" }
   | { kind: "phishing"; sender: string }
   | { kind: "sponsorboard" }
@@ -166,6 +168,9 @@ export function resolve(s: GameState, raw: string): Resolved {
     if (bmc) return out({ kind: "ipmi", deviceId: bmc.id }, powered(s, bmc.id) && !bmc.bmcHung ? "fast" : "down");
     const kvm = s.devices.find((d) => oobIp(s, d.id) === name);
     if (kvm) return out({ kind: "kvm", deviceId: kvm.id }, oobUp(s, kvm.id) ? "fast" : "down");
+    // A managed switch answers on its management address; of two on one factory address, the older one does.
+    const sw = s.devices.find((d) => switchIp(d) === name);
+    if (sw) return out({ kind: "switch", deviceId: sw.id }, working(s, sw.id) ? "fast" : "down");
     const m = machineOf(s, name, true);
     return m ? { url, host, path, ...machinePage(s, m, port, path) } : out({ kind: "notfound" });
   }
