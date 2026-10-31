@@ -92,6 +92,8 @@
 .cx-tile.danger svg { color: var(--bad); }
 .cx-log { margin: 8px 0 0; padding: 8px 10px; max-height: 360px; overflow: auto; border: 1px solid var(--line); border-radius: 4px; font: 11.5px/1.5 var(--mono, monospace); white-space: pre-wrap; word-break: break-all; }
 
+.cx-banner { margin: 0 0 8px; padding: 6px 10px; border-radius: 3px; }
+.cx-banner.bad { color: #fff; background: var(--bad); }
 /* Shared classes follow the web of the game year. Vendor sheets use :root[data-era] selectors to outrank these :where() rules. */
 
 /* 2003 to 2006: grey table pages in Verdana with bevelled buttons, grid tables and a flat header bar. */
