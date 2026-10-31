@@ -28,7 +28,7 @@ Every address fact is stored on the device that holds it, and every view (inspec
 
 | Device | New state | Default |
 | --- | --- | --- |
-| Router (gateway kind) | `lan: { cidr, gateway, pool: [from, to], leaseHours, dns: boolean }`, `reservations: { mac, ip }[]`, `leases: { mac, ip, until, name }[]` | Fritz!Bocks: 192.168.178.0/24, .1, .20 to .200, 240 hours. Datacenter handoff: the location's 10.n.0.0/24, fixed. |
+| Router (gateway kind) | `lan: { cidr, gateway, pool: [from, to], leaseHours, dns: boolean }`, `reservations: { mac, ip }[]`, `leases: { mac, ip, until, name }[]`, `shares: { ip, kind: "web" \| "exposed" }[]` | Fritz!Bocks: 192.168.178.0/24, .1, .20 to .200, 240 hours. Datacenter handoff: the location's 10.n.0.0/24, fixed. |
 | Server, BMC, KVM, switch management | `iface: { mode: "dhcp" \| "static", ip?, prefix?, gw?, dns? }` persistent, plus `runtime?: same` set by `ip` and cleared on boot | `dhcp` |
 | Managed switch | `vlans: Record<port, { untagged: number, tagged: number[] }>`, `running` and `saved` copies of `groups` and `vlans` | Every port untagged in VLAN 1 |
 
@@ -56,6 +56,23 @@ Clusters gain one rule: a node is a member at the address it joined with. A node
 Gateways of the small-office line (`home-router`, the Fritz!Bocks models) change from height 0 on the carrier panel to height 1 in a rack, drawn as a box on a shelf. The carrier panel keeps a new provider device, `line-jack`, 0U, one port with the media `dsl`; the router's WAN port has the same media, so nothing else can be cabled to the jack (`connectError` already refuses a media mismatch). `lineUp` moves from the panel to the router: a router passes traffic when its WAN port reaches a jack and the location's line is active. The datacenter `handoff` stays on the panel as today and becomes a DHCP server with a fixed range, so a datacenter server installed with DHCP works the day it is cabled, and a static address there is optional.
 
 `home-router` becomes the Fritz!Bocks 5050: price 0, not sold, the numbers of today's home router. The other Fritz!Bocks models keep their prices, and `isOfficeRouter` keys on the AVN brand instead of height 0. Installing a bought one from storage still swaps it with the mounted one and keeps the cables on the same ports (`Storage.tsx`, gdd.md Routers), now with the LAN settings copied and the leases dropped.
+
+### Port shares
+
+A basement machine that serves the internet through the line's shared address needs a port share on the router, as on a real Fritz!Bocks. Today `hasPublicAddress` in `addresses.ts` counts every basement machine as reachable while a line is live; it changes to count a machine on the shared address only when the router has a share to it. Machines that hold an address of their own (from a business line's /29, or in a datacenter) need no share, since the router routes those addresses without translating them.
+
+Fritz!OZ lists shares under Internet, Permit access. A share names a device and one of two kinds:
+
+| Share | Ports | Effect |
+| --- | --- | --- |
+| Web server | TCP 80 and 443 | The device can sell and serve web hosting on the shared address |
+| Exposed host | Everything | The same, and the device counts as an exposed instance in the Security app with its open vulnerabilities |
+
+A port goes to one device. A second Web server share on the same router is refused with Fritz!OZ's own message ("Port 80 is already shared with node001"), so a dynamic line carries one web host. A second web host in the basement needs the business line, whose /29 gives it an address of its own, or the panel's sites moved onto the first host. This fits the existing rule that a dynamic line sells only web hosting, and it makes the business line's static addresses worth what they cost.
+
+Creating a share ticks "Always assign this network device the same IPv4 address" for its device, as Fritz!OS does, so a share survives lease expiry. The share points at the device's address, though: a device later switched to a static address outside the reservation, or a router swapped for a new one (which copies shares but drops leases and reservations), leaves the share pointing at nothing, and the sites behind it go dark until the share is fixed.
+
+`hasPublicAddress` feeds `clusterReachable` and `lineOffered` in `cluster.ts`, so a missing share both stops new web hosting sales and takes the running sites on that machine offline, with the outage penalty the game already applies. A VM gets its share to its own LAN address, the same as a server.
 
 ### Unmanaged and managed switches
 
@@ -117,9 +134,9 @@ The switch interfaces share one component tree (`src/ui/apps/browser/mgmt/Switch
 
 ## Tutorial and first hour
 
-`checklist.ts` `TUTORIAL` gains `mountRouter` (the router is mounted and its WAN port reaches the line jack) between `mountServer` and `internet`, and `findAddress` (the player opened the router's device list with the first server in it) before `website`. The guide routes `mountRouter` to Locations with the router selected in storage and `findAddress` to the Browser at `fritz.bocks`. first-hour.md changes its Minute 0 line (the router is in storage, not beside the rack), the Getting started table (one more row, no cost), and the beat sheet row "cabled to the router". `tests/checklist.test.ts` and `tests/first-server.test.ts` follow.
+`checklist.ts` `TUTORIAL` gains `mountRouter` (the router is mounted and its WAN port reaches the line jack) between `mountServer` and `internet`, `findAddress` (the player opened the router's device list with the first server in it) before `website`, and `shareWeb` (the web host has a Web server share, or holds an address of its own) right after `setup`. `shareWeb` ticks by itself on a business line, so only dynamic-line players see it. The guide routes `mountRouter` to Locations with the router selected in storage, and `findAddress` and `shareWeb` to the Browser at `fritz.bocks`. first-hour.md changes its Minute 0 line (the router is in storage, not beside the rack), the Getting started table (one more row, no cost), and the beat sheet row "cabled to the router". `tests/checklist.test.ts` and `tests/first-server.test.ts` follow.
 
-A player who installs with DHCP and keeps the defaults never has to touch an address to reach the first customer; the router login is the one new required step, and every later network skill is a fix for a problem the game creates on its own (a shuffled cluster, a full pool, a VLAN that needs a managed switch).
+A player who installs with DHCP and keeps the defaults never has to touch an address to reach the first customer; the router login, and on a dynamic line the web share, are the new required steps, and every later network skill is a fix for a problem the game creates on its own (a shuffled cluster, a full pool, a VLAN that needs a managed switch).
 
 ## Saves
 
@@ -131,19 +148,19 @@ A player who installs with DHCP and keeps the defaults never has to touch an add
 | --- | --- |
 | Catalog | `10-catalog/hardware.ts` (`managed`, unmanaged models, router height, `line-jack`, Fritz!Bocks 5050, `isOfficeRouter`), `10-catalog/economy.ts` if the start cash moves |
 | State | `50-state.ts` (`Device` fields, `newGame` with the router in storage and the jack on the panel) |
-| Derived | new `60-infra/lan.ts`; `status.ts` (`computeLinkStatus`, `lineUp`, `reachesGateway` replaced by `segmentOf`); `addresses.ts` (`privateIp`, `ipmiIp`, `oobIp` removed); `oob.ts` (`machineNet` reads the lease; lockout by VLAN); `cluster.ts` (member address); `terminal.ts`, `shell.ts` |
-| Actions | new `90-actions/lan.ts` (`setIface`, `setRuntimeIface`, `setRouterLan`, `reserveAddress`, `setPortVlan`, `saveSwitchConfig`); `hardware.ts` (`setPortGroup` refused on unmanaged switches, router swap); `console.ts` (`installOs` with `iface`) |
+| Derived | new `60-infra/lan.ts`; `status.ts` (`computeLinkStatus`, `lineUp`, `reachesGateway` replaced by `segmentOf`); `addresses.ts` (`privateIp`, `ipmiIp`, `oobIp` removed, `hasPublicAddress` on port shares); `oob.ts` (`machineNet` reads the lease; lockout by VLAN); `cluster.ts` (member address); `terminal.ts`, `shell.ts` |
+| Actions | new `90-actions/lan.ts` (`setIface`, `setRuntimeIface`, `setRouterLan`, `reserveAddress`, `setPortShare`, `setPortVlan`, `saveSwitchConfig`); `hardware.ts` (`setPortGroup` refused on unmanaged switches, router swap); `console.ts` (`installOs` with `iface`) |
 | Tick | `88-tick/tick.ts` calls `leaseTick` before `networkTick` |
 | Save | `91-save/save.ts` defaults and the router move |
 | Browser | `80-business/browser.ts` (page kinds, `fritz.bocks`, reach check), `80-business/index.ts`, `ui/apps/browser/mgmt/` |
 | UI | `locations/Inspector.tsx` (MAC, label card, Management link, group editor removed), `art/fronts.tsx` (shelf devices), `console/installer.tsx`, the Windoors Server Manager page, `network/Addresses.tsx` (public addresses only) |
 | Text | new `src/i18n/lan.ts` and `ui-browser-mgmt.ts` with the same files in de, es, fr, it, pt; `terminal.ts` and `console.ts` keys |
 | Guide | `checklist.ts`, `ui/apps/guide.ts`, docs/design/first-hour.md, gdd.md (Racks, Addresses), economy.md (switch prices) |
-| Tests | new `tests/lan.test.ts` (leases, renewal, shuffle on expiry and router swap, reservations, conflicts, wrong gateway, renumbering), `tests/lan-shell.test.ts` (`ip`, `ifconfig`, `dhclient`, interfaces file, runtime lost on reboot), `tests/switch-web.test.ts` (VLAN segments, groups through the interface, deterministic lockout, unsaved config lost on reboot), `tests/router-rack.test.ts` (offline without a mounted router, jack media, old save move); updates to `routers.test.ts`, `terminal.test.ts`, `browser-resolve.test.ts`, `install-network.test.ts`, `addresses.test.ts`, `checklist.test.ts`, `first-server.test.ts`, `save.test.ts` |
+| Tests | new `tests/lan.test.ts` (leases, renewal, shuffle on expiry and router swap, reservations, conflicts, wrong gateway, renumbering), `tests/port-share.test.ts` (web hosting gated on a share on a dynamic line, one Web server share per router, no share needed for an own address, a stale share after a router swap, an exposed host in the Security list), `tests/lan-shell.test.ts` (`ip`, `ifconfig`, `dhclient`, interfaces file, runtime lost on reboot), `tests/switch-web.test.ts` (VLAN segments, groups through the interface, deterministic lockout, unsaved config lost on reboot), `tests/router-rack.test.ts` (offline without a mounted router, jack media, old save move); updates to `routers.test.ts`, `terminal.test.ts`, `browser-resolve.test.ts`, `install-network.test.ts`, `addresses.test.ts`, `checklist.test.ts`, `first-server.test.ts`, `save.test.ts` |
 
 ## Phases
 
-1. **Router and DHCP.** Router in the rack with the line jack, the Fritz!Bocks 5050 at start, `lan.ts` with leases and `addressOf` for servers, `computeLinkStatus` on `gatewayOf`, `privateIp` and friends replaced, Fritz!OZ with devices, IPv4 settings and reservations, the reach check in the Browser, the label card and the two guide steps. Every machine stays on DHCP; the game plays as today plus the router.
+1. **Router and DHCP.** Router in the rack with the line jack, the Fritz!Bocks 5050 at start, `lan.ts` with leases and `addressOf` for servers, `computeLinkStatus` on `gatewayOf`, `privateIp` and friends replaced, Fritz!OZ with devices, IPv4 settings, reservations and port shares, `hasPublicAddress` on the shares, the reach check in the Browser, the label card and the three guide steps. Every machine stays on DHCP; the game plays as today plus the router and, on a dynamic line, one web host per basement.
 2. **Static addresses.** The installer's network step, `iface` static, the shell commands and `/etc/network/interfaces`, conflicts, cluster member addresses, the Windoors adapter page.
 3. **Switches.** `managed`, the unmanaged models, management addresses by DHCP with the factory fallback, VLAN-aware `segmentOf`, the switch web interfaces for Sysko, Hewlett-Packet and Nettgear, port groups moved out of the inspector, running and saved configuration.
 4. **Datacenters.** Own routers in a datacenter behind the handoff (MicroTick and Junipurr interfaces), routing between VLANs on layer 3 switches, VMs bridged onto the location's LAN and drawing from its pool, and the private networks customers ask for in gdd.md as VLANs on these switches.
@@ -152,7 +169,6 @@ Phase 1 changes the most callers and goes first; 2 and 3 both build on `lan.ts` 
 
 ## Open points
 
-- **Port forwarding.** A basement server behind a shared dynamic address is reachable today without any setting. A real Fritz!Bocks needs a port share for 80 and 443, and only one machine can hold them, which would push a second web host toward the business line. That is a real rebalance of the basement and wants its own decision.
 - **Reaching datacenter LANs from the desk.** The desk sits in the basement LAN. Today it reaches datacenter servers as if they were next door; a stricter rule (on site, a VPN, or a link between zones) belongs with phase 4.
 - **Late game friction.** Reading leases off a router does not scale to three hundred servers. The likely answer is an IPAM page in the Network app that lists static addresses and reservations across locations, as a research unlock.
 - **Passwords.** Whether the player can change the router and switch passwords, and whether a device left on its default password counts as an exposed instance in the Security app.
