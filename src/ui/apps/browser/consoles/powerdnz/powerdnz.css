@@ -34,3 +34,4 @@
 .pd-zone .cx-tools { display: flex; gap: 8px; margin: 0 0 10px; }
 .pd-form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
 .pd-zone[data-era="early"] .cx-table th { background: #d8d8d8; }
+.pd-secondary { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }

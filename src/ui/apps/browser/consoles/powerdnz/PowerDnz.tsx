@@ -3,6 +3,7 @@ import { t } from "../../../../../i18n/en";
 import { LogOut } from "lucide-react";
 import { Actions, erasFrom, eraAt, Facts, LoginForm, RowLines, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
 import { tenants } from "../services";
+import { slavesServed, zoneOf } from "../../../../../sim/60-infra/netsvc-dns";
 import { ZoneEditor } from "./ZoneEditor";
 import "./powerdnz.css";
 
@@ -34,12 +35,12 @@ export function PowerDnz(p: PanelProps) {
           <section className="pd-box">
             <h2>{t("browser-consoles-2.zones")}</h2>
             <table className="cx-table">
-              <thead><tr><th>{t("browser-consoles-2.name")}</th><th>{t("browser-consoles-2.type")}</th><th>{t("browser-consoles-2.account")}</th><th>{t("browser-consoles-2.server")}</th><th>{t("browser-consoles-2.status")}</th><th /></tr></thead>
+              <thead><tr><th>{t("browser-consoles-2.name")}</th><th>{t("browser-consoles-2.type")}</th><th>{t("browser-consoles-2.account")}</th><th>{t("browser-consoles-2.server")}</th><th>{t("netsvc.secondary")}</th><th>{t("browser-consoles-2.status")}</th><th /></tr></thead>
               <tbody>
-                {zones === 0 && <tr><td colSpan={6} className="cx-empty">{t("browser-consoles-2.nothingHere")}</td></tr>}
+                {zones === 0 && <tr><td colSpan={7} className="cx-empty">{t("browser-consoles-2.nothingHere")}</td></tr>}
                 {rows.flatMap((r) => { const tn = ts.find((x) => x.id === r.id); return (tn?.zones ?? []).map((z, i) => (
-                  <RowLines key={`${r.id}${z}`} r={i === 0 ? r : { ...r, panel: null }} span={6}>
-                    <td><button className="pd-link" onClick={() => setZone(z)}><b>{z}</b></button></td><td>{t("browser-consoles-2.native")}</td><td>{tn?.customer}</td><td>{r.name}</td>
+                  <RowLines key={`${r.id}${z}`} r={i === 0 ? r : { ...r, panel: null }} span={7}>
+                    <td><button className="pd-link" onClick={() => setZone(z)}><b>{z}</b></button></td><td>{t("browser-consoles-2.native")}</td><td>{tn?.customer}</td><td>{r.name}</td><td>{p.game.clusters.find((c) => c.id === zoneOf(p.game, z).secondary)?.name}</td>
                     <td><span className={`cx-state ${r.tone}`}>{r.state}</span></td>
                     <td>{i === 0 && <Actions actions={r.actions} className="cx-acts" />}</td>
                   </RowLines>
@@ -48,7 +49,7 @@ export function PowerDnz(p: PanelProps) {
             </table>
           </section>
         </>}
-        {tab === "software" && <section className="pd-box"><h2>{t("browser-consoles-2.server")}</h2><Facts facts={sw.facts} /><Actions actions={sw.actions}>{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>{sw.panel}</section>}
+        {tab === "software" && <section className="pd-box"><h2>{t("browser-consoles-2.server")}</h2><Facts facts={[...sw.facts, { label: t("netsvc.slavesServed"), value: String(slavesServed(p.game, p.c.id).length) }]} /><Actions actions={sw.actions}>{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>{sw.panel}</section>}
       </main>
     </div>
   );

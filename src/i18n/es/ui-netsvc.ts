@@ -51,4 +51,8 @@ export default {
   "error.unknownZone": () => "Esta zona ya no existe.",
   "ticket.howTo.dnsChange.subject": () => "Cambiad nuestro registro DNS, por favor",
   "ticket.howTo.dnsChange.text": (p) => `Nuestro sitio ${p.domain} debe apuntar a ${p.ip}. Poned el registro www en esa dirección, por favor.`,
+  "netsvc.secondary": () => "Secundario",
+  "netsvc.noSecondary": () => "Ninguno",
+  "netsvc.slavesServed": () => "Esclavos atendidos",
+  "error.badSecondary": () => "Este servidor no puede ser el secundario de la zona.",
 } satisfies Dict;

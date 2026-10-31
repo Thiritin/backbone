@@ -51,4 +51,8 @@ export default {
   "error.unknownZone": () => "Cette zone n'existe plus.",
   "ticket.howTo.dnsChange.subject": () => "Merci de modifier notre enregistrement DNS",
   "ticket.howTo.dnsChange.text": (p) => `Notre site ${p.domain} doit pointer vers ${p.ip}. Merci de mettre l'enregistrement www sur cette adresse.`,
+  "netsvc.secondary": () => "Secondaire",
+  "netsvc.noSecondary": () => "Aucun",
+  "netsvc.slavesServed": () => "Esclaves servis",
+  "error.badSecondary": () => "Ce serveur ne peut pas être le secondaire de la zone.",
 } satisfies Dict;

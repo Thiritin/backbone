@@ -1,5 +1,5 @@
 import type { GameState } from "../50-state";
-import { isIpv4, ownerOf, putZone, syncZone, TTLS, zoneOf, type DnsRecord, type DnsType } from "../60-infra/netsvc-dns";
+import { isIpv4, ownerOf, putZone, secondaryChoices, syncZone, TTLS, zoneOf, type DnsRecord, type DnsType } from "../60-infra/netsvc-dns";
 import type { ActionResult } from "./hardware";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -35,5 +35,14 @@ export function deleteRecord(s: GameState, zone: string, id: string): ActionResu
   if (!z.records.some((r) => r.id === id)) return fail("error.badRecord");
   putZone(s, zone, { ...z, records: z.records.filter((r) => r.id !== id) });
   syncZone(s, zone);
+  return { ok: true };
+}
+
+// Names the server that answers for a zone when the primary is down; null removes it.
+export function setSecondary(s: GameState, zone: string, clusterId: string | null): ActionResult {
+  const v = ownerOf(s, zone);
+  if (!v) return fail("error.unknownZone");
+  if (clusterId !== null && !secondaryChoices(s, v).some((c) => c.id === clusterId)) return fail("error.badSecondary");
+  putZone(s, zone, { ...zoneOf(s, zone), secondary: clusterId });
   return { ok: true };
 }

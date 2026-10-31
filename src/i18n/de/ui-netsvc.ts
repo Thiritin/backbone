@@ -51,4 +51,8 @@ export default {
   "error.unknownZone": () => "Diese Zone gibt es nicht mehr.",
   "ticket.howTo.dnsChange.subject": () => "Bitte ändert unseren DNS-Eintrag",
   "ticket.howTo.dnsChange.text": (p) => `Unsere Website ${p.domain} muss auf ${p.ip} zeigen. Bitte setzt den www-Eintrag auf diese Adresse.`,
+  "netsvc.secondary": () => "Sekundär",
+  "netsvc.noSecondary": () => "Keiner",
+  "netsvc.slavesServed": () => "Bediente Slaves",
+  "error.badSecondary": () => "Dieser Server kann nicht der sekundäre Server der Zone sein.",
 } satisfies Dict;

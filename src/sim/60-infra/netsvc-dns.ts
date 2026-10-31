@@ -7,6 +7,7 @@ import { ascii } from "../30-customers/domains";
 import { createTicket, isFinal } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import { serviceAddress } from "./addresses";
+import { controlPlaneUp, supports, type Cluster } from "./cluster";
 
 export type DnsType = "A" | "AAAA" | "CNAME" | "MX" | "TXT" | "NS";
 export interface DnsRecord { id: string; type: DnsType; name: string; ttl: number; data: string }
@@ -89,3 +90,17 @@ export function dnsTick(s: GameState): void {
 
 // The address a ticket asks for, shown in its text.
 export const askedIp = (s: GameState, ticketId: string): string => Object.values(s.netsvc.zones).find((z) => z.ask?.ticketId === ticketId)?.ask?.ip ?? "";
+
+const primaryOf = (s: GameState, v: Service): string | undefined => s.workloads.find((w) => w.serviceId === v.id)?.clusterId ?? undefined;
+
+// The DNS servers a zone of this service can have as its secondary: every other one.
+export const secondaryChoices = (s: GameState, v: Service): Cluster[] => s.clusters.filter((c) => supports(c, "dns") && c.id !== primaryOf(s, v));
+
+// Whether every zone of the service has a secondary that is up, so the zones keep answering with the primary down.
+export function dnsCovered(s: GameState, serviceId: string): boolean {
+  const v = s.services.find((x) => x.id === serviceId), zones = v ? dnsZones(s, v) : [];
+  return zones.length > 0 && zones.every((z) => { const c = s.clusters.find((x) => x.id === zoneOf(s, z).secondary); return !!c && controlPlaneUp(s, c); });
+}
+
+// The zones another server answers for, by the cluster serving them.
+export const slavesServed = (s: GameState, clusterId: string): string[] => dnsServices(s).flatMap((v) => dnsZones(s, v)).filter((z) => zoneOf(s, z).secondary === clusterId);
