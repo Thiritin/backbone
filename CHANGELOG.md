@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-10-31
 
+- Progress bars in server panels now look like the ones each product used in its time, from boxed and segmented bars early on to thin flat ones later.
 - Every update is now named after its date, such as Version 2026.10.31.
 - The main menu buttons are now readable in light mode.
 - The main menu now has sounds: a soft tick when you move over an option, a chime when you choose one and a falling tone when you go back.
