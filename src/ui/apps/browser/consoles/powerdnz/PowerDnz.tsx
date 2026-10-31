@@ -2,6 +2,7 @@ import { useState } from "react";
 import { t } from "../../../../../i18n/en";
 import { LogOut } from "lucide-react";
 import { Actions, erasFrom, eraAt, Facts, LoginForm, RowLines, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
+import { useReadoutPages } from "../Readouts";
 import { tenants } from "../services";
 import { slavesServed, zoneOf } from "../../../../../sim/60-infra/netsvc-dns";
 import { ZoneEditor } from "./ZoneEditor";
@@ -12,14 +13,14 @@ const ERAS = erasFrom(2005, 2016);
 
 export function PowerDnz(p: PanelProps) {
   const era = eraAt(ERAS, p.game), [tab, setTab] = usePanelTab(p.f), [zone, setZone] = useState<string | null>(null);
-  const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), ts = tenants(p.game, p.c);
+  const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f), ts = tenants(p.game, p.c);
   if (!p.signedIn) return (
     <div className="cx pd pd-login" data-era={era}>
       <LoginForm className="pd-card" onLogin={p.login} button={t("browser-consoles-2.logIn")}><div className="pd-logo">PowerDNZ <b>Admin</b></div><div className="cx-host">{p.host}</div></LoginForm>
     </div>
   );
   const zones = ts.reduce((n, t) => n + t.zones.length, 0);
-  const nav: [Tab, string][] = [["objects", t("browser-consoles-2.zones")], ["software", t("browser-consoles-2.server")]];
+  const nav: [Tab, string][] = [["objects", t("browser-consoles-2.zones")], ["software", t("browser-consoles-2.server")], ...pages.map((g) => [g.id, g.label] as [Tab, string])];
   return (
     <div className="cx pd" data-era={era}>
       <header className="pd-top">
@@ -49,6 +50,7 @@ export function PowerDnz(p: PanelProps) {
             </table>
           </section>
         </>}
+        {pages.filter((g) => g.id === tab).map((g) => <div key={g.id}>{g.body}</div>)}
         {tab === "software" && <section className="pd-box"><h2>{t("browser-consoles-2.server")}</h2><Facts facts={[...sw.facts, { label: t("netsvc.slavesServed"), value: String(slavesServed(p.game, p.c.id).length) }]} /><Actions actions={sw.actions}>{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>{sw.panel}</section>}
       </main>
     </div>

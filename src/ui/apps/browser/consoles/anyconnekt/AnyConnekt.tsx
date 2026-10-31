@@ -1,6 +1,8 @@
+import { FileText } from "lucide-react";
 import { Home, KeyRound, LogOut, Settings, type LucideIcon } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Actions, erasFrom, eraAt, Facts, LoginForm, RowLines, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
+import { useReadoutPages } from "../Readouts";
 import { t } from "../../../../../i18n/en";
 import { IdentityCerts } from "./IdentityCerts";
 import { tenants } from "../services";
@@ -11,7 +13,7 @@ const ERAS = erasFrom(2005, 2016);
 
 export function AnyConnekt(p: PanelProps) {
   const era = eraAt(ERAS, p.game), [tab, setTab] = usePanelTab(p.f), [certs, setCerts] = useState(false);
-  const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), ts = tenants(p.game, p.c);
+  const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f), ts = tenants(p.game, p.c);
   const logo = <span className="sy-logo"><i aria-hidden>{"|||.|||."}</i>SYSKO <b>AnyConnekt</b></span>;
   if (!p.signedIn) return (
     <div className="cx sy sy-login" data-era={era}>
@@ -19,7 +21,7 @@ export function AnyConnekt(p: PanelProps) {
     </div>
   );
   const sessions = ts.reduce((n, x) => n + (x.running ? x.users : 0), 0);
-  const nav: [Tab, string, LucideIcon][] = [["objects", t("browser-consoles-1.acHome"), Home], ["software", t("browser-consoles-1.acConfiguration"), Settings]];
+  const nav: [Tab, string, LucideIcon][] = [["objects", t("browser-consoles-1.acHome"), Home], ["software", t("browser-consoles-1.acConfiguration"), Settings], ...pages.map((g) => [g.id, g.label, FileText] as [Tab, string, LucideIcon])];
   const box = (title: string, body: ReactNode) => <section className="sy-box"><h2>{title}</h2>{body}</section>;
   return (
     <div className="cx sy" data-era={era}>
@@ -52,6 +54,7 @@ export function AnyConnekt(p: PanelProps) {
             </table>
           ))}
         </>}
+        {!certs && pages.filter((g) => g.id === tab).map((g) => <div key={g.id}>{g.body}</div>)}
         {!certs && tab === "software" && box(t("browser-consoles-1.softwareUpdates"), <><Facts facts={sw.facts} /><Actions actions={sw.actions}>{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>{sw.panel}</>)}
       </main>
     </div>

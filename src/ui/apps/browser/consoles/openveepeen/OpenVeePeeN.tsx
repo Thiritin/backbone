@@ -3,6 +3,7 @@ import { useState } from "react";
 import { LogOut } from "lucide-react";
 import { Actions, erasFrom, eraAt, Facts, LoginForm, RowLines, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
 import { Certificates } from "./Certificates";
+import { useReadoutPages } from "../Readouts";
 import { tenants } from "../services";
 import "./openveepeen.css";
 
@@ -11,7 +12,7 @@ const ERAS = erasFrom(2005, 2017);
 
 export function OpenVeePeeN(p: PanelProps) {
   const era = eraAt(ERAS, p.game), [tab, setTab] = usePanelTab(p.f), [certs, setCerts] = useState(false);
-  const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), ts = tenants(p.game, p.c);
+  const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f), ts = tenants(p.game, p.c);
   const logo = <div className="ov-logo">OpenVeePeeN <span>Access Server</span></div>;
   if (!p.signedIn) return (
     <div className="cx ov ov-login" data-era={era}>
@@ -19,7 +20,7 @@ export function OpenVeePeeN(p: PanelProps) {
     </div>
   );
   const users = ts.reduce((n, t) => n + (t.running ? t.users : 0), 0);
-  const nav: [string, Tab, string][] = [[t("browser-consoles-2.status"), "objects", t("browser-consoles-2.statusOverview")], [t("browser-consoles-2.configuration"), "software", t("browser-consoles-2.softwareUpdates")]];
+  const nav: [string, Tab, string][] = [[t("browser-consoles-2.status"), "objects", t("browser-consoles-2.statusOverview")], [t("browser-consoles-2.configuration"), "software", t("browser-consoles-2.softwareUpdates")], ...pages.map((g) => [g.label, g.id, g.label] as [string, Tab, string])];
   const userOf = (id: string) => ts.find((t) => t.id === id);
   return (
     <div className="cx ov" data-era={era}>
@@ -58,6 +59,7 @@ export function OpenVeePeeN(p: PanelProps) {
                 </section>
               ))}
             </div>)}
+          {!certs && pages.filter((g) => g.id === tab).map((g) => <div key={g.id}>{g.body}</div>)}
           {!certs && tab === "software" && <><Facts facts={sw.facts} /><Actions actions={sw.actions}>{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>{sw.panel}</>}
         </main>
       </div>

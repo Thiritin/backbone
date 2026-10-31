@@ -4,6 +4,7 @@ import { PHP, phpAt, phpBehind } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
 import type { Cluster } from "./cluster";
 import { contention } from "./oversell";
+import { customerWorkloads, liveServices } from "./status";
 
 // economy.md, PHP versions.
 export const PHP_TICKETS = 0.05;
@@ -26,9 +27,9 @@ export const phpSupported = (year: number): string => PHP[Math.max(0, PHP.findIn
 
 // Hacked sites on an unsupported PHP send spam: a customer with a web space on one draws half again the abuse reports.
 export function phpAbuse(s: GameState, customerId: string): number {
-  const services = new Set(s.services.filter((v) => v.customerId === customerId && v.endedAt === null && v.product === "webHosting").map((v) => v.id));
+  const services = new Set(liveServices(s, customerId).filter((v) => v.product === "webHosting").map((v) => v.id));
   if (!services.size) return 1;
-  const old = s.workloads.some((w) => {
+  const old = customerWorkloads(s, customerId).some((w) => {
     const c = w.clusterId && services.has(w.serviceId) ? s.clusters.find((x) => x.id === w.clusterId) : undefined;
     return c?.kind === "panel" && phpLag(s, c) >= PHP_EOL;
   });
