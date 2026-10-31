@@ -1,7 +1,7 @@
 import { t } from "../../i18n/en";
 import { Settings, X } from "lucide-react";
 import type { CSSProperties } from "react";
-import { appFor } from "../apps/registry";
+import { appFor, appTitle } from "../apps/registry";
 import { formatClock } from "../../sim/00-core/time";
 import { useStore, type Banner } from "../store";
 
@@ -12,9 +12,9 @@ function Card({ b, time, dismiss, gear }: { b: Banner; time: string; dismiss: (i
   return (
     <div className="banner" role="button" tabIndex={0} onClick={open} onKeyDown={(e) => e.key === "Enter" && open()}>
       <span className="b-icon" style={{ "--tile": app.tile } as CSSProperties}><app.icon /></span>
-      <span><span className="b-app">{app.name}</span><span className="b-title">{b.title}</span><span className="b-text">{b.text}</span></span>
+      <span><span className="b-app">{appTitle(app)}</span><span className="b-title">{b.title}</span><span className="b-text">{b.text}</span></span>
       <span className="b-time">{time}</span>
-      {gear && <button className="b-close b-set" aria-label={t("desktop.notif.appSettings", { name: app.name })} onClick={(e) => { e.stopPropagation(); gear(); }}><Settings /></button>}
+      {gear && <button className="b-close b-set" aria-label={t("desktop.notif.appSettings", { name: appTitle(app) })} onClick={(e) => { e.stopPropagation(); gear(); }}><Settings /></button>}
       <button className="b-close" aria-label={t("desktop.notif.dismiss")} onClick={(e) => { e.stopPropagation(); dismiss(b.id); }}><X /></button>
     </div>
   );

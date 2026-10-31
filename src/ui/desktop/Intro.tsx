@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, KeyboardEvent, ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { MODELS, modelById, PATCH_BRAND, SERVER_BRANDS, SWITCH_BRAND, type DeviceModel } from "../../sim/10-catalog/hardware";
-import { APPS } from "../apps/registry";
+import { APPS, appTitle } from "../apps/registry";
 import { DeviceSvg, type Lamp, type PortLamp } from "../art/fronts";
 import { Logo } from "../art/logos";
 import { PAGES, type Block, type Inline, type Page } from "./intro-text";
@@ -62,7 +62,7 @@ function BlockView({ b }: { b: Block }) {
       {APPS.filter((a) => !a.hidden).map((a) => (
         <li key={a.name}>
           <span className="dock-tile intro-tile" style={{ "--tile": a.tile } as CSSProperties}><a.icon /></span>
-          <span><strong>{a.name}</strong>{a.about}</span>
+          <span><strong>{appTitle(a)}</strong>{a.about}</span>
         </li>
       ))}
     </ul>

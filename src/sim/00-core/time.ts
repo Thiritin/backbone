@@ -1,3 +1,5 @@
+import { lang, LOCALE } from "../../i18n/lang";
+
 // Game time is a whole number of hours since 1 Jan 2005 00:00 UTC.
 export const START_YEAR = 2005;
 const START = Date.UTC(START_YEAR, 0, 1);
@@ -28,7 +30,8 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 export function formatClock(hour: number, minute = 0): string {
   const d = dateOf(hour);
   const hh = String(d.getUTCHours()).padStart(2, "0");
-  return `${DAYS[d.getUTCDay()]} ${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()} · ${hh}:${String(minute).padStart(2, "0")}`;
+  const date = lang === "en" ? `${DAYS[d.getUTCDay()]} ${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}` : d.toLocaleDateString(LOCALE, { weekday: "short", day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+  return `${date} · ${hh}:${String(minute).padStart(2, "0")}`;
 }
 
 export const isMonthStart = (hour: number): boolean => {

@@ -1,7 +1,7 @@
 import { t } from "../../i18n/en";
 import { Fragment } from "react";
 import type { CSSProperties } from "react";
-import { APPS, appFor } from "../apps/registry";
+import { APPS, appFor, appTitle } from "../apps/registry";
 import { appMenu } from "../apps/ApplicationsApp";
 import { useStore } from "../store";
 import { menuOn } from "./ContextMenu";
@@ -22,7 +22,7 @@ export function Dock() {
             {i > 0 && i % 4 === 0 && <span className="dock-divider" />}
             <button
               className={`dock-app${win ? " running" : ""}`}
-              aria-label={badge ? t("desktop.dock.open", { name: shown.name, n: badge }) : shown.name}
+              aria-label={badge ? t("desktop.dock.open", { name: appTitle(shown), n: badge }) : appTitle(shown)}
               onClick={(e) => {
                 if (!win) bounce(e.currentTarget.querySelector(".dock-tile")!);
                 if (win?.minimized) rememberSlot(win.id);
@@ -30,7 +30,7 @@ export function Dock() {
               }}
               onContextMenu={menuOn(() => appMenu(a.name))}
             >
-              <span className="tip">{shown.name}</span>
+              <span className="tip">{appTitle(shown)}</span>
               <span className="dock-tile" style={{ "--tile": shown.tile } as CSSProperties}><shown.icon /></span>
               <span className="dot" />
               {badge > 0 && <span className="count">{badge > 99 ? "99+" : badge}</span>}
@@ -42,8 +42,8 @@ export function Dock() {
       {minimized.map((w) => {
         const app = appFor(game, w.app);
         return (
-          <button key={w.id} className="dock-app" aria-label={t("desktop.dock.restore", { name: app.name })} onClick={() => { rememberSlot(w.id); if (w.doc) openDoc(w.doc); else openApp(w.app); }}>
-            <span className="tip">{app.name}</span>
+          <button key={w.id} className="dock-app" aria-label={t("desktop.dock.restore", { name: appTitle(app) })} onClick={() => { rememberSlot(w.id); if (w.doc) openDoc(w.doc); else openApp(w.app); }}>
+            <span className="tip">{appTitle(app)}</span>
             <span className="dock-mini" data-min={w.id}>
               <span className="mini-win" />
               <span className="mini-badge" style={{ "--tile": app.tile } as CSSProperties}><app.icon /></span>

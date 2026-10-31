@@ -1,7 +1,7 @@
 import { t } from "../../i18n/en";
 import { useLayoutEffect, useRef } from "react";
 import type { CSSProperties, PointerEvent as RPointerEvent } from "react";
-import { appFor } from "../apps/registry";
+import { appFor, appTitle } from "../apps/registry";
 import { GuideApp } from "../apps/GuideApp";
 import { NoteApp, NoteTitle } from "../apps/NoteApp";
 import { LocationsApp } from "../apps/locations/LocationsApp";
@@ -49,7 +49,7 @@ export function AppWindow({ win, front }: { win: Win; front: boolean }) {
   const was = useRef({ minimized: win.minimized, zoomed: win.zoomed });
   const game = useStore((s) => s.game);
   const app = appFor(game, win.app);
-  const title = win.console ? consoleTitle(game, win.console) : app.name;
+  const title = win.console ? consoleTitle(game, win.console) : appTitle(app);
 
   useLayoutEffect(() => { animateOpen(ref.current!); }, []);
 
@@ -90,7 +90,7 @@ export function AppWindow({ win, front }: { win: Win; front: boolean }) {
         {win.console ? <ConsoleWindow deviceId={win.console} front={front} /> : win.doc ? <NoteApp id={win.doc} /> : win.app === "Settings" ? <SettingsApp /> : win.app === "Getting started" ? <GuideApp /> : win.app === "Locations" ? <LocationsApp /> : win.app === "Shop" ? <ShopApp /> : app.body ? <app.body /> : (
           <div className="app-empty">
             <span className="app-empty-tile" style={{ "--tile": app.tile } as CSSProperties}><app.icon /></span>
-            <h2>{app.name}</h2>
+            <h2>{appTitle(app)}</h2>
             <p>{app.about}</p>
           </div>
         )}

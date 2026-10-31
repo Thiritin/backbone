@@ -13,7 +13,7 @@ import { playerAt } from "../../sim/60-infra/handwork";
 import { drive, travelTo } from "../../sim/90-actions/travel";
 import { uiSound, useStore, type Win } from "../store";
 import { CompanyMark } from "../apps/company";
-import { appFor } from "../apps/registry";
+import { appFor, appTitle } from "../apps/registry";
 import { EMBEDDED } from "../embedded";
 import { BUILD_ID } from "../leaderboard";
 import { LANGS, lang, setLang, type Lang } from "../../i18n/lang";
@@ -24,7 +24,7 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
   const { game, speed, setSpeed, windows, openApp, openConsole, openDoc, act, unseen, importSave, openNews, deleteProgress, minimize, close } = useStore();
   const guideGone = !game.docs.some((d) => d.kind === "guide");
   const docTitle = (id: string) => game.docs.find((d) => d.id === id)?.title ?? "";
-  const appName = (w: Win) => (w.console ? "Console" : appFor(game, w.app).name);
+  const appName = (w: Win) => (w.console ? t("desktop.menu.console") : appTitle(appFor(game, w.app)));
   const [menu, setMenu] = useState<string | null>(null);
   const [confirm, setConfirm] = useState(false);
   const [intro, setIntro] = useState(false);
