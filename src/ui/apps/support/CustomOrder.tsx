@@ -17,6 +17,8 @@ import { offerUpgrade, confirmOrder, createAccount, provisionOrder, quoteOrder, 
 import { decline } from "../../../sim/90-actions/sales";
 import { closeTicket } from "../../../sim/90-actions/support";
 import { useStore } from "../../store";
+import { createFormFor, createLink } from "../../../sim/80-business/consoles";
+import { familyOf } from "../../../sim/60-infra/vulns";
 import { PriceField } from "../sales/PriceField";
 import "./custom-order.css";
 
@@ -148,7 +150,10 @@ export function InvoicePill({ r }: { r: SalesRequest }) {
 export function CustomCompose({ tk, r }: { tk: Ticket; r: SalesRequest }) {
   const game = useStore((s) => s.game);
   const act = useStore((s) => s.act);
+  const openApp = useStore((s) => s.openApp);
   const [route, setRoute] = useState<string | null>(() => r.route ?? hostFor(game, r));
+  const host = route ? game.clusters.find((x) => x.id === route) : undefined;
+  const link = host && createFormFor(familyOf(host), r.product) ? createLink(game, host.id, tk.id) : null;
   if (isFinal(tk)) return null;
   const done = stepsDone(game, r), locked = !!tk.work;
   const web = r.product === "webHosting" && !!r.domain;
@@ -177,7 +182,9 @@ export function CustomCompose({ tk, r }: { tk: Ticket; r: SalesRequest }) {
         {row("provision", t("support.setup"), done.provision ? t("support.live") : t("support.notSetUp"),
           <div className="step-col">
             <HostCards r={r} value={route} onChange={setRoute} disabled={locked} />
-            <button className="btn primary" disabled={locked || !route} onClick={() => act(provisionOrder, tk.id, route!)}><Rocket />{PROVISION[r.product]}</button>
+            {link
+              ? <button className="btn primary" disabled={locked} onClick={() => openApp("Browser", { kind: "url", id: `http://${link}` })}><Rocket />{t("pkg.openForm")}</button>
+              : <button className="btn primary" disabled={locked || !route} onClick={() => act(provisionOrder, tk.id, route!)}><Rocket />{PROVISION[r.product]}</button>}
           </div>)}
       </ol>
       <div className="actions-row">

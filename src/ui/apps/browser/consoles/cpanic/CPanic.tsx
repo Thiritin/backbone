@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Backups, erasFrom, eraAt, Facts, LoginForm, Nodes, RowsTable, Tiles, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
 import { t } from "../../../../../i18n/en";
 import { parseCreate } from "../../../../../sim/80-business/consoles";
-import { PackagesScreen } from "../PackageForms";
+import { PackagesScreen, ProvisionForm } from "../PackageForms";
 import { useReadoutPages } from "../Readouts";
 import "./cpanic.css";
 
@@ -24,6 +24,7 @@ export function CPanic(p: PanelProps) {
   const menu: [string, [Tab, string][]][] = [
     [t("browser-consoles-1.cpAccountInfo"), [["objects", t("browser-consoles-1.cpListAccounts")]]],
     ...(p.f.cluster ? [[t("browser-consoles-1.cpClusters"), [["nodes", t("browser-consoles-1.cpClusterStatus")]]] as [string, [Tab, string][]]] : []),
+    [t("pkg.accountFunctions"), [["create", t("pkg.cpCreate")]]],
     [t("pkg.packages"), [["packages", t("pkg.addPackage")]]],
     [t("browser-consoles-1.cpServerConfig"), [["software", t("browser-consoles-1.cpSoftwareUpdates")]]],
     ...(pages.length ? [[t("readouts.serverStatus"), pages.map((g) => [g.id, g.label] as [Tab, string])] as [string, [Tab, string][]]] : []),
@@ -51,7 +52,11 @@ export function CPanic(p: PanelProps) {
         </aside>
         <main className="cp-main">
           <h1>{title}</h1>
-          {tab === "objects" && <RowsTable rows={rows} name={t("browser-consoles-1.domain")} />}
+          {tab === "objects" && <RowsTable rows={rows} name={t("browser-consoles-1.domain")} extra={["user", "pkg"]} />}
+          {tab === "create" && (
+            <ProvisionForm game={p.game} c={p.c} products={["webHosting"]} order={open?.screen === "create" ? open.order : undefined} className="cx-form cp-form"
+              sections={{ order: t("pkg.order"), account: t("pkg.cpDomainInfo"), plan: t("pkg.cpSettings") }} />
+          )}
           {tab === "packages" && <PackagesScreen game={p.game} c={p.c} />}
           {tab === "nodes" && <Nodes game={p.game} c={p.c} />}
           {pages.find((g) => g.id === tab)?.body}
