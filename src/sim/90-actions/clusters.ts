@@ -1,5 +1,6 @@
 import { betterHost } from "../60-infra/routes";
 import { yearOf } from "../00-core/time";
+import { CONTINUOUS } from "../20-world/datacenters";
 import { modelById } from "../10-catalog/hardware";
 import { marketPrice, PRODUCTS, sizeSpec, type Resources, type Sla, type Spec } from "../10-catalog/products";
 import type { Product } from "../30-customers/customers";
@@ -411,7 +412,7 @@ export function placeService(s: GameState, serviceId: string, clusterId: string 
     for (const r of s.racks) {
       const loc = s.locations.find((l) => l.id === r.locationId)!;
       const p = rackPower(s, r.id), slot = freeSlots(s, r.id, units).at(-1);
-      if (!loc.dc || !inZone(loc.az) || r.arriveAt !== null || slot === undefined || p.watts + watts > p.limitWatts) continue;
+      if (!loc.dc || !inZone(loc.az) || r.arriveAt !== null || slot === undefined || p.watts + watts > CONTINUOUS.share * p.limitWatts) continue;
       w = workload(s, v.id, { rackId: r.id, slot, units, watts });
       az = loc.az;
       break;

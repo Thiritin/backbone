@@ -50,6 +50,8 @@ export const OPS: Record<string, (p: Params) => string> = {
   "event.feedDark.text": (p) => `Feed ${p.feed} of ${p.rack} failed and its servers were without power for ${duration(Number(p.minutes))}.`,
   "event.feedCarried.title": () => "Feed failure",
   "event.feedCarried.text": (p) => `${p.rack} stayed online through a ${duration(Number(p.minutes))} failure of feed ${p.feed}.`,
+  "event.feedCascade.title": () => "Feed failure",
+  "event.feedCascade.text": (p) => `Feed ${p.feed} of ${p.rack} failed and the other feed could not carry the whole load and tripped. Every server in it was without power for ${duration(Number(p.minutes))}.`,
   "event.seized.title": () => "Server seized",
   "event.seized.text": (p) => `${p.agency} took ${p.device} from ${p.location}.`,
   "event.seizedBack.title": () => "Server returned",

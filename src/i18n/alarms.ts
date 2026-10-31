@@ -14,4 +14,6 @@ export const ALARMS_EN: Record<string, (p: Params) => string> = {
   "alarm.diskHigh": (p) => `Datastore usage on ${p.host} is at ${p.percent}%.`,
   "alarm.vmStuck": (p) => `Virtual machine ${p.vm} could not be restarted on another host.`,
   "alarm.noFailover": (p) => `Insufficient resources to fail over ${p.host}: ${p.need} GB memory allocated, ${p.free} GB free on the other hosts.`,
+  "alarm.feedHigh": (p) => `Feed ${p.feed} of ${p.rack} is at ${p.percent}% of its limit.`,
+  "alarm.noFeedFailover": (p) => `Insufficient power to fail over ${p.rack}: feeds A and B together draw ${p.percent}% of one feed's limit.`,
 };

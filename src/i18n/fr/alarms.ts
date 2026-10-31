@@ -14,4 +14,6 @@ export default {
   "alarm.diskHigh": (p) => `L'utilisation du datastore de ${p.host} est à ${p.percent} %.`,
   "alarm.vmStuck": (p) => `La machine virtuelle ${p.vm} n'a pas pu être redémarrée sur un autre hôte.`,
   "alarm.noFailover": (p) => `Ressources insuffisantes pour basculer ${p.host} : ${p.need} Go de mémoire alloués, ${p.free} Go libres sur les autres hôtes.`,
+  "alarm.feedHigh": (p) => `L'arrivée ${p.feed} de ${p.rack} est à ${p.percent} % de sa limite.`,
+  "alarm.noFeedFailover": (p) => `Puissance insuffisante pour basculer ${p.rack} : les arrivées A et B tirent ensemble ${p.percent} % de la limite d'une arrivée.`,
 } satisfies Dict;

@@ -49,6 +49,8 @@ export default {
   "event.feedDark.text": (p) => `L'arrivée ${p.feed} de ${p.rack} est tombée en panne et ses serveurs sont restés sans électricité pendant ${duration(Number(p.minutes))}.`,
   "event.feedCarried.title": () => "Panne d'alimentation",
   "event.feedCarried.text": (p) => `${p.rack} est resté en ligne malgré une panne de ${duration(Number(p.minutes))} de l'arrivée ${p.feed}.`,
+  "event.feedCascade.title": () => "Panne d'alimentation",
+  "event.feedCascade.text": (p) => `L'arrivée ${p.feed} de ${p.rack} est tombée en panne et l'autre arrivée, incapable de porter toute la charge, s'est déclenchée. Tous ses serveurs sont restés sans électricité pendant ${duration(Number(p.minutes))}.`,
   "event.seized.title": () => "Serveur saisi",
   "event.seized.text": (p) => `${p.agency} a emporté ${p.device} depuis ${p.location}.`,
   "event.seizedBack.title": () => "Serveur restitué",

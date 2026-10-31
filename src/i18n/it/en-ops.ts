@@ -49,6 +49,8 @@ export default {
   "event.feedDark.text": (p) => `La linea ${p.feed} di ${p.rack} è andata in guasto e i suoi server sono rimasti senza corrente per ${duration(Number(p.minutes))}.`,
   "event.feedCarried.title": () => "Guasto a una linea di alimentazione",
   "event.feedCarried.text": (p) => `${p.rack} è rimasto online durante un guasto di ${duration(Number(p.minutes))} della linea ${p.feed}.`,
+  "event.feedCascade.title": () => "Guasto a una linea di alimentazione",
+  "event.feedCascade.text": (p) => `La linea ${p.feed} di ${p.rack} è andata in guasto e l'altra linea non ha retto tutto il carico ed è scattata. Tutti i suoi server sono rimasti senza corrente per ${duration(Number(p.minutes))}.`,
   "event.seized.title": () => "Server sequestrato",
   "event.seized.text": (p) => `${p.agency} ha portato via ${p.device} da ${p.location}.`,
   "event.seizedBack.title": () => "Server restituito",

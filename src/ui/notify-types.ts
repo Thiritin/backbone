@@ -16,7 +16,7 @@ const GROUPS: Record<string, NotifyType[]> = {
     type("Orders and sales", "order", "orderAccepted", "orderQuoted", "orderFailed", "orderPaid", "sales*"),
     type("Sponsoring requests", "sponsorRequest", "boardApplication"),
     type("Notices and legal", "seized", "breach"),
-    type("Power", "gridDark", "gridCarried", "feedDark", "feedCarried"),
+    type("Power", "gridDark", "gridCarried", "feedDark", "feedCarried", "feedCascade"),
   ],
   Browser: [
     type("Domains", "registrarTier", "domainsTransferred"),
@@ -24,7 +24,7 @@ const GROUPS: Record<string, NotifyType[]> = {
   ],
   Locations: [
     type("Planned maintenance", "maintenanceStart", "maintenanceEnd"),
-    type("Hardware failures", "componentFailed", "dataLoss", "dataCorrupted", "recovered", "serverHung", "serverStuck", "breakerTripped", "bmcHung", "nodeFrozen", "nodeThawed"),
+    type("Hardware failures", "componentFailed", "dataLoss", "dataCorrupted", "recovered", "serverHung", "serverStuck", "breakerTripped", "feedTripped", "bmcHung", "nodeFrozen", "nodeThawed"),
     type("Deliveries and moves", "rackArrived", "stockArrived", "drained", "spaceHeld", "holdExpired", "seizedBack"),
     type("Internet line", "lineReady", "lineFull"),
     type("Burn-in and refunds", "burninQuick", "burninFull", "burninAborted", "usedRefund"),
