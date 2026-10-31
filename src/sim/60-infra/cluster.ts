@@ -13,6 +13,7 @@ import { deviceVendor, installedRamGb, installedVcpu, linkStatus, locationOf, ra
 import { COMPAT_VCPU } from "../10-catalog/cpus";
 import { hasPublicAddress, sellsFrom } from "./addresses";
 import { coverage } from "./maintenance";
+import type { PackageDef } from "../80-business/packages";
 
 // Active takes new workloads, cordoned keeps its own, draining moves them off, maintenance is empty after a drain.
 export type NodeState = "active" | "cordoned" | "draining" | "maintenance";
@@ -47,6 +48,8 @@ export interface Cluster {
   php: string; phpUntil: number; ha: Ha; version: number; updatedAt: number;
   // Servers attached as shared storage (economy.md, Datastores); VM disks on one stay off their node.
   datastores: Datastore[];
+  // Named specs this installation sells (80-business/packages.ts); absent reads as none.
+  packages?: PackageDef[];
 }
 // A datastore takes disks from readyAt on.
 export interface Datastore { deviceId: string; protocol: DatastoreProtocol; readyAt: number }
@@ -87,7 +90,7 @@ export const deltaGb = (w: Workload): number => w.snapshots?.reduce((n, x) => n 
 // Old saves are converted by upgradeCompute; this fills the fields every cluster has.
 // Software of a save from before versions runs its install year, or two years before the save while no install date is known.
 export const clusterDefaults = (c: Partial<Cluster> & Pick<Cluster, "nodes">, hour = 0): Cluster => ({
-  panel: null, platform: null, vm: null, switching: null, appSuite: false, datastores: [], backup: { targetId: null, every: "off" }, php: phpAt(yearOf(hour)), phpUntil: -1,
+  panel: null, platform: null, vm: null, switching: null, appSuite: false, datastores: [], packages: [], backup: { targetId: null, every: "off" }, php: phpAt(yearOf(hour)), phpUntil: -1,
   version: c.switching ? yearOf(c.switching.doneAt) : Math.max(START_YEAR, yearOf(hour) - 2), updatedAt: c.switching?.doneAt ?? hour, ...c,
   ha: { ...HA_OFF, ...c.ha },
   controlPlane: c.controlPlane === undefined ? c.nodes[0]?.deviceId ?? null : c.controlPlane,
