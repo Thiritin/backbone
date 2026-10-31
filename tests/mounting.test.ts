@@ -125,4 +125,24 @@ describe("mounting hardware", () => {
     run(s, 2);
     expect(dev(s, id)).toMatchObject({ rackId: null, store: loc, maintenance: null });
   });
+
+  it("lets a technician mount a whole stack in one operation that takes the summed time", () => {
+    const { s, loc, rack } = colo();
+    s.hour = MONDAY_9 - 1;
+    const c = visibleCandidates(s).find((x) => x.role === "technician")!;
+    const tech = ok(hire(s, c.id));
+    s.staff = s.staff.map((e) => (e.id === tech ? { ...e, trained: ["hardware"] as Task[] } : e));
+    ok(setTechLocation(s, tech, loc));
+    ok(buyDevice(s, "sw-8", "Sysko", 3, loc));
+    const ids = s.devices.filter((d) => d.model === "sw-8" && d.store === loc).map((d) => d.id);
+    expect(err(queueOperation(s, "mount", ids[0], rack, null, 5, 4))).toBe("error.notInStorage");
+    ok(queueOperation(s, "mount", ids[0], rack, null, 5, 3));
+    const at = s.hour + 1;
+    run(s, 1);
+    expect(ids.map((id) => dev(s, id).slot).sort()).toEqual([5, 6, 7]);
+    for (const id of ids) expect(dev(s, id)).toMatchObject({ rackId: rack, maintenance: { mount: true, doneAt: at + 3 * mountHours("sw-8") } });
+    expect(s.techOps).toEqual([]);
+    run(s, 2);
+    for (const id of ids) expect(dev(s, id).maintenance).toBeNull();
+  });
 });
