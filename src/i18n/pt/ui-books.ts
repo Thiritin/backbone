@@ -12,6 +12,7 @@ export default {
   "books.tab.invoices": () => "Faturas",
   "books.tab.bank": () => "Banco",
   "books.tab.reminders": () => "Lembretes",
+  "books.tab.payables": () => "Faturas de fornecedores",
   "books.monthlyRun": () => "Faturação mensal",
   "books.matchByReference": () => "Associar por referência",
   "books.autoReminders": () => "Lembretes automáticos",

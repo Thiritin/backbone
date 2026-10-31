@@ -4,6 +4,9 @@ import { t } from "../../../../i18n/en";
 import { ArrowRightLeft, CalendarClock, Circle, Code, Maximize2, Pause, Play, PowerOff, RefreshCw, RotateCcw, Square, Terminal, Trash2, X, type LucideIcon } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { yearOf } from "../../../../sim/00-core/time";
+import { GAME_UNIT } from "../../../../sim/10-catalog/games";
+import { gameOf, playersOf } from "../../../../sim/60-infra/games";
+import { GameLine, type GameRow } from "./GamePanel";
 import { autoUpdates, phpAt, softwareById } from "../../../../sim/10-catalog/platforms";
 import type { Resources } from "../../../../sim/10-catalog/products";
 import type { Look } from "../../../../sim/10-catalog/sites";
@@ -119,10 +122,18 @@ export function Migrate({ game, w, c, done }: { game: GameState; w: Workload; c:
 // Each console names the switch of an account's package in its own words.
 const PLAN_LABEL: Record<string, string> = { cpanic: "pkg.changeCpanic", directadmin: "pkg.changeDa" };
 
+function gameRow(game: GameState, c: Cluster, serviceId: string): GameRow | undefined {
+  if (!c.panel || !GAME_UNIT[c.panel] || game.services.find((v) => v.id === serviceId)?.product !== "gameServer") return undefined;
+  const g = gameOf(game, serviceId);
+  return { title: g ? t(`games.title.${g.title}`) : t("games.unknown"), players: playersOf(game, serviceId) };
+}
+
 export interface Row {
   id: string; name: string; sub: string; pkg?: string; user?: string; node: string; state: string; tone: string;
   cpu: [number, number]; ram: [number, number]; disk: [number, number]; lead: [number, number]; traffic: [number, number]; mail: number; usage: string;
   actions: PanelAction[]; panel: ReactNode;
+  // Game servers on a game panel.
+  game?: GameRow;
 }
 
 // One row per web space, game server or VM; panel is the open migrate or resize form under it.
@@ -149,6 +160,7 @@ export function useRows(game: GameState, c: Cluster, f: ConsoleFeatures, node: s
       id: w.id, state: hold?.state?.[0] ?? state, tone: hold?.state?.[1] ?? tone, pkg: site?.pkg, user: site?.username,
       name: web ? site?.domain ?? w.hostname ?? "" : host?.name ?? w.hostname ?? vmLabel(game, w).name,
       sub: [host?.panel ? consoleTitle(host.panel) : "", !web && site?.pkg].filter(Boolean).join(" · "),
+      game: gameRow(game, c, w.serviceId),
       node: d ? d.hostname ?? d.label ?? d.name : "",
       cpu: [u.vcpu, w.vcpu], ram: [u.ramGb, w.ramGb], disk: [u.diskGb, w.diskGb], lead: web ? [u.diskGb, w.diskGb] : [u.vcpu, w.vcpu], traffic: uses.get(w.id)?.traffic ?? [0, 0], mail: uses.get(w.id)?.mailboxes ?? 0,
       usage: web ? t("browser-consoles-2.of", { used: disk(Math.round(u.diskGb)), total: disk(w.diskGb) }) : t("browser-consoles-2.usageVm", { cpu: num(u.vcpu), vcpu: w.vcpu, ram: ram(+u.ramGb.toFixed(1)), ramTotal: ram(w.ramGb) }),
@@ -172,7 +184,7 @@ export function RowsTable({ rows, name, node = false, className = "cx-table", ex
         {rows.length === 0 && <tr><td colSpan={span} className="cx-empty">{t("browser-consoles-2.nothingHere")}</td></tr>}
         {rows.map((r) => (
           <RowLines key={r.id} r={r} span={span}>
-            <td><b>{r.name}</b>{r.sub && <span className="cx-sub">{r.sub}</span>}</td>
+            <td><b>{r.name}</b>{r.sub && <span className="cx-sub">{r.sub}</span>}<GameLine g={r.game} /></td>
             {cols.map((k) => <td key={k}>{k === "user" ? r.user : r.pkg}</td>)}
             {node && <td>{r.node}</td>}
             <td><span className={`cx-state ${r.tone}`}>{r.state}</span></td>
