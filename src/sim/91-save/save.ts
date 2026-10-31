@@ -3,7 +3,7 @@ import { freeSlots } from "../60-infra/status";
 import { leave } from "../90-actions/clusters";
 import { yearOf } from "../00-core/time";
 import { asImage } from "../10-catalog/server-os";
-import { capacityAt, DATACENTERS, DEFAULT_HOME_LINE, nextAz, seedDcs } from "../20-world/datacenters";
+import { capacityAt, DATACENTERS, DEFAULT_HOME_LINE, LEAD_DAYS, nextAz, seedDcs, SHARE_RACKS, spacePrice } from "../20-world/datacenters";
 import { fillAddresses } from "../60-infra/addresses";
 import { skillById, skillFor } from "../10-catalog/research";
 import { STARTER_APPS, WIDGETS } from "../10-catalog/store";
@@ -79,6 +79,13 @@ export function deserialize(raw: string): GameState {
     ...base, ...data, dcs, locations, devices, racks, cables, rng: { ...base.rng, ...data.rng }, version: SAVE_VERSION,
     billingRules: { ...base.billingRules, ...data.billingRules },
     waitlist: (data.waitlist ?? []).filter((w: { space: string }) => w.space !== "positions"),
+    // Saves from before contracts get one per rented location at today's price.
+    contracts: data.contracts ?? locations.filter((l) => l.dc).map((l, i) => {
+      const dc = DATACENTERS.find((d) => d.id === l.dc)!;
+      const space = l.space as "share" | "cage" | "suite";
+      const size = space === "share" ? SHARE_RACKS.find((m) => m.id === racks.find((r) => r.locationId === l.id && r.provided)?.model)?.size ?? 1 : l.positions;
+      return { id: `contract-old-${i}`, provider: dc.provider, dc: dc.id, locationId: l.id, space, positions: size, since: l.readyAt - 24 * LEAD_DAYS[space], monthly: spacePrice(dc, space, size), endsAt: null };
+    }),
     // Saves from before free mail had no mail service at all.
     company: { ...base.company, ...data.company, ...((data.company?.mail as { kind: string } | undefined)?.kind === "none" && { mail: base.company.mail }) },
     score: { ...base.score, ...data.score },

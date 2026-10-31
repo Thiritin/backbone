@@ -112,6 +112,7 @@ describe("flat-rate power contract", () => {
     const s = rich(), rack = position(s, "equinox-fr5"), data = JSON.parse(serialize(s));
     const loc = rackOf(s, rack).locationId;
     data.locations = data.locations.map((l: { id: string }) => (l.id === loc ? { ...l, space: "positions", positions: 2 } : l));
+    delete data.contracts;
     data.waitlist = [{ id: "w1", dc: "equinox-fr5", space: "positions", size: 2, since: 0, heldUntil: null }, { id: "w2", dc: "equinox-fr5", space: "share", size: 8, since: 0, heldUntil: null }];
     const loaded = deserialize(JSON.stringify(data));
     expect(loaded.locations.find((l) => l.id === loc)).toMatchObject({ space: "cage", positions: 2 });
