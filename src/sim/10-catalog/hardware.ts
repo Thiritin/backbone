@@ -1,5 +1,5 @@
 // Values come from docs/design/economy.md (Server generations, Server lines, Manufacturers, Switches, Security appliances, Patch panels and gateways).
-import { hourOf } from "../00-core/time";
+import { hourOf, START_YEAR } from "../00-core/time";
 import type { RouterLan } from "../50-state";
 import { GENERATIONS } from "./economy";
 import { cardAt, cardOf, gpuOffers, gpuPrice } from "./gpu";
@@ -804,7 +804,9 @@ export const priceOf = (model: DeviceModel, brand: string): number => Math.round
 // What a brand's variant of a model does: the release as a month count (year * 12 + month, January 0), the last year on
 // sale (null while it stays on sale) and the draw in watts. A model fixed to one brand has no variants.
 const shifted = (m: DeviceModel, brand: string) => (m.brand ? undefined : manufacturerByName(brand));
-export const brandFrom = (m: DeviceModel, brand: string): number => m.from * 12 + (shifted(m, brand)?.fromShift ?? 0);
+// Models after the start year come out in a month fixed by their id, so a year's releases spread over its months.
+const releaseMonth = (m: DeviceModel): number => (m.from <= START_YEAR ? 0 : Math.abs([...m.id].reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 0)) % 12);
+export const brandFrom = (m: DeviceModel, brand: string): number => m.from * 12 + releaseMonth(m) + (shifted(m, brand)?.fromShift ?? 0);
 export const brandUntil = (m: DeviceModel, brand: string): number | null => (m.until === null ? null : m.until + (shifted(m, brand)?.untilShift ?? 0));
 export const wattsFactorOf = (m: DeviceModel, brand: string): number => shifted(m, brand)?.wattsFactor ?? 1;
 export const brandWatts = (m: DeviceModel, brand: string): number => m.watts * wattsFactorOf(m, brand);

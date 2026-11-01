@@ -10,7 +10,7 @@ import { deviceWatts, linkStatus } from "../src/sim/60-infra/status";
 import { announceBlock } from "../src/sim/90-actions/addresses";
 import { addLocation, atServer, buyRack, powerCycle, remotePower, reset, sellDevice, setPower } from "../src/sim/90-actions/hardware";
 import { mountDevice } from "./plugged";
-import { buyDevice, newGame } from "./fixtures";
+import { buyDevice, newGame, onSaleAt } from "./fixtures";
 import { orderTransit } from "../src/sim/90-actions/network";
 import { installRouter } from "../src/sim/90-actions/routers";
 import { powerTick } from "../src/sim/60-infra/power";
@@ -52,7 +52,7 @@ describe("router catalog", () => {
     expect(brandsOf(modelById("sw-24"))).toEqual(["Sysko"]);
     expect(brandsOf(modelById("ex2200-24t"))).toEqual(["Junipurr"]);
     const s = { ...readyGame(1), cash: 1e6 };
-    s.hour = jan(2013);
+    s.hour = onSaleAt(["ccr1036", "MicroTick"]);
     expect(buyDevice(s, "ccr1036", "Sysko", 1, "loc1")).toEqual({ ok: false, error: "error.unknownBrand" });
     expect(buyDevice(s, "ccr1036", "MicroTick", 1, "loc1").ok).toBe(true);
     expect(dev(s, s.devices.at(-1)!.id).price).toBe(1000);
@@ -79,9 +79,9 @@ describe("router catalog", () => {
 
 describe("announcing a block", () => {
   // A ready rack in a datacenter at the given year, with a server cabled to the handoff.
-  function colo(year: number) {
+  function colo(hour: number) {
     const s = { ...readyGame(1), cash: 1e7 };
-    s.hour = jan(year);
+    s.hour = hour;
     const loc = ok(addLocation(s, "hetzler-park", "suite", 20));
     s.locations = s.locations.map((l) => (l.id === loc ? { ...l, readyAt: s.hour } : l));
     const rack = ok(buyRack(s, loc, "rack-42", 1));
@@ -91,7 +91,7 @@ describe("announcing a block", () => {
   const block = (s: GameState) => s.ips.blocks[0].id;
 
   it("needs a full-table router at the location, which a router without one does not provide", () => {
-    const { s, loc, rack } = colo(2013);
+    const { s, loc, rack } = colo(onSaleAt(["ccr1036", "MicroTick"]));
     expect(err(announceBlock(s, block(s), loc))).toBe("error.needsBgpRouter");
     const small = ok(buyDevice(s, "isr-2911", "Sysko", 1, loc));
     ok(mountDevice(s, small, rack, 1));
@@ -103,14 +103,14 @@ describe("announcing a block", () => {
   });
 
   it("does not count a router that is switched off or sits in another location", () => {
-    const { s, loc, rack } = colo(2013);
+    const { s, loc, rack } = colo(onSaleAt(["ccr1036", "MicroTick"]));
     const big = ok(buyDevice(s, "ccr1036", "MicroTick", 1, loc));
     ok(mountDevice(s, big, rack, 1));
     ok(setPower(s, big, false));
     expect(err(announceBlock(s, block(s), loc))).toBe("error.needsBgpRouter");
     ok(setPower(s, big, true));
     s.hour += 2;
-    const other = colo(2013);
+    const other = colo(onSaleAt(["ccr1036", "MicroTick"]));
     expect(err(announceBlock(other.s, block(other.s), other.loc))).toBe("error.needsBgpRouter");
     expect(err(announceBlock(s, block(s), loc))).toBe("ok");
   });
@@ -140,7 +140,7 @@ describe("the basement router", () => {
     s.homeLine = { id: "vdsl-50", next: null };
     expect(homeUp(s)).toBe(10);
     s.homeLine = { id: "biz-fiber-1000", next: null };
-    s.hour = jan(2018);
+    s.hour = onSaleAt(["fb-7590", "AVN"]);
     const fast = ok(buyDevice(s, "fb-7590", "AVN", 1, "loc1"));
     ok(installRouter(s, fast));
     expect(homeUp(s)).toBe(1000);
@@ -151,7 +151,7 @@ describe("the basement router", () => {
 
   it("keeps the cabling and the servers online across the swap", () => {
     const s = { ...readyGame(1), cash: 1e6 };
-    s.hour = jan(2018);
+    s.hour = onSaleAt(["fb-7590", "AVN"]);
     expect(linkStatus(s, "dev3").online).toBe(true);
     const cable = s.cables.find((c) => c.b.device === "dev5")!;
     const fast = ok(buyDevice(s, "fb-7590", "AVN", 1, "loc1"));
@@ -162,7 +162,7 @@ describe("the basement router", () => {
 
   it("only goes in the basement, on a shelf of its rack", () => {
     const s = { ...readyGame(1), cash: 1e6 };
-    s.hour = jan(2018);
+    s.hour = onSaleAt(["fb-7590", "AVN"]);
     const loc = ok(addLocation(s, "hetzler-park", "suite", 20));
     expect(err(buyDevice(s, "fb-7590", "AVN", 1, loc))).toBe("error.basementOnly");
     const fast = ok(buyDevice(s, "fb-7590", "AVN", 1, "loc1"));
@@ -202,7 +202,7 @@ describe("router throughput in a datacenter", () => {
 describe("UPS sizes", () => {
   it("carry a location for as many minutes as their battery lasts at its load", () => {
     const s = { ...readyGame(1), cash: 1e6 };
-    s.hour = jan(2008);
+    s.hour = onSaleAt(["ups-10k", "Eatin"]);
     const load = (extra: string[]) => s.devices.filter((d) => d.rackId || extra.includes(d.id)).reduce((n, d) => n + deviceWatts(d), 0);
     const small = ok(buyDevice(s, "ups-1500", "Eatin", 1, "loc1"));
     ok(mountDevice(s, small, "rack2", 5));

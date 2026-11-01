@@ -7,7 +7,7 @@ import { mailedAddress } from "../src/sim/30-customers/addresses";
 import { sendInvoice } from "../src/sim/90-actions/billing";
 import { MODULE_IDS } from "../src/sim/10-catalog/shops";
 import { hourOf } from "../src/sim/00-core/time";
-import { componentParts, fits, genOf, modelById, type FormFactor, type PartSpec } from "../src/sim/10-catalog/hardware";
+import { brandFrom, componentParts, fits, genOf, modelById, type FormFactor, type PartSpec } from "../src/sim/10-catalog/hardware";
 import type { Resources } from "../src/sim/10-catalog/products";
 import { device, deviceDefaults, newGame as blankGame, type GameState } from "../src/sim/50-state";
 import { START_CASH } from "../src/sim/10-catalog/economy";
@@ -62,6 +62,9 @@ const must = (r: { ok: boolean; id?: string; error?: string }): string => {
 
 // Moves a game that started in 2005 on to the first day of the year, for software that is not on the market at the start.
 export const skipTo = (s: GameState, year: number): void => { s.hour += hourOf(new Date(Date.UTC(year, 0, 1))); };
+// The first hour at which every given brand sells its model.
+export const onSaleAt = (...items: [model: string, brand: string][]): number =>
+  Math.max(...items.map(([id, brand]) => { const m = brandFrom(modelById(id), brand); return hourOf(new Date(Date.UTC(Math.floor(m / 12), m % 12, 1))); }));
 
 export const BASEMENT_SERVER = "dev3";
 // The flat's router (dev5) on the basement rack's top shelf with its DSL port on the line jack (dev6).
