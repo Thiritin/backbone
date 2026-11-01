@@ -43,5 +43,5 @@ export default {
   "error.notCancellable": () => "This licence cannot be cancelled.",
   "ledger.order": (p) => `${p.vendor} order ${p.order}`,
   "ticket.mail.vendor.order.subject": (p) => `Your order ${p.order}`,
-  "ticket.mail.vendor.order.text": (p) => `Thank you for your order ${p.order}. We have charged ${euroPrice(Number(p.total))} to your bank account. Your licence keys are listed in My account on our website.`,
+  "ticket.mail.vendor.order.text": (p) => `Thank you for your order ${p.order}. ${Number(p.card) ? `We have charged ${euroPrice(Number(p.total))} to your credit card.` : `We have received your transfer of ${euroPrice(Number(p.total))}.`} Your licence keys are listed in My account on our website.`,
 } satisfies Dict;

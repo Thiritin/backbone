@@ -10,6 +10,7 @@ import { hourOf } from "../src/sim/00-core/time";
 import { componentParts, fits, genOf, modelById, type FormFactor, type PartSpec } from "../src/sim/10-catalog/hardware";
 import type { Resources } from "../src/sim/10-catalog/products";
 import { device, deviceDefaults, newGame as blankGame, type GameState } from "../src/sim/50-state";
+import { openAccount } from "../src/sim/46-finance/bank";
 import { START_CASH } from "../src/sim/10-catalog/economy";
 
 // Games with the savings already in hand and no bank account, the way every game started before the account came first.
@@ -259,3 +260,9 @@ export function lateVersions(product: string): [string, string] {
 // Sets the version the software runs on a cluster's machine.
 export const pinVersion = (s: GameState, c: Cluster, product: string, version: string): void =>
   setMachine(s, panelMachine(c)!, (m) => ({ software: m.software.map((x) => (x.id === product ? { ...x, version } : x)) }));
+
+// A bank account with a credit card ready to pay at the given limit.
+export function withCard<S extends GameState>(s: S, limit = 100_000): S {
+  s.bank = { ...openAccount(s, "sparklasse"), card: { appliedAt: s.hour, readyAt: s.hour, limit, spent: [], feeAt: s.hour } };
+  return s;
+}
