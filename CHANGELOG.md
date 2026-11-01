@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- Customers without an active contract move to an archive at the bottom of the contracts list in your books, so the list shows only the customers you still serve.
+- The semiannual billing cycle now shows a proper name in every language.
 - Agencies now book reseller blocks on your DirectAdmen and cPanic hosts and pay each month for the GB their clients use, at the price per GB you set in your rates.
 - HOSTtoast compares reseller blocks by price per GB, so you can see your rate next to the rivals that sell them.
 - Bookkeeping programs are no longer in the Pear Store: buy them on their maker's website, where desktop programs download over your internet line and install from the same page.
