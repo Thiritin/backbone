@@ -6,6 +6,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - Custom order tickets now show only the step you are at, and you can open the customer account before or after sending the offer, which appears as an attachment on the email you sent.
 - A custom order now sends the customer one email when everything is set up, with the account, the order confirmation and its invoice, the domain and the login details together.
+- Quotes and invoices in Lexwear Office now show as a full A4 page that fits the pane, and a draft quote can be sent to the customer with the Send button.
 - Small hosting companies now open in one or two cities, collect reviews like the big ones, and go bust or get bought when they win too few customers, with each step in the news.
 - Competitors now change over the years: they move to new server generations, add features and have outages that make the news, the budget host cuts its prices each year, and the Market app charts each city's share of new customers.
 - A new game now starts with no money: you first open a business account on a bank's website, where your €3,500 savings arrive, and then register the company at the trade office for a €40 fee paid by bank transfer.
