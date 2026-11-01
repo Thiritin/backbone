@@ -95,7 +95,8 @@ export function componentParts(m: DeviceModel, vendor?: Vendor, sku?: string): P
     ];
   }
   if (m.kind === "switch" || m.kind === "firewall") return [...n("psu", m.psus), ...n("fan", 2), ...n("board", 1)];
-  if (m.kind === "kvm" || m.kind === "console" || m.kind === "oob") return n("board", 1);
+  if (m.kind === "kvm" || m.kind === "console" || m.kind === "oob") return [...n("board", 1), ...n("psu", m.psus)];
+  if (m.kind === "ups" || m.kind === "pdu") return n("psu", m.psus);
   return [];
 }
 // A server's mainboard: its maker's socket of the chassis's generation, the sockets it has, and the biggest CPU it takes as a
@@ -238,6 +239,7 @@ export interface DeviceModel {
   server?: ServerSpec;
   layer?: 2 | 3;
   // Switches: a managed one has a management address, port groups, VLANs and a web interface; an unmanaged one forwards between all ports.
+  // UPS units: a managed one has a network card with an address and a web interface, and shuts down its hosts cleanly.
   managed?: boolean;
   // A desktop box that stands on a 1U shelf.
   shelf?: true;
@@ -495,7 +497,7 @@ const LIFE: Partial<Record<DeviceKind, { sale: number; support: number }>> = {
   switch: { sale: 6, support: 5 }, firewall: { sale: 6, support: 5 }, gateway: { sale: 6, support: 5 }, ups: { sale: 8, support: 3 }, pdu: { sale: 8, support: 3 },
 };
 // The newest model of each line stays on sale until a successor row exists (economy.md, Routers, UPS and PDUs).
-export const NEWEST = new Set(["sw-32e", "fw-400g", "edge-xxl", "ups-10k", "pdu-24", "fb-5690", "isr-8300", "ccr2216", "mx304", "qfx5240", "ar-7060x6", "cat9300x-48", "mt-crs518", "ng-m4350-48", "ub-usw-ent-48", "dl-dgs1510-52x", "fg-4800f", "pa-7500", "srx4600", "nt-8200", "sp-xgs4500", "ar-7050sx3", "fg-90g", "sp-xgs87", "cat1000-8", "mt-crs310-8g", "ub-usw-lite-8", "ng-gs724tp", "hp-6100-24g"]);
+export const NEWEST = new Set(["sw-32e", "fw-400g", "edge-xxl", "ups-10k", "ups-10k-net", "pdu-24", "fb-5690", "isr-8300", "ccr2216", "mx304", "qfx5240", "ar-7060x6", "cat9300x-48", "mt-crs518", "ng-m4350-48", "ub-usw-ent-48", "dl-dgs1510-52x", "fg-4800f", "pa-7500", "srx4600", "nt-8200", "sp-xgs4500", "ar-7050sx3", "fg-90g", "sp-xgs87", "cat1000-8", "mt-crs310-8g", "ub-usw-lite-8", "ng-gs724tp", "hp-6100-24g"]);
 const other = (id: string, name: string, kind: DeviceKind, height: number, p: PortSpec[], watts: number, price: number, from = 2005, extra: Extra = {}): DeviceModel => {
   const life = price > 0 ? LIFE[kind] : undefined;
   return { id, name, kind, height, ports: p, watts, idleWatts: watts, psus: 1, price, from, until: life && !NEWEST.has(id) ? from + life.sale : null, supportYears: life?.support ?? 0, ...extra };
@@ -620,6 +622,7 @@ const SWITCHES: DeviceModel[] = [
   dumb("Nettgear", "ng-gs116", "GS116", 2008, ports(16, 1), 8, 110, true),
 ];
 export const isManaged = (m: DeviceModel): boolean => m.kind === "switch" && !!m.managed;
+export const isManagedUps = (m: DeviceModel): boolean => m.kind === "ups" && !!m.managed;
 // Parodies: PIXel, ASAP and Firepowder (PIX, ASA, Firepower), FortiGoat (FortiGate), PA, SRX, pfSinse on Netgoat boxes
 // (pfSense, Netgate), SoPhosphate (Sophos). Every year sells a firewall under 1000 euro and a datacenter one.
 const FIREWALLS: DeviceModel[] = [
@@ -720,6 +723,11 @@ export const MODELS: DeviceModel[] = [
   other("ups-3000", "UPS 3000 VA", "ups", 2, [], 25, 900, 2005, { batteryWh: 1800 }),
   other("ups-5k", "UPS 5 kVA", "ups", 3, [], 50, 2500, 2005, { batteryWh: 3500 }),
   other("ups-10k", "UPS 10 kVA", "ups", 6, [], 100, 6000, 2008, { batteryWh: 8000, psus: 2 }),
+  // economy.md, UPS: the same units with a network management card.
+  other("ups-1500-net", "UPS 1500 VA, network card", "ups", 1, ports(1, 1), 12, 480, 2005, { batteryWh: 600, managed: true }),
+  other("ups-3000-net", "UPS 3000 VA, network card", "ups", 2, ports(1, 1), 27, 1200, 2005, { batteryWh: 1800, managed: true }),
+  other("ups-5k-net", "UPS 5 kVA, network card", "ups", 3, ports(1, 1), 52, 2800, 2005, { batteryWh: 3500, managed: true }),
+  other("ups-10k-net", "UPS 10 kVA, network card", "ups", 6, ports(1, 1), 102, 6300, 2008, { batteryWh: 8000, psus: 2, managed: true }),
   // A switched PDU cuts or cycles any device in its rack; a 0U one hangs on the rack's side rail.
   other("pdu-8", "Switched PDU 8", "pdu", 1, [], 15, 700, 2005, { outlets: 8 }),
   other("pdu-24", "Switched PDU 24", "pdu", 0, [], 20, 1200, 2008, { outlets: 24 }),

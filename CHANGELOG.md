@@ -8,6 +8,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Bookkeeping editions with the tax view connect to DOHLE with your certificate file, send the advance VAT returns in the monthly run and submit the yearly return once every invoice and transfer of the year is in the books.
 - Income tax is no longer taken every April: you file a yearly return through DohleFormular, the assessment follows by post, and a late return costs a fee or brings an estimate that is always too high.
 - You can register on DOHLE for a certificate file, with the activation ID by email and the code by post, and download DohleFormular to send your advance VAT returns.
+- UPS units, PDUs and console switches can now be plugged in and unplugged at the back of the rack, and a UPS only carries the location through an outage while it is plugged in.
+- New UPS models with a network card have their own web interface and shut down servers cleanly in a long outage when the servers run the nuts-client agent or are VMwhere or HyperVee nodes.
 
 ## 2026-11-01
 - Bookkeeping programs no longer send reminders, dunning notices and final notices by themselves; they go out when you or your staff send them, or after the Automation research.

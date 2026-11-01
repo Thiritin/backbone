@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
 import { GENERATIONS, START_CASH } from "../src/sim/10-catalog/economy";
-import { brandOnSale, brandsOf, deliveryHours, MODELS, modelById, shopModels } from "../src/sim/10-catalog/hardware";
+import { brandOnSale, brandsOf, deliveryHours, isManagedUps, MODELS, modelById, shopModels } from "../src/sim/10-catalog/hardware";
 import { type GameState } from "../src/sim/50-state";
 import { freeSlots, linkStatus, mountFrom, mountMax, portPeers, storageStacks } from "../src/sim/60-infra/status";
 import { tick } from "../src/sim/88-tick/tick";
@@ -35,7 +35,7 @@ describe("catalog", () => {
     expect(new Set(MODELS.map((m) => m.id)).size).toBe(MODELS.length);
     for (const m of MODELS) {
       expect(m.idleWatts).toBeLessThanOrEqual(m.watts);
-      expect(m.ports.length > 0).toBe(!["part", "ups", "pdu", "kvm", "console", "oob", "chassis"].includes(m.kind));
+      expect(m.ports.length > 0).toBe(!["part", "ups", "pdu", "kvm", "console", "oob", "chassis"].includes(m.kind) || isManagedUps(m));
       // The handoff, the line jack and parts take no rack units; small-office routers stand on a 1U shelf; rack gateways, UPS units and PDUs take their own height.
       expect(m.height).toBe(m.kind === "part" || m.kind === "jack" || m.id === "handoff" ? 0 : m.brand === "AVN" ? 1 : ["server", "gateway", "ups", "pdu", "kvm", "chassis"].includes(m.kind) ? m.height : 1);
     }

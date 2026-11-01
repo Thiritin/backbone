@@ -98,6 +98,8 @@ export interface Device extends MachineState { id: string; model: string; brand:
   bootUntil?: number;
   // The hour a clean shutdown switches the device off.
   haltUntil?: number;
+  // The UPS shutdown agent runs on the server's OS (ups.ts).
+  upsAgent?: boolean;
   // The operating system froze (hung) or the management controller did (bmcHung); log is the device's last 20 events.
   hung: boolean; bmcHung: boolean; log: DeviceLog[]; inletSev?: LogSev;
   // The chassis a multi-node server's node sits in; it mounts, moves and gets power with it.
