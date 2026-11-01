@@ -20,6 +20,7 @@ import { coverage } from "./maintenance";
 import type { PackageDef } from "../80-business/packages";
 import type { BackupJob, RestorePoint } from "./backups";
 import type { Ceph, Replica } from "./replica";
+import { vswitchBlocks, type VSwitch } from "./vswitch";
 import { firewallBlocks, type Firewall } from "./exposure";
 
 // Active takes new workloads, cordoned keeps its own, draining moves them off, maintenance is empty after a drain.
@@ -59,6 +60,8 @@ export interface Cluster {
   qdevice?: string | null;
   // A Proxmocks shared storage pool built from the node disks (replica.ts); missing is none.
   ceph?: Ceph;
+  // HyperVee virtual switches; missing is the one external Default Switch (vswitch.ts).
+  switches?: VSwitch[];
   // The player's cap on booked vCPU per physical vCPU for a panel host; missing or null is no cap (oversell.ts).
   oversell?: number | null;
   // The update channel; missing is Release (channel.ts).
@@ -95,6 +98,11 @@ export interface Workload extends Resources, Partial<MachineState> {
   points?: RestorePoint[];
   // A copy of the disk on a second node of the cluster, refreshed on a schedule (replica.ts).
   replica?: Replica | null;
+  // HyperVee: the virtual switch the adapter is plugged into; missing or null is the cluster's default switch (vswitch.ts).
+  switchId?: string | null;
+  // OpenVeeZee: failcnt per beancounter, the most RAM held, the extra RAM allowed while the node has room, hours of failing
+  // in a row, failcounts today, and a live checkpoint (beancounters.ts).
+  failcnt?: Record<string, number>; maxheld?: number; burstGb?: number; failStreak?: number; failDay?: number; frozen?: boolean;
   // Own VMs only: the port macros the VM lets through (exposure.ts); missing or null is no firewall.
   firewall?: Firewall | null;
   // The sold size when a package booked less; the service uses the sold size times its load.
@@ -481,7 +489,7 @@ export const sitesDown = (s: GameState, hostId: string): boolean => s.security.o
 // A web space in a panel VM is up while the VM is. Colocation is up while its rack has power.
 // ponytail: colocation ignores the customer's uplinks until colocation cabling lands.
 export function workloadOnline(s: GameState, w: Workload): boolean {
-  if (w.stopped || w.busyUntil > s.hour) return false;
+  if (w.stopped || w.frozen || w.busyUntil > s.hour) return false;
   const c = w.clusterId ? s.clusters.find((x) => x.id === w.clusterId) : undefined;
   if (c?.switching) return false;
   if (c && (c.kind === "panel" ? sitesDown(s, c.id) : s.security.hacked.includes(c.id))) return false;
@@ -489,6 +497,7 @@ export function workloadOnline(s: GameState, w: Workload): boolean {
   if (c && w.deviceId && s.frozen.includes(w.deviceId)) return false;
   if (w.deviceId) {
     const d = s.devices.find((x) => x.id === w.deviceId);
+    if (c && vswitchBlocks(s, c, w)) return false;
     return !!d && !lostDisk(s, w) && linkStatus(s, d.id).online && (!w.datastore || working(s, w.datastore))
       && (!isVm(s, w) || (!!addressOf(s, w.id) && !privateNetDown(s, w)));
   }
