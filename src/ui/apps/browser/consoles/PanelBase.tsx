@@ -275,20 +275,20 @@ export function useSoftware(game: GameState, c: Cluster, f: ConsoleFeatures): { 
 
 // The backup schedule and the host the backups go to; consoles show it where consoleFeatures offers backups.
 export function Backups({ game, c, title = <h4 className="cx-h">{t("browser-consoles-2.backups")}</h4> }: { game: GameState; c: Cluster; title?: ReactNode }) {
-  const act = useStore((s) => s.act), others = backupTargets(game, c), target = c.backup.targetId ?? others[0]?.id ?? null;
+  const act = useStore((s) => s.act), others = backupTargets(game, c), job = c.jobs[0], every = (job?.every ?? "off") as BackupEvery, target = job?.targetId ?? others[0]?.id ?? null;
   return (
     <>
       {title}
       <div className="cx-tools">
         {(["off", "daily", "weekly"] as BackupEvery[]).map((e) => (
-          <button key={e} className="cx-chip" aria-pressed={c.backup.every === e} disabled={e !== "off" && !target} onClick={() => act(setBackup, c.id, target, e)}>
+          <button key={e} className="cx-chip" aria-pressed={every === e} disabled={e !== "off" && !target} onClick={() => act(setBackup, c.id, target, e)}>
             {e === "off" ? t("browser-consoles-2.off") : e === "daily" ? t("browser-consoles-2.daily") : t("browser-consoles-2.weekly")}
           </button>
         ))}
       </div>
       <div className="cx-tools">
         {others.length === 0 && <span className="cx-note">{t("browser-consoles-2.noBackupServer")}</span>}
-        {others.map((x) => <button key={x.id} className="cx-chip" aria-pressed={c.backup.targetId === x.id} onClick={() => act(setBackup, c.id, x.id, c.backup.every)}>{x.name}</button>)}
+        {others.map((x) => <button key={x.id} className="cx-chip" aria-pressed={job?.targetId === x.id} onClick={() => act(setBackup, c.id, x.id, every === "off" ? "daily" : every)}>{x.name}</button>)}
       </div>
     </>
   );

@@ -2,7 +2,8 @@ import { chance, hashRng, rand } from "../00-core/rng";
 import { dateOf } from "../00-core/time";
 import { isOobPort, jacksOf, modelById } from "../10-catalog/hardware";
 import type { Resources } from "../10-catalog/products";
-import { BACKUP_CHANGED, BACKUP_HOUR, curveFor, curveLoad, daySwing, growthRate, idNum, JOB_CPU, nightJob, weekMedian } from "../10-catalog/usage";
+import { replicaDue } from "./replica";
+import { BACKUP_CHANGED, curveFor, curveLoad, daySwing, growthRate, idNum, JOB_CPU, nightJob, weekMedian } from "../10-catalog/usage";
 import type { Service } from "../30-customers/customers";
 import { bump, createTicket, isFinal } from "../40-support/tickets";
 import { serviceHeld } from "../45-billing/billing";
@@ -46,17 +47,26 @@ export function workloadLoad(s: GameState, w: Workload, hour: number): number {
 export interface BackupFlow { from: string; to: string; mbps: number }
 export function backupFlows(s: GameState, hour: number = s.hour): BackupFlow[] {
   const d = dateOf(hour);
-  if (d.getUTCHours() !== BACKUP_HOUR) return [];
   const flows = new Map<string, BackupFlow>();
   for (const c of s.clusters) {
-    const t = s.clusters.find((x) => x.id === c.backup.targetId), to = t?.controlPlane;
-    if (c.backup.every === "off" || !t || !to || !controlPlaneUp(s, t) || (c.backup.every === "weekly" && d.getUTCDay() !== 0)) continue;
-    for (const w of s.workloads) {
-      if (w.clusterId !== c.id || !w.deviceId || w.deviceId === to || w.stopped || lostDisk(s, w)) continue;
-      const f = flows.get(`${w.deviceId}>${to}`) ?? { from: w.deviceId, to, mbps: 0 };
-      f.mbps += (w.diskGb * diskFill(s, w, hour) * BACKUP_CHANGED * 8000) / 3600;
-      flows.set(`${w.deviceId}>${to}`, f);
+    for (const j of c.jobs) {
+      const t = s.clusters.find((x) => x.id === j.targetId), to = t?.controlPlane;
+      if (j.hour !== d.getUTCHours() || !t || !to || !controlPlaneUp(s, t) || (j.every === "weekly" && d.getUTCDay() !== 0)) continue;
+      for (const w of s.workloads) {
+        if (w.clusterId !== c.id || !w.deviceId || w.deviceId === to || w.stopped || lostDisk(s, w) || (j.workloadIds && !j.workloadIds.includes(w.id))) continue;
+        const f = flows.get(`${w.deviceId}>${to}`) ?? { from: w.deviceId, to, mbps: 0 };
+        f.mbps += (w.diskGb * diskFill(s, w, hour) * BACKUP_CHANGED * 8000) / 3600;
+        flows.set(`${w.deviceId}>${to}`, f);
+      }
     }
+  }
+  // A replica sends its changed data to the second node when a copy is due.
+  for (const w of s.workloads) {
+    const r = w.replica;
+    if (!r || !w.deviceId || w.stopped || lostDisk(s, w) || !replicaDue(r.every, hour)) continue;
+    const f = flows.get(`${w.deviceId}>${r.toNode}`) ?? { from: w.deviceId, to: r.toNode, mbps: 0 };
+    f.mbps += (w.diskGb * diskFill(s, w, hour) * BACKUP_CHANGED * 8000) / 3600;
+    flows.set(`${w.deviceId}>${r.toNode}`, f);
   }
   return [...flows.values()];
 }
