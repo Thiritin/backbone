@@ -8,8 +8,7 @@ import { lateVersions, panelVm, pinVersion, readyGame, skipTo } from "./fixtures
 
 // docs/design/software.md, section 10: a year of each console's early look, a year of its late look, and a mark of its page.
 const ERAS: Record<string, [number, number, string]> = {
-  pleskit: [2005, 2015, "Websites &amp; Domains"], directadmen: [2005, 2018, "Server Manager"],
-  freepanel: [2005, 2016, "Software and updates"], tcadmen: [2005, 2016, "Game Servers"], multikraft: [2010, 2018, "Servers"], pterodaktyl: [2016, 2021, "Servers"],
+  tcadmen: [2005, 2016, "Game Servers"], multikraft: [2010, 2018, "Servers"], pterodaktyl: [2016, 2021, "Servers"],
 };
 
 function render(id: string, year: number, signedIn: boolean, path?: string, version?: string) {
