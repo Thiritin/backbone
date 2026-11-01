@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { PaymentHabit } from "../src/sim/30-customers/customers";
 import { serviceOnline } from "../src/sim/40-support/status";
+import { actionsOf, templatesOf } from "../src/sim/40-support/tickets";
 import { billingTick, freeRiding, invoiceTotal, isSuspended, SUSPENDED_PAY_ODDS } from "../src/sim/45-billing/billing";
 import { type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
@@ -35,6 +36,8 @@ describe("suspension", () => {
     expect(serviceOnline(s, v)).toBe(false);
     expect(customer().happiness).toBe(55);
     expect(s.tickets).toMatchObject([{ kind: "billing", topic: "suspended", customerId: customer().id }]);
+    expect(templatesOf(s.tickets[0])).toEqual(["resend", "askDetails"]);
+    expect(actionsOf(s.tickets[0])).toEqual([]);
     expect(suspendServices(s, inv().id, false).ok).toBe(true);
     expect(serviceOnline(s, v)).toBe(true);
   });
