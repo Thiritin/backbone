@@ -41,6 +41,16 @@ describe("how-to topics", () => {
     addService(s, id, "ssl", "cert", 20, "year");
     expect(topics(s, id)).not.toContain("ssl");
   });
+
+  it("asks how to point a domain only when it is registered elsewhere", () => {
+    const s = withCompany(newGame(5));
+    const id = addCustomer(s, "Jonas Weber", "private");
+    const svc = addService(s, id, "webHosting", "site", 5, "year"), site = s.services.find((v) => v.id === svc)!;
+    site.domain = "weber.de";
+    expect(topics(s, id)).toContain("dns");
+    s.domains = [...s.domains, { name: "weber.de", customerId: id, registeredAt: s.hour, expiresAt: s.hour + 8760, transfer: false, lapsed: false }];
+    expect(topics(s, id)).not.toContain("dns");
+  });
 });
 
 describe("knowledge base", () => {
