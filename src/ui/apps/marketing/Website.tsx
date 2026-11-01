@@ -3,10 +3,10 @@ import { t } from "../../../i18n/en";
 import { euro, euroCents } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
 import { registrarById, REGISTRARS } from "../../../sim/10-catalog/registrars";
-import { HAND_ROLLED, shopById } from "../../../sim/10-catalog/shops";
-import { chooseShop } from "../../../sim/90-actions/shop";
+import { shopById } from "../../../sim/10-catalog/shops";
 import type { Product } from "../../../sim/30-customers/customers";
-import { hasOrderForm, OWNED, owns, type SiteHost } from "../../../sim/80-business/marketing";
+import { OWNED, owns, type SiteHost } from "../../../sim/80-business/marketing";
+import { shopActive } from "../../../sim/80-business/shop";
 import { generationOf, lineBlocker, listed, SITE_LINES, SITE_RENT, siteBuilt, siteRoom, siteStatus, type SiteStatus } from "../../../sim/80-business/website";
 import { setCompany, TAGLINE_MAX } from "../../../sim/90-actions/company";
 import { setUpChannel } from "../../../sim/90-actions/marketing";
@@ -102,7 +102,7 @@ export function SiteCard() {
   );
 }
 
-// Web design, its redesigns, the order form and email orders, once the site is online.
+// Web design, its redesigns, the shop and email orders, once the site is online.
 function Upgrades() {
   const game = useStore((s) => s.game);
   const act = useStore((s) => s.act);
@@ -119,13 +119,13 @@ function Upgrades() {
         <button className="btn" disabled={current || game.cash < OWNED.website.setup} onClick={() => act(redesign)}>{t("marketing.redesign")} <span className="num">{euro(OWNED.website.setup)}</span></button>
       </> : <><span className="mkt-grow">{t("marketing.webDesign")}{upkeep("website")}</span>{offer("website")}</>}
     </div>
-    {owns(game, "website") && (
+    {owns(game, "website") && game.shop.variant && (
       <div className="mkt-row">
         <span className="mkt-label">{t("marketing.orders")}</span>
-        {game.shop.variant ? <span className="mkt-grow">{game.shop.variant === "handRolled" ? t("marketing.orderForm") : shopById(game.shop.variant).name}</span> : <><span className="mkt-grow">{t("marketing.orderForm")}</span><button className="btn" disabled={game.cash < HAND_ROLLED.setup} onClick={() => act(chooseShop, "handRolled")}>{t("marketing.setUp")} <span className="num">{euro(HAND_ROLLED.setup)}</span></button></>}
+        <span className="mkt-grow">{shopById(game.shop.variant).name}</span>
       </div>
     )}
-    {hasOrderForm(game) && (
+    {shopActive(game) && (
       <label className="mkt-row">
         <span className="mkt-label">{t("marketing.email")}</span>
         <span className="mkt-grow">{t("marketing.emailOrders")}</span>

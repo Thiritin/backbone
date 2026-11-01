@@ -9,10 +9,16 @@ const load = (patch: (d: any) => void) => {
 };
 
 describe("order form save migration", () => {
-  it("loads a saved order form as the hand-rolled variant", () => {
+  it("loads a saved order form channel as email orders", () => {
     const s = load((d) => { d.marketing.owned = ["website", "orderForm"]; });
-    expect(s.shop).toMatchObject({ variant: "handRolled", since: 0, readyAt: 0 });
+    expect(s.shop.variant).toBeNull();
     expect(s.marketing.owned).toEqual(["website"]);
+  });
+
+  it("loads the hand-rolled variant as no shop, without its scripts and with email orders on", () => {
+    const s = load((d) => { d.marketing.owned = ["website"]; d.marketing.emailOrders = false; d.shop.variant = "hostBull"; d.shop.modules = { cpanic: 0 }; });
+    expect(s.shop).toMatchObject({ variant: null, modules: {} });
+    expect(s.marketing.emailOrders).toBe(true);
   });
 
   it("keeps a chosen variant and drops the channel", () => {

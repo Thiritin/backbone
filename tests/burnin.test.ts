@@ -145,7 +145,7 @@ describe("buyer protection", () => {
     expect(s.cash).toBe(after);
   });
 
-  it("refunds nothing from a Telegrump deal", () => {
+  it("refunds nothing from a Craigslost deal", () => {
     const { s, d } = bought("chat");
     const cash = s.cash;
     breakPart(s, d());

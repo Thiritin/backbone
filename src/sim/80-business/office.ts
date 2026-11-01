@@ -7,10 +7,6 @@ export const OFFICE_HOST = "trade-office.gov";
 export const OFFICE_URL = `www.${OFFICE_HOST}/eservice/`;
 export const OFFICE_OPEN = 8;
 export const OFFICE_CLOSE = 16;
-// The office's account at the state bank, and the registration fee paid to it by transfer.
-export const OFFICE_ACCOUNT = "4400018000";
-export const OFFICE_CODE = "60050000";
-export const REGISTRATION_FEE = 40;
 export const LEGAL_FORMS: Record<string, string> = textRecord("sim.legal", { sole: "", partnership: "", limited: "" });
 
 // Monday to Friday, 08:00 to 16:00.

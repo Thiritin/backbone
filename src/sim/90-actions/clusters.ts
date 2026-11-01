@@ -16,7 +16,7 @@ import { versionAt } from "../10-catalog/software-versions";
 import { freezeTick } from "../60-infra/usage";
 import { PHP_UPGRADE_HOURS } from "../60-infra/php";
 import { withinOversell } from "../60-infra/oversell";
-import { licenceBlock } from "../60-infra/licence";
+import { buildKeys, licenceBlock, licenceExpired, licenseBuild, releaseGone } from "../60-infra/licence";
 import { markPatched, patchOut, vulnerable } from "../60-infra/security";
 import {
   anchorOf, clusterOf, clustersOf, dropCluster, gameFirst, controlPlaneUp, controlPlaneUse, fitsControlPlane, HA_OFF, hostOfVm, hostsOfVm, insideVm, isOwnVm, KEYS, vmCap, moveOff, noRoomError, nodeTakes, pickNode, serverTaken,
@@ -31,7 +31,7 @@ import { isFloating } from "../60-infra/horizont";
 import { deleteJob, saveJob } from "./backups";
 import type { ActionResult } from "./hardware";
 import { migrateWorkload } from "./vms";
-import { buyLicenses, licenseDue } from "../85-products/products";
+import { keysShort } from "./licence";
 import { sizeOf } from "../30-market/spec";
 import { ADMIN, quotaBlock, sizeAdd } from "../60-infra/projects";
 import { quorumBlock } from "../60-infra/quorum";
@@ -113,6 +113,7 @@ export function createVm(s: GameState, clusterId: string, size: Resources, poolI
   if (!c) return fail("error.unknownCluster");
   if (c.kind !== "cloud" || (!c.platform && c.switching?.kind !== "cloud")) return fail("error.needsPlatform");
   if (c.platform && !controlPlaneUp(s, c)) return fail("error.controlPlaneDown");
+  if (licenceExpired(s, c)) return fail("error.licenceExpired");
   { const q = quorumBlock(s, c); if (q) return fail(q); }
   if (KEYS.some((k) => !Number.isFinite(size[k]) || size[k] < PANEL_VM_MIN[k])) return fail("error.vmSize");
   if (c.platform === "openstash") { const b = quotaBlock(s, c, projectId, sizeAdd(size)); if (b) return fail(b); }
@@ -133,6 +134,7 @@ export function deleteVm(s: GameState, vmId: string): ActionResult {
   if (insideVm(s, vm.id).length) return fail("error.softwareInUse");
   for (const h of hostsOfVm(s, vm.id)) dropCluster(s, h.id);
   s.workloads = s.workloads.filter((w) => w.id !== vm.id);
+  releaseGone(s);
   // A volume outlives its instance; a floating IP stays allocated, unmapped.
   s.clusters = s.clusters.map((x) => (x.id !== vm.clusterId ? x : { ...x,
     volumes: x.volumes?.map((v) => (v.attachedTo === vm.id ? { ...v, attachedTo: null } : v)),
@@ -170,12 +172,14 @@ export function createPanelVm(s: GameState, clusterId: string, panelId: string, 
   if (sw.id !== panelId || sw.kind === "cloud") return fail("error.unknownSoftware");
   const bad = sizeError(size, sw.controlPlane);
   if (bad) return fail(bad);
-  if (s.cash < licenseDue(s, "", sw.os[0], sw.id)) return fail("error.noCash");
+  const items = [{ product: sw.os[0], version: serverOsAt(sw.os[0], yearOf(s.hour)).version }, { product: sw.id, version: versionAt(sw.id, s.hour).version }];
+  const keys = buildKeys(s, items);
+  if (typeof keys === "string") return keysShort(keys);
   const vm = createVm(s, clusterId, size);
   if (!vm.ok) return vm;
   templateOs(s, vm.id!, sw);
   const done = installPanelInVm(s, vm.id!, panelId);
-  if (done.ok) buyLicenses(s, vm.id!, sw.os[0], sw.id);
+  if (done.ok) licenseBuild(s, vm.id!, items, keys);
   return done;
 }
 

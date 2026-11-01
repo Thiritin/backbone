@@ -7,11 +7,11 @@ import { companyDomain } from "../../../../../sim/30-customers/domains";
 import { orderChoices, shopRegisters, stepError } from "../../../../../sim/30-market/manual";
 import type { GameState } from "../../../../../sim/50-state";
 import { registerOrderDomain } from "../../../../../sim/90-actions/orders";
-import { useStore } from "../../../../store";
 import { OrderPicker } from "../../consoles/PackageForms";
 import { REGISTRAR_HUE } from "./RegistrarPage";
 import "../bank/bank-site.css";
 import "./registrars.css";
+import { usePageAct } from "../../pageAct";
 
 type Field = keyof Address;
 const FIELDS: Field[] = ["contact", "company", "street", "zip", "city", "email"];
@@ -29,7 +29,7 @@ function domainChoices(game: GameState, transfer: boolean, keep: string) {
 // The partner's registration or transfer form. A click on a line of the customer record beside it fills the focused owner
 // field, the postcode line fills postcode and city, and the focus moves on to the next empty field, as in New customer in Books.
 export function RegistrarForm({ game, r, transfer, ticketId }: { game: GameState; r: Registrar; transfer: boolean; ticketId: string }) {
-  const act = useStore((s) => s.act), choices = domainChoices(game, transfer, ticketId);
+  const act = usePageAct(), choices = domainChoices(game, transfer, ticketId);
   const [ticket, setTicket] = useState(choices.some((o) => o.ticketId === ticketId) ? ticketId : choices.length === 1 ? choices[0].ticketId : "");
   const [form, setForm] = useState<Address>(EMPTY), [focus, setFocus] = useState<Field>("contact");
   const [ns, setNs] = useState(() => [`ns1.${companyDomain(game)}`, `ns2.${companyDomain(game)}`]);

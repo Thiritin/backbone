@@ -3,14 +3,14 @@ import { disk } from "../../../hw";
 import { quotaOf, quotaUsers } from "../../../../../sim/60-infra/netsvc-quota";
 import { storageOnCluster } from "../../../../../sim/60-infra/netsvc-storage";
 import { setQuota } from "../../../../../sim/90-actions/netsvc-quota";
-import { useStore } from "../../../../store";
 import type { PanelProps } from "../PanelBase";
+import { usePageAct } from "../../pageAct";
 
 const CHOICES = [1024, 5120, 10240, 20480];
 
 // The user table of each customer with the quota that applies to all of its users.
 export function Users({ game, c }: { game: PanelProps["game"]; c: PanelProps["c"] }) {
-  const act = useStore((s) => s.act);
+  const act = usePageAct();
   return <>{storageOnCluster(game, c.id).map((v) => {
     const q = quotaOf(game, v), n = quotaUsers(v), options = CHOICES.includes(q.perUserMb) ? CHOICES : [...CHOICES, q.perUserMb].sort((a, b) => a - b);
     return (

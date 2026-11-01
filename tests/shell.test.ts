@@ -109,7 +109,7 @@ describe("the desktop in ~/Desktop", () => {
   it("shows Getting started as its checklist and keeps it read-only", () => {
     const s = fresh();
     expect(text(s, "ls ~/Desktop")).toBe("Getting started");
-    expect(text(s, "cat ~/Desktop/Getting\\ started").split("\n")).toContain("[ ] Style your company");
+    expect(text(s, "cat ~/Desktop/Getting\\ started").split("\n")).toContain("[ ] Register your company");
     expect(text(s, "rm ~/Desktop/Getting\\ started")).toBe("rm: cannot remove '~/Desktop/Getting started': Permission denied");
     expect(text(s, "echo hi > 'Desktop/Getting started'")).toBe("bash: Desktop/Getting started: Permission denied");
     expect(text(s, "edit 'Desktop/Getting started'")).toBe("edit: Desktop/Getting started: Permission denied");

@@ -4,9 +4,9 @@ import type { GameState } from "../../../../../sim/50-state";
 import type { Cluster, Workload } from "../../../../../sim/60-infra/cluster";
 import { REPLICA_EVERY, replicaHost, replicaReady } from "../../../../../sim/60-infra/replica";
 import { failoverReplica, setReplication } from "../../../../../sim/90-actions/replication";
-import { useStore } from "../../../../store";
 import { nodeName } from "../HypervisorBase";
 import { Facts } from "../PanelBase";
+import { usePageAct } from "../../pageAct";
 
 // Replication Health: Normal while the last copy is recent, Warning while it ages, Critical after half a day.
 const health = (game: GameState, w: Workload) => (w.replica?.lastAt == null ? "warning" : game.hour - w.replica.lastAt <= 2 ? "normal" : game.hour - w.replica.lastAt <= 12 ? "warning" : "critical");
@@ -17,7 +17,7 @@ const hostsFor = (game: GameState, c: Cluster, w: Workload): string[] =>
 
 // The Replication tab of a VM: Enable Replication, health and Failover.
 export function Replica({ game, c, w }: { game: GameState; c: Cluster; w: Workload }) {
-  const act = useStore((s) => s.act), r = w.replica;
+  const act = usePageAct(), r = w.replica;
   return (
     <>
       <table className="hv-kv"><tbody><tr><th>{t("browser-consoles-1.hvReplicationState")}:</th><td>{r ? t("hvx.replicating") : t("browser-consoles-1.hvNotEnabled")}</td></tr></tbody></table>

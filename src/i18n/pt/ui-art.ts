@@ -11,6 +11,7 @@ export default {
   "art.unplugPsu": (p) => `Desligar fonte ${p.n}`,
   "art.plugInPsu": (p) => `Ligar fonte ${p.n}`,
   "art.plugInMonitor": () => "Ligar monitor",
+  "art.portDsl": () => "DSL",
   "art.powerInlet": () => "Entrada de energia",
   "art.psu": (p) => `Fonte ${p.n}`,
   "art.fan": (p) => `Ventoinha ${p.n}`,

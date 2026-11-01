@@ -183,8 +183,8 @@ function NodeBox({ n, peers, cableOf }: { n: Node; peers: (End | null)[]; cableO
           <g key={p} data-p={k2} data-on={cableOf.get(k2)} className="loc-cab-port">
             <rect x={n.x + 2} y={y} width={NODE_W - 4} height={PITCH} rx="3" className="loc-cab-row" />
             <text x={n.x + 10} y={y + PITCH / 2 + 3.5} className="loc-cab-label">{portName(n.m, p)}</text>
-            <text x={jx - 8} y={y + PITCH / 2 + 3.5} textAnchor="end" className="loc-cab-speed">{sfp ? "SFP " : ""}{speed(port.gbit)}</text>
-            <rect x={jx} y={y + (sfp ? 3.5 : 2.5)} width={sfp ? 13 : 12} height={sfp ? 9 : 11} rx={sfp ? 1 : 2} className={sfp ? "sfp" : "rj45"} />
+            <text x={jx - 8} y={y + PITCH / 2 + 3.5} textAnchor="end" className="loc-cab-speed">{sfp ? "SFP " : port.media === "dsl" ? `${t("art.portDsl")} ` : ""}{speed(port.gbit)}</text>
+            <rect x={jx + (port.media === "dsl" ? 2 : 0)} y={y + (sfp ? 3.5 : port.media === "dsl" ? 4.5 : 2.5)} width={sfp ? 13 : port.media === "dsl" ? 8 : 12} height={sfp ? 9 : port.media === "dsl" ? 7 : 11} rx={sfp ? 1 : 2} className={port.media} />
             {lamp && <rect x={jx + 2.5} y={y + (sfp ? 5 : 4)} width={sfp ? 8 : 7} height="2" rx="0.5" fill={lamp} pointerEvents="none" />}
           </g>
         );

@@ -1,27 +1,38 @@
 // docs/design/plans/software-licences.md, lanes vendor-shop and my-account: the cart, checkout and order email every vendor
 // site shares.
-import { licensingAt, type LicenseKind } from "../10-catalog/server-os";
+import { eraAt, type LicenseKind } from "../10-catalog/server-os";
 import type { GameState, Licence } from "../50-state";
-import { isLicensed, keyTiers, productOf } from "../60-infra/licence";
+import { isLicensed, productOf, tiersOnSale, yearAfter } from "../60-infra/licence";
 
 export const ORDER = "vendor.order";
-export interface Offer { edition: string | null; fee: number; kind: LicenseKind }
+export interface Offer { edition: string | null; fee: number; kind: LicenseKind; period?: "year" }
 export type CartLine = GameState["cart"][number];
 
 // The site that sells a product and the name its order emails come from.
 export const hostOf = (product: string): string | undefined => productOf(product)?.site.host;
 export const vendorName = (product: string): string => productOf(product)?.name ?? product;
 
-// What a product's site sells in a year: its editions, or one licence at the price of the year's licensing era.
-export function offers(product: string, year: number): Offer[] {
-  const tiers = keyTiers(product);
-  if (tiers.length) return tiers.map((x) => ({ edition: x.id, fee: x.fee, kind: x.kind }));
+// What a product's site sells at the hour: the editions of its licensing era, and one licence at the era's price when the
+// era sells keys for a major or the product has no editions.
+export function offers(product: string, hour: number): Offer[] {
   const p = productOf(product);
-  const era = p && isLicensed(product) ? licensingAt(p, year) : undefined;
-  return era && era.kind !== "free" ? [{ edition: null, fee: era.fee, kind: era.kind }] : [];
+  const era = p && isLicensed(product) ? eraAt(p, hour) : undefined;
+  const tiers: Offer[] = tiersOnSale(product, hour).map((x) => ({ edition: x.id, fee: x.fee, kind: x.kind }));
+  const own = era && era.kind !== "free" && (era.kind === "once" || !tiers.length) ? [{ edition: null, fee: era.fee, kind: era.kind, period: era.period }] : [];
+  return [...tiers, ...own];
 }
-export const offerOf = (line: Pick<CartLine, "product" | "edition">, year: number): Offer | undefined =>
-  offers(line.product, year).find((o) => o.edition === line.edition);
+export const offerOf = (line: Pick<CartLine, "product" | "edition">, hour: number): Offer | undefined =>
+  offers(line.product, hour).find((o) => o.edition === line.edition);
+
+// The price of a key for the major after fromMajor while the vendor sells keys per major: the upgrade price when the player
+// holds a key for fromMajor bought within the last 12 months, the full price otherwise; null in a term era.
+export function upgradeOffer(s: GameState, product: string, fromMajor: string): { fee: number; discounted: boolean } | null {
+  const p = productOf(product), era = p && eraAt(p, s.hour);
+  if (era?.kind !== "once") return null;
+  const discounted = era.upgrade !== undefined &&
+    s.licenses.some((k) => k.product === product && k.covers.kind === "version" && k.covers.major === fromMajor && s.hour < yearAfter(k.boughtAt));
+  return { fee: discounted ? era.upgrade! : era.fee, discounted };
+}
 
 export const cartOf = (s: GameState, host: string): CartLine[] => s.cart.filter((l) => hostOf(l.product) === host);
 export const keysOf = (s: GameState, host: string): Licence[] => s.licenses.filter((k) => hostOf(k.product) === host);

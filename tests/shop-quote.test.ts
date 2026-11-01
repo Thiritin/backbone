@@ -34,7 +34,7 @@ describe("email quotes and option discounts", () => {
     const s = automate(readyGame(4));
     s.cash = 1e6;
     setUpChannel(s, "website");
-    chooseShop(s, "handRolled");
+    chooseShop(s, "hostBull");
     setRate(s, "webHosting", "base", 99);
     const { r, discount } = quoted(s);
     expect(r.quote).toBe(Math.round(offerPrice(s, "webHosting", r.spec, "basic") * (1 - discount) * 100) / 100);
@@ -46,7 +46,7 @@ describe("email quotes and option discounts", () => {
     expect(setOptionDiscount(s, "annual", 0.2)).toMatchObject({ ok: false, error: "error.needsShop" });
     s.cash = 1e6;
     setUpChannel(s, "website");
-    chooseShop(s, "handRolled");
+    chooseShop(s, "hostBull");
     expect(termPrice(s, 10, "annual")).toBe(108);
     expect(setOptionDiscount(s, "annual", 0.2).ok).toBe(true);
     expect(termPrice(s, 10, "annual")).toBe(96);
@@ -62,7 +62,7 @@ describe("email quote with a billing cycle", () => {
     const s = readyGame(4);
     s.cash = 1e6;
     setUpChannel(s, "website");
-    chooseShop(s, "handRolled");
+    chooseShop(s, "hostBull");
     s.shop.variant = "whmCache";
     const { r } = quoted(s);
     const t = s.tickets.find((x) => x.id === r.ticketId)!;
@@ -82,7 +82,7 @@ describe("email quote with a billing cycle", () => {
     const s = readyGame(4);
     s.cash = 1e6;
     setUpChannel(s, "website");
-    chooseShop(s, "handRolled");
+    chooseShop(s, "hostBull");
     const { r } = quoted(s);
     const qid = (createQuote(s, r.ticketId!) as { id: string }).id;
     expect(setQuoteCycle(s, qid, "triennial")).toMatchObject({ ok: false, error: "error.cycleNotSupported" });

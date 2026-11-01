@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent as Rea
 import { OOB_PORT, oobPorts, type DeviceModel } from "../../sim/10-catalog/hardware";
 import type { End } from "../../sim/50-state";
 import { Back, bayRects, Cord, portSpots, psuInlets, type Side, type Spot } from "./backs";
-import { CABLE, Defs, Front, ledProps, portNo, type Lamp, type Parts, type PortLamp, type PortLight } from "./fronts";
+import { Defs, Front, ledProps, PortJack, portNo, type Lamp, type Parts, type PortLamp, type PortLight } from "./fronts";
 
 // plugs holds whether each power supply is plugged in.
 export interface RackItem { id: string; slot: number; model: DeviceModel; brand: string; name: string; state: Lamp; blink?: boolean; parts?: Parts; ports: PortLamp[]; lights?: PortLight[]; groups: number[][]; plugs?: boolean[]; chassisId?: string | null; stick?: boolean }
@@ -311,8 +311,7 @@ export function RackFront({ units, items, links = [], remotes = [], side = "fron
             const p = remotePort.get(endKey({ device: r.id, port: i }))!, end = { device: r.id, port: i };
             return (
               <g key={i}>
-                <rect x={p.x - 4} y={p.y - 4} width="8" height="8" rx="0.8" fill="oklch(0.12 0.004 255)" stroke="var(--metal-3)" strokeWidth="0.5" />
-                {st !== "off" && <rect x={p.x - 2.5} y={p.y - 1.4} width="5" height="4" rx="0.6" fill={st === "fiber" ? CABLE.fiber : CABLE.copper} />}
+                <PortJack media={r.model.ports[i]?.media ?? "rj45"} x={p.x - 4} y={p.y - 4} w={8} h={8} st={st} />
                 {r.lights?.[i] && <rect x={p.x - 3.2} y={p.y - 3.2} width="2.4" height="1.4" {...ledProps(r.lights[i], r.id, i)} />}
                 <text x={p.x} y={p.y + 8.4} textAnchor="middle" fontFamily={MONO} fontSize="4.6" fill={DIM} aria-hidden="true">{portNo(r.model, i)}</text>
                 <rect className="rack-port" data-end={endKey(end)} x={p.x - 5} y={p.y - 5} width="10" height="10" rx="1" onPointerDown={grab(end, p.x, p.y)} />

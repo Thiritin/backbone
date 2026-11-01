@@ -9,7 +9,7 @@ import type { Cluster } from "../../../../../sim/60-infra/cluster";
 import { accountsOf, phpInstalled, phpOlder, phpRunning, POOL_MAX, poolOf, siteBroken } from "../../../../../sim/60-infra/webpanel";
 import { phpDue, upgradePhp } from "../../../../../sim/90-actions/clusters";
 import { setAccountPhp, setPhpPool } from "../../../../../sim/90-actions/webpanel";
-import { useStore } from "../../../../store";
+import { usePageAct } from "../../pageAct";
 
 // The legacy versions a host can still install: released, and older than its newest.
 export const legacyVersions = (game: GameState, c: Cluster): string[] =>
@@ -18,7 +18,7 @@ export const legacyVersions = (game: GameState, c: Cluster): string[] =>
 // The PHP versions installed on a panel host and the version each account runs. The x3 era asks for a profile and a build; later
 // each version has its own button.
 export function PhpProfiles({ game, c, x3 }: { game: GameState; c: Cluster; x3: boolean }) {
-  const act = useStore((s) => s.act), pool = poolOf(game, c.id), [pick, setPick] = useState<string[] | null>(null), [keep, setKeep] = useState(false);
+  const act = usePageAct(), pool = poolOf(game, c.id), [pick, setPick] = useState<string[] | null>(null), [keep, setKeep] = useState(false);
   const chosen = pick ?? pool, building = game.hour <= c.phpUntil, now = phpAt(yearOf(game.hour));
   const toggle = (v: string) => setPick(chosen.includes(v) ? chosen.filter((x) => x !== v) : [...chosen, v]);
   const installed = phpInstalled(game, c), accounts = accountsOf(game, c.id);

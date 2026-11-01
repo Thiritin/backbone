@@ -14,6 +14,6 @@ describe("semi-annual and triennial cycles", () => {
   });
   it("are sold by the full-featured systems only", () => {
     expect(shopById("whmCache").cycles).toContain("triennial");
-    expect(shopById("handRolled").cycles).not.toContain("semiannual");
+    expect(shopById("hostBull").cycles).not.toContain("semiannual");
   });
 });

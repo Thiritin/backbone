@@ -3,7 +3,7 @@ import { arrived, bookPayment, cardBlocked, invoice, open, payableFor, supplierA
 import { t } from "../../i18n/en";
 import { hashRng, rand } from "../00-core/rng";
 import { dateOf, isMonthStart, monthIndexOf, nowMinutes, yearOf } from "../00-core/time";
-import { bankById, bookingFee, DEFAULT_BANK, IBAN_YEAR, monthlyFee, tanMethods, TRANSFER_HOURS, type Bank, type BankId, type TanMethod } from "../10-catalog/banks";
+import { bankById, bookingFee, DEFAULT_BANK, CUSTODY_ALLOWANCE, depositRate, IBAN_YEAR, monthlyFee, tanMethods, TRANSFER_HOURS, type Bank, type BankId, type TanMethod } from "../10-catalog/banks";
 import { challengeById } from "../10-catalog/challenges";
 import { START_CASH } from "../10-catalog/economy";
 import { deliverMail } from "../40-support/tickets";
@@ -15,9 +15,10 @@ export interface Card { appliedAt: number; readyAt: number; limit: number; spent
 export interface StandingOrder { id: string; name: string; account: string; amount: number; reference: string; day: number }
 // A transfer the player sent; the money left at hour and reaches the payee at arriveAt.
 export interface Outgoing { id: string; hour: number; arriveAt: number; name: string; account: string; amount: number; reference: string; payableId?: string; arrived?: true }
+// A payee saved in online banking; code is the bank code of an account from before IBAN.
+export interface Payee { id: string; name: string; account: string; code?: string }
 // What the transfer form holds; account is an IBAN, or an account number with its bank code before IBAN.
-// registration: the trade office application this transfer pays the fee for.
-export interface Draft { name: string; account: string; code?: string; amount: number; reference: string; payableId?: string; registration?: { name: string; owner: string; form: string } }
+export interface Draft { name: string; account: string; code?: string; amount: number; reference: string; payableId?: string }
 // A transfer waiting for its TAN: the list position asked for (iTAN), the code texted (mTAN) and the minute the text arrives.
 // day is set when the TAN confirms a standing order for that day of the month instead of a transfer.
 export interface Pending { draft: Draft; index: number | null; code: string | null; sendAt: number | null; day?: number }
@@ -35,10 +36,13 @@ export interface BankAccount {
   outgoing: Outgoing[];
   // Overdraft interest run up since the last month start.
   interest: number;
+  // Interest on a positive balance run up since the last month start; negative for a custody fee.
+  credit?: number;
   // Whether the welcome email with the PIN went out; the first hour of the account sends it.
   welcomed: boolean;
   // HBCI pays open invoices by itself shortly before they are due.
   autoPay?: boolean;
+  payees?: Payee[];
 }
 
 export const TAN_COUNT = 100;
@@ -63,7 +67,7 @@ export function openAccount(s: GameState, id: BankId): BankAccount {
   return {
     id, number: `${1 + Math.floor(rand(r) * 9)}${digits(r, 9)}`, pin: `${1 + Math.floor(rand(r) * 9)}${digits(r, 4)}`, opened: s.hour, tan: tanMethods(bank, yearOf(s.hour)).at(-1)?.method ?? "itan",
     card: null, overdraft: 0, overdraftAt: null, mandates: [], standingOrders: [],
-    tans: { list: 1, codes: tanCodes(s.seed, 1), used: [] }, pending: null, wrong: 0, lockedUntil: 0, outgoing: [], interest: 0, welcomed: false,
+    tans: { list: 1, codes: tanCodes(s.seed, 1), used: [] }, pending: null, wrong: 0, lockedUntil: 0, outgoing: [], interest: 0, welcomed: false, payees: [],
   };
 }
 
@@ -206,12 +210,12 @@ function bookingsIn(s: GameState, month: number): number {
   for (let i = s.ledger.length - 1; i >= 0; i--) {
     const e = s.ledger[i], m = monthIndexOf(e.hour);
     if (m < month) break;
-    if (m === month && e.amount !== 0 && e.category !== "fees") n++;
+    if (m === month && e.amount !== 0 && e.category !== "fees" && e.category !== "interest") n++;
   }
   return n;
 }
 
-// Hourly: the account fee and overdraft interest at each month start, interest on a negative balance, card and overdraft decisions.
+// Hourly: the account fee, overdraft and balance interest at each month start, interest on the balance either way, card and overdraft decisions.
 export function bankTick(s: GameState): SimEvent[] {
   const b = s.bank, bank = bankOf(s);
   if (!b || !bank) return [];
@@ -226,6 +230,8 @@ export function bankTick(s: GameState): SimEvent[] {
     for (const o of b.outgoing) if (!o.arrived && o.arriveAt <= s.hour && o.payableId) arrived(s, o.payableId);
   }
   let next: BankAccount = { ...s.bank!, interest: s.cash < 0 && bank.overdraft ? b.interest - (s.cash * bank.overdraft) / HOURS_PER_YEAR : b.interest };
+  const rate = depositRate(yearOf(s.hour)), base = rate < 0 ? s.cash - CUSTODY_ALLOWANCE : s.cash;
+  if (base > 0 && rate !== 0) next.credit = (next.credit ?? 0) + (base * rate) / HOURS_PER_YEAR;
   const card = next.card;
   if (card && s.hour === card.readyAt) deliverMail(s, bank.name, "bankCard", { bank: bank.name, limit: card.limit });
   if (card && s.hour >= card.feeAt) {
@@ -258,7 +264,10 @@ export function bankTick(s: GameState): SimEvent[] {
     const count = perBooking > 0 ? bookingsIn(s, monthIndexOf(s.hour) - 1) : 0;
     if (count > 0) book("fees", "ledger.bookingFee", { bank: bank.name, count }, -cents(count * perBooking));
     if (next.interest >= 0.01) book("fees", "ledger.overdraftInterest", { bank: bank.name }, -cents(next.interest));
-    next = { ...next, interest: 0 };
+    const credit = cents(next.credit ?? 0);
+    if (credit > 0) book("interest", "ledger.depositInterest", { bank: bank.name }, credit);
+    if (credit < 0) book("fees", "ledger.custodyFee", { bank: bank.name }, credit);
+    next = { ...next, interest: 0, credit: 0 };
   }
   s.bank = next;
   if (next.autoPay && hbci(s)) payAll(s, s.hour + AUTO_PAY_HOURS);

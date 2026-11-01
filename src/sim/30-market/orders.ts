@@ -1,4 +1,4 @@
-// GDD, Where requests come from: standard orders arrive as order emails in Support until the order form takes them in directly.
+// GDD, Where requests come from: standard orders arrive as order emails in Support until a shop system takes them in directly.
 // Numbers in economy.md, Orders by email.
 import { hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
@@ -14,12 +14,12 @@ import { profileStats, type Ticket } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import { fromShop, type InvoiceLine } from "../45-billing/billing";
 import { phpNeeded } from "../60-infra/php";
-import { discountFor, hasOrderForm } from "../80-business/marketing";
+import { discountFor } from "../80-business/marketing";
 import type { SimEvent } from "../88-tick/tick";
 import type { ActionResult } from "../90-actions/hardware";
 import { missingFor, needFor, referenceFor, REQUEST_HOURS, requestName, senderFor, type SalesRequest } from "./market";
 import { addRequest, cancelShopOrder, editRequest, fulfil, loseRequest, nextSpec, say, targetFor } from "./sales";
-import { deployable, hasModule, moduleFor, shopActive, shopStocked, takeStock, type ShopProduct } from "../80-business/shop";
+import { deployable, hasModule, moduleFor, shopActive, takeStock, type ShopProduct } from "../80-business/shop";
 import { productCycles, takeProductStock } from "../80-business/portal";
 import { companyParams, variant } from "../40-support/replies";
 import { failsScreen, reviewing, rollFraud, screening } from "../45-billing/fraud";
@@ -53,9 +53,9 @@ function place(s: GameState, r: SalesRequest): ActionResult & { reason?: string;
   return done;
 }
 
-// email: the customer writes an order email and gets a quote first; otherwise the order form takes the spec at the player's
-// rates, which counts as the accepted quote. With automation switched on the form places it at once, otherwise it waits in
-// Support like an email order. A shop takes one unit of the line's stock.
+// email: the customer writes an order email and gets a quote first; otherwise the shop takes the spec at the player's
+// rates, which counts as the accepted quote, and one unit of the line's stock. With automation switched on the shop places
+// it at once, otherwise it waits in Support like an email order.
 // lead marks a sales lead: an email in its own words (key), with the budget it brings and the shady flag, owning no domain.
 export interface LeadTraits { budget: number; shady?: boolean; key?: string }
 export function orderLead(s: GameState, profile: Profile, city: string, events: SimEvent[], need = needFor(s.rng, profile, yearOf(s.hour)), email = emailFor(s), given?: Spec, lead?: LeadTraits, pick?: ShopProduct): SalesRequest {
@@ -63,7 +63,7 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
   const key = s.nextId, spec = given ?? nextSpec(s, need, profile), reference = referenceFor(s, profile, need.product, spec, need.sla), discount = discountFor(s, profile);
   // One in three web customers already owns the domain they name.
   const owned = !lead && email && need.product === "webHosting" && rand(hashRng(s.seed, key, 229)) < 1 / 3;
-  const shop = !email && shopStocked(s);
+  const shop = !email;
   // A shop order checks out with the customer's payment method or goes elsewhere; only a card can be stolen there.
   const preferred = shop ? preferredMethod(s, profile, city, !!lead?.shady, key) : "transfer", method = shop ? checkoutMethod(s, preferred, key) : "transfer";
   const fraud = !lead && (!shop || method === "card") && rollFraud(s, key, need.product, yearOf(s.hour), email);
@@ -95,7 +95,7 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
     return r;
   }
   const params = { name: requestName(r), spec: specText(r.product, spec) };
-  // The form places an order itself only through the module (or custom script) for the software it lands on.
+  // The shop places an order itself only through the module for the software it lands on.
   const auto = !email && s.autoOrders && pick?.setupMode !== "accept" && pick?.setupMode !== "off" && canAutomate(s) && !reviewing(s, need.product), target = auto && !missingFor(s, r).length ? targetFor(s, r) : null;
   if (auto && (!target || (hasModule(s, moduleFor(s, r.product, target.clusterId)) && deployable(s, target.clusterId)))) {
     const done = target ? place(s, r) : null;
@@ -104,22 +104,15 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
       events.push({ app: "Customers", key: "event.orderPlaced", params: { ...params, price: r.quote! } });
       return r;
     }
-    // Without email orders, an order the form cannot place goes elsewhere.
-    if (shop) {
-      cancelShopOrder(s, r);
-      return r;
-    }
-    if (!s.marketing.emailOrders) {
-      loseRequest(s, r, "lost", done?.reason ?? "lost.noCapacity", done?.params ?? { city: r.city });
-      return r;
-    }
+    cancelShopOrder(s, r);
+    return r;
   }
   const t: Ticket = {
     id: `tkt${s.nextId++}`, customerId: "", serviceId: null, kind: "order", topic: need.product, status: "open",
     createdAt: s.hour, dueAt: r.deadline, updatedAt: s.hour, unread: true, replies: [], outcome: null, work: null, assignee: null,
   };
   s.tickets = [...s.tickets, t];
-  r = editRequest(s, r.id, () => ({ ticketId: t.id, ...(!email && { form: true, status: "accepted" as const }) }));
+  r = editRequest(s, r.id, () => ({ ticketId: t.id, ...(shop && { status: "accepted" as const }) }));
   if (missingFor(s, r).length) return r;
   // Automation quotes an email order at the line's own rate when there is room for it.
   if (email && !lead && s.autoOrders && canAutomate(s) && targetFor(s, r)) {
@@ -137,7 +130,7 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
 export const emailRate = (s: GameState, product: Product, spec: Spec, sla: SalesRequest["sla"]): number =>
   shopActive(s) ? offerPrice(s, product, spec, sla) : marketPrice(product, spec, yearOf(s.hour), sla);
 
-// The order form bills at once: the line's setup fee and the first term, which the monthly run then skips.
+// A shop order bills at once: the line's setup fee and the first term, which the monthly run then skips.
 function formInvoice(s: GameState, id: string): void {
   const r = s.sales.requests.find((x) => x.id === id)!, label = s.services.find((v) => v.id === r.serviceId)?.label ?? requestName(r), fee = r.setup ?? setupFee(s, r.product);
   const lines: InvoiceLine[] = [
@@ -161,11 +154,11 @@ export function firstOrder(s: GameState, events: SimEvent[]): void {
 // the budgets sit in the upper half of a sales lead's range and a quote at the market reference is mostly taken.
 export const ORDER_BUDGET: [number, number] = [1.1, 1.25];
 
-// With the order form and email orders on, this share of order leads still writes an email.
+// With a shop and email orders on, this share of order leads still writes an email.
 export const EMAIL_SHARE = 0.25;
-// Whether the next order lead writes an email: always before the order form, never with email orders off.
+// Whether the next order lead writes an email: always before a shop, never with email orders off.
 export const emailFor = (s: GameState): boolean =>
-  !hasOrderForm(s) || (s.marketing.emailOrders && rand(hashRng(s.seed, s.hour, s.nextId, 233)) < EMAIL_SHARE);
+  !shopActive(s) || (s.marketing.emailOrders && rand(hashRng(s.seed, s.hour, s.nextId, 233)) < EMAIL_SHARE);
 
 // Why a request is declined, in the customer's terms: the product is not sold there, there is no room, or neither.
 export const declineReason = (s: GameState, r: SalesRequest): string =>

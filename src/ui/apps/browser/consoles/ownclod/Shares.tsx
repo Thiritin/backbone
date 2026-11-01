@@ -3,14 +3,14 @@ import { LOCALE } from "../../../../../i18n/lang";
 import { dateOf } from "../../../../../sim/00-core/time";
 import { EXPIRY_CHOICES, isOwnclod, shareExpired, sharesOf, storageOnCluster } from "../../../../../sim/60-infra/netsvc-storage";
 import { deleteShare, extendShare, setSharePolicy } from "../../../../../sim/90-actions/netsvc-storage";
-import { useStore } from "../../../../store";
 import type { PanelProps } from "../PanelBase";
+import { usePageAct } from "../../pageAct";
 
 const day = (h: number) => dateOf(h).toLocaleDateString(LOCALE, { timeZone: "UTC" });
 
 // The "Shared by link" list of every customer on the cluster and the admin default for how long a link lives.
 export function Shares({ game, c }: { game: PanelProps["game"]; c: PanelProps["c"] }) {
-  const act = useStore((s) => s.act), services = storageOnCluster(game, c.id).filter((v) => isOwnclod(game, v));
+  const act = usePageAct(), services = storageOnCluster(game, c.id).filter((v) => isOwnclod(game, v));
   return (
     <>
       <label className="oc-policy">{t("netsvc.shareDefaultExpiry")} <select value={game.netsvc.policy.shareExpiryDays} onChange={(e) => act(setSharePolicy, Number(e.target.value))}>

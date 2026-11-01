@@ -21,16 +21,17 @@ const until = (s: GameState, hour: number) => { while (s.hour < hour) tick(s); }
 const months = (s: GameState, n: number) => { for (let i = 0; i < n; i++) { tick(s); while (!isMonthStart(s.hour)) tick(s); } };
 
 describe("owned channels", () => {
-  it("sets up the website, then the order form and ads that need it", () => {
+  it("sets up the website, then a shop and ads that need it", () => {
     const s = withCompany({ ...newGame(1), cash: 1000 });
-    expect(chooseShop(s, "handRolled")).toEqual({ ok: false, error: "error.needsWebsite" });
+    s.unlocks = [...s.unlocks, "shops"];
+    expect(chooseShop(s, "clientExit")).toEqual({ ok: false, error: "error.needsWebsite" });
     expect(setUpChannel(s, "website").ok).toBe(true);
     expect(s.cash).toBe(600);
     expect(s.ledger.at(-1)).toMatchObject({ category: "marketing", key: "ledger.marketingSetup", amount: -400 });
     expect(setUpChannel(s, "website")).toEqual({ ok: false, error: "error.channelOwned" });
     expect(setUpChannel(s, "searchAds").ok).toBe(true);
     expect(setUpChannel(s, "aiAds")).toEqual({ ok: false, error: "error.channelLater" });
-    expect(chooseShop(s, "handRolled")).toEqual({ ok: false, error: "error.noCash" });
+    expect(chooseShop({ ...s, cash: 0 }, "clientExit")).toEqual({ ok: false, error: "error.noCash" });
   });
 });
 

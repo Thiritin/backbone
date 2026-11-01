@@ -120,6 +120,7 @@ export default {
   "desktop.menu.speed": () => "Spielgeschwindigkeit",
   "desktop.menu.skip": () => "Zum nächsten Ereignis springen",
   "desktop.menu.pause": () => "Pause",
+  "desktop.paused": () => "Pausiert",
   "desktop.menu.speedN": (p) => `${p.n}× Geschwindigkeit`,
   "desktop.menu.language": () => "Sprache",
   "desktop.menu.darkMode": () => "Dunkelmodus umschalten",

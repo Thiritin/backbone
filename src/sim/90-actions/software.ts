@@ -1,6 +1,8 @@
 import { dateOf, yearOf } from "../00-core/time";
+import { versionAt } from "../10-catalog/software-versions";
 import { BREAK_HOURS, CHANNELS, channelOf, type Channel, targetYear, updateBreaks } from "../60-infra/channel";
-import { licenceExpired } from "../60-infra/licence";
+import { buildKeys, installKeyBlock, licenceExpired, licenseBuild, licenseInstall, releaseGone } from "../60-infra/licence";
+import { serverOsAt } from "../10-catalog/server-os";
 import type { SimEvent } from "../88-tick/tick";
 import { autoUpdates, clustersIn, conflict, phpAt, runsOn, SOFTWARE, softwareById, type SoftwareKind } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
@@ -11,7 +13,7 @@ import { familyOf, openVulns } from "../60-infra/vulns";
 import type { Resources } from "../10-catalog/products";
 import { createVm, freeServer, installHypervisor, installPanel, installPanelInVm, PANEL_VM_SIZE, phpDue, removeNode, templateOs, upgradeNodePhp } from "./clusters";
 import type { ActionResult } from "./hardware";
-import { buyLicenses, licenseDue } from "../85-products/products";
+import { keysShort } from "./licence";
 
 // A machine is a server or one of the player's own VMs, with the software on its disk; VMs take no hypervisor. Each
 // software is the control plane of one of the machine's clusters. doneAt is null once installed.
@@ -63,7 +65,7 @@ export function installBlock(s: GameState, machineId: string, softwareId: string
     if (s.clusters.some((c) => c.kind === "mail")) return "error.oneMailServer";
   }
   if (replacing) return null;
-  return canInstall(s, machineId, sw.id) ?? (s.cash < licenseDue(s, machineId, null, sw.id) ? "error.noCash" : null);
+  return canInstall(s, machineId, sw.id);
 }
 
 // Why the machine does not take the software: another OS, a conflict with what is installed, a server that is rented
@@ -81,14 +83,15 @@ export function canInstall(s: GameState, machineId: string, softwareId: string):
   return osUp(s, machineId) ? null : m.os ? "error.osNotUp" : "error.noOs";
 }
 
-// Installs catalog software on a server or one of the player's VMs; it runs after its install hours.
-export function installSoftware(s: GameState, machineId: string, softwareId: string): ActionResult {
+// Installs catalog software on a server or one of the player's VMs; it runs after its install hours. A licensed product
+// takes the typed key, or runs its trial; one without a trial needs the key.
+export function installSoftware(s: GameState, machineId: string, softwareId: string, key?: string): ActionResult {
   const sw = SOFTWARE.find((x) => x.id === softwareId);
   if (!sw) return { ok: false, error: "error.unknownSoftware" };
-  const block = installBlock(s, machineId, sw.id);
+  const version = versionAt(sw.id, s.hour).version, block = installBlock(s, machineId, sw.id) ?? installKeyBlock(s, machineId, sw.id, version, key);
   if (block) return { ok: false, error: block };
   const done = !isServer(s, machineId) ? installPanelInVm(s, machineId, sw.id) : sw.kind === "cloud" ? installHypervisor(s, machineId, sw.id) : installPanel(s, machineId, sw.id);
-  if (done.ok) buyLicenses(s, machineId, null, sw.id);
+  if (done.ok) licenseInstall(s, machineId, sw.id, version, key);
   if (done.ok && sw.kind === "mail") s.company = { ...s.company, mail: { kind: "self", software: sw.id as "postfixit" | "mailpig", clusterId: done.id! } };
   return done;
 }
@@ -97,13 +100,15 @@ export function installSoftware(s: GameState, machineId: string, softwareId: str
 export function createSoftwareVm(s: GameState, clusterId: string, softwareId: string, size: Resources = PANEL_VM_SIZE): ActionResult {
   const sw = SOFTWARE.find((x) => x.id === softwareId);
   if (!sw) return { ok: false, error: "error.unknownSoftware" };
-  if (s.cash < licenseDue(s, "", sw.os[0], sw.id)) return { ok: false, error: "error.noCash" };
+  const os = { product: sw.os[0], version: serverOsAt(sw.os[0], yearOf(s.hour)).version };
+  const keys = buildKeys(s, [os, { product: sw.id, version: versionAt(sw.id, s.hour).version }]);
+  if (typeof keys === "string") return keysShort(keys);
   const vm = createVm(s, clusterId, size);
   if (!vm.ok) return vm;
   templateOs(s, vm.id!, sw);
-  const done = installSoftware(s, vm.id!, softwareId);
+  const done = installSoftware(s, vm.id!, softwareId, keys[1]?.key);
   if (!done.ok) s.workloads = s.workloads.filter((w) => w.id !== vm.id);
-  else buyLicenses(s, vm.id!, sw.os[0], null);
+  else licenseBuild(s, vm.id!, [os], keys);
   return done;
 }
 
@@ -177,9 +182,9 @@ export function uninstallSoftware(s: GameState, machineId: string, softwareId?: 
   const node = c.kind === "cloud" || (c.nodes.length > 1 && isServer(s, machineId));
   const busy = node ? !emptyOf(s, c, machineId) : s.workloads.some((w) => w.clusterId === c.id);
   if (busy) return { ok: false, error: "error.softwareInUse" };
-  if (node) return removeNode(s, machineId, c.id);
-  dropCluster(s, c.id);
-  return { ok: true };
+  const done = node ? removeNode(s, machineId, c.id) : (dropCluster(s, c.id), { ok: true as const });
+  releaseGone(s);
+  return done;
 }
 
 // docs/design/terminal-shell.md, apt: what an upgrade on a server would bring up to date, as Debian packages. cluster is

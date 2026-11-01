@@ -4,11 +4,11 @@ import { dateOf } from "../../../../../sim/00-core/time";
 import { CERT_WARN_DAYS, certsOf, isAnyconnekt, vpnOf, vpnOnCluster } from "../../../../../sim/60-infra/netsvc-vpn";
 import { reissueCert, renewCert, revokeCert, setAutoEnroll } from "../../../../../sim/90-actions/netsvc-vpn";
 import type { PanelProps } from "../PanelBase";
-import { useStore } from "../../../../store";
+import { usePageAct } from "../../pageAct";
 
 // The identity certificates of each gateway with the ASDM columns; Delete before 2016 and Revoke after it remove a certificate from use.
 export function IdentityCerts({ game, c, era }: { game: PanelProps["game"]; c: PanelProps["c"]; era: string }) {
-  const act = useStore((s) => s.act), services = vpnOnCluster(game, c.id);
+  const act = usePageAct(), services = vpnOnCluster(game, c.id);
   if (!services.length) return <p className="cx-empty">{t("browser-consoles-1.nothingYet")}</p>;
   return <>{services.map((v) => {
     const x = vpnOf(game, v), expiry = dateOf(x.serverExpiresAt).toLocaleDateString(LOCALE, { timeZone: "UTC" });

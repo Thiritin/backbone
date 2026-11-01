@@ -71,7 +71,6 @@ const PATHS: Record<ShopId, Record<PortalArea, string | null>> = {
   boxBillin: { store: "/order", configure: "/order/<product>", cart: null, client: "/client", admin: "/bb-admin/" },
   clientExit: { store: "/order.php?gid=<group>", configure: "/order.php?pid=<product>", cart: "/order.php?step=cart", client: "/index.php?fuse=home", admin: "/admin/" },
   modemBill: { store: "/order.php?group=<group>", configure: "/order.php?pkg=<product>", cart: "/order.php?step=review", client: "/modernbill/", admin: "/admin/" },
-  handRolled: { store: "/bestellen.php", configure: "/bestellen.php?plan=<product>", cart: null, client: null, admin: "/admin.php" },
   ubersmyth: { store: "/order/", configure: "/order/<product>", cart: "/order/cart", client: "/client/", admin: "/admin/" },
   orderBocks: { store: "/store/", configure: "/store/<product>", cart: "/store/cart", client: "/account/", admin: "/admin/" },
 };

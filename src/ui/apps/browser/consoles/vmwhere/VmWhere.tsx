@@ -11,7 +11,6 @@ import { deleteSnapshot, revertSnapshot, takeSnapshot } from "../../../../../sim
 import { day } from "../../../hw";
 import { working } from "../../../../../sim/60-infra/status";
 import { t } from "../../../../../i18n/en";
-import { useStore } from "../../../../store";
 import type { GameState } from "../../../../../sim/50-state";
 import { vmStats } from "../../../../../sim/60-infra/stats";
 import { clusterSummary, type Alarm, type Amount, type Amounts, type Severity } from "../../../../../sim/60-infra/alarms";
@@ -26,6 +25,7 @@ import type { Look } from "../../../../../sim/10-catalog/sites";
 import type { Resources } from "../../../../../sim/10-catalog/products";
 import { AlarmsPage, DrsPage, Licensing, PoolsPage } from "./Admin";
 import "./vmwhere.css";
+import { usePageAct } from "../../pageAct";
 
 // docs/design/software.md, section 9: the grey and yellow fat client from 2005, the blue web client from 2015.
 const ERAS = erasFrom(2005, 2015);
@@ -104,7 +104,7 @@ const Use = ({ k, a }: { k: keyof Amounts; a: Amount }) => (
 
 // The cluster or host Summary tab: capacity like vSphere's resource meters, the host table, triggered alarms and every VM.
 function ClusterSummaryView({ game, c, node, vms, pick }: { game: GameState; c: Cluster; node: string | null; vms: Vm[]; pick: (s: Sel) => void }) {
-  const { sum, use, alarms } = summaryOf(game, c, node), act = useStore((s) => s.act);
+  const { sum, use, alarms } = summaryOf(game, c, node), act = usePageAct();
   const rows: [string, keyof Amounts][] = [["CPU", "vcpu"], [t("browser-consoles-2.memoryCaps"), "ramGb"], [t("browser-consoles-2.storageCaps"), "diskGb"]];
   return (
     <>
@@ -178,7 +178,7 @@ const storageFacts = (game: GameState, c: Cluster, size: Resources) => {
 
 // The Snapshots tab of a VM: its snapshots oldest first with their delta, and the buttons that take, revert and delete them.
 function Snapshots({ v }: { v: Vm }) {
-  const act = useStore((s) => s.act), list = v.w.snapshots ?? [];
+  const act = usePageAct(), list = v.w.snapshots ?? [];
   return (
     <>
       <table className="cx-table">
@@ -202,7 +202,7 @@ function Snapshots({ v }: { v: Vm }) {
 
 // The Datastores tab: each host's local disk, the shared datastores with their use, and the form that attaches a server as one.
 function Datastores({ game, c }: { game: GameState; c: Cluster }) {
-  const act = useStore((s) => s.act), year = yearOf(game.hour);
+  const act = usePageAct(), year = yearOf(game.hour);
   const free = game.devices.filter((d) => modelById(d.model).server && !datastoreBlock(game, c, d.id));
   const protocols = (Object.keys(DATASTORE_FROM) as DatastoreProtocol[]).filter((x) => DATASTORE_FROM[x] <= year);
   const [pick, setPick] = useState(""), [protocol, setProtocol] = useState<DatastoreProtocol>("nfs");
