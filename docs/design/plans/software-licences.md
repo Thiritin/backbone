@@ -53,6 +53,8 @@ The trial lengths follow the real products. `null` means a key is needed at inst
 - Keys reuse the Lexwear format and generator (`licenceKey`, four groups of four), seeded per order line.
 - Templates and cluster builds that install licensed software take keys from My account in the order shown there; if there are not enough unassigned keys, the build fails with an error that names the product.
 - `s.licenses` becomes the list of bought keys. The ledger line moves from install to checkout.
+- Checkout pays a one-time licence's price and a term licence's first month for one unit, as one ledger line per order. A cancelled term licence stops renewing, runs to the end of the term it paid for and then lapses.
+- The cart is one list in the game state; each vendor site shows and checks out only the lines it sells. Lexwear and the other bookkeeping vendors keep selling their modules on their own pages.
 
 ## Lanes
 
