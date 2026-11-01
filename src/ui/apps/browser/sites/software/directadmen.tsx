@@ -1,5 +1,5 @@
 import { t } from "../../../../../i18n/en";
-import { Body, Commands, Features, Nav, Pricing, type SiteProps } from "./SoftwareSite";
+import { Body, Commands, Docs, Features, Nav, Pricing, type SiteProps } from "./SoftwareSite";
 import { SiteMark } from "./marks";
 import "./directadmen.css";
 
@@ -15,6 +15,7 @@ export function DirectAdmen(props: SiteProps) {
           <section><h2>{t("browser-sites-1.da.features")}</h2><Features p={p} className="grid" /></section>
           <section><h2>{t("browser-sites-1.da.pricing")}</h2><Pricing p={p} /></section>
           <section><h2>{t("browser-sites-1.da.install")}</h2><Commands p={p} year={year} /></section>
+          <section><h2>{t("browser-sites-2.navDocs")}</h2><Docs p={p} /></section>
         </>}
         <footer>{t("browser-sites-1.da.footer", { year })}</footer>
       </div>

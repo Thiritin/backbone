@@ -23,6 +23,7 @@ export default {
   "ticket.mail.lexwear.newsletter.subject": (p) => `New for Lexwear Office: ${p.module}`,
   "ticket.mail.lexwear.newsletter.text": (p) => `${p.pitch} You can buy it as a one-time licence on lexwear.de.`,
   "error.licenceKey": () => "This licence key is not valid.",
+  "error.noTrial": () => "No trial is available for this software on this machine.",
   "error.moduleBought": () => "You have already bought this module.",
   "error.moduleRegistered": () => "This module is already registered.",
   "vendor-sites.taskInvoices": () => "Sending invoices",

@@ -1,7 +1,8 @@
 import { t } from "../../../../../i18n/en";
 import { useState, type ReactNode } from "react";
 import { euroPrice } from "../../../../../sim/00-core/money";
-import { SOFTWARE, type Software } from "../../../../../sim/10-catalog/platforms";
+import { BINARIES, SOFTWARE, type Software } from "../../../../../sim/10-catalog/platforms";
+import { cliCommands } from "../../../../../sim/60-infra/vendor-cli";
 import { imageOf, imageParts, licensingAt, SERVER_OS, serverOsById, type LicenseEra, type LicenseKind, type OsImage, type ServerOs, type ServerOsId } from "../../../../../sim/10-catalog/server-os";
 import { yearOf } from "../../../../../sim/00-core/time";
 import { useStore } from "../../../../store";
@@ -14,7 +15,7 @@ import { Account, Cart, cartCount, Editions } from "../shop/VendorShop";
 import "./software.css";
 
 // docs/design/software.md, 8.3: the pieces every software and OS site lays out in its own look.
-export type SitePage = "home" | "features" | "pricing" | "download" | "versions" | "news" | "cart" | "account";
+export type SitePage = "home" | "features" | "pricing" | "download" | "docs" | "versions" | "news" | "cart" | "account";
 export interface Product { id: string; name: string; site: Site; sw?: Software; os?: ServerOs }
 export interface SiteProps { p: Product; look: Look; page: SitePage; year: number; hour: number; go: (path: string) => void }
 
@@ -24,22 +25,23 @@ export const productOf = (kind: "software" | "os", id: string): Product | null =
   return x ? { id: x.id, name: x.name, site: x.site, sw, os } : null;
 };
 
-const PAGES: SitePage[] = ["home", "features", "pricing", "download", "versions", "news", "cart", "account"];
+const PAGES: SitePage[] = ["home", "features", "pricing", "download", "docs", "versions", "news", "cart", "account"];
 // Only sites of licensed products have a shop.
 const SHOP: SitePage[] = ["cart", "account"];
 export const pageOf = (path: string): SitePage => PAGES.find((x) => x === path.split(/[/?#]/)[1]) ?? "home";
 const pathOf = (page: SitePage) => (page === "home" ? "/" : `/${page}`);
 const gui = (p: Product) => p.sw?.install.kind === "gui";
+const binaryOf = (p: Product): string | undefined => p.sw && BINARIES[p.sw.id];
 
 export function Nav({ p, page, go, className, labels }: Pick<SiteProps, "p" | "page" | "go"> & { className?: string; labels?: Partial<Record<SitePage, string>> }) {
   const n = useStore((s) => cartCount(s.game, p.site.host));
   const name: Record<SitePage, string> = {
     home: t("browser-sites-2.navHome"), features: t("browser-sites-2.navFeatures"), pricing: t("browser-sites-2.navPricing"), download: gui(p) ? t("browser-sites-2.navInstall") : t("browser-sites-2.navDownload"),
-    versions: t("releases.navVersions"), news: t("releases.navNews"), cart: t("vendor-shop.cart", { n }), account: t("vendor-shop.myAccount"), ...labels,
+    docs: t("browser-sites-2.navDocs"), versions: t("releases.navVersions"), news: t("releases.navNews"), cart: t("vendor-shop.cart", { n }), account: t("vendor-shop.myAccount"), ...labels,
   };
   return (
     <nav className={className}>
-      {PAGES.filter((x) => isLicensed(p.id) || !SHOP.includes(x)).map((x) => (
+      {PAGES.filter((x) => (isLicensed(p.id) || !SHOP.includes(x)) && (x !== "docs" || binaryOf(p))).map((x) => (
         <a key={x} href={`#${x}`} aria-current={x === page ? "page" : undefined} onClick={(e) => { e.preventDefault(); go(pathOf(x)); }}>{name[x]}</a>
       ))}
     </nav>
@@ -136,6 +138,23 @@ export function Commands({ p, year, className }: { p: Product; year: number; cla
   );
 }
 
+// The software's command line tool and every command it takes.
+export function Docs({ p, className }: { p: Product; className?: string }) {
+  const bin = binaryOf(p);
+  if (!bin) return null;
+  return (
+    <div className={className}>
+      <p>{t("browser-sites-2.docsBinary")}: <code>{bin}</code></p>
+      <table>
+        <thead><tr><th>{t("browser-sites-2.docsCommand")}</th><th>{t("browser-sites-2.docsDescription")}</th></tr></thead>
+        <tbody>{cliCommands(p.sw!).map((c) => (
+          <tr key={c.id}><td><code>{bin} {c.syntax}</code></td><td>{t(`browser-sites-2.cli.${c.id}`)}{c.root && ` ${t("browser-sites-2.cli.root")}`}</td></tr>
+        ))}</tbody>
+      </table>
+    </div>
+  );
+}
+
 // The page body below a site's own header and hero.
 export function Body({ p, page, year, hour, go, className }: SiteProps & { className?: string }) {
   if (page === "features") return <section className={className}><h2>{t("browser-sites-2.navFeatures")}</h2><Features p={p} /></section>;
@@ -143,6 +162,7 @@ export function Body({ p, page, year, hour, go, className }: SiteProps & { class
   if (page === "versions" || page === "news") return <section className={className}><h2>{t(page === "news" ? "releases.navNews" : "releases.navVersions")}</h2><Releases p={p} page={page} hour={hour} /></section>;
   if (page === "cart" && isLicensed(p.id)) return <section className={className}><h2>{t("vendor-shop.cart", { n: 0 })}</h2><Cart host={p.site.host} btn="sws-btn" account={() => go("/account")} /></section>;
   if (page === "account" && isLicensed(p.id)) return <section className={className}><h2>{t("vendor-shop.myAccount")}</h2><Account host={p.site.host} btn="sws-btn" /></section>;
+  if (page === "docs") return <section className={className}><h2>{t("browser-sites-2.navDocs")}</h2><Docs p={p} /></section>;
   if (page === "download") return <section className={className}><h2>{gui(p) ? t("browser-sites-2.navInstall") : t("browser-sites-2.navDownload")}</h2><Commands p={p} year={year} /></section>;
   return (
     <section className={className}>

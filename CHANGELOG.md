@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- Every installed software now has its own command in the server's shell, such as `cpanic` or `esxwhere`, that shows its version and license, updates it, switches its channel, assigns a key or starts a trial, and runs the daily jobs of its kind.
+- Each software site has a new Docs page that lists its command and everything it takes.
 - Every bank now sells account plans, from a cheap Giro for sole traders to Business Plus and Premium with fewer booking fees and the card included, and a partnership or limited company needs the right plan before the paperwork, while a limited company also needs its share capital in the account.
 - You can switch to another bank on its site once loans are repaid, and loan interest now differs from bank to bank.
 - A cPanic Dedicated licence now renews as the account-based edition that fits its web spaces at its first renewal from June 2019, and cPanic emails the change a month ahead.

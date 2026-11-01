@@ -151,6 +151,13 @@ export const kindServing = (p: Product): SoftwareKind | null => (["panel", "clou
 export const IN_VM = 0.95;
 
 export const softwareById =(id: string): Software => SOFTWARE.find((x) => x.id === id) ?? SOFTWARE.find((x) => x.id === "proxmocks")!;
+// The command line tool each software installs on its machine (60-infra/vendor-cli.ts).
+export const BINARIES: Record<string, string> = {
+  cpanic: "cpanic", pleskit: "pleskit", directadmen: "da", freepanel: "freepanel", openveezee: "vzctl", openstash: "stash", vmwhere: "esxwhere",
+  proxmocks: "pvm", hypervee: "hypervee", tcadmen: "tcadmen", multikraft: "multikraft", pterodaktyl: "ptero", bound: "boundc", powerdnz: "pdnzutil",
+  knut: "knutc", openveepeen: "ovpn", anyconnekt: "anyconnekt", wireguarded: "wgd", vsftpeed: "vsftpeed", ownclod: "occ", minnio: "mnc",
+  postfixit: "postfixit", mailpig: "mailpig", backula: "bconsola", veeham: "veeham",
+};
 // Whether the target's migration tool applies to a web space coming from the source panel in that year.
 export const importsFrom = (target: Software, source: string, year: number): boolean => {
   const from = source === target.id ? target.migration.same : target.migration.other;

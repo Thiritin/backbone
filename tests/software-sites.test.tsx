@@ -5,6 +5,7 @@ import { productOf, type SitePage } from "../src/ui/apps/browser/sites/software/
 import { SITE_VIEWS } from "../src/ui/apps/browser/sites/software/registry";
 import { readyGame, skipTo, newGame } from "./fixtures";
 import { licensingAt } from "../src/sim/10-catalog/server-os";
+import { BINARIES } from "../src/sim/10-catalog/platforms";
 
 const PAGES: SitePage[] = ["home", "features", "pricing", "download"];
 const ONE_LOOK = new Set(["wireguarded", "vsftpeed", "postfixit", "mailpig"]);
@@ -18,6 +19,20 @@ describe("software sites", () => {
         const html = renderToString(<View p={p} look={look} page={page} year={from} hour={0} go={() => {}} />);
         expect(html).toContain(page === "pricing" ? (licensingAt((p.sw ?? p.os)!, 2005).kind === "free" ? "Free" : "€") : "<nav");
         if (page === "download" && p.sw?.install.kind !== "gui" && p.sw) expect(html).toContain(p.sw.install.commands[0].split(" ")[0]);
+      }
+    }
+  });
+
+  it("documents each software's command line tool and leaves it off the OS sites", () => {
+    for (const [id, View] of Object.entries(SITE_VIEWS)) {
+      const p = productOf(id === "lunix" || id === "windoors" ? "os" : "software", id)!;
+      for (const { look, from } of p.site.eras) {
+        const home = renderToString(<View p={p} look={look} page="home" year={from} hour={0} go={() => {}} />);
+        expect(home.includes('href="#docs"')).toBe(!!p.sw);
+        if (!p.sw) continue;
+        const html = renderToString(<View p={p} look={look} page="docs" year={from} hour={0} go={() => {}} />);
+        expect(html).toContain(`<code>${BINARIES[id]}</code>`);
+        expect(html).toContain("Prints the installed version and the update channel.");
       }
     }
   });
