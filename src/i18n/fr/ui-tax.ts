@@ -54,4 +54,10 @@ export default {
   "ui-tax.books.connect": () => "Connecter DOHLE",
   "ui-tax.books.connected": () => "Connecté",
   "ui-tax.books.submit": () => "Envoyer la déclaration",
+  "ui-tax.mein.title": () => "Mein DOHLE",
+  "ui-tax.mein.login": () => "Connexion par certificat",
+  "ui-tax.mein.loginButton": () => "Se connecter",
+  "ui-tax.mein.logout": () => "Se déconnecter",
+  "ui-tax.mein.returns": () => "Formulaires",
+  "ui-tax.formular.retired": () => "DohleFormular a été abandonné. Les déclarations s'envoient désormais sur Mein DOHLE.",
 } satisfies Dict;

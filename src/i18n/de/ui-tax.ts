@@ -54,4 +54,10 @@ export default {
   "ui-tax.books.connect": () => "DOHLE verbinden",
   "ui-tax.books.connected": () => "Verbunden",
   "ui-tax.books.submit": () => "Steuererklärung übermitteln",
+  "ui-tax.mein.title": () => "Mein DOHLE",
+  "ui-tax.mein.login": () => "Anmeldung mit Zertifikat",
+  "ui-tax.mein.loginButton": () => "Anmelden",
+  "ui-tax.mein.logout": () => "Abmelden",
+  "ui-tax.mein.returns": () => "Formulare",
+  "ui-tax.formular.retired": () => "DohleFormular wurde eingestellt. Steuererklärungen werden jetzt über Mein DOHLE übermittelt.",
 } satisfies Dict;

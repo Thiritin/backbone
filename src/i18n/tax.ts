@@ -74,4 +74,5 @@ export const TAX_EN: Record<string, (p: Params) => string> = {
   "error.booksNotLinked": () => "DOHLE is not connected in Books.",
   "error.booksInvoices": () => "Books is missing invoices from this year.",
   "error.booksUnmatched": () => "The bank statement of this year has unmatched transfers.",
+  "error.dohlePortal": () => "Mein DOHLE opens in 2013.",
 };

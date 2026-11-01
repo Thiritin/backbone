@@ -62,6 +62,8 @@ The company pays VAT and income tax by filing returns itself. Today `46-finance/
 - On the first of the month at nine, when the monthly run sends the drafts, Books files every advance return whose period has ended.
 - Submit tax return sits on the yearly return's row in the Books Tax tab. "Every invoice of the year present" means no invoice issued in the year is still waiting for an import from the shop, and "a matched statement" means no transfer of the year is unmatched. Submitting then files like DohleFormular, with the same tax number, certificate and closing checks.
 
+- From 1 January 2013 the site's Downloads tab becomes Mein DOHLE at `www.dohle.de/mein/`, and the download page is gone. Logging in picks the certificate file from the desktop and lasts while the page stays open. An installed DohleFormular stays on the dock and opens to a notice with a button to the portal.
+
 ## 6. Certificate
 
 1. Registering on `www.dohle.de/registrieren/` needs the tax number and the company's email address.

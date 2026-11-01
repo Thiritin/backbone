@@ -1,7 +1,7 @@
 // docs/design/plans/tax-office.md: what the player files with the tax office through DOHLE.
 import { yearOf } from "../00-core/time";
 import type { GameState } from "../50-state";
-import { answer, booksLinked, booksMissing, CERT_FILE, certOk, taxView, fileVat, fileYear, yearOpen, FORMULAR_APP, normalCode, registerDohle, smallLimit, taxNumber } from "../80-business/tax";
+import { answer, booksLinked, portalOpen, booksMissing, CERT_FILE, certOk, taxView, fileVat, fileYear, yearOpen, FORMULAR_APP, normalCode, registerDohle, smallLimit, taxNumber } from "../80-business/tax";
 import { salesAddress } from "../80-business/mail";
 import { freeSpot } from "./docs";
 import type { ActionResult } from "./hardware";
@@ -82,4 +82,11 @@ export function submitTaxReturn(s: GameState, id: string): ActionResult {
   if (!r) return fail("error.taxReturn");
   const missing = booksMissing(s, r);
   return missing ? fail(missing) : fileReturn(s, id);
+}
+
+// Logging in to Mein DOHLE with the certificate file picked from the desktop.
+export function loginMeinDohle(s: GameState, doc: string): ActionResult {
+  if (!portalOpen(s)) return fail("error.dohlePortal");
+  if (!certOk(s) || doc !== s.tax.cert) return fail("error.dohleCert");
+  return { ok: true };
 }

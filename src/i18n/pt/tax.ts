@@ -56,4 +56,5 @@ export default {
   "error.booksNotLinked": () => "O DOHLE não está ligado na contabilidade.",
   "error.booksInvoices": () => "Faltam faturas deste ano na contabilidade.",
   "error.booksUnmatched": () => "O extrato deste ano tem transferências por associar.",
+  "error.dohlePortal": () => "O Mein DOHLE abre em 2013.",
 } satisfies Dict;

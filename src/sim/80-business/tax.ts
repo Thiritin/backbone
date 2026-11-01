@@ -19,6 +19,10 @@ export const CODE_DAYS = 2;
 export const DOHLE_HOST = "dohle.de";
 export const DOHLE_URL = `www.${DOHLE_HOST}/`;
 export const ERFASSUNG_URL = `www.${DOHLE_HOST}/erfassung/`;
+// From 2013 the forms move to the Mein DOHLE portal and DohleFormular is retired.
+export const PORTAL_YEAR = 2013;
+export const MEIN_URL = `www.${DOHLE_HOST}/mein/`;
+export const portalOpen = (s: GameState): boolean => yearOf(s.hour) >= PORTAL_YEAR;
 // Working days: the questionnaire lands two days after the trade office's confirmation, the number five after the answer.
 export const ASK_DAYS = 2;
 export const NUMBER_DAYS = 5;
