@@ -37,5 +37,9 @@ export default {
   "error.needsBgpRouter": () => "Precisa de um roteador com tabela de rotas completa neste local.",
   "error.basementOnly": () => "Só o porão aceita este roteador.",
   "error.noRouter": () => "Não há roteador montado aqui.",
+  "error.badPool": () => "A faixa DHCP não cabe na rede.",
+  "error.badAddress": () => "Digite um endereço IPv4 privado.",
+  "error.portShared": () => "A porta 80 já está compartilhada com outro dispositivo.",
+  "error.noAddress": () => "Este dispositivo não tem endereço na rede do roteador.",
   "error.notOfficeRouter": () => "Só um roteador de pequeno escritório substitui o do porão.",
 } satisfies Dict;

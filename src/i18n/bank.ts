@@ -9,6 +9,15 @@ const money = (p: Params) => euroCents(Number(p.amount));
 // Bank and payables text the sim writes: ledger lines, emails, errors; spread into en.
 export const BANK_EN: Record<string, (p: Params) => string> = {
   "doc.tans": () => "TAN list",
+  "guide.step.bank": () => "Open a bank account",
+  "ledger.savings": () => "Transfer from your personal account: Savings",
+  "bank.savings": () => "Savings",
+  "bank.savings.from": () => "Personal account",
+  "bank.office.payee": () => "Trade office",
+  "bank.office.reference": (p) => `Business registration ${p.name}`,
+  "error.hasBank": () => "The company already has a bank account.",
+  "sim.index.cat.banks": () => "Banks",
+  "sim.index.bank": () => "Business accounts and online banking",
   "bank.tanList.no": (p) => `TAN list no. ${p.n}`,
   "ledger.bankFee": (p) => `Account fee, ${p.bank}`,
   "ledger.bookingFee": (p) => `Booking fees, ${p.count} bookings, ${p.bank}`,

@@ -37,10 +37,10 @@ export const LOCAL_CHANCE = 0.35;
 export const SHIP_DAYS: [number, number] = [3, 5];
 
 // Selling: the board's default ask and the share of the value above which nobody buys, eBuy's start and fee, and the days to a buyer.
-export const SELL_ASK = 1.3;
-export const SELL_CAP = 1.5;
+export const SELL_ASK = 0.9;
+export const SELL_CAP = 1;
 export const SELL_START = 0.5;
-export const SELL_FINAL: [number, number] = [1, 1.4];
+export const SELL_FINAL: [number, number] = [0.8, 1];
 export const EBUY_FEE = 0.08;
 export const SELL_DAYS: [number, number] = [7, 30];
 export const SELL_LISTED_DAYS = 30;

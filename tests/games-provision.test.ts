@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { titleById } from "../src/sim/10-catalog/games";
 import { sizeSpec } from "../src/sim/10-catalog/products";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { gameOf } from "../src/sim/60-infra/games";
 import { workloadsOf } from "../src/sim/60-infra/cluster";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { connect, type ActionResult } from "../src/sim/90-actions/hardware";
-import { buyDevice, hypervisor, panelServer, skipTo, withServer } from "./fixtures";
+import { buyDevice, hypervisor, panelServer, skipTo, withServer, newGame } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 const ok = (r: ActionResult) => {

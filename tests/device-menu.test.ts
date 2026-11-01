@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { newGame, type GameState } from "../src/sim/50-state";
-import { buyDevice } from "./fixtures";
+import { type GameState } from "../src/sim/50-state";
+import { buyDevice, newGame } from "./fixtures";
 import { tidy, type MenuItem } from "../src/ui/desktop/menu";
 import { deviceMenu, type DeviceUi } from "../src/ui/apps/locations/deviceMenu";
 import { useStore } from "../src/ui/store";

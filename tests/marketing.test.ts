@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { chooseShop } from "../src/sim/90-actions/shop";
 import { isMonthStart } from "../src/sim/00-core/time";
 import { createTicket } from "../src/sim/40-support/tickets";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import {
   addAwareness, addReview, announceReview, awareness, discountFor, leadsThisMonth, monthlyMarketingCost, reviewMultiplier, reviewScore, trustBonus,
 } from "../src/sim/80-business/marketing";
@@ -12,7 +12,7 @@ import { setCampaign, setReviewPlatform, setUpChannel, stopCampaign } from "../s
 import { hire } from "../src/sim/90-actions/staff";
 import { visibleCandidates } from "../src/sim/47-staff/staff";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { withCompany } from "./fixtures";
+import { withCompany, newGame } from "./fixtures";
 
 const FEB_1 = 744;
 // Paid review platforms need a marketing manager on staff.

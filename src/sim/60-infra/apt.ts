@@ -12,7 +12,7 @@ import { installFromSite, upgradeHours, upgradeOs, upgradeTarget } from "../90-a
 import { machineNet, osUp } from "./oob";
 import { consoleSuffix } from "../80-business/consoles";
 import { fqdn } from "../30-customers/domains";
-import { privateIp } from "./addresses";
+import { machineAddress } from "./addresses";
 import type { CommandResult, Watch } from "./terminal";
 
 const lines = (key: string, p: Record<string, string | number> = {}) => t(key, p).split("\n");
@@ -92,7 +92,7 @@ export function installLog(sw: Software): string[] {
 // What a finished install prints: the address its console answers at, if it has one, and the reboot. The address is the
 // fqdn once the company has a domain and the machine's private address before, with the console's port.
 export function installDone(s: GameState, machineId: string, sw: Software): string[] {
-  const m = machineOf(s, machineId), host = m?.hostname, at = host && (s.company.domain ? fqdn(s, host) : privateIp(s, m.id));
+  const m = machineOf(s, machineId), host = m?.hostname, at = host && (s.company.domain ? fqdn(s, host) : machineAddress(s, m.id));
   const c = clustersOn(s, machineId).find((x) => [x.panel, x.platform, x.switching?.to].includes(sw.id)), port = c && consoleSuffix(s, c);
   const url = at && typeof port === "string" ? `https://${at}${port}/` : null;
   return [t("term.install.done", { name: sw.name }), ...(url ? [t("term.install.reach", { url })] : []), t("term.install.reboot")];

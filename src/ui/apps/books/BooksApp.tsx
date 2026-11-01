@@ -11,13 +11,13 @@ import { InvoicesTab } from "./InvoicesTab";
 import { QuotesTab } from "./QuotesTab";
 import { NEW } from "./NewCustomer";
 import { PayablesTab } from "./PayablesTab";
-import { RemindersTab } from "./RemindersTab";
+import { RemindersTab, RulesTab } from "./RemindersTab";
 import { Register } from "./Register";
 import "../billing/billing.css";
 import "./books.css";
 
 export const drafts = (s: GameState) => s.invoices.filter((i) => i.status === "draft").length;
-export const unmatched = (s: GameState) => s.transfers.filter((x) => x.invoiceId === null).length;
+export const unmatched = (s: GameState) => s.transfers.filter((x) => x.matchedAt === null).length;
 export const late = (s: GameState) => s.invoices.filter((i) => i.status === "overdue").length;
 
 // Each tab: id, label key, dock count and body. The selection a tab opens on comes from the focus id.
@@ -27,6 +27,7 @@ const TABS: { id: string; count: (s: GameState) => number; body: ComponentType<{
   { id: "invoices", count: drafts, body: InvoicesTab },
   { id: "bank", count: unmatched, body: BankTab },
   { id: "reminders", count: late, body: RemindersTab },
+  { id: "dunning", count: () => 0, body: RulesTab },
   { id: "payables", count: (s) => s.payables.filter((p) => overdue(s, p)).length, body: PayablesTab },
 ];
 
