@@ -154,7 +154,6 @@ svg.logo-mark { flex: none; }
 .loc-port[aria-pressed="true"] { box-shadow: 0 0 0 1.6px var(--accent); background: oklch(0.24 0.04 262); }
 .loc-port:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
-.loc-mode { justify-self: start; margin-top: -4px; }
 
 .loc-card { border: var(--ar-bw) solid var(--line-strong); border-radius: var(--ar-card); background: var(--field); min-width: 0; }
 .loc-card-h { display: flex; align-items: center; gap: 8px; padding: 8px 10px 8px 14px; min-height: 44px; border-bottom: var(--ar-bw) solid var(--line); }

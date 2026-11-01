@@ -1,3 +1,4 @@
+import { hourOfMonth } from "../00-core/time";
 import { SITES, type Site } from "./sites";
 
 // docs/design/software.md, section 1: the operating systems a server or one of the player's VMs runs.
@@ -8,8 +9,9 @@ export type LicenseKind = "once" | "core" | "server" | "account" | "free";
 export interface LicenseEra { from: number; kind: LicenseKind; fee: number }
 export const licensingAt = (x: { licensing: LicenseEra[] }, year: number): LicenseEra =>
   [...x.licensing].reverse().find((e) => e.from <= year) ?? x.licensing[0];
-// from is the first game year the version exists; an install takes the newest one out.
-export interface ServerOsVersion { version: string; name: string; from: number }
+// from is the first game year the version exists; an install takes the newest one out. updatesUntil and securityUntil are
+// the hours its fixes and its security fixes end (docs/design/software-versions.md).
+export interface ServerOsVersion { version: string; name: string; from: number; updatesUntil: number; securityUntil: number }
 export interface ServerOs {
   id: ServerOsId; name: string; versions: ServerOsVersion[];
   licensing: LicenseEra[];
@@ -20,22 +22,26 @@ export interface ServerOs {
   site: Site;
 }
 
-const v = (version: string, from: number, name = ""): ServerOsVersion => ({ version, name, from });
+const v = (version: string, from: number, updates: string, security: string, name = ""): ServerOsVersion =>
+  ({ version, name, from, updatesUntil: hourOfMonth(updates), securityUntil: hourOfMonth(security) });
 
 export const SERVER_OS: ServerOs[] = [
   {
     id: "lunix", name: "Debiant GNU/Lunix", licensing: [{ from: 2005, kind: "free", fee: 0 }], bootMinutes: 20, haltMinutes: 5, installHours: 1, site: SITES.lunix,
     versions: [
-      v("3.1", 2005, "Sarge"), v("4", 2007, "Etch"), v("5", 2009, "Lenny"), v("6", 2011, "Squeeze"), v("7", 2013, "Wheezy"),
-      v("8", 2015, "Jessie"), v("9", 2017, "Stretch"), v("10", 2019, "Buster"), v("11", 2021, "Bullseye"), v("12", 2023, "Bookworm"),
+      v("3.1", 2005, "2008-03", "2008-03", "Sarge"), v("4", 2007, "2010-02", "2010-02", "Etch"), v("5", 2009, "2012-02", "2012-02", "Lenny"),
+      v("6", 2011, "2014-05", "2016-02", "Squeeze"), v("7", 2013, "2016-04", "2018-05", "Wheezy"), v("8", 2015, "2018-06", "2020-06", "Jessie"),
+      v("9", 2017, "2020-07", "2022-07", "Stretch"), v("10", 2019, "2022-09", "2024-06", "Buster"), v("11", 2021, "2024-08", "2026-08", "Bullseye"),
+      v("12", 2023, "2026-07", "2028-06", "Bookworm"),
     ],
   },
   {
     id: "windoors", name: "Windoors Server", bootMinutes: 40, haltMinutes: 10, installHours: 2, site: SITES.windoors,
     licensing: [{ from: 2005, kind: "once", fee: 600 }, { from: 2016, kind: "core", fee: 4 }], trialDays: 180,
     versions: [
-      v("2003", 2005), v("2008", 2008), v("2008 R2", 2010), v("2012", 2012), v("2012 R2", 2014), v("2016", 2016), v("2019", 2019),
-      v("2022", 2022), v("2025", 2025),
+      v("2003", 2005, "2010-07", "2015-07"), v("2008", 2008, "2015-01", "2020-01"), v("2008 R2", 2010, "2015-01", "2020-01"),
+      v("2012", 2012, "2018-10", "2023-10"), v("2012 R2", 2014, "2018-10", "2023-10"), v("2016", 2016, "2022-01", "2027-01"),
+      v("2019", 2019, "2024-01", "2029-01"), v("2022", 2022, "2026-10", "2031-10"), v("2025", 2025, "2029-11", "2034-11"),
     ],
   },
 ];

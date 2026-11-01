@@ -163,7 +163,7 @@ describe("terminal", () => {
     const lines = out(s, null, `traceroute ${host(s)}`).split("\n");
     expect(lines).toHaveLength(4);
     expect(lines[1]).toMatch(/^ 1  \S+  [\d.]+ ms  [\d.]+ ms  [\d.]+ ms$/);
-    expect(lines[3]).toContain(`${host(s)}.${s.company.domain} (192.168.1.`);
+    expect(lines[3]).toContain(`${host(s)}.${s.company.domain} (192.168.178.`);
   });
 
   it("stops the trace at the last working hop when a switch is powered off", () => {
@@ -185,7 +185,7 @@ describe("terminal", () => {
 
   it("prints the address of a name", () => {
     const s = fresh();
-    expect(out(s, null, `host ${host(s)}`)).toMatch(/^node001\.\S+ has address 192\.168\.1\.\d+/);
+    expect(out(s, null, `host ${host(s)}`)).toMatch(/^node001\.\S+ has address 192\.168\.178\.\d+/);
     expect(out(s, null, "host nowhere")).toBe("Host nowhere not found: 3(NXDOMAIN)");
   });
 
