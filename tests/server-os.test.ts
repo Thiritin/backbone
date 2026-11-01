@@ -63,7 +63,7 @@ describe("server operating systems", () => {
     ok(installSoftware(s, bootedMachine(s, "dev3", "windoors"), "tcadmen"));
     expect(machineOf(s, "dev3")).toMatchObject({
       os: { id: "windoors", version: "2008 R2", installedAt: s.hour },
-      software: [{ id: "tcadmen", version: "2010", installedAt: s.hour, doneAt: s.hour + 2 }],
+      software: [{ id: "tcadmen", version: "1.0", installedAt: s.hour, doneAt: s.hour + 2 }],
     });
     const cloud = hypervisor(s, [second]);
     hypervisor(s, [third]);

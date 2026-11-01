@@ -24,6 +24,7 @@ import { setMachine } from "../src/sim/60-infra/cluster";
 import { assignedKey, assignKey, isLicensed, issueKey, panelMachine } from "../src/sim/60-infra/licence";
 import { topTier } from "../src/sim/10-catalog/licence-tiers";
 import { portPeers } from "../src/sim/60-infra/status";
+import { setPortShare } from "../src/sim/90-actions/lan";
 import { imageOf, serverOsAt, type OsImage, type ServerOsId } from "../src/sim/10-catalog/server-os";
 import { softwareById } from "../src/sim/10-catalog/platforms";
 import { yearOf } from "../src/sim/00-core/time";
@@ -86,7 +87,7 @@ export const runServers = (s: GameState): void => {
 };
 
 // The basement server and switch new games used to start with, cabled to the home router and paid from the savings, on the
-// business DSL line with an own /24 announced there; suites that are not about the first server or addresses start from it.
+// business DSL line with an own /24 announced there and the router's web port shared with the server; suites that are not about the first server or addresses start from it.
 export function withServer(s: GameState): GameState {
   s.cash -= 2500;
   s.homeLine = { id: "dsl-16-biz", next: null };
@@ -98,7 +99,15 @@ export function withServer(s: GameState): GameState {
     { id: "cab6", a: { device: "dev3", port: 0 }, b: { device: "dev4", port: 0 }, kind: "copper", color: null },
     { id: "cab7", a: { device: "dev4", port: 7 }, b: { device: "dev5", port: 0 }, kind: "copper", color: null },
   );
+  setPortShare(s, "dev5", "dev3", "web");
   return s;
+}
+
+// The basement router's one web share moved to the machine.
+export function shareWith(s: GameState, id: string): void {
+  const r = s.devices.find((d) => d.id === "dev5")!;
+  r.lan = { ...r.lan!, shares: [] };
+  if (!setPortShare(s, "dev5", id, "web").ok) throw new Error(`no share for ${id}`);
 }
 
 // The servers with the hypervisor already installed, joined into one cluster under the name; returns the cluster id.

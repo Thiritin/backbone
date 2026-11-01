@@ -48,9 +48,22 @@ At the month roll, with a generator hashed from the game seed, the month and the
 - **Exit.** A small rival with under 0.5% share in all its cities for 6 months in a row closes with 50% chance: it goes bust (its customers become switchers, section 5) or a major buys it (the customers move to that major). Both post a news item. The six majors never close.
 - **Names.** Generated from two syllable lists, a stem (Netz, Host, Server, Web, Daten, Cloud, Rack, Bit) and an ending (kiste, werk, haus, mann, ly, io, 24, pro), deduplicated per game. They are ids and stay untranslated.
 
+Decisions for phase 2:
+
+- The cap of 10 counts small rivals only; the six majors come on top.
+- Entrants use the budget, game or managed template, and from 2010 also devCloud for the cloud wave. An entrant starts with the convenience steps of the milestones that have already arrived, and with no customers; the three seeded at the start hold their steady-state share in their home cities like the majors.
+- A small rival sells only in its home cities, so the market roll and Market research leave it out elsewhere.
+- Once a rival has been under 0.5% for 6 months, each further month it closes with 50% chance, and half of those go bust while the other half are bought by the major of the same template. Until switchers arrive in phase 4, a bust rival's customers leave the market.
+- When 20 draws of a name are all taken, the name gets a number ("Netzwerk 2").
+- The exit share is the rival's part of the customers all rivals hold in the city, so an entrant that cannot build a base closes within its first year, while an established one keeps going.
+- The balance model runs the same month for the rivals (`rollRivals`), with each city's buyers split among the rivals alone.
+- With small rivals the steady bot's level-6 median moves from 2018.8 to 2019.1 to 2019.4 depending on the seed set, so the balance test allows 1.5 years past the pacing target for level 6. Shrinking small rivals to 20 under the template and at most 6 still left it at 2019.2 on one seed set.
+
 ## 4. Rival reviews
 
 Rivals get reviews from the same formula as the player: 5% of their new customers a month write one with stars from `1 + 4 × H / 100 ± 0.5`, where H is 40 + 0.6 × R; an outage month adds 0.2% of their customers as reviews with H = 20. The score uses the same 2-year window and the 3.5-star prior worth 20 reviews. Review text comes from a pool of `t()` templates keyed by star count and topic (support, speed, price, outage).
+
+Reviews are kept as 24 monthly buckets of star sum and count. A month's stars are drawn in one go: each review rounds `1 + 4 × H / 100` up with the chance of its fraction, which is the same as rounding it after adding ± 0.5. The review texts arrive with HOSTtoast, which shows them.
 
 ## 5. Saturation and switchers
 

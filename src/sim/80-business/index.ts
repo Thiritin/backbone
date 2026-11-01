@@ -9,7 +9,7 @@ import { CHANNELS, marketUrl } from "../10-catalog/used";
 import { companyDomain, fqdn } from "../30-customers/domains";
 import type { GameState } from "../50-state";
 import { BOARD_TITLE, BOARD_URL, companyUrl, WIKI_TITLE, WIKI_URL, displayHost, resolve, vendorHost, vendorLive, VENDORS, VIDEO_TITLE, VIDEO_URL } from "./browser";
-import { privateIp } from "../60-infra/addresses";
+import { machineAddress } from "../60-infra/addresses";
 import { familyOf } from "../60-infra/vulns";
 import { consoleHost, consoleSuffix, consoleTitle } from "./consoles";
 import { OFFICE_HOST } from "./office";
@@ -37,7 +37,7 @@ function consoleRows(s: GameState): IndexRow[] {
     const family = familyOf(c), host = family && consoleHost(s, c), at = consoleSuffix(s, c);
     if (!family || !host || at === null) return [];
     const id = (s.devices.find((d) => d.hostname === host) ?? s.workloads.find((w) => w.hostname === host))?.id;
-    const url = s.company.domain ? fqdn(s, host) : id && privateIp(s, id);
+    const url = s.company.domain ? fqdn(s, host) : id && machineAddress(s, id);
     return url ? [row(`${consoleTitle(family)} ${host}${at}`, url + at, url + at)] : [];
   });
 }

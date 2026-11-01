@@ -17,7 +17,7 @@ import { buyBare, buyDevice, newGame } from "./fixtures";
 import { research } from "../src/sim/90-actions/store";
 import { tick } from "../src/sim/88-tick/tick";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { hypervisor, skipTo, withServer } from "./fixtures";
+import { hypervisor, shareWith, skipTo, withServer } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 type R = { ok: boolean; id?: string; error?: string };
@@ -161,6 +161,7 @@ describe("GPU rental", () => {
   it("needs the skill and a free card to be offered, and rents whole cards", () => {
     const s = rich(2012), id = gpuServer(s);
     hypervisor(s, [id], "GPU 1");
+    shareWith(s, id);
     expect(lineOffered(s, "gpu")).toBe(false);
     s.unlocks = [...s.unlocks, GPU_SKILL];
     expect(lineOffered(s, "gpu")).toBe(true);
