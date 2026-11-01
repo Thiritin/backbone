@@ -12,7 +12,6 @@ import { useBooks } from "./view";
 import { formatDay } from "../billing/format";
 import { monthYear } from "../support/labels";
 import { NEW, NewCustomer } from "./NewCustomer";
-import { suspendCustomer } from "../../../sim/90-actions/customers";
 import { ChangePrice, CreditSheet } from "../customers/CustomerPage";
 import "../customers/customers.css";
 
@@ -31,7 +30,6 @@ export function CustomersTab({ focus }: { focus: string | null }) {
   const toggle = archived.length > 0 && <button className="btn books-archive" aria-pressed={archive} onClick={() => { setArchive(!archive); setSelected((archive ? current : archived)[0]?.id ?? null); }}>{archive ? t("books.tab.customers") : t("books.archive", { n: archived.length })}</button>;
   if (list.length === 0) return <div className="fin-empty"><Users />{t("books.noCustomers")}{add}{toggle}</div>;
   const services = c ? activeServices(game.services, c.id) : [];
-  const held = !!c && game.heldCustomers.includes(c.id);
   const domains = c ? game.domains.filter((d) => d.customerId === c.id) : [];
   return (
     <div className="books-customers">
@@ -64,7 +62,6 @@ export function CustomersTab({ focus }: { focus: string | null }) {
           {c.churnedAt === null && (
             <div className="fin-actions">
               <button className="btn" onClick={() => setCrediting(true)}>{t("misc.creditEllipsis")}</button>
-              <button className="btn" onClick={() => act(suspendCustomer, c.id, !held)}>{held ? t("misc.unsuspend") : t("misc.suspend")}</button>
             </div>
           )}
           {crediting && <CreditSheet customerId={c.id} onClose={() => setCrediting(false)} />}

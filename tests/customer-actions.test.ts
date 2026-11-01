@@ -1,12 +1,11 @@
 import { newGame } from "./fixtures";
 import { describe, expect, it } from "vitest";
-import { serviceOnline } from "../src/sim/40-support/status";
 import { createTicket } from "../src/sim/40-support/tickets";
 import { activityFor } from "../src/sim/47-staff/activity";
 import { TASKS, visibleCandidates, type Role } from "../src/sim/47-staff/staff";
 import { type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
-import { addCustomer, addService, creditCustomer, suspendCustomer } from "../src/sim/90-actions/customers";
+import { addCustomer, addService, creditCustomer } from "../src/sim/90-actions/customers";
 import { hire } from "../src/sim/90-actions/staff";
 import { assignTicket } from "../src/sim/90-actions/support";
 import { deserialize, serialize } from "../src/sim/91-save/save";
@@ -49,27 +48,6 @@ describe("customer credit", () => {
     tick(s);
     expect(s.invoices.find((i) => i.customerId === a)!.lines.at(-1)!.amount).toBe(-10);
     expect(customer(deserialize(serialize(s)), a).credit).toBe(20);
-  });
-});
-
-describe("customer suspension", () => {
-  it("stops every service of the customer and unsuspending restores them", () => {
-    const s = newGame(8);
-    const a = addCustomer(s, "Held", "private"), b = addCustomer(s, "Other", "private");
-    const mine = [addService(s, a, "vps", "vm 1", 1, "hour"), addService(s, a, "vps", "vm 2", 1, "hour")], theirs = addService(s, b, "vps", "vm 3", 1, "hour");
-    expect(mine.every((id) => serviceOnline(s, id))).toBe(true);
-    const happy = customer(s, a).happiness, tickets = s.tickets.length;
-    expect(suspendCustomer(s, a, true).ok).toBe(true);
-    expect(mine.some((id) => serviceOnline(s, id))).toBe(false);
-    expect(serviceOnline(s, theirs)).toBe(true);
-    expect(customer(s, a).happiness).toBeLessThan(happy);
-    expect(s.tickets.length).toBe(tickets + 1);
-    // A repeat changes nothing.
-    expect(suspendCustomer(s, a, true).ok).toBe(true);
-    expect(s.tickets.length).toBe(tickets + 1);
-    expect(suspendCustomer(s, a, false).ok).toBe(true);
-    expect(mine.every((id) => serviceOnline(s, id))).toBe(true);
-    expect(suspendCustomer(s, "nobody", true)).toEqual({ ok: false, error: "error.unknownCustomer" });
   });
 });
 

@@ -3,7 +3,7 @@ import { addHoursOn } from "../00-core/workhours";
 import { CLEAN_MINUTES } from "../10-catalog/apps";
 import { PRODUCTS } from "../10-catalog/products";
 import { PROFILES, type Budget, type Profile as ProfileStats } from "../10-catalog/economy";
-import { activeServices, type Customer, type Product, type Profile, type Service } from "../30-customers/customers";
+import { activeServices, type Customer, type Product, type Profile, type Service, type TerminateReason } from "../30-customers/customers";
 import type { GameState } from "../50-state";
 import { serviceOnline } from "./status";
 
@@ -34,6 +34,8 @@ export interface Ticket {
   assignee: string | null;
   // An email from a company (bank, supplier) that asks for no reply: who sent it and what fills its text.
   mail?: { from: string; params: Record<string, string | number> };
+  // The hoster's termination notice: when the service ends and why.
+  term?: { end: number; now: boolean; reason: TerminateReason | null };
 }
 
 export const HOURS_PER_MONTH = 730;

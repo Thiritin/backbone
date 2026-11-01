@@ -1,3 +1,4 @@
+import { day } from "../tax";
 import type { Dict } from "../lang";
 import { t } from "../en";
 import { euro } from "../../sim/00-core/money";
@@ -99,6 +100,8 @@ export default {
   "ticket.cancellation.outage.text": () => "Mes services sont tombés trop souvent en panne. Je passe chez un autre hébergeur, merci donc de tout résilier à la fin du mois.",
   "ticket.cancellation.slow.subject": () => "Merci de résilier mon contrat",
   "ticket.cancellation.slow.text": () => "Mes services sont bien trop lents depuis des semaines. Je passe chez un hébergeur plus rapide, merci donc de tout résilier à la fin du mois.",
+  "ticket.cancellation.byHost.subject": () => "Résiliation de ton contrat",
+  "ticket.cancellation.byHost.text": (p) => (Number(p.now) ? `Nous avons résilié ton contrat pour ${p.service} avec effet immédiat. Motif : ${p.why}.` : `Nous résilions ton contrat pour ${p.service}. Il prend fin le ${day(p.end)}.${p.why ? ` Motif : ${p.why}.` : ""}`),
   "ticket.abuse.spam.subject": (p) => `Spam envoyé depuis ${who(p, "ton réseau")}`,
   "ticket.abuse.spam.text": () => "Un fournisseur de messagerie signale des milliers de spams provenant du serveur de ce client.",
   "ticket.abuse.attack.subject": (p) => `Trafic d'attaque depuis ${who(p, "ton réseau")}`,

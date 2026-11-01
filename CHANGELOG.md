@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- You can terminate a customer contract with notice or immediately, with a reason such as non-payment, abuse, excessive usage or capacity limits, and the customer receives an email with the end date.
+- Suspending now applies to single services, so the customer-wide suspend in the books and the customer page is gone.
 - Customers without an active contract move to an archive at the bottom of the contracts list in your books, so the list shows only the customers you still serve.
 - The semiannual billing cycle now shows a proper name in every language.
 - Agencies now book reseller blocks on your DirectAdmen and cPanic hosts and pay each month for the GB their clients use, at the price per GB you set in your rates.

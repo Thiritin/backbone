@@ -227,6 +227,9 @@ const switchParams = (s: GameState, tk: Ticket) => {
   return { title: g ? t(`games.title.${g.title}`) : "", next: g?.switchTo ? t(`games.title.${g.switchTo}`) : "" };
 };
 
+// The hoster's termination notice: the end hour, whether it ended at once and the reason as shown.
+const termParams = (term: NonNullable<Ticket["term"]>) => ({ end: term.end, now: term.now ? 1 : 0, why: term.reason ? t(`host.reason.${term.reason}`) : "" });
+
 export const subjectParams = (s: GameState, t: Ticket): Record<string, string | number> => ({
   service: s.services.find((v) => v.id === t.serviceId)?.label ?? "", hostname: serviceFqdn(s, s.services.find((v) => v.id === t.serviceId)), domain: s.services.find((v) => v.id === t.serviceId)?.domain ?? s.sales.requests.find((r) => r.ticketId === t.id)?.domain ?? "", url: t.notice?.url ?? "", ip: t.topic === "dnsChange" ? askedIp(s, t.id) : "", video: t.notice?.video ?? "",
   target: t.move?.name ?? "", round: t.notice?.round ?? 1, sender: t.notice ? senderName(t.notice.sender) : "",
@@ -234,6 +237,7 @@ export const subjectParams = (s: GameState, t: Ticket): Record<string, string | 
   ...(t.maint && maintParams(t.maint)),
   ...(t.kind === "sponsor" && sponsorParams(s, t)),
   ...(t.topic === "switchTitle" && switchParams(s, t)),
+  ...(t.term && termParams(t.term)),
   ...t.mail?.params,
   ...(t.kind === "mail" && t.topic === SHOP_LICENCE && vendorParams(t.mail!.params)),
 });

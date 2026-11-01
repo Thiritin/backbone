@@ -210,7 +210,6 @@ export function dueStep(inv: Invoice, hour: number): number | null {
 }
 
 export const isSuspended = (s: GameState, customerId: string): boolean => {
-  if (s.heldCustomers.includes(customerId)) return true;
   const suspended = sweepGroups(s, "suspended", () => s.invoices.filter((i) => i.suspended && isUnpaid(i)), (i) => i.customerId);
   return suspended ? suspended.has(customerId) : s.invoices.some((i) => i.customerId === customerId && i.suspended && isUnpaid(i));
 };
@@ -222,8 +221,7 @@ export const serviceHeld = (s: GameState, v: Service): boolean => !!s.heldServic
 
 export function holdReason(s: GameState, v: Service): HoldReason | null {
   if (s.heldServices[v.id]) return s.heldServices[v.id];
-  if (s.invoices.some((i) => i.customerId === v.customerId && i.suspended && isUnpaid(i))) return "payment";
-  return s.heldCustomers.includes(v.customerId) ? "manual" : null;
+  return s.invoices.some((i) => i.customerId === v.customerId && i.suspended && isUnpaid(i)) ? "payment" : null;
 }
 
 const customerName = (s: GameState, id: string) => s.customers.find((c) => c.id === id)?.name ?? id;

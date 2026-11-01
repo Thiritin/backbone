@@ -7,8 +7,6 @@ import { webDomain } from "../30-customers/domains";
 import { addressFor, homeAddress, requestAddress } from "../30-customers/addresses";
 import type { SalesRequest } from "../30-market/market";
 import { serviceHostname } from "../30-customers/hostnames";
-import { isSuspended, SUSPEND_HAPPINESS } from "../45-billing/billing";
-import { bump, createTicket, profileStats } from "../40-support/tickets";
 import type { ActionResult } from "./hardware";
 
 // who is the request the customer comes from; without one the address is drawn for the company's home city.
@@ -39,19 +37,5 @@ export function creditCustomer(s: GameState, customerId: string, amount: number)
   if (!c) return { ok: false, error: "error.unknownCustomer" };
   if (!Number.isFinite(amount) || amount <= 0) return { ok: false, error: "error.creditAmount" };
   c.credit = Math.round((c.credit + amount) * 100) / 100;
-  return { ok: true, id: c.id };
-}
-
-// Holds every service of the customer offline, or brings them back. The first hold costs happiness and brings a ticket, as an invoice suspension does.
-export function suspendCustomer(s: GameState, customerId: string, suspended: boolean): ActionResult {
-  const c = live(s, customerId);
-  if (!c) return { ok: false, error: "error.unknownCustomer" };
-  if (suspended === s.heldCustomers.includes(c.id)) return { ok: true, id: c.id };
-  const first = suspended && !isSuspended(s, c.id);
-  s.heldCustomers = suspended ? [...s.heldCustomers, c.id] : s.heldCustomers.filter((id) => id !== c.id);
-  if (first) {
-    bump(c, -SUSPEND_HAPPINESS[profileStats(c.profile).budget]);
-    createTicket(s, c, "billing").topic = "suspended";
-  }
   return { ok: true, id: c.id };
 }
