@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- Suspending an account now stops abuse notices about its site, and an open notice counts as taken down once the account is suspended.
 - Free shop systems such as OrderBocks and free shop modules can now be started while your account is in the red.
 - The Website card in the Marketing app now shows in your language, and its buttons sit at the bottom of the card.
 - Customers on a game title past its prime no longer get unhappy; their servers empty out and shrink, and some ask to move to a newer game, staying if your panel runs it and leaving if it does not.
