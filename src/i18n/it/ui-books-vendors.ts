@@ -2,7 +2,7 @@ import type { Dict } from "../lang";
 
 export default {
   "guide.step.books": () => "Installa un programma di contabilità",
-  "apps.guide.step.books": () => "Acquista un programma di contabilità nel Pear Store per emettere fatture e abbinare i pagamenti.",
+  "apps.guide.step.books": () => "Acquista un programma di contabilità sul sito del produttore per emettere fatture e abbinare i pagamenti.",
   "shop.shelf.Bookkeeping": () => "Contabilità",
   "sim.index.cat.bookkeeping": () => "Contabilità",
   "books-vendors.priceOnce": (p) => `${p.price} una tantum`,
@@ -26,4 +26,10 @@ export default {
   "ledger.bookModule.match-by-reference": (p) => `Licenza ${p.vendor} Abbina per causale`,
   "ledger.bookModule.hbci": (p) => `Licenza ${p.vendor} Home banking HBCI`,
   "error.updateOpen": () => "L'aggiornamento annuale non è pagato.",
+  "error.booksOffline": () => "Per scaricare il programma serve la linea internet.",
+  "error.booksDownloading": () => "Il programma è ancora in download.",
+  "error.booksNotDownloaded": () => "Scarica prima il programma.",
+  "books-vendors.download": () => "Scarica",
+  "books-vendors.downloading": (p) => `Download ${p.pct}%`,
+  "books-vendors.install": () => "Installa",
 } satisfies Dict;

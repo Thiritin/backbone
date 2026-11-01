@@ -14,10 +14,18 @@ import { quoteOrder } from "../src/sim/90-actions/orders";
 import { resolve } from "../src/sim/80-business/browser";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { sendInvoice } from "../src/sim/90-actions/billing";
-import { installBooks, runFeature, setSeats, upgradeBooks } from "../src/sim/90-actions/bookkeeping";
+import { buyBooks, installBooks, runFeature, setSeats, upgradeBooks } from "../src/sim/90-actions/bookkeeping";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { newGame as fixtureGame, readyGame, withServer } from "./fixtures";
+
+// Buys a program on its vendor's site and, for a desktop program, installs it once its download is done.
+function own(s: GameState, id: string, edition?: string) {
+  const r = buyBooks(s, id, edition);
+  if (!r.ok || !s.books.download) return r;
+  s.books.download.readyAt = s.hour;
+  return installBooks(s, id);
+}
 
 const at = (y: number, m: number, d: number, h = 10) => hourOf(new Date(Date.UTC(y, m - 1, d, h)));
 
@@ -53,7 +61,7 @@ function ledger(seed = 9) {
   Object.assign(s.transfers[0], { reference: "books.ref.invoice", params: { number: inv(b).number } });
   return { s, A: () => inv(a), B: () => inv(b), C: () => inv(c) };
 }
-const run = (s: GameState, vendor: string, edition: string) => { s.books = { vendor: vendor as never, installedAt: s.hour, edition, seats: 0 }; };
+const run = (s: GameState, vendor: string, edition: string) => { s.books = { vendor: vendor as never, installedAt: s.hour, edition, seats: 0, download: null }; };
 
 describe("editions", () => {
   it("lists every vendor's editions from smallest to largest, GnuCache free", () => {
@@ -69,21 +77,21 @@ describe("editions", () => {
 
   it("installs the edition asked for and upgrades a desktop licence for the difference", () => {
     const s = game();
-    expect(installBooks(s, "lexwear", "buchhalter")).toEqual({ ok: true });
+    expect(own(s, "lexwear", "buchhalter")).toEqual({ ok: true });
     expect(s.cash).toBe(5_000 - 249);
     expect(upgradeBooks(s, "financial-office-pro")).toEqual({ ok: true });
     expect(s.cash).toBe(5_000 - 899);
     expect(s.books.edition).toBe("financial-office-pro");
     expect(upgradeBooks(s, "buchhalter")).toEqual({ ok: false, error: "error.unknownEdition" });
     // Switching away and back costs nothing more for the licence already paid.
-    installBooks(s, "gnucache");
-    installBooks(s, "lexwear", "financial-office");
+    own(s, "gnucache");
+    own(s, "lexwear", "financial-office");
     expect(s.cash).toBe(5_000 - 899);
   });
 
   it("switches a browser plan's fee from the next month and bills its seats", () => {
     const s = game(2014);
-    installBooks(s, "lexoffize");
+    own(s, "lexoffize");
     expect(s.payables.at(-1)).toMatchObject({ name: "lexoffize", amount: 7 });
     expect(upgradeBooks(s, "l")).toEqual({ ok: true });
     expect(setSeats(s, 2)).toEqual({ ok: true });
@@ -96,7 +104,7 @@ describe("editions", () => {
 
   it("sells desktop seats once and only with an edition that has them", () => {
     const s = game();
-    installBooks(s, "wizo", "m");
+    own(s, "wizo", "m");
     expect(setSeats(s, 1)).toEqual({ ok: false, error: "error.unknownEdition" });
     upgradeBooks(s, "l");
     const cash = s.cash;
@@ -217,7 +225,7 @@ describe("browser programs", () => {
 describe("GnuCache", () => {
   it("has no quotes, and the order ticket takes a typed price instead", () => {
     const s = readyGame(9);
-    installBooks(s, "gnucache");
+    own(s, "gnucache");
     expect(s.books.edition).toBe("free");
     expect(hasFeature(s, "quotes")).toBe(false);
     expect(hasFeature(s, "reports")).toBe(true);
@@ -327,14 +335,14 @@ describe("Finance in old saves", () => {
   it("installs Books in place of Finance, with GnuCache when no program ran", () => {
     const raw = JSON.parse(serialize(game()));
     raw.installed = [...raw.installed.filter((id: string) => id !== "Books"), "Finance"];
-    raw.books = { vendor: null, installedAt: 0, edition: null, seats: 0 };
+    raw.books = { vendor: null, installedAt: 0, edition: null, seats: 0, download: null };
     const s = deserialize(JSON.stringify(raw));
     expect(s.installed).toContain("Books");
     expect(s.installed).not.toContain("Finance");
     expect(s.books).toMatchObject({ vendor: "gnucache", edition: "free", seats: 0 });
 
     raw.installed = [...raw.installed, "Books"];
-    raw.books = { vendor: "wizo", installedAt: 0, edition: "m", seats: 0 };
+    raw.books = { vendor: "wizo", installedAt: 0, edition: "m", seats: 0, download: null };
     expect(deserialize(JSON.stringify(raw)).books).toMatchObject({ vendor: "wizo", edition: "m" });
   });
 });

@@ -173,7 +173,7 @@ describe("work", () => {
     s.invoices = [inv(1, -8 * 24), { ...inv(2, -15 * 24), reminders: [-24] }];
     s.billingRules.autoRemind = true;
     // Two seats on a plan without automatic reminders.
-    s.books = { vendor: "sevdeck", installedAt: 0, edition: "rechnung", seats: 2 };
+    s.books = { vendor: "sevdeck", installedAt: 0, edition: "rechnung", seats: 2, download: null };
     const book = hireOne(s, "bookkeeper"), acc = hireOne(s, "accountant");
     train(s, book);
     runTo(s, MONDAY_9 + 1);

@@ -3,7 +3,7 @@ import type { Dict } from "./lang";
 // The bookkeeping programs in the Pear Store, their fees, their vendors' sites and the Getting started step.
 export default {
   "guide.step.books": () => "Install a bookkeeping program",
-  "apps.guide.step.books": () => "Buy a bookkeeping program in the Pear Store to write invoices and match payments.",
+  "apps.guide.step.books": () => "Buy a bookkeeping program on its maker's website to write invoices and match payments.",
   "shop.shelf.Bookkeeping": () => "Bookkeeping",
   "sim.index.cat.bookkeeping": () => "Bookkeeping",
   "books-vendors.priceOnce": (p) => `${p.price} once`,
@@ -27,4 +27,10 @@ export default {
   "ledger.bookModule.match-by-reference": (p) => `${p.vendor} Match by reference licence`,
   "ledger.bookModule.hbci": (p) => `${p.vendor} HBCI online banking licence`,
   "error.updateOpen": () => "The yearly update is unpaid.",
+  "error.booksOffline": () => "You need the internet line to download the program.",
+  "error.booksDownloading": () => "The program is still downloading.",
+  "error.booksNotDownloaded": () => "Download the program first.",
+  "books-vendors.download": () => "Download",
+  "books-vendors.downloading": (p) => `Downloading ${p.pct}%`,
+  "books-vendors.install": () => "Install",
 } satisfies Dict;

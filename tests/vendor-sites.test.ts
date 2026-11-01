@@ -35,7 +35,7 @@ function books(seed = 9) {
 describe("bookkeeper", () => {
   // A per-seat plan with no automation of its own, so the clerks do every chore.
   const clerk = (s: GameState, n = 1) => {
-    s.books = { vendor: "sevdeck", installedAt: s.hour, edition: "rechnung", seats: n };
+    s.books = { vendor: "sevdeck", installedAt: s.hour, edition: "rechnung", seats: n, download: null };
     for (let i = 0; i < n; i++) {
       const c = s.candidates.find((x) => x.role === "bookkeeper" && x.arriveAt <= s.hour)
         ?? { ...s.candidates[0], id: `cand${i}`, role: "bookkeeper" as const, arriveAt: 0, leaveAt: 1e9 };
