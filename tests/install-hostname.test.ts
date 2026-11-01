@@ -23,15 +23,15 @@ describe("installer hostname", () => {
   it("takes a typed hostname and refuses bad or taken ones", () => {
     const s = readyGame(7), id = atInstaller(s);
     const other = s.devices.find((d) => d.id !== id && d.hostname)!.hostname!;
-    expect(err(installOs(s, id, "lunix", undefined, undefined, "Web_1"))).toBe("error.badHostname");
-    expect(err(installOs(s, id, "lunix", undefined, undefined, "-web"))).toBe("error.badHostname");
-    expect(err(installOs(s, id, "lunix", undefined, undefined, other))).toBe("error.hostnameTaken");
-    expect(installOs(s, id, "lunix", undefined, undefined, "node090").ok).toBe(true);
+    expect(err(installOs(s, id, "lunix", undefined, undefined, undefined, "Web_1"))).toBe("error.badHostname");
+    expect(err(installOs(s, id, "lunix", undefined, undefined, undefined, "-web"))).toBe("error.badHostname");
+    expect(err(installOs(s, id, "lunix", undefined, undefined, undefined, other))).toBe("error.hostnameTaken");
+    expect(installOs(s, id, "lunix", undefined, undefined, undefined, "node090").ok).toBe(true);
   });
 
   it("names the server after install", () => {
     const s = readyGame(7), id = atInstaller(s);
-    expect(installOs(s, id, "lunix", undefined, undefined, "db-1").ok).toBe(true);
+    expect(installOs(s, id, "lunix", undefined, undefined, undefined, "db-1").ok).toBe(true);
     expect(s.devices.find((d) => d.id === id)!.hostname).toBe("db-1");
   });
 });
