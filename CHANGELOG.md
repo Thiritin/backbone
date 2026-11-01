@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- Customers only rarely transfer a few cents too little or a rounded-down amount.
 - ClientExit has its own look in every era, from a 2005 table admin to the refreshed 7.0 console, and sells its keys, renewals and upgrades at clientexit.com.
 - Ubersmyth has its own website at ubersmyth.com with pricing, releases, add-ons and your keys, and its admin, store and client portal change their look with each major version, from the 2006 tabbed ironworks to the 2024 sectioned workspace.
 - WHMCache has its own website at whmcache.com with pricing, releases and My account, and its admin, store and client area change their look with each major version.
