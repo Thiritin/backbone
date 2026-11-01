@@ -6,7 +6,7 @@ import { serviceFqdn } from "../30-customers/hostnames";
 import type { Customer } from "../30-customers/customers";
 import { EXTENSION_DAYS } from "../45-billing/billing";
 import type { GameState } from "../50-state";
-import { senderById, TAKEDOWN_HOURS } from "./notices";
+import { senderName, TAKEDOWN_HOURS } from "./notices";
 import { monthlyValue, type Reply, type Ticket } from "./tickets";
 
 // Each outgoing email has this many wordings in en.ts (reply.<what>.0 to .2).
@@ -30,7 +30,7 @@ export function outgoing(s: GameState, t: Ticket, c: Customer | undefined, what:
     params: {
       ...companyParams(s), name: c && PERSONS.includes(c.profile) ? c.name.split(" ")[0] : "", service: v?.label ?? "", hostname: serviceFqdn(s, v), domain: v?.domain ?? "",
       credit: cents(0.1 * monthly), once: updatePrice(s.rates.webHosting, "updateOnce"), managed: updatePrice(s.rates.webHosting, "updates"), refund: cents(monthly), days: EXTENSION_DAYS, hours: TAKEDOWN_HOURS,
-      url: t.notice?.url ?? "", sender: t.notice ? senderById(t.notice.sender).name : "",
+      url: t.notice?.url ?? "", sender: t.notice ? senderName(t.notice.sender) : "",
     },
   };
 }

@@ -2,7 +2,7 @@
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { softwareById } from "../10-catalog/platforms";
-import { balances, datastoreOn, diskMovesLive, insideVm, isOwnVm, liveBetween, lostDisk, moveControlPlaneOff, pickNode, type Cluster, type Workload } from "./cluster";
+import { balances, datastoreOn, memberUp, diskMovesLive, insideVm, isOwnVm, liveBetween, lostDisk, moveControlPlaneOff, pickNode, type Cluster, type Workload } from "./cluster";
 import { working } from "./status";
 import { nodeUsage } from "./usage";
 
@@ -24,7 +24,7 @@ const servicesIn = (s: GameState, w: Workload): string[] =>
 // that fits nowhere stays down, and the player hears about it once. On a hypervisor with datastores only a VM whose disk is
 // on a working datastore restarts; one with its disk on the dead node waits for the node. A template stays where it is.
 function failover(s: GameState, c: Cluster, events: SimEvent[]) {
-  const dead = new Set(c.nodes.filter((n) => !working(s, n.deviceId)).map((n) => n.deviceId));
+  const dead = new Set(c.nodes.filter((n) => !memberUp(s, n)).map((n) => n.deviceId));
   if (!dead.size) return;
   if (c.controlPlane && dead.has(c.controlPlane)) moveControlPlaneOff(s, c.id, c.controlPlane);
   let moved = 0, stuck = 0;
