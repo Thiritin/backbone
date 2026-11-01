@@ -33,6 +33,7 @@ import type { ActionResult } from "./hardware";
 import { migrateWorkload } from "./vms";
 import { buyLicenses, licenseDue } from "../85-products/products";
 import { sizeOf } from "../30-market/spec";
+import { ADMIN, quotaBlock, sizeAdd } from "../60-infra/projects";
 import { quorumBlock } from "../60-infra/quorum";
 import { editionAllows, poolRoom } from "../60-infra/vmwhere";
 import { cephCapacity, cephOn, cephUsed } from "../60-infra/replica";
@@ -107,18 +108,19 @@ export function installHypervisor(s: GameState, deviceId: string, platformId: st
 
 // Creates one of the player's own VMs on a hypervisor cluster, empty until software is installed in it. A cluster still
 // installing its hypervisor takes the VM.
-export function createVm(s: GameState, clusterId: string, size: Resources, poolId: string | null = null): ActionResult {
+export function createVm(s: GameState, clusterId: string, size: Resources, poolId: string | null = null, projectId: string = ADMIN): ActionResult {
   const c = s.clusters.find((x) => x.id === clusterId);
   if (!c) return fail("error.unknownCluster");
   if (c.kind !== "cloud" || (!c.platform && c.switching?.kind !== "cloud")) return fail("error.needsPlatform");
   if (c.platform && !controlPlaneUp(s, c)) return fail("error.controlPlaneDown");
   { const q = quorumBlock(s, c); if (q) return fail(q); }
   if (KEYS.some((k) => !Number.isFinite(size[k]) || size[k] < PANEL_VM_MIN[k])) return fail("error.vmSize");
+  if (c.platform === "openstash") { const b = quotaBlock(s, c, projectId, sizeAdd(size)); if (b) return fail(b); }
   if (cephOn(c) && cephUsed(s, c) + size.diskGb > cephCapacity(s, c)) return fail("error.cephFull");
   if (poolId !== null && !poolRoom(s, c, poolId, size)) return fail(c.pools.some((p) => p.id === poolId) ? "error.poolFull" : "error.unknownPool");
   const disk = withDatastore(s, c, size), node = pickNode(s, c, disk, null, c.drs === "partial" || c.drs === "full" ? "spread" : c.placement);
   if (!node) return fail("error.noCapacity");
-  const vm = workload(s, "", { ...disk, clusterId: c.id, deviceId: node, os: null, software: [], ...(poolId && { poolId }), ...(c.platform === "openstash" && { groupIds: ["default"] }) });
+  const vm = workload(s, "", { ...disk, clusterId: c.id, deviceId: node, os: null, software: [], ...(poolId && { poolId }), ...(c.platform === "openstash" && { groupIds: ["default"], ...(projectId !== ADMIN && { projectId }) }) });
   s.workloads = [...s.workloads, vm];
   return { ok: true, id: vm.id };
 }
@@ -208,6 +210,7 @@ export function resizeVm(s: GameState, vmId: string, size: Resources): ActionRes
   const bad = sizeError(size, { vcpu: 0, ramGb: 0, diskGb: 0 });
   if (bad) return fail(bad);
   { const pc = s.clusters.find((x) => x.id === vm.clusterId); if (pc && vm.poolId && !poolRoom(s, pc, vm.poolId, size, vm.id)) return fail("error.poolFull"); }
+  { const pc = s.clusters.find((x) => x.id === vm.clusterId); if (pc?.platform === "openstash") { const b = quotaBlock(s, pc, vm.projectId ?? ADMIN, sizeAdd(size, vm)); if (b) return fail(b); } }
   const d = vm.deviceId ? s.devices.find((x) => x.id === vm.deviceId) : undefined;
   if ((d && !nodeTakes(s, d, { ...size, datastore: vm.datastore }, vm)) || (vm.datastore && !datastoreFits(s, vm.datastore, size.diskGb - vm.diskGb))) return fail("error.nodeFull");
   const c = s.clusters.find((x) => x.id === vm.clusterId);
