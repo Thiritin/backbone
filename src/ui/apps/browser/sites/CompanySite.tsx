@@ -24,7 +24,7 @@ const ICON: Record<Product, LucideIcon> = {
   dedicated: Cpu, colocation: Building2, gpu: Zap, ssl: ShieldCheck, domain: Globe,
 };
 const CYCLE_LABEL: Record<Cycle, string> = {
-  monthly: t("shop-admin.cycleMonthly"), quarterly: t("shop-admin.cycleQuarterly"), annual: t("shop-admin.cycleAnnual"), biennial: t("shop-admin.cycleBiennial"),
+  monthly: t("shop-admin.cycleMonthly"), quarterly: t("shop-admin.cycleQuarterly"), semiannual: t("shop-admin.cycleSemiannual"), annual: t("shop-admin.cycleAnnual"), biennial: t("shop-admin.cycleBiennial"), triennial: t("shop-admin.cycleTriennial"),
 };
 const LABEL: Record<SitePage, string> = {
   home: t("browser-sites-1.co.nav.home"), products: t("browser-sites-1.co.nav.products"), pricing: t("browser-sites-1.co.nav.pricing"), network: t("browser-sites-1.co.nav.network"), status: t("browser-sites-1.co.nav.status"), legal: t("browser-sites-1.co.nav.legal"), contact: t("browser-sites-1.co.nav.contact"), kb: t("browser-sites-1.co.nav.kb"), helpdesk: t("browser-sites-1.co.nav.helpdesk"), about: t("browser-sites-1.co.nav.about"), support: t("browser-sites-1.co.nav.support"),

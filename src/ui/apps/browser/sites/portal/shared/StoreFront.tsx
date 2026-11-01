@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { t } from "../../../../../../i18n/en";
 import { euroCents } from "../../../../../../sim/00-core/money";
 import { yearOf } from "../../../../../../sim/00-core/time";
@@ -101,14 +102,16 @@ function Summary({ it, cycle, size }: { it: Item; cycle: Cycle; size: number }) 
   );
 }
 
-// Contact fields prefilled from the company; the order button stays disabled in the preview.
+// Contact fields prefilled from the company; completing the order only shows the confirmation and changes nothing in the game.
 function Checkout({ game }: { game: GameState }) {
+  const [placed, setPlaced] = useState(false);
+  if (placed) return <p className="shop-checkout" role="status">{t("shop-store.orderPlaced")}</p>;
   return (
-    <form className="shop-checkout" onSubmit={(e) => e.preventDefault()}>
+    <form className="shop-checkout" onSubmit={(e) => { e.preventDefault(); setPlaced(true); }}>
       <h3>{t("shop-store.contact")}</h3>
       <label>{t("shop-store.company")}<input readOnly value={game.company.name} /></label>
       <label>{t("shop-store.email")}<input readOnly value={game.company.domain ? `info@${game.company.domain}` : ""} /></label>
-      <button className="btn primary" disabled>{t("shop-store.completeOrder")}</button>
+      <button className="btn primary">{t("shop-store.completeOrder")}</button>
     </form>
   );
 }

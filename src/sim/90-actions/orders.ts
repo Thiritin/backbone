@@ -4,6 +4,8 @@ import type { SalesRequest } from "../30-market/market";
 import type { Address } from "../30-customers/addresses";
 import { canAutomate, draftInvoice, firstLines, invoiceOf, issueInvoice, resize, shopRegisters, stepError, stepMinutes, type OrderStep } from "../30-market/manual";
 import { offerPrice, setupFee } from "../30-market/spec";
+import { cyclesFor, discountOf } from "../30-market/cycles";
+import type { Cycle } from "../10-catalog/cycles";
 import { carryForward, type Quote } from "../30-market/quotes";
 import { orderOf } from "../30-market/orders";
 import { answerAt, editRequest, say } from "../30-market/sales";
@@ -82,13 +84,18 @@ export function provisionOrder(s: GameState, ticketId: string, route: string, op
 }
 
 // Sends the customer a monthly price and a setup fee (the line's rate where omitted); they answer within their reply time.
-export function quoteOrder(s: GameState, ticketId: string, monthly: number, setup?: number): ActionResult {
+// A cycle other than monthly offers a prepaid term at the shop's discount; the customer weighs the discounted monthly price.
+export const effectiveMonthly = (s: GameState, monthly: number, cycle?: Cycle): number =>
+  Math.round(monthly * (cycle ? 1 - discountOf(s, cycle) : 1) * 100) / 100;
+
+export function quoteOrder(s: GameState, ticketId: string, monthly: number, setup?: number, cycle?: Cycle): ActionResult {
   const t = s.tickets.find((x) => x.id === ticketId), r = t && orderOf(s, t);
   if (!r) return fail("error.unknownRequest");
   if (!validPrice(monthly, r.reference)) return fail("error.quotePrice");
   if (setup !== undefined && !validPrice(setup + 1, r.reference)) return fail("error.quotePrice");
-  const before = { quote: r.quote, setup: r.setup };
-  editRequest(s, r.id, () => ({ quote: Math.round(monthly * 100) / 100, setup: setup === undefined ? undefined : Math.round(setup * 100) / 100 }));
+  if (cycle && (cycle === "monthly" || !cyclesFor(s, r.product).includes(cycle))) return fail("error.cycleNotSupported");
+  const before = { quote: r.quote, setup: r.setup, cycle: r.cycle };
+  editRequest(s, r.id, () => ({ quote: effectiveMonthly(s, monthly, cycle), cycle, setup: setup === undefined ? undefined : Math.round(setup * 100) / 100 }));
   const done = step(s, ticketId, "quote");
   if (!done.ok) editRequest(s, r.id, () => before);
   return done;
@@ -106,7 +113,7 @@ export function createQuote(s: GameState, ticketId: string): ActionResult {
   const monthly = r.counter ?? Math.round(offerPrice(s, r.product, r.spec, r.sla) * 100) / 100, setup = r.setup ?? setupFee(s, r.product);
   const q: Quote = {
     id: `quo${s.nextId++}`, number: `${yearOf(s.hour)}-${String(s.quotes.length + 1).padStart(4, "0")}`, customerId: r.customerId, ticketId,
-    lines: firstLines(s, r, monthly, setup), monthly, setup, status: "draft", sentAt: null, createdAt: s.hour,
+    lines: firstLines(s, r, monthly, setup, null), monthly, setup, status: "draft", sentAt: null, createdAt: s.hour,
   };
   s.quotes = [...s.quotes, q];
   return { ok: true, id: q.id };
@@ -119,7 +126,17 @@ export function editQuote(s: GameState, quoteId: string, monthly: number, setup:
   if (!q || !r) return fail("error.quoteSentAlready");
   if (!validPrice(monthly, r.reference) || !validPrice(setup + 1, r.reference)) return fail("error.quotePrice");
   const m = Math.round(monthly * 100) / 100, f = Math.round(setup * 100) / 100;
-  s.quotes = s.quotes.map((x) => (x.id === q.id ? { ...x, monthly: m, setup: f, lines: firstLines(s, r, m, f) } : x));
+  s.quotes = s.quotes.map((x) => (x.id === q.id ? { ...x, monthly: m, setup: f, lines: firstLines(s, r, effectiveMonthly(s, m, x.cycle), f, x.cycle ?? null) } : x));
+  return { ok: true };
+}
+
+// Offers a draft quote as a prepaid term, or back as month-to-month.
+export function setQuoteCycle(s: GameState, quoteId: string, cycle: Cycle | null): ActionResult {
+  const q = draftQuote(s, quoteId), t = q && s.tickets.find((x) => x.id === q.ticketId), r = t && orderOf(s, t);
+  if (!q || !r) return fail("error.quoteSentAlready");
+  if (cycle && (cycle === "monthly" || !cyclesFor(s, r.product).includes(cycle))) return fail("error.cycleNotSupported");
+  const c = cycle ?? undefined;
+  s.quotes = s.quotes.map((x) => (x.id === q.id ? { ...x, cycle: c, lines: firstLines(s, r, effectiveMonthly(s, x.monthly, c), x.setup, c ?? null) } : x));
   return { ok: true };
 }
 
@@ -128,7 +145,7 @@ export function attachQuote(s: GameState, quoteId: string, ticketId: string): Ac
   const q = draftQuote(s, quoteId);
   if (!q) return fail("error.quoteSentAlready");
   if (q.ticketId !== ticketId) return fail("error.quoteOtherOrder");
-  const done = quoteOrder(s, ticketId, q.monthly, q.setup);
+  const done = quoteOrder(s, ticketId, q.monthly, q.setup, q.cycle);
   if (done.ok) s.quotes = s.quotes.map((x) => (x.id === q.id ? { ...x, status: "sent", sentAt: s.hour } : x));
   return done;
 }

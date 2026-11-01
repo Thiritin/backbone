@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { marketPrice } from "../src/sim/10-catalog/products";
 import { yearOf } from "../src/sim/00-core/time";
 import { termPrice } from "../src/sim/30-market/cycles";
+import { acceptChance } from "../src/sim/30-market/market";
+import { attachQuote, createQuote, effectiveMonthly, setQuoteCycle } from "../src/sim/90-actions/orders";
 import { emailRate, orderLead } from "../src/sim/30-market/orders";
 import { offerPrice } from "../src/sim/30-market/spec";
 import { discountFor } from "../src/sim/80-business/marketing";
@@ -52,5 +54,38 @@ describe("email quotes and option discounts", () => {
     expect(setOptionDiscount(s, "biennial", 0.1)).toMatchObject({ ok: false, error: "error.cycleNotSupported" });
     expect(setOptionDiscount(s, "annual", null).ok).toBe(true);
     expect(termPrice(s, 10, "annual")).toBe(108);
+  });
+});
+
+describe("email quote with a billing cycle", () => {
+  it("offers a prepaid term at the discount and the customer weighs the discounted price", () => {
+    const s = readyGame(4);
+    s.cash = 1e6;
+    setUpChannel(s, "website");
+    chooseShop(s, "handRolled");
+    s.shop.variant = "whmCache";
+    const { r } = quoted(s);
+    const t = s.tickets.find((x) => x.id === r.ticketId)!;
+    const qid = (createQuote(s, t.id) as { id: string }).id;
+    expect(setQuoteCycle(s, qid, "monthly")).toMatchObject({ ok: false, error: "error.cycleNotSupported" });
+    expect(setQuoteCycle(s, qid, "triennial").ok).toBe(true);
+    const q = s.quotes.find((x) => x.id === qid)!;
+    expect(q.lines.find((l) => l.key === "invoice.line.firstTerm")!.amount).toBe(Math.round(effectiveMonthly(s, q.monthly, "triennial") * 36 * 100) / 100);
+    expect(attachQuote(s, qid, t.id).ok).toBe(true);
+    const sent = s.sales.requests.find((x) => x.id === r.id)!;
+    expect(sent.cycle).toBe("triennial");
+    expect(sent.quote).toBe(Math.round(q.monthly * 0.8 * 100) / 100);
+    expect(acceptChance(s, sent, sent.quote!)).toBeGreaterThan(acceptChance(s, sent, q.monthly));
+  });
+
+  it("refuses a cycle the shop does not sell", () => {
+    const s = readyGame(4);
+    s.cash = 1e6;
+    setUpChannel(s, "website");
+    chooseShop(s, "handRolled");
+    const { r } = quoted(s);
+    const qid = (createQuote(s, r.ticketId!) as { id: string }).id;
+    expect(setQuoteCycle(s, qid, "triennial")).toMatchObject({ ok: false, error: "error.cycleNotSupported" });
+    expect(setQuoteCycle(s, qid, "annual").ok).toBe(true);
   });
 });
