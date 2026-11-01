@@ -8,12 +8,13 @@ import { renewDomain } from "../../../sim/90-actions/orders";
 import { t } from "../../../i18n/en";
 import { menuOn } from "../../desktop/ContextMenu";
 import { useStore } from "../../store";
+import { useBooks } from "./view";
 import { formatDay } from "../billing/format";
 import { monthYear } from "../support/labels";
 import { NEW, NewCustomer } from "./NewCustomer";
 
 export function CustomersTab({ focus }: { focus: string | null }) {
-  const game = useStore((s) => s.game), act = useStore((s) => s.act);
+  const game = useBooks(), act = useStore((s) => s.act);
   const list = game.customers.filter((c) => !c.sponsor).sort((a, b) => Number(a.churnedAt !== null) - Number(b.churnedAt !== null) || b.since - a.since);
   const [selected, setSelected] = useState<string | null>(focus?.startsWith(NEW) ? null : focus ?? list[0]?.id ?? null);
   const [adding, setAdding] = useState<string | null>(focus?.startsWith(NEW) ? focus.slice(NEW.length) : null);
