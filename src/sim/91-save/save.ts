@@ -24,7 +24,7 @@ import { fillHostnames } from "../30-customers/hostnames";
 import { fillRegistrar } from "../30-customers/registrar";
 import { fillDesign, fillLaunch, fillLines } from "../80-business/website";
 import { fillSpecs } from "./specs";
-import { fillMachines } from "./machines";
+import { fillMachines, fillVersions } from "./machines";
 import { legacyLeads } from "./leads";
 
 // ponytail: plain JSON in localStorage; compress once saves approach the ~5 MB limit.
@@ -121,6 +121,8 @@ export function deserialize(raw: string): GameState {
     services: (data.services ?? []).map((v) => ({ ...v, zone: v.zone ?? null, sla: v.sla ?? "basic" })),
     // Saves from before clusters keep their services unplaced, which leaves them online.
     sales: { ...base.sales, ...data.sales },
+    // Rivals saved before small rivals and reviews.
+    competitors: (data.competitors ?? base.competitors).map((r) => ({ ...r, weak: r.weak ?? 0, reviews: r.reviews ?? [] })),
     shop: { ...base.shop, ...data.shop },
     used: (data.used ?? base.used).filter(known).map((l) => ({ ...l, model: RENAMED_MODELS[l.model] ?? l.model, brand: maker(RENAMED_MODELS[l.model] ?? l.model, l.brand), ...(l.device && { device: { ...l.device, brand: maker(l.device.model, l.device.brand) } }) })),
     staff: (data.staff ?? []).map(({ hours: _h, hoursFrom: _f, ...e }: Employee & { hours?: number; hoursFrom?: number }) => ({ ...e, location: e.location ?? null, team: e.team ?? "office", worked: e.worked ?? 0 })),
@@ -138,6 +140,7 @@ export function deserialize(raw: string): GameState {
   // A save from before accounts opened on the bank's site holds the savings as cash; they come back with the account.
   if ((data.version ?? 1) < 4 && !s.registration && !s.bank && s.cash >= savingsOf(s)) s.cash -= savingsOf(s);
   shelveRouter(s);
+  fillVersions(s);
   // Saves from before licence keys; machines from before one-time licenses hold theirs for free, since the fee was never charged.
   if (!data.trials) legacyLicences(s, (data.licenses ?? []) as unknown as Parameters<typeof legacyLicences>[1]);
   const media = data.media ?? base.media;

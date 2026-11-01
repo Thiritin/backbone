@@ -6,10 +6,12 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - Routers you mount in a datacenter now run their own network behind the provider's handoff with a WebFigg or J-Webb web interface, and the desk reaches that network only once you switch on the router's VPN.
 - Layer 3 switches can route between VLANs, every VM takes its own address from the local network's DHCP pool so a full pool stops new VPS sales, and enterprise customers need a private network carried as a VLAN to every server their VMs run on.
+- Small hosting companies now open in one or two cities, collect reviews like the big ones, and go bust or get bought when they win too few customers, with each step in the news.
 - Competitors now change over the years: they move to new server generations, add features and have outages that make the news, the budget host cuts its prices each year, and the Market app charts each city's share of new customers.
 - A new game now starts with no money: you first open a business account on a bank's website, where your €3,500 savings arrive, and then register the company at the trade office for a €40 fee paid by bank transfer.
 - Used hardware now resells for less than it cost new, and buyers on the board and on eBuy no longer pay more than its resale value.
 - A part taken out of a server takes its share of the server's value along, so stripping a server and selling the pieces brings in the same as selling it whole.
+- Installed software now runs a real version number, and a new install takes the newest release out at the time.
 - The Marketing app has a Domain tile whose Buy button opens the domain resellers in the Yahoy! Directory, and the domains of other companies in the game can no longer be registered as your own.
 - Websites in the browser fill the whole window again instead of a narrow page.
 - Right-click a browser tab to close it, close all other tabs, or close every tab to its left or right.

@@ -34,7 +34,7 @@ export function demand(s: GameState, city: string): Demand[] {
       if (!w) continue;
       const total = market * profileStats(p).mix * w;
       const mine = flows.some((f) => f.profile === p) ? player(p, product, w, total) : 0;
-      const sellers = rivals(p, product, openRivals(s)), us = sellers.map((c) => Math.exp(rivalValue(p, c) / CHOICE_TAU)), sum = us.reduce((n, e) => n + e, 0);
+      const sellers = rivals(p, product, openRivals(s, city)), us = sellers.map((c) => Math.exp(rivalValue(p, c) / CHOICE_TAU)), sum = us.reduce((n, e) => n + e, 0);
       sellers.forEach((c, i) => others.set(c.name, (others.get(c.name) ?? 0) + ((total - mine) * us[i]) / sum));
       buyers += total;
       you += mine;
