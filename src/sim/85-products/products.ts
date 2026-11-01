@@ -7,8 +7,8 @@ import { genOf, modelById } from "../10-catalog/hardware";
 import { balancerIn, isService, softwareById } from "../10-catalog/platforms";
 import { slowTolerance } from "../10-catalog/usage";
 import { channelOf, EDGE_HOWTO } from "../60-infra/channel";
-import { assignedKey, assignKey, installedVersion, isLicensed, issueKey, trialDaysOf, panelKey, panelMachine, panelStatus, renewTerms, startTrial, tierOf, updateKey } from "../60-infra/licence";
-import { LAPSE_GRACE_DAYS, tiersOf, topTier, type LicenceTier } from "../10-catalog/licence-tiers";
+import { hasTrialTiers, assignedKey, assignKey, installedVersion, isLicensed, issueKey, panelKey, panelMachine, panelStatus, renewTerms, startTrial, tierOf, updateKey } from "../60-infra/licence";
+import { LAPSE_GRACE_DAYS, topTier, type LicenceTier } from "../10-catalog/licence-tiers";
 import { APP_SUITE_FEE, licensingAt, serverOsAt, serverOsById, type LicenseEra, type LicenseKind, type ServerOsId } from "../10-catalog/server-os";
 import { homeLineById } from "../20-world/datacenters";
 import type { Customer, Product } from "../30-customers/customers";
@@ -94,7 +94,7 @@ const oncePrice = (s: GameState, machineId: string, x: Licensed, perSocket: bool
 // The licensed OS and software the machine holds no key for, with their price; a licensed panel with a trial starts on it instead.
 const owed = (s: GameState, machineId: string, osId: ServerOsId | null, swId: string | null): [Licensed, number][] =>
   ([...(osId ? [[serverOsById(osId), false]] : []), ...(swId ? [[softwareById(swId), true]] : [])] as [Licensed, boolean][])
-    .filter(([x]) => isLicensed(x.id) && !(tiersOf(x.id).length && trialDaysOf(x.id) !== null) && !assignedKey(s, machineId, x.id))
+    .filter(([x]) => isLicensed(x.id) && !hasTrialTiers(x.id) && !assignedKey(s, machineId, x.id))
     .map(([x, perSocket]) => [x, oncePrice(s, machineId, x, perSocket)]);
 
 // What installing the OS or the software on the machine costs at once; a machine that does not exist yet is a new VM.
