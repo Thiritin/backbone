@@ -12,12 +12,11 @@ import { matchTransfer } from "../src/sim/90-actions/billing";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { buyLicence, registerLicence } from "../src/sim/90-actions/licences";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
-import { chooseShop } from "../src/sim/90-actions/shop";
 import { buyShopLink, importFromShop } from "../src/sim/90-actions/shoplink";
 import { resolve } from "../src/sim/80-business/browser";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { tick } from "../src/sim/88-tick/tick";
-import { automate, readyGame } from "./fixtures";
+import { automate, readyGame, installWithKey } from "./fixtures";
 
 const web = { product: "webHosting" as const, size: 1, sla: "basic" as const };
 
@@ -32,7 +31,7 @@ function shopGame(seed = 8, link = false): GameState {
   s.cash = 1e6;
   setUpChannel(s, "website");
   s.unlocks = [...s.unlocks, "shops"];
-  expect(chooseShop(s, "modemBill").ok).toBe(true);
+  installWithKey(s, "modemBill");
   s.hour += SHOP_SETUP_HOURS;
   s.modules = [...s.modules, "paypail"];
   prefer({ transfer: 1 });

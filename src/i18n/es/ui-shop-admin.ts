@@ -33,7 +33,6 @@ export default {
   "shop-admin.menuSetup": () => "Configuración",
   "shop-admin.moduleName": () => "Nombre del módulo",
   "shop-admin.none": () => "Ninguno",
-  "shop-admin.openAdmin": () => "Abrir administración",
   "shop-admin.options": () => "Opciones configurables",
   "shop-admin.packageName": () => "Nombre del paquete",
   "shop-admin.password": () => "Contraseña",

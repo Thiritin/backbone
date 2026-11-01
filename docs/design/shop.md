@@ -18,7 +18,7 @@ The website stays the marketing presentation of product lines (Marketing > Produ
 
 - New research "Shop systems", tier 1, 60 know-how, 4 days, no prerequisite. A first year yields about 300 know-how, so it is reachable in the first months.
 - The shop runs on the website's host (`setSiteHost`). While the site is down the shop takes no orders and leads behave as if there were no shop.
-- Choosing a shop replaces the current one. Switching takes 3 days of setup, during which only email orders arrive. A switch pays the new variant's setup again; owned licences of the old one are lost.
+- A shop key is bought on the vendor's website in the Browser. The shop is installed from the software page of a panel host in its console, by picking the variant and entering a key, or without one on the vendor's trial. Installing another variant replaces the current one. Switching takes 3 days of setup, during which only email orders arrive; keys of the old variant stay in My account.
 - Old saves with the hand-rolled order form load with no shop, its custom scripts dropped and email orders on.
 
 ### 2.2 Modules
@@ -136,10 +136,10 @@ Missing, with the year it appeared and its value to the game:
 
 Each milestone lands on main with seeded tests, `newGame` defaults, `deserialize` fills and a CHANGELOG bullet.
 
-1. **Shop catalog and choice.** Catalog of variants and modules in `src/sim/10-catalog/shops.ts`; research "Shop systems"; state `s.shop` (variant, owned modules, switch timer); actions `chooseShop`, `buyModule` in `src/sim/90-actions/shop.ts`; licence billing. The first variants are the pun-named systems of section 2.3.
+1. **Shop catalog and choice.** Catalog of variants and modules in `src/sim/10-catalog/shops.ts`; research "Shop systems"; state `s.shop` (variant, owned modules, switch timer); actions `installShop`, `buyModule` in `src/sim/90-actions/shop.ts`; licence billing. The first variants are the pun-named systems of section 2.3.
 2. **Stock limits.** Stock setting per line, reservation on order, sold-out visitors instead of lost sales, `autoOrders` routed through modules.
 3. **Server groups.** Group state and actions (`createGroup`, `addToGroup`, `removeFromGroup`, `setGroupSale`, `setGroupDeploy`); `targetFor` filtering; auto stock from group capacity and reserve.
-4. **Shop UI.** Marketing, Shop holds the variant choice, modules and stock (built). Server groups join it with milestone 3. A styled admin console per variant in the Browser can follow.
+4. **Shop UI.** The shop is installed from a panel host's software page and run from its admin at `portal.<company domain>/admin`: stock per line under Options, server groups and modules under Servers, payment methods under Invoices (built). The Marketing app has no shop section.
 5. **Software-level cordon, drain, evacuate.** Per-installation `setNodeState`, evacuate action, console buttons, removal from the Locations device menu, technician task moved to an admin task.
 6. **Era events.** ModemBill sunset, WHMCache 2012 breach and 2020 pricing, BoxBillin' abandonment and revival.
 

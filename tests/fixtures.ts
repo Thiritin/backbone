@@ -1,6 +1,9 @@
 import { PAYMENT_METHODS } from "../src/sim/10-catalog/payments";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
-import { chooseShop } from "../src/sim/90-actions/shop";
+import { installShop } from "../src/sim/90-actions/shop";
+import { shopEditionFor, shopLease } from "../src/sim/10-catalog/shop-licences";
+import { newShop, shopCount } from "../src/sim/80-business/shop";
+import type { ShopId } from "../src/sim/10-catalog/shops";
 import { authCode } from "../src/sim/30-customers/registry";
 import type { Address } from "../src/sim/30-customers/addresses";
 import { mailedAddress } from "../src/sim/30-customers/addresses";
@@ -241,13 +244,26 @@ export const owner = (s: GameState, ticketId: string): [Address | undefined, str
   return [s.customers.find((c) => c.id === r?.customerId)?.address, r?.owned ? authCode(s.seed, r.id) : undefined];
 };
 
+// A key for the shop, the lease edition where it is leased unless own, installed on the first panel host; without one the shop is
+// chosen but not installed.
+export function installWithKey(s: GameState, id: ShopId, own = false): void {
+  const host = s.clusters.find((c) => c.kind === "panel" && c.panel);
+  if (!host) {
+    s.shop = { ...newShop(), variant: id, groups: s.shop.groups, products: s.shop.products, productGroups: s.shop.productGroups };
+    return;
+  }
+  const k = isLicensed(id) ? issueKey(s, id, own || shopLease(id, s.hour) === null ? null : shopEditionFor(id, s.hour, shopCount(s))?.id ?? null) : undefined;
+  const r = installShop(s, host.id, id, k?.key);
+  if (!r.ok) throw new Error(r.error);
+}
+
 // A shop system that takes orders at once, for tests of shop orders rather than of choosing a shop.
-export function openShop(s: GameState, id: Parameters<typeof chooseShop>[1] = "clientExit"): GameState {
+export function openShop(s: GameState, id: ShopId = "clientExit"): GameState {
   s.cash = Math.max(s.cash, 1e4);
   setUpChannel(s, "website");
   if (!s.unlocks.includes("shops")) s.unlocks = [...s.unlocks, "shops"];
-  const modules = s.shop.modules, r = chooseShop(s, id);
-  if (!r.ok) throw new Error(r.error);
+  const modules = s.shop.modules;
+  installWithKey(s, id);
   // Keeps the modules automate() bought.
   s.shop = { ...s.shop, readyAt: s.hour, modules: { ...modules, ...s.shop.modules } };
   // Every payment method, so no checkout is lost for a missing one.
