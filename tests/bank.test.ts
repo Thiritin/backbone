@@ -19,7 +19,8 @@ const run = (s: GameState, hours: number) => { for (let i = 0; i < hours; i++) t
 export const opened = (seed = 1, bank: Parameters<typeof registerCompany>[4] = "sparklasse", form = "sole"): GameState => {
   const s = newGame(seed);
   s.hour = MONDAY_8;
-  expect(registerCompany(s, "Basement Hosting", "Becker, Tin", form, bank).ok).toBe(true);
+  expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "sole", bank).ok).toBe(true);
+  s.registration!.form = form;
   tick(s);
   return s;
 };
@@ -70,11 +71,7 @@ describe("bank account", () => {
     expect(s.ledger.filter((e) => e.category === "fees").map((e) => [e.key, e.amount])).toEqual([["ledger.bankFee", -8]]);
   });
 
-  it("opens no netbunk account for a limited company and charges a partnership its flat fee", () => {
-    const s = newGame(1);
-    s.hour = MONDAY_8;
-    expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "limited", "netbunk")).toEqual({ ok: false, error: "error.bankForm" });
-    expect(s.registration).toBeNull();
+  it("charges a partnership at netbunk its flat fee", () => {
     const p = opened(1, "netbunk", "partnership");
     p.ledger = [...p.ledger, { hour: p.hour, category: "sales", key: "ledger.usedSale", params: {}, amount: 10 }];
     run(p, hourOf(new Date(Date.UTC(2005, 1, 1))) - p.hour);

@@ -13,6 +13,8 @@ export const PAPERWORK_EN: Record<string, (p: Params) => string> = {
   "doc.form.limited": () => "Articles of association.pdf",
   "error.notRegistered": () => "The company is not registered yet.",
   "error.legalFormDown": () => "A legal form can only be changed to a higher one.",
+  "error.registerSole": () => "A business can only be registered as a sole trader.",
+  "error.companyLaw": () => "Founding a limited company needs Company law from Research.",
   "error.changePending": () => "A change of legal form is already in progress.",
   "error.formSigned": () => "This form is already signed.",
   "error.mailAddress": () => "Enter a valid email address.",

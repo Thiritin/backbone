@@ -12,6 +12,7 @@ export default {
   "paperwork.of.pending": () => "In Bearbeitung",
   "paperwork.of.registerFirst": () => "Bitte melden Sie Ihr Gewerbe zuerst im eService an.",
   "paperwork.of.top": () => "Die Firma hat die höchste Rechtsform.",
+  "paperwork.of.none": () => "Für das Unternehmen ist keine andere Rechtsform verfügbar.",
   "paperwork.doc.head.partnership": () => "Gewerbeummeldung (Formular GA-2)",
   "paperwork.doc.head.limited": () => "Gesellschaftsvertrag und Anmeldung zur Eintragung in das Handelsregister",
   "paperwork.doc.current": () => "Bisherige Rechtsform",
