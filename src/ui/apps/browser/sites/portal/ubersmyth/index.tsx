@@ -41,7 +41,7 @@ const A = ({ l, className }: { l: Link; className?: string }) => (
 // The admin frame: tabs in 2, pills and a portlet in 3, a grouped sidebar in 4, group switcher and tabs in 5.
 function AdminFrame({ props, title, at, children }: { props: SkinProps; title?: string; at?: ScreenName; children: ReactNode }) {
   const { game, variant, open, major } = props, era = eraOf(major);
-  const link = (n: ScreenName): Link => ({ id: n, label: label(n), on: at === n, go: () => open("admin", {}, screenArgs({ name: n })), icon: ICON[n] });
+  const link = (n: ScreenName): Link => ({ id: n, label: label(n), on: at === n, go: () => open("admin", {}, screenArgs({ name: n })), icon: era === "4" ? ICON[n] : undefined });
   const groups = at ? GROUPS.map(([g, screens]) => ({ g, links: screens.map(link) })) : [];
   const flat = groups.flatMap((x) => x.links), group = groups.find((x) => x.links.some((l) => l.on));
   const foot = <VersionFooter game={game} variant={variant} />;
@@ -84,7 +84,7 @@ function AdminFrame({ props, title, at, children }: { props: SkinProps; title?: 
     <div className={`portal ubs ubs-admin ubs-2 ubs-on-${at ?? "bare"}`}>
       <header className="ubs-head"><Mark /><span className="ubs-host">{game.company.domain && `portal.${game.company.domain}`}</span></header>
       <nav className="ubs-tabs">{flat.map((l) => <A key={l.id} l={l} />)}</nav>
-      {title && <div className="ubs-crumb">{t("ubersmyth.nav.home")} <span>›</span> {title}</div>}
+      {title && at !== "home" && <div className="ubs-crumb">{t("ubersmyth.nav.home")} <span>›</span> {title}</div>}
       <main className="ubs-main">{children}</main>
       {foot}
     </div>

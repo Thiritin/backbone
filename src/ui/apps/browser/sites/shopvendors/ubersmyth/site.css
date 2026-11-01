@@ -29,7 +29,7 @@
 /* 2006: grey backdrop, 780 px white page, slate masthead, orange-ruled bar, right column of boxes, Verdana 11px. */
 .ubv-2006 { background: #c9ced4; font: 11px/1.5 Verdana, Tahoma, sans-serif; padding: 14px 0 20px; }
 .ubv-2006 > * { width: 780px; max-width: calc(100% - 32px); margin: 0 auto; }
-.ubv-2006 .ubv-in { width: auto; max-width: none; margin: 0; }
+.ubv-2006 .ubv-head .ubv-in, .ubv-2006 .ubv-hero .ubv-in, .ubv-2006 .ubv-foot .ubv-in { width: auto; max-width: none; margin: 0; }
 .ubv-2006 .ubv-head { background: var(--iron); color: #fff; padding: 14px 16px; border: 1px solid #1a222b; border-bottom: 0; }
 .ubv-2006 .ubv-word { font: bold 22px Tahoma, Verdana, sans-serif; letter-spacing: 4px; text-transform: uppercase; }
 .ubv-2006 .ubv-tag { margin-left: auto; color: #9fb0c1; font-size: 11px; }
@@ -108,7 +108,7 @@
 .ubv-2016 .ubv-cards section { padding: 26px; border: 1px solid #e1e5e9; border-top: 4px solid var(--ember); display: grid; gap: 6px; align-content: start; }
 .ubv-2016 .ubv-cards h3 { margin: 0; font-size: 20px; font-weight: 600; }
 .ubv-2016 .ubv-cap { margin: 0; color: #5d6873; }
-.ubv-2016 .ubv-price { margin: 6px 0 12px; font-size: 22px; font-weight: 300; }
+.ubv-2016 .ubv-price { margin: 6px 0 12px; font: 300 22px/1.3 "Open Sans", "Segoe UI", Helvetica, sans-serif; }
 .ubv-2016 .ubv-table th, .ubv-2016 .shop-table th, .ubv-2016 .sws-versions th { font-weight: 600; color: #5d6873; padding: 10px; border-bottom: 2px solid #e1e5e9; text-align: left; }
 .ubv-2016 .ubv-table td, .ubv-2016 .shop-table td, .ubv-2016 .sws-versions td { padding: 10px; border-bottom: 1px solid #eef0f2; }
 .ubv-2016 .sws-versions { width: 100%; border-collapse: collapse; }
@@ -146,7 +146,7 @@
 .ubv-2021 .ubv-cards section { padding: 24px; background: #fff; border: 1px solid #e8e5df; border-radius: 16px; display: grid; gap: 4px; align-content: start; }
 .ubv-2021 .ubv-cards h3 { margin: 0; font-size: 18px; font-weight: 650; }
 .ubv-2021 .ubv-cap { margin: 0; color: #6b6f76; font-size: 14px; }
-.ubv-2021 .ubv-price { margin: 10px 0 16px; font-size: 26px; font-weight: 650; letter-spacing: -0.8px; }
+.ubv-2021 .ubv-price { margin: 10px 0 16px; font: 650 26px/1.2 Inter, system-ui, sans-serif; letter-spacing: -0.8px; }
 .ubv-2021 .ubv-main > .ubv-table, .ubv-2021 .shop-table, .ubv-2021 .sws-versions { width: 100%; border-collapse: separate; border-spacing: 0; background: #fff; border: 1px solid #e8e5df; border-radius: 14px; overflow: hidden; }
 .ubv-2021 .ubv-table th, .ubv-2021 .shop-table th, .ubv-2021 .sws-versions th { font-size: 13px; font-weight: 500; color: #6b6f76; padding: 10px 14px; border-bottom: 1px solid #e8e5df; text-align: left; }
 .ubv-2021 .ubv-table td, .ubv-2021 .shop-table td, .ubv-2021 .sws-versions td { padding: 12px 14px; border-bottom: 1px solid #f1efea; }

@@ -65,7 +65,7 @@ export function Ubersmyth({ game, path = "/", go = () => {} }: VendorProps) {
       <header className="ubv-head">
         <div className="ubv-in">
           {link("", "ubv-mark", <><span className="ubv-tile"><Anvil /></span><span className="ubv-word">ubersmyth</span></>)}
-          {era === 2006 && <span className="ubv-tag">{t("ubersmyth.site.tagline")}</span>}
+          {era === 2006 && <span className="ubv-tag">{t("sim.site.ubersmyth.tagline")}</span>}
           {era !== 2006 && <nav className="ubv-nav">{PAGES.map((p) => link(p))}</nav>}
         </div>
       </header>
@@ -76,7 +76,7 @@ export function Ubersmyth({ game, path = "/", go = () => {} }: VendorProps) {
           {page && <h1 className="ubv-h1">{label(page)}</h1>}
           {body[page]()}
         </main>
-        {era === 2006 && (
+        {era === 2006 && page !== "cart" && page !== "account" && (
           <aside className="ubv-side">
             <section><h3>{t("ubersmyth.site.latest")}</h3><p>{link("releases", undefined, `${NAME} ${latest}`)}</p></section>
             <section><h3>{t("ubersmyth.site.editions")}</h3><ul>{offers(ID, game.hour).map((o) => <li key={o.edition}>{tiersOf(ID).find((x) => x.id === o.edition)?.name}</li>)}</ul>{link("pricing", undefined, t("ubersmyth.site.seePricing"))}</section>
@@ -93,7 +93,7 @@ function Hero({ era, latest, pricing }: { era: Era; latest: string; pricing: Rea
     <section className="ubv-hero">
       <div className="ubv-in">
         <h2>{t(`ubersmyth.site.hero.${era}`)}</h2>
-        <p>{t("ubersmyth.site.pitch")}</p>
+        <p>{t("sim.site.ubersmyth.blurb")}</p>
         <p className="ubv-hero-cta">{pricing}{era === 2021 && <span className="ubv-meta">{t("ubersmyth.site.latest")} <b className="num">{latest}</b></span>}</p>
       </div>
     </section>

@@ -4,8 +4,7 @@ import { tiersOf, type LicenceTier } from "./licence-tiers";
 import { eraAt, type LicenseEra } from "./server-os";
 import { yearOf } from "../00-core/time";
 import { shopById, SHOPS, type ShopId } from "./shops";
-import type { Site } from "./sites";
-import { t } from "../../i18n/en";
+import { site, type Site } from "./sites";
 
 export interface ShopLicence {
   id: ShopId;
@@ -51,6 +50,7 @@ const TERMS: Record<ShopId, Omit<ShopLicence, "id" | "name">> = {
       { from: 2025, month: 11, kind: "once", fee: 350, updates: 12, updatesFee: 62, editions: ["branded", "unbranded"] },
     ],
     trialDays: 30,
+    site: { host: "blessta.com", tagline: "", blurb: "", features: [], eras: [{ from: 2007, look: "early" }] },
   },
   hostBull: {
     licensing: [
@@ -65,10 +65,10 @@ const TERMS: Record<ShopId, Omit<ShopLicence, "id" | "name">> = {
       { from: 2016, month: 4, kind: "server", fee: 400, setup: 2500, editions: ["standard", "pro", "enterprise"] },
     ],
     trialDays: null, caps: "servers",
-    site: { host: "ubersmyth.com", get tagline() { return t("ubersmyth.site.tagline"); }, get blurb() { return t("ubersmyth.site.pitch"); }, features: [], eras: [] },
+    site: site("ubersmyth", "ubersmyth.com", 0, 2006),
   },
   orderBocks: { licensing: [{ from: 2006, kind: "free", fee: 0, cut: 0.06 }] },
-  boxBillin: { licensing: [{ from: 2011, kind: "free", fee: 0 }] },
+  boxBillin: { licensing: [{ from: 2011, kind: "free", fee: 0 }], site: site("boxBillin", "boxbillin.com", 0, 2011) },
 };
 
 export const SHOP_LICENCES: ShopLicence[] = SHOPS.map((v) => ({ id: v.id, name: v.name, ...TERMS[v.id] }));

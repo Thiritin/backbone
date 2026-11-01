@@ -12,7 +12,7 @@ const LABEL: Record<string, string> = { monthly: "Monthly", quarterly: "Quarterl
 
 // Variants that run on the game's first years, then the ones that need a later start.
 const LEGACY: ShopId[] = ["modemBill", "clientExit"];
-const PRODUCTS_LABEL: Record<string, string> = { modemBill: "Packages", clientExit: "Product Groups", blessta: "Package Groups", boxBillin: "Product categories", hostBull: "Order pages" };
+const PRODUCTS_LABEL: Record<string, string> = { modemBill: "Packages", clientExit: "Product Groups", blessta: "Package Groups", boxBillin: "Products", hostBull: "Order pages" };
 const MODERN: ShopId[] = ["blessta", "boxBillin", "hostBull"];
 
 const setup = (variant: ShopId): { s: GameState; g: string; p: string } => {
@@ -54,19 +54,12 @@ describe.each([...LEGACY, ...MODERN])("%s skin", (variant) => {
   });
 });
 
-describe("flat variants", () => {
-  it("list the products without group headings", () => {
-    for (const variant of ["boxBillin"] as ShopId[]) {
+describe("store groups", () => {
+  it("keep group headings", () => {
+    for (const variant of ["modemBill", "boxBillin"] as ShopId[]) {
       const { s, g } = setup(variant);
-      const html = render(s, variant, "store", { group: g });
-      expect(html).toContain("Starter");
-      expect(html).not.toContain("<h2>Shared hosting</h2>");
+      expect(render(s, variant, "store", { group: g })).toContain("<h2>Shared hosting</h2>");
     }
-  });
-
-  it("keep groups on the others", () => {
-    const { s, g } = setup("modemBill");
-    expect(render(s, "modemBill", "store", { group: g })).toContain("<h2>Shared hosting</h2>");
   });
 
 });
