@@ -28,3 +28,11 @@
 .whm-late .whm-nav a.on { color: #fff; background: #1f2d3b; }
 .whm-late .pt-table th { background: #f3f5f7; }
 @media (max-width: 640px) { .whm-body { flex-direction: column; } .whm-nav { flex-direction: row; flex-wrap: wrap; } }
+/* WHMCache cart and client area */
+.whm-shop { background: #fff; }
+.whm-shop-early { font-family: Tahoma, Verdana, sans-serif; font-size: 12px; }
+.whm-shop-early .shop-head { background: #e8e8e8; border-bottom: 1px solid #b5b5b5; }
+.whm-shop-mid .shop-head { background: linear-gradient(#2a5a8f, #1b4372); color: #fff; }
+.whm-shop-mid .shop-steps .on { color: #1b66b4; }
+.whm-shop-late .shop-head { background: #fff; border-bottom: 1px solid #e3e6ea; }
+.whm-shop-late .btn.primary { background: #337ab7; color: #fff; border: 0; }
