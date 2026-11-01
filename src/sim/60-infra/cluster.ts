@@ -35,6 +35,7 @@ export const HA_OFF: Ha = { live: false, balance: false, failover: false };
 // target cluster. ramGuard (Memory reservation) keeps booked RAM within each node's installed RAM; it is the only way RAM refuses a booking. php and phpUntil are a
 // panel host's PHP version; after an upgrade its sites run slower up to and including the hour phpUntil. version is the
 // year of the release the installed software runs and updatedAt the hour it was installed or last updated (vulns.ts).
+export interface Pool { id: string; name: string; vcpuLimit: number | null; ramLimitGb: number | null; shares: "low" | "normal" | "high" }
 export type Drs = "off" | "manual" | "partial" | "full";
 export interface DrsRec { workloadId: string; to: string; at: number }
 export interface Cluster {
@@ -45,6 +46,10 @@ export interface Cluster {
   jobs: BackupJob[];
   // VMwhere DRS: how the hourly balancing pass acts, and the moves it recommends (at most 5) in the manual and partial modes.
   drs: Drs; recs: DrsRec[];
+  // VMwhere alarm thresholds (alarms.ts DEFAULT_RULES when missing) and the keys of the acknowledged alarms.
+  alarmRules?: { cpu: number; ram: number; disk: number }; acks: string[];
+  // VMwhere resource pools; Workload.poolId names the pool a workload belongs to.
+  pools: Pool[];
   ramGuard?: boolean;
   // A free server that casts one extra vote in a Proxmocks cluster (quorum.ts); missing is none.
   qdevice?: string | null;
@@ -81,7 +86,7 @@ export interface Datastore { deviceId: string; protocol: DatastoreProtocol; read
 // The player's own VMs carry MachineState; customer workloads do not.
 export interface Workload extends Resources, Partial<MachineState> {
   id: string; serviceId: string; clusterId: string | null; deviceId: string | null; rackId: string | null; slot: number; units: number; watts: number; placedAt: number;
-  stopped: boolean; busyUntil: number; backupAt: number | null; stuck?: boolean;
+  stopped: boolean; busyUntil: number; backupAt: number | null; stuck?: boolean; poolId?: string | null;
   // Restore points the backup jobs wrote; backupAt is the newest one's hour.
   points?: RestorePoint[];
   // A copy of the disk on a second node of the cluster, refreshed on a schedule (replica.ts).
@@ -119,7 +124,7 @@ export const deltaGb = (w: Workload): number => w.snapshots?.reduce((n, x) => n 
 export const clusterDefaults = (c: Partial<Cluster> & Pick<Cluster, "nodes">, hour = 0): Cluster => ({
   panel: null, platform: null, vm: null, switching: null, appSuite: false, datastores: [], packages: [], jobs: [], php: phpAt(yearOf(hour)), phpUntil: -1,
   version: c.switching ? yearOf(c.switching.doneAt) : Math.max(START_YEAR, yearOf(hour) - 2), updatedAt: c.switching?.doneAt ?? hour, ...c,
-  ha: { ...HA_OFF, ...c.ha }, drs: c.drs ?? (c.ha?.balance ? "full" : "off"), recs: c.recs ?? [],
+  ha: { ...HA_OFF, ...c.ha }, drs: c.drs ?? (c.ha?.balance ? "full" : "off"), recs: c.recs ?? [], acks: c.acks ?? [], pools: c.pools ?? [],
   ...(c.licence || !topTier(c.panel ?? c.platform ?? null) ? {} : { licence: { tier: topTier(c.panel ?? c.platform ?? null)!.id, trialUntil: null, lapsedAt: null } }),
   controlPlane: c.controlPlane === undefined ? c.nodes[0]?.deviceId ?? null : c.controlPlane,
 }) as Cluster;

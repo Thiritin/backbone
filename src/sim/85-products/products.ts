@@ -1,4 +1,6 @@
 import { chance, hashRng } from "../00-core/rng";
+import { runsHot } from "../60-infra/ha";
+import { POOL_LOW_PERF, sharesOf } from "../60-infra/vmwhere";
 import { hourOf, isMonthStart, monthIndexOf, nowHours, yearOf } from "../00-core/time";
 import { cpuModel, isFresh, skuOf, topBoost } from "../10-catalog/cpus";
 import { genOf, modelById } from "../10-catalog/hardware";
@@ -242,7 +244,10 @@ export function workloadPerf(s: GameState, w: Workload, product: Product | undef
   const vm = vmOf(s, w), at = w.deviceId ?? vm?.deviceId;
   if (!at || s.frozen.includes(at) || vm?.stopped) return 1;
   const c = s.clusters.find((x) => x.id === w.clusterId), node = product === "gameServer" ? s.devices.find((d) => d.id === at) : undefined;
-  return Math.min(nodePerf(at), hostPerf(s, c), node ? perCoreOf(node) : 1);
+  const base = Math.min(nodePerf(at), hostPerf(s, c), node ? perCoreOf(node) : 1), shares = sharesOf(c, w);
+  if (shares === "normal" || !runsHot(s, at)) return base;
+  // Under contention a high pool keeps its performance and a low pool gives some up.
+  return shares === "high" ? 1 : Math.min(base, POOL_LOW_PERF);
 }
 
 // Overloaded nodes slow every customer on them, web spaces in a panel VM included, and a PHP upgrade or a compromise slows

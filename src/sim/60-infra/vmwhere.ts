@@ -1,7 +1,8 @@
 import { tiersOf } from "../10-catalog/licence-tiers";
 import { softwareById } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
-import { movesLive, pickNode, type Cluster } from "./cluster";
+import type { Resources } from "../10-catalog/products";
+import { booked, movesLive, pickNode, type Cluster } from "./cluster";
 
 // VMwhere editions: the licence tier of a VMwhere cluster; a cluster without a tier is on Enterprise.
 export const EDITION_COST: Record<string, number> = { essentials: 1, standard: 2, enterprise: 4 };
@@ -28,3 +29,21 @@ export function maintenanceBlockers(s: GameState, c: Cluster, deviceId: string):
     return !to || !movesLive(s, c, w, deviceId, to);
   }).map((w) => w.id);
 }
+
+// Whether a pool takes a workload booking add on top of its members, leaving out the workload skip (a resize of a member).
+export function poolRoom(s: GameState, c: Cluster, poolId: string, add: Resources, skip?: string): boolean {
+  const pool = c.pools.find((p) => p.id === poolId);
+  if (!pool) return false;
+  const use = s.workloads.filter((w) => w.clusterId === c.id && w.poolId === poolId && w.id !== skip).reduce((n, w) => {
+    const b = booked(s, w);
+    return { vcpu: n.vcpu + b.vcpu, ramGb: n.ramGb + b.ramGb };
+  }, { vcpu: 0, ramGb: 0 });
+  return (pool.vcpuLimit === null || use.vcpu + add.vcpu <= pool.vcpuLimit) && (pool.ramLimitGb === null || use.ramGb + add.ramGb <= pool.ramLimitGb + 1e-9);
+}
+
+// The shares of the pool a workload belongs to, normal without one.
+export const sharesOf = (c: Cluster | undefined, w: { poolId?: string | null }): "low" | "normal" | "high" =>
+  c?.pools.find((p) => p.id === w.poolId)?.shares ?? "normal";
+
+// The performance a low pool keeps on a hot node.
+export const POOL_LOW_PERF = 0.9;

@@ -24,7 +24,7 @@ import { nodeName, AlarmList, ALL, AMOUNT, amountText, AppSuiteTile, CapacityBar
 import { Actions, Backups, Bar, erasFrom, eraAt, Facts, LoginForm, useSoftware, type PanelProps } from "../PanelBase";
 import type { Look } from "../../../../../sim/10-catalog/sites";
 import type { Resources } from "../../../../../sim/10-catalog/products";
-import { DrsPage, Licensing } from "./Admin";
+import { AlarmsPage, DrsPage, Licensing, PoolsPage } from "./Admin";
 import "./vmwhere.css";
 
 // docs/design/software.md, section 9: the grey and yellow fat client from 2005, the blue web client from 2015.
@@ -252,7 +252,7 @@ export function VmWhere(p: PanelProps) {
   const era = eraAt(ERAS, p.game), { game, c, f } = p, year = yearOf(game.hour);
   const open = parseCreate("vmwhere", p.path), [sel, setSel] = useState<Sel>(open?.screen === "create" ? { kind: "new" } : open?.screen === "packages" ? { kind: "plans" } : ALL), [tab, setTab] = useState("Summary");
   const [byOrder, setByOrder] = useState(open?.screen === "create" && !!open.order);
-  const tabNames: Record<string, string> = { Summary: t("browser-consoles-2.summary"), Monitor: t("browser-consoles-2.monitor"), Configure: t("browser-consoles-2.configure"), Snapshots: t("browser-consoles-2.snapshots"), Hosts: t("browser-consoles-2.hosts"), Datastores: t("browser-consoles-2.datastores"), Networks: t("browser-consoles-2.networks"), Licensing: t("vw.licensing"), DRS: t("vw.drs") };
+  const tabNames: Record<string, string> = { Summary: t("browser-consoles-2.summary"), Monitor: t("browser-consoles-2.monitor"), Configure: t("browser-consoles-2.configure"), Snapshots: t("browser-consoles-2.snapshots"), Hosts: t("browser-consoles-2.hosts"), Datastores: t("browser-consoles-2.datastores"), Networks: t("browser-consoles-2.networks"), Licensing: t("vw.licensing"), DRS: t("vw.drs"), Alarms: t("vw.alarm.alarms"), Pools: t("vw.pool.pools") };
   const { vms, dialog } = useVms(game, c, f), sw = useSoftware(game, c, f), nv = useNewVm(game, c, open?.screen === "create" ? open.order : undefined);
   if (!p.signedIn) return (
     <div className="cx vsw vsw-login" data-era={era}>
@@ -265,7 +265,7 @@ export function VmWhere(p: PanelProps) {
   const pick = (s: Sel, tb = "Summary") => { setSel(s); setTab(tb); };
   const vm = sel.kind === "vm" ? vms.find((v) => v.id === sel.id) : undefined, node = sel.kind === "node" ? sel.id : null;
   const nodes = c.nodes.map((n) => game.devices.find((d) => d.id === n.deviceId)!).filter(Boolean);
-  const tabs = vm ? ["Summary", "Monitor", "Configure", ...(vm.w.deviceId ? ["Snapshots"] : [])] : ["Summary", "Monitor", "Configure", ...(node ? [] : ["Hosts"]), "Datastores", "Networks", ...(node ? [] : ["DRS"]), "Licensing"];
+  const tabs = vm ? ["Summary", "Monitor", "Configure", ...(vm.w.deviceId ? ["Snapshots"] : [])] : ["Summary", "Monitor", "Configure", ...(node ? [] : ["Hosts"]), "Datastores", "Networks", ...(node ? [] : ["DRS", "Alarms", "Pools"]), "Licensing"];
   const shown = tabs.includes(tab) ? tab : "Summary", facts = vm && vmFacts(game, vm);
   const app = nv.suite ? suiteSoftware(year).find((x) => x.id === nv.suite) : undefined, appOs = app && serverOsById(app.os[0]);
   const finish = () => { if (byOrder) { if (nv.submit()) setSel(ALL); return; } const id = nv.create(); if (id) pick({ kind: "vm", id }); };
@@ -338,6 +338,8 @@ export function VmWhere(p: PanelProps) {
             {!vm && sel.kind !== "plans" && shown === "Hosts" && <NodeList game={game} c={c} f={f} />}
             {!vm && sel.kind !== "plans" && shown === "Licensing" && <Licensing game={game} c={c} />}
             {!vm && sel.kind !== "plans" && shown === "DRS" && <DrsPage game={game} c={c} />}
+            {!vm && sel.kind !== "plans" && shown === "Alarms" && <AlarmsPage game={game} c={c} />}
+            {!vm && sel.kind !== "plans" && shown === "Pools" && <PoolsPage game={game} c={c} />}
             {!vm && sel.kind !== "plans" && shown === "Datastores" && <Datastores game={game} c={c} />}
             {!vm && sel.kind !== "plans" && shown === "Networks" && <Facts facts={[{ label: t("browser-consoles-2.vmNetwork"), value: "vSwitch0" }, { label: t("browser-consoles-2.managementNetwork"), value: "vSwitch0" }]} />}
           </main>

@@ -29,7 +29,7 @@ import { migrateWorkload } from "./vms";
 import { buyLicenses, licenseDue } from "../85-products/products";
 import { sizeOf } from "../30-market/spec";
 import { quorumBlock } from "../60-infra/quorum";
-import { editionAllows } from "../60-infra/vmwhere";
+import { editionAllows, poolRoom } from "../60-infra/vmwhere";
 import { cephCapacity, cephOn, cephUsed } from "../60-infra/replica";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -39,7 +39,7 @@ export const PANEL_VM_MIN: Resources = { vcpu: 1, ramGb: 1, diskGb: 10 };
 
 const blank = (s: GameState, id: string, name: string, az: string, kind: SoftwareKind): Cluster => ({
   id, name, az, kind, placement: "pack", nodes: [], panel: null, platform: null, vm: null, controlPlane: null, switching: null, appSuite: false, datastores: [], packages: [],
-  jobs: [], drs: "off", recs: [], php: phpAt(yearOf(s.hour)), phpUntil: -1, ha: { ...HA_OFF }, version: yearOf(s.hour), updatedAt: s.hour,
+  jobs: [], drs: "off", recs: [], acks: [], pools: [], php: phpAt(yearOf(s.hour)), phpUntil: -1, ha: { ...HA_OFF }, version: yearOf(s.hour), updatedAt: s.hour,
 });
 // The name a cluster in one of the player's VMs gets, by the kind of its software.
 const PREFIX: Record<SoftwareKind, string> = { panel: "Web", cloud: "Cloud", game: "Game", mail: "Mail", dns: "DNS", vpn: "VPN", storage: "Storage", backup: "Backup" };
@@ -99,7 +99,7 @@ export function installHypervisor(s: GameState, deviceId: string, platformId: st
 
 // Creates one of the player's own VMs on a hypervisor cluster, empty until software is installed in it. A cluster still
 // installing its hypervisor takes the VM.
-export function createVm(s: GameState, clusterId: string, size: Resources): ActionResult {
+export function createVm(s: GameState, clusterId: string, size: Resources, poolId: string | null = null): ActionResult {
   const c = s.clusters.find((x) => x.id === clusterId);
   if (!c) return fail("error.unknownCluster");
   if (c.kind !== "cloud" || (!c.platform && c.switching?.kind !== "cloud")) return fail("error.needsPlatform");
@@ -107,9 +107,10 @@ export function createVm(s: GameState, clusterId: string, size: Resources): Acti
   { const q = quorumBlock(s, c); if (q) return fail(q); }
   if (KEYS.some((k) => !Number.isFinite(size[k]) || size[k] < PANEL_VM_MIN[k])) return fail("error.vmSize");
   if (cephOn(c) && cephUsed(s, c) + size.diskGb > cephCapacity(s, c)) return fail("error.cephFull");
+  if (poolId !== null && !poolRoom(s, c, poolId, size)) return fail(c.pools.some((p) => p.id === poolId) ? "error.poolFull" : "error.unknownPool");
   const disk = withDatastore(s, c, size), node = pickNode(s, c, disk, null, c.drs === "partial" || c.drs === "full" ? "spread" : c.placement);
   if (!node) return fail("error.noCapacity");
-  const vm = workload(s, "", { ...disk, clusterId: c.id, deviceId: node, os: null, software: [] });
+  const vm = workload(s, "", { ...disk, clusterId: c.id, deviceId: node, os: null, software: [], ...(poolId && { poolId }) });
   s.workloads = [...s.workloads, vm];
   return { ok: true, id: vm.id };
 }
@@ -193,6 +194,7 @@ export function resizeVm(s: GameState, vmId: string, size: Resources): ActionRes
   if (hostOfVm(s, vm.id)) return fail("error.softwareInUse");
   const bad = sizeError(size, { vcpu: 0, ramGb: 0, diskGb: 0 });
   if (bad) return fail(bad);
+  { const pc = s.clusters.find((x) => x.id === vm.clusterId); if (pc && vm.poolId && !poolRoom(s, pc, vm.poolId, size, vm.id)) return fail("error.poolFull"); }
   const d = vm.deviceId ? s.devices.find((x) => x.id === vm.deviceId) : undefined;
   if ((d && !nodeTakes(s, d, { ...size, datastore: vm.datastore }, vm)) || (vm.datastore && !datastoreFits(s, vm.datastore, size.diskGb - vm.diskGb))) return fail("error.nodeFull");
   const c = s.clusters.find((x) => x.id === vm.clusterId);

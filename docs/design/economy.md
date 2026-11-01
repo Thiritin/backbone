@@ -1906,6 +1906,19 @@ A template is a stopped own VM on a VMwhere cluster kept to clone ready VMs from
 - **Templates** keep their disk booking, OS, software and snapshots. They never start, cannot be migrated, are not balanced, and failover leaves them on a dead node.
 - **Clones** put their disk where a new VM's goes, a datastore with room first. They are busy for the copy; each software they carry runs as its own cluster once the copy is done. A template running mail cannot be cloned.
 
+### VMwhere editions, DRS and pools
+
+A new VMwhere cluster starts on Essentials; a cluster from an older save is on Enterprise. Moving up an edition costs the VMwhere licence fee per node times the step in levels (Essentials 1, Standard 2, Enterprise 4), paid once.
+
+| Edition | Adds |
+| --- | --- |
+| Essentials | Live migration, snapshots, datastores |
+| Standard | High availability failover, alarm thresholds, manual DRS |
+| Enterprise | Partially and fully automated DRS, resource pools |
+
+DRS Manual and Partial keep up to five recommended moves for the player to apply, Full applies them. A host enters maintenance mode only when every running VM can move live. A pool caps the booked vCPUs and RAM of its members. On a hot node a high pool keeps its performance and a low pool keeps at most 90%.
+
+
 ## PHP versions
 
 Each version becomes available on 1 January after its release, rounded so the start of the game has 4.4:
