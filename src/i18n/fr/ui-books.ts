@@ -50,6 +50,8 @@ export default {
   "books.noCustomers": () => "Aucun client",
   "books.noInvoices": () => "Aucune facture",
   "books.noTransfers": () => "Aucun virement",
+  "books.booked": () => "Comptabilisés",
+  "books.undo": () => "Annuler",
   "books.noOpen": () => "Aucune facture ouverte",
   "books.noLate": () => "Aucune facture en retard",
   "books.since": () => "Client depuis",

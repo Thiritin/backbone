@@ -3,7 +3,7 @@ import { STARTER_APPS } from "../src/sim/10-catalog/store";
 import { ALREADY_PAID_HAPPINESS, DUE_DAYS, billingTick, owed } from "../src/sim/45-billing/billing";
 import type { Profile } from "../src/sim/30-customers/customers";
 import { tick } from "../src/sim/88-tick/tick";
-import { matchTransfer, sendInvoice, sendReminder } from "../src/sim/90-actions/billing";
+import { matchTransfer, sendInvoice, sendReminder, unmatchTransfer } from "../src/sim/90-actions/billing";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { withServer, newGame } from "./fixtures";
@@ -130,6 +130,33 @@ describe("bank transfers", () => {
     matchTransfer(s, s.transfers[0].id, inv().id);
     expect(inv().status).toBe("paid");
     expect(customer().credit).toBe(3);
+  });
+
+  it("undo a booking: the invoice owes again, the credit goes and the transfer can be booked anew", () => {
+    const { s, bill, inv, customer } = paying();
+    bill(1);
+    s.transfers[0].amount = 15;
+    matchTransfer(s, s.transfers[0].id, inv().id);
+    expect(unmatchTransfer(s, s.transfers[0].id)).toEqual({ ok: true });
+    expect(inv()).toMatchObject({ status: "open", paidAt: null });
+    expect(customer().credit).toBe(0);
+    expect(s.transfers[0]).toMatchObject({ invoiceId: null, matchedAt: null });
+    expect(unmatchTransfer(s, s.transfers[0].id)).toEqual({ ok: false, error: "error.transferChanged" });
+    expect(matchTransfer(s, s.transfers[0].id, inv().id)).toEqual({ ok: true });
+  });
+
+  it("undo a partial payment only while the invoice is still open", () => {
+    const { s, bill, inv } = paying();
+    bill(1);
+    s.transfers[0].amount = 9.9;
+    matchTransfer(s, s.transfers[0].id, inv().id);
+    expect(unmatchTransfer(s, s.transfers[0].id)).toEqual({ ok: true });
+    expect(owed(inv())).toBe(12);
+    matchTransfer(s, s.transfers[0].id, inv().id);
+    s.transfers = [...s.transfers, { ...s.transfers[0], id: "trf-rest", amount: 2.1, invoiceId: null, matchedAt: null, booked: undefined }];
+    matchTransfer(s, "trf-rest", inv().id);
+    expect(inv().status).toBe("paid");
+    expect(unmatchTransfer(s, s.transfers[0].id)).toEqual({ ok: false, error: "error.transferChanged" });
   });
 
   it("make a reminder on a paid but unmatched invoice cost happiness and bring a billing ticket", () => {
