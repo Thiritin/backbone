@@ -31,6 +31,7 @@ export const PREFERENCE: Record<Profile | "international" | "shady", Weights> = 
   soleProp: { transfer: 0.5, debit: 0.25, paypail: 0.15, card: 0.1 },
   smallBiz: { transfer: 0.45, debit: 0.3, card: 0.2, paypail: 0.05 },
   agency: { transfer: 0.4, card: 0.35, debit: 0.15, paypail: 0.1 },
+  reseller: { transfer: 0.4, card: 0.3, paypail: 0.2, debit: 0.1 },
   office: { transfer: 0.5, debit: 0.4, card: 0.1 },
   onlineShop: { transfer: 0.35, debit: 0.3, card: 0.25, paypail: 0.1 },
   enterprise: { transfer: 0.6, debit: 0.25, card: 0.15 },

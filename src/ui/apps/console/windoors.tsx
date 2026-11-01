@@ -2,7 +2,10 @@ import { useState } from "react";
 import { t } from "../../../i18n/en";
 import { dateOf, yearOf } from "../../../sim/00-core/time";
 import { runsOn, SOFTWARE, softwareById, type Software } from "../../../sim/10-catalog/platforms";
-import type { GameState } from "../../../sim/50-state";
+import type { Device, GameState, IfaceConfig } from "../../../sim/50-state";
+import { isIp, maskOf, prefixOf } from "../../../sim/60-infra/ifaces";
+import { addressOf, macOf } from "../../../sim/60-infra/lan";
+import { setIface } from "../../../sim/90-actions/lan";
 import { installDone, installLog } from "../../../sim/60-infra/apt";
 import { machineNet, machineScreen } from "../../../sim/60-infra/oob";
 import { reboot } from "../../../sim/90-actions/hardware";
@@ -54,7 +57,7 @@ export function useWindoors(game: GameState, m: Machine, version: string, logged
   return { view, onKey, keys: pass === null ? ["CtrlAltDel"] : ["Enter", "Escape", "Backspace"] };
 }
 
-type Win = "manager" | "roles" | "programs" | null;
+type Win = "manager" | "roles" | "programs" | "adapter" | null;
 interface Entry { sw: Software; installed: boolean; installing: boolean; why: string | null }
 
 // The Windoors software the year allows, roles (the hypervisor) or programs, with whether it is on the machine.
@@ -77,7 +80,7 @@ function Desktop({ game, m, version, era, logOut }: { game: GameState; m: Machin
   const [start, setStart] = useState(false);
   const items = START_ITEMS[era];
   const open = (w: Win) => { setWin(w); setStart(false); };
-  const title = win === "manager" ? items[0] : win === "programs" ? items[1] : win === "roles" ? ROLE_WIZARD[era] : "";
+  const title = win === "manager" ? items[0] : win === "programs" ? items[1] : win === "roles" ? ROLE_WIZARD[era] : win === "adapter" ? t("console.win.adapter") : "";
   return (
     <div className="wd" data-era={era}>
       <div className="wd-area">
@@ -88,6 +91,7 @@ function Desktop({ game, m, version, era, logOut }: { game: GameState; m: Machin
               {win === "manager" && <Manager game={game} m={m} version={version} era={era} open={setWin} />}
               {win === "roles" && <Wizard game={game} m={m} era={era} items={entries(game, m, era === 2 ? null : true)} close={() => setWin("manager")} />}
               {win === "programs" && <Programs game={game} m={m} era={era} />}
+              {win === "adapter" && isDevice(m) && <Adapter game={game} m={m} close={() => setWin("manager")} />}
             </div>
           </div>
         )}
@@ -123,6 +127,40 @@ const NO_NET = (
   </svg>
 );
 const NetLine = ({ game, m }: { game: GameState; m: Machine }) => (machineNet(game, m.id) ? <div className="wm1-sec">{t("console.networkLine")}</div> : null);
+
+type AdapterField = "ip" | "mask" | "gw" | "dns";
+const ADAPTER_FIELDS: AdapterField[] = ["ip", "mask", "gw", "dns"];
+// Without a lease Windoors configures itself a link-local address from its MAC.
+const linkLocal = (mac: string) => { const b = mac.split(":").map((x) => parseInt(x, 16)); return `169.254.${b[4]}.${b[5]}`; };
+
+// The adapter's IPv4 properties: by DHCP, or a fixed address with mask, gateway and DNS server (lan.md, Installer).
+function Adapter({ game, m, close }: { game: GameState; m: Device; close: () => void }) {
+  const act = useStore((s) => s.act);
+  const c = game.devices.find((x) => x.id === m.id)?.iface ?? { mode: "dhcp" as const };
+  const [auto, setAuto] = useState(c.mode === "dhcp");
+  const [form, setForm] = useState<Record<AdapterField, string>>({ ip: c.ip ?? "", mask: maskOf(c.prefix ?? 24), gw: c.gw ?? "", dns: c.dns ?? "" });
+  const [note, setNote] = useState("");
+  const apply = (iface: IfaceConfig) => { const r = act(setIface, m.id, iface); if (r.ok) close(); else setNote(t(r.error)); };
+  const ok = () => {
+    if (auto) return apply({ mode: "dhcp" });
+    const prefix = prefixOf(form.mask);
+    if (!isIp(form.ip) || prefix === null || [form.gw, form.dns].some((x) => x && !isIp(x))) return setNote(t("console.win.invalid"));
+    apply({ mode: "static", ip: form.ip, prefix, ...(form.gw ? { gw: form.gw } : {}), ...(form.dns ? { dns: form.dns } : {}) });
+  };
+  return (
+    <div className="wa">
+      <div className="wm1-sec">{t("console.win.ipv4")}<span>{t("console.win.address", { ip: addressOf(game, m.id) ?? linkLocal(macOf(game, m.id)) })}</span></div>
+      <label><input type="radio" name="wa-mode" checked={auto} onChange={() => setAuto(true)} /> {t("console.win.auto")}</label>
+      <label><input type="radio" name="wa-mode" checked={!auto} onChange={() => setAuto(false)} /> {t("console.win.manual")}</label>
+      {ADAPTER_FIELDS.map((f) => (
+        <label key={f} className="wa-row"><span>{t(`console.win.${f}`)}</span><input value={form[f]} disabled={auto} inputMode="decimal" onChange={(e) => setForm({ ...form, [f]: e.target.value })} /></label>
+      ))}
+      {note && <div className="wm-note">{note}</div>}
+      <div className="wm-links"><button onClick={ok}>{t("console.ok")}</button><button onClick={close}>{t("console.cancel")}</button></div>
+    </div>
+  );
+}
+const AdapterLink = ({ m, open }: { m: Machine; open: (w: Win) => void }) => (isDevice(m) ? <div className="wm-links"><button onClick={() => open("adapter")}>{t("console.win.adapter")}</button></div> : null);
 
 const ROLE_WIZARD: Record<Era, string> = { 0: t("console.wizard0"), 1: t("console.wizard1"), 2: t("console.wizard2") };
 const STEPS: Record<Era, string[]> = {
@@ -164,6 +202,7 @@ function Manager({ game, m, version, era, open }: { game: GameState; m: Machine;
       <div className="wm0-h"><b>{t("console.manageServer")}</b><span>{t("console.serverHost", { host })}</span></div>
       <div className="wm0-body">
         <NetLine game={game} m={m} />
+        <AdapterLink m={m} open={open} />
         <div className="wm0-t">{t("console.configuredRoles")}</div>
         <Installed game={game} m={m} list={all} label={t("console.remove")} />
         <div className="wm-links">
@@ -183,6 +222,7 @@ function Manager({ game, m, version, era, open }: { game: GameState; m: Machine;
         <div className="wm1-h">{t("console.serverManager")}</div>
         <div className="wm1-sec">{t("console.serverSummary")}<span>{t("console.computerName", { host, version })}</span></div>
         <NetLine game={game} m={m} />
+        <AdapterLink m={m} open={open} />
         <div className="wm1-sec">{t("console.rolesSummary")}</div>
         <Installed game={game} m={m} list={all} label={t("console.remove")} />
         <div className="wm-links"><button onClick={() => open("roles")}>{t("console.addRoles")}</button><button onClick={() => open("programs")}>{t("console.programsFeatures")}</button></div>
@@ -197,6 +237,7 @@ function Manager({ game, m, version, era, open }: { game: GameState; m: Machine;
         <button disabled><b>3</b> {t("console.addOtherServers")}</button>
       </div>
       <NetLine game={game} m={m} />
+      <AdapterLink m={m} open={open} />
       <div className="wm1-sec">{t("console.rolesFeaturesOn", { host })}</div>
       <Installed game={game} m={m} list={all} label={t("console.remove")} />
     </div>
