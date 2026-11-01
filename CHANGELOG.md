@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- Customers on a game title past its prime no longer get unhappy; their servers empty out and shrink, and some ask to move to a newer game, staying if your panel runs it and leaving if it does not.
+- TCAdmen and Pterodaktyl list every game on their Packages screen, where you can import community configs or pay to write your own, and see how many requests went to other hosts for games you do not offer.
 - The Shop scrolls again, so every server and part in the catalog is reachable, and the add to cart button no longer spills out of narrow cards.
 - The BIOS setup can save changes without leaving, and its Boot Override starts the server from the hard disk or the attached USB stick right away.
 - A site you fixed after a broken WordPrass Toolkit update no longer keeps its old release around for a rollback.

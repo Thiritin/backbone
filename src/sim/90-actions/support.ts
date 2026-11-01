@@ -1,3 +1,4 @@
+import { declineTitleSwitch } from "./games";
 import type { GameState } from "../50-state";
 import { ACTION_MINUTES, actionsOf, bump, cancelCustomer, canEscalate, isFinal, MINUTES, templatesOf, type Ticket, type TicketAction, type Work } from "../40-support/tickets";
 import { hashRng } from "../00-core/rng";
@@ -112,6 +113,7 @@ export function closeTicket(s: GameState, id: string): ActionResult {
     Object.assign(f.t, { status: "closed", updatedAt: s.hour, unread: false });
     return { ok: true, id };
   }
+  if (f.t.kind === "upgrade" && f.t.topic === "switchTitle") return declineTitleSwitch(s, id);
   if (f.t.kind === "order") {
     declineOrder(s, f.t);
     return { ok: true, id };

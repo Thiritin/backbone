@@ -27,6 +27,7 @@ import { CERT_SHARE, offerCertificate } from "../30-customers/certificates";
 import { shopPriceLevel } from "./cycles";
 import { emailFor, firstOrder, isStandard, orderLead, orderQueued } from "./orders";
 import { growSlots } from "../60-infra/games";
+import { gameLeadLost } from "../60-infra/titles";
 import { LEAD_SHARE, resellerLeadsOpen } from "../30-customers/resellers";
 import { provisionService } from "../90-actions/clusters";
 import { addressesFit } from "../60-infra/addresses";
@@ -121,6 +122,8 @@ function newLeads(s: GameState, events: SimEvent[]): void {
       if (rand(s.rng) >= Math.min(1, cache.get(k)! * f.conversion)) continue;
       // Leads only write about lines on the website, which needs a control plane that sells them.
       if (!lineOffered(s, need.product) || !listed(s, need.product)) continue;
+      // A gamer wants one game; when none of your panels runs it, they go elsewhere.
+      if (need.product === "gameServer" && gameLeadLost(s)) continue;
       // A few web hosting leads are resellers who want a block of accounts instead.
       if (need.product === "webHosting" && resellerLeadsOpen(s) && rand(s.rng) < LEAD_SHARE) {
         newLead(s, "reseller", f.city, events, { product: "reseller", size: Math.floor(rand(s.rng) * SIZES.reseller.length), sla: "business" });

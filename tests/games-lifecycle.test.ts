@@ -41,7 +41,7 @@ const at = (s: GameState, hourOfDay: number, day?: number): void => {
 
 describe("crashes", () => {
   it("happen a few times a year on a plain server", () => {
-    const { s, id } = game("counterstrife", 2018);
+    const { s, id } = game("teamfortune", 2016);
     run(s, 24 * 365);
     expect(gameOf(s, id)!.crashes).toBeGreaterThan(2);
     expect(gameOf(s, id)!.crashes).toBeLessThan(18);
