@@ -12,7 +12,7 @@ import { buyShopLink } from "../../../../../sim/90-actions/shoplink";
 import "./shopvendors.css";
 import { usePageAct } from "../../pageAct";
 
-export interface VendorProps { game: GameState }
+export interface VendorProps { game: GameState; path?: string; go?: (url: string) => void }
 
 // The page every shop vendor sells its modules on, Shop link and the payment methods of the year; each vendor's file
 // gives it its colours and wordmark.
