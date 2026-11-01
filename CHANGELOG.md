@@ -7,6 +7,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - You can register on DOHLE for a certificate file, with the activation ID by email and the code by post, and download DohleFormular to send your advance VAT returns.
 
 ## 2026-11-01
+- Leads now write in about products you do not sell yet, and a switch on the website settings stops those requests.
 - A newly installed cPanic, Pleskit or DirectAdmen asks for its license on a setup page at first sign-in, where you can type a key, pick one you already own or continue on the trial.
 - When a panel's trial or license runs out, its admin pages show only the license page until a key is entered, and its customers write in that their control panel login shows a license error while their sites stay online.
 - Quote and invoice previews in Books keep their margins and text size in proportion to the page at any window size.

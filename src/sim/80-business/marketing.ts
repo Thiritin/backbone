@@ -70,6 +70,8 @@ export interface Marketing {
   lines: Product[];
   // Whether orders still arrive by email.
   emailOrders: boolean;
+  // Whether leads write in about products you do not sell yet.
+  customRequests: boolean;
   // The hour the hand-written first site is ready, null before the player starts it, and whether it is online.
   siteReady: number | null;
   launched: boolean;
@@ -96,7 +98,7 @@ export function wonLeads(s: GameState, ago: 0 | 1): Partial<Record<Product, numb
 }
 
 export const newMarketing = (): Marketing => ({
-  owned: [], campaigns: [], reviews: [], platform: null, studies: [], lines: [], emailOrders: true, siteReady: null, launched: false, siteHost: { kind: "rented" }, designYear: 2005, siteOutage: false, unmet: { month: {}, last: {} }, published: null,
+  owned: [], campaigns: [], reviews: [], platform: null, studies: [], lines: [], emailOrders: true, customRequests: true, siteReady: null, launched: false, siteHost: { kind: "rented" }, designYear: 2005, siteOutage: false, unmet: { month: {}, last: {} }, published: null,
   awareness: Object.fromEntries(PROFILE_IDS.map((p) => [p, p === "private" || p === "gamer" ? 0.05 : AWARENESS_FLOOR])) as Record<Profile, number>,
 });
 
