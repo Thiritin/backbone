@@ -376,4 +376,9 @@ export default {
   "browser-sites-1.art.rack": () => "Baie de serveurs",
   "browser-sites-1.art.aisle": () => "Allée du centre de données",
   "browser-sites-1.art.desk": () => "Bureau du support",
+  "browser-sites-1.co.nav.pricing": () => "Tarifs",
+  "browser-sites-1.co.pricingLead": () => "Choisissez une offre et une périodicité, puis commandez en ligne.",
+  "browser-sites-1.co.plan": () => "Offre",
+  "browser-sites-1.co.specs": () => "Caractéristiques",
+  "browser-sites-1.co.spec": (p) => `${p.cpu} vCPU, ${p.ram} Go de RAM, ${p.disk} Go de disque`,
 } satisfies Dict;

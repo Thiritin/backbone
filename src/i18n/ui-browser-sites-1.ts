@@ -404,4 +404,9 @@ export default {
   "browser-sites-1.art.rack": () => "Server rack",
   "browser-sites-1.art.aisle": () => "Datacenter aisle",
   "browser-sites-1.art.desk": () => "Support desk",
+  "browser-sites-1.co.nav.pricing": () => "Pricing",
+  "browser-sites-1.co.pricingLead": () => "Choose a plan and billing cycle, then order it online.",
+  "browser-sites-1.co.plan": () => "Plan",
+  "browser-sites-1.co.specs": () => "Specifications",
+  "browser-sites-1.co.spec": (p) => `${p.cpu} vCPU, ${p.ram} GB RAM, ${p.disk} GB disk`,
 } satisfies Dict;
