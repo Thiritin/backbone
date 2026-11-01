@@ -83,4 +83,13 @@ export default {
   "games.tab.pterodaktyl.monitor": () => `Absturzerkennung`,
   "games.tab.pterodaktyl.ports": () => `Zuweisungen`,
   "games.tab.pterodaktyl.nodes": () => `Nodes`,
+  "games.log.version": (p) => `Spielversion ${p.version} geladen`,
+  "games.log.mod": (p) => `Mod ${p.mod} geladen`,
+  "games.log.join": (p) => `${p.player} ist dem Spiel beigetreten`,
+  "games.log.leave": (p) => `${p.player} hat das Spiel verlassen`,
+  "games.log.crash": () => `Ausnahme im Server-Thread: Speicher erschöpft`,
+  "games.log.autoRestart": () => `Server wird neu gestartet`,
+  "games.tab.tcadmen.console": () => `Konsole`,
+  "games.tab.multikraft.console": () => `Konsole`,
+  "games.tab.pterodaktyl.console": () => `Konsole`,
 } satisfies Dict;

@@ -83,4 +83,13 @@ export default {
   "games.tab.pterodaktyl.monitor": () => `Deteção de falhas`,
   "games.tab.pterodaktyl.ports": () => `Atribuições`,
   "games.tab.pterodaktyl.nodes": () => `Nós`,
+  "games.log.version": (p) => `Versão do jogo ${p.version} carregada`,
+  "games.log.mod": (p) => `Mod ${p.mod} carregado`,
+  "games.log.join": (p) => `${p.player} entrou no jogo`,
+  "games.log.leave": (p) => `${p.player} saiu do jogo`,
+  "games.log.crash": () => `Exceção na thread do servidor: memória esgotada`,
+  "games.log.autoRestart": () => `A reiniciar o servidor`,
+  "games.tab.tcadmen.console": () => `Consola`,
+  "games.tab.multikraft.console": () => `Consola`,
+  "games.tab.pterodaktyl.console": () => `Consola`,
 } satisfies Dict;

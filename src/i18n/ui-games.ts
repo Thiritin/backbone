@@ -83,4 +83,13 @@ export default {
   "games.tab.pterodaktyl.monitor": () => `Crash detection`,
   "games.tab.pterodaktyl.ports": () => `Allocations`,
   "games.tab.pterodaktyl.nodes": () => `Nodes`,
+  "games.log.version": (p) => `Game version ${p.version} loaded`,
+  "games.log.mod": (p) => `Mod ${p.mod} loaded`,
+  "games.log.join": (p) => `${p.player} joined the game`,
+  "games.log.leave": (p) => `${p.player} left the game`,
+  "games.log.crash": () => `Exception in server thread: out of memory`,
+  "games.log.autoRestart": () => `Restarting the server`,
+  "games.tab.tcadmen.console": () => `Console`,
+  "games.tab.multikraft.console": () => `Console`,
+  "games.tab.pterodaktyl.console": () => `Console`,
 } satisfies Dict;

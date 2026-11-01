@@ -83,4 +83,13 @@ export default {
   "games.tab.pterodaktyl.monitor": () => `Rilevamento arresti`,
   "games.tab.pterodaktyl.ports": () => `Assegnazioni`,
   "games.tab.pterodaktyl.nodes": () => `Nodi`,
+  "games.log.version": (p) => `Versione del gioco ${p.version} caricata`,
+  "games.log.mod": (p) => `Mod ${p.mod} caricata`,
+  "games.log.join": (p) => `${p.player} è entrato nella partita`,
+  "games.log.leave": (p) => `${p.player} ha lasciato la partita`,
+  "games.log.crash": () => `Eccezione nel thread del server: memoria esaurita`,
+  "games.log.autoRestart": () => `Riavvio del server`,
+  "games.tab.tcadmen.console": () => `Console`,
+  "games.tab.multikraft.console": () => `Console`,
+  "games.tab.pterodaktyl.console": () => `Console`,
 } satisfies Dict;

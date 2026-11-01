@@ -83,4 +83,13 @@ export default {
   "games.tab.pterodaktyl.monitor": () => `Détection des plantages`,
   "games.tab.pterodaktyl.ports": () => `Allocations`,
   "games.tab.pterodaktyl.nodes": () => `Nœuds`,
+  "games.log.version": (p) => `Version du jeu ${p.version} chargée`,
+  "games.log.mod": (p) => `Mod ${p.mod} chargé`,
+  "games.log.join": (p) => `${p.player} a rejoint la partie`,
+  "games.log.leave": (p) => `${p.player} a quitté la partie`,
+  "games.log.crash": () => `Exception dans le thread du serveur : mémoire insuffisante`,
+  "games.log.autoRestart": () => `Redémarrage du serveur`,
+  "games.tab.tcadmen.console": () => `Console`,
+  "games.tab.multikraft.console": () => `Console`,
+  "games.tab.pterodaktyl.console": () => `Console`,
 } satisfies Dict;

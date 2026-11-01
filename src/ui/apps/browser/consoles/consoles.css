@@ -232,3 +232,4 @@
 .gp { display: grid; gap: 8px; padding: 8px 0; }
 .gp-hours { display: flex; align-items: flex-end; gap: 2px; height: 64px; }
 .gp-hours i { flex: 1; background: var(--accent); min-height: 2px; border-radius: 1px; }
+.gp-log { margin: 0; padding: 8px; max-height: 240px; overflow: auto; font: 12px/1.5 ui-monospace, monospace; background: var(--side); color: var(--side-fg); border-radius: var(--r); }

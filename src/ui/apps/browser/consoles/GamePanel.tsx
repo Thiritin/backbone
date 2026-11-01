@@ -6,7 +6,7 @@ import { GAME_TITLES, MODS, titleById } from "../../../../sim/10-catalog/games";
 import type { GameState } from "../../../../sim/50-state";
 import type { Cluster } from "../../../../sim/60-infra/cluster";
 import { POOL_SIZE, daemonOf, freePorts, nodeKeys } from "../../../../sim/60-infra/daemons";
-import { gameCrashed, gameOf, latestVersion, playersOf } from "../../../../sim/60-infra/games";
+import { gameCrashed, gameLog, gameOf, latestVersion, playersOf } from "../../../../sim/60-infra/games";
 import { addAllocation, changeTitle, installMod, removeAllocation, removeMod, restartDaemon, restartGame, setAutoRestart, setGameVersion, setRestartSchedule, updateDaemon, updateGameVersion } from "../../../../sim/90-actions/games";
 import { useStore } from "../../../store";
 
@@ -27,11 +27,11 @@ export function TitlesSummary({ rows }: { rows: { game?: GameRow }[] }) {
 }
 
 // The sections each panel names in its own words; the ids pick the block that fills them.
-type Section = "overview" | "settings" | "mods" | "schedule" | "monitor" | "players" | "ports";
+type Section = "overview" | "settings" | "mods" | "schedule" | "monitor" | "players" | "ports" | "console";
 const SECTIONS: Record<string, Section[]> = {
-  tcadmen: ["overview", "settings", "mods", "schedule", "monitor", "players"],
-  multikraft: ["players", "settings", "mods", "schedule"],
-  pterodaktyl: ["settings", "mods", "schedule", "monitor", "ports"],
+  tcadmen: ["overview", "settings", "mods", "schedule", "monitor", "players", "console"],
+  multikraft: ["players", "settings", "mods", "schedule", "console"],
+  pterodaktyl: ["settings", "mods", "schedule", "monitor", "ports", "console"],
 };
 
 const weekday = (d: number) => new Intl.DateTimeFormat(LOCALE, { weekday: "long", timeZone: "UTC" }).format(new Date(Date.UTC(2024, 0, 7 + d)));
@@ -116,6 +116,9 @@ export function GameDetails({ game, serviceId, panel }: { game: GameState; servi
           {Array.from({ length: 24 }, (_, h) => playersOf(game, serviceId, game.hour - 23 + h)).map((p, h) => <i key={h} style={{ height: `${p && p.slots ? (p.players / p.slots) * 100 : 0}%` }} />)}
         </div>
       </>
+    ),
+    console: (
+      <pre className="gp-log">{gameLog(game, serviceId).map((l) => `${String(l.at % 24).padStart(2, "0")}:00 ${t(l.key, { ...l.params, mod: l.key === "games.log.mod" ? t(`games.mod.${l.params.mod}`) : "" })}`).join("\n")}</pre>
     ),
     ports: (
       <>
