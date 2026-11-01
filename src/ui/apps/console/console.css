@@ -158,6 +158,11 @@
 .wm2-tiles button:disabled { background: #9ab; cursor: default; }
 .wm2-tiles b { margin-right: 8px; }
 .wd .muted { color: #666; }
+.wa { padding: 12px 14px; display: grid; gap: 8px; align-content: start; max-width: 420px; }
+.wa label { display: flex; align-items: center; gap: 6px; }
+.wa-row { justify-content: space-between; padding-left: 22px; }
+.wa-row input { width: 150px; font: inherit; padding: 2px 4px; border: 1px solid #7a7a7a; }
+.wa-row input:disabled { background: #f0f0f0; color: #888; }
 .wz { display: grid; height: 100%; }
 .wz[data-steps] { grid-template-columns: 170px 1fr; }
 .wz-steps { margin: 0; padding: 12px; list-style: none; background: #e8eef7; display: grid; align-content: start; gap: 4px; }

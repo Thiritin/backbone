@@ -6,6 +6,7 @@ import { serverOsById, type ServerOsId } from "../../../sim/10-catalog/server-os
 import type { Device, GameState, NetFail } from "../../../sim/50-state";
 import type { Workload } from "../../../sim/60-infra/cluster";
 import { isIp, prefixOf, type IfaceConfig } from "../../../sim/60-infra/ifaces";
+import { machineAddress } from "../../../sim/60-infra/addresses";
 import { machineNet } from "../../../sim/60-infra/oob";
 import { drivesOf, raidUsable } from "../../../sim/60-infra/status";
 import { eraseDisk, installCase, installOs, setMedia, upgradeHours, upgradeOs, upgradeTarget } from "../../../sim/90-actions/console";
@@ -88,7 +89,7 @@ function Rows({ rows, at, pick }: { rows: Row[]; at: number; pick: (i: number) =
 }
 
 type Field = "ip" | "mask" | "gw" | "dns";
-type LunixStep = "boot" | "language" | "hostname" | "dhcp" | "autofail" | Field | "fetch" | "disks" | "write" | "erase";
+type LunixStep = "boot" | "language" | "hostname" | "dhcp" | "autofail" | "leased" | Field | "fetch" | "disks" | "write" | "erase";
 const LANGUAGES = ["English", "Deutsch", "Français", "Español", "Nederlands"];
 const FIELDS: Field[] = ["ip", "mask", "gw", "dns"];
 
@@ -101,7 +102,8 @@ function useLunixSetup(game: GameState, m: Machine, version: string): Keyed {
   const tg = useTarget(game, m), net = machineNet(game, m.id);
   const go = (to: LunixStep) => () => { setStep(to); tg.setNote(""); tg.setTyped(""); };
   const back = (to: LunixStep): Row => ({ label: t("console.goBack"), run: go(to) });
-  const dhcp = () => { setIface({ mode: "dhcp" }); go(net ? "autofail" : "disks")(); };
+  const leased = machineAddress(game, m.id);
+  const dhcp = () => { setIface({ mode: "dhcp" }); go(net || !leased ? "autofail" : "leased")(); };
   // Each field takes an address; the gateway and name servers may stay empty. The netmask proposes /24, the gateway the
   // network's first address and the name server the gateway, as the real installer does.
   const valid = (f: Field) => (f === "mask" ? prefixOf(form.mask) !== null : isIp(form[f]) || (f !== "ip" && !form[f]));
@@ -145,6 +147,7 @@ function useLunixSetup(game: GameState, m: Machine, version: string): Keyed {
       : { title: t("console.configureNetwork"), err: true, body: <div>{t("error.noAutoconf")}</div>, rows: [
         { label: t("console.net.retry"), run: dhcp }, { label: t("console.net.manual"), run: go("ip") }, { label: t("console.net.none"), run: go("fetch") },
       ] },
+    leased: { title: t("console.configureNetwork"), body: <div>{t("console.net.ip")} {leased}</div>, rows: [{ label: t("console.continue"), run: go("disks") }, back("dhcp")] },
     ip: field("ip"), mask: field("mask"), gw: field("gw"), dns: field("dns"),
     fetch: { title: t("console.retrievingPackages"), err: true, body: <div>{t("term.console.osInstallFailed")} {t("console.checkNetwork")}</div>, rows: [{ label: t("console.abort"), run: () => { go("boot")(); tg.leave(); } }] },
     disks: { title: t("console.partitionDisks"), body: <div>{t("console.partitioningMethod")}</div>, rows: [{ label: t("console.guided", { array: tg.array }), run: go("write") }, back("dhcp")] },
