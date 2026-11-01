@@ -28,6 +28,7 @@ import { Shop } from "./Shop";
 type Section = "channels" | "products" | "shop" | "pricing" | "campaigns" | "awareness" | "reviews" | "fairs" | "community";
 
 export const AUDIENCE: Record<Profile, string> = {
+  reseller: t("web.reseller.audience"),
   private: t("marketing.audPrivate"), gamer: t("marketing.audGamer"), hobbyDev: t("marketing.audHobbyDev"), soleProp: t("marketing.audSoleProp"), smallBiz: t("marketing.audSmallBiz"), agency: t("marketing.audAgency"), office: t("marketing.audOffice"), onlineShop: t("marketing.audOnlineShop"), enterprise: t("marketing.audEnterprise"),
 };
 

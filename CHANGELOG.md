@@ -5,6 +5,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-01
 
 - Letters in the Post app now arrive as full A4 pages with each sender's letterhead, crest or logo, the address window, reference block and footer of an official German letter.
+- Authorities that seize servers or send legal requests now appear under their name in your chosen language.
+- Resellers now rent blocks of 20, 50 or 100 accounts on a DirectAdmen or cPanic host and fill them over the months, their customers bring abuse reports of their own, and DirectAdmen has a Reseller login and a Manage Resellers page to watch and suspend them.
 - The desktop only responds at normal speed; pause or fast forward to watch, then return to normal speed to act.
 - Quotes and invoices in Lexwear Office now show as a full A4 page that fits the pane, and a draft quote can be sent to the customer with the Send button.
 - Small hosting companies now open in one or two cities, collect reviews like the big ones, and go bust or get bought when they win too few customers, with each step in the news.
