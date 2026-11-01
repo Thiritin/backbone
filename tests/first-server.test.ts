@@ -9,6 +9,7 @@ import { tick } from "../src/sim/88-tick/tick";
 import { createPanelVm, installPanel } from "../src/sim/90-actions/clusters";
 import { installSoftware } from "../src/sim/90-actions/software";
 import { connect, mountDevice, setPlugged } from "../src/sim/90-actions/hardware";
+import { setPortShare } from "../src/sim/90-actions/lan";
 import { buyDevice, bootedMachine } from "./fixtures";
 import { startGame } from "../src/sim/90-actions/start";
 import { checkDone } from "../src/sim/checklist";
@@ -37,6 +38,7 @@ function firstServer(s: GameState): string {
   expect(checkDone(s, "mountRouter")).toBe(true);
   run(s, 1);
   expect(linkStatus(s, srv).online).toBe(true);
+  ok(setPortShare(s, "dev5", srv, "web"));
   return srv;
 }
 

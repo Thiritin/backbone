@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { MANUFACTURERS } from "../src/sim/10-catalog/hardware";
 import { companyDomain, fqdn } from "../src/sim/30-customers/domains";
-import { privateIp } from "../src/sim/60-infra/addresses";
+import { machineAddress } from "../src/sim/60-infra/addresses";
 import { defaultBookmarks, displayHost, resolve, split, vendorHost, VENDORS, VIDEO_URL, WIKI_URL } from "../src/sim/80-business/browser";
 import { siteIndex } from "../src/sim/80-business/index";
 import { newGame } from "../src/sim/50-state";
@@ -18,6 +18,7 @@ const web = (s: ReturnType<typeof readyGame>) => s.services.find((v) => v.produc
 // A server and a VM without management software, which serve no console.
 function bare(s: ReturnType<typeof readyGame>) {
   s.devices.push({ ...s.devices.find((x) => x.hostname)!, id: "dev99", hostname: "node099" });
+  s.cables.push({ id: "cab99", a: { device: "dev99", port: 0 }, b: { device: "dev4", port: 5 }, kind: "copper", color: null });
   const made = createVm(s, s.clusters[0].id, PANEL_VM_SIZE), vm = s.workloads.find((w) => w.id === (made.ok ? made.id : ""))!;
   return { node: s.devices.at(-1)!, vm };
 }
@@ -64,7 +65,7 @@ describe("browser resolver", () => {
   });
 
   it("resolves private addresses typed as URLs to the machine", () => {
-    const s = readyGame(1), { node } = bare(s), ip = privateIp(s, node.id)!;
+    const s = readyGame(1), { node } = bare(s), ip = machineAddress(s, node.id)!;
     expect(resolve(s, `http://${ip}/`).page).toEqual({ kind: "host", hostname: node.hostname });
     expect(resolve(s, "10.99.99.99").page).toEqual({ kind: "notfound" });
   });
@@ -103,13 +104,13 @@ describe("browser resolver", () => {
   });
 
   it("cannot reach a site or machine on a host that is down", () => {
-    const s = readyGame(1), node = s.devices.find((x) => x.hostname)!;
+    const s = readyGame(1), node = s.devices.find((x) => x.hostname)!, ip = machineAddress(s, node.id);
     expect(resolve(s, fqdn(s, node.hostname!)).load).toBe("fast");
     expect(resolve(s, web(s).domain!).load).toBe("fast");
     expect(setPower(s, node.id, false).ok).toBe(true);
     expect(resolve(s, fqdn(s, node.hostname!)).load).toBe("down");
     expect(resolve(s, web(s).domain!).load).toBe("down");
-    expect(resolve(s, `http://${privateIp(s, node.id)}/`).load).toBe("down");
+    expect(resolve(s, `http://${ip}/`).load).toBe("down");
   });
 
   it("cannot reach the company site on a down own host, while the admin page still opens", () => {

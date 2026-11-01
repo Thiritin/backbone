@@ -37,6 +37,8 @@ The steps run in this order, with the 2005 prices from the game.
 | Mount the router | Locations | Nothing; the Fritz!Bocks 5050 waits in storage and goes on a shelf in the rack, its DSL port cabled to the line jack | Instant |
 | Add internet | Locations, Internet line | DSL 16000, €45 a month, 1 Mbit/s up, no fixed address. DSL 16000 Business, €59 a month, fixed addresses. SDSL 2048, €129 a month, 2 Mbit/s up, fixed addresses | 7 days; 14 days for the business line and the SDSL |
 | Install software | Locations, the server's Add Software tile | FreePanel and the OpenVeeZee hypervisor are free. Pleskit is €12 a server, DirectAdmen €4 a server and cPanic €0.40 an account | 2 hours for FreePanel; 3 hours for OpenVeeZee, which then hosts a FreePanel VM |
+| Find the server's address | Browser, fritz.bocks, Home network | Nothing; the password is on the router's label in Locations | Instant |
+| Share the web port | Browser, fritz.bocks, Internet, Permit access | Nothing; on a business line with addresses of its own this step ticks by itself | Instant |
 | Build the website | Marketing, Channels | Free | 3 days |
 | Register your domain | Network, Domains | NameCheep has no signup fee and no monthly fee; a .de domain costs €18 a year, booked as €1.50 a month | Instant |
 | Launch it and list a product | Marketing, Channels and Products | €9.90 a month for the site Strateaux hosts, or nothing on an own panel host | Instant |

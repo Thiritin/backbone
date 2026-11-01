@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { hashRng, rand } from "../src/sim/00-core/rng";
 import { hasBmc, MANUFACTURERS } from "../src/sim/10-catalog/hardware";
 import { DATACENTERS } from "../src/sim/20-world/datacenters";
-import { ipmiIp } from "../src/sim/60-infra/addresses";
+import { addressOf } from "../src/sim/60-infra/lan";
 import { bmcHangChance, hangChance, powerTick } from "../src/sim/60-infra/power";
 import { deviceHealth, halting, powered, working } from "../src/sim/60-infra/status";
 import type { GameState } from "../src/sim/50-state";
@@ -38,18 +38,16 @@ describe("management controllers", () => {
     expect(MANUFACTURERS.filter((m) => m.kinds.includes("server")).map((m) => m.name)).toEqual(["Dwell", "Hewlett-Packet", "SuperMacro", "Lenovoid", "Gigabutt"]);
   });
 
-  it("have a management address in the location's range", () => {
+  it("take a lease from the router after the desk and the server's own NIC", () => {
     const s = game();
-    expect(ipmiIp(s, "dev3")).toMatch(/^192\.168\.3\.\d+$/);
-    expect(ipmiIp(s, "dev3")!.split(".")[3]).toBe(String(10 + (3 % 240)));
-    s.locations[0].dc = DATACENTERS[0].id;
-    expect(ipmiIp(s, "dev3")).toBe(`10.${s.locations.indexOf(s.locations[0]) + 1}.2.13`);
-    expect(ipmiIp(game("g1-compute"), "dev3")).toBeNull();
+    expect(addressOf(s, "dev3")).toBe("192.168.178.21");
+    expect(addressOf(s, "dev3", "bmc")).toBe("192.168.178.22");
+    expect(addressOf(game("g1-compute"), "dev3", "bmc")).toBeNull();
   });
 
   it("answer in the browser, also when the server is off, and not when hung", () => {
     const s = game();
-    const url = `http://${ipmiIp(s, "dev3")}/`;
+    const url = `http://${addressOf(s, "dev3", "bmc")}/`;
     expect(resolve(s, url)).toMatchObject({ page: { kind: "ipmi", deviceId: "dev3" }, load: "fast" });
     setPower(s, "dev3", false);
     expect(resolve(s, url).load).toBe("fast");

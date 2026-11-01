@@ -651,6 +651,7 @@ export function setPortGroup(s: GameState, switchId: string, ports: number[]): A
   if (!d) return fail("error.unknownDevice");
   const model = modelById(d.model);
   if (model.kind !== "switch") return fail("error.notSwitch");
+  if (!model.managed) return fail("error.unmanaged");
   const unique = [...new Set(ports)].sort((x, y) => x - y);
   if (unique.some((p) => !Number.isInteger(p) || !model.ports[p])) return fail("error.unknownPort");
   if (unique.length > 8) return fail("error.groupSize");

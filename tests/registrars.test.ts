@@ -221,8 +221,8 @@ describe("company domain", () => {
 });
 
 describe("tutorial", () => {
-  it("runs register, company, buyServer, mountServer, mountRouter, internet, setup, website, domain, launch, email, firstCustomer", () => {
-    expect(TUTORIAL).toEqual(["register", "company", "buyServer", "mountServer", "mountRouter", "internet", "setup", "website", "domain", "launch", "email", "firstCustomer"]);
+  it("runs register, company, buyServer, mountServer, mountRouter, internet, setup, findAddress, shareWeb, website, domain, launch, email, firstCustomer", () => {
+    expect(TUTORIAL).toEqual(["register", "company", "buyServer", "mountServer", "mountRouter", "internet", "setup", "findAddress", "shareWeb", "website", "domain", "launch", "email", "firstCustomer"]);
   });
 
   it("starts without Marketing and gives it to old registered saves", () => {
