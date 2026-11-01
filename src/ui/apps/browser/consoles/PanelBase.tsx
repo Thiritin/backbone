@@ -5,7 +5,7 @@ import { ArrowRightLeft, CalendarClock, Circle, Code, Maximize2, Pause, Play, Po
 import { useMemo, useState, type ReactNode } from "react";
 import { yearOf } from "../../../../sim/00-core/time";
 import { GAME_UNIT } from "../../../../sim/10-catalog/games";
-import { gameOf, playersOf } from "../../../../sim/60-infra/games";
+import { gameCrashed, gameOf, playersOf } from "../../../../sim/60-infra/games";
 import { GameLine, type GameRow } from "./GamePanel";
 import { autoUpdates, phpAt, softwareById } from "../../../../sim/10-catalog/platforms";
 import type { Resources } from "../../../../sim/10-catalog/products";
@@ -130,7 +130,7 @@ const PLAN_LABEL: Record<string, string> = { cpanic: "pkg.changeCpanic", directa
 function gameRow(game: GameState, c: Cluster, serviceId: string): GameRow | undefined {
   if (!c.panel || !GAME_UNIT[c.panel] || game.services.find((v) => v.id === serviceId)?.product !== "gameServer") return undefined;
   const g = gameOf(game, serviceId);
-  return { title: g ? t(`games.title.${g.title}`) : t("games.unknown"), players: playersOf(game, serviceId) };
+  return { title: g ? t(`games.title.${g.title}`) : t("games.unknown"), players: playersOf(game, serviceId), crashed: gameCrashed(game, serviceId) };
 }
 
 export interface Row {

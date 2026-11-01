@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { sizeSpec } from "../src/sim/10-catalog/products";
 import { type GameState } from "../src/sim/50-state";
-import { FULL_BOOST, FULL_HOURS, fullBoost, gameOf, gamesTick, growSlots, playersOf } from "../src/sim/60-infra/games";
+import { FULL_BOOST, FULL_HOURS, fullBoost, gameOf, growSlots, playersOf } from "../src/sim/60-infra/games";
+import { gamesTick } from "../src/sim/85-products/games-tick";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { connect, type ActionResult } from "../src/sim/90-actions/hardware";

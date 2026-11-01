@@ -5,6 +5,9 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-01
 
 - Backup servers now have a restore page that brings a lost machine back from its backup onto any server with room, in any location, including machines stranded on a seized server.
+- Game servers now crash now and then, more often with mods or on an overloaded host, and come back by themselves when auto-restart is on, and each server can restart on a daily or weekly schedule.
+- Dragging a window to a screen edge now shows a preview and tiles it to half the screen, to a quarter near a corner, or to the full screen at the top, and dragging it away restores its size.
+- Closing the last browser tab closes the browser window, and the dock menu can open a second browser window with its own tabs.
 - Progress bars in server panels now look like the ones each product used in its time, from boxed and segmented bars early on to thin flat ones later.
 - Backula no longer has a web console; its host page shows the director status and the backup disk the way its command line would.
 - Clicking the clock in the top bar opens a calendar that marks the days with announcements, and clicking your cash opens Finance.
