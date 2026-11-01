@@ -151,7 +151,7 @@ Domains and SSL (`period: "year"`) do not show a cycle choice; they are always a
 
 ### 3.3 Product groups and products (feature 3)
 
-Reshaped by [product-catalog](product-catalog.md) section 4: products live in `s.catalog` as `CatalogProduct` plus the shop fields below, and feature 1 is superseded by its milestone 1.
+Feature 1 is superseded by [product-catalog](product-catalog.md) milestone 1. The shop keeps its own products on `ShopState`; the Books catalog (`s.catalog`) is a separate list that email orders choose from.
 
 State on `ShopState` (`src/sim/80-business/shop.ts`):
 

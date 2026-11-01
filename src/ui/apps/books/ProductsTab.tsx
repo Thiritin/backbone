@@ -19,9 +19,9 @@ export function ProductsTab({ focus }: { focus: string | null }) {
   const game = useStore((s) => s.game), act = useStore((s) => s.act);
   const [editing, setEditing] = useState<string | null>(focus);
   const [line, setLine] = useState<Product>(LINES[0]);
-  const locked = game.shop.variant !== null, p = game.catalog.find((x) => x.id === editing);
-  if (p && !locked) return <ProductForm key={p.id} game={game} p={p} onDone={() => setEditing(null)} />;
-  const add = !locked && (
+  const p = game.catalog.find((x) => x.id === editing);
+  if (p) return <ProductForm key={p.id} game={game} p={p} onDone={() => setEditing(null)} />;
+  const add = (
     <div className="books-pick">
       <select className="field" aria-label={t("books.line")} value={line} onChange={(e) => setLine(e.target.value as Product)}>
         {LINES.map((l) => <option key={l} value={l}>{t(`sim.line.${l}`)}</option>)}
@@ -30,7 +30,7 @@ export function ProductsTab({ focus }: { focus: string | null }) {
     </div>
   );
   if (game.catalog.length === 0) return <div className="fin-empty"><Package />{t("books.noProducts")}{add}</div>;
-  const open = (x: CatalogProduct) => !locked && setEditing(x.id);
+  const open = (x: CatalogProduct) => setEditing(x.id);
   return (
     <div className="fin-scroll books-products">
       {add}
@@ -45,7 +45,7 @@ export function ProductsTab({ focus }: { focus: string | null }) {
           <tbody key={l}>
             <tr><th colSpan={6} scope="colgroup">{t(`sim.line.${l}`)}</th></tr>
             {game.catalog.filter((x) => x.line === l).map((x) => (
-              <tr key={x.id} onClick={() => open(x)} tabIndex={locked ? undefined : 0} onKeyDown={(e) => e.key === "Enter" && open(x)}>
+              <tr key={x.id} onClick={() => open(x)} tabIndex={0} onKeyDown={(e) => e.key === "Enter" && open(x)}>
                 <td>{x.name}</td>
                 <td>{specText(x.line, x.spec)}</td>
                 <td className="r num">{x.prices.monthly === undefined ? "" : euroPrice(x.prices.monthly)}</td>

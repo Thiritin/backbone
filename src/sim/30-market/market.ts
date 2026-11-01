@@ -48,7 +48,8 @@ export interface SalesRequest {
   cycle?: Cycle;
   // Taken by a shop system: the website's prices are the quote and ordering is the acceptance; one that cannot be placed is cancelled, never lost.
   shop?: boolean;
-  // The shop product a form order buys; its server group and package decide where the service goes.
+  // The product the order buys: a shop product for a shop order (its server group and package decide where the service
+  // goes), a Books catalog product for an email order.
   productId?: string;
   // The payment method a shop order checked out with; absent for bank transfer.
   method?: MethodId;
