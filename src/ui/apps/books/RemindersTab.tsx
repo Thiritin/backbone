@@ -13,7 +13,7 @@ import { useBooks } from "./view";
 import { More } from "../More";
 
 const DAY = 24;
-const reminder = (step: number) => STEPS[step].key === "collections" ? t("misc1.billing.toCollections") : t("misc1.billing.sendStep", { step: t(`invoice.step.${STEPS[step].key}`).toLowerCase() });
+const reminder = (step: number) => STEPS[step].key === "collections" ? t("misc1.billing.toCollections") : t("misc1.billing.sendStep", { step: t(`invoice.step.${STEPS[step].key}`) });
 
 // Suspension, write-off and the customer for a late invoice.
 function invoiceMenu(inv: Invoice, onWriteOff: (i: Invoice) => void): MenuEntry[] {
