@@ -39,4 +39,8 @@ export default {
   "books-vendors.about.gnucache": () => "Free bookkeeping, built by volunteers.",
   "ticket.pear.overdraft.subject": () => "Your cash is running low",
   "ticket.pear.overdraft.text": () => "Your cash covers less than two months of running costs. On your bank's website you can apply for an overdraft, or for a loan that pays for the next server.",
+  "books-editions.group.sales": () => "Sales",
+  "books-editions.group.payments": () => "Payments",
+  "books-editions.group.reports": () => "Reports",
+  "books-editions.accounts": () => "Accounts",
 } satisfies Dict;

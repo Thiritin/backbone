@@ -38,4 +38,8 @@ export default {
   "books-vendors.about.gnucache": () => `Une comptabilité gratuite, faite par des bénévoles.`,
   "ticket.pear.overdraft.subject": () => `Ta trésorerie s'épuise`,
   "ticket.pear.overdraft.text": () => `Ta trésorerie couvre moins de deux mois de frais courants. Sur le site de ta banque, tu peux demander un découvert ou un prêt pour le prochain serveur.`,
+  "books-editions.group.sales": () => `Ventes`,
+  "books-editions.group.payments": () => `Paiements`,
+  "books-editions.group.reports": () => `Rapports`,
+  "books-editions.accounts": () => `Comptes`,
 } satisfies Dict;

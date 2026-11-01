@@ -38,4 +38,8 @@ export default {
   "books-vendors.about.gnucache": () => `Contabilidade gratuita, feita por voluntários.`,
   "ticket.pear.overdraft.subject": () => `O teu dinheiro está a acabar`,
   "ticket.pear.overdraft.text": () => `O teu dinheiro cobre menos de dois meses de custos correntes. No site do teu banco podes pedir um descoberto ou um empréstimo para o próximo servidor.`,
+  "books-editions.group.sales": () => `Vendas`,
+  "books-editions.group.payments": () => `Pagamentos`,
+  "books-editions.group.reports": () => `Relatórios`,
+  "books-editions.accounts": () => `Contas`,
 } satisfies Dict;

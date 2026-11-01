@@ -21,6 +21,8 @@ import { RemindersTab } from "./RemindersTab";
 import { OverviewTab, StatementTab, StatisticsTab, TaxTab } from "./Reports";
 import { Register } from "./Register";
 import { useBooks } from "./view";
+import { LAYOUTS } from "./layouts";
+import type { Entry, Group } from "./layouts/types";
 import "../billing/billing.css";
 import "./books.css";
 
@@ -29,17 +31,17 @@ export const unmatched = (s: GameState) => s.transfers.filter((x) => x.matchedAt
 export const late = (s: GameState) => s.invoices.filter((i) => i.status === "overdue" && synced(i)).length;
 
 // Each tab: id, label key, dock count and body. The selection a tab opens on comes from the focus id.
-const TABS: { id: string; count: (s: GameState) => number; body: ComponentType<{ focus: string | null }>; features?: Feature[] }[] = [
-  { id: "overview", count: () => 0, body: OverviewTab },
-  { id: "customers", count: (s) => s.customers.filter((c) => c.churnedAt === null && !c.sponsor).length, body: CustomersTab },
-  { id: "quotes", count: (s) => s.quotes.filter((q) => q.status === "accepted").length, body: QuotesTab, features: ["quotes"] },
-  { id: "invoices", count: drafts, body: InvoicesTab },
-  { id: "bank", count: unmatched, body: BankTab },
-  { id: "reminders", count: late, body: RemindersTab },
-  { id: "payables", count: (s) => s.payables.filter((p) => overdue(s, p)).length, body: PayablesTab },
-  { id: "statistics", count: () => 0, body: StatisticsTab, features: ["reports", "statistics"] },
-  { id: "tax", count: () => 0, body: TaxTab, features: ["tax"] },
-  { id: "statement", count: () => 0, body: StatementTab },
+const TABS: { id: string; group: Group; count: (s: GameState) => number; body: ComponentType<{ focus: string | null }>; features?: Feature[] }[] = [
+  { id: "overview", group: "reports", count: () => 0, body: OverviewTab },
+  { id: "customers", group: "sales", count: (s) => s.customers.filter((c) => c.churnedAt === null && !c.sponsor).length, body: CustomersTab },
+  { id: "quotes", group: "sales", count: (s) => s.quotes.filter((q) => q.status === "accepted").length, body: QuotesTab, features: ["quotes"] },
+  { id: "invoices", group: "sales", count: drafts, body: InvoicesTab },
+  { id: "bank", group: "payments", count: unmatched, body: BankTab },
+  { id: "reminders", group: "payments", count: late, body: RemindersTab },
+  { id: "payables", group: "payments", count: (s) => s.payables.filter((p) => overdue(s, p)).length, body: PayablesTab },
+  { id: "statistics", group: "reports", count: () => 0, body: StatisticsTab, features: ["reports", "statistics"] },
+  { id: "tax", group: "reports", count: () => 0, body: TaxTab, features: ["tax"] },
+  { id: "statement", group: "reports", count: () => 0, body: StatementTab },
 ];
 
 export function BooksApp() {
@@ -64,33 +66,29 @@ export function BooksApp() {
   const locked = (x: (typeof TABS)[number]) => !!x.features && !x.features.some((f) => hasFeature(game, f));
   const current = shown.find((x) => x.id === tab && !locked(x)) ?? shown[0];
   const Body = current.body;
-  const pick = (x: (typeof TABS)[number]) => {
+  const pick = (id: string) => {
+    const x = shown.find((y) => y.id === id)!;
     if (locked(x) && v) return openApp("Browser", { kind: "url", id: booksUrl(v) });
     setTab(x.id); setFocus(null);
   };
+  const entries: Entry[] = shown.map((x) => ({ id: x.id, group: x.group, count: x.count(game), locked: locked(x) }));
+  const Layout = LAYOUTS[v?.layout ?? "tabs"];
   // Shop modules arrive with a licence key to register here.
   const keys = MODULES.some((m) => licenceMail(game, m.id) && !hasModule(game, m.id));
   return (
     <div className="books" style={skin && { "--accent": skin.accent, "--bk-bar": skin.bar, "--bk-ink": skin.ink } as CSSProperties}>
-      {v?.deployment === "browser" && <div className="books-web num">{`https://www.${booksHost(v)}/app`}</div>}
-      <div className="books-top">
-      <div className="books-bar tabs" role="tablist" aria-label={t("books.title")}>
-        {shown.map((x) => {
-          const n = x.count(game);
-          return (
-            <button key={x.id} role="tab" aria-selected={x.id === current.id} aria-disabled={locked(x) || undefined} onClick={() => pick(x)}>
-              {t(`books.tab.${x.id}`)}{n ? <span className="tab-count num">{n}</span> : null}
-            </button>
-          );
-        })}
-      </div>
-      {importing && <button className="btn books-import" onClick={() => act(importFromShop)}>{t("shop-link.import")}{waiting ? <span className="tab-count num">{waiting}</span> : null}</button>}
-      {keys && <button className="btn books-register-open" aria-expanded={register} onClick={() => setRegister(!register)}>{t("vendor-sites.register")}</button>}
-      </div>
-      {register && keys && <Register onClose={() => setRegister(false)} />}
-      <div className="books-body" role="tabpanel">
-        {v && booksOffline(game) ? <Offline v={v} /> : <Body key={`${current.id}:${focus}`} focus={focus} />}
-      </div>
+      <Layout v={v!} entries={entries} active={current.id} pick={pick}>
+        {(importing || keys) && (
+          <div className="books-top">
+            {importing && <button className="btn books-import" onClick={() => act(importFromShop)}>{t("shop-link.import")}{waiting ? <span className="tab-count num">{waiting}</span> : null}</button>}
+            {keys && <button className="btn books-register-open" aria-expanded={register} onClick={() => setRegister(!register)}>{t("vendor-sites.register")}</button>}
+          </div>
+        )}
+        {register && keys && <Register onClose={() => setRegister(false)} />}
+        <div className="books-body">
+          {v && booksOffline(game) ? <Offline v={v} /> : <Body key={`${current.id}:${focus}`} focus={focus} />}
+        </div>
+      </Layout>
     </div>
   );
 }

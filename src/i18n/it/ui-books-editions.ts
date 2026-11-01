@@ -38,4 +38,8 @@ export default {
   "books-vendors.about.gnucache": () => `Contabilità gratuita, fatta da volontari.`,
   "ticket.pear.overdraft.subject": () => `Stai finendo i soldi`,
   "ticket.pear.overdraft.text": () => `La tua cassa copre meno di due mesi di costi correnti. Sul sito della tua banca puoi chiedere uno scoperto o un prestito per il prossimo server.`,
+  "books-editions.group.sales": () => `Vendite`,
+  "books-editions.group.payments": () => `Pagamenti`,
+  "books-editions.group.reports": () => `Report`,
+  "books-editions.accounts": () => `Conti`,
 } satisfies Dict;

@@ -38,4 +38,8 @@ export default {
   "books-vendors.about.gnucache": () => `Kostenlose Buchhaltung, von Freiwilligen gebaut.`,
   "ticket.pear.overdraft.subject": () => `Dein Geld wird knapp`,
   "ticket.pear.overdraft.text": () => `Dein Geld deckt weniger als zwei Monate laufende Kosten. Auf der Website deiner Bank kannst du einen Dispokredit beantragen oder einen Kredit für den nächsten Server.`,
+  "books-editions.group.sales": () => `Verkauf`,
+  "books-editions.group.payments": () => `Zahlungen`,
+  "books-editions.group.reports": () => `Auswertungen`,
+  "books-editions.accounts": () => `Konten`,
 } satisfies Dict;
