@@ -110,9 +110,13 @@ describe("switching banks", () => {
     const s = account("sparklasse", "giro"), cash = s.cash;
     s.bank!.standingOrders = [{ id: "so1", name: "Landlord", account: "DE00", amount: 300, reference: "Rent", day: 3 }];
     s.bank!.mandates = ["Strom AG"];
+    s.bank!.payees = [{ id: "pe1", name: "Landlord", account: "DE00" }];
+    s.bank!.credit = 1.5;
     expect(switchBank(s, "volksbunk", "giro")).toEqual({ ok: true });
-    expect(s.cash).toBe(cash);
+    expect(s.cash).toBe(cash + 1.5);
     expect(s.bank).toMatchObject({ id: "volksbunk", plan: "giro", standingOrders: [], mandates: [] });
+    expect(s.bank!.payees).toEqual([{ id: "pe1", name: "Landlord", account: "DE00" }]);
+    expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.depositInterest", amount: 1.5, params: { bank: "Sparklasse" } });
     expect(s.bank!.previous).toMatchObject({ id: "sparklasse", closed: false, standingOrders: [{ name: "Landlord" }], mandates: ["Strom AG"] });
     run(s, FEB + 1);
     expect(feesAt(s, FEB)).toEqual([["ledger.bankFee", -6, "Folksbank"], ["ledger.bankFee", -8, "Sparklasse"]]);
