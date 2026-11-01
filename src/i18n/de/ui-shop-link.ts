@@ -1,0 +1,25 @@
+import type { Dict } from "../lang";
+
+export default {
+  "vendor-sites.module.shop-link": () => "Shop-Anbindung",
+  "vendor-sites.pitch.shop-link": () => "Die Shop-Anbindung überträgt jeden Kunden und jede Rechnung aus Ihrem Shop sofort in Lexwear Office und markiert eine Rechnung im Shop als bezahlt, sobald Books die Zahlung verbucht.",
+  "ledger.module.shop-link": () => "Lizenz Shop-Anbindung",
+  "ticket.mail.shop-link.licence.subject": (p) => `Ihr Lizenzschlüssel für ${p.module}`,
+  "ticket.mail.shop-link.licence.text": (p) => `Vielen Dank für den Kauf von ${p.module} für ${p.shop}. Ihr Lizenzschlüssel lautet ${p.key}. Geben Sie ihn in Books unter Registrieren ein, um Ihren Shop anzubinden.`,
+  "shop-link.ref.payout": (p) => `Auszahlung ${p.numbers}`,
+  "error.payoutImport": () => "Diese Auszahlung umfasst mehrere Rechnungen.",
+  "error.nothingToImport": () => "Es gibt nichts zu importieren.",
+  "error.noShopSystem": () => "Für dieses Modul brauchen Sie das Shopsystem dieses Herstellers.",
+  "shop-link.import": () => "Aus dem Shop importieren",
+  "shop-link.customers": () => "Shop-Kunden",
+  "shop-link.invoices": () => "Shop-Rechnungen",
+  "shop-link.footer": (p) => `© ${p.year} ${p.maker}`,
+  "shop-link.tagline.modemBill": () => "Abrechnung und Provisionierung für Webhoster",
+  "shop-link.tagline.clientExit": () => "Kundenverwaltung und Abrechnung für Hostingfirmen",
+  "shop-link.tagline.whmCache": () => "Abrechnung und Automatisierung für Webhoster",
+  "shop-link.tagline.blessta": () => "Abrechnung mit offenem Code für Hostingfirmen",
+  "shop-link.tagline.hostBull": () => "Abrechnung für jede Art von Hosting",
+  "shop-link.tagline.ubersmyth": () => "Abrechnung für Anbieter von Dedicated Servern und Colocation",
+  "shop-link.tagline.orderBocks": () => "Domains und Hosting verkaufen ohne Vorabkosten",
+  "shop-link.tagline.boxBillin": () => "Freie und offene Abrechnung für Hostingfirmen",
+} satisfies Dict;

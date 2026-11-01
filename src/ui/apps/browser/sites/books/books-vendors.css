@@ -1,0 +1,31 @@
+/* The bookkeeping vendors' shops: one frame, each vendor's brand colour, ink and type. */
+.bv { min-height: 100%; background: var(--bv-page); color: #222; font: 11px/1.45 var(--bv-font); padding: 12px 0 24px; }
+.bv a { color: var(--bv-brand); }
+.bv-page { width: 760px; max-width: 100%; margin: 0 auto; background: #fff; border: 1px solid #a0a0a0; }
+.bv-head { display: flex; align-items: baseline; gap: 14px; padding: 12px 16px 10px; background: var(--bv-brand); color: var(--bv-ink); }
+.bv-logo { font: 24px/1 Arial, Helvetica, sans-serif; letter-spacing: -0.5px; }
+.bv-logo b { font-weight: 900; }
+.bv-tag { font-size: 11px; opacity: 0.85; }
+.bv-nav { display: flex; background: #e4e4e4; border-bottom: 1px solid #bbb; }
+.bv-nav a { padding: 4px 14px; color: #333; text-decoration: none; font-weight: bold; }
+.bv-nav a[aria-current] { background: #fff; color: var(--bv-brand); }
+.bv-main { padding: 12px 16px 18px; }
+.bv h1 { font-size: 15px; color: var(--bv-brand); margin: 0 0 10px; }
+.bv h2 { font-size: 12px; margin: 0 0 3px; }
+.bv p { margin: 0 0 6px; }
+.bv-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.bv-list li { padding: 8px 10px; border: 1px solid #ccc; background: linear-gradient(#fff, #f4f4f4); }
+.bv-row { display: flex; align-items: center; gap: 12px; }
+.bv-amount { font-weight: bold; font-size: 13px; }
+.bv-buy { font: bold 11px var(--bv-font); color: var(--bv-ink); background: var(--bv-brand); border: 1px solid rgb(0 0 0 / 0.35); border-radius: 3px; padding: 3px 14px; cursor: pointer; }
+.bv-state { font-weight: bold; color: #2f7d1a; }
+.bv-muted { color: #777; }
+.bv-foot { padding: 6px 16px; border-top: 1px solid #ddd; color: #777; font-size: 10px; }
+/* The cloud vendors of the 2010s: full width, no frame, round buttons. */
+.bv.flat { padding: 0; font-size: 13px; }
+.bv.flat .bv-page { width: auto; border: 0; }
+.bv.flat .bv-head { padding: 20px 32px; }
+.bv.flat .bv-nav { background: #fff; padding: 0 18px; }
+.bv.flat .bv-main { padding: 20px 32px; max-width: 760px; }
+.bv.flat .bv-list li { border-radius: 10px; background: #fff; border-color: #e3e3e3; padding: 14px 16px; }
+.bv.flat .bv-buy { border: 0; border-radius: 999px; padding: 6px 18px; font-size: 13px; }

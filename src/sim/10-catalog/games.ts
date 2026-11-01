@@ -1,6 +1,8 @@
 // game-servers plan 3.1: punned game titles, the unit each panel sells and the slot conversion.
 import { hashRng, rand } from "../00-core/rng";
+import { hourOf } from "../00-core/time";
 import type { Resources } from "./products";
+import { idNum } from "./usage";
 
 export interface GameTitle {
   id: string;
@@ -36,6 +38,9 @@ export const GAME_TITLES: GameTitle[] = [
   title("pallworld", 2024, NEVER, 1.5, [0.12, 0.12, 0.08], [2024]),
 ];
 
+// Titles that need a query port besides the game port.
+export const needsQuery = (g: GameTitle): boolean => ["rost", "fiveem", "arkaic"].includes(g.id);
+
 export const titleById = (id: string): GameTitle | undefined => GAME_TITLES.find((x) => x.id === id);
 
 // What a panel sells: slots (TCAdmen), RAM (MultiKraft) or RAM and a CPU limit (Pterodaktyl). Anything else is no game panel.
@@ -44,6 +49,9 @@ export const GAME_UNIT: Record<string, "slots" | "ram" | "ramCpu"> = { tcadmen: 
 // The share of new orders a title takes in a year: none before it arrives, full until it fades, then 25 percent less a year down to a tenth.
 export const weightAt = (g: GameTitle, year: number): number =>
   year < g.from ? 0 : g.weight * (year <= g.fade ? 1 : Math.max(0.1, 0.75 ** (year - g.fade)));
+
+// economy.md, Happiness and churn: from the year after a title fades its players leave, 0.05 happiness a day, doubling every year up to 0.4.
+export const fadeDrain = (g: GameTitle, year: number): number => (year > g.fade ? Math.min(0.4, 0.05 * 2 ** (year - g.fade - 1)) : 0);
 
 export function pickTitle(seed: number, key: number, year: number): string {
   const live = GAME_TITLES.filter((g) => weightAt(g, year) > 0);
@@ -60,3 +68,30 @@ export const slotsFor = (g: GameTitle, ramGb: number): number => Math.max(1, Mat
 
 export const resourcesOf = (g: GameTitle, slots: number): Resources =>
   ({ vcpu: slots * g.perSlot.vcpu, ramGb: slots * g.perSlot.ramGb, diskGb: slots * g.perSlot.diskGb });
+
+// game-servers plan 3.4: an installable mod. `works` is the newest version index it runs on; `weight` counts as that many mods for crashes.
+export interface GameMod { id: string; titles: string[]; load: number; leak: number; happy: number; works: number; weight: number }
+const mod = (id: string, titles: string[], load: number, happy: number, works: number, leak = 0, weight = 1): GameMod => ({ id, titles, load, leak, happy, works, weight });
+export const MODS: GameMod[] = [
+  mod("sourcemud", ["counterstrife", "teamfortune"], 1.05, 1, 1),
+  mod("metamix", ["counterstrife", "teamfortune", "battlefeld"], 1.05, 1, 2),
+  mod("bukkaboo", ["blockcraft"], 1.1, 2, 2, 0.002),
+  mod("essentiel", ["blockcraft"], 1.03, 1, 3),
+  mod("worldedik", ["blockcraft", "terrarea"], 1.05, 1, 3),
+  mod("oxidize", ["rost"], 1.1, 2, 1),
+  mod("carbonara", ["rost", "arkaic"], 1.1, 1, 1),
+  mod("fiveemfw", ["fiveem"], 1.2, 2, 1),
+  mod("modpack", ["blockcraft", "terrarea"], 1.4, 3, 2, 0, 3),
+];
+export const modById = (id: string): GameMod | undefined => MODS.find((m) => m.id === id);
+
+// Each January 1 plus up to 90 days a title's release ships, the same date in every save.
+export const releaseHour = (g: GameTitle, index: number): number =>
+  hourOf(new Date(Date.UTC(g.releases[index], 0, 1))) + 24 * Math.floor(rand(hashRng(idNum(g.id), 31, index)) * 91);
+
+// The newest release that is out at an hour; -1 before the first.
+export function releasedAt(g: GameTitle, hour: number): number {
+  let n = -1;
+  g.releases.forEach((_, i) => { if (releaseHour(g, i) <= hour) n = i; });
+  return n;
+}

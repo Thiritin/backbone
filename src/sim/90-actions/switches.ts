@@ -19,7 +19,8 @@ function managed(s: GameState, id: string): Device | string {
   return d;
 }
 
-// Sets a port's untagged VLAN and the VLANs it carries tagged, in the running configuration. A change that cuts the
+// Sets a port's untagged VLAN and the VLANs it carries tagged, and whether it carries every customer network, in the
+// running configuration. A change that cuts the
 // management VLAN off from the gateway, the way the desk comes in, locks the player out at once.
 export function setPortVlan(s: GameState, switchId: string, port: number, vlan: PortVlan): ActionResult {
   const d = managed(s, switchId);
@@ -28,7 +29,7 @@ export function setPortVlan(s: GameState, switchId: string, port: number, vlan: 
   const ids = [vlan.untagged, ...vlan.tagged];
   if (ids.some((v) => !Number.isInteger(v) || v < 1 || v > VLAN_MAX)) return fail("error.vlanRange");
   const reached = mgmtReachesGateway(s, d);
-  const next = { untagged: vlan.untagged, tagged: [...new Set(vlan.tagged)].filter((v) => v !== vlan.untagged).sort((a, b) => a - b) };
+  const next = { untagged: vlan.untagged, tagged: [...new Set(vlan.tagged)].filter((v) => v !== vlan.untagged).sort((a, b) => a - b), ...(vlan.all && { all: true as const }) };
   d.vlans = { ...d.vlans, [port]: next };
   if (reached && !mgmtReachesGateway(s, d)) {
     d.locked = true;
@@ -41,6 +42,16 @@ export function setPortVlan(s: GameState, switchId: string, port: number, vlan: 
 export function saveSwitchConfig(s: GameState, switchId: string): ActionResult {
   const d = managed(s, switchId);
   if (typeof d === "string") return fail(d);
-  d.saved = { groups: d.groups.map((g) => [...g]), vlans: structuredClone(d.vlans ?? {}) };
+  d.saved = { groups: d.groups.map((g) => [...g]), vlans: structuredClone(d.vlans ?? {}), ...(d.routed && { routed: [...d.routed] }) };
+  return { ok: true };
+}
+
+// The VLANs a layer 3 switch routes between, in the running configuration.
+export function setRouted(s: GameState, switchId: string, vlans: number[]): ActionResult {
+  const d = managed(s, switchId);
+  if (typeof d === "string") return fail(d);
+  if (modelById(d.model).layer !== 3) return fail("error.notLayer3");
+  if (vlans.some((v) => !Number.isInteger(v) || v < 1 || v > VLAN_MAX)) return fail("error.vlanRange");
+  d.routed = [...new Set(vlans)].sort((a, b) => a - b);
   return { ok: true };
 }

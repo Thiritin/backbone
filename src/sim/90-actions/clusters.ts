@@ -1,3 +1,4 @@
+import { allocationFree } from "../60-infra/daemons";
 import { createGameServer } from "../60-infra/games";
 import { betterHost } from "../60-infra/routes";
 import { keepPhp } from "../60-infra/webpanel";
@@ -21,6 +22,8 @@ import {
   anchorOf, clusterOf, clustersOf, dropCluster, gameFirst, controlPlaneUp, controlPlaneUse, fitsControlPlane, HA_OFF, hostOfVm, hostsOfVm, insideVm, isOwnVm, KEYS, vmCap, moveOff, noRoomError, nodeTakes, pickNode, serverTaken,
   backsUpCluster, balances, datastoreFits, isDatastore, setMachine, withDatastore, setNodeState, stripSoftware, supports, vmById, vmRoom, workloadsOf, workloadsOn, type BackupEvery, type Cluster, type ClusterNode, type Ha, type Placement, type Workload,
 } from "../60-infra/cluster";
+import { freeAddresses, gatewayOf } from "../60-infra/lan";
+import { nextPrivateVlan, privateNetOf } from "../60-infra/private";
 import { burning, freeSlots, installedRamGb, locationOf, rackPower, working } from "../60-infra/status";
 import { addService } from "./customers";
 import { assignService } from "../60-infra/addresses";
@@ -409,6 +412,7 @@ const hostnameOf = (s: GameState, serviceId: string): { hostname?: string } => {
   return hostname ? { hostname } : {};
 };
 
+const isVmCluster = (s: GameState, id: string | null) => s.clusters.find((c) => c.id === id)?.kind === "cloud";
 // Places a service on hardware by its product: a cluster workload (in clusterId, or the first cluster of its zone that sells
 // it with room; on deviceId when given; inside the VM of a panel VM host), a whole free server for dedicated, rack units with power for colocation. A service without a zone
 // takes the zone it lands in. A custom service books its own resources.
@@ -428,14 +432,25 @@ export function placeService(s: GameState, serviceId: string, clusterId: string 
         const disk = withDatastore(s, c, size);
         const room = withinOversell(s, c, disk), why = licenceBlock(s, c);
         if (why) { blocked = why; continue; }
+        if (v.product === "gameServer" && !allocationFree(s, c)) { blocked = "error.noAllocation"; continue; }
         if (!room) capped = true;
         const node = controlPlaneUp(s, c) && room ? pickNode(s, deviceId ? { ...c, nodes: c.nodes.filter((n) => n.deviceId === deviceId) } : c, disk, null, c.placement, roomyOnly) : null;
+        // A VM is bridged onto its server's network and needs an address from its router's pool (lan.md, Phases).
+        const router = node && c.kind === "cloud" ? gatewayOf(s, node) : null;
+        if (router && freeAddresses(s, router) < 1) { blocked = "error.poolFull"; continue; }
         if (node) { w = workload(s, v.id, { ...disk, clusterId: c.id, deviceId: c.vm ? null : node }); az = c.az; break; }
       }
       if (w) break;
     }
     const target = clusterId ? s.clusters.find((x) => x.id === clusterId) : undefined;
     if (!w && blocked) return fail(blocked);
+    // An enterprise customer's VMs need a private network (gdd.md, Network and DDoS).
+    const customer = s.customers.find((x) => x.id === v.customerId);
+    if (w && customer?.profile === "enterprise" && isVmCluster(s, w.clusterId) && !privateNetOf(s, customer.id)) {
+      const vlan = nextPrivateVlan(s);
+      if (vlan === null) return fail("error.noVlanLeft");
+      s.privateNets = [...s.privateNets, { customerId: customer.id, vlan, since: s.hour }];
+    }
     if (!w && capped) return fail("error.oversellCap");
     if (!w) return fail(target && supports(target, v.product) && !controlPlaneUp(s, target) ? "error.controlPlaneDown" : noRoomError(s, v.product, clusterId));
   } else if (spec.runsOn === "server") {
@@ -488,6 +503,10 @@ export function provisionService(s: GameState, customerId: string, product: Prod
     Object.assign(s, { services: s.services.filter((v) => v.id !== id), nextId });
     return placed;
   }
-  if (product === "gameServer") createGameServer(s, id, order.title);
+  const noPort = product === "gameServer" ? createGameServer(s, id, order.title) : null;
+  if (noPort) {
+    Object.assign(s, { services: s.services.filter((v) => v.id !== id), workloads: s.workloads.filter((w) => w.serviceId !== id), nextId });
+    return fail(noPort);
+  }
   return { ok: true, id };
 }

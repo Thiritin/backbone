@@ -148,7 +148,7 @@ export function CtPage({ game, v, host }: { game: GameState; v: Vm; host: string
 }
 
 export function OpenVeeZee(p: PanelProps) {
-  const era = eraAt(ERAS, p.game), { game, c, f } = p, link = parseCreate("openveezee", p.path), [page, setPage] = useState<Page>(link?.screen === "create" ? "create" : link?.screen === "packages" ? "plans" : "dashboard");
+  const era = eraAt(ERAS, p), { game, c, f } = p, link = parseCreate("openveezee", p.path), [page, setPage] = useState<Page>(link?.screen === "create" ? "create" : link?.screen === "packages" ? "plans" : "dashboard");
   const { vms, dialog } = useVms(game, c, f), sw = useSoftware(game, c, f), nv = useNewVm(game, c, link?.screen === "create" ? link.order : undefined), health = summaryOf(game, c, null);
   if (!p.signedIn) return (
     <div className="cx ovz ovz-login" data-era={era}>
