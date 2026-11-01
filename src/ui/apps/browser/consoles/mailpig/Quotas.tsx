@@ -5,14 +5,14 @@ import { quotaOf, quotaUsers } from "../../../../../sim/60-infra/netsvc-quota";
 import { setQuota } from "../../../../../sim/90-actions/netsvc-quota";
 import { t } from "../../../../../i18n/en";
 import { LOCALE } from "../../../../../i18n/lang";
-import { useStore } from "../../../../store";
+import { usePageAct } from "../../pageAct";
 
 const STEPS = [50, 250, 1000, 5000, 15000, 50000];
 export const mb = (n: number) => t("netsvc.mb", { n: Math.round(n).toLocaleString(LOCALE) });
 
 // The quota dropdown of a service: the usual steps plus the value it has now.
 export function QuotaSelect({ serviceId, current }: { serviceId: string; current: number }) {
-  const act = useStore((s) => s.act), steps = [...new Set([...STEPS, current])].sort((a, b) => a - b);
+  const act = usePageAct(), steps = [...new Set([...STEPS, current])].sort((a, b) => a - b);
   return <select value={current} aria-label={t("browser-consoles-1.mpQuota")} onChange={(e) => act(setQuota, serviceId, Number(e.target.value))}>{steps.map((n) => <option key={n} value={n}>{mb(n)}</option>)}</select>;
 }
 

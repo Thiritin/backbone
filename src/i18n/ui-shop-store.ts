@@ -13,6 +13,7 @@ export default {
   "shop-store.cart": () => "Cart",
   "shop-store.checkout": () => "Checkout",
   "shop-store.completeOrder": () => "Complete Order",
+  "shop-store.orderPlaced": () => "Test order placed",
   "shop-store.contact": () => "Contact details",
   "shop-store.name": () => "Name",
   "shop-store.email": () => "Email",

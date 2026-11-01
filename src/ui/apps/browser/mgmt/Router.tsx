@@ -7,11 +7,11 @@ import type { Device, GameState } from "../../../../sim/50-state";
 import { addressOf, freeAddresses, lanOf, leasesOf } from "../../../../sim/60-infra/lan";
 import { linkStatus } from "../../../../sim/60-infra/status";
 import { setOwnRouterLan, setRemoteAccess } from "../../../../sim/90-actions/routers";
-import { useStore } from "../../../store";
 import { devName } from "../../hw";
 import { lookOf, MgmtShell } from "./Switch";
 import "../consoles/consoles.css";
 import "./switch.css";
+import { usePageAct } from "../pageAct";
 
 export const routerTitle = (d: Device): string => `${lookOf(d).title} ${devName(d)}`;
 
@@ -31,7 +31,7 @@ function System({ game, d }: { game: GameState; d: Device }) {
 }
 
 function Dhcp({ game, d }: { game: GameState; d: Device }) {
-  const act = useStore((s) => s.act), lan = lanOf(game, d)!;
+  const act = usePageAct(), lan = lanOf(game, d)!;
   const [gateway, setGateway] = useState(lan.gateway), [prefix, setPrefix] = useState(lan.cidr.split("/")[1]);
   const [from, setFrom] = useState(lan.pool[0]), [to, setTo] = useState(lan.pool[1]);
   const field = (label: string, value: string, set: (v: string) => void) => <label>{label} <input className="num" value={value} onChange={(e) => set(e.target.value)} /></label>;
@@ -58,7 +58,7 @@ function Dhcp({ game, d }: { game: GameState; d: Device }) {
 }
 
 function Vpn({ game, d }: { game: GameState; d: Device }) {
-  const act = useStore((s) => s.act), on = !!lanOf(game, d)!.vpn;
+  const act = usePageAct(), on = !!lanOf(game, d)!.vpn;
   return (
     <div className="cx-tools">
       <span>{t("router.vpnServer")}</span>

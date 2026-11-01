@@ -27,6 +27,18 @@ Today installing licensed software charges the licence on the spot: `buyLicenses
 - When a vendor ends an option in real life, the shop stops selling it on that date. A player who keeps an old perpetual licence keeps running the version it covers, and that version runs out of updates and security fixes on its real schedule. Moving on means buying into the new model.
 - A term-bound key covers every version released while it is paid. When it lapses, the software behaves like an ended trial until it is renewed.
 
+The catalog carries these eras (`licensing` in `src/sim/10-catalog/platforms.ts` and `server-os.ts`); prices are in economy.md, Platforms and licenses.
+
+| Product | Eras |
+|---|---|
+| Windoors Server | perpetual per machine; from 2016-10 per core a month, 16 per server and 8 per CPU at least |
+| VMwhere | perpetual per CPU socket; from 2023-12 per core a year, 16 per CPU at least |
+| cPanic | Dedicated per server a month; from 2019-06 the account editions Solo, Admin, Pro and Premier |
+| DirectAdmen | lifetime per major or Standard a month; from 2019-09 monthly only, Personal, Lite and Standard |
+| Veeham Backup | perpetual per CPU socket; from 2018 per server a year |
+| MultiKraft | per server a month; from 2020 per game server beyond 25 a month |
+| Pleskit, HyperVee, TCAdmen, Sysko AnyConnekt | one monthly era, unchanged |
+
 ## Terms per product
 
 The trial lengths follow the real products. `null` means a key is needed at install.
@@ -53,6 +65,8 @@ The trial lengths follow the real products. `null` means a key is needed at inst
 - Keys reuse the Lexwear format and generator (`licenceKey`, four groups of four), seeded per order line.
 - Templates and cluster builds that install licensed software take keys from My account in the order shown there; if there are not enough unassigned keys, the build fails with an error that names the product.
 - `s.licenses` becomes the list of bought keys. The ledger line moves from install to checkout.
+- Checkout pays a one-time licence's price and a term licence's first month for one unit, as one ledger line per order. A cancelled term licence stops renewing, runs to the end of the term it paid for and then lapses.
+- The cart is one list in the game state; each vendor site shows and checks out only the lines it sells. Lexwear and the other bookkeeping vendors keep selling their modules on their own pages.
 
 ## Lanes
 

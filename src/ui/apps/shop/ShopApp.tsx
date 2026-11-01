@@ -12,8 +12,7 @@ import { Software } from "./Software";
 import { ShopFilter, useFilter } from "./FilterBar";
 import { CLASS_TREE, classLabel, classOf, inClass, makerOf, MAKERS, matchesFilter, partClass, rowLabel, sortItems, type Sort } from "./filter";
 import { familyById, isRamFamily } from "../../../sim/10-catalog/families";
-import { onMarket, type Channel } from "../../../sim/10-catalog/used";
-import { Used } from "./Used";
+import { CHANNELS, marketUrl } from "../../../sim/10-catalog/used";
 import { Isometric } from "../../art/Isometric";
 import { BrandLogo } from "../../art/logos";
 import { useFocus, useStore } from "../../store";
@@ -48,16 +47,13 @@ const items = (year: number, month: number): Item[] => [
 const itemKey = (it: Item) => `${it.model.id}|${it.brand}|${it.part?.size ?? ""}|${it.part?.ff ?? ""}|${it.part?.vendor ?? ""}|${it.part?.gen ?? ""}|${it.part?.sku ?? ""}`;
 
 export function ShopApp() {
-  const game = useStore((s) => s.game), hour = game.hour;
-  const [market, setMarket] = useSessionState<"new" | "used">("shop.market", "new");
-  const [channel, setChannel] = useSessionState<Channel>("shop.usedChannel", "ebuy");
+  const game = useStore((s) => s.game), hour = game.hour, openApp = useStore((s) => s.openApp);
   const [maker, setMaker] = useSessionState<string | null>("shop.maker", null);
   const [cls, setCls] = useSessionState<string | null>("shop.cls", null);
-  useFocus("Shop", (f) => { if (f.kind === "software") { setMarket("new"); setMaker(null); setCls("Software"); } });
+  useFocus("Shop", (f) => { if (f.kind === "software") { setMaker(null); setCls("Software"); } });
   const all = items(yearOf(hour), monthIndexOf(hour));
-  const software = market === "new" && cls === "Software";
-  const rows: { make: string | null; cls: string }[] = market === "new" ? all
-    : game.used.filter((l) => l.channel === channel && onMarket(game, l)).map((l) => ({ make: l.brand, cls: classOf(modelById(l.model)) }));
+  const software = cls === "Software";
+  const rows = all;
   const keep = (r: { make: string | null; cls: string }) => (!maker || r.make === maker) && inClass(cls, r.cls);
   const count = (f: (r: { make: string | null; cls: string }) => boolean) => rows.filter(f).length;
   const [filter, setFilter, clearFilter] = useFilter();
@@ -67,7 +63,7 @@ export function ShopApp() {
   const [cartOpen, setCartOpen] = useState(false);
   const inCart = useStore((st) => st.cart.reduce((n, l) => n + l.qty, 0));
   const [detail, setDetail] = useSessionState<string | null>("shop.detail", null);
-  useEffect(() => setDetail(null), [maker, cls, market]);
+  useEffect(() => setDetail(null), [maker, cls]);
   const opened_ = detail ? all.find((it) => itemKey(it) === detail) : undefined;
   const [view, setView] = useSessionState<"grid" | "list">("shop.view", "grid");
   // Parent classes the player opened; a parent also shows its children while it or one of them is picked.
@@ -96,7 +92,7 @@ export function ShopApp() {
     <div className="shop">
       <aside className="sidebar shop-side">
         <button className={`side-item${!maker && !cls ? " active" : ""}`} aria-pressed={!maker && !cls} onClick={() => { setMaker(null); setCls(null); }}><Store />{t("shop.all")}<span className="side-count">{rows.length}</span></button>
-        {market === "new" && (
+        {(
           <button className={`side-item shop-side-soft${software ? " active" : ""}`} aria-pressed={software} onClick={() => { setMaker(null); setCls(software ? null : "Software"); }}>
             <span className="shop-soft-tile"><AppWindow /></span>{t("shop.software")}
           </button>
@@ -112,12 +108,11 @@ export function ShopApp() {
       </aside>
       <div className="shop-main">
         <div className="shop-bar">
-          <div className="seg" role="group" aria-label={t("shop.market")}>
-            <button aria-pressed={market === "new"} onClick={() => setMarket("new")}>{t("shop.new")}</button>
-            <button aria-pressed={market === "used"} onClick={() => { setMarket("used"); if (software) setCls(null); }}>{t("shop.used")}</button>
+          <div className="seg" role="group" aria-label={t("shop.used")}>
+            {CHANNELS.map((c) => <button key={c.id} onClick={() => openApp("Browser", { kind: "url", id: marketUrl(c.id) })}>{c.name}</button>)}
           </div>
           <span className="grow" />
-          {market === "new" && !software && !opened_ && (
+          {!software && !opened_ && (
             <div className="seg shop-view" role="group" aria-label={t("shop.view")}>
               <button aria-pressed={view === "grid"} aria-label={t("shop.grid")} title={t("shop.grid")} onClick={() => setView("grid")}><LayoutGrid /></button>
               <button aria-pressed={view === "list"} aria-label={t("shop.list")} title={t("shop.list")} onClick={() => setView("list")}><List /></button>
@@ -125,9 +120,9 @@ export function ShopApp() {
           )}
           <button className="btn ghost" aria-pressed={cartOpen} onClick={() => setCartOpen(!cartOpen)}><ShoppingCart />{t("shop.cart")}<span key={inCart} className="num shop-count" data-full={inCart > 0 || undefined}>{inCart}</span></button>
         </div>
-        {market === "new" && !software && !opened_ && <ShopFilter items={scoped} filter={filter} set={setFilter} clear={clearFilter} sort={sort} setSort={setSort} />}
+        {!software && !opened_ && <ShopFilter items={scoped} filter={filter} set={setFilter} clear={clearFilter} sort={sort} setSort={setSort} />}
         <div className="shop-body">
-          {market === "used" ? <Used channel={channel} setChannel={setChannel} keep={(l) => keep({ make: l.brand, cls: classOf(modelById(l.model)) })} /> : software ? <Software /> : opened_ ? <Details {...opened_} maker={filter.vendor} onBack={() => setDetail(null)} /> : view === "list" ? (
+          {software ? <Software /> : opened_ ? <Details {...opened_} maker={filter.vendor} onBack={() => setDetail(null)} /> : view === "list" ? (
             <div className="shop-list">
               {shown.map((it) => <Row key={itemKey(it)} {...it} maker={filter.vendor} onOpen={() => setDetail(itemKey(it))} />)}
               {!shown.length && <div className="shop-none">{t("shop.noModels")}</div>}

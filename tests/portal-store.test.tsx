@@ -40,12 +40,12 @@ describe("WHMCache store front", () => {
     expect(html).toContain("Domain");
   });
 
-  it("totals the cart and keeps the order button disabled", () => {
+  it("totals the cart and offers the order button as a test checkout", () => {
     const s = shopGame();
     const { g, p } = withProduct(s);
     const html = render(s, "whmCache", "cart", { group: g, product: p }, { p, cycle: "annual" });
     expect(html).toContain("Total");
-    expect(html).toMatch(/<button[^>]*disabled[^>]*>Complete Order/);
+    expect(html).toMatch(/<button(?![^>]*disabled)[^>]*>Complete Order/);
   });
 
   it("shows the stepper from 2013 only", () => {

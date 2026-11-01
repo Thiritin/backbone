@@ -5,11 +5,11 @@ import { requestDelist } from "../../../../../sim/90-actions/addresses";
 import { suspendCustomer } from "../../../../../sim/90-actions/customers";
 import { setMailRelay } from "../../../../../sim/90-actions/netsvc-mail";
 import { t } from "../../../../../i18n/en";
-import { useStore } from "../../../../store";
+import { usePageAct } from "../../pageAct";
 
 // A blocklist lookup box: the address, its standing, the customers sending from it and the delisting request.
 export function Blacklist({ game, clusterId }: { game: GameState; clusterId: string }) {
-  const act = useStore((s) => s.act), a = mailAddress(game, clusterId);
+  const act = usePageAct(), a = mailAddress(game, clusterId);
   if (!a) return <p className="cx-empty">{t("netsvc.noAddress")}</p>;
   const senders = spamSenders(game, a.id), level = a.rep < 30 ? "bad" : a.rep < 50 ? "warn" : "ok";
   return (
@@ -35,7 +35,7 @@ export function Blacklist({ game, clusterId }: { game: GameState; clusterId: str
 
 // Mailu's relayed domains: each panel host can send its customers' mail through this mail server.
 export function Relays({ game, clusterId }: { game: GameState; clusterId: string }) {
-  const act = useStore((s) => s.act), panels = game.clusters.filter((c) => c.kind === "panel");
+  const act = usePageAct(), panels = game.clusters.filter((c) => c.kind === "panel");
   return (
     <table className="cx-table">
       <thead><tr><th>{t("netsvc.panelHost")}</th><th>{t("netsvc.relayHost")}</th></tr></thead>

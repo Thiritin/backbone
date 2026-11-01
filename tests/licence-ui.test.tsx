@@ -7,7 +7,7 @@ import { panelVm, readyGame, skipTo } from "./fixtures";
 
 function setup(panel: string) {
   const s = readyGame(1);
-  skipTo(s, 2008);
+  skipTo(s, 2020);
   s.cash = 1_000_000;
   const id = panelVm(s, s.clusters.find((y) => y.kind === "cloud")!.id, panel);
   const host = () => s.clusters.find((x) => x.id === id)!;

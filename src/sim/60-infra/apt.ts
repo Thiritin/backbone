@@ -3,10 +3,13 @@
 // or by the line its website prints.
 import { t } from "../../i18n/en";
 import { nowHours, yearOf } from "../00-core/time";
+import { installKeyBlock } from "./licence";
+import { versionAt } from "../10-catalog/software-versions";
 import { SOFTWARE, softwareById, type Software } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
 import { installBlock, uninstallSoftware, upgradable, upgradeServer } from "../90-actions/software";
 import { clustersOn, machineOf } from "./cluster";
+import { supportOf } from "./lifecycle";
 import { DESK, releaseOf, treeOf } from "./fs";
 import { installFromSite, upgradeHours, upgradeOs, upgradeTarget } from "../90-actions/console";
 import { machineNet, osUp } from "./oob";
@@ -122,15 +125,17 @@ function remove(s: GameState, host: string, pkg: string): CommandResult {
   return { output: [...lines("term.apt.state"), t("term.apt.removing", { pkg })], action: [uninstallSoftware, host] };
 }
 
-// A line that is one of a script software's install lines, after whitespace normalisation: the install starts on the
-// machine. Undefined for every other line, which the shell then runs segment by segment.
+// A line that is one of a script software's install lines, after whitespace normalisation and with an optional
+// `--key <licence key>`: the install starts on the machine. Undefined for every other line, which the shell then runs
+// segment by segment.
 export function installScript(s: GameState, machineId: string, line: string): CommandResult | undefined {
-  const typed = norm(line), sw = SOFTWARE.find((x) => x.install.kind === "script" && x.install.commands.some((c) => norm(c) === typed));
+  const key = /\s--key\s+(\S+)/.exec(` ${line}`)?.[1], typed = norm(` ${line}`.replace(/\s--key\s+\S+/, ""));
+  const sw = SOFTWARE.find((x) => x.install.kind === "script" && x.install.commands.some((c) => norm(c) === typed));
   if (!sw || !osUp(s, machineId)) return undefined;
-  const why = installBlock(s, machineId, sw.id);
+  const why = installBlock(s, machineId, sw.id) ?? installKeyBlock(s, machineId, sw.id, versionAt(sw.id, s.hour).version, key);
   if (why) return { output: [t(why)], failed: true };
   if (machineNet(s, machineId)) return { output: lines(typed.startsWith("wget") ? "term.wget.resolve" : "term.curl.resolve", { host: siteOf(typed) }), failed: true };
-  return { output: [...lines("term.install.script", { name: sw.name }), ...started(sw)], action: [installFromSite, machineId, sw.id], watch: watching(machineOf(s, machineId)?.hostname ?? machineId, machineId, sw) };
+  return { output: [...lines("term.install.script", { name: sw.name }), ...started(sw)], action: [installFromSite, machineId, sw.id, ...(key ? [key] : [])], watch: watching(machineOf(s, machineId)?.hostname ?? machineId, machineId, sw) };
 }
 
 // One refresh of an install the screen watches: the progress lines due since the last one and the watch to keep, null
@@ -152,7 +157,8 @@ export function dpkg(s: GameState, host: string, args: string[]): CommandResult 
   if (!args.includes("-l")) return { output: lines("term.dpkg.usage"), failed: true };
   const now = nowHours(s), rows = (machineOf(s, host)?.software ?? []).map((x) => {
     const sw = softwareById(x.id);
-    return t("term.dpkg.row", { st: x.doneAt !== null && x.doneAt > now ? "iU" : "ii", pkg: pkgOf(sw), version: x.version, name: sw.name });
+    const support = supportOf(x.id, x.version, s.hour), name = support === "supported" ? sw.name : `${sw.name} (${t(`software.support.${support}`)})`;
+    return t("term.dpkg.row", { st: x.doneAt !== null && x.doneAt > now ? "iU" : "ii", pkg: pkgOf(sw), version: x.version, name });
   });
   return { output: [...lines("term.dpkg.head"), ...rows] };
 }

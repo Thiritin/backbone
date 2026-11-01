@@ -9,8 +9,8 @@ import { lostDisk } from "../../../../../sim/60-infra/cluster";
 import { LOCALE } from "../../../../../i18n/lang";
 import { t } from "../../../../../i18n/en";
 import { disk } from "../../../hw";
-import { useStore } from "../../../../store";
 import "./backup.css";
+import { usePageAct } from "../../pageAct";
 
 export type Skin = "proxmocks" | "veeham" | "backula" | "pbs";
 export const skinOf = (panel: string | null): Skin => (panel === "veeham" ? "veeham" : panel === "backula" ? "backula" : "pbs");
@@ -20,7 +20,7 @@ const hh = (h: number) => `${String(h).padStart(2, "0")}:00`;
 
 // The form of one job; the retention label follows the console.
 function JobEditor({ game, c, job, skin, done }: { game: GameState; c: Cluster; job?: BackupJob; skin: Skin; done: () => void }) {
-  const act = useStore((s) => s.act), targets = backupTargets(game, c), vms = game.workloads.filter((w) => w.clusterId === c.id && !w.template);
+  const act = usePageAct(), targets = backupTargets(game, c), vms = game.workloads.filter((w) => w.clusterId === c.id && !w.template);
   const [d, setD] = useState<JobDraft & { keep: { last: number; weekly: number } }>({
     id: job?.id, name: job?.name ?? t("bk.defaultName"), targetId: job?.targetId ?? targets[0]?.id, every: job?.every ?? "daily", hour: job?.hour ?? 2,
     workloadIds: job?.workloadIds ?? null, keep: job?.keep ?? { last: 3, weekly: 0 }, notify: job?.notify ?? true, offsiteId: job?.offsiteId ?? null,
@@ -47,7 +47,7 @@ function JobEditor({ game, c, job, skin, done }: { game: GameState; c: Cluster; 
 
 // The jobs of one source cluster (Proxmocks Datacenter > Backup) or of every cluster that writes to a repository (backup consoles).
 export function JobsPanel({ game, source, target, skin }: { game: GameState; source?: Cluster; target?: Cluster; skin: Skin }) {
-  const act = useStore((s) => s.act), [edit, setEdit] = useState<{ c: Cluster; job?: BackupJob } | null>(null);
+  const act = usePageAct(), [edit, setEdit] = useState<{ c: Cluster; job?: BackupJob } | null>(null);
   const rows = game.clusters.filter((c) => (source ? c.id === source.id : true)).flatMap((c) => c.jobs.filter((j) => !target || j.targetId === target.id).map((j) => ({ c, j })));
   const can = source && backupTargets(game, source).length > 0 && source.jobs.length < MAX_JOBS;
   return (
@@ -87,13 +87,13 @@ const status = (p: RestorePoint) => p.testDoneAt !== undefined ? t("bk.testing")
 
 // The restore test button of a point, which reads it back from its repository.
 function TestButton({ w, p }: { w: Workload; p: RestorePoint }) {
-  const act = useStore((s) => s.act);
+  const act = usePageAct();
   return <button className="cx-btn" disabled={p.verified || p.testDoneAt !== undefined} onClick={() => act(testRestore, w.id, p.at, p.offsite)}>{t("bk.testRestore")}</button>;
 }
 
 // The restore points of one workload, newest first, with Restore for a lost one, Remove and Backup now.
 export function PointsPanel({ game, c, w }: { game: GameState; c: Cluster; w: Workload }) {
-  const act = useStore((s) => s.act), pts = [...pointsOf(w)].sort((a, b) => b.at - a.at), covered = c.jobs.some((j) => !j.workloadIds || j.workloadIds.includes(w.id));
+  const act = usePageAct(), pts = [...pointsOf(w)].sort((a, b) => b.at - a.at), covered = c.jobs.some((j) => !j.workloadIds || j.workloadIds.includes(w.id));
   return (
     <>
       <div className="cx-tools">

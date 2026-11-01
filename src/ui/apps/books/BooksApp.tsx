@@ -15,6 +15,7 @@ import { InvoicesTab } from "./InvoicesTab";
 import { QuotesTab } from "./QuotesTab";
 import { NEW } from "./NewCustomer";
 import { PayablesTab } from "./PayablesTab";
+import { ProductsTab } from "./ProductsTab";
 import { RemindersTab } from "./RemindersTab";
 import { Register } from "./Register";
 import { useBooks } from "./view";
@@ -33,6 +34,7 @@ const TABS: { id: string; count: (s: GameState) => number; body: ComponentType<{
   { id: "bank", count: unmatched, body: BankTab },
   { id: "reminders", count: late, body: RemindersTab },
   { id: "payables", count: (s) => s.payables.filter((p) => overdue(s, p)).length, body: PayablesTab },
+  { id: "products", count: () => 0, body: ProductsTab },
 ];
 
 export function BooksApp() {

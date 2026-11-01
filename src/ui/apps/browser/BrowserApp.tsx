@@ -20,6 +20,7 @@ import { t } from "../../../i18n/en";
 import { useFocus, useStore, useWin } from "../../store";
 import { Favicon } from "./Favicon";
 import { ConsolePage } from "./consoles/ConsolePage";
+import { PageError } from "./pageAct";
 import { bmcTitle, IpmiPage } from "./ipmi/IpmiPage";
 import { FritzOz } from "./mgmt/FritzOz";
 import { KvmPage, kvmTitle } from "./ipmi/KvmPage";
@@ -31,10 +32,14 @@ import { SponsorBoard } from "./sites/SponsorBoard";
 import { IndexSite } from "./sites/index/IndexSite";
 import { OfficeSite } from "./sites/office/OfficeSite";
 import { LexwearSite } from "./sites/lexwear/LexwearSite";
+import { MarketSite } from "./sites/market/MarketSite";
+import { channelName } from "../../../sim/10-catalog/used";
 import { BOOKS_SITES } from "./sites/books/sites";
 import { booksVendor } from "../../../sim/10-catalog/bookkeeping";
 import { ShopVendorSite } from "./sites/shopvendors/registry";
 import { shopById } from "../../../sim/10-catalog/shops";
+import { HostToastSite } from "./sites/hosttoast/HostToastSite";
+import { HOSTTOAST } from "../../../sim/10-catalog/hosttoast";
 import { WikiSite } from "./sites/wiki/WikiSite";
 import { LEXWEAR } from "../../../sim/80-business/lexwear";
 import { SoftwarePage } from "./sites/software/registry";
@@ -91,8 +96,10 @@ function titleOf(game: GameState, r: Resolved): string {
     case "index": return t("browser-sites-1.ix.title");
     case "office": return t("browser-sites-1.of.title");
     case "lexwear": return LEXWEAR;
+    case "market": return channelName(p.channel);
     case "books": return booksVendor(p.id)!.program;
     case "shopVendor": return shopById(p.id).name;
+    case "hosttoast": return HOSTTOAST;
     case "wiki": return WIKI_TITLE;
     case "shop": return game.company.name;
     case "software": return softwareById(p.id).name;
@@ -104,6 +111,7 @@ function titleOf(game: GameState, r: Resolved): string {
 // The page of one load; the key restarts it, so a slow host shows its progress bar again after every navigation.
 function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: string) => void }) {
   const [waiting, setWaiting] = useState(r.load === "slow" && !reduced());
+  const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     if (!waiting) return;
     const id = setTimeout(() => setWaiting(false), LOAD_MS);
@@ -124,9 +132,11 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "sponsorboard") body = <SponsorBoard game={game} />;
   else if (p.kind === "office") body = <OfficeSite game={game} path={r.path} go={go} />;
   else if (p.kind === "lexwear") body = <LexwearSite game={game} path={r.path} go={go} />;
+  else if (p.kind === "market") body = <MarketSite game={game} channel={p.channel} path={r.path} go={go} />;
   else if (p.kind === "shop") body = <PortalSite game={game} host={r.host} path={r.path} go={go} />;
   else if (p.kind === "books" && p.id !== "lexwear") { const Site = BOOKS_SITES[p.id]; body = <Site game={game} path={r.path} go={go} />; }
   else if (p.kind === "shopVendor") body = <ShopVendorSite game={game} id={p.id} />;
+  else if (p.kind === "hosttoast") body = <HostToastSite game={game} path={r.path} go={go} />;
   else if (p.kind === "wiki") body = <WikiSite game={game} path={r.path} go={go} />;
   else if (p.kind === "index") body = <IndexSite game={game} path={r.path} go={go} />;
   else if (p.kind === "software" || p.kind === "os") body = <SoftwarePage game={game} kind={p.kind} id={p.id} path={r.path} go={go} />;
@@ -144,7 +154,10 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   return (
     <>
       {waiting && <div className="web-load" aria-hidden />}
-      <div className={`web-view${paper ? " white" : ""}`}>{body}</div>
+      <div className={`web-view${paper ? " white" : ""}`}>
+        {error && <div className="web-error" role="alert">{t(error)}</div>}
+        <PageError.Provider value={setError}>{body}</PageError.Provider>
+      </div>
     </>
   );
 }
@@ -193,6 +206,14 @@ export function BrowserApp() {
     setTabs([...tabs, { id, history: [to], at: 0, nav: 0 }]);
     setActive(id);
   };
+  const [drag, setDrag] = useState<{ id: number; over: number } | null>(null);
+  const moveTab = (id: number, before: number) => {
+    const from = tabs.findIndex((x) => x.id === id), to = tabs.findIndex((x) => x.id === before);
+    if (from < 0 || to < 0 || from === to) return;
+    const rest = tabs.filter((x) => x.id !== id);
+    rest.splice(rest.findIndex((x) => x.id === before) + (from < to ? 1 : 0), 0, tabs[from]);
+    setTabs(rest);
+  };
   const keep = (rest: Tab[]) => {
     if (!rest.length) return win.close();
     if (rest.length === tabs.length) return;
@@ -229,7 +250,11 @@ export function BrowserApp() {
         {tabs.map((x, i) => {
           const rx = resolve(game, x.history[x.at]);
           return (
-            <div key={x.id} role="tab" aria-selected={x.id === tab.id} className="br-tab" tabIndex={0} onClick={() => setActive(x.id)} onContextMenu={menuOn(() => tabMenu(i))}
+            <div key={x.id} role="tab" aria-selected={x.id === tab.id} className={`br-tab${drag && drag.over === x.id && drag.id !== x.id ? " drop" : ""}`} tabIndex={0} onClick={() => setActive(x.id)} onContextMenu={menuOn(() => tabMenu(i))}
+              draggable onDragStart={(e) => { e.dataTransfer.effectAllowed = "move"; setDrag({ id: x.id, over: x.id }); }}
+              onDragOver={(e) => { if (!drag) return; e.preventDefault(); if (drag.over !== x.id) setDrag({ ...drag, over: x.id }); }}
+              onDrop={(e) => { e.preventDefault(); if (drag) moveTab(drag.id, x.id); setDrag(null); }}
+              onDragEnd={() => setDrag(null)}
               onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setActive(x.id)}>
               <Favicon game={game} r={rx} />
               <span className="br-tab-title">{titleOf(game, rx)}</span>

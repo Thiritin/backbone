@@ -6,8 +6,8 @@ import type { GameState } from "../../../../sim/50-state";
 import type { Cluster, Workload } from "../../../../sim/60-infra/cluster";
 import { holdAsksReason, holdLabels, type ConsoleFeatures } from "../../../../sim/80-business/consoles";
 import { suspendService, terminateService, unsuspendService } from "../../../../sim/90-actions/holds";
-import { useStore } from "../../../store";
 import type { PanelAction } from "./PanelBase";
+import { usePageAct } from "../pageAct";
 
 const REASONS: HoldReason[] = ["payment", "abuse", "manual"];
 
@@ -15,7 +15,7 @@ export interface WorkloadHold { actions: PanelAction[]; panel: ReactNode; state:
 
 // Suspend, unsuspend and terminate for the account behind a workload, in the console's own words.
 export function useHolds(game: GameState, _c: Cluster, f: ConsoleFeatures): (w: Workload) => WorkloadHold | null {
-  const act = useStore((s) => s.act), labels = holdLabels(f.look), asks = holdAsksReason(f.look);
+  const act = usePageAct(), labels = holdLabels(f.look), asks = holdAsksReason(f.look);
   const [open, setOpen] = useState<{ id: string; kind: "suspend" | "terminate" } | null>(null), [reason, setReason] = useState<HoldReason>("payment");
   const close = () => setOpen(null);
   return (w) => {

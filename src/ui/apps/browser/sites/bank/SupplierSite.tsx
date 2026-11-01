@@ -8,15 +8,15 @@ import { groupIban, ibanEra, ownIban } from "../../../../../sim/46-finance/bank"
 import { overdue } from "../../../../../sim/46-finance/payables";
 import type { GameState } from "../../../../../sim/50-state";
 import { setMandate } from "../../../../../sim/90-actions/bank";
-import { useStore } from "../../../../store";
 import "./bank-site.css";
+import { usePageAct } from "../../pageAct";
 
 const day = (hour: number) => dateOf(hour).toLocaleDateString(LOCALE, { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" });
 const SKIN = { "--bar": "#3c4a5c", "--accent": "#6b7f99", "--bg": "#f2f2ee" } as CSSProperties;
 
 // A supplier's customer portal: its invoices, and the direct debit mandate.
 export function SupplierSite({ game, name }: { game: GameState; name: string }) {
-  const act = useStore((s) => s.act);
+  const act = usePageAct();
   const bills = game.payables.filter((p) => p.name === name).reverse();
   const b = game.bank, on = !!b?.mandates.includes(name);
   return (

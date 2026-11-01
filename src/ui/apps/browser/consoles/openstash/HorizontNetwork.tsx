@@ -5,15 +5,15 @@ import type { Cluster } from "../../../../../sim/60-infra/cluster";
 import { MACROS, type Macro } from "../../../../../sim/60-infra/exposure";
 import { DEFAULT_GROUP, floatingOf, groupsOf, volumesOf } from "../../../../../sim/60-infra/horizont";
 import { allocateFloatingIp, associateFloatingIp, attachVolume, createVolume, deallocateFloatingIp, deleteGroup, deleteVolume, saveGroup, setInstanceGroups } from "../../../../../sim/90-actions/horizont";
-import { useStore } from "../../../../store";
 import type { Vm } from "../HypervisorBase";
+import { usePageAct } from "../../pageAct";
 
 const empty = <tr><td colSpan={8} className="cx-empty">{t("browser-consoles-1.hzNoItems")}</td></tr>;
 const macroLabel = (m: Macro) => t(`hzn.macro.${m}`);
 
 // Project > Network > Floating IPs: the addresses rented for the project and the instance each points at.
 export function FloatingIps({ game, c, vms }: { game: GameState; c: Cluster; vms: Vm[] }) {
-  const act = useStore((s) => s.act), rows = floatingOf(c), mine = vms.filter((v) => v.own);
+  const act = usePageAct(), rows = floatingOf(c), mine = vms.filter((v) => v.own);
   return (
     <>
       <div className="cx-hv-head"><h1>{t("hzn.floatingIps")}</h1><button className="cx-btn primary" onClick={() => act(allocateFloatingIp, c.id)}>{t("hzn.allocate")}</button></div>
@@ -43,7 +43,7 @@ export function FloatingIps({ game, c, vms }: { game: GameState; c: Cluster; vms
 
 // Project > Network > Security Groups: the groups with their macros, and the instances each one covers.
 export function SecurityGroups({ c, vms }: { c: Cluster; vms: Vm[] }) {
-  const act = useStore((s) => s.act), [name, setName] = useState(""), [sel, setSel] = useState<string | null>(null);
+  const act = usePageAct(), [name, setName] = useState(""), [sel, setSel] = useState<string | null>(null);
   const groups = groupsOf(c), cur = groups.find((g) => g.id === sel);
   const toggle = (g: { id: string; name: string; allow: Macro[] }, m: Macro) => act(saveGroup, c.id, g.id, g.name, g.allow.includes(m) ? g.allow.filter((x) => x !== m) : [...g.allow, m]);
   return (
@@ -89,7 +89,7 @@ export function SecurityGroups({ c, vms }: { c: Cluster; vms: Vm[] }) {
 
 // The groups of one instance as ticks, on its Overview tab.
 export function InstanceGroups({ c, v }: { c: Cluster; v: Vm }) {
-  const act = useStore((s) => s.act), on = v.w.groupIds ?? [];
+  const act = usePageAct(), on = v.w.groupIds ?? [];
   return (
     <div className="cx-field">
       {groupsOf(c).map((g) => (
@@ -104,7 +104,7 @@ export function InstanceGroups({ c, v }: { c: Cluster; v: Vm }) {
 
 // Project > Volumes > Volumes: block storage that outlives its instance.
 export function Volumes({ c, vms }: { c: Cluster; vms: Vm[] }) {
-  const act = useStore((s) => s.act), [name, setName] = useState(""), [gb, setGb] = useState(10), mine = vms.filter((v) => v.own);
+  const act = usePageAct(), [name, setName] = useState(""), [gb, setGb] = useState(10), mine = vms.filter((v) => v.own);
   return (
     <>
       <div className="cx-hv-head">

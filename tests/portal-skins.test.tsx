@@ -8,7 +8,7 @@ import { createProduct, createProductGroup, setProductPrice } from "../src/sim/9
 import { skinOf } from "../src/ui/apps/browser/sites/portal/skins";
 import { shopGame, idOf, render } from "./portal-helpers";
 
-const LABEL: Record<string, string> = { monthly: "Monthly", quarterly: "Quarterly", annual: "Annually", biennial: "Biennially" };
+const LABEL: Record<string, string> = { monthly: "Monthly", quarterly: "Quarterly", semiannual: "Semi-annually", annual: "Annually", biennial: "Biennially", triennial: "Triennially" };
 
 // Variants that run on the game's first years, then the ones that need a later start.
 const LEGACY: ShopId[] = ["handRolled", "modemBill", "clientExit"];
@@ -35,7 +35,7 @@ describe.each([...LEGACY, ...MODERN])("%s skin", (variant) => {
     const { s, p } = setup(variant);
     const html = admin(s, variant, { s: "product", id: p, tab: "pricing" });
     for (const c of shopById(variant).cycles) expect(html).toContain(LABEL[c]);
-    for (const c of ["monthly", "quarterly", "annual", "biennial"]) if (!shopById(variant).cycles.includes(c as never)) expect(html).not.toContain(LABEL[c]);
+    for (const c of ["monthly", "quarterly", "semiannual", "annual", "biennial", "triennial"]) if (!shopById(variant).cycles.includes(c as never)) expect(html).not.toContain(LABEL[c]);
   });
 
   it("renders store, configure and client area in its frame", () => {
