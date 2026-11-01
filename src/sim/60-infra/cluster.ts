@@ -10,6 +10,8 @@ import type { Device, GameState, MachineState } from "../50-state";
 import type { OsImage } from "../10-catalog/server-os";
 import type { SimEvent } from "../88-tick/tick";
 import type { VmSample } from "./stats";
+import { isVm } from "./lan";
+import { privateNetDown } from "./private";
 import { deviceVendor, drivesOf, installedRamGb, installedVcpu, linkStatus, locationOf, raidUsable, rackPower, readOnlySweep, serviceById, sweepGroups, working, burning } from "./status";
 import { COMPAT_VCPU } from "../10-catalog/cpus";
 import { hasPublicAddress, sellsFrom } from "./addresses";
@@ -474,7 +476,8 @@ export function setNodeState(s: GameState, deviceId: string, state: NodeState, c
 // The web sites of a panel host the player took offline or that were compromised.
 export const sitesDown = (s: GameState, hostId: string): boolean => s.security.offline.includes(hostId) || s.security.hacked.includes(hostId);
 
-// A workload on a server is up while the server reaches the internet and still holds the data written since it was placed.
+// A workload on a server is up while the server reaches the internet and still holds the data written since it was placed;
+// a VM also needs an address on its host's network and, for a customer with a private network, that network (private.ts).
 // A web space in a panel VM is up while the VM is. Colocation is up while its rack has power.
 // ponytail: colocation ignores the customer's uplinks until colocation cabling lands.
 export function workloadOnline(s: GameState, w: Workload): boolean {
@@ -486,7 +489,8 @@ export function workloadOnline(s: GameState, w: Workload): boolean {
   if (c && w.deviceId && s.frozen.includes(w.deviceId)) return false;
   if (w.deviceId) {
     const d = s.devices.find((x) => x.id === w.deviceId);
-    return !!d && !lostDisk(s, w) && linkStatus(s, d.id).online && (!w.datastore || working(s, w.datastore));
+    return !!d && !lostDisk(s, w) && linkStatus(s, d.id).online && (!w.datastore || working(s, w.datastore))
+      && (!isVm(s, w) || (!!addressOf(s, w.id) && !privateNetDown(s, w)));
   }
   const rack = s.racks.find((r) => r.id === w.rackId);
   const loc = rack && s.locations.find((l) => l.id === rack.locationId);
