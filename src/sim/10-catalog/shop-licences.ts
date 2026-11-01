@@ -40,7 +40,7 @@ const TERMS: Record<ShopId, Omit<ShopLicence, "id" | "name">> = {
       { from: 2007, month: 7, kind: "once", fee: 325, updates: 12, updatesFee: 45, editions: ["leased"] },
       { from: 2020, month: 8, kind: "server", fee: 18, editions: ["plus", "professional", "business", "business5000", "unlimited"] },
     ],
-    trialDays: null, caps: "clients",
+    trialDays: null, caps: "clients", site: { host: "whmcache.com", tagline: "", blurb: "", features: [], eras: [] },
   },
   blessta: {
     licensing: [
