@@ -119,3 +119,21 @@
 :where(:root[data-era="tahoe"]) .cx-hv-tree button { border-radius: 10px; }
 :where(:root[data-era="tahoe"]) .cx-chart, :where(:root[data-era="tahoe"]) .cx-suite { border-color: color-mix(in srgb, var(--line) 60%, transparent); border-radius: 18px; background: color-mix(in srgb, var(--panel) 62%, transparent); box-shadow: var(--hi), 0 6px 20px rgb(0 0 0 / 0.06); }
 :where(:root[data-era="tahoe"]) .cx-state.warn { box-shadow: var(--hi); }
+
+/* VMwhere, Proxmocks and HyperVee draw one look per installed version, so the desktop era's shapes stay out of them. */
+:is(.vsw, .pmx, .hv) :is(.cx-btn, .cx-toolbar button, .cx-state, .cx-table, .cx-table th, .cx-table td, .cx-wiz, .cx-wiz-back, .cx-tasks, .cx-hv-tree, .cx-hv-tree button, .cx-hv-tabs button, .cx-chart, .cx-suite, .cx-bar, input, select) { box-shadow: none; text-shadow: none; filter: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+:is(.vsw, .pmx, .hv) :is(.cx-btn, .cx-toolbar button, .cx-table, .cx-wiz, .cx-chart, .cx-suite, input, select) { border-radius: var(--r); }
+:is(.vsw, .pmx, .hv) :is(.cx-btn, .cx-toolbar button, input, select) { border-color: var(--line); background: var(--panel); color: var(--fg); }
+:is(.vsw, .pmx, .hv) :is(input, select) { padding: 5px 7px; }
+:is(.vsw, .pmx, .hv) .cx-btn { justify-content: center; }
+:is(.vsw, .pmx, .hv) .cx-btn.primary { border-color: var(--accent); background: var(--accent); color: var(--accent-fg); }
+:is(.vsw, .pmx, .hv) .cx-btn.danger { border-color: var(--bad); background: var(--bad); color: #fff; }
+:is(.vsw, .pmx, .hv) .cx-table { border-collapse: collapse; border-color: var(--line); background: var(--panel); }
+:is(.vsw, .pmx, .hv) .cx-table tbody tr:hover td { background: var(--hover); }
+:is(.vsw, .pmx, .hv) .cx-state { border-radius: 99px; }
+:is(.vsw, .pmx, .hv) :is(.cx-tasks, .cx-hv-tree, .cx-chart, .cx-suite) { border-color: var(--line); background: var(--panel); }
+:is(.vsw, .pmx, .hv) .cx-wiz-back { background: rgb(0 0 0 / 0.3); }
+:is(.vsw, .pmx, .hv) :is(.cx-hv-tree button, .cx-bar i) { border-radius: 0; }
+:is(.vsw, .pmx, .hv) .cx-hv-tabs { gap: 0; border-bottom: 1px solid var(--line); }
+:is(.vsw, .pmx, .hv) .cx-hv-tabs button { border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; }
+:is(.vsw, .pmx, .hv) .cx-hv-tabs button[aria-pressed="true"] { border-bottom-color: var(--accent); }

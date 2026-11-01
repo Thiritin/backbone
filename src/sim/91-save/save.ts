@@ -1,3 +1,4 @@
+import { migrateBooks } from "./books";
 import { fillShop } from "./shop";
 import { brandsOf, fillCpus, isOfficeRouter, MODELS, modelById, RENAMED_MODELS, wanPort } from "../10-catalog/hardware";
 import { freeSlots } from "../60-infra/status";
@@ -52,6 +53,8 @@ export function deserialize(raw: string): GameState {
   const bare = new Set([...(data.devices ?? []), ...(data.workloads ?? [])].filter((m) => m.os === undefined).map((m) => m.id));
   const base = newGame(data.seed);
   if ((data.version ?? 1) < 2) for (const k of INFRA) delete data[k];
+  // Hardware insurance is gone; repairs cost what they cost.
+  delete (data as { insurance?: unknown }).insurance;
   const locations: GameState["locations"] = [];
   // The basement's tower shelf is gone, and rack positions became cages.
   for (const { shelf: _, ...l } of (data.locations ?? base.locations) as (Location & { shelf?: number })[]) {
@@ -118,7 +121,7 @@ export function deserialize(raw: string): GameState {
     // The Research app was called Unlocks.
     // The Sales app moved into Support and the Checklist into Getting started, so their ids are dropped; saves from before the Website app get it in the dock.
     // Billing became Books.
-    installed: data.installed ? [...new Set([...data.installed.map((id) => (id === "Unlocks" ? "Research" : id === "Billing" ? "Books" : id)).filter((id) => id !== "Sales" && id !== "Checklist" && id !== "Bank" && id !== "dockBadges" && id !== "Products" && id !== "Virtual machines" && id !== "Website"), "Browser", "Chat", ...(data.registration === null || data.arrived ? [] : ["Marketing", "Security", "Applications"])])] : [...STARTER_APPS, "Chat", ...WIDGETS.map(([id]) => id)],
+    installed: data.installed ? [...new Set([...data.installed.map((id) => (id === "Unlocks" ? "Research" : id === "Billing" || id === "Finance" ? "Books" : id)).filter((id) => id !== "Sales" && id !== "Checklist" && id !== "Bank" && id !== "dockBadges" && id !== "Products" && id !== "Virtual machines" && id !== "Website"), "Browser", "Chat", ...(data.registration === null || data.arrived ? [] : ["Marketing", "Security", "Applications"])])] : [...STARTER_APPS, "Chat", ...WIDGETS.map(([id]) => id)],
     // Older saves researched Pear Store items directly; each becomes its skill and that skill's prerequisites.
     unlocks: [...new Set((data.unlocks ?? []).flatMap(learned))],
     customers: (data.customers ?? []).map((c) => ({ ...c, history: c.history ?? [], credit: c.credit ?? 0, address: c.address ?? homeAddress({ seed: base.seed, locations }, Number(c.id.slice(3)) || 0, c.name, c.profile) })),
@@ -164,7 +167,8 @@ export function deserialize(raw: string): GameState {
   // Apps a save already has count as arrived, so they never send their email.
   s.arrived = data.arrived ?? WALK.filter((id) => s.installed.includes(id));
   // Saves from before the Bookkeeping category run Lexwear Office when they have Books.
-  if (!data.books) s.books = { vendor: s.installed.includes("Books") ? "lexwear" : null, installedAt: 0 };
+  if (!data.books) s.books = { vendor: data.installed?.some((id: string) => id === "Books" || id === "Billing") ? "lexwear" : null, installedAt: 0, edition: null, seats: 0 };
+  migrateBooks(s);
   s.tax = data.tax ? { ...base.tax, ...data.tax } : s.registration ? legacyTax(s) : base.tax;
   return s;
 }

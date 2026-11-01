@@ -128,7 +128,7 @@ function finishSwitches(s: GameState, events: SimEvent[]) {
     const host = kind === "panel" && topTier(to) ? panelMachine(c) : null;
     if (host && !assignedKey(s, host, to)) startTrial(s, host, to);
     const licence = kind === "cloud" && to === "vmwhere" && fresh ? { tier: "essentials", trialUntil: null, lapsedAt: null } : undefined;
-    s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, switching: null, version: yearOf(s.hour), updatedAt: s.hour, ...(kind === "cloud" ? { platform: to, ...(licence && { licence }) } : { panel: to }), ...(fresh ? { channel: "stable" as const } : {}) } : x));
+    s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, switching: null, version: yearOf(s.hour), updatedAt: s.hour, ...(kind === "cloud" ? { platform: to, ...(licence && { licence }) } : { panel: to }), ...(fresh && host && { setupPending: true }), ...(fresh ? { channel: "stable" as const } : {}) } : x));
     events.push({ app: "Locations", key: fresh ? "event.installed" : "event.switched", params: { cluster: c.name, name: softwareById(to).name } });
     const d = fresh ? s.devices.find((x) => x.id === c.controlPlane) : undefined;
     if (d?.bootFrom === "usb") Object.assign(d, { bootFrom: "disk", bootUntil: nowHours(s) + bootHours(s, d) });

@@ -135,7 +135,7 @@ describe("yearly return", () => {
     expect(t.letters.find((l) => l.topic === "taxEstimate")!.bill!.lines[0].amount).toBe(-YEAR_ESTIMATE.min);
   });
 
-  it("lists the open yearly return with its tax in Finance and Books", () => {
+  it("lists the open yearly return with its tax in Books", () => {
     const s = company(true);
     s.ledger = [...s.ledger, entry(at(2005, 6, 1), "payments", 20_000)];
     jump(s, at(2006, 1, 1));

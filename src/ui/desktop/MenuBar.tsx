@@ -81,7 +81,7 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
       <span className="mb-sep" />
       <button className="mb-item num" onClick={() => openApp("Calendar")}>{formatClock(game.hour, game.minute)}</button>
       <span className="mb-sep" />
-      <button className="mb-item mb-cash num" onClick={() => openApp("Finance")}>{euro(game.cash)}</button>
+      <button className="mb-item mb-cash num" onClick={() => openApp("Books")}>{euro(game.cash)}</button>
       <button className="mb-item mb-badge" aria-label={unseen ? t("desktop.notif.unseen", { n: unseen }) : t("desktop.notif.title")} onClick={onBell}>
         <Bell />
         {unseen > 0 && <span key={unseen} className="count plop">{unseen > 99 ? "99+" : unseen}</span>}

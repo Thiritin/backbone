@@ -209,4 +209,6 @@ export default {
   "web.rs.question": (p) => `Domanda su ${p.domain}`,
   "web.rs.suspend": () => "Sospendi",
   "web.rs.resume": () => "Riattiva",
+  "ticket.howTo.licence.subject": () => "Il pannello di controllo dice che la licenza è scaduta",
+  "ticket.howTo.licence.text": (p) => `Quando accedo al pannello di controllo di ${p.domain || "il mio sito"} vedo solo una pagina che dice che la licenza è scaduta. Il sito funziona ancora, ma non posso gestire nulla. Puoi sistemarlo?`,
 } satisfies Dict;

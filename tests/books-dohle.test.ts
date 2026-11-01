@@ -14,7 +14,7 @@ import { BooksTax } from "../src/ui/apps/books/TaxTab";
 const at = (y: number, m: number, d = 1, h = 0) => hourOf(new Date(Date.UTC(y, m - 1, d, h)));
 const jump = (s: GameState, hour: number, hours = 1) => { s.hour = hour - 1; for (let i = 0; i < hours; i++) tick(s); };
 const entry = (hour: number, category: string, amount: number): LedgerEntry => ({ hour, category, key: "ledger.test", params: {}, amount });
-// A registered company with its certificate on the desktop and Lexwear with the monthly run.
+// A registered company with its certificate on the desktop and the Lexwear edition with the tax view.
 function company(small = false): GameState {
   const s = newGame(7);
   s.hour = at(2005, 1, 3, 8);
@@ -23,8 +23,7 @@ function company(small = false): GameState {
   tick(s);
   s.docs = [...s.docs, { id: "cert1", kind: "cert", title: "dohle-zertifikat.pfx", body: "", x: 0, y: 0 }];
   s.tax = { ...s.tax, answered: s.hour, small, number: taxNumberOf(7), numberAt: s.hour, cert: "cert1" };
-  s.books = { vendor: "lexwear", installedAt: s.hour };
-  s.modules = [...s.modules, "monthly-run"];
+  s.books = { vendor: "lexwear", installedAt: s.hour, edition: "financial-office", seats: 0 };
   s.cash = 100_000;
   return s;
 }
@@ -33,11 +32,11 @@ const year = (s: GameState, y: number) => s.tax.returns.find((r) => r.kind === "
 const transfer = (hour: number, matchedAt: number | null): Transfer => ({ id: `trf${hour}`, hour, from: "Customer", reference: "books.ref.invoice", params: {}, amount: 10, invoiceId: null, matchedAt, forInvoice: "" });
 
 describe("DOHLE in Books", () => {
-  it("connects with the valid certificate once the edition has the monthly run", () => {
+  it("connects with the valid certificate once the edition has the tax view", () => {
     const s = company();
-    s.modules = s.modules.filter((m) => m !== "monthly-run");
+    s.books = { ...s.books, edition: "buchhalter" };
     expect(connectDohle(s, "cert1")).toEqual({ ok: false, error: "error.booksTaxView" });
-    s.modules = [...s.modules, "monthly-run"];
+    s.books = { ...s.books, edition: "financial-office" };
     expect(connectDohle(s, "doc0")).toEqual({ ok: false, error: "error.dohleCert" });
     expect(connectDohle(s, "cert1").ok).toBe(true);
     expect(booksLinked(s)).toBe(true);

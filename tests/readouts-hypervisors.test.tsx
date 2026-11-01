@@ -54,7 +54,7 @@ describe("hypervisor readouts", () => {
   });
 
   it("shows the EVC state on the cluster page", () => {
-    expect(html("vmwhere", 2012)).toContain("VMware EVC");
+    expect(html("vmwhere", 2012)).toContain("VMwhere EVC");
   });
 
   it("asks a guest older than the host for an update and shows a stopped VM as off", () => {

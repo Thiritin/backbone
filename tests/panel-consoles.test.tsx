@@ -8,8 +8,7 @@ import { lateVersions, panelVm, pinVersion, readyGame, skipTo } from "./fixtures
 
 // docs/design/software.md, section 10: a year of each console's early look, a year of its late look, and a mark of its page.
 const ERAS: Record<string, [number, number, string]> = {
-  cpanic: [2005, 2014, "WebHost Manager"], pleskit: [2005, 2015, "Websites &amp; Domains"], directadmen: [2005, 2018, "Server Manager"],
-  freepanel: [2005, 2016, "Software and updates"], tcadmen: [2005, 2016, "Game Servers"], multikraft: [2010, 2018, "Servers"], pterodaktyl: [2016, 2021, "Servers"],
+  tcadmen: [2005, 2016, "Game Servers"], multikraft: [2010, 2018, "Servers"], pterodaktyl: [2016, 2021, "Servers"],
 };
 
 function render(id: string, year: number, signedIn: boolean, path?: string, version?: string) {
@@ -40,6 +39,25 @@ describe("hosting and game panel consoles", () => {
         const login = render(id, year, false, undefined, version).html;
         expect(login, id).toContain(`data-era="${look}"`);
         expect(login).toContain("Password");
+      }
+    }
+  });
+
+  it("shows the installed version in the PowerDNZ stats, not the year", () => {
+    const [, from] = lateVersions("powerdnz");
+    const out = render("powerdnz", 2020, true, undefined, from).html;
+    expect(out).toContain(`<b class="num">${from}</b>`);
+    expect(out).not.toContain('<b class="num">2020</b>');
+  });
+
+  it("draws cPanic in the look of each generation's first version, signed in or not", () => {
+    expect(CONSOLES.cpanic).toBeDefined();
+    for (const [version, look, year] of [["10", "x3", 2022], ["11.38", "paperLamp", 2022], ["98", "jupitar", 2022]] as const) {
+      for (const signedIn of [true, false]) {
+        const { html } = render("cpanic", year, signedIn, undefined, version);
+        expect(html, version).toContain(`data-era="${look}"`);
+        expect(html).toContain("WebHost Manager");
+        expect(html).toContain(signedIn ? "List Accounts" : "Password");
       }
     }
   });

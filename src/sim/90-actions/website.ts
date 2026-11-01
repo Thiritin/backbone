@@ -42,6 +42,12 @@ export function setEmailOrders(s: GameState, on: boolean): ActionResult {
   return { ok: true };
 }
 
+// Lets leads ask for products you do not sell, or stops them.
+export function setCustomRequests(s: GameState, on: boolean): ActionResult {
+  s.marketing = { ...s.marketing, customRequests: on };
+  return { ok: true };
+}
+
 // Moves the company site to the rented host or to an own panel host with room for it; moving is instant and free.
 export function setSiteHost(s: GameState, host: SiteHost): ActionResult {
   if (host.kind === "own") {

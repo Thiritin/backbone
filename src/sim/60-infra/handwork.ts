@@ -54,32 +54,32 @@ export function handWork(s: GameState, locationId: string): HandWork | null {
   };
 }
 
-// A priced piece of hand work. cost is what the caller checks the cash against, bill the part that is remote hands (insurable);
+// A priced piece of hand work. cost is what the caller checks the cash against;
 // commit books the fee, claims the player's time or the favour, and returns the hours until the work is done.
-export interface HandJob { cost: number; bill: number; wait: number; commit: () => number }
+export interface HandJob { cost: number; wait: number; commit: () => number }
 
 // Prices work of the given hours at a location. Remote hands bill at least an hour; a technician and the basement are on site at once.
 export function handJob(s: GameState, device: string, loc: Location | undefined, how: How | boolean, work: number, billHours = Math.max(1, work)): { error: string } | HandJob {
   const h: How = how === true ? "tech" : how === false ? "hands" : how;
   const w = h === "tech" || !loc ? null : handWork(s, loc.id);
-  if (!w) return { cost: 0, bill: 0, wait: work, commit: () => work };
+  if (!w) return { cost: 0, wait: work, commit: () => work };
   const book = (key: string, amount: number, params: Record<string, string | number>) => {
     s.cash = Math.round((s.cash - amount) * 100) / 100;
     s.ledger.push({ hour: s.hour, category: "maintenance", key, params, amount: -amount });
   };
   if (h === "hands") {
     const bill = billHours * w.hands.perHour, wait = w.hands.wait + work;
-    return { cost: bill, bill, wait, commit: () => { book("ledger.remoteHands", bill, { device, hours: billHours }); return wait; } };
+    return { cost: bill, wait, commit: () => { book("ledger.remoteHands", bill, { device, hours: billHours }); return wait; } };
   }
   if (h === "self") {
     if (!w.here) return { error: "error.notThere" };
-    return { cost: 0, bill: 0, wait: work, commit: () => { workOnSite(s, work); return work; } };
+    return { cost: 0, wait: work, commit: () => { workOnSite(s, work); return work; } };
   }
   const o = w.friend;
   if (!o) return { error: "error.tooFar" };
   if (o.left < 1) return { error: "error.noFavours" };
   const wait = o.wait + work;
-  return { cost: o.fee, bill: 0, wait, commit: () => {
+  return { cost: o.fee, wait, commit: () => {
     const year = yearOf(s.hour);
     s.friendFavours = { year, used: (s.friendFavours.year === year ? s.friendFavours.used : 0) + 1 };
     book("ledger.friend", o.fee, { device });

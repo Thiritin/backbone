@@ -1,6 +1,6 @@
 import { parseCreate } from "../../../../../sim/80-business/consoles";
 import { PackagesScreen } from "../PackageForms";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { yearOf } from "../../../../../sim/00-core/time";
 import { serverOsById } from "../../../../../sim/10-catalog/server-os";
 import { euro } from "../../../../../sim/00-core/money";
@@ -20,23 +20,31 @@ import { enterMaintenance, exitMaintenance } from "../../../../../sim/90-actions
 import { setCompatMode } from "../../../../../sim/90-actions/cpus";
 import { Chart, niceMax } from "../Chart";
 import { nodeName, AlarmList, ALL, AMOUNT, amountText, AppSuiteTile, CapacityBar, SEV_GLYPH, summaryOf, worst, ConsoleThumb, isoName, MediaMenu, NodeList, SizeFields, suiteSoftware, TaskLog, Toolbar, useNewVm, useVms, vmFacts, windoorsLicence, Wizard, type Sel, type Vm } from "../HypervisorBase";
-import { Actions, Backups, Bar, erasFrom, eraAt, Facts, LoginForm, useSoftware, type PanelProps } from "../PanelBase";
-import type { Look } from "../../../../../sim/10-catalog/sites";
+import { Actions, Backups, Bar, eraAt, Facts, LoginForm, looks, useSoftware, type PanelProps } from "../PanelBase";
+import { Box, Boxes, Copy, Monitor, MonitorOff, Server } from "lucide-react";
 import type { Resources } from "../../../../../sim/10-catalog/products";
 import { AlarmsPage, DrsPage, Licensing, PoolsPage } from "./Admin";
 import "./vmwhere.css";
 import { usePageAct } from "../../pageAct";
 
-// docs/design/software.md, section 9: the grey and yellow fat client from 2005, the blue web client from 2015.
-const ERAS = erasFrom(2005, 2015);
+// docs/design/software.md, section 10: one look per vSphear client generation, ids as in UI_LOOKS.
+const LOOKS = looks({ thickClient: 2004, flecks: 2011, clearity: 2016 });
+type VswLook = (typeof LOOKS)[number]["look"];
+const brand = (era: VswLook) => (era === "flecks" ? t("browser-consoles-2.webClient") : t("browser-consoles-2.client"));
+// The tree's icons: the fat client's glyphs, the Flecks client's boxed ones, the Clearity line icons.
+const TREE: Record<VswLook, Record<"cluster" | "host" | "on" | "off" | "template", ReactNode>> = {
+  thickClient: { cluster: "▥", host: "▦", on: "▶", off: "▫", template: "⧉" },
+  flecks: { cluster: "◫", host: "▤", on: "▣", off: "□", template: "❐" },
+  clearity: { cluster: <Boxes size={13} />, host: <Server size={13} />, on: <Monitor size={13} />, off: <MonitorOff size={13} />, template: <Copy size={13} /> },
+};
 const labels = () => ({ start: t("browser-consoles-2.powerOn"), stop: t("browser-consoles-2.shutDownGuest"), reset: t("browser-consoles-2.reset"), migrate: t("browser-consoles-2.migrate"), storage: t("browser-consoles-2.migrateStorage"), resize: t("browser-consoles-2.editSettings"), console: t("browser-consoles-2.openConsole"), delete: t("browser-consoles-2.deleteFromDisk"), restore: t("browser-consoles-2.restore"), recover: t("browser-consoles-2.recover") });
 
 const MHZ = 2400;
 const gb = (x: number) => `${+x.toFixed(2)} GB`;
 
 // The Summary tab: the console thumbnail beside the guest facts, the usage meters on the right, the hardware and notes portlets.
-export function VmSummary({ game, v, era }: { game: GameState; v: Vm; era: Look }) {
-  const now = vmStats(game, v.id)!.now, w = v.w, compat = era === "early" ? t("browser-consoles-2.compatEarly") : t("browser-consoles-2.compatLate");
+export function VmSummary({ game, v, era }: { game: GameState; v: Vm; era: VswLook }) {
+  const now = vmStats(game, v.id)!.now, w = v.w, compat = era !== "clearity" ? t("browser-consoles-2.compatEarly") : t("browser-consoles-2.compatLate");
   const tools = v.own && w.os && v.st === "running" ? t("browser-consoles-2.toolsRunning") : t("browser-consoles-2.toolsOff");
   const meters: [string, string, [number, number]][] = [
     [t("browser-consoles-2.cpuUsage2"), `${Math.round(now.cpu * w.vcpu * MHZ)} MHz`, [now.cpu, 1]], [t("browser-consoles-2.memoryUsage2"), gb(now.ram * w.ramGb), [now.ram, 1]], [t("browser-consoles-2.storageUsage"), gb(now.disk * w.diskGb), [now.disk, 1]],
@@ -46,7 +54,7 @@ export function VmSummary({ game, v, era }: { game: GameState; v: Vm; era: Look 
       <div className="vsw-summary">
         <div className="vsw-thumbbox">
           <ConsoleThumb game={game} v={v} className="cx-thumb vsw-thumb" />
-          {v.own && <span className="vsw-launch">{era === "early" ? t("browser-consoles-2.openConsole") : t("browser-consoles-2.launchWebConsole")}</span>}
+          {v.own && <span className="vsw-launch">{era === "thickClient" ? t("browser-consoles-2.openConsole") : t("browser-consoles-2.launchWebConsole")}</span>}
         </div>
         <table className="vsw-facts"><tbody>
           <tr><th>{t("browser-consoles-2.guestOs")}</th><td>{v.own ? v.os : v.sub}</td></tr>
@@ -249,7 +257,7 @@ function Datastores({ game, c }: { game: GameState; c: Cluster }) {
 }
 
 export function VmWhere(p: PanelProps) {
-  const era = eraAt(ERAS, p), { game, c, f } = p, year = yearOf(game.hour);
+  const era = eraAt(LOOKS, p), icon = TREE[era], { game, c, f } = p, year = yearOf(game.hour);
   const open = parseCreate("vmwhere", p.path), [sel, setSel] = useState<Sel>(open?.screen === "create" ? { kind: "new" } : open?.screen === "packages" ? { kind: "plans" } : ALL), [tab, setTab] = useState("Summary");
   const [byOrder, setByOrder] = useState(open?.screen === "create" && !!open.order);
   const tabNames: Record<string, string> = { Summary: t("browser-consoles-2.summary"), Monitor: t("browser-consoles-2.monitor"), Configure: t("browser-consoles-2.configure"), Snapshots: t("browser-consoles-2.snapshots"), Hosts: t("browser-consoles-2.hosts"), Datastores: t("browser-consoles-2.datastores"), Networks: t("browser-consoles-2.networks"), Licensing: t("vw.licensing"), DRS: t("vw.drs"), Alarms: t("vw.alarm.alarms"), Pools: t("vw.pool.pools") };
@@ -257,7 +265,7 @@ export function VmWhere(p: PanelProps) {
   if (!p.signedIn) return (
     <div className="cx vsw vsw-login" data-era={era}>
       <LoginForm className="vsw-card" onLogin={p.login} button={t("browser-consoles-2.logIn")}>
-        <div className="vsw-brand">VMwhere <b>vSphear</b>{era === "early" ? ` ${t("browser-consoles-2.client")}` : ` ${t("browser-consoles-2.webClient")}`}</div>
+        <div className="vsw-brand">VMwhere <b>vSphear</b> {brand(era)}</div>
         <div className="cx-host">{p.host}</div>
       </LoginForm>
     </div>
@@ -273,11 +281,11 @@ export function VmWhere(p: PanelProps) {
   return (
     <div className="cx cx-hv vsw" data-era={era}>
       <header className="vsw-top">
-        <span className="vsw-brand">VMwhere <b>vSphear</b>{era === "early" ? ` ${t("browser-consoles-2.client")}` : ""}</span>
+        <span className="vsw-brand">{era === "clearity" && <i className="vsw-mark">vw</i>}VMwhere <b>vSphear</b> {brand(era)}</span>
         <span className="cx-host">{p.host}</span>
         <button className="vsw-link" onClick={p.logout}>{t("browser-consoles-2.logOutCap")}</button>
       </header>
-      {era === "early" && (
+      {era === "thickClient" && (
         <div className="vsw-menu"><span>{t("browser-consoles-2.file")}</span><span>{t("browser-consoles-2.edit")}</span><span>{t("browser-consoles-2.view")}</span><span>{t("browser-consoles-2.inventory")}</span><span>{t("browser-consoles-2.administration")}</span><span>{t("browser-consoles-2.help")}</span></div>
       )}
       <div className="vsw-bar">
@@ -288,14 +296,14 @@ export function VmWhere(p: PanelProps) {
         <aside className="cx-hv-tree vsw-tree">
           <div className="vsw-tree-h">{t("browser-consoles-2.hostsAndClusters")}</div>
           <ul>
-            <li><button aria-pressed={sel.kind === "all"} onClick={() => pick(ALL)}><i>▥</i>{c.name}<Badge alarms={alarms} /></button>
+            <li><button aria-pressed={sel.kind === "all"} onClick={() => pick(ALL)}><i>{icon.cluster}</i>{c.name}<Badge alarms={alarms} /></button>
               <ul>
                 {nodes.map((d) => (
                   <li key={d.id}>
-                    <button aria-pressed={node === d.id} onClick={() => pick({ kind: "node", id: d.id })}><i>▦</i>{d.hostname ?? d.name}<Badge alarms={alarms.filter((a) => a.on.id === d.id)} /></button>
+                    <button aria-pressed={node === d.id} onClick={() => pick({ kind: "node", id: d.id })}><i>{icon.host}</i>{d.hostname ?? d.name}<Badge alarms={alarms.filter((a) => a.on.id === d.id)} /></button>
                     <ul>
                       {vms.filter((v) => v.w.deviceId === d.id).map((v) => (
-                        <li key={v.id}><button aria-pressed={vm?.id === v.id} data-state={v.w.template ? "template" : v.st} onClick={() => pick({ kind: "vm", id: v.id })}><i>{v.w.template ? "⧉" : v.st === "running" ? "▶" : "▫"}</i>{v.name}<Badge alarms={alarms.filter((a) => a.on.id === v.id)} /></button></li>
+                        <li key={v.id}><button aria-pressed={vm?.id === v.id} data-state={v.w.template ? "template" : v.st} onClick={() => pick({ kind: "vm", id: v.id })}><i>{v.w.template ? icon.template : v.st === "running" ? icon.on : icon.off}</i>{v.name}<Badge alarms={alarms.filter((a) => a.on.id === v.id)} /></button></li>
                       ))}
                     </ul>
                   </li>
@@ -303,7 +311,7 @@ export function VmWhere(p: PanelProps) {
               </ul>
             </li>
           </ul>
-          <button className="vsw-classes" aria-pressed={sel.kind === "plans"} onClick={() => pick({ kind: "plans" })}><i>▤</i>{t("pkg.vswClasses")}</button>
+          <button className="vsw-classes" aria-pressed={sel.kind === "plans"} onClick={() => pick({ kind: "plans" })}><i>{era === "clearity" ? <Box size={13} /> : "▤"}</i>{t("pkg.vswClasses")}</button>
         </aside>
         <section className="vsw-content">
           <div className="vsw-title">{sel.kind === "plans" ? t("pkg.vswClasses") : vm ? vm.name : node ? nodes.find((d) => d.id === node)?.hostname : c.name}</div>

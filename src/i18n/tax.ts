@@ -70,7 +70,7 @@ export const TAX_EN: Record<string, (p: Params) => string> = {
   "ledger.taxCredit": (p) => `Tax estimate credited ${p.year}`,
   "ledger.taxEstimate": (p) => `Estimated tax ${p.year}`,
   "error.taxYearClosed": () => "The estimate for this year is final.",
-  "error.booksTaxView": () => "Filing with DOHLE needs the Monthly run module.",
+  "error.booksTaxView": () => "This edition cannot file with DOHLE.",
   "error.booksNotLinked": () => "DOHLE is not connected in Books.",
   "error.booksInvoices": () => "Books is missing invoices from this year.",
   "error.booksUnmatched": () => "The bank statement of this year has unmatched transfers.",

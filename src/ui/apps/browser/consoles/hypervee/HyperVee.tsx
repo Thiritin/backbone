@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+import { Boxes, Server, ServerCog, Tags } from "lucide-react";
 import { dateOf, yearOf } from "../../../../../sim/00-core/time";
 import { SNAPSHOTS_MAX } from "../../../../../sim/10-catalog/platforms";
+import { versionsOf } from "../../../../../sim/10-catalog/software-versions";
 import { deleteSnapshot, revertSnapshot, takeSnapshot } from "../../../../../sim/90-actions/snapshots";
 import { t } from "../../../../../i18n/en";
 import { useStore } from "../../../../store";
@@ -10,7 +12,7 @@ import { vmStats } from "../../../../../sim/60-infra/stats";
 import { integrationServices } from "../../../../../sim/80-business/readouts";
 import { Chart } from "../Chart";
 import { AlarmList, ConsoleThumb, MediaMenu, NodeList, ResourceBars, SizeFields, summaryOf, TaskLog, useNewVm, useVms, vmFacts, Wizard, type Vm } from "../HypervisorBase";
-import { Actions, Backups, erasFrom, eraAt, Facts, LoginForm, useSoftware, type PanelAction, type PanelProps } from "../PanelBase";
+import { Actions, Backups, eraAt, Facts, LoginForm, looks, useSoftware, type PanelAction, type PanelProps } from "../PanelBase";
 import { parseCreate } from "../../../../../sim/80-business/consoles";
 import { PackagesScreen } from "../PackageForms";
 import { Replica } from "./Replica";
@@ -20,8 +22,14 @@ import { switchOf, switchesOf, vswitchBlocks } from "../../../../../sim/60-infra
 import "./hypervee.css";
 import { usePageAct } from "../../pageAct";
 
-// docs/design/software.md, section 9: the glossy MMC from 2008, the same MMC with flat chrome from 2012.
-const ERAS = erasFrom(2008, 2012);
+// docs/design/software.md, section 10: the glossy MMC from 2008, the same MMC with flat chrome from 2012, Windoors Admin Center from 2019; ids as in UI_LOOKS.
+const LOOKS = looks({ glossy: 2008, flat: 2012, honoloo: 2019 });
+type HvLook = (typeof LOOKS)[number]["look"];
+const MMC_TREE = { root: "⧉", node: "▦", plans: "▤", cluster: "⛁" };
+const TREE: Record<HvLook, Record<keyof typeof MMC_TREE, ReactNode>> = {
+  glossy: MMC_TREE, flat: MMC_TREE,
+  honoloo: { root: <Boxes size={14} />, node: <Server size={14} />, plans: <Tags size={14} />, cluster: <ServerCog size={14} /> },
+};
 const LABELS: Record<string, string> = { start: t("browser-consoles-1.hvStart"), stop: t("browser-consoles-1.hvShutDown"), reset: t("browser-consoles-1.hvReset"), restore: t("browser-consoles-1.hvRestore"), recover: t("browser-consoles-1.hvRecover"), migrate: t("browser-consoles-1.hvMove"), resize: t("browser-consoles-1.hvSettingsDots"), console: t("browser-consoles-1.hvConnect"), delete: t("browser-consoles-1.hvDelete") };
 type Page = { kind: "list"; node: string | null } | { kind: "cluster" } | { kind: "settings"; id: string } | { kind: "new" } | { kind: "server" } | { kind: "profiles" } | { kind: "switches" };
 const SETTINGS = ["BIOS", "Memory", "Processor", "DVD Drive", "Network Adapter", "Name", "Checkpoints", "Integration Services"] as const;
@@ -36,7 +44,9 @@ function ActionsPane({ title, actions }: { title: string; actions: (PanelAction 
   );
 }
 
-const integrationText = (game: GameState, c: Cluster, v: Vm) => { const x = integrationServices(game, c, v.w); return x.version === "off" ? "" : x.version === "update" ? t("readouts.is.update") : String(x.guest); };
+// The integration services a guest carries are those of the newest HyperVee out in the year it was installed.
+const isVersion = (year: number) => { const vs = versionsOf("hypervee"); return (vs.filter((x) => yearOf(x.release) <= year).at(-1) ?? vs[0]).version; };
+const integrationText = (game: GameState, c: Cluster, v: Vm) => { const x = integrationServices(game, c, v.w); return x.version === "off" ? "" : x.version === "update" ? t("readouts.is.update") : isVersion(x.guest); };
 // The automatic checkpoint name: the VM's name and the time it was taken.
 const checkpointName = (name: string, at: number) => {
   const d = dateOf(at), p = (n: number) => String(n).padStart(2, "0");
@@ -112,7 +122,7 @@ export function VmDetails({ game, v, generations, c }: { game: GameState; v: Vm;
 }
 
 export function HyperVee(p: PanelProps) {
-  const era = eraAt(ERAS, p), { game, c, f } = p, openConsole = useStore((s) => s.openConsole), act = usePageAct();
+  const era = eraAt(LOOKS, p), icon = TREE[era], { game, c, f } = p, openConsole = useStore((s) => s.openConsole), act = usePageAct();
   const open = parseCreate("hypervee", p.path);
   const [page, setPage] = useState<Page>(open?.screen === "create" ? { kind: "new" } : open?.screen === "packages" ? { kind: "profiles" } : { kind: "list", node: null }), [selId, setSelId] = useState<string | null>(null);
   const [part, setPart] = useState<(typeof SETTINGS)[number]>("Memory"), [gen, setGen] = useState(1);
@@ -134,16 +144,16 @@ export function HyperVee(p: PanelProps) {
   const vmActions = vm ? vm.actions.map((a) => (a.id === "resize" ? { ...a, run: () => setPage({ kind: "settings", id: vm.id }) } : a)) : [];
   return (
     <div className="cx cx-hv hv" data-era={era}>
-      <header className="hv-top"><span className="hv-title">{t("browser-consoles-1.hvManager")}</span><span className="cx-host">{p.host}</span><button className="hv-out" onClick={p.logout}>{t("browser-consoles-1.hvDisconnect")}</button></header>
-      <div className="hv-menu"><span>{t("browser-consoles-1.hvFile")}</span><span>{t("browser-consoles-1.hvAction")}</span><span>{t("browser-consoles-1.hvView")}</span><span>{t("browser-consoles-1.hvHelp")}</span></div>
+      <header className="hv-top"><span className="hv-title">{era === "honoloo" ? "Windoors Admin Center" : t("browser-consoles-1.hvManager")}</span><span className="cx-host">{p.host}</span><button className="hv-out" onClick={p.logout}>{t("browser-consoles-1.hvDisconnect")}</button></header>
+      {era !== "honoloo" && <div className="hv-menu"><span>{t("browser-consoles-1.hvFile")}</span><span>{t("browser-consoles-1.hvAction")}</span><span>{t("browser-consoles-1.hvView")}</span><span>{t("browser-consoles-1.hvHelp")}</span></div>}
       <div className="cx-hv-body">
         <aside className="cx-hv-tree hv-tree">
           <ul>
-            <li><button aria-pressed={page.kind === "list" && !page.node} onClick={() => setPage({ kind: "list", node: null })}><i>⧉</i>{t("browser-consoles-1.hvManager")}</button>
-              <ul>{nodes.map((d) => <li key={d.id}><button aria-pressed={page.kind === "list" && page.node === d.id} onClick={() => setPage({ kind: "list", node: d.id })}><i>▦</i>{(d.hostname ?? d.name).toUpperCase()}</button></li>)}</ul>
+            <li><button aria-pressed={page.kind === "list" && !page.node} onClick={() => setPage({ kind: "list", node: null })}><i>{icon.root}</i>{t("browser-consoles-1.hvManager")}</button>
+              <ul>{nodes.map((d) => <li key={d.id}><button aria-pressed={page.kind === "list" && page.node === d.id} onClick={() => setPage({ kind: "list", node: d.id })}><i>{icon.node}</i>{(d.hostname ?? d.name).toUpperCase()}</button></li>)}</ul>
             </li>
-            <li><button aria-pressed={page.kind === "profiles"} onClick={() => setPage({ kind: "profiles" })}><i>▤</i>{t("pkg.hvProfiles")}</button></li>
-            {f.cluster && <li><button aria-pressed={page.kind === "cluster"} onClick={() => setPage({ kind: "cluster" })}><i>⛁</i>{t("browser-consoles-1.hvFailoverClusterManager")}</button></li>}
+            <li><button aria-pressed={page.kind === "profiles"} onClick={() => setPage({ kind: "profiles" })}><i>{icon.plans}</i>{t("pkg.hvProfiles")}</button></li>
+            {f.cluster && <li><button aria-pressed={page.kind === "cluster"} onClick={() => setPage({ kind: "cluster" })}><i>{icon.cluster}</i>{t("browser-consoles-1.hvFailoverClusterManager")}</button></li>}
           </ul>
         </aside>
         <main className="hv-mid">

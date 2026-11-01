@@ -2,10 +2,10 @@
 import { dateOf, hourOf, isMonthStart, monthIndexOf, yearOf } from "../00-core/time";
 import { post } from "../40-support/letters";
 import { deliverMail } from "../40-support/tickets";
-import { hasModule } from "../10-catalog/modules";
-import { synced } from "../45-billing/billing";
 import { taxFor } from "../46-finance/finance";
 import type { GameState, LedgerEntry } from "../50-state";
+import { synced } from "../45-billing/billing";
+import { MONTHLY_RUN_HOUR, works } from "./bookkeeping";
 import { newTax, type TaxReturn, type TaxState } from "./tax-state";
 
 export { newTax, type TaxReturn, type TaxState };
@@ -50,6 +50,8 @@ export function taxTick(s: GameState): void {
     if (month === REMINDER_MONTH) remind(s, year - 1);
     if (s.tax.checked < year) january(s, year);
   }
+  const d = dateOf(s.hour);
+  if (d.getUTCDate() === 1 && d.getUTCHours() === MONTHLY_RUN_HOUR && works(s, "monthly-run")) booksFile(s);
   chase(s);
 }
 
@@ -70,7 +72,7 @@ const addMonths = (hour: number, months: number) => {
 };
 export const monthsOf = (r: Pick<TaxReturn, "from" | "to">): number => monthIndexOf(r.to) - monthIndexOf(r.from);
 
-// Sales carry output VAT and these purchases input VAT; salaries, insurance, loans, capital, fees and taxes carry none.
+// Sales carry output VAT and these purchases input VAT; salaries, loans, capital, fees and taxes carry none.
 export const OUTPUT_CATEGORIES = ["payments", "setup", "sales"];
 export const INPUT_CATEGORIES = ["hardware", "rent", "power", "transit", "licenses", "subscriptions", "marketing", "maintenance", "domains", "leasing", "moving", "ai"];
 
@@ -193,11 +195,11 @@ export function fileVat(s: GameState, r: TaxReturn): number {
 // The certificate is valid while its document is on the desktop; a new registration revokes it.
 export const certOk = (s: GameState): boolean => !!s.tax.cert && s.docs.some((d) => d.id === s.tax.cert && d.kind === "cert");
 
-// Books files with the certificate it was connected with, from the edition with the tax view (the monthly run's tier).
-export const taxView = (s: GameState): boolean => !!s.books.vendor && hasModule(s, "monthly-run");
+// Books files with the certificate it was connected with, in an edition with the tax view.
+export const taxView = (s: GameState): boolean => works(s, "tax");
 export const booksLinked = (s: GameState): boolean => taxView(s) && certOk(s) && s.tax.booksCert === s.tax.cert;
 
-// Books' monthly run sends the advance returns whose period has ended.
+// Books' monthly run on the first at nine sends the advance returns whose period has ended.
 export function booksFile(s: GameState): void {
   if (!booksLinked(s) || !taxNumber(s)) return;
   s.tax.returns.filter((r) => r.kind === "vat" && r.filedAt === null && r.to <= s.hour).forEach((r) => fileVat(s, r));

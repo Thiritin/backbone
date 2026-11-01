@@ -52,7 +52,7 @@ export default {
   "ledger.taxCredit": (p) => `Accredito della stima ${p.year}`,
   "ledger.taxEstimate": (p) => `Imposta stimata ${p.year}`,
   "error.taxYearClosed": () => "La stima di quest'anno è definitiva.",
-  "error.booksTaxView": () => "Per DOHLE serve il modulo Fatturazione mensile.",
+  "error.booksTaxView": () => "Questa edizione non può inviare con DOHLE.",
   "error.booksNotLinked": () => "DOHLE non è collegato nella contabilità.",
   "error.booksInvoices": () => "Nella contabilità mancano fatture di quest'anno.",
   "error.booksUnmatched": () => "L'estratto conto di quest'anno ha bonifici non abbinati.",

@@ -1,6 +1,6 @@
 import { tiersOf } from "../10-catalog/licence-tiers";
 import type { GameState } from "../50-state";
-import { accountsOn, assignKey, extendKey, installedVersion, isLicensed, issueKey, keyFor, licenceExpired, nameOf, panelKey, panelMachine, startTrial, tiersOnSale, trialDaysOf, trialOf, updateKey } from "../60-infra/licence";
+import { accountsOn, assignKey, extendKey, installedVersion, isLicensed, issueKey, keyFor, licenceExpired, nameOf, panelKey, panelLocked, panelMachine, startTrial, tiersOnSale, trialDaysOf, trialOf, updateKey } from "../60-infra/licence";
 import { machineOf } from "../60-infra/cluster";
 import { payLicence, tierFee } from "../85-products/products";
 import type { ActionResult } from "./hardware";
@@ -45,4 +45,13 @@ export function startLicenceTrial(s: GameState, machineId: string, product: stri
   if (trialDaysOf(product) === null || trialOf(s, machineId, product)) return { ok: false, error: "error.noTrial" };
   startTrial(s, machineId, product);
   return { ok: true };
+}
+
+// Closes a panel's first-sign-in licence setup, once it runs a key or its trial.
+export function finishPanelSetup(s: GameState, clusterId: string): ActionResult {
+  const c = s.clusters.find((x) => x.id === clusterId);
+  if (!c) return { ok: false, error: "error.unknownCluster" };
+  if (panelLocked(s, c)) return { ok: false, error: "error.licenceExpired" };
+  s.clusters = s.clusters.map((x) => (x.id === clusterId ? { ...x, setupPending: false } : x));
+  return { ok: true, id: clusterId };
 }

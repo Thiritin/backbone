@@ -1,17 +1,11 @@
-import { dateOf, hourOf, isMonthStart } from "../00-core/time";
+import { dateOf, hourOf } from "../00-core/time";
 import { TAX_RATE } from "../10-catalog/economy";
-import { COMPONENTS } from "../10-catalog/hardware";
 import { cents, loanAvailable } from "../45-billing/billing";
 import { payOf } from "../47-staff/staff";
-import type { Component, GameState, LedgerEntry } from "../50-state";
-import { HOURS_PER_YEAR } from "../60-infra/status";
-import { failureChance, type SimEvent } from "../88-tick/tick";
-
-export interface Policy { id: "hardware"; since: number }
+import type { GameState, LedgerEntry } from "../50-state";
+import type { SimEvent } from "../88-tick/tick";
 
 export const INSOLVENT_DAYS = 30;
-export const PREMIUM_MARKUP = 1.5;
-export const MIN_PREMIUM = 1;
 
 export const yearStart = (year: number): number => hourOf(new Date(Date.UTC(year, 0, 1)));
 export const monthStartOf = (hour: number): number => {
@@ -43,6 +37,49 @@ export function runwayMonths(s: GameState, extra = 0): number {
   return s.cash <= 0 ? 0 : burn > 0 ? s.cash / burn : Infinity;
 }
 
+export const monthKey = (hour: number): string => dateOf(hour).toISOString().slice(0, 7);
+// The last count month keys up to the current one, oldest first.
+export const lastMonths = (s: GameState, count: number): string[] => {
+  const now = dateOf(s.hour);
+  return Array.from({ length: count }, (_, i) => new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - count + 1 + i, 1)).toISOString().slice(0, 7));
+};
+
+export interface MonthFlow { key: string; inflow: number; outflow: number; end: number }
+// Money in and out per month and the balance at each month's end.
+export function cashFlow(s: GameState, count: number): MonthFlow[] {
+  const keys = lastMonths(s, count);
+  const flows = new Map(keys.map((key) => [key, { key, inflow: 0, outflow: 0, end: 0 }]));
+  for (const e of s.ledger) {
+    const f = flows.get(monthKey(e.hour));
+    if (f) { if (e.amount > 0) f.inflow += e.amount; else f.outflow -= e.amount; }
+  }
+  let end = s.cash;
+  for (const key of [...keys].reverse()) {
+    const f = flows.get(key)!;
+    f.end = end;
+    end -= f.inflow - f.outflow;
+  }
+  return keys.map((k) => flows.get(k)!);
+}
+
+export const REVENUE = ["payments", "setup", "sales"];
+export interface MonthStats { key: string; customers: number; joined: number; churned: number; revenue: number; lost: number }
+// Customers at each month's end, those who joined and left in it, the revenue booked and the sales lost.
+export function monthlyStats(s: GameState, count: number): MonthStats[] {
+  const real = s.customers.filter((c) => !c.sponsor);
+  return lastMonths(s, count).map((key) => {
+    const at = (h: number) => monthKey(h) === key, end = (h: number) => monthKey(h) <= key;
+    return {
+      key,
+      customers: real.filter((c) => end(c.since) && (c.churnedAt === null || !end(c.churnedAt))).length,
+      joined: real.filter((c) => at(c.since)).length,
+      churned: real.filter((c) => c.churnedAt !== null && at(c.churnedAt)).length,
+      revenue: cents(s.ledger.filter((e) => REVENUE.includes(e.category) && at(e.hour)).reduce((n, e) => n + e.amount, 0)),
+      lost: s.sales.lost.filter((l) => at(l.hour)).length,
+    };
+  });
+}
+
 // Tax on a year's profit after the losses carried from earlier years, and the loss carried on.
 export function taxFor(s: GameState, year: number): { profit: number; tax: number; carry: number } {
   const profit = profitBetween(s, yearStart(year), yearStart(year + 1));
@@ -50,50 +87,19 @@ export function taxFor(s: GameState, year: number): { profit: number; tax: numbe
   return base > 0 ? { profit, tax: cents(base * TAX_RATE), carry: 0 } : { profit, tax: 0, carry: cents(-base) };
 }
 
-// Normal wear and tear is not covered: only failures within the component's life expectancy.
-const withinLife = (c: Component, at: number) => at - c.installedAt < COMPONENTS[c.kind].life * HOURS_PER_YEAR;
-
-// A month's hardware premium: the expected cost of spare parts for every covered component at its current failure rate, with the insurer's markup.
-export function hardwarePremium(s: GameState): number {
-  const yearly = s.devices.filter((d) => !d.used).reduce((sum, d) => sum + d.components.filter((c) => c.failedAt === null && withinLife(c, s.hour))
-    .reduce((a, c) => a + failureChance(s, d, c) * HOURS_PER_YEAR * COMPONENTS[c.kind].price, 0), 0);
-  return Math.max(MIN_PREMIUM, cents((yearly * PREMIUM_MARKUP) / 12));
-}
-
-const book = (s: GameState, category: string, key: string, params: LedgerEntry["params"], amount: number) => {
-  s.cash = cents(s.cash + amount);
-  s.ledger = [...s.ledger, { hour: s.hour, category, key, params, amount }];
-};
-
-// The hardware policy pays the spare part and the remote hands for a component that failed while insured and within its life expectancy.
-export function claimRepair(s: GameState, device: string, c: Component, part: number, hands: number): void {
-  const policy = s.insurance.find((p) => p.id === "hardware");
-  if (!policy || c.failedAt === null || c.failedAt < policy.since || !withinLife(c, c.failedAt)) return;
-  book(s, "insurance", "ledger.insuranceClaim", { device, component: c.kind }, cents(part + hands));
-}
-
-export const chargePremium = (s: GameState): number => {
-  const premium = hardwarePremium(s);
-  book(s, "insurance", "ledger.insurancePremium", { policy: "hardware" }, -premium);
-  return premium;
-};
-
 // The bank still lends enough to bring cash back to zero. Checked once a day after the 30 days.
 const rescuable = (s: GameState): boolean => s.hour >= s.loansBlockedUntil && loanAvailable(s) >= -s.cash;
 
 export function financeTick(s: GameState): SimEvent[] {
   const events: SimEvent[] = [];
-  if (isMonthStart(s.hour)) {
-    if (s.insurance.length) chargePremium(s);
-  }
   // The overdraft keeps the company solvent down to its limit.
   if (s.cash >= -(s.bank?.overdraft ?? 0)) s.brokeSince = null;
   else if (s.brokeSince === null) {
     s.brokeSince = s.hour;
-    events.push({ app: "Finance", key: "event.cashNegative", params: { days: INSOLVENT_DAYS } });
+    events.push({ app: "Books", key: "event.cashNegative", params: { days: INSOLVENT_DAYS } });
   } else if (s.gameOver === null && s.hour - s.brokeSince >= INSOLVENT_DAYS * 24 && (s.hour - s.brokeSince) % 24 === 0 && !rescuable(s)) {
     s.gameOver = s.hour;
-    events.push({ app: "Finance", key: "event.bankrupt", params: { days: INSOLVENT_DAYS } });
+    events.push({ app: "Books", key: "event.bankrupt", params: { days: INSOLVENT_DAYS } });
   }
   return events;
 }

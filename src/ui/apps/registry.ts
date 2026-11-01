@@ -1,5 +1,5 @@
 import {
-  Activity, CalendarDays, Landmark, Cloud, Mailbox, FolderOpen, Bug, BookOpen, Compass, ChartLine, ChartPie, Contact, FileText, Network, GraduationCap, LifeBuoy, Megaphone, MessageCircle, Newspaper, Receipt, Server, Settings, ShieldAlert, ShoppingCart, SquareTerminal, Users,
+  Activity, CalendarDays, Landmark, Cloud, Mailbox, FolderOpen, Bug, BookOpen, Compass, ChartPie, Contact, FileText, Network, GraduationCap, LifeBuoy, Megaphone, MessageCircle, Newspaper, Receipt, Server, Settings, ShieldAlert, ShoppingCart, SquareTerminal, Users,
 } from "lucide-react";
 import type { ComponentType } from "react";
 import { t } from "../../i18n/en";
@@ -8,7 +8,6 @@ import { CalendarApp } from "./calendar/CalendarApp";
 import { DohleFormularApp } from "./dohle/DohleFormularApp";
 import { BrowserApp } from "./browser/BrowserApp";
 import { DevApp } from "./dev/DevApp";
-import { FinanceApp } from "./finance/FinanceApp";
 import { MarketingApp } from "./marketing/MarketingApp";
 import { MarketApp } from "./market/MarketApp";
 import { NetworkApp } from "./network/NetworkApp";
@@ -62,7 +61,6 @@ export const APPS: AppDef[] = [
   { name: "Post", icon: Mailbox, tile: "oklch(0.72 0.15 85)", about: t("apps.about.Post"), body: PostApp,
     badge: (s) => inbox(s).filter((l) => !l.read).length },
   { name: "DohleFormular", icon: Landmark, tile: "oklch(0.36 0.09 255)", about: t("apps.about.DohleFormular"), body: DohleFormularApp },
-  { name: "Finance", icon: ChartLine, tile: "oklch(0.55 0.13 175)", about: t("apps.about.Finance"), body: FinanceApp },
   { name: "Staff", icon: Contact, tile: "oklch(0.7 0.15 70)", about: t("apps.about.Staff"), body: StaffApp },
   { name: "Marketing", icon: Megaphone, tile: "oklch(0.62 0.19 350)", about: t("apps.about.Marketing"), body: MarketingApp },
   { name: "Market", icon: ChartPie, tile: "oklch(0.62 0.12 230)", about: t("apps.about.Market"), body: MarketApp },

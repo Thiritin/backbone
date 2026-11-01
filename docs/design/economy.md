@@ -1132,7 +1132,7 @@ Without a spare kit in stock, a repair waits for a delivery first.
 | CPU | 7 years | 0.05% | 0.2% | €400 | No |
 | Network card | 10 years | 0.3% | 1% | €80 | No |
 
-A server has 4 fans; a switch or router 2 fans, 1 or 2 power supplies and a board that fails like a mainboard. The part price column is the reference price of an unsized spare and sets the insurance premium; the shop sells parts at the prices of Part prices by year.
+A server has 4 fans; a switch or router 2 fans, 1 or 2 power supplies and a board that fails like a mainboard. The part price column is the reference price of an unsized spare; the shop sells parts at the prices of Part prices by year.
 
 **Cooling and overheating.** Each location keeps a room temperature: 22 °C in a datacenter hall, and in the basement 22 + 5 · cos((month − 6.5) · π / 6), from 17 in January to 27 in July. A server's inlet adds up to 3 °C as its rack nears its power limit and 6 °C behind a failed fan. On top of that the room carries heat H, which the sim steps every game minute (60 steps when an hour is ticked at once):
 
@@ -1187,7 +1187,7 @@ A rebuild takes the used data on the drive ÷ the rebuild speed, so a 4 TB HDD t
 
 **Maintenance.** A swap takes 15 minutes once someone is there. In the basement you are there at once. At a datacenter remote hands arrive after their response time and bill their hourly rate for at least one hour.
 
-**Hand work yourself.** At a datacenter the same swap can be done by you or by a friend, after the drive from the home city (the basement's city). Same city: 1 hour and EUR 20 (anchor: a regional train ticket). Same country: 4 hours and EUR 90 (an ICE return). Another European country: 9 hours and EUR 250 (a short-haul flight). Overseas is not offered. A datacenter that is the highest position price of a city with a rival (`visitBooking`) adds 24 hours for the booked visit. Doing it yourself keeps `playerBusyUntil` set through the drive there, the work and the drive back, and waits behind replies already queued. A friend charges EUR 35 (pizza and beer), at most 3 times per calendar year (`friendFavours`), takes the same drive time and leaves the player free; the game's random sequence rolls a 10% chance per favour that the work takes twice as long. Neither option bills remote hands, so hardware insurance pays no hand-work bill for them. A player already at the datacenter presses the front panel buttons and plugs the power cords at once, with no drive and no fee.
+**Hand work yourself.** At a datacenter the same swap can be done by you or by a friend, after the drive from the home city (the basement's city). Same city: 1 hour and EUR 20 (anchor: a regional train ticket). Same country: 4 hours and EUR 90 (an ICE return). Another European country: 9 hours and EUR 250 (a short-haul flight). Overseas is not offered. A datacenter that is the highest position price of a city with a rival (`visitBooking`) adds 24 hours for the booked visit. Doing it yourself keeps `playerBusyUntil` set through the drive there, the work and the drive back, and waits behind replies already queued. A friend charges EUR 35 (pizza and beer), at most 3 times per calendar year (`friendFavours`), takes the same drive time and leaves the player free; the game's random sequence rolls a 10% chance per favour that the work takes twice as long. Neither option bills remote hands. A player already at the datacenter presses the front panel buttons and plugs the power cords at once, with no drive and no fee.
 
 **Remote management, hangs and pulled plugs.** A baseboard management controller is part of the server board: it needs no extra part and costs nothing. Anchors for when it appears: Dell DRAC 5 on PowerEdge 9G in 2006 as an add-in card and iDRAC standard from 11G in 2009; HP iLO 2 on ProLiant G5 in 2006; Supermicro onboard IPMI on X8 boards in 2009; Lenovo IMM on System x from 2008. The game maps them to the generations: Dwell and Hewlett-Packet from generation 2 (2008), SuperMacro and Lenovoid from generation 3 (2011), the ARM line always, generation 1 (2005) never. The management address follows the private address rule: 192.168.3.x in the basement, 10.n.2.x in datacenter n, with the same host octet. Hang rates have no public source and are game choices.
 
@@ -1257,7 +1257,7 @@ Stuck boots, hangs and lockouts are rolled per device and hour and do not draw f
 | Bust hoster's lot | Once a year: 20 servers of one model as one board listing at 35% of their preset price, from the player's first city, for 14 days |
 | Clearance weekend | Once a year: 10 eBuy auctions ending on the second evening |
 
-Used devices are never insured, cannot be leased and resell from the price paid like any other device. Anchors: eBay server lots sold at 30% to 50% of list in the 2000s, and WebHostingTalk marketplace asks sit around half of the new price.
+Used devices cannot be leased and resell from the price paid like any other device. Anchors: eBay server lots sold at 30% to 50% of list in the 2000s, and WebHostingTalk marketplace asks sit around half of the new price.
 
 **Burn-in.** A racked server that is on, has power and sits in no cluster and runs no workload can be burned in. The server counts as busy for the whole test: it draws its full rated power at the location's rate, and in a datacenter the rack position and power limit are used as usual. The test ends early if the server loses power.
 
@@ -1898,6 +1898,14 @@ A datastore is a server attached to a VMwhere cluster as shared storage for VM d
 
 A Proxmocks cluster of two or more nodes holds quorum while more than half of its votes are up. Every node casts one vote, and a QDevice (a free server in the cluster's zone with no software, set with `setQdevice`) casts one more. Without quorum the cluster is read-only: creating or deleting VMs, migrating, snapshots, restores, node state changes, backup jobs and datastore attachment refuse with `error.noQuorum`, and failover is suspended. Running VMs stay up. A two-node cluster loses quorum when either node dies; a third node or a QDevice prevents that.
 
+### Proxmocks HA groups
+
+A Proxmocks cluster holds up to eight HA groups, each a set of nodes with priorities (`saveHaGroup`). A VM in a group (`setHaGroup`) fails over to the highest priority node with room; a restricted group never starts the VM outside its nodes, so it stays down when they are all unavailable. When a better node is available again the VM moves back after one hour, with the downtime of a cold move when it cannot move live, unless the group is set to Nofailback. Changes need quorum.
+
+### Horizont projects and quotas
+
+An OpenStash cluster starts with one unlimited project, admin. Projects (`saveProject`, up to ten) carry a quota on instances, vCPU, RAM, volume storage and floating IPs; an empty limit is no limit. Creating or resizing an instance, creating a volume and allocating a floating IP refuse with `error.quotaExceeded` when the project would pass a limit. A project can be tied to a customer, moves instances with `setInstanceProject` when the target has room, and is deleted only when empty.
+
 ### Storage replication and Ceph
 
 A VM of a Proxmocks cluster (from the year of its cluster support) can replicate its disk to another active node with `setReplication`: every 15 minutes, hourly or daily (03:00 UTC). The replica books the VM's disk on the target node and each copy sends `BACKUP_CHANGED` of the filled disk over the LAN. When the VM's node dies with its data (`lostDisk`), failover restarts the VM on the replica node and closes the loss with the data written since the last copy lost (the lag since `lastAt` plus half an interval). A disk on shared storage or a Ceph pool takes no replica.
@@ -2403,7 +2411,6 @@ Product management was tier 2 at 200 know-how and 14 days after Marketing basics
 | Managed databases | Products | 9,000 | €40,000 | Level 4 |
 | Own network number (ASN) | Network | 8,000 | €20,000 | Level 4 |
 | VPN | Products | 8,000 | €30,000 | Level 4 |
-| SLA insurance | Business | 10,000 | €10,000 | Level 4 |
 | Overlay networks | Network | 10,000 | €40,000 | Level 4 |
 | Always-on DDoS protection | Network | 12,000 | €100,000 | Level 4 |
 | Private suite | Infrastructure | 20,000 | €250,000 | Level 5 |
@@ -2439,7 +2446,7 @@ The GDD counts years in operation inside net worth. Here they are a separate min
 
 A company whose net worth stays below 80% of its level's threshold for 6 months drops one level, and customers who require the old level stop renewing.
 
-## Bank, insurance and tax
+## Bank and tax
 
 A level-1 company borrows at about 10% interest and a level-6 company at about 4.5%. Profit is taxed at 30% once the yearly return is filed, and a company that stays out of cash for 30 days goes bankrupt.
 
@@ -2487,9 +2494,7 @@ The loan margin in points is added to the base rate and the risk premium, and th
 
 **Switching banks.** Opening an account at another bank moves the whole balance. The old account pays its last fee at the next month start and closes. Switching is refused while a loan is open or the account is overdrawn. Standing orders, mandates and the card stay behind, and the card's open spending is billed at once. Customers who pay an invoice issued before the switch still reach the company for three months; after that the transfer bounces and the invoice stays unpaid.
 
-**SLA insurance.** The monthly premium is 2% of the recurring revenue from customers with an SLA, times an uptime factor: 1.0 at 99.95% or better over 90 days, 1.5 at 99.9% or better, and 2.5 below that. A missed SLA owes the customer 10% of their monthly fee per 0.1% of uptime below the promise, up to the full fee. The insurer pays those credits for three claims, then blocks the company for a year.
-
-**VAT.** Prices are gross, as for private customers: a sale of a holds a × r / (1 + r) of VAT. The rate r is 16% to 2006, 19% from 1 January 2007, and 16% from 1 July to 31 December 2020. Output VAT comes from customer payments, setup fees and sales; input VAT comes back on hardware, rent, power, transit, licenses, subscriptions, marketing, maintenance, domains, leasing, moving and AI. Salaries, insurance, loans, capital, fees and taxes carry none. VAT payments book in the category `vat`, which counts against profit, so a small business that charges no VAT keeps more of the same price.
+**VAT.** Prices are gross, as for private customers: a sale of a holds a × r / (1 + r) of VAT. The rate r is 16% to 2006, 19% from 1 January 2007, and 16% from 1 July to 31 December 2020. Output VAT comes from customer payments, setup fees and sales; input VAT comes back on hardware, rent, power, transit, licenses, subscriptions, marketing, maintenance, domains, leasing, moving and AI. Salaries, loans, capital, fees and taxes carry none. VAT payments book in the category `vat`, which counts against profit, so a small business that charges no VAT keeps more of the same price.
 
 | Item | Rule |
 |---|---|
@@ -2510,7 +2515,6 @@ A small business files no advance returns, charges no VAT and reclaims none. On 
 | Late fee | 0.25% of the assessed tax for each month started after the due date, at least €25 a month, billed with the assessment |
 | Estimate | Two months after the due date, 1.3 × the real tax, at least €100; filing before the end of the following year replaces it and settles the difference |
 
-**Hardware insurance.** The monthly premium is 1.5 × the expected yearly cost of spare parts for every working component still within its life expectancy (part price × its current yearly failure rate, with the manufacturer and overheating factors) / 12, at least €1. A claim pays the spare part's price and the remote hands bill for a component that failed while insured and before the end of its life expectancy; wear-out failures after that are not covered, so parts past their lifetimes add nothing to the premium. The starting basement server costs about €1.40 a month to insure.
 
 ## Balancing
 

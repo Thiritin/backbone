@@ -5,7 +5,7 @@ import { booksLinked, DOHLE_NAME, taxView } from "../../../sim/80-business/tax";
 import { connectDohle, submitTaxReturn } from "../../../sim/90-actions/tax";
 import { useStore } from "../../store";
 import { OpenReturns } from "../dohle/OpenReturns";
-import { Locked } from "./Locked";
+import { useBooks } from "./view";
 
 export function BooksTax({ game, connect, submit }: { game: GameState; connect: (doc: string) => void; submit: (id: string) => void }) {
   const certs = game.docs.filter((d) => d.kind === "cert");
@@ -14,7 +14,7 @@ export function BooksTax({ game, connect, submit }: { game: GameState; connect: 
   return (
     <div className="fin-scroll">
       <div className="fin-toolbar">
-        {!taxView(game) ? <Locked id="monthly-run" label={t("ui-tax.books.connect")} />
+        {!taxView(game) ? null
           : linked ? <span>{DOHLE_NAME}: {t("ui-tax.books.connected")}</span>
           : (
             <>
@@ -29,6 +29,6 @@ export function BooksTax({ game, connect, submit }: { game: GameState; connect: 
 }
 
 export function TaxTab() {
-  const game = useStore((s) => s.game), act = useStore((s) => s.act);
+  const game = useBooks(), act = useStore((s) => s.act);
   return <BooksTax game={game} connect={(doc) => act(connectDohle, doc)} submit={(id) => act(submitTaxReturn, id)} />;
 }

@@ -48,7 +48,7 @@ The company pays VAT and income tax by filing returns itself. Today `46-finance/
 - Two months after the due date the office estimates 1.3 times the real tax and bills it. Filing before the year ends replaces the estimate with the real assessment and books the difference.
 - The estimate is at least €100, like the VAT estimate, so a loss year is estimated too. "Before the year ends" is read as the end of the calendar year after the tax year; after that the estimate stands and filing is refused with `error.taxYearClosed`.
 - A yearly return opens on 1 January for every year the company was registered in. Filing it files the year's open advance returns and books the rest of the year's VAT, so the yearly VAT return always matches. The assessment lists the tax, the late fee and the credit for a paid estimate; when the credit is larger, the refund books at once.
-- Finance shows the open returns in place of the April tax card, and Books has a Tax tab with the same list.
+- The Books Tax tab (editions with the tax view) shows the open returns in place of the April tax card. The Finance app moved into Books before this phase landed.
 
 ## 5. Filing routes
 
@@ -58,8 +58,8 @@ The company pays VAT and income tax by filing returns itself. Today `46-finance/
 | Mein DOHLE | from 2013 | The same forms on `www.dohle.de`, logged in with the certificate file. DohleFormular refuses to start from 2013 and points to the portal. |
 | Bookkeeping program | when its edition has the tax view | Connect DOHLE once in Books by picking the certificate file. From then on Books files the advance return in its monthly run and offers Submit tax return, which needs every invoice of the year present and a matched statement (billing-by-hand 9e). |
 
-- Editions (billing-by-hand 9d) are not built yet, so the tax view comes with the tier of the monthly run: Books has it while the Monthly run module is registered, and without it Connect DOHLE opens the module's page on the vendor's site.
-- The monthly run on the first at nine files every advance return whose period has ended, after sending the drafts. Running the monthly run by hand files them too.
+- The Tax tab and Connect DOHLE come with the editions that have the tax view (billing-by-hand 9d).
+- On the first of the month at nine, when the monthly run sends the drafts, Books files every advance return whose period has ended.
 - Submit tax return sits on the yearly return's row in the Books Tax tab. "Every invoice of the year present" means no invoice issued in the year is still waiting for an import from the shop, and "a matched statement" means no transfer of the year is unmatched. Submitting then files like DohleFormular, with the same tax number, certificate and closing checks.
 
 ## 6. Certificate

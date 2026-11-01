@@ -5,7 +5,7 @@ import { registrarById, REGISTRARS } from "../../sim/10-catalog/registrars";
 import { supportApp } from "./support/desk";
 import { t } from "../../i18n/en";
 import { OFFICE_URL } from "../../sim/80-business/office";
-import { HOME_URL } from "../../sim/80-business/browser";
+import { bankUrl, HOME_URL } from "../../sim/80-business/browser";
 import type { GameState } from "../../sim/50-state";
 import type { GUIDE } from "../../sim/checklist";
 
@@ -67,7 +67,7 @@ export function stepOf(s: GameState, id: StepId): Step {
     case "firstCustomer":
       return { title: t("guide.step.firstCustomer"), text: t("apps.guide.step.firstCustomer", { app: mailApp }), app: "Support" };
     case "loan":
-      return { title: t("guide.step.loan"), text: t("apps.guide.step.loan"), app: "Finance" };
+      return { title: t("guide.step.loan"), text: t("apps.guide.step.loan"), app: "Browser", focus: { kind: "url", id: s.bank ? `${bankUrl(s.bank.id)}banking/loans` : HOME_URL } };
     case "tenCustomers":
       return { title: t("guide.step.tenCustomers"), text: t("apps.guide.step.tenCustomers"), app: "Customers" };
     case "research":

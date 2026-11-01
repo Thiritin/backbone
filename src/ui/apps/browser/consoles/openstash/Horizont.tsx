@@ -10,18 +10,19 @@ import { useStore } from "../../../../store";
 import { bootLines } from "../../../console/lunix";
 import { Chart, Donut, niceMax } from "../Chart";
 import { AlarmList, ConsoleThumb, isoName, MediaMenu, NodeList, ResourceBars, summaryOf, TaskLog, tasks, Toolbar, useNewVm, useVms, vmFacts, Wizard, type Vm } from "../HypervisorBase";
-import { Actions, Backups, erasFrom, eraAt, Facts, LoginForm, useSoftware, type PanelProps } from "../PanelBase";
+import { Actions, Backups, eraAt, looks, Facts, LoginForm, useSoftware, type PanelProps } from "../PanelBase";
 import { parseCreate } from "../../../../../sim/80-business/consoles";
 import { packagesOf } from "../../../../../sim/80-business/packages";
 import { PackagesScreen } from "../PackageForms";
 import { flavorCounts, FLAVORS, flavorOf as baseFlavorOf, same } from "./flavors";
+import { Projects } from "./HorizontProjects";
 import { FloatingIps, InstanceGroups, SecurityGroups, Volumes } from "./HorizontNetwork";
 import { volumesOf } from "../../../../../sim/60-infra/horizont";
 import "./horizont.css";
 import { noAutofill } from "../../../../no-autofill";
 
-// docs/design/software.md, section 9: the purple dashboard from 2010, the dark-sidebar one with the red mark from 2016.
-const ERAS = erasFrom(2010, 2016);
+// docs/design/software.md, section 9: one look per Horizont generation, ids as in UI_LOOKS.
+const LOOKS = looks({ dashboard: 2010, early: 2012, heat: 2013, late: 2016 });
 const flavorOf = (r: Resources, c: Cluster) => FLAVORS.find(([, x]) => same(x, r))?.[0] ?? packagesOf(c).find((q) => same(q.spec, r))?.name ?? baseFlavorOf(r);
 const QUOTA_INSTANCES = 10;
 
@@ -88,11 +89,11 @@ export function InstanceOverview({ game, c, v, flavor }: { game: GameState; c: C
   );
 }
 
-type Page = "overview" | "instances" | "floating" | "groups" | "volumes" | "images" | "keys" | "hypervisors" | "flavors" | "system" | { vm: string; tab: "Overview" | "Log" | "Console" };
+type Page = "overview" | "instances" | "floating" | "groups" | "volumes" | "images" | "keys" | "projects" | "hypervisors" | "flavors" | "system" | { vm: string; tab: "Overview" | "Log" | "Console" };
 const TAB_LABELS = { Overview: () => t("browser-consoles-1.hzOverview"), Log: () => t("browser-consoles-1.hzLog"), Console: () => t("browser-consoles-1.console") };
 
 export function Horizont(p: PanelProps) {
-  const era = eraAt(ERAS, p), { game, c, f } = p, openConsole = useStore((s) => s.openConsole);
+  const era = eraAt(LOOKS, p), { game, c, f } = p, openConsole = useStore((s) => s.openConsole);
   const link = parseCreate("openstash", p.path), [page, setPage] = useState<Page>(link?.screen === "packages" ? "flavors" : "instances"), [launching, setLaunching] = useState(link?.screen === "create");
   const { vms, dialog } = useVms(game, c, f), sw = useSoftware(game, c, f), nv = useNewVm(game, c, link?.screen === "create" ? link.order : undefined), health = summaryOf(game, c, null);
   if (!p.signedIn) return (
@@ -110,6 +111,7 @@ export function Horizont(p: PanelProps) {
     ["Project", t("browser-consoles-1.hzProject"), [["overview", t("browser-consoles-1.hzOverview")], ["instances", t("browser-consoles-1.hzInstances")], ["images", t("browser-consoles-1.hzImages")], ["keys", t("browser-consoles-1.hzKeyPairs")]]],
     ["Network", t("hzn.network"), [["floating", t("hzn.floatingIps")], ["groups", t("hzn.securityGroups")]]],
     ["Volumes", t("hzn.volumes"), [["volumes", t("hzn.volumes")]]],
+    ["Identity", t("hzp.identity"), [["projects", t("hzp.projects")]]],
     ["Admin", t("browser-consoles-1.hzAdmin"), [["hypervisors", t("browser-consoles-1.hzHypervisors")], ["flavors", t("readouts.flavors")], ["system", t("browser-consoles-1.hzSystemInfo")]]],
   ];
   return (
@@ -174,6 +176,7 @@ export function Horizont(p: PanelProps) {
           {page === "floating" && <FloatingIps game={game} c={c} vms={vms} />}
           {page === "groups" && <SecurityGroups c={c} vms={vms} />}
           {page === "volumes" && <Volumes c={c} vms={vms} />}
+          {page === "projects" && <Projects game={game} c={c} />}
           {page === "images" && (
             <>
               <h1>{t("browser-consoles-1.hzImages")}</h1>

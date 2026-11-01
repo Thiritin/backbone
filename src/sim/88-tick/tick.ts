@@ -26,7 +26,7 @@ import { marketingTick } from "../80-business/marketing";
 import { newsTick } from "../80-business/news";
 import { walkTick } from "../80-business/walk";
 import { booksTick } from "../80-business/bookkeeping";
-import { deliverLicences, lexwearTick } from "../80-business/lexwear";
+import { deliverLicences } from "../80-business/licences";
 import { payoutTick } from "../80-business/shoplink";
 import { paymentsTick } from "../45-billing/payments";
 import { lifecycleTick } from "../60-infra/lifecycle";
@@ -303,7 +303,7 @@ export function tick(state: GameState): SimEvent[] {
   if (monthStart) events.push(...hosttoastTick(state));
   if (monthStart) {
     const d = dateOf(state.hour);
-    events.push({ app: "Finance", key: "event.monthStart", params: { month: d.getUTCMonth(), year: d.getUTCFullYear() } });
+    events.push({ app: "Books", key: "event.monthStart", params: { month: d.getUTCMonth(), year: d.getUTCFullYear() } });
     const power = cents(state.powerDue);
     const bills: LedgerEntry[] = state.locations.filter((l) => l.dc)
       .map((l) => ({ hour: state.hour, category: "rent", key: "ledger.space", params: { location: l.name }, amount: -locationRent(state, l) }));
@@ -338,7 +338,7 @@ export function tick(state: GameState): SimEvent[] {
     state.cash = cents(state.cash + direct.reduce((n, b) => n + b.amount, 0));
     state.powerDue = 0;
     state.ledger = [...state.ledger, ...direct];
-    if (bills.length) events.push({ app: "Finance", key: "event.bills", params: { power, rent, leasing: cents(leasing), subscriptions, total: cents(power + rent + leasing + subscriptions) } });
+    if (bills.length) events.push({ app: "Books", key: "event.bills", params: { power, rent, leasing: cents(leasing), subscriptions, total: cents(power + rent + leasing + subscriptions) } });
     state.knowHow = cents(state.knowHow + knowHowPerMonth(state));
   }
   events.push(...addressTick(state));
@@ -361,7 +361,7 @@ export function tick(state: GameState): SimEvent[] {
   payoutTick(state);
   paymentsTick(state);
   events.push(...fraudTick(state));
-  events.push(...lexwearTick(state));
+  events.push(...deliverLicences(state));
   booksTick(state);
   events.push(...ordersTick(state));
   events.push(...domainsTick(state));

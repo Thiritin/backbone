@@ -298,6 +298,7 @@ export const en: Record<string, (p: Params) => string> = {
   "error.invoiceSettled": () => "This invoice is already settled.",
   "error.invoiceSent": () => "This invoice was already sent.",
   "error.transferMatched": () => "This transfer is already booked.",
+  "error.transferChanged": () => "This invoice changed after the booking.",
   "error.stepNotDue": () => "No dunning step is due yet.",
   "error.notOverdue": () => "This invoice is not overdue.",
   "error.billingRule": () => "This billing rule is not available.",
@@ -308,7 +309,7 @@ export const en: Record<string, (p: Params) => string> = {
   "error.loanBlocked": () => "The bank grants no new loans right now.",
   "error.loanLimit": () => "This amount is above your loan limit.",
   "error.loanTerm": () => "The bank does not offer this term.",
-  // Tax, insurance and bankruptcy.
+  // Bankruptcy; the insurance lines stay for the ledgers of old saves.
   "event.cashNegative.title": () => "Cash below zero",
   "event.cashNegative.text": (p) => `Your account is overdrawn. If it stays below zero for ${p.days} days and the bank lends no more, the company goes bankrupt.`,
   "event.bankrupt.title": () => "Bankrupt",
@@ -316,8 +317,6 @@ export const en: Record<string, (p: Params) => string> = {
   "ledger.tax": (p) => `Corporate tax for ${p.year}`,
   "ledger.insurancePremium": () => "Hardware insurance premium",
   "ledger.insuranceClaim": (p) => `Hardware insurance claim: ${COMPONENT_LABELS[String(p.component)] ?? p.component} in ${p.device}`,
-  "error.insured": () => "You already have this policy.",
-  "error.notInsured": () => "You do not have this policy.",
   "error.unknownLoan": () => "This loan no longer exists.",
   // Support and customers
   "event.ticket.title": (p) => `${p.name}`,

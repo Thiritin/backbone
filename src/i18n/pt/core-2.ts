@@ -26,8 +26,6 @@ export default {
   "ledger.tax": (p) => `Imposto sobre o rendimento de ${p.year}`,
   "ledger.insurancePremium": () => "Prémio do seguro de hardware",
   "ledger.insuranceClaim": (p) => `Sinistro do seguro de hardware: ${part(p.component, 0)} em ${p.device}`,
-  "error.insured": () => "Já tens esta apólice.",
-  "error.notInsured": () => "Não tens esta apólice.",
   "error.unknownLoan": () => "Este empréstimo já não existe.",
   "event.ticket.title": (p) => `${p.name}`,
   "event.ticket.text": (p) => t(String(p.subject), p),
