@@ -7,7 +7,7 @@ import { deliverMail } from "../40-support/tickets";
 import type { GameState, LedgerEntry } from "../50-state";
 import { groupIban, iban, ibanEra } from "./bank";
 
-export type SupplierId = "upstream" | "power" | "datacenter" | "pear" | "registrar" | "hardware" | "card" | "office" | "notary" | "register" | "chamber" | "books";
+export type SupplierId = "upstream" | "power" | "datacenter" | "pear" | "registrar" | "hardware" | "card" | "office" | "notary" | "register" | "chamber" | "books" | "tax";
 // throttle slows the home line, cut takes it off the internet, dark switches the locations' power off, licence stops the Pear
 // subscriptions, domains lets the domains lapse, noShip stops hardware orders, card blocks the credit card.
 export type Effect = "throttle" | "cut" | "dark" | "licence" | "domains" | "noShip" | "card";
@@ -21,7 +21,7 @@ export const CONSEQUENCES: Record<SupplierId, { days: number; effect: Effect }[]
   registrar: [{ days: 14, effect: "domains" }],
   hardware: [{ days: 0, effect: "noShip" }],
   card: [{ days: 14, effect: "card" }],
-  office: [], notary: [], register: [], chamber: [],
+  office: [], notary: [], register: [], chamber: [], tax: [],
   // The bookkeeping program keeps working unpaid; an open Lexwear update only stops new modules.
   books: [],
 };
