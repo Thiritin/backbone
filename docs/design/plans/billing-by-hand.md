@@ -159,10 +159,17 @@ Features by edition, three tiers for every vendor where the vendor has three, na
 | Collmix | basic 15 a month | plus 29 a month | | HBCI already in basic; no Helpdesk link ever |
 | sevDeck (2013) | Rechnung 9 a month | Buchhaltung 19 a month | Warenwirtschaft 39 a month | bank sync in every edition |
 | lexoffize (2014) | S 7 a month | M 12 a month | L 19 a month | |
+| GnuCache (GnuCash) | free | | | desktop, single user, HBCI included, P&L and cash flow reports, no quotes, no monthly run, no matching by reference, no automatic reminders, no statistics; GTK grey look |
 
-Layouts, one per vendor: Lexwear a grey Windows 2000 program with a tree on the left and a toolbar of small icons; WIZO a blue program with a row of large icons on top; Saga a dense grey enterprise screen with menus; orgaMIN orange with top tabs; Collmix a web page inside the window with an address bar, blue links and plain tables; sevDeck flat cards with a teal sidebar; lexoffize flat and light with a green sidebar. Document views keep the 2005 toolbar from the quote work. Edition-locked features show as disabled entries that open the vendor's site at the upgrade page.
+Deployment and seats:
 
-Milestones: editions in the catalog and `s.books.edition`; features read from the edition everywhere a module flag was read; remove the Lexwear modules, keys and Register; vendor sites sell editions and upgrades; Overview, Statistics and Tax in Books; remove Finance; remove insurance; layouts per vendor; old saves: Finance installed becomes Books, Lexwear with modules owned becomes the smallest edition that covers them; `tests/books-editions.test.ts` and the finance and insurance tests removed or moved.
+- Desktop programs (Lexwear, WIZO, Saga, orgaMIN, GnuCache) run on the player's PC and keep working when the internet line is down. Browser programs (Collmix, sevDeck, lexoffize) run inside the Browser look and are unusable while the line is down or throttled, so an unpaid line bill locks the books.
+- Licences are single user or multi user. A single-user licence means only the player works in the program: a hired bookkeeper cannot work until a multi-user licence or seats exist. Desktop vendors sell a network version as the multi-user step (Lexwear financial office pro and Saga Office Line Plus include it, WIZO L and orgaMIN Enterprise sell seats at a price each, GnuCache stays single user). Browser programs count seats per plan: Collmix plus 3 users, sevDeck and lexoffize one included and a monthly fee per further user. Each bookkeeper occupies one seat.
+- GnuCache has no Quotes view, so with it the order ticket keeps its plain Quote step where the player types the price without a document.
+
+Layouts, one per vendor: Lexwear a grey Windows 2000 program with a tree on the left and a toolbar of small icons; WIZO a blue program with a row of large icons on top; Saga a dense grey enterprise screen with menus; orgaMIN orange with top tabs; Collmix a web page inside the window with an address bar, blue links and plain tables; sevDeck flat cards with a teal sidebar; lexoffize flat and light with a green sidebar; GnuCache a GTK2 grey window with an account tree and a register table. Document views keep the 2005 toolbar from the quote work. Edition-locked features show as disabled entries that open the vendor's site at the upgrade page.
+
+Milestones: editions in the catalog and `s.books.edition` with deployment and seats; GnuCache as the free vendor; features read from the edition everywhere a module flag was read; remove the Lexwear modules, keys and Register; vendor sites sell editions and upgrades; Overview, Statistics and Tax in Books; remove Finance; remove insurance; layouts per vendor; old saves: Finance installed becomes Books, Lexwear with modules owned becomes the smallest edition that covers them; `tests/books-editions.test.ts` and the finance and insurance tests removed or moved.
 
 ## 10. Shared files
 
