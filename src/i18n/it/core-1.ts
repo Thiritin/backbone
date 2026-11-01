@@ -232,6 +232,7 @@ export default {
   "error.invoiceSettled": () => "Questa fattura è già saldata.",
   "error.invoiceSent": () => "Questa fattura è già stata inviata.",
   "error.transferMatched": () => "Questo bonifico è già registrato.",
+  "error.transferChanged": () => "La fattura è cambiata dopo la registrazione.",
   "error.stepNotDue": () => "Non è ancora previsto nessun passaggio di sollecito.",
   "error.notOverdue": () => "Questa fattura non è scaduta.",
   "error.billingRule": () => "Questa regola di fatturazione non è disponibile.",
