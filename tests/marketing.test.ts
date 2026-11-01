@@ -31,7 +31,7 @@ describe("owned channels", () => {
     expect(setUpChannel(s, "website")).toEqual({ ok: false, error: "error.channelOwned" });
     expect(setUpChannel(s, "searchAds").ok).toBe(true);
     expect(setUpChannel(s, "aiAds")).toEqual({ ok: false, error: "error.channelLater" });
-    expect(chooseShop({ ...s, cash: 0 }, "clientExit")).toEqual({ ok: false, error: "error.noCash" });
+    expect(chooseShop({ ...s, cash: 0 }, "clientExit", true)).toEqual({ ok: false, error: "error.noCash" });
   });
 });
 

@@ -72,7 +72,6 @@ export default {
   "marketing.hwColo": () => "Colocation",
   "marketing.priceCut": (p) => `${p.pct}% vom Umsatz`,
   "marketing.priceOnce": (p) => `${p.price} einmalig`,
-  "marketing.priceMonthlyPerServer": (p) => `${p.price} / Monat oder ${p.perServer} pro Server`,
   "marketing.priceYearly": (p) => `${p.price} / Jahr`,
   "marketing.free": () => "Gratis",
   "marketing.takingOrders": () => "Nimmt Bestellungen an",

@@ -6,6 +6,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - The Customers app is gone: customer records now live in the admin of your shop system, and before you run a shop, Books keeps them as contracts where you can credit, suspend and reprice them.
 - Marketing, Security and Research are in the dock from the day you register the company, so no Pear email or news line announces them anymore.
+- Shop systems now follow their real licence history: keys with a year of updates, leases sized by your active clients or managed servers, and options that come and go over the years.
+- Every shop system now has its real release history, from its first version to the one sold today.
 - Craigslost now lives at craigslost.org and looks like a classifieds board: a plain list of postings with date, photo and price, filters on the side and a page per posting.
 - A support ticket from a customer suspended over an unpaid invoice now offers the replies that fit it: resending the invoice or asking for details.
 - A suspended customer site that was defaced now shows as offline and stops sending spam from your mail address.
