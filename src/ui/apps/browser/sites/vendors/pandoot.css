@@ -2,6 +2,7 @@
 .vs-pdt header { display: flex; align-items: center; gap: 28px; padding: 10px 18px; background: #003a70; color: #ffffff; }
 .vs-pdt .vs-wm { display: flex; align-items: center; gap: 6px; font: 700 18px/1 Arial, sans-serif; letter-spacing: 0.1em; }
 .vs-pdt .vs-wm svg rect:first-child { fill: #ffffff; }
+.vs-pdt .vs-wm svg path { stroke: #003a70; }
 .vs-pdt nav { display: flex; gap: 2px; }
 .vs-pdt nav a { padding: 3px 10px; color: #ffffff; text-decoration: none; background: #1d5590; }
 .vs-pdt nav a[aria-current] { background: #ffc20e; color: #003a70; }

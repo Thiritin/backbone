@@ -11,7 +11,7 @@ export const SITE_COLOR: Record<string, string> = {
 };
 
 const W = { stroke: "white", strokeWidth: 1.5, fill: "none", strokeLinecap: "round", strokeLinejoin: "round" } as const;
-const letter = (t: string, size = 8.5) => <text x="8" y="11.2" textAnchor="middle" fontSize={size} fontWeight="800" fill="white" fontFamily="Verdana, Arial, sans-serif">{t}</text>;
+const letter = (t: string, size = 8.5) => <text x="8" y={8 + size * 0.364} textAnchor="middle" fontSize={size} fontWeight="800" fill="white" fontFamily="Verdana, Arial, sans-serif">{t}</text>;
 
 const GLYPH: Record<string, ReactNode> = {
   lunix: <path d="M10.6 6.2a3.2 3.2 0 1 0 .3 3.9M10.6 6.2c-.9-1-2.7-1-3.3.3-.6 1.3.5 2.6 1.7 2.2" {...W} />,
