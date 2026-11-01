@@ -7,7 +7,7 @@ const mailboxes = (n: string | number) => `${n} ${Number(n) === 1 ? "Postfach" :
 const web = (p: Params) => `${gb(p.disk)} Speicherplatz, ${gb(p.traffic)} Traffic im Monat und ${mailboxes(p.mail)}`;
 const box = (p: Params) => `${p.cpu} vCPU${Number(p.cpu) === 1 ? "" : "s"}, ${gb(p.ram)} RAM und ${gb(p.disk)} Festplatte`;
 const cards = (p: Params) => `${p.gpu} GPU${Number(p.gpu) === 1 ? "" : "s"}`;
-const domain = (p: Params) => (Number(p.owned) ? `Ich besitze ${p.domain} schon und würde sie gern zu dir umziehen.` : `Registrier bitte auch ${p.domain} für mich.`);
+const domain = (p: Params) => (Number(p.owned) ? `Ich besitze ${p.domain} schon und würde sie gern zu dir umziehen.${p.auth ? ` Der Auth-Code lautet ${p.auth}.` : ""}` : `Registrier bitte auch ${p.domain} für mich.`);
 const and = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(", ")} und ${xs.at(-1)}` : xs[0] ?? "mehr Platz");
 const more = (p: Params) => (p.product === "webHosting"
   ? `${gb(p.disk0)} bis ${gb(p.disk1)} Speicherplatz, ${gb(p.traffic0)} bis ${gb(p.traffic1)} Traffic und ${p.mail0} bis ${mailboxes(p.mail1)}`
@@ -59,6 +59,7 @@ export default {
   "error.quoteSentAlready": () => "Dieses Angebot ist schon verschickt.",
   "error.quoteOtherOrder": () => "Dieses Angebot gehört zu einer anderen Bestellung.",
   "error.quoteNotAccepted": () => "Der Kunde hat dieses Angebot nicht angenommen.",
+  "error.quoteInvoiced": () => "Dieses Angebot ist schon weitergeführt.",
   "error.needsInvoice": () => "Bestätige zuerst die Bestellung und sende die Rechnung.",
   "error.needsDomain": () => "Registriere zuerst die Domain.",
   "error.stepDone": () => "Dieser Schritt ist erledigt.",
