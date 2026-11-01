@@ -4,6 +4,7 @@ import { isMonthStart, nowMinutes } from "../00-core/time";
 import { counts } from "../00-core/workhours";
 import { noticed, segmentOf } from "../10-catalog/attention";
 import { activeServices, type Customer } from "../30-customers/customers";
+import { resellerAbuse } from "../30-customers/resellers";
 import { serviceFqdn } from "../30-customers/hostnames";
 import { grantExtension, serviceHeld, KEEP_SUSPENDED_HAPPINESS, UNSUSPEND_HAPPINESS } from "../45-billing/billing";
 import type { GameState } from "../50-state";
@@ -123,7 +124,7 @@ function spawnHourly(s: GameState): void {
     if (c.churnedAt !== null) continue;
     const { skill } = profileStats(c.profile);
     for (const kind of ["howTo", "billing", "abuse"] as const) {
-      const rate = (kind === "abuse" && c.profile === "gamer" ? GAMER_ABUSE_RATE : MONTHLY_RATES[kind][skill] * (kind === "howTo" ? howToFactor(s, c.id) * tenureFactor(s, c) : 1)) * (kind === "abuse" && c.shady ? SHADY_ABUSE : 1) * (kind === "abuse" ? phpAbuse(s, c.id) * (allHeld(s, c.id) ? 0 : 1) : 1);
+      const rate = (kind === "abuse" && c.profile === "gamer" ? GAMER_ABUSE_RATE : MONTHLY_RATES[kind][skill] * (kind === "howTo" ? howToFactor(s, c.id) * tenureFactor(s, c) : 1)) * (kind === "abuse" && c.shady ? SHADY_ABUSE : 1) * (kind === "abuse" ? phpAbuse(s, c.id) * resellerAbuse(s, c.id) * (allHeld(s, c.id) ? 0 : 1) : 1);
       if (!chance(s.rng, rate / HOURS_PER_MONTH)) continue;
       if (kind !== "howTo") { createTicket(s, c, kind); continue; }
       const ask = pickHowTo(s, c);

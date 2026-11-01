@@ -4,7 +4,7 @@ import { euroCents, euroPrice } from "../../../sim/00-core/money";
 import { updatePrice } from "../../../sim/10-catalog/apps";
 import { deskHas, deskOf, type DeskFeature } from "../../../sim/10-catalog/desks";
 import { actionsOf, canEscalate, isFinal, monthlyValue, shownTemplates, templatesOf, type Ticket, type TicketAction, type TicketKind } from "../../../sim/40-support/tickets";
-import { senderById, subjectParams, TAKEDOWN_HOURS } from "../../../sim/40-support/notices";
+import { senderById, senderName, subjectParams, TAKEDOWN_HOURS } from "../../../sim/40-support/notices";
 import { EXTENSION_DAYS } from "../../../sim/45-billing/billing";
 import { requestName, requirementsFor, type SalesRequest } from "../../../sim/30-market/market";
 import { orderOf } from "../../../sim/30-market/orders";
@@ -25,7 +25,7 @@ import { Incidents } from "./Incidents";
 import { CustomerCard } from "./CustomerCard";
 import { Reports } from "./Reports";
 import { supportApp } from "./desk";
-import { CustomCompose, InvoicePill } from "./CustomOrder";
+import { CustomCompose, InvoicePill, MailAttachments } from "./CustomOrder";
 import { Compose } from "./Compose";
 import { specText } from "../../../sim/30-market/spec";
 import { OFFERS } from "../../../sim/80-business/walk";
@@ -100,7 +100,7 @@ const subjectOf = (s: GameState, tk: Ticket) => t(`ticket.${tk.kind}.${tk.topic}
 
 function Sender({ id }: { id: string }) {
   const x = senderById(id);
-  return <span>{x.name}{x.agency && <BadgeCheck className="verified" aria-label={t("support.verifiedSender")} />}</span>;
+  return <span>{senderName(id)}{x.agency && <BadgeCheck className="verified" aria-label={t("support.verifiedSender")} />}</span>;
 }
 
 function Sla({ tk, hour }: { tk: Ticket; hour: number }) {
@@ -132,7 +132,7 @@ const stampOf = (it: Item) => it.tk.updatedAt;
 const createdOf = (it: Item) => it.tk.createdAt;
 // A search matches the sender, the subject and the ticket number.
 const textOf = (game: GameState, it: Item) =>
-  `${game.customers.find((c) => c.id === it.tk.customerId)?.name ?? ""} ${it.tk.notice ? senderById(it.tk.notice.sender).name : ""} ${subjectOf(game, it.tk)} ${it.tk.id.slice(3)}`.toLowerCase();
+  `${game.customers.find((c) => c.id === it.tk.customerId)?.name ?? ""} ${it.tk.notice ? senderName(it.tk.notice.sender) : ""} ${subjectOf(game, it.tk)} ${it.tk.id.slice(3)}`.toLowerCase();
 
 export function SupportApp() {
   const game = useStore((s) => s.game);
@@ -298,6 +298,7 @@ function OrderThread({ tk, r, gates }: { tk: Ticket; r: SalesRequest; gates: Gat
           <div key={i} className={`msg${m.from === "you" ? " you" : ""}`}>
             <div className="from">{m.from === "you" ? m.by ?? t("support.you") : r.contact} · <span className="num">{stamp(m.hour)}</span></div>
             <p>{t(m.key, m.params)}{i === 0 && r.kind !== "expansion" && ` ${t(`request.use.${r.profile}`)}`}{i === 0 && r.kind === "order" && `\n\n${addressLines(mailedAddress(game.seed, r)).join("\n")}`}</p>
+            {r.kind === "order" && <MailAttachments tk={tk} r={r} m={m} />}
           </div>
         ))}
         {tk.work && <div className="event"><span>{t("support.queuedUntil", { time: stamp(tk.work.doneAt / 60) })}</span></div>}
@@ -367,7 +368,7 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
 
       {sender ? (
         <div className="cust">
-          <div className="logo">{initials(sender.name)}</div>
+          <div className="logo">{initials(senderName(sender.id))}</div>
           <div>
             <div className="name"><Sender id={sender.id} /></div>
             <div className="sub">{tk.notice!.from}</div>
@@ -396,7 +397,7 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
 
       <div className="thread">
         <div className={sent ? "msg you" : "msg"}>
-          <div className="from">{sender ? sender.name : sent ? t("support.you") : tk.kind === "sponsor" ? p.event : tk.mail ? tk.mail.from : tk.kind === "pear" ? t("walk.from") : c?.name} · <span className="num">{stamp(tk.createdAt)}</span></div>
+          <div className="from">{sender ? senderName(sender.id) : sent ? t("support.you") : tk.kind === "sponsor" ? p.event : tk.mail ? tk.mail.from : tk.kind === "pear" ? t("walk.from") : c?.name} · <span className="num">{stamp(tk.createdAt)}</span></div>
           <p>{t(`ticket.${tk.kind}.${tk.topic}.text`, p)}</p>
           {(tk.topic === LICENCE || tk.topic === BOOKS_LICENCE) && <p><button className="btn primary" onClick={() => openApp("Books", { kind: "register", id: "" })}>{t("vendor-sites.register")}</button></p>}
           {tk.topic === NEWSLETTER && <p><button className="btn primary" onClick={() => openApp("Browser", { kind: "url", id: lexwearUrl(String(tk.mail!.params.module)) })}>{t("vendor-sites.viewModule")}</button></p>}

@@ -53,5 +53,5 @@ export const subscriptionEntry = (s: GameState, item: StoreItem): LedgerEntry =>
 
 // Know-how each active contract earns per month; DNS counts like a domain.
 export const KNOW_HOW: Record<Product, number> = {
-  domain: 0.2, ssl: 0.2, dns: 0.2, webHosting: 1, vpn: 1, gameServer: 1.5, vps: 2, storage: 3, cloud: 4, dedicated: 5, colocation: 6, gpu: 8,
+  domain: 0.2, ssl: 0.2, dns: 0.2, webHosting: 1, vpn: 1, gameServer: 1.5, vps: 2, storage: 3, cloud: 4, dedicated: 5, colocation: 6, gpu: 8, reseller: 2,
 };

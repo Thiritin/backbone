@@ -4,6 +4,7 @@ import { hashRng, rand, type Rng } from "../00-core/rng";
 import { activeServices, type Customer } from "../30-customers/customers";
 import { serviceFqdn } from "../30-customers/hostnames";
 import type { GameState } from "../50-state";
+import { t } from "../../i18n/en";
 import { serverOf, type Workload } from "../60-infra/cluster";
 import { breachOf, decideBreach } from "../60-infra/breach";
 import { gridTick, maybeReview, returnSeized, seize } from "../60-infra/incidents";
@@ -28,6 +29,7 @@ export const SENDERS: Sender[] = [
   { id: "lockbitt", name: "Lockbitt Crew", domain: "lockbitt.onion", topics: ["extortion"], agency: false },
 ];
 export const senderById = (id: string): Sender => SENDERS.find((x) => x.id === id)!;
+export const senderName = (id: string): string => { const x = senderById(id); return x.agency ? t(`sender.${x.id}`) : x.name; };
 
 // Notices per customer per month; a shady customer draws far more real ones and legal requests.
 export const NOTICE_RATES = { real: 0.01, fake: 0.01, legal: 0.002, shadyReal: 0.3, shadyLegal: 0.06, stray: 0.2 };
@@ -164,7 +166,7 @@ function deadlines(s: GameState, r: Rng, events: SimEvent[]): void {
       const at = (w: Workload) => { const id = serverOf(s, w); return id && s.devices.some((d) => d.id === id) ? id : null; };
       const deviceId = s.workloads.filter((w) => w.serviceId === t.serviceId).map(at).find((id) => id)
         ?? s.workloads.filter((w) => s.services.find((v) => v.id === w.serviceId)?.customerId === t.customerId).map(at).find((id) => id);
-      if (deviceId) seize(s, deviceId, senderById(t.notice.sender).name, r, events);
+      if (deviceId) seize(s, deviceId, senderName(t.notice.sender), r, events);
     }
   }
 }
@@ -210,7 +212,7 @@ const breachParams = (s: GameState, t: Ticket) => {
 
 export const subjectParams = (s: GameState, t: Ticket): Record<string, string | number> => ({
   service: s.services.find((v) => v.id === t.serviceId)?.label ?? "", hostname: serviceFqdn(s, s.services.find((v) => v.id === t.serviceId)), domain: s.services.find((v) => v.id === t.serviceId)?.domain ?? s.sales.requests.find((r) => r.ticketId === t.id)?.domain ?? "", url: t.notice?.url ?? "", ip: t.topic === "dnsChange" ? askedIp(s, t.id) : "", video: t.notice?.video ?? "",
-  target: t.move?.name ?? "", round: t.notice?.round ?? 1, sender: t.notice ? senderById(t.notice.sender).name : "",
+  target: t.move?.name ?? "", round: t.notice?.round ?? 1, sender: t.notice ? senderName(t.notice.sender) : "",
   ...(t.kind === "extortion" && breachParams(s, t)),
   ...(t.maint && maintParams(t.maint)),
   ...(t.kind === "sponsor" && sponsorParams(s, t)),
@@ -227,7 +229,7 @@ export function opsTick(s: GameState): SimEvent[] {
   deadlines(s, r, events);
   const fresh = [...followUps(s, r), ...spawn(s, r)];
   for (const t of fresh) {
-    events.push({ app: "Support", key: "event.ticket", params: { ...subjectParams(s, t), ticketId: t.id, name: senderById(t.notice!.sender).name, subject: `ticket.${t.kind}.${t.topic}.subject` } });
+    events.push({ app: "Support", key: "event.ticket", params: { ...subjectParams(s, t), ticketId: t.id, name: senderName(t.notice!.sender), subject: `ticket.${t.kind}.${t.topic}.subject` } });
   }
   return events;
 }
