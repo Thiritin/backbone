@@ -4,6 +4,7 @@ import { START_YEAR, yearOf } from "../00-core/time";
 import { GPU_SKILL } from "../10-catalog/research";
 import { backsUp, balancerIn, fcGbit, IN_VM, isService, kindsServing, kindServing, phpAt, softwareById, type DatastoreProtocol, type SoftwareKind } from "../10-catalog/platforms";
 import { OVERCOMMIT, PRODUCTS, type Resources } from "../10-catalog/products";
+import { topTier } from "../10-catalog/licence-tiers";
 import type { Product } from "../30-customers/customers";
 import { serviceHeld } from "../45-billing/billing";
 import type { Device, GameState, MachineState } from "../50-state";
@@ -66,6 +67,8 @@ export interface Cluster {
   licence?: { tier: string; trialUntil: number | null; lapsedAt: number | null };
   // The update channel; missing is Release (channel.ts).
   channel?: "stable" | "release" | "edge";
+  // The edition of a licensed cloud platform; lapsedAt the hour an unpaid licence expired. Missing is the top tier without expiry.
+  licence?: { tier: string; trialUntil: number | null; lapsedAt: number | null };
   // Compatibility mode lets VMs move live between nodes of different CPU vendors, at COMPAT_VCPU of every node's vCPU.
   compat?: boolean;
   // Whether the software updates itself at AUTO_UPDATE_HOUR when an update is due (software.ts).

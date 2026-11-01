@@ -12,6 +12,7 @@ import { maybeReview } from "./incidents";
 import { familyOf, instanceRisk, openVulns, patchedNow } from "./vulns";
 import { oobSecurityTick } from "./oob";
 import { phpInstalled } from "./webpanel";
+import { jailFactor } from "./bans";
 
 export interface Vuln { id: string; at: number; versions: string[] }
 const at = (y: number, m: number, d: number) => hourOf(new Date(Date.UTC(y, m - 1, d, 9)));
@@ -102,7 +103,7 @@ export function securityTick(s: GameState): SimEvent[] {
   }
   if (s.security.stage < 1) return events;
   const risk = s.security.stage >= 2 ? WARNING_RISK : POC_RISK;
-  for (const c of hosts(s)) if (exposed(s, c) && chance(s.rng, risk * exposureFactor(s, c))) compromise(s, c, events);
+  for (const c of hosts(s)) if (exposed(s, c) && chance(s.rng, risk * exposureFactor(s, c) * jailFactor(s, c.id))) compromise(s, c, events);
   return events;
 }
 

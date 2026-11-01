@@ -49,6 +49,7 @@ import * as vswitch from "./vswitch";
 import * as rates from "./rates";
 import * as registrar from "./registrar";
 import * as remote from "./remote";
+import * as lan from "./lan";
 import * as routers from "./routers";
 import * as sales from "./sales";
 import * as security from "./security";
@@ -59,6 +60,7 @@ import * as staff from "./staff";
 import * as start from "./start";
 import * as store from "./store";
 import * as suite from "./suite";
+import * as switches from "./switches";
 import * as support from "./support";
 import * as templates from "./templates";
 import * as travel from "./travel";
@@ -73,7 +75,8 @@ export type Call = [Action, ...unknown[]];
 export type { LogEntry };
 export const LOG_CAP = 50_000;
 
-const modules = [addresses, backups, bank, billing, burnin, changes, checklist, clusters, community, datastores, company, console_, cpus, customers, dev, holds, licence, lexwear, oversell, packages, firewall, horizont, quorum, replication, webpanel, docs, paperwork, files, finance, hardware, mail, maintenance, market, marketing, media, moves, netsvcDns, netsvcMail, netsvcQuota, netsvcStorage, netsvcVpn, network, openveezee, os, orders, rates, registrar, remote, routers, sales, security, shop, snapshots, software, staff, start, store, suite, support, templates, travel, used, vms, vmwhere, vswitch, website];
+const modules = [addresses, lan, backups, bank, billing, burnin, changes, checklist, clusters, community, datastores, company, console_, cpus, customers, dev, holds, licence, lexwear, oversell, packages, firewall, horizont, quorum, replication, webpanel, docs, paperwork, files, finance, hardware, mail, maintenance, market, marketing, media, moves, netsvcDns, netsvcMail, netsvcQuota, netsvcStorage, netsvcVpn, network, openveezee, os, orders, rates, registrar, remote, routers, sales, security, shop, snapshots, software, staff, start, store, suite, switches, support, templates, travel, used, vms, vmwhere, vswitch, website];
+// Every exported function of 90-actions by its name, so a replay can call the actions a run logged.
 export const ACTIONS: Record<string, Action> = Object.fromEntries(modules.flatMap((m) => Object.entries(m).filter(([, f]) => typeof f === "function"))) as Record<string, Action>;
 const NAMES = new Map<unknown, string>(Object.entries(ACTIONS).map(([k, f]) => [f, k]));
 
