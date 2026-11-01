@@ -38,6 +38,8 @@ export default {
   "marketing.building": () => "Em construção",
   "marketing.none": () => "Nenhum",
   "marketing.website": () => "Site",
+  "marketing.websiteText": () => "O site da tua empresa, onde os visitantes veem produtos e encomendam.",
+  "marketing.manage": () => "Gerir",
   "marketing.siteIntro": () => "Escreve um site HTML simples para a empresa. Não custa nada e demora três dias.",
   "marketing.build": () => "Construir",
   "marketing.readyOn": () => "Pronto em",
