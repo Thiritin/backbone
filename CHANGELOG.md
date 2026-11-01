@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- The router now sits in the rack and hands out every address by DHCP, and its Fritz!OZ page at fritz.bocks lists your devices, fixes addresses and shares the web port with the one server that hosts websites on a home line.
+- Switches now come managed or unmanaged, and managed switches have VLANs, a saved configuration and their own web page at the address the router gives them.
 - Websites in the browser fill the whole window again instead of a narrow page.
 - Right-click a browser tab to close it, close all other tabs, or close every tab to its left or right.
 - Letters now arrive by post in the new Post app, and paper bills from the trade office, the notary, the commercial register and the chamber of commerce land in your payables.
