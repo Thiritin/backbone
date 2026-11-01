@@ -29,7 +29,7 @@ describe("pulled power", () => {
     const s = at(hits[0]);
     setPower(s, "dev3", false);
     expect(corrupted(s).length).toBe(onDev3(s).length);
-    expect(dev3(s).log.at(-1)).toEqual({ hour: s.hour, key: "ipmi.log.corrupted" });
+    expect(dev3(s).log.at(-1)).toMatchObject({ hour: s.hour, key: "ipmi.log.corrupted", sev: "crit" });
     const t = at(hits[0]);
     setPower(t, "dev3", false);
     expect(t.workloads).toEqual(s.workloads);

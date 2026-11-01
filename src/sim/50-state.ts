@@ -55,6 +55,9 @@ export type BondMode = "none" | "failover" | "balance";
 export type CableKind = "copper" | "dac" | "fiber" | "rollover";
 
 export type SpaceKind = "basement" | "share" | "cage" | "suite";
+// One System Event Log record of a device (syslog.ts pushLog); id counts up within the log.
+export type LogSev = "info" | "warn" | "crit";
+export interface DeviceLog { hour: number; key: string; sev: LogSev; id: number }
 // Each location is an availability zone (az, like fra2) in the region of its city.
 export interface Location { id: string; dc: string | null; city: string; az: string; name: string; space: SpaceKind; positions: number; readyAt: number; extraCircuit: boolean }
 // share-N racks belong to the provider of a rack share and hold N units.
@@ -93,7 +96,7 @@ export interface Device extends MachineState { id: string; model: string; brand:
   // The hour a clean shutdown switches the device off.
   haltUntil?: number;
   // The operating system froze (hung) or the management controller did (bmcHung); log is the device's last 20 events.
-  hung: boolean; bmcHung: boolean; log: { hour: number; key: string }[];
+  hung: boolean; bmcHung: boolean; log: DeviceLog[]; inletSev?: LogSev;
   // The chassis a multi-node server's node sits in; it mounts, moves and gets power with it.
   chassisId: string | null;
   // A hand task waiting for someone on site: pulling the plug or resetting the management controller.
@@ -379,7 +382,7 @@ export function deviceDefaults(modelId: string, at: number, partList?: PartSpec[
     components: parts.map((p, i): Component => ({ id: `c${i + 1}`, ...p, installedAt: at, failedAt: null })),
     on: true, label: null, raid: (drives >= 2 ? "1" : "none") as RaidLevel, rebuildRate: "medium" as RebuildRate,
     rebuild: null, maintenance: null, dataLost: null, burnin: null as Device["burnin"], burnedInAt: null as number | null, chassisId: null as string | null,
-    hung: false, bmcHung: false, log: [] as { hour: number; key: string }[], os: null as MachineState["os"], software: [] as MachineState["software"],
+    hung: false, bmcHung: false, log: [] as DeviceLog[], os: null as MachineState["os"], software: [] as MachineState["software"],
     stuck: false, locked: false, setup: false, bootFrom: "disk" as const, ...(hasFirmware(modelById(modelId)) ? { fw: { version: yearOf(at), updatedAt: at } } : {}),
     ...(isOfficeRouter(modelById(modelId)) ? { lan: homeLan() } : {}),
     ...(modelById(modelId).kind === "server" ? { iface: { mode: "dhcp" } as IfaceConfig } : {}),
