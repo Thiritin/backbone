@@ -5,19 +5,23 @@ import { booksVendor } from "../../../../../sim/10-catalog/bookkeeping";
 import type { GameState } from "../../../../../sim/50-state";
 import { booksUrl, LEXWEAR_HOST } from "../../../../../sim/80-business/bookkeeping";
 import { editionIn, Editions } from "../books/VendorShop";
+import { eraOf } from "../era";
 import "./lexwear.css";
 
 const SUPPORT = `www.${LEXWEAR_HOST}/support`;
 // A software box drawn in CSS, its spine darker with each edition.
 const HUE = [210, 150, 20];
+// The real vendor moved from a fixed red-bar portal to a white page with a product comparison table around 2010.
+const ERAS = [{ from: 2005, look: "classic" }, { from: 2010, look: "modern" }] as const;
 
 export function LexwearSite({ game, path, go }: { game: GameState; path: string; go: (url: string) => void }) {
   const v = booksVendor("lexwear")!, one = editionIn(path);
   const link = (url: string) => (e: MouseEvent) => { e.preventDefault(); go(url); };
   const page = path.startsWith("/support") ? "support" : "home";
+  const look = eraOf([...ERAS], yearOf(game.hour));
   const nav: [string, string, string][] = [["home", t("books-editions.nav"), booksUrl(v)], ["support", t("vendor-sites.navSupport"), SUPPORT]];
   return (
-    <div className="lx">
+    <div className={`lx lx-${look}`}>
       <div className="lx-page">
         <header className="lx-head">
           <span className="lx-logo">lex<b>wear</b></span>
@@ -37,7 +41,7 @@ export function LexwearSite({ game, path, go }: { game: GameState; path: string;
                   </div>
                 ))}
               </div>
-              <Editions game={game} v={v} one={one} />
+              <Editions game={game} v={v} one={one} table={look === "modern"} />
             </>
           )}
         </main>
