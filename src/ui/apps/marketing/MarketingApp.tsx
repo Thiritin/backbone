@@ -1,4 +1,4 @@
-import { Eye, HeartHandshake, Megaphone, Package, Presentation, ShoppingCart, Star, Waypoints } from "lucide-react";
+import { Eye, HeartHandshake, Megaphone, Package, Presentation, Star, Waypoints } from "lucide-react";
 import { Fragment, useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
@@ -23,9 +23,8 @@ import "../shop/shop.css";
 import "../billing/billing.css";
 import "./marketing.css";
 import { Products, SiteCard } from "./Website";
-import { Shop } from "./Shop";
 
-type Section = "channels" | "products" | "shop" | "campaigns" | "awareness" | "reviews" | "fairs" | "community";
+type Section = "channels" | "products" | "campaigns" | "awareness" | "reviews" | "fairs" | "community";
 
 export const AUDIENCE: Record<Profile, string> = {
   reseller: t("web.reseller.audience"),
@@ -51,7 +50,7 @@ export function MarketingApp() {
   // Channels is always open, Products once the site is online, Reviews and Community with
   // Marketing basics, the rest with Marketing campaigns.
   const full = isAvailable("Marketing", game.unlocks), basics = game.unlocks.includes("marketingBasics");
-  const open = (id: Section) => id === "channels" || (id === "shop" ? owns(game, "website") : id === "products" ? game.marketing.launched : full || (basics && (id === "reviews" || id === "community")));
+  const open = (id: Section) => id === "channels" || (id === "products" ? game.marketing.launched : full || (basics && (id === "reviews" || id === "community")));
   const [picked, setSection] = useState<Section | null>(null);
   const section = picked && open(picked) ? picked : "channels";
   useFocus("Marketing", (f) => { if (f.kind === "page") setSection(f.id as Section); });
@@ -59,7 +58,6 @@ export function MarketingApp() {
   const items: [Section, string, ReactNode, number | null][] = [
     ["channels", t("marketing.secChannels"), <Waypoints />, null],
     ["products", t("marketing.secProducts"), <Package />, game.marketing.lines.length || null],
-    ["shop", t("marketing.secShop"), <ShoppingCart />, null],
     ["campaigns", t("marketing.secCampaigns"), <Megaphone />, game.marketing.campaigns.length || null],
     ["awareness", t("marketing.secAwareness"), <Eye />, null],
     ["reviews", t("marketing.secReviews"), <Star />, game.marketing.reviews.length || null],
@@ -86,7 +84,6 @@ export function MarketingApp() {
         <div className="fin-scroll">
           {section === "channels" && <Channels />}
           {section === "products" && <Products />}
-          {section === "shop" && <Shop game={game} />}
           {section === "campaigns" && <Campaigns />}
           {section === "awareness" && <Awareness />}
           {section === "reviews" && <Reviews />}

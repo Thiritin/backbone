@@ -11,8 +11,6 @@ export default {
   "error.nothingToImport": () => "Il n'y a rien à importer.",
   "error.noShopSystem": () => "Ce module demande le système de boutique de cet éditeur.",
   "shop-link.import": () => "Importer depuis la boutique",
-  "shop-link.customers": () => "Clients de la boutique",
-  "shop-link.invoices": () => "Factures de la boutique",
   "shop-link.footer": (p) => `© ${p.year} ${p.maker}`,
   "shop-link.tagline.modemBill": () => "Facturation et provisionnement pour hébergeurs web",
   "shop-link.tagline.clientExit": () => "Gestion des clients et facturation pour hébergeurs",

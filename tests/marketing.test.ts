@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { chooseShop } from "../src/sim/90-actions/shop";
+import { installShop } from "../src/sim/90-actions/shop";
 import { isMonthStart } from "../src/sim/00-core/time";
 import { createTicket } from "../src/sim/40-support/tickets";
 import { type GameState } from "../src/sim/50-state";
@@ -24,14 +24,13 @@ describe("owned channels", () => {
   it("sets up the website, then a shop and ads that need it", () => {
     const s = withCompany({ ...newGame(1), cash: 1000 });
     s.unlocks = [...s.unlocks, "shops"];
-    expect(chooseShop(s, "clientExit")).toEqual({ ok: false, error: "error.needsWebsite" });
+    expect(installShop(s, "c1", "clientExit")).toEqual({ ok: false, error: "error.needsWebsite" });
     expect(setUpChannel(s, "website").ok).toBe(true);
     expect(s.cash).toBe(600);
     expect(s.ledger.at(-1)).toMatchObject({ category: "marketing", key: "ledger.marketingSetup", amount: -400 });
     expect(setUpChannel(s, "website")).toEqual({ ok: false, error: "error.channelOwned" });
     expect(setUpChannel(s, "searchAds").ok).toBe(true);
     expect(setUpChannel(s, "aiAds")).toEqual({ ok: false, error: "error.channelLater" });
-    expect(chooseShop({ ...s, cash: 0 }, "clientExit", true)).toEqual({ ok: false, error: "error.noCash" });
   });
 });
 
