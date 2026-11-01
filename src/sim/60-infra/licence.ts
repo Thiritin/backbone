@@ -4,7 +4,8 @@ import { dateOf, hourOf, yearOf } from "../00-core/time";
 import { tiersOf, topTier, type LicenceTier } from "../10-catalog/licence-tiers";
 import { SOFTWARE } from "../10-catalog/platforms";
 import { licensingAt, SERVER_OS } from "../10-catalog/server-os";
-import { versionAt, versionInfo, versionsOf } from "../10-catalog/software-versions";
+import type { Look } from "../10-catalog/sites";
+import { UI_LOOKS, versionAt, versionInfo, versionsOf } from "../10-catalog/software-versions";
 import type { GameState, Licence } from "../50-state";
 import type { Cluster } from "./cluster";
 
@@ -32,7 +33,13 @@ export function installedVersion(s: GameState, machineId: string, product: strin
   const m = [...s.devices, ...s.workloads].find((x) => x.id === machineId);
   return (m?.os?.id === product ? m.os.version : m?.software?.find((x) => x.id === product)?.version) ?? null;
 }
-const installedMajor = (s: GameState, machineId: string, product: string): string | undefined =>
+// The console look of the version the machine runs, or null when the version or its UI generations are unknown.
+export function lookOf(s: GameState, machineId: string, product: string): Look | null {
+  const vs = versionsOf(product), at = (v: string | null) => vs.findIndex((x) => x.version === v);
+  const i = at(installedVersion(s, machineId, product));
+  return i < 0 ? null : UI_LOOKS[product]?.filter(([from]) => at(from) <= i).at(-1)?.[1] ?? null;
+}
+const installedMajor =(s: GameState, machineId: string, product: string): string | undefined =>
   versionInfo(product, installedVersion(s, machineId, product) ?? "")?.major;
 // A key for a major the product never had (a year, from before versions) covers whatever is installed.
 const isNewer = (product: string, installed: string | null, major: string): boolean => {

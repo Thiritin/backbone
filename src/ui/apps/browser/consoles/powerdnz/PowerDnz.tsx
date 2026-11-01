@@ -13,7 +13,7 @@ import "./powerdnz.css";
 const ERAS = erasFrom(2005, 2016);
 
 export function PowerDnz(p: PanelProps) {
-  const era = eraAt(ERAS, p.game), [tab, setTab] = usePanelTab(p.f), [zone, setZone] = useState<string | null>(null);
+  const era = eraAt(ERAS, p), [tab, setTab] = usePanelTab(p.f), [zone, setZone] = useState<string | null>(null);
   const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f), ts = tenants(p.game, p.c);
   if (!p.signedIn) return (
     <div className="cx pd pd-login" data-era={era}>

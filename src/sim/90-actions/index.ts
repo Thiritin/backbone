@@ -17,6 +17,7 @@ import * as customers from "./customers";
 import * as holds from "./holds";
 import * as licence from "./licence";
 import * as lexwear from "./lexwear";
+import * as shoplink from "./shoplink";
 import * as oversell from "./oversell";
 import * as dev from "./dev";
 import * as docs from "./docs";
@@ -72,7 +73,7 @@ export type Call = [Action, ...unknown[]];
 export type { LogEntry };
 export const LOG_CAP = 50_000;
 
-const modules = [addresses, lan, backups, bank, billing, burnin, changes, checklist, clusters, community, datastores, company, console_, cpus, customers, dev, holds, licence, lexwear, oversell, packages, firewall, quorum, replication, webpanel, docs, paperwork, files, finance, hardware, mail, maintenance, market, marketing, media, moves, netsvcDns, netsvcMail, netsvcQuota, netsvcStorage, netsvcVpn, network, os, orders, rates, registrar, remote, routers, sales, security, shop, snapshots, software, staff, start, store, suite, switches, support, templates, travel, used, vms, vmwhere, website];
+const modules = [addresses, lan, backups, bank, billing, burnin, changes, checklist, clusters, community, datastores, company, console_, cpus, customers, dev, holds, licence, lexwear, shoplink, oversell, packages, firewall, quorum, replication, webpanel, docs, paperwork, files, finance, hardware, mail, maintenance, market, marketing, media, moves, netsvcDns, netsvcMail, netsvcQuota, netsvcStorage, netsvcVpn, network, os, orders, rates, registrar, remote, routers, sales, security, shop, snapshots, software, staff, start, store, suite, switches, support, templates, travel, used, vms, vmwhere, website];
 // Every exported function of 90-actions by its name, so a replay can call the actions a run logged.
 export const ACTIONS: Record<string, Action> = Object.fromEntries(modules.flatMap((m) => Object.entries(m).filter(([, f]) => typeof f === "function"))) as Record<string, Action>;
 const NAMES = new Map<unknown, string>(Object.entries(ACTIONS).map(([k, f]) => [f, k]));

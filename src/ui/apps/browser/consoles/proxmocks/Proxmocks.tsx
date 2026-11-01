@@ -53,7 +53,7 @@ export function VmSummary({ game, c, v }: { game: GameState; c: Cluster; v: Vm }
 }
 
 export function Proxmocks(p: PanelProps) {
-  const era = eraAt(ERAS, p.game), { game, c, f } = p, openConsole = useStore((s) => s.openConsole);
+  const era = eraAt(ERAS, p), { game, c, f } = p, openConsole = useStore((s) => s.openConsole);
   const open = parseCreate("proxmocks", p.path), [sel, setSel] = useState<Sel>(open?.screen === "create" ? { kind: "new" } : open?.screen === "packages" ? { kind: "plans" } : ALL), [tab, setTab] = useState("Summary");
   const tabNames: Record<string, string> = { Summary: t("browser-consoles-2.summary"), Console: t("browser-consoles-2.console"), Hardware: t("browser-consoles-2.hardware"), Options: t("browser-consoles-2.options"), Backup: t("browser-consoles-2.backup"), Updates: t("browser-consoles-2.updates"), Cluster: t("browser-consoles-2.cluster"), Replication: t("pmx.replication"), Ceph: "Ceph", Storage: t("pmx.storage"), Firewall: t("pmx.firewall") };
   const { vms, dialog } = useVms(game, c, f), sw = useSoftware(game, c, f), nv = useNewVm(game, c, open?.screen === "create" ? open.order : undefined);
