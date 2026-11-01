@@ -170,10 +170,10 @@ export function backupPool(s: GameState, targetId: string): { need: number; room
   return { need, room };
 }
 
-// Hours a restore of a workload takes from its cluster's backup target.
-export function restoreHours(s: GameState, w: Workload): number {
+// Hours a restore of a workload takes from its cluster's backup target into zone az, its own cluster's by default.
+export function restoreHours(s: GameState, w: Workload, az?: string): number {
   const c = s.clusters.find((x) => x.id === w.clusterId), target = c && s.clusters.find((x) => x.id === c.backup.targetId);
-  const rate = target && target.az === c.az ? LAN_GB_PER_HOUR : WAN_GB_PER_HOUR;
+  const rate = target && target.az === (az ?? c.az) ? LAN_GB_PER_HOUR : WAN_GB_PER_HOUR;
   return Math.max(1, Math.ceil((w.diskGb * diskFill(s, w, w.backupAt ?? s.hour)) / rate));
 }
 

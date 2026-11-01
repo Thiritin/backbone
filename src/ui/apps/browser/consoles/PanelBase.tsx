@@ -24,7 +24,7 @@ import { migrateWebspace, migrateWorkload, migrationTargets, restoreWorkload, st
 import { useStore } from "../../../store";
 import { disk, ram } from "../../hw";
 import { VM_STATE, vmLabel, vmState } from "../../products/parts";
-import { hoursText } from "../../vms/migrate";
+import { hoursText } from "../../workload-menu";
 import { useHolds } from "./Holds";
 import { HostSettings } from "./HostSettings";
 import { eraOf } from "../sites/era";

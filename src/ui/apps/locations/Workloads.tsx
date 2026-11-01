@@ -6,7 +6,7 @@ import { softwareById } from "../../../sim/10-catalog/platforms";
 import { clusterOf, controlPlaneUse, workloadsOn, type Workload } from "../../../sim/60-infra/cluster";
 import { pegged, workloadUse } from "../../../sim/60-infra/usage";
 import { migrateWorkload, migrationTargets, startWorkload, stopWorkload } from "../../../sim/90-actions/vms";
-import { announceEntries, migrateEntries, offerEntries, rescueEntries } from "../vms/migrate";
+import { announceEntries, migrateEntries, offerEntries, rescueEntries } from "../workload-menu";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
