@@ -2,7 +2,7 @@ import { START_CASH } from "../src/sim/10-catalog/economy";
 import { describe, expect, it } from "vitest";
 import { createRng } from "../src/sim/00-core/rng";
 import { hourOf } from "../src/sim/00-core/time";
-import { annuity, baseRate, billingTick, invoiceTotal, isSuspended, loanAvailable, PAY_ODDS, rollPayStep, YEAR_HOURS } from "../src/sim/45-billing/billing";
+import { annuity, baseRate, billingTick, dueStep, invoiceTotal, isSuspended, loanAvailable, PAY_ODDS, rollPayStep, YEAR_HOURS } from "../src/sim/45-billing/billing";
 import { type GameState } from "../src/sim/50-state";
 import { metrics } from "../src/sim/metrics";
 import { tick } from "../src/sim/88-tick/tick";
@@ -270,5 +270,17 @@ describe("billing saves", () => {
     expect(s).toMatchObject({ customers: [], services: [], invoices: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0 });
     runTo(s, at(2005, 2, 1));
     expect(s.invoices).toEqual([]);
+  });
+});
+
+describe("dunning spacing", () => {
+  it("waits a week after a late reminder before the dunning letter", () => {
+    const { s, inv: get } = withInvoice(99);
+    const inv = get();
+    s.hour = inv.dueAt + 20 * 24;
+    expect(dueStep(inv, s.hour)).toBe(0);
+    sendReminder(s, inv.id);
+    expect(dueStep(s.invoices[0], s.hour)).toBe(null);
+    expect(dueStep(s.invoices[0], s.hour + 7 * 24)).toBe(1);
   });
 });

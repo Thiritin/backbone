@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- A dunning letter now waits a week after a late payment reminder, and the reminder buttons in German show the step names capitalized.
 - Customers without an active contract move to an archive at the bottom of the contracts list in your books, so the list shows only the customers you still serve.
 - The semiannual billing cycle now shows a proper name in every language.
 - Agencies now book reseller blocks on your DirectAdmen and cPanic hosts and pay each month for the GB their clients use, at the price per GB you set in your rates.

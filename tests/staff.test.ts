@@ -170,7 +170,7 @@ describe("work", () => {
       id: `inv-${n}`, number: `2005-${n}`, customerId: c, lines: [{ serviceId: null, key: "x", params: {}, amount: 10 }], issuedAt: 0, dueAt,
       status: "overdue", reminders: [], suspended: false, suspendedAt: null, payStep: 4, payAt: null, paidAt: null, extendedUntil: null,
     });
-    s.invoices = [inv(1, -8 * 24), { ...inv(2, -15 * 24), reminders: [-24] }];
+    s.invoices = [inv(1, -8 * 24), { ...inv(2, -15 * 24), reminders: [-8 * 24] }];
     s.billingRules.autoRemind = true;
     // Two seats on a plan without automatic reminders.
     s.books = { vendor: "sevdeck", installedAt: 0, edition: "rechnung", seats: 2, download: null };
