@@ -38,6 +38,13 @@ describe("Debiant netinst", () => {
     expect(machineScreen(s, id).kind).toBe("osInstall");
   });
 
+  it("reaches no mirror with a static address that has no gateway", () => {
+    const s = readyGame(7), id = atInstaller(s);
+    withNetwork(s, id);
+    expect(err(installOs(s, id, "lunix", undefined, { mode: "static", ip: "192.168.178.10", prefix: 24 }))).toBe("error.noMirror");
+    expect(installOs(s, id, "lunix", undefined, { mode: "static", ip: "192.168.178.10", prefix: 24, gw: "192.168.178.1" }).ok).toBe(true);
+  });
+
   it("is abandoned when the cable comes out mid-install, and the failure shows until a key", () => {
     const s = readyGame(7), id = atInstaller(s);
     withNetwork(s, id);

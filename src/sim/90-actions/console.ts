@@ -12,6 +12,7 @@ import { BOOT_HOURS, bootHours, booting, powered } from "../60-infra/status";
 import { buyLicenses, buyUpgradeLicense, licenseDue, reportLoss, upgradeLicenseDue } from "../85-products/products";
 import { leave } from "./clusters";
 import type { ActionResult } from "./hardware";
+import type { IfaceConfig } from "../60-infra/ifaces";
 import { installSoftware, uninstallSoftware } from "./software";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -120,7 +121,7 @@ const atInstaller = (s: GameState, machineId: string): Machine | string => {
 // The installer's Install: whatever the disks held goes first, then the OS installs for its install hours, the version
 // on the media. os.installedAt is the hour it is done; a server is held in its boot until then and boots from its disk
 // after, a VM ejects its ISO. The stick and an ISO each hold one version of one OS.
-export function installOs(s: GameState, machineId: string, osId: ServerOsId, confirm?: string): ActionResult {
+export function installOs(s: GameState, machineId: string, osId: ServerOsId, confirm?: string, iface: IfaceConfig = { mode: "dhcp" }): ActionResult {
   const m = atInstaller(s, machineId);
   if (typeof m === "string") return fail(m);
   if (!SERVER_OS.some((o) => o.id === osId)) return fail("error.unknownOs");
@@ -129,6 +130,8 @@ export function installOs(s: GameState, machineId: string, osId: ServerOsId, con
   // The Debiant image is a netinst; Windoors Setup carries everything on its image.
   const net = osId === "lunix" ? machineNet(s, machineId) : null;
   if (net) return fail(net === "noInterfaces" ? "error.noInterfaces" : "error.noAutoconf");
+  // A static address without a gateway reaches no mirror.
+  if (osId === "lunix" && iface.mode === "static" && !iface.gw) return fail("error.noMirror");
   if (s.cash < licenseDue(s, machineId, osId, null)) return fail("error.noCash");
   const cleared = clear(s, m, confirm);
   if (!cleared.ok) return cleared;
