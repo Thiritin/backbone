@@ -6,13 +6,14 @@ import { useReadoutPages } from "../Readouts";
 import { t } from "../../../../../i18n/en";
 import { IdentityCerts } from "./IdentityCerts";
 import { tenants } from "../services";
+import { VpnReadout } from "../ServiceReadouts";
 import "./anyconnekt.css";
 
 // docs/design/software.md, section 10: the blue device-manager tabs until 2016, then flat white and teal.
 const ERAS = erasFrom(2005, 2016);
 
 export function AnyConnekt(p: PanelProps) {
-  const era = eraAt(ERAS, p.game), [tab, setTab] = usePanelTab(p.f), [certs, setCerts] = useState(false);
+  const era = eraAt(ERAS, p), [tab, setTab] = usePanelTab(p.f), [certs, setCerts] = useState(false);
   const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f), ts = tenants(p.game, p.c);
   const logo = <span className="sy-logo"><i aria-hidden>{"|||.|||."}</i>SYSKO <b>AnyConnekt</b></span>;
   if (!p.signedIn) return (
@@ -53,6 +54,7 @@ export function AnyConnekt(p: PanelProps) {
               </tbody>
             </table>
           ))}
+          {box(t("readouts.vpn.sessions"), <VpnReadout game={p.game} c={p.c} />)}
         </>}
         {!certs && pages.filter((g) => g.id === tab).map((g) => <div key={g.id}>{g.body}</div>)}
         {!certs && tab === "software" && box(t("browser-consoles-1.softwareUpdates"), <><Facts facts={sw.facts} /><Actions actions={sw.actions}>{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>{sw.panel}</>)}

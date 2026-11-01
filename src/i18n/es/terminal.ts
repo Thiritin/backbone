@@ -23,6 +23,7 @@ export default {
     "uptime             mostrar cuánto lleva encendido el servidor",
     "df -h              mostrar el uso del disco",
     "free -m            mostrar el uso de memoria",
+    "ip a               mostrar las interfaces de red",
     "top                mostrar los procesos más activos",
     "shutdown -h now    apagar el servidor",
     "reboot             reiniciar el servidor",

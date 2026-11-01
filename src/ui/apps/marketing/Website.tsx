@@ -3,7 +3,8 @@ import { t } from "../../../i18n/en";
 import { euro, euroCents } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
 import { registrarById, REGISTRARS } from "../../../sim/10-catalog/registrars";
-import { shopById } from "../../../sim/10-catalog/shops";
+import { HAND_ROLLED, shopById } from "../../../sim/10-catalog/shops";
+import { chooseShop } from "../../../sim/90-actions/shop";
 import type { Product } from "../../../sim/30-customers/customers";
 import { hasOrderForm, OWNED, owns, type SiteHost } from "../../../sim/80-business/marketing";
 import { generationOf, lineBlocker, listed, SITE_LINES, SITE_RENT, siteBuilt, siteRoom, siteStatus, type SiteStatus } from "../../../sim/80-business/website";
@@ -11,7 +12,7 @@ import { setCompany, TAGLINE_MAX } from "../../../sim/90-actions/company";
 import { setUpChannel } from "../../../sim/90-actions/marketing";
 import { buildSite, launchSite, redesign, setEmailOrders, setLine, setSiteHost } from "../../../sim/90-actions/website";
 import { useStore } from "../../store";
-import { formatDay } from "../billing/BillingApp";
+import { formatDay } from "../billing/format";
 import { PRODUCT } from "../support/labels";
 
 const STATUS: Record<SiteStatus, [string, string]> = { up: [t("marketing.statusUp"), "ok"], slow: [t("marketing.statusSlow"), "warn"], down: [t("marketing.statusDown"), "bad"] };
@@ -106,10 +107,10 @@ function Upgrades() {
   const game = useStore((s) => s.game);
   const act = useStore((s) => s.act);
   const current = game.marketing.designYear >= generationOf(yearOf(game.hour));
-  const offer = (id: "website" | "orderForm") => (
+  const offer = (id: "website") => (
     <button className="btn" disabled={game.cash < OWNED[id].setup} onClick={() => act(setUpChannel, id)}>{t("marketing.setUp")} <span className="num">{euro(OWNED[id].setup)}</span></button>
   );
-  const upkeep = (id: "website" | "orderForm") => <span className="mkt-sub">{t("marketing.priceMonth", { price: euro(OWNED[id].upkeep) })}</span>;
+  const upkeep = (id: "website") => <span className="mkt-sub">{t("marketing.priceMonth", { price: euro(OWNED[id].upkeep) })}</span>;
   return <>
     <div className="mkt-row">
       <span className="mkt-label">{t("marketing.design")}</span>
@@ -121,7 +122,7 @@ function Upgrades() {
     {owns(game, "website") && (
       <div className="mkt-row">
         <span className="mkt-label">{t("marketing.orders")}</span>
-        {game.shop.variant ? <span className="mkt-grow">{shopById(game.shop.variant).name}</span> : hasOrderForm(game) ? <span className="mkt-grow">{t("marketing.orderForm")}</span> : <><span className="mkt-grow">{t("marketing.orderForm")}{upkeep("orderForm")}</span>{offer("orderForm")}</>}
+        {game.shop.variant ? <span className="mkt-grow">{game.shop.variant === "handRolled" ? t("marketing.orderForm") : shopById(game.shop.variant).name}</span> : <><span className="mkt-grow">{t("marketing.orderForm")}</span><button className="btn" disabled={game.cash < HAND_ROLLED.setup} onClick={() => act(chooseShop, "handRolled")}>{t("marketing.setUp")} <span className="num">{euro(HAND_ROLLED.setup)}</span></button></>}
       </div>
     )}
     {hasOrderForm(game) && (

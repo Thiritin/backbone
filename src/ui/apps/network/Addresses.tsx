@@ -3,12 +3,12 @@ import { euro, euroCents } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
 import { freeBlock, LINE_EXTRA_V4, LIR_FEES, providerV4, transferPrice } from "../../../sim/10-catalog/addresses";
 import type { GameState, Location } from "../../../sim/50-state";
-import {
-  addressesOf, dynamicLine, freeV4, ipmiIp, lineActive, machineLocation, privateIp, publicV4, publicV6, v6Offered, type Address, type AddressSource,
-} from "../../../sim/60-infra/addresses";
+import { addressesOf, dynamicLine, freeV4, lineActive, machineLocation, publicV4, publicV6, v6Offered, type Address, type AddressSource, machineAddress } from "../../../sim/60-infra/addresses";
+import { addressOf, macOf } from "../../../sim/60-infra/lan";
+import { fullTableAt } from "../../../sim/60-infra/routers";
 import { addAddress, announceBlock, assignAddress, buyAddresses, buyBlock, joinLir, releaseAddress, requestDelist } from "../../../sim/90-actions/addresses";
 import { useStore } from "../../store";
-import { formatDay } from "../billing/BillingApp";
+import { formatDay } from "../billing/format";
 import { devName } from "../hw";
 import { vmLabel } from "../products/parts";
 import { LOCALE } from "../../../i18n/lang";
@@ -42,14 +42,16 @@ function RepCell({ a }: { a: Address }) {
 // A server's or VM's addresses, as rows of its facts list.
 export function AddressRows({ game, id }: { game: GameState; id: string }) {
   const act = useStore((s) => s.act), openApp = useStore((s) => s.openApp);
-  const loc = machineLocation(game, id), mgmt = ipmiIp(game, id);
+  const loc = machineLocation(game, id), mgmt = addressOf(game, id, "bmc");
   if (!loc) return null;
   const v4 = publicV4(game, id), v6 = publicV6(game, id);
   const own = addressesOf(game, id).filter((a) => a.v === 4);
   // Datacenter servers keep their address; VMs and basement servers can give theirs back.
   const fixed = !!loc.dc && game.devices.some((d) => d.id === id);
   return <>
-    <div><dt>{t("misc.privateIp")}</dt><dd className="num">{privateIp(game, id) ?? t("misc.none")}</dd></div>
+    {game.devices.some((d) => d.id === id)
+      ? <div><dt>{t("browser-consoles-2.fritz.mac")}</dt><dd className="num">{macOf(game, id)}</dd></div>
+      : <div><dt>{t("misc.privateIp")}</dt><dd className="num">{machineAddress(game, id) ?? t("misc.none")}</dd></div>}
     {mgmt && (
       <div>
         <dt>{t("misc.management")}</dt>
@@ -173,8 +175,9 @@ export function Ripe({ game }: { game: GameState }) {
               <td className="num r">{game.ips.addresses.filter((a) => a.blockId === b.id && a.holder).length}</td>
               <td>
                 <div className="seg" role="group" aria-label={t("misc.announcedFrom")}>
-                  {dcs.map((l) => <button key={l.id} aria-pressed={b.locationId === l.id} onClick={() => b.locationId !== l.id && act(announceBlock, b.id, l.id)}>{l.az}</button>)}
+                  {dcs.map((l) => <button key={l.id} aria-pressed={b.locationId === l.id} onClick={() => b.locationId !== l.id && act(announceBlock, b.id, l.id, !fullTableAt(game, l.id))}>{l.az}</button>)}
                 </div>
+                {b.locationId && b.byProvider && <span> {t("misc.byProvider")}</span>}
               </td>
             </tr>
           ))}

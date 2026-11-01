@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { chooseShop } from "../src/sim/90-actions/shop";
 import { hourOf, isMonthStart, yearOf } from "../src/sim/00-core/time";
 import { sizeSpec } from "../src/sim/10-catalog/products";
 import { leadFlows } from "../src/sim/30-market/market";
@@ -11,11 +12,10 @@ import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { setPower } from "../src/sim/90-actions/hardware";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
-import { startGame } from "../src/sim/90-actions/start";
 import { redesign, setSiteHost } from "../src/sim/90-actions/website";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { en } from "../src/i18n/en";
-import { automate, panelServer, readyGame, withCompany, withServer } from "./fixtures";
+import { automate, panelServer, readyGame, withCompany, withServer, startGame } from "./fixtures";
 
 const inYear = (s: GameState, y: number) => { s.hour = hourOf(new Date(Date.UTC(y, 5, 15))); };
 const hostOf = (s: GameState) => s.clusters.find((c) => c.kind === "panel")!.id;
@@ -135,7 +135,7 @@ describe("company site hosting", () => {
   it("loses the orders of the order form while the site is down", () => {
     const orders = (down: boolean) => {
       const s = automate(withSite(7));
-      ok(setUpChannel(s, "orderForm"));
+      ok(chooseShop(s, "handRolled"));
       if (down) ok(setPower(s, "dev3", false));
       else ok(setSiteHost(s, { kind: "rented" }));
       return run(s, 24 * 30).filter((e) => e.key === "event.orderPlaced").length;

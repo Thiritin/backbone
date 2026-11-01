@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { LEASE_FACTOR, leaseOffers, LESSORS } from "../src/sim/10-catalog/leasing";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { connectError, storageStacks } from "../src/sim/60-infra/status";
 import { tick } from "../src/sim/88-tick/tick";
 import { buyOutLease, connect, mountStack, sellDevice, type CartLine } from "../src/sim/90-actions/hardware";
-import { buyCart, buyDevice } from "./fixtures";
+import { buyCart, buyDevice, newGame } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { withServer } from "./fixtures";
 

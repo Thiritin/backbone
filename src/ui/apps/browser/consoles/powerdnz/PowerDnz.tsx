@@ -4,6 +4,7 @@ import { LogOut } from "lucide-react";
 import { Actions, erasFrom, eraAt, Facts, LoginForm, RowLines, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
 import { useReadoutPages } from "../Readouts";
 import { tenants } from "../services";
+import { DnsStatistics } from "../ServiceReadouts";
 import { slavesServed, zoneOf } from "../../../../../sim/60-infra/netsvc-dns";
 import { ZoneEditor } from "./ZoneEditor";
 import "./powerdnz.css";
@@ -12,7 +13,7 @@ import "./powerdnz.css";
 const ERAS = erasFrom(2005, 2016);
 
 export function PowerDnz(p: PanelProps) {
-  const era = eraAt(ERAS, p.game), [tab, setTab] = usePanelTab(p.f), [zone, setZone] = useState<string | null>(null);
+  const era = eraAt(ERAS, p), [tab, setTab] = usePanelTab(p.f), [zone, setZone] = useState<string | null>(null);
   const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f), ts = tenants(p.game, p.c);
   if (!p.signedIn) return (
     <div className="cx pd pd-login" data-era={era}>
@@ -49,6 +50,7 @@ export function PowerDnz(p: PanelProps) {
               </tbody>
             </table>
           </section>
+          <section className="pd-box"><h2>{t("readouts.dns.statistics")}</h2><DnsStatistics game={p.game} c={p.c} table={era === "early"} /></section>
         </>}
         {pages.filter((g) => g.id === tab).map((g) => <div key={g.id}>{g.body}</div>)}
         {tab === "software" && <section className="pd-box"><h2>{t("browser-consoles-2.server")}</h2><Facts facts={[...sw.facts, { label: t("netsvc.slavesServed"), value: String(slavesServed(p.game, p.c.id).length) }]} /><Actions actions={sw.actions}>{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>{sw.panel}</section>}

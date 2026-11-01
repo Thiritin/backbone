@@ -16,7 +16,8 @@ import { metrics } from "../../../sim/metrics";
 import { PRODUCT } from "../support/labels";
 import { t } from "../../../i18n/en";
 import { useFocus, useStore } from "../../store";
-import { formatDay } from "../billing/BillingApp";
+import { resellersUrl } from "../../../sim/80-business/browser";
+import { formatDay } from "../billing/format";
 import "../shop/shop.css";
 import "../billing/billing.css";
 import "./marketing.css";
@@ -27,6 +28,7 @@ import { Shop } from "./Shop";
 type Section = "channels" | "products" | "shop" | "pricing" | "campaigns" | "awareness" | "reviews" | "fairs" | "community";
 
 export const AUDIENCE: Record<Profile, string> = {
+  reseller: t("web.reseller.audience"),
   private: t("marketing.audPrivate"), gamer: t("marketing.audGamer"), hobbyDev: t("marketing.audHobbyDev"), soleProp: t("marketing.audSoleProp"), smallBiz: t("marketing.audSmallBiz"), agency: t("marketing.audAgency"), office: t("marketing.audOffice"), onlineShop: t("marketing.audOnlineShop"), enterprise: t("marketing.audEnterprise"),
 };
 
@@ -39,7 +41,7 @@ const OWNED_INFO: { id: OwnedChannel | "email"; name: string; text: string }[] =
 const CAMPAIGN_INFO: Record<CampaignChannel, string> = {
   search: "Goggle Ads", ai: t("marketing.aiAds"), gaming: t("marketing.campGaming"), coldCall: t("marketing.campColdCall"), agency: t("marketing.campAgency"),
 };
-const CHANNEL_NAME: Record<OwnedChannel, string> = { website: t("marketing.webDesign"), orderForm: t("marketing.orderForm"), searchAds: "Goggle Ads", aiAds: t("marketing.aiAds") };
+const CHANNEL_NAME: Record<OwnedChannel, string> = { website: t("marketing.webDesign"), searchAds: "Goggle Ads", aiAds: t("marketing.aiAds") };
 
 const pct = (v: number) => `${Math.round(v * 100)}%`;
 const leads = (n: number) => (n < 10 ? n.toFixed(1) : String(Math.round(n)));
@@ -101,10 +103,11 @@ export function MarketingApp() {
 function Channels() {
   const game = useStore((s) => s.game);
   const act = useStore((s) => s.act);
+  const openApp = useStore((s) => s.openApp);
   const [managing, setManaging] = useState(false);
   const year = yearOf(game.hour), full = isAvailable("Marketing", game.unlocks);
   if (managing) return <>
-    <div className="mkt-list"><button className="btn" onClick={() => setManaging(false)}>Back</button></div>
+    <div className="mkt-list"><button className="btn" style={{ justifySelf: "start" }} onClick={() => setManaging(false)}>{t("desktop.back")}</button></div>
     <div className="mkt-list"><SiteCard /></div>
   </>;
   return <>
@@ -112,6 +115,12 @@ function Channels() {
       <div className="shop-card">
         <div className="shop-name"><strong>Website</strong><span>Your company site where visitors browse products and order.</span></div>
         <div className="shop-buy"><span className="grow" />{game.marketing.launched && <span className="pill ok">Active</span>}<button className="btn" onClick={() => setManaging(true)}>Manage</button></div>
+      </div>
+      <div className="shop-card">
+        <div className="shop-name"><strong>{t("marketing.domain")}</strong><span>{t("marketing.domainText")}</span></div>
+        <div className="shop-buy"><span className="grow" />{game.company.domain
+          ? <span className="pill ok num">{game.company.domain}</span>
+          : <button className="btn primary" onClick={() => openApp("Browser", { kind: "url", id: resellersUrl() })}>{t("marketing.buy")}</button>}</div>
       </div>
       {OWNED_INFO.filter(({ id }) => full || id === "email").map(({ id, name, text }) => {
         const def = id === "email" ? null : OWNED[id];

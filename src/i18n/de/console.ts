@@ -24,4 +24,5 @@ export default {
   "error.noDownload": () => "Der Installer konnte das Paket nicht herunterladen.",
   "term.console.osInstallFailed": () => "Failed to retrieve the base system installation files.",
   "term.console.logon": () => "Press Ctrl+Alt+Delete to log on",
+  "error.noMirror": () => "Der angegebene Debiant-Spiegelserver ist nicht erreichbar.",
 } satisfies Dict;

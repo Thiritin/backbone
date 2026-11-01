@@ -4,10 +4,11 @@ import { euroCents, euroPrice } from "../../../sim/00-core/money";
 import { updatePrice } from "../../../sim/10-catalog/apps";
 import { deskHas, deskOf, type DeskFeature } from "../../../sim/10-catalog/desks";
 import { actionsOf, canEscalate, isFinal, monthlyValue, shownTemplates, templatesOf, type Ticket, type TicketAction, type TicketKind } from "../../../sim/40-support/tickets";
-import { senderById, subjectParams, TAKEDOWN_HOURS } from "../../../sim/40-support/notices";
+import { senderById, senderName, subjectParams, TAKEDOWN_HOURS } from "../../../sim/40-support/notices";
 import { EXTENSION_DAYS } from "../../../sim/45-billing/billing";
 import { requestName, requirementsFor, type SalesRequest } from "../../../sim/30-market/market";
 import { orderOf } from "../../../sim/30-market/orders";
+import { addressLines, mailedAddress } from "../../../sim/30-customers/addresses";
 import { companyParams } from "../../../sim/40-support/replies";
 import type { GameState } from "../../../sim/50-state";
 import { acceptSponsorship, declineSponsorship } from "../../../sim/90-actions/community";
@@ -24,9 +25,11 @@ import { Incidents } from "./Incidents";
 import { CustomerCard } from "./CustomerCard";
 import { Reports } from "./Reports";
 import { supportApp } from "./desk";
-import { CustomCompose, InvoicePill } from "./CustomOrder";
+import { CustomCompose, InvoicePill, MailAttachments } from "./CustomOrder";
+import { Compose } from "./Compose";
 import { specText } from "../../../sim/30-market/spec";
 import { OFFERS } from "../../../sim/80-business/walk";
+import { isLicence, lexwearUrl, NEWSLETTER } from "../../../sim/80-business/lexwear";
 import { due, initials, KINDS, kindOf, monthYear, moodClass, span, stamp, statusOf } from "./labels";
 import { SLAS } from "../../../sim/10-catalog/products";
 import { Card, LostSales, need, SLA_LABEL } from "../sales/SalesApp";
@@ -97,7 +100,7 @@ const subjectOf = (s: GameState, tk: Ticket) => t(`ticket.${tk.kind}.${tk.topic}
 
 function Sender({ id }: { id: string }) {
   const x = senderById(id);
-  return <span>{x.name}{x.agency && <BadgeCheck className="verified" aria-label={t("support.verifiedSender")} />}</span>;
+  return <span>{senderName(id)}{x.agency && <BadgeCheck className="verified" aria-label={t("support.verifiedSender")} />}</span>;
 }
 
 function Sla({ tk, hour }: { tk: Ticket; hour: number }) {
@@ -118,7 +121,8 @@ interface Item { id: string; due: number; tk: Ticket }
 
 function itemsIn(game: GameState, box: Box): Item[] {
   const tickets = (f: (tk: Ticket) => boolean): Item[] => game.tickets.filter(f).map((tk) => ({ id: tk.id, due: tk.dueAt, tk }));
-  if (box === "all") return tickets((tk) => !isFinal(tk));
+  // Company emails arrive closed and stay in the inbox like any email.
+  if (box === "all") return tickets((tk) => !isFinal(tk) || tk.kind === "mail");
   const tb = BOXES.find((b) => b.id === box);
   return tb ? tickets((tk) => tb.match(tk, game.hour)) : [];
 }
@@ -128,7 +132,7 @@ const stampOf = (it: Item) => it.tk.updatedAt;
 const createdOf = (it: Item) => it.tk.createdAt;
 // A search matches the sender, the subject and the ticket number.
 const textOf = (game: GameState, it: Item) =>
-  `${game.customers.find((c) => c.id === it.tk.customerId)?.name ?? ""} ${it.tk.notice ? senderById(it.tk.notice.sender).name : ""} ${subjectOf(game, it.tk)} ${it.tk.id.slice(3)}`.toLowerCase();
+  `${game.customers.find((c) => c.id === it.tk.customerId)?.name ?? ""} ${it.tk.notice ? senderName(it.tk.notice.sender) : ""} ${subjectOf(game, it.tk)} ${it.tk.id.slice(3)}`.toLowerCase();
 
 export function SupportApp() {
   const game = useStore((s) => s.game);
@@ -139,6 +143,7 @@ export function SupportApp() {
   const [query, setQuery] = useSessionState("support.query", "");
   // The email settings: the Settings button and the app menu open them.
   const [setup, setSetup] = useSessionState("support.setup", false);
+  const [composing, setComposing] = useSessionState("support.compose", false);
   const desk = deskOf(game);
   const { style, brand, icon: Logo, tile } = supportApp(game);
   const has = (f: DeskFeature) => deskHas(game, f);
@@ -189,7 +194,8 @@ export function SupportApp() {
       <header className="sup-brand">
         <span className="sup-logo" style={{ "--tile": tile } as CSSProperties}><Logo /></span>
         <strong>{brand}</strong>
-        <button className="btn sup-settings" onClick={() => setSetup(true)}>{t("support.settings")}</button>
+        <button className="btn ghost sup-settings" onClick={() => setComposing(true)}>{t("paperwork.mail.new")}</button>
+        <button className="btn ghost sup-settings sup-settings-2" onClick={() => setSetup(true)}>{t("support.settings")}</button>
       </header>
       {setup && <EmailSettings onClose={() => setSetup(false)} />}
       {desk && <aside className="sidebar sup-side">
@@ -222,7 +228,8 @@ export function SupportApp() {
         {!list.length && <div className="sup-none">{t("support.noEmails")}</div>}
       </div>
 
-      {upgrade ? <Card key={upgrade.id} r={upgrade} />
+      {composing ? <Compose onClose={() => setComposing(false)} />
+        : upgrade ? <Card key={upgrade.id} r={upgrade} />
         : current && order ? <OrderThread key={current.id} tk={current} r={order} gates={gates} />
         : current ? <Thread key={current.id} tk={current} gates={gates} />
         : <div className="sup-detail sup-none">{t("support.noEmailSelected")}</div>}
@@ -238,7 +245,7 @@ function TicketRow({ tk, active, timers, onOpen }: { tk: Ticket; active: boolean
   const K = kindOf(tk.kind);
   return (
     <button role="listitem" className={`tk${active ? " active" : ""}${tk.unread ? " unread" : ""}`} onClick={() => onOpen(tk)} onContextMenu={menuOn(() => ticketMenu(game, tk))}>
-      <span className="who">{tk.unread && <i className="dot" aria-label={t("support.unread")} />}{tk.notice ? <Sender id={tk.notice.sender} /> : <span>{order ? requestName(order) : tk.kind === "sponsor" ? subjectParams(game, tk).event : tk.kind === "pear" ? t("walk.from") : c?.name}</span>}</span>
+      <span className="who">{tk.unread && <i className="dot" aria-label={t("support.unread")} />}{tk.notice ? <Sender id={tk.notice.sender} /> : <span>{order ? requestName(order) : tk.kind === "sponsor" ? subjectParams(game, tk).event : tk.mail ? tk.mail.from : tk.kind === "pear" ? t("walk.from") : c?.name}</span>}</span>
       {timers ? <Sla tk={tk} hour={game.hour} /> : <span className="sla num">{stamp(tk.status === "open" ? tk.createdAt : tk.updatedAt)}</span>}
       <span className="subj">{order ? need(order) : subjectOf(game, tk)}</span>
       <span className="meta"><span className="type" style={{ "--k": KINDS.findIndex((x) => x.id === tk.kind) } as CSSProperties}><K.icon />{K.label}</span>{tk.work && <span className="pill accent">{t("support.queued")}</span>}</span>
@@ -290,7 +297,8 @@ function OrderThread({ tk, r, gates }: { tk: Ticket; r: SalesRequest; gates: Gat
         {r.thread.map((m, i) => (
           <div key={i} className={`msg${m.from === "you" ? " you" : ""}`}>
             <div className="from">{m.from === "you" ? m.by ?? t("support.you") : r.contact} · <span className="num">{stamp(m.hour)}</span></div>
-            <p>{t(m.key, m.params)}{i === 0 && r.kind !== "expansion" && ` ${t(`request.use.${r.profile}`)}`}</p>
+            <p>{t(m.key, m.params)}{i === 0 && r.kind !== "expansion" && ` ${t(`request.use.${r.profile}`)}`}{i === 0 && r.kind === "order" && `\n\n${addressLines(mailedAddress(game.seed, r)).join("\n")}`}</p>
+            {r.kind === "order" && <MailAttachments tk={tk} r={r} m={m} />}
           </div>
         ))}
         {tk.work && <div className="event"><span>{t("support.queuedUntil", { time: stamp(tk.work.doneAt / 60) })}</span></div>}
@@ -360,7 +368,7 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
 
       {sender ? (
         <div className="cust">
-          <div className="logo">{initials(sender.name)}</div>
+          <div className="logo">{initials(senderName(sender.id))}</div>
           <div>
             <div className="name"><Sender id={sender.id} /></div>
             <div className="sub">{tk.notice!.from}</div>
@@ -389,8 +397,10 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
 
       <div className="thread">
         <div className={sent ? "msg you" : "msg"}>
-          <div className="from">{sender ? sender.name : sent ? t("support.you") : tk.kind === "sponsor" ? p.event : tk.kind === "pear" ? t("walk.from") : c?.name} · <span className="num">{stamp(tk.createdAt)}</span></div>
+          <div className="from">{sender ? senderName(sender.id) : sent ? t("support.you") : tk.kind === "sponsor" ? p.event : tk.mail ? tk.mail.from : tk.kind === "pear" ? t("walk.from") : c?.name} · <span className="num">{stamp(tk.createdAt)}</span></div>
           <p>{t(`ticket.${tk.kind}.${tk.topic}.text`, p)}</p>
+          {isLicence(tk.topic) && <p><button className="btn primary" onClick={() => openApp("Books", { kind: "register", id: "" })}>{t("vendor-sites.register")}</button></p>}
+          {tk.topic === NEWSLETTER && <p><button className="btn primary" onClick={() => openApp("Browser", { kind: "url", id: lexwearUrl(String(tk.mail!.params.module)) })}>{t("vendor-sites.viewModule")}</button></p>}
         </div>
         {tk.replies.map((r, i) => (
           <div key={i} className="thread-pair">

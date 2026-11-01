@@ -5,13 +5,14 @@ import { Actions, erasFrom, eraAt, Facts, LoginForm, RowLines, usePanelTab, useR
 import { Certificates } from "./Certificates";
 import { useReadoutPages } from "../Readouts";
 import { tenants } from "../services";
+import { VpnReadout } from "../ServiceReadouts";
 import "./openveepeen.css";
 
 // docs/design/software.md, section 10: the orange and grey admin with a left menu until 2017, then dark with orange cards.
 const ERAS = erasFrom(2005, 2017);
 
 export function OpenVeePeeN(p: PanelProps) {
-  const era = eraAt(ERAS, p.game), [tab, setTab] = usePanelTab(p.f), [certs, setCerts] = useState(false);
+  const era = eraAt(ERAS, p), [tab, setTab] = usePanelTab(p.f), [certs, setCerts] = useState(false);
   const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f), ts = tenants(p.game, p.c);
   const logo = <div className="ov-logo">OpenVeePeeN <span>Access Server</span></div>;
   if (!p.signedIn) return (
@@ -59,6 +60,7 @@ export function OpenVeePeeN(p: PanelProps) {
                 </section>
               ))}
             </div>)}
+          {!certs && tab === "objects" && <VpnReadout game={p.game} c={p.c} />}
           {!certs && pages.filter((g) => g.id === tab).map((g) => <div key={g.id}>{g.body}</div>)}
           {!certs && tab === "software" && <><Facts facts={sw.facts} /><Actions actions={sw.actions}>{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>{sw.panel}</>}
         </main>

@@ -5,6 +5,7 @@ import { Actions, Bar, erasFrom, eraAt, Facts, LoginForm, usePanelTab, useRows, 
 import { useReadoutPages } from "../Readouts";
 import { t } from "../../../../../i18n/en";
 import { hash } from "../services";
+import { StorageUsage } from "../ServiceReadouts";
 import { BucketPage } from "./BucketPage";
 import { Drives } from "./Drives";
 import "./minnio.css";
@@ -13,7 +14,7 @@ import "./minnio.css";
 const ERAS = erasFrom(2016, 2021);
 
 export function MinnIO(p: PanelProps) {
-  const era = eraAt(ERAS, p.game), [tab, setTab] = usePanelTab(p.f);
+  const era = eraAt(ERAS, p), [tab, setTab] = usePanelTab(p.f);
   const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f);
   const logo = <span className="mn-logo">MINN<b>IO</b></span>;
   if (!p.signedIn) return (
@@ -46,6 +47,7 @@ export function MinnIO(p: PanelProps) {
             </section>
           ))}
         </div>}
+        {tab === "objects" && <StorageUsage game={p.game} c={p.c} />}
         {tab === "objects" && <BucketPage game={p.game} c={p.c} />}
         {pages.filter((g) => g.id === tab).map((g) => <div key={g.id}>{g.body}</div>)}
         {tab === "software" && <><Facts facts={sw.facts} /><Actions actions={sw.actions}>{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>{sw.panel}<Drives game={p.game} c={p.c} /></>}

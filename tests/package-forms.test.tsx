@@ -12,9 +12,9 @@ import { consoleFeatures, createFormFor, createLink } from "../src/sim/80-busine
 import { tick } from "../src/sim/88-tick/tick";
 import { confirmOrder, createAccount, provisionOrder, quoteOrder, registerOrderDomain } from "../src/sim/90-actions/orders";
 import { addPackage } from "../src/sim/90-actions/packages";
-import { ProvisionForm } from "../src/ui/apps/browser/consoles/PackageForms";
-import { accountChoices, NewCustomer } from "../src/ui/apps/customers/NewCustomer";
-import { panelVm, readyGame } from "./fixtures";
+import { ChangePackage, planChoices, ProvisionForm } from "../src/ui/apps/browser/consoles/PackageForms";
+import { accountChoices, NewCustomer } from "../src/ui/apps/books/NewCustomer";
+import { mailed, owner, panelVm, readyGame } from "./fixtures";
 
 let s0: GameState;
 const run = (s: GameState, hours: number) => { for (let i = 0; i < hours; i++) tick(s); };
@@ -29,11 +29,11 @@ function order(seed: number, ready: boolean, product: "webHosting" | "vps" = "we
   const req = () => s.sales.requests.find((x) => x.id === r.id)!;
   for (let i = 0; i < 60 && req().status !== "accepted" && !req().customerId; i++) tick(s);
   if (ready) {
-    must(createAccount(s, id));
+    must(createAccount(s, id, mailed(s, id)));
     must(confirmOrder(s, id));
     s.invoices = s.invoices.map((i) => (i.id === invoiceOf(s, req())!.id ? { ...i, payStep: 0, payAt: s.hour } : i));
     run(s, 1);
-    if (product === "webHosting") must(registerOrderDomain(s, id));
+    if (product === "webHosting") must(registerOrderDomain(s, id, ...owner(s, id)));
   }
   return { s, id, req, host: hostFor(s, req())! };
 }
@@ -83,7 +83,7 @@ describe("create account form", () => {
 
   it("links from Support only for a console with a form", () => {
     const { s, id, host } = order(35, true);
-    expect(createFormFor(familyOf(s.clusters.find((x) => x.id === host)!), "webHosting")).toBe(false);
+    expect(createFormFor(familyOf(s.clusters.find((x) => x.id === host)!), "vps")).toBe(false);
     const cp = panelVm(s, s.clusters.find((c) => c.kind === "cloud")!.id, "cpanic");
     expect(createFormFor(familyOf(s.clusters.find((x) => x.id === cp)!), "webHosting")).toBe(true);
     expect(createLink(s, cp, id)).toContain(`/scripts/wwwacct?order=${id}`);
@@ -117,6 +117,44 @@ describe("create account form", () => {
     expect(html).toContain("Tiny");
   });
 
+  it.each([
+    ["vmwhere", "/ui/app/vm-classes", "pkg.vswClasses", "/ui/app/vm/new"],
+    ["hypervee", "/library/hardware-profiles", "pkg.hvProfiles", "/vm/new"],
+    ["openveezee", "/plans", "pkg.ovzPlans", "/virtual-servers/create"],
+    ["openstash", "/admin/flavors", "pkg.hzFlavors", "/project/instances/launch"],
+  ])("draws the %s package screen and the Order field on its create form", (platform, plans, key, create) => {
+    const { s, id, req, host } = order(51, true, "vps");
+    const c = s.clusters.find((x) => x.id === host)!;
+    c.platform = platform;
+    addPackage(s, host, { name: "Tiny", product: "vps", spec: req().spec });
+    expect(createFormFor(familyOf(c), "vps")).toBe(true);
+    expect(createLink(s, host, id)).toContain(`${create}?order=${id}`);
+    const list = console_(s, c, plans);
+    expect(list).toContain(t(key));
+    expect(list).toContain("Tiny");
+    const html = console_(s, c, `${create}?order=${id}`);
+    expect(html).toContain(`<option value="${id}" selected="">`);
+    expect(console_(s, c, create)).not.toContain(`<option value="${id}" selected="">`);
+  });
+
+  it("lists the built-in Horizont flavors as public rows and names a stored flavor", () => {
+    const { s, req, host } = order(52, true, "vps");
+    const c = s.clusters.find((x) => x.id === host)!;
+    c.platform = "openstash";
+    addPackage(s, host, { name: "Odd", product: "vps", spec: { ...req().spec, vcpu: 3, ramGb: 6, diskGb: 33 } });
+    const html = console_(s, c, "/admin/flavors");
+    for (const f of ["m1.tiny", "m1.small", "m1.medium", "m1.large", "m1.xlarge", "Odd"]) expect(html).toContain(f);
+  });
+
+  it("offers the change package form for a running account", () => {
+    const { s, id, req, host } = order(53, true);
+    addPackage(s, host, { name: "Big", product: "webHosting", spec: { ...req().spec, vcpu: req().spec.vcpu * 2 } });
+    must(provisionOrder(s, id, host));
+    const c = s.clusters.find((x) => x.id === host)!, sid = req().serviceId!;
+    expect(planChoices(s, c, sid).map((p) => p.name)).toEqual(["Big"]);
+    expect(renderToString(<ChangePackage game={s} c={c} serviceId={sid} done={() => {}} />)).toContain(t("pkg.changePlan"));
+  });
+
   it("draws the TCAdmen service defaults and Add Service form", () => {
     const { s, req } = order(44, true, "vps");
     const game = panelVm(s, s.clusters.find((c) => c.kind === "cloud")!.id, "tcadmen");
@@ -128,13 +166,32 @@ describe("create account form", () => {
     expect(add).toContain(t("pkg.custom"));
   });
 
+  it.each([
+    ["directadmen", "webHosting", "/CMD_PACKAGES_USER", "/CMD_ACCOUNT_USER"],
+    ["pleskit", "webHosting", "/admin/service-plan/list", "/admin/subscription/create"],
+    ["freepanel", "webHosting", "/virtual-server/edit_plan.cgi", "/virtual-server/domain_form.cgi"],
+    ["multikraft", "gameServer", "/plans", "/servers/create"],
+    ["pterodaktyl", "gameServer", "/admin/nests", "/admin/servers/new"],
+  ] as const)("draws the %s packages screen and create form", (panel, product, plans, create) => {
+    const { s, id, req } = order(46, true, product === "gameServer" ? "vps" : "webHosting");
+    const host = panelVm(s, s.clusters.find((c) => c.kind === "cloud")!.id, panel);
+    const c = s.clusters.find((x) => x.id === host)!;
+    addPackage(s, host, { name: "Plan42", product, spec: req().spec });
+    expect(console_(s, c, plans)).toContain("Plan42");
+    expect(createFormFor(panel, product)).toBe(true);
+    expect(createLink(s, host, id)).toContain(`${create}?order=${id}`);
+    const html = console_(s, c, `${create}?order=${id}`);
+    expect(html).toContain(t("pkg.order"));
+    expect(html).toContain(t("pkg.custom"));
+  });
+
   it("lists accepted orders without an account in New customer and creates the account like the action", () => {
     const { s, id, req } = order(45, false);
     expect(accountChoices(s).map((o) => [o.ticketId, o.error])).toEqual([[id, null]]);
     const html = renderToString(<NewCustomer game={s} initial={id} onDone={() => {}} />);
     expect(html).toContain(req().contact);
-    expect(html).toContain(t("pkg.addClient"));
-    must(createAccount(s, id));
+    expect(html).toContain(t("orderSteps.saveCustomer"));
+    must(createAccount(s, id, mailed(s, id)));
     expect(accountChoices(s)).toEqual([]);
     expect(s.sales.requests.find((x) => x.id === req().id)!.customerId).toBeTruthy();
   });
