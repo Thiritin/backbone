@@ -4,38 +4,43 @@ import { deliverMail } from "../40-support/tickets";
 import { cents } from "../45-billing/billing";
 import type { GameState } from "../50-state";
 import { issueKey, updateKey } from "../60-infra/licence";
-import { cartOf, offerOf, ORDER, vendorName, type CartLine } from "../80-business/vendor-shop";
+import { cartOf, lineOffer, ORDER, upgradeOffers, vendorName, type CartLine } from "../80-business/vendor-shop";
 import type { ActionResult } from "./hardware";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
-const same = (a: Pick<CartLine, "product" | "edition">) => (b: CartLine) => a.product === b.product && a.edition === b.edition;
+type LineId = Pick<CartLine, "product" | "edition" | "from">;
+const same = (a: LineId) => (b: CartLine) => a.product === b.product && a.edition === b.edition && a.from === b.from;
 
-export function addToCart(s: GameState, product: string, edition: string | null): ActionResult {
-  if (!offerOf({ product, edition }, s.hour)) return fail("error.notForSale");
-  const line = s.cart.find(same({ product, edition }));
-  s.cart = line ? s.cart.map((l) => (l === line ? { ...l, qty: l.qty + 1 } : l)) : [...s.cart, { product, edition, qty: 1 }];
+// from puts the upgrade from that major in the cart instead of an edition.
+export function addToCart(s: GameState, product: string, edition: string | null, from?: string): ActionResult {
+  const id = { product, edition, from };
+  if (!lineOffer(s, id)) return fail("error.notForSale");
+  const line = s.cart.find(same(id));
+  s.cart = line ? s.cart.map((l) => (l === line ? { ...l, qty: l.qty + 1 } : l)) : [...s.cart, { product, edition, qty: 1, ...(from ? { from } : {}) }];
   return { ok: true };
 }
 
-export function removeFromCart(s: GameState, product: string, edition: string | null): ActionResult {
-  if (!s.cart.some(same({ product, edition }))) return fail("error.notInCart");
-  s.cart = s.cart.filter((l) => !same({ product, edition })(l));
+export function removeFromCart(s: GameState, product: string, edition: string | null, from?: string): ActionResult {
+  const id = { product, edition, from };
+  if (!s.cart.some(same(id))) return fail("error.notInCart");
+  s.cart = s.cart.filter((l) => !same(id)(l));
   return { ok: true };
 }
 
 // Pays the site's cart lines from the bank as one order: a ledger line, an unassigned key per licence and the order email.
-// A one-time licence costs its price; a term licence pays its first term for one unit.
+// A one-time licence costs its price; a term licence pays its first term for one unit; an upgrade is a key for the next major.
 export function checkout(s: GameState, host: string): ActionResult {
   const lines = cartOf(s, host);
   if (!lines.length) return fail("error.cartEmpty");
-  const fees = lines.map((l) => offerOf(l, s.hour)?.fee);
+  const fees = lines.map((l) => lineOffer(s, l)?.fee);
   if (fees.some((f) => f === undefined)) return fail("error.notForSale");
   const total = cents(lines.reduce((n, l, i) => n + fees[i]! * l.qty, 0));
   if (s.cash < total) return fail("error.noCash");
   const order = `ORD-${s.nextId++}`, vendor = vendorName(lines[0].product);
+  const to = lines.map((l) => (l.from ? upgradeOffers(s, l.product).find((o) => o.from === l.from)!.to : undefined));
   s.cash = cents(s.cash - total);
   s.ledger = [...s.ledger, { hour: s.hour, category: "licenses", key: "ledger.order", params: { vendor, order }, amount: -total }];
-  for (const l of lines) for (let i = 0; i < l.qty; i++) issueKey(s, l.product, l.edition, order);
+  lines.forEach((l, n) => { for (let i = 0; i < l.qty; i++) issueKey(s, l.product, l.edition, order, to[n]); });
   s.cart = s.cart.filter((l) => !lines.includes(l));
   deliverMail(s, vendor, ORDER, { order, total });
   return { ok: true, id: order };

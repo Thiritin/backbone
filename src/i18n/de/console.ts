@@ -15,6 +15,7 @@ export default {
   "error.noOs": () => "Installiere zuerst ein Betriebssystem auf dieser Maschine.",
   "error.osNotUp": () => "Das Betriebssystem der Maschine läuft nicht.",
   "error.noUpgrade": () => "Für dieses Betriebssystem ist noch keine neuere Version erschienen.",
+  "error.noMajorUpgrade": () => "Von dieser Software ist noch keine neuere Hauptversion erschienen.",
   "error.notVmwhere": () => "Die App Suite wird für VMwhere-Cluster verkauft.",
   "error.noAppSuite": () => "Dieser Cluster hat keine App Suite.",
   "error.hasAppSuite": () => "Dieser Cluster hat bereits die App Suite.",

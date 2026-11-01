@@ -444,6 +444,7 @@ export default {
   "browser-sites-2.cli.channel": () => "Legt den Kanal fest, aus dem künftige Updates kommen.",
   "browser-sites-2.cli.autoupdate": () => "Schaltet die automatischen nächtlichen Updates ein oder aus.",
   "browser-sites-2.cli.licenseSet": () => "Weist dieser Maschine einen freien Lizenzschlüssel zu.",
+  "browser-sites-2.cli.upgrade": () => "Aktualisiert die Software auf die nächste Hauptversion; --key gibt den Upgrade-Schlüssel ein, den eine Lizenz für eine ältere Version braucht.",
   "browser-sites-2.cli.licenseShow": () => "Zeigt den zugewiesenen Schlüssel, seine Edition und wann er abläuft.",
   "browser-sites-2.cli.trial": () => "Startet die kostenlose Testversion auf dieser Maschine.",
   "browser-sites-2.cli.licenseTier": () => "Ändert die Lizenzedition dieses Panel-Hosts.",

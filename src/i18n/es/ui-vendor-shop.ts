@@ -16,6 +16,7 @@ export default {
   "vendor-shop.perGameserver": (p) => `${p.fee} por servidor de juegos al mes`,
   "vendor-shop.perAccount": (p) => `${p.fee} por cuenta al mes`,
   "vendor-shop.addToCart": () => "Añadir al carrito",
+  "vendor-shop.upgradeFrom": (p) => `Actualización desde ${p.from}`,
   "vendor-shop.inCart": () => "En el carrito",
   "vendor-shop.product": () => "Producto",
   "vendor-shop.qty": () => "Cantidad",
