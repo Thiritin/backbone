@@ -32,7 +32,7 @@ const TERMS: Record<ShopId, Omit<ShopLicence, "id" | "name">> = {
       { from: 2005, kind: "once", fee: 250, updates: 12, updatesFee: 50, editions: ["branded", "unbranded"] },
       { from: 2025, month: 12, kind: "server", fee: 13, editions: ["branded", "unbranded"] },
     ],
-    trialDays: 14,
+    trialDays: 14, site: { host: "clientexit.com", tagline: "", blurb: "", features: [], eras: [] },
   },
   whmCache: {
     licensing: [
