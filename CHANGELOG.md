@@ -7,6 +7,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - You can register on DOHLE for a certificate file, with the activation ID by email and the code by post, and download DohleFormular to send your advance VAT returns.
 
 ## 2026-11-01
+- An upgrade request now shows each resource going from old to new with the price field in the same list, and asks for a server only when the current one has no room.
 - The Bank tab in Books lists your booked transfers, and Undo takes back a payment you matched to the wrong invoice so you can book it again.
 - The savings from your private account no longer wait among the incoming transfers to be matched.
 - The Terminal button on a server now connects by its address, and Tab in the terminal completes server addresses as well as names.
