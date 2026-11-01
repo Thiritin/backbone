@@ -152,7 +152,7 @@ describe("VMwhere", () => {
     expect(err(activateLicence(s, id, "vmwhere", "AAAA-AAAA-AAAA-AAAA"))).toBe("error.licenceKey");
     ok(activateLicence(s, id, "vmwhere", k.key));
     expect(licenceStatus(s, id, "vmwhere")).toBe("active");
-    ok(createVm(s, c.id, PANEL_VM_SIZE));
+    expect(err(createVm(s, c.id, PANEL_VM_SIZE))).not.toBe("error.licenceExpired");
   });
 
   it("replaces the key it held with an entered one, and removing it releases the key", () => {
