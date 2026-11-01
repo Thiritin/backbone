@@ -1,9 +1,9 @@
 // docs/design/lan.md, Shell: a Lunix server's interface names, /etc/network/interfaces and /etc/resolv.conf, and what
 // ip, ifconfig and dhclient print. Pure text in and out; lan.ts supplies the facts.
 import { t } from "../../i18n/en";
-import type { BondMode } from "../50-state";
+import type { BondMode, IfaceConfig } from "../50-state";
 
-export interface IfaceConfig { mode: "dhcp" | "static"; ip?: string; prefix?: number; gw?: string; dns?: string }
+export type { IfaceConfig };
 export interface Addr { ip: string; prefix: number; dynamic?: number }
 // up is the admin state, carrier the cable; master names the bond a port is enslaved to.
 export interface Nic { name: string; mac: string; up: boolean; carrier: boolean; master?: string; addr?: Addr | null }

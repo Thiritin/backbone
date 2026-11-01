@@ -38,11 +38,13 @@ describe("Debiant netinst", () => {
     expect(machineScreen(s, id).kind).toBe("osInstall");
   });
 
-  it("reaches no mirror with a static address that has no gateway", () => {
-    const s = readyGame(7), id = atInstaller(s);
+  it("reaches no mirror with a static address off the router's network, and stores the setting it installs with", () => {
+    const s = readyGame(7), id = atInstaller(s), fixed = { mode: "static" as const, ip: "192.168.178.10", prefix: 24, gw: "192.168.178.1" };
     withNetwork(s, id);
-    expect(err(installOs(s, id, "lunix", undefined, { mode: "static", ip: "192.168.178.10", prefix: 24 }))).toBe("error.noMirror");
-    expect(installOs(s, id, "lunix", undefined, { mode: "static", ip: "192.168.178.10", prefix: 24, gw: "192.168.178.1" }).ok).toBe(true);
+    expect(err(installOs(s, id, "lunix", undefined, { ...fixed, gw: undefined }))).toBe("error.noMirror");
+    expect(err(installOs(s, id, "lunix", undefined, { ...fixed, ip: "10.0.0.10", gw: "10.0.0.1" }))).toBe("error.noMirror");
+    expect(installOs(s, id, "lunix", undefined, fixed).ok).toBe(true);
+    expect(dev(s, id).iface).toEqual(fixed);
   });
 
   it("is abandoned when the cable comes out mid-install, and the failure shows until a key", () => {
