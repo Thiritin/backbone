@@ -18,11 +18,11 @@ function pay(s: GameState, amount: number, key: string, params: Record<string, s
   s.ledger = [...s.ledger, { hour: s.hour, category: "marketing", key, params, amount: -amount }];
 }
 
-// Replaces the hand-rolled form or the current shop; the new one takes orders after its setup days.
+// Replaces the current shop; the new one takes orders after its setup days.
 export function chooseShop(s: GameState, id: ShopId, own = false): ActionResult {
   const v = SHOPS.find((x) => x.id === id), year = yearOf(s.hour);
   if (!v) return fail("error.unknownShop");
-  if (id !== "handRolled" && !s.unlocks.includes("shops")) return fail("error.needsShopSkill");
+  if (!s.unlocks.includes("shops")) return fail("error.needsShopSkill");
   if (!owns(s, "website")) return fail("error.needsWebsite");
   if (s.shop.variant === id) return fail("error.shopInUse");
   if (year < v.from || (v.until !== undefined && year > v.until)) return fail("error.shopNotSold");
@@ -30,18 +30,15 @@ export function chooseShop(s: GameState, id: ShopId, own = false): ActionResult 
   const price = own && v.own ? v.own.price : v.setup;
   if (s.cash < price) return fail("error.noCash");
   pay(s, price, "ledger.shopSetup", { name: v.name });
-  const first = s.shop.variant === null;
-  const base = first && id === "handRolled" ? s.shop : newShop();
-  s.shop = { ...base, variant: id, owned: own, since: s.hour, readyAt: first && id === "handRolled" ? s.hour : s.hour + SHOP_SETUP_HOURS, groups: s.shop.groups.length || id === "handRolled" ? s.shop.groups : firstGroups(s) };
+  s.shop = { ...newShop(), variant: id, owned: own, since: s.hour, readyAt: s.hour + SHOP_SETUP_HOURS, groups: s.shop.groups.length ? s.shop.groups : firstGroups(s) };
   return { ok: true, id };
 }
 
-// A module for the shop, or a custom script for the hand-rolled form.
 export function buyModule(s: GameState, module: string): ActionResult {
   if (!MODULE_IDS.includes(module)) return fail("error.unknownModule");
   if (hasModule(s, module) || s.shop.modules[module] !== undefined) return fail("error.moduleOwned");
   const v = s.shop.variant && shopById(s.shop.variant);
-  if (!v) return fail("error.needsOrderForm");
+  if (!v) return fail("error.needsShop");
   if (v.extra === null) return fail("error.moduleNotSold");
   const price = v.extra;
   if (s.cash < price) return fail("error.noCash");

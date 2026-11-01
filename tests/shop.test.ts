@@ -3,8 +3,7 @@ import { hourOf } from "../src/sim/00-core/time";
 import { SHOP_SETUP_HOURS } from "../src/sim/10-catalog/shops";
 import { orderLead } from "../src/sim/30-market/orders";
 import type { GameState } from "../src/sim/50-state";
-import { hasOrderForm } from "../src/sim/80-business/marketing";
-import { hasModule, inStock, shopBills, shopTick, stockOf, WHM_BREACH_AT } from "../src/sim/80-business/shop";
+import { hasModule, inStock, shopActive, shopBills, shopTick, stockOf, WHM_BREACH_AT } from "../src/sim/80-business/shop";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { addToGroup, buyModule, chooseShop, createGroup, removeFromGroup, setGroupDeploy, setGroupSale, setStock } from "../src/sim/90-actions/shop";
 import { cordon, uncordon } from "../src/sim/90-actions/clusters";
@@ -17,7 +16,6 @@ const withShop = (seed: number, id: Parameters<typeof chooseShop>[1] = "whmCache
   const s = readyGame(seed);
   s.cash = 1e6;
   setUpChannel(s, "website");
-  chooseShop(s, "handRolled");
   s.unlocks = [...s.unlocks, "shops"];
   expect(chooseShop(s, id).ok).toBe(true);
   s.hour += SHOP_SETUP_HOURS;
@@ -26,21 +24,20 @@ const withShop = (seed: number, id: Parameters<typeof chooseShop>[1] = "whmCache
 const at = (s: GameState, year: number) => { s.hour = hourOf(new Date(Date.UTC(year, 0, 1))); return s; };
 
 describe("shop systems", () => {
-  it("need the research and the website, and replace the order form after their setup days", () => {
+  it("need the research and the website, and take orders after their setup days", () => {
     const s = readyGame(1);
     s.cash = 1e6;
     expect(chooseShop(s, "whmCache")).toMatchObject({ ok: false, error: "error.needsShopSkill" });
     s.unlocks = [...s.unlocks, "shops"];
     expect(chooseShop(s, "whmCache")).toMatchObject({ ok: false, error: "error.needsWebsite" });
     setUpChannel(s, "website");
-    chooseShop(s, "handRolled");
     const cash = s.cash;
     expect(chooseShop(s, "clientExit").ok).toBe(true);
     expect(s.cash).toBe(cash - 250);
     expect(s.shop.variant).toBe("clientExit");
-    expect(hasOrderForm(s)).toBe(false);
+    expect(shopActive(s)).toBe(false);
     s.hour += SHOP_SETUP_HOURS;
-    expect(hasOrderForm(s)).toBe(true);
+    expect(shopActive(s)).toBe(true);
     expect(chooseShop(s, "hostBull")).toMatchObject({ ok: false, error: "error.shopNotSold" });
   });
 

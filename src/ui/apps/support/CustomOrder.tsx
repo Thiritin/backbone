@@ -161,7 +161,7 @@ export function InvoicePill({ r }: { r: SalesRequest }) {
   return <span className={`pill ${st.pill}`}>{t("support.invoicePill", { number: inv.number, status: st.label })}</span>;
 }
 
-// The steps of a custom order, each with its button once the step before it is done. Order form orders start accepted.
+// The steps of a custom order, each with its button once the step before it is done. Shop orders start accepted.
 export function CustomCompose({ tk, r }: { tk: Ticket; r: SalesRequest }) {
   const game = useStore((s) => s.game);
   const act = useStore((s) => s.act);
@@ -189,7 +189,7 @@ export function CustomCompose({ tk, r }: { tk: Ticket; r: SalesRequest }) {
   return (
     <div className="compose custom-steps">
       <ol className="steps">
-        {!r.form && row("quote", t("support.quote"), quoteValue, <Attachments tk={tk} locked={locked} open={!waiting} />)}
+        {!r.shop && row("quote", t("support.quote"), quoteValue, <Attachments tk={tk} locked={locked} open={!waiting} />)}
         {row("account", t("support.customerAccount"), done.account ? t("support.created") : t("support.none"),
           <button className="btn primary" disabled={locked} onClick={() => openApp("Books", { kind: "newCustomer", id: tk.id })}><UserPlus />{t("orderSteps.createCustomer")}</button>)}
         {row("invoice", t("support.orderConfirmation"), done.invoice ? t("support.perMonth", { price: euroCents(r.quote ?? 0) }) : invoiceOf(game, r) ? t("orderSteps.status.draft") : t("support.notSent"),

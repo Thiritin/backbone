@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { chooseShop } from "../src/sim/90-actions/shop";
 import { orderLead } from "../src/sim/30-market/orders";
 import { setupFee, specText } from "../src/sim/30-market/spec";
 import { hostFor, invoiceOf, nextStep, stepsDone } from "../src/sim/30-market/manual";
@@ -16,11 +15,10 @@ import { hire } from "../src/sim/90-actions/staff";
 import { createTicket } from "../src/sim/40-support/tickets";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { closeTicket } from "../src/sim/90-actions/support";
-import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { SKILLS } from "../src/sim/10-catalog/research";
 import { research } from "../src/sim/90-actions/store";
 import { setRate } from "../src/sim/90-actions/rates";
-import { mailed, owner, panelVm, readyGame } from "./fixtures";
+import { mailed, owner, panelVm, readyGame, openShop } from "./fixtures";
 
 const MONDAY_9 = 48 + 9;
 const run = (s: GameState, hours: number) => { for (let i = 0; i < hours; i++) tick(s); };
@@ -54,7 +52,7 @@ const payNow = (s: GameState, invoiceId: string) => {
 };
 
 describe("custom orders", () => {
-  it("asks for its own resources, different for each order, and the order form accepts the website price", () => {
+  it("asks for its own resources, different for each order, and the shop accepts the website price", () => {
     const s = readyGame(5);
     const specs = Array.from({ length: 6 }, () => order(s).r);
     for (const r of specs) {
@@ -66,13 +64,12 @@ describe("custom orders", () => {
     const v = order(s, vps).r;
     expect(specText(v.product, v.spec)).toMatch(/^VPS, /);
     expect(v.spec.vcpu).toBeGreaterThanOrEqual(0.5);
-    // The order form's order waits for the steps like an email order, with the website's price as the accepted quote.
+    // The shop order waits for the steps like an email order, with the website's price as the accepted quote.
     s.cash = 1e6;
-    setUpChannel(s, "website");
-    chooseShop(s, "handRolled");
+    openShop(s);
     const placed = orderLead(s, "private", "Frankfurt", [], web, false);
     expect(placed.ticketId).not.toBeNull();
-    expect(s.sales.requests.find((x) => x.id === placed.id)!).toMatchObject({ status: "accepted", form: true });
+    expect(s.sales.requests.find((x) => x.id === placed.id)!).toMatchObject({ status: "accepted", shop: true });
   });
 
   it("works the first order of a company without customers", () => {
@@ -469,15 +466,14 @@ describe("quote first", () => {
     expect(provisionOrder(s, o.id, "auto")).toEqual({ ok: false, error: "error.noCapacity" });
   });
 
-  it("makes an order form order wait for the steps without automation and skips the quote", () => {
+  it("makes a shop order wait for the steps without automation and skips the quote", () => {
     const s = readyGame(1);
     s.cash = 1e6;
-    setUpChannel(s, "website");
-    chooseShop(s, "handRolled");
-    s.shop.optionDiscount = { annual: -3 };
+    openShop(s);
+    s.shop.optionDiscount = { quarterly: -3, annual: -3, biennial: -3 };
     const customers = s.customers.length, r = orderLead(s, "private", "Frankfurt", [], web, false);
     const req = () => s.sales.requests.find((x) => x.id === r.id)!;
-    expect(req()).toMatchObject({ form: true, status: "accepted", serviceId: null });
+    expect(req()).toMatchObject({ shop: true, status: "accepted", serviceId: null });
     expect(s.customers).toHaveLength(customers);
     expect(stepsDone(s, req()).quote).toBe(true);
     expect(nextStep(s, req())).toBe("account");

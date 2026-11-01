@@ -38,7 +38,7 @@ import { fillLines } from "../src/sim/80-business/website";
 import { OWNED, owns } from "../src/sim/80-business/marketing";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { chooseShop } from "../src/sim/90-actions/shop";
-import { HAND_ROLLED } from "../src/sim/10-catalog/shops";
+import { SHOPS } from "../src/sim/10-catalog/shops";
 import { bookMail } from "../src/sim/90-actions/mail";
 import { registerCompanyDomain, signRegistrar } from "../src/sim/90-actions/registrar";
 import { derivedDomain } from "../src/sim/30-customers/domains";
@@ -156,15 +156,16 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
   };
   let servers = 0;
   const reached: Record<string, number> = {};
-  // Product management then Marketing basics as know-how allows; web design and the order form once no server is due and
+  // Product management, Marketing basics and Shop systems as know-how allows; web design and the cheapest shop once no server is due and
 // cash keeps a reserve.
   let needServer = false;
   const learn = () => {
-    const next = ["products", "marketingBasics"].find((id) => !s.unlocks.includes(id));
+    const next = ["products", "marketingBasics", "shops"].find((id) => !s.unlocks.includes(id));
     if (next && !s.training) research(s, next);
     if (!owns(s, "website") && !needServer && s.cash >= OWNED.website.setup + 2000) setUpChannel(s, "website");
-    if (owns(s, "website") && !s.shop.variant && !needServer && s.cash >= HAND_ROLLED.setup + 2000) chooseShop(s, "handRolled");
-    for (const k of ["products", "orderForm"]) if (!(k in reached) && (k === "orderForm" ? !!s.shop.variant : s.unlocks.includes(k))) reached[k] = Math.round((10 * s.hour) / MONTH) / 10;
+    const year = yearOf(s.hour), shop = SHOPS.filter((v) => year >= v.from && (v.until === undefined || year <= v.until)).sort((a, b) => a.setup - b.setup)[0];
+    if (owns(s, "website") && s.unlocks.includes("shops") && !s.shop.variant && !needServer && s.cash >= shop.setup + 2000) chooseShop(s, shop.id);
+    for (const k of ["products", "shop"]) if (!(k in reached) && (k === "shop" ? !!s.shop.variant : s.unlocks.includes(k))) reached[k] = Math.round((10 * s.hour) / MONTH) / 10;
   };
   // The cheapest line with more upload this year, once the basement's evening peak reaches 90% of the line.
   const upgradeLine = () => {
@@ -227,13 +228,13 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
         if (t.kind === "order") {
           const r = orderOf(s, t);
           if (!r) continue;
-          // A form order is served at once on any host with disk room, declined when none has, as the form did; an email order waits for its payment and the RAM.
-          const sd = stepsDone(s, r), step = nextStep(s, r) ?? (r.form && sd.account && sd.invoice && sd.domain && !sd.provision ? "provision" : null);
+          // A shop order is served at once on any host with disk room, declined when none has; an email order waits for its payment and the RAM.
+          const sd = stepsDone(s, r), step = nextStep(s, r) ?? (r.shop && sd.account && sd.invoice && sd.domain && !sd.provision ? "provision" : null);
           if (!step || (step === "quote" && r.status === "refused")) continue;
           // A careful player declines an order the cluster cannot also fit after the orders already taken, and sets one up
           // only where its RAM fits, waiting for a panel VM to grow or a server to arrive.
-          if (step === "account" && (r.form ? !hostFor(s, r) : !room(r))) { closeTicket(s, t.id); continue; }
-          if (step === "provision" && !r.form && !ramRoom(r)) { stepErrors["wait.ram"] = (stepErrors["wait.ram"] ?? 0) + 1; continue; }
+          if (step === "account" && (r.shop ? !hostFor(s, r) : !room(r))) { closeTicket(s, t.id); continue; }
+          if (step === "provision" && !r.shop && !ramRoom(r)) { stepErrors["wait.ram"] = (stepErrors["wait.ram"] ?? 0) + 1; continue; }
           const error = stepError(s, t, step);
           if (error) { stepErrors[error] = (stepErrors[error] ?? 0) + 1; continue; }
           doStep(t.id, step, r);
@@ -285,7 +286,7 @@ if (process.argv[1]?.endsWith("happiness.ts")) {
       for (const [k, v] of Object.entries(r.downHours)) downs[k] = (downs[k] ?? 0) + v;
     }
     const at = (m: number) => rows[m - 1] ? `${rows[m - 1].live} €${rows[m - 1].mrr} H${rows[m - 1].happiness} L${rows[m - 1].level}` : "-";
-    summary.push(`seed ${seed}: June ${at(6)} / December ${at(12)}${MONTHS >= 24 ? ` / Dec 2006 ${at(24)}` : ""} / Product management m${reached.products ?? "-"}, order form m${reached.orderForm ?? "-"}`);
+    summary.push(`seed ${seed}: June ${at(6)} / December ${at(12)}${MONTHS >= 24 ? ` / Dec 2006 ${at(24)}` : ""} / Product management m${reached.products ?? "-"}, shop m${reached.shop ?? "-"}`);
   }
   const per = (o: Record<string, number>) => Object.fromEntries(Object.entries(o).sort((a, b) => a[1] - b[1]).map(([k, v]) => [k, Math.round((10 * v) / Math.max(1, liveMonths)) / 10]));
   console.log(`\n${summary.join("\n")}`);

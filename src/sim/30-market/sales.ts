@@ -33,7 +33,7 @@ import { acceptQuote, resize, specParams } from "./manual";
 import { answerQuote } from "./quotes";
 import { logActivity } from "../47-staff/activity";
 import type { ActionResult } from "../90-actions/hardware";
-import { forSale, inStock, shopStocked, soldOutVisit } from "../80-business/shop";
+import { forSale, inStock, soldOutVisit } from "../80-business/shop";
 import {
   acceptChance, acceptMid, FORUM_AWARENESS, FORUM_PROFILES, leadFlows, missingFor, needFor, referenceFor,
   requestName, share, values, type Need, type SalesMessage, type SalesRequest,
@@ -106,27 +106,27 @@ function newLeads(s: GameState, events: SimEvent[]): void {
   for (const f of leadFlows(s)) {
     const n = poisson(s.rng, (f.leads / DAYS_PER_MONTH / 24) * arrivalWeight(f.profile, s.hour));
     for (let i = 0; i < n; i++) {
-      // An order the form takes weighs the setup fee too.
-      const need = needFor(s.rng, f.profile, yearOf(s.hour)), form = isStandard(f.profile, need.sla) && !emailFor(s), k = `${f.profile}/${need.product}/${f.city}/${form}`;
-      if (!cache.has(k)) cache.set(k, share(s, f.profile, need.product, f.city, form ? setupPremium(s, need.product) : 0, form ? shopPriceLevel(s, f.profile, need.product) : undefined));
+      // A shop order weighs the setup fee too.
+      const need = needFor(s.rng, f.profile, yearOf(s.hour)), shop = isStandard(f.profile, need.sla) && !emailFor(s), k = `${f.profile}/${need.product}/${f.city}/${shop}`;
+      if (!cache.has(k)) cache.set(k, share(s, f.profile, need.product, f.city, shop ? setupPremium(s, need.product) : 0, shop ? shopPriceLevel(s, f.profile, need.product) : undefined));
       if (rand(s.rng) >= Math.min(1, cache.get(k)! * f.conversion)) continue;
       // Leads only write about lines on the website, which needs a control plane that sells them.
       if (!lineOffered(s, need.product) || !listed(s, need.product)) continue;
-      // The order form is part of the website: a down, slow or dated site loses its orders. Website leads already carry the factor in their count.
-      if (form && !f.site && site < 1 && rand(s.rng) >= site) continue;
+      // The shop is part of the website: a down, slow or dated site loses its orders. Website leads already carry the factor in their count.
+      if (shop && !f.site && site < 1 && rand(s.rng) >= site) continue;
       if (!isStandard(f.profile, need.sla)) {
         newLead(s, f.profile, f.city, events, need);
         continue;
       }
       // Email orders thin out while delivery is impaired, and businesses shy away from a freemail address.
-      if (!form && mailShare(s, f.profile) < 1 && rand(s.rng) >= mailShare(s, f.profile)) continue;
+      if (!shop && mailShare(s, f.profile) < 1 && rand(s.rng) >= mailShare(s, f.profile)) continue;
       // A shop sells only what is in stock; a sold-out visitor leaves no request.
-      const spec = form && shopStocked(s) ? nextSpec(s, need, f.profile) : undefined;
+      const spec = shop ? nextSpec(s, need, f.profile) : undefined;
       if (spec && !inStock(s, { city: f.city, product: need.product, spec })) {
         soldOutVisit(s, need.product);
         continue;
       }
-      orderLead(s, f.profile, f.city, events, need, !form, spec);
+      orderLead(s, f.profile, f.city, events, need, !shop, spec);
     }
   }
 }

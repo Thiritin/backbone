@@ -17,7 +17,7 @@ export const ORDERS_EN: Record<string, (p: Params) => string> = {
   "event.certificateSold.title": () => "SSL certificate sold",
   "event.certificateSold.text": (p) => `${p.name} ordered an SSL certificate for ${p.domain}.`,
   "event.orderPlaced.title": () => "New order",
-  "event.orderPlaced.text": (p) => `${p.name} ordered through the order form at ${euroCents(Number(p.price))} a month: ${p.spec}.`,
+  "event.orderPlaced.text": (p) => `${p.name} ordered in the shop at ${euroCents(Number(p.price))} a month: ${p.spec}.`,
   "event.orderQuoted.title": () => "Order quoted",
   "event.orderQuoted.text": (p) => `Automation sent ${p.name} a quote of ${euroCents(Number(p.price))} a month for ${p.spec}.`,
   "event.orderFailed.title": () => "Setup failed",

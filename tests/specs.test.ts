@@ -1,18 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { chooseShop } from "../src/sim/90-actions/shop";
 import { t } from "../src/i18n/en";
 import { yearOf } from "../src/sim/00-core/time";
 import { marketRates, sizeSpec, specPrice } from "../src/sim/10-catalog/products";
 import { orderLead } from "../src/sim/30-market/orders";
+import { loseRequest } from "../src/sim/30-market/sales";
 import { sizeOf, specText } from "../src/sim/30-market/spec";
 import type { GameState } from "../src/sim/50-state";
 import { siteContent } from "../src/sim/80-business/website";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
-import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { setRate } from "../src/sim/90-actions/rates";
 import { setEmailOrders } from "../src/sim/90-actions/website";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { automate, readyGame } from "./fixtures";
+import { automate, readyGame, openShop } from "./fixtures";
 
 const OLD_NAMES = ["Web S", "Web M", "Web L", "VPS S", "VPS M", "VPS L", "VPS XL", "Game S", "Game L", "Dedicated S", "Dedicated L", "package"];
 const run = (s: GameState, days: number) => {
@@ -20,18 +19,17 @@ const run = (s: GameState, days: number) => {
   for (let i = 0; i < days * 24; i++) events.push(...tick(s));
   return events;
 };
-const withForm = (seed: number) => {
+const withShop = (seed: number) => {
   const s = readyGame(seed);
   s.cash = 1e6;
-  setUpChannel(s, "website");
-  chooseShop(s, "handRolled");
+  openShop(s);
   return automate(s);
 };
 const orders = (s: GameState, from = 0) => s.sales.requests.filter((r) => r.kind === "order" && r.createdAt >= from);
 const web = { product: "webHosting" as const, size: 1, sla: "basic" as const };
 const vps = { product: "vps" as const, size: 1, sla: "basic" as const };
-// Places one order through the form and returns the request and its service.
-const formOrder = (s: GameState, need: typeof web | typeof vps = web) => {
+// Places one order through the shop and returns the request and its service.
+const shopOrder = (s: GameState, need: typeof web | typeof vps = web) => {
   const r = orderLead(s, "private", "Frankfurt", [], need, false);
   const won = s.sales.requests.find((x) => x.id === r.id)!;
   expect(won.status).toBe("won");
@@ -46,19 +44,19 @@ const texts = (s: GameState, events: SimEvent[]) => [
 
 describe("specs on requests and services", () => {
   it("vary between requests and stay on the request and the service", () => {
-    const s = withForm(1);
-    const placed = Array.from({ length: 4 }, () => formOrder(s));
+    const s = withShop(1);
+    const placed = Array.from({ length: 4 }, () => shopOrder(s));
     expect(new Set(placed.map(({ r }) => JSON.stringify(r.spec))).size).toBeGreaterThan(2);
     for (const { r, v } of placed) expect(v.spec).toMatchObject(r.spec);
     const back = deserialize(serialize(s));
     expect(back.services.find((v) => v.id === placed[0].v.id)!.spec).toMatchObject(placed[0].r.spec);
   });
 
-  it("are priced at the order form by the line's rates less the discount", () => {
-    const s = withForm(2);
+  it("are priced in the shop by the line's rates less the discount", () => {
+    const s = withShop(2);
     expect(setRate(s, "webHosting", "diskGb", 4).ok).toBe(true);
     expect(setRate(s, "webHosting", "base", 1).ok).toBe(true);
-    const { r, v } = formOrder(s);
+    const { r, v } = shopOrder(s);
     const list = specPrice("webHosting", r.spec, yearOf(s.hour), "basic", s.rates.webHosting);
     const m = marketRates("webHosting", yearOf(s.hour));
     expect(list).toBeCloseTo(1 + 4 * r.spec.diskGb + m.mailbox! * r.spec.mailboxes + (m.traffic! * r.spec.trafficGb) / 100, 2);
@@ -67,20 +65,20 @@ describe("specs on requests and services", () => {
   });
 
   it("leaves the prices of services already sold alone when a rate changes", () => {
-    const s = withForm(3);
-    const { v } = formOrder(s);
+    const s = withShop(3);
+    const { v } = shopOrder(s);
     const before = s.services.map((x) => [x.id, x.price]);
     expect(setRate(s, "webHosting", "diskGb", 9).ok).toBe(true);
     run(s, 2);
     expect(s.services.filter((x) => before.some(([id]) => id === x.id)).map((x) => [x.id, x.price])).toEqual(before);
-    const next = formOrder(s);
+    const next = shopOrder(s);
     expect(next.v.price).toBeGreaterThan(v.price * (next.r.spec.diskGb / v.spec.diskGb));
   });
 
-  it("are provisioned by the order form with their own resources", () => {
-    const s = withForm(4);
+  it("are provisioned by the shop with their own resources", () => {
+    const s = withShop(4);
     for (const need of [vps, web]) {
-      const { r, v } = formOrder(s, need);
+      const { r, v } = shopOrder(s, need);
       const w = s.workloads.find((x) => x.serviceId === v.id)!;
       expect(sizeOf(w)).toEqual(sizeOf(r.spec));
     }
@@ -88,14 +86,14 @@ describe("specs on requests and services", () => {
 });
 
 describe("email orders", () => {
-  it("route every order lead through the form when switched off", () => {
-    const on = withForm(5), off = withForm(5);
+  it("route every order lead through the shop when switched off", () => {
+    const on = withShop(5), off = withShop(5);
     expect(setEmailOrders(off, false).ok).toBe(true);
     for (const s of [on, off]) for (let i = 0; i < 40; i++) orderLead(s, "private", "Frankfurt", []);
     expect(orders(on).some((r) => r.ticketId !== null)).toBe(true);
     expect(orders(off).every((r) => r.ticketId === null)).toBe(true);
     expect(off.tickets.some((x) => x.kind === "order")).toBe(false);
-    // A lead the form cannot place goes elsewhere instead of writing an email.
+    // A lead the shop cannot place goes elsewhere instead of writing an email.
     const away = orderLead(off, "private", "London", [], web);
     expect(off.sales.requests.find((x) => x.id === away.id)).toMatchObject({ status: "lost", ticketId: null });
   });
@@ -103,7 +101,7 @@ describe("email orders", () => {
 
 describe("sim text", () => {
   it.each([1, 2, 3])("names no old package in events, request threads or lost sales, seed %i", (seed) => {
-    const s = withForm(seed);
+    const s = withShop(seed);
     const said = texts(s, run(s, 90));
     expect(orders(s).length).toBeGreaterThan(0);
     expect(said.filter((x) => OLD_NAMES.some((n) => x.includes(n)))).toEqual([]);
@@ -112,10 +110,9 @@ describe("sim text", () => {
 
 describe("saves from before specs", () => {
   it("fill specs from the old plan ids, drop the plans and the packages, and start with market rates", () => {
-    const s = withForm(6);
-    formOrder(s, vps);
-    setEmailOrders(s, false);
-    orderLead(s, "private", "London", [], web, false);
+    const s = withShop(6);
+    shopOrder(s, vps);
+    loseRequest(s, orderLead(s, "private", "London", [], web), "lost", "lost.noCapacity");
     const old = JSON.parse(serialize(s));
     const plans: Record<string, string> = { webHosting: "web-l", vps: "vps-m" };
     for (const x of [...old.services, ...old.sales.requests, ...old.sales.lost]) { delete x.spec; x.plan = plans[x.product] ?? null; x.packaged = true; }

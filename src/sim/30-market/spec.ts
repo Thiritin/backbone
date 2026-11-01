@@ -65,11 +65,11 @@ export const serviceMarket = (v: Pick<Service, "product" | "sla" | "spec">, year
 export const offerPrice = (s: GameState, product: Product, spec: Spec, sla: Sla = "basic"): number =>
   specPrice(product, spec, yearOf(s.hour), sla, s.rates[product]);
 
-// The one-time fee an order form order pays on top of its first month (Products app), the market's where unset.
+// The one-time fee a shop order pays on top of its first month (Products app), the market's where unset.
 export const setupFee = (s: GameState, product: Product): number => s.rates[product]?.setup ?? marketSetup(product, yearOf(s.hour));
 // Customers weigh a setup fee as if spread over this many months of the line's middle size.
 export const SETUP_MONTHS = 36;
-// How much dearer a setup fee above the market's makes the order form, as a share of the monthly price; negative below it.
+// How much dearer a setup fee above the market's makes the shop, as a share of the monthly price; negative below it.
 export function setupPremium(s: GameState, product: Product): number {
   const year = yearOf(s.hour), monthly = marketPrice(product, sizeSpec(product, Math.floor((SIZES[product].length - 1) / 2), year), year);
   return monthly > 0 ? (setupFee(s, product) - marketSetup(product, year)) / (SETUP_MONTHS * monthly) : 0;

@@ -1,7 +1,8 @@
 import { yearOf } from "../00-core/time";
 import type { Product } from "../30-customers/customers";
 import type { GameState } from "../50-state";
-import { hasOrderForm, OWNED, owns, type SiteHost } from "../80-business/marketing";
+import { OWNED, owns, type SiteHost } from "../80-business/marketing";
+import { shopActive } from "../80-business/shop";
 import { generationOf, lineBlocker, SITE_BUILD_HOURS, SITE_LINES, siteBuilt, siteRoom } from "../80-business/website";
 import type { ActionResult } from "./hardware";
 
@@ -34,9 +35,9 @@ export function launchSite(s: GameState, host: SiteHost): ActionResult {
   return r;
 }
 
-// Stops or resumes taking orders by email; with them off, only the order form takes orders.
+// Stops or resumes taking orders by email; with them off, only the shop takes orders.
 export function setEmailOrders(s: GameState, on: boolean): ActionResult {
-  if (!on && !hasOrderForm(s)) return { ok: false, error: "error.needsOrderForm" };
+  if (!on && !shopActive(s)) return { ok: false, error: "error.needsShop" };
   s.marketing = { ...s.marketing, emailOrders: on };
   return { ok: true };
 }

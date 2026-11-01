@@ -15,7 +15,6 @@ import { formatDay } from "../billing/format";
 import { PRODUCT } from "../support/labels";
 
 const ABOUT: Record<ShopId, string> = {
-  handRolled: t("marketing.aboutHandRolled"),
   modemBill: t("marketing.aboutModemBill"),
   clientExit: t("marketing.aboutClientExit"),
   whmCache: t("marketing.aboutWhmCache"),
@@ -35,19 +34,17 @@ const price = (id: ShopId): string => {
 };
 
 export function Shop({ game }: { game: GameState }) {
-  const v = game.shop.variant && shopById(game.shop.variant), real = v && v.id !== "handRolled";
+  const v = game.shop.variant && shopById(game.shop.variant);
   return <>
     <div className="mkt-list">
       <div className="mkt-row">
         <span className="mkt-label">{t("marketing.orders")}</span>
-        <span className="mkt-grow">{v ? (v.id === "handRolled" ? t("marketing.handRolledOrderForm") : v.name) : t("marketing.email")}</span>
+        <span className="mkt-grow">{v ? v.name : t("marketing.email")}</span>
         {v && (shopActive(game) ? <span className="pill ok">{t("marketing.takingOrders")}</span> : <span className="pill">{t("marketing.readyDay", { day: formatDay(game.shop.readyAt) })}</span>)}
       </div>
     </div>
     <Variants game={game} />
-    {v && <Modules game={game} />}
-    {real && <Groups game={game} />}
-    {real && <StockList game={game} />}
+    {v && <><Modules game={game} /><Groups game={game} /><StockList game={game} /></>}
   </>;
 }
 
@@ -56,7 +53,7 @@ function Variants({ game }: { game: GameState }) {
   const year = yearOf(game.hour);
   return (
     <div className="shop-grid mkt-flat">
-      {SHOPS.filter((v) => year >= v.from && (v.id === "handRolled" || game.unlocks.includes("shops"))).map((v) => {
+      {SHOPS.filter((v) => year >= v.from && game.unlocks.includes("shops")).map((v) => {
         const used = game.shop.variant === v.id, sold = v.until === undefined || year <= v.until;
         let state: ReactNode;
         if (used) state = <span className="pill ok">{t("marketing.inUse")}</span>;
@@ -88,7 +85,7 @@ function Modules({ game }: { game: GameState }) {
   const cost = v ? v.extra : null;
   return (
     <div className="mkt-list">
-      <div className="side-h">{v && v.id !== "handRolled" ? t("marketing.modules") : t("marketing.customScripts")}</div>
+      <div className="side-h">{t("marketing.modules")}</div>
       {[...software, ...HARDWARE_MODULES].map((m) => {
         const bought = game.shop.modules[m];
         let state: ReactNode;

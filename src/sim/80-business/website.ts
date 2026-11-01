@@ -11,7 +11,8 @@ import { bookable, diskFits, lineOffered, noRoomError, nodeUsed, serverOf, vmRoo
 import { hostPerf } from "../60-infra/php";
 import { nodeUsage } from "../60-infra/usage";
 import type { SimEvent } from "../88-tick/tick";
-import { hasOrderForm, owns } from "./marketing";
+import { owns } from "./marketing";
+import { shopActive } from "./shop";
 import { salesAddress } from "./mail";
 
 export const SITE_LINES: Product[] = ["webHosting", "vps", "gameServer", "dns", "vpn", "storage", "cloud", "dedicated", "colocation", "gpu", "ssl"];
@@ -41,9 +42,9 @@ export function fillLines(s: GameState, saved: Product[] | undefined): GameState
 }
 
 // What the website shows: each listed line, with its price from the line's smallest size at the player's rates once the
-// order form takes orders, and the order address while orders still come by email.
+// shop takes orders, and the order address while orders still come by email.
 export const siteContent = (s: GameState): { lines: { product: Product; from: number | null }[]; email: string | null } => ({
-  lines: SITE_LINES.filter((p) => listed(s, p)).map((p) => ({ product: p, from: hasOrderForm(s) ? offerPrice(s, p, sizeSpec(p, 0, yearOf(s.hour))) : null })),
+  lines: SITE_LINES.filter((p) => listed(s, p)).map((p) => ({ product: p, from: shopActive(s) ? offerPrice(s, p, sizeSpec(p, 0, yearOf(s.hour))) : null })),
   email: s.marketing.emailOrders ? salesAddress(s) : null,
 });
 
@@ -112,7 +113,7 @@ export const generationsBehind = (s: GameState): number => (generationOf(yearOf(
 export const penaltyFor = (behind: number): number => Math.max(0.4, 1 - 0.2 * Math.max(0, behind - 1));
 export const agePenalty = (s: GameState): number => penaltyFor(generationsBehind(s));
 
-// What the status does to website leads and order form orders.
+// What the status does to website leads and shop orders.
 export const STATUS_FACTOR: Record<SiteStatus, number> = { up: 1, slow: 0.5, down: 0 };
 export const siteFactor = (s: GameState): number => STATUS_FACTOR[siteStatus(s)] * agePenalty(s);
 

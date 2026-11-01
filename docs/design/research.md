@@ -117,7 +117,7 @@ Web hosting runs on panel hosts and virtual machines run on hypervisor clusters.
 
 ### Now available
 
-- **Shop systems** in Marketing replace the hand-rolled order form with a bought order and provisioning system.
+- **Shop systems** in Marketing take orders through a bought order and provisioning system instead of email.
 - **Stock** per product line decides how much the shop sells.
 
 ### Choosing a shop
@@ -141,7 +141,7 @@ Setting up an order now offers **Automatic** next to your hosts. The game picks 
 
 ### Place orders automatically
 
-Settings has a new **Place orders automatically** switch. With it on, an order form order is invoiced and set up the moment it arrives, as long as the form has a module or a custom script for the software it lands on, and an order by email runs from the customer account to the setup the moment the customer accepts your quote.
+Settings has a new **Place orders automatically** switch. With it on, a shop order is invoiced and set up the moment it arrives, as long as the shop has a module for the software it lands on, and an order by email runs from the customer account to the setup the moment the customer accepts your quote.
 
 An order email gets a quote at your own rate for the line, as long as a host in its city has room for it. An order with no room waits for you to quote it by hand. A step that cannot run, such as a setup with no room, waits in the inbox for you too.
 

@@ -2518,11 +2518,11 @@ The solo bot reaches level 5 in 2012.8 instead of 2012.9. Neither bot goes bankr
 
 ## Shop systems
 
-Variants, licences, module prices, the custom script price of the hand-rolled form (€400 per software) and stock rules are in `shop.md`, section 2.3. The research "Shop systems" costs 60 know-how and 4 days. Shop licences are billed with marketing on the 1st.
+Variants, licences, module prices and stock rules are in `shop.md`, section 2.3. The research "Shop systems" costs 60 know-how and 4 days. Shop licences are billed with marketing on the 1st.
 
 ### Billing cycles
 
-A shop sells its products for a month, a quarter, a year or two years. A longer cycle is billed in advance at N times the monthly price less the cycle's discount. The hand-rolled form sells monthly and annual, ModemBill adds quarterly, OrderBocks adds biennial and the other systems sell all four.
+A shop sells its products for a month, a quarter, a year or two years. A longer cycle is billed in advance at N times the monthly price less the cycle's discount. ModemBill sells monthly, quarterly and annual, OrderBocks adds biennial and the other systems sell all four.
 
 | Cycle | Months | Market discount |
 | --- | --- | --- |
