@@ -68,7 +68,7 @@ export interface CatalogProduct {
 
 - `s.marketing.published: CatalogProduct[] | null`, default `null`.
 - Action `publishCatalog(s)` copies the offered, visible products. Books shows a Publish to website button and marks the tab when the catalog differs from the published one.
-- `src/sim/80-business/website.ts`: each listed line shows its published products (name, spec, price per cycle) instead of the "from" price; a line without products keeps the "from" price. With a shop active the site uses `s.catalog`.
+- `src/sim/80-business/website.ts`: each listed line shows its published products (name, spec, price per cycle) instead of the "from" price; a line without products keeps the "from" price. With a shop active the site shows the shop's products and their pricing page, as it did before.
 - Test: publish snapshots; a price change after publishing leaves the site and lead decisions on the old price until the next publish.
 
 ### 3.5 Lost demand readout

@@ -301,7 +301,7 @@ function OrderThread({ tk, r, gates }: { tk: Ticket; r: SalesRequest; gates: Gat
         {r.thread.map((m, i) => (
           <div key={i} className={`msg${m.from === "you" ? " you" : ""}`}>
             <div className="from">{m.from === "you" ? m.by ?? t("support.you") : r.contact} · <span className="num">{stamp(m.hour)}</span></div>
-            <p>{t(m.key, m.params)}{i === 0 && r.kind !== "expansion" && ` ${t(`request.use.${r.profile}`)}`}{i === 0 && r.kind === "order" && `\n\n${addressLines(mailedAddress(game.seed, r)).join("\n")}`}</p>
+            <p>{t(m.key, m.params)}{i === 0 && r.kind !== "expansion" && ` ${t(`request.use.${r.profile}`)}`}{i === 0 && m.params.item && ` ${t("order.msg.item", m.params)}`}{i === 0 && r.kind === "order" && `\n\n${addressLines(mailedAddress(game.seed, r)).join("\n")}`}</p>
             {r.kind === "order" && <MailAttachments tk={tk} r={r} m={m} />}
           </div>
         ))}

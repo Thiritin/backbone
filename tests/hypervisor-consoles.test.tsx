@@ -24,7 +24,7 @@ import { mountDevice } from "./plugged";
 // docs/design/software.md, section 9: a year of each hypervisor console's early look, a year of its late look, and its mark.
 const ERAS: Record<string, [number, number, string]> = {
   proxmocks: [2008, 2015, "PROXMOCKS"], vmwhere: [2005, 2015, "vSphear"], hypervee: [2008, 2012, "HyperVee Manager"],
-  openveezee: [2005, 2016, "OpenVeeZee Web Panel"], openstash: [2010, 2016, "openstash"],
+  openveezee: [2005, 2016, "OpenVeeZee Web Panel"],
 };
 
 const ok = (r: { ok: boolean; id?: string; error?: string }) => { expect(r.error).toBeUndefined(); return r.id!; };

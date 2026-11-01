@@ -33,7 +33,7 @@ import { provisionService } from "../90-actions/clusters";
 import { addressesFit } from "../60-infra/addresses";
 import { withAddressNeeds } from "../10-catalog/addresses";
 import { grownSpec, setupPremium, sizeOf, specFor, specText } from "./spec";
-import { acceptQuote, resize, specParams } from "./manual";
+import { acceptQuote, issueInvoice, resize, specParams } from "./manual";
 import { answerQuote } from "./quotes";
 import { logActivity } from "../47-staff/activity";
 import type { ActionResult } from "../90-actions/hardware";
@@ -285,6 +285,11 @@ function replyUpgrade(s: GameState, r: SalesRequest, events: SimEvent[]): void {
     if (!resize(s, v, r.spec!, r.route ?? "auto", r.city).ok) return loseRequest(s, r, "lost", "lost.noCapacity", { city: r.city });
     growSlots(s, v.id, r.spec!.ramGb / v.spec.ramGb);
     s.services = s.services.map((x) => (x.id === v.id ? { ...x, price: price / 730, before: undefined } : x));
+    // The prepaid rest of a term is billed at the new rate once the service has grown.
+    const left = (v.termEnd ?? 0) - s.hour, extra = Math.round((price / 730 - v.price) * left * 100) / 100;
+    if (v.cycle && left > 0 && extra > 0) {
+      issueInvoice(s, v.customerId, [{ serviceId: null, key: "invoice.line.upgradeTerm", params: { label: v.label, months: Math.max(1, Math.round(left / 730)) }, amount: extra }]);
+    }
     say(s, r.id, "you", "sales.you.upgradeDone", { price });
     editRequest(s, r.id, () => ({ status: "won", replyAt: null }));
     closeTicket(s, r);

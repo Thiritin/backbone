@@ -1,5 +1,5 @@
 import {
-  annuity, AUTO_COLLECT_DAYS, bookTransfer, issue, AUTO_SUSPEND_DAYS, cents, dueStep, isUnpaid, synced, LOAN_AMOUNTS, LOAN_YEARS, loanAvailable, loanRate, sendStep, STEPS, suspend, type BillingRules, type Invoice,
+  annuity, AUTO_COLLECT_DAYS, bookTransfer, unbookTransfer, issue, AUTO_SUSPEND_DAYS, cents, dueStep, isUnpaid, synced, LOAN_AMOUNTS, LOAN_YEARS, loanAvailable, loanRate, sendStep, STEPS, suspend, type BillingRules, type Invoice,
 } from "../45-billing/billing";
 import { bankById } from "../10-catalog/banks";
 import type { GameState } from "../50-state";
@@ -30,6 +30,16 @@ export function matchTransfer(s: GameState, transferId: string, invoiceId: strin
   if (!inv) return fail("error.invoiceSettled");
   bookTransfer(s, tr, inv, settle);
   log(s, inv, "matchTransfer");
+  return { ok: true };
+}
+
+// Takes back a manual booking that went to the wrong invoice.
+export function unmatchTransfer(s: GameState, transferId: string): ActionResult {
+  const tr = s.transfers.find((x) => x.id === transferId);
+  const inv = tr?.booked && s.invoices.find((i) => i.id === tr.invoiceId);
+  // A later booking or write-off changed the invoice since; undoing this one would no longer add up.
+  if (!tr?.booked || !inv || (tr.booked.paid ? inv.status !== "paid" : !isUnpaid(inv))) return fail("error.transferChanged");
+  unbookTransfer(s, tr, inv);
   return { ok: true };
 }
 
