@@ -1,6 +1,6 @@
 import { tiersOf } from "../10-catalog/licence-tiers";
 import type { GameState } from "../50-state";
-import { accountsOn, assignKey, extendKey, installedVersion, issueKey, keyFor, licenceExpired, nameOf, panelKey, panelMachine, swapKey, updateKey } from "../60-infra/licence";
+import { accountsOn, assignKey, extendKey, installedVersion, issueKey, keyFor, licenceExpired, nameOf, panelKey, panelMachine, updateKey } from "../60-infra/licence";
 import { payLicence, tierFee } from "../85-products/products";
 import type { ActionResult } from "./hardware";
 
@@ -31,6 +31,6 @@ export function activateLicence(s: GameState, machineId: string, product: string
   if (version === null) return { ok: false, error: "error.noSoftware" };
   const k = keyFor(s, machineId, product, key, version);
   if (!k) return { ok: false, error: "error.licenceKey" };
-  swapKey(s, machineId, k);
+  assignKey(s, k.id, machineId);
   return { ok: true, id: k.id };
 }

@@ -83,6 +83,16 @@ describe("Windoors Server", () => {
     expect(dev(s, id).os).toBeNull();
   });
 
+  it("refuses a one-time key for an older major than the media's", () => {
+    const s = readyGame(7);
+    skipTo(s, 2009);
+    const id = atInstaller(s), old = issueKey(s, "windoors", null, undefined, "2003"), now = issueKey(s, "windoors", null);
+    withStick(s, id, "windoors");
+    expect(err(installOs(s, id, "windoors", undefined, undefined, old.key))).toBe("error.licenceKey");
+    ok(installOs(s, id, "windoors", undefined, undefined, now.key));
+    expect(dev(s, id).os?.version).not.toBe("2003");
+  });
+
   it("gives a new VM from a template a key from My account in order, or its trial", () => {
     const s = withServer(newGame(1)), cloud = hypervisor(s, ["dev3"]), cash = s.cash;
     const first = ok(createSoftwareVm(s, cloud, "tcadmen")) as string;

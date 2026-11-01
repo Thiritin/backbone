@@ -1,4 +1,5 @@
 import { dateOf, yearOf } from "../00-core/time";
+import { versionAt } from "../10-catalog/software-versions";
 import { BREAK_HOURS, CHANNELS, channelOf, type Channel, targetYear, updateBreaks } from "../60-infra/channel";
 import { buildKeys, installKeyBlock, licenceExpired, licenseBuild, licenseInstall, releaseGone } from "../60-infra/licence";
 import { serverOsAt } from "../10-catalog/server-os";
@@ -87,7 +88,7 @@ export function canInstall(s: GameState, machineId: string, softwareId: string):
 export function installSoftware(s: GameState, machineId: string, softwareId: string, key?: string): ActionResult {
   const sw = SOFTWARE.find((x) => x.id === softwareId);
   if (!sw) return { ok: false, error: "error.unknownSoftware" };
-  const version = String(yearOf(s.hour)), block = installBlock(s, machineId, sw.id) ?? installKeyBlock(s, machineId, sw.id, version, key);
+  const version = versionAt(sw.id, s.hour).version, block = installBlock(s, machineId, sw.id) ?? installKeyBlock(s, machineId, sw.id, version, key);
   if (block) return { ok: false, error: block };
   const done = !isServer(s, machineId) ? installPanelInVm(s, machineId, sw.id) : sw.kind === "cloud" ? installHypervisor(s, machineId, sw.id) : installPanel(s, machineId, sw.id);
   if (done.ok) licenseInstall(s, machineId, sw.id, version, key);
@@ -100,7 +101,7 @@ export function createSoftwareVm(s: GameState, clusterId: string, softwareId: st
   const sw = SOFTWARE.find((x) => x.id === softwareId);
   if (!sw) return { ok: false, error: "error.unknownSoftware" };
   const os = { product: sw.os[0], version: serverOsAt(sw.os[0], yearOf(s.hour)).version };
-  const keys = buildKeys(s, [os, { product: sw.id, version: String(yearOf(s.hour)) }]);
+  const keys = buildKeys(s, [os, { product: sw.id, version: versionAt(sw.id, s.hour).version }]);
   if (typeof keys === "string") return keysShort(keys);
   const vm = createVm(s, clusterId, size);
   if (!vm.ok) return vm;

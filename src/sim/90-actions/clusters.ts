@@ -155,7 +155,7 @@ export function createPanelVm(s: GameState, clusterId: string, panelId: string, 
   if (sw.id !== panelId || sw.kind === "cloud") return fail("error.unknownSoftware");
   const bad = sizeError(size, sw.controlPlane);
   if (bad) return fail(bad);
-  const items = [{ product: sw.os[0], version: serverOsAt(sw.os[0], yearOf(s.hour)).version }, { product: sw.id, version: String(yearOf(s.hour)) }];
+  const items = [{ product: sw.os[0], version: serverOsAt(sw.os[0], yearOf(s.hour)).version }, { product: sw.id, version: versionAt(sw.id, s.hour).version }];
   const keys = buildKeys(s, items);
   if (typeof keys === "string") return keysShort(keys);
   const vm = createVm(s, clusterId, size);

@@ -1,4 +1,5 @@
 // economy.md, Templates: stopped own VMs on a hypervisor with datastores, kept to clone ready VMs from.
+import { versionAt } from "../10-catalog/software-versions";
 import { nowHours } from "../00-core/time";
 import { softwareById } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
@@ -8,7 +9,6 @@ import {
 import { working } from "../60-infra/status";
 import { LAN_GB_PER_HOUR } from "../85-products/products";
 import { buildKeys, licenseBuild } from "../60-infra/licence";
-import { yearOf } from "../00-core/time";
 import { keysShort } from "./licence";
 import { hostInVm, workload } from "./clusters";
 import type { ActionResult } from "./hardware";
@@ -70,7 +70,7 @@ export function cloneTemplate(s: GameState, templateId: string, toDeviceId?: str
   if (!working(s, t.datastore ?? t.deviceId!)) return fail("error.nodeDown");
   const software = (t.software ?? []).map((x) => softwareById(x.id));
   if (software.some((x) => x.kind === "mail")) return fail("error.oneMailServer");
-  const items = [...(t.os ? [{ product: t.os.id, version: t.os.version }] : []), ...software.map((x) => ({ product: x.id, version: String(yearOf(s.hour)) }))];
+  const items = [...(t.os ? [{ product: t.os.id, version: t.os.version }] : []), ...software.map((x) => ({ product: x.id, version: versionAt(x.id, s.hour).version }))];
   const keys = buildKeys(s, items);
   if (typeof keys === "string") return keysShort(keys);
   const disk = withDatastore(s, c, { vcpu: t.vcpu, ramGb: t.ramGb, diskGb: t.diskGb }), d = toDeviceId ? s.devices.find((x) => x.id === toDeviceId) : undefined;

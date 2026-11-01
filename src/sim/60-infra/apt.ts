@@ -4,6 +4,7 @@
 import { t } from "../../i18n/en";
 import { nowHours, yearOf } from "../00-core/time";
 import { installKeyBlock } from "./licence";
+import { versionAt } from "../10-catalog/software-versions";
 import { SOFTWARE, softwareById, type Software } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
 import { installBlock, uninstallSoftware, upgradable, upgradeServer } from "../90-actions/software";
@@ -130,7 +131,7 @@ export function installScript(s: GameState, machineId: string, line: string): Co
   const key = /\s--key\s+(\S+)/.exec(` ${line}`)?.[1], typed = norm(` ${line}`.replace(/\s--key\s+\S+/, ""));
   const sw = SOFTWARE.find((x) => x.install.kind === "script" && x.install.commands.some((c) => norm(c) === typed));
   if (!sw || !osUp(s, machineId)) return undefined;
-  const why = installBlock(s, machineId, sw.id) ?? installKeyBlock(s, machineId, sw.id, String(yearOf(s.hour)), key);
+  const why = installBlock(s, machineId, sw.id) ?? installKeyBlock(s, machineId, sw.id, versionAt(sw.id, s.hour).version, key);
   if (why) return { output: [t(why)], failed: true };
   if (machineNet(s, machineId)) return { output: lines(typed.startsWith("wget") ? "term.wget.resolve" : "term.curl.resolve", { host: siteOf(typed) }), failed: true };
   return { output: [...lines("term.install.script", { name: sw.name }), ...started(sw)], action: [installFromSite, machineId, sw.id, ...(key ? [key] : [])], watch: watching(machineOf(s, machineId)?.hostname ?? machineId, machineId, sw) };

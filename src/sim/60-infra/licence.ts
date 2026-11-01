@@ -27,7 +27,7 @@ export const trialOf = (s: GameState, machineId: string, product: string): GameS
 
 // The version the machine runs of an OS or software id, or null when it is not installed.
 export function installedVersion(s: GameState, machineId: string, product: string): string | null {
-  const m = [...s.devices, ...s.workloads].find((x) => x.id === machineId);
+  const m = s.devices.find((x) => x.id === machineId) ?? s.workloads.find((x) => x.id === machineId);
   return (m?.os?.id === product ? m.os.version : m?.software?.find((x) => x.id === product)?.version) ?? null;
 }
 // The console look of the version the machine runs, or null when the version or its UI generations are unknown.
@@ -86,7 +86,11 @@ export const extendKey = (s: GameState, keyId: string, from: number): void => {
   const until = monthAfter(from);
   updateKey(s, keyId, { covers: { kind: "term", until }, renewsAt: until, lapsedAt: null });
 };
-export const assignKey = (s: GameState, keyId: string, machineId: string): void => updateKey(s, keyId, { machineId });
+// A machine holds one key per product: the one it held before goes back unassigned.
+export function assignKey(s: GameState, keyId: string, machineId: string): void {
+  const product = s.licenses.find((k) => k.id === keyId)?.product;
+  s.licenses = s.licenses.map((k) => (k.id === keyId ? { ...k, machineId } : k.machineId === machineId && k.product === product ? { ...k, machineId: null } : k));
+}
 export const releaseKey = (s: GameState, keyId: string): void => updateKey(s, keyId, { machineId: null });
 
 // Whether the key may license that version of its product: a one-time key covers its major and the ones before.
@@ -102,17 +106,10 @@ export function installKeyBlock(s: GameState, machineId: string, product: string
   return trialDaysOf(product) === null ? "error.licenceKey" : null;
 }
 
-// Assigns the key to the machine in place of the key it held for the product, which goes back unassigned.
-export function swapKey(s: GameState, machineId: string, k: Licence): void {
-  const old = assignedKey(s, machineId, k.product);
-  if (old && old.id !== k.id) releaseKey(s, old.id);
-  assignKey(s, k.id, machineId);
-}
-
 // Licenses a started install with the typed key, or starts its trial.
 export function licenseInstall(s: GameState, machineId: string, product: string, version: string, code?: string): void {
   const k = code ? keyFor(s, machineId, product, code, version) : undefined;
-  if (k) swapKey(s, machineId, k);
+  if (k) assignKey(s, k.id, machineId);
   else startTrial(s, machineId, product);
 }
 
@@ -129,7 +126,7 @@ export function buildKeys(s: GameState, items: { product: string; version: strin
   return out;
 }
 export const licenseBuild = (s: GameState, machineId: string, items: { product: string }[], keys: (Licence | null)[]): void =>
-  items.forEach((x, i) => { const k = keys[i]; if (k) swapKey(s, machineId, k); else startTrial(s, machineId, x.product); });
+  items.forEach((x, i) => { const k = keys[i]; if (k) assignKey(s, k.id, machineId); else startTrial(s, machineId, x.product); });
 
 // Erased disks hand back every key the machine held.
 export function releaseMachine(s: GameState, machineId: string): void {
@@ -171,7 +168,7 @@ export function tierOf(s: GameState, c: Cluster): LicenceTier | undefined {
 // gated work: new accounts, VMs and services, updates and backups to it.
 export const licenceExpired = (s: GameState, c: Cluster): boolean => {
   const id = c.panel ?? c.platform;
-  return !!id && (c.vm ? [c.vm] : c.nodes.map((n) => n.deviceId)).some((m) => ["ended", "lapsed", "unlicensed"].includes(licenceStatus(s, m, id) ?? ""));
+  return !!id && isLicensed(id) && (c.vm ? [c.vm] : c.nodes.map((n) => n.deviceId)).some((m) => ["ended", "lapsed", "unlicensed"].includes(licenceStatus(s, m, id) ?? ""));
 };
 
 // The error that refuses one more account, VM or service on the cluster, or null.
