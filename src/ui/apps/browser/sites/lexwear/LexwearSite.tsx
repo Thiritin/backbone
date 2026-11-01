@@ -6,8 +6,8 @@ import { hasModule, moduleById, MODULES, type Module } from "../../../../../sim/
 import type { GameState } from "../../../../../sim/50-state";
 import { bought, LEXWEAR, LEXWEAR_HOST, lexwearUrl } from "../../../../../sim/80-business/lexwear";
 import { buyLicence } from "../../../../../sim/90-actions/lexwear";
-import { useStore } from "../../../../store";
 import "./lexwear.css";
+import { usePageAct } from "../../pageAct";
 
 const SUPPORT = `www.${LEXWEAR_HOST}/support`;
 const name = (m: Module) => t(`vendor-sites.module.${m.id}`);
@@ -22,7 +22,7 @@ const Box = ({ m, big }: { m: Module; big?: boolean }) => (
 );
 
 function Buy({ game, m }: { game: GameState; m: Module }) {
-  const act = useStore((s) => s.act);
+  const act = usePageAct();
   if (hasModule(game, m.id)) return <span className="lx-state">{t("vendor-sites.registered")}</span>;
   if (bought(game, m.id)) return <span className="lx-state">{t("vendor-sites.bought")}</span>;
   return <button type="button" className="lx-buy" onClick={() => act(buyLicence, m.id)}>{t("vendor-sites.buy")}</button>;
@@ -32,9 +32,9 @@ export function LexwearSite({ game, path, go }: { game: GameState; path: string;
   const year = yearOf(game.hour);
   const link = (url: string) => (e: MouseEvent) => { e.preventDefault(); go(url); };
   const id = /^\/module\/([\w-]+)/.exec(path)?.[1];
-  const m = id ? moduleById(id) : undefined;
-  const shown = MODULES.filter((x) => x.year <= year);
-  const page = m && m.year <= year ? "module" : path.startsWith("/support") ? "support" : "home";
+  const m = id ? moduleById(id) : undefined, ours = m?.vendor === "lexwear";
+  const shown = MODULES.filter((x) => x.vendor === "lexwear" && x.year <= year);
+  const page = m && ours && m.year <= year ? "module" : path.startsWith("/support") ? "support" : "home";
   const nav: [string, string, string][] = [["home", t("vendor-sites.navModules"), lexwearUrl()], ["support", t("vendor-sites.navSupport"), SUPPORT]];
   return (
     <div className="lx">

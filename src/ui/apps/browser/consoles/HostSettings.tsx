@@ -11,17 +11,17 @@ import { CHANNELS, channelOf } from "../../../../sim/60-infra/channel";
 import { setChannel } from "../../../../sim/90-actions/software";
 import { setOversell } from "../../../../sim/90-actions/oversell";
 import { tiersOf } from "../../../../sim/10-catalog/licence-tiers";
-import { accountsOn, licenceExpired, panelMachine, panelStatus, tierOf, trialOf } from "../../../../sim/60-infra/licence";
+import { accountsOn, licenceExpired, panelMachine, panelStatus, tierOf, tiersOnSale, trialOf } from "../../../../sim/60-infra/licence";
 import { setLicenceTier } from "../../../../sim/90-actions/licence";
-import { useStore } from "../../../store";
 import { ram } from "../../hw";
 import { Facts, type Fact } from "./PanelBase";
+import { usePageAct } from "../pageAct";
 
 const num = (n: number) => `${+n.toFixed(2)}`;
 
 // Booked and used capacity of a panel host with the oversell cap; Pterodaktyl takes the cap as an overallocation percentage.
 export function Oversell({ game, c }: { game: GameState; c: Cluster }) {
-  const act = useStore((s) => s.act), percent = familyOf(c) === "pterodaktyl";
+  const act = usePageAct(), percent = familyOf(c) === "pterodaktyl";
   const shown = (cap: number | null | undefined) => (cap == null ? "" : String(percent ? Math.round(cap * 100) : cap));
   const [value, setValue] = useState(shown(c.oversell));
   const mine = game.workloads.filter((w) => w.clusterId === c.id), ids = new Set(mine.map((w) => w.serviceId));
@@ -52,7 +52,7 @@ export function Oversell({ game, c }: { game: GameState; c: Cluster }) {
 
 // The release channel the host updates from.
 export function ChannelPicker({ c }: { c: Cluster }) {
-  const act = useStore((s) => s.act), now = channelOf(c);
+  const act = usePageAct(), now = channelOf(c);
   return (
     <>
       <h4 className="cx-h">{t("host.channel")}</h4>
@@ -69,7 +69,7 @@ export const LicenceBanner = ({ game, c }: { game: GameState; c: Cluster }) =>
 
 // Edition, accounts against the cap, expiry and the editions to switch to.
 export function LicenceTiers({ game, c }: { game: GameState; c: Cluster }) {
-  const act = useStore((s) => s.act), tier = tierOf(game, c);
+  const act = usePageAct(), tier = tierOf(game, c);
   if (!tier) return null;
   const status = panelStatus(game, c), machine = panelMachine(c), trial = machine && c.panel ? trialOf(game, machine, c.panel) : undefined;
   const fee = (x: typeof tier) => t(x.kind === "account" ? "host.perAccount" : "host.perMonth", { fee: euroPrice(x.fee) });
@@ -83,7 +83,7 @@ export function LicenceTiers({ game, c }: { game: GameState; c: Cluster }) {
       <LicenceBanner game={game} c={c} />
       <Facts facts={facts} />
       <div className="cx-tools">
-        {tiersOf(c.panel).map((x) => <button key={x.id} className="cx-chip" aria-pressed={x.id === tier.id && !licenceExpired(game, c)} onClick={() => act(setLicenceTier, c.id, x.id)}>{`${x.name} · ${fee(x)}`}</button>)}
+        {tiersOf(c.panel).filter((x) => x.id === tier.id || tiersOnSale(c.panel, game.hour).includes(x)).map((x) => <button key={x.id} className="cx-chip" aria-pressed={x.id === tier.id && !licenceExpired(game, c)} onClick={() => act(setLicenceTier, c.id, x.id)}>{`${x.name} · ${fee(x)}`}</button>)}
       </div>
     </>
   );

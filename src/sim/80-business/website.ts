@@ -8,12 +8,17 @@ import type { GameState } from "../50-state";
 import { serviceOnline } from "../40-support/status";
 import { HOW_TO, KNOWLEDGE_BASE } from "../40-support/tickets";
 import { bookable, diskFits, lineOffered, noRoomError, nodeUsed, serverOf, vmRoom, workloadOnline, workloadsOf, type Cluster, type Workload } from "../60-infra/cluster";
-import { privateIp } from "../60-infra/addresses";
+import { machineAddress } from "../60-infra/addresses";
 import { hostPerf } from "../60-infra/php";
 import { nodeUsage } from "../60-infra/usage";
 import type { SimEvent } from "../88-tick/tick";
 import { hasOrderForm, owns } from "./marketing";
 import { salesAddress } from "./mail";
+import { CYCLE_MONTHS, CYCLES } from "../10-catalog/cycles";
+import { companyDomain } from "../30-customers/domains";
+import { lineHasProducts, portalPath, productsOf } from "./portal";
+import { STATUS_FROM_YEAR, STATUS_MIN_CUSTOMERS } from "./status";
+import { shopActive, type ShopProduct } from "./shop";
 
 export const SITE_LINES: Product[] = ["webHosting", "vps", "gameServer", "dns", "vpn", "storage", "cloud", "dedicated", "colocation", "gpu", "ssl"];
 
@@ -41,21 +46,44 @@ export function fillLines(s: GameState, saved: Product[] | undefined): GameState
   return lineBlocker(base, "ssl") ? base : { ...base, marketing: { ...base.marketing, lines: [...base.marketing.lines, "ssl"] } };
 }
 
-// What the website shows: each listed line, with its price from the line's smallest size at the player's rates once the
-// order form takes orders, and the order address while orders still come by email.
-export const siteContent = (s: GameState): { lines: { product: Product; from: number | null }[]; email: string | null } => ({
-  lines: SITE_LINES.filter((p) => listed(s, p)).map((p) => ({ product: p, from: hasOrderForm(s) ? offerPrice(s, p, sizeSpec(p, 0, yearOf(s.hour))) : null })),
+// Products of a line the shop shows: neither the product nor its group is hidden.
+export const visibleProducts = (s: GameState, line: Product): ShopProduct[] =>
+  productsOf(s, line).filter((p) => !p.hidden && !s.shop.productGroups.find((g) => g.id === p.groupId)?.hidden);
+// The lowest price per month over a product's cycles.
+export const fromMonthly = (p: ShopProduct): number =>
+  Math.min(...CYCLES.filter((c) => p.prices[c] !== undefined).map((c) => p.prices[c]! / CYCLE_MONTHS[c]));
+// The portal address an order button leads to: the product's configure page, else the store root. Null without a shop.
+export function orderLink(s: GameState, product?: ShopProduct): string | null {
+  const v = s.shop.variant;
+  if (!v || !shopActive(s)) return null;
+  const path = product ? portalPath(v, "configure", { group: product.groupId, product: product.id }) : portalPath(v, "store");
+  return `portal.${companyDomain(s)}${path}`;
+}
+
+// What the website shows: each listed line, with the price from its cheapest visible product, or from the line's smallest
+// size at the player's rates for lines sold through configurable options, and the order address while orders still come
+// by email.
+export const siteContent = (s: GameState): { lines: { product: Product; from: number | null; link: string | null }[]; email: string | null } => ({
+  lines: SITE_LINES.filter((p) => listed(s, p)).map((p) => {
+    const best = visibleProducts(s, p).filter((x) => Number.isFinite(fromMonthly(x))).sort((x, y) => fromMonthly(x) - fromMonthly(y))[0];
+    if (best) return { product: p, from: fromMonthly(best), link: orderLink(s, best) };
+    return { product: p, from: hasOrderForm(s) ? offerPrice(s, p, sizeSpec(p, 0, yearOf(s.hour))) : null, link: orderLink(s) };
+  }),
   email: s.marketing.emailOrders ? salesAddress(s) : null,
 });
 
 // The site grows with the company: the hand-written page is one page, the web design adds the menu, the Knowledge base
 // app adds its articles and enough customers fill a help desk with questions and answers.
-export type SitePage = "home" | "products" | "kb" | "helpdesk" | "about" | "support";
+export type SitePage = "home" | "products" | "pricing" | "kb" | "helpdesk" | "network" | "status" | "about" | "legal" | "contact" | "support";
 export const HELPDESK_CUSTOMERS = 25;
+export const statusPage = (s: GameState): boolean =>
+  yearOf(s.hour) >= STATUS_FROM_YEAR && s.customers.filter((c) => c.churnedAt === null).length >= STATUS_MIN_CUSTOMERS;
 export function sitePages(s: GameState): SitePage[] {
   if (!owns(s, "website")) return ["home"];
   const kb = s.installed.includes(KNOWLEDGE_BASE), desk = s.customers.filter((c) => c.churnedAt === null).length >= HELPDESK_CUSTOMERS;
-  return ["home", "products", ...(kb ? ["kb" as const] : []), ...(desk ? ["helpdesk" as const] : []), "about", "support"];
+  const priced = shopActive(s) && SITE_LINES.some((p) => listed(s, p) && (visibleProducts(s, p).length > 0 || !lineHasProducts(s, p)));
+  return ["home", "products", ...(priced ? ["pricing" as const] : []), ...(kb ? ["kb" as const] : []), ...(desk ? ["helpdesk" as const] : []),
+    ...(s.locations.some((l) => l.dc) ? ["network" as const] : []), ...(statusPage(s) ? ["status" as const] : []), "about", "contact", "legal", "support"];
 }
 // The articles the Knowledge base answers, with how often customers read each.
 export const kbArticles = (s: GameState): { topic: string; reads: number }[] =>
@@ -157,5 +185,5 @@ export function siteHost(s: GameState, serviceId: string): string | null {
   const v = s.services.find((x) => x.id === serviceId);
   if (!v || v.product !== "webHosting") return null;
   const w = workloadsOf(s, serviceId)[0];
-  return v.domain ?? (w ? privateIp(s, w.id) : null);
+  return v.domain ?? (w ? machineAddress(s, w.id) : null);
 }

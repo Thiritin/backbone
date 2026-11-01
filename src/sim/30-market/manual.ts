@@ -8,7 +8,8 @@ import type { Product, Service } from "../30-customers/customers";
 import { DOMAIN_FEE, domainOf, register, TRANSFER_FEE } from "../30-customers/registry";
 import { CERT_SHARE, offerCertificate } from "../30-customers/certificates";
 import { cancelCustomer, isFinal, replyDue, type Ticket } from "../40-support/tickets";
-import { DUE_DAYS, issue, rollPayStep, type Invoice, type InvoiceLine } from "../45-billing/billing";
+import { DUE_DAYS, fromShop, issue, rollPayStep, type Invoice, type InvoiceLine } from "../45-billing/billing";
+import { checkout } from "../45-billing/payments";
 import { ACTION_MINUTES, logActivity } from "../47-staff/activity";
 import type { GameState } from "../50-state";
 import { bookable, nodeUsed, workloadsOf } from "../60-infra/cluster";
@@ -17,6 +18,7 @@ import type { SimEvent } from "../88-tick/tick";
 import { addCustomer } from "../90-actions/customers";
 import { placeService, provisionService } from "../90-actions/clusters";
 import type { ActionResult } from "../90-actions/hardware";
+import type { Cycle } from "../10-catalog/cycles";
 import { startTerm, termLine } from "./cycles";
 import { setupFee, sizeOf } from "./spec";
 import { missingFor, requestName, REQUEST_HOURS, type SalesRequest } from "./market";
@@ -37,7 +39,7 @@ const STEP_MINUTES: Record<OrderStep, number> = {
 };
 // The package an order provisions from on the host it goes to, or undefined for a custom spec, an automatic route or a missing package.
 export function packageFor(s: GameState, r: SalesRequest, route?: string): PackageDef | undefined {
-  const to = route ?? r.route ?? hostFor(s, r), target = r.pkg && to && to !== "auto" ? routeTarget(s, to, r.product) : null;
+  const to = route ?? r.route ?? hostFor(s, r), target = r.pkg && to ? (to === "auto" ? targetFor(s, r) : routeTarget(s, to, r.product)) : null;
   const c = target && s.clusters.find((x) => x.id === target.clusterId);
   return c && r.pkg ? packageNamed(c, r.pkg) : undefined;
 }
@@ -120,13 +122,17 @@ export function staffOrderStep(s: GameState, t: Ticket, legacyError: string | nu
 export const orderMinutes = (s: GameState, t: Ticket, arg: string, legacy: number): number => (isStep(arg) && orderOf(s, t) ? stepMinutes(arg, s, orderOf(s, t)) : legacy);
 
 // A new invoice outside the monthly run, paid by the customer's habit; an order is paid within ORDER_PAY_DAYS when on time.
+// A shop customer's invoice is the shop's, paid by the customer's payment method.
 export function issueInvoice(s: GameState, customerId: string, lines: InvoiceLine[], payDays = DUE_DAYS - 1): Invoice {
-  const payStep = rollPayStep(s.rng, s.customers.find((c) => c.id === customerId)?.habit ?? "prompt");
+  const c = s.customers.find((x) => x.id === customerId);
+  const payStep = rollPayStep(s.rng, c?.habit ?? "prompt");
   const inv: Invoice = {
     id: `inv${s.nextId++}`, number: `${yearOf(s.hour)}-${String(s.invoices.length + 1).padStart(4, "0")}`, customerId, lines,
     issuedAt: s.hour, dueAt: s.hour + DUE_DAYS * DAY, status: "open", reminders: [], suspended: false, suspendedAt: null, extendedUntil: null,
     payStep, payAt: payStep === 0 ? s.hour + DAY + Math.floor(rand(s.rng) * payDays * DAY) + mailDelay(s) : null, paidAt: null,
+    ...(c?.source === "shop" && { ...fromShop(s), bank: true as const }),
   };
+  if (c?.source === "shop") checkout(s, inv, c);
   s.invoices = [...s.invoices, inv];
   return inv;
 }
@@ -142,11 +148,11 @@ export function draftInvoice(s: GameState, customerId: string, lines: InvoiceLin
 }
 
 // The first invoice of an order, and the quote for it: the setup fee, the first month and a new or moved domain.
-export function firstLines(s: GameState, r: SalesRequest, monthly = r.quote ?? 0, setup = r.setup ?? setupFee(s, r.product)): InvoiceLine[] {
+export function firstLines(s: GameState, r: SalesRequest, monthly = r.quote ?? 0, setup = r.setup ?? setupFee(s, r.product), cycle: Cycle | null = r.cycle ?? null): InvoiceLine[] {
   const label = r.domain ?? requestName(r);
   const lines: InvoiceLine[] = [
     ...(setup > 0 ? [{ serviceId: null, key: "invoice.line.setupFee", params: { label }, amount: setup }] : []),
-    termLine({ cycle: r.cycle, quote: monthly }, label),
+    termLine({ cycle: cycle ?? undefined, quote: monthly }, label),
   ];
   if (needsDomain(r)) lines.push({ serviceId: null, key: r.owned ? "invoice.line.domainTransfer" : "invoice.line.domain", params: { domain: r.domain! }, amount: r.owned ? TRANSFER_FEE : DOMAIN_FEE });
   return lines;

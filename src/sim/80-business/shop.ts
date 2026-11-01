@@ -5,9 +5,11 @@ import type { SimEvent } from "../88-tick/tick";
 import { bump } from "../40-support/tickets";
 import { PRODUCTS } from "../10-catalog/products";
 import type { Cycle } from "../10-catalog/cycles";
+import type { MethodId } from "../10-catalog/payments";
 import { includes, shopById, WHM_PER_THOUSAND, WHM_TIERS, type ShopId } from "../10-catalog/shops";
 import { modelById } from "../10-catalog/hardware";
 import type { Product } from "../30-customers/customers";
+import type { Spec } from "../10-catalog/products";
 import type { SoftwareKind } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
 import { targetFor } from "../30-market/sales";
@@ -16,6 +18,20 @@ import type { SalesRequest } from "../30-market/market";
 export type Stock = number | "auto" | "off";
 // A server group: software installations of one kind (a panel host, a hypervisor cluster) the shop sells from.
 export interface ServerGroup { id: string; name: string; kind: SoftwareKind; members: string[]; sale: Product[]; deploy: boolean }
+// When a product's order is set up: on the first payment, after the admin accepts it, or by hand.
+export type SetupMode = "payment" | "accept" | "off";
+export interface ProductGroup { id: string; name: string; hidden: boolean }
+// A sellable plan. prices hold the total of one term per cycle; an absent cycle is not offered.
+export interface ShopProduct {
+  id: string; groupId: string; name: string; line: Product;
+  serverGroupId: string | null; packageName: string | null;
+  // Used until a package is bound, and for lines whose software has no packages.
+  spec: Spec;
+  title?: string; slots?: number;
+  prices: Partial<Record<Cycle, number>>;
+  setup: number;
+  stock: Stock; hidden: boolean; setupMode: SetupMode;
+}
 export interface ShopState {
   variant: ShopId | null;
   // Owned licence instead of the lease, for variants that sell one.
@@ -25,14 +41,18 @@ export interface ShopState {
   // Bought modules (custom scripts for the hand-rolled form) and the hour each starts working.
   modules: Record<string, number>;
   stock: Partial<Record<Product, Stock>>;
-  // Visitors this month who found the line sold out.
-  soldOut: Partial<Record<Product, number>>;
+  // Visitors this month who found the line (or, with products, no fitting plan) sold out.
+  soldOut: Record<string, number>;
   groups: ServerGroup[];
   // Discount off N times the monthly price per cycle for lines sold through configurable options; the market's where unset.
   optionDiscount: Partial<Record<Cycle, number>>;
+  products: ShopProduct[];
+  productGroups: ProductGroup[];
+  // Payment methods the player switched off in this shop.
+  methodsOff: MethodId[];
 }
 
-export const newShop = (): ShopState => ({ variant: null, owned: false, since: 0, readyAt: 0, modules: {}, stock: {}, soldOut: {}, groups: [], optionDiscount: {} });
+export const newShop = (): ShopState => ({ variant: null, owned: false, since: 0, readyAt: 0, modules: {}, stock: {}, soldOut: {}, groups: [], optionDiscount: {}, products: [], productGroups: [], methodsOff: [] });
 
 export const shopActive = (s: GameState): boolean => s.shop.variant !== null && s.hour >= s.shop.readyAt;
 // A real shop system takes orders from stock and server groups; the hand-rolled form sells from everything.
@@ -73,7 +93,7 @@ export function takeStock(s: GameState, p: Product): void {
   if (typeof n === "number") s.shop = { ...s.shop, stock: { ...s.shop.stock, [p]: Math.max(0, n - 1) } };
 }
 
-export function soldOutVisit(s: GameState, p: Product): void {
+export function soldOutVisit(s: GameState, p: string): void {
   s.shop = { ...s.shop, soldOut: { ...s.shop.soldOut, [p]: (s.shop.soldOut[p] ?? 0) + 1 } };
 }
 

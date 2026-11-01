@@ -7,11 +7,11 @@ import { appVulns, cmsOf, hasBackup } from "../../../../../sim/60-infra/apps";
 import type { Cluster } from "../../../../../sim/60-infra/cluster";
 import { accountsOf } from "../../../../../sim/60-infra/webpanel";
 import { massUpdateSites, rollbackSite } from "../../../../../sim/90-actions/webpanel";
-import { useStore } from "../../../../store";
+import { usePageAct } from "../../pageAct";
 
 // WordPrass Toolkit from 2015 on, the Applications list with one Update link per site before.
 export function Toolkit({ game, c, late }: { game: GameState; c: Cluster; late: boolean }) {
-  const act = useStore((s) => s.act), [picked, setPicked] = useState<string[]>([]), [details, setDetails] = useState(false);
+  const act = usePageAct(), [picked, setPicked] = useState<string[]>([]), [details, setDetails] = useState(false);
   const sites = accountsOf(game, c.id).filter((v) => cmsOf(v)), year = yearOf(game.hour);
   const flag = (id: string) => (game.webpanel.appBroken[id] !== undefined ? "broken" : appVulns(game, game.services.find((v) => v.id === id)!).length ? "vulnerable" : "ok");
   const vulnerable = sites.filter((v) => flag(v.id) === "vulnerable").length;

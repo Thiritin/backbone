@@ -1,5 +1,5 @@
 import { booted, monthNet, pickSound, playSound, soundFor, WINDOW_MS, type Sound, type UiSound } from "./sounds";
-import { useEffect } from "react";
+import { createContext, useContext, useEffect } from "react";
 import { create } from "zustand";
 import type { GameState } from "../sim/50-state";
 import { weeklyChallenge } from "../sim/10-catalog/challenges";
@@ -14,6 +14,8 @@ import { SKIP, SPEEDS, type Speed } from "../sim/00-core/time";
 import { t } from "../i18n/en";
 import type { ActionResult, CartLine } from "../sim/90-actions/hardware";
 import { readSession, writeSession } from "./session";
+
+export const DISCORD_URL = "https://discord.gg/e8nTAV8Yk7";
 
 export const SAVE_KEY = "backbone.save";
 
@@ -46,7 +48,7 @@ const THEME_KEY = "backbone.theme";
 export interface WallpaperPref { pick: string; custom: string | null }
 const WALLPAPER_KEY = "backbone.wallpaper";
 
-interface Store {
+export interface Store {
   game: GameState;
   speed: Speed;
   windows: Win[];
@@ -74,8 +76,10 @@ interface Store {
   advance: (hours: number) => void;
   // Runs a 90-actions function on a copy of the game with these arguments; a success is kept and logged for replays.
   act: <A extends unknown[]>(fn: (s: GameState, ...args: A) => ActionResult, ...args: A) => ActionResult;
+  // act for pages that show the error themselves.
+  attempt: <A extends unknown[]>(fn: (s: GameState, ...args: A) => ActionResult, ...args: A) => ActionResult;
   setSpeed: (s: Speed) => void;
-  openApp: (app: string, focus?: Omit<Focus, "n">) => void;
+  openApp: (app: string, focus?: Omit<Focus, "n">, fresh?: boolean) => void;
   // Opens a server's console in its own window, one per server.
   openConsole: (deviceId: string) => void;
   // Opens a desktop document: the guide in Getting started, a note in its own Notes window.
@@ -265,6 +269,14 @@ export const useStore = create<Store>((set, get) => ({
     else set({ game });
   },
   act: (fn, ...args) => {
+    const r = get().attempt(fn, ...args);
+    if (!r.ok) {
+      lastBanner = Date.now();
+      get().notify("Settings", t("action.failed.title"), t(r.error));
+    }
+    return r;
+  },
+  attempt: (fn, ...args) => {
     const game = structuredClone(get().game);
     const name = actionName(fn);
     if (!name) console.error(`${fn.name || "An action"} is not in ACTIONS, so replays miss it.`);
@@ -273,18 +285,15 @@ export const useStore = create<Store>((set, get) => ({
       if (booted(get().game, game)) setTimeout(() => uiSound("post"), 1200);
       if (game.media.stick.in !== get().game.media.stick.in) uiSound(game.media.stick.in ? "plug" : "unplug");
       set({ game });
-    } else {
-      uiSound("error");
-      lastBanner = Date.now();
-      get().notify("Settings", t("action.failed.title"), t(r.error));
-    }
+    } else uiSound("error");
     return r;
   },
   setSpeed: (speed) => set({ speed }),
 
-  openApp: (app, target) => {
+  openApp: (app, target, fresh) => {
+    if (app === "Chat") return void window.open(DISCORD_URL, "_blank", "noopener");
     const ws = get().windows;
-    const open = ws.find((w) => w.app === app);
+    const open = fresh ? undefined : ws.filter((w) => w.app === app).sort((a, b) => b.z - a.z)[0];
     const focus = target ? { ...target, n: ++focusId } : open?.focus;
     if (open) return set({ windows: ws.map((w) => (w.id === open.id ? { ...w, minimized: false, z: topZ(ws) + 1, focus } : w)) });
     const n = ws.length % 8, size = WINDOW_SIZES[app] ?? { w: 760, h: 480 };
@@ -414,8 +423,13 @@ useStore.subscribe((s, prev) => {
 
 export const loadedFromSave = initial.loaded;
 
+// The window an app body renders in, so an app with several windows keeps state per window.
+export const WinContext = createContext({ id: "", close: () => {} });
+export const useWin = () => useContext(WinContext);
+
 // Runs apply with the focus another app opened this app's window on, on mount and on every new request.
 export function useFocus(app: string, apply: (f: Focus) => void): void {
-  const focus = useStore((s) => s.windows.find((w) => w.app === app)?.focus);
+  const { id } = useWin();
+  const focus = useStore((s) => s.windows.find((w) => (id ? w.id === id : w.app === app))?.focus);
   useEffect(() => { if (focus) apply(focus); }, [focus?.n]);
 }

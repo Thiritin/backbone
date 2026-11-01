@@ -1,7 +1,7 @@
 // Code-drawn device fronts, ported from docs/design/mockups/shell.js. Sizes are px; u is one rack unit.
 import { t } from "../../i18n/en";
 import type { ReactNode } from "react";
-import { bayCount, isOobPort, jacksOf, modelById as nodeModel, oobPortOf, type DeviceModel } from "../../sim/10-catalog/hardware";
+import { bayCount, isOobPort, jacksOf, modelById as nodeModel, oobPortOf, type DeviceModel, type PortSpec } from "../../sim/10-catalog/hardware";
 import { isMgmtModel, MgmtFront, oobLabel } from "./mgmt";
 import { Back, Cord, portSpots, psuInlets, SwitchRear } from "./backs";
 import { BrandMark } from "./logos";
@@ -32,7 +32,7 @@ export const tw = (t: string, fs: number) => t.length * fs * 0.62;
 // Port numbers print in a band above and below the ports.
 export const numSize = (h: number) => Math.min(6, Math.max(3.8, Math.min(h, 32) * 0.19));
 export const numBand = (h: number) => numSize(h) * 0.85 + 1.3;
-export const portNo = (m: DeviceModel, i: number) => (isOobPort(i) ? oobLabel(m, i) : m.kind === "server" ? i : m.kind === "patch" ? (i % jacksOf(m)) + 1 : i + 1);
+export const portNo = (m: DeviceModel, i: number) => (isOobPort(i) ? oobLabel(m, i) : m.ports[i]?.media === "dsl" ? t("art.portDsl") : m.kind === "server" ? i : m.kind === "patch" ? (i % jacksOf(m)) + 1 : i + 1);
 
 // Activity flickers faster the busier the link; each port starts at its own point so neighbours never flicker in step.
 const phaseOf = (name: string, i: number) => ([...name].reduce((n, c) => (n * 31 + c.charCodeAt(0)) % 997, 7) / 997 + i * 0.618) % 1;
@@ -324,9 +324,48 @@ export function SwitchPorts({ at, ports, lights = [], name, groups = [] }: { at:
   return <>{cells}{outlines}</>;
 }
 
+// A gap of half a port sets a run of other ports apart, such as a router's DSL port from its LAN ports.
 export function gatewayLayout(model: DeviceModel, name: string, w: number, h: number) {
-  const fs = fsz(Math.min(h, 24)), x0 = Math.max(w * 0.42, 18 + tw(name, fs)), step = Math.min(11, (w - x0 - 34) / Math.max(1, model.ports.length));
-  return new Map(model.ports.map((_, i) => [i, { x: x0 + i * step, y: numBand(h), w: step - 2, h: h - numBand(h) - 3.5 }]));
+  const gaps = model.ports.filter((p, i) => i && p.media !== model.ports[i - 1].media).length;
+  const fs = fsz(Math.min(h, 24)), x0 = Math.max(w * 0.42, 18 + tw(name, fs)), step = Math.min(11, (w - x0 - 34) / Math.max(1, model.ports.length + gaps / 2));
+  let x = x0;
+  return new Map(model.ports.map((p, i) => {
+    if (i && p.media !== model.ports[i - 1].media) x += step / 2;
+    const at = { x, y: numBand(h), w: step - 2, h: h - numBand(h) - 3.5 };
+    x += step;
+    return [i, at];
+  }));
+}
+
+// A port as its connector looks: an RJ45 jack with its latch slot, a silver SFP cage, a smaller grey DSL jack.
+export function PortJack({ media, x, y, w, h, st = "off" }: { media: PortSpec["media"]; x: number; y: number; w: number; h: number; st?: PortLamp }) {
+  const on = st !== "off";
+  if (media === "sfp") {
+    return (
+      <>
+        <rect x={x} y={y} width={w} height={h} rx="0.5" fill="oklch(0.72 0.01 255)" />
+        <rect x={x + 0.9} y={y + 0.9} width={w - 1.8} height={h - 1.8} rx="0.3" fill="oklch(0.1 0.004 255)" />
+        {on && <rect x={x + w * 0.22} y={y + h * 0.3} width={w * 0.22} height={h * 0.4} fill={CABLE.fiber} />}
+        {on && <rect x={x + w * 0.56} y={y + h * 0.3} width={w * 0.22} height={h * 0.4} fill={CABLE.fiber} />}
+      </>
+    );
+  }
+  if (media === "dsl") {
+    const dw = w * 0.72, dh = h * 0.72, dx = x + (w - dw) / 2, dy = y + (h - dh) / 2;
+    return (
+      <>
+        <rect x={dx} y={dy} width={dw} height={dh} rx="0.6" fill="oklch(0.6 0.01 255)" />
+        <rect x={dx + dw * 0.2} y={dy + dh * 0.22} width={dw * 0.6} height={dh * 0.56} rx="0.3" fill={on ? CABLE.copper : "oklch(0.14 0.004 255)"} />
+      </>
+    );
+  }
+  return (
+    <>
+      <rect x={x} y={y} width={w} height={h} rx="0.6" fill="oklch(0.12 0.004 255)" stroke="var(--metal-3)" strokeWidth="0.5" />
+      <rect x={x + w * 0.34} y={y + h * 0.78} width={w * 0.32} height={h * 0.22} fill="oklch(0.3 0.006 255)" />
+      {on && <rect x={x + w * 0.15} y={y + h * 0.18} width={w * 0.7} height={h * 0.55} rx="0.5" fill={st === "fiber" ? CABLE.fiber : CABLE.copper} />}
+    </>
+  );
 }
 
 function Gateway(p: FrontProps) {
@@ -457,7 +496,8 @@ export function Front(p: FrontProps) {
 
 // One device front as a standalone <svg>; panel gateways (height 0) are drawn as one unit.
 // plugs and onInlet draw the cord in each plugged inlet and let a click on an inlet plug it in or pull it; onConsole makes a server's VGA port clickable.
-export function DeviceSvg({ w, u, back, plugs, onInlet, onConsole, ...p }: Omit<FrontProps, "h" | "w"> & { w: number; u: number; back?: boolean; plugs?: boolean[]; onInlet?: (psu: number) => void; onConsole?: () => void }) {
+// onPort makes each data port on the back a button; portLabel names it.
+export function DeviceSvg({ w, u, back, plugs, onInlet, onConsole, onPort, portLabel, ...p }: Omit<FrontProps, "h" | "w"> & { w: number; u: number; back?: boolean; plugs?: boolean[]; onInlet?: (psu: number) => void; onConsole?: () => void; onPort?: (port: number) => void; portLabel?: (port: number) => string }) {
   const side = back ? "back" : "front", h = Math.max(1, p.model.height) * u, inlets = psuInlets(p.model, side, w, h);
   const vga = onConsole && p.model.kind === "server" ? [...portSpots(p.model, p.name, side, w, h)].find(([i]) => oobPortOf(p.model, i) === "console")?.[1] : undefined;
   return (
@@ -476,6 +516,13 @@ export function DeviceSvg({ w, u, back, plugs, onInlet, onConsole, ...p }: Omit<
         <rect className="rack-port rack-vga" role="button" tabIndex={0} aria-label={t("art.plugInMonitor")} x={vga.x - 1} y={vga.y - 1} width={vga.w + 2} height={vga.h + 2} rx="1"
           onClick={onConsole} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onConsole(); } }}><title>{t("art.plugInMonitor")}</title></rect>
       )}
+      {onPort && [...portSpots(p.model, p.name, side, w, h)].filter(([i]) => !isOobPort(i)).map(([i, s]) => {
+        const label = portLabel?.(i) ?? String(portNo(p.model, i));
+        return (
+          <rect key={`p${i}`} className="rack-port" role="button" tabIndex={0} aria-label={label} x={s.x - 1} y={s.y - 1} width={s.w + 2} height={s.h + 2} rx="1"
+            onClick={(e) => { e.stopPropagation(); onPort(i); }} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); onPort(i); } }}><title>{label}</title></rect>
+        );
+      })}
     </svg>
   );
 }

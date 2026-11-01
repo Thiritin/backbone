@@ -1,11 +1,8 @@
 import type { Company, GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
 import { STARTER_APPS } from "../10-catalog/store";
-import { LEGAL_FORMS, OFFICE_ACCOUNT, OFFICE_CODE, officeOpen, REGISTRATION_FEE, registerNumber } from "../80-business/office";
-import { iban, ibanEra, send, spendable, type Draft } from "../46-finance/bank";
-import { t } from "../../i18n/en";
+import { LEGAL_FORMS, officeOpen, registerNumber } from "../80-business/office";
 import { bankById, monthlyFee } from "../10-catalog/banks";
-import { startTransfer } from "./bank";
 
 // Logo marks by id; the UI draws each one as an icon on a tile in the chosen colour.
 export const COMPANY_LOGOS = ["server", "cloud", "zap", "globe", "rocket", "database", "cpu", "shield", "leaf", "mountain", "waves", "flame", "wolf", "fox", "cat", "toaster"];
@@ -37,27 +34,13 @@ export function registrationError(s: GameState, name: string, owner: string, for
   if (form !== "sole") return "error.registerSole";
   if (!s.bank) return "error.noBank";
   if (monthlyFee(bankById(s.bank.id)!, form) === null) return "error.bankForm";
-  if (REGISTRATION_FEE > spendable(s)) return "error.noCash";
   return null;
 }
 
-// The fee transfer to the office, filled in from the application.
-export const officeDraft = (s: GameState, name: string): Draft => ibanEra(s)
-  ? { name: t("bank.office.payee"), account: iban(OFFICE_CODE, OFFICE_ACCOUNT), amount: REGISTRATION_FEE, reference: t("bank.office.reference", { name: name.trim() }) }
-  : { name: t("bank.office.payee"), account: OFFICE_ACCOUNT, code: OFFICE_CODE, amount: REGISTRATION_FEE, reference: t("bank.office.reference", { name: name.trim() }) };
-
-// The office form fills in the fee transfer on the bank's site; the TAN that sends it completes the registration.
-export function applyForRegistration(s: GameState, name: string, owner: string, form: string): ActionResult {
-  const error = registrationError(s, name, owner, form);
-  if (error) return { ok: false, error };
-  return startTransfer(s, { ...officeDraft(s, name), registration: { name: name.trim(), owner: owner.trim(), form } });
-}
-
-// The trade office registers the company under its name once the fee is sent, and Pear One installs the starter apps.
+// The trade office registers the company under its name and bills its fee by letter; Pear One installs the starter apps.
 export function registerCompany(s: GameState, name: string, owner: string, form: string): ActionResult {
   const error = registrationError(s, name, owner, form);
   if (error) return { ok: false, error };
-  send(s, officeDraft(s, name));
   setCompany(s, { name });
   s.registration = { hour: s.hour, owner: owner.trim(), form, number: registerNumber(s.seed) };
   s.installed = [...new Set([...s.installed, ...STARTER_APPS])];

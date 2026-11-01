@@ -2,6 +2,7 @@
 
 .br-tabs { display: flex; align-items: flex-end; gap: 2px; padding: 6px 8px 0; background: var(--win-side); border-bottom: 0.5px solid var(--line); }
 .br-tab { display: flex; align-items: center; gap: 7px; width: 200px; min-width: 0; height: 30px; padding: 0 8px; border-radius: 8px 8px 0 0; color: var(--text-2); font-size: 12px; cursor: default; }
+.br-tab.drop { background: var(--hover); box-shadow: inset 2px 0 0 var(--accent); }
 .br-tab:hover { background: var(--hover); }
 .br-tab[aria-selected="true"] { background: var(--win-bar); color: var(--text); }
 .br-tab:focus-visible, .br-new:focus-visible, .br-mark:focus-visible, .br-star:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
@@ -32,6 +33,7 @@
 .web-view { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: auto; background: var(--win); }
 .web-view.white { background: #ffffff; }
 .web-view > * { flex: 1 0 auto; min-height: 100%; }
+.web-view > .web-error { flex: none; min-height: 0; position: sticky; top: 0; z-index: 1; padding: 6px 10px; background: #fde8e8; color: #a40000; border-bottom: 1px solid #e3a5a5; font: 12px/1.4 Verdana, Geneva, sans-serif; }
 .web-load { height: 2px; background: linear-gradient(90deg, transparent, var(--accent), transparent); background-size: 40% 100%; background-repeat: no-repeat; animation: web-load 1.4s linear infinite; }
 @keyframes web-load { from { background-position: -40% 0; } to { background-position: 140% 0; } }
 @media (prefers-reduced-motion: reduce) { .web-load { animation: none; background-size: 100% 100%; } }
