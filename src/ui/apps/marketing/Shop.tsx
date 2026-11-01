@@ -102,7 +102,7 @@ function Variants({ game }: { game: GameState }) {
         else if (!sold) state = <span className="pill">{t("marketing.discontinued")}</span>;
         else state = <>
           {v.own && <button className="btn" disabled={game.cash < v.own.price} onClick={() => act(chooseShop, v.id, true)}>{t("marketing.buy")} <span className="num">{euro(v.own.price)}</span></button>}
-          <button className="btn primary" disabled={game.cash < v.setup} onClick={() => act(chooseShop, v.id)}>{v.own ? t("marketing.lease") : t("marketing.choose")}</button>
+          <button className="btn primary" disabled={v.setup > 0 && game.cash < v.setup} onClick={() => act(chooseShop, v.id)}>{v.own ? t("marketing.lease") : t("marketing.choose")}</button>
         </>;
         return (
           <div key={v.id} className="shop-card">
@@ -135,7 +135,7 @@ function Modules({ game }: { game: GameState }) {
         else if (hasModule(game, m)) state = <span className="pill ok">{t("marketing.installed")}</span>;
         else if (bought !== undefined) state = <span className="pill">{t("marketing.readyDay", { day: formatDay(bought) })}</span>;
         else if (cost === null) state = <span className="pill">{t("marketing.notAvailable")}</span>;
-        else state = <button className="btn" disabled={game.cash < cost} onClick={() => act(buyModule, m)}>{cost ? <>{t("marketing.buy")} <span className="num">{euro(cost)}</span></> : t("marketing.integrate")}</button>;
+        else state = <button className="btn" disabled={cost > 0 && game.cash < cost} onClick={() => act(buyModule, m)}>{cost ? <>{t("marketing.buy")} <span className="num">{euro(cost)}</span></> : t("marketing.integrate")}</button>;
         return (
           <div key={m} className="mkt-row">
             <span className="mkt-grow">{(HARDWARE_NAME as Record<string, string>)[m] ?? moduleName(m)}</span>
