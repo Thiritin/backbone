@@ -6,7 +6,8 @@ import type { LicenseKind } from "../../../../../sim/10-catalog/server-os";
 import type { GameState, Licence } from "../../../../../sim/50-state";
 import { keyExpired, productOf } from "../../../../../sim/60-infra/licence";
 import { cartOf, keysOf, lineOffer, offers, orderKeys, upgradeOffers, type CartLine, type Offer } from "../../../../../sim/80-business/vendor-shop";
-import { addToCart, cancelLicence, checkout, removeFromCart } from "../../../../../sim/90-actions/vendor-shop";
+import { addToCart, cancelLicence, checkout, removeFromCart, type LicencePayment } from "../../../../../sim/90-actions/vendor-shop";
+import { cardReady, cardSpent } from "../../../../../sim/46-finance/bank";
 import { useStore } from "../../../../store";
 import { day } from "../../../hw";
 import "./shop.css";
@@ -56,12 +57,14 @@ export function Editions({ product, btn }: ShopProps & { product: string }) {
 export function Cart({ host, btn, account }: ShopProps & { host: string; account: () => void }) {
   const game = useStore((s) => s.game), act = useStore((s) => s.act);
   const [order, setOrder] = useState<string | null>(null);
+  const [pick, setPick] = useState<LicencePayment>("transfer");
   const lines = cartOf(game, host);
   if (!lines.length) {
     if (!order) return <p>{t("vendor-shop.empty")}</p>;
     return <p>{t("vendor-shop.placed", { order })} <a href="#account" onClick={(e) => { e.preventDefault(); account(); }}>{t("vendor-shop.myAccount")}</a></p>;
   }
   const total = lines.reduce((n, l) => n + (lineOffer(game, l)?.fee ?? 0) * l.qty, 0);
+  const card = cardReady(game) && cardSpent(game) + total <= game.bank!.card!.limit, pay = card ? pick : "transfer";
   return (
     <>
       <table className="shop-table">
@@ -77,7 +80,12 @@ export function Cart({ host, btn, account }: ShopProps & { host: string; account
         })}</tbody>
         <tfoot><tr><th>{t("vendor-shop.total")}</th><td /><td className="num">{euroPrice(total)}</td><td /></tr></tfoot>
       </table>
-      <p><button type="button" className={btn} onClick={() => { const r = act(checkout, host); if (r.ok) setOrder(r.id ?? null); }}>{t("vendor-shop.checkout")}</button></p>
+      <fieldset>
+        <legend>{t("shop.payment")}</legend>
+        <label><input type="radio" name="pay" checked={pay === "card"} disabled={!card} onChange={() => setPick("card")} /> {t("bank.shop.card")}</label>
+        <label><input type="radio" name="pay" checked={pay === "transfer"} onChange={() => setPick("transfer")} /> {t("bank.shop.prepay")}</label>
+      </fieldset>
+      <p><button type="button" className={btn} onClick={() => { const r = act(checkout, host, pay); if (r.ok) setOrder(r.id ?? null); }}>{t("vendor-shop.checkout")}</button></p>
     </>
   );
 }

@@ -14,6 +14,7 @@ import { supportTick, workTick } from "../40-support/tick";
 import { abandonTickets } from "../40-support/abandon";
 import { financeTick } from "../46-finance/finance";
 import { bankTick, tanTick } from "../46-finance/bank";
+import { deliverPaidOrders } from "../80-business/vendor-shop";
 import { staffTick } from "../47-staff/staff";
 import { techTick } from "../47-staff/technicians";
 import { autoUpdateTick } from "../90-actions/software";
@@ -380,6 +381,7 @@ export function tick(state: GameState): SimEvent[] {
   abandonTickets(state);
   events.push(...financeTick(state));
   events.push(...bankTick(state));
+  deliverPaidOrders(state);
   paperworkTick(state);
   taxTick(state);
   lettersTick(state);

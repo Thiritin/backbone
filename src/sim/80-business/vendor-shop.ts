@@ -3,7 +3,9 @@
 import { eraAt, type LicenseKind } from "../10-catalog/server-os";
 import type { GameState, Licence } from "../50-state";
 import { nextMajor, versionsOf } from "../10-catalog/software-versions";
-import { isLicensed, productOf, tiersOnSale, yearAfter } from "../60-infra/licence";
+import { issueKey, isLicensed, productOf, tiersOnSale, yearAfter } from "../60-infra/licence";
+import { deliverMail } from "../40-support/tickets";
+import type { Payable } from "../46-finance/payables";
 
 export const ORDER = "vendor.order";
 export interface Offer { edition: string | null; fee: number; kind: LicenseKind; period?: "year" }
@@ -56,3 +58,19 @@ export const lineOffer = (s: GameState, line: Pick<CartLine, "product" | "editio
 export const cartOf = (s: GameState, host: string): CartLine[] => s.cart.filter((l) => hostOf(l.product) === host);
 export const keysOf = (s: GameState, host: string): Licence[] => s.licenses.filter((k) => hostOf(k.product) === host);
 export const orderKeys = (s: GameState, orderId: string): Licence[] => s.licenses.filter((k) => k.orderId === orderId);
+
+export type KeyLine = NonNullable<Payable["keys"]>["lines"][number];
+
+// Issues an unassigned key per licence of the order and sends the order email; card says the card paid rather than a transfer.
+export function sendKeys(s: GameState, vendor: string, order: string, lines: KeyLine[], total: number, card: boolean): void {
+  lines.forEach((l) => { for (let i = 0; i < l.qty; i++) issueKey(s, l.product, l.edition, order, l.to); });
+  deliverMail(s, vendor, ORDER, { order, total, card: card ? 1 : 0 });
+}
+
+// Hourly: a licence order whose transfer has arrived gets its keys.
+export function deliverPaidOrders(s: GameState): void {
+  const paid = s.payables.filter((p) => p.keys && p.paidAt !== null);
+  if (!paid.length) return;
+  s.payables = s.payables.map((p) => (paid.includes(p) ? { ...p, keys: undefined } : p));
+  for (const p of paid) sendKeys(s, p.name, p.keys!.order, p.keys!.lines, p.amount, false);
+}

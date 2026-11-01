@@ -7,7 +7,7 @@ import { deliverMail } from "../40-support/tickets";
 import type { GameState, LedgerEntry } from "../50-state";
 import { groupIban, iban, ibanEra } from "./bank";
 
-export type SupplierId = "upstream" | "power" | "datacenter" | "pear" | "registrar" | "hardware" | "card" | "office" | "notary" | "register" | "chamber" | "books" | "tax";
+export type SupplierId = "upstream" | "power" | "datacenter" | "pear" | "registrar" | "hardware" | "card" | "office" | "notary" | "register" | "chamber" | "books" | "tax" | "software";
 // throttle slows the home line, cut takes it off the internet, dark switches the locations' power off, licence stops the Pear
 // subscriptions, domains lets the domains lapse, noShip stops hardware orders, card blocks the credit card.
 export type Effect = "throttle" | "cut" | "dark" | "licence" | "domains" | "noShip" | "card";
@@ -24,6 +24,8 @@ export const CONSEQUENCES: Record<SupplierId, { days: number; effect: Effect }[]
   office: [], notary: [], register: [], chamber: [], tax: [],
   // The bookkeeping program keeps working unpaid; an open Lexwear update only stops new modules.
   books: [],
+  // An unpaid licence order just never sends its keys.
+  software: [],
 };
 export const PAY_DAYS = 14;
 export const THROTTLE = 0.25;
@@ -34,6 +36,8 @@ const SUPPLIER_CODE = "60050101";
 export interface Payable {
   id: string; supplier: SupplierId; name: string; number: string; amount: number; issuedAt: number; dueAt: number; paidAt: number | null;
   consequence: Effect | null; lines: LedgerEntry[]; sent: number; held?: Record<string, number>;
+  // A licence order paid by transfer, whose keys the vendor sends once the money arrives.
+  keys?: { order: string; lines: { product: string; edition: string | null; qty: number; to?: string }[] };
 }
 
 export const supplierAccount = (supplier: SupplierId): string => {
