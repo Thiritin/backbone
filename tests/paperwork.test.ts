@@ -64,6 +64,9 @@ describe("company paperwork", () => {
     run(s, 24 * 16);
     const topics = inbox(s).map((l) => l.topic);
     expect(topics).toEqual(expect.arrayContaining(["officeRegistered", "chamberFee"]));
+    const confirm = inbox(s).find((l) => l.topic === "officeRegistered")!;
+    expect(confirm.params.reg).toBe(s.registration!.number);
+    expect(confirm.params.number).toMatch(/^OF-/);
     expect(s.payables.map((p) => p.amount)).toEqual(expect.arrayContaining([FEES.registration, 40]));
   });
 
@@ -79,6 +82,7 @@ describe("company paperwork", () => {
   it("turns a sole trader into a partnership once the trade office confirms by letter", () => {
     const s = registered();
     const doc = signed(s, "partnership");
+    expect(s.docs.find((d) => d.id === doc)!.form).toMatchObject({ form: "partnership", from: "sole" });
     expect(sendMail(s, OFFICE_MAIL, "Change", doc)).toEqual({ ok: true });
     expect(lastMail(s).topic).toBe("officeReceived");
     expect(s.registration!.form).toBe("sole");

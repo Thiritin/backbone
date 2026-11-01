@@ -26,8 +26,8 @@ export const PAPERWORK_EN: Record<string, (p: Params) => string> = {
   "sim.index.office": () => "Register a business or change its legal form.",
   "browser-sites-1.ix.title": () => "Yahoy! Directory",
 
-  "letter.officeRegistered.subject": (p) => `Trade registration no. GA ${p.number}`,
-  "letter.officeRegistered.body": (p) => `We confirm the registration of ${p.name} under number GA ${p.number}. ${pay(p)}`,
+  "letter.officeRegistered.subject": (p) => `Trade registration no. GA ${p.reg}`,
+  "letter.officeRegistered.body": (p) => `We confirm the registration of ${p.name} under number GA ${p.reg}. ${pay(p)}`,
   "letter.officeChange.subject": () => "Change of trade registration",
   "letter.officeChange.body": (p) => `We confirm that ${p.name} is registered as a ${FORM[p.form] ?? p.form} from today. ${pay(p)}`,
   "letter.notaryInvoice.subject": (p) => `Invoice ${p.number}`,

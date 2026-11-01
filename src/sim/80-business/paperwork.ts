@@ -64,7 +64,7 @@ export function file(s: GameState, form: string): void {
     return;
   }
   post(s, NOTARY_NAME, "notaryInvoice", { name }, 2, { bill: bill(s, "notary", "ledger.notary", FEES.notary) });
-  post(s, REGISTER_NAME, "registerEntry", { name, form, number: s.registration!.number }, FILE_DAYS + REGISTER_DAYS, { form });
+  post(s, REGISTER_NAME, "registerEntry", { name, form }, FILE_DAYS + REGISTER_DAYS, { form });
   post(s, REGISTER_NAME, "registerInvoice", { name }, FILE_DAYS + REGISTER_DAYS + 3, { bill: bill(s, "register", "ledger.registerEntry", FEES.register) });
 }
 
@@ -74,7 +74,7 @@ export function paperworkTick(s: GameState): void {
   if (!s.registration) return;
   const year = yearOf(s.hour);
   if (s.chamberYear >= year) return;
-  if (s.chamberYear === 0) post(s, OFFICE_NAME, "officeRegistered", { name: s.company.name, number: s.registration.number }, 2, { bill: bill(s, "office", "ledger.tradeRegistration", FEES.registration) });
+  if (s.chamberYear === 0) post(s, OFFICE_NAME, "officeRegistered", { name: s.company.name, reg: s.registration.number }, 2, { bill: bill(s, "office", "ledger.tradeRegistration", FEES.registration) });
   const amount = chamberFee(s);
   post(s, CHAMBER_NAME, "chamberFee", { name: s.company.name, year, staff: s.staff.length }, CHAMBER_DAYS, { bill: bill(s, "chamber", "ledger.chamber", amount, { year }) });
   s.chamberYear = year;

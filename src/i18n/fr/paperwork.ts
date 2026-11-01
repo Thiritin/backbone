@@ -26,8 +26,8 @@ export default {
   "sim.index.office": () => "Immatricule une entreprise ou change sa forme juridique.",
   "browser-sites-1.ix.title": () => "Annuaire Yahoy!",
 
-  "letter.officeRegistered.subject": (p) => `Immatriculation n° GA ${p.number}`,
-  "letter.officeRegistered.body": (p) => `Nous confirmons l'immatriculation de ${p.name} sous le numéro GA ${p.number}. ${pay(p)}`,
+  "letter.officeRegistered.subject": (p) => `Immatriculation n° GA ${p.reg}`,
+  "letter.officeRegistered.body": (p) => `Nous confirmons l'immatriculation de ${p.name} sous le numéro GA ${p.reg}. ${pay(p)}`,
   "letter.officeChange.subject": () => "Modification d'immatriculation",
   "letter.officeChange.body": (p) => `Nous confirmons que ${p.name} est immatriculée en tant que ${FORM[p.form] ?? p.form} à compter d'aujourd'hui. ${pay(p)}`,
   "letter.notaryInvoice.subject": (p) => `Facture ${p.number}`,

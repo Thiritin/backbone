@@ -26,8 +26,8 @@ export default {
   "sim.index.office": () => "Regista uma atividade ou muda a sua forma jurídica.",
   "browser-sites-1.ix.title": () => "Diretório Yahoy!",
 
-  "letter.officeRegistered.subject": (p) => `Registo de atividade n.º GA ${p.number}`,
-  "letter.officeRegistered.body": (p) => `Confirmamos o registo de ${p.name} com o número GA ${p.number}. ${pay(p)}`,
+  "letter.officeRegistered.subject": (p) => `Registo de atividade n.º GA ${p.reg}`,
+  "letter.officeRegistered.body": (p) => `Confirmamos o registo de ${p.name} com o número GA ${p.reg}. ${pay(p)}`,
   "letter.officeChange.subject": () => "Alteração do registo de atividade",
   "letter.officeChange.body": (p) => `Confirmamos que ${p.name} está registada como ${FORM[p.form] ?? p.form} a partir de hoje. ${pay(p)}`,
   "letter.notaryInvoice.subject": (p) => `Fatura ${p.number}`,

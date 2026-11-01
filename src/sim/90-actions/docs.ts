@@ -77,7 +77,7 @@ export function downloadForm(s: GameState, form: string): ActionResult {
   const have = s.docs.find((d) => d.kind === "form" && d.form?.form === form && !d.form.signed);
   if (have) return { ok: true, id: have.id };
   const id = `doc${s.nextId++}`;
-  s.docs = [...s.docs, { id, kind: "form", title: t(`doc.form.${form}`), body: "", ...freeSpot(s), form: { form, signed: null } }];
+  s.docs = [...s.docs, { id, kind: "form", title: t(`doc.form.${form}`), body: "", ...freeSpot(s), form: { form, from: s.registration!.form, signed: null } }];
   return { ok: true, id };
 }
 

@@ -194,8 +194,8 @@ export function SupportApp() {
       <header className="sup-brand">
         <span className="sup-logo" style={{ "--tile": tile } as CSSProperties}><Logo /></span>
         <strong>{brand}</strong>
-        <button className="btn sup-settings" onClick={() => setComposing(true)}>{t("paperwork.mail.new")}</button>
-        <button className="btn sup-settings sup-settings-2" onClick={() => setSetup(true)}>{t("support.settings")}</button>
+        <button className="btn ghost sup-settings" onClick={() => setComposing(true)}>{t("paperwork.mail.new")}</button>
+        <button className="btn ghost sup-settings sup-settings-2" onClick={() => setSetup(true)}>{t("support.settings")}</button>
       </header>
       {setup && <EmailSettings onClose={() => setSetup(false)} />}
       {desk && <aside className="sidebar sup-side">

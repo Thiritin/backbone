@@ -137,7 +137,8 @@ export interface HostFiles { since: number; paths: Record<string, string | boole
 // A desktop document; x and y are its icon position on the desktop in pixels.
 // An "app" doc is a desktop link whose title is the app name; a "form" doc is a downloaded application to sign.
 export interface Doc { id: string; kind: "guide" | "note" | "app" | "form"; title: string; body: string; x: number; y: number; form?: DocForm }
-export interface DocForm { form: string; signed: number | null }
+// from is the legal form the company held when the form was downloaded.
+export interface DocForm { form: string; from?: string; signed: number | null }
 // domain is the company's own domain once registered; mail is its email service.
 export interface Company { name: string; logo: string; color: string; domain: string | null; mail: CompanyMail; tagline: string }
 export interface Registration { hour: number; owner: string; form: string; number: number }

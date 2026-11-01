@@ -19,7 +19,7 @@ export function FormDoc({ doc }: { doc: Doc }) {
     [t("browser-sites-1.of.businessName"), game.company.name],
     [t("browser-sites-1.of.ownerField"), r?.owner ?? ""],
     [t("browser-sites-1.of.regNumber"), r ? `GA ${r.number}` : ""],
-    [t("paperwork.doc.current"), r ? LEGAL_FORMS[r.form] : ""],
+    [t("paperwork.doc.current"), LEGAL_FORMS[f.from ?? r?.form ?? ""] ?? ""],
     [t("paperwork.doc.next"), LEGAL_FORMS[f.form]],
     ...(f.form === "limited" ? [[t("paperwork.doc.capital"), euro(SHARE_CAPITAL)] as [string, string]] : []),
     [t("paperwork.of.sendTo"), FILED_WITH[f.form]],

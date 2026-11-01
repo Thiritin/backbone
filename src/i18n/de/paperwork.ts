@@ -26,8 +26,8 @@ export default {
   "sim.index.office": () => "Gewerbe anmelden oder die Rechtsform ändern.",
   "browser-sites-1.ix.title": () => "Yahoy! Verzeichnis",
 
-  "letter.officeRegistered.subject": (p) => `Gewerbeanmeldung Nr. GA ${p.number}`,
-  "letter.officeRegistered.body": (p) => `Wir bestätigen die Anmeldung von ${p.name} unter der Nummer GA ${p.number}. ${pay(p)}`,
+  "letter.officeRegistered.subject": (p) => `Gewerbeanmeldung Nr. GA ${p.reg}`,
+  "letter.officeRegistered.body": (p) => `Wir bestätigen die Anmeldung von ${p.name} unter der Nummer GA ${p.reg}. ${pay(p)}`,
   "letter.officeChange.subject": () => "Gewerbeummeldung",
   "letter.officeChange.body": (p) => `Wir bestätigen, dass ${p.name} ab heute als ${FORM[p.form] ?? p.form} eingetragen ist. ${pay(p)}`,
   "letter.notaryInvoice.subject": (p) => `Rechnung ${p.number}`,
