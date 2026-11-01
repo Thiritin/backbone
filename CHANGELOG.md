@@ -3,6 +3,7 @@
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
 ## 2026-11-01
+- Leads now write in about products you do not sell yet, and a switch on the website settings stops those requests.
 - A newly installed cPanic, Pleskit or DirectAdmen asks for its license on a setup page at first sign-in, where you can type a key, pick one you already own or continue on the trial.
 - When a panel's trial or license runs out, its admin pages show only the license page until a key is entered, and its customers write in that their control panel login shows a license error while their sites stay online.
 - Quote and invoice previews in Books keep their margins and text size in proportion to the page at any window size.
