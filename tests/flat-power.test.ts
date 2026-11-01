@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { businessPowerPrice } from "../src/sim/10-catalog/economy";
 import { DATACENTERS, datacenterById, FLAT_CONTRACTS, flatMonthly } from "../src/sim/20-world/datacenters";
-import { device, newGame, type GameState } from "../src/sim/50-state";
+import { device, type GameState } from "../src/sim/50-state";
 import { locationRent, rackPower, working } from "../src/sim/60-infra/status";
 import { powerPerHour, tick } from "../src/sim/88-tick/tick";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { addLocation, buyRack, setFlatPower } from "../src/sim/90-actions/hardware";
-import { freeFloor, runServers, withServer } from "./fixtures";
+import { freeFloor, runServers, withServer, newGame } from "./fixtures";
 
 const rich = (): GameState => ({ ...withServer(newGame(1)), cash: 1_000_000 });
 const ok = (r: { ok: boolean; id?: string; error?: string }) => {

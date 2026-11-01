@@ -37,10 +37,10 @@ The trial lengths follow the real products. `null` means a key is needed at inst
 | HyperVee | Hyper-V on a Windows Server evaluation | 180 days | per server, monthly |
 | cPanic | cPanel 15-day trial | 15 days | edition per server, Premier per account, monthly |
 | Pleskit | Plesk full trial | 14 days | edition per server, monthly |
-| DirectAdmen | DirectAdmin trial licence | 30 days | edition per server, monthly |
+| DirectAdmen | DirectAdmin, no trial since about 2019 | `null` | edition per server, monthly |
 | VMwhere | vSphere evaluation | 60 days | once per server, per core from 2024 |
 | Veeham Backup | Veeam trial | 30 days | per server, monthly |
-| TCAdmen | TCAdmin | `null` | per server, monthly |
+| TCAdmen | TCAdmin 30-day trial | 30 days | per server, monthly |
 | MultiKraft | Multicraft | `null` | per server, monthly |
 | Sysko AnyConnekt | AnyConnect | `null` | per server, monthly |
 

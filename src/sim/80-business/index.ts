@@ -2,12 +2,13 @@
 import { t } from "../../i18n/en";
 import { monthIndexOf, yearOf } from "../00-core/time";
 import { SOFTWARE } from "../10-catalog/platforms";
+import { banksOpen } from "../10-catalog/banks";
 import { registrarHost, REGISTRARS } from "../10-catalog/registrars";
 import { SERVER_OS } from "../10-catalog/server-os";
 import { companyDomain, fqdn } from "../30-customers/domains";
 import type { GameState } from "../50-state";
 import { BOARD_TITLE, BOARD_URL, companyUrl, WIKI_TITLE, WIKI_URL, displayHost, resolve, vendorHost, vendorLive, VENDORS, VIDEO_TITLE, VIDEO_URL } from "./browser";
-import { privateIp } from "../60-infra/addresses";
+import { machineAddress } from "../60-infra/addresses";
 import { familyOf } from "../60-infra/vulns";
 import { consoleHost, consoleSuffix, consoleTitle } from "./consoles";
 import { OFFICE_HOST } from "./office";
@@ -35,7 +36,7 @@ function consoleRows(s: GameState): IndexRow[] {
     const family = familyOf(c), host = family && consoleHost(s, c), at = consoleSuffix(s, c);
     if (!family || !host || at === null) return [];
     const id = (s.devices.find((d) => d.hostname === host) ?? s.workloads.find((w) => w.hostname === host))?.id;
-    const url = s.company.domain ? fqdn(s, host) : id && privateIp(s, id);
+    const url = s.company.domain ? fqdn(s, host) : id && machineAddress(s, id);
     return url ? [row(`${consoleTitle(family)} ${host}${at}`, url + at, url + at)] : [];
   });
 }
@@ -52,6 +53,7 @@ export function siteIndex(s: GameState): Category[] {
     ...consoleRows(s),
   ].map((r) => ({ ...r, down: resolve(s, r.url).load === "down" }));
   return [
+    { title: t("sim.index.cat.banks"), rows: banksOpen(year).map((b) => row(b.name, `${displayHost(b.host)}/`, t("sim.index.bank"))) },
     { title: t("sim.index.cat.os"), rows: SERVER_OS.map((o) => row(o.name, `${displayHost(o.site.host)}/`, o.site.tagline)) },
     ...software,
     { title: t("sim.index.cat.resellers"), rows: REGISTRARS.filter((r) => r.from <= year).map((r) => row(r.name, `${displayHost(registrarHost(r))}/`, t("sim.index.resellers"))) },

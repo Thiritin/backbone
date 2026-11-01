@@ -8,8 +8,11 @@ import { companyDomain } from "../30-customers/domains";
 import { serviceOnline } from "../40-support/status";
 import type { GameState } from "../50-state";
 import { isOwnVm, workloadOnline, workloadsOf, type Workload } from "../60-infra/cluster";
-import { ipmiIp, oobIp, privateIp } from "../60-infra/addresses";
-import { oobUp } from "../60-infra/oob";
+import { machineAddress } from "../60-infra/addresses";
+import { deskReaches, FRITZ_HOST, holderOf } from "../60-infra/lan";
+import { isManaged, modelById } from "../10-catalog/hardware";
+import { mountedRouter } from "../60-infra/routers";
+import { isMgmtDevice, oobUp } from "../60-infra/oob";
 import { linkStatus, powered, working } from "../60-infra/status";
 import { nodeUsage } from "../60-infra/usage";
 import { BOARD_HOST } from "./sponsorboard";
@@ -37,6 +40,8 @@ export type Page =
   | { kind: "console"; hostname: string; clusterId: string; defaced: boolean; path: string }
   | { kind: "ipmi"; deviceId: string }
   | { kind: "kvm"; deviceId: string }
+  | { kind: "router"; deviceId: string }
+  | { kind: "switch"; deviceId: string }
   | { kind: "video" }
   | { kind: "phishing"; sender: string }
   | { kind: "sponsorboard" }
@@ -77,6 +82,15 @@ export const companyUrl = (s: GameState): string => `${displayHost(companyDomain
 // The registrar under contract, or the first one before any contract.
 export const partnerOf = (s: GameState) => (s.registrar && registrarById(s.registrar.id)) ?? REGISTRARS[0];
 export const registrarUrl = (s: GameState): string => `${displayHost(registrarHost(partnerOf(s)))}/`;
+// A directory category's path segment, as the index links it.
+export const dirSlug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+export const resellersUrl = (): string => `${HOME_URL}${dirSlug(t("sim.index.cat.resellers"))}`;
+// Domains the game's other companies hold in any year, and every name under them.
+export function providerDomain(name: string): boolean {
+  const hosts = [INDEX_HOST, OFFICE_HOST, WIKI_HOST, LEXWEAR_HOST, BOARD_HOST, VIDEO_HOST, ...SOFTWARE.map((x) => x.site.host), ...SERVER_OS.map((x) => x.site.host),
+    ...VENDORS.map((m) => vendorHost(m.id)), ...BANKS.map((b) => b.host), ...REGISTRARS.map(registrarHost)].map((h) => h.replace(/^www\./, ""));
+  return hosts.some((h) => h === name || h.endsWith(`.${name}`));
+}
 // The partner's form that registers or transfers an order's domain.
 export const registrarFormUrl = (s: GameState, ticketId: string, transfer: boolean): string => `${registrarUrl(s)}${transfer ? "transfer" : "register"}?order=${ticketId}`;
 
@@ -118,7 +132,7 @@ function serviceLoad(s: GameState, serviceId: string): Load {
 
 // The machine a hostname or private address names, with the load it answers with.
 function machineOf(s: GameState, key: string, byIp: boolean): { hostname: string; load: Load } | null {
-  const match = (hostname: string | undefined, id: string) => (byIp ? privateIp(s, id) === key : !!hostname && hostname === key);
+  const match = (hostname: string | undefined, id: string) => (byIp ? machineAddress(s, id) === key : !!hostname && hostname === key);
   for (const d of s.devices) if (d.hostname !== undefined && match(d.hostname, d.id)) return { hostname: d.hostname, load: serverLoad(s, d.id) };
   for (const w of s.workloads) {
     if (!match(w.hostname, w.id) || !w.hostname) continue;
@@ -180,14 +194,23 @@ export function resolve(s: GameState, raw: string): Resolved {
   }
   // A machine's address may name the port of one of its consoles.
   const colon = host.indexOf(":"), name = colon < 0 ? host : host.slice(0, colon), port = colon < 0 ? "" : host.slice(colon);
+  // The basement router answers on fritz.bocks and on its own address.
+  if (name === FRITZ_HOST) {
+    const home = s.locations.find((l) => !l.dc), router = home && mountedRouter(s, home.id);
+    return out({ kind: "router", deviceId: router?.id ?? "" }, router && deskReaches(s, router.id, "router") ? "fast" : "down");
+  }
   if (/^\d{1,3}(\.\d{1,3}){3}$/.test(name)) {
+    // A device on a network the desk does not reach times out.
+    const at = holderOf(s, name);
+    if (at && !deskReaches(s, at.deviceId, at.iface)) return out({ kind: "notfound" }, "down");
+    const d = at && s.devices.find((x) => x.id === at.deviceId);
+    if (d && at.iface === "router") return out({ kind: "router", deviceId: d.id });
     // The management controller answers on standby power, so a switched-off server still has its page; a hung one answers nothing.
-    const bmc = s.devices.find((d) => ipmiIp(s, d.id) === name);
-    if (bmc) return out({ kind: "ipmi", deviceId: bmc.id }, powered(s, bmc.id) && !bmc.bmcHung ? "fast" : "down");
-    const kvm = s.devices.find((d) => oobIp(s, d.id) === name);
-    if (kvm) return out({ kind: "kvm", deviceId: kvm.id }, oobUp(s, kvm.id) ? "fast" : "down");
+    if (d && at.iface === "bmc") return out({ kind: "ipmi", deviceId: d.id }, powered(s, d.id) && !d.bmcHung ? "fast" : "down");
+    if (d && isMgmtDevice(d)) return out({ kind: "kvm", deviceId: d.id }, oobUp(s, d.id) ? "fast" : "down");
+    if (d && isManaged(modelById(d.model))) return out({ kind: "switch", deviceId: d.id }, working(s, d.id) ? "fast" : "down");
     const m = machineOf(s, name, true);
-    return m ? { url, host, path, ...machinePage(s, m, port, path) } : out({ kind: "notfound" });
+    return m ? { url, host, path, ...machinePage(s, m, port, path) } : out({ kind: "notfound" }, "down");
   }
   if (s.company.domain && name.endsWith(`.${domain}`)) {
     const m = machineOf(s, name.slice(0, -domain.length - 1), false);

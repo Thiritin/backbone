@@ -12,11 +12,10 @@ import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { setPower } from "../src/sim/90-actions/hardware";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
-import { startGame } from "../src/sim/90-actions/start";
 import { redesign, setSiteHost } from "../src/sim/90-actions/website";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { en } from "../src/i18n/en";
-import { automate, panelServer, readyGame, withCompany, withServer } from "./fixtures";
+import { automate, panelServer, readyGame, withCompany, withServer, startGame } from "./fixtures";
 
 const inYear = (s: GameState, y: number) => { s.hour = hourOf(new Date(Date.UTC(y, 5, 15))); };
 const hostOf = (s: GameState) => s.clusters.find((c) => c.kind === "panel")!.id;

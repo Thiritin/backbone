@@ -4,11 +4,11 @@ import { DDR_BY_GEN, defaultFamily, DRIVE_FAMILIES, familiesOn, familyById, fami
 import { cardOf, gpuPrice, OTHER_CARDS } from "../src/sim/10-catalog/gpu";
 import { componentParts, fits, modelById, partOffers } from "../src/sim/10-catalog/hardware";
 import { partPrice, presetPrice } from "../src/sim/10-catalog/parts";
-import { device, deviceDefaults, newGame, type GameState } from "../src/sim/50-state";
+import { device, deviceDefaults, type GameState } from "../src/sim/50-state";
 import { failureChance } from "../src/sim/88-tick/tick";
 import { partLabel } from "../src/ui/apps/hw";
 import { makerOf, partClass } from "../src/ui/apps/shop/filter";
-import { buyCart, buyDevice, withServer } from "./fixtures";
+import { buyCart, buyDevice, withServer, newGame } from "./fixtures";
 
 const ok = (r: { ok: boolean; id?: string; error?: string }) => {
   if (!r.ok) throw new Error(r.error);
