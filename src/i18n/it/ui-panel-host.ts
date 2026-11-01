@@ -64,4 +64,8 @@ export default {
   "host.channel.stable": () => "Stabile",
   "host.channel.release": () => "Release",
   "host.channel.edge": () => "Edge",
+  "error.licenceKey": () => "Inserisci una chiave di licenza valida.",
+  "error.licenceKeysShort": (p) => `Nessuna chiave di licenza libera per ${p.name}.`,
+  "host.activate": () => "Attiva",
+  "host.activated": () => "Attivata",
 } satisfies Dict;

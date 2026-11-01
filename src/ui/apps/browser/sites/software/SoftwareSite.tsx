@@ -130,6 +130,7 @@ export function Commands({ p, year, className }: { p: Product; year: number; cla
         <pre>{text}</pre>
         <button type="button" onClick={copy}>{copied ? t("browser-sites-2.copied") : t("browser-sites-2.copy")}</button>
       </div>
+      {isLicensed(p.sw!.id) && <p>{t("browser-sites-2.keyFlag")}</p>}
     </div>
   );
 }

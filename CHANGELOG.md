@@ -69,6 +69,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - A part taken out of a server takes its share of the server's value along, so stripping a server and selling the pieces brings in the same as selling it whole.
 - Installed software now runs a real version number, and a new install takes the newest release out at the time.
 - A software console now looks like the version installed on the machine, so an old cPanic keeps its old look in later years.
+- Installing licensed software no longer charges a licence: software with a trial runs it, the rest asks for a licence key in the installer, in Windoors Setup or with --key on the install command, and a key entered on the licence page turns a trial into a full licence.
+- Software whose trial ended or whose licence lapsed stops working for you: hypervisors refuse new virtual machines, game and service software take no new customers, and backups to Veeham Backup fail.
 - The Marketing app has a Domain tile whose Buy button opens the domain resellers in the Yahoy! Directory, and the domains of other companies in the game can no longer be registered as your own.
 - Websites in the browser fill the whole window again instead of a narrow page.
 - Right-click a browser tab to close it, close all other tabs, or close every tab to its left or right.

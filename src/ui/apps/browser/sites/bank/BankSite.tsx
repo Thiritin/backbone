@@ -1,3 +1,4 @@
+import { useStore } from "../../../../store";
 import { useState, type CSSProperties, type ReactNode } from "react";
 import { t } from "../../../../../i18n/en";
 import { LOCALE } from "../../../../../i18n/lang";
