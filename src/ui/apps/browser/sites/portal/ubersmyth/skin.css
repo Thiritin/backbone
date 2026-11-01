@@ -1,0 +1,255 @@
+/* Ubersmyth: an ironworks of billing. Ember orange on iron in every era; the frame and its materials change per major. */
+.ubs { --ember: #d4621c; --iron: #27313c; min-height: 100%; display: flex; flex-direction: column; }
+.ubs .ubs-main { padding: 0; }
+.ubs a { color: inherit; }
+.ubs .num { font-variant-numeric: tabular-nums; }
+.ubs h2, .ubs h3 { margin: 0 0 8px; }
+.ubs .pt-version { margin-top: auto; }
+.ubs .ubs-mark { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+.ubs .ubs-anvil { width: 22px; height: 15px; fill: currentColor; display: block; }
+.ubs .ubs-tile { display: inline-flex; color: var(--ember); }
+.ubs input:not([type=radio]), .ubs select { font: inherit; color: inherit; }
+.ubs .ubs-links { display: flex; gap: 4px; margin-left: auto; }
+.ubs .ubs-links a, .ubs nav a { text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+.ubs .shop-banner { margin: 0 0 14px; }
+.ubs .ubs-who { margin: 0 0 10px; text-align: right; }
+.ubs .ubs-signin { display: grid; gap: 10px; max-width: 340px; }
+.ubs .ubs-signin label { display: grid; gap: 4px; }
+.ubs .pt-key { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
+.ubs .pt-key label { display: grid; gap: 4px; }
+.ubs .mkt-list { display: grid; margin-top: 18px; }
+.ubs .mkt-row { display: flex; align-items: center; gap: 12px; }
+.ubs .mkt-grow { flex: 1; }
+.ubs .pill { white-space: nowrap; }
+.ubs-login { align-items: center; justify-content: center; padding: 48px 16px; }
+.ubs-login form { display: grid; gap: 12px; width: 300px; }
+.ubs-login form label { display: grid; gap: 4px; }
+.ubs-login h1 { display: grid; gap: 8px; margin: 0; }
+.ubs-login .ubs-login-art { display: none; }
+
+/* 2: 2006 ironworks. Slate masthead, bevelled tabs, Verdana 11px, ruled grey tables. */
+.ubs-2 { background: #e9ecef; color: #1d232a; font: 11px/1.45 Verdana, Tahoma, sans-serif; }
+.ubs-2 .ubs-head { display: flex; align-items: center; gap: 16px; padding: 9px 14px; background: var(--iron); color: #fff; border-bottom: 3px solid var(--ember); }
+.ubs-2 .ubs-word { font: bold 17px Tahoma, Verdana, sans-serif; letter-spacing: 3px; text-transform: uppercase; }
+.ubs-2 .ubs-host { margin-left: auto; color: #9fb0c1; }
+.ubs-2 .ubs-tabs { display: flex; flex-wrap: wrap; gap: 2px; padding: 6px 10px 0; background: #3c4a58; }
+.ubs-2 .ubs-tabs a { padding: 4px 11px 3px; background: #d5dbe2; color: #23303c; border: 1px solid #8d99a6; border-bottom: 0; border-radius: 3px 3px 0 0; }
+.ubs-2 .ubs-tabs a:hover { background: #e7ebef; }
+.ubs-2 .ubs-tabs a.on { background: #fff; font-weight: bold; border-top: 3px solid var(--ember); padding-top: 2px; }
+.ubs-2 .ubs-crumb { padding: 5px 14px; background: #fff; border-bottom: 1px solid #c3cad2; color: #555; }
+.ubs-2 .ubs-crumb span { color: var(--ember); }
+.ubs-2 .ubs-main { margin: 12px 14px; padding: 12px; background: #fff; border: 1px solid #aeb7c1; }
+.ubs-2 h2 { font-size: 13px; color: var(--iron); border-bottom: 1px solid #c3cad2; padding-bottom: 3px; }
+.ubs-2 h3 { font-size: 11px; color: #fff; background: #5a6978; padding: 3px 6px; margin: 10px 0 0; }
+.ubs-2 .pt-table { border: 1px solid #aab4be; }
+.ubs-2 .pt-table th { background: #d9dfe6; border: 1px solid #aab4be; padding: 3px 6px; font-weight: bold; }
+.ubs-2 .pt-table td { border: 1px solid #d0d6dc; padding: 3px 6px; }
+.ubs-2 .pt-table tbody tr:nth-child(even) td { background: #f3f5f7; }
+.ubs-2 .pt-fields { background: #f3f5f7; border: 1px solid #c3cad2; padding: 8px 10px; }
+.ubs-2 .pt-fields dt { font-weight: bold; color: #44505c; }
+.ubs-2 .pt-tabs { border-bottom: 1px solid #8d99a6; }
+.ubs-2 .pt-tabs button { font: inherit; background: #d5dbe2; border-color: #8d99a6; border-radius: 3px 3px 0 0; }
+.ubs-2 .pt-tabs button.on { background: #fff; }
+.ubs-2 input:not([type=radio]), .ubs-2 select { font-size: 11px; padding: 2px 3px; border: 1px solid #7f8a95; border-top-color: #5c6670; background: #fff; }
+.ubs-2 .btn, .ubs-2 button { font: 11px Verdana, Tahoma, sans-serif; padding: 2px 10px; background: #e4e7eb; color: #1d232a; border: 1px solid; border-color: #fff #6f7984 #6f7984 #fff; outline: 1px solid #9aa4ae; border-radius: 0; cursor: pointer; }
+.ubs-2 .btn.primary { background: var(--ember); color: #fff; border-color: #f0a06c #8a3a0c #8a3a0c #f0a06c; outline-color: #8a3a0c; font-weight: bold; }
+.ubs-2 .btn:disabled { color: #8d96a0; }
+.ubs-2 .pt-version { padding: 6px 14px 10px; text-align: center; color: #6a7580; font-size: 10px; }
+.ubs-2.ubs-store { background: #c9ced4; align-items: center; padding: 14px 0; }
+.ubs-2.ubs-store > * { width: 780px; max-width: calc(100% - 32px); }
+.ubs-2.ubs-store .ubs-links a { color: #d5dbe2; padding: 0 8px; border-left: 1px solid #5a6978; }
+.ubs-2.ubs-store .ubs-links a.on { color: #fff; font-weight: bold; }
+.ubs-2.ubs-store .ubs-crumb { font-weight: bold; color: var(--iron); background: #eef1f4; }
+.ubs-2.ubs-store .ubs-main { margin: 0; border-top: 0; }
+.ubs-2.ubs-store .pt-version { margin-top: 0; background: #fff; border: 1px solid #aeb7c1; border-top: 0; }
+.ubs-2 .shop-store h2 { color: #fff; background: #3c4a58; padding: 4px 8px; border: 0; margin: 10px 0 0; }
+.ubs-2 .shop-list { gap: 0; border: 1px solid #aab4be; border-top: 0; }
+.ubs-2 .shop-item { border-bottom: 1px dotted #aab4be; padding: 5px 8px; }
+.ubs-2 .shop-item .num { font-weight: bold; }
+.ubs-2.ubs-login { background: #c9ced4; }
+.ubs-2.ubs-login form { background: #fff; border: 1px solid #6f7984; padding: 0 14px 14px; }
+.ubs-2.ubs-login h1 { margin: 0 -14px 4px; padding: 8px 12px; background: var(--iron); color: #fff; border-bottom: 3px solid var(--ember); }
+.ubs-2.ubs-login h1 span:last-child { font: normal 11px Verdana, sans-serif; color: #9fb0c1; }
+
+.ubs-2 .side-h { font-weight: bold; color: #fff; background: #5a6978; padding: 3px 6px; }
+.ubs-2 .mkt-list { border: 1px solid #aab4be; }
+.ubs-2 .mkt-row { padding: 3px 6px; border-top: 1px solid #d0d6dc; }
+.ubs-2 .mkt-row:nth-child(odd) { background: #f3f5f7; }
+.ubs-2 .pill { font-weight: bold; color: #6a7580; }
+.ubs-2 .pill.ok { color: #2f7d1a; }
+
+/* 3: 2012 gloss. Steel gradient masthead, glossy pills, rounded portlets with gradient title bars. */
+.ubs-3 { background: #dfe5ec linear-gradient(#cdd6e0, #e8edf2 240px) no-repeat; color: #1f2d3b; font: 12px/1.5 "Helvetica Neue", Helvetica, Arial, sans-serif; }
+.ubs-3 .ubs-head { position: relative; display: flex; align-items: center; padding: 14px 20px; background: linear-gradient(#5b7fa3, #2b4663); color: #fff; }
+.ubs-3 .ubs-head::after { content: ""; position: absolute; inset: 0 0 50% 0; background: linear-gradient(rgb(255 255 255 / 0.28), rgb(255 255 255 / 0.06)); pointer-events: none; }
+.ubs-3 .ubs-word { font: italic bold 22px "Helvetica Neue", Arial, sans-serif; letter-spacing: -0.5px; text-shadow: 0 1px 0 rgb(0 0 0 / 0.45); }
+.ubs-3 .ubs-tile { width: 30px; height: 30px; justify-content: center; align-items: center; border-radius: 7px; color: #fff; background: linear-gradient(#f9a25a, #d9581a); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.5), 0 1px 2px rgb(0 0 0 / 0.4); }
+.ubs-3 .ubs-pills { display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 16px; background: linear-gradient(#26394e, #1a2938); border-bottom: 1px solid #0e1822; }
+.ubs-3 .ubs-pills a { padding: 4px 13px; border-radius: 14px; color: #cfdbe7; text-shadow: 0 -1px 0 rgb(0 0 0 / 0.5); }
+.ubs-3 .ubs-pills a:hover { background: rgb(255 255 255 / 0.1); }
+.ubs-3 .ubs-pills a.on { color: #fff; background: linear-gradient(#f89a4c, #dd5f19); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.4), 0 1px 1px rgb(0 0 0 / 0.5); }
+.ubs-3 .ubs-col { padding: 18px 20px 6px; }
+.ubs-3 .ubs-portlet { background: #fff; border: 1px solid #b6c2cf; border-radius: 7px; box-shadow: 0 2px 6px rgb(30 50 70 / 0.18); overflow: hidden; }
+.ubs-3 .ubs-portlet-head { margin: 0; padding: 8px 14px; font-size: 14px; color: #2b4663; text-shadow: 0 1px 0 #fff; background: linear-gradient(#f9fbfc, #dde4eb); border-bottom: 1px solid #c3cdd8; }
+.ubs-3 .ubs-main { padding: 14px; }
+.ubs-3 h2 { font-size: 15px; color: #2b4663; }
+.ubs-3 h3 { font-size: 13px; color: #2b4663; margin-top: 10px; }
+.ubs-3 .pt-table { border: 1px solid #c3cdd8; border-radius: 5px; border-collapse: separate; border-spacing: 0; overflow: hidden; }
+.ubs-3 .pt-table th { background: linear-gradient(#fbfcfd, #e3e8ee); color: #3d5266; border-bottom: 1px solid #c3cdd8; padding: 5px 8px; }
+.ubs-3 .pt-table td { border-bottom: 1px solid #e4e9ee; padding: 5px 8px; }
+.ubs-3 .pt-table tbody tr:hover td { background: #fff6ee; }
+.ubs-3 .pt-fields { padding: 10px 12px; border-radius: 6px; background: linear-gradient(#fbfcfd, #f0f3f6); border: 1px solid #d3dbe3; }
+.ubs-3 .pt-fields dt { color: #5b6f82; }
+.ubs-3 .pt-tabs { border-bottom: 1px solid #b6c2cf; }
+.ubs-3 .pt-tabs button { font: inherit; border-radius: 6px 6px 0 0; border-color: #b6c2cf; background: linear-gradient(#fdfdfd, #e1e6eb); }
+.ubs-3 .pt-tabs button.on { background: #fff; color: #2b4663; }
+.ubs-3 input:not([type=radio]), .ubs-3 select { padding: 4px 6px; border: 1px solid #a9b6c3; border-radius: 4px; box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.12); background: #fff; }
+.ubs-3 .btn, .ubs-3 button { font: bold 12px "Helvetica Neue", Arial, sans-serif; padding: 4px 12px; color: #2b3e52; background: linear-gradient(#fdfdfd, #dfe4ea); border: 1px solid #a3afbc; border-radius: 4px; box-shadow: inset 0 1px 0 #fff, 0 1px 1px rgb(0 0 0 / 0.1); text-shadow: 0 1px 0 #fff; cursor: pointer; }
+.ubs-3 .btn.primary { color: #fff; text-shadow: 0 -1px 0 rgb(0 0 0 / 0.3); background: linear-gradient(#f89a4c, #dd5f19); border-color: #b44c12; box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.4), 0 1px 1px rgb(0 0 0 / 0.2); }
+.ubs-3 .btn:disabled { opacity: 0.55; }
+.ubs-3 .pt-version { padding: 10px 20px 14px; color: #5b6f82; text-align: right; }
+.ubs-3.ubs-store .ubs-links a { color: #e4ecf4; padding: 4px 12px; border-radius: 14px; }
+.ubs-3.ubs-store .ubs-links a.on { background: linear-gradient(#f89a4c, #dd5f19); color: #fff; }
+.ubs-3.ubs-store .ubs-main { width: 900px; max-width: calc(100% - 32px); margin: 20px auto 0; padding: 18px; background: #fff; border: 1px solid #b6c2cf; border-radius: 8px; box-shadow: 0 2px 6px rgb(30 50 70 / 0.18); }
+.ubs-3 .shop-steps { gap: 0; }
+.ubs-3 .shop-steps li { padding: 5px 22px 5px 16px; background: linear-gradient(#fdfdfd, #e1e6eb); border: 1px solid #b6c2cf; color: #6a7c8d; clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 0 100%, 10px 50%); margin-left: -8px; }
+.ubs-3 .shop-steps li:first-child { margin-left: 0; }
+.ubs-3 .shop-steps li.on { color: #fff; background: linear-gradient(#5b7fa3, #2b4663); }
+.ubs-3 .shop-store section + section { margin-top: 16px; }
+.ubs-3 .shop-list { gap: 8px; }
+.ubs-3 .shop-item { border: 1px solid #d3dbe3; border-radius: 6px; padding: 9px 12px; background: linear-gradient(#fff, #f2f5f8); }
+.ubs-3 .shop-item .shop-name { font-weight: bold; color: #2b4663; }
+.ubs-3 .shop-item .btn { color: #fff; text-shadow: 0 -1px 0 rgb(0 0 0 / 0.3); background: linear-gradient(#f89a4c, #dd5f19); border-color: #b44c12; }
+.ubs-3.ubs-login form { background: #fff; border: 1px solid #b6c2cf; border-radius: 8px; padding: 0 18px 18px; box-shadow: 0 3px 10px rgb(30 50 70 / 0.25); overflow: hidden; }
+.ubs-3.ubs-login h1 { margin: 0 -18px 4px; padding: 12px 16px; background: linear-gradient(#5b7fa3, #2b4663); color: #fff; }
+.ubs-3.ubs-login h1 span:last-child { font: normal 12px "Helvetica Neue", Arial, sans-serif; color: #cfdbe7; }
+
+.ubs-3 .side-h { padding: 6px 12px; font-weight: bold; color: #2b4663; background: linear-gradient(#f9fbfc, #dde4eb); border-bottom: 1px solid #c3cdd8; }
+.ubs-3 .mkt-list { border: 1px solid #c3cdd8; border-radius: 6px; overflow: hidden; }
+.ubs-3 .mkt-row { padding: 6px 12px; border-top: 1px solid #e4e9ee; }
+.ubs-3 .pill { padding: 1px 9px; border-radius: 10px; font-size: 11px; font-weight: bold; color: #5b6f82; background: linear-gradient(#fdfdfd, #e1e6eb); border: 1px solid #b6c2cf; }
+.ubs-3 .pill.ok { color: #fff; background: linear-gradient(#7cc35a, #4c9a2a); border-color: #3f7f22; }
+
+/* 4: 2016 flat. Dark grouped sidebar with line icons, white top bar, flat white panels on light grey. */
+.ubs-4 { --ember: #f26b21; background: #f2f4f6; color: #22282f; font: 13px/1.5 "Open Sans", "Segoe UI", Helvetica, Arial, sans-serif; }
+.ubs-4.ubs-admin { flex-direction: row; }
+.ubs-4 .ubs-side { width: 216px; flex: none; background: #20262d; color: #c5ccd3; padding: 14px 0 20px; }
+.ubs-4 .ubs-side .ubs-mark { padding: 4px 18px 14px; color: #fff; }
+.ubs-4 .ubs-word { font-size: 18px; font-weight: 600; letter-spacing: -0.3px; }
+.ubs-4 .ubs-side nav { display: grid; padding: 6px 0; }
+.ubs-4 .ubs-side h4 { margin: 8px 18px 4px; font-size: 11px; font-weight: 600; color: #7c8792; }
+.ubs-4 .ubs-side a { padding: 7px 18px 7px 15px; border-left: 3px solid transparent; }
+.ubs-4 .ubs-side a:hover { background: #29313a; color: #fff; }
+.ubs-4 .ubs-side a.on { background: #2c343c; color: #fff; border-left-color: var(--ember); }
+.ubs-4 .ubs-col { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ubs-4 .ubs-top { display: flex; align-items: center; min-height: 56px; padding: 0 24px; background: #fff; border-bottom: 1px solid #e1e5e9; }
+.ubs-4 .ubs-title { font-size: 19px; font-weight: 600; }
+.ubs-4 .ubs-main { margin: 22px 24px; padding: 20px; background: #fff; border: 1px solid #e1e5e9; }
+.ubs-4 h2 { font-size: 16px; font-weight: 600; }
+.ubs-4 h3 { font-size: 13px; font-weight: 600; margin-top: 14px; }
+.ubs-4 .pt-table th { font-weight: 600; color: #5d6873; border-bottom: 2px solid #e1e5e9; padding: 8px 10px; }
+.ubs-4 .pt-table td { border-bottom: 1px solid #eef0f2; padding: 8px 10px; }
+.ubs-4 .pt-tabs { border-bottom: 1px solid #e1e5e9; gap: 18px; }
+.ubs-4 .pt-tabs button { font: inherit; border: 0; background: none; padding: 8px 0; border-bottom: 2px solid transparent; }
+.ubs-4 .pt-tabs button.on { border-bottom-color: var(--ember); font-weight: 600; }
+.ubs-4 input:not([type=radio]), .ubs-4 select { padding: 6px 8px; border: 1px solid #cfd5db; border-radius: 2px; background: #fff; }
+.ubs-4 .btn, .ubs-4 button { font: 600 13px "Open Sans", "Segoe UI", Helvetica, sans-serif; padding: 6px 14px; background: #fff; color: #22282f; border: 1px solid #cfd5db; border-radius: 2px; cursor: pointer; }
+.ubs-4 .btn:hover { border-color: #9aa4ae; }
+.ubs-4 .btn.primary { background: var(--ember); color: #fff; border-color: var(--ember); }
+.ubs-4 .btn:disabled { opacity: 0.5; }
+.ubs-4 .pt-version { padding: 0 24px 18px; color: #8a949e; }
+.ubs-4.ubs-on-home .ubs-main { background: none; border: 0; padding: 0; }
+.ubs-4.ubs-on-home .pt-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
+.ubs-4.ubs-on-home .pt-fields > div { display: flex; flex-direction: column-reverse; gap: 2px; padding: 18px; background: #fff; border: 1px solid #e1e5e9; border-top: 3px solid var(--ember); }
+.ubs-4.ubs-on-home .pt-fields dd { font-size: 30px; font-weight: 300; }
+.ubs-4.ubs-store .ubs-head { display: flex; align-items: center; padding: 0 28px; min-height: 60px; background: #20262d; color: #fff; }
+.ubs-4.ubs-store .ubs-links a { padding: 19px 14px; color: #c5ccd3; border-bottom: 3px solid transparent; }
+.ubs-4.ubs-store .ubs-links a.on { color: #fff; border-bottom-color: var(--ember); }
+.ubs-4.ubs-store .ubs-main { width: 960px; max-width: calc(100% - 32px); margin: 28px auto; padding: 0; background: none; border: 0; }
+.ubs-4 .shop-steps { counter-reset: step; gap: 4px; margin-bottom: 20px; }
+.ubs-4 .shop-steps li { flex: 1; padding-top: 8px; border-top: 4px solid #dde2e6; color: #8a949e; font-weight: 600; }
+.ubs-4 .shop-steps li.on { border-top-color: var(--ember); color: #22282f; }
+.ubs-4 .shop-store h2 { font-size: 20px; font-weight: 300; margin: 18px 0 12px; }
+.ubs-4 .shop-list { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+.ubs-4 .shop-item { flex-direction: column; align-items: stretch; gap: 10px; padding: 18px; background: #fff; border: 1px solid #e1e5e9; }
+.ubs-4 .shop-item .shop-name { font-weight: 600; font-size: 15px; }
+.ubs-4 .shop-item .num { font-size: 20px; font-weight: 300; color: var(--ember); }
+.ubs-4 .shop-item .btn { background: var(--ember); color: #fff; border-color: var(--ember); }
+.ubs-4 .shop-configure, .ubs-4 .shop-client, .ubs-4 .ubs-signin, .ubs-4.ubs-store .pt-closed { padding: 20px; background: #fff; border: 1px solid #e1e5e9; }
+.ubs-4.ubs-login { flex-direction: row; padding: 0; align-items: stretch; }
+.ubs-4.ubs-login .ubs-login-art { display: flex; align-items: center; justify-content: center; flex: 1; background: #20262d; color: #fff; }
+.ubs-4.ubs-login .ubs-login-art .ubs-word { font-size: 30px; }
+.ubs-4.ubs-login .ubs-login-art .ubs-anvil { width: 40px; height: 27px; }
+.ubs-4.ubs-login form { align-content: center; padding: 40px; background: #fff; width: 380px; }
+.ubs-4.ubs-login h1 .ubs-mark { display: none; }
+.ubs-4.ubs-login h1 span { font-size: 20px; font-weight: 600; }
+
+.ubs-4 .side-h { font-weight: 600; padding: 8px 0; border-bottom: 2px solid #e1e5e9; }
+.ubs-4 .mkt-row { padding: 8px 0; border-bottom: 1px solid #eef0f2; }
+.ubs-4 .pill { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 2px; background: #eef0f2; color: #5d6873; }
+.ubs-4 .pill.ok { background: #e3f2dc; color: #2f6b19; }
+
+/* 5: 2024 workspace. Warm white, a molten tile mark, section switcher with tabs below, roomy rounded cards. */
+.ubs-5 { --ember: #e2541c; --ink: #16181b; --line: #e9e6e0; background: #f8f7f4; color: var(--ink); font: 14px/1.5 Inter, system-ui, -apple-system, "Segoe UI", sans-serif; }
+.ubs-5 .ubs-bar, .ubs-5.ubs-store .ubs-head { display: flex; align-items: center; gap: 24px; padding: 12px 28px; background: #fff; border-bottom: 1px solid var(--line); }
+.ubs-5 .ubs-tile { width: 28px; height: 28px; justify-content: center; align-items: center; border-radius: 8px; color: #fff; background: linear-gradient(135deg, #ff8a3d, #d6361a); }
+.ubs-5 .ubs-anvil { width: 18px; height: 12px; }
+.ubs-5 .ubs-word { font-size: 17px; font-weight: 650; letter-spacing: -0.4px; }
+.ubs-5 .ubs-seg { display: flex; gap: 2px; padding: 3px; background: #f0eee9; border-radius: 10px; }
+.ubs-5 .ubs-seg a, .ubs-5.ubs-store .ubs-links a { padding: 5px 12px; border-radius: 8px; color: #5b5f66; font-weight: 500; }
+.ubs-5 .ubs-seg a.on, .ubs-5.ubs-store .ubs-links a.on { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / 0.08); }
+.ubs-5.ubs-store .ubs-links { padding: 3px; background: #f0eee9; border-radius: 10px; gap: 2px; }
+.ubs-5 .ubs-sub { display: flex; gap: 22px; padding: 0 max(16px, calc((100% - 1040px) / 2)); background: #fff; border-bottom: 1px solid var(--line); }
+.ubs-5 .ubs-sub a { padding: 10px 0; color: #5b5f66; border-bottom: 2px solid transparent; }
+.ubs-5 .ubs-sub a.on { color: var(--ink); border-bottom-color: var(--ember); }
+.ubs-5 .ubs-col { width: 1040px; max-width: calc(100% - 32px); margin: 0 auto; padding: 26px 0 8px; }
+.ubs-5 .ubs-title { font-size: 24px; font-weight: 650; letter-spacing: -0.5px; margin: 0 0 16px; }
+.ubs-5 .ubs-main { padding: 22px; background: #fff; border: 1px solid var(--line); border-radius: 14px; }
+.ubs-5 h2 { font-size: 18px; font-weight: 650; letter-spacing: -0.3px; }
+.ubs-5 h3 { font-size: 14px; font-weight: 600; margin-top: 16px; }
+.ubs-5 .pt-table th { font-size: 12px; font-weight: 500; color: #6b6f76; border-bottom: 1px solid var(--line); padding: 8px 10px; }
+.ubs-5 .pt-table td { border-bottom: 1px solid #f1efea; padding: 10px; }
+.ubs-5 .pt-table tbody tr:last-child td { border-bottom: 0; }
+.ubs-5 .pt-fields dt { color: #6b6f76; }
+.ubs-5 .pt-tabs { border: 0; gap: 2px; padding: 3px; background: #f0eee9; border-radius: 10px; width: max-content; }
+.ubs-5 .pt-tabs button { font: inherit; border: 0; border-radius: 8px; background: none; padding: 4px 12px; color: #5b5f66; }
+.ubs-5 .pt-tabs button.on { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / 0.08); }
+.ubs-5 input:not([type=radio]), .ubs-5 select { padding: 7px 10px; border: 1px solid #dedbd5; border-radius: 8px; background: #fff; }
+.ubs-5 input:focus, .ubs-5 select:focus { outline: 2px solid rgb(226 84 28 / 0.35); outline-offset: 0; border-color: var(--ember); }
+.ubs-5 .btn, .ubs-5 button { font: 500 14px Inter, system-ui, sans-serif; padding: 7px 14px; background: #fff; color: var(--ink); border: 1px solid #dedbd5; border-radius: 8px; cursor: pointer; }
+.ubs-5 .btn:hover { background: #f6f5f2; }
+.ubs-5 .btn.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+.ubs-5 .btn:disabled { opacity: 0.45; }
+.ubs-5 .pt-version { padding: 18px 28px 22px; color: #8b8f96; font-size: 12px; text-align: center; }
+.ubs-5.ubs-on-home .ubs-main { background: none; border: 0; padding: 0; }
+.ubs-5.ubs-on-home .pt-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+.ubs-5.ubs-on-home .pt-fields > div { display: flex; flex-direction: column-reverse; gap: 4px; padding: 20px; background: #fff; border: 1px solid var(--line); border-radius: 14px; }
+.ubs-5.ubs-on-home .pt-fields dd { font-size: 32px; font-weight: 650; letter-spacing: -1px; }
+.ubs-5.ubs-on-home .pt-fields dt a { color: #5b5f66; }
+.ubs-5.ubs-store .ubs-main { width: 880px; max-width: calc(100% - 32px); margin: 32px auto 0; }
+.ubs-5 .shop-steps { gap: 8px; margin-bottom: 18px; counter-reset: s; }
+.ubs-5 .shop-steps li { counter-increment: s; display: inline-flex; align-items: center; gap: 8px; color: #8b8f96; }
+.ubs-5 .shop-steps li::before { content: counter(s); display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #f0eee9; font-size: 12px; }
+.ubs-5 .shop-steps li.on { color: var(--ink); }
+.ubs-5 .shop-steps li.on::before { background: var(--ember); color: #fff; }
+.ubs-5 .shop-store h2 { font-size: 22px; margin: 20px 0 8px; }
+.ubs-5 .shop-store section:first-child h2 { margin-top: 0; }
+.ubs-5 .shop-item { padding: 12px 4px; border-bottom: 1px solid #f1efea; }
+.ubs-5 .shop-item .shop-name { font-weight: 500; }
+.ubs-5 .shop-item .num { padding: 2px 10px; border-radius: 999px; background: #f6efe9; color: #9a3a12; font-size: 13px; }
+.ubs-5.ubs-login { background: radial-gradient(circle at 50% 0, #fde7da, #f8f7f4 60%); }
+.ubs-5.ubs-login form { padding: 28px; background: #fff; border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 12px 32px rgb(40 30 20 / 0.08); }
+.ubs-5.ubs-login h1 span:last-child { font-size: 20px; font-weight: 650; letter-spacing: -0.4px; }
+
+.ubs-5 .mkt-list { margin-top: 22px; }
+.ubs-5 .side-h { font-weight: 600; margin-bottom: 6px; }
+.ubs-5 .mkt-row { padding: 9px 0; border-top: 1px solid #f1efea; }
+.ubs-5 .pill { font-size: 12px; font-weight: 500; padding: 2px 10px; border-radius: 999px; background: #f0eee9; color: #5b5f66; }
+.ubs-5 .pill.ok { background: #e6f4e6; color: #256b2a; }
+
+@media (max-width: 720px) {
+  .ubs-4.ubs-admin, .ubs-4.ubs-login { flex-direction: column; }
+  .ubs-4 .ubs-side { width: auto; }
+  .ubs-4 .ubs-side nav { display: flex; flex-wrap: wrap; }
+  .ubs-5 .ubs-bar { flex-wrap: wrap; }
+}
