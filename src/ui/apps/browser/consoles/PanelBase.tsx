@@ -10,7 +10,6 @@ import { gameCrashed, gameOf, playersOf } from "../../../../sim/60-infra/games";
 import { GameDetails, GameLine, TitlesSummary, type GameRow } from "./GamePanel";
 import { autoUpdates, phpAt, softwareById } from "../../../../sim/10-catalog/platforms";
 import type { Resources } from "../../../../sim/10-catalog/products";
-import type { Look } from "../../../../sim/10-catalog/sites";
 import type { GameState } from "../../../../sim/50-state";
 import { backupTargets, hostOfVm, isOwnVm, vmById, workloadsOn, type BackupEvery, type Cluster, type Workload } from "../../../../sim/60-infra/cluster";
 import { deviceHealth } from "../../../../sim/60-infra/status";
@@ -40,11 +39,14 @@ export interface PanelProps { game: GameState; c: Cluster; f: ConsoleFeatures; h
   // The address inside the console, which opens the create form or the packages screen.
   path?: string }
 
-export const erasFrom = (early: number, late: number): { from: number; look: Look }[] => [{ from: early, look: "early" }, { from: late, look: "late" }];
-// The look of the installed version, or the game year's when the version is unknown.
-export function eraAt(eras: { from: number; look: Look }[], { game, c }: { game: GameState; c: Cluster }): Look {
-  const m = panelMachine(c), product = familyOf(c);
-  return (m && product && lookOf(game, m, product)) || eraOf(eras, yearOf(game.hour));
+// A console's looks with the year each starts, ids as in UI_LOOKS: looks({ x3: 2005, paperLamp: 2014, jupitar: 2021 }).
+export const looks = <L extends string>(from: Record<L, number>): { from: number; look: L }[] =>
+  (Object.entries(from) as [L, number][]).map(([look, year]) => ({ from: year, look }));
+export const erasFrom = (early: number, late: number) => looks({ early, late });
+// The look of the installed version, or the game year's when the version is unknown or not one the console draws.
+export function eraAt<L extends string>(eras: { from: number; look: L }[], { game, c }: { game: GameState; c: Cluster }): L {
+  const m = panelMachine(c), product = familyOf(c), v = m && product ? lookOf(game, m, product) : null;
+  return eras.find((e) => e.look === v)?.look ?? eraOf(eras, yearOf(game.hour));
 }
 
 export function usePanelTab(f: ConsoleFeatures, first: Tab = "objects"): [Tab, (t: Tab) => void] {
