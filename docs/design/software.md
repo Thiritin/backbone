@@ -397,9 +397,11 @@ Each software with a web console gets its own component and stylesheet, modelled
 
 Each console shows the look of the version installed on its machine, from the UI generations in `software-versions.md` (`UI_LOOKS`); the year in the table applies only when the installed version is unknown.
 
+A console declares its looks in one place, `const LOOKS = looks({ x3: 2005, paperLamp: 2014, jupitar: 2021 })` with the year each starts, and picks one with `eraAt(LOOKS, p)`, which its root element carries as `data-era` for the stylesheet. The ids match the console's `UI_LOOKS` entry, so a console drawn per generation names its own ids there, while the rest still draw `erasFrom(early, late)` and map every generation to "early" or "late". A version whose look the console does not draw falls back to the year.
+
 | Console | Early look | Late look |
 | --- | --- | --- |
-| cPanic (WHM) | 2005: the x3 look, dark blue left menu with a search box, grey content, icon rows as tiles, Verdana | 2014: the flat "Paper Lantern", white, blue left bar with grouped sections |
+| cPanic (WHM) | 2005, x3 (version 10): blue gradient header with an orange rule, dark blue left menu of underlined links with small icons and a search box, grey content with tabbed box titles, icon tiles, Verdana | 2014, Paper Lamp (11.38): flat and white, a light left category list with uppercase headings and no icons. 2021, Jupitar (98): a full-height dark navy sidebar with icons, the search in a white top bar, rounded cards |
 | Pleskit | 2005: the 8.x look, dark blue left menu, light blue content, an icon grid per page | 2015: the Onyx look, white, dark grey sidebar, flat cards |
 | DirectAdmen | 2005: the enhanced skin, white, grey top bar, three columns of underlined links | 2018: the Evolution skin, dark top bar, cards, a search |
 | FreePanel | 2005: Webmin-style blue left tree and grey tables | 2016: white, left menu, Bootstrap-flat |
