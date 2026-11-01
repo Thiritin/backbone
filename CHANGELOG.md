@@ -6,6 +6,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - Books is now a choice: buy Lexwear Office, WIZO Mein Büro, Saga Office Line, orgaMIN or the web-based Collmix in the Pear Store, with sevDeck and lexoffize joining in later years, each with its own look, prices and modules.
 - Each bookkeeping vendor has its own site in the Browser and a place under Bookkeeping on Yahoy, and Getting started now asks you to install a program before your first customer.
+- The first order form is now called the self-scripted order form in every language.
+- Software subscriptions now renew per licence key on the day of the month you bought them, with a receipt from the vendor, and a renewal the bank cannot pay lapses after a week of grace until the money is there.
 - The Debiant installer asks how to configure the network, so a server can take its address from the router or get a fixed address, netmask, gateway and name server, and the Windoors Server Manager has a Network adapter page for the same settings.
 - Server shells know `ip`, `ifconfig`, `dhclient`, `ifup`, `ifdown` and the networking restart commands, apply the edited network settings file when networking restarts, and two servers holding the same address both drop off the network.
 - Custom order tickets now show only the step you are at, and you can open the customer account before or after sending the offer, which appears as an attachment on the email you sent.
