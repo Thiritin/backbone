@@ -5,6 +5,14 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-01
 
 - The Debiant installer lets you type your own hostname for the machine or keep the one it suggests.
+- HyperVee VMs from 2012 can replicate to a second host and fail over to it, and HyperVee hosts get a Virtual Switch Manager with external, internal and private switches.
+- OpenVeeZee containers now show their beancounters and slow down or stop when the node is oversold, can use burst memory, and move between nodes with a checkpoint and restore.
+- The game panels now have a Manage screen for every game server with versions, mods, restart schedules, a player chart and port allocations, and Pterodaktyl shows the status of its nodes.
+- Customers on a game title past its prime now lose happiness every day until you move them to a current title, and Pterodaktyl nodes run a daemon that fails now and then and has to keep up with its panel.
+- Backup jobs now keep restore points that you can test and copy offsite, Proxmocks clusters keep quorum, replicate VMs and run Ceph storage, and every VM can have its own firewall.
+- VMwhere clusters now come in Essentials, Standard and Enterprise editions, with DRS modes, host maintenance mode, editable and acknowledgeable alarms, and resource pools that cap the vCPUs and RAM of their VMs.
+- Books is now a choice: buy Lexwear Office, WIZO Mein Büro, Saga Office Line, orgaMIN or the web-based Collmix in the Pear Store, with sevDeck and lexoffize joining in later years, each with its own look, prices and modules.
+- Each bookkeeping vendor has its own site in the Browser and a place under Bookkeeping on Yahoy, and Getting started now asks you to install a program before your first customer.
 - Routers you mount in a datacenter now run their own network behind the provider's handoff with a WebFigg or J-Webb web interface, and the desk reaches that network only once you switch on the router's VPN.
 - Layer 3 switches can route between VLANs, every VM takes its own address from the local network's DHCP pool so a full pool stops new VPS sales, and enterprise customers need a private network carried as a VLAN to every server their VMs run on.
 - A new Chat app in the dock opens the Backbone Discord and changes from ICU to Skipe to Diskord as the years pass; you can remove it from the dock like any other app.

@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { t } from "../src/i18n/en";
 import { type GameState } from "../src/sim/50-state";
-import { clusterSummary, CPU_RATIO } from "../src/sim/60-infra/alarms";
+import { clusterSummary, CPU_RATIO, DEFAULT_RULES, rulesOf } from "../src/sim/60-infra/alarms";
 import { controlPlanesOn, nodeCapacity } from "../src/sim/60-infra/cluster";
 import { createVm } from "../src/sim/90-actions/clusters";
 import { connect, setPower } from "../src/sim/90-actions/hardware";
-import { basement, buyDevice, join, withServer, newGame } from "./fixtures";
+import { tick } from "../src/sim/88-tick/tick";
+import { acknowledgeAlarm, resetAlarms, setAlarmRules } from "../src/sim/90-actions/vmwhere";
+import { basement, buyDevice, hypervisor, join, withServer, newGame } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 const ok = (r: { ok: boolean; id?: string; error?: string }) => { expect(r.error).toBeUndefined(); return r.id!; };
@@ -61,5 +63,43 @@ describe("cluster alarms", () => {
     expect(sum.alarms.slice(0, 2).map((a) => [a.severity, a.key]).sort()).toEqual([["critical", "alarm.hostDown"], ["critical", "alarm.vmStuck"]]);
     expect(sum.hosts.find((h) => h.deviceId === host)!.up).toBe(false);
     for (const a of sum.alarms) expect(t(a.key, a.params)).not.toBe(a.key);
+  });
+});
+
+describe("VMwhere alarm thresholds", () => {
+  function vmwhere(edition?: string) {
+    const s = { ...withServer(newGame(7)), cash: 100_000 };
+    s.unlocks = [...s.unlocks, "virtualization"];
+    const id = hypervisor(s, ["dev3"], "VW", "vmwhere");
+    if (edition) s.clusters = s.clusters.map((c) => (c.id === id ? { ...c, licence: { tier: edition, trialUntil: null, lapsedAt: null } } : c));
+    return { s, id };
+  }
+
+  it("a custom threshold fires earlier and the defaults reproduce today's alarms", () => {
+    const { s, id } = vmwhere();
+    const vcpu = cap(s, "dev3").vcpu * 1.5;
+    ok(createVm(s, id, { vcpu, ramGb: 1, diskGb: 10 }));
+    expect(keys(s, id)).not.toContain("alarm.cpuOvercommitted");
+    expect(rulesOf(s.clusters.find((c) => c.id === id)!)).toEqual(DEFAULT_RULES);
+    expect(setAlarmRules(s, id, { ...DEFAULT_RULES, cpu: 1 })).toEqual({ ok: true });
+    expect(keys(s, id)).toContain("alarm.cpuOvercommitted");
+    expect(setAlarmRules(s, id, { ...DEFAULT_RULES, cpu: 99 })).toEqual({ ok: false, error: "error.alarmRule" });
+  });
+
+  it("Essentials cannot edit thresholds", () => {
+    const { s, id } = vmwhere("essentials");
+    expect(setAlarmRules(s, id, DEFAULT_RULES)).toEqual({ ok: false, error: "error.needsEdition" });
+  });
+
+  it("acknowledging hides an alarm until it clears", () => {
+    const { s, id } = vmwhere();
+    const vm = ok(createVm(s, id, { vcpu: cap(s, "dev3").vcpu * CPU_RATIO + 2, ramGb: 1, diskGb: 10 }));
+    expect(acknowledgeAlarm(s, id).ok).toBe(true);
+    expect(keys(s, id)).not.toContain("alarm.cpuOvercommitted");
+    expect(clusterSummary(s, id).hidden.map((a) => a.key)).toContain("alarm.cpuOvercommitted");
+    s.workloads = s.workloads.filter((w) => w.id !== vm);
+    tick(s);
+    expect(s.clusters.find((c) => c.id === id)!.acks).toEqual([]);
+    expect(resetAlarms(s, id).ok).toBe(true);
   });
 });

@@ -24,11 +24,15 @@ import { bmcTitle, IpmiPage } from "./ipmi/IpmiPage";
 import { FritzOz } from "./mgmt/FritzOz";
 import { KvmPage, kvmTitle } from "./ipmi/KvmPage";
 import { SwitchPage, switchTitle } from "./mgmt/Switch";
+import { RouterPage, routerTitle } from "./mgmt/Router";
+import { isOwnRouter } from "../../../sim/60-infra/routers";
 import { CompanySite } from "./sites/CompanySite";
 import { SponsorBoard } from "./sites/SponsorBoard";
 import { IndexSite } from "./sites/index/IndexSite";
 import { OfficeSite } from "./sites/office/OfficeSite";
 import { LexwearSite } from "./sites/lexwear/LexwearSite";
+import { BOOKS_SITES } from "./sites/books/sites";
+import { booksVendor } from "../../../sim/10-catalog/bookkeeping";
 import { ShopVendorSite } from "./sites/shopvendors/registry";
 import { shopById } from "../../../sim/10-catalog/shops";
 import { WikiSite } from "./sites/wiki/WikiSite";
@@ -72,7 +76,10 @@ function titleOf(game: GameState, r: Resolved): string {
       const d = game.devices.find((x) => x.id === p.deviceId);
       return d ? kvmTitle(d) : r.host;
     }
-    case "router": return "Fritz!OZ";
+    case "router": {
+      const d = game.devices.find((x) => x.id === p.deviceId);
+      return d && isOwnRouter(d) ? routerTitle(d) : "Fritz!OZ";
+    }
     case "switch": {
       const d = game.devices.find((x) => x.id === p.deviceId);
       return d ? switchTitle(d) : r.host;
@@ -83,6 +90,7 @@ function titleOf(game: GameState, r: Resolved): string {
     case "index": return t("browser-sites-1.ix.title");
     case "office": return t("browser-sites-1.of.title");
     case "lexwear": return LEXWEAR;
+    case "books": return booksVendor(p.id)!.program;
     case "shopVendor": return shopById(p.id).name;
     case "wiki": return WIKI_TITLE;
     case "software": return softwareById(p.id).name;
@@ -114,6 +122,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "sponsorboard") body = <SponsorBoard game={game} />;
   else if (p.kind === "office") body = <OfficeSite game={game} path={r.path} go={go} />;
   else if (p.kind === "lexwear") body = <LexwearSite game={game} path={r.path} go={go} />;
+  else if (p.kind === "books" && p.id !== "lexwear") { const Site = BOOKS_SITES[p.id]; body = <Site game={game} path={r.path} go={go} />; }
   else if (p.kind === "shopVendor") body = <ShopVendorSite game={game} id={p.id} />;
   else if (p.kind === "wiki") body = <WikiSite game={game} path={r.path} go={go} />;
   else if (p.kind === "index") body = <IndexSite game={game} path={r.path} go={go} />;
@@ -121,7 +130,10 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "console") body = <ConsolePage game={game} hostname={p.hostname} host={r.host} cluster={game.clusters.find((x) => x.id === p.clusterId)} defaced={p.defaced} path={p.path} />;
   else if (p.kind === "ipmi") body = <IpmiPage game={game} deviceId={p.deviceId} host={r.host} />;
   else if (p.kind === "kvm") body = <KvmPage game={game} deviceId={p.deviceId} host={r.host} />;
-  else if (p.kind === "router") body = <FritzOz game={game} deviceId={p.deviceId} host={r.host} />;
+  else if (p.kind === "router") {
+    const d = game.devices.find((x) => x.id === p.deviceId);
+    body = d && isOwnRouter(d) ? <RouterPage game={game} deviceId={p.deviceId} host={r.host} /> : <FritzOz game={game} deviceId={p.deviceId} host={r.host} />;
+  }
   else if (p.kind === "switch") body = <SwitchPage game={game} deviceId={p.deviceId} host={r.host} />;
   else if (p.kind === "host") body = <HostPage host={r.host} />;
   else body = <NotFound host={r.host} />;
