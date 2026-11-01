@@ -12,6 +12,9 @@ import { BASEMENT_SERVER, hypervisor, skipTo, withServer } from "./fixtures";
 const at = hourOfMonth;
 
 describe("software versions", () => {
+  it("OpenVeeZee has a release out when the game starts", () => {
+    expect(versionAt("openveezee", 0).release).toBe(0);
+  });
   it("every OS and software has releases in order with ends after them", () => {
     for (const id of [...SOFTWARE.map((x) => x.id), ...SERVER_OS.map((o) => o.id)]) {
       const vs = versionsOf(id);

@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- Vendor shop carts, product pages and order emails now name the major version a one-time licence key covers.
+- OpenVeeZee lists its first release on its Versions page from the start of the game.
 - Proxmocks clusters now have HA groups that decide where a failed guest restarts, and Horizont has projects that group your instances.
 - Email orders and leads now pick the cheapest of your Books products that fits their needs and budget, accept any quote up to that product's price, and go elsewhere when none of your products fits.
 - Books products stay editable after you choose a shop system.

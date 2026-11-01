@@ -47,7 +47,7 @@ const SOFTWARE_LINES: Record<string, SoftwareVersion[]> = {
   ]),
   // OpenVZ kernels by the RHEL kernel they patch, then OpenVZ 7.
   openveezee: line([
-    ["2.6.9", "2005-10", "2009-08", "2010-12"], ["2.6.18", "2007-08", "2013-06", "2015-12"], ["2.6.32", "2011-06", "2018-12", "2020-11"],
+    ["2.6.9", "2005-01", "2009-08", "2010-12"], ["2.6.18", "2007-08", "2013-06", "2015-12"], ["2.6.32", "2011-06", "2018-12", "2020-11"],
     ["7", "2016-07", null, null],
   ]),
   // Maintained for 18 months, with no security-only phase after; the releases still maintained have no end set.
