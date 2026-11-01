@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- You can keep working while the game runs at 2× or 4×, and pausing now dims the desktop with a Paused overlay.
 - The shady used-hardware channel in the Shop is now Craigslost, a classifieds site, instead of a chat app that did not exist in 2005.
 - Your bank account now earns interest at each month start, following the real rates of each year, and from 2020 to 2021 the bank charges a custody fee on balances above 100,000 instead.
 - Books has a Products tab where you set up the packages you sell, each with a size, SLA, prices per billing cycle and a setup fee.

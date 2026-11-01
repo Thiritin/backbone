@@ -6,6 +6,7 @@ button { font: inherit; color: inherit; cursor: default; }
 .wallpaper-host.photo { background: oklch(0.2 0.05 265) center / cover no-repeat; }
 :root[data-theme="dark"] .wallpaper-host.photo { filter: brightness(0.7); }
 .live-only { display: contents; }
+.paused-veil { position: absolute; inset: 0; z-index: 48; display: grid; place-items: center; background: oklch(0 0 0 / 0.45); color: white; font-size: 28px; font-weight: 600; letter-spacing: 0.04em; user-select: none; }
 .windows { position: absolute; inset: 0; z-index: 10; isolation: isolate; pointer-events: none; }
 .windows > .window { pointer-events: auto; }
 
