@@ -157,4 +157,14 @@ describe("billing cycles money flow", () => {
     const now = s.services.find((v) => v.id === old.id)!;
     expect(line.amount).toBeLessThanOrEqual((now.price - old.price) * (end - s.hour + 25) + 0.01);
   });
+
+  it("refund nothing for a term whose invoice was written off", () => {
+    const s = annualGame();
+    const { req, svc } = place(s);
+    s.invoices = s.invoices.map((i) => ({ ...i, status: "writtenOff" as const }));
+    s.services = s.services.map((v) => (v.id === svc.id ? { ...v, termEnd: s.hour + 730 * 5 + 100 } : v));
+    const cash = s.cash;
+    refundUnused(s, s.customers.find((c) => c.id === req.customerId)!);
+    expect(s.cash).toBe(cash);
+  });
 });
