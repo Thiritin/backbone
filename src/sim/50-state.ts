@@ -53,10 +53,10 @@ export type BondMode = "none" | "failover" | "balance";
 export type CableKind = "copper" | "dac" | "fiber" | "rollover";
 
 export type SpaceKind = "basement" | "share" | "cage" | "suite";
-// Each location is an availability zone (az, like fra2) in the region of its city.
-// One System Event Log record of a device (power.ts pushLog); id counts up within the log.
+// One System Event Log record of a device (syslog.ts pushLog); id counts up within the log.
 export type LogSev = "info" | "warn" | "crit";
 export interface DeviceLog { hour: number; key: string; sev: LogSev; id: number }
+// Each location is an availability zone (az, like fra2) in the region of its city.
 export interface Location { id: string; dc: string | null; city: string; az: string; name: string; space: SpaceKind; positions: number; readyAt: number; extraCircuit: boolean }
 // share-N racks belong to the provider of a rack share and hold N units.
 export type RackModel = "rack-24" | "rack-42" | "rack-47" | "share-5" | "share-10" | "share-21" | "share-42";
