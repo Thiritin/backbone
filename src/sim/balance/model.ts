@@ -14,7 +14,7 @@ import { LINE_EXTRA_V4, providerV4, STATIC_LINE_ADDRESSES } from "../10-catalog/
 import { noticedHours } from "../10-catalog/attention";
 import { dcPerTb } from "../10-catalog/network";
 import { OVER_DRIFT, PAST_MAX_DRIFT, TOLERANCE } from "../30-customers/pricing";
-import { OFFER, ORGANIC_CONSIDER, REFERRAL_LEADS, SPILL_SHARE } from "../30-market/market";
+import { OFFER, ORGANIC_CONSIDER, PRICE_WEIGHT, REFERRAL_LEADS, SPILL_SHARE } from "../30-market/market";
 import { CYCLE_SHARE, MARKET_DISCOUNT } from "../10-catalog/cycles";
 import { HAND_ROLLED } from "../10-catalog/shops";
 import { BUDGETS, OWNED, PLATFORMS, PROFILE_IDS, SATURATION, WEBSITE_LEADS } from "../80-business/marketing";
@@ -31,7 +31,7 @@ import { BOT_SPEED } from "../47-staff/staff";
 import { botOdds, BOT_RIGHT, costPerTicket, type ChadKind } from "../47-staff/chad";
 import { marketPrice, marketSetup, type Spec } from "../10-catalog/products";
 import { EMAIL_SHARE } from "../30-market/orders";
-import { driftRival, seedRivals } from "../30-market/rivals";
+import { driftRival, seedRivals, TEMPLATES, type Rival } from "../30-market/rivals";
 import { hourOf } from "../00-core/time";
 import { CHARGEBACK_FEE, fraudShare, TRANSFER_FACTOR } from "../45-billing/fraud";
 import { factorFor, REGISTRARS, tierFor } from "../10-catalog/registrars";
@@ -207,12 +207,15 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
       p.wP * (P[pr] - locPenalty) + p.wR * R[pr] + p.wC * C - p.lambda * 100 * (bot.priceFactor - 1);
     // ponytail: the cohort model keeps the four archetypes in every segment; specialists and product lines live in the real market (30-market).
     const rivals = (p: Profile, _pr: Product) => field.filter((c) => c.priceFactor <= p.cap && !c.targets);
-    const best = (p: Profile, pr: Product) => Math.max(...rivals(p, pr)
-      .map((c) => p.wP * c.P + p.wR * c.R + p.wC * c.C - p.lambda * 100 * (c.priceFactor - 1)));
+    // The model's price term is calibrated four times the game's; a rival's price cuts since 2005 count at the game's weight.
+    const rivalU = (p: Profile, c: Rival) => {
+      const from = TEMPLATES[c.template].priceFactor;
+      return p.wP * c.P + p.wR * c.R + p.wC * c.C - p.lambda * 100 * (from - 1) - PRICE_WEIGHT * p.lambda * 100 * (c.priceFactor - from);
+    };
+    const best = (p: Profile, pr: Product) => Math.max(...rivals(p, pr).map((c) => rivalU(p, c)));
     const share = (p: Profile, pr: Product) => {
       const you = Math.exp(U(p, pr, 0) / CHOICE_TAU);
-      const others = rivals(p, pr)
-        .reduce((a, c) => a + Math.exp((p.wP * c.P + p.wR * c.R + p.wC * c.C - p.lambda * 100 * (c.priceFactor - 1)) / CHOICE_TAU), 0);
+      const others = rivals(p, pr).reduce((a, c) => a + Math.exp(rivalU(p, c) / CHOICE_TAU), 0);
       return you / (you + others);
     };
 

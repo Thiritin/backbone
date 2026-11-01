@@ -1,5 +1,5 @@
 import { ChartColumn, Lock, Swords, TrendingDown, Users } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 import { euro, euroCents } from "../../../sim/00-core/money";
 import { CITIES } from "../../../sim/10-catalog/economy";
 import type { Profile } from "../../../sim/30-customers/customers";
@@ -196,7 +196,7 @@ function Lost() {
 
 const W = 520, H = 160, PAD = { l: 32, r: 8, t: 8, b: 20 };
 // Rival layers are neutral steps so the accent stays yours.
-const shade = (k: number) => `color-mix(in oklch, var(--text) ${[14, 30, 22, 38, 18, 34, 26, 42][k % 8]}%, var(--win))`;
+const shade = (k: number) => `color-mix(in oklch, var(--text) ${[10, 34, 18, 42, 26, 50, 14, 38][k % 8]}%, var(--win))`;
 
 function ShareChart({ city }: { city: string }) {
   const game = useStore((s) => s.game);
@@ -256,23 +256,28 @@ function Competitors() {
           <tr>
             <th>{t("misc1.market.competitor")}</th><th className="mkt-right">{t("misc1.market.performance")}</th><th className="mkt-right">{t("misc1.market.reliability")}</th>
             <th className="mkt-right">{t("misc1.market.convenience")}</th><th>{t("misc1.market.price")}</th><th className="mkt-right">{t("misc1.market.customers")}</th>
-            <th>{t("misc1.market.sells")}</th><th>{t("misc1.market.sellsTo")}</th>
           </tr>
         </thead>
         <tbody>
           {openRivals(game).map((c) => {
             const diff = Math.round((c.priceFactor - 1) * 100);
             return (
-              <tr key={c.id}>
+              <Fragment key={c.id}>
+              <tr className="mk-main">
                 <td><strong>{c.name}</strong>{c.outage && <span className="pill bad">{t("misc1.market.outage")}</span>}</td>
                 <td className="num">{Math.round(c.P)}</td>
                 <td className="num">{Math.round(c.R)}</td>
                 <td className="num">{Math.round(c.C)}</td>
                 <td>{diff < 0 ? t("misc1.market.under", { n: -diff }) : t("misc1.market.over", { n: diff })}</td>
                 <td className="num">{(c.customers[city] ?? 0).toLocaleString(LOCALE)}</td>
-                <td><div className="mkt-chips">{c.sells.map((p) => <span key={p} className="mk-tag">{PRODUCT[p]}</span>)}</div></td>
-                <td><div className="mkt-chips">{segmentsOf(c).map((p) => <span key={p} className="mk-tag">{AUDIENCE[p]}</span>)}</div></td>
               </tr>
+              <tr className="mk-sub">
+                <td colSpan={6}>
+                  <div className="mkt-row"><span className="mkt-label">{t("misc1.market.sells")}</span><div className="mkt-chips">{c.sells.map((p) => <span key={p} className="mk-tag">{PRODUCT[p]}</span>)}</div></div>
+                  <div className="mkt-row"><span className="mkt-label">{t("misc1.market.sellsTo")}</span><div className="mkt-chips">{segmentsOf(c).map((p) => <span key={p} className="mk-tag">{AUDIENCE[p]}</span>)}</div></div>
+                </td>
+              </tr>
+              </Fragment>
             );
           })}
         </tbody>

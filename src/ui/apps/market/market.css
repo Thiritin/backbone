@@ -21,7 +21,10 @@
 .mk-legend li { display: inline-flex; align-items: center; gap: 6px; }
 .mk-legend i { width: 10px; height: 10px; border-radius: 2px; }
 .mk-legend .num { color: var(--text-3); }
-.mk-rivals td { vertical-align: top; }
+.mk-rivals td { vertical-align: top; white-space: nowrap; }
+.mk-rivals .mk-main td { border-bottom: 0; }
+.mk-rivals .mk-sub td { white-space: normal; padding-top: 0; }
+.mk-rivals .mk-sub .mkt-row { padding: 2px 0; border-top: 0; }
 .mk-rivals td .pill { margin-left: 8px; }
 
 /* Panthera and Leapard: tags are shaded capsules with a 1px border. */

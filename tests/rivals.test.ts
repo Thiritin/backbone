@@ -39,10 +39,10 @@ describe("rivals", () => {
     // A rival with no lag follows the market each January.
     c.competitors = c.competitors.map((r) => ({ ...r, lag: 0 }));
     rollTo(c, 2009, 6);
-    // Four Januaries passed: budget prices fall 2% a year, the rest 1%.
+    // Four Januaries passed: the budget host cuts its price 2% a year and the rest hold theirs.
     const ionose = byId(c, "ionose"), rackspice = byId(c, "rackspice");
     expect(ionose.priceFactor).toBeCloseTo(0.8 * 0.98 ** 4, 3);
-    expect(rackspice.priceFactor).toBeCloseTo(1.3 * 0.99 ** 4, 3);
+    expect(rackspice.priceFactor).toBe(1.3);
     // Control panels in 2006 and one-click installs in 2009.
     expect(ionose.C).toBe(70 + 8);
     expect(rackspice.C).toBe(75 + 6);

@@ -65,8 +65,9 @@ export function driftRival(r: Rival, i: number, seed: number, hour: number): { r
   const rng = hashRng(seed, monthOf(hour), i);
   const next: Rival = { ...r, P: t.P - (gen > 0 && since(GENERATIONS[gen].year) < r.lag ? GEN_PENALTY : 0) };
   if (CONVENIENCE_YEARS.some((y) => since(y) === r.lag)) next.C = Math.min(95, r.C + (C_STEP[r.template] ?? 2));
+  // Only the budget template cuts its price, 2% a year (competitors.md, Monthly drift).
   const cut = since(START_YEAR + 1) - r.lag;
-  if (cut >= 0 && cut % 12 === 0) next.priceFactor = Math.max(round(t.priceFactor - 0.15), round(r.priceFactor * (r.template === "budget" ? 0.98 : 0.99)));
+  if (r.template === "budget" && cut >= 0 && cut % 12 === 0) next.priceFactor = Math.max(round(t.priceFactor - 0.15), round(r.priceFactor * 0.98));
   if (r.outage) {
     const left = r.outage.months - 1;
     next.outage = left > 0 ? { ...r.outage, months: left } : null;
