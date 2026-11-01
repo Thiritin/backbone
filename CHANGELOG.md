@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- Every bank now sells account plans, from a cheap Giro for sole traders to Business Plus and Premium with fewer booking fees and the card included, and a partnership or limited company needs the right plan before the paperwork, while a limited company also needs its share capital in the account.
+- You can switch to another bank on its site once loans are repaid, and loan interest now differs from bank to bank.
 - A cPanic Dedicated licence now renews as the account-based edition that fits its web spaces at its first renewal from June 2019, and cPanic emails the change a month ahead.
 - The hand-rolled order form is gone: orders arrive by email until you run a shop system, every shop system needs the Shop systems research, and saves that had the form keep taking orders by email.
 - Getting started no longer asks you to style your company, since registering it already gives it a name.

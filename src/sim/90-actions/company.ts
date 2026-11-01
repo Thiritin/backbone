@@ -2,7 +2,7 @@ import type { Company, GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
 import { STARTER_APPS } from "../10-catalog/store";
 import { LEGAL_FORMS, officeOpen, registerNumber } from "../80-business/office";
-import { bankById, monthlyFee } from "../10-catalog/banks";
+import { bankById, planById } from "../10-catalog/banks";
 
 // Logo marks by id; the UI draws each one as an icon on a tile in the chosen colour.
 export const COMPANY_LOGOS = ["server", "cloud", "zap", "globe", "rocket", "database", "cpu", "shield", "leaf", "mountain", "waves", "flame", "wolf", "fox", "cat", "toaster"];
@@ -33,7 +33,7 @@ export function registrationError(s: GameState, name: string, owner: string, for
   if (!(form in LEGAL_FORMS)) return "error.legalForm";
   if (form !== "sole") return "error.registerSole";
   if (!s.bank) return "error.noBank";
-  if (monthlyFee(bankById(s.bank.id)!, form) === null) return "error.bankForm";
+  if (!planById(bankById(s.bank.id)!, s.bank.plan)?.forms.includes(form)) return "error.bankPlan";
   return null;
 }
 
