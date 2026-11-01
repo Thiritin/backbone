@@ -79,3 +79,4 @@
 .books-doclist-ref { display: block; margin-top: 2px; font-size: 11.5px; color: var(--text-3); }
 .books-docfoot { display: flex; gap: 18px; padding: 3px 12px; border-top: var(--ar-bw) solid var(--line); font-size: 11.5px; color: var(--text-3); flex: none; }
 .books-docfoot b { font-weight: 600; color: var(--text); }
+.books-settings { margin-left: auto; }

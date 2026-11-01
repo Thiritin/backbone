@@ -142,7 +142,7 @@ export function invoiceOrder(s: GameState, ticketId: string): ActionResult {
   const draft = invoiceOf(s, r);
   if (draft) return { ok: true, id: draft.id };
   const inv = draftInvoice(s, r.customerId!, firstLines(s, r));
-  editRequest(s, r.id, () => ({ invoiceId: inv.id }));
+  editRequest(s, r.id, () => ({ invoiceId: inv.id, status: "quoted", replyAt: null }));
   carryForward(s, ticketId, inv.id);
   return { ok: true, id: inv.id };
 }
@@ -162,7 +162,7 @@ export function deleteQuote(s: GameState, quoteId: string): ActionResult {
   return { ok: true };
 }
 
-// Confirms the accepted quote and sends the invoice.
+// Confirms the accepted quote with its first invoice as a draft; it goes out with the setup.
 export const confirmOrder = (s: GameState, ticketId: string): ActionResult => step(s, ticketId, "invoice");
 
 // Switches the automatic run of accepted orders; it needs the provisioning skill.
