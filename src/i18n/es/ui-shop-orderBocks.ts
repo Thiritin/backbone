@@ -40,7 +40,7 @@ export default {
   "orderbocks.v.notes.8": () => "Un catálogo de hosting más amplio, una tienda nueva y un panel nuevo.",
   "orderbocks.v.notes.9": () => "Nuevas extensiones de dominio y un nuevo panel para revendedores.",
   "orderbocks.v.step0": () => "Abre el panel de hosting de uno de tus hosts con panel.",
-  "orderbocks.v.step1": (p) => `En sus ajustes, en Sistema de tienda, pulsa Instalar ${p.name}.`,
+  "orderbocks.v.step1": (p) => `En su página Software y actualizaciones, en Sistema de tienda, elige ${p.name} y pulsa Instalar ${p.name}.`,
   "orderbocks.v.step2": (p) => `Inicia sesión en ${p.url}.`,
   "orderbocks.v.noInstall": () => "OrderBocks no está instalado en ninguno de tus hosts.",
   "orderbocks.v.installation": () => "Instalación",

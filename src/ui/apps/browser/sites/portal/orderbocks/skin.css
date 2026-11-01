@@ -143,7 +143,7 @@
 .ob-panel .ob-who span { display: none; }
 .ob-panel .ob-who i { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #ff7a2f; color: #fff; font-style: normal; font-weight: 600; }
 .ob-panel .ob-body { display: contents; }
-.ob-panel.ob-admin .ob-nav { background: #121a2c; padding: 8px 12px 24px; display: flex; flex-direction: column; gap: 2px; }
+.ob-panel.ob-admin .ob-nav { grid-row: 2 / 4; background: #121a2c; padding: 8px 12px 24px; display: flex; flex-direction: column; gap: 2px; }
 .ob-panel.ob-admin .ob-nav a { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; color: #b6c0d4; font-weight: 500; }
 .ob-panel.ob-admin .ob-nav a:hover { background: #1e2840; color: #fff; }
 .ob-panel.ob-admin .ob-nav a.on { background: #ff6b1a; color: #fff; }

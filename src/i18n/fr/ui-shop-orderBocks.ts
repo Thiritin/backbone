@@ -40,7 +40,7 @@ export default {
   "orderbocks.v.notes.8": () => "Un catalogue d'hébergement plus large, une nouvelle boutique et un nouveau panneau.",
   "orderbocks.v.notes.9": () => "De nouvelles extensions de domaine et un nouveau tableau de bord revendeur.",
   "orderbocks.v.step0": () => "Ouvrez le panneau d'hébergement de l'un de vos hôtes à panneau.",
-  "orderbocks.v.step1": (p) => `Dans ses réglages, sous Système de boutique, cliquez sur Installer ${p.name}.`,
+  "orderbocks.v.step1": (p) => `Sur sa page Logiciels et mises à jour, sous Système de boutique, choisissez ${p.name} puis cliquez sur Installer ${p.name}.`,
   "orderbocks.v.step2": (p) => `Connectez-vous sur ${p.url}.`,
   "orderbocks.v.noInstall": () => "OrderBocks n'est installé sur aucun de vos hôtes.",
   "orderbocks.v.installation": () => "Installation",

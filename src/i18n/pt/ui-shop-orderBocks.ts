@@ -40,7 +40,7 @@ export default {
   "orderbocks.v.notes.8": () => "Um catálogo de alojamento maior, uma nova loja e um novo painel.",
   "orderbocks.v.notes.9": () => "Novas extensões de domínio e um novo painel de revendedor.",
   "orderbocks.v.step0": () => "Abra o painel de alojamento de um dos seus hosts com painel.",
-  "orderbocks.v.step1": (p) => `Nas definições, em Sistema de loja, clique em Instalar ${p.name}.`,
+  "orderbocks.v.step1": (p) => `Na página Software e atualizações, em Sistema de loja, escolha ${p.name} e clique em Instalar ${p.name}.`,
   "orderbocks.v.step2": (p) => `Inicie sessão em ${p.url}.`,
   "orderbocks.v.noInstall": () => "O OrderBocks não está instalado em nenhum dos seus hosts.",
   "orderbocks.v.installation": () => "Instalação",

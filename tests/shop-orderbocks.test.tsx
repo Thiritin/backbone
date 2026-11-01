@@ -3,10 +3,10 @@ import { describe, expect, it } from "vitest";
 import { hourOfMonth } from "../src/sim/00-core/time";
 import { hostOf } from "../src/sim/80-business/vendor-shop";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
-import { chooseShop, upgradeShop } from "../src/sim/90-actions/shop";
+import { upgradeShop } from "../src/sim/90-actions/shop";
 import { orderBocksSkin } from "../src/ui/apps/browser/sites/portal/orderbocks";
 import { OrderBocks } from "../src/ui/apps/browser/sites/shopvendors/orderbocks";
-import { readyGame } from "./fixtures";
+import { installWithKey, readyGame } from "./fixtures";
 
 const shop = (month: string) => {
   const s = readyGame(5);
@@ -14,7 +14,7 @@ const shop = (month: string) => {
   s.cash = 1e6;
   setUpChannel(s, "website");
   s.unlocks = [...s.unlocks, "shops"];
-  expect(chooseShop(s, "orderBocks").ok).toBe(true);
+  installWithKey(s, "orderBocks");
   return s;
 };
 const props = (s: ReturnType<typeof shop>, major: string, area: "admin" | "store" | "client" = "admin") =>
