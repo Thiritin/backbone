@@ -32,6 +32,7 @@ The steps run in this order, with the 2005 prices from the game.
 
 | Step | Where | What it costs | How long it takes |
 | --- | --- | --- | --- |
+| Install a bookkeeping program | Shop, Pear Store, Bookkeeping | Lexwear Office €249 once and €99 a year for updates; WIZO Mein Büro €149, orgaMIN €199 and Saga Office Line €599 once; Collmix €15 a month | Instant |
 | Buy a server | Shop | Dwell Balanced 1U G1, €2,500 (2 cores, 8 GB RAM, 500 GB disk, 250 W) | The first server arrives at once; later ones take 3 days |
 | Mount and power it | Locations | Nothing; the rack is already there | Instant |
 | Mount the router | Locations | Nothing; the Fritz!Bocks 5050 waits in storage and goes on a shelf in the rack, its DSL port cabled to the line jack | Instant |
@@ -43,7 +44,7 @@ The steps run in this order, with the 2005 prices from the game.
 | Set up company email | Email app | Hosted Exchange by Ionose, €10 a month for the one seat | Instant |
 | Win your first customer | Support | Nothing | Days |
 
-The server leaves €1,000 of the €3,500. The fixed bills that follow are €80.40 a month with the business line (€59 line, €9.90 site, €10 email, €1.50 domain) or €66.40 with the DSL 16000 line, plus electricity at the household price.
+The server and Lexwear Office leave €751 of the €3,500; with WIZO Mein Büro €851, or €1,000 less €15 a month with Collmix. The fixed bills that follow are €80.40 a month with the business line (€59 line, €9.90 site, €10 email, €1.50 domain) or €66.40 with the DSL 16000 line, plus electricity at the household price.
 
 The three friends (Jonas, Mira and Tobi) sign up for web hosting at €6 a month once the first panel host is ready and the internet reaches it. They bring in €18 a month and always pay.
 

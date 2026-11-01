@@ -16,9 +16,25 @@ The form asks for the company name, the owner, the legal form (sole trader, part
 
 A submit outside office hours fails with "The online service is closed." An empty owner or a bad company name fails with the same errors the Settings company fields use.
 
+## The bookkeeping program
+
+After the company is styled, Getting started shows "Install a bookkeeping program". Its Open button opens the Pear Store in the Shop at the Bookkeeping shelf, which lists every program on sale in the current year with its price. Getting one pays its licence, or starts its monthly fee as an invoice from the vendor, puts Books in the dock in that program's colours and ticks the step.
+
+| Program | From | Price |
+| --- | --- | --- |
+| Lexwear Office | 2005 | €249 once, updates €99 a year |
+| WIZO Mein Büro | 2005 | €149 once |
+| Saga Office Line | 2005 | €599 once |
+| orgaMIN | 2005 | €199 once |
+| Collmix | 2005 | €15 a month |
+| sevDeck | 2013 | €19 a month |
+| lexoffize | 2014 | €12 a month |
+
+Each program's modules and their prices come from its vendor, sold on the vendor's site in the Browser and listed under Bookkeeping on Yahoy. Lexwear, WIZO, Saga and orgaMIN email a licence key for Register in Books; Collmix, sevDeck and lexoffize switch a module on at purchase. Lexwear's yearly update arrives as an invoice on each anniversary of the install; while it is unpaid Lexwear sells no new modules, and the program keeps working. Switching to another program in the Pear Store keeps every customer, invoice, quote, payment and supplier invoice, drops the old program's modules and stops its monthly fee. A program bought once installs again without a second licence.
+
 ## Apps that arrive later
 
-The registration installs Applications, Locations, Shop, Browser, Terminal, Support, Billing and Settings. Every other app arrives when its problem does, checked each morning at 09:00, with one email from Pear in Support and one News line:
+The registration installs Applications, Locations, Shop, Browser, Terminal, Support and Settings. Books arrives with the bookkeeping program (see below). Every other app arrives when its problem does, checked each morning at 09:00, with one email from Pear in Support and one News line:
 
 | App | Arrives when |
 | --- | --- |
@@ -34,7 +50,7 @@ Staff and Market are paid Pear Store apps, so their email offers them and the pl
 
 ## Old saves
 
-Saves from before the tutorial count as registered on the first hour, so they keep their dock and never see the trade office as a step. Apps a save already has count as arrived and send no email.
+Saves from before the tutorial count as registered on the first hour, so they keep their dock and never see the trade office as a step. Apps a save already has count as arrived and send no email. Saves from before the Bookkeeping shelf that have Books run Lexwear Office.
 
 ## Next chapters
 
