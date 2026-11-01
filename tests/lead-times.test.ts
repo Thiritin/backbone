@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
 import { leadFactor } from "../src/sim/10-catalog/hardware";
 import { partPrice } from "../src/sim/10-catalog/parts";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { buyCart, deliveryWait, type CartLine } from "../src/sim/90-actions/hardware";
-import { withServer } from "./fixtures";
+import { withServer, newGame } from "./fixtures";
 
 const at = (y: number, m: number, d = 1) => hourOf(new Date(Date.UTC(y, m - 1, d)));
 const game = (y: number, m: number): GameState => ({ ...withServer(newGame(1)), hour: at(y, m), cash: 1_000_000 });

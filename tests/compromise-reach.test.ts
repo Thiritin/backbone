@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { yearOf } from "../src/sim/00-core/time";
 import { sizeSpec } from "../src/sim/10-catalog/products";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { hasBackup } from "../src/sim/60-infra/apps";
 import { RESTORE_HOURS, STAGE_HOURS, VULNS, securityTick } from "../src/sim/60-infra/security";
 import { createVm, installPanelInVm, provisionService } from "../src/sim/90-actions/clusters";
@@ -9,7 +9,7 @@ import { addCustomer } from "../src/sim/90-actions/customers";
 import { setPower } from "../src/sim/90-actions/hardware";
 import { tick } from "../src/sim/88-tick/tick";
 import { cleanUp } from "../src/sim/90-actions/security";
-import { hypervisor, panelServer, skipTo, withServer } from "./fixtures";
+import { hypervisor, panelServer, skipTo, withServer, newGame } from "./fixtures";
 
 const ok = (r: ReturnType<typeof setPower>) => {
   if (!r.ok) throw new Error(r.error);

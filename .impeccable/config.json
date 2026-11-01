@@ -21,6 +21,18 @@
         ],
         "createdAt": "2026-10-29T18:15:36.106Z",
         "reason": "Agent: .loc-shelf-row has no radius; its 3px bottom border is the drawn shelf plank"
+      },
+      {
+        "rule": "design-system-font",
+        "value": "georgia",
+        "createdAt": "2026-10-31T23:32:11.656Z",
+        "reason": "agent: in-world printed paper in the game, like the period site styles"
+      },
+      {
+        "rule": "design-system-font",
+        "value": "brush script mt",
+        "createdAt": "2026-10-31T23:32:11.699Z",
+        "reason": "agent: in-world handwritten signature on a printed form"
       }
     ]
   }

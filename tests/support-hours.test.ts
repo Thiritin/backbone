@@ -1,10 +1,11 @@
+import { newGame } from "./fixtures";
 import { describe, expect, it, vi } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
 import { addHoursOn, hoursOn, isWorkHour } from "../src/sim/00-core/workhours";
 import type { Profile } from "../src/sim/30-customers/customers";
 import { createTicket } from "../src/sim/40-support/tickets";
 import { noticed } from "../src/sim/10-catalog/attention";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { deserialize, serialize } from "../src/sim/91-save/save";

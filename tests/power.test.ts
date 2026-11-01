@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { deviceHealth, linkStatus, powered, rackPower, working } from "../src/sim/60-infra/status";
 import { connect, mountDevice, mountStack, setPlugged, unmountDevice } from "../src/sim/90-actions/hardware";
-import { buyDevice } from "./fixtures";
+import { buyDevice, newGame } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { failComponents, powerPerHour, tick } from "../src/sim/88-tick/tick";
 import { runServers, withServer } from "./fixtures";

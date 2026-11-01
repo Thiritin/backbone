@@ -1,0 +1,24 @@
+/* Printed paper: downloaded forms and letters from the post. Paper stays white in dark mode, as a printout would. */
+.paper-scroll { height: 100%; overflow: auto; padding: 16px; background: var(--win-side); }
+.paper { max-width: 520px; margin: 0 auto; padding: 32px 36px; background: #fff; color: #1a1a1a; border: 0.5px solid var(--line-strong); box-shadow: 0 1px 3px rgb(0 0 0 / 0.12); font-family: Georgia, "Times New Roman", serif; font-size: 13px; line-height: 1.5; }
+.paper h1 { margin: 0 0 16px; font-size: 15px; font-weight: 700; }
+.paper table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+.paper th, .paper td { padding: 4px 6px; border-bottom: 0.5px solid #ccc; text-align: left; vertical-align: top; }
+.paper th { width: 42%; font-weight: 400; color: #555; }
+.paper-note { margin: 12px 0; font-weight: 700; }
+.paper-sign { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; margin-top: 28px; min-height: 64px; justify-content: flex-end; }
+.paper-sign .btn { font-family: var(--font-ui); }
+.paper-ink { font-family: "Brush Script MT", "Segoe Script", cursive; font-size: 24px; color: #1d3b8f; line-height: 1; }
+.paper-sign small { color: #555; }
+.paper-line { width: 220px; border-top: 0.5px solid #1a1a1a; padding-top: 2px; font-size: 11px; color: #555; }
+.paper-head { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 20px; font-size: 12px; color: #555; }
+.paper-head strong { color: #1a1a1a; font-size: 14px; }
+.paper-bill { margin-top: 12px; }
+.post { display: grid; grid-template-columns: 240px 1fr; height: 100%; }
+.post-list { overflow: auto; background: var(--win-side); border-right: 0.5px solid var(--line); }
+.post-row { display: grid; gap: 1px; width: 100%; padding: 8px 12px; border: 0; border-bottom: 0.5px solid var(--line); background: none; color: inherit; text-align: left; font: inherit; }
+.post-row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.post-row small { color: var(--text-2); }
+.post-row.unread strong::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: var(--accent); }
+.post-row.active { background: color-mix(in oklch, var(--accent) 14%, transparent); }
+.post-none { padding: 16px 12px; color: var(--text-2); }
