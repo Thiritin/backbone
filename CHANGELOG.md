@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- Getting started no longer asks you to style your company, since registering it already gives it a name.
 - Every software and operating system website now has a Versions page with each release's support dates and a News page announcing each release with its headline features, and the News app reports every new major version on its release day.
 - Used hardware is now bought on its own websites in the Browser: eBuy auctions, the WebHostingTalc forum and the Telegrump chat each look and filter the way they did in their year, from 2005 web pages to modern apps.
 - Registering your company at the trade office now goes through at once and charges the fee only once, by a letter that arrives the same day, and paying it is the next step in Getting started.
