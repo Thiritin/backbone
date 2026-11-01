@@ -65,7 +65,7 @@ export function LicencePage({ game, c }: { game: GameState; c: Cluster }) {
               <tr key={sw.id}>
                 <td>{sw.name}</td>
                 <td>{t(`readouts.kind.${kind}`)}</td>
-                <td>{kind === "free" ? "" : t(kind === "account" ? "readouts.counted.account" : "readouts.counted.server", { n: kind === "account" ? accounts : c.nodes.length || 1 })}</td>
+                <td>{kind === "free" ? "" : t(kind === "account" || kind === "gameserver" ? `readouts.counted.${kind}` : "readouts.counted.server", { n: kind === "account" || kind === "gameserver" ? accounts : c.nodes.length || 1 })}</td>
                 <td className="num">{kind === "free" ? "" : euroCents(fee)}</td>
               </tr>
             );

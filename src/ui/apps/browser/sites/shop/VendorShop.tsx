@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { t } from "../../../../../i18n/en";
 import { euroPrice } from "../../../../../sim/00-core/money";
-import { yearOf } from "../../../../../sim/00-core/time";
 import { tiersOf } from "../../../../../sim/10-catalog/licence-tiers";
 import type { LicenseKind } from "../../../../../sim/10-catalog/server-os";
 import type { GameState, Licence } from "../../../../../sim/50-state";
@@ -19,18 +18,18 @@ type ShopProps = { btn: string };
 const productName = (id: string) => productOf(id)?.name ?? id;
 const editionName = (product: string, edition: string | null) => tiersOf(product).find((x) => x.id === edition)?.name ?? "";
 const lineName = (product: string, edition: string | null) => [productName(product), editionName(product, edition)].filter(Boolean).join(" ");
-const UNIT: Record<LicenseKind, string> = { once: "vendor-shop.once", server: "vendor-shop.perServer", core: "vendor-shop.perCore", account: "vendor-shop.perAccount", free: "vendor-shop.once" };
-const priceOf = (o: Offer) => t(UNIT[o.kind], { fee: euroPrice(o.fee) });
+const UNIT: Record<LicenseKind, string> = { once: "vendor-shop.once", server: "vendor-shop.perServer", core: "vendor-shop.perCore", account: "vendor-shop.perAccount", gameserver: "vendor-shop.perGameserver", free: "vendor-shop.once" };
+const priceOf = (o: Offer) => t(`${UNIT[o.kind]}${o.period === "year" ? "Year" : ""}`, { fee: euroPrice(o.fee) });
 
 export const cartCount = (s: GameState, host: string): number => cartOf(s, host).reduce((n, l) => n + l.qty, 0);
 
 export function Editions({ product, btn }: ShopProps & { product: string }) {
-  const year = useStore((s) => yearOf(s.game.hour)), act = useStore((s) => s.act);
+  const hour = useStore((s) => s.game.hour), act = useStore((s) => s.act);
   const caps = tiersOf(product);
   return (
     <table className="shop-table">
       <thead><tr><th>{t("vendor-shop.edition")}</th>{caps.length > 0 && <th>{t("vendor-shop.accounts")}</th>}<th>{t("vendor-shop.price")}</th><th /></tr></thead>
-      <tbody>{offers(product, year).map((o) => {
+      <tbody>{offers(product, hour).map((o) => {
         const cap = caps.find((x) => x.id === o.edition)?.cap;
         return (
           <tr key={o.edition ?? product}>
@@ -48,18 +47,18 @@ export function Editions({ product, btn }: ShopProps & { product: string }) {
 export function Cart({ host, btn, account }: ShopProps & { host: string; account: () => void }) {
   const game = useStore((s) => s.game), act = useStore((s) => s.act);
   const [order, setOrder] = useState<string | null>(null);
-  const year = yearOf(game.hour), lines = cartOf(game, host);
+  const lines = cartOf(game, host);
   if (!lines.length) {
     if (!order) return <p>{t("vendor-shop.empty")}</p>;
     return <p>{t("vendor-shop.placed", { order })} <a href="#account" onClick={(e) => { e.preventDefault(); account(); }}>{t("vendor-shop.myAccount")}</a></p>;
   }
-  const total = lines.reduce((n, l) => n + (offerOf(l, year)?.fee ?? 0) * l.qty, 0);
+  const total = lines.reduce((n, l) => n + (offerOf(l, game.hour)?.fee ?? 0) * l.qty, 0);
   return (
     <>
       <table className="shop-table">
         <thead><tr><th>{t("vendor-shop.product")}</th><th>{t("vendor-shop.qty")}</th><th>{t("vendor-shop.price")}</th><th /></tr></thead>
         <tbody>{lines.map((l) => {
-          const o = offerOf(l, year);
+          const o = offerOf(l, game.hour);
           return (
             <tr key={`${l.product}.${l.edition}`}>
               <td>{lineName(l.product, l.edition)}</td><td className="num">{l.qty}</td><td className="num">{o ? priceOf(o) : ""}</td>

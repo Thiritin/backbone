@@ -7,9 +7,9 @@ import { genOf, modelById } from "../10-catalog/hardware";
 import { balancerIn, isService, softwareById } from "../10-catalog/platforms";
 import { slowTolerance } from "../10-catalog/usage";
 import { channelOf, EDGE_HOWTO } from "../60-infra/channel";
-import { hasTrialTiers, keyTiers, assignedKey, assignKey, extendKey, installedVersion, isLicensed, issueKey, productOf, panelMachine, startTrial, updateKey } from "../60-infra/licence";
+import { accountsOn, hasTrialTiers, keyTiers, assignedKey, assignKey, extendKey, installedVersion, isLicensed, issueKey, productOf, panelMachine, startTrial, updateKey, yearly } from "../60-infra/licence";
 import { LAPSE_GRACE_DAYS, topTier, type LicenceTier } from "../10-catalog/licence-tiers";
-import { APP_SUITE_FEE, licensingAt, serverOsAt, serverOsById, type LicenseEra, type ServerOsId } from "../10-catalog/server-os";
+import { APP_SUITE_FEE, eraAt, serverOsAt, serverOsById, type LicenseEra, type ServerOsId } from "../10-catalog/server-os";
 import { homeLineById } from "../20-world/datacenters";
 import type { Customer, Product } from "../30-customers/customers";
 import { bump, createTicket, deliverMail, slowed } from "../40-support/tickets";
@@ -69,8 +69,8 @@ const machinesOf = (s: GameState, c: Cluster) => (c.vm ? s.workloads.filter((w) 
 // for an OS and per CPU socket of a server for software; the key it gets stays assigned for every later reinstall.
 type Licensed = { id: string; name: string; licensing: LicenseEra[] };
 const oncePrice = (s: GameState, machineId: string, x: Licensed, perSocket: boolean): number => {
-  const era = licensingAt(x, yearOf(s.hour));
-  if (era.kind !== "once") return 0;
+  const era = eraAt(x, s.hour);
+  if (era.kind !== "once" || keyTiers(x.id).length) return 0;
   const d = perSocket ? s.devices.find((m) => m.id === machineId) : undefined;
   return era.fee * (d ? d.components.filter((p) => p.kind === "cpu").length : 1);
 };
@@ -100,7 +100,7 @@ export function buyLicenses(s: GameState, machineId: string, osId: ServerOsId | 
 
 // An in-place upgrade buys the new release in a once era; a monthly era already covers it.
 export const upgradeLicenseDue = (s: GameState, osId: ServerOsId): number => {
-  const era = licensingAt(serverOsById(osId), yearOf(s.hour));
+  const era = eraAt(serverOsById(osId), s.hour);
   return era.kind === "once" ? era.fee : 0;
 };
 
@@ -124,7 +124,7 @@ export const balancerFee = (s: GameState, c: Cluster): number =>
 export function licenseCost(s: GameState, c: Cluster): { panel: number; platform: number } {
   const machines = new Set(machinesOf(s, c).map((m) => m.id));
   const keys = s.licenses.filter((k) => k.machineId !== null && machines.has(k.machineId) && k.renewsAt !== null);
-  const sum = (ks: Licence[]) => Math.round(ks.reduce((n, k) => n + keyFee(s, k), 0) * 100) / 100;
+  const sum = (ks: Licence[]) => Math.round(ks.reduce((n, k) => n + keyFee(s, k) / (yearly(k.product, k.edition, s.hour) ? 12 : 1), 0) * 100) / 100;
   const extra = (c.appSuite ? APP_SUITE_FEE : 0) + balancerFee(s, c);
   return { panel: sum(keys.filter((k) => k.product === c.panel)), platform: sum(keys.filter((k) => k.product !== c.panel)) + extra };
 }
@@ -321,16 +321,20 @@ function billLicenses(s: GameState) {
   s.ledger = [...s.ledger, ...lines];
 }
 
-// The monthly fee of a subscription key: its edition's or its product's price per account, server, or core of its machine.
-// An unassigned key pays for one unit.
+// The fee per term of a subscription key: its edition's or its product's price per account, server, game server beyond the
+// free ones, or core of its machine, a server counting at least the era's minimum cores. An unassigned key pays for one unit.
 export function keyFee(s: GameState, k: Licence): number {
   const tier = keyTiers(k.product).find((x) => x.id === k.edition);
   const c = s.clusters.find((x) => x.panel === k.product && panelMachine(x) === k.machineId);
   if (tier) return c ? tierFee(s, c, tier) : tier.fee;
-  const era = licensingAt(productOf(k.product)!, yearOf(s.hour));
+  const era = eraAt(productOf(k.product)!, s.hour);
   if (era.kind === "once" || era.kind === "free") return 0;
   const m = [...s.devices, ...s.workloads].find((x) => x.id === k.machineId);
-  return Math.round(era.fee * (m && era.kind === "core" ? (isServer(m) ? installedCores(m) : m.vcpu) : 1) * 100) / 100;
+  const sockets = m && isServer(m) ? m.components.filter((p) => p.kind === "cpu").length : 0;
+  const units = !m ? 1
+    : era.kind === "core" ? (isServer(m) ? Math.max(installedCores(m), era.minCores ?? 0, (era.minCoresPerCpu ?? 0) * sockets) : m.vcpu)
+    : era.kind === "gameserver" ? Math.max(0, (c ? accountsOn(s, c) : 0) - (era.free ?? 0)) : 1;
+  return Math.round(era.fee * units * 100) / 100;
 }
 
 // Hourly: every subscription key that is due renews from the bank, one ledger line each and one receipt per product. A key
