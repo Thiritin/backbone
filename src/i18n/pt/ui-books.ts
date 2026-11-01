@@ -16,7 +16,6 @@ export default {
   "books.tab.payables": () => "Faturas de fornecedores",
   "books.monthlyRun": () => "Faturação mensal",
   "books.matchByReference": () => "Associar por referência",
-  "books.autoReminders": () => "Lembretes automáticos",
   "books.col.number": () => "N.º",
   "books.col.customer": () => "Cliente",
   "books.col.period": () => "Período",

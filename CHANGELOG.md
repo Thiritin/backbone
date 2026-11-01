@@ -4,10 +4,13 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
-- You can register on DOHLE for a certificate file, with the activation ID by email and the code by post, and download DohleFormular to send your advance VAT returns.
+- Bookkeeping editions with the tax view connect to DOHLE with your certificate file, send the advance VAT returns in the monthly run and submit the yearly return once every invoice and transfer of the year is in the books.
 - Income tax is no longer taken every April: you file a yearly return through DohleFormular, the assessment follows by post, and a late return costs a fee or brings an estimate that is always too high.
+- You can register on DOHLE for a certificate file, with the activation ID by email and the code by post, and download DohleFormular to send your advance VAT returns.
 
 ## 2026-11-01
+- Bookkeeping programs no longer send reminders, dunning notices and final notices by themselves; they go out when you or your staff send them, or after the Automation research.
+- Private customers and gamers now write the invoice number on four out of five transfers.
 - The DirectAdmen 1.30 release notes list the Enhanced skin once.
 - Consoles, the command line and the monitoring list show the installed software version instead of the year, and the DirectAdmen 1.24 release notes no longer mention the Enhanced skin.
 - Leads now write in about products you do not sell yet, and a switch on the website settings stops those requests.

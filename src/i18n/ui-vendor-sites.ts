@@ -6,7 +6,6 @@ export default {
   "ledger.module.helpdesk-link": () => "Lexwear Helpdesk link licence",
   "ledger.module.monthly-run": () => "Lexwear Monthly run licence",
   "ledger.module.match-by-reference": () => "Lexwear Match by reference licence",
-  "ledger.module.auto-reminders": () => "Lexwear Automatic reminders licence",
   "ledger.module.hbci": () => "Lexwear HBCI online banking licence",
   "error.licenceKey": () => "This licence key is not valid.",
   "error.noTrial": () => "No trial is available for this software on this machine.",
