@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
-import { assignKey, issueKey } from "../src/sim/60-infra/licence";
+import { assignKey, issueKey, panelMachine } from "../src/sim/60-infra/licence";
 import { installedCores } from "../src/sim/60-infra/status";
 import { offers, upgradeOffer } from "../src/sim/80-business/vendor-shop";
 import { keyFee, licenseCost, renewKeys } from "../src/sim/85-products/products";
+import { provisionService } from "../src/sim/90-actions/clusters";
+import { addCustomer } from "../src/sim/90-actions/customers";
 import { addToCart, checkout } from "../src/sim/90-actions/vendor-shop";
-import { BASEMENT_SERVER, newGame, startGame, withServer } from "./fixtures";
+import { BASEMENT_SERVER, newGame, panelVm, readyGame, startGame, withServer } from "./fixtures";
 
 const at = (y: number, m: number, d = 1) => hourOf(new Date(Date.UTC(y, m - 1, d)));
 const game = (hour: number) => Object.assign(newGame(41), { hour, cash: 50_000 });
@@ -77,5 +79,33 @@ describe("licence eras", () => {
     expect(upgradeOffer(s, "windoors", major)).toEqual({ fee: 600, discounted: false });
     s.hour = at(2017, 1);
     expect(upgradeOffer(s, "windoors", major)).toBeNull();
+  });
+
+  it("moves a Dedicated cPanic key to the account edition that fits at its first renewal from June 2019, with notice", () => {
+    const s = readyGame(1);
+    const id = panelVm(s, s.clusters.find((c) => c.kind === "cloud")!.id, "cpanic");
+    const vm = panelMachine(s.clusters.find((c) => c.id === id)!)!;
+    s.licenses = s.licenses.filter((k) => k.machineId !== vm);
+    s.hour = at(2019, 5, 10);
+    s.cash = 50_000;
+    const k = issueKey(s, "cpanic", "dedicated");
+    assignKey(s, k.id, vm);
+    const cus = addCustomer(s, "Ada Lang", "hobbyDev");
+    for (const label of ["a.com", "b.com"]) expect(provisionService(s, cus, "webHosting", { label, clusterId: id }).ok).toBe(true);
+    const renews = at(2019, 6, 10), notices = () => s.tickets.filter((x) => x.topic === "licenceEditionChange");
+    s.hour = renews - 30 * 24 - 1;
+    renewKeys(s);
+    expect(notices()).toEqual([]);
+    s.hour = renews - 30 * 24;
+    renewKeys(s);
+    expect(notices().map((x) => x.mail!.params)).toEqual([{ name: "cPanic", key: k.key, from: "Dedicated", to: "Admin", amount: 4 }]);
+    s.hour = renews - 1;
+    renewKeys(s);
+    expect(s.licenses[0].edition).toBe("dedicated");
+    s.hour = renews;
+    const cash = s.cash;
+    renewKeys(s);
+    expect(s.licenses[0]).toMatchObject({ edition: "admin", kind: "server", covers: { kind: "term", until: at(2019, 7, 10) } });
+    expect(s.cash).toBe(cash - 4);
   });
 });

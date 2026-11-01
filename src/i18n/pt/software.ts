@@ -13,6 +13,8 @@ export default {
   "ticket.mail.licenceRenewed.text": (p) => `A sua assinatura ${p.name} foi renovada por mais um mês. ${p.count === 1 ? "1 chave" : `${p.count} chaves`}, ${euroCents(Number(p.amount))} cobrados.`,
   "ticket.mail.licenceLapsed.subject": (p) => `Assinatura ${p.name} expirada`,
   "ticket.mail.licenceLapsed.text": (p) => `Não foi possível cobrar a renovação da sua chave ${p.name} ${p.key}. A licença expirou e será renovada assim que o pagamento for efetuado.`,
+  "ticket.mail.licenceEditionChange.subject": (p) => `Alteração da sua licença ${p.name}`,
+  "ticket.mail.licenceEditionChange.text": (p) => `Deixámos de vender a edição ${p.from}. Na próxima renovação, a sua chave ${p.name} ${p.key} será renovada como ${p.to} por ${euroCents(Number(p.amount))} por mês.`,
   "ledger.licenseOnce": (p) => `Licença ${p.name}, ${p.machine}`,
   "ledger.balancer": (p) => `${p.name}, ${p.cluster}`,
   "ledger.appSuite": (p) => `VMwhere App Suite, ${p.cluster}`,

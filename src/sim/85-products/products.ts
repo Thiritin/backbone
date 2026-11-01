@@ -7,7 +7,7 @@ import { genOf, modelById } from "../10-catalog/hardware";
 import { balancerIn, isService, softwareById } from "../10-catalog/platforms";
 import { slowTolerance } from "../10-catalog/usage";
 import { channelOf, EDGE_HOWTO } from "../60-infra/channel";
-import { accountsOn, keyTiers, assignedKey, extendKey, productOf, panelMachine, startTrial, updateKey, yearly } from "../60-infra/licence";
+import { accountsOn, keyTiers, assignedKey, extendKey, productOf, panelMachine, startTrial, tiersOnSale, updateKey, yearly } from "../60-infra/licence";
 import { LAPSE_GRACE_DAYS, topTier, type LicenceTier } from "../10-catalog/licence-tiers";
 import { APP_SUITE_FEE, eraAt, serverOsById, type ServerOsId } from "../10-catalog/server-os";
 import { homeLineById } from "../20-world/datacenters";
@@ -305,20 +305,42 @@ export function keyFee(s: GameState, k: Licence): number {
   return Math.round(era.fee * units * 100) / 100;
 }
 
+const keyCluster = (s: GameState, k: Licence): Cluster | undefined => s.clusters.find((x) => x.panel === k.product && panelMachine(x) === k.machineId);
+// The edition a key renews as at the hour: its own while the vendor sells it, else the first one on sale that fits its accounts.
+function renewalTier(s: GameState, k: Licence, hour: number): LicenceTier | undefined {
+  const own = keyTiers(k.product).find((x) => x.id === k.edition), sale = tiersOnSale(k.product, hour);
+  if (!own || sale.includes(own)) return own;
+  const c = keyCluster(s, k), n = c ? accountsOn(s, c) : 0;
+  return sale.find((x) => x.cap === null || n <= x.cap) ?? own;
+}
+
 // Hourly: every subscription key that is due renews from the bank, one ledger line each and one receipt per product. A key
 // still unpaid after the grace days lapses; paid later, it runs a month from then. A cancelled key expires when its term ends.
+// A key whose edition the vendor stopped selling renews as the edition that fits it, with a notice 30 days before.
 export function renewKeys(s: GameState): void {
   const receipts = new Map<string, { count: number; amount: number }>();
-  for (const k of s.licenses) {
+  for (let k of s.licenses) {
     if (k.covers.kind !== "term") continue;
     if (k.renewsAt === null) {
       if (k.lapsedAt === null && s.hour >= k.covers.until) updateKey(s, k.id, { lapsedAt: k.covers.until });
       continue;
     }
+    if (s.hour === k.renewsAt - 30 * 24) {
+      const next = renewalTier(s, k, k.renewsAt), c = keyCluster(s, k);
+      if (next && next.id !== k.edition) {
+        const name = productOf(k.product)!.name, from = keyTiers(k.product).find((x) => x.id === k.edition)!.name;
+        deliverMail(s, name, "licenceEditionChange", { name, key: k.key, from, to: next.name, amount: c ? tierFee(s, c, next) : next.fee });
+      }
+    }
     if (s.hour < k.renewsAt) continue;
-    const fee = keyFee(s, k), late = s.hour - k.renewsAt >= LAPSE_GRACE_DAYS * 24, name = productOf(k.product)!.name;
+    const renewsAt = k.renewsAt, next = renewalTier(s, k, s.hour);
+    if (next && next.id !== k.edition) {
+      updateKey(s, k.id, { edition: next.id, kind: next.kind });
+      k = { ...k, edition: next.id, kind: next.kind };
+    }
+    const fee = keyFee(s, k), late = s.hour - renewsAt >= LAPSE_GRACE_DAYS * 24, name = productOf(k.product)!.name;
     if (spendable(s) >= fee) {
-      extendKey(s, k.id, late ? s.hour : k.renewsAt);
+      extendKey(s, k.id, late ? s.hour : renewsAt);
       if (fee <= 0) continue;
       s.cash = Math.round((s.cash - fee) * 100) / 100;
       s.ledger = [...s.ledger, { hour: s.hour, category: "licenses", key: "ledger.licenceRenewal", params: { name, key: k.key }, amount: -fee }];
