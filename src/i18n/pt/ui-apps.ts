@@ -233,7 +233,6 @@ export default {
   "apps.guide.saving": () => "Gravação",
   "apps.guide.savingText": () => "O jogo grava-se sozinho neste navegador. O menu do logótipo, no extremo esquerdo da barra de menus, exporta o teu jogo para um ficheiro, importa um jogo e apaga o teu progresso.",
   "apps.guide.step.register": () => "Regista a tua empresa na conservatória comercial no navegador.",
-  "apps.guide.step.company": () => "Escolhe o nome, o logótipo e a cor da tua empresa.",
   "apps.guide.step.buyServer": () => "Compra o teu primeiro servidor na loja.",
   "apps.guide.step.mountServer": () => "Monta-o num rack e liga-o em Locais.",
   "apps.guide.step.mountRouter": () => "Monta a Fritz!Bocks do armazém no rack, liga a porta DSL dela à tomada de linha e o servidor a uma das portas LAN em Locais.",

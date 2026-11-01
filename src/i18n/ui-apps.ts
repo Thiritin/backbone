@@ -233,7 +233,6 @@ export default {
   "apps.guide.saving": () => "Saving",
   "apps.guide.savingText": () => "The game saves itself in this browser. The logo menu at the far left of the menu bar exports your save to a file, imports a save, and deletes your progress.",
   "apps.guide.step.register": () => "Register your company at the trade office in the Browser.",
-  "apps.guide.step.company": () => "Choose the name, logo and colour of your company.",
   "apps.guide.step.buyServer": () => "Buy your first server in the Shop.",
   "apps.guide.step.mountServer": () => "Mount it in a rack and power it on in Locations.",
   "apps.guide.step.mountRouter": () => "Mount the Fritz!Bocks from storage in the rack, cable its DSL port to the line jack and the server to one of its LAN ports in Locations.",

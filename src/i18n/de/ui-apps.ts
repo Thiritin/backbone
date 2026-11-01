@@ -233,7 +233,6 @@ export default {
   "apps.guide.saving": () => "Speichern",
   "apps.guide.savingText": () => "Das Spiel speichert sich selbst in diesem Browser. Über das Logo-Menü ganz links in der Menüleiste exportierst du deinen Spielstand in eine Datei, importierst einen Spielstand und löschst deinen Fortschritt.",
   "apps.guide.step.register": () => "Melde deine Firma im Handelsamt im Browser an.",
-  "apps.guide.step.company": () => "Wähle Name, Logo und Farbe deiner Firma.",
   "apps.guide.step.buyServer": () => "Kaufe deinen ersten Server im Shop.",
   "apps.guide.step.mountServer": () => "Baue ihn in ein Rack ein und schalte ihn unter Standorte ein.",
   "apps.guide.step.mountRouter": () => "Baue die Fritz!Bocks aus dem Lager ins Rack ein, verbinde ihren DSL-Anschluss mit der Anschlussdose und den Server mit einem ihrer LAN-Anschlüsse unter Standorte.",

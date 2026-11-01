@@ -166,7 +166,6 @@ export default {
   "os.current": () => "Pear OS è aggiornato",
   "doc.untitled": () => "Senza titolo",
   "guide.step.register": () => "Registra la tua azienda",
-  "guide.step.company": () => "Dai un nome alla tua azienda",
   "guide.step.buyServer": () => "Compra un server",
   "guide.step.mountServer": () => "Montalo e accendilo",
   "guide.step.mountRouter": () => "Monta il router",

@@ -54,8 +54,8 @@ export const CHECKS: Record<string, (s: GameState) => boolean> = {
 export const tracked = (id: string): boolean => id in CHECKS;
 export const checkDone = (s: GameState, id: string): boolean => CHECKS[id]?.(s) || s.checklist.includes(id);
 
-// The Getting started tutorial: each step is a checklist goal, done in this order. company is ticked by any change in Settings under Company.
-export const TUTORIAL = ["bank", "register", "company", "buyServer", "mountServer", "mountRouter", "internet", "setup", "findAddress", "shareWeb", "website", "domain", "launch", "email", "firstCustomer"] as const;
+// The Getting started tutorial: each step is a checklist goal, done in this order.
+export const TUTORIAL = ["bank", "register", "buyServer", "mountServer", "mountRouter", "internet", "setup", "findAddress", "shareWeb", "website", "domain", "launch", "email", "firstCustomer"] as const;
 
 // The steps after the tutorial belong to apps that arrive later (80-business/walk.ts); each shows once its app is installed.
 export const GUIDE = [...TUTORIAL, "loan", "tenCustomers", "research", "patch", "hire", "study"] as const;
