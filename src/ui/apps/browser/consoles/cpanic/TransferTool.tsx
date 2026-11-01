@@ -5,11 +5,11 @@ import type { GameState } from "../../../../../sim/50-state";
 import type { Cluster } from "../../../../../sim/60-infra/cluster";
 import { accountsOf } from "../../../../../sim/60-infra/webpanel";
 import { startTransfer } from "../../../../../sim/90-actions/webpanel";
-import { useStore } from "../../../../store";
+import { usePageAct } from "../../pageAct";
 
 // WHM > Transfers > Transfer Tool in its three steps: the remote server, the accounts, the transfer itself.
 export function TransferTool({ game, c, x3 }: { game: GameState; c: Cluster; x3: boolean }) {
-  const act = useStore((s) => s.act), [picked, setPicked] = useState<string[]>([]);
+  const act = usePageAct(), [picked, setPicked] = useState<string[]>([]);
   const accounts = accountsOf(game, c.id).filter((v) => v.spec.transferFrom);
   const open = accounts.filter((v) => game.webpanel.transfers[v.id]?.status !== "running" && game.webpanel.transfers[v.id]?.status !== "done");
   const from = open.find((v) => picked.includes(v.id))?.spec.transferFrom ?? open[0]?.spec.transferFrom ?? "";

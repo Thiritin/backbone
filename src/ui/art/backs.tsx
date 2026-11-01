@@ -6,7 +6,7 @@ import { t } from "../../i18n/en";
 import type { DeviceModel } from "../../sim/10-catalog/hardware";
 import { BrandMark } from "./logos";
 import { isMgmtModel, MgmtBack, OobJacks, oobSpots } from "./mgmt";
-import { AssetTag, frontBays, fsz, gatewayLayout, Jacks, LED, ledProps, numBand, numSize, partLed, patchLayout, Pdu, portNo, switchLayout, SwitchPorts, switchX0, tw, type FrontProps, type PartLamp } from "./fronts";
+import { AssetTag, frontBays, fsz, gatewayLayout, Jacks, LED, ledProps, numBand, numSize, partLed, patchLayout, Pdu, PortJack, portNo, switchLayout, SwitchPorts, switchX0, tw, type FrontProps, type PartLamp } from "./fronts";
 
 const MONO = "JetBrains Mono, monospace", NUM = "oklch(0.74 0.01 255)";
 
@@ -276,7 +276,7 @@ export function Back(p: FrontProps) {
         {p.parts && p.parts.fans.length > 0 && <Fans x={gx} w={grille} h={model.kind === "server" && model.height > 1 ? h - h / model.height : h} lamps={p.parts.fans} on={state !== "off"} />}
         {[...spots].map(([i, s]) => (
           <g key={i}>
-            <rect x={s.x} y={s.y} width={s.w} height={s.h} rx="0.6" fill="oklch(0.12 0.004 255)" stroke="var(--metal-3)" strokeWidth="0.5" />
+            <PortJack media={model.ports[i]?.media ?? "rj45"} x={s.x} y={s.y} w={s.w} h={s.h} st={ports[i]} />
             {p.lights?.[i] && <rect x={s.x + s.w * 0.62} y={s.y + 1} width={s.w * 0.26} height="1.4" {...ledProps(p.lights[i], name, i)} />}
           </g>
         ))}

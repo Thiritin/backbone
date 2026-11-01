@@ -30,7 +30,7 @@ export function chooseShop(s: GameState, id: ShopId, own = false): ActionResult 
   const price = own && v.own ? v.own.price : v.setup;
   if (s.cash < price) return fail("error.noCash");
   pay(s, price, "ledger.shopSetup", { name: v.name });
-  s.shop = { ...newShop(), variant: id, owned: own, since: s.hour, readyAt: s.hour + SHOP_SETUP_HOURS, groups: s.shop.groups.length ? s.shop.groups : firstGroups(s) };
+  s.shop = { ...newShop(), variant: id, owned: own, since: s.hour, readyAt: s.hour + SHOP_SETUP_HOURS, groups: s.shop.groups.length ? s.shop.groups : firstGroups(s), products: s.shop.products, productGroups: s.shop.productGroups };
   return { ok: true, id };
 }
 

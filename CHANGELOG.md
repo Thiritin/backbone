@@ -5,6 +5,25 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-01
 
 - The hand-rolled order form is gone: orders arrive by email until you run a shop system, every shop system needs the Shop systems research, and saves that had the form keep taking orders by email.
+- Registering your company at the trade office now goes through at once and charges the fee only once, by a letter that arrives the same day, and paying it is the next step in Getting started.
+- Errors on web pages, such as a wrong TAN or a missing owner name, now appear on the page next to the field instead of as a notification.
+- Ports now look like their connectors on every rear panel: RJ45 jacks, silver SFP cages and a grey, labelled DSL port set apart from the LAN ports.
+- The carrier panel shows its ports, and clicking one opens it ready to connect a cable.
+- You can keep working while the game runs at 2× or 4×, and pausing now dims the desktop with a Paused overlay.
+- The shady used-hardware channel in the Shop is now Craigslost, a classifieds site, instead of a chat app that did not exist in 2005.
+- Your bank account now earns interest at each month start, following the real rates of each year, and from 2020 to 2021 the bank charges a custody fee on balances above 100,000 instead.
+- Books has a Products tab where you set up the packages you sell, each with a size, SLA, prices per billing cycle and a setup fee.
+- Online banking now has a Payees page where you save, delete and pay recipients, and the transfer form can pick a saved payee or save a new one.
+- The settings button in the Gmix and other mail desks is readable again on the classic desktop looks.
+- Software vendors now change how they sell licences over the years: Windoors and VMwhere move from one-time licences to per-core subscriptions, cPanic switches to account-based editions in June 2019, and DirectAdmen stops selling lifetime licences in September 2019, while licences already bought keep working.
+- Every licensed product's website has a shop with its editions and prices, a cart, a checkout paid from the bank, and an order email with the licence keys.
+- A My account page on each product website lists the licences bought there with their key, machine and renewal date, and cancels a monthly licence at the end of its term.
+- Password managers in your browser no longer offer to fill or save the logins inside the game.
+- The Debiant installer lets you type your own hostname for the machine or keep the one it suggests.
+- HyperVee VMs from 2012 can replicate to a second host and fail over to it, and HyperVee hosts get a Virtual Switch Manager with external, internal and private switches.
+- OpenVeeZee containers now show their beancounters and slow down or stop when the node is oversold, can use burst memory, and move between nodes with a checkpoint and restore.
+- Horizont now has Floating IPs that keep a service's address when its instance moves, Security Groups that filter ports, and Volumes.
+- The IPMI System Event Log now shows a severity and number for each event, can be filtered by severity and cleared, and records power supply, inlet temperature and cluster node events.
 - The game panels now have a Manage screen for every game server with versions, mods, restart schedules, a player chart and port allocations, and Pterodaktyl shows the status of its nodes.
 - Customers on a game title past its prime now lose happiness every day until you move them to a current title, and Pterodaktyl nodes run a daemon that fails now and then and has to keep up with its panel.
 - Backup jobs now keep restore points that you can test and copy offsite, Proxmocks clusters keep quorum, replicate VMs and run Ceph storage, and every VM can have its own firewall.
@@ -43,6 +62,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - The desktop only responds at normal speed; pause or fast forward to watch, then return to normal speed to act.
 - Quotes and invoices in Lexwear Office now show as a full A4 page that fits the pane, and a draft quote can be sent to the customer with the Send button.
 - Small hosting companies now open in one or two cities, collect reviews like the big ones, and go bust or get bought when they win too few customers, with each step in the news.
+- Software and operating systems past their vendor's end of updates or end of security updates are marked in the console, the vendor writes 90 days before security updates end, and a machine running a version without security updates gets compromised more often the longer it runs.
 - Competitors now change over the years: they move to new server generations, add features and have outages that make the news, the budget host cuts its prices each year, and the Market app charts each city's share of new customers.
 - A new game now starts with no money: you first open a business account on a bank's website, where your €3,500 savings arrive, and then register the company at the trade office for a €40 fee paid by bank transfer.
 - Used hardware now resells for less than it cost new, and buyers on the board and on eBuy no longer pay more than its resale value.
@@ -74,6 +94,11 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Control panel trials now last as long as the real vendor's trial, 15 days for cPanic and 14 for Pleskit, and run only once per machine, so reinstalling a panel no longer starts a new trial. DirectAdmen has no trial and bills its top edition from the install.
 - The router now sits in the rack and hands out every address by DHCP, and its Fritz!OZ page at fritz.bocks lists your devices, fixes addresses and shares the web port with the one server that hosts websites on a home line.
 - Switches now come managed or unmanaged, and managed switches have VLANs, a saved configuration and their own web page at the address the router gives them.
+- HOSTtoast at hosttoast.de lists every host by tier and reviews: sign up for free, buy a higher tier for more trust and awareness, keep it by answering its monthly test ticket in time and keeping your uptime, and win host of the year or the uptime seal each January.
+
+## 2026-11-01
+
+- Browser tabs can be dragged left or right to reorder them.
 
 ## 2026-10-31
 

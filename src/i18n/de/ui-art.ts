@@ -11,6 +11,7 @@ export default {
   "art.unplugPsu": (p) => `Netzteil ${p.n} abziehen`,
   "art.plugInPsu": (p) => `Netzteil ${p.n} einstecken`,
   "art.plugInMonitor": () => "Monitor anschließen",
+  "art.portDsl": () => "DSL",
   "art.powerInlet": () => "Stromeingang",
   "art.psu": (p) => `Netzteil ${p.n}`,
   "art.fan": (p) => `Lüfter ${p.n}`,

@@ -17,7 +17,7 @@ import { OVER_DRIFT, PAST_MAX_DRIFT, TOLERANCE } from "../30-customers/pricing";
 import { OFFER, ORGANIC_CONSIDER, PRICE_WEIGHT, REFERRAL_LEADS, SPILL_SHARE } from "../30-market/market";
 import { CYCLE_SHARE, MARKET_DISCOUNT } from "../10-catalog/cycles";
 import { SHOPS } from "../10-catalog/shops";
-import { BUDGETS, OWNED, PLATFORMS, PROFILE_IDS, SATURATION, WEBSITE_LEADS } from "../80-business/marketing";
+import { BUDGETS, OWNED, PROFILE_IDS, SATURATION, WEBSITE_LEADS } from "../80-business/marketing";
 import { generationOf, penaltyFor, SITE_RENT } from "../80-business/website";
 import { annuity, baseRate, LOAN_AMOUNTS, MIN_LIMIT, RISK_PREMIUM } from "../45-billing/billing";
 import { LEASE_FACTOR, LEASE_TERMS } from "../10-catalog/leasing";
@@ -31,7 +31,8 @@ import { BOT_SPEED } from "../47-staff/staff";
 import { botOdds, BOT_RIGHT, costPerTicket, type ChadKind } from "../47-staff/chad";
 import { marketPrice, marketSetup, type Spec } from "../10-catalog/products";
 import { EMAIL_SHARE } from "../30-market/orders";
-import { rollRivals, seedRivals, sellsIn, split, TEMPLATES, type Rival } from "../30-market/rivals";
+import { rollRivals, seedRivals, sellsIn, split, TEMPLATES, withBadges, yearAwards, type Rival } from "../30-market/rivals";
+import { rivalTrust, TIERS } from "../10-catalog/hosttoast";
 import { hourOf } from "../00-core/time";
 import { CHARGEBACK_FEE, fraudShare, TRANSFER_FACTOR } from "../45-billing/fraud";
 import { factorFor, REGISTRARS, tierFor } from "../10-catalog/registrars";
@@ -190,7 +191,6 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     const year = 2005 + Math.floor(month / 12);
     const yf = 2005 + month / 12;
     const gen = generationAt(year);
-    // The rivals drift as in the game (30-market/rivals.ts); the game rolls its first month in February 2005.
     // The rivals' month as in the game (30-market/rivals.ts), with each city's buyers split among the rivals alone.
     if (month > 0) {
       const hour = hourOf(new Date(Date.UTC(2005, month, 1))), splits = new Map<string, Map<string, number>>();
@@ -199,6 +199,8 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
         return splits.get(city)!.get(r.id) ?? 0;
       };
       field = rollRivals(field, seed, hour, won).list;
+      // HOSTtoast's awards among the rivals; you are on the free tier and win none.
+      if (month % 12 === 0) field = withBadges(field, yearAwards(field, year - 1, null));
     }
 
     // Scores (Customer choice).
@@ -220,7 +222,7 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     // The model's price term is calibrated four times the game's; a rival's price cuts since 2005 count at the game's weight.
     const rivalU = (p: Profile, c: Rival) => {
       const from = TEMPLATES[c.template].priceFactor;
-      return p.wP * c.P + p.wR * c.R + p.wC * c.C - p.lambda * 100 * (from - 1) - PRICE_WEIGHT * p.lambda * 100 * (c.priceFactor - from);
+      return p.wP * c.P + p.wR * c.R + p.wC * c.C + rivalTrust(c) - p.lambda * 100 * (from - 1) - PRICE_WEIGHT * p.lambda * 100 * (c.priceFactor - from);
     };
     const best = (p: Profile, pr: Product) => Math.max(...rivals(p, pr).map((c) => rivalU(p, c)));
     const share = (p: Profile, pr: Product, city: string) => {
@@ -258,12 +260,12 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
         });
       });
     }
-    // Awareness (Marketing and reviews): paid leads, the website, the review score, the free listing's trust and happy customers.
+    // Awareness (Marketing and reviews): paid leads, the website, the review score, the HOSTtoast listing and happy customers.
     const score = (3.5 * 20 + reviewSum) / (20 + reviewN);
     PROFILES.forEach((_, i) => {
       const happy = PRODUCTS.reduce((a, _, k) => a + happyOf(i, k), 0);
       const g = 0.05 * (1 - Math.exp(-paidBy[i] / 100)) + (website ? 0.004 : 0) + 0.006 * (score - 3.5)
-        + 0.001 * (website ? PLATFORMS.free.trust : 0) + Math.min(0.01, 0.0005 * happy);
+        + (website ? 0.001 * TIERS.registered.trust + TIERS.registered.awareness : 0) + Math.min(0.01, 0.0005 * happy);
       aware[i] = Math.min(1, Math.max(0.02, aware[i] + (1 - aware[i]) * g - 0.02 * aware[i]));
     });
 
@@ -414,8 +416,8 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     // Money.
     let mrr = 0, collectedShare = 0, stuck = 0;
     PROFILES.forEach((p, i) => PRODUCTS.forEach((pr, k) => {
-      // Shop orders take the annual cycle at its market discount; the model counts only the monthly and annual cycles.
-      const [monthly, , annual] = CYCLE_SHARE[PROFILE_IDS[i]], cycleCut = website ? (1 - EMAIL_SHARE) * (annual / (monthly + annual)) * MARKET_DISCOUNT.annual : 0;
+      // Form orders take the annual cycle at its market discount: the hand-rolled form sells monthly and annual.
+      const [monthly, , , annual] = CYCLE_SHARE[PROFILE_IDS[i]], cycleCut = website ? (1 - EMAIL_SHARE) * (annual / (monthly + annual)) * MARKET_DISCOUNT.annual : 0;
       const v = cohorts[i][k].n * priceOf(p, pr, year) * bot.priceFactor * (1 - cycleCut);
       mrr += v;
       collectedShare += v * (ON_TIME[p.budget] + (1 - ON_TIME[p.budget] - NEVER_PAYS[p.budget]) * processed);

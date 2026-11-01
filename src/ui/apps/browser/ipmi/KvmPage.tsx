@@ -8,13 +8,14 @@ import { continueBoot, recoverGear } from "../../../../sim/90-actions/remote";
 import { useStore } from "../../../store";
 import "../consoles/consoles.css";
 import "./ipmi.css";
+import { usePageAct } from "../pageAct";
 
 const nameOf = (d: Device) => d.hostname ?? d.label ?? d.name;
 export const kvmTitle = (d: Device): string => `${modelById(d.model).name} ${d.label ?? d.name}`;
 
 // One device behind the KVM or console server: its state, the power buttons the KVM can press, and the console's last line.
 function Target({ game, d }: { game: GameState; d: Device }) {
-  const act = useStore((s) => s.act), openConsole = useStore((s) => s.openConsole);
+  const act = usePageAct(), openConsole = useStore((s) => s.openConsole);
   const screen = consoleScreen(game, d), server = modelById(d.model).kind === "server";
   const power = server && !!kvmPower(game, d);
   return (

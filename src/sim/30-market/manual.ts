@@ -18,6 +18,7 @@ import type { SimEvent } from "../88-tick/tick";
 import { addCustomer } from "../90-actions/customers";
 import { placeService, provisionService } from "../90-actions/clusters";
 import type { ActionResult } from "../90-actions/hardware";
+import type { Cycle } from "../10-catalog/cycles";
 import { startTerm, termLine } from "./cycles";
 import { setupFee, sizeOf } from "./spec";
 import { missingFor, requestName, REQUEST_HOURS, type SalesRequest } from "./market";
@@ -38,7 +39,7 @@ const STEP_MINUTES: Record<OrderStep, number> = {
 };
 // The package an order provisions from on the host it goes to, or undefined for a custom spec, an automatic route or a missing package.
 export function packageFor(s: GameState, r: SalesRequest, route?: string): PackageDef | undefined {
-  const to = route ?? r.route ?? hostFor(s, r), target = r.pkg && to && to !== "auto" ? routeTarget(s, to, r.product) : null;
+  const to = route ?? r.route ?? hostFor(s, r), target = r.pkg && to ? (to === "auto" ? targetFor(s, r) : routeTarget(s, to, r.product)) : null;
   const c = target && s.clusters.find((x) => x.id === target.clusterId);
   return c && r.pkg ? packageNamed(c, r.pkg) : undefined;
 }
@@ -147,11 +148,11 @@ export function draftInvoice(s: GameState, customerId: string, lines: InvoiceLin
 }
 
 // The first invoice of an order, and the quote for it: the setup fee, the first month and a new or moved domain.
-export function firstLines(s: GameState, r: SalesRequest, monthly = r.quote ?? 0, setup = r.setup ?? setupFee(s, r.product)): InvoiceLine[] {
+export function firstLines(s: GameState, r: SalesRequest, monthly = r.quote ?? 0, setup = r.setup ?? setupFee(s, r.product), cycle: Cycle | null = r.cycle ?? null): InvoiceLine[] {
   const label = r.domain ?? requestName(r);
   const lines: InvoiceLine[] = [
     ...(setup > 0 ? [{ serviceId: null, key: "invoice.line.setupFee", params: { label }, amount: setup }] : []),
-    termLine({ cycle: r.cycle, quote: monthly }, label),
+    termLine({ cycle: cycle ?? undefined, quote: monthly }, label),
   ];
   if (needsDomain(r)) lines.push({ serviceId: null, key: r.owned ? "invoice.line.domainTransfer" : "invoice.line.domain", params: { domain: r.domain! }, amount: r.owned ? TRANSFER_FEE : DOMAIN_FEE });
   return lines;

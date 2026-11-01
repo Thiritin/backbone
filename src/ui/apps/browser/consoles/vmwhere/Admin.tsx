@@ -8,13 +8,13 @@ import { EDITION_COST, editionAllows, editionOf, upgradeCost, type Feature } fro
 import { acknowledgeAlarm, applyRec, deletePool, resetAlarms, savePool, setAlarmRules, setDrs, setPool, upgradeEdition } from "../../../../../sim/90-actions/vmwhere";
 import { t } from "../../../../../i18n/en";
 import { nodeName } from "../HypervisorBase";
-import { useStore } from "../../../../store";
+import { usePageAct } from "../../pageAct";
 
 const FEATURES: Feature[] = ["failover", "alarms", "drs", "pools"];
 
 // Administration > Licensing: the editions of the cluster, what each unlocks and the upgrade button.
 export function Licensing({ c }: { game: GameState; c: Cluster }) {
-  const act = useStore((s) => s.act), now = editionOf(c);
+  const act = usePageAct(), now = editionOf(c);
   return (
     <>
       <table className="cx-table">
@@ -43,7 +43,7 @@ const MODES: Drs[] = ["off", "manual", "partial", "full"];
 
 // Cluster > Configure > vSphere DRS and Monitor > DRS > Recommendations.
 export function DrsPage({ game, c }: { game: GameState; c: Cluster }) {
-  const act = useStore((s) => s.act);
+  const act = usePageAct();
   return (
     <>
       <div className="cx-tools">
@@ -68,7 +68,7 @@ const NUM = (v: string) => (v === "" ? null : Number(v));
 
 // Cluster > Configure > Alarm Definitions and Monitor > Issues > Triggered Alarms.
 export function AlarmsPage({ game, c }: { game: GameState; c: Cluster }) {
-  const act = useStore((s) => s.act), r = rulesOf(c), sum = clusterSummary(game, c.id);
+  const act = usePageAct(), r = rulesOf(c), sum = clusterSummary(game, c.id);
   const set = (k: keyof typeof r, v: string) => act(setAlarmRules, c.id, { ...r, [k]: Number(v) });
   const rows: [keyof typeof r, string][] = [["cpu", t("vw.alarm.cpu")], ["ram", t("vw.alarm.ram")], ["disk", t("vw.alarm.disk")]];
   return (
@@ -94,7 +94,7 @@ export function AlarmsPage({ game, c }: { game: GameState; c: Cluster }) {
 
 // Resource pools under the cluster: limits, shares and which VMs belong to which pool.
 export function PoolsPage({ game, c }: { game: GameState; c: Cluster }) {
-  const act = useStore((s) => s.act);
+  const act = usePageAct();
   const [name, setName] = useState(""), [cpu, setCpu] = useState(""), [ram, setRam] = useState(""), [shares, setShares] = useState<Pool["shares"]>("normal");
   const vms = game.workloads.filter((w) => w.clusterId === c.id && isOwnVm(w));
   return (

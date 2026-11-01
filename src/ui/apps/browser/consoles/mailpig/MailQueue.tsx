@@ -5,13 +5,13 @@ import { mailStateOf, queueEntries } from "../../../../../sim/60-infra/netsvc-ma
 import { deleteQueue, flushQueue } from "../../../../../sim/90-actions/netsvc-mail";
 import { t } from "../../../../../i18n/en";
 import { LOCALE } from "../../../../../i18n/lang";
-import { useStore } from "../../../../store";
+import { usePageAct } from "../../pageAct";
 
 const stamp = (hour: number) => dateOf(hour).toLocaleString(LOCALE, { dateStyle: "short", timeStyle: "short", timeZone: "UTC" });
 
 // The address a mail host sends from and what waits in its deferred queue.
 export function useMailQueue(game: GameState, clusterId: string) {
-  const act = useStore((s) => s.act), address = mailAddress(game, clusterId);
+  const act = usePageAct(), address = mailAddress(game, clusterId);
   return {
     address, deferred: address ? mailStateOf(game, address.id).deferred : 0, entries: address ? queueEntries(game, address.id) : [],
     flush: () => address && act(flushQueue, address.id), clear: () => address && act(deleteQueue, address.id),

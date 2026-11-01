@@ -234,6 +234,7 @@ export default {
   "apps.guide.saving": () => "Sauvegarde",
   "apps.guide.savingText": () => "Le jeu se sauvegarde tout seul dans ce navigateur. Le menu du logo tout à gauche de la barre des menus exporte ta sauvegarde dans un fichier, en importe une et efface ta progression.",
   "apps.guide.step.register": () => "Enregistre ton entreprise au bureau du commerce dans le navigateur.",
+  "apps.guide.step.payBill": () => "Le bureau du commerce envoie les frais d'enregistrement par courrier. Ouvre la lettre dans Post et paie-la.",
   "apps.guide.step.company": () => "Choisis le nom, le logo et la couleur de ton entreprise.",
   "apps.guide.step.buyServer": () => "Achète ton premier serveur dans la boutique.",
   "apps.guide.step.mountServer": () => "Monte-le dans une baie et allume-le dans Sites.",

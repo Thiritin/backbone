@@ -7,12 +7,12 @@ import { poolOf } from "../../../../../sim/60-infra/webpanel";
 import { phpDue, upgradePhp } from "../../../../../sim/90-actions/clusters";
 import { updateDue, updateSoftware } from "../../../../../sim/90-actions/software";
 import { rebuildHost, setPhpPool } from "../../../../../sim/90-actions/webpanel";
-import { useStore } from "../../../../store";
 import { legacyVersions } from "../cpanic/EasyApache";
+import { usePageAct } from "../../pageAct";
 
 // Admin Level > Custom Build. Until 2018 it is the build script's option list; later a table of software with Update and Rebuild.
 export function CustomBuild({ game, c, late }: { game: GameState; c: Cluster; late: boolean }) {
-  const act = useStore((s) => s.act), year = yearOf(game.hour), pool = poolOf(game, c.id), php2 = pool[0] ?? "";
+  const act = usePageAct(), year = yearOf(game.hour), pool = poolOf(game, c.id), php2 = pool[0] ?? "";
   const building = game.hour <= c.phpUntil, legacy = legacyVersions(game, c);
   const pickPhp2 = (v: string) => act(setPhpPool, c.id, v ? [v] : []);
   const select = (

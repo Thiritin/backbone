@@ -22,7 +22,7 @@ describe("orders before a shop system", () => {
 
   it("need the shops research for every variant and a variant for modules", () => {
     const s = game();
-    expect(chooseShop(s, "handRolled" as never)).toEqual({ ok: false, error: "error.unknownShop" });
+    expect(chooseShop(s, "hostBull" as never)).toEqual({ ok: false, error: "error.unknownShop" });
     expect(chooseShop(s, "clientExit")).toEqual({ ok: false, error: "error.needsShopSkill" });
     expect(buyModule(s, "cpanic")).toEqual({ ok: false, error: "error.needsShop" });
     s.unlocks = [...s.unlocks, "shops"];
