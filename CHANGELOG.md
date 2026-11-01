@@ -25,6 +25,9 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Removing an offsite backup server now discards its copies, a Proxmocks VM can no longer be moved into a cluster without quorum, and the Backula status lists only the jobs that write to that server with their real result.
 - Books has a Publish to website button: your website lists the published products of each line with their prices, and email orders and leads decide on those prices until you publish again.
 - An order email for one of your products now names that product.
+- Bookkeeping programs now come in editions with their own prices, features, seats and look, GnuCache joins as a free program, and each bookkeeper needs a seat to work.
+- Books now holds the overview, statistics, tax and account statement, Finance is gone, loans live on your bank's website, and low cash brings an email about your bank's overdraft.
+- Hardware insurance is gone, so repairs cost what they cost.
 - A charged-back renewal no longer extends a prepaid term twice, upgrades on a prepaid term are billed for the rest of the term, and customers leaving after a written-off term get no refund.
 - The Pear Store sells KeePassive, a password manager that offers to save your router and bank logins after you type them once and fills them in on every later visit.
 - Pulling the power cords, a power outage or overheating now aborts a running OS install, and a server can be shut down from the installer.

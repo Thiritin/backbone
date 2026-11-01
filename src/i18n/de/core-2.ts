@@ -29,8 +29,6 @@ export default {
   "ledger.tax": (p) => `Körperschaftsteuer ${p.year}`,
   "ledger.insurancePremium": () => "Prämie der Hardwareversicherung",
   "ledger.insuranceClaim": (p) => `Schaden bei der Hardwareversicherung: ${part(p.component, 0)} in ${p.device}`,
-  "error.insured": () => "Du hast diese Police schon.",
-  "error.notInsured": () => "Du hast diese Police nicht.",
   "error.unknownLoan": () => "Diesen Kredit gibt es nicht mehr.",
   "event.ticket.title": (p) => `${p.name}`,
   "event.ticket.text": (p) => t(String(p.subject), p),

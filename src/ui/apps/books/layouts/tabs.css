@@ -1,0 +1,6 @@
+/* orgaMIN: an orange band with white tabs that join the page. */
+.bk-tabs { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.bk-tabs-row { display: flex; gap: 2px; padding: 6px 8px 0; background: #e8731c; flex: none; overflow-x: auto; }
+.bk-tabs-row button { padding: 5px 12px; border: 0; border-radius: 5px 5px 0 0; background: #f5a462; color: #4a2205; font: 600 12px Verdana, sans-serif; white-space: nowrap; display: flex; align-items: center; gap: 6px; }
+.bk-tabs-row button[aria-selected="true"] { background: var(--win); color: #c25a0c; }
+.bk-tabs .bk-body { background: var(--win); }
