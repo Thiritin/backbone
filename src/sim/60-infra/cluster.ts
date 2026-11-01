@@ -74,6 +74,8 @@ export interface Cluster {
   oversell?: number | null;
   // The edition of a VMwhere platform; missing is the top tier (vmwhere.ts).
   licence?: { tier: string; trialUntil: number | null; lapsedAt: number | null };
+  // A freshly installed licensed panel shows its licence setup on first sign-in; missing is set up.
+  setupPending?: boolean;
   // The update channel; missing is Release (channel.ts).
   channel?: "stable" | "release" | "edge";
   // Compatibility mode lets VMs move live between nodes of different CPU vendors, at COMPAT_VCPU of every node's vCPU.
