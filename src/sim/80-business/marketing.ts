@@ -1,7 +1,7 @@
 import { t } from "../../i18n/en";
 // Values from docs/design/economy.md, "Marketing and reviews"; numbers marked as decisions are recorded there.
 import { hashRng, rand, type Rng } from "../00-core/rng";
-import { isMonthStart, yearOf } from "../00-core/time";
+import { isMonthStart, monthIndexOf, yearOf } from "../00-core/time";
 import { priceAt, SEARCH_AD_COST } from "../10-catalog/economy";
 import { BADGE_TRUST, TIERS, TRUST_CAP } from "../10-catalog/hosttoast";
 import type { Product, Profile } from "../30-customers/customers";
@@ -84,6 +84,13 @@ export type SiteHost = { kind: "rented" } | { kind: "own"; clusterId: string };
 const AWARENESS_FLOOR = 0.02;
 const AWARENESS_DECAY = 0.02;
 export const REVIEW_HOURS = 2 * 8760;
+
+// Won orders per line among the leads that arrived this month (ago 0) or last month (ago 1).
+export function wonLeads(s: GameState, ago: 0 | 1): Partial<Record<Product, number>> {
+  const month = monthIndexOf(s.hour) - ago, won: Partial<Record<Product, number>> = {};
+  for (const r of s.sales.requests) if (r.kind === "order" && r.status === "won" && monthIndexOf(r.createdAt) === month) won[r.product] = (won[r.product] ?? 0) + 1;
+  return won;
+}
 
 export const newMarketing = (): Marketing => ({
   owned: [], campaigns: [], reviews: [], platform: null, studies: [], lines: [], emailOrders: true, siteReady: null, launched: false, siteHost: { kind: "rented" }, designYear: 2005, siteOutage: false, unmet: { month: {}, last: {} },

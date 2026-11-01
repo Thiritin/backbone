@@ -11,7 +11,7 @@ import { sizeSpec, type Sla } from "../src/sim/10-catalog/products";
 import { orderLead } from "../src/sim/30-market/orders";
 import { applyStep } from "../src/sim/30-market/manual";
 import { editRequest, salesTick } from "../src/sim/30-market/sales";
-import { marketingTick } from "../src/sim/80-business/marketing";
+import { marketingTick, wonLeads } from "../src/sim/80-business/marketing";
 import { createQuote } from "../src/sim/90-actions/orders";
 
 const err = (r: { ok: boolean; error?: string }) => (r.ok ? "ok" : r.error);
@@ -111,6 +111,23 @@ describe("product-based demand", () => {
     while (new Date(Date.UTC(2005, 0, 1) + s.hour * 3600e3).getUTCDate() !== 1 || s.hour % 24 !== 0) s.hour++;
     marketingTick(s);
     expect(s.marketing.unmet).toEqual({ month: {}, last: { vps: 1 } });
+  });
+
+  it("counts won orders per line by the month the lead arrived", () => {
+    const s = readyGame(14);
+    offer(s, 0, 2);
+    const old = lead(s), lost = lead(s, 1);
+    editRequest(s, old.id, () => ({ status: "won" }));
+    expect(req(s, lost.id).status).toBe("lost");
+    expect(wonLeads(s, 0)).toEqual({ vps: 1 });
+    do s.hour++; while (new Date(Date.UTC(2005, 0, 1) + s.hour * 3600e3).getUTCDate() !== 1 || s.hour % 24 !== 0);
+    const fresh = lead(s);
+    editRequest(s, fresh.id, () => ({ status: "won" }));
+    expect(wonLeads(s, 0)).toEqual({ vps: 1 });
+    expect(wonLeads(s, 1)).toEqual({ vps: 1 });
+    s.hour += 24 * 40;
+    expect(wonLeads(s, 1)).toEqual({ vps: 1 });
+    expect(wonLeads(s, 0)).toEqual({});
   });
 
   it("prefills the Books quote from the product and declines a quote above its price", () => {
