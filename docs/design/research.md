@@ -224,7 +224,7 @@ Your staff now knows how to run campaigns, track awareness and book trade fairs.
 
 ### The Marketing app
 
-The **Marketing** app you bought your domain in now has four more sections. **Channels** sets up web design, an order form and search ads. **Campaigns** runs ads with a budget and a target. **Awareness** shows how well known you are, and **Trade fairs** books stands.
+The **Marketing** app you bought your domain in now has four more sections. **Channels** sets up web design and search ads. **Campaigns** runs ads with a budget and a target. **Awareness** shows how well known you are, and **Trade fairs** books stands.
 
 A campaign brings in requests, and the reviews decide how many of them become customers. Answering tickets quickly is still the cheapest advertising you will ever buy.
 

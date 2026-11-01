@@ -350,7 +350,7 @@ Website and campaign leads send 10% to cities without a location of yours, where
 
 **GPU demand.** Hobby developers, agencies, online shops and enterprises ask for GPU servers in 3% of their orders at a demand factor of 1 (`gpuDemand` in `gpu.ts`). The factor is 0 before 2011, 0.2 from 2011 to 2016, 0.6 from 2017 (deep learning), 1 from 2020 and 2.5 from 2023 (generative AI), so those profiles ask for a GPU server in 0.6%, 1.8%, 3% and 7.5% of their orders, and their other products give way proportionally. News announces the two jumps. A GPU order that finds no free card is lost as no capacity, like any other line. The portfolio score ignores the GPU line.
 
-**Site state.** The company site is rented from "Strateaux" (always up) or runs as a small workload (0.25 vCPU, 0.5 GB RAM, 2 GB disk) on one of your panel hosts. On an own host the site is down while the host is off, failed, frozen, taken offline or compromised, and slow while the host performs below 1 (overload, a PHP upgrade) or has over 90% of its RAM booked. Website leads and the orders of the order form are multiplied by 0 while the site is down and by 0.5 while it is slow, at the daily roll; search ads, campaigns, fairs, referrals and email orders are untouched. The site adds no awareness (the 0.004 a month under Marketing and reviews) while it is down.
+**Site state.** The company site is rented from "Strateaux" (always up) or runs as a small workload (0.25 vCPU, 0.5 GB RAM, 2 GB disk) on one of your panel hosts. On an own host the site is down while the host is off, failed, frozen, taken offline or compromised, and slow while the host performs below 1 (overload, a PHP upgrade) or has over 90% of its RAM booked. Website leads and shop orders are multiplied by 0 while the site is down and by 0.5 while it is slow, at the daily roll; search ads, campaigns, fairs, referrals and email orders are untouched. The site adds no awareness (the 0.004 a month under Marketing and reviews) while it is down.
 
 The review multiplier is 0.4 + 0.25 × (stars − 1), so 1 star gives 0.4, 3 stars 0.9 and 5 stars 1.4.
 
@@ -458,13 +458,13 @@ Hours a service is down are left off its invoice line. When the hours up fall be
 
 How the market above turns into order emails and sales requests in the Support app. Code: `src/sim/30-market`.
 
-**Orders by email.** A lead asking for a basic SLA from a profile with a low or medium budget is a standard order (`orders.ts`). It names its own resources (Custom orders, below), its price starts at the request's market reference less any campaign discount, and it has the same 72 hours as a sales request. Declining it takes 10 minutes of player or support time; the steps of an accepted order take the times under Custom orders. Before the order form every order lead writes an email. With the order form and email orders on, a quarter of the order leads (`EMAIL_SHARE`, 0.25) still write one and the rest go through the form at the player's rates (Per-resource pricing). With Provisioning automation switched on the form places the order at once when the city has the product and room, and an order it cannot place arrives as an order email. Without it a form order is accepted on arrival and waits in the inbox for its steps (Custom orders). A new game always gets its first order email within 14 days: each morning before then without an order, a friend's recommendation brings one from a private individual with chance 1 / (14 − day). Seeds 1 to 8 already brought one between day 1 and day 22 from organic leads alone, so the recommendation only fills the gap.
+**Orders by email.** A lead asking for a basic SLA from a profile with a low or medium budget is a standard order (`orders.ts`). It names its own resources (Custom orders, below), its price starts at the request's market reference less any campaign discount, and it has the same 72 hours as a sales request. Declining it takes 10 minutes of player or support time; the steps of an accepted order take the times under Custom orders. Before a shop system every order lead writes an email. With a shop and email orders on, a quarter of the order leads (`EMAIL_SHARE`, 0.25) still write one and the rest go through the shop at the player's rates (Per-resource pricing). With Provisioning automation switched on the shop places the order at once through its module when the city has the product and room, and an order it cannot place is cancelled. Without it a shop order is accepted on arrival and waits in the inbox for its steps (Custom orders). A new game always gets its first order email within 14 days: each morning before then without an order, a friend's recommendation brings one from a private individual with chance 1 / (14 − day). Seeds 1 to 8 already brought one between day 1 and day 22 from organic leads alone, so the recommendation only fills the gap.
 
-**Email orders off.** Switching email orders off (`website.ts`, needs the order form) sends every order lead through the order form, and an order the form cannot place is a lost sale instead of an order email. Sales requests (business SLA or high budget), upgrades and the shady request are not affected. Email off therefore saves the 30 to 35 minutes of step work of a quarter of the order leads and costs only the orders the form cannot place.
+**Email orders off.** Switching email orders off (`website.ts`, needs an active shop) sends every order lead through the shop. Sales requests (business SLA or high budget), upgrades and the shady request are not affected. Email off therefore saves the 30 to 35 minutes of step work of a quarter of the order leads and costs only the orders the shop cannot place.
 
 **No room on accept.** A customer who accepts a quote when no server has room signs elsewhere at once, a lost sale for lack of capacity (`sales.ts`). Upgrades work the same way.
 
-**Custom orders.** Every order names its own resources, by email or through the form (`spec.ts`, `manual.ts`). It starts from the size its profile's budget picks (What a lead asks for). Web hosting, VPS and game server orders scale that size by one of 0.5, 0.75, 1, 1, 1.25 or 1.5, which average to 1: web disk in half GB steps, traffic in whole GB, 1 + up to 5 × factor mailboxes, with 0.1 vCPU and 0.25 GB RAM; VPS and game server RAM in quarter GB steps, vCPUs scaled (plus one, three times in ten), disk ±25% in 5 GB steps. DNS and VPN orders scale their zones or users and their traffic the same way (DNS zones and VPN users). Other lines take the size as it is. A spec's monthly market price comes from Per-resource pricing, and the SLA factor and the profile's offer factor apply on top. Step times: quote 5, account 5, confirmation and invoice 10, domain 5, setup 15 minutes. **Quoting an email order.** The first step is the quote, at the monthly price and setup fee the player enters (the market reference and the line's setup fee are prefilled). An email order draws its budget between 1.10 and 1.25 times the reference (`ORDER_BUDGET`, the upper half of a sales lead's range, because a standard order is a shelf product), which makes a quote at the reference taken about nine times in ten, and the customer answers like a sales lead: 4 to 24 hours after the quote, 2 hours after a quote that meets their counter, taking it with the logistic chance of Customer choice, countering once at 0.97 times their accepted price when within 0.12 of it and half the time, otherwise refusing; a second refusal ends the order as a lost sale. An accepted quote has 72 hours (`REQUEST_HOURS`) for the steps. An order form order is accepted at arrival at the website's price and setup fee and has the same 72 hours. **Setup.** The setup lists the cluster and panel hosts of the order's city that sell the product, with the RAM and disk booked against what each holds; disk is the only limit (Usage curves and overcommit). Automatic (`targetFor`) and the Place orders automatically switch need the Provisioning automation skill (Know-how and unlock costs). Staff set an order up on the first host with disk room, one with the RAM for it first. The balance model counts an order as placed on acceptance, as a company with the switch on would. An order invoice is due in 14 days; an on-time payer pays it within 1 to 3 days. Upgrades ask for 1.5 or 2 times every resource.
+**Custom orders.** Every order names its own resources, by email or through the shop (`spec.ts`, `manual.ts`). It starts from the size its profile's budget picks (What a lead asks for). Web hosting, VPS and game server orders scale that size by one of 0.5, 0.75, 1, 1, 1.25 or 1.5, which average to 1: web disk in half GB steps, traffic in whole GB, 1 + up to 5 × factor mailboxes, with 0.1 vCPU and 0.25 GB RAM; VPS and game server RAM in quarter GB steps, vCPUs scaled (plus one, three times in ten), disk ±25% in 5 GB steps. DNS and VPN orders scale their zones or users and their traffic the same way (DNS zones and VPN users). Other lines take the size as it is. A spec's monthly market price comes from Per-resource pricing, and the SLA factor and the profile's offer factor apply on top. Step times: quote 5, account 5, confirmation and invoice 10, domain 5, setup 15 minutes. **Quoting an email order.** The first step is the quote, at the monthly price and setup fee the player enters (the market reference and the line's setup fee are prefilled). An email order draws its budget between 1.10 and 1.25 times the reference (`ORDER_BUDGET`, the upper half of a sales lead's range, because a standard order is a shelf product), which makes a quote at the reference taken about nine times in ten, and the customer answers like a sales lead: 4 to 24 hours after the quote, 2 hours after a quote that meets their counter, taking it with the logistic chance of Customer choice, countering once at 0.97 times their accepted price when within 0.12 of it and half the time, otherwise refusing; a second refusal ends the order as a lost sale. An accepted quote has 72 hours (`REQUEST_HOURS`) for the steps. A shop order is accepted at arrival at the website's price and setup fee and has the same 72 hours. **Setup.** The setup lists the cluster and panel hosts of the order's city that sell the product, with the RAM and disk booked against what each holds; disk is the only limit (Usage curves and overcommit). Automatic (`targetFor`) and the Place orders automatically switch need the Provisioning automation skill (Know-how and unlock costs). Staff set an order up on the first host with disk room, one with the RAM for it first. The balance model counts an order as placed on acceptance, as a company with the switch on would. An order invoice is due in 14 days; an on-time payer pays it within 1 to 3 days. Upgrades ask for 1.5 or 2 times every resource.
 
 **Domains.** Registry cost per year, 2005 to 2026, linear in between: .de €12 to €6, .at €25 to €12, .ch €15 to €9, .co.uk €8 to €7, .fr €20 to €9, .nl €10 to €6, .it €15 to €8, .com €6 to €9 (VeriSigh raised its price over the years). The customer pays €15 a year for a registration or renewal and €5 for a transfer, which includes its first year. The reminder comes 30 days before expiry.
 
@@ -550,6 +550,10 @@ d is the agency discount from a campaign, e is 1.15 for an existing customer and
 **Price changes.** Raising a running service's price costs happiness, lowering it wins some back, and an overpriced service keeps costing happiness every month. A raise takes effect from the month after it is made: the invoice for the current month bills the old price, and a customer who cancels over the raise leaves at that billing date without paying it. The numbers are in Happiness and churn, Price tolerance.
 
 **Market research.** A market study reveals one profile in the Market app for good; it is a one-time payment booked as marketing. Studies cost €800 for a low-budget profile, €2,000 for a medium one and €4,000 for a high one, €20,400 for all nine (decision). The Demand section counts a city's buyers of a product as the city's new customers × each profile's mix × that profile's product weight, your part as the expected requests from the lead flows above (leads × product weight × your choice share × conversion), and splits the remainder over the competitors by their softmax among themselves. Code: `src/sim/30-market/research.ts`.
+
+**Transfers.** From 2008, about 30% of new web hosting orders come from another host and name it in their first message. On a cPanic host the Transfer Tool copies such an account: it takes the player 15 minutes plus 5 minutes per 10 GB and runs one hour per 20 GB, at least one. A transfer that ends within 24 hours of the account's start gives the customer +3 happiness. It fails with 5%, or 15% when the host's PHP is newer than the site's app runs on; a failure opens a ticket and the player runs the transfer again.
+
+**Message System.** The DirectAdmin Message System stores nothing. It lists the outage, how-to, abuse, upgrade and migration tickets of customers whose sites run on the host, plus a system message for each expired certificate on it and for a published security advisory that affects it. The Open button shows the ticket in Support.
 
 **Measured flow.** `npx tsx scripts/sales-flow.ts [seed] [months]` runs the real tick with a bot that quotes 3% under the reference, answers tickets, sets up a website in month 3 and runs €250 of search ads from month 6. Seed 1 gets 6 to 9 requests a month in the basement, 16 to 26 with the website and ads, and fills the basement server at about 26 customers, after which most deals are lost for capacity until you buy hardware.
 
@@ -784,11 +788,49 @@ The balance model books 6 staff minutes per customer and month for payments, whi
 
 **Working hours.** Each employee works their team's shifts: per weekday a start hour and 1 to 12 hours, and a shift may run past midnight. The salary is for 40 hours a week; each hour on shift earns salary / 173, paid at the month start, so pay follows the hours actually worked. An action starts only if it ends within the shift; whatever is left waits for the next shift. Technicians on shift handle operations at their location; when nobody there is on shift, the on-call technician covers.
 
+## Payment methods
+
+A shop system takes payment at checkout. Bank transfer is always offered; every other method is a module bought once on the shop vendor's site, registered with its licence key in Books and switched on or off in the shop. The code keeps the numbers in `src/sim/10-catalog/payments.ts`.
+
+| Method (real one) | From | Module | Fee per payment | Paid | Side effect |
+| --- | --- | --- | --- | --- | --- |
+| Bank transfer | 2005 | none | none | by the customer's habit, matched in Books | dunning as in Billing and payment habits |
+| Direct debit | 2005 | €49 | €0.35 | collected at checkout, weekly payout from the shop system | a bad payer's debit returns when their invoice would have paid late, with a €3 fee, 3 to 7 days after the payout |
+| PayPail (PayPal) | 2005 | €49 | 1.9% + €0.35 | prepaid at checkout, weekly payout | 1% of payments are disputed 5 to 20 days after the payout; the money is held 30 days, then comes back |
+| Visor (Visa) | 2006 | €199 | 2.9% + €0.30 | collected at checkout, weekly payout | 0.5% of honest payments are charged back 7 to 90 days after the payout with the chargeback fee; stolen cards (below) charge back fully |
+| paysavecard (paysafecard) | 2007 | €99 | 10% | prepaid at checkout, weekly payout | twice the base churn of the profile |
+| Instantly (Sofortüberweisung) | 2008 | €49 | 0.9% | the customer's own transfer arrives at checkout with the exact amount and invoice number | none |
+| Bitcorn Pay (Bitcoin) | 2012 | €99 | 1% | prepaid at checkout, weekly payout | three times the abuse ticket and real notice rate for each customer paying this way |
+
+**Preferences.** Each shop order draws the method its customer wants first, from the weights of its profile over the methods that exist that year. Customers from the other side of the Atlantic and shady customers use their own rows.
+
+| Crowd | Transfer | Debit | PayPail | Card | paysavecard | Instantly | Crypto |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Private individual | 45 | 10 | 35 | 5 | | 5 | |
+| Gamer | 15 | | 35 | 10 | 35 | 5 | |
+| Hobby developer | 25 | | 35 | 25 | | 5 | 10 |
+| Sole proprietor | 50 | 25 | 15 | 10 | | | |
+| Small business | 45 | 30 | 5 | 20 | | | |
+| Agency or startup | 40 | 15 | 10 | 35 | | | |
+| Doctor's or law office | 50 | 40 | | 10 | | | |
+| Online shop | 35 | 30 | 10 | 25 | | | |
+| Enterprise | 60 | 25 | | 15 | | | |
+| International | 10 | | 30 | 60 | | | |
+| Shady | | | | 20 | 20 | | 60 |
+
+**Missing method.** When the shop does not offer the wanted method, half of the orders go through by bank transfer and the rest are lost sales with the reason that names the method. paysavecard and crypto customers never switch. Email orders always pay by bank transfer.
+
+**Prepaid.** PayPail, paysavecard and crypto invoices are paid at checkout, so Books never sends a reminder or suspends for them; neither do direct debit and card, whose money the shop collects at checkout. Each gateway pays out on Monday at 09:00 as one transfer per method, less its fees, with a reference listing the invoices; Import from shop or Shop link books it.
+
+**Money taken back.** Returns, disputes and chargebacks arrive in Books as negative transfers of the invoice amount plus the fee. Matching one to its paid invoice reopens it: a disputed invoice waits for the released money, a returned or charged-back one is due again by bank transfer under the dunning steps. Match by reference books them on its own. A chargeback on a stolen card marks the customer as fraud and suspends their services when it is matched.
+
+**Stolen cards.** Through a shop only card orders can be fraudulent, at the shares in Fraud and chargebacks below; their chargeback 30 to 60 days after signing up arrives as one negative transfer per paid invoice instead of the automatic write-off.
+
 ## Fraud and chargebacks
 
 A small share of standard orders is paid with a stolen card or a stolen PayPail account. Sales leads are never fraudulent. The share is rolled once per order:
 
-| Product | Share of order form orders |
+| Product | Share of shop orders |
 | --- | --- |
 | GPU servers | 6% |
 | VPS and cloud | 5% |
@@ -1468,11 +1510,11 @@ Each line with traffic also charges it per 100 GB a month (Traffic, below). The 
 
 Game servers and colocation move the most data per euro and carry the largest share. A VPN moves 300 GB a month on a €5 bill, so its rate per GB is the lowest.
 
-**Setup fees.** An order through the order form pays a one-time setup fee on top of its first month (`marketSetup` in `products.ts`, `setupFee` in `spec.ts`). The market's fee in 2005, falling to a third by 2026 (m = 3), rounded to whole euros: web hosting €10, VPS €15, game server €15, DNS €5, VPN €10, storage €10, cloud server €0, dedicated server €75, colocation €150. The player sets a line's fee in Pricing next to its rates; empty charges the market's. Customers weigh a fee above the market's as if spread over 36 months of the line's middle size (`SETUP_MONTHS`): the difference ÷ (36 × that monthly price) adds to the price index for leads that would order through the form, so a dearer fee brings a few fewer form orders and a cheaper one a few more. Twice the market's web hosting fee costs about 7% of the form's share. Email orders and sales requests charge no setup fee.
+**Setup fees.** A shop order pays a one-time setup fee on top of its first month (`marketSetup` in `products.ts`, `setupFee` in `spec.ts`). The market's fee in 2005, falling to a third by 2026 (m = 3), rounded to whole euros: web hosting €10, VPS €15, game server €15, DNS €5, VPN €10, storage €10, cloud server €0, dedicated server €75, colocation €150. The player sets a line's fee in Pricing next to its rates; empty charges the market's. Customers weigh a fee above the market's as if spread over 36 months of the line's middle size (`SETUP_MONTHS`): the difference ÷ (36 × that monthly price) adds to the price index for leads that would order through the shop, so a dearer fee brings a few fewer shop orders and a cheaper one a few more. Twice the market's web hosting fee costs about 7% of the shop's share. Email orders and sales requests charge no setup fee.
 
-**Form invoices.** The order form invoices an order the moment it is placed: the setup fee (left out when it is zero) and the full first month at the order's price. The service is prepaid for 730 hours, so the monthly run bills only the hours after that and the first month is never billed twice; this is the same rule an email order's invoice step uses. The invoice is due in 14 days, and an on-time payer pays it within 1 to 3 days. Its payment books as two ledger entries: the setup fee under Setup fees and the rest under Customer payments, so the two add up to the invoice total (a collections payout splits the same way).
+**Shop invoices.** The shop invoices an order the moment it is placed: the setup fee (left out when it is zero) and the full first month at the order's price. The service is prepaid for 730 hours, so the monthly run bills only the hours after that and the first month is never billed twice; this is the same rule an email order's invoice step uses. The invoice is due in 14 days, and an on-time payer pays it within 1 to 3 days. Its payment books as two ledger entries: the setup fee under Setup fees and the rest under Customer payments, so the two add up to the invoice total (a collections payout splits the same way).
 
-**The player's rates.** The Products app's Pricing view holds one rate per unit for each line (`rates.ts`). An empty rate charges the market rate, and Market rates resets the whole line. Rates apply to new sales: the order form charges a spec at the player's rates × the SLA factor × (1 − campaign discount) and places it at once. Overpricing costs leads through the price factor in Choice with prices and customers through Price tolerance and churn. Services already sold keep the price they were sold at, and raising one goes through Price changes with its tolerance, complaint and retention rules. Email orders are priced by hand, prefilled at the market reference less any campaign discount. Saves from before per-resource pricing give every service, request and lost sale with a plan that plan's size as its spec in the year it started, and start with every rate empty. Saves from before DNS zones and VPN users give each DNS or VPN service the count its monthly price buys at the loading year's market rates (less the base fee and traffic, at least one); requests and lost sales use their market reference. Their setup fees start at the market's.
+**The player's rates.** The Products app's Pricing view holds one rate per unit for each line (`rates.ts`). An empty rate charges the market rate, and Market rates resets the whole line. Rates apply to new sales: the shop charges a spec at the player's rates × the SLA factor × (1 − campaign discount) and places it at once. Overpricing costs leads through the price factor in Choice with prices and customers through Price tolerance and churn. Services already sold keep the price they were sold at, and raising one goes through Price changes with its tolerance, complaint and retention rules. Email orders are priced by hand, prefilled at the market reference less any campaign discount. Saves from before per-resource pricing give every service, request and lost sale with a plan that plan's size as its spec in the year it started, and start with every rate empty. Saves from before DNS zones and VPN users give each DNS or VPN service the count its monthly price buys at the loading year's market rates (less the base fee and traffic, at least one); requests and lost sales use their market reference. Their setup fees start at the market's.
 
 **Capacity.** A node books up to its physical cores × 8 in vCPUs, its RAM × 1.5 and its usable RAID disk × 2. A G1 balanced server books 16 vCPUs, 12 GB of RAM and 1 TB of disk: 48 web spaces, or 24 of the 0.5 GB VPS, or 6 of the 2 GB VPS by RAM. Booking counts what workloads booked; the load they put on the hardware follows the usage curves.
 
@@ -1586,6 +1628,14 @@ Disk use starts at 30% of booked and stops at 100%; the average customer reaches
 
 **Before and after.** Measured over 30 days with a mixed set of customers (web hosting, VPS, game servers, VPN, storage, dedicated): early game in 2005 with 13 services moves 0.59 TB before and after, with a 95th percentile of 3.4 Mbit/s before and 3.8 after (night jobs add short peaks to a small base); mid game in 2012 with 200 services moves 17.9 TB before and 17.8 after, with a 95th percentile of 103 Mbit/s before and 88 after, so transit bills drop about 15% (€311 to €264 a month at Cogentle's price), because the floors and staggered peaks flatten the sum.
 
+## Resellers
+
+A reseller buys a block of accounts on a DirectAdmen or cPanic host and sells web space to their own customers. The three blocks are Small (20 accounts, 50 GB, 500 GB traffic), Medium (50 accounts, 150 GB, 1,500 GB) and Large (100 accounts, 350 GB, 4,000 GB). The monthly price of a block is 0.5 times the market price of an average web space times its account count, billed in full whether the block is filled or not.
+
+The block books its full compute and disk from the day it starts. The reseller's own customers arrive linearly over 6 months up to a fill of 70%, and a cheaper block than the market price fills faster (down to 3 months at half the price per account). Resource use follows the fill, so the host carries less than it has sold.
+
+Abuse reports arrive at the rate of the filled accounts, and the reseller handles half of them; the other half come to the player as abuse tickets with the reseller as the customer. Each month there is a 2% chance that the block holds a shady account, which draws the abuse and legal follow-ups of a shady customer until the player suspends the reseller. Reseller leads are 3% of web hosting leads from 2008, once a DirectAdmen or cPanic host exists.
+
 ## Platforms and licenses
 
 Every server and every one of the player's own VMs runs an operating system, and software on it must run on that system and share no TCP port with the software already there; at most one hypervisor runs on a machine. A hypervisor ("Cloud" below) runs on every node of a hypervisor cluster and sells VPS, game servers and, with failover on, cloud servers. A panel runs on a panel host, a bare-metal server or one of the player's own VMs, and sells web hosting. Service software runs the same way as a panel, on one bare-metal server or one of the player's VMs, and sells one line each: a game panel sells game servers, a DNS server DNS, a VPN server VPN and a storage server storage. Game servers also run on a hypervisor; DNS, VPN and storage need their own software. A DNS, VPN or storage service already on a hypervisor keeps running there. Dedicated servers, colocation, domains and certificates need neither. Values live in `src/sim/10-catalog/platforms.ts`; fees are monthly, in euros, and fixed over the years, except where a license lists a one-time price first.
@@ -1650,7 +1700,7 @@ Service software anchors: BIND (Bound) and PowerDNS (PowerDNZ) both predate 2005
 
 Anchors: cPanel could copy accounts between servers with WHM's "Copy an account" since 2005 and gained its transfer tool for other panels around 2012; Plesk's Migration Manager appeared with Plesk 7.5.6 in 2005 and the Plesk Migrator extension (2015) imports cPanel, Confixx and others; DirectAdmin moves accounts through backup and restore since about 2010; ISPConfig 3 introduced multiserver setups in March 2009, which is where FreePanel clusters from, while cPanel and Plesk never clustered web serving (only DNS). Hypervisor years follow the products: OpenStack 2010, VMware ESX long before 2005, Proxmox VE 2008, Hyper-V 2008 (clustering of Hyper-V hosts from the 2012 release).
 
-- **Licenses** are billed on the 1st of each month per hypervisor cluster and per panel host, as ledger lines in the category "licenses".
+- **Licenses** on a subscription are billed per key on the day of the month the key was bought, one ledger line per key in the category "licenses" naming the product and the key, unassigned keys included. A per-account edition such as cPanic Premier charges its fee for every account on its panel host. The vendor emails one receipt per product. A renewal the bank cannot pay keeps the software running for `LAPSE_GRACE_DAYS`, then the key lapses and the vendor emails it; the next hour with the money renews it for a month from then. A cancelled key runs to the end of its paid month and expires. A key bought once is never billed again. The App Suite and the balancer are billed on the 1st per cluster.
 - **How-to tickets:** a customer's how-to rate is multiplied by the average factor of the software serving each of their workloads (the panel for web spaces, the service software for game servers, DNS, VPN and storage, the hypervisor for the rest).
 - **Booking:** software sets no limit on what a node books. Every hypervisor and panel books vCPU and RAM past the physical amounts and disk up to twice the usable RAID disk (see Usage curves and overcommit). Ballooning decides one thing: a resize of one of the player's own VMs that only grows its RAM is live on a hypervisor that balloons (Proxmocks and VMwhere, HyperVee from 2012; OpenStash and OpenVeeZee never); any other resize restarts the VM for 10 minutes.
 - **Software in a VM** gets 95% of the VM's vCPU and RAM (`IN_VM` in 10-catalog/platforms.ts): a panel VM's web hosting room is 0.95 times its booked vCPU and RAM, less the panel, with its full disk. The same panel on bare metal gets the whole server.
@@ -1842,6 +1892,20 @@ A datastore is a server attached to a VMwhere cluster as shared storage for VM d
 - **Failure.** A datastore server that stops working takes every VM on it down. A datastore that loses its data loses every disk on it.
 - **Detaching** needs the datastore empty.
 
+### Proxmocks cluster quorum
+
+A Proxmocks cluster of two or more nodes holds quorum while more than half of its votes are up. Every node casts one vote, and a QDevice (a free server in the cluster's zone with no software, set with `setQdevice`) casts one more. Without quorum the cluster is read-only: creating or deleting VMs, migrating, snapshots, restores, node state changes, backup jobs and datastore attachment refuse with `error.noQuorum`, and failover is suspended. Running VMs stay up. A two-node cluster loses quorum when either node dies; a third node or a QDevice prevents that.
+
+### Storage replication and Ceph
+
+A VM of a Proxmocks cluster (from the year of its cluster support) can replicate its disk to another active node with `setReplication`: every 15 minutes, hourly or daily (03:00 UTC). The replica books the VM's disk on the target node and each copy sends `BACKUP_CHANGED` of the filled disk over the LAN. When the VM's node dies with its data (`lostDisk`), failover restarts the VM on the replica node and closes the loss with the data written since the last copy lost (the lag since `lastAt` plus half an interval). A disk on shared storage or a Ceph pool takes no replica.
+
+A cluster of three or more Proxmocks nodes can build a Ceph pool with `setCeph` (size 2 or 3). Its capacity is the usable disk of all nodes divided by the size, and it must hold the disks of the cluster's VMs. Every node down costs one copy: at one copy the pool is read-only (mutating actions refuse with `error.cephReadOnly`). VMs on the pool fail over like VMs on a datastore, also when the dead node lost its data. After a node returns the pool rebalances for `diskUsed / (Gbit * LAN_GB_PER_HOUR)` hours, with a warning alarm.
+
+### Per-VM firewall
+
+An own VM on a Proxmocks cluster can switch its firewall on and tick the port macros it lets through (web, ssh, mail, db, rdp); every other port is dropped. A host in that VM serves its own ports (a panel serves web, a mail host serves mail): blocking one takes the service offline until the macro is ticked again. When the firewall closes a port the host's software listens on but does not serve (SSH, for instance), the hourly and daily compromise chances are halved (`FIREWALL_RISK`). A VM without a firewall behaves as before. The firewall costs no money.
+
 ### Snapshots
 
 A snapshot freezes a VM's disk on a VMwhere cluster and, for the player's own VMs, its installed OS and software. Values live in `src/sim/10-catalog/platforms.ts`.
@@ -1858,6 +1922,36 @@ A snapshot freezes a VM's disk on a VMwhere cluster and, for the player's own VM
 - **Revert** clears the corruption of a pulled plug when the snapshot is older than the corruption, and closes the loss report item as a restore from backup would. An own VM gets its OS and software back as they were; a VM that hosts a panel needs that panel in the snapshot.
 - **Loss.** A disk lost with its server or datastore loses its snapshots, and a lost disk cannot revert. A VM that leaves VMwhere loses its snapshots.
 
+### Backup jobs and restore points
+
+A cluster has up to 4 backup jobs. Each job copies a set of its workloads (all by default) to a backup cluster at its hour (02:00 by default), daily or weekly on Sundays, and writes one restore point per workload.
+
+| Value | Amount |
+| --- | --- |
+| Default retention | keep last 3, weekly 0 |
+| Retention range | last 1 to 14, weekly 0 to 8 |
+| First point of a job | a full copy: the disk size times the fill |
+| Later points | an increment of 10% of the full copy |
+| Pruning | the newest `last` points stay, plus the newest point of each of `weekly` older weeks; the oldest point kept becomes the full copy |
+| Repository use | the sum of all restore points written to the cluster; the old flat 1.3 pool factor is gone |
+| Full repository | the run stops, the job is marked failed with reason full and the failure alert goes out |
+| Target not reachable | the run fails with reason unreachable |
+| Restore | uses the newest point, so the age penalty in Data loss and backups is unchanged |
+
+Restore tests, offsite copies and alerts:
+
+| Value | Amount |
+| --- | --- |
+| Bad point | 1% of new points are bad, drawn from the game seed; a point that took the internet path to an offsite repository is bad with 3% |
+| Restore test | reads the point back at the restore speed (volume size divided by the link) and leaves the workload running; the point then shows as verified or bad |
+| Restoring an untested bad point | takes the full restore time, then the workload comes back empty and the customer takes the no-backup hit |
+| Tested bad point | is no backup: the restore reads the point before it |
+| Offsite copy | Sundays three hours after the job's hour; the newest point goes to a backup cluster in another zone at 45 GB per hour; both repositories hold it |
+| Failure alert | one per job per day, only when the job sends notifications |
+| Backup elsewhere | a backup survives its repository cluster losing every server only through an offsite copy |
+
+A save from before jobs turns its single schedule into one job named Backup and gives each backed-up workload one point.
+
 ### Templates
 
 A template is a stopped own VM on a VMwhere cluster kept to clone ready VMs from. Actions live in `src/sim/90-actions/templates.ts`.
@@ -1872,6 +1966,19 @@ A template is a stopped own VM on a VMwhere cluster kept to clone ready VMs from
 
 - **Templates** keep their disk booking, OS, software and snapshots. They never start, cannot be migrated, are not balanced, and failover leaves them on a dead node.
 - **Clones** put their disk where a new VM's goes, a datastore with room first. They are busy for the copy; each software they carry runs as its own cluster once the copy is done. A template running mail cannot be cloned.
+
+### VMwhere editions, DRS and pools
+
+A new VMwhere cluster starts on Essentials; a cluster from an older save is on Enterprise. Moving up an edition costs the VMwhere licence fee per node times the step in levels (Essentials 1, Standard 2, Enterprise 4), paid once.
+
+| Edition | Adds |
+| --- | --- |
+| Essentials | Live migration, snapshots, datastores |
+| Standard | High availability failover, alarm thresholds, manual DRS |
+| Enterprise | Partially and fully automated DRS, resource pools |
+
+DRS Manual and Partial keep up to five recommended moves for the player to apply, Full applies them. A host enters maintenance mode only when every running VM can move live. A pool caps the booked vCPUs and RAM of its members. On a hot node a high pool keeps its performance and a low pool keeps at most 90%.
+
 
 ## PHP versions
 
@@ -2117,17 +2224,16 @@ Platform fees are flat: the free listing costs nothing, ProvenExpat €49 and Tr
 | --- | --- | --- | --- |
 | Email | Free | Free | Always on |
 | Web design | €400 | €15 | None |
-| Order form | €900 | €10 | Web design |
 | Goggle Ads | €50 | None | Web design |
 | AI ads | €1,500 | None | Web design, from 2023 |
 
-Web design and the order form are set up on the website card in the Marketing app's Channels once the site is launched. The Marketing app waits for 450 know-how of research (Marketing basics, Employee management, Marketing campaigns), so a first-year company could not otherwise buy them before December.
+Web design is set up on the website card in the Marketing app's Channels once the site is launched. The Marketing app waits for 450 know-how of research (Marketing basics, Employee management, Marketing campaigns), so a first-year company could not otherwise buy them before December.
 
 The basic website every company starts with is free and brings no leads of its own. The web design brings 4 leads a month per location city, split by the profile mix. Every lead only writes when its product is listed on the website.
 
 **Site hosting.** A rented host costs €9.90 a month from the month the web design is bought, flat over the years (ledger line "Website hosting: Strateaux"). Anchor: German shared hosting packages from Strato and 1&1 cost €5 to €10 a month in 2005. An own host costs nothing extra.
 
-**Design generations.** The design belongs to a generation: 2005, 2009, 2013, 2017, 2021 or 2025 (every four years; the web design takes the generation of the year it is bought). With b = (current generation − design generation) ÷ 4, website leads and order form orders are multiplied by 1 for b of 0 or 1 and by max(0.4, 1 − 0.2 × (b − 1)) from b = 2:
+**Design generations.** The design belongs to a generation: 2005, 2009, 2013, 2017, 2021 or 2025 (every four years; the web design takes the generation of the year it is bought). With b = (current generation − design generation) ÷ 4, website leads and shop orders are multiplied by 1 for b of 0 or 1 and by max(0.4, 1 − 0.2 × (b − 1)) from b = 2:
 
 | Design from | 2012 | 2013 to 2016 | 2017 to 2020 | 2021 on |
 | --- | --- | --- | --- | --- |
@@ -2324,15 +2430,15 @@ The loan limit is the higher of the level's minimum and 12× the average monthly
 
 **Bankruptcy.** When cash stays below zero for 30 days and no loan is available that covers the deficit, the company is insolvent and the game ends.
 
-**Account fees.** A limited company (GmbH) must keep a business account, and business accounts cost more than a sole trader's, so the account fee a month depends on the legal form. Branch banks charge a limited company about twice the sole trader's fee and add a fee for every booking on a partnership's or limited company's account; the fintechs sell flat plans, the limited one at two to three times the sole trader's. A partnership pays between the two. Each month start books the fee for the month and, at a branch bank, one line for the bookings of the month before: every ledger line of that month except the bank's own fees. netbunk, like the direct banks that long opened no GmbH accounts, opens none for a limited company: the registration refuses that pair, and the trade office form greys netbunk out while the limited form is chosen. The legal form is fixed once registered, so an open account never needs to move.
+**Account fees.** A limited company (GmbH) must keep a business account, and business accounts cost more than a sole trader's, so the account fee a month depends on the legal form. Branch banks charge a limited company about twice the sole trader's fee and add a fee for every booking on a partnership's or limited company's account; the fintechs sell flat plans, the limited one at two to three times the sole trader's. A partnership pays between the two. Each month start books the fee for the month and, at a branch bank, one line for the bookings of the month before: every ledger line of that month except the bank's own fees. Ding-DiBa, like the direct banks that long opened no GmbH accounts, opens none for a limited company: the registration refuses that pair, and the trade office form greys Ding-DiBa out while the limited form is chosen. The legal form is fixed once registered, so an open account never needs to move.
 
 | Bank | Sole trader | Partnership | Limited company | Per booking (partnership, limited) |
 | --- | --- | --- | --- | --- |
 | Sparklasse | €8 | €12 | €16 | €0.30 |
-| Volksbunk | €6 | €9 | €12 | €0.25 |
+| Folksbank | €6 | €9 | €12 | €0.25 |
 | Deutsche Bunk | €12 | €18 | €24 | €0.15 |
-| Postbunk | €4 | €6 | €8 | €0.40 |
-| netbunk | €0 | €5 | no account | none |
+| Postbanq | €4 | €6 | €8 | €0.40 |
+| Ding-DiBa | €0 | €5 | no account | none |
 | Fidorr | €0 | €6 | €12 | none |
 | Quonto | €9 | €15 | €25 | none |
 
@@ -2407,7 +2513,7 @@ Leads were never the problem before 2014: about 500 a year reached the company a
 - **Server lines.** The model bought only the balanced 1U. The Shop sells the memory-optimized 2U from 2005: four times the RAM for 1.8 times the price and 1.6 times the power. Out of the basement the bot now picks the line with the lowest price per GB it can fill, counting the vCPUs its customers book (0.1 per web space, one per 2 GB of VPS, two per 4 GB game server, at most 8 per core). RAM, not CPU, sets the limit in 2005, so it buys memory-optimized servers.
 - **Leasing and the loan limit.** The model had no leasing, and its loan limit ignored the live rule's 12 × average monthly profit. The bot now takes the cheapest of three lease offers (factor 1.06 to 1.40, 12 to 36 months) when the bank says no, but only when the payment is below what the server earns at 80% booked at last month's revenue per GB, less its running costs. Leases sit outside the 60% instalment rule because each one pays for itself. Leased hardware is not in net worth until it is paid off, as in `metrics.ts`.
 
-Two bot rules were changed to match a careful player. The bot moves out of the basement no earlier than October of year 1: the model has none of year 1's setup work (trainings, website, order form) and otherwise filled the basement by April, while the happiness run fills it in the last quarter. At the move the basement servers ride along to the rack share for €300 and the home line is cancelled.
+Two bot rules were changed to match a careful player. The bot moves out of the basement no earlier than October of year 1: the model has none of year 1's setup work (trainings, website, shop) and otherwise filled the basement by April, while the happiness run fills it in the last quarter. At the move the basement servers ride along to the rack share for €300 and the home line is cancelled.
 
 No price, threshold or loan limit moved. With these changes (median of 20 seeds):
 
@@ -2495,7 +2601,7 @@ Neither bot goes bankrupt. The steady bot pays €500 a month for ChadGPT in 200
 
 The solo bot reaches level 5 in 2012.9 instead of 2012.8. Neither bot goes bankrupt.
 
-**Traffic and setup fees.** The model's specs now carry traffic (the live TRAFFIC_GB, growing 20% a year, × the budget size) priced at the market rate per 100 GB, and while the order form is up every new customer without a high budget pays the market's setup fee once on three in four orders (one in four still writes an email, `EMAIL_SHARE`), collected at the on-time share. The model sells no DNS or VPN, so per-unit DNS and VPN leave it alone. Medians before and after:
+**Traffic and setup fees.** The model's specs now carry traffic (the live TRAFFIC_GB, growing 20% a year, × the budget size) priced at the market rate per 100 GB, and while the shop is up every new customer without a high budget pays the market's setup fee once on three in four orders (one in four still writes an email, `EMAIL_SHARE`), collected at the on-time share. The model sells no DNS or VPN, so per-unit DNS and VPN leave it alone. Medians before and after:
 
 | Level | Target | Steady before | Steady after |
 | --- | --- | --- | --- |
@@ -2531,12 +2637,12 @@ A shop sells its products for a month, a quarter, a year or two years. A longer 
 | Annual | 12 | 10% |
 | Biennial | 24 | 15% |
 
-A form order draws its cycle from the profile's base shares (`CYCLE_SHARE` in `cycles.ts`: a private customer takes monthly 78%, quarterly 10%, annual 11%, biennial 1%; an enterprise 20, 10, 50, 20). Each offered non-monthly cycle's weight is its base share times `exp(8 * (d - m))`, where `d` is the discount the player sets and `m` the market discount; the weights are normalised over the offered cycles. Ten points above the market's discount multiplies a share by 2.2, ten below by 0.45. Cycles the player has not priced use the market discount.
+A shop order draws its cycle from the profile's base shares (`CYCLE_SHARE` in `cycles.ts`: a private customer takes monthly 78%, quarterly 10%, annual 11%, biennial 1%; an enterprise 20, 10, 50, 20). Each offered non-monthly cycle's weight is its base share times `exp(8 * (d - m))`, where `d` is the discount the player sets and `m` the market discount; the weights are normalised over the offered cycles. Ten points above the market's discount multiplies a share by 2.2, ten below by 0.45. Cycles the player has not priced use the market discount.
 
-Lead conversion for form orders reads the advertised price level: the line's rate against the market for its middle size, times the weighted cycle price against the same weighting at market discounts. A changed rate or discount reaches new leads at once, where the sold-services index follows only after sales.
+Lead conversion for shop orders reads the advertised price level: the line's rate against the market for its middle size, times the weighted cycle price against the same weighting at market discounts. A changed rate or discount reaches new leads at once, where the sold-services index follows only after sales.
 
 A customer inside a paid term skips the monthly churn roll unless happiness is below 15. In the month before the term ends the customer rolls once with `min(0.9, N * base) + 0.5 * max(0, (50 - H) / 50)`, where `base` is the profile's monthly churn and `N` the term months. A customer who leaves inside a paid term, with no invoice open, gets the unused whole months back as a ledger entry.
 
 A renewal invoice for the next term goes out at the month start before a term ends, at the service's current price. Paying it extends the term by N months. A prepaid service has no monthly arrears lines.
 
-The balance model takes the annual share of form orders as a revenue discount.
+The balance model takes the annual share of shop orders as a revenue discount.

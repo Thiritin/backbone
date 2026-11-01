@@ -8,6 +8,7 @@ import type { GameState } from "../50-state";
 import { serviceOnline } from "../40-support/status";
 import { HOW_TO, KNOWLEDGE_BASE } from "../40-support/tickets";
 import { bookable, diskFits, lineOffered, noRoomError, nodeUsed, serverOf, vmRoom, workloadOnline, workloadsOf, type Cluster, type Workload } from "../60-infra/cluster";
+import { machineAddress } from "../60-infra/addresses";
 import { hostPerf } from "../60-infra/php";
 import { nodeUsage } from "../60-infra/usage";
 import type { SimEvent } from "../88-tick/tick";
@@ -150,4 +151,12 @@ export function customerSite(s: GameState, serviceId: string): { title: string; 
     : ws.some((w) => slowHost(s, w, s.clusters.find((c) => c.id === w.clusterId))) ? "slow" : "up";
   const sponsored = s.sponsorships.some((x) => x.status === "running" && x.serviceIds.includes(serviceId) && !x.board?.dropped);
   return { title: cus.name, blurb: `site.blurb.${cus.profile}`, status, sponsored };
+}
+
+// Where a customer's site answers: its domain, or the private address of its account until it has one.
+export function siteHost(s: GameState, serviceId: string): string | null {
+  const v = s.services.find((x) => x.id === serviceId);
+  if (!v || v.product !== "webHosting") return null;
+  const w = workloadsOf(s, serviceId)[0];
+  return v.domain ?? (w ? machineAddress(s, w.id) : null);
 }

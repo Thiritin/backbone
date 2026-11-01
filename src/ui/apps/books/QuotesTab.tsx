@@ -5,12 +5,13 @@ import { mailedAddress } from "../../../sim/30-customers/addresses";
 import { stepError } from "../../../sim/30-market/manual";
 import { requestName } from "../../../sim/30-market/market";
 import { orderOf } from "../../../sim/30-market/orders";
-import { hasHelpdeskLink, type Quote, type QuoteStatus } from "../../../sim/30-market/quotes";
+import { type Quote, type QuoteStatus } from "../../../sim/30-market/quotes";
 import { setupFee } from "../../../sim/30-market/spec";
 import type { GameState } from "../../../sim/50-state";
 import { attachQuote, convertQuote, createQuote, deleteQuote, editQuote } from "../../../sim/90-actions/orders";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
+import { useBooks } from "./view";
 import { formatDay } from "../billing/format";
 import { PriceField } from "../sales/PriceField";
 import { DocBar, DocButton, DocFoot } from "./DocBar";
@@ -34,7 +35,7 @@ const quotable = (game: GameState) => game.tickets.filter((tk) => orderOf(game, 
 
 // Quotes as a document list: toolbar, list, A4 preview and a footer line.
 export function QuotesTab({ focus }: { focus: string | null }) {
-  const game = useStore((s) => s.game), act = useStore((s) => s.act), openApp = useStore((s) => s.openApp);
+  const game = useBooks(), act = useStore((s) => s.act), openApp = useStore((s) => s.openApp);
   const list = [...game.quotes].reverse(), open = quotable(game);
   const [selected, setSelected] = useState<string | null>(focus ?? list[0]?.id ?? null);
   const [ticket, setTicket] = useState(""), [editing, setEditing] = useState(false);
@@ -58,7 +59,7 @@ export function QuotesTab({ focus }: { focus: string | null }) {
         </select>
         <span className="books-docbar-sep" />
         <DocButton icon={<FilePen />} label={t("orderSteps.edit")} disabled={!draft} pressed={editing && draft} onClick={() => setEditing(!editing)} />
-        <DocButton icon={<Send />} label={t("orderSteps.send")} disabled={!draft || !q?.ticketId || !hasHelpdeskLink(game)} onClick={() => act(attachQuote, q!.id, q!.ticketId!)} />
+        <DocButton icon={<Send />} label={t("orderSteps.send")} disabled={!draft || !q?.ticketId} onClick={() => act(attachQuote, q!.id, q!.ticketId!)} />
         <DocButton icon={<FileOutput />} label={t("orderSteps.carryForward")} disabled={q?.status !== "accepted"} onClick={carry} />
         <DocButton icon={<Trash2 />} label={t("orderSteps.delete")} disabled={!draft} onClick={() => { if (act(deleteQuote, q!.id).ok) pick(null); }} />
       </DocBar>

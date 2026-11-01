@@ -126,7 +126,7 @@ const CATALOG: Omit<Software, MachineFields>[] = [
   { id: "postfixit", kind: "mail", name: "Postfixit", console: "Postfixit", licensing: [{ from: 2005, kind: "free", fee: 0 }], tickets: 1.4, live: false, split: true, balloon: null, controlPlane: { vcpu: 0.5, ramGb: 1, diskGb: 20 }, installHours: 4, from: 2005 , migration: { same: null, other: null }, cluster: null, autoUpdate: null },
   { id: "mailpig", kind: "mail", name: "Mailpig", console: "Mailpig", licensing: [{ from: 2005, kind: "free", fee: 0 }], tickets: 1, live: false, split: true, balloon: null, controlPlane: { vcpu: 1, ramGb: 2, diskGb: 20 }, installHours: 2, from: 2015 , migration: { same: null, other: null }, cluster: null, autoUpdate: null },
   // Backup software: a repository other clusters back up to; backs lists what it reads.
-  { id: "backula", kind: "backup", name: "Backula", console: "Backula Web", licensing: [{ from: 2005, kind: "free", fee: 0 }], tickets: 0, live: false, split: true, balloon: null, controlPlane: { vcpu: 0.5, ramGb: 1, diskGb: 10 }, installHours: 3, from: 2005, migration: { same: null, other: null }, cluster: null, autoUpdate: null, backs: { ...Object.fromEntries(FILES.map((id) => [id, 2005])), proxmocks: 2005, openstash: 2012 } },
+  { id: "backula", kind: "backup", name: "Backula", console: "Backula", licensing: [{ from: 2005, kind: "free", fee: 0 }], tickets: 0, live: false, split: true, balloon: null, controlPlane: { vcpu: 0.5, ramGb: 1, diskGb: 10 }, installHours: 3, from: 2005, migration: { same: null, other: null }, cluster: null, autoUpdate: null, backs: { ...Object.fromEntries(FILES.map((id) => [id, 2005])), proxmocks: 2005, openstash: 2012 } },
   { id: "veeham", kind: "backup", name: "Veeham Backup", console: "Veeham Backup and Replication", licensing: [{ from: 2008, kind: "server", fee: 40 }], trialDays: 30, tickets: 0, live: false, split: true, balloon: null, controlPlane: { vcpu: 2, ramGb: 4, diskGb: 20 }, installHours: 2, from: 2008, migration: { same: null, other: null }, cluster: null, autoUpdate: 2016, backs: { vmwhere: 2008, hypervee: 2011, proxmocks: 2024 } },
   { id: "proxmocksBackup", kind: "backup", name: "Proxmocks Backup Server", console: "Proxmocks Backup Server", licensing: [{ from: 2020, kind: "free", fee: 0 }], tickets: 0, live: false, split: true, balloon: null, controlPlane: { vcpu: 1, ramGb: 2, diskGb: 10 }, installHours: 2, from: 2020, migration: { same: null, other: null }, cluster: null, autoUpdate: null, backs: { proxmocks: 2020 } },
 ];
@@ -142,8 +142,10 @@ export const isService = (k: SoftwareKind): boolean => SERVICE_KINDS.includes(k)
 // The order the software picker lists the kinds in.
 export const KINDS: SoftwareKind[] = ["cloud", "panel", "game", "dns", "vpn", "storage", "mail", "backup"];
 // Game servers also run on plain virtual machines, so a line can have more than one kind; kindServing is the general one.
-export const kindsServing = (p: Product): SoftwareKind[] => (Object.keys(SERVES) as SoftwareKind[]).filter((k) => SERVES[k].includes(p));
-export const kindServing = (p: Product): SoftwareKind | null => (["panel", "cloud", "dns", "vpn", "storage"] as SoftwareKind[]).find((k) => SERVES[k].includes(p)) ?? null;
+// A reseller block lives on a web panel host but is never sold from the shop, so it is not in SERVES.
+const served = (p: Product): Product => (p === "reseller" ? "webHosting" : p);
+export const kindsServing = (p: Product): SoftwareKind[] => (Object.keys(SERVES) as SoftwareKind[]).filter((k) => SERVES[k].includes(served(p)));
+export const kindServing = (p: Product): SoftwareKind | null => (["panel", "cloud", "dns", "vpn", "storage"] as SoftwareKind[]).find((k) => SERVES[k].includes(served(p))) ?? null;
 
 // economy.md, Platforms and licenses: software in a virtual machine gets this share of the VM's CPU and RAM.
 export const IN_VM = 0.95;

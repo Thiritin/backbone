@@ -12,7 +12,7 @@ import type { GameState } from "../50-state";
 // What each line is called in requests, emails and lists.
 export const LINE_NAME: Record<Product, string> = textRecord("sim.line", {
   webHosting: "Web hosting", vps: "VPS", gameServer: "Game server", dns: "DNS hosting", vpn: "VPN", storage: "Storage",
-  cloud: "Cloud server", dedicated: "Dedicated server", colocation: "Colocation", domain: "Domain", ssl: "SSL certificate", gpu: "GPU server",
+  cloud: "Cloud server", dedicated: "Dedicated server", colocation: "Colocation", domain: "Domain", ssl: "SSL certificate", gpu: "GPU server", reseller: "Reseller block",
 });
 // Lines whose customers scale their size; the others take it as it is.
 const SCALED: Product[] = ["webHosting", "vps", "gameServer", "dns", "vpn"];
@@ -88,6 +88,7 @@ export function specText(product: Product, spec: Spec): string {
             : product === "colocation" ? [`${spec.units ?? 0}U`, `${spec.watts ?? 0} W`]
               : product === "dns" ? [t("sim.spec.zones", { n: spec.zones ?? 0 })]
                 : product === "vpn" ? [t("sim.spec.users", { n: spec.users ?? 0 })]
+              : product === "reseller" ? [t("sim.spec.accounts", { n: spec.accounts ?? 0 }), gb(spec.diskGb)]
               : [];
   const addresses = [...(spec.ipv4 ? [t("sim.spec.ipv4", { n: spec.ipv4 })] : []), ...(spec.ipv6 ? ["IPv6"] : [])];
   return [LINE_NAME[product], ...parts, ...(spec.arch ? [spec.arch] : []), ...addresses].join(", ");

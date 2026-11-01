@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
 import { SHOP_SETUP_HOURS } from "../src/sim/10-catalog/shops";
+import { PREFERENCE } from "../src/sim/10-catalog/payments";
 import { orderLead } from "../src/sim/30-market/orders";
 import type { GameState } from "../src/sim/50-state";
 import { hasModule, inStock, shopActive, shopBills, shopTick, stockOf, WHM_BREACH_AT } from "../src/sim/80-business/shop";
@@ -9,6 +10,11 @@ import { addToGroup, buyModule, chooseShop, createGroup, removeFromGroup, setGro
 import { cordon, uncordon } from "../src/sim/90-actions/clusters";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { automate, readyGame } from "./fixtures";
+
+// Private customers pay by bank transfer here, so no shop order is lost for its payment method.
+const saved = PREFERENCE.private;
+beforeEach(() => { PREFERENCE.private = { transfer: 1 }; });
+afterEach(() => { PREFERENCE.private = saved; });
 
 const web = { product: "webHosting" as const, size: 1, sla: "basic" as const };
 

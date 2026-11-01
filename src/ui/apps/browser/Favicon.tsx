@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { shopById } from "../../../sim/10-catalog/shops";
 import type { Resolved } from "../../../sim/80-business/browser";
 import type { GameState } from "../../../sim/50-state";
 import { customerSite } from "../../../sim/80-business/website";
@@ -10,6 +11,7 @@ import { BMC_LOOK } from "./ipmi/IpmiPage";
 import { REGISTRAR_HUE } from "./sites/registrars/RegistrarPage";
 import { SiteMark } from "./sites/software/marks";
 import { softwareById } from "../../../sim/10-catalog/platforms";
+import { booksVendor } from "../../../sim/10-catalog/bookkeeping";
 import { serverOsById } from "../../../sim/10-catalog/server-os";
 import { bankById } from "../../../sim/10-catalog/banks";
 
@@ -43,6 +45,14 @@ export function Favicon({ game, r }: { game: GameState; r: Resolved }) {
     }
     case "office": return <Tile fill="#1c3f8c"><path d="M8 3.2l4.6 2.3H3.4zM4.4 6.6h1.4v4.2H4.4zM7.3 6.6h1.4v4.2H7.3zM10.2 6.6h1.4v4.2h-1.4zM3.4 11.6h9.2v1.3H3.4z" fill="white" /></Tile>;
     case "lexwear": return <Tile fill="#c8102e"><text x="8" y="11.8" textAnchor="middle" fontSize="10" fontWeight="800" fill="white" fontFamily="Verdana, sans-serif">L</text></Tile>;
+    case "books": {
+      const v = booksVendor(p.id)!;
+      return <Tile fill={v.skin.accent}><text x="8" y="11.8" textAnchor="middle" fontSize="10" fontWeight="800" fill="white" fontFamily="Verdana, sans-serif">{v.name[0].toUpperCase()}</text></Tile>;
+    }
+    case "shopVendor": {
+      const name = shopById(p.id).name;
+      return <Tile fill={`oklch(0.5 0.12 ${hueOf(name)})`}><text x="8" y="11.6" textAnchor="middle" fontSize="9.5" fontWeight="700" fill="white" fontFamily="Verdana, sans-serif">{name[0]}</text></Tile>;
+    }
     case "wiki": return <Tile fill="#f8f9fa"><text x="8" y="12" textAnchor="middle" fontSize="11" fontFamily="Georgia, serif" fill="#202122">W</text></Tile>;
     case "sponsorboard": return <Tile fill="oklch(0.66 0.17 55)"><path d="M3.5 5h9v4.5h-4L6 12V9.5H3.5z" fill="white" /></Tile>;
     case "vendor": return <Logo provider={p.maker} size={16} />;
