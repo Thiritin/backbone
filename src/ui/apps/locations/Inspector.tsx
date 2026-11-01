@@ -7,6 +7,7 @@ import { bayCount, boardSpec, isManaged, isOfficeRouter, jacksOf, modelById, mod
 import { imageName } from "../../../sim/10-catalog/server-os";
 import type { Cable as CableT, Device, End, GameState } from "../../../sim/50-state";
 import { addressOf, FRITZ_HOST, macOf, routerPassword } from "../../../sim/60-infra/lan";
+import { isOwnRouter } from "../../../sim/60-infra/routers";
 import { clusterOf, workloadsOn } from "../../../sim/60-infra/cluster";
 import { deviceHealth, deviceVendor, deviceWatts, deviceValue, isPlugged, linkStatus, locationOf, pluggedIn, portPeers, resaleValue, working } from "../../../sim/60-infra/status";
 import { pduOf } from "../../../sim/60-infra/pdu";
@@ -292,7 +293,7 @@ function Status({ game, device }: { game: GameState; device: Device }) {
       )}
       {model.kind === "server" && <div><dt>{t("locations-1.role")}</dt><dd>{role}</dd></div>}
       {model.kind === "server" && device.rackId && <AddressRows game={game} id={device.id} />}
-      {(isOfficeRouter(model) || (isManaged(model) && device.rackId)) && <RouterLabel game={game} device={device} />}
+      {(isOfficeRouter(model) || isOwnRouter(device) || (isManaged(model) && device.rackId)) && <RouterLabel game={game} device={device} />}
     </dl>
   );
 }

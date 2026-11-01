@@ -6,7 +6,7 @@ import "./hewlett-packet.css";
 const Mark = ({ late }: { late: boolean }) => (
   <svg className="vs-mark" width="34" height="34" viewBox="0 0 34 34" aria-hidden="true">
     {late ? <circle cx="17" cy="17" r="16" fill="#0096d6" /> : <rect x="1" y="1" width="32" height="32" rx="3" fill="#ffffff" />}
-    <text x="17" y="22.5" textAnchor="middle" fontSize="13" fontStyle="italic" fontWeight="700" fontFamily="Arial, sans-serif" fill={late ? "#ffffff" : "#003366"}>h-p</text>
+    <text x="17" y="20.4" textAnchor="middle" fontSize="13" fontStyle="italic" fontWeight="700" fontFamily="Arial, sans-serif" fill={late ? "#ffffff" : "#003366"}>h-p</text>
   </svg>
 );
 
