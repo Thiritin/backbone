@@ -12,7 +12,7 @@ import "./openveepeen.css";
 const ERAS = erasFrom(2005, 2017);
 
 export function OpenVeePeeN(p: PanelProps) {
-  const era = eraAt(ERAS, p.game), [tab, setTab] = usePanelTab(p.f), [certs, setCerts] = useState(false);
+  const era = eraAt(ERAS, p), [tab, setTab] = usePanelTab(p.f), [certs, setCerts] = useState(false);
   const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f), ts = tenants(p.game, p.c);
   const logo = <div className="ov-logo">OpenVeePeeN <span>Access Server</span></div>;
   if (!p.signedIn) return (
