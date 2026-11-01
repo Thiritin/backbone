@@ -63,8 +63,8 @@ describe("files", () => {
     const s = fresh(), at = server(s);
     expect(text(s, "cat /etc/hostname", at)).toBe(at.host);
     expect(text(s, "cat /etc/os-release", at)).toContain('VERSION="3.1 (sarge)"');
-    expect(text(s, "ls -a /etc", at)).toBe(".  ..  apt  hostname  os-release");
-    expect(text(s, "rm /etc/hostname && ls /etc", at)).toBe("apt  os-release");
+    expect(text(s, "ls -a /etc", at)).toBe(".  ..  apt  hostname  network  os-release  resolv.conf");
+    expect(text(s, "rm /etc/hostname && ls /etc", at)).toBe("apt  network  os-release  resolv.conf");
     expect(s.files.dev3.paths["/etc/hostname"]).toBe(false);
   });
 
@@ -99,7 +99,7 @@ describe("files", () => {
     const s = fresh(), at = server(s);
     expect(complete(s, at, "cat /etc/os").line).toBe("cat /etc/os-release ");
     expect(complete(s, at, "cd /et").line).toBe("cd /etc/");
-    expect(complete(s, at, "ls /etc/").options).toEqual(["apt/", "hostname", "os-release"]);
+    expect(complete(s, at, "ls /etc/").options).toEqual(["apt/", "hostname", "network/", "os-release", "resolv.conf"]);
   });
 });
 
