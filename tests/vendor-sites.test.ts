@@ -11,7 +11,8 @@ import { deserialize, serialize } from "../src/sim/91-save/save";
 import { withServer } from "./fixtures";
 
 const at = (y: number, m: number, d: number, h: number) => hourOf(new Date(Date.UTC(y, m - 1, d, h)));
-
+// Three customers: A's invoice is a draft, B's exact payment waits in Books, imported from the statement, C's invoice is a
+// week overdue.
 // Three customers: A's invoice is a draft, B's exact payment waits in the bank, C's invoice is a week overdue.
 function books(seed = 9) {
   const s = withServer(newGame(seed));
@@ -28,7 +29,7 @@ function books(seed = 9) {
   Object.assign(inv(c), { payStep: 9, payAt: null, dueAt: s.hour - 8 * 24 });
   s.hour++;
   billingTick(s);
-  Object.assign(s.transfers[0], { reference: "books.ref.invoice", params: { number: inv(b).number } });
+  Object.assign(s.transfers[0], { reference: "books.ref.invoice", params: { number: inv(b).number }, atBank: undefined });
   return { s, A: () => inv(a), B: () => inv(b), C: () => inv(c) };
 }
 

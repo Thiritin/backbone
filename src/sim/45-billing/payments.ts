@@ -73,7 +73,7 @@ export function takeBack(s: GameState, inv: Invoice, kind: Exclude<BackKind, "re
   const fee = kind === "return" ? DEBIT_RETURN_FEE : kind === "chargeback" ? (s.chargebackStrikes >= 2 ? WATCHED_FEE : CHARGEBACK_FEE) : 0;
   const tr: Transfer = {
     id: `trf${s.nextId++}`, hour: s.hour, from: payeeOf(s, inv.method), reference: `payment-methods.ref.${kind}`, params: { number: inv.number },
-    amount: -cents(total + fee), invoiceId: null, matchedAt: null, forInvoice: inv.id, back: kind, ...(fraud && { fraud: true as const }),
+    amount: -cents(total + fee), invoiceId: null, matchedAt: null, forInvoice: inv.id, back: kind, atBank: true, ...(fraud && { fraud: true as const }),
   };
   const lines: LedgerEntry[] = kind === "chargeback"
     ? [{ hour: s.hour, category: "payments", key: "ledger.chargeback", params: { customer: c?.name ?? "" }, amount: -total },
@@ -95,7 +95,7 @@ export function paymentsTick(s: GameState): void {
       continue;
     }
     const from = payeeOf(s, inv.method);
-    s.transfers = [...s.transfers, { id: `trf${s.nextId++}`, hour: s.hour, from, reference: "books.ref.invoice", params: { number: inv.number }, amount: total, invoiceId: null, matchedAt: null, forInvoice: inv.id }];
+    s.transfers = [...s.transfers, { id: `trf${s.nextId++}`, hour: s.hour, from, reference: "books.ref.invoice", params: { number: inv.number }, amount: total, invoiceId: null, matchedAt: null, forInvoice: inv.id, atBank: true }];
     s.cash = cents(s.cash + total);
     s.ledger = [...s.ledger, { hour: s.hour, category: "payments", key: "ledger.transfer", params: { from }, amount: total }];
   }

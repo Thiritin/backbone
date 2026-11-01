@@ -169,7 +169,11 @@ export interface HostFiles { since: number; paths: Record<string, string | boole
 
 // A desktop document; x and y are its icon position on the desktop in pixels.
 // An "app" doc is a desktop link whose title is the app name; a "form" doc is a downloaded application to sign.
-export interface Doc { id: string; kind: "guide" | "note" | "app" | "form"; title: string; body: string; x: number; y: number; form?: DocForm }
+// A "file" doc is an export a program wrote, its text in body.
+export interface Doc { id: string; kind: "guide" | "note" | "app" | "form" | "file"; title: string; body: string; x: number; y: number; form?: DocForm; file?: DataFile }
+// at is the hour the file was written; ids are the records it carries (customers and invoices, or transfers) and imported
+// the bookkeeping programs that took it in.
+export interface DataFile { kind: "shop" | "statement"; at: number; ids: string[]; imported: string[] }
 // from is the legal form the company held when the form was downloaded.
 export interface DocForm { form: string; from?: string; signed: number | null }
 // domain is the company's own domain once registered; mail is its email service.

@@ -67,7 +67,9 @@ export interface Transfer { id: string; hour: number; from: string; reference: s
   // Money taken back from a paid invoice: matching it reopens the invoice; fraud marks a stolen card's chargeback.
   back?: Exclude<BackKind, "release">; fraud?: true;
   // What a manual booking did, so it can be undone: whether it paid the invoice and the credit it left.
-  booked?: { paid: boolean; credit: number } }
+  booked?: { paid: boolean; credit: number };
+  // Only on the bank's statement until a statement import or HBCI brings it into Books; absent reads as in Books.
+  atBank?: true }
 // rate is yearly; left counts the instalments still to pay.
 export interface Loan { id: string; amount: number; rate: number; months: number; left: number; payment: number; balance: number; takenAt: number; missed: number }
 
@@ -150,6 +152,7 @@ export const invoiceTotal = (inv: Invoice): number => cents(inv.lines.reduce((su
 export const isUnpaid = (inv: Invoice): boolean => inv.status === "open" || inv.status === "overdue";
 export const owed = (inv: Invoice): number => cents(invoiceTotal(inv) - (inv.received ?? 0));
 export const synced = (x: { synced?: boolean }): boolean => x.synced !== false;
+export const inBooks = (x: Transfer): boolean => !x.atBank;
 // A record the shop system creates: synced at once with the Shop link module, otherwise waiting for an import in Books.
 export const fromShop = (s: GameState): { source: "shop"; synced?: false } => ({ source: "shop", ...(!hasModule(s, "shop-link") && { synced: false as const }) });
 // Books chases only invoices it knows; the gateway collected its invoices at checkout.
@@ -170,7 +173,7 @@ function transferFor(s: GameState, inv: Invoice): Transfer {
   const bare = first && !!c && chance(r, BARE_REFERENCE[c.profile]);
   const [reference, params]: [string, Record<string, string>] = !bare ? ["books.ref.invoice", { number: inv.number }]
     : chance(r, 0.5) ? [`books.ref.${pick(r, BARE_WORDS)}`, {}] : ["books.ref.name", { name: a?.contact ?? c!.name }];
-  return { id: `trf${s.nextId++}`, hour: s.hour, from, reference, params, amount, invoiceId: null, matchedAt: null, forInvoice: inv.id };
+  return { id: `trf${s.nextId++}`, hour: s.hour, from, reference, params, amount, invoiceId: null, matchedAt: null, forInvoice: inv.id, atBank: true };
 }
 
 // Books a transfer against an unpaid invoice. A smaller amount is a partial payment unless settle writes the difference off;

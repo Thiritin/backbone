@@ -93,3 +93,9 @@
 .books-offline { flex: 1; padding: 40px 32px; background: #fff; color: #222; font: 13px Arial, Helvetica, sans-serif; }
 .books-offline h2 { font-size: 18px; margin: 0 0 10px; }
 .books-offline p { color: #555; }
+.books-files { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 10px 16px; border-bottom: var(--ar-bw) solid var(--line); flex: none; }
+.books-files-list { border-collapse: collapse; }
+.books-files-list th { text-align: left; font-weight: 600; padding: 2px 12px 4px 0; }
+.books-files-list td { padding: 3px 12px 3px 0; vertical-align: middle; }
+.books-files-list svg { vertical-align: -2px; }
+.books-imported { color: var(--muted, inherit); }

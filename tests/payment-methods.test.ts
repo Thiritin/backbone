@@ -17,9 +17,9 @@ import { addCustomer } from "../src/sim/90-actions/customers";
 import { buyLicence } from "../src/sim/90-actions/licences";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { chooseShop } from "../src/sim/90-actions/shop";
-import { importFromShop, setPaymentMethod } from "../src/sim/90-actions/shoplink";
+import { setPaymentMethod } from "../src/sim/90-actions/shoplink";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { automate, readyGame } from "./fixtures";
+import { automate, importAll, pullAll, readyGame } from "./fixtures";
 
 const web = { product: "webHosting" as const, size: 1, sla: "basic" as const };
 const DAY = 24;
@@ -157,7 +157,8 @@ describe("payment methods", () => {
     const stolen = backFor(s, thief.first());
     expect(stolen.fraud).toBe(true);
     expect(thief.customer().churnedAt).toBeNull();
-    // Match by reference books it on its own.
+    // Once the statement is in Books, match by reference books it on its own.
+    pullAll(s);
     matchByReference(s);
     expect(thief.customer().fraud).toBe(true);
     expect(thief.first()).toMatchObject({ status: "open", suspended: true });
@@ -223,7 +224,7 @@ describe("payment methods", () => {
     expect(PAYMENT_METHODS.filter((m) => offers(loaded, m.id)).map((m) => m.id)).toEqual(["transfer"]);
     const [payout] = toPayout(loaded);
     expect(payout).toMatchObject({ from: "ModemBill", amount: 30, covers: ["inv9001"] });
-    expect(importFromShop(loaded).ok).toBe(true);
+    importAll(loaded);
     expect([invoice(loaded, "inv9001").status, invoice(loaded, "inv9002").status]).toEqual(["paid", "paid"]);
   });
 });

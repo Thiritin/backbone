@@ -2,8 +2,6 @@ import type { ComponentType, CSSProperties } from "react";
 import { isUnpaid, synced } from "../../../sim/45-billing/billing";
 import { hasModule, MODULES } from "../../../sim/10-catalog/modules";
 import { licenceMail } from "../../../sim/80-business/licences";
-import { unsynced } from "../../../sim/80-business/shoplink";
-import { importFromShop } from "../../../sim/90-actions/shoplink";
 import { overdue } from "../../../sim/46-finance/payables";
 import { sells, type BooksVendor, type Feature } from "../../../sim/10-catalog/bookkeeping";
 import { booksHost, booksOffline, booksUrl, currentVendor, hasFeature } from "../../../sim/80-business/bookkeeping";
@@ -21,6 +19,7 @@ import { ProductsTab } from "./ProductsTab";
 import { RemindersTab } from "./RemindersTab";
 import { OverviewTab, StatementTab, StatisticsTab, TaxTab } from "./Reports";
 import { Register } from "./Register";
+import { ImportFiles, unimported } from "./ImportFiles";
 import { useBooks } from "./view";
 import { LAYOUTS } from "./layouts";
 import type { Entry, Group } from "./layouts/types";
@@ -48,10 +47,9 @@ const TABS: { id: string; group: Group; count: (s: GameState) => number; body: C
 ];
 
 export function BooksApp() {
-  const game = useBooks(), act = useStore((s) => s.act), openApp = useStore((s) => s.openApp);
-  const waiting = useStore((s) => unsynced(s.game));
-  // Before Shop link, a shop system hands its records over only on import.
-  const importing = !!game.shop.variant && !hasModule(game, "shop-link");
+  const game = useBooks(), openApp = useStore((s) => s.openApp);
+  const waiting = useStore((s) => unimported(s.game));
+  const [importing, setImporting] = useSessionState("books.import", false);
   const [tab, setTab] = useSessionState("books.tab", "overview");
   const [focus, setFocus] = useSessionState<string | null>("books.focus", null);
   const [register, setRegister] = useSessionState("books.register", false);
@@ -81,13 +79,12 @@ export function BooksApp() {
   return (
     <div className="books" style={skin && { "--accent": skin.accent, "--bk-bar": skin.bar, "--bk-ink": skin.ink } as CSSProperties}>
       <Layout v={v!} entries={entries} active={current.id} pick={pick}>
-        {(importing || keys) && (
-          <div className="books-top">
-            {importing && <button className="btn books-import" onClick={() => act(importFromShop)}>{t("shop-link.import")}{waiting ? <span className="tab-count num">{waiting}</span> : null}</button>}
-            {keys && <button className="btn books-register-open" aria-expanded={register} onClick={() => setRegister(!register)}>{t("vendor-sites.register")}</button>}
-          </div>
-        )}
+        <div className="books-top">
+          <button className="btn books-import" aria-expanded={importing} onClick={() => setImporting(!importing)}>{t("dataFlow.import")}{waiting ? <span className="tab-count num">{waiting}</span> : null}</button>
+          {keys && <button className="btn books-register-open" aria-expanded={register} onClick={() => setRegister(!register)}>{t("vendor-sites.register")}</button>}
+        </div>
         {register && keys && <Register onClose={() => setRegister(false)} />}
+        {importing && <ImportFiles onClose={() => setImporting(false)} />}
         <div className="books-body">
           {v && booksOffline(game) ? <Offline v={v} /> : <Body key={`${current.id}:${focus}`} focus={focus} />}
         </div>

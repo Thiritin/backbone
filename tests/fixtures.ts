@@ -1,3 +1,5 @@
+import { downloadStatement, exportShop, importFile } from "../src/sim/90-actions/dataflow";
+import { pullStatement } from "../src/sim/80-business/dataflow";
 import { PAYMENT_METHODS } from "../src/sim/10-catalog/payments";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { chooseShop } from "../src/sim/90-actions/shop";
@@ -259,3 +261,13 @@ export function lateVersions(product: string): [string, string] {
 // Sets the version the software runs on a cluster's machine.
 export const pinVersion = (s: GameState, c: Cluster, product: string, version: string): void =>
   setMachine(s, panelMachine(c)!, (m) => ({ software: m.software.map((x) => (x.id === product ? { ...x, version } : x)) }));
+
+// Brings the shop's records and the bank's transfers into Books through the files, as the player does without Shop link
+// or HBCI; a game without a bookkeeping program gets Lexwear's smallest edition for free.
+export function importAll(s: GameState): void {
+  if (!s.books.vendor) s.books = { ...s.books, vendor: "lexwear", edition: "buchhalter" };
+  pullStatement(s);
+  for (const r of [downloadStatement(s), exportShop(s)]) if (r.ok) importFile(s, r.id!);
+}
+// Takes every transfer the bank holds into Books, as a statement import does.
+export const pullAll = (s: GameState): void => { s.transfers = s.transfers.map((x) => ({ ...x, atBank: undefined })); };

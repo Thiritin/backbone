@@ -13,11 +13,12 @@ import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { buyLicence, registerLicence } from "../src/sim/90-actions/licences";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { chooseShop } from "../src/sim/90-actions/shop";
-import { buyShopLink, importFromShop } from "../src/sim/90-actions/shoplink";
+import { buyShopLink } from "../src/sim/90-actions/shoplink";
 import { resolve } from "../src/sim/80-business/browser";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { tick } from "../src/sim/88-tick/tick";
-import { automate, readyGame } from "./fixtures";
+import { automate, importAll, readyGame } from "./fixtures";
+import { exportShop } from "../src/sim/90-actions/dataflow";
 
 const web = { product: "webHosting" as const, size: 1, sla: "basic" as const };
 
@@ -81,12 +82,12 @@ describe("shop link", () => {
     expect(inv()).toMatchObject({ source: "shop", synced: false, bank: true });
     expect(tr().invoiceId).toBeNull();
     expect(matchTransfer(s, tr().id, inv().id)).toMatchObject({ ok: false, error: "error.invoiceSettled" });
-    expect(importFromShop(s).ok).toBe(true);
+    importAll(s);
     expect(synced(customer()) && synced(inv())).toBe(true);
     expect(inv().status).toBe("paid");
     expect(inv().shopPaid).toBeUndefined();
     expect(tr().invoiceId).toBe(inv().id);
-    expect(importFromShop(s)).toMatchObject({ ok: false, error: "error.nothingToImport" });
+    expect(exportShop(s)).toMatchObject({ ok: false, error: "error.nothingToExport" });
   });
 
   it("sends no reminder for an unsynced invoice", () => {
@@ -100,7 +101,7 @@ describe("shop link", () => {
     const now = () => s.invoices.find((i) => i.id === inv.id)!;
     expect(now().reminders).toEqual([]);
     expect(dueStep(now(), s.hour)).toBeNull();
-    importFromShop(s);
+    importAll(s);
     expect(dueStep(now(), s.hour)).toBe(0);
   });
 
@@ -124,7 +125,7 @@ describe("shop link", () => {
     expect(payout.params.numbers).toBe(`${a.first().number}, ${b.first().number}`);
     expect(payout.invoiceId).toBeNull();
     expect(matchTransfer(s, payout.id, a.first().id)).toMatchObject({ ok: false });
-    importFromShop(s);
+    importAll(s);
     expect([a.first().status, b.first().status]).toEqual(["paid", "paid"]);
     expect(s.transfers.find((x) => x.id === payout.id)!.matchedAt).toBe(s.hour);
   });

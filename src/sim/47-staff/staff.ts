@@ -1,7 +1,7 @@
 import { hashRng, rand, type Rng } from "../00-core/rng";
 import { dateOf, isMonthStart, yearOf } from "../00-core/time";
 import { monthlySalary, priceAt } from "../10-catalog/economy";
-import { autoStep, cents, dueStep, isUnpaid, owed, ruleStep, ruleSuspendsAt, rulesAutomated, sendStep, STEPS, suspend, synced, type Invoice } from "../45-billing/billing";
+import { autoStep, cents, dueStep, isUnpaid, owed, ruleStep, ruleSuspendsAt, rulesAutomated, sendStep, STEPS, suspend, synced, inBooks, type Invoice } from "../45-billing/billing";
 import { ACTION_MINUTES, logActivity } from "./activity";
 import { storeItem } from "../10-catalog/store";
 import { bookFor, booksOffline, seated, sendDraft } from "../80-business/bookkeeping";
@@ -283,7 +283,7 @@ function keepBooks(s: GameState, clerks: Employee[], done: Set<string>): void {
   const check = ACTION_MINUTES.checkInvoice;
   for (const e of clerks) {
     if (e.trained.includes("transfers")) {
-      for (const tr of s.transfers.filter((x) => x.invoiceId === null)) {
+      for (const tr of s.transfers.filter((x) => x.invoiceId === null && inBooks(x))) {
         const inv = s.invoices.find((i) => i.id === tr.forInvoice && isUnpaid(i) && synced(i));
         if (!inv || done.has(inv.id)) continue;
         const took = take(s, e, check + ACTION_MINUTES.matchTransfer);

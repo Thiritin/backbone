@@ -34,7 +34,8 @@ function game(year = 2005): GameState {
   return s;
 }
 
-// Three customers: A's invoice is a draft, B's exact payment waits in the bank, C's invoice is a week overdue.
+// Three customers: A's invoice is a draft, B's exact payment waits in Books, imported from the statement, C's invoice is a
+// week overdue.
 function ledger(seed = 9) {
   const s = withServer(newGame(seed));
   const [a, b, c] = ["Müller Webdesign", "Krause IT", "Bauer Media"].map((name, i) => {
@@ -50,7 +51,7 @@ function ledger(seed = 9) {
   Object.assign(inv(c), { payStep: 9, payAt: null, dueAt: s.hour - 8 * 24 });
   s.hour++;
   billingTick(s);
-  Object.assign(s.transfers[0], { reference: "books.ref.invoice", params: { number: inv(b).number } });
+  Object.assign(s.transfers[0], { reference: "books.ref.invoice", params: { number: inv(b).number }, atBank: undefined });
   return { s, A: () => inv(a), B: () => inv(b), C: () => inv(c) };
 }
 const run = (s: GameState, vendor: string, edition: string) => { s.books = { vendor: vendor as never, installedAt: s.hour, edition, seats: 0 }; };

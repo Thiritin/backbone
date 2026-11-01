@@ -9,6 +9,8 @@ import { cardSpent, groupIban, iban as toIban, ibanEra, ownIban, spendable, WRON
 import type { GameState } from "../../../../../sim/50-state";
 import { applyCard, applyOverdraft, openBankAccount, cancelTransfer, confirmTransfer, deletePayee, deleteStandingOrder, savePayee, setPlan, setTanMethod, startStandingOrder, startTransfer, switchBank } from "../../../../../sim/90-actions/bank";
 import { repayLoan, takeLoan } from "../../../../../sim/90-actions/billing";
+import { downloadStatement } from "../../../../../sim/90-actions/dataflow";
+import { useStore } from "../../../../store";
 import { readSession, writeSession } from "../../../../session";
 import { noAutofill } from "../../../../no-autofill";
 import { offerLogin, savedLogin } from "../../../../vault";
@@ -154,7 +156,12 @@ function Opened({ game }: { game: GameState }) {
 }
 
 function Statement({ game }: { game: GameState }) {
-  const b = game.bank!;
+  const b = game.bank!, act = usePageAct();
+  const [saved, setSaved] = useState<string | null>(null);
+  const download = () => {
+    const r = act(downloadStatement);
+    setSaved(r.ok ? useStore.getState().game.docs.find((d) => d.id === r.id)?.title ?? null : null);
+  };
   // The balance after each booking, counted back from today's balance.
   let balance = game.cash;
   const rows = game.ledger.filter((e) => e.hour >= b.opened).reverse().slice(0, 60).map((e) => {
@@ -172,6 +179,10 @@ function Statement({ game }: { game: GameState }) {
             <tr><td>{t("bank.site.available")}</td><td className="r num">{euroCents(spendable(game))}</td></tr>
           </tbody>
         </table>
+        <p>
+          <button className="bks-btn" onClick={download}>{t("dataFlow.downloadStatement")}</button>
+          {saved && <span role="status"> {t("dataFlow.saved", { name: saved })}</span>}
+        </p>
       </Box>
       <table className="bks-table bks-rows">
         <thead><tr><th>{t("bank.site.date")}</th><th>{t("bank.site.text")}</th><th className="r">{t("bank.site.amount")}</th><th className="r">{t("bank.site.balance")}</th></tr></thead>

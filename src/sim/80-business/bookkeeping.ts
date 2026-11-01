@@ -2,7 +2,7 @@
 import { dateOf, isMonthStart } from "../00-core/time";
 import { booksVendor, editionById, type BooksVendor, type Capability, type Edition, type Feature } from "../10-catalog/bookkeeping";
 import { SHOP_CAPS } from "../10-catalog/shops";
-import { bookTransfer, cents, isUnpaid, issue, owed, synced, type Invoice, type Transfer } from "../45-billing/billing";
+import { bookTransfer, cents, inBooks, isUnpaid, issue, owed, synced, type Invoice, type Transfer } from "../45-billing/billing";
 import { effectOf, invoice, invoicing } from "../46-finance/payables";
 import { logActivity } from "../47-staff/activity";
 import type { Employee } from "../47-staff/staff";
@@ -85,7 +85,7 @@ export function referenced(s: GameState, tr: Transfer): Invoice | undefined {
   return inv && owed(inv) === tr.amount ? inv : undefined;
 }
 
-export const matchByReference = (s: GameState): void => [...s.transfers].forEach((tr) => {
+export const matchByReference = (s: GameState): void => s.transfers.filter(inBooks).forEach((tr) => {
   const inv = referenced(s, tr);
   if (inv) bookFor(s, tr, inv, false, by(s));
 });

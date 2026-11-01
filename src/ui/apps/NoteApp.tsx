@@ -29,8 +29,8 @@ export function NoteApp({ id }: { id: string }) {
 
   if (!doc) return null;
   if (doc.form) return <FormDoc doc={doc} />;
-  // The bank's TAN list is printed: it shows the list as it stands and takes no typing.
-  const printed = id === "tans";
+  // The bank's TAN list and exported files are printed: they show as they stand and take no typing.
+  const printed = id === "tans" || doc.kind === "file";
   return (
     <textarea
       className="note-body"
@@ -53,7 +53,7 @@ export function NoteTitle({ id }: { id: string }) {
       className="note-title"
       aria-label={t("apps.note.title")}
       maxLength={80}
-      readOnly={id === "tans" || !!doc.form}
+      readOnly={id === "tans" || doc.kind === "file" || !!doc.form}
       value={draft ?? doc.title}
       size={Math.max(4, (draft ?? doc.title).length)}
       onPointerDown={(e) => e.stopPropagation()}
