@@ -7,9 +7,9 @@ import { consoleFeatures } from "../src/sim/80-business/consoles";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { CONSOLES, ConsolePage } from "../src/ui/apps/browser/consoles/ConsolePage";
-import { panelVm, readyGame, skipTo } from "./fixtures";
+import { lateVersions, panelVm, pinVersion, readyGame, skipTo } from "./fixtures";
 
-// docs/design/software.md, section 10: the first year of each console's early and late look, and a word only that look prints.
+// docs/design/software.md, section 10: a year of each console's early look, a year of its late look, and a word only that look prints.
 const ERAS: Record<string, [number, number, string, string]> = {
   powerdnz: [2005, 2016, "Native", "Accounts"], openveepeen: [2005, 2017, "Gateway", "Current users"],
   anyconnekt: [2005, 2016, "Device Information", "Device Information"], ownclod: [2010, 2016, "<th>Size</th>", "oc-tile"],
@@ -27,8 +27,9 @@ function setup(id: string, year: number) {
   return { s, c };
 }
 
-function render(id: string, year: number, signedIn: boolean) {
+function render(id: string, year: number, signedIn: boolean, version?: string) {
   const { s, c } = setup(id, year), View = CONSOLES[id];
+  if (version) pinVersion(s, c, id, version);
   return { year: yearOf(s.hour), html: renderToString(<View game={s} c={c} f={consoleFeatures(id, yearOf(s.hour))} host="svc.example.com" signedIn={signedIn} login={() => {}} logout={() => {}} />) };
 }
 
@@ -37,15 +38,16 @@ describe("DNS, VPN, storage and mail consoles", () => {
     for (const id of [...Object.keys(ERAS), "mailpig"]) expect(CONSOLES[id], id).toBeDefined();
   });
 
-  it("wear the early look before the late year and the late look from it, signed in or not", () => {
+  it("wear the look of the installed version, signed in or not", () => {
     for (const [id, [early, late, earlyMark, lateMark]] of Object.entries(ERAS)) {
-      for (const [year, look, mark] of [[early, "early", earlyMark], [late - 1, "early", earlyMark], [late, "late", lateMark]] as const) {
-        const out = render(id, year, true);
+      const [before, from] = lateVersions(id);
+      for (const [year, look, mark, version] of [[early, "early", earlyMark, undefined], [late, "early", earlyMark, before], [late, "late", lateMark, from]] as const) {
+        const out = render(id, year, true, version);
         expect(out.year, id).toBe(year);
         expect(out.html, `${id} ${year}`).toContain(`data-era="${look}"`);
         expect(out.html, `${id} ${year}`).toContain(mark);
         expect(out.html).toContain("svc.example.com");
-        const login = render(id, year, false).html;
+        const login = render(id, year, false, version).html;
         expect(login, id).toContain(`data-era="${look}"`);
         expect(login).toContain("Password");
       }

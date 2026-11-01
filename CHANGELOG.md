@@ -5,6 +5,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-01
 
 - A customer's website without a domain opens in the browser at its account's private address again.
+- Vendor and software websites now show their logos centred and complete in every era, and the ISO download buttons line up with their release rows.
 - The back button on the marketing website page is now its normal size and shows in your language.
 - The server details page has room at its edges again, long German button labels wrap, and the disk label no longer runs into its meter.
 - Each website on a panel host links to its domain, or to its address while it has none.
@@ -27,6 +28,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Used hardware now resells for less than it cost new, and buyers on the board and on eBuy no longer pay more than its resale value.
 - A part taken out of a server takes its share of the server's value along, so stripping a server and selling the pieces brings in the same as selling it whole.
 - Installed software now runs a real version number, and a new install takes the newest release out at the time.
+- A software console now looks like the version installed on the machine, so an old cPanic keeps its old look in later years.
 - The Marketing app has a Domain tile whose Buy button opens the domain resellers in the Yahoy! Directory, and the domains of other companies in the game can no longer be registered as your own.
 - Websites in the browser fill the whole window again instead of a narrow page.
 - Right-click a browser tab to close it, close all other tabs, or close every tab to its left or right.
