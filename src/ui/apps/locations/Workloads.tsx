@@ -7,7 +7,7 @@ import { clusterOf, controlPlaneUse, workloadsOn, type Workload } from "../../..
 import { pegged, workloadUse } from "../../../sim/60-infra/usage";
 import { siteHost } from "../../../sim/80-business/website";
 import { migrateWorkload, migrationTargets, startWorkload, stopWorkload } from "../../../sim/90-actions/vms";
-import { announceEntries, migrateEntries, offerEntries, rescueEntries } from "../vms/migrate";
+import { announceEntries, migrateEntries, offerEntries, rescueEntries } from "../workload-menu";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
