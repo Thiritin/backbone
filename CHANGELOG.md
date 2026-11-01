@@ -7,6 +7,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Pulling the power cords, a power outage or overheating now aborts a running OS install, and a server can be shut down from the installer.
 - The RAID level can no longer be changed while an OS installs.
 - The Pleskit website now says its license is a monthly fee per server that grows with the domains it hosts.
+- The OpenVeeZee, OpenStash, OwnClod, vsFTPeed and Postfixit websites and the plain project pages now look like the web of their time, and download buttons on 2005 pages are grey and bevelled.
 - The Shop scrolls again, so every server and part in the catalog is reachable, and the add to cart button no longer spills out of narrow cards.
 - The BIOS setup can save changes without leaving, and its Boot Override starts the server from the hard disk or the attached USB stick right away.
 - A site you fixed after a broken WordPrass Toolkit update no longer keeps its old release around for a rollback.

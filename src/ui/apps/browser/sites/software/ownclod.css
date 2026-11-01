@@ -24,3 +24,7 @@
 .sw-ownclod.late .btn.ghost { background: transparent; color: #ffffff; border-color: #ffffff; }
 .sw-ownclod .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 980px; margin: 0 auto; padding: 36px 32px; list-style: none; }
 .sw-ownclod .cards li { padding: 22px; border-radius: 6px; box-shadow: 0 1px 4px rgb(11 37 65 / 0.18); }
+.sw-ownclod.early { font-size: 13px; line-height: 1.5; }
+.sw-ownclod.early header { background: linear-gradient(#2c4566, #1d2d44); border-bottom: 1px solid #0b1626; }
+.sw-ownclod.early .btn, .sw-ownclod.early .sws-cta { border: 1px solid #154c86; border-radius: 5px; background: linear-gradient(#5a9be0, #1d63ad); text-shadow: 0 -1px 0 #154c86; }
+.sw-ownclod.early .btn.ghost { border-color: #9fb6d0; background: linear-gradient(#ffffff, #dde7f2); color: #1d63ad; text-shadow: none; }

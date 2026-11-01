@@ -21,12 +21,27 @@
 :is(.sws-iso, .sws-btn) { height: 24px; padding: 0 10px; border: 1px solid #b9b9b9; border-radius: 4px; background: #ffffff; color: #222222; font: 600 12px/1 system-ui, sans-serif; cursor: pointer; }
 :is(.sws-iso, .sws-btn):hover:not(:disabled) { background: #eeeeee; }
 :is(.sws-iso, .sws-btn):disabled { color: #777777; cursor: default; }
+/* Until 2007 the shared controls are bevelled; :where keeps each site's own overrides winning. */
+:where(:root[data-era="aqua"] .sw.early) :is(.sws-iso, .sws-btn, .sws-cmd button) { height: auto; padding: 1px 8px; border: 2px outset #ffffff; border-radius: 0; background: #d4d0c8; color: #000000; font: 11px Verdana, sans-serif; }
+:where(:root[data-era="aqua"] .sw.early) .sws-cmd pre { font-family: "Courier New", Courier, monospace; }
 
 /* The plain software page by web era; the modern look above is the base. */
 :root[data-era="aqua"] .sws-plain { padding: 12px 16px; background: #f4f4f4; font: 12px/1.45 Verdana, Geneva, sans-serif; }
 :root[data-era="aqua"] .sws-plain header { padding: 8px 12px; border: 1px solid #cccccc; background: #ffffff; }
 :root[data-era="aqua"] .sws-plain h1 { margin: 16px 0 8px; font-size: 15px; }
 :root[data-era="aqua"] .sws-plain :is(.sws-iso, .sws-btn) { height: auto; padding: 1px 8px; border: 2px outset #ffffff; border-radius: 0; background: #d4d0c8; color: #000000; font: 11px Verdana, sans-serif; }
+:root[data-era="aqua"] .sws-plain a { color: #0000cc; text-decoration: underline; }
+:root[data-era="aqua"] .sws-plain nav { gap: 0; margin-left: auto; border: 1px solid #999999; background: #eeeeee; }
+:root[data-era="aqua"] .sws-plain nav a { padding: 2px 8px; }
+:root[data-era="aqua"] .sws-plain nav a + a { border-left: 1px solid #cccccc; }
+:root[data-era="aqua"] .sws-plain nav a[aria-current] { color: #000000; background: #dddddd; text-decoration: none; }
+:root[data-era="aqua"] .sws-plain h2 { margin-bottom: 6px; font-size: 13px; }
+:root[data-era="aqua"] .sws-plain section > * + * { margin-top: 8px; }
+:root[data-era="aqua"] .sws-plain table { border-collapse: collapse; border: 1px solid #999999; }
+:root[data-era="aqua"] .sws-plain :is(th, td) { padding: 3px 6px; border: 1px solid #999999; text-align: left; vertical-align: top; }
+:root[data-era="aqua"] .sws-plain th { background: #dddddd; }
+:root[data-era="aqua"] .sws-plain .sws-cmd pre { padding: 8px 76px 8px 8px; border: 1px solid #999999; background: #ffffff; font: 12px/1.4 "Courier New", Courier, monospace; }
+:root[data-era="aqua"] .sws-plain .sws-cmd button { top: 6px; right: 6px; height: auto; padding: 1px 8px; border: 2px outset #ffffff; border-radius: 0; background: #d4d0c8; color: #000000; font: 11px Verdana, sans-serif; }
 
 :root[data-era="leopard"] .sws-plain { background: linear-gradient(#e6edf6, #ffffff 200px); font-family: "Lucida Grande", "Trebuchet MS", Verdana, sans-serif; font-size: 14px; }
 :root[data-era="leopard"] .sws-plain header { padding: 12px 16px; border-radius: 10px; background: linear-gradient(#ffffff, #dde4ee); box-shadow: 0 2px 6px #00000033; }
