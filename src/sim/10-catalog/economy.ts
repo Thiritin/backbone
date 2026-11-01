@@ -58,7 +58,7 @@ export interface Competitor {
   targets?: string[];
 }
 
-const EVERYTHING: Product[] = ["webHosting", "domain", "ssl", "dns", "gameServer", "vps", "vpn", "dedicated", "storage", "cloud", "colocation", "gpu"];
+const EVERYTHING: Product[] = ["webHosting", "domain", "ssl", "dns", "gameServer", "vps", "vpn", "dedicated", "storage", "cloud", "colocation", "gpu", "reseller"];
 
 // Customer choice, Competitors: the four archetypes plus two specialists (decision, recorded in economy.md).
 export const COMPETITORS: Competitor[] = [

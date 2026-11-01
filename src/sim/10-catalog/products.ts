@@ -112,7 +112,7 @@ const VM: Unit[] = ["base", "vcpu", "ramGb", "diskGb", "traffic", "ip"];
 export const UNITS: Record<Product, Unit[]> = {
   webHosting: ["base", "diskGb", "mailbox", "traffic", "ip", "updates", "updateOnce"], vps: VM, gameServer: VM, cloud: VM, storage: ["base", "diskGb", "traffic"],
   dns: ["base", "zone", "traffic"], vpn: ["base", "user", "traffic"], domain: ["base"], ssl: ["base", "ov", "ev"], dedicated: ["base", "ramGb", "traffic", "ip"],
-  colocation: ["base", "unit", "kw", "traffic", "ip"], gpu: ["gpu", "traffic", "ip"], reseller: ["account"],
+  colocation: ["base", "unit", "kw", "traffic", "ip"], gpu: ["gpu", "traffic", "ip"], reseller: ["diskGb"],
 };
 // A line's rates in euros per unit, and its one-time setup fee; a unit without one charges the market rate.
 export type Rates = Partial<Record<Unit | "setup", number>>;
@@ -169,8 +169,8 @@ function resourceRates(product: Product, year: number): Rates {
     case "dedicated": return scaled(product, year, { base: 6, ramGb: 220 / 24 / g });
     case "colocation": return { base: 15, unit: 30, kw: 100 };
     case "gpu": return { gpu: gpuRent(year) };
-    // economy.md, Resellers: half the market price of an average web space, per account of the block.
-    case "reseller": return { account: 0.5 * marketPrice("webHosting", sizeSpec("webHosting", 1, year), year) };
+    // economy.md, Resellers: half the market price of an average web space per account, spread over a medium block's disk.
+    case "reseller": { const m = sizeSpec("reseller", 1, year); return { diskGb: (0.5 * marketPrice("webHosting", sizeSpec("webHosting", 1, year), year) * (m.accounts ?? 0)) / m.diskGb }; }
   }
 }
 

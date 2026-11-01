@@ -7,6 +7,7 @@ import { CYCLE_MONTHS } from "../10-catalog/cycles";
 import { methodById, methodFee, type MethodId } from "../10-catalog/payments";
 import { SLAS } from "../10-catalog/products";
 import type { PaymentHabit, Profile, Service } from "../30-customers/customers";
+import { fillAt } from "../30-customers/resellers";
 import { bump, cancelCustomer, createTicket, profileStats } from "../40-support/tickets";
 import type { GameState, LedgerEntry } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
@@ -448,10 +449,12 @@ export function billingTick(s: GameState): SimEvent[] {
     for (const v of s.services) {
       // A prepaid cycle bills through its renewal invoices instead.
       if (v.period !== "hour" || v.cycle) continue;
-      const hours = Math.min(v.endedAt ?? s.hour, s.hour) - Math.max(v.startedAt, from, v.prepaidUntil ?? 0);
+      const start = Math.max(v.startedAt, from, v.prepaidUntil ?? 0), hours = Math.min(v.endedAt ?? s.hour, s.hour) - start;
       if (hours <= 0) continue;
       // Hours down are not billed; a missed SLA credits its share of what is billed.
-      const billed = hours - Math.min(hours, s.downHours[v.id] ?? 0), sla = SLAS[v.sla], rate = Math.min(v.price, v.held ?? v.price);
+      // A reseller pays for the share of the block in use; the fill grows linearly, so the month's midpoint is its mean.
+      const used = v.product === "reseller" ? fillAt(v, start + hours / 2) : 1;
+      const billed = hours - Math.min(hours, s.downHours[v.id] ?? 0), sla = SLAS[v.sla], rate = Math.min(v.price, v.held ?? v.price) * used;
       if (billed > 0) add(v.customerId, { serviceId: v.id, key: "invoice.line.hours", params: { label: v.label, hours: billed }, amount: cents(billed * rate) });
       if (billed > 0 && sla.credit && billed / hours < sla.uptime) {
         add(v.customerId, { serviceId: v.id, key: "invoice.line.slaCredit", params: { label: v.label }, amount: -cents(sla.credit * billed * rate) });

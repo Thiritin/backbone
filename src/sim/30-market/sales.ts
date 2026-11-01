@@ -28,7 +28,7 @@ import { shopPriceLevel } from "./cycles";
 import { emailFor, firstOrder, isStandard, orderLead, orderQueued } from "./orders";
 import { growSlots } from "../60-infra/games";
 import { gameLeadLost } from "../60-infra/titles";
-import { LEAD_SHARE, resellerLeadsOpen } from "../30-customers/resellers";
+import { AGENCY_LEAD_SHARE, LEAD_SHARE, resellerLeadsOpen } from "../30-customers/resellers";
 import { provisionService } from "../90-actions/clusters";
 import { addressesFit } from "../60-infra/addresses";
 import { withAddressNeeds } from "../10-catalog/addresses";
@@ -129,9 +129,9 @@ function newLeads(s: GameState, events: SimEvent[]): void {
       }
       // A gamer wants one game; when none of your panels runs it, they go elsewhere.
       if (need.product === "gameServer" && gameLeadLost(s)) continue;
-      // A few web hosting leads are resellers who want a block of accounts instead.
-      if (need.product === "webHosting" && resellerLeadsOpen(s) && rand(s.rng) < LEAD_SHARE) {
-        newLead(s, "reseller", f.city, events, { product: "reseller", size: Math.floor(rand(s.rng) * SIZES.reseller.length), sla: "business" });
+      // A few web hosting leads, and many from agencies, want a reseller block instead.
+      if (need.product === "webHosting" && resellerLeadsOpen(s) && rand(s.rng) < (f.profile === "agency" ? AGENCY_LEAD_SHARE : LEAD_SHARE)) {
+        newLead(s, f.profile === "agency" ? "agency" : "reseller", f.city, events, { product: "reseller", size: Math.floor(rand(s.rng) * SIZES.reseller.length), sla: "business" });
         continue;
       }
       // The shop is part of the website: a down, slow or dated site loses its orders. Website leads already carry the factor in their count.
