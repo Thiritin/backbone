@@ -171,6 +171,25 @@ Layouts, one per vendor: Lexwear a grey Windows 2000 program with a tree on the 
 
 Milestones: editions in the catalog and `s.books.edition` with deployment and seats; GnuCache as the free vendor; features read from the edition everywhere a module flag was read; remove the Lexwear modules, keys and Register; vendor sites sell editions and upgrades; Overview, Statistics and Tax in Books; remove Finance; remove insurance; layouts per vendor; old saves: Finance installed becomes Books, Lexwear with modules owned becomes the smallest edition that covers them; `tests/books-editions.test.ts` and the finance and insurance tests removed or moved.
 
+## 9e. Lane `data-flow`
+
+Decisions from the user:
+
+- A bookkeeping program is optional. A shop system that keeps customers, invoices and payments is enough to run the business; the player may uninstall the bookkeeping program and work from the shop alone once email orders are off. Only what a program provides exists on screen: with no bookkeeping program there is no Books window, the statement is read on the bank's site, payables are paid there from the emailed invoice, and the order ticket keeps its plain Quote step.
+- Programs declare capabilities: customers, quotes, invoices, payments, payables, statement, reminders, statistics, tax. A shop system has customers, invoices, payments and reminders for its own orders. Bookkeeping programs have everything their edition allows, and tax is theirs alone.
+- Two linked programs show the same data. Shop link stays the integration: with it, the shop and the bookkeeping program are two views of one record set. Without it the data has to travel as files.
+- Files. Programs export and import. An export lands as a file in the desktop's Documents (next to the TAN list and Getting started), with a name like `shop-export-2005-10.csv` or `statement-2005-10.csv`; an import dialog lists the files of the right kind, and importing one moves the records over. Formats are named by era: CSV in 2005, DATEV export from 2007 for the tax side, MT940 for bank statements.
+  - Shop to bookkeeping: the shop's admin has Export customers and invoices; the bookkeeping program's Import takes the file. This replaces the one-click Import from shop button, which only Shop link now makes unnecessary.
+  - Bank to bookkeeping: transfers live at the bank. A bookkeeping program without HBCI sees them only after the player downloads the statement on the bank's site and imports the file in Books; HBCI pulls it itself. The Bank tab is empty until the first import, which is the point of HBCI.
+  - Every edition can import and export; the file step is the small edition's chore and HBCI and Shop link are what the bigger ones remove.
+- Tax returns are the bookkeeping program's own job. Once a year the tax office (pun site) sends the letter; Books has Submit tax return, which needs every invoice of the year present in Books (imported or synced) and a matched statement, and files it on the tax office site. The shop never files taxes. A player without a bookkeeping program has to install one at tax time, GnuCache is free, or hire a tax advisor (lane 9f). Missing the deadline costs a late fee and a second letter, then an estimate that is always higher than the real tax.
+
+Milestones: capability table on the program catalogs; Books window absent without a program and the ticket's plain quote step with it; Documents as a file list with kinds; shop export and Books import of customers and invoices; bank statement download and import, HBCI pulls on its own; Import from shop button removed; tax office site and Submit tax return with the completeness check; late fee and estimate; old saves: records present count as imported; `tests/data-flow.test.ts`.
+
+## 9f. Lane `tax-advisors` (handoff, not built yet)
+
+A tax advisor is a firm (pun on DATEV members and the big names) hired on their site. They file the tax return, the yearly accounts and the advance VAT returns, and answer the tax office's letters, so the player never sees a tax step again. They are expensive: a monthly retainer by company size plus a fee per filing, several times what a bookkeeping program costs, worth it for a large company. They work from what they are given: with DATEV export the player or a bookkeeper exports once a month and uploads it on the advisor's portal, with a bookkeeping program's DATEV link (bigger editions, 2007 on) it flows itself. They do not chase invoices, match transfers, send reminders or pay payables, so bookkeepers stay needed. Mistakes in the delivered data (unmatched transfers, missing invoices) come back as a query letter with a fee per hour of their time. The design and numbers go into economy.md when the lane starts.
+
 ## 10. Shared files
 
 | File | Lanes | Rule |
