@@ -22,6 +22,8 @@ export default {
   "ledger.bankFee": (p) => `Kontoführungsgebühr, ${p.bank}`,
   "ledger.bookingFee": (p) => `Buchungsposten, ${p.count} Buchungen, ${p.bank}`,
   "ledger.overdraftInterest": (p) => `Dispozinsen, ${p.bank}`,
+  "ledger.depositInterest": (p) => `Guthabenzinsen, ${p.bank}`,
+  "ledger.custodyFee": (p) => `Verwahrentgelt, ${p.bank}`,
   "ledger.transferOut": (p) => `Überweisung an ${p.name}: ${p.reference}`,
   "error.unknownBank": () => "Diese Bank eröffnet noch keine Konten.",
   "error.bankForm": () => "Diese Bank eröffnet keine Konten für diese Rechtsform.",

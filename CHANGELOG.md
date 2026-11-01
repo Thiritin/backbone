@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- Your bank account now earns interest at each month start, following the real rates of each year, and from 2020 to 2021 the bank charges a custody fee on balances above 100,000 instead.
 - Small hosting companies now open in one or two cities, collect reviews like the big ones, and go bust or get bought when they win too few customers, with each step in the news.
 - Competitors now change over the years: they move to new server generations, add features and have outages that make the news, the budget host cuts its prices each year, and the Market app charts each city's share of new customers.
 - A new game now starts with no money: you first open a business account on a bank's website, where your €3,500 savings arrive, and then register the company at the trade office for a €40 fee paid by bank transfer.

@@ -19,6 +19,7 @@ import { deserialize, serialize } from "../src/sim/91-save/save";
 // Hour 0 is Saturday 1 January 2005, 00:00; Monday 08:00 is hour 56.
 const MONDAY_8 = 56;
 const run = (s: GameState, hours: number) => { for (let i = 0; i < hours; i++) tick(s); };
+const earned = (s: GameState, from = 0) => s.ledger.filter((e) => e.key === "ledger.depositInterest" && e.hour > from).reduce((n, e) => n + e.amount, 0);
 export const opened = (seed = 1, bank: BankId = "sparklasse", form = "sole"): GameState => {
   const s = blankGame(seed);
   s.hour = MONDAY_8;
@@ -52,7 +53,7 @@ describe("bank account", () => {
     const cash = s.cash;
     run(s, hourOf(new Date(Date.UTC(2005, 1, 1))) - s.hour);
     expect(s.ledger.filter((e) => e.key === "ledger.bankFee")).toEqual([expect.objectContaining({ amount: -12, category: "fees" })]);
-    expect(s.cash).toBeLessThanOrEqual(cash - 12);
+    expect(s.cash).toBeLessThanOrEqual(cash - 12 + earned(s));
   });
 
   it("charges a limited company the dearer fee and every booking of the month before", () => {
@@ -215,6 +216,18 @@ describe("card and overdraft", () => {
     run(s, hourOf(new Date(Date.UTC(2005, 1, 1))) - s.hour);
     expect(s.ledger.find((e) => e.key === "ledger.overdraftInterest")!.amount).toBeLessThan(0);
   });
+
+  it("books interest on the balance at the month start, and a custody fee in negative years", () => {
+    const s = banked();
+    run(s, hourOf(new Date(Date.UTC(2005, 1, 1))) - s.hour);
+    const paid = s.ledger.find((e) => e.key === "ledger.depositInterest")!;
+    expect(paid.category).toBe("interest");
+    expect(paid.amount).toBeCloseTo((20_000 * 0.015 * 31) / 365, 0);
+    s.hour = hourOf(new Date(Date.UTC(2020, 5, 1)));
+    s.cash = 200_000;
+    run(s, 24 * 30);
+    expect(s.ledger.find((e) => e.key === "ledger.custodyFee")!.amount).toBeLessThan(0);
+  });
 });
 
 describe("standing orders", () => {
@@ -305,7 +318,7 @@ describe("mandates and HBCI", () => {
     expect(next.id).not.toBe(line.id);
     expect(next.paidAt).not.toBeNull();
     expect(s.tickets.some((t) => t.topic === "debit" && t.mail!.params.number === next.number)).toBe(true);
-    expect(s.cash).toBeLessThan(cash - 58);
+    expect(s.cash).toBeLessThan(cash - 58 + earned(s, FEB));
   });
 
   it("pays every open invoice in one go and later by itself once the account has HBCI", () => {

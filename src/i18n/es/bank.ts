@@ -22,6 +22,8 @@ export default {
   "ledger.bankFee": (p) => `Comisión de cuenta, ${p.bank}`,
   "ledger.bookingFee": (p) => `Comisiones por apunte, ${p.count} apuntes, ${p.bank}`,
   "ledger.overdraftInterest": (p) => `Intereses de descubierto, ${p.bank}`,
+  "ledger.depositInterest": (p) => `Intereses del saldo, ${p.bank}`,
+  "ledger.custodyFee": (p) => `Comisión de custodia, ${p.bank}`,
   "ledger.transferOut": (p) => `Transferencia a ${p.name}: ${p.reference}`,
   "error.unknownBank": () => "Este banco todavía no abre cuentas.",
   "error.bankForm": () => "Este banco no abre cuentas para esta forma jurídica.",

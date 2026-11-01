@@ -22,6 +22,8 @@ export default {
   "ledger.bankFee": (p) => `Frais de tenue de compte, ${p.bank}`,
   "ledger.bookingFee": (p) => `Frais par écriture, ${p.count} écritures, ${p.bank}`,
   "ledger.overdraftInterest": (p) => `Intérêts de découvert, ${p.bank}`,
+  "ledger.depositInterest": (p) => `Intérêts créditeurs, ${p.bank}`,
+  "ledger.custodyFee": (p) => `Frais de garde, ${p.bank}`,
   "ledger.transferOut": (p) => `Virement à ${p.name} : ${p.reference}`,
   "error.unknownBank": () => "Cette banque n'ouvre pas encore de comptes.",
   "error.bankForm": () => "Cette banque n'ouvre pas de comptes pour cette forme juridique.",
