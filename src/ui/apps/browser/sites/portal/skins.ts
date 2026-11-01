@@ -8,9 +8,8 @@ import { clientExitSkin } from "./clientexit";
 import { hostBullSkin } from "./hostbull";
 import { modemBillSkin } from "./modembill";
 import { orderBocksSkin } from "./orderbocks";
-import { makeSkin } from "./shared/makeSkin";
 import { Plain } from "./plain/Plain";
-import { WhmCacheAdmin } from "./whmCache/Admin";
+import { whmCacheSkin } from "./whmCache";
 
 export type Open = (area: PortalArea, ids?: PortalIds, screen?: string | Record<string, string>) => void;
 // version and major are the installed release, which picks the look; browse opens a full address in the Browser.
@@ -23,7 +22,7 @@ export interface Skin {
 
 // A shop system without a skin of its own looks plain.
 const SKINS: Partial<Record<ShopId, Partial<Skin>>> = {
-  whmCache: { ...makeSkin({ cls: "whm-shop", nav: "top", stepsFrom: 2013 }), Admin: WhmCacheAdmin },
+  whmCache: whmCacheSkin,
   modemBill: modemBillSkin, clientExit: clientExitSkin,
   blessta: blesstaSkin, boxBillin: boxBillinSkin, hostBull: hostBullSkin,
   orderBocks: orderBocksSkin,
