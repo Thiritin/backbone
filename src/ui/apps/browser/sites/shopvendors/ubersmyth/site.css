@@ -1,0 +1,163 @@
+/* ubersmyth.com by game year: 2006 fixed table page, 2012 glossy steel, 2016 flat ember, 2021 dark product site. */
+.ubv { --ember: #d4621c; --iron: #27313c; min-height: 100%; display: flex; flex-direction: column; color: #1d232a; }
+.ubv a { color: inherit; }
+.ubv .num { font-variant-numeric: tabular-nums; }
+.ubv-in { width: 960px; max-width: calc(100% - 32px); margin: 0 auto; }
+.ubv-head .ubv-in { display: flex; align-items: center; gap: 24px; }
+.ubv-mark { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; white-space: nowrap; }
+.ubv-tile { display: inline-flex; color: var(--ember); }
+.ubv-anvil { width: 24px; height: 16px; fill: currentColor; display: block; }
+.ubv-nav { display: flex; flex-wrap: wrap; align-items: center; }
+.ubv-nav a { text-decoration: none; }
+.ubv-body { display: flex; gap: 20px; align-items: flex-start; flex: 1; }
+.ubv-main { flex: 1; min-width: 0; }
+.ubv-hero h2 { margin: 0; }
+.ubv-features { list-style: none; margin: 0; padding: 0; display: grid; }
+.ubv-table { width: 100%; border-collapse: collapse; }
+.ubv-table th, .ubv-table td { text-align: left; }
+.ubv-btn { cursor: pointer; font: inherit; white-space: nowrap; }
+.ubv-acts { display: flex; flex-wrap: wrap; gap: 6px; }
+.ubv-key { word-break: break-all; }
+.ubv-ok { font-weight: bold; color: #2f7d1a; }
+.ubv-addons dl { display: grid; grid-template-columns: max-content 1fr; gap: 2px 14px; margin: 8px 0 10px; }
+.ubv-addons dd { margin: 0; }
+.ubv-steps { margin: 0; padding-left: 22px; display: grid; gap: 8px; }
+.ubv .shop-table { width: 100%; border-collapse: collapse; }
+.ubv .shop-table th, .ubv .shop-table td { text-align: left; }
+.ubv fieldset { margin: 12px 0; display: flex; gap: 16px; flex-wrap: wrap; }
+
+/* 2006: grey backdrop, 780 px white page, slate masthead, orange-ruled bar, right column of boxes, Verdana 11px. */
+.ubv-2006 { background: #c9ced4; font: 11px/1.5 Verdana, Tahoma, sans-serif; padding: 14px 0 20px; }
+.ubv-2006 > * { width: 780px; max-width: calc(100% - 32px); margin: 0 auto; }
+.ubv-2006 .ubv-head .ubv-in, .ubv-2006 .ubv-hero .ubv-in, .ubv-2006 .ubv-foot .ubv-in { width: auto; max-width: none; margin: 0; }
+.ubv-2006 .ubv-head { background: var(--iron); color: #fff; padding: 14px 16px; border: 1px solid #1a222b; border-bottom: 0; }
+.ubv-2006 .ubv-word { font: bold 22px Tahoma, Verdana, sans-serif; letter-spacing: 4px; text-transform: uppercase; }
+.ubv-2006 .ubv-tag { margin-left: auto; color: #9fb0c1; font-size: 11px; }
+.ubv-2006 .ubv-bar { background: var(--ember); border: 1px solid #8a3a0c; border-width: 0 1px; padding: 0 8px; }
+.ubv-2006 .ubv-bar a { color: #fff; font-weight: bold; padding: 5px 10px; border-right: 1px solid #f0a06c; }
+.ubv-2006 .ubv-bar a[aria-current] { background: #a8470f; }
+.ubv-2006 .ubv-body { background: #fff; border: 1px solid #8d99a6; border-top: 0; padding: 14px 16px; gap: 16px; }
+.ubv-2006 .ubv-h1 { font-size: 15px; color: var(--iron); margin: 0 0 10px; padding-bottom: 3px; border-bottom: 1px solid #c3cad2; }
+.ubv-2006 .ubv-hero { padding: 12px 16px; background: #eef1f4; border: 1px solid #8d99a6; border-width: 0 1px; }
+.ubv-2006 .ubv-hero p { margin: 6px 0 0; }
+.ubv-2006 .ubv-hero h2 { font-size: 16px; color: var(--iron); margin-bottom: 6px; }
+.ubv-2006 .ubv-cta { font-weight: bold; color: var(--ember); }
+.ubv-2006 .ubv-features { gap: 4px; }
+.ubv-2006 .ubv-features li { padding-left: 14px; background: linear-gradient(var(--ember), var(--ember)) 2px 6px / 6px 6px no-repeat; }
+.ubv-2006 .ubv-side { width: 190px; flex: none; display: grid; gap: 12px; }
+.ubv-2006 .ubv-side section { border: 1px solid #aab4be; }
+.ubv-2006 .ubv-side h3 { margin: 0; padding: 3px 7px; font-size: 11px; color: #fff; background: #5a6978; }
+.ubv-2006 .ubv-side p, .ubv-2006 .ubv-side ul { margin: 6px 8px; }
+.ubv-2006 .ubv-side ul { padding-left: 16px; }
+.ubv-2006 .ubv-side section > a { display: block; margin: 0 8px 7px; color: var(--ember); font-weight: bold; }
+.ubv-2006 .ubv-table, .ubv-2006 .shop-table { border: 1px solid #aab4be; }
+.ubv-2006 .ubv-table th, .ubv-2006 .ubv-table td, .ubv-2006 .shop-table th, .ubv-2006 .shop-table td, .ubv-2006 .sws-versions th, .ubv-2006 .sws-versions td { border: 1px solid #c3cad2; padding: 3px 6px; }
+.ubv-2006 .ubv-table th, .ubv-2006 .shop-table th, .ubv-2006 .sws-versions th { background: #d9dfe6; }
+.ubv-2006 .sws-versions { width: 100%; border-collapse: collapse; }
+.ubv-2006 .ubv-btn { font: 11px Verdana, sans-serif; padding: 2px 10px; background: #e4e7eb; border: 1px solid; border-color: #fff #6f7984 #6f7984 #fff; outline: 1px solid #9aa4ae; }
+.ubv-2006 .ubv-addons section + section { border-top: 1px dotted #aab4be; margin-top: 10px; padding-top: 8px; }
+.ubv-2006 .ubv-addons h3 { font-size: 12px; color: var(--iron); margin: 0 0 4px; }
+.ubv-2006 .ubv-foot { padding: 6px 2px; color: #4a5560; font-size: 10px; }
+
+/* 2012: steel gradient masthead with glossy pills, blue gloss hero, rounded white panels, Helvetica 13px. */
+.ubv-2012 { background: #e3e8ee; font: 13px/1.55 "Helvetica Neue", Helvetica, Arial, sans-serif; }
+.ubv-2012 .ubv-head { background: linear-gradient(#3a5878, #1d3046); color: #fff; padding: 12px 0; border-bottom: 1px solid #0e1822; box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2); }
+.ubv-2012 .ubv-tile { width: 34px; height: 34px; justify-content: center; align-items: center; border-radius: 8px; color: #fff; background: linear-gradient(#f9a25a, #d9581a); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.5), 0 1px 2px rgb(0 0 0 / 0.5); }
+.ubv-2012 .ubv-word { font: italic bold 24px "Helvetica Neue", Arial, sans-serif; letter-spacing: -0.5px; text-shadow: 0 1px 0 rgb(0 0 0 / 0.5); }
+.ubv-2012 .ubv-nav { margin-left: auto; gap: 3px; }
+.ubv-2012 .ubv-nav a { padding: 5px 12px; border-radius: 15px; color: #d4e0ec; }
+.ubv-2012 .ubv-nav a:hover { background: rgb(255 255 255 / 0.12); }
+.ubv-2012 .ubv-nav a[aria-current] { color: #fff; background: linear-gradient(#f89a4c, #dd5f19); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.4); }
+.ubv-2012 .ubv-body { margin: 24px auto; }
+.ubv-2012 .ubv-main { background: #fff; border: 1px solid #bcc7d2; border-radius: 8px; box-shadow: 0 2px 8px rgb(30 50 70 / 0.15); padding: 24px; }
+.ubv-2012 .ubv-h1 { font-size: 22px; color: #2b4663; margin: 0 0 16px; text-shadow: 0 1px 0 #fff; }
+.ubv-2012 .ubv-hero { padding: 44px 0; color: #fff; background: radial-gradient(ellipse at 80% 0, #6f93b8, transparent 60%), linear-gradient(#4f7398, #22394f); position: relative; }
+.ubv-2012 .ubv-hero::after { content: ""; position: absolute; inset: 0 0 55% 0; background: linear-gradient(rgb(255 255 255 / 0.18), rgb(255 255 255 / 0)); pointer-events: none; }
+.ubv-2012 .ubv-hero h2 { font-size: 30px; line-height: 1.15; letter-spacing: -0.5px; text-shadow: 0 1px 2px rgb(0 0 0 / 0.4); max-width: 600px; }
+.ubv-2012 .ubv-hero p { font-size: 15px; color: #dbe6f1; max-width: 560px; }
+.ubv-2012 .ubv-cta, .ubv-2012 .ubv-btn { display: inline-block; padding: 7px 18px; border-radius: 6px; font-weight: bold; color: #fff; text-decoration: none; text-shadow: 0 -1px 0 rgb(0 0 0 / 0.3); background: linear-gradient(#f89a4c, #dd5f19); border: 1px solid #b44c12; box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.4), 0 1px 2px rgb(0 0 0 / 0.25); }
+.ubv-2012 .ubv-cta { font-size: 15px; padding: 10px 24px; position: relative; z-index: 1; }
+.ubv-2012 .ubv-features { grid-template-columns: repeat(2, 1fr); gap: 1px; margin: -24px; background: #dde4eb; }
+.ubv-2012 .ubv-features li { padding: 18px 24px 18px 48px; background: #fff linear-gradient(#f89a4c, #dd5f19) 24px 22px / 12px 12px no-repeat; }
+.ubv-2012 .ubv-table, .ubv-2012 .shop-table, .ubv-2012 .sws-versions { width: 100%; border: 1px solid #c3cdd8; border-radius: 6px; border-collapse: separate; border-spacing: 0; overflow: hidden; }
+.ubv-2012 .ubv-table th, .ubv-2012 .shop-table th, .ubv-2012 .sws-versions th { padding: 7px 10px; background: linear-gradient(#fbfcfd, #e3e8ee); color: #3d5266; border-bottom: 1px solid #c3cdd8; text-align: left; }
+.ubv-2012 .ubv-table td, .ubv-2012 .shop-table td, .ubv-2012 .sws-versions td { padding: 8px 10px; border-bottom: 1px solid #e4e9ee; }
+.ubv-2012 .ubv-addons section { padding: 14px 16px; border: 1px solid #d3dbe3; border-radius: 6px; background: linear-gradient(#fff, #f3f6f9); margin-bottom: 12px; }
+.ubv-2012 .ubv-addons h3 { margin: 0 0 6px; color: #2b4663; }
+.ubv-2012 .ubv-foot { background: #1d3046; color: #9fb4c8; padding: 14px 0; font-size: 12px; }
+
+/* 2016: white bar, a full-bleed ember hero, line icons in a four-column grid, flat cards, Open Sans. */
+.ubv-2016 { --ember: #f26b21; background: #fff; font: 14px/1.6 "Open Sans", "Segoe UI", Helvetica, Arial, sans-serif; color: #22282f; }
+.ubv-2016 .ubv-head { border-bottom: 1px solid #e6e9ec; }
+.ubv-2016 .ubv-head .ubv-in { min-height: 64px; }
+.ubv-2016 .ubv-word { font-size: 21px; font-weight: 600; letter-spacing: -0.4px; color: #20262d; }
+.ubv-2016 .ubv-nav { margin-left: auto; gap: 26px; }
+.ubv-2016 .ubv-nav a { color: #5d6873; padding: 21px 0; border-bottom: 3px solid transparent; }
+.ubv-2016 .ubv-nav a[aria-current] { color: #20262d; border-bottom-color: var(--ember); }
+.ubv-2016 .ubv-body { padding: 36px 0 48px; }
+.ubv-2016 .ubv-h1 { font-size: 30px; font-weight: 300; margin: 0 0 24px; }
+.ubv-2016 .ubv-hero { padding: 72px 0; background: var(--ember); color: #fff; }
+.ubv-2016 .ubv-hero h2 { font-size: 40px; font-weight: 300; line-height: 1.15; letter-spacing: -0.8px; max-width: 640px; }
+.ubv-2016 .ubv-hero p { font-size: 17px; max-width: 560px; color: #fff3ea; }
+.ubv-2016 .ubv-cta { display: inline-block; margin-top: 8px; padding: 11px 26px; background: #fff; color: var(--ember); font-weight: 600; text-decoration: none; }
+.ubv-2016 .ubv-features { grid-template-columns: repeat(4, 1fr); gap: 28px; }
+.ubv-2016 .ubv-features li { display: grid; gap: 10px; align-content: start; }
+.ubv-2016 .ubv-features svg { color: var(--ember); }
+.ubv-2016 .ubv-btn { padding: 9px 18px; background: var(--ember); color: #fff; border: 0; font-weight: 600; }
+.ubv-2016 .ubv-cards, .ubv-2021 .ubv-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+.ubv-2016 .ubv-cards section { padding: 26px; border: 1px solid #e1e5e9; border-top: 4px solid var(--ember); display: grid; gap: 6px; align-content: start; }
+.ubv-2016 .ubv-cards h3 { margin: 0; font-size: 20px; font-weight: 600; }
+.ubv-2016 .ubv-cap { margin: 0; color: #5d6873; }
+.ubv-2016 .ubv-price { margin: 6px 0 12px; font: 300 22px/1.3 "Open Sans", "Segoe UI", Helvetica, sans-serif; }
+.ubv-2016 .ubv-table th, .ubv-2016 .shop-table th, .ubv-2016 .sws-versions th { font-weight: 600; color: #5d6873; padding: 10px; border-bottom: 2px solid #e1e5e9; text-align: left; }
+.ubv-2016 .ubv-table td, .ubv-2016 .shop-table td, .ubv-2016 .sws-versions td { padding: 10px; border-bottom: 1px solid #eef0f2; }
+.ubv-2016 .sws-versions { width: 100%; border-collapse: collapse; }
+.ubv-2016 .ubv-addons { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
+.ubv-2016 .ubv-addons section { padding: 22px; border: 1px solid #e1e5e9; }
+.ubv-2016 .ubv-addons h3 { margin: 0 0 6px; }
+.ubv-2016 .ubv-quiet { background: #fff; color: #22282f; border: 1px solid #cfd5db; }
+.ubv-2016 .ubv-foot { background: #f2f4f6; color: #5d6873; padding: 22px 0; font-size: 13px; }
+
+/* 2021: near-black product site with an ember glow, tight display type, rounded cards on warm off-white. */
+.ubv-2021 { --ember: #ff6a2b; background: #f7f6f3; font: 15px/1.6 Inter, system-ui, -apple-system, "Segoe UI", sans-serif; color: #15171a; }
+.ubv-2021 .ubv-head { background: #111315; color: #fff; }
+.ubv-2021 .ubv-head .ubv-in { min-height: 64px; }
+.ubv-2021 .ubv-tile { width: 30px; height: 30px; justify-content: center; align-items: center; border-radius: 9px; color: #fff; background: linear-gradient(135deg, #ff9a4d, #d6361a); }
+.ubv-2021 .ubv-anvil { width: 19px; height: 13px; }
+.ubv-2021 .ubv-word { font-size: 19px; font-weight: 650; letter-spacing: -0.5px; }
+.ubv-2021 .ubv-nav { margin-left: auto; gap: 4px; }
+.ubv-2021 .ubv-nav a { color: #a9adb3; padding: 6px 12px; border-radius: 8px; font-size: 14px; }
+.ubv-2021 .ubv-nav a:hover { color: #fff; }
+.ubv-2021 .ubv-nav a[aria-current] { color: #fff; background: #23262a; }
+.ubv-2021 .ubv-body { padding: 40px 0 56px; }
+.ubv-2021 .ubv-h1 { font-size: 34px; font-weight: 650; letter-spacing: -1px; margin: 0 0 24px; }
+.ubv-2021 .ubv-hero { padding: 88px 0 96px; background: radial-gradient(ellipse 60% 80% at 85% 10%, rgb(255 106 43 / 0.38), transparent 70%), #111315; color: #fff; }
+.ubv-2021 .ubv-hero h2 { font-size: 52px; font-weight: 700; line-height: 1.05; letter-spacing: -2px; max-width: 720px; }
+.ubv-2021 .ubv-hero p { font-size: 18px; color: #b9bdc3; max-width: 580px; }
+.ubv-2021 .ubv-hero-cta { display: flex; align-items: center; gap: 24px; margin-top: 28px; }
+.ubv-2021 .ubv-cta { padding: 12px 22px; border-radius: 10px; background: var(--ember); color: #111315; font-weight: 600; text-decoration: none; }
+.ubv-2021 .ubv-meta { color: #a9adb3; font-size: 14px; }
+.ubv-2021 .ubv-meta b { color: #fff; }
+.ubv-2021 .ubv-features { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.ubv-2021 .ubv-features li { display: flex; gap: 14px; padding: 22px; background: #fff; border: 1px solid #e8e5df; border-radius: 16px; }
+.ubv-2021 .ubv-features svg { flex: none; color: var(--ember); }
+.ubv-2021 .ubv-btn { padding: 9px 16px; border-radius: 9px; background: #15171a; color: #fff; border: 0; font-weight: 500; }
+.ubv-2021 .ubv-quiet { background: #fff; color: #15171a; border: 1px solid #dedbd5; }
+.ubv-2021 .ubv-cards section { padding: 24px; background: #fff; border: 1px solid #e8e5df; border-radius: 16px; display: grid; gap: 4px; align-content: start; }
+.ubv-2021 .ubv-cards h3 { margin: 0; font-size: 18px; font-weight: 650; }
+.ubv-2021 .ubv-cap { margin: 0; color: #6b6f76; font-size: 14px; }
+.ubv-2021 .ubv-price { margin: 10px 0 16px; font: 650 26px/1.2 Inter, system-ui, sans-serif; letter-spacing: -0.8px; }
+.ubv-2021 .ubv-main > .ubv-table, .ubv-2021 .shop-table, .ubv-2021 .sws-versions { width: 100%; border-collapse: separate; border-spacing: 0; background: #fff; border: 1px solid #e8e5df; border-radius: 14px; overflow: hidden; }
+.ubv-2021 .ubv-table th, .ubv-2021 .shop-table th, .ubv-2021 .sws-versions th { font-size: 13px; font-weight: 500; color: #6b6f76; padding: 10px 14px; border-bottom: 1px solid #e8e5df; text-align: left; }
+.ubv-2021 .ubv-table td, .ubv-2021 .shop-table td, .ubv-2021 .sws-versions td { padding: 12px 14px; border-bottom: 1px solid #f1efea; }
+.ubv-2021 .ubv-addons { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.ubv-2021 .ubv-addons section { padding: 22px; background: #fff; border: 1px solid #e8e5df; border-radius: 16px; }
+.ubv-2021 .ubv-addons h3 { margin: 0 0 6px; }
+.ubv-2021 .ubv-steps li::marker { color: var(--ember); font-weight: 650; }
+.ubv-2021 .ubv-foot { background: #111315; color: #8a8f96; padding: 26px 0; font-size: 13px; }
+
+@media (max-width: 760px) {
+  .ubv-body { flex-direction: column; }
+  .ubv-2006 .ubv-side { width: auto; }
+  .ubv-2016 .ubv-features, .ubv-2021 .ubv-features, .ubv-2012 .ubv-features { grid-template-columns: 1fr; }
+}

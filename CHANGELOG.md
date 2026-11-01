@@ -5,6 +5,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-01
 
 - ClientExit has its own look in every era, from a 2005 table admin to the refreshed 7.0 console, and sells its keys, renewals and upgrades at clientexit.com.
+- Ubersmyth has its own website at ubersmyth.com with pricing, releases, add-ons and your keys, and its admin, store and client portal change their look with each major version, from the 2006 tabbed ironworks to the 2024 sectioned workspace.
 - WHMCache has its own website at whmcache.com with pricing, releases and My account, and its admin, store and client area change their look with each major version.
 - OrderBocks has its own look in its admin, storefront and client area, changing with versions 7, 8 and 9, and its own site at orderbocks.com with pricing, releases, install steps and a free upgrade from My account.
 - Blessta has its own website with pricing, releases, extensions and your keys, and its admin, store and client area change their look with each major version from the 2008 tabs to the dark 2026 dashboard.

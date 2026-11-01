@@ -6,6 +6,7 @@ import { blesstaSkin } from "./blessta";
 import { boxBillinSkin } from "./boxbillin";
 import { clientExitSkin } from "./clientexit";
 import { hostBullSkin } from "./hostbull";
+import { ubersmythSkin } from "./ubersmyth";
 import { modemBillSkin } from "./modembill";
 import { orderBocksSkin } from "./orderbocks";
 import { Plain } from "./plain/Plain";
@@ -25,6 +26,7 @@ const SKINS: Partial<Record<ShopId, Partial<Skin>>> = {
   whmCache: whmCacheSkin,
   modemBill: modemBillSkin, clientExit: clientExitSkin,
   blessta: blesstaSkin, boxBillin: boxBillinSkin, hostBull: hostBullSkin,
+  ubersmyth: ubersmythSkin,
   orderBocks: orderBocksSkin,
 };
 
