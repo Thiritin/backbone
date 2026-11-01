@@ -22,7 +22,7 @@
 .obv-cta { display: inline-block; text-decoration: none; cursor: pointer; }
 
 /* 2006 to 2011: fixed 760 px page, navy masthead, orange-bulleted link column, tables with grey-blue heads. */
-.obv-box { background: #c9d3df; font: 11px/1.5 Verdana, Geneva, sans-serif; padding: 12px 0 20px; display: grid; grid-template-columns: minmax(0, 1fr) 160px 600px minmax(0, 1fr); grid-template-areas: ". head head ." ". nav main ." ". foot foot ."; }
+.obv-box { background: #c9d3df; font: 11px/1.5 Verdana, Geneva, sans-serif; padding: 12px 0 20px; display: grid; grid-template-columns: minmax(0, 1fr) 160px 600px minmax(0, 1fr); grid-template-areas: ". head head ." ". nav main ." ". foot foot ."; align-content: start; }
 .obv-box .obv-head { grid-area: head; background: #1b3564; color: #fff; padding: 14px 16px; border-bottom: 4px solid var(--ob-orange); }
 .obv-box .obv-logo { font-size: 26px; }
 .obv-box .obv-maker { font-size: 10px; color: #b9c7de; }

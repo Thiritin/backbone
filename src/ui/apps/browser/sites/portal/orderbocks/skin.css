@@ -17,6 +17,7 @@
 .ob .num { font-variant-numeric: tabular-nums; }
 .ob .pt-table { border-collapse: collapse; }
 .ob .shop-item { border-bottom: 0; }
+.ob .shop-item .shop-name { padding: 0; display: block; }
 .ob .ob-foot .pt-version { margin: 0; }
 .ob-login { display: grid; gap: 10px; width: 300px; margin: 48px auto; }
 .ob-login label { display: grid; gap: 4px; }
