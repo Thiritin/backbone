@@ -6,6 +6,7 @@ import type { Speed } from "../../sim/00-core/time";
 import { latestOs, type OsRelease } from "../../sim/10-catalog/os";
 import { updateOs } from "../../sim/90-actions/os";
 import { uiSound, useStore } from "../store";
+import { noAutofill } from "../no-autofill";
 
 const INSTALL_MS = 8000;
 
@@ -62,7 +63,7 @@ function Install({ release, host, onDone }: { release: OsRelease; host: Element;
       {done ? (
         <form className="os-login" onSubmit={(e) => { e.preventDefault(); onDone(); }}>
           <span className="os-avatar"><User /></span>
-          <input type="password" aria-label={t("desktop.os.password")} placeholder={t("desktop.os.password")} autoFocus />
+          <input type="password" aria-label={t("desktop.os.password")} placeholder={t("desktop.os.password")} autoFocus {...noAutofill} />
         </form>
       ) : (
         <>

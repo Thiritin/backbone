@@ -1,0 +1,8 @@
+/* BoxBilling: bootstrap 2 white and blue, flat Tabler look from FOSSBilling */
+.sk-box { font-family: "Helvetica Neue", Arial, sans-serif; background: #fff; }
+.sk-box .shop-head { border-bottom: 1px solid #ddd; }
+.sk-box .shop-nav { border-bottom: 1px solid #ddd; }
+.sk-box .shop-nav a.on { border-bottom: 2px solid #3a87ad; }
+.sk-box-late { font-family: system-ui, sans-serif; background: #f5f7fb; }
+.sk-box-late .shop-main { background: #fff; border-radius: 4px; margin: 12px; }
+.sk-box-late .btn.primary { background: #206bc4; color: #fff; border: 0; }

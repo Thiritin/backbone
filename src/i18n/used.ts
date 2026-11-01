@@ -1,7 +1,7 @@
 import { euro, euroCents } from "../sim/00-core/money";
 
 type Params = Record<string, string | number>;
-const CHANNEL: Record<string, string> = { ebuy: "eBuy", board: "WebHostingTalc", chat: "Telegrump" };
+const CHANNEL: Record<string, string> = { ebuy: "eBuy", board: "WebHostingTalc", chat: "Craigslost" };
 const box = (p: Params) => `${p.cpu} vCPU${Number(p.cpu) === 1 ? "" : "s"}, ${p.ram} GB of RAM and ${p.disk} GB of disk`;
 
 // The used hardware market; spread into en.

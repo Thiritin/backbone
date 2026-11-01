@@ -1,4 +1,4 @@
-import { Eye, HeartHandshake, Megaphone, Package, Presentation, ShoppingCart, Star, Tags, Waypoints } from "lucide-react";
+import { Eye, HeartHandshake, Megaphone, Package, Presentation, ShoppingCart, Star, Waypoints } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
@@ -22,10 +22,9 @@ import "../shop/shop.css";
 import "../billing/billing.css";
 import "./marketing.css";
 import { Products, SiteCard } from "./Website";
-import { Rates } from "./Rates";
 import { Shop } from "./Shop";
 
-type Section = "channels" | "products" | "shop" | "pricing" | "campaigns" | "awareness" | "reviews" | "fairs" | "community";
+type Section = "channels" | "products" | "shop" | "campaigns" | "awareness" | "reviews" | "fairs" | "community";
 
 export const AUDIENCE: Record<Profile, string> = {
   reseller: t("web.reseller.audience"),
@@ -48,10 +47,10 @@ const leads = (n: number) => (n < 10 ? n.toFixed(1) : String(Math.round(n)));
 
 export function MarketingApp() {
   const game = useStore((s) => s.game);
-  // Channels is always open, Products once the site is online, Pricing with Product management, Reviews and Community with
+  // Channels is always open, Products once the site is online, Reviews and Community with
   // Marketing basics, the rest with Marketing campaigns.
   const full = isAvailable("Marketing", game.unlocks), basics = game.unlocks.includes("marketingBasics");
-  const open = (id: Section) => id === "channels" || (id === "shop" ? owns(game, "website") : id === "products" ? game.marketing.launched : id === "pricing" ? game.unlocks.includes("products") : full || (basics && (id === "reviews" || id === "community")));
+  const open = (id: Section) => id === "channels" || (id === "shop" ? owns(game, "website") : id === "products" ? game.marketing.launched : full || (basics && (id === "reviews" || id === "community")));
   const [picked, setSection] = useState<Section | null>(null);
   const section = picked && open(picked) ? picked : "channels";
   useFocus("Marketing", (f) => { if (f.kind === "page") setSection(f.id as Section); });
@@ -60,7 +59,6 @@ export function MarketingApp() {
     ["channels", t("marketing.secChannels"), <Waypoints />, null],
     ["products", t("marketing.secProducts"), <Package />, game.marketing.lines.length || null],
     ["shop", t("marketing.secShop"), <ShoppingCart />, null],
-    ["pricing", t("marketing.pricing"), <Tags />, null],
     ["campaigns", t("marketing.secCampaigns"), <Megaphone />, game.marketing.campaigns.length || null],
     ["awareness", t("marketing.secAwareness"), <Eye />, null],
     ["reviews", t("marketing.secReviews"), <Star />, game.marketing.reviews.length || null],
@@ -88,7 +86,6 @@ export function MarketingApp() {
           {section === "channels" && <Channels />}
           {section === "products" && <Products />}
           {section === "shop" && <Shop game={game} />}
-          {section === "pricing" && <Rates game={game} />}
           {section === "campaigns" && <Campaigns />}
           {section === "awareness" && <Awareness />}
           {section === "reviews" && <Reviews />}

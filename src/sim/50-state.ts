@@ -1,5 +1,6 @@
 import { createRng, type Rng } from "./00-core/rng";
 import { componentParts, hasFirmware, homeLan, isManaged, isOfficeRouter, modelById, type ComponentKind, type FormFactor, type PartSpec } from "./10-catalog/hardware";
+import type { BooksVendorId } from "./10-catalog/bookkeeping";
 import type { Vendor } from "./10-catalog/cpus";
 import type { LicenseKind, OsImage, ServerOsId } from "./10-catalog/server-os";
 import { yearOf } from "./00-core/time";
@@ -7,6 +8,7 @@ import { MOMS_DSL, seedDcs } from "./20-world/datacenters";
 import { t } from "../i18n/en";
 import type { Customer, Product, Service } from "./30-customers/customers";
 import type { Quote } from "./30-market/quotes";
+import type { CatalogProduct } from "./80-business/catalog";
 import type { BillingRules, HoldReason, Invoice, Loan, Transfer } from "./45-billing/billing";
 import type { Ticket } from "./40-support/tickets";
 import type { Policy } from "./46-finance/finance";
@@ -16,6 +18,7 @@ import type { TechOp, TechRules } from "./47-staff/technicians";
 import type { ActivityEntry } from "./47-staff/activity";
 import { newMarketing, type Marketing } from "./80-business/marketing";
 import type { Cluster, Workload } from "./60-infra/cluster";
+import type { Daemon } from "./60-infra/daemons";
 import type { GameServer } from "./60-infra/games";
 import type { Maintenance } from "./60-infra/maintenance";
 import type { FrontOp } from "./60-infra/power";
@@ -26,6 +29,7 @@ import type { Breach } from "./60-infra/breach";
 import { newSecurity, type Security } from "./60-infra/security";
 import { newSales, type Sales } from "./30-market/market";
 import { seedRivals, type Rival, type ShareEntry } from "./30-market/rivals";
+import { newHostToast, type HostToast } from "./10-catalog/hosttoast";
 import type { FairBooking } from "./80-business/fairs";
 import type { Sponsorship } from "./80-business/community";
 import type { SponsorOffer } from "./80-business/sponsorboard";
@@ -45,6 +49,7 @@ import type { BankAccount } from "./46-finance/bank";
 import type { Payable } from "./46-finance/payables";
 import type { Letter } from "./40-support/letters";
 import type { TrendPoint } from "./80-business/trend";
+import type { StatusDay } from "./80-business/status";
 
 // 3: GPU line servers carry their preset cards. 4: an unregistered game holds its savings until the bank account opens.
 export const SAVE_VERSION = 5;
@@ -53,6 +58,9 @@ export type BondMode = "none" | "failover" | "balance";
 export type CableKind = "copper" | "dac" | "fiber" | "rollover";
 
 export type SpaceKind = "basement" | "share" | "cage" | "suite";
+// One System Event Log record of a device (syslog.ts pushLog); id counts up within the log.
+export type LogSev = "info" | "warn" | "crit";
+export interface DeviceLog { hour: number; key: string; sev: LogSev; id: number }
 // Each location is an availability zone (az, like fra2) in the region of its city.
 export interface Location { id: string; dc: string | null; city: string; az: string; name: string; space: SpaceKind; positions: number; readyAt: number; extraCircuit: boolean }
 // share-N racks belong to the provider of a rack share and hold N units.
@@ -91,7 +99,7 @@ export interface Device extends MachineState { id: string; model: string; brand:
   // The hour a clean shutdown switches the device off.
   haltUntil?: number;
   // The operating system froze (hung) or the management controller did (bmcHung); log is the device's last 20 events.
-  hung: boolean; bmcHung: boolean; log: { hour: number; key: string }[];
+  hung: boolean; bmcHung: boolean; log: DeviceLog[]; inletSev?: LogSev;
   // The chassis a multi-node server's node sits in; it mounts, moves and gets power with it.
   chassisId: string | null;
   // A hand task waiting for someone on site: pulling the plug or resetting the management controller.
@@ -195,6 +203,8 @@ export interface GameState {
   licenses: Licence[];
   // One entry per machine and product whose trial started; it never starts again there. until is the hour it ends.
   trials: { machineId: string; product: string; until: number }[];
+  // The vendor sites' shared shopping cart; each site checks out the lines it sells.
+  cart: { product: string; edition: string | null; qty: number }[];
   // Operating system images downloaded from their sites, one per version, and the one USB stick: the image written on it,
   // the server it is in.
   media: { images: OsImage[]; stick: { os: OsImage | null; in: string | null } };
@@ -209,6 +219,8 @@ export interface GameState {
   transfers: Transfer[];
   // Quotes written in Books for order tickets.
   quotes: Quote[];
+  // The products the player sells (80-business/catalog.ts).
+  catalog: CatalogProduct[];
   // Hour up to which each yearly service is invoiced.
   yearlyBilledUntil: Record<string, number>;
   loans: Loan[];
@@ -234,6 +246,8 @@ export interface GameState {
   heldServices: Record<string, HoldReason>;
   // Game servers: the title, slots and state of each game server service on a game panel.
   gameServers: GameServer[];
+  // Pterodaktyl: the node daemons by node.
+  daemons: Record<string, Daemon>;
   // Support: tickets, the minute the player's queued replies finish, and the hour each offline service went down.
   tickets: Ticket[];
   playerBusyUntil: number;
@@ -261,6 +275,8 @@ export interface GameState {
   installed: string[];
   // Knowledge base article reads by how-to topic, each one a ticket the customer did not write.
   kbReads: Record<string, number>;
+  // One entry per day, at most 90, of the product lines that were down, slowed or in an announced window (80-business/status.ts).
+  statusDays: StatusDay[];
   // Checklist goals the player ticked by hand.
   checklist: string[];
   // The changelog entries (date|text) the player has been shown.
@@ -330,6 +346,8 @@ export interface GameState {
   // News already published, as "<id>@<hour>" (80-business/news.ts).
   news: string[];
   competitors: Rival[];
+  // The HOSTtoast listing (80-business/hosttoast.ts).
+  hosttoast: HostToast;
   shareLog: ShareEntry[];
   // Next server number, next own-VM number and next service number (30-customers/hostnames.ts).
   nextNode: number;
@@ -360,6 +378,8 @@ export interface GameState {
   chamberYear: number;
   // Bought software modules by id; "hbci" lets Books talk to the bank.
   modules: string[];
+  // The bookkeeping program the Books app runs (10-catalog/bookkeeping.ts); null until one is installed.
+  books: { vendor: BooksVendorId | null; installedAt: number };
 }
 
 export interface LogEntry { hour: number; minute?: number; name: string; args: unknown[] }
@@ -373,7 +393,7 @@ export function deviceDefaults(modelId: string, at: number, partList?: PartSpec[
     components: parts.map((p, i): Component => ({ id: `c${i + 1}`, ...p, installedAt: at, failedAt: null })),
     on: true, label: null, raid: (drives >= 2 ? "1" : "none") as RaidLevel, rebuildRate: "medium" as RebuildRate,
     rebuild: null, maintenance: null, dataLost: null, burnin: null as Device["burnin"], burnedInAt: null as number | null, chassisId: null as string | null,
-    hung: false, bmcHung: false, log: [] as { hour: number; key: string }[], os: null as MachineState["os"], software: [] as MachineState["software"],
+    hung: false, bmcHung: false, log: [] as DeviceLog[], os: null as MachineState["os"], software: [] as MachineState["software"],
     stuck: false, locked: false, setup: false, bootFrom: "disk" as const, ...(hasFirmware(modelById(modelId)) ? { fw: { version: yearOf(at), updatedAt: at } } : {}),
     ...(isOfficeRouter(modelById(modelId)) ? { lan: homeLan() } : {}),
     ...(modelById(modelId).kind === "server" ? { iface: { mode: "dhcp" } as IfaceConfig } : {}),
@@ -409,16 +429,18 @@ export const newGame = (seed: number): GameState => ({
   racks: [{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null, overSince: { a: null, b: null } }],
   devices: [{ ...device("dev5", "home-router", "AVN", null, 0, null, "fra1-gw-01", 0), store: "loc1" }, device("dev6", "line-jack", "", null, 0, "loc1", "fra1-line-01", 0)],
   cables: [],
-  ledger: [], licenses: [], trials: [], media: { images: [], stick: { os: null, in: null } }, leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], contracts: [], unlocks: [], training: null, knowHow: 0, installed: ["Browser", "Chat"], kbReads: {}, checklist: [], seenChanges: [], undocked: [], os: "aqua",
+  ledger: [], licenses: [], trials: [], cart: [], media: { images: [], stick: { os: null, in: null } }, leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], contracts: [], unlocks: [], training: null, knowHow: 0, installed: ["Browser", "Chat"], kbReads: {}, statusDays: [], checklist: [], seenChanges: [], undocked: [], os: "aqua",
   customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], files: {},
   invoices: [], transfers: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   quotes: [],
+  catalog: [],
   billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 }, autoOrders: false, reviewOrders: false, screenOrders: false, screenChecks: 0, chargebackStrikes: 0,
   shop: newShop(),
   heldCustomers: [],
   privateNets: [],
   heldServices: {},
   gameServers: [],
+  daemons: {},
   tickets: [], playerBusyUntil: 0, friendFavours: { year: 0, used: 0 }, player: { at: "loc1", until: 0, doing: "work" }, downSince: {}, frozen: [],
   company: { name: "Basement Hosting", logo: "server", color: "oklch(0.55 0.15 255)", domain: null, mail: { kind: "free" }, tagline: "" },
   homeLine: { id: MOMS_DSL.id, next: null },
@@ -440,6 +462,7 @@ export const newGame = (seed: number): GameState => ({
   webpanel: newWebPanel(),
   news: [],
   competitors: seedRivals(seed),
+  hosttoast: newHostToast(),
   shareLog: [],
   nextNode: 1, nextVm: 1, nextHostNo: firstHostNo(seed),
   used: [], usedRep: 0,
@@ -449,6 +472,7 @@ export const newGame = (seed: number): GameState => ({
   letters: [],
   chamberYear: 0,
   modules: [],
+  books: { vendor: null, installedAt: 0 },
 });
 
 export const guideDoc = (): Doc => ({ id: "guide", kind: "guide", title: t("doc.guide"), body: "", x: 16, y: 46 });

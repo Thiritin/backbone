@@ -39,7 +39,7 @@ export function Mark({ id, size = 28 }: { id: string | null; size?: number }) {
   return <span className="prd-mark" style={{ background: color, width: size, height: size }}><Icon size={Math.round(size * 0.62)} /></span>;
 }
 
-const UNIT: Record<LicenseKind, string> = { free: "", once: t("misc1.parts.perSocket"), account: t("misc1.parts.perWebSpace"), server: t("misc1.parts.perServer"), core: t("misc1.parts.perCore") };
+const UNIT: Record<LicenseKind, string> = { free: "", once: t("misc1.parts.perSocket"), account: t("misc1.parts.perWebSpace"), server: t("misc1.parts.perServer"), core: t("misc1.parts.perCore"), gameserver: t("misc1.parts.perGameserver") };
 export const licenseText = (sw: Software, year: number) => {
   const era = licensingAt(sw, year);
   return era.kind === "free" ? t("misc1.parts.free") : t("misc1.parts.fee", { fee: euroCents(era.fee), unit: UNIT[era.kind] });
@@ -113,9 +113,9 @@ export function Sparkline({ values, from, w = 240, h = 44 }: { values: number[];
   );
 }
 
-export type VmState = "running" | "stopped" | "lost" | "restoring" | "migrating" | "cloning" | "down" | "frozen";
+export type VmState = "running" | "stopped" | "lost" | "restoring" | "migrating" | "cloning" | "down" | "frozen" | "checkpointed";
 export const VM_STATE: Record<VmState, [string, string]> = {
-  running: [t("misc1.parts.running"), "ok"], frozen: [t("misc1.parts.frozen"), "bad"], stopped: [t("misc1.parts.stopped"), ""], lost: [t("misc1.parts.lostDisk"), "bad"], restoring: [t("misc1.parts.restoring"), "accent"], migrating: [t("misc1.parts.migrating"), "accent"], cloning: [t("misc1.parts.cloning"), "accent"], down: [t("misc1.parts.down"), "bad"],
+  running: [t("misc1.parts.running"), "ok"], frozen: [t("misc1.parts.frozen"), "bad"], checkpointed: [t("ovz.frozen"), "accent"], stopped: [t("misc1.parts.stopped"), ""], lost: [t("misc1.parts.lostDisk"), "bad"], restoring: [t("misc1.parts.restoring"), "accent"], migrating: [t("misc1.parts.migrating"), "accent"], cloning: [t("misc1.parts.cloning"), "accent"], down: [t("misc1.parts.down"), "bad"],
 };
 export function vmState(game: GameState, w: Workload): VmState {
   if (lostDisk(game, w)) return "lost";
@@ -123,6 +123,7 @@ export function vmState(game: GameState, w: Workload): VmState {
   if (w.cloning && w.cloning > game.hour) return "cloning";
   if (w.busyUntil > game.hour) return game.lossReports.some((r) => r.items.some((i) => i.workloadId === w.id && i.restored)) ? "restoring" : "migrating";
   if (w.stopped) return "stopped";
+  if (w.frozen) return "checkpointed";
   if (w.clusterId && w.deviceId && game.frozen.includes(w.deviceId)) return "frozen";
   return workloadOnline(game, w) ? "running" : "down";
 }
