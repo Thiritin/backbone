@@ -44,10 +44,9 @@ function Register({ game }: { game: GameState }) {
   const act = useStore((s) => s.act);
   const [name, setName] = useState(game.company.name);
   const [owner, setOwner] = useState("");
-  const [form, setForm] = useState("sole");
   const [bank, setBank] = useState<BankId>(DEFAULT_BANK);
   return (
-    <form className="to-form" onSubmit={(e) => { e.preventDefault(); act(registerCompany, name, owner, form, bank); }}>
+    <form className="to-form" onSubmit={(e) => { e.preventDefault(); act(registerCompany, name, owner, "sole", bank); }}>
       <fieldset>
         <legend>{t("browser-sites-1.of.application")}</legend>
         <table>
@@ -61,18 +60,14 @@ function Register({ game }: { game: GameState }) {
               <td><input id="to-owner" value={owner} required onChange={(e) => setOwner(e.target.value)} /></td>
             </tr>
             <tr>
-              <td><label htmlFor="to-form">{t("browser-sites-1.of.legalForm")} <b>*</b></label></td>
-              <td>
-                <select id="to-form" value={form} onChange={(e) => setForm(e.target.value)}>
-                  {Object.entries(LEGAL_FORMS).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
-                </select>
-              </td>
+              <td>{t("browser-sites-1.of.legalForm")}</td>
+              <td>{LEGAL_FORMS.sole}</td>
             </tr>
             <tr>
               <td><label htmlFor="to-bank">{t("bank.office.bank")} <b>*</b></label></td>
               <td>
                 <select id="to-bank" value={bank} onChange={(e) => setBank(e.target.value as BankId)}>
-                  {banksOpen(yearOf(game.hour)).map((b) => <option key={b.id} value={b.id} disabled={monthlyFee(b, form) === null}>{b.name}</option>)}
+                  {banksOpen(yearOf(game.hour)).map((b) => <option key={b.id} value={b.id} disabled={monthlyFee(b, "sole") === null}>{b.name}</option>)}
                 </select>
               </td>
             </tr>
@@ -90,7 +85,7 @@ function Register({ game }: { game: GameState }) {
         <p className="to-req"><b>*</b> {t("browser-sites-1.of.required")}</p>
         <div className="to-buttons">
           <button type="submit">{t("browser-sites-1.of.submit")}</button>
-          <button type="reset" onClick={() => { setName(""); setOwner(""); setForm("sole"); setBank(DEFAULT_BANK); }}>{t("browser-sites-1.of.reset")}</button>
+          <button type="reset" onClick={() => { setName(""); setOwner(""); setBank(DEFAULT_BANK); }}>{t("browser-sites-1.of.reset")}</button>
         </div>
       </fieldset>
     </form>
@@ -120,8 +115,9 @@ function Forms({ game }: { game: GameState }) {
   const act = useStore((s) => s.act);
   const r = game.registration;
   if (!r) return <p>{t("paperwork.of.registerFirst")}</p>;
-  const next = Object.keys(FORM_RANK).filter((f) => FORM_RANK[f] > FORM_RANK[r.form]);
-  if (!next.length) return <p>{t("paperwork.of.top")}</p>;
+  if (r.form === "limited") return <p>{t("paperwork.of.top")}</p>;
+  const next = Object.keys(FORM_RANK).filter((f) => FORM_RANK[f] > FORM_RANK[r.form] && applyError(game, f) !== "error.companyLaw");
+  if (!next.length) return <p>{t("paperwork.of.none")}</p>;
   const fee = (f: string) => f === "limited" ? t("paperwork.of.feeLimited", { notary: euro(FEES.notary), register: euro(FEES.register), capital: euro(SHARE_CAPITAL) }) : euro(FEES.change);
   return (
     <>

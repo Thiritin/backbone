@@ -28,13 +28,14 @@ export function setCompany(s: GameState, patch: Partial<Company>): ActionResult 
   return { ok: true };
 }
 
-// The trade office registers the company under its name during office hours, the chosen bank opens its account and Pear One
+// The trade office registers a sole trader under its name during office hours; other forms come later through the paperwork. Then the chosen bank opens its account and Pear One
 // installs the starter apps.
 export function registerCompany(s: GameState, name: string, owner: string, form: string, bank: BankId = DEFAULT_BANK): ActionResult {
   if (s.registration) return { ok: false, error: "error.registered" };
   if (!officeOpen(s.hour)) return { ok: false, error: "error.officeClosed" };
   if (!owner.trim()) return { ok: false, error: "error.ownerName" };
   if (!(form in LEGAL_FORMS)) return { ok: false, error: "error.legalForm" };
+  if (form !== "sole") return { ok: false, error: "error.registerSole" };
   const chosen = banksOpen(yearOf(s.hour)).find((b) => b.id === bank);
   if (!chosen) return { ok: false, error: "error.unknownBank" };
   if (monthlyFee(chosen, form) === null) return { ok: false, error: "error.bankForm" };

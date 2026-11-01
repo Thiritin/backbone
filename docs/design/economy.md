@@ -2219,6 +2219,7 @@ A first-year company earns about 300 know-how; a company with 10,000 customers e
 | Monitoring | 1 | 50 | 5 days | | Nagiosaurus, failure notifications |
 | Marketing basics | 1 | 50 | 5 days | | Leads to Marketing campaigns |
 | Employee management | 1 | 100 | 10 days | | Staff |
+| Company law | 1 | 100 | 10 days | | Founding a limited company |
 | Network operations | 2 | 300 | 14 days | Monitoring | Network |
 | Product management | 1 | 100 | 7 days | | Products |
 | Provisioning automation | 2 | 150 | 10 days | Product management | Automatic setup of orders, the Place orders automatically switch |
@@ -2228,7 +2229,7 @@ A first-year company earns about 300 know-how; a company with 10,000 customers e
 | Virtualization | 3 | 400 | 14 days | Product management, Monitoring | Virtual machines |
 | Automation | 3 | 1,500 | 21 days | Employee management, Monitoring | ChadGPT Support, Clipsy Reminders |
 
-The whole tree costs 3,950 know-how and 128 days of training.
+The whole tree costs 4,050 know-how and 138 days of training.
 
 Product management was tier 2 at 200 know-how and 14 days after Marketing basics. The happiness run showed a careful first-year company earns 15 to 40 know-how a month, so the 250 know-how path landed in September to November. As a tier 1 skill at 100 know-how and 7 days, the same company learns it between early May and early July (median early June).
 

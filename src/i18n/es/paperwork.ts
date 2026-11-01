@@ -13,6 +13,8 @@ export default {
   "doc.form.limited": () => "Estatutos sociales.pdf",
   "error.notRegistered": () => "La empresa aún no está registrada.",
   "error.legalFormDown": () => "La forma jurídica solo puede cambiarse por una superior.",
+  "error.registerSole": () => "Un negocio solo puede registrarse como empresario individual.",
+  "error.companyLaw": () => "Fundar una sociedad limitada requiere Derecho societario de Investigación.",
   "error.changePending": () => "Ya hay un cambio de forma jurídica en curso.",
   "error.formSigned": () => "Este formulario ya está firmado.",
   "error.mailAddress": () => "Introduce una dirección de correo válida.",

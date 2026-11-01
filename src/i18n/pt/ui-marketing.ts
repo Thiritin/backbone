@@ -42,6 +42,7 @@ export default {
   "marketing.build": () => "Construir",
   "marketing.readyOn": () => "Pronto em",
   "marketing.domain": () => "Domínio",
+  "marketing.domainText": () => "Regista o endereço web da tua empresa num revendedor de domínios.",
   "marketing.buyDomain": (p) => `Compra um domínio para a tua empresa na ${p.registrar}.`,
   "marketing.launch": () => "Lançar",
   "marketing.setUp": () => "Configurar",
