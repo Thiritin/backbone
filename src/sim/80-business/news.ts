@@ -85,6 +85,10 @@ export const NEWS: NewsDef[] = [
   }),
 ];
 
+// NEWS by the hour it posts, so the hourly tick looks up one hour instead of scanning every announcement.
+const AT = new Map<number, NewsDef[]>();
+for (const d of NEWS) AT.set(d.at, [...(AT.get(d.at) ?? []), d]);
+
 // Saves from before kept their "could sell" posts in the feed.
 const lineDef = (p: string): NewsDef => ({ id: `line.${p}`, key: "event.news.line", at: -1, params: { line: LINE_NAME[p as keyof typeof LINE_NAME] } });
 
@@ -118,7 +122,7 @@ export function newsTick(s: GameState): SimEvent[] {
     s.news = [...s.news, `${d.id}@${s.hour}`];
     events.push({ app: "News", key: d.key, params: d.params });
   };
-  for (const d of NEWS) if (d.at === s.hour) post(d);
+  for (const d of AT.get(s.hour) ?? []) post(d);
   const year = yearOf(s.hour), out = year > START_YEAR && s.hour === at(year) ? releases(s, year) : [];
   if (out.length) post(releaseDef(`release.${year}.${out.join("+")}`));
   return events;
