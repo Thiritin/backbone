@@ -1,0 +1,9 @@
+/* Collmix: an early web application, white page, blue underlined links, grey rules. */
+.bk-web { flex: 1; min-height: 0; display: flex; flex-direction: column; background: #fff; color: #000; font: 13px Arial, Helvetica, sans-serif; }
+.bk-web-url { padding: 3px 8px; font-size: 11px; background: #ece9d8; border-bottom: 1px solid #aca899; color: #333; flex: none; }
+.bk-web-head { padding: 6px 10px; background: #3b4a5a; color: #fff; font-size: 16px; flex: none; }
+.bk-web-links { padding: 5px 10px; border-bottom: 1px solid #ccc; flex: none; }
+.bk-web-links a { color: #00c; text-decoration: underline; }
+.bk-web-links a[aria-current] { color: #000; font-weight: 700; text-decoration: none; }
+.bk-web .bk-body { background: #fff; }
+.bk-web .table th { background: #eee; }

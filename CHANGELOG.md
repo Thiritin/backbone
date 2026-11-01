@@ -6,6 +6,21 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - Customers on a game title past its prime no longer get unhappy; their servers empty out and shrink, and some ask to move to a newer game, staying if your panel runs it and leaving if it does not.
 - TCAdmen and Pterodaktyl list every game on their Packages screen, where you can import community configs or pay to write your own, and see how many requests went to other hosts for games you do not offer.
+- From 2013 DOHLE replaces DohleFormular with the Mein DOHLE portal, where you log in with your certificate file and send the same returns.
+- Product prices in the books now show the market price for each term and the setup fee, so you can see what customers expect to pay.
+- Bookkeeping editions with the tax view connect to DOHLE with your certificate file, send the advance VAT returns in the monthly run and submit the yearly return once every invoice and transfer of the year is in the books.
+- Income tax is no longer taken every April: you file a yearly return through DohleFormular, the assessment follows by post, and a late return costs a fee or brings an estimate that is always too high.
+- You can register on DOHLE for a certificate file, with the activation ID by email and the code by post, and download DohleFormular to send your advance VAT returns.
+- UPS units, PDUs and console switches can now be plugged in and unplugged at the back of the rack, and a UPS only carries the location through an outage while it is plugged in.
+- New UPS models with a network card have their own web interface and shut down servers cleanly in a long outage when the servers run the nuts-client agent or are VMwhere or HyperVee nodes.
+
+## 2026-11-01
+- Bookkeeping programs no longer send reminders, dunning notices and final notices by themselves; they go out when you or your staff send them, or after the Automation research.
+- Private customers and gamers now write the invoice number on four out of five transfers.
+- The DirectAdmen 1.30 release notes list the Enhanced skin once.
+- Consoles, the command line and the monitoring list show the installed software version instead of the year, and the DirectAdmen 1.24 release notes no longer mention the Enhanced skin.
+- Leads now write in about products you do not sell yet, and a switch on the website settings stops those requests.
+- HyperVee lists the HyperVee release of each guest's integration services instead of a year, the Proxmocks header shows the installed version, and the vSphear DRS and VMwhere EVC labels use the right names.
 - A newly installed cPanic, Pleskit or DirectAdmen asks for its license on a setup page at first sign-in, where you can type a key, pick one you already own or continue on the trial.
 - When a panel's trial or license runs out, its admin pages show only the license page until a key is entered, and its customers write in that their control panel login shows a license error while their sites stay online.
 - Quote and invoice previews in Books keep their margins and text size in proportion to the page at any window size.
@@ -15,9 +30,14 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - The Terminal button on a server now connects by its address, and Tab in the terminal completes server addresses as well as names.
 - TCAdmen 3, the Sysko Sekure Client, the newer MinnIO object browser, every Veeham console generation and the early OpenStash dashboards each get their own look, matching the version you run.
 - VMwhere, Proxmocks and HyperVee consoles now look like the installed version: vSphear moves from the fat client to the Flecks web client in 5.0 and the Clearity client in 6.5, Proxmocks from its first web interface to the ExtJS manager in 2.0 and the flat one in 4.0, which turns dark with your desktop, and HyperVee from the glossy manager to the flat one in 2012 and Windoors Admin Center in 2019.
+- Pleskit now has its own look for every generation from Reload to Obsidian, DirectAdmen draws the classic, Enhanced and Evolution skins, and FreePanel switches from the Gray theme to Authentic, each following the version installed.
+- The software page of every console shows the installed version instead of a year.
 - Removing an offsite backup server now discards its copies, a Proxmocks VM can no longer be moved into a cluster without quorum, and the Backula status lists only the jobs that write to that server with their real result.
 - Books has a Publish to website button: your website lists the published products of each line with their prices, and email orders and leads decide on those prices until you publish again.
 - An order email for one of your products now names that product.
+- Bookkeeping programs now come in editions with their own prices, features, seats and look, GnuCache joins as a free program, and each bookkeeper needs a seat to work.
+- Books now holds the overview, statistics, tax and account statement, Finance is gone, loans live on your bank's website, and low cash brings an email about your bank's overdraft.
+- Hardware insurance is gone, so repairs cost what they cost.
 - A charged-back renewal no longer extends a prepaid term twice, upgrades on a prepaid term are billed for the rest of the term, and customers leaving after a written-off term get no refund.
 - The Pear Store sells KeePassive, a password manager that offers to save your router and bank logins after you type them once and fills them in on every later visit.
 - Pulling the power cords, a power outage or overheating now aborts a running OS install, and a server can be shut down from the installer.

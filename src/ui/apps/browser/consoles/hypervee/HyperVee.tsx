@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import { Boxes, Server, ServerCog, Tags } from "lucide-react";
 import { dateOf, yearOf } from "../../../../../sim/00-core/time";
 import { SNAPSHOTS_MAX } from "../../../../../sim/10-catalog/platforms";
+import { versionsOf } from "../../../../../sim/10-catalog/software-versions";
 import { deleteSnapshot, revertSnapshot, takeSnapshot } from "../../../../../sim/90-actions/snapshots";
 import { t } from "../../../../../i18n/en";
 import { useStore } from "../../../../store";
@@ -43,7 +44,9 @@ function ActionsPane({ title, actions }: { title: string; actions: (PanelAction 
   );
 }
 
-const integrationText = (game: GameState, c: Cluster, v: Vm) => { const x = integrationServices(game, c, v.w); return x.version === "off" ? "" : x.version === "update" ? t("readouts.is.update") : String(x.guest); };
+// The integration services a guest carries are those of the newest HyperVee out in the year it was installed.
+const isVersion = (year: number) => { const vs = versionsOf("hypervee"); return (vs.filter((x) => yearOf(x.release) <= year).at(-1) ?? vs[0]).version; };
+const integrationText = (game: GameState, c: Cluster, v: Vm) => { const x = integrationServices(game, c, v.w); return x.version === "off" ? "" : x.version === "update" ? t("readouts.is.update") : isVersion(x.guest); };
 // The automatic checkpoint name: the VM's name and the time it was taken.
 const checkpointName = (name: string, at: number) => {
   const d = dateOf(at), p = (n: number) => String(n).padStart(2, "0");

@@ -63,6 +63,6 @@ export const TUTORIAL = ["bank", "register", "payBill", "books", "buyServer", "m
 // The steps after the tutorial belong to apps that arrive later (80-business/walk.ts); each shows once its app is installed.
 export const GUIDE = [...TUTORIAL, "loan", "tenCustomers", "research", "patch", "hire", "study"] as const;
 const AFTER: Partial<Record<(typeof GUIDE)[number], string>> = {
-  website: "Marketing", launch: "Marketing", loan: "Finance", tenCustomers: "Customers", research: "Research", patch: "Security", hire: "Staff", study: "Market",
+  website: "Marketing", launch: "Marketing", tenCustomers: "Customers", research: "Research", patch: "Security", hire: "Staff", study: "Market",
 };
 export const guideSteps = (s: GameState) => GUIDE.filter((id) => !AFTER[id] || s.installed.includes(AFTER[id]!));

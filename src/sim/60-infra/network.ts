@@ -398,7 +398,7 @@ export function networkTick(s: GameState): SimEvent[] {
     s.cash = cents(s.cash - total);
     s.ledger = [...s.ledger, ...bills];
     s.network = { ...s.network, dcTb: {}, goodwill: s.network.goodwill * (1 - GOODWILL_DECAY) };
-    if (total > 0) events.push({ app: "Finance", key: "event.networkBills", params: { total } });
+    if (total > 0) events.push({ app: "Books", key: "event.networkBills", params: { total } });
   }
   return events;
 }

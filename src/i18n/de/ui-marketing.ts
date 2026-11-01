@@ -52,6 +52,8 @@ export default {
   "marketing.orders": () => "Bestellungen",
   "marketing.email": () => "E-Mail",
   "marketing.emailOrders": () => "Bestellungen per E-Mail annehmen",
+  "marketing.requests": () => "Anfragen",
+  "marketing.customRequests": () => "Anfragen zu Produkten annehmen, die du nicht anbietest",
   "marketing.listProduct": (p) => `${p.product} anbieten`,
 
   "marketing.aboutModemBill": () => "Verkauft Webhosting auf cPanic und Pleskit gegen eine Einmalzahlung.",

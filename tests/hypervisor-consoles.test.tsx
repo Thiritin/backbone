@@ -78,6 +78,22 @@ describe("hypervisor consoles", () => {
     }
   });
 
+  it("names only the game's puns in every look of VMwhere, Proxmocks and HyperVee", () => {
+    for (const [id, version] of GENERATIONS) {
+      const { s, c } = cloud(id, 2026);
+      pinVersion(s, s.clusters.find((x) => x.id === c)!, id, version);
+      for (const signedIn of [true, false]) expect(html(s, c, id, signedIn), `${id} ${version}`).not.toMatch(/VMware|vSphere|Hyper-V|Proxmox|Microsoft|\bWindows\b/);
+    }
+  });
+
+  it("shows the HyperVee release of a guest's integration services and the installed Proxmocks version", () => {
+    const hv = cloud("hypervee", 2010);
+    expect(html(hv.s, hv.c, "hypervee")).toContain(">2008 R2</td>");
+    const pmx = cloud("proxmocks", 2026);
+    pinVersion(pmx.s, pmx.s.clusters.find((x) => x.id === pmx.c)!, "proxmocks", "8.4");
+    expect(html(pmx.s, pmx.c, "proxmocks")).toContain('class="pmx-ver num">8.4<');
+  });
+
   it("shows the App Suite tile with its fee on a VMwhere cluster", () => {
     const { s, c } = cloud("vmwhere", 2010);
     expect(html(s, c, "vmwhere")).toContain("VMwhere App Suite");

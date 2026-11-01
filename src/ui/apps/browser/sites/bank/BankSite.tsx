@@ -8,7 +8,7 @@ import { annuity, LOAN_AMOUNTS, LOAN_YEARS, loanAvailable, loanRate } from "../.
 import { cardSpent, groupIban, iban as toIban, ibanEra, ownIban, spendable, WRONG_LIMIT, type Draft, type Payee } from "../../../../../sim/46-finance/bank";
 import type { GameState } from "../../../../../sim/50-state";
 import { applyCard, applyOverdraft, openBankAccount, cancelTransfer, confirmTransfer, deletePayee, deleteStandingOrder, savePayee, setPlan, setTanMethod, startStandingOrder, startTransfer, switchBank } from "../../../../../sim/90-actions/bank";
-import { takeLoan } from "../../../../../sim/90-actions/billing";
+import { repayLoan, takeLoan } from "../../../../../sim/90-actions/billing";
 import { readSession, writeSession } from "../../../../session";
 import { noAutofill } from "../../../../no-autofill";
 import { offerLogin, savedLogin } from "../../../../vault";
@@ -314,6 +314,23 @@ function Loans({ game }: { game: GameState }) {
   const min = bankById(game.bank!.id)!.loans.min;
   const amounts = blocked ? [] : [...LOAN_AMOUNTS.filter((a) => a <= limit), ...(limit > 0 && !LOAN_AMOUNTS.includes(limit) ? [limit] : [])].filter((a) => a >= min);
   return (
+    <>
+    {game.loans.length > 0 && (
+      <Box title={t("misc2.yourLoans")}>
+        <table className="bks-table bks-rows">
+          <thead><tr><th>{t("misc.date")}</th><th className="r">{t("bank.site.amount")}</th><th className="r">{t("misc2.remaining")}</th><th className="r">{t("misc2.instalment")}</th><th className="r">{t("misc2.instalmentsLeft")}</th><th className="r">{t("misc2.interestRate")}</th><th /></tr></thead>
+          <tbody>
+            {game.loans.map((l) => (
+              <tr key={l.id}>
+                <td className="num">{day(l.takenAt)}</td><td className="r num">{euro(l.amount)}</td><td className="r num">{euroCents(l.balance)}</td>
+                <td className="r num">{euroCents(l.payment)}</td><td className="r num">{l.left}</td><td className="r num">{pct(l.rate)}</td>
+                <td className="r"><button className="bks-btn" disabled={game.cash < l.balance} onClick={() => act(repayLoan, l.id)}>{t("misc2.repay")}</button></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Box>
+    )}
     <Box title={t("bank.site.nav.loans")}>
       <div className="bks-row">
         <label>{t("bank.site.term")}
@@ -340,6 +357,7 @@ function Loans({ game }: { game: GameState }) {
         </tbody>
       </table>
     </Box>
+    </>
   );
 }
 

@@ -10,7 +10,7 @@ import { shopActive } from "../../../sim/80-business/shop";
 import { generationOf, lineBlocker, listed, SITE_LINES, SITE_RENT, siteBuilt, siteRoom, siteStatus, type SiteStatus } from "../../../sim/80-business/website";
 import { setCompany, TAGLINE_MAX } from "../../../sim/90-actions/company";
 import { setUpChannel } from "../../../sim/90-actions/marketing";
-import { buildSite, launchSite, redesign, setEmailOrders, setLine, setSiteHost } from "../../../sim/90-actions/website";
+import { buildSite, launchSite, redesign, setCustomRequests, setEmailOrders, setLine, setSiteHost } from "../../../sim/90-actions/website";
 import { useStore } from "../../store";
 import { formatDay } from "../billing/format";
 import { PRODUCT } from "../support/labels";
@@ -133,6 +133,12 @@ function Upgrades() {
           onChange={(e) => act(setEmailOrders, e.target.checked)} />
       </label>
     )}
+    <label className="mkt-row">
+      <span className="mkt-label">{t("marketing.requests")}</span>
+      <span className="mkt-grow">{t("marketing.customRequests")}</span>
+      <input type="checkbox" role="switch" className="switch" aria-label={t("marketing.customRequests")} checked={game.marketing.customRequests}
+        onChange={(e) => act(setCustomRequests, e.target.checked)} />
+    </label>
   </>;
 }
 

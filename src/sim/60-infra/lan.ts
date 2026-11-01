@@ -1,7 +1,7 @@
 // docs/design/lan.md, The derived layer: the broadcast domain each router serves, the leases it hands out and the address
 // every device holds. Every machine takes its address by DHCP; a lease is granted the moment a client is in the router's
 // domain, and the hourly tick stores and renews it.
-import { BMC_NAME, hasBmc, homeLan, isManaged, isOfficeRouter, isOobPort, jacksOf, modelById, OOB_PORT, oobPortOf, oobPorts, type DeviceModel } from "../10-catalog/hardware";
+import { BMC_NAME, hasBmc, homeLan, isManaged, isManagedUps, isOfficeRouter, isOobPort, jacksOf, modelById, OOB_PORT, oobPortOf, oobPorts, type DeviceModel } from "../10-catalog/hardware";
 import type { Device, End, GameState, IfaceConfig, PortShare, RouterLan } from "../50-state";
 import { isOwnRouter, mountedRouter, ownLan, uplinkPort } from "./routers";
 import { linkStatus, locationOf, peerOf, powered, sweepGroups, sweepMemo, working } from "./status";
@@ -80,6 +80,7 @@ function computeDomain(s: GameState, routerId: string): Set<string> {
       if (vlan === null && (m.kind === "server" ? !isOobPort(at.port) : oobPortOf(m, at.port) === "net")) found.add(d.id);
     } else if (!working(s, d.id)) continue;
     else if (m.kind === "gateway") { if (vlan === null && d.id !== routerId && isOwnRouter(d) && at.port === uplinkPort(d)) found.add(d.id); }
+    else if (isManagedUps(m)) { if (vlan === null) found.add(d.id); }
     else if (m.kind === "oob") { found.add(d.id); exits = oobPorts(m).map((_, i) => OOB_PORT + i); }
     else if ((m.kind === "switch" || m.kind === "firewall") && !isOobPort(at.port)) {
       exits = m.ports.map((_, i) => i);

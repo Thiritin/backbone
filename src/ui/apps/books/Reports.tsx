@@ -1,27 +1,26 @@
-import { CalendarDays, ChartColumn, Landmark, Layers, LayoutGrid, ShieldCheck, Table } from "lucide-react";
+// The program's reports, moved from the Finance app: Overview, Statistics, Tax and the account statement.
 import { useEffect, useRef, useState } from "react";
 import { euro, euroCents } from "../../../sim/00-core/money";
 import { dateOf } from "../../../sim/00-core/time";
-import { hardwarePremium, monthStartOf, nextTax, profitBetween, profitOf, runwayMonths } from "../../../sim/46-finance/finance";
-import { buyInsurance, cancelInsurance } from "../../../sim/90-actions/finance";
+import { cashFlow, monthKey, monthlyStats, monthStartOf, profitBetween, profitOf, REVENUE, runwayMonths, type MonthFlow } from "../../../sim/46-finance/finance";
 import type { GameState } from "../../../sim/50-state";
+import { currentVendor, hasFeature } from "../../../sim/80-business/bookkeeping";
+import { sells } from "../../../sim/10-catalog/bookkeeping";
 import { metrics } from "../../../sim/metrics";
 import { t } from "../../../i18n/en";
-import { useStore, useFocus } from "../../store";
-import { BankApp } from "../bank/BankApp";
-import { formatDay } from "../billing/format";
-import "../billing/billing.css";
-import "../shop/shop.css";
-import "./finance.css";
 import { LOCALE } from "../../../i18n/lang";
+import { formatDay } from "../billing/format";
+import { TrendCharts } from "../customers/TrendCharts";
+import { BooksLocked } from "./Locked";
+import { useBooks } from "./view";
+import "../shop/shop.css";
+import "./reports.css";
 
 const CATEGORY: Record<string, string> = {
   payments: t("misc.catPayments"), setup: t("misc.catSetup"), sales: t("misc.catSales"), hardware: t("misc.catHardware"), rent: t("misc.catRent"), power: t("misc.catPower"), transit: t("misc.catTransit"), salaries: t("misc.catSalaries"),
   leasing: t("misc.catLeasing"), maintenance: t("misc.catMaintenance"), moving: t("misc.catMoving"), insurance: t("misc.catInsurance"), loans: t("misc.catLoans"), tax: t("misc.catTax"), subscriptions: t("misc.catSubscriptions"), ai: t("misc.catAi"), marketing: t("misc.catMarketing"), fees: t("misc.catFees"), transfers: t("bank.catTransfers"), capital: t("bank.catCapital"),
 };
 const categoryLabel = (c: string) => CATEGORY[c] ?? c.charAt(0).toUpperCase() + c.slice(1);
-const REVENUE = ["payments", "setup", "sales"];
-const monthKey = (hour: number) => dateOf(hour).toISOString().slice(0, 7);
 const monthLabel = (key: string) => new Date(`${key}-01T00:00:00Z`).toLocaleDateString(LOCALE, { month: "long", year: "numeric", timeZone: "UTC" });
 const monthShort = (key: string) => new Date(`${key}-01T00:00:00Z`).toLocaleDateString(LOCALE, { month: "short", timeZone: "UTC" });
 const compact = (v: number) => {
@@ -29,126 +28,70 @@ const compact = (v: number) => {
   return a >= 1000 ? `${sign}${Number((a / 1000).toFixed(a >= 10_000 ? 0 : 1))}k €` : `${sign}${Math.round(a)} €`;
 };
 
-type View = "overview" | "pnl" | "cash" | "tax" | "loans" | "statement";
-const VIEWS: { id: View; label: string; icon: typeof Layers }[] = [
-  { id: "overview", label: t("misc.overview"), icon: LayoutGrid },
-  { id: "pnl", label: t("misc.profitAndLoss"), icon: Table },
-  { id: "cash", label: t("misc.cashFlow"), icon: ChartColumn },
-  { id: "tax", label: t("misc.taxAndInsurance"), icon: ShieldCheck },
-  { id: "loans", label: t("misc.loans"), icon: Landmark },
-];
-
-interface MonthFlow { key: string; inflow: number; outflow: number; end: number }
-
-// The last `count` months up to the current one, with money in and out and the balance at each month's end.
-function cashFlow(game: GameState, count: number): MonthFlow[] {
-  const now = dateOf(game.hour);
-  const keys = Array.from({ length: count }, (_, i) => new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - count + 1 + i, 1)).toISOString().slice(0, 7));
-  const flows = new Map(keys.map((key) => [key, { key, inflow: 0, outflow: 0, end: 0 }]));
-  for (const e of game.ledger) {
-    const f = flows.get(monthKey(e.hour));
-    if (f) { if (e.amount > 0) f.inflow += e.amount; else f.outflow -= e.amount; }
-  }
-  let end = game.cash;
-  for (const key of [...keys].reverse()) {
-    const f = flows.get(key)!;
-    f.end = end;
-    end -= f.inflow - f.outflow;
-  }
-  return keys.map((k) => flows.get(k)!);
-}
-
-export function FinanceApp() {
-  const game = useStore((s) => s.game);
-  const [view, setView] = useState<View>("overview");
-  const [month, setMonth] = useState<string | null>(null);
-  useFocus("Finance", (f) => { if (f.kind === "tab" && f.id === "loans") setView("loans"); });
-  // Balance after each entry, counted back from current cash.
-  let balance = game.cash;
-  const rows = game.ledger.map((e, i) => ({ e, i })).reverse().map(({ e, i }) => {
-    const row = { e, i, balance };
-    balance -= e.amount;
-    return row;
-  });
-  const months = [...new Set(rows.map((r) => monthKey(r.e.hour)))].sort().reverse();
-  const count = (m: string) => rows.filter((r) => monthKey(r.e.hour) === m).length;
-  const shown = month ? rows.filter((r) => monthKey(r.e.hour) === month) : rows;
-  const statement = (m: string | null) => { setView("statement"); setMonth(m); };
-
-  return (
-    <div className="fin">
-      <aside className="sidebar fin-side" aria-label={t("misc.finance")}>
-        <div className="side-h">{t("misc.finance")}</div>
-        {VIEWS.map(({ id, label, icon: Icon }) => (
-          <button key={id} className={`side-item${view === id ? " active" : ""}`} aria-pressed={view === id} onClick={() => setView(id)}>
-            <Icon />{label}
-          </button>
-        ))}
-        <div className="side-h">{t("misc.statement")}</div>
-        <button className={`side-item${view === "statement" && !month ? " active" : ""}`} aria-pressed={view === "statement" && !month} onClick={() => statement(null)}>
-          <Layers />{t("misc.allMonths")}<span className="side-count">{rows.length}</span>
-        </button>
-        {months.map((m) => (
-          <button key={m} className={`side-item${view === "statement" && month === m ? " active" : ""}`} aria-pressed={view === "statement" && month === m} onClick={() => statement(m)}>
-            <CalendarDays />{monthLabel(m)}<span className="side-count">{count(m)}</span>
-          </button>
-        ))}
-      </aside>
-      <div className="fin-main">
-        <div className="fin-toolbar">
-          <h2>{view === "statement" ? t("misc.account") : VIEWS.find((v) => v.id === view)!.label}</h2>
-          <span className="grow" />
-          <span className="num">{euroCents(game.cash)}</span>
-        </div>
-        {view === "overview" && <Overview game={game} />}
-        {view === "pnl" && <ProfitLoss game={game} />}
-        {view === "loans" && <BankApp />}
-        {view === "cash" && <CashFlowView game={game} />}
-        {view === "tax" && <TaxInsurance game={game} />}
-        {view === "statement" && (
-          <div className="fin-scroll">
-            {shown.length === 0 ? (
-              <div className="fin-empty"><Landmark />{t("misc.noBookings")}</div>
-            ) : (
-              <table className="table">
-                <thead><tr><th>{t("misc.date")}</th><th>{t("misc.category")}</th><th>{t("misc.text")}</th><th className="r">{t("misc.amount")}</th><th className="r">{t("misc.balance")}</th></tr></thead>
-                <tbody>
-                  {shown.map(({ e, i, balance }) => (
-                    <tr key={i}>
-                      <td className="num">{formatDay(e.hour)}</td>
-                      <td>{categoryLabel(e.category)}</td>
-                      <td className="fin-text">{t(e.key, e.params)}</td>
-                      <td className="r num">{euroCents(e.amount)}</td>
-                      <td className="r num">{euroCents(balance)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 export const runwayLabel = (months: number) => (Number.isFinite(months) ? t("misc.nMonthsDecimal", { n: months.toFixed(1) }) : "∞");
 
-function Overview({ game }: { game: GameState }) {
+// Cash, recurring revenue, last month's profit and runway; the cash flow chart comes with the reports.
+export function OverviewTab() {
+  const game = useBooks();
   const start = monthStartOf(game.hour);
   const prev = monthStartOf(start - 1);
   const lastMonth = profitBetween(game, prev, start);
-  const runway = runwayLabel(runwayMonths(game));
   return (
     <div className="fin-scroll">
       <dl className="fin-totals fin-cards">
         <div><dt>{t("misc.cash")}</dt><dd className="num">{euroCents(game.cash)}</dd></div>
         <div><dt>MRR</dt><dd className="num">{euroCents(metrics(game).mrr)}</dd></div>
         <div><dt>{t("misc.profitIn", { month: monthLabel(monthKey(prev)) })}</dt><dd className={`num${lastMonth < 0 ? " fin-neg" : ""}`}>{euroCents(lastMonth)}</dd></div>
-        <div><dt>{t("misc.runway")}</dt><dd className="num">{runway}</dd></div>
+        <div><dt>{t("misc.runway")}</dt><dd className="num">{runwayLabel(runwayMonths(game))}</dd></div>
       </dl>
-      <h3 className="fin-h">{t("misc.last12Months")}</h3>
-      <CashChart flows={cashFlow(game, 12)} />
+      {hasFeature(game, "reports") && <><h3 className="fin-h">{t("misc.last12Months")}</h3><CashChart flows={cashFlow(game, 12)} /></>}
+    </div>
+  );
+}
+
+type Report = "pnl" | "cash" | "customers";
+// Profit and loss and cash flow with the reports feature, the customer and revenue figures with statistics.
+export function StatisticsTab() {
+  const game = useBooks(), v = currentVendor(game);
+  const [report, setReport] = useState<Report>(hasFeature(game, "reports") ? "pnl" : "customers");
+  const items: [Report, string, "reports" | "statistics"][] = [["pnl", t("misc.profitAndLoss"), "reports"], ["cash", t("misc.cashFlow"), "reports"], ["customers", t("books-editions.customersAndRevenue"), "statistics"]];
+  return (
+    <>
+      <div className="fin-bar">
+        <div className="seg" role="group" aria-label={t("books.tab.statistics")}>
+          {items.filter(([, , f]) => v && sells(v, f)).map(([id, label, f]) => hasFeature(game, f)
+            ? <button key={id} aria-pressed={report === id} onClick={() => setReport(id)}>{label}</button>
+            : <BooksLocked key={id} label={label} />)}
+        </div>
+      </div>
+      {report === "pnl" && hasFeature(game, "reports") && <ProfitLoss game={game} />}
+      {report === "cash" && hasFeature(game, "reports") && <CashFlowView game={game} />}
+      {report === "customers" && hasFeature(game, "statistics") && <CustomerStats game={game} />}
+    </>
+  );
+}
+
+function CustomerStats({ game }: { game: GameState }) {
+  const rows = monthlyStats(game, 12).reverse();
+  return (
+    <div className="fin-scroll">
+      <TrendCharts trend={game.trend} />
+      <table className="table">
+        <thead><tr><th>{t("misc.month")}</th><th className="r">{t("books-editions.customers")}</th><th className="r">{t("books-editions.joined")}</th><th className="r">{t("books-editions.churned")}</th><th className="r">{t("misc.revenue")}</th><th className="r">{t("books-editions.lostSales")}</th></tr></thead>
+        <tbody>
+          {rows.map((m) => (
+            <tr key={m.key}>
+              <td>{monthLabel(m.key)}</td>
+              <td className="r num">{m.customers}</td>
+              <td className="r num">{m.joined}</td>
+              <td className="r num">{m.churned}</td>
+              <td className="r num">{euroCents(m.revenue)}</td>
+              <td className="r num">{m.lost}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -318,62 +261,44 @@ function CashChart({ flows }: { flows: MonthFlow[] }) {
   );
 }
 
-function TaxInsurance({ game }: { game: GameState }) {
-  const act = useStore((s) => s.act);
-  const tax = nextTax(game);
-  const policy = game.insurance.find((p) => p.id === "hardware");
-  const premium = hardwarePremium(game);
-  const claims = game.ledger.filter((e) => e.key === "ledger.insuranceClaim");
-  const paid = game.ledger.filter((e) => e.category === "tax").at(-1);
+// Every booking on the company account with the running balance, one month or all.
+export function StatementTab() {
+  const game = useBooks();
+  const [month, setMonth] = useState("");
+  let balance = game.cash;
+  const rows = game.ledger.map((e, i) => ({ e, i })).reverse().map(({ e, i }) => {
+    const row = { e, i, balance };
+    balance -= e.amount;
+    return row;
+  });
+  const months = [...new Set(rows.map((r) => monthKey(r.e.hour)))].sort().reverse();
+  const shown = month ? rows.filter((r) => monthKey(r.e.hour) === month) : rows;
   return (
-    <div className="fin-scroll">
-      <h3 className="fin-h">{t("misc.corporateTax")}</h3>
-      <div className="shop-grid fin-grid-cards">
-        <div className="shop-card">
-          <div className="shop-name">
-            <strong>{t("misc.taxFor", { year: tax.year })}</strong>
-            <span>{t("misc.dueOn", { date: formatDay(tax.dueAt) })}</span>
-          </div>
-          <dl className="shop-specs">
-            <div><dt>{t("misc.profitIn", { month: tax.year })}</dt><dd className={`num${tax.profit < 0 ? " fin-neg" : ""}`}>{euroCents(tax.profit)}</dd></div>
-            <div><dt>{t("misc.lossesCarried")}</dt><dd className="num">{euroCents(game.taxLoss)}</dd></div>
-            <div><dt>{t("misc.taxRate")}</dt><dd className="num">30%</dd></div>
-            <div><dt>{t("misc.estimatedTax")}</dt><dd className="num">{euroCents(tax.tax)}</dd></div>
-          </dl>
-        </div>
-        {paid && (
-          <div className="shop-card">
-            <div className="shop-name">
-              <strong>{t("misc.taxFor", { year: paid.params.year })}</strong>
-              <span>{t("misc.paidOn", { date: formatDay(paid.hour) })}</span>
-            </div>
-            <dl className="shop-specs">
-              <div><dt>{t("misc.amount")}</dt><dd className="num">{euroCents(-paid.amount)}</dd></div>
-            </dl>
-          </div>
+    <>
+      <div className="fin-bar">
+        <select aria-label={t("misc.month")} value={month} onChange={(e) => setMonth(e.target.value)}>
+          <option value="">{t("misc.allMonths")}</option>
+          {months.map((m) => <option key={m} value={m}>{monthLabel(m)}</option>)}
+        </select>
+      </div>
+      <div className="fin-scroll">
+        {shown.length === 0 ? <div className="books-none">{t("misc.noBookings")}</div> : (
+          <table className="table">
+            <thead><tr><th>{t("misc.date")}</th><th>{t("misc.category")}</th><th>{t("misc.text")}</th><th className="r">{t("misc.amount")}</th><th className="r">{t("misc.balance")}</th></tr></thead>
+            <tbody>
+              {shown.map(({ e, i, balance }) => (
+                <tr key={i}>
+                  <td className="num">{formatDay(e.hour)}</td>
+                  <td>{categoryLabel(e.category)}</td>
+                  <td className="fin-text">{t(e.key, e.params)}</td>
+                  <td className="r num">{euroCents(e.amount)}</td>
+                  <td className="r num">{euroCents(balance)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
-      <h3 className="fin-h">{t("misc.insurance")}</h3>
-      <div className="shop-grid fin-grid-cards">
-        <div className="shop-card">
-          <div className="shop-name">
-            <strong>{t("misc.hardwareInsurance")}</strong>
-            <span>{t("misc.hardwareInsuranceText")}</span>
-          </div>
-          <dl className="shop-specs">
-            <div><dt>{t("misc.monthlyPremium")}</dt><dd className="num">{euroCents(premium)}</dd></div>
-            <div><dt>{t("misc.insuredSince")}</dt><dd>{policy ? formatDay(policy.since) : t("misc.notInsured")}</dd></div>
-            <div><dt>{t("misc.claimsPaid")}</dt><dd className="num">{claims.length}</dd></div>
-            <div><dt>{t("misc.paidOut")}</dt><dd className="num">{euroCents(claims.reduce((sum, e) => sum + e.amount, 0))}</dd></div>
-          </dl>
-          <div className="shop-buy">
-            <span className="grow" />
-            {policy
-              ? <button className="btn" onClick={() => act(cancelInsurance)}>{t("misc.cancel")}</button>
-              : <button className="btn primary" disabled={game.cash < premium} onClick={() => act(buyInsurance)}>{t("misc.buy")}</button>}
-          </div>
-        </div>
-      </div>
-    </div>
+    </>
   );
 }

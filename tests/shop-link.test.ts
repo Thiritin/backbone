@@ -6,11 +6,11 @@ import { issueInvoice } from "../src/sim/30-market/manual";
 import { orderLead } from "../src/sim/30-market/orders";
 import { billingTick, dueStep, synced } from "../src/sim/45-billing/billing";
 import type { GameState } from "../src/sim/50-state";
-import { lexwearTick, licenceKey, licenceMail } from "../src/sim/80-business/lexwear";
+import { deliverLicences, licenceKey, licenceMail } from "../src/sim/80-business/licences";
 import { booksView, payoutTick, PAYOUT_DAY, PAYOUT_HOUR } from "../src/sim/80-business/shoplink";
 import { matchTransfer } from "../src/sim/90-actions/billing";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
-import { buyLicence, registerLicence } from "../src/sim/90-actions/lexwear";
+import { buyLicence, registerLicence } from "../src/sim/90-actions/licences";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { chooseShop } from "../src/sim/90-actions/shop";
 import { buyShopLink, importFromShop } from "../src/sim/90-actions/shoplink";
@@ -27,7 +27,7 @@ const prefer = (w: typeof saved) => { PREFERENCE.private = w; };
 afterEach(() => prefer(saved));
 
 // ModemBill takes orders, placed at once and offering PayPail; link adds the Shop link module.
-function shopGame(seed = 5, link = false): GameState {
+function shopGame(seed = 8, link = false): GameState {
   const s = readyGame(seed);
   s.cash = 1e6;
   setUpChannel(s, "website");
@@ -91,7 +91,7 @@ describe("shop link", () => {
 
   it("sends no reminder for an unsynced invoice", () => {
     const s = shopGame();
-    s.modules = [...s.modules, "auto-reminders"];
+    s.unlocks = [...s.unlocks, "automation"];
     s.billingRules = { ...s.billingRules, autoRemind: true };
     const { customer } = order(s);
     const inv = issueInvoice(s, customer().id, [{ serviceId: null, key: "invoice.line.setupFee", params: { label: "x" }, amount: 20 }]);
@@ -105,7 +105,7 @@ describe("shop link", () => {
   });
 
   it("syncs at creation with Shop link and marks the shop's invoice paid on a match", () => {
-    const s = shopGame(5, true);
+    const s = shopGame(8, true);
     const { customer, first } = order(s);
     expect(customer().source).toBe("shop");
     expect(synced(customer()) && synced(first())).toBe(true);
@@ -130,7 +130,7 @@ describe("shop link", () => {
   });
 
   it("resolves a payout at once with Shop link", () => {
-    const s = shopGame(5, true);
+    const s = shopGame(8, true);
     prefer({ paypail: 1 });
     const a = order(s);
     const payout = toPayout(s);
@@ -148,7 +148,7 @@ describe("shop link", () => {
     expect(buyShopLink(s, "clientExit")).toMatchObject({ ok: false, error: "error.noShopSystem" });
     expect(buyShopLink(s, "modemBill").ok).toBe(true);
     s.hour++;
-    lexwearTick(s);
+    deliverLicences(s);
     const mail = licenceMail(s, "shop-link")!;
     expect(mail.topic).toBe("shop-link.licence");
     expect(mail.mail!.params.shop).toBe("ModemBill");

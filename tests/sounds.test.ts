@@ -7,7 +7,7 @@ import { hourOf } from "../src/sim/00-core/time";
 
 describe("sounds", () => {
   it("maps sim events to sounds, with Support falling back to the ticket ding", () => {
-    expect(soundFor("Finance", "event.monthStart")).toBe("month");
+    expect(soundFor("Books", "event.monthStart")).toBe("month");
     expect(soundFor("Support", "event.orderPaid")).toBe("money");
     expect(soundFor("Locations", "event.componentFailed")).toBe("warn");
     expect(soundFor("Security", "event.vuln.hacked")).toBe("warn");

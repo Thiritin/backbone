@@ -36,12 +36,12 @@ describe("company website", () => {
 
   it("brings no leads for unlisted lines", () => {
     const off = readyGame(3);
-    off.marketing = { ...off.marketing, lines: [] };
+    off.marketing = { ...off.marketing, lines: [], customRequests: false };
     run(off, 60);
     expect(leads(off)).toHaveLength(0);
 
     const web = readyGame(3);
-    web.marketing = { ...web.marketing, lines: [] };
+    web.marketing = { ...web.marketing, lines: [], customRequests: false };
     setLine(web, "webHosting", true);
     run(web, 60);
     expect(leads(web).length).toBeGreaterThan(0);

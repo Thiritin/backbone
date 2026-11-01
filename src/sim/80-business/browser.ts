@@ -10,7 +10,7 @@ import type { GameState } from "../50-state";
 import { isOwnVm, workloadOnline, workloadsOf, type Workload } from "../60-infra/cluster";
 import { machineAddress } from "../60-infra/addresses";
 import { deskReaches, FRITZ_HOST, holderOf } from "../60-infra/lan";
-import { isManaged, modelById } from "../10-catalog/hardware";
+import { isManaged, isManagedUps, modelById } from "../10-catalog/hardware";
 import { mountedRouter } from "../60-infra/routers";
 import { isMgmtDevice, oobUp } from "../60-infra/oob";
 import { linkStatus, powered, working } from "../60-infra/status";
@@ -24,10 +24,9 @@ import { OFFICE_HOST, OFFICE_URL } from "./office";
 import { DOHLE_HOST } from "./tax";
 import { t } from "../../i18n/en";
 import { bankById, BANKS, type BankId } from "../10-catalog/banks";
-import { LEXWEAR_HOST } from "./lexwear";
 import { CHANNELS, type Channel } from "../10-catalog/used";
 import { BOOKS_VENDORS, type BooksVendorId } from "../10-catalog/bookkeeping";
-import { booksHost } from "./bookkeeping";
+import { booksHost, LEXWEAR_HOST } from "./bookkeeping";
 import { SHOPS, type ShopId } from "../10-catalog/shops";
 import { shopHost } from "./shoplink";
 import { HOSTTOAST_HOST } from "../10-catalog/hosttoast";
@@ -53,6 +52,7 @@ export type Page =
   | { kind: "kvm"; deviceId: string }
   | { kind: "router"; deviceId: string }
   | { kind: "switch"; deviceId: string }
+  | { kind: "ups"; deviceId: string }
   | { kind: "video" }
   | { kind: "phishing"; sender: string }
   | { kind: "sponsorboard" }
@@ -232,6 +232,7 @@ export function resolve(s: GameState, raw: string): Resolved {
     if (d && at.iface === "bmc") return out({ kind: "ipmi", deviceId: d.id }, powered(s, d.id) && !d.bmcHung ? "fast" : "down");
     if (d && isMgmtDevice(d)) return out({ kind: "kvm", deviceId: d.id }, oobUp(s, d.id) ? "fast" : "down");
     if (d && isManaged(modelById(d.model))) return out({ kind: "switch", deviceId: d.id }, working(s, d.id) ? "fast" : "down");
+    if (d && isManagedUps(modelById(d.model))) return out({ kind: "ups", deviceId: d.id }, working(s, d.id) ? "fast" : "down");
     const m = machineOf(s, name, true);
     return m ? { url, host, path, ...machinePage(s, m, port, path) } : out({ kind: "notfound" }, "down");
   }

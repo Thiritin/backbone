@@ -50,6 +50,8 @@ const DAYS_PER_MONTH = 30.4;
 const MAIL_HOUR = 8;
 // A shady request about every three months, from the fourth month on.
 const SHADY_PER_MONTH = 0.3;
+// Share of leads that ask anyway for a product you do not sell.
+const CUSTOM_ASK = 0.3;
 const EXPANSION_HOURS = 7 * 24;
 const RETRY_HOURS = 48;
 const KEEP_HOURS = 60 * 24;
@@ -120,8 +122,11 @@ function newLeads(s: GameState, events: SimEvent[]): void {
       const need = needFor(s.rng, f.profile, yearOf(s.hour)), shop = isStandard(f.profile, need.sla) && !emailFor(s), k = `${f.profile}/${need.product}/${f.city}/${shop}`;
       if (!cache.has(k)) cache.set(k, share(s, f.profile, need.product, f.city, shop ? setupPremium(s, need.product) : 0, shop ? shopPriceLevel(s, f.profile, need.product) : undefined));
       if (rand(s.rng) >= Math.min(1, cache.get(k)! * f.conversion)) continue;
-      // Leads only write about lines on the website, which needs a control plane that sells them.
-      if (!lineOffered(s, need.product) || !listed(s, need.product)) continue;
+      // Leads order only lines on the website, which needs a control plane that sells them; some ask for the rest by email.
+      if (!lineOffered(s, need.product) || !listed(s, need.product)) {
+        if (s.marketing.customRequests && rand(s.rng) < CUSTOM_ASK * mailShare(s, f.profile)) newLead(s, f.profile, f.city, events, need);
+        continue;
+      }
       // A gamer wants one game; when none of your panels runs it, they go elsewhere.
       if (need.product === "gameServer" && gameLeadLost(s)) continue;
       // A few web hosting leads are resellers who want a block of accounts instead.

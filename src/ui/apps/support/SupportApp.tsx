@@ -30,8 +30,9 @@ import { supportApp } from "./desk";
 import { CustomCompose, InvoicePill, MailAttachments } from "./CustomOrder";
 import { Compose } from "./Compose";
 import { specText } from "../../../sim/30-market/spec";
-import { OFFERS } from "../../../sim/80-business/walk";
-import { isLicence, lexwearUrl, NEWSLETTER } from "../../../sim/80-business/lexwear";
+import { OFFERS, OVERDRAFT } from "../../../sim/80-business/walk";
+import { bankUrl, HOME_URL } from "../../../sim/80-business/browser";
+import { isLicence } from "../../../sim/80-business/licences";
 import { ORDER } from "../../../sim/80-business/vendor-shop";
 import { OrderKeys } from "../browser/sites/shop/VendorShop";
 import { due, initials, KINDS, kindOf, monthYear, moodClass, span, stamp, statusOf } from "./labels";
@@ -405,7 +406,6 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
           <p>{t(`ticket.${tk.kind}.${tk.topic}.text`, p)}</p>
           {tk.topic === ORDER && <OrderKeys game={game} order={String(tk.mail!.params.order)} />}
           {isLicence(tk.topic) && <p><button className="btn primary" onClick={() => openApp("Books", { kind: "register", id: "" })}>{t("vendor-sites.register")}</button></p>}
-          {tk.topic === NEWSLETTER && <p><button className="btn primary" onClick={() => openApp("Browser", { kind: "url", id: lexwearUrl(String(tk.mail!.params.module)) })}>{t("vendor-sites.viewModule")}</button></p>}
         </div>
         {tk.replies.map((r, i) => (
           <div key={i} className="thread-pair">
@@ -479,7 +479,7 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
               </button>
             ))}
             <span className="grow" />
-            {tk.kind === "pear" && <button className="btn primary" onClick={() => openApp(OFFERS.includes(tk.topic) ? "Shop" : tk.topic)}>{t("apps.open")}</button>}
+            {tk.kind === "pear" && <button className="btn primary" onClick={() => tk.topic === OVERDRAFT ? openApp("Browser", { kind: "url", id: game.bank ? `${bankUrl(game.bank.id)}banking/overdraft` : HOME_URL }) : openApp(OFFERS.includes(tk.topic) ? "Shop" : tk.topic)}>{t("apps.open")}</button>}
             {tk.kind === "sponsor" && <button className="btn ghost" disabled={locked} onClick={() => act(declineSponsorship, tk.id)}><CircleX />{t("support.decline")}</button>}
             {tk.kind === "sponsor" && <button className="btn primary" disabled={locked} onClick={() => act(acceptSponsorship, tk.id)}><Check />{t("support.accept")}</button>}
             {tk.topic === "switchTitle" && !isFinal(tk) && <button className="btn primary" disabled={locked} onClick={() => act(changeTitle, tk.serviceId!, gameOf(game, tk.serviceId!)?.switchTo ?? "")}><Check />{t("support.accept")}</button>}
