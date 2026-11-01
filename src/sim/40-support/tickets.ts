@@ -102,10 +102,12 @@ export const ACTIONS: Record<TicketKind, TicketAction[]> = {
 };
 // Actions only tickets of one topic offer: the customer asks for help with an outdated site, or a defaced site waits for clean-up.
 export const TOPIC_ACTIONS: Record<string, TicketAction[]> = { "howTo.update": ["offerOnce", "offerManaged", "free"], "howTo.hacked": ["clean", "noBackup"] };
+// Topics with replies of their own and no actions: a suspended customer only needs the invoice to pay it.
+export const TOPIC_TEMPLATES: Record<string, string[]> = { "billing.suspended": ["resend", "askDetails"] };
 export const ACTION_MINUTES: Partial<Record<TicketAction, number>> = { clean: CLEAN_MINUTES };
-export const actionsOf = (t: Pick<Ticket, "kind" | "topic">): TicketAction[] => [...ACTIONS[t.kind], ...(TOPIC_ACTIONS[`${t.kind}.${t.topic}`] ?? [])];
+export const actionsOf = (t: Pick<Ticket, "kind" | "topic">): TicketAction[] => (`${t.kind}.${t.topic}` in TOPIC_TEMPLATES ? [] : [...ACTIONS[t.kind], ...(TOPIC_ACTIONS[`${t.kind}.${t.topic}`] ?? [])]);
 // Tickets with their own actions have no reply templates.
-export const templatesOf = (t: Pick<Ticket, "kind" | "topic">): string[] => (`${t.kind}.${t.topic}` in TOPIC_ACTIONS ? [] : TEMPLATES[t.kind]);
+export const templatesOf = (t: Pick<Ticket, "kind" | "topic">): string[] => TOPIC_TEMPLATES[`${t.kind}.${t.topic}`] ?? (`${t.kind}.${t.topic}` in TOPIC_ACTIONS ? [] : TEMPLATES[t.kind]);
 // A service that can grow in place: it runs on hardware and bills by the hour. Upgrade requests are only about these.
 export const expandable = (v: Service): boolean => PRODUCTS[v.product].runsOn !== "none" && PRODUCTS[v.product].period === "hour";
 export const canEscalate = (kind: TicketKind): boolean => kind === "outage";

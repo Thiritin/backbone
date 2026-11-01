@@ -5,6 +5,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-01
 
 - Craigslost now lives at craigslost.org and looks like a classifieds board: a plain list of postings with date, photo and price, filters on the side and a page per posting.
+- A support ticket from a customer suspended over an unpaid invoice now offers the replies that fit it: resending the invoice or asking for details.
 - A suspended customer site that was defaced now shows as offline and stops sending spam from your mail address.
 - New hardware now comes out over the whole year, each model in its own month, instead of every release landing in January.
 - Suspending an account now stops abuse notices about its site, and an open notice counts as taken down once the account is suspended.
