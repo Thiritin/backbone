@@ -243,7 +243,7 @@ function Awareness() {
   );
 }
 
-function Stars({ n }: { n: number }) {
+export function Stars({ n }: { n: number }) {
   return (
     <span className="mkt-stars" aria-label={t("marketing.starsOf5", { n })}>
       {[1, 2, 3, 4, 5].map((i) => <Star key={i} className={i <= Math.round(n) ? "on" : ""} />)}

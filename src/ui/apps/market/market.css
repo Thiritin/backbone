@@ -23,6 +23,7 @@
 .mk-legend .num { color: var(--text-3); }
 .mk-rivals td { vertical-align: top; white-space: nowrap; }
 .mk-rivals .mk-main td { border-bottom: 0; }
+.mk-rivals .mk-stars { display: flex; align-items: center; gap: 6px; }
 .mk-rivals .mk-sub td { white-space: normal; padding-top: 0; }
 .mk-rivals .mk-sub .mkt-row { padding: 2px 0; border-top: 0; }
 .mk-rivals td .pill { margin-left: 8px; }

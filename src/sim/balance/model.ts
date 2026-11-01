@@ -31,7 +31,7 @@ import { BOT_SPEED } from "../47-staff/staff";
 import { botOdds, BOT_RIGHT, costPerTicket, type ChadKind } from "../47-staff/chad";
 import { marketPrice, marketSetup, type Spec } from "../10-catalog/products";
 import { EMAIL_SHARE } from "../30-market/orders";
-import { driftRival, seedRivals, TEMPLATES, type Rival } from "../30-market/rivals";
+import { rollRivals, seedRivals, sellsIn, split, TEMPLATES, type Rival } from "../30-market/rivals";
 import { hourOf } from "../00-core/time";
 import { CHARGEBACK_FEE, fraudShare, TRANSFER_FACTOR } from "../45-billing/fraud";
 import { factorFor, REGISTRARS, tierFor } from "../10-catalog/registrars";
@@ -189,7 +189,15 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     const yf = 2005 + month / 12;
     const gen = generationAt(year);
     // The rivals drift as in the game (30-market/rivals.ts); the game rolls its first month in February 2005.
-    if (month > 0) field = field.map((r, i) => driftRival(r, i, seed, hourOf(new Date(Date.UTC(2005, month, 1)))).rival);
+    // The rivals' month as in the game (30-market/rivals.ts), with each city's buyers split among the rivals alone.
+    if (month > 0) {
+      const hour = hourOf(new Date(Date.UTC(2005, month, 1))), splits = new Map<string, Map<string, number>>();
+      const won = (r: Rival, city: string) => {
+        if (!splits.has(city)) splits.set(city, split(field, city, hour));
+        return splits.get(city)!.get(r.id) ?? 0;
+      };
+      field = rollRivals(field, seed, hour, won).list;
+    }
 
     // Scores (Customer choice).
     const vpsServers = servers.length;
@@ -206,16 +214,16 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     const U = (p: Profile, pr: Product, locPenalty: number) =>
       p.wP * (P[pr] - locPenalty) + p.wR * R[pr] + p.wC * C - p.lambda * 100 * (bot.priceFactor - 1);
     // ponytail: the cohort model keeps the four archetypes in every segment; specialists and product lines live in the real market (30-market).
-    const rivals = (p: Profile, _pr: Product) => field.filter((c) => c.priceFactor <= p.cap && !c.targets);
+    const rivals = (p: Profile, _pr: Product, city = CITY_ORDER[0].name) => field.filter((c) => c.closed === null && c.priceFactor <= p.cap && !c.targets && sellsIn(c, city));
     // The model's price term is calibrated four times the game's; a rival's price cuts since 2005 count at the game's weight.
     const rivalU = (p: Profile, c: Rival) => {
       const from = TEMPLATES[c.template].priceFactor;
       return p.wP * c.P + p.wR * c.R + p.wC * c.C - p.lambda * 100 * (from - 1) - PRICE_WEIGHT * p.lambda * 100 * (c.priceFactor - from);
     };
     const best = (p: Profile, pr: Product) => Math.max(...rivals(p, pr).map((c) => rivalU(p, c)));
-    const share = (p: Profile, pr: Product) => {
+    const share = (p: Profile, pr: Product, city: string) => {
       const you = Math.exp(U(p, pr, 0) / CHOICE_TAU);
-      const others = rivals(p, pr).reduce((a, c) => a + Math.exp(rivalU(p, c) / CHOICE_TAU), 0);
+      const others = rivals(p, pr, city).reduce((a, c) => a + Math.exp(rivalU(p, c) / CHOICE_TAU), 0);
       return you / (you + others);
     };
 
@@ -242,7 +250,7 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
         book_("organic", organic); book_("referrals", referrals); book_("paid", paid); book_("website", site); book_("leads", leads); book_("cap", cap);
         book_("city" + c, leads);
         PRODUCTS.forEach((pr, k) => {
-          const n = Math.round(leads * wants(p, pr)), won = binomial(rng, n, share(p, pr));
+          const n = Math.round(leads * wants(p, pr)), won = binomial(rng, n, share(p, pr, CITY_ORDER[c].name));
           newCustomers[i][k] += won;
           book_("asked", n); book_("won", won);
         });

@@ -137,6 +137,7 @@ export default {
   "misc1.market.customers": () => "Clients",
   "misc1.market.outage": () => "Panne",
   "misc1.market.shareNew": () => "Part des nouveaux clients",
+  "misc1.market.reviews": () => "Avis",
   "misc1.ipmi.power": () => "Alimentation",
   "misc1.ipmi.storage": () => "Stockage",
   "misc1.ipmi.sensors": () => "Capteurs",

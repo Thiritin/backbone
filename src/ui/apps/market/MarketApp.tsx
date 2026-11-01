@@ -12,7 +12,8 @@ import { PROFILE_IDS } from "../../../sim/80-business/marketing";
 import { buyStudy } from "../../../sim/90-actions/market";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
-import { AUDIENCE } from "../marketing/MarketingApp";
+import { AUDIENCE, Stars } from "../marketing/MarketingApp";
+import { reviewCount, rivalScore } from "../../../sim/30-market/rivals";
 import { monthYear, patience, PRODUCT } from "../support/labels";
 import "../shop/shop.css";
 import "../billing/billing.css";
@@ -204,7 +205,7 @@ function ShareChart({ city }: { city: string }) {
   const log = game.shareLog, ci = CITIES.findIndex((c) => c.name === city);
   if (log.length < 2) return <div className="sup-none">{t("misc.noHistoryYet")}</div>;
   const hosts = [{ id: "you", name: t("misc1.market.you"), at: (i: number) => log[i].you[ci] ?? 0 },
-    ...game.competitors.map((r) => ({ id: r.id, name: r.name, at: (i: number) => log[i].rivals[r.id]?.[ci] ?? 0 }))];
+    ...game.competitors.map((r) => ({ id: r.id, name: r.name, at: (i: number) => log[i].rivals[r.id]?.[ci] ?? 0 }))].filter((h, k) => k === 0 || log.some((_, i) => h.at(i) > 0));
   const total = (i: number) => Math.max(1e-9, hosts.reduce((n, h) => n + h.at(i), 0));
   const x = (i: number) => PAD.l + (i / (log.length - 1)) * (W - PAD.l - PAD.r);
   const y = (v: number) => PAD.t + (1 - v) * (H - PAD.t - PAD.b);
@@ -255,11 +256,11 @@ function Competitors() {
         <thead>
           <tr>
             <th>{t("misc1.market.competitor")}</th><th className="mkt-right">{t("misc1.market.performance")}</th><th className="mkt-right">{t("misc1.market.reliability")}</th>
-            <th className="mkt-right">{t("misc1.market.convenience")}</th><th>{t("misc1.market.price")}</th><th className="mkt-right">{t("misc1.market.customers")}</th>
+            <th className="mkt-right">{t("misc1.market.convenience")}</th><th>{t("misc1.market.price")}</th><th className="mkt-right">{t("misc1.market.customers")}</th><th>{t("misc1.market.reviews")}</th>
           </tr>
         </thead>
         <tbody>
-          {openRivals(game).map((c) => {
+          {openRivals(game, city).map((c) => {
             const diff = Math.round((c.priceFactor - 1) * 100);
             return (
               <Fragment key={c.id}>
@@ -270,9 +271,10 @@ function Competitors() {
                 <td className="num">{Math.round(c.C)}</td>
                 <td>{diff < 0 ? t("misc1.market.under", { n: -diff }) : t("misc1.market.over", { n: diff })}</td>
                 <td className="num">{(c.customers[city] ?? 0).toLocaleString(LOCALE)}</td>
+                <td><div className="mk-stars"><Stars n={rivalScore(c)} /><span className="num">{rivalScore(c).toLocaleString(LOCALE, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} ({reviewCount(c).toLocaleString(LOCALE)})</span></div></td>
               </tr>
               <tr className="mk-sub">
-                <td colSpan={6}>
+                <td colSpan={7}>
                   <div className="mkt-row"><span className="mkt-label">{t("misc1.market.sells")}</span><div className="mkt-chips">{c.sells.map((p) => <span key={p} className="mk-tag">{PRODUCT[p]}</span>)}</div></div>
                   <div className="mkt-row"><span className="mkt-label">{t("misc1.market.sellsTo")}</span><div className="mkt-chips">{segmentsOf(c).map((p) => <span key={p} className="mk-tag">{AUDIENCE[p]}</span>)}</div></div>
                 </td>
