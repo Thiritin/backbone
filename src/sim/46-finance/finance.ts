@@ -1,11 +1,10 @@
-import { dateOf, hourOf, isMonthStart, yearOf } from "../00-core/time";
+import { dateOf, hourOf } from "../00-core/time";
 import { TAX_RATE } from "../10-catalog/economy";
 import { cents, loanAvailable } from "../45-billing/billing";
 import { payOf } from "../47-staff/staff";
 import type { GameState, LedgerEntry } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 
-export const TAX_MONTH = 3;
 export const INSOLVENT_DAYS = 30;
 
 export const yearStart = (year: number): number => hourOf(new Date(Date.UTC(year, 0, 1)));
@@ -88,33 +87,11 @@ export function taxFor(s: GameState, year: number): { profit: number; tax: numbe
   return base > 0 ? { profit, tax: cents(base * TAX_RATE), carry: 0 } : { profit, tax: 0, carry: cents(-base) };
 }
 
-// The next April's tax: last year's until it is paid, then the running year's so far.
-export function nextTax(s: GameState): { year: number; dueAt: number; profit: number; tax: number; carry: number } {
-  const year = yearOf(s.hour) - (dateOf(s.hour).getUTCMonth() < TAX_MONTH ? 1 : 0);
-  return { year, dueAt: hourOf(new Date(Date.UTC(year + 1, TAX_MONTH, 1))), ...taxFor(s, year) };
-}
-
-const book = (s: GameState, category: string, key: string, params: LedgerEntry["params"], amount: number) => {
-  s.cash = cents(s.cash + amount);
-  s.ledger = [...s.ledger, { hour: s.hour, category, key, params, amount }];
-};
-
 // The bank still lends enough to bring cash back to zero. Checked once a day after the 30 days.
 const rescuable = (s: GameState): boolean => s.hour >= s.loansBlockedUntil && loanAvailable(s) >= -s.cash;
 
 export function financeTick(s: GameState): SimEvent[] {
   const events: SimEvent[] = [];
-  if (isMonthStart(s.hour)) {
-    if (dateOf(s.hour).getUTCMonth() === TAX_MONTH) {
-      const year = yearOf(s.hour) - 1;
-      const { profit, tax, carry } = taxFor(s, year);
-      s.taxLoss = carry;
-      if (tax > 0) {
-        book(s, "tax", "ledger.tax", { year }, -tax);
-        events.push({ app: "Books", key: "event.tax", params: { year, tax, profit } });
-      } else if (profit < 0) events.push({ app: "Books", key: "event.taxLoss", params: { year, carry } });
-    }
-  }
   // The overdraft keeps the company solvent down to its limit.
   if (s.cash >= -(s.bank?.overdraft ?? 0)) s.brokeSince = null;
   else if (s.brokeSince === null) {

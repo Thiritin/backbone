@@ -19,6 +19,7 @@ const PERIOD: Record<string, string> = {
   year: "files no advance VAT returns and settles the VAT with the yearly return",
   none: "charges no VAT and files no advance VAT returns",
 };
+const TAXNAME: Record<string, string> = {"sole": "income tax", "partnership": "income tax", "limited": "corporate tax"};
 
 // The tax office's letters and DOHLE's answers, the tax bookings and the filing errors.
 export const TAX_EN: Record<string, (p: Params) => string> = {
@@ -58,4 +59,15 @@ export const TAX_EN: Record<string, (p: Params) => string> = {
   "error.dohleMail": () => "Enter the company's email address.",
   "error.dohleNoCode": () => "The activation code has not arrived yet.",
   "error.dohleCode": () => "The activation ID or code is wrong.",
+  "letter.taxReminder.subject": (p) => `Tax return ${p.year}`,
+  "letter.taxReminder.body": (p) => `Tax number ${p.taxNo}. We remind you that the tax return of ${p.name} for ${p.year} is due on ${day(p.deadline)}. Please file it on DOHLE.`,
+  "letter.taxEstimate.subject": (p) => `Estimated tax assessment ${p.year}`,
+  "letter.taxEstimate.body": (p) => `Tax number ${p.taxNo}. The tax return of ${p.name} for ${p.year} has not been filed, so we have estimated the tax at ${euroCents(Number(p.amount))}. Filing the return by the end of next year replaces this estimate. ${pay(p)}`,
+  "letter.taxAssessment.subject": (p) => `Tax assessment ${p.year}`,
+  "letter.taxAssessment.body": (p) => `Tax number ${p.taxNo}. We assess the ${TAXNAME[p.form] ?? TAXNAME.sole} of ${p.name} for ${p.year} on a taxable profit of ${euroCents(Number(p.profit))} at ${euroCents(Number(p.tax))}.${Number(p.carry) > 0 ? ` A loss of ${euroCents(Number(p.carry))} carries forward to the next year.` : ""}${Number(p.fee) > 0 ? ` The late filing fee for ${p.months} months is ${euroCents(Number(p.fee))}.` : ""}${Number(p.credit) > 0 ? ` Already paid on our estimate: ${euroCents(Number(p.credit))}.` : ""} ${p.refund === undefined ? pay(p) : Number(p.refund) > 0 ? `We refund ${euroCents(Number(p.refund))} to your account.` : "No payment is due."}`,
+  "ledger.vatYear": (p) => `Yearly VAT return ${p.year}`,
+  "ledger.taxLate": (p) => `Late filing fee ${p.year}`,
+  "ledger.taxCredit": (p) => `Tax estimate credited ${p.year}`,
+  "ledger.taxEstimate": (p) => `Estimated tax ${p.year}`,
+  "error.taxYearClosed": () => "The estimate for this year is final.",
 };

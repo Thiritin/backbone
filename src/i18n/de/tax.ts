@@ -5,6 +5,7 @@ import { day, period } from "../tax";
 type Params = Record<string, string | number>;
 const pay = (p: Params) => `Bitte überweisen Sie ${euroCents(Number(p.amount))} bis zum ${day(p.due)} auf ${p.iban ? `IBAN ${p.iban}` : `Konto ${p.account}, BLZ ${p.code}`} mit dem Verwendungszweck ${p.number}.`;
 const PERIOD: Record<string, string> = {"month": "gibt die Umsatzsteuer-Voranmeldung monatlich ab, jeweils bis zum 10. des Folgemonats", "quarter": "gibt die Umsatzsteuer-Voranmeldung vierteljährlich ab, jeweils bis zum 10. des Monats nach dem Quartal", "year": "gibt keine Umsatzsteuer-Voranmeldungen mehr ab und erklärt die Umsatzsteuer mit der Jahreserklärung", "none": "weist keine Umsatzsteuer aus und gibt keine Umsatzsteuer-Voranmeldungen ab"};
+const TAXNAME: Record<string, string> = {"sole": "Einkommensteuer", "partnership": "Einkommensteuer", "limited": "Körperschaftsteuer"};
 
 export default {
   "letter.taxQuestionnaire.subject": () => "Fragebogen zur steuerlichen Erfassung",
@@ -40,4 +41,15 @@ export default {
   "error.dohleMail": () => "Geben Sie die E-Mail-Adresse des Unternehmens ein.",
   "error.dohleNoCode": () => "Der Aktivierungscode ist noch nicht angekommen.",
   "error.dohleCode": () => "Aktivierungs-ID oder Aktivierungscode ist falsch.",
+  "letter.taxReminder.subject": (p) => `Steuererklärung ${p.year}`,
+  "letter.taxReminder.body": (p) => `Steuernummer ${p.taxNo}. Wir erinnern daran, dass die Steuererklärung von ${p.name} für ${p.year} bis zum ${day(p.deadline)} abzugeben ist. Bitte übermitteln Sie sie über DOHLE.`,
+  "letter.taxEstimate.subject": (p) => `Steuerbescheid ${p.year} aufgrund einer Schätzung`,
+  "letter.taxEstimate.body": (p) => `Steuernummer ${p.taxNo}. Die Steuererklärung von ${p.name} für ${p.year} liegt uns nicht vor. Wir haben die Steuer daher auf ${euroCents(Number(p.amount))} geschätzt. Geben Sie die Erklärung bis zum Ende des nächsten Jahres ab, tritt sie an die Stelle der Schätzung. ${pay(p)}`,
+  "letter.taxAssessment.subject": (p) => `Steuerbescheid ${p.year}`,
+  "letter.taxAssessment.body": (p) => `Steuernummer ${p.taxNo}. Die ${TAXNAME[p.form] ?? TAXNAME.sole} von ${p.name} für ${p.year} wird bei einem zu versteuernden Gewinn von ${euroCents(Number(p.profit))} auf ${euroCents(Number(p.tax))} festgesetzt.${Number(p.carry) > 0 ? ` Ein Verlust von ${euroCents(Number(p.carry))} wird in das Folgejahr vorgetragen.` : ""}${Number(p.fee) > 0 ? ` Der Verspätungszuschlag für ${p.months} Monate beträgt ${euroCents(Number(p.fee))}.` : ""}${Number(p.credit) > 0 ? ` Auf unsere Schätzung bereits gezahlt: ${euroCents(Number(p.credit))}.` : ""} ${p.refund === undefined ? pay(p) : Number(p.refund) > 0 ? `Wir erstatten ${euroCents(Number(p.refund))} auf Ihr Konto.` : "Es ist keine Zahlung fällig."}`,
+  "ledger.vatYear": (p) => `Umsatzsteuer-Jahreserklärung ${p.year}`,
+  "ledger.taxLate": (p) => `Verspätungszuschlag ${p.year}`,
+  "ledger.taxCredit": (p) => `Anrechnung der Schätzung ${p.year}`,
+  "ledger.taxEstimate": (p) => `Geschätzte Steuer ${p.year}`,
+  "error.taxYearClosed": () => "Die Schätzung für dieses Jahr ist bestandskräftig.",
 } satisfies Dict;

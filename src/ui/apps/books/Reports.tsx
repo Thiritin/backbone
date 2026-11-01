@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { euro, euroCents } from "../../../sim/00-core/money";
 import { dateOf } from "../../../sim/00-core/time";
-import { cashFlow, monthKey, monthlyStats, monthStartOf, nextTax, profitBetween, profitOf, REVENUE, runwayMonths, type MonthFlow } from "../../../sim/46-finance/finance";
+import { cashFlow, monthKey, monthlyStats, monthStartOf, profitBetween, profitOf, REVENUE, runwayMonths, type MonthFlow } from "../../../sim/46-finance/finance";
 import type { GameState } from "../../../sim/50-state";
 import { currentVendor, hasFeature } from "../../../sim/80-business/bookkeeping";
 import { sells } from "../../../sim/10-catalog/bookkeeping";
@@ -258,45 +258,6 @@ function CashChart({ flows }: { flows: MonthFlow[] }) {
         </svg>
       </div>
     </figure>
-  );
-}
-
-export function TaxTab() {
-  return <Tax game={useBooks()} />;
-}
-
-function Tax({ game }: { game: GameState }) {
-  const tax = nextTax(game);
-  const paid = game.ledger.filter((e) => e.category === "tax").at(-1);
-  return (
-    <div className="fin-scroll">
-      <h3 className="fin-h">{t("misc.corporateTax")}</h3>
-      <div className="shop-grid fin-grid-cards">
-        <div className="shop-card">
-          <div className="shop-name">
-            <strong>{t("misc.taxFor", { year: tax.year })}</strong>
-            <span>{t("misc.dueOn", { date: formatDay(tax.dueAt) })}</span>
-          </div>
-          <dl className="shop-specs">
-            <div><dt>{t("misc.profitIn", { month: tax.year })}</dt><dd className={`num${tax.profit < 0 ? " fin-neg" : ""}`}>{euroCents(tax.profit)}</dd></div>
-            <div><dt>{t("misc.lossesCarried")}</dt><dd className="num">{euroCents(game.taxLoss)}</dd></div>
-            <div><dt>{t("misc.taxRate")}</dt><dd className="num">30%</dd></div>
-            <div><dt>{t("misc.estimatedTax")}</dt><dd className="num">{euroCents(tax.tax)}</dd></div>
-          </dl>
-        </div>
-        {paid && (
-          <div className="shop-card">
-            <div className="shop-name">
-              <strong>{t("misc.taxFor", { year: paid.params.year })}</strong>
-              <span>{t("misc.paidOn", { date: formatDay(paid.hour) })}</span>
-            </div>
-            <dl className="shop-specs">
-              <div><dt>{t("misc.amount")}</dt><dd className="num">{euroCents(-paid.amount)}</dd></div>
-            </dl>
-          </div>
-        )}
-      </div>
-    </div>
   );
 }
 
