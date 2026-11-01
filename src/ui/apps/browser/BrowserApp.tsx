@@ -193,6 +193,14 @@ export function BrowserApp() {
     setTabs([...tabs, { id, history: [to], at: 0, nav: 0 }]);
     setActive(id);
   };
+  const [drag, setDrag] = useState<{ id: number; over: number } | null>(null);
+  const moveTab = (id: number, before: number) => {
+    const from = tabs.findIndex((x) => x.id === id), to = tabs.findIndex((x) => x.id === before);
+    if (from < 0 || to < 0 || from === to) return;
+    const rest = tabs.filter((x) => x.id !== id);
+    rest.splice(rest.findIndex((x) => x.id === before) + (from < to ? 1 : 0), 0, tabs[from]);
+    setTabs(rest);
+  };
   const keep = (rest: Tab[]) => {
     if (!rest.length) return win.close();
     if (rest.length === tabs.length) return;
@@ -229,7 +237,11 @@ export function BrowserApp() {
         {tabs.map((x, i) => {
           const rx = resolve(game, x.history[x.at]);
           return (
-            <div key={x.id} role="tab" aria-selected={x.id === tab.id} className="br-tab" tabIndex={0} onClick={() => setActive(x.id)} onContextMenu={menuOn(() => tabMenu(i))}
+            <div key={x.id} role="tab" aria-selected={x.id === tab.id} className={`br-tab${drag && drag.over === x.id && drag.id !== x.id ? " drop" : ""}`} tabIndex={0} onClick={() => setActive(x.id)} onContextMenu={menuOn(() => tabMenu(i))}
+              draggable onDragStart={(e) => { e.dataTransfer.effectAllowed = "move"; setDrag({ id: x.id, over: x.id }); }}
+              onDragOver={(e) => { if (!drag) return; e.preventDefault(); if (drag.over !== x.id) setDrag({ ...drag, over: x.id }); }}
+              onDrop={(e) => { e.preventDefault(); if (drag) moveTab(drag.id, x.id); setDrag(null); }}
+              onDragEnd={() => setDrag(null)}
               onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setActive(x.id)}>
               <Favicon game={game} r={rx} />
               <span className="br-tab-title">{titleOf(game, rx)}</span>

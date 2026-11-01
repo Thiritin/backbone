@@ -85,6 +85,10 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - The router now sits in the rack and hands out every address by DHCP, and its Fritz!OZ page at fritz.bocks lists your devices, fixes addresses and shares the web port with the one server that hosts websites on a home line.
 - Switches now come managed or unmanaged, and managed switches have VLANs, a saved configuration and their own web page at the address the router gives them.
 
+## 2026-11-01
+
+- Browser tabs can be dragged left or right to reorder them.
+
 ## 2026-10-31
 
 - MinnIO keeps real buckets that you set to private, read only or public, and customers sometimes ask you to open one.
