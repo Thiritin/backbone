@@ -3,6 +3,7 @@
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
 ## 2026-11-01
+- Leads now write in about products you do not sell yet, and a switch on the website settings stops those requests.
 - Quote and invoice previews in Books keep their margins and text size in proportion to the page at any window size.
 - An upgrade request now shows each resource going from old to new with the price field in the same list, and asks for a server only when the current one has no room.
 - The Bank tab in Books lists your booked transfers, and Undo takes back a payment you matched to the wrong invoice so you can book it again.
