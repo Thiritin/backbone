@@ -3,18 +3,19 @@
 import { t } from "../../i18n/en";
 import { hashRng, rand } from "../00-core/rng";
 import { dateOf } from "../00-core/time";
-import { BMC_NAME } from "../10-catalog/hardware";
+import { BMC_NAME, modelById } from "../10-catalog/hardware";
 import { consoleScreen, consoleVia, osUp } from "./oob";
 import { JITTER } from "../10-catalog/network";
 import { fqdn } from "../30-customers/domains";
-import type { GameState } from "../50-state";
+import type { Device, GameState } from "../50-state";
 import type { Call } from "../90-actions/index";
 import { recover } from "../90-actions/vms";
 import { publicV4, publicV6, machineAddress } from "./addresses";
-import { addressOf } from "./lan";
+import { addressOf, deskReaches, FRITZ_HOST, leasesOf, macOf, registersNames } from "./lan";
+import { netCommand } from "./netshell";
 import { isOwnVm, serverOf, vmOf, workloadOnline, type Workload } from "./cluster";
 import { latency } from "./network";
-import { hopDown, pathTo, powered, working, type Hop } from "./status";
+import { hopDown, locationOf, pathTo, powered, working, type Hop } from "./status";
 import { mountedRouter } from "./routers";
 import { nodeUsage, workloadUse } from "./usage";
 import { RECOVER_HOURS } from "./power";
@@ -58,14 +59,25 @@ const targetIp = (s: GameState, id: string): string => {
   return (own && !own.shared ? own.ip : machineAddress(s, id)) ?? "0.0.0.0";
 };
 
+// The name the desk's resolver knows a server by. A basement server's short name resolves only through a Fritz!Bocks that
+// registers the names its DHCP clients send, as node001 and node001.fritz.bocks; a datacenter's is resolved as before.
+function localName(s: GameState, d: Device, key: string): string | null {
+  const h = d.hostname!, local = `${h}.${FRITZ_HOST}`;
+  if (key !== h && key !== local) return null;
+  if (locationOf(s, d)?.dc) return key === h ? fqdn(s, h) : null;
+  const r = s.devices.find((x) => x.id === deskRouter(s)), mac = macOf(s, d.id);
+  return r && registersNames(modelById(r.model)) && leasesOf(s, r.id).some((l) => l.mac === mac) ? local : null;
+}
+
 function resolveTarget(s: GameState, raw: string): Target | null {
   const key = raw.toLowerCase().replace(/\.$/, "");
   const named = (h: string | undefined) => !!h && (h === key || fqdn(s, h) === key);
   const isIp = /^\d{1,3}(\.\d{1,3}){3}$/.test(key);
   for (const d of s.devices) {
     if (d.hostname === undefined) continue;
-    if (named(d.hostname) || (isIp && (machineAddress(s, d.id) === key || (publicV4(s, d.id)?.ip === key && !publicV4(s, d.id)!.shared)))) {
-      return { label: isIp ? key : fqdn(s, d.hostname), ip: targetIp(s, d.id), kind: "server", deviceId: d.id, name: d.hostname };
+    const label = fqdn(s, d.hostname) === key ? key : localName(s, d, key);
+    if (label || (isIp && (machineAddress(s, d.id) === key || (publicV4(s, d.id)?.ip === key && !publicV4(s, d.id)!.shared)))) {
+      return { label: label ?? key, ip: targetIp(s, d.id), kind: "server", deviceId: d.id, name: d.hostname };
     }
     if (isIp && addressOf(s, d.id, "bmc") === key) return { label: key, ip: key, kind: "bmc", deviceId: d.id, name: d.hostname };
   }
@@ -84,11 +96,12 @@ function answers(s: GameState, tg: Target): boolean {
   return tg.kind === "workload" ? workloadOnline(s, tg.workload!) : working(s, tg.deviceId);
 }
 
-// The route to a target that works, or null when the desk cannot reach it or it does not answer.
+// The route to a target that works, or null when the desk cannot reach it or it does not answer. The desk reaches a
+// network only through its router (lan.ts, deskReaches): no address, a wrong gateway or a closed VPN times out.
 function reach(s: GameState, tg: Target): Hop[] | null {
   const desk = deskRouter(s);
   const hops = desk ? pathTo(s, desk, tg.deviceId) : null;
-  return hops && answers(s, tg) ? hops : null;
+  return hops && answers(s, tg) && deskReaches(s, tg.deviceId, tg.kind === "bmc" ? "bmc" : "eth") ? hops : null;
 }
 
 // The same line of a command run twice differs through nonce, so repeated pings do not repeat themselves.
@@ -164,7 +177,7 @@ function ssh(s: GameState, args: string[]): CommandResult {
   const tg = resolveTarget(s, arg);
   if (!tg) return { output: lines("term.ssh.resolve", { host: arg }) };
   const timeout = { output: lines("term.ssh.timeout", { host: arg }) };
-  if (tg.kind === "bmc") return pathTo(s, deskRouter(s) ?? "", tg.deviceId) && answers(s, tg) ? { output: lines("term.ssh.refused", { host: arg }) } : timeout;
+  if (tg.kind === "bmc") return reach(s, tg) ? { output: lines("term.ssh.refused", { host: arg }) } : timeout;
   if (!reach(s, tg)) return timeout;
   if (tg.kind === "workload" && !isOwnVm(tg.workload!)) return { output: lines("term.ssh.denied", { host: tg.name }) };
   // No sshd on Windoors; a machine whose OS is not up does not answer at all. One of the player's own VMs is a machine too.
@@ -310,7 +323,7 @@ export function recoveryReport(s: GameState, watch: Watch): string[] | null {
 
 const SHARED = [...FILE_COMMANDS, "apt", "apt-get", "help", "clear"];
 const DESK_COMMANDS = ["ssh", "ping", "traceroute", "host", "console", "sudo", ...SHARED];
-const REMOTE_COMMANDS = ["uptime", "df", "free", "top", "shutdown", "reboot", "recover", "exit", "dpkg", "curl", "wget", "sh", ...SHARED];
+const REMOTE_COMMANDS = ["uptime", "df", "free", "top", "shutdown", "reboot", "recover", "exit", "dpkg", "curl", "wget", "sh", "ip", "ifconfig", "dhclient", "ifup", "ifdown", "systemctl", "service", ...SHARED];
 const PATH_COMMANDS = ["cd", "ls", "cat", "edit", "touch", "mkdir", "rm", "rmdir", "mv", "cp"];
 
 // Tab on a line: the first word completes to a command, a word after a file command to a path, other words to a host
@@ -353,6 +366,8 @@ function runWords(s: GameState, session: Session | null, cwd: string, words: str
     if (!osUp(s, session.deviceId) || (server && !working(s, session.deviceId))) return { output: lines("term.ssh.lost", { host: session.host }), session: null };
     if (cmd === "exit" || (server && ["uptime", "df", "free", "top", "shutdown", "reboot", "recover"].includes(cmd))) return remote(s, session, cmd, args);
     if (cmd === "dpkg") return dpkg(s, session.deviceId, args);
+    const net = netCommand(s, session.deviceId, cmd, args);
+    if (net) return net;
     if (cmd === "curl" || cmd === "wget") return { output: lines(`term.${cmd}.resolve`, { host: urlHost(args) }), failed: true };
     if (cmd === "sh") return { output: lines("term.sh.open", { file: args[0] ?? "" }), failed: true };
   } else if (cmd === "ssh") return ssh(s, args);

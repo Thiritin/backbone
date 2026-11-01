@@ -42,5 +42,7 @@ export const ADDRESSES_EN: Record<string, (p: Params) => string> = {
   "error.badAddress": () => "Enter a private IPv4 address.",
   "error.portShared": () => "Port 80 is already shared with another device.",
   "error.noAddress": () => "This device has no address on the router's network.",
+  "error.badIp": () => "The IP address is not valid.",
+  "error.notServerNet": () => "Only servers have a network setting.",
   "error.notOfficeRouter": () => "Only a small-office router replaces the basement router.",
 };
