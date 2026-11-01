@@ -26,4 +26,13 @@ export default {
   "books-editions.noSeat": () => `Kein Platz`,
   "books-editions.offline": () => `Buchhaltung offline`,
   "books-editions.offlineTitle": () => `Die Seite kann nicht angezeigt werden`,
+  "books.tab.overview": () => `Übersicht`,
+  "books.tab.statistics": () => `Statistik`,
+  "books.tab.tax": () => `Steuer`,
+  "books.tab.statement": () => `Kontoauszug`,
+  "books-editions.customersAndRevenue": () => `Kunden und Umsatz`,
+  "books-editions.customers": () => `Kunden`,
+  "books-editions.joined": () => `Neu`,
+  "books-editions.churned": () => `Verloren`,
+  "books-editions.lostSales": () => `Verlorene Verkäufe`,
 } satisfies Dict;

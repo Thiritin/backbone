@@ -18,6 +18,7 @@ import { QuotesTab } from "./QuotesTab";
 import { NEW } from "./NewCustomer";
 import { PayablesTab } from "./PayablesTab";
 import { RemindersTab } from "./RemindersTab";
+import { OverviewTab, StatementTab, StatisticsTab, TaxTab } from "./Reports";
 import { Register } from "./Register";
 import { useBooks } from "./view";
 import "../billing/billing.css";
@@ -28,13 +29,17 @@ export const unmatched = (s: GameState) => s.transfers.filter((x) => x.matchedAt
 export const late = (s: GameState) => s.invoices.filter((i) => i.status === "overdue" && synced(i)).length;
 
 // Each tab: id, label key, dock count and body. The selection a tab opens on comes from the focus id.
-const TABS: { id: string; count: (s: GameState) => number; body: ComponentType<{ focus: string | null }>; feature?: Feature }[] = [
+const TABS: { id: string; count: (s: GameState) => number; body: ComponentType<{ focus: string | null }>; features?: Feature[] }[] = [
+  { id: "overview", count: () => 0, body: OverviewTab },
   { id: "customers", count: (s) => s.customers.filter((c) => c.churnedAt === null && !c.sponsor).length, body: CustomersTab },
-  { id: "quotes", count: (s) => s.quotes.filter((q) => q.status === "accepted").length, body: QuotesTab, feature: "quotes" },
+  { id: "quotes", count: (s) => s.quotes.filter((q) => q.status === "accepted").length, body: QuotesTab, features: ["quotes"] },
   { id: "invoices", count: drafts, body: InvoicesTab },
   { id: "bank", count: unmatched, body: BankTab },
   { id: "reminders", count: late, body: RemindersTab },
   { id: "payables", count: (s) => s.payables.filter((p) => overdue(s, p)).length, body: PayablesTab },
+  { id: "statistics", count: () => 0, body: StatisticsTab, features: ["reports", "statistics"] },
+  { id: "tax", count: () => 0, body: TaxTab, features: ["tax"] },
+  { id: "statement", count: () => 0, body: StatementTab },
 ];
 
 export function BooksApp() {
@@ -42,7 +47,7 @@ export function BooksApp() {
   const waiting = useStore((s) => unsynced(s.game));
   // Before Shop link, a shop system hands its records over only on import.
   const importing = !!game.shop.variant && game.shop.variant !== "handRolled" && !hasModule(game, "shop-link");
-  const [tab, setTab] = useSessionState("books.tab", "invoices");
+  const [tab, setTab] = useSessionState("books.tab", "overview");
   const [focus, setFocus] = useSessionState<string | null>("books.focus", null);
   const [register, setRegister] = useSessionState("books.register", false);
   useFocus("Books", (f) => {
@@ -55,9 +60,9 @@ export function BooksApp() {
   });
   const v = currentVendor(game), skin = v?.skin;
   // An entry the edition lacks opens the vendor's editions page; one the vendor never sells is missing.
-  const shown = TABS.filter((x) => !x.feature || (v && sells(v, x.feature)));
-  const locked = (x: (typeof TABS)[number]) => !!x.feature && !hasFeature(game, x.feature);
-  const current = shown.find((x) => x.id === tab && !locked(x)) ?? shown.find((x) => x.id === "invoices")!;
+  const shown = TABS.filter((x) => !x.features || x.features.some((f) => v && sells(v, f)));
+  const locked = (x: (typeof TABS)[number]) => !!x.features && !x.features.some((f) => hasFeature(game, f));
+  const current = shown.find((x) => x.id === tab && !locked(x)) ?? shown[0];
   const Body = current.body;
   const pick = (x: (typeof TABS)[number]) => {
     if (locked(x) && v) return openApp("Browser", { kind: "url", id: booksUrl(v) });

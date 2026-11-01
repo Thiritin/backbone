@@ -3,6 +3,7 @@ import { hourOf } from "../src/sim/00-core/time";
 import { BOOKS_VENDORS, booksVendor, LARGE, MEDIUM } from "../src/sim/10-catalog/bookkeeping";
 import { billingTick, owed } from "../src/sim/45-billing/billing";
 import { openAccount } from "../src/sim/46-finance/bank";
+import { cashFlow, monthlyStats } from "../src/sim/46-finance/finance";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { booksOffline, booksTick, hasFeature, seated, works } from "../src/sim/80-business/bookkeeping";
 import { staffTick } from "../src/sim/47-staff/staff";
@@ -225,5 +226,36 @@ describe("GnuCache", () => {
     expect(quoteOrder(s, r.ticketId!, 10, 0)).toMatchObject({ ok: true });
     for (let i = 0; i < 60 && !stepsDone(s, s.sales.requests.find((x) => x.id === r.id)!).quote; i++) tick(s);
     expect(stepsDone(s, s.sales.requests.find((x) => x.id === r.id)!).quote).toBe(true);
+  });
+});
+
+describe("Overview and Statistics", () => {
+  it("sum money in and out per month and count back each month's closing cash", () => {
+    const s = game();
+    s.ledger = [
+      { hour: at(2005, 1, 5), category: "payments", key: "x", params: {}, amount: 300 },
+      { hour: at(2005, 2, 5), category: "rent", key: "x", params: {}, amount: -100 },
+      { hour: at(2005, 3, 2), category: "payments", key: "x", params: {}, amount: 50 },
+      { hour: at(2005, 3, 3), category: "power", key: "x", params: {}, amount: -20 },
+    ];
+    s.cash = 1_000;
+    expect(cashFlow(s, 3)).toEqual([
+      { key: "2005-01", inflow: 300, outflow: 0, end: 1_070 },
+      { key: "2005-02", inflow: 0, outflow: 100, end: 970 },
+      { key: "2005-03", inflow: 50, outflow: 20, end: 1_000 },
+    ]);
+  });
+
+  it("count customers, new and lost ones, revenue and lost sales per month", () => {
+    const s = game();
+    const c = (id: string, since: number, churnedAt: number | null) => ({ ...s.customers[0], id, since, churnedAt, sponsor: undefined });
+    s.customers = [c("a", at(2005, 1, 2), null), c("b", at(2005, 2, 2), at(2005, 3, 1)), c("c", at(2005, 3, 4), null)] as never;
+    s.ledger = [{ hour: at(2005, 2, 9), category: "setup", key: "x", params: {}, amount: 25 }];
+    s.sales.lost = [{ hour: at(2005, 3, 5) } as never];
+    expect(monthlyStats(s, 3)).toEqual([
+      { key: "2005-01", customers: 1, joined: 1, churned: 0, revenue: 0, lost: 0 },
+      { key: "2005-02", customers: 2, joined: 1, churned: 0, revenue: 25, lost: 0 },
+      { key: "2005-03", customers: 2, joined: 1, churned: 1, revenue: 0, lost: 1 },
+    ]);
   });
 });

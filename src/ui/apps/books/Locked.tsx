@@ -6,9 +6,15 @@ import { useStore } from "../../store";
 // An edition feature's button: it runs the feature when the edition has it, opens the vendor's editions page when a larger
 // edition has it, and is missing where the vendor never sells it.
 export function Locked({ id, label }: { id: Feature; label: string }) {
-  const game = useStore((s) => s.game), act = useStore((s) => s.act), openApp = useStore((s) => s.openApp);
+  const game = useStore((s) => s.game), act = useStore((s) => s.act);
   const v = currentVendor(game);
   if (hasFeature(game, id)) return <button className="btn" onClick={() => act(runFeature, id)}>{label}</button>;
   if (!v || !sells(v, id)) return null;
-  return <button className="btn books-locked" aria-disabled="true" onClick={() => openApp("Browser", { kind: "url", id: booksUrl(v) })}>{label}</button>;
+  return <BooksLocked label={label} />;
+}
+
+// A disabled entry that opens the vendor's editions page.
+export function BooksLocked({ label }: { label: string }) {
+  const game = useStore((s) => s.game), openApp = useStore((s) => s.openApp), v = currentVendor(game);
+  return <button className="btn books-locked" aria-disabled="true" onClick={() => v && openApp("Browser", { kind: "url", id: booksUrl(v) })}>{label}</button>;
 }

@@ -26,4 +26,13 @@ export default {
   "books-editions.noSeat": () => `Sin puesto`,
   "books-editions.offline": () => `Contabilidad sin conexión`,
   "books-editions.offlineTitle": () => `No se puede mostrar esta página`,
+  "books.tab.overview": () => `Resumen`,
+  "books.tab.statistics": () => `Estadísticas`,
+  "books.tab.tax": () => `Impuestos`,
+  "books.tab.statement": () => `Extracto`,
+  "books-editions.customersAndRevenue": () => `Clientes e ingresos`,
+  "books-editions.customers": () => `Clientes`,
+  "books-editions.joined": () => `Nuevos`,
+  "books-editions.churned": () => `Perdidos`,
+  "books-editions.lostSales": () => `Ventas perdidas`,
 } satisfies Dict;

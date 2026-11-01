@@ -44,6 +44,49 @@ export function runwayMonths(s: GameState, extra = 0): number {
   return s.cash <= 0 ? 0 : burn > 0 ? s.cash / burn : Infinity;
 }
 
+export const monthKey = (hour: number): string => dateOf(hour).toISOString().slice(0, 7);
+// The last count month keys up to the current one, oldest first.
+export const lastMonths = (s: GameState, count: number): string[] => {
+  const now = dateOf(s.hour);
+  return Array.from({ length: count }, (_, i) => new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - count + 1 + i, 1)).toISOString().slice(0, 7));
+};
+
+export interface MonthFlow { key: string; inflow: number; outflow: number; end: number }
+// Money in and out per month and the balance at each month's end.
+export function cashFlow(s: GameState, count: number): MonthFlow[] {
+  const keys = lastMonths(s, count);
+  const flows = new Map(keys.map((key) => [key, { key, inflow: 0, outflow: 0, end: 0 }]));
+  for (const e of s.ledger) {
+    const f = flows.get(monthKey(e.hour));
+    if (f) { if (e.amount > 0) f.inflow += e.amount; else f.outflow -= e.amount; }
+  }
+  let end = s.cash;
+  for (const key of [...keys].reverse()) {
+    const f = flows.get(key)!;
+    f.end = end;
+    end -= f.inflow - f.outflow;
+  }
+  return keys.map((k) => flows.get(k)!);
+}
+
+export const REVENUE = ["payments", "setup", "sales"];
+export interface MonthStats { key: string; customers: number; joined: number; churned: number; revenue: number; lost: number }
+// Customers at each month's end, those who joined and left in it, the revenue booked and the sales lost.
+export function monthlyStats(s: GameState, count: number): MonthStats[] {
+  const real = s.customers.filter((c) => !c.sponsor);
+  return lastMonths(s, count).map((key) => {
+    const at = (h: number) => monthKey(h) === key, end = (h: number) => monthKey(h) <= key;
+    return {
+      key,
+      customers: real.filter((c) => end(c.since) && (c.churnedAt === null || !end(c.churnedAt))).length,
+      joined: real.filter((c) => at(c.since)).length,
+      churned: real.filter((c) => c.churnedAt !== null && at(c.churnedAt)).length,
+      revenue: cents(s.ledger.filter((e) => REVENUE.includes(e.category) && at(e.hour)).reduce((n, e) => n + e.amount, 0)),
+      lost: s.sales.lost.filter((l) => at(l.hour)).length,
+    };
+  });
+}
+
 // Tax on a year's profit after the losses carried from earlier years, and the loss carried on.
 export function taxFor(s: GameState, year: number): { profit: number; tax: number; carry: number } {
   const profit = profitBetween(s, yearStart(year), yearStart(year + 1));
