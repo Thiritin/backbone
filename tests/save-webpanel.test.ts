@@ -20,4 +20,18 @@ describe("web panel state in saves", () => {
     expect(back.webpanel.phpOf).toEqual({ svc1: "5.2" });
     expect(back.webpanel.phpBroken).toEqual({});
   });
+
+  it("fills the jail and toolkit records of a save from before them", () => {
+    const s = newGame(1);
+    s.webpanel = { ...s.webpanel, bans: { clu1: { jail: false, trusted: ["10.0.0.1"], list: [], failed: 4 } }, appBroken: { svc1: 99 } };
+    const raw = JSON.parse(serialize(s)) as { webpanel: Record<string, unknown> };
+    const full = deserialize(JSON.stringify(raw));
+    expect(full.webpanel.bans.clu1.trusted).toEqual(["10.0.0.1"]);
+    expect(full.webpanel.appBroken).toEqual({ svc1: 99 });
+    delete raw.webpanel.bans; delete raw.webpanel.appBack; delete raw.webpanel.appBroken;
+    const old = deserialize(JSON.stringify(raw));
+    expect(old.webpanel.bans).toEqual({});
+    expect(old.webpanel.appBack).toEqual({});
+    expect(old.webpanel.appBroken).toEqual({});
+  });
 });
