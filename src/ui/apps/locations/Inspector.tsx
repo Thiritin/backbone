@@ -114,9 +114,9 @@ const POWER = {
 // onHot reports the cable of the hovered or selected port, so the rack view can highlight it. rename opens the name field.
 type InspTab = "actions" | "ports" | "lease" | "psu" | "parts";
 
-export function Inspector({ game, device, side = "front", onSelect, onHot, rename = false, onRenaming, monitor = false, onUnplug, onConsole }: { game: GameState; device: Device; side?: Side; onSelect: (id: string | null) => void; onHot?: (cableId: string | null) => void; rename?: boolean; onRenaming?: () => void; monitor?: boolean; onUnplug?: () => void; onConsole?: () => void }) {
+export function Inspector({ game, device, port, side = "front", onSelect, onHot, rename = false, onRenaming, monitor = false, onUnplug, onConsole }: { game: GameState; device: Device; port?: number; side?: Side; onSelect: (id: string | null) => void; onHot?: (cableId: string | null) => void; rename?: boolean; onRenaming?: () => void; monitor?: boolean; onUnplug?: () => void; onConsole?: () => void }) {
   const act = useStore((s) => s.act);
-  const [sel, setSel] = useState<number[]>([]);
+  const [sel, setSel] = useState<number[]>(port === undefined ? [] : [port]);
   const [editing, setEditing] = useState(false);
   useEffect(() => { if (rename) { setEditing(true); onRenaming?.(); } }, [rename, onRenaming]);
   const menus = useDeviceMenu(game, onSelect, () => setEditing(true));

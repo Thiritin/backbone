@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- Ports now look like their connectors on every rear panel: RJ45 jacks, silver SFP cages and a grey, labelled DSL port set apart from the LAN ports.
+- The carrier panel shows its ports, and clicking one opens it ready to connect a cable.
 - Letters in the Post app now arrive as full A4 pages with each sender's letterhead, crest or logo, the address window, reference block and footer of an official German letter.
 - Authorities that seize servers or send legal requests now appear under their name in your chosen language.
 - Resellers now rent blocks of 20, 50 or 100 accounts on a DirectAdmen or cPanic host and fill them over the months, their customers bring abuse reports of their own, and DirectAdmen has a Reseller login and a Manage Resellers page to watch and suspend them.
