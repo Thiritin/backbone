@@ -14,6 +14,12 @@ export interface TaxState {
   returns: TaxReturn[];
   // The last year the January check ran; 0 before the first.
   checked: number;
+  // DOHLE: the activation ID and code of the open registration ("" when none) and the hour the code's letter lands; cert
+  // is the desktop document of the valid certificate.
+  dohleId: string;
+  dohleCode: string;
+  codeAt: number | null;
+  cert: string | null;
 }
 
 // A return for the hours [from, to). booked is what filing booked; late is set once the surcharge letter went out and
@@ -23,4 +29,4 @@ export interface TaxReturn {
   filedAt: number | null; booked: number; late: boolean; estimate: string | null;
 }
 
-export const newTax = (): TaxState => ({ asked: null, answered: null, expected: 0, small: false, number: "", numberAt: null, since: 0, returns: [], checked: 0 });
+export const newTax = (): TaxState => ({ asked: null, answered: null, expected: 0, small: false, number: "", numberAt: null, since: 0, returns: [], checked: 0, dohleId: "", dohleCode: "", codeAt: null, cert: null });

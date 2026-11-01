@@ -49,4 +49,13 @@ export const TAX_EN: Record<string, (p: Params) => string> = {
   "error.taxNotSmall": () => "The company does not use the small business rule.",
   "error.taxReturnFiled": () => "This return has already been filed.",
   "error.taxSmallLimit": () => "The expected revenue is above the limit of the small business rule.",
+  "ticket.mail.dohleId.subject": () => "Your DOHLE registration",
+  "ticket.mail.dohleId.text": (p) => `Thank you for registering for tax number ${p.number}. Your activation ID is ${p.id}. The activation code follows by post. Enter both on www.dohle.de/registrieren/ to receive your certificate file.`,
+  "letter.dohleCode.subject": () => "Your DOHLE activation code",
+  "letter.dohleCode.body": (p) => `For your registration with tax number ${p.number} the activation code is ${p.code}. Enter it together with the activation ID from our email on www.dohle.de/registrieren/.`,
+  "error.dohleCert": () => "The DOHLE certificate file was not found on the desktop.",
+  "error.dohleTaxNumber": () => "The tax number does not match.",
+  "error.dohleMail": () => "Enter the company's email address.",
+  "error.dohleNoCode": () => "The activation code has not arrived yet.",
+  "error.dohleCode": () => "The activation ID or code is wrong.",
 };
