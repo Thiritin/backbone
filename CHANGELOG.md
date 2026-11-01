@@ -5,6 +5,10 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-01
 
 - Clicking the clock in the top bar opens a calendar that marks the days with announcements, and clicking your cash opens Finance.
+- Shop vendors now sell payment methods for your shop, from direct debit and PayPail to Visor cards, paysavecard, Instantly and Bitcorn Pay, each with its own fee and weekly payout, and customers whose favourite method is missing may buy elsewhere.
+- Returned debits, PayPail disputes and card chargebacks now arrive in Books as negative payments that reopen their invoice once you book them, and a chargeback on a stolen card suspends the fraudster.
+- A shop system now keeps its own customers and invoices, which reach Books when you press Import from shop, and its card payments arrive as one weekly payout that lists the invoices it covers.
+- Each shop vendor sells a Shop link module on its own website that sends new shop customers and invoices to Books at once and marks shop invoices paid when you book their payment.
 - Vendor and software websites now show their logos centred and complete in every era, and the ISO download buttons line up with their release rows.
 - The back button on the marketing website page is now its normal size and shows in your language.
 - The server details page has room at its edges again, long German button labels wrap, and the disk label no longer runs into its meter.
