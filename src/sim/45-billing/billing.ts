@@ -4,6 +4,7 @@ import { dateOf, hourOf, isMonthStart, yearOf } from "../00-core/time";
 import type { Budget } from "../10-catalog/economy";
 import { hasModule } from "../10-catalog/modules";
 import { CYCLE_MONTHS } from "../10-catalog/cycles";
+import { methodById, methodFee, type MethodId } from "../10-catalog/payments";
 import { SLAS } from "../10-catalog/products";
 import type { PaymentHabit, Profile, Service } from "../30-customers/customers";
 import { bump, cancelCustomer, createTicket, profileStats } from "../40-support/tickets";
@@ -13,6 +14,7 @@ import { metrics } from "../metrics";
 import { logActivity } from "../47-staff/activity";
 import { mailDelay } from "../80-business/mail";
 import { sweepGroups } from "../60-infra/status";
+import { checkout, payeeOf, reopen } from "./payments";
 
 // A draft waits in Books until it is sent; it is not due and never pays.
 export type InvoiceStatus = "draft" | "open" | "overdue" | "paid" | "writtenOff";
@@ -51,12 +53,18 @@ export interface Invoice {
   payout?: string;
   // The shop's own record of the payment: the gateway, or a match in Books with the Shop link module.
   shopPaid?: true;
+  // The method the shop collected it by, and the return, dispute or chargeback waiting for it (or a dispute's release).
+  method?: MethodId;
+  back?: { kind: BackKind; at: number };
 }
+export type BackKind = "return" | "dispute" | "chargeback" | "release";
 // A payment in the bank account. reference and params are the purpose line as an i18n key; invoiceId is the invoice the
 // player matched it to. forInvoice is the invoice the customer meant, never shown.
 export interface Transfer { id: string; hour: number; from: string; reference: string; params: Record<string, string>; amount: number; invoiceId: string | null; matchedAt: number | null; forInvoice: string;
   // A gateway payout: the invoices it pays.
-  covers?: string[] }
+  covers?: string[];
+  // Money taken back from a paid invoice: matching it reopens the invoice; fraud marks a stolen card's chargeback.
+  back?: Exclude<BackKind, "release">; fraud?: true }
 // rate is yearly; left counts the instalments still to pay.
 export interface Loan { id: string; amount: number; rate: number; months: number; left: number; payment: number; balance: number; takenAt: number; missed: number }
 
@@ -149,7 +157,8 @@ const pick = <T>(r: Rng, xs: readonly T[]): T => xs[Math.floor(rand(r) * xs.leng
 // The customer's transfer for what is left of an invoice; only the first may carry an odd reference or amount.
 function transferFor(s: GameState, inv: Invoice): Transfer {
   const c = s.customers.find((x) => x.id === inv.customerId), a = c?.address;
-  const r = hashRng(s.seed, Number(inv.id.slice(3)) || 0, s.hour, 251), first = !inv.received;
+  // Instantly fills in the reference and amount itself.
+  const r = hashRng(s.seed, Number(inv.id.slice(3)) || 0, s.hour, 251), first = !inv.received && inv.method !== "instantly";
   const from = a?.company ?? (a ? `${a.contact[0]}. ${a.contact.split(" ").slice(1).join(" ")}` : c?.name ?? "");
   let amount = owed(inv);
   if (first && c && profileStats(c.profile).budget === "low" && chance(r, SHORT_PAY)) {
@@ -164,6 +173,7 @@ function transferFor(s: GameState, inv: Invoice): Transfer {
 // Books a transfer against an unpaid invoice. A smaller amount is a partial payment unless settle writes the difference off;
 // a larger one pays the invoice and leaves the rest as the customer's credit.
 export function bookTransfer(s: GameState, tr: Transfer, inv: Invoice, settle: boolean): void {
+  if (tr.back) return reopen(s, tr, inv);
   s.transfers = s.transfers.map((x) => (x === tr ? { ...x, invoiceId: inv.id, matchedAt: s.hour } : x));
   const rest = cents(owed(inv) - tr.amount);
   if (rest > 0 && !settle) inv.received = cents((inv.received ?? 0) + tr.amount);
@@ -391,6 +401,7 @@ export function billingTick(s: GameState): SimEvent[] {
         const tr = transferFor(s, inv);
         arrived.push(tr);
         book("payments", "ledger.transfer", { from: tr.from }, tr.amount);
+        if (inv.method === "instantly") book("fees", "ledger.paymentFees", { from: payeeOf(s, inv.method) }, -methodFee(methodById(inv.method), tr.amount));
         return { ...inv, payAt: null };
       }
       const collected = inv.status === "writtenOff";
@@ -479,6 +490,7 @@ export function billingTick(s: GameState): SimEvent[] {
     if (owner?.source === "shop") {
       Object.assign(issued[issued.length - 1], fromShop(s));
       issue(s, issued[issued.length - 1]);
+      checkout(s, issued[issued.length - 1], owner);
     }
   }
   if (changed || issued.length) s.invoices = [...invoices, ...issued];

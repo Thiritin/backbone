@@ -90,8 +90,9 @@ export function bookFor(s: GameState, tr: Transfer, inv: Invoice, settle: boolea
 
 export const monthlyRun = (s: GameState): void => s.invoices.filter((i) => i.status === "draft").forEach((inv) => sendDraft(s, inv, LEXWEAR));
 
-// The open invoice a transfer's reference names, when the amount is exactly what it owes.
+// The open invoice a transfer's reference names, when the amount is exactly what it owes; for money taken back, the paid one.
 export function referenced(s: GameState, tr: Transfer): Invoice | undefined {
+  if (tr.invoiceId === null && tr.back) return s.invoices.find((i) => i.number === tr.params.number && i.status === "paid" && synced(i));
   if (tr.invoiceId !== null || tr.reference !== "books.ref.invoice") return undefined;
   const inv = s.invoices.find((i) => i.number === tr.params.number && isUnpaid(i) && synced(i));
   return inv && owed(inv) === tr.amount ? inv : undefined;

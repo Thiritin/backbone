@@ -24,6 +24,7 @@ import { newsTick } from "../80-business/news";
 import { walkTick } from "../80-business/walk";
 import { deliverLicences, lexwearTick } from "../80-business/lexwear";
 import { payoutTick } from "../80-business/shoplink";
+import { paymentsTick } from "../45-billing/payments";
 import { salesTick } from "../30-market/sales";
 import { usedTick } from "../80-business/used";
 import { ordersTick } from "../30-market/manual";
@@ -338,6 +339,7 @@ export function tick(state: GameState): SimEvent[] {
   statsTick(state);
   events.push(...billingTick(state));
   payoutTick(state);
+  paymentsTick(state);
   events.push(...fraudTick(state));
   events.push(...lexwearTick(state));
   events.push(...ordersTick(state));

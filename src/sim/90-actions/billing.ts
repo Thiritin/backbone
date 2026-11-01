@@ -27,7 +27,8 @@ export function matchTransfer(s: GameState, transferId: string, invoiceId: strin
   const tr = s.transfers.find((x) => x.id === transferId && x.invoiceId === null);
   if (!tr) return fail("error.transferMatched");
   if (tr.covers) return fail("error.payoutImport");
-  const inv = unpaidInvoice(s, invoiceId);
+  // Money taken back books against the paid invoice it came from.
+  const inv = tr.back ? s.invoices.find((i) => i.id === invoiceId && i.status === "paid" && synced(i)) : unpaidInvoice(s, invoiceId);
   if (!inv) return fail("error.invoiceSettled");
   bookTransfer(s, tr, inv, settle);
   log(s, inv, "matchTransfer");

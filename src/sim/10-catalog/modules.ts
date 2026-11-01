@@ -13,6 +13,13 @@ export const MODULES: Module[] = [
   { id: "hbci", vendor: "lexwear", price: 79, year: 2005, trigger: null },
   // Lane shop-link: the shop and Books share customers and invoices as they are created.
   { id: "shop-link", vendor: "shop", price: 199, year: 2005, trigger: null },
+  // Lane payment-methods: each payment method but bank transfer, with its one-time setup (catalog in payments.ts).
+  { id: "debit", vendor: "shop", price: 49, year: 2005, trigger: null },
+  { id: "paypail", vendor: "shop", price: 49, year: 2005, trigger: null },
+  { id: "card", vendor: "shop", price: 199, year: 2006, trigger: null },
+  { id: "paysafe", vendor: "shop", price: 99, year: 2007, trigger: null },
+  { id: "instantly", vendor: "shop", price: 49, year: 2008, trigger: null },
+  { id: "crypto", vendor: "shop", price: 99, year: 2012, trigger: null },
 ];
 
 export const moduleById = (id: string): Module | undefined => MODULES.find((m) => m.id === id);

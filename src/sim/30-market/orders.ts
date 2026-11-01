@@ -22,6 +22,7 @@ import { addRequest, cancelShopOrder, editRequest, fulfil, loseRequest, nextSpec
 import { deployable, hasModule, moduleFor, shopStocked, takeStock } from "../80-business/shop";
 import { companyParams, variant } from "../40-support/replies";
 import { failsScreen, reviewing, rollFraud, screening } from "../45-billing/fraud";
+import { checkoutMethod, preferredMethod } from "../45-billing/payments";
 
 // Without an order, the first one comes from a friend's recommendation within this many days of the friends joining.
 export const FIRST_ORDER_DAYS = 14;
@@ -62,11 +63,13 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
   // One in three web customers already owns the domain they name.
   const owned = !lead && email && need.product === "webHosting" && rand(hashRng(s.seed, key, 229)) < 1 / 3;
   const shop = !email && shopStocked(s);
-  const fraud = !lead && rollFraud(s, key, need.product, yearOf(s.hour), email);
+  // A shop order checks out with the customer's payment method or goes elsewhere; only a card can be stolen there.
+  const preferred = shop ? preferredMethod(s, profile, city, !!lead?.shady, key) : "transfer", method = shop ? checkoutMethod(s, preferred, key) : "transfer";
+  const fraud = !lead && (!shop || method === "card") && rollFraud(s, key, need.product, yearOf(s.hour), email);
   const screened = !lead && screening(s);
   if (screened) s.screenChecks++;
   const declined = screened && failsScreen(s, key, fraud);
-  if (shop && !declined) takeStock(s, need.product);
+  if (shop && !declined && method) takeStock(s, need.product);
   const price = email ? reference : offerPrice(s, need.product, spec, need.sla);
   const cycle = email ? "monthly" : drawCycle(s, profile, need.product, rand(hashRng(s.seed, key, 281))), months = CYCLE_MONTHS[cycle];
   const budget = lead ? lead.budget : email ? ORDER_BUDGET[0] + (ORDER_BUDGET[1] - ORDER_BUDGET[0]) * rand(hashRng(s.seed, key, 263)) : 1;
@@ -78,10 +81,15 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
     quote: Math.round((termPrice(s, price * (1 - discount), cycle) / months) * 100) / 100,
     ...(months > 1 && { cycle }),
     ...(shop && { shop: true }),
+    ...(method && method !== "transfer" && { method }),
     ...(email && { owned, thread: x.thread.map((m, i) => (i ? m : { ...m, params: { ...m.params, owned: owned ? 1 : 0, ...(owned && { auth: authCode(s.seed, x.id) }) } })) }),
   }));
   if (declined) {
     loseRequest(s, r, "declined", "lost.declined");
+    return r;
+  }
+  if (!method) {
+    loseRequest(s, r, "lost", `lost.paymentMethod.${preferred}`);
     return r;
   }
   const params = { name: requestName(r), spec: specText(r.product, spec) };
@@ -130,13 +138,10 @@ function formInvoice(s: GameState, id: string): void {
     ...(fee > 0 ? [{ serviceId: null, key: "invoice.line.setupFee", params: { label }, amount: fee }] : []),
     termLine(r, label),
   ];
-  const inv = issueInvoice(s, r.customerId!, lines, ORDER_PAY_DAYS - 1);
-  // A shop places the order itself: its customer and invoice, paid at checkout through the shop gateway that pays out weekly.
+  // A shop places the order itself: its customer and invoice, paid by the method chosen at checkout.
   // An order the player takes by hand from Support is Books' own.
-  if (r.shop) {
-    s.customers = s.customers.map((c) => (c.id === r.customerId && !c.source ? { ...c, ...fromShop(s) } : c));
-    Object.assign(inv, { ...fromShop(s), gateway: true, shopPaid: true, payStep: 0, payAt: null });
-  }
+  if (r.shop) s.customers = s.customers.map((c) => (c.id === r.customerId && !c.source ? { ...c, ...fromShop(s), ...(r.method && { method: r.method }) } : c));
+  issueInvoice(s, r.customerId!, lines, ORDER_PAY_DAYS - 1);
   s.services = s.services.map((v) => (v.id === r.serviceId ? startTerm(s, v, r.cycle) : v));
 }
 

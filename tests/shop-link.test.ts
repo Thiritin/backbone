@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { dateOf } from "../src/sim/00-core/time";
 import { SHOP_SETUP_HOURS } from "../src/sim/10-catalog/shops";
+import { PREFERENCE } from "../src/sim/10-catalog/payments";
 import { issueInvoice } from "../src/sim/30-market/manual";
 import { orderLead } from "../src/sim/30-market/orders";
 import { billingTick, dueStep, synced } from "../src/sim/45-billing/billing";
@@ -20,7 +21,12 @@ import { automate, readyGame } from "./fixtures";
 
 const web = { product: "webHosting" as const, size: 1, sla: "basic" as const };
 
-// ModemBill takes orders, placed at once; link adds the Shop link module.
+// Private shop customers pay by bank transfer unless a test sends them through PayPail's gateway.
+const saved = PREFERENCE.private;
+const prefer = (w: typeof saved) => { PREFERENCE.private = w; };
+afterEach(() => prefer(saved));
+
+// ModemBill takes orders, placed at once and offering PayPail; link adds the Shop link module.
 function shopGame(seed = 5, link = false): GameState {
   const s = readyGame(seed);
   s.cash = 1e6;
@@ -29,6 +35,8 @@ function shopGame(seed = 5, link = false): GameState {
   s.unlocks = [...s.unlocks, "shops"];
   expect(chooseShop(s, "modemBill").ok).toBe(true);
   s.hour += SHOP_SETUP_HOURS;
+  s.modules = [...s.modules, "paypail"];
+  prefer({ transfer: 1 });
   if (link) s.modules = [...s.modules, "shop-link"];
   return automate(s);
 }
@@ -58,6 +66,7 @@ const toPayout = (s: GameState) => {
 describe("shop link", () => {
   it("starts shop records unsynced and hides them from Books", () => {
     const s = shopGame();
+    prefer({ paypail: 1 });
     const { customer, first } = order(s);
     expect(customer()).toMatchObject({ source: "shop", synced: false });
     expect(first()).toMatchObject({ source: "shop", synced: false, gateway: true, shopPaid: true });
@@ -109,6 +118,7 @@ describe("shop link", () => {
 
   it("pays out the gateway weekly as one transfer that Import resolves into its invoices", () => {
     const s = shopGame();
+    prefer({ paypail: 1 });
     const a = order(s), b = order(s);
     const payout = toPayout(s);
     expect(payout.covers).toEqual([a.first().id, b.first().id]);
@@ -122,6 +132,7 @@ describe("shop link", () => {
 
   it("resolves a payout at once with Shop link", () => {
     const s = shopGame(5, true);
+    prefer({ paypail: 1 });
     const a = order(s);
     const payout = toPayout(s);
     expect(s.transfers.find((x) => x.id === payout.id)!.invoiceId).toBe(a.first().id);
