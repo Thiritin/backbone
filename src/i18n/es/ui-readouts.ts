@@ -156,7 +156,7 @@ export default {
   "readouts.is.exchange": () => "Intercambio de datos",
   "readouts.is.heartbeat": () => "Latido",
   "readouts.is.backup": () => "Copia de seguridad (punto de control de volumen)",
-  "readouts.evc": () => "VMware EVC",
+  "readouts.evc": () => "VMwhere EVC",
   "readouts.evc.on": () => "Habilitado",
   "readouts.evc.off": () => "Deshabilitado",
   "readouts.evc.cost": () => "Coste de vCPU",
