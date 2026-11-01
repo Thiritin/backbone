@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- The settings button in the Gmix and other mail desks is readable again on the classic desktop looks.
 - Every licensed product's website has a shop with its editions and prices, a cart, a checkout paid from the bank, and an order email with the licence keys.
 - A My account page on each product website lists the licences bought there with their key, machine and renewal date, and cancels a monthly licence at the end of its term.
 - Password managers in your browser no longer offer to fill or save the logins inside the game.
