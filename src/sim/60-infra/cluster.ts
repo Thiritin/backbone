@@ -133,7 +133,7 @@ export const clusterDefaults = (c: Partial<Cluster> & Pick<Cluster, "nodes">, ho
   panel: null, platform: null, vm: null, switching: null, appSuite: false, datastores: [], packages: [], jobs: [], php: phpAt(yearOf(hour)), phpUntil: -1,
   version: c.switching ? yearOf(c.switching.doneAt) : Math.max(START_YEAR, yearOf(hour) - 2), updatedAt: c.switching?.doneAt ?? hour, ...c,
   ha: { ...HA_OFF, ...c.ha }, drs: c.drs ?? (c.ha?.balance ? "full" : "off"), recs: c.recs ?? [], acks: c.acks ?? [], pools: c.pools ?? [],
-  ...(c.licence || !topTier(c.platform ?? null) ? {} : { licence: { tier: topTier(c.platform ?? null)!.id, trialUntil: null, lapsedAt: null } }),
+  ...(c.licence || c.panel || !topTier(c.platform ?? null) ? {} : { licence: { tier: topTier(c.platform ?? null)!.id, trialUntil: null, lapsedAt: null } }),
   controlPlane: c.controlPlane === undefined ? c.nodes[0]?.deviceId ?? null : c.controlPlane,
 }) as Cluster;
 export const workloadDefaults = (w: Partial<Workload>): Workload => ({ stopped: false, busyUntil: 0, backupAt: null, ...w }) as Workload;
