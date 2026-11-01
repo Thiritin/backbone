@@ -1898,6 +1898,14 @@ A datastore is a server attached to a VMwhere cluster as shared storage for VM d
 
 A Proxmocks cluster of two or more nodes holds quorum while more than half of its votes are up. Every node casts one vote, and a QDevice (a free server in the cluster's zone with no software, set with `setQdevice`) casts one more. Without quorum the cluster is read-only: creating or deleting VMs, migrating, snapshots, restores, node state changes, backup jobs and datastore attachment refuse with `error.noQuorum`, and failover is suspended. Running VMs stay up. A two-node cluster loses quorum when either node dies; a third node or a QDevice prevents that.
 
+### Proxmocks HA groups
+
+A Proxmocks cluster holds up to eight HA groups, each a set of nodes with priorities (`saveHaGroup`). A VM in a group (`setHaGroup`) fails over to the highest priority node with room; a restricted group never starts the VM outside its nodes, so it stays down when they are all unavailable. When a better node is available again the VM moves back after one hour, with the downtime of a cold move when it cannot move live, unless the group is set to Nofailback. Changes need quorum.
+
+### Horizont projects and quotas
+
+An OpenStash cluster starts with one unlimited project, admin. Projects (`saveProject`, up to ten) carry a quota on instances, vCPU, RAM, volume storage and floating IPs; an empty limit is no limit. Creating or resizing an instance, creating a volume and allocating a floating IP refuse with `error.quotaExceeded` when the project would pass a limit. A project can be tied to a customer, moves instances with `setInstanceProject` when the target has room, and is deleted only when empty.
+
 ### Storage replication and Ceph
 
 A VM of a Proxmocks cluster (from the year of its cluster support) can replicate its disk to another active node with `setReplication`: every 15 minutes, hourly or daily (03:00 UTC). The replica books the VM's disk on the target node and each copy sends `BACKUP_CHANGED` of the filled disk over the LAN. When the VM's node dies with its data (`lostDisk`), failover restarts the VM on the replica node and closes the loss with the data written since the last copy lost (the lag since `lastAt` plus half an interval). A disk on shared storage or a Ceph pool takes no replica.

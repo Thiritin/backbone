@@ -202,7 +202,7 @@ export function sslTick(s: GameState): void {
 function updateBrokenTick(s: GameState): void {
   const live = new Set(s.services.filter((v) => v.endedAt === null).map((v) => v.id));
   const entries = Object.entries(s.webpanel.appBroken), slow = new Set(entries.filter(([id, until]) => live.has(id) && until > s.hour).map(([id]) => id));
-  if (slow.size !== entries.length) s.webpanel = { ...s.webpanel, appBroken: Object.fromEntries(entries.filter(([id]) => slow.has(id))) };
+  if (slow.size !== entries.length) s.webpanel = { ...s.webpanel, appBroken: Object.fromEntries(entries.filter(([id]) => slow.has(id))), appBack: Object.fromEntries(Object.entries(s.webpanel.appBack).filter(([id]) => slow.has(id))) };
   if (slow.size) s.services = s.services.map((v) => (slow.has(v.id) ? { ...v, slowedAt: s.hour } : v));
 }
 
