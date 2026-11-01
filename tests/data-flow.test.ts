@@ -15,6 +15,7 @@ import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { quoteOrder } from "../src/sim/90-actions/orders";
 import { chooseShop } from "../src/sim/90-actions/shop";
 import { deserialize, serialize } from "../src/sim/91-save/save";
+import type { ActionResult } from "../src/sim/90-actions/hardware";
 import { automate, readyGame } from "./fixtures";
 
 const saved = PREFERENCE.private;
@@ -50,6 +51,8 @@ function paid(s: GameState, customerId: string) {
   return { inv: () => s.invoices.find((i) => i.id === inv.id)!, tr: () => s.transfers.find((x) => x.id === tr.id)! };
 }
 const file = (s: GameState, id: string) => s.docs.find((d) => d.id === id)!;
+// The id of the file an export wrote.
+const made = (r: ActionResult): string => { if (!r.ok) throw new Error(r.error); return r.id!; };
 
 describe("capabilities", () => {
   it("follow the installed programs", () => {
@@ -92,31 +95,29 @@ describe("files", () => {
     const { customer } = order(s);
     const { inv, tr } = paid(s, customer().id);
     expect(synced(inv())).toBe(false);
-    const st = downloadStatement(s);
-    expect(st.ok).toBe(true);
-    expect(file(s, st.id!)).toMatchObject({ kind: "file", file: { kind: "statement", ids: [tr().id], imported: [] } });
-    expect(file(s, st.id!).title).toMatch(/^statement-\d{4}-\d{2}\.sta$/);
-    expect(file(s, st.id!).body).toContain(":61:");
-    expect(importFile(s, st.id!).ok).toBe(true);
+    const st = made(downloadStatement(s));
+    expect(file(s, st)).toMatchObject({ kind: "file", file: { kind: "statement", ids: [tr().id], imported: [] } });
+    expect(file(s, st).title).toMatch(/^statement-\d{4}-\d{2}\.sta$/);
+    expect(file(s, st).body).toContain(":61:");
+    expect(importFile(s, st).ok).toBe(true);
     expect(tr().invoiceId).toBeNull();
-    const ex = exportShop(s);
-    expect(ex.ok).toBe(true);
-    const f = file(s, ex.id!);
+    const ex = made(exportShop(s));
+    const f = file(s, ex);
     expect(f.title).toMatch(/^shop-export-\d{4}-\d{2}\.csv$/);
     expect(f.file!.ids).toEqual(expect.arrayContaining([customer().id, inv().id]));
     expect(f.body.split("\n")).toHaveLength(f.file!.ids.length + 1);
     expect(exportShop(s)).toMatchObject({ ok: false, error: "error.nothingToExport" });
-    expect(importFile(s, ex.id!).ok).toBe(true);
+    expect(importFile(s, ex).ok).toBe(true);
     expect(synced(customer()) && synced(inv())).toBe(true);
     expect(inv().status).toBe("paid");
     expect(tr().invoiceId).toBe(inv().id);
-    expect(file(s, ex.id!).file!.imported).toEqual(["lexwear"]);
-    expect(importFile(s, ex.id!)).toMatchObject({ ok: false, error: "error.fileImported" });
+    expect(file(s, ex).file!.imported).toEqual(["lexwear"]);
+    expect(importFile(s, ex)).toMatchObject({ ok: false, error: "error.fileImported" });
     const next = order(s);
-    const second = exportShop(s);
-    expect(file(s, second.id!).file!.ids).toContain(next.customer().id);
-    expect(file(s, second.id!).file!.ids).not.toContain(customer().id);
-    expect(file(s, second.id!).title).toMatch(/-2\.csv$/);
+    const second = made(exportShop(s));
+    expect(file(s, second).file!.ids).toContain(next.customer().id);
+    expect(file(s, second).file!.ids).not.toContain(customer().id);
+    expect(file(s, second).title).toMatch(/-2\.csv$/);
   });
 });
 
@@ -124,12 +125,12 @@ describe("bank", () => {
   it("keeps transfers out of Books until the statement is imported", () => {
     const s = shopGame();
     const { customer } = order(s);
-    importFile(s, exportShop(s).id!);
+    importFile(s, made(exportShop(s)));
     const { tr } = paid(s, customer().id);
     for (let i = 0; i < 3; i++) tick(s);
     expect(tr().atBank).toBe(true);
     expect(booksView(s).transfers.some((x) => x.id === tr().id)).toBe(false);
-    importFile(s, downloadStatement(s).id!);
+    importFile(s, made(downloadStatement(s)));
     expect(booksView(s).transfers.some((x) => x.id === tr().id)).toBe(true);
     expect(downloadStatement(s)).toMatchObject({ ok: false, error: "error.nothingToExport" });
   });
@@ -138,7 +139,7 @@ describe("bank", () => {
     const s = shopGame();
     upgradeBooks(s, "financial-office");
     const { customer } = order(s);
-    importFile(s, exportShop(s).id!);
+    importFile(s, made(exportShop(s)));
     const { tr } = paid(s, customer().id);
     expect(tr().atBank).toBe(true);
     tick(s);
@@ -149,7 +150,7 @@ describe("bank", () => {
   it("loads an old save with every transfer in Books", () => {
     const s = shopGame();
     const { customer } = order(s);
-    importFile(s, exportShop(s).id!);
+    importFile(s, made(exportShop(s)));
     const { tr } = paid(s, customer().id);
     const raw = JSON.parse(serialize(s));
     for (const x of raw.transfers) delete x.atBank;
