@@ -1,6 +1,6 @@
 // Products and groups of the shop portal: which plan an order form visit buys (docs/design/shop.md).
 import { CYCLE_MONTHS, CYCLES, type Cycle } from "../10-catalog/cycles";
-import { shopById } from "../10-catalog/shops";
+import { shopById, type ShopId } from "../10-catalog/shops";
 import type { Spec } from "../10-catalog/products";
 import type { Product } from "../30-customers/customers";
 import { targetFor } from "../30-market/sales";
@@ -58,3 +58,66 @@ export function chooseProduct(s: GameState, r: { city: string; product: Product;
 export function takeProductStock(s: GameState, id: string): void {
   s.shop = { ...s.shop, products: s.shop.products.map((p) => (p.id === id && typeof p.stock === "number" ? { ...p, stock: Math.max(0, p.stock - 1) } : p)) };
 }
+
+export type PortalArea = "store" | "configure" | "cart" | "client" | "admin";
+export interface PortalIds { group?: string; product?: string }
+export interface PortalRoute extends PortalIds { area: PortalArea; query: URLSearchParams }
+
+// Addresses by shop system; <group> and <product> take the ids. A cart of null is the configure page (single page order).
+const PATHS: Record<ShopId, Record<PortalArea, string | null>> = {
+  whmCache: { store: "/cart.php?gid=<group>", configure: "/cart.php?a=add&pid=<product>", cart: "/cart.php?a=view", client: "/clientarea.php", admin: "/admin/" },
+  blessta: { store: "/order/main/packages/<group>", configure: "/order/config/index/<group>?pricing_id=<product>", cart: "/order/cart", client: "/client/", admin: "/admin/" },
+  hostBull: { store: "/cart/<group>/", configure: "/cart/<group>/<product>/", cart: "/cart/", client: "/clientarea/", admin: "/admin/" },
+  boxBillin: { store: "/order", configure: "/order/<product>", cart: null, client: "/client", admin: "/bb-admin/" },
+  clientExit: { store: "/order.php?gid=<group>", configure: "/order.php?pid=<product>", cart: "/order.php?step=cart", client: "/index.php?fuse=home", admin: "/admin/" },
+  modemBill: { store: "/order.php?group=<group>", configure: "/order.php?pkg=<product>", cart: "/order.php?step=review", client: "/modernbill/", admin: "/admin/" },
+  handRolled: { store: "/bestellen.php", configure: "/bestellen.php?plan=<product>", cart: null, client: null, admin: "/admin.php" },
+  ubersmyth: { store: "/order/", configure: "/order/<product>", cart: "/order/cart", client: "/client/", admin: "/admin/" },
+  orderBocks: { store: "/store/", configure: "/store/<product>", cart: "/store/cart", client: "/account/", admin: "/admin/" },
+};
+
+// Specific before general: a cart address is never read as a product.
+const AREAS: PortalArea[] = ["admin", "client", "cart", "configure", "store"];
+const trim = (p: string): string => p.replace(/\/+$/, "");
+const slot = (v: string): string | null => /^<(\w+)>$/.exec(v)?.[1] ?? null;
+
+// The ids a path carries when it fits the template (admin and client also match everything below their address), else null.
+function fit(tpl: string, path: string, prefix: boolean): PortalIds | null {
+  const [tp, tq = ""] = tpl.split("?"), [pp, pq = ""] = path.split("?");
+  const ts = trim(tp).split("/"), ps = trim(pp).split("/"), ids: Record<string, string> = {};
+  if (prefix ? ps.length < ts.length : ps.length !== ts.length) return null;
+  for (let i = 0; i < ts.length; i++) {
+    const k = slot(ts[i]);
+    if (k) { if (!ps[i]) return null; ids[k] = decodeURIComponent(ps[i]); } else if (ts[i] !== ps[i]) return null;
+  }
+  const q = new URLSearchParams(pq);
+  for (const [key, want] of new URLSearchParams(tq)) {
+    const k = slot(want), got = q.get(key);
+    if (k) { if (!got) return null; ids[k] = got; } else if (got !== want) return null;
+  }
+  return ids;
+}
+
+// The address of a page. screen names a screen inside the admin or client area; a record adds more parameters to it.
+export function portalPath(variant: ShopId, area: PortalArea, ids: PortalIds = {}, screen?: string | Record<string, string>): string {
+  const tpl = PATHS[variant][area] ?? (area === "cart" ? PATHS[variant].configure : "") ?? "";
+  const path = tpl.replace("<group>", encodeURIComponent(ids.group ?? "")).replace("<product>", encodeURIComponent(ids.product ?? ""));
+  const extra = new URLSearchParams(typeof screen === "string" ? { s: screen } : screen).toString();
+  return extra ? `${path}${path.includes("?") ? "&" : "?"}${extra}` : path;
+}
+
+export function parsePortal(variant: ShopId, path: string): PortalRoute | null {
+  const query = new URLSearchParams(path.split("?")[1] ?? "");
+  for (const area of AREAS) {
+    const tpl = PATHS[variant][area];
+    if (!tpl) continue;
+    const prefix = area === "admin" || area === "client";
+    // The store address alone, without a group, shows the first group.
+    const ids = fit(tpl, path, prefix) ?? (area === "store" && !path.includes("?") ? fit(tpl.split("?")[0], path, false) : null);
+    if (ids) return { area, ...ids, query };
+  }
+  return null;
+}
+
+// /admin leads to the admin of every shop system.
+export const isAdminAlias = (path: string): boolean => /^\/admin(\/|\?|$)/.test(path);
