@@ -6,7 +6,9 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - Email orders and leads now pick the cheapest of your Books products that fits their needs and budget, accept any quote up to that product's price, and go elsewhere when none of your products fits.
 - Books products stay editable after you choose a shop system.
+- The license set command of each software tool now takes a key the same way the installer does, and the DirectAdmen site shows its Docs page on its own.
 - Prices now include VAT: unless you use the small business rule, the tax office expects an advance VAT return every month or quarter, and a late return brings a surcharge and then an estimate by post.
+- The game no longer starts on a blank screen in development builds.
 - Switching banks now pays out the interest the old account has earned so far and keeps your saved payees.
 - After you register, the tax office sends a questionnaire by post that you answer on the new DOHLE site, choosing whether to use the small business rule, and your tax number follows by letter.
 - Every installed software now has its own command in the server's shell, such as `cpanic` or `esxwhere`, that shows its version and license, updates it, switches its channel, assigns a key or starts a trial, and runs the daily jobs of its kind.

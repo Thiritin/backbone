@@ -7,7 +7,7 @@ import { BINARIES, softwareById, type Software, type SoftwareKind } from "../10-
 import type { GameState } from "../50-state";
 import type { Call } from "../90-actions/index";
 import { drain, setHa, upgradePhp } from "../90-actions/clusters";
-import { assignLicence, setLicenceTier, startLicenceTrial } from "../90-actions/licence";
+import { activateLicence, setLicenceTier, startLicenceTrial } from "../90-actions/licence";
 import { setSecondary } from "../90-actions/netsvc-dns";
 import { deleteQueue, flushQueue, setMailRelay } from "../90-actions/netsvc-mail";
 import { renewCert, revokeCert, setAutoEnroll } from "../90-actions/netsvc-vpn";
@@ -117,11 +117,7 @@ function run(s: GameState, m: string, sw: Software, c: Cluster, id: string, rest
     case "update": return act(updateSoftware, c.id);
     case "channel": return CHANNELS.includes(a as Channel) ? act(setChannel, c.id, a as Channel) : undefined;
     case "autoupdate": { const on = onOff(a); return on === undefined ? undefined : act(setAutoUpdate, c.id, on); }
-    case "licenseSet": {
-      if (!a) return undefined;
-      const k = s.licenses.find((x) => x.product === sw.id && (x.id === a || same(x.key, a)));
-      return k ? act(assignLicence, k.id, m) : fail("error.licenceKey");
-    }
+    case "licenseSet": return a ? act(activateLicence, m, sw.id, a) : undefined;
     case "licenseShow": {
       const k = assignedKey(s, m, sw.id);
       if (!k) return { output: licenceLine(s, m, sw) };

@@ -1,7 +1,8 @@
 // economy.md, OpenVeeZee beancounters: failcnt from overselling, burst memory and the live checkpoint.
 import type { GameState } from "../50-state";
 import { lostDisk, type Cluster, type Workload } from "./cluster";
-import { HOT_RAM, servicesIn } from "./ha";
+import { HOT_RAM } from "./alarms";
+import { servicesIn } from "./ha";
 import { workloadUse, nodeUsage } from "./usage";
 
 export const BURST_MAX = 2;
