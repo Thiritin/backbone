@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- The Debiant installer asks how to configure the network, so a server can take its address from the router or get a fixed address, netmask, gateway and name server, and the Windoors Server Manager has a Network adapter page for the same settings.
+- Server shells know `ip`, `ifconfig`, `dhclient`, `ifup`, `ifdown` and the networking restart commands, apply the edited network settings file when networking restarts, and two servers holding the same address both drop off the network.
 - Custom order tickets now show only the step you are at, and you can open the customer account before or after sending the offer, which appears as an attachment on the email you sent.
 - A custom order now sends the customer one email when everything is set up, with the account, the order confirmation and its invoice, the domain and the login details together.
 - Every bank now has a name of its own and a website laid out its own way, and each bank redesigns its site with a modern look at some point between 2010 and 2016.
