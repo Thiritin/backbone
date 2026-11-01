@@ -15,6 +15,8 @@ import { derivedDomain } from "../src/sim/30-customers/domains";
 import { register } from "../src/sim/30-customers/registry";
 import { nodeName } from "../src/sim/30-customers/hostnames";
 import { setMachine } from "../src/sim/60-infra/cluster";
+import { assignedKey, assignKey, isLicensed, issueKey, panelMachine } from "../src/sim/60-infra/licence";
+import { topTier } from "../src/sim/10-catalog/licence-tiers";
 import { portPeers } from "../src/sim/60-infra/status";
 import { imageOf, serverOsAt, type OsImage, type ServerOsId } from "../src/sim/10-catalog/server-os";
 import { softwareById } from "../src/sim/10-catalog/platforms";
@@ -29,6 +31,9 @@ const done = (s: GameState, id: string, patch: Partial<GameState["clusters"][num
     setMachine(s, m, (x) => ({ software: x.software.map((sw) => (sw.doneAt !== null && sw.doneAt > s.hour ? { ...sw, doneAt: s.hour } : sw)) }));
   }
   s.clusters = s.clusters.map((x) => (x.id === id ? { ...x, ...patch, switching: null } : x));
+  // A licensed panel holds a key, for its top tier when it has tiers.
+  const host = panelMachine(c), panel = patch.panel;
+  if (host && panel && isLicensed(panel) && !assignedKey(s, host, panel)) assignKey(s, issueKey(s, panel, topTier(panel)?.id ?? null).id, host);
   return id;
 };
 const must = (r: { ok: boolean; id?: string; error?: string }): string => {

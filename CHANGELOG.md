@@ -28,6 +28,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Quotes are now documents in Books that you drag onto the order ticket, an accepted quote converts to the first invoice that you send and match like any other, and the Lexwear module Helpdesk link does the quote, account and invoice from the ticket.
 - Datacenter providers now announce your own IP block under your AS number for a one-off setup fee, so you no longer need your own BGP router for it.
 - Register domain and Transfer domain on an order now open your registrar's website, where you fill the owner from the customer record with a click and enter the auth code from the order email, while a shop system with the registrar module still registers its own orders.
+- Control panel trials now last as long as the real vendor's trial, 15 days for cPanic and 14 for Pleskit, and run only once per machine, so reinstalling a panel no longer starts a new trial. DirectAdmen has no trial and bills its top edition from the install.
 
 ## 2026-10-31
 

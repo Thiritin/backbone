@@ -2,7 +2,7 @@ import { createRng, type Rng } from "./00-core/rng";
 import { START_CASH } from "./10-catalog/economy";
 import { componentParts, hasFirmware, modelById, type ComponentKind, type FormFactor, type PartSpec } from "./10-catalog/hardware";
 import type { Vendor } from "./10-catalog/cpus";
-import type { OsImage, ServerOsId } from "./10-catalog/server-os";
+import type { LicenseKind, OsImage, ServerOsId } from "./10-catalog/server-os";
 import { yearOf } from "./00-core/time";
 import { MOMS_DSL, seedDcs } from "./20-world/datacenters";
 import { t } from "../i18n/en";
@@ -144,6 +144,15 @@ export interface Company { name: string; logo: string; color: string; domain: st
 export interface Registration { hour: number; owner: string; form: string; number: number }
 export interface LedgerEntry { hour: number; category: string; key: string; params: Record<string, string | number>; amount: number }
 
+// A licence key for an OS or software id. edition is a panel tier; kind is the pricing at purchase. covers is the major
+// version a one-time key is bound to, or the hour a subscription's paid term runs to; renewsAt is the next renewal of a
+// subscription and lapsedAt the hour an unpaid one expired.
+export interface Licence {
+  id: string; product: string; edition: string | null; kind: LicenseKind; key: string; orderId: string; boughtAt: number;
+  machineId: string | null; covers: { kind: "version"; major: string } | { kind: "term"; until: number };
+  renewsAt: number | null; lapsedAt: number | null;
+}
+
 export interface GameState {
   version: number;
   seed: number;
@@ -157,8 +166,10 @@ export interface GameState {
   devices: Device[];
   cables: Cable[];
   ledger: LedgerEntry[];
-  // One-time licenses (docs/design/software.md, section 1): the OS or software id and the machine that holds it.
-  licenses: { id: string; machineId: string; boughtAt: number }[];
+  // Bought licence keys (docs/design/plans/software-licences.md), each assigned to at most one machine.
+  licenses: Licence[];
+  // One entry per machine and product whose trial started; it never starts again there. until is the hour it ends.
+  trials: { machineId: string; product: string; until: number }[];
   // Operating system images downloaded from their sites, one per version, and the one USB stick: the image written on it,
   // the server it is in.
   media: { images: OsImage[]; stick: { os: OsImage | null; in: string | null } };
@@ -366,7 +377,7 @@ export const newGame = (seed: number): GameState => ({
   racks: [{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null, overSince: { a: null, b: null } }],
   devices: [{ ...device("dev5", "home-router", "AVN", null, 0, null, "fra1-gw-01", 0), store: "loc1" }, device("dev6", "line-jack", "", null, 0, "loc1", "fra1-line-01", 0)],
   cables: [],
-  ledger: [], licenses: [], media: { images: [], stick: { os: null, in: null } }, leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], contracts: [], unlocks: [], training: null, knowHow: 0, installed: ["Browser"], kbReads: {}, checklist: [], seenChanges: [], undocked: [], os: "aqua",
+  ledger: [], licenses: [], trials: [], media: { images: [], stick: { os: null, in: null } }, leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], contracts: [], unlocks: [], training: null, knowHow: 0, installed: ["Browser"], kbReads: {}, checklist: [], seenChanges: [], undocked: [], os: "aqua",
   customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], files: {},
   invoices: [], transfers: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   quotes: [],
