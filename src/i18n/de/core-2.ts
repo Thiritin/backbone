@@ -169,6 +169,8 @@ export default {
   "guide.step.buyServer": () => "Server kaufen",
   "guide.step.mountServer": () => "Einbauen und einschalten",
   "guide.step.mountRouter": () => "Router einbauen",
+  "guide.step.findAddress": () => "Adresse des Servers finden",
+  "guide.step.shareWeb": () => "Webserver freigeben",
   "guide.step.internet": () => "Internet hinzufügen",
   "guide.step.setup": () => "Software installieren",
   "guide.step.domain": () => "Domain kaufen",

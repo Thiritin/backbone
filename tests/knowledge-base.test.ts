@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { HOURS_PER_MONTH, KNOWLEDGE_BASE, pickHowTo } from "../src/sim/40-support/tickets";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { withCompany } from "./fixtures";
+import { withCompany, newGame } from "./fixtures";
 
 const topics = (s: GameState, id: string) => {
   const c = s.customers.find((x) => x.id === id)!, seen = new Set<string>();

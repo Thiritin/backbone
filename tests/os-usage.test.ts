@@ -1,10 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { nowHours } from "../src/sim/00-core/time";
-import { newGame } from "../src/sim/50-state";
 import { setMachine, vmById } from "../src/sim/60-infra/cluster";
 import { nodeUsage, workloadUse } from "../src/sim/60-infra/usage";
 import { createVm, PANEL_VM_SIZE } from "../src/sim/90-actions/clusters";
-import { bootedMachine, hypervisor, skipTo, withServer } from "./fixtures";
+import { bootedMachine, hypervisor, skipTo, withServer, newGame } from "./fixtures";
 
 function server() {
   const s = withServer(newGame(5));

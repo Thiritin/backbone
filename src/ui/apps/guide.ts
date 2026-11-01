@@ -1,9 +1,11 @@
 import { isOfficeRouter, modelById } from "../../sim/10-catalog/hardware";
 import { locationOf } from "../../sim/60-infra/status";
+import { FRITZ_HOST } from "../../sim/60-infra/lan";
 import { registrarById, REGISTRARS } from "../../sim/10-catalog/registrars";
 import { supportApp } from "./support/desk";
 import { t } from "../../i18n/en";
 import { OFFICE_URL } from "../../sim/80-business/office";
+import { HOME_URL } from "../../sim/80-business/browser";
 import type { GameState } from "../../sim/50-state";
 import type { GUIDE } from "../../sim/checklist";
 
@@ -24,6 +26,8 @@ export function stepOf(s: GameState, id: StepId): Step {
   const home = basement(s), server = firstServer(s);
   const mailApp = supportApp(s).name;
   switch (id) {
+    case "bank":
+      return { title: t("guide.step.bank"), text: t("apps.guide.step.bank"), app: "Browser", focus: { kind: "url", id: HOME_URL } };
     case "register":
       return { title: t("guide.step.register"), text: t("apps.guide.step.register"), app: "Browser", focus: { kind: "url", id: OFFICE_URL } };
     case "company":
@@ -40,6 +44,10 @@ export function stepOf(s: GameState, id: StepId): Step {
       return { title: t("guide.step.internet"), text: t("apps.guide.step.internet"), app: "Locations", focus: { kind: "line", id: "home" } };
     case "setup":
       return { title: t("guide.step.setup"), text: t("apps.guide.step.setup"), app: "Locations", focus: server && { kind: "device", id: server.id } };
+    case "findAddress":
+      return { title: t("guide.step.findAddress"), text: t("apps.guide.step.findAddress"), app: "Browser", focus: { kind: "url", id: `${FRITZ_HOST}/` } };
+    case "shareWeb":
+      return { title: t("guide.step.shareWeb"), text: t("apps.guide.step.shareWeb"), app: "Browser", focus: { kind: "url", id: `${FRITZ_HOST}/` } };
     case "domain": {
       const partner = (s.registrar && registrarById(s.registrar.id)?.name) ?? REGISTRARS[0].name;
       return {
