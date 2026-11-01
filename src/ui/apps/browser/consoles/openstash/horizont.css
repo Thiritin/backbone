@@ -1,4 +1,4 @@
-/* OpenStash Horizont: the purple dashboard until 2016, then the dark sidebar with the red mark. */
+/* OpenStash Horizont: the Django dashboard until Essex, the purple Horizon, the Havana accordion, then the dark sidebar with the red mark from 2016. */
 .hz[data-era="early"] { --bg: #ffffff; --panel: #ffffff; --line: #dddddd; --fg: #333; --muted: #777; --accent: #772953; --accent-fg: #fff; --hover: #f3e9ef; --r: 3px; --font: "Ubuntu", "Helvetica Neue", Arial, sans-serif; --side: #2c001e; --side-fg: #e9d5e1; --mark: #dd4814; font-size: 13px; }
 .hz[data-era="late"] { --bg: #ffffff; --panel: #ffffff; --line: #dddddd; --fg: #333; --muted: #777; --accent: #337ab7; --accent-fg: #fff; --hover: #f5f5f5; --r: 4px; --font: "Helvetica Neue", Helvetica, Arial, sans-serif; --side: #2b2b2b; --side-fg: #cccccc; --mark: #da1a32; font-size: 13px; }
 
@@ -40,3 +40,40 @@
 .hz-pies { display: flex; flex-wrap: wrap; gap: 24px; }
 .hz-pies figcaption { font-weight: 700; }
 .hz-order { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+
+/* Until Essex the Django dashboard: a grey header, the menu as rows of tabs over the page, Verdana. */
+.hz[data-era="dashboard"] { --bg: #ffffff; --panel: #ffffff; --line: #cfd6dd; --fg: #2a2a2a; --muted: #6b7680; --accent: #1f6fa8; --accent-fg: #fff; --hover: #e8f1f8; --r: 0; --font: Verdana, Geneva, sans-serif; --side: #e9edf0; --side-fg: #2a2a2a; --mark: #c4161c; font-size: 12px; }
+.hz[data-era="dashboard"] .hz-top { background: linear-gradient(#5a6670, #343c42); border-bottom: 3px solid var(--mark); }
+.hz[data-era="dashboard"] .hz-logo { font-family: Georgia, serif; font-weight: 400; font-style: italic; }
+.hz:is([data-era="dashboard"], [data-era="heat"]) .hz-top .cx-host { color: #e6e6e6; }
+.hz[data-era="dashboard"] .cx-hv-body { flex-direction: column; }
+.hz[data-era="dashboard"] .hz-side { flex-direction: row; flex-wrap: wrap; width: auto; padding: 0 8px; border-bottom: 1px solid var(--line); }
+.hz[data-era="dashboard"] .hz-side section { display: flex; align-items: stretch; margin-right: 12px; }
+.hz[data-era="dashboard"] .hz-side h3 { margin: 0; padding: 7px 8px; color: var(--muted); font-size: 11px; text-transform: uppercase; }
+.hz[data-era="dashboard"] .hz-side h4 { display: none; }
+.hz[data-era="dashboard"] .hz-side button { width: auto; padding: 7px 10px; border: 1px solid transparent; border-bottom: 0; }
+.hz[data-era="dashboard"] .hz-side button:hover { background: var(--hover); }
+.hz[data-era="dashboard"] .hz-side button[aria-pressed="true"] { background: #fff; color: var(--accent); border-color: var(--line); margin-bottom: -1px; font-weight: 700; }
+.hz[data-era="dashboard"] .hz-main h1 { font-family: Georgia, serif; color: var(--accent); }
+.hz[data-era="dashboard"] .hz-table th { background: #dfe6ec; color: #2a2a2a; }
+.hz[data-era="dashboard"] .cx-table tbody tr:nth-child(even) td { background: #f4f7f9; }
+.hz-login[data-era="dashboard"] { background: #e9edf0; }
+.hz-login[data-era="dashboard"] .hz-card { border-top: 4px solid var(--mark); }
+.hz-login[data-era="dashboard"] .hz-logo { color: #343c42; font-family: Georgia, serif; font-weight: 400; font-style: italic; }
+
+/* From Havana the Heat and Neutron Horizon: a black top bar, a light accordion sidebar, Bootstrap blue. */
+.hz[data-era="heat"] { --bg: #f7f7f7; --panel: #ffffff; --line: #d5d5d5; --fg: #333; --muted: #777; --accent: #3a87ad; --accent-fg: #fff; --hover: #e6eef3; --r: 4px; --font: "Helvetica Neue", Helvetica, Arial, sans-serif; --side: #ececec; --side-fg: #333; --mark: #e8472a; font-size: 13px; }
+.hz[data-era="heat"] .hz-top { background: linear-gradient(#3b3b3b, #111); }
+.hz[data-era="heat"] .hz-logo { color: #fff; }
+.hz[data-era="heat"] .hz-logo::first-letter { color: var(--mark); }
+.hz[data-era="heat"] .hz-side { width: 200px; padding: 0; border-right: 1px solid var(--line); }
+.hz[data-era="heat"] .hz-side h3 { display: flex; justify-content: space-between; margin: 0; padding: 8px 12px; background: linear-gradient(#f9f9f9, #dcdcdc); border-bottom: 1px solid var(--line); color: #333; }
+.hz[data-era="heat"] .hz-side h3::after { content: "\25BE"; color: var(--muted); }
+.hz[data-era="heat"] .hz-side h4 { margin: 8px 12px 2px; font-weight: 700; font-size: 11px; text-transform: uppercase; opacity: 1; color: var(--muted); }
+.hz[data-era="heat"] .hz-side button { padding: 6px 12px 6px 22px; }
+.hz[data-era="heat"] .hz-side button:hover { background: var(--hover); }
+.hz[data-era="heat"] .hz-side button[aria-pressed="true"] { background: var(--panel); color: var(--accent); font-weight: 700; box-shadow: inset 4px 0 0 var(--accent); }
+.hz[data-era="heat"] .hz-main { background: var(--bg); }
+.hz[data-era="heat"] .hz-table th { background: linear-gradient(#fff, #efefef); }
+.hz-login[data-era="heat"] { background: #111; }
+.hz-login[data-era="heat"] .hz-logo { color: var(--mark); }
