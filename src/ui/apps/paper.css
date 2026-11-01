@@ -13,8 +13,7 @@
 .paper-line { width: 220px; border-top: 0.5px solid #1a1a1a; padding-top: 2px; font-size: 11px; color: #555; }
 .paper-head { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 20px; font-size: 12px; color: #555; }
 .paper-head strong { color: #1a1a1a; font-size: 14px; }
-.paper-bill { margin-top: 12px; }
-.post { display: grid; grid-template-columns: 240px 1fr; height: 100%; }
+.post { flex: 1; min-width: 0; display: grid; grid-template-columns: 240px 1fr; height: 100%; }
 .post-list { overflow: auto; background: var(--win-side); border-right: 0.5px solid var(--line); }
 .post-row { display: grid; gap: 1px; width: 100%; padding: 8px 12px; border: 0; border-bottom: 0.5px solid var(--line); background: none; color: inherit; text-align: left; font: inherit; }
 .post-row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -22,3 +21,30 @@
 .post-row.unread strong::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: var(--accent); }
 .post-row.active { background: color-mix(in oklch, var(--accent) 14%, transparent); }
 .post-none { padding: 16px 12px; color: var(--text-2); }
+/* A letter is one A4 page measured in millimetres (--mm), placed after DIN 5008 form B. */
+.letter-fit { container-type: inline-size; max-width: 760px; margin: 0 auto; }
+.letter { --mm: calc(100cqw / 210); position: relative; width: 100cqw; aspect-ratio: 210 / 297; padding: calc(var(--mm) * 98) calc(var(--mm) * 20) calc(var(--mm) * 32) calc(var(--mm) * 25); background: #fff; color: #1a1a1a; box-shadow: 0 0 0 0.5px var(--line-strong), 0 2px 8px rgb(0 0 0 / 0.14); font: calc(var(--mm) * 3.9) / 1.45 Arial, Helvetica, sans-serif; }
+.letter.serif { font-family: Georgia, "Times New Roman", serif; }
+.letter-mark { position: absolute; left: calc(var(--mm) * 4); width: calc(var(--mm) * 5); border-top: 0.5px solid #999; }
+.letter-mark.fold1 { top: calc(var(--mm) * 105); }
+.letter-mark.punch { top: calc(var(--mm) * 148.5); width: calc(var(--mm) * 8); }
+.letter-mark.fold2 { top: calc(var(--mm) * 210); }
+.letter-head { position: absolute; top: calc(var(--mm) * 12); left: calc(var(--mm) * 25); right: calc(var(--mm) * 20); display: flex; align-items: center; gap: calc(var(--mm) * 4); }
+.letter-logo svg { display: block; height: calc(var(--mm) * 18); width: auto; }
+.letter-head div { display: grid; }
+.letter-head strong { font-size: calc(var(--mm) * 5.2); }
+.letter-head span { color: #444; }
+.letter-window { position: absolute; top: calc(var(--mm) * 45); left: calc(var(--mm) * 25); width: calc(var(--mm) * 85); height: calc(var(--mm) * 45); }
+.letter-window small { display: block; height: calc(var(--mm) * 17.7); padding-top: calc(var(--mm) * 11); font-size: calc(var(--mm) * 2.3); text-decoration: underline; color: #444; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.letter-window address { display: grid; font-style: normal; }
+.letter-info { position: absolute; top: calc(var(--mm) * 50); left: calc(var(--mm) * 125); right: calc(var(--mm) * 10); display: grid; grid-template-columns: auto 1fr; gap: 0 calc(var(--mm) * 3); margin: 0; font-size: calc(var(--mm) * 3.2); }
+.letter-info dt { color: #555; }
+.letter-info dd { margin: 0; }
+.letter-body h1 { margin: 0 0 calc(var(--mm) * 8); font-size: inherit; font-weight: 700; }
+.letter-body p { margin: 0 0 calc(var(--mm) * 4.5); }
+.letter-sign { display: grid; margin-top: calc(var(--mm) * 6); }
+.letter-sign .paper-ink { font-size: calc(var(--mm) * 8); }
+.letter-machine { margin-top: calc(var(--mm) * 10); font-size: calc(var(--mm) * 3); color: #555; }
+.letter-foot { position: absolute; bottom: calc(var(--mm) * 10); left: calc(var(--mm) * 25); right: calc(var(--mm) * 20); display: flex; gap: calc(var(--mm) * 8); padding-top: calc(var(--mm) * 2); border-top: 0.5px solid #bbb; font-size: calc(var(--mm) * 2.6); color: #444; }
+.letter-foot div { display: grid; }
+.letter-actions { max-width: 760px; margin: 12px auto 0; }
