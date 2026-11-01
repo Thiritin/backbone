@@ -17,3 +17,23 @@
 .sw-lunix.late header { background: #c70036; border-bottom: 0; color: #ffffff; }
 .sw-lunix.late .sw-wm, .sw-lunix.late .sub { color: #ffffff; }
 .sw-lunix.late .side { border-right: 0; background: #f6f0f2; border-radius: 4px; }
+.sw-lunix.early { font: 12px/1.4 Arial, Helvetica, sans-serif; color: #000000; }
+.sw-lunix.early a { color: #0000cc; text-decoration: underline; }
+.sw-lunix.early header > svg { display: none; }
+.sw-lunix.early header { gap: 8px; padding: 6px 10px; border-bottom: 2px solid #c70036; }
+.sw-lunix.early .sw-wm { font: 700 26px/1 Arial, sans-serif; letter-spacing: 0; }
+.sw-lunix.early .sub { margin-left: 8px; color: #000000; font-style: normal; font-size: 11px; }
+.sw-lunix.early .cols { grid-template-columns: 150px 1fr; gap: 12px; padding: 10px; }
+.sw-lunix.early .side { gap: 0; padding: 0; align-self: start; border: 1px solid #999999; background: #eeeeee; }
+.sw-lunix.early .side a { padding: 3px 6px; border-bottom: 1px solid #cccccc; }
+.sw-lunix.early .side a[aria-current] { color: #000000; background: #dddddd; }
+.sw-lunix.early main { max-width: none; }
+.sw-lunix.early h1 { margin-bottom: 8px; font-size: 18px; color: #000000; }
+.sw-lunix.early h2 { margin-bottom: 6px; font-size: 14px; color: #c70036; }
+.sw-lunix.early section > * + * { margin-top: 8px; }
+.sw-lunix.early ul { list-style: disc; }
+.sw-lunix.early table { border: 1px solid #999999; }
+.sw-lunix.early th { padding: 3px 6px; background: #dddddd; border: 1px solid #999999; }
+.sw-lunix.early td { padding: 3px 6px; border: 1px solid #999999; }
+.sw-lunix.early .sws-cta { color: #0000cc; }
+.sw-lunix.early footer { margin: 0 10px; padding: 6px 0 12px; border-top: 1px solid #999999; color: #000000; }
