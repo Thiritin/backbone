@@ -52,8 +52,8 @@ describe("vendor command line tools", () => {
     expect(assignedKey(s, vm, "cpanic")!.id).toBe(k.id);
     expect(text(s, "cpanic license show", guest)).toContain(`Key: ${k.key}\nEdition: Solo`);
     expect(text(s, "cpanic license set NOPE-0000", guest)).toBe("This licence key is not valid.");
-    text(s, "cpanic license tier admin", guest);
-    expect(assignedKey(s, vm, "cpanic")!.edition).toBe("admin");
+    text(s, "cpanic license tier dedicated", guest);
+    expect(assignedKey(s, vm, "cpanic")!.edition).toBe("dedicated");
     expect(s.clusters.find((c) => c.id === panel)!.kind).toBe("panel");
   });
 
