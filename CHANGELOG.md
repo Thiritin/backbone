@@ -5,6 +5,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-01
 
 - A customer's website without a domain opens in the browser at its account's private address again.
+- Clicking the clock in the top bar opens a calendar that marks the days with announcements, and clicking your cash opens Finance.
 - Shop vendors now sell payment methods for your shop, from direct debit and PayPail to Visor cards, paysavecard, Instantly and Bitcorn Pay, each with its own fee and weekly payout, and customers whose favourite method is missing may buy elsewhere.
 - Returned debits, PayPail disputes and card chargebacks now arrive in Books as negative payments that reopen their invoice once you book them, and a chargeback on a stolen card suspends the fraudster.
 - A shop system now keeps its own customers and invoices, which reach Books when you press Import from shop, and its card payments arrive as one weekly payout that lists the invoices it covers.
