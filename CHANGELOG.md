@@ -5,6 +5,9 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-01
 
 - Every bank now has a name of its own and a website laid out its own way, and each bank redesigns its site with a modern look at some point between 2010 and 2016.
+- Resellers now rent blocks of 20, 50 or 100 accounts on a DirectAdmen or cPanic host and fill them over the months, their customers bring abuse reports of their own, and DirectAdmen has a Reseller login and a Manage Resellers page to watch and suspend them.
+- The desktop only responds at normal speed; pause or fast forward to watch, then return to normal speed to act.
+- Quotes and invoices in Lexwear Office now show as a full A4 page that fits the pane, and a draft quote can be sent to the customer with the Send button.
 - Small hosting companies now open in one or two cities, collect reviews like the big ones, and go bust or get bought when they win too few customers, with each step in the news.
 - Competitors now change over the years: they move to new server generations, add features and have outages that make the news, the budget host cuts its prices each year, and the Market app charts each city's share of new customers.
 - A new game now starts with no money: you first open a business account on a bank's website, where your €3,500 savings arrive, and then register the company at the trade office for a €40 fee paid by bank transfer.
