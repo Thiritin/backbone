@@ -4,7 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
-- Shop vendor websites can now have more than one page.
+- Shop vendor websites can now have more than one page, and each shop system can style its own sign-in page.
 - Your shop system now runs in a web space on one of your panel hosts, with a licence key, a trial, an updates window and paid upgrades, and it takes no orders while its host is down or its licence has run out.
 - The Customers app is gone: customer records now live in the admin of your shop system, and before you run a shop, Books keeps them as contracts where you can credit, suspend and reprice them.
 - Marketing, Security and Research are in the dock from the day you register the company, so no Pear email or news line announces them anymore.

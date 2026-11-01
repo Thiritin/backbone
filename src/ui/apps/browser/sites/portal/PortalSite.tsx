@@ -20,12 +20,13 @@ export function PortalSite({ game, host, path, go }: { game: GameState; host: st
   const skin = skinOf(variant);
   const open: Open = (area, ids, screen) => go(host + portalPath(variant, area, ids, screen));
   const version = game.shop.install?.version ?? "", major = versionInfo(variant, version)?.major ?? "";
+  const Frame = skin.Bare ?? Bare;
   const props = { game, variant, route: alias ? { ...route, area: "admin" as const } : route, open, version, major, browse: go };
   if (route.area === "admin" || alias) {
-    if (!loggedIn) return <Login variant={variant} onLogin={() => setLoggedIn(true)} />;
-    return licenceLocked(game) ? <Bare game={game} variant={variant}><LicenceScreen game={game} /></Bare> : <skin.Admin {...props} />;
+    if (!loggedIn) return skin.Login ? <skin.Login {...props} onLogin={() => setLoggedIn(true)} /> : <Login variant={variant} onLogin={() => setLoggedIn(true)} />;
+    return licenceLocked(game) ? <Frame {...props}><LicenceScreen game={game} /></Frame> : <skin.Admin {...props} />;
   }
-  if (shopBlock(game)) return <Bare game={game} variant={variant}><NotTakingOrders game={game} /></Bare>;
+  if (shopBlock(game)) return <Frame {...props}><NotTakingOrders game={game} /></Frame>;
   if (route.area === "client") return <skin.Client {...props} />;
   return <skin.Store {...props} />;
 }
