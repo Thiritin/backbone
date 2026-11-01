@@ -73,7 +73,7 @@ export default {
   "marketing.priceMonthlyPerServer": (p) => `${p.price} / Monat oder ${p.perServer} pro Server`,
   "marketing.priceYearly": (p) => `${p.price} / Jahr`,
   "marketing.free": () => "Gratis",
-  "marketing.handRolledOrderForm": () => "Selbstgebasteltes Bestellformular",
+  "marketing.selfScriptedOrderForm": () => "Selbstgeskriptetes Bestellformular",
   "marketing.takingOrders": () => "Nimmt Bestellungen an",
   "marketing.readyDay": (p) => `Fertig ${p.day}`,
   "marketing.inUse": () => "Im Einsatz",
