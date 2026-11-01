@@ -70,7 +70,9 @@ export function deserialize(raw: string): GameState {
   const devices = (data.devices ?? base.devices).filter(known).map((d) => {
     const model = RENAMED_MODELS[d.model] ?? d.model;
     const defaults = deviceDefaults(model, d.boughtAt ?? 0);
-    const sized = fillCpus(modelById(model), fillSizes(model, d.components ?? defaults.components));
+    // UPS units, PDUs and console gear saved before they had power supplies get their model's.
+    const parts = d.components && !d.components.some((c) => c.kind === "psu") ? [...d.components, ...defaults.components.filter((c) => c.kind === "psu")] : d.components;
+    const sized = fillCpus(modelById(model), fillSizes(model, parts ?? defaults.components));
     return {
       ...defaults, ...d, log: (d.log ?? []).map((e, i) => ({ ...e, sev: e.sev ?? "info", id: e.id ?? i })), model, brand: model === "home-router" ? "AVN" : maker(model, d.brand), components: (data.version ?? 1) < 3 ? fillCards(model, sized) : sized, lease: d.lease ?? null, store: stored(d), transitTo: d.transitTo ?? null, arriveAt: d.arriveAt ?? null,
       // A managed switch saved before configurations were saved boots into what it runs.

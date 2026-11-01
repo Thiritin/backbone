@@ -9,6 +9,7 @@ export default {
   "ipmi.log.powerOn": () => "Eingeschaltet",
   "ipmi.log.shutdown": () => "Ordnungsgemäß heruntergefahren",
   "ipmi.log.pulled": () => "Strom verloren",
+  "ipmi.log.upsShutdown": () => "Vom USV-Signal heruntergefahren",
   "ipmi.log.overheat": () => "Wegen Hitze abgeschaltet",
   "ipmi.log.reset": () => "Hard-Reset",
   "ipmi.log.cycle": () => "Aus- und wieder eingeschaltet",

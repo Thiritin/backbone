@@ -17,6 +17,8 @@ import { consoleSuffix } from "../80-business/consoles";
 import { fqdn } from "../30-customers/domains";
 import { machineAddress } from "./addresses";
 import type { CommandResult, Watch } from "./terminal";
+import { UPS_PACKAGE } from "./ups";
+import { setUpsAgent } from "../90-actions/hardware";
 
 const lines = (key: string, p: Record<string, string | number> = {}) => t(key, p).split("\n");
 
@@ -56,6 +58,7 @@ export function apt(s: GameState, host: string, args: string[], root: boolean): 
       const pkg = args.find((a) => a !== op && !a.startsWith("-"));
       if (!pkg) return { output: lines("term.apt.nothing"), failed: true };
       if (!root) return { output: lines("term.apt.lock"), failed: true };
+      if (pkg === UPS_PACKAGE) return upsAgent(s, host, op === "install", yes);
       return op === "install" ? install(s, host, pkg, yes) : remove(s, host, pkg);
     }
     default:
@@ -116,6 +119,18 @@ function install(s: GameState, host: string, pkg: string, yes: boolean): Command
   if (machineNet(s, host)) return { output: [...plan, ...lines("term.apt.archives", { site: repoSite(sw), pkg, codename: releaseOf(s, host).codename })], failed: true };
   if (!yes) return { output: plan, confirm: true };
   return { output: [...plan, ...started(sw)], action: [installFromSite, host, sw.id], watch: watching(host, host, sw) };
+}
+
+// The UPS shutdown agent, from the OS mirror; it only runs on a server's own OS.
+function upsAgent(s: GameState, host: string, on: boolean, yes: boolean): CommandResult {
+  const d = s.devices.find((x) => x.id === host), pkg = UPS_PACKAGE;
+  if (!d) return { output: lines("term.apt.locate", { pkg }), failed: true };
+  if (!on) return d.upsAgent ? { output: [...lines("term.apt.state"), t("term.apt.removing", { pkg })], action: [setUpsAgent, d.id, false] } : { output: [...lines("term.apt.state"), t("term.apt.notInstalled", { pkg })] };
+  if (d.upsAgent) return { output: [...lines("term.apt.state"), t("term.apt.newest", { pkg })] };
+  const plan = [...lines("term.apt.state"), t("term.apt.new"), `  ${pkg}`, t("term.apt.installs", { n: 1 })];
+  if (machineNet(s, host)) return { output: [...plan, ...lines("term.apt.archives", { site: MIRROR, pkg, codename: releaseOf(s, host).codename })], failed: true };
+  if (!yes) return { output: plan, confirm: true };
+  return { output: [...plan, t("term.apt.setup", { pkg, to: releaseOf(s, host).version })], action: [setUpsAgent, d.id, true] };
 }
 
 function remove(s: GameState, host: string, pkg: string): CommandResult {

@@ -27,7 +27,7 @@ const prefer = (w: typeof saved) => { PREFERENCE.private = w; };
 afterEach(() => prefer(saved));
 
 // ModemBill takes orders, placed at once and offering PayPail; link adds the Shop link module.
-function shopGame(seed = 5, link = false): GameState {
+function shopGame(seed = 8, link = false): GameState {
   const s = readyGame(seed);
   s.cash = 1e6;
   setUpChannel(s, "website");
@@ -105,7 +105,7 @@ describe("shop link", () => {
   });
 
   it("syncs at creation with Shop link and marks the shop's invoice paid on a match", () => {
-    const s = shopGame(5, true);
+    const s = shopGame(8, true);
     const { customer, first } = order(s);
     expect(customer().source).toBe("shop");
     expect(synced(customer()) && synced(first())).toBe(true);
@@ -130,7 +130,7 @@ describe("shop link", () => {
   });
 
   it("resolves a payout at once with Shop link", () => {
-    const s = shopGame(5, true);
+    const s = shopGame(8, true);
     prefer({ paypail: 1 });
     const a = order(s);
     const payout = toPayout(s);
