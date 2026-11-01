@@ -991,7 +991,7 @@ Starting values come from today's Western European market (checked October 2026,
 
 | Item | Price today | Source |
 | --- | --- | --- |
-| 1U in a shared rack | €25–170 per month | [hosttest.de](https://www.hosttest.de/vergleich/colocation-frankfurt.html) |
+| 1U in a shared rack | €25–145 per month | [hosttest.de](https://www.hosttest.de/vergleich/colocation-frankfurt.html) |
 | Quarter rack (~10U, 1 kW) | ~€420 per month | [MIRhosting](https://mirhosting.com/colocation-in-frankfurt) |
 | Half rack (~22U, 2 kW) | ~€840 per month | [MIRhosting](https://mirhosting.com/colocation-in-frankfurt) |
 | Full 47U rack | €1,300–4,000 per month, plus ~€2,500 setup | [IMT Systems](https://www.imt-systems.com/en/colocation.html) |
