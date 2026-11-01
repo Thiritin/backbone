@@ -7,6 +7,7 @@ import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { controlPlaneUp, sitesDown, type Cluster, type Workload } from "./cluster";
 import { breachEligible, breachTick, startBreach, BREACH_CHANCE } from "./breach";
+import { exposureFactor } from "./exposure";
 import { maybeReview } from "./incidents";
 import { familyOf, instanceRisk, openVulns, patchedNow } from "./vulns";
 import { oobSecurityTick } from "./oob";
@@ -102,7 +103,7 @@ export function securityTick(s: GameState): SimEvent[] {
   }
   if (s.security.stage < 1) return events;
   const risk = s.security.stage >= 2 ? WARNING_RISK : POC_RISK;
-  for (const c of hosts(s)) if (exposed(s, c) && chance(s.rng, risk * jailFactor(s, c.id))) compromise(s, c, events);
+  for (const c of hosts(s)) if (exposed(s, c) && chance(s.rng, risk * exposureFactor(s, c) * jailFactor(s, c.id))) compromise(s, c, events);
   return events;
 }
 
@@ -131,7 +132,7 @@ function generatedTick(s: GameState): SimEvent[] {
   for (const c of s.clusters) {
     if (!reachable(s, c)) continue;
     const open = openVulns(s, c.id), risk = instanceRisk(open), num = Number(c.id.replace(/\D/g, "")) || 0;
-    if (risk <= 0 || rand(hashRng(s.seed, num, s.hour / 24, 91)) >= risk) continue;
+    if (risk <= 0 || rand(hashRng(s.seed, num, s.hour / 24, 91)) >= risk * exposureFactor(s, c)) continue;
     if (breachEligible(s, c.id, open) && rand(hashRng(s.seed, num, s.hour / 24, 92)) < BREACH_CHANCE) startBreach(s, c, events);
     else compromise(s, c, events);
   }
