@@ -6,6 +6,7 @@ import { offerPrice } from "../30-market/spec";
 import type { Product } from "../30-customers/customers";
 import type { GameState } from "../50-state";
 import { serviceOnline } from "../40-support/status";
+import { serviceHeld } from "../45-billing/billing";
 import { HOW_TO, KNOWLEDGE_BASE } from "../40-support/tickets";
 import { bookable, diskFits, lineOffered, noRoomError, nodeUsed, serverOf, vmRoom, workloadOnline, workloadsOf, type Cluster, type Workload } from "../60-infra/cluster";
 import { machineAddress } from "../60-infra/addresses";
@@ -177,8 +178,9 @@ export function customerSite(s: GameState, serviceId: string): { title: string; 
   if (!v || !cus || v.product !== "webHosting") return null;
   const ws = workloadsOf(s, serviceId);
   const hacked = ws.some((w) => w.clusterId && s.security.hacked.includes(w.clusterId));
-  const status: CustomerSiteStatus = hacked || s.sites.defaced.includes(serviceId) ? "defaced"
-    : v.endedAt !== null || !serviceOnline(s, serviceId) ? "down"
+  const status: CustomerSiteStatus = v.endedAt !== null || serviceHeld(s, v) ? "down"
+    : hacked || s.sites.defaced.includes(serviceId) ? "defaced"
+    : !serviceOnline(s, serviceId) ? "down"
     : ws.some((w) => slowHost(s, w, s.clusters.find((c) => c.id === w.clusterId))) ? "slow" : "up";
   const sponsored = s.sponsorships.some((x) => x.status === "running" && x.serviceIds.includes(serviceId) && !x.board?.dropped);
   return { title: cus.name, blurb: `site.blurb.${cus.profile}`, status, sponsored };
