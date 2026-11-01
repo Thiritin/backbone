@@ -11,6 +11,7 @@ import { bookTransfer, isUnpaid, issue, owed, synced, type Invoice, type Transfe
 import { logActivity } from "../47-staff/activity";
 import type { GameState, LedgerEntry } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
+import { booksFile } from "./tax";
 
 export const LEXWEAR = "Lexwear";
 export const LEXWEAR_HOST = "lexwear.de";
@@ -99,7 +100,11 @@ export function bookFor(s: GameState, tr: Transfer, inv: Invoice, settle: boolea
   logged(s, copy, "matchTransfer", by, minutes);
 }
 
-export const monthlyRun = (s: GameState): void => s.invoices.filter((i) => i.status === "draft").forEach((inv) => sendDraft(s, inv, LEXWEAR));
+// Sends the drafts and, once DOHLE is connected, the advance VAT returns.
+export function monthlyRun(s: GameState): void {
+  s.invoices.filter((i) => i.status === "draft").forEach((inv) => sendDraft(s, inv, LEXWEAR));
+  booksFile(s);
+}
 
 // The open invoice a transfer's reference names, when the amount is exactly what it owes; for money taken back, the paid one.
 export function referenced(s: GameState, tr: Transfer): Invoice | undefined {

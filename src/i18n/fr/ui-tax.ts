@@ -51,4 +51,7 @@ export default {
   "ui-tax.formular.none": () => "Aucune déclaration ouverte",
   "ui-tax.returns.owed": () => "Montant",
   "books.tab.tax": () => "Impôts",
+  "ui-tax.books.connect": () => "Connecter DOHLE",
+  "ui-tax.books.connected": () => "Connecté",
+  "ui-tax.books.submit": () => "Envoyer la déclaration",
 } satisfies Dict;

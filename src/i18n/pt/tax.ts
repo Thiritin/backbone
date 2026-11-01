@@ -52,4 +52,8 @@ export default {
   "ledger.taxCredit": (p) => `Crédito da estimativa ${p.year}`,
   "ledger.taxEstimate": (p) => `Imposto estimado ${p.year}`,
   "error.taxYearClosed": () => "A estimativa deste ano é definitiva.",
+  "error.booksTaxView": () => "O DOHLE precisa do módulo Faturação mensal.",
+  "error.booksNotLinked": () => "O DOHLE não está ligado na contabilidade.",
+  "error.booksInvoices": () => "Faltam faturas deste ano na contabilidade.",
+  "error.booksUnmatched": () => "O extrato deste ano tem transferências por associar.",
 } satisfies Dict;

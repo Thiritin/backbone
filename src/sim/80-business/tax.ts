@@ -2,6 +2,8 @@
 import { dateOf, hourOf, isMonthStart, monthIndexOf, yearOf } from "../00-core/time";
 import { post } from "../40-support/letters";
 import { deliverMail } from "../40-support/tickets";
+import { hasModule } from "../10-catalog/modules";
+import { synced } from "../45-billing/billing";
 import { taxFor } from "../46-finance/finance";
 import type { GameState, LedgerEntry } from "../50-state";
 import { newTax, type TaxReturn, type TaxState } from "./tax-state";
@@ -191,6 +193,24 @@ export function fileVat(s: GameState, r: TaxReturn): number {
 // The certificate is valid while its document is on the desktop; a new registration revokes it.
 export const certOk = (s: GameState): boolean => !!s.tax.cert && s.docs.some((d) => d.id === s.tax.cert && d.kind === "cert");
 
+// Books files with the certificate it was connected with, from the edition with the tax view (the monthly run's tier).
+export const taxView = (s: GameState): boolean => !!s.books.vendor && hasModule(s, "monthly-run");
+export const booksLinked = (s: GameState): boolean => taxView(s) && certOk(s) && s.tax.booksCert === s.tax.cert;
+
+// Books' monthly run sends the advance returns whose period has ended.
+export function booksFile(s: GameState): void {
+  if (!booksLinked(s) || !taxNumber(s)) return;
+  s.tax.returns.filter((r) => r.kind === "vat" && r.filedAt === null && r.to <= s.hour).forEach((r) => fileVat(s, r));
+}
+
+// What keeps Books from submitting the yearly return: an invoice of the year it does not have, or an unmatched transfer.
+export function booksMissing(s: GameState, r: TaxReturn): string | null {
+  const within = (h: number) => h >= r.from && h < r.to;
+  if (s.invoices.some((i) => within(i.issuedAt) && !synced(i))) return "error.booksInvoices";
+  if (s.transfers.some((x) => within(x.hour) && x.matchedAt === null)) return "error.booksUnmatched";
+  return null;
+}
+
 const code36 = (n: number, len: number) => (Math.abs(Math.floor(n)) % 36 ** len).toString(36).toUpperCase().padStart(len, "0");
 export const normalCode = (v: string) => v.toUpperCase().replace(/[^A-Z0-9]/g, "");
 
@@ -201,7 +221,7 @@ export function registerDohle(s: GameState): void {
   deliverMail(s, DOHLE_NAME, "dohleId", { id, number: s.tax.number });
   const days = CODE_DAYS + (n % 3 === 0 ? 1 : 0);
   const l = post(s, DOHLE_NAME, "dohleCode", { code, number: s.tax.number }, days);
-  s.tax = { ...s.tax, dohleId: id, dohleCode: code, codeAt: l.at, cert: null };
+  s.tax = { ...s.tax, dohleId: id, dohleCode: code, codeAt: l.at, cert: null, booksCert: null };
 }
 
 // The yearly return: due 31 May of the next year, 31 July for the years from 2018; reminded in March.

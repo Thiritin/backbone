@@ -58,6 +58,10 @@ The company pays VAT and income tax by filing returns itself. Today `46-finance/
 | Mein DOHLE | from 2013 | The same forms on `www.dohle.de`, logged in with the certificate file. DohleFormular refuses to start from 2013 and points to the portal. |
 | Bookkeeping program | when its edition has the tax view | Connect DOHLE once in Books by picking the certificate file. From then on Books files the advance return in its monthly run and offers Submit tax return, which needs every invoice of the year present and a matched statement (billing-by-hand 9e). |
 
+- Editions (billing-by-hand 9d) are not built yet, so the tax view comes with the tier of the monthly run: Books has it while the Monthly run module is registered, and without it Connect DOHLE opens the module's page on the vendor's site.
+- The monthly run on the first at nine files every advance return whose period has ended, after sending the drafts. Running the monthly run by hand files them too.
+- Submit tax return sits on the yearly return's row in the Books Tax tab. "Every invoice of the year present" means no invoice issued in the year is still waiting for an import from the shop, and "a matched statement" means no transfer of the year is unmatched. Submitting then files like DohleFormular, with the same tax number, certificate and closing checks.
+
 ## 6. Certificate
 
 1. Registering on `www.dohle.de/registrieren/` needs the tax number and the company's email address.

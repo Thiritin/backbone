@@ -52,4 +52,8 @@ export default {
   "ledger.taxCredit": (p) => `Anrechnung der Schätzung ${p.year}`,
   "ledger.taxEstimate": (p) => `Geschätzte Steuer ${p.year}`,
   "error.taxYearClosed": () => "Die Schätzung für dieses Jahr ist bestandskräftig.",
+  "error.booksTaxView": () => "Für DOHLE braucht die Buchhaltung das Modul Monatslauf.",
+  "error.booksNotLinked": () => "DOHLE ist in der Buchhaltung nicht verbunden.",
+  "error.booksInvoices": () => "In der Buchhaltung fehlen Rechnungen aus diesem Jahr.",
+  "error.booksUnmatched": () => "Der Kontoauszug dieses Jahres hat nicht zugeordnete Buchungen.",
 } satisfies Dict;

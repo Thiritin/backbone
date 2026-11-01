@@ -1,7 +1,7 @@
 // docs/design/plans/tax-office.md: what the player files with the tax office through DOHLE.
 import { yearOf } from "../00-core/time";
 import type { GameState } from "../50-state";
-import { answer, CERT_FILE, certOk, fileVat, fileYear, yearOpen, FORMULAR_APP, normalCode, registerDohle, smallLimit, taxNumber } from "../80-business/tax";
+import { answer, booksLinked, booksMissing, CERT_FILE, certOk, taxView, fileVat, fileYear, yearOpen, FORMULAR_APP, normalCode, registerDohle, smallLimit, taxNumber } from "../80-business/tax";
 import { salesAddress } from "../80-business/mail";
 import { freeSpot } from "./docs";
 import type { ActionResult } from "./hardware";
@@ -65,4 +65,21 @@ export function installDohleFormular(s: GameState): ActionResult {
   if (s.installed.includes(FORMULAR_APP)) return fail("error.installed");
   s.installed = [...s.installed, FORMULAR_APP];
   return { ok: true };
+}
+
+// Connecting DOHLE in Books with the certificate file picked from the desktop.
+export function connectDohle(s: GameState, doc: string): ActionResult {
+  if (!taxView(s)) return fail("error.booksTaxView");
+  if (!certOk(s) || doc !== s.tax.cert) return fail("error.dohleCert");
+  s.tax = { ...s.tax, booksCert: doc };
+  return { ok: true };
+}
+
+// Submit tax return in Books: the yearly return, once Books has every invoice of the year and a matched statement.
+export function submitTaxReturn(s: GameState, id: string): ActionResult {
+  if (!booksLinked(s)) return fail("error.booksNotLinked");
+  const r = s.tax.returns.find((x) => x.id === id && x.kind === "year");
+  if (!r) return fail("error.taxReturn");
+  const missing = booksMissing(s, r);
+  return missing ? fail(missing) : fileReturn(s, id);
 }
