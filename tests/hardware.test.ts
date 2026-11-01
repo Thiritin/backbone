@@ -181,11 +181,11 @@ describe("sellDevice", () => {
     ok(sellDevice(s, "dev3"));
     expect(s.devices.map((d) => d.id)).toEqual(["dev4", "dev5", "dev6"]);
     expect(s.cables.map((c) => c.id)).toEqual(["cab-line", "cab7"]);
-    expect(s.cash).toBe(7500);
-    expect(s.ledger.at(-1)).toEqual({ hour: 0, category: "sales", key: "ledger.sale", params: { device: "fra1-srv-01" }, amount: 2500 });
+    expect(s.cash).toBe(7250);
+    expect(s.ledger.at(-1)).toEqual({ hour: 0, category: "sales", key: "ledger.sale", params: { device: "fra1-srv-01" }, amount: 2250 });
     const stored = ok(buyDevice(s, "sw-24", "Sysko", 1, "loc1"));
     ok(sellDevice(s, stored));
-    expect(s.cash).toBe(7500);
+    expect(s.ledger.at(-1)!.amount).toBeCloseTo(-s.ledger.at(-2)!.amount * 0.9, 2);
     expect(err(sellDevice(s, "dev3"))).toBe("error.unknownDevice");
     expect(err(sellDevice(s, "dev5"))).toBe("error.cannotSell");
   });

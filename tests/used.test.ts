@@ -189,7 +189,7 @@ describe("used listings", () => {
     expect(until(t, m.expiresAt).map((e) => e.key)).not.toContain("event.usedOutbidNow");
   });
 
-  it("sells on the board for more than the resale value, after a while", () => {
+  it("sells on the board below the resale value, after a while", () => {
     const s = game(), id = idOf(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
     const value = deviceValue(s, s.devices.find((d) => d.id === id)!), cash = s.cash, at = s.hour;
     const r = listForSale(s, id, "board");
@@ -198,8 +198,8 @@ describe("used listings", () => {
     const events = until(s, at + 31 * 24);
     const sold = events.find((e) => e.key === "event.usedSold")!;
     expect(sold).toBeDefined();
-    expect(s.cash - cash).toBe(Math.round(value * 1.3));
-    expect(s.cash - cash).toBeGreaterThan(value);
+    expect(s.cash - cash).toBe(Math.round(value * 0.9));
+    expect(s.cash - cash).toBeLessThan(value);
     expect(s.ledger.at(-1)!.key).toBe("ledger.usedSale");
     expect(s.usedRep).toBe(1);
   });
@@ -212,7 +212,7 @@ describe("used listings", () => {
 
     const t = game(), dev = idOf(buyDevice(t, "g1-compute", "Dwell", 1, "loc1"));
     const value = deviceValue(t, t.devices.find((d) => d.id === dev)!);
-    const kid = idOf(listForSale(t, dev, "board", Math.round(value * 1.6))), k = t.used.find((x) => x.id === kid)!;
+    const kid = idOf(listForSale(t, dev, "board", Math.round(value * 1.1))), k = t.used.find((x) => x.id === kid)!;
     expect(k.soldAt).toBeNull();
     expect(until(t, k.expiresAt).map((e) => e.key)).toContain("event.usedExpired");
     expect(t.devices.find((d) => d.id === dev)!.store).toBe("loc1");
