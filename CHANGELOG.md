@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- ClientExit has its own look in every era, from a 2005 table admin to the refreshed 7.0 console, and sells its keys, renewals and upgrades at clientexit.com.
 - The Shop section of the Marketing app is gone: you install a shop system from the software page of a panel host, and you manage its modules and payment methods in its admin.
 - Shop vendor websites can now have more than one page, and each shop system can style its own sign-in page.
 - Your shop system now runs in a web space on one of your panel hosts, with a licence key, a trial, an updates window and paid upgrades, and it takes no orders while its host is down or its licence has run out.
