@@ -162,7 +162,7 @@ export function MailAttachments({ tk, r, m }: { tk: Ticket; r: SalesRequest; m: 
   const game = useStore((s) => s.game);
   const openApp = useStore((s) => s.openApp);
   if (m.from !== "you") return null;
-  const q = m.key.startsWith("reply.order.quote.") ? game.quotes.find((x) => x.ticketId === tk.id && x.sentAt === m.hour) : undefined;
+  const q = m.key.startsWith("reply.order.quote.") ? game.quotes.filter((x) => x.ticketId === tk.id && x.sentAt !== null && x.sentAt <= m.hour).at(-1) : undefined;
   const inv = m.key.startsWith("reply.order.done.") ? invoiceOf(game, r) : undefined;
   if (!q && !inv) return null;
   return (
