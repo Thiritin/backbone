@@ -4,6 +4,9 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- Bookkeeping programs now come in editions with their own prices, features, seats and look, GnuCache joins as a free program, and each bookkeeper needs a seat to work.
+- Books now holds the overview, statistics, tax and account statement, Finance is gone, loans live on your bank's website, and low cash brings an email about your bank's overdraft.
+- Hardware insurance is gone, so repairs cost what they cost.
 - Email orders and leads now pick the cheapest of your Books products that fits their needs and budget, accept any quote up to that product's price, and go elsewhere when none of your products fits.
 - Books products stay editable after you choose a shop system.
 - The license set command of each software tool now takes a key the same way the installer does, and the DirectAdmen site shows its Docs page on its own.
