@@ -206,7 +206,9 @@ export function unbookTransfer(s: GameState, tr: Transfer, inv: Invoice): void {
 export function dueStep(inv: Invoice, hour: number): number | null {
   const i = inv.reminders.length;
   if (!isUnpaid(inv) || !chased(inv) || i >= STEPS.length) return null;
-  return hour >= inv.dueAt + STEPS[i].days * DAY ? i : null;
+  // A late first reminder pushes the next steps back, so they keep their spacing.
+  const after = i ? inv.reminders[i - 1] + (STEPS[i].days - STEPS[i - 1].days) * DAY : 0;
+  return hour >= Math.max(inv.dueAt + STEPS[i].days * DAY, after) ? i : null;
 }
 
 export const isSuspended = (s: GameState, customerId: string): boolean => {

@@ -7,7 +7,8 @@ import { yearOf } from "../00-core/time";
 import type { Product, Service } from "../30-customers/customers";
 import { domainFee, domainOf, register, TRANSFER_FEE } from "../30-customers/registry";
 import { CERT_SHARE, offerCertificate } from "../30-customers/certificates";
-import { cancelCustomer, isFinal, replyDue, type Ticket } from "../40-support/tickets";
+import { cancelCustomer, deliverMail, isFinal, replyDue, type Ticket } from "../40-support/tickets";
+import { partnerOf, registrarUrl } from "../80-business/browser";
 import { DUE_DAYS, fromShop, issue, rollPayStep, type Invoice, type InvoiceLine } from "../45-billing/billing";
 import { checkout } from "../45-billing/payments";
 import { ACTION_MINUTES, logActivity } from "../47-staff/activity";
@@ -199,6 +200,8 @@ export function applyStep(s: GameState, t: Ticket, step: OrderStep, by?: string)
     editRequest(s, r.id, () => ({ invoiceId: inv.id, status: "quoted", replyAt: null }));
     carryForward(s, t.id, inv.id);
   } else if (step === "domain") {
+    // The partner's confirmation of the first customer domain opens its reseller login.
+    if (!s.domains.some((d) => d.customerId !== null)) deliverMail(s, partnerOf(s).name, "registrarLogin", { name: partnerOf(s).name, domain: r.domain!, url: `${registrarUrl(s)}login` });
     register(s, r.domain!, customerId, !!r.owned);
   } else {
     const to = r.route ?? hostFor(s, r) ?? "";

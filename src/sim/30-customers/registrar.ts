@@ -1,12 +1,16 @@
 // GDD, Domain registration: the registrar partner under contract bills the registry cost of every domain under management
 // monthly, at a factor that falls with the number of domains. Numbers in economy.md, Sales and quotes (Domains).
-import { invoice, invoicing } from "../46-finance/payables";
+import { effectOf, invoice, invoicing } from "../46-finance/payables";
+import { hashRng, rand } from "../00-core/rng";
 import { dateOf, isMonthStart } from "../00-core/time";
 import { factorFor, icannFee, registrarById, tierFor, type Registrar as Partner, type RegistrarId } from "../10-catalog/registrars";
 import type { GameState, LedgerEntry } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
+import { bump, createTicket, deliverMail, type Ticket } from "../40-support/tickets";
+import { companyParams } from "../40-support/replies";
+import type { Customer } from "./customers";
 import { derivedDomain } from "./domains";
-import { register, REGISTRIES, registryCost, tldOf, YEAR } from "./registry";
+import { DAY, domainOf, heldDomains, register, REGISTRIES, registryCost, tldOf, YEAR } from "./registry";
 
 // transfer is the move of every domain to a new partner, a hand task: doneAt is null until someone starts it.
 export interface Transfer { from: RegistrarId; domains: number; doneAt: number | null }
@@ -50,7 +54,7 @@ export function spinNames(input: string): string[] {
 }
 
 // One twelfth of every domain's wholesale, the monthly domain total.
-export const monthlyDomains = (s: GameState): number => cents(s.domains.reduce((n, d) => n + wholesale(s, d.name), 0) / 12);
+export const monthlyDomains = (s: GameState): number => cents(heldDomains(s).reduce((n, d) => n + wholesale(s, d.name), 0) / 12);
 
 // The certificates resold through the partner: every running SSL service.
 export const certificateCount = (s: GameState): number => s.services.filter((v) => v.product === "ssl" && v.endedAt === null).length;
@@ -68,35 +72,85 @@ export function registrarBill(s: GameState): LedgerEntry[] {
   if (!r.billed && def.signup > 0) entry("ledger.registrarSignup", { name: def.name }, def.signup);
   const fee = def.minimum > 0 ? Math.max(0, cents(def.minimum - domains)) : def.fee;
   if (fee > 0) entry("ledger.registrar", { name: def.name }, fee);
-  if (domains > 0) entry("ledger.domains", { name: def.name, count: s.domains.length }, domains);
+  if (domains > 0) entry("ledger.domains", { name: def.name, count: heldDomains(s).length }, domains);
   const certs = certificateCount(s);
   if (certs > 0) entry("ledger.certificates", { name: def.name, count: certs }, cents((certUnits(s) * def.ssl) / 12));
   return out;
 }
 
-// Hourly: a finished transfer ends. At a month start: the tier follows the count, the company domain renews and the partner invoices.
+// The partner's charges: on its next invoice once suppliers invoice, else straight from the cash.
+function charge(s: GameState, name: string, bill: LedgerEntry[]): void {
+  if (invoicing(s)) {
+    if (bill.length) invoice(s, "registrar", name, bill);
+    return;
+  }
+  s.cash = cents(s.cash - cents(bill.reduce((n, e) => n - e.amount, 0)));
+  s.ledger = [...s.ledger, ...bill];
+}
+
+// Hourly: a finished transfer ends and the new partner books a year of every domain on arrival, so each expires a year
+// later. Daily: customers who left ask for their domains. At a month start: the tier follows the count, the company domain
+// renews and the partner invoices.
 export function registrarTick(s: GameState): SimEvent[] {
   const r = s.registrar, events: SimEvent[] = [];
   if (!r) return events;
   if (r.transfer?.doneAt != null && s.hour >= r.transfer.doneAt) {
+    const name = registrarById(r.id)!.name, moved = heldDomains(s);
     s.registrar = { ...r, transfer: null };
-    events.push({ app: "Browser", key: "event.domainsTransferred", params: { name: registrarById(r.id)!.name, count: r.transfer.domains } });
+    s.domains = s.domains.map((d) => (d.lapsed ? d : { ...d, expiresAt: d.expiresAt + YEAR }));
+    const year = cents(moved.reduce((n, d) => n + wholesale(s, d.name), 0));
+    if (year > 0) charge(s, name, [{ hour: s.hour, category: "domains", key: "ledger.domainsMoved", params: { name, count: moved.length }, amount: -year }]);
+    events.push({ app: "Browser", key: "event.domainsTransferred", params: { name, count: r.transfer.domains } });
   }
+  if (s.hour % DAY === 0) events.push(...transferRequests(s));
   if (!isMonthStart(s.hour)) return events;
-  const tier = tierFor(s.domains.length), was = s.registrar!.tier;
+  const held = heldDomains(s).length, tier = tierFor(held), was = s.registrar!.tier;
   s.registrar = { ...s.registrar!, tier };
-  if (tier > was) events.push({ app: "Browser", key: "event.registrarTier", params: { name: registrarById(r.id)!.name, domains: s.domains.length } });
-  // The company's domain renews with the contract, so only customers' domains need renewing by hand.
-  s.domains = s.domains.map((d) => (d.customerId === null && d.expiresAt - s.hour < MONTH ? { ...d, expiresAt: d.expiresAt + YEAR } : d));
-  const bill = registrarBill(s), total = cents(bill.reduce((n, e) => n - e.amount, 0));
+  if (tier > was) events.push({ app: "Browser", key: "event.registrarTier", params: { name: registrarById(r.id)!.name, domains: held } });
+  // The company's domain renews with the contract, a month ahead; the others renew on their last day (registry.ts).
+  if (effectOf(s, "registrar") !== "domains") s.domains = s.domains.map((d) => (d.customerId === null && !d.lapsed && d.expiresAt - s.hour < MONTH ? { ...d, expiresAt: d.expiresAt + YEAR } : d));
+  const bill = registrarBill(s);
   s.registrar = { ...s.registrar!, billed: true };
-  if (invoicing(s)) {
-    if (bill.length) invoice(s, "registrar", registrarById(r.id)!.name, bill);
-    return events;
-  }
-  s.cash = cents(s.cash - total);
-  s.ledger = [...s.ledger, ...bill];
+  charge(s, registrarById(r.id)!.name, bill);
   return events;
+}
+
+// economy.md, Domains: the share of leaving customers who ask for the auth code of each domain, the days they wait for it,
+// what a refusal costs and the chance it ends in a complaint to the partner, who then releases the domain anyway.
+export const DOMAIN_OUT = "domainOut";
+export const TRANSFER_ASK = 0.5, TRANSFER_WAIT_DAYS = 3, TRANSFER_OUT_DAYS = 2, REFUSE_PENALTY = 15, COMPLAINT_CHANCE = 0.5;
+
+// A customer who left within the last day asks for each domain the partner still renews for them.
+function transferRequests(s: GameState): SimEvent[] {
+  const left = s.customers.filter((c) => c.churnedAt !== null && s.hour > c.churnedAt && s.hour - c.churnedAt <= DAY);
+  const events: SimEvent[] = [];
+  for (const c of left) {
+    for (const d of s.domains) {
+      if (d.customerId !== c.id || d.lapsed || d.cancelled || d.leavesAt !== undefined) continue;
+      if (rand(hashRng(s.seed, d.registeredAt, ...[...d.name].map((ch) => ch.charCodeAt(0)), 289)) >= TRANSFER_ASK) continue;
+      const t = createTicket(s, c, "billing", null, DOMAIN_OUT);
+      Object.assign(t, { domain: d.name, dueAt: s.hour + TRANSFER_WAIT_DAYS * DAY });
+      events.push({ app: "Support", key: "event.ticket", params: { ticketId: t.id, name: c.name, subject: `ticket.billing.${DOMAIN_OUT}.subject`, domain: d.name, service: "", hostname: "" } });
+    }
+  }
+  return events;
+}
+
+const release = (s: GameState, name: string) => {
+  s.domains = s.domains.map((d) => (d.name === name && !d.lapsed ? { ...d, leavesAt: s.hour + TRANSFER_OUT_DAYS * DAY } : d));
+};
+
+// The answer to a transfer request lands: the auth code lets the domain go; a refusal costs happiness and may bring a
+// complaint, after which the partner releases the domain anyway.
+export function answerTransfer(s: GameState, t: Ticket, c: Customer, arg: string, by?: string): void {
+  const name = t.domain ?? "", give = arg === "authCode";
+  t.replies = [...t.replies, { hour: s.hour, template: arg, right: give, key: `reply.${DOMAIN_OUT}.${arg}`, params: { ...companyParams(s), domain: name, code: domainOf(s, name)?.code ?? "" }, ...(by && { by }) }];
+  Object.assign(t, { status: "resolved", updatedAt: s.hour, outcome: give ? "complied" : "domainKept" });
+  if (give) return release(s, name);
+  bump(c, -REFUSE_PENALTY);
+  if (rand(hashRng(s.seed, Number(t.id.slice(3)) || 0, 291)) >= COMPLAINT_CHANCE) return;
+  deliverMail(s, registrarById(s.registrar?.id ?? "nameCheep")!.name, "transferComplaint", { domain: name, customer: c.name });
+  release(s, name);
 }
 
 // Saves from before registrars have a NameCheep contract and their derived company domain registered.

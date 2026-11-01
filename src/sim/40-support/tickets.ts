@@ -26,8 +26,10 @@ export interface Ticket {
   id: string; customerId: string; serviceId: string | null; kind: TicketKind; topic: string; status: TicketStatus;
   createdAt: number; dueAt: number; updatedAt: number; unread: boolean; replies: Reply[];
   outcome: "credit" | "retained" | "cancelled" | "unsuspended" | "kept" | "forwarded" | "takenDown" | "rejected" | "ignored" | "withdrawn" | "complied" | "objected"
-    | "seized" | "refunded" | "refused" | "accepted" | "declined" | "failed" | "offerRefused" | "fixFailed" | "reverted" | "cleaned" | "noBackup" | "updated" | "updateSold" | "managedSold" | "ransomPaid" | "ransomRefused" | "moved" | "moveDeclined" | "sponsored" | "sponsorDeclined" | null;
+    | "seized" | "refunded" | "refused" | "accepted" | "declined" | "failed" | "offerRefused" | "fixFailed" | "reverted" | "cleaned" | "noBackup" | "updated" | "updateSold" | "managedSold" | "ransomPaid" | "ransomRefused" | "moved" | "moveDeclined" | "sponsored" | "sponsorDeclined" | "domainKept" | null;
   work: Work | null; notice?: Notice; move?: Move;
+  // The domain a leaving customer asks to transfer away.
+  domain?: string;
   // The maintenance window a maintenance email is about.
   maint?: { windowId: string; from: number; hours: number };
   // The support agent (an employee id) who takes the ticket before anyone else.
@@ -104,8 +106,9 @@ export const ACTIONS: Record<TicketKind, TicketAction[]> = {
 };
 // Actions only tickets of one topic offer: the customer asks for help with an outdated site, or a defaced site waits for clean-up.
 export const TOPIC_ACTIONS: Record<string, TicketAction[]> = { "howTo.update": ["offerOnce", "offerManaged", "free"], "howTo.hacked": ["clean", "noBackup"] };
-// Topics with replies of their own and no actions: a suspended customer only needs the invoice to pay it.
-export const TOPIC_TEMPLATES: Record<string, string[]> = { "billing.suspended": ["resend", "askDetails"] };
+// Topics with replies of their own and no actions: a suspended customer only needs the invoice to pay it. A transfer
+// request is answered with the auth code or refused (90-actions/registrar.ts).
+export const TOPIC_TEMPLATES: Record<string, string[]> = { "billing.suspended": ["resend", "askDetails"], "billing.domainOut": [] };
 export const ACTION_MINUTES: Partial<Record<TicketAction, number>> = { clean: CLEAN_MINUTES };
 export const actionsOf = (t: Pick<Ticket, "kind" | "topic">): TicketAction[] => (`${t.kind}.${t.topic}` in TOPIC_TEMPLATES ? [] : [...ACTIONS[t.kind], ...(TOPIC_ACTIONS[`${t.kind}.${t.topic}`] ?? [])]);
 // Tickets with their own actions have no reply templates.

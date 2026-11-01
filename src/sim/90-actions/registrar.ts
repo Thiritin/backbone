@@ -1,6 +1,8 @@
 import { registrarById, tierFor } from "../10-catalog/registrars";
-import { domainOf, REGISTRIES, register } from "../30-customers/registry";
-import { beginTransfer, TRANSFER_MINUTES } from "../30-customers/registrar";
+import { domainOf, heldDomains, outCode, REGISTRIES, register } from "../30-customers/registry";
+import { beginTransfer, DOMAIN_OUT, TRANSFER_MINUTES } from "../30-customers/registrar";
+import { MINUTES } from "../40-support/tickets";
+import { find, queue } from "./support";
 import { taken } from "../30-customers/domains";
 import { providerDomain } from "../80-business/browser";
 import { yearOf } from "../00-core/time";
@@ -18,7 +20,7 @@ export function signRegistrar(s: GameState, id: string): ActionResult {
   if (s.registrar?.id === id) return fail("error.registrarCurrent");
   if (s.registrar?.transfer) return fail("error.transferBusy");
   if (s.cash < def.signup) return fail("error.noCash");
-  const was = s.registrar, n = s.domains.length;
+  const was = s.registrar, n = heldDomains(s).length;
   s.registrar = { id: def.id, since: s.hour, tier: tierFor(n), billed: false, transfer: was && n ? { from: was.id, domains: n, doneAt: null } : null };
   return { ok: true, id: def.id };
 }
@@ -75,3 +77,36 @@ export function queueTransfer(s: GameState): ActionResult {
   return { ok: true, id: queueOp(s, "domains", "").id };
 }
 
+
+const heldAt = (s: GameState, name: string) => {
+  const d = domainOf(s, name);
+  return d && !d.lapsed && d.leavesAt === undefined ? d : undefined;
+};
+
+// The reseller panel: the auth code that lets a domain transfer away.
+export function generateAuthCode(s: GameState, name: string): ActionResult {
+  if (!heldAt(s, name)) return fail("error.unknownDomain");
+  const code = outCode(s.seed, name);
+  s.domains = s.domains.map((d) => (d.name === name ? { ...d, code } : d));
+  return { ok: true, id: code };
+}
+
+// Switches a domain's renewal at the partner; a cancelled domain lapses at expiry.
+export function setDomainRenewal(s: GameState, name: string, on: boolean): ActionResult {
+  if (!heldAt(s, name)) return fail("error.unknownDomain");
+  s.domains = s.domains.map((d) => (d.name === name ? { ...d, cancelled: on ? undefined : true } : d));
+  return { ok: true };
+}
+
+// Answers a transfer request with the auth code generated in the panel, or refuses it.
+export function answerDomainTransfer(s: GameState, ticketId: string, code: string | null): ActionResult {
+  const f = find(s, ticketId);
+  if ("error" in f) return f.error;
+  if (f.t.topic !== DOMAIN_OUT || f.t.status !== "open") return fail("error.ticketNotOpen");
+  if (code !== null) {
+    const d = heldAt(s, f.t.domain ?? "");
+    if (!d) return fail("error.unknownDomain");
+    if (!d.code || code.trim().toUpperCase() !== d.code) return fail("error.authCode");
+  }
+  return queue(s, f.t, "resolve", code === null ? "refuse" : "authCode", MINUTES.billing);
+}

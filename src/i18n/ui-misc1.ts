@@ -23,7 +23,7 @@ export default {
   "misc1.billing.statusCol": () => "Status",
   "misc1.billing.reminders": () => "Reminders",
   "misc1.billing.toCollections": () => "Hand to collections",
-  "misc1.billing.sendStep": (p) => `Send ${p.step}`,
+  "misc1.billing.sendStep": (p) => `Send ${String(p.step).toLowerCase()}`,
   "misc1.billing.renew": () => "Renew",
   "misc1.billing.openCustomer": () => "Open customer",
   "misc1.billing.resume": () => "Resume services",

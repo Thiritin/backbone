@@ -1,5 +1,5 @@
 import { AlarmClock, BadgeCheck, ChartColumn, Check, CircleCheck, CircleX, Hourglass, Inbox, Layers, Mails, Search, Timer, TrendingDown, TriangleAlert, Wrench, X } from "lucide-react";
-import type { CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 import { euroCents, euroPrice } from "../../../sim/00-core/money";
 import { updatePrice } from "../../../sim/10-catalog/apps";
 import { deskHas, deskOf, type DeskFeature } from "../../../sim/10-catalog/desks";
@@ -16,6 +16,8 @@ import { HELD_TOPIC } from "../../../sim/80-business/community";
 import { changeTitle } from "../../../sim/90-actions/games";
 import { gameOf } from "../../../sim/60-infra/games";
 import { retentionOptions, type RetentionId } from "../../../sim/40-support/retention";
+import { answerDomainTransfer } from "../../../sim/90-actions/registrar";
+import { DOMAIN_OUT } from "../../../sim/30-customers/registrar";
 import { assignTicket, closeTicket, escalateTicket, readTicket, replyTicket, resolveTicket, retainTicket } from "../../../sim/90-actions/support";
 import { t } from "../../../i18n/en";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
@@ -405,6 +407,7 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
         <div className={sent ? "msg you" : "msg"}>
           <div className="from">{sender ? senderName(sender.id) : sent ? t("support.you") : tk.kind === "sponsor" ? p.event : tk.mail ? tk.mail.from : tk.kind === "pear" ? t("walk.from") : c?.name} · <span className="num">{stamp(tk.createdAt)}</span></div>
           <p>{t(`ticket.${tk.kind}.${tk.topic}.text`, p)}</p>
+          {tk.mail && tk.topic === "registrarLogin" && <p><button className="btn primary" onClick={() => openApp("Browser", { kind: "url", id: String(tk.mail!.params.url) })}>{t("apps.open")}</button></p>}
           {tk.topic === ORDER && <OrderKeys game={game} order={String(tk.mail!.params.order)} />}
           {isLicence(tk.topic) && <p><button className="btn primary" onClick={() => openApp("Books", { kind: "register", id: "" })}>{t("vendor-sites.register")}</button></p>}
         </div>
@@ -473,6 +476,7 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
               </div>
             </>
           )}
+          {tk.topic === DOMAIN_OUT && tk.status === "open" && <TransferAnswer id={tk.id} locked={locked} />}
           <div className="actions-row">
             {actionsOf(tk).filter((a) => (a !== "revert" || tk.topic === "price") && (!stray || a === "reject")).map((a) => (
               <button key={a} className="btn" disabled={locked || ((a === "forward" || a === "takedown") && !c)} onClick={() => reply(resolveTicket, tk.id, a)}>
@@ -494,4 +498,19 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
     </div>
   );
   return gates.customerSidebar && c ? <div className="sup-split">{body}<CustomerCard game={game} id={c.id} /></div> : body;
+}
+
+// A transfer request: the auth code from the registrar's panel goes into the reply, or the transfer is refused.
+function TransferAnswer({ id, locked }: { id: string; locked: boolean }) {
+  const act = useStore((s) => s.act), [code, setCode] = useState("");
+  return (
+    <>
+      <h3>{t("support.reply")}</h3>
+      <form className="actions-row" onSubmit={(e) => { e.preventDefault(); act(answerDomainTransfer, id, code); }}>
+        <input className="field" aria-label={t("registrarForm.authCode")} placeholder={t("registrarForm.authCode")} spellCheck={false} autoCapitalize="characters" value={code} onChange={(e) => setCode(e.target.value)} />
+        <button className="btn primary" disabled={locked || !code.trim()}><Check />{t("support.sendCode")}</button>
+        <button type="button" className="btn ghost" disabled={locked} onClick={() => act(answerDomainTransfer, id, null)}><CircleX />{t("support.refuseTransfer")}</button>
+      </form>
+    </>
+  );
 }
