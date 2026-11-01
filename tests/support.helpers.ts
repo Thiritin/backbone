@@ -1,10 +1,10 @@
 import type { PaymentHabit, Profile } from "../src/sim/30-customers/customers";
 import { createTicket, type Ticket, type TicketKind } from "../src/sim/40-support/tickets";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { workload } from "../src/sim/90-actions/clusters";
-import { readyGame } from "./fixtures";
+import { readyGame, newGame } from "./fixtures";
 
 export const FEB_1 = 744, MAR_1 = 744 + 672;
 

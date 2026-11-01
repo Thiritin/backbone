@@ -6,12 +6,12 @@ import type { Profile } from "../src/sim/30-customers/customers";
 import { CITY_TLD } from "../src/sim/30-customers/domains";
 import { registryCost } from "../src/sim/30-customers/registry";
 import { orderLead } from "../src/sim/30-market/orders";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { travelCost } from "../src/sim/60-infra/status";
 import { addLocation } from "../src/sim/90-actions/hardware";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { CITIES as MAP_CITIES } from "../src/ui/map/world-data";
-import { readyGame } from "./fixtures";
+import { readyGame, newGame } from "./fixtures";
 
 const NEW = ["Düsseldorf", "Kerkrade", "Nuremberg", "Falkenstein", "Munich", "Ashburn", "New York", "Chicago", "Dallas", "Los Angeles"];
 const US = ["Ashburn", "New York", "Chicago", "Dallas", "Los Angeles"];

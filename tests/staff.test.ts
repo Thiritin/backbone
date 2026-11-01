@@ -1,3 +1,4 @@
+import { newGame } from "./fixtures";
 import { describe, expect, it } from "vitest";
 import { createTicket } from "../src/sim/40-support/tickets";
 import { isMonthStart } from "../src/sim/00-core/time";
@@ -5,7 +6,7 @@ import { dueStep, type Invoice } from "../src/sim/45-billing/billing";
 import {
   COURSE_HOURS, forumAwareness, isWorkHour, MARKET_PER_ROLE, MONTHLY_HOURS, quitChance, ROLES, staffPrice, TASKS, TRAINER_HOURS, visibleCandidates, type Role,
 } from "../src/sim/47-staff/staff";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { answerRaise, assign, fire, hire, planTraining, postJobAd } from "../src/sim/90-actions/staff";

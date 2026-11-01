@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
 import { componentParts, fits, MODELS, manufacturerByName, modelById, partOffers, shopModels, vendorsOf } from "../src/sim/10-catalog/hardware";
 import { BUNDLE, partPrice, partsPrice, presetPrice } from "../src/sim/10-catalog/parts";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { installedCores, installedRamGb, raidUsable } from "../src/sim/60-infra/status";
 import { replaceComponent, type CartLine } from "../src/sim/90-actions/hardware";
-import { buyCart, buyDevice } from "./fixtures";
+import { buyCart, buyDevice, newGame } from "./fixtures";
 import { mountDevice } from "./plugged";
 import { withServer } from "./fixtures";
 

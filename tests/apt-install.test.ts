@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { softwareById } from "../src/sim/10-catalog/platforms";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { clusterOf, vmById } from "../src/sim/60-infra/cluster";
 import { createVm, PANEL_VM_SIZE } from "../src/sim/90-actions/clusters";
 import { runLine, watchStep, type Session, type Watch } from "../src/sim/60-infra/terminal";
@@ -8,8 +8,8 @@ import { tick } from "../src/sim/88-tick/tick";
 import type { Call } from "../src/sim/90-actions/index";
 import { softwareOn } from "../src/sim/90-actions/software";
 import { installLog } from "../src/sim/60-infra/apt";
-import { privateIp } from "../src/sim/60-infra/addresses";
-import { bootedMachine, hypervisor, skipTo, withServer } from "./fixtures";
+import { machineAddress } from "../src/sim/60-infra/addresses";
+import { bootedMachine, hypervisor, skipTo, withServer, newGame } from "./fixtures";
 
 // withServer: dev3 is a free server cabled to the desk's router; booted here with an OS.
 const act = (s: GameState) => ([fn, ...args]: Call) => fn(s, ...args);
@@ -56,7 +56,7 @@ describe("installing software from the shell", () => {
     expect(w).toBeNull();
     expect(s.company.domain).toBeNull();
     expect(byHour.every((h) => h.length > 0)).toBe(true);
-    expect(byHour.flat()).toEqual([...log.slice(1), "Proxmocks installation complete.", `You can access your new installation at https://${privateIp(s, "dev3")}:8006/`, "Reboot now to finish the installation."]);
+    expect(byHour.flat()).toEqual([...log.slice(1), "Proxmocks installation complete.", `You can access your new installation at https://${machineAddress(s, "dev3")}:8006/`, "Reboot now to finish the installation."]);
     expect(clusterOf(s, "dev3")?.platform).toBe("proxmocks");
     expect(text(s, "dpkg -l", at)).toMatch(/ii {2}proxmocks-ve +2017 +amd64 +Proxmocks/);
   });

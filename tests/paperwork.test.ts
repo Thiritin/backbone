@@ -6,6 +6,7 @@ import { chamberFee, FEES, NOTARY_MAIL, NOTARY_NAME, OFFICE_MAIL, REGISTER_NAME,
 import { tick } from "../src/sim/88-tick/tick";
 import { COMPANY_LAW_SKILL } from "../src/sim/10-catalog/research";
 import { registerCompany } from "../src/sim/90-actions/company";
+import { openBankAccount } from "../src/sim/90-actions/bank";
 import { downloadForm, signForm } from "../src/sim/90-actions/docs";
 import { sendMail } from "../src/sim/90-actions/paperwork";
 import { research } from "../src/sim/90-actions/store";
@@ -18,7 +19,8 @@ const run = (s: GameState, hours: number) => { for (let i = 0; i < hours; i++) t
 const registered = (form = "sole", bank = "sparklasse", law = true): GameState => {
   const s = newGame(7);
   s.hour = MONDAY_8;
-  expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "sole", bank as never).ok).toBe(true);
+  expect(openBankAccount(s, bank as never).ok).toBe(true);
+  expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "sole").ok).toBe(true);
   s.registration!.form = form;
   if (law) s.unlocks = [...s.unlocks, COMPANY_LAW_SKILL];
   return s;
