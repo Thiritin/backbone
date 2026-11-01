@@ -200,6 +200,38 @@ export function restoreWorkload(s: GameState, id: string): ActionResult {
   return { ok: true };
 }
 
+// Where a lost workload's backup can come back from its backup server: active, working nodes of any cluster, in any location,
+// that sell its product and have room. A web space comes back with its panel VM. down is the hours the copy takes.
+export function restoreTargets(s: GameState, id: string): MigrationTarget[] {
+  const lost = s.workloads.find((x) => x.id === id), found = clusterWorkload(s, (lost && vmOf(s, lost))?.id ?? id);
+  if (!found) return [];
+  const { w, c } = found, backup = s.clusters.find((x) => x.id === c.backup.targetId);
+  if (!lostDisk(s, w) || w.backupAt === null || !backup || !controlPlaneUp(s, backup) || c.kind === "panel") return [];
+  const product = s.services.find((v) => v.id === w.serviceId)?.product;
+  const takes = (to: Cluster) => (product ? supports(to, product) : to.kind === "cloud" && !!to.platform);
+  return s.clusters.filter((to) => !to.vm && controlPlaneUp(s, to) && takes(to)).flatMap((to) => to.nodes.flatMap((n): MigrationTarget[] => {
+    const d = s.devices.find((x) => x.id === n.deviceId);
+    if (!d || n.state !== "active" || !working(s, d.id) || !nodeTakes(s, d, w)) return [];
+    return [{ to: d.id, name: d.label ?? d.name, clusterId: to.id, free: left(bookable(s, d), nodeUsed(s, d.id)), down: restoreHours(s, w, to.az) }];
+  }));
+}
+
+// Restores a lost workload from its backup server onto a node of any cluster, which then runs it: offline for the copy.
+export function restoreTo(s: GameState, id: string, toId: string): ActionResult {
+  const lost = s.workloads.find((x) => x.id === id), found = clusterWorkload(s, (lost && vmOf(s, lost))?.id ?? id);
+  if (!found) return fail("error.unknownWorkload");
+  const { w } = found, target = restoreTargets(s, w.id).find((x) => x.to === toId);
+  if (!lostDisk(s, w)) return fail("error.notLost");
+  if (!target) return fail(w.backupAt === null ? "error.backupUnavailable" : "error.noCapacity");
+  const to = s.clusters.find((x) => x.id === target.clusterId)!;
+  const lostAt = s.devices.find((d) => d.id === w.deviceId)?.dataLost ?? s.hour;
+  patch(s, w.id, { deviceId: toId, clusterId: to.id, placedAt: s.hour, busyUntil: s.hour + target.down, stopped: !!w.template, datastore: undefined, stuck: undefined, corrupted: undefined, recoverDoneAt: undefined, recoverFailed: undefined, snapshots: undefined });
+  s.services = s.services.map((v) => (v.id === w.serviceId ? { ...v, zone: to.az } : v));
+  settleLoss(s, w, lostAt, w.backupAt);
+  freezeTick(s);
+  return { ok: true };
+}
+
 // Closes the open loss items of a workload and the web spaces in it; data saved at savedAt wins back some customer trust.
 export function settleLoss(s: GameState, w: Workload, lostAt: number, savedAt: number | null): void {
   const back = [w.id, ...(isOwnVm(w) ? insideVm(s, w.id).map((x) => x.id) : [])];

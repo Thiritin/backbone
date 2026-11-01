@@ -14,5 +14,6 @@ describe("backula page", () => {
     expect(html).toContain("bconsole");
     expect(html).toContain("bk1-dir Version:");
     expect(html).toContain("/var/lib/backula");
+    expect(html).toContain("No lost machines");
   });
 });
