@@ -182,11 +182,11 @@ export interface LedgerEntry { hour: number; category: string; key: string; para
 
 // A licence key for an OS or software id. edition is a panel tier; kind is the pricing at purchase. covers is the major
 // version a one-time key is bound to, or the hour a subscription's paid term runs to; renewsAt is the next renewal of a
-// subscription and lapsedAt the hour an unpaid one expired.
+// subscription and lapsedAt the hour an unpaid one expired. updatesUntil ends the minor updates a one-time shop key includes.
 export interface Licence {
   id: string; product: string; edition: string | null; kind: LicenseKind; key: string; orderId: string; boughtAt: number;
   machineId: string | null; covers: { kind: "version"; major: string } | { kind: "term"; until: number };
-  renewsAt: number | null; lapsedAt: number | null;
+  renewsAt: number | null; lapsedAt: number | null; updatesUntil?: number;
 }
 
 export interface GameState {

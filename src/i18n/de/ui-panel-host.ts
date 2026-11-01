@@ -72,4 +72,6 @@ export default {
   "host.ownedKeys": () => "Freie Schlüssel",
   "host.continue": () => "Weiter",
   "host.useTrial": () => "Testversion nutzen",
+  "host.shop": () => "Shopsystem",
+  "host.installShop": (p) => `${p.name} installieren`,
 } satisfies Dict;

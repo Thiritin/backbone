@@ -32,7 +32,7 @@ describe("portal shell", () => {
     const s = shopGame();
     const route = parsePortal("whmCache", "/admin/")!;
     const { Admin } = skinOf("whmCache");
-    const out = renderToString(<Admin game={s} variant="whmCache" route={route} open={() => {}} />);
+    const out = renderToString(<Admin game={s} variant="whmCache" route={route} open={() => {}} version="" major="" browse={() => {}} />);
     expect(out).toContain("Pending Orders");
     expect(out).toContain("Products/Services");
   });
@@ -41,8 +41,8 @@ describe("portal shell", () => {
     const s = shopGame();
     for (const v of ["modemBill", "whmCache"] as const) {
       const { Store, Client } = skinOf(v);
-      expect(renderToString(<Store game={s} variant={v} route={{ area: "store", query: new URLSearchParams() }} open={() => {}} />)).toContain("portal");
-      expect(renderToString(<Client game={s} variant={v} route={{ area: "client", query: new URLSearchParams() }} open={() => {}} />)).toContain("Client area");
+      expect(renderToString(<Store game={s} variant={v} route={{ area: "store", query: new URLSearchParams() }} open={() => {}} version="" major="" browse={() => {}} />)).toContain("portal");
+      expect(renderToString(<Client game={s} variant={v} route={{ area: "client", query: new URLSearchParams() }} open={() => {}} version="" major="" browse={() => {}} />)).toContain("Client area");
     }
   });
 

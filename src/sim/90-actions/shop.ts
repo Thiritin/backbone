@@ -1,11 +1,14 @@
 // Choosing a shop system, buying its modules and setting stock (docs/design/shop.md).
 import { MODULE_IDS, SHOP_SETUP_HOURS, shopById, SHOPS, type ShopId } from "../10-catalog/shops";
-import { shopEra, shopKeyPrice, shopLease, shopOnSale } from "../10-catalog/shop-licences";
+import { shopEditionFor, shopEra, shopKeyPrice, shopLease, shopOnSale } from "../10-catalog/shop-licences";
+import { nextMajor, versionAt } from "../10-catalog/software-versions";
+import { assignedKey, assignKey, covers, installKeyBlock, isLicensed, issueKey, licenceBlock, licenseInstall, SHOP_MACHINE, updateKey, yearAfter } from "../60-infra/licence";
+import { upgradeOffer } from "../80-business/vendor-shop";
 import { PRODUCTS } from "../10-catalog/products";
 import type { Product } from "../30-customers/customers";
 import type { GameState } from "../50-state";
 import { owns } from "../80-business/marketing";
-import { groupOf, hasModule, newShop, type ServerGroup, type Stock } from "../80-business/shop";
+import { groupOf, hasModule, installable, newShop, shopCount, shopUpdate, shopUpdatesFee, type ServerGroup, type Stock } from "../80-business/shop";
 import { SERVES, type SoftwareKind } from "../10-catalog/platforms";
 import { t } from "../../i18n/en";
 import type { ActionResult } from "./hardware";
@@ -34,7 +37,83 @@ export function chooseShop(s: GameState, id: ShopId, own = false): ActionResult 
   if (price > 0 && s.cash < price) return fail("error.noCash");
   pay(s, price, "ledger.shopSetup", { name: v.name });
   s.shop = { ...newShop(), variant: id, owned: own, since: s.hour, readyAt: s.hour + SHOP_SETUP_HOURS, groups: s.shop.groups.length ? s.shop.groups : firstGroups(s), products: s.shop.products, productGroups: s.shop.productGroups };
+  // The bought key, or the lease of the edition the shop needs, goes onto the first panel host; without one the shop waits
+  // to be installed.
+  const k = !isLicensed(id) ? undefined : issueKey(s, id, own ? null : shopEditionFor(id, s.hour, shopCount(s))?.id ?? null);
+  const host = s.clusters.find((c) => c.kind === "panel" && c.panel);
+  if (host) installShop(s, host.id, k?.key);
   return { ok: true, id };
+}
+
+// docs/design/plans/shop-software.md: installs the chosen shop system into a web space of a panel host, which counts against
+// the panel's licence. It takes the newest release its key may install; a typed key licenses it, else it keeps the key it
+// holds, runs its trial or needs a key. Installing it on another host moves it.
+export function installShop(s: GameState, clusterId: string, key?: string): ActionResult {
+  const id = s.shop.variant;
+  if (!id) return fail("error.needsShop");
+  const c = s.clusters.find((x) => x.id === clusterId);
+  if (!c) return fail("error.unknownCluster");
+  if (c.kind !== "panel" || !c.panel) return fail("error.shopHostPanel");
+  if (s.shop.install?.clusterId === clusterId) return fail("error.shopInUse");
+  const full = licenceBlock(s, c);
+  if (full) return fail(full);
+  const code = key?.trim().toUpperCase(), held = assignedKey(s, SHOP_MACHINE, id);
+  const typed = code ? s.licenses.find((k) => k.product === id && k.key === code && (k.machineId === null || k.machineId === SHOP_MACHINE)) : undefined;
+  const version = (installable(s, id, code ? typed : held) ?? versionAt(id, s.hour)).version;
+  const blocked = held && !code ? null : installKeyBlock(s, SHOP_MACHINE, id, version, code);
+  if (blocked) return fail(blocked);
+  s.shop = { ...s.shop, install: { clusterId, version, at: s.hour } };
+  if (!held || code) licenseInstall(s, SHOP_MACHINE, id, version, code);
+  return { ok: true, id: version };
+}
+
+const setVersion = (s: GameState, version: string) => { s.shop = { ...s.shop, install: { ...s.shop.install!, version } }; };
+
+// Installs the newest release the shop's key may install.
+export function updateShop(s: GameState): ActionResult {
+  if (!s.shop.install) return fail("error.shopNotInstalled");
+  const next = shopUpdate(s);
+  if (!next) return fail("error.noUpdate");
+  setVersion(s, next.version);
+  return { ok: true, id: next.version };
+}
+
+// Pays the yearly updates fee of the shop's one-time key: its updates run a year past their end, or from now once ended.
+// A vendor no longer selling keys charges the fee of the era the key was bought in.
+export function renewShopUpdates(s: GameState): ActionResult {
+  const id = s.shop.variant, k = id ? assignedKey(s, SHOP_MACHINE, id) : undefined;
+  if (!id || !k || k.updatesUntil === undefined) return fail("error.noUpdates");
+  const fee = shopUpdatesFee(s, k);
+  if (fee === undefined) return fail("error.notForSale");
+  if (s.cash < fee) return fail("error.noCash");
+  payLicence(s, fee, "ledger.shopUpdates", { name: shopById(id).name });
+  updateKey(s, k.id, { updatesUntil: yearAfter(Math.max(k.updatesUntil, s.hour)) });
+  return { ok: true, id: k.id };
+}
+
+// Moves the shop to the newest release of the next major. A key for an older major is replaced by a key for the new one at
+// the vendor's upgrade price; the old key goes back unassigned.
+export function upgradeShop(s: GameState): ActionResult {
+  const id = s.shop.variant, at = s.shop.install;
+  if (!id || !at) return fail("error.shopNotInstalled");
+  const next = nextMajor(id, at.version, s.hour);
+  if (!next) return fail("error.noMajorUpgrade");
+  const k = assignedKey(s, SHOP_MACHINE, id);
+  if (k && !covers(k, next.version)) {
+    const offer = k.covers.kind === "version" ? upgradeOffer(s, id, k.covers.major) : null;
+    if (!offer) return fail("error.notForSale");
+    if (s.cash < offer.fee) return fail("error.noCash");
+    payLicence(s, offer.fee, "ledger.shopUpgrade", { name: shopById(id).name, major: next.major });
+    assignKey(s, issueKey(s, id, null, undefined, next.major).id, SHOP_MACHINE);
+  }
+  setVersion(s, next.version);
+  return { ok: true, id: next.version };
+}
+
+function payLicence(s: GameState, amount: number, key: string, params: Record<string, string | number>): void {
+  if (amount <= 0) return;
+  s.cash = Math.round((s.cash - amount) * 100) / 100;
+  s.ledger = [...s.ledger, { hour: s.hour, category: "licenses", key, params, amount: -amount }];
 }
 
 export function buyModule(s: GameState, module: string): ActionResult {

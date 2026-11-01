@@ -30,4 +30,10 @@ export default {
   "ledger.shopUpdates": (p) => `Actualizaciones de tienda: ${p.name}`,
   "ledger.shopCut": (p) => `Participación en ingresos de la tienda: ${p.name}`,
   "ledger.shopModule": (p) => `Módulo de tienda: ${p.module}`,
+  "error.shopNotInstalled": () => "El sistema de tienda no está instalado.",
+  "error.shopDown": () => "El host del sistema de tienda está caído.",
+  "error.shopHostPanel": () => "Solo un host de panel de alojamiento web puede ejecutar el sistema de tienda.",
+  "error.noUpdate": () => "No hay ninguna actualización disponible.",
+  "error.noUpdates": () => "Esta licencia no incluye actualizaciones.",
+  "ledger.shopUpgrade": (p) => `Actualización de tienda: ${p.name} ${p.major}`,
 } satisfies Dict;

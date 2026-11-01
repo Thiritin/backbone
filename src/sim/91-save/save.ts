@@ -1,5 +1,5 @@
 import { migrateBooks } from "./books";
-import { fillShop } from "./shop";
+import { fillShop, installSavedShop } from "./shop";
 import { brandsOf, fillCpus, isOfficeRouter, MODELS, modelById, RENAMED_MODELS, wanPort } from "../10-catalog/hardware";
 import { freeSlots } from "../60-infra/status";
 import { legacyLicences } from "../60-infra/licence";
@@ -170,6 +170,7 @@ export function deserialize(raw: string): GameState {
   if (!data.books) s.books = { vendor: data.installed?.some((id: string) => id === "Books" || id === "Billing") ? "lexwear" : null, installedAt: 0, edition: null, seats: 0 };
   migrateBooks(s);
   s.tax = data.tax ? { ...base.tax, ...data.tax } : s.registration ? legacyTax(s) : base.tax;
+  if (data.shop && data.shop.install === undefined) installSavedShop(s);
   return s;
 }
 

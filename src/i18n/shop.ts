@@ -31,4 +31,10 @@ export const SHOP_EN: Record<string, (p: Params) => string> = {
   "ledger.shopUpdates": (p) => `Shop updates: ${p.name}`,
   "ledger.shopCut": (p) => `Shop revenue share: ${p.name}`,
   "ledger.shopModule": (p) => `Shop module: ${p.module}`,
+  "error.shopNotInstalled": () => "The shop system is not installed.",
+  "error.shopDown": () => "The shop system's host is down.",
+  "error.shopHostPanel": () => "Only a web hosting panel host can run the shop system.",
+  "error.noUpdate": () => "No update is available.",
+  "error.noUpdates": () => "This licence includes no updates.",
+  "ledger.shopUpgrade": (p) => `Shop upgrade: ${p.name} ${p.major}`,
 };

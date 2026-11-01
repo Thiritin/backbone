@@ -30,4 +30,10 @@ export default {
   "ledger.shopUpdates": (p) => `Mises à jour de la boutique : ${p.name}`,
   "ledger.shopCut": (p) => `Part de chiffre d'affaires de la boutique : ${p.name}`,
   "ledger.shopModule": (p) => `Module de boutique : ${p.module}`,
+  "error.shopNotInstalled": () => "Le système de boutique n'est pas installé.",
+  "error.shopDown": () => "L'hôte du système de boutique est hors service.",
+  "error.shopHostPanel": () => "Seul un hôte de panneau d'hébergement web peut faire tourner le système de boutique.",
+  "error.noUpdate": () => "Aucune mise à jour disponible.",
+  "error.noUpdates": () => "Cette licence n'inclut aucune mise à jour.",
+  "ledger.shopUpgrade": (p) => `Mise à niveau de la boutique : ${p.name} ${p.major}`,
 } satisfies Dict;

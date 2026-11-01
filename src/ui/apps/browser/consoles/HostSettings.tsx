@@ -11,8 +11,10 @@ import { CHANNELS, channelOf } from "../../../../sim/60-infra/channel";
 import { setChannel } from "../../../../sim/90-actions/software";
 import { setOversell } from "../../../../sim/90-actions/oversell";
 import { tiersOf } from "../../../../sim/10-catalog/licence-tiers";
-import { accountsOn, licenceExpired, panelMachine, panelStatus, tierOf, tiersOnSale, trialOf } from "../../../../sim/60-infra/licence";
+import { accountsOn, isLicensed, licenceExpired, panelMachine, panelStatus, tierOf, tiersOnSale, trialOf } from "../../../../sim/60-infra/licence";
 import { setLicenceTier } from "../../../../sim/90-actions/licence";
+import { installShop } from "../../../../sim/90-actions/shop";
+import { shopById } from "../../../../sim/10-catalog/shops";
 import { ram } from "../../hw";
 import { Facts, type Fact } from "./PanelBase";
 import { usePageAct } from "../pageAct";
@@ -89,7 +91,25 @@ export function LicenceTiers({ game, c }: { game: GameState; c: Cluster }) {
   );
 }
 
+// The shop system in a web space of a panel host: the release it runs here, or the chosen one to install with a key.
+export function ShopInstall({ game, c }: { game: GameState; c: Cluster }) {
+  const act = usePageAct(), [code, setCode] = useState(""), id = game.shop.variant;
+  if (!id || c.kind !== "panel") return null;
+  const name = shopById(id).name, here = game.shop.install?.clusterId === c.id ? game.shop.install : null;
+  return (
+    <>
+      <h4 className="cx-h">{t("host.shop")}</h4>
+      {here ? <Facts facts={[{ label: name, value: here.version, num: true }]} /> : (
+        <div className="cx-inline">
+          {isLicensed(id) && <label className="cx-field">{t("shop-admin.key")}<input value={code} autoComplete="off" onChange={(e) => setCode(e.target.value)} /></label>}
+          <button className="cx-btn primary" onClick={() => act(installShop, c.id, code.trim() || undefined).ok && setCode("")}>{t("host.installShop", { name })}</button>
+        </div>
+      )}
+    </>
+  );
+}
+
 // What the software page of a panel or game host adds under its actions.
 export function HostSettings({ game, c }: { game: GameState; c: Cluster }) {
-  return oversold(c) ? <div className="cx-host-settings"><LicenceBanner game={game} c={c} />{c.kind === "panel" && <ChannelPicker c={c} />}<Oversell game={game} c={c} /></div> : null;
+  return oversold(c) ? <div className="cx-host-settings"><LicenceBanner game={game} c={c} />{c.kind === "panel" && <ChannelPicker c={c} />}<Oversell game={game} c={c} /><ShopInstall game={game} c={c} /></div> : null;
 }

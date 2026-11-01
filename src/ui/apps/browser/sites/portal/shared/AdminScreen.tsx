@@ -7,10 +7,12 @@ import { Orders } from "./Orders";
 import { ProductEdit } from "./ProductEdit";
 import { Products } from "./Products";
 import { Servers } from "./Servers";
+import { LicenceScreen, UpdatesScreen } from "./Licence";
 
 export const SCREEN_LABEL: Partial<Record<ScreenName, string>> = {
   home: t("shop-admin.home"), products: t("shop-admin.products"), options: t("shop-admin.options"), servers: t("shop-admin.servers"),
   orders: t("shop-admin.pendingOrders"), clients: t("shop-admin.clients"), invoices: t("shop-admin.invoices"),
+  licence: t("shop-admin.licence"), updates: t("shop-admin.updates"),
 };
 
 function Home({ game, go }: ScreenProps) {
@@ -34,6 +36,8 @@ export function AdminScreen({ screen, ...props }: ScreenProps & { screen: Screen
     case "clients": return <Clients {...props} />;
     case "client": return <ClientSummary {...props} id={screen.id ?? ""} tab={screen.tab} />;
     case "invoices": return <Invoices {...props} />;
+    case "licence": return <LicenceScreen {...props} />;
+    case "updates": return <UpdatesScreen {...props} />;
     default: return <Home {...props} />;
   }
 }

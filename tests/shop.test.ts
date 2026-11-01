@@ -8,6 +8,7 @@ import { hasModule, inStock, shopActive, shopBills, shopTick, stockOf, WHM_BREAC
 import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { addToGroup, buyModule, chooseShop, createGroup, removeFromGroup, setGroupDeploy, setGroupSale, setStock } from "../src/sim/90-actions/shop";
 import { cordon, uncordon } from "../src/sim/90-actions/clusters";
+import { keyFee } from "../src/sim/85-products/products";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { automate, readyGame } from "./fixtures";
 
@@ -101,14 +102,11 @@ describe("shop systems", () => {
     expect(s.shop.soldOut.webHosting).toBe(1);
   });
 
-  it("bill leases, per-server minimums and revenue shares", () => {
-    const whm = withShop(6);
-    expect(shopBills(whm)).toMatchObject([{ key: "ledger.shopLicence", amount: 15 }]);
-    at(whm, 2021);
-    expect(shopBills(whm)[0].amount).toBe(18);
-    const uber = at(withShop(7, "modemBill"), 2007);
-    uber.shop = { ...uber.shop, variant: "ubersmyth" };
-    expect(shopBills(uber)).toMatchObject([{ key: "ledger.shopLicence", amount: 100 }]);
+  it("lease as licence keys and bill only revenue shares", () => {
+    const whm = withShop(6), key = whm.licenses.find((k) => k.product === "whmCache")!;
+    expect(shopBills(whm)).toEqual([]);
+    expect(key).toMatchObject({ edition: "leased", kind: "server", covers: { kind: "term" } });
+    expect(keyFee(whm, key)).toBe(15);
     const box = at(withShop(8, "modemBill"), 2007);
     box.shop = { ...box.shop, variant: "orderBocks" };
     box.services = [{ ...box.services[0], viaShop: true, endedAt: null, price: 10 / 730 }];

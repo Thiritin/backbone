@@ -7,7 +7,7 @@ import { genOf, modelById } from "../10-catalog/hardware";
 import { balancerIn, isService, softwareById } from "../10-catalog/platforms";
 import { slowTolerance } from "../10-catalog/usage";
 import { channelOf, EDGE_HOWTO } from "../60-infra/channel";
-import { accountsOn, keyTiers, assignedKey, extendKey, productOf, panelMachine, startTrial, tiersOnSale, updateKey, yearly } from "../60-infra/licence";
+import { accountsOn, keyTiers, shopMachine, assignedKey, extendKey, productOf, panelMachine, startTrial, tiersOnSale, updateKey, yearly } from "../60-infra/licence";
 import { LAPSE_GRACE_DAYS, topTier, type LicenceTier } from "../10-catalog/licence-tiers";
 import { APP_SUITE_FEE, eraAt } from "../10-catalog/server-os";
 import { homeLineById } from "../20-world/datacenters";
@@ -265,7 +265,7 @@ function billLicenses(s: GameState) {
     ...(balancerFee(s, c) > 0 ? [line("ledger.balancer", { cluster: c.name, name: balancerIn(softwareById(c.platform!), yearOf(s.hour))!.name }, balancerFee(s, c))] : []),
   ]);
   // ponytail: sold, scrapped and deleted machines release their keys here, at the month's bill.
-  const held = new Set([...s.devices, ...s.workloads, ...s.ops.seized.map((x) => x.device)].map((m) => m.id));
+  const held = new Set([...s.devices, ...s.workloads, ...s.ops.seized.map((x) => x.device), ...(shopMachine(s) ? [shopMachine(s)!] : [])].map((m) => m.id));
   s.licenses = s.licenses.map((k) => (k.machineId !== null && !held.has(k.machineId) ? { ...k, machineId: null } : k));
   if (!lines.length) return;
   s.cash = Math.round((s.cash + lines.reduce((n, l) => n + l.amount, 0)) * 100) / 100;

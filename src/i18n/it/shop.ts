@@ -30,4 +30,10 @@ export default {
   "ledger.shopUpdates": (p) => `Aggiornamenti shop: ${p.name}`,
   "ledger.shopCut": (p) => `Quota dei ricavi dello shop: ${p.name}`,
   "ledger.shopModule": (p) => `Modulo shop: ${p.module}`,
+  "error.shopNotInstalled": () => "Il sistema shop non è installato.",
+  "error.shopDown": () => "L'host del sistema shop è fuori servizio.",
+  "error.shopHostPanel": () => "Solo un host con pannello di web hosting può eseguire il sistema shop.",
+  "error.noUpdate": () => "Nessun aggiornamento disponibile.",
+  "error.noUpdates": () => "Questa licenza non include aggiornamenti.",
+  "ledger.shopUpgrade": (p) => `Upgrade shop: ${p.name} ${p.major}`,
 } satisfies Dict;

@@ -3,6 +3,7 @@ import { yearOf } from "../../../../../../sim/00-core/time";
 import { AdminScreen, SCREEN_LABEL } from "../shared/AdminScreen";
 import { screenArgs, screenOf, type Screen, type ScreenName } from "../shared/nav";
 import type { SkinProps } from "../skins";
+import { VersionFooter } from "../shared/Licence";
 import "../portal.css";
 import "./skin.css";
 
@@ -12,12 +13,13 @@ const MENUS: [string, ScreenName[]][] = [
   ["shop-admin.menuOrders", ["orders"]],
   ["shop-admin.menuBilling", ["invoices"]],
   ["shop-admin.menuSetup", ["products", "options", "servers"]],
+  ["shop-admin.menuHelp", ["licence", "updates"]],
 ];
 
 // WHMCache 3 and 4 until 2011, Blend and the Six theme until 2019, then the flat admin.
 export const eraOf = (hour: number): "early" | "mid" | "late" => (yearOf(hour) <= 2011 ? "early" : yearOf(hour) <= 2019 ? "mid" : "late");
 
-export function WhmCacheAdmin({ game, route, open }: SkinProps) {
+export function WhmCacheAdmin({ game, variant, route, open, browse }: SkinProps) {
   const screen = screenOf(route.query);
   const go = (s: Screen) => open("admin", {}, screenArgs(s));
   const current = screen.name === "product" ? "products" : screen.name === "client" ? "clients" : screen.name;
@@ -37,9 +39,10 @@ export function WhmCacheAdmin({ game, route, open }: SkinProps) {
           ))}
         </nav>
         <main className="whm-main">
-          <AdminScreen game={game} screen={screen} go={go} toClient={(c) => open("client", {}, { c })} />
+          <AdminScreen game={game} screen={screen} go={go} toClient={(c) => open("client", {}, { c })} browse={browse} />
         </main>
       </div>
+      <VersionFooter game={game} variant={variant} />
     </div>
   );
 }

@@ -72,4 +72,6 @@ export default {
   "host.ownedKeys": () => "Unassigned keys",
   "host.continue": () => "Continue",
   "host.useTrial": () => "Use trial",
+  "host.shop": () => "Shop system",
+  "host.installShop": (p) => `Install ${p.name}`,
 } satisfies Dict;

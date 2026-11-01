@@ -24,6 +24,6 @@ export const idOf = (r: { ok: boolean; id?: string }) => { expect(r.ok).toBe(tru
 export const render = (s: GameState, variant: string, area: "store" | "configure" | "cart" | "client", ids: { group?: string; product?: string } = {}, screen?: string | Record<string, string>, part: "Store" | "Client" = "Store") => {
   const route = parsePortal(variant as never, portalPath(variant as never, area, ids, screen)) ?? { area, query: new URLSearchParams() };
   const Skin = skinOf(variant as never)[part];
-  return renderToString(<Skin game={s} variant={variant as never} route={route} open={() => {}} />);
+  return renderToString(<Skin game={s} variant={variant as never} route={route} open={() => {}} version="" major="" browse={() => {}} />);
 };
 
