@@ -3,7 +3,7 @@ import { hourOf } from "../src/sim/00-core/time";
 import { modelById, OOB_PORT, oobPorts, shopModels } from "../src/sim/10-catalog/hardware";
 import { DATACENTERS, datacenterById } from "../src/sim/20-world/datacenters";
 import { device, type GameState } from "../src/sim/50-state";
-import { addressOf } from "../src/sim/60-infra/lan";
+import { addressOf, leaseTick } from "../src/sim/60-infra/lan";
 import { networkBills } from "../src/sim/60-infra/network";
 import { consoleVia, exposedDevices, firmwareVulns, GEAR_RECOVER_HOURS, kvmPower, oobSecurityTick, oobUp } from "../src/sim/60-infra/oob";
 import { hardReboot, powerTick, STUCK_CHANCE } from "../src/sim/60-infra/power";
@@ -105,6 +105,8 @@ describe("add-on KVMs", () => {
     expect(failureChance(s, kvm, kvm.components[0]) * 8760).toBeCloseTo(0.04);
     const ip = addressOf(s, "dev90");
     expect(resolve(s, `http://${ip}/`)).toMatchObject({ page: { kind: "kvm", deviceId: "dev90" }, load: "fast" });
+    // The routers store their leases, as every hour does, so the panel VM keeps its own address once the KVM is off.
+    leaseTick(s);
     kvm.on = false;
     expect(resolve(s, `http://${ip}/`).load).toBe("down");
   });

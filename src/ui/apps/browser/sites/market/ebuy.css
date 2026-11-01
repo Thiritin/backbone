@@ -1,0 +1,172 @@
+.mk-ebuy { min-height: 100%; background: #ffffff; color: #000000; font: 13px/1.4 Arial, Helvetica, sans-serif; }
+.mk-ebuy a { color: #0000cc; cursor: pointer; }
+.mk-ebuy ul { list-style: none; padding: 0; }
+.mk-ebuy .num { font-family: inherit; font-variant-numeric: tabular-nums; }
+.mk-ebuy input, .mk-ebuy select { background: #ffffff; color: #000000; border: 1px solid #7f9db9; padding: 2px 3px; font: inherit; }
+.mk-ebuy header { display: grid; grid-template-columns: auto 1fr; grid-template-areas: "logo nav" "search search"; align-items: end; }
+.mk-ebuy .eb-logo { grid-area: logo; display: flex; text-decoration: none; font: 700 48px/1 Helvetica, Arial, sans-serif; letter-spacing: -0.12em; padding-right: 0.12em; }
+.mk-ebuy .eb-logo i { font-style: normal; position: relative; }
+.mk-ebuy .eb-logo i:nth-child(1) { color: #e53238; }
+.mk-ebuy .eb-logo i:nth-child(2) { color: #0064d2; top: -5px; }
+.mk-ebuy .eb-logo i:nth-child(3) { color: #f5af02; }
+.mk-ebuy .eb-logo i:nth-child(4) { color: #86b817; top: -5px; }
+.mk-ebuy nav { grid-area: nav; display: flex; gap: 2px; margin-left: 28px; }
+.mk-ebuy nav a { padding: 4px 18px; text-decoration: none; font-weight: 700; color: #000000; background: linear-gradient(#fff6bf, #ffcc00); border: 1px solid #c9a300; border-bottom: 0; border-radius: 6px 6px 0 0; }
+.mk-ebuy nav a[aria-current] { background: linear-gradient(#5b84d8, #2a56b4); border-color: #1f4596; color: #ffffff; }
+.mk-ebuy .eb-search { grid-area: search; display: flex; gap: 6px; padding: 6px 12px; background: #2a56b4; }
+.mk-ebuy .eb-search input { width: 300px; }
+.mk-ebuy .eb-search button, .mk-ebuy .mk-btn { background: linear-gradient(#fdfdfd, #d4d4d4); color: #000000; border: 1px solid #7f7f7f; border-radius: 2px; padding: 2px 10px; font-weight: 700; }
+.mk-ebuy .mk-btn:disabled { opacity: 0.5; cursor: default; }
+.mk-ebuy .mk-money { display: inline-flex; align-items: center; gap: 3px; }
+.mk-ebuy .mk-money input { width: 90px; }
+.mk-ebuy header { padding: 8px 12px 0; }
+.mk-ebuy.y05 .eb-search { margin: 0 -12px; }
+.mk-ebuy main { padding: 10px 12px; }
+.mk-ebuy footer { margin-top: 16px; padding: 10px 12px; border-top: 1px solid #cccccc; font-size: 10px; color: #666666; }
+.mk-ebuy .eb-none { padding: 16px 0; color: #666666; }
+.mk-ebuy .eb-pill { margin-left: 6px; padding: 0 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; color: #ffffff; background: #339933; }
+.mk-ebuy .eb-pill.warn { background: #cc0000; }
+.mk-ebuy .eb-maker { display: flex; align-items: center; gap: 4px; color: #666666; font-size: 12px; }
+.mk-ebuy .eb-pic { text-align: center; }
+
+.mk-ebuy .eb-cols { display: grid; grid-template-columns: 190px 1fr; gap: 12px; align-items: start; }
+.mk-ebuy aside h3, .mk-ebuy.y05 h2 { background: #d7e1f7; color: #1c3b8b; border: 1px solid #99aedd; padding: 3px 6px; font-size: 12px; }
+.mk-ebuy aside h3 + * { border: 1px solid #99aedd; border-top: 0; margin-bottom: 10px; }
+.mk-ebuy .eb-cats { padding: 4px 0; }
+.mk-ebuy .eb-cats li { padding: 1px 6px; }
+.mk-ebuy .eb-cats a[aria-current] { color: #000000; font-weight: 700; text-decoration: none; }
+.mk-ebuy .eb-cats .num { color: #666666; font-size: 11px; }
+.mk-ebuy .eb-options { display: grid; gap: 8px; padding: 6px; background: #fffbe0; }
+.mk-ebuy.y05 .eb-pick span, .mk-ebuy.y05 .eb-max span { display: block; font-size: 11px; font-weight: 700; }
+.mk-ebuy.y05 .eb-pick select { width: 100%; }
+.mk-ebuy.y05 .eb-max { display: grid; gap: 6px; justify-items: start; }
+.mk-ebuy.y05 .eb-max input { width: 90px; }
+.mk-ebuy .eb-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 4px 6px; }
+.mk-ebuy .eb-bar strong { margin-right: auto; }
+.mk-ebuy.y05 .eb-bar { background: #eef2fb; border-top: 2px solid #2a56b4; }
+.mk-ebuy.y05 .eb-sort span, .mk-ebuy .eb-ship span { margin-right: 4px; }
+.mk-ebuy .eb-table { width: 100%; border-collapse: collapse; }
+.mk-ebuy .eb-table th { background: #d7e1f7; color: #1c3b8b; text-align: left; font-size: 11px; padding: 3px 6px; }
+.mk-ebuy .eb-table td { padding: 4px 6px; border-bottom: 1px solid #dddddd; vertical-align: top; }
+.mk-ebuy .eb-table tbody tr:nth-child(even) td { background: #f6f8fd; }
+.mk-ebuy .eb-table .num { text-align: right; white-space: nowrap; }
+.mk-ebuy .eb-table .eb-pic { width: 68px; }
+.mk-ebuy .eb-table small { display: block; color: #666666; font-size: 11px; }
+
+.mk-ebuy .eb-item { display: grid; grid-template-columns: 270px 1fr; gap: 14px; align-items: start; }
+.mk-ebuy .eb-item section { grid-column: 1 / -1; }
+.mk-ebuy .eb-shot { display: flex; justify-content: center; padding: 8px; border: 1px solid #cccccc; }
+.mk-ebuy .eb-panel { display: grid; gap: 8px; justify-items: start; padding: 8px; border: 1px solid #99aedd; background: #f6f8fd; }
+.mk-ebuy .eb-panel h1 { font-size: 16px; }
+.mk-ebuy .eb-terms div, .mk-ebuy .eb-facts div { display: grid; grid-template-columns: 120px 1fr; gap: 6px; }
+.mk-ebuy .eb-terms dt, .mk-ebuy .eb-facts dt { color: #666666; }
+.mk-ebuy .eb-terms strong { font-size: 16px; }
+.mk-ebuy .eb-bidbox { display: flex; gap: 6px; align-items: center; }
+.mk-ebuy .eb-item .eb-facts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px 16px; padding: 6px; }
+.mk-ebuy .eb-item h2, .mk-ebuy .eb-mine h2 { margin: 12px 0 6px; }
+.mk-ebuy .eb-history { width: 100%; border-collapse: collapse; }
+.mk-ebuy .eb-history th { text-align: left; font-size: 11px; color: #666666; border-bottom: 1px solid #cccccc; padding: 3px 6px; }
+.mk-ebuy .eb-history td { padding: 3px 6px; border-bottom: 1px solid #eeeeee; }
+.mk-ebuy .eb-history td { text-align: left; }
+.mk-ebuy .eb-history :is(th, td):last-child { text-align: right; }
+.mk-ebuy .eb-mine h1 { font-size: 18px; margin-bottom: 4px; }
+.mk-ebuy .eb-selling li { display: flex; align-items: center; gap: 12px; padding: 6px 0; border-bottom: 1px solid #dddddd; }
+.mk-ebuy .eb-selling span { margin-left: auto; color: #666666; }
+
+/* 2012: white header with the search bar beside the logo, a grey refinement bar and a list. */
+.mk-ebuy.y12 { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; color: #333333; }
+.mk-ebuy.y12 a { color: #0654ba; text-decoration: none; }
+.mk-ebuy.y12 input, .mk-ebuy.y12 select { border: 1px solid #bbbbbb; border-radius: 3px; height: 28px; padding: 0 6px; }
+.mk-ebuy.y12 select { background: linear-gradient(#ffffff, #eeeeee); }
+.mk-ebuy.y12 header, .mk-ebuy.y19 header { grid-template-columns: auto 1fr auto; grid-template-areas: "logo search nav"; align-items: center; gap: 20px; padding: 12px 24px; border-bottom: 1px solid #dddddd; }
+.mk-ebuy.y12 .eb-logo, .mk-ebuy.y19 .eb-logo { font-size: 36px; letter-spacing: -0.08em; }
+.mk-ebuy.y12 .eb-logo i, .mk-ebuy.y19 .eb-logo i { top: 0; }
+.mk-ebuy.y12 nav, .mk-ebuy.y19 nav { margin: 0; gap: 4px; }
+.mk-ebuy.y12 nav a { background: none; border: 0; padding: 4px 8px; font-weight: 400; font-size: 12px; color: #555555; }
+.mk-ebuy.y12 nav a[aria-current] { color: #0654ba; font-weight: 700; }
+.mk-ebuy.y12 .eb-search, .mk-ebuy.y19 .eb-search { background: none; padding: 0; gap: 0; }
+.mk-ebuy.y12 .eb-search input { flex: 1; height: 36px; border-radius: 3px 0 0 3px; }
+.mk-ebuy.y12 .eb-search button, .mk-ebuy.y12 .mk-btn { background: linear-gradient(#4f8ae3, #2459b6); color: #ffffff; border: 1px solid #1f4fa3; border-radius: 3px; padding: 4px 14px; }
+.mk-ebuy.y12 .eb-search button { border-radius: 0 3px 3px 0; padding: 0 28px; font-size: 15px; }
+.mk-ebuy.y12 main { padding: 14px 24px; }
+.mk-ebuy.y12 .eb-refine, .mk-ebuy.y19 .eb-refine { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; }
+.mk-ebuy.y12 .eb-refine { padding: 8px 10px; background: #f4f4f4; border: 1px solid #dddddd; border-radius: 3px; }
+.mk-ebuy.y12 .eb-refine span { display: block; font-size: 11px; color: #666666; }
+.mk-ebuy.y12 .eb-pick.on select { border-color: #0654ba; color: #0654ba; font-weight: 700; }
+.mk-ebuy.y12 .eb-max { display: flex; align-items: end; gap: 4px; }
+.mk-ebuy.y12 .eb-max input { width: 80px; }
+.mk-ebuy.y12 .eb-max .mk-btn { height: 28px; }
+.mk-ebuy .eb-sort { margin-left: auto; }
+.mk-ebuy.y05 .eb-sort { margin-left: 0; }
+.mk-ebuy.y12 .eb-bar, .mk-ebuy.y19 .eb-bar { padding: 12px 0; border-bottom: 1px solid #dddddd; }
+.mk-ebuy.y12 .eb-bar strong { font-weight: 400; font-size: 15px; }
+.mk-ebuy.y12 .eb-items li { display: grid; grid-template-columns: 130px 1fr 150px; gap: 14px; padding: 14px 0; border-bottom: 1px solid #e5e5e5; }
+.mk-ebuy.y12 .eb-title { font-size: 15px; }
+.mk-ebuy .eb-title:hover { text-decoration: underline; }
+.mk-ebuy.y12 .eb-info { display: grid; gap: 4px; align-content: start; }
+.mk-ebuy.y12 .eb-facts { font-size: 12px; color: #555555; }
+.mk-ebuy.y12 .eb-facts div { grid-template-columns: 80px 1fr; }
+.mk-ebuy .eb-price { display: flex; flex-direction: column; gap: 2px; }
+.mk-ebuy.y12 .eb-price strong { font-size: 18px; }
+.mk-ebuy .eb-price span { font-size: 12px; color: #777777; }
+.mk-ebuy.y12 .eb-pill, .mk-ebuy.y19 .eb-pill { text-transform: none; font-size: 11px; padding: 1px 6px; border-radius: 3px; color: #3f7a12; background: #e6f4d7; }
+.mk-ebuy.y12 .eb-pill.warn, .mk-ebuy.y19 .eb-pill.warn { color: #c4161c; background: #fde3e1; }
+.mk-ebuy.y12 .eb-item { grid-template-columns: 300px 1fr; gap: 24px; }
+.mk-ebuy.y12 .eb-shot { border-color: #dddddd; border-radius: 4px; }
+.mk-ebuy.y12 .eb-panel { padding: 16px; border: 1px solid #dddddd; border-radius: 4px; background: #fafafa; gap: 12px; }
+.mk-ebuy.y12 .eb-panel h1 { font-size: 20px; font-weight: 400; }
+.mk-ebuy.y12 .eb-terms strong { font-size: 20px; }
+.mk-ebuy.y12 .eb-bidbox .mk-btn { padding: 6px 24px; font-size: 15px; }
+.mk-ebuy.y12 .eb-item h2, .mk-ebuy.y12 .eb-mine h2 { font-size: 16px; font-weight: 400; padding-bottom: 6px; border-bottom: 1px solid #dddddd; margin: 20px 0 8px; }
+.mk-ebuy.y12 .eb-mine h1 { font-size: 24px; font-weight: 400; }
+.mk-ebuy.y12 footer { border: 0; background: #f4f4f4; padding: 14px 24px; font-size: 11px; color: #777777; }
+
+/* 2019: flat white, filter pills and a card grid. */
+.mk-ebuy.y19 { font: 14px/1.45 "Market Sans", "Helvetica Neue", Helvetica, Arial, sans-serif; color: #111820; }
+.mk-ebuy.y19 a { color: #111820; text-decoration: none; }
+.mk-ebuy.y19 input, .mk-ebuy.y19 select { border: 1px solid #c7c7c7; height: 36px; padding: 0 10px; border-radius: 8px; color: #111820; }
+.mk-ebuy.y19 header { padding: 14px 32px; border-color: #e5e5e5; }
+.mk-ebuy.y19 .eb-logo { font-weight: 600; letter-spacing: -0.05em; }
+.mk-ebuy.y19 nav a { background: none; border: 0; border-radius: 0; padding: 4px 8px; font-weight: 400; font-size: 13px; color: #111820; }
+.mk-ebuy.y19 nav a[aria-current] { box-shadow: inset 0 -2px #111820; color: #111820; }
+.mk-ebuy.y19 .eb-search input { flex: 1; height: 44px; border: 2px solid #111820; border-radius: 0; font-size: 15px; }
+.mk-ebuy.y19 .eb-search button { background: #3665f3; color: #ffffff; border: 0; border-radius: 0; padding: 0 40px; font-size: 16px; font-weight: 700; }
+.mk-ebuy.y19 .mk-btn { background: #3665f3; color: #ffffff; border: 0; border-radius: 24px; padding: 10px 24px; font-size: 15px; font-weight: 700; }
+.mk-ebuy.y19 main { padding: 16px 32px; }
+.mk-ebuy.y19 .eb-refine { align-items: center; gap: 8px; }
+.mk-ebuy.y19 .eb-pick { position: relative; }
+.mk-ebuy.y19 .eb-pick span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.mk-ebuy.y19 .eb-pick::after { content: "\25BE"; position: absolute; right: 13px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+.mk-ebuy.y19 .eb-pick select, .mk-ebuy.y19 .eb-sort select { appearance: none; height: 34px; border-radius: 20px; padding: 0 30px 0 14px; background: #ffffff; }
+.mk-ebuy.y19 .eb-sort { position: relative; }
+.mk-ebuy.y19 .eb-sort::after { content: "\25BE"; position: absolute; right: 13px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+.mk-ebuy.y19 .eb-sort span { margin-right: 6px; color: #707070; }
+.mk-ebuy.y19 .eb-pick.on select { background: #111820; border-color: #111820; color: #ffffff; }
+.mk-ebuy.y19 .eb-pick.on::after { color: #ffffff; }
+.mk-ebuy.y19 .eb-max { display: inline-flex; align-items: center; gap: 4px; height: 34px; padding: 0 3px 0 14px; border: 1px solid #c7c7c7; border-radius: 20px; }
+.mk-ebuy.y19 .eb-max.on { border-color: #111820; box-shadow: inset 0 0 0 1px #111820; }
+.mk-ebuy.y19 .eb-max span { margin-right: 4px; }
+.mk-ebuy.y19 .eb-max input { width: 70px; height: 28px; border: 0; padding: 0 4px; }
+.mk-ebuy.y19 .eb-max .mk-btn { padding: 4px 12px; font-size: 13px; }
+.mk-ebuy.y19 .eb-bar { border-color: #e5e5e5; }
+.mk-ebuy.y19 .eb-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 24px 16px; padding-top: 16px; }
+.mk-ebuy.y19 .eb-items li { display: flex; flex-direction: column; gap: 6px; }
+.mk-ebuy.y19 .eb-items .eb-pic, .mk-ebuy.y19 .eb-shot { display: flex; align-items: center; justify-content: center; aspect-ratio: 1; background: #f7f7f7; border: 0; border-radius: 12px; }
+.mk-ebuy.y19 .eb-title { font-size: 15px; }
+.mk-ebuy.y19 .eb-info { display: grid; gap: 4px; }
+.mk-ebuy.y19 .eb-price strong { font-size: 20px; }
+.mk-ebuy.y19 .eb-price span { font-size: 13px; color: #707070; }
+.mk-ebuy.y19 .eb-pill { border-radius: 12px; padding: 2px 8px; font-weight: 600; color: #05823f; background: #e8f5e0; }
+.mk-ebuy.y19 .eb-item { grid-template-columns: 360px 1fr; gap: 32px; }
+.mk-ebuy.y19 .eb-panel { padding: 0; border: 0; background: none; gap: 14px; justify-items: stretch; }
+.mk-ebuy.y19 .eb-panel h1 { font-size: 24px; font-weight: 600; }
+.mk-ebuy.y19 .eb-terms strong { font-size: 24px; }
+.mk-ebuy.y19 .eb-bidbox { display: grid; gap: 10px; }
+.mk-ebuy.y19 .mk-money input { width: 100%; height: 44px; }
+.mk-ebuy.y19 .eb-item h2, .mk-ebuy.y19 .eb-mine h2 { font-size: 20px; font-weight: 600; margin: 28px 0 10px; }
+.mk-ebuy.y19 .eb-item .eb-facts { padding: 0; gap: 6px 24px; }
+.mk-ebuy.y19 .eb-facts dt, .mk-ebuy.y19 .eb-terms dt { color: #707070; }
+.mk-ebuy.y19 .eb-mine h1 { font-size: 28px; font-weight: 700; }
+.mk-ebuy.y19 .eb-selling li { border-color: #e5e5e5; padding: 12px 0; }
+.mk-ebuy.y19 .eb-selling .mk-btn { padding: 6px 16px; font-size: 13px; }
+.mk-ebuy.y19 footer { border-color: #e5e5e5; padding: 20px 32px; font-size: 12px; color: #707070; }

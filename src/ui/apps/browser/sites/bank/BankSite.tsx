@@ -14,7 +14,6 @@ import { readSession, writeSession } from "../../../../session";
 import { noAutofill } from "../../../../no-autofill";
 import "./bank-site.css";
 import { useFieldAct, usePageAct } from "../../pageAct";
-import { useStore } from "../../../../store";
 
 type Go = (url: string) => void;
 const day = (hour: number) => dateOf(hour).toLocaleDateString(LOCALE, { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" });
@@ -249,7 +248,7 @@ function Transfer({ game, bank, prefill, go, standing }: { game: GameState; bank
 }
 
 function Payees({ game, bank, go }: { game: GameState; bank: Bank; go: Go }) {
-  const act = useStore((s) => s.act), iban = ibanEra(game), payees = game.bank!.payees ?? [];
+  const act = usePageAct(), iban = ibanEra(game), payees = game.bank!.payees ?? [];
   const [name, setName] = useState(""), [account, setAccount] = useState(""), [code, setCode] = useState(""), [saved, setSaved] = useState(false);
   const transfer = (p: Payee) => go(`www.${bank.host}/banking/transfer?${new URLSearchParams({ name: p.name, account: payeeAccount(p, iban), ...(p.code && !iban && { code: p.code }) })}`);
   const save = () => { if (act(savePayee, { name, account, ...(iban ? {} : { code }) }).ok) { setName(""); setAccount(""); setCode(""); setSaved(true); } };

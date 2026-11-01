@@ -24,7 +24,7 @@ import { derivedDomain } from "../src/sim/30-customers/domains";
 import { register } from "../src/sim/30-customers/registry";
 import { nodeName } from "../src/sim/30-customers/hostnames";
 import { setMachine, type Cluster } from "../src/sim/60-infra/cluster";
-import { assignedKey, assignKey, isLicensed, issueKey, panelMachine } from "../src/sim/60-infra/licence";
+import { assignedKey, assignKey, isLicensed, issueKey, panelMachine, trialDaysOf } from "../src/sim/60-infra/licence";
 import { topTier } from "../src/sim/10-catalog/licence-tiers";
 import { UI_LOOKS, versionsOf } from "../src/sim/10-catalog/software-versions";
 import { portPeers } from "../src/sim/60-infra/status";
@@ -43,9 +43,11 @@ const done = (s: GameState, id: string, patch: Partial<GameState["clusters"][num
     setMachine(s, m, (x) => ({ software: x.software.map((sw) => (sw.doneAt !== null && sw.doneAt > s.hour ? { ...sw, doneAt: s.hour } : sw)) }));
   }
   s.clusters = s.clusters.map((x) => (x.id === id ? { ...x, ...patch, switching: null } : x));
-  // A licensed panel holds a key, for its top tier when it has tiers.
-  const host = panelMachine(c), panel = patch.panel;
-  if (host && panel && isLicensed(panel) && !assignedKey(s, host, panel)) assignKey(s, issueKey(s, panel, topTier(panel)?.id ?? null).id, host);
+  // Licensed software holds a key on each machine, for its top tier when it has tiers.
+  const sw = patch.panel ?? patch.platform;
+  for (const m of c.vm ? [c.vm] : c.nodes.map((n) => n.deviceId)) {
+    if (sw && isLicensed(sw) && !assignedKey(s, m, sw)) assignKey(s, issueKey(s, sw, topTier(sw)?.id ?? null).id, m);
+  }
   return id;
 };
 // Every node of a licensed platform holds a key, as an install from the console gives it.
@@ -143,8 +145,10 @@ export function join(s: GameState, clusterId: string, deviceId: string) {
 }
 
 // A panel VM on a hypervisor cluster with its panel already installed; returns the panel host id.
-export const panelVm = (s: GameState, clusterId: string, panel = "freepanel", size?: Resources): string =>
-  done(s, must(createPanelVm(s, clusterId, panel, size)), { panel });
+export const panelVm = (s: GameState, clusterId: string, panel = "freepanel", size?: Resources): string => {
+  if (isLicensed(panel) && trialDaysOf(panel) === null) issueKey(s, panel, topTier(panel)?.id ?? null);
+  return done(s, must(createPanelVm(s, clusterId, panel, size)), { panel });
+};
 
 // A bare-metal panel host on a free mounted server with its panel already installed; returns the panel host id.
 export const named = (s: GameState, id: string, name: string): string => done(s, id, { name });

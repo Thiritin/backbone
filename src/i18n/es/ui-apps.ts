@@ -235,7 +235,6 @@ export default {
   "apps.guide.savingText": () => "El juego se guarda solo en este navegador. El menú del logotipo, a la izquierda del todo en la barra de menús, exporta tu partida a un archivo, importa una partida y borra tu progreso.",
   "apps.guide.step.register": () => "Registra tu empresa en la oficina de comercio del navegador.",
   "apps.guide.step.payBill": () => "La oficina de comercio envía la tasa de registro por carta. Abre la carta en Post y págala.",
-  "apps.guide.step.company": () => "Elige el nombre, el logotipo y el color de tu empresa.",
   "apps.guide.step.buyServer": () => "Compra tu primer servidor en la tienda.",
   "apps.guide.step.mountServer": () => "Móntalo en un rack y enciéndelo en Ubicaciones.",
   "apps.guide.step.mountRouter": () => "Monta la Fritz!Bocks del almacén en el rack, conecta su puerto DSL a la toma de línea y el servidor a uno de sus puertos LAN en Ubicaciones.",

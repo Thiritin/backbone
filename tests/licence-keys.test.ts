@@ -79,16 +79,16 @@ describe("renewal days", () => {
 });
 
 describe("panel installs", () => {
-  it("start cPanic on a trial and give DirectAdmen, which has none, a key for its top tier", () => {
+  it("start cPanic on a trial and give DirectAdmen, which has none, the first unassigned key in My account", () => {
     const s = readyGame(1);
-    s.cash = 10_000;
     const cloud = s.clusters.find((c) => c.kind === "cloud")!.id;
     const vm = (panel: string) => { const r = createPanelVm(s, cloud, panel); if (!r.ok) throw new Error(r.error); return panelMachine(s.clusters.find((c) => c.id === r.id)!)!; };
+    expect(createPanelVm(s, cloud, "directadmen")).toMatchObject({ ok: false, error: "error.licenceKeysShort", params: { name: "DirectAdmen" } });
+    const first = issueKey(s, "directadmen", "standard");
+    issueKey(s, "directadmen", "standard");
     const da = vm("directadmen"), cp = vm("cpanic");
-    expect(assignedKey(s, da, "directadmen")).toMatchObject({ edition: "standard", kind: "server", covers: { kind: "term" } });
+    expect(assignedKey(s, da, "directadmen")).toMatchObject({ id: first.id, edition: "standard", kind: "server", covers: { kind: "term" } });
     expect(assignedKey(s, cp, "cpanic")).toBeUndefined();
-    s.hour += 24;
-    productsTick(s);
     expect(trialOf(s, cp, "cpanic")).toBeDefined();
     expect(trialOf(s, da, "directadmen")).toBeUndefined();
     expect([licenceStatus(s, cp, "cpanic"), licenceStatus(s, da, "directadmen")]).toEqual(["trial", "active"]);

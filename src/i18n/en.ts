@@ -456,7 +456,6 @@ export const en: Record<string, (p: Params) => string> = {
   "doc.untitled": () => "Untitled",
   "guide.step.register": () => "Register your company",
   "guide.step.payBill": () => "Pay your first bill",
-  "guide.step.company": () => "Style your company",
   "guide.step.buyServer": () => "Buy a server",
   "guide.step.mountServer": () => "Mount and power it",
   "guide.step.mountRouter": () => "Mount the router",
