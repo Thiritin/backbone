@@ -3,12 +3,13 @@ import { vmById, workloadOnline } from "../src/sim/60-infra/cluster";
 import { createVm } from "../src/sim/90-actions/clusters";
 import { deleteSwitch, saveSwitch, setVmSwitch } from "../src/sim/90-actions/vswitch";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { skipTo } from "./fixtures";
+import { platformKeys, skipTo } from "./fixtures";
 import { err, ok, pmx, SMALL } from "./pmx";
 
 function hv() {
   const x = pmx(2);
   x.s.clusters = x.s.clusters.map((c) => (c.id === x.c ? { ...c, platform: "hypervee" } : c));
+  platformKeys(x.s, x.c);
   skipTo(x.s, 2012);
   const vm = ok(createVm(x.s, x.c, SMALL));
   x.s.workloads = x.s.workloads.map((w) => (w.id === vm ? { ...w, deviceId: "dev3", busyUntil: 0 } : w));

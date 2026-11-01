@@ -1,5 +1,5 @@
 import { t } from "../../../../../i18n/en";
-import { Commands, Features, Nav, Pricing, type SiteProps } from "./SoftwareSite";
+import { Commands, Docs, Features, Nav, Pricing, type SiteProps } from "./SoftwareSite";
 import { Releases } from "./Releases";
 import "./vsftpeed.css";
 
@@ -21,6 +21,7 @@ export function VsFTPeed(props: SiteProps) {
       )}
       {page === "features" && <Features p={p} />}
       {page === "pricing" && <Pricing p={p} />}
+      {page === "docs" && <><Docs p={p} /></>}
       {page === "download" && <><p>{t("browser-sites-2.vsAfterInstall")}</p><Commands p={p} year={year} /></>}
       {(page === "versions" || page === "news") && <Releases p={p} page={page} hour={props.hour} />}
       <hr />

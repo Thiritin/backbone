@@ -12,7 +12,7 @@ import { type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { registerCompany } from "../src/sim/90-actions/company";
 import { newGame as blankGame } from "../src/sim/50-state";
-import { BANKS, type BankId } from "../src/sim/10-catalog/banks";
+import { bankById, BANKS, defaultPlan, type BankId } from "../src/sim/10-catalog/banks";
 import { START_CASH } from "../src/sim/10-catalog/economy";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { FEES } from "../src/sim/80-business/paperwork";
@@ -28,6 +28,7 @@ export const opened = (seed = 1, bank: BankId = "sparklasse", form = "sole"): Ga
   expect(openBankAccount(s, bank).ok).toBe(true);
   expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "sole").ok).toBe(true);
   s.registration!.form = form;
+  s.bank!.plan = defaultPlan(bankById(bank)!, form);
   tick(s);
   return s;
 };
@@ -54,19 +55,19 @@ describe("bank account", () => {
     const s = opened(1, "deutscheBunk");
     const cash = s.cash;
     run(s, hourOf(new Date(Date.UTC(2005, 1, 1))) - s.hour);
-    expect(s.ledger.filter((e) => e.key === "ledger.bankFee")).toEqual([expect.objectContaining({ amount: -12, category: "fees" })]);
-    expect(s.cash).toBeLessThanOrEqual(cash - 12 + earned(s));
+    expect(s.ledger.filter((e) => e.key === "ledger.bankFee")).toEqual([expect.objectContaining({ amount: -18, category: "fees" })]);
+    expect(s.cash).toBeLessThanOrEqual(cash - 18 + earned(s));
   });
 
-  it("charges a limited company the dearer fee and every booking of the month before", () => {
+  it("charges a limited company the dearer fee and every booking of the month before above the free ones", () => {
     const s = opened(1, "sparklasse", "limited"), feb = hourOf(new Date(Date.UTC(2005, 1, 1)));
-    for (let i = 0; i < 3; i++) s.ledger = [...s.ledger, { hour: s.hour, category: "sales", key: "ledger.usedSale", params: {}, amount: 10 }];
+    for (let i = 0; i < 25; i++) s.ledger = [...s.ledger, { hour: s.hour, category: "sales", key: "ledger.usedSale", params: {}, amount: 10 }];
     run(s, feb - s.hour);
     const bookings = s.ledger.filter((e) => e.hour < feb && e.amount !== 0 && e.category !== "fees").length;
-    expect(bookings).toBeGreaterThanOrEqual(3);
+    expect(bookings).toBeGreaterThanOrEqual(25);
     expect(s.ledger.filter((e) => e.hour === feb && e.category === "fees")).toEqual([
+      expect.objectContaining({ key: "ledger.bookingFee", amount: -Math.round((bookings - 20) * 30) / 100, params: { bank: "Sparklasse", count: bookings - 20 } }),
       expect.objectContaining({ key: "ledger.bankFee", amount: -16 }),
-      expect.objectContaining({ key: "ledger.bookingFee", amount: -Math.round(bookings * 30) / 100, params: { bank: "Sparklasse", count: bookings } }),
     ]);
   });
 

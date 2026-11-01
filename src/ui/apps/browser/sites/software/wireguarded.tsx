@@ -1,5 +1,5 @@
 import { t } from "../../../../../i18n/en";
-import { Commands, Features, Nav, Pricing, type SiteProps } from "./SoftwareSite";
+import { Commands, Docs, Features, Nav, Pricing, type SiteProps } from "./SoftwareSite";
 import { Releases } from "./Releases";
 import { SiteMark } from "./marks";
 import "./wireguarded.css";
@@ -15,6 +15,7 @@ export function WireGuarded(props: SiteProps) {
         {page === "home" && <><h2>{t("browser-sites-2.wgName")}</h2><p>{t("browser-sites-2.wgNameText")}</p><h2>{t("browser-sites-2.wgDescription")}</h2><p>{p.site.blurb}</p></>}
         {(page === "home" || page === "features") && <><h2>{t("browser-sites-2.wgFeatures")}</h2><Features p={p} /></>}
         {page === "pricing" && <><h2>{t("browser-sites-2.wgLicense")}</h2><Pricing p={p} /></>}
+        {page === "docs" && <><h2>{t("browser-sites-2.navDocs")}</h2><Docs p={p} /></>}
         {page === "download" && <><h2>{t("browser-sites-2.wgInstallation")}</h2><p>{t("browser-sites-2.wgAfterInstall")}</p><Commands p={p} year={year} /></>}
         {(page === "versions" || page === "news") && <><h2>{t(page === "news" ? "releases.navNews" : "releases.navVersions")}</h2><Releases p={p} page={page} hour={props.hour} /></>}
         <h2>{t("browser-sites-2.wgSeeAlso")}</h2><p>wg(8), wg-quick(8), ip(8)</p>

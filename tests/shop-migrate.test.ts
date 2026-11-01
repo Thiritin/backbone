@@ -16,7 +16,7 @@ describe("order form save migration", () => {
   });
 
   it("loads the hand-rolled variant as no shop, without its scripts and with email orders on", () => {
-    const s = load((d) => { d.marketing.owned = ["website"]; d.marketing.emailOrders = false; d.shop.variant = "hostBull"; d.shop.modules = { cpanic: 0 }; });
+    const s = load((d) => { d.marketing.owned = ["website"]; d.marketing.emailOrders = false; d.shop.variant = "handRolled"; d.shop.modules = { cpanic: 0 }; });
     expect(s.shop).toMatchObject({ variant: null, modules: {} });
     expect(s.marketing.emailOrders).toBe(true);
   });

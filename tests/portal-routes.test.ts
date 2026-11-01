@@ -13,7 +13,8 @@ const withShop = () => {
   s.cash = 1e6;
   setUpChannel(s, "website");
   s.marketing.launched = true;
-  expect(chooseShop(s, "hostBull").ok).toBe(true);
+  s.unlocks = [...s.unlocks, "shops"];
+  expect(chooseShop(s, "modemBill").ok).toBe(true);
   return s;
 };
 
@@ -40,7 +41,6 @@ describe("portal host", () => {
 describe("portal paths", () => {
   it("round trip per shop system", () => {
     for (const v of SHOPS) for (const area of AREAS) {
-      if (area === "client" && v.id === "hostBull") { expect(portalPath(v.id, area)).toBe(""); continue; }
       const ids = { group: "pg1", product: "prod2" };
       const path = portalPath(v.id, area, ids);
       const route = parsePortal(v.id, path);
@@ -48,7 +48,7 @@ describe("portal paths", () => {
       const want = area === "cart" && !route?.area.match(/cart/) ? "configure" : area;
       expect(route?.area, `${v.id} ${area} ${path}`).toBe(want);
       if (area === "configure" || (area === "cart" && want === "configure")) expect(route?.product).toBe("prod2");
-      if (area === "store" && v.id !== "ubersmyth" && v.id !== "orderBocks" && v.id !== "boxBillin" && v.id !== "hostBull") expect(route?.group).toBe("pg1");
+      if (area === "store" && v.id !== "ubersmyth" && v.id !== "orderBocks" && v.id !== "boxBillin") expect(route?.group).toBe("pg1");
     }
   });
 

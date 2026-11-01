@@ -22,6 +22,7 @@ const registered = (form = "sole", bank = "sparklasse", law = true): GameState =
   expect(openBankAccount(s, bank as never).ok).toBe(true);
   expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "sole").ok).toBe(true);
   s.registration!.form = form;
+  s.bank!.plan = "business";
   if (law) s.unlocks = [...s.unlocks, COMPANY_LAW_SKILL];
   return s;
 };
@@ -120,10 +121,13 @@ describe("company paperwork", () => {
   it("answers an unsigned form, a missing capital and a stranger's address without filing", () => {
     const s = registered();
     s.cash = 100;
+    expect(downloadForm(s, "limited")).toEqual({ ok: false, error: "error.shareCapital" });
+    s.cash = SHARE_CAPITAL;
     const r = downloadForm(s, "limited"), doc = r.ok ? r.id! : "";
     sendMail(s, NOTARY_MAIL, "GmbH", doc);
     expect(lastMail(s).topic).toBe("unsigned");
     signForm(s, doc);
+    s.cash = 100;
     sendMail(s, NOTARY_MAIL, "GmbH", doc);
     expect(lastMail(s).topic).toBe("capital");
     sendMail(s, "someone@example.com", "Hi", null);
@@ -140,11 +144,16 @@ describe("company paperwork", () => {
     expect(research(s, COMPANY_LAW_SKILL)).toEqual({ ok: true });
     run(s, 24 * 11);
     expect(s.unlocks).toContain(COMPANY_LAW_SKILL);
+    s.cash = SHARE_CAPITAL;
     expect(downloadForm(s, "limited").ok).toBe(true);
   });
 
-  it("refuses a limited company at a bank that opens no account for one", () => {
+  it("refuses a form the account plan is not made for, before the form is signed", () => {
     const s = registered("sole", "netbunk");
-    expect(downloadForm(s, "limited")).toEqual({ ok: false, error: "error.bankForm" });
+    s.cash = SHARE_CAPITAL;
+    expect(downloadForm(s, "limited")).toEqual({ ok: false, error: "error.bankPlan" });
+    const r = downloadForm(s, "partnership"), doc = r.ok ? r.id! : "";
+    s.bank!.plan = "giro";
+    expect(signForm(s, doc)).toEqual({ ok: false, error: "error.bankPlan" });
   });
 });
