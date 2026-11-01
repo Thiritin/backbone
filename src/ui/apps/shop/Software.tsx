@@ -12,7 +12,6 @@ import { Confirm } from "../../desktop/Confirm";
 import { PearMark } from "../../desktop/Intro";
 import { appByName } from "../registry";
 import { DESK } from "../support/desk";
-import { BooksShelf } from "./BooksShelf";
 import { rowLabel } from "./filter";
 import { useStore } from "../../store";
 import { t } from "../../../i18n/en";
@@ -91,7 +90,6 @@ export function Software() {
           <Action item={featured} />
         </div>
       </section>
-      <BooksShelf />
       {SHELVES.map(([title, ids]) => (
         <section key={title} className="ps-shelf">
           <h3>{t(`shop.shelf.${title}`)}</h3>

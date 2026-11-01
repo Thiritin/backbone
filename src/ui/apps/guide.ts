@@ -5,7 +5,7 @@ import { registrarById, REGISTRARS } from "../../sim/10-catalog/registrars";
 import { supportApp } from "./support/desk";
 import { t } from "../../i18n/en";
 import { OFFICE_URL } from "../../sim/80-business/office";
-import { bankUrl, HOME_URL } from "../../sim/80-business/browser";
+import { bankUrl, dirSlug, HOME_URL } from "../../sim/80-business/browser";
 import type { GameState } from "../../sim/50-state";
 import type { GUIDE } from "../../sim/checklist";
 
@@ -32,8 +32,8 @@ export function stepOf(s: GameState, id: StepId): Step {
       return { title: t("guide.step.register"), text: t("apps.guide.step.register"), app: "Browser", focus: { kind: "url", id: OFFICE_URL } };
     case "payBill":
       return { title: t("guide.step.payBill"), text: t("apps.guide.step.payBill"), app: "Post" };
-      return { title: t("guide.step.books"), text: t("apps.guide.step.books"), app: "Shop", focus: { kind: "software", id: "Bookkeeping" } };
     case "books":
+      return { title: t("guide.step.books"), text: t("apps.guide.step.books"), app: "Browser", focus: { kind: "url", id: `${HOME_URL}${dirSlug(t("sim.index.cat.bookkeeping"))}` } };
     case "buyServer":
       return { title: t("guide.step.buyServer"), text: t("apps.guide.step.buyServer"), app: "Shop" };
     case "mountServer":

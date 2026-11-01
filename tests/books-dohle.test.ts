@@ -23,7 +23,7 @@ function company(small = false): GameState {
   tick(s);
   s.docs = [...s.docs, { id: "cert1", kind: "cert", title: "dohle-zertifikat.pfx", body: "", x: 0, y: 0 }];
   s.tax = { ...s.tax, answered: s.hour, small, number: taxNumberOf(7), numberAt: s.hour, cert: "cert1" };
-  s.books = { vendor: "lexwear", installedAt: s.hour, edition: "financial-office", seats: 0 };
+  s.books = { vendor: "lexwear", installedAt: s.hour, edition: "financial-office", seats: 0, download: null };
   s.cash = 100_000;
   return s;
 }
