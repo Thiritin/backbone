@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
 import { GENERATIONS, START_CASH } from "../src/sim/10-catalog/economy";
 import { brandOnSale, brandsOf, deliveryHours, MODELS, modelById, shopModels } from "../src/sim/10-catalog/hardware";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { freeSlots, linkStatus, mountFrom, mountMax, portPeers, storageStacks } from "../src/sim/60-infra/status";
 import { tick } from "../src/sim/88-tick/tick";
 import { addLocation, buyCart as buyCartReal, buyDevice as buyReal, buyRack, connect, disconnect, sellDevice, setBond, setPortGroup, unmountDevice } from "../src/sim/90-actions/hardware";
-import { buyDevice } from "./fixtures";
+import { buyDevice, newGame } from "./fixtures";
 import { mountDevice, mountStack } from "./plugged";
 import { withServer } from "./fixtures";
 
@@ -181,11 +181,11 @@ describe("sellDevice", () => {
     ok(sellDevice(s, "dev3"));
     expect(s.devices.map((d) => d.id)).toEqual(["dev4", "dev5", "dev6"]);
     expect(s.cables.map((c) => c.id)).toEqual(["cab-line", "cab7"]);
-    expect(s.cash).toBe(7500);
-    expect(s.ledger.at(-1)).toEqual({ hour: 0, category: "sales", key: "ledger.sale", params: { device: "fra1-srv-01" }, amount: 2500 });
+    expect(s.cash).toBe(7250);
+    expect(s.ledger.at(-1)).toEqual({ hour: 0, category: "sales", key: "ledger.sale", params: { device: "fra1-srv-01" }, amount: 2250 });
     const stored = ok(buyDevice(s, "sw-24", "Sysko", 1, "loc1"));
     ok(sellDevice(s, stored));
-    expect(s.cash).toBe(7500);
+    expect(s.ledger.at(-1)!.amount).toBeCloseTo(-s.ledger.at(-2)!.amount * 0.9, 2);
     expect(err(sellDevice(s, "dev3"))).toBe("error.unknownDevice");
     expect(err(sellDevice(s, "dev5"))).toBe("error.cannotSell");
   });

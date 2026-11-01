@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
-import { clusterDefaults } from "../src/sim/60-infra/cluster";
+import { assignKey, issueKey, panelKey, panelMachine } from "../src/sim/60-infra/licence";
 import { productsTick } from "../src/sim/85-products/products";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
@@ -10,16 +10,20 @@ import { panelVm, readyGame } from "./fixtures";
 
 const MONTH = hourOf(new Date(Date.UTC(2006, 0, 1)));
 
-function setup(tier: string, extra: object = {}) {
+// A cPanic VM on the given tier's key, or on a trial until trialUntil without one.
+function setup(tier: string, trialUntil?: number) {
   const s = readyGame(1);
   const id = panelVm(s, s.clusters.find((c) => c.kind === "cloud")!.id, "cpanic");
-  s.clusters = s.clusters.map((c) => (c.id === id ? { ...c, licence: { tier, trialUntil: null, lapsedAt: null, ...extra } } : c));
+  const vm = panelMachine(s.clusters.find((c) => c.id === id)!)!;
+  s.licenses = s.licenses.filter((k) => k.machineId !== vm);
+  if (trialUntil === undefined) assignKey(s, issueKey(s, "cpanic", tier).id, vm);
+  else s.trials = [{ machineId: vm, product: "cpanic", until: trialUntil }];
   s.hour = MONTH;
   const cus = addCustomer(s, "Ada Lang", "hobbyDev");
   const host = () => s.clusters.find((c) => c.id === id)!;
   const add = (label: string) => provisionService(s, cus, "webHosting", { label, clusterId: id });
   const fees = () => s.ledger.filter((l) => l.key === "ledger.license" && l.params.cluster === host().name);
-  return { s, id, host, add, fees };
+  return { s, id, vm, host, add, fees, key: () => panelKey(s, host()) };
 }
 
 describe("licence tiers", () => {
@@ -43,7 +47,7 @@ describe("licence tiers", () => {
   });
 
   it("blocks new accounts and updates once the trial ends, until a tier is bought", () => {
-    const { s, id, host, add } = setup("premier", { trialUntil: MONTH + 10 });
+    const { s, id, host, add } = setup("premier", MONTH + 10);
     expect(add("a.com").ok).toBe(true);
     s.hour += 11;
     expect(add("b.com")).toEqual({ ok: false, error: "error.licenceExpired" });
@@ -54,39 +58,40 @@ describe("licence tiers", () => {
   });
 
   it("lapses on empty cash and recovers within seven days", () => {
-    const { s, host, add } = setup("pro");
+    const { s, key, add } = setup("pro");
     s.cash = 0;
     productsTick(s);
-    expect(host().licence!.lapsedAt).toBe(MONTH);
+    expect(key()!.lapsedAt).toBe(MONTH);
     expect(add("a.com")).toEqual({ ok: false, error: "error.licenceExpired" });
     s.cash = 100; s.hour += 1;
     productsTick(s);
-    expect(host().licence!.lapsedAt).toBeNull();
+    expect(key()!.lapsedAt).toBeNull();
     expect(add("a.com").ok).toBe(true);
   });
 
   it("stays lapsed after seven days", () => {
-    const { s, id, host } = setup("pro");
+    const { s, id, key } = setup("pro");
     s.cash = 0;
     productsTick(s);
     s.cash = 100; s.hour += 8 * 24;
     productsTick(s);
-    expect(host().licence!.lapsedAt).toBe(MONTH);
+    expect(key()!.lapsedAt).toBe(MONTH);
     expect(setLicenceTier(s, id, "pro").ok).toBe(true);
-    expect(host().licence!.lapsedAt).toBeNull();
+    expect(key()!.lapsedAt).toBeNull();
     expect(s.cash).toBe(90);
   });
 
-  it("starts a new install on a 30 day trial", () => {
-    const { s, id, host } = setup("pro");
-    s.clusters = s.clusters.map((c) => (c.id === id ? { ...c, panel: null, licence: undefined, switching: { kind: "panel", to: "cpanic", doneAt: MONTH } } : c));
-    productsTick(s);
-    expect(host().licence).toEqual({ tier: "premier", trialUntil: MONTH + 30 * 24, lapsedAt: null });
-  });
-
-  it("gives an old save the top tier with no expiry", () => {
-    const c = clusterDefaults({ nodes: [], panel: "cpanic" });
-    expect(c.licence).toEqual({ tier: "premier", trialUntil: null, lapsedAt: null });
-    expect(clusterDefaults({ nodes: [], panel: "freepanel" }).licence).toBeUndefined();
+  it("starts a new install on a 15 day trial once per machine", () => {
+    const { s, id, vm, host, add } = setup("pro", MONTH);
+    s.licenses = [];
+    const install = () => { s.clusters = s.clusters.map((c) => (c.id === id ? { ...c, panel: null, switching: { kind: "panel", to: "cpanic", doneAt: s.hour } } : c)); productsTick(s); };
+    s.trials = [];
+    install();
+    expect(s.trials).toEqual([{ machineId: vm, product: "cpanic", until: MONTH + 15 * 24 }]);
+    expect(host().panel).toBe("cpanic");
+    s.hour += 20 * 24;
+    install();
+    expect(s.trials).toEqual([{ machineId: vm, product: "cpanic", until: MONTH + 15 * 24 }]);
+    expect(add("a.com")).toEqual({ ok: false, error: "error.licenceExpired" });
   });
 });

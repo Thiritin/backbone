@@ -1,9 +1,10 @@
+import { newGame } from "./fixtures";
 import { describe, expect, it } from "vitest";
 import { createTicket, MINUTES, TEMPLATES } from "../src/sim/40-support/tickets";
 import type { Invoice } from "../src/sim/45-billing/billing";
 import { ACTION_MINUTES, activityFor } from "../src/sim/47-staff/activity";
 import { campaignBoost, forumAwareness, MONTHLY_HOURS, onShift, shiftEndAt, TASKS, visibleCandidates, type Role } from "../src/sim/47-staff/staff";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { sendReminder, setBillingRules, suspendServices } from "../src/sim/90-actions/billing";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";

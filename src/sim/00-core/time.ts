@@ -21,6 +21,8 @@ export const dateOf = (hour: number): Date => new Date(START + hour * HOUR);
 export const hourOf = (d: Date): number => Math.floor((d.getTime() - START) / HOUR);
 
 export const yearOf = (hour: number): number => dateOf(hour).getUTCFullYear();
+// The first hour of a month written "2013-05".
+export const hourOfMonth = (ym: string): number => { const [y, m] = ym.split("-").map(Number); return hourOf(new Date(Date.UTC(y, m - 1, 1))); };
 // Months since year 0, January 0, for comparing against a release month.
 export const monthIndexOf = (hour: number): number => { const d = dateOf(hour); return d.getUTCFullYear() * 12 + d.getUTCMonth(); };
 

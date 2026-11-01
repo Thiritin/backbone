@@ -66,6 +66,8 @@ export default {
   "sim.skill.people.about": () => "Aprendes a contratar, pagar y organizar a la gente sin perder la pista de quién hace qué.",
   "sim.skill.marketingBasics.name": () => "Fundamentos de marketing",
   "sim.skill.marketingBasics.about": () => "Aprendes quiénes son tus clientes, qué escriben sobre ti y cómo el patrocinio de eventos los conquista.",
+  "sim.skill.companyLaw.name": () => "Derecho societario",
+  "sim.skill.companyLaw.about": () => "Aprendes lo que necesita una sociedad limitada: un notario, capital social y una inscripción en el registro mercantil.",
   "sim.skill.marketing.name": () => "Campañas de marketing",
   "sim.skill.marketing.about": () => "Tu personal aprende a lanzar campañas, seguir el reconocimiento de marca y reservar stands en ferias.",
   "sim.profile.private.name": () => "Particular",

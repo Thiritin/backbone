@@ -5,14 +5,14 @@ import { yearOf } from "../src/sim/00-core/time";
 import { datacenterById } from "../src/sim/20-world/datacenters";
 import type { Profile } from "../src/sim/30-customers/customers";
 import { serviceOnline } from "../src/sim/40-support/status";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { attacks, blackholed, burstFactor, capacityMbps, monthlyNetworkCost, networkBills, networkTick, p95, route, serviceMbps, transitBill, zoneDemand, zoneTraffic } from "../src/sim/60-infra/network";
 import type { SimEvent } from "../src/sim/88-tick/tick";
 import { addressBills, addressTick } from "../src/sim/60-infra/addresses";
 import { buyAddresses } from "../src/sim/90-actions/addresses";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { addLocation } from "../src/sim/90-actions/hardware";
-import { buyDevice } from "./fixtures";
+import { buyDevice, newGame } from "./fixtures";
 import {
   acceptPeering, addUplinkLink, freeRouterPort, joinExchange, orderExchangePort, orderTransit, orderZoneLink, registerAsn, rejectPeering, requestPeering, setBlackhole, setProtection,
 } from "../src/sim/90-actions/network";

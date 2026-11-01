@@ -1,7 +1,8 @@
+import { newGame } from "./fixtures";
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
 import { atFair, marketSalary, visibleCandidates, type Role } from "../src/sim/47-staff/staff";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { fairById, fairCost, fairStart, FAIRS, tradeFairBonus, upcomingFairs } from "../src/sim/80-business/fairs";
 import { leadsThisMonth } from "../src/sim/80-business/marketing";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";

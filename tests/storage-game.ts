@@ -1,10 +1,9 @@
 import { sizeSpec } from "../src/sim/10-catalog/products";
 import { serviceOnline } from "../src/sim/40-support/status";
-import { newGame } from "../src/sim/50-state";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { installSoftware } from "../src/sim/90-actions/software";
-import { bootedMachine, skipTo, withServer } from "./fixtures";
+import { bootedMachine, skipTo, withServer, newGame } from "./fixtures";
 
 void serviceOnline;
 

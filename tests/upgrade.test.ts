@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { dualPsuModel } from "../src/sim/10-catalog/hardware";
 import { visibleCandidates } from "../src/sim/47-staff/staff";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { BOOT_HOURS, deviceHealth, installedRamGb } from "../src/sim/60-infra/status";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { addLocation, addSecondPsu, buyRack, installPart, removePart, setPower, type CartLine } from "../src/sim/90-actions/hardware";
-import { buyBare, buyDevice } from "./fixtures";
+import { buyBare, buyDevice, newGame } from "./fixtures";
 import { hire, queueOperation } from "../src/sim/90-actions/staff";
 import { mountDevice } from "./plugged";
 import { withServer } from "./fixtures";
