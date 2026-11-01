@@ -8,7 +8,7 @@ import { tick } from "../src/sim/88-tick/tick";
 import { suggestedUsername, type PackageDef } from "../src/sim/80-business/packages";
 import { confirmOrder, createAccount, provisionOrder, quoteOrder, registerOrderDomain } from "../src/sim/90-actions/orders";
 import { addPackage, changePackage } from "../src/sim/90-actions/packages";
-import { mailed, readyGame } from "./fixtures";
+import { mailed, owner, readyGame } from "./fixtures";
 
 const run = (s: GameState, hours: number) => { for (let i = 0; i < hours; i++) tick(s); };
 const must = (r: { ok: boolean; error?: string }) => { if (!r.ok) throw new Error(r.error); run(s0, 1); };
@@ -26,7 +26,7 @@ function ready(seed: number) {
   must(confirmOrder(s, id));
   s.invoices = s.invoices.map((i) => (i.id === invoiceOf(s, req())!.id ? { ...i, payStep: 0, payAt: s.hour } : i));
   run(s, 1);
-  must(registerOrderDomain(s, id));
+  must(registerOrderDomain(s, id, ...owner(s, id)));
   return { s, id, req, host: hostFor(s, req())! };
 }
 const pkg = (sold: Spec, name: string, f: (k: number) => number): PackageDef => ({

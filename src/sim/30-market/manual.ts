@@ -23,6 +23,7 @@ import { missingFor, requestName, REQUEST_HOURS, type SalesRequest } from "./mar
 import { mailRequest, orderOf } from "./orders";
 import { answerAt, editRequest, habitFor, loseRequest, targetFor } from "./sales";
 import { mailDelay } from "../80-business/mail";
+import { hasModule } from "../80-business/shop";
 import { belowFloor, bookingFor, covers, packageNamed, suggestedUsername, type PackageDef } from "../80-business/packages";
 import type { Sla, Spec } from "../10-catalog/products";
 import { AUTOMATION_SKILL } from "../10-catalog/research";
@@ -57,6 +58,8 @@ export const specParams = (spec: Spec, suffix = ""): Record<string, number> => (
 
 export const invoiceOf = (s: GameState, r: SalesRequest): Invoice | undefined => (r.invoiceId ? s.invoices.find((i) => i.id === r.invoiceId) : undefined);
 const needsDomain = (r: SalesRequest) => r.product === "webHosting" && !!r.domain;
+// A shop whose system has the registrar module registers its own orders' domains; every other order goes through the registrar's form.
+export const shopRegisters = (s: GameState, r: SalesRequest): boolean => !!r.shop && hasModule(s, "registrar");
 const domainDone = (s: GameState, r: SalesRequest) => !needsDomain(r) || domainOf(s, r.domain!)?.customerId === r.customerId;
 
 // The sender of the steps automation runs.

@@ -14,7 +14,7 @@ import { confirmOrder, createAccount, provisionOrder, quoteOrder, registerOrderD
 import { addPackage } from "../src/sim/90-actions/packages";
 import { ChangePackage, planChoices, ProvisionForm } from "../src/ui/apps/browser/consoles/PackageForms";
 import { accountChoices, NewCustomer } from "../src/ui/apps/books/NewCustomer";
-import { mailed, panelVm, readyGame } from "./fixtures";
+import { mailed, owner, panelVm, readyGame } from "./fixtures";
 
 let s0: GameState;
 const run = (s: GameState, hours: number) => { for (let i = 0; i < hours; i++) tick(s); };
@@ -33,7 +33,7 @@ function order(seed: number, ready: boolean, product: "webHosting" | "vps" = "we
     must(confirmOrder(s, id));
     s.invoices = s.invoices.map((i) => (i.id === invoiceOf(s, req())!.id ? { ...i, payStep: 0, payAt: s.hour } : i));
     run(s, 1);
-    if (product === "webHosting") must(registerOrderDomain(s, id));
+    if (product === "webHosting") must(registerOrderDomain(s, id, ...owner(s, id)));
   }
   return { s, id, req, host: hostFor(s, req())! };
 }
