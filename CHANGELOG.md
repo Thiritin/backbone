@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- Proxmocks clusters now have HA groups that decide where a failed guest restarts, and Horizont has projects that group your instances.
 - Email orders and leads now pick the cheapest of your Books products that fits their needs and budget, accept any quote up to that product's price, and go elsewhere when none of your products fits.
 - Books products stay editable after you choose a shop system.
 - The license set command of each software tool now takes a key the same way the installer does, and the DirectAdmen site shows its Docs page on its own.
