@@ -3,6 +3,7 @@ import { MANUFACTURERS } from "../src/sim/10-catalog/hardware";
 import { companyDomain, fqdn } from "../src/sim/30-customers/domains";
 import { privateIp } from "../src/sim/60-infra/addresses";
 import { defaultBookmarks, displayHost, resolve, split, vendorHost, VENDORS, VIDEO_URL, WIKI_URL } from "../src/sim/80-business/browser";
+import { CHANNELS, marketUrl } from "../src/sim/10-catalog/used";
 import { siteIndex } from "../src/sim/80-business/index";
 import { createVm, PANEL_VM_SIZE } from "../src/sim/90-actions/clusters";
 import { setPower } from "../src/sim/90-actions/hardware";
@@ -27,6 +28,15 @@ describe("browser resolver", () => {
     expect(resolve(s, WIKI_URL)).toMatchObject({ page: { kind: "wiki" }, path: "/wiki/Main_Page", load: "fast" });
     expect(resolve(s, "wikipedio.org/wiki/Uplink").page.kind).toBe("wiki");
     expect(siteIndex(s).find((c) => c.title === "Community")!.rows.map((r) => r.url)).toContain(WIKI_URL);
+  });
+
+  it("serves each used market as a site and lists them in the index", () => {
+    const s = newGame(1);
+    for (const c of CHANNELS) {
+      expect(resolve(s, marketUrl(c.id))).toMatchObject({ page: { kind: "market", channel: c.id }, load: "fast" });
+      expect(resolve(s, `${c.host}/itm/x?cat=Servers`).page).toEqual({ kind: "market", channel: c.id });
+    }
+    expect(siteIndex(s).find((c) => c.title === "Used hardware")!.rows.map((r) => r.url)).toEqual(CHANNELS.map((c) => marketUrl(c.id)));
   });
 
   it("splits an address into a lowercase host and a path", () => {

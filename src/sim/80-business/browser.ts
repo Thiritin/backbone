@@ -20,6 +20,7 @@ import { OFFICE_HOST, OFFICE_URL } from "./office";
 import { t } from "../../i18n/en";
 import { bankById, BANKS, type BankId } from "../10-catalog/banks";
 import { LEXWEAR_HOST } from "./lexwear";
+import { CHANNELS, type Channel } from "../10-catalog/used";
 
 // fast loads at once, slow shows a progress bar first, down cannot be reached.
 export type Load = "fast" | "slow" | "down";
@@ -32,6 +33,7 @@ export type Page =
   | { kind: "bank"; id: BankId }
   | { kind: "supplier"; name: string }
   | { kind: "lexwear" }
+  | { kind: "market"; channel: Channel }
   | { kind: "host"; hostname: string }
   | { kind: "console"; hostname: string; clusterId: string; defaced: boolean; path: string }
   | { kind: "ipmi"; deviceId: string }
@@ -80,7 +82,7 @@ export const dirSlug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]
 export const resellersUrl = (): string => `${HOME_URL}${dirSlug(t("sim.index.cat.resellers"))}`;
 // Domains the game's other companies hold in any year, and every name under them.
 export function providerDomain(name: string): boolean {
-  const hosts = [INDEX_HOST, OFFICE_HOST, WIKI_HOST, LEXWEAR_HOST, BOARD_HOST, VIDEO_HOST, ...SOFTWARE.map((x) => x.site.host), ...SERVER_OS.map((x) => x.site.host),
+  const hosts = [INDEX_HOST, OFFICE_HOST, WIKI_HOST, LEXWEAR_HOST, BOARD_HOST, VIDEO_HOST, ...CHANNELS.map((c) => c.host), ...SOFTWARE.map((x) => x.site.host), ...SERVER_OS.map((x) => x.site.host),
     ...VENDORS.map((m) => vendorHost(m.id)), ...BANKS.map((b) => b.host), ...REGISTRARS.map(registrarHost)].map((h) => h.replace(/^www\./, ""));
   return hosts.some((h) => h === name || h.endsWith(`.${name}`));
 }
@@ -165,6 +167,8 @@ export function resolve(s: GameState, raw: string): Resolved {
   if (named(OFFICE_HOST)) return out({ kind: "office" });
   if (named(WIKI_HOST)) return out({ kind: "wiki" });
   if (named(LEXWEAR_HOST)) return out({ kind: "lexwear" });
+  const market = CHANNELS.find((c) => named(c.host));
+  if (market) return out({ kind: "market", channel: market.id });
   // A software's site exists from the year the software does; an operating system's always.
   const year = yearOf(s.hour), sw = SOFTWARE.find((x) => named(x.site.host) && x.from <= year);
   if (sw) return out({ kind: "software", id: sw.id });
