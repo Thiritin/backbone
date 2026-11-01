@@ -7,13 +7,14 @@ import { privateNetOf } from "../src/sim/60-infra/private";
 import { linkStatus } from "../src/sim/60-infra/status";
 import { loadSaved } from "../src/sim/60-infra/switches";
 import { resolve } from "../src/sim/80-business/browser";
+import { runCommand } from "../src/sim/60-infra/terminal";
 import { addLocation, buyRack } from "../src/sim/90-actions/hardware";
 import { createVm, placeService } from "../src/sim/90-actions/clusters";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { setOwnRouterLan, setRemoteAccess } from "../src/sim/90-actions/routers";
 import { saveSwitchConfig, setPortVlan, setRouted } from "../src/sim/90-actions/switches";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { freeFloor, hypervisor, join } from "./fixtures";
+import { bootedMachine, freeFloor, hypervisor, join, routerOnLine } from "./fixtures";
 
 const ok = (r: { ok: boolean; id?: string; error?: string }) => { if (!r.ok) throw new Error(r.error); return r.id!; };
 const err = (r: { ok: boolean; error?: string }) => (r.ok ? "ok" : r.error);
@@ -69,6 +70,17 @@ describe("own routers in a datacenter", () => {
     ok(setRemoteAccess(s, "rtr", true));
     expect(server().load).not.toBe("down");
     expect(resolve(s, "http://192.168.88.1/").page).toEqual({ kind: "router", deviceId: "rtr" });
+  });
+
+  it("times ssh out to a server behind it until its VPN is on", () => {
+    const { s } = datacenter();
+    routerOnLine(s);
+    s.homeLine = { id: "dsl-16", next: null };
+    bootedMachine(s, "srvA");
+    const ssh = () => runCommand(s, null, `ssh ${addressOf(s, "srvA")}`).output.join("\n");
+    expect(ssh()).toMatch(/Connection timed out/);
+    ok(setRemoteAccess(s, "rtr", true));
+    expect(ssh()).toMatch(/^Welcome to node101/);
   });
 
   it("moves its network to a range the player sets and refuses broken ones", () => {
