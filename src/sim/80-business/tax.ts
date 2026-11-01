@@ -11,7 +11,7 @@ export const DOHLE_HOST = "dohle.de";
 export const DOHLE_URL = `www.${DOHLE_HOST}/`;
 export const ERFASSUNG_URL = `www.${DOHLE_HOST}/erfassung/`;
 // Working days: the questionnaire lands two days after the trade office's confirmation, the number five after the answer.
-export const ASK_DAYS = 4;
+export const ASK_DAYS = 2;
 export const NUMBER_DAYS = 5;
 
 const pad = (n: number, len: number) => String(n).padStart(len, "0");

@@ -350,7 +350,7 @@ Website and campaign leads send 10% to cities without a location of yours, where
 
 **GPU demand.** Hobby developers, agencies, online shops and enterprises ask for GPU servers in 3% of their orders at a demand factor of 1 (`gpuDemand` in `gpu.ts`). The factor is 0 before 2011, 0.2 from 2011 to 2016, 0.6 from 2017 (deep learning), 1 from 2020 and 2.5 from 2023 (generative AI), so those profiles ask for a GPU server in 0.6%, 1.8%, 3% and 7.5% of their orders, and their other products give way proportionally. News announces the two jumps. A GPU order that finds no free card is lost as no capacity, like any other line. The portfolio score ignores the GPU line.
 
-**Site state.** The company site is rented from "Strateaux" (always up) or runs as a small workload (0.25 vCPU, 0.5 GB RAM, 2 GB disk) on one of your panel hosts. On an own host the site is down while the host is off, failed, frozen, taken offline or compromised, and slow while the host performs below 1 (overload, a PHP upgrade) or has over 90% of its RAM booked. Website leads and the orders of the order form are multiplied by 0 while the site is down and by 0.5 while it is slow, at the daily roll; search ads, campaigns, fairs, referrals and email orders are untouched. The site adds no awareness (the 0.004 a month under Marketing and reviews) while it is down.
+**Site state.** The company site is rented from "Strateaux" (always up) or runs as a small workload (0.25 vCPU, 0.5 GB RAM, 2 GB disk) on one of your panel hosts. On an own host the site is down while the host is off, failed, frozen, taken offline or compromised, and slow while the host performs below 1 (overload, a PHP upgrade) or has over 90% of its RAM booked. Website leads and shop orders are multiplied by 0 while the site is down and by 0.5 while it is slow, at the daily roll; search ads, campaigns, fairs, referrals and email orders are untouched. The site adds no awareness (the 0.004 a month under Marketing and reviews) while it is down.
 
 The review multiplier is 0.4 + 0.25 × (stars − 1), so 1 star gives 0.4, 3 stars 0.9 and 5 stars 1.4.
 
@@ -458,13 +458,13 @@ Hours a service is down are left off its invoice line. When the hours up fall be
 
 How the market above turns into order emails and sales requests in the Support app. Code: `src/sim/30-market`.
 
-**Orders by email.** A lead asking for a basic SLA from a profile with a low or medium budget is a standard order (`orders.ts`). It names its own resources (Custom orders, below), its price starts at the request's market reference less any campaign discount, and it has the same 72 hours as a sales request. Declining it takes 10 minutes of player or support time; the steps of an accepted order take the times under Custom orders. Before the order form every order lead writes an email. With the order form and email orders on, a quarter of the order leads (`EMAIL_SHARE`, 0.25) still write one and the rest go through the form at the player's rates (Per-resource pricing). With Provisioning automation switched on the form places the order at once when the city has the product and room, and an order it cannot place arrives as an order email. Without it a form order is accepted on arrival and waits in the inbox for its steps (Custom orders). A new game always gets its first order email within 14 days: each morning before then without an order, a friend's recommendation brings one from a private individual with chance 1 / (14 − day). Seeds 1 to 8 already brought one between day 1 and day 22 from organic leads alone, so the recommendation only fills the gap.
+**Orders by email.** A lead asking for a basic SLA from a profile with a low or medium budget is a standard order (`orders.ts`). It names its own resources (Custom orders, below), its price starts at the request's market reference less any campaign discount, and it has the same 72 hours as a sales request. Declining it takes 10 minutes of player or support time; the steps of an accepted order take the times under Custom orders. Before a shop system every order lead writes an email. With a shop and email orders on, a quarter of the order leads (`EMAIL_SHARE`, 0.25) still write one and the rest go through the shop at the player's rates (Per-resource pricing). With Provisioning automation switched on the shop places the order at once through its module when the city has the product and room, and an order it cannot place is cancelled. Without it a shop order is accepted on arrival and waits in the inbox for its steps (Custom orders). A new game always gets its first order email within 14 days: each morning before then without an order, a friend's recommendation brings one from a private individual with chance 1 / (14 − day). Seeds 1 to 8 already brought one between day 1 and day 22 from organic leads alone, so the recommendation only fills the gap.
 
-**Email orders off.** Switching email orders off (`website.ts`, needs the order form) sends every order lead through the order form, and an order the form cannot place is a lost sale instead of an order email. Sales requests (business SLA or high budget), upgrades and the shady request are not affected. Email off therefore saves the 30 to 35 minutes of step work of a quarter of the order leads and costs only the orders the form cannot place.
+**Email orders off.** Switching email orders off (`website.ts`, needs an active shop) sends every order lead through the shop. Sales requests (business SLA or high budget), upgrades and the shady request are not affected. Email off therefore saves the 30 to 35 minutes of step work of a quarter of the order leads and costs only the orders the shop cannot place.
 
 **No room on accept.** A customer who accepts a quote when no server has room signs elsewhere at once, a lost sale for lack of capacity (`sales.ts`). Upgrades work the same way.
 
-**Custom orders.** Every order names its own resources, by email or through the form (`spec.ts`, `manual.ts`). It starts from the size its profile's budget picks (What a lead asks for). Web hosting, VPS and game server orders scale that size by one of 0.5, 0.75, 1, 1, 1.25 or 1.5, which average to 1: web disk in half GB steps, traffic in whole GB, 1 + up to 5 × factor mailboxes, with 0.1 vCPU and 0.25 GB RAM; VPS and game server RAM in quarter GB steps, vCPUs scaled (plus one, three times in ten), disk ±25% in 5 GB steps. DNS and VPN orders scale their zones or users and their traffic the same way (DNS zones and VPN users). Other lines take the size as it is. A spec's monthly market price comes from Per-resource pricing, and the SLA factor and the profile's offer factor apply on top. Step times: quote 5, account 5, confirmation and invoice 10, domain 5, setup 15 minutes. **Quoting an email order.** The first step is the quote, at the monthly price and setup fee the player enters (the market reference and the line's setup fee are prefilled). An email order draws its budget between 1.10 and 1.25 times the reference (`ORDER_BUDGET`, the upper half of a sales lead's range, because a standard order is a shelf product), which makes a quote at the reference taken about nine times in ten, and the customer answers like a sales lead: 4 to 24 hours after the quote, 2 hours after a quote that meets their counter, taking it with the logistic chance of Customer choice, countering once at 0.97 times their accepted price when within 0.12 of it and half the time, otherwise refusing; a second refusal ends the order as a lost sale. An accepted quote has 72 hours (`REQUEST_HOURS`) for the steps. An order form order is accepted at arrival at the website's price and setup fee and has the same 72 hours. **Setup.** The setup lists the cluster and panel hosts of the order's city that sell the product, with the RAM and disk booked against what each holds; disk is the only limit (Usage curves and overcommit). Automatic (`targetFor`) and the Place orders automatically switch need the Provisioning automation skill (Know-how and unlock costs). Staff set an order up on the first host with disk room, one with the RAM for it first. The balance model counts an order as placed on acceptance, as a company with the switch on would. An order invoice is due in 14 days; an on-time payer pays it within 1 to 3 days. Upgrades ask for 1.5 or 2 times every resource.
+**Custom orders.** Every order names its own resources, by email or through the shop (`spec.ts`, `manual.ts`). It starts from the size its profile's budget picks (What a lead asks for). Web hosting, VPS and game server orders scale that size by one of 0.5, 0.75, 1, 1, 1.25 or 1.5, which average to 1: web disk in half GB steps, traffic in whole GB, 1 + up to 5 × factor mailboxes, with 0.1 vCPU and 0.25 GB RAM; VPS and game server RAM in quarter GB steps, vCPUs scaled (plus one, three times in ten), disk ±25% in 5 GB steps. DNS and VPN orders scale their zones or users and their traffic the same way (DNS zones and VPN users). Other lines take the size as it is. A spec's monthly market price comes from Per-resource pricing, and the SLA factor and the profile's offer factor apply on top. Step times: quote 5, account 5, confirmation and invoice 10, domain 5, setup 15 minutes. **Quoting an email order.** The first step is the quote, at the monthly price and setup fee the player enters (the market reference and the line's setup fee are prefilled). An email order draws its budget between 1.10 and 1.25 times the reference (`ORDER_BUDGET`, the upper half of a sales lead's range, because a standard order is a shelf product), which makes a quote at the reference taken about nine times in ten, and the customer answers like a sales lead: 4 to 24 hours after the quote, 2 hours after a quote that meets their counter, taking it with the logistic chance of Customer choice, countering once at 0.97 times their accepted price when within 0.12 of it and half the time, otherwise refusing; a second refusal ends the order as a lost sale. An accepted quote has 72 hours (`REQUEST_HOURS`) for the steps. A shop order is accepted at arrival at the website's price and setup fee and has the same 72 hours. **Setup.** The setup lists the cluster and panel hosts of the order's city that sell the product, with the RAM and disk booked against what each holds; disk is the only limit (Usage curves and overcommit). Automatic (`targetFor`) and the Place orders automatically switch need the Provisioning automation skill (Know-how and unlock costs). Staff set an order up on the first host with disk room, one with the RAM for it first. The balance model counts an order as placed on acceptance, as a company with the switch on would. An order invoice is due in 14 days; an on-time payer pays it within 1 to 3 days. Upgrades ask for 1.5 or 2 times every resource.
 
 **Domains.** Registry cost per year, 2005 to 2026, linear in between: .de €12 to €6, .at €25 to €12, .ch €15 to €9, .co.uk €8 to €7, .fr €20 to €9, .nl €10 to €6, .it €15 to €8, .com €6 to €9 (VeriSigh raised its price over the years). The customer pays €15 a year for a registration or renewal and €5 for a transfer, which includes its first year. The reminder comes 30 days before expiry.
 
@@ -830,7 +830,7 @@ A shop system takes payment at checkout. Bank transfer is always offered; every 
 
 A small share of standard orders is paid with a stolen card or a stolen PayPail account. Sales leads are never fraudulent. The share is rolled once per order:
 
-| Product | Share of order form orders |
+| Product | Share of shop orders |
 | --- | --- |
 | GPU servers | 6% |
 | VPS and cloud | 5% |
@@ -1245,7 +1245,7 @@ Stuck boots, hangs and lockouts are rolled per device and hour and do not draw f
 | New listings per channel and month | 2 to 6, posted over the month at random hours, the first month with the new game; a model qualifies once its launch is at least 2 years back, and a model from 2005 counts as launched in 2002, so 2005 listings are 1 to 3 years old at the usual price bands |
 | Age of a unit | 1 year up to the years since the model's launch |
 | WebHostingTalc ask | 60% of the preset price at 1 year falling in a straight line to 45% at 6 years and older |
-| Telegrump ask | 45% falling to 30% the same way; 15% of the deals are scams that take the money and ship nothing |
+| Craigslost ask | 45% falling to 30% the same way; 15% of the deals are scams that take the money and ship nothing |
 | eBuy | Starts at 25%; the rival's maximum is 35% to 70%; the higher maximum wins and pays the other's maximum |
 | Visible defect | 30% of single units; PSU 2 missing ×0.85 (two-supply models), 1 drive reports errors ×0.8 (the drive arrives one year past its life), no rails ×0.95 (rack-mounted) |
 | Hidden part age | Each part's age is the unit's age times 0.5 to 1.5 |
@@ -1267,7 +1267,7 @@ Used devices are never insured, cannot be leased and resell from the price paid 
 | Full | 48 hours; every hidden part shows its real age; each working part past its life fails with 50% (seeded by game seed, hour and device) |
 | Bonus | A full burn-in in which no part failed multiplies the server's failure chance by 0.9 for 365 days (it stacks with the other failure factors) |
 | Used parts | Parts bought on the used market are hidden until a burn-in has looked at them; replaced parts are known |
-| Buyer protection | The first failed part of a unit bought on the board or eBuy within 14 days of its arrival refunds half the unit price, once; Telegrump deals never refund |
+| Buyer protection | The first failed part of a unit bought on the board or eBuy within 14 days of its arrival refunds half the unit price, once; Craigslost deals never refund |
 
 **Power feeds.**
 
@@ -1510,11 +1510,11 @@ Each line with traffic also charges it per 100 GB a month (Traffic, below). The 
 
 Game servers and colocation move the most data per euro and carry the largest share. A VPN moves 300 GB a month on a €5 bill, so its rate per GB is the lowest.
 
-**Setup fees.** An order through the order form pays a one-time setup fee on top of its first month (`marketSetup` in `products.ts`, `setupFee` in `spec.ts`). The market's fee in 2005, falling to a third by 2026 (m = 3), rounded to whole euros: web hosting €10, VPS €15, game server €15, DNS €5, VPN €10, storage €10, cloud server €0, dedicated server €75, colocation €150. The player sets a line's fee in Pricing next to its rates; empty charges the market's. Customers weigh a fee above the market's as if spread over 36 months of the line's middle size (`SETUP_MONTHS`): the difference ÷ (36 × that monthly price) adds to the price index for leads that would order through the form, so a dearer fee brings a few fewer form orders and a cheaper one a few more. Twice the market's web hosting fee costs about 7% of the form's share. Email orders and sales requests charge no setup fee.
+**Setup fees.** A shop order pays a one-time setup fee on top of its first month (`marketSetup` in `products.ts`, `setupFee` in `spec.ts`). The market's fee in 2005, falling to a third by 2026 (m = 3), rounded to whole euros: web hosting €10, VPS €15, game server €15, DNS €5, VPN €10, storage €10, cloud server €0, dedicated server €75, colocation €150. The player sets a line's fee in Pricing next to its rates; empty charges the market's. Customers weigh a fee above the market's as if spread over 36 months of the line's middle size (`SETUP_MONTHS`): the difference ÷ (36 × that monthly price) adds to the price index for leads that would order through the shop, so a dearer fee brings a few fewer shop orders and a cheaper one a few more. Twice the market's web hosting fee costs about 7% of the shop's share. Email orders and sales requests charge no setup fee.
 
-**Form invoices.** The order form invoices an order the moment it is placed: the setup fee (left out when it is zero) and the full first month at the order's price. The service is prepaid for 730 hours, so the monthly run bills only the hours after that and the first month is never billed twice; this is the same rule an email order's invoice step uses. The invoice is due in 14 days, and an on-time payer pays it within 1 to 3 days. Its payment books as two ledger entries: the setup fee under Setup fees and the rest under Customer payments, so the two add up to the invoice total (a collections payout splits the same way).
+**Shop invoices.** The shop invoices an order the moment it is placed: the setup fee (left out when it is zero) and the full first month at the order's price. The service is prepaid for 730 hours, so the monthly run bills only the hours after that and the first month is never billed twice; this is the same rule an email order's invoice step uses. The invoice is due in 14 days, and an on-time payer pays it within 1 to 3 days. Its payment books as two ledger entries: the setup fee under Setup fees and the rest under Customer payments, so the two add up to the invoice total (a collections payout splits the same way).
 
-**The player's rates.** The Products app's Pricing view holds one rate per unit for each line (`rates.ts`). An empty rate charges the market rate, and Market rates resets the whole line. Rates apply to new sales: the order form charges a spec at the player's rates × the SLA factor × (1 − campaign discount) and places it at once. Overpricing costs leads through the price factor in Choice with prices and customers through Price tolerance and churn. Services already sold keep the price they were sold at, and raising one goes through Price changes with its tolerance, complaint and retention rules. Email orders are priced by hand, prefilled at the market reference less any campaign discount. Saves from before per-resource pricing give every service, request and lost sale with a plan that plan's size as its spec in the year it started, and start with every rate empty. Saves from before DNS zones and VPN users give each DNS or VPN service the count its monthly price buys at the loading year's market rates (less the base fee and traffic, at least one); requests and lost sales use their market reference. Their setup fees start at the market's.
+**The player's rates.** The Products app's Pricing view holds one rate per unit for each line (`rates.ts`). An empty rate charges the market rate, and Market rates resets the whole line. Rates apply to new sales: the shop charges a spec at the player's rates × the SLA factor × (1 − campaign discount) and places it at once. Overpricing costs leads through the price factor in Choice with prices and customers through Price tolerance and churn. Services already sold keep the price they were sold at, and raising one goes through Price changes with its tolerance, complaint and retention rules. Email orders are priced by hand, prefilled at the market reference less any campaign discount. Saves from before per-resource pricing give every service, request and lost sale with a plan that plan's size as its spec in the year it started, and start with every rate empty. Saves from before DNS zones and VPN users give each DNS or VPN service the count its monthly price buys at the loading year's market rates (less the base fee and traffic, at least one); requests and lost sales use their market reference. Their setup fees start at the market's.
 
 **Capacity.** A node books up to its physical cores × 8 in vCPUs, its RAM × 1.5 and its usable RAID disk × 2. A G1 balanced server books 16 vCPUs, 12 GB of RAM and 1 TB of disk: 48 web spaces, or 24 of the 0.5 GB VPS, or 6 of the 2 GB VPS by RAM. Booking counts what workloads booked; the load they put on the hardware follows the usage curves.
 
@@ -1642,17 +1642,17 @@ Every server and every one of the player's own VMs runs an operating system, and
 
 | Software | Kind | OS | License | Install | How-to tickets | Live migration | Control plane |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| cPanic | Panel | Lunix | €0.40 per web space | 3 h | ×0.8 |  | 0.25 vCPU, 0.25 GB, 5 GB |
+| cPanic | Panel | Lunix | €12 per server (Dedicated), from June 2019 the editions Solo to Premier (€0.40 per web space) | 3 h | ×0.8 |  | 0.25 vCPU, 0.25 GB, 5 GB |
 | Pleskit | Panel | Lunix, Windoors | €12 per panel host | 3 h | ×0.9 |  | 0.25 vCPU, 0.25 GB, 5 GB |
-| DirectAdmen | Panel | Lunix | €4 per panel host | 2 h | ×1.2 |  | 0.1 vCPU, 0.1 GB, 2 GB |
+| DirectAdmen | Panel | Lunix | €100 lifetime per major or Standard at €4 per panel host, from September 2019 the editions Personal to Standard | 2 h | ×1.2 |  | 0.1 vCPU, 0.1 GB, 2 GB |
 | FreePanel | Panel | Lunix | Free | 2 h | ×1.5 |  | 0.1 vCPU, 0.1 GB, 2 GB |
 | OpenVeeZee | Cloud | Lunix | Free | 3 h | ×1.4 | No | 0.1 vCPU, 0.1 GB, 2 GB |
 | OpenStash | Cloud | Lunix | Free | 8 h | ×1.3 | Yes | 2 vCPU, 2 GB, 20 GB |
-| VMwhere | Cloud | Lunix | €600 once per CPU socket, €8 per physical core from 2024 | 5 h | ×0.7 | Yes | 1 vCPU, 2 GB, 10 GB |
+| VMwhere | Cloud | Lunix | €600 once per CPU socket, from December 2023 €96 a year per physical core with 16 cores per CPU at least | 5 h | ×0.7 | Yes | 1 vCPU, 2 GB, 10 GB |
 | Proxmocks | Cloud | Lunix | Free | 3 h | ×1.0 | Yes | 0.25 vCPU, 0.25 GB, 5 GB |
 | HyperVee | Cloud | Windoors | €20 per node | 4 h | ×0.9 | No | 1 vCPU, 1 GB, 10 GB |
 | TCAdmen | Game | Windoors | €25 per server | 2 h | ×0.9 | No | 0.25 vCPU, 0.5 GB, 5 GB |
-| MultiKraft | Game | Lunix, Windoors | €20 per server | 2 h | ×1.0 | No | 0.25 vCPU, 0.5 GB, 5 GB |
+| MultiKraft | Game | Lunix, Windoors | €20 per server, from 2020 €1.20 per game server beyond 25 | 2 h | ×1.0 | No | 0.25 vCPU, 0.5 GB, 5 GB |
 | Pterodaktyl | Game | Lunix | Free | 3 h | ×1.2 | No | 0.25 vCPU, 0.5 GB, 5 GB |
 | Bound | DNS | Lunix, Windoors | Free | 2 h | ×1.3 | No | 0.1 vCPU, 0.25 GB, 2 GB |
 | PowerDNZ | DNS | Lunix | Free | 2 h | ×1.0 | No | 0.25 vCPU, 0.5 GB, 5 GB |
@@ -1667,10 +1667,12 @@ Every server and every one of the player's own VMs runs an operating system, and
 | Operating system | License | Install | Boot |
 | --- | --- | --- | --- |
 | Debiant GNU/Lunix | Free | 1 h | 20 min |
-| Windoors Server | €600 once per machine, €4 per core or vCPU from 2016 | 2 h | 40 min |
+| Windoors Server | €600 once per machine, from October 2016 €4 per core (16 per server and 8 per CPU at least) or vCPU | 2 h | 40 min |
 | VMwhere App Suite | €25 per VMwhere cluster | | |
 
-Windoors Server and VMwhere are bought once per machine when the install starts, until Windoors moves to 4 euros a month per physical core of a server or per vCPU of a VM in 2016 and VMwhere to 8 euros a month per physical core in 2024. A reinstall on the same machine pays nothing; a new machine, a VM from a template included, pays again, and the install is refused without the cash. The App Suite bills 25 euros a month per VMwhere cluster that has it. The OS install and boot add to every install's time to serve. A panel on a hypervisor node is allowed when no port collides. Values live in `src/sim/10-catalog/server-os.ts`.
+Windoors Server and VMwhere are bought once per machine when the install starts, until Windoors moves to 4 euros a month per physical core of a server or per vCPU of a VM in October 2016 and VMwhere to 96 euros a year per physical core in December 2023. A reinstall on the same machine pays nothing; a new machine, a VM from a template included, pays again, and the install is refused without the cash. The App Suite bills 25 euros a month per VMwhere cluster that has it. The OS install and boot add to every install's time to serve. A panel on a hypervisor node is allowed when no port collides. Values live in `src/sim/10-catalog/server-os.ts`.
+
+**Licence eras.** Each licensed product sells what its vendor sold at the game month, from `licensing` in the catalog (docs/design/plans/software-licences.md, Licence models over time). A perpetual key covers the major on sale when it was bought and never bills again; an upgrade to the next major costs the full price, or half (€300 for Windoors, VMwhere and Veeham Backup) for a holder of the previous major's key bought within the last 12 months. A yearly key renews on the same day a year later and shows at a twelfth in monthly bills. A server pays for at least the minimum cores of a per-core era; a VM pays per vCPU. Veeham Backup sells €600 per CPU socket once from 2008 and €480 a year per server from 2018. Prices keep the game's euro scale, where a real list price divides by about three: cPanel's licence of about $35 a server reads €12, and its 2019 editions keep the €2 to €10 and €0.40 per web space the game already charged. When a vendor stops selling an option the shop drops it that day, and a key already bought keeps working. A subscription key whose edition is no longer sold renews as the first edition on sale that fits its account count, so a cPanic Dedicated key moves to Solo, Admin, Pro or Premier at its first renewal from June 2019; the vendor emails the change 30 days before.
 
 **Split cores.** OpenVeeZee and Proxmocks give a guest a fraction of a core through containers and CPU limits, so a VM books exactly the vCPUs it sold. OpenStash, VMwhere and HyperVee give a VM whole vCPUs: a VM books its vCPUs rounded up and uses that much CPU at load. Web spaces, game servers, DNS zones, VPN gateways and storage volumes run as containers in their software and keep their fraction everywhere. A customer who scales a VPS below one core asks for tenths of a core (at least 0.2), so 0.75 of one core becomes 0.8.
 
@@ -1998,6 +2000,18 @@ A new VMwhere cluster starts on Essentials; a cluster from an older save is on E
 DRS Manual and Partial keep up to five recommended moves for the player to apply, Full applies them. A host enters maintenance mode only when every running VM can move live. A pool caps the booked vCPUs and RAM of its members. On a hot node a high pool keeps its performance and a low pool keeps at most 90%.
 
 
+### Horizont floating IPs, security groups and volumes
+
+A floating IP is one more address rented from the datacenter of an OpenStash cluster, billed like any rented address. It points at one instance, or at none. A service on a floating IP keeps its address when it moves to another location, so no renumbering happens and no customer is told to change DNS. An address that is not floating is renumbered as before.
+
+An instance has security groups. A new instance joins the default group, which lets only SSH through. The groups of an instance add up, and a port outside them is dropped, so a panel or mail host in a default-only instance is offline until a group lets its web or mail port through; a group that closes a port the software listens on but does not serve halves the breach chance, like the Proxmocks firewall. A project has up to 10 groups; the default group stays and a group in use cannot be deleted.
+
+A volume is 1 to 1000 GB of block storage that counts toward the capacity of the first working datastore with room, or sits on a node disk when the cluster has no datastore. It costs nothing extra. It survives deleting the instance it is attached to and is detached afterwards. Before 2012 a volume leaves only a stopped instance.
+
+### IPMI System Event Log
+
+Each server's management controller keeps its last 20 events, each with a severity (information, warning or critical) and a number. Failed parts and shutdowns from heat are critical; lost power, a stalled operating system or controller, a lost power supply input, a lockout and an inlet temperature of 35 degrees or more are warnings. The inlet temperature is checked every hour, and a crossing of 35 or 40 degrees is logged once, with a note when it returns below 35. A change of a cluster node's state (active, cordoned, draining, maintenance) is logged on its server. The player can clear the log.
+
 ## PHP versions
 
 Each version becomes available on 1 January after its release, rounded so the start of the game has 4.4:
@@ -2108,6 +2122,8 @@ Disclosure is a random day of the release's year. A vulnerability is open on an 
 | Alert at the patch (critical) | Once per instance |
 
 An unattended panel host installed at the start of the game is compromised for the first time after a median of 0.8 years.
+
+An operating system or software on a machine that runs past its vendor's end of security updates collects vulnerabilities of its own: each year past the end adds 0.5 to a multiplier on the daily compromise chance of the instances on that machine, counted up to 4 years per install (an install 4 years past the end triples the chance). The newest release of a product never counts as ended while it is the newest. The vendor emails 90 days before the end of security updates of every version the company runs.
 
 ### Breaches and ransom
 
@@ -2230,11 +2246,11 @@ Spending more in one channel and city gets dearer: the cost per lead is multipli
 | Platform | Invite rate per happy customer per month | Trust bonus T |
 | --- | --- | --- |
 | None | 0 | 0 |
-| Free listing | 0 | 2 |
+| Free listing | 0 | 0 |
 | "ProvenExpat" | 1% | 4 |
 | "TrustPylon" | 2% | 6 |
 
-Platform fees are flat: the free listing costs nothing, ProvenExpat €49 and TrustPylon €199 a month.
+Platform fees are flat: the free listing costs nothing, ProvenExpat €49 and TrustPylon €199 a month. The free listing's +2 now comes from the HOSTtoast listing (competitors.md, HOSTtoast), whose T adds to the platform's, capped at 10.
 
 **Owned channels.** Each step is a one-off setup plus monthly upkeep, flat over the years:
 
@@ -2242,17 +2258,16 @@ Platform fees are flat: the free listing costs nothing, ProvenExpat €49 and Tr
 | --- | --- | --- | --- |
 | Email | Free | Free | Always on |
 | Web design | €400 | €15 | None |
-| Order form | €900 | €10 | Web design |
 | Goggle Ads | €50 | None | Web design |
 | AI ads | €1,500 | None | Web design, from 2023 |
 
-Web design and the order form are set up on the website card in the Marketing app's Channels once the site is launched. The Marketing app waits for 450 know-how of research (Marketing basics, Employee management, Marketing campaigns), so a first-year company could not otherwise buy them before December.
+Web design is set up on the website card in the Marketing app's Channels once the site is launched. The Marketing app waits for 450 know-how of research (Marketing basics, Employee management, Marketing campaigns), so a first-year company could not otherwise buy them before December.
 
 The basic website every company starts with is free and brings no leads of its own. The web design brings 4 leads a month per location city, split by the profile mix. Every lead only writes when its product is listed on the website.
 
 **Site hosting.** A rented host costs €9.90 a month from the month the web design is bought, flat over the years (ledger line "Website hosting: Strateaux"). Anchor: German shared hosting packages from Strato and 1&1 cost €5 to €10 a month in 2005. An own host costs nothing extra.
 
-**Design generations.** The design belongs to a generation: 2005, 2009, 2013, 2017, 2021 or 2025 (every four years; the web design takes the generation of the year it is bought). With b = (current generation − design generation) ÷ 4, website leads and order form orders are multiplied by 1 for b of 0 or 1 and by max(0.4, 1 − 0.2 × (b − 1)) from b = 2:
+**Design generations.** The design belongs to a generation: 2005, 2009, 2013, 2017, 2021 or 2025 (every four years; the web design takes the generation of the year it is bought). With b = (current generation − design generation) ÷ 4, website leads and shop orders are multiplied by 1 for b of 0 or 1 and by max(0.4, 1 − 0.2 × (b − 1)) from b = 2:
 
 | Design from | 2012 | 2013 to 2016 | 2017 to 2020 | 2021 on |
 | --- | --- | --- | --- | --- |
@@ -2449,17 +2464,28 @@ The loan limit is the higher of the level's minimum and 12× the average monthly
 
 **Bankruptcy.** When cash stays below zero for 30 days and no loan is available that covers the deficit, the company is insolvent and the game ends.
 
-**Account fees.** A limited company (GmbH) must keep a business account, and business accounts cost more than a sole trader's, so the account fee a month depends on the legal form. Branch banks charge a limited company about twice the sole trader's fee and add a fee for every booking on a partnership's or limited company's account; the fintechs sell flat plans, the limited one at two to three times the sole trader's. A partnership pays between the two. Each month start books the fee for the month and, at a branch bank, one line for the bookings of the month before: every ledger line of that month except the bank's own fees. Ding-DiBa, like the direct banks that long opened no GmbH accounts, opens none for a limited company: the registration refuses that pair, and the trade office form greys Ding-DiBa out while the limited form is chosen. The legal form is fixed once registered, so an open account never needs to move.
+**Account plans.** Each bank sells account plans, and the account fee a month is the plan's (docs/design/plans/bank-plans.md). A dearer plan makes each booking cheaper, and the top plans include the credit card. A booking is any ledger line of the month except the bank's own fees. Each month start books last month's bookings above the plan's free ones, then the plan's fee for the new month. A plan change takes effect at that month start. A limited company pays the plan's fee times the bank's limited factor, which is the ratio of its old limited fee to its old partnership fee. A legal form needs a plan that serves it, so the player moves up a plan before the paperwork, and a limited company application also needs the share capital of €25,000 in the account, without the overdraft.
 
-| Bank | Sole trader | Partnership | Limited company | Per booking (partnership, limited) |
-| --- | --- | --- | --- | --- |
-| Sparklasse | €8 | €12 | €16 | €0.30 |
-| Folksbank | €6 | €9 | €12 | €0.25 |
-| Deutsche Bunk | €12 | €18 | €24 | €0.15 |
-| Postbanq | €4 | €6 | €8 | €0.40 |
-| Ding-DiBa | €0 | €5 | no account | none |
-| Fidorr | €0 | €6 | €12 | none |
-| Quonto | €9 | €15 | €25 | none |
+| Plan | Serves | Fee a month | Free bookings | Per booking | Card |
+| --- | --- | --- | --- | --- | --- |
+| Giro | sole trader | the old sole fee | all | none | yearly fee |
+| Business | all forms | the old partnership fee | 20 | the old booking fee | yearly fee |
+| Business Plus | all forms | 2× Business | 100 | 1/3 of Business | included |
+| Premium | partnership, limited | 4× Business | all | none | included, double limit |
+
+| Bank | Plans | Giro | Business | Per booking | Limited factor | Loan margin | Smallest loan |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Sparklasse | all four | €8 | €12 | €0.30 | 4/3 | +0.5 | €2,500 |
+| Folksbank | all four | €6 | €9 | €0.25 | 4/3 | +0.5 | €2,500 |
+| Deutsche Bunk | no Giro | | €18 | €0.15 | 4/3 | 0 | €50,000 |
+| Postbanq | all four | €4 | €6 | €0.40 | 4/3 | +1.5 | €2,500 |
+| Ding-DiBa | Giro, Business for sole traders and partnerships | €0 | €5 | none | | +1.0 | no loans |
+| Fidorr | Fidorr Start (Business), Fidorr Pro (Business Plus) | | €6 | none | 2 | +2.0 | €2,500 |
+| Quonto | Quonto Essential (Business), Quonto Smart (Business Plus) | | €15 | none | 5/3 | +1.5 | no loans |
+
+The loan margin in points is added to the base rate and the risk premium, and the rate is fixed when the loan is signed.
+
+**Switching banks.** Opening an account at another bank moves the whole balance. The old account pays its last fee at the next month start and closes. Switching is refused while a loan is open or the account is overdrawn. Standing orders, mandates and the card stay behind, and the card's open spending is billed at once. Customers who pay an invoice issued before the switch still reach the company for three months; after that the transfer bounces and the invoice stays unpaid.
 
 **SLA insurance.** The monthly premium is 2% of the recurring revenue from customers with an SLA, times an uptime factor: 1.0 at 99.95% or better over 90 days, 1.5 at 99.9% or better, and 2.5 below that. A missed SLA owes the customer 10% of their monthly fee per 0.1% of uptime below the promise, up to the full fee. The insurer pays those credits for three claims, then blocks the company for a year.
 
@@ -2532,7 +2558,7 @@ Leads were never the problem before 2014: about 500 a year reached the company a
 - **Server lines.** The model bought only the balanced 1U. The Shop sells the memory-optimized 2U from 2005: four times the RAM for 1.8 times the price and 1.6 times the power. Out of the basement the bot now picks the line with the lowest price per GB it can fill, counting the vCPUs its customers book (0.1 per web space, one per 2 GB of VPS, two per 4 GB game server, at most 8 per core). RAM, not CPU, sets the limit in 2005, so it buys memory-optimized servers.
 - **Leasing and the loan limit.** The model had no leasing, and its loan limit ignored the live rule's 12 × average monthly profit. The bot now takes the cheapest of three lease offers (factor 1.06 to 1.40, 12 to 36 months) when the bank says no, but only when the payment is below what the server earns at 80% booked at last month's revenue per GB, less its running costs. Leases sit outside the 60% instalment rule because each one pays for itself. Leased hardware is not in net worth until it is paid off, as in `metrics.ts`.
 
-Two bot rules were changed to match a careful player. The bot moves out of the basement no earlier than October of year 1: the model has none of year 1's setup work (trainings, website, order form) and otherwise filled the basement by April, while the happiness run fills it in the last quarter. At the move the basement servers ride along to the rack share for €300 and the home line is cancelled.
+Two bot rules were changed to match a careful player. The bot moves out of the basement no earlier than October of year 1: the model has none of year 1's setup work (trainings, website, shop) and otherwise filled the basement by April, while the happiness run fills it in the last quarter. At the move the basement servers ride along to the rack share for €300 and the home line is cancelled.
 
 No price, threshold or loan limit moved. With these changes (median of 20 seeds):
 
@@ -2620,7 +2646,7 @@ Neither bot goes bankrupt. The steady bot pays €500 a month for ChadGPT in 200
 
 The solo bot reaches level 5 in 2012.9 instead of 2012.8. Neither bot goes bankrupt.
 
-**Traffic and setup fees.** The model's specs now carry traffic (the live TRAFFIC_GB, growing 20% a year, × the budget size) priced at the market rate per 100 GB, and while the order form is up every new customer without a high budget pays the market's setup fee once on three in four orders (one in four still writes an email, `EMAIL_SHARE`), collected at the on-time share. The model sells no DNS or VPN, so per-unit DNS and VPN leave it alone. Medians before and after:
+**Traffic and setup fees.** The model's specs now carry traffic (the live TRAFFIC_GB, growing 20% a year, × the budget size) priced at the market rate per 100 GB, and while the shop is up every new customer without a high budget pays the market's setup fee once on three in four orders (one in four still writes an email, `EMAIL_SHARE`), collected at the on-time share. The model sells no DNS or VPN, so per-unit DNS and VPN leave it alone. Medians before and after:
 
 | Level | Target | Steady before | Steady after |
 | --- | --- | --- | --- |
@@ -2643,11 +2669,11 @@ The solo bot reaches level 5 in 2012.8 instead of 2012.9. Neither bot goes bankr
 
 ## Shop systems
 
-Variants, licences, module prices, the custom script price of the hand-rolled form (€400 per software) and stock rules are in `shop.md`, section 2.3. The research "Shop systems" costs 60 know-how and 4 days. Shop licences are billed with marketing on the 1st.
+Variants, licences, module prices and stock rules are in `shop.md`, section 2.3. The research "Shop systems" costs 60 know-how and 4 days. Shop licences are billed with marketing on the 1st.
 
 ### Billing cycles
 
-A shop sells its products for a month, a quarter, a year or two years. A longer cycle is billed in advance at N times the monthly price less the cycle's discount. The hand-rolled form sells monthly and annual, ModemBill adds quarterly, OrderBocks adds biennial and the other systems sell all four.
+A shop sells its products for a month, a quarter, a year or two years. A longer cycle is billed in advance at N times the monthly price less the cycle's discount. ModemBill sells monthly, quarterly and annual, OrderBocks adds biennial and the other systems sell all four.
 
 | Cycle | Months | Market discount |
 | --- | --- | --- |
@@ -2656,12 +2682,12 @@ A shop sells its products for a month, a quarter, a year or two years. A longer 
 | Annual | 12 | 10% |
 | Biennial | 24 | 15% |
 
-A form order draws its cycle from the profile's base shares (`CYCLE_SHARE` in `cycles.ts`: a private customer takes monthly 78%, quarterly 10%, annual 11%, biennial 1%; an enterprise 20, 10, 50, 20). Each offered non-monthly cycle's weight is its base share times `exp(8 * (d - m))`, where `d` is the discount the player sets and `m` the market discount; the weights are normalised over the offered cycles. Ten points above the market's discount multiplies a share by 2.2, ten below by 0.45. Cycles the player has not priced use the market discount.
+A shop order draws its cycle from the profile's base shares (`CYCLE_SHARE` in `cycles.ts`: a private customer takes monthly 78%, quarterly 10%, annual 11%, biennial 1%; an enterprise 20, 10, 50, 20). Each offered non-monthly cycle's weight is its base share times `exp(8 * (d - m))`, where `d` is the discount the player sets and `m` the market discount; the weights are normalised over the offered cycles. Ten points above the market's discount multiplies a share by 2.2, ten below by 0.45. Cycles the player has not priced use the market discount.
 
-Lead conversion for form orders reads the advertised price level: the line's rate against the market for its middle size, times the weighted cycle price against the same weighting at market discounts. A changed rate or discount reaches new leads at once, where the sold-services index follows only after sales.
+Lead conversion for shop orders reads the advertised price level: the line's rate against the market for its middle size, times the weighted cycle price against the same weighting at market discounts. A changed rate or discount reaches new leads at once, where the sold-services index follows only after sales.
 
 A customer inside a paid term skips the monthly churn roll unless happiness is below 15. In the month before the term ends the customer rolls once with `min(0.9, N * base) + 0.5 * max(0, (50 - H) / 50)`, where `base` is the profile's monthly churn and `N` the term months. A customer who leaves inside a paid term, with no invoice open, gets the unused whole months back as a ledger entry.
 
 A renewal invoice for the next term goes out at the month start before a term ends, at the service's current price. Paying it extends the term by N months. A prepaid service has no monthly arrears lines.
 
-The balance model takes the annual share of form orders as a revenue discount.
+The balance model takes the annual share of shop orders as a revenue discount.

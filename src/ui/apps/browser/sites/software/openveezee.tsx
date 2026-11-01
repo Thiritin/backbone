@@ -3,7 +3,7 @@ import { Body, Nav, type SiteProps } from "./SoftwareSite";
 import { SiteMark } from "./marks";
 import "./openveezee.css";
 
-const TITLE = { home: t("browser-sites-1.oz.main"), features: t("browser-sites-1.oz.features"), pricing: t("browser-sites-1.oz.license"), download: t("browser-sites-1.oz.download") } as const;
+const TITLE = { home: t("browser-sites-1.oz.main"), features: t("browser-sites-1.oz.features"), pricing: t("browser-sites-1.oz.license"), download: t("browser-sites-1.oz.download"), versions: t("releases.navVersions"), news: t("releases.navNews"), cart: t("vendor-shop.cart", { n: 0 }), account: t("vendor-shop.myAccount"), docs: t("browser-sites-2.navDocs") } as const;
 
 // OpenVeeZee: a project wiki with a grey sidebar; 2016 adds a blue header band.
 export function OpenVeeZee(props: SiteProps) {

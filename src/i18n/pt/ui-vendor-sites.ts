@@ -22,6 +22,7 @@ export default {
   "ticket.mail.lexwear.newsletter.subject": (p) => `Novidade para o Lexwear Office: ${p.module}`,
   "ticket.mail.lexwear.newsletter.text": (p) => `${p.pitch} Pode comprá-lo como licença única em lexwear.de.`,
   "error.licenceKey": () => "Esta chave de licença não é válida.",
+  "error.noTrial": () => "Não há avaliação disponível para este software nesta máquina.",
   "error.moduleBought": () => "Já comprou este módulo.",
   "error.moduleRegistered": () => "Este módulo já está registado.",
   "vendor-sites.taskInvoices": () => "Enviar faturas",

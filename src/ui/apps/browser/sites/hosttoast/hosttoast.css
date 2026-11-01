@@ -1,0 +1,54 @@
+/* A hosting comparison portal: until 2011 a fixed 780 px page in toast orange and Verdana, from 2012 a flat, wide layout. */
+.ht { min-height: 100%; padding: 12px 0 24px; font: 11px/1.45 Verdana, Geneva, Tahoma, sans-serif; color: #2b2118; background: #efe6d8; }
+.ht a { color: #b4540a; }
+.ht-page { width: 780px; max-width: 100%; margin: 0 auto; background: #fffdf8; border: 1px solid #c9b79c; }
+.ht-head { display: flex; align-items: baseline; gap: 14px; padding: 12px 16px 10px; background: linear-gradient(#f7a541, #d9731b); color: #fff; }
+.ht-logo { font: bold 24px/1 Georgia, "Times New Roman", serif; letter-spacing: -0.5px; }
+.ht-logo b { font-style: italic; color: #fff3d6; }
+.ht-tag { color: #fff1dc; }
+.ht-nav { display: flex; gap: 1px; background: #b98f5a; border-bottom: 1px solid #a17a48; }
+.ht-nav a { padding: 4px 14px; background: linear-gradient(#fff6e8, #ead6b6); color: #4a3520; font-weight: bold; text-decoration: none; }
+.ht-nav a[aria-current] { background: #fffdf8; color: #b4540a; }
+.ht-main { padding: 12px 16px 18px; }
+.ht h1 { font: bold 15px Georgia, serif; color: #b4540a; margin: 0 0 8px; }
+.ht h2 { font-size: 12px; margin: 0 0 4px; }
+.ht-filters { display: flex; gap: 16px; margin: 0 0 8px; }
+.ht-filters label { display: flex; align-items: center; gap: 6px; font-weight: bold; }
+.ht-filters select { font: inherit; }
+.ht-table { width: 100%; border-collapse: collapse; margin: 6px 0 10px; }
+.ht-table th { text-align: left; padding: 3px 6px; background: #f3e4cc; border-bottom: 1px solid #d8c09c; white-space: nowrap; }
+.ht-table td { padding: 4px 6px; border-bottom: 1px solid #eee2cf; vertical-align: middle; }
+.ht-table .r { text-align: right; }
+.ht-you td { background: #fff1d0; font-weight: bold; }
+.ht-badge { display: inline-block; padding: 0 6px; border-radius: 3px; font-size: 10px; font-weight: bold; color: #fff; background: #9b9284; white-space: nowrap; }
+.ht-verified { background: #3f8a3a; }
+.ht-premium { background: #c27b12; }
+.ht-diamond { background: #3a6fb5; }
+.ht-medal { display: inline-block; margin-left: 6px; padding: 0 4px; border: 1px solid #d9a441; border-radius: 3px; font-size: 9px; color: #8a5a00; background: #fff6d9; }
+.ht-bar { display: inline-block; width: 60px; height: 7px; background: #eadfcd; vertical-align: middle; }
+.ht-bar i { display: block; height: 100%; background: #e08a2c; }
+.ht-awards { margin: 0 0 10px; padding: 6px 8px; border: 1px solid #e3c58f; background: #fff7e3; }
+.ht-awards ul { list-style: none; margin: 0; padding: 0; display: flex; gap: 18px; flex-wrap: wrap; }
+.ht-facts { display: flex; gap: 24px; margin: 0 0 8px; }
+.ht-facts dt { color: #6d5a43; }
+.ht-facts dd { margin: 0; font-weight: bold; }
+.ht-button { font: bold 11px Verdana, sans-serif; color: #fff; background: linear-gradient(#f39a3a, #c8650f); border: 1px solid #8f4706; border-radius: 3px; padding: 3px 12px; cursor: pointer; }
+.ht-state { font-weight: bold; color: #3f8a3a; }
+.ht-foot { padding: 6px 16px; border-top: 1px solid #eadfcd; color: #8a7a64; font-size: 10px; }
+
+.ht.late { background: #f5f3f0; font: 13px/1.5 "Helvetica Neue", Arial, sans-serif; }
+.ht.late .ht-page { width: 980px; border: 0; border-radius: 8px; box-shadow: 0 1px 3px rgb(0 0 0 / 0.12); overflow: hidden; }
+.ht.late .ht-head { background: #ff7a1a; padding: 16px 20px; }
+.ht.late .ht-logo { font: 800 26px/1 "Helvetica Neue", Arial, sans-serif; }
+.ht.late .ht-nav { background: #fff; border-bottom: 1px solid #eee; gap: 0; }
+.ht.late .ht-nav a { background: none; padding: 10px 18px; color: #555; }
+.ht.late .ht-nav a[aria-current] { color: #ff7a1a; box-shadow: inset 0 -2px #ff7a1a; }
+.ht.late .ht-main { padding: 16px 20px 22px; }
+.ht.late h1 { font: 700 20px "Helvetica Neue", Arial, sans-serif; color: #222; }
+.ht.late .ht-table th { background: none; border-bottom: 2px solid #eee; color: #777; font-weight: 600; }
+.ht.late .ht-table td { border-bottom: 1px solid #f0f0f0; padding: 7px 6px; }
+.ht.late .ht-badge { border-radius: 10px; padding: 1px 8px; }
+.ht.late .ht-bar { height: 6px; border-radius: 3px; overflow: hidden; background: #f0ebe4; }
+.ht.late .ht-bar i { background: #ff7a1a; }
+.ht.late .ht-button { background: #ff7a1a; border: 0; border-radius: 4px; padding: 5px 14px; font: 600 13px "Helvetica Neue", Arial, sans-serif; }
+.ht.late .ht-awards { border: 0; border-radius: 6px; background: #fff4e8; }

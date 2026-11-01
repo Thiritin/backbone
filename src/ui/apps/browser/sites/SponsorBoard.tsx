@@ -11,10 +11,10 @@ import { acceptSponsorship, declineSponsorship, offerHalf, postOffer, withdrawOf
 import { AUDIENCE } from "../../marketing/MarketingApp";
 import { formatDay } from "../../billing/format";
 import { PRODUCT } from "../../support/labels";
-import { useStore } from "../../../store";
 import { eraOf } from "./era";
 import "./sponsorboard.css";
 import { LOCALE } from "../../../../i18n/lang";
+import { usePageAct } from "../pageAct";
 
 const AD: Record<Ad, string> = { banner: t("browser-sites-2.adBanner"), signature: t("browser-sites-2.adSignature"), stage: t("browser-sites-2.adStage") };
 const monthsText = (n: number) => t("browser-sites-2.nMonths", { n });
@@ -36,7 +36,7 @@ function Seg<T extends string | number>({ label, value, options, onChange }: { l
 
 // The sponsor board: servers for a clan, a fan site or a student project in return for a logo.
 export function SponsorBoard({ game }: { game: GameState }) {
-  const act = useStore((s) => s.act);
+  const act = usePageAct();
   const [product, setProduct] = useState<Product>("gameServer");
   const [size, setSize] = useState(0);
   const [months, setMonths] = useState<number>(3);

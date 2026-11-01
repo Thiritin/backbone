@@ -15,6 +15,7 @@ import { InvoicesTab } from "./InvoicesTab";
 import { QuotesTab } from "./QuotesTab";
 import { NEW } from "./NewCustomer";
 import { PayablesTab } from "./PayablesTab";
+import { ProductsTab } from "./ProductsTab";
 import { RemindersTab } from "./RemindersTab";
 import { Register } from "./Register";
 import { useBooks } from "./view";
@@ -33,13 +34,14 @@ const TABS: { id: string; count: (s: GameState) => number; body: ComponentType<{
   { id: "bank", count: unmatched, body: BankTab },
   { id: "reminders", count: late, body: RemindersTab },
   { id: "payables", count: (s) => s.payables.filter((p) => overdue(s, p)).length, body: PayablesTab },
+  { id: "products", count: () => 0, body: ProductsTab },
 ];
 
 export function BooksApp() {
   const game = useBooks(), act = useStore((s) => s.act);
   const waiting = useStore((s) => unsynced(s.game));
   // Before Shop link, a shop system hands its records over only on import.
-  const importing = !!game.shop.variant && game.shop.variant !== "handRolled" && !hasModule(game, "shop-link");
+  const importing = !!game.shop.variant && !hasModule(game, "shop-link");
   const [tab, setTab] = useSessionState("books.tab", "invoices");
   const [focus, setFocus] = useSessionState<string | null>("books.focus", null);
   const [register, setRegister] = useSessionState("books.register", false);

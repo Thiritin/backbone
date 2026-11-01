@@ -9,15 +9,15 @@ import { shopById, type ShopId } from "../../../../../sim/10-catalog/shops";
 import type { GameState } from "../../../../../sim/50-state";
 import { bought } from "../../../../../sim/80-business/lexwear";
 import { buyShopLink } from "../../../../../sim/90-actions/shoplink";
-import { useStore } from "../../../../store";
 import "./shopvendors.css";
+import { usePageAct } from "../../pageAct";
 
 export interface VendorProps { game: GameState }
 
 // The page every shop vendor sells its modules on, Shop link and the payment methods of the year; each vendor's file
 // gives it its colours and wordmark.
 export function VendorPage({ game, id, className, mark }: VendorProps & { id: ShopId; className: string; mark: ReactNode }) {
-  const act = useStore((s) => s.act);
+  const act = usePageAct();
   const v = shopById(id), year = yearOf(game.hour);
   const modules = MODULES.filter((m) => m.vendor === "shop" && m.year <= year);
   const state = (m: Module) => hasModule(game, m.id) && game.shop.variant === id ? <span className="sv-state">{t("vendor-sites.registered")}</span>

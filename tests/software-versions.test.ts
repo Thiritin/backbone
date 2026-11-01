@@ -5,7 +5,7 @@ import { SERVER_OS } from "../src/sim/10-catalog/server-os";
 import { nextMajor, versionAt, versionInfo, versionsOf } from "../src/sim/10-catalog/software-versions";
 import { newGame } from "../src/sim/50-state";
 import { machineOf } from "../src/sim/60-infra/cluster";
-import { assignKey, installedVersion, issueKey, licenceStatus, updateKey } from "../src/sim/60-infra/licence";
+import { assignedKey, installedVersion, licenceStatus, updateKey } from "../src/sim/60-infra/licence";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { BASEMENT_SERVER, hypervisor, skipTo, withServer } from "./fixtures";
 
@@ -53,9 +53,8 @@ describe("software versions", () => {
     hypervisor(s, [BASEMENT_SERVER], undefined, "vmwhere");
     expect(installedVersion(s, BASEMENT_SERVER, "vmwhere")).toBe(versionAt("vmwhere", s.hour).version);
     expect(installedVersion(s, BASEMENT_SERVER, "vmwhere")).toBe("5.1");
-    const key = issueKey(s, "vmwhere", null);
+    const key = assignedKey(s, BASEMENT_SERVER, "vmwhere")!;
     expect(key.covers).toEqual({ kind: "version", major: "5" });
-    assignKey(s, key.id, BASEMENT_SERVER);
     expect(licenceStatus(s, BASEMENT_SERVER, "vmwhere")).toBe("active");
     updateKey(s, key.id, { covers: { kind: "version", major: "4" } });
     expect(licenceStatus(s, BASEMENT_SERVER, "vmwhere")).toBe("unlicensed");

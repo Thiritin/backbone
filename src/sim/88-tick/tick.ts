@@ -29,6 +29,7 @@ import { booksTick } from "../80-business/bookkeeping";
 import { deliverLicences, lexwearTick } from "../80-business/lexwear";
 import { payoutTick } from "../80-business/shoplink";
 import { paymentsTick } from "../45-billing/payments";
+import { lifecycleTick } from "../60-infra/lifecycle";
 import { salesTick } from "../30-market/sales";
 import { usedTick } from "../80-business/used";
 import { ordersTick } from "../30-market/manual";
@@ -61,6 +62,7 @@ import { familyById, familyFailure } from "../10-catalog/families";
 import { lessorName } from "../10-catalog/leasing";
 import { BURNIN_BONUS_HOURS, BURNIN_FACTOR } from "../10-catalog/burnin";
 import { burninTick } from "../60-infra/burnin";
+import { sensorTick } from "../60-infra/sensors";
 import { THERMAL, thermalTick, throttled } from "../60-infra/thermal";
 import { FAILURE_FACTOR, unsupported } from "../10-catalog/lifecycle";
 import { skillById } from "../10-catalog/research";
@@ -71,6 +73,7 @@ import { scoreTick } from "../80-business/scores";
 import { trendTick } from "../80-business/trend";
 import { arrayLost, busyDevices, dcAvailability, drawWatts, driveGb, drivesOf, fits, isDrive, HOURS_PER_YEAR, locationOf, locationRent, powered, readOnlySweep } from "../60-infra/status";
 import { rivalsTick } from "../30-market/rivals-tick";
+import { hosttoastTick } from "../80-business/hosttoast";
 
 export interface SimEvent {
   app: string;
@@ -288,6 +291,7 @@ export function tick(state: GameState): SimEvent[] {
   burninTick(state, events);
   if (state.devices.some((d) => d.maintenance || d.rebuild)) service(state, events);
   events.push(...powerTick(state));
+  sensorTick(state);
   const monthStart = isMonthStart(state.hour);
   if (monthStart) {
     competitorsCancel(state);
@@ -296,6 +300,7 @@ export function tick(state: GameState): SimEvent[] {
   contractsEnd(state, events);
   if (monthStart) competitorsTake(state);
   if (monthStart) events.push(...rivalsTick(state));
+  if (monthStart) events.push(...hosttoastTick(state));
   if (monthStart) {
     const d = dateOf(state.hour);
     events.push({ app: "Finance", key: "event.monthStart", params: { month: d.getUTCMonth(), year: d.getUTCFullYear() } });
@@ -365,6 +370,7 @@ export function tick(state: GameState): SimEvent[] {
   leaseTick(state);
   pinMembers(state);
   events.push(...networkTick(state));
+  lifecycleTick(state);
   events.push(...securityTick(state));
   events.push(...appsTick(state));
   events.push(...webpanelTick(state));

@@ -3,7 +3,7 @@ import { t } from "../../../../../i18n/en";
 import { deleteRecord, saveRecord, setSecondary } from "../../../../../sim/90-actions/netsvc-dns";
 import type { GameState } from "../../../../../sim/50-state";
 import { ownerOf, secondaryChoices, TTLS, zoneOf, type DnsRecord, type DnsType } from "../../../../../sim/60-infra/netsvc-dns";
-import { useStore } from "../../../../store";
+import { usePageAct } from "../../pageAct";
 
 const TYPES: DnsType[] = ["A", "AAAA", "CNAME", "MX", "TXT", "NS"];
 type Draft = Omit<DnsRecord, "id"> & { id?: string };
@@ -11,7 +11,7 @@ const blank: Draft = { type: "A", name: "", ttl: 3600, data: "" };
 
 // The zone page: its records with Edit and Delete, and a form to add or change one. Early look is the plain table, late look the card.
 export function ZoneEditor({ game, zone, era, onBack }: { game: GameState; zone: string; era: string; onBack: () => void }) {
-  const act = useStore((s) => s.act), [draft, setDraft] = useState<Draft | null>(null), [error, setError] = useState("");
+  const act = usePageAct(), [draft, setDraft] = useState<Draft | null>(null), [error, setError] = useState("");
   const z = zoneOf(game, zone), owner = ownerOf(game, zone), choices = owner ? secondaryChoices(game, owner) : [];
   const save = () => {
     const r = act(saveRecord, zone, draft!);

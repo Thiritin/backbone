@@ -6,12 +6,11 @@ import { visibleCandidates } from "../src/sim/47-staff/staff";
 import type { GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { provisionService } from "../src/sim/90-actions/clusters";
-import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { quoteOrder, setAutoOrders } from "../src/sim/90-actions/orders";
-import { buyModule, chooseShop } from "../src/sim/90-actions/shop";
+import { buyModule } from "../src/sim/90-actions/shop";
 import { moduleFor } from "../src/sim/80-business/shop";
 import { hire } from "../src/sim/90-actions/staff";
-import { readyGame } from "./fixtures";
+import { openShop, readyGame } from "./fixtures";
 import { closeTicket, resolveTicket } from "../src/sim/90-actions/support";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 
@@ -111,14 +110,13 @@ describe("orders by email", () => {
     expect(tk().outcome).toBe("accepted");
   });
 
-  it("orders directly once the order form is set up and orders run automatically", () => {
+  it("orders directly once a shop is open and orders run automatically", () => {
     const s = readyGame(1);
     s.cash = 1e6;
-    expect(setUpChannel(s, "website").ok).toBe(true);
-    expect(chooseShop(s, "handRolled").ok).toBe(true);
+    openShop(s);
     s.unlocks = [...s.unlocks, "products", "provisioning"];
     expect(setAutoOrders(s, true).ok).toBe(true);
-    // Without a custom script for the panel the form order waits in Support.
+    // Without a module for the panel the shop order waits in Support.
     const waiting = orderLead(s, "private", "Frankfurt", [], web, false);
     expect(waiting.status).toBe("accepted");
     expect(buyModule(s, moduleFor(s, "webHosting", targetFor(s, waiting)!.clusterId)).ok).toBe(true);
@@ -129,8 +127,9 @@ describe("orders by email", () => {
     expect(s.tickets.length).toBe(tickets);
     expect(s.services.some((v) => v.customerId === done.customerId && v.id === done.serviceId)).toBe(true);
     expect(s.services.find((v) => v.id === done.serviceId)!.spec).toMatchObject(r.spec);
-    // Without room the order still arrives as an email.
-    expect(orderLead(s, "private", "London", [], web, false).ticketId).not.toBeNull();
+    // Without room the shop order is cancelled.
+    const away = orderLead(s, "private", "London", [], web, false);
+    expect(s.sales.requests.find((x) => x.id === away.id)).toMatchObject({ ticketId: null, status: "lost" });
   });
 
   it("keeps an open order through a save", () => {

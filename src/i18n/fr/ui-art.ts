@@ -11,6 +11,7 @@ export default {
   "art.unplugPsu": (p) => `Débrancher l'alimentation ${p.n}`,
   "art.plugInPsu": (p) => `Brancher l'alimentation ${p.n}`,
   "art.plugInMonitor": () => "Brancher l'écran",
+  "art.portDsl": () => "DSL",
   "art.powerInlet": () => "Entrée secteur",
   "art.psu": (p) => `Alim. ${p.n}`,
   "art.fan": (p) => `Ventilateur ${p.n}`,

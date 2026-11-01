@@ -18,6 +18,7 @@ import { Switches } from "./Switches";
 import { setVmSwitch } from "../../../../../sim/90-actions/vswitch";
 import { switchOf, switchesOf, vswitchBlocks } from "../../../../../sim/60-infra/vswitch";
 import "./hypervee.css";
+import { usePageAct } from "../../pageAct";
 
 // docs/design/software.md, section 9: the glossy MMC from 2008, the same MMC with flat chrome from 2012.
 const ERAS = erasFrom(2008, 2012);
@@ -44,7 +45,7 @@ const checkpointName = (name: string, at: number) => {
 
 // The Checkpoints pane under the VM list and in the VM's settings: take, apply and delete.
 function Checkpoints({ v }: { v: Vm }) {
-  const act = useStore((s) => s.act), list = v.w.snapshots ?? [];
+  const act = usePageAct(), list = v.w.snapshots ?? [];
   return (
     <>
       <table className="cx-table">
@@ -111,7 +112,7 @@ export function VmDetails({ game, v, generations, c }: { game: GameState; v: Vm;
 }
 
 export function HyperVee(p: PanelProps) {
-  const era = eraAt(ERAS, p), { game, c, f } = p, openConsole = useStore((s) => s.openConsole), act = useStore((s) => s.act);
+  const era = eraAt(ERAS, p), { game, c, f } = p, openConsole = useStore((s) => s.openConsole), act = usePageAct();
   const open = parseCreate("hypervee", p.path);
   const [page, setPage] = useState<Page>(open?.screen === "create" ? { kind: "new" } : open?.screen === "packages" ? { kind: "profiles" } : { kind: "list", node: null }), [selId, setSelId] = useState<string | null>(null);
   const [part, setPart] = useState<(typeof SETTINGS)[number]>("Memory"), [gen, setGen] = useState(1);

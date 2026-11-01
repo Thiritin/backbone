@@ -8,6 +8,7 @@ import { monthOf, rivalNews, rollRivals, SHARE_MONTHS, type RivalEvent, type Sha
 const EVENT: Record<RivalEvent["kind"], { app: string; key: string }> = {
   outage: { app: "News", key: "event.news.rivalOutage" }, bust: { app: "News", key: "event.news.rivalBust" },
   bought: { app: "News", key: "event.news.rivalBought" }, open: { app: "News", key: "event.news.rivalOpen" },
+  tier: { app: "News", key: "event.news.rivalTier" },
 };
 
 // Each city's buyers split between you and the rivals as Market research shows them, then the rivals' month (rivals.ts).

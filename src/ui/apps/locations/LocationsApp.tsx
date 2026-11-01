@@ -33,6 +33,7 @@ export function LocationsApp() {
   const [view, setView] = useSessionState<string | null>("locations.sel", null);
   const [rackId, setRackId] = useSessionState<string | null>("locations.rack", null);
   const [deviceId, setDeviceId] = useSessionState<string | null>("locations.device", null);
+  const [panelPort, setPanelPort] = useState<number>();
   const [picked, setTab] = useSessionState<Tab>("locations.tab", "floor");
   const [adding, setAdding] = useState(false);
   const loc = game.locations.find((l) => l.id === view);
@@ -110,10 +111,10 @@ export function LocationsApp() {
                   <div className="loc-scroll">
                     <Upgrades loc={loc} />
                     <Floor game={game} loc={loc} onRack={(id) => go(loc.id, id)} />
-                    <CarrierPanel game={game} loc={loc} selected={deviceId} onDevice={setDeviceId} />
+                    <CarrierPanel game={game} loc={loc} selected={deviceId} onDevice={(id, port) => { setDeviceId(id); setPanelPort(port); }} />
                   </div>
                   {deviceId && game.devices.some((d) => d.id === deviceId && d.panel === loc.id) && (
-                    <div className="loc-insp"><Inspector key={deviceId} game={game} device={game.devices.find((d) => d.id === deviceId)!} onSelect={setDeviceId} /></div>
+                    <div className="loc-insp"><Inspector key={`${deviceId}:${panelPort}`} game={game} device={game.devices.find((d) => d.id === deviceId)!} port={panelPort} onSelect={(id) => { setDeviceId(id); setPanelPort(undefined); }} /></div>
                   )}
                 </div>
               )}

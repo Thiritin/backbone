@@ -19,15 +19,18 @@ import { BOARD_HOST } from "./sponsorboard";
 import { consoleAt, isDefaced } from "./consoles";
 import { customerSite, siteHost, siteStatus, slowHost } from "./website";
 import { vendorHost, vendorLive, VENDORS } from "./vendors";
+import { shopActive } from "./shop";
 import { OFFICE_HOST, OFFICE_URL } from "./office";
 import { DOHLE_HOST } from "./tax";
 import { t } from "../../i18n/en";
 import { bankById, BANKS, type BankId } from "../10-catalog/banks";
 import { LEXWEAR_HOST } from "./lexwear";
+import { CHANNELS, type Channel } from "../10-catalog/used";
 import { BOOKS_VENDORS, type BooksVendorId } from "../10-catalog/bookkeeping";
 import { booksHost } from "./bookkeeping";
 import { SHOPS, type ShopId } from "../10-catalog/shops";
 import { shopHost } from "./shoplink";
+import { HOSTTOAST_HOST } from "../10-catalog/hosttoast";
 
 // fast loads at once, slow shows a progress bar first, down cannot be reached.
 export type Load = "fast" | "slow" | "down";
@@ -40,8 +43,10 @@ export type Page =
   | { kind: "bank"; id: BankId }
   | { kind: "supplier"; name: string }
   | { kind: "lexwear" }
+  | { kind: "market"; channel: Channel }
   | { kind: "books"; id: BooksVendorId }
   | { kind: "shopVendor"; id: ShopId }
+  | { kind: "hosttoast" }
   | { kind: "host"; hostname: string }
   | { kind: "console"; hostname: string; clusterId: string; defaced: boolean; path: string }
   | { kind: "ipmi"; deviceId: string }
@@ -55,6 +60,7 @@ export type Page =
   | { kind: "office" }
   | { kind: "dohle" }
   | { kind: "wiki" }
+  | { kind: "shop" }
   | { kind: "software"; id: string }
   | { kind: "os"; id: ServerOsId }
   | { kind: "notfound" };
@@ -93,7 +99,7 @@ export const dirSlug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]
 export const resellersUrl = (): string => `${HOME_URL}${dirSlug(t("sim.index.cat.resellers"))}`;
 // Domains the game's other companies hold in any year, and every name under them.
 export function providerDomain(name: string): boolean {
-  const hosts = [INDEX_HOST, OFFICE_HOST, DOHLE_HOST, WIKI_HOST, LEXWEAR_HOST, BOARD_HOST, VIDEO_HOST, ...SOFTWARE.map((x) => x.site.host), ...SERVER_OS.map((x) => x.site.host),
+  const hosts = [INDEX_HOST, OFFICE_HOST, DOHLE_HOST, WIKI_HOST, LEXWEAR_HOST, HOSTTOAST_HOST, BOARD_HOST, VIDEO_HOST, ...CHANNELS.map((c) => c.host), ...SOFTWARE.map((x) => x.site.host), ...SERVER_OS.map((x) => x.site.host),
     ...VENDORS.map((m) => vendorHost(m.id)), ...BANKS.map((b) => b.host), ...REGISTRARS.map(registrarHost)].map((h) => h.replace(/^www\./, ""));
   return hosts.some((h) => h === name || h.endsWith(`.${name}`));
 }
@@ -160,6 +166,7 @@ export function resolve(s: GameState, raw: string): Resolved {
   const { host, path } = split(raw), url = `${host}${path}`;
   const out = (page: Page, load: Load = "fast"): Resolved => ({ url, host, path, page, load });
   const domain = companyDomain(s);
+  const shopLoad = (): Load => { const st = siteStatus(s); return st === "up" ? "fast" : st === "slow" ? "slow" : "down"; };
   // A phishing page a notice reports stays up until the player takes it down.
   const phish = s.tickets.filter((t) => t.topic === "phishing" && t.notice && split(t.notice.url).host === host && split(t.notice.url).path === path);
   if (phish.length && !phish.some((t) => t.outcome === "takenDown" || t.outcome === "seized")) return out({ kind: "phishing", sender: phish[0].notice!.sender });
@@ -168,6 +175,7 @@ export function resolve(s: GameState, raw: string): Resolved {
     const st = siteStatus(s);
     return out({ kind: "company" }, st === "up" ? "fast" : st === "slow" ? "slow" : "down");
   }
+  if (host === `portal.${domain}`) return shopActive(s) ? out({ kind: "shop" }, shopLoad()) : out({ kind: "notfound" });
   const site = s.services.find((v) => !!v.domain && (v.domain === host || `www.${v.domain}` === host))
     ?? s.services.find((v) => !v.domain && v.product === "webHosting" && siteHost(s, v.id) === host);
   if (site) {
@@ -180,9 +188,12 @@ export function resolve(s: GameState, raw: string): Resolved {
   if (named(DOHLE_HOST)) return out({ kind: "dohle" });
   if (named(WIKI_HOST)) return out({ kind: "wiki" });
   if (named(LEXWEAR_HOST)) return out({ kind: "lexwear" });
-  // Every shop system but the hand-rolled form has its vendor's site, from the year it is sold.
-  const shopSite = SHOPS.find((v) => v.id !== "handRolled" && v.from <= yearOf(s.hour) && named(shopHost(v.id)));
+  const market = CHANNELS.find((c) => named(c.host));
+  if (market) return out({ kind: "market", channel: market.id });
+  // Every shop system has its vendor's site, from the year it is sold.
+  const shopSite = SHOPS.find((v) => v.from <= yearOf(s.hour) && named(shopHost(v.id)));
   if (shopSite) return out({ kind: "shopVendor", id: shopSite.id });
+  if (named(HOSTTOAST_HOST)) return out({ kind: "hosttoast" });
   // A software's site exists from the year the software does; an operating system's always.
   const year = yearOf(s.hour), sw = SOFTWARE.find((x) => named(x.site.host) && x.from <= year);
   if (sw) return out({ kind: "software", id: sw.id });

@@ -22,6 +22,7 @@ import { RECOVER_HOURS } from "./power";
 import { reboot, shutdown, type ActionResult } from "../90-actions/hardware";
 import { apt, dpkg, installScript, installStep } from "./apt";
 import { DESK, homeOf, shortPath } from "./fs";
+import { binariesOn, cliWords, vendorCli } from "./vendor-cli";
 import { completePath, FILE_COMMANDS, fileCommand, parseLine, redirect, type Segment } from "./shell";
 
 // An open ssh session on a server; null at the desk.
@@ -332,7 +333,9 @@ export function complete(s: GameState, session: Session | null, line: string, cw
   const word = /(?:\\.|[^\s\\])*$/.exec(line)![0], at = line.length - word.length, first = line.trim().split(/\s+/)[0];
   const host = hostOf(session);
   const paths = at > 0 && PATH_COMMANDS.includes(first);
-  const pool = at === 0 ? (session ? REMOTE_COMMANDS : DESK_COMMANDS)
+  const sub = session && at > 0 && line.slice(0, at).trim() === first ? cliWords(s, session.deviceId, first) : [];
+  const pool = at === 0 ? (session ? [...REMOTE_COMMANDS, ...binariesOn(s, session.deviceId)] : DESK_COMMANDS)
+    : sub.length ? sub
     : paths ? completePath(s, host, cwd ?? homeOf(host), word)
     : [...s.devices.map((d) => d.hostname), ...s.workloads.map((w) => w.hostname), ...s.services.map((v) => v.hostname)];
   const key = paths ? word : word.toLowerCase();
@@ -366,7 +369,7 @@ function runWords(s: GameState, session: Session | null, cwd: string, words: str
     if (!osUp(s, session.deviceId) || (server && !working(s, session.deviceId))) return { output: lines("term.ssh.lost", { host: session.host }), session: null };
     if (cmd === "exit" || (server && ["uptime", "df", "free", "top", "shutdown", "reboot", "recover"].includes(cmd))) return remote(s, session, cmd, args);
     if (cmd === "dpkg") return dpkg(s, session.deviceId, args);
-    const net = netCommand(s, session.deviceId, cmd, args);
+    const net = netCommand(s, session.deviceId, cmd, args) ?? vendorCli(s, session.deviceId, cmd, args, root);
     if (net) return net;
     if (cmd === "curl" || cmd === "wget") return { output: lines(`term.${cmd}.resolve`, { host: urlHost(args) }), failed: true };
     if (cmd === "sh") return { output: lines("term.sh.open", { file: args[0] ?? "" }), failed: true };

@@ -1,3 +1,6 @@
+import { PAYMENT_METHODS } from "../src/sim/10-catalog/payments";
+import { setUpChannel } from "../src/sim/90-actions/marketing";
+import { chooseShop } from "../src/sim/90-actions/shop";
 import { authCode } from "../src/sim/30-customers/registry";
 import type { Address } from "../src/sim/30-customers/addresses";
 import { mailedAddress } from "../src/sim/30-customers/addresses";
@@ -21,7 +24,7 @@ import { derivedDomain } from "../src/sim/30-customers/domains";
 import { register } from "../src/sim/30-customers/registry";
 import { nodeName } from "../src/sim/30-customers/hostnames";
 import { setMachine, type Cluster } from "../src/sim/60-infra/cluster";
-import { assignedKey, assignKey, isLicensed, issueKey, panelMachine } from "../src/sim/60-infra/licence";
+import { assignedKey, assignKey, isLicensed, issueKey, panelMachine, trialDaysOf } from "../src/sim/60-infra/licence";
 import { topTier } from "../src/sim/10-catalog/licence-tiers";
 import { UI_LOOKS, versionsOf } from "../src/sim/10-catalog/software-versions";
 import { portPeers } from "../src/sim/60-infra/status";
@@ -40,13 +43,15 @@ const done = (s: GameState, id: string, patch: Partial<GameState["clusters"][num
     setMachine(s, m, (x) => ({ software: x.software.map((sw) => (sw.doneAt !== null && sw.doneAt > s.hour ? { ...sw, doneAt: s.hour } : sw)) }));
   }
   s.clusters = s.clusters.map((x) => (x.id === id ? { ...x, ...patch, switching: null } : x));
-  // A licensed panel holds a key, for its top tier when it has tiers.
-  const host = panelMachine(c), panel = patch.panel;
-  if (host && panel && isLicensed(panel) && !assignedKey(s, host, panel)) assignKey(s, issueKey(s, panel, topTier(panel)?.id ?? null).id, host);
+  // Licensed software holds a key on each machine, for its top tier when it has tiers.
+  const sw = patch.panel ?? patch.platform;
+  for (const m of c.vm ? [c.vm] : c.nodes.map((n) => n.deviceId)) {
+    if (sw && isLicensed(sw) && !assignedKey(s, m, sw)) assignKey(s, issueKey(s, sw, topTier(sw)?.id ?? null).id, m);
+  }
   return id;
 };
 // Every node of a licensed platform holds a key, as an install from the console gives it.
-const platformKeys = (s: GameState, id: string) => {
+export const platformKeys = (s: GameState, id: string) => {
   const c = s.clusters.find((x) => x.id === id)!;
   for (const n of c.nodes) if (c.platform && isLicensed(c.platform) && !assignedKey(s, n.deviceId, c.platform)) assignKey(s, issueKey(s, c.platform, null).id, n.deviceId);
 };
@@ -140,8 +145,10 @@ export function join(s: GameState, clusterId: string, deviceId: string) {
 }
 
 // A panel VM on a hypervisor cluster with its panel already installed; returns the panel host id.
-export const panelVm = (s: GameState, clusterId: string, panel = "freepanel", size?: Resources): string =>
-  done(s, must(createPanelVm(s, clusterId, panel, size)), { panel });
+export const panelVm = (s: GameState, clusterId: string, panel = "freepanel", size?: Resources): string => {
+  if (isLicensed(panel) && trialDaysOf(panel) === null) issueKey(s, panel, topTier(panel)?.id ?? null);
+  return done(s, must(createPanelVm(s, clusterId, panel, size)), { panel });
+};
 
 // A bare-metal panel host on a free mounted server with its panel already installed; returns the panel host id.
 export const named = (s: GameState, id: string, name: string): string => done(s, id, { name });
@@ -229,6 +236,20 @@ export const owner = (s: GameState, ticketId: string): [Address | undefined, str
   const r = s.sales.requests.find((x) => x.kind === "order" && x.ticketId === ticketId);
   return [s.customers.find((c) => c.id === r?.customerId)?.address, r?.owned ? authCode(s.seed, r.id) : undefined];
 };
+
+// A shop system that takes orders at once, for tests of shop orders rather than of choosing a shop.
+export function openShop(s: GameState, id: Parameters<typeof chooseShop>[1] = "clientExit"): GameState {
+  s.cash = Math.max(s.cash, 1e4);
+  setUpChannel(s, "website");
+  if (!s.unlocks.includes("shops")) s.unlocks = [...s.unlocks, "shops"];
+  const modules = s.shop.modules, r = chooseShop(s, id);
+  if (!r.ok) throw new Error(r.error);
+  // Keeps the modules automate() bought.
+  s.shop = { ...s.shop, readyAt: s.hour, modules: { ...modules, ...s.shop.modules } };
+  // Every payment method, so no checkout is lost for a missing one.
+  s.modules = [...new Set([...s.modules, ...PAYMENT_METHODS.map((m) => m.id)])];
+  return s;
+}
 
 // The version just before a console's late look and the first version with it.
 export function lateVersions(product: string): [string, string] {

@@ -8,7 +8,7 @@ import type { Cluster } from "../../../../sim/60-infra/cluster";
 import { POOL_SIZE, daemonOf, freePorts, nodeKeys } from "../../../../sim/60-infra/daemons";
 import { gameCrashed, gameLog, gameOf, latestVersion, playersOf } from "../../../../sim/60-infra/games";
 import { addAllocation, changeTitle, installMod, removeAllocation, removeMod, restartDaemon, restartGame, setAutoRestart, setGameVersion, setRestartSchedule, updateDaemon, updateGameVersion } from "../../../../sim/90-actions/games";
-import { useStore } from "../../../store";
+import { usePageAct } from "../pageAct";
 
 // What a game server row shows next to its name: the title and the players online out of its slots.
 export interface GameRow { title: string; faded: boolean; players: { players: number; slots: number } | null; crashed: boolean; offline: boolean; ports: number[]; managed: boolean }
@@ -38,7 +38,7 @@ const weekday = (d: number) => new Intl.DateTimeFormat(LOCALE, { weekday: "long"
 
 // What the player can do with one game server, laid out in the tabs of the panel that hosts it.
 export function GameDetails({ game, serviceId, panel }: { game: GameState; serviceId: string; panel: string }) {
-  const act = useStore((s) => s.act), g = gameOf(game, serviceId), list = SECTIONS[panel] ?? SECTIONS.tcadmen, [pick, setPick] = useState<Section>(list[0]);
+  const act = usePageAct(), g = gameOf(game, serviceId), list = SECTIONS[panel] ?? SECTIONS.tcadmen, [pick, setPick] = useState<Section>(list[0]);
   const title = g && titleById(g.title);
   if (!g || !title) return null;
   const latest = latestVersion(game, g), players = playersOf(game, serviceId), down = gameCrashed(game, serviceId), always = panel === "pterodaktyl";
@@ -140,7 +140,7 @@ export function GameDetails({ game, serviceId, panel }: { game: GameState; servi
 
 // The Wings daemon and port pool of every node of a Pterodaktyl cluster.
 export function GameNodes({ game, c }: { game: GameState; c: Cluster }) {
-  const act = useStore((s) => s.act);
+  const act = usePageAct();
   return (
     <table className="cx-table">
       <thead><tr><th>{t("browser-consoles-2.node")}</th><th>{t("games.daemon")}</th><th>{t("games.version")}</th><th>{t("games.allocations")}</th><th /></tr></thead>

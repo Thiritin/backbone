@@ -9,7 +9,6 @@ export const SHOP_EN: Record<string, (p: Params) => string> = {
   "error.shopNoOwn": () => "This shop system is only leased.",
   "error.unknownModule": () => "There is no such module.",
   "error.moduleOwned": () => "You already have this module.",
-  "error.needsOrderForm": () => "Set up the order form first.",
   "error.moduleNotSold": () => "Your shop system sells no extra modules.",
   "error.needsShop": () => "Choose a shop system first.",
   "error.unknownProduct": () => "There is no such product line.",

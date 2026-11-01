@@ -2,14 +2,14 @@ import type { Workload } from "../../../../../sim/60-infra/cluster";
 import { MACROS, type Macro } from "../../../../../sim/60-infra/exposure";
 import { setFirewall } from "../../../../../sim/90-actions/firewall";
 import { t } from "../../../../../i18n/en";
-import { useStore } from "../../../../store";
 import { Facts } from "../PanelBase";
+import { usePageAct } from "../../pageAct";
 
 const NAME: Record<Macro, string> = { web: "HTTP", ssh: "SSH", mail: "SMTP", db: "MySQL", rdp: "RDP" };
 
 // VM > Firewall: the switch with its input policy, and the allowed macros as read-only rule rows.
 export function FirewallPanel({ w }: { w: Workload }) {
-  const act = useStore((s) => s.act), fw = w.firewall ?? { on: false, allow: [] as Macro[] };
+  const act = usePageAct(), fw = w.firewall ?? { on: false, allow: [] as Macro[] };
   const set = (next: Partial<typeof fw>) => act(setFirewall, w.id, { ...fw, ...next });
   const toggle = (m: Macro) => set({ allow: fw.allow.includes(m) ? fw.allow.filter((x) => x !== m) : [...fw.allow, m] });
   return (

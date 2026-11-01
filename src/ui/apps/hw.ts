@@ -47,13 +47,14 @@ export function portsText(m: DeviceModel): string {
     if (last && last.p.media === p.media && last.p.gbit === p.gbit) last.n++;
     else runs.push({ p, n: 1 });
   }
-  return runs.map(({ p, n }) => `${n} × ${p.media === "sfp" ? "SFP " : ""}${speed(p.gbit)}`).join(", ");
+  return runs.map(({ p, n }) => `${n} × ${p.media === "sfp" ? "SFP " : p.media === "dsl" ? `${t("art.portDsl")} ` : ""}${speed(p.gbit)}`).join(", ");
 }
 
 export function portName(m: DeviceModel, i: number): string {
   if (isOobPort(i)) { const l = oobLabel(m, i); return /^\d+$/.test(l) ? t("apps.hw.oobPort", { kind: oobPorts(m)[i - OOB_PORT] === "kvm" ? t("apps.hw.kvm") : t("apps.hw.serial"), label: l }) : l; }
   if (m.kind === "server") return `eth${i}`;
   if (m.kind === "patch") return i < jacksOf(m) ? t("apps.hw.portTop", { n: i + 1 }) : t("apps.hw.portBottom", { n: i - jacksOf(m) + 1 });
+  if (m.ports[i].media === "dsl") return t("art.portDsl");
   return t(m.ports[i].media === "sfp" && m.ports.some((p) => p.media === "rj45") ? "apps.hw.portSfp" : "apps.hw.port", { n: i + 1 });
 }
 
