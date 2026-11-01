@@ -1,10 +1,9 @@
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { newGame } from "../src/sim/50-state";
 import { IndexSite } from "../src/ui/apps/browser/sites/index/IndexSite";
 import { productOf, type SitePage } from "../src/ui/apps/browser/sites/software/SoftwareSite";
 import { SITE_VIEWS } from "../src/ui/apps/browser/sites/software/registry";
-import { readyGame, skipTo } from "./fixtures";
+import { readyGame, skipTo, newGame } from "./fixtures";
 import { licensingAt } from "../src/sim/10-catalog/server-os";
 
 const PAGES: SitePage[] = ["home", "features", "pricing", "download"];

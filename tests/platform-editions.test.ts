@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { licenseCost } from "../src/sim/85-products/products";
 import { setBackup, setBalancer, setHa } from "../src/sim/90-actions/clusters";
 import { installBlock } from "../src/sim/90-actions/software";
 import { backupTargets } from "../src/sim/60-infra/cluster";
 import { connect } from "../src/sim/90-actions/hardware";
-import { buyDevice, hypervisor, panelServer, skipTo, withServer } from "./fixtures";
+import { buyDevice, hypervisor, panelServer, skipTo, withServer, newGame } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 const err = (r: { ok: boolean; error?: string }) => (r.ok ? undefined : r.error);

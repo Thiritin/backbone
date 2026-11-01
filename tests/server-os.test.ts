@@ -3,7 +3,7 @@ import { hashRng } from "../src/sim/00-core/rng";
 import { isMonthStart, yearOf } from "../src/sim/00-core/time";
 import { SOFTWARE } from "../src/sim/10-catalog/platforms";
 import { APP_SUITE_FEE, SERVER_OS, serverOsAt } from "../src/sim/10-catalog/server-os";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { machineOf } from "../src/sim/60-infra/cluster";
 import { seize } from "../src/sim/60-infra/incidents";
 import { licenseCost } from "../src/sim/85-products/products";
@@ -12,7 +12,7 @@ import { addNode, createVm, deleteVm } from "../src/sim/90-actions/clusters";
 import { connect } from "../src/sim/90-actions/hardware";
 import { installSoftware, uninstallSoftware } from "../src/sim/90-actions/software";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { bootedMachine, buyDevice, isoOf, hypervisor, panelServer, panelVm, skipTo, withServer } from "./fixtures";
+import { bootedMachine, buyDevice, isoOf, hypervisor, panelServer, panelVm, skipTo, withServer, newGame } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 type R = { ok: boolean; id?: string; error?: string };
@@ -63,7 +63,7 @@ describe("server operating systems", () => {
     ok(installSoftware(s, bootedMachine(s, "dev3", "windoors"), "tcadmen"));
     expect(machineOf(s, "dev3")).toMatchObject({
       os: { id: "windoors", version: "2008 R2", installedAt: s.hour },
-      software: [{ id: "tcadmen", version: "2010", installedAt: s.hour, doneAt: s.hour + 2 }],
+      software: [{ id: "tcadmen", version: "1.0", installedAt: s.hour, doneAt: s.hour + 2 }],
     });
     const cloud = hypervisor(s, [second]);
     hypervisor(s, [third]);

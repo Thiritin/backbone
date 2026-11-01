@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { extraStepPrice, datacenterById, spacePrice } from "../src/sim/20-world/datacenters";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { rackPower } from "../src/sim/60-infra/status";
 import { tick } from "../src/sim/88-tick/tick";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { addLocation, buyRack, setExtraPower, setFeed } from "../src/sim/90-actions/hardware";
-import { withServer, freeFloor } from "./fixtures";
+import { withServer, freeFloor, newGame } from "./fixtures";
 
 const DC = "hetzler-park";
 const rich = (): GameState => ({ ...withServer(newGame(1)), cash: 1_000_000 });

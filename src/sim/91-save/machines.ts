@@ -1,6 +1,7 @@
 import { yearOf } from "../00-core/time";
 import { softwareById } from "../10-catalog/platforms";
 import { serverOsAt } from "../10-catalog/server-os";
+import { versionAt, versionsOf } from "../10-catalog/software-versions";
 import type { GameState, MachineState } from "../50-state";
 import { isOwnVm } from "../60-infra/cluster";
 
@@ -23,4 +24,10 @@ export function fillMachines(s: GameState, bare: Set<string>): GameState {
   for (const d of s.devices) if (bare.has(d.id)) Object.assign(d, filled.get(d.id) ?? empty());
   s.workloads = s.workloads.map((w) => (bare.has(w.id) && isOwnVm(w) ? { ...w, ...(filled.get(w.id) ?? empty()) } : w));
   return s;
+}
+
+// Saves from before software versions hold the install year; those installs run the newest version out at the save's date.
+export function fillVersions(s: GameState): void {
+  const known = (x: MachineState["software"][number]) => !versionsOf(x.id).length || versionsOf(x.id).some((v) => v.version === x.version);
+  for (const m of [...s.devices, ...s.workloads]) if (m.software) m.software = m.software.map((x) => (known(x) ? x : { ...x, version: versionAt(x.id, s.hour).version }));
 }

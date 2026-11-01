@@ -4,7 +4,7 @@ import { updateBreaks } from "../src/sim/60-infra/channel";
 import { sizeSpec } from "../src/sim/10-catalog/products";
 import { storeItem, subscriptionPrice } from "../src/sim/10-catalog/store";
 import { visibleCandidates, type Task } from "../src/sim/47-staff/staff";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { workloadOnline } from "../src/sim/60-infra/cluster";
 import { MONITORING, securityTick } from "../src/sim/60-infra/security";
 import {
@@ -14,7 +14,7 @@ import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { connect, type ActionResult } from "../src/sim/90-actions/hardware";
-import { buyDevice, bootedMachine } from "./fixtures";
+import { buyDevice, bootedMachine, newGame } from "./fixtures";
 import { cleanUp } from "../src/sim/90-actions/security";
 import { installSoftware, updateSoftware } from "../src/sim/90-actions/software";
 import { hire, queueOperation, setTechRules } from "../src/sim/90-actions/staff";

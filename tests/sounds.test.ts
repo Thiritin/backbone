@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { booted, humOf, loopBounds, monthNet, pickSound, soundFor, voiceOf, WINDOW_MS } from "../src/ui/sounds";
 import { OS_RELEASES } from "../src/sim/10-catalog/os";
-import { newGame } from "../src/sim/50-state";
-import { withServer } from "./fixtures";
+import { withServer, newGame } from "./fixtures";
 import { setPower } from "../src/sim/90-actions/hardware";
 import { hourOf } from "../src/sim/00-core/time";
 
