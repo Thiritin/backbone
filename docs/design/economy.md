@@ -2121,6 +2121,8 @@ Disclosure is a random day of the release's year. A vulnerability is open on an 
 
 An unattended panel host installed at the start of the game is compromised for the first time after a median of 0.8 years.
 
+An operating system or software on a machine that runs past its vendor's end of security updates collects vulnerabilities of its own: each year past the end adds 0.5 to a multiplier on the daily compromise chance of the instances on that machine, counted up to 4 years per install (an install 4 years past the end triples the chance). The newest release of a product never counts as ended while it is the newest. The vendor emails 90 days before the end of security updates of every version the company runs.
+
 ### Breaches and ransom
 
 A critical vulnerability that has been open on an instance for more than 30 days can turn the daily exploitation roll into a breach. When the roll hits an instance (the table above) and the instance has such a vulnerability open, 25% of the hits are breaches: the attackers steal the customer data on the host and the host is not compromised in the usual way (no clean-up, no spam). A host with a ransom still undecided cannot be breached again. The customers on a host are those with a workload on it; a mail host holds every customer's mailbox. The tick draws from the seed, the host and the day (the exploitation roll uses tag 91, the breach roll tag 92).

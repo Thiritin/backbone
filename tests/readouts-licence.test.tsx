@@ -29,4 +29,11 @@ describe("licence page", () => {
     expect(html).toContain("Free software");
     expect(html).not.toContain("€");
   });
+
+  it("marks a panel past its end of security updates", () => {
+    const { s, c } = page("cpanic");
+    expect(renderToString(<LicencePage game={s} c={c} />)).not.toContain("Security updates ended");
+    s.hour += 10 * 365 * 24;
+    expect(renderToString(<LicencePage game={s} c={c} />)).toContain("Security updates ended");
+  });
 });

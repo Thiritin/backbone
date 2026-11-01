@@ -39,6 +39,7 @@ export const BANK_EN: Record<string, (p: Params) => string> = {
   "ledger.standingOrder": (p) => `Standing order to ${p.name}: ${p.reference}`,
   "error.orderDay": () => "Choose a day from 1 to 28.",
   "error.noOrder": () => "This standing order does not exist.",
+  "error.noPayee": () => 'This payee does not exist.',
   "ticket.mail.bankOrderFailed.subject": () => "Standing order not executed",
   "ticket.mail.bankOrderFailed.text": (p) => `${p.bank} could not execute your standing order of ${euroCents(Number(p.amount))} to ${p.name}.`,
   "error.shopUnpaid": () => "The shop has an unpaid invoice.",

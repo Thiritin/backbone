@@ -15,6 +15,8 @@ export interface Card { appliedAt: number; readyAt: number; limit: number; spent
 export interface StandingOrder { id: string; name: string; account: string; amount: number; reference: string; day: number }
 // A transfer the player sent; the money left at hour and reaches the payee at arriveAt.
 export interface Outgoing { id: string; hour: number; arriveAt: number; name: string; account: string; amount: number; reference: string; payableId?: string; arrived?: true }
+// A payee saved in online banking; code is the bank code of an account from before IBAN.
+export interface Payee { id: string; name: string; account: string; code?: string }
 // What the transfer form holds; account is an IBAN, or an account number with its bank code before IBAN.
 // registration: the trade office application this transfer pays the fee for.
 export interface Draft { name: string; account: string; code?: string; amount: number; reference: string; payableId?: string; registration?: { name: string; owner: string; form: string } }
@@ -39,6 +41,7 @@ export interface BankAccount {
   welcomed: boolean;
   // HBCI pays open invoices by itself shortly before they are due.
   autoPay?: boolean;
+  payees?: Payee[];
 }
 
 export const TAN_COUNT = 100;
@@ -63,7 +66,7 @@ export function openAccount(s: GameState, id: BankId): BankAccount {
   return {
     id, number: `${1 + Math.floor(rand(r) * 9)}${digits(r, 9)}`, pin: `${1 + Math.floor(rand(r) * 9)}${digits(r, 4)}`, opened: s.hour, tan: tanMethods(bank, yearOf(s.hour)).at(-1)?.method ?? "itan",
     card: null, overdraft: 0, overdraftAt: null, mandates: [], standingOrders: [],
-    tans: { list: 1, codes: tanCodes(s.seed, 1), used: [] }, pending: null, wrong: 0, lockedUntil: 0, outgoing: [], interest: 0, welcomed: false,
+    tans: { list: 1, codes: tanCodes(s.seed, 1), used: [] }, pending: null, wrong: 0, lockedUntil: 0, outgoing: [], interest: 0, welcomed: false, payees: [],
   };
 }
 
