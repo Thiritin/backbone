@@ -21,7 +21,7 @@ import "./site.css";
 
 const ICON: Record<Product, LucideIcon> = {
   webHosting: Globe, vps: Server, gameServer: Gamepad2, dns: Network, vpn: Lock, storage: HardDrive, cloud: Cloud,
-  dedicated: Cpu, colocation: Building2, gpu: Zap, ssl: ShieldCheck, domain: Globe,
+  dedicated: Cpu, colocation: Building2, gpu: Zap, ssl: ShieldCheck, domain: Globe, reseller: Globe,
 };
 const CYCLE_LABEL: Record<Cycle, string> = {
   monthly: t("shop-admin.cycleMonthly"), quarterly: t("shop-admin.cycleQuarterly"), semiannual: t("shop-admin.cycleSemiannual"), annual: t("shop-admin.cycleAnnual"), biennial: t("shop-admin.cycleBiennial"), triennial: t("shop-admin.cycleTriennial"),

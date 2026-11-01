@@ -1,6 +1,6 @@
 # Plan: billing by hand
 
-Lane ids: `books`, `walk`, `bank`, `order-steps`, `vendor-sites`, `registrar-form`, `shop-link`, `payment-methods`. Mockup: `docs/design/mockups/bookkeeping.html`. Related design: `docs/design/gdd.md` (Custom orders, the five order steps), `docs/design/economy.md` (Billing and payment habits), `docs/design/shop.md` (shop systems, modules, variants), `docs/design/plans/shop-portal.md`.
+Lane ids: `books`, `walk`, `bank`, `order-steps`, `vendor-sites`, `registrar-form`, `shop-link`, `payment-methods`, `registrar-panel`, `teardown`. Mockup: `docs/design/mockups/bookkeeping.html`. Related design: `docs/design/gdd.md` (Custom orders, the five order steps), `docs/design/economy.md` (Billing and payment habits), `docs/design/shop.md` (shop systems, modules, variants), `docs/design/plans/shop-portal.md`.
 
 ## 1. Decisions
 
@@ -15,6 +15,9 @@ Lane ids: `books`, `walk`, `bank`, `order-steps`, `vendor-sites`, `registrar-for
 - The shop and Books are separate systems until the Shop link module is bought. Before it, shop customers and invoices reach Books only through an Import button, and gateway payouts land as one bundled transfer.
 - Payment methods are shop modules with a year, a fee, a profile preference and a side effect: PayPal disputes, card chargebacks and fraud, paysafecard churn, crypto abuse.
 - The first hour shrinks: fewer apps in the dock, each app arrives when its problem does.
+- The registrar partner's site has a reseller login, reached from the first registration's confirmation email. Its domain list shows every domain the player holds there with owner, expiry and renewal status; per domain the player can generate an auth code to transfer it out, or cancel it so it lapses at expiry. The partner bills each renewal to the player whether or not the customer still pays.
+- Nothing is terminated on its own while billing is by hand. A customer who cancels or is written off stops being invoiced, but their services keep running on the server, their domains keep renewing and both keep costing until the player terminates them. A suspended customer stays suspended until paid or terminated.
+- Termination is automated by a shop system's automation settings (auto-suspend after a number of days overdue, auto-terminate after a number of days suspended or at the end of a cancelled term, cancel or release each domain) for customers the shop knows, and by the bookkeeper staff role for every customer, at the bookkeeper's rate.
 
 ## 2. Lanes and order
 
@@ -28,8 +31,10 @@ Lane ids: `books`, `walk`, `bank`, `order-steps`, `vendor-sites`, `registrar-for
 | `registrar-form` | Register and Transfer domain as a Browser form on the registrar's site, click-fill from the customer record; shop registrar module skips it | `order-steps` |
 | `shop-link` | Source and synced flags, Import from shop, Shop link module, bundled gateway payouts | `books`, `vendor-sites`, shop systems in code |
 | `payment-methods` | Method catalog, profile preference, lost sales by method, fees, chargebacks and returns as negative transfers, crypto abuse | `shop-link` |
+| `registrar-panel` | Reseller login on the registrar's site, domain list, auth code for transfer out, cancel at expiry, yearly renewals charged to the player, transfer-out requests from customers | `registrar-form` |
+| `teardown` | Cancelled and written-off customers keep their services until terminated, Terminate in Books, suspended stays suspended, shop automation settings, bookkeeper terminates | `books`, `registrar-panel`, `vendor-sites` |
 
-Build `books` and `walk` first, in parallel, with `bank` starting on its first three milestones at the same time. Then `order-steps` and `vendor-sites` in parallel. Then `registrar-form` and `shop-link`. Then `payment-methods`.
+Build `books` and `walk` first, in parallel, with `bank` starting on its first three milestones at the same time. Then `order-steps` and `vendor-sites` in parallel. Then `registrar-form` and `shop-link`. Then `registrar-panel` and `payment-methods`. Then `teardown`.
 
 ## 3. Lane `books`
 
@@ -132,6 +137,82 @@ Switching programs keeps every customer, invoice, quote and transfer, since the 
 
 Milestones: catalog in `src/sim/10-catalog/bookkeeping.ts`; `s.books.vendor` with Lexwear as the default for old saves; Pear Store category and install; Books skin per vendor (colours, name in the title, module list); module prices read from the vendor; vendor sites; Getting started step; `tests/books-vendors.test.ts`.
 
+## 9d. Lane `books-editions`
+
+Decisions from the user:
+
+- The Finance app goes. The statement already lives in Books. Overview (cash, monthly recurring revenue, last month's profit, runway) becomes the first page of Books. Profit and loss, cash flow and the customer and revenue statistics become a Statistics section in Books. Tax moves to Books. Running loans and loan offers live on the bank's site. Finance leaves the Pear Store, the dock, the walk triggers and old saves, which open Books instead.
+- Insurance goes entirely: hardware insurance, the policy state, premiums, claims, the actions, the tests, the keys and the design text.
+- Bookkeeping features are not modules. Each vendor sells editions, and the edition decides which features the program has. The Lexwear module catalog, the licence key flow and the Register dialog are removed; the per-vendor sites sell editions and upgrades. Shop-side modules (Shop link, payment methods) stay modules, since the shop vendor sells them.
+- Each vendor has its own layout, not only colours.
+
+Features by edition, three tiers for every vendor where the vendor has three, named as the vendor named them:
+
+| Feature | Small | Medium | Large |
+| --- | --- | --- | --- |
+| Customers, quotes, invoices, bank statement, manual matching, reminders by hand, payables, overview page | yes | yes | yes |
+| Monthly run, match by reference, HBCI (pay all, statement pull), tax view | | yes | yes |
+| Profit and loss, cash flow chart | | yes | yes |
+| Automatic reminders, Helpdesk link, Statistics (customers, churn, revenue trend, lost sales) | | | yes |
+
+| Vendor | Small | Medium | Large | Notes |
+| --- | --- | --- | --- | --- |
+| Lexwear | buchhalter 249 | financial office 499 | financial office pro 899 | yearly update 99, 149, 199; upgrade pays the difference |
+| WIZO Mein Büro | S 149 | M 249 | L 399 | no yearly fee |
+| Saga Office Line | | Office Line 599 | Office Line Plus 999 | no small edition |
+| orgaMIN | Standard 199 | Professional 349 | Enterprise 549 | |
+| Collmix | basic 15 a month | plus 29 a month | | HBCI already in basic; no Helpdesk link ever |
+| sevDeck (2013) | Rechnung 9 a month | Buchhaltung 19 a month | Warenwirtschaft 39 a month | bank sync in every edition |
+| lexoffize (2014) | S 7 a month | M 12 a month | L 19 a month | |
+| GnuCache (GnuCash) | free | | | desktop, single user, HBCI included, P&L and cash flow reports, no quotes, no monthly run, no matching by reference, no automatic reminders, no statistics; GTK grey look |
+
+Deployment and seats:
+
+- Desktop programs (Lexwear, WIZO, Saga, orgaMIN, GnuCache) run on the player's PC and keep working when the internet line is down. Browser programs (Collmix, sevDeck, lexoffize) run inside the Browser look and are unusable while the line is down or throttled, so an unpaid line bill locks the books.
+- Licences are single user or multi user. A single-user licence means only the player works in the program: a hired bookkeeper cannot work until a multi-user licence or seats exist. Desktop vendors sell a network version as the multi-user step (Lexwear financial office pro and Saga Office Line Plus include it, WIZO L and orgaMIN Enterprise sell seats at a price each, GnuCache stays single user). Browser programs count seats per plan: Collmix plus 3 users, sevDeck and lexoffize one included and a monthly fee per further user. Each bookkeeper occupies one seat.
+- GnuCache has no Quotes view, so with it the order ticket keeps its plain Quote step where the player types the price without a document.
+
+Layouts, one per vendor: Lexwear a grey Windows 2000 program with a tree on the left and a toolbar of small icons; WIZO a blue program with a row of large icons on top; Saga a dense grey enterprise screen with menus; orgaMIN orange with top tabs; Collmix a web page inside the window with an address bar, blue links and plain tables; sevDeck flat cards with a teal sidebar; lexoffize flat and light with a green sidebar; GnuCache a GTK2 grey window with an account tree and a register table. Document views keep the 2005 toolbar from the quote work. Edition-locked features show as disabled entries that open the vendor's site at the upgrade page.
+
+Milestones: editions in the catalog and `s.books.edition` with deployment and seats; GnuCache as the free vendor; features read from the edition everywhere a module flag was read; remove the Lexwear modules, keys and Register; vendor sites sell editions and upgrades; Overview, Statistics and Tax in Books; remove Finance; remove insurance; layouts per vendor; old saves: Finance installed becomes Books, Lexwear with modules owned becomes the smallest edition that covers them; `tests/books-editions.test.ts` and the finance and insurance tests removed or moved.
+
+## 9e. Lane `data-flow`
+
+Decisions from the user:
+
+- A bookkeeping program is optional. A shop system that keeps customers, invoices and payments is enough to run the business; the player may uninstall the bookkeeping program and work from the shop alone once email orders are off. Only what a program provides exists on screen: with no bookkeeping program there is no Books window, the statement is read on the bank's site, payables are paid there from the emailed invoice, and the order ticket keeps its plain Quote step.
+- Programs declare capabilities: customers, quotes, invoices, payments, payables, statement, reminders, statistics, tax. A shop system has customers, invoices, payments and reminders for its own orders. Bookkeeping programs have everything their edition allows, and tax is theirs alone.
+- Two linked programs show the same data. Shop link stays the integration: with it, the shop and the bookkeeping program are two views of one record set. Without it the data has to travel as files.
+- Files. Programs export and import. An export lands as a file in the desktop's Documents (next to the TAN list and Getting started), with a name like `shop-export-2005-10.csv` or `statement-2005-10.csv`; an import dialog lists the files of the right kind, and importing one moves the records over. Formats are named by era: CSV in 2005, DATEV export from 2007 for the tax side, MT940 for bank statements.
+  - Shop to bookkeeping: the shop's admin has Export customers and invoices; the bookkeeping program's Import takes the file. This replaces the one-click Import from shop button, which only Shop link now makes unnecessary.
+  - Bank to bookkeeping: transfers live at the bank. A bookkeeping program without HBCI sees them only after the player downloads the statement on the bank's site and imports the file in Books; HBCI pulls it itself. The Bank tab is empty until the first import, which is the point of HBCI.
+  - Every edition can import and export; the file step is the small edition's chore and HBCI and Shop link are what the bigger ones remove.
+- Tax returns are the bookkeeping program's own job. Once a year the tax office (pun site) sends the letter; Books has Submit tax return, which needs every invoice of the year present in Books (imported or synced) and a matched statement, and files it on the tax office site. The shop never files taxes. A player without a bookkeeping program has to install one at tax time, GnuCache is free, or hire a tax advisor (lane 9f). Missing the deadline costs a late fee and a second letter, then an estimate that is always higher than the real tax.
+
+Milestones: capability table on the program catalogs; Books window absent without a program and the ticket's plain quote step with it; Documents as a file list with kinds; shop export and Books import of customers and invoices; bank statement download and import, HBCI pulls on its own; Import from shop button removed; tax office site and Submit tax return with the completeness check; late fee and estimate; old saves: records present count as imported; `tests/data-flow.test.ts`.
+
+## 9f. Lane `tax-advisors` (handoff, not built yet)
+
+A tax advisor is a firm (pun on DATEV members and the big names) hired on their site. They file the tax return, the yearly accounts and the advance VAT returns, and answer the tax office's letters, so the player never sees a tax step again. They are expensive: a monthly retainer by company size plus a fee per filing, several times what a bookkeeping program costs, worth it for a large company. They work from what they are given: with DATEV export the player or a bookkeeper exports once a month and uploads it on the advisor's portal, with a bookkeeping program's DATEV link (bigger editions, 2007 on) it flows itself. They do not chase invoices, match transfers, send reminders or pay payables, so bookkeepers stay needed. Mistakes in the delivered data (unmatched transfers, missing invoices) come back as a query letter with a fee per hour of their time. The design and numbers go into economy.md when the lane starts.
+
+## 9g. Lane `registrar-panel`
+
+1. The registrar partner's site gains a Login page, unlocked by the first registration and announced by its confirmation email. Domains lists every `Domain` the player registered or transferred in: name, owner, expiry, renewal on or off, status (active, transfer pending, cancelled, gone).
+2. Renewals: each domain renews at the partner a year after registration and books the registry cost to the player, independent of the customer's invoices. A cancelled domain does not renew and is gone at expiry.
+3. Transfer out: a leaving customer may open a "transfer my domain" ticket. Generate auth code in the panel shows the code; the player pastes it into the reply. The domain leaves the list two days later and stops renewing. A ticket left unanswered for three days costs happiness like any ticket, and a refusal costs more and can end in a complaint.
+4. Moving domains to another registrar (a cheaper partner, later the player's own accreditation) is a transfer per domain: the new registrar books one year on arrival, so each moved domain is paid a year early and its expiry no longer lines up with the customer's billing term.
+5. `tests/registrar-panel.test.ts`: renewals charge the player after the customer left; a cancelled domain lapses at expiry; the auth code ticket resolves and the domain leaves; a moved domain books a year and shifts its expiry.
+
+## 9h. Lane `teardown`
+
+1. A cancellation or write-off sets `churnedAt` and stops invoicing as today, but the customer's services stay on the server and keep their slot, power and licence costs, and their domains keep renewing. Services gain the status `orphaned`, shown in Books, Customers and the server's service list.
+2. Terminate in Books on the customer page: one action `terminateCustomer(s, customerId)` in `src/sim/90-actions/customers.ts` removes every service, frees the slots and cancels each domain at the partner. Terminating a domain is a separate click in the registrar panel until the shop or bookkeeper does both.
+3. A suspended customer stays suspended. Today's churn after `SUSPEND_CHURN_DAYS` writes the invoice off but leaves the services suspended until terminated.
+4. Orphaned services that run for 30 days raise the abuse report rate for their server, since nobody patches an abandoned site.
+5. Shop automation settings: auto-suspend after N days overdue, auto-terminate after N days suspended, terminate at the end of a cancelled term, domain on termination cancel or release. They act only on customers the shop knows (lane `shop-link`).
+6. The bookkeeper role terminates orphaned and long-suspended customers at a rate per hour, for every customer, with the same settings as the shop.
+7. `tests/teardown.test.ts`: a cancelled customer's services keep running and costing; terminate frees the slot and cancels the domain; a suspended customer stays suspended after churn; shop settings and the bookkeeper each terminate on their day; an old save loads with every churned customer's services already gone.
+
 ## 10. Shared files
 
 | File | Lanes | Rule |
@@ -140,8 +221,10 @@ Milestones: catalog in `src/sim/10-catalog/bookkeeping.ts`; `s.books.vendor` wit
 | `src/sim/88-tick/tick.ts` | books, vendor-sites, walk, bank | One call per lane on its own line |
 | `src/sim/10-catalog/store.ts` (`STARTER_APPS`) | books, walk, books-vendors | books swaps Billing for Books; walk trims the list; books-vendors removes Books from it |
 | `src/sim/90-actions/orders.ts` | order-steps, registrar-form | order-steps lands first |
-| `src/sim/80-business/browser.ts` | bank, vendor-sites, registrar-form | bank adds the shared site frame first, the others reuse it |
+| `src/sim/80-business/browser.ts` | bank, vendor-sites, registrar-form, registrar-panel | bank adds the shared site frame first, the others reuse it |
 | `src/sim/80-business/office.ts` | walk, bank | walk edits the dock list, bank adds the bank choice |
+| `src/sim/45-billing/billing.ts` | books, teardown | books lands first |
+| `src/sim/47-staff/staff.ts` | vendor-sites, teardown | vendor-sites adds the bookkeeper first |
 
 ## 11. Open questions, with recommendations
 

@@ -1,10 +1,11 @@
 // Player actions on the bank's website (46-finance/bank.ts).
 import { nowMinutes, yearOf } from "../00-core/time";
 import { hashRng, rand } from "../00-core/rng";
-import { tanMethods, type TanMethod } from "../10-catalog/banks";
-import { APPROVAL_HOURS, bankOf, hbci, payAll, ibanEra, limitFor, LOCK_HOURS, MIN_CARD_LIMIT, nextTanIndex, placeTanList, send, spendable, useTan, WRONG_LIMIT, type Draft } from "../46-finance/bank";
+import { banksOpen, tanMethods, type BankId, type TanMethod } from "../10-catalog/banks";
+import { APPROVAL_HOURS, bankOf, openWithSavings, hbci, payAll, ibanEra, limitFor, LOCK_HOURS, MIN_CARD_LIMIT, nextTanIndex, placeTanList, send, spendable, useTan, WRONG_LIMIT, type Draft } from "../46-finance/bank";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
+import { registerCompany, registrationError } from "./company";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 
@@ -54,6 +55,8 @@ export function confirmTransfer(s: GameState, tan = ""): ActionResult {
   const b = s.bank, p = b?.pending;
   if (!b || !p) return fail("error.noTransfer");
   if (s.hour < b.lockedUntil) return fail("error.bankLocked");
+  const reg = p.draft.registration, refused = reg && registrationError(s, reg.name, reg.owner, reg.form);
+  if (refused) return fail(refused);
   const want = b.tan === "itan" ? b.tans.codes[p.index!] : b.tan === "mtan" ? p.code : null;
   if (want !== null && tan.trim() !== want) {
     const wrong = b.wrong + 1;
@@ -68,6 +71,7 @@ export function confirmTransfer(s: GameState, tan = ""): ActionResult {
     s.bank = { ...s.bank, standingOrders: [...s.bank.standingOrders, { id, name: d.name, account: d.account, amount: d.amount, reference: d.reference, day: p.day }] };
     return { ok: true, id };
   }
+  if (reg) return registerCompany(s, reg.name, reg.owner, reg.form);
   return { ok: true, id: send(s, p.draft).id };
 }
 
@@ -121,5 +125,13 @@ export function setAutoPay(s: GameState, on: boolean): ActionResult {
   if (!s.bank) return fail("error.noBank");
   if (!hbci(s)) return fail("error.noHbci");
   s.bank = { ...s.bank, autoPay: on };
+  return { ok: true };
+}
+
+// Opens the company's account on the bank's site; the player's savings arrive as its first booking.
+export function openBankAccount(s: GameState, id: BankId): ActionResult {
+  if (s.bank) return fail("error.hasBank");
+  if (!banksOpen(yearOf(s.hour)).some((b) => b.id === id)) return fail("error.unknownBank");
+  openWithSavings(s, id);
   return { ok: true };
 }

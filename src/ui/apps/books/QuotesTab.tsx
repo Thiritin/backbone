@@ -5,7 +5,7 @@ import { mailedAddress } from "../../../sim/30-customers/addresses";
 import { stepError } from "../../../sim/30-market/manual";
 import { requestName } from "../../../sim/30-market/market";
 import { orderOf } from "../../../sim/30-market/orders";
-import { hasHelpdeskLink, type Quote, type QuoteStatus } from "../../../sim/30-market/quotes";
+import { type Quote, type QuoteStatus } from "../../../sim/30-market/quotes";
 import { setupFee } from "../../../sim/30-market/spec";
 import type { GameState } from "../../../sim/50-state";
 import type { Cycle } from "../../../sim/10-catalog/cycles";
@@ -61,7 +61,7 @@ export function QuotesTab({ focus }: { focus: string | null }) {
         </select>
         <span className="books-docbar-sep" />
         <DocButton icon={<FilePen />} label={t("orderSteps.edit")} disabled={!draft} pressed={editing && draft} onClick={() => setEditing(!editing)} />
-        <DocButton icon={<Send />} label={t("orderSteps.send")} disabled={!draft || !q?.ticketId || !hasHelpdeskLink(game)} onClick={() => act(attachQuote, q!.id, q!.ticketId!)} />
+        <DocButton icon={<Send />} label={t("orderSteps.send")} disabled={!draft || !q?.ticketId} onClick={() => act(attachQuote, q!.id, q!.ticketId!)} />
         <DocButton icon={<FileOutput />} label={t("orderSteps.carryForward")} disabled={q?.status !== "accepted"} onClick={carry} />
         <DocButton icon={<Trash2 />} label={t("orderSteps.delete")} disabled={!draft} onClick={() => { if (act(deleteQuote, q!.id).ok) pick(null); }} />
       </DocBar>
