@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
+import { t } from "../src/i18n/en";
 import { hourOfMonth } from "../src/sim/00-core/time";
 import { softwareById } from "../src/sim/10-catalog/platforms";
 import { type GameState } from "../src/sim/50-state";
-import { installScript } from "../src/sim/60-infra/apt";
 import { setMachine } from "../src/sim/60-infra/cluster";
 import { assignedKey, assignKey, installedVersion, issueKey, licenceStatus, lookOf } from "../src/sim/60-infra/licence";
 import { machineScreen } from "../src/sim/60-infra/oob";
+import { vendorCli } from "../src/sim/60-infra/vendor-cli";
 import { hostOf, upgradeOffers } from "../src/sim/80-business/vendor-shop";
 import { softwareTarget, upgradeSoftware } from "../src/sim/90-actions/console";
 import { type ActionResult } from "../src/sim/90-actions/hardware";
@@ -15,7 +16,6 @@ import { newGame, panelServer, withServer } from "./fixtures";
 const ok = (r: ActionResult) => { if (!r.ok) throw new Error(r.error); return r.id!; };
 const err = (r: ActionResult) => (r.ok ? "ok" : r.error);
 const start = () => ({ ...withServer(newGame(3)), cash: 100_000 });
-const DA = "wget -O setup.sh https://download.directadmen.com/setup.sh && sh setup.sh auto";
 // Finishes an upgrade that is running.
 const finish = (s: GameState, product: string) => { s.hour += softwareById(product).installHours; };
 
@@ -42,20 +42,20 @@ describe("software upgrade", () => {
     expect(s.cash).toBe(100_000);
   });
 
-  it("needs an upgrade key past a version-bound key, from the console or the command, and hands the old key back", () => {
+  it("needs an upgrade key past a version-bound key, from the licence page or the da tool, and hands the old key back", () => {
     const s = start();
     panelServer(s, "dev3", "directadmen");
     const old = issueKey(s, "directadmen", null);
     assignKey(s, old.id, "dev3");
     s.hour = hourOfMonth("2008-01");
     expect(err(upgradeSoftware(s, "dev3", "directadmen"))).toBe("error.licenceKey");
-    expect(installScript(s, "dev3", `${DA} --upgrade`)).toMatchObject({ failed: true });
+    expect(vendorCli(s, "dev3", "da", ["upgrade"], true)).toMatchObject({ failed: true, output: [t("error.licenceKey")] });
     ok(addToCart(s, "directadmen", null, "1.24"));
     ok(checkout(s, hostOf("directadmen")!));
     const up = s.licenses.at(-1)!;
     expect(up).toMatchObject({ covers: { kind: "version", major: "1.30" }, machineId: null });
     expect(s.cash).toBe(100_000 - 100);
-    expect(installScript(s, "dev3", `${DA} --upgrade --key ${up.key}`)?.action?.[0]).toBe(upgradeSoftware);
+    expect(vendorCli(s, "dev3", "da", ["upgrade", "--key", up.key], true)?.action).toEqual([upgradeSoftware, "dev3", "directadmen", up.key]);
     ok(upgradeSoftware(s, "dev3", "directadmen", up.key));
     expect(assignedKey(s, "dev3", "directadmen")?.id).toBe(up.id);
     expect(s.licenses.find((k) => k.id === old.id)?.machineId).toBeNull();

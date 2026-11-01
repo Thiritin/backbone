@@ -444,6 +444,7 @@ export default {
   "browser-sites-2.cli.channel": () => "Define o canal de onde virão as próximas atualizações.",
   "browser-sites-2.cli.autoupdate": () => "Liga ou desliga as atualizações automáticas noturnas.",
   "browser-sites-2.cli.licenseSet": () => "Atribui a esta máquina uma chave de licença livre.",
+  "browser-sites-2.cli.upgrade": () => "Atualiza o software para a versão principal seguinte; --key introduz a chave de atualização de que uma licença de uma versão anterior precisa.",
   "browser-sites-2.cli.licenseShow": () => "Mostra a chave atribuída, a sua edição e quando expira.",
   "browser-sites-2.cli.trial": () => "Inicia a avaliação gratuita nesta máquina.",
   "browser-sites-2.cli.licenseTier": () => "Muda a edição da licença deste host de painel.",
@@ -466,5 +467,4 @@ export default {
   "browser-sites-2.cli.serverList": () => "Lista os servidores de jogo nesta máquina e se estão em execução.",
   "browser-sites-2.cli.shareList": () => "Lista os links compartilhados neste servidor de armazenamento e quando expiram.",
   "browser-sites-2.keyFlag": () => "Acrescenta --key seguido da tua chave de licença ao comando para instalar com licença.",
-  "browser-sites-2.upgradeFlag": () => "Acrescenta --upgrade ao comando para atualizar uma cópia instalada para a versão principal seguinte, e --key com a chave de atualização se a tua licença precisar de uma.",
 } satisfies Dict;

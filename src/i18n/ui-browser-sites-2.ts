@@ -444,6 +444,7 @@ export default {
   "browser-sites-2.cli.channel": () => "Sets the release channel that future updates come from.",
   "browser-sites-2.cli.autoupdate": () => "Turns automatic nightly updates on or off.",
   "browser-sites-2.cli.licenseSet": () => "Assigns an unassigned license key to this machine.",
+  "browser-sites-2.cli.upgrade": () => "Upgrades the software to the next major version; --key enters the upgrade key a licence for an older version needs.",
   "browser-sites-2.cli.licenseShow": () => "Shows the assigned key, its edition and when it expires.",
   "browser-sites-2.cli.trial": () => "Starts the free trial on this machine.",
   "browser-sites-2.cli.licenseTier": () => "Changes the license edition of this panel host.",
@@ -466,5 +467,4 @@ export default {
   "browser-sites-2.cli.serverList": () => "Lists the game servers on this machine and whether they are running.",
   "browser-sites-2.cli.shareList": () => "Lists the shared links on this storage server and when they expire.",
   "browser-sites-2.keyFlag": () => "Add --key followed by your license key to the command to install with a license.",
-  "browser-sites-2.upgradeFlag": () => "Add --upgrade to the command to upgrade an installed copy to the next major version, and --key with the upgrade key if your licence needs one.",
 } satisfies Dict;

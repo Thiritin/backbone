@@ -196,7 +196,7 @@ export const TERMINAL_EN: Record<string, (p: Params) => string> = {
   "term.apt.removing": (p) => `Removing ${p.pkg} ...`,
   "term.install.apt": (p) => APT_LOG(String(p.pkg)).join("\n"),
   "term.install.script": (p) => `Starting the ${p.name} installer ...`,
-  "term.install.upgrade": (p) => `Upgrading ${p.name} to ${p.version}, ${p.hours} h ...`,
+  "term.vendor.upgrading": (p) => `Upgrading ${p.name} to ${p.version}, ${p.hours} h ...`,
   "term.install.scriptLog": (p) => SCRIPT_LOG(String(p.name), String(p.ports)).join("\n"),
   "term.install.done": (p) => `${p.name} installation complete.`,
   "term.install.reach": (p) => `You can access your new installation at ${p.url}`,

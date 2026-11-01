@@ -36,7 +36,7 @@ export default {
   "dev.open": () => "Apertura del menu sviluppatore.",
   "term.apt.downtime": (p) => `I servizi di questo server resteranno offline per circa ${p.minutes} minuti.`,
   "term.install.script": (p) => `Avvio dell'installer di ${p.name} ...`,
-  "term.install.upgrade": (p) => `Aggiornamento di ${p.name} a ${p.version}, ${p.hours} h ...`,
+  "term.vendor.upgrading": (p) => `Aggiornamento di ${p.name} a ${p.version}, ${p.hours} h ...`,
   "term.install.done": (p) => `Installazione di ${p.name} completata.`,
   "term.install.reach": (p) => `Puoi accedere alla tua nuova installazione su ${p.url}`,
   "term.install.reboot": () => "Riavvia ora per completare l'installazione.",

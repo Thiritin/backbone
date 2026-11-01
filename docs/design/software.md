@@ -161,7 +161,7 @@ Action `upgradeOs(machineId, key?)` in `90-actions/console.ts`. Tests: `tests/os
 
 ### 4.5 Software upgrade
 
-Installed software steps up one major at a time once the next major is out (`softwareTarget`, from `nextMajor`), with `upgradeSoftware(machineId, product, key?)` in `90-actions/console.ts`. It runs from the Upgrade row on the console's Licence page, or from the vendor's install command with `--upgrade` (and `--key` for the upgrade key), which the vendor site documents under the command.
+Installed software steps up one major at a time once the next major is out (`softwareTarget`, from `nextMajor`), with `upgradeSoftware(machineId, product, key?)` in `90-actions/console.ts`. It runs from the Upgrade row on the console's Licence page, or from the software's own tool in the shell, `<tool> upgrade [--key <key>]`, which the vendor site's Docs page lists.
 
 - **Downtime.** The upgrade takes the software's install hours; the machine's console shows it installing, and everything on the machine is down for that time as for an OS upgrade. The software runs, and its console looks like, the version it came from until the upgrade is done.
 - **Licenses.** The same rule as the OS: a key for an older major needs an upgrade key for the target major, which replaces it. While the vendor sells keys per major, its site sells "Upgrade from N" for every major the player holds a key for, at the upgrade price when that key was bought in the last 12 months and the full price otherwise (`upgradeOffers`). Once the vendor sells only subscriptions, no upgrades are on sale.
