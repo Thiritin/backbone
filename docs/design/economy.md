@@ -1245,7 +1245,7 @@ Stuck boots, hangs and lockouts are rolled per device and hour and do not draw f
 | New listings per channel and month | 2 to 6, posted over the month at random hours, the first month with the new game; a model qualifies once its launch is at least 2 years back, and a model from 2005 counts as launched in 2002, so 2005 listings are 1 to 3 years old at the usual price bands |
 | Age of a unit | 1 year up to the years since the model's launch |
 | WebHostingTalc ask | 60% of the preset price at 1 year falling in a straight line to 45% at 6 years and older |
-| Telegrump ask | 45% falling to 30% the same way; 15% of the deals are scams that take the money and ship nothing |
+| Craigslost ask | 45% falling to 30% the same way; 15% of the deals are scams that take the money and ship nothing |
 | eBuy | Starts at 25%; the rival's maximum is 35% to 70%; the higher maximum wins and pays the other's maximum |
 | Visible defect | 30% of single units; PSU 2 missing ×0.85 (two-supply models), 1 drive reports errors ×0.8 (the drive arrives one year past its life), no rails ×0.95 (rack-mounted) |
 | Hidden part age | Each part's age is the unit's age times 0.5 to 1.5 |
@@ -1267,7 +1267,7 @@ Used devices are never insured, cannot be leased and resell from the price paid 
 | Full | 48 hours; every hidden part shows its real age; each working part past its life fails with 50% (seeded by game seed, hour and device) |
 | Bonus | A full burn-in in which no part failed multiplies the server's failure chance by 0.9 for 365 days (it stacks with the other failure factors) |
 | Used parts | Parts bought on the used market are hidden until a burn-in has looked at them; replaced parts are known |
-| Buyer protection | The first failed part of a unit bought on the board or eBuy within 14 days of its arrival refunds half the unit price, once; Telegrump deals never refund |
+| Buyer protection | The first failed part of a unit bought on the board or eBuy within 14 days of its arrival refunds half the unit price, once; Craigslost deals never refund |
 
 **Power feeds.**
 

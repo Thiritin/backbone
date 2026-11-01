@@ -1,7 +1,7 @@
 import { euro, euroCents } from "../../sim/00-core/money";
 import type { Dict, Params } from "../lang";
 
-const CHANNEL: Record<string, string> = { ebuy: "eBuy", board: "WebHostingTalc", chat: "Telegrump" };
+const CHANNEL: Record<string, string> = { ebuy: "eBuy", board: "WebHostingTalc", chat: "Craigslost" };
 const box = (p: Params) => `${p.cpu} vCPU${Number(p.cpu) === 1 ? "" : "s"}, ${p.ram} GB RAM und ${p.disk} GB Festplatte`;
 
 export default {
