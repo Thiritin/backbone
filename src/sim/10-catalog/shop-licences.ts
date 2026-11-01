@@ -50,6 +50,7 @@ const TERMS: Record<ShopId, Omit<ShopLicence, "id" | "name">> = {
       { from: 2025, month: 11, kind: "once", fee: 350, updates: 12, updatesFee: 62, editions: ["branded", "unbranded"] },
     ],
     trialDays: 30,
+    site: { host: "blessta.com", tagline: "", blurb: "", features: [], eras: [{ from: 2007, look: "early" }] },
   },
   hostBull: {
     licensing: [
