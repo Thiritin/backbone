@@ -145,6 +145,7 @@ describe("compute", () => {
   it("fails VMs over within five minutes only with failover on and room on another node", () => {
     const setup = (ha: boolean) => {
       const { s, cluster, second } = twoNodes(), cus = addCustomer(s, "Ada Lang", "hobbyDev");
+      s.clusters = s.clusters.map((x) => ({ ...x, qdevice: "dev4" }));
       s.unlocks = [...s.unlocks, "virtualization"];
       if (ha) ok(setHa(s, cluster, "failover", true));
       const box = ok(provisionService(s, cus, "vps", { label: "Box", spec: sizeSpec("vps", 0, yearOf(s.hour)) }));
@@ -165,6 +166,7 @@ describe("compute", () => {
     expect(on.s.clusters.find((c) => c.id === on.cluster)!.controlPlane).toBe(on.second);
 
     const full = setup(true);
+    full.s.clusters = full.s.clusters.map((x) => ({ ...x, platform: "hypervee", qdevice: undefined }));
     ok(setPower(full.s, full.second, false));
     ok(setPower(full.s, "dev3", false));
     const stuck = run(full.s, 3);

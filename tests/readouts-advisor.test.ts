@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { advisorChecks } from "../src/sim/80-business/readouts";
+import { newJob } from "../src/sim/60-infra/backups";
 import { panelVm, readyGame, skipTo } from "./fixtures";
 
 function host(year = 2016) {
@@ -13,21 +14,21 @@ function host(year = 2016) {
 describe("Pleskit Advisor", () => {
   it("scores a fresh host 100 minus the backup finding", () => {
     const { s, c } = host();
-    expect(c.backup.every).toBe("off");
+    expect(c.jobs).toEqual([]);
     const kinds = advisorChecks(s, c).checks.map((x) => x.kind).filter((k) => k !== "auto");
     expect(kinds).toEqual(["backup"]);
-    c.backup.every = "daily";
+    c.jobs = [newJob("j1", "x")];
     expect(advisorChecks(s, c).checks.map((x) => x.kind)).not.toContain("backup");
   });
 
   it("lowers the score by each finding's penalty", () => {
     const { s, c } = host();
-    c.backup.every = "daily";
+    c.jobs = [newJob("j1", "x")];
     const base = advisorChecks(s, c).score;
     s.security.offline.push(c.id);
     expect(advisorChecks(s, c).score).toBe(base - 5);
     s.security.offline = [];
-    c.backup.every = "off";
+    c.jobs = [];
     expect(advisorChecks(s, c).score).toBe(base - 15);
   });
 

@@ -40,7 +40,7 @@ describe("server operating systems", () => {
   it("has Debiant and Windoors with their fees, boot minutes and install hours", () => {
     expect(SERVER_OS.map((o) => [o.id, o.name, o.licensing, o.bootMinutes, o.installHours])).toEqual([
       ["lunix", "Debiant GNU/Lunix", [{ from: 2005, kind: "free", fee: 0 }], 20, 1],
-      ["windoors", "Windoors Server", [{ from: 2005, kind: "once", fee: 600 }, { from: 2016, kind: "core", fee: 4 }], 40, 2],
+      ["windoors", "Windoors Server", [{ from: 2005, kind: "once", fee: 600, upgrade: 300 }, { from: 2016, month: 10, kind: "core", fee: 4, minCores: 16, minCoresPerCpu: 8 }], 40, 2],
     ]);
     expect(APP_SUITE_FEE).toBe(25);
     expect(SOFTWARE.every((sw) => sw.os.length > 0 && /^[a-z.-]+\.(com|org|net|io|de|cz)$/.test(sw.site.host))).toBe(true);
@@ -83,21 +83,19 @@ describe("server operating systems", () => {
     expect(s.ops.seized[0].device).toMatchObject({ id: second, software: [] });
   });
 
-  it("bills Windoors per core from 2016 and the App Suite per cluster with the licenses", () => {
+  it("bills subscription keys and the App Suite, and keeps Windoors bought once free from 2016", () => {
     const { s, second } = threeServers();
     const host = panelServer(s, "dev3", "tcadmen");
     const cloud = hypervisor(s, [second], undefined, "hypervee");
     skipTo(s, 2016);
-    // Two cores per server at 4 euros each.
-    expect(licenseCost(s, s.clusters.find((c) => c.id === host)!)).toEqual({ panel: 25, platform: 8 });
-    expect(licenseCost(s, s.clusters.find((c) => c.id === cloud)!)).toEqual({ panel: 0, platform: 20 + 8 });
+    expect(licenseCost(s, s.clusters.find((c) => c.id === host)!)).toEqual({ panel: 25, platform: 0 });
+    expect(licenseCost(s, s.clusters.find((c) => c.id === cloud)!)).toEqual({ panel: 0, platform: 20 });
     s.clusters = s.clusters.map((c) => (c.id === cloud ? { ...c, appSuite: true } : c));
-    expect(licenseCost(s, s.clusters.find((c) => c.id === cloud)!).platform).toBe(20 + 8 + 25);
+    expect(licenseCost(s, s.clusters.find((c) => c.id === cloud)!).platform).toBe(20 + 25);
     monthEnd(s);
-    expect(s.ledger.filter((l) => l.category === "licenses").map((l) => [l.key, l.amount])).toEqual([
-      ["ledger.license", -25], ["ledger.license", -20], ["ledger.appSuite", -25], ["ledger.windoors", -16],
+    expect(s.ledger.filter((l) => l.category === "licenses").map((l) => [l.key, l.params.name, l.amount])).toEqual([
+      ["ledger.licenceRenewal", "TCAdmen", -25], ["ledger.licenceRenewal", "HyperVee", -20], ["ledger.appSuite", undefined, -25],
     ]);
-    expect(s.ledger.find((l) => l.key === "ledger.windoors")?.params).toEqual({ count: 2 });
   });
 });
 

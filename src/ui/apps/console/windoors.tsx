@@ -8,6 +8,7 @@ import { addressOf, macOf } from "../../../sim/60-infra/lan";
 import { setIface } from "../../../sim/90-actions/lan";
 import { installDone, installLog } from "../../../sim/60-infra/apt";
 import { machineNet, machineScreen } from "../../../sim/60-infra/oob";
+import { supportOn } from "../../../sim/60-infra/lifecycle";
 import { reboot } from "../../../sim/90-actions/hardware";
 import { installFromSite } from "../../../sim/90-actions/console";
 import { installBlock, softwareOn, uninstallSoftware } from "../../../sim/90-actions/software";
@@ -58,6 +59,11 @@ export function useWindoors(game: GameState, m: Machine, version: string, logged
 }
 
 type Win = "manager" | "roles" | "programs" | "adapter" | null;
+const endSuffix = (game: GameState, m: Machine, id: string): string => {
+  const support = supportOn(game, m.id, id);
+  return support === "supported" ? "" : ` (${t(`software.support.${support}`)})`;
+};
+
 interface Entry { sw: Software; installed: boolean; installing: boolean; why: string | null }
 
 // The Windoors software the year allows, roles (the hypervisor) or programs, with whether it is on the machine.
@@ -271,7 +277,7 @@ function Wizard({ game, m, era, items, close, roles = true }: { game: GameState;
           {items.map((e) => (
             <label key={e.sw.id} className={`wz-row${e.why && !e.installed ? " dim" : ""}`}>
               <input type="radio" name="sw" checked={pick === e.sw.id || e.installed} disabled={e.installed || e.installing || !!e.why} onChange={() => setPick(e.sw.id)} />
-              <span>{e.sw.name}{e.installed ? t("console.installedSuffix") : ""}</span>
+              <span>{e.sw.name}{e.installed ? t("console.installedSuffix") : ""}{e.installed ? endSuffix(game, m, e.sw.id) : ""}</span>
               {e.why && !e.installed && !e.installing && <small>{t(e.why)}</small>}
             </label>
           ))}

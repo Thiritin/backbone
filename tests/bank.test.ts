@@ -7,7 +7,7 @@ import { withServer, newGame } from "./fixtures";
 import { lineCut, lineFactor, supplierAccount, supplierCode, supplierHost, type Payable } from "../src/sim/46-finance/payables";
 import { resolve } from "../src/sim/80-business/browser";
 import { tickMinute } from "../src/sim/88-tick/tick";
-import { cancelTransfer, confirmTransfer, openBankAccount, payAllDue, setAutoPay, setMandate, setTanMethod, startTransfer } from "../src/sim/90-actions/bank";
+import { cancelTransfer, confirmTransfer, deletePayee, openBankAccount, payAllDue, savePayee, setAutoPay, setMandate, setTanMethod, startTransfer } from "../src/sim/90-actions/bank";
 import { type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { applyForRegistration, registerCompany } from "../src/sim/90-actions/company";
@@ -164,6 +164,19 @@ describe("bank site and TANs", () => {
     expect(startTransfer(s, { ...payee, name: " " })).toEqual({ ok: false, error: "error.payeeName" });
     s.hour = hourOf(new Date(Date.UTC(2008, 2, 1)));
     expect(startTransfer(s, payee)).toEqual({ ok: false, error: "error.payeeAccount" });
+  });
+
+  it("saves payees, replaces one with the same account and keeps them in a save", () => {
+    const s = opened();
+    expect(savePayee(s, { name: "Hoster", account: "123", code: "12345678" })).toEqual({ ok: true });
+    expect(savePayee(s, { name: "Hoster GmbH", account: "123", code: "12345678" })).toEqual({ ok: true });
+    expect(savePayee(s, { name: "Nobody", account: "123" })).toEqual({ ok: false, error: "error.payeeAccount" });
+    expect(s.bank!.payees!.map((p) => p.name)).toEqual(["Hoster GmbH"]);
+    const loaded = deserialize(serialize(s));
+    expect(loaded.bank!.payees).toEqual(s.bank!.payees);
+    expect(deletePayee(loaded, loaded.bank!.payees![0].id)).toEqual({ ok: true });
+    expect(deletePayee(loaded, "payee0")).toEqual({ ok: false, error: "error.noPayee" });
+    expect(loaded.bank!.payees).toEqual([]);
   });
 });
 

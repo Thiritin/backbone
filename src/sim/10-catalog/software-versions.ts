@@ -1,5 +1,6 @@
 import { hourOfMonth } from "../00-core/time";
 import { SERVER_OS } from "./server-os";
+import type { Look } from "./sites";
 
 // docs/design/software-versions.md: the releases of every operating system and software, oldest first. release,
 // updatesUntil and securityUntil are game hours; an end is null while the vendor has not set one. major is the line a
@@ -187,4 +188,27 @@ export const nextMajor = (product: string, version: string, hour: number): Softw
   const vs = versionsOf(product), i = vs.findIndex((x) => x.version === version);
   const major = i < 0 ? undefined : vs.slice(i + 1).find((x) => x.major !== vs[i].major)?.major;
   return vs.filter((x) => x.major === major && x.release <= hour).at(-1) ?? null;
+};
+
+// docs/design/software-versions.md, UI generations: the first version of each generation and the console look it shows.
+// The consoles draw two looks, so each generation takes the nearer one; Horizont, HyperVee and OpenVeePeeN change look
+// inside a generation, at the version of the game year the look was drawn for.
+export const UI_LOOKS: Record<string, [version: string, look: Look][]> = {
+  cpanic: [["10", "early"], ["11", "early"], ["11.38", "late"], ["98", "late"]],
+  pleskit: [["7.5", "early"], ["10.0", "early"], ["12.0", "early"], ["17.0", "late"], ["18.0", "late"]],
+  directadmen: [["1.24", "early"], ["1.60", "late"]],
+  freepanel: [["1.200", "early"], ["1.700", "late"]],
+  tcadmen: [["1.0", "early"], ["2.0", "late"], ["3.0", "late"]],
+  multikraft: [["1.0", "early"], ["2.0", "late"]],
+  pterodaktyl: [["0.5", "early"], ["1.0", "late"]],
+  proxmocks: [["0.9", "early"], ["2.0", "early"], ["4.0", "late"]],
+  vmwhere: [["2.5", "early"], ["5.0", "early"], ["6.5", "late"]],
+  hypervee: [["2008", "early"], ["2012", "late"], ["2019", "late"]],
+  openveezee: [["2.6.9", "early"], ["7", "late"]],
+  openstash: [["Austin", "early"], ["Diablo", "early"], ["Essex", "early"], ["Havana", "early"], ["Mitaka", "late"]],
+  powerdnz: [["2.9", "early"], ["4.0", "late"]],
+  openveepeen: [["2.0", "early"], ["2.4", "late"]],
+  anyconnekt: [["2.0", "early"], ["4.0", "late"], ["5.0", "late"]],
+  ownclod: [["1.0", "early"], ["10.0", "late"]],
+  minnio: [["RELEASE.2016-06-03", "early"], ["RELEASE.2021-05-11", "late"]],
 };

@@ -788,6 +788,44 @@ The balance model books 6 staff minutes per customer and month for payments, whi
 
 **Working hours.** Each employee works their team's shifts: per weekday a start hour and 1 to 12 hours, and a shift may run past midnight. The salary is for 40 hours a week; each hour on shift earns salary / 173, paid at the month start, so pay follows the hours actually worked. An action starts only if it ends within the shift; whatever is left waits for the next shift. Technicians on shift handle operations at their location; when nobody there is on shift, the on-call technician covers.
 
+## Payment methods
+
+A shop system takes payment at checkout. Bank transfer is always offered; every other method is a module bought once on the shop vendor's site, registered with its licence key in Books and switched on or off in the shop. The code keeps the numbers in `src/sim/10-catalog/payments.ts`.
+
+| Method (real one) | From | Module | Fee per payment | Paid | Side effect |
+| --- | --- | --- | --- | --- | --- |
+| Bank transfer | 2005 | none | none | by the customer's habit, matched in Books | dunning as in Billing and payment habits |
+| Direct debit | 2005 | €49 | €0.35 | collected at checkout, weekly payout from the shop system | a bad payer's debit returns when their invoice would have paid late, with a €3 fee, 3 to 7 days after the payout |
+| PayPail (PayPal) | 2005 | €49 | 1.9% + €0.35 | prepaid at checkout, weekly payout | 1% of payments are disputed 5 to 20 days after the payout; the money is held 30 days, then comes back |
+| Visor (Visa) | 2006 | €199 | 2.9% + €0.30 | collected at checkout, weekly payout | 0.5% of honest payments are charged back 7 to 90 days after the payout with the chargeback fee; stolen cards (below) charge back fully |
+| paysavecard (paysafecard) | 2007 | €99 | 10% | prepaid at checkout, weekly payout | twice the base churn of the profile |
+| Instantly (Sofortüberweisung) | 2008 | €49 | 0.9% | the customer's own transfer arrives at checkout with the exact amount and invoice number | none |
+| Bitcorn Pay (Bitcoin) | 2012 | €99 | 1% | prepaid at checkout, weekly payout | three times the abuse ticket and real notice rate for each customer paying this way |
+
+**Preferences.** Each shop order draws the method its customer wants first, from the weights of its profile over the methods that exist that year. Customers from the other side of the Atlantic and shady customers use their own rows.
+
+| Crowd | Transfer | Debit | PayPail | Card | paysavecard | Instantly | Crypto |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Private individual | 45 | 10 | 35 | 5 | | 5 | |
+| Gamer | 15 | | 35 | 10 | 35 | 5 | |
+| Hobby developer | 25 | | 35 | 25 | | 5 | 10 |
+| Sole proprietor | 50 | 25 | 15 | 10 | | | |
+| Small business | 45 | 30 | 5 | 20 | | | |
+| Agency or startup | 40 | 15 | 10 | 35 | | | |
+| Doctor's or law office | 50 | 40 | | 10 | | | |
+| Online shop | 35 | 30 | 10 | 25 | | | |
+| Enterprise | 60 | 25 | | 15 | | | |
+| International | 10 | | 30 | 60 | | | |
+| Shady | | | | 20 | 20 | | 60 |
+
+**Missing method.** When the shop does not offer the wanted method, half of the orders go through by bank transfer and the rest are lost sales with the reason that names the method. paysavecard and crypto customers never switch. Email orders always pay by bank transfer.
+
+**Prepaid.** PayPail, paysavecard and crypto invoices are paid at checkout, so Books never sends a reminder or suspends for them; neither do direct debit and card, whose money the shop collects at checkout. Each gateway pays out on Monday at 09:00 as one transfer per method, less its fees, with a reference listing the invoices; Import from shop or Shop link books it.
+
+**Money taken back.** Returns, disputes and chargebacks arrive in Books as negative transfers of the invoice amount plus the fee. Matching one to its paid invoice reopens it: a disputed invoice waits for the released money, a returned or charged-back one is due again by bank transfer under the dunning steps. Match by reference books them on its own. A chargeback on a stolen card marks the customer as fraud and suspends their services when it is matched.
+
+**Stolen cards.** Through a shop only card orders can be fraudulent, at the shares in Fraud and chargebacks below; their chargeback 30 to 60 days after signing up arrives as one negative transfer per paid invoice instead of the automatic write-off.
+
 ## Fraud and chargebacks
 
 A small share of standard orders is paid with a stolen card or a stolen PayPail account. Sales leads are never fraudulent. The share is rolled once per order:
@@ -1604,17 +1642,17 @@ Every server and every one of the player's own VMs runs an operating system, and
 
 | Software | Kind | OS | License | Install | How-to tickets | Live migration | Control plane |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| cPanic | Panel | Lunix | €0.40 per web space | 3 h | ×0.8 |  | 0.25 vCPU, 0.25 GB, 5 GB |
+| cPanic | Panel | Lunix | €12 per server (Dedicated), from June 2019 the editions Solo to Premier (€0.40 per web space) | 3 h | ×0.8 |  | 0.25 vCPU, 0.25 GB, 5 GB |
 | Pleskit | Panel | Lunix, Windoors | €12 per panel host | 3 h | ×0.9 |  | 0.25 vCPU, 0.25 GB, 5 GB |
-| DirectAdmen | Panel | Lunix | €4 per panel host | 2 h | ×1.2 |  | 0.1 vCPU, 0.1 GB, 2 GB |
+| DirectAdmen | Panel | Lunix | €100 lifetime per major or Standard at €4 per panel host, from September 2019 the editions Personal to Standard | 2 h | ×1.2 |  | 0.1 vCPU, 0.1 GB, 2 GB |
 | FreePanel | Panel | Lunix | Free | 2 h | ×1.5 |  | 0.1 vCPU, 0.1 GB, 2 GB |
 | OpenVeeZee | Cloud | Lunix | Free | 3 h | ×1.4 | No | 0.1 vCPU, 0.1 GB, 2 GB |
 | OpenStash | Cloud | Lunix | Free | 8 h | ×1.3 | Yes | 2 vCPU, 2 GB, 20 GB |
-| VMwhere | Cloud | Lunix | €600 once per CPU socket, €8 per physical core from 2024 | 5 h | ×0.7 | Yes | 1 vCPU, 2 GB, 10 GB |
+| VMwhere | Cloud | Lunix | €600 once per CPU socket, from December 2023 €96 a year per physical core with 16 cores per CPU at least | 5 h | ×0.7 | Yes | 1 vCPU, 2 GB, 10 GB |
 | Proxmocks | Cloud | Lunix | Free | 3 h | ×1.0 | Yes | 0.25 vCPU, 0.25 GB, 5 GB |
 | HyperVee | Cloud | Windoors | €20 per node | 4 h | ×0.9 | No | 1 vCPU, 1 GB, 10 GB |
 | TCAdmen | Game | Windoors | €25 per server | 2 h | ×0.9 | No | 0.25 vCPU, 0.5 GB, 5 GB |
-| MultiKraft | Game | Lunix, Windoors | €20 per server | 2 h | ×1.0 | No | 0.25 vCPU, 0.5 GB, 5 GB |
+| MultiKraft | Game | Lunix, Windoors | €20 per server, from 2020 €1.20 per game server beyond 25 | 2 h | ×1.0 | No | 0.25 vCPU, 0.5 GB, 5 GB |
 | Pterodaktyl | Game | Lunix | Free | 3 h | ×1.2 | No | 0.25 vCPU, 0.5 GB, 5 GB |
 | Bound | DNS | Lunix, Windoors | Free | 2 h | ×1.3 | No | 0.1 vCPU, 0.25 GB, 2 GB |
 | PowerDNZ | DNS | Lunix | Free | 2 h | ×1.0 | No | 0.25 vCPU, 0.5 GB, 5 GB |
@@ -1629,10 +1667,12 @@ Every server and every one of the player's own VMs runs an operating system, and
 | Operating system | License | Install | Boot |
 | --- | --- | --- | --- |
 | Debiant GNU/Lunix | Free | 1 h | 20 min |
-| Windoors Server | €600 once per machine, €4 per core or vCPU from 2016 | 2 h | 40 min |
+| Windoors Server | €600 once per machine, from October 2016 €4 per core (16 per server and 8 per CPU at least) or vCPU | 2 h | 40 min |
 | VMwhere App Suite | €25 per VMwhere cluster | | |
 
-Windoors Server and VMwhere are bought once per machine when the install starts, until Windoors moves to 4 euros a month per physical core of a server or per vCPU of a VM in 2016 and VMwhere to 8 euros a month per physical core in 2024. A reinstall on the same machine pays nothing; a new machine, a VM from a template included, pays again, and the install is refused without the cash. The App Suite bills 25 euros a month per VMwhere cluster that has it. The OS install and boot add to every install's time to serve. A panel on a hypervisor node is allowed when no port collides. Values live in `src/sim/10-catalog/server-os.ts`.
+Windoors Server and VMwhere are bought once per machine when the install starts, until Windoors moves to 4 euros a month per physical core of a server or per vCPU of a VM in October 2016 and VMwhere to 96 euros a year per physical core in December 2023. A reinstall on the same machine pays nothing; a new machine, a VM from a template included, pays again, and the install is refused without the cash. The App Suite bills 25 euros a month per VMwhere cluster that has it. The OS install and boot add to every install's time to serve. A panel on a hypervisor node is allowed when no port collides. Values live in `src/sim/10-catalog/server-os.ts`.
+
+**Licence eras.** Each licensed product sells what its vendor sold at the game month, from `licensing` in the catalog (docs/design/plans/software-licences.md, Licence models over time). A perpetual key covers the major on sale when it was bought and never bills again; an upgrade to the next major costs the full price, or half (€300 for Windoors, VMwhere and Veeham Backup) for a holder of the previous major's key bought within the last 12 months. A yearly key renews on the same day a year later and shows at a twelfth in monthly bills. A server pays for at least the minimum cores of a per-core era; a VM pays per vCPU. Veeham Backup sells €600 per CPU socket once from 2008 and €480 a year per server from 2018. Prices keep the game's euro scale, where a real list price divides by about three: cPanel's licence of about $35 a server reads €12, and its 2019 editions keep the €2 to €10 and €0.40 per web space the game already charged. When a vendor stops selling an option the shop drops it that day, and a key already bought keeps working.
 
 **Split cores.** OpenVeeZee and Proxmocks give a guest a fraction of a core through containers and CPU limits, so a VM books exactly the vCPUs it sold. OpenStash, VMwhere and HyperVee give a VM whole vCPUs: a VM books its vCPUs rounded up and uses that much CPU at load. Web spaces, game servers, DNS zones, VPN gateways and storage volumes run as containers in their software and keep their fraction everywhere. A customer who scales a VPS below one core asks for tenths of a core (at least 0.2), so 0.75 of one core becomes 0.8.
 
@@ -1662,7 +1702,7 @@ Service software anchors: BIND (Bound) and PowerDNS (PowerDNZ) both predate 2005
 
 Anchors: cPanel could copy accounts between servers with WHM's "Copy an account" since 2005 and gained its transfer tool for other panels around 2012; Plesk's Migration Manager appeared with Plesk 7.5.6 in 2005 and the Plesk Migrator extension (2015) imports cPanel, Confixx and others; DirectAdmin moves accounts through backup and restore since about 2010; ISPConfig 3 introduced multiserver setups in March 2009, which is where FreePanel clusters from, while cPanel and Plesk never clustered web serving (only DNS). Hypervisor years follow the products: OpenStack 2010, VMware ESX long before 2005, Proxmox VE 2008, Hyper-V 2008 (clustering of Hyper-V hosts from the 2012 release).
 
-- **Licenses** are billed on the 1st of each month per hypervisor cluster and per panel host, as ledger lines in the category "licenses".
+- **Licenses** on a subscription are billed per key on the day of the month the key was bought, one ledger line per key in the category "licenses" naming the product and the key, unassigned keys included. A per-account edition such as cPanic Premier charges its fee for every account on its panel host. The vendor emails one receipt per product. A renewal the bank cannot pay keeps the software running for `LAPSE_GRACE_DAYS`, then the key lapses and the vendor emails it; the next hour with the money renews it for a month from then. A cancelled key runs to the end of its paid month and expires. A key bought once is never billed again. The App Suite and the balancer are billed on the 1st per cluster.
 - **How-to tickets:** a customer's how-to rate is multiplied by the average factor of the software serving each of their workloads (the panel for web spaces, the service software for game servers, DNS, VPN and storage, the hypervisor for the rest).
 - **Booking:** software sets no limit on what a node books. Every hypervisor and panel books vCPU and RAM past the physical amounts and disk up to twice the usable RAID disk (see Usage curves and overcommit). Ballooning decides one thing: a resize of one of the player's own VMs that only grows its RAM is live on a hypervisor that balloons (Proxmocks and VMwhere, HyperVee from 2012; OpenStash and OpenVeeZee never); any other resize restarts the VM for 10 minutes.
 - **Software in a VM** gets 95% of the VM's vCPU and RAM (`IN_VM` in 10-catalog/platforms.ts): a panel VM's web hosting room is 0.95 times its booked vCPU and RAM, less the panel, with its full disk. The same panel on bare metal gets the whole server.
@@ -1854,6 +1894,38 @@ A datastore is a server attached to a VMwhere cluster as shared storage for VM d
 - **Failure.** A datastore server that stops working takes every VM on it down. A datastore that loses its data loses every disk on it.
 - **Detaching** needs the datastore empty.
 
+### Proxmocks cluster quorum
+
+A Proxmocks cluster of two or more nodes holds quorum while more than half of its votes are up. Every node casts one vote, and a QDevice (a free server in the cluster's zone with no software, set with `setQdevice`) casts one more. Without quorum the cluster is read-only: creating or deleting VMs, migrating, snapshots, restores, node state changes, backup jobs and datastore attachment refuse with `error.noQuorum`, and failover is suspended. Running VMs stay up. A two-node cluster loses quorum when either node dies; a third node or a QDevice prevents that.
+
+### Storage replication and Ceph
+
+A VM of a Proxmocks cluster (from the year of its cluster support) can replicate its disk to another active node with `setReplication`: every 15 minutes, hourly or daily (03:00 UTC). The replica books the VM's disk on the target node and each copy sends `BACKUP_CHANGED` of the filled disk over the LAN. When the VM's node dies with its data (`lostDisk`), failover restarts the VM on the replica node and closes the loss with the data written since the last copy lost (the lag since `lastAt` plus half an interval). A disk on shared storage or a Ceph pool takes no replica.
+
+A cluster of three or more Proxmocks nodes can build a Ceph pool with `setCeph` (size 2 or 3). Its capacity is the usable disk of all nodes divided by the size, and it must hold the disks of the cluster's VMs. Every node down costs one copy: at one copy the pool is read-only (mutating actions refuse with `error.cephReadOnly`). VMs on the pool fail over like VMs on a datastore, also when the dead node lost its data. After a node returns the pool rebalances for `diskUsed / (Gbit * LAN_GB_PER_HOUR)` hours, with a warning alarm.
+
+### Per-VM firewall
+
+An own VM on a Proxmocks cluster can switch its firewall on and tick the port macros it lets through (web, ssh, mail, db, rdp); every other port is dropped. A host in that VM serves its own ports (a panel serves web, a mail host serves mail): blocking one takes the service offline until the macro is ticked again. When the firewall closes a port the host's software listens on but does not serve (SSH, for instance), the hourly and daily compromise chances are halved (`FIREWALL_RISK`). A VM without a firewall behaves as before. The firewall costs no money.
+
+### HyperVee replica and virtual switches
+
+A HyperVee VM from 2012 can replicate to a second host: another node of its cluster, or a node of another HyperVee cluster in the same zone. The frequency is 30 seconds, 5 minutes or 15 minutes. The sim copies on the hour for all three; the shorter intervals send 4 and 2 times the changed data of the 15 minute one and lose less on a takeover (half an interval of writes plus the time since the last copy). The replica books the VM disk on the second host.
+
+Failover is a player action, since HyperVee has no automatic recovery before its cluster year. With a healthy primary the roles swap, nothing is lost and the VM is down for an hour. With a dead primary the VM starts on the replica host, writes since the last copy are lost and the replica is dropped. Replication Health reads Normal up to 2 hours since the last copy, Warning up to 12 hours, then Critical.
+
+A HyperVee cluster has virtual switches, up to 8, starting with one external Default Switch. A VM on an internal or private switch has no uplink and is offline. A VM on an external switch bound to a host port is offline while that port is unplugged or its far end is dead; a switch bound to no port follows whichever port is connected. Deleting a switch moves its VMs back to the default.
+
+### OpenVeeZee beancounters, burst and checkpoint
+
+A container shows its beancounters: kmemsize, privvmpages, oomguarpages, numproc and numtcpsock with held, maxheld, barrier, limit and failcnt. Memory is in 4 KB pages. Failcnt is stored on the container for privvmpages and numproc; the rest is derived from its use.
+
+Each hour a node with more than 90% of its RAM in use takes burst memory back first: only containers with a burst allowance collect privvmpages failcnt. A node out of RAM, or with more busy vCPUs than cores, makes every container fail privvmpages and numproc. The increment is 40 times the container's share of the node RAM, at least 1, per hour. Six hours in a row slow the site like any other slowdown. Past 24 failcounts in a day the OOM killer stops the container for an hour and the hour counts as downtime. The player fixes it by raising the container's size, moving it or selling less of the node.
+
+Burst memory ranges from 0 to twice the container's RAM, in steps of a quarter GB. It is not booked and costs nothing.
+
+Checkpoint freezes a container: it stays booked on its node, uses no CPU or RAM and is offline. Restore resumes it within a minute plus two seconds per GB of RAM in use, which counts as downtime. A cold move of a container on OpenVeeZee is a checkpoint, a copy and a restore, so it is down only for the copy of its disk over the link (at least 1 minute) instead of a full boot.
+
 ### Snapshots
 
 A snapshot freezes a VM's disk on a VMwhere cluster and, for the player's own VMs, its installed OS and software. Values live in `src/sim/10-catalog/platforms.ts`.
@@ -1870,6 +1942,36 @@ A snapshot freezes a VM's disk on a VMwhere cluster and, for the player's own VM
 - **Revert** clears the corruption of a pulled plug when the snapshot is older than the corruption, and closes the loss report item as a restore from backup would. An own VM gets its OS and software back as they were; a VM that hosts a panel needs that panel in the snapshot.
 - **Loss.** A disk lost with its server or datastore loses its snapshots, and a lost disk cannot revert. A VM that leaves VMwhere loses its snapshots.
 
+### Backup jobs and restore points
+
+A cluster has up to 4 backup jobs. Each job copies a set of its workloads (all by default) to a backup cluster at its hour (02:00 by default), daily or weekly on Sundays, and writes one restore point per workload.
+
+| Value | Amount |
+| --- | --- |
+| Default retention | keep last 3, weekly 0 |
+| Retention range | last 1 to 14, weekly 0 to 8 |
+| First point of a job | a full copy: the disk size times the fill |
+| Later points | an increment of 10% of the full copy |
+| Pruning | the newest `last` points stay, plus the newest point of each of `weekly` older weeks; the oldest point kept becomes the full copy |
+| Repository use | the sum of all restore points written to the cluster; the old flat 1.3 pool factor is gone |
+| Full repository | the run stops, the job is marked failed with reason full and the failure alert goes out |
+| Target not reachable | the run fails with reason unreachable |
+| Restore | uses the newest point, so the age penalty in Data loss and backups is unchanged |
+
+Restore tests, offsite copies and alerts:
+
+| Value | Amount |
+| --- | --- |
+| Bad point | 1% of new points are bad, drawn from the game seed; a point that took the internet path to an offsite repository is bad with 3% |
+| Restore test | reads the point back at the restore speed (volume size divided by the link) and leaves the workload running; the point then shows as verified or bad |
+| Restoring an untested bad point | takes the full restore time, then the workload comes back empty and the customer takes the no-backup hit |
+| Tested bad point | is no backup: the restore reads the point before it |
+| Offsite copy | Sundays three hours after the job's hour; the newest point goes to a backup cluster in another zone at 45 GB per hour; both repositories hold it |
+| Failure alert | one per job per day, only when the job sends notifications |
+| Backup elsewhere | a backup survives its repository cluster losing every server only through an offsite copy |
+
+A save from before jobs turns its single schedule into one job named Backup and gives each backed-up workload one point.
+
 ### Templates
 
 A template is a stopped own VM on a VMwhere cluster kept to clone ready VMs from. Actions live in `src/sim/90-actions/templates.ts`.
@@ -1884,6 +1986,31 @@ A template is a stopped own VM on a VMwhere cluster kept to clone ready VMs from
 
 - **Templates** keep their disk booking, OS, software and snapshots. They never start, cannot be migrated, are not balanced, and failover leaves them on a dead node.
 - **Clones** put their disk where a new VM's goes, a datastore with room first. They are busy for the copy; each software they carry runs as its own cluster once the copy is done. A template running mail cannot be cloned.
+
+### VMwhere editions, DRS and pools
+
+A new VMwhere cluster starts on Essentials; a cluster from an older save is on Enterprise. Moving up an edition costs the VMwhere licence fee per node times the step in levels (Essentials 1, Standard 2, Enterprise 4), paid once.
+
+| Edition | Adds |
+| --- | --- |
+| Essentials | Live migration, snapshots, datastores |
+| Standard | High availability failover, alarm thresholds, manual DRS |
+| Enterprise | Partially and fully automated DRS, resource pools |
+
+DRS Manual and Partial keep up to five recommended moves for the player to apply, Full applies them. A host enters maintenance mode only when every running VM can move live. A pool caps the booked vCPUs and RAM of its members. On a hot node a high pool keeps its performance and a low pool keeps at most 90%.
+
+
+### Horizont floating IPs, security groups and volumes
+
+A floating IP is one more address rented from the datacenter of an OpenStash cluster, billed like any rented address. It points at one instance, or at none. A service on a floating IP keeps its address when it moves to another location, so no renumbering happens and no customer is told to change DNS. An address that is not floating is renumbered as before.
+
+An instance has security groups. A new instance joins the default group, which lets only SSH through. The groups of an instance add up, and a port outside them is dropped, so a panel or mail host in a default-only instance is offline until a group lets its web or mail port through; a group that closes a port the software listens on but does not serve halves the breach chance, like the Proxmocks firewall. A project has up to 10 groups; the default group stays and a group in use cannot be deleted.
+
+A volume is 1 to 1000 GB of block storage that counts toward the capacity of the first working datastore with room, or sits on a node disk when the cluster has no datastore. It costs nothing extra. It survives deleting the instance it is attached to and is detached afterwards. Before 2012 a volume leaves only a stopped instance.
+
+### IPMI System Event Log
+
+Each server's management controller keeps its last 20 events, each with a severity (information, warning or critical) and a number. Failed parts and shutdowns from heat are critical; lost power, a stalled operating system or controller, a lost power supply input, a lockout and an inlet temperature of 35 degrees or more are warnings. The inlet temperature is checked every hour, and a crossing of 35 or 40 degrees is logged once, with a note when it returns below 35. A change of a cluster node's state (active, cordoned, draining, maintenance) is logged on its server. The player can clear the log.
 
 ## PHP versions
 
@@ -1995,6 +2122,8 @@ Disclosure is a random day of the release's year. A vulnerability is open on an 
 | Alert at the patch (critical) | Once per instance |
 
 An unattended panel host installed at the start of the game is compromised for the first time after a median of 0.8 years.
+
+An operating system or software on a machine that runs past its vendor's end of security updates collects vulnerabilities of its own: each year past the end adds 0.5 to a multiplier on the daily compromise chance of the instances on that machine, counted up to 4 years per install (an install 4 years past the end triples the chance). The newest release of a product never counts as ended while it is the newest. The vendor emails 90 days before the end of security updates of every version the company runs.
 
 ### Breaches and ransom
 
@@ -2117,11 +2246,11 @@ Spending more in one channel and city gets dearer: the cost per lead is multipli
 | Platform | Invite rate per happy customer per month | Trust bonus T |
 | --- | --- | --- |
 | None | 0 | 0 |
-| Free listing | 0 | 2 |
+| Free listing | 0 | 0 |
 | "ProvenExpat" | 1% | 4 |
 | "TrustPylon" | 2% | 6 |
 
-Platform fees are flat: the free listing costs nothing, ProvenExpat €49 and TrustPylon €199 a month.
+Platform fees are flat: the free listing costs nothing, ProvenExpat €49 and TrustPylon €199 a month. The free listing's +2 now comes from the HOSTtoast listing (competitors.md, HOSTtoast), whose T adds to the platform's, capped at 10.
 
 **Owned channels.** Each step is a one-off setup plus monthly upkeep, flat over the years:
 
