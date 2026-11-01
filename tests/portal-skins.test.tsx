@@ -27,7 +27,7 @@ const setup = (variant: ShopId): { s: GameState; g: string; p: string } => {
 const admin = (s: GameState, variant: ShopId, screen: Record<string, string>) => {
   const route = parsePortal(variant, portalPath(variant, "admin", {}, screen))!;
   const { Admin } = skinOf(variant);
-  return renderToString(<Admin game={s} variant={variant} route={route} open={() => {}} />);
+  return renderToString(<Admin game={s} variant={variant} route={route} open={() => {}} version="" major="" browse={() => {}} />);
 };
 
 describe.each([...LEGACY, ...MODERN])("%s skin", (variant) => {

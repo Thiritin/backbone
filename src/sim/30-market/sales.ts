@@ -17,7 +17,7 @@ import { phpNeeded } from "../60-infra/php";
 import { installedRamGb, locationOf } from "../60-infra/status";
 import { addAwareness } from "../80-business/marketing";
 import { mailShare } from "../80-business/mail";
-import { listed, siteFactor } from "../80-business/website";
+import { listed, shopBlock, siteFactor } from "../80-business/website";
 import { forumAwareness } from "../47-staff/staff";
 import type { SimEvent } from "../88-tick/tick";
 import { addCustomer } from "../90-actions/customers";
@@ -114,7 +114,7 @@ export function shadyLead(s: GameState, city: string, events: SimEvent[]): Sales
 }
 
 function newLeads(s: GameState, events: SimEvent[]): void {
-  const cache = new Map<string, number>(), site = siteFactor(s);
+  const cache = new Map<string, number>(), site = siteFactor(s), closed = !!shopBlock(s);
   for (const f of leadFlows(s)) {
     const n = poisson(s.rng, (f.leads / DAYS_PER_MONTH / 24) * arrivalWeight(f.profile, s.hour));
     for (let i = 0; i < n; i++) {
@@ -136,6 +136,8 @@ function newLeads(s: GameState, events: SimEvent[]): void {
       }
       // The shop is part of the website: a down, slow or dated site loses its orders. Website leads already carry the factor in their count.
       if (shop && !f.site && site < 1 && rand(s.rng) >= site) continue;
+      // A shop that takes no orders loses its visitors, as a down site does.
+      if (shop && closed) continue;
       if (!isStandard(f.profile, need.sla)) {
         newLead(s, f.profile, f.city, events, need);
         continue;

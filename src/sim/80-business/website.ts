@@ -19,7 +19,9 @@ import { CYCLE_MONTHS, CYCLES } from "../10-catalog/cycles";
 import { companyDomain } from "../30-customers/domains";
 import { lineHasProducts, portalPath, productsOf } from "./portal";
 import { STATUS_FROM_YEAR, STATUS_MIN_CUSTOMERS } from "./status";
-import { shopActive, type ShopProduct } from "./shop";
+import { shopActive, shopCount, type ShopProduct } from "./shop";
+import { assignedKey, licenceStatus, SHOP_MACHINE, tiersOnSale } from "../60-infra/licence";
+import { tiersOf, type LicenceTier } from "../10-catalog/licence-tiers";
 import { offeredProducts, type CatalogProduct } from "./catalog";
 
 export const SITE_LINES: Product[] = ["webHosting", "vps", "gameServer", "dns", "vpn", "storage", "cloud", "dedicated", "colocation", "gpu", "ssl"];
@@ -102,10 +104,11 @@ const SLOW_RAM = 0.9;
 
 export const siteHostingCost = (s: GameState): number => (s.marketing.launched && s.marketing.siteHost.kind === "rented" ? SITE_RENT : 0);
 
-// The site is a virtual workload on its host: it books nothing in the node, so workloadsOf and billing stay as they are.
-function siteWorkload(c: Cluster): Workload {
+// The site and the shop system are virtual workloads on their host: they book nothing in the node, so workloadsOf and
+// billing stay as they are.
+function siteWorkload(c: Cluster, id = "site"): Workload {
   return {
-    id: "site", serviceId: "site", clusterId: c.id, deviceId: c.vm ? null : c.nodes[0]?.deviceId ?? null, rackId: null, slot: 0, units: 0, watts: 0,
+    id, serviceId: id, clusterId: c.id, deviceId: c.vm ? null : c.nodes[0]?.deviceId ?? null, rackId: null, slot: 0, units: 0, watts: 0,
     // Never placed before a disk loss, so a static site survives one.
     placedAt: Number.MAX_SAFE_INTEGER, stopped: false, busyUntil: 0, backupAt: null, ...SITE_LOAD,
   };
@@ -131,12 +134,33 @@ export type SiteStatus = "up" | "slow" | "down";
 // performs below 1 or has over 90% of its RAM booked.
 export function siteStatus(s: GameState): SiteStatus {
   const host = s.marketing.siteHost;
-  if (host.kind === "rented") return "up";
-  const c = s.clusters.find((x) => x.id === host.clusterId);
+  return host.kind === "rented" ? "up" : hostStatus(s, host.clusterId, "site");
+}
+function hostStatus(s: GameState, clusterId: string, id: string): SiteStatus {
+  const c = s.clusters.find((x) => x.id === clusterId);
   if (!c) return "down";
-  const w = siteWorkload(c);
+  const w = siteWorkload(c, id);
   if (!workloadOnline(s, w)) return "down";
   return slowHost(s, w, c) || siteRoom(s, c).crowded ? "slow" : "up";
+}
+
+// The installed shop system follows its panel host like the site; down while it is not installed.
+export const shopStatus = (s: GameState): SiteStatus => (s.shop.install ? hostStatus(s, s.shop.install.clusterId, SHOP_MACHINE) : "down");
+
+// The edition of the shop's key; a trial runs the top edition on sale, and a key without an edition has no cap.
+export function shopTier(s: GameState): LicenceTier | undefined {
+  const id = s.shop.variant, k = id ? assignedKey(s, SHOP_MACHINE, id) : undefined;
+  return k ? tiersOf(id).find((x) => x.id === k.edition) : tiersOnSale(id, s.hour).at(-1);
+}
+
+// Why the shop takes no orders: not installed, its host down, its licence ended or its edition full; null while it takes them.
+export function shopBlock(s: GameState): string | null {
+  const id = s.shop.variant;
+  if (!id || !s.shop.install) return "error.shopNotInstalled";
+  if (shopStatus(s) === "down") return "error.shopDown";
+  if (["ended", "lapsed", "unlicensed"].includes(licenceStatus(s, SHOP_MACHINE, id) ?? "")) return "error.licenceExpired";
+  const cap = shopTier(s)?.cap;
+  return cap != null && shopCount(s) >= cap ? "error.licenceCap" : null;
 }
 
 // Design generations are 4 years apart; a site is fine one generation behind and loses 20% of its requests for each

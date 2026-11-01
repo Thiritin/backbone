@@ -25,7 +25,7 @@ const idOf = (r: { ok: boolean; id?: string }) => { expect(r.ok).toBe(true); ret
 const page = (s: GameState, screen: Record<string, string>) => {
   const route = parsePortal("whmCache", portalPath("whmCache", "admin", {}, screen))!;
   const { Admin } = skinOf("whmCache");
-  return renderToString(<Admin game={s} variant="whmCache" route={route} open={() => {}} />);
+  return renderToString(<Admin game={s} variant="whmCache" route={route} open={() => {}} version="" major="" browse={() => {}} />);
 };
 
 describe("WHMCache admin", () => {

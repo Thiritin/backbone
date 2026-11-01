@@ -12,7 +12,8 @@ import { Plain } from "./plain/Plain";
 import { WhmCacheAdmin } from "./whmCache/Admin";
 
 export type Open = (area: PortalArea, ids?: PortalIds, screen?: string | Record<string, string>) => void;
-export interface SkinProps { game: GameState; variant: ShopId; route: PortalRoute; open: Open }
+// version and major are the installed release, which picks the look; browse opens a full address in the Browser.
+export interface SkinProps { game: GameState; variant: ShopId; route: PortalRoute; open: Open; version: string; major: string; browse: (url: string) => void }
 export interface Skin { Admin: FC<SkinProps>; Store: FC<SkinProps>; Client: FC<SkinProps> }
 
 // A shop system without a skin of its own looks plain.

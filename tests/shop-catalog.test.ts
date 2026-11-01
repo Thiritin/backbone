@@ -4,10 +4,11 @@ import { tiersOf } from "../src/sim/10-catalog/licence-tiers";
 import { SHOP_LICENCES, shopEditionFor, shopEra, shopKeyPrice, shopLease, shopOnSale, shopUpfront } from "../src/sim/10-catalog/shop-licences";
 import { SHOPS } from "../src/sim/10-catalog/shops";
 import { UI_LOOKS, versionAt, versionsOf } from "../src/sim/10-catalog/software-versions";
-import { isLicensed, productOf } from "../src/sim/60-infra/licence";
+import { isLicensed, issueKey, productOf } from "../src/sim/60-infra/licence";
 import { offers } from "../src/sim/80-business/vendor-shop";
 import { shopBills } from "../src/sim/80-business/shop";
-import { readyGame } from "./fixtures";
+import { openShop, readyGame } from "./fixtures";
+import { keyFee } from "../src/sim/85-products/products";
 
 const at = (ym: string) => hourOfMonth(ym);
 
@@ -68,11 +69,12 @@ describe("shop system licences", () => {
     expect(shopEditionFor("modemBill", at("2006-01"), 51)?.id).toBe("unlimited");
   });
 
-  it("bill a lease by the edition the active clients need", () => {
-    const s = readyGame(41);
+  it("lease the edition the active clients need as a key", () => {
+    const s = openShop(readyGame(41), "whmCache");
     s.hour = at("2021-02");
-    s.shop = { ...s.shop, variant: "whmCache", owned: false, since: at("2021-01") };
     const active = s.customers.filter((c) => c.churnedAt === null).length;
-    expect(shopBills(s)).toEqual([{ key: "ledger.shopLicence", params: { name: "WHMCache" }, amount: shopLease("whmCache", s.hour, active) }]);
+    const key = issueKey(s, "whmCache", shopEditionFor("whmCache", s.hour, active)!.id);
+    expect(shopBills(s)).toEqual([]);
+    expect(keyFee(s, key)).toBe(shopLease("whmCache", s.hour, active));
   });
 });

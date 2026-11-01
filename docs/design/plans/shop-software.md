@@ -1,5 +1,7 @@
 # Shop systems as installed software
 
+Status: `shop-catalog`, `shop-versions` and `shop-install` are built. The shop runs as the machine id `shop` in `src/sim/60-infra/licence.ts`, so keys, trials, upgrades and the lifecycle treat it like any other installation. Its admin's Licence and Updates screens, the closed store page and the version footer are shared components in `src/ui/apps/browser/sites/portal/shared/Licence.tsx`. Until a shop's vendor site exists, the Updates screen's Upgrade button buys the next major's key directly.
+
 Lane ids: `shop-catalog`, `shop-install`, `shop-sites`, `shop-versions`, `shop-marketing-cut`. Related design: `docs/design/shop.md` (the shop variants), `docs/design/plans/software-licences.md` (keys, eras, versions, vendor shop, My account), `docs/design/plans/shop-portal.md` (the hosted portal and its admin), `docs/design/software-versions.md` (version data).
 
 ## What changes

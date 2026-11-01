@@ -133,7 +133,7 @@ describe("company site hosting", () => {
 
   it("loses the shop orders while the site is down", () => {
     const orders = (down: boolean) => {
-      const s = automate(withSite(7));
+      const s = automate(withSite(8));
       openShop(s);
       if (down) ok(setPower(s, "dev3", false));
       else ok(setSiteHost(s, { kind: "rented" }));

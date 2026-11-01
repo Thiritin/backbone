@@ -7,7 +7,11 @@ import { PRODUCTS } from "../10-catalog/products";
 import type { Cycle } from "../10-catalog/cycles";
 import type { MethodId } from "../10-catalog/payments";
 import { includes, shopById, type ShopId } from "../10-catalog/shops";
-import { shopEra, shopLease, shopLicence } from "../10-catalog/shop-licences";
+import { shopEra, shopLicence } from "../10-catalog/shop-licences";
+import { assignedKey, covers, SHOP_MACHINE } from "../60-infra/licence";
+import { releasedAt, versionsOf, type SoftwareVersion } from "../10-catalog/software-versions";
+import type { Licence } from "../50-state";
+import { supportOn } from "../60-infra/lifecycle";
 import { modelById } from "../10-catalog/hardware";
 import type { Product } from "../30-customers/customers";
 import type { Spec } from "../10-catalog/products";
@@ -51,9 +55,12 @@ export interface ShopState {
   productGroups: ProductGroup[];
   // Payment methods the player switched off in this shop.
   methodsOff: MethodId[];
+  // The web space on a panel host the shop runs in, and the version it runs; null while it is not installed.
+  install: ShopInstall | null;
 }
+export interface ShopInstall { clusterId: string; version: string; at: number }
 
-export const newShop = (): ShopState => ({ variant: null, owned: false, since: 0, readyAt: 0, modules: {}, stock: {}, soldOut: {}, groups: [], optionDiscount: {}, products: [], productGroups: [], methodsOff: [] });
+export const newShop = (): ShopState => ({ variant: null, owned: false, since: 0, readyAt: 0, modules: {}, stock: {}, soldOut: {}, groups: [], optionDiscount: {}, products: [], productGroups: [], methodsOff: [], install: null });
 
 export const shopActive = (s: GameState): boolean => s.shop.variant !== null && s.hour >= s.shop.readyAt;
 
@@ -96,40 +103,51 @@ export function soldOutVisit(s: GameState, p: string): void {
   s.shop = { ...s.shop, soldOut: { ...s.shop.soldOut, [p]: (s.shop.soldOut[p] ?? 0) + 1 } };
 }
 
-// The month's shop bills: the lease of the edition the usage needs or the yearly updates of an owned key, and the revenue cut.
-export function shopBills(s: GameState): { key: string; params: Record<string, string | number>; amount: number }[] {
-  if (!s.shop.variant) return [];
-  const v = shopById(s.shop.variant), name = v.name, out: ReturnType<typeof shopBills> = [];
-  const anniversary = Math.round((s.hour - s.shop.since) / 730) % 12 === 0 && s.hour > s.shop.since;
-  if (s.shop.owned) {
-    const fee = shopEra(v.id, s.shop.since).updatesFee;
-    if (fee && anniversary) out.push({ key: "ledger.shopUpdates", params: { name }, amount: fee });
-  } else {
-    const caps = shopLicence(v.id).caps;
-    const n = caps === "servers" ? s.devices.filter((d) => d.rackId && modelById(d.model).server).length
-      : caps === "clients" ? s.customers.filter((c) => c.churnedAt === null).length : 0;
-    // A lease no longer sold keeps billing at the terms it was taken on.
-    const monthly = shopLease(v.id, s.hour, n) ?? shopLease(v.id, s.shop.since, n) ?? 0;
-    if (monthly > 0) out.push({ key: "ledger.shopLicence", params: { name }, amount: monthly });
-  }
-  const share = shopEra(v.id, s.hour).cut;
-  if (share) {
-    const revenue = s.services.filter((x) => x.viaShop && x.endedAt === null).reduce((n, x) => n + x.price * 730, 0);
-    const cut = Math.round(revenue * share * 100) / 100;
-    if (cut > 0) out.push({ key: "ledger.shopCut", params: { name }, amount: cut });
-  }
-  return out;
+// The newest release the key may install: one its major covers, out before its updates end. Without a key, the newest out.
+export function installable(s: GameState, id: ShopId, k: Licence | undefined): SoftwareVersion | undefined {
+  const until = k?.updatesUntil === undefined ? s.hour : Math.min(s.hour, k.updatesUntil);
+  return releasedAt(id, until).filter((v) => !k || covers(k, v.version)).at(-1);
+}
+// The release Install update takes the installed shop to; null while it runs the newest its key may install.
+export function shopUpdate(s: GameState): SoftwareVersion | null {
+  const id = s.shop.variant, at = s.shop.install;
+  if (!id || !at) return null;
+  const v = installable(s, id, assignedKey(s, SHOP_MACHINE, id)), vs = versionsOf(id);
+  return v && vs.indexOf(v) > vs.findIndex((x) => x.version === at.version) ? v : null;
 }
 
-// A leak of the shop's customer data: WHMCache's in May 2012, and a monthly risk for a shop past its last update.
+// The yearly updates fee of a one-time shop key: the vendor's current one, else the one of the era the key was bought in.
+export const shopUpdatesFee = (s: GameState, k: Licence): number | undefined =>
+  shopEra(k.product as ShopId, s.hour).updatesFee ?? shopEra(k.product as ShopId, k.boughtAt).updatesFee;
+
+// What a shop edition caps: active clients or managed servers; 0 for a shop without caps.
+export function shopCount(s: GameState): number {
+  const caps = s.shop.variant && shopLicence(s.shop.variant).caps;
+  return caps === "servers" ? s.devices.filter((d) => d.rackId && modelById(d.model).server).length
+    : caps === "clients" ? s.customers.filter((c) => c.churnedAt === null).length : 0;
+}
+
+// The month's shop bill: the vendor's cut of the shop's revenue. Keys renew and lapse with the other licence keys.
+export function shopBills(s: GameState): { key: string; params: Record<string, string | number>; amount: number }[] {
+  if (!s.shop.variant) return [];
+  const v = shopById(s.shop.variant), share = shopEra(v.id, s.hour).cut;
+  if (!share) return [];
+  const revenue = s.services.filter((x) => x.viaShop && x.endedAt === null).reduce((n, x) => n + x.price * 730, 0);
+  const cut = Math.round(revenue * share * 100) / 100;
+  return cut > 0 ? [{ key: "ledger.shopCut", params: { name: v.name }, amount: cut }] : [];
+}
+
+// A leak of the shop's customer data: WHMCache's in May 2012, and a monthly risk for a shop past its last update or running a
+// version past its end of security updates.
 export const SHOP_BREACH = { happiness: -15, monthly: 0.02 };
 export const WHM_BREACH_AT = hourOf(new Date(Date.UTC(2012, 4, 21)));
 const unpatched = (id: ShopId, year: number): boolean => (id === "modemBill" && year >= 2011) || (id === "boxBillin" && year >= 2015 && year < 2022);
 
 export function shopTick(s: GameState, events: SimEvent[]): void {
   const id = s.shop.variant;
-  if (!id || !shopActive(s)) return;
-  const hit = (id === "whmCache" && s.hour === WHM_BREACH_AT) || (isMonthStart(s.hour) && unpatched(id, yearOf(s.hour)) && rand(hashRng(s.seed, s.hour, 271)) < SHOP_BREACH.monthly);
+  if (!id || !shopActive(s) || !s.shop.install) return;
+  const old = unpatched(id, yearOf(s.hour)) || supportOn(s, SHOP_MACHINE, id) === "securityEnded";
+  const hit = (id === "whmCache" && s.hour === WHM_BREACH_AT) || (isMonthStart(s.hour) && old && rand(hashRng(s.seed, s.hour, 271)) < SHOP_BREACH.monthly);
   if (!hit) return;
   s.customers = s.customers.map((c) => {
     if (c.churnedAt !== null) return c;

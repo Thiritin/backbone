@@ -1,6 +1,6 @@
 # Shop systems, stock limits and server groups
 
-Status: approved 2026-10-30. Milestones 1 to 3, 5 and the Marketing part of 4 are built. Milestone 6 is built as shop breaches (WHMCache in May 2012, a 2% monthly risk for ModemBill from 2011 and BoxBillin' from 2015 to 2021), each lowering every customer's happiness by 15. The power-off prompt from section 5 and a styled shop console in the Browser are open.
+Status: approved 2026-10-30. Milestones 1 to 3, 5 and the Marketing part of 4 are built. Milestone 6 is built as shop breaches (WHMCache in May 2012, a 2% monthly risk for ModemBill from 2011, BoxBillin' from 2015 to 2021 and any shop running a version past its end of security updates), each lowering every customer's happiness by 15. The power-off prompt from section 5 and a styled shop console in the Browser are open.
 
 The website stays the marketing presentation of product lines (Marketing > Products, `src/sim/80-business/website.ts`). Selling moves into a separate channel: a shop system the player picks from pun-named variants of the order and provisioning software hosters used from 2005 on. The game already bills customers itself, so a shop system here is the order form, the stock and the provisioning modules. Its billing side is not modelled.
 
