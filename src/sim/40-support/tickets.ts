@@ -130,7 +130,7 @@ export function rightTemplate(s: GameState, t: Ticket): string {
 
 const CATALOG_ID: Record<Profile, string> = {
   private: "private", gamer: "gamer", hobbyDev: "hobby", soleProp: "sole", smallBiz: "small",
-  agency: "agency", office: "office", onlineShop: "shop", enterprise: "enterprise",
+  agency: "agency", office: "office", onlineShop: "shop", enterprise: "enterprise", reseller: "agency",
 };
 export const profileStats = (p: Profile): ProfileStats => PROFILES.find((x) => x.id === CATALOG_ID[p])!;
 

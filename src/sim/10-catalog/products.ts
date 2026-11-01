@@ -10,7 +10,7 @@ export interface Resources { vcpu: number; ramGb: number; diskGb: number; gpus?:
 // What a customer orders and a service books: its resources, traffic per month, mailboxes (web hosting), zones (DNS),
 // users (VPN) and, for colocation, rack units and watts. A dedicated server's RAM is the smallest server it accepts.
 // ipv4 counts the dedicated IPv4 addresses ordered and ipv6 asks for an IPv6 address (60-infra/addresses.ts).
-export interface Spec extends Resources { trafficGb: number; mailboxes: number; zones?: number; users?: number; units?: number; watts?: number; ipv4?: number; ipv6?: boolean;
+export interface Spec extends Resources { accounts?: number; trafficGb: number; mailboxes: number; zones?: number; users?: number; units?: number; watts?: number; ipv4?: number; ipv6?: boolean;
   // Web hosting: the app the customer runs, its release year and the hour it was last updated (apps.ts), and whether the customer pays for updates.
   app?: App; appVersion?: number; appUpdatedAt?: number; managedUpdates?: boolean;
   // Web hosting only: the host the customer's site still runs on and expects moved (webpanel.ts, Transfers).
@@ -43,9 +43,10 @@ export const PRODUCTS: Record<Product, ProductSpec> = {
   gpu: { runsOn: "cluster", period: "hour", commitMonths: 1 },
   domain: { runsOn: "none", period: "year", commitMonths: 12 },
   ssl: { runsOn: "none", period: "year", commitMonths: 12 },
+  reseller: { runsOn: "cluster", period: "hour", commitMonths: 1 },
 };
 
-type Size = (year: number) => Resources & { zones?: number; users?: number; units?: number; watts?: number };
+type Size = (year: number) => Resources & { accounts?: number; trafficGb?: number; zones?: number; users?: number; units?: number; watts?: number };
 const NONE: Resources = { vcpu: 0, ramGb: 0, diskGb: 0 };
 const grow = (year: number) => vpsPlanGb(year);
 // A web space uses 0.1 vCPU, 0.25 GB of RAM and its disk, which grows like VPS RAM.
@@ -61,6 +62,8 @@ const cards = (n: number): Size => (y) => ({ vcpu: 4 * n, ramGb: Math.round(32 *
 const volume = (gb: number): Size => () => ({ ...NONE, diskGb: gb });
 const dedicated = (ramGb: number): Size => (y) => ({ ...NONE, ramGb: ramGb * grow(y) });
 const colo = (units: number, watts: number): Size => () => ({ ...NONE, units, watts });
+// A reseller block books a web space's compute per account, plus its disk and traffic, in full.
+const block = (accounts: number, diskGb: number, trafficGb: number): Size => (y) => ({ vcpu: 0.1 * accounts, ramGb: 0.25 * accounts, diskGb: Math.round(diskGb * grow(y)), accounts, trafficGb });
 const fixed = (r: Resources): Size => () => r;
 const zones = (n: number): Size => () => ({ vcpu: 0.05, ramGb: 0.1, diskGb: 1, zones: n });
 // A VPN gateway takes a vCPU per three users, at least half of one.
@@ -81,11 +84,13 @@ export const SIZES: Record<Product, Size[]> = {
   gpu: [cards(1), cards(2), cards(4), cards(8)],
   domain: [fixed(NONE)],
   ssl: [fixed(NONE)],
+  // economy.md, Resellers: the Small, Medium and Large block.
+  reseller: [block(20, 50, 500), block(50, 150, 1500), block(100, 350, 4000)],
 };
 
 // economy.md, Traffic and bandwidth: an average customer's GB per month in 2005, growing 20% a year.
 export const TRAFFIC_GB: Record<Product, number> = {
-  webHosting: 2, domain: 0, ssl: 0, dns: 1, gameServer: 60, vps: 20, vpn: 300, dedicated: 150, storage: 100, cloud: 20, colocation: 500, gpu: 20,
+  webHosting: 2, domain: 0, ssl: 0, dns: 1, gameServer: 60, vps: 20, vpn: 300, dedicated: 150, storage: 100, cloud: 20, colocation: 500, reseller: 0, gpu: 20,
 };
 export const TRAFFIC_GROWTH = 1.2;
 
@@ -94,17 +99,18 @@ export const TRAFFIC_GROWTH = 1.2;
 export function sizeSpec(product: Product, i: number, year: number): Spec {
   const sizes = SIZES[product], k = Math.min(Math.max(0, i), sizes.length - 1);
   const trafficGb = TRAFFIC_GB[product] * Math.pow(TRAFFIC_GROWTH, Math.max(0, year - 2005)) * Math.pow(2, k - Math.floor((sizes.length - 1) / 2));
-  return { ...sizes[k](year), trafficGb, mailboxes: product === "webHosting" ? 2 : 0 };
+  const size = sizes[k](year);
+  return { ...size, trafficGb: size.trafficGb ?? trafficGb, mailboxes: product === "webHosting" ? 2 : 0 };
 }
 
 // What a line charges for: a base fee per service and a price per resource unit; traffic is per 100 GB a month.
 // ip is a dedicated IPv4 address a month; gpu is a card a month; updates is managed updates a month and updateOnce a one-off update, which only web hosting sells.
-export type Unit = "base" | "vcpu" | "ramGb" | "diskGb" | "mailbox" | "zone" | "user" | "unit" | "kw" | "traffic" | "ip" | "gpu" | "updates" | "updateOnce";
+export type Unit = "base" | "vcpu" | "ramGb" | "diskGb" | "mailbox" | "zone" | "user" | "unit" | "kw" | "traffic" | "ip" | "gpu" | "updates" | "updateOnce" | "account";
 const VM: Unit[] = ["base", "vcpu", "ramGb", "diskGb", "traffic", "ip"];
 export const UNITS: Record<Product, Unit[]> = {
   webHosting: ["base", "diskGb", "mailbox", "traffic", "ip", "updates", "updateOnce"], vps: VM, gameServer: VM, cloud: VM, storage: ["base", "diskGb", "traffic"],
   dns: ["base", "zone", "traffic"], vpn: ["base", "user", "traffic"], domain: ["base"], ssl: ["base"], dedicated: ["base", "ramGb", "traffic", "ip"],
-  colocation: ["base", "unit", "kw", "traffic", "ip"], gpu: ["gpu", "traffic", "ip"],
+  colocation: ["base", "unit", "kw", "traffic", "ip"], gpu: ["gpu", "traffic", "ip"], reseller: ["account"],
 };
 // A line's rates in euros per unit, and its one-time setup fee; a unit without one charges the market rate.
 export type Rates = Partial<Record<Unit | "setup", number>>;
@@ -145,11 +151,13 @@ function resourceRates(product: Product, year: number): Rates {
     case "dedicated": return { base: 6, ramGb: 220 / 24 / g };
     case "colocation": return { base: 15, unit: 30, kw: 100 };
     case "gpu": return { gpu: gpuRent(year) };
+    // economy.md, Resellers: half the market price of an average web space, per account of the block.
+    case "reseller": return { account: 0.5 * marketPrice("webHosting", sizeSpec("webHosting", 1, year), year) };
   }
 }
 
 export const unitAmount = (spec: Spec, u: Unit): number =>
-  u === "base" ? 1 : u === "mailbox" ? spec.mailboxes : u === "zone" ? spec.zones ?? 0 : u === "user" ? spec.users ?? 0
+  u === "base" ? 1 : u === "account" ? spec.accounts ?? 0 : u === "mailbox" ? spec.mailboxes : u === "zone" ? spec.zones ?? 0 : u === "user" ? spec.users ?? 0
     : u === "unit" ? spec.units ?? 0 : u === "kw" ? (spec.watts ?? 0) / 1000 : u === "traffic" ? spec.trafficGb / 100 : u === "ip" ? spec.ipv4 ?? 0 : u === "gpu" ? spec.gpus ?? 0
       : u === "updates" ? Number(!!spec.managedUpdates) : u === "updateOnce" ? 0 : spec[u];
 

@@ -1579,6 +1579,14 @@ Disk use starts at 30% of booked and stops at 100%; the average customer reaches
 
 **Before and after.** Measured over 30 days with a mixed set of customers (web hosting, VPS, game servers, VPN, storage, dedicated): early game in 2005 with 13 services moves 0.59 TB before and after, with a 95th percentile of 3.4 Mbit/s before and 3.8 after (night jobs add short peaks to a small base); mid game in 2012 with 200 services moves 17.9 TB before and 17.8 after, with a 95th percentile of 103 Mbit/s before and 88 after, so transit bills drop about 15% (€311 to €264 a month at Cogentle's price), because the floors and staggered peaks flatten the sum.
 
+## Resellers
+
+A reseller buys a block of accounts on a DirectAdmen or cPanic host and sells web space to their own customers. The three blocks are Small (20 accounts, 50 GB, 500 GB traffic), Medium (50 accounts, 150 GB, 1,500 GB) and Large (100 accounts, 350 GB, 4,000 GB). The monthly price of a block is 0.5 times the market price of an average web space times its account count, billed in full whether the block is filled or not.
+
+The block books its full compute and disk from the day it starts. The reseller's own customers arrive linearly over 6 months up to a fill of 70%, and a cheaper block than the market price fills faster (down to 3 months at half the price per account). Resource use follows the fill, so the host carries less than it has sold.
+
+Abuse reports arrive at the rate of the filled accounts, and the reseller handles half of them; the other half come to the player as abuse tickets with the reseller as the customer. Each month there is a 2% chance that the block holds a shady account, which draws the abuse and legal follow-ups of a shady customer until the player suspends the reseller. Reseller leads are 3% of web hosting leads from 2008, once a DirectAdmen or cPanic host exists.
+
 ## Platforms and licenses
 
 Every server and every one of the player's own VMs runs an operating system, and software on it must run on that system and share no TCP port with the software already there; at most one hypervisor runs on a machine. A hypervisor ("Cloud" below) runs on every node of a hypervisor cluster and sells VPS, game servers and, with failover on, cloud servers. A panel runs on a panel host, a bare-metal server or one of the player's own VMs, and sells web hosting. Service software runs the same way as a panel, on one bare-metal server or one of the player's VMs, and sells one line each: a game panel sells game servers, a DNS server DNS, a VPN server VPN and a storage server storage. Game servers also run on a hypervisor; DNS, VPN and storage need their own software. A DNS, VPN or storage service already on a hypervisor keeps running there. Dedicated servers, colocation, domains and certificates need neither. Values live in `src/sim/10-catalog/platforms.ts`; fees are monthly, in euros, and fixed over the years, except where a license lists a one-time price first.

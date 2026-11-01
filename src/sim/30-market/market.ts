@@ -78,10 +78,11 @@ export const NEEDS: Record<Profile, [Product, number][]> = {
   office: [["webHosting", 0.9], ["vps", 0.1]],
   onlineShop: [["webHosting", 0.5], ["vps", 0.5], ["gpu", GPU_SHARE]],
   enterprise: [["vps", 0.5], ["dedicated", 0.5], ["gpu", GPU_SHARE]],
+  reseller: [["reseller", 1]],
 };
 export const SLA_ASKED: Record<Profile, Sla> = {
   private: "basic", gamer: "basic", hobbyDev: "basic", soleProp: "basic", smallBiz: "business", agency: "business",
-  office: "business", onlineShop: "premium", enterprise: "premium",
+  office: "business", onlineShop: "premium", enterprise: "premium", reseller: "business",
 };
 
 // A profile's needs in a year: the GPU share scaled by the year's demand, the other weights making room for it; none before GPU servers.
@@ -271,7 +272,7 @@ export function senderFor(r: Rng, profile: Profile, shady = false, us = false): 
   const company: Record<Profile, string | null> = {
     private: null, gamer: null, hobbyDev: null,
     soleProp: `${last} ${pick(r, TRADES)}`, smallBiz: `${last} ${pick(r, FIRMS)}`, agency: pick(r, AGENCY),
-    office: `${pick(r, OFFICES)} ${last}`, onlineShop: `${pick(r, SHOPS)}-shop.${shop}`, enterprise: `${last} Industries ${corp}`,
+    office: `${pick(r, OFFICES)} ${last}`, onlineShop: `${pick(r, SHOPS)}-shop.${shop}`, enterprise: `${last} Industries ${corp}`, reseller: `${last} Webhosting`,
   };
   return { contact, company: company[profile] };
 }

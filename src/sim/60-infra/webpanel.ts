@@ -11,6 +11,7 @@ import { cmsOf } from "./apps";
 import type { Cluster } from "./cluster";
 import type { HostBans } from "./bans";
 import { transferTick, type Transfer } from "./transfers";
+import type { Reseller } from "../30-customers/resellers";
 
 export interface WebPanel {
   phpPool: Record<string, string[]>; // panel host id -> legacy PHP versions kept installed besides Cluster.php
@@ -20,6 +21,7 @@ export interface WebPanel {
   bans: Record<string, HostBans>; // Pleskit host id -> its Fail2ban jail
   appBack: Record<string, { appVersion: number; appUpdatedAt: number }>; // site id -> the release before a Toolkit update
   transfers: Record<string, Transfer>; // web hosting service id -> the move of its site from another host
+  resellers: Record<string, Reseller>; // customer id -> the reseller block they fill
   appBroken: Record<string, number>; // site id -> the hour the site a Toolkit update broke runs normally again
 }
 
@@ -29,13 +31,13 @@ export interface SslLog { hour: number; serviceId: string; ok: boolean }
 export interface Ssl { auto: string[]; expires: Record<string, number>; expired: string[]; log: SslLog[] }
 export const newSsl = (): Ssl => ({ auto: [], expires: {}, expired: [], log: [] });
 
-export const newWebPanel = (): WebPanel => ({ phpPool: {}, phpOf: {}, phpBroken: {}, ssl: newSsl(), bans: {}, appBack: {}, appBroken: {}, transfers: {} });
+export const newWebPanel = (): WebPanel => ({ phpPool: {}, phpOf: {}, phpBroken: {}, ssl: newSsl(), bans: {}, appBack: {}, appBroken: {}, transfers: {}, resellers: {} });
 
 // A save keeps what it has per sub-record, so a save from an earlier milestone still gets the later sub-fields.
 export const mergeWebPanel = (base: WebPanel, data: Partial<WebPanel> | undefined): WebPanel => ({
   phpPool: { ...base.phpPool, ...data?.phpPool }, phpOf: { ...base.phpOf, ...data?.phpOf }, phpBroken: { ...base.phpBroken, ...data?.phpBroken },
   ssl: { ...base.ssl, ...data?.ssl }, bans: { ...base.bans, ...data?.bans },
-  appBack: { ...base.appBack, ...data?.appBack }, appBroken: { ...base.appBroken, ...data?.appBroken }, transfers: { ...base.transfers, ...data?.transfers },
+  appBack: { ...base.appBack, ...data?.appBack }, appBroken: { ...base.appBroken, ...data?.appBroken }, transfers: { ...base.transfers, ...data?.transfers }, resellers: { ...base.resellers, ...data?.resellers },
 });
 
 export const POOL_MAX = 2;

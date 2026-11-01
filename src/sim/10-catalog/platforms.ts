@@ -140,8 +140,10 @@ export const isService = (k: SoftwareKind): boolean => SERVICE_KINDS.includes(k)
 // The order the software picker lists the kinds in.
 export const KINDS: SoftwareKind[] = ["cloud", "panel", "game", "dns", "vpn", "storage", "mail", "backup"];
 // Game servers also run on plain virtual machines, so a line can have more than one kind; kindServing is the general one.
-export const kindsServing = (p: Product): SoftwareKind[] => (Object.keys(SERVES) as SoftwareKind[]).filter((k) => SERVES[k].includes(p));
-export const kindServing = (p: Product): SoftwareKind | null => (["panel", "cloud", "dns", "vpn", "storage"] as SoftwareKind[]).find((k) => SERVES[k].includes(p)) ?? null;
+// A reseller block lives on a web panel host but is never sold from the shop, so it is not in SERVES.
+const served = (p: Product): Product => (p === "reseller" ? "webHosting" : p);
+export const kindsServing = (p: Product): SoftwareKind[] => (Object.keys(SERVES) as SoftwareKind[]).filter((k) => SERVES[k].includes(served(p)));
+export const kindServing = (p: Product): SoftwareKind | null => (["panel", "cloud", "dns", "vpn", "storage"] as SoftwareKind[]).find((k) => SERVES[k].includes(served(p))) ?? null;
 
 // economy.md, Platforms and licenses: software in a virtual machine gets this share of the VM's CPU and RAM.
 export const IN_VM = 0.95;
