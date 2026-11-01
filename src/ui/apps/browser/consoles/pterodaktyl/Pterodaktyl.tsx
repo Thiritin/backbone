@@ -1,7 +1,7 @@
 import { FileText } from "lucide-react";
 import { t } from "../../../../../i18n/en";
-import { LogOut, Package, Plus, Server, Settings, type LucideIcon } from "lucide-react";
-import { GameLine } from "../GamePanel";
+import { HardDrive, LogOut, Package, Plus, Server, Settings, type LucideIcon } from "lucide-react";
+import { GameLine, GameNodes } from "../GamePanel";
 import { Actions, Backups, Bar, cpuText, erasFrom, eraAt, Facts, LoginForm, ramText, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
 import { parseCreate } from "../../../../../sim/80-business/consoles";
 import { PackagesScreen, ProvisionForm } from "../PackageForms";
@@ -22,7 +22,7 @@ export function Pterodaktyl(p: PanelProps) {
       </LoginForm>
     </div>
   );
-  const nav: [Tab, string, LucideIcon][] = [["objects", t("browser-consoles-2.servers"), Server], ["create", t("pkg.ptCreate"), Plus], ["packages", t("pkg.ptNests"), Package], ["software", t("browser-consoles-2.settings"), Settings], ...pages.map((g) => [g.id, g.label, FileText] as [Tab, string, LucideIcon])];
+  const nav: [Tab, string, LucideIcon][] = [["objects", t("browser-consoles-2.servers"), Server], ["create", t("pkg.ptCreate"), Plus], ["packages", t("pkg.ptNests"), Package], ["wings", t("games.tab.pterodaktyl.nodes"), HardDrive], ["software", t("browser-consoles-2.settings"), Settings], ...pages.map((g) => [g.id, g.label, FileText] as [Tab, string, LucideIcon])];
   return (
     <div className="cx pt" data-era={era}>
       <header className="pt-nav">
@@ -33,6 +33,7 @@ export function Pterodaktyl(p: PanelProps) {
       </header>
       <main className="pt-main">
         {tab === "create" && <ProvisionForm game={p.game} c={p.c} products={["gameServer"]} order={open?.screen === "create" ? open.order : undefined} />}
+        {tab === "wings" && <GameNodes game={p.game} c={p.c} />}
         {tab === "packages" && <PackagesScreen game={p.game} c={p.c} />}
         {tab === "objects" && rows.length === 0 && <p className="cx-empty">{t("browser-consoles-2.nothingHere")}</p>}
         {tab === "objects" && rows.map((r) => (
