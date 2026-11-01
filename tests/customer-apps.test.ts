@@ -5,7 +5,7 @@ import { appShares, AUTO_UPDATE, CMS, drawApp, SELF_UPDATE, type App } from "../
 import { marketRates, sizeSpec, specPrice } from "../src/sim/10-catalog/products";
 import type { Profile } from "../src/sim/30-customers/customers";
 import { offerPrice } from "../src/sim/30-market/spec";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { mailAddress } from "../src/sim/60-infra/addresses";
 import {
   appMonitoring, appsTick, appVulns, asksForHelp, cleanSite, notifyCustomers, selfUpdateAt, wishOf,
@@ -18,7 +18,7 @@ import { setRate } from "../src/sim/90-actions/rates";
 import { resolveTicket } from "../src/sim/90-actions/support";
 import { customerSite } from "../src/sim/80-business/website";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { panelServer, withServer } from "./fixtures";
+import { panelServer, withServer, newGame } from "./fixtures";
 
 const ok = (r: { ok: boolean; id?: string; error?: string }) => {
   if (!r.ok) throw new Error(r.error);

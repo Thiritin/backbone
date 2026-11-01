@@ -3,13 +3,13 @@ import type { Profile } from "../src/sim/30-customers/customers";
 import { serviceOnline } from "../src/sim/40-support/status";
 import { supportTick } from "../src/sim/40-support/tick";
 import { billingTick, EXTENSION_DAYS, isSuspended, SUSPENDED_PAY_ODDS_HIGH } from "../src/sim/45-billing/billing";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { setBillingRules, suspendServices } from "../src/sim/90-actions/billing";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { resolveTicket } from "../src/sim/90-actions/support";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { withServer } from "./fixtures";
+import { sendDrafts, withServer, newGame } from "./fixtures";
 
 const DAY = 24;
 const bill = (s: GameState, hour: number) => { while (s.hour < hour) { s.hour++; billingTick(s); } };
@@ -24,6 +24,7 @@ function overdue(seed: number, profile: Profile = "enterprise") {
   const c = addCustomer(s, "Initech", profile, "late");
   const v = addService(s, c, "domain", "initech.com", 12, "year");
   tick(s);
+  sendDrafts(s);
   Object.assign(s.invoices[0], { payStep: 4, payAt: null });
   bill(s, s.invoices[0].dueAt + DAY);
   return { s, c, v, inv: () => s.invoices[0], customer: () => s.customers.find((x) => x.id === c)! };
@@ -47,7 +48,7 @@ describe("auto collections", () => {
     bill(s, inv().dueAt + 60 * DAY - 1);
     expect(inv().status).toBe("overdue");
     s.hour++;
-    expect(billingTick(s)).toEqual([{ app: "Billing", key: "event.collected", params: { customer: "Initech", invoice: inv().number } }]);
+    expect(billingTick(s)).toEqual([{ app: "Books", key: "event.collected", params: { customer: "Initech", invoice: inv().number } }]);
     expect(inv().status).toBe("writtenOff");
     expect(inv().reminders).toHaveLength(4);
     expect(customer().churnedAt).toBe(s.hour);
@@ -111,7 +112,7 @@ describe("suspension appeals", () => {
     bill(s, inv().extendedUntil! - 1);
     expect(isSuspended(s, customer().id)).toBe(false);
     s.hour++;
-    expect(billingTick(s)).toEqual([{ app: "Billing", key: "event.suspended", params: { customer: "Initech", invoice: inv().number } }]);
+    expect(billingTick(s)).toEqual([{ app: "Books", key: "event.suspended", params: { customer: "Initech", invoice: inv().number } }]);
     expect(serviceOnline(s, v)).toBe(false);
     // The second suspension of the same invoice brings a billing ticket, and the rule acts only once per extension.
     expect(s.tickets.filter((t) => t.kind === "appeal")).toHaveLength(1);

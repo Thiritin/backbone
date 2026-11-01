@@ -1,3 +1,4 @@
+import { newGame } from "./fixtures";
 import { describe, expect, it } from "vitest";
 import { createTicket } from "../src/sim/40-support/tickets";
 import { isMonthStart } from "../src/sim/00-core/time";
@@ -5,7 +6,7 @@ import { dueStep, type Invoice } from "../src/sim/45-billing/billing";
 import {
   COURSE_HOURS, forumAwareness, isWorkHour, MARKET_PER_ROLE, MONTHLY_HOURS, quitChance, ROLES, staffPrice, TASKS, TRAINER_HOURS, visibleCandidates, type Role,
 } from "../src/sim/47-staff/staff";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { answerRaise, assign, fire, hire, planTraining, postJobAd } from "../src/sim/90-actions/staff";
@@ -123,7 +124,7 @@ describe("work", () => {
     for (const c of cus) createTicket(s, s.customers.find((x) => x.id === c)!, "howTo", null);
     createTicket(s, s.customers[0], "abuse", null);
     runTo(s, MONDAY_9 - 1);
-    expect(s.tickets.every((t) => t.status === "open")).toBe(true);
+    expect(s.tickets.filter((t) => t.customerId).every((t) => t.status === "open")).toBe(true);
     runTo(s, MONDAY_9 + 1);
     // Skill 100 works at 1.5x: 20-minute tickets take 13.3 minutes, so 5 start in the first hour.
     expect(s.tickets.filter((t) => t.work).length).toBe(5);

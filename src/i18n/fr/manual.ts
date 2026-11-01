@@ -7,7 +7,7 @@ const mailboxes = (n: string | number) => `${n} ${Number(n) < 2 ? "boîte mail" 
 const web = (p: Params) => `${gb(p.disk)} d'espace, ${gb(p.traffic)} de trafic par mois et ${mailboxes(p.mail)}`;
 const box = (p: Params) => `${p.cpu} vCPU, ${gb(p.ram)} de RAM et ${gb(p.disk)} de disque`;
 const cards = (p: Params) => `${p.gpu} GPU`;
-const domain = (p: Params) => (Number(p.owned) ? `Je possède déjà ${p.domain} et j'aimerais la transférer chez toi.` : `Enregistre aussi ${p.domain} pour moi, s'il te plaît.`);
+const domain = (p: Params) => (Number(p.owned) ? `Je possède déjà ${p.domain} et j'aimerais la transférer chez toi.${p.auth ? ` Le code d'autorisation est ${p.auth}.` : ""}` : `Enregistre aussi ${p.domain} pour moi, s'il te plaît.`);
 const and = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(", ")} et ${xs.at(-1)}` : xs[0] ?? "plus de place");
 const more = (p: Params) => (p.product === "webHosting"
   ? `de ${gb(p.disk0)} à ${gb(p.disk1)} d'espace, de ${gb(p.traffic0)} à ${gb(p.traffic1)} de trafic et de ${p.mail0} à ${mailboxes(p.mail1)}`
@@ -38,6 +38,7 @@ export default {
   "ledger.domainTransfer": (p) => `Transfert de ${p.domain} vers ${p.registry}`,
   "ledger.domainRenewal": (p) => `Renouvellement de ${p.domain} chez ${p.registry}`,
   "activity.renewDomain": (p) => `${p.domain} renouvelé pour un an`,
+  "activity.changePackage": (p) => `Passé au forfait ${p.pkg}`,
   "activity.upgrade": (p) => `Service mis à niveau à ${euroCents(Number(p.price))} par mois`,
   "event.orderAccepted.title": () => "Devis accepté",
   "event.orderAccepted.text": (p) => `${p.name} a accepté le devis.`,
@@ -54,6 +55,11 @@ export default {
   "error.quoteSent": () => "Le client n'a pas encore répondu au devis.",
   "error.needsAutomation": () => "Choisis un hôte pour la mise en service.",
   "error.needsAccount": () => "Crée d'abord le compte client.",
+  "error.addressMissing": () => "Saisis l'adresse complète.",
+  "error.quoteSentAlready": () => "Ce devis est déjà envoyé.",
+  "error.quoteOtherOrder": () => "Ce devis appartient à une autre commande.",
+  "error.quoteNotAccepted": () => "Le client n'a pas accepté ce devis.",
+  "error.quoteInvoiced": () => "Ce devis a déjà été transféré en facture.",
   "error.needsInvoice": () => "Confirme d'abord la commande et envoie la facture.",
   "error.needsDomain": () => "Enregistre d'abord le domaine.",
   "error.stepDone": () => "Cette étape est terminée.",

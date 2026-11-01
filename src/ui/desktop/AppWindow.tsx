@@ -77,7 +77,7 @@ export function AppWindow({ win, front }: { win: Win; front: boolean }) {
   const pv = useRef<HTMLDivElement>(null), pvFrom = useRef<DOMRect | null>(null);
   const game = useStore((s) => s.game);
   const app = appFor(game, win.app);
-  const title = win.console ? consoleTitle(game, win.console) : appTitle(app);
+  const title = win.console ? consoleTitle(game, win.console) : app.title ?? appTitle(app);
 
   useLayoutEffect(() => { animateOpen(ref.current!); }, []);
 

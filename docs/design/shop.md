@@ -6,7 +6,7 @@ The website stays the marketing presentation of product lines (Marketing > Produ
 
 ## 1. What exists today
 
-- The order form is a marketing channel (`OWNED.orderForm`, €900 setup, €10 a month, needs the website). With it, standard-SLA leads become form orders; 25% still arrive as email orders while email orders are on.
+- The order form is the shop variant "Hand-rolled order form" (€900 once, no monthly fee, needs the website, no research). With it, standard-SLA leads become form orders; 25% still arrive as email orders while email orders are on.
 - `s.autoOrders` places form orders and runs accepted quotes without the player, gated by `canAutomate` (research "Provisioning automation", 150 know-how, needs "Product management").
 - A form order that cannot be placed is lost (`lost.noCapacity`), or falls back to an order email that later fails. Lost sales carry no reputation hit, but they fill the lost-sales list and the market research reasons, which reads as a penalty, and the player has no way to say "sold out".
 - `targetFor` (`src/sim/30-market/sales.ts`) picks any fitting software installation in any zone. There is no way to keep a server out of sales.
@@ -31,7 +31,7 @@ Prices are game euros. "Modules" lists what is included; "Extra" is what a missi
 
 | Variant (real product) | Available | Licence | Included modules | Extra modules | Stock | Upside | Downside |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Hand-rolled order form (own PHP) | 2005 on | €900 setup, €10 a month | none | custom script, €400 once per software | none | no licence, no cut | sold-out orders are lost as today; no server groups |
+| Hand-rolled order form (own PHP) | 2005 on | €900 once, no monthly fee | none | custom script, €400 once per software | none | no licence, no cut | sold-out orders are lost as today; no server groups |
 | ModemBill (ModernBill) | 2005, sold until 2010 | €300 once | cPanic, Pleskit, registrars | none sold | manual | cheapest real shop | Parallax buys it in 2008; no updates and no new modules after 2011 |
 | ClientExit (ClientExec) | 2005 on | €250 once, €60 a year for updates | cPanic, DirectAdmen, registrars | €150 once (third party) | manual and auto | cheap to own | few modules; no game panel modules before 2010 |
 | WHMCache (WHMCS) | 2005 on | €15 a month leased, or €450 once and €90 a year | every panel, registrars, certificates, game panels from 2008 | hypervisor modules from ModulesGardn, €200 once per hypervisor | manual and auto | widest panel coverage, the default choice | 2012 breach event; from 2020 the lease scales with active customers (€18 up to 250, €30 up to 500, €50 up to 1,000, then €15 per further 1,000) |

@@ -5,11 +5,11 @@ import { GENERATIONS } from "../src/sim/10-catalog/economy";
 import { MODELS, modelById, NET_LIFE, NEWEST, shopModels } from "../src/sim/10-catalog/hardware";
 import { erodedPrice, FAILURE_FACTOR, outOfSupport, supportEnd } from "../src/sim/10-catalog/lifecycle";
 import { presetPrice } from "../src/sim/10-catalog/parts";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { failComponents, failureChance } from "../src/sim/88-tick/tick";
 import { feed, NEWS, newsTick } from "../src/sim/80-business/news";
 import { INSTALL_HOURS, installPart, removePart, replaceComponent, SWAP_HOURS } from "../src/sim/90-actions/hardware";
-import { buyDevice } from "./fixtures";
+import { buyDevice, newGame } from "./fixtures";
 import { withServer } from "./fixtures";
 
 const jan = (year: number) => hourOf(new Date(Date.UTC(year, 0, 1, 9)));

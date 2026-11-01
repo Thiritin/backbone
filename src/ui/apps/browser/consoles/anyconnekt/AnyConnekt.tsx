@@ -13,7 +13,7 @@ import "./anyconnekt.css";
 const ERAS = erasFrom(2005, 2016);
 
 export function AnyConnekt(p: PanelProps) {
-  const era = eraAt(ERAS, p.game), [tab, setTab] = usePanelTab(p.f), [certs, setCerts] = useState(false);
+  const era = eraAt(ERAS, p), [tab, setTab] = usePanelTab(p.f), [certs, setCerts] = useState(false);
   const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f), ts = tenants(p.game, p.c);
   const logo = <span className="sy-logo"><i aria-hidden>{"|||.|||."}</i>SYSKO <b>AnyConnekt</b></span>;
   if (!p.signedIn) return (

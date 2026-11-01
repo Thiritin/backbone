@@ -1,8 +1,12 @@
 // The market: who looks for a host each month, how many of them pick you, and what they ask for.
 // Values and decisions are in docs/design/economy.md, "Market and leads", "Customer choice" and "Requests, SLAs and growth".
 import { rand, type Rng } from "../00-core/rng";
+import { CITY_TLD } from "../30-customers/domains";
+import type { Address } from "../30-customers/addresses";
 import { yearOf } from "../00-core/time";
-import { CHOICE_TAU, CITIES, COMPETITORS, generationAt, leadCapShare, MARKET_GROWTH, type Budget, type Profile as ProfileStats } from "../10-catalog/economy";
+import type { Cycle } from "../10-catalog/cycles";
+import type { MethodId } from "../10-catalog/payments";
+import { CHOICE_TAU, CITIES, COMPETITORS, generationAt, leadCapShare, MARKET_GROWTH, type Budget, type Competitor, type Profile as ProfileStats } from "../10-catalog/economy";
 import { gpuDemand, GPU_SHARE } from "../10-catalog/gpu";
 import { modelById } from "../10-catalog/hardware";
 import { marketPrice, PRODUCTS, SIZES, type Sla, type Spec } from "../10-catalog/products";
@@ -16,6 +20,7 @@ import { forumAwareness } from "../47-staff/staff";
 import { metrics } from "../metrics";
 import { addressesFit, addressNeed } from "../60-infra/addresses";
 import { serviceMarket } from "./spec";
+import type { Rival } from "./rivals";
 
 export type RequestStatus = "open" | "quoted" | "countered" | "refused" | "accepted" | "won" | "lost" | "declined";
 // by names the employee who sent a "you" message; the player otherwise.
@@ -34,12 +39,18 @@ export interface SalesRequest {
   // An email order: whether the customer owns the domain already, its first invoice and the route chosen for its setup
   // ("auto", a cluster id or a node's device id).
   owned?: boolean; invoiceId?: string; route?: string;
+  // The address the player entered for the account; the order email's own until then (addresses.ts, requestAddress).
+  address?: Address;
   // The package name and web hosting username the provision step uses.
   pkg?: string; username?: string;
   // Placed through the order form: the website's prices are the quote and ordering is the acceptance.
   form?: boolean;
+  // The billing cycle a form order picked; absent for monthly and email orders.
+  cycle?: Cycle;
   // Taken by a shop system rather than the hand-rolled form; a shop order that cannot be placed is cancelled, never lost.
   shop?: boolean;
+  // The payment method a shop order checked out with; absent for bank transfer.
+  method?: MethodId;
   // The one-time fee the manual quote's invoice carries; the line's rate where unset.
   setup?: number;
 }
@@ -74,10 +85,11 @@ export const NEEDS: Record<Profile, [Product, number][]> = {
   office: [["webHosting", 0.9], ["vps", 0.1]],
   onlineShop: [["webHosting", 0.5], ["vps", 0.5], ["gpu", GPU_SHARE]],
   enterprise: [["vps", 0.5], ["dedicated", 0.5], ["gpu", GPU_SHARE]],
+  reseller: [["reseller", 1]],
 };
 export const SLA_ASKED: Record<Profile, Sla> = {
   private: "basic", gamer: "basic", hobbyDev: "basic", soleProp: "basic", smallBiz: "business", agency: "business",
-  office: "business", onlineShop: "premium", enterprise: "premium",
+  office: "business", onlineShop: "premium", enterprise: "premium", reseller: "business",
 };
 
 // A profile's needs in a year: the GPU share scaled by the year's demand, the other weights making room for it; none before GPU servers.
@@ -139,23 +151,28 @@ export function priceIndex(s: GameState): number {
 const value = (p: ProfileStats, P: number, R: number, C: number, T: number, priceFactor: number) =>
   p.wP * P + p.wR * R + p.wC * C + T - PRICE_WEIGHT * p.lambda * 100 * (priceFactor - 1);
 
-export const rivals = (profile: Profile, product: Product) => {
-  const p = profileStats(profile);
-  return COMPETITORS.filter((c) => c.priceFactor <= p.cap && c.sells.includes(product) && (!c.targets || c.targets.includes(p.id)));
-};
+// The open rivals of a game (30-market/rivals.ts), in a city if given; the catalog table where no game is at hand.
+export const openRivals = (s: GameState, city?: string): Rival[] =>
+  s.competitors.filter((r) => r.closed === null && (city === undefined || r.customers[city] !== undefined));
 
-// Your value U and the best competitor's for a profile, product and city; dearer adds to your price level.
-export function values(s: GameState, profile: Profile, product: Product, city: string, dearer = 0): { you: number; others: number[] } {
+export const rivals = <C extends Competitor>(profile: Profile, product: Product, list: readonly C[] = COMPETITORS as C[]): C[] => {
+  const p = profileStats(profile);
+  return list.filter((c) => c.priceFactor <= p.cap && c.sells.includes(product) && (!c.targets || c.targets.includes(p.id)));
+};
+export const rivalValue = (profile: Profile, c: Competitor): number => value(profileStats(profile), c.P, c.R, c.C, 0, c.priceFactor);
+
+// Your value U and the best competitor's for a profile, product and city; dearer adds to your price level, which level replaces.
+export function values(s: GameState, profile: Profile, product: Product, city: string, dearer = 0, level?: number): { you: number; others: number[] } {
   const p = profileStats(profile), sc = playerScores(s, profile, city);
   return {
-    you: value(p, sc.P, sc.R, sc.C, trustBonus(s), priceIndex(s) + dearer),
-    others: rivals(profile, product).map((c) => value(p, c.P, c.R, c.C, 0, c.priceFactor)),
+    you: value(p, sc.P, sc.R, sc.C, trustBonus(s), (level ?? priceIndex(s)) + dearer),
+    others: rivals(profile, product, openRivals(s, city)).map((c) => rivalValue(profile, c)),
   };
 }
 
 // The softmax share of leads that pick you over the competitors that sell the product.
-export function share(s: GameState, profile: Profile, product: Product, city: string, dearer = 0): number {
-  const { you, others } = values(s, profile, product, city, dearer);
+export function share(s: GameState, profile: Profile, product: Product, city: string, dearer = 0, level?: number): number {
+  const { you, others } = values(s, profile, product, city, dearer, level);
   const e = Math.exp(you / CHOICE_TAU);
   return e / (e + others.reduce((n, u) => n + Math.exp(u / CHOICE_TAU), 0));
 }
@@ -267,9 +284,11 @@ export function senderFor(r: Rng, profile: Profile, shady = false, us = false): 
   const company: Record<Profile, string | null> = {
     private: null, gamer: null, hobbyDev: null,
     soleProp: `${last} ${pick(r, TRADES)}`, smallBiz: `${last} ${pick(r, FIRMS)}`, agency: pick(r, AGENCY),
-    office: `${pick(r, OFFICES)} ${last}`, onlineShop: `${pick(r, SHOPS)}-shop.${shop}`, enterprise: `${last} Industries ${corp}`,
+    office: `${pick(r, OFFICES)} ${last}`, onlineShop: `${pick(r, SHOPS)}-shop.${shop}`, enterprise: `${last} Industries ${corp}`, reseller: `${last} Webhosting`,
   };
   return { contact, company: company[profile] };
 }
+
+export const personName = (r: Rng, city: string): string => senderFor(r, "private", false, CITY_TLD[city]?.tld === "com").contact;
 
 export const requestName = (r: Pick<SalesRequest, "contact" | "company">): string => r.company ?? r.contact;

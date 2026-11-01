@@ -21,6 +21,8 @@ export const BOUNCE_CHANCE = 0.01;
 // Mails a day from a compromised panel host and from a spamming customer's service, in thousands.
 export const SPAM = { hacked: 12, shady: 2 };
 export const LIR_FEES = { signup: 2000, yearly: 1400 };
+// One-off fee a datacenter provider charges to announce an own block under the company's AS from its routers.
+export const PROVIDER_ROUTING_SETUP = 250;
 // Lines whose services need an address of their own. Only web hosting sits behind a shared address, so a dynamic line sells
 // nothing else; DNS and storage share their host's address but need it static.
 export const OWN_ADDRESS: Product[] = ["vps", "gameServer", "cloud", "vpn", "colocation", "dedicated", "gpu"];

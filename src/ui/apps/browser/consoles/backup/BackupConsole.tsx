@@ -8,7 +8,7 @@ import { useReadoutPages } from "../Readouts";
 import { t } from "../../../../../i18n/en";
 import "./backup.css";
 
-// One console for Backula, Veeham and Proxmocks Backup Server: the jobs that write here, the repository and the software.
+// One console for Veeham and Proxmocks Backup Server: the jobs that write here, the repository and the software.
 export function BackupConsole(p: PanelProps) {
   const [tab, setTab] = usePanelTab(p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f), name = softwareById(p.c.panel!).console;
   const logo = <span className="bk-logo"><Archive size={18} aria-hidden />{name}</span>;

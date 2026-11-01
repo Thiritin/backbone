@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
 import { MAIL_PROVIDERS, mailDelay, mailImpaired, mailShare, providerById, salesAddress, seatsFor } from "../src/sim/80-business/mail";
 import { visibleCandidates } from "../src/sim/47-staff/staff";
-import { newGame } from "../src/sim/50-state";
 import { createVm } from "../src/sim/90-actions/clusters";
 import { bookMail, cancelMail, selectMailServer } from "../src/sim/90-actions/mail";
 import { signRegistrar, registerCompanyDomain } from "../src/sim/90-actions/registrar";
@@ -11,7 +10,7 @@ import { hire } from "../src/sim/90-actions/staff";
 import { setEmailOrders } from "../src/sim/90-actions/website";
 import { CHECKS } from "../src/sim/checklist";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { bootedMachine, readyGame } from "./fixtures";
+import { bootedMachine, readyGame, newGame } from "./fixtures";
 import { err, idOf, run, toMonthStart, mailLedger, selfHosted } from "./company-mail.helpers";
 
 describe("external providers", () => {
@@ -136,7 +135,7 @@ describe("email orders", () => {
     expect(mailShare(s, "smallBiz")).toBe(1);
     const orders = (free: boolean) => {
       let n = 0;
-      for (const seed of [1, 2, 3]) {
+      for (const seed of [1, 2, 3, 4]) {
         const g = readyGame(seed);
         if (free) g.company = { ...g.company, mail: { kind: "free" } };
         run(g, 24 * 60);
@@ -149,7 +148,8 @@ describe("email orders", () => {
 
   it("can be switched on with free mail", () => {
     const s = readyGame(6);
-    s.marketing.owned = ["website", "orderForm"];
+    s.marketing.owned = ["website"];
+    s.shop = { ...s.shop, variant: "handRolled", readyAt: 0 };
     s.company = { ...s.company, mail: { kind: "free" } };
     expect(setEmailOrders(s, false).ok).toBe(true);
     expect(setEmailOrders(s, true).ok).toBe(true);

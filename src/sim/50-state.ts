@@ -1,13 +1,13 @@
 import { createRng, type Rng } from "./00-core/rng";
-import { START_CASH } from "./10-catalog/economy";
-import { componentParts, hasFirmware, modelById, type ComponentKind, type FormFactor, type PartSpec } from "./10-catalog/hardware";
+import { componentParts, hasFirmware, homeLan, isManaged, isOfficeRouter, modelById, type ComponentKind, type FormFactor, type PartSpec } from "./10-catalog/hardware";
 import type { Vendor } from "./10-catalog/cpus";
-import type { OsImage, ServerOsId } from "./10-catalog/server-os";
+import type { LicenseKind, OsImage, ServerOsId } from "./10-catalog/server-os";
 import { yearOf } from "./00-core/time";
 import { MOMS_DSL, seedDcs } from "./20-world/datacenters";
 import { t } from "../i18n/en";
 import type { Customer, Product, Service } from "./30-customers/customers";
-import type { BillingRules, HoldReason, Invoice, Loan } from "./45-billing/billing";
+import type { Quote } from "./30-market/quotes";
+import type { BillingRules, HoldReason, Invoice, Loan, Transfer } from "./45-billing/billing";
 import type { Ticket } from "./40-support/tickets";
 import type { Policy } from "./46-finance/finance";
 import { applications, defaultTeams, type Candidate, type Employee, type Team } from "./47-staff/staff";
@@ -16,6 +16,7 @@ import type { TechOp, TechRules } from "./47-staff/technicians";
 import type { ActivityEntry } from "./47-staff/activity";
 import { newMarketing, type Marketing } from "./80-business/marketing";
 import type { Cluster, Workload } from "./60-infra/cluster";
+import type { GameServer } from "./60-infra/games";
 import type { Maintenance } from "./60-infra/maintenance";
 import type { FrontOp } from "./60-infra/power";
 import { newNetwork, type Network } from "./60-infra/network";
@@ -24,6 +25,7 @@ import { newSites, type Sites } from "./60-infra/apps";
 import type { Breach } from "./60-infra/breach";
 import { newSecurity, type Security } from "./60-infra/security";
 import { newSales, type Sales } from "./30-market/market";
+import { seedRivals, type Rival, type ShareEntry } from "./30-market/rivals";
 import type { FairBooking } from "./80-business/fairs";
 import type { Sponsorship } from "./80-business/community";
 import type { SponsorOffer } from "./80-business/sponsorboard";
@@ -33,15 +35,19 @@ import type { Domain } from "./30-customers/registry";
 import { newChadUsage, type ChadUsage } from "./47-staff/chad";
 import { newIps, type Ips } from "./60-infra/addresses";
 import { newNetSvc, type NetSvc } from "./60-infra/netsvc";
+import { newWebPanel, type WebPanel } from "./60-infra/webpanel";
 import type { CompanyMail } from "./80-business/mail";
 import type { Registrar } from "./30-customers/registrar";
 import type { Listing } from "./10-catalog/used";
 import { firstHostNo } from "./30-customers/hostnames";
 import { newShop, type ShopState } from "./80-business/shop";
+import type { BankAccount } from "./46-finance/bank";
+import type { Payable } from "./46-finance/payables";
+import type { Letter } from "./40-support/letters";
 import type { TrendPoint } from "./80-business/trend";
 
-// 3: GPU line servers carry their preset cards.
-export const SAVE_VERSION = 3;
+// 3: GPU line servers carry their preset cards. 4: an unregistered game holds its savings until the bank account opens.
+export const SAVE_VERSION = 5;
 
 export type BondMode = "none" | "failover" | "balance";
 export type CableKind = "copper" | "dac" | "fiber" | "rollover";
@@ -70,6 +76,9 @@ export interface MachineState {
   installFailed?: NetFail;
 }
 export type NetFail = "noInterfaces" | "noLink";
+// A managed switch port's VLANs: the one its untagged frames belong to and the ones it carries tagged. A port without an entry is untagged in VLAN 1.
+export interface PortVlan { untagged: number; tagged: number[] }
+export interface SwitchConfig { groups: number[][]; vlans: Record<number, PortVlan> }
 export interface Device extends MachineState { id: string; model: string; brand: string; rackId: string | null; slot: number; panel: string | null; name: string; bond: BondMode; groups: number[][]; price: number; boughtAt: number; lease: string | null; store: string | null; transitTo: string | null; arriveAt: number | null;
   components: Component[]; on: boolean; label: string | null; raid: RaidLevel; rebuildRate: RebuildRate;
   // others are the further CPUs a swap of every socket replaces with the same spec.
@@ -93,6 +102,8 @@ export interface Device extends MachineState { id: string; model: string; brand:
   // The server sits in its BIOS setup (90-actions/console.ts): the boot waits until the player leaves it. bootFrom is what
   // this boot came from: the USB stick shows the installer in place of the operating system.
   setup: boolean; bootFrom: "disk" | "usb";
+  // A managed switch's running configuration is groups and vlans; saved is what it loads when it boots.
+  vlans?: Record<number, PortVlan>; saved?: SwitchConfig;
   // The image mounted through the management controller (90-actions/media.ts); it boots like the USB stick without a visit.
   virtualMedia?: OsImage;
   // What a spare part in storage is (size and form factor); spares without it fit any slot of their kind.
@@ -107,10 +118,27 @@ export interface Device extends MachineState { id: string; model: string; brand:
   refund?: { until: number; amount: number } | null;
   // thermal.ts: the game minute the server shut itself off from heat, and the hours it ran throttling hot.
   overheatedAt?: number; hotHours?: number;
+  // A small-office router's home network (docs/design/lan.md); a datacenter handoff stores only once it hands out leases.
+  lan?: RouterLan;
+  // A server's network setting as its OS stores it, and the one ip or ifdown set since boot (lan.md, Shell): it holds only
+  // while bootUntil is still the boot it was set in, so the next boot drops it.
+  iface?: IfaceConfig; runtime?: IfaceConfig & { down?: true; boot: number | null };
 }
+// DHCP, or a static address with its prefix, gateway and name server; static without ip leaves the interface unconfigured.
+export interface IfaceConfig { mode: "dhcp" | "static"; ip?: string; prefix?: number; gw?: string; dns?: string }
+// A router's range, DHCP pool and lease time, the addresses it always gives the same device, its live leases (until is the
+// hour a lease runs out) and its port shares, each pointing at an address on the network.
+export interface RouterLan {
+  cidr: string; gateway: string; pool: [string, string]; leaseHours: number;
+  reservations: { mac: string; ip: string }[]; leases: { mac: string; ip: string; until: number; name: string }[]; shares: PortShare[];
+}
+export interface PortShare { ip: string; kind: "web" | "exposed" }
 // paid counts the monthly payments made so far; the lease ends after months payments.
 export interface Lease { id: string; lessor: string; monthly: number; months: number; startedAt: number; paid: number; devices: string[] }
 // A waitlist entry gets heldUntil once its space is free; the space is then reserved until that hour.
+// A rented space's contract with its provider. monthly is the rent agreed at order time; endsAt is set once the player
+// gives notice and the location closes at that hour.
+export interface Contract { id: string; provider: string; dc: string; locationId: string; space: "share" | "cage" | "suite"; positions: number; since: number; monthly: number; endsAt: number | null }
 export interface WaitlistEntry { id: string; dc: string; space: "share" | "cage" | "suite"; size: number; since: number; heldUntil: number | null }
 export interface End { device: string; port: number }
 export interface Cable { id: string; a: End; b: End; kind: CableKind; color: string | null }
@@ -126,12 +154,23 @@ export type RebuildRate = "low" | "medium" | "high";
 export interface HostFiles { since: number; paths: Record<string, string | boolean> }
 
 // A desktop document; x and y are its icon position on the desktop in pixels.
-// An "app" doc is a desktop link whose title is the app name.
-export interface Doc { id: string; kind: "guide" | "note" | "app"; title: string; body: string; x: number; y: number }
+// An "app" doc is a desktop link whose title is the app name; a "form" doc is a downloaded application to sign.
+export interface Doc { id: string; kind: "guide" | "note" | "app" | "form"; title: string; body: string; x: number; y: number; form?: DocForm }
+// from is the legal form the company held when the form was downloaded.
+export interface DocForm { form: string; from?: string; signed: number | null }
 // domain is the company's own domain once registered; mail is its email service.
 export interface Company { name: string; logo: string; color: string; domain: string | null; mail: CompanyMail; tagline: string }
 export interface Registration { hour: number; owner: string; form: string; number: number }
 export interface LedgerEntry { hour: number; category: string; key: string; params: Record<string, string | number>; amount: number }
+
+// A licence key for an OS or software id. edition is a panel tier; kind is the pricing at purchase. covers is the major
+// version a one-time key is bound to, or the hour a subscription's paid term runs to; renewsAt is the next renewal of a
+// subscription and lapsedAt the hour an unpaid one expired.
+export interface Licence {
+  id: string; product: string; edition: string | null; kind: LicenseKind; key: string; orderId: string; boughtAt: number;
+  machineId: string | null; covers: { kind: "version"; major: string } | { kind: "term"; until: number };
+  renewsAt: number | null; lapsedAt: number | null;
+}
 
 export interface GameState {
   version: number;
@@ -146,8 +185,10 @@ export interface GameState {
   devices: Device[];
   cables: Cable[];
   ledger: LedgerEntry[];
-  // One-time licenses (docs/design/software.md, section 1): the OS or software id and the machine that holds it.
-  licenses: { id: string; machineId: string; boughtAt: number }[];
+  // Bought licence keys (docs/design/plans/software-licences.md), each assigned to at most one machine.
+  licenses: Licence[];
+  // One entry per machine and product whose trial started; it never starts again there. until is the hour it ends.
+  trials: { machineId: string; product: string; until: number }[];
   // Operating system images downloaded from their sites, one per version, and the one USB stick: the image written on it,
   // the server it is in.
   media: { images: OsImage[]; stick: { os: OsImage | null; in: string | null } };
@@ -158,6 +199,10 @@ export interface GameState {
   services: Service[];
   // Billing and bank.
   invoices: Invoice[];
+  // Bank transfers from customers, matched to invoices by hand in Books.
+  transfers: Transfer[];
+  // Quotes written in Books for order tickets.
+  quotes: Quote[];
   // Hour up to which each yearly service is invoiced.
   yearlyBilledUntil: Record<string, number>;
   loans: Loan[];
@@ -179,6 +224,8 @@ export interface GameState {
   heldCustomers: string[];
   // Panel hosts: services the player holds offline one by one, with the reason shown in the consoles.
   heldServices: Record<string, HoldReason>;
+  // Game servers: the title, slots and state of each game server service on a game panel.
+  gameServers: GameServer[];
   // Support: tickets, the minute the player's queued replies finish, and the hour each offline service went down.
   tickets: Ticket[];
   playerBusyUntil: number;
@@ -195,6 +242,7 @@ export interface GameState {
   // Positions rented by competitors in each datacenter.
   dcs: Record<string, { others: number }>;
   waitlist: WaitlistEntry[];
+  contracts: Contract[];
   // Learned research skills (SKILLS ids).
   unlocks: string[];
   // The skill in training and the hour it is learned.
@@ -269,8 +317,12 @@ export interface GameState {
   ips: Ips;
   // Mail queues and broken DNS, certificates and storage sets of the infrastructure consoles (60-infra/netsvc.ts).
   netsvc: NetSvc;
+  // PHP pools, certificates, bans, transfers and resellers of the web panel consoles (60-infra/webpanel.ts).
+  webpanel: WebPanel;
   // News already published, as "<id>@<hour>" (80-business/news.ts).
   news: string[];
+  competitors: Rival[];
+  shareLog: ShareEntry[];
   // Next server number, next own-VM number and next service number (30-customers/hostnames.ts).
   nextNode: number;
   nextVm: number;
@@ -290,6 +342,16 @@ export interface GameState {
   registration: Registration | null;
   // Apps that arrived by their trigger (80-business/walk.ts), installed or offered once.
   arrived: string[];
+  // The company's bank account (46-finance/bank.ts); null until the registration opens it.
+  bank: BankAccount | null;
+  // Supplier invoices to pay by transfer (46-finance/payables.ts).
+  payables: Payable[];
+  // Paper post, delivered and on its way (40-support/letters.ts).
+  letters: Letter[];
+  // The last calendar year the chamber of commerce billed; 0 before the first bill (80-business/paperwork.ts).
+  chamberYear: number;
+  // Bought software modules by id; "hbci" lets Books talk to the bank.
+  modules: string[];
 }
 
 export interface LogEntry { hour: number; minute?: number; name: string; args: unknown[] }
@@ -305,6 +367,9 @@ export function deviceDefaults(modelId: string, at: number, partList?: PartSpec[
     rebuild: null, maintenance: null, dataLost: null, burnin: null as Device["burnin"], burnedInAt: null as number | null, chassisId: null as string | null,
     hung: false, bmcHung: false, log: [] as { hour: number; key: string }[], os: null as MachineState["os"], software: [] as MachineState["software"],
     stuck: false, locked: false, setup: false, bootFrom: "disk" as const, ...(hasFirmware(modelById(modelId)) ? { fw: { version: yearOf(at), updatedAt: at } } : {}),
+    ...(isOfficeRouter(modelById(modelId)) ? { lan: homeLan() } : {}),
+    ...(modelById(modelId).kind === "server" ? { iface: { mode: "dhcp" } as IfaceConfig } : {}),
+    ...(isManaged(modelById(modelId)) ? { vlans: {} as Record<number, PortVlan>, saved: { groups: [], vlans: {} } as SwitchConfig } : {}),
   };
 }
 
@@ -331,18 +396,20 @@ export const device = (id: string, model: string, brand: string, rackId: string 
 // Starting infrastructure: an empty 24U basement rack, the line jack on its panel and the flat's router in storage. The player
 // mounts the router, buys, mounts and cables the first server.
 export const newGame = (seed: number): GameState => ({
-  version: SAVE_VERSION, seed, rng: createRng(seed), hour: 0, minute: 0, cash: START_CASH, nextId: 8,
+  version: SAVE_VERSION, seed, rng: createRng(seed), hour: 0, minute: 0, cash: 0, nextId: 8,
   locations: [{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: t("location.basement"), space: "basement", positions: 1, readyAt: 0, extraCircuit: false }],
   racks: [{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null, overSince: { a: null, b: null } }],
   devices: [{ ...device("dev5", "home-router", "AVN", null, 0, null, "fra1-gw-01", 0), store: "loc1" }, device("dev6", "line-jack", "", null, 0, "loc1", "fra1-line-01", 0)],
   cables: [],
-  ledger: [], licenses: [], media: { images: [], stick: { os: null, in: null } }, leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], unlocks: [], training: null, knowHow: 0, installed: ["Browser"], kbReads: {}, checklist: [], seenChanges: [], undocked: [], os: "aqua",
+  ledger: [], licenses: [], trials: [], media: { images: [], stick: { os: null, in: null } }, leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], contracts: [], unlocks: [], training: null, knowHow: 0, installed: ["Browser"], kbReads: {}, checklist: [], seenChanges: [], undocked: [], os: "aqua",
   customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], files: {},
-  invoices: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
+  invoices: [], transfers: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
+  quotes: [],
   billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 }, autoOrders: false, reviewOrders: false, screenOrders: false, screenChecks: 0, chargebackStrikes: 0,
   shop: newShop(),
   heldCustomers: [],
   heldServices: {},
+  gameServers: [],
   tickets: [], playerBusyUntil: 0, friendFavours: { year: 0, used: 0 }, player: { at: "loc1", until: 0, doing: "work" }, downSince: {}, frozen: [],
   company: { name: "Basement Hosting", logo: "server", color: "oklch(0.55 0.15 255)", domain: null, mail: { kind: "free" }, tagline: "" },
   homeLine: { id: MOMS_DSL.id, next: null },
@@ -361,10 +428,18 @@ export const newGame = (seed: number): GameState => ({
   chadUsage: newChadUsage(),
   ips: newIps(),
   netsvc: newNetSvc(),
+  webpanel: newWebPanel(),
   news: [],
+  competitors: seedRivals(seed),
+  shareLog: [],
   nextNode: 1, nextVm: 1, nextHostNo: firstHostNo(seed),
   used: [], usedRep: 0,
   log: [], challenge: null, registration: null, arrived: [], score: { netWorth: null, level3: null, happySum: 0, happyHours: 0 }, trend: [],
+  bank: null,
+  payables: [],
+  letters: [],
+  chamberYear: 0,
+  modules: [],
 });
 
 export const guideDoc = (): Doc => ({ id: "guide", kind: "guide", title: t("doc.guide"), body: "", x: 16, y: 46 });

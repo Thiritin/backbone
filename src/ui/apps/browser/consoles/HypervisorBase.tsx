@@ -9,7 +9,7 @@ import { APP_SUITE_FEE, imageParts, licensingAt, serverOsById, type OsImage } fr
 import type { GameState } from "../../../../sim/50-state";
 import { t } from "../../../../i18n/en";
 import { clusterSummary, type Alarm, type Amount, type Amounts, type Severity } from "../../../../sim/60-infra/alarms";
-import { privateIp } from "../../../../sim/60-infra/addresses";
+import { machineAddress } from "../../../../sim/60-infra/addresses";
 import { balances, datastoreFits, datastoreUp, deltaGb, hostOfVm, insideVm, isOwnVm, KEYS, nodeTakes, withDatastore, workloadsOn, type Cluster, type ClusterNode, type Ha, type Workload } from "../../../../sim/60-infra/cluster";
 import { machineScreen } from "../../../../sim/60-infra/oob";
 import { deviceHealth, working } from "../../../../sim/60-infra/status";
@@ -30,7 +30,7 @@ import { bootLines } from "../../console/lunix";
 import { useHandWork } from "../../locations/HandSheet";
 import { VM_STATE, vmLabel, vmState, type VmState } from "../../products/parts";
 import { Bar, Migrate, Resize, type Fact, type PanelAction } from "./PanelBase";
-import { HYPERVISOR_ORDERS, hostChoices, OrderPicker, PlanSelect } from "./PackageForms";
+import { ChangePackage, HYPERVISOR_ORDERS, hostChoices, OrderPicker, planChoices, PlanSelect } from "./PackageForms";
 import { orderChoices } from "../../../../sim/30-market/manual";
 import { provisionOrder } from "../../../../sim/90-actions/orders";
 import "./hypervisor.css";
@@ -91,12 +91,14 @@ export function useVms(game: GameState, c: Cluster, f: ConsoleFeatures): { vms: 
       templating && st === "stopped" && !tpl && { id: "template", label: t("browser-consoles-1.convertToTemplate"), run: () => act(makeTemplate, w.id) },
       tpl && { id: "clone", label: t("browser-consoles-1.clone"), run: toggle("clone") },
       tpl && { id: "vm", label: t("browser-consoles-1.convertToVm"), run: () => act(makeVm, w.id) },
+      planChoices(game, c, w.serviceId).length > 0 && { id: "plan", label: t("pkg.changePlan"), run: toggle("plan") },
       f.resize && own && { id: "resize", label: t("browser-consoles-1.resize"), run: toggle("resize") },
       own && { id: "console", label: t("browser-consoles-1.console"), run: () => openConsole(w.id) },
       f.delete && own && !insideVm(game, w.id).length && { id: "delete", label: t("browser-consoles-1.delete"), tone: "danger", run: toggle("delete") },
     ];
     const kind = open?.id === w.id ? open.kind : null, hold = holds(w);
     const panel = kind === "migrate" ? <Migrate game={game} w={w} c={c} done={close} />
+      : kind === "plan" && w.serviceId ? <ChangePackage game={game} c={c} serviceId={w.serviceId} done={close} />
       : kind === "storage" ? <DiskMove game={game} w={w} c={c} done={close} />
       : kind === "clone" ? <Clone game={game} w={w} c={c} done={close} />
       : kind === "resize" ? (host ? <Resize game={game} host={host} done={close} /> : <SizeForm w={w} done={close} />)
@@ -117,7 +119,7 @@ export function useVms(game: GameState, c: Cluster, f: ConsoleFeatures): { vms: 
       ) : hold?.panel ?? null;
     return {
       w, id: w.id, st, state: hold?.state?.[0] ?? state, tone: hold?.state?.[1] ?? tone, own, name: host?.name ?? label.name, sub: own ? (host ? consoleTitle(host.panel ?? host.platform ?? "") : "") : label.service,
-      node: nodeName(game, w.deviceId), ip: privateIp(game, w.id) ?? "", os: own ? osText(w) : "", media: w.media ?? null,
+      node: nodeName(game, w.deviceId), ip: machineAddress(game, w.id) ?? "", os: own ? osText(w) : "", media: w.media ?? null,
       use: workloadUse(game, w), actions: [...actions.filter((a): a is PanelAction => !!a), ...(hold?.actions ?? [])], panel, storage: w.datastore ? nodeName(game, w.datastore) : t("browser-consoles-1.local"),
     };
   });

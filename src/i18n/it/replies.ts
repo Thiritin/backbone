@@ -113,6 +113,11 @@ const MAILS: Record<string, [Mail, Mail, Mail]> = {
     () => "Ci sono due fatture perché i consumi vengono fatturati a fine mese per il mese precedente. Sono entrambe corrette, e nulla è stato addebitato due volte.",
     () => "Un pagamento è la fattura attuale, l'altro i consumi del mese scorso, che fatturiamo in via posticipata. Il tuo conto è in ordine.",
   ],
+  "tpl.foundPayment": [
+    () => "Abbiamo trovato il tuo bonifico e lo abbiamo registrato sulla fattura. Puoi ignorare il sollecito.",
+    () => "Grazie, il pagamento è arrivato e la fattura è saldata. Il sollecito è partito prima che lo registrassimo.",
+    () => "Il tuo bonifico ora è registrato sulla fattura. Non resta nulla di aperto, quindi il sollecito non vale più.",
+  ],
   "tpl.resend": [
     () => "Ti abbiamo mandato una copia della fattura. Facci sapere se non arriva.",
     () => "Una copia della fattura è in arrivo al tuo indirizzo di contatto.",
@@ -283,7 +288,14 @@ const MAILS: Record<string, [Mail, Mail, Mail]> = {
     (p) => `Tutto è configurato: ${hosting(p)} gira a ${p.city} ${since(p)}.${p.domain ? ` ${domainLine(p)}` : ""} I tuoi dati di accesso seguono in un'e-mail separata.`,
   ],
 };
-const LEAD = ["decline.notOffered", "decline.noCapacity", "decline.busy", "accept", "failed", "order.quote", "order.invoice", "order.live"];
+// The one email of a finished order: account, confirmation with its invoice, domain and setup.
+const DONE: [Mail, Mail, Mail] = [
+  (p) => `Confermiamo il tuo ordine di ${hosting(p)} a ${euroCents(Number(p.price))} al mese. Il tuo account cliente è attivo e in allegato trovi la fattura ${p.invoice} di ${euroCents(Number(p.total))}.`,
+  (p) => `Il tuo ordine è confermato e il tuo account cliente è pronto. Paga la fattura ${p.invoice} (${euroCents(Number(p.total))}) nei prossimi giorni.`,
+  (p) => `Grazie, l'ordine è confermato: ${hosting(p)} costa ${euroCents(Number(p.price))} al mese e la prima fattura, ${p.invoice}, ammonta a ${euroCents(Number(p.total))}. Il tuo account cliente è attivo.`,
+];
+MAILS["order.done"] = [0, 1, 2].map((i): Mail => (p) => `${DONE[i](p)} ${MAILS["order.live"][i](p)}`) as [Mail, Mail, Mail];
+const LEAD = ["decline.notOffered", "decline.noCapacity", "decline.busy", "accept", "failed", "order.quote", "order.invoice", "order.live", "order.done"];
 const SENDER = ["forward", "takedown", "notOurs", "reject", "comply", "object"];
 
 export default Object.fromEntries(Object.entries(MAILS).flatMap(([what, bodies]) =>
