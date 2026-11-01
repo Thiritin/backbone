@@ -133,17 +133,18 @@ export const generationAt = (year: number): number => {
 
 export const BASEMENT_SLOTS = 4;
 
+// Prices over time, keyframes: straight lines between [year, value] pairs, flat before the first and after the last.
+export function keyframes(keys: [number, number][], year: number): number {
+  const i = keys.findIndex(([y]) => y > year);
+  if (i < 0) return keys[keys.length - 1][1];
+  if (i === 0) return keys[0][1];
+  const [y0, v0] = keys[i - 1], [y1, v1] = keys[i];
+  return v0 + ((v1 - v0) * (year - y0)) / (y1 - y0);
+}
+
 // Electricity keyframes in ct/kWh (business); the basement pays 1.6×.
 const POWER_KEYS: [number, number][] = [[2005, 9], [2010, 12], [2014, 15], [2020, 18], [2022, 35], [2023, 25], [2026, 17]];
-export function businessPowerPrice(year: number): number {
-  const y = Math.min(Math.max(year, 2005), 2026);
-  for (let i = 1; i < POWER_KEYS.length; i++) {
-    const [y1, p1] = POWER_KEYS[i];
-    const [y0, p0] = POWER_KEYS[i - 1];
-    if (y <= y1) return (p0 + ((p1 - p0) * (y - y0)) / (y1 - y0)) / 100;
-  }
-  return POWER_KEYS[POWER_KEYS.length - 1][1] / 100;
-}
+export const businessPowerPrice = (year: number): number => keyframes(POWER_KEYS, year) / 100;
 
 export const SERVER_AFR = 0.08;
 export const REPAIR_HOURS = 8;

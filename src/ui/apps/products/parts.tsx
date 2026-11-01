@@ -4,6 +4,7 @@ import { formatClock, START_YEAR, yearOf } from "../../../sim/00-core/time";
 import { SERVES, softwareById, softwareOf, type Software, type SoftwareKind } from "../../../sim/10-catalog/platforms";
 import { PRODUCTS } from "../../../sim/10-catalog/products";
 import { licensingAt, type LicenseKind } from "../../../sim/10-catalog/server-os";
+import { licenceIndex } from "../../../sim/10-catalog/licence-tiers";
 import { t } from "../../../i18n/en";
 import { PRODUCT } from "../support/labels";
 import type { GameState } from "../../../sim/50-state";
@@ -42,7 +43,7 @@ export function Mark({ id, size = 28 }: { id: string | null; size?: number }) {
 const UNIT: Record<LicenseKind, string> = { free: "", once: t("misc1.parts.perSocket"), account: t("misc1.parts.perWebSpace"), server: t("misc1.parts.perServer"), core: t("misc1.parts.perCore"), gameserver: t("misc1.parts.perGameserver") };
 export const licenseText = (sw: Software, year: number) => {
   const era = licensingAt(sw, year);
-  return era.kind === "free" ? t("misc1.parts.free") : t("misc1.parts.fee", { fee: euroCents(era.fee), unit: UNIT[era.kind] });
+  return era.kind === "free" ? t("misc1.parts.free") : t("misc1.parts.fee", { fee: euroCents(era.fee * licenceIndex(sw.id, year)), unit: UNIT[era.kind] });
 };
 const cp = (sw: Software) => `${+sw.controlPlane.vcpu.toFixed(2)} vCPU · ${+sw.controlPlane.ramGb.toFixed(2)} GB`;
 

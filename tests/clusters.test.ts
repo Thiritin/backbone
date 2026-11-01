@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { buyAddresses } from "../src/sim/90-actions/addresses";
 import { yearOf } from "../src/sim/00-core/time";
-import { marketPrice, PRODUCTS, SIZES, sizeSpec } from "../src/sim/10-catalog/products";
+import { FIXED_KEYS, marketPrice, PRODUCTS, SIZES, sizeSpec } from "../src/sim/10-catalog/products";
+import { keyframes } from "../src/sim/10-catalog/economy";
 import { serviceOnline } from "../src/sim/40-support/status";
 import { bumpProbe } from "../src/sim/40-support/tickets";
 import { invoiceTotal, SLA_KEPT_HAPPINESS } from "../src/sim/45-billing/billing";
@@ -49,7 +50,8 @@ describe("product catalog", () => {
   it("prices sizes at the market reference for the year", () => {
     const web = (y: number) => marketPrice("webHosting", sizeSpec("webHosting", 1, y), y);
     expect(web(2005)).toBe(6);
-    expect(web(2020)).toBeCloseTo(6, 0);
+    // economy.md, Prices over time: sizes grow while the price follows the web hosting keyframes.
+    expect(web(2020)).toBeCloseTo(6 * keyframes(FIXED_KEYS.webHosting!, 2020), 0);
     // economy.md: 1 vCPU, 512 MB and 10 GB in 2005 come to 0.65 × the €30 GB rate, less the traffic below the middle size's.
     const vps = (y: number, sla?: "premium") => marketPrice("vps", sizeSpec("vps", 0, y), y, sla);
     expect(vps(2005)).toBeCloseTo(19.41, 2);
@@ -59,8 +61,8 @@ describe("product catalog", () => {
     expect(game(2026)).toBeCloseTo(11.7, 2);
     expect(vps(2026)).toBeLessThan(vps(2005));
     expect(vps(2005, "premium")).toBeCloseTo(1.5 * vps(2005), 1);
-    expect(marketPrice("ssl", sizeSpec("ssl", 0, 2010), 2010)).toBe(50);
-    expect(marketPrice("ssl", sizeSpec("ssl", 0, 2016), 2016)).toBe(0);
+    expect(marketPrice("ssl", sizeSpec("ssl", 0, 2010), 2010)).toBe(40);
+    expect(marketPrice("ssl", sizeSpec("ssl", 0, 2016), 2016)).toBe(28);
   });
   it("gives every product a place to run, terms and at least one size", () => {
     for (const sizes of Object.values(SIZES)) expect(sizes.length).toBeGreaterThan(0);

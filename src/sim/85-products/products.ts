@@ -8,7 +8,7 @@ import { balancerIn, isService, softwareById } from "../10-catalog/platforms";
 import { slowTolerance } from "../10-catalog/usage";
 import { channelOf, EDGE_HOWTO } from "../60-infra/channel";
 import { accountsOn, keyTiers, shopMachine, assignedKey, extendKey, productOf, panelMachine, startTrial, tiersOnSale, updateKey, yearly } from "../60-infra/licence";
-import { LAPSE_GRACE_DAYS, topTier, type LicenceTier } from "../10-catalog/licence-tiers";
+import { LAPSE_GRACE_DAYS, licenceIndex, topTier, type LicenceTier } from "../10-catalog/licence-tiers";
 import { APP_SUITE_FEE, eraAt } from "../10-catalog/server-os";
 import { homeLineById } from "../20-world/datacenters";
 import type { Customer, Product } from "../30-customers/customers";
@@ -273,8 +273,10 @@ function billLicenses(s: GameState) {
 }
 
 // The fee per term of a subscription key: its edition's or its product's price per account, server, game server beyond the
-// free ones, or core of its machine, a server counting at least the era's minimum cores. An unassigned key pays for one unit.
-export function keyFee(s: GameState, k: Licence): number {
+// free ones, or core of its machine, a server counting at least the era's minimum cores, at the year's price rises. An
+// unassigned key pays for one unit.
+export const keyFee = (s: GameState, k: Licence): number => Math.round(listFee(s, k) * licenceIndex(k.product, yearOf(s.hour)) * 100) / 100;
+function listFee(s: GameState, k: Licence): number {
   const tier = keyTiers(k.product).find((x) => x.id === k.edition);
   const c = s.clusters.find((x) => x.panel === k.product && panelMachine(x) === k.machineId);
   if (tier) return c ? tierFee(s, c, tier) : tier.fee;
@@ -312,7 +314,7 @@ export function renewKeys(s: GameState): void {
       const next = renewalTier(s, k, k.renewsAt), c = keyCluster(s, k);
       if (next && next.id !== k.edition) {
         const name = productOf(k.product)!.name, from = keyTiers(k.product).find((x) => x.id === k.edition)!.name;
-        deliverMail(s, name, "licenceEditionChange", { name, key: k.key, from, to: next.name, amount: c ? tierFee(s, c, next) : next.fee });
+        deliverMail(s, name, "licenceEditionChange", { name, key: k.key, from, to: next.name, amount: Math.round((c ? tierFee(s, c, next) : next.fee) * licenceIndex(k.product, yearOf(k.renewsAt)) * 100) / 100 });
       }
     }
     if (s.hour < k.renewsAt) continue;

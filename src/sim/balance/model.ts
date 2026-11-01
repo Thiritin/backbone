@@ -37,7 +37,7 @@ import { rivalTrust, TIERS } from "../10-catalog/hosttoast";
 import { hourOf } from "../00-core/time";
 import { CHARGEBACK_FEE, fraudShare, TRANSFER_FACTOR } from "../45-billing/fraud";
 import { factorFor, REGISTRARS, tierFor } from "../10-catalog/registrars";
-import { DOMAIN_FEE, registryCost } from "../30-customers/registry";
+import { domainFee, registryCost } from "../30-customers/registry";
 import { providerById } from "../80-business/mail";
 import type { Product as LiveProduct } from "../30-customers/customers";
 
@@ -459,7 +459,7 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     // customers who ordered by email, who pay the yearly fee in return. The company books Hosted Exchange for the owner and every
     // employee (Company email).
     const customerDomains = PROFILES.reduce((a, _, i) => a + cohorts[i][0].n, 0) * (website ? EMAIL_SHARE : 1), domains = 1 + customerDomains;
-    const domainBill = (domains * registryCost("x.de", year) * factorFor(REGISTRARS[0], "de", tierFor(domains)) - customerDomains * DOMAIN_FEE) / 12;
+    const domainBill = (domains * registryCost("x.de", year) * factorFor(REGISTRARS[0], "de", tierFor(domains)) - customerDomains * domainFee(year)) / 12;
     const mailBill = (1 + support.length + books.length) * providerById("hostedExchange")!.price(year);
     const chadPrice = chad ? subscriptionPrice(CHAD, year) + botTickets * mix((k) => costPerTicket(k, year)) : 0;
     // Every VPS and game server holds an address: extra business line addresses in the basement, provider addresses (one

@@ -1,7 +1,8 @@
 // GDD, Domains: domains registered or transferred for customers, renewed yearly at the registry of their TLD.
 // Numbers in economy.md, Domains.
 import { hashRng, rand } from "../00-core/rng";
-import { nowMinutes } from "../00-core/time";
+import { hourOf, nowMinutes } from "../00-core/time";
+import { marketRates } from "../10-catalog/products";
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import type { Service } from "./customers";
@@ -14,8 +15,9 @@ export const REGISTER_MINUTES = 2;
 export const registering = (s: GameState, d: Domain): boolean => (d.readyAt ?? 0) > nowMinutes(s);
 
 export const YEAR = 8760, DAY = 24;
-// What the registry charges per year, in 2005 and from 2026 on; linear in between.
-export const REGISTRIES: Record<string, { name: string; cost: [number, number] }> = {
+// What the registry charges per year, in 2005 and from 2026 on; linear in between. A registry with steps charges the last
+// step's price that has taken effect instead, [year, month 1 to 12, euros]; it announces each one NOTICE_MONTHS before.
+export const REGISTRIES: Record<string, { name: string; cost: [number, number]; steps?: [number, number, number][] }> = {
   de: { name: "DENIQ", cost: [12, 6] },
   at: { name: "nick.at", cost: [25, 12] },
   ch: { name: "SWISCH", cost: [15, 9] },
@@ -23,16 +25,20 @@ export const REGISTRIES: Record<string, { name: string; cost: [number, number] }
   fr: { name: "AFNIQUE", cost: [20, 9] },
   nl: { name: "SIDNey", cost: [10, 6] },
   it: { name: "Registrato.it", cost: [15, 8] },
-  com: { name: "VeriSigh", cost: [6, 9] },
+  com: { name: "VeriSigh", cost: [6, 9], steps: [[2005, 1, 6], [2007, 10, 6.42], [2008, 10, 6.86], [2010, 7, 7.34], [2012, 1, 7.85], [2021, 9, 8.39], [2022, 9, 8.97], [2023, 9, 9.59], [2024, 9, 10.26]] },
 };
-// What the customer pays: a yearly fee for a new or renewed domain, a one-off fee for a transfer (its first year included).
-export const DOMAIN_FEE = 15;
+// What the customer pays: the market's yearly domain price for a new or renewed domain, a one-off fee for a transfer (its first year included).
+export const domainFee = (year: number): number => Math.round((marketRates("domain", year).base ?? 0) * 100) / 100;
+export const REGISTRY_NOTICE_MONTHS = 6;
+export const stepAt = (step: [number, number, number]): number => hourOf(new Date(Date.UTC(step[0], step[1] - 1, 1)));
 export const TRANSFER_FEE = 5;
 export const EXPIRY_NOTICE_DAYS = 30;
 
 export const tldOf = (name: string): string => Object.keys(REGISTRIES).find((t) => name.endsWith(`.${t}`)) ?? "de";
 export const registryOf = (name: string) => REGISTRIES[tldOf(name)];
-export function registryCost(name: string, year: number): number {
+export function registryCost(name: string, year: number, month = 0): number {
+  const steps = registryOf(name).steps?.filter(([y, m]) => y < year || (y === year && m <= month + 1));
+  if (steps?.length) return steps[steps.length - 1][2];
   const [a, b] = registryOf(name).cost, k = Math.min(1, Math.max(0, (year - 2005) / 21));
   return Math.round((a + (b - a) * k) * 100) / 100;
 }

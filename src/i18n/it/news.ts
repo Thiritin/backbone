@@ -1,5 +1,9 @@
+import { euroCents } from "../../sim/00-core/money";
+import { dateOf } from "../../sim/00-core/time";
+import { LOCALE } from "../lang";
 import type { Dict, Params } from "../lang";
 
+const day = (hour: string | number) => dateOf(Number(hour)).toLocaleDateString(LOCALE, { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
 const list = (v: string | number) => { const a = String(v).split("|"); return a.length < 2 ? a[0] : `${a.slice(0, -1).join(", ")} e ${a[a.length - 1]}`; };
 const FEATURE: Record<string, string> = {
   cluster: "funziona come un unico cluster su più server",
@@ -65,5 +69,13 @@ export default {
   "event.news.ports.title": (p) => `Porte da ${p.gbit} Gbit/s`,
   "event.news.ports.text": (p) => `Golem.dy riferisce che carrier e internet exchange ora vendono porte da ${p.gbit} Gbit/s.`,
   "event.news.freeSsl.title": () => "Certificati SSL gratuiti",
-  "event.news.freeSsl.text": () => "Handelsblah riferisce che Let's Encryptly ora emette certificati SSL gratis e i clienti non si aspettano più di pagarne uno.",
+  "event.news.freeSsl.text": () => "Handelsblah riferisce che Let's Encryptly ora emette certificati SSL gratis e i clienti privati non si aspettano più di pagarne uno.",
+  "event.news.licenceModel.title": (p) => `${p.name} cambia le sue licenze`,
+  "event.news.licenceModel.text": (p) => `Heize online riferisce che ${p.name} vende le sue licenze a nuove condizioni dal ${day(p.at)}.`,
+  "event.news.licenceRise.title": (p) => `${p.name} aumenta i prezzi`,
+  "event.news.licenceRise.text": (p) => `Heize online riferisce che ${p.name} aumenta i prezzi delle licenze del ${p.pct}% il ${day(p.at)}.`,
+  "event.news.registryPrice.title": (p) => `${p.name} aumenta la tariffa`,
+  "event.news.registryPrice.text": (p) => `Golem.dy riferisce che ${p.name} addebita ai registrar ${euroCents(Number(p.price))} all'anno per dominio dal ${day(p.at)}.`,
+  "event.news.marketPrice.title": (p) => `Prezzi in aumento: ${p.line}`,
+  "event.news.marketPrice.text": (p) => `Handelsblah riferisce che i grandi provider aumentano i prezzi (${p.line}) del ${p.pct}% il ${day(p.at)}.`,
 } satisfies Dict;

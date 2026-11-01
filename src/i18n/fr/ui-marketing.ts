@@ -16,6 +16,8 @@ export default {
   "marketing.unitRamGb": () => "Par Go de RAM",
   "marketing.unitDiskGb": () => "Par Go de disque",
   "marketing.unitMailbox": () => "Par boîte mail",
+  "marketing.unitOv": () => "Validation OV",
+  "marketing.unitEv": () => "Validation EV",
   "marketing.unitZone": () => "Par zone",
   "marketing.unitUser": () => "Par utilisateur",
   "marketing.unitUnit": () => "Par unité de baie",

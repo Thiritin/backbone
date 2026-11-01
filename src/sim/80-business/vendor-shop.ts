@@ -1,6 +1,8 @@
 // docs/design/plans/software-licences.md, lanes vendor-shop and my-account: the cart, checkout and order email every vendor
 // site shares.
 import { eraAt, type LicenseKind } from "../10-catalog/server-os";
+import { licenceIndex } from "../10-catalog/licence-tiers";
+import { yearOf } from "../00-core/time";
 import type { GameState, Licence } from "../50-state";
 import { nextMajor, versionAt, versionsOf } from "../10-catalog/software-versions";
 import { issueKey, isLicensed, productOf, tiersOnSale, yearAfter } from "../60-infra/licence";
@@ -21,8 +23,9 @@ export function offers(product: string, hour: number): Offer[] {
   const p = productOf(product);
   const era = p && isLicensed(product) ? eraAt(p, hour) : undefined;
   if (era?.closed) return [];
-  const tiers: Offer[] = tiersOnSale(product, hour).map((x) => ({ edition: x.id, fee: x.fee, kind: x.kind }));
-  const own = era && era.kind !== "free" && (era.kind === "once" || !tiers.length) ? [{ edition: null, fee: era.fee, kind: era.kind, period: era.period }] : [];
+  const at = (fee: number) => Math.round(fee * licenceIndex(product, yearOf(hour)) * 100) / 100;
+  const tiers: Offer[] = tiersOnSale(product, hour).map((x) => ({ edition: x.id, fee: at(x.fee), kind: x.kind }));
+  const own = era && era.kind !== "free" && (era.kind === "once" || !tiers.length) ? [{ edition: null, fee: at(era.fee), kind: era.kind, period: era.period }] : [];
   return [...tiers, ...own];
 }
 export const offerOf = (line: Pick<CartLine, "product" | "edition">, hour: number): Offer | undefined =>

@@ -3,6 +3,7 @@ import { isMonthStart } from "../src/sim/00-core/time";
 import { certificateOf, offerCertificate } from "../src/sim/30-customers/certificates";
 import { registrarBill } from "../src/sim/30-customers/registrar";
 import type { GameState } from "../src/sim/50-state";
+import type { Profile } from "../src/sim/30-customers/customers";
 import { tick } from "../src/sim/88-tick/tick";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
@@ -10,8 +11,8 @@ import { setLine } from "../src/sim/90-actions/website";
 import { readyGame, skipTo } from "./fixtures";
 
 // A customer with a domain service standing in for their web hosting: the offer only reads the customer and the domain.
-function customer(s: GameState) {
-  const id = addCustomer(s, "Kunde", "smallBiz");
+function customer(s: GameState, profile: Profile = "smallBiz") {
+  const id = addCustomer(s, "Kunde", profile);
   provisionService(s, id, "domain", { label: "kunde.de" });
   return s.services.find((v) => v.customerId === id)!;
 }
@@ -29,13 +30,13 @@ describe("SSL certificates", () => {
     expect(offerCertificate(s, v, 1)).toBeNull();
   });
 
-  it("need a registrar partner and stop selling once certificates are free", () => {
+  it("need a registrar partner and stop selling to private customers once certificates are free", () => {
     const s = readyGame(1), v = customer(s);
     listSsl(s);
     s.registrar = null;
     expect(offerCertificate(s, v, 1)).toBeNull();
     expect(setLine(s, "ssl", true)).toMatchObject({ ok: false, error: "error.needsRegistrar" });
-    const later = readyGame(1), w = customer(later);
+    const later = readyGame(1), w = customer(later, "private");
     listSsl(later);
     skipTo(later, 2016);
     expect(offerCertificate(later, w, 1)).toBeNull();

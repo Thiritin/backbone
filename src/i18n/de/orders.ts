@@ -14,6 +14,8 @@ export default {
   "event.order.text": (p) => `${p.name} bestellt ${p.spec}.`,
   "event.certificateSold.title": () => "SSL-Zertifikat verkauft",
   "event.certificateSold.text": (p) => `${p.name} hat ein SSL-Zertifikat für ${p.domain} bestellt.`,
+  "event.certificatesFree.title": () => "SSL-Zertifikate gekündigt",
+  "event.certificatesFree.text": (p) => (p.n === 1 ? "Ein Kunde hat sein SSL-Zertifikat gekündigt." : `${p.n} Kunden haben ihre SSL-Zertifikate gekündigt.`),
   "event.orderPlaced.title": () => "Neue Bestellung",
   "event.orderPlaced.text": (p) => `${p.name} hat im Shop für ${euroCents(Number(p.price))} im Monat bestellt: ${p.spec}.`,
   "event.orderQuoted.title": () => "Angebot erstellt",

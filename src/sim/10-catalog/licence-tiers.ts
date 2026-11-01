@@ -22,3 +22,14 @@ export const TIERS: Record<string, LicenceTier[]> = {
 export const tiersOf = (softwareId: string | null): LicenceTier[] => (softwareId ? TIERS[softwareId] ?? [] : []);
 export const topTier = (softwareId: string | null): LicenceTier | undefined => tiersOf(softwareId).at(-1);
 export const LAPSE_GRACE_DAYS = 7;
+
+// economy.md, Licence price rises: on 1 January of each year listed a vendor's list prices become this multiple of the
+// era's fees; the vendor announces it RISE_NOTICE_MONTHS before.
+export const LICENCE_RISES: Record<string, [number, number][]> = {
+  cpanic: [[2021, 1.1], [2022, 1.21], [2023, 1.33], [2024, 1.46], [2025, 1.61]],
+  pleskit: [[2021, 1.1], [2023, 1.2], [2025, 1.3]],
+  windoors: [[2025, 1.1]],
+};
+export const RISE_NOTICE_MONTHS = 3;
+export const licenceIndex = (product: string, year: number): number =>
+  (LICENCE_RISES[product] ?? []).reduce((f, [y, x]) => (y <= year ? x : f), 1);

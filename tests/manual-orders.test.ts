@@ -1,8 +1,10 @@
+import { yearOf } from "../src/sim/00-core/time";
 import { describe, expect, it } from "vitest";
 import { orderLead } from "../src/sim/30-market/orders";
 import { setupFee, specText } from "../src/sim/30-market/spec";
 import { hostFor, invoiceOf, nextStep, stepsDone } from "../src/sim/30-market/manual";
-import { domainOf, DOMAIN_FEE, registryCost, REGISTRIES } from "../src/sim/30-customers/registry";
+import { domainOf, domainFee, registryCost, REGISTRIES } from "../src/sim/30-customers/registry";
+const DOMAIN_FEE = domainFee(2005);
 import { serviceOnline } from "../src/sim/40-support/status";
 import { sendStep, STEPS } from "../src/sim/45-billing/billing";
 import { visibleCandidates } from "../src/sim/47-staff/staff";
@@ -230,7 +232,7 @@ describe("domains", () => {
     expect(serviceOnline(s, v)).toBe(true);
     expect(domainOf(s, name)!.expiresAt).toBeGreaterThan(s.hour + 8000);
     expect(s.invoices.length).toBe(invoices + 1);
-    expect(s.invoices.at(-1)!.lines[0]).toMatchObject({ key: "invoice.line.domainRenewal", amount: DOMAIN_FEE });
+    expect(s.invoices.at(-1)!.lines[0]).toMatchObject({ key: "invoice.line.domainRenewal", amount: domainFee(yearOf(s.hour)) });
   });
 
   it("loads saves from before domains", () => {

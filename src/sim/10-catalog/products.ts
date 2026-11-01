@@ -1,5 +1,5 @@
 import type { Product } from "../30-customers/customers";
-import { priceAt, vpsPlanGb, vpsRatePerGb } from "./economy";
+import { keyframes, priceAt, vpsPlanGb, vpsRatePerGb } from "./economy";
 import { retailV4 } from "./addresses";
 import { UPDATE_PRICE, type App } from "./apps";
 import { gpuRent } from "./gpu";
@@ -14,7 +14,9 @@ export interface Spec extends Resources { accounts?: number; trafficGb: number; 
   // Web hosting: the app the customer runs, its release year and the hour it was last updated (apps.ts), and whether the customer pays for updates.
   app?: App; appVersion?: number; appUpdatedAt?: number; managedUpdates?: boolean;
   // Web hosting only: the host the customer's site still runs on and expects moved (webpanel.ts, Transfers).
-  transferFrom?: string }
+  transferFrom?: string;
+  // SSL only: an OV or EV certificate; without it a DV one.
+  cert?: "ov" | "ev" }
 // cluster: a workload on a cluster node; server: a whole server; rack: units and power in a datacenter rack; none: resold.
 export type RunsOn = "cluster" | "server" | "rack" | "none";
 export interface ProductSpec { runsOn: RunsOn; period: "hour" | "year"; commitMonths: number; ha?: boolean }
@@ -46,7 +48,7 @@ export const PRODUCTS: Record<Product, ProductSpec> = {
   reseller: { runsOn: "cluster", period: "hour", commitMonths: 1 },
 };
 
-type Size = (year: number) => Resources & { accounts?: number; trafficGb?: number; zones?: number; users?: number; units?: number; watts?: number };
+type Size = (year: number) => Resources & { cert?: Spec["cert"]; accounts?: number; trafficGb?: number; zones?: number; users?: number; units?: number; watts?: number };
 const NONE: Resources = { vcpu: 0, ramGb: 0, diskGb: 0 };
 const grow = (year: number) => vpsPlanGb(year);
 // A web space uses 0.1 vCPU, 0.25 GB of RAM and its disk, which grows like VPS RAM.
@@ -83,7 +85,7 @@ export const SIZES: Record<Product, Size[]> = {
   colocation: [colo(1, 150), colo(10, 1000), colo(21, 2000), colo(42, 4000)],
   gpu: [cards(1), cards(2), cards(4), cards(8)],
   domain: [fixed(NONE)],
-  ssl: [fixed(NONE)],
+  ssl: [fixed(NONE), () => ({ ...NONE, cert: "ov" }), () => ({ ...NONE, cert: "ev" })],
   // economy.md, Resellers: the Small, Medium and Large block.
   reseller: [block(20, 50, 500), block(50, 150, 1500), block(100, 350, 4000)],
 };
@@ -105,11 +107,11 @@ export function sizeSpec(product: Product, i: number, year: number): Spec {
 
 // What a line charges for: a base fee per service and a price per resource unit; traffic is per 100 GB a month.
 // ip is a dedicated IPv4 address a month; gpu is a card a month; updates is managed updates a month and updateOnce a one-off update, which only web hosting sells.
-export type Unit = "base" | "vcpu" | "ramGb" | "diskGb" | "mailbox" | "zone" | "user" | "unit" | "kw" | "traffic" | "ip" | "gpu" | "updates" | "updateOnce" | "account";
+export type Unit = "base" | "ov" | "ev" | "vcpu" | "ramGb" | "diskGb" | "mailbox" | "zone" | "user" | "unit" | "kw" | "traffic" | "ip" | "gpu" | "updates" | "updateOnce" | "account";
 const VM: Unit[] = ["base", "vcpu", "ramGb", "diskGb", "traffic", "ip"];
 export const UNITS: Record<Product, Unit[]> = {
   webHosting: ["base", "diskGb", "mailbox", "traffic", "ip", "updates", "updateOnce"], vps: VM, gameServer: VM, cloud: VM, storage: ["base", "diskGb", "traffic"],
-  dns: ["base", "zone", "traffic"], vpn: ["base", "user", "traffic"], domain: ["base"], ssl: ["base"], dedicated: ["base", "ramGb", "traffic", "ip"],
+  dns: ["base", "zone", "traffic"], vpn: ["base", "user", "traffic"], domain: ["base"], ssl: ["base", "ov", "ev"], dedicated: ["base", "ramGb", "traffic", "ip"],
   colocation: ["base", "unit", "kw", "traffic", "ip"], gpu: ["gpu", "traffic", "ip"], reseller: ["account"],
 };
 // A line's rates in euros per unit, and its one-time setup fee; a unit without one charges the market rate.
@@ -136,19 +138,35 @@ export function marketRates(product: Product, year: number): Rates {
   const scaled = Object.fromEntries(Object.entries(rates).map(([u, x]) => [u, u === "ip" || u in UPDATE_PRICE ? x : x * (1 - share)]));
   return { ...scaled, traffic: (share * rest) / unitAmount(mid, "traffic") };
 }
+// economy.md, Prices over time: the share of the 2005 rates a fixed-price line charges in a year, and the yearly SSL
+// prices by validation, which the OV and EV rates add to the DV base.
+export const FIXED_KEYS: Partial<Record<Product, [number, number][]>> = {
+  webHosting: [[2005, 1], [2010, 0.95], [2015, 0.85], [2022, 0.8], [2023, 0.88]],
+  domain: [[2005, 1], [2012, 0.93], [2021, 0.93], [2026, 1]],
+  dedicated: [[2005, 1], [2012, 0.8], [2021, 0.65], [2023, 0.75], [2026, 0.8]],
+};
+export const SSL_KEYS: Record<"dv" | "ov" | "ev", [number, number][]> = {
+  dv: [[2005, 50], [2010, 40], [2015, 30], [2020, 20], [2026, 15]],
+  ov: [[2005, 150], [2015, 120], [2026, 100]],
+  ev: [[2005, 400], [2015, 300], [2020, 250], [2026, 200]],
+};
+const scaled = (product: Product, year: number, rates: Rates): Rates => {
+  const f = keyframes(FIXED_KEYS[product]!, year);
+  return Object.fromEntries(Object.entries(rates).map(([u, x]) => [u, x * f]));
+};
 function resourceRates(product: Product, year: number): Rates {
   const r = vpsRatePerGb(year), g = grow(year);
   switch (product) {
-    case "webHosting": return { base: 0.9, diskGb: 2.25 / g, mailbox: 0.3 };
+    case "webHosting": return scaled(product, year, { base: 0.9, diskGb: 2.25 / g, mailbox: 0.3 });
     case "vps": return { vcpu: 0.2 * r, ramGb: 0.5 * r, diskGb: 0.02 * r };
     case "gameServer": return { vcpu: 0.4 * r, ramGb: 1.35 * r, diskGb: 0.02 * r };
     case "cloud": return { vcpu: 0.25 * r, ramGb: 0.625 * r, diskGb: 0.025 * r };
     case "storage": return { diskGb: priceAt(2.6, 32, year) / 1000 };
     case "dns": return { base: 0.5, zone: 0.3 };
     case "vpn": return { base: 0.5, user: 1.5 };
-    case "domain": return { base: 15 };
-    case "ssl": return { base: year < 2016 ? 50 : 0 };
-    case "dedicated": return { base: 6, ramGb: 220 / 24 / g };
+    case "domain": return scaled(product, year, { base: 15 });
+    case "ssl": { const dv = keyframes(SSL_KEYS.dv, year); return { base: dv, ov: keyframes(SSL_KEYS.ov, year) - dv, ev: keyframes(SSL_KEYS.ev, year) - dv }; }
+    case "dedicated": return scaled(product, year, { base: 6, ramGb: 220 / 24 / g });
     case "colocation": return { base: 15, unit: 30, kw: 100 };
     case "gpu": return { gpu: gpuRent(year) };
     // economy.md, Resellers: half the market price of an average web space, per account of the block.
@@ -157,7 +175,7 @@ function resourceRates(product: Product, year: number): Rates {
 }
 
 export const unitAmount = (spec: Spec, u: Unit): number =>
-  u === "base" ? 1 : u === "account" ? spec.accounts ?? 0 : u === "mailbox" ? spec.mailboxes : u === "zone" ? spec.zones ?? 0 : u === "user" ? spec.users ?? 0
+  u === "base" ? 1 : u === "ov" || u === "ev" ? Number(spec.cert === u) : u === "account" ? spec.accounts ?? 0 : u === "mailbox" ? spec.mailboxes : u === "zone" ? spec.zones ?? 0 : u === "user" ? spec.users ?? 0
     : u === "unit" ? spec.units ?? 0 : u === "kw" ? (spec.watts ?? 0) / 1000 : u === "traffic" ? spec.trafficGb / 100 : u === "ip" ? spec.ipv4 ?? 0 : u === "gpu" ? spec.gpus ?? 0
       : u === "updates" ? Number(!!spec.managedUpdates) : u === "updateOnce" ? 0 : spec[u];
 

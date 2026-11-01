@@ -89,6 +89,7 @@ export function specText(product: Product, spec: Spec): string {
               : product === "dns" ? [t("sim.spec.zones", { n: spec.zones ?? 0 })]
                 : product === "vpn" ? [t("sim.spec.users", { n: spec.users ?? 0 })]
               : product === "reseller" ? [t("sim.spec.accounts", { n: spec.accounts ?? 0 }), gb(spec.diskGb)]
+              : product === "ssl" ? [(spec.cert ?? "dv").toUpperCase()]
               : [];
   const addresses = [...(spec.ipv4 ? [t("sim.spec.ipv4", { n: spec.ipv4 })] : []), ...(spec.ipv6 ? ["IPv6"] : [])];
   return [LINE_NAME[product], ...parts, ...(spec.arch ? [spec.arch] : []), ...addresses].join(", ");
