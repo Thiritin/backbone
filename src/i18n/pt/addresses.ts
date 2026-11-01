@@ -41,5 +41,7 @@ export default {
   "error.badAddress": () => "Digite um endereço IPv4 privado.",
   "error.portShared": () => "A porta 80 já está compartilhada com outro dispositivo.",
   "error.noAddress": () => "Este dispositivo não tem endereço na rede do roteador.",
+  "error.badIp": () => "O endereço IP não é válido.",
+  "error.notServerNet": () => "Só os servidores têm uma configuração de rede.",
   "error.notOfficeRouter": () => "Só um roteador de pequeno escritório substitui o do porão.",
 } satisfies Dict;

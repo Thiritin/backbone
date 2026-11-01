@@ -16,4 +16,5 @@ export default {
   "error.noAppSuite": () => "Questo cluster non ha l'App Suite.",
   "error.hasAppSuite": () => "Questo cluster ha già l'App Suite.",
   "error.noDownload": () => "Il programma di installazione non è riuscito a scaricare il pacchetto.",
+  "error.noMirror": () => "Il mirror dell'archivio Debiant indicato non è raggiungibile.",
 } satisfies Dict;

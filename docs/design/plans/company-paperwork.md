@@ -31,7 +31,7 @@ The Yahoy! Directory lists the trade office under Government.
 6. A partnership: the trade office confirms by letter three working days later, with its fee. The form changes when that letter lands.
 7. A limited company: the notary confirms it files within three working days and bills its fee by letter two working days later. The register's entry letter lands thirteen working days after sending, and the form changes then. The register's invoice follows three working days later.
 8. No downgrade exists. Every path that would lower the form, including a stale form on the desktop, is refused with `error.legalFormDown`. While a change waits for its letter, no second application is taken (`error.changePending`).
-9. A bank that opens no account for the target form refuses the change (`error.bankForm`); netbunk has no limited company account.
+9. A bank that opens no account for the target form refuses the change (`error.bankForm`); Ding-DiBa has no limited company account.
 10. A limited company needs the Company law training in Research (company track, tier 1, 100 know-how, 10 days, no prerequisites). Until it is learned, the Forms page does not list the limited company and every path to it is refused with `error.companyLaw`. A partnership needs no training.
 
 ## Numbers
