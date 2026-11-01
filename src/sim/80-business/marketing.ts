@@ -7,6 +7,7 @@ import { BADGE_TRUST, TIERS, TRUST_CAP } from "../10-catalog/hosttoast";
 import type { Product, Profile } from "../30-customers/customers";
 import { profileStats } from "../40-support/tickets";
 import type { GameState, LedgerEntry } from "../50-state";
+import type { CatalogProduct } from "./catalog";
 import type { SimEvent } from "../88-tick/tick";
 import { campaignBoost, hasMarketingManager, reviewBoost } from "../47-staff/staff";
 import { communityBatches } from "./community";
@@ -78,6 +79,8 @@ export interface Marketing {
   siteOutage: boolean;
   // Leads per line lost because no catalog product fitted, this month and last month.
   unmet: { month: Partial<Record<Product, number>>; last: Partial<Record<Product, number>> };
+  // The catalog as last published to the website; leads decide on it. Null until the first publish.
+  published: CatalogProduct[] | null;
 }
 export type SiteHost = { kind: "rented" } | { kind: "own"; clusterId: string };
 
@@ -93,7 +96,7 @@ export function wonLeads(s: GameState, ago: 0 | 1): Partial<Record<Product, numb
 }
 
 export const newMarketing = (): Marketing => ({
-  owned: [], campaigns: [], reviews: [], platform: null, studies: [], lines: [], emailOrders: true, siteReady: null, launched: false, siteHost: { kind: "rented" }, designYear: 2005, siteOutage: false, unmet: { month: {}, last: {} },
+  owned: [], campaigns: [], reviews: [], platform: null, studies: [], lines: [], emailOrders: true, siteReady: null, launched: false, siteHost: { kind: "rented" }, designYear: 2005, siteOutage: false, unmet: { month: {}, last: {} }, published: null,
   awareness: Object.fromEntries(PROFILE_IDS.map((p) => [p, p === "private" || p === "gamer" ? 0.05 : AWARENESS_FLOOR])) as Record<Profile, number>,
 });
 

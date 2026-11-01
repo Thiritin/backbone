@@ -232,6 +232,7 @@ export default {
   "error.invoiceSettled": () => "Cette facture est déjà réglée.",
   "error.invoiceSent": () => "Cette facture a déjà été envoyée.",
   "error.transferMatched": () => "Ce virement est déjà comptabilisé.",
+  "error.transferChanged": () => "La facture a changé depuis la comptabilisation.",
   "error.stepNotDue": () => "Aucune étape de relance n'est encore due.",
   "error.notOverdue": () => "Cette facture n'est pas en retard.",
   "error.billingRule": () => "Cette règle de facturation n'est pas disponible.",
