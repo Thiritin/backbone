@@ -17,6 +17,7 @@ import { hire } from "../src/sim/90-actions/staff";
 import { createTicket } from "../src/sim/40-support/tickets";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { closeTicket } from "../src/sim/90-actions/support";
+import { setDomainRenewal } from "../src/sim/90-actions/registrar";
 import { SKILLS } from "../src/sim/10-catalog/research";
 import { research } from "../src/sim/90-actions/store";
 import { setRate } from "../src/sim/90-actions/rates";
@@ -217,10 +218,11 @@ describe("domains", () => {
     expect(registryCost("x.de", 2005)).toBeGreaterThan(registryCost("x.de", 2026));
   });
 
-  it("warns before expiry, takes the site down when it lapses and comes back on renewal", () => {
+  it("warns before expiry, takes the site down when a cancelled domain lapses and comes back on renewal", () => {
     const { s, req } = live(16);
     const name = req().domain!, v = req().serviceId!, d = domainOf(s, name)!;
     expect(serviceOnline(s, v)).toBe(true);
+    expect(setDomainRenewal(s, name, false).ok).toBe(true);
     s.hour = d.expiresAt - 30 * 24 - (d.expiresAt % 24) - 1;
     const events = [] as string[];
     while (s.hour < d.expiresAt + 24) events.push(...tick(s).map((e) => e.key));
