@@ -16,6 +16,8 @@ export const FRITZ_HOST = "fritz.bocks";
 
 // Every router hands out addresses: a Fritz!Bocks its home network, the others their location's datacenter range.
 export const servesDhcp = (m: DeviceModel): boolean => m.kind === "gateway";
+// Fritz!OZ from the 7390 on registers the names its DHCP clients send under fritz.bocks; the older firmware registers none.
+export const registersNames = (m: DeviceModel): boolean => isOfficeRouter(m) && m.from >= 2010;
 const ipNum = (ip: string): number => ip.split(".").reduce((n, x) => n * 256 + Number(x), 0);
 const ipStr = (n: number): string => [24, 16, 8, 0].map((b) => Math.floor(n / 2 ** b) % 256).join(".");
 export function inNet(cidr: string, ip: string): boolean {
