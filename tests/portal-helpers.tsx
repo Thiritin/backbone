@@ -14,9 +14,9 @@ export const shopGame = (variant = "whmCache", year = 2005): GameState => {
   skipTo(s, year);
   s.cash = 1e6;
   setUpChannel(s, "website");
-  chooseShop(s, "handRolled");
+  chooseShop(s, "hostBull");
   s.unlocks = [...s.unlocks, "shops"];
-  expect(chooseShop(s, variant as never).ok || variant === "handRolled").toBe(true);
+  expect(chooseShop(s, variant as never).ok || variant === "hostBull").toBe(true);
   s.hour += SHOP_SETUP_HOURS;
   setLine(s, "webHosting", true);
   return s;

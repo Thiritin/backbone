@@ -44,11 +44,9 @@ export interface SalesRequest {
   address?: Address;
   // The package name and web hosting username the provision step uses.
   pkg?: string; username?: string;
-  // Placed through the order form: the website's prices are the quote and ordering is the acceptance.
-  form?: boolean;
-  // The billing cycle a form order picked; absent for monthly and email orders.
+  // The billing cycle a shop order picked; absent for monthly and email orders.
   cycle?: Cycle;
-  // Taken by a shop system rather than the hand-rolled form; a shop order that cannot be placed is cancelled, never lost.
+  // Taken by a shop system: the website's prices are the quote and ordering is the acceptance; one that cannot be placed is cancelled, never lost.
   shop?: boolean;
   // The shop product a form order buys; its server group and package decide where the service goes.
   productId?: string;

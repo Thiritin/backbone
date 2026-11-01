@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- The hand-rolled order form is gone: orders arrive by email until you run a shop system, every shop system needs the Shop systems research, and saves that had the form keep taking orders by email.
 - Getting started no longer asks you to style your company, since registering it already gives it a name.
 - Every software and operating system website now has a Versions page with each release's support dates and a News page announcing each release with its headline features, and the News app reports every new major version on its release day.
 - Used hardware is now bought on its own websites in the Browser: eBuy auctions, the WebHostingTalc forum and the Telegrump chat each look and filter the way they did in their year, from 2005 web pages to modern apps.

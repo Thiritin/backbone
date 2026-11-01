@@ -40,7 +40,7 @@ const COMPONENT_LABELS: Record<string, string> = {
   hdd: "hard drive", ssd: "SSD", nvme: "NVMe drive", psu: "power supply", fan: "fan", ram: "RAM stick", board: "mainboard", cpu: "CPU", nic: "network card",
 };
 const CHANNELS: Record<string, string> = {
-  website: "Website", orderForm: "Order form", searchAds: "Goggle Ads", aiAds: "AI ads",
+  website: "Website", searchAds: "Goggle Ads", aiAds: "AI ads",
   search: "Goggle Ads", ai: "AI ads", gaming: "Gaming communities", coldCall: "Cold calling", agency: "Agency outreach",
 };
 const thing = (p: Params) => `${p.web ? "web space" : "virtual machine"}${p.count === 1 ? "" : "s"}`;
@@ -119,7 +119,6 @@ export const en: Record<string, (p: Params) => string> = {
   "error.unknownSiteLine": () => "This product cannot go on the website.",
   "error.unknownLineRate": () => "This product has no such rate.",
   "error.badRate": () => "Enter a rate of zero or more.",
-  "error.needsOrderForm": () => "Set up the order form first.",
   "error.notInShop": () => "The shop does not sell this model.",
   "error.outOfBounds": () => "The device does not fit at this height.",
   "error.slotTaken": () => "Another device is in the way.",

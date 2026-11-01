@@ -12,7 +12,7 @@ import { machineAddress } from "../60-infra/addresses";
 import { hostPerf } from "../60-infra/php";
 import { nodeUsage } from "../60-infra/usage";
 import type { SimEvent } from "../88-tick/tick";
-import { hasOrderForm, owns } from "./marketing";
+import { owns } from "./marketing";
 import { salesAddress } from "./mail";
 import { CYCLE_MONTHS, CYCLES } from "../10-catalog/cycles";
 import { companyDomain } from "../30-customers/domains";
@@ -67,7 +67,7 @@ export const siteContent = (s: GameState): { lines: { product: Product; from: nu
   lines: SITE_LINES.filter((p) => listed(s, p)).map((p) => {
     const best = visibleProducts(s, p).filter((x) => Number.isFinite(fromMonthly(x))).sort((x, y) => fromMonthly(x) - fromMonthly(y))[0];
     if (best) return { product: p, from: fromMonthly(best), link: orderLink(s, best) };
-    return { product: p, from: hasOrderForm(s) ? offerPrice(s, p, sizeSpec(p, 0, yearOf(s.hour))) : null, link: orderLink(s) };
+    return { product: p, from: shopActive(s) ? offerPrice(s, p, sizeSpec(p, 0, yearOf(s.hour))) : null, link: orderLink(s) };
   }),
   email: s.marketing.emailOrders ? salesAddress(s) : null,
 });
@@ -141,7 +141,7 @@ export const generationsBehind = (s: GameState): number => (generationOf(yearOf(
 export const penaltyFor = (behind: number): number => Math.max(0.4, 1 - 0.2 * Math.max(0, behind - 1));
 export const agePenalty = (s: GameState): number => penaltyFor(generationsBehind(s));
 
-// What the status does to website leads and order form orders.
+// What the status does to website leads and shop orders.
 export const STATUS_FACTOR: Record<SiteStatus, number> = { up: 1, slow: 0.5, down: 0 };
 export const siteFactor = (s: GameState): number => STATUS_FACTOR[siteStatus(s)] * agePenalty(s);
 

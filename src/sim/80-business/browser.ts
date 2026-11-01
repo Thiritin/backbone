@@ -187,8 +187,8 @@ export function resolve(s: GameState, raw: string): Resolved {
   if (named(LEXWEAR_HOST)) return out({ kind: "lexwear" });
   const market = CHANNELS.find((c) => named(c.host));
   if (market) return out({ kind: "market", channel: market.id });
-  // Every shop system but the hand-rolled form has its vendor's site, from the year it is sold.
-  const shopSite = SHOPS.find((v) => v.id !== "handRolled" && v.from <= yearOf(s.hour) && named(shopHost(v.id)));
+  // Every shop system has its vendor's site, from the year it is sold.
+  const shopSite = SHOPS.find((v) => v.from <= yearOf(s.hour) && named(shopHost(v.id)));
   if (shopSite) return out({ kind: "shopVendor", id: shopSite.id });
   if (named(HOSTTOAST_HOST)) return out({ kind: "hosttoast" });
   // A software's site exists from the year the software does; an operating system's always.

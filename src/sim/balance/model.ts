@@ -16,7 +16,7 @@ import { dcPerTb } from "../10-catalog/network";
 import { OVER_DRIFT, PAST_MAX_DRIFT, TOLERANCE } from "../30-customers/pricing";
 import { OFFER, ORGANIC_CONSIDER, PRICE_WEIGHT, REFERRAL_LEADS, SPILL_SHARE } from "../30-market/market";
 import { CYCLE_SHARE, MARKET_DISCOUNT } from "../10-catalog/cycles";
-import { HAND_ROLLED } from "../10-catalog/shops";
+import { SHOPS } from "../10-catalog/shops";
 import { BUDGETS, OWNED, PROFILE_IDS, SATURATION, WEBSITE_LEADS } from "../80-business/marketing";
 import { generationOf, penaltyFor, SITE_RENT } from "../80-business/website";
 import { annuity, baseRate, LOAN_AMOUNTS, MIN_LIMIT, RISK_PREMIUM } from "../45-billing/billing";
@@ -96,9 +96,11 @@ const CHAD = STORE.find((i) => i.id === "chadGpt")!;
 const CHAD_KNOW_HOW = ["people", "monitoring", "automation"].reduce((a, id) => a + skillById(id)!.knowHow, 0);
 // Awareness starts at 5% for private individuals and gamers and 2% for the rest (80-business/marketing.ts).
 const AWARENESS_START = (p: Profile) => (p.id === "private" || p.id === "gamer" ? 0.05 : 0.02);
-// The model has none of year 1's setup work (trainings, website, order form) and would fill the basement by April;
+// The model has none of year 1's setup work (trainings, website, shop) and would fill the basement by April;
 // the happiness run's careful player fills it in the last quarter, so the bot moves out no earlier than October.
 const MOVE_MONTH = 9;
+// The bot buys the cheapest shop system on sale with its website.
+const shopSetup = (year: number): number => Math.min(...SHOPS.filter((v) => year >= v.from && (v.until === undefined || year <= v.until)).map((v) => v.setup));
 function rackRent(watts: number): number {
   const kw = watts / 1000;
   const share = [8, 4, 2, 1].find((n) => kw <= HOME_DC.kwPerPosition / n);
@@ -231,7 +233,7 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
 
     // Leads (Market and leads), as 30-market/market.ts leadFlows: organic by awareness and referrals from happy customers,
     // capped per city, plus website and search campaign leads, of which 10% spill to cities without a location.
-    if (!website && rackUnlocked && cash > 3000 + OWNED.website.setup + HAND_ROLLED.setup) { website = true; designYear = generationOf(year); cash -= OWNED.website.setup + HAND_ROLLED.setup; }
+    if (!website && rackUnlocked && cash > 3000 + OWNED.website.setup + shopSetup(year)) { website = true; designYear = generationOf(year); cash -= OWNED.website.setup + shopSetup(year); }
     // The bot redesigns once the site is 2 generations behind; its site stays on the rented host.
     if (website && generationOf(year) - designYear >= 8 && cash > 5000) { designYear = generationOf(year); cash -= OWNED.website.setup; }
     // The search campaign: the largest preset budget within the bot's ad share, spread over every profile and city.
@@ -421,7 +423,7 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
       collectedShare += v * (ON_TIME[p.budget] + (1 - ON_TIME[p.budget] - NEVER_PAYS[p.budget]) * processed);
       stuck += v * (1 - ON_TIME[p.budget] - NEVER_PAYS[p.budget]) * (1 - processed);
       // The bot places every order on acceptance, as a company with automatic orders would; the quote and setup steps done by
-      // hand are the happiness harness's. The order form bills its standard orders the market's setup fee once; big budgets and email orders pay none.
+      // hand are the happiness harness's. The shop bills its standard orders the market's setup fee once; big budgets and email orders pay none.
       if (website && p.budget !== "high") collectedShare += newCustomers[i][k] * (1 - EMAIL_SHARE) * marketSetup(LIVE[pr], year) * ON_TIME[p.budget];
       // A fraudulent signup takes back about two months of payments and costs the chargeback fee.
       const paidBy = website ? 1 - EMAIL_SHARE * (1 - TRANSFER_FACTOR) : TRANSFER_FACTOR;

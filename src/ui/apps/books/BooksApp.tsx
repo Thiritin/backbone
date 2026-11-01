@@ -41,7 +41,7 @@ export function BooksApp() {
   const game = useBooks(), act = useStore((s) => s.act);
   const waiting = useStore((s) => unsynced(s.game));
   // Before Shop link, a shop system hands its records over only on import.
-  const importing = !!game.shop.variant && game.shop.variant !== "handRolled" && !hasModule(game, "shop-link");
+  const importing = !!game.shop.variant && !hasModule(game, "shop-link");
   const [tab, setTab] = useSessionState("books.tab", "invoices");
   const [focus, setFocus] = useSessionState<string | null>("books.focus", null);
   const [register, setRegister] = useSessionState("books.register", false);

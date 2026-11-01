@@ -1,3 +1,6 @@
+import { PAYMENT_METHODS } from "../src/sim/10-catalog/payments";
+import { setUpChannel } from "../src/sim/90-actions/marketing";
+import { chooseShop } from "../src/sim/90-actions/shop";
 import { authCode } from "../src/sim/30-customers/registry";
 import type { Address } from "../src/sim/30-customers/addresses";
 import { mailedAddress } from "../src/sim/30-customers/addresses";
@@ -233,6 +236,20 @@ export const owner = (s: GameState, ticketId: string): [Address | undefined, str
   const r = s.sales.requests.find((x) => x.kind === "order" && x.ticketId === ticketId);
   return [s.customers.find((c) => c.id === r?.customerId)?.address, r?.owned ? authCode(s.seed, r.id) : undefined];
 };
+
+// A shop system that takes orders at once, for tests of shop orders rather than of choosing a shop.
+export function openShop(s: GameState, id: Parameters<typeof chooseShop>[1] = "clientExit"): GameState {
+  s.cash = Math.max(s.cash, 1e4);
+  setUpChannel(s, "website");
+  if (!s.unlocks.includes("shops")) s.unlocks = [...s.unlocks, "shops"];
+  const modules = s.shop.modules, r = chooseShop(s, id);
+  if (!r.ok) throw new Error(r.error);
+  // Keeps the modules automate() bought.
+  s.shop = { ...s.shop, readyAt: s.hour, modules: { ...modules, ...s.shop.modules } };
+  // Every payment method, so no checkout is lost for a missing one.
+  s.modules = [...new Set([...s.modules, ...PAYMENT_METHODS.map((m) => m.id)])];
+  return s;
+}
 
 // The version just before a console's late look and the first version with it.
 export function lateVersions(product: string): [string, string] {

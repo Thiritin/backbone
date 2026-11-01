@@ -2,7 +2,7 @@ import type { Dict, Params } from "../lang";
 import { euro } from "../../sim/00-core/money";
 
 const CHANNELS: Record<string, string> = {
-  website: "Site", orderForm: "Formulário de pedido", searchAds: "Goggle Ads", aiAds: "Anúncios de IA",
+  website: "Site", searchAds: "Goggle Ads", aiAds: "Anúncios de IA",
   search: "Goggle Ads", ai: "Anúncios de IA", gaming: "Comunidades de jogadores", coldCall: "Chamadas a frio", agency: "Contacto com agências",
 };
 const one = (p: Params) => Number(p.count) === 1;

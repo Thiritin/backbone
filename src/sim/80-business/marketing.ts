@@ -11,7 +11,7 @@ import type { SimEvent } from "../88-tick/tick";
 import { campaignBoost, hasMarketingManager, reviewBoost } from "../47-staff/staff";
 import { communityBatches } from "./community";
 import { fairBatches, fairGain } from "./fairs";
-import { shopActive, shopBills, shopTick } from "./shop";
+import { shopBills, shopTick } from "./shop";
 import { siteBuiltEvent, siteDownEvent, siteFactor, siteHostingCost, siteStatus } from "./website";
 
 export const PROFILE_IDS: Profile[] = ["private", "gamer", "hobbyDev", "soleProp", "smallBiz", "agency", "office", "onlineShop", "enterprise"];
@@ -89,7 +89,6 @@ export const newMarketing = (): Marketing => ({
 });
 
 export const owns = (s: GameState, c: OwnedChannel): boolean => s.marketing.owned.includes(c);
-export const hasOrderForm = (s: GameState): boolean => shopActive(s);
 export const costPerLead = (channel: CampaignChannel, p: Profile, year: number): number => priceAt(CAMPAIGNS[channel].cost[p] ?? 0, 0.6, year);
 export const reach = (channel: CampaignChannel): Profile[] => PROFILE_IDS.filter((p) => CAMPAIGNS[channel].cost[p]);
 export const awareness = (s: GameState, p: Profile): number => s.marketing.awareness[p];

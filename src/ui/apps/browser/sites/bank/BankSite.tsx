@@ -10,7 +10,6 @@ import { cardSpent, groupIban, iban as toIban, ibanEra, ownIban, spendable, WRON
 import type { GameState } from "../../../../../sim/50-state";
 import { applyCard, applyOverdraft, openBankAccount, cancelTransfer, confirmTransfer, deletePayee, deleteStandingOrder, savePayee, setTanMethod, startStandingOrder, startTransfer } from "../../../../../sim/90-actions/bank";
 import { takeLoan } from "../../../../../sim/90-actions/billing";
-import { useStore } from "../../../../store";
 import { readSession, writeSession } from "../../../../session";
 import { noAutofill } from "../../../../no-autofill";
 import "./bank-site.css";
