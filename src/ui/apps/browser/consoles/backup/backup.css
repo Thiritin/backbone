@@ -9,3 +9,17 @@
 .bk-main { flex: 1; overflow: auto; padding: 16px; }
 .bk-login { display: grid; place-items: center; }
 .bk-card { display: grid; gap: 12px; padding: 24px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); min-width: 280px; }
+
+.bk[data-skin="veeham"] { --accent: #00a05a; --info: #00a05a; }
+.bk[data-skin="backula"] { --accent: #b3541e; --info: #b3541e; --bg: #f4f1ec; }
+.bk[data-skin="pbs"] { --accent: #e57000; --info: #e57000; --bg: #f3f4f6; }
+.bk-edit { display: grid; gap: 8px; max-width: 360px; margin-top: 12px; padding: 12px; border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); }
+.bk-pick { display: grid; gap: 4px; }
+.bk-jobs td.cx-tools { white-space: nowrap; }
+.bk-cal { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+.bk-month { flex-basis: 100%; margin: 0; font-weight: 600; text-transform: capitalize; }
+.bk-grid td { padding: 2px; }
+.bk-day { width: 34px; height: 30px; border: 1px solid var(--line); border-radius: var(--r); background: none; color: var(--muted); font: inherit; cursor: pointer; }
+.bk-day[data-has="true"] { background: color-mix(in oklch, var(--accent) 22%, transparent); color: var(--fg); font-weight: 600; }
+.bk-day[aria-pressed="true"] { outline: 2px solid var(--accent); }
+.bk-side { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }

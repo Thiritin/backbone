@@ -1,6 +1,8 @@
 // What a server's management controller reports: inlet temperature from the room, fan speeds and power supply status.
 import { dateOf } from "../00-core/time";
-import type { Device, GameState, Location } from "../50-state";
+import { modelById } from "../10-catalog/hardware";
+import type { Device, GameState, Location, LogSev } from "../50-state";
+import { pushLog } from "./syslog";
 import { isPlugged, locationOf, rackPower } from "./status";
 
 export const FAN_RPM = 9000;
@@ -38,4 +40,18 @@ export function sensorsOf(s: GameState, d: Device): Sensors {
     fans: fans.map((c) => ({ id: c.id, rpm: !d.on || c.failedAt !== null ? 0 : compensating ? FAN_RPM_COMPENSATING : FAN_RPM })),
     psus: d.components.filter((c) => c.kind === "psu").map((c) => ({ id: c.id, state: c.failedAt !== null ? "failed" : !isPlugged(c) ? "unplugged" : "ok" })),
   };
+}
+
+// Inlet temperature thresholds of the event log: a warning from 35 degrees and a critical event from 40.
+export const INLET_WARN = 35, INLET_CRIT = 40;
+
+// Hourly: logs the hour a running server's inlet crosses a threshold, once per crossing.
+export function sensorTick(s: GameState): void {
+  for (const d of s.devices) {
+    if (!d.on || modelById(d.model).kind !== "server") continue;
+    const t = inletTemperature(s, d), sev: LogSev = t >= INLET_CRIT ? "crit" : t >= INLET_WARN ? "warn" : "info";
+    if (sev === (d.inletSev ?? "info")) continue;
+    pushLog(d, s.hour, sev === "info" ? "ipmi.log.inlet.normal" : `ipmi.log.inlet.${sev}`);
+    d.inletSev = sev;
+  }
 }

@@ -12,7 +12,7 @@ export default {
   "books.tab.invoices": () => "Invoices",
   "books.tab.bank": () => "Bank",
   "books.tab.reminders": () => "Reminders",
-  "books.tab.dunning": () => "Dunning settings",
+  "books.settings": () => "Settings",
   "books.tab.payables": () => "Payables",
   "books.monthlyRun": () => "Monthly run",
   "books.matchByReference": () => "Match by reference",

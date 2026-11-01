@@ -12,7 +12,7 @@ const ERAS = erasFrom(2010, 2018);
 const Dot = ({ r }: { r: Row }) => <span className="mk-status"><i className={`mk-dot ${r.tone}`} />{r.state}</span>;
 
 export function MultiKraft(p: PanelProps) {
-  const era = eraAt(ERAS, p.game), open = parseCreate("multikraft", p.path), [tab, setTab] = usePanelTab(p.f, open?.screen ?? "objects");
+  const era = eraAt(ERAS, p), open = parseCreate("multikraft", p.path), [tab, setTab] = usePanelTab(p.f, open?.screen ?? "objects");
   const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f);
   if (!p.signedIn) return (
     <div className="cx mk mk-login" data-era={era}>

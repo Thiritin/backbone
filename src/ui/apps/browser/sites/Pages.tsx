@@ -8,6 +8,7 @@ import { senderById } from "../../../../sim/40-support/notices";
 import { CompanyMark } from "../../company";
 import "./pages.css";
 import { LOCALE } from "../../../../i18n/lang";
+import { noAutofill } from "../../../no-autofill";
 
 const hueOf = (name: string): number => [...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7);
 
@@ -68,7 +69,7 @@ export function PhishingPage({ sender }: { sender: string }) {
         <h1>{t("browser-sites-1.pg.banking")}</h1>
         <label>{t("browser-sites-1.pg.branch")}<input inputMode="numeric" /></label>
         <label>{t("browser-sites-1.pg.account")}<input inputMode="numeric" /></label>
-        <label>{t("browser-sites-1.pg.pin")}<input type="password" /></label>
+        <label>{t("browser-sites-1.pg.pin")}<input type="password" {...noAutofill} /></label>
         <button>{t("browser-sites-1.pg.login")}</button>
       </form>
     </div>
