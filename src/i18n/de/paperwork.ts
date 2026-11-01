@@ -13,6 +13,8 @@ export default {
   "doc.form.limited": () => "Gesellschaftsvertrag.pdf",
   "error.notRegistered": () => "Die Firma ist noch nicht angemeldet.",
   "error.legalFormDown": () => "Eine Rechtsform lässt sich nur in eine höhere ändern.",
+  "error.registerSole": () => "Ein Gewerbe kann nur als Einzelunternehmen angemeldet werden.",
+  "error.companyLaw": () => "Für die Gründung einer GmbH braucht es Gesellschaftsrecht aus der Forschung.",
   "error.changePending": () => "Ein Wechsel der Rechtsform läuft bereits.",
   "error.formSigned": () => "Dieses Formular ist bereits unterschrieben.",
   "error.mailAddress": () => "Gib eine gültige E-Mail-Adresse ein.",

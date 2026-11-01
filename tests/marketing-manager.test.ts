@@ -1,7 +1,8 @@
+import { newGame } from "./fixtures";
 import { describe, expect, it } from "vitest";
 import { monthlySalary } from "../src/sim/10-catalog/economy";
 import { campaignBoost, hasMarketingManager, reviewBoost, TASKS, visibleCandidates } from "../src/sim/47-staff/staff";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { leadsThisMonth } from "../src/sim/80-business/marketing";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { setCampaign, setReviewPlatform } from "../src/sim/90-actions/marketing";

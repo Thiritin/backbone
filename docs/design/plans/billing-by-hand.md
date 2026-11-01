@@ -132,6 +132,64 @@ Switching programs keeps every customer, invoice, quote and transfer, since the 
 
 Milestones: catalog in `src/sim/10-catalog/bookkeeping.ts`; `s.books.vendor` with Lexwear as the default for old saves; Pear Store category and install; Books skin per vendor (colours, name in the title, module list); module prices read from the vendor; vendor sites; Getting started step; `tests/books-vendors.test.ts`.
 
+## 9d. Lane `books-editions`
+
+Decisions from the user:
+
+- The Finance app goes. The statement already lives in Books. Overview (cash, monthly recurring revenue, last month's profit, runway) becomes the first page of Books. Profit and loss, cash flow and the customer and revenue statistics become a Statistics section in Books. Tax moves to Books. Running loans and loan offers live on the bank's site. Finance leaves the Pear Store, the dock, the walk triggers and old saves, which open Books instead.
+- Insurance goes entirely: hardware insurance, the policy state, premiums, claims, the actions, the tests, the keys and the design text.
+- Bookkeeping features are not modules. Each vendor sells editions, and the edition decides which features the program has. The Lexwear module catalog, the licence key flow and the Register dialog are removed; the per-vendor sites sell editions and upgrades. Shop-side modules (Shop link, payment methods) stay modules, since the shop vendor sells them.
+- Each vendor has its own layout, not only colours.
+
+Features by edition, three tiers for every vendor where the vendor has three, named as the vendor named them:
+
+| Feature | Small | Medium | Large |
+| --- | --- | --- | --- |
+| Customers, quotes, invoices, bank statement, manual matching, reminders by hand, payables, overview page | yes | yes | yes |
+| Monthly run, match by reference, HBCI (pay all, statement pull), tax view | | yes | yes |
+| Profit and loss, cash flow chart | | yes | yes |
+| Automatic reminders, Helpdesk link, Statistics (customers, churn, revenue trend, lost sales) | | | yes |
+
+| Vendor | Small | Medium | Large | Notes |
+| --- | --- | --- | --- | --- |
+| Lexwear | buchhalter 249 | financial office 499 | financial office pro 899 | yearly update 99, 149, 199; upgrade pays the difference |
+| WIZO Mein Büro | S 149 | M 249 | L 399 | no yearly fee |
+| Saga Office Line | | Office Line 599 | Office Line Plus 999 | no small edition |
+| orgaMIN | Standard 199 | Professional 349 | Enterprise 549 | |
+| Collmix | basic 15 a month | plus 29 a month | | HBCI already in basic; no Helpdesk link ever |
+| sevDeck (2013) | Rechnung 9 a month | Buchhaltung 19 a month | Warenwirtschaft 39 a month | bank sync in every edition |
+| lexoffize (2014) | S 7 a month | M 12 a month | L 19 a month | |
+| GnuCache (GnuCash) | free | | | desktop, single user, HBCI included, P&L and cash flow reports, no quotes, no monthly run, no matching by reference, no automatic reminders, no statistics; GTK grey look |
+
+Deployment and seats:
+
+- Desktop programs (Lexwear, WIZO, Saga, orgaMIN, GnuCache) run on the player's PC and keep working when the internet line is down. Browser programs (Collmix, sevDeck, lexoffize) run inside the Browser look and are unusable while the line is down or throttled, so an unpaid line bill locks the books.
+- Licences are single user or multi user. A single-user licence means only the player works in the program: a hired bookkeeper cannot work until a multi-user licence or seats exist. Desktop vendors sell a network version as the multi-user step (Lexwear financial office pro and Saga Office Line Plus include it, WIZO L and orgaMIN Enterprise sell seats at a price each, GnuCache stays single user). Browser programs count seats per plan: Collmix plus 3 users, sevDeck and lexoffize one included and a monthly fee per further user. Each bookkeeper occupies one seat.
+- GnuCache has no Quotes view, so with it the order ticket keeps its plain Quote step where the player types the price without a document.
+
+Layouts, one per vendor: Lexwear a grey Windows 2000 program with a tree on the left and a toolbar of small icons; WIZO a blue program with a row of large icons on top; Saga a dense grey enterprise screen with menus; orgaMIN orange with top tabs; Collmix a web page inside the window with an address bar, blue links and plain tables; sevDeck flat cards with a teal sidebar; lexoffize flat and light with a green sidebar; GnuCache a GTK2 grey window with an account tree and a register table. Document views keep the 2005 toolbar from the quote work. Edition-locked features show as disabled entries that open the vendor's site at the upgrade page.
+
+Milestones: editions in the catalog and `s.books.edition` with deployment and seats; GnuCache as the free vendor; features read from the edition everywhere a module flag was read; remove the Lexwear modules, keys and Register; vendor sites sell editions and upgrades; Overview, Statistics and Tax in Books; remove Finance; remove insurance; layouts per vendor; old saves: Finance installed becomes Books, Lexwear with modules owned becomes the smallest edition that covers them; `tests/books-editions.test.ts` and the finance and insurance tests removed or moved.
+
+## 9e. Lane `data-flow`
+
+Decisions from the user:
+
+- A bookkeeping program is optional. A shop system that keeps customers, invoices and payments is enough to run the business; the player may uninstall the bookkeeping program and work from the shop alone once email orders are off. Only what a program provides exists on screen: with no bookkeeping program there is no Books window, the statement is read on the bank's site, payables are paid there from the emailed invoice, and the order ticket keeps its plain Quote step.
+- Programs declare capabilities: customers, quotes, invoices, payments, payables, statement, reminders, statistics, tax. A shop system has customers, invoices, payments and reminders for its own orders. Bookkeeping programs have everything their edition allows, and tax is theirs alone.
+- Two linked programs show the same data. Shop link stays the integration: with it, the shop and the bookkeeping program are two views of one record set. Without it the data has to travel as files.
+- Files. Programs export and import. An export lands as a file in the desktop's Documents (next to the TAN list and Getting started), with a name like `shop-export-2005-10.csv` or `statement-2005-10.csv`; an import dialog lists the files of the right kind, and importing one moves the records over. Formats are named by era: CSV in 2005, DATEV export from 2007 for the tax side, MT940 for bank statements.
+  - Shop to bookkeeping: the shop's admin has Export customers and invoices; the bookkeeping program's Import takes the file. This replaces the one-click Import from shop button, which only Shop link now makes unnecessary.
+  - Bank to bookkeeping: transfers live at the bank. A bookkeeping program without HBCI sees them only after the player downloads the statement on the bank's site and imports the file in Books; HBCI pulls it itself. The Bank tab is empty until the first import, which is the point of HBCI.
+  - Every edition can import and export; the file step is the small edition's chore and HBCI and Shop link are what the bigger ones remove.
+- Tax returns are the bookkeeping program's own job. Once a year the tax office (pun site) sends the letter; Books has Submit tax return, which needs every invoice of the year present in Books (imported or synced) and a matched statement, and files it on the tax office site. The shop never files taxes. A player without a bookkeeping program has to install one at tax time, GnuCache is free, or hire a tax advisor (lane 9f). Missing the deadline costs a late fee and a second letter, then an estimate that is always higher than the real tax.
+
+Milestones: capability table on the program catalogs; Books window absent without a program and the ticket's plain quote step with it; Documents as a file list with kinds; shop export and Books import of customers and invoices; bank statement download and import, HBCI pulls on its own; Import from shop button removed; tax office site and Submit tax return with the completeness check; late fee and estimate; old saves: records present count as imported; `tests/data-flow.test.ts`.
+
+## 9f. Lane `tax-advisors` (handoff, not built yet)
+
+A tax advisor is a firm (pun on DATEV members and the big names) hired on their site. They file the tax return, the yearly accounts and the advance VAT returns, and answer the tax office's letters, so the player never sees a tax step again. They are expensive: a monthly retainer by company size plus a fee per filing, several times what a bookkeeping program costs, worth it for a large company. They work from what they are given: with DATEV export the player or a bookkeeper exports once a month and uploads it on the advisor's portal, with a bookkeeping program's DATEV link (bigger editions, 2007 on) it flows itself. They do not chase invoices, match transfers, send reminders or pay payables, so bookkeepers stay needed. Mistakes in the delivered data (unmatched transfers, missing invoices) come back as a query letter with a fee per hour of their time. The design and numbers go into economy.md when the lane starts.
+
 ## 10. Shared files
 
 | File | Lanes | Rule |

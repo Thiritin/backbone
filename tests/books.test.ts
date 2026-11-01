@@ -1,13 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { STARTER_APPS } from "../src/sim/10-catalog/store";
-import { newGame } from "../src/sim/50-state";
 import { ALREADY_PAID_HAPPINESS, DUE_DAYS, billingTick, owed } from "../src/sim/45-billing/billing";
 import type { Profile } from "../src/sim/30-customers/customers";
 import { tick } from "../src/sim/88-tick/tick";
 import { matchTransfer, sendInvoice, sendReminder } from "../src/sim/90-actions/billing";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { withServer } from "./fixtures";
+import { withServer, newGame } from "./fixtures";
 
 describe("customer addresses", () => {
   it("come from the order's sender and city", () => {

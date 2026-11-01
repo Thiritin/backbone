@@ -2,10 +2,10 @@ import { useState } from "react";
 import { t } from "../../../../../i18n/en";
 import { dateOf } from "../../../../../sim/00-core/time";
 import type { GameState } from "../../../../../sim/50-state";
-import { LEGAL_FORMS, OFFICE_HOST, OFFICE_URL, officeOpen } from "../../../../../sim/80-business/office";
-import { registerCompany } from "../../../../../sim/90-actions/company";
-import { banksOpen, DEFAULT_BANK, monthlyFee, type BankId } from "../../../../../sim/10-catalog/banks";
-import { yearOf } from "../../../../../sim/00-core/time";
+import { LEGAL_FORMS, REGISTRATION_FEE, OFFICE_HOST, OFFICE_URL, officeOpen } from "../../../../../sim/80-business/office";
+import { applyForRegistration } from "../../../../../sim/90-actions/company";
+import { euroCents } from "../../../../../sim/00-core/money";
+import { bankById } from "../../../../../sim/10-catalog/banks";
 import { useStore } from "../../../../store";
 import { euro } from "../../../../../sim/00-core/money";
 import { applyError, FEES, FILED_WITH, FORM_RANK, SHARE_CAPITAL } from "../../../../../sim/80-business/paperwork";
@@ -40,14 +40,12 @@ function Hours() {
   );
 }
 
-function Register({ game }: { game: GameState }) {
+function Register({ game, go }: { game: GameState; go: (url: string) => void }) {
   const act = useStore((s) => s.act);
   const [name, setName] = useState(game.company.name);
   const [owner, setOwner] = useState("");
-  const [form, setForm] = useState("sole");
-  const [bank, setBank] = useState<BankId>(DEFAULT_BANK);
   return (
-    <form className="to-form" onSubmit={(e) => { e.preventDefault(); act(registerCompany, name, owner, form, bank); }}>
+    <form className="to-form" onSubmit={(e) => { e.preventDefault(); if (act(applyForRegistration, name, owner, "sole").ok) go(`www.${bankById(game.bank!.id)!.host}/banking/transfer`); }}>
       <fieldset>
         <legend>{t("browser-sites-1.of.application")}</legend>
         <table>
@@ -61,20 +59,12 @@ function Register({ game }: { game: GameState }) {
               <td><input id="to-owner" value={owner} required onChange={(e) => setOwner(e.target.value)} /></td>
             </tr>
             <tr>
-              <td><label htmlFor="to-form">{t("browser-sites-1.of.legalForm")} <b>*</b></label></td>
-              <td>
-                <select id="to-form" value={form} onChange={(e) => setForm(e.target.value)}>
-                  {Object.entries(LEGAL_FORMS).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
-                </select>
-              </td>
+              <td>{t("browser-sites-1.of.legalForm")}</td>
+              <td>{LEGAL_FORMS.sole}</td>
             </tr>
             <tr>
-              <td><label htmlFor="to-bank">{t("bank.office.bank")} <b>*</b></label></td>
-              <td>
-                <select id="to-bank" value={bank} onChange={(e) => setBank(e.target.value as BankId)}>
-                  {banksOpen(yearOf(game.hour)).map((b) => <option key={b.id} value={b.id} disabled={monthlyFee(b, form) === null}>{b.name}</option>)}
-                </select>
-              </td>
+              <td>{t("bank.office.fee")}</td>
+              <td>{euroCents(REGISTRATION_FEE)}</td>
             </tr>
             <tr>
               <td><label htmlFor="to-activity">{t("browser-sites-1.of.activity")} <b>*</b></label></td>
@@ -90,7 +80,7 @@ function Register({ game }: { game: GameState }) {
         <p className="to-req"><b>*</b> {t("browser-sites-1.of.required")}</p>
         <div className="to-buttons">
           <button type="submit">{t("browser-sites-1.of.submit")}</button>
-          <button type="reset" onClick={() => { setName(""); setOwner(""); setForm("sole"); setBank(DEFAULT_BANK); }}>{t("browser-sites-1.of.reset")}</button>
+          <button type="reset" onClick={() => { setName(""); setOwner(""); }}>{t("browser-sites-1.of.reset")}</button>
         </div>
       </fieldset>
     </form>
@@ -120,8 +110,9 @@ function Forms({ game }: { game: GameState }) {
   const act = useStore((s) => s.act);
   const r = game.registration;
   if (!r) return <p>{t("paperwork.of.registerFirst")}</p>;
-  const next = Object.keys(FORM_RANK).filter((f) => FORM_RANK[f] > FORM_RANK[r.form]);
-  if (!next.length) return <p>{t("paperwork.of.top")}</p>;
+  if (r.form === "limited") return <p>{t("paperwork.of.top")}</p>;
+  const next = Object.keys(FORM_RANK).filter((f) => FORM_RANK[f] > FORM_RANK[r.form] && applyError(game, f) !== "error.companyLaw");
+  if (!next.length) return <p>{t("paperwork.of.none")}</p>;
   const fee = (f: string) => f === "limited" ? t("paperwork.of.feeLimited", { notary: euro(FEES.notary), register: euro(FEES.register), capital: euro(SHARE_CAPITAL) }) : euro(FEES.change);
   return (
     <>
@@ -179,7 +170,7 @@ function Body({ game, path, go }: { game: GameState; path: string; go: (url: str
       </>
     );
   }
-  return <><h1>{t("browser-sites-1.of.eservice")}</h1><Register game={game} /></>;
+  return <><h1>{t("browser-sites-1.of.eservice")}</h1><Register game={game} go={go} /></>;
 }
 
 // docs/design/tutorial.md: a 2005 government page that registers the company during office hours.

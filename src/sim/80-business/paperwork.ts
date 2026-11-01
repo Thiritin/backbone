@@ -3,6 +3,7 @@
 import { yearOf } from "../00-core/time";
 import { bankById } from "../10-catalog/banks";
 import { monthlyFee } from "../10-catalog/banks";
+import { COMPANY_LAW_SKILL } from "../10-catalog/research";
 import { post } from "../40-support/letters";
 import type { SupplierId } from "../46-finance/payables";
 import type { GameState, LedgerEntry } from "../50-state";
@@ -49,6 +50,7 @@ export function applyError(s: GameState, form: string): string | null {
   if (!s.registration) return "error.notRegistered";
   if (!(form in FORM_RANK)) return "error.legalForm";
   if (FORM_RANK[form] <= FORM_RANK[s.registration.form]) return "error.legalFormDown";
+  if (form === "limited" && !s.unlocks.includes(COMPANY_LAW_SKILL)) return "error.companyLaw";
   if (changePending(s)) return "error.changePending";
   const bank = s.bank && bankById(s.bank.id);
   if (bank && monthlyFee(bank, form) === null) return "error.bankForm";

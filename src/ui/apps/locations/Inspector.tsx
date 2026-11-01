@@ -3,13 +3,14 @@ import { Cable, Flame, Gauge, EthernetPort, Monitor, MonitorOff, FileSignature, 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { VENDOR_NAME } from "../../../sim/10-catalog/cpus";
-import { bayCount, boardSpec, jacksOf, modelById, modelName, wattsFactorOf, type DeviceModel } from "../../../sim/10-catalog/hardware";
+import { bayCount, boardSpec, isManaged, isOfficeRouter, jacksOf, modelById, modelName, wattsFactorOf, type DeviceModel } from "../../../sim/10-catalog/hardware";
 import { imageName } from "../../../sim/10-catalog/server-os";
 import type { Cable as CableT, Device, End, GameState } from "../../../sim/50-state";
+import { addressOf, FRITZ_HOST, macOf, routerPassword } from "../../../sim/60-infra/lan";
 import { clusterOf, workloadsOn } from "../../../sim/60-infra/cluster";
 import { deviceHealth, deviceVendor, deviceWatts, deviceValue, isPlugged, linkStatus, locationOf, pluggedIn, portPeers, resaleValue, working } from "../../../sim/60-infra/status";
 import { pduOf } from "../../../sim/60-infra/pdu";
-import { addSecondPsu, atServer, buyOutLease, connect, disconnect, LABEL_MAX, moveServer, resetBmc, sellDevice, setBond, setCableColor, setLabel, setPlugged, setPortGroup, setPower, unmountDevice, type ActionResult } from "../../../sim/90-actions/hardware";
+import { addSecondPsu, atServer, buyOutLease, connect, disconnect, LABEL_MAX, moveServer, resetBmc, sellDevice, setBond, setCableColor, setLabel, setPlugged, setPower, unmountDevice, type ActionResult } from "../../../sim/90-actions/hardware";
 import type { Side } from "../../art/backs";
 import { cableColor, DeviceSvg, SWATCHES } from "../../art/fronts";
 import { BrandLogo, Logo } from "../../art/logos";
@@ -116,13 +117,12 @@ type InspTab = "actions" | "ports" | "lease" | "psu" | "parts";
 export function Inspector({ game, device, side = "front", onSelect, onHot, rename = false, onRenaming, monitor = false, onUnplug, onConsole }: { game: GameState; device: Device; side?: Side; onSelect: (id: string | null) => void; onHot?: (cableId: string | null) => void; rename?: boolean; onRenaming?: () => void; monitor?: boolean; onUnplug?: () => void; onConsole?: () => void }) {
   const act = useStore((s) => s.act);
   const [sel, setSel] = useState<number[]>([]);
-  const [mode, setMode] = useState<"cable" | "group">("cable");
   const [editing, setEditing] = useState(false);
   useEffect(() => { if (rename) { setEditing(true); onRenaming?.(); } }, [rename, onRenaming]);
   const menus = useDeviceMenu(game, onSelect, () => setEditing(true));
   const menu = () => menus.entries(device);
   const model = modelById(device.model), peers = portPeers(game, device.id), name = devName(device);
-  const pick = (i: number) => setSel((cur) => (mode === "group" ? (cur.includes(i) ? cur.filter((x) => x !== i) : [...cur, i]) : cur.length === 1 && cur[0] === i ? [] : [i]));
+  const pick = (i: number) => setSel((cur) => (cur.length === 1 && cur[0] === i ? [] : [i]));
   const [hover, setHover] = useState<number | null>(null);
   const focus = hover ?? (sel.length === 1 ? sel[0] : null);
   const hot = focus === null ? null : game.cables.find((c) => [c.a, c.b].some((e) => e.device === device.id && e.port === focus))?.id ?? null;
@@ -211,18 +211,7 @@ export function Inspector({ game, device, side = "front", onSelect, onHot, renam
         : server && device.store && <div className="loc-card"><div className="act-tiles">{serverActs}</div></div>}
       <RemoteCard game={game} device={device} />
 
-      {model.kind === "switch" && (
-        <div className="seg loc-mode" role="group" aria-label={t("locations-1.portSelection")}>
-          <button aria-pressed={mode === "cable"} onClick={() => { setMode("cable"); setSel(sel.slice(0, 1)); }}>{t("locations-1.cable")}</button>
-          <button aria-pressed={mode === "group"} onClick={() => setMode("group")}>{t("locations-1.group")}</button>
-        </div>
-      )}
-
-      {mode === "group" && model.kind === "switch" ? (
-        <GroupCard device={device} sel={sel} onDone={() => setSel([])} />
-      ) : sel.length === 1 && !server ? (
-        <PortCard game={game} device={device} model={model} port={sel[0]} peer={peers[sel[0]]} onSelect={onSelect} />
-      ) : null}
+      {sel.length === 1 && !server && <PortCard game={game} device={device} model={model} port={sel[0]} peer={peers[sel[0]]} onSelect={onSelect} />}
       {server && <NodeCard game={game} device={device} />}
       </>}
 
@@ -303,8 +292,21 @@ function Status({ game, device }: { game: GameState; device: Device }) {
       )}
       {model.kind === "server" && <div><dt>{t("locations-1.role")}</dt><dd>{role}</dd></div>}
       {model.kind === "server" && device.rackId && <AddressRows game={game} id={device.id} />}
+      {(isOfficeRouter(model) || (isManaged(model) && device.rackId)) && <RouterLabel game={game} device={device} />}
     </dl>
   );
+}
+
+// The label on a router or managed switch: its MAC address and the address of its web interface; a Fritz!Bocks also
+// carries its password.
+function RouterLabel({ game, device }: { game: GameState; device: Device }) {
+  const openApp = useStore((s) => s.openApp);
+  const router = isOfficeRouter(modelById(device.model)), host = router ? FRITZ_HOST : addressOf(game, device.id);
+  return <>
+    <div><dt>{t("browser-consoles-2.fritz.mac")}</dt><dd className="num">{macOf(game, device.id)}</dd></div>
+    {host && <div><dt>{t("misc.management")}</dt><dd><button className="loc-link num" onClick={() => openApp("Browser", { kind: "url", id: `${host}/` })}>{host}</button></dd></div>}
+    {router && <div><dt>{t("misc1.ipmi.password")}</dt><dd className="num">{routerPassword(game, device.id)}</dd></div>}
+  </>;
 }
 
 function LeaseCard({ game, leaseId }: { game: GameState; leaseId: string }) {
@@ -467,29 +469,6 @@ function ConnectRow({ game, device, model, port }: { game: GameState; device: De
         <span className="grow" />
         <button className="btn primary" onClick={go}><Cable />{t("locations-1.connect")}</button>
       </div>
-    </div>
-  );
-}
-
-function GroupCard({ device, sel, onDone }: { device: Device; sel: number[]; onDone: () => void }) {
-  const act = useStore((s) => s.act);
-  const sorted = [...sel].sort((a, b) => a - b);
-  const inGroup = sorted.find((p) => device.groups.some((g) => g.includes(p)));
-  const run = (ports: number[]) => { if (act(setPortGroup, device.id, ports).ok) onDone(); };
-  return (
-    <div className="loc-card">
-      <div className="loc-card-h">
-        <h3>{sorted.length ? <>{t("locations-1.ports")} <span className="num">{sorted.map((p) => p + 1).join(", ")}</span></> : t("locations-1.portGroups")}</h3>
-        <span className="grow" />
-        {inGroup !== undefined && <button className="btn" onClick={() => run([inGroup])}>{t("locations-1.ungroup")}</button>}
-        <button className="btn primary" disabled={sorted.length < 2 || sorted.length > 8} onClick={() => run(sorted)}>{t("locations-1.group")}</button>
-      </div>
-      {device.groups.map((g, k) => (
-        <div className="loc-row" key={k}>
-          <span className="loc-k">{t("locations-1.groupN", { n: k + 1 })}</span>
-          <span className="loc-chips">{g.map((p) => <span key={p} className="loc-chip num">{p + 1}</span>)}</span>
-        </div>
-      ))}
     </div>
   );
 }

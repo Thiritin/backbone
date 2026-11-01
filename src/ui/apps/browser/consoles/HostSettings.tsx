@@ -11,7 +11,7 @@ import { CHANNELS, channelOf } from "../../../../sim/60-infra/channel";
 import { setChannel } from "../../../../sim/90-actions/software";
 import { setOversell } from "../../../../sim/90-actions/oversell";
 import { tiersOf } from "../../../../sim/10-catalog/licence-tiers";
-import { accountsOn, licenceExpired, tierOf } from "../../../../sim/60-infra/licence";
+import { accountsOn, licenceExpired, panelMachine, panelStatus, tierOf, trialOf } from "../../../../sim/60-infra/licence";
 import { setLicenceTier } from "../../../../sim/90-actions/licence";
 import { useStore } from "../../../store";
 import { ram } from "../../hw";
@@ -69,13 +69,14 @@ export const LicenceBanner = ({ game, c }: { game: GameState; c: Cluster }) =>
 
 // Edition, accounts against the cap, expiry and the editions to switch to.
 export function LicenceTiers({ game, c }: { game: GameState; c: Cluster }) {
-  const act = useStore((s) => s.act), tier = tierOf(c);
+  const act = useStore((s) => s.act), tier = tierOf(game, c);
   if (!tier) return null;
-  const lic = c.licence, fee = (x: typeof tier) => t(x.kind === "account" ? "host.perAccount" : "host.perMonth", { fee: euroPrice(x.fee) });
+  const status = panelStatus(game, c), machine = panelMachine(c), trial = machine && c.panel ? trialOf(game, machine, c.panel) : undefined;
+  const fee = (x: typeof tier) => t(x.kind === "account" ? "host.perAccount" : "host.perMonth", { fee: euroPrice(x.fee) });
   const facts: Fact[] = [
     { label: t("host.edition"), value: tier.name },
     { label: t("host.accounts"), value: tier.cap === null ? t("host.unlimited", { n: accountsOn(game, c) }) : t("host.of", { n: accountsOn(game, c), cap: tier.cap }), num: true },
-    { label: t("host.expires"), value: lic?.lapsedAt != null ? t("host.lapsed") : lic?.trialUntil != null ? t("host.trialUntil", { date: formatClock(lic.trialUntil) }) : t("host.never"), num: true },
+    { label: t("host.expires"), value: status === "lapsed" ? t("host.lapsed") : status !== "active" && trial ? t("host.trialUntil", { date: formatClock(trial.until) }) : t("host.never"), num: true },
   ];
   return (
     <>
