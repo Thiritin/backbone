@@ -102,7 +102,7 @@ describe("orders by email", () => {
     expect(req().customerId).toBeNull();
     s.sales.requests = s.sales.requests.map((x) => (x.id === r.id ? { ...x, budget: 100 } : x));
     expect(quoteOrder(s, tk().id, r.quote!).ok).toBe(true);
-    for (let i = 0; i < 24 * 4 && !req().invoiceId; i++) run(s, 1);
+    for (let i = 0; i < 24 * 4 && !req().serviceId; i++) run(s, 1);
     expect(tk().status).toBe("waiting");
     s.invoices = s.invoices.map((i) => (i.id === req().invoiceId ? { ...i, payStep: 0, payAt: s.hour, bank: undefined } : i));
     for (let i = 0; i < 24 * 4 && req().status !== "won"; i++) run(s, 1);

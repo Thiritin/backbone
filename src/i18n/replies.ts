@@ -287,7 +287,14 @@ const MAILS: Record<string, [Mail, Mail, Mail]> = {
     (p) => `Everything is set up: ${hosting(p)} runs in ${p.city} since ${day(p)}.${p.domain ? ` ${domainLine(p)}` : ""} Your access details follow in a separate email.`,
   ],
 };
-const LEAD = ["decline.notOffered", "decline.noCapacity", "decline.busy", "accept", "failed", "order.quote", "order.invoice", "order.live"];
+// The one email of a finished order: account, confirmation with its invoice, domain and setup.
+const DONE: [Mail, Mail, Mail] = [
+  (p) => `We confirm your order of ${hosting(p)} at ${euroCents(Number(p.price))} a month. Your customer account with us is set up, and invoice ${p.invoice} over ${euroCents(Number(p.total))} is attached.`,
+  (p) => `Your order is confirmed and your customer account is ready. Please pay invoice ${p.invoice} (${euroCents(Number(p.total))}) within the next few days.`,
+  (p) => `Thank you, the order stands: ${hosting(p)} costs ${euroCents(Number(p.price))} a month, and the first invoice, ${p.invoice}, comes to ${euroCents(Number(p.total))}. Your customer account is set up.`,
+];
+MAILS["order.done"] = [0, 1, 2].map((i): Mail => (p) => `${DONE[i](p)} ${MAILS["order.live"][i](p)}`) as [Mail, Mail, Mail];
+const LEAD = ["decline.notOffered", "decline.noCapacity", "decline.busy", "accept", "failed", "order.quote", "order.invoice", "order.live", "order.done"];
 const SENDER = ["forward", "takedown", "notOurs", "reject", "comply", "object"];
 
 // Outgoing emails; spread into en.

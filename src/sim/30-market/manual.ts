@@ -1,6 +1,6 @@
-// GDD, Custom orders: an order email is worked step by step, each step a reply in its thread. Quote a price and wait for the
-// customer to accept, then create the customer account, confirm the order with its invoice, register or transfer the domain
-// and set up the service. Numbers in economy.md, Custom orders.
+// GDD, Custom orders: an order email is worked step by step. Quote a price and wait for the customer to accept, create the
+// customer account before or after, confirm the order with its invoice, register or transfer the domain and set up the
+// service; the customer hears once more when everything is done. Numbers in economy.md, Custom orders.
 import { carryForward } from "./quotes";
 import { hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
@@ -66,20 +66,21 @@ const domainDone = (s: GameState, r: SalesRequest) => !needsDomain(r) || domainO
 // The sender of the steps automation runs.
 export const AUTOMATION = "Automation";
 export const canAutomate = (s: GameState): boolean => s.unlocks.includes(AUTOMATION_SKILL);
-// The quote counts as accepted once the customer said yes or the order came through the form; an order past its account
+// The quote counts as accepted once the customer said yes or the order came through the form; an order past its invoice
 // from an older save counts too.
-export const quoteAccepted = (r: SalesRequest): boolean => r.status === "accepted" || !!r.customerId || !!r.invoiceId || !!r.serviceId;
+export const quoteAccepted = (r: SalesRequest): boolean => r.status === "accepted" || !!r.invoiceId || !!r.serviceId;
 // The best host of the order's city (routes.ts, preferredRoute): what the setup preselects, and the pick of staff, who
 // cannot ask.
 export const hostFor = (s: GameState, r: SalesRequest): string | null => preferredRoute(s, r.product, r.city, sizeOf(r.spec));
 
 // Which steps the order has behind it.
 export function stepsDone(s: GameState, r: SalesRequest): Record<OrderStep, boolean> {
-  return { quote: quoteAccepted(r), account: !!r.customerId, invoice: !!r.invoiceId && invoiceOf(s, r)?.status !== "draft", domain: !!r.customerId && domainDone(s, r), provision: !!r.serviceId };
+  return { quote: quoteAccepted(r), account: !!r.customerId, invoice: !!r.invoiceId, domain: !!r.customerId && domainDone(s, r), provision: !!r.serviceId };
 }
 
-// Why a step of a custom order cannot run now, or null. Steps run in order; the domain only for web hosting. The setup
-// runs on the route given, else the one chosen before, else the first host with room; "auto" needs the provisioning skill.
+// Why a step of a custom order cannot run now, or null. The account runs any time, the rest once the quote is accepted and
+// the account exists; the domain only for web hosting. The setup runs on the route given, else the one chosen before, else
+// the first host with room; "auto" needs the provisioning skill.
 const LIVE = ["open", "quoted", "countered", "refused", "accepted"];
 export function stepError(s: GameState, t: Ticket, step: OrderStep, route?: string): string | null {
   const r = orderOf(s, t);
@@ -88,26 +89,25 @@ export function stepError(s: GameState, t: Ticket, step: OrderStep, route?: stri
   const done = stepsDone(s, r);
   if (done[step]) return "error.stepDone";
   if (step === "quote") return r.replyAt !== null ? "error.quoteSent" : null;
-  if (!done.quote) return "error.needsQuote";
   if (step === "account") return null;
+  if (!done.quote) return "error.needsQuote";
   if (!done.account) return "error.needsAccount";
   if (step === "invoice") return r.quote && r.quote > 0 ? null : "error.quotePrice";
-  if (!done.invoice) return "error.needsInvoice";
   if (step === "domain") {
     if (!needsDomain(r)) return "error.unknownTicketAction";
     return domainOf(s, r.domain!) ? "error.domainTaken" : null;
   }
   if (!done.domain) return "error.needsDomain";
+  if (!done.invoice) return "error.needsInvoice";
   const to = route ?? r.route ?? hostFor(s, r);
   if (to === "auto") return !canAutomate(s) ? "error.needsAutomation" : targetFor(s, r) ? null : "error.noCapacity";
   return to ? routeError(s, r.product, r.city, sizeOf(r.spec), to) : "error.noCapacity";
 }
 
-// The step staff work next: everything in order, the setup only once the invoice is paid. The quote waits for the customer's answer.
+// The step staff work next: everything in order. The quote waits for the customer's answer.
 export function nextStep(s: GameState, r: SalesRequest): OrderStep | null {
   const done = stepsDone(s, r), step = ORDER_STEPS.find((x) => !done[x]) ?? null;
-  if (step === "quote") return r.replyAt === null ? step : null;
-  return step === "provision" && invoiceOf(s, r)?.status !== "paid" ? null : step;
+  return step === "quote" && r.replyAt !== null ? null : step;
 }
 
 // What a support agent does on an order ticket, or null when it waits for the player or the customer.
@@ -153,12 +153,6 @@ export function firstLines(s: GameState, r: SalesRequest, monthly = r.quote ?? 0
   return lines;
 }
 
-// Sends the first invoice of a live order as the confirmation step; false when the invoice belongs to no order that waits for it.
-export function sendOrderInvoice(s: GameState, inv: Invoice): boolean {
-  const r = s.sales.requests.find((x) => x.kind === "order" && x.invoiceId === inv.id), t = r && s.tickets.find((x) => x.id === r.ticketId);
-  return !!t && !stepError(s, t, "invoice") && !applyStep(s, t, "invoice");
-}
-
 const setTicket = (s: GameState, id: string, fields: Partial<Ticket>) => {
   s.tickets = s.tickets.map((x) => (x.id === id ? { ...x, ...fields } : x));
 };
@@ -187,20 +181,18 @@ export function applyStep(s: GameState, t: Ticket, step: OrderStep, by?: string)
     const id = addCustomer(s, requestName(r), r.profile, r.shady || r.fraud ? "prompt" : habitFor(hashRng(s.seed, Number(r.id.slice(3)) || 0, 227), r.profile), r);
     if (r.shady || r.fraud) s.customers = s.customers.map((c) => (c.id === id ? { ...c, ...hiddenTraits(s, r) } : c));
     editRequest(s, r.id, () => ({ customerId: id }));
-    setTicket(s, t.id, { customerId: id, updatedAt: s.hour });
+    // Past the accepted quote the new customer waits on the setup.
+    setTicket(s, t.id, { customerId: id, updatedAt: s.hour, ...(quoteAccepted(r) && { dueAt: replyDue(s.customers.find((c) => c.id === id)!, s.hour) }) });
     s.quotes = s.quotes.map((q) => (q.ticketId === t.id ? { ...q, customerId: id } : q));
     log(id);
     return null;
   }
   const customerId = r.customerId!;
   if (step === "invoice") {
-    // The draft converted from the quote, else one made now; the customer pays it by bank transfer.
-    const draft = invoiceOf(s, r), inv = draft?.status === "draft" ? draft : draftInvoice(s, customerId, firstLines(s, r));
-    issue(s, inv, ORDER_PAY_DAYS - 1);
+    // The confirmation waits in Books as a draft and goes out with the setup; the confirmed order no longer lapses.
+    const inv = draftInvoice(s, customerId, firstLines(s, r));
     editRequest(s, r.id, () => ({ invoiceId: inv.id, status: "quoted", replyAt: null }));
     carryForward(s, t.id, inv.id);
-    mailRequest(s, r.id, "order.invoice", by, { invoice: inv.number, total: cents(inv.lines.reduce((n, l) => n + l.amount, 0)) });
-    setTicket(s, t.id, { status: "waiting", updatedAt: s.hour });
   } else if (step === "domain") {
     register(s, r.domain!, customerId, !!r.owned);
   } else {
@@ -215,9 +207,12 @@ export function applyStep(s: GameState, t: Ticket, step: OrderStep, by?: string)
     if (!done.ok) return { app: "Support", key: "event.stepFailed", params: { name: requestName(r), error: done.error ?? "error.noCapacity" } };
     s.services = s.services.map((v) => (v.id === done.id ? startTerm(s, v, r.cycle) : v));
     if (r.product === "webHosting") offerCertificate(s, s.services.find((v) => v.id === done.id)!, CERT_SHARE.order);
-    editRequest(s, r.id, () => ({ serviceId: done.id! }));
-    setTicket(s, t.id, { serviceId: done.id!, updatedAt: s.hour });
-    mailRequest(s, r.id, "order.live", by, { owned: r.owned ? 1 : 0 });
+    editRequest(s, r.id, () => ({ serviceId: done.id!, status: "quoted", replyAt: null }));
+    // One email for the account, the confirmation with its invoice, the domain and the setup; the customer pays it by bank transfer.
+    const inv = invoiceOf(s, r)!;
+    if (inv.status === "draft") issue(s, inv, ORDER_PAY_DAYS - 1);
+    mailRequest(s, r.id, "order.done", by, { owned: r.owned ? 1 : 0, invoice: inv.number, total: cents(inv.lines.reduce((n, l) => n + l.amount, 0)) });
+    setTicket(s, t.id, { serviceId: done.id!, status: inv.status === "paid" ? t.status : "waiting", updatedAt: s.hour });
   }
   settle(s, orderOf(s, t)!);
   return null;
