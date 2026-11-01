@@ -209,4 +209,6 @@ export default {
   "web.rs.question": (p) => `Question sur ${p.domain}`,
   "web.rs.suspend": () => "Suspendre",
   "web.rs.resume": () => "Reactiver",
+  "ticket.howTo.licence.subject": () => "Le panneau de contrôle indique une licence expirée",
+  "ticket.howTo.licence.text": (p) => `Quand je me connecte au panneau de contrôle de ${p.domain || "mon site"}, je ne vois qu'une page indiquant que la licence a expiré. Le site fonctionne toujours, mais je ne peux rien gérer. Pouvez-vous régler ça ?`,
 } satisfies Dict;
