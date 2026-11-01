@@ -13,7 +13,7 @@ import { createVm } from "../src/sim/90-actions/clusters";
 import { migrationDowntime } from "../src/sim/90-actions/vms";
 import { runAction } from "../src/sim/90-actions";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { buyBare, buyDevice, hypervisor, join, skipTo, withServer, newGame } from "./fixtures";
+import { buyBare, buyDevice, hypervisor, join, onSaleAt, skipTo, withServer, newGame } from "./fixtures";
 
 type R = { ok: boolean; id?: string; error?: string };
 const ok = (r: R) => {
@@ -43,8 +43,7 @@ describe("CPU vendors", () => {
   });
 
   it("sells a server model as Indel or AMB, the ARM line as Ampear only", () => {
-    const s = rich();
-    skipTo(s, 2017);
+    const s = { ...rich(), hour: onSaleAt(["g5-compute", "Dwell"]) };
     const amb = ok(buyDevice(s, "g5-compute", "Dwell", 1, "loc1", { vendor: "amb" }));
     expect(cpus(s, amb).map((c) => [c.vendor, c.gen, c.size])).toEqual([["amb", 5, 32], ["amb", 5, 32]]);
     expect(dev(s, amb).components.find((c) => c.kind === "board")!.vendor).toBe("amb");
