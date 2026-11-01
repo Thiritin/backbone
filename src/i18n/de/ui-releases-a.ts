@@ -64,7 +64,7 @@ export default {
   "swnews.pleskit.17.0": () => "Neue Oberfläche|Let's-Encryptly-Integration|Verbesserte Erweiterungen",
   "swnews.pleskit.18.0": () => "Monatliche inkrementelle Updates|WordPrass Toolkit|Dockyard- und Git-Unterstützung",
   "swnews.directadmen.1.24": () => "Schlankes Panel|Schnelle Einrichtung",
-  "swnews.directadmen.1.30": () => "Enhanced-Oberfläche|Verbesserte Reseller-Stufen|Feinschliff an der Enhanced-Oberfläche|Einfachere Lizenzaktivierung",
+  "swnews.directadmen.1.30": () => "Enhanced-Oberfläche|Verbesserte Reseller-Stufen|Einfachere Lizenzaktivierung",
   "swnews.directadmen.1.40": () => "Verbesserte E-Mail-Tools|Schnellere Backups|Aktualisierte DNS-Tools",
   "swnews.directadmen.1.50": () => "CustomBuild 2|Let's-Encryptly-Integration|Verbesserte PHP-Auswahl",
   "swnews.directadmen.1.60": () => "Evolution-Oberfläche als Standard|Verbesserte Anmeldesicherheit|Bessere API",
