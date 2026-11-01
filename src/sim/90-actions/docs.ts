@@ -86,6 +86,8 @@ export function signForm(s: GameState, id: string): ActionResult {
   if (!doc?.form) return fail("error.unknownDoc");
   if (doc.form.signed !== null) return fail("error.formSigned");
   if (!s.registration) return fail("error.notRegistered");
+  const err = applyError(s, doc.form.form);
+  if (err) return fail(err);
   s.docs = s.docs.map((d) => (d.id === id ? { ...d, form: { ...d.form!, signed: s.hour } } : d));
   return { ok: true };
 }

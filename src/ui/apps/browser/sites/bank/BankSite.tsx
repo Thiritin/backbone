@@ -2,13 +2,12 @@ import { useState, type CSSProperties, type ReactNode } from "react";
 import { t } from "../../../../../i18n/en";
 import { LOCALE } from "../../../../../i18n/lang";
 import { euro, euroCents } from "../../../../../sim/00-core/money";
-import { dateOf, yearOf } from "../../../../../sim/00-core/time";
-import { bankById, bookingFee, monthlyFee, tanMethods, type Bank, type BankId, type TanMethod } from "../../../../../sim/10-catalog/banks";
-import { LEGAL_FORMS } from "../../../../../sim/80-business/office";
+import { dateOf, hourOf, yearOf } from "../../../../../sim/00-core/time";
+import { bankById, monthlyFee, plansFor, tanMethods, type Bank, type BankId, type Plan, type PlanId, type TanMethod } from "../../../../../sim/10-catalog/banks";
 import { annuity, LOAN_AMOUNTS, LOAN_YEARS, loanAvailable, loanRate } from "../../../../../sim/45-billing/billing";
 import { cardSpent, groupIban, ibanEra, ownIban, spendable, WRONG_LIMIT, type Draft } from "../../../../../sim/46-finance/bank";
 import type { GameState } from "../../../../../sim/50-state";
-import { applyCard, applyOverdraft, openBankAccount, cancelTransfer, confirmTransfer, deleteStandingOrder, setTanMethod, startStandingOrder, startTransfer } from "../../../../../sim/90-actions/bank";
+import { applyCard, applyOverdraft, openBankAccount, cancelTransfer, confirmTransfer, deleteStandingOrder, setPlan, setTanMethod, startStandingOrder, startTransfer, switchBank } from "../../../../../sim/90-actions/bank";
 import { takeLoan } from "../../../../../sim/90-actions/billing";
 import { readSession, writeSession } from "../../../../session";
 import { useStore } from "../../../../store";
@@ -66,9 +65,33 @@ function Box({ title, children }: { title: string; children: ReactNode }) {
   return <section className="bks-box"><h2>{title}</h2>{children}</section>;
 }
 
+// The bank's plans with the fee for the company's form; last renders the row's pick or state.
+function Plans({ game, bank, last }: { game: GameState; bank: Bank; last: (p: Plan, serves: boolean) => ReactNode }) {
+  const form = game.registration?.form ?? "sole", serving = plansFor(bank, form);
+  return (
+    <table className="bks-table bks-rows">
+      <thead><tr><th>{t("bank.site.planName")}</th><th className="r">{t("bank.site.planFee")}</th><th className="r">{t("bank.site.freeBookings")}</th><th className="r">{t("bank.site.perBooking")}</th><th className="r">{t("bank.site.planCard")}</th><th /></tr></thead>
+      <tbody>
+        {bank.plans.map((p) => (
+          <tr key={p.id}>
+            <td>{p.name}</td>
+            <td className="r num">{euroCents(monthlyFee(bank, p.id, form))}</td>
+            <td className="r num">{p.booking ? p.free : t("bank.site.allFree")}</td>
+            <td className="r num">{p.booking ? euroCents(p.booking) : "–"}</td>
+            <td className="r">{p.card === "double" ? t("bank.site.cardDouble") : p.card ? t("bank.site.cardIncluded") : t("bank.site.cardYearly", { fee: euro(bank.card.yearly) })}</td>
+            <td className="r">{last(p, serving.includes(p))}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
 function Login({ game, bank, onIn, onOpen }: { game: GameState; bank: Bank; onIn: () => void; onOpen: () => void }) {
   const act = useStore((s) => s.act);
   const [number, setNumber] = useState(""), [pin, setPin] = useState(""), [failed, setFailed] = useState(false);
+  const [plan, setPlanPick] = useState<PlanId | undefined>(() => plansFor(bank, game.registration?.form ?? "sole")[0]?.id);
+  const other = !!game.bank && game.bank.id !== bank.id;
   const submit = () => {
     const ok = game.bank?.id === bank.id && number.trim() === game.bank.number && pin.trim() === game.bank.pin;
     setFailed(!ok);
@@ -87,22 +110,20 @@ function Login({ game, bank, onIn, onOpen }: { game: GameState; bank: Bank; onIn
       <Box title={t("bank.site.conditions")}>
         <table className="bks-table">
           <tbody>
-            {Object.entries(LEGAL_FORMS).map(([form, label]) => {
-              const fee = monthlyFee(bank, form), booking = bookingFee(bank, form);
-              return (
-                <tr key={form}>
-                  <td>{t("bank.site.monthly", { form: label })}</td>
-                  <td className="r">{fee === null ? "–" : booking ? t("bank.site.plusBooking", { fee: euroCents(fee), booking: euroCents(booking) }) : euroCents(fee)}</td>
-                </tr>
-              );
-            })}
             <tr><td>{t("bank.site.transferTime")}</td><td className="r">{t(`bank.speed.${bank.speed}`)}</td></tr>
             <tr><td>{t("bank.site.tan")}</td><td className="r">{tanMethods(bank, yearOf(game.hour)).map((m) => t(`bank.tan.${m.label}`)).join(", ")}</td></tr>
             <tr><td>{t("bank.site.cardFee")}</td><td className="r">{euro(bank.card.yearly)}</td></tr>
             <tr><td>{t("bank.site.overdraftRate")}</td><td className="r">{bank.overdraft === null ? "–" : pct(bank.overdraft)}</td></tr>
+            <tr><td>{t("bank.site.loanRate")}</td><td className="r">{bank.loans.factor ? pct(loanRate(game, bank.id)) : "–"}</td></tr>
           </tbody>
         </table>
-        {!game.bank && <p><button className="bks-btn primary" onClick={() => { if (act(openBankAccount, bank.id).ok) onOpen(); }}>{t("bank.site.open")}</button></p>}
+      </Box>
+      <Box title={t("bank.site.plans")}>
+        <Plans game={game} bank={bank} last={(p, serves) => (game.bank && !other ? null
+          : <input type="radio" name="plan" aria-label={p.name} disabled={!serves} checked={plan === p.id} onChange={() => setPlanPick(p.id)} />)} />
+        {(!game.bank || other) && plan && <p><button className="bks-btn primary" onClick={() => {
+          if ((other ? act(switchBank, bank.id, plan) : act(openBankAccount, bank.id, plan)).ok) onOpen();
+        }}>{other ? t("bank.site.switch", { bank: bank.name }) : t("bank.site.open")}</button></p>}
       </Box>
     </>
   );
@@ -260,8 +281,25 @@ function Loans({ game }: { game: GameState }) {
 }
 
 function Service({ game, bank }: { game: GameState; bank: Bank }) {
-  const act = useStore((s) => s.act);
+  const act = useStore((s) => s.act), b = game.bank!, d = dateOf(game.hour);
+  const first = day(hourOf(new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1))));
+  const old = b.previous, oldName = old ? bankById(old.id)!.name : "";
   return (
+    <>
+    <Box title={t("bank.site.plans")}>
+      <Plans game={game} bank={bank} last={(p, serves) => p.id === b.planNext ? t("bank.site.planFrom", { date: first })
+        : p.id === b.plan && !b.planNext ? t("bank.site.current")
+        : serves ? <button className="bks-btn" onClick={() => act(setPlan, p.id)}>{t("bank.site.choose")}</button> : "–"} />
+    </Box>
+    {!!old?.standingOrders.length && (
+      <Box title={t("bank.site.oldOrders", { bank: oldName })}>
+        <table className="bks-table bks-rows">
+          <thead><tr><th>{t("bank.site.payee")}</th><th>{t("bank.site.reference")}</th><th className="r">{t("bank.site.orderDay")}</th><th className="r">{t("bank.site.amount")}</th></tr></thead>
+          <tbody>{old.standingOrders.map((o) => <tr key={o.id}><td>{o.name}</td><td>{o.reference}</td><td className="r num">{o.day}</td><td className="r num">{euroCents(o.amount)}</td></tr>)}</tbody>
+        </table>
+      </Box>
+    )}
+    {!!old?.mandates.length && <Box title={t("bank.site.oldMandates", { bank: oldName })}><ul>{old.mandates.map((m) => <li key={m}>{m}</li>)}</ul></Box>}
     <Box title={t("bank.site.nav.service")}>
       <form className="bks-form" onSubmit={(e) => e.preventDefault()}>
         <label>{t("bank.site.tan")}
@@ -271,6 +309,7 @@ function Service({ game, bank }: { game: GameState; bank: Bank }) {
         </label>
       </form>
     </Box>
+    </>
   );
 }
 

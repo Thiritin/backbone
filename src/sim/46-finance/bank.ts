@@ -3,7 +3,7 @@ import { arrived, bookPayment, cardBlocked, invoice, open, payableFor, supplierA
 import { t } from "../../i18n/en";
 import { hashRng, rand } from "../00-core/rng";
 import { dateOf, isMonthStart, monthIndexOf, nowMinutes, yearOf } from "../00-core/time";
-import { bankById, bookingFee, DEFAULT_BANK, IBAN_YEAR, monthlyFee, tanMethods, TRANSFER_HOURS, type Bank, type BankId, type TanMethod } from "../10-catalog/banks";
+import { bankById, bookingFee, DEFAULT_BANK, defaultPlan, IBAN_YEAR, monthlyFee, planById, tanMethods, TRANSFER_HOURS, type Bank, type BankId, type PlanId, type TanMethod } from "../10-catalog/banks";
 import { challengeById } from "../10-catalog/challenges";
 import { START_CASH } from "../10-catalog/economy";
 import { deliverMail } from "../40-support/tickets";
@@ -21,8 +21,14 @@ export interface Draft { name: string; account: string; code?: string; amount: n
 // A transfer waiting for its TAN: the list position asked for (iTAN), the code texted (mTAN) and the minute the text arrives.
 // day is set when the TAN confirms a standing order for that day of the month instead of a transfer.
 export interface Pending { draft: Draft; index: number | null; code: string | null; sendAt: number | null; day?: number }
+// The account the company switched away from: it pays its last fee at the next month start (closed then), and customers'
+// payments to its number still arrive for PREVIOUS_HOURS after at.
+export interface OldAccount { id: BankId; number: string; plan: PlanId; at: number; closed: boolean; standingOrders: StandingOrder[]; mandates: string[] }
 export interface BankAccount {
   id: BankId; number: string; pin: string; opened: number; tan: TanMethod;
+  // planNext takes over at the next month start.
+  plan: PlanId; planNext?: PlanId;
+  previous?: OldAccount;
   card: Card | null;
   // The overdraft limit, and the hour an application for one is decided.
   overdraft: number; overdraftAt: number | null;
@@ -57,11 +63,11 @@ export const tanCodes = (seed: number, list: number): string[] => {
   return Array.from({ length: TAN_COUNT }, () => String(100000 + Math.floor(rand(r) * 900000)));
 };
 
-export function openAccount(s: GameState, id: BankId): BankAccount {
+export function openAccount(s: GameState, id: BankId, plan = defaultPlan(bankById(id)!, s.registration?.form ?? "sole")): BankAccount {
   const r = hashRng(s.seed, 0xba4c, id.length);
   const bank = bankById(id)!;
   return {
-    id, number: `${1 + Math.floor(rand(r) * 9)}${digits(r, 9)}`, pin: `${1 + Math.floor(rand(r) * 9)}${digits(r, 4)}`, opened: s.hour, tan: tanMethods(bank, yearOf(s.hour)).at(-1)?.method ?? "itan",
+    id, plan, number: `${1 + Math.floor(rand(r) * 9)}${digits(r, 9)}`, pin: `${1 + Math.floor(rand(r) * 9)}${digits(r, 4)}`, opened: s.hour, tan: tanMethods(bank, yearOf(s.hour)).at(-1)?.method ?? "itan",
     card: null, overdraft: 0, overdraftAt: null, mandates: [], standingOrders: [],
     tans: { list: 1, codes: tanCodes(s.seed, 1), used: [] }, pending: null, wrong: 0, lockedUntil: 0, outgoing: [], interest: 0, welcomed: false,
   };
@@ -120,9 +126,9 @@ export function savingsOf(s: GameState): number {
   return twist?.kind === "cash" ? twist.cash : START_CASH;
 }
 
-export function openWithSavings(s: GameState, id: BankId): void {
+export function openWithSavings(s: GameState, id: BankId, plan: PlanId): void {
   const savings = savingsOf(s);
-  s.bank = openAccount(s, id);
+  s.bank = openAccount(s, id, plan);
   welcome(s);
   s.cash = cents(s.cash + savings);
   s.ledger = [...s.ledger, { hour: s.hour, category: "capital", key: "ledger.savings", params: {}, amount: savings }];
@@ -200,12 +206,12 @@ export const limitFor = (s: GameState, factor: number, floor: number): number =>
 export const cardReady = (s: GameState): boolean => !!s.bank?.card && s.hour >= s.bank.card.readyAt && !cardBlocked(s);
 export const cardSpent = (s: GameState): number => -(s.bank?.card?.spent ?? []).reduce((n, e) => n + e.amount, 0);
 
-// Every ledger line of the month moved the account, except the bank's own fees.
-function bookingsIn(s: GameState, month: number): number {
+// Every ledger line of the month since the account opened moved the account, except the bank's own fees.
+function bookingsIn(s: GameState, month: number, since: number): number {
   let n = 0;
   for (let i = s.ledger.length - 1; i >= 0; i--) {
     const e = s.ledger[i], m = monthIndexOf(e.hour);
-    if (m < month) break;
+    if (m < month || e.hour < since) break;
     if (m === month && e.amount !== 0 && e.category !== "fees") n++;
   }
   return n;
@@ -230,7 +236,7 @@ export function bankTick(s: GameState): SimEvent[] {
   if (card && s.hour === card.readyAt) deliverMail(s, bank.name, "bankCard", { bank: bank.name, limit: card.limit });
   if (card && s.hour >= card.feeAt) {
     const free = bank.card.freeFirstYear && card.feeAt === card.readyAt;
-    if (bank.card.yearly > 0 && !free) book("fees", "ledger.cardFee", { bank: bank.name }, -bank.card.yearly);
+    if (bank.card.yearly > 0 && !free && !planById(bank, b.plan)?.card) book("fees", "ledger.cardFee", { bank: bank.name }, -bank.card.yearly);
     next = { ...next, card: { ...card, feeAt: card.feeAt + HOURS_PER_YEAR } };
   }
   if (next.overdraftAt !== null && s.hour >= next.overdraftAt) {
@@ -253,10 +259,19 @@ export function bankTick(s: GameState): SimEvent[] {
       invoice(s, "card", bank.name, next.card.spent);
       next = { ...s.bank!, card: { ...next.card, spent: [] } };
     }
-    const form = s.registration?.form ?? "sole", fee = monthlyFee(bank, form) ?? 0, perBooking = bookingFee(bank, form);
-    if (fee > 0) book("fees", "ledger.bankFee", { bank: bank.name }, -fee);
-    const count = perBooking > 0 ? bookingsIn(s, monthIndexOf(s.hour) - 1) : 0;
+    // Last month's bookings under the old plan, then the plan change and the new month's fee.
+    const form = s.registration?.form ?? "sole", perBooking = bookingFee(bank, next.plan);
+    const count = perBooking > 0 ? Math.max(0, bookingsIn(s, monthIndexOf(s.hour) - 1, next.opened) - planById(bank, next.plan)!.free) : 0;
     if (count > 0) book("fees", "ledger.bookingFee", { bank: bank.name, count }, -cents(count * perBooking));
+    if (next.planNext) next = { ...next, plan: next.planNext, planNext: undefined };
+    const fee = monthlyFee(bank, next.plan, form);
+    if (fee > 0) book("fees", "ledger.bankFee", { bank: bank.name }, -fee);
+    const old = next.previous, oldBank = old && !old.closed && bankById(old.id);
+    if (oldBank) {
+      const last = monthlyFee(oldBank, old.plan, form);
+      if (last > 0) book("fees", "ledger.bankFee", { bank: oldBank.name }, -last);
+      next = { ...next, previous: { ...old, closed: true } };
+    }
     if (next.interest >= 0.01) book("fees", "ledger.overdraftInterest", { bank: bank.name }, -cents(next.interest));
     next = { ...next, interest: 0 };
   }

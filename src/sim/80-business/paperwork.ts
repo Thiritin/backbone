@@ -1,8 +1,7 @@
 // docs/design/plans/company-paperwork.md: the legal form only moves up, by a signed application the player emails to the
 // trade office (partnership) or the notary (limited company); the answer comes back by letter, with the fees.
 import { yearOf } from "../00-core/time";
-import { bankById } from "../10-catalog/banks";
-import { monthlyFee } from "../10-catalog/banks";
+import { bankById, planById } from "../10-catalog/banks";
 import { COMPANY_LAW_SKILL } from "../10-catalog/research";
 import { post } from "../40-support/letters";
 import type { SupplierId } from "../46-finance/payables";
@@ -53,7 +52,9 @@ export function applyError(s: GameState, form: string): string | null {
   if (form === "limited" && !s.unlocks.includes(COMPANY_LAW_SKILL)) return "error.companyLaw";
   if (changePending(s)) return "error.changePending";
   const bank = s.bank && bankById(s.bank.id);
-  if (bank && monthlyFee(bank, form) === null) return "error.bankForm";
+  if (bank && [s.bank!.plan, s.bank!.planNext ?? s.bank!.plan].some((p) => !planById(bank, p)?.forms.includes(form))) return "error.bankPlan";
+  // The overdraft does not count toward the share capital.
+  if (form === "limited" && s.cash < SHARE_CAPITAL) return "error.shareCapital";
   return null;
 }
 
