@@ -7,12 +7,12 @@ const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.len
 for (const bot of [STEADY, SOLO]) {
   const runs: RunResult[] = SEEDS.map((s) => run(bot, s));
   console.log(`\n${bot.name}: ${runs.filter((r) => r.bankrupt).length} of ${runs.length} bankrupt`);
-  console.log("year  level  customers        MRR   lowest cash  staff");
+  console.log("year  level  customers        MRR   lowest cash  staff  share");
   runs[0].rows.forEach((_, y) => {
     const col = (f: (r: RunResult) => number) => median(runs.map((r) => (r.rows[y] ? f(r) : NaN)).filter((v) => !Number.isNaN(v)));
     const row = runs[0].rows[y];
     console.log(
-      `${row.year}  ${String(col((r) => r.rows[y].level)).padStart(5)}  ${String(col((r) => r.rows[y].customers)).padStart(9)}  ${String(col((r) => r.rows[y].mrr)).padStart(9)}  ${String(col((r) => r.rows[y].minCash)).padStart(12)}  ${String(col((r) => r.rows[y].staff)).padStart(5)}`,
+      `${row.year}  ${String(col((r) => r.rows[y].level)).padStart(5)}  ${String(col((r) => r.rows[y].customers)).padStart(9)}  ${String(col((r) => r.rows[y].mrr)).padStart(9)}  ${String(col((r) => r.rows[y].minCash)).padStart(12)}  ${String(col((r) => r.rows[y].staff)).padStart(5)}  ${(100 * col((r) => r.rows[y].flow.won / Math.max(1, r.rows[y].flow.asked))).toFixed(1).padStart(5)}%`,
     );
   });
   console.log("level  target  median year reached");

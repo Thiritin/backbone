@@ -78,6 +78,8 @@ export default {
   "error.speedMismatch": () => "Ambas as portas têm de funcionar à mesma velocidade.",
   "error.notServer": () => "Só os servidores têm modo de bond.",
   "error.notSwitch": () => "Só os switches têm grupos de portas.",
+  "error.unmanaged": () => "Os switches não geridos não têm definições.",
+  "error.vlanRange": () => "Os IDs de VLAN vão de 1 a 4094.",
   "error.groupSize": () => "Um grupo de portas tem de 2 a 8 portas.",
   "ledger.lease": (p) => `${p.lessor}, pagamento ${p.paid} de ${p.months}`,
   "ledger.leaseBuyout": (p) => `${p.lessor}, compra final`,
