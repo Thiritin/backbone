@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- Play immersive in the main menu runs the game in full screen with keyboard shortcuts such as Cmd+Tab and Alt+Tab kept inside the game, where they switch between windows, and Log out in the top left menu leaves it.
 - You can terminate a customer contract with notice or immediately, with a reason such as non-payment, abuse, excessive usage or capacity limits, and the customer receives an email with the end date.
 - Suspending now applies to single services, so the customer-wide suspend in the books and the customer page is gone.
 - A dunning letter now waits a week after a late payment reminder, and the reminder buttons in German show the step names capitalized.
