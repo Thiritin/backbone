@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- Online banking now has a Payees page where you save, delete and pay recipients, and the transfer form can pick a saved payee or save a new one.
 - The settings button in the Gmix and other mail desks is readable again on the classic desktop looks.
 - Every licensed product's website has a shop with its editions and prices, a cart, a checkout paid from the bank, and an order email with the licence keys.
 - A My account page on each product website lists the licences bought there with their key, machine and renewal date, and cancels a monthly licence at the end of its term.

@@ -39,6 +39,7 @@ export default {
   "ledger.standingOrder": (p) => `Dauerauftrag an ${p.name}: ${p.reference}`,
   "error.orderDay": () => "Wähle einen Tag von 1 bis 28.",
   "error.noOrder": () => "Diesen Dauerauftrag gibt es nicht.",
+  "error.noPayee": () => 'Diesen Empfänger gibt es nicht.',
   "ticket.mail.bankOrderFailed.subject": () => "Dauerauftrag nicht ausgeführt",
   "ticket.mail.bankOrderFailed.text": (p) => `${p.bank} konnte Ihren Dauerauftrag über ${euroCents(Number(p.amount))} an ${p.name} nicht ausführen.`,
   "error.shopUnpaid": () => "Der Shop hat eine unbezahlte Rechnung.",

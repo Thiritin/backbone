@@ -39,6 +39,7 @@ export default {
   "ledger.standingOrder": (p) => `Virement permanent à ${p.name} : ${p.reference}`,
   "error.orderDay": () => "Choisis un jour entre 1 et 28.",
   "error.noOrder": () => "Ce virement permanent n'existe pas.",
+  "error.noPayee": () => "Ce bénéficiaire n'existe pas.",
   "ticket.mail.bankOrderFailed.subject": () => "Virement permanent non exécuté",
   "ticket.mail.bankOrderFailed.text": (p) => `${p.bank} n'a pas pu exécuter votre virement permanent de ${euroCents(Number(p.amount))} à ${p.name}.`,
   "error.shopUnpaid": () => "La boutique a une facture impayée.",
