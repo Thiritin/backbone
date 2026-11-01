@@ -3,8 +3,8 @@ import { keyCode } from "../00-core/rng";
 import { dateOf, hourOf, yearOf } from "../00-core/time";
 import { tiersOf, topTier, type LicenceTier } from "../10-catalog/licence-tiers";
 import { SOFTWARE } from "../10-catalog/platforms";
-import { licensingAt, SERVER_OS, serverOsAt } from "../10-catalog/server-os";
-import type { ServerOsId } from "../10-catalog/server-os";
+import { licensingAt, SERVER_OS } from "../10-catalog/server-os";
+import { versionAt, versionInfo, versionsOf } from "../10-catalog/software-versions";
 import type { GameState, Licence } from "../50-state";
 import type { Cluster } from "./cluster";
 
@@ -28,10 +28,12 @@ export function installedVersion(s: GameState, machineId: string, product: strin
   const m = [...s.devices, ...s.workloads].find((x) => x.id === machineId);
   return (m?.os?.id === product ? m.os.version : m?.software?.find((x) => x.id === product)?.version) ?? null;
 }
-// ponytail: only operating systems have ordered releases; software installs count as the key's major until it gets versions.
+const installedMajor = (s: GameState, machineId: string, product: string): string | undefined =>
+  versionInfo(product, installedVersion(s, machineId, product) ?? "")?.major;
+// A key for a major the product never had (a year, from before versions) covers whatever is installed.
 const isNewer = (product: string, installed: string | null, major: string): boolean => {
-  const versions = SERVER_OS.find((o) => o.id === product)?.versions.map((v) => v.version);
-  return !!versions && installed !== null && versions.indexOf(installed) > versions.indexOf(major);
+  const vs = versionsOf(product), i = vs.findIndex((v) => v.version === installed), k = vs.findIndex((v) => v.major === major);
+  return i >= 0 && k >= 0 && vs[i].major !== major && i > k;
 };
 
 // An assigned key makes an install active until it lapses, unless it is for an older major version; without one the install
@@ -50,9 +52,8 @@ const nextMonth = (hour: number): number => {
   return hourOf(new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1)));
 };
 
-// The release a one-time key bought now covers: the OS version on sale, or the year for software.
-const majorAt = (product: string, hour: number): string =>
-  SERVER_OS.some((o) => o.id === product) ? serverOsAt(product as ServerOsId, yearOf(hour)).version : String(yearOf(hour));
+// The major a one-time key bought now covers: the one of the newest release out.
+const majorAt = (product: string, hour: number): string => versionAt(product, hour).major;
 
 // Adds an unassigned key; its code is seeded by its number, one per order line. A key bought without an order is its own order.
 // A one-time key covers a major version, the release on sale unless major names one; any other key covers a monthly term.
@@ -129,11 +130,11 @@ export function legacyLicences(s: GameState, held: { id: string; machineId: stri
     if (!assignedKey(s, machineId, product)) updateKey(s, issueKey(s, product, edition, undefined, major).id, { machineId, ...patch });
   };
   for (const l of held) {
-    const major = installedVersion(s, l.machineId, l.id) ?? majorAt(l.id, l.boughtAt);
+    const major = installedMajor(s, l.machineId, l.id) ?? majorAt(l.id, l.boughtAt);
     add(l.machineId, l.id, { kind: "once", boughtAt: l.boughtAt, covers: { kind: "version", major }, renewsAt: null });
   }
   for (const m of [...s.devices, ...s.workloads]) {
-    for (const id of [m.os?.id, ...(m.software ?? []).map((x) => x.id)]) if (id && isLicensed(id) && !tiersOf(id).length) add(m.id, id, {}, null, installedVersion(s, m.id, id) ?? undefined);
+    for (const id of [m.os?.id, ...(m.software ?? []).map((x) => x.id)]) if (id && isLicensed(id) && !tiersOf(id).length) add(m.id, id, {}, null, installedMajor(s, m.id, id));
   }
   s.clusters = s.clusters.map((c) => {
     const { licence, ...rest } = c as Cluster & { licence?: LegacyPanel };
