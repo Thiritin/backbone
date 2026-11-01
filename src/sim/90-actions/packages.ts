@@ -1,9 +1,11 @@
 import type { Spec } from "../10-catalog/products";
 import { SERVES } from "../10-catalog/platforms";
-import { type Cluster } from "../60-infra/cluster";
-import { PACKAGE_LIMIT, PACKAGE_NAME, packageNamed, packageUse, packagesOf, type PackageDef } from "../80-business/packages";
+import { workloadsOf, type Cluster } from "../60-infra/cluster";
+import { ACTION_MINUTES, logActivity } from "../47-staff/activity";
+import { belowFloor, bookingFor, PACKAGE_LIMIT, PACKAGE_NAME, packageNamed, packageUse, packagesOf, type PackageDef } from "../80-business/packages";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
+import { placeService } from "./clusters";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 const KEYS = ["vcpu", "ramGb", "diskGb"] as const;
@@ -53,4 +55,23 @@ export function copyPackages(s: GameState, fromClusterId: string, toClusterId: s
     n++;
   }
   return { ok: true, id: String(n) };
+}
+
+// Books another package of the host on a running service, in place while the node holds the RAM and disk; the service keeps its sold spec.
+export function changePackage(s: GameState, serviceId: string, name: string): ActionResult {
+  const v = s.services.find((x) => x.id === serviceId && x.endedAt === null), w = v && workloadsOf(s, v.id)[0];
+  const c = w && s.clusters.find((x) => x.id === w.clusterId);
+  if (!v || !w || !c) return fail("error.unknownService");
+  const pkg = packageNamed(c, name);
+  if (!pkg) return fail("error.packageMissing");
+  if (pkg.product !== v.product) return fail("error.packageProduct");
+  if (belowFloor(pkg, v.spec)) return fail("error.packageTooSmall");
+  const { book, promised } = bookingFor(pkg, v.spec);
+  // Checked on a copy: the booking must be placeable on the node the service already runs on.
+  const trial = { ...s, workloads: s.workloads.filter((x) => x.id !== w.id), services: s.services.map((x) => (x.id === v.id ? { ...x, pkg: pkg.name, pkgBook: book } : x)) };
+  if (!placeService(trial, v.id, c.id, w.deviceId).ok) return fail("error.noCapacity");
+  s.workloads = s.workloads.map((x) => (x.id === w.id ? { ...x, ...book, promised } : x));
+  s.services = s.services.map((x) => (x.id === v.id ? { ...x, pkg: pkg.name, pkgBook: book } : x));
+  logActivity(s, { customerId: v.customerId, serviceId: v.id, by: null, key: "activity.changePackage", params: { pkg: pkg.name }, minutes: ACTION_MINUTES.techOp });
+  return { ok: true };
 }

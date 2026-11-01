@@ -3,13 +3,13 @@ import { yearOf } from "../src/sim/00-core/time";
 import { sizeSpec } from "../src/sim/10-catalog/products";
 import { createRng } from "../src/sim/00-core/rng";
 import { serviceOnline } from "../src/sim/40-support/status";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import {
   ADVISORY_KEYS, POC_RISK, REBUILD_HOURS, STAGE_HOURS, VULNS, WARNING_RISK, advisoryNodes, securityTick,
 } from "../src/sim/60-infra/security";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { provisionService, upgradeNodePhp } from "../src/sim/90-actions/clusters";
-import { panelServer, withServer } from "./fixtures";
+import { panelServer, withServer, newGame } from "./fixtures";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { connect, setPower } from "../src/sim/90-actions/hardware";
 import { buyDevice } from "./fixtures";

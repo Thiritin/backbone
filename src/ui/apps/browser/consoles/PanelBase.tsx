@@ -1,8 +1,13 @@
 // docs/design/software.md, section 10: what every console offers, as blocks each product lays out in its own chrome.
+import { ChangePackage, planChoices } from "./PackageForms";
 import { t } from "../../../../i18n/en";
-import { ArrowRightLeft, CalendarClock, Circle, Code, Maximize2, Pause, Play, PowerOff, RefreshCw, RotateCcw, Square, Terminal, Trash2, X, type LucideIcon } from "lucide-react";
+import { ArrowRightLeft, CalendarClock, Circle, Code, Gamepad2, Maximize2, Pause, Play, PowerOff, RefreshCw, RotateCcw, Square, Terminal, Trash2, X, type LucideIcon } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { yearOf } from "../../../../sim/00-core/time";
+import { GAME_UNIT, NEVER, titleById } from "../../../../sim/10-catalog/games";
+import { daemonOffline } from "../../../../sim/60-infra/daemons";
+import { gameCrashed, gameOf, playersOf } from "../../../../sim/60-infra/games";
+import { GameDetails, GameLine, TitlesSummary, type GameRow } from "./GamePanel";
 import { autoUpdates, phpAt, softwareById } from "../../../../sim/10-catalog/platforms";
 import type { Resources } from "../../../../sim/10-catalog/products";
 import type { Look } from "../../../../sim/10-catalog/sites";
@@ -20,13 +25,14 @@ import { migrateWebspace, migrateWorkload, migrationTargets, restoreWorkload, st
 import { useStore } from "../../../store";
 import { disk, ram } from "../../hw";
 import { VM_STATE, vmLabel, vmState } from "../../products/parts";
-import { hoursText } from "../../vms/migrate";
+import { hoursText } from "../../workload-menu";
 import { useHolds } from "./Holds";
 import { HostSettings } from "./HostSettings";
 import { eraOf } from "../sites/era";
 import { noAutofill } from "../../../no-autofill";
+import { lookOf, panelMachine } from "../../../../sim/60-infra/licence";
 
-export type Tab = "objects" | "nodes" | "software" | "tasks" | "logs" | "licence" | "services" | "sysinfo" | "packages" | "create";
+export type Tab = "objects" | "nodes" | "restore" | "software" | "tasks" | "logs" | "licence" | "services" | "sysinfo" | "packages" | "create" | "easyapache" | "custombuild" | "resellers" | "autossl" | "transfer" | "fail2ban" | "toolkit" | "messages" | "wings";
 
 // What ConsolePage hands a product console; the console draws its own login while signedIn is false.
 export interface PanelProps { game: GameState; c: Cluster; f: ConsoleFeatures; host: string; signedIn: boolean; login: () => void; logout: () => void;
@@ -34,7 +40,11 @@ export interface PanelProps { game: GameState; c: Cluster; f: ConsoleFeatures; h
   path?: string }
 
 export const erasFrom = (early: number, late: number): { from: number; look: Look }[] => [{ from: early, look: "early" }, { from: late, look: "late" }];
-export const eraAt = (eras: { from: number; look: Look }[], game: GameState): Look => eraOf(eras, yearOf(game.hour));
+// The look of the installed version, or the game year's when the version is unknown.
+export function eraAt(eras: { from: number; look: Look }[], { game, c }: { game: GameState; c: Cluster }): Look {
+  const m = panelMachine(c), product = familyOf(c);
+  return (m && product && lookOf(game, m, product)) || eraOf(eras, yearOf(game.hour));
+}
 
 export function usePanelTab(f: ConsoleFeatures, first: Tab = "objects"): [Tab, (t: Tab) => void] {
   const [tab, setTab] = useState<Tab>(first);
@@ -45,7 +55,7 @@ export interface PanelAction { id: string; label: string; run: () => void; tone?
 
 const ICON: Record<string, LucideIcon> = {
   update: RefreshCw, auto: CalendarClock, php: Code, offline: PowerOff, resize: Maximize2, remove: Trash2, confirm: Trash2, cancel: X,
-  hold: Pause, unhold: Play, terminate: Trash2, start: Play, stop: Square, restore: RotateCcw, migrate: ArrowRightLeft, console: Terminal, delete: Trash2,
+  manage: Gamepad2, hold: Pause, unhold: Play, terminate: Trash2, start: Play, stop: Square, restore: RotateCcw, migrate: ArrowRightLeft, console: Terminal, delete: Trash2,
 };
 export const ActionIcon = ({ id, size }: { id: string; size?: number }) => { const I = ICON[id] ?? Circle; return <I size={size} aria-hidden />; };
 
@@ -116,15 +126,26 @@ export function Migrate({ game, w, c, done }: { game: GameState; w: Workload; c:
   );
 }
 
+// Each console names the switch of an account's package in its own words.
+const PLAN_LABEL: Record<string, string> = { cpanic: "pkg.changeCpanic", directadmin: "pkg.changeDa" };
+
+function gameRow(game: GameState, c: Cluster, serviceId: string): GameRow | undefined {
+  if (!c.panel || !GAME_UNIT[c.panel] || game.services.find((v) => v.id === serviceId)?.product !== "gameServer") return undefined;
+  const g = gameOf(game, serviceId);
+  return { title: g ? t(`games.title.${g.title}`) : t("games.unknown"), faded: !!g && yearOf(game.hour) > (titleById(g.title)?.fade ?? NEVER), players: playersOf(game, serviceId), crashed: gameCrashed(game, serviceId), offline: daemonOffline(game, serviceId), ports: g?.ports ?? [], managed: !!g };
+}
+
 export interface Row {
   id: string; name: string; sub: string; pkg?: string; user?: string; node: string; state: string; tone: string;
   cpu: [number, number]; ram: [number, number]; disk: [number, number]; lead: [number, number]; traffic: [number, number]; mail: number; usage: string;
   actions: PanelAction[]; panel: ReactNode;
+  // Game servers on a game panel.
+  game?: GameRow;
 }
 
 // One row per web space, game server or VM; panel is the open migrate or resize form under it.
 export function useRows(game: GameState, c: Cluster, f: ConsoleFeatures, node: string | null = null): Row[] {
-  const act = useStore((s) => s.act), openConsole = useStore((s) => s.openConsole), [open, setOpen] = useState<{ id: string; kind: "migrate" | "resize" } | null>(null);
+  const act = useStore((s) => s.act), openConsole = useStore((s) => s.openConsole), [open, setOpen] = useState<{ id: string; kind: "migrate" | "resize" | "plan" | "manage" } | null>(null);
   const uses = useMemo(() => new Map(c.kind === "panel" ? game.workloads.filter((w) => w.clusterId === c.id).map((w) => [w.id, accountUse(game, w)] as const) : []), [game.hour, game.workloads.length, c.id, c.kind]); // eslint-disable-line react-hooks/exhaustive-deps
   const web = c.kind === "panel", cloud = c.kind === "cloud", close = () => setOpen(null), holds = useHolds(game, c, f);
   return game.workloads.filter((w) => w.clusterId === c.id && (!node || w.deviceId === node)).map((w) => {
@@ -137,6 +158,8 @@ export function useRows(game: GameState, c: Cluster, f: ConsoleFeatures, node: s
       st === "lost" && f.backups && { id: "restore", label: w.backupAt === null ? t("browser-consoles-2.startEmpty") : t("browser-consoles-2.restore"), run: () => act(restoreWorkload, w.id) },
       !!f.migrate && movable && { id: "migrate", label: t("browser-consoles-2.migrate"), run: () => setOpen({ id: w.id, kind: "migrate" }) },
       f.resize && !!host && cloud && { id: "resize", label: t("browser-consoles-2.resize"), run: () => setOpen({ id: w.id, kind: "resize" }) },
+      !!gameRow(game, c, w.serviceId)?.managed && { id: "manage", label: t("games.manage"), run: () => setOpen(open?.id === w.id && open.kind === "manage" ? null : { id: w.id, kind: "manage" }) },
+      !!site && planChoices(game, c, site.id).length > 0 && { id: "plan", label: t(PLAN_LABEL[f.look] ?? "pkg.changePlan"), run: () => setOpen({ id: w.id, kind: "plan" }) },
       own && { id: "console", label: t("browser-consoles-2.console"), run: () => openConsole(w.id) },
       f.delete && own && !host && { id: "delete", label: t("browser-consoles-2.delete"), run: () => act(deleteVm, w.id) },
     ];
@@ -145,11 +168,12 @@ export function useRows(game: GameState, c: Cluster, f: ConsoleFeatures, node: s
       id: w.id, state: hold?.state?.[0] ?? state, tone: hold?.state?.[1] ?? tone, pkg: site?.pkg, user: site?.username,
       name: web ? site?.domain ?? w.hostname ?? "" : host?.name ?? w.hostname ?? vmLabel(game, w).name,
       sub: [host?.panel ? consoleTitle(host.panel) : "", !web && site?.pkg].filter(Boolean).join(" · "),
+      game: gameRow(game, c, w.serviceId),
       node: d ? d.hostname ?? d.label ?? d.name : "",
       cpu: [u.vcpu, w.vcpu], ram: [u.ramGb, w.ramGb], disk: [u.diskGb, w.diskGb], lead: web ? [u.diskGb, w.diskGb] : [u.vcpu, w.vcpu], traffic: uses.get(w.id)?.traffic ?? [0, 0], mail: uses.get(w.id)?.mailboxes ?? 0,
       usage: web ? t("browser-consoles-2.of", { used: disk(Math.round(u.diskGb)), total: disk(w.diskGb) }) : t("browser-consoles-2.usageVm", { cpu: num(u.vcpu), vcpu: w.vcpu, ram: ram(+u.ramGb.toFixed(1)), ramTotal: ram(w.ramGb) }),
       actions: [...actions.filter((a): a is PanelAction => !!a), ...(hold?.actions ?? [])],
-      panel: o === "migrate" ? <Migrate game={game} w={w} c={c} done={close} /> : o === "resize" && host ? <Resize game={game} host={host} done={close} /> : hold?.panel ?? null,
+      panel: o === "manage" && c.panel ? <GameDetails game={game} serviceId={w.serviceId} panel={c.panel} /> : o === "migrate" ? <Migrate game={game} w={w} c={c} done={close} /> : o === "plan" && site ? <ChangePackage game={game} c={c} serviceId={site.id} label={t(PLAN_LABEL[f.look] ?? "pkg.changePlan")} done={close} /> : o === "resize" && host ? <Resize game={game} host={host} done={close} /> : hold?.panel ?? null,
     };
   });
 }
@@ -162,13 +186,15 @@ export const ramText = (r: Row) => t("browser-consoles-2.of", { used: ram(+r.ram
 export function RowsTable({ rows, name, node = false, className = "cx-table", extra, cols = [] }: { rows: Row[]; name: string; node?: boolean; className?: string; extra?: (r: Row) => ReactNode; cols?: ("user" | "pkg")[] }) {
   const span = (node ? 5 : 4) + cols.length;
   return (
+    <>
+    <TitlesSummary rows={rows} />
     <table className={className}>
       <thead><tr><th>{name}</th>{cols.map((k) => <th key={k}>{t(k === "user" ? "pkg.username" : "pkg.package")}</th>)}{node && <th>{t("browser-consoles-2.node")}</th>}<th>{t("browser-consoles-2.status")}</th><th>{t("browser-consoles-2.usage")}</th><th /></tr></thead>
       <tbody>
         {rows.length === 0 && <tr><td colSpan={span} className="cx-empty">{t("browser-consoles-2.nothingHere")}</td></tr>}
         {rows.map((r) => (
           <RowLines key={r.id} r={r} span={span}>
-            <td><b>{r.name}</b>{r.sub && <span className="cx-sub">{r.sub}</span>}</td>
+            <td><b>{r.name}</b>{r.sub && <span className="cx-sub">{r.sub}</span>}<GameLine g={r.game} /></td>
             {cols.map((k) => <td key={k}>{k === "user" ? r.user : r.pkg}</td>)}
             {node && <td>{r.node}</td>}
             <td><span className={`cx-state ${r.tone}`}>{r.state}</span></td>
@@ -178,6 +204,7 @@ export function RowsTable({ rows, name, node = false, className = "cx-table", ex
         ))}
       </tbody>
     </table>
+    </>
   );
 }
 
@@ -249,20 +276,20 @@ export function useSoftware(game: GameState, c: Cluster, f: ConsoleFeatures): { 
 
 // The backup schedule and the host the backups go to; consoles show it where consoleFeatures offers backups.
 export function Backups({ game, c, title = <h4 className="cx-h">{t("browser-consoles-2.backups")}</h4> }: { game: GameState; c: Cluster; title?: ReactNode }) {
-  const act = useStore((s) => s.act), others = backupTargets(game, c), target = c.backup.targetId ?? others[0]?.id ?? null;
+  const act = useStore((s) => s.act), others = backupTargets(game, c), job = c.jobs[0], every = (job?.every ?? "off") as BackupEvery, target = job?.targetId ?? others[0]?.id ?? null;
   return (
     <>
       {title}
       <div className="cx-tools">
         {(["off", "daily", "weekly"] as BackupEvery[]).map((e) => (
-          <button key={e} className="cx-chip" aria-pressed={c.backup.every === e} disabled={e !== "off" && !target} onClick={() => act(setBackup, c.id, target, e)}>
+          <button key={e} className="cx-chip" aria-pressed={every === e} disabled={e !== "off" && !target} onClick={() => act(setBackup, c.id, target, e)}>
             {e === "off" ? t("browser-consoles-2.off") : e === "daily" ? t("browser-consoles-2.daily") : t("browser-consoles-2.weekly")}
           </button>
         ))}
       </div>
       <div className="cx-tools">
         {others.length === 0 && <span className="cx-note">{t("browser-consoles-2.noBackupServer")}</span>}
-        {others.map((x) => <button key={x.id} className="cx-chip" aria-pressed={c.backup.targetId === x.id} onClick={() => act(setBackup, c.id, x.id, c.backup.every)}>{x.name}</button>)}
+        {others.map((x) => <button key={x.id} className="cx-chip" aria-pressed={job?.targetId === x.id} onClick={() => act(setBackup, c.id, x.id, every === "off" ? "daily" : every)}>{x.name}</button>)}
       </div>
     </>
   );

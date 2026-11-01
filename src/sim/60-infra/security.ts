@@ -7,9 +7,12 @@ import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { controlPlaneUp, sitesDown, type Cluster, type Workload } from "./cluster";
 import { breachEligible, breachTick, startBreach, BREACH_CHANCE } from "./breach";
+import { exposureFactor } from "./exposure";
 import { maybeReview } from "./incidents";
 import { familyOf, instanceRisk, openVulns, patchedNow } from "./vulns";
 import { oobSecurityTick } from "./oob";
+import { phpInstalled } from "./webpanel";
+import { jailFactor } from "./bans";
 
 export interface Vuln { id: string; at: number; versions: string[] }
 const at = (y: number, m: number, d: number) => hourOf(new Date(Date.UTC(y, m - 1, d, 9)));
@@ -44,7 +47,7 @@ export const webOn = (s: GameState, hostId: string): Workload[] => s.workloads.f
 const hosts = (s: GameState): Cluster[] => s.clusters.filter((c) => c.kind === "panel" && c.panel);
 export const patchOut = (s: GameState): boolean => !!s.security.vuln && s.security.stage >= STAGES.indexOf("patch");
 export const vulnerable = (s: GameState, c: Cluster): boolean =>
-  c.kind === "panel" && !!vulnById(s.security.vuln)?.versions.includes(c.php) && !s.security.patched.includes(c.id);
+  c.kind === "panel" && phpInstalled(s, c).some((p) => vulnById(s.security.vuln)?.versions.includes(p)) && !s.security.patched.includes(c.id);
 // Panel hosts the Security app lists: on an affected version, or patched, offline or compromised.
 export const advisoryNodes = (s: GameState): Cluster[] =>
   hosts(s).filter((c) => vulnerable(s, c) || s.security.patched.includes(c.id) || sitesDown(s, c.id));
@@ -85,7 +88,7 @@ export function securityTick(s: GameState): SimEvent[] {
     if (v.at > s.hour || s.security.seen.includes(v.id)) continue;
     s.security = { ...s.security, seen: [...s.security.seen, v.id] };
     const live = s.hour < v.at + STAGE_HOURS[3];
-    const hit = live && hosts(s).some((c) => v.versions.includes(c.php) && webOn(s, c.id).length);
+    const hit = live && hosts(s).some((c) => phpInstalled(s, c).some((p) => v.versions.includes(p)) && webOn(s, c.id).length);
     if (!hit) continue;
     s.security = { ...s.security, vuln: v.id, stage: 0, patched: [] };
     events.push({ app: "Security", key: ADVISORY_KEYS[0], params: params(s, v) });
@@ -100,7 +103,7 @@ export function securityTick(s: GameState): SimEvent[] {
   }
   if (s.security.stage < 1) return events;
   const risk = s.security.stage >= 2 ? WARNING_RISK : POC_RISK;
-  for (const c of hosts(s)) if (exposed(s, c) && chance(s.rng, risk)) compromise(s, c, events);
+  for (const c of hosts(s)) if (exposed(s, c) && chance(s.rng, risk * exposureFactor(s, c) * jailFactor(s, c.id))) compromise(s, c, events);
   return events;
 }
 
@@ -129,7 +132,7 @@ function generatedTick(s: GameState): SimEvent[] {
   for (const c of s.clusters) {
     if (!reachable(s, c)) continue;
     const open = openVulns(s, c.id), risk = instanceRisk(open), num = Number(c.id.replace(/\D/g, "")) || 0;
-    if (risk <= 0 || rand(hashRng(s.seed, num, s.hour / 24, 91)) >= risk) continue;
+    if (risk <= 0 || rand(hashRng(s.seed, num, s.hour / 24, 91)) >= risk * exposureFactor(s, c)) continue;
     if (breachEligible(s, c.id, open) && rand(hashRng(s.seed, num, s.hour / 24, 92)) < BREACH_CHANCE) startBreach(s, c, events);
     else compromise(s, c, events);
   }

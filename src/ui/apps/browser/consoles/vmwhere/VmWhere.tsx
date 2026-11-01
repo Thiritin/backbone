@@ -1,3 +1,5 @@
+import { parseCreate } from "../../../../../sim/80-business/consoles";
+import { PackagesScreen } from "../PackageForms";
 import { useState } from "react";
 import { yearOf } from "../../../../../sim/00-core/time";
 import { serverOsById } from "../../../../../sim/10-catalog/server-os";
@@ -15,12 +17,14 @@ import { vmStats } from "../../../../../sim/60-infra/stats";
 import { clusterSummary, type Alarm, type Amount, type Amounts, type Severity } from "../../../../../sim/60-infra/alarms";
 import { withDatastore, bookable, datastoreCapacity, datastoreGbit, datastoreUsed, nodeUsed, type Cluster, type NodeState } from "../../../../../sim/60-infra/cluster";
 import { COMPAT_VCPU } from "../../../../../sim/10-catalog/cpus";
+import { enterMaintenance, exitMaintenance } from "../../../../../sim/90-actions/vmwhere";
 import { setCompatMode } from "../../../../../sim/90-actions/cpus";
 import { Chart, niceMax } from "../Chart";
 import { nodeName, AlarmList, ALL, AMOUNT, amountText, AppSuiteTile, CapacityBar, SEV_GLYPH, summaryOf, worst, ConsoleThumb, isoName, MediaMenu, NodeList, SizeFields, suiteSoftware, TaskLog, Toolbar, useNewVm, useVms, vmFacts, windoorsLicence, Wizard, type Sel, type Vm } from "../HypervisorBase";
 import { Actions, Backups, Bar, erasFrom, eraAt, Facts, LoginForm, useSoftware, type PanelProps } from "../PanelBase";
 import type { Look } from "../../../../../sim/10-catalog/sites";
 import type { Resources } from "../../../../../sim/10-catalog/products";
+import { AlarmsPage, DrsPage, Licensing, PoolsPage } from "./Admin";
 import "./vmwhere.css";
 
 // docs/design/software.md, section 9: the grey and yellow fat client from 2005, the blue web client from 2015.
@@ -125,13 +129,18 @@ function ClusterSummaryView({ game, c, node, vms, pick }: { game: GameState; c: 
       </div>
       {!node && (
         <table className="cx-table">
-          <thead><tr><th>{t("browser-consoles-2.host")}</th><th>{t("browser-consoles-2.state")}</th><th>{t("browser-consoles-2.status")}</th><th>CPU</th><th>{t("browser-consoles-2.memory")}</th><th>{t("browser-consoles-2.storage")}</th><th>VMs</th></tr></thead>
+          <thead><tr><th>{t("browser-consoles-2.host")}</th><th>{t("browser-consoles-2.state")}</th><th>{t("browser-consoles-2.status")}</th><th>CPU</th><th>{t("browser-consoles-2.memory")}</th><th>{t("browser-consoles-2.storage")}</th><th>VMs</th><th /></tr></thead>
           <tbody>
             {sum.hosts.map((h) => (
               <tr key={h.deviceId} onClick={() => pick({ kind: "node", id: h.deviceId })}>
                 <td><b>{h.name}</b></td><td>{h.up ? hostState()[h.state] : t("browser-consoles-2.notResponding")}</td>
                 <td><Status sev={worst(sum.alarms.filter((a) => a.on.id === h.deviceId))} /></td>
                 <Use k="vcpu" a={h.use.vcpu} /><Use k="ramGb" a={h.use.ramGb} /><Use k="diskGb" a={h.use.diskGb} /><td className="num">{h.vms}</td>
+                <td onClick={(e) => e.stopPropagation()}>
+                  {h.state === "active" || h.state === "cordoned"
+                    ? <button className="cx-btn" onClick={() => act(enterMaintenance, c.id, h.deviceId)}>{t("vw.enterMaintenance")}</button>
+                    : <button className="cx-btn" onClick={() => act(exitMaintenance, c.id, h.deviceId)}>{t("vw.exitMaintenance")}</button>}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -240,10 +249,11 @@ function Datastores({ game, c }: { game: GameState; c: Cluster }) {
 }
 
 export function VmWhere(p: PanelProps) {
-  const era = eraAt(ERAS, p.game), { game, c, f } = p, year = yearOf(game.hour);
-  const [sel, setSel] = useState<Sel>(ALL), [tab, setTab] = useState("Summary");
-  const tabNames: Record<string, string> = { Summary: t("browser-consoles-2.summary"), Monitor: t("browser-consoles-2.monitor"), Configure: t("browser-consoles-2.configure"), Snapshots: t("browser-consoles-2.snapshots"), Hosts: t("browser-consoles-2.hosts"), Datastores: t("browser-consoles-2.datastores"), Networks: t("browser-consoles-2.networks") };
-  const { vms, dialog } = useVms(game, c, f), sw = useSoftware(game, c, f), nv = useNewVm(game, c);
+  const era = eraAt(ERAS, p), { game, c, f } = p, year = yearOf(game.hour);
+  const open = parseCreate("vmwhere", p.path), [sel, setSel] = useState<Sel>(open?.screen === "create" ? { kind: "new" } : open?.screen === "packages" ? { kind: "plans" } : ALL), [tab, setTab] = useState("Summary");
+  const [byOrder, setByOrder] = useState(open?.screen === "create" && !!open.order);
+  const tabNames: Record<string, string> = { Summary: t("browser-consoles-2.summary"), Monitor: t("browser-consoles-2.monitor"), Configure: t("browser-consoles-2.configure"), Snapshots: t("browser-consoles-2.snapshots"), Hosts: t("browser-consoles-2.hosts"), Datastores: t("browser-consoles-2.datastores"), Networks: t("browser-consoles-2.networks"), Licensing: t("vw.licensing"), DRS: t("vw.drs"), Alarms: t("vw.alarm.alarms"), Pools: t("vw.pool.pools") };
+  const { vms, dialog } = useVms(game, c, f), sw = useSoftware(game, c, f), nv = useNewVm(game, c, open?.screen === "create" ? open.order : undefined);
   if (!p.signedIn) return (
     <div className="cx vsw vsw-login" data-era={era}>
       <LoginForm className="vsw-card" onLogin={p.login} button={t("browser-consoles-2.logIn")}>
@@ -255,10 +265,10 @@ export function VmWhere(p: PanelProps) {
   const pick = (s: Sel, tb = "Summary") => { setSel(s); setTab(tb); };
   const vm = sel.kind === "vm" ? vms.find((v) => v.id === sel.id) : undefined, node = sel.kind === "node" ? sel.id : null;
   const nodes = c.nodes.map((n) => game.devices.find((d) => d.id === n.deviceId)!).filter(Boolean);
-  const tabs = vm ? ["Summary", "Monitor", "Configure", ...(vm.w.deviceId ? ["Snapshots"] : [])] : ["Summary", "Monitor", "Configure", ...(node ? [] : ["Hosts"]), "Datastores", "Networks"];
+  const tabs = vm ? ["Summary", "Monitor", "Configure", ...(vm.w.deviceId ? ["Snapshots"] : [])] : ["Summary", "Monitor", "Configure", ...(node ? [] : ["Hosts"]), "Datastores", "Networks", ...(node ? [] : ["DRS", "Alarms", "Pools"]), "Licensing"];
   const shown = tabs.includes(tab) ? tab : "Summary", facts = vm && vmFacts(game, vm);
   const app = nv.suite ? suiteSoftware(year).find((x) => x.id === nv.suite) : undefined, appOs = app && serverOsById(app.os[0]);
-  const finish = () => { const id = nv.create(); if (id) pick({ kind: "vm", id }); };
+  const finish = () => { if (byOrder) { if (nv.submit()) setSel(ALL); return; } const id = nv.create(); if (id) pick({ kind: "vm", id }); };
   const list = vms.filter((v) => !node || v.w.deviceId === node), alarms = clusterSummary(game, c.id).alarms;
   return (
     <div className="cx cx-hv vsw" data-era={era}>
@@ -293,11 +303,13 @@ export function VmWhere(p: PanelProps) {
               </ul>
             </li>
           </ul>
+          <button className="vsw-classes" aria-pressed={sel.kind === "plans"} onClick={() => pick({ kind: "plans" })}><i>▤</i>{t("pkg.vswClasses")}</button>
         </aside>
         <section className="vsw-content">
-          <div className="vsw-title">{vm ? vm.name : node ? nodes.find((d) => d.id === node)?.hostname : c.name}</div>
-          <nav className="cx-hv-tabs vsw-tabs">{tabs.map((tb) => <button key={tb} aria-pressed={tb === shown} onClick={() => setTab(tb)}>{tabNames[tb]}</button>)}</nav>
+          <div className="vsw-title">{sel.kind === "plans" ? t("pkg.vswClasses") : vm ? vm.name : node ? nodes.find((d) => d.id === node)?.hostname : c.name}</div>
+          <nav className="cx-hv-tabs vsw-tabs" hidden={sel.kind === "plans"}>{tabs.map((tb) => <button key={tb} aria-pressed={tb === shown} onClick={() => setTab(tb)}>{tabNames[tb]}</button>)}</nav>
           <main className="cx-hv-main">
+            {sel.kind === "plans" && <PackagesScreen game={game} c={c} />}
             {vm && vm.panel}
             {vm && facts && shown === "Summary" && <VmSummary game={game} v={vm} era={era} />}
             {vm && shown === "Monitor" && <VmMonitor game={game} v={vm} />}
@@ -308,14 +320,14 @@ export function VmWhere(p: PanelProps) {
                 <MediaMenu game={game} v={vm} label={t("browser-consoles-2.cdDvdIso")} none={t("browser-consoles-2.clientDevice")} />
               </>
             )}
-            {!vm && shown === "Summary" && (
+            {!vm && sel.kind !== "plans" && shown === "Summary" && (
               <>
                 {!node && <AppSuiteTile c={c} className="cx-suite vsw-suite" />}
                 <ClusterSummaryView game={game} c={c} node={node} vms={list} pick={pick} />
               </>
             )}
-            {!vm && shown === "Monitor" && <NodeList game={game} c={{ ...c, nodes: c.nodes.filter((n) => !node || n.deviceId === node) }} f={{ ...f, cluster: false }} />}
-            {!vm && shown === "Configure" && (
+            {!vm && sel.kind !== "plans" && shown === "Monitor" && <NodeList game={game} c={{ ...c, nodes: c.nodes.filter((n) => !node || n.deviceId === node) }} f={{ ...f, cluster: false }} />}
+            {!vm && sel.kind !== "plans" && shown === "Configure" && (
               <>
                 <Facts facts={sw.facts} />
                 <Actions actions={sw.actions}>{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>
@@ -323,9 +335,13 @@ export function VmWhere(p: PanelProps) {
                 {f.backups && <Backups game={game} c={c} title={<h4 className="cx-h">{t("browser-consoles-2.dataProtection")}</h4>} />}
               </>
             )}
-            {!vm && shown === "Hosts" && <NodeList game={game} c={c} f={f} />}
-            {!vm && shown === "Datastores" && <Datastores game={game} c={c} />}
-            {!vm && shown === "Networks" && <Facts facts={[{ label: t("browser-consoles-2.vmNetwork"), value: "vSwitch0" }, { label: t("browser-consoles-2.managementNetwork"), value: "vSwitch0" }]} />}
+            {!vm && sel.kind !== "plans" && shown === "Hosts" && <NodeList game={game} c={c} f={f} />}
+            {!vm && sel.kind !== "plans" && shown === "Licensing" && <Licensing game={game} c={c} />}
+            {!vm && sel.kind !== "plans" && shown === "DRS" && <DrsPage game={game} c={c} />}
+            {!vm && sel.kind !== "plans" && shown === "Alarms" && <AlarmsPage game={game} c={c} />}
+            {!vm && sel.kind !== "plans" && shown === "Pools" && <PoolsPage game={game} c={c} />}
+            {!vm && sel.kind !== "plans" && shown === "Datastores" && <Datastores game={game} c={c} />}
+            {!vm && sel.kind !== "plans" && shown === "Networks" && <Facts facts={[{ label: t("browser-consoles-2.vmNetwork"), value: "vSwitch0" }, { label: t("browser-consoles-2.managementNetwork"), value: "vSwitch0" }]} />}
           </main>
         </section>
       </div>
@@ -335,8 +351,10 @@ export function VmWhere(p: PanelProps) {
           <Wizard title={t("browser-consoles-2.newVm")} className="vsw-wiz" finish={t("browser-consoles-2.finish")} onCancel={() => setSel(ALL)} onFinish={finish} steps={[
             { id: "type", label: t("browser-consoles-2.selCreationType"), body: (
               <div className="vsw-radios">
-                <label className="cx-check"><input type="radio" name="vsw-type" checked={!nv.suite} onChange={() => nv.setSuite(null)} />{t("browser-consoles-2.createNewVm")}</label>
-                {c.appSuite && <label className="cx-check"><input type="radio" name="vsw-type" checked={!!nv.suite} onChange={() => nv.setSuite(suiteSoftware(year)[0]?.id ?? null)} />{t("browser-consoles-2.deployAppSuite")}</label>}
+                <label className="cx-check"><input type="radio" name="vsw-type" checked={!nv.suite && !byOrder} onChange={() => { nv.setSuite(null); setByOrder(false); }} />{t("browser-consoles-2.createNewVm")}</label>
+                <label className="cx-check"><input type="radio" name="vsw-type" checked={byOrder} onChange={() => { nv.setSuite(null); setByOrder(true); }} />{t("pkg.vswCustomerOrder")}</label>
+                {byOrder && <div className="vsw-order">{nv.orderFields}</div>}
+                {c.appSuite && <label className="cx-check"><input type="radio" name="vsw-type" checked={!!nv.suite && !byOrder} onChange={() => { setByOrder(false); nv.setSuite(suiteSoftware(year)[0]?.id ?? null); }} />{t("browser-consoles-2.deployAppSuite")}</label>}
               </div>
             ) },
             ...(nv.suite ? [{ id: "app", label: t("browser-consoles-2.selAppliance"), body: (

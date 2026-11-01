@@ -4,14 +4,18 @@ import { sizeSpec, type Sla, type Spec } from "../10-catalog/products";
 import { yearOf } from "../00-core/time";
 import { drawApp } from "../10-catalog/apps";
 import { webDomain } from "../30-customers/domains";
+import { addressFor, homeAddress, requestAddress } from "../30-customers/addresses";
+import type { SalesRequest } from "../30-market/market";
 import { serviceHostname } from "../30-customers/hostnames";
 import { isSuspended, SUSPEND_HAPPINESS } from "../45-billing/billing";
 import { bump, createTicket, profileStats } from "../40-support/tickets";
 import type { ActionResult } from "./hardware";
 
-export function addCustomer(s: GameState, name: string, profile: Profile, habit: PaymentHabit = "prompt"): string {
-  const id = `cus${s.nextId++}`;
-  s.customers.push({ id, name, profile, since: s.hour, happiness: 70, habit, churnedAt: null, history: [], credit: 0 } satisfies Customer);
+// who is the request the customer comes from; without one the address is drawn for the company's home city.
+export function addCustomer(s: GameState, name: string, profile: Profile, habit: PaymentHabit = "prompt", who?: Pick<SalesRequest, "contact" | "company" | "city"> & Partial<Pick<SalesRequest, "id" | "address">>): string {
+  const n = s.nextId++, id = `cus${n}`;
+  const address = !who ? homeAddress(s, n, name, profile) : who.id ? requestAddress(s.seed, { ...who, id: who.id }) : addressFor(s.seed, n, who.contact, who.company, who.city);
+  s.customers.push({ id, name, profile, since: s.hour, happiness: 70, habit, churnedAt: null, history: [], credit: 0, address } satisfies Customer);
   return id;
 }
 

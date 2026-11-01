@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { chooseShop } from "../src/sim/90-actions/shop";
 import { isMonthStart } from "../src/sim/00-core/time";
 import { createTicket } from "../src/sim/40-support/tickets";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import {
   addAwareness, addReview, announceReview, awareness, discountFor, leadsThisMonth, monthlyMarketingCost, reviewMultiplier, reviewScore, trustBonus,
 } from "../src/sim/80-business/marketing";
@@ -11,7 +12,7 @@ import { setCampaign, setReviewPlatform, setUpChannel, stopCampaign } from "../s
 import { hire } from "../src/sim/90-actions/staff";
 import { visibleCandidates } from "../src/sim/47-staff/staff";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { withCompany } from "./fixtures";
+import { withCompany, newGame } from "./fixtures";
 
 const FEB_1 = 744;
 // Paid review platforms need a marketing manager on staff.
@@ -22,14 +23,14 @@ const months = (s: GameState, n: number) => { for (let i = 0; i < n; i++) { tick
 describe("owned channels", () => {
   it("sets up the website, then the order form and ads that need it", () => {
     const s = withCompany({ ...newGame(1), cash: 1000 });
-    expect(setUpChannel(s, "orderForm")).toEqual({ ok: false, error: "error.needsWebsite" });
+    expect(chooseShop(s, "handRolled")).toEqual({ ok: false, error: "error.needsWebsite" });
     expect(setUpChannel(s, "website").ok).toBe(true);
     expect(s.cash).toBe(600);
     expect(s.ledger.at(-1)).toMatchObject({ category: "marketing", key: "ledger.marketingSetup", amount: -400 });
     expect(setUpChannel(s, "website")).toEqual({ ok: false, error: "error.channelOwned" });
     expect(setUpChannel(s, "searchAds").ok).toBe(true);
     expect(setUpChannel(s, "aiAds")).toEqual({ ok: false, error: "error.channelLater" });
-    expect(setUpChannel(s, "orderForm")).toEqual({ ok: false, error: "error.noCash" });
+    expect(chooseShop(s, "handRolled")).toEqual({ ok: false, error: "error.noCash" });
   });
 });
 

@@ -1,5 +1,5 @@
 import { booted, monthNet, pickSound, playSound, soundFor, WINDOW_MS, type Sound, type UiSound } from "./sounds";
-import { useEffect } from "react";
+import { createContext, useContext, useEffect } from "react";
 import { create } from "zustand";
 import type { GameState } from "../sim/50-state";
 import { weeklyChallenge } from "../sim/10-catalog/challenges";
@@ -14,6 +14,8 @@ import { SKIP, SPEEDS, type Speed } from "../sim/00-core/time";
 import { t } from "../i18n/en";
 import type { ActionResult, CartLine } from "../sim/90-actions/hardware";
 import { readSession, writeSession } from "./session";
+
+export const DISCORD_URL = "https://discord.gg/e8nTAV8Yk7";
 
 export const SAVE_KEY = "backbone.save";
 
@@ -32,8 +34,8 @@ export interface NotifyPref { allow: boolean; sound: boolean; types?: Record<str
 const WIDE = { w: 1240, h: 680 };
 const WINDOW_SIZES: Record<string, { w: number; h: number }> = {
   Security: { w: 900, h: 560 }, Browser: { w: 1100, h: 720 }, News: { w: 520, h: 640 },
-  Locations: { w: 1440, h: 860 }, Shop: { w: 1180, h: 700 }, Billing: WIDE, Customers: WIDE, Marketing: WIDE, Market: WIDE, Network: WIDE,
-  Support: { w: 1400, h: 840 }, Research: { w: 1140, h: 600 }, Staff: { w: 1240, h: 640 },
+  Locations: { w: 1440, h: 860 }, Shop: { w: 1180, h: 700 }, Books: { w: 900, h: 560 }, Customers: WIDE, Marketing: WIDE, Market: WIDE, Network: WIDE,
+  Support: { w: 1400, h: 840 }, Research: { w: 1140, h: 600 }, Staff: { w: 1240, h: 640 }, Post: { w: 1000, h: 820 },
 };
 
 export const prefOf = (prefs: Record<string, Partial<NotifyPref>>, app: string): NotifyPref => ({ allow: true, sound: true, ...prefs[app] });
@@ -75,7 +77,7 @@ interface Store {
   // Runs a 90-actions function on a copy of the game with these arguments; a success is kept and logged for replays.
   act: <A extends unknown[]>(fn: (s: GameState, ...args: A) => ActionResult, ...args: A) => ActionResult;
   setSpeed: (s: Speed) => void;
-  openApp: (app: string, focus?: Omit<Focus, "n">) => void;
+  openApp: (app: string, focus?: Omit<Focus, "n">, fresh?: boolean) => void;
   // Opens a server's console in its own window, one per server.
   openConsole: (deviceId: string) => void;
   // Opens a desktop document: the guide in Getting started, a note in its own Notes window.
@@ -132,7 +134,7 @@ function loadGame(): { game: GameState; loaded: boolean } {
 
 const initial = loadGame();
 // A reload (the dev server's after a code change, or the player's) reopens the windows of the saved game and keeps its clock running.
-const restored = initial.loaded ? readSession<Win[]>("windows", []) : [];
+const restored = initial.loaded ? readSession<Win[]>("windows", []).map((w) => (w.app === "Billing" ? { ...w, app: "Books" } : w)) : [];
 const savedSpeed = readSession<Speed>("speed", 0);
 const restoredSpeed: Speed = initial.loaded && SPEEDS.includes(savedSpeed) ? savedSpeed : 0;
 
@@ -282,9 +284,10 @@ export const useStore = create<Store>((set, get) => ({
   },
   setSpeed: (speed) => set({ speed }),
 
-  openApp: (app, target) => {
+  openApp: (app, target, fresh) => {
+    if (app === "Chat") return void window.open(DISCORD_URL, "_blank", "noopener");
     const ws = get().windows;
-    const open = ws.find((w) => w.app === app);
+    const open = fresh ? undefined : ws.filter((w) => w.app === app).sort((a, b) => b.z - a.z)[0];
     const focus = target ? { ...target, n: ++focusId } : open?.focus;
     if (open) return set({ windows: ws.map((w) => (w.id === open.id ? { ...w, minimized: false, z: topZ(ws) + 1, focus } : w)) });
     const n = ws.length % 8, size = WINDOW_SIZES[app] ?? { w: 760, h: 480 };
@@ -414,8 +417,13 @@ useStore.subscribe((s, prev) => {
 
 export const loadedFromSave = initial.loaded;
 
+// The window an app body renders in, so an app with several windows keeps state per window.
+export const WinContext = createContext({ id: "", close: () => {} });
+export const useWin = () => useContext(WinContext);
+
 // Runs apply with the focus another app opened this app's window on, on mount and on every new request.
 export function useFocus(app: string, apply: (f: Focus) => void): void {
-  const focus = useStore((s) => s.windows.find((w) => w.app === app)?.focus);
+  const { id } = useWin();
+  const focus = useStore((s) => s.windows.find((w) => (id ? w.id === id : w.app === app))?.focus);
   useEffect(() => { if (focus) apply(focus); }, [focus?.n]);
 }

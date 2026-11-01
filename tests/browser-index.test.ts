@@ -1,12 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { SOFTWARE } from "../src/sim/10-catalog/platforms";
 import { SERVER_OS } from "../src/sim/10-catalog/server-os";
-import { newGame } from "../src/sim/50-state";
 import { HOME_URL, resolve } from "../src/sim/80-business/browser";
 import { consoleBookmarks } from "../src/sim/80-business/consoles";
 import { siteIndex } from "../src/sim/80-business/index";
 import { setPower } from "../src/sim/90-actions/hardware";
-import { readyGame, skipTo } from "./fixtures";
+import { readyGame, skipTo, newGame } from "./fixtures";
 
 const titles = (s: ReturnType<typeof newGame>, category: string) => siteIndex(s).find((c) => c.title === category)!.rows.map((r) => r.title);
 
@@ -16,8 +15,8 @@ describe("browser index", () => {
     expect(resolve(s, HOME_URL).page).toEqual({ kind: "index" });
     expect(resolve(s, "yahoy.com").page).toEqual({ kind: "index" });
     expect(siteIndex(s).map((c) => c.title)).toEqual([
-      "Operating systems", "Virtualization", "Hosting panels", "Game panels", "DNS", "VPN", "Storage", "Mail", "Backup",
-      "Domain resellers", "Community", "Hardware", "Video",
+      "Banks", "Operating systems", "Virtualization", "Hosting panels", "Game panels", "DNS", "VPN", "Storage", "Mail", "Backup",
+      "Domain resellers", "Government", "Bookkeeping", "Community", "Hardware", "Video",
     ]);
     const ready = readyGame(1);
     expect(siteIndex(ready).map((c) => c.title).slice(-3)).toEqual(["Hardware", ready.company.name, "Video"]);

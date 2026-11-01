@@ -1,6 +1,7 @@
 import { FileText } from "lucide-react";
 import { t } from "../../../../../i18n/en";
-import { LogOut, Package, Plus, Server, Settings, type LucideIcon } from "lucide-react";
+import { HardDrive, LogOut, Package, Plus, Server, Settings, type LucideIcon } from "lucide-react";
+import { GameLine, GameNodes } from "../GamePanel";
 import { Actions, Backups, Bar, cpuText, erasFrom, eraAt, Facts, LoginForm, ramText, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
 import { parseCreate } from "../../../../../sim/80-business/consoles";
 import { PackagesScreen, ProvisionForm } from "../PackageForms";
@@ -11,7 +12,7 @@ import "./pterodaktyl.css";
 const ERAS = erasFrom(2016, 2021);
 
 export function Pterodaktyl(p: PanelProps) {
-  const era = eraAt(ERAS, p.game), open = parseCreate("pterodaktyl", p.path), [tab, setTab] = usePanelTab(p.f, open?.screen ?? "objects");
+  const era = eraAt(ERAS, p), open = parseCreate("pterodaktyl", p.path), [tab, setTab] = usePanelTab(p.f, open?.screen ?? "objects");
   const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f);
   if (!p.signedIn) return (
     <div className="cx pt pt-login" data-era={era}>
@@ -21,7 +22,7 @@ export function Pterodaktyl(p: PanelProps) {
       </LoginForm>
     </div>
   );
-  const nav: [Tab, string, LucideIcon][] = [["objects", t("browser-consoles-2.servers"), Server], ["create", t("pkg.ptCreate"), Plus], ["packages", t("pkg.ptNests"), Package], ["software", t("browser-consoles-2.settings"), Settings], ...pages.map((g) => [g.id, g.label, FileText] as [Tab, string, LucideIcon])];
+  const nav: [Tab, string, LucideIcon][] = [["objects", t("browser-consoles-2.servers"), Server], ["create", t("pkg.ptCreate"), Plus], ["packages", t("pkg.ptNests"), Package], ["wings", t("games.tab.pterodaktyl.nodes"), HardDrive], ["software", t("browser-consoles-2.settings"), Settings], ...pages.map((g) => [g.id, g.label, FileText] as [Tab, string, LucideIcon])];
   return (
     <div className="cx pt" data-era={era}>
       <header className="pt-nav">
@@ -32,12 +33,13 @@ export function Pterodaktyl(p: PanelProps) {
       </header>
       <main className="pt-main">
         {tab === "create" && <ProvisionForm game={p.game} c={p.c} products={["gameServer"]} order={open?.screen === "create" ? open.order : undefined} />}
+        {tab === "wings" && <GameNodes game={p.game} c={p.c} />}
         {tab === "packages" && <PackagesScreen game={p.game} c={p.c} />}
         {tab === "objects" && rows.length === 0 && <p className="cx-empty">{t("browser-consoles-2.nothingHere")}</p>}
         {tab === "objects" && rows.map((r) => (
           <article key={r.id} className="pt-server">
             <span className={`pt-led ${r.tone}`} />
-            <div className="pt-name"><b>{r.name}</b><span className="cx-sub">{r.node}</span></div>
+            <div className="pt-name"><b>{r.name}</b><span className="cx-sub">{r.node}</span><GameLine g={r.game} /></div>
             <div className="pt-meter"><span className="cx-use">{t("browser-consoles-2.cpu")}</span><Bar use={r.cpu} /><span className="cx-use num">{cpuText(r)}</span></div>
             <div className="pt-meter"><span className="cx-use">{t("browser-consoles-2.memory")}</span><Bar use={r.ram} /><span className="cx-use num">{ramText(r)}</span></div>
             <span className={`cx-state ${r.tone}`}>{r.state}</span>

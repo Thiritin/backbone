@@ -14,11 +14,11 @@ import { renewDomain } from "../../../sim/90-actions/orders";
 import { changePrice } from "../../../sim/90-actions/sales";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { More } from "../More";
-import { workloadActions } from "../vms/migrate";
+import { workloadActions } from "../workload-menu";
 import { consoleEntry } from "../products/parts";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
-import { formatDay } from "../billing/BillingApp";
+import { formatDay } from "../billing/format";
 import { PriceField } from "../sales/PriceField";
 import { ActivityLog } from "./ActivityLog";
 import { registryOf } from "../../../sim/30-customers/registry";
@@ -35,7 +35,7 @@ export const STATUSES: Record<Status, { label: string; pill: string }> = {
   churned: { label: t("misc.churned"), pill: "" },
 };
 const INVOICE: Record<InvoiceStatus, { label: string; pill: string }> = {
-  open: { label: t("misc.open"), pill: "accent" }, overdue: { label: t("misc.overdue"), pill: "warn" }, paid: { label: t("misc.paid"), pill: "" }, writtenOff: { label: t("misc.writtenOff"), pill: "" },
+  draft: { label: t("books.status.draft"), pill: "" }, open: { label: t("misc.open"), pill: "accent" }, overdue: { label: t("misc.overdue"), pill: "warn" }, paid: { label: t("misc.paid"), pill: "" }, writtenOff: { label: t("misc.writtenOff"), pill: "" },
 };
 const SLA = { basic: t("misc.slaBasic"), business: t("misc.slaBusiness"), premium: t("misc.slaPremium") } as const;
 const PERSON: Profile[] = ["private", "gamer", "hobbyDev"];
@@ -96,7 +96,7 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
   const domains = game.domains.filter((d) => d.customerId === c.id);
   const tickets = game.tickets.filter((tk) => tk.customerId === c.id).sort((a, b) => b.createdAt - a.createdAt);
   const subject = (tk: (typeof tickets)[number]) => t(`ticket.${tk.kind}.${tk.topic}.subject`, subjectParams(game, tk));
-  const openInvoice = (id: string) => openApp("Billing", { kind: "invoice", id });
+  const openInvoice = (id: string) => openApp("Books", { kind: "invoice", id });
   const openTicket = (id: string) => openApp("Support", { kind: "ticket", id });
   const serviceMenu = (v: Service) => (): MenuEntry[] => {
     const w = v.endedAt === null ? game.workloads.find((x) => x.serviceId === v.id) : undefined;
@@ -115,7 +115,7 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
   ];
   const domainMenu = (name: string) => (): MenuEntry[] => [
     c.churnedAt === null && { label: t("misc.renew"), run: () => act(renewDomain, name) },
-    { label: t("misc.openInBilling"), run: () => openApp("Billing", { kind: "domain", id: name }) },
+    { label: t("misc.openInBooks"), run: () => openApp("Books", { kind: "customer", id: c.id }) },
   ];
   const tabs: [Tab, string, number?][] = [
     ["summary", t("misc.summary")],
@@ -226,7 +226,7 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
                   <table className="table cus-table">
                     <tbody>
                       {domains.map((d) => (
-                        <tr key={d.name} onClick={() => openApp("Billing", { kind: "domain", id: d.name })} onContextMenu={menuOn(domainMenu(d.name))}>
+                        <tr key={d.name} onClick={() => openApp("Books", { kind: "customer", id: c.id })} onContextMenu={menuOn(domainMenu(d.name))}>
                           <td className="cus-subject"><span className="cus-strong">{d.name}</span></td>
                           <td className="cus-dim">{registryOf(d.name).name}</td>
                           <td className="r num">{formatDay(d.expiresAt)}</td>

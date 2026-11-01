@@ -21,7 +21,7 @@ export const CURVES: Record<CurveId, { weekday: Keys; weekend: Keys }> = {
 
 const BY_PRODUCT: Partial<Record<Product, CurveId>> = { gameServer: "game", vpn: "vpn", storage: "backup", dedicated: "enterprise" };
 const BY_PROFILE: Record<Profile, CurveId> = {
-  private: "blog", gamer: "game", hobbyDev: "dev", soleProp: "business", smallBiz: "business", agency: "news", office: "business", onlineShop: "shop", enterprise: "enterprise",
+  private: "blog", gamer: "game", hobbyDev: "dev", soleProp: "business", smallBiz: "business", agency: "news", office: "business", onlineShop: "shop", enterprise: "enterprise", reseller: "business",
 };
 // Private individuals mostly keep a personal page; this share of them writes a blog people read.
 export const PRIVATE_BLOGS = 0.25;

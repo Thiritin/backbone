@@ -20,9 +20,9 @@ export const monthStartOf = (hour: number): number => {
   return hourOf(new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)));
 };
 
-// Loan principal moves cash without being profit; an instalment counts only its interest.
+// Loan principal and the owner's capital move cash without being profit; an instalment counts only its interest.
 export function profitOf(e: LedgerEntry): number {
-  if (e.category === "tax") return 0;
+  if (e.category === "tax" || e.category === "capital") return 0;
   if (e.category !== "loans") return e.amount;
   if (e.key === "ledger.loanRepayment") return -Number(e.params.interest);
   return e.key === "ledger.loanFee" ? e.amount : 0;
@@ -102,7 +102,8 @@ export function financeTick(s: GameState): SimEvent[] {
       } else if (profit < 0) events.push({ app: "Finance", key: "event.taxLoss", params: { year, carry } });
     }
   }
-  if (s.cash >= 0) s.brokeSince = null;
+  // The overdraft keeps the company solvent down to its limit.
+  if (s.cash >= -(s.bank?.overdraft ?? 0)) s.brokeSince = null;
   else if (s.brokeSince === null) {
     s.brokeSince = s.hour;
     events.push({ app: "Finance", key: "event.cashNegative", params: { days: INSOLVENT_DAYS } });

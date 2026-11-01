@@ -25,7 +25,10 @@ import { REPLIES_EN } from "./replies";
 import { BURNIN_EN } from "./burnin";
 import { USED_EN } from "./used";
 import { VENDORS_EN } from "./vendors";
+import { BANK_EN } from "./bank";
+import { PAPERWORK_EN } from "./paperwork";
 import { ALARMS_EN } from "./alarms";
+import { IFACE_EN } from "./iface";
 import { active, LOCALE, type Dict } from "./lang";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -49,6 +52,7 @@ export const en: Record<string, (p: Params) => string> = {
   ...ADDRESSES_EN,
   ...IPMI_EN,
   ...TERMINAL_EN,
+  ...IFACE_EN,
   ...REMOTE_EN,
   ...CONSOLE_EN,
   ...SECURITY_EN,
@@ -62,6 +66,8 @@ export const en: Record<string, (p: Params) => string> = {
   ...DOMAINS_EN,
   ...NEWS_EN,
   ...VENDORS_EN,
+  ...BANK_EN,
+  ...PAPERWORK_EN,
   ...USED_EN,
   ...BURNIN_EN,
   ...ALARMS_EN,
@@ -134,6 +140,8 @@ export const en: Record<string, (p: Params) => string> = {
   "error.speedMismatch": () => "Both ports must run at the same speed.",
   "error.notServer": () => "Only servers have a bond mode.",
   "error.notSwitch": () => "Only switches have port groups.",
+  "error.unmanaged": () => "Unmanaged switches have no settings.",
+  "error.vlanRange": () => "VLAN IDs run from 1 to 4094.",
   "error.groupSize": () => "A port group holds 2 to 8 ports.",
   "ledger.lease": (p) => `${p.lessor}, payment ${p.paid} of ${p.months}`,
   "ledger.leaseBuyout": (p) => `${p.lessor}, buyout`,
@@ -253,8 +261,8 @@ export const en: Record<string, (p: Params) => string> = {
   "event.suspendedLeft.text": (p) => `${p.customer} left while suspended, and invoice ${p.invoice} went to collections.`,
   "event.collected.title": () => "Sent to collections",
   "event.collected.text": (p) => `Invoice ${p.invoice} of ${p.customer} went to collections.`,
-  "event.invoices.title": () => "Invoices sent",
-  "event.invoices.text": (p) => `You sent ${p.count} ${Number(p.count) === 1 ? "invoice" : "invoices"} for ${euroCents(Number(p.total))}.`,
+  "event.invoices.title": () => "Invoice drafts",
+  "event.invoices.text": (p) => `Lexwear created ${p.count} ${Number(p.count) === 1 ? "invoice draft" : "invoice drafts"} for ${euroCents(Number(p.total))}.`,
   "event.loanMissed.title": () => "Repayment missed",
   "event.loanMissed.text": (p) => `The instalment on the ${euro(Number(p.amount))} loan was not paid, and the bank charged a ${euro(Number(p.fee))} fee.`,
   "event.loanCalled.title": () => "Loan called in",
@@ -268,6 +276,7 @@ export const en: Record<string, (p: Params) => string> = {
   "invoice.step.final": () => "Final notice",
   "invoice.step.collections": () => "Collections",
   "ledger.payment": (p) => `Invoice ${p.invoice} from ${p.customer}`,
+  "ledger.transfer": (p) => `Bank transfer from ${p.from}`,
   "ledger.setup": (p) => `Setup fees on invoice ${p.invoice} from ${p.customer}`,
   "ledger.collections": (p) => `Collections on invoice ${p.invoice} from ${p.customer}`,
   "ledger.chargeback": (p) => `Chargeback from ${p.customer}`,
@@ -286,6 +295,8 @@ export const en: Record<string, (p: Params) => string> = {
   "ledger.loanFee": (p) => `Missed instalment fee on the ${euro(Number(p.amount))} loan`,
   "ledger.loanCalled": (p) => `The ${euro(Number(p.amount))} loan was called in`,
   "error.invoiceSettled": () => "This invoice is already settled.",
+  "error.invoiceSent": () => "This invoice was already sent.",
+  "error.transferMatched": () => "This transfer is already booked.",
   "error.stepNotDue": () => "No dunning step is due yet.",
   "error.notOverdue": () => "This invoice is not overdue.",
   "error.billingRule": () => "This billing rule is not available.",
@@ -352,6 +363,8 @@ export const en: Record<string, (p: Params) => string> = {
   "ticket.billing.charge.text": () => "My bank statement shows two payments to you this month. Can you explain?",
   "ticket.billing.copy.subject": () => "Copy of my last invoice",
   "ticket.billing.copy.text": () => "My accountant needs last month's invoice and I can't find the email.",
+  "ticket.billing.alreadyPaid.subject": () => "I already paid",
+  "ticket.billing.alreadyPaid.text": () => "I paid this invoice by bank transfer. Why are you sending me a reminder?",
   "ticket.billing.delay.subject": () => "Can I pay a little later?",
   "ticket.billing.delay.text": () => "Money is tight until the end of the month. Could I pay the invoice two weeks late?",
   "ticket.billing.price.subject": () => "The new price is too high",
@@ -413,6 +426,8 @@ export const en: Record<string, (p: Params) => string> = {
   "template.explain.text": () => "The second payment covers last month's usage, which we invoice in arrears.",
   "template.resend.title": () => "Resend the invoice",
   "template.resend.text": () => "We have sent you a copy of the invoice.",
+  "template.foundPayment.title": () => "Confirm the payment",
+  "template.foundPayment.text": () => "We found your payment and booked it to the invoice. Please ignore the reminder.",
   "template.extension.title": () => "Grant an extension",
   "template.extension.text": () => "No problem, you can pay two weeks later this time.",
   "template.newPrice.title": () => "Explain the new price",
@@ -445,6 +460,8 @@ export const en: Record<string, (p: Params) => string> = {
   "guide.step.buyServer": () => "Buy a server",
   "guide.step.mountServer": () => "Mount and power it",
   "guide.step.mountRouter": () => "Mount the router",
+  "guide.step.findAddress": () => "Find the server's address",
+  "guide.step.shareWeb": () => "Share the web port",
   "guide.step.internet": () => "Add internet",
   "guide.step.setup": () => "Install software",
   "guide.step.domain": () => "Buy your domain",

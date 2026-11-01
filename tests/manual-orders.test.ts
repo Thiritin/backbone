@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { chooseShop } from "../src/sim/90-actions/shop";
 import { orderLead } from "../src/sim/30-market/orders";
 import { setupFee, specText } from "../src/sim/30-market/spec";
 import { hostFor, invoiceOf, nextStep, stepsDone } from "../src/sim/30-market/manual";
@@ -19,7 +20,7 @@ import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { SKILLS } from "../src/sim/10-catalog/research";
 import { research } from "../src/sim/90-actions/store";
 import { setRate } from "../src/sim/90-actions/rates";
-import { panelVm, readyGame } from "./fixtures";
+import { mailed, owner, panelVm, readyGame } from "./fixtures";
 
 const MONDAY_9 = 48 + 9;
 const run = (s: GameState, hours: number) => { for (let i = 0; i < hours; i++) tick(s); };
@@ -49,7 +50,7 @@ const done = (s: GameState, res: { ok: boolean; error?: string }) => {
   run(s, 1);
 };
 const payNow = (s: GameState, invoiceId: string) => {
-  s.invoices = s.invoices.map((i) => (i.id === invoiceId ? { ...i, payStep: 0, payAt: s.hour } : i));
+  s.invoices = s.invoices.map((i) => (i.id === invoiceId ? { ...i, payStep: 0, payAt: s.hour, bank: undefined } : i));
 };
 
 describe("custom orders", () => {
@@ -68,7 +69,7 @@ describe("custom orders", () => {
     // The order form's order waits for the steps like an email order, with the website's price as the accepted quote.
     s.cash = 1e6;
     setUpChannel(s, "website");
-    setUpChannel(s, "orderForm");
+    chooseShop(s, "handRolled");
     const placed = orderLead(s, "private", "Frankfurt", [], web, false);
     expect(placed.ticketId).not.toBeNull();
     expect(s.sales.requests.find((x) => x.id === placed.id)!).toMatchObject({ status: "accepted", form: true });
@@ -78,33 +79,32 @@ describe("custom orders", () => {
     const s = readyGame(11);
     Object.assign(s, { customers: [], services: [], workloads: [] });
     const { id, req } = accepted(s);
-    done(s, createAccount(s, id));
+    done(s, createAccount(s, id, mailed(s, id)));
     expect(s.customers.map((c) => c.id)).toEqual([req().customerId]);
   });
 
-  it("runs its steps only in order", () => {
+  it("opens the account any time and the other steps once the quote is accepted", () => {
     const s = readyGame(1);
     const { id } = order(s);
     const a = accepted(s);
     const hostId = host(s, a);
-    expect(createAccount(s, id)).toEqual({ ok: false, error: "error.needsQuote" });
+    done(s, createAccount(s, id, mailed(s, id)));
     expect(confirmOrder(s, id)).toEqual({ ok: false, error: "error.needsQuote" });
     expect(provisionOrder(s, id, hostId)).toEqual({ ok: false, error: "error.needsQuote" });
     expect(quoteOrder(s, id, 0)).toEqual({ ok: false, error: "error.quotePrice" });
     expect(provisionOrder(s, a.id, hostId)).toEqual({ ok: false, error: "error.needsAccount" });
     expect(confirmOrder(s, a.id)).toEqual({ ok: false, error: "error.needsAccount" });
-    done(s, createAccount(s, a.id));
-    expect(createAccount(s, a.id)).toEqual({ ok: false, error: "error.stepDone" });
-    expect(registerOrderDomain(s, a.id)).toEqual({ ok: false, error: "error.needsInvoice" });
-    expect(provisionOrder(s, a.id, hostId)).toEqual({ ok: false, error: "error.needsInvoice" });
-    done(s, confirmOrder(s, a.id));
+    done(s, createAccount(s, a.id, mailed(s, a.id)));
+    expect(createAccount(s, a.id, mailed(s, a.id))).toEqual({ ok: false, error: "error.stepDone" });
     expect(provisionOrder(s, a.id, hostId)).toEqual({ ok: false, error: "error.needsDomain" });
+    done(s, registerOrderDomain(s, a.id, ...owner(s, a.id)));
+    expect(provisionOrder(s, a.id, hostId)).toEqual({ ok: false, error: "error.needsInvoice" });
   });
 
-  it("waits for the payment, then sets up the service with its own resources", () => {
+  it("sets up the service with its own resources, mails once and waits for the payment", () => {
     const s = readyGame(2);
     const { id, req, tk } = accepted(s, web, 12);
-    done(s, createAccount(s, id));
+    done(s, createAccount(s, id, mailed(s, id)));
     const c = s.customers.find((x) => x.id === req().customerId)!;
     expect(c.name).toBe(req().contact);
     expect(s.services.some((v) => v.customerId === c.id)).toBe(false);
@@ -112,13 +112,10 @@ describe("custom orders", () => {
     done(s, confirmOrder(s, id));
     const inv = invoiceOf(s, req())!;
     expect(inv.lines.map((l) => l.amount)).toEqual([setupFee(s, "webHosting"), 12, req().owned ? 5 : DOMAIN_FEE]);
-    expect(tk().status).toBe("waiting");
-    payNow(s, inv.id);
-    run(s, 1);
-    expect(tk()).toMatchObject({ status: "open", unread: true });
-    expect(tk().dueAt).toBeGreaterThan(s.hour);
+    expect(inv.status).toBe("draft");
+    expect(tk().status).toBe("open");
     const cash = s.cash;
-    done(s, registerOrderDomain(s, id));
+    done(s, registerOrderDomain(s, id, ...owner(s, id)));
     expect(domainOf(s, req().domain!)).toMatchObject({ customerId: c.id, transfer: !!req().owned });
     // The registrar bills the registry cost at the month start, not at the registration.
     expect(s.cash).toBeCloseTo(cash, 2);
@@ -128,23 +125,24 @@ describe("custom orders", () => {
     expect(v.price * 730).toBeCloseTo(12, 6);
     const w = s.workloads.find((x) => x.serviceId === v.id)!;
     expect([w.vcpu, w.ramGb, w.diskGb]).toEqual([req().spec!.vcpu, req().spec!.ramGb, req().spec!.diskGb]);
+    expect(invoiceOf(s, req())!.status).toBe("open");
+    expect(tk().status).toBe("waiting");
+    expect(req().thread.filter((m) => m.from === "you").map((m) => m.key.replace(/\.\d$/, ""))).toEqual(["reply.order.quote", "reply.order.done"]);
+    payNow(s, inv.id);
+    run(s, 1);
     expect(req().status).toBe("won");
     expect(tk()).toMatchObject({ status: "resolved", outcome: "accepted", serviceId: v.id });
-    expect(req().thread.filter((m) => m.from === "you").map((m) => m.key.replace(/\.\d$/, ""))).toEqual(
-      ["reply.order.quote", "reply.order.invoice", "reply.order.live"]);
     // The first month is prepaid: the next monthly invoice bills only the hours past it.
     runTo(s, 62 * 24 + 1);
     const bill = s.invoices.find((i) => i.lines.some((l) => l.serviceId === v.id))!;
     expect(bill.lines.find((l) => l.serviceId === v.id)!.params.hours).toBe(bill.issuedAt - v.prepaidUntil!);
   });
 
-  it("costs happiness when the paid setup waits past the customer's reply time", () => {
+  it("costs happiness when the setup waits past the customer's reply time", () => {
     const s = readyGame(4);
     const { id, req } = accepted(s, vps, 20);
-    done(s, createAccount(s, id));
+    done(s, createAccount(s, id, mailed(s, id)));
     done(s, confirmOrder(s, id));
-    payNow(s, req().invoiceId!);
-    run(s, 1);
     const c = () => s.customers.find((x) => x.id === req().customerId)!, before = c().happiness;
     run(s, 24 * 7);
     expect(c().happiness).toBeLessThan(before);
@@ -153,7 +151,7 @@ describe("custom orders", () => {
   it("closes the account and ends the service when a provisioned order is never paid", () => {
     const s = readyGame(5);
     const { id, req, tk } = accepted(s, vps, 20);
-    done(s, createAccount(s, id));
+    done(s, createAccount(s, id, mailed(s, id)));
     done(s, confirmOrder(s, id));
     s.invoices = s.invoices.map((i) => (i.id === req().invoiceId ? { ...i, payStep: 4, payAt: null } : i));
     done(s, provisionOrder(s, id, hostFor(s, req())!));
@@ -172,7 +170,7 @@ describe("custom orders", () => {
   it("closes the account when a confirmed order is declined", () => {
     const s = readyGame(6);
     const { id, req } = accepted(s, vps, 20);
-    done(s, createAccount(s, id));
+    done(s, createAccount(s, id, mailed(s, id)));
     done(s, confirmOrder(s, id));
     s.invoices = s.invoices.map((i) => (i.id === req().invoiceId ? { ...i, payAt: null } : i));
     expect(closeTicket(s, id).ok).toBe(true);
@@ -186,17 +184,17 @@ describe("custom orders", () => {
     s.cash = 1e6;
     expect(setRate(s, "webHosting", "setup", 25).ok).toBe(true);
     const a = accepted(s, web, 12);
-    done(s, createAccount(s, a.id));
+    done(s, createAccount(s, a.id, mailed(s, a.id)));
     done(s, confirmOrder(s, a.id));
     const first = invoiceOf(s, a.req())!.lines.filter((l) => l.key !== "invoice.line.domain" && l.key !== "invoice.line.domainTransfer");
     expect(first.map((l) => [l.key, l.amount])).toEqual([["invoice.line.setupFee", 25], ["invoice.line.firstMonth", 12]]);
     expect(quoteOrder(s, order(s).id, 12, -1)).toEqual({ ok: false, error: "error.quotePrice" });
     const b = accepted(s, web, 12, 40);
-    done(s, createAccount(s, b.id));
+    done(s, createAccount(s, b.id, mailed(s, b.id)));
     done(s, confirmOrder(s, b.id));
     expect(invoiceOf(s, b.req())!.lines[0]).toMatchObject({ key: "invoice.line.setupFee", amount: 40 });
     const c = accepted(s, web, 12, 0);
-    done(s, createAccount(s, c.id));
+    done(s, createAccount(s, c.id, mailed(s, c.id)));
     done(s, confirmOrder(s, c.id));
     expect(invoiceOf(s, c.req())!.lines.some((l) => l.key === "invoice.line.setupFee")).toBe(false);
   });
@@ -206,11 +204,11 @@ describe("domains", () => {
   function live(seed: number) {
     const s = readyGame(seed);
     const o = accepted(s, web, 8);
-    done(s, createAccount(s, o.id));
+    done(s, createAccount(s, o.id, mailed(s, o.id)));
     done(s, confirmOrder(s, o.id));
     payNow(s, o.req().invoiceId!);
     run(s, 1);
-    done(s, registerOrderDomain(s, o.id));
+    done(s, registerOrderDomain(s, o.id, ...owner(s, o.id)));
     done(s, provisionOrder(s, o.id, host(s, o)));
     return { s, ...o };
   }
@@ -261,9 +259,10 @@ describe("staff on custom orders", () => {
     expect(req().customerId).toBeNull();
     s.sales.requests = s.sales.requests.map((r) => (r.id === req().id ? { ...r, budget: 100 } : r));
     done(s, quoteOrder(s, tk().id, 20));
-    for (let i = 0; i < 24 * 4 && !req().invoiceId; i++) tick(s);
+    for (let i = 0; i < 24 * 4 && !req().serviceId; i++) tick(s);
     expect(req().customerId).not.toBeNull();
     expect(req().invoiceId).toBeDefined();
+    expect(req().serviceId).toBeDefined();
     const mine = req().thread.filter((m) => m.from === "you");
     expect(mine[0].by).toBeUndefined();
     expect(mine.slice(1).every((m) => m.by === s.staff[0].name)).toBe(true);
@@ -279,7 +278,7 @@ describe("routing and upgrades", () => {
   it("sets up on a chosen node and refuses one without the disk", () => {
     const s = readyGame(9);
     const { id, req } = accepted(s, vps, 20);
-    done(s, createAccount(s, id));
+    done(s, createAccount(s, id, mailed(s, id)));
     done(s, confirmOrder(s, id));
     const options = routeOptions(s, "vps", "Frankfurt", req().spec!);
     expect(options.length).toBe(1);
@@ -291,7 +290,7 @@ describe("routing and upgrades", () => {
     expect(s.workloads.find((w) => w.serviceId === req().serviceId)!.deviceId).toBe(node.id);
     expect(routeOptions(s, "vps", "Frankfurt", req().spec!)[0].nodes.find((n) => n.id === node.id)!.used.vcpu).toBeCloseTo(node.used.vcpu + s.workloads.find((w) => w.serviceId === req().serviceId)!.vcpu);
     const big = accepted(s, vps, 20);
-    done(s, createAccount(s, big.id));
+    done(s, createAccount(s, big.id, mailed(s, big.id)));
     s.sales.requests = s.sales.requests.map((r) => (r.id === big.r.id ? { ...r, spec: { ...r.spec!, diskGb: 10_000_000 } } : r));
     done(s, confirmOrder(s, big.id));
     expect(provisionOrder(s, big.id, node.id)).toEqual({ ok: false, error: "error.noCapacity" });
@@ -300,7 +299,7 @@ describe("routing and upgrades", () => {
   it("offers the upgrade price, locks the request until the customer answers and then grows the service", () => {
     const s = readyGame(10);
     const { id, req } = accepted(s, vps, 20);
-    done(s, createAccount(s, id));
+    done(s, createAccount(s, id, mailed(s, id)));
     done(s, confirmOrder(s, id));
     done(s, provisionOrder(s, id, hostFor(s, req())!));
     const v = s.services.find((x) => x.id === req().serviceId)!, c = s.customers.find((x) => x.id === v.customerId)!;
@@ -334,14 +333,13 @@ describe("quote first", () => {
     const { id, r, req, tk } = order(s);
     expect(nextStep(s, req())).toBe("quote");
     expect(stepsDone(s, req())).toMatchObject({ quote: false, account: false });
-    expect(createAccount(s, id)).toEqual({ ok: false, error: "error.needsQuote" });
+    expect(confirmOrder(s, id)).toEqual({ ok: false, error: "error.needsQuote" });
     s.sales.requests = s.sales.requests.map((x) => (x.id === r.id ? { ...x, budget: 100 } : x));
     done(s, quoteOrder(s, id, r.reference));
     expect(req()).toMatchObject({ status: "quoted", attempts: 1 });
     expect(tk().status).toBe("waiting");
     expect(req().thread.at(-1)!.key).toMatch(/^reply\.order\.quote\./);
     expect(quoteOrder(s, id, 9)).toEqual({ ok: false, error: "error.quoteSent" });
-    expect(createAccount(s, id)).toEqual({ ok: false, error: "error.needsQuote" });
     expect(nextStep(s, req())).toBeNull();
     for (let i = 0; i < 48 && req().status === "quoted"; i++) tick(s);
     expect(req().status).toBe("accepted");
@@ -349,7 +347,7 @@ describe("quote first", () => {
     expect(req().thread.some((m) => m.key === "sales.reply.accept")).toBe(true);
     expect(s.customers).toHaveLength(customers);
     expect(nextStep(s, req())).toBe("account");
-    done(s, createAccount(s, id));
+    done(s, createAccount(s, id, mailed(s, id)));
     expect(s.customers).toHaveLength(customers + 1);
   });
 
@@ -383,9 +381,9 @@ describe("quote first", () => {
     const first = s.clusters.find((c) => c.vm)!.id;
     const second = panelVm(s, s.clusters.find((c) => !c.vm && c.platform)!.id);
     const o = accepted(s, web, 12);
-    done(s, createAccount(s, o.id));
+    done(s, createAccount(s, o.id, mailed(s, o.id)));
     done(s, confirmOrder(s, o.id));
-    done(s, registerOrderDomain(s, o.id));
+    done(s, registerOrderDomain(s, o.id, ...owner(s, o.id)));
     const hosts = routeOptions(s, "webHosting", "Frankfurt", o.req().spec!);
     expect(hosts.map((h) => h.id).sort()).toEqual([first, second].sort());
     for (const h of hosts) {
@@ -400,7 +398,7 @@ describe("quote first", () => {
   it("refuses Automatic without the provisioning skill and places it with the skill", () => {
     const s = readyGame(4);
     const o = accepted(s, vps, 20);
-    done(s, createAccount(s, o.id));
+    done(s, createAccount(s, o.id, mailed(s, o.id)));
     done(s, confirmOrder(s, o.id));
     expect(provisionOrder(s, o.id, "auto")).toEqual({ ok: false, error: "error.needsAutomation" });
     expect(s.services.some((v) => v.id === o.req().serviceId)).toBe(false);
@@ -472,7 +470,8 @@ describe("quote first", () => {
     const s = readyGame(1);
     s.cash = 1e6;
     setUpChannel(s, "website");
-    setUpChannel(s, "orderForm");
+    chooseShop(s, "handRolled");
+    s.shop.optionDiscount = { annual: -3 };
     const customers = s.customers.length, r = orderLead(s, "private", "Frankfurt", [], web, false);
     const req = () => s.sales.requests.find((x) => x.id === r.id)!;
     expect(req()).toMatchObject({ form: true, status: "accepted", serviceId: null });
@@ -480,7 +479,7 @@ describe("quote first", () => {
     expect(stepsDone(s, req()).quote).toBe(true);
     expect(nextStep(s, req())).toBe("account");
     expect(quoteOrder(s, r.ticketId!, 5)).toEqual({ ok: false, error: "error.stepDone" });
-    done(s, createAccount(s, r.ticketId!));
+    done(s, createAccount(s, r.ticketId!, mailed(s, r.ticketId!)));
     done(s, confirmOrder(s, r.ticketId!));
     expect(invoiceOf(s, req())!.lines.find((l) => l.key === "invoice.line.firstMonth")!.amount).toBe(r.quote);
   });
@@ -488,10 +487,10 @@ describe("quote first", () => {
   it("loads saves with half-done orders and counts a started order's quote as accepted", () => {
     const s = readyGame(5);
     const idle = order(s), started = accepted(s, vps, 20);
-    done(s, createAccount(s, started.id));
+    done(s, createAccount(s, started.id, mailed(s, started.id)));
     // As an older save kept it: the account exists, the status is still open and no quote was ever sent.
     s.sales.requests = s.sales.requests.map((x) => (x.id === started.r.id ? { ...x, status: "open", attempts: 0 } : x));
-    const back = deserialize(serialize(s));
+    const back = deserialize(JSON.stringify({ ...JSON.parse(serialize(s)), version: 4 }));
     const old = (id: string) => back.sales.requests.find((x) => x.id === id)!;
     expect(nextStep(back, old(idle.r.id))).toBe("quote");
     expect(stepsDone(back, old(started.r.id))).toMatchObject({ quote: true, account: true, invoice: false });

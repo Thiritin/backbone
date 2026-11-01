@@ -1,12 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { sizeSpec } from "../src/sim/10-catalog/products";
 import { serviceOnline } from "../src/sim/40-support/status";
-import { newGame } from "../src/sim/50-state";
 import { netsvcBroken } from "../src/sim/60-infra/netsvc";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { BASEMENT_SERVER, panelServer, withServer } from "./fixtures";
+import { BASEMENT_SERVER, panelServer, withServer, newGame } from "./fixtures";
 
 describe("netsvc state", () => {
   it("round trips through a save", () => {

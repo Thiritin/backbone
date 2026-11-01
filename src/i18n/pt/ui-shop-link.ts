@@ -1,0 +1,25 @@
+import type { Dict } from "../lang";
+
+export default {
+  "vendor-sites.module.shop-link": () => "Ligação à loja",
+  "vendor-sites.pitch.shop-link": () => "A ligação à loja copia cada cliente e cada fatura da sua loja para o Lexwear Office assim que são criados e marca a fatura como paga na loja quando o Books regista o pagamento.",
+  "ledger.module.shop-link": () => "Licença Ligação à loja",
+  "ticket.mail.shop-link.licence.subject": (p) => `A sua chave de licença para ${p.module}`,
+  "ticket.mail.shop-link.licence.text": (p) => `Obrigado por comprar ${p.module} para ${p.shop}. A sua chave de licença é ${p.key}. Introduza-a em Registar, no Books, para ligar a sua loja.`,
+  "shop-link.ref.payout": (p) => `Pagamento ${p.numbers}`,
+  "error.payoutImport": () => "Este pagamento cobre várias faturas.",
+  "error.nothingToImport": () => "Não há nada para importar.",
+  "error.noShopSystem": () => "Este módulo precisa do sistema de loja deste fabricante.",
+  "shop-link.import": () => "Importar da loja",
+  "shop-link.customers": () => "Clientes da loja",
+  "shop-link.invoices": () => "Faturas da loja",
+  "shop-link.footer": (p) => `© ${p.year} ${p.maker}`,
+  "shop-link.tagline.modemBill": () => "Faturação e provisionamento para alojamento web",
+  "shop-link.tagline.clientExit": () => "Gestão de clientes e faturação para empresas de alojamento",
+  "shop-link.tagline.whmCache": () => "Faturação e automação para alojamento web",
+  "shop-link.tagline.blessta": () => "Faturação de código aberto para empresas de alojamento",
+  "shop-link.tagline.hostBull": () => "Faturação para todo o tipo de alojamento",
+  "shop-link.tagline.ubersmyth": () => "Faturação para fornecedores de servidores dedicados e colocation",
+  "shop-link.tagline.orderBocks": () => "Venda domínios e alojamento sem custos iniciais",
+  "shop-link.tagline.boxBillin": () => "Faturação livre e aberta para empresas de alojamento",
+} satisfies Dict;

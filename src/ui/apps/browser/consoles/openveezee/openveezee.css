@@ -41,3 +41,6 @@
 .ovz-card .cx-btn { border: 2px outset #ddd; background: #e4e4e4; color: #000; }
 .ovz-login .ovz-logo { color: var(--accent); }
 .ovz-login[data-era="late"] { background: linear-gradient(#222 0 120px, var(--bg) 120px); }
+.ovz-order { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.ovz-ubc { font-family: monospace; }
+.ovz-ubc .ovz-fail { color: #c00; font-weight: 700; }

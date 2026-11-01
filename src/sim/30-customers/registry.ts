@@ -1,5 +1,6 @@
 // GDD, Domains: domains registered or transferred for customers, renewed yearly at the registry of their TLD.
 // Numbers in economy.md, Domains.
+import { hashRng, rand } from "../00-core/rng";
 import { nowMinutes } from "../00-core/time";
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
@@ -38,6 +39,13 @@ export function registryCost(name: string, year: number): number {
 
 export const domainOf = (s: GameState, name: string): Domain | undefined => s.domains.find((d) => d.name === name);
 
+// The transfer code the old registrar gave a customer who owns their domain; the order email quotes it.
+const CODE = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+export function authCode(seed: number, requestId: string): string {
+  const rng = hashRng(seed, Number(requestId.slice(3)) || 0, 281);
+  return Array.from({ length: 8 }, () => CODE[Math.floor(rand(rng) * CODE.length)]).join("");
+}
+
 // Records the domain for a year; the registrar bills its registry cost monthly (30-customers/registrar.ts).
 export function register(s: GameState, name: string, customerId: string | null, transfer: boolean): void {
   const d: Domain = { name, customerId, registeredAt: s.hour, expiresAt: s.hour + YEAR, transfer, lapsed: false, readyAt: nowMinutes(s) + REGISTER_MINUTES };
@@ -64,10 +72,10 @@ export function domainsTick(s: GameState): SimEvent[] {
   for (const d of s.domains) {
     if (!d.customerId || !active.has(d.customerId)) continue;
     const left = d.expiresAt - s.hour;
-    if (left <= EXPIRY_NOTICE_DAYS * DAY && left > (EXPIRY_NOTICE_DAYS - 1) * DAY) events.push({ app: "Billing", key: "event.domainExpiring", params: { domain: d.name, days: EXPIRY_NOTICE_DAYS } });
+    if (left <= EXPIRY_NOTICE_DAYS * DAY && left > (EXPIRY_NOTICE_DAYS - 1) * DAY) events.push({ app: "Books", key: "event.domainExpiring", params: { domain: d.name, days: EXPIRY_NOTICE_DAYS } });
     if (!d.lapsed && s.hour >= d.expiresAt) {
       lapsed = true;
-      events.push({ app: "Billing", key: "event.domainExpired", params: { domain: d.name } });
+      events.push({ app: "Books", key: "event.domainExpired", params: { domain: d.name } });
     }
   }
   if (lapsed) s.domains = s.domains.map((d) => (!d.lapsed && s.hour >= d.expiresAt && d.customerId !== null && active.has(d.customerId) ? { ...d, lapsed: true } : d));

@@ -8,7 +8,7 @@ import { t } from "../../../i18n/en";
 import { PRODUCT } from "../support/labels";
 import type { GameState } from "../../../sim/50-state";
 import { controlPlaneUp, hostOfVm, lostDisk, workloadOnline, type Cluster, type Workload } from "../../../sim/60-infra/cluster";
-import { privateIp } from "../../../sim/60-infra/addresses";
+import { machineAddress } from "../../../sim/60-infra/addresses";
 import { restoreWorkload } from "../../../sim/90-actions/vms";
 import type { MenuEntry } from "../../desktop/menu";
 import { useStore } from "../../store";
@@ -113,9 +113,9 @@ export function Sparkline({ values, from, w = 240, h = 44 }: { values: number[];
   );
 }
 
-export type VmState = "running" | "stopped" | "lost" | "restoring" | "migrating" | "cloning" | "down" | "frozen";
+export type VmState = "running" | "stopped" | "lost" | "restoring" | "migrating" | "cloning" | "down" | "frozen" | "checkpointed";
 export const VM_STATE: Record<VmState, [string, string]> = {
-  running: [t("misc1.parts.running"), "ok"], frozen: [t("misc1.parts.frozen"), "bad"], stopped: [t("misc1.parts.stopped"), ""], lost: [t("misc1.parts.lostDisk"), "bad"], restoring: [t("misc1.parts.restoring"), "accent"], migrating: [t("misc1.parts.migrating"), "accent"], cloning: [t("misc1.parts.cloning"), "accent"], down: [t("misc1.parts.down"), "bad"],
+  running: [t("misc1.parts.running"), "ok"], frozen: [t("misc1.parts.frozen"), "bad"], checkpointed: [t("ovz.frozen"), "accent"], stopped: [t("misc1.parts.stopped"), ""], lost: [t("misc1.parts.lostDisk"), "bad"], restoring: [t("misc1.parts.restoring"), "accent"], migrating: [t("misc1.parts.migrating"), "accent"], cloning: [t("misc1.parts.cloning"), "accent"], down: [t("misc1.parts.down"), "bad"],
 };
 export function vmState(game: GameState, w: Workload): VmState {
   if (lostDisk(game, w)) return "lost";
@@ -123,6 +123,7 @@ export function vmState(game: GameState, w: Workload): VmState {
   if (w.cloning && w.cloning > game.hour) return "cloning";
   if (w.busyUntil > game.hour) return game.lossReports.some((r) => r.items.some((i) => i.workloadId === w.id && i.restored)) ? "restoring" : "migrating";
   if (w.stopped) return "stopped";
+  if (w.frozen) return "checkpointed";
   if (w.clusterId && w.deviceId && game.frozen.includes(w.deviceId)) return "frozen";
   return workloadOnline(game, w) ? "running" : "down";
 }
@@ -195,6 +196,6 @@ export const softwareName =(id: string | null) => (id ? softwareById(id).name : 
 
 // Opens the web console of a cluster's software in the Browser, at the private address of its VM or control plane.
 export function consoleEntry(game: GameState, clusterId: string | null): MenuEntry | false {
-  const c = game.clusters.find((x) => x.id === clusterId), id = c && (c.vm ?? c.controlPlane ?? c.nodes[0]?.deviceId), ip = id && privateIp(game, id);
+  const c = game.clusters.find((x) => x.id === clusterId), id = c && (c.vm ?? c.controlPlane ?? c.nodes[0]?.deviceId), ip = id && machineAddress(game, id);
   return !!ip && { label: t("misc1.parts.openConsole"), run: () => useStore.getState().openApp("Browser", { kind: "url", id: `http://${ip}/` }) };
 }
