@@ -12,7 +12,7 @@ import { InvoicesTab } from "./InvoicesTab";
 import { QuotesTab } from "./QuotesTab";
 import { NEW } from "./NewCustomer";
 import { PayablesTab } from "./PayablesTab";
-import { RemindersTab, RulesTab } from "./RemindersTab";
+import { RemindersTab } from "./RemindersTab";
 import { Register } from "./Register";
 import "../billing/billing.css";
 import "./books.css";
@@ -28,7 +28,6 @@ const TABS: { id: string; count: (s: GameState) => number; body: ComponentType<{
   { id: "invoices", count: drafts, body: InvoicesTab },
   { id: "bank", count: unmatched, body: BankTab },
   { id: "reminders", count: late, body: RemindersTab },
-  { id: "dunning", count: () => 0, body: RulesTab },
   { id: "payables", count: (s) => s.payables.filter((p) => overdue(s, p)).length, body: PayablesTab },
 ];
 
