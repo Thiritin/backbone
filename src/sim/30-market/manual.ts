@@ -1,6 +1,7 @@
 // GDD, Custom orders: an order email is worked step by step, each step a reply in its thread. Quote a price and wait for the
 // customer to accept, then create the customer account, confirm the order with its invoice, register or transfer the domain
 // and set up the service. Numbers in economy.md, Custom orders.
+import { carryForward } from "./quotes";
 import { hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
 import type { Product, Service } from "../30-customers/customers";
@@ -193,6 +194,7 @@ export function applyStep(s: GameState, t: Ticket, step: OrderStep, by?: string)
     const draft = invoiceOf(s, r), inv = draft?.status === "draft" ? draft : draftInvoice(s, customerId, firstLines(s, r));
     issue(s, inv, ORDER_PAY_DAYS - 1);
     editRequest(s, r.id, () => ({ invoiceId: inv.id, status: "quoted", replyAt: null }));
+    carryForward(s, t.id, inv.id);
     mailRequest(s, r.id, "order.invoice", by, { invoice: inv.number, total: cents(inv.lines.reduce((n, l) => n + l.amount, 0)) });
     setTicket(s, t.id, { status: "waiting", updatedAt: s.hour });
   } else if (step === "domain") {

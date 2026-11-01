@@ -23,7 +23,7 @@ export const late = (s: GameState) => s.invoices.filter((i) => i.status === "ove
 // Each tab: id, label key, dock count and body. The selection a tab opens on comes from the focus id.
 const TABS: { id: string; count: (s: GameState) => number; body: ComponentType<{ focus: string | null }> }[] = [
   { id: "customers", count: (s) => s.customers.filter((c) => c.churnedAt === null && !c.sponsor).length, body: CustomersTab },
-  { id: "quotes", count: (s) => s.quotes.filter((q) => q.status === "accepted" && !s.sales.requests.some((r) => r.ticketId === q.ticketId && r.invoiceId)).length, body: QuotesTab },
+  { id: "quotes", count: (s) => s.quotes.filter((q) => q.status === "accepted").length, body: QuotesTab },
   { id: "invoices", count: drafts, body: InvoicesTab },
   { id: "bank", count: unmatched, body: BankTab },
   { id: "reminders", count: late, body: RemindersTab },

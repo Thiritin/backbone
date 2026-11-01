@@ -59,6 +59,7 @@ export default {
   "error.quoteSentAlready": () => "Dieses Angebot ist schon verschickt.",
   "error.quoteOtherOrder": () => "Dieses Angebot gehört zu einer anderen Bestellung.",
   "error.quoteNotAccepted": () => "Der Kunde hat dieses Angebot nicht angenommen.",
+  "error.quoteInvoiced": () => "Dieses Angebot ist schon weitergeführt.",
   "error.needsInvoice": () => "Bestätige zuerst die Bestellung und sende die Rechnung.",
   "error.needsDomain": () => "Registriere zuerst die Domain.",
   "error.stepDone": () => "Dieser Schritt ist erledigt.",

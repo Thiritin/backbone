@@ -61,6 +61,7 @@ export const MANUAL_EN: Record<string, (p: Params) => string> = {
   "error.quoteSentAlready": () => "This quote was sent already.",
   "error.quoteOtherOrder": () => "This quote belongs to another order.",
   "error.quoteNotAccepted": () => "The customer has not accepted this quote.",
+  "error.quoteInvoiced": () => "This quote was carried forward already.",
   "error.needsInvoice": () => "Confirm the order and send the invoice first.",
   "error.needsDomain": () => "Register the domain first.",
   "error.stepDone": () => "This step is done.",

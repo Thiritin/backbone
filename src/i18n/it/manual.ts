@@ -59,6 +59,7 @@ export default {
   "error.quoteSentAlready": () => "Questo preventivo è già stato inviato.",
   "error.quoteOtherOrder": () => "Questo preventivo è di un altro ordine.",
   "error.quoteNotAccepted": () => "Il cliente non ha accettato questo preventivo.",
+  "error.quoteInvoiced": () => "Questo preventivo è già stato trasferito in fattura.",
   "error.needsInvoice": () => "Conferma prima l'ordine e invia la fattura.",
   "error.needsDomain": () => "Registra prima il dominio.",
   "error.stepDone": () => "Questo passaggio è completato.",
