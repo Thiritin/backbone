@@ -29,11 +29,11 @@ Level 6 lands before the cloud and GPU boom, so the late game still has new prod
 
 ## Starting state
 
-A new game opens paused on 1 January 2005 at 00:00 with €3,500 in cash, an empty 24U rack in the basement next to the home router, and three friends waiting for web hosting. The savings buy the first server, a Dwell Balanced 1U G1 at €2,500, and leave the same €1,000 the company used to start with next to a free server, so year 1 pacing is unchanged. The Bank comes in for the second server, which the panel VM and the friends make due within the first month or two. The home router has 4 ports, one per basement server, so the basement needs no switch.
+A new game opens paused on 1 January 2005 at 00:00 with no cash and €3,500 of savings that arrive when the player opens the bank account, an empty 24U rack in the basement next to the home router, and three friends waiting for web hosting. The savings buy the first server, a Dwell Balanced 1U G1 at €2,500, and leave the same €1,000 the company used to start with next to a free server, so year 1 pacing is unchanged. The Bank comes in for the second server, which the panel VM and the friends make due within the first month or two. The home router has 4 ports, one per basement server, so the basement needs no switch.
 
 | Item | Starting value |
 | --- | --- |
-| Cash | €3,500, no debt; the bank lends up to the level 1 minimum of €10,000 from day one |
+| Cash | €0 until the bank account opens with the €3,500 savings, then €40 for the registration, no debt; the bank lends up to the level 1 minimum of €10,000 from day one |
 | Company | Level 1, 0 know-how, no reviews yet |
 | Basement | 1 rack position for a rack up to 24U, 3 kW at most; power at the household price |
 | Home line | Mom's DSL, free (Home line). The player orders a better one in Locations; it goes live after its install days, and every line on offer costs money |
@@ -52,7 +52,7 @@ A challenge starts from the normal starting state with one twist, chosen by ISO 
 | --- | --- |
 | 0 | Home line SDSL 2048 already in from hour 0 |
 | 1 | Every datacenter except Hetzler Park starts at its 2005 capacity; competitors cancel and refill as usual afterwards |
-| 2 | Starting cash €2,000 |
+| 2 | Savings of €2,000 arrive with the bank account |
 
 Scores count until 1 January 2008, 00:00: net worth then (rounded to the euro), the first day level 3 holds (checked once a day), and the mean of each hour's average happiness of active customers (rounded to a tenth). A replay passes when net worth is within €1, the level 3 day matches and happiness is within 0.1.
 
@@ -236,7 +236,18 @@ A router is built by one manufacturer only (Sysko, AVN, MicroTick or Junipurr, b
 | Edge XL | 2U | 36 × 400G | 800 Gbit/s | Yes | 2021 | €90,000 | 900 W |
 | Edge XXL | 2U | 36 × 400G | 1.6 Tbit/s | Yes | 2027 | €150,000 | 1,200 W |
 
-**Switches.** All switches are managed and keep their list price, less the yearly price erosion. Every switch comes from one maker in the maker's own numbering (`SWITCHES` in `hardware.ts`), so a model's price, power and years on sale are its maker's: Sysko Catalust and Nexxus (6 years on sale, 5 of support), Junipurr EX and QFX (6 and 5), Aristotle 7000 (5 and 5, datacenter only, cheapest per 10G, 25G, 100G and 400G port), Hewlett-Packet ProCurvy and Arugula (7 years on sale, lifetime support), MicroTick CRS (6 and 3, a quarter of the big makers' prices, 100G for 650 euro from 2021), Nettgear ProSafe and M4300 (5 and 3, the 60 euro 8 port box of 2005), Ubiquitea EdgeSwitch and UniFee (5 and 3, from 2015) and D-Lunk DGS (4 and 2, the cheapest 2005 to 2016). In every year the shop sells an 8, a 24 and a 48 port copper switch, one of them under 500 euro. Layer 3 can route between networks and act as a gateway, so within a maker it costs and draws more than the layer 2 model with the same ports. The generic switches of the first builds (`sw-8` to `sw-32e`) live on as Sysko models with their ports, so saved games keep their cabling: Catalust 2960-8TC (the starting switch, 8 × 1G, 60 euro, 8 W), 2960-24TT, 2960S-48TD, 3750X-48, Nexxus 3064, 9372PX, 93180YC-EX, 9336C-FX2, 9364D-GX2 and 9808. Switches, firewalls and gateways draw their full power at all times. Prices are estimates of launch street prices.
+**Switches.** Switches keep their list price, less the yearly price erosion. Every switch comes from one maker in the maker's own numbering (`SWITCHES` in `hardware.ts`), so a model's price, power and years on sale are its maker's: Sysko Catalust and Nexxus (6 years on sale, 5 of support), Junipurr EX and QFX (6 and 5), Aristotle 7000 (5 and 5, datacenter only, cheapest per 10G, 25G, 100G and 400G port), Hewlett-Packet ProCurvy and Arugula (7 years on sale, lifetime support), MicroTick CRS (6 and 3, a quarter of the big makers' prices, 100G for 650 euro from 2021), Nettgear ProSafe and M4300 (5 and 3, the 60 euro 8 port box of 2005), Ubiquitea EdgeSwitch and UniFee (5 and 3, from 2015) and D-Lunk DGS (4 and 2, the cheapest 2005 to 2016). In every year the shop sells an 8, a 24 and a 48 port copper switch, one of them under 500 euro. Layer 3 can route between networks and act as a gateway, so within a maker it costs and draws more than the layer 2 model with the same ports. The generic switches of the first builds (`sw-8` to `sw-32e`) live on as Sysko models with their ports, so saved games keep their cabling: Catalust 2960-8TC (the starting switch, 8 × 1G, 60 euro, 8 W), 2960-24TT, 2960S-48TD, 3750X-48, Nexxus 3064, 9372PX, 93180YC-EX, 9336C-FX2, 9364D-GX2 and 9808. Switches, firewalls and gateways draw their full power at all times. Prices are estimates of launch street prices.
+
+Every switch above is managed: it takes a management address, port groups and VLANs through its web interface. Four unmanaged switches have no address and no settings and forward between all their ports; the desktop ones stand on a 1U shelf. They make the basement's first switch cheaper than the Catalust 2960-8TC.
+
+| Unmanaged switch | Ports | Form | Sold from | Price | Power |
+| --- | --- | --- | --- | --- | --- |
+| D-Lunk DES-1008D | 8 × 100M | Desktop | 2005 | €25 | 3 W |
+| Nettgear GS108 | 8 × 1G | Desktop | 2005 | €75 | 4 W |
+| D-Lunk DGS-1024D | 24 × 1G | 1U | 2006 | €180 | 15 W |
+| Nettgear GS116 | 16 × 1G | Desktop | 2008 | €110 | 8 W |
+
+Anchors: the DES-1008D sold for about 25 euro and the GS108 for about 70 euro in 2005. Each row follows its maker's years on sale and support.
 
 **Security appliances.** 1U firewalls sit inline between the gateway and the switches. A firewall forwards like a switch, and every link through it runs at most at its throughput. Every firewall comes from one maker (`FIREWALLS` in `hardware.ts`) and also lists what it inspects (`ipsGbit`, lower than the throughput) and the connections it tracks (`sessions`); both show on the spec sheet and wait for the sim to use them. Sysko PIXel, ASAP and Firepowder (the old `fw-1g` to `fw-400g` are the ASAP 5520, ASAP 5585-X, Firepowder 4120, 4215 and 9300), Fortinope FortiGoat (the most throughput per euro), Pablo Alto PA (the dearest, the best inspection), Junipurr SRX (from 2009), Netgoat pfSinse boxes (from 2015, the cheapest, no inspection before 2018) and SoPhosphate UTM, XG and XGS (from 2011). In every year the shop sells a firewall under 1000 euro and a datacenter one.
 
@@ -389,7 +400,7 @@ P(j) = \frac{e^{U_j/\tau}}{\sum_k e^{U_k/\tau}}
 | Online shop | 0.30 | 0.55 | 0.15 | 1.3× | Premium | 5× |
 | Enterprise | 0.35 | 0.55 | 0.10 | 1.3× | Premium | 4× |
 
-**Competitors.** Four fixed archetypes sell in every city. Their scores never change.
+**Competitors.** Four archetypes sell in every city. Their scores drift over the years as described in [competitors.md](competitors.md).
 
 | Competitor | P | R | C | Sells |
 | --- | --- | --- | --- | --- |
@@ -2220,6 +2231,7 @@ A first-year company earns about 300 know-how; a company with 10,000 customers e
 | Monitoring | 1 | 50 | 5 days | | Nagiosaurus, failure notifications |
 | Marketing basics | 1 | 50 | 5 days | | Leads to Marketing campaigns |
 | Employee management | 1 | 100 | 10 days | | Staff |
+| Company law | 1 | 100 | 10 days | | Founding a limited company |
 | Network operations | 2 | 300 | 14 days | Monitoring | Network |
 | Product management | 1 | 100 | 7 days | | Products |
 | Provisioning automation | 2 | 150 | 10 days | Product management | Automatic setup of orders, the Place orders automatically switch |
@@ -2229,7 +2241,7 @@ A first-year company earns about 300 know-how; a company with 10,000 customers e
 | Virtualization | 3 | 400 | 14 days | Product management, Monitoring | Virtual machines |
 | Automation | 3 | 1,500 | 21 days | Employee management, Monitoring | ChadGPT Support, Clipsy Reminders |
 
-The whole tree costs 3,950 know-how and 128 days of training.
+The whole tree costs 4,050 know-how and 138 days of training.
 
 Product management was tier 2 at 200 know-how and 14 days after Marketing basics. The happiness run showed a careful first-year company earns 15 to 40 know-how a month, so the 250 know-how path landed in September to November. As a tier 1 skill at 100 know-how and 7 days, the same company learns it between early May and early July (median early June).
 

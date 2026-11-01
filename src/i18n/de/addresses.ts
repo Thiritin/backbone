@@ -37,5 +37,9 @@ export default {
   "error.needsBgpRouter": () => "Braucht an diesem Standort einen Router mit vollständiger Routing-Tabelle.",
   "error.basementOnly": () => "Nur der Keller nimmt diesen Router.",
   "error.noRouter": () => "Hier ist kein Router eingebaut.",
+  "error.badPool": () => "Der DHCP-Bereich passt nicht zum Netz.",
+  "error.badAddress": () => "Gib eine private IPv4-Adresse ein.",
+  "error.portShared": () => "Port 80 ist schon für ein anderes Gerät freigegeben.",
+  "error.noAddress": () => "Dieses Gerät hat keine Adresse im Netz des Routers.",
   "error.notOfficeRouter": () => "Nur ein Router fürs kleine Büro ersetzt den Router im Keller.",
 } satisfies Dict;

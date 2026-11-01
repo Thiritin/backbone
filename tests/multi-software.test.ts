@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { softwareById } from "../src/sim/10-catalog/platforms";
 import { fqdn } from "../src/sim/30-customers/domains";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { bookable, clusterOf, clustersOf, controlPlanesOn, nodeCapacity } from "../src/sim/60-infra/cluster";
 import { routeTarget } from "../src/sim/60-infra/routes";
 import { nodeUsage } from "../src/sim/60-infra/usage";
@@ -12,7 +12,7 @@ import { tick } from "../src/sim/88-tick/tick";
 import { createVm, PANEL_VM_SIZE, provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { installBlock, installSoftware, uninstallSoftware } from "../src/sim/90-actions/software";
-import { bootedMachine, readyGame, skipTo, withServer } from "./fixtures";
+import { bootedMachine, readyGame, skipTo, withServer, newGame } from "./fixtures";
 
 const run = (s: GameState, hours: number) => { for (let h = 0; h < hours; h++) tick(s); };
 const idOf = (r: { ok: boolean; id?: string; error?: string }) => { expect(r.error).toBeUndefined(); return r.id!; };

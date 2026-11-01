@@ -1,7 +1,6 @@
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { yearOf } from "../src/sim/00-core/time";
-import { newGame } from "../src/sim/50-state";
 import { consoleFeatures } from "../src/sim/80-business/consoles";
 import { evcWarning, integrationServices } from "../src/sim/80-business/readouts";
 import { createVm } from "../src/sim/90-actions/clusters";
@@ -9,7 +8,7 @@ import { setCompatMode } from "../src/sim/90-actions/cpus";
 import { CONSOLES } from "../src/ui/apps/browser/consoles/ConsolePage";
 import { flavorCounts } from "../src/ui/apps/browser/consoles/openstash/flavors";
 import { TemplatesPage } from "../src/ui/apps/browser/consoles/openveezee/OpenVeeZee";
-import { hypervisor, skipTo, withServer } from "./fixtures";
+import { hypervisor, skipTo, withServer, newGame } from "./fixtures";
 
 function cloud(id: string, year: number) {
   const s = withServer(newGame(3));

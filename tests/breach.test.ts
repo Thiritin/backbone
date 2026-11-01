@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { hashRng } from "../src/sim/00-core/rng";
 import { hourOf, yearOf } from "../src/sim/00-core/time";
 import { sizeSpec } from "../src/sim/10-catalog/products";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { isAlert } from "../src/sim/alerts";
 import { breachEligible, breachTick, BREACH_DAYS, decideBreach, drawFine, EXTORTION_HOURS, FINE, GDPR_AT, ransomFor, RANSOM, startBreach } from "../src/sim/60-infra/breach";
 import { securityTick } from "../src/sim/60-infra/security";
@@ -12,7 +12,7 @@ import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { closeTicket, resolveTicket } from "../src/sim/90-actions/support";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { panelServer, withServer } from "./fixtures";
+import { panelServer, withServer, newGame } from "./fixtures";
 
 const year = (y: number) => hourOf(new Date(Date.UTC(y, 0, 1)));
 const must = (r: { ok: boolean; error?: string }) => { if (!r.ok) throw new Error(r.error); };
