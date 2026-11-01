@@ -81,7 +81,6 @@ export function Blessta({ game, path = "/", go }: VendorProps) {
         {era === "classic" && (
           <aside className="bv-side">
             {latest && <section><h2>{t("blessta.v.latest")}</h2><p><strong>{name} {latest.version}</strong><br />{formatDay(latest.release)}</p>{link("download", t("blessta.v.download"))}</section>}
-            <section><h2>{t("vendor-shop.cart", { n: 0 })}</h2><p>{link("cart", t("vendor-shop.cart", { n: cartCount(game, HOST) }))}</p></section>
           </aside>
         )}
       </div>
@@ -144,10 +143,10 @@ function Download({ game }: { game: GameState }) {
     <>
       {latest && <p className="bv-version">{t("blessta.v.current")}: <strong className="num">{name} {latest.version}</strong></p>}
       <ol className="bv-steps">
-        <li>{t("blessta.v.step0", { days: shopLicence(ID).trialDays ?? 0 })}</li>
+        <li>{t("blessta.v.step0")}</li>
         <li>{t("blessta.v.step1")}</li>
-        <li>{t("blessta.v.step2", { button: t("host.installShop", { name }) })}</li>
-        <li>{t("blessta.v.step3", { name })}</li>
+        <li>{t("blessta.v.step2", { name, section: t("host.shop"), button: t("host.installShop", { name }) })}</li>
+        <li>{t("blessta.v.step3", { name, days: shopLicence(ID).trialDays ?? 0 })}</li>
       </ol>
     </>
   );
@@ -186,7 +185,7 @@ function Account({ game, to }: { game: GameState; to: (p: Page) => void }) {
         <article key={k.id} className="bv-key">
           <dl>
             <dt>{t("vendor-shop.edition")}</dt><dd>{edition(k)}</dd>
-            <dt>{t("blessta.v.covers")}</dt><dd>{covered(k)}</dd>
+            <dt>{t(k.covers.kind === "version" ? "blessta.v.covers" : "vendor-shop.status")}</dt><dd>{covered(k)}</dd>
             <dt>{t("blessta.v.installation")}</dt><dd>{installation(game, k)}</dd>
             {k.updatesUntil !== undefined && <><dt>{t("shop-admin.updatesUntil")}</dt><dd className="num">{formatDay(k.updatesUntil)}</dd></>}
             <dt>{t("vendor-shop.key")}</dt><dd><code className="shop-key">{k.key}</code><CopyKey text={k.key} /></dd>

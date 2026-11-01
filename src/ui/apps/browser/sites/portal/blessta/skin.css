@@ -14,6 +14,14 @@
 .bl .bl-fhead nav a { text-decoration: none; }
 .bl .shop-cart, .bl .pt-table { width: 100%; }
 .bl input, .bl select, .bl textarea { font: inherit; }
+.bl .shop-store .shop-name { display: block; padding: 0; }
+.bl .num { font-family: inherit; font-variant-numeric: tabular-nums; }
+.bl .pt-key { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
+.bl .pt-key label { display: grid; gap: 4px; }
+.bl-widgets.bl-gate > :first-child { margin-block: auto; }
+.bl-widgets.bl-gate .pt-version { margin-top: 0; }
+.bl .shop-client h2 { margin: 4px 0 10px; }
+.bl .shop-client h3 { margin: 18px 0 6px; }
 
 /* ---------- classic: Blessta 1 and 2, 2008 to 2013 ---------- */
 .bl-classic { font: 11px/1.45 Tahoma, Verdana, Geneva, sans-serif; color: #1b2430; background: #e3e8ee; }
@@ -117,9 +125,12 @@
 .bl-widgets .shop-store h2 { font-size: 18px; font-weight: 300; margin: 6px 0 12px; }
 .bl-widgets .shop-store .shop-list { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 18px; }
 .bl-widgets .shop-store .shop-item { flex-direction: column; align-items: stretch; text-align: center; gap: 8px; padding: 0 0 14px; background: #fff; border: 1px solid #d6dbe1; border-radius: 3px; }
-.bl-widgets .shop-store .shop-name { padding: 10px; background: #f7f8fa; border-bottom: 1px solid #e3e6ea; font-weight: 600; font-size: 15px; }
+.bl-widgets .shop-store .shop-item .shop-name { padding: 10px; background: #f7f8fa; border-bottom: 1px solid #e3e6ea; font-weight: 600; font-size: 15px; }
 .bl-widgets .shop-store .shop-item > .num { font-size: 17px; color: #2a6db5; }
-.bl-widgets .shop-store .shop-item .btn { margin: 0 14px; }
+.bl-widgets .shop-store .shop-item .btn { margin: 0 14px; text-align: center; }
+.bl-widgets.bl-admin a:not(.on) { color: #2a6db5; }
+.bl-widgets.bl-admin .bl-tabs a:not(.on) { color: #a8afb9; }
+.bl-widgets.bl-admin .bl-tabs a:hover { color: #fff; }
 .bl-widgets .shop-steps { gap: 0; counter-reset: step; }
 .bl-widgets .shop-steps li { counter-increment: step; padding: 6px 16px 6px 10px; color: #8a929d; background: #fff; border: 1px solid #d6dbe1; margin-right: -1px; }
 .bl-widgets .shop-steps li::before { content: counter(step); display: inline-grid; place-items: center; width: 18px; height: 18px; margin-right: 8px; border-radius: 50%; background: #d6dbe1; color: #fff; font-size: 11px; }

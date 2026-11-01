@@ -138,8 +138,10 @@ function Login({ game, variant, major, onLogin }: SkinProps & { onLogin: () => v
   );
 }
 
-// The licence-locked admin and the closed store.
-function Bare({ game, variant, major, children }: SkinProps & { children: ReactNode }) {
+// The licence-locked admin, and the closed store inside the store's own frame.
+function Bare(props: SkinProps & { children: ReactNode }) {
+  const { game, variant, major, children } = props;
+  if (props.route.area !== "admin") return <Front {...props} title={t("blessta.order")}>{children}</Front>;
   return (
     <div className={`${cls(major)} bl-gate`}>
       <section className="bl-box bl-bare"><div className="bl-boxhead"><Wordmark /></div><div className="bl-boxbody">{children}</div></section>

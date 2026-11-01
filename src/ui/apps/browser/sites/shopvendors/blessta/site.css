@@ -5,7 +5,8 @@
 .bv .bl-mark { width: 1em; height: 1em; fill: var(--bv-accent); flex: none; }
 .bv .bv-wrap { width: 100%; margin: 0 auto; box-sizing: border-box; }
 .bv .bv-head .bv-wrap { display: flex; align-items: center; gap: 24px; }
-.bv .bv-nav { display: flex; flex-wrap: wrap; margin-left: auto; }
+.bv .bv-nav { display: flex; flex-wrap: wrap; margin-left: auto; background: none; border: 0; padding: 0; }
+.bv .num { font-family: inherit; font-variant-numeric: tabular-nums; }
 .bv .bv-nav a { text-decoration: none; }
 .bv .bv-body { display: flex; align-items: flex-start; gap: 20px; flex: 1; }
 .bv .bv-main { flex: 1; min-width: 0; }
