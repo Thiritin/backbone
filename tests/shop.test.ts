@@ -72,6 +72,18 @@ describe("shop systems", () => {
     expect(hasModule(box, "proxmocks")).toBe(true);
   });
 
+  it("start a free shop system and a free module while the account is overdrawn", () => {
+    const s = at(readyGame(6), 2012);
+    setUpChannel(s, "website");
+    s.unlocks = [...s.unlocks, "shops"];
+    s.cash = -500;
+    expect(chooseShop(s, "orderBocks").ok).toBe(true);
+    expect(chooseShop(s, "boxBillin").ok).toBe(true);
+    expect(buyModule(s, "proxmocks").ok).toBe(true);
+    expect(chooseShop(s, "whmCache", true)).toMatchObject({ ok: false, error: "error.noCash" });
+    expect(s.cash).toBe(-500);
+  });
+
   it("sell from stock, and cancel an order they cannot set up without a lost sale", () => {
     const s = automate(withShop(5, "modemBill"));
     expect(stockOf(s, "webHosting")).toBe(10);

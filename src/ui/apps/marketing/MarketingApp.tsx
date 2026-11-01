@@ -111,8 +111,8 @@ function Channels() {
   return <>
     <div className="shop-grid mkt-flat">
       <div className="shop-card">
-        <div className="shop-name"><strong>Website</strong><span>Your company site where visitors browse products and order.</span></div>
-        <div className="shop-buy"><span className="grow" />{game.marketing.launched && <span className="pill ok">Active</span>}<button className="btn" onClick={() => setManaging(true)}>Manage</button></div>
+        <div className="shop-name"><strong>{t("marketing.website")}</strong><span>{t("marketing.websiteText")}</span></div>
+        <div className="shop-buy"><span className="grow" />{game.marketing.launched && <span className="pill ok">{t("misc.active")}</span>}<button className="btn" onClick={() => setManaging(true)}>{t("marketing.manage")}</button></div>
       </div>
       <div className="shop-card">
         <div className="shop-name"><strong>{t("marketing.domain")}</strong><span>{t("marketing.domainText")}</span></div>

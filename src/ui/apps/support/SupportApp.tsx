@@ -13,6 +13,8 @@ import { companyParams } from "../../../sim/40-support/replies";
 import type { GameState } from "../../../sim/50-state";
 import { acceptSponsorship, answerSponsor, declineSponsorship } from "../../../sim/90-actions/community";
 import { HELD_TOPIC } from "../../../sim/80-business/community";
+import { changeTitle } from "../../../sim/90-actions/games";
+import { gameOf } from "../../../sim/60-infra/games";
 import { retentionOptions, type RetentionId } from "../../../sim/40-support/retention";
 import { assignTicket, closeTicket, escalateTicket, readTicket, replyTicket, resolveTicket, retainTicket } from "../../../sim/90-actions/support";
 import { t } from "../../../i18n/en";
@@ -91,7 +93,7 @@ function ticketMenu(game: GameState, tk: Ticket): MenuEntry[] {
   return [
     tk.unread && { label: t("support.markRead"), run: () => act(readTicket, tk.id) },
     canEscalate(tk.kind) && tk.status === "open" && { label: t("support.escalate"), disabled: locked, run: () => act(escalateTicket, tk.id) },
-    !isFinal(tk) && { label: tk.kind === "order" || tk.kind === "sponsor" ? t("support.decline") : tk.notice ? t("support.ignore") : t("support.close"), disabled: locked, run: () => act(closeTicket, tk.id) },
+    !isFinal(tk) && { label: tk.kind === "order" || tk.kind === "sponsor" || tk.topic === "switchTitle" ? t("support.decline") : tk.notice ? t("support.ignore") : t("support.close"), disabled: locked, run: () => act(closeTicket, tk.id) },
     null,
     customer && { label: t("support.openCustomer"), run: () => openApp("Customers", { kind: "customer", id: customer.id }) },
     request && { label: t("support.openRequest"), run: () => openApp("Support", { kind: "request", id: request.id }) },
@@ -483,7 +485,8 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
             {tk.kind === "sponsor" && tk.topic === HELD_TOPIC && <button className="btn primary" disabled={locked} onClick={() => act(answerSponsor, tk.id, true)}><Check />{t("support.bannerBack")}</button>}
             {tk.kind === "sponsor" && tk.topic !== HELD_TOPIC && <button className="btn ghost" disabled={locked} onClick={() => act(declineSponsorship, tk.id)}><CircleX />{t("support.decline")}</button>}
             {tk.kind === "sponsor" && tk.topic !== HELD_TOPIC && <button className="btn primary" disabled={locked} onClick={() => act(acceptSponsorship, tk.id)}><Check />{t("support.accept")}</button>}
-            {!stray && tk.kind !== "sponsor" && <button className="btn ghost" disabled={locked} onClick={() => act(closeTicket, tk.id)}><X />{tk.notice ? t("support.ignore") : t("support.close")}</button>}
+            {tk.topic === "switchTitle" && !isFinal(tk) && <button className="btn primary" disabled={locked} onClick={() => act(changeTitle, tk.serviceId!, gameOf(game, tk.serviceId!)?.switchTo ?? "")}><Check />{t("support.accept")}</button>}
+            {!stray && tk.kind !== "sponsor" && <button className="btn ghost" disabled={locked} onClick={() => act(closeTicket, tk.id)}><X />{tk.notice ? t("support.ignore") : tk.topic === "switchTitle" ? t("support.decline") : t("support.close")}</button>}
             {tk.status === "waiting" && tk.kind !== "migration" && !tk.work && <button className="btn primary" disabled={locked} onClick={() => act(resolveTicket, tk.id)}><CircleCheck />{t("support.resolve")}</button>}
           </div>
         </div>
