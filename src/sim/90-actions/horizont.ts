@@ -5,6 +5,7 @@ import { buyProvider, holderOf, machineLocation } from "../60-infra/addresses";
 import { datastoreFits, datastoreUp, isOwnVm, vmById, type Cluster } from "../60-infra/cluster";
 import { MACROS, type Macro } from "../60-infra/exposure";
 import { DEFAULT_GROUP, floatingOf, groupsOf, HOT_DETACH_YEAR, isHorizont, MAX_GROUPS, VOLUME_MAX_GB, VOLUME_MIN_GB, volumesOf, type Volume } from "../60-infra/horizont";
+import { ADMIN, quotaBlock } from "../60-infra/projects";
 import { quorumBlock } from "../60-infra/quorum";
 import type { ActionResult } from "./hardware";
 
@@ -16,13 +17,14 @@ const setHolder = (s: GameState, ip: string, holder: string | null) => { s.ips =
 // Floating IPs ---------------------------------------------------------------------------------------------------------
 
 // Rents one more address of the cluster's datacenter as a floating IP, billed like any rented address.
-export function allocateFloatingIp(s: GameState, clusterId: string): ActionResult {
+export function allocateFloatingIp(s: GameState, clusterId: string, projectId: string = ADMIN): ActionResult {
   const c = horizont(s, clusterId);
   if (!c) return fail("error.unknownCluster");
+  { const b = quotaBlock(s, c, projectId, { floatingIps: 1 }); if (b) return fail(b); }
   const loc = s.locations.find((l) => l.az === c.az);
   if (!loc?.dc) return fail("error.addressesFromLine");
   const a = buyProvider(s, loc, 4);
-  patch(s, c.id, { floating: [...floatingOf(c), { ip: a.ip, workloadId: null }] });
+  patch(s, c.id, { floating: [...floatingOf(c), { ip: a.ip, workloadId: null, ...(projectId !== ADMIN && { projectId }) }] });
   return { ok: true, id: a.ip };
 }
 
@@ -95,7 +97,7 @@ export function setInstanceGroups(s: GameState, vmId: string, groupIds: string[]
 const setVolumes = (s: GameState, c: Cluster, volumes: Volume[]) => patch(s, c.id, { volumes });
 
 // Creates a volume on the cluster's first working datastore with room, or on a node disk when it has no datastore.
-export function createVolume(s: GameState, clusterId: string, name: string, gb: number): ActionResult {
+export function createVolume(s: GameState, clusterId: string, name: string, gb: number, projectId: string = ADMIN): ActionResult {
   const c = horizont(s, clusterId);
   if (!c) return fail("error.unknownCluster");
   const q = quorumBlock(s, c);
@@ -103,10 +105,11 @@ export function createVolume(s: GameState, clusterId: string, name: string, gb: 
   if (!Number.isInteger(gb) || gb < VOLUME_MIN_GB || gb > VOLUME_MAX_GB) return fail("error.volumeSize");
   const label = name.trim();
   if (!label) return fail("error.volumeName");
+  { const b = quotaBlock(s, c, projectId, { volumeGb: gb }); if (b) return fail(b); }
   const ds = c.datastores.find((x) => datastoreUp(s, x) && datastoreFits(s, x.deviceId, gb));
   if (c.datastores.length && !ds) return fail("error.datastoreFull");
   const id = `vol${s.nextId++}`;
-  setVolumes(s, c, [...volumesOf(c), { id, name: label, gb, attachedTo: null, datastore: ds?.deviceId ?? null }]);
+  setVolumes(s, c, [...volumesOf(c), { id, name: label, gb, attachedTo: null, datastore: ds?.deviceId ?? null, ...(projectId !== ADMIN && { projectId }) }]);
   return { ok: true, id };
 }
 

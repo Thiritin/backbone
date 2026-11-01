@@ -3,10 +3,10 @@ import type { GameState } from "../50-state";
 import type { Macro } from "./exposure";
 import type { Cluster } from "./cluster";
 
-export interface FloatingIp { ip: string; workloadId: string | null }
+export interface FloatingIp { ip: string; workloadId: string | null; projectId?: string }
 export interface SecurityGroup { id: string; name: string; allow: Macro[] }
 // Block storage apart from the instance: gb is booked on datastore (a node disk when null); attachedTo is an instance id.
-export interface Volume { id: string; name: string; gb: number; attachedTo: string | null; datastore: string | null }
+export interface Volume { id: string; name: string; gb: number; attachedTo: string | null; datastore: string | null; projectId?: string }
 
 export const DEFAULT_GROUP: SecurityGroup = { id: "default", name: "default", allow: ["ssh"] };
 export const MAX_GROUPS = 10;
