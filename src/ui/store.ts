@@ -15,6 +15,8 @@ import { t } from "../i18n/en";
 import type { ActionResult, CartLine } from "../sim/90-actions/hardware";
 import { readSession, writeSession } from "./session";
 
+export const DISCORD_URL = "https://discord.gg/e8nTAV8Yk7";
+
 export const SAVE_KEY = "backbone.save";
 
 // What another app asked a window to show; n changes on every request so repeating one still applies.
@@ -283,6 +285,7 @@ export const useStore = create<Store>((set, get) => ({
   setSpeed: (speed) => set({ speed }),
 
   openApp: (app, target, fresh) => {
+    if (app === "Chat") return void window.open(DISCORD_URL, "_blank", "noopener");
     const ws = get().windows;
     const open = fresh ? undefined : ws.filter((w) => w.app === app).sort((a, b) => b.z - a.z)[0];
     const focus = target ? { ...target, n: ++focusId } : open?.focus;
