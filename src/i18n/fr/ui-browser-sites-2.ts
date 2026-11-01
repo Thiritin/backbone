@@ -466,4 +466,5 @@ export default {
   "browser-sites-2.cli.serverList": () => "Liste les serveurs de jeu de cette machine et indique s'ils tournent.",
   "browser-sites-2.cli.shareList": () => "Liste les liens partagés de ce serveur de stockage et leur date d'expiration.",
   "browser-sites-2.keyFlag": () => "Ajoute --key suivi de ta clé de licence à la commande pour installer avec une licence.",
+  "browser-sites-2.upgradeFlag": () => "Ajoute --upgrade à la commande pour mettre à niveau une copie installée vers la version majeure suivante, et --key avec la clé de mise à niveau si ta licence en demande une.",
 } satisfies Dict;

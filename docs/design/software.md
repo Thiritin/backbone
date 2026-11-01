@@ -155,9 +155,18 @@ An installed OS upgrades to the next release once it is out (`upgradeTarget`), o
 - **Windoors.** Setup from the next release's media (the stick in that server, or the ISO on that VM) asks "Which type of installation do you want?" after the license terms when the disk holds the release before it. Upgrade shows the downtime and runs `upgradeOs`; Custom is the clean install.
 - **Downtime.** The machine is down for the OS's install hours and its boot, plus POST on a server (`upgradeHours`). The console shows the upgrade's progress and the KVM line reads "Upgrading the system...". Every workload still on the machine at that moment (web spaces on a panel server, VMs on a hypervisor node and what runs inside them) is busy for that time and the partial hour counts against its SLA, as for a software update. Workloads the player migrated off first stay up; nothing migrates by itself.
 - **Power loss.** A power cut or reset mid-upgrade, or stopping a VM, rolls the machine back to the release it came from (`cutOs`); an install from scratch still leaves an empty disk. A Debiant upgrade has its packages before it starts, so losing the network mid-upgrade does nothing.
-- **Licenses.** In a `once` era the upgrade buys the new release for the era fee, charged when it starts as a ledger line ("Windoors Server 2008 R2 license, node001"), and refused without the cash. In a monthly era the running fee already covers it.
+- **Licenses.** An upgrade charges nothing. A machine whose key is for an older major needs a key for the new release, typed at Setup's product key step; it replaces the old key, which goes back to My account unassigned. A term key that is paid, a trial and free software upgrade as they are.
 
-Action `upgradeOs(machineId)` in `90-actions/console.ts`. Tests: `tests/os-upgrade.test.ts`.
+Action `upgradeOs(machineId, key?)` in `90-actions/console.ts`. Tests: `tests/os-upgrade.test.ts`.
+
+### 4.5 Software upgrade
+
+Installed software steps up one major at a time once the next major is out (`softwareTarget`, from `nextMajor`), with `upgradeSoftware(machineId, product, key?)` in `90-actions/console.ts`. It runs from the Upgrade row on the console's Licence page, or from the vendor's install command with `--upgrade` (and `--key` for the upgrade key), which the vendor site documents under the command.
+
+- **Downtime.** The upgrade takes the software's install hours; the machine's console shows it installing, and everything on the machine is down for that time as for an OS upgrade. The software runs, and its console looks like, the version it came from until the upgrade is done.
+- **Licenses.** The same rule as the OS: a key for an older major needs an upgrade key for the target major, which replaces it. While the vendor sells keys per major, its site sells "Upgrade from N" for every major the player holds a key for, at the upgrade price when that key was bought in the last 12 months and the full price otherwise (`upgradeOffers`). Once the vendor sells only subscriptions, no upgrades are on sale.
+
+Tests: `tests/software-upgrade.test.ts`.
 
 ## 5. App installers on paid platforms
 

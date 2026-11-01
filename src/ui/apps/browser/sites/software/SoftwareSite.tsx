@@ -134,6 +134,7 @@ export function Commands({ p, year, className }: { p: Product; year: number; cla
         <button type="button" onClick={copy}>{copied ? t("browser-sites-2.copied") : t("browser-sites-2.copy")}</button>
       </div>
       {isLicensed(p.sw!.id) && <p>{t("browser-sites-2.keyFlag")}</p>}
+      {p.sw!.install.kind === "script" && <p>{t("browser-sites-2.upgradeFlag")}</p>}
     </div>
   );
 }

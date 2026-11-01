@@ -7,6 +7,7 @@ import { serverOsAt } from "../src/sim/10-catalog/server-os";
 import { type GameState } from "../src/sim/50-state";
 import { apt } from "../src/sim/60-infra/apt";
 import { clusterOf, vmById } from "../src/sim/60-infra/cluster";
+import { assignedKey, assignKey, issueKey } from "../src/sim/60-infra/licence";
 import { consoleScreen, machineScreen } from "../src/sim/60-infra/oob";
 import { pullPlug } from "../src/sim/60-infra/power";
 import { createVm, PANEL_VM_SIZE, provisionService } from "../src/sim/90-actions/clusters";
@@ -116,7 +117,7 @@ describe("in-place OS upgrade", () => {
     expect(dev(s).log.at(-1)?.key).toBe("ipmi.log.upgradeAborted");
   });
 
-  it("upgrades Windoors from the next release's media and rolls a stopped VM back", () => {
+  it("upgrades Windoors from the next release's media with a key for it and rolls a stopped VM back", () => {
     const s = readyGame(7), vm = ok(createVm(s, clusterOf(s, "dev3")!.id, PANEL_VM_SIZE));
     bootedMachine(s, vm, "windoors");
     vmById(s, vm)!.os!.version = "2008";
@@ -128,12 +129,14 @@ describe("in-place OS upgrade", () => {
     expect(err(upgradeOs(s, vm))).toBe("error.otherMedia");
     ok(setMedia(s, vm, "windoors@2008 R2"));
     const busy = vmById(s, vm)!.busyUntil;
-    s.cash = 599;
-    expect(err(upgradeOs(s, vm))).toBe("error.noCash");
-    s.cash = 1000;
-    ok(upgradeOs(s, vm));
-    expect(s.cash).toBe(400);
-    expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.licenseOnce", amount: -600, params: { name: "Windoors Server 2008 R2" } });
+    const old = issueKey(s, "windoors", null, undefined, "2008"), up = issueKey(s, "windoors", null, undefined, "2008 R2");
+    assignKey(s, old.id, vm);
+    expect(err(upgradeOs(s, vm))).toBe("error.licenceKey");
+    expect(err(upgradeOs(s, vm, old.key))).toBe("error.licenceKey");
+    const cash = s.cash;
+    ok(upgradeOs(s, vm, up.key));
+    expect(s.cash).toBe(cash);
+    expect([assignedKey(s, vm, "windoors")?.id, s.licenses.find((k) => k.id === old.id)?.machineId]).toEqual([up.id, null]);
     expect(vmById(s, vm)).toMatchObject({ os: { version: "2008 R2", from: "2008" }, media: undefined, busyUntil: busy });
     expect(machineScreen(s, vm).kind).toBe("osInstall");
     expect(renderToString(createElement(VmConsole, { game: s, vm: vmById(s, vm)!, front: false }))).toContain("Upgrading Windoors Server 2008 R2");

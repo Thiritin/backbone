@@ -2,6 +2,7 @@
 // site shares.
 import { eraAt, type LicenseKind } from "../10-catalog/server-os";
 import type { GameState, Licence } from "../50-state";
+import { nextMajor, versionsOf } from "../10-catalog/software-versions";
 import { isLicensed, productOf, tiersOnSale, yearAfter } from "../60-infra/licence";
 
 export const ORDER = "vendor.order";
@@ -33,6 +34,24 @@ export function upgradeOffer(s: GameState, product: string, fromMajor: string): 
     s.licenses.some((k) => k.product === product && k.covers.kind === "version" && k.covers.major === fromMajor && s.hour < yearAfter(k.boughtAt));
   return { fee: discounted ? era.upgrade! : era.fee, discounted };
 }
+
+// The "Upgrade from N" offers of a product: one per major the player holds a key for whose next major is out, while the
+// vendor sells keys per major.
+export interface UpgradeOffer { from: string; to: string; fee: number; discounted: boolean }
+export function upgradeOffers(s: GameState, product: string): UpgradeOffer[] {
+  const majors = [...new Set(s.licenses.flatMap((k) => (k.product === product && k.covers.kind === "version" ? [k.covers.major] : [])))];
+  return majors.flatMap((from) => {
+    const last = versionsOf(product).filter((v) => v.major === from).at(-1), to = last && nextMajor(product, last.version, s.hour);
+    const o = to ? upgradeOffer(s, product, from) : null;
+    return to && o ? [{ from, to: to.major, ...o }] : [];
+  });
+}
+// What a cart line sells now, an upgrade at its upgrade price; undefined once it is no longer sold.
+export const lineOffer = (s: GameState, line: Pick<CartLine, "product" | "edition" | "from">): Offer | undefined => {
+  if (!line.from) return offerOf(line, s.hour);
+  const u = upgradeOffers(s, line.product).find((o) => o.from === line.from);
+  return u && { edition: null, fee: u.fee, kind: "once" };
+};
 
 export const cartOf = (s: GameState, host: string): CartLine[] => s.cart.filter((l) => hostOf(l.product) === host);
 export const keysOf = (s: GameState, host: string): Licence[] => s.licenses.filter((k) => hostOf(k.product) === host);

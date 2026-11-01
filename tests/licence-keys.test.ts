@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
-import { buyUpgradeLicense, productsTick } from "../src/sim/85-products/products";
+import { productsTick } from "../src/sim/85-products/products";
 import { SOFTWARE } from "../src/sim/10-catalog/platforms";
 import { SERVER_OS } from "../src/sim/10-catalog/server-os";
 import { newGame } from "../src/sim/50-state";
@@ -96,15 +96,14 @@ describe("panel installs", () => {
 });
 
 describe("version-bound keys", () => {
-  it("leave a newer major unlicensed until a paid upgrade moves the key, and term keys renew a month on", () => {
+  it("leave a newer major unlicensed until a key for it replaces theirs, and term keys renew a month on", () => {
     const s = readyGame(7), id = s.devices.find((d) => d.os)!.id;
     s.devices = s.devices.map((d) => (d.id === id ? { ...d, os: { id: "windoors", version: "2003", installedAt: 0 } } : d));
     assignKey(s, issueKey(s, "windoors", null).id, id);
     expect(licenceStatus(s, id, "windoors")).toBe("active");
     s.devices = s.devices.map((d) => (d.id === id ? { ...d, os: { ...d.os!, version: "2008" } } : d));
     expect(licenceStatus(s, id, "windoors")).toBe("unlicensed");
-    s.cash = 1000;
-    buyUpgradeLicense(s, id, "windoors", "2008");
+    assignKey(s, issueKey(s, "windoors", null, undefined, "2008").id, id);
     expect(assignedKey(s, id, "windoors")!.covers).toEqual({ kind: "version", major: "2008" });
     expect(licenceStatus(s, id, "windoors")).toBe("active");
     const term = issueKey(s, "tcadmen", null);

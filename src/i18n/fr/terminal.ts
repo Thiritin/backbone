@@ -36,6 +36,7 @@ export default {
   "dev.open": () => "Ouverture du menu développeur.",
   "term.apt.downtime": (p) => `Les services de ce serveur seront hors ligne pendant environ ${p.minutes} minutes.`,
   "term.install.script": (p) => `Lancement de l'installateur ${p.name} ...`,
+  "term.install.upgrade": (p) => `Mise à niveau de ${p.name} vers ${p.version}, ${p.hours} h ...`,
   "term.install.done": (p) => `Installation de ${p.name} terminée.`,
   "term.install.reach": (p) => `Ta nouvelle installation est accessible à l'adresse ${p.url}`,
   "term.install.reboot": () => "Redémarre maintenant pour terminer l'installation.",

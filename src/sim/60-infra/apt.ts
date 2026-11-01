@@ -11,7 +11,7 @@ import { installBlock, uninstallSoftware, upgradable, upgradeServer } from "../9
 import { clustersOn, machineOf } from "./cluster";
 import { supportOf } from "./lifecycle";
 import { DESK, releaseOf, treeOf } from "./fs";
-import { installFromSite, upgradeHours, upgradeOs, upgradeTarget } from "../90-actions/console";
+import { installFromSite, softwareTarget, softwareUpgradeBlock, upgradeHours, upgradeOs, upgradeSoftware, upgradeTarget } from "../90-actions/console";
 import { machineNet, osUp } from "./oob";
 import { consoleSuffix } from "../80-business/consoles";
 import { fqdn } from "../30-customers/domains";
@@ -126,12 +126,18 @@ function remove(s: GameState, host: string, pkg: string): CommandResult {
 }
 
 // A line that is one of a script software's install lines, after whitespace normalisation and with an optional
-// `--key <licence key>`: the install starts on the machine. Undefined for every other line, which the shell then runs
-// segment by segment.
+// `--key <licence key>`: the install starts on the machine. With `--upgrade` the installed copy steps up one major instead.
+// Undefined for every other line, which the shell then runs segment by segment.
 export function installScript(s: GameState, machineId: string, line: string): CommandResult | undefined {
-  const key = /\s--key\s+(\S+)/.exec(` ${line}`)?.[1], typed = norm(` ${line}`.replace(/\s--key\s+\S+/, ""));
+  const key = /\s--key\s+(\S+)/.exec(` ${line}`)?.[1], upgrade = /\s--upgrade(?=\s|$)/.test(` ${line}`);
+  const typed = norm(` ${line}`.replace(/\s--key\s+\S+/, "").replace(/\s--upgrade(?=\s|$)/, ""));
   const sw = SOFTWARE.find((x) => x.install.kind === "script" && x.install.commands.some((c) => norm(c) === typed));
   if (!sw || !osUp(s, machineId)) return undefined;
+  if (upgrade) {
+    const to = softwareTarget(s, machineId, sw.id), blocked = softwareUpgradeBlock(s, machineId, sw.id, key);
+    if (blocked) return { output: [t(blocked)], failed: true };
+    return { output: [t("term.install.upgrade", { name: sw.name, version: to!.version, hours: sw.installHours })], action: [upgradeSoftware, machineId, sw.id, ...(key ? [key] : [])] };
+  }
   const why = installBlock(s, machineId, sw.id) ?? installKeyBlock(s, machineId, sw.id, versionAt(sw.id, s.hour).version, key);
   if (why) return { output: [t(why)], failed: true };
   if (machineNet(s, machineId)) return { output: lines(typed.startsWith("wget") ? "term.wget.resolve" : "term.curl.resolve", { host: siteOf(typed) }), failed: true };

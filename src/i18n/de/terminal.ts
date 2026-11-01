@@ -36,6 +36,7 @@ export default {
   "dev.open": () => "Das Dev-Menü wird geöffnet.",
   "term.apt.downtime": (p) => `Die Dienste dieses Servers sind etwa ${p.minutes} Minuten offline.`,
   "term.install.script": (p) => `Der ${p.name}-Installer wird gestartet ...`,
+  "term.install.upgrade": (p) => `${p.name} wird auf ${p.version} aktualisiert, ${p.hours} h ...`,
   "term.install.done": (p) => `${p.name} wurde installiert.`,
   "term.install.reach": (p) => `Deine neue Installation erreichst du unter ${p.url}`,
   "term.install.reboot": () => "Starte jetzt neu, um die Installation abzuschließen.",
