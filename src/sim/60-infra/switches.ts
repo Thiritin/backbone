@@ -5,6 +5,8 @@ import type { Device, PortVlan } from "../50-state";
 // The VLAN a managed switch answers on; the player reaches its web interface through a port that carries it.
 export const MGMT_VLAN = 1;
 export const VLAN_MAX = 4094;
+// Customer private networks take VLANs from here up; a port set to carry them all takes every one of them tagged.
+export const PRIVATE_VLAN_FROM = 100;
 const DEFAULT_VLAN: PortVlan = { untagged: MGMT_VLAN, tagged: [] };
 
 // Where a managed switch answers when no DHCP server gives it an address.
@@ -22,19 +24,24 @@ export const vlansIn = (d: Device): number[] =>
 // untagged VLAN and accepts a tagged one only on a port that carries that VLAN tagged (ingress, undefined when dropped);
 // it sends a frame out of a port in its VLAN, untagged where that is the port's untagged VLAN (egress, the tag it leaves
 // with, undefined when the port is not in the VLAN).
+const carries = (v: PortVlan, vlan: number) => v.tagged.includes(vlan) || (!!v.all && vlan >= PRIVATE_VLAN_FROM);
 export const ingress = (d: Device, port: number, tag: number | null): number | undefined => {
   const v = vlanOf(d, port);
-  return tag === null ? v.untagged : v.tagged.includes(tag) ? tag : undefined;
+  return tag === null ? v.untagged : tag !== v.untagged && carries(v, tag) ? tag : undefined;
 };
 export const egress = (d: Device, port: number, vlan: number): number | null | undefined => {
   const v = vlanOf(d, port);
-  return v.untagged === vlan ? null : v.tagged.includes(vlan) ? vlan : undefined;
+  return v.untagged === vlan ? null : carries(v, vlan) ? vlan : undefined;
 };
+// The VLANs a frame in vlan can leave a switch in: every routed VLAN on a layer 3 switch that routes it, else its own.
+export const routesTo = (d: Device, vlan: number): number[] =>
+  modelById(d.model).layer === 3 && d.routed?.includes(vlan) ? d.routed : [vlan];
 // A reboot drops what was not saved.
 export function loadSaved(d: Device): void {
   if (!d.saved) return;
   d.groups = d.saved.groups.map((g) => [...g]);
   d.vlans = structuredClone(d.saved.vlans);
+  if (d.routed || d.saved.routed) d.routed = [...(d.saved.routed ?? [])];
 }
 
 // The address a managed switch answers on: its factory address until it gets a lease.

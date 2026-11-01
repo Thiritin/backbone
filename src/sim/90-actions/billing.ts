@@ -1,5 +1,5 @@
 import {
-  annuity, AUTO_COLLECT_DAYS, bookTransfer, issue, AUTO_SUSPEND_DAYS, cents, dueStep, isUnpaid, LOAN_AMOUNTS, LOAN_YEARS, loanAvailable, loanRate, sendStep, STEPS, suspend, type BillingRules, type Invoice,
+  annuity, AUTO_COLLECT_DAYS, bookTransfer, issue, AUTO_SUSPEND_DAYS, cents, dueStep, isUnpaid, synced, LOAN_AMOUNTS, LOAN_YEARS, loanAvailable, loanRate, sendStep, STEPS, suspend, type BillingRules, type Invoice,
 } from "../45-billing/billing";
 import { bankById } from "../10-catalog/banks";
 import type { GameState } from "../50-state";
@@ -7,7 +7,7 @@ import type { ActionResult } from "./hardware";
 import { ACTION_MINUTES, logActivity } from "../47-staff/activity";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
-const unpaidInvoice = (s: GameState, id: string) => s.invoices.find((i) => i.id === id && isUnpaid(i));
+const unpaidInvoice = (s: GameState, id: string) => s.invoices.find((i) => i.id === id && isUnpaid(i) && synced(i));
 const log = (s: GameState, inv: Invoice, key: keyof typeof ACTION_MINUTES | "writeOff") =>
   logActivity(s, { customerId: inv.customerId, serviceId: null, by: null, key: `activity.${key}`, params: { invoice: inv.number }, minutes: key === "writeOff" ? 0 : ACTION_MINUTES[key] });
 
@@ -24,7 +24,9 @@ export function sendInvoice(s: GameState, invoiceId: string): ActionResult {
 export function matchTransfer(s: GameState, transferId: string, invoiceId: string, settle = false): ActionResult {
   const tr = s.transfers.find((x) => x.id === transferId && x.matchedAt === null);
   if (!tr) return fail("error.transferMatched");
-  const inv = unpaidInvoice(s, invoiceId);
+  if (tr.covers) return fail("error.payoutImport");
+  // Money taken back books against the paid invoice it came from.
+  const inv = tr.back ? s.invoices.find((i) => i.id === invoiceId && i.status === "paid" && synced(i)) : unpaidInvoice(s, invoiceId);
   if (!inv) return fail("error.invoiceSettled");
   bookTransfer(s, tr, inv, settle);
   log(s, inv, "matchTransfer");

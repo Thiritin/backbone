@@ -12,7 +12,7 @@ import "./pterodaktyl.css";
 const ERAS = erasFrom(2016, 2021);
 
 export function Pterodaktyl(p: PanelProps) {
-  const era = eraAt(ERAS, p.game), open = parseCreate("pterodaktyl", p.path), [tab, setTab] = usePanelTab(p.f, open?.screen ?? "objects");
+  const era = eraAt(ERAS, p), open = parseCreate("pterodaktyl", p.path), [tab, setTab] = usePanelTab(p.f, open?.screen ?? "objects");
   const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f);
   if (!p.signedIn) return (
     <div className="cx pt pt-login" data-era={era}>

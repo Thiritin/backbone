@@ -1,0 +1,32 @@
+import type { Dict } from "../lang";
+
+// docs/design/lan.md, Phases: the web interfaces of own routers in a datacenter.
+export default {
+  "router.system": () => "Sistema",
+  "router.dhcp": () => "Server DHCP",
+  "router.vpn": () => "Accesso remoto",
+  "router.model": () => "Modello",
+  "router.name": () => "Nome",
+  "router.uplink": () => "Indirizzo di uplink",
+  "router.address": () => "Indirizzo LAN",
+  "router.firmware": () => "Firmware",
+  "router.network": () => "Rete",
+  "router.prefix": () => "Prefisso",
+  "router.poolFrom": () => "Inizio pool",
+  "router.poolTo": () => "Fine pool",
+  "router.free": () => "Indirizzi liberi",
+  "router.leases": () => "Lease",
+  "router.host": () => "Nome host",
+  "router.mac": () => "Indirizzo MAC",
+  "router.ip": () => "Indirizzo",
+  "router.vpnServer": () => "Server VPN",
+  "router.enabled": () => "Attivo",
+  "router.disabled": () => "Disattivo",
+  "router.enable": () => "Attiva",
+  "router.disable": () => "Disattiva",
+  "error.poolFull": () => "Il pool DHCP del router non ha più indirizzi liberi.",
+  "error.noVlanLeft": () => "Tutte le VLAN del dominio di switch sono occupate.",
+  "error.notLayer3": () => "Questo switch non instrada tra VLAN.",
+  "error.notOwnRouter": () => "Solo i router del datacenter hanno questa impostazione.",
+  "error.badPrefix": () => "Il prefisso deve essere tra /16 e /30.",
+} satisfies Dict;

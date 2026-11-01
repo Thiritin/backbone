@@ -115,7 +115,7 @@ export function deserialize(raw: string): GameState {
     // The Research app was called Unlocks.
     // The Sales app moved into Support and the Checklist into Getting started, so their ids are dropped; saves from before the Website app get it in the dock.
     // Billing became Books.
-    installed: data.installed ? [...new Set([...data.installed.map((id) => (id === "Unlocks" ? "Research" : id === "Billing" ? "Books" : id)).filter((id) => id !== "Sales" && id !== "Checklist" && id !== "Bank" && id !== "dockBadges" && id !== "Products" && id !== "Virtual machines" && id !== "Website"), "Browser", ...(data.registration === null || data.arrived ? [] : ["Marketing", "Security", "Applications"])])] : [...STARTER_APPS, ...WIDGETS.map(([id]) => id)],
+    installed: data.installed ? [...new Set([...data.installed.map((id) => (id === "Unlocks" ? "Research" : id === "Billing" ? "Books" : id)).filter((id) => id !== "Sales" && id !== "Checklist" && id !== "Bank" && id !== "dockBadges" && id !== "Products" && id !== "Virtual machines" && id !== "Website"), "Browser", "Chat", ...(data.registration === null || data.arrived ? [] : ["Marketing", "Security", "Applications"])])] : [...STARTER_APPS, "Chat", ...WIDGETS.map(([id]) => id)],
     // Older saves researched Pear Store items directly; each becomes its skill and that skill's prerequisites.
     unlocks: [...new Set((data.unlocks ?? []).flatMap(learned))],
     customers: (data.customers ?? []).map((c) => ({ ...c, history: c.history ?? [], credit: c.credit ?? 0, address: c.address ?? homeAddress({ seed: base.seed, locations }, Number(c.id.slice(3)) || 0, c.name, c.profile) })),
@@ -153,6 +153,8 @@ export function deserialize(raw: string): GameState {
   s.media = { images: [...new Set(media.images.map((x) => asImage(x, year)))], stick: { ...media.stick, os: media.stick.os && asImage(media.stick.os, year) } };
   // Apps a save already has count as arrived, so they never send their email.
   s.arrived = data.arrived ?? WALK.filter((id) => s.installed.includes(id));
+  // Saves from before the Bookkeeping category run Lexwear Office when they have Books.
+  if (!data.books) s.books = { vendor: s.installed.includes("Books") ? "lexwear" : null, installedAt: 0 };
   return s;
 }
 
