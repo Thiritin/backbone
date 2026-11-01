@@ -58,7 +58,7 @@ describe("installing software from the shell", () => {
     expect(byHour.every((h) => h.length > 0)).toBe(true);
     expect(byHour.flat()).toEqual([...log.slice(1), "Proxmocks installation complete.", `You can access your new installation at https://${machineAddress(s, "dev3")}:8006/`, "Reboot now to finish the installation."]);
     expect(clusterOf(s, "dev3")?.platform).toBe("proxmocks");
-    expect(text(s, "dpkg -l", at)).toMatch(/ii {2}proxmocks-ve +2017 +amd64 +Proxmocks/);
+    expect(text(s, "dpkg -l", at)).toMatch(/ii {2}proxmocks-ve +4\.0 +amd64 +Proxmocks/);
   });
 
   it("does not find the package before its repo line, nor a script software's name", () => {

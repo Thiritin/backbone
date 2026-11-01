@@ -24,7 +24,7 @@ import { fillHostnames } from "../30-customers/hostnames";
 import { fillRegistrar } from "../30-customers/registrar";
 import { fillDesign, fillLaunch, fillLines } from "../80-business/website";
 import { fillSpecs } from "./specs";
-import { fillMachines } from "./machines";
+import { fillMachines, fillVersions } from "./machines";
 import { legacyLeads } from "./leads";
 
 // ponytail: plain JSON in localStorage; compress once saves approach the ~5 MB limit.
@@ -138,6 +138,7 @@ export function deserialize(raw: string): GameState {
   // A save from before accounts opened on the bank's site holds the savings as cash; they come back with the account.
   if ((data.version ?? 1) < 4 && !s.registration && !s.bank && s.cash >= savingsOf(s)) s.cash -= savingsOf(s);
   shelveRouter(s);
+  fillVersions(s);
   // Saves from before licence keys; machines from before one-time licenses hold theirs for free, since the fee was never charged.
   if (!data.trials) legacyLicences(s, (data.licenses ?? []) as unknown as Parameters<typeof legacyLicences>[1]);
   const media = data.media ?? base.media;
