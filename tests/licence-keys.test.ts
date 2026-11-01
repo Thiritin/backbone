@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { hourOf, isMonthStart } from "../src/sim/00-core/time";
+import { hourOf } from "../src/sim/00-core/time";
 import { buyUpgradeLicense, productsTick } from "../src/sim/85-products/products";
 import { SOFTWARE } from "../src/sim/10-catalog/platforms";
 import { SERVER_OS } from "../src/sim/10-catalog/server-os";
 import { newGame } from "../src/sim/50-state";
-import { assignedKey, assignKey, issueKey, trialOf, licenceStatus, panelMachine, releaseKey, startTrial, unassignedKeys, updateKey } from "../src/sim/60-infra/licence";
+import { assignedKey, assignKey, issueKey, monthAfter, trialOf, licenceStatus, panelMachine, releaseKey, startTrial, unassignedKeys, updateKey } from "../src/sim/60-infra/licence";
 import { createPanelVm } from "../src/sim/90-actions/clusters";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { panelVm, readyGame } from "./fixtures";
@@ -52,7 +52,7 @@ describe("licence keys", () => {
     const once = issueKey(s, "windoors", null, "ord9"), monthly = issueKey(s, "cpanic", "premier");
     expect(once).toMatchObject({ id: "lic1", product: "windoors", edition: null, kind: "once", orderId: "ord9", machineId: null, covers: { kind: "version", major: "2003" }, renewsAt: null, lapsedAt: null });
     expect(monthly).toMatchObject({ id: "lic2", edition: "premier", kind: "account", orderId: "ord2" });
-    expect(isMonthStart(monthly.renewsAt!)).toBe(true);
+    expect(monthly.renewsAt).toBe(monthAfter(s.hour));
     expect(monthly.covers).toEqual({ kind: "term", until: monthly.renewsAt });
     expect(once.key).toMatch(/^[A-Z2-9]{4}(-[A-Z2-9]{4}){3}$/);
     expect(once.key).not.toBe(monthly.key);
@@ -66,6 +66,15 @@ describe("licence keys", () => {
     expect(licenceStatus(s, "m1", "windoors")).toBe("ended");
     assignKey(s, once.id, "m2");
     expect(licenceStatus(s, "m2", "windoors")).toBe("active");
+  });
+});
+
+describe("renewal days", () => {
+  it("fall on the same day and hour a month later, or the last day of a shorter month", () => {
+    const at = (m: number, d: number, h = 0) => hourOf(new Date(Date.UTC(2007, m, d, h)));
+    expect(monthAfter(at(2, 14, 9))).toBe(at(3, 14, 9));
+    expect(monthAfter(at(0, 31))).toBe(at(1, 28));
+    expect(monthAfter(at(11, 31, 5))).toBe(hourOf(new Date(Date.UTC(2008, 0, 31, 5))));
   });
 });
 
@@ -87,7 +96,7 @@ describe("panel installs", () => {
 });
 
 describe("version-bound keys", () => {
-  it("leave a newer major unlicensed until a paid upgrade moves the key, and term keys renew with the monthly bill", () => {
+  it("leave a newer major unlicensed until a paid upgrade moves the key, and term keys renew a month on", () => {
     const s = readyGame(7), id = s.devices.find((d) => d.os)!.id;
     s.devices = s.devices.map((d) => (d.id === id ? { ...d, os: { id: "windoors", version: "2003", installedAt: 0 } } : d));
     assignKey(s, issueKey(s, "windoors", null).id, id);
@@ -100,9 +109,9 @@ describe("version-bound keys", () => {
     expect(licenceStatus(s, id, "windoors")).toBe("active");
     const term = issueKey(s, "tcadmen", null);
     assignKey(s, term.id, id);
-    s.hour = hourOf(new Date(Date.UTC(2005, 5, 1)));
+    s.hour = term.renewsAt!;
     productsTick(s);
-    expect(assignedKey(s, id, "tcadmen")).toMatchObject({ covers: { kind: "term", until: hourOf(new Date(Date.UTC(2005, 6, 1))) }, renewsAt: hourOf(new Date(Date.UTC(2005, 6, 1))) });
+    expect(assignedKey(s, id, "tcadmen")).toMatchObject({ covers: { kind: "term", until: monthAfter(term.renewsAt!) }, renewsAt: monthAfter(term.renewsAt!) });
   });
 });
 
@@ -122,7 +131,7 @@ describe("old saves", () => {
     const back = deserialize(JSON.stringify(raw));
     expect(back.licenses).toMatchObject([
       { product: "windoors", kind: "once", machineId: "dev3", boughtAt: 5, covers: { kind: "version", major: "2003" }, renewsAt: null },
-      { product: "cpanic", edition: "pro", kind: "server", machineId: vm(paid), lapsedAt: 100 },
+      { product: "cpanic", edition: "pro", kind: "server", machineId: vm(paid), lapsedAt: 100, renewsAt: monthAfter(s.hour) },
     ]);
     expect(back.trials).toEqual([{ machineId: vm(trial), product: "pleskit", until: s.hour + 48 }]);
     expect(back.clusters.some((c) => "licence" in c)).toBe(false);
