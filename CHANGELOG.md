@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- Customers on a game title past its prime no longer get unhappy; their servers empty out and shrink, and some ask to move to a newer game, staying if your panel runs it and leaving if it does not.
+- TCAdmen and Pterodaktyl list every game on their Packages screen, where you can import community configs or pay to write your own, and see how many requests went to other hosts for games you do not offer.
 - Licence keys bought on a vendor website are paid by credit card or by bank transfer, and keys paid by transfer arrive once the money reaches the vendor.
 - From 2013 DOHLE replaces DohleFormular with the Mein DOHLE portal, where you log in with your certificate file and send the same returns.
 - Product prices in the books now show the market price for each term and the setup fee, so you can see what customers expect to pay.

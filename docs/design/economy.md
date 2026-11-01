@@ -670,6 +670,8 @@ Private customers and hobbyists use their sites in the evening and forgive a wee
 
 Shared links without an expiry that are older than 90 days leak with a monthly chance of 0.015 (0.003 with a password) and cost the customer 20 happiness. The expiry policy of 7, 30 or 90 days trades these leaks for extension tickets.
 
+**Game titles.** A faded title costs no happiness. Its players online fall to `max(0.15, 0.7 ^ (year - fade))` of normal, and once a month its servers shrink to the slots their busiest hour of the week needs, at a price scaled down alike. A quarter of its customers, picked by seed, stay for good. The rest ask to move to the current title of the same genre with a monthly chance of `0.04 * (year - fade)`; declining, or leaving the request a week, ends that game server, and the customer leaves when it was their last service. Writing a game config costs 400 on TCAdmen and 200 on Pterodaktyl.
+
 ## Tickets and work rates
 
 A low-skill customer creates about 0.3 tickets a month, so one average support agent keeps about 1,400 of them answered. Every job in the game, from tickets to cabling, is a task with a handling time, and staff work through tasks at a rate set by their skill.

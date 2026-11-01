@@ -211,12 +211,19 @@ const breachParams = (s: GameState, t: Ticket) => {
   return { host: s.clusters.find((c) => c.id === b?.hostId)?.name ?? "", ransom: b?.ransom ?? 0 };
 };
 
+// A switch request names the title the customer plays and the one they want.
+const switchParams = (s: GameState, tk: Ticket) => {
+  const g = s.gameServers.find((x) => x.serviceId === tk.serviceId);
+  return { title: g ? t(`games.title.${g.title}`) : "", next: g?.switchTo ? t(`games.title.${g.switchTo}`) : "" };
+};
+
 export const subjectParams = (s: GameState, t: Ticket): Record<string, string | number> => ({
   service: s.services.find((v) => v.id === t.serviceId)?.label ?? "", hostname: serviceFqdn(s, s.services.find((v) => v.id === t.serviceId)), domain: s.services.find((v) => v.id === t.serviceId)?.domain ?? s.sales.requests.find((r) => r.ticketId === t.id)?.domain ?? "", url: t.notice?.url ?? "", ip: t.topic === "dnsChange" ? askedIp(s, t.id) : "", video: t.notice?.video ?? "",
   target: t.move?.name ?? "", round: t.notice?.round ?? 1, sender: t.notice ? senderName(t.notice.sender) : "",
   ...(t.kind === "extortion" && breachParams(s, t)),
   ...(t.maint && maintParams(t.maint)),
   ...(t.kind === "sponsor" && sponsorParams(s, t)),
+  ...(t.topic === "switchTitle" && switchParams(s, t)),
   ...t.mail?.params,
   ...(t.kind === "mail" && t.topic === SHOP_LICENCE && vendorParams(t.mail!.params)),
 });
