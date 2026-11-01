@@ -25,6 +25,7 @@ import { WeatherApp } from "./weather/WeatherApp";
 import { TerminalApp } from "./terminal/TerminalApp";
 import { isFinal } from "../../sim/40-support/tickets";
 import { deviceHealth } from "../../sim/60-infra/status";
+import { currentVendor } from "../../sim/80-business/bookkeeping";
 
 export interface AppDef {
   name: string;
@@ -81,4 +82,5 @@ export const appByName = (name: string): AppDef => APPS.find((a) => a.name === n
 
 // The app as the player sees it: Support is Email, or the installed desk, with its own name, mark and tile.
 export const appFor = (s: GameState, name: string): AppDef =>
-  name === "Support" ? { ...appByName(name), ...supportApp(s) } : name === "Applications" ? { ...appByName(name), name: "Finder" } : appByName(name);
+  name === "Support" ? { ...appByName(name), ...supportApp(s) } : name === "Applications" ? { ...appByName(name), name: "Finder" }
+  : name === "Books" ? { ...appByName(name), title: currentVendor(s)?.program ?? t("books.title") } : appByName(name);

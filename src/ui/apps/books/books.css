@@ -63,3 +63,7 @@
 .books-register input { width: 24ch; letter-spacing: 0.04em; }
 .books-registered { color: var(--good-text, var(--good, #2a7)); }
 .books-locked { opacity: 0.5; }
+
+/* The vendor's skin: a strip in its colour above the toolbar, or for a web program the address bar it runs under. */
+.books { border-top: 4px solid var(--bk-bar, transparent); }
+.books-web { margin-top: -4px; padding: 4px 16px; font-size: 11px; background: var(--bk-bar); color: var(--bk-ink); flex: none; }
