@@ -40,6 +40,7 @@
 .da[data-era="classic"] .cx-table tr:nth-child(even) td { background: #eef1f8; }
 .da[data-era="classic"] .cx-btn { background: #e3e8f2; border: 1px solid #4a5f8f; border-radius: 0; }
 .da[data-era="classic"] .cx-btn.primary { background: #3a64a8; color: #fff; }
+.da[data-era="classic"] .cx-btn.danger { color: var(--bad); }
 .da[data-era="classic"] .cx-bar { height: 10px; border-color: #4a5f8f; background: #fff; box-shadow: none; }
 .da[data-era="classic"] .cx-bar i { background: #3a64a8; }
 

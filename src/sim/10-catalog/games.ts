@@ -17,25 +17,32 @@ export interface GameTitle {
   releases: number[];
   // Memory grows until a restart.
   leak: boolean;
+  // A drifting customer asks to move to the current title of the same genre.
+  genre: Genre;
+  // Panels that ship the title's config or egg.
+  bundled: string[];
 }
 
+export type Genre = "shooter" | "strategy" | "sandbox" | "survival" | "roleplay";
+
 export const NEVER = 9999;
-const title = (id: string, from: number, fade: number, weight: number, perSlot: [number, number, number], releases: number[], leak = false): GameTitle =>
-  ({ id, from, fade, weight, perSlot: { vcpu: perSlot[0], ramGb: perSlot[1], diskGb: perSlot[2] }, slots: [12, 32], releases, leak });
+const title = (id: string, genre: Genre, bundled: string[], from: number, fade: number, weight: number, perSlot: [number, number, number], releases: number[], leak = false): GameTitle =>
+  ({ id, genre, bundled, from, fade, weight, perSlot: { vcpu: perSlot[0], ramGb: perSlot[1], diskGb: perSlot[2] }, slots: [12, 32], releases, leak });
+const T = "tcadmen", M = "multikraft", P = "pterodaktyl";
 
 export const GAME_TITLES: GameTitle[] = [
-  title("counterstrife", 2005, 2012, 3, [0.04, 0.025, 0.02], [2005, 2008, 2011]),
-  title("quackiii", 2005, 2010, 1, [0.03, 0.02, 0.02], [2005, 2007]),
-  title("battlefeld", 2005, 2011, 1.5, [0.05, 0.035, 0.03], [2005, 2009]),
-  title("warcrafty", 2006, 2014, 1, [0.09, 0.07, 0.05], [2006, 2008, 2010, 2012]),
-  title("teamfortune", 2008, 2018, 2, [0.05, 0.03, 0.03], [2008, 2011, 2014, 2017]),
-  title("blockcraft", 2010, NEVER, 4, [0.05, 0.08, 0.03], [2010, 2013, 2016, 2019, 2022], true),
-  title("terrarea", 2012, 2022, 1, [0.03, 0.03, 0.02], [2012, 2015, 2020]),
-  title("rost", 2014, NEVER, 2, [0.12, 0.1, 0.08], [2014, 2017, 2020, 2023], true),
-  title("arkaic", 2016, 2024, 1.5, [0.14, 0.14, 0.1], [2016, 2019, 2022], true),
-  title("fiveem", 2017, NEVER, 1.5, [0.08, 0.06, 0.05], [2017, 2020, 2023]),
-  title("valhome", 2021, NEVER, 1.5, [0.1, 0.09, 0.06], [2021, 2023]),
-  title("pallworld", 2024, NEVER, 1.5, [0.12, 0.12, 0.08], [2024]),
+  title("counterstrife", "shooter", [T, P], 2005, 2012, 3, [0.04, 0.025, 0.02], [2005, 2008, 2011]),
+  title("quackiii", "shooter", [T], 2005, 2010, 1, [0.03, 0.02, 0.02], [2005, 2007]),
+  title("battlefeld", "shooter", [T], 2005, 2011, 1.5, [0.05, 0.035, 0.03], [2005, 2009]),
+  title("warcrafty", "strategy", [T], 2006, 2014, 1, [0.09, 0.07, 0.05], [2006, 2008, 2010, 2012]),
+  title("teamfortune", "shooter", [T, P], 2008, 2018, 2, [0.05, 0.03, 0.03], [2008, 2011, 2014, 2017]),
+  title("blockcraft", "sandbox", [T, M, P], 2010, NEVER, 4, [0.05, 0.08, 0.03], [2010, 2013, 2016, 2019, 2022], true),
+  title("terrarea", "sandbox", [], 2012, 2022, 1, [0.03, 0.03, 0.02], [2012, 2015, 2020]),
+  title("rost", "survival", [P], 2014, NEVER, 2, [0.12, 0.1, 0.08], [2014, 2017, 2020, 2023], true),
+  title("arkaic", "survival", [], 2016, 2024, 1.5, [0.14, 0.14, 0.1], [2016, 2019, 2022], true),
+  title("fiveem", "roleplay", [], 2017, NEVER, 1.5, [0.08, 0.06, 0.05], [2017, 2020, 2023]),
+  title("valhome", "survival", [], 2021, NEVER, 1.5, [0.1, 0.09, 0.06], [2021, 2023]),
+  title("pallworld", "survival", [], 2024, NEVER, 1.5, [0.12, 0.12, 0.08], [2024]),
 ];
 
 // Titles that need a query port besides the game port.
@@ -50,11 +57,23 @@ export const GAME_UNIT: Record<string, "slots" | "ram" | "ramCpu"> = { tcadmen: 
 export const weightAt = (g: GameTitle, year: number): number =>
   year < g.from ? 0 : g.weight * (year <= g.fade ? 1 : Math.max(0.1, 0.75 ** (year - g.fade)));
 
-// economy.md, Happiness and churn: from the year after a title fades its players leave, 0.05 happiness a day, doubling every year up to 0.4.
-export const fadeDrain = (g: GameTitle, year: number): number => (year > g.fade ? Math.min(0.4, 0.05 * 2 ** (year - g.fade - 1)) : 0);
+// economy.md, Happiness and churn: after a title fades, its players online fall 30 percent a year down to 15 percent.
+export const interestAt = (g: GameTitle, year: number): number => (year <= g.fade ? 1 : Math.max(0.15, 0.7 ** (year - g.fade)));
 
-export function pickTitle(seed: number, key: number, year: number): string {
-  const live = GAME_TITLES.filter((g) => weightAt(g, year) > 0);
+// The current title of the same genre with the most new orders, which a drifting customer asks to move to.
+export function successorOf(g: GameTitle, year: number): GameTitle | undefined {
+  const next = GAME_TITLES.filter((x) => x.id !== g.id && x.genre === g.genre && weightAt(x, year) > 0 && year <= x.fade);
+  return next.sort((a, b) => weightAt(b, year) - weightAt(a, year))[0];
+}
+
+// game-servers plan 3.5: a community config or egg shows up some months after the game; writing your own costs money and days.
+export const IMPORT_LAG: Record<string, number> = { tcadmen: 0.5, pterodaktyl: 0.25 };
+export const WRITE_COST: Record<string, number> = { tcadmen: 400, pterodaktyl: 200 };
+export const WRITE_DAYS: Record<string, number> = { tcadmen: 5, pterodaktyl: 3 };
+
+// With `allowed`, only those titles; when none of them is out, any.
+export function pickTitle(seed: number, key: number, year: number, allowed?: (id: string) => boolean): string {
+  const out = GAME_TITLES.filter((g) => weightAt(g, year) > 0), only = allowed ? out.filter((g) => allowed(g.id)) : out, live = only.length ? only : out;
   let x = rand(hashRng(seed, key, 977)) * live.reduce((n, g) => n + weightAt(g, year), 0);
   for (const g of live) if ((x -= weightAt(g, year)) < 0) return g.id;
   return live[live.length - 1].id;

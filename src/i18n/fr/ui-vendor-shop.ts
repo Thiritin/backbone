@@ -42,5 +42,5 @@ export default {
   "error.notCancellable": () => "Cette licence ne peut pas être résiliée.",
   "ledger.order": (p) => `Commande ${p.order} chez ${p.vendor}`,
   "ticket.mail.vendor.order.subject": (p) => `Votre commande ${p.order}`,
-  "ticket.mail.vendor.order.text": (p) => `Merci pour votre commande ${p.order}. Nous avons débité ${euroPrice(Number(p.total))} de votre compte bancaire. Vos clés de licence figurent dans Mon compte sur notre site.`,
+  "ticket.mail.vendor.order.text": (p) => `Merci pour votre commande ${p.order}. ${Number(p.card) ? `Nous avons débité ${euroPrice(Number(p.total))} de votre carte de crédit.` : `Nous avons reçu votre virement de ${euroPrice(Number(p.total))}.`} Vos clés de licence figurent dans Mon compte sur notre site.`,
 } satisfies Dict;

@@ -6,6 +6,7 @@ import { idNum } from "../10-catalog/usage";
 import type { GameState } from "../50-state";
 import { workloadsOf } from "./cluster";
 import { freePorts, nodeOf } from "./daemons";
+import { offered } from "./titles";
 import { workloadLoad } from "./usage";
 
 export interface GameServer {
@@ -26,6 +27,8 @@ export interface GameServer {
   restart: Restart;
   // Pterodaktyl port allocations on its node; empty on the other panels.
   ports: number[];
+  // The title the customer asked to move to in an open switch ticket.
+  switchTo: string | null;
 }
 
 export interface Restart { every: "off" | "daily" | "weekly"; hour: number; day: number }
@@ -33,7 +36,7 @@ export const NO_RESTART: Restart = { every: "off", hour: 4, day: 1 };
 
 // Saves from before crashes and mods get the defaults.
 export function fillGames(s: GameState): GameState {
-  s.gameServers = s.gameServers.map((g) => ({ ...({ crashedAt: null, crashes: 0, leak: 0, mods: [], restart: NO_RESTART, ports: [] } as Partial<GameServer>), ...g } as GameServer));
+  s.gameServers = s.gameServers.map((g) => ({ ...({ crashedAt: null, crashes: 0, leak: 0, mods: [], restart: NO_RESTART, ports: [], switchTo: null } as Partial<GameServer>), ...g } as GameServer));
   return s;
 }
 
@@ -44,12 +47,12 @@ export const gameOf = (s: GameState, serviceId: string): GameServer | null => s.
 export function createGameServer(s: GameState, serviceId: string, titleId?: string): string | null {
   const w = workloadsOf(s, serviceId)[0], panel = s.clusters.find((c) => c.id === w?.clusterId)?.panel, unit = panel ? GAME_UNIT[panel] : undefined;
   if (!w || !panel || !unit) return null;
-  const year = yearOf(s.hour), g = titleById(titleId ?? "") ?? titleById(pickTitle(s.seed, idNum(serviceId), year))!;
+  const year = yearOf(s.hour), g = titleById(titleId ?? "") ?? titleById(pickTitle(s.seed, idNum(serviceId), year, (id) => offered(s, panel, id)))!;
   const free = panel === "pterodaktyl" ? freePorts(s, nodeOf(s, serviceId)?.key ?? "") : [], want = panel === "pterodaktyl" ? (needsQuery(g) ? 2 : 1) : 0;
   if (free.length < want) return "error.noAllocation";
   s.gameServers = [...s.gameServers, {
     serviceId, title: g.id, slots: unit === "slots" ? slotsFor(g, (w.promised ?? w).ramGb) : null, version: latestRelease(g, year),
-    auto: panel === "pterodaktyl" || year >= 2011, seenFull: -1, crashedAt: null, crashes: 0, leak: 0, mods: [], restart: NO_RESTART, ports: free.slice(0, want),
+    auto: panel === "pterodaktyl" || year >= 2011, seenFull: -1, crashedAt: null, crashes: 0, leak: 0, mods: [], restart: NO_RESTART, ports: free.slice(0, want), switchTo: null,
   }];
   return null;
 }
