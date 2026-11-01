@@ -36,6 +36,7 @@ export function registrationError(s: GameState, name: string, owner: string, for
   if (!name.trim() || name.trim().length > NAME_MAX) return "error.companyName";
   if (!owner.trim()) return "error.ownerName";
   if (!(form in LEGAL_FORMS)) return "error.legalForm";
+  if (form !== "sole") return "error.registerSole";
   if (!s.bank) return "error.noBank";
   if (monthlyFee(bankById(s.bank.id)!, form) === null) return "error.bankForm";
   if (REGISTRATION_FEE > spendable(s)) return "error.noCash";

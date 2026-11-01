@@ -7,7 +7,7 @@ const mailboxes = (n: string | number) => `${n} ${Number(n) === 1 ? "caixa de e-
 const web = (p: Params) => `${gb(p.disk)} de espaço, ${gb(p.traffic)} de tráfego por mês e ${mailboxes(p.mail)}`;
 const box = (p: Params) => `${p.cpu} vCPU, ${gb(p.ram)} de RAM e ${gb(p.disk)} de disco`;
 const cards = (p: Params) => `${p.gpu} GPU`;
-const domain = (p: Params) => (Number(p.owned) ? `Já tenho ${p.domain} e gostava de o transferir para ti.` : `Regista também ${p.domain} para mim, por favor.`);
+const domain = (p: Params) => (Number(p.owned) ? `Já tenho ${p.domain} e gostava de o transferir para ti.${p.auth ? ` O código de autorização é ${p.auth}.` : ""}` : `Regista também ${p.domain} para mim, por favor.`);
 const more = (p: Params) => (p.product === "webHosting"
   ? `de ${gb(p.disk0)} a ${gb(p.disk1)} de espaço, de ${gb(p.traffic0)} a ${gb(p.traffic1)} de tráfego e de ${p.mail0} a ${mailboxes(p.mail1)}`
   : and([
@@ -55,6 +55,11 @@ export default {
   "error.quoteSent": () => "O cliente ainda não respondeu ao orçamento.",
   "error.needsAutomation": () => "Escolhe um host onde o configurar.",
   "error.needsAccount": () => "Cria primeiro a conta do cliente.",
+  "error.addressMissing": () => "Introduz o endereço completo.",
+  "error.quoteSentAlready": () => "Este orçamento já foi enviado.",
+  "error.quoteOtherOrder": () => "Este orçamento pertence a outra encomenda.",
+  "error.quoteNotAccepted": () => "O cliente não aceitou este orçamento.",
+  "error.quoteInvoiced": () => "Este orçamento já foi transferido para fatura.",
   "error.needsInvoice": () => "Confirma primeiro o pedido e envia a fatura.",
   "error.needsDomain": () => "Regista primeiro o domínio.",
   "error.stepDone": () => "Este passo já está concluído.",

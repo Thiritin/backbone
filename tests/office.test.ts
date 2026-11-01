@@ -42,9 +42,11 @@ describe("trade office", () => {
     expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "sole")).toEqual({ ok: false, error: "error.noBank" });
     expect(openBankAccount(s, "sparklasse").ok).toBe(true);
     expect(registerCompany(s, "Basement Hosting", " ", "sole")).toEqual({ ok: false, error: "error.ownerName" });
-    expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "limited").ok).toBe(true);
+    expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "limited")).toEqual({ ok: false, error: "error.registerSole" });
+    expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "partnership")).toEqual({ ok: false, error: "error.registerSole" });
+    expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "sole").ok).toBe(true);
     expect(s.company.name).toBe("Basement Hosting");
-    expect(s.registration).toMatchObject({ hour: MONDAY_8, owner: "Becker, Tin", form: "limited" });
+    expect(s.registration).toMatchObject({ hour: MONDAY_8, owner: "Becker, Tin", form: "sole" });
     expect(s.installed).toEqual(expect.arrayContaining(STARTER_APPS));
     expect(checkDone(s, "register")).toBe(true);
     expect(checkDone(s, "company")).toBe(false);

@@ -73,7 +73,7 @@ export const BANK_EN: Record<string, (p: Params) => string> = {
   "ticket.mail.bankOverdraft.subject": () => "Your overdraft",
   "ticket.mail.bankOverdraft.text": (p) => `${p.bank} has set your overdraft limit to ${euro(Number(p.limit))} at ${p.rate} % interest a year.`,
   "ticket.mail.bankWelcome.subject": (p) => `Your account at ${p.bank}`,
-  "ticket.mail.bankWelcome.text": (p) => `Welcome to ${p.bank}. Your business account ${p.number} is open. Your PIN for online banking is ${p.pin}. You can log in at ${p.url}.`,
+  "ticket.mail.bankWelcome.text": (p) => `Welcome to ${p.bank}. Your business account is open.\n\nAccount number: ${p.number}\nOnline banking PIN: ${p.pin}\nLogin: ${p.url}`,
   "ticket.mail.bankMtan.subject": () => "Your mTAN",
   "ticket.mail.bankMtan.text": (p) => `The mTAN for your transfer of ${euroCents(Number(p.amount))} to ${p.name} is ${p.code}.`,
   "ticket.mail.bankTanList.subject": (p) => `TAN list no. ${p.n}`,

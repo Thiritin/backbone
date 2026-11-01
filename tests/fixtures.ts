@@ -1,3 +1,6 @@
+import { authCode } from "../src/sim/30-customers/registry";
+import type { Address } from "../src/sim/30-customers/addresses";
+import { mailedAddress } from "../src/sim/30-customers/addresses";
 import { sendInvoice } from "../src/sim/90-actions/billing";
 import { MODULE_IDS } from "../src/sim/10-catalog/shops";
 import { hourOf } from "../src/sim/00-core/time";
@@ -181,4 +184,17 @@ export const freeFloor = (s: GameState): GameState => { s.dcs = Object.fromEntri
 // Sends every draft invoice as the player does in Books; the payments then settle them as if matched on arrival (books.test.ts covers matching).
 export const sendDrafts = (s: GameState) => {
   for (const i of s.invoices) if (i.status === "draft" && sendInvoice(s, i.id).ok) delete i.bank;
+};
+
+// The address the order email of a ticket signs with, as the player enters it in Books.
+export const mailed = (s: GameState, ticketId: string) => {
+  const r = s.sales.requests.find((x) => x.kind === "order" && x.ticketId === ticketId);
+  return r && mailedAddress(s.seed, r);
+};
+
+// The owner and transfer code the player enters on the registrar's form for a ticket: the customer record and the code
+// from the order email.
+export const owner = (s: GameState, ticketId: string): [Address | undefined, string | undefined] => {
+  const r = s.sales.requests.find((x) => x.kind === "order" && x.ticketId === ticketId);
+  return [s.customers.find((c) => c.id === r?.customerId)?.address, r?.owned ? authCode(s.seed, r.id) : undefined];
 };

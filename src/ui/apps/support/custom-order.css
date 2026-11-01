@@ -40,3 +40,9 @@
 
 /* Tahoo: glass choice tiles. */
 :root[data-os="tahoe"] :is(.route, .host):not(.sel, :has(input:checked)) { background: color-mix(in oklch, var(--field), transparent 30%); box-shadow: var(--ar-lift); }
+
+.attach-strip { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; min-height: 40px; padding: 6px 10px; border: 1px dashed var(--line-strong); border-radius: var(--r); }
+.attach-strip.over { border-style: solid; border-color: var(--accent); background: var(--hover); }
+.attach-k { font-size: 11.5px; color: var(--text-3); margin-right: auto; }
+.attach-chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; border: var(--ar-bw, 1px) solid var(--line); border-radius: 4px; background: var(--field); font: inherit; color: var(--text); }
+.attach-chip svg { width: 14px; height: 14px; }
