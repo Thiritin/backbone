@@ -413,7 +413,7 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     let mrr = 0, collectedShare = 0, stuck = 0;
     PROFILES.forEach((p, i) => PRODUCTS.forEach((pr, k) => {
       // Form orders take the annual cycle at its market discount: the hand-rolled form sells monthly and annual.
-      const [monthly, , annual] = CYCLE_SHARE[PROFILE_IDS[i]], cycleCut = website ? (1 - EMAIL_SHARE) * (annual / (monthly + annual)) * MARKET_DISCOUNT.annual : 0;
+      const [monthly, , , annual] = CYCLE_SHARE[PROFILE_IDS[i]], cycleCut = website ? (1 - EMAIL_SHARE) * (annual / (monthly + annual)) * MARKET_DISCOUNT.annual : 0;
       const v = cohorts[i][k].n * priceOf(p, pr, year) * bot.priceFactor * (1 - cycleCut);
       mrr += v;
       collectedShare += v * (ON_TIME[p.budget] + (1 - ON_TIME[p.budget] - NEVER_PAYS[p.budget]) * processed);

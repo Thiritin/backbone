@@ -36,7 +36,8 @@ describe("billing cycles", () => {
     expect(of("handRolled")).toEqual(["monthly", "annual"]);
     expect(of("modemBill")).toEqual(["monthly", "quarterly", "annual"]);
     expect(of("orderBocks")).toEqual(["monthly", "annual", "biennial"]);
-    expect(of("whmCache")).toHaveLength(4);
+    expect(of("clientExit")).toHaveLength(4);
+    expect(of("whmCache")).toHaveLength(6);
   });
 
   it("weigh cycles at the base shares at the market discount and shift with exp(8 * gap)", () => {
