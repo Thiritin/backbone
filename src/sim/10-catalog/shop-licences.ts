@@ -5,6 +5,7 @@ import { eraAt, type LicenseEra } from "./server-os";
 import { yearOf } from "../00-core/time";
 import { shopById, SHOPS, type ShopId } from "./shops";
 import type { Site } from "./sites";
+import { t } from "../../i18n/en";
 
 export interface ShopLicence {
   id: ShopId;
@@ -64,6 +65,7 @@ const TERMS: Record<ShopId, Omit<ShopLicence, "id" | "name">> = {
       { from: 2016, month: 4, kind: "server", fee: 400, setup: 2500, editions: ["standard", "pro", "enterprise"] },
     ],
     trialDays: null, caps: "servers",
+    site: { host: "ubersmyth.com", get tagline() { return t("ubersmyth.site.tagline"); }, get blurb() { return t("ubersmyth.site.pitch"); }, features: [], eras: [] },
   },
   orderBocks: { licensing: [{ from: 2006, kind: "free", fee: 0, cut: 0.06 }] },
   boxBillin: { licensing: [{ from: 2011, kind: "free", fee: 0 }] },
