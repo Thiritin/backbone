@@ -116,7 +116,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   return (
     <>
       {waiting && <div className="web-load" aria-hidden />}
-      <div className={`web-view${paper ? " paper" : ""}`}>{body}</div>
+      <div className={`web-view${paper ? " white" : ""}`}>{body}</div>
     </>
   );
 }

@@ -33,6 +33,7 @@ export const SKILLS: Skill[] = textFields("sim.skill", [
   { id: "knowledgeBase", track: "sales", name: "Documentation", about: "Your team learns to write the answers to common questions down, so customers find them before they write in.", tier: 2, knowHow: 200, days: 10, needs: ["products"], opens: ["Knowledge base"] },
   { id: "market", track: "sales", name: "Market research", about: "You learn to read demand by product and to find out why a sale got away.", tier: 3, knowHow: 800, days: 21, needs: ["products", "marketing"], opens: ["Market"] },
   { id: "people", track: "company", name: "Employee management", about: "You learn to hire, pay and organise people without losing track of who does what.", tier: 1, knowHow: 100, days: 10, needs: [], opens: ["Staff"] },
+  { id: "companyLaw", track: "company", name: "Company law", about: "You learn what a limited company needs: a notary, share capital and an entry in the commercial register.", tier: 1, knowHow: 100, days: 10, needs: [], opens: [] },
   { id: "marketingBasics", track: "company", name: "Marketing basics", about: "You learn who your customers are, what they write about you and how sponsoring events wins them over.", tier: 1, knowHow: 50, days: 5, needs: [], opens: [] },
   { id: "marketing", track: "company", name: "Marketing campaigns", about: "Your staff learns to run campaigns, track awareness and book stands at trade fairs.", tier: 2, knowHow: 300, days: 14, needs: ["marketingBasics", "people"], opens: ["Marketing"] },
 ], ["name", "about"]);
@@ -43,6 +44,8 @@ export const TRACKS: { id: Track; name: string }[] = [
 
 // The skill that unlocks live migration, auto-balancing and failover per hypervisor cluster; its id predates the rename.
 export const HA_SKILL = "virtualization";
+// The skill that lets a sole trader or partnership found a limited company.
+export const COMPANY_LAW_SKILL = "companyLaw";
 // The skill that lets a hypervisor cluster rent out its GPU cards.
 export const GPU_SKILL = "gpuCompute";
 // The skill that adds Automatic to an order's setup and the switch that quotes order emails and runs accepted orders by themselves.
