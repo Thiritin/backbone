@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { renderToString } from "react-dom/server";
 import { beforeEach, describe, expect, it } from "vitest";
 import { nowHours } from "../src/sim/00-core/time";
-import { newGame, type Device, type GameState } from "../src/sim/50-state";
+import { type Device, type GameState } from "../src/sim/50-state";
 import { setMachine, vmById } from "../src/sim/60-infra/cluster";
 import { machineScreen } from "../src/sim/60-infra/oob";
 import { createVm, PANEL_VM_SIZE } from "../src/sim/90-actions/clusters";
@@ -10,7 +10,7 @@ import { setMedia } from "../src/sim/90-actions/console";
 import { installSoftware } from "../src/sim/90-actions/software";
 import { Screen } from "../src/ui/apps/console/Screen";
 import { VmConsole } from "../src/ui/apps/console/VmConsole";
-import { bootedMachine, hypervisor, skipTo, withServer, isoOf, withImage, withStick } from "./fixtures";
+import { bootedMachine, hypervisor, skipTo, withServer, isoOf, withImage, withStick, newGame } from "./fixtures";
 
 // withServer: dev3 is a free server cabled to the desk's router. The console's login lives in the tab's session storage.
 const store = new Map<string, string>();

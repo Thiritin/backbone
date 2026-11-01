@@ -14,5 +14,4 @@ export const TIERS: Record<string, LicenceTier[]> = {
 
 export const tiersOf = (softwareId: string | null): LicenceTier[] => (softwareId ? TIERS[softwareId] ?? [] : []);
 export const topTier = (softwareId: string | null): LicenceTier | undefined => tiersOf(softwareId).at(-1);
-export const TRIAL_DAYS = 30;
 export const LAPSE_GRACE_DAYS = 7;

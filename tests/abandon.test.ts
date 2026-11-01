@@ -1,7 +1,7 @@
+import { newGame } from "./fixtures";
 import { describe, expect, it } from "vitest";
 import { ABANDON_HOURS } from "../src/sim/40-support/abandon";
 import { createTicket } from "../src/sim/40-support/tickets";
-import { newGame } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 

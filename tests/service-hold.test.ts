@@ -1,14 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { serviceOnline } from "../src/sim/40-support/status";
 import { holdReason, serviceHeld } from "../src/sim/45-billing/billing";
-import { newGame } from "../src/sim/50-state";
 import { HELD_LOAD, workloadLoad } from "../src/sim/60-infra/usage";
 import { workloadsOf } from "../src/sim/60-infra/cluster";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { suspendService, terminateService, unsuspendService } from "../src/sim/90-actions/holds";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { panelVm, readyGame } from "./fixtures";
+import { panelVm, readyGame, newGame } from "./fixtures";
 
 function setup() {
   const s = readyGame(1);

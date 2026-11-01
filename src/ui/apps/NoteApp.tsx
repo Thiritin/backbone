@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { editNote } from "../../sim/90-actions/docs";
 import { useStore } from "../store";
 import { t } from "../../i18n/en";
+import { FormDoc } from "./FormDoc";
 
 const SAVE_MS = 400;
 const useDoc = (id: string) => useStore((s) => s.game.docs.find((d) => d.id === id));
@@ -27,6 +28,7 @@ export function NoteApp({ id }: { id: string }) {
   useEffect(() => flush, []);
 
   if (!doc) return null;
+  if (doc.form) return <FormDoc doc={doc} />;
   // The bank's TAN list is printed: it shows the list as it stands and takes no typing.
   const printed = id === "tans";
   return (
@@ -51,7 +53,7 @@ export function NoteTitle({ id }: { id: string }) {
       className="note-title"
       aria-label={t("apps.note.title")}
       maxLength={80}
-      readOnly={id === "tans"}
+      readOnly={id === "tans" || !!doc.form}
       value={draft ?? doc.title}
       size={Math.max(4, (draft ?? doc.title).length)}
       onPointerDown={(e) => e.stopPropagation()}
