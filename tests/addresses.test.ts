@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
-import { freeBlock, providerV4, REP, retailV4, withAddressNeeds } from "../src/sim/10-catalog/addresses";
+import { freeBlock, PROVIDER_ROUTING_SETUP, providerV4, REP, retailV4, withAddressNeeds } from "../src/sim/10-catalog/addresses";
 import { noticed, type Segment } from "../src/sim/10-catalog/attention";
 import { sizeSpec } from "../src/sim/10-catalog/products";
 import { requirementsFor } from "../src/sim/30-market/market";
@@ -141,6 +141,24 @@ describe("addresses", () => {
     ok(announceBlock(s, block.id, loc));
     addressTick(s);
     expect(s.ips.addresses.find((a) => a.source === "lir")?.ip.startsWith(block.prefix.split(".").slice(0, 2).join("."))).toBe(true);
+  });
+
+  it("lets the provider announce an own block for a setup fee without an own BGP router", () => {
+    const s = withServer(newGame(1));
+    s.ips = { ...s.ips, blocks: [] };
+    s.cash = 10_000;
+    const { loc } = datacenter(s);
+    ok(joinLir(s));
+    const block = s.ips.blocks[0], cash = s.cash;
+    expect(err(announceBlock(s, block.id, loc))).toBe("error.needsBgpRouter");
+    s.cash = 0;
+    expect(err(announceBlock(s, block.id, loc, true))).toBe("error.noCash");
+    s.cash = cash;
+    ok(announceBlock(s, block.id, loc, true));
+    expect(s.cash).toBe(cash - PROVIDER_ROUTING_SETUP);
+    expect(s.ips.blocks[0]).toMatchObject({ locationId: loc, byProvider: true });
+    addressTick(s);
+    expect(s.ips.addresses.some((a) => a.source === "lir" && a.blockId === block.id)).toBe(true);
   });
 });
 

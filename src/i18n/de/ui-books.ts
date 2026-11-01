@@ -12,6 +12,8 @@ export default {
   "books.tab.invoices": () => "Rechnungen",
   "books.tab.bank": () => "Bank",
   "books.tab.reminders": () => "Mahnwesen",
+  "books.tab.dunning": () => "Mahneinstellungen",
+  "books.tab.payables": () => "Eingangsrechnungen",
   "books.monthlyRun": () => "Monatslauf",
   "books.matchByReference": () => "Nach Verwendungszweck zuordnen",
   "books.autoReminders": () => "Automatische Mahnungen",

@@ -4,7 +4,12 @@ import { dateOf } from "../../../../../sim/00-core/time";
 import type { GameState } from "../../../../../sim/50-state";
 import { LEGAL_FORMS, OFFICE_HOST, OFFICE_URL, officeOpen } from "../../../../../sim/80-business/office";
 import { registerCompany } from "../../../../../sim/90-actions/company";
+import { banksOpen, DEFAULT_BANK, monthlyFee, type BankId } from "../../../../../sim/10-catalog/banks";
+import { yearOf } from "../../../../../sim/00-core/time";
 import { useStore } from "../../../../store";
+import { euro } from "../../../../../sim/00-core/money";
+import { applyError, FEES, FILED_WITH, FORM_RANK, SHARE_CAPITAL } from "../../../../../sim/80-business/paperwork";
+import { downloadForm } from "../../../../../sim/90-actions/docs";
 import "./office.css";
 
 const DAYS = [t("browser-sites-1.of.day0"), t("browser-sites-1.of.day1"), t("browser-sites-1.of.day2"), t("browser-sites-1.of.day3"), t("browser-sites-1.of.day4"), t("browser-sites-1.of.day5"), t("browser-sites-1.of.day6")];
@@ -40,8 +45,9 @@ function Register({ game }: { game: GameState }) {
   const [name, setName] = useState(game.company.name);
   const [owner, setOwner] = useState("");
   const [form, setForm] = useState("sole");
+  const [bank, setBank] = useState<BankId>(DEFAULT_BANK);
   return (
-    <form className="to-form" onSubmit={(e) => { e.preventDefault(); act(registerCompany, name, owner, form); }}>
+    <form className="to-form" onSubmit={(e) => { e.preventDefault(); act(registerCompany, name, owner, form, bank); }}>
       <fieldset>
         <legend>{t("browser-sites-1.of.application")}</legend>
         <table>
@@ -63,6 +69,14 @@ function Register({ game }: { game: GameState }) {
               </td>
             </tr>
             <tr>
+              <td><label htmlFor="to-bank">{t("bank.office.bank")} <b>*</b></label></td>
+              <td>
+                <select id="to-bank" value={bank} onChange={(e) => setBank(e.target.value as BankId)}>
+                  {banksOpen(yearOf(game.hour)).map((b) => <option key={b.id} value={b.id} disabled={monthlyFee(b, form) === null}>{b.name}</option>)}
+                </select>
+              </td>
+            </tr>
+            <tr>
               <td><label htmlFor="to-activity">{t("browser-sites-1.of.activity")} <b>*</b></label></td>
               <td>
                 <select id="to-activity" defaultValue="hosting">
@@ -76,7 +90,7 @@ function Register({ game }: { game: GameState }) {
         <p className="to-req"><b>*</b> {t("browser-sites-1.of.required")}</p>
         <div className="to-buttons">
           <button type="submit">{t("browser-sites-1.of.submit")}</button>
-          <button type="reset" onClick={() => { setName(""); setOwner(""); setForm("sole"); }}>{t("browser-sites-1.of.reset")}</button>
+          <button type="reset" onClick={() => { setName(""); setOwner(""); setForm("sole"); setBank(DEFAULT_BANK); }}>{t("browser-sites-1.of.reset")}</button>
         </div>
       </fieldset>
     </form>
@@ -101,6 +115,37 @@ function Extract({ game }: { game: GameState }) {
   );
 }
 
+// The application forms for a higher legal form; the form downloads to the desktop.
+function Forms({ game }: { game: GameState }) {
+  const act = useStore((s) => s.act);
+  const r = game.registration;
+  if (!r) return <p>{t("paperwork.of.registerFirst")}</p>;
+  const next = Object.keys(FORM_RANK).filter((f) => FORM_RANK[f] > FORM_RANK[r.form]);
+  if (!next.length) return <p>{t("paperwork.of.top")}</p>;
+  const fee = (f: string) => f === "limited" ? t("paperwork.of.feeLimited", { notary: euro(FEES.notary), register: euro(FEES.register), capital: euro(SHARE_CAPITAL) }) : euro(FEES.change);
+  return (
+    <>
+      <p className="to-closed">{t("paperwork.of.final")}</p>
+      {next.map((f) => {
+        const err = applyError(game, f), have = game.docs.some((d) => d.form?.form === f);
+        return (
+          <fieldset key={f} className="to-form">
+            <legend>{t(`doc.form.${f}`)}</legend>
+            <table>
+              <tbody>
+                <tr><td>{t("paperwork.of.sendTo")}</td><td>{FILED_WITH[f]}</td></tr>
+                <tr><td>{t("paperwork.of.fee")}</td><td>{fee(f)}</td></tr>
+                <tr><td /><td>{err === "error.changePending" ? t("paperwork.of.pending") : err ? t(err) : have ? t("paperwork.of.downloaded")
+                  : <a href="#download" onClick={(e) => { e.preventDefault(); act(downloadForm, f); }}>{t("paperwork.of.download")}</a>}</td></tr>
+              </tbody>
+            </table>
+          </fieldset>
+        );
+      })}
+    </>
+  );
+}
+
 function Body({ game, path, go }: { game: GameState; path: string; go: (url: string) => void }) {
   if (path === "/" || path === "") {
     return (
@@ -113,6 +158,7 @@ function Body({ game, path, go }: { game: GameState; path: string; go: (url: str
       </>
     );
   }
+  if (path.replace(/\/$/, "") === "/forms") return <><h1>{t("browser-sites-1.of.menuForms")}</h1><Forms game={game} /></>;
   if (path.replace(/\/$/, "") !== "/eservice") {
     return (
       <>

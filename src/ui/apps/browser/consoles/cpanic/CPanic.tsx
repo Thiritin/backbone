@@ -2,11 +2,15 @@ import { LogOut, Search } from "lucide-react";
 import { useState } from "react";
 import { Backups, erasFrom, eraAt, Facts, LoginForm, Nodes, RowsTable, Tiles, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
 import { t } from "../../../../../i18n/en";
+import { yearOf } from "../../../../../sim/00-core/time";
+import { AUTOSSL_FROM } from "../../../../../sim/60-infra/webpanel";
 import { parseCreate } from "../../../../../sim/80-business/consoles";
 import { PackagesScreen, ProvisionForm } from "../PackageForms";
 import { useReadoutPages } from "../Readouts";
 import { useSessionState } from "../../../../session";
 import { Customer } from "./Customer";
+import { AutoSsl } from "./AutoSsl";
+import { PhpProfiles } from "./EasyApache";
 import { ServiceManager } from "./ServiceManager";
 import "./cpanic.css";
 
@@ -39,7 +43,8 @@ export function CPanic(p: PanelProps) {
     ...(p.f.cluster ? [[t("browser-consoles-1.cpClusters"), [["nodes", t("browser-consoles-1.cpClusterStatus")]]] as [string, [Tab, string][]]] : []),
     [t("pkg.accountFunctions"), [["create", t("pkg.cpCreate")]]],
     [t("pkg.packages"), [["packages", t("pkg.addPackage")]]],
-    [t("browser-consoles-1.cpServerConfig"), [["software", t("browser-consoles-1.cpSoftwareUpdates")]]],
+    ...(yearOf(p.game.hour) >= AUTOSSL_FROM ? [[t("web.ssl.group"), [["autossl", t("web.ssl.menu")]]] as [string, [Tab, string][]]] : []),
+    [t("browser-consoles-1.cpServerConfig"), [["software", t("browser-consoles-1.cpSoftwareUpdates")], ["easyapache", era === "early" ? t("web.ea.menu3") : t("web.ea.menu4")]]],
     ...(pages.length ? [[t("readouts.serverStatus"), [["services", t("readouts.services")] as [Tab, string], ...pages.map((g) => [g.id, g.label] as [Tab, string])]] as [string, [Tab, string][]]] : []),
   ];
   const title = menu.flatMap(([, items]) => items).find(([id]) => id === tab)?.[1];
@@ -72,6 +77,8 @@ export function CPanic(p: PanelProps) {
           )}
           {tab === "packages" && <PackagesScreen game={p.game} c={p.c} />}
           {tab === "nodes" && <Nodes game={p.game} c={p.c} />}
+          {tab === "autossl" && <AutoSsl game={p.game} c={p.c} />}
+          {tab === "easyapache" && <PhpProfiles game={p.game} c={p.c} x3={era === "early"} />}
           {tab === "services" && <ServiceManager game={p.game} c={p.c} />}
           {pages.find((g) => g.id === tab)?.body}
           {tab === "software" && (

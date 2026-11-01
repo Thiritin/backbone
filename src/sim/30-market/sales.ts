@@ -22,15 +22,18 @@ import { addCustomer } from "../90-actions/customers";
 import { hiddenTraits } from "../45-billing/fraud";
 import { domainFor } from "../30-customers/domains";
 import { CERT_SHARE, offerCertificate } from "../30-customers/certificates";
+import { shopPriceLevel } from "./cycles";
 import { emailFor, firstOrder, isStandard, orderLead, orderQueued } from "./orders";
+import { growSlots } from "../60-infra/games";
 import { provisionService } from "../90-actions/clusters";
 import { addressesFit } from "../60-infra/addresses";
 import { withAddressNeeds } from "../10-catalog/addresses";
 import { grownSpec, setupPremium, sizeOf, specFor, specText } from "./spec";
 import { acceptQuote, resize, specParams } from "./manual";
+import { answerQuote } from "./quotes";
 import { logActivity } from "../47-staff/activity";
 import type { ActionResult } from "../90-actions/hardware";
-import { forSale, inStock, shopActive, soldOutVisit } from "../80-business/shop";
+import { forSale, inStock, shopStocked, soldOutVisit } from "../80-business/shop";
 import {
   acceptChance, acceptMid, FORUM_AWARENESS, FORUM_PROFILES, leadFlows, missingFor, needFor, referenceFor,
   requestName, share, values, type Need, type SalesMessage, type SalesRequest,
@@ -105,7 +108,7 @@ function newLeads(s: GameState, events: SimEvent[]): void {
     for (let i = 0; i < n; i++) {
       // An order the form takes weighs the setup fee too.
       const need = needFor(s.rng, f.profile, yearOf(s.hour)), form = isStandard(f.profile, need.sla) && !emailFor(s), k = `${f.profile}/${need.product}/${f.city}/${form}`;
-      if (!cache.has(k)) cache.set(k, share(s, f.profile, need.product, f.city, form ? setupPremium(s, need.product) : 0));
+      if (!cache.has(k)) cache.set(k, share(s, f.profile, need.product, f.city, form ? setupPremium(s, need.product) : 0, form ? shopPriceLevel(s, f.profile, need.product) : undefined));
       if (rand(s.rng) >= Math.min(1, cache.get(k)! * f.conversion)) continue;
       // Leads only write about lines on the website, which needs a control plane that sells them.
       if (!lineOffered(s, need.product) || !listed(s, need.product)) continue;
@@ -118,7 +121,7 @@ function newLeads(s: GameState, events: SimEvent[]): void {
       // Email orders thin out while delivery is impaired, and businesses shy away from a freemail address.
       if (!form && mailShare(s, f.profile) < 1 && rand(s.rng) >= mailShare(s, f.profile)) continue;
       // A shop sells only what is in stock; a sold-out visitor leaves no request.
-      const spec = form && shopActive(s) ? nextSpec(s, need, f.profile) : undefined;
+      const spec = form && shopStocked(s) ? nextSpec(s, need, f.profile) : undefined;
       if (spec && !inStock(s, { city: f.city, product: need.product, spec })) {
         soldOutVisit(s, need.product);
         continue;
@@ -249,6 +252,7 @@ function replyUpgrade(s: GameState, r: SalesRequest, events: SimEvent[]): void {
   if (accepts) {
     say(s, r.id, "customer", "sales.reply.accept", { name: r.contact });
     if (!resize(s, v, r.spec!, r.route ?? "auto", r.city).ok) return loseRequest(s, r, "lost", "lost.noCapacity", { city: r.city });
+    growSlots(s, v.id, r.spec!.ramGb / v.spec.ramGb);
     s.services = s.services.map((x) => (x.id === v.id ? { ...x, price: price / 730, before: undefined } : x));
     say(s, r.id, "you", "sales.you.upgradeDone", { price });
     editRequest(s, r.id, () => ({ status: "won", replyAt: null }));
@@ -349,7 +353,11 @@ export function salesTick(s: GameState): SimEvent[] {
   newLeads(s, events);
   if (s.hour % 24 === MAIL_HOUR) morningMail(s, events);
   expansions(s);
-  for (const r of s.sales.requests) if (r.status === "quoted" && r.replyAt !== null && r.replyAt <= s.hour) reply(s, r, events);
+  for (const r of s.sales.requests) {
+    if (r.status !== "quoted" || r.replyAt === null || r.replyAt > s.hour) continue;
+    reply(s, r, events);
+    if (r.kind === "order") answerQuote(s, r.id, events);
+  }
   expire(s);
   return events;
 }

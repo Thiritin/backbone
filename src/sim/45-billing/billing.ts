@@ -1,6 +1,9 @@
 import { chance, hashRng, rand, type Rng } from "../00-core/rng";
+import { bankById } from "../10-catalog/banks";
 import { dateOf, hourOf, isMonthStart, yearOf } from "../00-core/time";
 import type { Budget } from "../10-catalog/economy";
+import { hasModule } from "../10-catalog/modules";
+import { CYCLE_MONTHS } from "../10-catalog/cycles";
 import { SLAS } from "../10-catalog/products";
 import type { PaymentHabit, Profile, Service } from "../30-customers/customers";
 import { bump, cancelCustomer, createTicket, profileStats } from "../40-support/tickets";
@@ -50,6 +53,8 @@ export interface Loan { id: string; amount: number; rate: number; months: number
 const DAY = 24;
 export const YEAR_HOURS = 8760;
 const MONTH_HOURS = YEAR_HOURS / 12;
+// A renewal goes out at the month start before the term ends, whichever length that month has.
+const LONGEST_MONTH = 744;
 export const DUE_DAYS = 14;
 export const cents = (v: number) => Math.round(v * 100) / 100;
 
@@ -139,6 +144,19 @@ function transferFor(s: GameState, inv: Invoice): Transfer {
   const [reference, params]: [string, Record<string, string>] = !bare ? ["books.ref.invoice", { number: inv.number }]
     : chance(r, 0.5) ? [`books.ref.${pick(r, BARE_WORDS)}`, {}] : ["books.ref.name", { name: a?.contact ?? c!.name }];
   return { id: `trf${s.nextId++}`, hour: s.hour, from, reference, params, amount, invoiceId: null, matchedAt: null, forInvoice: inv.id };
+}
+
+// Books a transfer against an unpaid invoice. A smaller amount is a partial payment unless settle writes the difference off;
+// a larger one pays the invoice and leaves the rest as the customer's credit.
+export function bookTransfer(s: GameState, tr: Transfer, inv: Invoice, settle: boolean): void {
+  s.transfers = s.transfers.map((x) => (x === tr ? { ...x, invoiceId: inv.id, matchedAt: s.hour } : x));
+  const rest = cents(owed(inv) - tr.amount);
+  if (rest > 0 && !settle) inv.received = cents((inv.received ?? 0) + tr.amount);
+  else {
+    Object.assign(inv, { status: "paid", paidAt: s.hour, suspended: false, payAt: null });
+    renewTerms(s, inv);
+  }
+  if (rest < 0) s.customers = s.customers.map((c) => (c.id === inv.customerId ? { ...c, credit: cents(c.credit - rest) } : c));
 }
 
 // Index into STEPS of the dunning step that is due now, or null.
@@ -252,17 +270,25 @@ export function ruleSuspendsAt(s: GameState, inv: Invoice): number | null {
   return inv.extendedUntil !== null && inv.suspendedAt < inv.extendedUntil ? inv.extendedUntil : null;
 }
 
-const automated = (s: GameState, inv: Invoice, key: string) =>
-  logActivity(s, { customerId: inv.customerId, serviceId: null, by: "Automation", key: `activity.${key}`, params: { invoice: inv.number }, minutes: 0 });
+// The dunning step that runs by itself now: every rule after the Automation research, and the notices up to the final one
+// with the Automatic reminders module. Staff carry out the rest.
+export function autoStep(s: GameState, inv: Invoice): number | null {
+  const i = ruleStep(s, inv);
+  if (i === null) return null;
+  return rulesAutomated(s) || (STEPS[i].key !== "collections" && hasModule(s, "auto-reminders")) ? i : null;
+}
+
+const automated = (s: GameState, inv: Invoice, key: string, by = "Automation") =>
+  logActivity(s, { customerId: inv.customerId, serviceId: null, by, key: `activity.${key}`, params: { invoice: inv.number }, minutes: 0 });
 
 // Automated billing rules and suspended customers, once per hour for each unpaid invoice the caller owns.
 function chase(s: GameState, inv: Invoice, events: SimEvent[]): void {
   const c = s.customers.find((x) => x.id === inv.customerId);
   const auto = rulesAutomated(s);
-  const i = auto ? ruleStep(s, inv) : null;
+  const i = autoStep(s, inv);
   if (i !== null) {
     sendStep(s, inv, i);
-    automated(s, inv, STEPS[i].key);
+    automated(s, inv, STEPS[i].key, auto ? "Automation" : "Lexwear");
   }
   if (inv.status === "writtenOff") {
     if (c) events.push({ app: "Books", key: "event.collected", params: { customer: c.name, invoice: inv.number } });
@@ -284,7 +310,7 @@ function chase(s: GameState, inv: Invoice, events: SimEvent[]): void {
 }
 
 const needsChase = (s: GameState, inv: Invoice): boolean =>
-  isUnpaid(inv) && (inv.suspended || (rulesAutomated(s) && (ruleStep(s, inv) !== null || ruleSuspendsAt(s, inv) !== null)));
+  isUnpaid(inv) && (inv.suspended || autoStep(s, inv) !== null || (rulesAutomated(s) && ruleSuspendsAt(s, inv) !== null));
 
 // Bank: economy.md, Bank, insurance and tax.
 const BASE_RATE: [number, number][] = [[2005, 4], [2009, 2.5], [2015, 1], [2021, 1], [2023, 4.5], [2026, 4]];
@@ -306,16 +332,28 @@ export function baseRate(year: number): number {
 export const loanRate = (s: GameState): number => baseRate(yearOf(s.hour)) + RISK_PREMIUM[metrics(s).level.level - 1] / 100;
 export const debt = (s: GameState): number => cents(s.loans.reduce((sum, l) => sum + l.balance, 0));
 
-// The higher of the level's minimum and 12x the average monthly gross profit of the last 6 months, less current debt.
+// The higher of the level's minimum and 12x the average monthly gross profit of the last 6 months, times the bank's factor,
+// less current debt.
 export function loanAvailable(s: GameState): number {
   const since = s.hour - 6 * MONTH_HOURS;
   const profit = s.ledger.filter((e) => e.hour > since && e.category !== "loans").reduce((sum, e) => sum + e.amount, 0) / 6;
-  return Math.max(0, Math.max(MIN_LIMIT[metrics(s).level.level - 1], 12 * profit) - debt(s));
+  const factor = (s.bank && bankById(s.bank.id)?.loans.factor) ?? 1;
+  return Math.max(0, Math.max(MIN_LIMIT[metrics(s).level.level - 1], 12 * profit) * factor - debt(s));
 }
 
 export function annuity(amount: number, rate: number, months: number): number {
   const r = rate / 12;
   return cents(r === 0 ? amount / months : (amount * r) / (1 - (1 + r) ** -months));
+}
+
+// A paid renewal line extends the service's term by the months it bought.
+export function renewTerms(s: GameState, inv: Invoice): void {
+  const bought = new Map(inv.lines.filter((l) => l.key === "invoice.line.renewal" && l.serviceId).map((l) => [l.serviceId!, Number(l.params.months)]));
+  if (!bought.size) return;
+  s.services = s.services.map((v) => {
+    const months = bought.get(v.id);
+    return months && v.termEnd !== undefined ? { ...v, termEnd: v.termEnd + MONTH_HOURS * months, prepaidUntil: v.termEnd + MONTH_HOURS * months } : v;
+  });
 }
 
 export function billingTick(s: GameState): SimEvent[] {
@@ -346,6 +384,7 @@ export function billingTick(s: GameState): SimEvent[] {
       const total = cents(invoiceTotal(inv) * share);
       if (setup !== 0) book("setup", "ledger.setup", params, setup);
       book("payments", collected ? "ledger.collections" : "ledger.payment", params, cents(total - setup));
+      if (!collected) renewTerms(s, inv);
       return { ...inv, payAt: null, status: collected ? inv.status : "paid", suspended: false, paidAt: s.hour } satisfies Invoice;
     }
     const due = inv.status === "open" && s.hour >= inv.dueAt;
@@ -364,7 +403,8 @@ export function billingTick(s: GameState): SimEvent[] {
     const d = dateOf(s.hour);
     const from = hourOf(new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() - 1, 1)));
     for (const v of s.services) {
-      if (v.period !== "hour") continue;
+      // A prepaid cycle bills through its renewal invoices instead.
+      if (v.period !== "hour" || v.cycle) continue;
       const hours = Math.min(v.endedAt ?? s.hour, s.hour) - Math.max(v.startedAt, from, v.prepaidUntil ?? 0);
       if (hours <= 0) continue;
       // Hours down are not billed; a missed SLA credits its share of what is billed.
@@ -373,6 +413,13 @@ export function billingTick(s: GameState): SimEvent[] {
       if (billed > 0 && sla.credit && billed / hours < sla.uptime) {
         add(v.customerId, { serviceId: v.id, key: "invoice.line.slaCredit", params: { label: v.label }, amount: -cents(sla.credit * billed * rate) });
       }
+    }
+    // Renewal of every term that ends before the next month start, unless one is already waiting to be paid.
+    const renewing = new Set(s.invoices.filter((i) => i.status !== "paid" && i.status !== "writtenOff").flatMap((i) => i.lines.filter((l) => l.key === "invoice.line.renewal").map((l) => l.serviceId)));
+    for (const v of s.services) {
+      if (v.endedAt !== null || !v.cycle || v.termEnd === undefined || v.termEnd > s.hour + LONGEST_MONTH || renewing.has(v.id)) continue;
+      const months = CYCLE_MONTHS[v.cycle];
+      add(v.customerId, { serviceId: v.id, key: "invoice.line.renewal", params: { label: v.label, months }, amount: cents(v.price * MONTH_HOURS * months) });
     }
     if (s.services.some((v) => v.held !== undefined)) s.services = s.services.map(({ held: _, ...v }) => v);
     const missed = new Set<string>(), kept = new Set<string>();

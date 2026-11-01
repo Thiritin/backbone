@@ -2,7 +2,9 @@
 // Values and decisions are in docs/design/economy.md, "Market and leads", "Customer choice" and "Requests, SLAs and growth".
 import { rand, type Rng } from "../00-core/rng";
 import { CITY_TLD } from "../30-customers/domains";
+import type { Address } from "../30-customers/addresses";
 import { yearOf } from "../00-core/time";
+import type { Cycle } from "../10-catalog/cycles";
 import { CHOICE_TAU, CITIES, COMPETITORS, generationAt, leadCapShare, MARKET_GROWTH, type Budget, type Profile as ProfileStats } from "../10-catalog/economy";
 import { gpuDemand, GPU_SHARE } from "../10-catalog/gpu";
 import { modelById } from "../10-catalog/hardware";
@@ -35,10 +37,14 @@ export interface SalesRequest {
   // An email order: whether the customer owns the domain already, its first invoice and the route chosen for its setup
   // ("auto", a cluster id or a node's device id).
   owned?: boolean; invoiceId?: string; route?: string;
+  // The address the player entered for the account; the order email's own until then (addresses.ts, requestAddress).
+  address?: Address;
   // The package name and web hosting username the provision step uses.
   pkg?: string; username?: string;
   // Placed through the order form: the website's prices are the quote and ordering is the acceptance.
   form?: boolean;
+  // The billing cycle a form order picked; absent for monthly and email orders.
+  cycle?: Cycle;
   // Taken by a shop system rather than the hand-rolled form; a shop order that cannot be placed is cancelled, never lost.
   shop?: boolean;
   // The one-time fee the manual quote's invoice carries; the line's rate where unset.
@@ -145,18 +151,18 @@ export const rivals = (profile: Profile, product: Product) => {
   return COMPETITORS.filter((c) => c.priceFactor <= p.cap && c.sells.includes(product) && (!c.targets || c.targets.includes(p.id)));
 };
 
-// Your value U and the best competitor's for a profile, product and city; dearer adds to your price level.
-export function values(s: GameState, profile: Profile, product: Product, city: string, dearer = 0): { you: number; others: number[] } {
+// Your value U and the best competitor's for a profile, product and city; dearer adds to your price level, which level replaces.
+export function values(s: GameState, profile: Profile, product: Product, city: string, dearer = 0, level?: number): { you: number; others: number[] } {
   const p = profileStats(profile), sc = playerScores(s, profile, city);
   return {
-    you: value(p, sc.P, sc.R, sc.C, trustBonus(s), priceIndex(s) + dearer),
+    you: value(p, sc.P, sc.R, sc.C, trustBonus(s), (level ?? priceIndex(s)) + dearer),
     others: rivals(profile, product).map((c) => value(p, c.P, c.R, c.C, 0, c.priceFactor)),
   };
 }
 
 // The softmax share of leads that pick you over the competitors that sell the product.
-export function share(s: GameState, profile: Profile, product: Product, city: string, dearer = 0): number {
-  const { you, others } = values(s, profile, product, city, dearer);
+export function share(s: GameState, profile: Profile, product: Product, city: string, dearer = 0, level?: number): number {
+  const { you, others } = values(s, profile, product, city, dearer, level);
   const e = Math.exp(you / CHOICE_TAU);
   return e / (e + others.reduce((n, u) => n + Math.exp(u / CHOICE_TAU), 0));
 }

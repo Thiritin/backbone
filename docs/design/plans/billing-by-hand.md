@@ -91,15 +91,17 @@ Money leaves by hand too. Supplier invoices are payables the player pays on the 
 
 Banks are a catalog in `src/sim/10-catalog/banks.ts`, each a row of numbers and a site skin:
 
-| Bank (pun on) | From | Account a month | Transfer | TAN | Card a year | Overdraft | Loans | Character |
+| Bank (pun on) | From | Account a month (sole / partnership / limited) | Transfer | TAN | Card a year | Overdraft | Loans | Character |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Sparklasse (Sparkasse) | 2005 | 8 | next day | iTAN list, mTAN 2009, pushTAN 2014 | 30, easy | 11% | big, slow | local, orange, branch look |
-| Volksbunk (Volksbank) | 2005 | 6 | next day | iTAN, card reader 2007 | 25 | 10% | fair, likes small firms | blue and orange frames |
-| Deutsche Bunk (Deutsche Bank) | 2005 | 12 | same day | iTAN, photoTAN 2012 | 60, higher limit | 13% | large sums only | corporate |
-| Postbunk (Postbank) | 2005 | 4 | next day | iTAN, mTAN 2008 | 20 | 12% | small, quick | yellow, cheap |
-| netbunk (direct banks) | 2005 | 0 | next day | iTAN, mTAN | 0 first year | 9% | none | web only, HBCI from day one |
-| Fidorr (Fidor) | 2009 | 0 | instant | mTAN | 0 | 14% | small | startup crowd, API 2013 |
-| Quonto (Qonto, Holvi) | 2016 | 9 | instant | app | included, virtual cards | none | none | fintech, API, no HBCI |
+| Sparklasse (Sparkasse) | 2005 | 8 / 12 / 16 + 0.30 a booking | next day | iTAN list, mTAN 2009, pushTAN 2014 | 30, easy | 11% | big, slow | local, orange, branch look |
+| Volksbunk (Volksbank) | 2005 | 6 / 9 / 12 + 0.25 a booking | next day | iTAN, card reader 2007 | 25 | 10% | fair, likes small firms | blue and orange frames |
+| Deutsche Bunk (Deutsche Bank) | 2005 | 12 / 18 / 24 + 0.15 a booking | same day | iTAN, photoTAN 2012 | 60, higher limit | 13% | large sums only | corporate |
+| Postbunk (Postbank) | 2005 | 4 / 6 / 8 + 0.40 a booking | next day | iTAN, mTAN 2008 | 20 | 12% | small, quick | yellow, cheap |
+| netbunk (direct banks) | 2005 | 0 / 5 / none | next day | iTAN, mTAN | 0 first year | 9% | none | web only, HBCI from day one |
+| Fidorr (Fidor) | 2009 | 0 / 6 / 12 | instant | mTAN | 0 | 14% | small | startup crowd, API 2013 |
+| Quonto (Qonto, Holvi) | 2016 | 9 / 15 / 25 | instant | app | included, virtual cards | none | none | fintech, API, no HBCI |
+
+A limited company (GmbH) must keep a business account, and business accounts cost more than a sole trader's, so the account fee a month depends on the legal form. Branch banks charge a limited company about twice the sole trader's fee and add a fee for every booking on a partnership's or limited company's account; the fintechs sell flat plans, the limited one at two to three times the sole trader's. A partnership pays between the two. Each month start books the fee for the month and, at a branch bank, one line for the bookings of the month before: every ledger line of that month except the bank's own fees. netbunk, like the direct banks that long opened no GmbH accounts, opens none for a limited company: the registration refuses that pair, and the trade office form greys netbunk out while the limited form is chosen. The legal form is fixed once registered, so an open account never needs to move.
 
 Milestones:
 
@@ -112,13 +114,31 @@ Milestones:
 7. **Switching banks**, last and optional: a second account, customers keep paying to the old one until told, both statements in Books, the old account closes when empty for a month.
 8. `tests/bank.test.ts`: fee charged, TAN flow accepts the right TAN and refuses a wrong one, a payable paid on time and one past due with its consequence, card approval and prepay shipping delay, mandate stops the manual payable, HBCI pays all due, old save loads with Sparklasse and keeps paying.
 
+## 9c. Lane `books-vendors`
+
+The bookkeeping program is a choice, like the bank and the shop. The Pear Store gets a Bookkeeping category; installing one of its programs installs the Books app in that vendor's skin and with that vendor's module list and prices. Books leaves the starter set. Getting started gains the step "Install a bookkeeping program" before the first customer step. Old saves keep Lexwear.
+
+| Vendor (pun on) | From | Licence | Modules | Character |
+| --- | --- | --- | --- | --- |
+| Lexwear Office (Lexware) | 2005 | 249 once, paid yearly updates 99 | all five at the plan's prices | market leader, grey Windows look |
+| WIZO Mein Büro (WISO Mein Büro) | 2005 | 149 once | Automatic reminders included, Monthly run 79, Match by reference 129, Helpdesk link 149, HBCI 49 | cheaper, friendlier, blue |
+| Saga Office Line (Sage) | 2005 | 599 once | all included except Helpdesk link 199 | business tier, higher support, slow start |
+| orgaMIN (orgaMAX) | 2005 | 199 once | Monthly run included, others 99 each | small-firm favourite, orange |
+| Collmix (Collmex) | 2005 | 0 once, 15 a month | HBCI and Match by reference included, no Helpdesk link ever | web based, runs in the Browser look inside the app frame |
+| sevDeck (sevDesk) | 2013 | 0 once, 19 a month | everything included, bank sync built in | fintech era, no licence keys, instant |
+| lexoffize (lexoffice) | 2014 | 0 once, 12 a month | everything included | Lexwear's cloud sibling |
+
+Switching programs keeps every customer, invoice, quote and transfer, since the data is the state, and drops the old program's modules. The new program's monthly fee is a payable like the others. Each vendor has a site in the Browser selling its modules on the Lexwear pattern.
+
+Milestones: catalog in `src/sim/10-catalog/bookkeeping.ts`; `s.books.vendor` with Lexwear as the default for old saves; Pear Store category and install; Books skin per vendor (colours, name in the title, module list); module prices read from the vendor; vendor sites; Getting started step; `tests/books-vendors.test.ts`.
+
 ## 10. Shared files
 
 | File | Lanes | Rule |
 | --- | --- | --- |
 | `src/sim/50-state.ts` and `newGame` | books (`transfers`), order-steps (`quotes`), vendor-sites (`modules`), walk (`unlocks`) | One field per lane on its own line, default in `newGame`, filled in `deserialize` |
 | `src/sim/88-tick/tick.ts` | books, vendor-sites, walk, bank | One call per lane on its own line |
-| `src/sim/10-catalog/store.ts` (`STARTER_APPS`) | books, walk | books swaps Billing for Books; walk trims the list afterwards |
+| `src/sim/10-catalog/store.ts` (`STARTER_APPS`) | books, walk, books-vendors | books swaps Billing for Books; walk trims the list; books-vendors removes Books from it |
 | `src/sim/90-actions/orders.ts` | order-steps, registrar-form | order-steps lands first |
 | `src/sim/80-business/browser.ts` | bank, vendor-sites, registrar-form | bank adds the shared site frame first, the others reuse it |
 | `src/sim/80-business/office.ts` | walk, bank | walk edits the dock list, bank adds the bank choice |

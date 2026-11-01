@@ -20,11 +20,12 @@ describe("support at scale", () => {
         "kinds": {
           "billing": 3,
           "howTo": 43,
+          "mail": 1,
           "notice": 1,
           "order": 4,
           "outage": 19,
         },
-        "last": "tkt1014",
+        "last": "tkt1015",
       }
     `);
 

@@ -8,7 +8,7 @@ import { tick } from "../src/sim/88-tick/tick";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { quoteOrder, setAutoOrders } from "../src/sim/90-actions/orders";
-import { buyModule } from "../src/sim/90-actions/shop";
+import { buyModule, chooseShop } from "../src/sim/90-actions/shop";
 import { moduleFor } from "../src/sim/80-business/shop";
 import { hire } from "../src/sim/90-actions/staff";
 import { readyGame } from "./fixtures";
@@ -104,7 +104,7 @@ describe("orders by email", () => {
     expect(quoteOrder(s, tk().id, r.quote!).ok).toBe(true);
     for (let i = 0; i < 24 * 4 && !req().invoiceId; i++) run(s, 1);
     expect(tk().status).toBe("waiting");
-    s.invoices = s.invoices.map((i) => (i.id === req().invoiceId ? { ...i, payStep: 0, payAt: s.hour } : i));
+    s.invoices = s.invoices.map((i) => (i.id === req().invoiceId ? { ...i, payStep: 0, payAt: s.hour, bank: undefined } : i));
     for (let i = 0; i < 24 * 4 && req().status !== "won"; i++) run(s, 1);
     expect(req().status).toBe("won");
     expect(tk().replies).toEqual([]);
@@ -115,7 +115,7 @@ describe("orders by email", () => {
     const s = readyGame(1);
     s.cash = 1e6;
     expect(setUpChannel(s, "website").ok).toBe(true);
-    expect(setUpChannel(s, "orderForm").ok).toBe(true);
+    expect(chooseShop(s, "handRolled").ok).toBe(true);
     s.unlocks = [...s.unlocks, "products", "provisioning"];
     expect(setAutoOrders(s, true).ok).toBe(true);
     // Without a custom script for the panel the form order waits in Support.

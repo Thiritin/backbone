@@ -28,10 +28,14 @@ import { CompanySite } from "./sites/CompanySite";
 import { SponsorBoard } from "./sites/SponsorBoard";
 import { IndexSite } from "./sites/index/IndexSite";
 import { OfficeSite } from "./sites/office/OfficeSite";
+import { LexwearSite } from "./sites/lexwear/LexwearSite";
 import { WikiSite } from "./sites/wiki/WikiSite";
-import { OFFICE_TITLE } from "../../../sim/80-business/office";
+import { LEXWEAR } from "../../../sim/80-business/lexwear";
 import { SoftwarePage } from "./sites/software/registry";
 import { RegistrarSite } from "./sites/registrars";
+import { SupplierSite } from "./sites/bank/SupplierSite";
+import { BankSite } from "./sites/bank/BankSite";
+import { bankById } from "../../../sim/10-catalog/banks";
 import { CannotReach, CustomerSite, HostPage, NotFound, PhishingPage, VideoPage } from "./sites/Pages";
 import { senderById } from "../../../sim/40-support/notices";
 import { VendorSite } from "./sites/vendors/registry";
@@ -51,6 +55,8 @@ function titleOf(game: GameState, r: Resolved): string {
     case "customer": return customerSite(game, p.serviceId)?.title ?? r.host;
     case "vendor": return MANUFACTURERS.find((m) => m.id === p.maker)?.name ?? r.host;
     case "registrar": return registrarById(p.id)?.name ?? r.host;
+    case "bank": return t("misc1.browser.onlineBanking", { name: bankById(p.id)!.name });
+    case "supplier": return p.name;
     case "host": return r.host;
     case "console": {
       const c = game.clusters.find((x) => x.id === p.clusterId), family = c && familyOf(c);
@@ -72,8 +78,9 @@ function titleOf(game: GameState, r: Resolved): string {
     case "video": return VIDEO_TITLE;
     case "phishing": return t("misc1.browser.onlineBanking", { name: senderById(p.sender).name });
     case "sponsorboard": return BOARD_TITLE;
-    case "index": return "Yahoy! Directory";
-    case "office": return OFFICE_TITLE;
+    case "index": return t("browser-sites-1.ix.title");
+    case "office": return t("browser-sites-1.of.title");
+    case "lexwear": return LEXWEAR;
     case "wiki": return WIKI_TITLE;
     case "software": return softwareById(p.id).name;
     case "os": return serverOsById(p.id).name;
@@ -96,11 +103,14 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "company") body = <CompanySite game={game} path={r.path} go={go} />;
   else if (p.kind === "customer") body = <CustomerSite game={game} serviceId={p.serviceId} />;
   else if (p.kind === "vendor") body = <VendorSite game={game} maker={p.maker} path={r.path} go={go} />;
-  else if (p.kind === "registrar") body = <RegistrarSite game={game} id={p.id} />;
+  else if (p.kind === "registrar") body = <RegistrarSite game={game} id={p.id} path={r.path} />;
+  else if (p.kind === "supplier") body = <SupplierSite game={game} name={p.name} />;
+  else if (p.kind === "bank") body = <BankSite game={game} id={p.id} path={r.path} go={go} />;
   else if (p.kind === "video") body = <VideoPage />;
   else if (p.kind === "phishing") body = <PhishingPage sender={p.sender} />;
   else if (p.kind === "sponsorboard") body = <SponsorBoard game={game} />;
   else if (p.kind === "office") body = <OfficeSite game={game} path={r.path} go={go} />;
+  else if (p.kind === "lexwear") body = <LexwearSite game={game} path={r.path} go={go} />;
   else if (p.kind === "wiki") body = <WikiSite game={game} path={r.path} go={go} />;
   else if (p.kind === "index") body = <IndexSite game={game} path={r.path} go={go} />;
   else if (p.kind === "software" || p.kind === "os") body = <SoftwarePage game={game} kind={p.kind} id={p.id} path={r.path} go={go} />;
@@ -111,7 +121,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "switch") body = <SwitchPage game={game} deviceId={p.deviceId} host={r.host} />;
   else if (p.kind === "host") body = <HostPage host={r.host} />;
   else body = <NotFound host={r.host} />;
-  const paper = !waiting && r.load !== "down" && ["company", "customer", "vendor", "sponsorboard", "registrar", "index", "office", "software", "os"].includes(p.kind);
+  const paper = !waiting && r.load !== "down" && ["company", "customer", "vendor", "sponsorboard", "registrar", "bank", "supplier", "index", "office", "software", "os"].includes(p.kind);
   return (
     <>
       {waiting && <div className="web-load" aria-hidden />}

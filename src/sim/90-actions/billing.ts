@@ -1,6 +1,8 @@
+import { sendOrderInvoice } from "../30-market/manual";
 import {
-  annuity, AUTO_COLLECT_DAYS, issue, owed, AUTO_SUSPEND_DAYS, cents, dueStep, isUnpaid, LOAN_AMOUNTS, LOAN_YEARS, loanAvailable, loanRate, sendStep, STEPS, suspend, type BillingRules, type Invoice,
+  annuity, AUTO_COLLECT_DAYS, bookTransfer, issue, AUTO_SUSPEND_DAYS, cents, dueStep, isUnpaid, LOAN_AMOUNTS, LOAN_YEARS, loanAvailable, loanRate, sendStep, STEPS, suspend, type BillingRules, type Invoice,
 } from "../45-billing/billing";
+import { bankById } from "../10-catalog/banks";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
 import { ACTION_MINUTES, logActivity } from "../47-staff/activity";
@@ -14,23 +16,19 @@ const log = (s: GameState, inv: Invoice, key: keyof typeof ACTION_MINUTES | "wri
 export function sendInvoice(s: GameState, invoiceId: string): ActionResult {
   const inv = s.invoices.find((x) => x.id === invoiceId && x.status === "draft");
   if (!inv) return fail("error.invoiceSent");
-  issue(s, inv);
+  // An order's first invoice is its confirmation.
+  if (!sendOrderInvoice(s, inv)) issue(s, inv);
   log(s, inv, "sendInvoice");
   return { ok: true };
 }
 
-// Books a bank transfer against an invoice. A smaller amount is a partial payment unless settle writes the difference off;
-// a larger one pays the invoice and leaves the rest as the customer's credit.
+// Books a bank transfer against an invoice; settle writes off what a smaller amount leaves open.
 export function matchTransfer(s: GameState, transferId: string, invoiceId: string, settle = false): ActionResult {
   const tr = s.transfers.find((x) => x.id === transferId && x.invoiceId === null);
   if (!tr) return fail("error.transferMatched");
   const inv = unpaidInvoice(s, invoiceId);
   if (!inv) return fail("error.invoiceSettled");
-  s.transfers = s.transfers.map((x) => (x === tr ? { ...x, invoiceId, matchedAt: s.hour } : x));
-  const rest = cents(owed(inv) - tr.amount);
-  if (rest > 0 && !settle) inv.received = cents((inv.received ?? 0) + tr.amount);
-  else Object.assign(inv, { status: "paid", paidAt: s.hour, suspended: false, payAt: null });
-  if (rest < 0) s.customers = s.customers.map((c) => (c.id === inv.customerId ? { ...c, credit: cents(c.credit - rest) } : c));
+  bookTransfer(s, tr, inv, settle);
   log(s, inv, "matchTransfer");
   return { ok: true };
 }
@@ -78,6 +76,7 @@ export function takeLoan(s: GameState, amount: number, years: number): ActionRes
   const available = loanAvailable(s);
   // A preset amount, or the whole remaining limit in euros.
   if (!(LOAN_AMOUNTS.includes(amount) || (amount > 0 && amount === Math.floor(available))) || amount > available) return fail("error.loanLimit");
+  if (amount < (s.bank ? bankById(s.bank.id)?.loans.min ?? 0 : 0)) return fail("error.loanMin");
   const rate = loanRate(s), months = years * 12;
   const id = `loan${s.nextId++}`;
   s.loans.push({ id, amount, rate, months, left: months, payment: annuity(amount, rate, months), balance: amount, takenAt: s.hour, missed: 0 });

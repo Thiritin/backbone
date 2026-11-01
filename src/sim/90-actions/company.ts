@@ -2,6 +2,9 @@ import type { Company, GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
 import { STARTER_APPS } from "../10-catalog/store";
 import { LEGAL_FORMS, officeOpen, registerNumber } from "../80-business/office";
+import { banksOpen, DEFAULT_BANK, monthlyFee, type BankId } from "../10-catalog/banks";
+import { openAccount } from "../46-finance/bank";
+import { yearOf } from "../00-core/time";
 
 // Logo marks by id; the UI draws each one as an icon on a tile in the chosen colour.
 export const COMPANY_LOGOS = ["server", "cloud", "zap", "globe", "rocket", "database", "cpu", "shield", "leaf", "mountain", "waves", "flame", "wolf", "fox", "cat", "toaster"];
@@ -25,16 +28,21 @@ export function setCompany(s: GameState, patch: Partial<Company>): ActionResult 
   return { ok: true };
 }
 
-// The trade office registers the company under its name during office hours and Pear One installs the starter apps.
-export function registerCompany(s: GameState, name: string, owner: string, form: string): ActionResult {
+// The trade office registers the company under its name during office hours, the chosen bank opens its account and Pear One
+// installs the starter apps.
+export function registerCompany(s: GameState, name: string, owner: string, form: string, bank: BankId = DEFAULT_BANK): ActionResult {
   if (s.registration) return { ok: false, error: "error.registered" };
   if (!officeOpen(s.hour)) return { ok: false, error: "error.officeClosed" };
   if (!owner.trim()) return { ok: false, error: "error.ownerName" };
   if (!(form in LEGAL_FORMS)) return { ok: false, error: "error.legalForm" };
+  const chosen = banksOpen(yearOf(s.hour)).find((b) => b.id === bank);
+  if (!chosen) return { ok: false, error: "error.unknownBank" };
+  if (monthlyFee(chosen, form) === null) return { ok: false, error: "error.bankForm" };
   const named = setCompany(s, { name });
   if (!named.ok) return named;
   s.checklist = s.checklist.filter((id) => id !== "company");
   s.registration = { hour: s.hour, owner: owner.trim(), form, number: registerNumber(s.seed) };
   s.installed = [...new Set([...s.installed, ...STARTER_APPS])];
+  s.bank = openAccount(s, bank);
   return { ok: true };
 }

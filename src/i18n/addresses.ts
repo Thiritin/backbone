@@ -8,6 +8,7 @@ export const ADDRESSES_EN: Record<string, (p: Params) => string> = {
   "ledger.lirSignup": () => "RIPE NCC sign-up fee",
   "ledger.lirYearly": () => "RIPE NCC yearly membership",
   "ledger.blockBought": (p) => `IP address block of ${p.size} addresses`,
+  "ledger.providerRouting": (p) => `Provider routing for ${p.prefix}`,
   "error.needsStaticLine": () => "Needs a business line with static IP addresses.",
   "sales.need.ipv4": (p) => `Needs a free IPv4 address in ${p.city}`,
   "sales.need.ipv6": (p) => `Needs IPv6 in ${p.city}`,

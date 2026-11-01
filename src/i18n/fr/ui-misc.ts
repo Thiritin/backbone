@@ -16,6 +16,7 @@ export default {
   "misc.allMonths": () => "Tous les mois",
   "misc.amount": () => "Montant",
   "misc.announcedFrom": () => "Annoncé depuis",
+  "misc.byProvider": () => "Fournisseur",
   "misc.anyMood": () => "Toute humeur",
   "misc.applicantsOnTheWay": () => "Candidats en route",
   "misc.aroundTheClock": () => "24 h/24",
