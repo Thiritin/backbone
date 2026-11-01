@@ -12,7 +12,7 @@ export default {
   "books.tab.invoices": () => "Fatture",
   "books.tab.bank": () => "Banca",
   "books.tab.reminders": () => "Solleciti",
-  "books.tab.dunning": () => "Impostazioni solleciti",
+  "books.settings": () => "Impostazioni",
   "books.tab.payables": () => "Fatture passive",
   "books.monthlyRun": () => "Fatturazione mensile",
   "books.matchByReference": () => "Abbina per causale",

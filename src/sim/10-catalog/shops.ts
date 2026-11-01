@@ -36,7 +36,7 @@ export interface ShopVariant {
 }
 
 export const SHOPS: ShopVariant[] = [
-  { id: "handRolled", name: "Hand-rolled order form", maker: "", from: 2005, setup: 900, monthly: 0, yearly: 0, includes: [], extra: 400, autoStock: false, cycles: ["monthly", "annual"] },
+  { id: "handRolled", name: "Self-scripted order form", maker: "", from: 2005, setup: 900, monthly: 0, yearly: 0, includes: [], extra: 400, autoStock: false, cycles: ["monthly", "annual"] },
   { id: "modemBill", name: "ModemBill", maker: "ModemBill Inc.", from: 2005, until: 2010, setup: 300, monthly: 0, yearly: 0, includes: [["cpanic", 2005], ["pleskit", 2005], ["registrar", 2005]], extra: null, autoStock: false, cycles: ["monthly", "quarterly", "annual"] },
   { id: "clientExit", name: "ClientExit", maker: "Newedge", from: 2005, setup: 250, monthly: 0, yearly: 60, includes: [["cpanic", 2005], ["directadmen", 2005], ["registrar", 2005]], extra: 150, autoStock: true, cycles: ["monthly", "quarterly", "annual", "biennial"] },
   { id: "whmCache", name: "WHMCache", maker: "WHMCache Ltd", from: 2005, setup: 0, monthly: 15, yearly: 0, own: { price: 450, yearly: 90 }, includes: [["panel", 2005], ["registrar", 2005], ["ssl", 2005], ["game", 2008]], extra: 200, autoStock: true, cycles: ["monthly", "quarterly", "semiannual", "annual", "biennial", "triennial"] },
