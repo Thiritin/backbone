@@ -430,4 +430,5 @@ export default {
   "browser-sites-2.wikiNoArticle": () => "Wikipedio no tiene un artículo con este nombre exacto.",
   "browser-sites-2.wikiRandom": () => "Artículo aleatorio",
   "browser-sites-2.wikiFrom": () => "De Wikipedio, la enciclopedia libre",
+  "browser-sites-2.keyFlag": () => "Añade --key seguido de tu clave de licencia al comando para instalar con licencia.",
 } satisfies Dict;

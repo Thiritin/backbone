@@ -1,4 +1,5 @@
 import { t } from "../../../../../i18n/en";
+import { isLicensed } from "../../../../../sim/60-infra/licence";
 import { useState, type ReactNode } from "react";
 import { euroPrice } from "../../../../../sim/00-core/money";
 import { SOFTWARE, type Software } from "../../../../../sim/10-catalog/platforms";
@@ -120,6 +121,7 @@ export function Commands({ p, year, className }: { p: Product; year: number; cla
         <pre>{text}</pre>
         <button type="button" onClick={copy}>{copied ? t("browser-sites-2.copied") : t("browser-sites-2.copy")}</button>
       </div>
+      {isLicensed(p.sw!.id) && <p>{t("browser-sites-2.keyFlag")}</p>}
     </div>
   );
 }

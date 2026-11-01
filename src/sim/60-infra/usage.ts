@@ -1,4 +1,5 @@
 import { chance, hashRng, rand } from "../00-core/rng";
+import { licenceExpired } from "./licence";
 import { dateOf } from "../00-core/time";
 import { isOobPort, jacksOf, modelById } from "../10-catalog/hardware";
 import type { Resources } from "../10-catalog/products";
@@ -50,7 +51,7 @@ export function backupFlows(s: GameState, hour: number = s.hour): BackupFlow[] {
   const flows = new Map<string, BackupFlow>();
   for (const c of s.clusters) {
     const t = s.clusters.find((x) => x.id === c.backup.targetId), to = t?.controlPlane;
-    if (c.backup.every === "off" || !t || !to || !controlPlaneUp(s, t) || (c.backup.every === "weekly" && d.getUTCDay() !== 0)) continue;
+    if (c.backup.every === "off" || !t || !to || !controlPlaneUp(s, t) || licenceExpired(s, t) || (c.backup.every === "weekly" && d.getUTCDay() !== 0)) continue;
     for (const w of s.workloads) {
       if (w.clusterId !== c.id || !w.deviceId || w.deviceId === to || w.stopped || lostDisk(s, w)) continue;
       const f = flows.get(`${w.deviceId}>${to}`) ?? { from: w.deviceId, to, mbps: 0 };

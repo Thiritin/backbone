@@ -1,6 +1,6 @@
 import { tiersOf } from "../10-catalog/licence-tiers";
 import type { GameState } from "../50-state";
-import { accountsOn, assignKey, extendKey, issueKey, licenceExpired, panelKey, panelMachine, updateKey } from "../60-infra/licence";
+import { accountsOn, assignKey, extendKey, installedVersion, issueKey, keyFor, licenceExpired, nameOf, panelKey, panelMachine, swapKey, updateKey } from "../60-infra/licence";
 import { payLicence, tierFee } from "../85-products/products";
 import type { ActionResult } from "./hardware";
 
@@ -19,4 +19,18 @@ export function setLicenceTier(s: GameState, clusterId: string, tierId: string):
   else assignKey(s, issueKey(s, c.panel!, tier.id).id, machine);
   payLicence(s, c, due);
   return { ok: true, id: clusterId };
+}
+
+// A build short of a key, naming the product.
+export const keysShort = (product: string): ActionResult => ({ ok: false, error: "error.licenceKeysShort", params: { name: nameOf(product) } });
+
+// Enters a key into an installed product: it licenses a trial, an ended trial or a lapse, and replaces the key it held,
+// which goes back unassigned.
+export function activateLicence(s: GameState, machineId: string, product: string, key: string): ActionResult {
+  const version = installedVersion(s, machineId, product);
+  if (version === null) return { ok: false, error: "error.noSoftware" };
+  const k = keyFor(s, machineId, product, key, version);
+  if (!k) return { ok: false, error: "error.licenceKey" };
+  swapKey(s, machineId, k);
+  return { ok: true, id: k.id };
 }

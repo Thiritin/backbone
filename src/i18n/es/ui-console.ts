@@ -213,4 +213,6 @@ export default {
   "console.uninstallChange": () => "Desinstalar o cambiar un programa",
   "console.addNewPrograms": () => "Agregar nuevos programas",
   "console.installFromNetwork": () => "Instalar un programa desde la red",
+  "console.winProductKey": () => "Clave de producto",
+  "console.winNoKey": () => "No tengo clave de producto",
 } satisfies Dict;

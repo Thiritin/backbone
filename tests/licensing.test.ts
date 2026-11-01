@@ -8,16 +8,19 @@ import { clusterOf } from "../src/sim/60-infra/cluster";
 import { installedCores } from "../src/sim/60-infra/status";
 import { licenseCost } from "../src/sim/85-products/products";
 import { tick } from "../src/sim/88-tick/tick";
-import { bootFromUsb, installOs } from "../src/sim/90-actions/console";
+import { bootFromUsb, installFromSite, installOs } from "../src/sim/90-actions/console";
+import { assignedKey, issueKey, licenceStatus, trialOf, unassignedKeys } from "../src/sim/60-infra/licence";
+import { activateLicence } from "../src/sim/90-actions/licence";
+import { createPanelVm, createVm, PANEL_VM_SIZE } from "../src/sim/90-actions/clusters";
 import type { ServerOsId } from "../src/sim/10-catalog/server-os";
-import { createSoftwareVm, installSoftware } from "../src/sim/90-actions/software";
+import { createSoftwareVm, installSoftware, uninstallSoftware } from "../src/sim/90-actions/software";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { hypervisor, readyGame, skipTo, withNetwork, withServer, withStick, newGame } from "./fixtures";
 import { installScript } from "../src/sim/60-infra/apt";
 import { t } from "../src/i18n/en";
 
 const err = (r: object) => (r as { error?: string }).error;
-const ok = (r: { ok: boolean }) => { expect(err(r)).toBeUndefined(); expect(r.ok).toBe(true); };
+const ok = (r: { ok: boolean; id?: string }) => { expect(err(r)).toBeUndefined(); expect(r.ok).toBe(true); return r.id; };
 const dev = (s: GameState, id: string) => s.devices.find((d) => d.id === id)!;
 const once = (s: GameState) => s.ledger.filter((l) => l.key === "ledger.licenseOnce");
 const monthEnd = (s: GameState) => {
@@ -34,7 +37,6 @@ const atInstaller = (s: GameState, id = "dev90", slot = 10): string => {
 };
 // The stick rewritten with the OS the installer installs.
 const install = (s: GameState, id: string, os: ServerOsId) => { withStick(s, id, os); return installOs(s, id, os); };
-const sockets = (s: GameState, id: string) => dev(s, id).components.filter((p) => p.kind === "cpu").length;
 
 describe("license eras", () => {
   it("pick the era of the game year", () => {
@@ -49,45 +51,62 @@ describe("license eras", () => {
 });
 
 describe("Windoors Server", () => {
-  it("is bought once per machine in 2005, kept on a reinstall and bills nothing monthly", () => {
-    const s = readyGame(7), id = atInstaller(s);
-    s.cash = 1000;
+  it("installs on a 180 day trial at no charge, once per machine, and ends", () => {
+    const s = readyGame(7), id = atInstaller(s), cash = s.cash;
     ok(install(s, id, "windoors"));
-    expect(s.cash).toBe(400);
-    expect(once(s)).toMatchObject([{ category: "licenses", params: { name: "Windoors Server 2003", machine: "st-dev90" }, amount: -600 }]);
-    expect(s.licenses).toMatchObject([{ product: "windoors", kind: "once", machineId: id, renewsAt: null }]);
+    expect([s.cash, once(s), s.licenses]).toEqual([cash, [], []]);
+    expect(licenceStatus(s, id, "windoors")).toBe("trial");
     ok(bootFromUsb(s, id));
     ok(install(s, id, "windoors"));
-    expect(s.cash).toBe(400);
-    monthEnd(s);
-    expect(s.ledger.filter((l) => l.key === "ledger.windoors")).toEqual([]);
+    expect(s.trials).toHaveLength(1);
+    s.hour += 181 * 24;
+    expect(licenceStatus(s, id, "windoors")).toBe("ended");
   });
 
-  it("is bought again for a new VM from a template", () => {
-    const s = withServer(newGame(1));
-    s.cash = 10_000;
-    const cloud = hypervisor(s, ["dev3"]);
-    const cash = s.cash;
-    ok(createSoftwareVm(s, cloud, "tcadmen"));
-    expect(s.cash).toBe(cash - 600);
-    expect(once(s)).toHaveLength(1);
+  it("takes a typed key and hands it back on a reinstall", () => {
+    const s = readyGame(7), id = atInstaller(s), k = issueKey(s, "windoors", null);
+    withStick(s, id, "windoors");
+    ok(installOs(s, id, "windoors", undefined, undefined, k.key.toLowerCase()));
+    expect([assignedKey(s, id, "windoors")?.id, licenceStatus(s, id, "windoors")]).toEqual([k.id, "active"]);
+    expect(trialOf(s, id, "windoors")).toBeUndefined();
+    ok(bootFromUsb(s, id));
+    ok(install(s, id, "windoors"));
+    expect(unassignedKeys(s, "windoors").map((x) => x.id)).toEqual([k.id]);
+    expect(licenceStatus(s, id, "windoors")).toBe("trial");
   });
 
-  it("is refused without the cash, and leaves the machine as it was", () => {
-    const s = readyGame(7), id = atInstaller(s);
-    s.cash = 100;
-    expect(err(install(s, id, "windoors"))).toBe("error.noCash");
+  it("refuses a key it does not know, and leaves the machine as it was", () => {
+    const s = readyGame(7), id = atInstaller(s), vmwhere = issueKey(s, "vmwhere", null);
+    withStick(s, id, "windoors");
+    expect(err(installOs(s, id, "windoors", undefined, undefined, vmwhere.key))).toBe("error.licenceKey");
+    expect(err(installOs(s, id, "windoors", undefined, undefined, "AAAA-AAAA-AAAA-AAAA"))).toBe("error.licenceKey");
     expect(dev(s, id).os).toBeNull();
-    expect(s.cash).toBe(100);
-    ok(install(s, id, "lunix"));
+  });
+
+  it("gives a new VM from a template a key from My account in order, or its trial", () => {
+    const s = withServer(newGame(1)), cloud = hypervisor(s, ["dev3"]), cash = s.cash;
+    const first = ok(createSoftwareVm(s, cloud, "tcadmen")) as string;
+    const vm1 = s.clusters.find((c) => c.id === first)!.vm!;
+    expect([s.cash, licenceStatus(s, vm1, "windoors"), licenceStatus(s, vm1, "tcadmen")]).toEqual([cash, "trial", "trial"]);
+    const [a] = [issueKey(s, "windoors", null), issueKey(s, "windoors", null)];
+    const second = ok(createSoftwareVm(s, cloud, "tcadmen")), vm2 = s.clusters.find((c) => c.id === second)!.vm!;
+    expect(assignedKey(s, vm2, "windoors")?.id).toBe(a.id);
+  });
+
+  it("refuses a VM build short of a key, naming the product", () => {
+    const s = withServer(newGame(1)), cloud = hypervisor(s, ["dev3"]), vms = s.workloads.length;
+    expect(createPanelVm(s, cloud, "directadmen")).toEqual({ ok: false, error: "error.licenceKeysShort", params: { name: "DirectAdmen" } });
+    expect(t("error.licenceKeysShort", { name: "DirectAdmen" })).toContain("DirectAdmen");
+    expect(s.workloads).toHaveLength(vms);
   });
 
   it("from 2016 costs nothing at install and 4 euros per core a month after", () => {
     const s = readyGame(7);
     skipTo(s, 2016);
-    const id = atInstaller(s);
+    const id = atInstaller(s), k = issueKey(s, "windoors", null);
     const cash = s.cash;
-    ok(install(s, id, "windoors"));
+    withStick(s, id, "windoors");
+    ok(installOs(s, id, "windoors", undefined, undefined, k.key));
     expect(s.cash).toBe(cash);
     expect(s.licenses).toMatchObject([{ product: "windoors", kind: "core", machineId: id }]);
     s.hour = s.licenses[0].renewsAt! - 1;
@@ -97,27 +116,46 @@ describe("Windoors Server", () => {
 });
 
 describe("VMwhere", () => {
-  it("is bought once per CPU socket in 2010", () => {
+  it("installs on a 60 day trial at no charge in 2010", () => {
     const s = readyGame(7);
     skipTo(s, 2010);
     const id = atInstaller(s);
     ok(install(s, id, "lunix"));
     for (let h = 0; h < 2; h++) tick(s);
-    s.cash = 5000;
+    const cash = s.cash;
     ok(installSoftware(s, id, "vmwhere"));
-    expect(s.cash).toBe(5000 - 600 * sockets(s, id));
-    expect(once(s)).toMatchObject([{ params: { name: "VMwhere", machine: "st-dev90" } }]);
+    expect([s.cash, once(s), licenceStatus(s, id, "vmwhere")]).toEqual([cash, [], "trial"]);
     for (let h = 0; h < 6; h++) tick(s);
     const c = clusterOf(s, id)!;
     expect(licenseCost(s, c)).toEqual({ panel: 0, platform: 0 });
   });
 
-  it("is refused without the cash", () => {
+  it("refuses new VMs once the trial ends, until a key is entered", () => {
     const s = readyGame(7), id = atInstaller(s);
     ok(install(s, id, "lunix"));
     for (let h = 0; h < 2; h++) tick(s);
-    s.cash = 100;
-    expect(err(installSoftware(s, id, "vmwhere"))).toBe("error.noCash");
+    ok(installSoftware(s, id, "vmwhere"));
+    for (let h = 0; h < 6; h++) tick(s);
+    const c = clusterOf(s, id)!, k = issueKey(s, "vmwhere", null);
+    s.hour += 61 * 24;
+    expect(err(createVm(s, c.id, PANEL_VM_SIZE))).toBe("error.licenceExpired");
+    expect(err(activateLicence(s, id, "vmwhere", "AAAA-AAAA-AAAA-AAAA"))).toBe("error.licenceKey");
+    ok(activateLicence(s, id, "vmwhere", k.key));
+    expect(licenceStatus(s, id, "vmwhere")).toBe("active");
+    ok(createVm(s, c.id, PANEL_VM_SIZE));
+  });
+
+  it("replaces the key it held with an entered one, and removing it releases the key", () => {
+    const s = readyGame(7), id = atInstaller(s);
+    ok(install(s, id, "lunix"));
+    for (let h = 0; h < 2; h++) tick(s);
+    const [a, b] = [issueKey(s, "vmwhere", null), issueKey(s, "vmwhere", null)];
+    ok(installSoftware(s, id, "vmwhere", a.key));
+    ok(activateLicence(s, id, "vmwhere", b.key));
+    expect(unassignedKeys(s, "vmwhere").map((x) => x.id)).toEqual([a.id]);
+    for (let h = 0; h < 6; h++) tick(s);
+    ok(uninstallSoftware(s, id, "vmwhere"));
+    expect(unassignedKeys(s, "vmwhere").map((x) => x.id)).toEqual([a.id, b.id]);
   });
 
   it("from 2024 costs nothing at install and 8 euros per physical core each month", () => {
@@ -156,12 +194,15 @@ describe("old saves", () => {
 });
 
 describe("the Terminal", () => {
-  it("refuses the VMwhere install line without the cash", () => {
+  it("refuses the DirectAdmen install line without a key and takes one with --key", () => {
     const s = readyGame(7), id = atInstaller(s);
     ok(install(s, id, "lunix"));
     for (let h = 0; h < 2; h++) tick(s);
-    s.cash = 100;
-    const r = installScript(s, id, softwareById("vmwhere").install.commands[0]);
-    expect(r).toMatchObject({ output: [t("error.noCash")], failed: true });
+    const line = softwareById("directadmen").install.commands[0], k = issueKey(s, "directadmen", null);
+    expect(installScript(s, id, line)).toMatchObject({ output: [t("error.licenceKey")], failed: true });
+    const r = installScript(s, id, `${line} --key ${k.key}`)!;
+    expect(r.action).toEqual([installFromSite, id, "directadmen", k.key]);
+    ok(installFromSite(s, id, "directadmen", k.key));
+    expect(licenceStatus(s, id, "directadmen")).toBe("active");
   });
 });

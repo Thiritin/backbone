@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { isLicensed } from "../../../sim/60-infra/licence";
 import { t } from "../../../i18n/en";
 import { dateOf, yearOf } from "../../../sim/00-core/time";
 import { runsOn, SOFTWARE, softwareById, type Software } from "../../../sim/10-catalog/platforms";
@@ -250,11 +251,12 @@ function Wizard({ game, m, era, items, close, roles = true }: { game: GameState;
   const [pick, setPick] = useState<string | null>(null);
   const [phase, setPhase] = useState<"pick" | "confirm" | "run" | "failed">("pick");
   const [note, setNote] = useState("");
+  const [key, setKey] = useState("");
   const sw = pick ? softwareById(pick) : null, mine = items.find((e) => e.sw.id === pick);
   const now = machineScreen(game, m.id, true);
   const shown = phase !== "run" ? phase : mine?.installing ? "progress" : "results";
   const install = () => {
-    const r = act(installFromSite, m.id, pick!);
+    const r = act(installFromSite, m.id, pick!, key.trim() || undefined);
     if (r.ok) setPhase("run");
     else if (r.error === "error.noDownload") setPhase("failed");
     else setNote(t(r.error));
@@ -280,6 +282,7 @@ function Wizard({ game, m, era, items, close, roles = true }: { game: GameState;
           <div className="wz-t">{t("console.confirmSelections")}</div>
           <div>{sw.name}</div>
           <div className="muted">{t("console.installTime", { n: sw.installHours })}</div>
+          {isLicensed(sw.id) && <label className="wz-row">{t("vendor-sites.licenceKey")}<input value={key} spellCheck={false} autoComplete="off" onChange={(e) => setKey(e.target.value)} /></label>}
         </>}
         {shown === "progress" && sw && <>
           <div className="wz-t">{t("console.installProgress")}</div>

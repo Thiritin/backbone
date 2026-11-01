@@ -9,7 +9,8 @@ import { imageOf, imageParts, nextVersion, SERVER_OS, serverOsById, type OsImage
 import { machineNet, osUp, stickOs } from "../60-infra/oob";
 import { pushLog } from "../60-infra/power";
 import { BOOT_HOURS, bootHours, booting, powered } from "../60-infra/status";
-import { buyLicenses, buyUpgradeLicense, licenseDue, reportLoss, upgradeLicenseDue } from "../85-products/products";
+import { buyUpgradeLicense, reportLoss, upgradeLicenseDue } from "../85-products/products";
+import { installKeyBlock, licenseInstall, releaseMachine } from "../60-infra/licence";
 import { leave } from "./clusters";
 import type { ActionResult } from "./hardware";
 import { staticRouter } from "../60-infra/lan";
@@ -121,8 +122,9 @@ const atInstaller = (s: GameState, machineId: string): Machine | string => {
 // The installer's Install: whatever the disks held goes first, then the OS installs for its install hours, the version
 // on the media. os.installedAt is the hour it is done; a server is held in its boot until then and boots from its disk
 // after, a VM ejects its ISO. The stick and an ISO each hold one version of one OS. A server keeps the network
-// setting the installer chose, and its old files go with the old disk contents.
-export function installOs(s: GameState, machineId: string, osId: ServerOsId, confirm?: string, iface: IfaceConfig = { mode: "dhcp" }): ActionResult {
+// setting the installer chose, and its old files go with the old disk contents. A licensed OS takes the typed key or
+// runs its trial.
+export function installOs(s: GameState, machineId: string, osId: ServerOsId, confirm?: string, iface: IfaceConfig = { mode: "dhcp" }, key?: string): ActionResult {
   const m = atInstaller(s, machineId);
   if (typeof m === "string") return fail(m);
   if (!SERVER_OS.some((o) => o.id === osId)) return fail("error.unknownOs");
@@ -133,12 +135,14 @@ export function installOs(s: GameState, machineId: string, osId: ServerOsId, con
   if (net) return fail(net === "noInterfaces" ? "error.noInterfaces" : "error.noAutoconf");
   // A static setting reaches the mirror only through the router of its network.
   if (osId === "lunix" && iface.mode === "static" && isDevice(m) && !staticRouter(s, m.id, iface)) return fail("error.noMirror");
-  if (s.cash < licenseDue(s, machineId, osId, null)) return fail("error.noCash");
+  const version = imageParts(media).version, bad = installKeyBlock(s, machineId, osId, version, key);
+  if (bad) return fail(bad);
   const cleared = clear(s, m, confirm);
   if (!cleared.ok) return cleared;
   const os = serverOsById(osId), done = nowHours(s) + os.installHours;
-  setMachine(s, machineId, () => ({ os: { id: osId, version: imageParts(media).version, installedAt: done }, software: [] }));
-  buyLicenses(s, machineId, osId, null);
+  setMachine(s, machineId, () => ({ os: { id: osId, version, installedAt: done }, software: [] }));
+  releaseMachine(s, machineId);
+  licenseInstall(s, machineId, osId, version, key);
   if (isDevice(m)) {
     Object.assign(m, { bootFrom: "disk", stuck: false, bootUntil: done + BOOT_HOURS + os.bootMinutes / 60, iface });
     delete s.files[m.id];
@@ -199,8 +203,8 @@ export function dismissInstallFail(s: GameState, machineId: string): ActionResul
 }
 
 // Software whose installer comes from its website: Server Manager, Add or Remove Programs, apt and the script lines.
-export function installFromSite(s: GameState, machineId: string, softwareId: string): ActionResult {
-  return machineNet(s, machineId) ? fail("error.noDownload") : installSoftware(s, machineId, softwareId);
+export function installFromSite(s: GameState, machineId: string, softwareId: string, key?: string): ActionResult {
+  return machineNet(s, machineId) ? fail("error.noDownload") : installSoftware(s, machineId, softwareId, key);
 }
 
 // The installer's Erase disk: bare metal, or an empty VM, under the same confirmation as a reinstall.
@@ -210,6 +214,7 @@ export function eraseDisk(s: GameState, machineId: string, confirm?: string): Ac
   if (installCase(s, machineId).kind === "empty" && !m.os) return fail("error.noSoftware");
   const cleared = clear(s, m, confirm);
   if (cleared.ok) setMachine(s, machineId, () => ({ os: null, software: [] }));
+  if (cleared.ok) releaseMachine(s, machineId);
   return cleared;
 }
 

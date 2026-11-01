@@ -278,7 +278,7 @@ export const useStore = create<Store>((set, get) => ({
     } else {
       uiSound("error");
       lastBanner = Date.now();
-      get().notify("Settings", t("action.failed.title"), t(r.error));
+      get().notify("Settings", t("action.failed.title"), t(r.error, r.params));
     }
     return r;
   },

@@ -6,7 +6,10 @@ import {
   controlPlaneUp, datastoreGbit, insideVm, isOwnVm, lostDisk, nodeTakes, pickNode, portGbit, withDatastore, type Cluster, type Workload,
 } from "../60-infra/cluster";
 import { working } from "../60-infra/status";
-import { buyLicenses, LAN_GB_PER_HOUR, licenseDue } from "../85-products/products";
+import { LAN_GB_PER_HOUR } from "../85-products/products";
+import { buildKeys, licenseBuild } from "../60-infra/licence";
+import { yearOf } from "../00-core/time";
+import { keysShort } from "./licence";
 import { hostInVm, workload } from "./clusters";
 import type { ActionResult } from "./hardware";
 
@@ -55,7 +58,7 @@ export function cloneHours(s: GameState, t: Workload): number {
 
 // A new own VM from the template, on toDeviceId or the node the scheduler picks, with its disk where a new VM's goes. It
 // carries the template's OS and every software of it, each running as a cluster of its own once the copy is done, and
-// buys the once licences a fresh install of them would. Returns the new VM's id.
+// takes a key from My account for each licensed one, or its trial. Returns the new VM's id.
 export function cloneTemplate(s: GameState, templateId: string, toDeviceId?: string): ActionResult {
   const found = ownVm(s, templateId);
   if (typeof found === "string") return fail(found);
@@ -67,8 +70,9 @@ export function cloneTemplate(s: GameState, templateId: string, toDeviceId?: str
   if (!working(s, t.datastore ?? t.deviceId!)) return fail("error.nodeDown");
   const software = (t.software ?? []).map((x) => softwareById(x.id));
   if (software.some((x) => x.kind === "mail")) return fail("error.oneMailServer");
-  const os = t.os?.id ?? null, cost = licenseDue(s, "", os, null) + software.reduce((n, x) => n + licenseDue(s, "", null, x.id), 0);
-  if (s.cash < cost) return fail("error.noCash");
+  const items = [...(t.os ? [{ product: t.os.id, version: t.os.version }] : []), ...software.map((x) => ({ product: x.id, version: String(yearOf(s.hour)) }))];
+  const keys = buildKeys(s, items);
+  if (typeof keys === "string") return keysShort(keys);
   const disk = withDatastore(s, c, { vcpu: t.vcpu, ramGb: t.ramGb, diskGb: t.diskGb }), d = toDeviceId ? s.devices.find((x) => x.id === toDeviceId) : undefined;
   if (toDeviceId && (!d || c.nodes.find((n) => n.deviceId === toDeviceId)?.state !== "active" || !working(s, d.id))) return fail("error.nodeDown");
   if (d && !nodeTakes(s, d, disk)) return fail("error.nodeFull");
@@ -78,7 +82,6 @@ export function cloneTemplate(s: GameState, templateId: string, toDeviceId?: str
   const vm = workload(s, "", { ...disk, clusterId: c.id, deviceId: node, busyUntil: done, cloning: done, os: t.os ? { ...t.os, installedAt: s.hour } : null, software: [] });
   s.workloads = [...s.workloads, vm];
   for (const sw of software) hostInVm(s, vm.id, c.az, sw, done);
-  buyLicenses(s, vm.id, os, null);
-  for (const sw of software) buyLicenses(s, vm.id, null, sw.id);
+  licenseBuild(s, vm.id, items, keys);
   return { ok: true, id: vm.id };
 }

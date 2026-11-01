@@ -5,9 +5,9 @@ import { genOf, modelById } from "../10-catalog/hardware";
 import { balancerIn, isService, softwareById } from "../10-catalog/platforms";
 import { BACKUP_HOUR, slowTolerance } from "../10-catalog/usage";
 import { channelOf, EDGE_HOWTO } from "../60-infra/channel";
-import { assignedKey, assignKey, extendKey, installedVersion, isLicensed, issueKey, productOf, trialDaysOf, panelMachine, startTrial, updateKey } from "../60-infra/licence";
+import { assignedKey, extendKey, licenceExpired, productOf, panelMachine, startTrial, updateKey } from "../60-infra/licence";
 import { LAPSE_GRACE_DAYS, tiersOf, topTier, type LicenceTier } from "../10-catalog/licence-tiers";
-import { APP_SUITE_FEE, licensingAt, serverOsAt, serverOsById, type LicenseEra, type ServerOsId } from "../10-catalog/server-os";
+import { APP_SUITE_FEE, licensingAt, serverOsById, type ServerOsId } from "../10-catalog/server-os";
 import { homeLineById } from "../20-world/datacenters";
 import type { Customer, Product } from "../30-customers/customers";
 import { bump, createTicket, deliverMail, slowed } from "../40-support/tickets";
@@ -64,38 +64,6 @@ export const tierFee = (s: GameState, c: Cluster, tier: LicenceTier): number =>
   Math.round(tier.fee * (tier.kind === "account" ? panelAccounts(s, c) : 1) * 100) / 100;
 const isServer = (m: Device | Workload): m is Device => "components" in m;
 const machinesOf = (s: GameState, c: Cluster) => (c.vm ? s.workloads.filter((w) => w.id === c.vm) : s.devices.filter((d) => c.nodes.some((n) => n.deviceId === d.id)));
-// docs/design/software.md, section 1: in a once era the OS or the software is bought when its install starts, per machine
-// for an OS and per CPU socket of a server for software; the key it gets stays assigned for every later reinstall.
-type Licensed = { id: string; name: string; licensing: LicenseEra[] };
-const oncePrice = (s: GameState, machineId: string, x: Licensed, perSocket: boolean): number => {
-  const era = licensingAt(x, yearOf(s.hour));
-  if (era.kind !== "once") return 0;
-  const d = perSocket ? s.devices.find((m) => m.id === machineId) : undefined;
-  return era.fee * (d ? d.components.filter((p) => p.kind === "cpu").length : 1);
-};
-// The licensed OS and software the machine holds no key for, with their price; a licensed panel with a trial starts on it instead.
-const owed = (s: GameState, machineId: string, osId: ServerOsId | null, swId: string | null): [Licensed, number][] =>
-  ([...(osId ? [[serverOsById(osId), false]] : []), ...(swId ? [[softwareById(swId), true]] : [])] as [Licensed, boolean][])
-    .filter(([x]) => isLicensed(x.id) && !(tiersOf(x.id).length && trialDaysOf(x.id) !== null) && !assignedKey(s, machineId, x.id))
-    .map(([x, perSocket]) => [x, oncePrice(s, machineId, x, perSocket)]);
-
-// What installing the OS or the software on the machine costs at once; a machine that does not exist yet is a new VM.
-export const licenseDue = (s: GameState, machineId: string, osId: ServerOsId | null, swId: string | null): number =>
-  owed(s, machineId, osId, swId).reduce((n, [, x]) => n + x, 0);
-
-// Charges what licenseDue counts, one ledger line each, and assigns the machine a key per licensed product.
-export function buyLicenses(s: GameState, machineId: string, osId: ServerOsId | null, swId: string | null): void {
-  const m = [...s.devices, ...s.workloads].find((x) => x.id === machineId);
-  const machine = m && ("components" in m ? m.hostname ?? m.label ?? m.name : m.hostname ?? m.id);
-  for (const [x, price] of owed(s, machineId, osId, swId)) {
-    const name = x.id === osId ? `${x.name} ${serverOsAt(osId, yearOf(s.hour)).version}` : x.name;
-    if (price > 0) {
-      s.cash = Math.round((s.cash - price) * 100) / 100;
-      s.ledger = [...s.ledger, { hour: s.hour, category: "licenses", key: "ledger.licenseOnce", params: { name, machine: machine ?? machineId }, amount: -price }];
-    }
-    assignKey(s, issueKey(s, x.id, topTier(x.id)?.id ?? null, undefined, installedVersion(s, machineId, x.id) ?? undefined).id, machineId);
-  }
-}
 
 // An in-place upgrade buys the new release in a once era; a monthly era already covers it.
 export const upgradeLicenseDue = (s: GameState, osId: ServerOsId): number => {
@@ -235,7 +203,7 @@ function runBackups(s: GameState, events: SimEvent[]) {
     const target = s.clusters.find((x) => x.id === c.backup.targetId);
     if (c.backup.every === "off" || !target || (c.backup.every === "weekly" && d.getUTCDay() !== 0)) continue;
     const pool = backupPool(s, target.id);
-    if (!backsUpCluster(s, c, target) || !controlPlaneUp(s, target) || pool.need > pool.room) {
+    if (!backsUpCluster(s, c, target) || !controlPlaneUp(s, target) || licenceExpired(s, target) || pool.need > pool.room) {
       events.push({ app: "Locations", key: "event.backupFailed", params: { cluster: c.name, target: target.name } });
       continue;
     }
