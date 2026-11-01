@@ -183,8 +183,8 @@ describe("bank transfers", () => {
     const priv = refs("private"), big = refs("enterprise");
     expect(priv.bare).toBeGreaterThan(30);
     expect(priv.bare).toBeLessThan(90);
-    expect(priv.short).toBeGreaterThan(10);
-    expect(priv.short).toBeLessThan(55);
+    expect(priv.short).toBeGreaterThan(0);
+    expect(priv.short).toBeLessThan(12);
     expect(big.bare).toBeLessThan(8);
     expect(big.short).toBe(0);
   });

@@ -135,9 +135,9 @@ export function issue(s: GameState, inv: Invoice, payDays = DUE_DAYS - 1): void 
 }
 
 // How customers fill in a transfer: the share who write a bare word or their name instead of the invoice number, by profile,
-// and the share of low-budget payers who send a few cents short or a rounded-down amount.
+// and the rare low-budget payer who sends a few cents short or a rounded-down amount.
 export const BARE_REFERENCE: Record<Profile, number> = { private: 0.2, gamer: 0.2, hobbyDev: 0.15, soleProp: 0.1, smallBiz: 0.05, agency: 0.03, office: 0.05, onlineShop: 0.03, enterprise: 0.01, reseller: 0.03 };
-export const SHORT_PAY = 0.15;
+export const SHORT_PAY = 0.02;
 const BARE_WORDS = ["hosting", "server", "domain"];
 // A reminder on an invoice whose payment sits unmatched in the bank.
 export const ALREADY_PAID_HAPPINESS = 5;
