@@ -16,7 +16,6 @@ export default {
   "books.tab.payables": () => "Eingangsrechnungen",
   "books.monthlyRun": () => "Monatslauf",
   "books.matchByReference": () => "Nach Verwendungszweck zuordnen",
-  "books.autoReminders": () => "Automatische Mahnungen",
   "books.col.number": () => "Nr.",
   "books.col.customer": () => "Kunde",
   "books.col.period": () => "Zeitraum",

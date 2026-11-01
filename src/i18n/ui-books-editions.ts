@@ -19,7 +19,6 @@ export default {
   "books-editions.feature.hbci": () => "HBCI online banking",
   "books-editions.feature.tax": () => "Tax",
   "books-editions.feature.reports": () => "Profit and loss and cash flow",
-  "books-editions.feature.auto-reminders": () => "Automatic reminders",
   "books-editions.feature.helpdesk-link": () => "Helpdesk link",
   "books-editions.feature.statistics": () => "Statistics",
   "books-editions.noSeat": () => "No seat",

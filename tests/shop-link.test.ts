@@ -91,7 +91,7 @@ describe("shop link", () => {
 
   it("sends no reminder for an unsynced invoice", () => {
     const s = shopGame();
-    s.modules = [...s.modules, "auto-reminders"];
+    s.unlocks = [...s.unlocks, "automation"];
     s.billingRules = { ...s.billingRules, autoRemind: true };
     const { customer } = order(s);
     const inv = issueInvoice(s, customer().id, [{ serviceId: null, key: "invoice.line.setupFee", params: { label: "x" }, amount: 20 }]);

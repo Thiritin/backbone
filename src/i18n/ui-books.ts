@@ -16,7 +16,6 @@ export default {
   "books.tab.payables": () => "Payables",
   "books.monthlyRun": () => "Monthly run",
   "books.matchByReference": () => "Match by reference",
-  "books.autoReminders": () => "Automatic reminders",
   "books.col.number": () => "No.",
   "books.col.customer": () => "Customer",
   "books.col.period": () => "Period",
