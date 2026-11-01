@@ -11,9 +11,9 @@ import { monthListings, usedTick } from "../src/sim/80-business/used";
 import { newsTick } from "../src/sim/80-business/news";
 import { tick } from "../src/sim/88-tick/tick";
 import { bidListing, buyListing, cancelListing, listForSale } from "../src/sim/90-actions/used";
-import { startChallenge, startGame } from "../src/sim/90-actions/start";
+import { startChallenge } from "../src/sim/90-actions/start";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { buyDevice, readyGame } from "./fixtures";
+import { buyDevice, readyGame, startGame } from "./fixtures";
 
 const idOf = (r: { ok: boolean; id?: string }): string => r.id!;
 const MARCH_2008 = hourOf(new Date(Date.UTC(2008, 2, 1)));

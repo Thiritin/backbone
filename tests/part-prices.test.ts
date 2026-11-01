@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
 import { brandsFor, MODELS, modelById, partOffers, priceOf } from "../src/sim/10-catalog/hardware";
 import { chassisPrice, CHASSIS_FLOOR, partPrice, partSold, presetPrice } from "../src/sim/10-catalog/parts";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { deviceValue, resaleValue } from "../src/sim/60-infra/status";
 import { sellDevice } from "../src/sim/90-actions/hardware";
-import { buyDevice } from "./fixtures";
+import { buyDevice, newGame } from "./fixtures";
 import { withServer } from "./fixtures";
 
 const SERVERS = MODELS.filter((m) => m.server);

@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { createRng } from "../src/sim/00-core/rng";
 import { CONTINUOUS } from "../src/sim/20-world/datacenters";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { rackAlarms } from "../src/sim/60-infra/alarms";
 import { feedFailure } from "../src/sim/60-infra/incidents";
 import { tripTick } from "../src/sim/60-infra/power";
 import { psusOf, rackPower } from "../src/sim/60-infra/status";
 import type { SimEvent } from "../src/sim/88-tick/tick";
-import { withServer } from "./fixtures";
+import { withServer, newGame } from "./fixtures";
 
 const rack = (s: GameState) => s.racks.find((r) => r.id === "rack2")!;
 const dev = (s: GameState, id: string) => s.devices.find((d) => d.id === id)!;

@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- Competitors now change over the years: they move to new server generations, add features and have outages that make the news, the budget host cuts its prices each year, and the Market app charts each city's share of new customers.
+- A new game now starts with no money: you first open a business account on a bank's website, where your €3,500 savings arrive, and then register the company at the trade office for a €40 fee paid by bank transfer.
 - Used hardware now resells for less than it cost new, and buyers on the board and on eBuy no longer pay more than its resale value.
 - A part taken out of a server takes its share of the server's value along, so stripping a server and selling the pieces brings in the same as selling it whole.
 - The Marketing app has a Domain tile whose Buy button opens the domain resellers in the Yahoy! Directory, and the domains of other companies in the game can no longer be registered as your own.

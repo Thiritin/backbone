@@ -36,6 +36,8 @@ export default {
     : "O Handelsblah noticia que a IA generativa põe as empresas em fila por servidores GPU de aluguer, e os hosters com placas livres podem fixar o preço."),
   "event.news.design.title": (p) => `Web design de ${p.year}`,
   "event.news.design.text": (p) => `O Handelsblah noticia que os visitantes esperam agora o visual de ${p.year} em todos os sites, e os designs mais antigos perdem pedidos.`,
+  "event.news.rivalOutage.title": (p) => `${p.name}: ${p.city} fora do ar durante ${p.hours} horas`,
+  "event.news.rivalOutage.text": (p) => `O Golem.dy noticia que os clientes da ${p.name} em ${p.city} não conseguiram aceder aos seus sites durante ${p.hours} horas.`,
   "event.news.line.title": (p) => `${p.line} podia vender`,
   "event.news.line.text": (p) => `O Handelsblah noticia que hoje podes fornecer ${p.line} e ainda não o puseste no teu site.`,
   "event.news.models.title": () => "Hardware novo na loja",

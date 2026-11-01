@@ -6,7 +6,7 @@ import { monthlyDomains, spinNames, wholesale, yearlyAt } from "../src/sim/30-cu
 import { registrarUrl, resolve } from "../src/sim/80-business/browser";
 import { domainOf, extend, register, registryCost } from "../src/sim/30-customers/registry";
 import { visibleCandidates } from "../src/sim/47-staff/staff";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { orderCompanyDomain, queueTransfer, registerCompanyDomain, signRegistrar, transferDomains } from "../src/sim/90-actions/registrar";
@@ -15,7 +15,7 @@ import { launchSite, setLine } from "../src/sim/90-actions/website";
 import { CHECKS, checkDone, TUTORIAL } from "../src/sim/checklist";
 import { setCompany } from "../src/sim/90-actions/company";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { readyGame, registered } from "./fixtures";
+import { readyGame, registered, newGame } from "./fixtures";
 
 const err = (r: { ok: boolean; error?: string }) => (r.ok ? "ok" : r.error);
 const toMonthStart = (s: GameState) => { do tick(s); while (!isMonthStart(s.hour)); };
@@ -222,8 +222,8 @@ describe("company domain", () => {
 });
 
 describe("tutorial", () => {
-  it("runs register, company, buyServer, mountServer, mountRouter, internet, setup, findAddress, shareWeb, website, domain, launch, email, firstCustomer", () => {
-    expect(TUTORIAL).toEqual(["register", "company", "buyServer", "mountServer", "mountRouter", "internet", "setup", "findAddress", "shareWeb", "website", "domain", "launch", "email", "firstCustomer"]);
+  it("runs bank, register, company, buyServer, mountServer, mountRouter, internet, setup, findAddress, shareWeb, website, domain, launch, email, firstCustomer", () => {
+    expect(TUTORIAL).toEqual(["bank", "register", "company", "buyServer", "mountServer", "mountRouter", "internet", "setup", "findAddress", "shareWeb", "website", "domain", "launch", "email", "firstCustomer"]);
   });
 
   it("starts without Marketing and gives it to old registered saves", () => {

@@ -132,6 +132,45 @@ Switching programs keeps every customer, invoice, quote and transfer, since the 
 
 Milestones: catalog in `src/sim/10-catalog/bookkeeping.ts`; `s.books.vendor` with Lexwear as the default for old saves; Pear Store category and install; Books skin per vendor (colours, name in the title, module list); module prices read from the vendor; vendor sites; Getting started step; `tests/books-vendors.test.ts`.
 
+## 9d. Lane `books-editions`
+
+Decisions from the user:
+
+- The Finance app goes. The statement already lives in Books. Overview (cash, monthly recurring revenue, last month's profit, runway) becomes the first page of Books. Profit and loss, cash flow and the customer and revenue statistics become a Statistics section in Books. Tax moves to Books. Running loans and loan offers live on the bank's site. Finance leaves the Pear Store, the dock, the walk triggers and old saves, which open Books instead.
+- Insurance goes entirely: hardware insurance, the policy state, premiums, claims, the actions, the tests, the keys and the design text.
+- Bookkeeping features are not modules. Each vendor sells editions, and the edition decides which features the program has. The Lexwear module catalog, the licence key flow and the Register dialog are removed; the per-vendor sites sell editions and upgrades. Shop-side modules (Shop link, payment methods) stay modules, since the shop vendor sells them.
+- Each vendor has its own layout, not only colours.
+
+Features by edition, three tiers for every vendor where the vendor has three, named as the vendor named them:
+
+| Feature | Small | Medium | Large |
+| --- | --- | --- | --- |
+| Customers, quotes, invoices, bank statement, manual matching, reminders by hand, payables, overview page | yes | yes | yes |
+| Monthly run, match by reference, HBCI (pay all, statement pull), tax view | | yes | yes |
+| Profit and loss, cash flow chart | | yes | yes |
+| Automatic reminders, Helpdesk link, Statistics (customers, churn, revenue trend, lost sales) | | | yes |
+
+| Vendor | Small | Medium | Large | Notes |
+| --- | --- | --- | --- | --- |
+| Lexwear | buchhalter 249 | financial office 499 | financial office pro 899 | yearly update 99, 149, 199; upgrade pays the difference |
+| WIZO Mein Büro | S 149 | M 249 | L 399 | no yearly fee |
+| Saga Office Line | | Office Line 599 | Office Line Plus 999 | no small edition |
+| orgaMIN | Standard 199 | Professional 349 | Enterprise 549 | |
+| Collmix | basic 15 a month | plus 29 a month | | HBCI already in basic; no Helpdesk link ever |
+| sevDeck (2013) | Rechnung 9 a month | Buchhaltung 19 a month | Warenwirtschaft 39 a month | bank sync in every edition |
+| lexoffize (2014) | S 7 a month | M 12 a month | L 19 a month | |
+| GnuCache (GnuCash) | free | | | desktop, single user, HBCI included, P&L and cash flow reports, no quotes, no monthly run, no matching by reference, no automatic reminders, no statistics; GTK grey look |
+
+Deployment and seats:
+
+- Desktop programs (Lexwear, WIZO, Saga, orgaMIN, GnuCache) run on the player's PC and keep working when the internet line is down. Browser programs (Collmix, sevDeck, lexoffize) run inside the Browser look and are unusable while the line is down or throttled, so an unpaid line bill locks the books.
+- Licences are single user or multi user. A single-user licence means only the player works in the program: a hired bookkeeper cannot work until a multi-user licence or seats exist. Desktop vendors sell a network version as the multi-user step (Lexwear financial office pro and Saga Office Line Plus include it, WIZO L and orgaMIN Enterprise sell seats at a price each, GnuCache stays single user). Browser programs count seats per plan: Collmix plus 3 users, sevDeck and lexoffize one included and a monthly fee per further user. Each bookkeeper occupies one seat.
+- GnuCache has no Quotes view, so with it the order ticket keeps its plain Quote step where the player types the price without a document.
+
+Layouts, one per vendor: Lexwear a grey Windows 2000 program with a tree on the left and a toolbar of small icons; WIZO a blue program with a row of large icons on top; Saga a dense grey enterprise screen with menus; orgaMIN orange with top tabs; Collmix a web page inside the window with an address bar, blue links and plain tables; sevDeck flat cards with a teal sidebar; lexoffize flat and light with a green sidebar; GnuCache a GTK2 grey window with an account tree and a register table. Document views keep the 2005 toolbar from the quote work. Edition-locked features show as disabled entries that open the vendor's site at the upgrade page.
+
+Milestones: editions in the catalog and `s.books.edition` with deployment and seats; GnuCache as the free vendor; features read from the edition everywhere a module flag was read; remove the Lexwear modules, keys and Register; vendor sites sell editions and upgrades; Overview, Statistics and Tax in Books; remove Finance; remove insurance; layouts per vendor; old saves: Finance installed becomes Books, Lexwear with modules owned becomes the smallest edition that covers them; `tests/books-editions.test.ts` and the finance and insurance tests removed or moved.
+
 ## 10. Shared files
 
 | File | Lanes | Rule |

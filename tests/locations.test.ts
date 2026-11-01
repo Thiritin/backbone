@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { CITIES, START_CASH } from "../src/sim/10-catalog/economy";
 import { BASEMENT, DATACENTERS, datacenterById, LEAD_DAYS, PROVIDERS, RACK_MODELS, SPACE_SIZES, spacePrice } from "../src/sim/20-world/datacenters";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { freeSlots } from "../src/sim/60-infra/status";
 import { freePositions, linkStatus, moveCost, rackPower, resaleValue } from "../src/sim/60-infra/status";
 import { powerPerHour, tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { deserialize } from "../src/sim/91-save/save";
 import { addLocation, buyRack, closeLocation, connect, moveRack, sellDevice, sellRack, unmountDevice } from "../src/sim/90-actions/hardware";
-import { buyDevice, freeFloor } from "./fixtures";
+import { buyDevice, freeFloor, newGame } from "./fixtures";
 import { mountDevice, mountStack } from "./plugged";
 import { runServers, withServer } from "./fixtures";
 

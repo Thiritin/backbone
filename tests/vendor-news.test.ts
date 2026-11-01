@@ -1,8 +1,8 @@
+import { newGame } from "./fixtures";
 import { describe, expect, it } from "vitest";
 import { t } from "../src/i18n/en";
 import { hourOf, START_YEAR } from "../src/sim/00-core/time";
 import { manufacturerByName } from "../src/sim/10-catalog/hardware";
-import { newGame } from "../src/sim/50-state";
 import { NEWS, newsTick } from "../src/sim/80-business/news";
 import { vendorReleases, VENDORS } from "../src/sim/80-business/vendors";
 

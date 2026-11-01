@@ -1,5 +1,4 @@
 import { createRng, type Rng } from "./00-core/rng";
-import { START_CASH } from "./10-catalog/economy";
 import { componentParts, hasFirmware, homeLan, isManaged, isOfficeRouter, modelById, type ComponentKind, type FormFactor, type PartSpec } from "./10-catalog/hardware";
 import type { Vendor } from "./10-catalog/cpus";
 import type { LicenseKind, OsImage, ServerOsId } from "./10-catalog/server-os";
@@ -26,6 +25,7 @@ import { newSites, type Sites } from "./60-infra/apps";
 import type { Breach } from "./60-infra/breach";
 import { newSecurity, type Security } from "./60-infra/security";
 import { newSales, type Sales } from "./30-market/market";
+import { seedRivals, type Rival, type ShareEntry } from "./30-market/rivals";
 import type { FairBooking } from "./80-business/fairs";
 import type { Sponsorship } from "./80-business/community";
 import type { SponsorOffer } from "./80-business/sponsorboard";
@@ -46,8 +46,8 @@ import type { Payable } from "./46-finance/payables";
 import type { Letter } from "./40-support/letters";
 import type { TrendPoint } from "./80-business/trend";
 
-// 3: GPU line servers carry their preset cards.
-export const SAVE_VERSION = 3;
+// 3: GPU line servers carry their preset cards. 4: an unregistered game holds its savings until the bank account opens.
+export const SAVE_VERSION = 4;
 
 export type BondMode = "none" | "failover" | "balance";
 export type CableKind = "copper" | "dac" | "fiber" | "rollover";
@@ -316,6 +316,8 @@ export interface GameState {
   webpanel: WebPanel;
   // News already published, as "<id>@<hour>" (80-business/news.ts).
   news: string[];
+  competitors: Rival[];
+  shareLog: ShareEntry[];
   // Next server number, next own-VM number and next service number (30-customers/hostnames.ts).
   nextNode: number;
   nextVm: number;
@@ -388,7 +390,7 @@ export const device = (id: string, model: string, brand: string, rackId: string 
 // Starting infrastructure: an empty 24U basement rack, the line jack on its panel and the flat's router in storage. The player
 // mounts the router, buys, mounts and cables the first server.
 export const newGame = (seed: number): GameState => ({
-  version: SAVE_VERSION, seed, rng: createRng(seed), hour: 0, minute: 0, cash: START_CASH, nextId: 8,
+  version: SAVE_VERSION, seed, rng: createRng(seed), hour: 0, minute: 0, cash: 0, nextId: 8,
   locations: [{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: t("location.basement"), space: "basement", positions: 1, readyAt: 0, extraCircuit: false }],
   racks: [{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null, overSince: { a: null, b: null } }],
   devices: [{ ...device("dev5", "home-router", "AVN", null, 0, null, "fra1-gw-01", 0), store: "loc1" }, device("dev6", "line-jack", "", null, 0, "loc1", "fra1-line-01", 0)],
@@ -422,6 +424,8 @@ export const newGame = (seed: number): GameState => ({
   netsvc: newNetSvc(),
   webpanel: newWebPanel(),
   news: [],
+  competitors: seedRivals(seed),
+  shareLog: [],
   nextNode: 1, nextVm: 1, nextHostNo: firstHostNo(seed),
   used: [], usedRep: 0,
   log: [], challenge: null, registration: null, arrived: [], score: { netWorth: null, level3: null, happySum: 0, happyHours: 0 }, trend: [],

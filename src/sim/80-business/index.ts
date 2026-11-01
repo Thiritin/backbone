@@ -2,6 +2,7 @@
 import { t } from "../../i18n/en";
 import { monthIndexOf, yearOf } from "../00-core/time";
 import { SOFTWARE } from "../10-catalog/platforms";
+import { banksOpen } from "../10-catalog/banks";
 import { registrarHost, REGISTRARS } from "../10-catalog/registrars";
 import { SERVER_OS } from "../10-catalog/server-os";
 import { companyDomain, fqdn } from "../30-customers/domains";
@@ -52,6 +53,7 @@ export function siteIndex(s: GameState): Category[] {
     ...consoleRows(s),
   ].map((r) => ({ ...r, down: resolve(s, r.url).load === "down" }));
   return [
+    { title: t("sim.index.cat.banks"), rows: banksOpen(year).map((b) => row(b.name, `${displayHost(b.host)}/`, t("sim.index.bank"))) },
     { title: t("sim.index.cat.os"), rows: SERVER_OS.map((o) => row(o.name, `${displayHost(o.site.host)}/`, o.site.tagline)) },
     ...software,
     { title: t("sim.index.cat.resellers"), rows: REGISTRARS.filter((r) => r.from <= year).map((r) => row(r.name, `${displayHost(registrarHost(r))}/`, t("sim.index.resellers"))) },
