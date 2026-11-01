@@ -12,7 +12,14 @@ export interface Edition {
   features: Feature[];
   // Users the licence includes, the player among them (Infinity for a network version), and the price of one more seat (0: none sold).
   users: number; seat: number;
+  // What the program does for the player, read by can() in 80-business/bookkeeping.ts.
+  caps: Capability[];
 }
+
+// 9e: what a program provides; only what an installed program provides exists on screen.
+export type Capability = "customers" | "quotes" | "invoices" | "payments" | "payables" | "statement" | "reminders" | "statistics" | "tax";
+const BASE_CAPS: Capability[] = ["customers", "invoices", "payments", "payables", "statement", "reminders"];
+const capsOf = (features: Feature[]): Capability[] => [...BASE_CAPS, ...(["quotes", "statistics", "tax"] as const).filter((f) => features.includes(f))];
 
 export interface BooksVendor {
   id: BooksVendorId;
@@ -31,7 +38,7 @@ export const MEDIUM: Feature[] = [...SMALL, "monthly-run", "match-by-reference",
 export const LARGE: Feature[] = [...MEDIUM, "auto-reminders", "helpdesk-link", "statistics"];
 const NETWORK = Infinity;
 const ed = (id: string, name: string, price: number, features: Feature[], more: Partial<Edition> = {}): Edition =>
-  ({ id, name, price, update: 0, features, users: 1, seat: 0, ...more });
+  ({ id, name, price, update: 0, features, users: 1, seat: 0, caps: capsOf(features), ...more });
 
 export const BOOKS_VENDORS: BooksVendor[] = [
   { id: "lexwear", name: "Lexwear", program: "Lexwear Office", from: 2005, deployment: "desktop", layout: "tree",
@@ -58,7 +65,7 @@ export const BOOKS_VENDORS: BooksVendor[] = [
     editions: [ed("s", "S", 7, SMALL, { seat: 6 }), ed("m", "M", 12, MEDIUM, { seat: 6 }), ed("l", "L", 19, LARGE, { seat: 6 })],
     skin: { bar: "#43a047", ink: "#ffffff", accent: "#2e7d32" } },
   { id: "gnucache", name: "GnuCache", program: "GnuCache", from: 2005, deployment: "desktop", layout: "gtk",
-    editions: [ed("free", "GnuCache", 0, ["hbci", "reports"])],
+    editions: [ed("free", "GnuCache", 0, ["hbci", "reports", "tax"])],
     skin: { bar: "#dcdad5", ink: "#2e3436", accent: "#4a90d9" } },
 ];
 

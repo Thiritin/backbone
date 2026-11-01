@@ -63,7 +63,7 @@ describe("editions", () => {
     expect(booksVendor("saga")!.editions[0].features).toEqual(MEDIUM);
     expect(booksVendor("collmix")!.editions[0].features).toContain("hbci");
     expect(booksVendor("collmix")!.editions.some((e) => e.features.includes("helpdesk-link"))).toBe(false);
-    expect(booksVendor("gnucache")!.editions).toEqual([expect.objectContaining({ price: 0, users: 1, features: ["hbci", "reports"] })]);
+    expect(booksVendor("gnucache")!.editions).toEqual([expect.objectContaining({ price: 0, users: 1, features: ["hbci", "reports", "tax"] })]);
     expect(resolve(game(), "www.gnucache.org/").page).toEqual({ kind: "books", id: "gnucache" });
   });
 

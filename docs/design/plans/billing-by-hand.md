@@ -164,7 +164,7 @@ Features by edition, three tiers for every vendor where the vendor has three, na
 | Collmix | basic 15 a month | plus 29 a month | | HBCI already in basic; no Helpdesk link ever |
 | sevDeck (2013) | Rechnung 9 a month | Buchhaltung 19 a month | Warenwirtschaft 39 a month | bank sync in every edition |
 | lexoffize (2014) | S 7 a month | M 12 a month | L 19 a month | |
-| GnuCache (GnuCash) | free | | | desktop, single user, HBCI included, P&L and cash flow reports, no quotes, no monthly run, no matching by reference, no automatic reminders, no statistics; GTK grey look |
+| GnuCache (GnuCash) | free | | | desktop, single user, HBCI included, P&L and cash flow reports, the tax view, no quotes, no monthly run, no matching by reference, no automatic reminders, no statistics; GTK grey look |
 
 Deployment and seats:
 

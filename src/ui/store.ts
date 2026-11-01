@@ -292,6 +292,7 @@ export const useStore = create<Store>((set, get) => ({
 
   openApp: (app, target, fresh) => {
     if (app === "Chat") return void window.open(DISCORD_URL, "_blank", "noopener");
+    if (app === "Books" && !get().game.books.vendor) return;
     const ws = get().windows;
     const open = fresh ? undefined : ws.filter((w) => w.app === app).sort((a, b) => b.z - a.z)[0];
     const focus = target ? { ...target, n: ++focusId } : open?.focus;

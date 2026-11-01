@@ -16,7 +16,7 @@ import type { InvoiceStatus } from "../../../sim/45-billing/billing";
 import type { GameState } from "../../../sim/50-state";
 import { betterHost, hostQuality, routeOptions } from "../../../sim/60-infra/routes";
 import { attachQuote, createQuote, invoiceOrder, offerUpgrade, provisionOrder, quoteOrder, registerOrderDomain } from "../../../sim/90-actions/orders";
-import { hasFeature } from "../../../sim/80-business/bookkeeping";
+import { can } from "../../../sim/80-business/bookkeeping";
 import { hasHelpdeskLink } from "../../../sim/30-market/quotes";
 import { QUOTE_DRAG, QuotePill } from "../books/QuotesTab";
 import { decline } from "../../../sim/90-actions/sales";
@@ -212,6 +212,8 @@ export function CustomCompose({ tk, r }: { tk: Ticket; r: SalesRequest }) {
     : [!done.account ? "account" : !done.invoice ? "invoice" : web && !done.domain ? "domain" : !done.provision ? "provision" : ""];
   const cost = web ? (game.registrar ? wholesale(game, r.domain!) : registryCost(r.domain!, yearOf(game.hour))) : 0;
   const quoteValue = done.quote ? t("support.perMonth", { price: euroCents(r.quote ?? 0) }) : waiting ? t("support.sent") : r.status === "countered" ? t("support.counter", { price: euroCents(r.counter ?? 0) }) : r.status === "refused" ? t("support.refused") : t("support.notSent");
+  // The customer and invoice steps are done in the bookkeeping program.
+  const books = !!game.books.vendor, needs = <p className="step-wait">{t("dataFlow.needsProgram")}</p>;
   const row = (id: string, label: string, value: string, body?: React.ReactNode) => (
     shown.includes(id) && (
       <li key={id} className="step now">
@@ -226,11 +228,11 @@ export function CustomCompose({ tk, r }: { tk: Ticket; r: SalesRequest }) {
     <div className="compose custom-steps">
       {((!done.quote && waiting) || done.provision) && <p className="step-wait">{t("support.status.waiting")}</p>}
       <ol className="steps">
-        {!r.shop && row("quote", t("support.quote"), quoteValue, hasFeature(game, "quotes") ? <Attachments tk={tk} locked={locked} open={!waiting} /> : !waiting && <QuoteFields tk={tk} r={r} locked={locked} />)}
+        {!r.shop && row("quote", t("support.quote"), quoteValue, can(game, "quotes") ? <Attachments tk={tk} locked={locked} open={!waiting} /> : !waiting && <QuoteFields tk={tk} r={r} locked={locked} />)}
         {row("account", t("support.customerAccount"), done.account ? t("support.created") : t("support.none"),
-          <button className="btn primary" disabled={locked} onClick={() => openApp("Books", { kind: "newCustomer", id: tk.id })}><UserPlus />{t("orderSteps.createCustomer")}</button>)}
+          !books ? needs : <button className="btn primary" disabled={locked} onClick={() => openApp("Books", { kind: "newCustomer", id: tk.id })}><UserPlus />{t("orderSteps.createCustomer")}</button>)}
         {row("invoice", t("support.orderConfirmation"), done.invoice ? t("support.perMonth", { price: euroCents(r.quote ?? 0) }) : invoiceOf(game, r) ? t("orderSteps.status.draft") : t("support.notSent"),
-          accepted && !invoiceOf(game, r)
+          !books ? needs : accepted && !invoiceOf(game, r)
             ? <button className="btn primary" disabled={locked} onClick={() => openApp("Books", { kind: "quote", id: accepted.id })}><FileText />{t("orderSteps.quote", { number: accepted.number })}</button>
             : <button className="btn primary" disabled={locked} onClick={() => { const res = act(invoiceOrder, tk.id); if (res.ok) openApp("Books", { kind: "invoice", id: res.id! }); }}><Receipt />{t("orderSteps.openInvoice")}</button>)}
         {web && row("domain", r.owned ? t("support.domainTransfer") : t("support.domain"), done.domain ? t("support.registered") : t("support.domainLine", { domain: r.domain!, registry: registryOf(r.domain!).name, price: euroCents(cost) }),

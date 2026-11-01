@@ -39,6 +39,14 @@ export function installBooks(s: GameState, id: string, editionId?: string): Acti
   return { ok: true };
 }
 
+// The program leaves the desktop; customers, invoices and transfers stay in the state for the next one.
+export function uninstallBooks(s: GameState): ActionResult {
+  if (!s.books.vendor) return fail("error.notInstalled");
+  s.books = { ...s.books, vendor: null, edition: null, seats: 0 };
+  s.installed = s.installed.filter((x) => x !== "Books");
+  return { ok: true };
+}
+
 // A desktop licence pays the difference to the larger edition; a browser plan switches its fee from the next month.
 export function upgradeBooks(s: GameState, editionId: string): ActionResult {
   const v = currentVendor(s), now = currentEdition(s), e = v && editionById(v, editionId);

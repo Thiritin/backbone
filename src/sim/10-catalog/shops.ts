@@ -1,6 +1,7 @@
 // Shop systems: the order form and provisioning software a hoster runs next to the website (docs/design/shop.md).
 import { type Cycle } from "./cycles";
 import { SOFTWARE, type SoftwareKind } from "./platforms";
+import type { Capability } from "./bookkeeping";
 
 export type ShopId = "modemBill" | "clientExit" | "whmCache" | "blessta" | "hostBull" | "ubersmyth" | "orderBocks" | "boxBillin";
 
@@ -46,6 +47,8 @@ export const SHOPS: ShopVariant[] = [
   { id: "boxBillin", name: "BoxBillin'", maker: "BoxBillin' community", from: 2011, setup: 0, monthly: 0, yearly: 0, includes: [["registrar", 2011]], extra: 0, extraHours: 12, autoStock: true, cycles: ["monthly", "quarterly", "semiannual", "annual", "biennial", "triennial"] },
 ];
 
+// Every shop system keeps the customers, invoices, payments and reminders of its own orders.
+export const SHOP_CAPS: Capability[] = ["customers", "invoices", "payments", "reminders"];
 export const shopById = (id: ShopId): ShopVariant => SHOPS.find((x) => x.id === id)!;
 
 // Days a new shop needs before it takes orders.

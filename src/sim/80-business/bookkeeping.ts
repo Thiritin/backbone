@@ -1,6 +1,7 @@
 // docs/design/plans/billing-by-hand.md, 9c and 9d: the installed bookkeeping program, its edition, fees, seats and chores.
 import { dateOf, isMonthStart } from "../00-core/time";
-import { booksVendor, editionById, type BooksVendor, type Edition, type Feature } from "../10-catalog/bookkeeping";
+import { booksVendor, editionById, type BooksVendor, type Capability, type Edition, type Feature } from "../10-catalog/bookkeeping";
+import { SHOP_CAPS } from "../10-catalog/shops";
 import { bookTransfer, cents, isUnpaid, issue, owed, synced, type Invoice, type Transfer } from "../45-billing/billing";
 import { effectOf, invoice, invoicing } from "../46-finance/payables";
 import { logActivity } from "../47-staff/activity";
@@ -26,6 +27,8 @@ export const booksOffline = (s: GameState): boolean => currentVendor(s)?.deploym
 // The edition has the feature; works says whether it runs right now.
 export const hasFeature = (s: GameState, f: Feature): boolean => !!currentEdition(s)?.features.includes(f);
 export const works = (s: GameState, f: Feature): boolean => hasFeature(s, f) && !booksOffline(s);
+// Whether an installed program, the bookkeeping program or the shop system, provides the capability.
+export const can = (s: GameState, c: Capability): boolean => !!currentEdition(s)?.caps.includes(c) || (!!s.shop.variant && SHOP_CAPS.includes(c));
 
 // Staff who may work in the program besides the player: the licence's further users and the bought seats.
 export const seatsFor = (s: GameState): number => Math.max(0, (currentEdition(s)?.users ?? 1) - 1 + s.books.seats);

@@ -65,6 +65,9 @@ export function Desktop() {
 function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
   const { windows, speed, setSpeed, advance, save, notify, clearUnseen, news, explain, setExplain, alert } = useStore();
   const gameOver = useStore((s) => s.game.gameOver);
+  // Books exists only while a bookkeeping program is installed.
+  const noBooks = useStore((s) => !s.game.books.vendor);
+  useEffect(() => { if (noBooks) for (const w of windows) if (w.app === "Books") useStore.getState().close(w.id); }, [noBooks, windows]);
   const [update, setUpdate] = useState<ChangelogDay[] | null>(null);
   const dismissed = useRef<number | null>(null);
 

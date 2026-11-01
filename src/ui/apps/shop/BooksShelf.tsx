@@ -5,7 +5,7 @@ import { euro } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
 import { vendorsIn, type BooksVendor } from "../../../sim/10-catalog/bookkeeping";
 import { currentVendor } from "../../../sim/80-business/bookkeeping";
-import { installBooks } from "../../../sim/90-actions/bookkeeping";
+import { installBooks, uninstallBooks } from "../../../sim/90-actions/bookkeeping";
 import { Confirm } from "../../desktop/Confirm";
 import { useFocus, useStore } from "../../store";
 
@@ -27,7 +27,12 @@ export function BooksShelf() {
   useFocus("Shop", (f) => { if (f.kind === "software" && f.id === BOOKKEEPING) ref.current?.scrollIntoView({ block: "start" }); });
   const current = currentVendor(game);
   const action = (v: BooksVendor) => {
-    if (current?.id === v.id) return <button className="ps-get" onClick={() => openApp("Books")}>{t("shop.open")}</button>;
+    if (current?.id === v.id) return (
+      <>
+        <button className="ps-get" onClick={() => act(uninstallBooks)}>{t("dataFlow.uninstall")}</button>
+        <button className="ps-get" onClick={() => openApp("Books")}>{t("shop.open")}</button>
+      </>
+    );
     if (current) return <button className="ps-get" onClick={() => setSwitching(v)}>{t("books-vendors.switch")}</button>;
     return <button className="ps-get primary" onClick={() => act(installBooks, v.id)}>{t("shop.get")}</button>;
   };
