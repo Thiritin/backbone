@@ -338,8 +338,15 @@ describe("bankruptcy", () => {
 
   it("loads an old save without finance fields", () => {
     const old = { ...withServer(fixtureGame(17)) } as Partial<GameState>;
-    delete old.taxLoss; delete old.insurance; delete old.brokeSince; delete old.gameOver;
-    expect(deserialize(JSON.stringify(old))).toMatchObject({ taxLoss: 0, insurance: [], brokeSince: null, gameOver: null });
+    delete old.taxLoss; delete old.brokeSince; delete old.gameOver;
+    expect(deserialize(JSON.stringify(old))).toMatchObject({ taxLoss: 0, brokeSince: null, gameOver: null });
+  });
+
+  it("drops the insurance policies of an old save", () => {
+    const old = { ...withServer(fixtureGame(18)), insurance: [{ id: "hardware", since: 0 }] };
+    const s = deserialize(JSON.stringify(old));
+    expect("insurance" in s).toBe(false);
+    expect(serialize(s)).not.toContain("insurance\"");
   });
 });
 

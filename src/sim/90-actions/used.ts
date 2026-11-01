@@ -23,8 +23,7 @@ function placeError(s: GameState, l: Listing, locationId: string): string | null
   return isOfficeRouter(m) && loc.dc ? "error.basementOnly" : null;
 }
 
-// Pays for a listing and ships its units: the parts carry their hidden age, a missing second power supply stays missing,
-// and used gear is never insured.
+// Pays for a listing and ships its units: the parts carry their hidden age, a missing second power supply stays missing.
 export function deliverListing(s: GameState, l: Listing, locationId: string, price: number): string[] {
   const city = s.locations.find((x) => x.id === locationId)!.city;
   pay(s, l, price);

@@ -339,7 +339,7 @@ function chase(s: GameState, inv: Invoice, events: SimEvent[]): void {
 const needsChase = (s: GameState, inv: Invoice): boolean =>
   isUnpaid(inv) && (inv.suspended || autoStep(s, inv) !== null || (rulesAutomated(s) && ruleSuspendsAt(s, inv) !== null));
 
-// Bank: economy.md, Bank, insurance and tax.
+// Bank: economy.md, Bank and tax.
 const BASE_RATE: [number, number][] = [[2005, 4], [2009, 2.5], [2015, 1], [2021, 1], [2023, 4.5], [2026, 4]];
 export const RISK_PREMIUM = [6, 4, 3, 2, 1, 0.5];
 export const MIN_LIMIT = [10_000, 25_000, 100_000, 500_000, 3_000_000, 20_000_000];

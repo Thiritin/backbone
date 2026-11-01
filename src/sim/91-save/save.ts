@@ -50,6 +50,8 @@ export function deserialize(raw: string): GameState {
   const bare = new Set([...(data.devices ?? []), ...(data.workloads ?? [])].filter((m) => m.os === undefined).map((m) => m.id));
   const base = newGame(data.seed);
   if ((data.version ?? 1) < 2) for (const k of INFRA) delete data[k];
+  // Hardware insurance is gone; repairs cost what they cost.
+  delete (data as { insurance?: unknown }).insurance;
   const locations: GameState["locations"] = [];
   // The basement's tower shelf is gone, and rack positions became cages.
   for (const { shelf: _, ...l } of (data.locations ?? base.locations) as (Location & { shelf?: number })[]) {

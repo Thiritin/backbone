@@ -42,13 +42,14 @@ The registration installs Applications, Locations, Shop, Browser, Terminal, Supp
 
 | App | Arrives when |
 | --- | --- |
-| Finance | The first month ends, or cash falls below two months of running costs |
 | Customers | The company has five customers |
 | Marketing | The first server gets a hosting panel or a hypervisor |
 | Security | The first abuse report or vulnerability arrives |
 | Staff | More than ten customer tickets are open |
 | Market | The first sale is lost |
 | Research | The player opens the Pear Store in the Shop, seven days have passed, or Staff or Market was offered |
+
+When cash falls below two months of running costs, Pear sends one email about the bank's overdraft, and its Open button shows the Overdraft page on the bank's website.
 
 Staff and Market are paid Pear Store apps, so their email offers them and the player buys them in the Shop once Research has trained their skill. The others go straight into the dock. Each app arrives once. Getting started shows the steps of an app, such as Build your website for Marketing or Take a loan for Finance, only once that app is installed.
 
@@ -60,6 +61,6 @@ Saves from before the tutorial count as registered on the first hour, so they ke
 
 These are planned and not built. Each one gates a little more of the game behind a believable piece of paperwork, the same way registration gates the dock.
 
-1. **Bank account.** Finance opens a business account with the register extract; until then, customers cannot pay invoices.
+1. **Bank account.** The player opens a business account on a bank's website with the register extract; until then, customers cannot pay invoices.
 2. **Tax number.** The tax office sends a questionnaire by post a week after registration, and the first invoice needs the number it returns.
 3. **Pear One activation.** The Pear Store asks for the register number before it sells the first feature expansion.

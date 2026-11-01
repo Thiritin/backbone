@@ -307,7 +307,7 @@ export const en: Record<string, (p: Params) => string> = {
   "error.loanBlocked": () => "The bank grants no new loans right now.",
   "error.loanLimit": () => "This amount is above your loan limit.",
   "error.loanTerm": () => "The bank does not offer this term.",
-  // Tax, insurance and bankruptcy.
+  // Tax and bankruptcy; the insurance lines stay for the ledgers of old saves.
   "event.tax.title": () => "Corporate tax paid",
   "event.tax.text": (p) => `You paid ${euroCents(Number(p.tax))} tax on a profit of ${euroCents(Number(p.profit))} in ${p.year}.`,
   "event.taxLoss.title": () => "No corporate tax",
@@ -319,8 +319,6 @@ export const en: Record<string, (p: Params) => string> = {
   "ledger.tax": (p) => `Corporate tax for ${p.year}`,
   "ledger.insurancePremium": () => "Hardware insurance premium",
   "ledger.insuranceClaim": (p) => `Hardware insurance claim: ${COMPONENT_LABELS[String(p.component)] ?? p.component} in ${p.device}`,
-  "error.insured": () => "You already have this policy.",
-  "error.notInsured": () => "You do not have this policy.",
   "error.unknownLoan": () => "This loan no longer exists.",
   // Support and customers
   "event.ticket.title": (p) => `${p.name}`,

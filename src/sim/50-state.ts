@@ -10,7 +10,6 @@ import type { Customer, Product, Service } from "./30-customers/customers";
 import type { Quote } from "./30-market/quotes";
 import type { BillingRules, HoldReason, Invoice, Loan, Transfer } from "./45-billing/billing";
 import type { Ticket } from "./40-support/tickets";
-import type { Policy } from "./46-finance/finance";
 import { applications, defaultTeams, type Candidate, type Employee, type Team } from "./47-staff/staff";
 import type { OnCall } from "./47-staff/oncall";
 import type { TechOp, TechRules } from "./47-staff/technicians";
@@ -114,7 +113,7 @@ export interface Device extends MachineState { id: string; model: string; brand:
   part?: PartSpec;
   // nodeNNN, set on servers.
   hostname?: string;
-  // Bought on the used market: no insurance covers it.
+  // Bought on the used market.
   used?: true;
   // A burn-in test running until the hour; full is the long one. burnedInAt is the hour a full burn-in passed.
   burnin: { until: number; full: boolean } | null; burnedInAt: number | null;
@@ -271,9 +270,8 @@ export interface GameState {
   // Pear OS release the desktop runs; it sets the look of the shell.
   os: string;
   company: Company;
-  // Finance: loss carried to the next tax year, insurance policies, the hour cash went below zero and the hour of bankruptcy.
+  // Finance: loss carried to the next tax year, the hour cash went below zero and the hour of bankruptcy.
   taxLoss: number;
-  insurance: Policy[];
   brokeSince: number | null;
   gameOver: number | null;
   // Employees and the job market.
@@ -426,7 +424,7 @@ export const newGame = (seed: number): GameState => ({
   tickets: [], playerBusyUntil: 0, friendFavours: { year: 0, used: 0 }, player: { at: "loc1", until: 0, doing: "work" }, downSince: {}, frozen: [],
   company: { name: "Basement Hosting", logo: "server", color: "oklch(0.55 0.15 255)", domain: null, mail: { kind: "free" }, tagline: "" },
   homeLine: { id: MOMS_DSL.id, next: null },
-  taxLoss: 0, insurance: [], brokeSince: null, gameOver: null,
+  taxLoss: 0, brokeSince: null, gameOver: null,
   staff: [], teams: defaultTeams(), candidates: applications(seed, 0), activity: [], techOps: [], techRules: { failed: true, worn: false, blackhole: true, updates: false, recover: true }, onCall: { roster: [], lastCall: {}, month: {} },
   marketing: newMarketing(), fairs: [], sponsorships: [], sponsorOffers: [],
   network: newNetwork(),

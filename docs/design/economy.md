@@ -1132,7 +1132,7 @@ Without a spare kit in stock, a repair waits for a delivery first.
 | CPU | 7 years | 0.05% | 0.2% | €400 | No |
 | Network card | 10 years | 0.3% | 1% | €80 | No |
 
-A server has 4 fans; a switch or router 2 fans, 1 or 2 power supplies and a board that fails like a mainboard. The part price column is the reference price of an unsized spare and sets the insurance premium; the shop sells parts at the prices of Part prices by year.
+A server has 4 fans; a switch or router 2 fans, 1 or 2 power supplies and a board that fails like a mainboard. The part price column is the reference price of an unsized spare; the shop sells parts at the prices of Part prices by year.
 
 **Cooling and overheating.** Each location keeps a room temperature: 22 °C in a datacenter hall, and in the basement 22 + 5 · cos((month − 6.5) · π / 6), from 17 in January to 27 in July. A server's inlet adds up to 3 °C as its rack nears its power limit and 6 °C behind a failed fan. On top of that the room carries heat H, which the sim steps every game minute (60 steps when an hour is ticked at once):
 
@@ -1187,7 +1187,7 @@ A rebuild takes the used data on the drive ÷ the rebuild speed, so a 4 TB HDD t
 
 **Maintenance.** A swap takes 15 minutes once someone is there. In the basement you are there at once. At a datacenter remote hands arrive after their response time and bill their hourly rate for at least one hour.
 
-**Hand work yourself.** At a datacenter the same swap can be done by you or by a friend, after the drive from the home city (the basement's city). Same city: 1 hour and EUR 20 (anchor: a regional train ticket). Same country: 4 hours and EUR 90 (an ICE return). Another European country: 9 hours and EUR 250 (a short-haul flight). Overseas is not offered. A datacenter that is the highest position price of a city with a rival (`visitBooking`) adds 24 hours for the booked visit. Doing it yourself keeps `playerBusyUntil` set through the drive there, the work and the drive back, and waits behind replies already queued. A friend charges EUR 35 (pizza and beer), at most 3 times per calendar year (`friendFavours`), takes the same drive time and leaves the player free; the game's random sequence rolls a 10% chance per favour that the work takes twice as long. Neither option bills remote hands, so hardware insurance pays no hand-work bill for them. A player already at the datacenter presses the front panel buttons and plugs the power cords at once, with no drive and no fee.
+**Hand work yourself.** At a datacenter the same swap can be done by you or by a friend, after the drive from the home city (the basement's city). Same city: 1 hour and EUR 20 (anchor: a regional train ticket). Same country: 4 hours and EUR 90 (an ICE return). Another European country: 9 hours and EUR 250 (a short-haul flight). Overseas is not offered. A datacenter that is the highest position price of a city with a rival (`visitBooking`) adds 24 hours for the booked visit. Doing it yourself keeps `playerBusyUntil` set through the drive there, the work and the drive back, and waits behind replies already queued. A friend charges EUR 35 (pizza and beer), at most 3 times per calendar year (`friendFavours`), takes the same drive time and leaves the player free; the game's random sequence rolls a 10% chance per favour that the work takes twice as long. Neither option bills remote hands. A player already at the datacenter presses the front panel buttons and plugs the power cords at once, with no drive and no fee.
 
 **Remote management, hangs and pulled plugs.** A baseboard management controller is part of the server board: it needs no extra part and costs nothing. Anchors for when it appears: Dell DRAC 5 on PowerEdge 9G in 2006 as an add-in card and iDRAC standard from 11G in 2009; HP iLO 2 on ProLiant G5 in 2006; Supermicro onboard IPMI on X8 boards in 2009; Lenovo IMM on System x from 2008. The game maps them to the generations: Dwell and Hewlett-Packet from generation 2 (2008), SuperMacro and Lenovoid from generation 3 (2011), the ARM line always, generation 1 (2005) never. The management address follows the private address rule: 192.168.3.x in the basement, 10.n.2.x in datacenter n, with the same host octet. Hang rates have no public source and are game choices.
 
@@ -1257,7 +1257,7 @@ Stuck boots, hangs and lockouts are rolled per device and hour and do not draw f
 | Bust hoster's lot | Once a year: 20 servers of one model as one board listing at 35% of their preset price, from the player's first city, for 14 days |
 | Clearance weekend | Once a year: 10 eBuy auctions ending on the second evening |
 
-Used devices are never insured, cannot be leased and resell from the price paid like any other device. Anchors: eBay server lots sold at 30% to 50% of list in the 2000s, and WebHostingTalk marketplace asks sit around half of the new price.
+Used devices cannot be leased and resell from the price paid like any other device. Anchors: eBay server lots sold at 30% to 50% of list in the 2000s, and WebHostingTalk marketplace asks sit around half of the new price.
 
 **Burn-in.** A racked server that is on, has power and sits in no cluster and runs no workload can be burned in. The server counts as busy for the whole test: it draws its full rated power at the location's rate, and in a datacenter the rack position and power limit are used as usual. The test ends early if the server loses power.
 
@@ -2370,7 +2370,6 @@ Product management was tier 2 at 200 know-how and 14 days after Marketing basics
 | Managed databases | Products | 9,000 | €40,000 | Level 4 |
 | Own network number (ASN) | Network | 8,000 | €20,000 | Level 4 |
 | VPN | Products | 8,000 | €30,000 | Level 4 |
-| SLA insurance | Business | 10,000 | €10,000 | Level 4 |
 | Overlay networks | Network | 10,000 | €40,000 | Level 4 |
 | Always-on DDoS protection | Network | 12,000 | €100,000 | Level 4 |
 | Private suite | Infrastructure | 20,000 | €250,000 | Level 5 |
@@ -2406,7 +2405,7 @@ The GDD counts years in operation inside net worth. Here they are a separate min
 
 A company whose net worth stays below 80% of its level's threshold for 6 months drops one level, and customers who require the old level stop renewing.
 
-## Bank, insurance and tax
+## Bank and tax
 
 A level-1 company borrows at about 10% interest and a level-6 company at about 4.5%. Profit is taxed at 30% each April, and a company that stays out of cash for 30 days goes bankrupt.
 
@@ -2443,11 +2442,8 @@ The loan limit is the higher of the level's minimum and 12× the average monthly
 | Fidorr | €0 | €6 | €12 | none |
 | Quonto | €9 | €15 | €25 | none |
 
-**SLA insurance.** The monthly premium is 2% of the recurring revenue from customers with an SLA, times an uptime factor: 1.0 at 99.95% or better over 90 days, 1.5 at 99.9% or better, and 2.5 below that. A missed SLA owes the customer 10% of their monthly fee per 0.1% of uptime below the promise, up to the full fee. The insurer pays those credits for three claims, then blocks the company for a year.
-
 **Tax.** Prices are without VAT, and VAT is not simulated. Corporate tax takes 30% of each year's profit in April of the following year, and losses carry forward to later years. Taxable profit is the year's ledger without loan principal; instalments count only their interest, and hardware is a cost in the year it is bought.
 
-**Hardware insurance.** The monthly premium is 1.5 × the expected yearly cost of spare parts for every working component still within its life expectancy (part price × its current yearly failure rate, with the manufacturer and overheating factors) / 12, at least €1. A claim pays the spare part's price and the remote hands bill for a component that failed while insured and before the end of its life expectancy; wear-out failures after that are not covered, so parts past their lifetimes add nothing to the premium. The starting basement server costs about €1.40 a month to insure.
 
 ## Balancing
 

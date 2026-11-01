@@ -11,7 +11,6 @@ import { chassisPrice, partPrice, partsPrice, presetPrice } from "../10-catalog/
 import { BASEMENT, DATACENTERS, datacenterById, EXTRA_POWER_LEAD_DAYS, EXTRA_STEP_KW, FLAT_CONTRACTS, HOME_LINES, maxExtraKw, LEAD_DAYS, nextAz, NOTICE_MONTHS, RACK_MODELS, rackUnits, SHARE_RACKS, SPACE_SIZES, spacePrice } from "../20-world/datacenters";
 import { deviceDefaults, type BondMode, type Component, type Device, type End, type GameState, type LedgerEntry, type RackModel, type RaidLevel, type RebuildRate } from "../50-state";
 import { arrayLost, bootHours, connectError, drivesOf, energized, fits, flatOffer, freePositions, holdsData, nodesOf, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, isPlugged, locationOf, moveCost, psusOf, deviceValue, resaleValue, spotOf, travelCost, working } from "../60-infra/status";
-import { claimRepair } from "../46-finance/finance";
 import { atFront, BMC_RESET_HOURS, bootUp, halt, hardReboot, plugCords, pullPlug, pushLog, rollStuck, type FrontOp } from "../60-infra/power";
 import { hasPdu, pduOf } from "../60-infra/pdu";
 import { kvmPower, lockoutRoll } from "../60-infra/oob";
@@ -552,7 +551,7 @@ export function moveServer(s: GameState, deviceIds: string | string[], locationI
     if (s.player.until > s.hour) return fail("error.away");
     const fare = driveTo(s, to.id);
     if (!fare) return fail("error.tooFar");
-    job = { cost: fare.fee, bill: 0, wait: fare.hours + work, commit: () => {
+    job = { cost: fare.fee, wait: fare.hours + work, commit: () => {
       book(s, "maintenance", "ledger.drive", { place: to.name }, -fare.fee);
       s.player = { at: to.id, until: s.hour + fare.hours + work, doing: "travel" };
       return fare.hours + work;
@@ -869,7 +868,6 @@ export function replaceComponent(s: GameState, deviceId: string, componentId: st
   if (s.cash < job.cost + grey) return fail("error.noCash");
   const wait = job.commit();
   if (grey) book(s, "maintenance", "ledger.greyMarket", { device: d.label ?? d.name, component: c.kind }, -grey);
-  if (!d.used) claimRepair(s, d.label ?? d.name, c, spares.reduce((n, x) => n + x.price, 0), job.bill);
   s.devices = s.devices.filter((x) => !spares.includes(x));
   const others = spares.length > 1 ? d.components.filter((x) => x.kind === "cpu" && x !== c).map((x) => x.id) : [];
   d.maintenance = { componentId, partId: part.id, doneAt: s.hour + wait, ...(part.part ? { spec: part.part } : {}), ...(others.length ? { others } : {}) };
@@ -979,7 +977,7 @@ const sameSlots = (a: ComponentKind, b: ComponentKind) => a === b || (isDriveKin
 // the hand work's wait at a datacenter (remote hands bill at least an hour), plus 30 minutes for a part that needs the server off.
 function handsOn(s: GameState, d: Device, hot: boolean, how: How | boolean): { error: string } | HandJob {
   if (d.maintenance) return { error: "error.busy" };
-  if (!d.rackId) return d.store ? { cost: 0, bill: 0, wait: 0, commit: () => 0 } : { error: "error.inTransit" };
+  if (!d.rackId) return d.store ? { cost: 0, wait: 0, commit: () => 0 } : { error: "error.inTransit" };
   const rack = spotOf(s, d.rackId)!;
   if (rack.moving) return { error: "error.rackMoving" };
   if (energized(d) && !hot) return { error: "error.powerOffFirst" };
