@@ -12,7 +12,7 @@ import { type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { applyForRegistration, registerCompany } from "../src/sim/90-actions/company";
 import { newGame as blankGame } from "../src/sim/50-state";
-import type { BankId } from "../src/sim/10-catalog/banks";
+import { BANKS, type BankId } from "../src/sim/10-catalog/banks";
 import { START_CASH } from "../src/sim/10-catalog/economy";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 
@@ -101,6 +101,11 @@ describe("bank account", () => {
 const payee: Draft = { name: "Hans Wurst", account: "1234567", code: "37040044", amount: 49.9, reference: "Rechnung 17" };
 
 describe("bank site and TANs", () => {
+  it("gives every bank its own name, host and layout, redesigned after it opens", () => {
+    for (const key of ["name", "host"] as const) expect(new Set(BANKS.map((b) => b[key])).size).toBe(BANKS.length);
+    expect(new Set(BANKS.map((b) => b.skin.frame)).size).toBe(BANKS.length);
+    for (const b of BANKS) expect(b.skin.redesign).toBeGreaterThanOrEqual(b.from);
+  });
   it("serves the bank's site in the Browser", () => {
     const s = opened();
     expect(resolve(s, "www.sparklasse.de/banking/transfer").page).toEqual({ kind: "bank", id: "sparklasse" });
