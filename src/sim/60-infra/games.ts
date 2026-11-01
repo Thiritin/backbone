@@ -1,6 +1,6 @@
 // game-servers plan 3.1 and 3.2: the game behind a game server service, its players and full-at-peak mark.
 import { yearOf } from "../00-core/time";
-import { GAME_UNIT, latestRelease, pickTitle, slotsFor, titleById } from "../10-catalog/games";
+import { GAME_UNIT, latestRelease, modById, pickTitle, releasedAt, slotsFor, titleById } from "../10-catalog/games";
 import { idNum } from "../10-catalog/usage";
 import type { GameState } from "../50-state";
 import { workloadsOf } from "./cluster";
@@ -15,6 +15,22 @@ export interface GameServer {
   auto: boolean;
   // The hour the server last had every slot taken; -1 for never.
   seenFull: number;
+  // The hour it crashed and has not been restarted since; null while it runs.
+  crashedAt: number | null;
+  crashes: number;
+  // Memory grown since the last restart, 0 to 1.
+  leak: number;
+  mods: string[];
+  restart: Restart;
+}
+
+export interface Restart { every: "off" | "daily" | "weekly"; hour: number; day: number }
+export const NO_RESTART: Restart = { every: "off", hour: 4, day: 1 };
+
+// Saves from before crashes and mods get the defaults.
+export function fillGames(s: GameState): GameState {
+  s.gameServers = s.gameServers.map((g) => ({ ...({ crashedAt: null, crashes: 0, leak: 0, mods: [], restart: NO_RESTART } as Partial<GameServer>), ...g } as GameServer));
+  return s;
 }
 
 // A gameServer service without an entry is a legacy one and shows RAM only.
@@ -27,7 +43,7 @@ export function createGameServer(s: GameState, serviceId: string, titleId?: stri
   const year = yearOf(s.hour), g = titleById(titleId ?? "") ?? titleById(pickTitle(s.seed, idNum(serviceId), year))!;
   s.gameServers = [...s.gameServers, {
     serviceId, title: g.id, slots: unit === "slots" ? slotsFor(g, (w.promised ?? w).ramGb) : null, version: latestRelease(g, year),
-    auto: panel === "pterodaktyl" || year >= 2011, seenFull: -1,
+    auto: panel === "pterodaktyl" || year >= 2011, seenFull: -1, crashedAt: null, crashes: 0, leak: 0, mods: [], restart: NO_RESTART,
   }];
 }
 
@@ -39,14 +55,15 @@ export function playersOf(s: GameState, serviceId: string, hour: number = s.hour
   return { players: Math.round(slots * workloadLoad(s, w, hour)), slots };
 }
 
-// Marks the servers that filled up this hour.
-export function gamesTick(s: GameState): void {
-  if (!s.gameServers.length) return;
-  s.gameServers = s.gameServers.map((g) => {
-    const p = s.services.find((v) => v.id === g.serviceId)?.endedAt === null ? playersOf(s, g.serviceId) : null;
-    return p && p.players >= p.slots ? { ...g, seenFull: s.hour } : g;
-  });
-}
+export const gameCrashed = (s: GameState, serviceId: string): boolean => gameOf(s, serviceId)?.crashedAt != null;
+
+// How many mods count against the crash chance, and how many of them no longer run on the server's version.
+export const brokenMods = (g: GameServer): number => g.mods.filter((id) => (modById(id)?.works ?? 0) < g.version).length;
+export const modCount = (g: GameServer): number => g.mods.reduce((n, id) => n + (modById(id)?.weight ?? 1), 0);
+
+// The newest version a server's title has out now.
+export const latestVersion = (s: GameState, g: GameServer): number => Math.max(g.version, releasedAt(titleById(g.title)!, s.hour));
+export const outdated = (s: GameState, g: GameServer): boolean => g.version < latestVersion(s, g);
 
 // economy.md, Happiness and churn: a customer whose game server filled up in the last week asks for more three times as often.
 export const FULL_HOURS = 7 * 24, FULL_BOOST = 3;
