@@ -1,7 +1,6 @@
 // game-servers plan 3.3 to 3.6: the hourly crashes, restarts and release waves of every game server.
 import { hashRng, rand } from "../00-core/rng";
-import { dateOf } from "../00-core/time";
-import { yearOf } from "../00-core/time";
+import { dateOf, yearOf } from "../00-core/time";
 import { fadeDrain, modById, releaseHour, releasedAt, titleById } from "../10-catalog/games";
 import { idNum } from "../10-catalog/usage";
 import { bump, createTicket } from "../40-support/tickets";
