@@ -32,8 +32,8 @@ export interface NotifyPref { allow: boolean; sound: boolean; types?: Record<str
 const WIDE = { w: 1240, h: 680 };
 const WINDOW_SIZES: Record<string, { w: number; h: number }> = {
   Security: { w: 900, h: 560 }, Browser: { w: 1100, h: 720 }, News: { w: 520, h: 640 },
-  Locations: { w: 1440, h: 860 }, Shop: { w: 1180, h: 700 }, Billing: WIDE, Customers: WIDE, Marketing: WIDE, Market: WIDE, Network: WIDE,
-  Support: { w: 1400, h: 840 }, Research: { w: 1140, h: 600 }, Staff: { w: 1240, h: 640 },
+  Locations: { w: 1440, h: 860 }, Shop: { w: 1180, h: 700 }, Books: { w: 900, h: 560 }, Customers: WIDE, Marketing: WIDE, Market: WIDE, Network: WIDE,
+  Support: { w: 1400, h: 840 }, Research: { w: 1140, h: 600 }, Staff: { w: 1240, h: 640 }, Post: { w: 1000, h: 820 },
 };
 
 export const prefOf = (prefs: Record<string, Partial<NotifyPref>>, app: string): NotifyPref => ({ allow: true, sound: true, ...prefs[app] });
@@ -132,7 +132,7 @@ function loadGame(): { game: GameState; loaded: boolean } {
 
 const initial = loadGame();
 // A reload (the dev server's after a code change, or the player's) reopens the windows of the saved game and keeps its clock running.
-const restored = initial.loaded ? readSession<Win[]>("windows", []) : [];
+const restored = initial.loaded ? readSession<Win[]>("windows", []).map((w) => (w.app === "Billing" ? { ...w, app: "Books" } : w)) : [];
 const savedSpeed = readSession<Speed>("speed", 0);
 const restoredSpeed: Speed = initial.loaded && SPEEDS.includes(savedSpeed) ? savedSpeed : 0;
 

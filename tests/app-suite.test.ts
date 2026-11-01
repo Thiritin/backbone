@@ -2,14 +2,14 @@ import { describe, expect, it } from "vitest";
 import { isMonthStart } from "../src/sim/00-core/time";
 import { softwareById } from "../src/sim/10-catalog/platforms";
 import { APP_SUITE_FEE } from "../src/sim/10-catalog/server-os";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { hostOfVm, machineOf } from "../src/sim/60-infra/cluster";
 import { machineScreen } from "../src/sim/60-infra/oob";
 import { tick } from "../src/sim/88-tick/tick";
 import { deleteVm, PANEL_VM_SIZE } from "../src/sim/90-actions/clusters";
 import { buyAppSuite, cancelAppSuite, deployFromSuite, SUITE_OS_HOURS } from "../src/sim/90-actions/suite";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { hypervisor, withServer } from "./fixtures";
+import { hypervisor, withServer, newGame } from "./fixtures";
 
 const err = (r: { ok: boolean; error?: string }) => r.error;
 const ok = (r: { ok: boolean; error?: string; id?: string }) => { expect(r.error).toBeUndefined(); return r.id!; };

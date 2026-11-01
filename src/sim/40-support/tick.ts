@@ -1,12 +1,15 @@
 import { chance, rand } from "../00-core/rng";
+import { refundUnused, termRoll } from "./terms";
 import { isMonthStart, nowMinutes } from "../00-core/time";
 import { counts } from "../00-core/workhours";
 import { noticed, segmentOf } from "../10-catalog/attention";
 import { activeServices, type Customer } from "../30-customers/customers";
+import { resellerAbuse } from "../30-customers/resellers";
 import { serviceFqdn } from "../30-customers/hostnames";
 import { grantExtension, serviceHeld, KEEP_SUSPENDED_HAPPINESS, UNSUSPEND_HAPPINESS } from "../45-billing/billing";
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
+import { fullBoost, fullServer } from "../60-infra/games";
 import { takenDown } from "../60-infra/ops";
 import { liveServices, readOnlySweep } from "../60-infra/status";
 import { coverage } from "../60-infra/maintenance";
@@ -121,7 +124,7 @@ function spawnHourly(s: GameState): void {
     if (c.churnedAt !== null) continue;
     const { skill } = profileStats(c.profile);
     for (const kind of ["howTo", "billing", "abuse"] as const) {
-      const rate = (kind === "abuse" && c.profile === "gamer" ? GAMER_ABUSE_RATE : MONTHLY_RATES[kind][skill] * (kind === "howTo" ? howToFactor(s, c.id) * tenureFactor(s, c) : 1)) * (kind === "abuse" && c.shady ? SHADY_ABUSE : 1) * (kind === "abuse" ? phpAbuse(s, c.id) * (allHeld(s, c.id) ? 0 : 1) : 1);
+      const rate = (kind === "abuse" && c.profile === "gamer" ? GAMER_ABUSE_RATE : MONTHLY_RATES[kind][skill] * (kind === "howTo" ? howToFactor(s, c.id) * tenureFactor(s, c) : 1)) * (kind === "abuse" && c.shady ? SHADY_ABUSE : 1) * (kind === "abuse" ? phpAbuse(s, c.id) * resellerAbuse(s, c.id) * (allHeld(s, c.id) ? 0 : 1) : 1);
       if (!chance(s.rng, rate / HOURS_PER_MONTH)) continue;
       if (kind !== "howTo") { createTicket(s, c, kind); continue; }
       const ask = pickHowTo(s, c);
@@ -154,7 +157,7 @@ function outages(s: GameState, customer: (id: string) => Customer): void {
 }
 
 // economy.md, Happiness and churn: a cancellation left open is processed at the next monthly billing date.
-// ponytail: every customer rolls monthly churn; yearly contracts rolling 12x at renewal needs billing's renewal dates.
+// A customer inside a paid term does not roll until the month the term ends, when one roll covers all its months.
 function monthly(s: GameState): void {
   for (const c of s.customers) if (c.churnedAt === null) c.history = [...c.history, c.happiness].slice(-HISTORY_MONTHS);
   overpricing(s);
@@ -162,17 +165,18 @@ function monthly(s: GameState): void {
   for (const t of s.tickets) {
     if (t.kind !== "cancellation" || isFinal(t) || t.createdAt >= s.hour || t.work?.arg === FIX_CHECK) continue;
     const c = s.customers.find((x) => x.id === t.customerId)!;
+    refundUnused(s, c);
     cancelCustomer(s, c);
     Object.assign(t, { status: "closed", updatedAt: s.hour, outcome: "cancelled", work: null });
   }
   for (const c of s.customers) {
     if (c.churnedAt !== null) continue;
-    const p = profileStats(c.profile);
-    const cancels = c.happiness < 15 || chance(s.rng, p.churn + 0.5 * Math.max(0, (50 - c.happiness) / 50));
+    const p = profileStats(c.profile), term = termRoll(s, c.id);
+    const cancels = !(term.committed && c.happiness >= 15) && (c.happiness < 15 || chance(s.rng, Math.min(0.9, p.churn * term.months) + 0.5 * Math.max(0, (50 - c.happiness) / 50)));
     if (cancels && !s.tickets.some((t) => t.customerId === c.id && t.kind === "cancellation" && !isFinal(t))) createTicket(s, c, "cancellation", null).topic = cancelReason(s, c);
-    else if (chance(s.rng, UPGRADE_CHANCE[p.budget])) {
-      const grow = activeServices(s.services, c.id).filter(expandable);
-      if (grow.length) createTicket(s, c, "upgrade", grow[Math.floor(rand(s.rng) * grow.length)].id, TOPICS.upgrade[0]);
+    else if (chance(s.rng, UPGRADE_CHANCE[p.budget] * fullBoost(s, c.id))) {
+      const grow = activeServices(s.services, c.id).filter(expandable), full = fullServer(s, c.id);
+      if (grow.length) createTicket(s, c, "upgrade", (grow.find((v) => v.id === full?.serviceId) ?? grow[Math.floor(rand(s.rng) * grow.length)]).id, TOPICS.upgrade[0]);
     }
   }
 }

@@ -2,9 +2,88 @@
 
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
-## 2026-10-31
+## 2026-11-01
 
 - Vendor and software websites now show their logos centred and complete in every era, and the ISO download buttons line up with their release rows.
+- The back button on the marketing website page is now its normal size and shows in your language.
+- The server details page has room at its edges again, long German button labels wrap, and the disk label no longer runs into its meter.
+- Each website on a panel host links to its domain, or to its address while it has none.
+- The dunning settings in Lexwear Office now open from a Settings button on the Reminders tab.
+- The first order form is now called the self-scripted order form in every language.
+- Software subscriptions now renew per licence key on the day of the month you bought them, with a receipt from the vendor, and a renewal the bank cannot pay lapses after a week of grace until the money is there.
+- The Debiant installer asks how to configure the network, so a server can take its address from the router or get a fixed address, netmask, gateway and name server, and the Windoors Server Manager has a Network adapter page for the same settings.
+- Server shells know `ip`, `ifconfig`, `dhclient`, `ifup`, `ifdown` and the networking restart commands, apply the edited network settings file when networking restarts, and two servers holding the same address both drop off the network.
+- Custom order tickets now show only the step you are at, and you can open the customer account before or after sending the offer, which appears as an attachment on the email you sent.
+- A custom order now sends the customer one email when everything is set up, with the account, the order confirmation and its invoice, the domain and the login details together.
+- Every bank now has a name of its own and a website laid out its own way, and each bank redesigns its site with a modern look at some point between 2010 and 2016.
+- Letters in the Post app now arrive as full A4 pages with each sender's letterhead, crest or logo, the address window, reference block and footer of an official German letter.
+- Authorities that seize servers or send legal requests now appear under their name in your chosen language.
+- Resellers now rent blocks of 20, 50 or 100 accounts on a DirectAdmen or cPanic host and fill them over the months, their customers bring abuse reports of their own, and DirectAdmen has a Reseller login and a Manage Resellers page to watch and suspend them.
+- The desktop only responds at normal speed; pause or fast forward to watch, then return to normal speed to act.
+- Quotes and invoices in Lexwear Office now show as a full A4 page that fits the pane, and a draft quote can be sent to the customer with the Send button.
+- Small hosting companies now open in one or two cities, collect reviews like the big ones, and go bust or get bought when they win too few customers, with each step in the news.
+- Competitors now change over the years: they move to new server generations, add features and have outages that make the news, the budget host cuts its prices each year, and the Market app charts each city's share of new customers.
+- A new game now starts with no money: you first open a business account on a bank's website, where your €3,500 savings arrive, and then register the company at the trade office for a €40 fee paid by bank transfer.
+- Used hardware now resells for less than it cost new, and buyers on the board and on eBuy no longer pay more than its resale value.
+- A part taken out of a server takes its share of the server's value along, so stripping a server and selling the pieces brings in the same as selling it whole.
+- Installed software now runs a real version number, and a new install takes the newest release out at the time.
+- A software console now looks like the version installed on the machine, so an old cPanic keeps its old look in later years.
+- The Marketing app has a Domain tile whose Buy button opens the domain resellers in the Yahoy! Directory, and the domains of other companies in the game can no longer be registered as your own.
+- Websites in the browser fill the whole window again instead of a narrow page.
+- Right-click a browser tab to close it, close all other tabs, or close every tab to its left or right.
+- A business now always registers as a sole trader, and founding a limited company first needs the new Company law training in Research.
+- Letters now arrive by post in the new Post app, and paper bills from the trade office, the notary, the commercial register and the chamber of commerce land in your payables.
+- You can change your company to a partnership or a limited company by downloading the form from the trade office site, signing it and emailing it from the new compose window, and the Yahoy! Directory now links to the trade office.
+- Dunning rules now have their own settings tab in the bookkeeping app, and the pay all button on the payables tab sits in a proper toolbar.
+- Bank websites now show their own icon in the browser tab and address bar.
+- Quotes and invoices in Books now sit in a document list with a toolbar, and an accepted quote becomes its first invoice through Carry forward to invoice, after which it reads Invoiced with the invoice number.
+- The weather in the menu bar shows the name of the place you are at again, after the temperature.
+- The bank's welcome email now lists your account number, PIN and login address on their own lines.
+- Lexwear now sells modules for Books on lexwear.de: Monthly run, Match by reference and Automatic reminders take over the back office once you enter the licence key from Lexwear's email.
+- Bookkeepers can now be trained to send draft invoices and match incoming payments, including odd amounts, and a second bookkeeper gets through twice as much.
+- The hand-rolled order form is now a shop you buy once for 900 euro with no monthly fee, and it takes orders right away.
+- Panel hosts can keep up to two older PHP versions next to the newest, and you install them and pick one per domain in EasyApachy and Custom Build.
+- Game servers now run a named game such as Counter-Strife or Blockcraft, and the game panels sell them by slots or by RAM.
+- The weather app fills its whole window again and lists all your locations.
+- Bank account fees now depend on your legal form: a limited company pays more, branch banks charge partnerships and limited companies for every booking, and netbunk opens no account for a limited company.
+- Order emails are now signed with the customer's postal address, and Create customer opens Books with the email beside the form, where a click on a line fills the field you are in.
+- Quotes are now documents in Books that you drag onto the order ticket, an accepted quote converts to the first invoice that you send and match like any other, and the Lexwear module Helpdesk link does the quote, account and invoice from the ticket.
+- Datacenter providers now announce your own IP block under your AS number for a one-off setup fee, so you no longer need your own BGP router for it.
+- Register domain and Transfer domain on an order now open your registrar's website, where you fill the owner from the customer record with a click and enter the auth code from the order email, while a shop system with the registrar module still registers its own orders.
+- Control panel trials now last as long as the real vendor's trial, 15 days for cPanic and 14 for Pleskit, and run only once per machine, so reinstalling a panel no longer starts a new trial. DirectAdmen has no trial and bills its top edition from the install.
+- The router now sits in the rack and hands out every address by DHCP, and its Fritz!OZ page at fritz.bocks lists your devices, fixes addresses and shares the web port with the one server that hosts websites on a home line.
+- Switches now come managed or unmanaged, and managed switches have VLANs, a saved configuration and their own web page at the address the router gives them.
+
+## 2026-10-31
+
+- MinnIO keeps real buckets that you set to private, read only or public, and customers sometimes ask you to open one.
+- PowerDNZ, Mailpig and the VPN consoles show statistics, mail authentication results and connected users.
+- The VPN consoles list a certificate for every VPN user, and you can revoke and reissue them when a customer loses a laptop.
+- Games with many customers now run faster.
+- Each hypervisor console has its own package screen, such as VM Classes, Hardware Profiles, Plans and Flavors.
+- PowerDNZ lists real zones where you edit records, and a wrong address for a customer's site takes it offline until you fix it.
+- DirectAdmen, Pleskit, FreePanel, MultiKraft and Pterodaktyl now have a packages screen and a create form for new orders.
+- Every game and infrastructure console now has Task log, Logs and Licence pages, and cPanic has a Service Manager.
+- Every hosting and game panel account can now be suspended, unsuspended and terminated from the console itself.
+- A shady customer's spam can get your mail server blacklisted, which costs every mail customer happiness until it is delisted.
+- You now manage packages and create customer accounts in the consoles instead of the Support order screen.
+- The whole desktop, every app and the web now follow the era of your Pear OS release, and Settings has a wallpaper picker and Credits.
+- You can learn Fraud screening in Research and turn on MaxMined to screen every new order.
+- Account lists show disk and bandwidth bars that turn amber at 80 percent and red at 95 percent of the limit.
+- Software installations hold up to 12 named packages, each sized for one product.
+- The basement router now stands on a shelf in the rack and only passes traffic while its DSL port is cabled to the line jack.
+- Mailpig has a working mail queue, and a broken service now causes an outage for its customers.
+- A technician can now mount a whole stack of stored units at once.
+- The cPanic, Pleskit, DirectAdmen and FreePanel consoles have a Task log page that lists installs, updates, moves and backups in progress.
+- Each Pear OS release now looks like the Mac of its year and comes with its own wallpaper.
+- Rooms now heat up with the racks in them, and a cooling failure can overheat a datacenter hall.
+- The Website app is gone, and you open your company site in the Browser.
+- Some new orders are paid with a stolen card or PayPail account, which leads to chargebacks.
+- Mounting bought hardware in a datacenter rack now takes time and costs money for the work.
+- You now choose a bank when you register the company and run the business account on its website, confirming every transfer with a TAN from your TAN list, a text message or the bank's app, and you can apply there for a credit card, an overdraft and standing orders.
+- Your line, power, datacenter, Pear and registrar bills now arrive as invoices by email that you pay by transfer before they are due, or that a supplier debits by itself once you set up a direct debit on its website, and an invoice left unpaid slows or cuts your line, switches the power off, pauses subscriptions or suspends domains.
+- Billing is now Books, the Lexwear Office bookkeeping program, where you see each customer's postal address and send every month's invoices yourself as PDF.
+- Customers now pay by bank transfer, and you match each payment to its invoice in Books, including short amounts, overpayments and transfers with an unclear reference.
 - Rented space now runs on a contract with the provider: cancelling gives one, three or six months of notice to the end of a month, the rent stays at the agreed price, and a location that still holds hardware at the end date keeps its contract one more month.
 - The free email provider every new company starts on is now called GMix, with a new logo.
 - Picking the USB stick in the boot menu now starts its installer right away instead of dropping back to the POST screen.

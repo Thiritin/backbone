@@ -75,3 +75,7 @@
 :root[data-era="tahoe"] .vsw .vsw-tree button[aria-pressed="true"] { border-radius: 10px; }
 :root[data-era="tahoe"] .vsw .vsw-portlet { overflow: hidden; border-radius: 18px; }
 :root[data-era="tahoe"] .vsw .vsw-card { overflow: hidden; border-radius: 26px; box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.75), 0 14px 40px rgb(0 0 0 / 0.2); }
+.vsw-order { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.vsw-classes { display: flex; align-items: center; gap: 6px; width: 100%; margin-top: 6px; padding: 3px 8px; border: 0; background: none; text-align: left; font: inherit; cursor: pointer; }
+.vsw-classes[aria-pressed="true"] { background: #cfe0f4; }
+.vsw-classes i { font-style: normal; }

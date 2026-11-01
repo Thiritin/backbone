@@ -7,7 +7,7 @@ import { DESKS, seats } from "./desks";
 // Values from docs/design/economy.md, section "Pear One subscriptions". The skill each item needs is in research.ts.
 
 // Apps every new game has in the dock, free of charge. Getting started and Notes are desktop documents and never sit in the dock.
-export const STARTER_APPS = ["Applications", "Locations", "Shop", "Browser", "Terminal", "Support", "Billing", "Settings"];
+export const STARTER_APPS = ["Applications", "Locations", "Shop", "Browser", "Terminal", "Support", "Books", "Settings"];
 
 // id is the app name for apps; monthly is the 2005 price, charged once per seat when perSeat is set.
 export interface StoreItem { id: string; kind: "app" | "upgrade" | "bot" | "desk"; name: string; monthly: number; perSeat?: boolean }
@@ -52,5 +52,5 @@ export const subscriptionEntry = (s: GameState, item: StoreItem): LedgerEntry =>
 
 // Know-how each active contract earns per month; DNS counts like a domain.
 export const KNOW_HOW: Record<Product, number> = {
-  domain: 0.2, ssl: 0.2, dns: 0.2, webHosting: 1, vpn: 1, gameServer: 1.5, vps: 2, storage: 3, cloud: 4, dedicated: 5, colocation: 6, gpu: 8,
+  domain: 0.2, ssl: 0.2, dns: 0.2, webHosting: 1, vpn: 1, gameServer: 1.5, vps: 2, storage: 3, cloud: 4, dedicated: 5, colocation: 6, gpu: 8, reseller: 2,
 };

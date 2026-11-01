@@ -16,7 +16,7 @@ import {
   requestPeering, setBlackhole,
 } from "../../../sim/90-actions/network";
 import { useStore } from "../../store";
-import { formatDay } from "../billing/BillingApp";
+import { formatDay } from "../billing/format";
 import { readyIn } from "../hw";
 import { AddressList } from "../network/Addresses";
 import { Topology } from "../network/Topology";

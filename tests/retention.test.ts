@@ -6,7 +6,7 @@ import {
   applyRetention, cancelReason, cheapestOption, endDiscounts, FIX_DAYS, KEPT_BUMP, oddsOf, retentionChance, retentionOptions, UPGRADE_FACTOR, type CancelReason, type RetentionId,
 } from "../src/sim/40-support/retention";
 import { createTicket, isFinal, monthlyValue, type Ticket } from "../src/sim/40-support/tickets";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { workloadsOf } from "../src/sim/60-infra/cluster";
 import { visibleCandidates, TASKS } from "../src/sim/47-staff/staff";
 import { tick } from "../src/sim/88-tick/tick";
@@ -16,7 +16,7 @@ import { connect } from "../src/sim/90-actions/hardware";
 import { hire } from "../src/sim/90-actions/staff";
 import { retainTicket, resolveTicket } from "../src/sim/90-actions/support";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { basement, buyDevice, hypervisor, withServer } from "./fixtures";
+import { basement, buyDevice, hypervisor, withServer, newGame } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 // Direct calls to the offer can be forced to win or lose; everything else rolls as usual.

@@ -30,7 +30,7 @@
 
 /* A page fills the viewport at least, so a short page's background runs to the bottom. */
 .web-view { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: auto; background: var(--win); }
-.web-view.paper { background: #ffffff; }
+.web-view.white { background: #ffffff; }
 .web-view > * { flex: 1 0 auto; min-height: 100%; }
 .web-load { height: 2px; background: linear-gradient(90deg, transparent, var(--accent), transparent); background-size: 40% 100%; background-repeat: no-repeat; animation: web-load 1.4s linear infinite; }
 @keyframes web-load { from { background-position: -40% 0; } to { background-position: 140% 0; } }

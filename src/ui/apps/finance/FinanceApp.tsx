@@ -9,7 +9,7 @@ import { metrics } from "../../../sim/metrics";
 import { t } from "../../../i18n/en";
 import { useStore, useFocus } from "../../store";
 import { BankApp } from "../bank/BankApp";
-import { formatDay } from "../billing/BillingApp";
+import { formatDay } from "../billing/format";
 import "../billing/billing.css";
 import "../shop/shop.css";
 import "./finance.css";
@@ -17,7 +17,7 @@ import { LOCALE } from "../../../i18n/lang";
 
 const CATEGORY: Record<string, string> = {
   payments: t("misc.catPayments"), setup: t("misc.catSetup"), sales: t("misc.catSales"), hardware: t("misc.catHardware"), rent: t("misc.catRent"), power: t("misc.catPower"), transit: t("misc.catTransit"), salaries: t("misc.catSalaries"),
-  leasing: t("misc.catLeasing"), maintenance: t("misc.catMaintenance"), moving: t("misc.catMoving"), insurance: t("misc.catInsurance"), loans: t("misc.catLoans"), tax: t("misc.catTax"), subscriptions: t("misc.catSubscriptions"), ai: t("misc.catAi"), marketing: t("misc.catMarketing"), fees: t("misc.catFees"),
+  leasing: t("misc.catLeasing"), maintenance: t("misc.catMaintenance"), moving: t("misc.catMoving"), insurance: t("misc.catInsurance"), loans: t("misc.catLoans"), tax: t("misc.catTax"), subscriptions: t("misc.catSubscriptions"), ai: t("misc.catAi"), marketing: t("misc.catMarketing"), fees: t("misc.catFees"), transfers: t("bank.catTransfers"), capital: t("bank.catCapital"),
 };
 const categoryLabel = (c: string) => CATEGORY[c] ?? c.charAt(0).toUpperCase() + c.slice(1);
 const REVENUE = ["payments", "setup", "sales"];
