@@ -6,7 +6,7 @@ import { type GameState } from "../src/sim/50-state";
 import { freeSlots, linkStatus, mountFrom, mountMax, portPeers, storageStacks } from "../src/sim/60-infra/status";
 import { tick } from "../src/sim/88-tick/tick";
 import { addLocation, buyCart as buyCartReal, buyDevice as buyReal, buyRack, connect, disconnect, sellDevice, setBond, setPortGroup, unmountDevice } from "../src/sim/90-actions/hardware";
-import { buyDevice, newGame } from "./fixtures";
+import { buyDevice, newGame, onSaleAt } from "./fixtures";
 import { mountDevice, mountStack } from "./plugged";
 import { withServer } from "./fixtures";
 
@@ -194,6 +194,7 @@ describe("sellDevice", () => {
 describe("connect", () => {
   it("picks copper, DAC or fiber", () => {
     const s = atYear(2011);
+    s.hour = onSaleAt(["g3-compute", "Dwell"], ["sw-48", "Sysko"]);
     const { racks: [a, b], handoff } = colo(s, 2);
     const srv = mounted(s, "g3-compute", a, 1);
     const swA = mounted(s, "sw-48", a, 41);
@@ -205,6 +206,7 @@ describe("connect", () => {
   });
   it("rejects every invalid cable", () => {
     const s = atYear(2011);
+    s.hour = onSaleAt(["g3-compute", "Dwell"], ["sw-48", "Sysko"]);
     const { racks: [a] } = colo(s);
     const srv = mounted(s, "g3-compute", a, 1);
     const sw = mounted(s, "sw-48", a, 41);

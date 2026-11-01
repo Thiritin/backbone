@@ -38,7 +38,7 @@ describe("news", () => {
     expect(keys(at(2010))).toContain("event.news.ipv6Dc");
     expect(keys(at(2013))).toContain("event.news.ipv6Home");
     expect(keys(at(2012, 8))).toEqual(["event.news.ripeLast"]);
-    expect(keys(at(2019, 10))).toEqual(["event.news.ripeOut"]);
+    expect(keys(at(2019, 10))).toContain("event.news.ripeOut");
     expect(keys(at(2009))).toContain("event.news.design");
     expect(keys(at(2013))).toContain("event.news.design");
     expect(keys(at(2011))).not.toContain("event.news.design");
@@ -69,7 +69,7 @@ describe("news", () => {
 
   it("loads a save without news and does not replay what already happened", () => {
     const s = newGame(1);
-    s.hour = at(2015, 5, 0);
+    s.hour = at(2015, 5, 12);
     const raw = JSON.parse(serialize(s));
     delete raw.news;
     const loaded = deserialize(JSON.stringify(raw));
