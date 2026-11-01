@@ -187,8 +187,9 @@ function finishSwitches(s: GameState, events: SimEvent[]) {
     if (!c.switching || c.switching.doneAt > s.hour) continue;
     const { kind, to } = c.switching, fresh = !(kind === "cloud" ? c.platform : c.panel);
     // A licensed panel starts on a free trial of its top tier.
-    const licence = kind === "panel" && topTier(to) ? { tier: topTier(to)!.id, trialUntil: s.hour + TRIAL_DAYS * 24, lapsedAt: null } : undefined;
-    s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, switching: null, version: yearOf(s.hour), updatedAt: s.hour, ...(kind === "cloud" ? { platform: to } : { panel: to, licence }), ...(fresh ? { channel: "stable" as const } : {}) } : x));
+    const licence = kind === "panel" && topTier(to) ? { tier: topTier(to)!.id, trialUntil: s.hour + TRIAL_DAYS * 24, lapsedAt: null }
+      : kind === "cloud" && to === "vmwhere" && fresh ? { tier: "essentials", trialUntil: null, lapsedAt: null } : undefined;
+    s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, switching: null, version: yearOf(s.hour), updatedAt: s.hour, ...(kind === "cloud" ? { platform: to, ...(licence && { licence }) } : { panel: to, licence }), ...(fresh ? { channel: "stable" as const } : {}) } : x));
     events.push({ app: "Locations", key: fresh ? "event.installed" : "event.switched", params: { cluster: c.name, name: softwareById(to).name } });
     const d = fresh ? s.devices.find((x) => x.id === c.controlPlane) : undefined;
     if (d?.bootFrom === "usb") Object.assign(d, { bootFrom: "disk", bootUntil: nowHours(s) + bootHours(s, d) });
@@ -350,7 +351,7 @@ export function licenceTick(s: GameState): void {
 export function payLicence(s: GameState, c: Cluster, fee: number): void {
   if (fee <= 0) return;
   s.cash = Math.round((s.cash - fee) * 100) / 100;
-  s.ledger = [...s.ledger, { hour: s.hour, category: "licenses", key: "ledger.license", params: { cluster: c.name, name: softwareById(c.panel!).name }, amount: -fee }];
+  s.ledger = [...s.ledger, { hour: s.hour, category: "licenses", key: "ledger.license", params: { cluster: c.name, name: softwareById((c.panel ?? c.platform)!).name }, amount: -fee }];
 }
 
 // Hourly: finishes software switches, opens incident reports for lost disks, runs backups, slows overloaded nodes, bills licenses.

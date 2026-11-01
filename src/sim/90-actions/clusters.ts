@@ -29,6 +29,7 @@ import { migrateWorkload } from "./vms";
 import { buyLicenses, licenseDue } from "../85-products/products";
 import { sizeOf } from "../30-market/spec";
 import { quorumBlock } from "../60-infra/quorum";
+import { editionAllows } from "../60-infra/vmwhere";
 import { cephCapacity, cephOn, cephUsed } from "../60-infra/replica";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -366,6 +367,7 @@ export function setHa(s: GameState, clusterId: string, feature: keyof Ha, on: bo
   if (c.kind !== "cloud") return fail("error.needsPlatform");
   if (!s.unlocks.includes(HA_SKILL)) return fail("error.missingSkill");
   if (on && feature === "live" && c.platform && !softwareById(c.platform).live) return fail("error.noLiveMigration");
+  if (on && feature === "failover" && !editionAllows(c, "failover")) return fail("error.needsEdition");
   if (on && feature === "balance" && !c.ha.live) return fail("error.needsLiveMigration");
   if (on && feature === "balance" && !balances(s, c)) return fail("error.needsBalancer");
   const ha = { ...c.ha, [feature]: on, ...(feature === "live" && !on ? { balance: false } : {}) };
