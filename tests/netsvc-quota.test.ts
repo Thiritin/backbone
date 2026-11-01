@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { sizeSpec } from "../src/sim/10-catalog/products";
-import { BASEMENT_SERVER, panelServer, withServer } from "./fixtures";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { BASEMENT_SERVER, panelServer, withServer, newGame } from "./fixtures";
+import { type GameState } from "../src/sim/50-state";
 import { defaultQuotaMb, quotaOf } from "../src/sim/60-infra/netsvc-quota";
 import { netsvcTick } from "../src/sim/60-infra/netsvc";
 import { provisionService } from "../src/sim/90-actions/clusters";

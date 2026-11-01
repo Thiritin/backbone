@@ -1,10 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { newGame } from "../src/sim/50-state";
 import { favoursLeft, FRIEND_FEE, TRAVEL } from "../src/sim/60-infra/handwork";
 import { locationOf } from "../src/sim/60-infra/status";
 import { addLocation, buyRack, moveServer, MOVE_INSTALL_HOURS } from "../src/sim/90-actions/hardware";
 import { drive, travelTo } from "../src/sim/90-actions/travel";
-import { buyDevice, hypervisor, withServer } from "./fixtures";
+import { buyDevice, hypervisor, withServer, newGame } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 const ok = (r: { ok: boolean; id?: string; error?: string }) => { expect(r.error).toBeUndefined(); return r.id!; };

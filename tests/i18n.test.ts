@@ -1,7 +1,7 @@
+import { newGame } from "./fixtures";
 import { describe, expect, it } from "vitest";
 import { en, t } from "../src/i18n/en";
 import { LANGS, loadLang, type Dict } from "../src/i18n/lang";
-import { newGame } from "../src/sim/50-state";
 
 const packs = import.meta.glob<{ default: Dict }>("../src/i18n/*/*.ts", { eager: true });
 const params = (f: (p: never) => string) => new Set(String(f).match(/\bp\.\w+/g) ?? []);

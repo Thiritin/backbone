@@ -5,7 +5,7 @@ import { SHOP_SETUP_HOURS } from "../src/sim/10-catalog/shops";
 import { orderLead } from "../src/sim/30-market/orders";
 import { issueInvoice } from "../src/sim/30-market/manual";
 import { lostReasons } from "../src/sim/30-market/research";
-import { dueStep, invoiceTotal, isSuspended, ruleSuspendsAt, type Invoice } from "../src/sim/45-billing/billing";
+import { cents, dueStep, invoiceTotal, isSuspended, ruleSuspendsAt, type Invoice } from "../src/sim/45-billing/billing";
 import { CHARGEBACK_FEE, fraudTick } from "../src/sim/45-billing/fraud";
 import { offers, paymentsTick, preferredMethod } from "../src/sim/45-billing/payments";
 import type { GameState } from "../src/sim/50-state";
@@ -147,7 +147,7 @@ describe("payment methods", () => {
     s.invoices = s.invoices.map((i) => (i.id === inv.id ? { ...i, back: { kind: "chargeback", at: s.hour } } : i));
     paymentsTick(s);
     const tr = backFor(s, inv);
-    expect(tr).toMatchObject({ back: "chargeback", from: "Visor", amount: -(invoiceTotal(inv) + CHARGEBACK_FEE) });
+    expect(tr).toMatchObject({ back: "chargeback", from: "Visor", amount: -cents(invoiceTotal(inv) + CHARGEBACK_FEE) });
     expect(matchTransfer(s, tr.id, inv.id).ok).toBe(true);
     expect(invoice(s, inv.id)).toMatchObject({ status: "open", bank: true, reminders: [] });
     expect(invoice(s, inv.id).gateway).toBeUndefined();

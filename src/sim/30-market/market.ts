@@ -6,7 +6,7 @@ import type { Address } from "../30-customers/addresses";
 import { yearOf } from "../00-core/time";
 import type { Cycle } from "../10-catalog/cycles";
 import type { MethodId } from "../10-catalog/payments";
-import { CHOICE_TAU, CITIES, COMPETITORS, generationAt, leadCapShare, MARKET_GROWTH, type Budget, type Profile as ProfileStats } from "../10-catalog/economy";
+import { CHOICE_TAU, CITIES, COMPETITORS, generationAt, leadCapShare, MARKET_GROWTH, type Budget, type Competitor, type Profile as ProfileStats } from "../10-catalog/economy";
 import { gpuDemand, GPU_SHARE } from "../10-catalog/gpu";
 import { modelById } from "../10-catalog/hardware";
 import { marketPrice, PRODUCTS, SIZES, type Sla, type Spec } from "../10-catalog/products";
@@ -20,6 +20,7 @@ import { forumAwareness } from "../47-staff/staff";
 import { metrics } from "../metrics";
 import { addressesFit, addressNeed } from "../60-infra/addresses";
 import { serviceMarket } from "./spec";
+import type { Rival } from "./rivals";
 
 export type RequestStatus = "open" | "quoted" | "countered" | "refused" | "accepted" | "won" | "lost" | "declined";
 // by names the employee who sent a "you" message; the player otherwise.
@@ -149,17 +150,22 @@ export function priceIndex(s: GameState): number {
 const value = (p: ProfileStats, P: number, R: number, C: number, T: number, priceFactor: number) =>
   p.wP * P + p.wR * R + p.wC * C + T - PRICE_WEIGHT * p.lambda * 100 * (priceFactor - 1);
 
-export const rivals = (profile: Profile, product: Product) => {
+// The open rivals of a game (30-market/rivals.ts), in a city if given; the catalog table where no game is at hand.
+export const openRivals = (s: GameState, city?: string): Rival[] =>
+  s.competitors.filter((r) => r.closed === null && (city === undefined || r.customers[city] !== undefined));
+
+export const rivals = <C extends Competitor>(profile: Profile, product: Product, list: readonly C[] = COMPETITORS as C[]): C[] => {
   const p = profileStats(profile);
-  return COMPETITORS.filter((c) => c.priceFactor <= p.cap && c.sells.includes(product) && (!c.targets || c.targets.includes(p.id)));
+  return list.filter((c) => c.priceFactor <= p.cap && c.sells.includes(product) && (!c.targets || c.targets.includes(p.id)));
 };
+export const rivalValue = (profile: Profile, c: Competitor): number => value(profileStats(profile), c.P, c.R, c.C, 0, c.priceFactor);
 
 // Your value U and the best competitor's for a profile, product and city; dearer adds to your price level, which level replaces.
 export function values(s: GameState, profile: Profile, product: Product, city: string, dearer = 0, level?: number): { you: number; others: number[] } {
   const p = profileStats(profile), sc = playerScores(s, profile, city);
   return {
     you: value(p, sc.P, sc.R, sc.C, trustBonus(s), (level ?? priceIndex(s)) + dearer),
-    others: rivals(profile, product).map((c) => value(p, c.P, c.R, c.C, 0, c.priceFactor)),
+    others: rivals(profile, product, openRivals(s, city)).map((c) => rivalValue(profile, c)),
   };
 }
 

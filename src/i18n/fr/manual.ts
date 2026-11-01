@@ -59,6 +59,7 @@ export default {
   "error.quoteSentAlready": () => "Ce devis est déjà envoyé.",
   "error.quoteOtherOrder": () => "Ce devis appartient à une autre commande.",
   "error.quoteNotAccepted": () => "Le client n'a pas accepté ce devis.",
+  "error.quoteInvoiced": () => "Ce devis a déjà été transféré en facture.",
   "error.needsInvoice": () => "Confirme d'abord la commande et envoie la facture.",
   "error.needsDomain": () => "Enregistre d'abord le domaine.",
   "error.stepDone": () => "Cette étape est terminée.",

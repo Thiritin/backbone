@@ -26,6 +26,7 @@ import { CustomerCard } from "./CustomerCard";
 import { Reports } from "./Reports";
 import { supportApp } from "./desk";
 import { CustomCompose, InvoicePill } from "./CustomOrder";
+import { Compose } from "./Compose";
 import { specText } from "../../../sim/30-market/spec";
 import { OFFERS } from "../../../sim/80-business/walk";
 import { isLicence, lexwearUrl, NEWSLETTER } from "../../../sim/80-business/lexwear";
@@ -142,6 +143,7 @@ export function SupportApp() {
   const [query, setQuery] = useSessionState("support.query", "");
   // The email settings: the Settings button and the app menu open them.
   const [setup, setSetup] = useSessionState("support.setup", false);
+  const [composing, setComposing] = useSessionState("support.compose", false);
   const desk = deskOf(game);
   const { style, brand, icon: Logo, tile } = supportApp(game);
   const has = (f: DeskFeature) => deskHas(game, f);
@@ -192,7 +194,8 @@ export function SupportApp() {
       <header className="sup-brand">
         <span className="sup-logo" style={{ "--tile": tile } as CSSProperties}><Logo /></span>
         <strong>{brand}</strong>
-        <button className="btn sup-settings" onClick={() => setSetup(true)}>{t("support.settings")}</button>
+        <button className="btn ghost sup-settings" onClick={() => setComposing(true)}>{t("paperwork.mail.new")}</button>
+        <button className="btn ghost sup-settings sup-settings-2" onClick={() => setSetup(true)}>{t("support.settings")}</button>
       </header>
       {setup && <EmailSettings onClose={() => setSetup(false)} />}
       {desk && <aside className="sidebar sup-side">
@@ -225,7 +228,8 @@ export function SupportApp() {
         {!list.length && <div className="sup-none">{t("support.noEmails")}</div>}
       </div>
 
-      {upgrade ? <Card key={upgrade.id} r={upgrade} />
+      {composing ? <Compose onClose={() => setComposing(false)} />
+        : upgrade ? <Card key={upgrade.id} r={upgrade} />
         : current && order ? <OrderThread key={current.id} tk={current} r={order} gates={gates} />
         : current ? <Thread key={current.id} tk={current} gates={gates} />
         : <div className="sup-detail sup-none">{t("support.noEmailSelected")}</div>}

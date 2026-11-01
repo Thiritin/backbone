@@ -31,6 +31,18 @@ Your company now knows how to hire people, pay them and give them something to d
 
 Salaries are paid every month whether the person is busy or not. A good hire pays for themselves in saved hours, and a bad one is still cheaper than burning out.
 
+## Company law
+
+### Now available
+
+- **Limited company** is on the trade office's Forms page, where you download the application for the notary.
+
+### You can found a GmbH
+
+Your company now knows what a limited company takes: a notary who writes the articles, 25,000 EUR of share capital in the company account and an entry in the commercial register.
+
+A sole trader or a partnership can now apply on the trade office site. The change is final, and the register's letter makes it official.
+
 ## Marketing basics
 
 ### Now available

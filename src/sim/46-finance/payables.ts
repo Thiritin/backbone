@@ -7,7 +7,7 @@ import { deliverMail } from "../40-support/tickets";
 import type { GameState, LedgerEntry } from "../50-state";
 import { groupIban, iban, ibanEra } from "./bank";
 
-export type SupplierId = "upstream" | "power" | "datacenter" | "pear" | "registrar" | "hardware" | "card";
+export type SupplierId = "upstream" | "power" | "datacenter" | "pear" | "registrar" | "hardware" | "card" | "office" | "notary" | "register" | "chamber";
 // throttle slows the home line, cut takes it off the internet, dark switches the locations' power off, licence stops the Pear
 // subscriptions, domains lets the domains lapse, noShip stops hardware orders, card blocks the credit card.
 export type Effect = "throttle" | "cut" | "dark" | "licence" | "domains" | "noShip" | "card";
@@ -21,6 +21,7 @@ export const CONSEQUENCES: Record<SupplierId, { days: number; effect: Effect }[]
   registrar: [{ days: 14, effect: "domains" }],
   hardware: [{ days: 0, effect: "noShip" }],
   card: [{ days: 14, effect: "card" }],
+  office: [], notary: [], register: [], chamber: [],
 };
 export const PAY_DAYS = 14;
 export const THROTTLE = 0.25;
@@ -69,8 +70,8 @@ const book = (s: GameState, lines: LedgerEntry[]) => {
   s.ledger = [...s.ledger, ...lines.map((e) => ({ ...e, hour: s.hour }))];
 };
 
-// A supplier's invoice by email; a supplier with a mandate debits it at once. Returns the payable.
-export function invoice(s: GameState, supplier: SupplierId, name: string, lines: LedgerEntry[], days = PAY_DAYS): Payable {
+// A supplier's invoice by email, or on paper when a letter brings it; a supplier with a mandate debits it at once.
+export function invoice(s: GameState, supplier: SupplierId, name: string, lines: LedgerEntry[], days = PAY_DAYS, paper = false): Payable {
   const amount = cents(-lines.reduce((n, e) => n + e.amount, 0));
   const id = `pay${s.nextId++}`;
   const p: Payable = { id, supplier, name, number: `${supplier.slice(0, 2).toUpperCase()}-${id.slice(3)}`, amount, issuedAt: s.hour, dueAt: s.hour + days * 24, paidAt: null, consequence: null, lines, sent: 0 };
@@ -79,7 +80,7 @@ export function invoice(s: GameState, supplier: SupplierId, name: string, lines:
     p.sent = amount;
     p.paidAt = s.hour;
     deliverMail(s, name, "debit", { name, number: p.number, amount });
-  } else deliverMail(s, name, "invoice", { name, number: p.number, amount, due: p.dueAt, iban: ibanEra(s) ? groupIban(supplierIban(supplier)) : "", account: supplierAccount(supplier), code: SUPPLIER_CODE, url: supplierUrl(name) });
+  } else if (!paper) deliverMail(s, name, "invoice", { name, number: p.number, amount, due: p.dueAt, iban: ibanEra(s) ? groupIban(supplierIban(supplier)) : "", account: supplierAccount(supplier), code: SUPPLIER_CODE, url: supplierUrl(name) });
   s.payables = [...s.payables, p];
   return p;
 }
