@@ -18,7 +18,7 @@ import "./site.css";
 
 const ICON: Record<Product, LucideIcon> = {
   webHosting: Globe, vps: Server, gameServer: Gamepad2, dns: Network, vpn: Lock, storage: HardDrive, cloud: Cloud,
-  dedicated: Cpu, colocation: Building2, gpu: Zap, ssl: ShieldCheck, domain: Globe,
+  dedicated: Cpu, colocation: Building2, gpu: Zap, ssl: ShieldCheck, domain: Globe, reseller: Globe,
 };
 const LABEL: Record<SitePage, string> = {
   home: t("browser-sites-1.co.nav.home"), products: t("browser-sites-1.co.nav.products"), kb: t("browser-sites-1.co.nav.kb"), helpdesk: t("browser-sites-1.co.nav.helpdesk"), about: t("browser-sites-1.co.nav.about"), support: t("browser-sites-1.co.nav.support"),

@@ -2,7 +2,9 @@
 // the player changed on top of it.
 import { t } from "../../i18n/en";
 import { dateOf, yearOf } from "../00-core/time";
-import type { Doc, GameState } from "../50-state";
+import type { Device, Doc, GameState } from "../50-state";
+import { IFACES, nicNames, renderInterfaces, renderResolv, RESOLV } from "./ifaces";
+import { gatewayOf, ifaceOf, lanOf } from "./lan";
 import { checkDone, guideSteps } from "../checklist";
 
 export const DESK = "desk";
@@ -34,6 +36,20 @@ const releaseIn = (year: number): Release => [...RELEASES].reverse().find((r) =>
 export function releaseOf(s: GameState, host: string): Release {
   const d = s.devices.find((x) => x.id === host), m = d ?? s.workloads.find((w) => w.id === host), v = m?.os?.id === "lunix" ? Number(m.os.version) : NaN;
   return RELEASES.find((r) => Number(r.version) === v) ?? releaseIn(yearOf(d?.boughtAt ?? 0));
+}
+
+// The interface a server's address sits on: bond0 over both ports when bonded, else the first port.
+export function primaryOf(s: GameState, d: Device): { dev: string; ports: [string, string]; bonded: boolean } {
+  const ports = nicNames(releaseOf(s, d.id).version), bonded = d.bond !== "none";
+  return { dev: bonded ? "bond0" : ports[0], ports, bonded };
+}
+
+// The name server a server asks: its static one, or with a lease the router that granted it.
+function nameServer(s: GameState, d: Device): string | null {
+  const c = ifaceOf(d);
+  if (c.mode === "static") return c.dns ?? null;
+  const router = s.devices.find((x) => x.id === gatewayOf(s, d.id));
+  return router ? lanOf(s, router)?.gateway ?? null : null;
 }
 
 export const userOf = (host: string) => (host === DESK ? "you" : "root");
@@ -88,6 +104,13 @@ function baseTree(s: GameState, host: string): Tree {
   ].join("\n");
   tree["/etc/apt/sources.list"] = `deb http://deb.debiant.org/debian ${r.codename} main\n`;
   tree["/var/log/syslog"] = (d?.log ?? []).map((e) => `${stamp(e.hour)} ${hostnameOf(s, host)} ${t(e.key)}\n`).join("");
+  // Written from the stored setting; a networking restart reads the file back (netshell.ts).
+  if (d?.iface) {
+    const p = primaryOf(s, d);
+    tree["/etc/network"] = true;
+    tree[IFACES] = renderInterfaces(p.dev, d.iface, p.bonded ? { slaves: p.ports, mode: d.bond } : null);
+    tree[RESOLV] = renderResolv(nameServer(s, d));
+  }
   if (host === DESK) {
     tree[DESKTOP] = true;
     for (const f of desktopFiles(s)) tree[f.path] = f.doc.kind === "guide" ? guideText(s) : f.doc.body;
