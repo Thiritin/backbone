@@ -6,9 +6,10 @@ import type { GameState, Location } from "../../../sim/50-state";
 import {
   addressesOf, dynamicLine, freeV4, ipmiIp, lineActive, machineLocation, privateIp, publicV4, publicV6, v6Offered, type Address, type AddressSource,
 } from "../../../sim/60-infra/addresses";
+import { fullTableAt } from "../../../sim/60-infra/routers";
 import { addAddress, announceBlock, assignAddress, buyAddresses, buyBlock, joinLir, releaseAddress, requestDelist } from "../../../sim/90-actions/addresses";
 import { useStore } from "../../store";
-import { formatDay } from "../billing/BillingApp";
+import { formatDay } from "../billing/format";
 import { devName } from "../hw";
 import { vmLabel } from "../products/parts";
 import { LOCALE } from "../../../i18n/lang";
@@ -173,8 +174,9 @@ export function Ripe({ game }: { game: GameState }) {
               <td className="num r">{game.ips.addresses.filter((a) => a.blockId === b.id && a.holder).length}</td>
               <td>
                 <div className="seg" role="group" aria-label={t("misc.announcedFrom")}>
-                  {dcs.map((l) => <button key={l.id} aria-pressed={b.locationId === l.id} onClick={() => b.locationId !== l.id && act(announceBlock, b.id, l.id)}>{l.az}</button>)}
+                  {dcs.map((l) => <button key={l.id} aria-pressed={b.locationId === l.id} onClick={() => b.locationId !== l.id && act(announceBlock, b.id, l.id, !fullTableAt(game, l.id))}>{l.az}</button>)}
                 </div>
+                {b.locationId && b.byProvider && <span> {t("misc.byProvider")}</span>}
               </td>
             </tr>
           ))}

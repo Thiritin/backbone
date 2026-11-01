@@ -70,7 +70,7 @@ export default {
   "browser-sites-1.thread.0.question": () => "Since last night my shop shows only a white page. Nothing changed on my side.",
   "browser-sites-1.thread.0.answer": () => "Your shop software is older than the PHP version on the server. Switch the PHP version back in the control panel under Settings, then update the shop when you have time.",
   "browser-sites-1.thread.1.title": () => "My emails land in spam",
-  "browser-sites-1.thread.1.question": () => "Everything I send to customers with Notmail ends up in their spam folder.",
+  "browser-sites-1.thread.1.question": () => "Everything I send to customers with GMix ends up in their spam folder.",
   "browser-sites-1.thread.1.answer": () => "Send through our outgoing server with your login instead of your internet provider's server. That way the receiving side sees that the email really comes from your domain.",
   "browser-sites-1.thread.2.title": () => "How do I restore yesterday's files?",
   "browser-sites-1.thread.2.question": () => "I deleted the wrong folder. Is there a backup?",

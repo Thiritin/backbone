@@ -7,6 +7,7 @@ export default {
   "ledger.lirSignup": () => "Taxa de adesão à RIPE NCC",
   "ledger.lirYearly": () => "Quota anual da RIPE NCC",
   "ledger.blockBought": (p) => `Bloco de ${p.size} endereços IP`,
+  "ledger.providerRouting": (p) => `Roteamento pelo provedor para ${p.prefix}`,
   "error.needsStaticLine": () => "Precisa de uma linha empresarial com endereços IP estáticos.",
   "sales.need.ipv4": (p) => `Precisa de um endereço IPv4 livre em ${p.city}`,
   "sales.need.ipv6": (p) => `Precisa de IPv6 em ${p.city}`,
@@ -35,6 +36,6 @@ export default {
   "error.needsInternet": () => "A internet ainda não chega a este anfitrião.",
   "error.needsBgpRouter": () => "Precisa de um roteador com tabela de rotas completa neste local.",
   "error.basementOnly": () => "Só o porão aceita este roteador.",
-  "error.panelRouter": () => "Este roteador substitui o do porão e não vai para um rack.",
+  "error.noRouter": () => "Não há roteador montado aqui.",
   "error.notOfficeRouter": () => "Só um roteador de pequeno escritório substitui o do porão.",
 } satisfies Dict;

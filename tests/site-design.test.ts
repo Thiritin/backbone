@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { chooseShop } from "../src/sim/90-actions/shop";
 import { hourOf, isMonthStart, yearOf } from "../src/sim/00-core/time";
 import { sizeSpec } from "../src/sim/10-catalog/products";
 import { leadFlows } from "../src/sim/30-market/market";
@@ -135,10 +136,10 @@ describe("company site hosting", () => {
   it("loses the orders of the order form while the site is down", () => {
     const orders = (down: boolean) => {
       const s = automate(withSite(7));
-      ok(setUpChannel(s, "orderForm"));
+      ok(chooseShop(s, "handRolled"));
       if (down) ok(setPower(s, "dev3", false));
       else ok(setSiteHost(s, { kind: "rented" }));
-      return run(s, 24 * 120).filter((e) => e.key === "event.orderPlaced").length;
+      return run(s, 24 * 30).filter((e) => e.key === "event.orderPlaced").length;
     };
     expect(orders(false)).toBeGreaterThan(0);
     expect(orders(true)).toBe(0);

@@ -45,12 +45,12 @@ function Defaced() {
   );
 }
 
-export function ConsolePage({ game, hostname, host, cluster, defaced }: { game: GameState; hostname: string; host: string; cluster: Cluster | undefined; defaced: boolean }) {
+export function ConsolePage({ game, hostname, host, cluster, defaced, path }: { game: GameState; hostname: string; host: string; cluster: Cluster | undefined; defaced: boolean; path?: string }) {
   const [logins, setLogins] = useSessionState<string[]>("browser.logins", []);
   const family = cluster && familyOf(cluster), Panel = family ? CONSOLES[family] : undefined;
   if (!cluster || !family) return null;
   if (CLI_ONLY.has(family)) return <HostCli game={game} c={cluster} family={family} host={host} name={hostname} />;
   if (defaced) return <Defaced />;
   if (!Panel) return null;
-  return <Panel game={game} c={cluster} f={consoleFeatures(family, yearOf(game.hour))} host={host} signedIn={logins.includes(hostname)} login={() => setLogins([...logins, hostname])} logout={() => setLogins(logins.filter((x) => x !== hostname))} />;
+  return <Panel key={path ?? "/"} path={path} game={game} c={cluster} f={consoleFeatures(family, yearOf(game.hour))} host={host} signedIn={logins.includes(hostname)} login={() => setLogins([...logins, hostname])} logout={() => setLogins(logins.filter((x) => x !== hostname))} />;
 }

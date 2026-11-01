@@ -1,14 +1,18 @@
 import { ChevronRight, Folder, LogOut } from "lucide-react";
 import { Actions, Backups, erasFrom, eraAt, Facts, LoginForm, Nodes, RowsTable, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
 import { t } from "../../../../../i18n/en";
+import { parseCreate } from "../../../../../sim/80-business/consoles";
+import { PackagesScreen, ProvisionForm } from "../PackageForms";
+import { useReadoutPages } from "../Readouts";
+import { SystemInfo } from "./SystemInfo";
 import "./freepanel.css";
 
 // docs/design/software.md, section 10: a blue category tree with grey module tables until 2016, then white and flat.
 const ERAS = erasFrom(2005, 2016);
 
 export function FreePanel(p: PanelProps) {
-  const era = eraAt(ERAS, p.game), [tab, setTab] = usePanelTab(p.f);
-  const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f);
+  const era = eraAt(ERAS, p.game), open = parseCreate("freepanel", p.path), [tab, setTab] = usePanelTab(p.f, open?.screen ?? "sysinfo");
+  const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f);
   if (!p.signedIn) return (
     <div className="cx fp fp-login" data-era={era}>
       <LoginForm className="fp-card" onLogin={p.login} button={t("browser-consoles-1.signIn")}>
@@ -17,10 +21,12 @@ export function FreePanel(p: PanelProps) {
       </LoginForm>
     </div>
   );
+  const fp = (id: string, key: string) => { const g = pages.find((x) => x.id === id); return g ? [[id as Tab, t(key)] as [Tab, string]] : []; };
   const tree: [string, [Tab, string][]][] = [
-    [t("browser-consoles-1.fpServers"), [["objects", t("browser-consoles-1.fpWebSpaces")]]],
+    [t("readouts.fp.dashboard"), [["sysinfo", t("readouts.fp.sysinfo")]]],
+    [t("readouts.fp.virtualmin"), [["objects", t("readouts.fp.virtual")], ["create", t("pkg.fpCreate")], ["packages", t("pkg.fpPlans")]]],
+    [t("browser-consoles-1.fpSystem"), [["software", t("browser-consoles-1.fpSoftwareUpdates")], ...fp("logs", "readouts.fp.logs"), ...fp("tasks", "readouts.fp.actions"), ...fp("licence", "readouts.fp.licence")]],
     ...(p.f.cluster ? [[t("browser-consoles-1.fpCluster"), [["nodes", t("browser-consoles-1.fpNodes")]]] as [string, [Tab, string][]]] : []),
-    [t("browser-consoles-1.fpSystem"), [["software", t("browser-consoles-1.fpSoftwareUpdates")]]],
   ];
   const title = tree.flatMap(([, items]) => items).find(([id]) => id === tab)?.[1];
   return (
@@ -38,8 +44,12 @@ export function FreePanel(p: PanelProps) {
       </aside>
       <main className="fp-main">
         <h1>{title}</h1>
+        {tab === "sysinfo" && <SystemInfo game={p.game} c={p.c} host={p.host} />}
         {tab === "objects" && <RowsTable rows={rows} name={t("browser-consoles-1.domain")} />}
+        {tab === "create" && <ProvisionForm game={p.game} c={p.c} products={["webHosting"]} order={open?.screen === "create" ? open.order : undefined} />}
+        {tab === "packages" && <PackagesScreen game={p.game} c={p.c} />}
         {tab === "nodes" && <Nodes game={p.game} c={p.c} />}
+        {pages.find((g) => g.id === tab)?.body}
         {tab === "software" && (
           <>
             <Facts facts={sw.facts} />

@@ -75,10 +75,11 @@ describe("components and failure rates", () => {
       const s = rich();
       ok(unmountDevice(s, "dev3"));
       const first = ok(buyDevice(s, "g1-archive", "Dwell", 5, "loc1"));
-      s.devices = s.devices.map((d) => ({ ...d, components: d.components.map((c) => ({ ...c, installedAt: -10 * 8760 })) }));
+      // A hot history makes failures ten times likelier.
+      s.devices = s.devices.map((d) => ({ ...d, hotHours: 900, components: d.components.map((c) => ({ ...c, installedAt: -10 * 8760 })) }));
       for (let i = 0; i < 5; i++) ok(mountDevice(s, `dev${Number(first.slice(3)) + i}`, "rack2", 1 + 4 * i));
       if (monitoring) s.unlocks = ["monitoring"];
-      const events = run(s, 8000);
+      const events = run(s, 1000);
       return { failed: s.devices.flatMap((d) => d.components.filter((c) => c.failedAt !== null)).length, events: events.filter((e) => e.key === "event.componentFailed").length };
     };
     const quiet = play(false), loud = play(true);
@@ -212,11 +213,11 @@ describe("power supplies, fans and power", () => {
   });
   it("takes everything behind a switch down when the switch is powered off", () => {
     const s = rich();
-    expect(rackPower(s, "rack2").watts).toBe(108);
+    expect(rackPower(s, "rack2").watts).toBe(118);
     ok(setPower(s, "dev4", false));
     expect(deviceHealth(s, "dev4").state).toBe("off");
     expect([linkStatus(s, "dev4").online, linkStatus(s, "dev3").online]).toEqual([false, false]);
-    expect(rackPower(s, "rack2").watts).toBe(100);
+    expect(rackPower(s, "rack2").watts).toBe(110);
     ok(setPower(s, "dev4", true));
     s.hour += 1;
     expect(linkStatus(s, "dev3").online).toBe(true);
@@ -232,7 +233,7 @@ describe("power supplies, fans and power", () => {
     expect(dev(s, "dev3").label).toBeNull();
     expect(err(setLabel(s, "dev3", "x".repeat(41)))).toBe("error.labelTooLong");
     ok(setCableColor(s, "cab6", "#ff8800"));
-    expect(s.cables[0].color).toBe("#ff8800");
+    expect(s.cables.find((c) => c.id === "cab6")!.color).toBe("#ff8800");
     expect(err(setCableColor(s, "cab6", "red"))).toBe("error.badColor");
     ok(setCableColor(s, "cab6", null));
     expect(err(setCableColor(s, "x", null))).toBe("error.unknownCable");

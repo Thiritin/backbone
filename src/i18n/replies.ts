@@ -112,6 +112,11 @@ const MAILS: Record<string, [Mail, Mail, Mail]> = {
     () => "There are two invoices because usage is billed at the end of each month for the month before. Both are correct, and nothing was charged twice.",
     () => "One payment is the current invoice, the other last month's usage, which we bill in arrears. Your account is in order.",
   ],
+  "tpl.foundPayment": [
+    () => "We found your bank transfer and booked it to the invoice. Please ignore the reminder.",
+    () => "Thank you, your payment has arrived and the invoice is settled. The reminder was sent before we booked it.",
+    () => "Your transfer is booked to the invoice now. Nothing more is open, so the reminder no longer applies.",
+  ],
   "tpl.resend": [
     () => "We have sent you a copy of the invoice. Please let us know if it does not arrive.",
     () => "A copy of the invoice is on its way to your contact address.",

@@ -36,7 +36,7 @@ describe("more locations", () => {
     }
     for (const dc of DATACENTERS.filter((d) => d.exchange)) expect(exchangeAt(dc)?.name).toBe(dc.exchange!.name);
     expect(datacenterById("skyblink-eygelshoven")).toMatchObject({ city: "Kerkrade", provider: "skyblink", carriers: 20, positionPrice: 300, size: "small" });
-    for (const id of ["equinox-du1", "interaction-dus", "ntd-dus1"]) expect(datacenterById(id).city).toBe("Düsseldorf");
+    for (const id of ["equinox-du1", "interaction-dus", "ntd-dus1", "myloch-dus"]) expect(datacenterById(id).city).toBe("Düsseldorf");
     expect(datacenterById("equinox-du1").positionPrice).toBeLessThan(datacenterById("equinox-fr5").positionPrice);
   });
 

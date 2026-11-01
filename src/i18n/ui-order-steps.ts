@@ -1,0 +1,27 @@
+import type { Dict } from "./lang";
+
+export default {
+  "books.tab.quotes": () => "Quotes",
+  "orderSteps.orderEmail": () => "Order email",
+  "orderSteps.from": (p) => `From: ${p.name}`,
+  "orderSteps.field.contact": () => "Contact",
+  "orderSteps.field.company": () => "Company",
+  "orderSteps.field.street": () => "Street",
+  "orderSteps.field.zip": () => "Postcode",
+  "orderSteps.field.city": () => "City",
+  "orderSteps.field.email": () => "Email",
+  "orderSteps.saveCustomer": () => "Save customer",
+  "orderSteps.createQuote": () => "Create quote",
+  "orderSteps.noQuotes": () => "No quotes yet.",
+  "orderSteps.quote": (p) => `Quote ${p.number}`,
+  "orderSteps.status.draft": () => "Draft",
+  "orderSteps.status.sent": () => "Sent",
+  "orderSteps.status.accepted": () => "Accepted",
+  "orderSteps.status.countered": () => "Countered",
+  "orderSteps.status.declined": () => "Declined",
+  "orderSteps.sendQuote": () => "Send quote",
+  "orderSteps.convert": () => "Convert to invoice",
+  "orderSteps.attachments": () => "Attachments",
+  "orderSteps.createCustomer": () => "Create customer",
+  "orderSteps.openInvoice": () => "Open invoice",
+} satisfies Dict;

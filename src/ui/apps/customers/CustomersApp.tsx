@@ -1,4 +1,4 @@
-import { ChartLine, ChevronDown, ChevronUp, LifeBuoy, Search } from "lucide-react";
+import { ChartLine, ChevronDown, ChevronUp, LifeBuoy, Search, UserPlus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { euro, euroCents, euroPrice } from "../../../sim/00-core/money";
 import { activeServices } from "../../../sim/30-customers/customers";
@@ -66,6 +66,7 @@ export function CustomerLink({ id, name }: { id: string; name: string }) {
 
 export function CustomersApp() {
   const game = useStore((s) => s.game);
+  const openApp = useStore((s) => s.openApp);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Status | "current">("current");
   const [band, setBand] = useState("any");
@@ -110,6 +111,7 @@ export function CustomersApp() {
       <div className="cus-main">
         <div className="cus-bar">
           <label className="search"><Search /><input type="search" placeholder={t("misc.search")} aria-label={t("misc.searchCustomers")} value={query} onChange={(e) => setQuery(e.target.value)} /></label>
+          <button className="btn cus-toggle" onClick={() => openApp("Books", { kind: "newCustomer", id: "" })}><UserPlus />{t("pkg.newCustomer")}</button>
           <button className="btn cus-toggle" aria-pressed={charts} onClick={() => setCharts(!charts)}><ChartLine />{t("misc.history")}</button>
           <div className="seg" role="group" aria-label={t("misc.status")}>
             {FILTERS.map((f) => <button key={f.id} aria-pressed={filter === f.id} onClick={() => setFilter(f.id)}>{f.label}</button>)}

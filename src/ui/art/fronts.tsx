@@ -332,6 +332,19 @@ export function gatewayLayout(model: DeviceModel, name: string, w: number, h: nu
 function Gateway(p: FrontProps) {
   const { w, h, name, model, lights = [], state, blink } = p;
   const fs = fsz(Math.min(h, 24));
+  // A small-office router is a white box standing on a shelf.
+  if (model.brand === "AVN") {
+    const bx = w * 0.32, bw = w * 0.4;
+    return (
+      <>
+        <rect x="0" y={h - 3} width={w} height="2.5" rx="0.8" fill="var(--metal)" stroke="var(--metal-line)" />
+        <rect x={bx} y="1.5" width={bw} height={h - 5} rx="3" fill="oklch(0.93 0.005 90)" stroke="oklch(0.7 0.01 90)" />
+        <Label x={12} y={h / 2 + fs * 0.35} text={name} size={fs} />
+        {model.ports.map((_, i) => <circle key={i} cx={bx + 10 + i * 6} cy={h / 2 - 1} r="1.3" {...ledProps(lights[i], name, i)} />)}
+        <StatusLeds x={bx + bw - 18} y={h / 2 - 1} state={state} blink={blink} />
+      </>
+    );
+  }
   return (
     <>
       <Ears w={w} h={h} />

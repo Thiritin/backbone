@@ -7,6 +7,7 @@ export default {
   "ledger.lirSignup": () => "Quota di iscrizione RIPE NCC",
   "ledger.lirYearly": () => "Quota annuale RIPE NCC",
   "ledger.blockBought": (p) => `Blocco di ${p.size} indirizzi IP`,
+  "ledger.providerRouting": (p) => `Instradamento del provider per ${p.prefix}`,
   "error.needsStaticLine": () => "Serve una linea business con indirizzi IP statici.",
   "sales.need.ipv4": (p) => `Serve un indirizzo IPv4 libero a ${p.city}`,
   "sales.need.ipv6": (p) => `Serve IPv6 a ${p.city}`,
@@ -35,6 +36,6 @@ export default {
   "error.needsInternet": () => "Internet non raggiunge ancora questo host.",
   "error.needsBgpRouter": () => "Serve un router con tabella di routing completa in questa sede.",
   "error.basementOnly": () => "Solo il seminterrato accetta questo router.",
-  "error.panelRouter": () => "Questo router sostituisce quello del seminterrato e non va in un rack.",
+  "error.noRouter": () => "Qui non è montato nessun router.",
   "error.notOfficeRouter": () => "Solo un router da piccolo ufficio sostituisce quello del seminterrato.",
 } satisfies Dict;

@@ -7,6 +7,7 @@ export default {
   "ledger.lirSignup": () => "Cuota de alta en RIPE NCC",
   "ledger.lirYearly": () => "Cuota anual de RIPE NCC",
   "ledger.blockBought": (p) => `Bloque de ${p.size} direcciones IP`,
+  "ledger.providerRouting": (p) => `Enrutamiento del proveedor para ${p.prefix}`,
   "error.needsStaticLine": () => "Necesita una línea profesional con direcciones IP estáticas.",
   "sales.need.ipv4": (p) => `Necesita una dirección IPv4 libre en ${p.city}`,
   "sales.need.ipv6": (p) => `Necesita IPv6 en ${p.city}`,
@@ -35,6 +36,6 @@ export default {
   "error.needsInternet": () => "Internet aún no llega a este host.",
   "error.needsBgpRouter": () => "Necesita un router con tabla de rutas completa en esta ubicación.",
   "error.basementOnly": () => "Solo el sótano admite este router.",
-  "error.panelRouter": () => "Este router sustituye al del sótano y no va en un rack.",
+  "error.noRouter": () => "Aquí no hay ningún router montado.",
   "error.notOfficeRouter": () => "Solo un router de oficina pequeña sustituye al del sótano.",
 } satisfies Dict;

@@ -1,12 +1,15 @@
 import { nowHours, yearOf } from "../00-core/time";
-import { wattsFactorOf, boardVendor, COMPONENTS, cpuWattsShift, genOf, isOobPort, jacksOf, modelById, oobFits, oobPortOf, type ComponentKind, type DeviceKind } from "../10-catalog/hardware";
+import { lineCut } from "../46-finance/payables";
+import { wanPort, wattsFactorOf, boardVendor, COMPONENTS, cpuWattsShift, genOf, isOobPort, jacksOf, modelById, oobFits, oobPortOf, type ComponentKind, type DeviceKind } from "../10-catalog/hardware";
 import { cpuModel, skuOf, SMT_SHARE, type Vendor } from "../10-catalog/cpus";
 import { cardWatts } from "../10-catalog/gpu";
 import { partPrice } from "../10-catalog/parts";
 import { BASEMENT, capacityAt, datacenterById, EXTRA_STEP_KW, extraStepPrice, homeLineById, inUs, MOVE, rackUnits, regionOf, SHARE_RACKS, spacePrice, type Datacenter } from "../20-world/datacenters";
 import { CITY_TLD } from "../30-customers/domains";
+import { activeServices, type Service } from "../30-customers/customers";
 import { serverOsById } from "../10-catalog/server-os";
 import type { Component, Device, End, GameState, Location, NetFail, Rack, SpaceKind } from "../50-state";
+import type { Workload } from "./cluster";
 
 export interface LinkStatus { online: boolean; gbit: number; warning: "bondNotGrouped" | null }
 
@@ -43,11 +46,12 @@ export function farEnd(s: GameState, from: End): { end: End; gbit: number } | nu
 
 // Servers never forward traffic; switches and firewalls forward between all ports, patch panels between a jack's front and back.
 // Firewalls slower than minGbit block the path.
-// A basement gateway carries traffic only while a home line is live.
-const lineUp = (s: GameState, gatewayId: string): boolean => {
-  const loc = s.locations.find((l) => l.id === s.devices.find((d) => d.id === gatewayId)?.panel);
-  return !loc || !!loc.dc || !!s.homeLine.id;
+// A router with a DSL port carries traffic only while that port reaches the line jack and a home line is live.
+export const jacked = (s: GameState, gatewayId: string): boolean => {
+  const wan = wanPort(modelOf(s, gatewayId)), jack = wan >= 0 && farEnd(s, { device: gatewayId, port: wan });
+  return !!jack && kindOf(s, jack.end.device) === "jack";
 };
+const lineUp = (s: GameState, gatewayId: string): boolean => wanPort(modelOf(s, gatewayId)) < 0 || (jacked(s, gatewayId) && !!s.homeLine.id && !lineCut(s));
 
 function reachesGateway(s: GameState, start: End, origin: string, minGbit: number): boolean {
   const seen = new Set([origin]);
@@ -138,7 +142,7 @@ function cabled(s: GameState, from: string, goal: (id: string) => boolean, live:
 }
 
 // Whether a hop of a route is cut: a stopped device, or a basement without an internet line.
-export const hopDown = (s: GameState, h: Hop): boolean => (h.device ? !working(s, h.device) : h.kind === "line" && !s.homeLine.id);
+export const hopDown = (s: GameState, h: Hop): boolean => (h.device ? !working(s, h.device) : h.kind === "line" && (!s.homeLine.id || lineCut(s)));
 
 // The hops from a device out to its location's edge: the gateway, then the carrier line (basement) or the datacenter's uplink.
 function toEdge(s: GameState, id: string, loc: Location, live: boolean, exempt?: string): Hop[] | null {
@@ -268,15 +272,43 @@ function computeRackPower(s: GameState, rackId: string): RackPower {
   return { watts: a + b, a, b, limitWatts, tripped: a > limitWatts || b > limitWatts };
 }
 
-// Link and rack power results memoised for one sweep. Only for code that reads the infrastructure and never changes it.
+// Link, rack power and lookup results memoised for one sweep. Only for code that reads the infrastructure and never changes it.
 // a and b are the draw on each feed; limitWatts is the limit of one feed.
 type RackPower = { watts: number; a: number; b: number; limitWatts: number; tripped: boolean };
-let memo: { s: GameState; link: Map<string, LinkStatus>; power: Map<string, RackPower> } | null = null;
+let memo: { s: GameState; link: Map<string, LinkStatus>; power: Map<string, RackPower>; groups: Map<string, Map<string, unknown[]>> } | null = null;
 export function readOnlySweep<T>(s: GameState, fn: () => T): T {
   if (memo) return fn();
-  memo = { s, link: new Map(), power: new Map() };
+  memo = { s, link: new Map(), power: new Map(), groups: new Map() };
   try { return fn(); } finally { memo = null; }
 }
+// Items grouped by key in state order, built once per sweep; null outside a sweep, where callers scan instead.
+export function sweepGroups<T>(s: GameState, name: string, items: () => T[], key: (t: T) => string): Map<string, T[]> | null {
+  if (memo?.s !== s) return null;
+  let groups = memo.groups.get(name) as Map<string, T[]> | undefined;
+  if (!groups) {
+    groups = new Map();
+    for (const t of items()) {
+      const list = groups.get(key(t));
+      if (list) list.push(t);
+      else groups.set(key(t), [t]);
+    }
+    memo.groups.set(name, groups);
+  }
+  return groups;
+}
+export const serviceById = (s: GameState, id: string): Service | undefined => {
+  const by = sweepGroups(s, "service", () => s.services, (v) => v.id);
+  return by ? by.get(id)?.[0] : s.services.find((v) => v.id === id);
+};
+export const liveServices = (s: GameState, customerId: string): Service[] => {
+  const by = sweepGroups(s, "live", () => s.services.filter((v) => v.endedAt === null), (v) => v.customerId);
+  return by ? by.get(customerId) ?? [] : activeServices(s.services, customerId);
+};
+// The workloads of a customer's services, or every workload outside a sweep; callers filter by service.
+export const customerWorkloads = (s: GameState, customerId: string): Workload[] => {
+  const by = sweepGroups(s, "customerWorkloads", () => s.workloads, (w) => serviceById(s, w.serviceId)?.customerId ?? "");
+  return by ? by.get(customerId) ?? [] : s.workloads;
+};
 const memoised = <V>(s: GameState, key: string, pick: (m: NonNullable<typeof memo>) => Map<string, V>, compute: () => V): V => {
   if (memo?.s !== s) return compute();
   const map = pick(memo);
@@ -487,7 +519,8 @@ export function locationRent(s: GameState, loc: Location): number {
   if (!loc.dc) return 0;
   const dc = datacenterById(loc.dc);
   const extra = s.racks.filter((r) => r.locationId === loc.id).reduce((sum, r) => sum + (r.extraKw / EXTRA_STEP_KW) * extraStepPrice(dc), 0);
-  return spacePrice(dc, loc.space as Exclude<SpaceKind, "basement">, rentedSize(s, loc)) + extra;
+  const contract = s.contracts.find((c) => c.locationId === loc.id);
+  return (contract?.monthly ?? spacePrice(dc, loc.space as Exclude<SpaceKind, "basement">, rentedSize(s, loc))) + extra;
 }
 
 // How a rack in this location can bill power: flat-rate contracts are offered on own racks in cages and suites.

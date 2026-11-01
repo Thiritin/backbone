@@ -111,10 +111,10 @@ describe("the mail software", () => {
 });
 
 describe("email orders", () => {
-  it("start on free Notmail without a domain and keep arriving", () => {
+  it("start on free GMix without a domain and keep arriving", () => {
     const s = newGame(1);
     expect(s.company.mail).toEqual({ kind: "free" });
-    expect(salesAddress(s)).toBe("basement-hosting@notmail.com");
+    expect(salesAddress(s)).toBe("basement-hosting@gmix.com");
     let n = 0;
     for (const seed of [1, 2, 3]) {
       const g = readyGame(seed);
@@ -136,7 +136,7 @@ describe("email orders", () => {
     expect(mailShare(s, "smallBiz")).toBe(1);
     const orders = (free: boolean) => {
       let n = 0;
-      for (const seed of [1, 2, 3]) {
+      for (const seed of [1, 2, 3, 4]) {
         const g = readyGame(seed);
         if (free) g.company = { ...g.company, mail: { kind: "free" } };
         run(g, 24 * 60);
@@ -149,7 +149,8 @@ describe("email orders", () => {
 
   it("can be switched on with free mail", () => {
     const s = readyGame(6);
-    s.marketing.owned = ["website", "orderForm"];
+    s.marketing.owned = ["website"];
+    s.shop = { ...s.shop, variant: "handRolled", readyAt: 0 };
     s.company = { ...s.company, mail: { kind: "free" } };
     expect(setEmailOrders(s, false).ok).toBe(true);
     expect(setEmailOrders(s, true).ok).toBe(true);
@@ -161,7 +162,7 @@ describe("email orders", () => {
     expect(siteContent(s).email).toBe(`sales@${s.company.domain}`);
     s.company = { ...s.company, mail: { kind: "free" } };
     expect(siteContent(s).email).toBe(salesAddress(s));
-    expect(siteContent(s).email).toMatch(/@notmail\.com$/);
+    expect(siteContent(s).email).toMatch(/@gmix\.com$/);
   });
 });
 

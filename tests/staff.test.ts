@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createTicket } from "../src/sim/40-support/tickets";
+import { isMonthStart } from "../src/sim/00-core/time";
 import { dueStep, type Invoice } from "../src/sim/45-billing/billing";
 import {
   COURSE_HOURS, forumAwareness, isWorkHour, MARKET_PER_ROLE, MONTHLY_HOURS, quitChance, ROLES, staffPrice, TASKS, TRAINER_HOURS, visibleCandidates, type Role,
@@ -122,7 +123,7 @@ describe("work", () => {
     for (const c of cus) createTicket(s, s.customers.find((x) => x.id === c)!, "howTo", null);
     createTicket(s, s.customers[0], "abuse", null);
     runTo(s, MONDAY_9 - 1);
-    expect(s.tickets.every((t) => t.status === "open")).toBe(true);
+    expect(s.tickets.filter((t) => t.customerId).every((t) => t.status === "open")).toBe(true);
     runTo(s, MONDAY_9 + 1);
     // Skill 100 works at 1.5x: 20-minute tickets take 13.3 minutes, so 5 start in the first hour.
     expect(s.tickets.filter((t) => t.work).length).toBe(5);
@@ -244,7 +245,8 @@ describe("pay, raises and quitting", () => {
     for (let seed = 0; seed < 40; seed++) {
       const s = newGame(seed);
       for (let i = 0; i < 6; i++) emp(s, hireOne(s, ROLES[i % 3])).salary = 100;
-      runTo(s, FEB_1 + 730 * 3);
+      // Before its first raise an employee only quits at a month start, so the hours between are skipped.
+      for (let h = FEB_1; h <= FEB_1 + 730 * 3; h++) if (isMonthStart(h)) { s.hour = h - 1; tick(s); }
       left += 6 - s.staff.length;
     }
     // About 3.5% a month over 4 month starts for 240 employees.

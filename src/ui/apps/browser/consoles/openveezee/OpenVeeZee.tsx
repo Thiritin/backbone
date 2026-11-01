@@ -8,13 +8,15 @@ import { Chart } from "../Chart";
 import { AlarmList, isoName, MediaMenu, ResourceBars, SizeFields, summaryOf, TaskLog, useNewVm, useVms, type Vm } from "../HypervisorBase";
 import type { Cluster } from "../../../../../sim/60-infra/cluster";
 import { Actions, Backups, Bar, erasFrom, eraAt, Facts, LoginForm, useSoftware, type PanelAction, type PanelProps } from "../PanelBase";
+import { parseCreate } from "../../../../../sim/80-business/consoles";
+import { PackagesScreen } from "../PackageForms";
 import "./openveezee.css";
 import { t } from "../../../../../i18n/en";
 
 // docs/design/software.md, section 9: the green-banded PHP admin from 2005, the same pages under a dark top bar from 2016.
 const ERAS = erasFrom(2005, 2016);
 const ctid = (v: Vm) => 100 + Number(v.id.replace(/\D/g, "") || 0);
-type Page = "dashboard" | "servers" | "vservers" | "create" | "users" | "requests" | "ips" | { node: string } | { ct: string };
+type Page = "dashboard" | "plans" | "servers" | "templates" | "vservers" | "create" | "users" | "requests" | "ips" | { node: string } | { ct: string };
 const labels = (): Record<string, string> => ({ start: t("browser-consoles-2.start"), stop: t("browser-consoles-2.stop"), reset: t("browser-consoles-2.restart"), console: t("browser-consoles-2.console"), resize: t("browser-consoles-2.changeSettings"), delete: t("browser-consoles-2.delete") });
 const ORDER = ["start", "stop", "reset", "reinstall", "console", "resize", "restore", "recover", "migrate", "delete"];
 const gb = (x: number) => `${+x.toFixed(2)} GB`;
@@ -42,6 +44,23 @@ function VsTable({ vms, open }: { vms: Vm[]; open: (id: string) => void }) {
   );
 }
 
+// The OS images the cluster holds and the containers using each.
+export function TemplatesPage({ game, vms }: { game: GameState; vms: Vm[] }) {
+  const list = mountableImages(game);
+  return (
+    <>
+      <h2>{t("browser-consoles-2.osTemplates")}</h2>
+      <table className="cx-table ovz-table">
+        <thead><tr><th>{t("browser-consoles-2.name")}</th><th>{t("browser-consoles-2.virtualServers")}</th><th>{t("readouts.architecture")}</th></tr></thead>
+        <tbody>
+          {list.length === 0 && <tr><td colSpan={3} className="cx-empty">{t("readouts.noTemplates")}</td></tr>}
+          {list.map((o) => <tr key={o}><td>{isoName(o).replace(/\.iso$/, "")}</td><td className="num">{vms.filter((v) => v.media === o).length}</td><td>x86_64</td></tr>)}
+        </tbody>
+      </table>
+    </>
+  );
+}
+
 // A physical server: its CPU, memory and disk, the OS templates it holds and the virtual servers on it.
 export function HostPage({ game, c, id, vms, open, create }: { game: GameState; c: Cluster; id: string; vms: Vm[]; open: (id: string) => void; create?: () => void }) {
   const d = game.devices.find((x) => x.id === id), mine = vms.filter((v) => v.w.deviceId === id), health = summaryOf(game, c, id);
@@ -52,15 +71,6 @@ export function HostPage({ game, c, id, vms, open, create }: { game: GameState; 
         <ResourceBars use={health.use} labels={["CPU", t("browser-consoles-2.memory"), t("browser-consoles-2.disk")]} />
       </fieldset>
       {health.alarms.length > 0 && <fieldset className="ovz-box"><legend>{t("browser-consoles-2.alerts")}</legend><AlarmList game={game} c={c} alarms={health.alarms} className="cx-table ovz-table" /></fieldset>}
-      <fieldset className="ovz-box"><legend>{t("browser-consoles-2.osTemplates")}</legend>
-        <table className="cx-table ovz-table">
-          <thead><tr><th>{t("browser-consoles-2.name")}</th><th>{t("browser-consoles-2.virtualServers")}</th></tr></thead>
-          <tbody>
-            {mountableImages(game).length === 0 && <tr><td colSpan={2} className="cx-empty">No OS templates</td></tr>}
-            {mountableImages(game).map((o) => <tr key={o}><td>{isoName(o).replace(/\.iso$/, "")}</td><td className="num">{mine.filter((v) => v.media === o).length}</td></tr>)}
-          </tbody>
-        </table>
-      </fieldset>
       <fieldset className="ovz-box"><legend>{t("browser-consoles-2.virtualServers")}</legend>
         <VsTable vms={mine} open={open} />
         {create && <div className="cx-tools"><button className="ovz-btn" onClick={create}>{t("browser-consoles-2.createVirtualServer")}</button></div>}
@@ -114,8 +124,8 @@ export function CtPage({ game, v, host }: { game: GameState; v: Vm; host: string
 }
 
 export function OpenVeeZee(p: PanelProps) {
-  const era = eraAt(ERAS, p.game), { game, c, f } = p, [page, setPage] = useState<Page>("dashboard");
-  const { vms, dialog } = useVms(game, c, f), sw = useSoftware(game, c, f), nv = useNewVm(game, c), health = summaryOf(game, c, null);
+  const era = eraAt(ERAS, p.game), { game, c, f } = p, link = parseCreate("openveezee", p.path), [page, setPage] = useState<Page>(link?.screen === "create" ? "create" : link?.screen === "packages" ? "plans" : "dashboard");
+  const { vms, dialog } = useVms(game, c, f), sw = useSoftware(game, c, f), nv = useNewVm(game, c, link?.screen === "create" ? link.order : undefined), health = summaryOf(game, c, null);
   if (!p.signedIn) return (
     <div className="cx ovz ovz-login" data-era={era}>
       <LoginForm className="ovz-card" onLogin={p.login} button={t("browser-consoles-2.logIn")}>
@@ -127,10 +137,10 @@ export function OpenVeeZee(p: PanelProps) {
   const ct = typeof page === "object" && "ct" in page ? vms.find((v) => v.id === page.ct) : undefined;
   const node = typeof page === "object" && "node" in page ? page.node : null;
   const open = (id: string) => setPage({ ct: id }), toCreate = f.create ? () => setPage("create") : undefined;
-  const create = () => { const id = nv.create(); if (id) setPage({ ct: id }); };
+  const create = () => { if (nv.ordered) { if (nv.submit()) setPage("vservers"); return; } const id = nv.create(); if (id) setPage({ ct: id }); };
   const nodes = c.nodes.map((n) => game.devices.find((d) => d.id === n.deviceId)!).filter(Boolean);
   const is = (x: Page) => page === x || (x === "vservers" && (!!ct || page === "create")) || (x === "servers" && !!node);
-  const menu: [Page, string, string][] = [["dashboard", "⌂", t("browser-consoles-2.dashboard")], ["servers", "▦", t("browser-consoles-2.physicalServers")], ["vservers", "▣", t("browser-consoles-2.virtualServers")], ["users", "☺", t("browser-consoles-2.users")], ["requests", "✉", t("browser-consoles-2.requests")], ["ips", "⌖", t("browser-consoles-2.ipAddresses")]];
+  const menu: [Page, string, string][] = [["dashboard", "⌂", t("browser-consoles-2.dashboard")], ["servers", "▦", t("browser-consoles-2.physicalServers")], ["templates", "▤", t("browser-consoles-2.osTemplates")], ["vservers", "▣", t("browser-consoles-2.virtualServers")], ["plans", "▤", t("pkg.ovzPlans")], ["users", "☺", t("browser-consoles-2.users")], ["requests", "✉", t("browser-consoles-2.requests")], ["ips", "⌖", t("browser-consoles-2.ipAddresses")]];
   return (
     <div className="cx cx-hv ovz" data-era={era}>
       <header className="ovz-top">
@@ -183,6 +193,7 @@ export function OpenVeeZee(p: PanelProps) {
               </table>
             </>
           )}
+          {page === "templates" && <TemplatesPage game={game} vms={vms} />}
           {node && <HostPage game={game} c={c} id={node} vms={vms} open={open} create={toCreate} />}
           {page === "vservers" && (
             <>
@@ -192,9 +203,11 @@ export function OpenVeeZee(p: PanelProps) {
             </>
           )}
           {ct && <CtPage game={game} v={ct} host={p.host} />}
+          {page === "plans" && <><h2>{t("pkg.ovzPlans")}</h2><PackagesScreen game={game} c={c} /></>}
           {page === "create" && (
             <form className="ovz-form" onSubmit={(e) => { e.preventDefault(); create(); }}>
               <h2>{t("browser-consoles-2.createVirtualServer")}</h2>
+              <div className="ovz-order">{nv.orderFields}</div>
               <Facts className="cx-table cx-facts ovz-table" facts={[{ label: "ID", value: "auto", num: true }, { label: t("browser-consoles-2.server"), value: c.name }]} />
               {nv.isoPick(t("browser-consoles-2.osTemplate"), t("browser-consoles-2.none"))}
               <SizeFields size={nv.size} set={nv.setSize} labels={[t("browser-consoles-2.cpuLimit"), t("browser-consoles-2.ramGb"), t("browser-consoles-2.diskQuotaGb")]} />

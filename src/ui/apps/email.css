@@ -1,15 +1,15 @@
 /* Email settings: a sheet that drops over the app window. */
 .mail-scrim { position: absolute; inset: 0; z-index: 20; display: grid; justify-items: center; align-items: start; background: oklch(0 0 0 / 0.18); }
-.mail-sheet { width: min(340px, calc(100% - 32px)); margin-top: 0; padding: 4px 0 8px; border-radius: 0 0 12px 12px; background: var(--win); color: var(--text); box-shadow: var(--shadow-win); animation: mail-drop 0.18s ease-out; }
+.mail-sheet { width: min(340px, calc(100% - 32px)); margin-top: 0; padding: 4px 0 8px; border-radius: 0 0 var(--ar-sheet) var(--ar-sheet); background: var(--win); color: var(--text); box-shadow: var(--shadow-win); animation: mail-drop 0.18s ease-out; }
 @keyframes mail-drop { from { transform: translateY(-12px); opacity: 0; } }
 .mail-sheet-h { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px 6px 16px; }
 .mail-sheet-h h2 { font-size: 13px; font-weight: 650; }
-.mail-facts { display: grid; gap: 4px; margin: 0 16px 10px; padding: 8px 10px; border-radius: 8px; background: var(--win-side); font-size: 12px; }
+.mail-facts { display: grid; gap: 4px; margin: 0 16px 10px; padding: 8px 10px; border-radius: var(--ar-pane); background: var(--win-side); font-size: 12px; }
 .mail-facts div { display: flex; justify-content: space-between; gap: 12px; }
 .mail-facts dt { color: var(--text-3); }
 .mail-facts dd { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mail-options { display: grid; gap: 2px; padding: 0 8px; }
-.mail-option { display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 8px; border: 0; border-radius: 8px; background: none; font: inherit; color: inherit; text-align: left; }
+.mail-option { display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 8px; border: 0; border-radius: var(--ar-pane); background: none; font: inherit; color: inherit; text-align: left; }
 .mail-option:hover:not(:disabled) { background: var(--hover); }
 .mail-option[aria-checked="true"] { background: var(--accent-soft); }
 .mail-option:disabled .mail-tile, .mail-option:disabled .mail-name { opacity: 0.45; }
@@ -18,3 +18,29 @@
 .mail-name { flex: 1; min-width: 0; display: grid; font-weight: 500; }
 .mail-name small { font-size: 11.5px; font-weight: 400; color: var(--text-3); }
 .mail-check { width: 16px; height: 16px; color: var(--accent); flex: none; }
+
+.mail-sheet-h { background-image: var(--ar-head); }
+
+/* Panthera and Leapard: opaque bordered sheets that hang from the title bar. */
+:root[data-os="aqua"] .mail-sheet,
+:root[data-os="leopard"] .mail-sheet { border: 1px solid oklch(0 0 0 / 0.4); border-top: 0; }
+:root[data-os="aqua"] .mail-tile,
+:root[data-os="leopard"] .mail-tile { border-radius: 18%; box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.4), 0 1px 2px oklch(0 0 0 / 0.3); }
+:root[data-os="aqua"] .mail-option[aria-checked="true"],
+:root[data-os="leopard"] .mail-option[aria-checked="true"] { background: var(--ar-sel); color: var(--ar-sel-ink); }
+:root[data-os="aqua"] .mail-option[aria-checked="true"] .mail-name small,
+:root[data-os="leopard"] .mail-option[aria-checked="true"] .mail-name small { color: inherit; opacity: 0.8; }
+:root[data-os="aqua"] .mail-check,
+:root[data-os="leopard"] .mail-check { color: white; }
+
+/* Yosemighty: frosted sheet. */
+:root[data-os="yosemite"] .mail-sheet { background: color-mix(in oklch, var(--win), transparent 14%); backdrop-filter: blur(20px) saturate(1.5); -webkit-backdrop-filter: blur(20px) saturate(1.5); border: var(--ar-bw) solid var(--line-strong); border-top: 0; }
+:root[data-os="yosemite"] .mail-tile { border-radius: 50%; }
+
+/* Tahoo: liquid glass sheet. */
+:root[data-os="tahoe"] .mail-sheet {
+  background: color-mix(in oklch, var(--win), transparent 38%); border: var(--ar-bw) solid oklch(1 0 0 / 0.28); border-top: 0;
+  backdrop-filter: blur(28px) saturate(1.8); -webkit-backdrop-filter: blur(28px) saturate(1.8);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.5), var(--shadow-win);
+}
+:root[data-os="tahoe"] .mail-tile { border-radius: 30%; box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.4); }

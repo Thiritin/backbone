@@ -297,7 +297,6 @@ export default {
   "browser-consoles-1.hvClusterEvents": (p) => `Cluster-Ereignisse (${p.n})`,
   "browser-consoles-1.hvSettingsFor": (p) => `Einstellungen für ${p.name}`,
   "browser-consoles-1.hvGenerationN": (p) => `Generation ${p.n}`,
-  "browser-consoles-1.mpQuotaOf": (p) => `${p.n} MiB von 2 GiB`,
   "browser-consoles-1.mnObjects": (p) => `${p.n} ${Number(p.n) === 1 ? "Objekt" : "Objekte"}`,
   "browser-consoles-1.hzUsedOf": (p) => `${p.a} von ${p.b} verwendet`,
   "browser-consoles-1.hzDaysHours": (p) => `${p.d} ${Number(p.d) === 1 ? "Tag" : "Tage"}, ${p.h} ${Number(p.h) === 1 ? "Stunde" : "Stunden"}`,

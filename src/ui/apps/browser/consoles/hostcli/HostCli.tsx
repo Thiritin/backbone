@@ -1,8 +1,13 @@
 import { dateOf } from "../../../../../sim/00-core/time";
+import { mailAddress } from "../../../../../sim/60-infra/addresses";
+import { mailStateOf, spamSenders } from "../../../../../sim/60-infra/netsvc-mail";
 import { companyDomain } from "../../../../../sim/30-customers/domains";
 import type { GameState } from "../../../../../sim/50-state";
 import type { Cluster } from "../../../../../sim/60-infra/cluster";
+import { t } from "../../../../../i18n/en";
 import { HostPage } from "../../sites/Pages";
+import { useMailQueue } from "../mailpig/MailQueue";
+import { queueEntries } from "../../../../../sim/60-infra/netsvc-mail";
 import { hash, tenants, wgKey, type Tenant } from "../services";
 import "./hostcli.css";
 
@@ -15,6 +20,21 @@ const serial = (game: GameState, zone: string) => {
 };
 const zonesOf = (ts: Tenant[]) => ts.flatMap((t) => t.zones);
 const mib = (n: number) => `${(n / 100).toFixed(2)} MiB`;
+
+// Postfix's mailq: one block per deferred mail with its reason, then the total.
+function mailq(game: GameState, c: Cluster): string[] {
+  const a = mailAddress(game, c.id), n = a ? mailStateOf(game, a.id).deferred : 0;
+  const senders = a ? spamSenders(game, a.id).map((x) => `${String(x.thousands * 1000).padStart(8)} ${game.customers.find((k) => k.id === x.customerId)?.name ?? x.customerId}`) : [];
+  const top = senders.length ? ["", `${t("netsvc.topSenders")}:`, ...senders] : [];
+  if (!a || n === 0) return ["Mail queue is empty", ...top];
+  const when = (h: number) => { const [wd, dd, mon, , time] = dateOf(h).toUTCString().replace(",", "").split(" "); return `${wd} ${mon} ${dd} ${time}`; };
+  return [
+    "-Queue ID-  --Size-- ----Arrival Time---- -Sender/Recipient-------",
+    ...queueEntries(game, a.id).flatMap((e) => [`${e.id.padEnd(11)} ${String(e.bytes).padStart(8)} ${when(e.hour)}  ${e.sender}`, `(${e.reason})`, `${" ".repeat(41)}${e.recipient}`, ""]),
+    `-- ${Math.ceil(n * 1.4)} Kbytes in ${n} Requests.`,
+    ...top,
+  ];
+}
 
 function listing(game: GameState, c: Cluster, family: string, name: string): [string, string[]][] {
   const ts = tenants(game, c), zones = zonesOf(ts);
@@ -46,18 +66,20 @@ function listing(game: GameState, c: Cluster, family: string, name: string): [st
     }
     default: return [
       ["postconf myhostname mydomain", [`myhostname = ${name}.${companyDomain(game)}`, `mydomain = ${companyDomain(game)}`]],
-      ["mailq", ["Mail queue is empty"]],
+      ["mailq", mailq(game, c)],
     ];
   }
 }
 
 export function HostCli({ game, c, family, host, name }: { game: GameState; c: Cluster; family: string; host: string; name: string }) {
+  const q = useMailQueue(game, c.id);
   return (
     <HostPage host={host}>
       <pre className="hc">
         {listing(game, c, family, name).map(([cmd, out]) => `root@${name}:~# ${cmd}\n${out.map((l) => `${l}\n`).join("")}`).join("")}
         {`root@${name}:~# `}
       </pre>
+      {family === "postfixit" && <div className="hc-actions"><button className="cx-btn" onClick={q.flush}>postqueue -f</button><button className="cx-btn" onClick={q.clear}>postsuper -d ALL deferred</button></div>}
     </HostPage>
   );
 }

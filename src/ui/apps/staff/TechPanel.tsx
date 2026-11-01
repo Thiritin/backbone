@@ -37,7 +37,7 @@ export function TechPanel({ game, e }: { game: GameState; e: Employee }) {
           return (
             <div key={o.id} className="st-op">
               <span>{opLabel(game, o)}</span>
-              <span className="st-cost">{d ? devName(d) : ""}</span>
+              <span className="st-cost">{o.count ? `${o.count} × ` : ""}{d ? devName(d) : ""}</span>
               {o.auto && <span className="pill">{t("misc.rule")}</span>}
               <span className="grow" />
               <button className="btn" onClick={() => act(cancelOperation, o.id)}>{t("misc.cancel")}</button>

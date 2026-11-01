@@ -11,8 +11,8 @@ describe("shop section", () => {
     const s = readyGame(1);
     s.cash = 1e6;
     setUpChannel(s, "website");
-    setUpChannel(s, "orderForm");
-    expect(s.marketing.owned).toEqual(["website", "orderForm"]);
+    chooseShop(s, "handRolled");
+    expect(s.shop.variant).toBe("handRolled");
     let html = renderToString(<Shop game={s} />);
     expect(html).toContain("Hand-rolled order form");
     expect(html).toContain("Custom scripts");

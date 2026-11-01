@@ -7,6 +7,7 @@ export default {
   "ledger.lirSignup": () => "Frais d'inscription RIPE NCC",
   "ledger.lirYearly": () => "Cotisation annuelle RIPE NCC",
   "ledger.blockBought": (p) => `Bloc d'adresses IP de ${p.size} adresses`,
+  "ledger.providerRouting": (p) => `Routage par le fournisseur pour ${p.prefix}`,
   "error.needsStaticLine": () => "Nécessite une ligne professionnelle avec des adresses IP fixes.",
   "sales.need.ipv4": (p) => `Nécessite une adresse IPv4 libre à ${p.city}`,
   "sales.need.ipv6": (p) => `Nécessite l'IPv6 à ${p.city}`,
@@ -35,6 +36,6 @@ export default {
   "error.needsInternet": () => "Internet n'atteint pas encore cet hôte.",
   "error.needsBgpRouter": () => "Nécessite un routeur avec table de routage complète sur ce site.",
   "error.basementOnly": () => "Seul le sous-sol accepte ce routeur.",
-  "error.panelRouter": () => "Ce routeur remplace celui du sous-sol et ne va pas dans une baie.",
+  "error.noRouter": () => "Aucun routeur n'est monté ici.",
   "error.notOfficeRouter": () => "Seul un routeur de petit bureau remplace celui du sous-sol.",
 } satisfies Dict;

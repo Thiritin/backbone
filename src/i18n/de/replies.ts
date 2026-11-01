@@ -111,6 +111,11 @@ const MAILS: Record<string, [Mail, Mail, Mail]> = {
     () => "Es gibt zwei Rechnungen, weil die Nutzung jeweils am Monatsende für den Vormonat abgerechnet wird. Beide stimmen, und nichts wurde doppelt abgebucht.",
     () => "Eine Zahlung gehört zur aktuellen Rechnung, die andere zur Nutzung des letzten Monats, die wir nachträglich abrechnen. Dein Konto ist in Ordnung.",
   ],
+  "tpl.foundPayment": [
+    () => "Wir haben deine Überweisung gefunden und der Rechnung zugeordnet. Du kannst die Mahnung ignorieren.",
+    () => "Danke, deine Zahlung ist da und die Rechnung ist beglichen. Die Mahnung ging raus, bevor wir sie gebucht hatten.",
+    () => "Deine Überweisung ist jetzt auf die Rechnung gebucht. Es ist nichts mehr offen, die Mahnung ist damit erledigt.",
+  ],
   "tpl.resend": [
     () => "Wir haben dir eine Kopie der Rechnung geschickt. Sag uns bitte Bescheid, falls sie nicht ankommt.",
     () => "Eine Kopie der Rechnung ist unterwegs an deine Kontaktadresse.",

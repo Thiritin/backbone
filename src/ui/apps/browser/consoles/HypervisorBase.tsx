@@ -23,17 +23,21 @@ import { buyAppSuite, cancelAppSuite, deployFromSuite } from "../../../../sim/90
 import { rescueTargets, rescueWorkload, restoreWorkload, startWorkload, stopWorkload } from "../../../../sim/90-actions/vms";
 import { diskMoveDowntime, moveDisk } from "../../../../sim/90-actions/datastores";
 import { cloneHours, cloneTemplate, makeTemplate, makeVm } from "../../../../sim/90-actions/templates";
+import { useHolds } from "./Holds";
 import { useStore } from "../../../store";
 import { day, disk, ram } from "../../hw";
 import { bootLines } from "../../console/lunix";
 import { useHandWork } from "../../locations/HandSheet";
 import { VM_STATE, vmLabel, vmState, type VmState } from "../../products/parts";
 import { Bar, Migrate, Resize, type Fact, type PanelAction } from "./PanelBase";
+import { ChangePackage, HYPERVISOR_ORDERS, hostChoices, OrderPicker, planChoices, PlanSelect } from "./PackageForms";
+import { orderChoices } from "../../../../sim/30-market/manual";
+import { provisionOrder } from "../../../../sim/90-actions/orders";
 import "./hypervisor.css";
 
 // Toolbar glyphs; the consoles draw no images.
 export const GLYPH: Record<string, string> = {
-  start: "▶", stop: "■", reset: "↻", restore: "⟲", recover: "⛑", migrate: "⇄", storage: "⛁", resize: "⤢", console: "▣", delete: "✕", create: "✚", template: "⧉", clone: "⎘", vm: "▢",
+  hold: "⏸", unhold: "▶", terminate: "✕", start: "▶", stop: "■", reset: "↻", restore: "⟲", recover: "⛑", migrate: "⇄", storage: "⛁", resize: "⤢", console: "▣", delete: "✕", create: "✚", template: "⧉", clone: "⎘", vm: "▢",
 };
 
 export interface Vm {
@@ -69,7 +73,7 @@ export function SizeFields({ size, set, labels = [t("browser-consoles-1.vcpu"), 
 
 // Every VM of the cluster with the actions its state allows; panel is the open form under it, dialog the hand work popover.
 export function useVms(game: GameState, c: Cluster, f: ConsoleFeatures): { vms: Vm[]; dialog: ReactNode } {
-  const act = useStore((s) => s.act), openConsole = useStore((s) => s.openConsole), hand = useHandWork();
+  const act = useStore((s) => s.act), openConsole = useStore((s) => s.openConsole), hand = useHandWork(), holds = useHolds(game, c, f);
   const [open, setOpen] = useState<{ id: string; kind: string } | null>(null), close = () => setOpen(null);
   const vms = game.workloads.filter((w) => w.clusterId === c.id).map((w): Vm => {
     const st = vmState(game, w), [state, tone] = VM_STATE[st], host = hostOfVm(game, w.id), own = isOwnVm(w), label = vmLabel(game, w);
@@ -87,12 +91,14 @@ export function useVms(game: GameState, c: Cluster, f: ConsoleFeatures): { vms: 
       templating && st === "stopped" && !tpl && { id: "template", label: t("browser-consoles-1.convertToTemplate"), run: () => act(makeTemplate, w.id) },
       tpl && { id: "clone", label: t("browser-consoles-1.clone"), run: toggle("clone") },
       tpl && { id: "vm", label: t("browser-consoles-1.convertToVm"), run: () => act(makeVm, w.id) },
+      planChoices(game, c, w.serviceId).length > 0 && { id: "plan", label: t("pkg.changePlan"), run: toggle("plan") },
       f.resize && own && { id: "resize", label: t("browser-consoles-1.resize"), run: toggle("resize") },
       own && { id: "console", label: t("browser-consoles-1.console"), run: () => openConsole(w.id) },
       f.delete && own && !insideVm(game, w.id).length && { id: "delete", label: t("browser-consoles-1.delete"), tone: "danger", run: toggle("delete") },
     ];
-    const kind = open?.id === w.id ? open.kind : null;
+    const kind = open?.id === w.id ? open.kind : null, hold = holds(w);
     const panel = kind === "migrate" ? <Migrate game={game} w={w} c={c} done={close} />
+      : kind === "plan" && w.serviceId ? <ChangePackage game={game} c={c} serviceId={w.serviceId} done={close} />
       : kind === "storage" ? <DiskMove game={game} w={w} c={c} done={close} />
       : kind === "clone" ? <Clone game={game} w={w} c={c} done={close} />
       : kind === "resize" ? (host ? <Resize game={game} host={host} done={close} /> : <SizeForm w={w} done={close} />)
@@ -110,11 +116,11 @@ export function useVms(game: GameState, c: Cluster, f: ConsoleFeatures): { vms: 
           ))}
           <button className="cx-btn" onClick={close}>{t("browser-consoles-1.cancel")}</button>
         </div>
-      ) : null;
+      ) : hold?.panel ?? null;
     return {
-      w, id: w.id, st, state, tone, own, name: host?.name ?? label.name, sub: own ? (host ? consoleTitle(host.panel ?? host.platform ?? "") : "") : label.service,
+      w, id: w.id, st, state: hold?.state?.[0] ?? state, tone: hold?.state?.[1] ?? tone, own, name: host?.name ?? label.name, sub: own ? (host ? consoleTitle(host.panel ?? host.platform ?? "") : "") : label.service,
       node: nodeName(game, w.deviceId), ip: privateIp(game, w.id) ?? "", os: own ? osText(w) : "", media: w.media ?? null,
-      use: workloadUse(game, w), actions: actions.filter((a): a is PanelAction => !!a), panel, storage: w.datastore ? nodeName(game, w.datastore) : t("browser-consoles-1.local"),
+      use: workloadUse(game, w), actions: [...actions.filter((a): a is PanelAction => !!a), ...(hold?.actions ?? [])], panel, storage: w.datastore ? nodeName(game, w.datastore) : t("browser-consoles-1.local"),
     };
   });
   return { vms, dialog: hand.dialog };
@@ -182,8 +188,11 @@ export interface Step { id: string; label: string; body: ReactNode }
 
 // The new VM a wizard books: its size, the ISO it boots and, on a VMwhere cluster with the App Suite, the software it
 // deploys with. create returns the new VM's id.
-export function useNewVm(game: GameState, c: Cluster) {
+export function useNewVm(game: GameState, c: Cluster, order?: string) {
   const act = useStore((s) => s.act), [size, setSize] = useState<Resources>(PANEL_VM_SIZE);
+  const choices = orderChoices(game, HYPERVISOR_ORDERS), [ticket, setTicket] = useState(choices.some((o) => o.ticketId === order) ? order! : "");
+  const [pkg, setPkg] = useState(""), [route, setRoute] = useState(c.id), picked = choices.find((o) => o.ticketId === ticket);
+  const hosts = hostChoices(game, c);
   const [iso, setIso] = useState<OsImage | "">(""), [suite, setSuite] = useState<string | null>(null);
   const create = (): string | null => {
     const r = suite ? act(deployFromSuite, c.id, size, suite) : act(createVm, c.id, size);
@@ -200,7 +209,18 @@ export function useNewVm(game: GameState, c: Cluster) {
       </select>
     </label>
   );
-  return { size, setSize, iso, isoLabel: iso ? isoName(iso) : null, isoPick, suite, setSuite, create };
+  // With an order picked the machine is the customer's: the order's own size and the chosen package are booked.
+  const submit = (): boolean => !!picked && act(provisionOrder, picked.ticketId, route, { package: pkg || undefined }).ok;
+  const orderFields = (
+    <>
+      <OrderPicker choices={choices} value={ticket} onChange={(id) => { setTicket(id); setPkg(""); }} />
+      {picked && <PlanSelect c={c} o={picked} value={pkg} onChange={setPkg} label={t("pkg.package")} />}
+      {picked && hosts.length > 1 && (
+        <label className="cx-field">{t("pkg.node")}<select value={route} onChange={(e) => setRoute(e.target.value)}>{hosts.map((h) => <option key={h.id} value={h.id}>{h.label}</option>)}</select></label>
+      )}
+    </>
+  );
+  return { ordered: !!picked, submit, orderFields, size, setSize, iso, isoLabel: iso ? isoName(iso) : null, isoPick, suite, setSuite, create };
 }
 
 // A step wizard: the step list or tab row, the current step, Back, Next and the finish button on the last step.
@@ -410,7 +430,7 @@ export function Toolbar({ actions, className = "cx-toolbar", labels = {} }: { ac
 }
 
 // What a console has selected: the whole cluster, one node, one VM, or the new VM wizard.
-export type Sel = { kind: "all" } | { kind: "node"; id: string } | { kind: "vm"; id: string } | { kind: "new" };
+export type Sel = { kind: "all" } | { kind: "node"; id: string } | { kind: "vm"; id: string } | { kind: "new" } | { kind: "plans" };
 export const ALL: Sel = { kind: "all" };
 
 // The VM's screen shrunk to a thumbnail, as a summary page shows it; a click opens the console.

@@ -7,7 +7,8 @@ import { yearOf } from "./00-core/time";
 import { MOMS_DSL, seedDcs } from "./20-world/datacenters";
 import { t } from "../i18n/en";
 import type { Customer, Product, Service } from "./30-customers/customers";
-import type { BillingRules, Invoice, Loan } from "./45-billing/billing";
+import type { Quote } from "./30-market/quotes";
+import type { BillingRules, HoldReason, Invoice, Loan, Transfer } from "./45-billing/billing";
 import type { Ticket } from "./40-support/tickets";
 import type { Policy } from "./46-finance/finance";
 import { applications, defaultTeams, type Candidate, type Employee, type Team } from "./47-staff/staff";
@@ -16,6 +17,7 @@ import type { TechOp, TechRules } from "./47-staff/technicians";
 import type { ActivityEntry } from "./47-staff/activity";
 import { newMarketing, type Marketing } from "./80-business/marketing";
 import type { Cluster, Workload } from "./60-infra/cluster";
+import type { GameServer } from "./60-infra/games";
 import type { Maintenance } from "./60-infra/maintenance";
 import type { FrontOp } from "./60-infra/power";
 import { newNetwork, type Network } from "./60-infra/network";
@@ -32,11 +34,15 @@ import type { Rates } from "./10-catalog/products";
 import type { Domain } from "./30-customers/registry";
 import { newChadUsage, type ChadUsage } from "./47-staff/chad";
 import { newIps, type Ips } from "./60-infra/addresses";
+import { newNetSvc, type NetSvc } from "./60-infra/netsvc";
+import { newWebPanel, type WebPanel } from "./60-infra/webpanel";
 import type { CompanyMail } from "./80-business/mail";
 import type { Registrar } from "./30-customers/registrar";
 import type { Listing } from "./10-catalog/used";
 import { firstHostNo } from "./30-customers/hostnames";
 import { newShop, type ShopState } from "./80-business/shop";
+import type { BankAccount } from "./46-finance/bank";
+import type { Payable } from "./46-finance/payables";
 import type { TrendPoint } from "./80-business/trend";
 
 // 3: GPU line servers carry their preset cards.
@@ -57,7 +63,7 @@ export interface Rack { id: string; model: RackModel; locationId: string; positi
   // The hour each feed went above its continuous load, null while below.
   overSince: { a: number | null; b: number | null } }
 // slot is the lowest unit the device occupies, counted from 1 at the bottom.
-// A gateway sits on its location's carrier panel: rackId null, panel = location id. A stored unit has store = its zone's location id;
+// A datacenter handoff and the basement's line jack sit on their location's carrier panel: rackId null, panel = location id. A stored unit has store = its zone's location id;
 // a shipped unit has store null and transitTo/arriveAt set until it arrives.
 // docs/design/software.md, section 3: what a server's or own VM's disk holds. os null is an empty disk; a software whose
 // doneAt is still ahead is installing. An OS whose installedAt is ahead is installing, or upgrading in place from the
@@ -92,6 +98,8 @@ export interface Device extends MachineState { id: string; model: string; brand:
   // The server sits in its BIOS setup (90-actions/console.ts): the boot waits until the player leaves it. bootFrom is what
   // this boot came from: the USB stick shows the installer in place of the operating system.
   setup: boolean; bootFrom: "disk" | "usb";
+  // The image mounted through the management controller (90-actions/media.ts); it boots like the USB stick without a visit.
+  virtualMedia?: OsImage;
   // What a spare part in storage is (size and form factor); spares without it fit any slot of their kind.
   part?: PartSpec;
   // nodeNNN, set on servers.
@@ -108,6 +116,9 @@ export interface Device extends MachineState { id: string; model: string; brand:
 // paid counts the monthly payments made so far; the lease ends after months payments.
 export interface Lease { id: string; lessor: string; monthly: number; months: number; startedAt: number; paid: number; devices: string[] }
 // A waitlist entry gets heldUntil once its space is free; the space is then reserved until that hour.
+// A rented space's contract with its provider. monthly is the rent agreed at order time; endsAt is set once the player
+// gives notice and the location closes at that hour.
+export interface Contract { id: string; provider: string; dc: string; locationId: string; space: "share" | "cage" | "suite"; positions: number; since: number; monthly: number; endsAt: number | null }
 export interface WaitlistEntry { id: string; dc: string; space: "share" | "cage" | "suite"; size: number; since: number; heldUntil: number | null }
 export interface End { device: string; port: number }
 export interface Cable { id: string; a: End; b: End; kind: CableKind; color: string | null }
@@ -155,6 +166,10 @@ export interface GameState {
   services: Service[];
   // Billing and bank.
   invoices: Invoice[];
+  // Bank transfers from customers, matched to invoices by hand in Books.
+  transfers: Transfer[];
+  // Quotes written in Books for order tickets.
+  quotes: Quote[];
   // Hour up to which each yearly service is invoiced.
   yearlyBilledUntil: Record<string, number>;
   loans: Loan[];
@@ -165,12 +180,19 @@ export interface GameState {
   autoOrders: boolean;
   // Whether server orders wait for a review by hand (45-billing/fraud.ts).
   reviewOrders: boolean;
+  // Whether MaxMined screens standard orders (needs the fraudScreening skill), and the checks billed next month start.
+  screenOrders: boolean;
+  screenChecks: number;
   // How many monthly checks in a row the payment provider found too many chargebacks: 1 warned, 2 higher fees.
   chargebackStrikes: number;
   // The shop system that takes orders, its modules and stock (docs/design/shop.md).
   shop: ShopState;
   // Customers whose services the player holds offline.
   heldCustomers: string[];
+  // Panel hosts: services the player holds offline one by one, with the reason shown in the consoles.
+  heldServices: Record<string, HoldReason>;
+  // Game servers: the title, slots and state of each game server service on a game panel.
+  gameServers: GameServer[];
   // Support: tickets, the minute the player's queued replies finish, and the hour each offline service went down.
   tickets: Ticket[];
   playerBusyUntil: number;
@@ -187,6 +209,7 @@ export interface GameState {
   // Positions rented by competitors in each datacenter.
   dcs: Record<string, { others: number }>;
   waitlist: WaitlistEntry[];
+  contracts: Contract[];
   // Learned research skills (SKILLS ids).
   unlocks: string[];
   // The skill in training and the hour it is learned.
@@ -259,6 +282,10 @@ export interface GameState {
   chadUsage: ChadUsage;
   // Public addresses, the LIR membership and its blocks (60-infra/addresses.ts).
   ips: Ips;
+  // Mail queues and broken DNS, certificates and storage sets of the infrastructure consoles (60-infra/netsvc.ts).
+  netsvc: NetSvc;
+  // PHP pools, certificates, bans, transfers and resellers of the web panel consoles (60-infra/webpanel.ts).
+  webpanel: WebPanel;
   // News already published, as "<id>@<hour>" (80-business/news.ts).
   news: string[];
   // Next server number, next own-VM number and next service number (30-customers/hostnames.ts).
@@ -278,6 +305,14 @@ export interface GameState {
   trend: TrendPoint[];
   // The trade office registration (80-business/office.ts); null until the player registers, which installs the starter apps.
   registration: Registration | null;
+  // Apps that arrived by their trigger (80-business/walk.ts), installed or offered once.
+  arrived: string[];
+  // The company's bank account (46-finance/bank.ts); null until the registration opens it.
+  bank: BankAccount | null;
+  // Supplier invoices to pay by transfer (46-finance/payables.ts).
+  payables: Payable[];
+  // Bought software modules by id; "hbci" lets Books talk to the bank.
+  modules: string[];
 }
 
 export interface LogEntry { hour: number; minute?: number; name: string; args: unknown[] }
@@ -316,19 +351,23 @@ export function fillCards(modelId: string, components: Component[]): Component[]
 export const device = (id: string, model: string, brand: string, rackId: string | null, slot: number, panel: string | null, name: string, price: number): Device =>
   ({ id, model, brand, rackId, slot, panel, name, bond: "none", groups: [], price, boughtAt: 0, lease: null, store: null, transitTo: null, arriveAt: null, ...deviceDefaults(model, 0) });
 
-// Starting infrastructure: an empty 24U basement rack and the home router. The player buys, mounts and cables the first server.
+// Starting infrastructure: an empty 24U basement rack, the line jack on its panel and the flat's router in storage. The player
+// mounts the router, buys, mounts and cables the first server.
 export const newGame = (seed: number): GameState => ({
   version: SAVE_VERSION, seed, rng: createRng(seed), hour: 0, minute: 0, cash: START_CASH, nextId: 8,
   locations: [{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: t("location.basement"), space: "basement", positions: 1, readyAt: 0, extraCircuit: false }],
   racks: [{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null, overSince: { a: null, b: null } }],
-  devices: [device("dev5", "home-router", "Sysko", null, 0, "loc1", "fra1-gw-01", 0)],
+  devices: [{ ...device("dev5", "home-router", "AVN", null, 0, null, "fra1-gw-01", 0), store: "loc1" }, device("dev6", "line-jack", "", null, 0, "loc1", "fra1-line-01", 0)],
   cables: [],
-  ledger: [], licenses: [], media: { images: [], stick: { os: null, in: null } }, leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], unlocks: [], training: null, knowHow: 0, installed: ["Browser"], kbReads: {}, checklist: [], seenChanges: [], undocked: [], os: "aqua",
+  ledger: [], licenses: [], media: { images: [], stick: { os: null, in: null } }, leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], contracts: [], unlocks: [], training: null, knowHow: 0, installed: ["Browser"], kbReads: {}, checklist: [], seenChanges: [], undocked: [], os: "aqua",
   customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], files: {},
-  invoices: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
-  billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 }, autoOrders: false, reviewOrders: false, chargebackStrikes: 0,
+  invoices: [], transfers: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
+  quotes: [],
+  billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 }, autoOrders: false, reviewOrders: false, screenOrders: false, screenChecks: 0, chargebackStrikes: 0,
   shop: newShop(),
   heldCustomers: [],
+  heldServices: {},
+  gameServers: [],
   tickets: [], playerBusyUntil: 0, friendFavours: { year: 0, used: 0 }, player: { at: "loc1", until: 0, doing: "work" }, downSince: {}, frozen: [],
   company: { name: "Basement Hosting", logo: "server", color: "oklch(0.55 0.15 255)", domain: null, mail: { kind: "free" }, tagline: "" },
   homeLine: { id: MOMS_DSL.id, next: null },
@@ -346,10 +385,15 @@ export const newGame = (seed: number): GameState => ({
   registrar: null,
   chadUsage: newChadUsage(),
   ips: newIps(),
+  netsvc: newNetSvc(),
+  webpanel: newWebPanel(),
   news: [],
   nextNode: 1, nextVm: 1, nextHostNo: firstHostNo(seed),
   used: [], usedRep: 0,
-  log: [], challenge: null, registration: null, score: { netWorth: null, level3: null, happySum: 0, happyHours: 0 }, trend: [],
+  log: [], challenge: null, registration: null, arrived: [], score: { netWorth: null, level3: null, happySum: 0, happyHours: 0 }, trend: [],
+  bank: null,
+  payables: [],
+  modules: [],
 });
 
 export const guideDoc = (): Doc => ({ id: "guide", kind: "guide", title: t("doc.guide"), body: "", x: 16, y: 46 });

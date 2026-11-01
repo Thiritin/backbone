@@ -7,7 +7,7 @@ const mailboxes = (n: string | number) => `${n} ${Number(n) === 1 ? "buzón" : "
 const web = (p: Params) => `${gb(p.disk)} de espacio, ${gb(p.traffic)} de tráfico al mes y ${mailboxes(p.mail)}`;
 const box = (p: Params) => `${p.cpu} vCPU, ${gb(p.ram)} de RAM y ${gb(p.disk)} de disco`;
 const cards = (p: Params) => `${p.gpu} GPU`;
-const domain = (p: Params) => (Number(p.owned) ? `Ya tengo ${p.domain} y me gustaría trasladarlo contigo.` : `Por favor, registra también ${p.domain} para mí.`);
+const domain = (p: Params) => (Number(p.owned) ? `Ya tengo ${p.domain} y me gustaría trasladarlo contigo.${p.auth ? ` El código de autorización es ${p.auth}.` : ""}` : `Por favor, registra también ${p.domain} para mí.`);
 const more = (p: Params) => (p.product === "webHosting"
   ? `de ${gb(p.disk0)} a ${gb(p.disk1)} de espacio, de ${gb(p.traffic0)} a ${gb(p.traffic1)} de tráfico y de ${p.mail0} a ${mailboxes(p.mail1)}`
   : and([
@@ -38,6 +38,7 @@ export default {
   "ledger.domainTransfer": (p) => `Traslado de ${p.domain} a ${p.registry}`,
   "ledger.domainRenewal": (p) => `Renovación de ${p.domain} en ${p.registry}`,
   "activity.renewDomain": (p) => `${p.domain} renovado por un año`,
+  "activity.changePackage": (p) => `Cambiado al paquete ${p.pkg}`,
   "activity.upgrade": (p) => `Servicio ampliado a ${euroCents(Number(p.price))} al mes`,
   "event.orderAccepted.title": () => "Presupuesto aceptado",
   "event.orderAccepted.text": (p) => `${p.name} ha aceptado el presupuesto.`,
@@ -54,6 +55,10 @@ export default {
   "error.quoteSent": () => "El cliente todavía no ha respondido al presupuesto.",
   "error.needsAutomation": () => "Elige un host donde configurarlo.",
   "error.needsAccount": () => "Crea primero la cuenta del cliente.",
+  "error.addressMissing": () => "Introduce la dirección completa.",
+  "error.quoteSentAlready": () => "Este presupuesto ya se envió.",
+  "error.quoteOtherOrder": () => "Este presupuesto es de otro pedido.",
+  "error.quoteNotAccepted": () => "El cliente no ha aceptado este presupuesto.",
   "error.needsInvoice": () => "Confirma primero el pedido y envía la factura.",
   "error.needsDomain": () => "Registra primero el dominio.",
   "error.stepDone": () => "Este paso ya está hecho.",

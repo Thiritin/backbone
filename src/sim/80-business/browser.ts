@@ -1,4 +1,5 @@
 // GDD, The desktop (Browser): what an address in the in-game browser leads to. Pure; the UI draws the page.
+import { supplierHost } from "../46-finance/payables";
 import { monthIndexOf, yearOf } from "../00-core/time";
 import { SOFTWARE } from "../10-catalog/platforms";
 import { registrarById, registrarHost, REGISTRARS, type RegistrarId } from "../10-catalog/registrars";
@@ -16,6 +17,8 @@ import { consoleAt, isDefaced } from "./consoles";
 import { customerSite, siteStatus, slowHost } from "./website";
 import { vendorHost, vendorLive, VENDORS } from "./vendors";
 import { OFFICE_HOST, OFFICE_TITLE, OFFICE_URL } from "./office";
+import { bankById, BANKS, type BankId } from "../10-catalog/banks";
+import { LEXWEAR_HOST } from "./lexwear";
 
 // fast loads at once, slow shows a progress bar first, down cannot be reached.
 export type Load = "fast" | "slow" | "down";
@@ -25,8 +28,11 @@ export type Page =
   | { kind: "customer"; serviceId: string }
   | { kind: "vendor"; maker: string }
   | { kind: "registrar"; id: RegistrarId }
+  | { kind: "bank"; id: BankId }
+  | { kind: "supplier"; name: string }
+  | { kind: "lexwear" }
   | { kind: "host"; hostname: string }
-  | { kind: "console"; hostname: string; clusterId: string; defaced: boolean }
+  | { kind: "console"; hostname: string; clusterId: string; defaced: boolean; path: string }
   | { kind: "ipmi"; deviceId: string }
   | { kind: "kvm"; deviceId: string }
   | { kind: "video" }
@@ -66,14 +72,17 @@ export function displayHost(host: string): string {
 export const companyUrl = (s: GameState): string => `${displayHost(companyDomain(s))}/`;
 
 // The registrar under contract, or the first one before any contract.
-export function registrarUrl(s: GameState): string {
-  const r = (s.registrar && registrarById(s.registrar.id)) ?? REGISTRARS[0];
-  return `${displayHost(registrarHost(r))}/`;
-}
+export const partnerOf = (s: GameState) => (s.registrar && registrarById(s.registrar.id)) ?? REGISTRARS[0];
+export const registrarUrl = (s: GameState): string => `${displayHost(registrarHost(partnerOf(s)))}/`;
+// The partner's form that registers or transfers an order's domain.
+export const registrarFormUrl = (s: GameState, ticketId: string, transfer: boolean): string => `${registrarUrl(s)}${transfer ? "transfer" : "register"}?order=${ticketId}`;
 
-// Bookmarks every game has: the company site once launched and the registrar. The index lists the rest.
+export const bankUrl = (id: BankId): string => `www.${bankById(id)!.host}/`;
+
+// Bookmarks every game has: the company site once launched, the bank and the registrar. The index lists the rest.
 export const defaultBookmarks = (s: GameState): { title: string; url: string }[] => [
   ...(s.registration ? [] : [{ title: OFFICE_TITLE, url: OFFICE_URL }]),
+  ...(s.bank ? [{ title: bankById(s.bank.id)!.name, url: bankUrl(s.bank.id) }] : []),
   ...(s.marketing.launched ? [{ title: s.company.name, url: companyUrl(s) }] : []),
   { title: ((s.registrar && registrarById(s.registrar.id)) ?? REGISTRARS[0]).name, url: registrarUrl(s) },
 ];
@@ -121,7 +130,7 @@ function machineOf(s: GameState, key: string, byIp: boolean): { hostname: string
 function machinePage(s: GameState, m: { hostname: string; load: Load }, port: string, path: string): Pick<Resolved, "page" | "load"> {
   const c = consoleAt(s, m.hostname, port, path);
   if (!c && port) return { page: { kind: "notfound" }, load: "fast" };
-  return { page: c ? { kind: "console", hostname: m.hostname, clusterId: c.id, defaced: isDefaced(s, c) } : { kind: "host", hostname: m.hostname }, load: m.load };
+  return { page: c ? { kind: "console", hostname: m.hostname, clusterId: c.id, defaced: isDefaced(s, c), path } : { kind: "host", hostname: m.hostname }, load: m.load };
 }
 
 export function resolve(s: GameState, raw: string): Resolved {
@@ -145,6 +154,7 @@ export function resolve(s: GameState, raw: string): Resolved {
   if (named(INDEX_HOST)) return out({ kind: "index" });
   if (named(OFFICE_HOST)) return out({ kind: "office" });
   if (named(WIKI_HOST)) return out({ kind: "wiki" });
+  if (named(LEXWEAR_HOST)) return out({ kind: "lexwear" });
   // A software's site exists from the year the software does; an operating system's always.
   const year = yearOf(s.hour), sw = SOFTWARE.find((x) => named(x.site.host) && x.from <= year);
   if (sw) return out({ kind: "software", id: sw.id });
@@ -153,7 +163,12 @@ export function resolve(s: GameState, raw: string): Resolved {
   const vendor = VENDORS.find((m) => named(vendorHost(m.id)) && vendorLive(m, monthIndexOf(s.hour)));
   if (vendor) return out({ kind: "vendor", maker: vendor.id });
   if (named(BOARD_HOST)) return out({ kind: "sponsorboard" });
+  const bank = BANKS.find((b) => named(b.host) && b.from <= year);
+  if (bank) return out({ kind: "bank", id: bank.id });
   const registrar = REGISTRARS.find((r) => named(registrarHost(r)));
+  // A supplier's portal opens once it has sent an invoice; a registrar's sits under /account of its site.
+  const supplier = [...new Set(s.payables.filter((p) => p.supplier !== "card").map((p) => p.name))].find((n) => named(supplierHost(n)));
+  if (supplier && (!registrar || path.startsWith("/account"))) return out({ kind: "supplier", name: supplier });
   if (registrar) return out({ kind: "registrar", id: registrar.id });
   if (named(VIDEO_HOST)) {
     return /[?&]v=uptime(&|$)/.test(path) ? out({ kind: "video" }) : out({ kind: "notfound" });

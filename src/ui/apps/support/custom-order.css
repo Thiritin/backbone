@@ -1,6 +1,6 @@
 .custom-steps { display: grid; gap: 10px; max-height: 55%; overflow: auto; }
 .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-.steps .step { display: grid; grid-template-columns: 18px 150px minmax(0, 1fr); align-items: center; gap: 4px 8px; padding: 8px 10px; border-radius: 8px; border: 0.5px solid var(--line); font-size: 12.5px; }
+.steps .step { display: grid; grid-template-columns: 18px 150px minmax(0, 1fr); align-items: center; gap: 4px 8px; padding: 8px 10px; border-radius: var(--ar-pane); border: var(--ar-bw) solid var(--line); font-size: 12.5px; }
 .steps .step.now { border-color: var(--accent); background: color-mix(in oklch, var(--accent) 6%, transparent); }
 .steps .step.done .step-k, .steps .step.done .step-v { color: var(--text-2); }
 .steps .step-i svg.lucide { width: 14px; height: 14px; color: var(--ok); }
@@ -11,7 +11,7 @@
 .step-col { display: grid; gap: 8px; justify-items: start; }
 
 .routes { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px; width: 100%; }
-.route { display: grid; gap: 2px; padding: 7px 10px; border-radius: 8px; border: 0.5px solid var(--line-strong); cursor: pointer; font-size: 12px; position: relative; }
+.route { display: grid; gap: 2px; padding: 7px 10px; border-radius: var(--ar-pane); border: var(--ar-bw) solid var(--line-strong); cursor: pointer; font-size: 12px; position: relative; }
 .route input { position: absolute; opacity: 0; pointer-events: none; }
 .route:has(input:checked) { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
 .route:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 1px; }
@@ -20,7 +20,7 @@
 .route-s { color: var(--text-2); }
 
 .hosts { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; width: 100%; }
-.host { display: grid; gap: 4px; align-content: start; padding: 8px 10px; border-radius: 8px; border: 0.5px solid var(--line-strong); font-size: 12px; }
+.host { display: grid; gap: 4px; align-content: start; padding: 8px 10px; border-radius: var(--ar-pane); border: var(--ar-bw) solid var(--line-strong); font-size: 12px; }
 .host.sel { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
 .host.full .host-r { color: var(--text-3); }
 .host-t { font-weight: 600; display: flex; align-items: center; gap: 6px; }
@@ -31,3 +31,18 @@
 .upgrade-table .r { text-align: right; }
 .sup-detail:has(.custom-steps) .thread { min-height: 140px; }
 .sales-bars.route-load { justify-self: stretch; max-width: 560px; padding: 4px 0 0; border: 0; }
+
+/* Panthera and Leapard: route and host choices are lightly shaded boxes with a gel selection ring. */
+:root[data-os="aqua"] :is(.route, .host):not(.sel, :has(input:checked)),
+:root[data-os="leopard"] :is(.route, .host):not(.sel, :has(input:checked)) { background: linear-gradient(var(--field), color-mix(in oklch, var(--field), var(--text) 4%)); box-shadow: var(--ar-lift); }
+:root[data-os="aqua"] :is(.route:has(input:checked), .host.sel),
+:root[data-os="leopard"] :is(.route:has(input:checked), .host.sel) { border-color: var(--gel); box-shadow: inset 0 0 0 1px var(--gel), var(--ar-glow); }
+
+/* Tahoo: glass choice tiles. */
+:root[data-os="tahoe"] :is(.route, .host):not(.sel, :has(input:checked)) { background: color-mix(in oklch, var(--field), transparent 30%); box-shadow: var(--ar-lift); }
+
+.attach-strip { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; min-height: 40px; padding: 6px 10px; border: 1px dashed var(--line-strong); border-radius: var(--r); }
+.attach-strip.over { border-style: solid; border-color: var(--accent); background: var(--hover); }
+.attach-k { font-size: 11.5px; color: var(--text-3); margin-right: auto; }
+.attach-chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; border: var(--ar-bw, 1px) solid var(--line); border-radius: 4px; background: var(--field); font: inherit; color: var(--text); }
+.attach-chip svg { width: 14px; height: 14px; }

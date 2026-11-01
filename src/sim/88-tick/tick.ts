@@ -1,4 +1,6 @@
 import { addressBills, addressTick } from "../60-infra/addresses";
+import { billSuppliers, invoicing, payablesTick } from "../46-finance/payables";
+import { netsvcTick } from "../60-infra/netsvc";
 import { binomial, rand } from "../00-core/rng";
 import { dateOf, isMonthStart, yearOf } from "../00-core/time";
 import { businessPowerPrice } from "../10-catalog/economy";
@@ -8,15 +10,19 @@ import { opsTick } from "../40-support/notices";
 import { supportTick, workTick } from "../40-support/tick";
 import { abandonTickets } from "../40-support/abandon";
 import { financeTick } from "../46-finance/finance";
+import { bankTick, tanTick } from "../46-finance/bank";
 import { staffTick } from "../47-staff/staff";
 import { techTick } from "../47-staff/technicians";
 import { autoUpdateTick } from "../90-actions/software";
 import { snapshotTick } from "../90-actions/snapshots";
+import { closeLocation, noticeEnd } from "../90-actions/hardware";
 import { officeOpen } from "../80-business/office";
 import { fairsTick } from "../80-business/fairs";
 import { communityTick } from "../80-business/sponsoring";
 import { marketingTick } from "../80-business/marketing";
 import { newsTick } from "../80-business/news";
+import { walkTick } from "../80-business/walk";
+import { deliverLicences, lexwearTick } from "../80-business/lexwear";
 import { salesTick } from "../30-market/sales";
 import { usedTick } from "../80-business/used";
 import { ordersTick } from "../30-market/manual";
@@ -33,6 +39,8 @@ import { freezeTick } from "../60-infra/usage";
 import { statsTick } from "../60-infra/stats";
 import { networkTick } from "../60-infra/network";
 import { appsTick } from "../60-infra/apps";
+import { webpanelTick } from "../60-infra/webpanel";
+import { gamesTick } from "../60-infra/games";
 import { securityTick } from "../60-infra/security";
 import { usageTick } from "../60-infra/usage";
 import { productsTick } from "../85-products/products";
@@ -49,7 +57,7 @@ import { capacityAt, DATACENTERS, datacenterById, flatMonthly, homeLineById, HOU
 import type { Component, Device, GameState, LedgerEntry } from "../50-state";
 import { scoreTick } from "../80-business/scores";
 import { trendTick } from "../80-business/trend";
-import { arrayLost, busyDevices, dcAvailability, drawWatts, driveGb, drivesOf, fits, isDrive, HOURS_PER_YEAR, locationOf, locationRent, powered } from "../60-infra/status";
+import { arrayLost, busyDevices, dcAvailability, drawWatts, driveGb, drivesOf, fits, isDrive, HOURS_PER_YEAR, locationOf, locationRent, powered, readOnlySweep } from "../60-infra/status";
 
 export interface SimEvent {
   app: string;
@@ -58,6 +66,17 @@ export interface SimEvent {
 }
 
 const cents = (v: number) => Math.round(v * 100) / 100;
+
+// A cancelled contract closes its location when the notice period ends. A location still holding hardware rolls one more month.
+function contractsEnd(state: GameState, events: SimEvent[]): void {
+  for (const c of state.contracts) {
+    if (c.endsAt === null || c.endsAt > state.hour) continue;
+    const loc = state.locations.find((l) => l.id === c.locationId);
+    if (closeLocation(state, c.locationId).ok) { events.push({ app: "Locations", key: "event.contractEnded", params: { location: loc?.name ?? "" } }); continue; }
+    c.endsAt = noticeEnd(state.hour, 0);
+    events.push({ app: "Locations", key: "event.contractRolled", params: { location: loc?.name ?? "" } });
+  }
+}
 
 // Drops the lease and makes its devices owned.
 export function endLease(s: GameState, leaseId: string) {
@@ -70,7 +89,7 @@ export function endLease(s: GameState, leaseId: string) {
 export function powerPerHour(s: GameState): number {
   const price = businessPowerPrice(yearOf(s.hour));
   const busy = busyDevices(s), flat = new Set(s.racks.filter((r) => r.flatKw).map((r) => r.id));
-  return s.devices.filter((d) => d.on && !flat.has(d.rackId ?? "") && powered(s, d.id)).reduce((sum, d) => {
+  return readOnlySweep(s, () => s.devices.filter((d) => d.on && !flat.has(d.rackId ?? "") && powered(s, d.id))).reduce((sum, d) => {
     const loc = locationOf(s, d)!;
     return sum + (drawWatts(d, busy) / 1000) * price * (loc.dc ? datacenterById(loc.dc).powerFactor : HOUSEHOLD_FACTOR);
   }, 0);
@@ -157,12 +176,13 @@ export function failComponents(s: GameState, d: Device, ids: string[], events: S
 }
 
 function wear(s: GameState, events: SimEvent[]) {
-  s.devices = s.devices.map((d) => {
+  // powered() reads the devices from before this sweep, so its rack power can be memoised.
+  s.devices = readOnlySweep(s, () => s.devices.map((d) => {
     if (!d.components.length || !d.on || !powered(s, d.id)) return d;
     if (throttled(s, d)) d = { ...d, hotHours: (d.hotHours ?? 0) + 1 };
     const broke = d.components.filter((c) => c.failedAt === null && rand(s.rng) < failureChance(s, d, c));
     return broke.length ? failComponents(s, d, broke.map((c) => c.id), events) : d;
-  });
+  }));
 }
 
 // Finished swaps put a new component in; a drive in an array that survived starts a rebuild. Finished rebuilds end.
@@ -206,6 +226,7 @@ export function tick(state: GameState): SimEvent[] {
   const minutes = 60 - state.minute;
   state.hour++;
   state.minute = 0;
+  tanTick(state);
   haltTick(state);
   installNetTick(state);
   const events: SimEvent[] = [...tripTick(state), ...thermalTick(state, minutes)];
@@ -258,6 +279,7 @@ export function tick(state: GameState): SimEvent[] {
     competitorsCancel(state);
   }
   if (state.waitlist.length) updateHolds(state, events);
+  contractsEnd(state, events);
   if (monthStart) competitorsTake(state);
   if (monthStart) {
     const d = dateOf(state.hour);
@@ -288,16 +310,19 @@ export function tick(state: GameState): SimEvent[] {
       if (item && item.monthly > 0) bills.push(subscriptionEntry(state, item));
     }
     if (power > 0) bills.unshift({ hour: state.hour, category: "power", key: "ledger.power", params: {}, amount: -power });
+    const dc = state.locations.find((l) => l.dc);
+    const direct = invoicing(state) ? billSuppliers(state, bills, { upstream: line.isp, datacenter: dc && datacenterById(dc.dc!).name }) : bills;
     const rent = bills.filter((b) => b.category === "rent").reduce((sum, b) => sum - b.amount, 0);
     const leasing = bills.filter((b) => b.category === "leasing").reduce((sum, b) => sum - b.amount, 0);
     const subscriptions = cents(bills.filter((b) => b.category === "subscriptions").reduce((sum, b) => sum - b.amount, 0));
-    state.cash = cents(state.cash - power - rent - leasing - subscriptions);
+    state.cash = cents(state.cash + direct.reduce((n, b) => n + b.amount, 0));
     state.powerDue = 0;
-    state.ledger = [...state.ledger, ...bills];
+    state.ledger = [...state.ledger, ...direct];
     if (bills.length) events.push({ app: "Finance", key: "event.bills", params: { power, rent, leasing: cents(leasing), subscriptions, total: cents(power + rent + leasing + subscriptions) } });
     state.knowHow = cents(state.knowHow + knowHowPerMonth(state));
   }
   events.push(...addressTick(state));
+  events.push(...netsvcTick(state));
   events.push(...opsTick(state));
   events.push(...freezeTick(state));
   events.push(...haTick(state));
@@ -308,9 +333,11 @@ export function tick(state: GameState): SimEvent[] {
   events.push(...migrationTick(state));
   events.push(...productsTick(state));
   events.push(...usageTick(state));
+  gamesTick(state);
   statsTick(state);
   events.push(...billingTick(state));
   events.push(...fraudTick(state));
+  events.push(...lexwearTick(state));
   events.push(...ordersTick(state));
   events.push(...domainsTick(state));
   events.push(...registrarTick(state));
@@ -318,15 +345,19 @@ export function tick(state: GameState): SimEvent[] {
   events.push(...networkTick(state));
   events.push(...securityTick(state));
   events.push(...appsTick(state));
+  events.push(...webpanelTick(state));
   events.push(...supportTick(state));
   abandonTickets(state);
   events.push(...financeTick(state));
+  events.push(...bankTick(state));
+  payablesTick(state);
   events.push(...staffTick(state));
   events.push(...techTick(state));
-  autoUpdateTick(state);
+  events.push(...autoUpdateTick(state));
   events.push(...fairsTick(state));
   events.push(...marketingTick(state));
   events.push(...newsTick(state));
+  events.push(...walkTick(state));
   events.push(...salesTick(state));
   events.push(...usedTick(state));
   scoreTick(state);
@@ -341,5 +372,6 @@ export function tickMinute(state: GameState): SimEvent[] {
   haltTick(state);
   installNetTick(state);
   const tripped = tripTick(state);
-  return [...tripped, ...thermalTick(state), ...workTick(state)];
+  tanTick(state);
+  return [...tripped, ...thermalTick(state), ...workTick(state), ...deliverLicences(state)];
 }

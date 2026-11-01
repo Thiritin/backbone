@@ -178,7 +178,7 @@ describe("raise notice", () => {
   });
 
   it("bills a raise the customer stays through from the month after it", () => {
-    const { s, ids, svc } = shop(4, 3);
+    const { s, ids, svc } = shop(5, 3);
     const { c, v } = ids[0];
     nextMonth(s);
     changePrice(s, v, 3.3);

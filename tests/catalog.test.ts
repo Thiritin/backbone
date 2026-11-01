@@ -141,10 +141,10 @@ describe("old model ids", () => {
     const s = { ...withServer(newGame(1)), cash: 100_000 };
     ok(buyDevice(s, "g1-compute", "Dwell", 2, "loc1"));
     const raw = JSON.parse(serialize(s));
-    raw.devices[3].model = "g1-compute-1s";
-    raw.devices[4].model = "g2-highmem";
+    raw.devices[4].model = "g1-compute-1s";
+    raw.devices[5].model = "g2-highmem";
     const loaded = deserialize(JSON.stringify(raw));
-    expect(loaded.devices.map((d) => d.model)).toEqual(["g1-compute", "sw-8", "home-router", "g1-compute", "g2-memory"]);
+    expect(loaded.devices.map((d) => d.model)).toEqual(["g1-compute", "sw-8", "home-router", "line-jack", "g1-compute", "g2-memory"]);
     for (const d of loaded.devices) expect(() => modelById(d.model)).not.toThrow();
   });
 });
