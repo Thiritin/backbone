@@ -11,6 +11,7 @@ import { activeServices, type PaymentHabit, type Product, type Profile } from ".
 import { bump, expandable, isFinal, profileStats } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import { betterHost } from "../60-infra/routes";
+import { allocationFree } from "../60-infra/daemons";
 import { gameFirst, lineOffered, noRoomError, pickNode, serverTaken, supports, withDatastore, workloadsOf } from "../60-infra/cluster";
 import { phpNeeded } from "../60-infra/php";
 import { installedRamGb, locationOf } from "../60-infra/status";
@@ -193,7 +194,7 @@ export function targetFor(s: GameState, r: Pick<SalesRequest, "city" | "product"
     const prod = r.productId ? s.shop.products.find((p) => p.id === r.productId) : undefined;
     const pg = prod?.serverGroupId ? s.shop.groups.find((g) => g.id === prod.serverGroupId) : undefined;
     const sold = pg ? new Set(pg.members) : r.shop ? forSale(s, r.product) : null;
-    const fit = [...s.clusters].sort((x, y) => gameFirst(x, y) || betterHost(s)(x, y)).filter((x) => zones.includes(x.az) && supports(x, r.product) && (!sold || sold.has(x.id)) && (!prod?.packageName || packageNamed(x, prod.packageName)));
+    const fit = [...s.clusters].sort((x, y) => gameFirst(x, y) || betterHost(s)(x, y)).filter((x) => zones.includes(x.az) && supports(x, r.product) && (!sold || sold.has(x.id)) && (!prod?.packageName || packageNamed(x, prod.packageName)) && (r.product !== "gameServer" || allocationFree(s, x)));
     const c = fit.find((x) => pickNode(s, x, withDatastore(s, x, size), null, x.placement, true)) ?? fit.find((x) => pickNode(s, x, withDatastore(s, x, size)));
     return c ? { clusterId: c.id, zone: c.az } : null;
   }

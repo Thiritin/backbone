@@ -1,7 +1,9 @@
 // game-servers plan 3.3 to 3.6: what the player does to a game server.
-import { modById, titleById } from "../10-catalog/games";
+import { yearOf } from "../00-core/time";
+import { latestRelease, modById, titleById, weightAt } from "../10-catalog/games";
 import { bump } from "../40-support/tickets";
 import type { GameState } from "../50-state";
+import { daemonOf, freePorts, nodeOf } from "../60-infra/daemons";
 import { gameOf, latestVersion, type GameServer, type Restart } from "../60-infra/games";
 import type { ActionResult } from "./hardware";
 
@@ -71,4 +73,49 @@ export function removeMod(s: GameState, serviceId: string, modId: string): Actio
   const r = target(s, serviceId);
   if (typeof r === "string") return fail(r);
   return r.g.mods.includes(modId) ? patch(s, serviceId, { mods: r.g.mods.filter((id) => id !== modId) }) : fail("error.modNotInstalled");
+}
+
+const CHANGE_HAPPY = 3;
+
+// Moves the customer to a title that is still current: slots follow the RAM they held, mods are dropped and the newest version is installed.
+export function changeTitle(s: GameState, serviceId: string, titleId: string): ActionResult {
+  const r = target(s, serviceId), to = titleById(titleId), year = yearOf(s.hour);
+  if (typeof r === "string") return fail(r);
+  const from = titleById(r.g.title);
+  if (!to || !from) return fail("error.unknownTitle");
+  if (to.id === from.id || weightAt(to, year) <= 0 || year > to.fade) return fail("error.titleChange");
+  bump(r.c, CHANGE_HAPPY);
+  const slots = r.g.slots === null ? null : Math.max(1, Math.min(to.slots[1], Math.floor((r.g.slots * from.perSlot.ramGb) / to.perSlot.ramGb + 1e-9)));
+  return patch(s, serviceId, { title: to.id, slots, version: latestRelease(to, year), mods: [], crashedAt: null, leak: 0 });
+}
+
+// Brings a node's daemon back at once.
+export function restartDaemon(s: GameState, nodeKey: string): ActionResult {
+  const d = daemonOf(s, nodeKey);
+  if (!d) return fail("error.noDaemon");
+  s.daemons = { ...s.daemons, [nodeKey]: { ...d, state: "online", since: s.hour } };
+  return { ok: true, id: nodeKey };
+}
+
+// Moves a node's daemon to its panel's release.
+export function updateDaemon(s: GameState, nodeKey: string): ActionResult {
+  const d = daemonOf(s, nodeKey), c = s.clusters.find((x) => x.panel === "pterodaktyl" && (x.vm === nodeKey || x.nodes.some((n) => n.deviceId === nodeKey)));
+  if (!d || !c) return fail("error.noDaemon");
+  s.daemons = { ...s.daemons, [nodeKey]: { ...d, version: c.version } };
+  return { ok: true, id: nodeKey };
+}
+
+export function addAllocation(s: GameState, serviceId: string): ActionResult {
+  const r = target(s, serviceId), n = nodeOf(s, serviceId);
+  if (typeof r === "string") return fail(r);
+  if (!r.g.ports.length || !n) return fail("error.noAllocation");
+  const port = freePorts(s, n.key)[0];
+  return port === undefined ? fail("error.noAllocation") : patch(s, serviceId, { ports: [...r.g.ports, port] });
+}
+
+// A server keeps at least its game port.
+export function removeAllocation(s: GameState, serviceId: string, port: number): ActionResult {
+  const r = target(s, serviceId);
+  if (typeof r === "string") return fail(r);
+  return r.g.ports.length > 1 && r.g.ports.includes(port) ? patch(s, serviceId, { ports: r.g.ports.filter((p) => p !== port) }) : fail("error.allocationRemove");
 }

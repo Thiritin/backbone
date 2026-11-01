@@ -38,6 +38,9 @@ export const GAME_TITLES: GameTitle[] = [
   title("pallworld", 2024, NEVER, 1.5, [0.12, 0.12, 0.08], [2024]),
 ];
 
+// Titles that need a query port besides the game port.
+export const needsQuery = (g: GameTitle): boolean => ["rost", "fiveem", "arkaic"].includes(g.id);
+
 export const titleById = (id: string): GameTitle | undefined => GAME_TITLES.find((x) => x.id === id);
 
 // What a panel sells: slots (TCAdmen), RAM (MultiKraft) or RAM and a CPU limit (Pterodaktyl). Anything else is no game panel.
@@ -46,6 +49,9 @@ export const GAME_UNIT: Record<string, "slots" | "ram" | "ramCpu"> = { tcadmen: 
 // The share of new orders a title takes in a year: none before it arrives, full until it fades, then 25 percent less a year down to a tenth.
 export const weightAt = (g: GameTitle, year: number): number =>
   year < g.from ? 0 : g.weight * (year <= g.fade ? 1 : Math.max(0.1, 0.75 ** (year - g.fade)));
+
+// economy.md, Happiness and churn: from the year after a title fades its players leave, 0.05 happiness a day, doubling every year up to 0.4.
+export const fadeDrain = (g: GameTitle, year: number): number => (year > g.fade ? Math.min(0.4, 0.05 * 2 ** (year - g.fade - 1)) : 0);
 
 export function pickTitle(seed: number, key: number, year: number): string {
   const live = GAME_TITLES.filter((g) => weightAt(g, year) > 0);
