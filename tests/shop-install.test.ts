@@ -1,3 +1,4 @@
+import type { ShopId } from "../src/sim/10-catalog/shops";
 import { describe, expect, it } from "vitest";
 import { hourOfMonth } from "../src/sim/00-core/time";
 import { shopEditionFor } from "../src/sim/10-catalog/shop-licences";
@@ -12,10 +13,10 @@ import { shopBlock } from "../src/sim/80-business/website";
 import { renewKeys } from "../src/sim/85-products/products";
 import { activateLicence } from "../src/sim/90-actions/licence";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
-import { chooseShop, installShop, renewShopUpdates, updateShop, upgradeShop } from "../src/sim/90-actions/shop";
+import { installShop, renewShopUpdates, updateShop, upgradeShop } from "../src/sim/90-actions/shop";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import type { ActionResult } from "../src/sim/90-actions/hardware";
-import { readyGame } from "./fixtures";
+import { readyGame, installWithKey } from "./fixtures";
 
 // readyGame's FreePanel VM is the first panel host.
 const panelHost = (s: GameState) => s.clusters.find((c) => c.kind === "panel")!;
@@ -30,9 +31,9 @@ const game = (ym: string, seed = 5): GameState => {
 };
 const err = (r: ActionResult): string | null => (r.ok ? null : r.error);
 const ok = (r: ActionResult) => expect(err(r)).toBeNull();
-const chosen = (ym: string, id: Parameters<typeof chooseShop>[1], own = false) => {
+const chosen = (ym: string, id: ShopId, own = false) => {
   const s = game(ym);
-  ok(chooseShop(s, id, own));
+  installWithKey(s, id, own);
   s.shop.readyAt = s.hour;
   return s;
 };
@@ -41,7 +42,7 @@ const key = (s: GameState) => assignedKey(s, SHOP_MACHINE, s.shop.variant!)!;
 describe("installing a shop system", () => {
   it("puts the chosen shop with its key into a web space of the first panel host", () => {
     const s = game("2009-05"), c = panelHost(s), before = accountsOn(s, c);
-    ok(chooseShop(s, "clientExit", true));
+    installWithKey(s, "clientExit", true);
     expect(s.shop.install).toEqual({ clusterId: c.id, version: versionAt("clientExit", s.hour).version, at: s.hour });
     expect(accountsOn(s, c)).toBe(before + 1);
     expect(key(s)).toMatchObject({ kind: "once", covers: { kind: "version", major: versionAt("clientExit", s.hour).major } });
@@ -50,19 +51,18 @@ describe("installing a shop system", () => {
 
   it("needs a panel host, and a key for a shop without a trial", () => {
     const s = game("2009-05");
-    s.shop = { ...s.shop, variant: "whmCache" };
-    expect(err(installShop(s, s.clusters.find((c) => c.kind !== "panel")!.id))).toBe("error.shopHostPanel");
-    expect(err(installShop(s, panelHost(s).id))).toBe("error.licenceKey");
+    expect(err(installShop(s, s.clusters.find((c) => c.kind !== "panel")!.id, "whmCache"))).toBe("error.shopHostPanel");
+    expect(err(installShop(s, panelHost(s).id, "whmCache"))).toBe("error.licenceKey");
     const k = issueKey(s, "whmCache", null);
-    ok(installShop(s, panelHost(s).id, k.key.toLowerCase()));
+    ok(installShop(s, panelHost(s).id, "whmCache", k.key.toLowerCase()));
     expect(key(s).id).toBe(k.id);
-    expect(err(installShop(s, panelHost(s).id))).toBe("error.shopInUse");
+    expect(err(installShop(s, panelHost(s).id, "whmCache"))).toBe("error.shopInUse");
   });
 
   it("takes orders only while installed, its host up and its licence valid", () => {
     const s = game("2009-05"), portal = `portal.${companyDomain(s)}/`;
     s.clusters = s.clusters.filter((c) => c.kind !== "panel");
-    ok(chooseShop(s, "clientExit", true));
+    installWithKey(s, "clientExit", true);
     s.shop.readyAt = s.hour;
     expect(shopBlock(s)).toBe("error.shopNotInstalled");
     expect(resolve(s, portal).page.kind).toBe("notfound");
@@ -81,7 +81,7 @@ describe("shop licences", () => {
     const bought = key(s);
     s.licenses = s.licenses.map((k) => ({ ...k, machineId: null }));
     s.shop.install = null;
-    ok(installShop(s, panelHost(s).id));
+    ok(installShop(s, panelHost(s).id, "clientExit"));
     expect(licenceStatus(s, SHOP_MACHINE, "clientExit")).toBe("trial");
     s.hour += 15 * 24;
     expect(shopBlock(s)).toBe("error.licenceExpired");
@@ -152,7 +152,7 @@ describe("shop updates", () => {
 describe("old saves", () => {
   it("install a saved shop on the first panel host with a year of updates from the save", () => {
     const s = game("2012-06");
-    ok(chooseShop(s, "blessta", true));
+    installWithKey(s, "blessta", true);
     const data = JSON.parse(serialize(s));
     delete data.shop.install;
     data.licenses = data.licenses.filter((k: { product: string }) => k.product !== "blessta");
@@ -164,7 +164,7 @@ describe("old saves", () => {
   it("keep a saved shop uninstalled without a panel host", () => {
     const s = game("2012-06");
     s.clusters = s.clusters.filter((c) => c.kind !== "panel");
-    ok(chooseShop(s, "blessta", true));
+    installWithKey(s, "blessta", true);
     const data = JSON.parse(serialize(s));
     delete data.shop.install;
     const back = deserialize(JSON.stringify(data));
