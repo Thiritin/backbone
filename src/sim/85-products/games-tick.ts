@@ -1,11 +1,12 @@
 // game-servers plan 3.3 to 3.6: the hourly crashes, restarts and release waves of every game server.
 import { hashRng, rand } from "../00-core/rng";
-import { dateOf } from "../00-core/time";
-import { modById, releaseHour, releasedAt, titleById } from "../10-catalog/games";
+import { dateOf, yearOf } from "../00-core/time";
+import { fadeDrain, modById, releaseHour, releasedAt, titleById } from "../10-catalog/games";
 import { idNum } from "../10-catalog/usage";
 import { bump, createTicket } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import { workloadsOf } from "../60-infra/cluster";
+import { daemonBehind, daemonTick } from "../60-infra/daemons";
 import { brokenMods, modCount, playersOf, type GameServer } from "../60-infra/games";
 import { workloadPerf } from "./products";
 
@@ -18,11 +19,12 @@ export const isPeak = (hour: number, day: number): boolean => (hour >= 17 && hou
 
 export function crashChance(s: GameState, g: GameServer): number {
   const w = workloadsOf(s, g.serviceId)[0], slow = w && workloadPerf(s, w, "gameServer") < 0.9;
-  return CRASH_BASE * (1 + 0.25 * modCount(g)) * (1 + 2 * brokenMods(g)) * (1 + 2 * g.leak) * (slow ? 2 : 1);
+  return CRASH_BASE * (1 + 0.25 * modCount(g)) * (1 + 2 * brokenMods(g)) * (1 + 2 * g.leak) * (slow ? 2 : 1) * (daemonBehind(s, g.serviceId) ? 2 : 1);
 }
 
 // Per hour: the full mark, the schedule, memory growth, crashes and the release waves.
 export function gamesTick(s: GameState): void {
+  daemonTick(s);
   if (!s.gameServers.length) return;
   const d = dateOf(s.hour), hour = d.getUTCHours(), day = d.getUTCDay();
   s.gameServers = s.gameServers.map((g0) => {
@@ -44,6 +46,7 @@ export function gamesTick(s: GameState): void {
     const p = g.crashedAt === null ? playersOf(s, g.serviceId) : null;
     if (p && p.players >= p.slots) g = { ...g, seenFull: s.hour };
     gameWave(s, g, c);
+    bump(c, -fadeDrain(t, yearOf(s.hour)) / 24);
     return g;
   });
 }

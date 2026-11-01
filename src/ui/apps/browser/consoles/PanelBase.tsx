@@ -4,9 +4,10 @@ import { t } from "../../../../i18n/en";
 import { ArrowRightLeft, CalendarClock, Circle, Code, Maximize2, Pause, Play, PowerOff, RefreshCw, RotateCcw, Square, Terminal, Trash2, X, type LucideIcon } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { yearOf } from "../../../../sim/00-core/time";
-import { GAME_UNIT } from "../../../../sim/10-catalog/games";
+import { GAME_UNIT, NEVER, titleById } from "../../../../sim/10-catalog/games";
+import { daemonOffline } from "../../../../sim/60-infra/daemons";
 import { gameCrashed, gameOf, playersOf } from "../../../../sim/60-infra/games";
-import { GameLine, type GameRow } from "./GamePanel";
+import { GameLine, TitlesSummary, type GameRow } from "./GamePanel";
 import { autoUpdates, phpAt, softwareById } from "../../../../sim/10-catalog/platforms";
 import type { Resources } from "../../../../sim/10-catalog/products";
 import type { Look } from "../../../../sim/10-catalog/sites";
@@ -130,7 +131,7 @@ const PLAN_LABEL: Record<string, string> = { cpanic: "pkg.changeCpanic", directa
 function gameRow(game: GameState, c: Cluster, serviceId: string): GameRow | undefined {
   if (!c.panel || !GAME_UNIT[c.panel] || game.services.find((v) => v.id === serviceId)?.product !== "gameServer") return undefined;
   const g = gameOf(game, serviceId);
-  return { title: g ? t(`games.title.${g.title}`) : t("games.unknown"), players: playersOf(game, serviceId), crashed: gameCrashed(game, serviceId) };
+  return { title: g ? t(`games.title.${g.title}`) : t("games.unknown"), faded: !!g && yearOf(game.hour) > (titleById(g.title)?.fade ?? NEVER), players: playersOf(game, serviceId), crashed: gameCrashed(game, serviceId), offline: daemonOffline(game, serviceId), ports: g?.ports ?? [] };
 }
 
 export interface Row {
@@ -183,6 +184,8 @@ export const ramText = (r: Row) => t("browser-consoles-2.of", { used: ram(+r.ram
 export function RowsTable({ rows, name, node = false, className = "cx-table", extra, cols = [] }: { rows: Row[]; name: string; node?: boolean; className?: string; extra?: (r: Row) => ReactNode; cols?: ("user" | "pkg")[] }) {
   const span = (node ? 5 : 4) + cols.length;
   return (
+    <>
+    <TitlesSummary rows={rows} />
     <table className={className}>
       <thead><tr><th>{name}</th>{cols.map((k) => <th key={k}>{t(k === "user" ? "pkg.username" : "pkg.package")}</th>)}{node && <th>{t("browser-consoles-2.node")}</th>}<th>{t("browser-consoles-2.status")}</th><th>{t("browser-consoles-2.usage")}</th><th /></tr></thead>
       <tbody>
@@ -199,6 +202,7 @@ export function RowsTable({ rows, name, node = false, className = "cx-table", ex
         ))}
       </tbody>
     </table>
+    </>
   );
 }
 
