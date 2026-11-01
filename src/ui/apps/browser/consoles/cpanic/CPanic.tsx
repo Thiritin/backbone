@@ -20,7 +20,7 @@ import "./cpanic.css";
 const ERAS = erasFrom(2005, 2014);
 
 export function CPanic(p: PanelProps) {
-  const era = eraAt(ERAS, p.game), open = parseCreate("cpanic", p.path), [tab, setTab] = usePanelTab(p.f, open?.screen ?? "objects"), [q, setQ] = useState(""), [as, setAs] = useSessionState<string | null>(`browser.cpanic.as.${p.c.id}`, null);
+  const era = eraAt(ERAS, p), open = parseCreate("cpanic", p.path), [tab, setTab] = usePanelTab(p.f, open?.screen ?? "objects"), [q, setQ] = useState(""), [as, setAs] = useSessionState<string | null>(`browser.cpanic.as.${p.c.id}`, null);
   const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f);
   if (!p.signedIn) return (
     <div className="cx cp cp-login" data-era={era}>

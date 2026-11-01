@@ -1,5 +1,6 @@
 // GDD, Support: abuse and copyright notices, legal requests, refunds after outages; numbers in economy.md, Notices and legal requests.
-import { vendorParams } from "../80-business/lexwear";
+import { CRYPTO_ABUSE } from "../10-catalog/payments";
+import { SHOP_LICENCE, vendorParams } from "../80-business/lexwear";
 import { hashRng, rand, type Rng } from "../00-core/rng";
 import { activeServices, type Customer } from "../30-customers/customers";
 import { serviceFqdn } from "../30-customers/hostnames";
@@ -193,7 +194,7 @@ function spawn(s: GameState, r: Rng): Ticket[] {
   // A board sponsor who misuses the server is hidden but still draws notices.
   const live = s.customers.filter((c) => c.churnedAt === null || (c.sponsor && c.shady && !!domainOf(s, c)));
   for (const c of live) {
-    const real = (c.shady ? NOTICE_RATES.shadyReal : NOTICE_RATES.real) / HOURS_PER_MONTH;
+    const real = (c.shady ? NOTICE_RATES.shadyReal : NOTICE_RATES.real) * (c.method === "crypto" ? CRYPTO_ABUSE : 1) / HOURS_PER_MONTH;
     const legal = (c.shady ? NOTICE_RATES.shadyLegal : NOTICE_RATES.legal) / HOURS_PER_MONTH;
     const roll = rand(r);
     if (roll >= real + NOTICE_RATES.fake / HOURS_PER_MONTH + legal || !domainOf(s, c)) continue;
@@ -217,7 +218,7 @@ export const subjectParams = (s: GameState, t: Ticket): Record<string, string | 
   ...(t.maint && maintParams(t.maint)),
   ...(t.kind === "sponsor" && sponsorParams(s, t)),
   ...t.mail?.params,
-  ...(t.kind === "mail" && t.topic.startsWith("lexwear.") && vendorParams(t.mail!.params)),
+  ...(t.kind === "mail" && (t.topic.startsWith("lexwear.") || t.topic === SHOP_LICENCE) && vendorParams(t.mail!.params)),
 });
 
 // Hourly, before the infrastructure and support ticks: grid outages, returned servers, notices, deadlines and seizures.
