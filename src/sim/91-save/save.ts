@@ -8,6 +8,7 @@ import { asImage } from "../10-catalog/server-os";
 import { capacityAt, DATACENTERS, DEFAULT_HOME_LINE, LEAD_DAYS, nextAz, seedDcs, SHARE_RACKS, spacePrice } from "../20-world/datacenters";
 import { fillAddresses } from "../60-infra/addresses";
 import { mergeWebPanel } from "../60-infra/webpanel";
+import { fillBackups } from "../60-infra/backups";
 import { skillById, skillFor } from "../10-catalog/research";
 import { STARTER_APPS, WIDGETS } from "../10-catalog/store";
 import { WALK } from "../80-business/walk";
@@ -25,6 +26,7 @@ import { fillHostnames } from "../30-customers/hostnames";
 import { fillRegistrar } from "../30-customers/registrar";
 import { fillDesign, fillLaunch, fillLines } from "../80-business/website";
 import { fillSpecs } from "./specs";
+import { fillDaemons } from "../60-infra/daemons";
 import { fillGames } from "../60-infra/games";
 import { fillMachines, fillVersions } from "./machines";
 import { legacyLeads } from "./leads";
@@ -66,7 +68,7 @@ export function deserialize(raw: string): GameState {
     const defaults = deviceDefaults(model, d.boughtAt ?? 0);
     const sized = fillCpus(modelById(model), fillSizes(model, d.components ?? defaults.components));
     return {
-      ...defaults, ...d, model, brand: model === "home-router" ? "AVN" : maker(model, d.brand), components: (data.version ?? 1) < 3 ? fillCards(model, sized) : sized, lease: d.lease ?? null, store: stored(d), transitTo: d.transitTo ?? null, arriveAt: d.arriveAt ?? null,
+      ...defaults, ...d, log: (d.log ?? []).map((e, i) => ({ ...e, sev: e.sev ?? "info", id: e.id ?? i })), model, brand: model === "home-router" ? "AVN" : maker(model, d.brand), components: (data.version ?? 1) < 3 ? fillCards(model, sized) : sized, lease: d.lease ?? null, store: stored(d), transitTo: d.transitTo ?? null, arriveAt: d.arriveAt ?? null,
       // A managed switch saved before configurations were saved boots into what it runs.
       ...(defaults.saved && !d.saved ? { saved: { groups: d.groups ?? [], vlans: d.vlans ?? {} } } : {}),
     };
@@ -123,8 +125,12 @@ export function deserialize(raw: string): GameState {
     services: (data.services ?? []).map((v) => ({ ...v, zone: v.zone ?? null, sla: v.sla ?? "basic" })),
     // Saves from before clusters keep their services unplaced, which leaves them online.
     sales: { ...base.sales, ...data.sales },
-    // Rivals saved before small rivals and reviews.
-    competitors: (data.competitors ?? base.competitors).map((r) => ({ ...r, weak: r.weak ?? 0, reviews: r.reviews ?? [] })),
+    // Rivals saved before small rivals, reviews and HOSTtoast.
+    competitors: (data.competitors ?? base.competitors).map((r) => ({
+      ...r, weak: r.weak ?? 0, reviews: r.reviews ?? [], down: r.down ?? [],
+      tier: r.tier ?? base.competitors.find((x) => x.id === r.id)?.tier ?? "registered", badges: r.badges ?? base.competitors.find((x) => x.id === r.id)?.badges ?? 0,
+    })),
+    hosttoast: { ...base.hosttoast, ...data.hosttoast },
     shop: { ...base.shop, ...data.shop },
     used: (data.used ?? base.used).filter(known).map((l) => ({ ...l, model: RENAMED_MODELS[l.model] ?? l.model, brand: maker(RENAMED_MODELS[l.model] ?? l.model, l.brand), ...(l.device && { device: { ...l.device, brand: maker(l.device.model, l.device.brand) } }) })),
     staff: (data.staff ?? []).map(({ hours: _h, hoursFrom: _f, ...e }: Employee & { hours?: number; hoursFrom?: number }) => ({ ...e, location: e.location ?? null, team: e.team ?? "office", worked: e.worked ?? 0 })),
@@ -133,6 +139,7 @@ export function deserialize(raw: string): GameState {
     clusters: data.clusters ?? [], workloads: (data.workloads ?? []).map((w) => workloadDefaults({ ...w, media: w.media && asImage((w.media as string) === "iso" ? "lunix" : w.media, year) })), downHours: data.downHours ?? {},
     invoices: (data.invoices ?? []).map((i) => ({ ...i, suspendedAt: i.suspendedAt ?? (i.suspended ? data.hour ?? 0 : null), extendedUntil: i.extendedUntil ?? null })),
   })))), data.marketing?.lines), data.marketing?.designYear), data.marketing?.launched)), data.registrar)), bare);
+  fillBackups(s);
   legacyLeads(s);
   // Saves from before the registrar form get the transfer code in the order email of an owned domain.
   s.sales = { ...s.sales, requests: s.sales.requests.map((r) => (r.owned && !r.thread[0]?.params.auth ? { ...r, thread: r.thread.map((m, i) => (i ? m : { ...m, params: { ...m.params, auth: authCode(s.seed, r.id) } })) } : r)) };
@@ -142,6 +149,7 @@ export function deserialize(raw: string): GameState {
   // Accounts from before plans get their bank's cheapest plan for the form.
   if (s.bank && !s.bank.plan) s.bank = { ...s.bank, plan: defaultPlan(bankById(s.bank.id)!, s.registration?.form ?? "sole") };
   fillGames(s);
+  fillDaemons(s);
   // A save from before accounts opened on the bank's site holds the savings as cash; they come back with the account.
   if ((data.version ?? 1) < 4 && !s.registration && !s.bank && s.cash >= savingsOf(s)) s.cash -= savingsOf(s);
   // Saves from before the account could come first opened it only after the customer accepted.

@@ -8,8 +8,8 @@
 .sup-compose { display: flex; flex-direction: column; gap: 10px; }
 .sup-compose label { display: grid; grid-template-columns: 90px 1fr; align-items: center; gap: 8px; padding: 0 16px; }
 .sup-compose-act { display: flex; justify-content: flex-end; gap: 8px; padding: 0 16px; }
-.sup .sup-brand .btn.sup-settings { color: inherit; background: color-mix(in oklch, var(--brand-ink, var(--text)) 12%, transparent); border-color: color-mix(in oklch, var(--brand-ink, var(--text)) 22%, transparent); }
-.sup .sup-brand .btn.sup-settings:hover { background: color-mix(in oklch, var(--brand-ink, var(--text)) 20%, transparent); }
+:root .sup .sup-brand .btn.sup-settings:not(.web-view *) { color: inherit; background: color-mix(in oklch, var(--brand-ink, var(--text)) 12%, transparent); border-color: color-mix(in oklch, var(--brand-ink, var(--text)) 22%, transparent); }
+:root .sup .sup-brand .btn.sup-settings:not(.web-view *):hover { background: color-mix(in oklch, var(--brand-ink, var(--text)) 20%, transparent); }
 .sup button.side-item, .sup button.tk { width: 100%; border: 0; background: none; font: inherit; color: inherit; text-align: left; }
 .sup-side button.side-item.active { background: var(--accent); color: var(--accent-ink); }
 .sup-side button.side-item:hover:not(.active) { background: var(--hover); }

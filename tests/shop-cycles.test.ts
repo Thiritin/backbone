@@ -7,19 +7,16 @@ import { orderLead } from "../src/sim/30-market/orders";
 import { share } from "../src/sim/30-market/market";
 import { refundUnused, termRoll } from "../src/sim/40-support/terms";
 import { tick } from "../src/sim/88-tick/tick";
-import { setUpChannel } from "../src/sim/90-actions/marketing";
-import { chooseShop } from "../src/sim/90-actions/shop";
 import type { GameState } from "../src/sim/50-state";
-import { automate, readyGame } from "./fixtures";
+import { automate, readyGame, openShop } from "./fixtures";
 
 const web = { product: "webHosting" as const, size: 1, sla: "basic" as const };
 
-// A hand-rolled form that almost always draws the annual cycle.
+// A shop that almost always draws the annual cycle.
 const annualGame = (seed = 3): GameState => {
   const s = automate(readyGame(seed));
   s.cash = 1e6;
-  setUpChannel(s, "website");
-  chooseShop(s, "handRolled");
+  openShop(s);
   s.shop.optionDiscount = { annual: 0.9 };
   return s;
 };
@@ -33,10 +30,10 @@ const toMonthStart = (s: GameState) => { do tick(s); while (!isMonthStart(s.hour
 describe("billing cycles", () => {
   it("are supported per shop variant", () => {
     const of = (id: string) => SHOPS.find((v) => v.id === id)!.cycles;
-    expect(of("handRolled")).toEqual(["monthly", "annual"]);
     expect(of("modemBill")).toEqual(["monthly", "quarterly", "annual"]);
     expect(of("orderBocks")).toEqual(["monthly", "annual", "biennial"]);
-    expect(of("whmCache")).toHaveLength(4);
+    expect(of("clientExit")).toHaveLength(4);
+    expect(of("whmCache")).toHaveLength(6);
   });
 
   it("weigh cycles at the base shares at the market discount and shift with exp(8 * gap)", () => {

@@ -5,13 +5,13 @@ import type { GameState } from "../../../../../sim/50-state";
 import type { Cluster } from "../../../../../sim/60-infra/cluster";
 import { newHostBans } from "../../../../../sim/60-infra/bans";
 import { setJail, trustIp, unbanIp, untrustIp } from "../../../../../sim/90-actions/webpanel";
-import { useStore } from "../../../../store";
+import { usePageAct } from "../../pageAct";
 
 type Part = "settings" | "jails" | "banned" | "trusted";
 
 // Tools & Settings > IP Address Banning (Fail2Ban) with the real tabs.
 export function Fail2Ban({ game, c }: { game: GameState; c: Cluster }) {
-  const act = useStore((s) => s.act), [part, setPart] = useState<Part>("settings"), [ip, setIp] = useState("");
+  const act = usePageAct(), [part, setPart] = useState<Part>("settings"), [ip, setIp] = useState("");
   const b = game.webpanel.bans[c.id] ?? newHostBans(), scanners = b.list.filter((x) => x.kind === "scanner").length;
   const name = (id?: string) => game.services.find((v) => v.id === id)?.label ?? "";
   return (

@@ -8,7 +8,6 @@ export default {
   "error.shopNoOwn": () => "Questo sistema shop è disponibile solo in affitto.",
   "error.unknownModule": () => "Questo modulo non esiste.",
   "error.moduleOwned": () => "Hai già questo modulo.",
-  "error.needsOrderForm": () => "Configura prima il modulo d'ordine.",
   "error.moduleNotSold": () => "Il tuo sistema shop non vende moduli aggiuntivi.",
   "error.needsShop": () => "Scegli prima un sistema shop.",
   "error.unknownProduct": () => "Questa linea di prodotti non esiste.",

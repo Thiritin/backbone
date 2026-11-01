@@ -11,19 +11,21 @@ import { deleteSnapshot, revertSnapshot, takeSnapshot } from "../../../../../sim
 import { day } from "../../../hw";
 import { working } from "../../../../../sim/60-infra/status";
 import { t } from "../../../../../i18n/en";
-import { useStore } from "../../../../store";
 import type { GameState } from "../../../../../sim/50-state";
 import { vmStats } from "../../../../../sim/60-infra/stats";
 import { clusterSummary, type Alarm, type Amount, type Amounts, type Severity } from "../../../../../sim/60-infra/alarms";
 import { withDatastore, bookable, datastoreCapacity, datastoreGbit, datastoreUsed, nodeUsed, type Cluster, type NodeState } from "../../../../../sim/60-infra/cluster";
 import { COMPAT_VCPU } from "../../../../../sim/10-catalog/cpus";
+import { enterMaintenance, exitMaintenance } from "../../../../../sim/90-actions/vmwhere";
 import { setCompatMode } from "../../../../../sim/90-actions/cpus";
 import { Chart, niceMax } from "../Chart";
 import { nodeName, AlarmList, ALL, AMOUNT, amountText, AppSuiteTile, CapacityBar, SEV_GLYPH, summaryOf, worst, ConsoleThumb, isoName, MediaMenu, NodeList, SizeFields, suiteSoftware, TaskLog, Toolbar, useNewVm, useVms, vmFacts, windoorsLicence, Wizard, type Sel, type Vm } from "../HypervisorBase";
 import { Actions, Backups, Bar, erasFrom, eraAt, Facts, LoginForm, useSoftware, type PanelProps } from "../PanelBase";
 import type { Look } from "../../../../../sim/10-catalog/sites";
 import type { Resources } from "../../../../../sim/10-catalog/products";
+import { AlarmsPage, DrsPage, Licensing, PoolsPage } from "./Admin";
 import "./vmwhere.css";
+import { usePageAct } from "../../pageAct";
 
 // docs/design/software.md, section 9: the grey and yellow fat client from 2005, the blue web client from 2015.
 const ERAS = erasFrom(2005, 2015);
@@ -102,7 +104,7 @@ const Use = ({ k, a }: { k: keyof Amounts; a: Amount }) => (
 
 // The cluster or host Summary tab: capacity like vSphere's resource meters, the host table, triggered alarms and every VM.
 function ClusterSummaryView({ game, c, node, vms, pick }: { game: GameState; c: Cluster; node: string | null; vms: Vm[]; pick: (s: Sel) => void }) {
-  const { sum, use, alarms } = summaryOf(game, c, node), act = useStore((s) => s.act);
+  const { sum, use, alarms } = summaryOf(game, c, node), act = usePageAct();
   const rows: [string, keyof Amounts][] = [["CPU", "vcpu"], [t("browser-consoles-2.memoryCaps"), "ramGb"], [t("browser-consoles-2.storageCaps"), "diskGb"]];
   return (
     <>
@@ -127,13 +129,18 @@ function ClusterSummaryView({ game, c, node, vms, pick }: { game: GameState; c: 
       </div>
       {!node && (
         <table className="cx-table">
-          <thead><tr><th>{t("browser-consoles-2.host")}</th><th>{t("browser-consoles-2.state")}</th><th>{t("browser-consoles-2.status")}</th><th>CPU</th><th>{t("browser-consoles-2.memory")}</th><th>{t("browser-consoles-2.storage")}</th><th>VMs</th></tr></thead>
+          <thead><tr><th>{t("browser-consoles-2.host")}</th><th>{t("browser-consoles-2.state")}</th><th>{t("browser-consoles-2.status")}</th><th>CPU</th><th>{t("browser-consoles-2.memory")}</th><th>{t("browser-consoles-2.storage")}</th><th>VMs</th><th /></tr></thead>
           <tbody>
             {sum.hosts.map((h) => (
               <tr key={h.deviceId} onClick={() => pick({ kind: "node", id: h.deviceId })}>
                 <td><b>{h.name}</b></td><td>{h.up ? hostState()[h.state] : t("browser-consoles-2.notResponding")}</td>
                 <td><Status sev={worst(sum.alarms.filter((a) => a.on.id === h.deviceId))} /></td>
                 <Use k="vcpu" a={h.use.vcpu} /><Use k="ramGb" a={h.use.ramGb} /><Use k="diskGb" a={h.use.diskGb} /><td className="num">{h.vms}</td>
+                <td onClick={(e) => e.stopPropagation()}>
+                  {h.state === "active" || h.state === "cordoned"
+                    ? <button className="cx-btn" onClick={() => act(enterMaintenance, c.id, h.deviceId)}>{t("vw.enterMaintenance")}</button>
+                    : <button className="cx-btn" onClick={() => act(exitMaintenance, c.id, h.deviceId)}>{t("vw.exitMaintenance")}</button>}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -171,7 +178,7 @@ const storageFacts = (game: GameState, c: Cluster, size: Resources) => {
 
 // The Snapshots tab of a VM: its snapshots oldest first with their delta, and the buttons that take, revert and delete them.
 function Snapshots({ v }: { v: Vm }) {
-  const act = useStore((s) => s.act), list = v.w.snapshots ?? [];
+  const act = usePageAct(), list = v.w.snapshots ?? [];
   return (
     <>
       <table className="cx-table">
@@ -195,7 +202,7 @@ function Snapshots({ v }: { v: Vm }) {
 
 // The Datastores tab: each host's local disk, the shared datastores with their use, and the form that attaches a server as one.
 function Datastores({ game, c }: { game: GameState; c: Cluster }) {
-  const act = useStore((s) => s.act), year = yearOf(game.hour);
+  const act = usePageAct(), year = yearOf(game.hour);
   const free = game.devices.filter((d) => modelById(d.model).server && !datastoreBlock(game, c, d.id));
   const protocols = (Object.keys(DATASTORE_FROM) as DatastoreProtocol[]).filter((x) => DATASTORE_FROM[x] <= year);
   const [pick, setPick] = useState(""), [protocol, setProtocol] = useState<DatastoreProtocol>("nfs");
@@ -245,7 +252,7 @@ export function VmWhere(p: PanelProps) {
   const era = eraAt(ERAS, p), { game, c, f } = p, year = yearOf(game.hour);
   const open = parseCreate("vmwhere", p.path), [sel, setSel] = useState<Sel>(open?.screen === "create" ? { kind: "new" } : open?.screen === "packages" ? { kind: "plans" } : ALL), [tab, setTab] = useState("Summary");
   const [byOrder, setByOrder] = useState(open?.screen === "create" && !!open.order);
-  const tabNames: Record<string, string> = { Summary: t("browser-consoles-2.summary"), Monitor: t("browser-consoles-2.monitor"), Configure: t("browser-consoles-2.configure"), Snapshots: t("browser-consoles-2.snapshots"), Hosts: t("browser-consoles-2.hosts"), Datastores: t("browser-consoles-2.datastores"), Networks: t("browser-consoles-2.networks") };
+  const tabNames: Record<string, string> = { Summary: t("browser-consoles-2.summary"), Monitor: t("browser-consoles-2.monitor"), Configure: t("browser-consoles-2.configure"), Snapshots: t("browser-consoles-2.snapshots"), Hosts: t("browser-consoles-2.hosts"), Datastores: t("browser-consoles-2.datastores"), Networks: t("browser-consoles-2.networks"), Licensing: t("vw.licensing"), DRS: t("vw.drs"), Alarms: t("vw.alarm.alarms"), Pools: t("vw.pool.pools") };
   const { vms, dialog } = useVms(game, c, f), sw = useSoftware(game, c, f), nv = useNewVm(game, c, open?.screen === "create" ? open.order : undefined);
   if (!p.signedIn) return (
     <div className="cx vsw vsw-login" data-era={era}>
@@ -258,7 +265,7 @@ export function VmWhere(p: PanelProps) {
   const pick = (s: Sel, tb = "Summary") => { setSel(s); setTab(tb); };
   const vm = sel.kind === "vm" ? vms.find((v) => v.id === sel.id) : undefined, node = sel.kind === "node" ? sel.id : null;
   const nodes = c.nodes.map((n) => game.devices.find((d) => d.id === n.deviceId)!).filter(Boolean);
-  const tabs = vm ? ["Summary", "Monitor", "Configure", ...(vm.w.deviceId ? ["Snapshots"] : [])] : ["Summary", "Monitor", "Configure", ...(node ? [] : ["Hosts"]), "Datastores", "Networks"];
+  const tabs = vm ? ["Summary", "Monitor", "Configure", ...(vm.w.deviceId ? ["Snapshots"] : [])] : ["Summary", "Monitor", "Configure", ...(node ? [] : ["Hosts"]), "Datastores", "Networks", ...(node ? [] : ["DRS", "Alarms", "Pools"]), "Licensing"];
   const shown = tabs.includes(tab) ? tab : "Summary", facts = vm && vmFacts(game, vm);
   const app = nv.suite ? suiteSoftware(year).find((x) => x.id === nv.suite) : undefined, appOs = app && serverOsById(app.os[0]);
   const finish = () => { if (byOrder) { if (nv.submit()) setSel(ALL); return; } const id = nv.create(); if (id) pick({ kind: "vm", id }); };
@@ -329,6 +336,10 @@ export function VmWhere(p: PanelProps) {
               </>
             )}
             {!vm && sel.kind !== "plans" && shown === "Hosts" && <NodeList game={game} c={c} f={f} />}
+            {!vm && sel.kind !== "plans" && shown === "Licensing" && <Licensing game={game} c={c} />}
+            {!vm && sel.kind !== "plans" && shown === "DRS" && <DrsPage game={game} c={c} />}
+            {!vm && sel.kind !== "plans" && shown === "Alarms" && <AlarmsPage game={game} c={c} />}
+            {!vm && sel.kind !== "plans" && shown === "Pools" && <PoolsPage game={game} c={c} />}
             {!vm && sel.kind !== "plans" && shown === "Datastores" && <Datastores game={game} c={c} />}
             {!vm && sel.kind !== "plans" && shown === "Networks" && <Facts facts={[{ label: t("browser-consoles-2.vmNetwork"), value: "vSwitch0" }, { label: t("browser-consoles-2.managementNetwork"), value: "vSwitch0" }]} />}
           </main>

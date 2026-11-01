@@ -9,7 +9,7 @@ import { isIp, prefixOf, type IfaceConfig } from "../../../sim/60-infra/ifaces";
 import { machineAddress } from "../../../sim/60-infra/addresses";
 import { machineNet } from "../../../sim/60-infra/oob";
 import { drivesOf, raidUsable } from "../../../sim/60-infra/status";
-import { eraseDisk, installCase, installOs, setMedia, upgradeHours, upgradeOs, upgradeTarget } from "../../../sim/90-actions/console";
+import { badHostname, eraseDisk, installCase, installOs, setMedia, upgradeHours, upgradeOs, upgradeTarget } from "../../../sim/90-actions/console";
 import { reboot } from "../../../sim/90-actions/hardware";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
@@ -54,7 +54,7 @@ function useTarget(game: GameState, m: Machine) {
     </>
   );
   const run = (r: { ok: boolean; error?: string }) => { setNote(r.ok ? "" : t(r.error ?? "")); setTyped(""); };
-  const install = (os: ServerOsId, iface?: IfaceConfig) => { const r = act(installOs, m.id, os, busy ? typed : undefined, iface); run(r); return r; };
+  const install = (os: ServerOsId, iface?: IfaceConfig, key?: string, hostname?: string) => { const r = act(installOs, m.id, os, busy ? typed : undefined, iface, key || undefined, hostname); run(r); return r; };
   const erase = () => run(act(eraseDisk, m.id, busy ? typed : undefined));
   const leave = () => (isDevice(m) ? act(reboot, m.id) : act(setMedia, m.id, null));
   const type = (key: string) => {
@@ -100,7 +100,15 @@ function useLunixSetup(game: GameState, m: Machine, version: string): Keyed {
   const [form, setForm] = useState<Record<Field, string>>({ ip: "", mask: "255.255.255.0", gw: "", dns: "" });
   const [iface, setIface] = useState<IfaceConfig>({ mode: "dhcp" });
   const tg = useTarget(game, m), net = machineNet(game, m.id);
+  const [host, setHost] = useState(() => hostOf(m));
   const go = (to: LunixStep) => () => { setStep(to); tg.setNote(""); tg.setTyped(""); };
+  const named = () => { const bad = badHostname(game, m.id, host); if (bad) tg.setNote(t(bad)); else go("dhcp")(); };
+  const typeHost = (key: string) => {
+    if (key === "Backspace") setHost((v) => v.slice(0, -1));
+    else if (key.length === 1) setHost((v) => v + key.toLowerCase());
+    else return false;
+    return true;
+  };
   const back = (to: LunixStep): Row => ({ label: t("console.goBack"), run: go(to) });
   const leased = machineAddress(game, m.id);
   const dhcp = () => { setIface({ mode: "dhcp" }); go(net || !leased ? "autofail" : "leased")(); };
@@ -121,7 +129,7 @@ function useLunixSetup(game: GameState, m: Machine, version: string): Keyed {
   });
   // The netinst fetches its packages over the configured network; a failure lands on the mirror error.
   const write = () => {
-    const r = tg.install("lunix", iface);
+    const r = tg.install("lunix", iface, undefined, host);
     if (r.ok) setStep("boot");
     else if (["error.noAutoconf", "error.noMirror", "error.noInterfaces"].includes(r.error)) go("fetch")();
   };
@@ -140,7 +148,7 @@ function useLunixSetup(game: GameState, m: Machine, version: string): Keyed {
       { label: isDevice(m) ? t("console.reboot") : t("console.ejectReboot"), run: tg.leave },
     ] },
     language: { title: t("console.selectLanguage"), rows: [...LANGUAGES.map((l) => ({ label: l, run: go("hostname") })), back("boot")] },
-    hostname: { title: t("console.configureNetwork"), body: <div>{t("console.hostname", { host: hostOf(m) })}</div>, rows: [{ label: t("console.continue"), run: go("dhcp") }, back("language")] },
+    hostname: { title: t("console.configureNetwork"), body: <div>{t("console.hostname", { host })}_</div>, rows: [{ label: t("console.continue"), run: named }, back("language")] },
     dhcp: { title: t("console.configureNetwork"), body: <div>{t("console.net.dhcp")}</div>, rows: [{ label: t("console.yes"), run: dhcp }, { label: t("console.no"), run: go("ip") }, back("hostname")] },
     autofail: net === "noInterfaces"
       ? { title: t("console.configureNetwork"), err: true, body: <div>{t("error.noInterfaces")}</div>, rows: [{ label: t("console.continue"), run: go("fetch") }] }
@@ -154,8 +162,8 @@ function useLunixSetup(game: GameState, m: Machine, version: string): Keyed {
     write: { title: t("console.partitionDisks"), body: <>{tg.what}<div>{t("console.writeChanges")}</div></>, rows: [{ label: t("console.yes"), run: write }, { label: t("console.no"), run: go("disks") }] },
     erase: { title: t("console.eraseDisk"), body: tg.what, rows: [{ label: t("console.erase"), run: tg.erase }, back("boot")] },
   };
-  const page = pages[step], typing = ((step === "write" || step === "erase") && tg.found.kind === "busy") || FIELDS.includes(step as Field);
-  const pager = usePager({ ...page, keys: { Escape: go("boot") } }, (k) => typeField(k) || (typing && tg.type(k)));
+  const page = pages[step], naming = step === "hostname", typing = naming || ((step === "write" || step === "erase") && tg.found.kind === "busy") || FIELDS.includes(step as Field);
+  const pager = usePager({ ...page, keys: { Escape: go("boot") } }, (k) => (naming ? typeHost(k) : typeField(k) || (typing && tg.type(k))));
   const view = <Debiant title={page.title} body={page.body} note={tg.note} err={page.err}><Rows rows={page.rows} at={pager.at} pick={pager.pick} /></Debiant>;
   return { view, onKey: pager.onKey, keys: [...keysOf(page, typing), "Escape"] };
 }
@@ -173,7 +181,7 @@ function Debiant({ title, body, note, err, children }: { title: string; body?: R
   );
 }
 
-type WinStep = "start" | "edition" | "license" | "type" | "upgrade" | "where" | "install" | "delete";
+type WinStep = "start" | "key" | "edition" | "license" | "type" | "upgrade" | "where" | "install" | "delete";
 
 // Windoors Setup: the blue text-mode first stage of 2003, or the Install Windoors window of 2008 and later. Media one
 // release ahead of the Windoors on the disks offers the in-place upgrade.
@@ -183,22 +191,31 @@ function useWindoorsSetup(game: GameState, m: Machine, version: string): Keyed {
   const upgrade = m.os?.id === "windoors" && upgradeTarget(game, m.id)?.version === version;
   const upgradeNow = () => { const r = act(upgradeOs, m.id); tg.setNote(r.ok ? "" : t(r.error ?? "")); if (r.ok) setStep("start"); };
   const go = (to: WinStep) => () => { setStep(to); tg.setNote(""); tg.setTyped(""); };
-  const setup = () => tg.install("windoors").ok && setStep("start");
+  const [key, setKey] = useState("");
+  const typeKey = (k: string) => {
+    if (k === "Backspace") setKey((v) => v.slice(0, -1));
+    else if (/^[A-Za-z0-9-]$/.test(k)) setKey((v) => (v + k.toUpperCase()).slice(0, 19));
+    else return false;
+    return true;
+  };
+  const setup = () => tg.install("windoors", undefined, key).ok && (setKey(""), setStep("start"));
   const install = () => (tg.found.kind === "empty" && !m.os ? setup() : go("install")());
   const del = tg.empty ? () => tg.setNote(t("error.noSoftware")) : go("delete");
   const part = tg.empty ? t("console.winUnpartitioned", { array: tg.array }) : `C:  Partition1 [NTFS]   ${tg.array}`;
   const suffix = era === 2 ? t("console.winDesktopExperience") : version.startsWith("2008") ? t("console.winFullInstallation") : t("console.winServerGui");
   const pages: Record<WinStep, Page> = era === 0 ? {
     start: { title: t("console.winWelcome"), body: <div>{t("console.winWelcomeBody")}</div>, rows: [], keys: { Enter: go("license"), F3: tg.leave }, foot: t("console.winWelcomeFoot") },
+    key: { title: t("console.winProductKey"), body: <div>{key}_</div>, rows: [], keys: { Enter: go("where"), Escape: go("license") }, foot: t("console.winFormatFoot") },
     edition: { title: "", rows: [] },
     type: { title: "", rows: [] },
     upgrade: { title: "", rows: [] },
-    license: { title: t("console.winLicenseTitle"), body: <div>{t("console.winLicenseBody")}</div>, rows: [], keys: { F8: go("where"), Escape: go("start") }, foot: t("console.winLicenseFoot") },
+    license: { title: t("console.winLicenseTitle"), body: <div>{t("console.winLicenseBody")}</div>, rows: [], keys: { F8: go("key"), Escape: go("start") }, foot: t("console.winLicenseFoot") },
     where: { title: t("console.winPartitions"), rows: [{ label: part, run: install }], keys: { d: del, D: del, F3: tg.leave }, foot: t("console.winWhereFoot") },
     install: { title: t("console.winFormat"), body: tg.what, rows: [], keys: { Enter: setup, Escape: go("where") }, foot: t("console.winFormatFoot") },
     delete: { title: t("console.winDeletePartition"), body: tg.what, rows: [], keys: { Enter: tg.erase, Escape: go("where") }, foot: t("console.winDeleteFoot") },
   } : {
-    start: { title: `Windoors Server ${version}`, rows: [{ label: t("console.winInstallNow"), run: go("edition") }] },
+    start: { title: `Windoors Server ${version}`, rows: [{ label: t("console.winInstallNow"), run: go("key") }] },
+    key: { title: t("console.winProductKey"), body: <div>{key}_</div>, rows: [{ label: t("console.next"), run: go("edition") }, { label: t("console.winNoKey"), run: () => { setKey(""); go("edition")(); } }] },
     edition: { title: t("console.winSelectOs"), rows: ["Standard", "Datacenter"].map((e) => ({ label: `Windoors Server ${version} ${e}${suffix}`, run: go("license") })) },
     license: { title: t("console.winLicenseTerms"), rows: [{ label: t("console.winAccept"), run: go(upgrade ? "type" : "where") }, { label: t("console.back"), run: go("edition") }] },
     type: { title: t("console.winInstallType"), rows: [{ label: t("console.winTypeUpgrade"), run: go("upgrade") }, { label: t("console.winTypeCustom"), run: go("where") }, { label: t("console.back"), run: go("license") }] },
@@ -207,8 +224,8 @@ function useWindoorsSetup(game: GameState, m: Machine, version: string): Keyed {
     install: { title: t("console.winUnableBoot"), body: tg.what, rows: [{ label: t("console.ok"), run: setup }, { label: t("console.cancel"), run: go("where") }] },
     delete: { title: t("console.winDeleteTitle"), body: tg.what, rows: [{ label: t("console.ok"), run: tg.erase }, { label: t("console.cancel"), run: go("where") }] },
   };
-  const page = pages[step], typing = (step === "install" || step === "delete") && tg.found.kind === "busy";
-  const pager = usePager(page, (k) => typing && tg.type(k));
+  const page = pages[step], typing = ((step === "install" || step === "delete") && tg.found.kind === "busy") || step === "key";
+  const pager = usePager(page, (k) => (step === "key" ? typeKey(k) : typing && tg.type(k)));
   const rows = <Rows rows={page.rows} at={pager.at} pick={pager.pick} />;
   const view = era === 0
     ? <WinText version={version} foot={page.foot ?? ""} note={tg.note}><div className="wt-title">{page.title}</div>{page.body}<div className="wt-rows">{rows}</div></WinText>

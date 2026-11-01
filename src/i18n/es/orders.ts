@@ -15,7 +15,7 @@ export default {
   "event.certificateSold.title": () => "Certificado SSL vendido",
   "event.certificateSold.text": (p) => `${p.name} pidió un certificado SSL para ${p.domain}.`,
   "event.orderPlaced.title": () => "Pedido nuevo",
-  "event.orderPlaced.text": (p) => `${p.name} hizo un pedido en el formulario por ${euroCents(Number(p.price))} al mes: ${p.spec}.`,
+  "event.orderPlaced.text": (p) => `${p.name} hizo un pedido en la tienda por ${euroCents(Number(p.price))} al mes: ${p.spec}.`,
   "event.orderQuoted.title": () => "Presupuesto enviado",
   "event.orderQuoted.text": (p) => `La automatización envió a ${p.name} un presupuesto de ${euroCents(Number(p.price))} al mes por ${p.spec}.`,
   "event.orderFailed.title": () => "Fallo en la configuración",

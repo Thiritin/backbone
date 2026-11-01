@@ -188,7 +188,7 @@ Selling uses two layers, as the real tools do: a shop product points at a panel 
 
 **Products live in the shop console.** A product is a package, a monthly price and a server group (`shop.md`, section 4). Products are what the order form offers, so the shop console is where the player decides what to sell and at what price.
 
-**Before a shop system**, the hand-rolled order form offers a short product list edited in Marketing > Products, next to the product lines the website already presents. Email orders stay custom specs and are priced in the quote as today.
+**Before a shop system**, orders arrive by email as custom specs and are priced in the quote.
 
 ## Manual customer accounts
 

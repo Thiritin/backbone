@@ -10,6 +10,9 @@ export default {
   "browser-sites-2.priceAccount": (p) => `${p.fee} al mes por espacio web`,
   "browser-sites-2.priceServer": (p) => `${p.fee} al mes por servidor`,
   "browser-sites-2.priceCore": (p) => `${p.fee} al mes por núcleo físico`,
+  "browser-sites-2.priceCoreYear": (p) => `${p.fee} al año por núcleo físico`,
+  "browser-sites-2.priceServerYear": (p) => `${p.fee} al año por servidor`,
+  "browser-sites-2.priceGameserver": (p) => `${p.fee} al mes por servidor de juegos`,
   "browser-sites-2.priceOsOnce": (p) => `${p.fee} por máquina, pago único`,
   "browser-sites-2.priceOsCore": (p) => `${p.fee} al mes por núcleo o vCPU`,
   "browser-sites-2.free": () => "Gratis",
@@ -430,4 +433,5 @@ export default {
   "browser-sites-2.wikiNoArticle": () => "Wikipedio no tiene un artículo con este nombre exacto.",
   "browser-sites-2.wikiRandom": () => "Artículo aleatorio",
   "browser-sites-2.wikiFrom": () => "De Wikipedio, la enciclopedia libre",
+  "browser-sites-2.keyFlag": () => "Añade --key seguido de tu clave de licencia al comando para instalar con licencia.",
 } satisfies Dict;

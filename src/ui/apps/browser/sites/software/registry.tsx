@@ -43,5 +43,5 @@ export function SoftwarePage({ game, kind, id, path, go }: { game: GameState; ki
   const p = productOf(kind, id);
   if (!p) return null;
   const year = yearOf(game.hour), View = SITE_VIEWS[id] ?? PlainSite;
-  return <View p={p} look={eraOf(p.site.eras, year)} page={pageOf(path)} year={year} go={(to) => go(`${displayHost(p.site.host)}${to}`)} />;
+  return <View p={p} look={eraOf(p.site.eras, year)} page={pageOf(path)} year={year} hour={game.hour} go={(to) => go(`${displayHost(p.site.host)}${to}`)} />;
 }

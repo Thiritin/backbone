@@ -14,6 +14,8 @@ const kind = (p: Params) => (p.kind === "panel" ? "hosting panel" : p.kind === "
 export const NEWS_EN: Record<string, (p: Params) => string> = {
   "event.news.software.title": (p) => `${p.name} released`,
   "event.news.software.text": (p) => `Heize online reports that the ${kind(p)} ${p.name} is out and can be installed on your servers.`,
+  "event.news.swVersion.title": (p) => `${p.name} released`,
+  "event.news.swVersion.text": (p) => `Heize online reports that ${p.name} is out.`,
   "event.news.autoUpdate.title": (p) => `${p.name} updates itself`,
   "event.news.autoUpdate.text": (p) => `Heize online reports that ${p.name} can now install its updates automatically at night.`,
   "event.news.generation.title": (p) => `G${p.gen} servers in the shop`,

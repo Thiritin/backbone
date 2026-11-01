@@ -8,10 +8,11 @@ import { tick } from "../src/sim/88-tick/tick";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { createAccount, quoteOrder, setReviewOrders, setScreenOrders } from "../src/sim/90-actions/orders";
 import { cents } from "../src/sim/45-billing/billing";
-import { yearOf } from "../src/sim/00-core/time";
+import { hourOf, yearOf } from "../src/sim/00-core/time";
+import { PREFERENCE } from "../src/sim/10-catalog/payments";
 import { resolveTicket } from "../src/sim/90-actions/support";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { mailed, readyGame } from "./fixtures";
+import { mailed, openShop, readyGame } from "./fixtures";
 
 const run = (s: GameState, hours: number) => { for (let i = 0; i < hours; i++) tick(s); };
 const web = { product: "webHosting" as const, size: 0, sla: "basic" as const };
@@ -32,7 +33,7 @@ function fraudster(s: GameState, amount = 40) {
 }
 
 describe("signup fraud", () => {
-  it("hits server products hardest, order form payments more than transfers and the crypto years most", () => {
+  it("hits server products hardest, shop payments more than transfers and the crypto years most", () => {
     expect(fraudShare("vps", 2005)).toBeGreaterThan(fraudShare("webHosting", 2005));
     expect(fraudShare("dedicated", 2005)).toBeGreaterThan(fraudShare("dns", 2005));
     expect(fraudShare("vps", 2005, true)).toBeCloseTo(fraudShare("vps", 2005) * 0.2, 9);
@@ -40,9 +41,18 @@ describe("signup fraud", () => {
     expect(fraudShare("vps", 2020)).toBeLessThan(fraudShare("vps", 2017));
   });
 
-  it("marks about the drawn share of order form VPS orders and no sales leads", () => {
-    const s = readyGame(3);
-    const orders = Array.from({ length: 600 }, () => orderLead(s, "hobbyDev", "Frankfurt", [], vps, false));
+  it("marks about the drawn share of card-paid shop VPS orders and no sales leads", () => {
+    const s = openShop(readyGame(3));
+    s.hour = hourOf(new Date(Date.UTC(2007, 0, 1)));
+    s.modules = [...s.modules, "card"];
+    const saved = PREFERENCE.hobbyDev;
+    PREFERENCE.hobbyDev = { card: 1 };
+    let orders: SalesRequest[];
+    try {
+      orders = Array.from({ length: 600 }, () => orderLead(s, "hobbyDev", "Frankfurt", [], vps, false));
+    } finally {
+      PREFERENCE.hobbyDev = saved;
+    }
     const share = orders.filter((r) => r.fraud).length / orders.length;
     expect(share).toBeGreaterThan(0.02);
     expect(share).toBeLessThan(0.09);

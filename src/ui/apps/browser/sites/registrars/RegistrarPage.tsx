@@ -9,10 +9,10 @@ import { registering, REGISTRIES } from "../../../../../sim/30-customers/registr
 import type { GameState } from "../../../../../sim/50-state";
 import { techsAt, OP_TASK } from "../../../../../sim/47-staff/technicians";
 import { companyDomainError, orderCompanyDomain, queueTransfer, signRegistrar, transferDomains } from "../../../../../sim/90-actions/registrar";
-import { useStore } from "../../../../store";
 import { formatDay } from "../../../billing/format";
 import "./registrars.css";
 import { LOCALE } from "../../../../../i18n/lang";
+import { usePageAct } from "../../pageAct";
 
 export const REGISTRAR_HUE: Record<RegistrarId, number> = { nameCheep: 45, goDuddy: 150, interNetY: 250, openSrsly: 300 };
 
@@ -33,7 +33,7 @@ const Head = ({ title }: { title?: ReactNode }) => (title ? <h2>{title}</h2> : n
 
 // The domain search with its name spinner; Buy orders the company domain.
 export function DomainSearch({ game, r, title, button = t("browser-sites-1.rg.search") }: { game: GameState; r: Registrar; title?: ReactNode; button?: string }) {
-  const act = useStore((s) => s.act);
+  const act = usePageAct();
   const [query, setQuery] = useState(() => derivedDomain(game));
   const [shown, setShown] = useState(query);
   const names = spinNames(shown).filter((n) => companyDomainError(game, n) !== "error.domainInvalid");
@@ -95,7 +95,7 @@ export function TldPrices({ game, r, title, columns = 1, grid }: { game: GameSta
 
 // The reseller contract: its terms and the button that signs it or switches to it.
 export function Program({ game, r, title = t("browser-sites-1.rg.program"), sign = t("browser-sites-1.rg.sign") }: { game: GameState; r: Registrar; title?: ReactNode; sign?: string }) {
-  const act = useStore((s) => s.act);
+  const act = usePageAct();
   const cur = game.registrar, mine = own(game, r), tier = tierOf(game, r);
   return (
     <div className="rg-program">
@@ -117,7 +117,7 @@ export function Program({ game, r, title = t("browser-sites-1.rg.program"), sign
 
 // The account under contract: tier, monthly bill, a pending transfer and every domain with its renewal date.
 export function Account({ game, r, title = t("browser-sites-1.rg.account") }: { game: GameState; r: Registrar; title?: ReactNode }) {
-  const act = useStore((s) => s.act);
+  const act = usePageAct();
   if (!own(game, r)) return null;
   const tier = game.registrar!.tier, count = game.domains.length, next = TIERS.find((at) => at > count);
   const tr = game.registrar!.transfer, hands = techsAt(game, game.locations[0].id, OP_TASK.domains).length > 0;
