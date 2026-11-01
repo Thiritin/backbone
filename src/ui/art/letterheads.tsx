@@ -55,7 +55,7 @@ export const LETTERHEADS: Record<string, Letterhead> = {
   },
   [REGISTER_NAME]: {
     org: "Amtsgericht Frankfurt am Main", dept: "paperwork.letter.register", street: "Gerichtstr. 2", city: "60313 Frankfurt am Main",
-    phone: "069 1367-01", web: "www.justiz.hessen.de", mark: Eagle,
+    phone: "069 1367-01", web: "www.amtsgericht-ffm.de", mark: Eagle,
   },
   [CHAMBER_NAME]: {
     org: "IHQ Frankfurt am Main", dept: "paperwork.letter.chamber", street: "Börsenplatz 4", city: "60313 Frankfurt am Main",
