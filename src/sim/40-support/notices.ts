@@ -1,5 +1,5 @@
 // GDD, Support: abuse and copyright notices, legal requests, refunds after outages; numbers in economy.md, Notices and legal requests.
-import { vendorParams } from "../80-business/lexwear";
+import { BOOKS_LICENCE, vendorParams } from "../80-business/lexwear";
 import { hashRng, rand, type Rng } from "../00-core/rng";
 import { activeServices, type Customer } from "../30-customers/customers";
 import { serviceFqdn } from "../30-customers/hostnames";
@@ -215,7 +215,7 @@ export const subjectParams = (s: GameState, t: Ticket): Record<string, string | 
   ...(t.maint && maintParams(t.maint)),
   ...(t.kind === "sponsor" && sponsorParams(s, t)),
   ...t.mail?.params,
-  ...(t.kind === "mail" && t.topic.startsWith("lexwear.") && vendorParams(t.mail!.params)),
+  ...(t.kind === "mail" && (t.topic.startsWith("lexwear.") || t.topic === BOOKS_LICENCE) && vendorParams(t.mail!.params)),
 });
 
 // Hourly, before the infrastructure and support ticks: grid outages, returned servers, notices, deadlines and seizures.

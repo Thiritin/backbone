@@ -1,6 +1,7 @@
 import { createRng, type Rng } from "./00-core/rng";
 import { START_CASH } from "./10-catalog/economy";
 import { componentParts, hasFirmware, modelById, type ComponentKind, type FormFactor, type PartSpec } from "./10-catalog/hardware";
+import type { BooksVendorId } from "./10-catalog/bookkeeping";
 import type { Vendor } from "./10-catalog/cpus";
 import type { OsImage, ServerOsId } from "./10-catalog/server-os";
 import { yearOf } from "./00-core/time";
@@ -313,6 +314,8 @@ export interface GameState {
   payables: Payable[];
   // Bought software modules by id; "hbci" lets Books talk to the bank.
   modules: string[];
+  // The bookkeeping program the Books app runs (10-catalog/bookkeeping.ts); null until one is installed.
+  books: { vendor: BooksVendorId | null; installedAt: number };
 }
 
 export interface LogEntry { hour: number; minute?: number; name: string; args: unknown[] }
@@ -394,6 +397,7 @@ export const newGame = (seed: number): GameState => ({
   bank: null,
   payables: [],
   modules: [],
+  books: { vendor: null, installedAt: 0 },
 });
 
 export const guideDoc = (): Doc => ({ id: "guide", kind: "guide", title: t("doc.guide"), body: "", x: 16, y: 46 });

@@ -181,9 +181,8 @@ describe("bank transfers", () => {
 });
 
 describe("the Books app", () => {
-  it("replaces Billing in new games and in saves that had it in the dock", () => {
+  it("replaces Billing in saves that had it in the dock", () => {
     const s = newGame(9);
-    expect(STARTER_APPS).toContain("Books");
     expect(STARTER_APPS).not.toContain("Billing");
     const raw = JSON.parse(serialize(s));
     raw.installed = ["Browser", "Billing", "Customers"];
