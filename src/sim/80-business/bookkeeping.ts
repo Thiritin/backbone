@@ -1,7 +1,7 @@
 // docs/design/plans/billing-by-hand.md, 9c and 9d: the installed bookkeeping program, its edition, fees, seats and chores.
 import { dateOf, isMonthStart } from "../00-core/time";
 import { booksVendor, editionById, type BooksVendor, type Edition, type Feature } from "../10-catalog/bookkeeping";
-import { bookTransfer, cents, isUnpaid, issue, owed, synced, type Invoice, type Transfer } from "../45-billing/billing";
+import { bookTransfer, cents, isUnpaid, issue, owed, payerOf, synced, type Invoice, type Transfer } from "../45-billing/billing";
 import { effectOf, invoice, invoicing } from "../46-finance/payables";
 import { logActivity } from "../47-staff/activity";
 import type { Employee } from "../47-staff/staff";
@@ -74,11 +74,21 @@ export function bookFor(s: GameState, tr: Transfer, inv: Invoice, settle: boolea
 const by = (s: GameState) => currentVendor(s)?.name ?? "";
 export const monthlyRun = (s: GameState): void => s.invoices.filter((i) => i.status === "draft").forEach((inv) => sendDraft(s, inv, by(s)));
 
-// The open invoice a transfer's reference names, when the amount is exactly what it owes; for money taken back, the paid one.
+// The open invoice a transfer most likely pays: the one its reference names, or for a reference without a number the
+// sender's oldest, when only one customer pays from that name.
+export function suggested(s: GameState, tr: Transfer): Invoice | undefined {
+  const unpaid = (i: Invoice) => isUnpaid(i) && synced(i);
+  if (tr.matchedAt !== null || tr.back || tr.covers || !tr.reference.startsWith("books.ref.")) return undefined;
+  if (tr.reference === "books.ref.invoice") return s.invoices.find((i) => i.number === tr.params.number && unpaid(i));
+  const senders = s.customers.filter((c) => payerOf(c) === tr.from);
+  if (senders.length !== 1) return undefined;
+  return s.invoices.filter((i) => i.customerId === senders[0].id && unpaid(i)).sort((a, b) => a.issuedAt - b.issuedAt)[0];
+}
+
+// The suggested invoice when the amount is exactly what it owes; for money taken back, the paid one.
 export function referenced(s: GameState, tr: Transfer): Invoice | undefined {
   if (tr.invoiceId === null && tr.back) return s.invoices.find((i) => i.number === tr.params.number && i.status === "paid" && synced(i));
-  if (tr.invoiceId !== null || tr.reference !== "books.ref.invoice") return undefined;
-  const inv = s.invoices.find((i) => i.number === tr.params.number && isUnpaid(i) && synced(i));
+  const inv = suggested(s, tr);
   return inv && owed(inv) === tr.amount ? inv : undefined;
 }
 

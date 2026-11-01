@@ -2,7 +2,7 @@
 import { nowMinutes, yearOf } from "../00-core/time";
 import { hashRng, rand } from "../00-core/rng";
 import { bankById, banksOpen, defaultPlan, planById, tanMethods, type BankId, type PlanId, type TanMethod } from "../10-catalog/banks";
-import { APPROVAL_HOURS, bankOf, openWithSavings, openAccount, hbci, payAll, ibanEra, limitFor, LOCK_HOURS, MIN_CARD_LIMIT, nextTanIndex, placeTanList, send, spendable, useTan, WRONG_LIMIT, type Draft, type Payee } from "../46-finance/bank";
+import { APPROVAL_HOURS, assign, bankOf, ibanValid, openWithSavings, openAccount, hbci, payAll, ibanEra, limitFor, LOCK_HOURS, MIN_CARD_LIMIT, nextTanIndex, placeTanList, send, spendable, useTan, WRONG_LIMIT, type Draft, type Payee } from "../46-finance/bank";
 import { invoice } from "../46-finance/payables";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
@@ -11,7 +11,8 @@ const fail = (error: string): ActionResult => ({ ok: false, error });
 
 function payeeError(s: GameState, d: Omit<Payee, "id">): string | null {
   if (!d.name.trim()) return "error.payeeName";
-  if (ibanEra(s) ? !/^DE\d{20}$/.test(d.account.replace(/\s/g, "")) : !/^\d{1,10}$/.test(d.account) || !/^\d{8}$/.test(d.code ?? "")) return "error.payeeAccount";
+  const account = d.account.replace(/\s/g, "");
+  if (ibanEra(s) ? !/^DE\d{20}$/.test(account) || !ibanValid(account) : !/^\d{1,10}$/.test(d.account) || !/^\d{8}$/.test(d.code ?? "")) return "error.payeeAccount";
   return null;
 }
 
@@ -138,6 +139,23 @@ export function payAllDue(s: GameState): ActionResult {
   if (!s.bank) return fail("error.noBank");
   if (!hbci(s)) return fail("error.noHbci");
   payAll(s);
+  return { ok: true };
+}
+
+// Books: a payment out counts toward a supplier's invoice once assigned to it.
+export function assignPayment(s: GameState, outgoingId: string, payableId: string): ActionResult {
+  const o = s.bank?.outgoing.find((x) => x.id === outgoingId && x.matched === null && !x.returned);
+  if (!o) return fail("error.transferMatched");
+  const p = s.payables.find((x) => x.id === payableId && x.booked < x.amount - 0.005);
+  if (!p) return fail("error.invoiceSettled");
+  assign(s, o, p.id);
+  return { ok: true };
+}
+
+export function unassignPayment(s: GameState, outgoingId: string): ActionResult {
+  const o = s.bank?.outgoing.find((x) => x.id === outgoingId && x.matched !== null);
+  if (!o) return fail("error.transferChanged");
+  assign(s, o, null);
   return { ok: true };
 }
 

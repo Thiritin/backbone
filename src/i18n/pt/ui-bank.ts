@@ -83,7 +83,7 @@ export default {
   "bank.pay.due": () => "Vencimento",
   "bank.pay.status": () => "Estado",
   "bank.pay.paid": () => "Paga",
-  "bank.pay.sent": () => "Transferência enviada",
+  "bank.pay.partly": (p) => `Faltam ${p.amount}`,
   "bank.pay.overdue": () => "Vencida",
   "bank.pay.open": () => "Em aberto",
   "bank.pay.pay": () => "Pagar",

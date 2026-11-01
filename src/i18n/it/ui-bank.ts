@@ -83,7 +83,7 @@ export default {
   "bank.pay.due": () => "Scadenza",
   "bank.pay.status": () => "Stato",
   "bank.pay.paid": () => "Pagata",
-  "bank.pay.sent": () => "Bonifico inviato",
+  "bank.pay.partly": (p) => `Ancora ${p.amount} aperti`,
   "bank.pay.overdue": () => "Scaduta",
   "bank.pay.open": () => "Aperta",
   "bank.pay.pay": () => "Paga",

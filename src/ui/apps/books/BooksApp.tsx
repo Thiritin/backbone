@@ -4,7 +4,7 @@ import { hasModule, MODULES } from "../../../sim/10-catalog/modules";
 import { licenceMail } from "../../../sim/80-business/licences";
 import { unsynced } from "../../../sim/80-business/shoplink";
 import { importFromShop } from "../../../sim/90-actions/shoplink";
-import { overdue } from "../../../sim/46-finance/payables";
+import { lateInBooks } from "../../../sim/46-finance/payables";
 import { sells, type BooksVendor, type Feature } from "../../../sim/10-catalog/bookkeeping";
 import { booksHost, booksOffline, booksUrl, currentVendor, hasFeature } from "../../../sim/80-business/bookkeeping";
 import type { GameState } from "../../../sim/50-state";
@@ -30,7 +30,8 @@ import "../billing/billing.css";
 import "./books.css";
 
 export const drafts = (s: GameState) => s.invoices.filter((i) => i.status === "draft" && synced(i)).length;
-export const unmatched = (s: GameState) => s.transfers.filter((x) => x.matchedAt === null).length;
+export const unmatched = (s: GameState) =>
+  s.transfers.filter((x) => x.matchedAt === null).length + (s.bank?.outgoing ?? []).filter((o) => o.matched === null && !o.returned).length;
 export const late = (s: GameState) => s.invoices.filter((i) => i.status === "overdue" && synced(i)).length;
 
 // Each tab: id, label key, dock count and body. The selection a tab opens on comes from the focus id.
@@ -42,7 +43,7 @@ const TABS: { id: string; group: Group; count: (s: GameState) => number; body: C
   { id: "bank", group: "payments", count: unmatched, body: BankTab },
   { id: "reminders", group: "payments", count: late, body: RemindersTab },
   { id: "products", group: "sales", count: unpublished, body: ProductsTab },
-  { id: "payables", group: "payments", count: (s) => s.payables.filter((p) => overdue(s, p)).length, body: PayablesTab },
+  { id: "payables", group: "payments", count: (s) => s.payables.filter((p) => lateInBooks(s, p)).length, body: PayablesTab },
   { id: "statistics", group: "reports", count: () => 0, body: StatisticsTab, features: ["reports", "statistics"] },
   { id: "tax", group: "reports", count: (s) => s.tax.returns.filter((r) => r.filedAt === null && s.hour >= r.dueAt).length, body: TaxTab, features: ["tax"] },
   { id: "statement", group: "reports", count: () => 0, body: StatementTab },

@@ -1,9 +1,9 @@
 // docs/design/plans/billing-by-hand.md, 9b: the company's bank account. Cash stays s.cash, the account's balance.
-import { arrived, bookPayment, cardBlocked, invoice, open, payableFor, supplierAccount, supplierIban } from "./payables";
+import { arrived, bookPayment, cardBlocked, invoice, open, payableFor, supplierAccount, supplierAt, supplierIban } from "./payables";
 import { t } from "../../i18n/en";
 import { hashRng, rand } from "../00-core/rng";
 import { dateOf, isMonthStart, monthIndexOf, nowMinutes, yearOf } from "../00-core/time";
-import { bankById, bookingFee, CUSTODY_ALLOWANCE, DEFAULT_BANK, defaultPlan, depositRate, IBAN_YEAR, monthlyFee, planById, tanMethods, TRANSFER_HOURS, type Bank, type BankId, type PlanId, type TanMethod } from "../10-catalog/banks";
+import { bankById, bookingFee, CUSTODY_ALLOWANCE, DEFAULT_BANK, defaultPlan, depositRate, IBAN_YEAR, monthlyFee, planById, RETURN_DAYS, tanMethods, TRANSFER_HOURS, type Bank, type BankId, type PlanId, type TanMethod } from "../10-catalog/banks";
 import { challengeById } from "../10-catalog/challenges";
 import { START_CASH } from "../10-catalog/economy";
 import { deliverMail } from "../40-support/tickets";
@@ -14,8 +14,13 @@ import { works } from "../80-business/bookkeeping";
 // A card applied for is ready at readyAt; due is what it spent since the last bill, booked as these entries when billed.
 export interface Card { appliedAt: number; readyAt: number; limit: number; spent: LedgerEntry[]; feeAt: number }
 export interface StandingOrder { id: string; name: string; account: string; amount: number; reference: string; day: number }
-// A transfer the player sent; the money left at hour and reaches the payee at arriveAt.
-export interface Outgoing { id: string; hour: number; arriveAt: number; name: string; account: string; amount: number; reference: string; payableId?: string; arrived?: true }
+// A transfer the player sent, or a supplier's direct debit; the money left at hour and reaches the payee at arriveAt.
+// payableId is the invoice the payee booked it to, matched the payable Books assigns it to. A transfer to an account no one
+// holds comes back at returnAt.
+export interface Outgoing {
+  id: string; hour: number; arriveAt: number; name: string; account: string; amount: number; reference: string; payableId?: string; arrived?: true;
+  matched: string | null; debit?: true; returnAt?: number; returned?: true;
+}
 // A payee saved in online banking; code is the bank code of an account from before IBAN.
 export interface Payee { id: string; name: string; account: string; code?: string }
 // What the transfer form holds; account is an IBAN, or an account number with its bank code before IBAN.
@@ -88,6 +93,8 @@ export function iban(code: string, account: string): string {
   const mod = [...`${bban}131400`].reduce((m, d) => (m * 10 + Number(d)) % 97, 0);
   return `DE${String(98 - mod).padStart(2, "0")}${bban}`;
 }
+// The form's check at entry: a German IBAN whose check digits make it 1 mod 97.
+export const ibanValid = (v: string): boolean => [...`${v.slice(4)}1314${v.slice(2, 4)}`].reduce((m, d) => (m * 10 + Number(d)) % 97, 0) === 1;
 export const ownIban = (s: GameState): string => (s.bank ? iban(bankById(s.bank.id)!.code, s.bank.number) : "");
 export const ibanEra = (s: GameState): boolean => yearOf(s.hour) >= IBAN_YEAR;
 // An IBAN printed in groups of four.
@@ -163,15 +170,43 @@ export function useTan(s: GameState, index: number): void {
 // The money leaves now and reaches the payee after the bank's transfer time.
 // A transfer that pays a supplier's invoice books the invoice's lines; any other books as a transfer.
 export function send(s: GameState, d: Draft, category = "transfers", key = "ledger.transferOut"): Outgoing {
-  const p = payableFor(s, d.account, d.reference, d.payableId);
-  const out: Outgoing = { id: `out${s.nextId++}`, hour: s.hour, arriveAt: s.hour + TRANSFER_HOURS[bankOf(s)!.speed], name: d.name, account: d.account, amount: d.amount, reference: d.reference, ...(p && { payableId: p.id }) };
-  if (p) bookPayment(s, p, d.amount);
-  else {
+  const p = payableFor(s, d.account, d.reference, d.payableId, d.code), id = `out${s.nextId++}`, arriveAt = s.hour + TRANSFER_HOURS[bankOf(s)!.speed];
+  const out: Outgoing = {
+    id, hour: s.hour, arriveAt, name: d.name, account: d.account, amount: d.amount, reference: d.reference, matched: p?.id ?? null, ...(p && { payableId: p.id }),
+    ...(!supplierAt(d.account, d.code) && { returnAt: arriveAt + returnDays(s, id) * 24 }),
+  };
+  if (p) {
+    bookPayment(s, p, d.amount);
+    credit(s, p.id, d.amount);
+  } else {
     s.cash = cents(s.cash - d.amount);
     s.ledger = [...s.ledger, { hour: s.hour, category, key, params: { name: d.name, reference: d.reference }, amount: -d.amount }];
   }
   s.bank = { ...s.bank!, outgoing: [...s.bank!.outgoing, out] };
   return out;
+}
+
+const credit = (s: GameState, payableId: string, n: number) => { s.payables = s.payables.map((p) => (p.id === payableId ? { ...p, booked: cents(p.booked + n) } : p)); };
+// Books' assignment of a payment out to a payable, or none; the supplier keeps what it booked.
+export function assign(s: GameState, o: Outgoing, payableId: string | null): void {
+  if (o.matched) credit(s, o.matched, -o.amount);
+  if (payableId) credit(s, payableId, o.amount);
+  s.bank = { ...s.bank!, outgoing: s.bank!.outgoing.map((x) => (x.id === o.id ? { ...x, matched: payableId } : x)) };
+}
+
+const returnDays = (s: GameState, id: string): number => {
+  const [lo, hi] = RETURN_DAYS;
+  return lo + Math.floor(rand(hashRng(s.seed, Number(id.slice(3)) || 0, 0x2e7)) * (hi - lo + 1));
+};
+
+// The receiving bank sends back a transfer to an account it does not hold; Books lists it as money in that needs no invoice.
+function bounce(s: GameState, o: Outgoing): void {
+  if (o.matched) assign(s, o, null);
+  s.bank = { ...s.bank!, outgoing: s.bank!.outgoing.map((x) => (x.id === o.id ? { ...x, returned: true as const } : x)) };
+  s.cash = cents(s.cash + o.amount);
+  s.ledger = [...s.ledger, { hour: s.hour, category: "transfers", key: "ledger.transferReturned", params: { name: o.name, reference: o.reference }, amount: o.amount }];
+  s.transfers = [...s.transfers, { id: `trf${s.nextId++}`, hour: s.hour, from: o.name, reference: "bank.ref.returned", params: { reference: o.reference }, amount: o.amount, invoiceId: null, matchedAt: s.hour, forInvoice: "" }];
+  deliverMail(s, bankOf(s)!.name, "bankReturned", { amount: o.amount, name: o.name, account: o.account });
 }
 
 // HBCI: the program's edition, a bank that includes it, or a fintech's API from its year.
@@ -236,6 +271,7 @@ export function bankTick(s: GameState): SimEvent[] {
     s.bank = { ...s.bank!, outgoing: s.bank!.outgoing.map((o) => (o.arrived || o.arriveAt > s.hour ? o : { ...o, arrived: true as const })) };
     for (const o of b.outgoing) if (!o.arrived && o.arriveAt <= s.hour && o.payableId) arrived(s, o.payableId);
   }
+  for (const o of b.outgoing) if (o.returnAt !== undefined && !o.returned && s.hour >= o.returnAt) bounce(s, o);
   let next: BankAccount = { ...s.bank!, interest: s.cash < 0 && bank.overdraft ? b.interest - (s.cash * bank.overdraft) / HOURS_PER_YEAR : b.interest };
   const rate = depositRate(yearOf(s.hour)), base = rate < 0 ? s.cash - CUSTODY_ALLOWANCE : s.cash;
   if (base > 0 && rate !== 0) next.credit = (next.credit ?? 0) + (base * rate) / HOURS_PER_YEAR;
