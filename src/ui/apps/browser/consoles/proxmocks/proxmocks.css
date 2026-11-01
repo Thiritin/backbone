@@ -1,52 +1,43 @@
-/* Proxmocks VE: grey ExtJS with blue gradient headers in Tahoma until 2015, then flat white with the orange mark. */
-.pmx[data-era="early"] { --bg: #dfe8f6; --panel: #ffffff; --line: #99bbe8; --fg: #15428b; --muted: #4c6a96; --accent: #3a6fbf; --accent-fg: #fff; --hover: #dde8f8; --r: 2px; --font: Tahoma, Verdana, Geneva, sans-serif; --mark: #e57000; font-size: 11px; }
-.pmx[data-era="late"] { --bg: #f5f5f5; --panel: #ffffff; --line: #cfcfcf; --fg: #333; --muted: #666; --accent: #3892d4; --accent-fg: #fff; --hover: #eef5fb; --r: 0; --font: "Helvetica Neue", Helvetica, Arial, sans-serif; --mark: #e57000; font-size: 12px; }
+/* Proxmocks VE, one look per web interface generation: the black and orange first interface in Verdana, the blue ExtJS manager in Tahoma, the flat white one that turns dark with the desktop. */
+.pmx[data-era="legacy"] { --bg: #ffffff; --panel: #ffffff; --line: #c4c4c4; --fg: #222; --muted: #666; --accent: #e57000; --accent-fg: #fff; --hover: #fdebd9; --r: 0; --font: Verdana, Geneva, sans-serif; --mark: #e57000; --head: #ececec; background: var(--bg); font-size: 11px; }
+.pmx[data-era="extGrey"] { --bg: #dfe8f6; --panel: #ffffff; --line: #99bbe8; --fg: #15428b; --muted: #4c6a96; --accent: #3a6fbf; --accent-fg: #fff; --hover: #dde8f8; --r: 2px; --font: Tahoma, Verdana, Geneva, sans-serif; --mark: #e57000; --head: linear-gradient(#dae7f6, #b8cfee); background: var(--bg); font-size: 11px; }
+.pmx[data-era="flatline"] { --bg: #f5f5f5; --panel: #ffffff; --line: #cfcfcf; --fg: #333; --muted: #666; --accent: #3892d4; --accent-fg: #fff; --hover: #eef5fb; --r: 0; --font: "Helvetica Neue", Helvetica, Arial, sans-serif; --mark: #e57000; --head: var(--panel); background: var(--bg); font-size: 12px; }
+:root[data-theme="dark"] .pmx[data-era="flatline"] { --bg: #1e1e1e; --panel: #2a2a2a; --line: #444; --fg: #e0e0e0; --muted: #a0a0a0; --hover: #34404b; --chart-grid: #444; --chart-bg: #2a2a2a; color-scheme: dark; }
 
-.pmx-top { display: flex; align-items: center; gap: 12px; padding: 6px 10px; }
-.pmx[data-era="early"] .pmx-top { background: linear-gradient(#d3e1f1, #a9c3e6); border-bottom: 1px solid var(--line); }
-.pmx[data-era="late"] .pmx-top { background: #fff; border-bottom: 1px solid var(--line); }
+.pmx-top { display: flex; align-items: center; gap: 12px; padding: 6px 10px; border-bottom: 1px solid var(--line); background: var(--head); }
 .pmx-logo { font-size: 14px; letter-spacing: 0.02em; }
 .pmx-logo b { color: var(--mark); }
-.pmx[data-era="early"] .pmx-logo b { color: #15428b; }
 .pmx-ver { color: var(--muted); }
 .pmx-top .cx-host { flex: 1; }
 .pmx-create, .pmx-out { padding: 3px 10px; border: 1px solid var(--line); border-radius: var(--r); font: inherit; cursor: pointer; }
 .pmx-create { background: var(--accent); border-color: var(--accent); color: #fff; }
 .pmx-out { background: var(--panel); color: var(--fg); }
-.pmx[data-era="early"] .pmx-create { background: linear-gradient(#fff, #d6e3f4); color: var(--fg); border-color: var(--line); }
 
 .pmx-view { padding: 4px 8px; color: var(--muted); border-bottom: 1px solid var(--line); margin-bottom: 4px; }
-.pmx[data-era="early"] .pmx-view { background: linear-gradient(#f2f6fb, #cfdcef); color: var(--fg); font-weight: 700; }
+.pmx-tree i { display: inline-flex; align-items: center; vertical-align: -2px; }
 .pmx-tree button[data-state="running"] i { color: #2c9c2c; }
 .pmx-tree button[aria-pressed="true"] i { color: inherit; }
 
 .pmx-content { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-.pmx-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 5px 10px; border-bottom: 1px solid var(--line); }
-.pmx[data-era="early"] .pmx-bar { background: linear-gradient(#dae7f6, #b8cfee); font-weight: 700; }
+.pmx-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 5px 10px; border-bottom: 1px solid var(--line); background: var(--head); }
 .pmx-title { flex: 1; }
 .pmx-pane { flex: 1; display: flex; min-height: 0; }
 .pmx-tabs { display: flex; flex-direction: column; flex: none; width: 120px; padding: 6px 0; border-right: 1px solid var(--line); background: var(--panel); }
 .pmx-tabs button { padding: 5px 12px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .pmx-tabs button[aria-pressed="true"] { background: var(--hover); font-weight: 700; }
-.pmx[data-era="late"] .pmx-tabs button[aria-pressed="true"] { border-left: 3px solid var(--accent); }
 .pmx-console { display: flex; align-items: center; justify-content: center; min-height: 200px; background: #000; }
-.pmx[data-era="early"] .cx-table th { background: linear-gradient(#f9f9f9, #e3e4e6); color: #333; }
-.pmx-tasks h4 { color: var(--fg); }
-.pmx[data-era="early"] .pmx-tasks h4 { background: linear-gradient(#dae7f6, #b8cfee); }
-.pmx-wiz .cx-wiz-title { background: var(--hover); }
+.pmx-tasks h4 { color: var(--fg); background: var(--head); }
+.pmx-wiz .cx-wiz-title { background: var(--head); }
 
 .pmx-login { align-items: center; justify-content: center; padding: 48px 16px; }
 .pmx-card { display: flex; flex-direction: column; gap: 10px; width: min(380px, 100%); padding: 0 0 14px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); }
 .pmx-card > *:not(.pmx-card-h) { margin: 0 14px; }
-.pmx-card-h { padding: 6px 10px; font-weight: 700; border-bottom: 1px solid var(--line); }
-.pmx-login[data-era="early"] .pmx-card-h { background: linear-gradient(#dae7f6, #b8cfee); }
-.pmx-login[data-era="late"] .pmx-card-h { background: #fff; border-top: 3px solid var(--mark); }
+.pmx-card-h { padding: 6px 10px; font-weight: 700; border-bottom: 1px solid var(--line); background: var(--head); }
 
 /* The VM Summary: the status box and the stacked graphs with green area fills on a grey grid. */
 .pmx { --chart-line: #4c9a2a; --chart-fill: rgb(115 185 75 / 0.55); --chart-grid: #d6d6d6; --chart-bg: #fff; }
 .pmx-panel { border: 1px solid var(--line); background: var(--panel); }
-.pmx-panel h4, .pmx-graph figcaption { margin: 0; padding: 4px 8px; font-size: 12px; font-weight: 700; border-bottom: 1px solid var(--line); }
-.pmx[data-era="early"] .pmx-panel h4, .pmx[data-era="early"] .pmx-graph figcaption { background: linear-gradient(#dae7f6, #b8cfee); }
+.pmx-panel h4, .pmx-graph figcaption { margin: 0; padding: 4px 8px; font-size: 12px; font-weight: 700; border-bottom: 1px solid var(--line); background: var(--head); }
 .pmx-status { border-collapse: collapse; margin: 4px 8px; }
 .pmx-status th { padding: 2px 16px 2px 0; text-align: left; font-weight: 400; color: var(--muted); }
 .pmx-status td { padding: 2px 0; }
@@ -55,29 +46,57 @@
 .pmx-graph .cx-chart-body { padding: 8px 12px 18px 4px; }
 .pmx-res { padding: 6px 8px; }
 .pmx-alarms { border: 0; border-top: 1px solid var(--line); }
-
-.pmx-plans { display: flex; align-items: center; gap: 6px; width: 100%; margin-top: 6px; padding: 4px 8px; border: 0; background: none; text-align: left; font: inherit; cursor: pointer; }
-.pmx-plans[aria-pressed="true"] { background: #cbe0f7; }
-.pmx-plans i { font-style: normal; }
-.pmx-order { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
-/* :root[data-era] selectors outrank the shared era rules. */
-:root[data-era="leopard"] .pmx :is(.pmx-create, .pmx-out) { border-radius: 999px; }
-:root[data-era="leopard"] .pmx .pmx-card { overflow: hidden; border-radius: 10px; box-shadow: 0 8px 24px rgb(0 0 0 / 0.18); }
-:root[data-era="yosemite"] .pmx .pmx-top { min-height: 44px; border-bottom: 3px solid var(--mark); background: #3a3a3a; color: #eee; }
-:root[data-era="yosemite"] .pmx .pmx-top .cx-host, :root[data-era="yosemite"] .pmx .pmx-ver { color: #b8b8b8; }
-:root[data-era="yosemite"] .pmx .pmx-out { border-color: rgb(255 255 255 / 0.4); background: transparent; color: #fff; }
-:root[data-era="yosemite"] .pmx :is(.pmx-create, .pmx-out) { border-radius: 4px; }
-:root[data-era="tahoe"] .pmx .pmx-top { margin: 8px 8px 0; padding: 8px 16px; border: 1px solid color-mix(in srgb, var(--line) 60%, transparent); border-radius: 22px; background: color-mix(in srgb, var(--panel) 62%, transparent); -webkit-backdrop-filter: blur(22px) saturate(1.8); backdrop-filter: blur(22px) saturate(1.8); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.75), 0 8px 24px rgb(0 0 0 / 0.08); }
-:root[data-era="tahoe"] .pmx :is(.pmx-create, .pmx-out) { padding: 4px 14px; border-radius: 999px; }
-:root[data-era="tahoe"] .pmx .pmx-tabs button { border-radius: 999px; }
-:root[data-era="tahoe"] .pmx .pmx-tabs button[aria-pressed="true"] { border-left: 0; background: color-mix(in srgb, var(--accent) 14%, var(--panel)); }
-:root[data-era="tahoe"] .pmx .pmx-card { overflow: hidden; border-radius: 26px; background: color-mix(in srgb, var(--panel) 62%, transparent); -webkit-backdrop-filter: blur(22px) saturate(1.8); backdrop-filter: blur(22px) saturate(1.8); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.75), 0 14px 40px rgb(0 0 0 / 0.1); }
-:root[data-era="tahoe"] .pmx .pmx-panel { overflow: hidden; border-radius: 18px; }
-:root[data-era="yosemite"] .pmx .pmx-logo b { color: var(--mark); }
-:root[data-era="tahoe"] .pmx .pmx-card-h { background: transparent; border-top: 0; }
-
-.pmx-plans { display: flex; align-items: center; gap: 6px; width: 100%; margin-top: 6px; padding: 4px 8px; border: 0; background: none; text-align: left; font: inherit; cursor: pointer; }
-.pmx-plans[aria-pressed="true"] { background: #cbe0f7; }
-.pmx-plans i { font-style: normal; }
+.pmx-plans { display: flex; align-items: center; gap: 6px; width: 100%; margin-top: 6px; padding: 4px 8px; border: 0; background: none; color: inherit; text-align: left; font: inherit; cursor: pointer; }
+.pmx-plans[aria-pressed="true"] { background: var(--hover); }
+.pmx-plans i { display: inline-flex; font-style: normal; }
 .pmx-order { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
 .pmx-noquorum { margin: 0 0 6px; padding: 4px 8px; background: #fbe3e1; color: #a1241b; font-weight: 700; font-size: 12px; }
+
+/* The first two generations put the tabs in a row above the content. */
+.pmx:is([data-era="legacy"], [data-era="extGrey"]) .pmx-pane { flex-direction: column; }
+.pmx:is([data-era="legacy"], [data-era="extGrey"]) .pmx-tabs { flex-direction: row; flex-wrap: wrap; width: auto; padding: 4px 6px 0; border-right: 0; border-bottom: 1px solid var(--line); background: none; }
+
+/* The first web interface: a black banner with an orange rule, a grey menu column, square grey tabs and orange bars. */
+.pmx[data-era="legacy"] .pmx-top { padding: 10px 14px; border-bottom: 4px solid var(--mark); background: #1b1b1b; color: #fff; }
+.pmx[data-era="legacy"] .pmx-top .cx-host, .pmx[data-era="legacy"] .pmx-ver { color: #aaa; }
+.pmx[data-era="legacy"] .pmx-logo { font-size: 18px; font-weight: 700; letter-spacing: 0.06em; }
+.pmx[data-era="legacy"] :is(.pmx-create, .pmx-out) { border-color: #555; background: #333; color: #fff; }
+.pmx[data-era="legacy"] .pmx-create { border-color: var(--mark); background: var(--mark); }
+.pmx[data-era="legacy"] .pmx-tree { background: #ececec; }
+.pmx[data-era="legacy"] .pmx-view { color: var(--mark); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+.pmx[data-era="legacy"] .pmx-tree button { text-decoration: underline; color: #1a4d8f; }
+.pmx[data-era="legacy"] .pmx-tree button[aria-pressed="true"] { background: none; color: #000; font-weight: 700; text-decoration: none; }
+.pmx[data-era="legacy"] .pmx-tree i { color: var(--mark); }
+.pmx[data-era="legacy"] .pmx-bar { font-size: 13px; font-weight: 700; }
+.pmx[data-era="legacy"] .pmx-tabs button { margin: 0 3px -1px 0; padding: 3px 10px; border: 1px solid var(--line); background: #e4e4e4; }
+.pmx[data-era="legacy"] .pmx-tabs button[aria-pressed="true"] { border-bottom-color: var(--panel); background: var(--panel); box-shadow: inset 0 3px 0 var(--mark); }
+.pmx[data-era="legacy"] .cx-table th { background: #e4e4e4; color: #222; }
+.pmx[data-era="legacy"] .cx-btn.primary, .pmx-login[data-era="legacy"] .cx-btn.primary { border-color: #b35800; background: var(--mark); }
+.pmx[data-era="legacy"] .cx-bar { height: 10px; border: 1px solid #999; border-radius: 0; background: #fff; }
+.pmx[data-era="legacy"] .cx-bar i { background: var(--mark); }
+.pmx[data-era="legacy"] .pmx-tasks h4 { background: #1b1b1b; color: #fff; }
+.pmx-login[data-era="legacy"] { justify-content: flex-start; background: #ececec; border-top: 46px solid #1b1b1b; }
+.pmx-login[data-era="legacy"] .pmx-card-h { background: #1b1b1b; color: #fff; border-bottom: 3px solid var(--mark); }
+
+/* The ExtJS manager: blue gradient headers and buttons in Tahoma. */
+.pmx[data-era="extGrey"] .pmx-logo b { color: #15428b; }
+.pmx[data-era="extGrey"] .pmx-create { background: linear-gradient(#fff, #d6e3f4); color: var(--fg); border-color: var(--line); }
+.pmx[data-era="extGrey"] .pmx-view { background: linear-gradient(#f2f6fb, #cfdcef); color: var(--fg); font-weight: 700; }
+.pmx[data-era="extGrey"] .pmx-bar { font-weight: 700; }
+.pmx[data-era="extGrey"] .pmx-tabs button { margin-right: 2px; padding: 3px 12px; border: 1px solid var(--line); border-bottom: 0; border-radius: 3px 3px 0 0; background: linear-gradient(#eef3fa, #cfdcef); }
+.pmx[data-era="extGrey"] .pmx-tabs button[aria-pressed="true"] { background: linear-gradient(#fff, #e9f0fa); }
+.pmx[data-era="extGrey"] .cx-table th { background: linear-gradient(#f9f9f9, #e3e4e6); color: #333; }
+.pmx[data-era="extGrey"] .cx-btn { background: linear-gradient(#fff, #d6e3f4); color: var(--fg); }
+.pmx[data-era="extGrey"] .cx-bar { height: 14px; border: 1px solid #8db2e3; border-radius: 0; background: #fff; }
+.pmx[data-era="extGrey"] .cx-bar i { background: linear-gradient(#cfe1f8, #8bb4ea 45%, #5a8fd8 50%, #7aa7e4); }
+.pmx[data-era="extGrey"] .pmx-plans[aria-pressed="true"] { background: #cbe0f7; }
+
+/* The flat manager: white, an orange mark, blue buttons and the tab menu down the side. */
+.pmx[data-era="flatline"] .pmx-top { padding: 8px 12px; }
+.pmx[data-era="flatline"] .pmx-tabs button[aria-pressed="true"] { border-left: 3px solid var(--accent); }
+.pmx[data-era="flatline"] .pmx-tree i { width: auto; margin-right: 5px; }
+.pmx[data-era="flatline"] .pmx-tree button[aria-pressed="true"] { background: color-mix(in srgb, var(--accent) 22%, var(--panel)); color: var(--fg); }
+.pmx[data-era="flatline"] .cx-table th { background: var(--panel); }
+.pmx[data-era="flatline"] .cx-bar { height: 8px; border: 0; border-radius: 0; background: color-mix(in srgb, var(--line) 60%, var(--panel)); }
+.pmx[data-era="flatline"] .cx-bar i { background: var(--accent); }
+.pmx-login[data-era="flatline"] .pmx-card-h { border-top: 3px solid var(--mark); }
