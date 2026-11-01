@@ -85,6 +85,7 @@
 .books-product .books-new-form { max-width: 520px; }
 .books-prices { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 .books-prices .field { width: 100%; min-width: 0; }
+.books-market { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
 .books-settings { margin-left: auto; }
 
 /* The vendor's skin: a strip in its colour above the toolbar, or for a web program the address bar it runs under. */
