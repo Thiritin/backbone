@@ -4,12 +4,13 @@ import { isUnpaid, owed } from "../../../sim/45-billing/billing";
 import { matchTransfer } from "../../../sim/90-actions/billing";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
+import { useBooks } from "./view";
 import { formatDay } from "../billing/format";
 import { Locked } from "./Locked";
 
 // Transfers on the left, open invoices on the right; picking one of each books it, or asks how when the amounts differ.
 export function BankTab() {
-  const game = useStore((s) => s.game), act = useStore((s) => s.act);
+  const game = useBooks(), act = useStore((s) => s.act);
   const [transfer, setTransfer] = useState<string | null>(null);
   const [invoice, setInvoice] = useState<string | null>(null);
   const transfers = game.transfers.filter((x) => x.invoiceId === null);

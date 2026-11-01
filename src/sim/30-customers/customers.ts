@@ -17,7 +17,10 @@ export interface Customer { id: string; name: string; profile: Profile; since: n
   // A fraudster's order: the hour the stolen payment is charged back. Never shown to the player.
   chargebackAt?: number;
   // The organiser of a sponsored event: churned from the start so no customer count, mail or churn roll sees them, while their free services run.
-  sponsor?: true }
+  sponsor?: true;
+  // Created by the shop system; absent reads as entered in Books. synced false hides it from Books until an import.
+  source?: "manual" | "shop";
+  synced?: boolean }
 // price is per hour for period "hour" (invoiced monthly in arrears) and per year for period "year" (invoiced in advance).
 // spec is what the customer ordered and the service books; its workloads point back at it by serviceId.
 export interface Service { id: string; customerId: string; product: Product; label: string; price: number; period: "hour" | "year"; commitMonths: number; startedAt: number; endedAt: number | null; zone: string | null;

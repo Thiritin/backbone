@@ -43,10 +43,20 @@ export interface Invoice {
   received?: number;
   // Hour the payment extension granted on a suspension appeal runs out.
   extendedUntil: number | null;
+  // Issued by the shop system; absent reads as Books' own. synced false hides it from Books until an import.
+  source?: "manual" | "shop";
+  synced?: boolean;
+  // Paid at checkout through the shop gateway, and the weekly payout transfer that carried the money.
+  gateway?: true;
+  payout?: string;
+  // The shop's own record of the payment: the gateway, or a match in Books with the Shop link module.
+  shopPaid?: true;
 }
 // A payment in the bank account. reference and params are the purpose line as an i18n key; invoiceId is the invoice the
 // player matched it to. forInvoice is the invoice the customer meant, never shown.
-export interface Transfer { id: string; hour: number; from: string; reference: string; params: Record<string, string>; amount: number; invoiceId: string | null; matchedAt: number | null; forInvoice: string }
+export interface Transfer { id: string; hour: number; from: string; reference: string; params: Record<string, string>; amount: number; invoiceId: string | null; matchedAt: number | null; forInvoice: string;
+  // A gateway payout: the invoices it pays.
+  covers?: string[] }
 // rate is yearly; left counts the instalments still to pay.
 export interface Loan { id: string; amount: number; rate: number; months: number; left: number; payment: number; balance: number; takenAt: number; missed: number }
 
@@ -128,6 +138,11 @@ export const payDelay = (r: Rng): number => DAY * (1 + Math.floor(rand(r) * 5));
 export const invoiceTotal = (inv: Invoice): number => cents(inv.lines.reduce((sum, l) => sum + l.amount, 0));
 export const isUnpaid = (inv: Invoice): boolean => inv.status === "open" || inv.status === "overdue";
 export const owed = (inv: Invoice): number => cents(invoiceTotal(inv) - (inv.received ?? 0));
+export const synced = (x: { synced?: boolean }): boolean => x.synced !== false;
+// A record the shop system creates: synced at once with the Shop link module, otherwise waiting for an import in Books.
+export const fromShop = (s: GameState): { source: "shop"; synced?: false } => ({ source: "shop", ...(!hasModule(s, "shop-link") && { synced: false as const }) });
+// Books chases only invoices it knows; the gateway collected its invoices at checkout.
+const chased = (inv: Invoice): boolean => synced(inv) && !inv.gateway;
 export const pendingTransfer = (s: GameState, inv: Invoice): Transfer | undefined => s.transfers.find((t) => t.forInvoice === inv.id && t.invoiceId === null);
 const pick = <T>(r: Rng, xs: readonly T[]): T => xs[Math.floor(rand(r) * xs.length)];
 
@@ -155,6 +170,7 @@ export function bookTransfer(s: GameState, tr: Transfer, inv: Invoice, settle: b
   else {
     Object.assign(inv, { status: "paid", paidAt: s.hour, suspended: false, payAt: null });
     renewTerms(s, inv);
+    if (inv.source === "shop" && hasModule(s, "shop-link")) inv.shopPaid = true;
   }
   if (rest < 0) s.customers = s.customers.map((c) => (c.id === inv.customerId ? { ...c, credit: cents(c.credit - rest) } : c));
 }
@@ -162,7 +178,7 @@ export function bookTransfer(s: GameState, tr: Transfer, inv: Invoice, settle: b
 // Index into STEPS of the dunning step that is due now, or null.
 export function dueStep(inv: Invoice, hour: number): number | null {
   const i = inv.reminders.length;
-  if (!isUnpaid(inv) || i >= STEPS.length) return null;
+  if (!isUnpaid(inv) || !chased(inv) || i >= STEPS.length) return null;
   return hour >= inv.dueAt + STEPS[i].days * DAY ? i : null;
 }
 
@@ -265,7 +281,7 @@ export function ruleStep(s: GameState, inv: Invoice): number | null {
 // Hour the suspend rule acts on an invoice: days after the due date, or again when an appeal's extension runs out.
 export function ruleSuspendsAt(s: GameState, inv: Invoice): number | null {
   const days = s.billingRules.autoSuspendDays;
-  if (!days || inv.status !== "overdue" || inv.suspended) return null;
+  if (!days || inv.status !== "overdue" || inv.suspended || !chased(inv)) return null;
   if (inv.suspendedAt === null) return inv.dueAt + days * DAY;
   return inv.extendedUntil !== null && inv.suspendedAt < inv.extendedUntil ? inv.extendedUntil : null;
 }
@@ -459,6 +475,11 @@ export function billingTick(s: GameState): SimEvent[] {
       customerId, lines: ls, issuedAt: s.hour, dueAt: s.hour, status: "draft", reminders: [], suspended: false, suspendedAt: null, extendedUntil: null,
       payStep: 0, payAt: null, paidAt: null,
     });
+    // The shop system sends its customers' invoices itself.
+    if (owner?.source === "shop") {
+      Object.assign(issued[issued.length - 1], fromShop(s));
+      issue(s, issued[issued.length - 1]);
+    }
   }
   if (changed || issued.length) s.invoices = [...invoices, ...issued];
   if (arrived.length) s.transfers = [...s.transfers, ...arrived];

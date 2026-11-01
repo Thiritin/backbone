@@ -19,6 +19,8 @@ import { vendorHost, vendorLive, VENDORS } from "./vendors";
 import { OFFICE_HOST, OFFICE_TITLE, OFFICE_URL } from "./office";
 import { bankById, BANKS, type BankId } from "../10-catalog/banks";
 import { LEXWEAR_HOST } from "./lexwear";
+import { SHOPS, type ShopId } from "../10-catalog/shops";
+import { shopHost } from "./shoplink";
 
 // fast loads at once, slow shows a progress bar first, down cannot be reached.
 export type Load = "fast" | "slow" | "down";
@@ -31,6 +33,7 @@ export type Page =
   | { kind: "bank"; id: BankId }
   | { kind: "supplier"; name: string }
   | { kind: "lexwear" }
+  | { kind: "shopVendor"; id: ShopId }
   | { kind: "host"; hostname: string }
   | { kind: "console"; hostname: string; clusterId: string; defaced: boolean; path: string }
   | { kind: "ipmi"; deviceId: string }
@@ -155,6 +158,9 @@ export function resolve(s: GameState, raw: string): Resolved {
   if (named(OFFICE_HOST)) return out({ kind: "office" });
   if (named(WIKI_HOST)) return out({ kind: "wiki" });
   if (named(LEXWEAR_HOST)) return out({ kind: "lexwear" });
+  // Every shop system but the hand-rolled form has its vendor's site, from the year it is sold.
+  const shopSite = SHOPS.find((v) => v.id !== "handRolled" && v.from <= yearOf(s.hour) && named(shopHost(v.id)));
+  if (shopSite) return out({ kind: "shopVendor", id: shopSite.id });
   // A software's site exists from the year the software does; an operating system's always.
   const year = yearOf(s.hour), sw = SOFTWARE.find((x) => named(x.site.host) && x.from <= year);
   if (sw) return out({ kind: "software", id: sw.id });

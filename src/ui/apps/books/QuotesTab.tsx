@@ -11,6 +11,7 @@ import type { GameState } from "../../../sim/50-state";
 import { attachQuote, convertQuote, createQuote, editQuote } from "../../../sim/90-actions/orders";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
+import { useBooks } from "./view";
 import { formatDay } from "../billing/format";
 import { PriceField } from "../sales/PriceField";
 import { Page } from "./InvoicesTab";
@@ -29,7 +30,7 @@ const orderFor = (game: GameState, q: Quote) => {
 const quotable = (game: GameState) => game.tickets.filter((tk) => orderOf(game, tk) && !stepError(game, tk, "quote"));
 
 export function QuotesTab({ focus }: { focus: string | null }) {
-  const game = useStore((s) => s.game), act = useStore((s) => s.act);
+  const game = useBooks(), act = useStore((s) => s.act);
   const list = [...game.quotes].reverse(), open = quotable(game);
   const [selected, setSelected] = useState<string | null>(focus ?? list[0]?.id ?? null);
   const [ticket, setTicket] = useState("");

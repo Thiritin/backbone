@@ -12,7 +12,7 @@ import type { Profile } from "../30-customers/customers";
 import { authCode } from "../30-customers/registry";
 import { profileStats, type Ticket } from "../40-support/tickets";
 import type { GameState } from "../50-state";
-import type { InvoiceLine } from "../45-billing/billing";
+import { fromShop, type InvoiceLine } from "../45-billing/billing";
 import { phpNeeded } from "../60-infra/php";
 import { discountFor, hasOrderForm } from "../80-business/marketing";
 import type { SimEvent } from "../88-tick/tick";
@@ -130,7 +130,13 @@ function formInvoice(s: GameState, id: string): void {
     ...(fee > 0 ? [{ serviceId: null, key: "invoice.line.setupFee", params: { label }, amount: fee }] : []),
     termLine(r, label),
   ];
-  issueInvoice(s, r.customerId!, lines, ORDER_PAY_DAYS - 1);
+  const inv = issueInvoice(s, r.customerId!, lines, ORDER_PAY_DAYS - 1);
+  // A shop places the order itself: its customer and invoice, paid at checkout through the shop gateway that pays out weekly.
+  // An order the player takes by hand from Support is Books' own.
+  if (r.shop) {
+    s.customers = s.customers.map((c) => (c.id === r.customerId && !c.source ? { ...c, ...fromShop(s) } : c));
+    Object.assign(inv, { ...fromShop(s), gateway: true, shopPaid: true, payStep: 0, payAt: null });
+  }
   s.services = s.services.map((v) => (v.id === r.serviceId ? startTerm(s, v, r.cycle) : v));
 }
 

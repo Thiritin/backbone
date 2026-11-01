@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- A shop system now keeps its own customers and invoices, which reach Books when you press Import from shop, and its card payments arrive as one weekly payout that lists the invoices it covers.
+- Each shop vendor sells a Shop link module on its own website that sends new shop customers and invoices to Books at once and marks shop invoices paid when you book their payment.
 - The weather in the menu bar shows the name of the place you are at again, after the temperature.
 - The bank's welcome email now lists your account number, PIN and login address on their own lines.
 - Lexwear now sells modules for Books on lexwear.de: Monthly run, Match by reference and Automatic reminders take over the back office once you enter the licence key from Lexwear's email.

@@ -7,6 +7,7 @@ import { t } from "../../../i18n/en";
 import { Confirm } from "../../desktop/Confirm";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { useStore } from "../../store";
+import { useBooks } from "./view";
 import { More } from "../More";
 import { Locked } from "./Locked";
 
@@ -25,7 +26,7 @@ function invoiceMenu(inv: Invoice, onWriteOff: (i: Invoice) => void): MenuEntry[
 }
 
 export function RemindersTab({ focus }: { focus: string | null }) {
-  const game = useStore((s) => s.game), act = useStore((s) => s.act);
+  const game = useBooks(), act = useStore((s) => s.act);
   const [writing, setWriting] = useState<Invoice | null>(null);
   const late = game.invoices.filter((i) => i.status === "overdue").sort((a, b) => a.dueAt - b.dueAt);
   const name = (id: string) => game.customers.find((c) => c.id === id)?.name ?? id;
@@ -82,7 +83,7 @@ function DaysRule<D extends number>({ label, days, value, onChange }: { label: s
 
 // The billing rules bookkeepers and accountants carry out in their work hours, or that run by themselves after the Automation research.
 function Rules() {
-  const game = useStore((s) => s.game), act = useStore((s) => s.act), openApp = useStore((s) => s.openApp);
+  const game = useBooks(), act = useStore((s) => s.act), openApp = useStore((s) => s.openApp);
   const rules = game.billingRules;
   const set = (r: Partial<BillingRules>) => act(setBillingRules, r);
   const auto = rulesAutomated(game);
