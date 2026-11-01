@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- Registering your company at the trade office now goes through at once and charges the fee only once, by a letter that arrives the same day, and paying it is the next step in Getting started.
+- Errors on web pages, such as a wrong TAN or a missing owner name, now appear on the page next to the field instead of as a notification.
 - Ports now look like their connectors on every rear panel: RJ45 jacks, silver SFP cages and a grey, labelled DSL port set apart from the LAN ports.
 - The carrier panel shows its ports, and clicking one opens it ready to connect a cable.
 - You can keep working while the game runs at 2× or 4×, and pausing now dims the desktop with a Paused overlay.

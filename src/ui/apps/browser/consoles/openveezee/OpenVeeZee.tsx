@@ -14,7 +14,7 @@ import "./openveezee.css";
 import { t } from "../../../../../i18n/en";
 import { BURST_MAX, beancounters } from "../../../../../sim/60-infra/beancounters";
 import { setBurst } from "../../../../../sim/90-actions/openveezee";
-import { useStore } from "../../../../store";
+import { usePageAct } from "../../pageAct";
 
 // docs/design/software.md, section 9: the green-banded PHP admin from 2005, the same pages under a dark top bar from 2016.
 const ERAS = erasFrom(2005, 2016);
@@ -84,7 +84,7 @@ export function HostPage({ game, c, id, vms, open, create }: { game: GameState; 
 
 // /proc/user_beancounters of a container, with the failcnt in red once it is not zero, and its burst RAM.
 function Beancounters({ game, v }: { game: GameState; v: Vm }) {
-  const act = useStore((s) => s.act), w = v.w, [burst, setBurstGb] = useState(String(w.burstGb ?? 0));
+  const act = usePageAct(), w = v.w, [burst, setBurstGb] = useState(String(w.burstGb ?? 0));
   const n = (x: number) => x.toLocaleString("en-US").replace(/,/g, "");
   return (
     <fieldset className="ovz-box"><legend>user_beancounters</legend>

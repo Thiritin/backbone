@@ -3,13 +3,13 @@ import { serverTaken, type Cluster } from "../../../../../sim/60-infra/cluster";
 import { qdeviceBlock, quorate, votes } from "../../../../../sim/60-infra/quorum";
 import { setQdevice } from "../../../../../sim/90-actions/quorum";
 import { t } from "../../../../../i18n/en";
-import { useStore } from "../../../../store";
 import { nodeName } from "../HypervisorBase";
 import { Facts } from "../PanelBase";
+import { usePageAct } from "../../pageAct";
 
 // Datacenter > Cluster: the Cluster Information box with the vote count and the QDevice.
 export function ClusterInfo({ game, c }: { game: GameState; c: Cluster }) {
-  const act = useStore((s) => s.act), v = votes(game, c);
+  const act = usePageAct(), v = votes(game, c);
   const free = game.devices.filter((d) => !serverTaken(game, d.id) && !qdeviceBlock(game, c, d.id));
   return (
     <section className="pmx-panel">

@@ -13,8 +13,6 @@ export default {
   "ledger.savings": () => "Transferencia desde tu cuenta personal: Ahorros",
   "bank.savings": () => "Ahorros",
   "bank.savings.from": () => "Cuenta personal",
-  "bank.office.payee": () => "Oficina de comercio",
-  "bank.office.reference": (p) => `Alta de actividad ${p.name}`,
   "error.hasBank": () => "La empresa ya tiene una cuenta bancaria.",
   "sim.index.cat.banks": () => "Bancos",
   "sim.index.bank": () => "Cuentas de empresa y banca en línea",

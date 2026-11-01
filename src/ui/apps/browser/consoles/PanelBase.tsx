@@ -23,6 +23,7 @@ import { setSitesOffline } from "../../../../sim/90-actions/security";
 import { setAutoUpdate, uninstallSoftware, updateDue, updateSoftware } from "../../../../sim/90-actions/software";
 import { migrateWebspace, migrateWorkload, migrationTargets, restoreWorkload, startWorkload, stopWorkload, webspaceTargets } from "../../../../sim/90-actions/vms";
 import { useStore } from "../../../store";
+import { usePageAct } from "../pageAct";
 import { disk, ram } from "../../hw";
 import { VM_STATE, vmLabel, vmState } from "../../products/parts";
 import { hoursText } from "../../workload-menu";
@@ -84,7 +85,7 @@ export const Bar = ({ use: [used, of] }: { use: [number, number] }) => <span cla
 const num = (n: number) => `${+n.toFixed(2)}`;
 
 export function Resize({ game, host, done }: { game: GameState; host: Cluster; done: () => void }) {
-  const act = useStore((s) => s.act), vm = vmById(game, host.vm)!;
+  const act = usePageAct(), vm = vmById(game, host.vm)!;
   const [size, setSize] = useState<Resources>({ vcpu: vm.vcpu, ramGb: vm.ramGb, diskGb: vm.diskGb });
   const field = (key: keyof Resources, label: string) => (
     <label className="cx-field">{label}
@@ -102,7 +103,7 @@ export function Resize({ game, host, done }: { game: GameState; host: Cluster; d
 
 // Targets with the hours they take; the player sees the hours before confirming.
 export function Migrate({ game, w, c, done }: { game: GameState; w: Workload; c: Cluster; done: () => void }) {
-  const act = useStore((s) => s.act), hand = c.kind === "panel", [pick, setPick] = useState<string | null>(null);
+  const act = usePageAct(), hand = c.kind === "panel", [pick, setPick] = useState<string | null>(null);
   const clusterName = (id: string) => game.clusters.find((x) => x.id === id)?.name ?? "";
   const targets = hand
     ? webspaceTargets(game, w.id).map((x) => ({ key: x.clusterId, label: t("browser-consoles-2.webspaceTarget", { panel: x.panel, name: x.name }), hours: x.hours, evc: false, run: () => act(migrateWebspace, w.id, x.clusterId) }))
@@ -145,7 +146,7 @@ export interface Row {
 
 // One row per web space, game server or VM; panel is the open migrate or resize form under it.
 export function useRows(game: GameState, c: Cluster, f: ConsoleFeatures, node: string | null = null): Row[] {
-  const act = useStore((s) => s.act), openConsole = useStore((s) => s.openConsole), [open, setOpen] = useState<{ id: string; kind: "migrate" | "resize" | "plan" | "manage" } | null>(null);
+  const act = usePageAct(), openConsole = useStore((s) => s.openConsole), [open, setOpen] = useState<{ id: string; kind: "migrate" | "resize" | "plan" | "manage" } | null>(null);
   const uses = useMemo(() => new Map(c.kind === "panel" ? game.workloads.filter((w) => w.clusterId === c.id).map((w) => [w.id, accountUse(game, w)] as const) : []), [game.hour, game.workloads.length, c.id, c.kind]); // eslint-disable-line react-hooks/exhaustive-deps
   const web = c.kind === "panel", cloud = c.kind === "cloud", close = () => setOpen(null), holds = useHolds(game, c, f);
   return game.workloads.filter((w) => w.clusterId === c.id && (!node || w.deviceId === node)).map((w) => {
@@ -247,7 +248,7 @@ export function Facts({ facts, className = "cx-table cx-facts" }: { facts: Fact[
 
 // The software page: its facts, the actions it allows now, a note when nothing is due and the open resize form.
 export function useSoftware(game: GameState, c: Cluster, f: ConsoleFeatures): { facts: Fact[]; actions: PanelAction[]; note: string | null; panel: ReactNode } {
-  const act = useStore((s) => s.act), [sizing, setSizing] = useState(false), [removing, setRemoving] = useState(false);
+  const act = usePageAct(), [sizing, setSizing] = useState(false), [removing, setRemoving] = useState(false);
   const family = familyOf(c)!, year = yearOf(game.hour), due = updateDue(game, c);
   const auto = f.update && autoUpdates(softwareById(family), year), on = !!c.autoUpdate;
   const off = game.security.offline.includes(c.id), machine = c.vm ?? c.nodes[0]?.deviceId ?? "";
@@ -276,7 +277,7 @@ export function useSoftware(game: GameState, c: Cluster, f: ConsoleFeatures): { 
 
 // The backup schedule and the host the backups go to; consoles show it where consoleFeatures offers backups.
 export function Backups({ game, c, title = <h4 className="cx-h">{t("browser-consoles-2.backups")}</h4> }: { game: GameState; c: Cluster; title?: ReactNode }) {
-  const act = useStore((s) => s.act), others = backupTargets(game, c), job = c.jobs[0], every = (job?.every ?? "off") as BackupEvery, target = job?.targetId ?? others[0]?.id ?? null;
+  const act = usePageAct(), others = backupTargets(game, c), job = c.jobs[0], every = (job?.every ?? "off") as BackupEvery, target = job?.targetId ?? others[0]?.id ?? null;
   return (
     <>
       {title}

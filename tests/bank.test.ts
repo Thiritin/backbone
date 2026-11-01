@@ -10,11 +10,13 @@ import { tickMinute } from "../src/sim/88-tick/tick";
 import { cancelTransfer, confirmTransfer, deletePayee, openBankAccount, payAllDue, savePayee, setAutoPay, setMandate, setTanMethod, startTransfer } from "../src/sim/90-actions/bank";
 import { type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
-import { applyForRegistration, registerCompany } from "../src/sim/90-actions/company";
+import { registerCompany } from "../src/sim/90-actions/company";
 import { newGame as blankGame } from "../src/sim/50-state";
 import { BANKS, type BankId } from "../src/sim/10-catalog/banks";
 import { START_CASH } from "../src/sim/10-catalog/economy";
 import { deserialize, serialize } from "../src/sim/91-save/save";
+import { FEES } from "../src/sim/80-business/paperwork";
+import { checkDone } from "../src/sim/checklist";
 
 // Hour 0 is Saturday 1 January 2005, 00:00; Monday 08:00 is hour 56.
 const MONDAY_8 = 56;
@@ -374,25 +376,26 @@ describe("game start", () => {
   it("refuses to register without an account", () => {
     const s = blankGame(4);
     s.hour = MONDAY_8;
-    expect(applyForRegistration(s, "Basement Hosting", "Becker, Tin", "sole")).toEqual({ ok: false, error: "error.noBank" });
     expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "sole")).toEqual({ ok: false, error: "error.noBank" });
     expect(s.registration).toBeNull();
   });
 
-  it("registers once the 40 euro fee transfer is confirmed with a TAN", () => {
+  it("registers at once and bills the fee once, by a letter the player pays", () => {
     const s = blankGame(4);
     s.hour = MONDAY_8;
     openBankAccount(s, "sparklasse");
-    expect(applyForRegistration(s, "Basement Hosting", "Becker, Tin", "sole").ok).toBe(true);
-    expect(s.bank!.pending!.draft).toMatchObject({ amount: 40, registration: { name: "Basement Hosting", owner: "Becker, Tin", form: "sole" } });
-    expect(s.registration).toBeNull();
-    expect(confirmTransfer(s, "wrong")).toEqual({ ok: false, error: "error.wrongTan" });
-    expect(confirmTransfer(s, s.bank!.tans.codes[s.bank!.pending!.index!]).ok).toBe(true);
+    expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "sole").ok).toBe(true);
     expect(s.registration).toMatchObject({ owner: "Becker, Tin", form: "sole" });
     expect(s.company.name).toBe("Basement Hosting");
-    expect(s.cash).toBe(START_CASH - 40);
-    expect(s.ledger.at(-1)).toMatchObject({ category: "transfers", amount: -40 });
-    expect(s.bank!.outgoing).toHaveLength(1);
+    expect(s.cash).toBe(START_CASH);
+    expect(s.bank!.pending).toBeNull();
+    expect(checkDone(s, "payBill")).toBe(false);
+    run(s, 2);
+    const fee = s.payables.filter((p) => p.supplier === "office");
+    expect(fee).toEqual([expect.objectContaining({ amount: FEES.registration, paidAt: null })]);
+    expect(pay(s, fee[0]).ok).toBe(true);
+    expect(s.cash).toBe(START_CASH - FEES.registration);
+    expect(checkDone(s, "payBill")).toBe(true);
   });
 
   it("leaves a registered old save's bank and cash as they are, and moves an unregistered one's cash into the savings", () => {

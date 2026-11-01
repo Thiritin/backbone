@@ -13,8 +13,6 @@ export default {
   "ledger.savings": () => "Transferência da tua conta pessoal: Poupanças",
   "bank.savings": () => "Poupanças",
   "bank.savings.from": () => "Conta pessoal",
-  "bank.office.payee": () => "Repartição de comércio",
-  "bank.office.reference": (p) => `Registo de atividade ${p.name}`,
   "error.hasBank": () => "A empresa já tem uma conta bancária.",
   "sim.index.cat.banks": () => "Bancos",
   "sim.index.bank": () => "Contas empresariais e banca online",

@@ -8,8 +8,8 @@ import type { GameState } from "../../../../../sim/50-state";
 import { booksUrl } from "../../../../../sim/80-business/bookkeeping";
 import { bought } from "../../../../../sim/80-business/lexwear";
 import { buyLicence } from "../../../../../sim/90-actions/lexwear";
-import { useStore } from "../../../../store";
 import "./books-vendors.css";
+import { usePageAct } from "../../pageAct";
 
 export interface SiteProps { game: GameState; path: string; go: (url: string) => void }
 // brand, ink, page and font give the vendor's look; flat drops the 2005 bevels for the cloud vendors.
@@ -19,7 +19,7 @@ const name = (id: string) => t(`vendor-sites.module.${id}`);
 const pitch = (v: BooksVendor, id: string) => (id === "hbci" ? t("books-vendors.pitchHbci", { program: v.program }) : t(`vendor-sites.pitch.${id}`));
 
 function State({ game, v, id }: { game: GameState; v: BooksVendor; id: string }) {
-  const act = useStore((s) => s.act);
+  const act = usePageAct();
   const price = modulePrice(v, id), running = game.books.vendor === v.id;
   if (price === "included") return <span className="bv-state">{t("books-vendors.included")}</span>;
   if (running && hasModule(game, id)) return <span className="bv-state">{t(v.keys ? "vendor-sites.registered" : "books-vendors.active")}</span>;

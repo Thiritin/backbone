@@ -13,8 +13,6 @@ export default {
   "ledger.savings": () => "Bonifico dal tuo conto personale: Risparmi",
   "bank.savings": () => "Risparmi",
   "bank.savings.from": () => "Conto personale",
-  "bank.office.payee": () => "Ufficio del commercio",
-  "bank.office.reference": (p) => `Registrazione attività ${p.name}`,
   "error.hasBank": () => "L'azienda ha già un conto in banca.",
   "sim.index.cat.banks": () => "Banche",
   "sim.index.bank": () => "Conti aziendali e home banking",

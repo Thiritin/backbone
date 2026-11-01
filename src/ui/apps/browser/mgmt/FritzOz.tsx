@@ -9,9 +9,9 @@ import { linkStatus } from "../../../../sim/60-infra/status";
 import { dropPortShare, reserveAddress, setPortShare, setRouterLan, viewDevices } from "../../../../sim/90-actions/lan";
 import { useSessionState } from "../../../session";
 import { noAutofill } from "../../../no-autofill";
-import { useStore } from "../../../store";
 import "../consoles/consoles.css";
 import "../ipmi/ipmi.css";
+import { usePageAct } from "../pageAct";
 
 // Fritz!OZ, the web interface of the basement's Fritz!Bocks (docs/design/lan.md, Management interfaces in the Browser).
 type Page = "overview" | "devices" | "ipv4" | "shares" | "firmware";
@@ -49,7 +49,7 @@ function Overview({ game, d }: { game: GameState; d: Device }) {
 }
 
 function Devices({ game, d }: { game: GameState; d: Device }) {
-  const act = useStore((s) => s.act), lan = lanOf(game, d)!;
+  const act = usePageAct(), lan = lanOf(game, d)!;
   useEffect(() => { act(viewDevices, d.id); }, [act, d.id]);
   return (
     <table className="cx-table">
@@ -65,7 +65,7 @@ function Devices({ game, d }: { game: GameState; d: Device }) {
 }
 
 function Ipv4({ game, d }: { game: GameState; d: Device }) {
-  const act = useStore((s) => s.act), lan = lanOf(game, d)!, last = (ip: string) => ip.split(".")[3];
+  const act = usePageAct(), lan = lanOf(game, d)!, last = (ip: string) => ip.split(".")[3];
   const [gw, setGw] = useState(lan.gateway), [from, setFrom] = useState(last(lan.pool[0])), [to, setTo] = useState(last(lan.pool[1]));
   return (
     <form className="cx-card" onSubmit={(e) => { e.preventDefault(); act(setRouterLan, d.id, gw.trim(), Number(from), Number(to)); }}>
@@ -80,7 +80,7 @@ function Ipv4({ game, d }: { game: GameState; d: Device }) {
 }
 
 function Shares({ game, d }: { game: GameState; d: Device }) {
-  const act = useStore((s) => s.act), lan = lanOf(game, d)!;
+  const act = usePageAct(), lan = lanOf(game, d)!;
   const hosts = leasesOf(game, d.id).filter((l) => l.active && l.deviceId && l.iface === "eth");
   const [target, setTarget] = useState(hosts[0]?.deviceId ?? ""), [kind, setKind] = useState<PortShare["kind"]>("web");
   const holder = (ip: string) => { const h = holderOf(game, ip); return h && game.devices.find((x) => x.id === h.deviceId); };

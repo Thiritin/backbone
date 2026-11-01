@@ -20,6 +20,7 @@ import { t } from "../../../i18n/en";
 import { useFocus, useStore, useWin } from "../../store";
 import { Favicon } from "./Favicon";
 import { ConsolePage } from "./consoles/ConsolePage";
+import { PageError } from "./pageAct";
 import { bmcTitle, IpmiPage } from "./ipmi/IpmiPage";
 import { FritzOz } from "./mgmt/FritzOz";
 import { KvmPage, kvmTitle } from "./ipmi/KvmPage";
@@ -107,6 +108,7 @@ function titleOf(game: GameState, r: Resolved): string {
 // The page of one load; the key restarts it, so a slow host shows its progress bar again after every navigation.
 function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: string) => void }) {
   const [waiting, setWaiting] = useState(r.load === "slow" && !reduced());
+  const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     if (!waiting) return;
     const id = setTimeout(() => setWaiting(false), LOAD_MS);
@@ -148,7 +150,10 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   return (
     <>
       {waiting && <div className="web-load" aria-hidden />}
-      <div className={`web-view${paper ? " white" : ""}`}>{body}</div>
+      <div className={`web-view${paper ? " white" : ""}`}>
+        {error && <div className="web-error" role="alert">{t(error)}</div>}
+        <PageError.Provider value={setError}>{body}</PageError.Provider>
+      </div>
     </>
   );
 }

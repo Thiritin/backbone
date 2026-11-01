@@ -13,8 +13,6 @@ export default {
   "ledger.savings": () => "Virement depuis ton compte personnel : Économies",
   "bank.savings": () => "Économies",
   "bank.savings.from": () => "Compte personnel",
-  "bank.office.payee": () => "Bureau du commerce",
-  "bank.office.reference": (p) => `Déclaration d'activité ${p.name}`,
   "error.hasBank": () => "L'entreprise a déjà un compte bancaire.",
   "sim.index.cat.banks": () => "Banques",
   "sim.index.bank": () => "Comptes professionnels et banque en ligne",
