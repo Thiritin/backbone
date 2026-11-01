@@ -1,0 +1,9 @@
+/* ClientExec: Ext JS grey panels with tabbed grids */
+.sk-cexit { font-family: Tahoma, Arial, sans-serif; font-size: 12px; background: #dfe8f6; }
+.sk-cexit .shop-head { background: linear-gradient(#f9f9f9, #c9c9c9); border-bottom: 1px solid #99bbe8; }
+.sk-cexit .shop-nav a { border: 1px solid #99bbe8; border-bottom: 0; background: #eef3fa; }
+.sk-cexit .shop-nav a.on { background: #fff; }
+.sk-cexit .shop-main { background: #fff; margin: 0 8px 8px; border: 1px solid #99bbe8; }
+.sk-cexit-mid { background: #f4f6f9; }
+.sk-cexit-late { background: #fff; font-family: system-ui, sans-serif; }
+.sk-cexit-late .shop-head { background: #fff; border-bottom: 1px solid #ddd; }

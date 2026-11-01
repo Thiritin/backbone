@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import { BookOpen, Building2, Check, CircleCheck, Cloud, Cpu, Gamepad2, Globe, HardDrive, LifeBuoy, Lock, Mail, MessagesSquare, Network, Server, ShieldCheck, Zap, type LucideIcon } from "lucide-react";
 import { t } from "../../../../i18n/en";
 import { START_YEAR, yearOf } from "../../../../sim/00-core/time";
@@ -9,10 +9,13 @@ import { companyDomain } from "../../../../sim/30-customers/domains";
 import type { GameState } from "../../../../sim/50-state";
 import { salesAddress } from "../../../../sim/80-business/mail";
 import { owns } from "../../../../sim/80-business/marketing";
-import { kbArticles, siteContent, sitePages, type SitePage } from "../../../../sim/80-business/website";
+import { packageSpec } from "../../../../sim/80-business/portal";
+import { CYCLES, type Cycle } from "../../../../sim/10-catalog/cycles";
+import { kbArticles, siteContent, sitePages, visibleProducts, orderLink, SITE_LINES, listed, type SitePage } from "../../../../sim/80-business/website";
 import { CompanyMark } from "../../company";
 import { PRODUCT } from "../../support/labels";
 import { BLURB, FEATURES, KB_STEPS, THREADS } from "./companyCopy";
+import { Contact, Legal, Network as NetworkPage, Status } from "./SitePages";
 import { AisleArt, DeskArt, RackArt } from "./SiteArt";
 import "./site.css";
 
@@ -20,8 +23,11 @@ const ICON: Record<Product, LucideIcon> = {
   webHosting: Globe, vps: Server, gameServer: Gamepad2, dns: Network, vpn: Lock, storage: HardDrive, cloud: Cloud,
   dedicated: Cpu, colocation: Building2, gpu: Zap, ssl: ShieldCheck, domain: Globe,
 };
+const CYCLE_LABEL: Record<Cycle, string> = {
+  monthly: t("shop-admin.cycleMonthly"), quarterly: t("shop-admin.cycleQuarterly"), annual: t("shop-admin.cycleAnnual"), biennial: t("shop-admin.cycleBiennial"),
+};
 const LABEL: Record<SitePage, string> = {
-  home: t("browser-sites-1.co.nav.home"), products: t("browser-sites-1.co.nav.products"), kb: t("browser-sites-1.co.nav.kb"), helpdesk: t("browser-sites-1.co.nav.helpdesk"), about: t("browser-sites-1.co.nav.about"), support: t("browser-sites-1.co.nav.support"),
+  home: t("browser-sites-1.co.nav.home"), products: t("browser-sites-1.co.nav.products"), pricing: t("browser-sites-1.co.nav.pricing"), network: t("browser-sites-1.co.nav.network"), status: t("browser-sites-1.co.nav.status"), legal: t("browser-sites-1.co.nav.legal"), contact: t("browser-sites-1.co.nav.contact"), kb: t("browser-sites-1.co.nav.kb"), helpdesk: t("browser-sites-1.co.nav.helpdesk"), about: t("browser-sites-1.co.nav.about"), support: t("browser-sites-1.co.nav.support"),
 };
 
 type Go = (path: string) => void;
@@ -45,15 +51,20 @@ export function CompanySite({ game, path, go }: { game: GameState; path: string;
         </div>
         {pages.length > 1 && (
           <nav className="site-nav">
-            {pages.filter((p) => p !== "home" && p !== "support").map((p) => <A key={p} to={`/${p}`} go={to} className={p === page ? "on" : undefined}>{LABEL[p]}</A>)}
+            {pages.filter((p) => p !== "home" && p !== "support" && p !== "legal" && p !== "contact").map((p) => <A key={p} to={`/${p}`} go={to} className={p === page ? "on" : undefined}>{LABEL[p]}</A>)}
             <A to="/support" go={to} className="site-button">{LABEL.support}</A>
           </nav>
         )}
       </header>
-      {page === "home" && <Home game={game} go={to} />}
-      {page === "products" && <Products game={game} />}
+      {page === "home" && <Home game={game} go={to} open={go} />}
+      {page === "products" && <Products game={game} go={go} />}
+      {page === "pricing" && <Pricing game={game} go={go} />}
       {page === "kb" && <Kb game={game} topic={second} go={to} />}
       {page === "helpdesk" && <HelpDesk game={game} />}
+      {page === "network" && <NetworkPage game={game} title={LABEL.network} />}
+      {page === "status" && <Status game={game} title={LABEL.status} />}
+      {page === "contact" && <Contact game={game} title={LABEL.contact} />}
+      {page === "legal" && <Legal game={game} title={LABEL.legal} />}
       {page === "about" && <About game={game} />}
       {page === "support" && <Support game={game} pages={pages} go={to} />}
       <footer className="site-foot">
@@ -67,13 +78,13 @@ export function CompanySite({ game, path, go }: { game: GameState; path: string;
   );
 }
 
-function ProductCards({ game, full }: { game: GameState; full?: boolean }) {
+function ProductCards({ game, full, go }: { game: GameState; full?: boolean; go?: (url: string) => void }) {
   const { lines } = siteContent(game);
   if (!lines.length) return <p className="site-empty">{t("browser-sites-1.co.underConstruction")}</p>;
   const designed = owns(game, "website");
   return (
     <div className={`site-products${full ? " full" : ""}`}>
-      {lines.map(({ product: p, from }) => {
+      {lines.map(({ product: p, from, link }) => {
         const Icon = ICON[p];
         return (
           <section key={p} className="site-product">
@@ -84,7 +95,7 @@ function ProductCards({ game, full }: { game: GameState; full?: boolean }) {
             {from !== null && (
               <div className="site-order">
                 <span>{t(PRODUCTS[p].period === "year" ? "browser-sites-1.co.fromYear" : "browser-sites-1.co.fromMonth", { price: euroCents(from) })}</span>
-                <span className="site-button">{t("browser-sites-1.co.order")}</span>
+                {link && go ? <a href={`#${link}`} className="site-button" onClick={(e) => { e.preventDefault(); go(link); }}>{t("browser-sites-1.co.order")}</a> : null}
               </div>
             )}
           </section>
@@ -94,7 +105,7 @@ function ProductCards({ game, full }: { game: GameState; full?: boolean }) {
   );
 }
 
-function Home({ game, go }: { game: GameState; go: Go }) {
+function Home({ game, go, open }: { game: GameState; go: Go; open: (url: string) => void }) {
   const { lines, email } = siteContent(game), city = game.locations[0]?.city ?? "Frankfurt";
   const designed = owns(game, "website");
   const pitch = t("browser-sites-1.co.pitch", { city }), sub = t("browser-sites-1.co.sub");
@@ -114,7 +125,7 @@ function Home({ game, go }: { game: GameState; go: Go }) {
         </section>
       ) : <p className="site-pitch">{pitch} {sub}</p>}
       <h2>{LABEL.products}</h2>
-      <ProductCards game={game} />
+      <ProductCards game={game} go={open} />
       {designed && (
         <section className="site-band">
           <AisleArt />
@@ -139,11 +150,51 @@ function Home({ game, go }: { game: GameState; go: Go }) {
   );
 }
 
-function Products({ game }: { game: GameState }) {
+function Products({ game, go }: { game: GameState; go: (url: string) => void }) {
   return (
     <>
       <PageHead title={LABEL.products} lead={t("browser-sites-1.co.productsLead")} />
-      <ProductCards game={game} full />
+      <ProductCards game={game} full go={go} />
+    </>
+  );
+}
+
+function Pricing({ game, go }: { game: GameState; go: (url: string) => void }) {
+  const [cycle, setCycle] = useState<Cycle>("monthly");
+  const open = (link: string) => (e: { preventDefault: () => void }) => { e.preventDefault(); go(link); };
+  const lines = SITE_LINES.filter((p) => listed(game, p));
+  return (
+    <>
+      <PageHead title={LABEL.pricing} lead={t("browser-sites-1.co.pricingLead")} />
+      <nav className="site-cycles">
+        {CYCLES.map((c) => <button key={c} className={c === cycle ? "on" : undefined} onClick={() => setCycle(c)}>{CYCLE_LABEL[c]}</button>)}
+      </nav>
+      {lines.map((p) => {
+        const items = visibleProducts(game, p).filter((x) => x.prices[cycle] !== undefined);
+        if (!items.length) return null;
+        return (
+          <section key={p} className="site-pricing">
+            <h3>{PRODUCT[p]}</h3>
+            <table>
+              <thead><tr><th>{t("browser-sites-1.co.plan")}</th><th>{t("browser-sites-1.co.specs")}</th><th>{CYCLE_LABEL[cycle]}</th><th>{t("shop-admin.setupFee")}</th><th /></tr></thead>
+              <tbody>
+                {items.map((x) => {
+                  const sp = packageSpec(game, x), link = orderLink(game, x)!;
+                  return (
+                    <tr key={x.id}>
+                      <td>{x.name}</td>
+                      <td>{t("browser-sites-1.co.spec", { cpu: sp.vcpu, ram: sp.ramGb, disk: sp.diskGb })}</td>
+                      <td>{euroCents(x.prices[cycle]!)}</td>
+                      <td>{x.setup ? euroCents(x.setup) : ""}</td>
+                      <td><a href={`#${link}`} className="site-button" onClick={open(link)}>{t("browser-sites-1.co.order")}</a></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </section>
+        );
+      })}
     </>
   );
 }
