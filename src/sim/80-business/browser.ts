@@ -108,11 +108,10 @@ export const registrarFormUrl = (s: GameState, ticketId: string, transfer: boole
 
 export const bankUrl = (id: BankId): string => `www.${bankById(id)!.host}/`;
 
-// Bookmarks every game has: the company site once launched, the bank and the registrar. The index lists the rest.
+// Bookmarks every game has: the bank and the registrar. The company's own sites sit in its bookmark folder.
 export const defaultBookmarks = (s: GameState): { title: string; url: string }[] => [
   ...(s.registration ? [] : [{ title: t("browser-sites-1.of.title"), url: OFFICE_URL }]),
   ...(s.bank ? [{ title: bankById(s.bank.id)!.name, url: bankUrl(s.bank.id) }] : []),
-  ...(s.marketing.launched ? [{ title: s.company.name, url: companyUrl(s) }] : []),
   { title: ((s.registrar && registrarById(s.registrar.id)) ?? REGISTRARS[0]).name, url: registrarUrl(s) },
 ];
 

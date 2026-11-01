@@ -28,7 +28,7 @@ describe("browser resolver", () => {
     const s = newGame(1);
     expect(resolve(s, WIKI_URL)).toMatchObject({ page: { kind: "wiki" }, path: "/wiki/Main_Page", load: "fast" });
     expect(resolve(s, "wikipedio.org/wiki/Uplink").page.kind).toBe("wiki");
-    expect(siteIndex(s).find((c) => c.title === "Community")!.rows.map((r) => r.url)).toContain(WIKI_URL);
+    expect(siteIndex(s).find((c) => c.title === "Documentation")!.rows.map((r) => r.url)).toEqual([WIKI_URL]);
   });
 
   it("serves each used market as a site and lists them in the index", () => {
@@ -51,7 +51,7 @@ describe("browser resolver", () => {
     expect(resolve(s, d).page).toEqual({ kind: "company" });
     expect(resolve(s, `https://www.${d}/`)).toMatchObject({ page: { kind: "company" }, load: "fast" });
     expect(resolve(s, `${d}/admin`).page).toEqual({ kind: "company" });
-    expect(defaultBookmarks(s).map((m) => resolve(s, m.url).page.kind)).toEqual(["company", "registrar"]);
+    expect(defaultBookmarks(s).map((m) => resolve(s, m.url).page.kind)).toEqual(["registrar"]);
     s.marketing.launched = false;
     expect(resolve(s, d).page).toEqual({ kind: "notfound" });
     expect(defaultBookmarks(s).map((m) => m.title)).not.toContain(s.company.name);
