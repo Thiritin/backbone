@@ -11,7 +11,7 @@ import { setSiteHost } from "../src/sim/90-actions/website";
 import { readyGame, registered, skipTo } from "./fixtures";
 import { createRng } from "../src/sim/00-core/rng";
 import { spawnNotice } from "../src/sim/40-support/notices";
-import { customerSite } from "../src/sim/80-business/website";
+import { customerSite, siteHost } from "../src/sim/80-business/website";
 
 const web = (s: ReturnType<typeof readyGame>) => s.services.find((v) => v.product === "webHosting" && v.domain)!;
 
@@ -53,6 +53,14 @@ describe("browser resolver", () => {
       expect(resolve(s, v.domain!).page).toEqual({ kind: "customer", serviceId: v.id });
       expect(resolve(s, `www.${v.domain}/index.html`).page).toEqual({ kind: "customer", serviceId: v.id });
     }
+  });
+
+  it("serves a site without a domain at its account's private address", () => {
+    const s = readyGame(1), v = web(s);
+    v.domain = undefined;
+    const ip = siteHost(s, v.id)!;
+    expect(ip).toBe(privateIp(s, s.workloads.find((w) => w.serviceId === v.id)!.id));
+    expect(resolve(s, ip).page).toEqual({ kind: "customer", serviceId: v.id });
   });
 
   it("resolves machine and service names to the placeholder host page", () => {

@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- The server details page has room at its edges again, long German button labels wrap, and the disk label no longer runs into its meter.
+- Each website on a panel host links to its domain, or to its address while it has none.
 - Websites in the browser fill the whole window again instead of a narrow page.
 - Right-click a browser tab to close it, close all other tabs, or close every tab to its left or right.
 - A business now always registers as a sole trader, and founding a limited company first needs the new Company law training in Research.
