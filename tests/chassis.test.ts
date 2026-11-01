@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { bayCount, bayTakes, componentParts, MODELS, modelById, presetCores, type FormFactor } from "../src/sim/10-catalog/hardware";
 import { OVERCOMMIT } from "../src/sim/10-catalog/products";
-import { device, deviceDefaults, newGame, type GameState } from "../src/sim/50-state";
+import { device, deviceDefaults, type GameState } from "../src/sim/50-state";
 import { installedCores, installedRamGb, installedThreads, perCoreOf, raidUsable } from "../src/sim/60-infra/status";
 import { SMT_SHARE } from "../src/sim/10-catalog/cpus";
 import { nodeCapacity } from "../src/sim/60-infra/cluster";
 import { freezeTick, nodeUsage } from "../src/sim/60-infra/usage";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { readyGame, withServer } from "./fixtures";
+import { readyGame, withServer, newGame } from "./fixtures";
 
 const SERVERS = MODELS.filter((m) => m.server);
 const withDevice = (model: string): { s: GameState; id: string } => {

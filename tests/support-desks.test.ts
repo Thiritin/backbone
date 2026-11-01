@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
 import { DESKS, deskHas, deskOf, seats } from "../src/sim/10-catalog/desks";
 import { monthlyCharge, storeItem, subscriptionPrice } from "../src/sim/10-catalog/store";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import type { Employee } from "../src/sim/47-staff/staff";
 import { tick } from "../src/sim/88-tick/tick";
 import { cancel, install } from "../src/sim/90-actions/store";
@@ -10,7 +10,7 @@ import { deserialize, serialize } from "../src/sim/91-save/save";
 import { stepOf } from "../src/ui/apps/guide";
 import { DESK_FEATURES, supportApp } from "../src/ui/apps/support/desk";
 import { FreeScootMark, FreshduskMark, GoggleMark, IonoseMark, LookoutMark, GMixMark, OsTickitMark, PearMailMark, ZenduskMark } from "../src/ui/art/mailmarks";
-import { registered } from "./fixtures";
+import { registered, newGame } from "./fixtures";
 
 const at = (y: number, m: number) => hourOf(new Date(Date.UTC(y, m - 1, 1)));
 const runTo = (s: GameState, hour: number) => { while (s.hour < hour) tick(s); };

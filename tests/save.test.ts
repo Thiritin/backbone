@@ -1,12 +1,11 @@
-import { START_CASH } from "../src/sim/10-catalog/economy";
 import { STARTER_APPS, WIDGETS } from "../src/sim/10-catalog/store";
 import { describe, expect, it } from "vitest";
-import { newGame, SAVE_VERSION } from "../src/sim/50-state";
+import { SAVE_VERSION } from "../src/sim/50-state";
 import { linkStatus } from "../src/sim/60-infra/status";
 import { tick } from "../src/sim/88-tick/tick";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { addLocation, moveRack } from "../src/sim/90-actions/hardware";
-import { buyDevice } from "./fixtures";
+import { buyDevice, newGame } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { readyGame, registered } from "./fixtures";
 import { legacyRegistration } from "../src/sim/80-business/office";
@@ -39,7 +38,7 @@ describe("save", () => {
   it("gives a milestone 1 save without infrastructure the starting basement", () => {
     const repaired = deserialize(JSON.stringify({ seed: 4, hour: 50 }));
     expect(repaired.hour).toBe(50);
-    expect(repaired.cash).toBe(START_CASH);
+    expect(repaired.cash).toBe(0);
     expect(repaired.rng.s).toBe(4);
     expect(repaired.version).toBe(SAVE_VERSION);
     expect(repaired.devices.map((d) => d.model)).toEqual(["home-router", "line-jack"]);

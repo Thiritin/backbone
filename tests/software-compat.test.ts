@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { conflict, runsOn, SOFTWARE, softwareById } from "../src/sim/10-catalog/platforms";
 import type { ServerOsId } from "../src/sim/10-catalog/server-os";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { setMachine } from "../src/sim/60-infra/cluster";
 import { installBlock } from "../src/sim/90-actions/software";
-import { hypervisor, skipTo, withServer } from "./fixtures";
+import { hypervisor, skipTo, withServer, newGame } from "./fixtures";
 
 // The basement server in 2016 with the OS and software given on its disk.
 function machine(os: ServerOsId, ...software: string[]): GameState {

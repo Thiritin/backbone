@@ -234,16 +234,16 @@ export function locationOf(s: GameState, d: Device): Location | undefined {
 
 export const holdsData = (s: GameState, d: Device): boolean => s.workloads.some((w) => w.deviceId === d.id);
 
-// 100% to 80% over the first month, then down to 20% over the next 24 months.
+// 90% right after buying, 80% after the first month, then down to 20% over the next 24 months.
 export function resaleValue(s: GameState, price: number, boughtAt: number): number {
   const months = Math.max(0, s.hour - boughtAt) / MONTH;
-  const share = months <= 1 ? 1 - 0.2 * months : Math.max(0.2, 0.8 - (0.6 * (months - 1)) / 24);
+  const share = months <= 1 ? 0.9 - 0.1 * months : Math.max(0.2, 0.8 - (0.6 * (months - 1)) / 24);
   return Math.round(price * share * 100) / 100;
 }
 
-// What a device sells for. A sized spare part sells at the current part price, anything else at what was paid.
+// What a device sells for. A new sized spare part sells at the current part price, anything else at what was paid.
 export const deviceValue = (s: GameState, d: Device): number =>
-  resaleValue(s, d.part ? partPrice(d.model.slice(5) as ComponentKind, d.part.size, d.part.ff, yearOf(s.hour), d.part) : d.price, d.boughtAt);
+  resaleValue(s, d.part && !d.used ? partPrice(d.model.slice(5) as ComponentKind, d.part.size, d.part.ff, yearOf(s.hour), d.part) : d.price, d.boughtAt);
 
 export const psusOf = (d: Device) => d.components.filter((c) => c.kind === "psu");
 export const isPlugged = (c: Component) => c.plugged !== false;
