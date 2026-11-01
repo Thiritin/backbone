@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- Customers write half as many support tickets, a right answer within two hours of a ticket opening makes them a little happier, and customers whose domain you registered no longer ask how to point it to their site.
 - From 2013 DOHLE replaces DohleFormular with the Mein DOHLE portal, where you log in with your certificate file and send the same returns.
 - Product prices in the books now show the market price for each term and the setup fee, so you can see what customers expect to pay.
 - Bookkeeping editions with the tax view connect to DOHLE with your certificate file, send the advance VAT returns in the monthly run and submit the yearly return once every invoice and transfer of the year is in the books.

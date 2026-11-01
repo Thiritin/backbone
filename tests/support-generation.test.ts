@@ -20,13 +20,13 @@ describe("ticket generation", () => {
     const count = (profile: Profile, kind: TicketKind) => games.get(profile)!.tickets.filter((t) => t.kind === kind).length;
     const near = (n: number, expected: number) => expect(Math.abs(n - expected)).toBeLessThan(4 * Math.sqrt(expected));
     // New customers ask about 2.3 times the base how-to rate in their first month (tenureFactor).
-    near(count("private", "howTo"), 125);
-    near(count("private", "billing"), 12);
-    near(count("private", "abuse"), 1.5);
-    near(count("enterprise", "howTo"), 14);
-    near(count("enterprise", "abuse"), 6);
-    near(count("gamer", "howTo"), 42);
-    near(count("gamer", "abuse"), 6);
+    near(count("private", "howTo"), 62);
+    near(count("private", "billing"), 6);
+    near(count("private", "abuse"), 0.75);
+    near(count("enterprise", "howTo"), 7);
+    near(count("enterprise", "abuse"), 3);
+    near(count("gamer", "howTo"), 21);
+    near(count("gamer", "abuse"), 3);
   });
 
   it("drops how-to questions to a trickle once customers are settled", () => {
@@ -34,7 +34,7 @@ describe("ticket generation", () => {
     for (const id of crowd(s, "private", 300)) s.customers.find((c) => c.id === id)!.since = s.hour - 36 * 730;
     runTo(s, 730);
     const n = s.tickets.filter((t) => t.kind === "howTo").length;
-    expect(Math.abs(n - 8)).toBeLessThan(4 * Math.sqrt(8));
+    expect(Math.abs(n - 4)).toBeLessThan(4 * Math.sqrt(4));
   }, 60_000);
 
   it("notifies Support about new tickets", () => {
