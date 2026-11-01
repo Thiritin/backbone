@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { datastoreUsed, nodeUsed, vmById, workloadOnline } from "../src/sim/60-infra/cluster";
 import { tick } from "../src/sim/88-tick/tick";
 import { createVm, setHa } from "../src/sim/90-actions/clusters";
@@ -8,7 +8,7 @@ import { connect, setPower } from "../src/sim/90-actions/hardware";
 import { installSoftware } from "../src/sim/90-actions/software";
 import { migrateWorkload } from "../src/sim/90-actions/vms";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { buyDevice, hypervisor, join, skipTo, withServer } from "./fixtures";
+import { buyDevice, hypervisor, join, skipTo, withServer, newGame } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 const ok = (r: { ok: boolean; id?: string; error?: string }) => { expect(r.error).toBeUndefined(); return r.id!; };

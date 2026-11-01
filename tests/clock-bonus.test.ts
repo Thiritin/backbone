@@ -3,13 +3,13 @@ import { hourOf } from "../src/sim/00-core/time";
 import { skuById, SMT_SHARE, topBoost } from "../src/sim/10-catalog/cpus";
 import { componentParts, modelById } from "../src/sim/10-catalog/hardware";
 import { sizeSpec } from "../src/sim/10-catalog/products";
-import { device, deviceDefaults, newGame, type GameState } from "../src/sim/50-state";
+import { device, deviceDefaults, type GameState } from "../src/sim/50-state";
 import { installedThreads, installedVcpu, perCoreOf } from "../src/sim/60-infra/status";
 import { FAST_HAPPY, monthlyReviews, nodeBoost } from "../src/sim/85-products/products";
 import type { SimEvent } from "../src/sim/88-tick/tick";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
-import { hypervisor, withServer } from "./fixtures";
+import { hypervisor, withServer, newGame } from "./fixtures";
 
 const ok = (r: { ok: boolean; id?: string; error?: string }) => {
   if (!r.ok) throw new Error(r.error);

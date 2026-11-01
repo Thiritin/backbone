@@ -1,12 +1,11 @@
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { sizeSpec } from "../src/sim/10-catalog/products";
-import { newGame } from "../src/sim/50-state";
 import { addressTick, mailAddress } from "../src/sim/60-infra/addresses";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { HostCli } from "../src/ui/apps/browser/consoles/hostcli/HostCli";
-import { BASEMENT_SERVER, panelServer, withServer } from "./fixtures";
+import { BASEMENT_SERVER, panelServer, withServer, newGame } from "./fixtures";
 
 describe("postfixit page", () => {
   it("prints the deferred queue and the command buttons", () => {

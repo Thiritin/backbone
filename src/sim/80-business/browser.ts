@@ -8,18 +8,24 @@ import { companyDomain } from "../30-customers/domains";
 import { serviceOnline } from "../40-support/status";
 import type { GameState } from "../50-state";
 import { isOwnVm, workloadOnline, workloadsOf, type Workload } from "../60-infra/cluster";
-import { ipmiIp, oobIp, privateIp } from "../60-infra/addresses";
-import { oobUp } from "../60-infra/oob";
+import { machineAddress } from "../60-infra/addresses";
+import { deskReaches, FRITZ_HOST, holderOf } from "../60-infra/lan";
+import { isManaged, modelById } from "../10-catalog/hardware";
+import { mountedRouter } from "../60-infra/routers";
+import { isMgmtDevice, oobUp } from "../60-infra/oob";
 import { linkStatus, powered, working } from "../60-infra/status";
 import { nodeUsage } from "../60-infra/usage";
 import { BOARD_HOST } from "./sponsorboard";
 import { consoleAt, isDefaced } from "./consoles";
-import { customerSite, siteStatus, slowHost } from "./website";
+import { customerSite, siteHost, siteStatus, slowHost } from "./website";
 import { vendorHost, vendorLive, VENDORS } from "./vendors";
 import { shopActive } from "./shop";
-import { OFFICE_HOST, OFFICE_TITLE, OFFICE_URL } from "./office";
+import { OFFICE_HOST, OFFICE_URL } from "./office";
+import { t } from "../../i18n/en";
 import { bankById, BANKS, type BankId } from "../10-catalog/banks";
 import { LEXWEAR_HOST } from "./lexwear";
+import { SHOPS, type ShopId } from "../10-catalog/shops";
+import { shopHost } from "./shoplink";
 
 // fast loads at once, slow shows a progress bar first, down cannot be reached.
 export type Load = "fast" | "slow" | "down";
@@ -32,10 +38,13 @@ export type Page =
   | { kind: "bank"; id: BankId }
   | { kind: "supplier"; name: string }
   | { kind: "lexwear" }
+  | { kind: "shopVendor"; id: ShopId }
   | { kind: "host"; hostname: string }
   | { kind: "console"; hostname: string; clusterId: string; defaced: boolean; path: string }
   | { kind: "ipmi"; deviceId: string }
   | { kind: "kvm"; deviceId: string }
+  | { kind: "router"; deviceId: string }
+  | { kind: "switch"; deviceId: string }
   | { kind: "video" }
   | { kind: "phishing"; sender: string }
   | { kind: "sponsorboard" }
@@ -74,16 +83,25 @@ export function displayHost(host: string): string {
 export const companyUrl = (s: GameState): string => `${displayHost(companyDomain(s))}/`;
 
 // The registrar under contract, or the first one before any contract.
-export function registrarUrl(s: GameState): string {
-  const r = (s.registrar && registrarById(s.registrar.id)) ?? REGISTRARS[0];
-  return `${displayHost(registrarHost(r))}/`;
+export const partnerOf = (s: GameState) => (s.registrar && registrarById(s.registrar.id)) ?? REGISTRARS[0];
+export const registrarUrl = (s: GameState): string => `${displayHost(registrarHost(partnerOf(s)))}/`;
+// A directory category's path segment, as the index links it.
+export const dirSlug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+export const resellersUrl = (): string => `${HOME_URL}${dirSlug(t("sim.index.cat.resellers"))}`;
+// Domains the game's other companies hold in any year, and every name under them.
+export function providerDomain(name: string): boolean {
+  const hosts = [INDEX_HOST, OFFICE_HOST, WIKI_HOST, LEXWEAR_HOST, BOARD_HOST, VIDEO_HOST, ...SOFTWARE.map((x) => x.site.host), ...SERVER_OS.map((x) => x.site.host),
+    ...VENDORS.map((m) => vendorHost(m.id)), ...BANKS.map((b) => b.host), ...REGISTRARS.map(registrarHost)].map((h) => h.replace(/^www\./, ""));
+  return hosts.some((h) => h === name || h.endsWith(`.${name}`));
 }
+// The partner's form that registers or transfers an order's domain.
+export const registrarFormUrl = (s: GameState, ticketId: string, transfer: boolean): string => `${registrarUrl(s)}${transfer ? "transfer" : "register"}?order=${ticketId}`;
 
 export const bankUrl = (id: BankId): string => `www.${bankById(id)!.host}/`;
 
 // Bookmarks every game has: the company site once launched, the bank and the registrar. The index lists the rest.
 export const defaultBookmarks = (s: GameState): { title: string; url: string }[] => [
-  ...(s.registration ? [] : [{ title: OFFICE_TITLE, url: OFFICE_URL }]),
+  ...(s.registration ? [] : [{ title: t("browser-sites-1.of.title"), url: OFFICE_URL }]),
   ...(s.bank ? [{ title: bankById(s.bank.id)!.name, url: bankUrl(s.bank.id) }] : []),
   ...(s.marketing.launched ? [{ title: s.company.name, url: companyUrl(s) }] : []),
   { title: ((s.registrar && registrarById(s.registrar.id)) ?? REGISTRARS[0]).name, url: registrarUrl(s) },
@@ -117,7 +135,7 @@ function serviceLoad(s: GameState, serviceId: string): Load {
 
 // The machine a hostname or private address names, with the load it answers with.
 function machineOf(s: GameState, key: string, byIp: boolean): { hostname: string; load: Load } | null {
-  const match = (hostname: string | undefined, id: string) => (byIp ? privateIp(s, id) === key : !!hostname && hostname === key);
+  const match = (hostname: string | undefined, id: string) => (byIp ? machineAddress(s, id) === key : !!hostname && hostname === key);
   for (const d of s.devices) if (d.hostname !== undefined && match(d.hostname, d.id)) return { hostname: d.hostname, load: serverLoad(s, d.id) };
   for (const w of s.workloads) {
     if (!match(w.hostname, w.id) || !w.hostname) continue;
@@ -149,7 +167,8 @@ export function resolve(s: GameState, raw: string): Resolved {
     return out({ kind: "company" }, st === "up" ? "fast" : st === "slow" ? "slow" : "down");
   }
   if (host === `portal.${domain}`) return shopActive(s) ? out({ kind: "shop" }, shopLoad()) : out({ kind: "notfound" });
-  const site = s.services.find((v) => !!v.domain && (v.domain === host || `www.${v.domain}` === host));
+  const site = s.services.find((v) => !!v.domain && (v.domain === host || `www.${v.domain}` === host))
+    ?? s.services.find((v) => !v.domain && v.product === "webHosting" && siteHost(s, v.id) === host);
   if (site) {
     const c = customerSite(s, site.id);
     if (c) return out({ kind: "customer", serviceId: site.id }, c.status === "down" ? "down" : c.status === "slow" ? "slow" : "fast");
@@ -159,6 +178,9 @@ export function resolve(s: GameState, raw: string): Resolved {
   if (named(OFFICE_HOST)) return out({ kind: "office" });
   if (named(WIKI_HOST)) return out({ kind: "wiki" });
   if (named(LEXWEAR_HOST)) return out({ kind: "lexwear" });
+  // Every shop system but the hand-rolled form has its vendor's site, from the year it is sold.
+  const shopSite = SHOPS.find((v) => v.id !== "handRolled" && v.from <= yearOf(s.hour) && named(shopHost(v.id)));
+  if (shopSite) return out({ kind: "shopVendor", id: shopSite.id });
   // A software's site exists from the year the software does; an operating system's always.
   const year = yearOf(s.hour), sw = SOFTWARE.find((x) => named(x.site.host) && x.from <= year);
   if (sw) return out({ kind: "software", id: sw.id });
@@ -179,14 +201,23 @@ export function resolve(s: GameState, raw: string): Resolved {
   }
   // A machine's address may name the port of one of its consoles.
   const colon = host.indexOf(":"), name = colon < 0 ? host : host.slice(0, colon), port = colon < 0 ? "" : host.slice(colon);
+  // The basement router answers on fritz.bocks and on its own address.
+  if (name === FRITZ_HOST) {
+    const home = s.locations.find((l) => !l.dc), router = home && mountedRouter(s, home.id);
+    return out({ kind: "router", deviceId: router?.id ?? "" }, router && deskReaches(s, router.id, "router") ? "fast" : "down");
+  }
   if (/^\d{1,3}(\.\d{1,3}){3}$/.test(name)) {
+    // A device on a network the desk does not reach times out.
+    const at = holderOf(s, name);
+    if (at && !deskReaches(s, at.deviceId, at.iface)) return out({ kind: "notfound" }, "down");
+    const d = at && s.devices.find((x) => x.id === at.deviceId);
+    if (d && at.iface === "router") return out({ kind: "router", deviceId: d.id });
     // The management controller answers on standby power, so a switched-off server still has its page; a hung one answers nothing.
-    const bmc = s.devices.find((d) => ipmiIp(s, d.id) === name);
-    if (bmc) return out({ kind: "ipmi", deviceId: bmc.id }, powered(s, bmc.id) && !bmc.bmcHung ? "fast" : "down");
-    const kvm = s.devices.find((d) => oobIp(s, d.id) === name);
-    if (kvm) return out({ kind: "kvm", deviceId: kvm.id }, oobUp(s, kvm.id) ? "fast" : "down");
+    if (d && at.iface === "bmc") return out({ kind: "ipmi", deviceId: d.id }, powered(s, d.id) && !d.bmcHung ? "fast" : "down");
+    if (d && isMgmtDevice(d)) return out({ kind: "kvm", deviceId: d.id }, oobUp(s, d.id) ? "fast" : "down");
+    if (d && isManaged(modelById(d.model))) return out({ kind: "switch", deviceId: d.id }, working(s, d.id) ? "fast" : "down");
     const m = machineOf(s, name, true);
-    return m ? { url, host, path, ...machinePage(s, m, port, path) } : out({ kind: "notfound" });
+    return m ? { url, host, path, ...machinePage(s, m, port, path) } : out({ kind: "notfound" }, "down");
   }
   if (s.company.domain && name.endsWith(`.${domain}`)) {
     const m = machineOf(s, name.slice(0, -domain.length - 1), false);

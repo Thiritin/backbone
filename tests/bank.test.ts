@@ -3,29 +3,34 @@ import { hourOf } from "../src/sim/00-core/time";
 import { iban, openAccount, type Draft } from "../src/sim/46-finance/bank";
 import { buyCart, deliveryWait, PREPAY_HOURS, type CartLine } from "../src/sim/90-actions/hardware";
 import { applyCard, applyOverdraft, deleteStandingOrder, startStandingOrder } from "../src/sim/90-actions/bank";
-import { withServer } from "./fixtures";
+import { withServer, newGame } from "./fixtures";
 import { lineCut, lineFactor, supplierAccount, supplierCode, supplierHost, type Payable } from "../src/sim/46-finance/payables";
 import { resolve } from "../src/sim/80-business/browser";
 import { tickMinute } from "../src/sim/88-tick/tick";
-import { cancelTransfer, confirmTransfer, payAllDue, setAutoPay, setMandate, setTanMethod, startTransfer } from "../src/sim/90-actions/bank";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { cancelTransfer, confirmTransfer, openBankAccount, payAllDue, setAutoPay, setMandate, setTanMethod, startTransfer } from "../src/sim/90-actions/bank";
+import { type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
-import { registerCompany } from "../src/sim/90-actions/company";
+import { applyForRegistration, registerCompany } from "../src/sim/90-actions/company";
+import { newGame as blankGame } from "../src/sim/50-state";
+import { BANKS, type BankId } from "../src/sim/10-catalog/banks";
+import { START_CASH } from "../src/sim/10-catalog/economy";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 
 // Hour 0 is Saturday 1 January 2005, 00:00; Monday 08:00 is hour 56.
 const MONDAY_8 = 56;
 const run = (s: GameState, hours: number) => { for (let i = 0; i < hours; i++) tick(s); };
-export const opened = (seed = 1, bank: Parameters<typeof registerCompany>[4] = "sparklasse", form = "sole"): GameState => {
-  const s = newGame(seed);
+export const opened = (seed = 1, bank: BankId = "sparklasse", form = "sole"): GameState => {
+  const s = blankGame(seed);
   s.hour = MONDAY_8;
-  expect(registerCompany(s, "Basement Hosting", "Becker, Tin", form, bank).ok).toBe(true);
+  expect(openBankAccount(s, bank).ok).toBe(true);
+  expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "sole").ok).toBe(true);
+  s.registration!.form = form;
   tick(s);
   return s;
 };
 
 describe("bank account", () => {
-  it("opens at the bank the registration names, with a welcome email and the TAN list on the desktop", () => {
+  it("opens at the bank whose site the player uses, with a welcome email and the TAN list on the desktop", () => {
     const s = opened(1, "postbunk");
     expect(s.bank).toMatchObject({ id: "postbunk", tan: "itan", card: null, overdraft: 0 });
     expect(s.bank!.number).toMatch(/^\d{10}$/);
@@ -37,10 +42,9 @@ describe("bank account", () => {
   });
 
   it("refuses a bank that does not exist yet", () => {
-    const s = newGame(1);
-    s.hour = MONDAY_8;
-    expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "sole", "quonto")).toEqual({ ok: false, error: "error.unknownBank" });
-    expect(s.registration).toBeNull();
+    const s = blankGame(1);
+    expect(openBankAccount(s, "quonto")).toEqual({ ok: false, error: "error.unknownBank" });
+    expect(s.bank).toBeNull();
   });
 
   it("charges the account fee every month start", () => {
@@ -70,11 +74,7 @@ describe("bank account", () => {
     expect(s.ledger.filter((e) => e.category === "fees").map((e) => [e.key, e.amount])).toEqual([["ledger.bankFee", -8]]);
   });
 
-  it("opens no netbunk account for a limited company and charges a partnership its flat fee", () => {
-    const s = newGame(1);
-    s.hour = MONDAY_8;
-    expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "limited", "netbunk")).toEqual({ ok: false, error: "error.bankForm" });
-    expect(s.registration).toBeNull();
+  it("charges a partnership at netbunk its flat fee", () => {
     const p = opened(1, "netbunk", "partnership");
     p.ledger = [...p.ledger, { hour: p.hour, category: "sales", key: "ledger.usedSale", params: {}, amount: 10 }];
     run(p, hourOf(new Date(Date.UTC(2005, 1, 1))) - p.hour);
@@ -100,6 +100,11 @@ describe("bank account", () => {
 const payee: Draft = { name: "Hans Wurst", account: "1234567", code: "37040044", amount: 49.9, reference: "Rechnung 17" };
 
 describe("bank site and TANs", () => {
+  it("gives every bank its own name, host and layout, redesigned after it opens", () => {
+    for (const key of ["name", "host"] as const) expect(new Set(BANKS.map((b) => b[key])).size).toBe(BANKS.length);
+    expect(new Set(BANKS.map((b) => b.skin.frame)).size).toBe(BANKS.length);
+    for (const b of BANKS) expect(b.skin.redesign).toBeGreaterThanOrEqual(b.from);
+  });
   it("serves the bank's site in the Browser", () => {
     const s = opened();
     expect(resolve(s, "www.sparklasse.de/banking/transfer").page).toEqual({ kind: "bank", id: "sparklasse" });
@@ -115,7 +120,7 @@ describe("bank site and TANs", () => {
     expect(confirmTransfer(s, s.bank!.tans.codes[index]).ok).toBe(true);
     expect(s.cash).toBeCloseTo(cash - 49.9, 2);
     expect(s.bank!.tans.used).toEqual([index]);
-    expect(s.bank!.outgoing[0]).toMatchObject({ name: "Hans Wurst", arriveAt: s.hour + 24 });
+    expect(s.bank!.outgoing.at(-1)).toMatchObject({ name: "Hans Wurst", arriveAt: s.hour + 24 });
     expect(s.docs.find((d) => d.id === "tans")!.body).toContain(`${String(index + 1).padStart(3, "0")}  ------`);
     // A used TAN is never asked for again.
     startTransfer(s, payee);
@@ -325,5 +330,57 @@ describe("mandates and HBCI", () => {
     expect(march.length).toBeGreaterThan(0);
     run(s, 14 * 24);
     expect(s.payables.every((p) => p.paidAt !== null)).toBe(true);
+  });
+});
+
+describe("game start", () => {
+  it("starts with no money and no account; the account opens with the savings as its first booking", () => {
+    const s = blankGame(4);
+    expect(s.cash).toBe(0);
+    expect(s.bank).toBeNull();
+    expect(openBankAccount(s, "volksbunk").ok).toBe(true);
+    expect(s.cash).toBe(START_CASH);
+    expect(s.ledger).toEqual([expect.objectContaining({ key: "ledger.savings", category: "capital", amount: START_CASH })]);
+    expect(s.transfers).toEqual([expect.objectContaining({ reference: "bank.savings", amount: START_CASH, invoiceId: null, matchedAt: s.hour })]);
+    expect(openBankAccount(s, "sparklasse")).toEqual({ ok: false, error: "error.hasBank" });
+  });
+
+  it("refuses to register without an account", () => {
+    const s = blankGame(4);
+    s.hour = MONDAY_8;
+    expect(applyForRegistration(s, "Basement Hosting", "Becker, Tin", "sole")).toEqual({ ok: false, error: "error.noBank" });
+    expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "sole")).toEqual({ ok: false, error: "error.noBank" });
+    expect(s.registration).toBeNull();
+  });
+
+  it("registers once the 40 euro fee transfer is confirmed with a TAN", () => {
+    const s = blankGame(4);
+    s.hour = MONDAY_8;
+    openBankAccount(s, "sparklasse");
+    expect(applyForRegistration(s, "Basement Hosting", "Becker, Tin", "sole").ok).toBe(true);
+    expect(s.bank!.pending!.draft).toMatchObject({ amount: 40, registration: { name: "Basement Hosting", owner: "Becker, Tin", form: "sole" } });
+    expect(s.registration).toBeNull();
+    expect(confirmTransfer(s, "wrong")).toEqual({ ok: false, error: "error.wrongTan" });
+    expect(confirmTransfer(s, s.bank!.tans.codes[s.bank!.pending!.index!]).ok).toBe(true);
+    expect(s.registration).toMatchObject({ owner: "Becker, Tin", form: "sole" });
+    expect(s.company.name).toBe("Basement Hosting");
+    expect(s.cash).toBe(START_CASH - 40);
+    expect(s.ledger.at(-1)).toMatchObject({ category: "transfers", amount: -40 });
+    expect(s.bank!.outgoing).toHaveLength(1);
+  });
+
+  it("leaves a registered old save's bank and cash as they are, and moves an unregistered one's cash into the savings", () => {
+    const registered = opened(5);
+    registered.cash = 1234.5;
+    expect(deserialize(serialize(registered))).toMatchObject({ cash: 1234.5, bank: { id: "sparklasse", number: registered.bank!.number } });
+    const old = JSON.parse(serialize(blankGame(5)));
+    old.cash = START_CASH;
+    old.version = 3;
+    delete old.bank;
+    const s = deserialize(JSON.stringify(old));
+    expect(s.cash).toBe(0);
+    expect(s.bank).toBeNull();
+    openBankAccount(s, "sparklasse");
+    expect(s.cash).toBe(START_CASH);
   });
 });

@@ -11,7 +11,7 @@ import "./tcadmen.css";
 const ERAS = erasFrom(2005, 2016);
 
 export function TCAdmen(p: PanelProps) {
-  const era = eraAt(ERAS, p.game), form = parseCreate("tcadmen", p.path), [tab, setTab] = usePanelTab(p.f, form?.screen ?? "objects"), [pick, setPick] = useState<string | null>(null);
+  const era = eraAt(ERAS, p), form = parseCreate("tcadmen", p.path), [tab, setTab] = usePanelTab(p.f, form?.screen ?? "objects"), [pick, setPick] = useState<string | null>(null);
   const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f);
   if (!p.signedIn) return (
     <div className="cx tc tc-login" data-era={era}>

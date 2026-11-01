@@ -9,9 +9,10 @@ import { applyStep, AUTOMATION, canAutomate, isStep, issueInvoice, ORDER_PAY_DAY
 import { marketPrice, PRODUCTS, type Spec } from "../10-catalog/products";
 import { inUs } from "../20-world/datacenters";
 import type { Product, Profile } from "../30-customers/customers";
+import { authCode } from "../30-customers/registry";
 import { profileStats, type Ticket } from "../40-support/tickets";
 import type { GameState } from "../50-state";
-import type { InvoiceLine } from "../45-billing/billing";
+import { fromShop, type InvoiceLine } from "../45-billing/billing";
 import { phpNeeded } from "../60-infra/php";
 import { discountFor, hasOrderForm } from "../80-business/marketing";
 import type { SimEvent } from "../88-tick/tick";
@@ -22,6 +23,7 @@ import { deployable, hasModule, moduleFor, shopActive, shopStocked, takeStock, t
 import { productCycles, takeProductStock } from "../80-business/portal";
 import { companyParams, variant } from "../40-support/replies";
 import { failsScreen, reviewing, rollFraud, screening } from "../45-billing/fraud";
+import { checkoutMethod, preferredMethod } from "../45-billing/payments";
 
 // Without an order, the first one comes from a friend's recommendation within this many days of the friends joining.
 export const FIRST_ORDER_DAYS = 14;
@@ -62,11 +64,13 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
   // One in three web customers already owns the domain they name.
   const owned = !lead && email && need.product === "webHosting" && rand(hashRng(s.seed, key, 229)) < 1 / 3;
   const shop = !email && shopStocked(s);
-  const fraud = !lead && rollFraud(s, key, need.product, yearOf(s.hour), email);
+  // A shop order checks out with the customer's payment method or goes elsewhere; only a card can be stolen there.
+  const preferred = shop ? preferredMethod(s, profile, city, !!lead?.shady, key) : "transfer", method = shop ? checkoutMethod(s, preferred, key) : "transfer";
+  const fraud = !lead && (!shop || method === "card") && rollFraud(s, key, need.product, yearOf(s.hour), email);
   const screened = !lead && screening(s);
   if (screened) s.screenChecks++;
   const declined = screened && failsScreen(s, key, fraud);
-  if (shop && !declined) pick ? takeProductStock(s, pick.id) : takeStock(s, need.product);
+  if (shop && !declined && method) pick ? takeProductStock(s, pick.id) : takeStock(s, need.product);
   const price = email ? reference : offerPrice(s, need.product, spec, need.sla);
   const cycle = email ? "monthly" : drawCycle(s, profile, need.product, rand(hashRng(s.seed, key, 281)), pick && productCycles(s, pick)), months = CYCLE_MONTHS[cycle];
   const budget = lead ? lead.budget : email ? ORDER_BUDGET[0] + (ORDER_BUDGET[1] - ORDER_BUDGET[0]) * rand(hashRng(s.seed, key, 263)) : 1;
@@ -79,10 +83,15 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
     ...(pick && { productId: pick.id, setup: pick.setup, ...(pick.packageName && { pkg: pick.packageName }) }),
     ...(months > 1 && { cycle }),
     ...(shop && { shop: true }),
-    ...(email && { owned, thread: x.thread.map((m, i) => (i ? m : { ...m, params: { ...m.params, owned: owned ? 1 : 0 } })) }),
+    ...(method && method !== "transfer" && { method }),
+    ...(email && { owned, thread: x.thread.map((m, i) => (i ? m : { ...m, params: { ...m.params, owned: owned ? 1 : 0, ...(owned && { auth: authCode(s.seed, x.id) }) } })) }),
   }));
   if (declined) {
     loseRequest(s, r, "declined", "lost.declined");
+    return r;
+  }
+  if (!method) {
+    loseRequest(s, r, "lost", `lost.paymentMethod.${preferred}`);
     return r;
   }
   const params = { name: requestName(r), spec: specText(r.product, spec) };
@@ -135,6 +144,9 @@ function formInvoice(s: GameState, id: string): void {
     ...(fee > 0 ? [{ serviceId: null, key: "invoice.line.setupFee", params: { label }, amount: fee }] : []),
     termLine(r, label),
   ];
+  // A shop places the order itself: its customer and invoice, paid by the method chosen at checkout.
+  // An order the player takes by hand from Support is Books' own.
+  if (r.shop) s.customers = s.customers.map((c) => (c.id === r.customerId && !c.source ? { ...c, ...fromShop(s), ...(r.method && { method: r.method }) } : c));
   issueInvoice(s, r.customerId!, lines, ORDER_PAY_DAYS - 1);
   s.services = s.services.map((v) => (v.id === r.serviceId ? startTerm(s, v, r.cycle) : v));
 }

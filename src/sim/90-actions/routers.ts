@@ -20,7 +20,9 @@ export function installRouter(s: GameState, deviceId: string): ActionResult {
   const move = (e: { device: string; port: number }) => (e.device === old.id ? { ...e, device: d.id } : e);
   s.cables = s.cables.map((c) => ({ ...c, a: move(c.a), b: move(c.b) }));
   const plugged = old.components.filter((c) => c.kind === "psu").map((c) => c.plugged);
-  Object.assign(d, { rackId: old.rackId, slot: old.slot, store: null, name: old.name, on: true,
+  // The new router takes over the network settings and port shares; it knows none of the old one's leases or reservations.
+  const lan = old.lan && { ...old.lan, leases: [], reservations: [] };
+  Object.assign(d, { rackId: old.rackId, slot: old.slot, store: null, name: old.name, on: true, ...(lan && { lan }),
     components: d.components.map((c) => (c.kind === "psu" ? { ...c, plugged: plugged.shift() ?? c.plugged } : c)) });
   Object.assign(old, { rackId: null, slot: 0, store: loc.id, name: d.name });
   return { ok: true, id: d.id };

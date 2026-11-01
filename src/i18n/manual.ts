@@ -8,7 +8,7 @@ const mailboxes = (n: string | number) => `${n} mailbox${Number(n) === 1 ? "" : 
 const web = (p: Params) => `${gb(p.disk)} of space, ${gb(p.traffic)} of traffic a month and ${mailboxes(p.mail)}`;
 const box = (p: Params) => `${p.cpu} vCPU${Number(p.cpu) === 1 ? "" : "s"}, ${gb(p.ram)} of RAM and ${gb(p.disk)} of disk`;
 const cards = (p: Params) => `${p.gpu} GPU${Number(p.gpu) === 1 ? "" : "s"}`;
-const domain = (p: Params) => (Number(p.owned) ? `I already own ${p.domain} and would like to move it to you.` : `Please register ${p.domain} for me as well.`);
+const domain = (p: Params) => (Number(p.owned) ? `I already own ${p.domain} and would like to move it to you.${p.auth ? ` The auth code is ${p.auth}.` : ""}` : `Please register ${p.domain} for me as well.`);
 const more = (p: Params) => (p.product === "webHosting"
   ? `${gb(p.disk0)} to ${gb(p.disk1)} of space, ${gb(p.traffic0)} to ${gb(p.traffic1)} of traffic and ${p.mail0} to ${mailboxes(p.mail1)}`
   : and([
@@ -57,6 +57,11 @@ export const MANUAL_EN: Record<string, (p: Params) => string> = {
   "error.quoteSent": () => "The customer has not answered the quote yet.",
   "error.needsAutomation": () => "Choose a host to set it up on.",
   "error.needsAccount": () => "Create the customer account first.",
+  "error.addressMissing": () => "Enter the full address.",
+  "error.quoteSentAlready": () => "This quote was sent already.",
+  "error.quoteOtherOrder": () => "This quote belongs to another order.",
+  "error.quoteNotAccepted": () => "The customer has not accepted this quote.",
+  "error.quoteInvoiced": () => "This quote was carried forward already.",
   "error.needsInvoice": () => "Confirm the order and send the invoice first.",
   "error.needsDomain": () => "Register the domain first.",
   "error.stepDone": () => "This step is done.",

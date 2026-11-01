@@ -26,7 +26,9 @@ import { BURNIN_EN } from "./burnin";
 import { USED_EN } from "./used";
 import { VENDORS_EN } from "./vendors";
 import { BANK_EN } from "./bank";
+import { PAPERWORK_EN } from "./paperwork";
 import { ALARMS_EN } from "./alarms";
+import { IFACE_EN } from "./iface";
 import { active, LOCALE, type Dict } from "./lang";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -50,6 +52,7 @@ export const en: Record<string, (p: Params) => string> = {
   ...ADDRESSES_EN,
   ...IPMI_EN,
   ...TERMINAL_EN,
+  ...IFACE_EN,
   ...REMOTE_EN,
   ...CONSOLE_EN,
   ...SECURITY_EN,
@@ -64,6 +67,7 @@ export const en: Record<string, (p: Params) => string> = {
   ...NEWS_EN,
   ...VENDORS_EN,
   ...BANK_EN,
+  ...PAPERWORK_EN,
   ...USED_EN,
   ...BURNIN_EN,
   ...ALARMS_EN,
@@ -136,6 +140,8 @@ export const en: Record<string, (p: Params) => string> = {
   "error.speedMismatch": () => "Both ports must run at the same speed.",
   "error.notServer": () => "Only servers have a bond mode.",
   "error.notSwitch": () => "Only switches have port groups.",
+  "error.unmanaged": () => "Unmanaged switches have no settings.",
+  "error.vlanRange": () => "VLAN IDs run from 1 to 4094.",
   "error.groupSize": () => "A port group holds 2 to 8 ports.",
   "ledger.lease": (p) => `${p.lessor}, payment ${p.paid} of ${p.months}`,
   "ledger.leaseBuyout": (p) => `${p.lessor}, buyout`,
@@ -454,6 +460,8 @@ export const en: Record<string, (p: Params) => string> = {
   "guide.step.buyServer": () => "Buy a server",
   "guide.step.mountServer": () => "Mount and power it",
   "guide.step.mountRouter": () => "Mount the router",
+  "guide.step.findAddress": () => "Find the server's address",
+  "guide.step.shareWeb": () => "Share the web port",
   "guide.step.internet": () => "Add internet",
   "guide.step.setup": () => "Install software",
   "guide.step.domain": () => "Buy your domain",
