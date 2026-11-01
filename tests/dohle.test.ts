@@ -11,7 +11,7 @@ import { tick } from "../src/sim/88-tick/tick";
 import { openBankAccount } from "../src/sim/90-actions/bank";
 import { registerCompany } from "../src/sim/90-actions/company";
 import { removeDoc } from "../src/sim/90-actions/docs";
-import { activateDohle, fileVatReturn, installDohleFormular, leaveSmallRule, registerForDohle } from "../src/sim/90-actions/tax";
+import { activateDohle, fileReturn, installDohleFormular, leaveSmallRule, registerForDohle } from "../src/sim/90-actions/tax";
 import { DohleSite } from "../src/ui/apps/browser/sites/dohle/DohleSite";
 import { DohleFormular } from "../src/ui/apps/dohle/DohleFormularApp";
 
@@ -68,13 +68,13 @@ describe("DOHLE", () => {
     s.cash = 10_000;
     run(s, at(2005, 2, 1) - s.hour + 1);
     const r = s.tax.returns[0];
-    expect(fileVatReturn(s, r.id)).toEqual({ ok: false, error: "error.dohleCert" });
+    expect(fileReturn(s, r.id)).toEqual({ ok: false, error: "error.dohleCert" });
     const cert = certified(s);
     expect(removeDoc(s, cert).ok).toBe(true);
-    expect(fileVatReturn(s, r.id)).toEqual({ ok: false, error: "error.dohleCert" });
+    expect(fileReturn(s, r.id)).toEqual({ ok: false, error: "error.dohleCert" });
     // A new registration revokes the old certificate and issues a new one.
     certified(s);
-    expect(fileVatReturn(s, r.id).ok).toBe(true);
+    expect(fileReturn(s, r.id).ok).toBe(true);
   });
 
   it("revokes the certificate on a new registration even while its file is on the desktop", () => {

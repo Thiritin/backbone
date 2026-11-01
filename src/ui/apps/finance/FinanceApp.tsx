@@ -2,7 +2,8 @@ import { CalendarDays, ChartColumn, Landmark, Layers, LayoutGrid, ShieldCheck, T
 import { useEffect, useRef, useState } from "react";
 import { euro, euroCents } from "../../../sim/00-core/money";
 import { dateOf } from "../../../sim/00-core/time";
-import { hardwarePremium, monthStartOf, nextTax, profitBetween, profitOf, runwayMonths } from "../../../sim/46-finance/finance";
+import { hardwarePremium, monthStartOf, profitBetween, profitOf, runwayMonths } from "../../../sim/46-finance/finance";
+import { OpenReturns } from "../dohle/OpenReturns";
 import { buyInsurance, cancelInsurance } from "../../../sim/90-actions/finance";
 import type { GameState } from "../../../sim/50-state";
 import { metrics } from "../../../sim/metrics";
@@ -320,7 +321,6 @@ function CashChart({ flows }: { flows: MonthFlow[] }) {
 
 function TaxInsurance({ game }: { game: GameState }) {
   const act = useStore((s) => s.act);
-  const tax = nextTax(game);
   const policy = game.insurance.find((p) => p.id === "hardware");
   const premium = hardwarePremium(game);
   const claims = game.ledger.filter((e) => e.key === "ledger.insuranceClaim");
@@ -328,19 +328,8 @@ function TaxInsurance({ game }: { game: GameState }) {
   return (
     <div className="fin-scroll">
       <h3 className="fin-h">{t("misc.corporateTax")}</h3>
+      <OpenReturns game={game} />
       <div className="shop-grid fin-grid-cards">
-        <div className="shop-card">
-          <div className="shop-name">
-            <strong>{t("misc.taxFor", { year: tax.year })}</strong>
-            <span>{t("misc.dueOn", { date: formatDay(tax.dueAt) })}</span>
-          </div>
-          <dl className="shop-specs">
-            <div><dt>{t("misc.profitIn", { month: tax.year })}</dt><dd className={`num${tax.profit < 0 ? " fin-neg" : ""}`}>{euroCents(tax.profit)}</dd></div>
-            <div><dt>{t("misc.lossesCarried")}</dt><dd className="num">{euroCents(game.taxLoss)}</dd></div>
-            <div><dt>{t("misc.taxRate")}</dt><dd className="num">30%</dd></div>
-            <div><dt>{t("misc.estimatedTax")}</dt><dd className="num">{euroCents(tax.tax)}</dd></div>
-          </dl>
-        </div>
         {paid && (
           <div className="shop-card">
             <div className="shop-name">

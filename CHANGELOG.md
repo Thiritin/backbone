@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- Income tax is no longer taken every April: you file a yearly return through DohleFormular, the assessment follows by post, and a late return costs a fee or brings an estimate that is always too high.
 - You can register on DOHLE for a certificate file, with the activation ID by email and the code by post, and download DohleFormular to send your advance VAT returns.
 - Email orders and leads now pick the cheapest of your Books products that fits their needs and budget, accept any quote up to that product's price, and go elsewhere when none of your products fits.
 - Books products stay editable after you choose a shop system.

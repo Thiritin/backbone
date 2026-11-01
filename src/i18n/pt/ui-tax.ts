@@ -49,4 +49,6 @@ export default {
   "ui-tax.formular.kind.year": () => "Declaração anual",
   "ui-tax.formular.send": () => "Enviar",
   "ui-tax.formular.none": () => "Sem declarações em aberto",
+  "ui-tax.returns.owed": () => "Montante",
+  "books.tab.tax": () => "Impostos",
 } satisfies Dict;

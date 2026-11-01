@@ -2441,7 +2441,7 @@ A company whose net worth stays below 80% of its level's threshold for 6 months 
 
 ## Bank, insurance and tax
 
-A level-1 company borrows at about 10% interest and a level-6 company at about 4.5%. Profit is taxed at 30% each April, and a company that stays out of cash for 30 days goes bankrupt.
+A level-1 company borrows at about 10% interest and a level-6 company at about 4.5%. Profit is taxed at 30% once the yearly return is filed, and a company that stays out of cash for 30 days goes bankrupt.
 
 **Loan interest** is the year's base rate plus a risk premium for the company level. Base rates follow these keyframes, with straight lines between them:
 
@@ -2501,7 +2501,14 @@ The loan margin in points is added to the base rate and the risk premium, and th
 
 A small business files no advance returns, charges no VAT and reclaims none. On 1 January a small business whose revenue last year was above the year's limit loses the rule by letter.
 
-**Tax.** Corporate tax takes 30% of each year's profit in April of the following year, and losses carry forward to later years. Taxable profit is the year's ledger without loan principal; instalments count only their interest, and hardware is a cost in the year it is bought.
+**Tax.** Income tax (corporate tax for a limited company) takes 30% of each year's profit once the yearly return is filed, and losses carry forward to later years. Taxable profit is the year's ledger without loan principal and taxes; instalments count only their interest, VAT payments count as a cost, and hardware is a cost in the year it is bought.
+
+| Item | Rule |
+|---|---|
+| Yearly return due | 31 May of the next year, 31 July for the years from 2018; the tax office reminds in March |
+| Assessment | 10 working days after filing, by letter with a bill due in 30 days; a refund books at once |
+| Late fee | 0.25% of the assessed tax for each month started after the due date, at least €25 a month, billed with the assessment |
+| Estimate | Two months after the due date, 1.3 × the real tax, at least €100; filing before the end of the following year replaces it and settles the difference |
 
 **Hardware insurance.** The monthly premium is 1.5 × the expected yearly cost of spare parts for every working component still within its life expectancy (part price × its current yearly failure rate, with the manufacturer and overheating factors) / 12, at least €1. A claim pays the spare part's price and the remote hands bill for a component that failed while insured and before the end of its life expectancy; wear-out failures after that are not covered, so parts past their lifetimes add nothing to the premium. The starting basement server costs about €1.40 a month to insure.
 

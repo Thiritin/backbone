@@ -1,4 +1,4 @@
-import { dateOf, hourOf, isMonthStart, yearOf } from "../00-core/time";
+import { dateOf, hourOf, isMonthStart } from "../00-core/time";
 import { TAX_RATE } from "../10-catalog/economy";
 import { COMPONENTS } from "../10-catalog/hardware";
 import { cents, loanAvailable } from "../45-billing/billing";
@@ -9,7 +9,6 @@ import { failureChance, type SimEvent } from "../88-tick/tick";
 
 export interface Policy { id: "hardware"; since: number }
 
-export const TAX_MONTH = 3;
 export const INSOLVENT_DAYS = 30;
 export const PREMIUM_MARKUP = 1.5;
 export const MIN_PREMIUM = 1;
@@ -51,12 +50,6 @@ export function taxFor(s: GameState, year: number): { profit: number; tax: numbe
   return base > 0 ? { profit, tax: cents(base * TAX_RATE), carry: 0 } : { profit, tax: 0, carry: cents(-base) };
 }
 
-// The next April's tax: last year's until it is paid, then the running year's so far.
-export function nextTax(s: GameState): { year: number; dueAt: number; profit: number; tax: number; carry: number } {
-  const year = yearOf(s.hour) - (dateOf(s.hour).getUTCMonth() < TAX_MONTH ? 1 : 0);
-  return { year, dueAt: hourOf(new Date(Date.UTC(year + 1, TAX_MONTH, 1))), ...taxFor(s, year) };
-}
-
 // Normal wear and tear is not covered: only failures within the component's life expectancy.
 const withinLife = (c: Component, at: number) => at - c.installedAt < COMPONENTS[c.kind].life * HOURS_PER_YEAR;
 
@@ -92,15 +85,6 @@ export function financeTick(s: GameState): SimEvent[] {
   const events: SimEvent[] = [];
   if (isMonthStart(s.hour)) {
     if (s.insurance.length) chargePremium(s);
-    if (dateOf(s.hour).getUTCMonth() === TAX_MONTH) {
-      const year = yearOf(s.hour) - 1;
-      const { profit, tax, carry } = taxFor(s, year);
-      s.taxLoss = carry;
-      if (tax > 0) {
-        book(s, "tax", "ledger.tax", { year }, -tax);
-        events.push({ app: "Finance", key: "event.tax", params: { year, tax, profit } });
-      } else if (profit < 0) events.push({ app: "Finance", key: "event.taxLoss", params: { year, carry } });
-    }
   }
   // The overdraft keeps the company solvent down to its limit.
   if (s.cash >= -(s.bank?.overdraft ?? 0)) s.brokeSince = null;

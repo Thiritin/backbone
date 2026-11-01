@@ -5,6 +5,7 @@ import { day, period } from "../tax";
 type Params = Record<string, string | number>;
 const pay = (p: Params) => `Vi preghiamo di bonificare ${euroCents(Number(p.amount))} entro il ${day(p.due)} su ${p.iban ? `IBAN ${p.iban}` : `conto ${p.account}, codice banca ${p.code}`}, indicando il riferimento ${p.number}.`;
 const PERIOD: Record<string, string> = {"month": "presenta la liquidazione IVA ogni mese, entro il 10 del mese successivo", "quarter": "presenta la liquidazione IVA ogni trimestre, entro il 10 del mese dopo il trimestre", "year": "non presenta liquidazioni periodiche e regola l'IVA con la dichiarazione annuale", "none": "non applica l'IVA e non presenta liquidazioni periodiche"};
+const TAXNAME: Record<string, string> = {"sole": "imposta sul reddito", "partnership": "imposta sul reddito", "limited": "imposta sulle società"};
 
 export default {
   "letter.taxQuestionnaire.subject": () => "Questionario di registrazione fiscale",
@@ -40,4 +41,15 @@ export default {
   "error.dohleMail": () => "Inserisca l'indirizzo email dell'impresa.",
   "error.dohleNoCode": () => "Il codice di attivazione non è ancora arrivato.",
   "error.dohleCode": () => "L'ID o il codice di attivazione è errato.",
+  "letter.taxReminder.subject": (p) => `Dichiarazione dei redditi ${p.year}`,
+  "letter.taxReminder.body": (p) => `Codice fiscale ${p.taxNo}. Le ricordiamo che la dichiarazione di ${p.name} per il ${p.year} scade il ${day(p.deadline)}. La presenti su DOHLE.`,
+  "letter.taxEstimate.subject": (p) => `Accertamento d'ufficio ${p.year}`,
+  "letter.taxEstimate.body": (p) => `Codice fiscale ${p.taxNo}. La dichiarazione di ${p.name} per il ${p.year} non è stata presentata, perciò abbiamo stimato l'imposta in ${euroCents(Number(p.amount))}. Presentarla entro la fine del prossimo anno sostituisce questa stima. ${pay(p)}`,
+  "letter.taxAssessment.subject": (p) => `Avviso di accertamento ${p.year}`,
+  "letter.taxAssessment.body": (p) => `Codice fiscale ${p.taxNo}. Determiniamo l'${TAXNAME[p.form] ?? TAXNAME.sole} di ${p.name} per il ${p.year}, su un utile imponibile di ${euroCents(Number(p.profit))}, in ${euroCents(Number(p.tax))}.${Number(p.carry) > 0 ? ` Una perdita di ${euroCents(Number(p.carry))} è riportata all'anno successivo.` : ""}${Number(p.fee) > 0 ? ` La sanzione per ritardo di ${p.months} mesi è di ${euroCents(Number(p.fee))}.` : ""}${Number(p.credit) > 0 ? ` Già versato sulla nostra stima: ${euroCents(Number(p.credit))}.` : ""} ${p.refund === undefined ? pay(p) : Number(p.refund) > 0 ? `Rimborsiamo ${euroCents(Number(p.refund))} sul suo conto.` : "Non è dovuto alcun pagamento."}`,
+  "ledger.vatYear": (p) => `Dichiarazione IVA annuale ${p.year}`,
+  "ledger.taxLate": (p) => `Sanzione per ritardo ${p.year}`,
+  "ledger.taxCredit": (p) => `Accredito della stima ${p.year}`,
+  "ledger.taxEstimate": (p) => `Imposta stimata ${p.year}`,
+  "error.taxYearClosed": () => "La stima di quest'anno è definitiva.",
 } satisfies Dict;

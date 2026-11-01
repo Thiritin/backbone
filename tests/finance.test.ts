@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
 import { COMPONENTS } from "../src/sim/10-catalog/hardware";
 import { HOURS_PER_YEAR } from "../src/sim/60-infra/status";
-import { hardwarePremium, INSOLVENT_DAYS, nextTax, profitBetween, yearStart } from "../src/sim/46-finance/finance";
+import { hardwarePremium, INSOLVENT_DAYS, profitBetween, yearStart } from "../src/sim/46-finance/finance";
 import { type GameState, type LedgerEntry } from "../src/sim/50-state";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { buyInsurance, cancelInsurance } from "../src/sim/90-actions/finance";
@@ -27,8 +27,8 @@ describe("setup fee income", () => {
   });
 });
 
-describe("corporate tax", () => {
-  it("takes 30% of last year's profit on April 1, counting loan interest and leaving principal out", () => {
+describe("taxable profit", () => {
+  it("counts loan interest and leaves principal out, and books no tax by itself in April", () => {
     const s = withServer(newGame(11));
     const h = at(2005, 6, 1);
     s.ledger = [
@@ -36,30 +36,8 @@ describe("corporate tax", () => {
       entry(h, "loans", -500, "ledger.loanRepayment", { amount: 5_000, interest: 50 }), entry(at(2006, 2, 1), "payments", 999),
     ];
     expect(profitBetween(s, yearStart(2005), yearStart(2006))).toBe(7_950);
-    const cash = s.cash;
-    const events = tickInto(s, at(2006, 4, 1));
-    expect(s.ledger.find((e) => e.category === "tax")).toMatchObject({ key: "ledger.tax", params: { year: 2005 }, amount: -2_385 });
-    expect(events).toContainEqual({ app: "Finance", key: "event.tax", params: { year: 2005, tax: 2_385, profit: 7_950 } });
-    expect(s.cash).toBeLessThan(cash - 2_385 + 1);
-  });
-
-  it("carries a loss forward and offsets it against the next year's profit", () => {
-    const s = withServer(newGame(12));
-    // Without a line, only power touches the profit.
-    s.homeLine = { id: "", next: null };
-    s.ledger = [entry(at(2005, 6, 1), "hardware", -3_000), entry(at(2006, 6, 1), "payments", 5_000)];
-    const loss = tickInto(s, at(2006, 4, 1));
-    expect(loss).toContainEqual({ app: "Finance", key: "event.taxLoss", params: { year: 2005, carry: 3_000 } });
-    expect(s.taxLoss).toBe(3_000);
+    tickInto(s, at(2006, 4, 1));
     expect(s.ledger.some((e) => e.category === "tax")).toBe(false);
-    s.hour = at(2007, 1, 15);
-    // The power of the one hour ticked in April 2006 lowers that year's profit by a cent.
-    const next = nextTax(s);
-    expect(next).toMatchObject({ year: 2006, dueAt: at(2007, 4, 1) });
-    expect(next.tax).toBeCloseTo(600, 1);
-    tickInto(s, at(2007, 4, 1));
-    expect(s.ledger.find((e) => e.category === "tax")?.amount).toBe(-next.tax);
-    expect(s.taxLoss).toBe(0);
   });
 });
 

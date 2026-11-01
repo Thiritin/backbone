@@ -1,7 +1,7 @@
 // docs/design/plans/tax-office.md: what the player files with the tax office through DOHLE.
 import { yearOf } from "../00-core/time";
 import type { GameState } from "../50-state";
-import { answer, CERT_FILE, certOk, fileVat, FORMULAR_APP, normalCode, registerDohle, smallLimit, taxNumber } from "../80-business/tax";
+import { answer, CERT_FILE, certOk, fileVat, fileYear, yearOpen, FORMULAR_APP, normalCode, registerDohle, smallLimit, taxNumber } from "../80-business/tax";
 import { salesAddress } from "../80-business/mail";
 import { freeSpot } from "./docs";
 import type { ActionResult } from "./hardware";
@@ -19,14 +19,16 @@ export function answerQuestionnaire(s: GameState, expected: number, small: boole
   return { ok: true };
 }
 
-// An advance VAT return filed with the tax office.
-export function fileVatReturn(s: GameState, id: string): ActionResult {
+// A return filed with the tax office: an advance VAT return, or the yearly return until the end of the following year.
+export function fileReturn(s: GameState, id: string): ActionResult {
   if (!taxNumber(s)) return fail("error.taxNumber");
   if (!certOk(s)) return fail("error.dohleCert");
-  const r = s.tax.returns.find((x) => x.id === id && x.kind === "vat");
+  const r = s.tax.returns.find((x) => x.id === id);
   if (!r) return fail("error.taxReturn");
   if (r.filedAt !== null) return fail("error.taxReturnFiled");
-  fileVat(s, r);
+  if (r.kind === "vat") fileVat(s, r);
+  else if (!yearOpen(s, r)) return fail("error.taxYearClosed");
+  else fileYear(s, r);
   return { ok: true };
 }
 

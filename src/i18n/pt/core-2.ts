@@ -1,6 +1,6 @@
 import type { Dict } from "../lang";
 import { t } from "../en";
-import { euro, euroCents } from "../../sim/00-core/money";
+import { euro } from "../../sim/00-core/money";
 
 // bare, definite, indefinite
 const PARTS: Record<string, [string, string, string]> = {
@@ -19,10 +19,6 @@ const who = (p: Record<string, string | number>, d: string) => String(p.hostname
 const s = (n: unknown, one: string, many: string) => (Number(n) === 1 ? one : many);
 
 export default {
-  "event.tax.title": () => "Imposto sobre o rendimento pago",
-  "event.tax.text": (p) => `Pagaste ${euroCents(Number(p.tax))} de imposto sobre um lucro de ${euroCents(Number(p.profit))} em ${p.year}.`,
-  "event.taxLoss.title": () => "Sem imposto sobre o rendimento",
-  "event.taxLoss.text": (p) => `${p.year} fechou com prejuízo, e ${euroCents(Number(p.carry))} de prejuízos transitam para o ano seguinte.`,
   "event.cashNegative.title": () => "Caixa abaixo de zero",
   "event.cashNegative.text": (p) => `A tua conta está a descoberto. Se ficar abaixo de zero durante ${p.days} dias e o banco deixar de emprestar, a empresa vai à falência.`,
   "event.bankrupt.title": () => "Falência",

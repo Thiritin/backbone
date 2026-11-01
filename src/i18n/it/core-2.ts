@@ -1,6 +1,6 @@
 import type { Dict } from "../lang";
 import { t } from "../en";
-import { euro, euroCents } from "../../sim/00-core/money";
+import { euro } from "../../sim/00-core/money";
 
 // bare, definite, indefinite
 const PARTS: Record<string, [string, string, string]> = {
@@ -19,10 +19,6 @@ const who = (p: Record<string, string | number>, d: string) => String(p.hostname
 const s = (n: unknown, one: string, many: string) => (Number(n) === 1 ? one : many);
 
 export default {
-  "event.tax.title": () => "Imposta societaria pagata",
-  "event.tax.text": (p) => `Hai pagato ${euroCents(Number(p.tax))} di imposte su un utile di ${euroCents(Number(p.profit))} nel ${p.year}.`,
-  "event.taxLoss.title": () => "Nessuna imposta societaria",
-  "event.taxLoss.text": (p) => `Il ${p.year} si è chiuso in perdita, e ${euroCents(Number(p.carry))} di perdite vengono riportati all'anno successivo.`,
   "event.cashNegative.title": () => "Liquidità sotto zero",
   "event.cashNegative.text": (p) => `Il tuo conto è scoperto. Se resta sotto zero per ${p.days} giorni e la banca non presta più, l'azienda fallisce.`,
   "event.bankrupt.title": () => "Fallimento",
