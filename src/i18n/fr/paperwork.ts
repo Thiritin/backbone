@@ -13,6 +13,8 @@ export default {
   "doc.form.limited": () => "Statuts.pdf",
   "error.notRegistered": () => "L'entreprise n'est pas encore immatriculée.",
   "error.legalFormDown": () => "Une forme juridique ne peut passer qu'à une forme supérieure.",
+  "error.registerSole": () => "Une activité ne peut être déclarée qu'en entreprise individuelle.",
+  "error.companyLaw": () => "Fonder une SARL nécessite Droit des sociétés dans Recherche.",
   "error.changePending": () => "Un changement de forme juridique est déjà en cours.",
   "error.formSigned": () => "Ce formulaire est déjà signé.",
   "error.mailAddress": () => "Saisis une adresse e-mail valide.",

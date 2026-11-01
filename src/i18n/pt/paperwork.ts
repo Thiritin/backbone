@@ -13,6 +13,8 @@ export default {
   "doc.form.limited": () => "Pacto social.pdf",
   "error.notRegistered": () => "A empresa ainda não está registada.",
   "error.legalFormDown": () => "Uma forma jurídica só pode mudar para uma superior.",
+  "error.registerSole": () => "Um negócio só pode ser registado como empresário em nome individual.",
+  "error.companyLaw": () => "Fundar uma sociedade por quotas requer Direito societário da Pesquisa.",
   "error.changePending": () => "Já está em curso uma mudança de forma jurídica.",
   "error.formSigned": () => "Este formulário já está assinado.",
   "error.mailAddress": () => "Introduz um endereço de email válido.",
