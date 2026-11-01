@@ -89,7 +89,7 @@ type Page = "overview" | "instances" | "images" | "keys" | "hypervisors" | "flav
 const TAB_LABELS = { Overview: () => t("browser-consoles-1.hzOverview"), Log: () => t("browser-consoles-1.hzLog"), Console: () => t("browser-consoles-1.console") };
 
 export function Horizont(p: PanelProps) {
-  const era = eraAt(ERAS, p.game), { game, c, f } = p, openConsole = useStore((s) => s.openConsole);
+  const era = eraAt(ERAS, p), { game, c, f } = p, openConsole = useStore((s) => s.openConsole);
   const link = parseCreate("openstash", p.path), [page, setPage] = useState<Page>(link?.screen === "packages" ? "flavors" : "instances"), [launching, setLaunching] = useState(link?.screen === "create");
   const { vms, dialog } = useVms(game, c, f), sw = useSoftware(game, c, f), nv = useNewVm(game, c, link?.screen === "create" ? link.order : undefined), health = summaryOf(game, c, null);
   if (!p.signedIn) return (
