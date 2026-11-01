@@ -37,9 +37,11 @@ import { startGame } from "../src/sim/90-actions/start";
 import { fillLines } from "../src/sim/80-business/website";
 import { OWNED, owns } from "../src/sim/80-business/marketing";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
-import { chooseShop } from "../src/sim/90-actions/shop";
+import { installShop } from "../src/sim/90-actions/shop";
+import { isLicensed, issueKey } from "../src/sim/60-infra/licence";
+import { shopCount } from "../src/sim/80-business/shop";
 import { SHOPS, type ShopId } from "../src/sim/10-catalog/shops";
-import { shopOnSale, shopUpfront } from "../src/sim/10-catalog/shop-licences";
+import { shopEditionFor, shopLease, shopOnSale, shopUpfront } from "../src/sim/10-catalog/shop-licences";
 import { bookMail } from "../src/sim/90-actions/mail";
 import { registerCompanyDomain, signRegistrar } from "../src/sim/90-actions/registrar";
 import { derivedDomain } from "../src/sim/30-customers/domains";
@@ -160,12 +162,22 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
   // Product management, Marketing basics and Shop systems as know-how allows; web design and the cheapest shop once no server is due and
 // cash keeps a reserve.
   let needServer = false;
+  // The cheapest shop's key, or its lease, paid and installed on the first panel VM.
+  const buyShop = (id: ShopId) => {
+    const host = s.clusters.find((c) => c.kind === "panel" && c.panel);
+    if (!host) return;
+    const k = isLicensed(id) ? issueKey(s, id, shopLease(id, s.hour) === null ? null : shopEditionFor(id, s.hour, shopCount(s))?.id ?? null) : undefined;
+    if (!installShop(s, host.id, id, k?.key).ok) return;
+    const price = shopUpfront(id, s.hour);
+    s.cash -= price;
+    s.ledger = [...s.ledger, { hour: s.hour, category: "licenses", key: "ledger.order", params: { vendor: id, order: k?.orderId ?? id }, amount: -price }];
+  };
   const learn = () => {
     const next = ["products", "marketingBasics", "shops"].find((id) => !s.unlocks.includes(id));
     if (next && !s.training) research(s, next);
     if (!owns(s, "website") && !needServer && s.cash >= OWNED.website.setup + 2000) setUpChannel(s, "website");
     const upfront = (id: ShopId) => shopUpfront(id, s.hour), shop = SHOPS.filter((v) => shopOnSale(v.id, s.hour)).sort((a, b) => upfront(a.id) - upfront(b.id))[0];
-    if (owns(s, "website") && s.unlocks.includes("shops") && !s.shop.variant && !needServer && s.cash >= upfront(shop.id) + 2000) chooseShop(s, shop.id);
+    if (owns(s, "website") && s.unlocks.includes("shops") && !s.shop.variant && !needServer && s.cash >= upfront(shop.id) + 2000) buyShop(shop.id);
     for (const k of ["products", "shop"]) if (!(k in reached) && (k === "shop" ? !!s.shop.variant : s.unlocks.includes(k))) reached[k] = Math.round((10 * s.hour) / MONTH) / 10;
   };
   // The cheapest line with more upload this year, once the basement's evening peak reaches 90% of the line.

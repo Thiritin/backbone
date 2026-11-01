@@ -16,10 +16,9 @@ import { matchTransfer } from "../src/sim/90-actions/billing";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { buyLicence } from "../src/sim/90-actions/licences";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
-import { chooseShop } from "../src/sim/90-actions/shop";
 import { importFromShop, setPaymentMethod } from "../src/sim/90-actions/shoplink";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { automate, readyGame } from "./fixtures";
+import { automate, readyGame, installWithKey } from "./fixtures";
 
 const web = { product: "webHosting" as const, size: 1, sla: "basic" as const };
 const DAY = 24;
@@ -35,7 +34,7 @@ function shopGame(methods: MethodId[] = [], seed = 5): GameState {
   s.cash = 1e6;
   setUpChannel(s, "website");
   s.unlocks = [...s.unlocks, "shops"];
-  expect(chooseShop(s, "modemBill").ok).toBe(true);
+  installWithKey(s, "modemBill");
   s.hour += SHOP_SETUP_HOURS;
   s.modules = [...s.modules, "shop-link", ...methods];
   return automate(s);

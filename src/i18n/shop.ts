@@ -6,7 +6,6 @@ export const SHOP_EN: Record<string, (p: Params) => string> = {
   "error.needsShopSkill": () => "Research Shop systems first.",
   "error.shopInUse": () => "This shop system already runs your orders.",
   "error.shopNotSold": () => "This shop system is not sold this year.",
-  "error.shopNoOwn": () => "This shop system is only leased.",
   "error.unknownModule": () => "There is no such module.",
   "error.moduleOwned": () => "You already have this module.",
   "error.moduleNotSold": () => "Your shop system sells no extra modules.",
