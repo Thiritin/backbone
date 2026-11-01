@@ -59,7 +59,7 @@ describe("browser resolver", () => {
     const s = readyGame(1), v = web(s);
     v.domain = undefined;
     const ip = siteHost(s, v.id)!;
-    expect(ip).toBe(privateIp(s, s.workloads.find((w) => w.serviceId === v.id)!.id));
+    expect(ip).toBe(machineAddress(s, s.workloads.find((w) => w.serviceId === v.id)!.id));
     expect(resolve(s, ip).page).toEqual({ kind: "customer", serviceId: v.id });
   });
 

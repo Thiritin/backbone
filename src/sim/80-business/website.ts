@@ -8,7 +8,7 @@ import type { GameState } from "../50-state";
 import { serviceOnline } from "../40-support/status";
 import { HOW_TO, KNOWLEDGE_BASE } from "../40-support/tickets";
 import { bookable, diskFits, lineOffered, noRoomError, nodeUsed, serverOf, vmRoom, workloadOnline, workloadsOf, type Cluster, type Workload } from "../60-infra/cluster";
-import { privateIp } from "../60-infra/addresses";
+import { machineAddress } from "../60-infra/addresses";
 import { hostPerf } from "../60-infra/php";
 import { nodeUsage } from "../60-infra/usage";
 import type { SimEvent } from "../88-tick/tick";
@@ -157,5 +157,5 @@ export function siteHost(s: GameState, serviceId: string): string | null {
   const v = s.services.find((x) => x.id === serviceId);
   if (!v || v.product !== "webHosting") return null;
   const w = workloadsOf(s, serviceId)[0];
-  return v.domain ?? (w ? privateIp(s, w.id) : null);
+  return v.domain ?? (w ? machineAddress(s, w.id) : null);
 }
