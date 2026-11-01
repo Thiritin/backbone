@@ -28,7 +28,6 @@ import { IndexSite } from "./sites/index/IndexSite";
 import { OfficeSite } from "./sites/office/OfficeSite";
 import { LexwearSite } from "./sites/lexwear/LexwearSite";
 import { WikiSite } from "./sites/wiki/WikiSite";
-import { OFFICE_TITLE } from "../../../sim/80-business/office";
 import { LEXWEAR } from "../../../sim/80-business/lexwear";
 import { SoftwarePage } from "./sites/software/registry";
 import { RegistrarSite } from "./sites/registrars";
@@ -73,8 +72,8 @@ function titleOf(game: GameState, r: Resolved): string {
     case "video": return VIDEO_TITLE;
     case "phishing": return t("misc1.browser.onlineBanking", { name: senderById(p.sender).name });
     case "sponsorboard": return BOARD_TITLE;
-    case "index": return "Yahoy! Directory";
-    case "office": return OFFICE_TITLE;
+    case "index": return t("browser-sites-1.ix.title");
+    case "office": return t("browser-sites-1.of.title");
     case "lexwear": return LEXWEAR;
     case "wiki": return WIKI_TITLE;
     case "shop": return game.company.name;
@@ -120,7 +119,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   return (
     <>
       {waiting && <div className="web-load" aria-hidden />}
-      <div className={`web-view${paper ? " paper" : ""}`}>{body}</div>
+      <div className={`web-view${paper ? " white" : ""}`}>{body}</div>
     </>
   );
 }
@@ -168,12 +167,21 @@ export function BrowserApp() {
     setTabs([...tabs, { id, history: [to], at: 0, nav: 0 }]);
     setActive(id);
   };
-  const close = (id: number) => {
-    if (tabs.length < 2) return;
-    const rest = tabs.filter((x) => x.id !== id);
+  const keep = (rest: Tab[]) => {
+    if (!rest.length || rest.length === tabs.length) return;
     setTabs(rest);
-    if (id === active) setActive(rest[Math.max(0, tabs.findIndex((x) => x.id === id) - 1)].id);
+    if (!rest.some((x) => x.id === active)) {
+      const at = tabs.findIndex((x) => x.id === active);
+      setActive((tabs.slice(0, at).reverse().find((x) => rest.includes(x)) ?? rest[0]).id);
+    }
   };
+  const close = (id: number) => keep(tabs.filter((x) => x.id !== id));
+  const tabMenu = (i: number) => [
+    { label: t("misc1.browser.closeTab"), run: () => close(tabs[i].id), disabled: tabs.length < 2 },
+    { label: t("misc1.browser.closeOthers"), run: () => keep([tabs[i]]), disabled: tabs.length < 2 },
+    { label: t("misc1.browser.closeLeft"), run: () => keep(tabs.slice(i)), disabled: i === 0 },
+    { label: t("misc1.browser.closeRight"), run: () => keep(tabs.slice(0, i + 1)), disabled: i === tabs.length - 1 },
+  ];
 
   // Another app asked for an address: show the tab that already has it, else a new one.
   useFocus("Browser", (f) => {
@@ -191,10 +199,10 @@ export function BrowserApp() {
   return (
     <div className="br">
       <div className="br-tabs" role="tablist">
-        {tabs.map((x) => {
+        {tabs.map((x, i) => {
           const rx = resolve(game, x.history[x.at]);
           return (
-            <div key={x.id} role="tab" aria-selected={x.id === tab.id} className="br-tab" tabIndex={0} onClick={() => setActive(x.id)}
+            <div key={x.id} role="tab" aria-selected={x.id === tab.id} className="br-tab" tabIndex={0} onClick={() => setActive(x.id)} onContextMenu={menuOn(() => tabMenu(i))}
               onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setActive(x.id)}>
               <Favicon game={game} r={rx} />
               <span className="br-tab-title">{titleOf(game, rx)}</span>
