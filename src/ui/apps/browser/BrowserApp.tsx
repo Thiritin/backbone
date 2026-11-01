@@ -27,6 +27,7 @@ import { FritzOz } from "./mgmt/FritzOz";
 import { KvmPage, kvmTitle } from "./ipmi/KvmPage";
 import { SwitchPage, switchTitle } from "./mgmt/Switch";
 import { RouterPage, routerTitle } from "./mgmt/Router";
+import { UpsPage, upsTitle } from "./mgmt/Ups";
 import { isOwnRouter } from "../../../sim/60-infra/routers";
 import { CompanySite } from "./sites/CompanySite";
 import { SponsorBoard } from "./sites/SponsorBoard";
@@ -91,6 +92,10 @@ function titleOf(game: GameState, r: Resolved): string {
       const d = game.devices.find((x) => x.id === p.deviceId);
       return d ? switchTitle(d) : r.host;
     }
+    case "ups": {
+      const d = game.devices.find((x) => x.id === p.deviceId);
+      return d ? upsTitle(d) : r.host;
+    }
     case "video": return VIDEO_TITLE;
     case "phishing": return t("misc1.browser.onlineBanking", { name: senderById(p.sender).name });
     case "sponsorboard": return BOARD_TITLE;
@@ -150,6 +155,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
     body = d && isOwnRouter(d) ? <RouterPage game={game} deviceId={p.deviceId} host={r.host} /> : <FritzOz game={game} deviceId={p.deviceId} host={r.host} />;
   }
   else if (p.kind === "switch") body = <SwitchPage game={game} deviceId={p.deviceId} host={r.host} />;
+  else if (p.kind === "ups") body = <UpsPage game={game} deviceId={p.deviceId} host={r.host} />;
   else if (p.kind === "host") body = <HostPage host={r.host} />;
   else body = <NotFound host={r.host} />;
   const paper = !waiting && r.load !== "down" && ["company", "customer", "vendor", "sponsorboard", "registrar", "bank", "supplier", "index", "office", "shop", "software", "os"].includes(p.kind);

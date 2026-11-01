@@ -293,8 +293,14 @@ Anchors: the AVM Fritz!Box 7050, 7390, 7590 and 5690 at their launch prices, the
 | UPS 3000 VA | 2U | 1,800 Wh | 2005 | €900 | 25 W |
 | UPS 5 kVA | 3U | 3,500 Wh | 2005 | €2,500 | 50 W |
 | UPS 10 kVA (two feeds) | 6U | 8,000 Wh | 2008 | €6,000 | 100 W |
+| UPS 1500 VA, network card | 1U | 600 Wh | 2005 | €480 | 12 W |
+| UPS 3000 VA, network card | 2U | 1,800 Wh | 2005 | €1,200 | 27 W |
+| UPS 5 kVA, network card | 3U | 3,500 Wh | 2005 | €2,800 | 52 W |
+| UPS 10 kVA, network card (two feeds) | 6U | 8,000 Wh | 2008 | €6,300 | 102 W |
 
-Anchors: an APC Smart-UPS 1500 cost about USD 600 in 2005, a 3000 about USD 1,200, and the Smart-UPS RT and Symmetra units of 5 to 10 kVA USD 3,000 to 7,000. A UPS carries a location through a grid outage for its battery in Wh divided by the draw of the location's racks.
+Anchors: an APC Smart-UPS 1500 cost about USD 600 in 2005, a 3000 about USD 1,200, and the Smart-UPS RT and Symmetra units of 5 to 10 kVA USD 3,000 to 7,000. A UPS carries a location through a grid outage for its battery in Wh divided by the draw of the location's racks. Only a UPS whose power cord is plugged in counts.
+
+A UPS with a network card (anchor: an APC Network Management Card at about USD 300 to 400) takes an address on the LAN and has a web interface with its battery, load, runtime and the servers it protects. When an outage outlasts the batteries, it signals the servers at its location to shut down cleanly instead of losing power, so no data is corrupted. A server hears the signal when both it and the UPS are online and either runs the `nuts-client` agent, installed with apt from its shell, or is a VMwhere or HyperVee node, whose hypervisor API the UPS drives. Reinstalling the OS removes the agent.
 
 | Switched PDU | Height | Outlets | Sold from | Price | Full power |
 | --- | --- | --- | --- | --- | --- |

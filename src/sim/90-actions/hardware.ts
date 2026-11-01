@@ -798,6 +798,14 @@ export function setPlugged(s: GameState, deviceId: string, componentId: string, 
   return { ok: true };
 }
 
+// Installs or removes the UPS shutdown agent on a server's OS (ups.ts), from its shell.
+export function setUpsAgent(s: GameState, deviceId: string, on: boolean): ActionResult {
+  const d = s.devices.find((x) => x.id === deviceId);
+  if (!d) return fail("error.unknownDevice");
+  d.upsAgent = on;
+  return { ok: true };
+}
+
 export const LABEL_MAX = 40;
 // An empty label clears it.
 export function setLabel(s: GameState, deviceId: string, label: string | null): ActionResult {
