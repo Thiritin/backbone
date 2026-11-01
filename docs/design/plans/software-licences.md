@@ -33,7 +33,7 @@ The catalog carries these eras (`licensing` in `src/sim/10-catalog/platforms.ts`
 |---|---|
 | Windoors Server | perpetual per machine; from 2016-10 per core a month, 16 per server and 8 per CPU at least |
 | VMwhere | perpetual per CPU socket; from 2023-12 per core a year, 16 per CPU at least |
-| cPanic | Dedicated per server a month; from 2019-06 the account editions Solo, Admin, Pro and Premier |
+| cPanic | Dedicated per server a month; from 2019-06 the account editions Solo, Admin, Pro and Premier, and a Dedicated key renews as the one that fits its accounts |
 | DirectAdmen | lifetime per major or Standard a month; from 2019-09 monthly only, Personal, Lite and Standard |
 | Veeham Backup | perpetual per CPU socket; from 2018 per server a year |
 | MultiKraft | per server a month; from 2020 per game server beyond 25 a month |

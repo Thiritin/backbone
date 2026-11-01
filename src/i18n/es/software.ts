@@ -13,6 +13,8 @@ export default {
   "ticket.mail.licenceRenewed.text": (p) => `Su suscripción de ${p.name} se ha renovado por un mes más. ${p.count === 1 ? "1 clave" : `${p.count} claves`}, ${euroCents(Number(p.amount))} cobrados.`,
   "ticket.mail.licenceLapsed.subject": (p) => `Suscripción de ${p.name} caducada`,
   "ticket.mail.licenceLapsed.text": (p) => `No pudimos cobrar la renovación de su clave de ${p.name} ${p.key}. La licencia ha caducado y se renovará en cuanto se realice el pago.`,
+  "ticket.mail.licenceEditionChange.subject": (p) => `Cambio en su licencia de ${p.name}`,
+  "ticket.mail.licenceEditionChange.text": (p) => `Ya no vendemos la edición ${p.from}. En su próxima renovación, su clave de ${p.name} ${p.key} se renovará como ${p.to} por ${euroCents(Number(p.amount))} al mes.`,
   "ledger.licenseOnce": (p) => `Licencia de ${p.name}, ${p.machine}`,
   "ledger.balancer": (p) => `${p.name}, ${p.cluster}`,
   "ledger.appSuite": (p) => `VMwhere App Suite, ${p.cluster}`,
