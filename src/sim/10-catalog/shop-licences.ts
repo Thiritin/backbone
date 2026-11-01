@@ -5,6 +5,7 @@ import { eraAt, type LicenseEra } from "./server-os";
 import { yearOf } from "../00-core/time";
 import { shopById, SHOPS, type ShopId } from "./shops";
 import type { Site } from "./sites";
+import { t } from "../../i18n/en";
 
 export interface ShopLicence {
   id: ShopId;
@@ -65,7 +66,7 @@ const TERMS: Record<ShopId, Omit<ShopLicence, "id" | "name">> = {
     ],
     trialDays: null, caps: "servers",
   },
-  orderBocks: { licensing: [{ from: 2006, kind: "free", fee: 0, cut: 0.06 }] },
+  orderBocks: { licensing: [{ from: 2006, kind: "free", fee: 0, cut: 0.06 }], site: { host: "orderbocks.com", get tagline() { return t("shop-link.tagline.orderBocks"); }, get blurb() { return t("orderbocks.v.pitch"); }, features: [], eras: [{ from: 2006, look: "early" }] } },
   boxBillin: { licensing: [{ from: 2011, kind: "free", fee: 0 }] },
 };
 

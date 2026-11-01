@@ -1,0 +1,122 @@
+/* orderbocks.com by year: a 2006 portal with a left link column, a 2011 glossy hero, a 2014 flat blue page, a 2019 dark landing page. */
+.obv { --ob-orange: #e8601c; min-height: 100%; color: #1d2a3a; }
+.obv a { color: inherit; }
+.obv h1 { margin: 0 0 12px; }
+.obv h3 { margin: 0 0 4px; }
+.obv p { margin: 0 0 8px; }
+.obv .num { font-variant-numeric: tabular-nums; }
+.obv-head { display: flex; align-items: center; gap: 16px; }
+.obv-logo { text-decoration: none; }
+.obv-maker { margin-left: auto; }
+.obv-nav { display: flex; }
+.obv-nav a { text-decoration: none; }
+.obv-table { width: 100%; border-collapse: collapse; margin: 0 0 16px; }
+.obv-table th, .obv-table td { text-align: left; vertical-align: top; }
+.obv-table td p { margin: 4px 0 0; }
+.obv-features { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.obv-steps { margin: 0; padding-left: 20px; display: grid; gap: 8px; }
+.obv-state { font-weight: 700; color: #2f8a3a; }
+.obv-btn { cursor: pointer; }
+.obv .shop-table { width: 100%; border-collapse: collapse; }
+.obv .shop-table th, .obv .shop-table td { text-align: left; padding: 6px 8px; }
+.obv-cta { display: inline-block; text-decoration: none; cursor: pointer; }
+
+/* 2006 to 2011: fixed 760 px page, navy masthead, orange-bulleted link column, tables with grey-blue heads. */
+.obv-box { background: #c9d3df; font: 11px/1.5 Verdana, Geneva, sans-serif; padding: 12px 0 20px; display: grid; grid-template-columns: minmax(0, 1fr) 160px 600px minmax(0, 1fr); grid-template-areas: ". head head ." ". nav main ." ". foot foot ."; }
+.obv-box .obv-head { grid-area: head; background: #1b3564; color: #fff; padding: 14px 16px; border-bottom: 4px solid var(--ob-orange); }
+.obv-box .obv-logo { font-size: 26px; }
+.obv-box .obv-maker { font-size: 10px; color: #b9c7de; }
+.obv-box .obv-nav { grid-area: nav; flex-direction: column; background: #eef2f7; border-right: 1px solid #b4c2d4; padding: 10px 0; }
+.obv-box .obv-nav a { padding: 4px 12px 4px 22px; position: relative; color: #1b3564; font-weight: 700; }
+.obv-box .obv-nav a::before { content: ""; position: absolute; left: 10px; top: 9px; width: 5px; height: 5px; background: var(--ob-orange); }
+.obv-box .obv-nav a.on { background: #fff; color: var(--ob-orange); }
+.obv-box .obv-main { grid-area: main; background: #fff; padding: 14px 16px 20px; min-height: 340px; }
+.obv-box h1 { font-size: 15px; color: #1b3564; border-bottom: 1px dotted #8ea3c3; padding-bottom: 3px; }
+.obv-box h2 { font-size: 12px; color: #1b3564; }
+.obv-box .obv-hero { background: #fff6ef; border: 1px solid #f1c4a6; padding: 12px 14px; margin-bottom: 14px; }
+.obv-box .obv-hero h1 { font-size: 22px; border: 0; }
+.obv-box .obv-cta { color: var(--ob-orange); font-weight: 700; text-decoration: underline; }
+.obv-box .obv-features h3 { font-size: 11px; color: var(--ob-orange); }
+.obv-box .obv-table, .obv-box .shop-table { border: 1px solid #8ea3c3; }
+.obv-box .obv-table th, .obv-box .shop-table th { background: #c9d6e8; color: #1b3564; padding: 3px 6px; border: 1px solid #a8b8cf; }
+.obv-box .obv-table td, .obv-box .shop-table td { padding: 4px 6px; border: 1px solid #d5dde8; }
+.obv-box .obv-btn { font: bold 11px Verdana, sans-serif; color: #fff; background: #f08a4b; border: 2px outset #f4a777; padding: 2px 10px; }
+.obv-box .obv-foot { grid-area: foot; background: #1b3564; color: #b9c7de; font-size: 10px; padding: 5px 16px; text-align: right; }
+
+/* 2011 to 2014: glossy navy band with a rounded, reflective hero, pill navigation and gel buttons. */
+.obv-gloss { background: linear-gradient(#0f2d52, #1f4f80 260px, #e9eff5 260px); font: 13px/1.55 Arial, Helvetica, sans-serif; padding-bottom: 24px; }
+.obv-gloss > * { width: 940px; max-width: calc(100% - 32px); margin-left: auto; margin-right: auto; box-sizing: border-box; }
+.obv-gloss .obv-head { color: #fff; padding: 18px 0 10px; }
+.obv-gloss .obv-logo { font-size: 28px; text-shadow: 0 2px 4px rgb(0 0 0 / 0.4); }
+.obv-gloss .obv-maker { color: #a9c3e2; }
+.obv-gloss .obv-nav { gap: 4px; padding: 4px; border-radius: 20px; background: rgb(255 255 255 / 0.12); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2); }
+.obv-gloss .obv-nav a { padding: 5px 16px; border-radius: 16px; color: #fff; font-weight: 700; }
+.obv-gloss .obv-nav a.on { background: linear-gradient(#fcc06a, #f7941d 50%, #ee8410 51%, #f39a2c); text-shadow: 0 -1px 0 rgb(0 0 0 / 0.25); }
+.obv-gloss .obv-main { margin-top: 18px; background: #fff; border-radius: 10px; padding: 22px 26px; box-shadow: 0 4px 18px rgb(0 20 50 / 0.25); }
+.obv-gloss .obv-hero { margin: -22px -26px 22px; padding: 28px 26px 30px; border-radius: 10px 10px 0 0; color: #fff; background: linear-gradient(#3f86cf, #23609f 55%, #1d548e 56%, #2b6cb0); }
+.obv-gloss .obv-hero h1 { font-size: 40px; text-shadow: 0 2px 3px rgb(0 0 0 / 0.35); -webkit-box-reflect: below -6px linear-gradient(transparent 60%, rgb(255 255 255 / 0.25)); }
+.obv-gloss .obv-hero .ob-mark b { color: #ffb26b; }
+.obv-gloss .obv-hero p { font-size: 16px; max-width: 560px; margin-top: 18px; }
+.obv-gloss .obv-cta, .obv-gloss .obv-btn { font: bold 13px Arial, sans-serif; color: #fff; padding: 7px 20px; border: 1px solid #c86a06; border-radius: 16px; text-shadow: 0 -1px 0 rgb(0 0 0 / 0.25);
+  background: linear-gradient(#fcc06a, #f7941d 50%, #ee8410 51%, #f39a2c); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.5), 0 2px 4px rgb(0 0 0 / 0.25); }
+.obv-gloss .obv-features li { padding: 14px; border: 1px solid #c3d2e2; border-radius: 8px; background: linear-gradient(#fff, #edf3f9); }
+.obv-gloss .obv-features h3 { color: #1f4f80; }
+.obv-gloss h1 { color: #1f4f80; font-size: 24px; }
+.obv-gloss .obv-table th, .obv-gloss .shop-table th { background: linear-gradient(#f6f9fc, #dde7f1); color: #2a4a6b; padding: 6px 8px; border-bottom: 1px solid #b9c9da; }
+.obv-gloss .obv-table td { padding: 8px; border-bottom: 1px solid #e3eaf1; }
+.obv-gloss .obv-foot { color: #5d7086; text-align: center; padding-top: 14px; font-size: 11px; }
+
+/* 2014 to 2019: flat. Full-width blue hero, white uppercase nav, three cards, green call to action. */
+.obv-flat { background: #fff; font: 14px/1.6 "Open Sans", "Segoe UI", "Helvetica Neue", Arial, sans-serif; color: #33414e; }
+.obv-flat .obv-head { background: #1e88c7; color: #fff; padding: 0 40px; height: 60px; }
+.obv-flat .obv-logo { font-size: 22px; }
+.obv-flat .obv-logo .ob-mark b { color: #ffd2b8; }
+.obv-flat .obv-logo .ob-cube { background: #fff; }
+.obv-flat .obv-maker { color: #cfe7f6; font-size: 12px; order: 3; }
+.obv-flat .obv-nav { background: #1e88c7; padding: 0 28px; border-top: 1px solid rgb(255 255 255 / 0.18); }
+.obv-flat .obv-nav a { color: #d7ecf8; padding: 12px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 3px solid transparent; }
+.obv-flat .obv-nav a.on { color: #fff; border-bottom-color: #fff; }
+.obv-flat .obv-main { padding: 32px 40px 40px; max-width: 1000px; }
+.obv-flat .obv-home { max-width: none; padding: 0 0 40px; }
+.obv-flat .obv-hero { background: #1e88c7; color: #fff; padding: 48px 40px 56px; text-align: center; }
+.obv-flat .obv-hero h1 { font-size: 46px; font-weight: 300; }
+.obv-flat .obv-hero .ob-mark b { color: #ffd2b8; }
+.obv-flat .obv-hero .ob-cube { background: #fff; }
+.obv-flat .obv-hero p { font-size: 18px; font-weight: 300; max-width: 640px; margin: 8px auto 24px; }
+.obv-flat .obv-features { padding: 32px 40px 0; }
+.obv-flat .obv-features li { border-top: 3px solid #1e88c7; padding-top: 14px; }
+.obv-flat .obv-features h3 { font-weight: 600; }
+.obv-flat .obv-cta, .obv-flat .obv-btn { font: 600 12px "Open Sans", "Segoe UI", sans-serif; text-transform: uppercase; letter-spacing: 0.06em; color: #fff; background: #3aa757; border: 0; border-radius: 2px; padding: 12px 24px; }
+.obv-flat .obv-btn { padding: 8px 16px; }
+.obv-flat h1 { font-size: 30px; font-weight: 300; color: #1e88c7; }
+.obv-flat .obv-table th, .obv-flat .shop-table th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #7a8a99; padding: 8px; border-bottom: 2px solid #e0e6ec; }
+.obv-flat .obv-table td { padding: 12px 8px; border-bottom: 1px solid #edf1f4; }
+.obv-flat .obv-foot { background: #2c3a47; color: #9aa9b6; font-size: 12px; padding: 18px 40px; }
+
+/* 2019 on: dark navy landing page, big tight type, orange accents, rounded cards. */
+.obv-panel { background: #f4f5f9; font: 15px/1.6 Inter, system-ui, -apple-system, "Segoe UI", sans-serif; color: #1a2233; }
+.obv-panel .obv-head, .obv-panel .obv-nav { background: #0e1526; color: #fff; }
+.obv-panel .obv-head { padding: 0 48px; height: 64px; }
+.obv-panel .obv-logo { font-size: 20px; }
+.obv-panel .obv-logo .ob-mark b, .obv-panel .obv-hero .ob-mark b { color: #ff7a2f; }
+.obv-panel .ob-cube { border-radius: 3px; background: #ff7a2f; }
+.obv-panel .obv-maker { color: #7d89a6; font-size: 13px; order: 3; }
+.obv-panel .obv-head { gap: 8px; }
+.obv-panel .obv-nav { padding: 0 40px 12px; gap: 4px; }
+.obv-panel .obv-nav a { padding: 6px 14px; border-radius: 999px; color: #b6c0d4; font-size: 14px; font-weight: 500; }
+.obv-panel .obv-nav a.on { background: #fff; color: #0e1526; }
+.obv-panel .obv-main { padding: 40px 48px 48px; max-width: 1040px; }
+.obv-panel .obv-home { max-width: none; padding: 0 0 48px; }
+.obv-panel .obv-hero { background: radial-gradient(circle at 80% 0%, #2a3a66, #0e1526 60%); color: #fff; padding: 72px 48px 80px; }
+.obv-panel .obv-hero h1 { font-size: 64px; line-height: 1.05; letter-spacing: -0.03em; }
+.obv-panel .obv-hero p { font-size: 20px; color: #c3cbe0; max-width: 620px; margin: 16px 0 28px; }
+.obv-panel .obv-features { padding: 40px 48px 0; }
+.obv-panel .obv-features li { background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 1px 2px rgb(16 24 40 / 0.06), 0 0 0 1px rgb(16 24 40 / 0.04); }
+.obv-panel .obv-features h3 { font-size: 17px; }
+.obv-panel .obv-cta, .obv-panel .obv-btn { font: 600 14px Inter, system-ui, sans-serif; color: #fff; background: #ff6b1a; border: 0; border-radius: 10px; padding: 12px 22px; }
+.obv-panel .obv-btn { padding: 8px 14px; border-radius: 8px; }
+.obv-panel h1 { font-size: 36px; letter-spacing: -0.02em; }
+.obv-panel .obv-table, .obv-panel .shop-table { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 0 0 1px #e8ebf2; }
+.obv-panel .obv-table th, .obv-panel .shop-table th { font-size: 12px; font-weight: 500; color: #64708a; background: #f7f8fb; padding: 10px 14px; }
+.obv-panel .obv-table td, .obv-panel .shop-table td { padding: 12px 14px; border-top: 1px solid #eef0f5; }
+.obv-panel .obv-foot { color: #7d89a6; font-size: 13px; padding: 24px 48px; border-top: 1px solid #e4e7ef; }
