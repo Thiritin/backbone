@@ -59,7 +59,6 @@ export function RemindersTab({ focus }: { focus: string | null }) {
           </tbody>
         </table>
         {late.length === 0 && <p className="books-none">{t("books.noLate")}</p>}
-        <Rules />
       </div>
       {writing && (
         <Confirm title={t("misc1.billing.writeOffTitle", { number: writing.number })} text={t("misc1.billing.writeOffText", { customer: name(writing.customerId), amount: euroCents(owed(writing)) })}
@@ -81,6 +80,10 @@ function DaysRule<D extends number>({ label, days, value, onChange }: { label: s
 }
 
 // The billing rules bookkeepers and accountants carry out in their work hours, or that run by themselves after the Automation research.
+export function RulesTab() {
+  return <div className="fin-scroll"><Rules /></div>;
+}
+
 function Rules() {
   const game = useStore((s) => s.game), act = useStore((s) => s.act), openApp = useStore((s) => s.openApp);
   const rules = game.billingRules;

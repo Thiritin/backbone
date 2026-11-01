@@ -9,6 +9,7 @@ import { applyStep, AUTOMATION, canAutomate, isStep, issueInvoice, ORDER_PAY_DAY
 import { PRODUCTS, type Spec } from "../10-catalog/products";
 import { inUs } from "../20-world/datacenters";
 import type { Profile } from "../30-customers/customers";
+import { authCode } from "../30-customers/registry";
 import { profileStats, type Ticket } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import type { InvoiceLine } from "../45-billing/billing";
@@ -77,7 +78,7 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
     quote: Math.round((termPrice(s, price * (1 - discount), cycle) / months) * 100) / 100,
     ...(months > 1 && { cycle }),
     ...(shop && { shop: true }),
-    ...(email && { owned, thread: x.thread.map((m, i) => (i ? m : { ...m, params: { ...m.params, owned: owned ? 1 : 0 } })) }),
+    ...(email && { owned, thread: x.thread.map((m, i) => (i ? m : { ...m, params: { ...m.params, owned: owned ? 1 : 0, ...(owned && { auth: authCode(s.seed, x.id) }) } })) }),
   }));
   if (declined) {
     loseRequest(s, r, "declined", "lost.declined");

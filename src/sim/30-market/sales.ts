@@ -32,6 +32,7 @@ import { addressesFit } from "../60-infra/addresses";
 import { withAddressNeeds } from "../10-catalog/addresses";
 import { grownSpec, setupPremium, sizeOf, specFor, specText } from "./spec";
 import { acceptQuote, resize, specParams } from "./manual";
+import { answerQuote } from "./quotes";
 import { logActivity } from "../47-staff/activity";
 import type { ActionResult } from "../90-actions/hardware";
 import { forSale, inStock, shopStocked, soldOutVisit } from "../80-business/shop";
@@ -362,7 +363,11 @@ export function salesTick(s: GameState): SimEvent[] {
   newLeads(s, events);
   if (s.hour % 24 === MAIL_HOUR) morningMail(s, events);
   expansions(s);
-  for (const r of s.sales.requests) if (r.status === "quoted" && r.replyAt !== null && r.replyAt <= s.hour) reply(s, r, events);
+  for (const r of s.sales.requests) {
+    if (r.status !== "quoted" || r.replyAt === null || r.replyAt > s.hour) continue;
+    reply(s, r, events);
+    if (r.kind === "order") answerQuote(s, r.id, events);
+  }
   expire(s);
   return events;
 }
