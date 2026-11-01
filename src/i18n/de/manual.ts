@@ -16,6 +16,7 @@ const more = (p: Params) => (p.product === "webHosting"
   ].filter((x): x is string => !!x)));
 
 export default {
+  "order.msg.item": (p) => `Ich hätte gern das Paket ${p.item} von deiner Website.`,
   "order.msg.webHosting.0": (p) => `Hallo, ich brauche Webhosting für ${p.domain}: etwa ${web(p)}. ${domain(p)}`,
   "order.msg.webHosting.1": (p) => `Ein Freund hat dich empfohlen. Meine Website ${p.domain} braucht ${web(p)}. ${domain(p)} Was würde das kosten?`,
   "order.msg.vps.0": (p) => `Ich hätte gern einen VPS in ${p.city} mit ${box(p)}. Root-Zugriff, bitte. Ich weiß, was ich tue.`,

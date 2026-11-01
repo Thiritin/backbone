@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import { yearOf } from "../src/sim/00-core/time";
 import { offerPrice, setupFee } from "../src/sim/30-market/spec";
 import { defaultSpecFor } from "../src/sim/80-business/packages";
-import { addProduct, removeProduct, updateProduct } from "../src/sim/90-actions/catalog";
+import { addProduct, publishCatalog, removeProduct, updateProduct } from "../src/sim/90-actions/catalog";
+import { unpublished } from "../src/sim/80-business/catalog";
+import { siteContent } from "../src/sim/80-business/website";
+import { t as tr } from "../src/i18n/en";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import type { Product } from "../src/sim/30-customers/customers";
 import type { GameState } from "../src/sim/50-state";
@@ -71,6 +74,7 @@ describe("product-based demand", () => {
   const offer = (s: GameState, size: number, monthly: number, sla: Sla = "basic"): string => {
     const id = added(s, "vps");
     expect(err(updateProduct(s, id, { spec: sized(s, size), prices: { monthly }, sla }))).toBe("ok");
+    publishCatalog(s);
     return id;
   };
   const lead = (s: GameState, budget = 100) => orderLead(s, "private", "Frankfurt", [], need, true, undefined, { budget });
@@ -84,6 +88,7 @@ describe("product-based demand", () => {
     const premium = offer(s, 1, 8, "premium");
     const hidden = offer(s, 1, 5);
     expect(err(updateProduct(s, hidden, { hidden: true }))).toBe("ok");
+    publishCatalog(s);
     const r = lead(s);
     expect(r.productId).toBe(premium);
     expect(r.quote).toBe(8);
@@ -146,8 +151,51 @@ describe("product-based demand", () => {
       { id: "prdX", name: "Box", line: "dedicated", spec: sized(b, 1), sla: "basic", prices: { monthly: 1 }, setup: 0, hidden: false },
       { id: "prdY", name: "Hidden", line: "vps", spec: sized(b, 2), sla: "premium", prices: { monthly: 1 }, setup: 0, hidden: true },
     ];
+    publishCatalog(b);
     const ra = lead(a), rb = lead(b);
     expect(rb).toEqual(ra);
     expect(rb.productId).toBeUndefined();
+  });
+
+  it("publishes a snapshot of the offered, visible products", () => {
+    const s = readyGame(16);
+    const a = offer(s, 1, 9.99), b = offer(s, 2, 20);
+    expect(err(updateProduct(s, b, { hidden: true }))).toBe("ok");
+    expect(s.marketing.published!.map((x) => x.id)).toEqual([a, b]);
+    expect(unpublished(s)).toBe(1);
+    publishCatalog(s);
+    expect(s.marketing.published!.map((x) => x.id)).toEqual([a]);
+    expect(unpublished(s)).toBe(0);
+    const { published: _, ...marketing } = JSON.parse(serialize(s)).marketing;
+    expect(deserialize(JSON.stringify({ ...JSON.parse(serialize(s)), marketing })).marketing.published).toBeNull();
+  });
+
+  it("keeps the site and leads on the published price until the next publish", () => {
+    const s = readyGame(14);
+    s.marketing = { ...s.marketing, lines: ["vps"] };
+    const id = offer(s, 1, 9.99);
+    expect(err(updateProduct(s, id, { prices: { monthly: 20 } }))).toBe("ok");
+    const site = () => siteContent(s).lines.find((l) => l.product === "vps")!.items[0].prices.monthly;
+    expect(site()).toBe(9.99);
+    const r = lead(s), t = s.tickets.find((x) => x.id === r.ticketId)!;
+    expect(r.quote).toBe(9.99);
+    editRequest(s, r.id, () => ({ quote: 12 }));
+    expect(applyStep(s, t, "quote")).toBeNull();
+    s.hour = req(s, r.id).replyAt!;
+    salesTick(s);
+    expect(req(s, r.id).status).toBe("refused");
+    publishCatalog(s);
+    expect(site()).toBe(20);
+    expect(lead(s).quote).toBe(20);
+  });
+
+  it("names the product in the order email", () => {
+    const s = readyGame(14);
+    const id = offer(s, 1, 9.99);
+    expect(err(updateProduct(s, id, { name: "Starter" }))).toBe("ok");
+    publishCatalog(s);
+    const m = lead(s).thread[0];
+    expect(m.params.item).toBe("Starter");
+    expect(tr("order.msg.item", m.params)).toContain("Starter");
   });
 });

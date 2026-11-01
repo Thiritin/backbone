@@ -59,6 +59,7 @@ export default {
   "books.tab.products": () => "Prodotti",
   "books.newProduct": () => "Nuovo prodotto",
   "books.noProducts": () => "Nessun prodotto",
+  "books.publish": () => "Pubblica sul sito",
   "books.col.name": () => "Nome",
   "books.col.size": () => "Taglia",
   "books.col.cycles": () => "Cicli di fatturazione",

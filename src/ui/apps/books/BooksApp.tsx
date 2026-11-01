@@ -19,6 +19,7 @@ import { ProductsTab } from "./ProductsTab";
 import { RemindersTab } from "./RemindersTab";
 import { Register } from "./Register";
 import { useBooks } from "./view";
+import { unpublished } from "../../../sim/80-business/catalog";
 import "../billing/billing.css";
 import "./books.css";
 
@@ -34,7 +35,7 @@ const TABS: { id: string; count: (s: GameState) => number; body: ComponentType<{
   { id: "bank", count: unmatched, body: BankTab },
   { id: "reminders", count: late, body: RemindersTab },
   { id: "payables", count: (s) => s.payables.filter((p) => overdue(s, p)).length, body: PayablesTab },
-  { id: "products", count: () => 0, body: ProductsTab },
+  { id: "products", count: unpublished, body: ProductsTab },
 ];
 
 export function BooksApp() {

@@ -16,6 +16,7 @@ const more = (p: Params) => (p.product === "webHosting"
 const and = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(", ")} y ${xs.at(-1)}` : xs[0] ?? "más espacio");
 
 export default {
+  "order.msg.item": (p) => `Quiero el paquete ${p.item} de tu web.`,
   "order.msg.webHosting.0": (p) => `Hola, necesito alojamiento web para ${p.domain}: unos ${web(p)}. ${domain(p)}`,
   "order.msg.webHosting.1": (p) => `Un amigo te ha recomendado. Mi sitio web ${p.domain} necesita ${web(p)}. ${domain(p)} ¿Cuánto costaría?`,
   "order.msg.vps.0": (p) => `Quisiera un VPS en ${p.city} con ${box(p)}. Acceso root, por favor. Sé lo que hago.`,
