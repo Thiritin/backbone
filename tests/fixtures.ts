@@ -20,9 +20,10 @@ import { fillLines } from "../src/sim/80-business/website";
 import { derivedDomain } from "../src/sim/30-customers/domains";
 import { register } from "../src/sim/30-customers/registry";
 import { nodeName } from "../src/sim/30-customers/hostnames";
-import { setMachine } from "../src/sim/60-infra/cluster";
+import { setMachine, type Cluster } from "../src/sim/60-infra/cluster";
 import { assignedKey, assignKey, isLicensed, issueKey, panelMachine } from "../src/sim/60-infra/licence";
 import { topTier } from "../src/sim/10-catalog/licence-tiers";
+import { UI_LOOKS, versionsOf } from "../src/sim/10-catalog/software-versions";
 import { portPeers } from "../src/sim/60-infra/status";
 import { leaseTick } from "../src/sim/60-infra/lan";
 import { setPortShare } from "../src/sim/90-actions/lan";
@@ -228,3 +229,12 @@ export const owner = (s: GameState, ticketId: string): [Address | undefined, str
   const r = s.sales.requests.find((x) => x.kind === "order" && x.ticketId === ticketId);
   return [s.customers.find((c) => c.id === r?.customerId)?.address, r?.owned ? authCode(s.seed, r.id) : undefined];
 };
+
+// The version just before a console's late look and the first version with it.
+export function lateVersions(product: string): [string, string] {
+  const vs = versionsOf(product).map((x) => x.version), from = UI_LOOKS[product].find(([, look]) => look === "late")![0];
+  return [vs[vs.indexOf(from) - 1], from];
+}
+// Sets the version the software runs on a cluster's machine.
+export const pinVersion = (s: GameState, c: Cluster, product: string, version: string): void =>
+  setMachine(s, panelMachine(c)!, (m) => ({ software: m.software.map((x) => (x.id === product ? { ...x, version } : x)) }));

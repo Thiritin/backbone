@@ -1,6 +1,9 @@
 import type { ReactNode } from "react";
 import { t } from "../../../i18n/en";
-import { euro } from "../../../sim/00-core/money";
+import { euro, euroCents } from "../../../sim/00-core/money";
+import { hasModule as registered } from "../../../sim/10-catalog/modules";
+import { invoiceTotal } from "../../../sim/45-billing/billing";
+import { shopVendorUrl } from "../../../sim/80-business/shoplink";
 import { yearOf } from "../../../sim/00-core/time";
 import { HARDWARE_MODULES, includes, moduleName, shopById, SHOPS, type ShopId } from "../../../sim/10-catalog/shops";
 import type { GameState } from "../../../sim/50-state";
@@ -9,6 +12,7 @@ import { hasModule, shopActive } from "../../../sim/80-business/shop";
 import { buyModule, chooseShop } from "../../../sim/90-actions/shop";
 import { useStore } from "../../store";
 import { formatDay } from "../billing/format";
+import { PaymentMethods } from "./payments";
 
 const ABOUT: Record<ShopId, string> = {
   handRolled: t("marketing.aboutHandRolled"),
@@ -32,7 +36,7 @@ const price = (id: ShopId): string => {
 
 export function Shop({ game }: { game: GameState }) {
   const openApp = useStore((s) => s.openApp);
-  const v = game.shop.variant && shopById(game.shop.variant);
+  const v = game.shop.variant && shopById(game.shop.variant), real = v && v.id !== "handRolled";
   return <>
     <div className="mkt-list">
       <div className="mkt-row">
@@ -44,7 +48,49 @@ export function Shop({ game }: { game: GameState }) {
     </div>
     <Variants game={game} />
     {v && <Modules game={game} />}
+    {real && <PaymentMethods game={game} />}
+    {real && <ShopRecords game={game} />}
   </>;
+}
+
+// ponytail: the latest 50 of each; the shop portal's admin replaces this list.
+const SHOWN = 50;
+
+// The shop system's own customers and invoices, with its Shop link module.
+function ShopRecords({ game }: { game: GameState }) {
+  const openApp = useStore((s) => s.openApp);
+  const customers = game.customers.filter((c) => c.source === "shop");
+  const invoices = game.invoices.filter((i) => i.source === "shop");
+  const name = (id: string) => customers.find((c) => c.id === id)?.name ?? id;
+  return (
+    <div className="mkt-list">
+      <div className="mkt-row">
+        <strong className="mkt-grow">{t("vendor-sites.module.shop-link")}</strong>
+        {registered(game, "shop-link")
+          ? <span className="pill ok">{t("vendor-sites.registered")}</span>
+          : <button className="btn" onClick={() => openApp("Browser", { kind: "url", id: shopVendorUrl(game.shop.variant!) })}>{t("vendor-sites.viewModule")}</button>}
+      </div>
+      <div className="side-h">{t("shop-link.customers")}</div>
+      <table className="table">
+        <thead><tr><th>{t("books.col.customer")}</th><th>{t("books.col.date")}</th></tr></thead>
+        <tbody>{customers.slice(-SHOWN).reverse().map((c) => <tr key={c.id}><td>{c.name}</td><td className="num">{formatDay(c.since)}</td></tr>)}</tbody>
+      </table>
+      <div className="side-h">{t("shop-link.invoices")}</div>
+      <table className="table">
+        <thead><tr><th>{t("books.col.number")}</th><th>{t("books.col.customer")}</th><th className="r">{t("books.col.amount")}</th><th>{t("books.col.status")}</th></tr></thead>
+        <tbody>
+          {invoices.slice(-SHOWN).reverse().map((i) => (
+            <tr key={i.id}>
+              <td className="num">{i.number}</td>
+              <td>{name(i.customerId)}</td>
+              <td className="r num">{euroCents(invoiceTotal(i))}</td>
+              <td>{t(i.shopPaid ? "books.status.paid" : "books.status.sent")}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 }
 
 function Variants({ game }: { game: GameState }) {

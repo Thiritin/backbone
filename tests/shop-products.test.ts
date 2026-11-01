@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { PREFERENCE } from "../src/sim/10-catalog/payments";
 import { SHOP_SETUP_HOURS } from "../src/sim/10-catalog/shops";
 import { sizeSpec } from "../src/sim/10-catalog/products";
 import { orderLead } from "../src/sim/30-market/orders";
@@ -10,6 +11,11 @@ import { chooseShop, createGroup, setGroupSale } from "../src/sim/90-actions/sho
 import { createProduct, createProductGroup, deleteProduct, deleteProductGroup, renameProductGroup, setProductGroupHidden, setProductPrice, updateProduct } from "../src/sim/90-actions/portal";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { automate, readyGame } from "./fixtures";
+
+// Every customer pays by bank transfer here, so no shop order is lost for its payment method.
+const saved = { ...PREFERENCE };
+beforeEach(() => { for (const k of Object.keys(PREFERENCE) as (keyof typeof PREFERENCE)[]) PREFERENCE[k] = { transfer: 1 }; });
+afterEach(() => { Object.assign(PREFERENCE, saved); });
 
 const web = { product: "webHosting" as const, size: 1, sla: "basic" as const };
 

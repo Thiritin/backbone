@@ -14,6 +14,7 @@ import { CYCLE_LABEL } from "../browser/sites/portal/shared/ProductEdit";
 import { attachQuote, convertQuote, createQuote, deleteQuote, editQuote, setQuoteCycle } from "../../../sim/90-actions/orders";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
+import { useBooks } from "./view";
 import { formatDay } from "../billing/format";
 import { PriceField } from "../sales/PriceField";
 import { DocBar, DocButton, DocFoot } from "./DocBar";
@@ -37,7 +38,7 @@ const quotable = (game: GameState) => game.tickets.filter((tk) => orderOf(game, 
 
 // Quotes as a document list: toolbar, list, A4 preview and a footer line.
 export function QuotesTab({ focus }: { focus: string | null }) {
-  const game = useStore((s) => s.game), act = useStore((s) => s.act), openApp = useStore((s) => s.openApp);
+  const game = useBooks(), act = useStore((s) => s.act), openApp = useStore((s) => s.openApp);
   const list = [...game.quotes].reverse(), open = quotable(game);
   const [selected, setSelected] = useState<string | null>(focus ?? list[0]?.id ?? null);
   const [ticket, setTicket] = useState(""), [editing, setEditing] = useState(false);
