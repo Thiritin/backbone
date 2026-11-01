@@ -10,6 +10,7 @@ import { BOARD_TITLE, BOARD_URL, companyUrl, WIKI_TITLE, WIKI_URL, displayHost, 
 import { privateIp } from "../60-infra/addresses";
 import { familyOf } from "../60-infra/vulns";
 import { consoleHost, consoleSuffix, consoleTitle } from "./consoles";
+import { OFFICE_HOST } from "./office";
 
 export interface IndexRow { title: string; url: string; desc: string; down: boolean }
 export interface Category { title: string; rows: IndexRow[] }
@@ -54,6 +55,7 @@ export function siteIndex(s: GameState): Category[] {
     { title: t("sim.index.cat.os"), rows: SERVER_OS.map((o) => row(o.name, `${displayHost(o.site.host)}/`, o.site.tagline)) },
     ...software,
     { title: t("sim.index.cat.resellers"), rows: REGISTRARS.filter((r) => r.from <= year).map((r) => row(r.name, `${displayHost(registrarHost(r))}/`, t("sim.index.resellers"))) },
+    { title: t("sim.index.cat.government"), rows: [row(t("browser-sites-1.of.title"), `www.${OFFICE_HOST}/`, t("sim.index.office"))] },
     { title: t("sim.index.cat.community"), rows: [row(BOARD_TITLE, BOARD_URL, t("sim.index.board")), row(WIKI_TITLE, WIKI_URL, t("sim.index.wiki"))] },
     { title: t("sim.index.cat.hardware"), rows: VENDORS.filter((m) => vendorLive(m, monthIndexOf(s.hour))).map((m) => row(m.name, `${displayHost(vendorHost(m.id))}/`, m.kinds.map((k) => t(`sim.index.kind.${k}`)).join(", "))) },
     { title: s.company.name, rows: own },
