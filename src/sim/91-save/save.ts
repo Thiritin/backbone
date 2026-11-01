@@ -14,6 +14,7 @@ import { STARTER_APPS, WIDGETS } from "../10-catalog/store";
 import { WALK } from "../80-business/walk";
 import { legacyRegistration } from "../80-business/office";
 import { legacyBank, savingsOf } from "../46-finance/bank";
+import { bankById, defaultPlan } from "../10-catalog/banks";
 import type { Employee } from "../47-staff/staff";
 import { device, deviceDefaults, fillCards, fillSizes, newGame, SAVE_VERSION, type Device, type GameState, type Location } from "../50-state";
 import { dropCluster, workloadDefaults } from "../60-infra/cluster";
@@ -145,6 +146,8 @@ export function deserialize(raw: string): GameState {
   fillShop(s, data.marketing?.owned);
   // Saves from before banks hold their account at Sparklasse; the next hour brings its welcome email and TAN list.
   if (data.bank === undefined) s.bank = legacyBank(s);
+  // Accounts from before plans get their bank's cheapest plan for the form.
+  if (s.bank && !s.bank.plan) s.bank = { ...s.bank, plan: defaultPlan(bankById(s.bank.id)!, s.registration?.form ?? "sole") };
   fillGames(s);
   fillDaemons(s);
   // A save from before accounts opened on the bank's site holds the savings as cash; they come back with the account.

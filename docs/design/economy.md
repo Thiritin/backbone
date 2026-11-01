@@ -2464,17 +2464,28 @@ The loan limit is the higher of the level's minimum and 12× the average monthly
 
 **Bankruptcy.** When cash stays below zero for 30 days and no loan is available that covers the deficit, the company is insolvent and the game ends.
 
-**Account fees.** A limited company (GmbH) must keep a business account, and business accounts cost more than a sole trader's, so the account fee a month depends on the legal form. Branch banks charge a limited company about twice the sole trader's fee and add a fee for every booking on a partnership's or limited company's account; the fintechs sell flat plans, the limited one at two to three times the sole trader's. A partnership pays between the two. Each month start books the fee for the month and, at a branch bank, one line for the bookings of the month before: every ledger line of that month except the bank's own fees. Ding-DiBa, like the direct banks that long opened no GmbH accounts, opens none for a limited company: the registration refuses that pair, and the trade office form greys Ding-DiBa out while the limited form is chosen. The legal form is fixed once registered, so an open account never needs to move.
+**Account plans.** Each bank sells account plans, and the account fee a month is the plan's (docs/design/plans/bank-plans.md). A dearer plan makes each booking cheaper, and the top plans include the credit card. A booking is any ledger line of the month except the bank's own fees. Each month start books last month's bookings above the plan's free ones, then the plan's fee for the new month. A plan change takes effect at that month start. A limited company pays the plan's fee times the bank's limited factor, which is the ratio of its old limited fee to its old partnership fee. A legal form needs a plan that serves it, so the player moves up a plan before the paperwork, and a limited company application also needs the share capital of €25,000 in the account, without the overdraft.
 
-| Bank | Sole trader | Partnership | Limited company | Per booking (partnership, limited) |
-| --- | --- | --- | --- | --- |
-| Sparklasse | €8 | €12 | €16 | €0.30 |
-| Folksbank | €6 | €9 | €12 | €0.25 |
-| Deutsche Bunk | €12 | €18 | €24 | €0.15 |
-| Postbanq | €4 | €6 | €8 | €0.40 |
-| Ding-DiBa | €0 | €5 | no account | none |
-| Fidorr | €0 | €6 | €12 | none |
-| Quonto | €9 | €15 | €25 | none |
+| Plan | Serves | Fee a month | Free bookings | Per booking | Card |
+| --- | --- | --- | --- | --- | --- |
+| Giro | sole trader | the old sole fee | all | none | yearly fee |
+| Business | all forms | the old partnership fee | 20 | the old booking fee | yearly fee |
+| Business Plus | all forms | 2× Business | 100 | 1/3 of Business | included |
+| Premium | partnership, limited | 4× Business | all | none | included, double limit |
+
+| Bank | Plans | Giro | Business | Per booking | Limited factor | Loan margin | Smallest loan |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Sparklasse | all four | €8 | €12 | €0.30 | 4/3 | +0.5 | €2,500 |
+| Folksbank | all four | €6 | €9 | €0.25 | 4/3 | +0.5 | €2,500 |
+| Deutsche Bunk | no Giro | | €18 | €0.15 | 4/3 | 0 | €50,000 |
+| Postbanq | all four | €4 | €6 | €0.40 | 4/3 | +1.5 | €2,500 |
+| Ding-DiBa | Giro, Business for sole traders and partnerships | €0 | €5 | none | | +1.0 | no loans |
+| Fidorr | Fidorr Start (Business), Fidorr Pro (Business Plus) | | €6 | none | 2 | +2.0 | €2,500 |
+| Quonto | Quonto Essential (Business), Quonto Smart (Business Plus) | | €15 | none | 5/3 | +1.5 | no loans |
+
+The loan margin in points is added to the base rate and the risk premium, and the rate is fixed when the loan is signed.
+
+**Switching banks.** Opening an account at another bank moves the whole balance. The old account pays its last fee at the next month start and closes. Switching is refused while a loan is open or the account is overdrawn. Standing orders, mandates and the card stay behind, and the card's open spending is billed at once. Customers who pay an invoice issued before the switch still reach the company for three months; after that the transfer bounces and the invoice stays unpaid.
 
 **SLA insurance.** The monthly premium is 2% of the recurring revenue from customers with an SLA, times an uptime factor: 1.0 at 99.95% or better over 90 days, 1.5 at 99.9% or better, and 2.5 below that. A missed SLA owes the customer 10% of their monthly fee per 0.1% of uptime below the promise, up to the full fee. The insurer pays those credits for three claims, then blocks the company for a year.
 

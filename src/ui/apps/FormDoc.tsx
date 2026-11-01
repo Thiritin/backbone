@@ -4,7 +4,7 @@ import { euro } from "../../sim/00-core/money";
 import { dateOf } from "../../sim/00-core/time";
 import type { Doc } from "../../sim/50-state";
 import { LEGAL_FORMS } from "../../sim/80-business/office";
-import { FILED_WITH, SHARE_CAPITAL } from "../../sim/80-business/paperwork";
+import { applyError, FILED_WITH, SHARE_CAPITAL } from "../../sim/80-business/paperwork";
 import { signForm } from "../../sim/90-actions/docs";
 import { useStore } from "../store";
 import "./paper.css";
@@ -14,7 +14,7 @@ export const paperDay = (hour: number) => dateOf(hour).toLocaleDateString(LOCALE
 // A downloaded application as a printed page, signed with one click on the signature line.
 export function FormDoc({ doc }: { doc: Doc }) {
   const game = useStore((s) => s.game), act = useStore((s) => s.act);
-  const f = doc.form!, r = game.registration;
+  const f = doc.form!, r = game.registration, err = f.signed === null ? applyError(game, f.form) : null;
   const rows: [string, string][] = [
     [t("browser-sites-1.of.businessName"), game.company.name],
     [t("browser-sites-1.of.ownerField"), r?.owner ?? ""],
@@ -33,6 +33,7 @@ export function FormDoc({ doc }: { doc: Doc }) {
         <div className="paper-sign">
           {f.signed !== null
             ? <span className="paper-ink">{r?.owner}</span>
+            : err ? <span className="paper-error">{t(err)}</span>
             : <button className="btn" onClick={() => act(signForm, doc.id)}>{t("paperwork.doc.sign")}</button>}
           <span className="paper-line">{t("paperwork.doc.signature")}</span>
           {f.signed !== null && <small>{t("paperwork.doc.signedOn", { date: paperDay(f.signed) })}</small>}
