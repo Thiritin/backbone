@@ -3,7 +3,7 @@ import { fqdn } from "../../sim/30-customers/domains";
 import { subjectParams } from "../../sim/40-support/notices";
 import type { GameState } from "../../sim/50-state";
 import { isOwnVm } from "../../sim/60-infra/cluster";
-import { privateIp, publicV4 } from "../../sim/60-infra/addresses";
+import { publicV4, machineAddress } from "../../sim/60-infra/addresses";
 import { companyUrl, resolve, WIKI_TITLE } from "../../sim/80-business/browser";
 import { ARTICLES, wikiUrl } from "../apps/browser/sites/wiki/articles";
 import { registrarHost, REGISTRARS } from "../../sim/10-catalog/registrars";
@@ -50,7 +50,7 @@ function collect(s: GameState): Hit[] {
     });
   }
 
-  const addresses = (id: string) => [privateIp(s, id), publicV4(s, id)?.ip].filter((x): x is string => !!x);
+  const addresses = (id: string) => [machineAddress(s, id), publicV4(s, id)?.ip].filter((x): x is string => !!x);
   for (const d of s.devices) {
     if (!d.hostname) continue;
     const name = d.label ?? d.name;

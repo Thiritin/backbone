@@ -38,5 +38,9 @@ export const ADDRESSES_EN: Record<string, (p: Params) => string> = {
   "error.needsBgpRouter": () => "Needs a router with a full routing table at this location.",
   "error.basementOnly": () => "Only the basement takes this router.",
   "error.noRouter": () => "No router is mounted here.",
+  "error.badPool": () => "The DHCP range does not fit the network.",
+  "error.badAddress": () => "Enter a private IPv4 address.",
+  "error.portShared": () => "Port 80 is already shared with another device.",
+  "error.noAddress": () => "This device has no address on the router's network.",
   "error.notOfficeRouter": () => "Only a small-office router replaces the basement router.",
 };
