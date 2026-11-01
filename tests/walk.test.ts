@@ -3,7 +3,7 @@ import { hourOf } from "../src/sim/00-core/time";
 import type { Ticket } from "../src/sim/40-support/tickets";
 import { type GameState } from "../src/sim/50-state";
 import { feed } from "../src/sim/80-business/news";
-import { OFFERS, WALK, walkTick } from "../src/sim/80-business/walk";
+import { OFFERS, OVERDRAFT, WALK, walkTick } from "../src/sim/80-business/walk";
 import { guideSteps } from "../src/sim/checklist";
 import { browseStore } from "../src/sim/90-actions/store";
 import { closeTicket } from "../src/sim/90-actions/support";
@@ -22,7 +22,6 @@ const mails = (s: GameState) => s.tickets.filter((t) => t.kind === "pear");
 const nextDay = (s: GameState) => { s.hour += 24; return walkTick(s); };
 
 const TRIGGERS: Record<(typeof WALK)[number], (s: GameState) => void> = {
-  Finance: (s) => { s.registration!.hour = hourOf(new Date(Date.UTC(2005, 0, 28, NINE))); s.hour = hourOf(new Date(Date.UTC(2005, 1, 1, NINE))); },
   Customers: (s) => { s.customers = Array.from({ length: 5 }, () => ({}) as GameState["customers"][number]); },
   Marketing: (s) => { s.clusters = [{ panel: "freepanel" } as GameState["clusters"][number]]; },
   Security: (s) => { s.tickets = [{ kind: "abuse", status: "open", customerId: "c1" } as Ticket]; },
@@ -51,7 +50,7 @@ describe("apps arrive when their problem does", () => {
     it(`brings ${app} once with one email and one News line`, () => {
       const s = fresh();
       TRIGGERS[app](s);
-      if (app !== "Finance" && app !== "Research") s.hour += 24;
+      if (app !== "Research") s.hour += 24;
       const events = walkTick(s);
       expect(events).toEqual([{ app: "News", key: "event.news.app", params: { app } }]);
       expect(s.arrived).toEqual([app]);
@@ -64,12 +63,17 @@ describe("apps arrive when their problem does", () => {
     });
   }
 
-  it("brings Finance early when cash falls below two months of running costs", () => {
+  it("sends the overdraft email once when cash falls below two months of running costs", () => {
     const s = fresh();
-    s.cash = 150;
+    s.cash = 170;
     s.ledger = [...s.ledger, { hour: 2, category: "rent", key: "ledger.homeLine", params: {}, amount: -80 }];
     nextDay(s);
-    expect(s.installed).toContain("Finance");
+    expect(mails(s)).toEqual([]);
+    s.cash = 150;
+    nextDay(s);
+    nextDay(s);
+    expect(mails(s).map((t) => t.topic)).toEqual([OVERDRAFT]);
+    expect(s.installed).not.toContain("Finance");
   });
 
   it("brings Research when the Pear Store is opened, and after an offer that needs it", () => {
@@ -103,7 +107,8 @@ describe("apps arrive when their problem does", () => {
     delete raw.arrived;
     raw.installed = [...raw.installed, "Finance", "Customers"];
     const s = deserialize(JSON.stringify(raw));
-    expect(s.arrived).toEqual(["Finance", "Customers", "Marketing", "Security"]);
+    expect(s.arrived).toEqual(["Customers", "Marketing", "Security"]);
+    expect(s.installed).toContain("Books");
     const kept = deserialize(serialize(fresh()));
     expect(kept.arrived).toEqual([]);
     expect(kept.installed).not.toContain("Marketing");
@@ -120,9 +125,8 @@ describe("apps arrive when their problem does", () => {
   it("shows the Getting started step of an app once it is installed", () => {
     const s = fresh();
     expect(guideSteps(s)).not.toContain("website");
-    expect(guideSteps(s)).not.toContain("loan");
     TRIGGERS.Marketing(s);
-    TRIGGERS.Finance(s);
+    s.hour += 24;
     walkTick(s);
     expect(guideSteps(s)).toEqual(expect.arrayContaining(["website", "launch", "loan"]));
     expect(guideSteps(s)).not.toContain("hire");

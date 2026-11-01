@@ -1,3 +1,4 @@
+import { installedVersion, panelMachine } from "../../../../../sim/60-infra/licence";
 import { dateOf } from "../../../../../sim/00-core/time";
 import { mailAddress } from "../../../../../sim/60-infra/addresses";
 import { mailStateOf, spamSenders } from "../../../../../sim/60-infra/netsvc-mail";
@@ -43,11 +44,12 @@ function mailq(game: GameState, c: Cluster): string[] {
 }
 
 function listing(game: GameState, c: Cluster, family: string, name: string): [string, string[]][] {
+  const ver = installedVersion(game, panelMachine(c) ?? "", family);
   const ts = tenants(game, c), zones = zonesOf(ts);
   switch (family) {
     case "bound": return [
       ["named-checkconf -z", zones.map((z) => `zone ${z}/IN: loaded serial ${serial(game, z)}`)],
-      ["rndc status", [`version: BOUND ${c.version}`, `number of zones: ${zones.length}`, "server is up and running"]],
+      ["rndc status", [...(ver ? [`version: BOUND ${ver}`] : []), `number of zones: ${zones.length}`, "server is up and running"]],
     ];
     case "knut": return [
       ["knotc status", ["Running"]],
@@ -75,7 +77,7 @@ function listing(game: GameState, c: Cluster, family: string, name: string): [st
       const done = finishedJobs(game, c.id);
       return [
         ["echo 'status director' | bconsole", [
-          `${name}-dir Version: ${c.version}`, "", "Terminated Jobs:",
+          ...(ver ? [`${name}-dir Version: ${ver}`] : []), "", "Terminated Jobs:",
           ...(done.length ? [" JobId  Level  Status  Finished          Name", ...done.map((j, i) => `${String(i + 1).padStart(6)}  Incr   ${j.ok ? "OK    " : "Error "}  ${stamp(j.last)}  ${j.name}`)] : ["No Terminated Jobs."]),
         ]],
         ["df -h /var/lib/backula", ["Filesystem  Size  Used  Avail  Mounted on", `/dev/sdb1   ${Math.round(pool.need + Math.max(0, pool.room))}G  ${Math.round(pool.need)}G  ${Math.round(Math.max(0, pool.room))}G  /var/lib/backula`]],

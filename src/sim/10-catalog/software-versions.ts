@@ -195,9 +195,9 @@ export const nextMajor = (product: string, version: string, hour: number): Softw
 // version of the game year the look was drawn for; HyperVee draws the flat 2012 manager as a look of its own.
 export const UI_LOOKS: Record<string, [version: string, look: string][]> = {
   cpanic: [["10", "x3"], ["11", "x3"], ["11.38", "paperLamp"], ["98", "jupitar"]],
-  pleskit: [["7.5", "early"], ["10.0", "early"], ["12.0", "early"], ["17.0", "late"], ["18.0", "late"]],
-  directadmen: [["1.24", "early"], ["1.60", "late"]],
-  freepanel: [["1.200", "early"], ["1.700", "late"]],
+  pleskit: [["7.5", "reload"], ["10.0", "parallax"], ["12.0", "twelve"], ["17.0", "onyx"], ["18.0", "obsidian"]],
+  directadmen: [["1.24", "classic"], ["1.30", "enhanced"], ["1.60", "evolution"]],
+  freepanel: [["1.200", "gray"], ["1.700", "authentic"]],
   tcadmen: [["1.0", "early"], ["2.0", "late"], ["3.0", "v3"]],
   multikraft: [["1.0", "early"], ["2.0", "late"]],
   pterodaktyl: [["0.5", "early"], ["1.0", "late"]],

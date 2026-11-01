@@ -136,7 +136,7 @@ export function issue(s: GameState, inv: Invoice, payDays = DUE_DAYS - 1): void 
 
 // How customers fill in a transfer: the share who write a bare word or their name instead of the invoice number, by profile,
 // and the share of low-budget payers who send a few cents short or a rounded-down amount.
-export const BARE_REFERENCE: Record<Profile, number> = { private: 0.3, gamer: 0.35, hobbyDev: 0.2, soleProp: 0.1, smallBiz: 0.05, agency: 0.03, office: 0.05, onlineShop: 0.03, enterprise: 0.01, reseller: 0.03 };
+export const BARE_REFERENCE: Record<Profile, number> = { private: 0.2, gamer: 0.2, hobbyDev: 0.15, soleProp: 0.1, smallBiz: 0.05, agency: 0.03, office: 0.05, onlineShop: 0.03, enterprise: 0.01, reseller: 0.03 };
 export const SHORT_PAY = 0.15;
 const BARE_WORDS = ["hosting", "server", "domain"];
 // A reminder on an invoice whose payment sits unmatched in the bank.
@@ -295,7 +295,7 @@ export function sendStep(s: GameState, inv: Invoice, i: number): void {
 // Before the Automation research, staff carry out the billing rules in their work hours; after it the rules run by themselves.
 export const rulesAutomated = (s: GameState): boolean => s.unlocks.includes("automation");
 
-// The dunning step the rules send now: notices with auto reminders, collections once its days have passed.
+// The dunning step the rules send now: notices when the reminder rule is on, collections once its days have passed.
 export function ruleStep(s: GameState, inv: Invoice): number | null {
   const i = dueStep(inv, s.hour);
   if (i === null) return null;
@@ -312,13 +312,8 @@ export function ruleSuspendsAt(s: GameState, inv: Invoice): number | null {
   return inv.extendedUntil !== null && inv.suspendedAt < inv.extendedUntil ? inv.extendedUntil : null;
 }
 
-// The dunning step that runs by itself now: every rule after the Automation research, and the notices up to the final one
-// with the Automatic reminders module. Staff carry out the rest.
-export function autoStep(s: GameState, inv: Invoice): number | null {
-  const i = ruleStep(s, inv);
-  if (i === null) return null;
-  return rulesAutomated(s) || (STEPS[i].key !== "collections" && hasModule(s, "auto-reminders")) ? i : null;
-}
+// The dunning step that runs by itself now: every rule after the Automation research. Staff carry out the rest.
+export const autoStep = (s: GameState, inv: Invoice): number | null => rulesAutomated(s) ? ruleStep(s, inv) : null;
 
 const automated = (s: GameState, inv: Invoice, key: string, by = "Automation") =>
   logActivity(s, { customerId: inv.customerId, serviceId: null, by, key: `activity.${key}`, params: { invoice: inv.number }, minutes: 0 });
@@ -354,7 +349,7 @@ function chase(s: GameState, inv: Invoice, events: SimEvent[]): void {
 const needsChase = (s: GameState, inv: Invoice): boolean =>
   isUnpaid(inv) && (inv.suspended || autoStep(s, inv) !== null || (rulesAutomated(s) && ruleSuspendsAt(s, inv) !== null));
 
-// Bank: economy.md, Bank, insurance and tax.
+// Bank: economy.md, Bank and tax.
 const BASE_RATE: [number, number][] = [[2005, 4], [2009, 2.5], [2015, 1], [2021, 1], [2023, 4.5], [2026, 4]];
 export const RISK_PREMIUM = [6, 4, 3, 2, 1, 0.5];
 export const MIN_LIMIT = [10_000, 25_000, 100_000, 500_000, 3_000_000, 20_000_000];
@@ -533,10 +528,10 @@ export function billingTick(s: GameState): SimEvent[] {
       s.loansBlockedUntil = s.hour + YEAR_HOURS;
       if (l.missed + 1 >= MISSED_LIMIT) {
         book("loans", "ledger.loanCalled", { amount: l.amount }, -cents(l.balance + interest));
-        events.push({ app: "Finance", key: "event.loanCalled", params: { amount: l.amount } });
+        events.push({ app: "Books", key: "event.loanCalled", params: { amount: l.amount } });
         return [];
       }
-      events.push({ app: "Finance", key: "event.loanMissed", params: { amount: l.amount, fee: MISSED_FEE } });
+      events.push({ app: "Books", key: "event.loanMissed", params: { amount: l.amount, fee: MISSED_FEE } });
       const balance = cents(l.balance + interest), rate = l.rate + MISSED_RATE;
       return [{ ...l, balance, rate, payment: annuity(balance, rate, l.left), missed: l.missed + 1 }];
     });

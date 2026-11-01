@@ -9,14 +9,14 @@ import { metrics } from "../src/sim/metrics";
 describe("notification settings", () => {
   it("drops muted apps and shows allowed ones as banners and in the history", () => {
     const s = useStore.getState;
-    s().setNotifyPref("Finance", { allow: false });
-    s().notify("Finance", "a", "b");
+    s().setNotifyPref("Books", { allow: false });
+    s().notify("Books", "a", "b");
     expect(s().history).toHaveLength(0);
     expect(s().banners).toHaveLength(0);
 
     // A pref stored before banners merged into allow still shows banners.
-    s().setNotifyPref("Finance", { allow: true, banners: false } as never);
-    s().notify("Finance", "a", "b");
+    s().setNotifyPref("Books", { allow: true, banners: false } as never);
+    s().notify("Books", "a", "b");
     expect(s().history).toHaveLength(1);
     expect(s().banners).toHaveLength(1);
   });
@@ -29,9 +29,9 @@ describe("notification settings", () => {
 
   it("removes a notification from the center, then clears the rest", () => {
     const s = useStore.getState;
-    s().setNotifyPref("Finance", { allow: true });
-    s().notify("Finance", "one", "x");
-    s().notify("Finance", "two", "x");
+    s().setNotifyPref("Books", { allow: true });
+    s().notify("Books", "one", "x");
+    s().notify("Books", "two", "x");
     const [two, one] = s().history;
     s().forget(two.id);
     expect(s().history.map((b) => b.title)).not.toContain("two");
@@ -125,7 +125,7 @@ describe("new game", () => {
     try {
       const s = useStore.getState;
       s().setSound({ volume: 0.2 });
-      s().setNotifyPref("Finance", { allow: false });
+      s().setNotifyPref("Books", { allow: false });
       s().startGame();
       expect([...local.keys()].sort()).toEqual(["backbone.prefs", "backbone.save"]);
       expect(JSON.parse(local.get("backbone.prefs")!)).toEqual({ notify: {}, sound: expect.objectContaining({ volume: 0.2 }) });
@@ -172,7 +172,7 @@ describe("alerts", () => {
     game.cash = -1000;
     game.brokeSince = null;
     useStore.setState({ game, speed: 4, alert: null, resume: 0 });
-    s().setNotifyPref("Finance", { allow: false });
+    s().setNotifyPref("Books", { allow: false });
     const start = game.hour;
     s().advance(48);
     expect(s().alert).toMatchObject({ key: "event.cashNegative", title: expect.any(String) });
@@ -182,12 +182,12 @@ describe("alerts", () => {
     s().closeAlert(true);
     expect(s().alert).toBeNull();
     expect(s().speed).toBe(4);
-    s().setNotifyPref("Finance", { allow: true });
+    s().setNotifyPref("Books", { allow: true });
   });
 
   it("keeps the game paused when the sheet opens an app", () => {
     const s = useStore.getState;
-    useStore.setState({ speed: 0, resume: 4, alert: { id: 1, app: "Finance", title: "a", text: "b", hour: 0, key: "event.cashNegative" } });
+    useStore.setState({ speed: 0, resume: 4, alert: { id: 1, app: "Books", title: "a", text: "b", hour: 0, key: "event.cashNegative" } });
     s().closeAlert(false);
     expect(s()).toMatchObject({ alert: null, speed: 0 });
   });

@@ -159,7 +159,7 @@ export function installOs(s: GameState, machineId: string, osId: ServerOsId, con
   licenseInstall(s, machineId, osId, version, key);
   const named = hostname === undefined ? {} : { hostname };
   if (isDevice(m)) {
-    Object.assign(m, { bootFrom: "disk", stuck: false, bootUntil: done + BOOT_HOURS + os.bootMinutes / 60, iface }, named);
+    Object.assign(m, { bootFrom: "disk", stuck: false, upsAgent: false, bootUntil: done + BOOT_HOURS + os.bootMinutes / 60, iface }, named);
     delete s.files[m.id];
   } else s.workloads = s.workloads.map((w) => (w.id === machineId ? { ...w, media: undefined, ...named } : w));
   return { ok: true };

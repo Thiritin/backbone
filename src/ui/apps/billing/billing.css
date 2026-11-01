@@ -1,4 +1,4 @@
-/* Shared by the Billing app and the Loans page in Finance. */
+/* Shared table and form styles of the business apps. */
 .fin { flex: 1; min-width: 0; display: flex; }
 .fin .grow { flex: 1; }
 .fin-side { display: flex; flex-direction: column; gap: 1px; }

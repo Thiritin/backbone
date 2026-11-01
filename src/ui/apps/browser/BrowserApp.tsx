@@ -27,6 +27,7 @@ import { FritzOz } from "./mgmt/FritzOz";
 import { KvmPage, kvmTitle } from "./ipmi/KvmPage";
 import { SwitchPage, switchTitle } from "./mgmt/Switch";
 import { RouterPage, routerTitle } from "./mgmt/Router";
+import { UpsPage, upsTitle } from "./mgmt/Ups";
 import { isOwnRouter } from "../../../sim/60-infra/routers";
 import { CompanySite } from "./sites/CompanySite";
 import { SponsorBoard } from "./sites/SponsorBoard";
@@ -43,7 +44,6 @@ import { shopById } from "../../../sim/10-catalog/shops";
 import { HostToastSite } from "./sites/hosttoast/HostToastSite";
 import { HOSTTOAST } from "../../../sim/10-catalog/hosttoast";
 import { WikiSite } from "./sites/wiki/WikiSite";
-import { LEXWEAR } from "../../../sim/80-business/lexwear";
 import { SoftwarePage } from "./sites/software/registry";
 import { RegistrarSite } from "./sites/registrars";
 import { SupplierSite } from "./sites/bank/SupplierSite";
@@ -92,12 +92,16 @@ function titleOf(game: GameState, r: Resolved): string {
       const d = game.devices.find((x) => x.id === p.deviceId);
       return d ? switchTitle(d) : r.host;
     }
+    case "ups": {
+      const d = game.devices.find((x) => x.id === p.deviceId);
+      return d ? upsTitle(d) : r.host;
+    }
     case "video": return VIDEO_TITLE;
     case "phishing": return t("misc1.browser.onlineBanking", { name: senderById(p.sender).name });
     case "sponsorboard": return BOARD_TITLE;
     case "index": return t("browser-sites-1.ix.title");
     case "office": return t("browser-sites-1.of.title");
-    case "lexwear": return LEXWEAR;
+    case "lexwear": return booksVendor("lexwear")!.name;
     case "market": return channelName(p.channel);
     case "books": return booksVendor(p.id)!.program;
     case "shopVendor": return shopById(p.id).name;
@@ -151,6 +155,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
     body = d && isOwnRouter(d) ? <RouterPage game={game} deviceId={p.deviceId} host={r.host} /> : <FritzOz game={game} deviceId={p.deviceId} host={r.host} />;
   }
   else if (p.kind === "switch") body = <SwitchPage game={game} deviceId={p.deviceId} host={r.host} />;
+  else if (p.kind === "ups") body = <UpsPage game={game} deviceId={p.deviceId} host={r.host} />;
   else if (p.kind === "host") body = <HostPage host={r.host} />;
   else body = <NotFound host={r.host} />;
   const paper = !waiting && r.load !== "down" && ["company", "customer", "vendor", "sponsorboard", "registrar", "bank", "supplier", "index", "office", "shop", "software", "os"].includes(p.kind);

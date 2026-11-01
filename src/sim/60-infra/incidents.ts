@@ -11,8 +11,9 @@ import { addReview, announceReview, starsFor, type ReviewReason } from "../80-bu
 import type { SimEvent } from "../88-tick/tick";
 import { insideVm, isOwnVm, moveControlPlaneOff, pickNode, vmOf, type Workload } from "./cluster";
 import type { Incident } from "./ops";
-import { losePower } from "./power";
-import { bootHours, deviceWatts, dualFed, HOURS_PER_YEAR, locationOf, rackPower } from "./status";
+import { losePower, upsShutdown } from "./power";
+import { cleanShutdowns } from "./ups";
+import { bootHours, deviceWatts, dualFed, HOURS_PER_YEAR, locationOf, pluggedIn, rackPower } from "./status";
 
 export const GRID = {
   // Outages a year: the household line in the basement fails more often than a datacenter's utility feed.
@@ -75,7 +76,8 @@ function record(s: GameState, inc: Omit<Incident, "id">): Incident {
 // Minutes the UPS units among these devices carry their load.
 const upsOf = (devices: Device[]): number => {
   const on = devices.filter((d) => d.rackId && d.on);
-  const wh = on.reduce((n, d) => n + (modelById(d.model).batteryWh ?? 0), 0);
+  // An unplugged UPS carries nothing.
+  const wh = on.filter(pluggedIn).reduce((n, d) => n + (modelById(d.model).batteryWh ?? 0), 0);
   const watts = on.reduce((n, d) => n + deviceWatts(d), 0);
   return wh && watts ? (wh / watts) * 60 : 0;
 };
@@ -83,10 +85,12 @@ const upsOf = (devices: Device[]): number => {
 // Minutes the location's own UPS units carry its current load.
 export const upsMinutes = (s: GameState, locId: string): number => upsOf(s.devices.filter((d) => locationOf(s, d)?.id === locId));
 
-// Running servers lose power uncleanly and boot once it is back.
-function cutPower(s: GameState, devices: Device[], dark: number): void {
+// Running servers lose power uncleanly, or shut down cleanly on a managed UPS's signal, and boot once it is back.
+function cutPower(s: GameState, devices: Device[], dark: number, pool = devices): void {
+  const clean = cleanShutdowns(s, pool, devices);
   for (const d of devices.filter((x) => x.on)) {
-    losePower(s, d);
+    if (clean.has(d.id)) upsShutdown(s, d);
+    else losePower(s, d);
     d.bootUntil = s.hour + dark / 60 + bootHours(s, d);
   }
 }
@@ -137,7 +141,7 @@ export function feedFailure(s: GameState, rack: Rack, feed: "A" | "B", minutes: 
   const here = dark && (feed === "A" || cascade) ? inRack.filter((d) => d.on && (cascade || !dualFed(rack, d)) && !modelById(d.model).batteryWh) : [];
   const ids = new Set(here.map((d) => d.id));
   const workloads = s.workloads.filter((w) => onDevices(s, w, ids));
-  cutPower(s, here, dark);
+  cutPower(s, here, dark, inRack);
   const inc = record(s, {
     hour: s.hour, cause: "feed", locationId: loc.id, minutes, dark: here.length ? dark : 0, devices: here.map((d) => d.label ?? d.name),
     customers: customersOf(s, workloads).map((c) => c.id), agency: null, returnAt: null,

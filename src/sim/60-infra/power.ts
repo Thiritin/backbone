@@ -72,6 +72,13 @@ export function losePower(s: GameState, d: Device, key = "ipmi.log.pulled"): voi
   leaveUsb(s, d);
 }
 
+// A managed UPS's shutdown signal (ups.ts): the OS halts before the battery runs out, so no data is corrupted.
+export function upsShutdown(s: GameState, d: Device): void {
+  leaveUsb(s, d);
+  loadSaved(d);
+  pushLog(d, s.hour, "ipmi.log.upsShutdown");
+}
+
 // What a power cut leaves of an OS still installing: an empty disk, or after an in-place upgrade the release it came from.
 export const cutOs = (os: MachineState["os"], now: number): MachineState["os"] =>
   !os || os.installedAt <= now ? os : os.from ? { id: os.id, version: os.from, installedAt: now } : null;

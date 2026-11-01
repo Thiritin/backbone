@@ -1,7 +1,7 @@
 // Letterheads for the paper post, keyed by the sender a letter carries. Marks are parodies of German authority styles.
 import type { ReactNode } from "react";
 import { CHAMBER_NAME, NOTARY_NAME, OFFICE_NAME, REGISTER_NAME } from "../../sim/80-business/paperwork";
-import { TAX_OFFICE_NAME } from "../../sim/80-business/tax";
+import { DOHLE_NAME, TAX_OFFICE_NAME } from "../../sim/80-business/tax";
 
 export interface Letterhead {
   org: string; dept: string; street: string; city: string; phone: string; web: string;
@@ -48,6 +48,17 @@ const Seal = (
   </svg>
 );
 
+// DOHLE's jackdaw on a branch, grey nape and pale eye.
+export const Jackdaw = (
+  <svg viewBox="0 0 46 40" aria-hidden="true">
+    <path d="M6 34h34" stroke="#8a6d3b" strokeWidth="2.5" strokeLinecap="round" />
+    <path d="M12 30c0-9 5-16 13-17 3-5 9-6 12-2l5 1-5 2c1 7-3 14-10 16l-5 1-3 3-1-3Z" fill="#111" />
+    <path d="M25 13c3-4 8-5 11-2-1 4-5 6-9 6Z" fill="#7d8590" />
+    <circle cx="35" cy="12.5" r="1.6" fill="#e8eef5" />
+    <path d="M16 30l-2 4M20 31l-1 3" stroke="#111" strokeWidth="1.5" />
+  </svg>
+);
+
 // dept is an i18n key; the rest are proper names and stay as written.
 export const LETTERHEADS: Record<string, Letterhead> = {
   [OFFICE_NAME]: {
@@ -65,6 +76,10 @@ export const LETTERHEADS: Record<string, Letterhead> = {
   [TAX_OFFICE_NAME]: {
     org: "Finanzamt Frankfurt am Main III", dept: "paperwork.letter.tax", street: "Gutleutstr. 120", city: "60327 Frankfurt am Main",
     phone: "069 2545-0", web: "www.dohle.de", mark: Eagle,
+  },
+  [DOHLE_NAME]: {
+    org: "DOHLE", dept: "paperwork.letter.dohle", street: "Postfach 10 01 13", city: "60001 Frankfurt am Main",
+    phone: "0800 523 5055", web: "www.dohle.de", mark: Jackdaw,
   },
   [NOTARY_NAME]: {
     org: NOTARY_NAME, dept: "paperwork.letter.notary", street: "Bockenheimer Landstr. 51", city: "60325 Frankfurt am Main",

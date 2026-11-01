@@ -5,6 +5,7 @@ import { day, period } from "../tax";
 type Params = Record<string, string | number>;
 const pay = (p: Params) => `Merci de virer ${euroCents(Number(p.amount))} avant le ${day(p.due)} sur ${p.iban ? `l'IBAN ${p.iban}` : `le compte ${p.account}, code banque ${p.code}`}, avec la référence ${p.number}.`;
 const PERIOD: Record<string, string> = {"month": "dépose une déclaration anticipée de TVA chaque mois, avant le 10 du mois suivant", "quarter": "dépose une déclaration anticipée de TVA chaque trimestre, avant le 10 du mois qui suit le trimestre", "year": "ne dépose plus de déclarations anticipées et régularise la TVA avec la déclaration annuelle", "none": "ne facture pas de TVA et ne dépose pas de déclarations anticipées"};
+const TAXNAME: Record<string, string> = {"sole": "impôt sur le revenu", "partnership": "impôt sur le revenu", "limited": "impôt sur les sociétés"};
 
 export default {
   "letter.taxQuestionnaire.subject": () => "Questionnaire d'immatriculation fiscale",
@@ -31,4 +32,29 @@ export default {
   "error.taxReturn": () => "Cette déclaration n'existe pas.",
   "error.taxNotSmall": () => "L'entreprise n'applique pas le régime de la petite entreprise.",
   "error.taxReturnFiled": () => "Cette déclaration a déjà été déposée.",
+  "ticket.mail.dohleId.subject": () => "Votre inscription à DOHLE",
+  "ticket.mail.dohleId.text": (p) => `Merci pour votre inscription avec le numéro fiscal ${p.number}. Votre identifiant d'activation est ${p.id}. Le code d'activation suit par courrier. Saisissez les deux sur www.dohle.de/registrieren/ pour recevoir votre fichier de certificat.`,
+  "letter.dohleCode.subject": () => "Votre code d'activation DOHLE",
+  "letter.dohleCode.body": (p) => `Pour votre inscription avec le numéro fiscal ${p.number}, le code d'activation est ${p.code}. Saisissez-le avec l'identifiant d'activation de notre e-mail sur www.dohle.de/registrieren/.`,
+  "error.dohleCert": () => "Le fichier de certificat DOHLE est introuvable sur le bureau.",
+  "error.dohleTaxNumber": () => "Le numéro fiscal ne correspond pas.",
+  "error.dohleMail": () => "Saisissez l'adresse e-mail de l'entreprise.",
+  "error.dohleNoCode": () => "Le code d'activation n'est pas encore arrivé.",
+  "error.dohleCode": () => "L'identifiant ou le code d'activation est incorrect.",
+  "letter.taxReminder.subject": (p) => `Déclaration d'impôts ${p.year}`,
+  "letter.taxReminder.body": (p) => `Numéro fiscal ${p.taxNo}. Nous vous rappelons que la déclaration de ${p.name} pour ${p.year} est due le ${day(p.deadline)}. Veuillez la déposer sur DOHLE.`,
+  "letter.taxEstimate.subject": (p) => `Imposition d'office ${p.year}`,
+  "letter.taxEstimate.body": (p) => `Numéro fiscal ${p.taxNo}. La déclaration de ${p.name} pour ${p.year} n'a pas été déposée ; nous avons donc estimé l'impôt à ${euroCents(Number(p.amount))}. Le dépôt de la déclaration avant la fin de l'année prochaine remplace cette estimation. ${pay(p)}`,
+  "letter.taxAssessment.subject": (p) => `Avis d'imposition ${p.year}`,
+  "letter.taxAssessment.body": (p) => `Numéro fiscal ${p.taxNo}. Nous fixons l'${TAXNAME[p.form] ?? TAXNAME.sole} de ${p.name} pour ${p.year}, sur un bénéfice imposable de ${euroCents(Number(p.profit))}, à ${euroCents(Number(p.tax))}.${Number(p.carry) > 0 ? ` Une perte de ${euroCents(Number(p.carry))} est reportée sur l'année suivante.` : ""}${Number(p.fee) > 0 ? ` La majoration de retard pour ${p.months} mois s'élève à ${euroCents(Number(p.fee))}.` : ""}${Number(p.credit) > 0 ? ` Déjà payé sur notre estimation : ${euroCents(Number(p.credit))}.` : ""} ${p.refund === undefined ? pay(p) : Number(p.refund) > 0 ? `Nous remboursons ${euroCents(Number(p.refund))} sur votre compte.` : "Aucun paiement n'est dû."}`,
+  "ledger.vatYear": (p) => `Déclaration annuelle de TVA ${p.year}`,
+  "ledger.taxLate": (p) => `Majoration de retard ${p.year}`,
+  "ledger.taxCredit": (p) => `Imputation de l'estimation ${p.year}`,
+  "ledger.taxEstimate": (p) => `Impôt estimé ${p.year}`,
+  "error.taxYearClosed": () => "L'estimation de cette année est définitive.",
+  "error.booksTaxView": () => "Cette édition ne peut pas déclarer avec DOHLE.",
+  "error.booksNotLinked": () => "DOHLE n'est pas connecté dans la comptabilité.",
+  "error.booksInvoices": () => "Il manque des factures de cette année dans la comptabilité.",
+  "error.booksUnmatched": () => "Le relevé de cette année contient des virements non rapprochés.",
+  "error.dohlePortal": () => "Mein DOHLE ouvre en 2013.",
 } satisfies Dict;

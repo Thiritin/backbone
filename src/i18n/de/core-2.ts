@@ -1,6 +1,6 @@
 import type { Dict } from "../lang";
 import { t } from "../en";
-import { euro, euroCents } from "../../sim/00-core/money";
+import { euro } from "../../sim/00-core/money";
 
 // bare, accusative definite, accusative indefinite
 const PARTS: Record<string, [string, string, string]> = {
@@ -18,10 +18,6 @@ const part = (c: unknown, i: 0 | 1 | 2) => PARTS[String(c)]?.[i] ?? String(c);
 const who = (p: Record<string, string | number>, d: string) => String(p.hostname || p.service || d);
 
 export default {
-  "event.tax.title": () => "Körperschaftsteuer gezahlt",
-  "event.tax.text": (p) => `Du hast ${euroCents(Number(p.tax))} Steuern auf einen Gewinn von ${euroCents(Number(p.profit))} für ${p.year} gezahlt.`,
-  "event.taxLoss.title": () => "Keine Körperschaftsteuer",
-  "event.taxLoss.text": (p) => `${p.year} endete mit einem Verlust, und ${euroCents(Number(p.carry))} Verlust werden ins nächste Jahr vorgetragen.`,
   "event.cashNegative.title": () => "Kontostand im Minus",
   "event.cashNegative.text": (p) => `Dein Konto ist überzogen. Bleibt es ${p.days} Tage im Minus und die Bank gibt keinen Kredit mehr, geht das Unternehmen pleite.`,
   "event.bankrupt.title": () => "Pleite",
@@ -29,8 +25,6 @@ export default {
   "ledger.tax": (p) => `Körperschaftsteuer ${p.year}`,
   "ledger.insurancePremium": () => "Prämie der Hardwareversicherung",
   "ledger.insuranceClaim": (p) => `Schaden bei der Hardwareversicherung: ${part(p.component, 0)} in ${p.device}`,
-  "error.insured": () => "Du hast diese Police schon.",
-  "error.notInsured": () => "Du hast diese Police nicht.",
   "error.unknownLoan": () => "Diesen Kredit gibt es nicht mehr.",
   "event.ticket.title": (p) => `${p.name}`,
   "event.ticket.text": (p) => t(String(p.subject), p),

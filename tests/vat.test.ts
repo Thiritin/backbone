@@ -7,7 +7,7 @@ import { ESTIMATE, smallLimit, taxNumberOf, vatBetween, vatPeriod, vatRate } fro
 import { tick } from "../src/sim/88-tick/tick";
 import { openBankAccount } from "../src/sim/90-actions/bank";
 import { registerCompany } from "../src/sim/90-actions/company";
-import { fileVatReturn, leaveSmallRule } from "../src/sim/90-actions/tax";
+import { fileReturn, leaveSmallRule } from "../src/sim/90-actions/tax";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 
 const at = (y: number, m: number, d = 1, h = 0) => hourOf(new Date(Date.UTC(y, m - 1, d, h)));
@@ -21,7 +21,9 @@ function company(small = false): GameState {
   expect(openBankAccount(s, "sparklasse").ok).toBe(true);
   expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "sole").ok).toBe(true);
   run(s, 1);
-  s.tax = { ...s.tax, answered: s.hour, small, number: taxNumberOf(7), numberAt: s.hour };
+  // The DOHLE certificate on the desktop.
+  s.docs = [...s.docs, { id: "cert1", kind: "cert", title: "dohle-zertifikat.pfx", body: "", x: 0, y: 0 }];
+  s.tax = { ...s.tax, answered: s.hour, small, number: taxNumberOf(7), numberAt: s.hour, cert: "cert1" };
   s.cash = 50_000;
   return s;
 }
@@ -53,8 +55,8 @@ describe("VAT", () => {
     run(s, 2);
     const r = vatReturns(s)[0];
     expect(r).toMatchObject({ from: at(2005, 1), to: at(2005, 2), dueAt: at(2005, 2, 11), filedAt: null });
-    expect(fileVatReturn(s, r.id).ok).toBe(true);
-    expect(fileVatReturn(s, r.id)).toEqual({ ok: false, error: "error.taxReturnFiled" });
+    expect(fileReturn(s, r.id).ok).toBe(true);
+    expect(fileReturn(s, r.id)).toEqual({ ok: false, error: "error.taxReturnFiled" });
     expect(vatBooked(s)).toBe(-160);
     expect(profitOf(s.ledger.at(-1)!)).toBe(-160);
   });
@@ -65,7 +67,7 @@ describe("VAT", () => {
     s.ledger = [...s.ledger, entry(at(2005, 1, 20), "hardware", -2320)];
     run(s, 2);
     const cash = s.cash;
-    expect(fileVatReturn(s, vatReturns(s)[0].id).ok).toBe(true);
+    expect(fileReturn(s, vatReturns(s)[0].id).ok).toBe(true);
     expect(s.cash).toBe(cash + 320);
   });
 
@@ -73,7 +75,7 @@ describe("VAT", () => {
     const s = company();
     s.tax = { ...s.tax, numberAt: null };
     runTo(s, at(2005, 2, 1) + 1);
-    expect(fileVatReturn(s, vatReturns(s)[0].id)).toEqual({ ok: false, error: "error.taxNumber" });
+    expect(fileReturn(s, vatReturns(s)[0].id)).toEqual({ ok: false, error: "error.taxNumber" });
   });
 
   it("sends a surcharge after the due date and an estimate a month later, which a late filing replaces", () => {
@@ -87,7 +89,7 @@ describe("VAT", () => {
     runTo(s, at(2005, 3, 16));
     const est = letters(s, "vatEstimate")[0];
     expect(est.params.amount).toBe(1600 * ESTIMATE.factor);
-    expect(fileVatReturn(s, vatReturns(s)[0].id).ok).toBe(true);
+    expect(fileReturn(s, vatReturns(s)[0].id).ok).toBe(true);
     // The unpaid estimate is withdrawn and the real payable booked.
     expect(s.payables.some((p) => p.id === est.payable)).toBe(false);
     expect(vatBooked(s)).toBe(-1600);
@@ -101,7 +103,7 @@ describe("VAT", () => {
     const p = s.payables.find((x) => x.id === est.payable)!;
     s.payables = s.payables.map((x) => (x.id === p.id ? { ...x, sent: p.amount, paidAt: s.hour } : x));
     s.ledger = [...s.ledger, ...p.lines];
-    expect(fileVatReturn(s, vatReturns(s)[0].id).ok).toBe(true);
+    expect(fileReturn(s, vatReturns(s)[0].id).ok).toBe(true);
     expect(vatBooked(s)).toBe(0);
   });
 

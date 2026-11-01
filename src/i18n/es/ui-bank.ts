@@ -77,7 +77,6 @@ export default {
   "bank.site.cancel": () => "Cancelar",
   "bank.site.next": () => "Siguiente",
   "bank.site.term": () => "Plazo",
-  "bank.finance.noLoans": () => "Sin préstamos",
   "bank.catTransfers": () => "Transferencias",
   "bank.pay.supplier": () => "Proveedor",
   "bank.pay.number": () => "Factura",

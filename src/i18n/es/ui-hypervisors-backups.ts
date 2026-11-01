@@ -119,7 +119,7 @@ export default {
   "vw.feature.pools": () => "Grupos de recursos",
   "error.maintenanceBlocked": () => "Una VM en ejecución no puede moverse en vivo e impide que este host entre en modo de mantenimiento.",
   "error.unknownRec": () => "Esta recomendación ya no existe.",
-  "vw.drs": () => "vSphere DRS",
+  "vw.drs": () => "vSphear DRS",
   "vw.drs.off": () => "Desactivado",
   "vw.drs.manual": () => "Manual",
   "vw.drs.partial": () => "Parcialmente automatizado",

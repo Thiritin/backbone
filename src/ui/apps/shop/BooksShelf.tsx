@@ -11,9 +11,13 @@ import { useFocus, useStore } from "../../store";
 
 export const BOOKKEEPING = "Bookkeeping";
 
-export const booksPrice = (v: BooksVendor): string => v.monthly
-  ? t("shop.priceMonthly", { price: euro(v.monthly), seat: 0 })
-  : [t("books-vendors.priceOnce", { price: euro(v.licence) }), ...(v.update ? [t("books-vendors.priceUpdates", { price: euro(v.update) })] : [])].join(", ");
+// The smallest edition's price, which the shelf installs.
+export const booksPrice = (v: BooksVendor): string => {
+  const e = v.editions[0];
+  if (v.deployment === "browser") return t("shop.priceMonthly", { price: euro(e.price), seat: 0 });
+  if (!e.price) return t("books-editions.free");
+  return [t("books-vendors.priceOnce", { price: euro(e.price) }), ...(e.update ? [t("books-vendors.priceUpdates", { price: euro(e.update) })] : [])].join(", ");
+};
 
 // The Pear Store shelf of bookkeeping programs on sale this year.
 export function BooksShelf() {

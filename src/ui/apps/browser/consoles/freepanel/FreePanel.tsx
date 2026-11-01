@@ -1,5 +1,5 @@
 import { ChevronRight, Folder, LogOut } from "lucide-react";
-import { Actions, Backups, erasFrom, eraAt, Facts, LoginForm, Nodes, RowsTable, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
+import { Actions, Backups, eraAt, looks, Facts, LoginForm, Nodes, RowsTable, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
 import { t } from "../../../../../i18n/en";
 import { parseCreate } from "../../../../../sim/80-business/consoles";
 import { PackagesScreen, ProvisionForm } from "../PackageForms";
@@ -7,11 +7,11 @@ import { useReadoutPages } from "../Readouts";
 import { SystemInfo } from "./SystemInfo";
 import "./freepanel.css";
 
-// docs/design/software.md, section 10: a blue category tree with grey module tables until 2016, then white and flat.
-const ERAS = erasFrom(2005, 2016);
+// docs/design/software.md, section 10: one look per Webmin theme, ids as in UI_LOOKS.
+const LOOKS = looks({ gray: 2005, authentic: 2014 });
 
 export function FreePanel(p: PanelProps) {
-  const era = eraAt(ERAS, p), open = parseCreate("freepanel", p.path), [tab, setTab] = usePanelTab(p.f, open?.screen ?? "sysinfo");
+  const era = eraAt(LOOKS, p), open = parseCreate("freepanel", p.path), [tab, setTab] = usePanelTab(p.f, open?.screen ?? "sysinfo");
   const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f);
   if (!p.signedIn) return (
     <div className="cx fp fp-login" data-era={era}>

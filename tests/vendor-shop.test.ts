@@ -5,7 +5,7 @@ import { newGame } from "../src/sim/50-state";
 import { assignKey, licenceStatus } from "../src/sim/60-infra/licence";
 import { renewKeys } from "../src/sim/85-products/products";
 import { cartOf, keysOf, lineMajor, offers, ORDER, orderKeys } from "../src/sim/80-business/vendor-shop";
-import { registerLicence } from "../src/sim/90-actions/lexwear";
+import { registerLicence } from "../src/sim/90-actions/licences";
 import { addToCart, cancelLicence, checkout, removeFromCart } from "../src/sim/90-actions/vendor-shop";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { bankTick, cardSpent, send } from "../src/sim/46-finance/bank";
