@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- Right-click a browser tab to close it, close all other tabs, or close every tab to its left or right.
 - Letters now arrive by post in the new Post app, and paper bills from the trade office, the notary, the commercial register and the chamber of commerce land in your payables.
 - You can change your company to a partnership or a limited company by downloading the form from the trade office site, signing it and emailing it from the new compose window, and the Yahoy! Directory now links to the trade office.
 - Dunning rules now have their own settings tab in the bookkeeping app, and the pay all button on the payables tab sits in a proper toolbar.
