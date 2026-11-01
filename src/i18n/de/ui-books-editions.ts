@@ -18,7 +18,6 @@ export default {
   "books-editions.feature.hbci": () => `HBCI-Onlinebanking`,
   "books-editions.feature.tax": () => `Steuer`,
   "books-editions.feature.reports": () => `Gewinn und Verlust und Cashflow`,
-  "books-editions.feature.auto-reminders": () => `Automatische Mahnungen`,
   "books-editions.feature.helpdesk-link": () => `Helpdesk-Anbindung`,
   "books-editions.feature.statistics": () => `Statistik`,
   "ledger.booksSeat": (p) => `${p.program} ${p.edition} Platz`,

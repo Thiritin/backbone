@@ -10,7 +10,6 @@ import { useSessionState } from "../../session";
 import { useStore } from "../../store";
 import { useBooks } from "./view";
 import { More } from "../More";
-import { Locked } from "./Locked";
 
 const DAY = 24;
 const reminder = (step: number) => STEPS[step].key === "collections" ? t("misc1.billing.toCollections") : t("misc1.billing.sendStep", { step: t(`invoice.step.${STEPS[step].key}`).toLowerCase() });
@@ -34,7 +33,7 @@ export function RemindersTab({ focus }: { focus: string | null }) {
   const name = (id: string) => game.customers.find((c) => c.id === id)?.name ?? id;
   return (
     <>
-      <div className="fin-toolbar"><Locked id="auto-reminders" label={t("books.autoReminders")} />
+      <div className="fin-toolbar">
         <button className="btn books-settings" aria-pressed={settings} onClick={() => setSettings(!settings)}>{t("books.settings")}</button>
       </div>
       {settings ? <div className="fin-scroll"><Rules /></div> : <div className="fin-scroll">

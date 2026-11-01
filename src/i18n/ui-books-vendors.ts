@@ -25,7 +25,6 @@ export default {
   "ledger.bookModule.helpdesk-link": (p) => `${p.vendor} Helpdesk link licence`,
   "ledger.bookModule.monthly-run": (p) => `${p.vendor} Monthly run licence`,
   "ledger.bookModule.match-by-reference": (p) => `${p.vendor} Match by reference licence`,
-  "ledger.bookModule.auto-reminders": (p) => `${p.vendor} Automatic reminders licence`,
   "ledger.bookModule.hbci": (p) => `${p.vendor} HBCI online banking licence`,
   "error.updateOpen": () => "The yearly update is unpaid.",
 } satisfies Dict;

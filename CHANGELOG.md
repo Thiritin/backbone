@@ -3,6 +3,8 @@
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
 ## 2026-11-01
+- Bookkeeping programs no longer send reminders, dunning notices and final notices by themselves; they go out when you or your staff send them, or after the Automation research.
+- Private customers and gamers now write the invoice number on four out of five transfers.
 - The DirectAdmen 1.30 release notes list the Enhanced skin once.
 - Consoles, the command line and the monitoring list show the installed software version instead of the year, and the DirectAdmen 1.24 release notes no longer mention the Enhanced skin.
 - Leads now write in about products you do not sell yet, and a switch on the website settings stops those requests.

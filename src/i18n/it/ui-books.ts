@@ -16,7 +16,6 @@ export default {
   "books.tab.payables": () => "Fatture passive",
   "books.monthlyRun": () => "Fatturazione mensile",
   "books.matchByReference": () => "Abbina per causale",
-  "books.autoReminders": () => "Solleciti automatici",
   "books.col.number": () => "N.",
   "books.col.customer": () => "Cliente",
   "books.col.period": () => "Periodo",
