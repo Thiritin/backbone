@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- Used hardware now resells for less than it cost new, and buyers on the board and on eBuy no longer pay more than its resale value.
+- A part taken out of a server takes its share of the server's value along, so stripping a server and selling the pieces brings in the same as selling it whole.
 - The Marketing app has a Domain tile whose Buy button opens the domain resellers in the Yahoy! Directory, and the domains of other companies in the game can no longer be registered as your own.
 - Websites in the browser fill the whole window again instead of a narrow page.
 - Right-click a browser tab to close it, close all other tabs, or close every tab to its left or right.
@@ -26,6 +28,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Quotes are now documents in Books that you drag onto the order ticket, an accepted quote converts to the first invoice that you send and match like any other, and the Lexwear module Helpdesk link does the quote, account and invoice from the ticket.
 - Datacenter providers now announce your own IP block under your AS number for a one-off setup fee, so you no longer need your own BGP router for it.
 - Register domain and Transfer domain on an order now open your registrar's website, where you fill the owner from the customer record with a click and enter the auth code from the order email, while a shop system with the registrar module still registers its own orders.
+- Control panel trials now last as long as the real vendor's trial, 15 days for cPanic and 14 for Pleskit, and run only once per machine, so reinstalling a panel no longer starts a new trial. DirectAdmen has no trial and bills its top edition from the install.
 - The router now sits in the rack and hands out every address by DHCP, and its Fritz!OZ page at fritz.bocks lists your devices, fixes addresses and shares the web port with the one server that hosts websites on a home line.
 - Switches now come managed or unmanaged, and managed switches have VLANs, a saved configuration and their own web page at the address the router gives them.
 

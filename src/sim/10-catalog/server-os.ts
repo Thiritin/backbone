@@ -13,6 +13,8 @@ export interface ServerOsVersion { version: string; name: string; from: number }
 export interface ServerOs {
   id: ServerOsId; name: string; versions: ServerOsVersion[];
   licensing: LicenseEra[];
+  // Days a fresh install runs without a key; null when a key is needed at install. Missing on free software.
+  trialDays?: number | null;
   // Game minutes from power on to the login and from a clean shutdown to power off, and game hours the installer runs.
   bootMinutes: number; haltMinutes: number; installHours: number;
   site: Site;
@@ -30,7 +32,7 @@ export const SERVER_OS: ServerOs[] = [
   },
   {
     id: "windoors", name: "Windoors Server", bootMinutes: 40, haltMinutes: 10, installHours: 2, site: SITES.windoors,
-    licensing: [{ from: 2005, kind: "once", fee: 600 }, { from: 2016, kind: "core", fee: 4 }],
+    licensing: [{ from: 2005, kind: "once", fee: 600 }, { from: 2016, kind: "core", fee: 4 }], trialDays: 180,
     versions: [
       v("2003", 2005), v("2008", 2008), v("2008 R2", 2010), v("2012", 2012), v("2012 R2", 2014), v("2016", 2016), v("2019", 2019),
       v("2022", 2022), v("2025", 2025),

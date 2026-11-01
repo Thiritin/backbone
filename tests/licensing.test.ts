@@ -55,7 +55,7 @@ describe("Windoors Server", () => {
     ok(install(s, id, "windoors"));
     expect(s.cash).toBe(400);
     expect(once(s)).toMatchObject([{ category: "licenses", params: { name: "Windoors Server 2003", machine: "st-dev90" }, amount: -600 }]);
-    expect(s.licenses).toMatchObject([{ id: "windoors", machineId: id }]);
+    expect(s.licenses).toMatchObject([{ product: "windoors", kind: "once", machineId: id, renewsAt: null }]);
     ok(bootFromUsb(s, id));
     ok(install(s, id, "windoors"));
     expect(s.cash).toBe(400);
@@ -89,7 +89,7 @@ describe("Windoors Server", () => {
     const cash = s.cash;
     ok(install(s, id, "windoors"));
     expect(s.cash).toBe(cash);
-    expect(s.licenses).toEqual([]);
+    expect(s.licenses).toMatchObject([{ product: "windoors", kind: "core", machineId: id }]);
     monthEnd(s);
     expect(s.ledger.filter((l) => l.key === "ledger.windoors").map((l) => l.amount)).toEqual([-4 * installedCores(dev(s, id))]);
   });
@@ -141,8 +141,9 @@ describe("old saves", () => {
     ok(install(s, id, "windoors"));
     const raw = JSON.parse(serialize(s));
     delete raw.licenses;
+    delete raw.trials;
     const back = deserialize(JSON.stringify(raw));
-    expect(back.licenses).toMatchObject([{ id: "windoors", machineId: id }]);
+    expect(back.licenses).toMatchObject([{ product: "windoors", machineId: id }]);
     const cash = back.cash, lines = back.ledger.length;
     monthEnd(back);
     expect(back.ledger.slice(lines).filter((l) => l.category === "licenses")).toEqual([]);
