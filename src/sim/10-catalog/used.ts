@@ -5,12 +5,14 @@ import type { Device, GameState } from "../50-state";
 import type { Vendor } from "./cpus";
 
 export type Channel = "ebuy" | "board" | "chat";
-export const CHANNELS: { id: Channel; name: string }[] = [
-  { id: "ebuy", name: "eBuy" },
-  { id: "board", name: "WebHostingTalc" },
-  { id: "chat", name: "Craigslost" },
+// Each channel is a website in the Browser.
+export const CHANNELS: { id: Channel; name: string; host: string }[] = [
+  { id: "ebuy", name: "eBuy", host: "ebuy.com" },
+  { id: "board", name: "WebHostingTalc", host: "webhostingtalc.com" },
+  { id: "chat", name: "Craigslost", host: "telegrump.org" },
 ];
 export const channelName = (c: Channel): string => CHANNELS.find((x) => x.id === c)!.name;
+export const marketUrl = (c: Channel): string => `www.${CHANNELS.find((x) => x.id === c)!.host}/`;
 
 export type Defect = "psu" | "drive" | "rails";
 // Price factor of a listing with this visible defect.

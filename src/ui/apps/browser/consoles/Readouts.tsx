@@ -13,6 +13,9 @@ import { supportOn } from "../../../../sim/60-infra/lifecycle";
 import { yearOf } from "../../../../sim/00-core/time";
 import { LOG_SOURCES, logLines, panelTasks, type LogSource } from "../../../../sim/80-business/readouts";
 import { LicenceTiers } from "./HostSettings";
+import { isLicensed, licenceStatus } from "../../../../sim/60-infra/licence";
+import { activateLicence } from "../../../../sim/90-actions/licence";
+import { useStore } from "../../../store";
 import type { Tab } from "./PanelBase";
 
 export interface ReadoutPage { id: Tab; label: string; body: ReactNode }
@@ -75,6 +78,25 @@ export function LicencePage({ game, c }: { game: GameState; c: Cluster }) {
         </tbody>
       </table>
       <LicenceTiers game={game} c={c} />
+      <KeyEntry game={game} c={c} />
+    </div>
+  );
+}
+
+// Enters a key on the first machine of the cluster that is not licensed, or on its first machine to replace the key.
+function KeyEntry({ game, c }: { game: GameState; c: Cluster }) {
+  const act = useStore((s) => s.act), [key, setKey] = useState(""), [done, setDone] = useState(false);
+  const id = c.panel ?? c.platform, machines = c.vm ? [c.vm] : c.nodes.map((n) => n.deviceId);
+  const m = id ? machines.find((x) => licenceStatus(game, x, id) !== "active") ?? machines[0] : undefined;
+  if (!id || !m || !isLicensed(id)) return null;
+  const activate = () => { const r = act(activateLicence, m, id, key); setDone(r.ok); if (r.ok) setKey(""); };
+  return (
+    <div className="cx-inline">
+      <label className="cx-field">{t("vendor-sites.licenceKey")}
+        <input className="num" value={key} spellCheck={false} autoComplete="off" onChange={(e) => { setKey(e.target.value); setDone(false); }} />
+      </label>
+      <button className="cx-btn primary" disabled={!key.trim()} onClick={activate}>{t("host.activate")}</button>
+      {done && <span role="status">{t("host.activated")}</span>}
     </div>
   );
 }

@@ -24,6 +24,7 @@ import { OFFICE_HOST, OFFICE_URL } from "./office";
 import { t } from "../../i18n/en";
 import { bankById, BANKS, type BankId } from "../10-catalog/banks";
 import { LEXWEAR_HOST } from "./lexwear";
+import { CHANNELS, type Channel } from "../10-catalog/used";
 import { BOOKS_VENDORS, type BooksVendorId } from "../10-catalog/bookkeeping";
 import { booksHost } from "./bookkeeping";
 import { SHOPS, type ShopId } from "../10-catalog/shops";
@@ -41,6 +42,7 @@ export type Page =
   | { kind: "bank"; id: BankId }
   | { kind: "supplier"; name: string }
   | { kind: "lexwear" }
+  | { kind: "market"; channel: Channel }
   | { kind: "books"; id: BooksVendorId }
   | { kind: "shopVendor"; id: ShopId }
   | { kind: "hosttoast" }
@@ -95,7 +97,7 @@ export const dirSlug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]
 export const resellersUrl = (): string => `${HOME_URL}${dirSlug(t("sim.index.cat.resellers"))}`;
 // Domains the game's other companies hold in any year, and every name under them.
 export function providerDomain(name: string): boolean {
-  const hosts = [INDEX_HOST, OFFICE_HOST, WIKI_HOST, LEXWEAR_HOST, HOSTTOAST_HOST, BOARD_HOST, VIDEO_HOST, ...SOFTWARE.map((x) => x.site.host), ...SERVER_OS.map((x) => x.site.host),
+  const hosts = [INDEX_HOST, OFFICE_HOST, WIKI_HOST, LEXWEAR_HOST, HOSTTOAST_HOST, BOARD_HOST, VIDEO_HOST, ...CHANNELS.map((c) => c.host), ...SOFTWARE.map((x) => x.site.host), ...SERVER_OS.map((x) => x.site.host),
     ...VENDORS.map((m) => vendorHost(m.id)), ...BANKS.map((b) => b.host), ...REGISTRARS.map(registrarHost)].map((h) => h.replace(/^www\./, ""));
   return hosts.some((h) => h === name || h.endsWith(`.${name}`));
 }
@@ -183,6 +185,8 @@ export function resolve(s: GameState, raw: string): Resolved {
   if (named(OFFICE_HOST)) return out({ kind: "office" });
   if (named(WIKI_HOST)) return out({ kind: "wiki" });
   if (named(LEXWEAR_HOST)) return out({ kind: "lexwear" });
+  const market = CHANNELS.find((c) => named(c.host));
+  if (market) return out({ kind: "market", channel: market.id });
   // Every shop system but the hand-rolled form has its vendor's site, from the year it is sold.
   const shopSite = SHOPS.find((v) => v.id !== "handRolled" && v.from <= yearOf(s.hour) && named(shopHost(v.id)));
   if (shopSite) return out({ kind: "shopVendor", id: shopSite.id });

@@ -433,4 +433,5 @@ export default {
   "browser-sites-2.wikiNoArticle": () => "Wikipedio non ha una voce con questo nome esatto.",
   "browser-sites-2.wikiRandom": () => "Una voce a caso",
   "browser-sites-2.wikiFrom": () => "Da Wikipedio, l'enciclopedia libera",
+  "browser-sites-2.keyFlag": () => "Aggiungi --key seguito dalla tua chiave di licenza al comando per installare con una licenza.",
 } satisfies Dict;

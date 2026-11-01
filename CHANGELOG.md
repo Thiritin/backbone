@@ -5,6 +5,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-01
 
 - Getting started no longer asks you to style your company, since registering it already gives it a name.
+- Every software and operating system website now has a Versions page with each release's support dates and a News page announcing each release with its headline features, and the News app reports every new major version on its release day.
+- Used hardware is now bought on its own websites in the Browser: eBuy auctions, the WebHostingTalc forum and the Telegrump chat each look and filter the way they did in their year, from 2005 web pages to modern apps.
 - Registering your company at the trade office now goes through at once and charges the fee only once, by a letter that arrives the same day, and paying it is the next step in Getting started.
 - Errors on web pages, such as a wrong TAN or a missing owner name, now appear on the page next to the field instead of as a notification.
 - Ports now look like their connectors on every rear panel: RJ45 jacks, silver SFP cages and a grey, labelled DSL port set apart from the LAN ports.
@@ -69,6 +71,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - A part taken out of a server takes its share of the server's value along, so stripping a server and selling the pieces brings in the same as selling it whole.
 - Installed software now runs a real version number, and a new install takes the newest release out at the time.
 - A software console now looks like the version installed on the machine, so an old cPanic keeps its old look in later years.
+- Installing licensed software no longer charges a licence: software with a trial runs it, the rest asks for a licence key in the installer, in Windoors Setup or with --key on the install command, and a key entered on the licence page turns a trial into a full licence.
+- Software whose trial ended or whose licence lapsed stops working for you: hypervisors refuse new virtual machines, game and service software take no new customers, and backups to Veeham Backup fail.
 - The Marketing app has a Domain tile whose Buy button opens the domain resellers in the Yahoy! Directory, and the domains of other companies in the game can no longer be registered as your own.
 - Websites in the browser fill the whole window again instead of a narrow page.
 - Right-click a browser tab to close it, close all other tabs, or close every tab to its left or right.

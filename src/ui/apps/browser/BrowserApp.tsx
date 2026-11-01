@@ -32,6 +32,8 @@ import { SponsorBoard } from "./sites/SponsorBoard";
 import { IndexSite } from "./sites/index/IndexSite";
 import { OfficeSite } from "./sites/office/OfficeSite";
 import { LexwearSite } from "./sites/lexwear/LexwearSite";
+import { MarketSite } from "./sites/market/MarketSite";
+import { channelName } from "../../../sim/10-catalog/used";
 import { BOOKS_SITES } from "./sites/books/sites";
 import { booksVendor } from "../../../sim/10-catalog/bookkeeping";
 import { ShopVendorSite } from "./sites/shopvendors/registry";
@@ -94,6 +96,7 @@ function titleOf(game: GameState, r: Resolved): string {
     case "index": return t("browser-sites-1.ix.title");
     case "office": return t("browser-sites-1.of.title");
     case "lexwear": return LEXWEAR;
+    case "market": return channelName(p.channel);
     case "books": return booksVendor(p.id)!.program;
     case "shopVendor": return shopById(p.id).name;
     case "hosttoast": return HOSTTOAST;
@@ -129,6 +132,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "sponsorboard") body = <SponsorBoard game={game} />;
   else if (p.kind === "office") body = <OfficeSite game={game} path={r.path} go={go} />;
   else if (p.kind === "lexwear") body = <LexwearSite game={game} path={r.path} go={go} />;
+  else if (p.kind === "market") body = <MarketSite game={game} channel={p.channel} path={r.path} go={go} />;
   else if (p.kind === "shop") body = <PortalSite game={game} host={r.host} path={r.path} go={go} />;
   else if (p.kind === "books" && p.id !== "lexwear") { const Site = BOOKS_SITES[p.id]; body = <Site game={game} path={r.path} go={go} />; }
   else if (p.kind === "shopVendor") body = <ShopVendorSite game={game} id={p.id} />;

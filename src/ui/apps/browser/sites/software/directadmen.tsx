@@ -11,9 +11,11 @@ export function DirectAdmen(props: SiteProps) {
       <div className="sw sw-directadmen late">
         <header><span className="sw-wm"><SiteMark id="directadmen" name={p.name} size={26} /> DirectAdmen</span><Nav {...props} /></header>
         <div className="hero"><h1>{t("browser-sites-1.da.tagLate", { tagline: p.site.tagline })}</h1><p>{p.site.blurb}</p></div>
-        <section><h2>{t("browser-sites-1.da.features")}</h2><Features p={p} className="grid" /></section>
-        <section><h2>{t("browser-sites-1.da.pricing")}</h2><Pricing p={p} /></section>
-        <section><h2>{t("browser-sites-1.da.install")}</h2><Commands p={p} year={year} /></section>
+        {props.page === "versions" || props.page === "news" ? <Body {...props} /> : <>
+          <section><h2>{t("browser-sites-1.da.features")}</h2><Features p={p} className="grid" /></section>
+          <section><h2>{t("browser-sites-1.da.pricing")}</h2><Pricing p={p} /></section>
+          <section><h2>{t("browser-sites-1.da.install")}</h2><Commands p={p} year={year} /></section>
+        </>}
         <footer>{t("browser-sites-1.da.footer", { year })}</footer>
       </div>
     );
