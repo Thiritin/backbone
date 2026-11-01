@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- Custom order tickets now show only the step you are at, and you can open the customer account before or after sending the offer, which appears as an attachment on the email you sent.
+- A custom order now sends the customer one email when everything is set up, with the account, the order confirmation and its invoice, the domain and the login details together.
 - A new game now starts with no money: you first open a business account on a bank's website, where your €3,500 savings arrive, and then register the company at the trade office for a €40 fee paid by bank transfer.
 - Used hardware now resells for less than it cost new, and buyers on the board and on eBuy no longer pay more than its resale value.
 - A part taken out of a server takes its share of the server's value along, so stripping a server and selling the pieces brings in the same as selling it whole.

@@ -25,7 +25,7 @@ import { Incidents } from "./Incidents";
 import { CustomerCard } from "./CustomerCard";
 import { Reports } from "./Reports";
 import { supportApp } from "./desk";
-import { CustomCompose, InvoicePill } from "./CustomOrder";
+import { CustomCompose, InvoicePill, MailAttachments } from "./CustomOrder";
 import { Compose } from "./Compose";
 import { specText } from "../../../sim/30-market/spec";
 import { OFFERS } from "../../../sim/80-business/walk";
@@ -298,6 +298,7 @@ function OrderThread({ tk, r, gates }: { tk: Ticket; r: SalesRequest; gates: Gat
           <div key={i} className={`msg${m.from === "you" ? " you" : ""}`}>
             <div className="from">{m.from === "you" ? m.by ?? t("support.you") : r.contact} · <span className="num">{stamp(m.hour)}</span></div>
             <p>{t(m.key, m.params)}{i === 0 && r.kind !== "expansion" && ` ${t(`request.use.${r.profile}`)}`}{i === 0 && r.kind === "order" && `\n\n${addressLines(mailedAddress(game.seed, r)).join("\n")}`}</p>
+            {r.kind === "order" && <MailAttachments tk={tk} r={r} m={m} />}
           </div>
         ))}
         {tk.work && <div className="event"><span>{t("support.queuedUntil", { time: stamp(tk.work.doneAt / 60) })}</span></div>}
