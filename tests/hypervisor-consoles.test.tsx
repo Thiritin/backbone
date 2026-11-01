@@ -2,7 +2,7 @@ import type { ReactElement } from "react";
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { yearOf } from "../src/sim/00-core/time";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { consoleFeatures } from "../src/sim/80-business/consoles";
 import { addNode, createVm } from "../src/sim/90-actions/clusters";
 import { connect } from "../src/sim/90-actions/hardware";
@@ -18,7 +18,7 @@ import { CtPage, HostPage, TemplatesPage } from "../src/ui/apps/browser/consoles
 import { VmSummary as PmxSummary } from "../src/ui/apps/browser/consoles/proxmocks/Proxmocks";
 import { VmMonitor, VmSummary as VswSummary } from "../src/ui/apps/browser/consoles/vmwhere/VmWhere";
 import type { Cluster } from "../src/sim/60-infra/cluster";
-import { buyDevice, hypervisor, panelVm, skipTo, withServer } from "./fixtures";
+import { buyDevice, hypervisor, panelVm, skipTo, withServer, newGame } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 // docs/design/software.md, section 9: the first year of each hypervisor console's early and late look, and its mark.

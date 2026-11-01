@@ -29,11 +29,11 @@ Level 6 lands before the cloud and GPU boom, so the late game still has new prod
 
 ## Starting state
 
-A new game opens paused on 1 January 2005 at 00:00 with €3,500 in cash, an empty 24U rack in the basement next to the home router, and three friends waiting for web hosting. The savings buy the first server, a Dwell Balanced 1U G1 at €2,500, and leave the same €1,000 the company used to start with next to a free server, so year 1 pacing is unchanged. The Bank comes in for the second server, which the panel VM and the friends make due within the first month or two. The home router has 4 ports, one per basement server, so the basement needs no switch.
+A new game opens paused on 1 January 2005 at 00:00 with no cash and €3,500 of savings that arrive when the player opens the bank account, an empty 24U rack in the basement next to the home router, and three friends waiting for web hosting. The savings buy the first server, a Dwell Balanced 1U G1 at €2,500, and leave the same €1,000 the company used to start with next to a free server, so year 1 pacing is unchanged. The Bank comes in for the second server, which the panel VM and the friends make due within the first month or two. The home router has 4 ports, one per basement server, so the basement needs no switch.
 
 | Item | Starting value |
 | --- | --- |
-| Cash | €3,500, no debt; the bank lends up to the level 1 minimum of €10,000 from day one |
+| Cash | €0 until the bank account opens with the €3,500 savings, then €40 for the registration, no debt; the bank lends up to the level 1 minimum of €10,000 from day one |
 | Company | Level 1, 0 know-how, no reviews yet |
 | Basement | 1 rack position for a rack up to 24U, 3 kW at most; power at the household price |
 | Home line | Mom's DSL, free (Home line). The player orders a better one in Locations; it goes live after its install days, and every line on offer costs money |
@@ -52,7 +52,7 @@ A challenge starts from the normal starting state with one twist, chosen by ISO 
 | --- | --- |
 | 0 | Home line SDSL 2048 already in from hour 0 |
 | 1 | Every datacenter except Hetzler Park starts at its 2005 capacity; competitors cancel and refill as usual afterwards |
-| 2 | Starting cash €2,000 |
+| 2 | Savings of €2,000 arrive with the bank account |
 
 Scores count until 1 January 2008, 00:00: net worth then (rounded to the euro), the first day level 3 holds (checked once a day), and the mean of each hour's average happiness of active customers (rounded to a tenth). A replay passes when net worth is within €1, the level 3 day matches and happiness is within 0.1.
 
@@ -389,7 +389,7 @@ P(j) = \frac{e^{U_j/\tau}}{\sum_k e^{U_k/\tau}}
 | Online shop | 0.30 | 0.55 | 0.15 | 1.3× | Premium | 5× |
 | Enterprise | 0.35 | 0.55 | 0.10 | 1.3× | Premium | 4× |
 
-**Competitors.** Four fixed archetypes sell in every city. Their scores never change.
+**Competitors.** Four archetypes sell in every city. Their scores drift over the years as described in [competitors.md](competitors.md).
 
 | Competitor | P | R | C | Sells |
 | --- | --- | --- | --- | --- |

@@ -23,15 +23,23 @@ Competitors move from the catalog into state as `competitors: Rival[]`. `newGame
 
 The market roll reads rivals from state instead of `COMPETITORS` and skips closed ones. With nothing changing yet, phase 1 must leave every existing market test green.
 
+Decisions for phase 1:
+
+- The majors' ids are their names in lower case with hyphens (`ionose`, `wp-engyne`), and `founded` counts months since January 2005.
+- Each major starts with the customers per city its 2005 share of the city's new customers holds at 1.5% churn a month.
+- P, R and C in state are the scores the market reads today. P is recomputed from the template each month, an outage subtracts its hit from R and gives it back when it ends, and C keeps every step it has taken.
+- The `reviews` and `tier` fields arrive with phases 2 and 3, which use them.
+
 ## 2. Monthly drift
 
-At the month roll, using the game rng so a seed replays the same market:
+At the month roll, with a generator hashed from the game seed, the month and the rival, so a seed replays the same market without changing any other draw of the game rng:
 
 - **Performance.** The template P is the score a rival has on the current generation. When a new generation launches (`generationAt`), every rival scores 7.5 lower (the 0.5 gen weight × 15 per generation behind) until `lag` months have passed, then it is back at its template P. Rivals refresh hardware on the same timeline as the player, so a fast rival is briefly ahead of a slow player.
 - **Reliability.** Each rival has an outage chance per month of 2% (premium 1%, budget 3%). An outage takes 10 to 25 from R for 1 to 3 months, posts a news item ("Hetzna: Frankfurt down for 6 hours") and writes reviews (section 4).
-- **Convenience.** C rises by the template's step whenever a convenience milestone arrives in the world: control panels (2006), one-click installs (2009), managed WordPress (2013), a customer API (2016), AI assistants (2023). Steps: budget and managed +4, premium +3, the others +2, capped at 95.
-- **Price.** Each January every price factor falls by 1% (budget 2%), floored at the template's value minus 0.15.
-- **Customers.** A rival's new customers per city are its softmax share of that month's leads in the city (the same `P(j)` the market already computes), minus churn of 1.5% a month, plus 2% while it has an outage.
+- **Convenience.** C rises by the template's step `lag` months after a convenience milestone arrives in the world: control panels (2006), one-click installs (2009), managed WordPress (2013), a customer API (2016), AI assistants (2023). Steps: budget and managed +4, premium +3, the others +2, capped at 95.
+- **Price.** Every year from 2006 a budget rival's price factor falls by 2%, `lag` months after January, floored at the template's value minus 0.15. The other templates hold their price factor.
+- **Why lag applies to all three and only budget cuts prices.** With convenience and every price moving each January, the balance model's share of leads you win in 2006 fell from 69% to 65%, and with every template cutting prices even to a floor of 0.05 the steady bot reached level 6 in 2019.5, past its pacing test (2018.8 with fixed rivals). Following each move after the rival's own lag and leaving price cuts to the budget template keeps 2005 and 2006 within 2 points of the fixed table and level 6 at 2018.9. The balance model counts a rival's price cuts at the game's 0.25 price weight, since its own price term is calibrated at four times that.
+- **Customers.** A rival's new customers per city are its softmax share of that month's leads in the city (the same `P(j)` the market already computes), minus churn of 1.5% a month, plus 2% while it has an outage. The new customers are the city's buyers that month as Market research splits them (`demand` in `30-market/research.ts`), and the Market app charts each month's split per city for the last 60 months.
 
 ## 3. Entry and exit
 

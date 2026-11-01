@@ -11,8 +11,7 @@ import { bootFromUsb, enterSetup, installOs } from "../src/sim/90-actions/consol
 import { reboot } from "../src/sim/90-actions/hardware";
 import { plugStick, unplugStick } from "../src/sim/90-actions/media";
 import { installSoftware, uninstallSoftware } from "../src/sim/90-actions/software";
-import { newGame } from "../src/sim/50-state";
-import { isoOf, readyGame, skipTo, withServer, withStick } from "./fixtures";
+import { isoOf, readyGame, skipTo, withServer, withStick, newGame } from "./fixtures";
 
 // withServer: dev3 is a free, cabled server with an empty disk.
 const err = (r: { ok: boolean; error?: string }) => r.error;

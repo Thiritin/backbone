@@ -36,6 +36,8 @@ export default {
     : "Handelsblah meldet, dass Unternehmen wegen generativer KI Schlange stehen für gemietete GPU-Server, und Hoster mit freien Karten ihren Preis nennen können."),
   "event.news.design.title": (p) => `Webdesign ${p.year}`,
   "event.news.design.text": (p) => `Handelsblah meldet, dass Besucher von jeder Website jetzt den Look von ${p.year} erwarten und ältere Designs Anfragen verlieren.`,
+  "event.news.rivalOutage.title": (p) => `${p.name}: ${p.city} ${p.hours} Stunden ausgefallen`,
+  "event.news.rivalOutage.text": (p) => `Golem.dy meldet, dass Kunden von ${p.name} in ${p.city} ${p.hours} Stunden lang ihre Websites nicht erreichen konnten.`,
   "event.news.line.title": (p) => `${p.line} könnte sich verkaufen`,
   "event.news.line.text": (p) => `Handelsblah meldet, dass du ${p.line} heute liefern könntest, es aber nicht auf deiner Website anbietest.`,
   "event.news.models.title": () => "Neue Hardware im Shop",

@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
 import type { Ticket } from "../src/sim/40-support/tickets";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { feed } from "../src/sim/80-business/news";
 import { OFFERS, WALK, walkTick } from "../src/sim/80-business/walk";
 import { guideSteps } from "../src/sim/checklist";
 import { browseStore } from "../src/sim/90-actions/store";
 import { closeTicket } from "../src/sim/90-actions/support";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { registered } from "./fixtures";
+import { registered, newGame } from "./fixtures";
 
 const NINE = 9;
 // A company registered this morning, at the hour the daily check runs.
