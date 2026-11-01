@@ -4,7 +4,6 @@ import type { Registration } from "../50-state";
 
 // docs/design/tutorial.md: the trade office registers the company; its online service keeps office hours.
 export const OFFICE_HOST = "trade-office.gov";
-export const OFFICE_TITLE = "Trade Office Online";
 export const OFFICE_URL = `www.${OFFICE_HOST}/eservice/`;
 export const OFFICE_OPEN = 8;
 export const OFFICE_CLOSE = 16;

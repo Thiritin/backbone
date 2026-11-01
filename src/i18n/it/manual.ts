@@ -7,7 +7,7 @@ const mailboxes = (n: string | number) => `${n} ${Number(n) === 1 ? "casella e-m
 const web = (p: Params) => `${gb(p.disk)} di spazio, ${gb(p.traffic)} di traffico al mese e ${mailboxes(p.mail)}`;
 const box = (p: Params) => `${p.cpu} vCPU, ${gb(p.ram)} di RAM e ${gb(p.disk)} di disco`;
 const cards = (p: Params) => `${p.gpu} GPU`;
-const domain = (p: Params) => (Number(p.owned) ? `Possiedo già ${p.domain} e vorrei trasferirlo da te.` : `Registra per favore anche ${p.domain} per me.`);
+const domain = (p: Params) => (Number(p.owned) ? `Possiedo già ${p.domain} e vorrei trasferirlo da te.${p.auth ? ` Il codice di autorizzazione è ${p.auth}.` : ""}` : `Registra per favore anche ${p.domain} per me.`);
 const more = (p: Params) => (p.product === "webHosting"
   ? `da ${gb(p.disk0)} a ${gb(p.disk1)} di spazio, da ${gb(p.traffic0)} a ${gb(p.traffic1)} di traffico e da ${p.mail0} a ${mailboxes(p.mail1)}`
   : and([
@@ -59,6 +59,7 @@ export default {
   "error.quoteSentAlready": () => "Questo preventivo è già stato inviato.",
   "error.quoteOtherOrder": () => "Questo preventivo è di un altro ordine.",
   "error.quoteNotAccepted": () => "Il cliente non ha accettato questo preventivo.",
+  "error.quoteInvoiced": () => "Questo preventivo è già stato trasferito in fattura.",
   "error.needsInvoice": () => "Conferma prima l'ordine e invia la fattura.",
   "error.needsDomain": () => "Registra prima il dominio.",
   "error.stepDone": () => "Questo passaggio è completato.",

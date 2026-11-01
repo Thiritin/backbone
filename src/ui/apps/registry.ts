@@ -1,5 +1,5 @@
 import {
-  Activity, Cloud, FolderOpen, Bug, BookOpen, Compass, ChartLine, ChartPie, Contact, FileText, Network, GraduationCap, LifeBuoy, Megaphone, Newspaper, Receipt, Server, Settings, ShieldAlert, ShoppingCart, SquareTerminal, Users,
+  Activity, Cloud, Mailbox, FolderOpen, Bug, BookOpen, Compass, ChartLine, ChartPie, Contact, FileText, Network, GraduationCap, LifeBuoy, Megaphone, Newspaper, Receipt, Server, Settings, ShieldAlert, ShoppingCart, SquareTerminal, Users,
 } from "lucide-react";
 import type { ComponentType } from "react";
 import { t } from "../../i18n/en";
@@ -22,6 +22,8 @@ import type { MarkProps } from "../art/mailmarks";
 import { ResearchApp } from "./research/ResearchApp";
 import { StaffApp } from "./staff/StaffApp";
 import { WeatherApp } from "./weather/WeatherApp";
+import { PostApp } from "./PostApp";
+import { inbox } from "../../sim/40-support/letters";
 import { TerminalApp } from "./terminal/TerminalApp";
 import { isFinal } from "../../sim/40-support/tickets";
 import { deviceHealth } from "../../sim/60-infra/status";
@@ -54,6 +56,8 @@ export const APPS: AppDef[] = [
     badge: (s) => s.tickets.filter((t) => !isFinal(t)).length },
   { name: "Books", icon: Receipt, tile: "oklch(0.6 0.14 160)", about: t("apps.about.Books"), body: BooksApp, title: t("books.title"),
     badge: (s) => drafts(s) + unmatched(s) + late(s) },
+  { name: "Post", icon: Mailbox, tile: "oklch(0.72 0.15 85)", about: t("apps.about.Post"), body: PostApp,
+    badge: (s) => inbox(s).filter((l) => !l.read).length },
   { name: "Finance", icon: ChartLine, tile: "oklch(0.55 0.13 175)", about: t("apps.about.Finance"), body: FinanceApp },
   { name: "Staff", icon: Contact, tile: "oklch(0.7 0.15 70)", about: t("apps.about.Staff"), body: StaffApp },
   { name: "Marketing", icon: Megaphone, tile: "oklch(0.62 0.19 350)", about: t("apps.about.Marketing"), body: MarketingApp },
