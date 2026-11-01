@@ -7,11 +7,13 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - You can register on DOHLE for a certificate file, with the activation ID by email and the code by post, and download DohleFormular to send your advance VAT returns.
 
 ## 2026-11-01
+- Quote and invoice previews in Books keep their margins and text size in proportion to the page at any window size.
 - An upgrade request now shows each resource going from old to new with the price field in the same list, and asks for a server only when the current one has no room.
 - The Bank tab in Books lists your booked transfers, and Undo takes back a payment you matched to the wrong invoice so you can book it again.
 - The savings from your private account no longer wait among the incoming transfers to be matched.
 - The Terminal button on a server now connects by its address, and Tab in the terminal completes server addresses as well as names.
 - TCAdmen 3, the Sysko Sekure Client, the newer MinnIO object browser, every Veeham console generation and the early OpenStash dashboards each get their own look, matching the version you run.
+- VMwhere, Proxmocks and HyperVee consoles now look like the installed version: vSphear moves from the fat client to the Flecks web client in 5.0 and the Clearity client in 6.5, Proxmocks from its first web interface to the ExtJS manager in 2.0 and the flat one in 4.0, which turns dark with your desktop, and HyperVee from the glossy manager to the flat one in 2012 and Windoors Admin Center in 2019.
 - Removing an offsite backup server now discards its copies, a Proxmocks VM can no longer be moved into a cluster without quorum, and the Backula status lists only the jobs that write to that server with their real result.
 - Books has a Publish to website button: your website lists the published products of each line with their prices, and email orders and leads decide on those prices until you publish again.
 - An order email for one of your products now names that product.
