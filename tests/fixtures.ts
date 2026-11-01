@@ -51,7 +51,7 @@ const done = (s: GameState, id: string, patch: Partial<GameState["clusters"][num
   return id;
 };
 // Every node of a licensed platform holds a key, as an install from the console gives it.
-const platformKeys = (s: GameState, id: string) => {
+export const platformKeys = (s: GameState, id: string) => {
   const c = s.clusters.find((x) => x.id === id)!;
   for (const n of c.nodes) if (c.platform && isLicensed(c.platform) && !assignedKey(s, n.deviceId, c.platform)) assignKey(s, issueKey(s, c.platform, null).id, n.deviceId);
 };

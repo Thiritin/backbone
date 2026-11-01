@@ -9,7 +9,7 @@ import { PortalSite } from "../src/ui/apps/browser/sites/portal/PortalSite";
 import { parsePortal } from "../src/sim/80-business/portal";
 import { readyGame } from "./fixtures";
 
-const shopGame = (id: Parameters<typeof chooseShop>[1] = "modemBill") => {
+const shopGame = (id: Parameters<typeof chooseShop>[1] = "whmCache") => {
   const s = readyGame(2);
   s.cash = 1e6;
   setUpChannel(s, "website");
@@ -30,9 +30,9 @@ describe("portal shell", () => {
 
   it("renders the plain admin home after the login", () => {
     const s = shopGame();
-    const route = parsePortal("modemBill", "/admin/")!;
-    const { Admin } = skinOf("modemBill");
-    const out = renderToString(<Admin game={s} variant="modemBill" route={route} open={() => {}} />);
+    const route = parsePortal("whmCache", "/admin/")!;
+    const { Admin } = skinOf("whmCache");
+    const out = renderToString(<Admin game={s} variant="whmCache" route={route} open={() => {}} />);
     expect(out).toContain("Pending Orders");
     expect(out).toContain("Products/Services");
   });

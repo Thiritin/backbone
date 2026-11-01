@@ -13,6 +13,8 @@ export default {
   "ticket.mail.licenceRenewed.text": (p) => `Votre abonnement ${p.name} a été renouvelé pour un mois. ${Number(p.count) < 2 ? "1 clé" : `${p.count} clés`}, ${euroCents(Number(p.amount))} prélevés.`,
   "ticket.mail.licenceLapsed.subject": (p) => `Abonnement ${p.name} expiré`,
   "ticket.mail.licenceLapsed.text": (p) => `Nous n'avons pas pu prélever le renouvellement de votre clé ${p.name} ${p.key}. La licence a expiré et sera renouvelée dès que le paiement aboutira.`,
+  "ticket.mail.licenceEditionChange.subject": (p) => `Changement de votre licence ${p.name}`,
+  "ticket.mail.licenceEditionChange.text": (p) => `Nous ne vendons plus l'édition ${p.from}. À son prochain renouvellement, votre clé ${p.name} ${p.key} sera renouvelée en ${p.to} pour ${euroCents(Number(p.amount))} par mois.`,
   "ledger.licenseOnce": (p) => `Licence ${p.name}, ${p.machine}`,
   "ledger.balancer": (p) => `${p.name}, ${p.cluster}`,
   "ledger.appSuite": (p) => `VMwhere App Suite, ${p.cluster}`,

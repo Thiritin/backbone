@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { SHOP_SETUP_HOURS } from "../src/sim/10-catalog/shops";
 import { marketPrice } from "../src/sim/10-catalog/products";
 import { yearOf } from "../src/sim/00-core/time";
 import { termPrice } from "../src/sim/30-market/cycles";
@@ -10,8 +11,9 @@ import { discountFor } from "../src/sim/80-business/marketing";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { setRate } from "../src/sim/90-actions/rates";
 import { setOptionDiscount } from "../src/sim/90-actions/portal";
+import { chooseShop } from "../src/sim/90-actions/shop";
 import type { GameState } from "../src/sim/50-state";
-import { automate, openShop, readyGame } from "./fixtures";
+import { automate, readyGame } from "./fixtures";
 
 const web = { product: "webHosting" as const, size: 1, sla: "basic" as const };
 const quoted = (s: GameState) => {
@@ -33,7 +35,9 @@ describe("email quotes and option discounts", () => {
     const s = automate(readyGame(4));
     s.cash = 1e6;
     setUpChannel(s, "website");
-    openShop(s);
+    s.unlocks = [...s.unlocks, "shops"];
+    chooseShop(s, "modemBill");
+    s.hour += SHOP_SETUP_HOURS;
     setRate(s, "webHosting", "base", 99);
     const { r, discount } = quoted(s);
     expect(r.quote).toBe(Math.round(offerPrice(s, "webHosting", r.spec, "basic") * (1 - discount) * 100) / 100);
@@ -45,7 +49,8 @@ describe("email quotes and option discounts", () => {
     expect(setOptionDiscount(s, "annual", 0.2)).toMatchObject({ ok: false, error: "error.needsShop" });
     s.cash = 1e6;
     setUpChannel(s, "website");
-    openShop(s, "modemBill");
+    s.unlocks = [...s.unlocks, "shops"];
+    chooseShop(s, "modemBill");
     expect(termPrice(s, 10, "annual")).toBe(108);
     expect(setOptionDiscount(s, "annual", 0.2).ok).toBe(true);
     expect(termPrice(s, 10, "annual")).toBe(96);
@@ -61,7 +66,8 @@ describe("email quote with a billing cycle", () => {
     const s = readyGame(4);
     s.cash = 1e6;
     setUpChannel(s, "website");
-    openShop(s);
+    s.unlocks = [...s.unlocks, "shops"];
+    chooseShop(s, "whmCache");
     s.shop.variant = "whmCache";
     const { r } = quoted(s);
     const t = s.tickets.find((x) => x.id === r.ticketId)!;
@@ -81,7 +87,8 @@ describe("email quote with a billing cycle", () => {
     const s = readyGame(4);
     s.cash = 1e6;
     setUpChannel(s, "website");
-    openShop(s, "modemBill");
+    s.unlocks = [...s.unlocks, "shops"];
+    chooseShop(s, "modemBill");
     const { r } = quoted(s);
     const qid = (createQuote(s, r.ticketId!) as { id: string }).id;
     expect(setQuoteCycle(s, qid, "triennial")).toMatchObject({ ok: false, error: "error.cycleNotSupported" });

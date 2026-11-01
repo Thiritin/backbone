@@ -4,6 +4,11 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- Every installed software now has its own command in the server's shell, such as `cpanic` or `esxwhere`, that shows its version and license, updates it, switches its channel, assigns a key or starts a trial, and runs the daily jobs of its kind.
+- Each software site has a new Docs page that lists its command and everything it takes.
+- Every bank now sells account plans, from a cheap Giro for sole traders to Business Plus and Premium with fewer booking fees and the card included, and a partnership or limited company needs the right plan before the paperwork, while a limited company also needs its share capital in the account.
+- You can switch to another bank on its site once loans are repaid, and loan interest now differs from bank to bank.
+- A cPanic Dedicated licence now renews as the account-based edition that fits its web spaces at its first renewal from June 2019, and cPanic emails the change a month ahead.
 - The hand-rolled order form is gone: orders arrive by email until you run a shop system, every shop system needs the Shop systems research, and saves that had the form keep taking orders by email.
 - Getting started no longer asks you to style your company, since registering it already gives it a name.
 - Every software and operating system website now has a Versions page with each release's support dates and a News page announcing each release with its headline features, and the News app reports every new major version on its release day.
@@ -100,9 +105,6 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - The router now sits in the rack and hands out every address by DHCP, and its Fritz!OZ page at fritz.bocks lists your devices, fixes addresses and shares the web port with the one server that hosts websites on a home line.
 - Switches now come managed or unmanaged, and managed switches have VLANs, a saved configuration and their own web page at the address the router gives them.
 - HOSTtoast at hosttoast.de lists every host by tier and reviews: sign up for free, buy a higher tier for more trust and awareness, keep it by answering its monthly test ticket in time and keeping your uptime, and win host of the year or the uptime seal each January.
-
-## 2026-11-01
-
 - Browser tabs can be dragged left or right to reorder them.
 
 ## 2026-10-31

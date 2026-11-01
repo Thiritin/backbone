@@ -68,4 +68,5 @@ describe("flat variants", () => {
     const { s, g } = setup("modemBill");
     expect(render(s, "modemBill", "store", { group: g })).toContain("<h2>Shared hosting</h2>");
   });
+
 });
