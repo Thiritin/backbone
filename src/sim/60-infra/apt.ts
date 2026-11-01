@@ -7,6 +7,7 @@ import { SOFTWARE, softwareById, type Software } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
 import { installBlock, uninstallSoftware, upgradable, upgradeServer } from "../90-actions/software";
 import { clustersOn, machineOf } from "./cluster";
+import { supportOf } from "./lifecycle";
 import { DESK, releaseOf, treeOf } from "./fs";
 import { installFromSite, upgradeHours, upgradeOs, upgradeTarget } from "../90-actions/console";
 import { machineNet, osUp } from "./oob";
@@ -152,7 +153,8 @@ export function dpkg(s: GameState, host: string, args: string[]): CommandResult 
   if (!args.includes("-l")) return { output: lines("term.dpkg.usage"), failed: true };
   const now = nowHours(s), rows = (machineOf(s, host)?.software ?? []).map((x) => {
     const sw = softwareById(x.id);
-    return t("term.dpkg.row", { st: x.doneAt !== null && x.doneAt > now ? "iU" : "ii", pkg: pkgOf(sw), version: x.version, name: sw.name });
+    const support = supportOf(x.id, x.version, s.hour), name = support === "supported" ? sw.name : `${sw.name} (${t(`software.support.${support}`)})`;
+    return t("term.dpkg.row", { st: x.doneAt !== null && x.doneAt > now ? "iU" : "ii", pkg: pkgOf(sw), version: x.version, name });
   });
   return { output: [...lines("term.dpkg.head"), ...rows] };
 }

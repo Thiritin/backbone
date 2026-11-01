@@ -1245,7 +1245,7 @@ Stuck boots, hangs and lockouts are rolled per device and hour and do not draw f
 | New listings per channel and month | 2 to 6, posted over the month at random hours, the first month with the new game; a model qualifies once its launch is at least 2 years back, and a model from 2005 counts as launched in 2002, so 2005 listings are 1 to 3 years old at the usual price bands |
 | Age of a unit | 1 year up to the years since the model's launch |
 | WebHostingTalc ask | 60% of the preset price at 1 year falling in a straight line to 45% at 6 years and older |
-| Telegrump ask | 45% falling to 30% the same way; 15% of the deals are scams that take the money and ship nothing |
+| Craigslost ask | 45% falling to 30% the same way; 15% of the deals are scams that take the money and ship nothing |
 | eBuy | Starts at 25%; the rival's maximum is 35% to 70%; the higher maximum wins and pays the other's maximum |
 | Visible defect | 30% of single units; PSU 2 missing ×0.85 (two-supply models), 1 drive reports errors ×0.8 (the drive arrives one year past its life), no rails ×0.95 (rack-mounted) |
 | Hidden part age | Each part's age is the unit's age times 0.5 to 1.5 |
@@ -1267,7 +1267,7 @@ Used devices are never insured, cannot be leased and resell from the price paid 
 | Full | 48 hours; every hidden part shows its real age; each working part past its life fails with 50% (seeded by game seed, hour and device) |
 | Bonus | A full burn-in in which no part failed multiplies the server's failure chance by 0.9 for 365 days (it stacks with the other failure factors) |
 | Used parts | Parts bought on the used market are hidden until a burn-in has looked at them; replaced parts are known |
-| Buyer protection | The first failed part of a unit bought on the board or eBuy within 14 days of its arrival refunds half the unit price, once; Telegrump deals never refund |
+| Buyer protection | The first failed part of a unit bought on the board or eBuy within 14 days of its arrival refunds half the unit price, once; Craigslost deals never refund |
 
 **Power feeds.**
 
@@ -1642,17 +1642,17 @@ Every server and every one of the player's own VMs runs an operating system, and
 
 | Software | Kind | OS | License | Install | How-to tickets | Live migration | Control plane |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| cPanic | Panel | Lunix | €0.40 per web space | 3 h | ×0.8 |  | 0.25 vCPU, 0.25 GB, 5 GB |
+| cPanic | Panel | Lunix | €12 per server (Dedicated), from June 2019 the editions Solo to Premier (€0.40 per web space) | 3 h | ×0.8 |  | 0.25 vCPU, 0.25 GB, 5 GB |
 | Pleskit | Panel | Lunix, Windoors | €12 per panel host | 3 h | ×0.9 |  | 0.25 vCPU, 0.25 GB, 5 GB |
-| DirectAdmen | Panel | Lunix | €4 per panel host | 2 h | ×1.2 |  | 0.1 vCPU, 0.1 GB, 2 GB |
+| DirectAdmen | Panel | Lunix | €100 lifetime per major or Standard at €4 per panel host, from September 2019 the editions Personal to Standard | 2 h | ×1.2 |  | 0.1 vCPU, 0.1 GB, 2 GB |
 | FreePanel | Panel | Lunix | Free | 2 h | ×1.5 |  | 0.1 vCPU, 0.1 GB, 2 GB |
 | OpenVeeZee | Cloud | Lunix | Free | 3 h | ×1.4 | No | 0.1 vCPU, 0.1 GB, 2 GB |
 | OpenStash | Cloud | Lunix | Free | 8 h | ×1.3 | Yes | 2 vCPU, 2 GB, 20 GB |
-| VMwhere | Cloud | Lunix | €600 once per CPU socket, €8 per physical core from 2024 | 5 h | ×0.7 | Yes | 1 vCPU, 2 GB, 10 GB |
+| VMwhere | Cloud | Lunix | €600 once per CPU socket, from December 2023 €96 a year per physical core with 16 cores per CPU at least | 5 h | ×0.7 | Yes | 1 vCPU, 2 GB, 10 GB |
 | Proxmocks | Cloud | Lunix | Free | 3 h | ×1.0 | Yes | 0.25 vCPU, 0.25 GB, 5 GB |
 | HyperVee | Cloud | Windoors | €20 per node | 4 h | ×0.9 | No | 1 vCPU, 1 GB, 10 GB |
 | TCAdmen | Game | Windoors | €25 per server | 2 h | ×0.9 | No | 0.25 vCPU, 0.5 GB, 5 GB |
-| MultiKraft | Game | Lunix, Windoors | €20 per server | 2 h | ×1.0 | No | 0.25 vCPU, 0.5 GB, 5 GB |
+| MultiKraft | Game | Lunix, Windoors | €20 per server, from 2020 €1.20 per game server beyond 25 | 2 h | ×1.0 | No | 0.25 vCPU, 0.5 GB, 5 GB |
 | Pterodaktyl | Game | Lunix | Free | 3 h | ×1.2 | No | 0.25 vCPU, 0.5 GB, 5 GB |
 | Bound | DNS | Lunix, Windoors | Free | 2 h | ×1.3 | No | 0.1 vCPU, 0.25 GB, 2 GB |
 | PowerDNZ | DNS | Lunix | Free | 2 h | ×1.0 | No | 0.25 vCPU, 0.5 GB, 5 GB |
@@ -1667,10 +1667,12 @@ Every server and every one of the player's own VMs runs an operating system, and
 | Operating system | License | Install | Boot |
 | --- | --- | --- | --- |
 | Debiant GNU/Lunix | Free | 1 h | 20 min |
-| Windoors Server | €600 once per machine, €4 per core or vCPU from 2016 | 2 h | 40 min |
+| Windoors Server | €600 once per machine, from October 2016 €4 per core (16 per server and 8 per CPU at least) or vCPU | 2 h | 40 min |
 | VMwhere App Suite | €25 per VMwhere cluster | | |
 
-Windoors Server and VMwhere are bought once per machine when the install starts, until Windoors moves to 4 euros a month per physical core of a server or per vCPU of a VM in 2016 and VMwhere to 8 euros a month per physical core in 2024. A reinstall on the same machine pays nothing; a new machine, a VM from a template included, pays again, and the install is refused without the cash. The App Suite bills 25 euros a month per VMwhere cluster that has it. The OS install and boot add to every install's time to serve. A panel on a hypervisor node is allowed when no port collides. Values live in `src/sim/10-catalog/server-os.ts`.
+Windoors Server and VMwhere are bought once per machine when the install starts, until Windoors moves to 4 euros a month per physical core of a server or per vCPU of a VM in October 2016 and VMwhere to 96 euros a year per physical core in December 2023. A reinstall on the same machine pays nothing; a new machine, a VM from a template included, pays again, and the install is refused without the cash. The App Suite bills 25 euros a month per VMwhere cluster that has it. The OS install and boot add to every install's time to serve. A panel on a hypervisor node is allowed when no port collides. Values live in `src/sim/10-catalog/server-os.ts`.
+
+**Licence eras.** Each licensed product sells what its vendor sold at the game month, from `licensing` in the catalog (docs/design/plans/software-licences.md, Licence models over time). A perpetual key covers the major on sale when it was bought and never bills again; an upgrade to the next major costs the full price, or half (€300 for Windoors, VMwhere and Veeham Backup) for a holder of the previous major's key bought within the last 12 months. A yearly key renews on the same day a year later and shows at a twelfth in monthly bills. A server pays for at least the minimum cores of a per-core era; a VM pays per vCPU. Veeham Backup sells €600 per CPU socket once from 2008 and €480 a year per server from 2018. Prices keep the game's euro scale, where a real list price divides by about three: cPanel's licence of about $35 a server reads €12, and its 2019 editions keep the €2 to €10 and €0.40 per web space the game already charged. When a vendor stops selling an option the shop drops it that day, and a key already bought keeps working.
 
 **Split cores.** OpenVeeZee and Proxmocks give a guest a fraction of a core through containers and CPU limits, so a VM books exactly the vCPUs it sold. OpenStash, VMwhere and HyperVee give a VM whole vCPUs: a VM books its vCPUs rounded up and uses that much CPU at load. Web spaces, game servers, DNS zones, VPN gateways and storage volumes run as containers in their software and keep their fraction everywhere. A customer who scales a VPS below one core asks for tenths of a core (at least 0.2), so 0.75 of one core becomes 0.8.
 
@@ -1906,6 +1908,24 @@ A cluster of three or more Proxmocks nodes can build a Ceph pool with `setCeph` 
 
 An own VM on a Proxmocks cluster can switch its firewall on and tick the port macros it lets through (web, ssh, mail, db, rdp); every other port is dropped. A host in that VM serves its own ports (a panel serves web, a mail host serves mail): blocking one takes the service offline until the macro is ticked again. When the firewall closes a port the host's software listens on but does not serve (SSH, for instance), the hourly and daily compromise chances are halved (`FIREWALL_RISK`). A VM without a firewall behaves as before. The firewall costs no money.
 
+### HyperVee replica and virtual switches
+
+A HyperVee VM from 2012 can replicate to a second host: another node of its cluster, or a node of another HyperVee cluster in the same zone. The frequency is 30 seconds, 5 minutes or 15 minutes. The sim copies on the hour for all three; the shorter intervals send 4 and 2 times the changed data of the 15 minute one and lose less on a takeover (half an interval of writes plus the time since the last copy). The replica books the VM disk on the second host.
+
+Failover is a player action, since HyperVee has no automatic recovery before its cluster year. With a healthy primary the roles swap, nothing is lost and the VM is down for an hour. With a dead primary the VM starts on the replica host, writes since the last copy are lost and the replica is dropped. Replication Health reads Normal up to 2 hours since the last copy, Warning up to 12 hours, then Critical.
+
+A HyperVee cluster has virtual switches, up to 8, starting with one external Default Switch. A VM on an internal or private switch has no uplink and is offline. A VM on an external switch bound to a host port is offline while that port is unplugged or its far end is dead; a switch bound to no port follows whichever port is connected. Deleting a switch moves its VMs back to the default.
+
+### OpenVeeZee beancounters, burst and checkpoint
+
+A container shows its beancounters: kmemsize, privvmpages, oomguarpages, numproc and numtcpsock with held, maxheld, barrier, limit and failcnt. Memory is in 4 KB pages. Failcnt is stored on the container for privvmpages and numproc; the rest is derived from its use.
+
+Each hour a node with more than 90% of its RAM in use takes burst memory back first: only containers with a burst allowance collect privvmpages failcnt. A node out of RAM, or with more busy vCPUs than cores, makes every container fail privvmpages and numproc. The increment is 40 times the container's share of the node RAM, at least 1, per hour. Six hours in a row slow the site like any other slowdown. Past 24 failcounts in a day the OOM killer stops the container for an hour and the hour counts as downtime. The player fixes it by raising the container's size, moving it or selling less of the node.
+
+Burst memory ranges from 0 to twice the container's RAM, in steps of a quarter GB. It is not booked and costs nothing.
+
+Checkpoint freezes a container: it stays booked on its node, uses no CPU or RAM and is offline. Restore resumes it within a minute plus two seconds per GB of RAM in use, which counts as downtime. A cold move of a container on OpenVeeZee is a checkpoint, a copy and a restore, so it is down only for the copy of its disk over the link (at least 1 minute) instead of a full boot.
+
 ### Snapshots
 
 A snapshot freezes a VM's disk on a VMwhere cluster and, for the player's own VMs, its installed OS and software. Values live in `src/sim/10-catalog/platforms.ts`.
@@ -1979,6 +1999,18 @@ A new VMwhere cluster starts on Essentials; a cluster from an older save is on E
 
 DRS Manual and Partial keep up to five recommended moves for the player to apply, Full applies them. A host enters maintenance mode only when every running VM can move live. A pool caps the booked vCPUs and RAM of its members. On a hot node a high pool keeps its performance and a low pool keeps at most 90%.
 
+
+### Horizont floating IPs, security groups and volumes
+
+A floating IP is one more address rented from the datacenter of an OpenStash cluster, billed like any rented address. It points at one instance, or at none. A service on a floating IP keeps its address when it moves to another location, so no renumbering happens and no customer is told to change DNS. An address that is not floating is renumbered as before.
+
+An instance has security groups. A new instance joins the default group, which lets only SSH through. The groups of an instance add up, and a port outside them is dropped, so a panel or mail host in a default-only instance is offline until a group lets its web or mail port through; a group that closes a port the software listens on but does not serve halves the breach chance, like the Proxmocks firewall. A project has up to 10 groups; the default group stays and a group in use cannot be deleted.
+
+A volume is 1 to 1000 GB of block storage that counts toward the capacity of the first working datastore with room, or sits on a node disk when the cluster has no datastore. It costs nothing extra. It survives deleting the instance it is attached to and is detached afterwards. Before 2012 a volume leaves only a stopped instance.
+
+### IPMI System Event Log
+
+Each server's management controller keeps its last 20 events, each with a severity (information, warning or critical) and a number. Failed parts and shutdowns from heat are critical; lost power, a stalled operating system or controller, a lost power supply input, a lockout and an inlet temperature of 35 degrees or more are warnings. The inlet temperature is checked every hour, and a crossing of 35 or 40 degrees is logged once, with a note when it returns below 35. A change of a cluster node's state (active, cordoned, draining, maintenance) is logged on its server. The player can clear the log.
 
 ## PHP versions
 
@@ -2090,6 +2122,8 @@ Disclosure is a random day of the release's year. A vulnerability is open on an 
 | Alert at the patch (critical) | Once per instance |
 
 An unattended panel host installed at the start of the game is compromised for the first time after a median of 0.8 years.
+
+An operating system or software on a machine that runs past its vendor's end of security updates collects vulnerabilities of its own: each year past the end adds 0.5 to a multiplier on the daily compromise chance of the instances on that machine, counted up to 4 years per install (an install 4 years past the end triples the chance). The newest release of a product never counts as ended while it is the newest. The vendor emails 90 days before the end of security updates of every version the company runs.
 
 ### Breaches and ransom
 
@@ -2212,11 +2246,11 @@ Spending more in one channel and city gets dearer: the cost per lead is multipli
 | Platform | Invite rate per happy customer per month | Trust bonus T |
 | --- | --- | --- |
 | None | 0 | 0 |
-| Free listing | 0 | 2 |
+| Free listing | 0 | 0 |
 | "ProvenExpat" | 1% | 4 |
 | "TrustPylon" | 2% | 6 |
 
-Platform fees are flat: the free listing costs nothing, ProvenExpat €49 and TrustPylon €199 a month.
+Platform fees are flat: the free listing costs nothing, ProvenExpat €49 and TrustPylon €199 a month. The free listing's +2 now comes from the HOSTtoast listing (competitors.md, HOSTtoast), whose T adds to the platform's, capped at 10.
 
 **Owned channels.** Each step is a one-off setup plus monthly upkeep, flat over the years:
 

@@ -6,19 +6,22 @@ import { dateOf, yearOf } from "../../../../../sim/00-core/time";
 import { bankById, bookingFee, monthlyFee, tanMethods, type Bank, type BankId, type TanMethod } from "../../../../../sim/10-catalog/banks";
 import { LEGAL_FORMS } from "../../../../../sim/80-business/office";
 import { annuity, LOAN_AMOUNTS, LOAN_YEARS, loanAvailable, loanRate } from "../../../../../sim/45-billing/billing";
-import { cardSpent, groupIban, ibanEra, ownIban, spendable, WRONG_LIMIT, type Draft } from "../../../../../sim/46-finance/bank";
+import { cardSpent, groupIban, iban as toIban, ibanEra, ownIban, spendable, WRONG_LIMIT, type Draft, type Payee } from "../../../../../sim/46-finance/bank";
 import type { GameState } from "../../../../../sim/50-state";
-import { applyCard, applyOverdraft, openBankAccount, cancelTransfer, confirmTransfer, deleteStandingOrder, setTanMethod, startStandingOrder, startTransfer } from "../../../../../sim/90-actions/bank";
+import { applyCard, applyOverdraft, openBankAccount, cancelTransfer, confirmTransfer, deletePayee, deleteStandingOrder, savePayee, setTanMethod, startStandingOrder, startTransfer } from "../../../../../sim/90-actions/bank";
 import { takeLoan } from "../../../../../sim/90-actions/billing";
 import { readSession, writeSession } from "../../../../session";
+import { noAutofill } from "../../../../no-autofill";
 import { useStore } from "../../../../store";
 import "./bank-site.css";
 
 type Go = (url: string) => void;
 const day = (hour: number) => dateOf(hour).toLocaleDateString(LOCALE, { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" });
 const pct = (r: number) => `${(r * 100).toLocaleString(LOCALE, { maximumFractionDigits: 2 })} %`;
-const VIEWS = ["statement", "transfer", "orders", "card", "overdraft", "loans", "service"] as const;
+const VIEWS = ["statement", "transfer", "orders", "payees", "card", "overdraft", "loans", "service"] as const;
 type View = (typeof VIEWS)[number];
+// A payee saved before IBAN is sent to its IBAN once IBAN applies.
+const payeeAccount = (p: Payee, iban: boolean) => (iban && p.code ? toIban(p.code, p.account) : p.account);
 
 // One frame for every bank: the skin swaps colours, layout and era, the account's TAN method sets the transfer's last step.
 export function BankSite({ game, id, path, go }: { game: GameState; id: BankId; path: string; go: Go }) {
@@ -51,6 +54,7 @@ export function BankSite({ game, id, path, go }: { game: GameState; id: BankId; 
             : view === "statement" ? <Statement game={game} />
             : view === "transfer" ? <Transfer key={path} game={game} bank={bank} prefill={query} go={go} />
             : view === "orders" ? <Orders key={path} game={game} bank={bank} go={go} />
+            : view === "payees" ? <Payees game={game} bank={bank} go={go} />
             : view === "card" ? <CardView game={game} bank={bank} />
             : view === "overdraft" ? <Overdraft game={game} bank={bank} />
             : view === "loans" ? <Loans game={game} />
@@ -79,7 +83,7 @@ function Login({ game, bank, onIn, onOpen }: { game: GameState; bank: Bank; onIn
       <Box title={t("bank.site.loginTitle")}>
         <form className="bks-form" onSubmit={(e) => { e.preventDefault(); submit(); }}>
           <label>{t("bank.site.number")}<input inputMode="numeric" value={number} onChange={(e) => setNumber(e.target.value)} /></label>
-          <label>{t("bank.site.pin")}<input type="password" inputMode="numeric" value={pin} onChange={(e) => setPin(e.target.value)} /></label>
+          <label>{t("bank.site.pin")}<input type="password" inputMode="numeric" value={pin} {...noAutofill} onChange={(e) => setPin(e.target.value)} /></label>
           <button className="bks-btn primary">{t("bank.site.login")}</button>
           {failed && <p className="bks-error">{t("bank.site.loginFailed")}</p>}
         </form>
@@ -167,6 +171,8 @@ function Transfer({ game, bank, prefill, go, standing }: { game: GameState; bank
   const [reference, setReference] = useState(prefill.get("reference") ?? "");
   const [tan, setTan] = useState("");
   const [orderDay, setOrderDay] = useState("1");
+  const [keep, setKeep] = useState(false);
+  const payees = b.payees ?? [];
   const title = t(standing ? "bank.site.newOrder" : "bank.site.nav.transfer"), again = `www.${bank.host}/banking/${standing ? "orders" : "transfer"}`;
   const [sent, setSent] = useState(false);
   if (game.hour < b.lockedUntil) return <Box title={title}><p className="bks-error">{t("bank.site.locked", { date: day(b.lockedUntil) })}</p></Box>;
@@ -206,7 +212,15 @@ function Transfer({ game, bank, prefill, go, standing }: { game: GameState; bank
   const draft = (): Draft => ({ name, account, ...(iban ? {} : { code }), amount: Number(amount.replace(",", ".")), reference, ...(prefill.get("payable") && { payableId: prefill.get("payable")! }) });
   return (
     <Box title={title}>
-      <form className="bks-form" onSubmit={(e) => { e.preventDefault(); if (standing) act(startStandingOrder, draft(), Number(orderDay)); else act(startTransfer, draft()); }}>
+      <form className="bks-form" onSubmit={(e) => { e.preventDefault(); const r = standing ? act(startStandingOrder, draft(), Number(orderDay)) : act(startTransfer, draft()); if (r.ok && keep) act(savePayee, { name, account, ...(iban ? {} : { code }) }); }}>
+        {payees.length > 0 && (
+          <label>{t("bank.site.pickPayee")}
+            <select value="" onChange={(e) => { const p = payees.find((x) => x.id === e.target.value); if (!p) return; setName(p.name); setAccount(payeeAccount(p, iban)); setCode(p.code ?? ""); }}>
+              <option value="" />
+              {payees.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+          </label>
+        )}
         <label>{t("bank.site.payee")}<input value={name} onChange={(e) => setName(e.target.value)} /></label>
         {iban
           ? <label>{t("bank.site.iban")}<input className="num" value={account} onChange={(e) => setAccount(e.target.value)} /></label>
@@ -216,10 +230,46 @@ function Transfer({ game, bank, prefill, go, standing }: { game: GameState; bank
           </>}
         <label>{t("bank.site.amount")}<input inputMode="decimal" className="num" value={amount} onChange={(e) => setAmount(e.target.value)} /></label>
         <label>{t("bank.site.reference")}<input value={reference} maxLength={140} onChange={(e) => setReference(e.target.value)} /></label>
+        <label>{t("bank.site.savePayee")}<input type="checkbox" checked={keep} onChange={(e) => setKeep(e.target.checked)} /></label>
         {standing && <label>{t("bank.site.orderDay")}<input type="number" min={1} max={28} className="num" value={orderDay} onChange={(e) => setOrderDay(e.target.value)} /></label>}
         <button className="bks-btn primary">{t("bank.site.next")}</button>
       </form>
     </Box>
+  );
+}
+
+function Payees({ game, bank, go }: { game: GameState; bank: Bank; go: Go }) {
+  const act = useStore((s) => s.act), iban = ibanEra(game), payees = game.bank!.payees ?? [];
+  const [name, setName] = useState(""), [account, setAccount] = useState(""), [code, setCode] = useState(""), [saved, setSaved] = useState(false);
+  const transfer = (p: Payee) => go(`www.${bank.host}/banking/transfer?${new URLSearchParams({ name: p.name, account: payeeAccount(p, iban), ...(p.code && !iban && { code: p.code }) })}`);
+  const save = () => { if (act(savePayee, { name, account, ...(iban ? {} : { code }) }).ok) { setName(""); setAccount(""); setCode(""); setSaved(true); } };
+  return (
+    <>
+      <table className="bks-table bks-rows">
+        <thead><tr><th>{t("bank.site.payee")}</th><th>{iban ? t("bank.site.iban") : t("bank.site.payeeAccount")}</th><th /></tr></thead>
+        <tbody>
+          {payees.map((p) => (
+            <tr key={p.id}><td>{p.name}</td><td className="num">{iban ? groupIban(payeeAccount(p, iban)) : `${p.account} / ${p.code}`}</td>
+              <td className="r"><button className="bks-btn" onClick={() => transfer(p)}>{t("bank.site.nav.transfer")}</button> <button className="bks-btn" onClick={() => act(deletePayee, p.id)}>{t("bank.site.delete")}</button></td></tr>
+          ))}
+          {!payees.length && <tr><td colSpan={3}>{t("bank.site.noPayees")}</td></tr>}
+        </tbody>
+      </table>
+      <br />
+      <Box title={t("bank.site.newPayee")}>
+        <form className="bks-form" onSubmit={(e) => { e.preventDefault(); save(); }}>
+          <label>{t("bank.site.payee")}<input value={name} onChange={(e) => { setName(e.target.value); setSaved(false); }} /></label>
+          {iban
+            ? <label>{t("bank.site.iban")}<input className="num" value={account} onChange={(e) => setAccount(e.target.value)} /></label>
+            : <>
+              <label>{t("bank.site.payeeAccount")}<input inputMode="numeric" className="num" value={account} onChange={(e) => setAccount(e.target.value)} /></label>
+              <label>{t("bank.site.code")}<input inputMode="numeric" className="num" value={code} onChange={(e) => setCode(e.target.value)} /></label>
+            </>}
+          <button className="bks-btn primary">{t("bank.site.savePayee")}</button>
+          {saved && <p className="bks-ok">{t("bank.site.payeeSaved")}</p>}
+        </form>
+      </Box>
+    </>
   );
 }
 

@@ -4,6 +4,8 @@ type Params = Record<string, string | number>;
 export const CONSOLE_EN: Record<string, (p: Params) => string> = {
   "error.unknownOs": () => "There is no such operating system.",
   "error.otherMedia": () => "The installer media holds another operating system.",
+  "error.badHostname": () => "Hostnames use lowercase letters, digits and hyphens, up to 63 characters.",
+  "error.hostnameTaken": () => "Another machine already has this hostname.",
   "error.noBootDevice": () => "No bootable device",
   "error.noImage": () => "Download this operating system's ISO from its website first.",
   "error.stickIn": () => "The USB stick is already in this server.",

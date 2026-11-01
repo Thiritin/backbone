@@ -27,6 +27,7 @@ import { nextPrivateVlan, privateNetOf } from "../60-infra/private";
 import { burning, freeSlots, installedRamGb, locationOf, rackPower, working } from "../60-infra/status";
 import { addService } from "./customers";
 import { assignService } from "../60-infra/addresses";
+import { isFloating } from "../60-infra/horizont";
 import { deleteJob, saveJob } from "./backups";
 import type { ActionResult } from "./hardware";
 import { migrateWorkload } from "./vms";
@@ -117,7 +118,7 @@ export function createVm(s: GameState, clusterId: string, size: Resources, poolI
   if (poolId !== null && !poolRoom(s, c, poolId, size)) return fail(c.pools.some((p) => p.id === poolId) ? "error.poolFull" : "error.unknownPool");
   const disk = withDatastore(s, c, size), node = pickNode(s, c, disk, null, c.drs === "partial" || c.drs === "full" ? "spread" : c.placement);
   if (!node) return fail("error.noCapacity");
-  const vm = workload(s, "", { ...disk, clusterId: c.id, deviceId: node, os: null, software: [], ...(poolId && { poolId }) });
+  const vm = workload(s, "", { ...disk, clusterId: c.id, deviceId: node, os: null, software: [], ...(poolId && { poolId }), ...(c.platform === "openstash" && { groupIds: ["default"] }) });
   s.workloads = [...s.workloads, vm];
   return { ok: true, id: vm.id };
 }
@@ -130,6 +131,11 @@ export function deleteVm(s: GameState, vmId: string): ActionResult {
   if (insideVm(s, vm.id).length) return fail("error.softwareInUse");
   for (const h of hostsOfVm(s, vm.id)) dropCluster(s, h.id);
   s.workloads = s.workloads.filter((w) => w.id !== vm.id);
+  // A volume outlives its instance; a floating IP stays allocated, unmapped.
+  s.clusters = s.clusters.map((x) => (x.id !== vm.clusterId ? x : { ...x,
+    volumes: x.volumes?.map((v) => (v.attachedTo === vm.id ? { ...v, attachedTo: null } : v)),
+    floating: x.floating?.map((f) => (f.workloadId === vm.id ? { ...f, workloadId: null } : f)) }));
+  s.ips = { ...s.ips, addresses: s.ips.addresses.map((a) => (a.holder === vm.id && isFloating(s, a.ip) ? { ...a, holder: null } : a)) };
   return { ok: true };
 }
 
