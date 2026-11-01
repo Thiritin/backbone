@@ -5,6 +5,9 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-01
 
 - Backup servers now have a restore page that brings a lost machine back from its backup onto any server with room, in any location, including machines stranded on a seized server.
+- Progress bars in server panels now look like the ones each product used in its time, from boxed and segmented bars early on to thin flat ones later.
+- Backula no longer has a web console; its host page shows the director status and the backup disk the way its command line would.
+- Clicking the clock in the top bar opens a calendar that marks the days with announcements, and clicking your cash opens Finance.
 - Shop vendors now sell payment methods for your shop, from direct debit and PayPail to Visor cards, paysavecard, Instantly and Bitcorn Pay, each with its own fee and weekly payout, and customers whose favourite method is missing may buy elsewhere.
 - Returned debits, PayPail disputes and card chargebacks now arrive in Books as negative payments that reopen their invoice once you book them, and a chargeback on a stolen card suspends the fraudster.
 - A shop system now keeps its own customers and invoices, which reach Books when you press Import from shop, and its card payments arrive as one weekly payout that lists the invoices it covers.
@@ -39,7 +42,6 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - A business now always registers as a sole trader, and founding a limited company first needs the new Company law training in Research.
 - Letters now arrive by post in the new Post app, and paper bills from the trade office, the notary, the commercial register and the chamber of commerce land in your payables.
 - You can change your company to a partnership or a limited company by downloading the form from the trade office site, signing it and emailing it from the new compose window, and the Yahoy! Directory now links to the trade office.
-- Backula no longer has a web console; its host page shows the director status and the backup disk the way its command line would.
 - Dunning rules now have their own settings tab in the bookkeeping app, and the pay all button on the payables tab sits in a proper toolbar.
 - Bank websites now show their own icon in the browser tab and address bar.
 - Quotes and invoices in Books now sit in a document list with a toolbar, and an accepted quote becomes its first invoice through Carry forward to invoice, after which it reads Invoiced with the invoice number.
