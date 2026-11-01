@@ -7,7 +7,7 @@ import type { Resources } from "../../../sim/10-catalog/products";
 import type { Product } from "../../../sim/30-customers/customers";
 import { registryCost, registryOf } from "../../../sim/30-customers/registry";
 import { wholesale } from "../../../sim/30-customers/registrar";
-import { sizeOf } from "../../../sim/30-market/spec";
+import { setupFee, sizeOf } from "../../../sim/30-market/spec";
 import { canAutomate, hostFor, invoiceOf, shopRegisters, stepsDone } from "../../../sim/30-market/manual";
 import { registrarFormUrl } from "../../../sim/80-business/browser";
 import type { SalesMessage, SalesRequest } from "../../../sim/30-market/market";
@@ -15,7 +15,8 @@ import { isFinal, type Ticket } from "../../../sim/40-support/tickets";
 import type { InvoiceStatus } from "../../../sim/45-billing/billing";
 import type { GameState } from "../../../sim/50-state";
 import { betterHost, hostQuality, routeOptions } from "../../../sim/60-infra/routes";
-import { attachQuote, createQuote, invoiceOrder, offerUpgrade, provisionOrder, registerOrderDomain } from "../../../sim/90-actions/orders";
+import { attachQuote, createQuote, invoiceOrder, offerUpgrade, provisionOrder, quoteOrder, registerOrderDomain } from "../../../sim/90-actions/orders";
+import { hasFeature } from "../../../sim/80-business/bookkeeping";
 import { hasHelpdeskLink } from "../../../sim/30-market/quotes";
 import { QUOTE_DRAG, QuotePill } from "../books/QuotesTab";
 import { decline } from "../../../sim/90-actions/sales";
@@ -125,6 +126,22 @@ function HostCards({ r, value, onChange, disabled }: { r: SalesRequest; value: s
   );
 }
 
+// Without a Quotes view in the bookkeeping program the price and setup fee are typed on the ticket; they start over with
+// the counter-offer after each answer.
+function QuoteFields({ tk, r, locked }: { tk: Ticket; r: SalesRequest; locked: boolean }) {
+  const game = useStore((s) => s.game);
+  const act = useStore((s) => s.act);
+  const fee = setupFee(game, r.product);
+  const [price, setPrice] = useState(r.counter ?? r.quote ?? r.reference), [setup, setSetup] = useState(r.setup ?? fee);
+  return (
+    <div className="step-row">
+      <PriceField value={price} reference={r.reference} onChange={setPrice} disabled={locked} />
+      <PriceField value={setup} reference={fee} onChange={setSetup} disabled={locked} label={t("support.setupFee")} />
+      <button className="btn primary" disabled={locked || !(price > 0) || !(setup >= 0)} onClick={() => act(quoteOrder, tk.id, price, setup)}><Send />{t("support.sendQuote")}</button>
+    </div>
+  );
+}
+
 // The attachments of the offer: a quote row dragged here from Books is sent to the customer; with the Helpdesk link the strip
 // has Create quote, which opens the quote in Books.
 function Attachments({ tk, locked, open }: { tk: Ticket; locked: boolean; open: boolean }) {
@@ -209,7 +226,7 @@ export function CustomCompose({ tk, r }: { tk: Ticket; r: SalesRequest }) {
     <div className="compose custom-steps">
       {((!done.quote && waiting) || done.provision) && <p className="step-wait">{t("support.status.waiting")}</p>}
       <ol className="steps">
-        {!r.shop && row("quote", t("support.quote"), quoteValue, <Attachments tk={tk} locked={locked} open={!waiting} />)}
+        {!r.shop && row("quote", t("support.quote"), quoteValue, hasFeature(game, "quotes") ? <Attachments tk={tk} locked={locked} open={!waiting} /> : !waiting && <QuoteFields tk={tk} r={r} locked={locked} />)}
         {row("account", t("support.customerAccount"), done.account ? t("support.created") : t("support.none"),
           <button className="btn primary" disabled={locked} onClick={() => openApp("Books", { kind: "newCustomer", id: tk.id })}><UserPlus />{t("orderSteps.createCustomer")}</button>)}
         {row("invoice", t("support.orderConfirmation"), done.invoice ? t("support.perMonth", { price: euroCents(r.quote ?? 0) }) : invoiceOf(game, r) ? t("orderSteps.status.draft") : t("support.notSent"),

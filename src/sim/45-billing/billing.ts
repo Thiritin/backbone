@@ -10,6 +10,7 @@ import type { PaymentHabit, Profile, Service } from "../30-customers/customers";
 import { bump, cancelCustomer, createTicket, profileStats } from "../40-support/tickets";
 import type { GameState, LedgerEntry } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
+import { works } from "../80-business/bookkeeping";
 import { metrics } from "../metrics";
 import { logActivity } from "../47-staff/activity";
 import { mailDelay } from "../80-business/mail";
@@ -313,11 +314,11 @@ export function ruleSuspendsAt(s: GameState, inv: Invoice): number | null {
 }
 
 // The dunning step that runs by itself now: every rule after the Automation research, and the notices up to the final one
-// with the Automatic reminders module. Staff carry out the rest.
+// with an edition that sends reminders by itself. Staff carry out the rest.
 export function autoStep(s: GameState, inv: Invoice): number | null {
   const i = ruleStep(s, inv);
   if (i === null) return null;
-  return rulesAutomated(s) || (STEPS[i].key !== "collections" && hasModule(s, "auto-reminders")) ? i : null;
+  return rulesAutomated(s) || (STEPS[i].key !== "collections" && works(s, "auto-reminders")) ? i : null;
 }
 
 const automated = (s: GameState, inv: Invoice, key: string, by = "Automation") =>
@@ -354,7 +355,7 @@ function chase(s: GameState, inv: Invoice, events: SimEvent[]): void {
 const needsChase = (s: GameState, inv: Invoice): boolean =>
   isUnpaid(inv) && (inv.suspended || autoStep(s, inv) !== null || (rulesAutomated(s) && ruleSuspendsAt(s, inv) !== null));
 
-// Bank: economy.md, Bank, insurance and tax.
+// Bank: economy.md, Bank and tax.
 const BASE_RATE: [number, number][] = [[2005, 4], [2009, 2.5], [2015, 1], [2021, 1], [2023, 4.5], [2026, 4]];
 export const RISK_PREMIUM = [6, 4, 3, 2, 1, 0.5];
 export const MIN_LIMIT = [10_000, 25_000, 100_000, 500_000, 3_000_000, 20_000_000];
@@ -533,10 +534,10 @@ export function billingTick(s: GameState): SimEvent[] {
       s.loansBlockedUntil = s.hour + YEAR_HOURS;
       if (l.missed + 1 >= MISSED_LIMIT) {
         book("loans", "ledger.loanCalled", { amount: l.amount }, -cents(l.balance + interest));
-        events.push({ app: "Finance", key: "event.loanCalled", params: { amount: l.amount } });
+        events.push({ app: "Books", key: "event.loanCalled", params: { amount: l.amount } });
         return [];
       }
-      events.push({ app: "Finance", key: "event.loanMissed", params: { amount: l.amount, fee: MISSED_FEE } });
+      events.push({ app: "Books", key: "event.loanMissed", params: { amount: l.amount, fee: MISSED_FEE } });
       const balance = cents(l.balance + interest), rate = l.rate + MISSED_RATE;
       return [{ ...l, balance, rate, payment: annuity(balance, rate, l.left), missed: l.missed + 1 }];
     });

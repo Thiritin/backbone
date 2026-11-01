@@ -17,7 +17,7 @@ describe("tick", () => {
     const events = [];
     for (let h = 0; h < 24 * 31; h++) events.push(...tick(s));
     expect(events.filter((e) => e.app !== "News").map((e) => e.key)).toEqual(["event.monthStart"]);
-    expect(events.find((e) => e.app === "Finance")).toEqual({ app: "Finance", key: "event.monthStart", params: { month: 1, year: 2005 } });
+    expect(events.find((e) => e.app === "Books")).toEqual({ app: "Books", key: "event.monthStart", params: { month: 1, year: 2005 } });
   });
 });
 

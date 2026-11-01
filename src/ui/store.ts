@@ -136,7 +136,7 @@ function loadGame(): { game: GameState; loaded: boolean } {
 
 const initial = loadGame();
 // A reload (the dev server's after a code change, or the player's) reopens the windows of the saved game and keeps its clock running.
-const restored = initial.loaded ? readSession<Win[]>("windows", []).map((w) => (w.app === "Billing" ? { ...w, app: "Books" } : w)) : [];
+const restored = initial.loaded ? readSession<Win[]>("windows", []).map((w) => (w.app === "Billing" || w.app === "Finance" ? { ...w, app: "Books", focus: undefined } : w)) : [];
 const savedSpeed = readSession<Speed>("speed", 0);
 const restoredSpeed: Speed = initial.loaded && SPEEDS.includes(savedSpeed) ? savedSpeed : 0;
 

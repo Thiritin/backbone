@@ -44,16 +44,16 @@ export function Widgets() {
       {has("widgetTickets") && <Widget app="Support" icon={<LifeBuoy />} label={t("desktop.widget.tickets")}>
         <span className="w-big num">{m.openTickets}</span>
       </Widget>}
-      {has("widgetCash") && <Widget app="Finance" icon={<Wallet />} label={t("desktop.widget.cash")}>
+      {has("widgetCash") && <Widget app="Books" icon={<Wallet />} label={t("desktop.widget.cash")}>
         <span className="w-big num">{euro(m.cash)}</span>
       </Widget>}
-      {has("widgetRevenue") && <Widget app="Finance" icon={<ChartLine />} label={t("desktop.widget.revenue")}>
+      {has("widgetRevenue") && <Widget app="Books" icon={<ChartLine />} label={t("desktop.widget.revenue")}>
         <span className="w-big num">{euro(m.mrr)}</span>
       </Widget>}
       {has("widgetCustomers") && <Widget app="Customers" icon={<Users />} label={t("desktop.widget.customers")}>
         <span className="w-big num">{m.customers}</span>
       </Widget>}
-      {has("widgetLevel") && <Widget app="Finance" icon={<Trophy />} label={t("desktop.widget.level", { level: m.level.level })}>
+      {has("widgetLevel") && <Widget app="Books" icon={<Trophy />} label={t("desktop.widget.level", { level: m.level.level })}>
         <span className="w-name">{m.level.name}</span>
         <span className="w-bar"><span style={{ width: `${m.progress * 100}%` }} /></span>
         {m.next && <span className="w-sub num">{t("desktop.widget.levelOf", { now: euro(m.netWorth), next: euro(m.next.netWorth) })}</span>}

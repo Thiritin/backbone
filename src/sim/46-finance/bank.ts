@@ -9,6 +9,7 @@ import { START_CASH } from "../10-catalog/economy";
 import { deliverMail } from "../40-support/tickets";
 import type { Doc, GameState, LedgerEntry } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
+import { works } from "../80-business/bookkeeping";
 
 // A card applied for is ready at readyAt; due is what it spent since the last bill, booked as these entries when billed.
 export interface Card { appliedAt: number; readyAt: number; limit: number; spent: LedgerEntry[]; feeAt: number }
@@ -173,10 +174,10 @@ export function send(s: GameState, d: Draft, category = "transfers", key = "ledg
   return out;
 }
 
-// HBCI: the bought module, a bank that includes it, or a fintech's API from its year.
+// HBCI: the program's edition, a bank that includes it, or a fintech's API from its year.
 export function hbci(s: GameState): boolean {
   const b = bankOf(s);
-  return !!b && (s.modules.includes("hbci") || b.hbci || (b.api !== null && yearOf(s.hour) >= b.api));
+  return !!b && (works(s, "hbci") || b.hbci || (b.api !== null && yearOf(s.hour) >= b.api));
 }
 export const AUTO_PAY_HOURS = 48;
 

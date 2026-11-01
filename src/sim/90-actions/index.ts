@@ -18,7 +18,7 @@ import * as cpus from "./cpus";
 import * as customers from "./customers";
 import * as holds from "./holds";
 import * as licence from "./licence";
-import * as lexwear from "./lexwear";
+import * as licences from "./licences";
 import * as shoplink from "./shoplink";
 import * as vendorShop from "./vendor-shop";
 import * as oversell from "./oversell";
@@ -28,7 +28,6 @@ import * as paperwork from "./paperwork";
 import * as tax from "./tax";
 import * as files from "./files";
 import * as games from "./games";
-import * as finance from "./finance";
 import * as hardware from "./hardware";
 import * as mail from "./mail";
 import * as maintenance from "./maintenance";
@@ -84,7 +83,7 @@ export type Call = [Action, ...unknown[]];
 export type { LogEntry };
 export const LOG_CAP = 50_000;
 
-const modules = [games, addresses, lan, backups, bank, billing, bookkeeping, burnin, catalog, changes, checklist, clusters, community, datastores, company, console_, cpus, customers, dev, holds, licence, lexwear, shoplink, vendorShop, oversell, packages, portal, firewall, horizont, quorum, replication, webpanel, docs, paperwork, tax, files, finance, hardware, mail, maintenance, market, marketing, media, moves, netsvcDns, netsvcMail, netsvcQuota, netsvcStorage, netsvcVpn, network, openveezee, os, orders, rates, registrar, remote, routers, sales, security, shop, snapshots, software, staff, start, store, suite, switches, support, templates, travel, used, vms, vmwhere, vswitch, website];
+const modules = [games, addresses, lan, backups, bank, billing, bookkeeping, burnin, catalog, changes, checklist, clusters, community, datastores, company, console_, cpus, customers, dev, holds, licence, licences, shoplink, vendorShop, oversell, packages, portal, firewall, horizont, quorum, replication, webpanel, docs, paperwork, tax, files, hardware, mail, maintenance, market, marketing, media, moves, netsvcDns, netsvcMail, netsvcQuota, netsvcStorage, netsvcVpn, network, openveezee, os, orders, rates, registrar, remote, routers, sales, security, shop, snapshots, software, staff, start, store, suite, switches, support, templates, travel, used, vms, vmwhere, vswitch, website];
 const hyperModules = [haGroups, projects];
 // Every exported function of 90-actions by its name, so a replay can call the actions a run logged.
 export const ACTIONS: Record<string, Action> = Object.fromEntries([...modules, ...hyperModules].flatMap((m) => Object.entries(m).filter(([, f]) => typeof f === "function"))) as Record<string, Action>;
