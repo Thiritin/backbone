@@ -2,12 +2,13 @@ import { describe, expect, it } from "vitest";
 import { LEVEL_BAD, LEVEL_WARN, accountUse, levelOf } from "../src/sim/80-business/readouts";
 import { readyGame, skipTo } from "./fixtures";
 
-// A web account whose service has run since 2005 and is judged in a later year.
+// A web account whose service has run since 2005 and is judged in a later year. Its customer is none of the game's, so
+// the traffic is the plan grown by the years and not one customer's usage curve, which the seed picks.
 function account() {
   const s = readyGame(1);
   skipTo(s, 2006);
   const base = s.services[0] ?? null;
-  const v = { ...(base ?? {}), id: "svc-x", customerId: s.customers[0]?.id ?? "c", startedAt: 0, endedAt: null, spec: { vcpu: 0.1, ramGb: 0.25, diskGb: 2, trafficGb: 5, mailboxes: 3 } } as never;
+  const v = { ...(base ?? {}), id: "svc-x", customerId: "cus-x", startedAt: 0, endedAt: null, spec: { vcpu: 0.1, ramGb: 0.25, diskGb: 2, trafficGb: 5, mailboxes: 3 } } as never;
   s.services.push(v);
   const w = { id: "w-x", serviceId: "svc-x", clusterId: "none", diskGb: 2, vcpu: 0.1, ramGb: 0.25, busyUntil: 0, backupAt: null, stopped: false } as never;
   s.workloads.push(w);

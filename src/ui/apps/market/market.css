@@ -15,6 +15,17 @@
 .mk-hidden .shop-specs { flex: 1; }
 .mk-top { align-items: start; }
 .mk-wide { grid-column: 1 / -1; }
+.mk-pad { padding: 12px 16px 4px; }
+.mk-share polygon { stroke: var(--win); stroke-width: 0.5; }
+.mk-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 8px 0 0; padding: 0; list-style: none; font-size: 12px; color: var(--text-2); }
+.mk-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.mk-legend i { width: 10px; height: 10px; border-radius: 2px; }
+.mk-legend .num { color: var(--text-3); }
+.mk-rivals td { vertical-align: top; white-space: nowrap; }
+.mk-rivals .mk-main td { border-bottom: 0; }
+.mk-rivals .mk-sub td { white-space: normal; padding-top: 0; }
+.mk-rivals .mk-sub .mkt-row { padding: 2px 0; border-top: 0; }
+.mk-rivals td .pill { margin-left: 8px; }
 
 /* Panthera and Leapard: tags are shaded capsules with a 1px border. */
 :root[data-os="aqua"] .mk-tag,

@@ -1,9 +1,10 @@
+import { newGame } from "./fixtures";
 import { describe, expect, it } from "vitest";
 import { serviceOnline } from "../src/sim/40-support/status";
 import { createTicket } from "../src/sim/40-support/tickets";
 import { activityFor } from "../src/sim/47-staff/activity";
 import { TASKS, visibleCandidates, type Role } from "../src/sim/47-staff/staff";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { addCustomer, addService, creditCustomer, suspendCustomer } from "../src/sim/90-actions/customers";
 import { hire } from "../src/sim/90-actions/staff";

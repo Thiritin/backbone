@@ -79,8 +79,8 @@ export function bidListing(s: GameState, listingId: string, max: number, locatio
   return { ok: true };
 }
 
-// Puts a stored device on the board at an ask (default 1.3 times its value) or on eBuy from half its value. A buyer comes
-// within 7 to 30 days unless the ask is 1.5 times the value or more; eBuy bidders end between the value and 1.4 times it.
+// Puts a stored device on the board at an ask (default 0.9 times its value) or on eBuy from half its value. A buyer comes
+// within 7 to 30 days unless the ask is the value or more; eBuy bidders end between 0.8 times the value and the value.
 export function listForSale(s: GameState, deviceId: string, channel: "board" | "ebuy", ask?: number): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
