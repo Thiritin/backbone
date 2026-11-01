@@ -17,7 +17,7 @@ import { consoleAt, isDefaced } from "./consoles";
 import { customerSite, siteStatus, slowHost } from "./website";
 import { vendorHost, vendorLive, VENDORS } from "./vendors";
 import { shopActive } from "./shop";
-import { OFFICE_HOST, OFFICE_TITLE, OFFICE_URL } from "./office";
+import { OFFICE_HOST, OFFICE_URL } from "./office";
 import { t } from "../../i18n/en";
 import { bankById, BANKS, type BankId } from "../10-catalog/banks";
 import { LEXWEAR_HOST } from "./lexwear";
