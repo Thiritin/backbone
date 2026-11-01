@@ -10,6 +10,7 @@ import type { GameState } from "../../../sim/50-state";
 import { companyDomain } from "../../../sim/30-customers/domains";
 import { hasModule, shopActive } from "../../../sim/80-business/shop";
 import { buyModule, chooseShop } from "../../../sim/90-actions/shop";
+import { shopEra, shopKeyPrice, shopLease, shopUpfront } from "../../../sim/10-catalog/shop-licences";
 import { useStore } from "../../store";
 import { formatDay } from "../billing/format";
 import { PaymentMethods } from "./payments";
@@ -26,10 +27,11 @@ const ABOUT: Record<ShopId, string> = {
 };
 const HARDWARE_NAME: Record<(typeof HARDWARE_MODULES)[number], string> = { registrar: t("marketing.hwDomains"), ssl: t("marketing.hwCertificates"), dedicated: t("marketing.hwDedicated"), colo: t("marketing.hwColo") };
 
-const price = (id: ShopId): string => {
-  const v = shopById(id);
-  if (v.cut) return t("marketing.priceCut", { pct: Math.round(v.cut * 100) });
-  const parts = [v.setup > 0 && t("marketing.priceOnce", { price: euro(v.setup) }), v.monthly > 0 && (v.perServer ? t("marketing.priceMonthlyPerServer", { price: euro(v.monthly), perServer: euro(v.perServer) }) : t("marketing.slashMonth", { price: euro(v.monthly) })), v.yearly > 0 && t("marketing.priceYearly", { price: euro(v.yearly) })];
+const price = (id: ShopId, hour: number): string => {
+  const era = shopEra(id, hour), key = shopKeyPrice(id, hour), lease = shopLease(id, hour);
+  if (era.cut) return t("marketing.priceCut", { pct: Math.round(era.cut * 100) });
+  const parts = [era.setup && t("marketing.priceOnce", { price: euro(era.setup) }), key !== null && t("marketing.priceOnce", { price: euro(key) }),
+    lease !== null && t("marketing.slashMonth", { price: euro(lease) }), era.updatesFee && t("marketing.priceYearly", { price: euro(era.updatesFee) })];
   return parts.filter(Boolean).join(", ") || t("marketing.free");
 };
 
@@ -96,19 +98,21 @@ function Variants({ game }: { game: GameState }) {
   return (
     <div className="shop-grid mkt-flat">
       {SHOPS.filter((v) => year >= v.from && game.unlocks.includes("shops")).map((v) => {
-        const used = game.shop.variant === v.id, sold = v.until === undefined || year <= v.until;
+        const used = game.shop.variant === v.id, sold = !shopEra(v.id, game.hour).closed;
+        const key = shopKeyPrice(v.id, game.hour), lease = shopLease(v.id, game.hour), both = key !== null && lease !== null;
+        const upfront = shopUpfront(v.id, game.hour);
         let state: ReactNode;
         if (used) state = <span className="pill ok">{t("marketing.inUse")}</span>;
         else if (!sold) state = <span className="pill">{t("marketing.discontinued")}</span>;
         else state = <>
-          {v.own && <button className="btn" disabled={game.cash < v.own.price} onClick={() => act(chooseShop, v.id, true)}>{t("marketing.buy")} <span className="num">{euro(v.own.price)}</span></button>}
-          <button className="btn primary" disabled={v.setup > 0 && game.cash < v.setup} onClick={() => act(chooseShop, v.id)}>{v.own ? t("marketing.lease") : t("marketing.choose")}</button>
+          {both && <button className="btn" disabled={game.cash < key} onClick={() => act(chooseShop, v.id, true)}>{t("marketing.buy")} <span className="num">{euro(key)}</span></button>}
+          <button className="btn primary" disabled={game.cash < upfront} onClick={() => act(chooseShop, v.id)}>{both ? t("marketing.lease") : t("marketing.choose")}</button>
         </>;
         return (
           <div key={v.id} className="shop-card">
             <div className="shop-name"><strong>{v.name}</strong><span>{ABOUT[v.id]}</span></div>
             <dl className="shop-specs">
-              <div><dt>{t("marketing.price")}</dt><dd className="num">{price(v.id)}</dd></div>
+              <div><dt>{t("marketing.price")}</dt><dd className="num">{price(v.id, game.hour)}</dd></div>
               <div><dt>{t("marketing.modules")}</dt><dd className="num">{v.extra === null ? t("marketing.includedOnly") : v.extra === 0 ? t("marketing.free") : t("marketing.priceEach", { price: euro(v.extra) })}</dd></div>
             </dl>
             <div className="shop-buy"><span className="grow" />{state}</div>

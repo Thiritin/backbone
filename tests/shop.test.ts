@@ -38,7 +38,7 @@ describe("shop systems", () => {
     expect(chooseShop(s, "whmCache")).toMatchObject({ ok: false, error: "error.needsWebsite" });
     setUpChannel(s, "website");
     const cash = s.cash;
-    expect(chooseShop(s, "clientExit").ok).toBe(true);
+    expect(chooseShop(s, "clientExit", true).ok).toBe(true);
     expect(s.cash).toBe(cash - 250);
     expect(s.shop.variant).toBe("clientExit");
     expect(shopActive(s)).toBe(false);
@@ -104,7 +104,7 @@ describe("shop systems", () => {
   it("bill leases, per-server minimums and revenue shares", () => {
     const whm = withShop(6);
     expect(shopBills(whm)).toMatchObject([{ key: "ledger.shopLicence", amount: 15 }]);
-    at(whm, 2020);
+    at(whm, 2021);
     expect(shopBills(whm)[0].amount).toBe(18);
     const uber = at(withShop(7, "modemBill"), 2007);
     uber.shop = { ...uber.shop, variant: "ubersmyth" };

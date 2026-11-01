@@ -1,6 +1,6 @@
 // Choosing a shop system, buying its modules and setting stock (docs/design/shop.md).
-import { yearOf } from "../00-core/time";
 import { MODULE_IDS, SHOP_SETUP_HOURS, shopById, SHOPS, type ShopId } from "../10-catalog/shops";
+import { shopEra, shopKeyPrice, shopLease, shopOnSale } from "../10-catalog/shop-licences";
 import { PRODUCTS } from "../10-catalog/products";
 import type { Product } from "../30-customers/customers";
 import type { GameState } from "../50-state";
@@ -20,14 +20,17 @@ function pay(s: GameState, amount: number, key: string, params: Record<string, s
 
 // Replaces the current shop; the new one takes orders after its setup days.
 export function chooseShop(s: GameState, id: ShopId, own = false): ActionResult {
-  const v = SHOPS.find((x) => x.id === id), year = yearOf(s.hour);
+  const v = SHOPS.find((x) => x.id === id);
   if (!v) return fail("error.unknownShop");
   if (!s.unlocks.includes("shops")) return fail("error.needsShopSkill");
   if (!owns(s, "website")) return fail("error.needsWebsite");
   if (s.shop.variant === id) return fail("error.shopInUse");
-  if (year < v.from || (v.until !== undefined && year > v.until)) return fail("error.shopNotSold");
-  if (own && !v.own) return fail("error.shopNoOwn");
-  const price = own && v.own ? v.own.price : v.setup;
+  if (!shopOnSale(id, s.hour)) return fail("error.shopNotSold");
+  const key = shopKeyPrice(id, s.hour);
+  if (own && key === null) return fail("error.shopNoOwn");
+  // Without a lease on sale, choosing the shop buys its key, or takes it free.
+  own ||= shopLease(id, s.hour) === null;
+  const price = own ? key ?? 0 : shopEra(id, s.hour).setup ?? 0;
   if (price > 0 && s.cash < price) return fail("error.noCash");
   pay(s, price, "ledger.shopSetup", { name: v.name });
   s.shop = { ...newShop(), variant: id, owned: own, since: s.hour, readyAt: s.hour + SHOP_SETUP_HOURS, groups: s.shop.groups.length ? s.shop.groups : firstGroups(s), products: s.shop.products, productGroups: s.shop.productGroups };
