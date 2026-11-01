@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { t } from "../src/i18n/en";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { clusterSummary, CPU_RATIO, DEFAULT_RULES, rulesOf } from "../src/sim/60-infra/alarms";
 import { controlPlanesOn, nodeCapacity } from "../src/sim/60-infra/cluster";
 import { createVm } from "../src/sim/90-actions/clusters";
 import { connect, setPower } from "../src/sim/90-actions/hardware";
 import { tick } from "../src/sim/88-tick/tick";
 import { acknowledgeAlarm, resetAlarms, setAlarmRules } from "../src/sim/90-actions/vmwhere";
-import { basement, buyDevice, hypervisor, join, withServer } from "./fixtures";
+import { basement, buyDevice, hypervisor, join, withServer, newGame } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 const ok = (r: { ok: boolean; id?: string; error?: string }) => { expect(r.error).toBeUndefined(); return r.id!; };

@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { newGame } from "../src/sim/50-state";
 import { rackPower } from "../src/sim/60-infra/status";
 import { tickMinute } from "../src/sim/88-tick/tick";
 import { setPower } from "../src/sim/90-actions/hardware";
-import { withServer } from "./fixtures";
+import { withServer, newGame } from "./fixtures";
 
 describe("breaker trip", () => {
   it("switches every server in an overloaded rack off and resets once they stop drawing", () => {

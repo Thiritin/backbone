@@ -1,14 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { yearOf } from "../src/sim/00-core/time";
 import { sizeSpec } from "../src/sim/10-catalog/products";
-import { newGame } from "../src/sim/50-state";
 import { bookingFor, covers, defaultSpecFor, missingOn, packageNamed, packagesOf, type PackageDef } from "../src/sim/80-business/packages";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addPackage, copyPackages, deletePackage, editPackage } from "../src/sim/90-actions/packages";
 import { runAction } from "../src/sim/90-actions";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { panelServer, withServer } from "./fixtures";
+import { panelServer, withServer, newGame } from "./fixtures";
 
 const setup = () => {
   const s = withServer(newGame(1)), id = panelServer(s, "dev3");

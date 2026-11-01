@@ -13,6 +13,8 @@ export default {
   "doc.form.limited": () => "Atto costitutivo.pdf",
   "error.notRegistered": () => "L'azienda non è ancora iscritta.",
   "error.legalFormDown": () => "Una forma giuridica può passare solo a una superiore.",
+  "error.registerSole": () => "Un'attività può essere registrata solo come ditta individuale.",
+  "error.companyLaw": () => "Per fondare una società a responsabilità limitata serve Diritto societario da Ricerca.",
   "error.changePending": () => "Un cambio di forma giuridica è già in corso.",
   "error.formSigned": () => "Questo modulo è già firmato.",
   "error.mailAddress": () => "Inserisci un indirizzo email valido.",

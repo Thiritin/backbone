@@ -9,7 +9,7 @@ import { APP_SUITE_FEE, imageParts, licensingAt, serverOsById, type OsImage } fr
 import type { GameState } from "../../../../sim/50-state";
 import { t } from "../../../../i18n/en";
 import { clusterSummary, type Alarm, type Amount, type Amounts, type Severity } from "../../../../sim/60-infra/alarms";
-import { privateIp } from "../../../../sim/60-infra/addresses";
+import { machineAddress } from "../../../../sim/60-infra/addresses";
 import { balances, datastoreFits, datastoreUp, deltaGb, hostOfVm, insideVm, isOwnVm, KEYS, nodeTakes, withDatastore, workloadsOn, type Cluster, type ClusterNode, type Ha, type Workload } from "../../../../sim/60-infra/cluster";
 import { machineScreen } from "../../../../sim/60-infra/oob";
 import { deviceHealth, working } from "../../../../sim/60-infra/status";
@@ -122,7 +122,7 @@ export function useVms(game: GameState, c: Cluster, f: ConsoleFeatures): { vms: 
       ) : hold?.panel ?? null;
     return {
       w, id: w.id, st, state: hold?.state?.[0] ?? state, tone: hold?.state?.[1] ?? tone, own, name: host?.name ?? label.name, sub: own ? (host ? consoleTitle(host.panel ?? host.platform ?? "") : "") : label.service,
-      node: nodeName(game, w.deviceId), ip: privateIp(game, w.id) ?? "", os: own ? osText(w) : "", media: w.media ?? null,
+      node: nodeName(game, w.deviceId), ip: machineAddress(game, w.id) ?? "", os: own ? osText(w) : "", media: w.media ?? null,
       use: workloadUse(game, w), actions: [...actions.filter((a): a is PanelAction => !!a), ...(hold?.actions ?? [])], panel, storage: w.datastore ? nodeName(game, w.datastore) : t("browser-consoles-1.local"),
     };
   });

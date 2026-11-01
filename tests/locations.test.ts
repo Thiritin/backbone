@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { CITIES, START_CASH } from "../src/sim/10-catalog/economy";
 import { BASEMENT, DATACENTERS, datacenterById, LEAD_DAYS, PROVIDERS, RACK_MODELS, SPACE_SIZES, spacePrice } from "../src/sim/20-world/datacenters";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { freeSlots } from "../src/sim/60-infra/status";
 import { freePositions, linkStatus, moveCost, rackPower, resaleValue } from "../src/sim/60-infra/status";
 import { powerPerHour, tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { deserialize } from "../src/sim/91-save/save";
 import { addLocation, buyRack, closeLocation, connect, moveRack, sellDevice, sellRack, unmountDevice } from "../src/sim/90-actions/hardware";
-import { buyDevice, freeFloor } from "./fixtures";
+import { buyDevice, freeFloor, newGame } from "./fixtures";
 import { mountDevice, mountStack } from "./plugged";
 import { runServers, withServer } from "./fixtures";
 
@@ -135,15 +135,15 @@ describe("racks", () => {
 });
 
 describe("resaleValue", () => {
-  it("falls to 80% over the first month, then to 20% over 24 months, and stays there", () => {
+  it("starts at 90%, falls to 80% over the first month, then to 20% over 24 months, and stays there", () => {
     const s = withServer(newGame(1));
     const at = (months: number) => {
       s.hour = Math.round(months * 730);
       return resaleValue(s, 1000, 0);
     };
-    expect([at(0), at(0.5), at(1), at(13), at(25), at(30)]).toEqual([1000, 900, 800, 500, 200, 200]);
+    expect([at(0), at(0.5), at(1), at(13), at(25), at(30)]).toEqual([900, 850, 800, 500, 200, 200]);
     s.hour = 0;
-    expect(resaleValue(s, 1000, 0)).toBe(1000);
+    expect(resaleValue(s, 1000, 0)).toBe(900);
   });
 });
 

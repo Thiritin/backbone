@@ -5,7 +5,7 @@ import { marketPrice, PRODUCTS, SIZES, sizeSpec } from "../src/sim/10-catalog/pr
 import { serviceOnline } from "../src/sim/40-support/status";
 import { bumpProbe } from "../src/sim/40-support/tickets";
 import { invoiceTotal, SLA_KEPT_HAPPINESS } from "../src/sim/45-billing/billing";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { nodeCapacity, nodeUsed, vmOf, workloadsOf, workloadsOn } from "../src/sim/60-infra/cluster";
 import { deviceHealth, freeSlots, installedCores, installedRamGb, installedVcpu, rackPower } from "../src/sim/60-infra/status";
 import { nodeUsage } from "../src/sim/60-infra/usage";
@@ -13,7 +13,7 @@ import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { addNode, cordon, createVm, drain, evacuate, installPanelInVm, resizeVm, placeService, provisionService, removeNode, setPlacement, uncordon } from "../src/sim/90-actions/clusters";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { addLocation, buyRack, connect, sellDevice, setPower, unmountDevice } from "../src/sim/90-actions/hardware";
-import { buyDevice, freeFloor } from "./fixtures";
+import { buyDevice, freeFloor, newGame } from "./fixtures";
 import { mountDevice } from "./plugged";
 import { FRIEND_HAPPINESS } from "../src/sim/90-actions/start";
 import { hypervisor, readyGame, skipTo, withServer } from "./fixtures";
@@ -88,7 +88,7 @@ describe("starting company", () => {
   });
   it("takes the friends offline and opens outage tickets when the switch loses power", () => {
     // A seed where a friend writes in once the outage is noticed.
-    const s = readyGame(4);
+    const s = readyGame(2);
     run(s, 2);
     ok(setPower(s, "dev4", false));
     // Private customers notice slowly (economy.md, Noticing outages): by two weeks one has written in.

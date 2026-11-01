@@ -11,6 +11,7 @@ import type { GameState } from "../50-state";
 import { balancerIn, balloons, clustersIn, conflict, isService, phpAt, softwareById, type Software, type SoftwareKind } from "../10-catalog/platforms";
 import { HA_SKILL } from "../10-catalog/research";
 import { serverOsAt } from "../10-catalog/server-os";
+import { versionAt } from "../10-catalog/software-versions";
 import { freezeTick } from "../60-infra/usage";
 import { PHP_UPGRADE_HOURS } from "../60-infra/php";
 import { withinOversell } from "../60-infra/oversell";
@@ -64,7 +65,7 @@ const runs = (c: Cluster, softwareId?: string): boolean => !!softwareId && [c.pa
 
 // The software joins the machine's list, installing until doneAt.
 function addSoftware(s: GameState, machineId: string, sw: Software, doneAt: number): void {
-  setMachine(s, machineId, (m) => ({ software: [...m.software, { id: sw.id, version: String(yearOf(s.hour)), installedAt: s.hour, doneAt }] }));
+  setMachine(s, machineId, (m) => ({ software: [...m.software, { id: sw.id, version: versionAt(sw.id, s.hour).version, installedAt: s.hour, doneAt }] }));
 }
 
 // A VM made from a template: the OS is on its disk and booted from the start.

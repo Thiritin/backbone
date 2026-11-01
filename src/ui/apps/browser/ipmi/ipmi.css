@@ -48,6 +48,7 @@
 .cx[data-look="kvm"] .bmc-mark { background: #555555; color: #ffffff; width: 20px; height: 20px; }
 .kvm-target { background: var(--panel); border: 1px solid var(--line); padding: 12px 14px; margin: 0 0 12px; }
 .kvm-screen { background: #101010; color: #c8d0c8; font-family: "JetBrains Mono", monospace; font-size: 12px; padding: 8px 10px; margin: 0 0 12px; white-space: pre-wrap; min-height: 2.6em; }
+.cx[data-look="fritz"] { --bg: #f4f6f9; --side: #1c3f6e; --side-fg: #dbe5f2; --accent: #c4161c; --head: #1c3f6e; --font: Arial, Helvetica, sans-serif; }
 
 /* Web eras for the controllers: the classic grey brand keeps its bevels until the flat years. */
 :root[data-era="aqua"] .cx:is([data-look="idraq"], [data-look="ilol"], [data-look="ipmi"], [data-look="xclarify"], [data-look="kvm"]) { --font: Verdana, Geneva, sans-serif; --r: 0; font-size: 12px; }

@@ -3,7 +3,7 @@ import { cpuModel, cpuWatts, socketGens, x86Share } from "../src/sim/10-catalog/
 import { boardSpec, componentParts, fits, modelById, partOffers, presetSku, vendorsOf } from "../src/sim/10-catalog/hardware";
 import { presetPrice } from "../src/sim/10-catalog/parts";
 import { specFor } from "../src/sim/30-market/spec";
-import { device, deviceDefaults, newGame, type GameState } from "../src/sim/50-state";
+import { device, deviceDefaults, type GameState } from "../src/sim/50-state";
 import { nodeCapacity, nodeTakes } from "../src/sim/60-infra/cluster";
 import { deviceWatts, installedVcpu, perCoreOf } from "../src/sim/60-infra/status";
 import { tick } from "../src/sim/88-tick/tick";
@@ -13,7 +13,7 @@ import { createVm } from "../src/sim/90-actions/clusters";
 import { migrationDowntime } from "../src/sim/90-actions/vms";
 import { runAction } from "../src/sim/90-actions";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { buyBare, buyDevice, hypervisor, join, skipTo, withServer } from "./fixtures";
+import { buyBare, buyDevice, hypervisor, join, skipTo, withServer, newGame } from "./fixtures";
 
 type R = { ok: boolean; id?: string; error?: string };
 const ok = (r: R) => {

@@ -12,6 +12,7 @@ export default {
   "paperwork.of.pending": () => "In corso",
   "paperwork.of.registerFirst": () => "Vi preghiamo di iscrivere prima la vostra attività nell'eService.",
   "paperwork.of.top": () => "L'azienda ha la forma giuridica più alta.",
+  "paperwork.of.none": () => "Nessun'altra forma giuridica è disponibile per l'azienda.",
   "paperwork.doc.head.partnership": () => "Comunicazione di variazione dell'iscrizione (modulo GA-2)",
   "paperwork.doc.head.limited": () => "Atto costitutivo e domanda di iscrizione nel registro delle imprese",
   "paperwork.doc.current": () => "Forma giuridica attuale",
