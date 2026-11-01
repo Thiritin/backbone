@@ -15,8 +15,6 @@ const productOf = (id: string) => SERVER_OS.find((o) => o.id === id) ?? SOFTWARE
 // Free software has no licence terms.
 export const isLicensed = (product: string): boolean => productOf(product)?.trialDays !== undefined;
 // Days of the product's trial; null when it needs a key at install.
-// A panel with editions starts on a trial of its top tier instead of a key at install; VMwhere editions are chosen later.
-export const hasTrialTiers = (product: string): boolean => tiersOf(product).length > 0 && trialDaysOf(product) !== null && SOFTWARE.find((x) => x.id === product)?.kind === "panel";
 export const trialDaysOf = (product: string): number | null => productOf(product)?.trialDays ?? null;
 // A panel with editions starts on a trial of its top tier instead of a key at install; VMwhere editions are chosen later.
 export const hasTrialTiers = (product: string): boolean => tiersOf(product).length > 0 && trialDaysOf(product) !== null && SOFTWARE.find((x) => x.id === product)?.kind === "panel";
