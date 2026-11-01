@@ -5,6 +5,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-01
 
 - A customer's website without a domain opens in the browser at its account's private address again.
+- Dragging a window to a screen edge now shows a preview and tiles it to half the screen, to a quarter near a corner, or to the full screen at the top, and dragging it away restores its size.
+- Closing the last browser tab closes the browser window, and the dock menu can open a second browser window with its own tabs.
 - Progress bars in server panels now look like the ones each product used in its time, from boxed and segmented bars early on to thin flat ones later.
 - Backula no longer has a web console; its host page shows the director status and the backup disk the way its command line would.
 - Clicking the clock in the top bar opens a calendar that marks the days with announcements, and clicking your cash opens Finance.
