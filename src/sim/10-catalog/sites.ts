@@ -6,7 +6,7 @@ export type Look = "early" | "late";
 export interface Site { host: string; tagline: string; blurb: string; features: string[]; eras: { from: number; look: Look }[] }
 
 // Text is looked up when read, so it follows the active language.
-const site = (id: string, host: string, n: number, early: number, late?: number): Site => ({
+export const site = (id: string, host: string, n: number, early: number, late?: number): Site => ({
   host,
   get tagline() { return t(`sim.site.${id}.tagline`); },
   get blurb() { return t(`sim.site.${id}.blurb`); },
@@ -15,7 +15,6 @@ const site = (id: string, host: string, n: number, early: number, late?: number)
 });
 
 export const SITES: Record<string, Site> = {
-  boxBillin: site("boxBillin", "boxbillin.com", 0, 2011, 2014),
   lunix: site("lunix", "debiant.org", 5, 2005, 2015),
   windoors: site("windoors", "windoors.macrosoft.com", 5, 2005, 2012),
   cpanic: site("cpanic", "cpanic.com", 6, 2005, 2014),

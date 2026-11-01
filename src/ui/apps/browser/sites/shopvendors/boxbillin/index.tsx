@@ -41,7 +41,7 @@ export function BoxBillin({ game, path = "/", go }: VendorProps) {
   const body: Record<Page, () => ReactNode> = {
     home: () => <Home era={era} brand={brand} version={latest.version} download={to("download")} install={to("install")} />,
     download: () => <Download game={game} brand={brand} install={to("install")} />,
-    install: () => <Install game={game} brand={brand} />,
+    install: () => <Install game={game} />,
     releases: () => <Releases game={game} />,
     extensions: () => <Extensions game={game} />,
     account: () => <Account game={game} />,
@@ -117,12 +117,12 @@ function Download({ game, brand, install }: { game: GameState; brand: string; in
   );
 }
 
-function Install({ game, brand }: { game: GameState; brand: string }) {
+function Install({ game }: { game: GameState }) {
   const admin = `portal.${companyDomain(game)}${portalPath(ID, "admin")}`;
   return (
     <ol className="bxs-card bxs-steps">
       <li>{t("shop-boxBillin.site.step0")}</li>
-      <li>{t("shop-boxBillin.site.step1", { section: t("host.shop"), button: t("host.installShop", { name: brand }) })}</li>
+      <li>{t("shop-boxBillin.site.step1", { section: t("host.shop"), button: t("host.installShop", { name: shopById(ID).name }) })}</li>
       <li>{t("shop-boxBillin.site.step2")} <code>{admin}</code></li>
     </ol>
   );

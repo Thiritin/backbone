@@ -135,7 +135,7 @@
 .bxs-foss .bxs-page { padding: 48px 0 64px; }
 .bxs-foss .bxs-page > h1 { font-size: 36px; font-weight: 750; letter-spacing: -0.8px; }
 .bxs-foss .bxs-edition { max-width: 440px; }
-.bxs-foss .bxs-price { margin: 2px 0 0; font-size: 40px; font-weight: 750; letter-spacing: -1px; color: #2f6fe4; }
+.bxs-foss .bxs-card .bxs-price { margin: 2px 0 0; font-size: 40px; font-weight: 750; letter-spacing: -1px; color: #2f6fe4; }
 .bxs-foss .bxs-card dt { color: #6c7689; }
 .bxs-foss table.bxs-card { padding: 0; border-collapse: separate; border-spacing: 0; overflow: hidden; }
 .bxs-foss .bxs-table th { font-size: 13px; font-weight: 600; color: #6c7689; background: #f9fafc; border-bottom: 1px solid #e3e8f1; }

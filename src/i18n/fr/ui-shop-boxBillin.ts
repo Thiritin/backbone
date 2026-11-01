@@ -46,7 +46,7 @@ export default {
   "shop-boxBillin.site.apache": () => "Apache 2.0",
   "shop-boxBillin.site.updates": () => "Mises à jour",
   "shop-boxBillin.site.updatesFree": () => "Gratuites pour chaque version",
-  "shop-boxBillin.site.step0": () => "Ouvrez la console de l'un de vos hôtes à panneau et allez dans ses réglages.",
+  "shop-boxBillin.site.step0": () => "Ouvrez la page Logiciels et mises à jour de l'un de vos hôtes à panneau.",
   "shop-boxBillin.site.step1": (p) => `Sous ${p.section}, choisissez ${p.button}.`,
   "shop-boxBillin.site.step2": () => "Connectez-vous à votre administration sur",
   "shop-boxBillin.site.version": () => "Version",

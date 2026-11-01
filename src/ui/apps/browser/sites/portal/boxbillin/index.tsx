@@ -5,7 +5,6 @@ import { versionInfo } from "../../../../../../sim/10-catalog/software-versions"
 import { shopById } from "../../../../../../sim/10-catalog/shops";
 import { AdminScreen } from "../shared/AdminScreen";
 import { ClientArea } from "../shared/ClientArea";
-import { VersionFooter } from "../shared/Licence";
 import { screenArgs, screenOf, type Screen, type ScreenName } from "../shared/nav";
 import { StoreFront } from "../shared/StoreFront";
 import type { Skin, SkinProps } from "../skins";
@@ -25,10 +24,14 @@ const GROUPS: [string, ScreenName[]][] = [
 const TILES: ScreenName[] = ["orders", "clients", "invoices", "products", "servers", "updates"];
 const label = (n: ScreenName) => t(`shop-boxBillin.nav.${n}`);
 
-function Brand({ era, variant, version }: { era: Era; variant: SkinProps["variant"]; version: string }) {
-  const name = versionInfo(variant, version)?.name || shopById(variant).name;
-  return <span className="bx-brand">{era === "foss" ? <OpenBox /> : <Cube />}<b>{name}</b></span>;
-}
+// FOSSBillin' releases carry the new name.
+const nameOf = (variant: SkinProps["variant"], version: string) => versionInfo(variant, version)?.name || shopById(variant).name;
+
+const Brand = ({ era, variant, version }: { era: Era; variant: SkinProps["variant"]; version: string }) =>
+  <span className="bx-brand">{era === "foss" ? <OpenBox /> : <Cube />}<b>{nameOf(variant, version)}</b></span>;
+
+const Version = ({ variant, version }: Pick<SkinProps, "variant" | "version">) =>
+  <footer className="pt-version">{t("shop-admin.footer", { name: nameOf(variant, version), version })}</footer>;
 
 function AdminFrame(props: SkinProps & { children: ReactNode }) {
   const era = eraOf(props.major);
@@ -36,7 +39,7 @@ function AdminFrame(props: SkinProps & { children: ReactNode }) {
     <div className={`portal shop bx bx-${era} bx-admin`}>
       <header className="bx-top"><Brand era={era} variant={props.variant} version={props.version} /><span className="bx-who">{t("shop-boxBillin.admin")}</span></header>
       <div className="bx-body">{props.children}</div>
-      <VersionFooter game={props.game} variant={props.variant} />
+      <Version variant={props.variant} version={props.version} />
     </div>
   );
 }
@@ -46,7 +49,7 @@ function Admin(props: SkinProps) {
   const go = (s: Screen) => open("admin", {}, screenArgs(s));
   const current = screen.name === "product" ? "products" : screen.name === "client" ? "clients" : screen.name;
   const link = (n: ScreenName) => (
-    <a key={n} href="#" className={current === n ? "on" : ""} onClick={(e) => { e.preventDefault(); go({ name: n }); }}><Icon name={n} /><span>{label(n)}</span></a>
+    <a key={n} href="#" className={current === n ? "on" : ""} onClick={(e) => { e.preventDefault(); go({ name: n }); }}><Icon name={n} />{label(n)}</a>
   );
   return (
     <AdminFrame {...props}>
@@ -68,8 +71,8 @@ function StoreFrame(props: SkinProps & { children: ReactNode }) {
   const { game, variant, version, major, route, open } = props, era = eraOf(major), client = route.area === "client";
   const links = (
     <>
-      <a href="#" className={client ? "" : "on"} onClick={(e) => { e.preventDefault(); open("store"); }}><Icon name="orders" /><span>{t("shop-boxBillin.order")}</span></a>
-      <a href="#" className={client ? "on" : ""} onClick={(e) => { e.preventDefault(); open("client"); }}><Icon name="clients" /><span>{t("shop-boxBillin.clientArea")}</span></a>
+      <a href="#" className={client ? "" : "on"} onClick={(e) => { e.preventDefault(); open("store"); }}><Icon name="orders" />{t("shop-boxBillin.order")}</a>
+      <a href="#" className={client ? "on" : ""} onClick={(e) => { e.preventDefault(); open("client"); }}><Icon name="clients" />{t("shop-boxBillin.clientArea")}</a>
     </>
   );
   return (
@@ -84,7 +87,7 @@ function StoreFrame(props: SkinProps & { children: ReactNode }) {
       </div>
       <footer className="bx-foot">
         <span>{t("shop-boxBillin.copyright", { year: yearOf(game.hour), name: game.company.name })}</span>
-        <VersionFooter game={game} variant={variant} />
+        <Version variant={variant} version={version} />
       </footer>
     </div>
   );
@@ -117,7 +120,7 @@ function Login(props: SkinProps & { onLogin: () => void }) {
         <label>{t("shop-admin.password")}<input name="password" type="password" defaultValue="password" autoComplete="off" /></label>
         <button type="submit" className="btn primary">{t("shop-boxBillin.signIn")}</button>
       </form>
-      <VersionFooter game={props.game} variant={props.variant} />
+      <Version variant={props.variant} version={props.version} />
     </div>
   );
 }
