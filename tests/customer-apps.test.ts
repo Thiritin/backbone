@@ -16,6 +16,7 @@ import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { setRate } from "../src/sim/90-actions/rates";
 import { resolveTicket } from "../src/sim/90-actions/support";
+import { suspendService } from "../src/sim/90-actions/holds";
 import { customerSite } from "../src/sim/80-business/website";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { panelServer, withServer, newGame } from "./fixtures";
@@ -328,6 +329,18 @@ describe("hacked customer sites", () => {
     day(s); day(clean.s);
     expect(start - mailAddress(s, host)!.rep).toBe(SPAM.shady * REP.perThousand);
     expect(mailAddress(clean.s, clean.host)!.rep).toBeGreaterThanOrEqual(start);
+  });
+
+  it("go down and stop sending spam while suspended", () => {
+    const s = withServer(newGame(1)), host = panelServer(s, "dev3"), cus = addCustomer(s, "Ada Lang", "hobbyDev");
+    const id = ok(provisionService(s, cus, "webHosting", { label: "ada.de", spec: sizeSpec("webHosting", 0, 2005), clusterId: host }));
+    tick(s);
+    s.sites = { ...s.sites, defaced: [id] };
+    ok(suspendService(s, id, "abuse"));
+    const start = mailAddress(s, host)!.rep;
+    for (let h = 0; h < 24; h++) tick(s);
+    expect(customerSite(s, id)?.status).toBe("down");
+    expect(mailAddress(s, host)!.rep).toBeGreaterThanOrEqual(start);
   });
 
   // Test sites run without a workload, so a backed-up one is added for the restore and dropped again to keep the site online.
