@@ -5,7 +5,6 @@ export default {
   "ledger.module.helpdesk-link": () => "Licença Lexwear Ligação ao helpdesk",
   "ledger.module.monthly-run": () => "Licença Lexwear Faturação mensal",
   "ledger.module.match-by-reference": () => "Licença Lexwear Associar por referência",
-  "ledger.module.auto-reminders": () => "Licença Lexwear Lembretes automáticos",
   "ledger.module.hbci": () => "Licença Lexwear Banco online HBCI",
   "error.licenceKey": () => "Esta chave de licença não é válida.",
   "error.noTrial": () => "Não há avaliação disponível para este software nesta máquina.",

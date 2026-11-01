@@ -24,7 +24,6 @@ export default {
   "ledger.bookModule.helpdesk-link": (p) => `Licença ${p.vendor} Ligação ao helpdesk`,
   "ledger.bookModule.monthly-run": (p) => `Licença ${p.vendor} Faturação mensal`,
   "ledger.bookModule.match-by-reference": (p) => `Licença ${p.vendor} Associar por referência`,
-  "ledger.bookModule.auto-reminders": (p) => `Licença ${p.vendor} Lembretes automáticos`,
   "ledger.bookModule.hbci": (p) => `Licença ${p.vendor} Banco online HBCI`,
   "error.updateOpen": () => "A atualização anual não está paga.",
 } satisfies Dict;

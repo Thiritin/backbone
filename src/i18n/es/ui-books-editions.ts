@@ -18,7 +18,6 @@ export default {
   "books-editions.feature.hbci": () => `Banca online HBCI`,
   "books-editions.feature.tax": () => `Impuestos`,
   "books-editions.feature.reports": () => `Pérdidas y ganancias y flujo de caja`,
-  "books-editions.feature.auto-reminders": () => `Recordatorios automáticos`,
   "books-editions.feature.helpdesk-link": () => `Enlace con el helpdesk`,
   "books-editions.feature.statistics": () => `Estadísticas`,
   "ledger.booksSeat": (p) => `Puesto de ${p.program} ${p.edition}`,

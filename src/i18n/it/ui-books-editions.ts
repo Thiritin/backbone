@@ -18,7 +18,6 @@ export default {
   "books-editions.feature.hbci": () => `Home banking HBCI`,
   "books-editions.feature.tax": () => `Imposte`,
   "books-editions.feature.reports": () => `Conto economico e flusso di cassa`,
-  "books-editions.feature.auto-reminders": () => `Solleciti automatici`,
   "books-editions.feature.helpdesk-link": () => `Collegamento helpdesk`,
   "books-editions.feature.statistics": () => `Statistiche`,
   "ledger.booksSeat": (p) => `Postazione ${p.program} ${p.edition}`,

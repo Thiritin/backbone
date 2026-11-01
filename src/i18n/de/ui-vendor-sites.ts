@@ -5,7 +5,6 @@ export default {
   "ledger.module.helpdesk-link": () => "Lexwear-Lizenz Helpdesk-Anbindung",
   "ledger.module.monthly-run": () => "Lexwear-Lizenz Monatslauf",
   "ledger.module.match-by-reference": () => "Lexwear-Lizenz Nach Verwendungszweck zuordnen",
-  "ledger.module.auto-reminders": () => "Lexwear-Lizenz Automatische Mahnungen",
   "ledger.module.hbci": () => "Lexwear-Lizenz HBCI-Onlinebanking",
   "error.licenceKey": () => "Dieser Lizenzschlüssel ist nicht gültig.",
   "error.noTrial": () => "Für diese Software ist auf dieser Maschine keine Testversion verfügbar.",

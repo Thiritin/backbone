@@ -759,10 +759,9 @@ Resolving the ticket adds the usual +5 happiness on top. Handling an appeal take
 | Helpdesk link | €149 | Create quote button on order tickets | 3 domains registered for customers |
 | Monthly run | €99 | Sends every draft invoice on the 1st at 09:00 | 10 customers |
 | Match by reference | €129 | Books each transfer whose reference names an open invoice and whose amount is exact | 10 transfers matched |
-| Automatic reminders | €99 | Sends the reminder, dunning and final notices on their due day under the billing rules | First suspension |
 | HBCI online banking | €79 | Pulls the bank statement and pays payables | Never |
 
-The billing rules say what is sent; bookkeepers and accountants carry them out in their work hours, the Automation research runs all of them, and Automatic reminders runs the notices up to the final one while suspensions and collections stay with staff or the research. Bookkeepers also send drafts and match transfers, writing off a shortfall below €1, before any reminder in the same hour; a second bookkeeper doubles the rate.
+The billing rules say what is sent; bookkeepers and accountants carry them out in their work hours, and the Automation research runs all of them. Bookkeepers also send drafts and match transfers, writing off a shortfall below €1, before any reminder in the same hour; a second bookkeeper doubles the rate.
 
 **Time per action.** Every employee action takes time from their workday, so one employee can't carry the whole company. Staff divide these times by their speed (0.5 plus skill/100, so skill 50 takes the times as listed); bots work at twice the speed. The code keeps them in `ACTION_MINUTES` (src/sim/47-staff/activity.ts), and ticket times in `MINUTES` (the ticket table above).
 

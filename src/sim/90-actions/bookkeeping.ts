@@ -1,7 +1,7 @@
 // docs/design/plans/billing-by-hand.md, 9c and 9d: installing a bookkeeping program, upgrading its edition, buying seats.
 import { yearOf } from "../00-core/time";
 import { booksVendor, editionById, type BooksVendor, type Edition, type Feature } from "../10-catalog/bookkeeping";
-import { cents, dueStep, isUnpaid, sendStep, STEPS } from "../45-billing/billing";
+import { cents } from "../45-billing/billing";
 import { invoicing } from "../46-finance/payables";
 import type { GameState } from "../50-state";
 import { bill, currentEdition, currentVendor, LICENCE_KEY, licencePrice, matchByReference, monthlyFee, monthlyRun, MONTHLY_KEY, SEAT_KEY, updateOpen, works } from "../80-business/bookkeeping";
@@ -20,7 +20,6 @@ function take(s: GameState, v: BooksVendor, e: Edition, seats: number): ActionRe
   const price = licencePrice(s, v, e), fee = monthlyFee(v, e, seats);
   if (s.cash < price + (invoicing(s) ? 0 : fee)) return fail("error.noCash");
   pay(s, v, LICENCE_KEY, price, e);
-  if (e.features.includes("auto-reminders")) s.billingRules = { ...s.billingRules, autoRemind: true };
   return { ok: true };
 }
 
@@ -71,11 +70,6 @@ export function runFeature(s: GameState, id: Feature): ActionResult {
   if (!works(s, id)) return fail("error.unknownEdition");
   if (id === "monthly-run") monthlyRun(s);
   else if (id === "match-by-reference") matchByReference(s);
-  else if (id === "auto-reminders") {
-    for (const inv of s.invoices) {
-      const i = isUnpaid(inv) ? dueStep(inv, s.hour) : null;
-      if (i !== null && STEPS[i].key !== "collections") sendStep(s, inv, i);
-    }
-  } else return fail("error.unknownEdition");
+  else return fail("error.unknownEdition");
   return { ok: true };
 }
