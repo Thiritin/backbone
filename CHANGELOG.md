@@ -3,8 +3,14 @@
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
 ## 2026-11-01
+- An upgrade request now shows each resource going from old to new with the price field in the same list, and asks for a server only when the current one has no room.
+- The Bank tab in Books lists your booked transfers, and Undo takes back a payment you matched to the wrong invoice so you can book it again.
+- The savings from your private account no longer wait among the incoming transfers to be matched.
+- The Terminal button on a server now connects by its address, and Tab in the terminal completes server addresses as well as names.
+- TCAdmen 3, the Sysko Sekure Client, the newer MinnIO object browser, every Veeham console generation and the early OpenStash dashboards each get their own look, matching the version you run.
 - Removing an offsite backup server now discards its copies, a Proxmocks VM can no longer be moved into a cluster without quorum, and the Backula status lists only the jobs that write to that server with their real result.
-
+- Books has a Publish to website button: your website lists the published products of each line with their prices, and email orders and leads decide on those prices until you publish again.
+- An order email for one of your products now names that product.
 - Bookkeeping programs now come in editions with their own prices, features, seats and look, GnuCache joins as a free program, and each bookkeeper needs a seat to work.
 - Books now holds the overview, statistics, tax and account statement, Finance is gone, loans live on your bank's website, and low cash brings an email about your bank's overdraft.
 - Hardware insurance is gone, so repairs cost what they cost.

@@ -24,6 +24,7 @@ import { Register } from "./Register";
 import { useBooks } from "./view";
 import { LAYOUTS } from "./layouts";
 import type { Entry, Group } from "./layouts/types";
+import { unpublished } from "../../../sim/80-business/catalog";
 import "../billing/billing.css";
 import "./books.css";
 
@@ -39,7 +40,7 @@ const TABS: { id: string; group: Group; count: (s: GameState) => number; body: C
   { id: "invoices", group: "sales", count: drafts, body: InvoicesTab },
   { id: "bank", group: "payments", count: unmatched, body: BankTab },
   { id: "reminders", group: "payments", count: late, body: RemindersTab },
-  { id: "products", group: "sales", count: () => 0, body: ProductsTab },
+  { id: "products", group: "sales", count: unpublished, body: ProductsTab },
   { id: "payables", group: "payments", count: (s) => s.payables.filter((p) => overdue(s, p)).length, body: PayablesTab },
   { id: "statistics", group: "reports", count: () => 0, body: StatisticsTab, features: ["reports", "statistics"] },
   { id: "tax", group: "reports", count: () => 0, body: TaxTab, features: ["tax"] },

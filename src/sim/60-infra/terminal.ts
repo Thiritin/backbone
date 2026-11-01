@@ -328,7 +328,7 @@ const REMOTE_COMMANDS = ["uptime", "df", "free", "top", "shutdown", "reboot", "r
 const PATH_COMMANDS = ["cd", "ls", "cat", "edit", "touch", "mkdir", "rm", "rmdir", "mv", "cp"];
 
 // Tab on a line: the first word completes to a command, a word after a file command to a path, other words to a host
-// name. Several matches extend to their shared prefix, and when that adds nothing the matches come back as options to list.
+// name or address. Several matches extend to their shared prefix, and when that adds nothing the matches come back as options to list.
 export function complete(s: GameState, session: Session | null, line: string, cwd: string | null = null): { line: string; options: string[] } {
   const word = /(?:\\.|[^\s\\])*$/.exec(line)![0], at = line.length - word.length, first = line.trim().split(/\s+/)[0];
   const host = hostOf(session);
@@ -337,7 +337,7 @@ export function complete(s: GameState, session: Session | null, line: string, cw
   const pool = at === 0 ? (session ? [...REMOTE_COMMANDS, ...binariesOn(s, session.deviceId)] : DESK_COMMANDS)
     : sub.length ? sub
     : paths ? completePath(s, host, cwd ?? homeOf(host), word)
-    : [...s.devices.map((d) => d.hostname), ...s.workloads.map((w) => w.hostname), ...s.services.map((v) => v.hostname)];
+    : [...s.devices.flatMap((d) => d.hostname ? [d.hostname, addressOf(s, d.id)] : []), ...s.workloads.flatMap((w) => w.hostname ? [w.hostname, machineAddress(s, w.id)] : []), ...s.services.map((v) => v.hostname)];
   const key = paths ? word : word.toLowerCase();
   const hits = [...new Set(pool.filter((h): h is string => !!h && h.startsWith(key)))].sort();
   if (hits.length === 1) return { line: line.slice(0, at) + hits[0] + (hits[0].endsWith("/") ? "" : " "), options: [] };

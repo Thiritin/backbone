@@ -129,8 +129,6 @@ export default {
   "support.traffic": () => "Traffic",
   "support.mailboxes": () => "Mailboxes",
   "support.disk": () => "Disk",
-  "support.resource": () => "Resource",
-  "support.requested": () => "Requested",
   "support.monthlyPrice": () => "Monthly price",
   "support.newMonthlyPrice": () => "New monthly price",
   "support.difference": (p) => `Difference ${p.amount} a month`,

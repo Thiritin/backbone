@@ -1,7 +1,7 @@
 import { FileText } from "lucide-react";
 import { Home, KeyRound, LogOut, Settings, type LucideIcon } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { Actions, erasFrom, eraAt, Facts, LoginForm, RowLines, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
+import { Actions, eraAt, looks, Facts, LoginForm, RowLines, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
 import { useReadoutPages } from "../Readouts";
 import { t } from "../../../../../i18n/en";
 import { IdentityCerts } from "./IdentityCerts";
@@ -9,13 +9,13 @@ import { tenants } from "../services";
 import { VpnReadout } from "../ServiceReadouts";
 import "./anyconnekt.css";
 
-// docs/design/software.md, section 10: the blue device-manager tabs until 2016, then flat white and teal.
-const ERAS = erasFrom(2005, 2016);
+// docs/design/software.md, section 10: one look per AnyConnekt generation, ids as in UI_LOOKS.
+const LOOKS = looks({ early: 2005, late: 2016, secure: 2023 });
 
 export function AnyConnekt(p: PanelProps) {
-  const era = eraAt(ERAS, p), [tab, setTab] = usePanelTab(p.f), [certs, setCerts] = useState(false);
+  const era = eraAt(LOOKS, p), [tab, setTab] = usePanelTab(p.f), [certs, setCerts] = useState(false);
   const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f), ts = tenants(p.game, p.c);
-  const logo = <span className="sy-logo"><i aria-hidden>{"|||.|||."}</i>SYSKO <b>AnyConnekt</b></span>;
+  const logo = <span className="sy-logo"><i aria-hidden>{"|||.|||."}</i>SYSKO <b>{era === "secure" ? "Sekure Client" : "AnyConnekt"}</b></span>;
   if (!p.signedIn) return (
     <div className="cx sy sy-login" data-era={era}>
       <LoginForm className="sy-card" onLogin={p.login} button={t("browser-consoles-1.login")}>{logo}<div className="cx-host">{p.host}</div></LoginForm>

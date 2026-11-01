@@ -27,8 +27,18 @@
 .host-r { display: flex; justify-content: space-between; gap: 8px; color: var(--text-2); }
 .host .btn { justify-self: start; margin-top: 2px; }
 
-.upgrade-table { margin: 10px 20px; width: calc(100% - 40px); font-size: 12.5px; }
-.upgrade-table .r { text-align: right; }
+.upgrade { display: contents; }
+.upgrade-diff { display: grid; grid-template-columns: max-content max-content 14px auto; justify-content: start; align-items: center; gap: 6px 14px; margin: 10px 20px; font-size: 12.5px; }
+.upgrade-row { display: contents; }
+.upgrade-row > :first-child { color: var(--text-2); padding-right: 16px; }
+.upgrade-row > .num:nth-child(2) { text-align: right; }
+.upgrade-row > svg.lucide { width: 14px; height: 14px; color: var(--text-3); }
+.upgrade-row.price > * { padding-top: 8px; border-top: var(--ar-bw) solid var(--line); }
+.upgrade-row.price > svg.lucide { box-sizing: content-box; }
+.upgrade-price { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.upgrade-price .price-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.upgrade-home { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; }
+.upgrade-home svg.lucide { width: 14px; height: 14px; color: var(--ok); }
 .sup-detail:has(.custom-steps) .thread { min-height: 140px; }
 .sales-bars.route-load { justify-self: stretch; max-width: 560px; padding: 4px 0 0; border: 0; }
 

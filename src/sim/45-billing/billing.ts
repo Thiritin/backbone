@@ -65,7 +65,9 @@ export interface Transfer { id: string; hour: number; from: string; reference: s
   // A gateway payout: the invoices it pays.
   covers?: string[];
   // Money taken back from a paid invoice: matching it reopens the invoice; fraud marks a stolen card's chargeback.
-  back?: Exclude<BackKind, "release">; fraud?: true }
+  back?: Exclude<BackKind, "release">; fraud?: true;
+  // What a manual booking did, so it can be undone: whether it paid the invoice and the credit it left.
+  booked?: { paid: boolean; credit: number } }
 // rate is yearly; left counts the instalments still to pay.
 export interface Loan { id: string; amount: number; rate: number; months: number; left: number; payment: number; balance: number; takenAt: number; missed: number }
 
@@ -175,15 +177,29 @@ function transferFor(s: GameState, inv: Invoice): Transfer {
 // a larger one pays the invoice and leaves the rest as the customer's credit.
 export function bookTransfer(s: GameState, tr: Transfer, inv: Invoice, settle: boolean): void {
   if (tr.back) return reopen(s, tr, inv);
-  s.transfers = s.transfers.map((x) => (x === tr ? { ...x, invoiceId: inv.id, matchedAt: s.hour } : x));
-  const rest = cents(owed(inv) - tr.amount);
-  if (rest > 0 && !settle) inv.received = cents((inv.received ?? 0) + tr.amount);
+  const rest = cents(owed(inv) - tr.amount), paid = rest <= 0 || settle;
+  s.transfers = s.transfers.map((x) => (x === tr ? { ...x, invoiceId: inv.id, matchedAt: s.hour, booked: { paid, credit: Math.max(0, -rest) } } : x));
+  if (!paid) inv.received = cents((inv.received ?? 0) + tr.amount);
   else {
     Object.assign(inv, { status: "paid", paidAt: s.hour, suspended: false, payAt: null });
     renewTerms(s, inv);
     if (inv.source === "shop" && hasModule(s, "shop-link")) inv.shopPaid = true;
   }
   if (rest < 0) s.customers = s.customers.map((c) => (c.id === inv.customerId ? { ...c, credit: cents(c.credit - rest) } : c));
+}
+
+// Reverses bookTransfer: the invoice owes the amount again and the transfer waits for a match.
+export function unbookTransfer(s: GameState, tr: Transfer, inv: Invoice): void {
+  const { paid, credit } = tr.booked!;
+  s.transfers = s.transfers.map((x) => (x === tr ? { ...x, invoiceId: null, matchedAt: null, booked: undefined } : x));
+  if (!paid) inv.received = cents((inv.received ?? 0) - tr.amount);
+  else {
+    Object.assign(inv, { status: s.hour > inv.dueAt ? "overdue" : "open", paidAt: null });
+    renewTerms(s, inv, -1);
+    if (!inv.gateway) delete inv.shopPaid;
+  }
+  // ponytail: credit already spent on a later invoice stays spent.
+  if (credit > 0) s.customers = s.customers.map((c) => (c.id === inv.customerId ? { ...c, credit: Math.max(0, cents(c.credit - credit)) } : c));
 }
 
 // Index into STEPS of the dunning step that is due now, or null.

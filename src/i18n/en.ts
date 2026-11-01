@@ -298,6 +298,7 @@ export const en: Record<string, (p: Params) => string> = {
   "error.invoiceSettled": () => "This invoice is already settled.",
   "error.invoiceSent": () => "This invoice was already sent.",
   "error.transferMatched": () => "This transfer is already booked.",
+  "error.transferChanged": () => "This invoice changed after the booking.",
   "error.stepNotDue": () => "No dunning step is due yet.",
   "error.notOverdue": () => "This invoice is not overdue.",
   "error.billingRule": () => "This billing rule is not available.",
