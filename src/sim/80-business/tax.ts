@@ -68,7 +68,7 @@ const addMonths = (hour: number, months: number) => {
 };
 export const monthsOf = (r: Pick<TaxReturn, "from" | "to">): number => monthIndexOf(r.to) - monthIndexOf(r.from);
 
-// Sales carry output VAT and these purchases input VAT; salaries, insurance, loans, capital, fees and taxes carry none.
+// Sales carry output VAT and these purchases input VAT; salaries, loans, capital, fees and taxes carry none.
 export const OUTPUT_CATEGORIES = ["payments", "setup", "sales"];
 export const INPUT_CATEGORIES = ["hardware", "rent", "power", "transit", "licenses", "subscriptions", "marketing", "maintenance", "domains", "leasing", "moving", "ai"];
 

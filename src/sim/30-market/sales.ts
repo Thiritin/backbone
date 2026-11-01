@@ -32,7 +32,7 @@ import { provisionService } from "../90-actions/clusters";
 import { addressesFit } from "../60-infra/addresses";
 import { withAddressNeeds } from "../10-catalog/addresses";
 import { grownSpec, setupPremium, sizeOf, specFor, specText } from "./spec";
-import { acceptQuote, resize, specParams } from "./manual";
+import { acceptQuote, issueInvoice, resize, specParams } from "./manual";
 import { answerQuote } from "./quotes";
 import { logActivity } from "../47-staff/activity";
 import type { ActionResult } from "../90-actions/hardware";
@@ -49,6 +49,8 @@ const DAYS_PER_MONTH = 30.4;
 const MAIL_HOUR = 8;
 // A shady request about every three months, from the fourth month on.
 const SHADY_PER_MONTH = 0.3;
+// Share of leads that ask anyway for a product you do not sell.
+const CUSTOM_ASK = 0.3;
 const EXPANSION_HOURS = 7 * 24;
 const RETRY_HOURS = 48;
 const KEEP_HOURS = 60 * 24;
@@ -119,8 +121,11 @@ function newLeads(s: GameState, events: SimEvent[]): void {
       const need = needFor(s.rng, f.profile, yearOf(s.hour)), shop = isStandard(f.profile, need.sla) && !emailFor(s), k = `${f.profile}/${need.product}/${f.city}/${shop}`;
       if (!cache.has(k)) cache.set(k, share(s, f.profile, need.product, f.city, shop ? setupPremium(s, need.product) : 0, shop ? shopPriceLevel(s, f.profile, need.product) : undefined));
       if (rand(s.rng) >= Math.min(1, cache.get(k)! * f.conversion)) continue;
-      // Leads only write about lines on the website, which needs a control plane that sells them.
-      if (!lineOffered(s, need.product) || !listed(s, need.product)) continue;
+      // Leads order only lines on the website, which needs a control plane that sells them; some ask for the rest by email.
+      if (!lineOffered(s, need.product) || !listed(s, need.product)) {
+        if (s.marketing.customRequests && rand(s.rng) < CUSTOM_ASK * mailShare(s, f.profile)) newLead(s, f.profile, f.city, events, need);
+        continue;
+      }
       // A few web hosting leads are resellers who want a block of accounts instead.
       if (need.product === "webHosting" && resellerLeadsOpen(s) && rand(s.rng) < LEAD_SHARE) {
         newLead(s, "reseller", f.city, events, { product: "reseller", size: Math.floor(rand(s.rng) * SIZES.reseller.length), sla: "business" });
@@ -282,6 +287,11 @@ function replyUpgrade(s: GameState, r: SalesRequest, events: SimEvent[]): void {
     if (!resize(s, v, r.spec!, r.route ?? "auto", r.city).ok) return loseRequest(s, r, "lost", "lost.noCapacity", { city: r.city });
     growSlots(s, v.id, r.spec!.ramGb / v.spec.ramGb);
     s.services = s.services.map((x) => (x.id === v.id ? { ...x, price: price / 730, before: undefined } : x));
+    // The prepaid rest of a term is billed at the new rate once the service has grown.
+    const left = (v.termEnd ?? 0) - s.hour, extra = Math.round((price / 730 - v.price) * left * 100) / 100;
+    if (v.cycle && left > 0 && extra > 0) {
+      issueInvoice(s, v.customerId, [{ serviceId: null, key: "invoice.line.upgradeTerm", params: { label: v.label, months: Math.max(1, Math.round(left / 730)) }, amount: extra }]);
+    }
     say(s, r.id, "you", "sales.you.upgradeDone", { price });
     editRequest(s, r.id, () => ({ status: "won", replyAt: null }));
     closeTicket(s, r);

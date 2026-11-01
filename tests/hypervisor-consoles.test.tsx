@@ -23,9 +23,14 @@ import { mountDevice } from "./plugged";
 
 // docs/design/software.md, section 9: a year of each hypervisor console's early look, a year of its late look, and its mark.
 const ERAS: Record<string, [number, number, string]> = {
-  proxmocks: [2008, 2015, "PROXMOCKS"], vmwhere: [2005, 2015, "vSphear"], hypervee: [2008, 2012, "HyperVee Manager"],
-  openveezee: [2005, 2016, "OpenVeeZee Web Panel"], openstash: [2010, 2016, "openstash"],
+  openveezee: [2005, 2016, "OpenVeeZee Web Panel"],
 };
+// docs/design/software.md, section 10: the first version of each UI generation, the look it draws, and a mark of its page.
+const GENERATIONS: [string, string, string, string][] = [
+  ["vmwhere", "2.5", "thickClient", "vSphear"], ["vmwhere", "5.0", "flecks", "Web Client"], ["vmwhere", "6.5", "clearity", "vSphear"],
+  ["proxmocks", "0.9", "legacy", "PROXMOCKS"], ["proxmocks", "2.0", "extGrey", "PROXMOCKS"], ["proxmocks", "4.0", "flatline", "PROXMOCKS"],
+  ["hypervee", "2008", "glossy", "HyperVee Manager"], ["hypervee", "2012", "flat", "HyperVee Manager"], ["hypervee", "2019", "honoloo", "Windoors Admin Center"],
+];
 
 const ok = (r: { ok: boolean; id?: string; error?: string }) => { expect(r.error).toBeUndefined(); return r.id!; };
 
@@ -60,6 +65,35 @@ describe("hypervisor consoles", () => {
     }
   });
 
+  it("draws VMwhere, Proxmocks and HyperVee in the look of each generation's first version, whatever the year", () => {
+    for (const [id, version, look, mark] of GENERATIONS) {
+      const { s, c } = cloud(id, 2026);
+      pinVersion(s, s.clusters.find((x) => x.id === c)!, id, version);
+      const page = html(s, c, id);
+      expect(page, `${id} ${version}`).toContain(`data-era="${look}"`);
+      expect(page, `${id} ${version}`).toContain(mark);
+      const login = html(s, c, id, false);
+      expect(login, `${id} ${version}`).toContain(`data-era="${look}"`);
+      expect(login).toContain("Password");
+    }
+  });
+
+  it("names only the game's puns in every look of VMwhere, Proxmocks and HyperVee", () => {
+    for (const [id, version] of GENERATIONS) {
+      const { s, c } = cloud(id, 2026);
+      pinVersion(s, s.clusters.find((x) => x.id === c)!, id, version);
+      for (const signedIn of [true, false]) expect(html(s, c, id, signedIn), `${id} ${version}`).not.toMatch(/VMware|vSphere|Hyper-V|Proxmox|Microsoft|\bWindows\b/);
+    }
+  });
+
+  it("shows the HyperVee release of a guest's integration services and the installed Proxmocks version", () => {
+    const hv = cloud("hypervee", 2010);
+    expect(html(hv.s, hv.c, "hypervee")).toContain(">2008 R2</td>");
+    const pmx = cloud("proxmocks", 2026);
+    pinVersion(pmx.s, pmx.s.clusters.find((x) => x.id === pmx.c)!, "proxmocks", "8.4");
+    expect(html(pmx.s, pmx.c, "proxmocks")).toContain('class="pmx-ver num">8.4<');
+  });
+
   it("shows the App Suite tile with its fee on a VMwhere cluster", () => {
     const { s, c } = cloud("vmwhere", 2010);
     expect(html(s, c, "vmwhere")).toContain("VMwhere App Suite");
@@ -87,7 +121,7 @@ describe("hypervisor consoles", () => {
   it("draws a VM's page with its day of samples the way each product does", () => {
     const pages: Record<string, [(g: GameState, c: Cluster, v: Vm) => ReactElement, string[]]> = {
       proxmocks: [(g, c, v) => <PmxSummary game={g} c={c} v={v} />, ["HA State", "Bootdisk size", "Network traffic", "Day (average)"]],
-      vmwhere: [(g, _, v) => <><VswSummary game={g} v={v} era="late" /><VmMonitor game={g} v={v} /></>, ["VMwhere Tools", "MEMORY USAGE", "VM Hardware", "Performance Chart"]],
+      vmwhere: [(g, _, v) => <><VswSummary game={g} v={v} era="clearity" /><VmMonitor game={g} v={v} /></>, ["VMwhere Tools", "MEMORY USAGE", "VM Hardware", "Performance Chart"]],
       hypervee: [(g, _, v) => <VmDetails game={g} v={v} generations />, ["Heartbeat", "Memory Demand", "Replication", "CPU Usage"]],
       openveezee: [(g, c, v) => <><CtPage game={g} v={v} host="hv.example.com" /><HostPage game={g} c={c} id={c.nodes[0].deviceId} vms={[v]} open={() => {}} /><TemplatesPage game={g} vms={[v]} /></>, ["Start on boot", "Diskinodes", "Barrier", "Change settings", "OS templates", "allocated of"]],
       openstash: [(g, c, v) => <><InstanceOverview game={g} c={c} v={v} flavor="m1.small" /><Overview game={g} c={c} vms={[v]} /></>, ["Security Groups", "Volumes Attached", "Limit Summary", "VCPU-Hours"]],

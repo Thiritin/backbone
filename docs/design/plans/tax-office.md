@@ -48,7 +48,7 @@ The company pays VAT and income tax by filing returns itself. Today `46-finance/
 - Two months after the due date the office estimates 1.3 times the real tax and bills it. Filing before the year ends replaces the estimate with the real assessment and books the difference.
 - The estimate is at least €100, like the VAT estimate, so a loss year is estimated too. "Before the year ends" is read as the end of the calendar year after the tax year; after that the estimate stands and filing is refused with `error.taxYearClosed`.
 - A yearly return opens on 1 January for every year the company was registered in. Filing it files the year's open advance returns and books the rest of the year's VAT, so the yearly VAT return always matches. The assessment lists the tax, the late fee and the credit for a paid estimate; when the credit is larger, the refund books at once.
-- Finance shows the open returns in place of the April tax card, and Books has a Tax tab with the same list.
+- The Books Tax tab (editions with the tax view) shows the open returns in place of the April tax card. The Finance app moved into Books before this phase landed.
 
 ## 5. Filing routes
 

@@ -11,7 +11,6 @@ import type { Quote } from "./30-market/quotes";
 import type { CatalogProduct } from "./80-business/catalog";
 import type { BillingRules, HoldReason, Invoice, Loan, Transfer } from "./45-billing/billing";
 import type { Ticket } from "./40-support/tickets";
-import type { Policy } from "./46-finance/finance";
 import { applications, defaultTeams, type Candidate, type Employee, type Team } from "./47-staff/staff";
 import type { OnCall } from "./47-staff/oncall";
 import type { TechOp, TechRules } from "./47-staff/technicians";
@@ -122,7 +121,7 @@ export interface Device extends MachineState { id: string; model: string; brand:
   part?: PartSpec;
   // nodeNNN, set on servers.
   hostname?: string;
-  // Bought on the used market: no insurance covers it.
+  // Bought on the used market.
   used?: true;
   // A burn-in test running until the hour; full is the long one. burnedInAt is the hour a full burn-in passed.
   burnin: { until: number; full: boolean } | null; burnedInAt: number | null;
@@ -288,9 +287,8 @@ export interface GameState {
   // Pear OS release the desktop runs; it sets the look of the shell.
   os: string;
   company: Company;
-  // Finance: loss carried to the next tax year, insurance policies, the hour cash went below zero and the hour of bankruptcy.
+  // Finance: loss carried to the next tax year, the hour cash went below zero and the hour of bankruptcy.
   taxLoss: number;
-  insurance: Policy[];
   brokeSince: number | null;
   gameOver: number | null;
   // Employees and the job market.
@@ -381,9 +379,12 @@ export interface GameState {
   // Bought software modules by id; "hbci" lets Books talk to the bank.
   modules: string[];
   // The bookkeeping program the Books app runs (10-catalog/bookkeeping.ts); null until one is installed.
-  books: { vendor: BooksVendorId | null; installedAt: number };
+  // The bookkeeping program, its edition and the seats bought beyond the edition's users.
+  books: { vendor: BooksVendorId | null; installedAt: number; edition: string | null; seats: number };
   // The tax office's file on the company (80-business/tax.ts).
   tax: TaxState;
+  // Logins KeePassive saved, by site ("fritz:<router id>", "bank:<bank id>"): the form's values in field order.
+  logins: Record<string, string[]>;
 }
 
 export interface LogEntry { hour: number; minute?: number; name: string; args: unknown[] }
@@ -448,7 +449,7 @@ export const newGame = (seed: number): GameState => ({
   tickets: [], playerBusyUntil: 0, friendFavours: { year: 0, used: 0 }, player: { at: "loc1", until: 0, doing: "work" }, downSince: {}, frozen: [],
   company: { name: "Basement Hosting", logo: "server", color: "oklch(0.55 0.15 255)", domain: null, mail: { kind: "free" }, tagline: "" },
   homeLine: { id: MOMS_DSL.id, next: null },
-  taxLoss: 0, insurance: [], brokeSince: null, gameOver: null,
+  taxLoss: 0, brokeSince: null, gameOver: null,
   staff: [], teams: defaultTeams(), candidates: applications(seed, 0), activity: [], techOps: [], techRules: { failed: true, worn: false, blackhole: true, updates: false, recover: true }, onCall: { roster: [], lastCall: {}, month: {} },
   marketing: newMarketing(), fairs: [], sponsorships: [], sponsorOffers: [],
   network: newNetwork(),
@@ -476,8 +477,9 @@ export const newGame = (seed: number): GameState => ({
   letters: [],
   chamberYear: 0,
   modules: [],
-  books: { vendor: null, installedAt: 0 },
+  books: { vendor: null, installedAt: 0, edition: null, seats: 0 },
   tax: newTax(),
+  logins: {},
 });
 
 export const guideDoc = (): Doc => ({ id: "guide", kind: "guide", title: t("doc.guide"), body: "", x: 16, y: 46 });

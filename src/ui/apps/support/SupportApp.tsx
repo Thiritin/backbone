@@ -28,8 +28,9 @@ import { supportApp } from "./desk";
 import { CustomCompose, InvoicePill, MailAttachments } from "./CustomOrder";
 import { Compose } from "./Compose";
 import { specText } from "../../../sim/30-market/spec";
-import { OFFERS } from "../../../sim/80-business/walk";
-import { isLicence, lexwearUrl, NEWSLETTER } from "../../../sim/80-business/lexwear";
+import { OFFERS, OVERDRAFT } from "../../../sim/80-business/walk";
+import { bankUrl, HOME_URL } from "../../../sim/80-business/browser";
+import { isLicence } from "../../../sim/80-business/licences";
 import { ORDER } from "../../../sim/80-business/vendor-shop";
 import { OrderKeys } from "../browser/sites/shop/VendorShop";
 import { due, initials, KINDS, kindOf, monthYear, moodClass, span, stamp, statusOf } from "./labels";
@@ -299,7 +300,7 @@ function OrderThread({ tk, r, gates }: { tk: Ticket; r: SalesRequest; gates: Gat
         {r.thread.map((m, i) => (
           <div key={i} className={`msg${m.from === "you" ? " you" : ""}`}>
             <div className="from">{m.from === "you" ? m.by ?? t("support.you") : r.contact} · <span className="num">{stamp(m.hour)}</span></div>
-            <p>{t(m.key, m.params)}{i === 0 && r.kind !== "expansion" && ` ${t(`request.use.${r.profile}`)}`}{i === 0 && r.kind === "order" && `\n\n${addressLines(mailedAddress(game.seed, r)).join("\n")}`}</p>
+            <p>{t(m.key, m.params)}{i === 0 && r.kind !== "expansion" && ` ${t(`request.use.${r.profile}`)}`}{i === 0 && m.params.item && ` ${t("order.msg.item", m.params)}`}{i === 0 && r.kind === "order" && `\n\n${addressLines(mailedAddress(game.seed, r)).join("\n")}`}</p>
             {r.kind === "order" && <MailAttachments tk={tk} r={r} m={m} />}
           </div>
         ))}
@@ -403,7 +404,6 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
           <p>{t(`ticket.${tk.kind}.${tk.topic}.text`, p)}</p>
           {tk.topic === ORDER && <OrderKeys game={game} order={String(tk.mail!.params.order)} />}
           {isLicence(tk.topic) && <p><button className="btn primary" onClick={() => openApp("Books", { kind: "register", id: "" })}>{t("vendor-sites.register")}</button></p>}
-          {tk.topic === NEWSLETTER && <p><button className="btn primary" onClick={() => openApp("Browser", { kind: "url", id: lexwearUrl(String(tk.mail!.params.module)) })}>{t("vendor-sites.viewModule")}</button></p>}
         </div>
         {tk.replies.map((r, i) => (
           <div key={i} className="thread-pair">
@@ -477,7 +477,7 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
               </button>
             ))}
             <span className="grow" />
-            {tk.kind === "pear" && <button className="btn primary" onClick={() => openApp(OFFERS.includes(tk.topic) ? "Shop" : tk.topic)}>{t("apps.open")}</button>}
+            {tk.kind === "pear" && <button className="btn primary" onClick={() => tk.topic === OVERDRAFT ? openApp("Browser", { kind: "url", id: game.bank ? `${bankUrl(game.bank.id)}banking/overdraft` : HOME_URL }) : openApp(OFFERS.includes(tk.topic) ? "Shop" : tk.topic)}>{t("apps.open")}</button>}
             {tk.kind === "sponsor" && <button className="btn ghost" disabled={locked} onClick={() => act(declineSponsorship, tk.id)}><CircleX />{t("support.decline")}</button>}
             {tk.kind === "sponsor" && <button className="btn primary" disabled={locked} onClick={() => act(acceptSponsorship, tk.id)}><Check />{t("support.accept")}</button>}
             {!stray && tk.kind !== "sponsor" && <button className="btn ghost" disabled={locked} onClick={() => act(closeTicket, tk.id)}><X />{tk.notice ? t("support.ignore") : t("support.close")}</button>}

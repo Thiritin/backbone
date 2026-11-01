@@ -24,7 +24,7 @@ const LABELS: Record<string, string> = {
   Backspace: "Bksp", ArrowLeft: "←", ArrowUp: "↑", ArrowDown: "↓", ArrowRight: "→", d: "D", CtrlAltDel: "Ctrl+Alt+Del",
 };
 const HANDLED = new Set([...Object.keys(LABELS)]);
-const stickName = (img: OsImage) => {
+export const stickName = (img: OsImage) => {
   const { id, version } = imageParts(img);
   return id === "lunix" ? `Debiant ${version} netinst` : `Windoors Server ${version}`;
 };

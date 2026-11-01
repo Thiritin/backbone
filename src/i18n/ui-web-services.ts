@@ -209,4 +209,6 @@ export default {
   "web.rs.question": (p) => `Question about ${p.domain}`,
   "web.rs.suspend": () => "Suspend",
   "web.rs.resume": () => "Resume",
+  "ticket.howTo.licence.subject": () => "Control panel login says the license expired",
+  "ticket.howTo.licence.text": (p) => `When I log in to the control panel for ${p.domain || "my site"} I only get a page saying the license has expired. My site still works, but I cannot manage anything. Can you fix it?`,
 } satisfies Dict;

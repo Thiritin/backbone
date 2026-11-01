@@ -8,6 +8,7 @@ import { bump, createTicket, isFinal, profileStats } from "../40-support/tickets
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { cmsOf } from "./apps";
+import { panelLocked } from "./licence";
 import type { Cluster } from "./cluster";
 import type { HostBans } from "./bans";
 import { transferTick, type Transfer } from "./transfers";
@@ -120,6 +121,26 @@ export function phpCompat(s: GameState): void {
   }
 }
 
+// Share of a locked panel's customers who write in each day about the licence page at their panel login.
+export const LICENCE_TICKET = 0.2;
+
+// Daily: customers of a panel whose licence ran out find the licence page and some write in; a licensed panel withdraws the tickets.
+export function licenceComplaints(s: GameState): void {
+  for (const c of s.clusters) {
+    if (c.kind !== "panel") continue;
+    const locked = panelLocked(s, c), day = Math.floor(s.hour / 24);
+    for (const v of accountsOf(s, c.id)) {
+      const open = s.tickets.some((t) => t.serviceId === v.id && t.topic === "licence" && !isFinal(t));
+      if (!locked) {
+        if (open) s.tickets = s.tickets.map((t) => (t.serviceId === v.id && t.topic === "licence" && !isFinal(t) ? { ...t, status: "resolved", updatedAt: s.hour } : t));
+        continue;
+      }
+      const cust = s.customers.find((x) => x.id === v.customerId);
+      if (cust && !open && rand(hashRng(s.seed, idNum(v.id), day, 311)) < LICENCE_TICKET) createTicket(s, cust, "howTo", v.id, "licence");
+    }
+  }
+}
+
 export const CERT_DAYS = 90;
 export const AUTOSSL_FROM = 2016;
 export const AUTOSSL_WINDOW_DAYS = 30;
@@ -202,7 +223,7 @@ export function sslTick(s: GameState): void {
 function updateBrokenTick(s: GameState): void {
   const live = new Set(s.services.filter((v) => v.endedAt === null).map((v) => v.id));
   const entries = Object.entries(s.webpanel.appBroken), slow = new Set(entries.filter(([id, until]) => live.has(id) && until > s.hour).map(([id]) => id));
-  if (slow.size !== entries.length) s.webpanel = { ...s.webpanel, appBroken: Object.fromEntries(entries.filter(([id]) => slow.has(id))) };
+  if (slow.size !== entries.length) s.webpanel = { ...s.webpanel, appBroken: Object.fromEntries(entries.filter(([id]) => slow.has(id))), appBack: Object.fromEntries(Object.entries(s.webpanel.appBack).filter(([id]) => slow.has(id))) };
   if (slow.size) s.services = s.services.map((v) => (slow.has(v.id) ? { ...v, slowedAt: s.hour } : v));
 }
 
@@ -213,6 +234,7 @@ export function webpanelTick(s: GameState): SimEvent[] {
   const stale = Object.keys(s.webpanel.phpPool).filter((id) => !hosts.has(id));
   if (stale.length) s.webpanel = { ...s.webpanel, phpPool: Object.fromEntries(Object.entries(s.webpanel.phpPool).filter(([id]) => hosts.has(id))) };
   phpCompat(s);
+  licenceComplaints(s);
   sslTick(s);
   updateBrokenTick(s);
   return [];

@@ -134,7 +134,7 @@ export default {
   "sim.site.pleskit.f1": () => "El catálogo de extensiones añade funciones con un clic.",
   "sim.site.pleskit.f2": () => "Los clientes tienen su propio acceso a sitios, correo y bases de datos.",
   "sim.site.pleskit.f3": () => "Las copias y restauraciones se hacen desde el panel.",
-  "sim.site.pleskit.f4": () => "Cada servidor lleva una licencia de tarifa plana.",
+  "sim.site.pleskit.f4": () => "Cada servidor paga una licencia mensual según los dominios que aloja.",
   "sim.site.directadmen.tagline": () => "Rápido, sencillo, asequible",
   "sim.site.directadmen.blurb": () => "DirectAdmin es un panel de hosting ligero que hace lo que debe y nada más. Se instala en minutos, funciona con hardware modesto y no estorba.",
   "sim.site.directadmen.f0": () => "El panel usa una fracción de la memoria de los grandes nombres.",

@@ -15,7 +15,8 @@
 .bv p { margin: 0 0 6px; }
 .bv-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 .bv-list li { padding: 8px 10px; border: 1px solid #ccc; background: linear-gradient(#fff, #f4f4f4); }
-.bv-row { display: flex; align-items: center; gap: 12px; }
+.bv-row { display: flex; align-items: center; gap: 12px; margin-top: 6px; }
+.bv-features { margin: 2px 0 0; padding-left: 16px; columns: 2; }
 .bv-amount { font-weight: bold; font-size: 13px; }
 .bv-buy { font: bold 11px var(--bv-font); color: var(--bv-ink); background: var(--bv-brand); border: 1px solid rgb(0 0 0 / 0.35); border-radius: 3px; padding: 3px 14px; cursor: pointer; }
 .bv-state { font-weight: bold; color: #2f7d1a; }

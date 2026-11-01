@@ -1,23 +1,33 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+import { Building2, Monitor, MonitorOff, Server, Tags } from "lucide-react";
 import type { GameState } from "../../../../../sim/50-state";
 import type { Cluster } from "../../../../../sim/60-infra/cluster";
 import { vmStats } from "../../../../../sim/60-infra/stats";
 import { useStore } from "../../../../store";
 import { Chart, niceMax } from "../Chart";
 import { AlarmList, ALL, MediaMenu, NodeList, osText, ResourceBars, summaryOf, SizeFields, TaskLog, Toolbar, useNewVm, useVms, vmFacts, Wizard, type Sel, type Vm } from "../HypervisorBase";
-import { Actions, erasFrom, eraAt, Facts, LoginForm, useSoftware, type PanelProps } from "../PanelBase";
+import { Actions, eraAt, Facts, LoginForm, looks, useSoftware, type PanelProps } from "../PanelBase";
 import "./proxmocks.css";
 import { t } from "../../../../../i18n/en";
 import { parseCreate } from "../../../../../sim/80-business/consoles";
 import { PackagesScreen } from "../PackageForms";
 import { JobsPanel, PointsPanel } from "../backup/Jobs";
 import { quorate } from "../../../../../sim/60-infra/quorum";
+import { installedVersion, panelMachine } from "../../../../../sim/60-infra/licence";
 import { ClusterInfo } from "./Cluster";
 import { FirewallPanel } from "./Firewall";
+import { HaPanel } from "./HaPanel";
 import { CephPanel, Replication, StorageList } from "./Storage";
 
-// docs/design/software.md, section 9: the grey ExtJS manager from 2008, the flat white one with the orange mark from 2015.
-const ERAS = erasFrom(2008, 2015);
+// docs/design/software.md, section 10: one look per Proxmocks web interface generation, ids as in UI_LOOKS.
+const LOOKS = looks({ legacy: 2008, extGrey: 2012, flatline: 2015 });
+type PmxLook = (typeof LOOKS)[number]["look"];
+// The tree's icons: plain bullets on the first web interface, the ExtJS glyphs, the flat line icons.
+const TREE: Record<PmxLook, Record<"dc" | "node" | "on" | "off" | "plans", ReactNode>> = {
+  legacy: { dc: "»", node: "›", on: "•", off: "◦", plans: "»" },
+  extGrey: { dc: "▤", node: "▦", on: "▣", off: "□", plans: "▤" },
+  flatline: { dc: <Building2 size={13} />, node: <Server size={13} />, on: <Monitor size={13} />, off: <MonitorOff size={13} />, plans: <Tags size={13} /> },
+};
 const vmid = (v: Vm) => 100 + Number(v.id.replace(/\D/g, "") || 0);
 const gib = (gb: number) => `${+gb.toFixed(2)} GiB`;
 
@@ -53,9 +63,9 @@ export function VmSummary({ game, c, v }: { game: GameState; c: Cluster; v: Vm }
 }
 
 export function Proxmocks(p: PanelProps) {
-  const era = eraAt(ERAS, p), { game, c, f } = p, openConsole = useStore((s) => s.openConsole);
+  const era = eraAt(LOOKS, p), icon = TREE[era], { game, c, f } = p, openConsole = useStore((s) => s.openConsole);
   const open = parseCreate("proxmocks", p.path), [sel, setSel] = useState<Sel>(open?.screen === "create" ? { kind: "new" } : open?.screen === "packages" ? { kind: "plans" } : ALL), [tab, setTab] = useState("Summary");
-  const tabNames: Record<string, string> = { Summary: t("browser-consoles-2.summary"), Console: t("browser-consoles-2.console"), Hardware: t("browser-consoles-2.hardware"), Options: t("browser-consoles-2.options"), Backup: t("browser-consoles-2.backup"), Updates: t("browser-consoles-2.updates"), Cluster: t("browser-consoles-2.cluster"), Replication: t("pmx.replication"), Ceph: "Ceph", Storage: t("pmx.storage"), Firewall: t("pmx.firewall") };
+  const tabNames: Record<string, string> = { Summary: t("browser-consoles-2.summary"), Console: t("browser-consoles-2.console"), Hardware: t("browser-consoles-2.hardware"), Options: t("browser-consoles-2.options"), Backup: t("browser-consoles-2.backup"), Updates: t("browser-consoles-2.updates"), Cluster: t("browser-consoles-2.cluster"), Replication: t("pmx.replication"), Ceph: "Ceph", Storage: t("pmx.storage"), Firewall: t("pmx.firewall"), HA: "HA" };
   const { vms, dialog } = useVms(game, c, f), sw = useSoftware(game, c, f), nv = useNewVm(game, c, open?.screen === "create" ? open.order : undefined);
   if (!p.signedIn) return (
     <div className="cx pmx pmx-login" data-era={era}>
@@ -70,7 +80,7 @@ export function Proxmocks(p: PanelProps) {
   const vm = sel.kind === "vm" ? vms.find((v) => v.id === sel.id) : undefined;
   const node = sel.kind === "node" ? sel.id : null;
   const tabs = vm ? ["Summary", "Console", "Hardware", "Options", "Backup", ...(c.nodes.length > 1 ? ["Replication"] : []), ...(vm.own ? ["Firewall"] : [])]
-    : node ? ["Summary", "Updates"] : ["Summary", ...(f.cluster ? ["Cluster", "Replication", "Ceph", "Storage"] : []), ...(f.backups ? ["Backup"] : [])];
+    : node ? ["Summary", "Updates"] : ["Summary", ...(f.cluster ? ["Cluster", "Replication", "Ceph", "Storage"] : []), ...(f.cluster && c.nodes.length > 1 ? ["HA"] : []), ...(f.backups ? ["Backup"] : [])];
   const shown = tabs.includes(tab) ? tab : "Summary";
   const nodes = c.nodes.map((n) => game.devices.find((d) => d.id === n.deviceId)!).filter(Boolean);
   const title = sel.kind === "plans" ? t("pkg.pmxPlans") : vm ? t("browser-consoles-2.vmTitle", { id: vmid(vm), name: vm.name, node: vm.node }) : node ? t("browser-consoles-2.nodeTitle", { name: nodes.find((d) => d.id === node)?.hostname ?? "" }) : t("browser-consoles-2.datacenter");
@@ -80,7 +90,7 @@ export function Proxmocks(p: PanelProps) {
     <div className="cx cx-hv pmx" data-era={era}>
       <header className="pmx-top">
         <span className="pmx-logo"><b>PROXMOCKS</b> {t("browser-consoles-2.virtualEnvironment")}</span>
-        <span className="pmx-ver num">{c.version}</span>
+        <span className="pmx-ver num">{installedVersion(game, panelMachine(c) ?? "", "proxmocks") ?? c.version}</span>
         <span className="cx-host">{p.host}</span>
         {f.create && <button className="pmx-create" onClick={() => setSel({ kind: "new" })}>{t("browser-consoles-2.createVm")}</button>}
         <button className="pmx-out" onClick={p.logout}>{t("browser-consoles-2.logout")}</button>
@@ -90,14 +100,14 @@ export function Proxmocks(p: PanelProps) {
           <div className="pmx-view">{t("browser-consoles-2.serverView")}</div>
           {!quorate(game, c) && <div className="pmx-noquorum" role="alert">{t("pmx.noQuorum")}</div>}
           <ul>
-            <li><button aria-pressed={sel.kind === "all"} onClick={() => pick(ALL)}><i>▤</i>{t("browser-consoles-2.datacenter")}</button>
+            <li><button aria-pressed={sel.kind === "all"} onClick={() => pick(ALL)}><i>{icon.dc}</i>{t("browser-consoles-2.datacenter")}</button>
               <ul>
                 {nodes.map((d) => (
                   <li key={d.id}>
-                    <button aria-pressed={node === d.id} onClick={() => pick({ kind: "node", id: d.id })}><i>▦</i>{d.hostname ?? d.name}</button>
+                    <button aria-pressed={node === d.id} onClick={() => pick({ kind: "node", id: d.id })}><i>{icon.node}</i>{d.hostname ?? d.name}</button>
                     <ul>
                       {vms.filter((v) => v.w.deviceId === d.id).map((v) => (
-                        <li key={v.id}><button aria-pressed={vm?.id === v.id} data-state={v.st} onClick={() => pick({ kind: "vm", id: v.id })}><i>{v.st === "running" ? "▣" : "□"}</i>{vmid(v)} ({v.name})</button></li>
+                        <li key={v.id}><button aria-pressed={vm?.id === v.id} data-state={v.st} onClick={() => pick({ kind: "vm", id: v.id })}><i>{v.st === "running" ? icon.on : icon.off}</i>{vmid(v)} ({v.name})</button></li>
                       ))}
                     </ul>
                   </li>
@@ -105,7 +115,7 @@ export function Proxmocks(p: PanelProps) {
               </ul>
             </li>
           </ul>
-          <button className="pmx-plans" aria-pressed={sel.kind === "plans"} onClick={() => pick({ kind: "plans" })}><i>▤</i>{t("pkg.pmxPlans")}</button>
+          <button className="pmx-plans" aria-pressed={sel.kind === "plans"} onClick={() => pick({ kind: "plans" })}><i>{icon.plans}</i>{t("pkg.pmxPlans")}</button>
         </aside>
         <section className="pmx-content">
           <div className="pmx-bar">
@@ -152,6 +162,7 @@ export function Proxmocks(p: PanelProps) {
               {vm && shown === "Firewall" && <FirewallPanel w={vm.w} />}
               {vm && shown === "Replication" && <Replication game={game} c={c} w={vm.w} />}
               {!vm && shown === "Replication" && <Replication game={game} c={c} />}
+              {!vm && shown === "HA" && <HaPanel game={game} c={c} />}
               {!vm && shown === "Ceph" && <CephPanel game={game} c={c} />}
               {!vm && shown === "Storage" && <StorageList game={game} c={c} />}
               {!vm && shown === "Backup" && <JobsPanel game={game} source={c} skin="proxmocks" />}
