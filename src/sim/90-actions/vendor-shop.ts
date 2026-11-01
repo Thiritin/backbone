@@ -1,6 +1,5 @@
 // docs/design/plans/software-licences.md, lanes vendor-shop and my-account: buying licence keys on a vendor site and cancelling
 // a term licence from My account.
-import { yearOf } from "../00-core/time";
 import { deliverMail } from "../40-support/tickets";
 import { cents } from "../45-billing/billing";
 import type { GameState } from "../50-state";
@@ -12,7 +11,7 @@ const fail = (error: string): ActionResult => ({ ok: false, error });
 const same = (a: Pick<CartLine, "product" | "edition">) => (b: CartLine) => a.product === b.product && a.edition === b.edition;
 
 export function addToCart(s: GameState, product: string, edition: string | null): ActionResult {
-  if (!offerOf({ product, edition }, yearOf(s.hour))) return fail("error.notForSale");
+  if (!offerOf({ product, edition }, s.hour)) return fail("error.notForSale");
   const line = s.cart.find(same({ product, edition }));
   s.cart = line ? s.cart.map((l) => (l === line ? { ...l, qty: l.qty + 1 } : l)) : [...s.cart, { product, edition, qty: 1 }];
   return { ok: true };
@@ -25,11 +24,11 @@ export function removeFromCart(s: GameState, product: string, edition: string | 
 }
 
 // Pays the site's cart lines from the bank as one order: a ledger line, an unassigned key per licence and the order email.
-// A one-time licence costs its price; a term licence pays its first month for one unit.
+// A one-time licence costs its price; a term licence pays its first term for one unit.
 export function checkout(s: GameState, host: string): ActionResult {
-  const lines = cartOf(s, host), year = yearOf(s.hour);
+  const lines = cartOf(s, host);
   if (!lines.length) return fail("error.cartEmpty");
-  const fees = lines.map((l) => offerOf(l, year)?.fee);
+  const fees = lines.map((l) => offerOf(l, s.hour)?.fee);
   if (fees.some((f) => f === undefined)) return fail("error.notForSale");
   const total = cents(lines.reduce((n, l, i) => n + fees[i]! * l.qty, 0));
   if (s.cash < total) return fail("error.noCash");

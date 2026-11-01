@@ -1642,17 +1642,17 @@ Every server and every one of the player's own VMs runs an operating system, and
 
 | Software | Kind | OS | License | Install | How-to tickets | Live migration | Control plane |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| cPanic | Panel | Lunix | €0.40 per web space | 3 h | ×0.8 |  | 0.25 vCPU, 0.25 GB, 5 GB |
+| cPanic | Panel | Lunix | €12 per server (Dedicated), from June 2019 the editions Solo to Premier (€0.40 per web space) | 3 h | ×0.8 |  | 0.25 vCPU, 0.25 GB, 5 GB |
 | Pleskit | Panel | Lunix, Windoors | €12 per panel host | 3 h | ×0.9 |  | 0.25 vCPU, 0.25 GB, 5 GB |
-| DirectAdmen | Panel | Lunix | €4 per panel host | 2 h | ×1.2 |  | 0.1 vCPU, 0.1 GB, 2 GB |
+| DirectAdmen | Panel | Lunix | €100 lifetime per major or Standard at €4 per panel host, from September 2019 the editions Personal to Standard | 2 h | ×1.2 |  | 0.1 vCPU, 0.1 GB, 2 GB |
 | FreePanel | Panel | Lunix | Free | 2 h | ×1.5 |  | 0.1 vCPU, 0.1 GB, 2 GB |
 | OpenVeeZee | Cloud | Lunix | Free | 3 h | ×1.4 | No | 0.1 vCPU, 0.1 GB, 2 GB |
 | OpenStash | Cloud | Lunix | Free | 8 h | ×1.3 | Yes | 2 vCPU, 2 GB, 20 GB |
-| VMwhere | Cloud | Lunix | €600 once per CPU socket, €8 per physical core from 2024 | 5 h | ×0.7 | Yes | 1 vCPU, 2 GB, 10 GB |
+| VMwhere | Cloud | Lunix | €600 once per CPU socket, from December 2023 €96 a year per physical core with 16 cores per CPU at least | 5 h | ×0.7 | Yes | 1 vCPU, 2 GB, 10 GB |
 | Proxmocks | Cloud | Lunix | Free | 3 h | ×1.0 | Yes | 0.25 vCPU, 0.25 GB, 5 GB |
 | HyperVee | Cloud | Windoors | €20 per node | 4 h | ×0.9 | No | 1 vCPU, 1 GB, 10 GB |
 | TCAdmen | Game | Windoors | €25 per server | 2 h | ×0.9 | No | 0.25 vCPU, 0.5 GB, 5 GB |
-| MultiKraft | Game | Lunix, Windoors | €20 per server | 2 h | ×1.0 | No | 0.25 vCPU, 0.5 GB, 5 GB |
+| MultiKraft | Game | Lunix, Windoors | €20 per server, from 2020 €1.20 per game server beyond 25 | 2 h | ×1.0 | No | 0.25 vCPU, 0.5 GB, 5 GB |
 | Pterodaktyl | Game | Lunix | Free | 3 h | ×1.2 | No | 0.25 vCPU, 0.5 GB, 5 GB |
 | Bound | DNS | Lunix, Windoors | Free | 2 h | ×1.3 | No | 0.1 vCPU, 0.25 GB, 2 GB |
 | PowerDNZ | DNS | Lunix | Free | 2 h | ×1.0 | No | 0.25 vCPU, 0.5 GB, 5 GB |
@@ -1667,10 +1667,12 @@ Every server and every one of the player's own VMs runs an operating system, and
 | Operating system | License | Install | Boot |
 | --- | --- | --- | --- |
 | Debiant GNU/Lunix | Free | 1 h | 20 min |
-| Windoors Server | €600 once per machine, €4 per core or vCPU from 2016 | 2 h | 40 min |
+| Windoors Server | €600 once per machine, from October 2016 €4 per core (16 per server and 8 per CPU at least) or vCPU | 2 h | 40 min |
 | VMwhere App Suite | €25 per VMwhere cluster | | |
 
-Windoors Server and VMwhere are bought once per machine when the install starts, until Windoors moves to 4 euros a month per physical core of a server or per vCPU of a VM in 2016 and VMwhere to 8 euros a month per physical core in 2024. A reinstall on the same machine pays nothing; a new machine, a VM from a template included, pays again, and the install is refused without the cash. The App Suite bills 25 euros a month per VMwhere cluster that has it. The OS install and boot add to every install's time to serve. A panel on a hypervisor node is allowed when no port collides. Values live in `src/sim/10-catalog/server-os.ts`.
+Windoors Server and VMwhere are bought once per machine when the install starts, until Windoors moves to 4 euros a month per physical core of a server or per vCPU of a VM in October 2016 and VMwhere to 96 euros a year per physical core in December 2023. A reinstall on the same machine pays nothing; a new machine, a VM from a template included, pays again, and the install is refused without the cash. The App Suite bills 25 euros a month per VMwhere cluster that has it. The OS install and boot add to every install's time to serve. A panel on a hypervisor node is allowed when no port collides. Values live in `src/sim/10-catalog/server-os.ts`.
+
+**Licence eras.** Each licensed product sells what its vendor sold at the game month, from `licensing` in the catalog (docs/design/plans/software-licences.md, Licence models over time). A perpetual key covers the major on sale when it was bought and never bills again; an upgrade to the next major costs the full price, or half (€300 for Windoors, VMwhere and Veeham Backup) for a holder of the previous major's key bought within the last 12 months. A yearly key renews on the same day a year later and shows at a twelfth in monthly bills. A server pays for at least the minimum cores of a per-core era; a VM pays per vCPU. Veeham Backup sells €600 per CPU socket once from 2008 and €480 a year per server from 2018. Prices keep the game's euro scale, where a real list price divides by about three: cPanel's licence of about $35 a server reads €12, and its 2019 editions keep the €2 to €10 and €0.40 per web space the game already charged. When a vendor stops selling an option the shop drops it that day, and a key already bought keeps working.
 
 **Split cores.** OpenVeeZee and Proxmocks give a guest a fraction of a core through containers and CPU limits, so a VM books exactly the vCPUs it sold. OpenStash, VMwhere and HyperVee give a VM whole vCPUs: a VM books its vCPUs rounded up and uses that much CPU at load. Web spaces, game servers, DNS zones, VPN gateways and storage volumes run as containers in their software and keep their fraction everywhere. A customer who scales a VPS below one core asks for tenths of a core (at least 0.2), so 0.75 of one core becomes 0.8.
 

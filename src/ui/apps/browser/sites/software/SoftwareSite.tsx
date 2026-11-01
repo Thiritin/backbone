@@ -53,9 +53,9 @@ export const Features = ({ p, className }: { p: Product; className?: string }) =
   <ul className={className}>{p.site.features.map((f) => <li key={f}>{f}</li>)}</ul>
 );
 
-const UNIT: Record<LicenseKind, string> = { free: "", once: "priceOnce", account: "priceAccount", server: "priceServer", core: "priceCore" };
+const UNIT: Record<LicenseKind, string> = { free: "", once: "priceOnce", account: "priceAccount", server: "priceServer", core: "priceCore", gameserver: "priceGameserver" };
 const OS_UNIT: Record<LicenseKind, string> = { ...UNIT, once: "priceOsOnce", core: "priceOsCore" };
-const price = (era: LicenseEra, unit: Record<LicenseKind, string>) => (era.kind === "free" ? t("browser-sites-2.free") : t(`browser-sites-2.${unit[era.kind]}`, { fee: euroPrice(era.fee) }));
+const price = (era: LicenseEra, unit: Record<LicenseKind, string>) => (era.kind === "free" ? t("browser-sites-2.free") : t(`browser-sites-2.${unit[era.kind]}${era.period === "year" ? "Year" : ""}`, { fee: euroPrice(era.fee) }));
 
 // The license of the game year as the catalog has it, and the Windoors license where the software runs on nothing else.
 export function Pricing({ p, className }: { p: Product; className?: string }) {

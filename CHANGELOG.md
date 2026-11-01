@@ -7,6 +7,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Books has a Products tab where you set up the packages you sell, each with a size, SLA, prices per billing cycle and a setup fee.
 - Online banking now has a Payees page where you save, delete and pay recipients, and the transfer form can pick a saved payee or save a new one.
 - The settings button in the Gmix and other mail desks is readable again on the classic desktop looks.
+- Software vendors now change how they sell licences over the years: Windoors and VMwhere move from one-time licences to per-core subscriptions, cPanic switches to account-based editions in June 2019, and DirectAdmen stops selling lifetime licences in September 2019, while licences already bought keep working.
 - Every licensed product's website has a shop with its editions and prices, a cart, a checkout paid from the bank, and an order email with the licence keys.
 - A My account page on each product website lists the licences bought there with their key, machine and renewal date, and cancels a monthly licence at the end of its term.
 - Password managers in your browser no longer offer to fill or save the logins inside the game.
