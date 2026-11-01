@@ -478,6 +478,10 @@ export function working(s: GameState, deviceId: string): boolean {
   return !(swap && !hotSwappable(d, swap));
 }
 
+// The OS installer halts on a shutdown like a running OS, which aborts the install.
+export const osInstalling = (s: GameState, d: Device): boolean => !!d.os && d.os.installedAt > nowHours(s);
+export const takesShutdown = (s: GameState, d: Device): boolean => working(s, d.id) || (d.on && !halting(d) && osInstalling(s, d) && powered(s, d.id));
+
 export function powered(s: GameState, deviceId: string): boolean {
   const d = s.devices.find((x) => x.id === deviceId);
   const loc = d && locationOf(s, d);

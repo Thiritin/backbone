@@ -6,10 +6,11 @@
 .sw-postfixit h1 { font-size: 24px; }
 .sw-postfixit h2 { margin-top: 16px; font-size: 17px; }
 .sw-postfixit nav { display: flex; gap: 0; margin: 8px 0 12px; }
-.sw-postfixit nav a { color: #0000cc; }
+.sw.sw-postfixit a { color: #0000cc; }
 .sw-postfixit nav a + a::before { content: "|"; margin: 0 8px; color: #000000; display: inline-block; }
 .sw-postfixit nav a[aria-current] { color: #000000; text-decoration: none; font-weight: 700; }
 .sw-postfixit p, .sw-postfixit ul, .sw-postfixit table:not(.top), .sw-postfixit .sws-cmd { margin-top: 8px; max-width: 760px; }
 .sw-postfixit ul { padding-left: 24px; }
 .sw-postfixit .sws-cmd pre { background: #ffffff; border: 1px solid #000000; font-family: "Courier New", Courier, monospace; }
 .sw-postfixit address { margin-top: 20px; padding-top: 6px; border-top: 1px solid #000000; font-size: 12px; }
+.sw-postfixit .sws-cmd button { height: auto; padding: 1px 6px; border: 2px outset #ffffff; border-radius: 0; background: #c0c0c0; color: #000000; font: 12px "Times New Roman", Times, serif; }
