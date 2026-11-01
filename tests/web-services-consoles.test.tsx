@@ -5,6 +5,7 @@ import { consoleFeatures } from "../src/sim/80-business/consoles";
 import { CONSOLES } from "../src/ui/apps/browser/consoles/ConsolePage";
 import { CustomBuild } from "../src/ui/apps/browser/consoles/directadmen/CustomBuild";
 import { UserLevel } from "../src/ui/apps/browser/consoles/directadmen/UserLevel";
+import { SubscriptionList } from "../src/ui/apps/browser/consoles/pleskit/SubscriptionList";
 import type { Row } from "../src/ui/apps/browser/consoles/PanelBase";
 import { panelVm, readyGame, skipTo } from "./fixtures";
 
@@ -47,5 +48,14 @@ describe("web service consoles", () => {
     const html = renderToString(<UserLevel game={s} c={c} rows={rows} />);
     expect(html).toContain("Select a user");
     if (w) expect(html).toContain("ada.de");
+  });
+
+  it("draws the Pleskit objects as clients early and as a subscriptions table late", () => {
+    const PK = Object.keys(CONSOLES).find((k) => k.startsWith("pleskit"))!;
+    const early = setup(PK, 2010), late = setup(PK, 2019);
+    expect(renderToString(<SubscriptionList game={early.s} c={early.c} rows={[]} late={false} />)).toContain("Clients");
+    const html = renderToString(<SubscriptionList game={late.s} c={late.c} rows={[]} late />);
+    expect(html).toContain("Service plan");
+    expect(html).not.toContain("Clients");
   });
 });
