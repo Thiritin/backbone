@@ -188,12 +188,17 @@ export function switchBank(s: GameState, id: BankId, plan: string): ActionResult
   if (s.cash < 0) return fail("error.switchOverdraft");
   if (old.previous && !old.previous.closed) return fail("error.switchPending");
   if (old.card?.spent.length) invoice(s, "card", from.name, old.card.spent);
-  if (old.interest >= 0.01) {
-    s.cash = Math.round((s.cash - old.interest) * 100) / 100;
-    s.ledger = [...s.ledger, { hour: s.hour, category: "fees", key: "ledger.overdraftInterest", params: { bank: from.name }, amount: -Math.round(old.interest * 100) / 100 }];
-  }
+  // The old account settles its interest now.
+  const settle = (category: string, key: string, amount: number) => {
+    s.cash = Math.round((s.cash + amount) * 100) / 100;
+    s.ledger = [...s.ledger, { hour: s.hour, category, key, params: { bank: from.name }, amount }];
+  };
+  const owed = Math.round(old.interest * 100) / 100, credit = Math.round((old.credit ?? 0) * 100) / 100;
+  if (owed > 0) settle("fees", "ledger.overdraftInterest", -owed);
+  if (credit > 0) settle("interest", "ledger.depositInterest", credit);
+  if (credit < 0) settle("fees", "ledger.custodyFee", credit);
   s.bank = {
-    ...openAccount(s, id, plan as PlanId), outgoing: old.outgoing,
+    ...openAccount(s, id, plan as PlanId), outgoing: old.outgoing, payees: old.payees ?? [],
     previous: { id: old.id, number: old.number, plan: old.plan, at: s.hour, closed: false, standingOrders: old.standingOrders, mandates: old.mandates },
   };
   // The next hour sends the welcome email; an iTAN list replaces the old one there.
