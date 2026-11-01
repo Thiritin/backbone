@@ -8,6 +8,7 @@ import { MOMS_DSL, seedDcs } from "./20-world/datacenters";
 import { t } from "../i18n/en";
 import type { Customer, Product, Service } from "./30-customers/customers";
 import type { Quote } from "./30-market/quotes";
+import type { CatalogProduct } from "./80-business/catalog";
 import type { BillingRules, HoldReason, Invoice, Loan, Transfer } from "./45-billing/billing";
 import type { Ticket } from "./40-support/tickets";
 import type { Policy } from "./46-finance/finance";
@@ -28,6 +29,7 @@ import type { Breach } from "./60-infra/breach";
 import { newSecurity, type Security } from "./60-infra/security";
 import { newSales, type Sales } from "./30-market/market";
 import { seedRivals, type Rival, type ShareEntry } from "./30-market/rivals";
+import { newHostToast, type HostToast } from "./10-catalog/hosttoast";
 import type { FairBooking } from "./80-business/fairs";
 import type { Sponsorship } from "./80-business/community";
 import type { SponsorOffer } from "./80-business/sponsorboard";
@@ -47,6 +49,7 @@ import type { BankAccount } from "./46-finance/bank";
 import type { Payable } from "./46-finance/payables";
 import type { Letter } from "./40-support/letters";
 import type { TrendPoint } from "./80-business/trend";
+import type { StatusDay } from "./80-business/status";
 
 // 3: GPU line servers carry their preset cards. 4: an unregistered game holds its savings until the bank account opens.
 export const SAVE_VERSION = 5;
@@ -200,6 +203,8 @@ export interface GameState {
   licenses: Licence[];
   // One entry per machine and product whose trial started; it never starts again there. until is the hour it ends.
   trials: { machineId: string; product: string; until: number }[];
+  // The vendor sites' shared shopping cart; each site checks out the lines it sells.
+  cart: { product: string; edition: string | null; qty: number }[];
   // Operating system images downloaded from their sites, one per version, and the one USB stick: the image written on it,
   // the server it is in.
   media: { images: OsImage[]; stick: { os: OsImage | null; in: string | null } };
@@ -214,6 +219,8 @@ export interface GameState {
   transfers: Transfer[];
   // Quotes written in Books for order tickets.
   quotes: Quote[];
+  // The products the player sells (80-business/catalog.ts).
+  catalog: CatalogProduct[];
   // Hour up to which each yearly service is invoiced.
   yearlyBilledUntil: Record<string, number>;
   loans: Loan[];
@@ -268,6 +275,8 @@ export interface GameState {
   installed: string[];
   // Knowledge base article reads by how-to topic, each one a ticket the customer did not write.
   kbReads: Record<string, number>;
+  // One entry per day, at most 90, of the product lines that were down, slowed or in an announced window (80-business/status.ts).
+  statusDays: StatusDay[];
   // Checklist goals the player ticked by hand.
   checklist: string[];
   // The changelog entries (date|text) the player has been shown.
@@ -337,6 +346,8 @@ export interface GameState {
   // News already published, as "<id>@<hour>" (80-business/news.ts).
   news: string[];
   competitors: Rival[];
+  // The HOSTtoast listing (80-business/hosttoast.ts).
+  hosttoast: HostToast;
   shareLog: ShareEntry[];
   // Next server number, next own-VM number and next service number (30-customers/hostnames.ts).
   nextNode: number;
@@ -418,10 +429,11 @@ export const newGame = (seed: number): GameState => ({
   racks: [{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null, overSince: { a: null, b: null } }],
   devices: [{ ...device("dev5", "home-router", "AVN", null, 0, null, "fra1-gw-01", 0), store: "loc1" }, device("dev6", "line-jack", "", null, 0, "loc1", "fra1-line-01", 0)],
   cables: [],
-  ledger: [], licenses: [], trials: [], media: { images: [], stick: { os: null, in: null } }, leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], contracts: [], unlocks: [], training: null, knowHow: 0, installed: ["Browser", "Chat"], kbReads: {}, checklist: [], seenChanges: [], undocked: [], os: "aqua",
+  ledger: [], licenses: [], trials: [], cart: [], media: { images: [], stick: { os: null, in: null } }, leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], contracts: [], unlocks: [], training: null, knowHow: 0, installed: ["Browser", "Chat"], kbReads: {}, statusDays: [], checklist: [], seenChanges: [], undocked: [], os: "aqua",
   customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], files: {},
   invoices: [], transfers: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   quotes: [],
+  catalog: [],
   billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 }, autoOrders: false, reviewOrders: false, screenOrders: false, screenChecks: 0, chargebackStrikes: 0,
   shop: newShop(),
   heldCustomers: [],
@@ -450,6 +462,7 @@ export const newGame = (seed: number): GameState => ({
   webpanel: newWebPanel(),
   news: [],
   competitors: seedRivals(seed),
+  hosttoast: newHostToast(),
   shareLog: [],
   nextNode: 1, nextVm: 1, nextHostNo: firstHostNo(seed),
   used: [], usedRep: 0,

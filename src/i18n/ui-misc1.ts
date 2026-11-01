@@ -186,6 +186,7 @@ export default {
   "misc1.parts.perWebSpace": () => "per web space",
   "misc1.parts.perServer": () => "per server",
   "misc1.parts.perCore": () => "per core",
+  "misc1.parts.perGameserver": () => "per game server",
   "misc1.parts.free": () => "Free",
   "misc1.parts.fee": (p) => `${p.fee} ${p.unit}`,
   "misc1.parts.kindPanel": () => "Hosting panel",

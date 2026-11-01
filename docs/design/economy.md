@@ -1245,7 +1245,7 @@ Stuck boots, hangs and lockouts are rolled per device and hour and do not draw f
 | New listings per channel and month | 2 to 6, posted over the month at random hours, the first month with the new game; a model qualifies once its launch is at least 2 years back, and a model from 2005 counts as launched in 2002, so 2005 listings are 1 to 3 years old at the usual price bands |
 | Age of a unit | 1 year up to the years since the model's launch |
 | WebHostingTalc ask | 60% of the preset price at 1 year falling in a straight line to 45% at 6 years and older |
-| Telegrump ask | 45% falling to 30% the same way; 15% of the deals are scams that take the money and ship nothing |
+| Craigslost ask | 45% falling to 30% the same way; 15% of the deals are scams that take the money and ship nothing |
 | eBuy | Starts at 25%; the rival's maximum is 35% to 70%; the higher maximum wins and pays the other's maximum |
 | Visible defect | 30% of single units; PSU 2 missing ×0.85 (two-supply models), 1 drive reports errors ×0.8 (the drive arrives one year past its life), no rails ×0.95 (rack-mounted) |
 | Hidden part age | Each part's age is the unit's age times 0.5 to 1.5 |
@@ -1267,7 +1267,7 @@ Used devices are never insured, cannot be leased and resell from the price paid 
 | Full | 48 hours; every hidden part shows its real age; each working part past its life fails with 50% (seeded by game seed, hour and device) |
 | Bonus | A full burn-in in which no part failed multiplies the server's failure chance by 0.9 for 365 days (it stacks with the other failure factors) |
 | Used parts | Parts bought on the used market are hidden until a burn-in has looked at them; replaced parts are known |
-| Buyer protection | The first failed part of a unit bought on the board or eBuy within 14 days of its arrival refunds half the unit price, once; Telegrump deals never refund |
+| Buyer protection | The first failed part of a unit bought on the board or eBuy within 14 days of its arrival refunds half the unit price, once; Craigslost deals never refund |
 
 **Power feeds.**
 
@@ -1642,17 +1642,17 @@ Every server and every one of the player's own VMs runs an operating system, and
 
 | Software | Kind | OS | License | Install | How-to tickets | Live migration | Control plane |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| cPanic | Panel | Lunix | €0.40 per web space | 3 h | ×0.8 |  | 0.25 vCPU, 0.25 GB, 5 GB |
+| cPanic | Panel | Lunix | €12 per server (Dedicated), from June 2019 the editions Solo to Premier (€0.40 per web space) | 3 h | ×0.8 |  | 0.25 vCPU, 0.25 GB, 5 GB |
 | Pleskit | Panel | Lunix, Windoors | €12 per panel host | 3 h | ×0.9 |  | 0.25 vCPU, 0.25 GB, 5 GB |
-| DirectAdmen | Panel | Lunix | €4 per panel host | 2 h | ×1.2 |  | 0.1 vCPU, 0.1 GB, 2 GB |
+| DirectAdmen | Panel | Lunix | €100 lifetime per major or Standard at €4 per panel host, from September 2019 the editions Personal to Standard | 2 h | ×1.2 |  | 0.1 vCPU, 0.1 GB, 2 GB |
 | FreePanel | Panel | Lunix | Free | 2 h | ×1.5 |  | 0.1 vCPU, 0.1 GB, 2 GB |
 | OpenVeeZee | Cloud | Lunix | Free | 3 h | ×1.4 | No | 0.1 vCPU, 0.1 GB, 2 GB |
 | OpenStash | Cloud | Lunix | Free | 8 h | ×1.3 | Yes | 2 vCPU, 2 GB, 20 GB |
-| VMwhere | Cloud | Lunix | €600 once per CPU socket, €8 per physical core from 2024 | 5 h | ×0.7 | Yes | 1 vCPU, 2 GB, 10 GB |
+| VMwhere | Cloud | Lunix | €600 once per CPU socket, from December 2023 €96 a year per physical core with 16 cores per CPU at least | 5 h | ×0.7 | Yes | 1 vCPU, 2 GB, 10 GB |
 | Proxmocks | Cloud | Lunix | Free | 3 h | ×1.0 | Yes | 0.25 vCPU, 0.25 GB, 5 GB |
 | HyperVee | Cloud | Windoors | €20 per node | 4 h | ×0.9 | No | 1 vCPU, 1 GB, 10 GB |
 | TCAdmen | Game | Windoors | €25 per server | 2 h | ×0.9 | No | 0.25 vCPU, 0.5 GB, 5 GB |
-| MultiKraft | Game | Lunix, Windoors | €20 per server | 2 h | ×1.0 | No | 0.25 vCPU, 0.5 GB, 5 GB |
+| MultiKraft | Game | Lunix, Windoors | €20 per server, from 2020 €1.20 per game server beyond 25 | 2 h | ×1.0 | No | 0.25 vCPU, 0.5 GB, 5 GB |
 | Pterodaktyl | Game | Lunix | Free | 3 h | ×1.2 | No | 0.25 vCPU, 0.5 GB, 5 GB |
 | Bound | DNS | Lunix, Windoors | Free | 2 h | ×1.3 | No | 0.1 vCPU, 0.25 GB, 2 GB |
 | PowerDNZ | DNS | Lunix | Free | 2 h | ×1.0 | No | 0.25 vCPU, 0.5 GB, 5 GB |
@@ -1667,10 +1667,12 @@ Every server and every one of the player's own VMs runs an operating system, and
 | Operating system | License | Install | Boot |
 | --- | --- | --- | --- |
 | Debiant GNU/Lunix | Free | 1 h | 20 min |
-| Windoors Server | €600 once per machine, €4 per core or vCPU from 2016 | 2 h | 40 min |
+| Windoors Server | €600 once per machine, from October 2016 €4 per core (16 per server and 8 per CPU at least) or vCPU | 2 h | 40 min |
 | VMwhere App Suite | €25 per VMwhere cluster | | |
 
-Windoors Server and VMwhere are bought once per machine when the install starts, until Windoors moves to 4 euros a month per physical core of a server or per vCPU of a VM in 2016 and VMwhere to 8 euros a month per physical core in 2024. A reinstall on the same machine pays nothing; a new machine, a VM from a template included, pays again, and the install is refused without the cash. The App Suite bills 25 euros a month per VMwhere cluster that has it. The OS install and boot add to every install's time to serve. A panel on a hypervisor node is allowed when no port collides. Values live in `src/sim/10-catalog/server-os.ts`.
+Windoors Server and VMwhere are bought once per machine when the install starts, until Windoors moves to 4 euros a month per physical core of a server or per vCPU of a VM in October 2016 and VMwhere to 96 euros a year per physical core in December 2023. A reinstall on the same machine pays nothing; a new machine, a VM from a template included, pays again, and the install is refused without the cash. The App Suite bills 25 euros a month per VMwhere cluster that has it. The OS install and boot add to every install's time to serve. A panel on a hypervisor node is allowed when no port collides. Values live in `src/sim/10-catalog/server-os.ts`.
+
+**Licence eras.** Each licensed product sells what its vendor sold at the game month, from `licensing` in the catalog (docs/design/plans/software-licences.md, Licence models over time). A perpetual key covers the major on sale when it was bought and never bills again; an upgrade to the next major costs the full price, or half (€300 for Windoors, VMwhere and Veeham Backup) for a holder of the previous major's key bought within the last 12 months. A yearly key renews on the same day a year later and shows at a twelfth in monthly bills. A server pays for at least the minimum cores of a per-core era; a VM pays per vCPU. Veeham Backup sells €600 per CPU socket once from 2008 and €480 a year per server from 2018. Prices keep the game's euro scale, where a real list price divides by about three: cPanel's licence of about $35 a server reads €12, and its 2019 editions keep the €2 to €10 and €0.40 per web space the game already charged. When a vendor stops selling an option the shop drops it that day, and a key already bought keeps working.
 
 **Split cores.** OpenVeeZee and Proxmocks give a guest a fraction of a core through containers and CPU limits, so a VM books exactly the vCPUs it sold. OpenStash, VMwhere and HyperVee give a VM whole vCPUs: a VM books its vCPUs rounded up and uses that much CPU at load. Web spaces, game servers, DNS zones, VPN gateways and storage volumes run as containers in their software and keep their fraction everywhere. A customer who scales a VPS below one core asks for tenths of a core (at least 0.2), so 0.75 of one core becomes 0.8.
 
@@ -2121,6 +2123,8 @@ Disclosure is a random day of the release's year. A vulnerability is open on an 
 
 An unattended panel host installed at the start of the game is compromised for the first time after a median of 0.8 years.
 
+An operating system or software on a machine that runs past its vendor's end of security updates collects vulnerabilities of its own: each year past the end adds 0.5 to a multiplier on the daily compromise chance of the instances on that machine, counted up to 4 years per install (an install 4 years past the end triples the chance). The newest release of a product never counts as ended while it is the newest. The vendor emails 90 days before the end of security updates of every version the company runs.
+
 ### Breaches and ransom
 
 A critical vulnerability that has been open on an instance for more than 30 days can turn the daily exploitation roll into a breach. When the roll hits an instance (the table above) and the instance has such a vulnerability open, 25% of the hits are breaches: the attackers steal the customer data on the host and the host is not compromised in the usual way (no clean-up, no spam). A host with a ransom still undecided cannot be breached again. The customers on a host are those with a workload on it; a mail host holds every customer's mailbox. The tick draws from the seed, the host and the day (the exploitation roll uses tag 91, the breach roll tag 92).
@@ -2242,11 +2246,11 @@ Spending more in one channel and city gets dearer: the cost per lead is multipli
 | Platform | Invite rate per happy customer per month | Trust bonus T |
 | --- | --- | --- |
 | None | 0 | 0 |
-| Free listing | 0 | 2 |
+| Free listing | 0 | 0 |
 | "ProvenExpat" | 1% | 4 |
 | "TrustPylon" | 2% | 6 |
 
-Platform fees are flat: the free listing costs nothing, ProvenExpat €49 and TrustPylon €199 a month.
+Platform fees are flat: the free listing costs nothing, ProvenExpat €49 and TrustPylon €199 a month. The free listing's +2 now comes from the HOSTtoast listing (competitors.md, HOSTtoast), whose T adds to the platform's, capped at 10.
 
 **Owned channels.** Each step is a one-off setup plus monthly upkeep, flat over the years:
 

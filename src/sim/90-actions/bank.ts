@@ -2,15 +2,21 @@
 import { nowMinutes, yearOf } from "../00-core/time";
 import { hashRng, rand } from "../00-core/rng";
 import { banksOpen, tanMethods, type BankId, type TanMethod } from "../10-catalog/banks";
-import { APPROVAL_HOURS, bankOf, openWithSavings, hbci, payAll, ibanEra, limitFor, LOCK_HOURS, MIN_CARD_LIMIT, nextTanIndex, placeTanList, send, spendable, useTan, WRONG_LIMIT, type Draft } from "../46-finance/bank";
+import { APPROVAL_HOURS, bankOf, openWithSavings, hbci, payAll, ibanEra, limitFor, LOCK_HOURS, MIN_CARD_LIMIT, nextTanIndex, placeTanList, send, spendable, useTan, WRONG_LIMIT, type Draft, type Payee } from "../46-finance/bank";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 
-function draftError(s: GameState, d: Draft): string | null {
+function payeeError(s: GameState, d: Omit<Payee, "id">): string | null {
   if (!d.name.trim()) return "error.payeeName";
   if (ibanEra(s) ? !/^DE\d{20}$/.test(d.account.replace(/\s/g, "")) : !/^\d{1,10}$/.test(d.account) || !/^\d{8}$/.test(d.code ?? "")) return "error.payeeAccount";
+  return null;
+}
+
+function draftError(s: GameState, d: Draft): string | null {
+  const payee = payeeError(s, d);
+  if (payee) return payee;
   if (!(d.amount > 0) || Math.abs(Math.round(d.amount * 100) - d.amount * 100) > 1e-6) return "error.badAmount";
   if (d.amount > spendable(s)) return "error.noCash";
   return null;
@@ -40,6 +46,23 @@ export function startStandingOrder(s: GameState, draft: Draft, day: number): Act
 export function deleteStandingOrder(s: GameState, id: string): ActionResult {
   if (!s.bank?.standingOrders.some((o) => o.id === id)) return fail("error.noOrder");
   s.bank = { ...s.bank, standingOrders: s.bank.standingOrders.filter((o) => o.id !== id) };
+  return { ok: true };
+}
+
+// Saves a payee for the transfer form; one with the same account is replaced.
+export function savePayee(s: GameState, payee: Omit<Payee, "id">): ActionResult {
+  if (!s.bank) return fail("error.noBank");
+  const error = payeeError(s, payee);
+  if (error) return fail(error);
+  const account = payee.account.replace(/\s/g, ""), code = ibanEra(s) ? undefined : payee.code;
+  const kept = (s.bank.payees ?? []).filter((p) => p.account !== account || p.code !== code);
+  s.bank = { ...s.bank, payees: [...kept, { id: `payee${s.nextId++}`, name: payee.name.trim(), account, ...(code && { code }) }] };
+  return { ok: true };
+}
+
+export function deletePayee(s: GameState, id: string): ActionResult {
+  if (!s.bank?.payees?.some((p) => p.id === id)) return fail("error.noPayee");
+  s.bank = { ...s.bank, payees: s.bank.payees.filter((p) => p.id !== id) };
   return { ok: true };
 }
 

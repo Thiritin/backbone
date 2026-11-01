@@ -1,4 +1,5 @@
 import { modelById } from "../10-catalog/hardware";
+import { recordStatus } from "../80-business/status";
 import { topTier } from "../10-catalog/licence-tiers";
 import { START_YEAR, yearOf } from "../00-core/time";
 import { GPU_SKILL } from "../10-catalog/research";
@@ -539,5 +540,6 @@ export function computeTick(s: GameState): SimEvent[] {
   // Hours inside an announced maintenance window are no downtime for the SLA; a late announcement counts half.
   const hours = (id: string) => coverage(s, s.services.find((v) => v.id === id)!)?.factor ?? 1;
   if (down.length) s.downHours = { ...s.downHours, ...Object.fromEntries(down.map((id) => [id, (s.downHours[id] ?? 0) + hours(id)])) };
+  recordStatus(s, down);
   return events;
 }

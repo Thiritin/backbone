@@ -1,0 +1,7 @@
+/* ModernBill 4: black on white tables, red headings, framed pages */
+.sk-modem { font-family: Verdana, Arial, sans-serif; font-size: 12px; background: #fff; color: #000; }
+.sk-modem .shop-head { border-bottom: 3px solid #a00; }
+.sk-modem h1, .sk-modem h2, .sk-modem h3 { color: #a00; }
+.sk-modem .shop-nav { border-bottom: 1px solid #000; }
+.sk-modem .pt-table, .sk-modem .pt-table th, .sk-modem .pt-table td { border: 1px solid #000; }
+.sk-modem .pt-table th { background: #ddd; }

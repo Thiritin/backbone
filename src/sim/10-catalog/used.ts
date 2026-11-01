@@ -8,7 +8,7 @@ export type Channel = "ebuy" | "board" | "chat";
 export const CHANNELS: { id: Channel; name: string }[] = [
   { id: "ebuy", name: "eBuy" },
   { id: "board", name: "WebHostingTalc" },
-  { id: "chat", name: "Telegrump" },
+  { id: "chat", name: "Craigslost" },
 ];
 export const channelName = (c: Channel): string => CHANNELS.find((x) => x.id === c)!.name;
 

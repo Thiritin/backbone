@@ -9,6 +9,7 @@ import { controlPlaneUp, sitesDown, type Cluster, type Workload } from "./cluste
 import { breachEligible, breachTick, startBreach, BREACH_CHANCE } from "./breach";
 import { exposureFactor } from "./exposure";
 import { maybeReview } from "./incidents";
+import { clusterFactor } from "./lifecycle";
 import { familyOf, instanceRisk, openVulns, patchedNow } from "./vulns";
 import { oobSecurityTick } from "./oob";
 import { phpInstalled } from "./webpanel";
@@ -131,7 +132,7 @@ function generatedTick(s: GameState): SimEvent[] {
   if (s.hour % 24 !== 0) return events;
   for (const c of s.clusters) {
     if (!reachable(s, c)) continue;
-    const open = openVulns(s, c.id), risk = instanceRisk(open), num = Number(c.id.replace(/\D/g, "")) || 0;
+    const open = openVulns(s, c.id), risk = instanceRisk(open) * clusterFactor(s, c), num = Number(c.id.replace(/\D/g, "")) || 0;
     if (risk <= 0 || rand(hashRng(s.seed, num, s.hour / 24, 91)) >= risk * exposureFactor(s, c)) continue;
     if (breachEligible(s, c.id, open) && rand(hashRng(s.seed, num, s.hour / 24, 92)) < BREACH_CHANCE) startBreach(s, c, events);
     else compromise(s, c, events);

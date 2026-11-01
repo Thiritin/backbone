@@ -11,7 +11,7 @@ import { CHANNELS, channelOf } from "../../../../sim/60-infra/channel";
 import { setChannel } from "../../../../sim/90-actions/software";
 import { setOversell } from "../../../../sim/90-actions/oversell";
 import { tiersOf } from "../../../../sim/10-catalog/licence-tiers";
-import { accountsOn, licenceExpired, panelMachine, panelStatus, tierOf, trialOf } from "../../../../sim/60-infra/licence";
+import { accountsOn, licenceExpired, panelMachine, panelStatus, tierOf, tiersOnSale, trialOf } from "../../../../sim/60-infra/licence";
 import { setLicenceTier } from "../../../../sim/90-actions/licence";
 import { ram } from "../../hw";
 import { Facts, type Fact } from "./PanelBase";
@@ -83,7 +83,7 @@ export function LicenceTiers({ game, c }: { game: GameState; c: Cluster }) {
       <LicenceBanner game={game} c={c} />
       <Facts facts={facts} />
       <div className="cx-tools">
-        {tiersOf(c.panel).map((x) => <button key={x.id} className="cx-chip" aria-pressed={x.id === tier.id && !licenceExpired(game, c)} onClick={() => act(setLicenceTier, c.id, x.id)}>{`${x.name} · ${fee(x)}`}</button>)}
+        {tiersOf(c.panel).filter((x) => x.id === tier.id || tiersOnSale(c.panel, game.hour).includes(x)).map((x) => <button key={x.id} className="cx-chip" aria-pressed={x.id === tier.id && !licenceExpired(game, c)} onClick={() => act(setLicenceTier, c.id, x.id)}>{`${x.name} · ${fee(x)}`}</button>)}
       </div>
     </>
   );
