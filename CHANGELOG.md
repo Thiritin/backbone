@@ -5,6 +5,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-01
 
 - Authorities that seize servers or send legal requests now appear under their name in your chosen language.
+- The desktop only responds at normal speed; pause or fast forward to watch, then return to normal speed to act.
 - Quotes and invoices in Lexwear Office now show as a full A4 page that fits the pane, and a draft quote can be sent to the customer with the Send button.
 - Small hosting companies now open in one or two cities, collect reviews like the big ones, and go bust or get bought when they win too few customers, with each step in the news.
 - Competitors now change over the years: they move to new server generations, add features and have outages that make the news, the budget host cuts its prices each year, and the Market app charts each city's share of new customers.
