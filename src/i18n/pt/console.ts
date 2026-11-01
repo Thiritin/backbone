@@ -3,6 +3,8 @@ import type { Dict } from "../lang";
 export default {
   "error.unknownOs": () => "Esse sistema operacional não existe.",
   "error.otherMedia": () => "O suporte de instalação contém outro sistema operacional.",
+  "error.badHostname": () => "Um nome de host usa letras minúsculas, dígitos e hífens, até 63 caracteres.",
+  "error.hostnameTaken": () => "Outra máquina já tem este nome de host.",
   "error.noImage": () => "Descarrega primeiro a ISO deste sistema operacional a partir do respetivo site.",
   "error.stickIn": () => "A pen USB já está ligada a este servidor.",
   "error.stickAway": () => "Desliga primeiro a pen USB do servidor.",

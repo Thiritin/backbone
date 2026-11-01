@@ -120,9 +120,18 @@ const atInstaller = (s: GameState, machineId: string): Machine | string => {
 // The installer's Install: whatever the disks held goes first, then the OS installs for its install hours, the version
 // on the media. os.installedAt is the hour it is done; a server is held in its boot until then and boots from its disk
 // after, a VM ejects its ISO. The stick and an ISO each hold one version of one OS.
-export function installOs(s: GameState, machineId: string, osId: ServerOsId, confirm?: string): ActionResult {
+// The error key for a hostname the installer cannot take: RFC 1123 labels, lowercase, unique among servers and VMs.
+export function badHostname(s: GameState, machineId: string, name: string): string | null {
+  if (!/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/.test(name)) return "error.badHostname";
+  const taken = [...s.devices, ...s.workloads].some((x) => x.id !== machineId && x.hostname === name);
+  return taken ? "error.hostnameTaken" : null;
+}
+
+export function installOs(s: GameState, machineId: string, osId: ServerOsId, confirm?: string, hostname?: string): ActionResult {
   const m = atInstaller(s, machineId);
   if (typeof m === "string") return fail(m);
+  const bad = hostname === undefined ? null : badHostname(s, machineId, hostname);
+  if (bad) return fail(bad);
   if (!SERVER_OS.some((o) => o.id === osId)) return fail("error.unknownOs");
   const media = isDevice(m) ? stickOs(s, m.id) : m.media;
   if (!media || imageParts(media).id !== osId) return fail("error.otherMedia");
@@ -135,8 +144,9 @@ export function installOs(s: GameState, machineId: string, osId: ServerOsId, con
   const os = serverOsById(osId), done = nowHours(s) + os.installHours;
   setMachine(s, machineId, () => ({ os: { id: osId, version: imageParts(media).version, installedAt: done }, software: [] }));
   buyLicenses(s, machineId, osId, null);
-  if (isDevice(m)) Object.assign(m, { bootFrom: "disk", stuck: false, bootUntil: done + BOOT_HOURS + os.bootMinutes / 60 });
-  else s.workloads = s.workloads.map((w) => (w.id === machineId ? { ...w, media: undefined } : w));
+  const named = hostname === undefined ? {} : { hostname };
+  if (isDevice(m)) Object.assign(m, { bootFrom: "disk", stuck: false, bootUntil: done + BOOT_HOURS + os.bootMinutes / 60 }, named);
+  else s.workloads = s.workloads.map((w) => (w.id === machineId ? { ...w, media: undefined, ...named } : w));
   return { ok: true };
 }
 

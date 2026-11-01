@@ -7,7 +7,7 @@ import type { Device, GameState, NetFail } from "../../../sim/50-state";
 import type { Workload } from "../../../sim/60-infra/cluster";
 import { machineNet } from "../../../sim/60-infra/oob";
 import { drivesOf, raidUsable } from "../../../sim/60-infra/status";
-import { eraseDisk, installCase, installOs, setMedia, upgradeHours, upgradeOs, upgradeTarget } from "../../../sim/90-actions/console";
+import { badHostname, eraseDisk, installCase, installOs, setMedia, upgradeHours, upgradeOs, upgradeTarget } from "../../../sim/90-actions/console";
 import { reboot } from "../../../sim/90-actions/hardware";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
@@ -52,7 +52,7 @@ function useTarget(game: GameState, m: Machine) {
     </>
   );
   const run = (r: { ok: boolean; error?: string }) => { setNote(r.ok ? "" : t(r.error ?? "")); setTyped(""); };
-  const install = (os: ServerOsId) => { const r = act(installOs, m.id, os, busy ? typed : undefined); run(r); return r.ok; };
+  const install = (os: ServerOsId, hostname?: string) => { const r = act(installOs, m.id, os, busy ? typed : undefined, hostname); run(r); return r.ok; };
   const erase = () => run(act(eraseDisk, m.id, busy ? typed : undefined));
   const leave = () => (isDevice(m) ? act(reboot, m.id) : act(setMedia, m.id, null));
   const type = (key: string) => {
@@ -94,7 +94,15 @@ const LANGUAGES = ["English", "Deutsch", "Français", "Español", "Nederlands"];
 function useLunixSetup(game: GameState, m: Machine, version: string): Keyed {
   const [step, setStep] = useState<LunixStep>("boot");
   const tg = useTarget(game, m), net = machineNet(game, m.id);
+  const [host, setHost] = useState(() => hostOf(m));
   const go = (to: LunixStep) => () => { setStep(to); tg.setNote(""); tg.setTyped(""); };
+  const named = () => { const bad = badHostname(game, m.id, host); if (bad) tg.setNote(t(bad)); else go("disks")(); };
+  const typeHost = (key: string) => {
+    if (key === "Backspace") setHost((v) => v.slice(0, -1));
+    else if (key.length === 1) setHost((v) => v + key.toLowerCase());
+    else return false;
+    return true;
+  };
   const back = (to: LunixStep): Row => ({ label: t("console.goBack"), run: go(to) });
   const pages: Record<LunixStep, Page> = {
     boot: { title: t("console.debBoot", { version }), rows: [
@@ -105,14 +113,14 @@ function useLunixSetup(game: GameState, m: Machine, version: string): Keyed {
     language: { title: t("console.selectLanguage"), rows: [...LANGUAGES.map((l) => ({ label: l, run: go("hostname") })), back("boot")] },
     hostname: net
       ? { title: t("console.configureNetwork"), err: true, body: <div>{t(net === "noInterfaces" ? "error.noInterfaces" : "error.noAutoconf")}</div>, rows: [{ label: t("console.continue"), run: go("fetch") }] }
-      : { title: t("console.configureNetwork"), body: <div>{t("console.hostname", { host: hostOf(m) })}</div>, rows: [{ label: t("console.continue"), run: go("disks") }, back("language")] },
+      : { title: t("console.configureNetwork"), body: <div>{t("console.hostname", { host })}_</div>, rows: [{ label: t("console.continue"), run: named }, back("language")] },
     fetch: { title: t("console.retrievingPackages"), err: true, body: <div>{t("term.console.osInstallFailed")} {t("console.checkNetwork")}</div>, rows: [{ label: t("console.abort"), run: () => { go("boot")(); tg.leave(); } }] },
     disks: { title: t("console.partitionDisks"), body: <div>{t("console.partitioningMethod")}</div>, rows: [{ label: t("console.guided", { array: tg.array }), run: go("write") }, back("hostname")] },
-    write: { title: t("console.partitionDisks"), body: <>{tg.what}<div>{t("console.writeChanges")}</div></>, rows: [{ label: t("console.yes"), run: () => tg.install("lunix") && setStep("boot") }, { label: t("console.no"), run: go("disks") }] },
+    write: { title: t("console.partitionDisks"), body: <>{tg.what}<div>{t("console.writeChanges")}</div></>, rows: [{ label: t("console.yes"), run: () => tg.install("lunix", host) && setStep("boot") }, { label: t("console.no"), run: go("disks") }] },
     erase: { title: t("console.eraseDisk"), body: tg.what, rows: [{ label: t("console.erase"), run: tg.erase }, back("boot")] },
   };
-  const page = pages[step], typing = (step === "write" || step === "erase") && tg.found.kind === "busy";
-  const pager = usePager({ ...page, keys: { Escape: go("boot") } }, (k) => typing && tg.type(k));
+  const page = pages[step], naming = step === "hostname" && !net, typing = naming || ((step === "write" || step === "erase") && tg.found.kind === "busy");
+  const pager = usePager({ ...page, keys: { Escape: go("boot") } }, (k) => typing && (naming ? typeHost(k) : tg.type(k)));
   const view = <Debiant title={page.title} body={page.body} note={tg.note} err={page.err}><Rows rows={page.rows} at={pager.at} pick={pager.pick} /></Debiant>;
   return { view, onKey: pager.onKey, keys: [...keysOf(page, typing), "Escape"] };
 }

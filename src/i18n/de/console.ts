@@ -3,6 +3,8 @@ import type { Dict } from "../lang";
 export default {
   "error.unknownOs": () => "Dieses Betriebssystem gibt es nicht.",
   "error.otherMedia": () => "Auf dem Installationsmedium liegt ein anderes Betriebssystem.",
+  "error.badHostname": () => "Hostnamen bestehen aus Kleinbuchstaben, Ziffern und Bindestrichen, bis zu 63 Zeichen.",
+  "error.hostnameTaken": () => "Ein anderer Rechner hat diesen Hostnamen schon.",
   "error.noBootDevice": () => "No bootable device",
   "error.noImage": () => "Lade zuerst die ISO dieses Betriebssystems von dessen Website herunter.",
   "error.stickIn": () => "Der USB-Stick steckt bereits in diesem Server.",
