@@ -59,6 +59,7 @@ export default {
   "error.quoteSentAlready": () => "Este orçamento já foi enviado.",
   "error.quoteOtherOrder": () => "Este orçamento pertence a outra encomenda.",
   "error.quoteNotAccepted": () => "O cliente não aceitou este orçamento.",
+  "error.quoteInvoiced": () => "Este orçamento já foi transferido para fatura.",
   "error.needsInvoice": () => "Confirma primeiro o pedido e envia a fatura.",
   "error.needsDomain": () => "Regista primeiro o domínio.",
   "error.stepDone": () => "Este passo já está concluído.",

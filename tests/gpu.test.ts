@@ -6,18 +6,18 @@ import { marketPrice, sizeSpec, specPrice } from "../src/sim/10-catalog/products
 import { GPU_SKILL } from "../src/sim/10-catalog/research";
 import { needsOf } from "../src/sim/30-market/market";
 import { specText } from "../src/sim/30-market/spec";
-import { newGame, SAVE_VERSION, type GameState } from "../src/sim/50-state";
+import { SAVE_VERSION, type GameState } from "../src/sim/50-state";
 import { cardsFree, lineOffered, workloadsOf } from "../src/sim/60-infra/cluster";
 import { busyDevices, deviceWatts, rackPower } from "../src/sim/60-infra/status";
 import { newsTick } from "../src/sim/80-business/news";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { connect, installPart, removePart, type CartLine } from "../src/sim/90-actions/hardware";
-import { buyBare, buyDevice } from "./fixtures";
+import { buyBare, buyDevice, newGame } from "./fixtures";
 import { research } from "../src/sim/90-actions/store";
 import { tick } from "../src/sim/88-tick/tick";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { hypervisor, skipTo, withServer } from "./fixtures";
+import { hypervisor, shareWith, skipTo, withServer } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 type R = { ok: boolean; id?: string; error?: string };
@@ -161,6 +161,7 @@ describe("GPU rental", () => {
   it("needs the skill and a free card to be offered, and rents whole cards", () => {
     const s = rich(2012), id = gpuServer(s);
     hypervisor(s, [id], "GPU 1");
+    shareWith(s, id);
     expect(lineOffered(s, "gpu")).toBe(false);
     s.unlocks = [...s.unlocks, GPU_SKILL];
     expect(lineOffered(s, "gpu")).toBe(true);

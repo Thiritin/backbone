@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { newGame } from "../src/sim/50-state";
 import { desktopFiles } from "../src/sim/60-infra/fs";
 import { addAppLink, setDocked } from "../src/sim/90-actions/docs";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { registered } from "./fixtures";
+import { registered, newGame } from "./fixtures";
 
 describe("app links and dock", () => {
   it("takes an app out of the dock and back", () => {

@@ -1,5 +1,7 @@
 import { addressBills, addressTick } from "../60-infra/addresses";
 import { billSuppliers, invoicing, payablesTick } from "../46-finance/payables";
+import { lettersTick } from "../40-support/letters";
+import { paperworkTick } from "../80-business/paperwork";
 import { netsvcTick } from "../60-infra/netsvc";
 import { binomial, rand } from "../00-core/rng";
 import { dateOf, isMonthStart, yearOf } from "../00-core/time";
@@ -31,6 +33,7 @@ import { registrarTick } from "../30-customers/registrar";
 import { mailTick } from "../80-business/mail";
 import { computeTick } from "../60-infra/cluster";
 import { haltTick, powerTick, pushLog, tripTick } from "../60-infra/power";
+import { loadSaved } from "../60-infra/switches";
 import { installNetTick } from "../60-infra/oob";
 import { haTick } from "../60-infra/ha";
 import { migrationTick } from "../60-infra/migration";
@@ -38,6 +41,7 @@ import { maintenanceTick } from "../60-infra/maintenance";
 import { freezeTick } from "../60-infra/usage";
 import { statsTick } from "../60-infra/stats";
 import { networkTick } from "../60-infra/network";
+import { leaseTick } from "../60-infra/lan";
 import { appsTick } from "../60-infra/apps";
 import { webpanelTick } from "../60-infra/webpanel";
 import { gamesTick } from "../60-infra/games";
@@ -58,6 +62,7 @@ import type { Component, Device, GameState, LedgerEntry } from "../50-state";
 import { scoreTick } from "../80-business/scores";
 import { trendTick } from "../80-business/trend";
 import { arrayLost, busyDevices, dcAvailability, drawWatts, driveGb, drivesOf, fits, isDrive, HOURS_PER_YEAR, locationOf, locationRent, powered, readOnlySweep } from "../60-infra/status";
+import { rivalsTick } from "../30-market/rivals-tick";
 
 export interface SimEvent {
   app: string;
@@ -163,6 +168,7 @@ export function failComponents(s: GameState, d: Device, ids: string[], events: S
   const next: Device = { ...d, components: d.components.map((c) => (broke.includes(c) ? { ...c, failedAt: s.hour } : c)) };
   for (const c of broke) pushLog(next, s.hour, `ipmi.log.failed.${c.kind}`);
   if (broke.some(isDrive) && arrayLost(next)) Object.assign(next, { dataLost: s.hour, rebuild: null });
+  if (broke.some((c) => c.kind === "psu") && !next.components.some((c) => c.kind === "psu" && c.failedAt === null)) loadSaved(next);
   if (d.refund && s.hour < d.refund.until) {
     s.cash = Math.round((s.cash + d.refund.amount) * 100) / 100;
     s.ledger = [...s.ledger, { hour: s.hour, category: "hardware", key: "ledger.usedRefund", params: { device: d.label ?? d.name }, amount: d.refund.amount }];
@@ -281,6 +287,7 @@ export function tick(state: GameState): SimEvent[] {
   if (state.waitlist.length) updateHolds(state, events);
   contractsEnd(state, events);
   if (monthStart) competitorsTake(state);
+  if (monthStart) events.push(...rivalsTick(state));
   if (monthStart) {
     const d = dateOf(state.hour);
     events.push({ app: "Finance", key: "event.monthStart", params: { month: d.getUTCMonth(), year: d.getUTCFullYear() } });
@@ -342,6 +349,7 @@ export function tick(state: GameState): SimEvent[] {
   events.push(...domainsTick(state));
   events.push(...registrarTick(state));
   mailTick(state);
+  leaseTick(state);
   events.push(...networkTick(state));
   events.push(...securityTick(state));
   events.push(...appsTick(state));
@@ -350,6 +358,8 @@ export function tick(state: GameState): SimEvent[] {
   abandonTickets(state);
   events.push(...financeTick(state));
   events.push(...bankTick(state));
+  paperworkTick(state);
+  lettersTick(state);
   payablesTick(state);
   events.push(...staffTick(state));
   events.push(...techTick(state));

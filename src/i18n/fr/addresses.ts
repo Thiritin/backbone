@@ -37,5 +37,9 @@ export default {
   "error.needsBgpRouter": () => "Nécessite un routeur avec table de routage complète sur ce site.",
   "error.basementOnly": () => "Seul le sous-sol accepte ce routeur.",
   "error.noRouter": () => "Aucun routeur n'est monté ici.",
+  "error.badPool": () => "La plage DHCP ne correspond pas au réseau.",
+  "error.badAddress": () => "Saisis une adresse IPv4 privée.",
+  "error.portShared": () => "Le port 80 est déjà partagé avec un autre appareil.",
+  "error.noAddress": () => "Cet appareil n'a pas d'adresse sur le réseau du routeur.",
   "error.notOfficeRouter": () => "Seul un routeur de petit bureau remplace celui du sous-sol.",
 } satisfies Dict;

@@ -1,7 +1,8 @@
+import { newGame } from "./fixtures";
 import { afterEach, describe, expect, it } from "vitest";
 import { bumpProbe, createTicket } from "../src/sim/40-support/tickets";
 import { agentCostPerSolved, attemptTokens, botOdds, BOT_TRIES, costPerSolved, pricePerMTokens, tokenCost } from "../src/sim/47-staff/chad";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { install } from "../src/sim/90-actions/store";

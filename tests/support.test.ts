@@ -1,8 +1,8 @@
+import { newGame } from "./fixtures";
 import { START_CASH } from "../src/sim/10-catalog/economy";
 import { hourOf } from "../src/sim/00-core/time";
 import { describe, expect, it, vi } from "vitest";
 import { monthlyValue, rightTemplate, shownTemplates, SHORT_REPLIES } from "../src/sim/40-support/tickets";
-import { newGame } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { addService } from "../src/sim/90-actions/customers";
 import { closeTicket, escalateTicket, readTicket, replyTicket, resolveTicket, retainTicket } from "../src/sim/90-actions/support";
