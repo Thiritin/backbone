@@ -35,4 +35,7 @@ export default {
   "books-editions.joined": () => `Nuovi`,
   "books-editions.churned": () => `Persi`,
   "books-editions.lostSales": () => `Vendite perse`,
+  "books-vendors.about.gnucache": () => `Contabilità gratuita, fatta da volontari.`,
+  "ticket.pear.overdraft.subject": () => `Stai finendo i soldi`,
+  "ticket.pear.overdraft.text": () => `La tua cassa copre meno di due mesi di costi correnti. Sul sito della tua banca puoi chiedere uno scoperto o un prestito per il prossimo server.`,
 } satisfies Dict;

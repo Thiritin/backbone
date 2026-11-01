@@ -141,18 +141,18 @@ export function financeTick(s: GameState): SimEvent[] {
       s.taxLoss = carry;
       if (tax > 0) {
         book(s, "tax", "ledger.tax", { year }, -tax);
-        events.push({ app: "Finance", key: "event.tax", params: { year, tax, profit } });
-      } else if (profit < 0) events.push({ app: "Finance", key: "event.taxLoss", params: { year, carry } });
+        events.push({ app: "Books", key: "event.tax", params: { year, tax, profit } });
+      } else if (profit < 0) events.push({ app: "Books", key: "event.taxLoss", params: { year, carry } });
     }
   }
   // The overdraft keeps the company solvent down to its limit.
   if (s.cash >= -(s.bank?.overdraft ?? 0)) s.brokeSince = null;
   else if (s.brokeSince === null) {
     s.brokeSince = s.hour;
-    events.push({ app: "Finance", key: "event.cashNegative", params: { days: INSOLVENT_DAYS } });
+    events.push({ app: "Books", key: "event.cashNegative", params: { days: INSOLVENT_DAYS } });
   } else if (s.gameOver === null && s.hour - s.brokeSince >= INSOLVENT_DAYS * 24 && (s.hour - s.brokeSince) % 24 === 0 && !rescuable(s)) {
     s.gameOver = s.hour;
-    events.push({ app: "Finance", key: "event.bankrupt", params: { days: INSOLVENT_DAYS } });
+    events.push({ app: "Books", key: "event.bankrupt", params: { days: INSOLVENT_DAYS } });
   }
   return events;
 }

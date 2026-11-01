@@ -35,4 +35,7 @@ export default {
   "books-editions.joined": () => `Neu`,
   "books-editions.churned": () => `Verloren`,
   "books-editions.lostSales": () => `Verlorene Verkäufe`,
+  "books-vendors.about.gnucache": () => `Kostenlose Buchhaltung, von Freiwilligen gebaut.`,
+  "ticket.pear.overdraft.subject": () => `Dein Geld wird knapp`,
+  "ticket.pear.overdraft.text": () => `Dein Geld deckt weniger als zwei Monate laufende Kosten. Auf der Website deiner Bank kannst du einen Dispokredit beantragen oder einen Kredit für den nächsten Server.`,
 } satisfies Dict;

@@ -17,7 +17,7 @@ import { Confirm } from "../../desktop/Confirm";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { More } from "../More";
 import { useFocus, useStore } from "../../store";
-import { runwayLabel } from "../finance/FinanceApp";
+import { runwayLabel } from "../books/Reports";
 import { booksOffline, seated } from "../../../sim/80-business/bookkeeping";
 import { Facts, Sheet } from "../locations/ui";
 import { TechPanel } from "./TechPanel";

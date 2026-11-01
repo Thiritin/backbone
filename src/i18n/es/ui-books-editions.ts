@@ -35,4 +35,7 @@ export default {
   "books-editions.joined": () => `Nuevos`,
   "books-editions.churned": () => `Perdidos`,
   "books-editions.lostSales": () => `Ventas perdidas`,
+  "books-vendors.about.gnucache": () => `Contabilidad gratuita hecha por voluntarios.`,
+  "ticket.pear.overdraft.subject": () => `Te queda poco dinero`,
+  "ticket.pear.overdraft.text": () => `Tu dinero cubre menos de dos meses de costes fijos. En la web de tu banco puedes pedir un descubierto o un préstamo para el próximo servidor.`,
 } satisfies Dict;

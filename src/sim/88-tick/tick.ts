@@ -296,7 +296,7 @@ export function tick(state: GameState): SimEvent[] {
   if (monthStart) events.push(...rivalsTick(state));
   if (monthStart) {
     const d = dateOf(state.hour);
-    events.push({ app: "Finance", key: "event.monthStart", params: { month: d.getUTCMonth(), year: d.getUTCFullYear() } });
+    events.push({ app: "Books", key: "event.monthStart", params: { month: d.getUTCMonth(), year: d.getUTCFullYear() } });
     const power = cents(state.powerDue);
     const bills: LedgerEntry[] = state.locations.filter((l) => l.dc)
       .map((l) => ({ hour: state.hour, category: "rent", key: "ledger.space", params: { location: l.name }, amount: -locationRent(state, l) }));
@@ -331,7 +331,7 @@ export function tick(state: GameState): SimEvent[] {
     state.cash = cents(state.cash + direct.reduce((n, b) => n + b.amount, 0));
     state.powerDue = 0;
     state.ledger = [...state.ledger, ...direct];
-    if (bills.length) events.push({ app: "Finance", key: "event.bills", params: { power, rent, leasing: cents(leasing), subscriptions, total: cents(power + rent + leasing + subscriptions) } });
+    if (bills.length) events.push({ app: "Books", key: "event.bills", params: { power, rent, leasing: cents(leasing), subscriptions, total: cents(power + rent + leasing + subscriptions) } });
     state.knowHow = cents(state.knowHow + knowHowPerMonth(state));
   }
   events.push(...addressTick(state));

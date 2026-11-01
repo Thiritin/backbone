@@ -513,10 +513,10 @@ export function billingTick(s: GameState): SimEvent[] {
       s.loansBlockedUntil = s.hour + YEAR_HOURS;
       if (l.missed + 1 >= MISSED_LIMIT) {
         book("loans", "ledger.loanCalled", { amount: l.amount }, -cents(l.balance + interest));
-        events.push({ app: "Finance", key: "event.loanCalled", params: { amount: l.amount } });
+        events.push({ app: "Books", key: "event.loanCalled", params: { amount: l.amount } });
         return [];
       }
-      events.push({ app: "Finance", key: "event.loanMissed", params: { amount: l.amount, fee: MISSED_FEE } });
+      events.push({ app: "Books", key: "event.loanMissed", params: { amount: l.amount, fee: MISSED_FEE } });
       const balance = cents(l.balance + interest), rate = l.rate + MISSED_RATE;
       return [{ ...l, balance, rate, payment: annuity(balance, rate, l.left), missed: l.missed + 1 }];
     });

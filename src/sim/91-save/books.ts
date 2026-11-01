@@ -7,6 +7,8 @@ const BOOK_MODULES = ["helpdesk-link", "monthly-run", "match-by-reference", "aut
 const OLD_MAILS = ["lexwear.licence", "lexwear.newsletter", "books.licence"];
 
 export function migrateBooks(s: GameState): void {
+  // Finance became part of Books: a save that only had Finance runs the free program.
+  if (s.installed.includes("Books") && !s.books.vendor) s.books = { vendor: "gnucache", installedAt: s.hour, edition: "free", seats: 0 };
   const v = booksVendor(s.books.vendor), owned = s.modules.filter((m) => BOOK_MODULES.includes(m));
   const edition = !v ? null : v.editions.some((e) => e.id === s.books.edition) ? s.books.edition
     : (smallestWith(v, v.id === "lexwear" ? owned : []) ?? v.editions.at(-1)!).id;

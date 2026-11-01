@@ -2,7 +2,7 @@ import type { Dict } from "../lang";
 
 export default {
   "books-editions.nav": () => `Éditions`,
-  "books-editions.yours": () => `Votre édition`,
+  "books-editions.yours": () => `Ton édition`,
   "books-editions.upgradeFor": (p) => `Passer à cette édition pour ${p.price}`,
   "books-editions.switch": () => `Changer`,
   "books-editions.perMonth": (p) => `${p.price} par mois`,
@@ -35,4 +35,7 @@ export default {
   "books-editions.joined": () => `Nouveaux`,
   "books-editions.churned": () => `Perdus`,
   "books-editions.lostSales": () => `Ventes perdues`,
+  "books-vendors.about.gnucache": () => `Une comptabilité gratuite, faite par des bénévoles.`,
+  "ticket.pear.overdraft.subject": () => `Ta trésorerie s'épuise`,
+  "ticket.pear.overdraft.text": () => `Ta trésorerie couvre moins de deux mois de frais courants. Sur le site de ta banque, tu peux demander un découvert ou un prêt pour le prochain serveur.`,
 } satisfies Dict;

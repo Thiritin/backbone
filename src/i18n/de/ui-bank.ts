@@ -73,7 +73,6 @@ export default {
   "bank.site.cancel": () => "Abbrechen",
   "bank.site.next": () => "Weiter",
   "bank.site.term": () => "Laufzeit",
-  "bank.finance.noLoans": () => "Keine Kredite",
   "bank.catTransfers": () => "Überweisungen",
   "bank.pay.supplier": () => "Lieferant",
   "bank.pay.number": () => "Rechnung",

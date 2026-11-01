@@ -3,8 +3,8 @@ import { hourOf } from "../src/sim/00-core/time";
 import { BOOKS_VENDORS, booksVendor, LARGE, MEDIUM } from "../src/sim/10-catalog/bookkeeping";
 import { billingTick, owed } from "../src/sim/45-billing/billing";
 import { openAccount } from "../src/sim/46-finance/bank";
-import { cashFlow, monthlyStats } from "../src/sim/46-finance/finance";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { cashFlow, INSOLVENT_DAYS, monthlyStats, nextTax, profitBetween, yearStart } from "../src/sim/46-finance/finance";
+import { newGame, type GameState, type LedgerEntry } from "../src/sim/50-state";
 import { booksOffline, booksTick, hasFeature, seated, works } from "../src/sim/80-business/bookkeeping";
 import { staffTick } from "../src/sim/47-staff/staff";
 import { orderLead } from "../src/sim/30-market/orders";
@@ -12,14 +12,19 @@ import { stepsDone } from "../src/sim/30-market/manual";
 import { hire } from "../src/sim/90-actions/staff";
 import { quoteOrder } from "../src/sim/90-actions/orders";
 import { resolve } from "../src/sim/80-business/browser";
-import { tick } from "../src/sim/88-tick/tick";
+import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { sendInvoice } from "../src/sim/90-actions/billing";
 import { installBooks, runFeature, setSeats, upgradeBooks } from "../src/sim/90-actions/bookkeeping";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { readyGame, withServer } from "./fixtures";
+import { newGame as fixtureGame, readyGame, withServer } from "./fixtures";
 
 const at = (y: number, m: number, d: number, h = 10) => hourOf(new Date(Date.UTC(y, m - 1, d, h)));
+
+const entry = (hour: number, category: string, amount: number, key = "ledger.x", params: LedgerEntry["params"] = {}): LedgerEntry => ({ hour, category, key, params, amount });
+// Ticks from the hour before `hour` up to it, collecting events.
+const tickInto = (s: GameState, hour: number): SimEvent[] => { s.hour = hour - 1; return tick(s); };
+const runFor = (s: GameState, hours: number): SimEvent[] => Array.from({ length: hours }, () => tick(s)).flat();
 
 function game(year = 2005): GameState {
   const s = newGame(31);
@@ -257,5 +262,99 @@ describe("Overview and Statistics", () => {
       { key: "2005-02", customers: 2, joined: 1, churned: 0, revenue: 25, lost: 0 },
       { key: "2005-03", customers: 2, joined: 1, churned: 1, revenue: 0, lost: 1 },
     ]);
+  });
+});
+
+describe("setup fee income", () => {
+  it("counts toward profit next to the customer payments of the same invoice", () => {
+    const s = withServer(fixtureGame(3));
+    const h = s.hour;
+    s.ledger = [entry(h, "setup", 5, "ledger.setup"), entry(h, "payments", 12, "ledger.payment")];
+    expect(profitBetween(s, h, h + 1)).toBe(17);
+  });
+});
+
+describe("corporate tax", () => {
+  it("takes 30% of last year's profit on April 1, counting loan interest and leaving principal out", () => {
+    const s = withServer(fixtureGame(11));
+    const h = at(2005, 6, 1, 0);
+    s.ledger = [
+      entry(h, "payments", 10_000), entry(h, "hardware", -2_000), entry(h, "loans", 5_000, "ledger.loanTaken"),
+      entry(h, "loans", -500, "ledger.loanRepayment", { amount: 5_000, interest: 50 }), entry(at(2006, 2, 1, 0), "payments", 999),
+    ];
+    expect(profitBetween(s, yearStart(2005), yearStart(2006))).toBe(7_950);
+    const cash = s.cash;
+    const events = tickInto(s, at(2006, 4, 1, 0));
+    expect(s.ledger.find((e) => e.category === "tax")).toMatchObject({ key: "ledger.tax", params: { year: 2005 }, amount: -2_385 });
+    expect(events).toContainEqual({ app: "Books", key: "event.tax", params: { year: 2005, tax: 2_385, profit: 7_950 } });
+    expect(s.cash).toBeLessThan(cash - 2_385 + 1);
+  });
+
+  it("carries a loss forward and offsets it against the next year's profit", () => {
+    const s = withServer(fixtureGame(12));
+    // Without a line, only power touches the profit.
+    s.homeLine = { id: "", next: null };
+    s.ledger = [entry(at(2005, 6, 1, 0), "hardware", -3_000), entry(at(2006, 6, 1, 0), "payments", 5_000)];
+    const loss = tickInto(s, at(2006, 4, 1, 0));
+    expect(loss).toContainEqual({ app: "Books", key: "event.taxLoss", params: { year: 2005, carry: 3_000 } });
+    expect(s.taxLoss).toBe(3_000);
+    expect(s.ledger.some((e) => e.category === "tax")).toBe(false);
+    s.hour = at(2007, 1, 15, 0);
+    // The power of the one hour ticked in April 2006 lowers that year's profit by a cent.
+    const next = nextTax(s);
+    expect(next).toMatchObject({ year: 2006, dueAt: at(2007, 4, 1, 0) });
+    expect(next.tax).toBeCloseTo(600, 1);
+    tickInto(s, at(2007, 4, 1, 0));
+    expect(s.ledger.find((e) => e.category === "tax")?.amount).toBe(-next.tax);
+    expect(s.taxLoss).toBe(0);
+  });
+});
+
+describe("bankruptcy", () => {
+  it("ends the game after 30 days below zero when the bank lends nothing", () => {
+    const s = withServer(fixtureGame(15));
+    s.cash = -50_000;
+    s.loansBlockedUntil = at(2010, 1, 1, 0);
+    const events = runFor(s, INSOLVENT_DAYS * 24);
+    expect(events.filter((e) => e.key === "event.cashNegative")).toHaveLength(1);
+    expect(s.gameOver).toBe(null);
+    expect(runFor(s, 1)).toContainEqual({ app: "Books", key: "event.bankrupt", params: { days: INSOLVENT_DAYS } });
+    expect(s.gameOver).toBe(s.hour);
+  });
+
+  it("keeps going while a loan could cover the deficit, and resets once cash is back above zero", () => {
+    const s = withServer(fixtureGame(16));
+    s.cash = -100;
+    runFor(s, (INSOLVENT_DAYS + 2) * 24);
+    expect(s.gameOver).toBe(null);
+    s.loansBlockedUntil = at(2010, 1, 1, 0);
+    s.cash = 100;
+    runFor(s, 1);
+    expect(s.brokeSince).toBe(null);
+    s.cash = -100;
+    runFor(s, (INSOLVENT_DAYS - 1) * 24);
+    expect(s.gameOver).toBe(null);
+  });
+
+  it("loads an old save without finance fields", () => {
+    const old = { ...withServer(fixtureGame(17)) } as Partial<GameState>;
+    delete old.taxLoss; delete old.insurance; delete old.brokeSince; delete old.gameOver;
+    expect(deserialize(JSON.stringify(old))).toMatchObject({ taxLoss: 0, insurance: [], brokeSince: null, gameOver: null });
+  });
+});
+
+describe("Finance in old saves", () => {
+  it("installs Books in place of Finance, with GnuCache when no program ran", () => {
+    const raw = JSON.parse(serialize(game()));
+    raw.installed = [...raw.installed.filter((id: string) => id !== "Books"), "Finance"];
+    raw.books = { vendor: null, installedAt: 0, edition: null, seats: 0 };
+    const s = deserialize(JSON.stringify(raw));
+    expect(s.installed).toContain("Books");
+    expect(s.installed).not.toContain("Finance");
+    expect(s.books).toMatchObject({ vendor: "gnucache", edition: "free", seats: 0 });
+
+    raw.installed = [...raw.installed, "Books"];
+    raw.books = { vendor: "wizo", installedAt: 0, edition: "m", seats: 0 };
+    expect(deserialize(JSON.stringify(raw)).books).toMatchObject({ vendor: "wizo", edition: "m" });
   });
 });

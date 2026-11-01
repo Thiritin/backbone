@@ -2,7 +2,7 @@ import type { Dict } from "../lang";
 
 export default {
   "books-editions.nav": () => `Edições`,
-  "books-editions.yours": () => `A sua edição`,
+  "books-editions.yours": () => `A tua edição`,
   "books-editions.upgradeFor": (p) => `Atualizar por ${p.price}`,
   "books-editions.switch": () => `Mudar`,
   "books-editions.perMonth": (p) => `${p.price} por mês`,
@@ -35,4 +35,7 @@ export default {
   "books-editions.joined": () => `Novos`,
   "books-editions.churned": () => `Perdidos`,
   "books-editions.lostSales": () => `Vendas perdidas`,
+  "books-vendors.about.gnucache": () => `Contabilidade gratuita, feita por voluntários.`,
+  "ticket.pear.overdraft.subject": () => `O teu dinheiro está a acabar`,
+  "ticket.pear.overdraft.text": () => `O teu dinheiro cobre menos de dois meses de custos correntes. No site do teu banco podes pedir um descoberto ou um empréstimo para o próximo servidor.`,
 } satisfies Dict;

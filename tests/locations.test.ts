@@ -253,7 +253,7 @@ describe("monthly bills", () => {
     expect(s.cash).toBe(START_CASH - 2500 - 198 - 59 - power);
     expect(s.powerDue).toBe(0);
     expect(s.ledger.map((l) => [l.category, l.key, l.amount])).toEqual([["power", "ledger.power", -power], ["rent", "ledger.space", -198], ["rent", "ledger.homeLine", -59]]);
-    expect(events).toContainEqual({ app: "Finance", key: "event.bills", params: { power, rent: 257, leasing: 0, subscriptions: 0, total: 257 + power } });
+    expect(events).toContainEqual({ app: "Books", key: "event.bills", params: { power, rent: 257, leasing: 0, subscriptions: 0, total: 257 + power } });
   });
 });
 
