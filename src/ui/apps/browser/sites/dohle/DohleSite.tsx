@@ -4,11 +4,12 @@ import { LOCALE } from "../../../../../i18n/lang";
 import { euro } from "../../../../../sim/00-core/money";
 import { yearOf } from "../../../../../sim/00-core/time";
 import type { GameState } from "../../../../../sim/50-state";
-import { certOk, DOHLE_HOST, FORMULAR_APP, smallLimit, taxNumber } from "../../../../../sim/80-business/tax";
-import { activateDohle, answerQuestionnaire, installDohleFormular, leaveSmallRule, registerForDohle } from "../../../../../sim/90-actions/tax";
+import { certOk, DOHLE_HOST, FORMULAR_APP, portalOpen, smallLimit, taxNumber } from "../../../../../sim/80-business/tax";
+import { activateDohle, answerQuestionnaire, fileReturn, installDohleFormular, leaveSmallRule, loginMeinDohle, registerForDohle } from "../../../../../sim/90-actions/tax";
 import { useStore } from "../../../../store";
 import { paperDay } from "../../../FormDoc";
 import { Jackdaw } from "../../../../art/letterheads";
+import { ReturnForms } from "../../../dohle/DohleFormularApp";
 import "./dohle.css";
 
 type Go = (url: string) => void;
@@ -132,12 +133,46 @@ function Download({ game }: { game: GameState }) {
   );
 }
 
+// The portal from 2013: logged in with the certificate file, it shows the same forms as DohleFormular.
+function MeinDohle({ game }: { game: GameState }) {
+  const act = useStore((s) => s.act);
+  const certs = game.docs.filter((d) => d.kind === "cert");
+  const [doc, setDoc] = useState(certs[0]?.id ?? ""), [inside, setInside] = useState(false);
+  if (inside && certOk(game) && doc === game.tax.cert) {
+    return (
+      <section className="dh-box">
+        <header>{t("ui-tax.mein.returns")}</header>
+        <table><tbody><tr><th>{t("ui-tax.dohle.taxNumber")}</th><td>{taxNumber(game) ?? t("ui-tax.dohle.pending")}</td></tr></tbody></table>
+        <ReturnForms game={game} send={(id) => act(fileReturn, id)} />
+        <div className="dh-buttons"><button type="button" onClick={() => setInside(false)}>{t("ui-tax.mein.logout")}</button></div>
+      </section>
+    );
+  }
+  return (
+    <form className="dh-box" onSubmit={(e) => { e.preventDefault(); if (act(loginMeinDohle, doc).ok) setInside(true); }}>
+      <header>{t("ui-tax.mein.login")}</header>
+      <table>
+        <tbody>
+          <tr>
+            <th><label htmlFor="dh-cert">{t("ui-tax.dohle.certificate")}</label></th>
+            <td><select id="dh-cert" required value={doc} onChange={(e) => setDoc(e.target.value)}>{certs.map((d) => <option key={d.id} value={d.id}>{d.title}</option>)}</select></td>
+          </tr>
+        </tbody>
+      </table>
+      <div className="dh-buttons"><button type="submit">{t("ui-tax.mein.loginButton")}</button></div>
+    </form>
+  );
+}
+
 function Body({ game, path, go }: { game: GameState; path: string; go: Go }) {
   const [page, query] = path.split("?");
   const at = page.replace(/\/$/, "");
   if (at === "/erfassung") return <><h1>{t("ui-tax.dohle.questionnaire")}</h1><Questionnaire game={game} /></>;
   if (at === "/registrieren") return <><h1>{t("ui-tax.dohle.register")}</h1><Register game={game} renew={query === "neu"} go={go} /></>;
-  if (at === "/download") return <><h1>{t("ui-tax.dohle.downloads")}</h1><Download game={game} /></>;
+  const portal = portalOpen(game);
+  if (at === "/download" && !portal) return <><h1>{t("ui-tax.dohle.downloads")}</h1><Download game={game} /></>;
+  if (at === "/mein" && portal) return <><h1>{t("ui-tax.mein.title")}</h1><MeinDohle game={game} /></>;
+  if (at === "/download" || at === "/mein") return <h1>{t("browser-sites-1.pg.notFound")}</h1>;
   return (
     <>
       <h1>{t("ui-tax.dohle.welcome")}</h1>
@@ -148,7 +183,7 @@ function Body({ game, path, go }: { game: GameState; path: string; go: Go }) {
 
 // docs/design/plans/tax-office.md: DOHLE, the tax administration's filing site.
 export function DohleSite({ game, path, go }: { game: GameState; path: string; go: Go }) {
-  const tabs: [string, string][] = [[t("ui-tax.dohle.home"), "/"], [t("ui-tax.dohle.questionnaire"), "/erfassung/"], [t("ui-tax.dohle.register"), "/registrieren/"], [t("ui-tax.dohle.downloads"), "/download/"]];
+  const tabs: [string, string][] = [[t("ui-tax.dohle.home"), "/"], [t("ui-tax.dohle.questionnaire"), "/erfassung/"], [t("ui-tax.dohle.register"), "/registrieren/"], portalOpen(game) ? [t("ui-tax.mein.title"), "/mein/"] : [t("ui-tax.dohle.downloads"), "/download/"]];
   return (
     <div className="dh">
       <div className="dh-page">

@@ -9,3 +9,5 @@
 .dhf-table tr.late td { color: #b00000; }
 .dhf-table button { font: 11px Tahoma, Verdana, sans-serif; padding: 1px 10px; background: #ece9d8; border: 1px solid #003c74; border-radius: 2px; color: #000; cursor: pointer; }
 .dhf-none { color: #555; }
+.dhf-retired { margin: 24px auto; padding: 16px 20px; max-width: 420px; background: #fff; border: 2px inset #d4d0c8; text-align: center; }
+.dhf-retired button { font: 11px Tahoma, Verdana, sans-serif; padding: 2px 14px; background: #ece9d8; border: 1px solid #003c74; border-radius: 2px; cursor: pointer; }

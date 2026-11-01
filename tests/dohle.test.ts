@@ -111,7 +111,7 @@ describe("DOHLE", () => {
     const s = company();
     s.ledger = [...s.ledger, { hour: at(2005, 1, 20), category: "payments", key: "ledger.test", params: {}, amount: 1160 }];
     run(s, at(2005, 2, 1) - s.hour + 1);
-    const view = () => renderToString(createElement(DohleFormular, { game: s, send: () => {} }));
+    const view = () => renderToString(createElement(DohleFormular, { game: s, send: () => {}, portal: () => {} }));
     const html = view();
     expect(html).toContain("Advance VAT return");
     expect(html).toContain(euroCents(160));
