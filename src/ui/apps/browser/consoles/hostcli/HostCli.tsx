@@ -8,11 +8,12 @@ import { t } from "../../../../../i18n/en";
 import { HostPage } from "../../sites/Pages";
 import { useMailQueue } from "../mailpig/MailQueue";
 import { queueEntries } from "../../../../../sim/60-infra/netsvc-mail";
+import { backupPool } from "../../../../../sim/85-products/products";
 import { hash, tenants, wgKey, type Tenant } from "../services";
 import "./hostcli.css";
 
 // docs/design/software.md, section 10: the software without a web console; its host page prints what the product's CLI would.
-export const CLI_ONLY = new Set(["bound", "knut", "wireguarded", "vsftpeed", "postfixit"]);
+export const CLI_ONLY = new Set(["bound", "knut", "wireguarded", "vsftpeed", "postfixit", "backula"]);
 
 const serial = (game: GameState, zone: string) => {
   const d = dateOf(game.hour), ymd = `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, "0")}${String(d.getUTCDate()).padStart(2, "0")}`;
@@ -63,6 +64,18 @@ function listing(game: GameState, c: Cluster, family: string, name: string): [st
           `${d} ${pid} [${t.hostname}] OK UPLOAD: Client ${ip}, "/backup/${t.hostname}.tar.gz", ${hash(`${t.id}b`) % 900_000_000 + 1_000_000} bytes`];
       });
       return [["tail -n 10 /var/log/vsftpeed.log", lines.slice(-10)]];
+    }
+    case "backula": {
+      const pool = backupPool(game, c.id), stamp = (h: number) => dateOf(h).toISOString().slice(0, 16).replace("T", " ");
+      const jobs = game.clusters.filter((x) => x.backup.targetId === c.id).map((x) => ({ name: x.name, last: Math.max(-1, ...game.workloads.filter((w) => w.clusterId === x.id).map((w) => w.backupAt ?? -1)) }));
+      const done = jobs.filter((j) => j.last >= 0).sort((a, b) => a.last - b.last);
+      return [
+        ["echo 'status director' | bconsole", [
+          `${name}-dir Version: ${c.version}`, "", "Terminated Jobs:",
+          ...(done.length ? [" JobId  Level  Status  Finished          Name", ...done.map((j, i) => `${String(i + 1).padStart(6)}  Incr   OK      ${stamp(j.last)}  ${j.name}`)] : ["No Terminated Jobs."]),
+        ]],
+        ["df -h /var/lib/backula", ["Filesystem  Size  Used  Avail  Mounted on", `/dev/sdb1   ${Math.round(pool.need + Math.max(0, pool.room))}G  ${Math.round(pool.need)}G  ${Math.round(Math.max(0, pool.room))}G  /var/lib/backula`]],
+      ];
     }
     default: return [
       ["postconf myhostname mydomain", [`myhostname = ${name}.${companyDomain(game)}`, `mydomain = ${companyDomain(game)}`]],
