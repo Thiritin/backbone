@@ -3,11 +3,11 @@ import { modelById } from "../src/sim/10-catalog/hardware";
 import { datacenterById } from "../src/sim/20-world/datacenters";
 import type { Task } from "../src/sim/47-staff/staff";
 import { visibleCandidates } from "../src/sim/47-staff/staff";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { addLocation, buyRack, mountDevice, mountHours, mountStack, setPlugged, setPower, unmountDevice } from "../src/sim/90-actions/hardware";
 import { hire, queueOperation, setTechLocation } from "../src/sim/90-actions/staff";
-import { buyDevice, freeFloor, withServer } from "./fixtures";
+import { buyDevice, freeFloor, withServer, newGame } from "./fixtures";
 
 type R = ReturnType<typeof setPower>;
 const ok = (r: R) => {

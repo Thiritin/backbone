@@ -4,6 +4,7 @@ import { registrarById, REGISTRARS } from "../../sim/10-catalog/registrars";
 import { supportApp } from "./support/desk";
 import { t } from "../../i18n/en";
 import { OFFICE_URL } from "../../sim/80-business/office";
+import { HOME_URL } from "../../sim/80-business/browser";
 import type { GameState } from "../../sim/50-state";
 import type { GUIDE } from "../../sim/checklist";
 
@@ -24,6 +25,8 @@ export function stepOf(s: GameState, id: StepId): Step {
   const home = basement(s), server = firstServer(s);
   const mailApp = supportApp(s).name;
   switch (id) {
+    case "bank":
+      return { title: t("guide.step.bank"), text: t("apps.guide.step.bank"), app: "Browser", focus: { kind: "url", id: HOME_URL } };
     case "register":
       return { title: t("guide.step.register"), text: t("apps.guide.step.register"), app: "Browser", focus: { kind: "url", id: OFFICE_URL } };
     case "company":

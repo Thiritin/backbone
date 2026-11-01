@@ -9,8 +9,7 @@ import { tick } from "../src/sim/88-tick/tick";
 import { createPanelVm, installPanel } from "../src/sim/90-actions/clusters";
 import { installSoftware } from "../src/sim/90-actions/software";
 import { connect, mountDevice, setPlugged } from "../src/sim/90-actions/hardware";
-import { buyDevice, bootedMachine } from "./fixtures";
-import { startGame } from "../src/sim/90-actions/start";
+import { buyDevice, bootedMachine, startGame } from "./fixtures";
 import { checkDone } from "../src/sim/checklist";
 import { skipTo } from "./fixtures";
 

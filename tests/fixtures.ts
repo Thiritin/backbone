@@ -6,10 +6,16 @@ import { MODULE_IDS } from "../src/sim/10-catalog/shops";
 import { hourOf } from "../src/sim/00-core/time";
 import { componentParts, fits, genOf, modelById, type FormFactor, type PartSpec } from "../src/sim/10-catalog/hardware";
 import type { Resources } from "../src/sim/10-catalog/products";
-import { device, deviceDefaults, type GameState } from "../src/sim/50-state";
+import { device, deviceDefaults, newGame as blankGame, type GameState } from "../src/sim/50-state";
+import { START_CASH } from "../src/sim/10-catalog/economy";
+
+// Games with the savings already in hand and no bank account, the way every game started before the account came first.
+const funded = (s: GameState): GameState => { s.cash = START_CASH; return s; };
+export const newGame = (seed: number): GameState => funded(blankGame(seed));
+export const startGame = (seed: number): GameState => funded(startBlank(seed));
 import { buyCart as buyCartReal, buyDevice as buyDeviceReal, type CartLine } from "../src/sim/90-actions/hardware";
 import { addNode, createPanelVm, installHypervisor, installPanel, workload } from "../src/sim/90-actions/clusters";
-import { startGame, welcomeFriends } from "../src/sim/90-actions/start";
+import { startGame as startBlank, welcomeFriends } from "../src/sim/90-actions/start";
 import { fillLines } from "../src/sim/80-business/website";
 import { derivedDomain } from "../src/sim/30-customers/domains";
 import { register } from "../src/sim/30-customers/registry";

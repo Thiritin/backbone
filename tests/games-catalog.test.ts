@@ -1,6 +1,6 @@
+import { newGame } from "./fixtures";
 import { describe, expect, it } from "vitest";
 import { GAME_TITLES, NEVER, latestRelease, pickTitle, resourcesOf, slotsFor, titleById, weightAt } from "../src/sim/10-catalog/games";
-import { newGame } from "../src/sim/50-state";
 import { gameOf } from "../src/sim/60-infra/games";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 

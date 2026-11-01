@@ -6,7 +6,7 @@ import { sizeSpec } from "../src/sim/10-catalog/products";
 import { requirementsFor } from "../src/sim/30-market/market";
 import { specText } from "../src/sim/30-market/spec";
 import { createTicket } from "../src/sim/40-support/tickets";
-import { device, newGame, type GameState } from "../src/sim/50-state";
+import { device, type GameState } from "../src/sim/50-state";
 import { addressBills, addressesOf, addressTick, addSpam, mailAddress, privateIp, publicV4, sharedAddress } from "../src/sim/60-infra/addresses";
 import { lineOffered } from "../src/sim/60-infra/cluster";
 import { tick } from "../src/sim/88-tick/tick";
@@ -14,7 +14,7 @@ import { addAddress, announceBlock, assignAddress, buyAddresses, joinLir, releas
 import { createVm, provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { addLocation, buyRack, connect } from "../src/sim/90-actions/hardware";
-import { buyDevice, freeFloor } from "./fixtures";
+import { buyDevice, freeFloor, newGame } from "./fixtures";
 import { cleanUp } from "../src/sim/90-actions/security";
 import { setLine } from "../src/sim/90-actions/website";
 import { deserialize, serialize } from "../src/sim/91-save/save";
