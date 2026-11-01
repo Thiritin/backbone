@@ -5,6 +5,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-01
 
 - New hardware now comes out over the whole year, each model in its own month, instead of every release landing in January.
+- Suspending an account now stops abuse notices about its site, and an open notice counts as taken down once the account is suspended.
 - Customers write half as many support tickets, a right answer within two hours of a ticket opening makes them a little happier, and customers whose domain you registered no longer ask how to point it to their site.
 - A Sponsor-Bored sponsor who takes your banner down can now be blocked or cancelled from the Marketing app, and when a blocked sponsor writes in you can say tough luck or have them put the banner back up.
 - Free shop systems such as OrderBocks and free shop modules can now be started while your account is in the red.
