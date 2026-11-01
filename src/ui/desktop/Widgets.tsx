@@ -50,7 +50,7 @@ export function Widgets() {
       {has("widgetRevenue") && <Widget app="Books" icon={<ChartLine />} label={t("desktop.widget.revenue")}>
         <span className="w-big num">{euro(m.mrr)}</span>
       </Widget>}
-      {has("widgetCustomers") && <Widget app="Customers" icon={<Users />} label={t("desktop.widget.customers")}>
+      {has("widgetCustomers") && <Widget app="Books" icon={<Users />} label={t("desktop.widget.customers")}>
         <span className="w-big num">{m.customers}</span>
       </Widget>}
       {has("widgetLevel") && <Widget app="Books" icon={<Trophy />} label={t("desktop.widget.level", { level: m.level.level })}>

@@ -69,7 +69,7 @@ export function stepOf(s: GameState, id: StepId): Step {
     case "loan":
       return { title: t("guide.step.loan"), text: t("apps.guide.step.loan"), app: "Browser", focus: { kind: "url", id: s.bank ? `${bankUrl(s.bank.id)}banking/loans` : HOME_URL } };
     case "tenCustomers":
-      return { title: t("guide.step.tenCustomers"), text: t("apps.guide.step.tenCustomers"), app: "Customers" };
+      return { title: t("guide.step.tenCustomers"), text: t("apps.guide.step.tenCustomers"), app: "Support" };
     case "research":
       return { title: t("guide.step.research"), text: t("apps.guide.step.research"), app: "Research" };
     case "patch":

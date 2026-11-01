@@ -6,9 +6,9 @@ import { setDocked } from "../src/sim/90-actions/docs";
 import { appFor } from "../src/ui/apps/registry";
 
 describe("dock apps", () => {
-  it("starts without Security in the dock and sends loan alerts to Books", () => {
+  it("starts with Security in the dock and sends loan alerts to Books", () => {
     const s = registered(newGame(1));
-    expect(s.installed).not.toContain("Security");
+    expect(s.installed).toContain("Security");
     expect(s.installed).not.toContain("Bank");
     expect(ALERT_KEYS["event.loanMissed"]).toBe("Books");
   });

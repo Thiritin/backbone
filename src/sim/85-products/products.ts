@@ -133,7 +133,7 @@ function finishSwitches(s: GameState, events: SimEvent[]) {
     const d = fresh ? s.devices.find((x) => x.id === c.controlPlane) : undefined;
     if (d?.bootFrom === "usb") Object.assign(d, { bootFrom: "disk", bootUntil: nowHours(s) + bootHours(s, d) });
     if (fresh && c.vm) s.workloads = s.workloads.map((w) => (w.id === c.vm && w.media ? { ...w, media: undefined } : w));
-    if (kind === "panel" && welcomeFriends(s, c.id)) events.push({ app: "Customers", key: "event.friendsJoined", params: { cluster: c.name } });
+    if (kind === "panel" && welcomeFriends(s, c.id)) events.push({ app: "Books", key: "event.friendsJoined", params: { cluster: c.name } });
   }
 }
 
@@ -142,7 +142,7 @@ function finishSwitches(s: GameState, events: SimEvent[]) {
 function friendsArrive(s: GameState, events: SimEvent[]) {
   if (s.customers.length) return;
   const c = s.clusters.find((x) => x.kind === "panel" && x.panel && !x.switching);
-  if (c && welcomeFriends(s, c.id)) events.push({ app: "Customers", key: "event.friendsJoined", params: { cluster: c.name } });
+  if (c && welcomeFriends(s, c.id)) events.push({ app: "Books", key: "event.friendsJoined", params: { cluster: c.name } });
 }
 
 function reportLosses(s: GameState, events: SimEvent[]) {

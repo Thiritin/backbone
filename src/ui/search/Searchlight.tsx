@@ -1,4 +1,5 @@
 import { Search } from "lucide-react";
+import { openCustomer } from "../apps/customers/open";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useStore } from "../store";
 import { t } from "../../i18n/en";
@@ -33,7 +34,8 @@ export function Searchlight() {
   const go = (h: Hit | undefined) => {
     if (!h) return;
     setOpen(false);
-    openApp(h.app, h.target);
+    if (h.target?.kind === "customer") openCustomer(h.target.id);
+    else openApp(h.app, h.target);
   };
   const onKey = (e: React.KeyboardEvent) => {
     if (e.key === "Escape" || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k")) { e.preventDefault(); setOpen(false); }

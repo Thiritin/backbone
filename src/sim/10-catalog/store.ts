@@ -8,7 +8,7 @@ import { DESKS, seats } from "./desks";
 
 // Apps every new game has in the dock, free of charge. Getting started and Notes are desktop documents and never sit in the dock.
 // Books comes with the bookkeeping program the player buys in the Pear Store.
-export const STARTER_APPS = ["Applications", "Locations", "Shop", "Browser", "Terminal", "Support", "Settings"];
+export const STARTER_APPS = ["Applications", "Locations", "Shop", "Browser", "Terminal", "Support", "Settings", "Marketing", "Security", "Research"];
 
 // id is the app name for apps; monthly is the 2005 price, charged once per seat when perSeat is set.
 export interface StoreItem { id: string; kind: "app" | "upgrade" | "bot" | "desk"; name: string; monthly: number; perSeat?: boolean }

@@ -15,7 +15,6 @@ import { SKILLS } from "../10-catalog/research";
 import { HOME_LINES } from "../20-world/datacenters";
 import { LINE_NAME } from "../30-market/spec";
 import type { GameState } from "../50-state";
-import { t } from "../../i18n/en";
 import { familyOf } from "../60-infra/vulns";
 import type { SimEvent } from "../88-tick/tick";
 import { MAIL_PROVIDERS } from "./mail";
@@ -104,13 +103,11 @@ function releaseDef(id: string): NewsDef {
   return { id, key: "event.news.release", at: -1, params: { year: y, names: names.join("|") } };
 }
 
-export const appParams = (app: string): Params => ({ app: t(`apps.name.${app}`) });
-
 // What GameState.news holds: each entry's hour of publication and the announcement it stands for, newest first.
 export function feed(s: GameState): { hour: number; key: string; params: Params }[] {
   return s.news.flatMap((e) => {
     const [id, hour] = e.split("@"), d = id.startsWith("line.") ? lineDef(id.slice(5)) : id.startsWith("release.") ? releaseDef(id)
-      : id.startsWith("rival.") ? rivalNews(s, id) : id.startsWith("app.") ? { id, key: "event.news.app", at: -1, params: appParams(id.slice(4)) } : NEWS.find((x) => x.id === id);
+      : id.startsWith("rival.") ? rivalNews(s, id) : NEWS.find((x) => x.id === id);
     return d ? [{ hour: Number(hour), key: d.key, params: d.params }] : [];
   }).sort((a, b) => b.hour - a.hour);
 }

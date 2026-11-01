@@ -1,5 +1,5 @@
 import {
-  Activity, CalendarDays, Landmark, Cloud, Mailbox, FolderOpen, Bug, BookOpen, Compass, ChartPie, Contact, FileText, Network, GraduationCap, LifeBuoy, Megaphone, MessageCircle, Newspaper, Receipt, Server, Settings, ShieldAlert, ShoppingCart, SquareTerminal, Users,
+  Activity, CalendarDays, Landmark, Cloud, Mailbox, FolderOpen, Bug, BookOpen, Compass, ChartPie, Contact, FileText, Network, GraduationCap, LifeBuoy, Megaphone, MessageCircle, Newspaper, Receipt, Server, Settings, ShieldAlert, ShoppingCart, SquareTerminal,
 } from "lucide-react";
 import type { ComponentType } from "react";
 import { t } from "../../i18n/en";
@@ -16,7 +16,6 @@ import { SecurityApp } from "./SecurityApp";
 import { KnowledgeBaseApp } from "./KnowledgeBaseApp";
 import { ApplicationsApp } from "./ApplicationsApp";
 import type { GameState } from "../../sim/50-state";
-import { CustomersApp } from "./customers/CustomersApp";
 import { SupportApp } from "./support/SupportApp";
 import { supportApp } from "./support/desk";
 import type { MarkProps } from "../art/mailmarks";
@@ -53,7 +52,6 @@ export const APPS: AppDef[] = [
   { name: "Network", icon: Network, tile: "oklch(0.58 0.12 210)", about: t("apps.about.Network"), body: NetworkApp },
   { name: "Terminal", icon: SquareTerminal, tile: "oklch(0.3 0.01 255)", about: t("apps.about.Terminal"), body: TerminalApp },
   { name: "Browser", icon: Compass, tile: "oklch(0.56 0.15 250)", about: t("apps.about.Browser"), body: BrowserApp },
-  { name: "Customers", icon: Users, tile: "oklch(0.52 0.17 268)", about: t("apps.about.Customers"), body: CustomersApp },
   { name: "Support", icon: LifeBuoy, tile: "oklch(0.62 0.19 35)", about: t("apps.about.Support"), body: SupportApp,
     badge: (s) => s.tickets.filter((t) => !isFinal(t)).length },
   { name: "Books", icon: Receipt, tile: "oklch(0.6 0.14 160)", about: t("apps.about.Books"), body: BooksApp, title: t("books.title"),

@@ -43,11 +43,10 @@ const GROUPS: Record<string, NotifyType[]> = {
     type("Training", "trained", "trainerDone"),
     type("On call and tech", "onCallAbuse", "onCallBlackhole", "phpUpgraded", "techFailed", "techReplaced", "techInstalled", "techRemoved", "techUpdated", "botIncident*"),
   ],
-  Customers: [type("Orders and sign-ups", "orderPlaced", "certificateSold", "friendsJoined")],
-  Books: [type("Bills and tax", "bills", "monthStart", "tax", "taxLoss", "networkBills"), type("Cash and loans", "cashNegative", "bankrupt", "loanMissed", "loanCalled"), type("Payments and dunning", "collected", "invoices", "suspended", "suspendedLeft", "chargeback", "chargebackWarning", "chargebackFees"), type("Domains", "domainExpired", "domainExpiring")],
+  Books: [type("Orders and sign-ups", "orderPlaced", "certificateSold", "friendsJoined"), type("Bills and tax", "bills", "monthStart", "tax", "taxLoss", "networkBills"), type("Cash and loans", "cashNegative", "bankrupt", "loanMissed", "loanCalled"), type("Payments and dunning", "collected", "invoices", "suspended", "suspendedLeft", "chargeback", "chargebackWarning", "chargebackFees"), type("Domains", "domainExpired", "domainExpiring")],
   Research: [type("Unlocks", "trainingDone")],
   Shop: [type("Used market", "used*")],
-  News: [type("Hardware", "news.generation", "news.endOfSale", "news.gpu", "news.models", "news.shape", "news.vendor"), type("Software", "news.software", "news.swVersion", "news.autoUpdate", "news.feature", "news.desk", "news.training", "news.release", "news.app"), type("Internet", "news.ipv6*", "news.ripe*", "news.homeLines", "news.ports"), type("Market", "news.design", "news.line", "news.mail", "news.gpuDemand", "news.used*", "news.freeSsl", "news.rival*", "news.toast*")],
+  News: [type("Hardware", "news.generation", "news.endOfSale", "news.gpu", "news.models", "news.shape", "news.vendor"), type("Software", "news.software", "news.swVersion", "news.autoUpdate", "news.feature", "news.desk", "news.training", "news.release"), type("Internet", "news.ipv6*", "news.ripe*", "news.homeLines", "news.ports"), type("Market", "news.design", "news.line", "news.mail", "news.gpuDemand", "news.used*", "news.freeSsl", "news.rival*", "news.toast*")],
 };
 
 const OTHER: NotifyType = { id: "other", label: t("core.notify.other"), match: () => true };
