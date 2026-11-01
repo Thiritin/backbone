@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- Your bank account now earns interest at each month start, following the real rates of each year, and from 2020 to 2021 the bank charges a custody fee on balances above 100,000 instead.
 - Books has a Products tab where you set up the packages you sell, each with a size, SLA, prices per billing cycle and a setup fee.
 - Online banking now has a Payees page where you save, delete and pay recipients, and the transfer form can pick a saved payee or save a new one.
 - The settings button in the Gmix and other mail desks is readable again on the classic desktop looks.

@@ -22,6 +22,8 @@ export const BANK_EN: Record<string, (p: Params) => string> = {
   "ledger.bankFee": (p) => `Account fee, ${p.bank}`,
   "ledger.bookingFee": (p) => `Booking fees, ${p.count} bookings, ${p.bank}`,
   "ledger.overdraftInterest": (p) => `Overdraft interest, ${p.bank}`,
+  "ledger.depositInterest": (p) => `Interest on balance, ${p.bank}`,
+  "ledger.custodyFee": (p) => `Custody fee, ${p.bank}`,
   "ledger.transferOut": (p) => `Transfer to ${p.name}: ${p.reference}`,
   "error.unknownBank": () => "This bank does not open accounts yet.",
   "error.bankForm": () => "This bank does not open accounts for this legal form.",

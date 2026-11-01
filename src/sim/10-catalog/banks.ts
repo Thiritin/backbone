@@ -75,3 +75,11 @@ export const bookingFee = (b: Bank, form: string): number => (form === "sole" ? 
 export const tanMethods = (b: Bank, year: number) => b.tans.filter((x) => x.from <= year);
 // From 2008 transfers name an IBAN, before an account number and bank code.
 export const IBAN_YEAR = 2008;
+
+// Interest a year on a business account's balance, by year, after the ECB rate; later years keep the last. Negative years charge a custody fee above the allowance.
+const DEPOSIT_RATES: Record<number, number> = {
+  2005: 0.015, 2006: 0.02, 2007: 0.03, 2008: 0.03, 2009: 0.01, 2010: 0.0075, 2011: 0.01, 2012: 0.005, 2013: 0.0025, 2014: 0.001,
+  2015: 0, 2016: 0, 2017: 0, 2018: 0, 2019: 0, 2020: -0.005, 2021: -0.005, 2022: 0.0025, 2023: 0.025, 2024: 0.0275, 2025: 0.0175, 2026: 0.015,
+};
+export const CUSTODY_ALLOWANCE = 100_000;
+export const depositRate = (year: number): number => DEPOSIT_RATES[Math.min(Math.max(year, 2005), 2026)];
