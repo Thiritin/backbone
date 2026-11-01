@@ -5,6 +5,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-01
 
 - A customer's website without a domain opens in the browser at its account's private address again.
+- Progress bars in server panels now look like the ones each product used in its time, from boxed and segmented bars early on to thin flat ones later.
 - Backula no longer has a web console; its host page shows the director status and the backup disk the way its command line would.
 - Clicking the clock in the top bar opens a calendar that marks the days with announcements, and clicking your cash opens Finance.
 - Shop vendors now sell payment methods for your shop, from direct debit and PayPail to Visor cards, paysavecard, Instantly and Bitcorn Pay, each with its own fee and weekly payout, and customers whose favourite method is missing may buy elsewhere.
