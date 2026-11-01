@@ -1,0 +1,25 @@
+import type { Dict } from "../lang";
+
+export default {
+  "vendor-sites.module.shop-link": () => "Collegamento negozio",
+  "vendor-sites.pitch.shop-link": () => "Il collegamento negozio copia ogni cliente e ogni fattura del tuo negozio in Lexwear Office appena viene creata e segna la fattura come pagata nel negozio quando Books registra il pagamento.",
+  "ledger.module.shop-link": () => "Licenza Collegamento negozio",
+  "ticket.mail.shop-link.licence.subject": (p) => `La tua chiave di licenza per ${p.module}`,
+  "ticket.mail.shop-link.licence.text": (p) => `Grazie per aver acquistato ${p.module} per ${p.shop}. La tua chiave di licenza è ${p.key}. Inseriscila in Registra, in Books, per collegare il tuo negozio.`,
+  "shop-link.ref.payout": (p) => `Accredito ${p.numbers}`,
+  "error.payoutImport": () => "Questo accredito copre più fatture.",
+  "error.nothingToImport": () => "Non c'è niente da importare.",
+  "error.noShopSystem": () => "Per questo modulo serve il sistema di negozio di questo produttore.",
+  "shop-link.import": () => "Importa dal negozio",
+  "shop-link.customers": () => "Clienti del negozio",
+  "shop-link.invoices": () => "Fatture del negozio",
+  "shop-link.footer": (p) => `© ${p.year} ${p.maker}`,
+  "shop-link.tagline.modemBill": () => "Fatturazione e provisioning per hosting web",
+  "shop-link.tagline.clientExit": () => "Gestione clienti e fatturazione per aziende di hosting",
+  "shop-link.tagline.whmCache": () => "Fatturazione e automazione per hosting web",
+  "shop-link.tagline.blessta": () => "Fatturazione a codice aperto per aziende di hosting",
+  "shop-link.tagline.hostBull": () => "Fatturazione per ogni tipo di hosting",
+  "shop-link.tagline.ubersmyth": () => "Fatturazione per fornitori di server dedicati e colocation",
+  "shop-link.tagline.orderBocks": () => "Vendi domini e hosting senza costi iniziali",
+  "shop-link.tagline.boxBillin": () => "Fatturazione libera e aperta per aziende di hosting",
+} satisfies Dict;

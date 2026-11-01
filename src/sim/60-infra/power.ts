@@ -4,9 +4,11 @@ import { hashRng, rand } from "../00-core/rng";
 import { hasBmc, modelById } from "../10-catalog/hardware";
 import { CONTINUOUS } from "../20-world/datacenters";
 import type { Device, GameState, MachineState } from "../50-state";
+import { pushLog } from "./syslog";
 import { dropCluster, insideVm, installingOn, isOwnVm, type Workload } from "./cluster";
 import { rebuildHours, type SimEvent } from "../88-tick/tick";
 import { reportLoss } from "../85-products/products";
+import { loadSaved } from "./switches";
 import { bootHours, booting, haltHours, deviceHealth, drivesOf, dualFed, HOURS_PER_YEAR, locationOf, powered, pluggedIn, psusOf, rackPower, working } from "./status";
 
 // An unclean stop corrupts the data of the workloads that ran with this chance.
@@ -19,7 +21,6 @@ export const BMC_RESET_HOURS = 0.25;
 export const HANG_YEARLY = 0.01;
 export const BMC_HANG_YEARLY = 0.01;
 export const BMC_OLD_YEARS = 6;
-export const LOG_MAX = 20;
 
 // A server sticks at the firmware prompt after a hard power event or a part swap with this chance, until a console or hands
 // continue the boot (oob.ts).
@@ -31,9 +32,7 @@ export function rollStuck(s: GameState, d: Device): void {
   if (modelById(d.model).kind === "server" && rand(hashRng(s.seed, s.hour, Number(d.id.replace(/\D/g, "")) || 0, 41)) < STUCK_CHANCE) d.stuck = true;
 }
 
-export function pushLog(d: Pick<Device, "log">, hour: number, key: string): void {
-  d.log = [...d.log, { hour, key }].slice(-LOG_MAX);
-}
+export { LOG_MAX, pushLog, sevOf } from "./syslog";
 
 export function hangChance(s: GameState, d: Device): number {
   const state = deviceHealth(s, d.id).state;
@@ -65,6 +64,7 @@ function uncleanStop(s: GameState, d: Device): "ipmi.log.resync" | "ipmi.log.cor
 
 export function losePower(s: GameState, d: Device, key = "ipmi.log.pulled"): void {
   const outcome = uncleanStop(s, d);
+  loadSaved(d);
   d.hung = false;
   rollStuck(s, d);
   pushLog(d, s.hour, key);
@@ -100,6 +100,7 @@ export function pullPlug(s: GameState, d: Device): void {
 // A clean shutdown: the workloads stop at once and the device switches off once the OS has halted.
 export function halt(s: GameState, d: Device): void {
   leaveUsb(s, d);
+  loadSaved(d);
   d.haltUntil = nowHours(s) + haltHours(s, d);
   pushLog(d, s.hour, "ipmi.log.shutdown");
 }
@@ -159,6 +160,7 @@ export function plugCords(s: GameState, d: Device, plugged: boolean, ids = psusO
   const before = pluggedIn(d), after = pluggedIn({ ...d, components });
   // The roll reads the server as it ran, so it comes before the cords move.
   if (d.on && before && !after) losePower(s, d);
+  for (const c of d.components) if (ids.includes(c.id) && c.kind === "psu" && c.failedAt === null && !!c.plugged !== plugged) pushLog(d, s.hour, plugged ? "ipmi.log.psuRestored" : "ipmi.log.psuLost");
   d.components = components;
   if (d.on && !before && after) d.bootUntil = nowHours(s) + bootHours(s, d);
 }
@@ -178,6 +180,7 @@ export function atFront(s: GameState, d: Device, op: FrontOp): void {
 // Reboots without losing power or after a ten second cycle: the same roll, then the server boots again.
 export function hardReboot(s: GameState, d: Device, key: "ipmi.log.reset" | "ipmi.log.cycle"): void {
   const outcome = uncleanStop(s, d);
+  loadSaved(d);
   d.hung = false;
   d.setup = false;
   d.haltUntil = undefined;
@@ -201,7 +204,7 @@ export function powerTick(s: GameState): SimEvent[] {
     if (d.hands && d.hands.doneAt <= s.hour) {
       if (d.hands.kind === "bmcreset") { n.bmcHung = false; pushLog(n, s.hour, "ipmi.log.bmcReset"); }
       else if (d.hands.kind === "continue") { n.stuck = false; pushLog(n, s.hour, "ipmi.log.continued"); }
-      else if (d.hands.kind === "recover") { n.hung = false; n.locked = false; pushLog(n, s.hour, "ipmi.log.gearRecovered"); }
+      else if (d.hands.kind === "recover") { n.hung = false; n.locked = false; loadSaved(n); pushLog(n, s.hour, "ipmi.log.gearRecovered"); }
       else if (d.hands.kind === "stick") { s.media.stick = { ...s.media.stick, in: n.id }; pushLog(n, s.hour, "ipmi.log.stickIn"); }
       else atFront(s, n, d.hands.kind);
       n.hands = null;

@@ -1,12 +1,11 @@
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { registrarHost, REGISTRARS } from "../src/sim/10-catalog/registrars";
-import { newGame } from "../src/sim/50-state";
 import { signRegistrar } from "../src/sim/90-actions/registrar";
 import { RegistrarSite } from "../src/ui/apps/browser/sites/registrars";
 import { REGISTRAR_ERAS } from "../src/ui/apps/browser/sites/registrars/RegistrarPage";
 import { SponsorBoard } from "../src/ui/apps/browser/sites/SponsorBoard";
-import { skipTo } from "./fixtures";
+import { skipTo, newGame } from "./fixtures";
 
 const at = (year: number) => {
   const s = newGame(1);

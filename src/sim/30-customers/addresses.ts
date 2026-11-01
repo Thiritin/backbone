@@ -3,6 +3,7 @@ import { hashRng, rand, type Rng } from "../00-core/rng";
 import type { GameState } from "../50-state";
 import { personName } from "../30-market/market";
 import type { Profile } from "./customers";
+import type { SalesRequest } from "../30-market/market";
 import { ascii, CITY_TLD } from "./domains";
 
 export interface Address { contact: string; company?: string; street: string; zip: string; city: string; email: string }
@@ -69,3 +70,11 @@ export const homeAddress = (s: Pick<GameState, "seed" | "locations">, key: numbe
   const city = s.locations[0]?.city ?? "Frankfurt";
   return legacyAddress(s.seed, key, name, profile, personName(hashRng(s.seed, key, 242), city), city);
 };
+
+// The sender of a request as the order email signs it, keyed by the request so it is stable for a seed.
+export const mailedAddress = (seed: number, r: Pick<SalesRequest, "id" | "contact" | "company" | "city">): Address =>
+  addressFor(seed, Number(r.id.slice(3)) || 0, r.contact, r.company, r.city);
+// The account's address: what the player entered, else the email's.
+export const requestAddress = (seed: number, r: Pick<SalesRequest, "id" | "contact" | "company" | "city" | "address">): Address => r.address ?? mailedAddress(seed, r);
+// The address block as the email signs it, one line each.
+export const addressLines = (a: Address): string[] => [a.contact, ...(a.company ? [a.company] : []), a.street, `${a.zip} ${a.city}`, a.email];

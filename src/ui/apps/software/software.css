@@ -7,7 +7,7 @@
 .prd-card[aria-disabled="true"] { opacity: 0.45; }
 .prd-card[aria-disabled="true"]:hover { border-color: var(--line-strong); }
 .act-tiles { display: grid; grid-template-columns: repeat(auto-fill, 92px); gap: 8px; }
-.sw-tile.act-tile { aspect-ratio: 1; min-height: 0; align-content: center; padding: 8px 6px; }
+.sw-tile.act-tile { aspect-ratio: 1; min-height: 0; align-content: center; padding: 8px 6px; hyphens: auto; overflow-wrap: anywhere; }
 .sw-tile.act-tile svg { color: var(--text-2); }
 .sw-tile.act-tile:hover:not(:disabled) svg { color: var(--accent); }
 .sw-tile:disabled { opacity: 0.45; cursor: default; border-color: var(--line-strong); }

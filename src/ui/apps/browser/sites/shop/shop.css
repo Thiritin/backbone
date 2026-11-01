@@ -1,0 +1,6 @@
+/* The vendor shop's tables take the font and colours of the site around them. */
+.shop-table { border-collapse: collapse; margin: 6px 0 10px; }
+.shop-table th, .shop-table td { padding: 6px 14px 6px 0; text-align: left; vertical-align: middle; }
+.shop-table tfoot th, .shop-table tfoot td { border-top: 1px solid currentColor; font-weight: 700; }
+.shop-table .num { font-variant-numeric: tabular-nums; }
+.shop-key { font-family: "JetBrains Mono", Menlo, Consolas, "Courier New", monospace; white-space: nowrap; user-select: all; }

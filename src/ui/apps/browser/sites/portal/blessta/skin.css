@@ -1,0 +1,8 @@
+/* Blesta: dark blue sidebar, white content, rounded buttons from version 5 */
+.sk-blessta { font-family: "Helvetica Neue", Arial, sans-serif; background: #fff; }
+.sk-blessta .shop-head { background: #1f3a5f; color: #fff; }
+.sk-blessta .shop-nav { background: #27456f; }
+.sk-blessta .shop-nav a { color: #cfdcee; }
+.sk-blessta .shop-nav a.on { color: #fff; background: #1f3a5f; }
+.sk-blessta .btn.primary { background: #2f78c4; color: #fff; border: 0; }
+.sk-blessta-late .btn { border-radius: 8px; }

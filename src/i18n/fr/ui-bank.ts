@@ -1,7 +1,11 @@
 import type { Dict } from "../lang";
 
 export default {
-  "bank.office.bank": () => "Compte professionnel chez",
+  "bank.office.fee": () => "Frais d'enregistrement",
+  "apps.guide.step.bank": () => "Ouvre un compte professionnel sur le site d'une banque dans le navigateur.",
+  "bank.site.open": () => "Ouvrir un compte",
+  "bank.site.opened": () => "Compte ouvert",
+  "bank.catCapital": () => "Apports",
   "bank.speed.nextDay": () => "Jour ouvré suivant",
   "bank.speed.sameDay": () => "Le jour même",
   "bank.speed.instant": () => "Instantané",

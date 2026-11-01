@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Backups, erasFrom, eraAt, Facts, LoginForm, Nodes, RowsTable, Tiles, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
 import { t } from "../../../../../i18n/en";
 import { yearOf } from "../../../../../sim/00-core/time";
+import { TRANSFER_FROM_YEAR } from "../../../../../sim/60-infra/transfers";
 import { AUTOSSL_FROM } from "../../../../../sim/60-infra/webpanel";
 import { parseCreate } from "../../../../../sim/80-business/consoles";
 import { PackagesScreen, ProvisionForm } from "../PackageForms";
@@ -11,6 +12,7 @@ import { useSessionState } from "../../../../session";
 import { Customer } from "./Customer";
 import { AutoSsl } from "./AutoSsl";
 import { PhpProfiles } from "./EasyApache";
+import { TransferTool } from "./TransferTool";
 import { ServiceManager } from "./ServiceManager";
 import "./cpanic.css";
 
@@ -18,7 +20,7 @@ import "./cpanic.css";
 const ERAS = erasFrom(2005, 2014);
 
 export function CPanic(p: PanelProps) {
-  const era = eraAt(ERAS, p.game), open = parseCreate("cpanic", p.path), [tab, setTab] = usePanelTab(p.f, open?.screen ?? "objects"), [q, setQ] = useState(""), [as, setAs] = useSessionState<string | null>(`browser.cpanic.as.${p.c.id}`, null);
+  const era = eraAt(ERAS, p), open = parseCreate("cpanic", p.path), [tab, setTab] = usePanelTab(p.f, open?.screen ?? "objects"), [q, setQ] = useState(""), [as, setAs] = useSessionState<string | null>(`browser.cpanic.as.${p.c.id}`, null);
   const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f);
   if (!p.signedIn) return (
     <div className="cx cp cp-login" data-era={era}>
@@ -43,6 +45,7 @@ export function CPanic(p: PanelProps) {
     ...(p.f.cluster ? [[t("browser-consoles-1.cpClusters"), [["nodes", t("browser-consoles-1.cpClusterStatus")]]] as [string, [Tab, string][]]] : []),
     [t("pkg.accountFunctions"), [["create", t("pkg.cpCreate")]]],
     [t("pkg.packages"), [["packages", t("pkg.addPackage")]]],
+    ...(yearOf(p.game.hour) >= TRANSFER_FROM_YEAR ? [[t("web.xfer.group"), [["transfer", era === "early" ? t("web.xfer.copy") : t("web.xfer.menu")]]] as [string, [Tab, string][]]] : []),
     ...(yearOf(p.game.hour) >= AUTOSSL_FROM ? [[t("web.ssl.group"), [["autossl", t("web.ssl.menu")]]] as [string, [Tab, string][]]] : []),
     [t("browser-consoles-1.cpServerConfig"), [["software", t("browser-consoles-1.cpSoftwareUpdates")], ["easyapache", era === "early" ? t("web.ea.menu3") : t("web.ea.menu4")]]],
     ...(pages.length ? [[t("readouts.serverStatus"), [["services", t("readouts.services")] as [Tab, string], ...pages.map((g) => [g.id, g.label] as [Tab, string])]] as [string, [Tab, string][]]] : []),
@@ -77,6 +80,7 @@ export function CPanic(p: PanelProps) {
           )}
           {tab === "packages" && <PackagesScreen game={p.game} c={p.c} />}
           {tab === "nodes" && <Nodes game={p.game} c={p.c} />}
+          {tab === "transfer" && <TransferTool game={p.game} c={p.c} x3={era === "early"} />}
           {tab === "autossl" && <AutoSsl game={p.game} c={p.c} />}
           {tab === "easyapache" && <PhpProfiles game={p.game} c={p.c} x3={era === "early"} />}
           {tab === "services" && <ServiceManager game={p.game} c={p.c} />}

@@ -3,7 +3,7 @@
 import { binomial, createRng, rand, type Rng } from "../00-core/rng";
 import { WORK_SHARE, type Patience } from "../00-core/workhours";
 import {
-  BASEMENT_SLOTS, BUDGET_SIZE, businessPowerPrice, CHOICE_TAU, CITIES, COMPETITORS, generationAt,
+  BASEMENT_SLOTS, BUDGET_SIZE, businessPowerPrice, CHOICE_TAU, CITIES, generationAt,
   leadCapShare, LEVELS, MARKET_GROWTH, monthlySalary, NEVER_PAYS, ON_TIME, PAYMENT_MINUTES, PROFILES,
   REPAIR_HOURS, SEARCH_AD_COST, SERVER_AFR, STAFF_HOURS_PER_MONTH, START_CASH,
   TAX_RATE, TICKET_MINUTES, TICKETS_PER_CUSTOMER, UPGRADE_CHANCE, priceAt, tasksPerHour, vpsPlanGb,
@@ -14,7 +14,7 @@ import { LINE_EXTRA_V4, providerV4, STATIC_LINE_ADDRESSES } from "../10-catalog/
 import { noticedHours } from "../10-catalog/attention";
 import { dcPerTb } from "../10-catalog/network";
 import { OVER_DRIFT, PAST_MAX_DRIFT, TOLERANCE } from "../30-customers/pricing";
-import { OFFER, ORGANIC_CONSIDER, REFERRAL_LEADS, SPILL_SHARE } from "../30-market/market";
+import { OFFER, ORGANIC_CONSIDER, PRICE_WEIGHT, REFERRAL_LEADS, SPILL_SHARE } from "../30-market/market";
 import { CYCLE_SHARE, MARKET_DISCOUNT } from "../10-catalog/cycles";
 import { HAND_ROLLED } from "../10-catalog/shops";
 import { BUDGETS, OWNED, PLATFORMS, PROFILE_IDS, SATURATION, WEBSITE_LEADS } from "../80-business/marketing";
@@ -31,6 +31,8 @@ import { BOT_SPEED } from "../47-staff/staff";
 import { botOdds, BOT_RIGHT, costPerTicket, type ChadKind } from "../47-staff/chad";
 import { marketPrice, marketSetup, type Spec } from "../10-catalog/products";
 import { EMAIL_SHARE } from "../30-market/orders";
+import { rollRivals, seedRivals, sellsIn, split, TEMPLATES, type Rival } from "../30-market/rivals";
+import { hourOf } from "../00-core/time";
 import { CHARGEBACK_FEE, fraudShare, TRANSFER_FACTOR } from "../45-billing/fraud";
 import { factorFor, REGISTRARS, tierFor } from "../10-catalog/registrars";
 import { DOMAIN_FEE, registryCost } from "../30-customers/registry";
@@ -159,6 +161,7 @@ function grow(w: Worker, month: number): void {
 
 export function run(bot: Bot, seed: number, years = 15): RunResult {
   const rng = createRng(seed);
+  let field = seedRivals(seed);
   const cohorts: Cohort[][] = PROFILES.map(() => PRODUCTS.map(() => ({ n: 0, H: 70 })));
   cohorts[0][0] = { n: 3, H: 85 };
   // The first server, bought from the starting savings in January.
@@ -185,6 +188,16 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     const year = 2005 + Math.floor(month / 12);
     const yf = 2005 + month / 12;
     const gen = generationAt(year);
+    // The rivals drift as in the game (30-market/rivals.ts); the game rolls its first month in February 2005.
+    // The rivals' month as in the game (30-market/rivals.ts), with each city's buyers split among the rivals alone.
+    if (month > 0) {
+      const hour = hourOf(new Date(Date.UTC(2005, month, 1))), splits = new Map<string, Map<string, number>>();
+      const won = (r: Rival, city: string) => {
+        if (!splits.has(city)) splits.set(city, split(field, city, hour));
+        return splits.get(city)!.get(r.id) ?? 0;
+      };
+      field = rollRivals(field, seed, hour, won).list;
+    }
 
     // Scores (Customer choice).
     const vpsServers = servers.length;
@@ -201,13 +214,16 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     const U = (p: Profile, pr: Product, locPenalty: number) =>
       p.wP * (P[pr] - locPenalty) + p.wR * R[pr] + p.wC * C - p.lambda * 100 * (bot.priceFactor - 1);
     // ponytail: the cohort model keeps the four archetypes in every segment; specialists and product lines live in the real market (30-market).
-    const rivals = (p: Profile, _pr: Product) => COMPETITORS.filter((c) => c.priceFactor <= p.cap && !c.targets);
-    const best = (p: Profile, pr: Product) => Math.max(...rivals(p, pr)
-      .map((c) => p.wP * c.P + p.wR * c.R + p.wC * c.C - p.lambda * 100 * (c.priceFactor - 1)));
-    const share = (p: Profile, pr: Product) => {
+    const rivals = (p: Profile, _pr: Product, city = CITY_ORDER[0].name) => field.filter((c) => c.closed === null && c.priceFactor <= p.cap && !c.targets && sellsIn(c, city));
+    // The model's price term is calibrated four times the game's; a rival's price cuts since 2005 count at the game's weight.
+    const rivalU = (p: Profile, c: Rival) => {
+      const from = TEMPLATES[c.template].priceFactor;
+      return p.wP * c.P + p.wR * c.R + p.wC * c.C - p.lambda * 100 * (from - 1) - PRICE_WEIGHT * p.lambda * 100 * (c.priceFactor - from);
+    };
+    const best = (p: Profile, pr: Product) => Math.max(...rivals(p, pr).map((c) => rivalU(p, c)));
+    const share = (p: Profile, pr: Product, city: string) => {
       const you = Math.exp(U(p, pr, 0) / CHOICE_TAU);
-      const others = rivals(p, pr)
-        .reduce((a, c) => a + Math.exp((p.wP * c.P + p.wR * c.R + p.wC * c.C - p.lambda * 100 * (c.priceFactor - 1)) / CHOICE_TAU), 0);
+      const others = rivals(p, pr, city).reduce((a, c) => a + Math.exp(rivalU(p, c) / CHOICE_TAU), 0);
       return you / (you + others);
     };
 
@@ -233,7 +249,11 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
         const leads = Math.min(organic + referrals, cap) + (paid + site) * (1 - SPILL_SHARE);
         book_("organic", organic); book_("referrals", referrals); book_("paid", paid); book_("website", site); book_("leads", leads); book_("cap", cap);
         book_("city" + c, leads);
-        PRODUCTS.forEach((pr, k) => { newCustomers[i][k] += binomial(rng, Math.round(leads * wants(p, pr)), share(p, pr)); });
+        PRODUCTS.forEach((pr, k) => {
+          const n = Math.round(leads * wants(p, pr)), won = binomial(rng, n, share(p, pr, CITY_ORDER[c].name));
+          newCustomers[i][k] += won;
+          book_("asked", n); book_("won", won);
+        });
       });
     }
     // Awareness (Marketing and reviews): paid leads, the website, the review score, the free listing's trust and happy customers.
@@ -393,7 +413,7 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     let mrr = 0, collectedShare = 0, stuck = 0;
     PROFILES.forEach((p, i) => PRODUCTS.forEach((pr, k) => {
       // Form orders take the annual cycle at its market discount: the hand-rolled form sells monthly and annual.
-      const [monthly, , annual] = CYCLE_SHARE[PROFILE_IDS[i]], cycleCut = website ? (1 - EMAIL_SHARE) * (annual / (monthly + annual)) * MARKET_DISCOUNT.annual : 0;
+      const [monthly, , , annual] = CYCLE_SHARE[PROFILE_IDS[i]], cycleCut = website ? (1 - EMAIL_SHARE) * (annual / (monthly + annual)) * MARKET_DISCOUNT.annual : 0;
       const v = cohorts[i][k].n * priceOf(p, pr, year) * bot.priceFactor * (1 - cycleCut);
       mrr += v;
       collectedShare += v * (ON_TIME[p.budget] + (1 - ON_TIME[p.budget] - NEVER_PAYS[p.budget]) * processed);

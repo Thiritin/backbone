@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 import type { PaymentHabit } from "../src/sim/30-customers/customers";
 import { serviceOnline } from "../src/sim/40-support/status";
 import { billingTick, freeRiding, invoiceTotal, isSuspended, SUSPENDED_PAY_ODDS } from "../src/sim/45-billing/billing";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { setBillingRules, suspendServices } from "../src/sim/90-actions/billing";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { sendDrafts } from "./fixtures";
+import { sendDrafts, newGame } from "./fixtures";
 
 const DAY = 24;
 // Billing only, so support churn and tickets don't move happiness.

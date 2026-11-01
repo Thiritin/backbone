@@ -11,7 +11,7 @@ import { cents } from "../src/sim/45-billing/billing";
 import { yearOf } from "../src/sim/00-core/time";
 import { resolveTicket } from "../src/sim/90-actions/support";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { readyGame } from "./fixtures";
+import { mailed, readyGame } from "./fixtures";
 
 const run = (s: GameState, hours: number) => { for (let i = 0; i < hours; i++) tick(s); };
 const web = { product: "webHosting" as const, size: 0, sla: "basic" as const };
@@ -136,7 +136,7 @@ describe("order review", () => {
     expect(quoteOrder(s, r!.ticketId!, 20).ok).toBe(true);
     for (let i = 0; i < 60 && req(s, r!.id).status !== "accepted"; i++) tick(s);
     const customers = s.customers.length;
-    expect(createAccount(s, r!.ticketId!).ok).toBe(true);
+    expect(createAccount(s, r!.ticketId!, mailed(s, r!.ticketId!)).ok).toBe(true);
     run(s, 2);
     expect(req(s, r!.id).status).toBe("declined");
     expect(s.tickets.find((t) => t.id === r!.ticketId)).toMatchObject({ status: "closed", outcome: "declined" });

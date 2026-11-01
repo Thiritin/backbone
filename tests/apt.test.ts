@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { hourOf, yearOf } from "../src/sim/00-core/time";
 import { phpAt } from "../src/sim/10-catalog/platforms";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { openVulns } from "../src/sim/60-infra/vulns";
 import { runCommand, runLine, type Session } from "../src/sim/60-infra/terminal";
 import type { Call } from "../src/sim/90-actions/index";
-import { panelServer, readyGame, withServer } from "./fixtures";
+import { panelServer, readyGame, withServer, newGame } from "./fixtures";
 
 const base = readyGame(3);
 const year = (y: number) => hourOf(new Date(Date.UTC(y, 0, 1)));

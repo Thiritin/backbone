@@ -1,0 +1,21 @@
+/* Switch and router web interfaces: one layout, each maker's colours and type. */
+.cx[data-look="sysko"] { --bg: #f2f4f5; --head: #005073; --accent: #049fd9; --side: #2b3a42; --side-fg: #d6e2e8; --info: #005073; --r: 2px; --font: Arial, Helvetica, sans-serif; }
+.cx[data-look="proswerve"] { --bg: #ffffff; --panel: #ffffff; --head: #4d4d4d; --accent: #0096d6; --line: #c8c8c8; --info: #0096d6; --r: 0; --font: Verdana, Geneva, sans-serif; }
+.cx[data-look="prosafe"] { --bg: #eceff4; --head: #5b2c86; --accent: #f28c00; --accent-fg: #ffffff; --side: #3d1f5c; --side-fg: #e5daf0; --info: #5b2c86; --r: 3px; --font: Tahoma, Verdana, sans-serif; }
+.cx[data-look="webfigg"] { --bg: #f4f4f4; --head: #293d52; --accent: #e3001b; --accent-fg: #ffffff; --side: #3a4b5c; --side-fg: #dfe6ec; --info: #293d52; --r: 0; --font: Verdana, Geneva, sans-serif; }
+.cx[data-look="jwebb"] { --bg: #f7f7f7; --head: #1a1a1a; --accent: #84b135; --accent-fg: #ffffff; --line: #d0d0d0; --info: #1a1a1a; --r: 2px; --font: Arial, Helvetica, sans-serif; }
+.cx[data-look="plain"] { --head: #3b4652; --accent: #3b4652; --info: #3b4652; }
+
+.sw .cx-brand span { opacity: 0.75; font-size: 12px; }
+.sw-body { display: flex; flex: 1; min-height: 0; }
+.sw-body.top { flex-direction: column; }
+.sw-body .cx-side { gap: 2px; width: 170px; padding: 12px 8px; }
+.sw-facts { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; margin: 0; padding: 14px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); }
+.sw-facts div { display: contents; }
+.sw-facts dt { color: var(--muted); }
+.sw-facts dd { margin: 0; }
+.sw .cx-table input { width: 100%; min-width: 60px; }
+.sw .cx-table input.sw-vlan { width: 72px; }
+.sw .cx-table input[type="checkbox"] { width: auto; min-width: 0; }
+.sw-ports .cx-chip { min-width: 34px; }
+.sw .cx-state.warn { background: color-mix(in oklab, #c27c00 16%, transparent); color: #9a6200; }

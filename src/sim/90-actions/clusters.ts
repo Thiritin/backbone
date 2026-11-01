@@ -1,3 +1,4 @@
+import { allocationFree } from "../60-infra/daemons";
 import { createGameServer } from "../60-infra/games";
 import { betterHost } from "../60-infra/routes";
 import { keepPhp } from "../60-infra/webpanel";
@@ -11,6 +12,7 @@ import type { GameState } from "../50-state";
 import { balancerIn, balloons, clustersIn, conflict, isService, phpAt, softwareById, type Software, type SoftwareKind } from "../10-catalog/platforms";
 import { HA_SKILL } from "../10-catalog/research";
 import { serverOsAt } from "../10-catalog/server-os";
+import { versionAt } from "../10-catalog/software-versions";
 import { freezeTick } from "../60-infra/usage";
 import { PHP_UPGRADE_HOURS } from "../60-infra/php";
 import { withinOversell } from "../60-infra/oversell";
@@ -18,24 +20,34 @@ import { licenceBlock } from "../60-infra/licence";
 import { markPatched, patchOut, vulnerable } from "../60-infra/security";
 import {
   anchorOf, clusterOf, clustersOf, dropCluster, gameFirst, controlPlaneUp, controlPlaneUse, fitsControlPlane, HA_OFF, hostOfVm, hostsOfVm, insideVm, isOwnVm, KEYS, vmCap, moveOff, noRoomError, nodeTakes, pickNode, serverTaken,
-  backsUpCluster, balances, datastoreFits, isDatastore, setMachine, withDatastore, setNodeState, stripSoftware, supports, vmById, vmRoom, workloadsOf, workloadsOn, type BackupEvery, type Cluster, type Ha, type Placement, type Workload,
+  backsUpCluster, balances, datastoreFits, isDatastore, setMachine, withDatastore, setNodeState, stripSoftware, supports, vmById, vmRoom, workloadsOf, workloadsOn, type BackupEvery, type Cluster, type ClusterNode, type Ha, type Placement, type Workload,
 } from "../60-infra/cluster";
+import { freeAddresses, gatewayOf } from "../60-infra/lan";
+import { nextPrivateVlan, privateNetOf } from "../60-infra/private";
 import { burning, freeSlots, installedRamGb, locationOf, rackPower, working } from "../60-infra/status";
 import { addService } from "./customers";
 import { assignService } from "../60-infra/addresses";
+import { isFloating } from "../60-infra/horizont";
+import { deleteJob, saveJob } from "./backups";
 import type { ActionResult } from "./hardware";
 import { migrateWorkload } from "./vms";
 import { buyLicenses, licenseDue } from "../85-products/products";
 import { sizeOf } from "../30-market/spec";
+import { quorumBlock } from "../60-infra/quorum";
+import { editionAllows, poolRoom } from "../60-infra/vmwhere";
+import { cephCapacity, cephOn, cephUsed } from "../60-infra/replica";
+import { addressOf } from "../60-infra/lan";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
+// A node joins at the address it holds now, or pins the first one it gets (cluster.ts, pinMembers).
+const joined = (s: GameState, deviceId: string): ClusterNode => { const ip = addressOf(s, deviceId); return ip ? { deviceId, state: "active", ip } : { deviceId, state: "active" }; };
 // economy.md, Panel VMs: the size the setup and the Products app suggest, and the smallest the player can book.
 export const PANEL_VM_SIZE: Resources = { vcpu: 2, ramGb: 2, diskGb: 50 };
 export const PANEL_VM_MIN: Resources = { vcpu: 1, ramGb: 1, diskGb: 10 };
 
 const blank = (s: GameState, id: string, name: string, az: string, kind: SoftwareKind): Cluster => ({
   id, name, az, kind, placement: "pack", nodes: [], panel: null, platform: null, vm: null, controlPlane: null, switching: null, appSuite: false, datastores: [], packages: [],
-  backup: { targetId: null, every: "off" }, php: phpAt(yearOf(s.hour)), phpUntil: -1, ha: { ...HA_OFF }, version: yearOf(s.hour), updatedAt: s.hour,
+  jobs: [], drs: "off", recs: [], acks: [], pools: [], php: phpAt(yearOf(s.hour)), phpUntil: -1, ha: { ...HA_OFF }, version: yearOf(s.hour), updatedAt: s.hour,
 });
 // The name a cluster in one of the player's VMs gets, by the kind of its software.
 const PREFIX: Record<SoftwareKind, string> = { panel: "Web", cloud: "Cloud", game: "Game", mail: "Mail", dns: "DNS", vpn: "VPN", storage: "Storage", backup: "Backup" };
@@ -60,7 +72,7 @@ const runs = (c: Cluster, softwareId?: string): boolean => !!softwareId && [c.pa
 
 // The software joins the machine's list, installing until doneAt.
 function addSoftware(s: GameState, machineId: string, sw: Software, doneAt: number): void {
-  setMachine(s, machineId, (m) => ({ software: [...m.software, { id: sw.id, version: String(yearOf(s.hour)), installedAt: s.hour, doneAt }] }));
+  setMachine(s, machineId, (m) => ({ software: [...m.software, { id: sw.id, version: versionAt(sw.id, s.hour).version, installedAt: s.hour, doneAt }] }));
 }
 
 // A VM made from a template: the OS is on its disk and booted from the start.
@@ -72,7 +84,7 @@ function installOnServer(s: GameState, deviceId: string, sw: Software, name: (la
   const d = s.devices.find((x) => x.id === deviceId), bad = freeServer(s, d, sw.id);
   if (bad) return fail(bad);
   const loc = locationOf(s, d!)!, id = `clu${s.nextId++}`, slot = sw.kind === "cloud" ? "platform" : "panel";
-  const c: Cluster = { ...blank(s, id, name(d!.label ?? d!.name, loc.name), loc.az, sw.kind), nodes: [{ deviceId, state: "active" }], controlPlane: deviceId };
+  const c: Cluster = { ...blank(s, id, name(d!.label ?? d!.name, loc.name), loc.az, sw.kind), nodes: [joined(s, deviceId)], controlPlane: deviceId };
   if (!fitsControlPlane(s, { ...c, [slot]: sw.id }, deviceId)) return fail(working(s, deviceId) ? "error.nodeFull" : "error.nodeDown");
   s.clusters = [...s.clusters, { ...c, switching: { kind: sw.kind, to: sw.id, doneAt: s.hour + sw.installHours } }];
   addSoftware(s, deviceId, sw, s.hour + sw.installHours);
@@ -95,15 +107,18 @@ export function installHypervisor(s: GameState, deviceId: string, platformId: st
 
 // Creates one of the player's own VMs on a hypervisor cluster, empty until software is installed in it. A cluster still
 // installing its hypervisor takes the VM.
-export function createVm(s: GameState, clusterId: string, size: Resources): ActionResult {
+export function createVm(s: GameState, clusterId: string, size: Resources, poolId: string | null = null): ActionResult {
   const c = s.clusters.find((x) => x.id === clusterId);
   if (!c) return fail("error.unknownCluster");
   if (c.kind !== "cloud" || (!c.platform && c.switching?.kind !== "cloud")) return fail("error.needsPlatform");
   if (c.platform && !controlPlaneUp(s, c)) return fail("error.controlPlaneDown");
+  { const q = quorumBlock(s, c); if (q) return fail(q); }
   if (KEYS.some((k) => !Number.isFinite(size[k]) || size[k] < PANEL_VM_MIN[k])) return fail("error.vmSize");
-  const disk = withDatastore(s, c, size), node = pickNode(s, c, disk);
+  if (cephOn(c) && cephUsed(s, c) + size.diskGb > cephCapacity(s, c)) return fail("error.cephFull");
+  if (poolId !== null && !poolRoom(s, c, poolId, size)) return fail(c.pools.some((p) => p.id === poolId) ? "error.poolFull" : "error.unknownPool");
+  const disk = withDatastore(s, c, size), node = pickNode(s, c, disk, null, c.drs === "partial" || c.drs === "full" ? "spread" : c.placement);
   if (!node) return fail("error.noCapacity");
-  const vm = workload(s, "", { ...disk, clusterId: c.id, deviceId: node, os: null, software: [] });
+  const vm = workload(s, "", { ...disk, clusterId: c.id, deviceId: node, os: null, software: [], ...(poolId && { poolId }), ...(c.platform === "openstash" && { groupIds: ["default"] }) });
   s.workloads = [...s.workloads, vm];
   return { ok: true, id: vm.id };
 }
@@ -112,9 +127,15 @@ export function createVm(s: GameState, clusterId: string, size: Resources): Acti
 export function deleteVm(s: GameState, vmId: string): ActionResult {
   const vm = vmById(s, vmId);
   if (!vm || !isOwnVm(vm)) return fail("error.notOwnVm");
+  { const q = quorumBlock(s, s.clusters.find((x) => x.id === vm.clusterId)); if (q) return fail(q); }
   if (insideVm(s, vm.id).length) return fail("error.softwareInUse");
   for (const h of hostsOfVm(s, vm.id)) dropCluster(s, h.id);
   s.workloads = s.workloads.filter((w) => w.id !== vm.id);
+  // A volume outlives its instance; a floating IP stays allocated, unmapped.
+  s.clusters = s.clusters.map((x) => (x.id !== vm.clusterId ? x : { ...x,
+    volumes: x.volumes?.map((v) => (v.attachedTo === vm.id ? { ...v, attachedTo: null } : v)),
+    floating: x.floating?.map((f) => (f.workloadId === vm.id ? { ...f, workloadId: null } : f)) }));
+  s.ips = { ...s.ips, addresses: s.ips.addresses.map((a) => (a.holder === vm.id && isFloating(s, a.ip) ? { ...a, holder: null } : a)) };
   return { ok: true };
 }
 
@@ -186,6 +207,7 @@ export function resizeVm(s: GameState, vmId: string, size: Resources): ActionRes
   if (hostOfVm(s, vm.id)) return fail("error.softwareInUse");
   const bad = sizeError(size, { vcpu: 0, ramGb: 0, diskGb: 0 });
   if (bad) return fail(bad);
+  { const pc = s.clusters.find((x) => x.id === vm.clusterId); if (pc && vm.poolId && !poolRoom(s, pc, vm.poolId, size, vm.id)) return fail("error.poolFull"); }
   const d = vm.deviceId ? s.devices.find((x) => x.id === vm.deviceId) : undefined;
   if ((d && !nodeTakes(s, d, { ...size, datastore: vm.datastore }, vm)) || (vm.datastore && !datastoreFits(s, vm.datastore, size.diskGb - vm.diskGb))) return fail("error.nodeFull");
   const c = s.clusters.find((x) => x.id === vm.clusterId);
@@ -218,15 +240,16 @@ export function moveControlPlane(s: GameState, clusterId: string, deviceId: stri
   return { ok: true };
 }
 
-// Backups of every workload in the cluster, daily or weekly at night, to a cluster whose backup software reads it.
+// The cluster's first backup job: off removes it, anything else points it at a target on that schedule.
 export function setBackup(s: GameState, clusterId: string, targetId: string | null, every: BackupEvery): ActionResult {
   const c = s.clusters.find((x) => x.id === clusterId), t = s.clusters.find((x) => x.id === targetId);
   if (!c) return fail("error.unknownCluster");
   if (targetId !== null && (!t || t.id === c.id || t.kind !== "backup")) return fail("error.backupTarget");
   if (t && !backsUpCluster(s, c, t)) return fail("error.backupIncompatible");
   if (every !== "off" && targetId === null) return fail("error.backupTarget");
-  update(s, clusterId, (c) => ({ ...c, backup: { targetId, every } }));
-  return { ok: true };
+  const first = c.jobs[0];
+  if (every === "off") return first ? deleteJob(s, clusterId, first.id) : { ok: true };
+  return saveJob(s, clusterId, { id: first?.id, targetId: targetId!, every });
 }
 
 const update = (s: GameState, id: string, fn: (c: Cluster) => Cluster) => {
@@ -251,7 +274,7 @@ export function addNode(s: GameState, clusterId: string, deviceId: string): Acti
   const kept = d.software;
   leave(s, own.id, d.id);
   d.software = kept;
-  update(s, c.id, (x) => ({ ...x, nodes: [...x.nodes, { deviceId, state: "active" }], controlPlane: x.controlPlane ?? deviceId }));
+  update(s, c.id, (x) => ({ ...x, nodes: [...x.nodes, joined(s, deviceId)], controlPlane: x.controlPlane ?? deviceId }));
   return { ok: true };
 }
 
@@ -305,6 +328,7 @@ const nodeOf = (s: GameState, deviceId: string, clusterId?: string): Cluster | u
 const nodeAction = (s: GameState, deviceId: string, state: "active" | "cordoned", clusterId?: string): ActionResult => {
   const c = nodeOf(s, deviceId, clusterId);
   if (!c) return fail("error.notNode");
+  { const q = quorumBlock(s, c); if (q) return fail(q); }
   setNodeState(s, deviceId, state, c.id);
   return { ok: true };
 };
@@ -315,6 +339,7 @@ export const uncordon = (s: GameState, deviceId: string, clusterId?: string): Ac
 export function drain(s: GameState, deviceId: string, clusterId?: string): ActionResult {
   const c = nodeOf(s, deviceId, clusterId);
   if (!c) return fail("error.notNode");
+  { const q = quorumBlock(s, c); if (q) return fail(q); }
   setNodeState(s, deviceId, "draining", c.id);
   moveOff(s, s.clusters.find((x) => x.id === c.id)!, deviceId);
   return { ok: true };
@@ -324,6 +349,7 @@ export function drain(s: GameState, deviceId: string, clusterId?: string): Actio
 export function evacuate(s: GameState, deviceId: string, clusterId?: string): ActionResult {
   const c = nodeOf(s, deviceId, clusterId);
   if (!c) return fail("error.notNode");
+  { const q = quorumBlock(s, c); if (q) return fail(q); }
   setNodeState(s, deviceId, "draining", c.id);
   for (const w of s.workloads.filter((x) => x.deviceId === deviceId && x.clusterId === c.id)) {
     const to = pickNode(s, s.clusters.find((x) => x.id === c.id)!, w, deviceId);
@@ -356,10 +382,12 @@ export function setHa(s: GameState, clusterId: string, feature: keyof Ha, on: bo
   if (c.kind !== "cloud") return fail("error.needsPlatform");
   if (!s.unlocks.includes(HA_SKILL)) return fail("error.missingSkill");
   if (on && feature === "live" && c.platform && !softwareById(c.platform).live) return fail("error.noLiveMigration");
+  if (on && feature === "failover" && !editionAllows(c, "failover")) return fail("error.needsEdition");
   if (on && feature === "balance" && !c.ha.live) return fail("error.needsLiveMigration");
   if (on && feature === "balance" && !balances(s, c)) return fail("error.needsBalancer");
+  if (on && feature === "balance" && !editionAllows(c, "drs")) return fail("error.needsEdition");
   const ha = { ...c.ha, [feature]: on, ...(feature === "live" && !on ? { balance: false } : {}) };
-  update(s, c.id, (x) => ({ ...x, ha }));
+  update(s, c.id, (x) => ({ ...x, ha, ...(ha.balance !== c.ha.balance && { drs: ha.balance ? "full" as const : "off" as const }) }));
   return { ok: true };
 }
 
@@ -369,7 +397,7 @@ export function setBalancer(s: GameState, clusterId: string, on: boolean): Actio
   if (!c) return fail("error.unknownCluster");
   const b = c.platform ? balancerIn(softwareById(c.platform), yearOf(s.hour)) : null;
   if (!b || b.fee === 0) return fail("error.noBalancer");
-  update(s, c.id, (x) => ({ ...x, balancer: on, ...(!on && { ha: { ...x.ha, balance: false } }) }));
+  update(s, c.id, (x) => ({ ...x, balancer: on, ...(!on && { ha: { ...x.ha, balance: false }, drs: "off" as const }) }));
   return { ok: true };
 }
 
@@ -384,6 +412,7 @@ const hostnameOf = (s: GameState, serviceId: string): { hostname?: string } => {
   return hostname ? { hostname } : {};
 };
 
+const isVmCluster = (s: GameState, id: string | null) => s.clusters.find((c) => c.id === id)?.kind === "cloud";
 // Places a service on hardware by its product: a cluster workload (in clusterId, or the first cluster of its zone that sells
 // it with room; on deviceId when given; inside the VM of a panel VM host), a whole free server for dedicated, rack units with power for colocation. A service without a zone
 // takes the zone it lands in. A custom service books its own resources.
@@ -403,14 +432,25 @@ export function placeService(s: GameState, serviceId: string, clusterId: string 
         const disk = withDatastore(s, c, size);
         const room = withinOversell(s, c, disk), why = licenceBlock(s, c);
         if (why) { blocked = why; continue; }
+        if (v.product === "gameServer" && !allocationFree(s, c)) { blocked = "error.noAllocation"; continue; }
         if (!room) capped = true;
         const node = controlPlaneUp(s, c) && room ? pickNode(s, deviceId ? { ...c, nodes: c.nodes.filter((n) => n.deviceId === deviceId) } : c, disk, null, c.placement, roomyOnly) : null;
+        // A VM is bridged onto its server's network and needs an address from its router's pool (lan.md, Phases).
+        const router = node && c.kind === "cloud" ? gatewayOf(s, node) : null;
+        if (router && freeAddresses(s, router) < 1) { blocked = "error.poolFull"; continue; }
         if (node) { w = workload(s, v.id, { ...disk, clusterId: c.id, deviceId: c.vm ? null : node }); az = c.az; break; }
       }
       if (w) break;
     }
     const target = clusterId ? s.clusters.find((x) => x.id === clusterId) : undefined;
     if (!w && blocked) return fail(blocked);
+    // An enterprise customer's VMs need a private network (gdd.md, Network and DDoS).
+    const customer = s.customers.find((x) => x.id === v.customerId);
+    if (w && customer?.profile === "enterprise" && isVmCluster(s, w.clusterId) && !privateNetOf(s, customer.id)) {
+      const vlan = nextPrivateVlan(s);
+      if (vlan === null) return fail("error.noVlanLeft");
+      s.privateNets = [...s.privateNets, { customerId: customer.id, vlan, since: s.hour }];
+    }
     if (!w && capped) return fail("error.oversellCap");
     if (!w) return fail(target && supports(target, v.product) && !controlPlaneUp(s, target) ? "error.controlPlaneDown" : noRoomError(s, v.product, clusterId));
   } else if (spec.runsOn === "server") {
@@ -463,6 +503,10 @@ export function provisionService(s: GameState, customerId: string, product: Prod
     Object.assign(s, { services: s.services.filter((v) => v.id !== id), nextId });
     return placed;
   }
-  if (product === "gameServer") createGameServer(s, id, order.title);
+  const noPort = product === "gameServer" ? createGameServer(s, id, order.title) : null;
+  if (noPort) {
+    Object.assign(s, { services: s.services.filter((v) => v.id !== id), workloads: s.workloads.filter((w) => w.serviceId !== id), nextId });
+    return fail(noPort);
+  }
   return { ok: true, id };
 }
