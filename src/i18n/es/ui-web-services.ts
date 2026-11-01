@@ -209,4 +209,6 @@ export default {
   "web.rs.question": (p) => `Pregunta sobre ${p.domain}`,
   "web.rs.suspend": () => "Suspender",
   "web.rs.resume": () => "Reactivar",
+  "ticket.howTo.licence.subject": () => "El panel de control dice que la licencia ha caducado",
+  "ticket.howTo.licence.text": (p) => `Cuando entro en el panel de control de ${p.domain || "mi sitio"} solo veo una página que dice que la licencia ha caducado. El sitio sigue funcionando, pero no puedo gestionar nada. ¿Puedes arreglarlo?`,
 } satisfies Dict;

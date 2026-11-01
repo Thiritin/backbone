@@ -68,21 +68,23 @@ const lines = (a: Address) => [a.company, a.contact, a.street, `${a.zip} ${a.cit
 export function Page({ game, title, to, items, footer }: { game: GameState; title: string; to?: Address; items: InvoiceLine[]; footer: ReactNode }) {
   const own = addressFor(game.seed, 0, game.registration?.owner ?? game.company.name, game.company.name, game.locations[0]?.city ?? "Frankfurt");
   return (
-    <article className="books-a4" aria-label={title}>
-      <header>
-        <h2>{title}</h2>
-        <p className="books-from">{[game.company.name, own.street, `${own.zip} ${own.city}`].join(" · ")}</p>
-      </header>
-      {to && <address>{lines(to).map((l) => <div key={l}>{l}</div>)}</address>}
-      <table>
-        <thead><tr><th>{t("books.col.item")}</th><th className="r">{t("books.col.amount")}</th></tr></thead>
-        <tbody>
-          {items.map((l, n) => <tr key={n}><td>{t(l.key, l.params)}</td><td className="r num">{euroCents(l.amount)}</td></tr>)}
-          <tr className="books-total"><td>{t("books.total")}</td><td className="r num">{euroCents(items.reduce((n, l) => n + l.amount, 0))}</td></tr>
-        </tbody>
-      </table>
-      <footer>{footer}</footer>
-    </article>
+    <div className="books-a4-fit">
+      <article className="books-a4" aria-label={title}>
+        <header>
+          <h2>{title}</h2>
+          <p className="books-from">{[game.company.name, own.street, `${own.zip} ${own.city}`].join(" · ")}</p>
+        </header>
+        {to && <address>{lines(to).map((l) => <div key={l}>{l}</div>)}</address>}
+        <table>
+          <thead><tr><th>{t("books.col.item")}</th><th className="r">{t("books.col.amount")}</th></tr></thead>
+          <tbody>
+            {items.map((l, n) => <tr key={n}><td>{t(l.key, l.params)}</td><td className="r num">{euroCents(l.amount)}</td></tr>)}
+            <tr className="books-total"><td>{t("books.total")}</td><td className="r num">{euroCents(items.reduce((n, l) => n + l.amount, 0))}</td></tr>
+          </tbody>
+        </table>
+        <footer>{footer}</footer>
+      </article>
+    </div>
   );
 }
 
