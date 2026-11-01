@@ -5,7 +5,7 @@ import { autoStep, cents, dueStep, isUnpaid, owed, ruleStep, ruleSuspendsAt, rul
 import { ACTION_MINUTES, logActivity } from "./activity";
 import { storeItem } from "../10-catalog/store";
 import { bookFor, booksOffline, seated, sendDraft } from "../80-business/bookkeeping";
-import { bump, createTicket, MINUTES, rightTemplate, TEMPLATES, TOPIC_ACTIONS, type Ticket, type TicketKind } from "../40-support/tickets";
+import { bump, createTicket, MINUTES, rightTemplate, templatesOf, TOPIC_ACTIONS, type Ticket, type TicketKind } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { isWorkHour } from "../00-core/workhours";
@@ -213,7 +213,7 @@ function choose(s: GameState, e: Employee, t: Ticket, r: Rng): { op: "reply" | "
   const right = rightTemplate(s, t);
   if (!right) return { op: "resolve", arg: "unsuspend" };
   if (rand(r) < rightChance(e, t.kind)) return { op: "reply", arg: right };
-  return { op: "reply", arg: pick(r, TEMPLATES[t.kind].filter((x) => x !== right)) };
+  return { op: "reply", arg: pick(r, templatesOf(t).filter((x) => x !== right)) };
 }
 
 interface BotTask { bot: Employee; customerId: string; reminder: boolean }
