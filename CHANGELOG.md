@@ -5,6 +5,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-01
 
 - OrderBocks has its own look in its admin, storefront and client area, changing with versions 7, 8 and 9, and its own site at orderbocks.com with pricing, releases, install steps and a free upgrade from My account.
+- BoxBillin' has its own look: a glossy charcoal admin and store for versions 1 and 2, a flat slate one for 3 and 4, a light FOSSBillin' one after the rename, and a free download site at boxbillin.com that shows your installation and upgrades it.
 - The Shop section of the Marketing app is gone: you install a shop system from the software page of a panel host, and you manage its modules and payment methods in its admin.
 - Shop vendor websites can now have more than one page, and each shop system can style its own sign-in page.
 - Your shop system now runs in a web space on one of your panel hosts, with a licence key, a trial, an updates window and paid upgrades, and it takes no orders while its host is down or its licence has run out.

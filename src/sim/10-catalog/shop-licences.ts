@@ -4,8 +4,7 @@ import { tiersOf, type LicenceTier } from "./licence-tiers";
 import { eraAt, type LicenseEra } from "./server-os";
 import { yearOf } from "../00-core/time";
 import { shopById, SHOPS, type ShopId } from "./shops";
-import type { Site } from "./sites";
-import { t } from "../../i18n/en";
+import { site, type Site } from "./sites";
 
 export interface ShopLicence {
   id: ShopId;
@@ -66,8 +65,8 @@ const TERMS: Record<ShopId, Omit<ShopLicence, "id" | "name">> = {
     ],
     trialDays: null, caps: "servers",
   },
-  orderBocks: { licensing: [{ from: 2006, kind: "free", fee: 0, cut: 0.06 }], site: { host: "orderbocks.com", get tagline() { return t("shop-link.tagline.orderBocks"); }, get blurb() { return t("orderbocks.v.pitch"); }, features: [], eras: [{ from: 2006, look: "early" }] } },
-  boxBillin: { licensing: [{ from: 2011, kind: "free", fee: 0 }] },
+  orderBocks: { licensing: [{ from: 2006, kind: "free", fee: 0, cut: 0.06 }], site: site("orderBocks", "orderbocks.com", 0, 2006) },
+  boxBillin: { licensing: [{ from: 2011, kind: "free", fee: 0 }], site: site("boxBillin", "boxbillin.com", 0, 2011) },
 };
 
 export const SHOP_LICENCES: ShopLicence[] = SHOPS.map((v) => ({ id: v.id, name: v.name, ...TERMS[v.id] }));

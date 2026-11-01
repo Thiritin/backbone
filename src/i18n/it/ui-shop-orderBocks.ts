@@ -45,4 +45,6 @@ export default {
   "orderbocks.v.noInstall": () => "OrderBocks non è installato su nessuno dei tuoi host.",
   "orderbocks.v.installation": () => "Installazione",
   "orderbocks.v.upgradeTo": (p) => `Passa a ${p.major}`,
+  "sim.site.orderBocks.tagline": () => "Vendi domini e hosting senza costi iniziali",
+  "sim.site.orderBocks.blurb": () => "OrderBocks gestisce gratis il tuo negozio di domini, certificati e hosting e trattiene una quota di ogni ordine.",
 } satisfies Dict;

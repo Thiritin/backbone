@@ -45,4 +45,6 @@ export default {
   "orderbocks.v.noInstall": () => "OrderBocks ist auf keinem Ihrer Hosts installiert.",
   "orderbocks.v.installation": () => "Installation",
   "orderbocks.v.upgradeTo": (p) => `Upgrade auf ${p.major}`,
+  "sim.site.orderBocks.tagline": () => "Domains und Hosting verkaufen ohne Vorabkosten",
+  "sim.site.orderBocks.blurb": () => "OrderBocks betreibt Ihren Shop für Domains, Zertifikate und Hosting kostenlos und behält einen Anteil an jeder Bestellung.",
 } satisfies Dict;
