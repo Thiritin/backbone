@@ -5,6 +5,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-01
 
 - A customer's website without a domain opens in the browser at its account's private address again.
+- A new Chat app in the dock opens the Backbone Discord and changes from ICU to Skipe to Diskord as the years pass; you can remove it from the dock like any other app.
 - Backup servers now have a restore page that brings a lost machine back from its backup onto any server with room, in any location, including machines stranded on a seized server.
 - Game servers now crash now and then, more often with mods or on an overloaded host, and come back by themselves when auto-restart is on, and each server can restart on a daily or weekly schedule.
 - Dragging a window to a screen edge now shows a preview and tiles it to half the screen, to a quarter near a corner, or to the full screen at the top, and dragging it away restores its size.
