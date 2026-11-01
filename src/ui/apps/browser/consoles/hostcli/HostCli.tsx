@@ -67,7 +67,7 @@ function listing(game: GameState, c: Cluster, family: string, name: string): [st
     }
     case "backula": {
       const pool = backupPool(game, c.id), stamp = (h: number) => dateOf(h).toISOString().slice(0, 16).replace("T", " ");
-      const jobs = game.clusters.filter((x) => x.backup.targetId === c.id).map((x) => ({ name: x.name, last: Math.max(-1, ...game.workloads.filter((w) => w.clusterId === x.id).map((w) => w.backupAt ?? -1)) }));
+      const jobs = game.clusters.filter((x) => x.jobs.some((j) => j.targetId === c.id)).map((x) => ({ name: x.name, last: Math.max(-1, ...game.workloads.filter((w) => w.clusterId === x.id).map((w) => w.backupAt ?? -1)) }));
       const done = jobs.filter((j) => j.last >= 0).sort((a, b) => a.last - b.last);
       return [
         ["echo 'status director' | bconsole", [
