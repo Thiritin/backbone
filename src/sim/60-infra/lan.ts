@@ -2,7 +2,7 @@
 // every device holds. Every machine takes its address by DHCP; a lease is granted the moment a client is in the router's
 // domain, and the hourly tick stores and renews it.
 import { BMC_NAME, hasBmc, homeLan, isManaged, isOfficeRouter, isOobPort, jacksOf, modelById, OOB_PORT, oobPortOf, oobPorts, type DeviceModel } from "../10-catalog/hardware";
-import type { Device, End, GameState, PortShare, RouterLan } from "../50-state";
+import type { Device, End, GameState, IfaceConfig, PortShare, RouterLan } from "../50-state";
 import { isOwnRouter, mountedRouter, ownLan, uplinkPort } from "./routers";
 import { linkStatus, locationOf, peerOf, powered, sweepGroups, sweepMemo, working } from "./status";
 import type { Workload } from "./cluster";
@@ -17,6 +17,8 @@ export const FRITZ_HOST = "fritz.bocks";
 
 // Every router hands out addresses: a Fritz!Bocks its home network, the others their location's datacenter range.
 export const servesDhcp = (m: DeviceModel): boolean => m.kind === "gateway";
+// Fritz!OZ from the 7390 on registers the names its DHCP clients send under fritz.bocks; the older firmware registers none.
+export const registersNames = (m: DeviceModel): boolean => isOfficeRouter(m) && m.from >= 2010;
 export const ipNum = (ip: string): number => ip.split(".").reduce((n, x) => n * 256 + Number(x), 0);
 export const ipStr = (n: number): string => [24, 16, 8, 0].map((b) => Math.floor(n / 2 ** b) % 256).join(".");
 export function inNet(cidr: string, ip: string): boolean {
@@ -55,9 +57,10 @@ function vmsOn(s: GameState, hostId: string): Workload[] {
 // firewalls, OOB switches and patch panels. The router sends untagged frames, and managed switches forward them only within
 // a VLAN (switches.ts). A server asks with its NIC on an untagged port and, on standby power, its management controller;
 // KVMs, console servers and OOB switches with their network jack; a managed switch with its interface in MGMT_VLAN.
-function clients(s: GameState, routerId: string): Grant[] {
+const domainOf = (s: GameState, routerId: string): Set<string> => sweepMemo(s, `domain:${routerId}`, () => computeDomain(s, routerId));
+function computeDomain(s: GameState, routerId: string): Set<string> {
   const router = s.devices.find((d) => d.id === routerId), rm = router && modelById(router.model);
-  if (!router || !rm || !working(s, routerId)) return [];
+  if (!router || !rm || !working(s, routerId)) return new Set();
   const found = new Set<string>(), seen = new Set<string>([routerId]);
   const queue: { at: End; tag: number | null }[] = rm.ports.flatMap((_, port) => {
     const at = port === uplinkPort(router) ? null : peerOf(s, { device: routerId, port });
@@ -90,19 +93,34 @@ function clients(s: GameState, routerId: string): Grant[] {
       }
     }
   }
+  return found;
+}
+
+// The setting a server's interface runs with: what ip or ifdown set in this boot, else what its OS stores.
+export function ifaceOf(d: Device): IfaceConfig & { down?: true } {
+  const r = d.runtime;
+  return r && r.boot === (d.bootUntil ?? null) ? r : d.iface ?? { mode: "dhcp" };
+}
+const isStatic = (d: Device) => ifaceOf(d).mode === "static";
+
+// A server with a static setting asks for no lease; one whose interface is down asks for nothing.
+function clients(s: GameState, routerId: string): Grant[] {
+  const router = s.devices.find((d) => d.id === routerId), rm = router && modelById(router.model), found = domainOf(s, routerId);
+  if (!router || !rm || !found.size) return [];
   const home = locationOf(s, router), desk = isOfficeRouter(rm) && home && mountedRouter(s, home.id)?.id === routerId;
-  const out: Grant[] = desk ? [{ mac: macOf(s, DESK_NAME), ip: "", name: DESK_NAME, deviceId: null, iface: "eth" }] : [];
+  const out: Grant[] = desk ? [{ mac: macOf(s, DESK_NAME), ip: "", name: DESK_NAME, deviceId: null, iface: "eth" }] : [], vms: Grant[] = [];
   for (const d of s.devices) {
     if (!found.has(d.id)) continue;
     const name = d.hostname ?? d.name;
-    if (working(s, d.id)) out.push({ mac: macOf(s, d.id), ip: "", name, deviceId: d.id, iface: "eth" });
+    if (working(s, d.id) && !isStatic(d) && !ifaceOf(d).down) out.push({ mac: macOf(s, d.id), ip: "", name, deviceId: d.id, iface: "eth" });
     if (modelById(d.model).kind === "server" && hasBmc(d.model, d.brand) && powered(s, d.id)) {
       out.push({ mac: macOf(s, d.id, "bmc"), ip: "", name: `${(BMC_NAME[d.brand] ?? "bmc").toLowerCase()}-${name}`, deviceId: d.id, iface: "bmc" });
     }
-    // A running VM's interface is bridged onto its host's port and asks for an address of its own.
-    if (working(s, d.id)) for (const w of vmsOn(s, d.id)) if (!w.stopped) out.push({ mac: macOf(s, w.id), ip: "", name: w.hostname ?? w.id, deviceId: w.id, iface: "eth" });
+    // A running VM's interface is bridged onto its host's port and asks for an address of its own, after the devices, so a
+    // new VM never takes an address a device was just given.
+    if (working(s, d.id)) for (const w of vmsOn(s, d.id)) if (!w.stopped) vms.push({ mac: macOf(s, w.id), ip: "", name: w.hostname ?? w.id, deviceId: w.id, iface: "eth" });
   }
-  return out;
+  return [...out, ...vms];
 }
 
 // The address each client in the domain holds, by MAC: its live lease, else its reservation, else the lowest free address
@@ -142,13 +160,53 @@ const grantBook = (s: GameState): Map<string, { router: string; ip: string }> =>
   return book;
 });
 
-// The router whose network a device's interface has an address in.
-export function gatewayOf(s: GameState, deviceId: string, iface: Iface = "eth"): string | null {
-  return grantBook(s).get(macOf(s, deviceId, iface))?.router ?? null;
+// The servers in a router's domain that hold a static address, by device id.
+const staticsIn = (s: GameState, routerId: string): Map<string, string> => sweepMemo(s, `statics:${routerId}`, () => {
+  const ids = domainOf(s, routerId);
+  return new Map(s.devices.filter((d) => ids.has(d.id) && working(s, d.id) && isStatic(d) && ifaceOf(d).ip && !ifaceOf(d).down).map((d) => [d.id, ifaceOf(d).ip!]));
+});
+
+// Two holders of one address in a router's domain, the router's own address included: both answer at random, so neither
+// counts as online and a ping to the address loses packets. Keys are deviceId:iface.
+export const conflictsOf = (s: GameState, routerId: string): Set<string> => sweepMemo(s, `conflicts:${routerId}`, () => {
+  const router = s.devices.find((d) => d.id === routerId)!, held = new Map<string, string[]>([[lanOf(s, router)!.gateway, [`${routerId}:router`]]]);
+  const hold = (ip: string, key: string) => held.set(ip, [...(held.get(ip) ?? []), key]);
+  for (const g of grantsOf(s, routerId).values()) if (g.deviceId) hold(g.ip, `${g.deviceId}:${g.iface}`);
+  for (const [id, ip] of staticsIn(s, routerId)) hold(ip, `${id}:eth`);
+  return new Set([...held.values()].filter((keys) => keys.length > 1).flat());
+});
+
+// The router a static setting on the device reaches: one whose domain holds the device, whose range holds the address and
+// whose own address is the gateway, inside the setting's prefix.
+export function staticRouter(s: GameState, deviceId: string, c: IfaceConfig & { down?: true }): Device | undefined {
+  if (c.mode !== "static" || !c.ip || !c.gw || c.down) return undefined;
+  return dhcpRouters(s).find((r) => {
+    const lan = lanOf(s, r)!;
+    return domainOf(s, r.id).has(deviceId) && inNet(lan.cidr, c.ip!) && c.gw === lan.gateway && c.ip !== lan.gateway && inNet(`${c.ip}/${c.prefix ?? 24}`, c.gw!);
+  });
 }
 
-// The address a device's interface holds; null without one. A managed switch without a lease answers on its factory address.
+// The router whose network a device's interface has an address in: the one that granted its lease, or for a static
+// address the one in its domain whose range holds it and whose address is its gateway. An address conflict counts as none.
+export function gatewayOf(s: GameState, deviceId: string, iface: Iface = "eth"): string | null {
+  const d = iface === "eth" ? s.devices.find((x) => x.id === deviceId) : undefined;
+  if (d && isStatic(d)) {
+    const r = working(s, deviceId) ? staticRouter(s, deviceId, ifaceOf(d)) : undefined;
+    return r && !conflictsOf(s, r.id).has(`${deviceId}:eth`) ? r.id : null;
+  }
+  const r = grantBook(s).get(macOf(s, deviceId, iface))?.router;
+  return r && !conflictsOf(s, r).has(`${deviceId}:${iface}`) ? r : null;
+}
+
+// Whether the address a device's interface holds is also held by another in its domain.
+export const conflicted = (s: GameState, deviceId: string, iface: Iface = "eth"): boolean =>
+  dhcpRouters(s).some((r) => conflictsOf(s, r.id).has(`${deviceId}:${iface}`));
+
+// The address a device's interface holds; null without one. A static setting holds its address while the interface is up; a
+// managed switch without a lease answers on its factory address.
 export function addressOf(s: GameState, id: string, iface: Iface = "eth"): string | null {
+  const own = iface === "eth" ? s.devices.find((x) => x.id === id) : undefined;
+  if (own && isStatic(own)) return ifaceOf(own).down ? null : ifaceOf(own).ip ?? null;
   const g = grantBook(s).get(macOf(s, id, iface));
   if (g) return g.ip;
   const d = iface === "eth" ? s.devices.find((x) => x.id === id) : undefined;
@@ -160,6 +218,7 @@ export function holderOf(s: GameState, ip: string): { deviceId: string; iface: I
   for (const r of dhcpRouters(s)) {
     if (lanOf(s, r)!.gateway === ip && working(s, r.id)) return { deviceId: r.id, iface: "router" };
     for (const g of grantsOf(s, r.id).values()) if (g.ip === ip && g.deviceId) return { deviceId: g.deviceId, iface: g.iface };
+    for (const [id, own] of staticsIn(s, r.id)) if (own === ip) return { deviceId: id, iface: "eth" };
   }
   return null;
 }

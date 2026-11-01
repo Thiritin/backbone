@@ -1,9 +1,9 @@
 // What a hypervisor console's cluster summary and alarm list show: per node and in total the physical capacity, what the
 // workloads book of it and what they use right now, and the alarms those numbers raise.
 import type { GameState } from "../50-state";
-import { booked, controlPlanesOn, KEYS, type Cluster, type NodeState } from "./cluster";
+import { booked, controlPlanesOn, KEYS, memberUp, type Cluster, type ClusterNode, type NodeState } from "./cluster";
 import { HOT_RAM } from "./ha";
-import { rackPower, working } from "./status";
+import { rackPower } from "./status";
 import { CONTINUOUS } from "../20-world/datacenters";
 import { nodeUsage } from "./usage";
 
@@ -24,13 +24,14 @@ const round = (x: number) => Math.round(x * 10) / 10;
 const pct = (a: number, b: number) => Math.round((a / b) * 100);
 
 // Allocated counts the control plane a node runs along with what its workloads book.
-function host(s: GameState, c: Cluster, deviceId: string, state: NodeState): HostSummary {
+function host(s: GameState, c: Cluster, n: ClusterNode): HostSummary {
+  const { deviceId, state } = n;
   const d = s.devices.find((x) => x.id === deviceId);
   const u = nodeUsage(s, deviceId), use = zero(), on = s.workloads.filter((w) => w.clusterId === c.id && w.deviceId === deviceId);
   const alloc = controlPlanesOn(s, deviceId);
   for (const w of on) { const b = booked(s, w); for (const k of KEYS) alloc[k] += b[k]; }
   for (const k of KEYS) use[k] = { capacity: u.physical[k], allocated: alloc[k], used: u.used[k] };
-  return { deviceId, name: d ? d.hostname ?? d.label ?? d.name : deviceId, state, up: working(s, deviceId), vms: on.length, use };
+  return { deviceId, name: d ? d.hostname ?? d.label ?? d.name : deviceId, state, up: memberUp(s, n), vms: on.length, use };
 }
 
 function hostAlarms(h: HostSummary): Alarm[] {
@@ -63,7 +64,7 @@ function failoverAlarm(c: Cluster, hosts: HostSummary[]): Alarm[] {
 export function clusterSummary(s: GameState, clusterId: string): ClusterSummary {
   const c = s.clusters.find((x) => x.id === clusterId);
   if (!c) return { hosts: [], total: zero(), alarms: [] };
-  const hosts = c.nodes.map((n) => host(s, c, n.deviceId, n.state)), total = zero();
+  const hosts = c.nodes.map((n) => host(s, c, n)), total = zero();
   for (const h of hosts) for (const k of KEYS) for (const f of ["capacity", "allocated", "used"] as const) total[k][f] += h.use[k][f];
   const stuck: Alarm[] = s.workloads.filter((w) => w.clusterId === c.id && w.stuck)
     .map((w) => ({ severity: "critical", on: { kind: "vm", id: w.id }, key: "alarm.vmStuck", params: { vm: w.hostname ?? w.id } }));

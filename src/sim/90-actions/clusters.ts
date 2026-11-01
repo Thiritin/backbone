@@ -19,7 +19,7 @@ import { licenceBlock } from "../60-infra/licence";
 import { markPatched, patchOut, vulnerable } from "../60-infra/security";
 import {
   anchorOf, clusterOf, clustersOf, dropCluster, gameFirst, controlPlaneUp, controlPlaneUse, fitsControlPlane, HA_OFF, hostOfVm, hostsOfVm, insideVm, isOwnVm, KEYS, vmCap, moveOff, noRoomError, nodeTakes, pickNode, serverTaken,
-  backsUpCluster, balances, datastoreFits, isDatastore, setMachine, withDatastore, setNodeState, stripSoftware, supports, vmById, vmRoom, workloadsOf, workloadsOn, type BackupEvery, type Cluster, type Ha, type Placement, type Workload,
+  backsUpCluster, balances, datastoreFits, isDatastore, setMachine, withDatastore, setNodeState, stripSoftware, supports, vmById, vmRoom, workloadsOf, workloadsOn, type BackupEvery, type Cluster, type ClusterNode, type Ha, type Placement, type Workload,
 } from "../60-infra/cluster";
 import { freeAddresses, gatewayOf } from "../60-infra/lan";
 import { nextPrivateVlan, privateNetOf } from "../60-infra/private";
@@ -30,8 +30,11 @@ import type { ActionResult } from "./hardware";
 import { migrateWorkload } from "./vms";
 import { buyLicenses, licenseDue } from "../85-products/products";
 import { sizeOf } from "../30-market/spec";
+import { addressOf } from "../60-infra/lan";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
+// A node joins at the address it holds now, or pins the first one it gets (cluster.ts, pinMembers).
+const joined = (s: GameState, deviceId: string): ClusterNode => { const ip = addressOf(s, deviceId); return ip ? { deviceId, state: "active", ip } : { deviceId, state: "active" }; };
 // economy.md, Panel VMs: the size the setup and the Products app suggest, and the smallest the player can book.
 export const PANEL_VM_SIZE: Resources = { vcpu: 2, ramGb: 2, diskGb: 50 };
 export const PANEL_VM_MIN: Resources = { vcpu: 1, ramGb: 1, diskGb: 10 };
@@ -75,7 +78,7 @@ function installOnServer(s: GameState, deviceId: string, sw: Software, name: (la
   const d = s.devices.find((x) => x.id === deviceId), bad = freeServer(s, d, sw.id);
   if (bad) return fail(bad);
   const loc = locationOf(s, d!)!, id = `clu${s.nextId++}`, slot = sw.kind === "cloud" ? "platform" : "panel";
-  const c: Cluster = { ...blank(s, id, name(d!.label ?? d!.name, loc.name), loc.az, sw.kind), nodes: [{ deviceId, state: "active" }], controlPlane: deviceId };
+  const c: Cluster = { ...blank(s, id, name(d!.label ?? d!.name, loc.name), loc.az, sw.kind), nodes: [joined(s, deviceId)], controlPlane: deviceId };
   if (!fitsControlPlane(s, { ...c, [slot]: sw.id }, deviceId)) return fail(working(s, deviceId) ? "error.nodeFull" : "error.nodeDown");
   s.clusters = [...s.clusters, { ...c, switching: { kind: sw.kind, to: sw.id, doneAt: s.hour + sw.installHours } }];
   addSoftware(s, deviceId, sw, s.hour + sw.installHours);
@@ -254,7 +257,7 @@ export function addNode(s: GameState, clusterId: string, deviceId: string): Acti
   const kept = d.software;
   leave(s, own.id, d.id);
   d.software = kept;
-  update(s, c.id, (x) => ({ ...x, nodes: [...x.nodes, { deviceId, state: "active" }], controlPlane: x.controlPlane ?? deviceId }));
+  update(s, c.id, (x) => ({ ...x, nodes: [...x.nodes, joined(s, deviceId)], controlPlane: x.controlPlane ?? deviceId }));
   return { ok: true };
 }
 
