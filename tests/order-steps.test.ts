@@ -1,16 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { addressLines, mailedAddress } from "../src/sim/30-customers/addresses";
-import { invoiceOf, stepsDone } from "../src/sim/30-market/manual";
+import { hostFor, invoiceOf, stepsDone } from "../src/sim/30-market/manual";
 import { offerPrice, setupFee } from "../src/sim/30-market/spec";
 import { DOMAIN_FEE } from "../src/sim/30-customers/registry";
 import { invoiceTotal } from "../src/sim/45-billing/billing";
-import { matchTransfer, sendInvoice } from "../src/sim/90-actions/billing";
+import { matchTransfer } from "../src/sim/90-actions/billing";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { orderLead } from "../src/sim/30-market/orders";
 import type { GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
-import { attachQuote, convertQuote, createAccount, createQuote, deleteQuote, editQuote, quoteOrder } from "../src/sim/90-actions/orders";
-import { readyGame } from "./fixtures";
+import { attachQuote, convertQuote, createAccount, createQuote, deleteQuote, editQuote, invoiceOrder, provisionOrder, quoteOrder, registerOrderDomain } from "../src/sim/90-actions/orders";
+import type { SalesRequest } from "../src/sim/30-market/market";
+import { owner, readyGame } from "./fixtures";
 
 const web = { product: "webHosting" as const, size: 0, sla: "basic" as const };
 const idOf = (r: { ok: boolean; error?: string; id?: string }) => { if (!r.ok || !r.id) throw new Error(r.error); return r.id; };
@@ -28,6 +29,59 @@ function accepted(s: GameState) {
   for (let i = 0; i < 60 && !stepsDone(s, o.req()).quote; i++) tick(s);
   return o;
 }
+
+// Registers the domain and sets up the service: the steps after the confirmation.
+function finish(s: GameState, id: string, req: () => SalesRequest) {
+  idOf({ ...registerOrderDomain(s, id, ...owner(s, id)), id: "ok" });
+  run(s, 1);
+  idOf({ ...provisionOrder(s, id, hostFor(s, req())!), id: "ok" });
+  run(s, 1);
+}
+const sent = (r: SalesRequest) => r.thread.filter((m) => m.from === "you").map((m) => m.key.replace(/\.\d$/, ""));
+
+describe("free order of steps", () => {
+  it("opens the account first and assigns the quote made after to it", () => {
+    const s = readyGame(9);
+    const { id, req } = order(s);
+    const customers = s.customers.length;
+    expect(createAccount(s, id, mailedAddress(s.seed, req())).ok).toBe(true);
+    run(s, 1);
+    const c = req().customerId!;
+    expect(c).not.toBeNull();
+    expect(stepsDone(s, req())).toMatchObject({ quote: false, account: true });
+    const q = idOf(createQuote(s, id));
+    expect(s.quotes.find((x) => x.id === q)!.customerId).toBe(c);
+    expect(attachQuote(s, q, id).ok).toBe(true);
+    for (let i = 0; i < 60 && !stepsDone(s, req()).quote; i++) tick(s);
+    idOf(convertQuote(s, q));
+    finish(s, id, req);
+    expect(s.customers).toHaveLength(customers + 1);
+    expect(invoiceOf(s, req())).toMatchObject({ status: "open", customerId: c });
+    expect(sent(req())).toEqual(["reply.order.quote", "reply.order.done"]);
+  });
+
+  it("takes the quote first and sends one email once everything is done", () => {
+    const s = readyGame(9);
+    const { id, req } = accepted(s);
+    expect(sent(req())).toEqual(["reply.order.quote"]);
+    expect(createAccount(s, id, mailedAddress(s.seed, req())).ok).toBe(true);
+    run(s, 1);
+    idOf(invoiceOrder(s, id));
+    run(s, 1);
+    expect(invoiceOf(s, req())!.status).toBe("draft");
+    idOf({ ...registerOrderDomain(s, id, ...owner(s, id)), id: "ok" });
+    run(s, 1);
+    // Account, confirmation and domain sent nothing yet.
+    expect(sent(req())).toEqual(["reply.order.quote"]);
+    idOf({ ...provisionOrder(s, id, hostFor(s, req())!), id: "ok" });
+    run(s, 1);
+    expect(sent(req())).toEqual(["reply.order.quote", "reply.order.done"]);
+    const mail = req().thread.at(-1)!, inv = invoiceOf(s, req())!;
+    expect(mail.params).toMatchObject({ invoice: inv.number, total: invoiceTotal(inv) });
+    expect(inv.status).toBe("open");
+    expect(s.tickets.find((x) => x.id === id)!.status).toBe("waiting");
+  });
+});
 
 describe("order steps", () => {
   it("signs the order email with the sender's postal address", () => {
@@ -83,12 +137,11 @@ describe("order steps", () => {
     const inv = invoiceOf(s, req())!;
     expect(inv).toMatchObject({ id: conv, status: "draft", customerId: req().customerId });
     expect(invoiceTotal(inv)).toBe(32.5 + DOMAIN_FEE);
-    expect(stepsDone(s, req()).invoice).toBe(false);
-    // Sending the draft from Books is the confirmation step; the customer pays it by bank transfer.
-    const mails = req().thread.length;
-    expect(sendInvoice(s, inv.id).ok).toBe(true);
     expect(stepsDone(s, req()).invoice).toBe(true);
-    expect(req().thread.slice(mails).map((m) => m.key)).toEqual([expect.stringMatching(/order\.invoice/)]);
+    // The draft confirms the order and goes out with the setup; the customer pays it by bank transfer.
+    const mails = req().thread.length;
+    finish(s, id, req);
+    expect(req().thread.slice(mails).map((m) => m.key)).toEqual([expect.stringMatching(/order\.done/)]);
     expect(s.tickets.find((x) => x.id === id)!.status).toBe("waiting");
     expect(invoiceOf(s, req())).toMatchObject({ status: "open", bank: true });
     s.invoices = s.invoices.map((i) => (i.id === inv.id ? { ...i, payStep: 0, payAt: s.hour } : i));
@@ -97,7 +150,7 @@ describe("order steps", () => {
     expect(invoiceOf(s, req())!.status).toBe("open");
     expect(matchTransfer(s, tr.id, inv.id, true).ok).toBe(true);
     run(s, 1);
-    expect(s.tickets.find((x) => x.id === id)!.status).toBe("open");
+    expect(s.tickets.find((x) => x.id === id)!).toMatchObject({ status: "resolved", outcome: "accepted" });
   });
 
   it("carries an accepted quote forward to the first invoice once", () => {
@@ -151,7 +204,7 @@ describe("order steps", () => {
     expect(c.address).toEqual(mailedAddress(s.seed, req()));
     // The quote shows it was carried forward on its own.
     expect(s.quotes.find((x) => x.id === q)).toMatchObject({ status: "invoiced", customerId: c.id, invoiceId: req().invoiceId });
-    expect(invoiceOf(s, req())).toMatchObject({ status: "open", bank: true, customerId: c.id });
+    expect(invoiceOf(s, req())).toMatchObject({ status: "draft", customerId: c.id });
     expect(stepsDone(s, req())).toMatchObject({ quote: true, account: true, invoice: true, provision: false });
   });
 

@@ -47,7 +47,7 @@ import type { Letter } from "./40-support/letters";
 import type { TrendPoint } from "./80-business/trend";
 
 // 3: GPU line servers carry their preset cards. 4: an unregistered game holds its savings until the bank account opens.
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 export type BondMode = "none" | "failover" | "balance";
 export type CableKind = "copper" | "dac" | "fiber" | "rollover";
