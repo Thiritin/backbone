@@ -1,4 +1,4 @@
-// Products and groups of the shop portal: which plan an order form visit buys (docs/design/shop.md).
+// Products and groups of the shop portal: which plan a shop visit buys (docs/design/shop.md).
 import { CYCLE_MONTHS, CYCLES, type Cycle } from "../10-catalog/cycles";
 import { shopById, type ShopId } from "../10-catalog/shops";
 import type { Spec } from "../10-catalog/products";
