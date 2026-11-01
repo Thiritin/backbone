@@ -17,3 +17,24 @@
 .pt-fields { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0; align-items: center; }
 .pt-fields dd { margin: 0; display: flex; gap: 8px; align-items: center; }
 .pt-fields > div { display: contents; }
+/* Shared frame of the skins that wrap the common screens */
+.shop-head { display: flex; align-items: center; padding: 10px 16px; }
+.shop-logo { font-size: 1.3em; font-weight: 700; }
+.shop-body { display: flex; align-items: flex-start; }
+.shop-nav { display: flex; gap: 4px; padding: 8px 12px; }
+.nav-side .shop-nav { flex-direction: column; min-width: 170px; align-self: stretch; }
+.nav-top .shop-body { flex-direction: column; align-items: stretch; }
+.nav-top .shop-nav { flex-wrap: wrap; }
+.shop-nav a { padding: 3px 8px; text-decoration: none; }
+.shop-nav a.on { font-weight: 700; }
+.shop-main { flex: 1; min-width: 0; padding: 16px; }
+.shop-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.shop-item { display: flex; align-items: center; gap: 12px; padding: 6px 8px; border-bottom: 1px solid #ddd; }
+.shop-item .shop-name { flex: 1; }
+.shop-item.gone { opacity: 0.5; }
+.shop-fields, .shop-checkout { display: grid; gap: 8px; max-width: 360px; margin: 12px 0; }
+.shop-fields label, .shop-checkout label { display: grid; gap: 2px; }
+.shop-steps { display: flex; gap: 16px; list-style: none; padding: 0; margin: 0 0 12px; }
+.shop-steps .on { font-weight: 700; }
+.shop-banner { margin: 0 0 12px; padding: 6px 10px; background: #fff3cd; border: 1px solid #e6d28a; }
+@media (max-width: 640px) { .shop-body { flex-direction: column; align-items: stretch; } .nav-side .shop-nav { flex-direction: row; flex-wrap: wrap; } }

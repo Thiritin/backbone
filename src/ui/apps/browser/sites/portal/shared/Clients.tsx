@@ -35,7 +35,7 @@ export function ClientSummary({ game, id, toClient }: ScreenProps & { id: string
   return (
     <div className="pt-screen">
       <h3>{c.name}</h3>
-      <button className="btn" onClick={() => toClient(c.id)}>{t("shop-admin.loginAsClient")}</button>
+      {toClient && <button className="btn" onClick={() => toClient(c.id)}>{t("shop-admin.loginAsClient")}</button>}
       <table className="pt-table">
         <thead><tr><th>{t("shop-admin.product")}</th><th>{t("shop-admin.price")}</th><th /></tr></thead>
         <tbody>

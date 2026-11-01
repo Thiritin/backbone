@@ -2,7 +2,7 @@ import type { GameState } from "../../../../../../sim/50-state";
 
 export type ScreenName = "home" | "products" | "product" | "options" | "servers" | "orders" | "clients" | "client" | "invoices";
 export interface Screen { name: ScreenName; id?: string; tab?: string }
-export interface ScreenProps { game: GameState; go: (s: Screen) => void; toClient: (customerId: string) => void }
+export interface ScreenProps { game: GameState; go: (s: Screen) => void; toClient?: (customerId: string) => void }
 
 const NAMES: ScreenName[] = ["home", "products", "product", "options", "servers", "orders", "clients", "client", "invoices"];
 
