@@ -27,16 +27,16 @@ A module connects the shop to one software (a panel, hypervisor, game panel, DNS
 
 ### 2.3 Variants
 
-Prices are game euros. "Modules" lists what is included; "Extra" is what a missing module costs.
+Prices are game euros at the start of each variant; the licensing eras, editions and caps over time are in `docs/design/software-versions.md`, section Shop systems. "Modules" lists what is included; "Extra" is what a missing module costs.
 
 | Variant (real product) | Available | Licence | Included modules | Extra modules | Stock | Upside | Downside |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| ModemBill (ModernBill) | 2005, sold until 2010 | €300 once | cPanic, Pleskit, registrars | none sold | manual | cheapest real shop | Parallax buys it in 2008; no updates and no new modules after 2011 |
-| ClientExit (ClientExec) | 2005 on | €250 once, €60 a year for updates | cPanic, DirectAdmen, registrars | €150 once (third party) | manual and auto | cheap to own | few modules; no game panel modules before 2010 |
-| WHMCache (WHMCS) | 2005 on | €15 a month leased, or €450 once and €90 a year | every panel, registrars, certificates, game panels from 2008 | hypervisor modules from ModulesGardn, €200 once per hypervisor | manual and auto | widest panel coverage, the default choice | 2012 breach event; from 2020 the lease scales with active customers (€18 up to 250, €30 up to 500, €50 up to 1,000, then €15 per further 1,000) |
-| Blessta (Blesta) | 2007 on | €300 once, updates included | cPanic, Pleskit, DirectAdmen, registrars, Proxmocks from 2010 | €100 once | manual and auto | no breach events, source included | few hypervisor and game modules |
-| HostBull (HostBill) | 2009 on | €60 a month | every panel, hypervisor, game panel, DNS, VPN and storage software, registrars, certificates | none | manual and auto | everything included | highest monthly cost |
-| Ubersmyth (Ubersmith) | 2006 on | €1,500 setup, €3 a month per managed server (at least €100) | dedicated servers (OOB power and install), colocation (rack units, PDU ports), DNS | €300 once per panel or hypervisor | manual and auto | the only one that auto-provisions dedicated servers and colocation | expensive for small hosters |
+| ModemBill (ModernBill) | 2005, sold until 2010 | €250 key or lease from €15 a month | cPanic, Pleskit, registrars | none sold | manual | cheapest real shop | Parallax buys it in 2008; no updates and no new modules after 2011 |
+| ClientExit (ClientExec) | 2005 on | €250 key and €50 a year for updates, or lease from €13 a month | cPanic, DirectAdmen, registrars | €150 once (third party) | manual and auto | cheap to own | few modules; no game panel modules before 2010 |
+| WHMCache (WHMCS) | 2005 on | €15 a month leased, or a €250 key (€325 from 2007) and €45 a year; from 2020 a lease by active clients | every panel, registrars, certificates, game panels from 2008 | hypervisor modules from ModulesGardn, €200 once per hypervisor | manual and auto | widest panel coverage, the default choice | 2012 breach event; from 2020 the lease scales with active customers (€18 up to 250, €30 up to 500, €50 up to 1,000, then €15 per further 1,000) |
+| Blessta (Blesta) | 2007 on | €13 a month leased, keys from 2010 | cPanic, Pleskit, DirectAdmen, registrars, Proxmocks from 2010 | €100 once | manual and auto | no breach events, source included | few hypervisor and game modules |
+| HostBull (HostBill) | 2009 on | €16 a month leased, a €600 key from 2013 | every panel, hypervisor, game panel, DNS, VPN and storage software, registrars, certificates | none | manual and auto | everything included | the €600 key from 2013 costs the most up front |
+| Ubersmyth (Ubersmith) | 2006 on | €1,000 setup and a lease by managed servers from €100 a month | dedicated servers (OOB power and install), colocation (rack units, PDU ports), DNS | €300 once per panel or hypervisor | manual and auto | the only one that auto-provisions dedicated servers and colocation | expensive for small hosters |
 | OrderBocks by ResellerKlub (OrderBox) | 2006 on | free | registrars, certificates, cPanic | none sold | manual | no upfront cost | takes 6% of the monthly revenue of customers who ordered through it |
 | BoxBillin' (BoxBilling, later FOSSBilling) | 2011 on | free | registrars | free community modules, each costs 12 staff hours to integrate | manual and auto | no licence | abandoned 2015, rising breach risk until the FossBillin' revival in 2022 |
 

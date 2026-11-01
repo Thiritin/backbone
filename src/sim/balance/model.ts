@@ -17,6 +17,7 @@ import { OVER_DRIFT, PAST_MAX_DRIFT, TOLERANCE } from "../30-customers/pricing";
 import { OFFER, ORGANIC_CONSIDER, PRICE_WEIGHT, REFERRAL_LEADS, SPILL_SHARE } from "../30-market/market";
 import { CYCLE_SHARE, MARKET_DISCOUNT } from "../10-catalog/cycles";
 import { SHOPS } from "../10-catalog/shops";
+import { shopOnSale, shopUpfront } from "../10-catalog/shop-licences";
 import { BUDGETS, OWNED, PROFILE_IDS, SATURATION, WEBSITE_LEADS } from "../80-business/marketing";
 import { generationOf, penaltyFor, SITE_RENT } from "../80-business/website";
 import { annuity, baseRate, LOAN_AMOUNTS, MIN_LIMIT, RISK_PREMIUM } from "../45-billing/billing";
@@ -100,7 +101,10 @@ const AWARENESS_START = (p: Profile) => (p.id === "private" || p.id === "gamer" 
 // the happiness run's careful player fills it in the last quarter, so the bot moves out no earlier than October.
 const MOVE_MONTH = 9;
 // The bot buys the cheapest shop system on sale with its website.
-const shopSetup = (year: number): number => Math.min(...SHOPS.filter((v) => year >= v.from && (v.until === undefined || year <= v.until)).map((v) => v.setup));
+const shopSetup = (year: number): number => {
+  const hour = hourOf(new Date(Date.UTC(year, 0, 1)));
+  return Math.min(...SHOPS.filter((v) => shopOnSale(v.id, hour)).map((v) => shopUpfront(v.id, hour)));
+};
 function rackRent(watts: number): number {
   const kw = watts / 1000;
   const share = [8, 4, 2, 1].find((n) => kw <= HOME_DC.kwPerPosition / n);

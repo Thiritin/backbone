@@ -12,7 +12,7 @@ export interface Offer { edition: string | null; fee: number; kind: LicenseKind;
 export type CartLine = GameState["cart"][number];
 
 // The site that sells a product and the name its order emails come from.
-export const hostOf = (product: string): string | undefined => productOf(product)?.site.host;
+export const hostOf = (product: string): string | undefined => productOf(product)?.site?.host;
 export const vendorName = (product: string): string => productOf(product)?.name ?? product;
 
 // What a product's site sells at the hour: the editions of its licensing era, and one licence at the era's price when the
@@ -20,6 +20,7 @@ export const vendorName = (product: string): string => productOf(product)?.name 
 export function offers(product: string, hour: number): Offer[] {
   const p = productOf(product);
   const era = p && isLicensed(product) ? eraAt(p, hour) : undefined;
+  if (era?.closed) return [];
   const tiers: Offer[] = tiersOnSale(product, hour).map((x) => ({ edition: x.id, fee: x.fee, kind: x.kind }));
   const own = era && era.kind !== "free" && (era.kind === "once" || !tiers.length) ? [{ edition: null, fee: era.fee, kind: era.kind, period: era.period }] : [];
   return [...tiers, ...own];

@@ -4,6 +4,7 @@ import { dateOf, hourOf } from "../00-core/time";
 import { tiersOf, topTier, type LicenceTier } from "../10-catalog/licence-tiers";
 import { SOFTWARE } from "../10-catalog/platforms";
 import { eraAt, SERVER_OS } from "../10-catalog/server-os";
+import { SHOP_LICENCES } from "../10-catalog/shop-licences";
 import { UI_LOOKS, versionAt, versionInfo, versionsOf } from "../10-catalog/software-versions";
 import type { GameState, Licence } from "../50-state";
 import type { Cluster } from "./cluster";
@@ -11,7 +12,7 @@ import type { Cluster } from "./cluster";
 // unlicensed: the assigned key is for an older major version than the one installed.
 export type LicenceStatus = "trial" | "active" | "ended" | "lapsed" | "unlicensed";
 
-export const productOf = (id: string) => SERVER_OS.find((o) => o.id === id) ?? SOFTWARE.find((x) => x.id === id);
+export const productOf = (id: string) => SERVER_OS.find((o) => o.id === id) ?? SOFTWARE.find((x) => x.id === id) ?? SHOP_LICENCES.find((x) => x.id === id);
 export const nameOf = (product: string): string => productOf(product)?.name ?? product;
 // Free software has no licence terms.
 export const isLicensed = (product: string): boolean => productOf(product)?.trialDays !== undefined;

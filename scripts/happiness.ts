@@ -38,7 +38,8 @@ import { fillLines } from "../src/sim/80-business/website";
 import { OWNED, owns } from "../src/sim/80-business/marketing";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { chooseShop } from "../src/sim/90-actions/shop";
-import { SHOPS } from "../src/sim/10-catalog/shops";
+import { SHOPS, type ShopId } from "../src/sim/10-catalog/shops";
+import { shopOnSale, shopUpfront } from "../src/sim/10-catalog/shop-licences";
 import { bookMail } from "../src/sim/90-actions/mail";
 import { registerCompanyDomain, signRegistrar } from "../src/sim/90-actions/registrar";
 import { derivedDomain } from "../src/sim/30-customers/domains";
@@ -163,8 +164,8 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
     const next = ["products", "marketingBasics", "shops"].find((id) => !s.unlocks.includes(id));
     if (next && !s.training) research(s, next);
     if (!owns(s, "website") && !needServer && s.cash >= OWNED.website.setup + 2000) setUpChannel(s, "website");
-    const year = yearOf(s.hour), shop = SHOPS.filter((v) => year >= v.from && (v.until === undefined || year <= v.until)).sort((a, b) => a.setup - b.setup)[0];
-    if (owns(s, "website") && s.unlocks.includes("shops") && !s.shop.variant && !needServer && s.cash >= shop.setup + 2000) chooseShop(s, shop.id);
+    const upfront = (id: ShopId) => shopUpfront(id, s.hour), shop = SHOPS.filter((v) => shopOnSale(v.id, s.hour)).sort((a, b) => upfront(a.id) - upfront(b.id))[0];
+    if (owns(s, "website") && s.unlocks.includes("shops") && !s.shop.variant && !needServer && s.cash >= upfront(shop.id) + 2000) chooseShop(s, shop.id);
     for (const k of ["products", "shop"]) if (!(k in reached) && (k === "shop" ? !!s.shop.variant : s.unlocks.includes(k))) reached[k] = Math.round((10 * s.hour) / MONTH) / 10;
   };
   // The cheapest line with more upload this year, once the basement's evening peak reaches 90% of the line.
