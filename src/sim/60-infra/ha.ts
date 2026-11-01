@@ -8,12 +8,12 @@ import { quorate } from "./quorum";
 import { cephCopies, cephOn, replicaReady, replicaStale, replicaTick } from "./replica";
 import { settleLoss } from "../90-actions/vms";
 import { working } from "./status";
+import { HOT_RAM } from "./alarms";
 import { nodeUsage } from "./usage";
 
 // economy.md, High availability: a failed node's VMs are back on other nodes after five minutes; a node runs hot from 90%
-// of its installed RAM or with more busy vCPUs than cores.
+// of its installed RAM (HOT_RAM in alarms.ts) or with more busy vCPUs than cores.
 export const FAILOVER_MINUTES = 5;
-export const HOT_RAM = 0.9;
 
 const patch = (s: GameState, id: string, p: Partial<Workload>) => {
   s.workloads = s.workloads.map((w) => (w.id === id ? { ...w, ...p } : w));
