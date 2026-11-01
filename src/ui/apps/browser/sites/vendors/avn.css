@@ -18,6 +18,7 @@
 .vs-avn.late header { background: #e2001a; border: 0; padding: 18px 40px; }
 .vs-avn.late .vs-wm, .vs-avn.late .vs-claim { color: #ffffff; }
 .vs-avn.late .vs-wm svg rect { fill: #ffffff; }
+.vs-avn.late .vs-wm svg path { stroke: #e2001a; }
 .vs-avn.late .vs-side { width: 200px; background: #ffffff; border-right: 1px solid #eeeeee; padding: 24px 0; }
 .vs-avn.late .vs-side a { padding: 8px 40px; }
 .vs-avn.late .vs-side a[aria-current] { background: #fbe5e8; }

@@ -8,6 +8,7 @@ import { cancelCustomer } from "../40-support/tickets";
 import type { GameState, LedgerEntry } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { cents, invoiceTotal } from "./billing";
+import { takeBack } from "./payments";
 
 const DAY = 24;
 // Share of standard orders paid with a stolen card or wallet account.
@@ -68,6 +69,11 @@ export function fraudTick(s: GameState): SimEvent[] {
   for (const due of s.customers.filter((c) => c.chargebackAt !== undefined && s.hour >= c.chargebackAt)) {
     s.customers = s.customers.map((c) => (c.id === due.id ? { ...c, chargebackAt: undefined } : c));
     const c = s.customers.find((x) => x.id === due.id)!;
+    // A stolen card through the shop: the card network takes back each payment in Books, where the player books it.
+    if (c.method === "card") {
+      for (const inv of s.invoices.filter((i) => i.customerId === c.id && i.status === "paid" && i.method === "card")) takeBack(s, inv, "chargeback", true);
+      continue;
+    }
     const paid = cents(s.invoices.filter((i) => i.customerId === c.id && i.status === "paid").reduce((n, i) => n + invoiceTotal(i), 0));
     s.invoices = s.invoices.map((i) => (i.customerId === c.id && i.status !== "writtenOff" ? { ...i, status: "writtenOff", payAt: null, suspended: false } : i));
     if (c.churnedAt === null) {

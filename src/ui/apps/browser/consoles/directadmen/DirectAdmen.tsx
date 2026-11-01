@@ -18,7 +18,7 @@ const ERAS = erasFrom(2005, 2018);
 
 // The software tab is the home page: server manager links, tools and server facts side by side.
 export function DirectAdmen(p: PanelProps) {
-  const era = eraAt(ERAS, p.game), open = parseCreate("directadmen", p.path), [tab, setTab] = usePanelTab(p.f, open?.screen ?? "software"), [q, setQ] = useState(""), [level, setLevel] = useState<"admin" | "reseller" | "user">("admin");
+  const era = eraAt(ERAS, p), open = parseCreate("directadmen", p.path), [tab, setTab] = usePanelTab(p.f, open?.screen ?? "software"), [q, setQ] = useState(""), [level, setLevel] = useState<"admin" | "reseller" | "user">("admin");
   const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f);
   if (!p.signedIn) return (
     <div className="cx da da-login" data-era={era}>

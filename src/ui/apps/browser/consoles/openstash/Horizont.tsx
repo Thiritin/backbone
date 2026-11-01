@@ -16,6 +16,7 @@ import { packagesOf } from "../../../../../sim/80-business/packages";
 import { PackagesScreen } from "../PackageForms";
 import { flavorCounts, FLAVORS, flavorOf as baseFlavorOf, same } from "./flavors";
 import "./horizont.css";
+import { noAutofill } from "../../../../no-autofill";
 
 // docs/design/software.md, section 9: the purple dashboard from 2010, the dark-sidebar one with the red mark from 2016.
 const ERAS = erasFrom(2010, 2016);
@@ -89,7 +90,7 @@ type Page = "overview" | "instances" | "images" | "keys" | "hypervisors" | "flav
 const TAB_LABELS = { Overview: () => t("browser-consoles-1.hzOverview"), Log: () => t("browser-consoles-1.hzLog"), Console: () => t("browser-consoles-1.console") };
 
 export function Horizont(p: PanelProps) {
-  const era = eraAt(ERAS, p.game), { game, c, f } = p, openConsole = useStore((s) => s.openConsole);
+  const era = eraAt(ERAS, p), { game, c, f } = p, openConsole = useStore((s) => s.openConsole);
   const link = parseCreate("openstash", p.path), [page, setPage] = useState<Page>(link?.screen === "packages" ? "flavors" : "instances"), [launching, setLaunching] = useState(link?.screen === "create");
   const { vms, dialog } = useVms(game, c, f), sw = useSoftware(game, c, f), nv = useNewVm(game, c, link?.screen === "create" ? link.order : undefined), health = summaryOf(game, c, null);
   if (!p.signedIn) return (
@@ -97,7 +98,7 @@ export function Horizont(p: PanelProps) {
       <LoginForm className="hz-card" onLogin={p.login} button={t("browser-consoles-1.hvConnectBtn")}>
         <div className="hz-logo">openstash</div>
         <div className="cx-host">{p.host}</div>
-        <label className="cx-field">{t("browser-consoles-1.domain")}<input defaultValue="default" autoComplete="off" /></label>
+        <label className="cx-field">{t("browser-consoles-1.domain")}<input defaultValue="default" {...noAutofill} /></label>
       </LoginForm>
     </div>
   );

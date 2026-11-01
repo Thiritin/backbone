@@ -17,6 +17,7 @@ import { useStore } from "../../../store";
 import { stamp } from "../../support/labels";
 import "../consoles/consoles.css";
 import "./ipmi.css";
+import { noAutofill } from "../../../no-autofill";
 
 // Each brand's controller keeps its own look and page structure whatever the desktop theme.
 export type BmcLook = "idraq" | "ilol" | "ipmi" | "xclarify";
@@ -146,8 +147,8 @@ function Login({ brand, host, onLogin }: { brand: string; host: string; onLogin:
       <form className="cx-card" onSubmit={(e) => { e.preventDefault(); onLogin(); }}>
         <Brand brand={brand} size={32} />
         <div className="cx-host">{host}</div>
-        <label className="cx-field">{t("misc1.ipmi.username")}<input defaultValue="root" autoComplete="off" /></label>
-        <label className="cx-field">{t("misc1.ipmi.password")}<input type="password" defaultValue="calvin" autoComplete="off" /></label>
+        <label className="cx-field">{t("misc1.ipmi.username")}<input defaultValue="root" {...noAutofill} /></label>
+        <label className="cx-field">{t("misc1.ipmi.password")}<input type="password" defaultValue="calvin" {...noAutofill} /></label>
         <button className="cx-btn primary" type="submit">{SIGN_IN[look.look]}</button>
       </form>
     </div>

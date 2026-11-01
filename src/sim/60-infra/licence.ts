@@ -4,7 +4,8 @@ import { dateOf, hourOf, yearOf } from "../00-core/time";
 import { tiersOf, topTier, type LicenceTier } from "../10-catalog/licence-tiers";
 import { SOFTWARE } from "../10-catalog/platforms";
 import { licensingAt, SERVER_OS } from "../10-catalog/server-os";
-import { versionAt, versionInfo, versionsOf } from "../10-catalog/software-versions";
+import type { Look } from "../10-catalog/sites";
+import { UI_LOOKS, versionAt, versionInfo, versionsOf } from "../10-catalog/software-versions";
 import type { GameState, Licence } from "../50-state";
 import type { Cluster } from "./cluster";
 
@@ -16,6 +17,10 @@ export const productOf = (id: string) => SERVER_OS.find((o) => o.id === id) ?? S
 export const isLicensed = (product: string): boolean => productOf(product)?.trialDays !== undefined;
 // Days of the product's trial; null when it needs a key at install.
 export const trialDaysOf = (product: string): number | null => productOf(product)?.trialDays ?? null;
+// The editions a licence key can carry; VMwhere editions belong to its cluster instead.
+export const keyTiers = (product: string): LicenceTier[] => (SOFTWARE.find((x) => x.id === product)?.kind === "panel" ? tiersOf(product) : []);
+// A panel with editions starts on a trial of its top tier instead of a key at install.
+export const hasTrialTiers = (product: string): boolean => keyTiers(product).length > 0 && trialDaysOf(product) !== null;
 
 export const assignedKey = (s: GameState, machineId: string, product: string): Licence | undefined =>
   s.licenses.find((k) => k.machineId === machineId && k.product === product);
@@ -28,7 +33,13 @@ export function installedVersion(s: GameState, machineId: string, product: strin
   const m = [...s.devices, ...s.workloads].find((x) => x.id === machineId);
   return (m?.os?.id === product ? m.os.version : m?.software?.find((x) => x.id === product)?.version) ?? null;
 }
-const installedMajor = (s: GameState, machineId: string, product: string): string | undefined =>
+// The console look of the version the machine runs, or null when the version or its UI generations are unknown.
+export function lookOf(s: GameState, machineId: string, product: string): Look | null {
+  const vs = versionsOf(product), at = (v: string | null) => vs.findIndex((x) => x.version === v);
+  const i = at(installedVersion(s, machineId, product));
+  return i < 0 ? null : UI_LOOKS[product]?.filter(([from]) => at(from) <= i).at(-1)?.[1] ?? null;
+}
+const installedMajor =(s: GameState, machineId: string, product: string): string | undefined =>
   versionInfo(product, installedVersion(s, machineId, product) ?? "")?.major;
 // A key for a major the product never had (a year, from before versions) covers whatever is installed.
 const isNewer = (product: string, installed: string | null, major: string): boolean => {
@@ -60,7 +71,7 @@ const majorAt = (product: string, hour: number): string => versionAt(product, ho
 // A one-time key covers a major version, the release on sale unless major names one; any other key covers a month from today.
 export function issueKey(s: GameState, product: string, edition: string | null, orderId?: string, major?: string): Licence {
   const n = 1 + Math.max(0, ...s.licenses.map((k) => Number(k.id.slice(3))));
-  const kind = tiersOf(product).find((x) => x.id === edition)?.kind ?? licensingAt(productOf(product)!, yearOf(s.hour)).kind;
+  const kind = keyTiers(product).find((x) => x.id === edition)?.kind ?? licensingAt(productOf(product)!, yearOf(s.hour)).kind;
   const term = kind === "once" ? null : monthAfter(s.hour);
   const k: Licence = {
     id: `lic${n}`, product, edition, kind, key: keyCode(s.seed, n, 611), orderId: orderId ?? `ord${n}`, boughtAt: s.hour, machineId: null,
@@ -135,7 +146,7 @@ export function legacyLicences(s: GameState, held: { id: string; machineId: stri
     add(l.machineId, l.id, { kind: "once", boughtAt: l.boughtAt, covers: { kind: "version", major }, renewsAt: null });
   }
   for (const m of [...s.devices, ...s.workloads]) {
-    for (const id of [m.os?.id, ...(m.software ?? []).map((x) => x.id)]) if (id && isLicensed(id) && !tiersOf(id).length) add(m.id, id, {}, null, installedMajor(s, m.id, id));
+    for (const id of [m.os?.id, ...(m.software ?? []).map((x) => x.id)]) if (id && isLicensed(id) && !hasTrialTiers(id)) add(m.id, id, {}, null, installedMajor(s, m.id, id));
   }
   s.clusters = s.clusters.map((c) => {
     const { licence, ...rest } = c as Cluster & { licence?: LegacyPanel };

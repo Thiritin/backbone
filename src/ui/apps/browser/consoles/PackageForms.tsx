@@ -11,6 +11,7 @@ import { belowFloor, covers, defaultSpecFor, packageNamed, packageProducts, pack
 import { provisionOrder } from "../../../../sim/90-actions/orders";
 import { addPackage, changePackage, copyPackages, deletePackage, editPackage } from "../../../../sim/90-actions/packages";
 import { useStore } from "../../../store";
+import { noAutofill } from "../../../no-autofill";
 
 const num = (n: number) => `${+n.toFixed(2)}`;
 export const specLine = (r: Resources): string => t("pkg.specLine", { vcpu: num(r.vcpu), ram: num(r.ramGb), disk: num(r.diskGb) });
@@ -159,7 +160,7 @@ export function ProvisionForm({ game, c, products, order, sections, className = 
         <>
           <label className="cx-field">{t("pkg.domain")}<input value={o!.domain ?? ""} readOnly /></label>
           <label className="cx-field">{t("pkg.username")}<input value={username} onChange={(e) => setUser(e.target.value)} /></label>
-          <label className="cx-field">{t("pkg.password")}<input type="password" defaultValue="correcthorse" autoComplete="off" /></label>
+          <label className="cx-field">{t("pkg.password")}<input type="password" defaultValue="correcthorse" {...noAutofill} /></label>
           <label className="cx-field">{t("pkg.email")}<input value={`contact@${o!.domain ?? ""}`} readOnly /></label>
         </>
       ))}

@@ -3,18 +3,25 @@ import { START_YEAR, yearOf } from "../00-core/time";
 import { GPU_SKILL } from "../10-catalog/research";
 import { backsUp, balancerIn, fcGbit, IN_VM, isService, kindsServing, kindServing, phpAt, softwareById, type DatastoreProtocol, type SoftwareKind } from "../10-catalog/platforms";
 import { OVERCOMMIT, PRODUCTS, type Resources } from "../10-catalog/products";
+import { topTier } from "../10-catalog/licence-tiers";
 import type { Product } from "../30-customers/customers";
 import { serviceHeld } from "../45-billing/billing";
 import type { Device, GameState, MachineState } from "../50-state";
 import type { OsImage } from "../10-catalog/server-os";
 import type { SimEvent } from "../88-tick/tick";
 import type { VmSample } from "./stats";
+import { isVm } from "./lan";
+import { privateNetDown } from "./private";
 import { deviceVendor, drivesOf, installedRamGb, installedVcpu, linkStatus, locationOf, raidUsable, rackPower, readOnlySweep, serviceById, sweepGroups, working, burning } from "./status";
 import { COMPAT_VCPU } from "../10-catalog/cpus";
 import { hasPublicAddress, sellsFrom } from "./addresses";
 import { addressOf } from "./lan";
 import { coverage } from "./maintenance";
 import type { PackageDef } from "../80-business/packages";
+import type { BackupJob, RestorePoint } from "./backups";
+import type { Ceph, Replica } from "./replica";
+import { vswitchBlocks, type VSwitch } from "./vswitch";
+import { firewallBlocks, type Firewall } from "./exposure";
 
 // Active takes new workloads, cordoned keeps its own, draining moves them off, maintenance is empty after a drain.
 export type NodeState = "active" | "cordoned" | "draining" | "maintenance";
@@ -33,16 +40,34 @@ export const HA_OFF: Ha = { live: false, balance: false, failover: false };
 // target cluster. ramGuard (Memory reservation) keeps booked RAM within each node's installed RAM; it is the only way RAM refuses a booking. php and phpUntil are a
 // panel host's PHP version; after an upgrade its sites run slower up to and including the hour phpUntil. version is the
 // year of the release the installed software runs and updatedAt the hour it was installed or last updated (vulns.ts).
+export interface Pool { id: string; name: string; vcpuLimit: number | null; ramLimitGb: number | null; shares: "low" | "normal" | "high" }
+export type Drs = "off" | "manual" | "partial" | "full";
+export interface DrsRec { workloadId: string; to: string; at: number }
 export interface Cluster {
   id: string; name: string; az: string; kind: SoftwareKind; placement: Placement; nodes: ClusterNode[];
   panel: string | null; platform: string | null; vm: string | null; controlPlane: string | null;
   switching: { kind: SoftwareKind; to: string; doneAt: number } | null;
-  backup: { targetId: string | null; every: BackupEvery };
+  // Backup jobs, up to MAX_JOBS (backups.ts).
+  jobs: BackupJob[];
+  // VMwhere DRS: how the hourly balancing pass acts, and the moves it recommends (at most 5) in the manual and partial modes.
+  drs: Drs; recs: DrsRec[];
+  // VMwhere alarm thresholds (alarms.ts DEFAULT_RULES when missing) and the keys of the acknowledged alarms.
+  alarmRules?: { cpu: number; ram: number; disk: number }; acks: string[];
+  // VMwhere resource pools; Workload.poolId names the pool a workload belongs to.
+  pools: Pool[];
   ramGuard?: boolean;
+  // A free server that casts one extra vote in a Proxmocks cluster (quorum.ts); missing is none.
+  qdevice?: string | null;
+  // A Proxmocks shared storage pool built from the node disks (replica.ts); missing is none.
+  ceph?: Ceph;
+  // HyperVee virtual switches; missing is the one external Default Switch (vswitch.ts).
+  switches?: VSwitch[];
   // The player's cap on booked vCPU per physical vCPU for a panel host; missing or null is no cap (oversell.ts).
   oversell?: number | null;
   // The update channel; missing is Release (channel.ts).
   channel?: "stable" | "release" | "edge";
+  // The edition of a licensed cloud platform; lapsedAt the hour an unpaid licence expired. Missing is the top tier without expiry.
+  licence?: { tier: string; trialUntil: number | null; lapsedAt: number | null };
   // Compatibility mode lets VMs move live between nodes of different CPU vendors, at COMPAT_VCPU of every node's vCPU.
   compat?: boolean;
   // Whether the software updates itself at AUTO_UPDATE_HOUR when an update is due (software.ts).
@@ -68,7 +93,18 @@ export interface Datastore { deviceId: string; protocol: DatastoreProtocol; read
 // The player's own VMs carry MachineState; customer workloads do not.
 export interface Workload extends Resources, Partial<MachineState> {
   id: string; serviceId: string; clusterId: string | null; deviceId: string | null; rackId: string | null; slot: number; units: number; watts: number; placedAt: number;
-  stopped: boolean; busyUntil: number; backupAt: number | null; stuck?: boolean;
+  stopped: boolean; busyUntil: number; backupAt: number | null; stuck?: boolean; poolId?: string | null;
+  // Restore points the backup jobs wrote; backupAt is the newest one's hour.
+  points?: RestorePoint[];
+  // A copy of the disk on a second node of the cluster, refreshed on a schedule (replica.ts).
+  replica?: Replica | null;
+  // HyperVee: the virtual switch the adapter is plugged into; missing or null is the cluster's default switch (vswitch.ts).
+  switchId?: string | null;
+  // OpenVeeZee: failcnt per beancounter, the most RAM held, the extra RAM allowed while the node has room, hours of failing
+  // in a row, failcounts today, and a live checkpoint (beancounters.ts).
+  failcnt?: Record<string, number>; maxheld?: number; burstGb?: number; failStreak?: number; failDay?: number; frozen?: boolean;
+  // Own VMs only: the port macros the VM lets through (exposure.ts); missing or null is no firewall.
+  firewall?: Firewall | null;
   // The sold size when a package booked less; the service uses the sold size times its load.
   promised?: Resources;
   // vmNNN for the player's own VMs; a customer workload carries its service's hostname.
@@ -98,9 +134,10 @@ export const deltaGb = (w: Workload): number => w.snapshots?.reduce((n, x) => n 
 // Old saves are converted by upgradeCompute; this fills the fields every cluster has.
 // Software of a save from before versions runs its install year, or two years before the save while no install date is known.
 export const clusterDefaults = (c: Partial<Cluster> & Pick<Cluster, "nodes">, hour = 0): Cluster => ({
-  panel: null, platform: null, vm: null, switching: null, appSuite: false, datastores: [], packages: [], backup: { targetId: null, every: "off" }, php: phpAt(yearOf(hour)), phpUntil: -1,
+  panel: null, platform: null, vm: null, switching: null, appSuite: false, datastores: [], packages: [], jobs: [], php: phpAt(yearOf(hour)), phpUntil: -1,
   version: c.switching ? yearOf(c.switching.doneAt) : Math.max(START_YEAR, yearOf(hour) - 2), updatedAt: c.switching?.doneAt ?? hour, ...c,
-  ha: { ...HA_OFF, ...c.ha },
+  ha: { ...HA_OFF, ...c.ha }, drs: c.drs ?? (c.ha?.balance ? "full" : "off"), recs: c.recs ?? [], acks: c.acks ?? [], pools: c.pools ?? [],
+  ...(c.licence || c.panel || !topTier(c.platform ?? null) ? {} : { licence: { tier: topTier(c.platform ?? null)!.id, trialUntil: null, lapsedAt: null } }),
   controlPlane: c.controlPlane === undefined ? c.nodes[0]?.deviceId ?? null : c.controlPlane,
 }) as Cluster;
 export const workloadDefaults = (w: Partial<Workload>): Workload => ({ stopped: false, busyUntil: 0, backupAt: null, ...w }) as Workload;
@@ -136,7 +173,10 @@ export const cardsFree = (s: GameState, d: Device): number =>
 // What the workloads on a server book; web spaces inside a panel VM count in the VM's booking, a disk on a datastore on the datastore.
 export function nodeUsed(s: GameState, deviceId: string): Resources {
   const used = { ...ZERO };
-  for (const w of s.workloads) if (w.deviceId === deviceId && w.clusterId) { const b = booked(s, w); for (const k of KEYS) used[k] += w.datastore && k === "diskGb" ? 0 : b[k]; }
+  for (const w of s.workloads) {
+    if (w.replica?.toNode === deviceId) used.diskGb += w.diskGb;
+    if (w.deviceId === deviceId && w.clusterId) { const b = booked(s, w); for (const k of KEYS) used[k] += w.datastore && k === "diskGb" ? 0 : b[k]; }
+  }
   return used;
 }
 
@@ -144,7 +184,7 @@ type Disk = Resources & { datastore?: string };
 export const datastoreOn = (c: Cluster, r: Disk): boolean => !!r.datastore && c.datastores.some((x) => x.deviceId === r.datastore);
 // What a VM books on a node of the cluster: none of its disk while that is on one of the cluster's datastores.
 const onNode = (c: Cluster | undefined, r: Disk): Resources => (c && datastoreOn(c, r) ? { ...r, diskGb: 0 } : r);
-export const isDatastore = (s: GameState, deviceId: string): boolean => s.clusters.some((c) => c.datastores.some((x) => x.deviceId === deviceId));
+export const isDatastore = (s: GameState, deviceId: string): boolean => s.clusters.some((c) => c.datastores.some((x) => x.deviceId === deviceId) || c.qdevice === deviceId);
 export const datastoreUsed = (s: GameState, deviceId: string): number => s.workloads.reduce((n, w) => n + (w.datastore === deviceId ? w.diskGb + deltaGb(w) : 0), 0);
 export const datastoreCapacity = (s: GameState, deviceId: string): number => {
   const d = s.devices.find((x) => x.id === deviceId);
@@ -318,12 +358,13 @@ export const gameFirst = (a: Cluster, b: Cluster): number => Number(isService(b.
 export const servedBy = (s: GameState, w: Workload): SoftwareKind => s.clusters.find((c) => c.id === w.clusterId)?.kind ?? "cloud";
 
 // A workload lost its disk when the data of its server, or of the datastore its disk is on, was lost after the workload was
-// placed there; a web space in a panel VM loses it with the VM.
+// placed there, or that server is gone (seized); a web space in a panel VM loses it with the VM.
 export function lostDisk(s: GameState, w: Workload): boolean {
   const vm = vmOf(s, w);
   if (vm) return lostDisk(s, vm);
   if (w.corrupted) return true;
   const at = w.datastore ?? w.deviceId, d = at ? s.devices.find((x) => x.id === at) : undefined;
+  if (at && !d) return true;
   return !!d && d.dataLost !== null && d.dataLost >= w.placedAt;
 }
 
@@ -362,7 +403,10 @@ export const stripSoftware = (s: GameState, c: Cluster, machineId: string) =>
 export function dropCluster(s: GameState, id: string) {
   const c = s.clusters.find((x) => x.id === id);
   if (c) for (const m of machinesOf(c)) stripSoftware(s, c, m);
-  s.clusters = s.clusters.filter((x) => x.id !== id).map((x) => (x.backup.targetId === id ? { ...x, backup: { targetId: null, every: "off" } } : x));
+  const old = s.clusters;
+  s.clusters = s.clusters.filter((x) => x.id !== id).map((x) => ({ ...x, jobs: x.jobs.filter((j) => j.targetId !== id) }));
+  const gone = new Set(old.flatMap((x) => x.jobs.filter((j) => j.targetId === id).map((j) => j.id)));
+  if (gone.size) s.workloads = s.workloads.map((w) => (w.points?.some((p) => gone.has(p.jobId)) ? { ...w, points: w.points.filter((p) => !gone.has(p.jobId)), backupAt: w.points.filter((p) => !gone.has(p.jobId)).reduce<number | null>((n, p) => (n === null || p.at > n ? p.at : n), null) } : w));
   const drop = (ids: string[]) => ids.filter((x) => x !== id);
   if (s.company.mail.kind === "self" && s.company.mail.clusterId === id) s.company = { ...s.company, mail: { kind: "free" } };
   s.security = { ...s.security, offline: drop(s.security.offline), hacked: drop(s.security.hacked), patched: drop(s.security.patched) };
@@ -440,19 +484,22 @@ export function setNodeState(s: GameState, deviceId: string, state: NodeState, c
 // The web sites of a panel host the player took offline or that were compromised.
 export const sitesDown = (s: GameState, hostId: string): boolean => s.security.offline.includes(hostId) || s.security.hacked.includes(hostId);
 
-// A workload on a server is up while the server reaches the internet and still holds the data written since it was placed.
+// A workload on a server is up while the server reaches the internet and still holds the data written since it was placed;
+// a VM also needs an address on its host's network and, for a customer with a private network, that network (private.ts).
 // A web space in a panel VM is up while the VM is. Colocation is up while its rack has power.
 // ponytail: colocation ignores the customer's uplinks until colocation cabling lands.
 export function workloadOnline(s: GameState, w: Workload): boolean {
-  if (w.stopped || w.busyUntil > s.hour) return false;
+  if (w.stopped || w.frozen || w.busyUntil > s.hour) return false;
   const c = w.clusterId ? s.clusters.find((x) => x.id === w.clusterId) : undefined;
   if (c?.switching) return false;
   if (c && (c.kind === "panel" ? sitesDown(s, c.id) : s.security.hacked.includes(c.id))) return false;
-  if (c?.vm) { const vm = vmById(s, c.vm); return !!vm && workloadOnline(s, vm); }
+  if (c?.vm) { const vm = vmById(s, c.vm); return !!vm && workloadOnline(s, vm) && !firewallBlocks(s, c); }
   if (c && w.deviceId && s.frozen.includes(w.deviceId)) return false;
   if (w.deviceId) {
     const d = s.devices.find((x) => x.id === w.deviceId);
-    return !!d && !lostDisk(s, w) && linkStatus(s, d.id).online && (!w.datastore || working(s, w.datastore));
+    if (c && vswitchBlocks(s, c, w)) return false;
+    return !!d && !lostDisk(s, w) && linkStatus(s, d.id).online && (!w.datastore || working(s, w.datastore))
+      && (!isVm(s, w) || (!!addressOf(s, w.id) && !privateNetDown(s, w)));
   }
   const rack = s.racks.find((r) => r.id === w.rackId);
   const loc = rack && s.locations.find((l) => l.id === rack.locationId);

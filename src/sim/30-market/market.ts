@@ -5,6 +5,7 @@ import { CITY_TLD } from "../30-customers/domains";
 import type { Address } from "../30-customers/addresses";
 import { yearOf } from "../00-core/time";
 import type { Cycle } from "../10-catalog/cycles";
+import type { MethodId } from "../10-catalog/payments";
 import { CHOICE_TAU, CITIES, COMPETITORS, generationAt, leadCapShare, MARKET_GROWTH, type Budget, type Competitor, type Profile as ProfileStats } from "../10-catalog/economy";
 import { gpuDemand, GPU_SHARE } from "../10-catalog/gpu";
 import { modelById } from "../10-catalog/hardware";
@@ -50,6 +51,8 @@ export interface SalesRequest {
   shop?: boolean;
   // The shop product a form order buys; its server group and package decide where the service goes.
   productId?: string;
+  // The payment method a shop order checked out with; absent for bank transfer.
+  method?: MethodId;
   // The one-time fee the manual quote's invoice carries; the line's rate where unset.
   setup?: number;
 }
