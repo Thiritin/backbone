@@ -14,7 +14,7 @@ import { renewDomain } from "../../../sim/90-actions/orders";
 import { changePrice } from "../../../sim/90-actions/sales";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { More } from "../More";
-import { workloadActions } from "../vms/migrate";
+import { workloadActions } from "../workload-menu";
 import { consoleEntry } from "../products/parts";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";

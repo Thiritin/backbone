@@ -4,7 +4,7 @@ import { sizeSpec } from "../src/sim/10-catalog/products";
 import { softwareById } from "../src/sim/10-catalog/platforms";
 import { serviceOnline } from "../src/sim/40-support/status";
 import { offers } from "../src/sim/30-market/market";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { controlPlaneUp, lineOffered, nodeCapacity, nodeUsed, vmById, vmOf, workloadsOf } from "../src/sim/60-infra/cluster";
 import { installedRamGb } from "../src/sim/60-infra/status";
 import { FAILOVER_MINUTES } from "../src/sim/60-infra/ha";
@@ -15,9 +15,8 @@ import {
 import { installSoftware, uninstallSoftware } from "../src/sim/90-actions/software";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { connect, setPower } from "../src/sim/90-actions/hardware";
-import { buyDevice, bootedMachine } from "./fixtures";
+import { buyDevice, bootedMachine, newGame, startGame } from "./fixtures";
 import { migrateWorkload } from "../src/sim/90-actions/vms";
-import { startGame } from "../src/sim/90-actions/start";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { basement, hypervisor, join, panelServer, panelVm, readyGame, skipTo, withServer } from "./fixtures";
 import { mountDevice } from "./plugged";
@@ -146,6 +145,7 @@ describe("compute", () => {
   it("fails VMs over within five minutes only with failover on and room on another node", () => {
     const setup = (ha: boolean) => {
       const { s, cluster, second } = twoNodes(), cus = addCustomer(s, "Ada Lang", "hobbyDev");
+      s.clusters = s.clusters.map((x) => ({ ...x, qdevice: "dev4" }));
       s.unlocks = [...s.unlocks, "virtualization"];
       if (ha) ok(setHa(s, cluster, "failover", true));
       const box = ok(provisionService(s, cus, "vps", { label: "Box", spec: sizeSpec("vps", 0, yearOf(s.hour)) }));
@@ -166,6 +166,7 @@ describe("compute", () => {
     expect(on.s.clusters.find((c) => c.id === on.cluster)!.controlPlane).toBe(on.second);
 
     const full = setup(true);
+    full.s.clusters = full.s.clusters.map((x) => ({ ...x, platform: "hypervee", qdevice: undefined }));
     ok(setPower(full.s, full.second, false));
     ok(setPower(full.s, "dev3", false));
     const stuck = run(full.s, 3);

@@ -23,6 +23,7 @@ export default {
     "uptime             zeigen, wie lange der Server läuft",
     "df -h              Speicherplatz anzeigen",
     "free -m            Arbeitsspeicher anzeigen",
+    "ip a               die Netzwerkschnittstellen anzeigen",
     "top                die aktivsten Prozesse anzeigen",
     "shutdown -h now    den Server ausschalten",
     "reboot             den Server neu starten",

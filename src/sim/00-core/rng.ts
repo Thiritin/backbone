@@ -37,3 +37,10 @@ export function hashRng(...xs: number[]): Rng {
   rand(r);
   return r;
 }
+
+const KEY_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+// A licence key of four groups of four, fixed by the seed parts.
+export function keyCode(...xs: number[]): string {
+  const r = hashRng(...xs);
+  return Array.from({ length: 4 }, () => Array.from({ length: 4 }, () => KEY_CHARS[Math.floor(rand(r) * KEY_CHARS.length)]).join("")).join("-");
+}

@@ -286,7 +286,14 @@ const MAILS: Record<string, [Mail, Mail, Mail]> = {
     (p) => `Alles ist eingerichtet: ${hosting(p)} läuft seit ${day(p)} in ${p.city}.${p.domain ? ` ${domainLine(p)}` : ""} Deine Zugangsdaten folgen in einer separaten E-Mail.`,
   ],
 };
-const LEAD = ["decline.notOffered", "decline.noCapacity", "decline.busy", "accept", "failed", "order.quote", "order.invoice", "order.live"];
+// The one email of a finished order: account, confirmation with its invoice, domain and setup.
+const DONE: [Mail, Mail, Mail] = [
+  (p) => `Wir bestätigen deine Bestellung von ${hosting(p)} für ${euroCents(Number(p.price))} im Monat. Dein Kundenkonto bei uns ist eingerichtet, und die Rechnung ${p.invoice} über ${euroCents(Number(p.total))} hängt an.`,
+  (p) => `Deine Bestellung ist bestätigt, und dein Kundenkonto ist bereit. Bitte bezahle die Rechnung ${p.invoice} (${euroCents(Number(p.total))}) in den nächsten Tagen.`,
+  (p) => `Danke, die Bestellung steht: ${hosting(p)} kostet ${euroCents(Number(p.price))} im Monat, und die erste Rechnung, ${p.invoice}, beträgt ${euroCents(Number(p.total))}. Dein Kundenkonto ist eingerichtet.`,
+];
+MAILS["order.done"] = [0, 1, 2].map((i): Mail => (p) => `${DONE[i](p)} ${MAILS["order.live"][i](p)}`) as [Mail, Mail, Mail];
+const LEAD = ["decline.notOffered", "decline.noCapacity", "decline.busy", "accept", "failed", "order.quote", "order.invoice", "order.live", "order.done"];
 const SENDER = ["forward", "takedown", "notOurs", "reject", "comply", "object"];
 
 export default Object.fromEntries(Object.entries(MAILS).flatMap(([what, bodies]) =>

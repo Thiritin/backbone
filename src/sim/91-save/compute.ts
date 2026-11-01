@@ -67,7 +67,7 @@ export function upgradeCompute(s: GameState): GameState {
   const map = (ids: string[]) => [...new Set(ids.flatMap((id) => (hostOf.has(id) ? [hostOf.get(id)!] : [])))];
   const known = new Set(clusters.map((c) => c.id));
   return {
-    ...s, nextId, clusters: clusters.map((c) => (c.backup.targetId && !known.has(c.backup.targetId) ? { ...c, backup: { targetId: null, every: "off" } } : c)),
+    ...s, nextId, clusters,
     workloads: [...workloads.filter((w) => !w.clusterId || known.has(w.clusterId)), ...vms],
     security: { ...s.security, patched: map(s.security.patched), offline: map(s.security.offline), hacked: map(s.security.hacked) },
   };

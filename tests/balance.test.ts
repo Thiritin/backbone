@@ -35,7 +35,8 @@ describe("balance run (docs/design/economy.md, Balancing)", () => {
     expect(dec2005).toBeLessThan(60);
   });
 
-  it("brings the steady bot to level 6 within a year of the pacing target", () => {
-    expect(medianYear(steady, 6)).toBeLessThanOrEqual(PACING_YEAR[6] + 1);
+  // Rivals that open and grow (competitors.md) slow level 6 by up to about half a year.
+  it("brings the steady bot to level 6 within a year and a half of the pacing target", () => {
+    expect(medianYear(steady, 6)).toBeLessThanOrEqual(PACING_YEAR[6] + 1.5);
   });
 });

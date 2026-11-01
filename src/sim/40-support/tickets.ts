@@ -119,8 +119,8 @@ export function shownTemplates(s: GameState, t: Ticket, all: boolean): string[] 
 }
 // A customer who cannot pay yet (boss, access) has no right reply: only unsuspending or keeping the suspension settles it.
 const RIGHT: Record<string, string> = {
-  suspended: "resend", upload: "ftp", email: "mail", phone: "mail", dns: "dns", ssl: "ssl", ssh: "ssh", panel: "panel", addon: "addon", php: "php", charge: "explain", alreadyPaid: "foundPayment", copy: "resend", delay: "extension", price: "newPrice", grow: "offer", disk: "offer", cpu: "offer", full: "offer", more: "offer",
-  spam: "warn", attack: "warn", forgot: "awaitPayment", onWay: "awaitPayment", bounce: "mail", mailFull: "offer", quotaFull: "offer", dnsChange: "dns", certLost: "offer", bucketPublic: "offer", linkExpired: "offer", phpBroken: "php", certExpired: "ssl",
+  gameVersion: "panel", suspended: "resend", upload: "ftp", email: "mail", phone: "mail", dns: "dns", ssl: "ssl", ssh: "ssh", panel: "panel", addon: "addon", php: "php", charge: "explain", alreadyPaid: "foundPayment", copy: "resend", delay: "extension", price: "newPrice", grow: "offer", disk: "offer", cpu: "offer", full: "offer", more: "offer",
+  spam: "warn", attack: "warn", forgot: "awaitPayment", onWay: "awaitPayment", bounce: "mail", mailFull: "offer", quotaFull: "offer", dnsChange: "dns", certLost: "offer", bucketPublic: "offer", linkExpired: "offer", phpBroken: "php", certExpired: "ssl", lockedOut: "panel", updateBroke: "php", transferFailed: "php",
 };
 
 export function rightTemplate(s: GameState, t: Ticket): string {
@@ -130,7 +130,7 @@ export function rightTemplate(s: GameState, t: Ticket): string {
 
 const CATALOG_ID: Record<Profile, string> = {
   private: "private", gamer: "gamer", hobbyDev: "hobby", soleProp: "sole", smallBiz: "small",
-  agency: "agency", office: "office", onlineShop: "shop", enterprise: "enterprise",
+  agency: "agency", office: "office", onlineShop: "shop", enterprise: "enterprise", reseller: "agency",
 };
 export const profileStats = (p: Profile): ProfileStats => PROFILES.find((x) => x.id === CATALOG_ID[p])!;
 

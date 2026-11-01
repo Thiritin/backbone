@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
 import { STARTER_APPS, storeItem, subscriptionPrice, WIDGETS } from "../src/sim/10-catalog/store";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { knowHowPerMonth, tick } from "../src/sim/88-tick/tick";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { cancel, install } from "../src/sim/90-actions/store";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { registered } from "./fixtures";
+import { registered, newGame } from "./fixtures";
 
 const runTo = (s: GameState, hour: number) => { while (s.hour < hour) tick(s); };
 const at = (y: number, m: number) => hourOf(new Date(Date.UTC(y, m - 1, 1)));
@@ -14,8 +14,8 @@ const at = (y: number, m: number) => hourOf(new Date(Date.UTC(y, m - 1, 1)));
 describe("pear store", () => {
   it("starts with the Browser, gets the starter apps with the registration and has no know-how", () => {
     const s = newGame(1);
-    expect(s.installed).toEqual(["Browser"]);
-    expect([...registered(s).installed].sort()).toEqual([...STARTER_APPS].sort());
+    expect(s.installed).toEqual(["Browser", "Chat"]);
+    expect([...registered(s).installed].sort()).toEqual([...STARTER_APPS, "Chat"].sort());
     expect(s.knowHow).toBe(0);
   });
 
@@ -24,7 +24,7 @@ describe("pear store", () => {
     delete raw.installed;
     delete raw.knowHow;
     const s = deserialize(JSON.stringify(raw));
-    expect(s.installed).toEqual([...STARTER_APPS, ...WIDGETS.map(([id]) => id)]);
+    expect(s.installed).toEqual([...STARTER_APPS, "Chat", ...WIDGETS.map(([id]) => id)]);
     expect(s.knowHow).toBe(0);
     expect(deserialize(serialize({ ...s, installed: [...s.installed, "Network"] })).installed).toContain("Network");
   });

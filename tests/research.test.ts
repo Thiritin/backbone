@@ -1,7 +1,8 @@
+import { newGame } from "./fixtures";
 import { describe, expect, it } from "vitest";
 import { SKILLS, skillById, skillFor } from "../src/sim/10-catalog/research";
 import { STORE } from "../src/sim/10-catalog/store";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { install, research } from "../src/sim/90-actions/store";
 import { deserialize, serialize } from "../src/sim/91-save/save";
@@ -73,7 +74,7 @@ describe("research", () => {
     raw.installed = ["Locations", "Unlocks", "Sales"];
     const old = deserialize(JSON.stringify(raw));
     expect(old.training).toBeNull();
-    expect(old.installed).toEqual(["Locations", "Research", "Browser", "Marketing", "Security", "Applications"]);
+    expect(old.installed).toEqual(["Locations", "Research", "Browser", "Chat", "Marketing", "Security", "Applications"]);
     expect([...old.unlocks].sort()).toEqual(["market", "marketing", "marketingBasics", "monitoring", "people", "products"]);
     expect(skillFor("Market")!.id).toBe("market");
   });

@@ -1,8 +1,9 @@
 // GDD, Addresses and internet: private and public addresses, address prices, the nightly reconnect of dynamic home lines
 // and mail reputation. Numbers in economy.md, Addresses and internet.
+import { isFloating } from "./horizont";
 import { hashRng, rand } from "../00-core/rng";
 import { dateOf, yearOf } from "../00-core/time";
-import { hasBmc, modelById } from "../10-catalog/hardware";
+import { modelById } from "../10-catalog/hardware";
 import type { Spec } from "../10-catalog/products";
 import { homeLineById } from "../20-world/datacenters";
 import { ABUSE_HIT, BOUNCE_CHANCE, IPV6_FROM, IPV6_MONTHLY, LINE_EXTRA_V4, LIR_FEES, NOTICES_RECONNECT, OWN_ADDRESS, providerV4, RECONNECT_HOUR, REP, SPAM, STATIC_LINE_ADDRESSES } from "../10-catalog/addresses";
@@ -14,6 +15,7 @@ import { isSuspended } from "../45-billing/billing";
 import { bounceFactor, listingTick, mailQueueTick } from "./netsvc-mail";
 import { jacked, locationOf } from "./status";
 import { mountedRouter } from "./routers";
+import { addressOf, isVm, shareOf } from "./lan";
 import type { SimEvent } from "../88-tick/tick";
 
 // line: comes with the home line; lineExtra: bought on a business line; provider: rented in a datacenter; lir: from an own block.
@@ -76,29 +78,15 @@ function workloadLocation(s: GameState, w: Workload): Location | undefined {
   return s.locations.find((l) => l.id === rack?.locationId);
 }
 
-// The private address every server and VM gets from its location's range: 192.168.x in the basement, 10.n elsewhere.
-export function privateIp(s: GameState, id: string): string | null {
+// A machine's address on its network: a device's or a VM's DHCP lease (lan.ts), or for another workload one on its host's
+// internal network, 192.168.2.x in the basement and 10.n.1.x elsewhere.
+export function machineAddress(s: GameState, id: string): string | null {
+  const w = s.workloads.find((x) => x.id === id);
+  if (s.devices.some((d) => d.id === id) || (w && isVm(s, w))) return addressOf(s, id);
   const loc = machineLocation(s, id);
   if (!loc) return null;
-  const vm = !s.devices.some((d) => d.id === id), n = Number(id.replace(/\D/g, "")) || 0, host = 10 + (n % 240);
-  if (!loc.dc) return `192.168.${vm ? 2 : 1}.${host}`;
-  return `10.${s.locations.indexOf(loc) + 1}.${vm ? 1 : 0}.${host}`;
-}
-
-// A server's management address when it has a BMC: 192.168.3.x in the basement, 10.n.2.x elsewhere, the host octet as in privateIp.
-export function ipmiIp(s: GameState, id: string): string | null {
-  const d = s.devices.find((x) => x.id === id), loc = d && machineLocation(s, id);
-  if (!d || !loc || !hasBmc(d.model, d.brand)) return null;
   const host = 10 + ((Number(id.replace(/\D/g, "")) || 0) % 240);
-  return loc.dc ? `10.${s.locations.indexOf(loc) + 1}.2.${host}` : `192.168.3.${host}`;
-}
-
-// A KVM, console server or OOB switch's address on the management network, one subnet above the controllers.
-export function oobIp(s: GameState, id: string): string | null {
-  const d = s.devices.find((x) => x.id === id), loc = d && locationOf(s, d);
-  if (!d || !loc || !d.rackId || !["kvm", "console", "oob"].includes(modelById(d.model).kind)) return null;
-  const host = 10 + ((Number(id.replace(/\D/g, "")) || 0) % 240);
-  return loc.dc ? `10.${s.locations.indexOf(loc) + 1}.3.${host}` : `192.168.4.${host}`;
+  return loc.dc ? `10.${s.locations.indexOf(loc) + 1}.1.${host}` : `192.168.2.${host}`;
 }
 
 // Who holds addresses for a machine: a customer's VM holds them through its service.
@@ -114,9 +102,9 @@ export function publicV4(s: GameState, id: string): { ip: string; shared: boolea
   return loc && !loc.dc && line ? { ip: line.ip, shared: true } : null;
 }
 export const publicV6 = (s: GameState, id: string): string | null => addressesOf(s, id).find((a) => a.v === 6)?.ip ?? null;
-// Basement machines are reachable whenever a line is live.
+// A basement machine on the line's shared address is reachable while the line is live and the router shares a port to it.
 export const hasPublicAddress = (s: GameState, id: string): boolean =>
-  addressesOf(s, id).length > 0 || (lineActive(s) && machineLocation(s, id)?.dc === null);
+  addressesOf(s, id).length > 0 || (lineActive(s) && machineLocation(s, id)?.dc === null && !!shareOf(s, id));
 
 export const v6Offered = (s: GameState, loc: Location): boolean =>
   yearOf(s.hour) >= (loc.dc ? IPV6_FROM.dc : IPV6_FROM.home) && (!!loc.dc || lineActive(s));
@@ -180,7 +168,7 @@ export function assignService(s: GameState, serviceId: string): string | null {
 export const RENUMBER_PENALTY = 5;
 export const RENUMBER_ANNOUNCED_PENALTY = 2;
 const announces = (s: GameState, loc: Location): boolean => s.ips.blocks.some((b) => b.locationId === loc.id);
-const keeps = (s: GameState, a: Address, from: Location, to: Location): boolean => a.source === "lir" && announces(s, from) && announces(s, to);
+const keeps = (s: GameState, a: Address, from: Location, to: Location): boolean => isFloating(s, a.ip) || a.source === "lir" && announces(s, from) && announces(s, to);
 const given = (s: GameState, id: string, from: Location, to: Location): Address[] =>
   s.ips.addresses.filter((a) => a.holder === id && a.v === 4 && !keeps(s, a, from, to));
 

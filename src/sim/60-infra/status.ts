@@ -8,7 +8,10 @@ import { BASEMENT, capacityAt, datacenterById, EXTRA_STEP_KW, extraStepPrice, ho
 import { CITY_TLD } from "../30-customers/domains";
 import { activeServices, type Service } from "../30-customers/customers";
 import { serverOsById } from "../10-catalog/server-os";
+import { egress, ingress, MGMT_VLAN, routesTo } from "./switches";
+import { isOwnRouter, uplinkPort } from "./routers";
 import type { Component, Device, End, GameState, Location, NetFail, Rack, SpaceKind } from "../50-state";
+import { gatewayOf } from "./lan";
 import type { Workload } from "./cluster";
 
 export interface LinkStatus { online: boolean; gbit: number; warning: "bondNotGrouped" | null }
@@ -51,27 +54,59 @@ export const jacked = (s: GameState, gatewayId: string): boolean => {
   const wan = wanPort(modelOf(s, gatewayId)), jack = wan >= 0 && farEnd(s, { device: gatewayId, port: wan });
   return !!jack && kindOf(s, jack.end.device) === "jack";
 };
-const lineUp = (s: GameState, gatewayId: string): boolean => wanPort(modelOf(s, gatewayId)) < 0 || (jacked(s, gatewayId) && !!s.homeLine.id && !lineCut(s));
+// An own router carries traffic while its uplink reaches a router in front of it that does (lan.md, Phases).
+const climbing = new Set<string>();
+function lineUp(s: GameState, gatewayId: string): boolean {
+  const d = s.devices.find((x) => x.id === gatewayId)!;
+  if (!isOwnRouter(d)) return wanPort(modelOf(s, gatewayId)) < 0 || (jacked(s, gatewayId) && !!s.homeLine.id && !lineCut(s));
+  return sweepMemo(s, `up:${gatewayId}`, () => {
+    const peer = peerOf(s, { device: gatewayId, port: uplinkPort(d) });
+    if (!peer || isOobPort(peer.port) || climbing.has(gatewayId)) return false;
+    climbing.add(gatewayId);
+    try { return reachesGateway(s, peer, gatewayId, 0); } finally { climbing.delete(gatewayId); }
+  });
+}
 
-function reachesGateway(s: GameState, start: End, origin: string, minGbit: number): boolean {
+// A frame leaves the server untagged; managed switches forward it only between ports of its VLAN (switches.ts), and a
+// gateway takes it only untagged.
+function reachesGateway(s: GameState, start: End, origin: string, minGbit: number, tag0: number | null = null): boolean {
   const seen = new Set([origin]);
-  const queue = [start];
+  const queue: { at: End; tag: number | null }[] = [{ at: start, tag: tag0 }];
   while (queue.length) {
-    const at = queue.shift()!;
+    const { at, tag } = queue.shift()!;
     const model = modelOf(s, at.device);
     if (!working(s, at.device)) continue;
-    if (model.kind === "gateway") return lineUp(s, at.device);
+    // A router's uplink leads to the network in front of it, not into the router's own.
+    if (model.kind === "gateway") {
+      if (tag === null && at.device !== origin && at.port !== uplinkPort(s.devices.find((x) => x.id === at.device)!)) return lineUp(s, at.device);
+      continue;
+    }
     if (model.kind === "firewall" && model.throughputGbit! < minGbit) continue;
-    const key = model.kind === "patch" ? `${at.device}:${at.port}` : at.device;
-    if (model.kind === "server" || seen.has(key)) continue;
+    const sw = model.managed ? s.devices.find((x) => x.id === at.device)! : null;
+    const vlan = sw ? ingress(sw, at.port, tag) : tag;
+    const key = `${model.kind === "patch" ? `${at.device}:${at.port}` : at.device}:${vlan}`;
+    if (model.kind === "server" || vlan === undefined || seen.has(key)) continue;
     seen.add(key);
     const exits = model.kind === "patch" ? [bridged(s, at)] : model.ports.map((_, i) => i);
     for (const port of exits) {
       const peer = peerOf(s, { device: at.device, port });
-      if (peer && !isOobPort(peer.port)) queue.push(peer);
+      if (!peer || isOobPort(peer.port)) continue;
+      for (const v of sw ? routesTo(sw, vlan!) : [vlan]) {
+        const out = sw ? egress(sw, port, v!) : v;
+        if (out !== undefined) queue.push({ at: peer, tag: out });
+      }
     }
   }
   return false;
+}
+
+// Whether a managed switch's management interface, in MGMT_VLAN, reaches the location's gateway: the way the player's desk reaches it.
+export function mgmtReachesGateway(s: GameState, d: Device): boolean {
+  if (!working(s, d.id)) return false;
+  return modelById(d.model).ports.some((_, port) => {
+    const tag = egress(d, port, MGMT_VLAN), peer = peerOf(s, { device: d.id, port });
+    return tag !== undefined && !!peer && !isOobPort(peer.port) && reachesGateway(s, peer, d.id, 0, tag);
+  });
 }
 
 // The fastest firewall cap on any path to a gateway: Infinity without a firewall on the way, null without a path.
@@ -95,7 +130,8 @@ function computeLinkStatus(s: GameState, deviceId: string): LinkStatus {
       const cap = f && gatewayCap(s, f.end, deviceId);
       return f && cap !== null ? [{ ...f, gbit: Math.min(f.gbit, cap, own) }] : [];
     });
-  if (!up.length) return { online: false, gbit: 0, warning: null };
+  // A server also needs an address from the router whose network it is on (lan.md, The derived layer).
+  if (!up.length || (modelById(d.model).kind === "server" && !gatewayOf(s, d.id))) return { online: false, gbit: 0, warning: null };
   const fastest = Math.max(...up.map((f) => f.gbit));
   if (d.bond !== "balance" || up.length === 1) return { online: true, gbit: fastest, warning: null };
   const sw = s.devices.find((x) => x.id === up[0].end.device)!;
@@ -217,16 +253,16 @@ export function locationOf(s: GameState, d: Device): Location | undefined {
 
 export const holdsData = (s: GameState, d: Device): boolean => s.workloads.some((w) => w.deviceId === d.id);
 
-// 100% to 80% over the first month, then down to 20% over the next 24 months.
+// 90% right after buying, 80% after the first month, then down to 20% over the next 24 months.
 export function resaleValue(s: GameState, price: number, boughtAt: number): number {
   const months = Math.max(0, s.hour - boughtAt) / MONTH;
-  const share = months <= 1 ? 1 - 0.2 * months : Math.max(0.2, 0.8 - (0.6 * (months - 1)) / 24);
+  const share = months <= 1 ? 0.9 - 0.1 * months : Math.max(0.2, 0.8 - (0.6 * (months - 1)) / 24);
   return Math.round(price * share * 100) / 100;
 }
 
-// What a device sells for. A sized spare part sells at the current part price, anything else at what was paid.
+// What a device sells for. A new sized spare part sells at the current part price, anything else at what was paid.
 export const deviceValue = (s: GameState, d: Device): number =>
-  resaleValue(s, d.part ? partPrice(d.model.slice(5) as ComponentKind, d.part.size, d.part.ff, yearOf(s.hour), d.part) : d.price, d.boughtAt);
+  resaleValue(s, d.part && !d.used ? partPrice(d.model.slice(5) as ComponentKind, d.part.size, d.part.ff, yearOf(s.hour), d.part) : d.price, d.boughtAt);
 
 export const psusOf = (d: Device) => d.components.filter((c) => c.kind === "psu");
 export const isPlugged = (c: Component) => c.plugged !== false;
@@ -275,10 +311,10 @@ function computeRackPower(s: GameState, rackId: string): RackPower {
 // Link, rack power and lookup results memoised for one sweep. Only for code that reads the infrastructure and never changes it.
 // a and b are the draw on each feed; limitWatts is the limit of one feed.
 type RackPower = { watts: number; a: number; b: number; limitWatts: number; tripped: boolean };
-let memo: { s: GameState; link: Map<string, LinkStatus>; power: Map<string, RackPower>; groups: Map<string, Map<string, unknown[]>> } | null = null;
+let memo: { s: GameState; link: Map<string, LinkStatus>; power: Map<string, RackPower>; groups: Map<string, Map<string, unknown[]>>; other: Map<string, unknown> } | null = null;
 export function readOnlySweep<T>(s: GameState, fn: () => T): T {
   if (memo) return fn();
-  memo = { s, link: new Map(), power: new Map(), groups: new Map() };
+  memo = { s, link: new Map(), power: new Map(), groups: new Map(), other: new Map() };
   try { return fn(); } finally { memo = null; }
 }
 // Items grouped by key in state order, built once per sweep; null outside a sweep, where callers scan instead.
@@ -318,6 +354,8 @@ const memoised = <V>(s: GameState, key: string, pick: (m: NonNullable<typeof mem
   map.set(key, v);
   return v;
 };
+// Any other derived value memoised for the sweep under its key.
+export const sweepMemo = <V>(s: GameState, key: string, compute: () => V): V => memoised(s, key, (m) => m.other as Map<string, V>, compute);
 // docs/design/software.md, section 4.2: why a server's cables give it no internet, null when they do. Unlike linkStatus it
 // leaves the server's own state out, since an installer runs while the server still counts as booting.
 export function cabledOut(s: GameState, deviceId: string): NetFail | null {

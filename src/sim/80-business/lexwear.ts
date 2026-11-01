@@ -1,13 +1,15 @@
 // docs/design/plans/billing-by-hand.md, lane vendor-sites: Lexwear sells the Books modules on its site. A purchase is a
 // ledger line, the licence key follows by email a minute later, and the newsletter offers each module once.
 import { t } from "../../i18n/en";
-import { hashRng, rand } from "../00-core/rng";
+import { keyCode } from "../00-core/rng";
 import { dateOf } from "../00-core/time";
-import { hasModule, MODULES, type ModuleCount } from "../10-catalog/modules";
+import { BOOKS_VENDORS, booksVendor, type BooksVendor, type BooksVendorId } from "../10-catalog/bookkeeping";
+import { hasModule, moduleById, MODULES, type ModuleCount } from "../10-catalog/modules";
+import { shopById } from "../10-catalog/shops";
 import { deliverMail, type Ticket } from "../40-support/tickets";
-import { bookTransfer, isUnpaid, issue, owed, type Invoice, type Transfer } from "../45-billing/billing";
+import { bookTransfer, isUnpaid, issue, owed, synced, type Invoice, type Transfer } from "../45-billing/billing";
 import { logActivity } from "../47-staff/activity";
-import type { GameState } from "../50-state";
+import type { GameState, LedgerEntry } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 
 export const LEXWEAR = "Lexwear";
@@ -15,35 +17,48 @@ export const LEXWEAR_HOST = "lexwear.de";
 export const lexwearUrl = (id?: string): string => `www.${LEXWEAR_HOST}/${id ? `module/${id}` : ""}`;
 export const MONTHLY_RUN_HOUR = 9;
 
-const KEY_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-// Four groups of four, fixed per game and module.
-export function licenceKey(s: GameState, id: string): string {
-  const r = hashRng(s.seed, MODULES.findIndex((m) => m.id === id) + 1, 607);
-  return Array.from({ length: 4 }, () => Array.from({ length: 4 }, () => KEY_CHARS[Math.floor(rand(r) * KEY_CHARS.length)]).join("")).join("-");
-}
+// Fixed per game, vendor and module.
+export const licenceKey = (s: GameState, id: string, vendor: BooksVendorId = "lexwear"): string =>
+  keyCode(s.seed, MODULES.findIndex((m) => m.id === id) + 1, 607 + BOOKS_VENDORS.findIndex((v) => v.id === vendor));
 
-const LEDGER = "ledger.module.";
-export const bought = (s: GameState, id: string): boolean => s.ledger.some((e) => e.key === LEDGER + id);
-export const LICENCE = "lexwear.licence", NEWSLETTER = "lexwear.newsletter";
-export const licenceMail = (s: GameState, id: string): Ticket | undefined =>
-  s.tickets.find((x) => x.kind === "mail" && x.topic === LICENCE && x.mail?.params.module === id);
+// Lexwear's module purchases keep their own ledger lines, as do the shop vendors'; the other bookkeeping vendors' lines carry the vendor's name.
+const LEDGER = "ledger.module.", VENDOR_LEDGER = "ledger.bookModule.";
+export const purchaseEntry = (s: GameState, v: BooksVendor, id: string, price: number): LedgerEntry => v.id === "lexwear"
+  ? { hour: s.hour, category: "licenses", key: LEDGER + id, params: {}, amount: -price }
+  : { hour: s.hour, category: "licenses", key: VENDOR_LEDGER + id, params: { vendor: v.name }, amount: -price };
+const purchaseOf = (e: LedgerEntry): { vendor: BooksVendorId; module: string } | null => e.key.startsWith(LEDGER)
+  ? { vendor: "lexwear", module: e.key.slice(LEDGER.length) }
+  : e.key.startsWith(VENDOR_LEDGER) ? { vendor: BOOKS_VENDORS.find((v) => v.name === e.params.vendor)?.id ?? "lexwear", module: e.key.slice(VENDOR_LEDGER.length) } : null;
+export const bought = (s: GameState, id: string, vendor: BooksVendorId = "lexwear"): boolean =>
+  s.ledger.some((e) => { const p = purchaseOf(e); return p?.vendor === vendor && p.module === id; });
+export const LICENCE = "lexwear.licence", NEWSLETTER = "lexwear.newsletter", BOOKS_LICENCE = "books.licence";
+// A shop vendor's licence email for a module it sells.
+export const SHOP_LICENCE = "shop-link.licence";
+export const isLicence = (topic: string): boolean => topic === LICENCE || topic === SHOP_LICENCE || topic === BOOKS_LICENCE;
+export const licenceMail = (s: GameState, id: string, vendor: BooksVendorId = "lexwear"): Ticket | undefined =>
+  s.tickets.find((x) => x.kind === "mail" && x.mail?.params.module === id
+    && (vendor === "lexwear" ? x.topic === LICENCE || x.topic === SHOP_LICENCE : x.topic === BOOKS_LICENCE && x.mail.from === booksVendor(vendor)?.name));
 
 // A Lexwear email's params as shown: the module's name and pitch in the player's language.
 export const vendorParams = (p: Record<string, string | number>): Record<string, string> => ({
-  module: t(`vendor-sites.module.${p.module}`), pitch: t(`vendor-sites.pitch.${p.module}`), key: String(p.key ?? ""),
+  module: t(`vendor-sites.module.${p.module}`), pitch: t(`vendor-sites.pitch.${p.module}`), key: String(p.key ?? ""), shop: String(p.shop ?? ""),
 });
 
-function mail(s: GameState, topic: string, params: Record<string, string>): SimEvent {
-  const m = deliverMail(s, LEXWEAR, topic, params);
-  return { app: "Support", key: "event.ticket", params: { ...vendorParams(params), ticketId: m.id, name: LEXWEAR, subject: `ticket.mail.${topic}.subject` } };
+function mail(s: GameState, topic: string, params: Record<string, string>, from = LEXWEAR): SimEvent {
+  const m = deliverMail(s, from, topic, params);
+  return { app: "Support", key: "event.ticket", params: { ...params, ...vendorParams(params), ticketId: m.id, name: from, subject: `ticket.mail.${topic}.subject` } };
 }
 
 // Every minute and hour: purchases of the last hour without their licence email get it now.
 export function deliverLicences(s: GameState): SimEvent[] {
   const out: SimEvent[] = [];
   for (let i = s.ledger.length - 1; i >= 0 && s.ledger[i].hour >= s.hour - 1; i--) {
-    const e = s.ledger[i], id = e.key.slice(LEDGER.length);
-    if (e.key.startsWith(LEDGER) && !licenceMail(s, id)) out.push(mail(s, LICENCE, { module: id, key: licenceKey(s, id) }));
+    const p = purchaseOf(s.ledger[i]), v = p && booksVendor(p.vendor);
+    if (!p || !v?.keys || licenceMail(s, p.module, v.id)) continue;
+    const key = licenceKey(s, p.module, v.id);
+    const shop = moduleById(p.module)?.vendor === "shop" && s.shop.variant ? shopById(s.shop.variant).name : null;
+    out.push(shop ? mail(s, SHOP_LICENCE, { module: p.module, key, shop }, shop)
+      : v.id === "lexwear" ? mail(s, LICENCE, { module: p.module, key }) : mail(s, BOOKS_LICENCE, { module: p.module, key, program: v.program }, v.name));
   }
   return out;
 }
@@ -57,7 +72,9 @@ export const COUNTS: Record<ModuleCount, (s: GameState) => number> = {
 // Sent newsletters are kept in arrived, like the apps' emails.
 const newsId = (id: string) => `lexwear.${id}`;
 
+// Lexwear stops writing once the company runs another vendor's program.
 function newsletters(s: GameState): SimEvent[] {
+  if (s.books.vendor && s.books.vendor !== "lexwear") return [];
   return MODULES.filter((m) => m.trigger && !s.arrived.includes(newsId(m.id)) && COUNTS[m.trigger.count](s) >= m.trigger.at).flatMap((m) => {
     s.arrived = [...s.arrived, newsId(m.id)];
     return bought(s, m.id) ? [] : [mail(s, NEWSLETTER, { module: m.id })];
@@ -84,10 +101,11 @@ export function bookFor(s: GameState, tr: Transfer, inv: Invoice, settle: boolea
 
 export const monthlyRun = (s: GameState): void => s.invoices.filter((i) => i.status === "draft").forEach((inv) => sendDraft(s, inv, LEXWEAR));
 
-// The open invoice a transfer's reference names, when the amount is exactly what it owes.
+// The open invoice a transfer's reference names, when the amount is exactly what it owes; for money taken back, the paid one.
 export function referenced(s: GameState, tr: Transfer): Invoice | undefined {
+  if (tr.invoiceId === null && tr.back) return s.invoices.find((i) => i.number === tr.params.number && i.status === "paid" && synced(i));
   if (tr.invoiceId !== null || tr.reference !== "books.ref.invoice") return undefined;
-  const inv = s.invoices.find((i) => i.number === tr.params.number && isUnpaid(i));
+  const inv = s.invoices.find((i) => i.number === tr.params.number && isUnpaid(i) && synced(i));
   return inv && owed(inv) === tr.amount ? inv : undefined;
 }
 

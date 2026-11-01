@@ -118,11 +118,14 @@ function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
   return (
     <>
       <MenuBar theme={theme} onTheme={onTheme} onBell={toggleCenter} />
-      <DesktopIcons />
-      <Widgets />
-      <div className="windows">{windows.map((w) => <AppWindow key={w.id} win={w} front={!w.minimized && w.z === frontZ} />)}</div>
-      {center ? <NotificationCenter onClose={() => setCenter(false)} /> : <Banners />}
-      <Dock />
+      {/* The company only takes orders at normal speed; paused or fast, the desktop is look-only. */}
+      <div className="live-only" inert={speed !== 1}>
+        <DesktopIcons />
+        <Widgets />
+        <div className="windows">{windows.map((w) => <AppWindow key={w.id} win={w} front={!w.minimized && w.z === frontZ} />)}</div>
+        {center ? <NotificationCenter onClose={() => setCenter(false)} /> : <Banners />}
+        <Dock />
+      </div>
       {news && <WhatsNew changes={news} />}
       {alert && <AlertSheet alert={alert} />}
       {gameOver !== null && <GameOver hour={gameOver} />}
