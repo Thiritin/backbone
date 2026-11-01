@@ -1937,6 +1937,14 @@ A new VMwhere cluster starts on Essentials; a cluster from an older save is on E
 DRS Manual and Partial keep up to five recommended moves for the player to apply, Full applies them. A host enters maintenance mode only when every running VM can move live. A pool caps the booked vCPUs and RAM of its members. On a hot node a high pool keeps its performance and a low pool keeps at most 90%.
 
 
+### Horizont floating IPs, security groups and volumes
+
+A floating IP is one more address rented from the datacenter of an OpenStash cluster, billed like any rented address. It points at one instance, or at none. A service on a floating IP keeps its address when it moves to another location, so no renumbering happens and no customer is told to change DNS. An address that is not floating is renumbered as before.
+
+An instance has security groups. A new instance joins the default group, which lets only SSH through. The groups of an instance add up, and a port outside them is dropped, so a panel or mail host in a default-only instance is offline until a group lets its web or mail port through; a group that closes a port the software listens on but does not serve halves the breach chance, like the Proxmocks firewall. A project has up to 10 groups; the default group stays and a group in use cannot be deleted.
+
+A volume is 1 to 1000 GB of block storage that counts toward the capacity of the first working datastore with room, or sits on a node disk when the cluster has no datastore. It costs nothing extra. It survives deleting the instance it is attached to and is detached afterwards. Before 2012 a volume leaves only a stopped instance.
+
 ## PHP versions
 
 Each version becomes available on 1 January after its release, rounded so the start of the game has 4.4:

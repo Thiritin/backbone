@@ -1,5 +1,6 @@
 // GDD, Addresses and internet: private and public addresses, address prices, the nightly reconnect of dynamic home lines
 // and mail reputation. Numbers in economy.md, Addresses and internet.
+import { isFloating } from "./horizont";
 import { hashRng, rand } from "../00-core/rng";
 import { dateOf, yearOf } from "../00-core/time";
 import { hasBmc, modelById } from "../10-catalog/hardware";
@@ -180,7 +181,7 @@ export function assignService(s: GameState, serviceId: string): string | null {
 export const RENUMBER_PENALTY = 5;
 export const RENUMBER_ANNOUNCED_PENALTY = 2;
 const announces = (s: GameState, loc: Location): boolean => s.ips.blocks.some((b) => b.locationId === loc.id);
-const keeps = (s: GameState, a: Address, from: Location, to: Location): boolean => a.source === "lir" && announces(s, from) && announces(s, to);
+const keeps = (s: GameState, a: Address, from: Location, to: Location): boolean => isFloating(s, a.ip) || a.source === "lir" && announces(s, from) && announces(s, to);
 const given = (s: GameState, id: string, from: Location, to: Location): Address[] =>
   s.ips.addresses.filter((a) => a.holder === id && a.v === 4 && !keeps(s, a, from, to));
 

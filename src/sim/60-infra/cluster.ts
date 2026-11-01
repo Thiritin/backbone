@@ -19,6 +19,7 @@ import type { BackupJob, RestorePoint } from "./backups";
 import type { Ceph, Replica } from "./replica";
 import { vswitchBlocks, type VSwitch } from "./vswitch";
 import { firewallBlocks, type Firewall } from "./exposure";
+import type { FloatingIp, SecurityGroup, Volume } from "./horizont";
 
 // Active takes new workloads, cordoned keeps its own, draining moves them off, maintenance is empty after a drain.
 export type NodeState = "active" | "cordoned" | "draining" | "maintenance";
@@ -73,6 +74,8 @@ export interface Cluster {
   // Whether the cluster pays for its hypervisor's balancer edition (Software.balancer).
   balancer?: boolean;
   php: string; phpUntil: number; ha: Ha; version: number; updatedAt: number;
+  // OpenStash Horizont (horizont.ts); missing is none, and the one default group.
+  floating?: FloatingIp[]; groups?: SecurityGroup[]; volumes?: Volume[];
   // Servers attached as shared storage (economy.md, Datastores); VM disks on one stay off their node.
   datastores: Datastore[];
   // Named specs this installation sells (80-business/packages.ts); absent reads as none.
@@ -101,6 +104,8 @@ export interface Workload extends Resources, Partial<MachineState> {
   failcnt?: Record<string, number>; maxheld?: number; burstGb?: number; failStreak?: number; failDay?: number; frozen?: boolean;
   // Own VMs only: the port macros the VM lets through (exposure.ts); missing or null is no firewall.
   firewall?: Firewall | null;
+  // Horizont: the security groups of the instance (horizont.ts); missing is none.
+  groupIds?: string[];
   // The sold size when a package booked less; the service uses the sold size times its load.
   promised?: Resources;
   // vmNNN for the player's own VMs; a customer workload carries its service's hostname.
@@ -181,7 +186,9 @@ export const datastoreOn = (c: Cluster, r: Disk): boolean => !!r.datastore && c.
 // What a VM books on a node of the cluster: none of its disk while that is on one of the cluster's datastores.
 const onNode = (c: Cluster | undefined, r: Disk): Resources => (c && datastoreOn(c, r) ? { ...r, diskGb: 0 } : r);
 export const isDatastore = (s: GameState, deviceId: string): boolean => s.clusters.some((c) => c.datastores.some((x) => x.deviceId === deviceId) || c.qdevice === deviceId);
-export const datastoreUsed = (s: GameState, deviceId: string): number => s.workloads.reduce((n, w) => n + (w.datastore === deviceId ? w.diskGb + deltaGb(w) : 0), 0);
+export const datastoreUsed = (s: GameState, deviceId: string): number =>
+  s.workloads.reduce((n, w) => n + (w.datastore === deviceId ? w.diskGb + deltaGb(w) : 0), 0) +
+  s.clusters.reduce((n, c) => n + (c.volumes ?? []).reduce((m, v) => m + (v.datastore === deviceId ? v.gb : 0), 0), 0);
 export const datastoreCapacity = (s: GameState, deviceId: string): number => {
   const d = s.devices.find((x) => x.id === deviceId);
   return d ? nodeCapacity(d).diskGb : 0;
