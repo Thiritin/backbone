@@ -3,13 +3,13 @@ import type { Profile } from "../src/sim/30-customers/customers";
 import { serviceOnline } from "../src/sim/40-support/status";
 import { supportTick } from "../src/sim/40-support/tick";
 import { billingTick, EXTENSION_DAYS, isSuspended, SUSPENDED_PAY_ODDS_HIGH } from "../src/sim/45-billing/billing";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { setBillingRules, suspendServices } from "../src/sim/90-actions/billing";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { resolveTicket } from "../src/sim/90-actions/support";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { sendDrafts, withServer } from "./fixtures";
+import { sendDrafts, withServer, newGame } from "./fixtures";
 
 const DAY = 24;
 const bill = (s: GameState, hour: number) => { while (s.hour < hour) { s.hour++; billingTick(s); } };

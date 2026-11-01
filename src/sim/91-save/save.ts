@@ -1,6 +1,7 @@
 import { fillShop } from "./shop";
 import { brandsOf, fillCpus, isOfficeRouter, MODELS, modelById, RENAMED_MODELS, wanPort } from "../10-catalog/hardware";
 import { freeSlots } from "../60-infra/status";
+import { legacyLicences } from "../60-infra/licence";
 import { leave } from "../90-actions/clusters";
 import { yearOf } from "../00-core/time";
 import { asImage } from "../10-catalog/server-os";
@@ -11,7 +12,7 @@ import { skillById, skillFor } from "../10-catalog/research";
 import { STARTER_APPS, WIDGETS } from "../10-catalog/store";
 import { WALK } from "../80-business/walk";
 import { legacyRegistration } from "../80-business/office";
-import { legacyBank } from "../46-finance/bank";
+import { legacyBank, savingsOf } from "../46-finance/bank";
 import type { Employee } from "../47-staff/staff";
 import { device, deviceDefaults, fillCards, fillSizes, newGame, SAVE_VERSION, type Device, type GameState, type Location } from "../50-state";
 import { dropCluster, workloadDefaults } from "../60-infra/cluster";
@@ -25,7 +26,6 @@ import { fillDesign, fillLaunch, fillLines } from "../80-business/website";
 import { fillSpecs } from "./specs";
 import { fillMachines } from "./machines";
 import { legacyLeads } from "./leads";
-import { heldLicenses } from "../85-products/products";
 
 // ponytail: plain JSON in localStorage; compress once saves approach the ~5 MB limit.
 export const serialize = (state: GameState): string => JSON.stringify(state);
@@ -133,9 +133,11 @@ export function deserialize(raw: string): GameState {
   fillShop(s, data.marketing?.owned);
   // Saves from before banks hold their account at Sparklasse; the next hour brings its welcome email and TAN list.
   if (data.bank === undefined) s.bank = legacyBank(s);
+  // A save from before accounts opened on the bank's site holds the savings as cash; they come back with the account.
+  if ((data.version ?? 1) < 4 && !s.registration && !s.bank && s.cash >= savingsOf(s)) s.cash -= savingsOf(s);
   shelveRouter(s);
-  // Machines from before one-time licenses hold theirs for free, since the fee was never charged.
-  if (!data.licenses) s.licenses = heldLicenses(s);
+  // Saves from before licence keys; machines from before one-time licenses hold theirs for free, since the fee was never charged.
+  if (!data.trials) legacyLicences(s, (data.licenses ?? []) as unknown as Parameters<typeof legacyLicences>[1]);
   const media = data.media ?? base.media;
   s.media = { images: [...new Set(media.images.map((x) => asImage(x, year)))], stick: { ...media.stick, os: media.stick.os && asImage(media.stick.os, year) } };
   // Apps a save already has count as arrived, so they never send their email.

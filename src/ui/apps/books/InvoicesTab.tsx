@@ -10,6 +10,7 @@ import { useStore } from "../../store";
 import { useBooks } from "./view";
 import { formatDay } from "../billing/format";
 import { monthYear } from "../support/labels";
+import { DocBar, DocButton, DocFoot } from "./DocBar";
 import { Locked } from "./Locked";
 
 const PILL: Record<InvoiceStatus, string> = { draft: "", open: "accent", overdue: "warn", paid: "ok", writtenOff: "" };
@@ -17,18 +18,22 @@ export const statusLabel = (i: Invoice) => t(`books.status.${i.status === "open"
 export const StatusPill = ({ inv }: { inv: Invoice }) => <span className={`pill ${PILL[inv.status]}`}>{statusLabel(inv)}</span>;
 
 export function InvoicesTab({ focus }: { focus: string | null }) {
-  const game = useBooks();
+  const game = useBooks(), act = useStore((s) => s.act);
   const list = [...game.invoices].reverse();
   const [selected, setSelected] = useState<string | null>(focus ?? list.find((i) => i.status === "draft")?.id ?? list[0]?.id ?? null);
   const inv = game.invoices.find((i) => i.id === selected);
   const name = (id: string) => game.customers.find((c) => c.id === id)?.name ?? id;
   return (
-    <>
-      <div className="fin-toolbar"><Locked id="monthly-run" label={t("books.monthlyRun")} /></div>
+    <div className="books-docs">
+      <DocBar>
+        <DocButton icon={<Send />} label={t("books.sendPdf")} disabled={inv?.status !== "draft"} onClick={() => act(sendInvoice, inv!.id)} />
+        <span className="books-docbar-sep" />
+        <Locked id="monthly-run" label={t("books.monthlyRun")} />
+      </DocBar>
       <div className="books-split">
         <div className="fin-scroll">
           {list.length === 0 ? <div className="fin-empty"><Receipt />{t("books.noInvoices")}</div> : (
-            <table className="table fin-table">
+            <table className="table fin-table books-doclist">
               <thead>
                 <tr><th>{t("books.col.number")}</th><th>{t("books.col.customer")}</th><th>{t("books.col.period")}</th><th className="r">{t("books.col.amount")}</th><th>{t("books.col.status")}</th></tr>
               </thead>
@@ -48,7 +53,12 @@ export function InvoicesTab({ focus }: { focus: string | null }) {
         </div>
         {inv && <Preview inv={inv} game={game} />}
       </div>
-    </>
+      <DocFoot items={[
+        [t("books.tab.invoices"), String(list.length)],
+        [t("books.status.draft"), String(list.filter((i) => i.status === "draft").length)],
+        [t("books.total"), euroCents(list.reduce((n, i) => n + invoiceTotal(i), 0))],
+      ]} />
+    </div>
   );
 }
 
@@ -77,14 +87,12 @@ export function Page({ game, title, to, items, footer }: { game: GameState; titl
 }
 
 function Preview({ inv, game }: { inv: Invoice; game: GameState }) {
-  const act = useStore((s) => s.act);
   const c = game.customers.find((x) => x.id === inv.customerId);
   return (
     <div className="books-preview">
       <Page game={game} title={t("books.invoice", { number: inv.number })} to={c?.address} items={inv.lines} footer={inv.status === "draft" ? <span>{formatDay(inv.issuedAt)}</span> : (
         <><StatusPill inv={inv} /><span className="num">{inv.paidAt !== null ? t("books.paidOn", { date: formatDay(inv.paidAt) }) : t("books.dueOn", { date: formatDay(inv.dueAt) })}</span></>
       )} />
-      {inv.status === "draft" && <button className="btn primary" onClick={() => act(sendInvoice, inv.id)}><Send />{t("books.sendPdf")}</button>}
     </div>
   );
 }

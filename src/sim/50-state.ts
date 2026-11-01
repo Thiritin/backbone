@@ -1,8 +1,7 @@
 import { createRng, type Rng } from "./00-core/rng";
-import { START_CASH } from "./10-catalog/economy";
 import { componentParts, hasFirmware, modelById, type ComponentKind, type FormFactor, type PartSpec } from "./10-catalog/hardware";
 import type { Vendor } from "./10-catalog/cpus";
-import type { OsImage, ServerOsId } from "./10-catalog/server-os";
+import type { LicenseKind, OsImage, ServerOsId } from "./10-catalog/server-os";
 import { yearOf } from "./00-core/time";
 import { MOMS_DSL, seedDcs } from "./20-world/datacenters";
 import { t } from "../i18n/en";
@@ -43,10 +42,11 @@ import { firstHostNo } from "./30-customers/hostnames";
 import { newShop, type ShopState } from "./80-business/shop";
 import type { BankAccount } from "./46-finance/bank";
 import type { Payable } from "./46-finance/payables";
+import type { Letter } from "./40-support/letters";
 import type { TrendPoint } from "./80-business/trend";
 
-// 3: GPU line servers carry their preset cards.
-export const SAVE_VERSION = 3;
+// 3: GPU line servers carry their preset cards. 4: an unregistered game holds its savings until the bank account opens.
+export const SAVE_VERSION = 4;
 
 export type BondMode = "none" | "failover" | "balance";
 export type CableKind = "copper" | "dac" | "fiber" | "rollover";
@@ -134,12 +134,23 @@ export type RebuildRate = "low" | "medium" | "high";
 export interface HostFiles { since: number; paths: Record<string, string | boolean> }
 
 // A desktop document; x and y are its icon position on the desktop in pixels.
-// An "app" doc is a desktop link whose title is the app name.
-export interface Doc { id: string; kind: "guide" | "note" | "app"; title: string; body: string; x: number; y: number }
+// An "app" doc is a desktop link whose title is the app name; a "form" doc is a downloaded application to sign.
+export interface Doc { id: string; kind: "guide" | "note" | "app" | "form"; title: string; body: string; x: number; y: number; form?: DocForm }
+// from is the legal form the company held when the form was downloaded.
+export interface DocForm { form: string; from?: string; signed: number | null }
 // domain is the company's own domain once registered; mail is its email service.
 export interface Company { name: string; logo: string; color: string; domain: string | null; mail: CompanyMail; tagline: string }
 export interface Registration { hour: number; owner: string; form: string; number: number }
 export interface LedgerEntry { hour: number; category: string; key: string; params: Record<string, string | number>; amount: number }
+
+// A licence key for an OS or software id. edition is a panel tier; kind is the pricing at purchase. covers is the major
+// version a one-time key is bound to, or the hour a subscription's paid term runs to; renewsAt is the next renewal of a
+// subscription and lapsedAt the hour an unpaid one expired.
+export interface Licence {
+  id: string; product: string; edition: string | null; kind: LicenseKind; key: string; orderId: string; boughtAt: number;
+  machineId: string | null; covers: { kind: "version"; major: string } | { kind: "term"; until: number };
+  renewsAt: number | null; lapsedAt: number | null;
+}
 
 export interface GameState {
   version: number;
@@ -154,8 +165,10 @@ export interface GameState {
   devices: Device[];
   cables: Cable[];
   ledger: LedgerEntry[];
-  // One-time licenses (docs/design/software.md, section 1): the OS or software id and the machine that holds it.
-  licenses: { id: string; machineId: string; boughtAt: number }[];
+  // Bought licence keys (docs/design/plans/software-licences.md), each assigned to at most one machine.
+  licenses: Licence[];
+  // One entry per machine and product whose trial started; it never starts again there. until is the hour it ends.
+  trials: { machineId: string; product: string; until: number }[];
   // Operating system images downloaded from their sites, one per version, and the one USB stick: the image written on it,
   // the server it is in.
   media: { images: OsImage[]; stick: { os: OsImage | null; in: string | null } };
@@ -311,6 +324,10 @@ export interface GameState {
   bank: BankAccount | null;
   // Supplier invoices to pay by transfer (46-finance/payables.ts).
   payables: Payable[];
+  // Paper post, delivered and on its way (40-support/letters.ts).
+  letters: Letter[];
+  // The last calendar year the chamber of commerce billed; 0 before the first bill (80-business/paperwork.ts).
+  chamberYear: number;
   // Bought software modules by id; "hbci" lets Books talk to the bank.
   modules: string[];
 }
@@ -354,12 +371,12 @@ export const device = (id: string, model: string, brand: string, rackId: string 
 // Starting infrastructure: an empty 24U basement rack, the line jack on its panel and the flat's router in storage. The player
 // mounts the router, buys, mounts and cables the first server.
 export const newGame = (seed: number): GameState => ({
-  version: SAVE_VERSION, seed, rng: createRng(seed), hour: 0, minute: 0, cash: START_CASH, nextId: 8,
+  version: SAVE_VERSION, seed, rng: createRng(seed), hour: 0, minute: 0, cash: 0, nextId: 8,
   locations: [{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: t("location.basement"), space: "basement", positions: 1, readyAt: 0, extraCircuit: false }],
   racks: [{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null, overSince: { a: null, b: null } }],
   devices: [{ ...device("dev5", "home-router", "AVN", null, 0, null, "fra1-gw-01", 0), store: "loc1" }, device("dev6", "line-jack", "", null, 0, "loc1", "fra1-line-01", 0)],
   cables: [],
-  ledger: [], licenses: [], media: { images: [], stick: { os: null, in: null } }, leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], contracts: [], unlocks: [], training: null, knowHow: 0, installed: ["Browser"], kbReads: {}, checklist: [], seenChanges: [], undocked: [], os: "aqua",
+  ledger: [], licenses: [], trials: [], media: { images: [], stick: { os: null, in: null } }, leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], contracts: [], unlocks: [], training: null, knowHow: 0, installed: ["Browser"], kbReads: {}, checklist: [], seenChanges: [], undocked: [], os: "aqua",
   customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], files: {},
   invoices: [], transfers: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   quotes: [],
@@ -393,6 +410,8 @@ export const newGame = (seed: number): GameState => ({
   log: [], challenge: null, registration: null, arrived: [], score: { netWorth: null, level3: null, happySum: 0, happyHours: 0 }, trend: [],
   bank: null,
   payables: [],
+  letters: [],
+  chamberYear: 0,
   modules: [],
 });
 

@@ -4,6 +4,18 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- A new game now starts with no money: you first open a business account on a bank's website, where your €3,500 savings arrive, and then register the company at the trade office for a €40 fee paid by bank transfer.
+- Used hardware now resells for less than it cost new, and buyers on the board and on eBuy no longer pay more than its resale value.
+- A part taken out of a server takes its share of the server's value along, so stripping a server and selling the pieces brings in the same as selling it whole.
+- The Marketing app has a Domain tile whose Buy button opens the domain resellers in the Yahoy! Directory, and the domains of other companies in the game can no longer be registered as your own.
+- Websites in the browser fill the whole window again instead of a narrow page.
+- Right-click a browser tab to close it, close all other tabs, or close every tab to its left or right.
+- A business now always registers as a sole trader, and founding a limited company first needs the new Company law training in Research.
+- Letters now arrive by post in the new Post app, and paper bills from the trade office, the notary, the commercial register and the chamber of commerce land in your payables.
+- You can change your company to a partnership or a limited company by downloading the form from the trade office site, signing it and emailing it from the new compose window, and the Yahoy! Directory now links to the trade office.
+- Dunning rules now have their own settings tab in the bookkeeping app, and the pay all button on the payables tab sits in a proper toolbar.
+- Bank websites now show their own icon in the browser tab and address bar.
+- Quotes and invoices in Books now sit in a document list with a toolbar, and an accepted quote becomes its first invoice through Carry forward to invoice, after which it reads Invoiced with the invoice number.
 - A shop system now keeps its own customers and invoices, which reach Books when you press Import from shop, and its card payments arrive as one weekly payout that lists the invoices it covers.
 - Each shop vendor sells a Shop link module on its own website that sends new shop customers and invoices to Books at once and marks shop invoices paid when you book their payment.
 - The weather in the menu bar shows the name of the place you are at again, after the temperature.
@@ -19,6 +31,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Quotes are now documents in Books that you drag onto the order ticket, an accepted quote converts to the first invoice that you send and match like any other, and the Lexwear module Helpdesk link does the quote, account and invoice from the ticket.
 - Datacenter providers now announce your own IP block under your AS number for a one-off setup fee, so you no longer need your own BGP router for it.
 - Register domain and Transfer domain on an order now open your registrar's website, where you fill the owner from the customer record with a click and enter the auth code from the order email, while a shop system with the registrar module still registers its own orders.
+- Control panel trials now last as long as the real vendor's trial, 15 days for cPanic and 14 for Pleskit, and run only once per machine, so reinstalling a panel no longer starts a new trial. DirectAdmen has no trial and bills its top edition from the install.
 
 ## 2026-10-31
 

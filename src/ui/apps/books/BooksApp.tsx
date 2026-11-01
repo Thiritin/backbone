@@ -14,23 +14,24 @@ import { InvoicesTab } from "./InvoicesTab";
 import { QuotesTab } from "./QuotesTab";
 import { NEW } from "./NewCustomer";
 import { PayablesTab } from "./PayablesTab";
-import { RemindersTab } from "./RemindersTab";
+import { RemindersTab, RulesTab } from "./RemindersTab";
 import { Register } from "./Register";
 import { useBooks } from "./view";
 import "../billing/billing.css";
 import "./books.css";
 
 export const drafts = (s: GameState) => s.invoices.filter((i) => i.status === "draft" && synced(i)).length;
-export const unmatched = (s: GameState) => s.transfers.filter((x) => x.invoiceId === null).length;
+export const unmatched = (s: GameState) => s.transfers.filter((x) => x.matchedAt === null).length;
 export const late = (s: GameState) => s.invoices.filter((i) => i.status === "overdue" && synced(i)).length;
 
 // Each tab: id, label key, dock count and body. The selection a tab opens on comes from the focus id.
 const TABS: { id: string; count: (s: GameState) => number; body: ComponentType<{ focus: string | null }> }[] = [
   { id: "customers", count: (s) => s.customers.filter((c) => c.churnedAt === null && !c.sponsor).length, body: CustomersTab },
-  { id: "quotes", count: (s) => s.quotes.filter((q) => q.status === "accepted" && !s.sales.requests.some((r) => r.ticketId === q.ticketId && r.invoiceId)).length, body: QuotesTab },
+  { id: "quotes", count: (s) => s.quotes.filter((q) => q.status === "accepted").length, body: QuotesTab },
   { id: "invoices", count: drafts, body: InvoicesTab },
   { id: "bank", count: unmatched, body: BankTab },
   { id: "reminders", count: late, body: RemindersTab },
+  { id: "dunning", count: () => 0, body: RulesTab },
   { id: "payables", count: (s) => s.payables.filter((p) => overdue(s, p)).length, body: PayablesTab },
 ];
 

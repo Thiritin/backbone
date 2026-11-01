@@ -24,7 +24,7 @@ export function sendInvoice(s: GameState, invoiceId: string): ActionResult {
 
 // Books a bank transfer against an invoice; settle writes off what a smaller amount leaves open.
 export function matchTransfer(s: GameState, transferId: string, invoiceId: string, settle = false): ActionResult {
-  const tr = s.transfers.find((x) => x.id === transferId && x.invoiceId === null);
+  const tr = s.transfers.find((x) => x.id === transferId && x.matchedAt === null);
   if (!tr) return fail("error.transferMatched");
   if (tr.covers) return fail("error.payoutImport");
   const inv = unpaidInvoice(s, invoiceId);
