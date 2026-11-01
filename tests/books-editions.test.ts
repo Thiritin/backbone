@@ -4,14 +4,19 @@ import { BOOKS_VENDORS, booksVendor, LARGE, MEDIUM } from "../src/sim/10-catalog
 import { billingTick, owed } from "../src/sim/45-billing/billing";
 import { openAccount } from "../src/sim/46-finance/bank";
 import { newGame, type GameState } from "../src/sim/50-state";
-import { booksTick, hasFeature } from "../src/sim/80-business/bookkeeping";
+import { booksOffline, booksTick, hasFeature, seated, works } from "../src/sim/80-business/bookkeeping";
+import { staffTick } from "../src/sim/47-staff/staff";
+import { orderLead } from "../src/sim/30-market/orders";
+import { stepsDone } from "../src/sim/30-market/manual";
+import { hire } from "../src/sim/90-actions/staff";
+import { quoteOrder } from "../src/sim/90-actions/orders";
 import { resolve } from "../src/sim/80-business/browser";
 import { tick } from "../src/sim/88-tick/tick";
 import { sendInvoice } from "../src/sim/90-actions/billing";
 import { installBooks, runFeature, setSeats, upgradeBooks } from "../src/sim/90-actions/bookkeeping";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { withServer } from "./fixtures";
+import { readyGame, withServer } from "./fixtures";
 
 const at = (y: number, m: number, d: number, h = 10) => hourOf(new Date(Date.UTC(y, m - 1, d, h)));
 
@@ -156,5 +161,69 @@ describe("old saves", () => {
     expect(s.modules).toEqual(["shop-link"]);
     expect(s.tickets.some((x) => x.topic === "lexwear.newsletter")).toBe(false);
     expect(s.books.seats).toBe(0);
+  });
+});
+
+describe("seats", () => {
+  const clerk = (s: GameState) => {
+    const c = { ...s.candidates[0], id: "candb", role: "bookkeeper" as const, arriveAt: 0, leaveAt: 1e9 };
+    s.candidates.push(c);
+    const id = (hire(s, c.id) as { id: string }).id, e = s.staff.find((x) => x.id === id)!;
+    Object.assign(e, { skill: 50, trained: ["reminder", "invoices", "transfers"] });
+    return e;
+  };
+  const day = (s: GameState) => { s.hour = at(2005, 1, 3, 9); for (let h = 0; h < 8; h++) { staffTick(s); s.hour++; } };
+
+  it("idles a bookkeeper on a single-user licence and puts them to work with a seat", () => {
+    const { s, A } = ledger();
+    run(s, "wizo", "l");
+    const e = clerk(s);
+    expect(seated(s, e)).toBe(false);
+    day(s);
+    expect(A().status).toBe("draft");
+    s.books.seats = 1;
+    expect(seated(s, e)).toBe(true);
+    day(s);
+    expect(A().status).toBe("open");
+  });
+
+  it("seats every bookkeeper with a network version and three users on Collmix plus", () => {
+    const { s } = ledger();
+    const a = clerk(s), b = clerk(s), c = clerk(s);
+    run(s, "lexwear", "financial-office-pro");
+    expect([a, b, c].every((e) => seated(s, e))).toBe(true);
+    run(s, "collmix", "plus");
+    expect([a, b, c].map((e) => seated(s, e))).toEqual([true, true, false]);
+  });
+});
+
+describe("browser programs", () => {
+  it("stop working while the line is cut or throttled, and desktop programs keep going", () => {
+    const { s, B } = ledger();
+    run(s, "collmix", "plus");
+    s.payables.push({ id: "pay1", supplier: "upstream", name: "Upstream", number: "1", amount: 30, issuedAt: s.hour - 30 * 24, dueAt: s.hour - 8 * 24, paidAt: null, lines: [] } as never);
+    expect(booksOffline(s)).toBe(true);
+    expect(works(s, "match-by-reference")).toBe(false);
+    booksTick(s);
+    expect(B().status).not.toBe("paid");
+    run(s, "lexwear", "financial-office");
+    expect(booksOffline(s)).toBe(false);
+    booksTick(s);
+    expect(B().status).toBe("paid");
+  });
+});
+
+describe("GnuCache", () => {
+  it("has no quotes, and the order ticket takes a typed price instead", () => {
+    const s = readyGame(9);
+    installBooks(s, "gnucache");
+    expect(s.books.edition).toBe("free");
+    expect(hasFeature(s, "quotes")).toBe(false);
+    expect(hasFeature(s, "reports")).toBe(true);
+    const r = orderLead(s, "smallBiz", "Frankfurt", [], { product: "webHosting", size: 0, sla: "basic" }, true);
+    s.sales.requests = s.sales.requests.map((x) => (x.id === r.id ? { ...x, budget: 100, owned: false } : x));
+    expect(quoteOrder(s, r.ticketId!, 10, 0)).toMatchObject({ ok: true });
+    for (let i = 0; i < 60 && !stepsDone(s, s.sales.requests.find((x) => x.id === r.id)!).quote; i++) tick(s);
+    expect(stepsDone(s, s.sales.requests.find((x) => x.id === r.id)!).quote).toBe(true);
   });
 });

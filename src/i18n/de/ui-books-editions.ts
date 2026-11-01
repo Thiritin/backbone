@@ -23,4 +23,7 @@ export default {
   "books-editions.feature.statistics": () => `Statistik`,
   "ledger.booksSeat": (p) => `${p.program} ${p.edition} Platz`,
   "error.unknownEdition": () => `Diese Edition ist nicht erhältlich.`,
+  "books-editions.noSeat": () => `Kein Platz`,
+  "books-editions.offline": () => `Buchhaltung offline`,
+  "books-editions.offlineTitle": () => `Die Seite kann nicht angezeigt werden`,
 } satisfies Dict;

@@ -22,6 +22,9 @@ export default {
   "books-editions.feature.auto-reminders": () => "Automatic reminders",
   "books-editions.feature.helpdesk-link": () => "Helpdesk link",
   "books-editions.feature.statistics": () => "Statistics",
+  "books-editions.noSeat": () => "No seat",
+  "books-editions.offline": () => "Bookkeeping offline",
+  "books-editions.offlineTitle": () => "This page cannot be displayed",
   "ledger.booksSeat": (p) => `${p.program} ${p.edition} seat`,
   "error.unknownEdition": () => "This edition is not on sale.",
 } satisfies Dict;

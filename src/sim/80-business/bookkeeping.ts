@@ -30,8 +30,11 @@ export const works = (s: GameState, f: Feature): boolean => hasFeature(s, f) && 
 // Staff who may work in the program besides the player: the licence's further users and the bought seats.
 export const seatsFor = (s: GameState): number => Math.max(0, (currentEdition(s)?.users ?? 1) - 1 + s.books.seats);
 const clerk = (e: Employee) => e.role === "bookkeeper" || e.role === "accountant";
-// Clerks take the seats in hiring order; one without a seat idles.
-export const seated = (s: GameState, e: Employee): boolean => !clerk(e) || s.staff.filter(clerk).indexOf(e) < seatsFor(s);
+// Clerks on the staff take the seats in hiring order; one without a seat idles. Bots work inside the program.
+export const seated = (s: GameState, e: Employee): boolean => {
+  const i = s.staff.filter(clerk).indexOf(e);
+  return !clerk(e) || i < seatsFor(s);
+};
 
 // An unpaid Lexwear update stops upgrades until it is paid.
 export const updateOpen = (s: GameState): boolean => s.payables.some((p) => p.paidAt === null && p.lines.some((e) => e.key === UPDATE_KEY));
