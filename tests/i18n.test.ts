@@ -2,11 +2,17 @@ import { newGame } from "./fixtures";
 import { describe, expect, it } from "vitest";
 import { en, t } from "../src/i18n/en";
 import { LANGS, loadLang, type Dict } from "../src/i18n/lang";
+import { CYCLES } from "../src/sim/10-catalog/cycles";
 
 const packs = import.meta.glob<{ default: Dict }>("../src/i18n/*/*.ts", { eager: true });
 const params = (f: (p: never) => string) => new Set(String(f).match(/\bp\.\w+/g) ?? []);
 
 describe("translations", () => {
+  it("names every billing cycle", () => {
+    expect(CYCLES.filter((c) => !en[`books.cycle.${c}`])).toEqual([]);
+  });
+
+
   for (const l of Object.keys(LANGS).filter((l) => l !== "en")) {
     const dict: Dict = Object.assign({}, ...Object.entries(packs).filter(([p]) => p.includes(`/i18n/${l}/`)).map(([, m]) => m.default));
 
