@@ -8,6 +8,7 @@ import { DESK_NAME, holderOf, lanOf, leasesOf, routerPassword } from "../../../.
 import { linkStatus } from "../../../../sim/60-infra/status";
 import { dropPortShare, reserveAddress, setPortShare, setRouterLan, viewDevices } from "../../../../sim/90-actions/lan";
 import { useSessionState } from "../../../session";
+import { noAutofill } from "../../../no-autofill";
 import "../consoles/consoles.css";
 import "../ipmi/ipmi.css";
 import { usePageAct } from "../pageAct";
@@ -24,7 +25,7 @@ function Login({ game, d, host, onLogin }: { game: GameState; d: Device; host: s
       <form className="cx-card" onSubmit={(e) => { e.preventDefault(); submit(); }}>
         <div className="cx-brand">Fritz!OZ</div>
         <div className="cx-host">{modelById(d.model).name} · {host}</div>
-        <label className="cx-field">{t("misc1.ipmi.password")}<input type="password" value={pass} autoComplete="off" onChange={(e) => { setPass(e.target.value); setWrong(false); }} /></label>
+        <label className="cx-field">{t("misc1.ipmi.password")}<input type="password" value={pass} {...noAutofill} onChange={(e) => { setPass(e.target.value); setWrong(false); }} /></label>
         {wrong && <div className="cx-note" role="alert">{t("browser-consoles-2.fritz.wrongPassword")}</div>}
         <button className="cx-btn primary" type="submit">{t("browser-consoles-2.fritz.logIn")}</button>
       </form>

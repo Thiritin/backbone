@@ -6,8 +6,12 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - Registering your company at the trade office now goes through at once and charges the fee only once, by a letter that arrives the same day, and paying it is the next step in Getting started.
 - Errors on web pages, such as a wrong TAN or a missing owner name, now appear on the page next to the field instead of as a notification.
+- Password managers in your browser no longer offer to fill or save the logins inside the game.
+- The Debiant installer lets you type your own hostname for the machine or keep the one it suggests.
 - HyperVee VMs from 2012 can replicate to a second host and fail over to it, and HyperVee hosts get a Virtual Switch Manager with external, internal and private switches.
 - OpenVeeZee containers now show their beancounters and slow down or stop when the node is oversold, can use burst memory, and move between nodes with a checkpoint and restore.
+- Horizont now has Floating IPs that keep a service's address when its instance moves, Security Groups that filter ports, and Volumes.
+- The IPMI System Event Log now shows a severity and number for each event, can be filtered by severity and cleared, and records power supply, inlet temperature and cluster node events.
 - The game panels now have a Manage screen for every game server with versions, mods, restart schedules, a player chart and port allocations, and Pterodaktyl shows the status of its nodes.
 - Customers on a game title past its prime now lose happiness every day until you move them to a current title, and Pterodaktyl nodes run a daemon that fails now and then and has to keep up with its panel.
 - Backup jobs now keep restore points that you can test and copy offsite, Proxmocks clusters keep quorum, replicate VMs and run Ceph storage, and every VM can have its own firewall.

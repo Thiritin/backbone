@@ -11,6 +11,7 @@ import type { GameState } from "../../../../../sim/50-state";
 import { applyCard, applyOverdraft, openBankAccount, cancelTransfer, confirmTransfer, deleteStandingOrder, setTanMethod, startStandingOrder, startTransfer } from "../../../../../sim/90-actions/bank";
 import { takeLoan } from "../../../../../sim/90-actions/billing";
 import { readSession, writeSession } from "../../../../session";
+import { noAutofill } from "../../../../no-autofill";
 import "./bank-site.css";
 import { useFieldAct, usePageAct } from "../../pageAct";
 
@@ -79,7 +80,7 @@ function Login({ game, bank, onIn, onOpen }: { game: GameState; bank: Bank; onIn
       <Box title={t("bank.site.loginTitle")}>
         <form className="bks-form" onSubmit={(e) => { e.preventDefault(); submit(); }}>
           <label>{t("bank.site.number")}<input inputMode="numeric" value={number} onChange={(e) => setNumber(e.target.value)} /></label>
-          <label>{t("bank.site.pin")}<input type="password" inputMode="numeric" value={pin} onChange={(e) => setPin(e.target.value)} /></label>
+          <label>{t("bank.site.pin")}<input type="password" inputMode="numeric" value={pin} {...noAutofill} onChange={(e) => setPin(e.target.value)} /></label>
           <button className="bks-btn primary">{t("bank.site.login")}</button>
           {failed && <p className="bks-error">{t("bank.site.loginFailed")}</p>}
         </form>
