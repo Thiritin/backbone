@@ -1,12 +1,18 @@
 // docs/design/plans/tax-office.md: the tax office (Finanzamt) and DOHLE, its online filing service.
 import { dateOf, hourOf, isMonthStart, monthIndexOf, yearOf } from "../00-core/time";
 import { post } from "../40-support/letters";
+import { deliverMail } from "../40-support/tickets";
 import type { GameState, LedgerEntry } from "../50-state";
 import { newTax, type TaxReturn, type TaxState } from "./tax-state";
 
 export { newTax, type TaxReturn, type TaxState };
 
 export const TAX_OFFICE_NAME = "Finanzamt";
+export const DOHLE_NAME = "DOHLE";
+export const CERT_FILE = "dohle-zertifikat.pfx";
+export const FORMULAR_APP = "DohleFormular";
+// The activation code's letter takes two working days, three on one registration in three.
+export const CODE_DAYS = 2;
 export const DOHLE_HOST = "dohle.de";
 export const DOHLE_URL = `www.${DOHLE_HOST}/`;
 export const ERFASSUNG_URL = `www.${DOHLE_HOST}/erfassung/`;
@@ -172,4 +178,20 @@ export function fileVat(s: GameState, r: TaxReturn): number {
   if (due !== 0) book(s, "vat", "ledger.vatReturn", { from: r.from, months: monthsOf(r) }, -due);
   update(s, r.id, { filedAt: s.hour, booked: payable });
   return payable;
+}
+
+// The certificate is valid while its document is on the desktop; a new registration revokes it.
+export const certOk = (s: GameState): boolean => !!s.tax.cert && s.docs.some((d) => d.id === s.tax.cert && d.kind === "cert");
+
+const code36 = (n: number, len: number) => (Math.abs(Math.floor(n)) % 36 ** len).toString(36).toUpperCase().padStart(len, "0");
+export const normalCode = (v: string) => v.toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+// A registration: the activation ID by email at once, the code by letter, and the old certificate revoked.
+export function registerDohle(s: GameState): void {
+  const n = s.seed * 7919 + s.nextId * 104_729;
+  const id = `${code36(n, 4)}-${code36(n / 7, 4)}`, code = `${code36(n * 13, 4)}-${code36(n * 17, 4)}-${code36(n * 19, 4)}`;
+  deliverMail(s, DOHLE_NAME, "dohleId", { id, number: s.tax.number });
+  const days = CODE_DAYS + (n % 3 === 0 ? 1 : 0);
+  const l = post(s, DOHLE_NAME, "dohleCode", { code, number: s.tax.number }, days);
+  s.tax = { ...s.tax, dohleId: id, dohleCode: code, codeAt: l.at, cert: null };
 }

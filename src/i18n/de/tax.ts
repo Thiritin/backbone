@@ -31,4 +31,13 @@ export default {
   "error.taxReturn": () => "Diese Erklärung gibt es nicht.",
   "error.taxNotSmall": () => "Das Unternehmen nutzt die Kleinunternehmerregelung nicht.",
   "error.taxReturnFiled": () => "Diese Erklärung wurde bereits abgegeben.",
+  "ticket.mail.dohleId.subject": () => "Ihre Registrierung bei DOHLE",
+  "ticket.mail.dohleId.text": (p) => `Vielen Dank für Ihre Registrierung zur Steuernummer ${p.number}. Ihre Aktivierungs-ID lautet ${p.id}. Den Aktivierungscode erhalten Sie per Post. Geben Sie beides unter www.dohle.de/registrieren/ ein, um Ihre Zertifikatsdatei zu erhalten.`,
+  "letter.dohleCode.subject": () => "Ihr Aktivierungscode für DOHLE",
+  "letter.dohleCode.body": (p) => `Für Ihre Registrierung zur Steuernummer ${p.number} lautet der Aktivierungscode ${p.code}. Geben Sie ihn zusammen mit der Aktivierungs-ID aus unserer E-Mail unter www.dohle.de/registrieren/ ein.`,
+  "error.dohleCert": () => "Die DOHLE-Zertifikatsdatei wurde auf dem Schreibtisch nicht gefunden.",
+  "error.dohleTaxNumber": () => "Die Steuernummer stimmt nicht.",
+  "error.dohleMail": () => "Geben Sie die E-Mail-Adresse des Unternehmens ein.",
+  "error.dohleNoCode": () => "Der Aktivierungscode ist noch nicht angekommen.",
+  "error.dohleCode": () => "Aktivierungs-ID oder Aktivierungscode ist falsch.",
 } satisfies Dict;

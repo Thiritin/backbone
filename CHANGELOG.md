@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- You can register on DOHLE for a certificate file, with the activation ID by email and the code by post, and download DohleFormular to send your advance VAT returns.
 - Prices now include VAT: unless you use the small business rule, the tax office expects an advance VAT return every month or quarter, and a late return brings a surcharge and then an estimate by post.
 - Switching banks now pays out the interest the old account has earned so far and keeps your saved payees.
 - After you register, the tax office sends a questionnaire by post that you answer on the new DOHLE site, choosing whether to use the small business rule, and your tax number follows by letter.

@@ -31,4 +31,13 @@ export default {
   "error.taxReturn": () => "Esta declaración no existe.",
   "error.taxNotSmall": () => "La empresa no está acogida al régimen de pequeña empresa.",
   "error.taxReturnFiled": () => "Esta declaración ya se ha presentado.",
+  "ticket.mail.dohleId.subject": () => "Su registro en DOHLE",
+  "ticket.mail.dohleId.text": (p) => `Gracias por registrarse con el número fiscal ${p.number}. Su ID de activación es ${p.id}. El código de activación llega por correo postal. Introduzca ambos en www.dohle.de/registrieren/ para recibir su archivo de certificado.`,
+  "letter.dohleCode.subject": () => "Su código de activación de DOHLE",
+  "letter.dohleCode.body": (p) => `Para su registro con el número fiscal ${p.number} el código de activación es ${p.code}. Introdúzcalo junto con el ID de activación de nuestro correo en www.dohle.de/registrieren/.`,
+  "error.dohleCert": () => "No se encontró el archivo de certificado de DOHLE en el escritorio.",
+  "error.dohleTaxNumber": () => "El número fiscal no coincide.",
+  "error.dohleMail": () => "Introduzca la dirección de correo de la empresa.",
+  "error.dohleNoCode": () => "El código de activación aún no ha llegado.",
+  "error.dohleCode": () => "El ID o el código de activación es incorrecto.",
 } satisfies Dict;

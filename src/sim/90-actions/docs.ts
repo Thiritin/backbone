@@ -8,7 +8,7 @@ const STEP_X = 100, STEP_Y = 100, ROWS = 6, ORIGIN = guideDoc();
 
 // First grid spot down the left columns that no icon covers.
 // ponytail: fixed 6 rows, the sim does not know the screen height.
-function freeSpot(s: GameState): { x: number; y: number } {
+export function freeSpot(s: GameState): { x: number; y: number } {
   for (let i = 0; ; i++) {
     const x = ORIGIN.x + Math.floor(i / ROWS) * STEP_X, y = ORIGIN.y + (i % ROWS) * STEP_Y;
     if (!s.docs.some((d) => Math.abs(d.x - x) < STEP_X && Math.abs(d.y - y) < STEP_Y)) return { x, y };

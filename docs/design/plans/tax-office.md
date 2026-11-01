@@ -62,6 +62,7 @@ The company pays VAT and income tax by filing returns itself. Today `46-finance/
 3. Entering both on the site puts `dohle-zertifikat.pfx` on the desktop as a document.
 4. Every filing route reads that file from the desktop. A route that finds no file refuses with `error.dohleCert`.
 5. A deleted certificate cannot be recovered. The site's Lost certificate link starts a new registration, which revokes the old one, breaks the Books connection and sends a new code by letter.
+6. The company's email address is the address customers write to (the free mailbox, or sales@ on the own domain). Every registration revokes the certificate before it, so the Lost certificate link opens the same form.
 
 ## 7. Phases
 
