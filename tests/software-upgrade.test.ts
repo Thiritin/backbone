@@ -36,9 +36,9 @@ describe("software upgrade", () => {
     finish(s, "freepanel");
     expect(softwareTarget(s, "dev3", "freepanel")?.version).toBe("1.700");
     ok(upgradeSoftware(s, "dev3", "freepanel"));
-    expect(lookOf(s, "dev3", "freepanel")).toBe("early");
+    expect(lookOf(s, "dev3", "freepanel")).toBe("gray");
     finish(s, "freepanel");
-    expect(lookOf(s, "dev3", "freepanel")).toBe("late");
+    expect(lookOf(s, "dev3", "freepanel")).toBe("authentic");
     expect(s.cash).toBe(100_000);
   });
 
