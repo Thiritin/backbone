@@ -51,6 +51,8 @@ export interface BoardInfo {
   product: Product; size: number; hours: number; free: boolean; leads: number;
   // Fixed when the application arrives: the applicant misuses the server, or drops the banner after the first month.
   abuser: boolean; drops: boolean; dropped: boolean;
+  // The sponsor's ticket once the player blocks its services over a dropped banner.
+  heldTicket?: string;
   // Awareness this sponsorship has added so far, counted against the board's cap.
   granted: number;
 }
@@ -69,6 +71,7 @@ export interface Sponsorship {
 }
 
 export const MONTH = 730;
+export const HELD_TOPIC = "board.held";
 
 export const patchSponsorship = (s: GameState, id: string, f: (x: Sponsorship) => Partial<Sponsorship>): void => {
   s.sponsorships = s.sponsorships.map((x) => (x.id === id ? { ...x, ...f(x) } : x));
@@ -99,7 +102,7 @@ function finished(s: GameState, cities: string[]) {
     });
 }
 
-export const sponsorshipOf = (s: GameState, t: Pick<Ticket, "id">): Sponsorship | undefined => s.sponsorships.find((x) => x.ticketId === t.id);
+export const sponsorshipOf = (s: GameState, t: Pick<Ticket, "id">): Sponsorship | undefined => s.sponsorships.find((x) => x.ticketId === t.id || x.board?.heldTicket === t.id);
 
 // What the ticket text names: the event, how many services of what size and for how long.
 export function sponsorParams(s: GameState, t: Ticket): Record<string, string | number> {

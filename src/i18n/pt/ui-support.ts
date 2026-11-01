@@ -211,5 +211,7 @@ export default {
   "support.retentionOffers": () => "Ofertas de retenção",
   "support.noCost": () => "Sem custo",
   "support.accept": () => "Aceitar",
+  "support.toughLuck": () => "Azar",
+  "support.bannerBack": () => "Banner de volta",
   "support.resolve": () => "Resolver",
 } satisfies Dict;

@@ -3,12 +3,13 @@ import { yearOf } from "../src/sim/00-core/time";
 import { marketPrice, sizeSpec } from "../src/sim/10-catalog/products";
 import { opsTick } from "../src/sim/40-support/notices";
 import { type GameState } from "../src/sim/50-state";
-import { MONTH, type Sponsorship } from "../src/sim/80-business/community";
+import { HELD_TOPIC, MONTH, type Sponsorship } from "../src/sim/80-business/community";
 import { leadsThisMonth } from "../src/sim/80-business/marketing";
 import { APPLICANTS, BOARD, boardGranted, boardTick, offerOpen, type SponsorOffer } from "../src/sim/80-business/sponsorboard";
 import { resolve } from "../src/sim/80-business/browser";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
-import { acceptSponsorship, postOffer, withdrawOffer } from "../src/sim/90-actions/community";
+import { acceptSponsorship, answerSponsor, blockSponsor, cancelSponsor, postOffer, withdrawOffer } from "../src/sim/90-actions/community";
+import { closeTicket } from "../src/sim/90-actions/support";
 import { setLine } from "../src/sim/90-actions/website";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { readyGame, newGame } from "./fixtures";
@@ -275,5 +276,71 @@ describe("an unlisted line", () => {
     expect(board(s)).toEqual([]);
     expect(offerOpen(s, s.sponsorOffers[0])).toBe(false);
     expect(s.news.some((e) => e.startsWith("line."))).toBe(false);
+  });
+  describe("a dropped banner", () => {
+    // A running sponsorship one month in, its banner just taken down.
+    function cut(seed: number) {
+      const s = applied(seed);
+      accept(s, board(s)[0]);
+      const sp = board(s)[0];
+      sp.board!.drops = true;
+      sp.endsAt = sp.startedAt + 6 * MONTH;
+      s.hour = sp.startedAt + MONTH;
+      boardTick(s, []);
+      return { s, id: sp.id };
+    }
+    const held = (s: GameState) => s.tickets.find((t) => t.topic === HELD_TOPIC)!;
+
+    it("refuses to block or cancel a sponsor that still shows the banner", () => {
+      const s = applied(11);
+      accept(s, board(s)[0]);
+      const id = board(s)[0].id;
+      expect(blockSponsor(s, id)).toMatchObject({ ok: false, error: "error.sponsorNotDropped" });
+      expect(cancelSponsor(s, id)).toMatchObject({ ok: false, error: "error.sponsorNotDropped" });
+    }, 60_000);
+
+    it("blocks the services, brings the sponsor's ticket and ends the sponsorship on tough luck", () => {
+      const { s, id } = cut(11);
+      expect(blockSponsor(s, id)).toMatchObject({ ok: true });
+      const sp = board(s)[0];
+      expect(sp.serviceIds.every((v) => s.heldServices[v] === "manual")).toBe(true);
+      expect(held(s)).toMatchObject({ kind: "sponsor", status: "open", customerId: sp.customerId });
+      expect(sp.board!.heldTicket).toBe(held(s).id);
+      expect(closeTicket(s, held(s).id)).toMatchObject({ ok: true });
+      runTo(s, s.hour + 2);
+      expect(board(s)[0]).toMatchObject({ status: "done" });
+      expect(board(s)[0].reward).not.toBeNull();
+      expect(s.services.filter((v) => sp.serviceIds.includes(v.id)).every((v) => v.endedAt !== null)).toBe(true);
+      expect(sp.serviceIds.some((v) => s.heldServices[v])).toBe(false);
+    }, 60_000);
+
+    it("lifts the block and pays again once the banner is back up", () => {
+      const { s, id } = cut(11);
+      blockSponsor(s, id);
+      expect(answerSponsor(s, held(s).id, true)).toMatchObject({ ok: true });
+      const sp = board(s)[0];
+      expect(sp).toMatchObject({ status: "running", board: { dropped: false, drops: false } });
+      expect(sp.serviceIds.some((v) => s.heldServices[v])).toBe(false);
+      expect(held(s).status).toBe("closed");
+      const a = s.marketing.awareness[sp.board!.profile];
+      s.hour = sp.startedAt + 2 * MONTH;
+      boardTick(s, []);
+      expect(s.marketing.awareness[sp.board!.profile]).toBeGreaterThan(a);
+      expect(blockSponsor(s, id)).toMatchObject({ ok: false });
+    }, 60_000);
+
+    it("cancels at once without a ticket", () => {
+      const { s, id } = cut(11);
+      expect(cancelSponsor(s, id)).toMatchObject({ ok: true });
+      runTo(s, s.hour + 2);
+      expect(board(s)[0]).toMatchObject({ status: "done" });
+      expect(s.tickets.some((t) => t.topic === HELD_TOPIC)).toBe(false);
+    }, 60_000);
+
+    it("keeps a block across a save", () => {
+      const { s, id } = cut(11);
+      blockSponsor(s, id);
+      expect(board(deserialize(serialize(s)))[0].board!.heldTicket).toBe(held(s).id);
+    }, 60_000);
   });
 });

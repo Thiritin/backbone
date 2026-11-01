@@ -34,6 +34,8 @@ import {
 // A shady customer draws this many times the abuse reports.
 export const SHADY_ABUSE = 10;
 const RIGHT_ANSWER = 5, WRONG_ANSWER = -10, HISTORY_MONTHS = 12;
+// A right first answer within FAST_HOURS of the ticket opening adds FAST_ANSWER happiness.
+export const FAST_HOURS = 2, FAST_ANSWER = 2;
 
 function resolve(s: GameState, t: Ticket, c: Customer, outcome: Ticket["outcome"] = null): void {
   Object.assign(t, { status: "resolved", updatedAt: s.hour, outcome });
@@ -75,6 +77,7 @@ function finishWork(s: GameState, customer: (id: string) => Customer, events: Si
     else if (work.op === "escalate") Object.assign(t, { status: "escalated", updatedAt: s.hour });
     else if (work.op === "reply") {
       const right = work.arg === rightTemplate(s, t);
+      if (right && !t.replies.length && s.hour - t.createdAt <= FAST_HOURS) bump(c, FAST_ANSWER);
       t.replies = [...t.replies, { hour: s.hour, template: work.arg, right, ...outgoing(s, t, c, `tpl.${work.arg}`), ...(work.by && { by: work.by }) }];
       t.updatedAt = s.hour;
       if (right) {
