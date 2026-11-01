@@ -2,7 +2,7 @@
 // site shares.
 import { eraAt, type LicenseKind } from "../10-catalog/server-os";
 import type { GameState, Licence } from "../50-state";
-import { nextMajor, versionsOf } from "../10-catalog/software-versions";
+import { nextMajor, versionAt, versionsOf } from "../10-catalog/software-versions";
 import { isLicensed, productOf, tiersOnSale, yearAfter } from "../60-infra/licence";
 
 export const ORDER = "vendor.order";
@@ -53,6 +53,11 @@ export const lineOffer = (s: GameState, line: Pick<CartLine, "product" | "editio
   return u && { edition: null, fee: u.fee, kind: "once" };
 };
 
+// The major a cart line's key will cover: the upgrade's target, or the release on sale for a one-time key; undefined for a term key.
+export const lineMajor = (s: GameState, line: Pick<CartLine, "product" | "edition" | "from">): string | undefined => {
+  if (line.from) return upgradeOffers(s, line.product).find((u) => u.from === line.from)?.to;
+  return lineOffer(s, line)?.kind === "once" ? versionAt(line.product, s.hour)?.major : undefined;
+};
 export const cartOf = (s: GameState, host: string): CartLine[] => s.cart.filter((l) => hostOf(l.product) === host);
 export const keysOf = (s: GameState, host: string): Licence[] => s.licenses.filter((k) => hostOf(k.product) === host);
 export const orderKeys = (s: GameState, orderId: string): Licence[] => s.licenses.filter((k) => k.orderId === orderId);
