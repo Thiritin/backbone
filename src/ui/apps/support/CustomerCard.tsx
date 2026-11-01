@@ -5,7 +5,7 @@ import { invoiceTotal, isUnpaid } from "../../../sim/45-billing/billing";
 import type { GameState } from "../../../sim/50-state";
 import { subjectParams } from "../../../sim/40-support/notices";
 import { t } from "../../../i18n/en";
-import { CustomerLink } from "../customers/CustomersApp";
+import { CustomerLink } from "../customers/open";
 import { initials, kindOf, monthYear, moodClass, statusOf } from "./labels";
 
 // The customer beside a ticket: standing, contracts, money and the latest tickets.

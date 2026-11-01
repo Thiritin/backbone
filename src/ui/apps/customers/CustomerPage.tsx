@@ -335,7 +335,7 @@ function Timeline({ invoices, tickets, subject }: { invoices: Invoice[]; tickets
   );
 }
 
-function CreditSheet({ customerId, onClose }: { customerId: string; onClose: () => void }) {
+export function CreditSheet({ customerId, onClose }: { customerId: string; onClose: () => void }) {
   const act = useStore((s) => s.act);
   const id = useId();
   const [text, setText] = useState(""), amount = Math.round(Number(text) * 100) / 100;
@@ -357,7 +357,7 @@ function CreditSheet({ customerId, onClose }: { customerId: string; onClose: () 
   );
 }
 
-function ChangePrice({ v, profile, onClose }: { v: Service; profile: Profile; onClose: () => void }) {
+export function ChangePrice({ v, profile, onClose }: { v: Service; profile: Profile; onClose: () => void }) {
   const game = useStore((s) => s.game);
   const act = useStore((s) => s.act);
   const [monthly, setMonthly] = useState(Math.round(serviceMonthly(v) * 100) / 100);

@@ -1,4 +1,5 @@
 import { Cpu, Globe, HardDrive, MemoryStick } from "lucide-react";
+import { openCustomer } from "../customers/open";
 import { useState, type ReactNode } from "react";
 import type { Resources } from "../../../sim/10-catalog/products";
 import type { GameState } from "../../../sim/50-state";
@@ -107,7 +108,7 @@ function WorkloadRow({ game, w, u }: { game: GameState; w: Workload; u: Resource
 
 // A workload's actions: move it to a node with room or recover it by hand, stop or start it, or open it elsewhere.
 export function workloadMenu(game: GameState, w: Workload, start: (game: GameState, t: HandTask) => void): MenuEntry[] {
-  const { act, openApp } = useStore.getState();
+  const { act } = useStore.getState();
   const web = game.clusters.find((c) => c.id === w.clusterId)?.kind === "panel";
   const targets = web ? [] : migrationTargets(game, w.id), rescue = rescueEntries(game, w, start);
   const customer = game.services.find((v) => v.id === w.serviceId)?.customerId;
@@ -118,7 +119,7 @@ export function workloadMenu(game: GameState, w: Workload, start: (game: GameSta
     w.stopped ? { label: t("locations-2.start"), run: () => act(startWorkload, w.id) } : { label: t("locations-2.stop"), run: () => act(stopWorkload, w.id) },
     null,
     consoleEntry(game, w.clusterId),
-    !!customer && { label: t("locations-2.openCustomer"), run: () => openApp("Customers", { kind: "customer", id: customer }) },
+    !!customer && { label: t("locations-2.openCustomer"), run: () => openCustomer(customer) },
   ];
 }
 

@@ -225,9 +225,9 @@ describe("tutorial", () => {
     expect(TUTORIAL).toEqual(["bank", "register", "payBill", "books", "buyServer", "mountServer", "mountRouter", "internet", "setup", "findAddress", "shareWeb", "website", "domain", "launch", "email", "firstCustomer"]);
   });
 
-  it("starts without Marketing and gives it to old registered saves", () => {
+  it("starts with Marketing and gives it to old registered saves", () => {
     const s = registered(newGame(1));
-    expect(s.installed).not.toContain("Marketing");
+    expect(s.installed).toContain("Marketing");
     const raw = JSON.parse(serialize(s));
     delete raw.registration;
     delete raw.arrived;

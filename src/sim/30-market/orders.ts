@@ -113,7 +113,7 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
     const done = target ? place(s, r) : null;
     if (done?.ok) {
       formInvoice(s, r.id);
-      events.push({ app: "Customers", key: "event.orderPlaced", params: { ...params, price: r.quote! } });
+      events.push({ app: "Books", key: "event.orderPlaced", params: { ...params, price: r.quote! } });
       return r;
     }
     cancelShopOrder(s, r);

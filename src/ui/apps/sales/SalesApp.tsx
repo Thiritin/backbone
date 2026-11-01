@@ -5,7 +5,7 @@ import { requestName, requirementsFor, type SalesRequest } from "../../../sim/30
 import { profileStats } from "../../../sim/40-support/tickets";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
-import { CustomerLink } from "../customers/CustomersApp";
+import { CustomerLink } from "../customers/open";
 import { initials, patience, PRODUCT, stamp } from "../support/labels";
 import { UpgradeCompose } from "../support/CustomOrder";
 import { specText } from "../../../sim/30-market/spec";

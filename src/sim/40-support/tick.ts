@@ -83,7 +83,7 @@ function finishWork(s: GameState, customer: (id: string) => Customer, events: Si
       if (right) {
         t.status = "waiting";
         const hosting = t.kind === "howTo" && t.topic === "ssl" && s.services.find((v) => v.id === t.serviceId && v.endedAt === null);
-        if (hosting && offerCertificate(s, hosting, CERT_SHARE.asked)) events.push({ app: "Customers", key: "event.certificateSold", params: { name: c.name, domain: hosting.domain ?? hosting.label } });
+        if (hosting && offerCertificate(s, hosting, CERT_SHARE.asked)) events.push({ app: "Books", key: "event.certificateSold", params: { name: c.name, domain: hosting.domain ?? hosting.label } });
       } else {
         // A wrong answer brings a follow-up in the same thread with a fresh response time.
         bump(c, WRONG_ANSWER);

@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- The Customers app is gone: customer records now live in the admin of your shop system, and before you run a shop, Books keeps them as contracts where you can credit, suspend and reprice them.
+- Marketing, Security and Research are in the dock from the day you register the company, so no Pear email or news line announces them anymore.
 - Customers write half as many support tickets, a right answer within two hours of a ticket opening makes them a little happier, and customers whose domain you registered no longer ask how to point it to their site.
 - A Sponsor-Bored sponsor who takes your banner down can now be blocked or cancelled from the Marketing app, and when a blocked sponsor writes in you can say tough luck or have them put the banner back up.
 - Free shop systems such as OrderBocks and free shop modules can now be started while your account is in the red.

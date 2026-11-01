@@ -60,9 +60,9 @@ export const checkDone = (s: GameState, id: string): boolean => CHECKS[id]?.(s) 
 // The Getting started tutorial: each step is a checklist goal, done in this order.
 export const TUTORIAL = ["bank", "register", "payBill", "books", "buyServer", "mountServer", "mountRouter", "internet", "setup", "findAddress", "shareWeb", "website", "domain", "launch", "email", "firstCustomer"] as const;
 
-// The steps after the tutorial belong to apps that arrive later (80-business/walk.ts); each shows once its app is installed.
+// A step that belongs to an app shows once that app is installed.
 export const GUIDE = [...TUTORIAL, "loan", "tenCustomers", "research", "patch", "hire", "study"] as const;
 const AFTER: Partial<Record<(typeof GUIDE)[number], string>> = {
-  website: "Marketing", launch: "Marketing", tenCustomers: "Customers", research: "Research", patch: "Security", hire: "Staff", study: "Market",
+  website: "Marketing", launch: "Marketing", research: "Research", patch: "Security", hire: "Staff", study: "Market",
 };
 export const guideSteps = (s: GameState) => GUIDE.filter((id) => !AFTER[id] || s.installed.includes(AFTER[id]!));

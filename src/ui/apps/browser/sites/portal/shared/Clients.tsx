@@ -5,6 +5,7 @@ import { suspendService, terminateService, unsuspendService } from "../../../../
 import { useStore } from "../../../../../store";
 import { formatDay } from "../../../../billing/format";
 import { PRODUCT } from "../../../../support/labels";
+import { CustomerView } from "../../../../customers/open";
 import type { ScreenProps } from "./nav";
 
 export function Clients({ game, go }: ScreenProps) {
@@ -27,14 +28,14 @@ export function Clients({ game, go }: ScreenProps) {
   );
 }
 
-// One client: the services with their hold and terminate links, and the way into the client area as that client.
-export function ClientSummary({ game, id, toClient }: ScreenProps & { id: string }) {
+// One client: the customer record, the services with their hold and terminate links, and the way into the client area as that client.
+export function ClientSummary({ game, go, id, tab, toClient }: ScreenProps & { id: string; tab?: string }) {
   const act = useStore((s) => s.act);
   const c = game.customers.find((x) => x.id === id);
   if (!c) return null;
   return (
     <div className="pt-screen">
-      <h3>{c.name}</h3>
+      <CustomerView game={game} id={c.id} tab={tab} onBack={() => go({ name: "clients" })} />
       {toClient && <button className="btn" onClick={() => toClient(c.id)}>{t("shop-admin.loginAsClient")}</button>}
       <table className="pt-table">
         <thead><tr><th>{t("shop-admin.product")}</th><th>{t("shop-admin.price")}</th><th /></tr></thead>

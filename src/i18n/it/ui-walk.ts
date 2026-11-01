@@ -2,8 +2,6 @@ import type { Dict } from "../lang";
 
 export default {
   "walk.from": () => "Pear",
-  "event.news.app.title": (p) => `Pear One porta ${p.app}`,
-  "event.news.app.text": (p) => `Heize online riporta che Pear One ora offre ${p.app} alle aziende di hosting che ne hanno bisogno.`,
   "ticket.pear.Customers.subject": () => "Clienti è nel tuo dock",
   "ticket.pear.Customers.text": () => "Clienti è ora nel tuo dock. Elenca ogni cliente con i suoi contratti e quanto è soddisfatto.",
   "ticket.pear.Marketing.subject": () => "Marketing è nel tuo dock",

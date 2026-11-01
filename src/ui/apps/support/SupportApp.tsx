@@ -23,7 +23,7 @@ import { uiSound, useFocus, useStore } from "../../store";
 import { useSessionState } from "../../session";
 import { More } from "../More";
 import { EmailSettings } from "../EmailSettings";
-import { CustomerLink } from "../customers/CustomersApp";
+import { CustomerLink, openCustomer } from "../customers/open";
 import { Incidents } from "./Incidents";
 import { CustomerCard } from "./CustomerCard";
 import { Reports } from "./Reports";
@@ -31,7 +31,7 @@ import { supportApp } from "./desk";
 import { CustomCompose, InvoicePill, MailAttachments } from "./CustomOrder";
 import { Compose } from "./Compose";
 import { specText } from "../../../sim/30-market/spec";
-import { OFFERS, OVERDRAFT } from "../../../sim/80-business/walk";
+import { OVERDRAFT } from "../../../sim/80-business/walk";
 import { bankUrl, HOME_URL } from "../../../sim/80-business/browser";
 import { isLicence } from "../../../sim/80-business/licences";
 import { ORDER } from "../../../sim/80-business/vendor-shop";
@@ -95,7 +95,7 @@ function ticketMenu(game: GameState, tk: Ticket): MenuEntry[] {
     canEscalate(tk.kind) && tk.status === "open" && { label: t("support.escalate"), disabled: locked, run: () => act(escalateTicket, tk.id) },
     !isFinal(tk) && { label: tk.kind === "order" || tk.kind === "sponsor" || tk.topic === "switchTitle" ? t("support.decline") : tk.notice ? t("support.ignore") : t("support.close"), disabled: locked, run: () => act(closeTicket, tk.id) },
     null,
-    customer && { label: t("support.openCustomer"), run: () => openApp("Customers", { kind: "customer", id: customer.id }) },
+    customer && { label: t("support.openCustomer"), run: () => openCustomer(customer.id) },
     request && { label: t("support.openRequest"), run: () => openApp("Support", { kind: "request", id: request.id }) },
   ];
 }
@@ -480,7 +480,7 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
               </button>
             ))}
             <span className="grow" />
-            {tk.kind === "pear" && <button className="btn primary" onClick={() => tk.topic === OVERDRAFT ? openApp("Browser", { kind: "url", id: game.bank ? `${bankUrl(game.bank.id)}banking/overdraft` : HOME_URL }) : openApp(OFFERS.includes(tk.topic) ? "Shop" : tk.topic)}>{t("apps.open")}</button>}
+            {tk.kind === "pear" && tk.topic === OVERDRAFT && <button className="btn primary" onClick={() => openApp("Browser", { kind: "url", id: game.bank ? `${bankUrl(game.bank.id)}banking/overdraft` : HOME_URL })}>{t("apps.open")}</button>}
             {tk.kind === "sponsor" && tk.topic === HELD_TOPIC && <button className="btn ghost" disabled={locked} onClick={() => act(answerSponsor, tk.id, false)}><CircleX />{t("support.toughLuck")}</button>}
             {tk.kind === "sponsor" && tk.topic === HELD_TOPIC && <button className="btn primary" disabled={locked} onClick={() => act(answerSponsor, tk.id, true)}><Check />{t("support.bannerBack")}</button>}
             {tk.kind === "sponsor" && tk.topic !== HELD_TOPIC && <button className="btn ghost" disabled={locked} onClick={() => act(declineSponsorship, tk.id)}><CircleX />{t("support.decline")}</button>}

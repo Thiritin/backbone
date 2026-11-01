@@ -32,7 +32,7 @@ export function AdminScreen({ screen, ...props }: ScreenProps & { screen: Screen
     case "servers": return <Servers game={props.game} />;
     case "orders": return <Orders {...props} />;
     case "clients": return <Clients {...props} />;
-    case "client": return <ClientSummary {...props} id={screen.id ?? ""} />;
+    case "client": return <ClientSummary {...props} id={screen.id ?? ""} tab={screen.tab} />;
     case "invoices": return <Invoices {...props} />;
     default: return <Home {...props} />;
   }

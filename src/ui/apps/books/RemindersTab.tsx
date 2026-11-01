@@ -1,4 +1,5 @@
 import { Mail } from "lucide-react";
+import { openCustomer } from "../customers/open";
 import { useState } from "react";
 import { euroCents } from "../../../sim/00-core/money";
 import { AUTO_COLLECT_DAYS, AUTO_SUSPEND_DAYS, dueStep, owed, rulesAutomated, STEPS, type BillingRules, type Invoice } from "../../../sim/45-billing/billing";
@@ -16,12 +17,12 @@ const reminder = (step: number) => STEPS[step].key === "collections" ? t("misc1.
 
 // Suspension, write-off and the customer for a late invoice.
 function invoiceMenu(inv: Invoice, onWriteOff: (i: Invoice) => void): MenuEntry[] {
-  const { act, openApp } = useStore.getState();
+  const { act } = useStore.getState();
   return [
     { label: inv.suspended ? t("misc1.billing.resume") : t("misc1.billing.suspend"), run: () => act(suspendServices, inv.id, !inv.suspended) },
     { label: t("misc1.billing.writeOffMenu"), run: () => onWriteOff(inv) },
     null,
-    { label: t("misc1.billing.openCustomer"), run: () => openApp("Customers", { kind: "customer", id: inv.customerId }) },
+    { label: t("misc1.billing.openCustomer"), run: () => openCustomer(inv.customerId) },
   ];
 }
 

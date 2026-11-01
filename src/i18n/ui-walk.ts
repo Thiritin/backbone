@@ -3,8 +3,6 @@ import type { Dict } from "./lang";
 // Apps that arrive later: the Pear email, the News line and the Getting started step of each.
 export default {
   "walk.from": () => "Pear",
-  "event.news.app.title": (p) => `Pear One brings ${p.app}`,
-  "event.news.app.text": (p) => `Heize online reports that Pear One now offers ${p.app} to hosting companies that need it.`,
   "ticket.pear.Customers.subject": () => "Customers is in your dock",
   "ticket.pear.Customers.text": () => "Customers is now in your dock. It lists every customer with their contracts and how happy they are.",
   "ticket.pear.Marketing.subject": () => "Marketing is in your dock",

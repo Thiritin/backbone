@@ -12,7 +12,7 @@ import { machineAddress } from "../../../sim/60-infra/addresses";
 import { restoreWorkload } from "../../../sim/90-actions/vms";
 import type { MenuEntry } from "../../desktop/menu";
 import { useStore } from "../../store";
-import { CustomerLink } from "../customers/CustomersApp";
+import { CustomerLink } from "../customers/open";
 import { devName, disk } from "../hw";
 import "./products.css";
 
