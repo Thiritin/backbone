@@ -3,6 +3,7 @@
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
 ## 2026-11-01
+- Consoles, the command line and the monitoring list show the installed software version instead of the year, and the DirectAdmen 1.24 release notes no longer mention the Enhanced skin.
 - Leads now write in about products you do not sell yet, and a switch on the website settings stops those requests.
 - HyperVee lists the HyperVee release of each guest's integration services instead of a year, the Proxmocks header shows the installed version, and the vSphear DRS and VMwhere EVC labels use the right names.
 - A newly installed cPanic, Pleskit or DirectAdmen asks for its license on a setup page at first sign-in, where you can type a key, pick one you already own or continue on the trial.

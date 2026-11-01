@@ -7,6 +7,7 @@ import { tenants } from "../services";
 import { DnsStatistics } from "../ServiceReadouts";
 import { slavesServed, zoneOf } from "../../../../../sim/60-infra/netsvc-dns";
 import { ZoneEditor } from "./ZoneEditor";
+import { installedVersion, panelMachine } from "../../../../../sim/60-infra/licence";
 import "./powerdnz.css";
 
 // docs/design/software.md, section 10: white with an orange bar and one zone table until 2016, then a dark header and cards.
@@ -33,7 +34,7 @@ export function PowerDnz(p: PanelProps) {
       <main className="pd-main">
         {tab === "objects" && zone && <ZoneEditor game={p.game} zone={zone} era={era} onBack={() => setZone(null)} />}
         {tab === "objects" && !zone && <>
-          {era === "late" && <div className="pd-stats">{([[t("browser-consoles-2.zones"), zones], [t("browser-consoles-2.accounts"), ts.length], [t("browser-consoles-2.version"), p.c.version]] as const).map(([l, v]) => <div key={l} className="pd-stat"><b className="num">{v}</b><span>{l}</span></div>)}</div>}
+          {era === "late" && <div className="pd-stats">{([[t("browser-consoles-2.zones"), zones], [t("browser-consoles-2.accounts"), ts.length], ...(installedVersion(p.game, panelMachine(p.c) ?? "", "powerdnz") ? [[t("browser-consoles-2.version"), installedVersion(p.game, panelMachine(p.c) ?? "", "powerdnz")]] : [])] as const).map(([l, v]) => <div key={l} className="pd-stat"><b className="num">{v}</b><span>{l}</span></div>)}</div>}
           <section className="pd-box">
             <h2>{t("browser-consoles-2.zones")}</h2>
             <table className="cx-table">

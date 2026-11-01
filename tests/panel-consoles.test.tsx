@@ -43,6 +43,13 @@ describe("hosting and game panel consoles", () => {
     }
   });
 
+  it("shows the installed version in the PowerDNZ stats, not the year", () => {
+    const [, from] = lateVersions("powerdnz");
+    const out = render("powerdnz", 2020, true, undefined, from).html;
+    expect(out).toContain(`<b class="num">${from}</b>`);
+    expect(out).not.toContain('<b class="num">2020</b>');
+  });
+
   it("draws cPanic in the look of each generation's first version, signed in or not", () => {
     expect(CONSOLES.cpanic).toBeDefined();
     for (const [version, look, year] of [["10", "x3", 2022], ["11.38", "paperLamp", 2022], ["98", "jupitar", 2022]] as const) {
