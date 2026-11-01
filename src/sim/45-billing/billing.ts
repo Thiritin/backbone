@@ -10,7 +10,6 @@ import type { PaymentHabit, Profile, Service } from "../30-customers/customers";
 import { bump, cancelCustomer, createTicket, profileStats } from "../40-support/tickets";
 import type { GameState, LedgerEntry } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
-import { works } from "../80-business/bookkeeping";
 import { metrics } from "../metrics";
 import { logActivity } from "../47-staff/activity";
 import { mailDelay } from "../80-business/mail";
@@ -137,7 +136,7 @@ export function issue(s: GameState, inv: Invoice, payDays = DUE_DAYS - 1): void 
 
 // How customers fill in a transfer: the share who write a bare word or their name instead of the invoice number, by profile,
 // and the share of low-budget payers who send a few cents short or a rounded-down amount.
-export const BARE_REFERENCE: Record<Profile, number> = { private: 0.3, gamer: 0.35, hobbyDev: 0.2, soleProp: 0.1, smallBiz: 0.05, agency: 0.03, office: 0.05, onlineShop: 0.03, enterprise: 0.01, reseller: 0.03 };
+export const BARE_REFERENCE: Record<Profile, number> = { private: 0.2, gamer: 0.2, hobbyDev: 0.15, soleProp: 0.1, smallBiz: 0.05, agency: 0.03, office: 0.05, onlineShop: 0.03, enterprise: 0.01, reseller: 0.03 };
 export const SHORT_PAY = 0.15;
 const BARE_WORDS = ["hosting", "server", "domain"];
 // A reminder on an invoice whose payment sits unmatched in the bank.
@@ -296,7 +295,7 @@ export function sendStep(s: GameState, inv: Invoice, i: number): void {
 // Before the Automation research, staff carry out the billing rules in their work hours; after it the rules run by themselves.
 export const rulesAutomated = (s: GameState): boolean => s.unlocks.includes("automation");
 
-// The dunning step the rules send now: notices with auto reminders, collections once its days have passed.
+// The dunning step the rules send now: notices when the reminder rule is on, collections once its days have passed.
 export function ruleStep(s: GameState, inv: Invoice): number | null {
   const i = dueStep(inv, s.hour);
   if (i === null) return null;
@@ -313,13 +312,8 @@ export function ruleSuspendsAt(s: GameState, inv: Invoice): number | null {
   return inv.extendedUntil !== null && inv.suspendedAt < inv.extendedUntil ? inv.extendedUntil : null;
 }
 
-// The dunning step that runs by itself now: every rule after the Automation research, and the notices up to the final one
-// with an edition that sends reminders by itself. Staff carry out the rest.
-export function autoStep(s: GameState, inv: Invoice): number | null {
-  const i = ruleStep(s, inv);
-  if (i === null) return null;
-  return rulesAutomated(s) || (STEPS[i].key !== "collections" && works(s, "auto-reminders")) ? i : null;
-}
+// The dunning step that runs by itself now: every rule after the Automation research. Staff carry out the rest.
+export const autoStep = (s: GameState, inv: Invoice): number | null => rulesAutomated(s) ? ruleStep(s, inv) : null;
 
 const automated = (s: GameState, inv: Invoice, key: string, by = "Automation") =>
   logActivity(s, { customerId: inv.customerId, serviceId: null, by, key: `activity.${key}`, params: { invoice: inv.number }, minutes: 0 });

@@ -16,7 +16,6 @@ export default {
   "books.tab.payables": () => "Facturas recibidas",
   "books.monthlyRun": () => "Facturación mensual",
   "books.matchByReference": () => "Asignar por concepto",
-  "books.autoReminders": () => "Recordatorios automáticos",
   "books.col.number": () => "N.º",
   "books.col.customer": () => "Cliente",
   "books.col.period": () => "Periodo",

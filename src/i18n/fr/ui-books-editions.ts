@@ -18,7 +18,6 @@ export default {
   "books-editions.feature.hbci": () => `Banque en ligne HBCI`,
   "books-editions.feature.tax": () => `Impôts`,
   "books-editions.feature.reports": () => `Compte de résultat et trésorerie`,
-  "books-editions.feature.auto-reminders": () => `Relances automatiques`,
   "books-editions.feature.helpdesk-link": () => `Liaison helpdesk`,
   "books-editions.feature.statistics": () => `Statistiques`,
   "ledger.booksSeat": (p) => `Poste ${p.program} ${p.edition}`,

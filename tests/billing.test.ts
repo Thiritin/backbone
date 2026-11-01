@@ -6,7 +6,7 @@ import { annuity, baseRate, billingTick, invoiceTotal, isSuspended, loanAvailabl
 import { type GameState } from "../src/sim/50-state";
 import { metrics } from "../src/sim/metrics";
 import { tick } from "../src/sim/88-tick/tick";
-import { repayLoan, sendReminder, suspendServices, takeLoan, writeOff } from "../src/sim/90-actions/billing";
+import { repayLoan, sendInvoice, sendReminder, suspendServices, takeLoan, writeOff } from "../src/sim/90-actions/billing";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { sendDrafts, withServer, newGame } from "./fixtures";
@@ -88,6 +88,19 @@ describe("payment habits", () => {
     expect(s.invoices[0].status).toBe("paid");
     expect(s.cash).toBe(cash + 12);
     expect(s.ledger.at(-1)).toMatchObject({ category: "payments", key: "ledger.payment", params: { customer: "Eve" }, amount: 12 });
+  });
+
+  it("writes the invoice number on at least four in five transfers", () => {
+    const refs: string[] = [];
+    for (let seed = 1; seed <= 200; seed++) {
+      const s = withServer(newGame(seed));
+      addService(s, addCustomer(s, "Ada", seed % 2 ? "private" : "gamer"), "domain", "ada.com", 12, "year");
+      tick(s);
+      for (const i of s.invoices) { sendInvoice(s, i.id); Object.assign(i, { payStep: 0, payAt: s.hour }); }
+      billingTick(s);
+      refs.push(...s.transfers.map((x) => x.reference));
+    }
+    expect(refs.filter((r) => r === "books.ref.invoice").length / refs.length).toBeGreaterThan(0.75);
   });
 });
 

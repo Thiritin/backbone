@@ -122,19 +122,14 @@ describe("features follow the edition", () => {
     expect(C().reminders).toEqual([]);
   });
 
-  it("sends reminders by itself only with the large edition, and keeps an odd amount for the player", () => {
+  it("sends no reminder by itself in any edition, and keeps an odd amount for the player", () => {
     const { s, C } = ledger();
     s.transfers.push({ ...s.transfers[0], id: "trf900", amount: owed(C()) - 0.5, params: { number: C().number }, forInvoice: C().id });
     s.billingRules.autoRemind = true;
-    run(s, "orgamin", "professional");
+    run(s, "orgamin", "enterprise");
     s.hour++;
     billingTick(s);
     expect(C().reminders).toEqual([]);
-    run(s, "orgamin", "enterprise");
-    expect(hasFeature(s, "auto-reminders")).toBe(true);
-    s.hour++;
-    billingTick(s);
-    expect(C().reminders).toEqual([s.hour]);
     booksTick(s);
     expect(s.transfers.find((x) => x.id === "trf900")!.invoiceId).toBeNull();
   });
