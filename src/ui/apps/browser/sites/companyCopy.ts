@@ -3,6 +3,7 @@ import type { Product } from "../../../../sim/30-customers/customers";
 
 // The company's own copy on its website.
 export const BLURB: Record<Product, string> = {
+  reseller: t("web.reseller.blurb"),
   webHosting: t("browser-sites-1.blurb.webHosting"),
   vps: t("browser-sites-1.blurb.vps"),
   gameServer: t("browser-sites-1.blurb.gameServer"),
@@ -18,6 +19,7 @@ export const BLURB: Record<Product, string> = {
 };
 
 export const FEATURES: Record<Product, string[]> = {
+  reseller: [t("web.reseller.feature.0"), t("web.reseller.feature.1"), t("web.reseller.feature.2")],
   webHosting: [t("browser-sites-1.feature.webHosting.0"), t("browser-sites-1.feature.webHosting.1"), t("browser-sites-1.feature.webHosting.2")],
   vps: [t("browser-sites-1.feature.vps.0"), t("browser-sites-1.feature.vps.1"), t("browser-sites-1.feature.vps.2")],
   gameServer: [t("browser-sites-1.feature.gameServer.0"), t("browser-sites-1.feature.gameServer.1"), t("browser-sites-1.feature.gameServer.2")],

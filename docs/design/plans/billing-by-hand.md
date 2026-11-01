@@ -1,6 +1,6 @@
 # Plan: billing by hand
 
-Lane ids: `books`, `walk`, `bank`, `order-steps`, `vendor-sites`, `registrar-form`, `shop-link`, `payment-methods`. Mockup: `docs/design/mockups/bookkeeping.html`. Related design: `docs/design/gdd.md` (Custom orders, the five order steps), `docs/design/economy.md` (Billing and payment habits), `docs/design/shop.md` (shop systems, modules, variants), `docs/design/plans/shop-portal.md`.
+Lane ids: `books`, `walk`, `bank`, `order-steps`, `vendor-sites`, `registrar-form`, `shop-link`, `payment-methods`, `registrar-panel`, `teardown`. Mockup: `docs/design/mockups/bookkeeping.html`. Related design: `docs/design/gdd.md` (Custom orders, the five order steps), `docs/design/economy.md` (Billing and payment habits), `docs/design/shop.md` (shop systems, modules, variants), `docs/design/plans/shop-portal.md`.
 
 ## 1. Decisions
 
@@ -15,6 +15,9 @@ Lane ids: `books`, `walk`, `bank`, `order-steps`, `vendor-sites`, `registrar-for
 - The shop and Books are separate systems until the Shop link module is bought. Before it, shop customers and invoices reach Books only through an Import button, and gateway payouts land as one bundled transfer.
 - Payment methods are shop modules with a year, a fee, a profile preference and a side effect: PayPal disputes, card chargebacks and fraud, paysafecard churn, crypto abuse.
 - The first hour shrinks: fewer apps in the dock, each app arrives when its problem does.
+- The registrar partner's site has a reseller login, reached from the first registration's confirmation email. Its domain list shows every domain the player holds there with owner, expiry and renewal status; per domain the player can generate an auth code to transfer it out, or cancel it so it lapses at expiry. The partner bills each renewal to the player whether or not the customer still pays.
+- Nothing is terminated on its own while billing is by hand. A customer who cancels or is written off stops being invoiced, but their services keep running on the server, their domains keep renewing and both keep costing until the player terminates them. A suspended customer stays suspended until paid or terminated.
+- Termination is automated by a shop system's automation settings (auto-suspend after a number of days overdue, auto-terminate after a number of days suspended or at the end of a cancelled term, cancel or release each domain) for customers the shop knows, and by the bookkeeper staff role for every customer, at the bookkeeper's rate.
 
 ## 2. Lanes and order
 
@@ -28,8 +31,10 @@ Lane ids: `books`, `walk`, `bank`, `order-steps`, `vendor-sites`, `registrar-for
 | `registrar-form` | Register and Transfer domain as a Browser form on the registrar's site, click-fill from the customer record; shop registrar module skips it | `order-steps` |
 | `shop-link` | Source and synced flags, Import from shop, Shop link module, bundled gateway payouts | `books`, `vendor-sites`, shop systems in code |
 | `payment-methods` | Method catalog, profile preference, lost sales by method, fees, chargebacks and returns as negative transfers, crypto abuse | `shop-link` |
+| `registrar-panel` | Reseller login on the registrar's site, domain list, auth code for transfer out, cancel at expiry, yearly renewals charged to the player, transfer-out requests from customers | `registrar-form` |
+| `teardown` | Cancelled and written-off customers keep their services until terminated, Terminate in Books, suspended stays suspended, shop automation settings, bookkeeper terminates | `books`, `registrar-panel`, `vendor-sites` |
 
-Build `books` and `walk` first, in parallel, with `bank` starting on its first three milestones at the same time. Then `order-steps` and `vendor-sites` in parallel. Then `registrar-form` and `shop-link`. Then `payment-methods`.
+Build `books` and `walk` first, in parallel, with `bank` starting on its first three milestones at the same time. Then `order-steps` and `vendor-sites` in parallel. Then `registrar-form` and `shop-link`. Then `registrar-panel` and `payment-methods`. Then `teardown`.
 
 ## 3. Lane `books`
 
@@ -190,6 +195,24 @@ Milestones: capability table on the program catalogs; Books window absent withou
 
 A tax advisor is a firm (pun on DATEV members and the big names) hired on their site. They file the tax return, the yearly accounts and the advance VAT returns, and answer the tax office's letters, so the player never sees a tax step again. They are expensive: a monthly retainer by company size plus a fee per filing, several times what a bookkeeping program costs, worth it for a large company. They work from what they are given: with DATEV export the player or a bookkeeper exports once a month and uploads it on the advisor's portal, with a bookkeeping program's DATEV link (bigger editions, 2007 on) it flows itself. They do not chase invoices, match transfers, send reminders or pay payables, so bookkeepers stay needed. Mistakes in the delivered data (unmatched transfers, missing invoices) come back as a query letter with a fee per hour of their time. The design and numbers go into economy.md when the lane starts.
 
+## 9g. Lane `registrar-panel`
+
+1. The registrar partner's site gains a Login page, unlocked by the first registration and announced by its confirmation email. Domains lists every `Domain` the player registered or transferred in: name, owner, expiry, renewal on or off, status (active, transfer pending, cancelled, gone).
+2. Renewals: each domain renews at the partner a year after registration and books the registry cost to the player, independent of the customer's invoices. A cancelled domain does not renew and is gone at expiry.
+3. Transfer out: a leaving customer may open a "transfer my domain" ticket. Generate auth code in the panel shows the code; the player pastes it into the reply. The domain leaves the list two days later and stops renewing. A ticket left unanswered for three days costs happiness like any ticket, and a refusal costs more and can end in a complaint.
+4. Moving domains to another registrar (a cheaper partner, later the player's own accreditation) is a transfer per domain: the new registrar books one year on arrival, so each moved domain is paid a year early and its expiry no longer lines up with the customer's billing term.
+5. `tests/registrar-panel.test.ts`: renewals charge the player after the customer left; a cancelled domain lapses at expiry; the auth code ticket resolves and the domain leaves; a moved domain books a year and shifts its expiry.
+
+## 9h. Lane `teardown`
+
+1. A cancellation or write-off sets `churnedAt` and stops invoicing as today, but the customer's services stay on the server and keep their slot, power and licence costs, and their domains keep renewing. Services gain the status `orphaned`, shown in Books, Customers and the server's service list.
+2. Terminate in Books on the customer page: one action `terminateCustomer(s, customerId)` in `src/sim/90-actions/customers.ts` removes every service, frees the slots and cancels each domain at the partner. Terminating a domain is a separate click in the registrar panel until the shop or bookkeeper does both.
+3. A suspended customer stays suspended. Today's churn after `SUSPEND_CHURN_DAYS` writes the invoice off but leaves the services suspended until terminated.
+4. Orphaned services that run for 30 days raise the abuse report rate for their server, since nobody patches an abandoned site.
+5. Shop automation settings: auto-suspend after N days overdue, auto-terminate after N days suspended, terminate at the end of a cancelled term, domain on termination cancel or release. They act only on customers the shop knows (lane `shop-link`).
+6. The bookkeeper role terminates orphaned and long-suspended customers at a rate per hour, for every customer, with the same settings as the shop.
+7. `tests/teardown.test.ts`: a cancelled customer's services keep running and costing; terminate frees the slot and cancels the domain; a suspended customer stays suspended after churn; shop settings and the bookkeeper each terminate on their day; an old save loads with every churned customer's services already gone.
+
 ## 10. Shared files
 
 | File | Lanes | Rule |
@@ -198,8 +221,10 @@ A tax advisor is a firm (pun on DATEV members and the big names) hired on their 
 | `src/sim/88-tick/tick.ts` | books, vendor-sites, walk, bank | One call per lane on its own line |
 | `src/sim/10-catalog/store.ts` (`STARTER_APPS`) | books, walk, books-vendors | books swaps Billing for Books; walk trims the list; books-vendors removes Books from it |
 | `src/sim/90-actions/orders.ts` | order-steps, registrar-form | order-steps lands first |
-| `src/sim/80-business/browser.ts` | bank, vendor-sites, registrar-form | bank adds the shared site frame first, the others reuse it |
+| `src/sim/80-business/browser.ts` | bank, vendor-sites, registrar-form, registrar-panel | bank adds the shared site frame first, the others reuse it |
 | `src/sim/80-business/office.ts` | walk, bank | walk edits the dock list, bank adds the bank choice |
+| `src/sim/45-billing/billing.ts` | books, teardown | books lands first |
+| `src/sim/47-staff/staff.ts` | vendor-sites, teardown | vendor-sites adds the bookkeeper first |
 
 ## 11. Open questions, with recommendations
 
