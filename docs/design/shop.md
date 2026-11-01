@@ -74,6 +74,12 @@ Server groups are a software-level concept and live in the shop console ("Server
 - `targetFor` filters to members of for-sale groups when a shop is installed, and to auto-deploy groups when provisioning automatically. Without a shop, placement works as today.
 - Locations and hardware never carry group, sale or stock settings. Dedicated servers and colocation are sold from hardware stock (free servers, free rack units), which only Ubersmyth automates.
 
+## 4b. Products and product groups
+
+A shop with a variant sells plans. A product belongs to a product group and has a line, a spec, a price for each billing cycle the variant supports, a setup fee, stock, a server group, an optional package name and a setup mode (on payment, on accept, by hand). A form visit buys the smallest plan whose spec covers what the visitor wanted. When none covers it, the largest plan is sold if its monthly price is at most 1.35 times what the visitor expected, otherwise the visit counts as sold out and not as a lost sale. A line without plans sells through its configurable options, priced per unit, with a discount per billing cycle that the market sets until the player changes it.
+
+Before a shop exists, email quotes start at the market rate. Once a shop is active they start at the configurable option rates.
+
 ## 5. Cordon, drain and evacuate at software level
 
 Cordon, drain and evacuate act on one software installation on one server (a node of a cluster), not on the server:
