@@ -146,15 +146,35 @@ State: `GameServer.mods`. Action `installMod(s, serviceId, modId)` and `removeMo
 
 Console screens: TCAdmin "Mods" and "Plugins" tab in the server details (the real product has "Game Mods" and "Game Plugins"), Multicraft "Plugins" (the real Multicraft has a plugin and mod installer), Pterodactyl "Plugin manager" does not exist in the base panel but eggs and "Mod Manager" for Minecraft/Rost, so the Pterodaktyl screen is the egg's "Mod Manager" with the list of install buttons.
 
-### 3.5 Titles arriving and fading, churn on old titles
+### 3.5 Titles arriving and fading, switch requests, title catalogue
 
-`from` controls availability, `fade` the decline. Mechanics:
-- Customers on a faded title (`year > fade`): the customer loses 0.05 happiness per day from the fade year plus one, doubling every year after, capped at 0.4. Churn then follows the existing happiness formula. The customer asks to move: a `cancellation` ticket by existing rules; no new ticket kind.
-- Action `changeTitle(s, serviceId, titleId)`: the player moves the customer to a newer title, converting slots by resources: `newSlots = floor(oldSlots * oldPerSlot.ramGb / newPerSlot.ramGb)` clamped to the new title's range; installed mods are cleared; version set to latest; sets `happy +3` (the customer wanted it). Removes the faded drain. Upgrade tickets about a title change ride on the `upgrade` kind: the TOPICS entry is shared with `gameVersion`.
-- Churn rate at the title level is a readout: the Game servers list shows a "Titles" summary card (count per title, with a faded tag).
+Shipped in milestone 7 as a happiness drain plus a player-driven `changeTitle`. That model blamed the host for a game dying and let the player move a community to a game it never chose. Milestone 11 reworks it as below.
 
-Economy extension: "Happiness and churn" in economy.md gets a paragraph "Game titles"; proposal numbers above.
+**Fade lowers players online.** Each title has an interest factor: 1 until `fade`, then `max(0.15, 0.7 ^ (year - fade))`. `gameLoad` multiplies players online by it, so a faded server sits emptier every year. Faded customers stop losing happiness; the drain from milestone 7 goes away.
 
+**Fans and drifters.** When a customer's title passes `fade`, the customer is rolled once, seeded by service id: 25 percent become fans, the rest drifters. Fans stay on the title for good. At each renewal they drop to the smallest slot count that covers their 30-day peak, clamped to the title's range, so an old title keeps a tail of small, cheap servers. Drifters do the same downsizing and also have a monthly chance of `0.04 * (year - fade)` to open a switch request.
+
+**Switch request.** A new ticket kind `switchTitle` names the successor: the current title with the highest `pickTitle` weight in the same `genre` (a new `GameTitle` field: `shooter`, `sandbox`, `survival`, `racing`, `voice`). The ticket stays open 7 days.
+- The successor is offered on the server's panel: accepting runs the existing conversion (`newSlots = floor(oldSlots * oldPerSlot.ramGb / newPerSlot.ramGb)`, clamped, mods cleared, latest version), sets `happy +3` and clears the fan or drifter roll. The customer now plays a current title.
+- The successor is not offered, the player declines, or the ticket expires: the customer cancels with the reason "Moved to a host offering {title}".
+- `changeTitle` stays as the action that accepts the ticket and is refused without an open `switchTitle` ticket for that service. The player never moves a customer unasked.
+
+**Title catalogue.** A title is sold on a panel only once that panel offers it. New state `gameTitles: Record<panelId, Record<titleId, { since: number; readyAt?: number }>>`, default `{}` in `newGame`, filled by `deserialize`, where old saves get every title in use on their servers marked as offered. A title reaches a panel in one of three ways:
+
+| Way | Real counterpart | Rule |
+|---|---|---|
+| Bundled | TCAdmin's config library, Pterodactyl's default nests | `GameTitle.bundled: PanelId[]`; offered from `from` with no action |
+| Community import | TCAdmin config repository, community Pterodactyl eggs | Action `importTitle(panelId, titleId)`, free and instant, allowed from `from + lag` (TCAdmen 0.5 years, Pterodaktyl 0.25 years) |
+| Write it yourself | A host writing its own config or egg for a game nobody has covered yet | Action `writeTitleConfig(panelId, titleId)`, allowed from `from`; one-off cost (TCAdmen 400, Pterodaktyl 200, scaled by the era price index) and `readyAt` after 5 days (TCAdmen) or 3 days (Pterodaktyl) |
+
+Per panel:
+- **TCAdmen** bundles most titles from before 2012 and receives new ones late. It has the widest catalogue in the slot era.
+- **MultiKraft** is Minecraft only, so title fade and switch requests do not apply. Its catalogue is server types and modpacks, already covered by versions and mods (3.3, 3.4).
+- **Pterodaktyl** bundles few titles but has the shortest community lag and the cheapest write-your-own, which makes it the panel for launch waves.
+
+**Lost sales.** A new order whose `pickTitle` result has no panel offering it is lost and counted per title for 90 days. The Game servers list shows the count next to the title in the Titles card ("Requests for {title} declined: {count}"). The Titles card also gains the catalogue table per panel with a status per title: Offered, Import, Write, Writing until {date}.
+
+Economy extension: "Happiness and churn" in economy.md drops the faded drain and gets the fan share and drifter switch chance; the write-it-yourself costs go under "Game titles".
 ### 3.6 Crashes, auto-restart and scheduled restarts (features 9, 10)
 
 Hourly in `gamesTick`, per running `GameServer`:
@@ -203,6 +223,7 @@ Each is a pull-request sized change, green on its own, with `npm run typecheck`,
 8. **Pterodaktyl daemon and allocations.** `daemons` state with defaults and fill, daemon outage and recovery, versions, allocation pool and its placement limit, `restartDaemon`, `updateDaemon`, `addAllocation`, `removeAllocation`. Tests: `tests/games-daemon.test.ts` (offline daemon makes node servers unreachable, recovery after 6 hours, pool of 100 limits placement, `targetFor` skips a full node, old saves get `online` daemons).
 9. **Console screens for the three panels.** The `GamePanel.tsx` blocks and per-console screens from section 3.8 for packages (Game services, Plans, Nests and eggs, using the packages lane's package list), server details tabs, nodes and allocations for Pterodaktyl. Tests: extend `tests/panel-consoles.test.tsx` with a render check per console and era (TCAdmen 2010 and 2018, MultiKraft 2014, Pterodaktyl 2020), legacy service shows RAM only, no raw keys (existing console-screens test pattern).
 10. **Deferred: live console log.** `gameLog` and the Console tab in each panel. Tests: `tests/games-log.test.ts` (deterministic for a seed and hour, join/leave pairs match players, crash lines appear after a crash) and a render check.
+11. **Title fade rework and catalogue.** Interest factor in `gameLoad`, fan and drifter roll, renewal downsizing, `switchTitle` ticket and successor by `genre`, `changeTitle` gated on the ticket, `gameTitles` state with default and fill, `bundled` and `genre` catalog fields, `importTitle`, `writeTitleConfig`, lost-sale counter, Titles card catalogue table. Removes the faded happiness drain. Tests: `tests/games-catalogue.test.ts` (interest factor per year, seeded fan share near 25 percent, a drifter's switch ticket names the same-genre successor, accepting keeps the customer and declining cancels it, `changeTitle` refused without a ticket, import refused before the lag, write ready after its days, an order for an unoffered title is lost and counted, an old save marks titles in use as offered).
 
 Milestones 1, 2 and 3 are the minimum for the "Game titles and slots" build step (panel-features.md step 6); 4 to 8 are the remaining Game panels features; 9 is the visible payoff; 10 is the deferred final one.
 
@@ -240,7 +261,7 @@ Independent of: `web-services`, `mail-dns-vpn-storage`.
 
 ## 7. Open questions
 
-1. **Does a customer pick the title or does the player?** Real TCAdmin hosts let the customer pick the game when ordering. Recommendation: the customer's order names the title (drawn by `pickTitle`), and the player chooses it only when creating a service by hand in the console; the title is fixed after provisioning except through `changeTitle`.
+1. **Does a customer pick the title or does the player?** Real TCAdmin hosts let the customer pick the game when ordering. Recommendation: the customer's order names the title (drawn by `pickTitle`), and the player chooses it only when creating a service by hand in the console; the title is fixed after provisioning except when the customer asks to switch (3.5). Decided: the customer picks, the player only decides which titles each panel offers.
 2. **Should a crash on a Pterodaktyl node with an offline daemon cost refunds?** Recommendation: no refunds in this lane; the existing outage ticket credit retention option covers it.
 3. **Is the live console log worth shipping?** It only copies the look. Recommendation: keep it as milestone 10 and drop it if the milestones before it take longer than planned.
 4. **Game panel eras for the unit**: should a 2018 or later MultiKraft install still sell RAM and a 2008 Pterodaktyl install sell slots, i.e. does the unit follow the panel or the year? Recommendation: it follows the panel installed on the cluster (a console is what the customer sees), and the year only decides which panels the shop offers to install.
