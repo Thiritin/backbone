@@ -212,3 +212,6 @@ export const UI_LOOKS: Record<string, [version: string, look: Look][]> = {
   ownclod: [["1.0", "early"], ["10.0", "late"]],
   minnio: [["RELEASE.2016-06-03", "early"], ["RELEASE.2021-05-11", "late"]],
 };
+
+// What the vendor has released by the hour, oldest first.
+export const releasedAt = (product: string, hour: number): SoftwareVersion[] => versionsOf(product).filter((x) => x.release <= hour);

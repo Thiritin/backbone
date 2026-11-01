@@ -12,6 +12,8 @@ const kind = (p: Params) => (p.kind === "panel" ? "del pannello di hosting" : p.
 export default {
   "event.news.software.title": (p) => `${p.name} è uscito`,
   "event.news.software.text": (p) => `Heize online riferisce l'uscita ${kind(p)} ${p.name}, che si può installare sui tuoi server.`,
+  "event.news.swVersion.title": (p) => `${p.name} è uscito`,
+  "event.news.swVersion.text": (p) => `Heize online riporta che ${p.name} è uscito.`,
   "event.news.autoUpdate.title": (p) => `${p.name} si aggiorna da solo`,
   "event.news.autoUpdate.text": (p) => `Heize online riferisce che ${p.name} ora può installare i propri aggiornamenti automaticamente di notte.`,
   "event.news.generation.title": (p) => `Server G${p.gen} nello shop`,
