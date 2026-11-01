@@ -135,7 +135,7 @@ export default {
   "sim.site.pleskit.f1": () => "The extensions catalog adds features in one click.",
   "sim.site.pleskit.f2": () => "Customers get their own login for sites, mail and databases.",
   "sim.site.pleskit.f3": () => "Backups and restores run from the panel.",
-  "sim.site.pleskit.f4": () => "Every server gets one flat license.",
+  "sim.site.pleskit.f4": () => "Each server pays a monthly license sized to the domains it hosts.",
   "sim.site.directadmen.tagline": () => "Fast, simple, affordable",
   "sim.site.directadmen.blurb": () => "DirectAdmen is a light hosting panel that does what it should and nothing more. It installs in minutes, runs on modest hardware and stays out of your way.",
   "sim.site.directadmen.f0": () => "The panel uses a fraction of the memory of the big names.",
