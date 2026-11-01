@@ -1,4 +1,3 @@
-import { sendOrderInvoice } from "../30-market/manual";
 import {
   annuity, AUTO_COLLECT_DAYS, bookTransfer, issue, AUTO_SUSPEND_DAYS, cents, dueStep, isUnpaid, LOAN_AMOUNTS, LOAN_YEARS, loanAvailable, loanRate, sendStep, STEPS, suspend, type BillingRules, type Invoice,
 } from "../45-billing/billing";
@@ -16,8 +15,7 @@ const log = (s: GameState, inv: Invoice, key: keyof typeof ACTION_MINUTES | "wri
 export function sendInvoice(s: GameState, invoiceId: string): ActionResult {
   const inv = s.invoices.find((x) => x.id === invoiceId && x.status === "draft");
   if (!inv) return fail("error.invoiceSent");
-  // An order's first invoice is its confirmation.
-  if (!sendOrderInvoice(s, inv)) issue(s, inv);
+  issue(s, inv);
   log(s, inv, "sendInvoice");
   return { ok: true };
 }

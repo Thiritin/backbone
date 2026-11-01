@@ -20,7 +20,7 @@ const pct = (r: number) => `${(r * 100).toLocaleString(LOCALE, { maximumFraction
 const VIEWS = ["statement", "transfer", "orders", "card", "overdraft", "loans", "service"] as const;
 type View = (typeof VIEWS)[number];
 
-// One frame for every bank: the skin swaps colours and logo, the account's TAN method sets the transfer's last step.
+// One frame for every bank: the skin swaps colours, layout and era, the account's TAN method sets the transfer's last step.
 export function BankSite({ game, id, path, go }: { game: GameState; id: BankId; path: string; go: Go }) {
   const bank = bankById(id)!;
   // Written at once: the navigation that follows a login mounts the page anew.
@@ -31,7 +31,7 @@ export function BankSite({ game, id, path, go }: { game: GameState; id: BankId; 
   const query = new URLSearchParams(path.split("?")[1] ?? "");
   const home = `www.${bank.host}`;
   return (
-    <div className={`bks bks-${bank.skin.frame}`} style={{ "--bar": bank.skin.bar, "--accent": bank.skin.accent, "--bg": bank.skin.bg } as CSSProperties}>
+    <div className={`bks bks-${bank.skin.frame} ${yearOf(game.hour) >= bank.skin.redesign ? "late" : "early"}`} style={{ "--bar": bank.skin.bar, "--accent": bank.skin.accent, "--bg": bank.skin.bg } as CSSProperties}>
       <header className="bks-head">
         <span className="bks-logo" aria-hidden>{bank.name.charAt(0).toUpperCase()}</span>
         <span className="bks-name">{bank.name}</span>
