@@ -7,6 +7,7 @@ import {
   ATX_PRICE, CONTINUE_HOURS, FIRMWARE_HOURS, firmwareDue, firmwareHangs, GEAR_RECOVER_HOURS, MODEM_FROM, remoteFix,
 } from "../60-infra/oob";
 import { pushLog } from "../60-infra/power";
+import { loadSaved } from "../60-infra/switches";
 import { locationOf, working } from "../60-infra/status";
 import type { ActionResult } from "./hardware";
 
@@ -40,6 +41,7 @@ export function recoverGear(s: GameState, deviceId: string, how: How | boolean =
   if (how === false && remoteFix(s, d)) {
     d.hung = false;
     d.locked = false;
+    loadSaved(d);
     d.bootUntil = s.hour + GEAR_RECOVER_HOURS;
     pushLog(d, s.hour, "ipmi.log.gearRecovered");
     return { ok: true };
@@ -61,6 +63,7 @@ export function updateFirmware(s: GameState, deviceId: string): ActionResult {
   if (!working(s, d.id)) return fail(d.locked ? "error.lockedOut" : "error.unresponsive");
   d.fw = { version: yearOf(s.hour), updatedAt: s.hour };
   d.bootUntil = s.hour + FIRMWARE_HOURS;
+  loadSaved(d);
   pushLog(d, s.hour, "ipmi.log.firmware");
   if (firmwareHangs(s, d)) { d.hung = true; pushLog(d, s.hour, "ipmi.log.hung"); }
   return { ok: true };

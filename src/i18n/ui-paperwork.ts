@@ -12,6 +12,7 @@ export default {
   "paperwork.of.pending": () => "In progress",
   "paperwork.of.registerFirst": () => "Register your business in the eService first.",
   "paperwork.of.top": () => "The company holds the highest legal form.",
+  "paperwork.of.none": () => "No other legal form is available for the company.",
   "paperwork.doc.head.partnership": () => "Notification of a change of trade registration (Form GA-2)",
   "paperwork.doc.head.limited": () => "Articles of association and application for entry in the commercial register",
   "paperwork.doc.current": () => "Current legal form",

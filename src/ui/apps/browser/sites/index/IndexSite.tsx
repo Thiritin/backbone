@@ -2,14 +2,13 @@ import { useState } from "react";
 import { t } from "../../../../../i18n/en";
 import { yearOf } from "../../../../../sim/00-core/time";
 import type { GameState } from "../../../../../sim/50-state";
-import { HOME_URL, INDEX_HOST, resolve } from "../../../../../sim/80-business/browser";
+import { dirSlug as slug, HOME_URL, INDEX_HOST, resolve } from "../../../../../sim/80-business/browser";
 import { siteIndex, type Category, type IndexRow } from "../../../../../sim/80-business/index";
 import { Favicon } from "../../Favicon";
 import { eraOf } from "../era";
 import "./index.css";
 
 const ERAS = [{ from: 2005, look: "early" as const }, { from: 2013, look: "late" as const }];
-const slug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
 function Row({ r, go, game, fav }: { r: IndexRow; go: (url: string) => void; game: GameState; fav?: boolean }) {
   return (

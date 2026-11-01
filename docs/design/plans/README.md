@@ -2,7 +2,7 @@
 
 Eight lane plans cover the features in `docs/design/panel-features.md`. This page lists the lanes, the order they can be built in, the files several lanes edit, and the decisions that are the user's.
 
-Billing, quotes, bank matching, the first-hour walk, vendor sites and payment methods are a separate set of lanes in [billing-by-hand](billing-by-hand.md). Provider websites, colocation contracts with notice periods and the customer portal per provider are in [colo-portals](colo-portals.md). Trials, licence keys, vendor shops with a cart and My account are in [software-licences](software-licences.md).
+Billing, quotes, bank matching, the first-hour walk, vendor sites and payment methods are a separate set of lanes in [billing-by-hand](billing-by-hand.md). Provider websites, colocation contracts with notice periods and the customer portal per provider are in [colo-portals](colo-portals.md). Trials, licence keys, vendor shops with a cart and My account are in [software-licences](software-licences.md). Bank account plans, the plan a legal form needs, switching banks and loan rates by bank are in [bank-plans](bank-plans.md).
 
 ## Lanes
 
@@ -10,6 +10,7 @@ Billing, quotes, bank matching, the first-hour walk, vendor sites and payment me
 - [packages-provisioning](packages-provisioning.md): the package store per software installation, provisioning from a package, create forms with the Order field in every panel, Customers > New customer, change package. 17 milestones.
 - [panel-host-sim](panel-host-sim.md): per-service suspend and unsuspend, terminate, oversell ratio with cap and contention, licence tiers with account caps and expiry, update channel. 8 milestones.
 - [shop-portal](shop-portal.md): billing cycles, product groups and products, the hosted portal with WHMCS-style admin and client area, skins, status and legal pages. 12 milestones.
+- [product-catalog](product-catalog.md): one product catalog edited in Books and later in the shop, products on the website, leads that pick a fitting package, and the hand-rolled order form removed.
 - [game-servers](game-servers.md): game titles and slots, players online, crashes and auto-restart, scheduled restarts, versions and mods, Pterodaktyl daemons and ports, and the live console log (deferred, last). 10 milestones.
 - [web-services](web-services.md): PHP profiles, CustomBuild, AutoSSL, banned IPs, Pleskit subscriptions, WordPrass mass update, account transfer, DirectAdmen Message System, DirectAdmen resellers (deferred, last). 9 milestones.
 - [mail-dns-vpn-storage](mail-dns-vpn-storage.md): mail queue, blacklist incident and relay, mailbox quotas, PowerDNZ zones and secondary DNS, VPN certificates and expiry, MinnIO buckets and erasure health, OwnClod links and quotas. 11 milestones.

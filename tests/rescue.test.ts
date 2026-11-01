@@ -1,10 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { newGame } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { createVm, removeNode } from "../src/sim/90-actions/clusters";
 import { connect, setPower } from "../src/sim/90-actions/hardware";
 import { migrateWorkload, migrationTargets, RESCUE_HOURS, rescueTargets, rescueWorkload } from "../src/sim/90-actions/vms";
-import { basement, buyDevice, hypervisor, withServer } from "./fixtures";
+import { basement, buyDevice, hypervisor, withServer, newGame } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 const ok = (r: { ok: boolean; id?: string; error?: string }) => { expect(r.error).toBeUndefined(); return r.id!; };

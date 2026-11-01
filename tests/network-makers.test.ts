@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { brandsOf, MODELS, modelById, NET_LIFE, shopModels, type DeviceModel } from "../src/sim/10-catalog/hardware";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { hourOf } from "../src/sim/00-core/time";
-import { buyDevice, withServer } from "./fixtures";
+import { buyDevice, withServer, newGame } from "./fixtures";
 
 const ok = (r: { ok: boolean; id?: string; error?: string }) => {
   if (!r.ok) throw new Error(r.error);

@@ -1,7 +1,7 @@
+import { newGame } from "./fixtures";
 import { describe, expect, it, vi } from "vitest";
 import type { Profile } from "../src/sim/30-customers/customers";
 import { type TicketKind } from "../src/sim/40-support/tickets";
-import { newGame } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { FEB_1, crowd, runTo } from "./support.helpers";
 

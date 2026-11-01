@@ -1,11 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { kindServing, SERVES, softwareOf } from "../src/sim/10-catalog/platforms";
-import { newGame } from "../src/sim/50-state";
 import { noRoomError, supports } from "../src/sim/60-infra/cluster";
 import { createVm, PANEL_VM_SIZE, provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { installBlock, installSoftware } from "../src/sim/90-actions/software";
-import { hypervisor, panelVm, readyGame, skipTo, withServer, bootedMachine } from "./fixtures";
+import { hypervisor, panelVm, readyGame, skipTo, withServer, bootedMachine, newGame } from "./fixtures";
 
 const err = (r: { ok: boolean; error?: string }) => (r.ok ? "ok" : r.error);
 const idOf = (r: { ok: boolean; id?: string }) => (r.ok ? r.id! : "");

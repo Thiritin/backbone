@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
 import { DATACENTERS, spacePrice } from "../src/sim/20-world/datacenters";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { locationRent } from "../src/sim/60-infra/status";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { addLocation, buyRack, cancelContract, closeLocation, noticeEnd, revokeCancel, sellRack } from "../src/sim/90-actions/hardware";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { freeFloor } from "./fixtures";
+import { freeFloor, newGame } from "./fixtures";
 
 const ok = (r: ReturnType<typeof addLocation>) => { if (!r.ok) throw new Error(r.error); return r.id!; };
 const err = (r: ReturnType<typeof addLocation>) => (r.ok ? "ok" : r.error);
