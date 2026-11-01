@@ -1,0 +1,8 @@
+/* HostBill: gradients first, flat UI from 2020 */
+.sk-bull { font-family: "Open Sans", Arial, sans-serif; background: #fff; }
+.sk-bull .shop-head { background: linear-gradient(#4a90d9, #2f6fb5); color: #fff; }
+.sk-bull .shop-nav { background: #eef2f6; }
+.sk-bull .btn.primary { background: #3b82c4; color: #fff; border: 0; }
+.sk-bull-late .shop-head { background: #fff; color: #1b2430; border-bottom: 1px solid #e2e6ea; }
+.sk-bull-late .shop-nav { background: #1b2430; }
+.sk-bull-late .shop-nav a { color: #cfd6de; }

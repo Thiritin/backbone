@@ -37,7 +37,7 @@ const STEP_MINUTES: Record<OrderStep, number> = {
 };
 // The package an order provisions from on the host it goes to, or undefined for a custom spec, an automatic route or a missing package.
 export function packageFor(s: GameState, r: SalesRequest, route?: string): PackageDef | undefined {
-  const to = route ?? r.route ?? hostFor(s, r), target = r.pkg && to && to !== "auto" ? routeTarget(s, to, r.product) : null;
+  const to = route ?? r.route ?? hostFor(s, r), target = r.pkg && to ? (to === "auto" ? targetFor(s, r) : routeTarget(s, to, r.product)) : null;
   const c = target && s.clusters.find((x) => x.id === target.clusterId);
   return c && r.pkg ? packageNamed(c, r.pkg) : undefined;
 }
