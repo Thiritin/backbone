@@ -242,8 +242,6 @@ export interface GameState {
   chargebackStrikes: number;
   // The shop system that takes orders, its modules and stock (docs/design/shop.md).
   shop: ShopState;
-  // Customers whose services the player holds offline.
-  heldCustomers: string[];
   // Customer private networks, each a VLAN on the player's switches (60-infra/private.ts).
   privateNets: PrivateNet[];
   // Panel hosts: services the player holds offline one by one, with the reason shown in the consoles.
@@ -448,7 +446,6 @@ export const newGame = (seed: number): GameState => ({
   catalog: [],
   billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 }, autoOrders: false, reviewOrders: false, screenOrders: false, screenChecks: 0, chargebackStrikes: 0,
   shop: newShop(),
-  heldCustomers: [],
   privateNets: [],
   heldServices: {},
   gameServers: [],

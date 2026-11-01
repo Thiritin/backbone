@@ -347,7 +347,7 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
   const services = game.services.filter((v) => v.customerId === tk.customerId && v.endedAt === null);
   const locked = !!tk.work || isFinal(tk);
   const agents = game.staff.filter((e) => e.role === "support");
-  const sent = tk.kind === "migration" || (tk.kind === "maintenance" && (tk.topic === "notice" || tk.topic === "moved"));
+  const sent = tk.kind === "migration" || !!tk.term || (tk.kind === "maintenance" && (tk.topic === "notice" || tk.topic === "moved"));
 
   const body = (
     <div className="sup-detail">

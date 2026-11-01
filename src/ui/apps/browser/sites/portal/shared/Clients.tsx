@@ -48,7 +48,7 @@ export function ClientSummary({ game, go, id, tab, toClient }: ScreenProps & { i
                 <td className="num">{euroCents(v.price)}</td>
                 <td>
                   <button className="btn" onClick={() => act(held ? unsuspendService : suspendService, v.id)}>{t(held ? "shop-admin.unsuspend" : "shop-admin.suspend")}</button>
-                  <button className="btn" onClick={() => act(terminateService, v.id)}>{t("shop-admin.terminate")}</button>
+                  {v.endsAt === undefined && <button className="btn" onClick={() => act(terminateService, v.id, "notice", null)}>{t("shop-admin.terminate")}</button>}
                 </td>
               </tr>
             );

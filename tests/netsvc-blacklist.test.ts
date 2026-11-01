@@ -5,7 +5,8 @@ import { addressTick, mailAddress } from "../src/sim/60-infra/addresses";
 import { delistHours, mailStateOf, spamSenders } from "../src/sim/60-infra/netsvc-mail";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { requestDelist } from "../src/sim/90-actions/addresses";
-import { addCustomer, suspendCustomer } from "../src/sim/90-actions/customers";
+import { addCustomer } from "../src/sim/90-actions/customers";
+import { suspendService, unsuspendService } from "../src/sim/90-actions/holds";
 import { setMailRelay } from "../src/sim/90-actions/netsvc-mail";
 import { BASEMENT_SERVER, panelServer, withServer, newGame } from "./fixtures";
 
@@ -21,7 +22,8 @@ function shadyHost() {
   addressTick(s);
   const addr = () => mailAddress(s, host)!;
   s.ips = { ...s.ips, addresses: s.ips.addresses.map((a) => (a.id === addr().id ? { ...a, rep: 35 } : a)) };
-  return { s, host, anna, mal, addr, happy: (id: string) => s.customers.find((c) => c.id === id)!.happiness };
+  const malSite = () => s.services.find((v) => v.customerId === mal)!.id;
+  return { s, host, anna, mal, malSite, addr, happy: (id: string) => s.customers.find((c) => c.id === id)!.happiness };
 }
 
 describe("blacklist incident", () => {
@@ -39,10 +41,10 @@ describe("blacklist incident", () => {
   });
 
   it("stops the spam when the sender is suspended, so a delisting request works", () => {
-    const { s, mal, addr } = shadyHost();
+    const { s, malSite, addr } = shadyHost();
     day(s);
     expect(requestDelist(s, addr().id)).toEqual({ ok: false, error: "error.stillSpamming" });
-    expect(suspendCustomer(s, mal, true).ok).toBe(true);
+    expect(suspendService(s, malSite(), "abuse").ok).toBe(true);
     expect(spamSenders(s, addr().id)).toEqual([]);
     day(s);
     expect(requestDelist(s, addr().id).ok).toBe(true);
@@ -50,9 +52,9 @@ describe("blacklist incident", () => {
   });
 
   it("makes a second listing within 30 days wait 48 hours", () => {
-    const { s, mal, addr } = shadyHost();
+    const { s, malSite, addr } = shadyHost();
     day(s);
-    suspendCustomer(s, mal, true);
+    suspendService(s, malSite(), "abuse");
     day(s);
     expect(delistHours(s, addr().id)).toBe(24);
     requestDelist(s, addr().id);
@@ -60,7 +62,7 @@ describe("blacklist incident", () => {
     day(s);
     expect(addr().listed).toBe(false);
     expect(mailStateOf(s, addr().id).hit).toBe(0);
-    suspendCustomer(s, mal, false);
+    unsuspendService(s, malSite());
     s.ips = { ...s.ips, addresses: s.ips.addresses.map((a) => (a.id === addr().id ? { ...a, rep: 35 } : a)) };
     day(s);
     expect(addr().listed).toBe(true);

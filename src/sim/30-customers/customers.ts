@@ -54,5 +54,9 @@ export interface Service { id: string; customerId: string; product: Product; lab
   cycle?: Cycle;
   rolledAt?: number;
   // A retention discount: the hourly price from before it and the month starts left until the price returns.
-  discount?: { was: number; months: number } }
+  discount?: { was: number; months: number };
+  // The hour a termination with notice ends the service.
+  endsAt?: number }
+// Why the hoster terminates a contract.
+export type TerminateReason = "payment" | "abuse" | "usage" | "capacity";
 export const activeServices = (services: Service[], customerId: string): Service[] => services.filter((v) => v.customerId === customerId && v.endedAt === null);

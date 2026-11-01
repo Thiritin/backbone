@@ -9,7 +9,7 @@ import { isFinal, profileStats, serviceMonthly } from "../../../sim/40-support/t
 import { invoiceTotal, isUnpaid, type Invoice, type InvoiceStatus } from "../../../sim/45-billing/billing";
 import type { GameState } from "../../../sim/50-state";
 import { zoneOf } from "../../../sim/60-infra/network";
-import { creditCustomer, suspendCustomer } from "../../../sim/90-actions/customers";
+import { creditCustomer } from "../../../sim/90-actions/customers";
 import { renewDomain } from "../../../sim/90-actions/orders";
 import { changePrice } from "../../../sim/90-actions/sales";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
@@ -108,10 +108,8 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
       w && consoleEntry(game, w.clusterId),
     ];
   };
-  const held = game.heldCustomers.includes(c.id);
   const customerMenu = (): MenuEntry[] => [
     { label: t("misc.creditEllipsis"), run: () => setCrediting(true) },
-    { label: held ? t("misc.unsuspend") : t("misc.suspend"), run: () => act(suspendCustomer, c.id, !held) },
   ];
   const domainMenu = (name: string) => (): MenuEntry[] => [
     c.churnedAt === null && { label: t("misc.renew"), run: () => act(renewDomain, name) },

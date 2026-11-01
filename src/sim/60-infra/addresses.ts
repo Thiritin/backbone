@@ -11,7 +11,7 @@ import type { Product } from "../30-customers/customers";
 import { bump, createTicket, isFinal, profileStats } from "../40-support/tickets";
 import type { GameState, LedgerEntry, Location } from "../50-state";
 import { isOwnVm, vmById, type Workload } from "./cluster";
-import { isSuspended } from "../45-billing/billing";
+import { serviceHeld } from "../45-billing/billing";
 import { serviceOnline } from "../40-support/status";
 import { bounceFactor, listingTick, mailQueueTick } from "./netsvc-mail";
 import { jacked, locationOf } from "./status";
@@ -321,10 +321,10 @@ function abuseHits(s: GameState): void {
 // Daily: spam and abuse lower reputation, a listing follows below the threshold, clean days bring it back, delist requests clear.
 function reputation(s: GameState, events: SimEvent[]): void {
   abuseHits(s);
-  const hacked = s.security.hacked, shady = new Set(s.customers.filter((c) => c.shady && c.churnedAt === null && !isSuspended(s, c.id)).map((c) => c.id));
+  const hacked = s.security.hacked, shady = new Set(s.customers.filter((c) => c.shady && c.churnedAt === null).map((c) => c.id));
   const spamTo = (a: Address | undefined, n: number) => a && patch(s, a.id, { spam: s.ips.addresses.find((x) => x.id === a.id)!.spam + n });
   for (const id of hacked) spamTo(mailAddress(s, id), SPAM.hacked);
-  for (const v of s.services.filter((x) => x.endedAt === null && shady.has(x.customerId))) spamTo(serviceAddress(s, v.id), SPAM.shady);
+  for (const v of s.services.filter((x) => x.endedAt === null && shady.has(x.customerId) && !serviceHeld(s, x))) spamTo(serviceAddress(s, v.id), SPAM.shady);
   // A defaced customer site sends from its host's address while it is online.
   for (const id of s.sites.defaced.filter((id) => serviceOnline(s, id))) {
     const host = s.workloads.find((w) => w.serviceId === id)?.clusterId, machine = host ? mailMachine(s, host) : undefined;

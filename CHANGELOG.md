@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- You can terminate a customer contract with notice or immediately, with a reason such as non-payment, abuse, excessive usage or capacity limits, and the customer receives an email with the end date.
+- Suspending now applies to single services, so the customer-wide suspend in the books and the customer page is gone.
 - A dunning letter now waits a week after a late payment reminder, and the reminder buttons in German show the step names capitalized.
 - Your registrar partner now has a reseller login that lists every domain with its owner, expiry, renewal and status, where you can cancel a domain or generate the auth code a leaving customer asks for in a transfer ticket.
 - The registrar renews every domain at its expiry and keeps billing you even after the customer left, and moving to a new partner books a year of each domain on arrival.
