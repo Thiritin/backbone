@@ -18,6 +18,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Customers on a game title past its prime now lose happiness every day until you move them to a current title, and Pterodaktyl nodes run a daemon that fails now and then and has to keep up with its panel.
 - Backup jobs now keep restore points that you can test and copy offsite, Proxmocks clusters keep quorum, replicate VMs and run Ceph storage, and every VM can have its own firewall.
 - VMwhere clusters now come in Essentials, Standard and Enterprise editions, with DRS modes, host maintenance mode, editable and acknowledgeable alarms, and resource pools that cap the vCPUs and RAM of their VMs.
+- Every installed software now has its own command in the server's shell, such as `cpanic` or `esxwhere`, that shows its version and license, updates it, switches its channel, assigns a key or starts a trial, and runs the daily jobs of its kind.
+- Each software site has a new Docs page that lists its command and everything it takes.
 - Books is now a choice: buy Lexwear Office, WIZO Mein Büro, Saga Office Line, orgaMIN or the web-based Collmix in the Pear Store, with sevDeck and lexoffize joining in later years, each with its own look, prices and modules.
 - Each bookkeeping vendor has its own site in the Browser and a place under Bookkeeping on Yahoy, and Getting started now asks you to install a program before your first customer.
 - Routers you mount in a datacenter now run their own network behind the provider's handoff with a WebFigg or J-Webb web interface, and the desk reaches that network only once you switch on the router's VPN.

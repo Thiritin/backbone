@@ -1,5 +1,5 @@
 import { t } from "../../../../../i18n/en";
-import { Commands, Features, Nav, Pricing, type SiteProps } from "./SoftwareSite";
+import { Commands, Docs, Features, Nav, Pricing, type SiteProps } from "./SoftwareSite";
 import "./vsftpeed.css";
 
 // vsFTPeed: one bare Courier page with a changelog that has never been redesigned.
@@ -20,6 +20,7 @@ export function VsFTPeed(props: SiteProps) {
       )}
       {page === "features" && <Features p={p} />}
       {page === "pricing" && <Pricing p={p} />}
+      {page === "docs" && <><Docs p={p} /></>}
       {page === "download" && <><p>{t("browser-sites-2.vsAfterInstall")}</p><Commands p={p} year={year} /></>}
       <hr />
       <address>{t("browser-sites-2.vsUpdated", { year })}</address>

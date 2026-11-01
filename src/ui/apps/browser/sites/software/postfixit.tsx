@@ -1,5 +1,5 @@
 import { t } from "../../../../../i18n/en";
-import { Commands, Features, Nav, Pricing, type SiteProps } from "./SoftwareSite";
+import { Commands, Docs, Features, Nav, Pricing, type SiteProps } from "./SoftwareSite";
 import "./postfixit.css";
 
 // Postfixit: one look, the plain home page of a mailing-list project with Courier headings.
@@ -20,6 +20,7 @@ export function Postfixit(props: SiteProps) {
       )}
       {page === "features" && <><h2>{t("browser-sites-2.navFeatures")}</h2><Features p={p} /></>}
       {page === "pricing" && <><h2>{t("browser-sites-2.license")}</h2><Pricing p={p} /></>}
+      {page === "docs" && <><h2>{t("browser-sites-2.navDocs")}</h2><Docs p={p} /></>}
       {page === "download" && <><h2>{t("browser-sites-2.navDownload")}</h2><p>{t("browser-sites-2.postfixitAfterInstall")}</p><Commands p={p} year={year} /></>}
       <address>{t("browser-sites-2.postfixitChanged", { year })}</address>
     </div>
