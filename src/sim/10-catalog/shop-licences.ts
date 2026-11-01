@@ -4,7 +4,7 @@ import { tiersOf, type LicenceTier } from "./licence-tiers";
 import { eraAt, type LicenseEra } from "./server-os";
 import { yearOf } from "../00-core/time";
 import { shopById, SHOPS, type ShopId } from "./shops";
-import type { Site } from "./sites";
+import { site, type Site } from "./sites";
 
 export interface ShopLicence {
   id: ShopId;
@@ -66,7 +66,7 @@ const TERMS: Record<ShopId, Omit<ShopLicence, "id" | "name">> = {
     trialDays: null, caps: "servers",
   },
   orderBocks: { licensing: [{ from: 2006, kind: "free", fee: 0, cut: 0.06 }] },
-  boxBillin: { licensing: [{ from: 2011, kind: "free", fee: 0 }] },
+  boxBillin: { licensing: [{ from: 2011, kind: "free", fee: 0 }], site: site("boxBillin", "boxbillin.com", 0, 2011) },
 };
 
 export const SHOP_LICENCES: ShopLicence[] = SHOPS.map((v) => ({ id: v.id, name: v.name, ...TERMS[v.id] }));
