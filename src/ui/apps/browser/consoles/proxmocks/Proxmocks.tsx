@@ -13,6 +13,7 @@ import { parseCreate } from "../../../../../sim/80-business/consoles";
 import { PackagesScreen } from "../PackageForms";
 import { JobsPanel, PointsPanel } from "../backup/Jobs";
 import { quorate } from "../../../../../sim/60-infra/quorum";
+import { installedVersion, panelMachine } from "../../../../../sim/60-infra/licence";
 import { ClusterInfo } from "./Cluster";
 import { FirewallPanel } from "./Firewall";
 import { HaPanel } from "./HaPanel";
@@ -89,7 +90,7 @@ export function Proxmocks(p: PanelProps) {
     <div className="cx cx-hv pmx" data-era={era}>
       <header className="pmx-top">
         <span className="pmx-logo"><b>PROXMOCKS</b> {t("browser-consoles-2.virtualEnvironment")}</span>
-        <span className="pmx-ver num">{c.version}</span>
+        <span className="pmx-ver num">{installedVersion(game, panelMachine(c) ?? "", "proxmocks") ?? c.version}</span>
         <span className="cx-host">{p.host}</span>
         {f.create && <button className="pmx-create" onClick={() => setSel({ kind: "new" })}>{t("browser-consoles-2.createVm")}</button>}
         <button className="pmx-out" onClick={p.logout}>{t("browser-consoles-2.logout")}</button>

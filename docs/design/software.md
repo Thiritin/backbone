@@ -402,9 +402,9 @@ A console declares its looks in one place, `const LOOKS = looks({ x3: 2005, pape
 | Console | Early look | Late look |
 | --- | --- | --- |
 | cPanic (WHM) | 2005, x3 (version 10): blue gradient header with an orange rule, dark blue left menu of underlined links with small icons and a search box, grey content with tabbed box titles, icon tiles, Verdana | 2014, Paper Lamp (11.38): flat and white, a light left category list with uppercase headings and no icons. 2021, Jupitar (98): a full-height dark navy sidebar with icons, the search in a white top bar, rounded cards |
-| Pleskit | 2005: the 8.x look, dark blue left menu, light blue content, an icon grid per page | 2015: the Onyx look, white, dark grey sidebar, flat cards |
-| DirectAdmen | 2005: the enhanced skin, white, grey top bar, three columns of underlined links | 2018: the Evolution skin, dark top bar, cards, a search |
-| FreePanel | 2005: Webmin-style blue left tree and grey tables | 2016: white, left menu, Bootstrap-flat |
+| Pleskit | 2005, Reload (7.5): a navy banner, a pale blue left pane of underlined links with orange icons, gradient box titles, an icon grid, Tahoma. 2010, Parallax (10.0): a charcoal bar, the menu as a silver tab strip across the top, grey gradient box titles | 2014, 12 (12.0): a slate bar, a light grey menu with a blue edge, flat boxes with small grey capitals. 2016, Onyx (17.0): white, dark grey sidebar, flat cards. 2019, Obsidian (18.0): a navy bar over a white sidebar of rounded items, wide outlined cards |
+| DirectAdmen | 2005, the classic skin (1.24): a fixed-width white sheet on slate, a navy banner, blue centred column titles. 2008, Enhanced (1.30): white, grey top bar, three columns of underlined links | 2019, Evolution (1.60): dark top bar, cards, a search |
+| FreePanel | 2005, the Gray theme (1.200): a light grey frame of folders and underlined links, lavender table heads | 2014, Authentic (1.700): a dark slate sidebar, white Bootstrap-flat pages |
 | TCAdmen | 2005: ASP.NET grey and black, a left tree of game servers, tables | 2016: TCAdmen 2, dark grey, green. 2022, v3 (3.0): light, a full-height navy rail with icons, the server tree as a card, rounded tables |
 | MultiKraft | 2010: dark grey, brown header, server tables with status dots | 2018: white, green, cards |
 | Pterodaktyl | 2016: the dark blue panel, server cards with CPU and RAM meters | 2021: the same, flatter, with the sidebar |

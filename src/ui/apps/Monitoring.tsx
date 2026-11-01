@@ -19,6 +19,8 @@ import { t } from "../../i18n/en";
 const TONE: Record<Severity, string> = { low: "accent", high: "warn", critical: "bad" };
 const NAME: Record<Severity, string> = { low: t("apps.severity.low"), high: t("apps.severity.high"), critical: t("apps.severity.critical") };
 
+import { installedVersion, panelMachine } from "../../sim/60-infra/licence";
+
 function Row({ game, m }: { game: GameState; m: MonitorRow }) {
   const act = useStore((s) => s.act);
   const c = m.cluster, at = anchorOf(game, c), d = game.devices.find((x) => x.id === at);
@@ -31,7 +33,7 @@ function Row({ game, m }: { game: GameState; m: MonitorRow }) {
   return (
     <tr onContextMenu={menuOn(menu)}>
       <td>{softwareById(m.family).name}</td>
-      <td className="num">{c.version}</td>
+      <td className="num">{installedVersion(game, panelMachine(c) ?? "", m.family) ?? ""}</td>
       <td>{m.worst ? <span className={`pill ${TONE[m.worst]}`}>{NAME[m.worst]}</span> : <span className="pill ok">{t("apps.none")}</span>}</td>
       <td className="r num">{m.worst ? t("apps.days", { n: m.days }) : ""}</td>
       <td>{d ? devName(d) : c.name}</td>

@@ -7,7 +7,9 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - You can register on DOHLE for a certificate file, with the activation ID by email and the code by post, and download DohleFormular to send your advance VAT returns.
 
 ## 2026-11-01
+- Consoles, the command line and the monitoring list show the installed software version instead of the year, and the DirectAdmen 1.24 release notes no longer mention the Enhanced skin.
 - Leads now write in about products you do not sell yet, and a switch on the website settings stops those requests.
+- HyperVee lists the HyperVee release of each guest's integration services instead of a year, the Proxmocks header shows the installed version, and the vSphear DRS and VMwhere EVC labels use the right names.
 - A newly installed cPanic, Pleskit or DirectAdmen asks for its license on a setup page at first sign-in, where you can type a key, pick one you already own or continue on the trial.
 - When a panel's trial or license runs out, its admin pages show only the license page until a key is entered, and its customers write in that their control panel login shows a license error while their sites stay online.
 - Quote and invoice previews in Books keep their margins and text size in proportion to the page at any window size.
@@ -17,6 +19,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - The Terminal button on a server now connects by its address, and Tab in the terminal completes server addresses as well as names.
 - TCAdmen 3, the Sysko Sekure Client, the newer MinnIO object browser, every Veeham console generation and the early OpenStash dashboards each get their own look, matching the version you run.
 - VMwhere, Proxmocks and HyperVee consoles now look like the installed version: vSphear moves from the fat client to the Flecks web client in 5.0 and the Clearity client in 6.5, Proxmocks from its first web interface to the ExtJS manager in 2.0 and the flat one in 4.0, which turns dark with your desktop, and HyperVee from the glossy manager to the flat one in 2012 and Windoors Admin Center in 2019.
+- Pleskit now has its own look for every generation from Reload to Obsidian, DirectAdmen draws the classic, Enhanced and Evolution skins, and FreePanel switches from the Gray theme to Authentic, each following the version installed.
+- The software page of every console shows the installed version instead of a year.
 - Removing an offsite backup server now discards its copies, a Proxmocks VM can no longer be moved into a cluster without quorum, and the Backula status lists only the jobs that write to that server with their real result.
 - Books has a Publish to website button: your website lists the published products of each line with their prices, and email orders and leads decide on those prices until you publish again.
 - An order email for one of your products now names that product.

@@ -30,7 +30,7 @@ import { useHolds } from "./Holds";
 import { HostSettings } from "./HostSettings";
 import { eraOf } from "../sites/era";
 import { noAutofill } from "../../../no-autofill";
-import { lookOf, panelMachine } from "../../../../sim/60-infra/licence";
+import { installedVersion, lookOf, panelMachine } from "../../../../sim/60-infra/licence";
 
 export type Tab = "objects" | "nodes" | "restore" | "software" | "tasks" | "logs" | "licence" | "services" | "sysinfo" | "packages" | "create" | "easyapache" | "custombuild" | "resellers" | "autossl" | "transfer" | "fail2ban" | "toolkit" | "messages" | "wings";
 
@@ -253,10 +253,10 @@ export function useSoftware(game: GameState, c: Cluster, f: ConsoleFeatures): { 
   const act = usePageAct(), [sizing, setSizing] = useState(false), [removing, setRemoving] = useState(false);
   const family = familyOf(c)!, year = yearOf(game.hour), due = updateDue(game, c);
   const auto = f.update && autoUpdates(softwareById(family), year), on = !!c.autoUpdate;
-  const off = game.security.offline.includes(c.id), machine = c.vm ?? c.nodes[0]?.deviceId ?? "";
+  const off = game.security.offline.includes(c.id), machine = c.vm ?? c.nodes[0]?.deviceId ?? "", version = installedVersion(game, machine, family);
   const facts: (Fact | false)[] = [
     { label: t("browser-consoles-2.software"), value: consoleTitle(family) },
-    { label: t("browser-consoles-2.version"), value: String(c.version), num: true },
+    version !== null && { label: t("browser-consoles-2.version"), value: version, num: true },
     auto && { label: t("browser-consoles-2.autoUpdates"), value: on ? t("browser-consoles-2.on") : t("browser-consoles-2.off") },
     { label: t("browser-consoles-2.openVulns"), value: String(openVulns(game, c.id).length), num: true },
     c.kind === "panel" && { label: "PHP", value: String(c.php), num: true },

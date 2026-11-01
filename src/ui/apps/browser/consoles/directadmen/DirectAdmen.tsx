@@ -1,6 +1,6 @@
 import { Search } from "lucide-react";
 import { useState } from "react";
-import { Backups, erasFrom, eraAt, LoginForm, Nodes, RowsTable, usePanelTab, useRows, useSoftware, type PanelProps } from "../PanelBase";
+import { Backups, eraAt, looks, LoginForm, Nodes, RowsTable, usePanelTab, useRows, useSoftware, type PanelProps } from "../PanelBase";
 import { t } from "../../../../../i18n/en";
 import { parseCreate } from "../../../../../sim/80-business/consoles";
 import { PackagesScreen, ProvisionForm } from "../PackageForms";
@@ -13,12 +13,12 @@ import { UserLevel } from "./UserLevel";
 import { resellersOn } from "../../../../../sim/30-customers/resellers";
 import "./directadmen.css";
 
-// docs/design/software.md, section 10: the enhanced skin's three link columns until 2018, then a dark bar, cards and a search.
-const ERAS = erasFrom(2005, 2018);
+// docs/design/software.md, section 10: one look per DirectAdmin skin, ids as in UI_LOOKS.
+const LOOKS = looks({ classic: 2005, enhanced: 2008, evolution: 2019 });
 
 // The software tab is the home page: server manager links, tools and server facts side by side.
 export function DirectAdmen(p: PanelProps) {
-  const era = eraAt(ERAS, p), open = parseCreate("directadmen", p.path), [tab, setTab] = usePanelTab(p.f, open?.screen ?? "software"), [q, setQ] = useState(""), [level, setLevel] = useState<"admin" | "reseller" | "user">("admin");
+  const era = eraAt(LOOKS, p), late = era === "evolution", open = parseCreate("directadmen", p.path), [tab, setTab] = usePanelTab(p.f, open?.screen ?? "software"), [q, setQ] = useState(""), [level, setLevel] = useState<"admin" | "reseller" | "user">("admin");
   const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f);
   if (!p.signedIn) return (
     <div className="cx da da-login" data-era={era}>
@@ -42,7 +42,7 @@ export function DirectAdmen(p: PanelProps) {
       <header className="da-top">
         <span className="da-logo">DirectAdmen</span>
         <span className="da-level">{level === "user" ? t("web.da.userLevel") : level === "reseller" ? t("web.rs.level") : t("browser-consoles-2.adminLevel")}</span>
-        {era === "late" && (
+        {late && (
           <label className="da-search"><Search size={14} aria-hidden />
             <input placeholder={t("browser-consoles-2.search")} value={q} onChange={(e) => { setQ(e.target.value); setTab("objects"); }} />
           </label>
@@ -53,9 +53,9 @@ export function DirectAdmen(p: PanelProps) {
       <main className="da-main">
         <nav className="da-crumb"><button className="da-link" onClick={() => setTab("software")}>{t("browser-consoles-2.home")}</button>{crumb && <> » {crumb}</>}</nav>
         {level === "user" ? <UserLevel game={p.game} c={p.c} rows={rows} /> : level === "reseller" ? <ResellerLevel game={p.game} c={p.c} /> : <>
-        {tab === "custombuild" && <CustomBuild game={p.game} c={p.c} late={era === "late"} />}
+        {tab === "custombuild" && <CustomBuild game={p.game} c={p.c} late={late} />}
         {tab === "resellers" && <ManageResellers game={p.game} c={p.c} />}
-        {tab === "messages" && <Messages game={p.game} c={p.c} late={era === "late"} />}
+        {tab === "messages" && <Messages game={p.game} c={p.c} late={late} />}
         {tab === "objects" && <RowsTable rows={shown} name={t("browser-consoles-2.domain")} />}
         {tab === "nodes" && <Nodes game={p.game} c={p.c} />}
         {tab === "create" && <ProvisionForm game={p.game} c={p.c} products={["webHosting"]} order={open?.screen === "create" ? open.order : undefined} className="cx-form da-form" />}
