@@ -83,7 +83,7 @@ export default {
   "bank.pay.due": () => "Échéance",
   "bank.pay.status": () => "Statut",
   "bank.pay.paid": () => "Payée",
-  "bank.pay.sent": () => "Virement envoyé",
+  "bank.pay.partly": (p) => `Reste ${p.amount}`,
   "bank.pay.overdue": () => "En retard",
   "bank.pay.open": () => "Ouverte",
   "bank.pay.pay": () => "Payer",

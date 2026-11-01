@@ -22,8 +22,19 @@
 .books-a4 footer { margin-top: auto; display: flex; align-items: center; gap: 0.6em; }
 .books-a4 footer .pill { font-size: 1em; height: auto; min-height: 0; line-height: 1.4; padding: 0 0.6em; }
 
-.books-bank { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 12px 16px; overflow: auto; }
-.books-bank h3 { font-size: 13px; font-weight: 650; margin: 0 0 6px; }
+/* Bank: the bookings on top, what the selected one can pay or pays below. */
+.books-bank { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.books .books-bank td:last-child .pill { margin-left: 0; }
+.books-bankbar .seg button { display: inline-flex; align-items: center; gap: 6px; }
+.books-suggest { display: inline-flex; align-items: center; gap: 6px; }
+.books-bank tr.sel .btn { color: var(--text); }
+/* The reference takes the room the other columns leave and cuts off the rest. */
+.books-ref { max-width: 0; width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.books-assigned { display: inline-flex; align-items: center; gap: 4px; }
+.books-assigned svg { width: 13px; height: 13px; color: var(--ok); }
+.books-muted { color: var(--text-3); }
+.books-assign { flex: 0 1 auto; max-height: 45%; overflow: auto; border-top: var(--ar-bw) solid var(--line-strong); }
+.books-assign h3 { font-size: 13px; font-weight: 650; margin: 0; padding: 8px 16px 4px; }
 .books-differs { display: flex; align-items: center; gap: 10px; margin: 0 16px 14px; padding: 8px 12px; border: var(--ar-bw) solid var(--bad, #c33); border-radius: 6px; color: var(--bad-text, var(--bad, #c33)); flex: none; }
 .books-differs span { margin-right: auto; }
 

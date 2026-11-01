@@ -36,6 +36,8 @@ const SUPPLIER_CODE = "60050101";
 export interface Payable {
   id: string; supplier: SupplierId; name: string; number: string; amount: number; issuedAt: number; dueAt: number; paidAt: number | null;
   consequence: Effect | null; lines: LedgerEntry[]; sent: number; held?: Record<string, number>;
+  // What Books counts as paid: the payments out assigned to it there. sent is what the supplier received.
+  booked: number;
   // A licence order paid by transfer, whose keys the vendor sends once the money arrives.
   keys?: { order: string; lines: { product: string; edition: string | null; qty: number; to?: string }[] };
 }
@@ -46,6 +48,9 @@ export const supplierAccount = (supplier: SupplierId): string => {
 };
 export const supplierIban = (supplier: SupplierId): string => iban(SUPPLIER_CODE, supplierAccount(supplier));
 export const supplierCode = SUPPLIER_CODE;
+// The supplier holding an account: by IBAN, or by account number at the suppliers' bank code. No one else banks.
+export const supplierAt = (account: string, code?: string): SupplierId | undefined => (Object.keys(CONSEQUENCES) as SupplierId[])
+  .find((sup) => account === supplierIban(sup) || (account === supplierAccount(sup) && (code ?? SUPPLIER_CODE) === SUPPLIER_CODE));
 
 // A supplier's customer portal, where the player sets up a direct debit mandate; a registrar's sits on its own site.
 export function supplierHost(name: string): string {
@@ -56,6 +61,9 @@ export const supplierUrl = (name: string): string => `www.${supplierHost(name)}/
 
 export const open = (s: GameState): Payable[] => s.payables.filter((p) => p.paidAt === null);
 export const overdue = (s: GameState, p: Payable): boolean => p.paidAt === null && s.hour > p.dueAt;
+// The same in Books, which goes by the payments assigned there.
+export const unbooked = (p: Payable): boolean => p.booked < p.amount - 0.005;
+export const lateInBooks = (s: GameState, p: Payable): boolean => unbooked(p) && s.hour > p.dueAt;
 // The consequence a supplier applies right now, if any of its invoices has run long enough past due.
 export function effectOf(s: GameState, supplier: SupplierId): Effect | null {
   let worst: Effect | null = null, rank = -1;
@@ -80,11 +88,12 @@ const book = (s: GameState, lines: LedgerEntry[]) => {
 export function invoice(s: GameState, supplier: SupplierId, name: string, lines: LedgerEntry[], days = PAY_DAYS, paper = false): Payable {
   const amount = cents(-lines.reduce((n, e) => n + e.amount, 0));
   const id = `pay${s.nextId++}`;
-  const p: Payable = { id, supplier, name, number: `${supplier.slice(0, 2).toUpperCase()}-${id.slice(3)}`, amount, issuedAt: s.hour, dueAt: s.hour + days * 24, paidAt: null, consequence: null, lines, sent: 0 };
+  const p: Payable = { id, supplier, name, number: `${supplier.slice(0, 2).toUpperCase()}-${id.slice(3)}`, amount, issuedAt: s.hour, dueAt: s.hour + days * 24, paidAt: null, consequence: null, lines, sent: 0, booked: 0 };
   if (s.bank?.mandates.includes(name)) {
     book(s, lines);
-    p.sent = amount;
-    p.paidAt = s.hour;
+    Object.assign(p, { sent: amount, paidAt: s.hour, booked: amount });
+    const debit = { id: `out${s.nextId++}`, hour: s.hour, arriveAt: s.hour, name, account: ibanEra(s) ? supplierIban(supplier) : supplierAccount(supplier), amount, reference: p.number, payableId: id, matched: id, arrived: true as const, debit: true as const };
+    s.bank = { ...s.bank, outgoing: [...s.bank.outgoing, debit] };
     deliverMail(s, name, "debit", { name, number: p.number, amount });
   } else if (!paper) deliverMail(s, name, "invoice", { name, number: p.number, amount, due: p.dueAt, iban: ibanEra(s) ? groupIban(supplierIban(supplier)) : "", account: supplierAccount(supplier), code: SUPPLIER_CODE, url: supplierUrl(name) });
   s.payables = [...s.payables, p];
@@ -113,10 +122,12 @@ export function billSuppliers(s: GameState, bills: LedgerEntry[], names: Partial
 // Suppliers that bill by invoice once the company banks; a game without an account keeps the direct debit of old.
 export const invoicing = (s: GameState): boolean => !!s.bank;
 
-// The payable a transfer pays: the one the form came from, or an open one of the payee whose number the reference names.
-export function payableFor(s: GameState, account: string, reference: string, payableId?: string): Payable | undefined {
-  if (payableId) return s.payables.find((p) => p.id === payableId && p.paidAt === null);
-  return open(s).find((p) => (account === supplierIban(p.supplier) || account === supplierAccount(p.supplier)) && reference.includes(p.number));
+// The payable a transfer pays at the account's holder: the one the form came from, else the open one the reference names,
+// else the holder's oldest open one.
+export function payableFor(s: GameState, account: string, reference: string, payableId?: string, code?: string): Payable | undefined {
+  const sup = supplierAt(account, code), words = reference.split(/[\s,;:]+/);
+  const mine = open(s).filter((p) => p.supplier === sup && p.sent < p.amount - 0.005);
+  return mine.find((p) => p.id === payableId) ?? mine.find((p) => words.includes(p.number)) ?? mine[0];
 }
 
 // A transfer to a payable books its lines, scaled to the part it pays.

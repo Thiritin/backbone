@@ -6,7 +6,7 @@ import { hasModule } from "../10-catalog/modules";
 import { CYCLE_MONTHS } from "../10-catalog/cycles";
 import { methodById, methodFee, type MethodId } from "../10-catalog/payments";
 import { SLAS } from "../10-catalog/products";
-import type { PaymentHabit, Profile, Service } from "../30-customers/customers";
+import type { Customer, PaymentHabit, Profile, Service } from "../30-customers/customers";
 import { fillAt } from "../30-customers/resellers";
 import { bump, cancelCustomer, createTicket, profileStats } from "../40-support/tickets";
 import type { GameState, LedgerEntry } from "../50-state";
@@ -156,13 +156,15 @@ export const fromShop = (s: GameState): { source: "shop"; synced?: false } => ({
 const chased = (inv: Invoice): boolean => synced(inv) && !inv.gateway;
 export const pendingTransfer = (s: GameState, inv: Invoice): Transfer | undefined => s.transfers.find((t) => t.forInvoice === inv.id && t.invoiceId === null);
 const pick = <T>(r: Rng, xs: readonly T[]): T => xs[Math.floor(rand(r) * xs.length)];
+// The account holder on a customer's transfers: the company, or the contact's initial and surname.
+export const payerOf = (c: Customer): string => c.address?.company ?? (c.address ? `${c.address.contact[0]}. ${c.address.contact.split(" ").slice(1).join(" ")}` : c.name);
 
 // The customer's transfer for what is left of an invoice; only the first may carry an odd reference or amount.
 function transferFor(s: GameState, inv: Invoice): Transfer {
   const c = s.customers.find((x) => x.id === inv.customerId), a = c?.address;
   // Instantly fills in the reference and amount itself.
   const r = hashRng(s.seed, Number(inv.id.slice(3)) || 0, s.hour, 251), first = !inv.received && inv.method !== "instantly";
-  const from = a?.company ?? (a ? `${a.contact[0]}. ${a.contact.split(" ").slice(1).join(" ")}` : c?.name ?? "");
+  const from = c ? payerOf(c) : "";
   let amount = owed(inv);
   if (first && c && profileStats(c.profile).budget === "low" && chance(r, SHORT_PAY)) {
     amount = amount % 1 === 0 || chance(r, 0.5) ? cents(amount - (1 + Math.floor(rand(r) * 9)) / 100) : Math.floor(amount);
