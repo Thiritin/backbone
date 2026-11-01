@@ -94,14 +94,14 @@ Banks are a catalog in `src/sim/10-catalog/banks.ts`, each a row of numbers and 
 | Bank (pun on) | From | Account a month (sole / partnership / limited) | Transfer | TAN | Card a year | Overdraft | Loans | Character |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Sparklasse (Sparkasse) | 2005 | 8 / 12 / 16 + 0.30 a booking | next day | iTAN list, mTAN 2009, pushTAN 2014 | 30, easy | 11% | big, slow | local, orange, branch look |
-| Volksbunk (Volksbank) | 2005 | 6 / 9 / 12 + 0.25 a booking | next day | iTAN, card reader 2007 | 25 | 10% | fair, likes small firms | blue and orange frames |
+| Folksbank (Volksbank) | 2005 | 6 / 9 / 12 + 0.25 a booking | next day | iTAN, card reader 2007 | 25 | 10% | fair, likes small firms | blue and orange frames |
 | Deutsche Bunk (Deutsche Bank) | 2005 | 12 / 18 / 24 + 0.15 a booking | same day | iTAN, photoTAN 2012 | 60, higher limit | 13% | large sums only | corporate |
-| Postbunk (Postbank) | 2005 | 4 / 6 / 8 + 0.40 a booking | next day | iTAN, mTAN 2008 | 20 | 12% | small, quick | yellow, cheap |
-| netbunk (direct banks) | 2005 | 0 / 5 / none | next day | iTAN, mTAN | 0 first year | 9% | none | web only, HBCI from day one |
+| Postbanq (Postbank) | 2005 | 4 / 6 / 8 + 0.40 a booking | next day | iTAN, mTAN 2008 | 20 | 12% | small, quick | yellow, cheap |
+| Ding-DiBa (direct banks) | 2005 | 0 / 5 / none | next day | iTAN, mTAN | 0 first year | 9% | none | web only, HBCI from day one |
 | Fidorr (Fidor) | 2009 | 0 / 6 / 12 | instant | mTAN | 0 | 14% | small | startup crowd, API 2013 |
 | Quonto (Qonto, Holvi) | 2016 | 9 / 15 / 25 | instant | app | included, virtual cards | none | none | fintech, API, no HBCI |
 
-A limited company (GmbH) must keep a business account, and business accounts cost more than a sole trader's, so the account fee a month depends on the legal form. Branch banks charge a limited company about twice the sole trader's fee and add a fee for every booking on a partnership's or limited company's account; the fintechs sell flat plans, the limited one at two to three times the sole trader's. A partnership pays between the two. Each month start books the fee for the month and, at a branch bank, one line for the bookings of the month before: every ledger line of that month except the bank's own fees. netbunk, like the direct banks that long opened no GmbH accounts, opens none for a limited company: the registration refuses that pair, and the trade office form greys netbunk out while the limited form is chosen. The legal form is fixed once registered, so an open account never needs to move.
+A limited company (GmbH) must keep a business account, and business accounts cost more than a sole trader's, so the account fee a month depends on the legal form. Branch banks charge a limited company about twice the sole trader's fee and add a fee for every booking on a partnership's or limited company's account; the fintechs sell flat plans, the limited one at two to three times the sole trader's. A partnership pays between the two. Each month start books the fee for the month and, at a branch bank, one line for the bookings of the month before: every ledger line of that month except the bank's own fees. Ding-DiBa, like the direct banks that long opened no GmbH accounts, opens none for a limited company: the registration refuses that pair, and the trade office form greys Ding-DiBa out while the limited form is chosen. The legal form is fixed once registered, so an open account never needs to move.
 
 Milestones:
 
