@@ -8,7 +8,7 @@ import { t } from "../../../i18n/en";
 import { PRODUCT } from "../support/labels";
 import type { GameState } from "../../../sim/50-state";
 import { controlPlaneUp, hostOfVm, lostDisk, workloadOnline, type Cluster, type Workload } from "../../../sim/60-infra/cluster";
-import { privateIp } from "../../../sim/60-infra/addresses";
+import { machineAddress } from "../../../sim/60-infra/addresses";
 import { restoreWorkload } from "../../../sim/90-actions/vms";
 import type { MenuEntry } from "../../desktop/menu";
 import { useStore } from "../../store";
@@ -196,6 +196,6 @@ export const softwareName =(id: string | null) => (id ? softwareById(id).name : 
 
 // Opens the web console of a cluster's software in the Browser, at the private address of its VM or control plane.
 export function consoleEntry(game: GameState, clusterId: string | null): MenuEntry | false {
-  const c = game.clusters.find((x) => x.id === clusterId), id = c && (c.vm ?? c.controlPlane ?? c.nodes[0]?.deviceId), ip = id && privateIp(game, id);
+  const c = game.clusters.find((x) => x.id === clusterId), id = c && (c.vm ?? c.controlPlane ?? c.nodes[0]?.deviceId), ip = id && machineAddress(game, id);
   return !!ip && { label: t("misc1.parts.openConsole"), run: () => useStore.getState().openApp("Browser", { kind: "url", id: `http://${ip}/` }) };
 }
