@@ -147,8 +147,9 @@ export function priceIndex(s: GameState): number {
 const value = (p: ProfileStats, P: number, R: number, C: number, T: number, priceFactor: number) =>
   p.wP * P + p.wR * R + p.wC * C + T - PRICE_WEIGHT * p.lambda * 100 * (priceFactor - 1);
 
-// The open rivals of a game (30-market/rivals.ts); the catalog table where no game is at hand.
-export const openRivals = (s: GameState): Rival[] => s.competitors.filter((r) => r.closed === null);
+// The open rivals of a game (30-market/rivals.ts), in a city if given; the catalog table where no game is at hand.
+export const openRivals = (s: GameState, city?: string): Rival[] =>
+  s.competitors.filter((r) => r.closed === null && (city === undefined || r.customers[city] !== undefined));
 
 export const rivals = <C extends Competitor>(profile: Profile, product: Product, list: readonly C[] = COMPETITORS as C[]): C[] => {
   const p = profileStats(profile);
@@ -161,7 +162,7 @@ export function values(s: GameState, profile: Profile, product: Product, city: s
   const p = profileStats(profile), sc = playerScores(s, profile, city);
   return {
     you: value(p, sc.P, sc.R, sc.C, trustBonus(s), (level ?? priceIndex(s)) + dearer),
-    others: rivals(profile, product, openRivals(s)).map((c) => rivalValue(profile, c)),
+    others: rivals(profile, product, openRivals(s, city)).map((c) => rivalValue(profile, c)),
   };
 }
 
