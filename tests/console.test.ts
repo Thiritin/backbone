@@ -50,6 +50,22 @@ describe("BIOS setup", () => {
     expect(err(exitSetup(s, "dev3"))).toBe("error.notInSetup");
   });
 
+  it("boots the disk or the stick at once through the boot override", () => {
+    const s = readyGame(7), d = dev(s, "dev3");
+    hardReboot(s, d, "ipmi.log.reset");
+    ok(enterSetup(s, d.id));
+    expect(err(exitSetup(s, d.id, "usb"))).toBe("error.noBootDevice");
+    expect(d.setup).toBe(true);
+    ok(exitSetup(s, d.id, "disk"));
+    expect(d.bootFrom).toBe("disk");
+    expect(d.bootUntil).toBeCloseTo(s.hour + 20 / 60);
+    hardReboot(s, d, "ipmi.log.reset");
+    ok(enterSetup(s, d.id));
+    withStick(s, d.id);
+    ok(exitSetup(s, d.id, "usb"));
+    expect(machineScreen(s, d.id)).toEqual({ kind: "bootMenu", media: [isoOf(s)] });
+  });
+
   it("opens from the firmware prompt a stuck boot waits at", () => {
     const s = readyGame(7), d = dev(s, "dev3");
     d.stuck = true;
