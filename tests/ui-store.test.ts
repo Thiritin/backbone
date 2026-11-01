@@ -53,8 +53,8 @@ describe("metrics", () => {
   it("starts on level 1 with cash, hardware and two years of the friends' revenue counted toward level 2", () => {
     const m = metrics(readyGame(1));
     expect(m.mrr).toBeCloseTo(18);
-    // The savings that bought the server, then the switch and rack at their purchase price in the first hour.
-    expect(m.netWorth).toBeCloseTo(START_CASH + 60 + 350 + 24 * 18);
+    // The savings that bought the 2500 server, the switch and the rack, all at 90% of their price in the first hour.
+    expect(m.netWorth).toBeCloseTo(START_CASH - 0.1 * 2500 + 0.9 * (60 + 350) + 24 * 18);
     expect(m.level.level).toBe(1);
     expect(m.next?.level).toBe(2);
     expect(m.progress).toBeCloseTo(m.netWorth / 15000);

@@ -7,7 +7,7 @@ import { boardVendor, manufacturerByName, brandOnSale, brandsOf, cpuOptions, off
 import type { Vendor } from "../10-catalog/cpus";
 import { leaseOffers, lessorName } from "../10-catalog/leasing";
 import { greySurcharge, workFactor } from "../10-catalog/lifecycle";
-import { partPrice, partsPrice, presetPrice } from "../10-catalog/parts";
+import { chassisPrice, partPrice, partsPrice, presetPrice } from "../10-catalog/parts";
 import { BASEMENT, DATACENTERS, datacenterById, EXTRA_POWER_LEAD_DAYS, EXTRA_STEP_KW, FLAT_CONTRACTS, HOME_LINES, maxExtraKw, LEAD_DAYS, nextAz, NOTICE_MONTHS, RACK_MODELS, rackUnits, SHARE_RACKS, SPACE_SIZES, spacePrice } from "../20-world/datacenters";
 import { deviceDefaults, type BondMode, type Component, type Device, type End, type GameState, type LedgerEntry, type RackModel, type RaidLevel, type RebuildRate } from "../50-state";
 import { arrayLost, bootHours, connectError, drivesOf, energized, fits, flatOffer, freePositions, holdsData, nodesOf, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, isPlugged, locationOf, moveCost, psusOf, deviceValue, resaleValue, spotOf, travelCost, working } from "../60-infra/status";
@@ -963,9 +963,9 @@ export function addSecondPsu(s: GameState, deviceId: string): ActionResult {
   const zone = d.rackId ? locationOf(s, d)?.id : d.store;
   if (!zone) return fail("error.inTransit");
   const spare = stock(s, { model: "part-psu", brand: "Generic", qty: 1 }, null, zone)[0];
+  s.devices.find((x) => x.id === spare)!.price = price;
   const r = installPart(s, deviceId, spare);
   if (!r.ok) { s.devices = s.devices.filter((x) => x.id !== spare); return r; }
-  d.price += price;
   book(s, "hardware", "ledger.secondPsu", { device: d.label ?? d.name }, -price);
   return r;
 }
@@ -1034,6 +1034,7 @@ export function installPart(s: GameState, deviceId: string, partId: string, slot
   d.components.splice(at < 0 ? d.components.length : at + 1, 0, ...set.map((_, i): Component =>
     ({ id: `c${top + 1 + i}`, ...spec, installedAt: s.hour, failedAt: null, ...(kind === "psu" && d.rackId ? { plugged: false } : {}) })));
   if (isDriveKind(kind) && d.rackId && d.raid !== "none" && !d.rebuild && !arrayLost(d)) d.rebuild = { componentId: id, doneAt: s.hour + rebuildHours(d) };
+  d.price += set.reduce((n, x) => n + x.price, 0);
   syncPsuBuild(d);
   return { ok: true, id };
 }
@@ -1053,12 +1054,17 @@ export function removePart(s: GameState, deviceId: string, componentId: string, 
   const w = handsOn(s, d, hotSwappable(d, c), how);
   if ("error" in w) return fail(w.error);
   startWork(s, d, "", w);
+  // The part takes its share of the server's price at purchase year prices along, so parts and server never resell for more.
+  const at = (p: PartSpec) => partPrice(p.kind, p.size, p.ff, yearOf(d.boughtAt), p);
+  const share = Math.round(d.price * at(asSpec(c)) / (chassisPrice(modelById(d.model)) + d.components.reduce((n, x) => n + at(asSpec(x)), 0)) * 100) / 100;
+  d.price -= share;
   d.components = d.components.filter((x) => x.id !== componentId);
   if (d.rebuild?.componentId === componentId) d.rebuild = null;
   syncPsuBuild(d);
   if (c.failedAt === null && s.hour - c.installedAt < COMPONENTS[c.kind].life * HOURS_PER_YEAR) {
     const spec = asSpec(c);
-    stock(s, { model: `part-${c.kind}`, brand: "Generic", qty: 1, ...(spec.size !== undefined || spec.ff ? { part: spec } : {}) }, null, zone);
+    const [id] = stock(s, { model: `part-${c.kind}`, brand: "Generic", qty: 1, ...(spec.size !== undefined || spec.ff ? { part: spec } : {}) }, null, zone);
+    Object.assign(s.devices.find((x) => x.id === id)!, { price: share, boughtAt: d.boughtAt, used: true });
   }
   return { ok: true };
 }
