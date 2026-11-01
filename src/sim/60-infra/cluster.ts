@@ -13,6 +13,7 @@ import type { VmSample } from "./stats";
 import { deviceVendor, drivesOf, installedRamGb, installedVcpu, linkStatus, locationOf, raidUsable, rackPower, readOnlySweep, serviceById, sweepGroups, working, burning } from "./status";
 import { COMPAT_VCPU } from "../10-catalog/cpus";
 import { hasPublicAddress, sellsFrom } from "./addresses";
+import { addressOf } from "./lan";
 import { coverage } from "./maintenance";
 import type { PackageDef } from "../80-business/packages";
 import type { BackupJob, RestorePoint } from "./backups";
@@ -24,7 +25,8 @@ import type { FloatingIp, SecurityGroup, Volume } from "./horizont";
 
 // Active takes new workloads, cordoned keeps its own, draining moves them off, maintenance is empty after a drain.
 export type NodeState = "active" | "cordoned" | "draining" | "maintenance";
-export interface ClusterNode { deviceId: string; state: NodeState }
+// ip is the address the node joined with (lan.md, Clusters); a node whose address moves drops out until it is back.
+export interface ClusterNode { deviceId: string; state: NodeState; ip?: string }
 export type Placement = "pack" | "spread";
 export type BackupEvery = "off" | "daily" | "weekly";
 // High availability, per hypervisor cluster once researched: live migration, auto-balancing and automatic failover.
@@ -309,9 +311,17 @@ export const backsUpCluster = (s: GameState, source: Cluster, target: Cluster): 
 // The clusters the source can back up to.
 export const backupTargets = (s: GameState, source: Cluster): Cluster[] => s.clusters.filter((t) => t.id !== source.id && backsUpCluster(s, source, t));
 export const hasHosts = (c: Cluster): boolean => c.nodes.length > 0 || !!c.vm;
+// A node takes part in its cluster while it works and holds the address it joined with.
+export const memberUp = (s: GameState, n: ClusterNode): boolean =>
+  working(s, n.deviceId) && (n.ip === undefined || addressOf(s, n.deviceId) === n.ip);
+// Hourly: a node that joined before it had an address, or from a save without one, keeps the first address it holds.
+export function pinMembers(s: GameState): void {
+  if (!s.clusters.some((c) => c.nodes.some((n) => n.ip === undefined && addressOf(s, n.deviceId)))) return;
+  s.clusters = s.clusters.map((c) => ({ ...c, nodes: c.nodes.map((n) => (n.ip === undefined && addressOf(s, n.deviceId) ? { ...n, ip: addressOf(s, n.deviceId)! } : n)) }));
+}
 // Whether the internet reaches a cluster: its panel VM or one of its servers has a public address.
 export const clusterReachable = (s: GameState, c: Cluster): boolean =>
-  c.vm ? hasPublicAddress(s, c.vm) : c.nodes.some((n) => linkStatus(s, n.deviceId).online && hasPublicAddress(s, n.deviceId));
+  c.vm ? hasPublicAddress(s, c.vm) : c.nodes.some((n) => memberUp(s, n) && linkStatus(s, n.deviceId).online && hasPublicAddress(s, n.deviceId));
 // Whether the player can deliver the product line anywhere: a reachable cluster with software that sells it, a spare
 // reachable server for dedicated servers, a rented location for colocation (gdd.md, Addresses and internet, The start).
 export function lineOffered(s: GameState, p: Product): boolean {
@@ -430,7 +440,7 @@ export function pickNode(
   let best: { id: string; load: number; roomy: boolean } | null = null;
   for (const n of cluster.nodes) {
     const d = s.devices.find((x) => x.id === n.deviceId);
-    if (!d || n.state !== "active" || n.deviceId === skip || !working(s, d.id)) continue;
+    if (!d || n.state !== "active" || n.deviceId === skip || !memberUp(s, n)) continue;
     if ((r.gpus ?? 0) > cardsFree(s, d) || !nodeTakes(s, d, r)) continue;
     const cap = bookable(s, d), used = nodeUsed(s, d.id), roomy = used.ramGb + r.ramGb <= cap.ramGb + 1e-9;
     // Past every node's RAM, the one with the lowest share of RAM booked is the least likely to freeze.

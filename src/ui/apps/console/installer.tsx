@@ -5,6 +5,8 @@ import { softwareById } from "../../../sim/10-catalog/platforms";
 import { serverOsById, type ServerOsId } from "../../../sim/10-catalog/server-os";
 import type { Device, GameState, NetFail } from "../../../sim/50-state";
 import type { Workload } from "../../../sim/60-infra/cluster";
+import { isIp, prefixOf, type IfaceConfig } from "../../../sim/60-infra/ifaces";
+import { machineAddress } from "../../../sim/60-infra/addresses";
 import { machineNet } from "../../../sim/60-infra/oob";
 import { drivesOf, raidUsable } from "../../../sim/60-infra/status";
 import { eraseDisk, installCase, installOs, setMedia, upgradeHours, upgradeOs, upgradeTarget } from "../../../sim/90-actions/console";
@@ -52,7 +54,7 @@ function useTarget(game: GameState, m: Machine) {
     </>
   );
   const run = (r: { ok: boolean; error?: string }) => { setNote(r.ok ? "" : t(r.error ?? "")); setTyped(""); };
-  const install = (os: ServerOsId) => { const r = act(installOs, m.id, os, busy ? typed : undefined); run(r); return r.ok; };
+  const install = (os: ServerOsId, iface?: IfaceConfig) => { const r = act(installOs, m.id, os, busy ? typed : undefined, iface); run(r); return r; };
   const erase = () => run(act(eraseDisk, m.id, busy ? typed : undefined));
   const leave = () => (isDevice(m) ? act(reboot, m.id) : act(setMedia, m.id, null));
   const type = (key: string) => {
@@ -86,16 +88,51 @@ function Rows({ rows, at, pick }: { rows: Row[]; at: number; pick: (i: number) =
   return <>{rows.map((r, i) => <div key={r.label} className={`inst-row${i === at ? " on" : ""}${r.dim ? " dim" : ""}`} onClick={() => pick(i)}>{r.label}</div>)}</>;
 }
 
-type LunixStep = "boot" | "language" | "hostname" | "fetch" | "disks" | "write" | "erase";
+type Field = "ip" | "mask" | "gw" | "dns";
+type LunixStep = "boot" | "language" | "hostname" | "dhcp" | "autofail" | "leased" | Field | "fetch" | "disks" | "write" | "erase";
 const LANGUAGES = ["English", "Deutsch", "Français", "Español", "Nederlands"];
+const FIELDS: Field[] = ["ip", "mask", "gw", "dns"];
 
-// The Debiant text-mode installer: the boot menu, language, hostname, the partitioner with its erase confirmation; the
-// install itself and the reboot follow from the simulation.
+// The Debiant text-mode installer: the boot menu, language, the network by DHCP or by hand, the partitioner with its
+// erase confirmation; the install itself and the reboot follow from the simulation.
 function useLunixSetup(game: GameState, m: Machine, version: string): Keyed {
   const [step, setStep] = useState<LunixStep>("boot");
+  const [form, setForm] = useState<Record<Field, string>>({ ip: "", mask: "255.255.255.0", gw: "", dns: "" });
+  const [iface, setIface] = useState<IfaceConfig>({ mode: "dhcp" });
   const tg = useTarget(game, m), net = machineNet(game, m.id);
   const go = (to: LunixStep) => () => { setStep(to); tg.setNote(""); tg.setTyped(""); };
   const back = (to: LunixStep): Row => ({ label: t("console.goBack"), run: go(to) });
+  const leased = machineAddress(game, m.id);
+  const dhcp = () => { setIface({ mode: "dhcp" }); go(net || !leased ? "autofail" : "leased")(); };
+  // Each field takes an address; the gateway and name servers may stay empty. The netmask proposes /24, the gateway the
+  // network's first address and the name server the gateway, as the real installer does.
+  const valid = (f: Field) => (f === "mask" ? prefixOf(form.mask) !== null : isIp(form[f]) || (f !== "ip" && !form[f]));
+  const next = (f: Field) => () => {
+    if (!valid(f)) return tg.setNote(t("console.net.malformed"));
+    if (f === "ip" && !form.gw) setForm((x) => ({ ...x, gw: form.ip.replace(/\d+$/, "1") }));
+    if (f === "gw" && !form.dns) setForm((x) => ({ ...x, dns: form.gw }));
+    if (f !== "dns") return go(FIELDS[FIELDS.indexOf(f) + 1])();
+    setIface({ mode: "static", ip: form.ip, prefix: prefixOf(form.mask)!, ...(form.gw ? { gw: form.gw } : {}), ...(form.dns ? { dns: form.dns } : {}) });
+    go("disks")();
+  };
+  const field = (f: Field): Page => ({
+    title: t("console.configureNetwork"), body: <div>{t(`console.net.${f}`)} <b>{form[f]}</b>_</div>,
+    rows: [{ label: t("console.continue"), run: next(f) }, back(f === "ip" ? "dhcp" : FIELDS[FIELDS.indexOf(f) - 1])],
+  });
+  // The netinst fetches its packages over the configured network; a failure lands on the mirror error.
+  const write = () => {
+    const r = tg.install("lunix", iface);
+    if (r.ok) setStep("boot");
+    else if (["error.noAutoconf", "error.noMirror", "error.noInterfaces"].includes(r.error)) go("fetch")();
+  };
+  const typeField = (key: string) => {
+    if (!FIELDS.includes(step as Field)) return false;
+    const f = step as Field;
+    if (key === "Backspace") setForm((x) => ({ ...x, [f]: x[f].slice(0, -1) }));
+    else if (/^[0-9.]$/.test(key)) setForm((x) => ({ ...x, [f]: x[f] + key }));
+    else return false;
+    return true;
+  };
   const pages: Record<LunixStep, Page> = {
     boot: { title: t("console.debBoot", { version }), rows: [
       { label: t("console.install"), run: go("language") },
@@ -103,16 +140,22 @@ function useLunixSetup(game: GameState, m: Machine, version: string): Keyed {
       { label: isDevice(m) ? t("console.reboot") : t("console.ejectReboot"), run: tg.leave },
     ] },
     language: { title: t("console.selectLanguage"), rows: [...LANGUAGES.map((l) => ({ label: l, run: go("hostname") })), back("boot")] },
-    hostname: net
-      ? { title: t("console.configureNetwork"), err: true, body: <div>{t(net === "noInterfaces" ? "error.noInterfaces" : "error.noAutoconf")}</div>, rows: [{ label: t("console.continue"), run: go("fetch") }] }
-      : { title: t("console.configureNetwork"), body: <div>{t("console.hostname", { host: hostOf(m) })}</div>, rows: [{ label: t("console.continue"), run: go("disks") }, back("language")] },
+    hostname: { title: t("console.configureNetwork"), body: <div>{t("console.hostname", { host: hostOf(m) })}</div>, rows: [{ label: t("console.continue"), run: go("dhcp") }, back("language")] },
+    dhcp: { title: t("console.configureNetwork"), body: <div>{t("console.net.dhcp")}</div>, rows: [{ label: t("console.yes"), run: dhcp }, { label: t("console.no"), run: go("ip") }, back("hostname")] },
+    autofail: net === "noInterfaces"
+      ? { title: t("console.configureNetwork"), err: true, body: <div>{t("error.noInterfaces")}</div>, rows: [{ label: t("console.continue"), run: go("fetch") }] }
+      : { title: t("console.configureNetwork"), err: true, body: <div>{t("error.noAutoconf")}</div>, rows: [
+        { label: t("console.net.retry"), run: dhcp }, { label: t("console.net.manual"), run: go("ip") }, { label: t("console.net.none"), run: go("fetch") },
+      ] },
+    leased: { title: t("console.configureNetwork"), body: <div>{t("console.net.ip")} {leased}</div>, rows: [{ label: t("console.continue"), run: go("disks") }, back("dhcp")] },
+    ip: field("ip"), mask: field("mask"), gw: field("gw"), dns: field("dns"),
     fetch: { title: t("console.retrievingPackages"), err: true, body: <div>{t("term.console.osInstallFailed")} {t("console.checkNetwork")}</div>, rows: [{ label: t("console.abort"), run: () => { go("boot")(); tg.leave(); } }] },
-    disks: { title: t("console.partitionDisks"), body: <div>{t("console.partitioningMethod")}</div>, rows: [{ label: t("console.guided", { array: tg.array }), run: go("write") }, back("hostname")] },
-    write: { title: t("console.partitionDisks"), body: <>{tg.what}<div>{t("console.writeChanges")}</div></>, rows: [{ label: t("console.yes"), run: () => tg.install("lunix") && setStep("boot") }, { label: t("console.no"), run: go("disks") }] },
+    disks: { title: t("console.partitionDisks"), body: <div>{t("console.partitioningMethod")}</div>, rows: [{ label: t("console.guided", { array: tg.array }), run: go("write") }, back("dhcp")] },
+    write: { title: t("console.partitionDisks"), body: <>{tg.what}<div>{t("console.writeChanges")}</div></>, rows: [{ label: t("console.yes"), run: write }, { label: t("console.no"), run: go("disks") }] },
     erase: { title: t("console.eraseDisk"), body: tg.what, rows: [{ label: t("console.erase"), run: tg.erase }, back("boot")] },
   };
-  const page = pages[step], typing = (step === "write" || step === "erase") && tg.found.kind === "busy";
-  const pager = usePager({ ...page, keys: { Escape: go("boot") } }, (k) => typing && tg.type(k));
+  const page = pages[step], typing = ((step === "write" || step === "erase") && tg.found.kind === "busy") || FIELDS.includes(step as Field);
+  const pager = usePager({ ...page, keys: { Escape: go("boot") } }, (k) => typeField(k) || (typing && tg.type(k)));
   const view = <Debiant title={page.title} body={page.body} note={tg.note} err={page.err}><Rows rows={page.rows} at={pager.at} pick={pager.pick} /></Debiant>;
   return { view, onKey: pager.onKey, keys: [...keysOf(page, typing), "Escape"] };
 }
@@ -140,7 +183,7 @@ function useWindoorsSetup(game: GameState, m: Machine, version: string): Keyed {
   const upgrade = m.os?.id === "windoors" && upgradeTarget(game, m.id)?.version === version;
   const upgradeNow = () => { const r = act(upgradeOs, m.id); tg.setNote(r.ok ? "" : t(r.error ?? "")); if (r.ok) setStep("start"); };
   const go = (to: WinStep) => () => { setStep(to); tg.setNote(""); tg.setTyped(""); };
-  const setup = () => tg.install("windoors") && setStep("start");
+  const setup = () => tg.install("windoors").ok && setStep("start");
   const install = () => (tg.found.kind === "empty" && !m.os ? setup() : go("install")());
   const del = tg.empty ? () => tg.setNote(t("error.noSoftware")) : go("delete");
   const part = tg.empty ? t("console.winUnpartitioned", { array: tg.array }) : `C:  Partition1 [NTFS]   ${tg.array}`;

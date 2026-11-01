@@ -31,7 +31,7 @@ import { ordersTick } from "../30-market/manual";
 import { domainsTick } from "../30-customers/registry";
 import { registrarTick } from "../30-customers/registrar";
 import { mailTick } from "../80-business/mail";
-import { computeTick } from "../60-infra/cluster";
+import { computeTick, pinMembers } from "../60-infra/cluster";
 import { haltTick, powerTick, pushLog, tripTick } from "../60-infra/power";
 import { loadSaved } from "../60-infra/switches";
 import { installNetTick } from "../60-infra/oob";
@@ -358,6 +358,7 @@ export function tick(state: GameState): SimEvent[] {
   events.push(...registrarTick(state));
   mailTick(state);
   leaseTick(state);
+  pinMembers(state);
   events.push(...networkTick(state));
   events.push(...securityTick(state));
   events.push(...appsTick(state));

@@ -41,5 +41,7 @@ export default {
   "error.badAddress": () => "Saisis une adresse IPv4 privée.",
   "error.portShared": () => "Le port 80 est déjà partagé avec un autre appareil.",
   "error.noAddress": () => "Cet appareil n'a pas d'adresse sur le réseau du routeur.",
+  "error.badIp": () => "L'adresse IP n'est pas valide.",
+  "error.notServerNet": () => "Seuls les serveurs ont un réglage réseau.",
   "error.notOfficeRouter": () => "Seul un routeur de petit bureau remplace celui du sous-sol.",
 } satisfies Dict;
