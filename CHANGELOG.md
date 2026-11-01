@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- The Marketing app has a Domain tile whose Buy button opens the domain resellers in the Yahoy! Directory, and the domains of other companies in the game can no longer be registered as your own.
 - Websites in the browser fill the whole window again instead of a narrow page.
 - Right-click a browser tab to close it, close all other tabs, or close every tab to its left or right.
 - A business now always registers as a sole trader, and founding a limited company first needs the new Company law training in Research.

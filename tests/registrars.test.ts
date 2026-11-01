@@ -184,6 +184,7 @@ describe("company domain", () => {
     for (const bad of ["ab.de", "-abc.de", "abc-.de", "a b c.de", "abc.xyz", "abc", "umlautä.de", `${"a".repeat(41)}.de`]) expect(err(registerCompanyDomain(s, bad))).toBe("error.domainInvalid");
     register(s, "taken.de", "cus-test", false);
     expect(err(registerCompanyDomain(s, "taken.de"))).toBe("error.domainTaken");
+    for (const other of ["yahoy.com", "namecheep.com", "internety.de", "youtub.com"]) expect(err(registerCompanyDomain(s, other))).toBe("error.domainTaken");
     expect(registerCompanyDomain(s, "  Basement-Hosting.de ").ok).toBe(true);
     expect(s.company.domain).toBe("basement-hosting.de");
     expect(domainOf(s, "basement-hosting.de")).toMatchObject({ customerId: null, transfer: false, lapsed: false });
