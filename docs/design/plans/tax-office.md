@@ -35,6 +35,9 @@ The company pays VAT and income tax by filing returns itself. Today `46-finance/
 - On 1 January the office checks the small business rule: a company whose prior year revenue was above the limit loses it and gets a letter. Leaving the rule early is a choice on DOHLE that binds for five years, as it does in reality.
 - A small business files no advance returns, charges no VAT and reclaims none.
 - The advance return shows output VAT, input VAT and the payable for the period, taken from the ledger.
+- Customer income in the ledger is the categories payments (customer payments and transfers, net of refunds and chargebacks), setup (setup fees) and sales (used hardware and app updates). All three carry output VAT and make up the revenue the small business limit reads.
+- The surcharge is non-deductible and books in the category `tax`, which profit ignores; an estimate books in `vat`. An open estimate bill is withdrawn when the return is filed, and a paid part counts toward the return.
+- A period letter goes out on 1 January when the year's period differs from last year's. Leaving the small business rule has no way back in the game, which covers the five years.
 
 ## 4. Yearly return
 

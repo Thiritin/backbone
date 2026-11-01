@@ -2497,7 +2497,19 @@ The loan margin in points is added to the base rate and the risk premium, and th
 
 **SLA insurance.** The monthly premium is 2% of the recurring revenue from customers with an SLA, times an uptime factor: 1.0 at 99.95% or better over 90 days, 1.5 at 99.9% or better, and 2.5 below that. A missed SLA owes the customer 10% of their monthly fee per 0.1% of uptime below the promise, up to the full fee. The insurer pays those credits for three claims, then blocks the company for a year.
 
-**Tax.** Prices are without VAT, and VAT is not simulated. Corporate tax takes 30% of each year's profit in April of the following year, and losses carry forward to later years. Taxable profit is the year's ledger without loan principal; instalments count only their interest, and hardware is a cost in the year it is bought.
+**VAT.** Prices are gross, as for private customers: a sale of a holds a × r / (1 + r) of VAT. The rate r is 16% to 2006, 19% from 1 January 2007, and 16% from 1 July to 31 December 2020. Output VAT comes from customer payments, setup fees and sales; input VAT comes back on hardware, rent, power, transit, licenses, subscriptions, marketing, maintenance, domains, leasing, moving and AI. Salaries, insurance, loans, capital, fees and taxes carry none. VAT payments book in the category `vat`, which counts against profit, so a small business that charges no VAT keeps more of the same price.
+
+| Item | Rule |
+|---|---|
+| Small business limit (prior year's revenue) | €17,500 to 2019, €22,000 from 2020 to 2024, €25,000 from 2025 |
+| Advance return period | Monthly in the registration year and the next; after that monthly above €6,136 of last year's VAT (€7,500 from 2009, €9,000 from 2025), quarterly above €512 (€1,000 from 2009, €2,000 from 2025), else only the yearly return |
+| Due | The 10th of the month after the period |
+| Late filing surcharge | 5% of the period's payable, at least €25, billed by letter the next working day after the due date |
+| Estimate | One month after the due date, 1.5 × the real payable, at least €100, billed by letter; a later filing withdraws its open bill and books the payable less what was already paid |
+
+A small business files no advance returns, charges no VAT and reclaims none. On 1 January a small business whose revenue last year was above the year's limit loses the rule by letter.
+
+**Tax.** Corporate tax takes 30% of each year's profit in April of the following year, and losses carry forward to later years. Taxable profit is the year's ledger without loan principal; instalments count only their interest, and hardware is a cost in the year it is bought.
 
 **Hardware insurance.** The monthly premium is 1.5 × the expected yearly cost of spare parts for every working component still within its life expectancy (part price × its current yearly failure rate, with the manufacturer and overheating factors) / 12, at least €1. A claim pays the spare part's price and the remote hands bill for a component that failed while insured and before the end of its life expectancy; wear-out failures after that are not covered, so parts past their lifetimes add nothing to the premium. The starting basement server costs about €1.40 a month to insure.
 
