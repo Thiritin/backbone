@@ -27,6 +27,8 @@ import { SponsorBoard } from "./sites/SponsorBoard";
 import { IndexSite } from "./sites/index/IndexSite";
 import { OfficeSite } from "./sites/office/OfficeSite";
 import { LexwearSite } from "./sites/lexwear/LexwearSite";
+import { BOOKS_SITES } from "./sites/books/sites";
+import { booksVendor } from "../../../sim/10-catalog/bookkeeping";
 import { WikiSite } from "./sites/wiki/WikiSite";
 import { OFFICE_TITLE } from "../../../sim/80-business/office";
 import { LEXWEAR } from "../../../sim/80-business/lexwear";
@@ -75,6 +77,7 @@ function titleOf(game: GameState, r: Resolved): string {
     case "index": return "Yahoy! Directory";
     case "office": return OFFICE_TITLE;
     case "lexwear": return LEXWEAR;
+    case "books": return booksVendor(p.id)!.program;
     case "wiki": return WIKI_TITLE;
     case "software": return softwareById(p.id).name;
     case "os": return serverOsById(p.id).name;
@@ -105,6 +108,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "sponsorboard") body = <SponsorBoard game={game} />;
   else if (p.kind === "office") body = <OfficeSite game={game} path={r.path} go={go} />;
   else if (p.kind === "lexwear") body = <LexwearSite game={game} path={r.path} go={go} />;
+  else if (p.kind === "books" && p.id !== "lexwear") { const Site = BOOKS_SITES[p.id]; body = <Site game={game} path={r.path} go={go} />; }
   else if (p.kind === "wiki") body = <WikiSite game={game} path={r.path} go={go} />;
   else if (p.kind === "index") body = <IndexSite game={game} path={r.path} go={go} />;
   else if (p.kind === "software" || p.kind === "os") body = <SoftwarePage game={game} kind={p.kind} id={p.id} path={r.path} go={go} />;

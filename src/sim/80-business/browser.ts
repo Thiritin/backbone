@@ -19,6 +19,8 @@ import { vendorHost, vendorLive, VENDORS } from "./vendors";
 import { OFFICE_HOST, OFFICE_TITLE, OFFICE_URL } from "./office";
 import { bankById, BANKS, type BankId } from "../10-catalog/banks";
 import { LEXWEAR_HOST } from "./lexwear";
+import { BOOKS_VENDORS, type BooksVendorId } from "../10-catalog/bookkeeping";
+import { booksHost } from "./bookkeeping";
 
 // fast loads at once, slow shows a progress bar first, down cannot be reached.
 export type Load = "fast" | "slow" | "down";
@@ -31,6 +33,7 @@ export type Page =
   | { kind: "bank"; id: BankId }
   | { kind: "supplier"; name: string }
   | { kind: "lexwear" }
+  | { kind: "books"; id: BooksVendorId }
   | { kind: "host"; hostname: string }
   | { kind: "console"; hostname: string; clusterId: string; defaced: boolean; path: string }
   | { kind: "ipmi"; deviceId: string }
@@ -158,6 +161,8 @@ export function resolve(s: GameState, raw: string): Resolved {
   // A software's site exists from the year the software does; an operating system's always.
   const year = yearOf(s.hour), sw = SOFTWARE.find((x) => named(x.site.host) && x.from <= year);
   if (sw) return out({ kind: "software", id: sw.id });
+  const books = BOOKS_VENDORS.find((v) => v.id !== "lexwear" && named(booksHost(v)) && v.from <= year);
+  if (books) return out({ kind: "books", id: books.id });
   const os = SERVER_OS.find((x) => named(x.site.host));
   if (os) return out({ kind: "os", id: os.id });
   const vendor = VENDORS.find((m) => named(vendorHost(m.id)) && vendorLive(m, monthIndexOf(s.hour)));

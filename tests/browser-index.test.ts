@@ -17,7 +17,7 @@ describe("browser index", () => {
     expect(resolve(s, "yahoy.com").page).toEqual({ kind: "index" });
     expect(siteIndex(s).map((c) => c.title)).toEqual([
       "Operating systems", "Virtualization", "Hosting panels", "Game panels", "DNS", "VPN", "Storage", "Mail", "Backup",
-      "Domain resellers", "Community", "Hardware", "Video",
+      "Domain resellers", "Bookkeeping", "Community", "Hardware", "Video",
     ]);
     const ready = readyGame(1);
     expect(siteIndex(ready).map((c) => c.title).slice(-3)).toEqual(["Hardware", ready.company.name, "Video"]);
