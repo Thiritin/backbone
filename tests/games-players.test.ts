@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { sizeSpec } from "../src/sim/10-catalog/products";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { FULL_BOOST, FULL_HOURS, fullBoost, gameOf, growSlots, playersOf } from "../src/sim/60-infra/games";
 import { gamesTick } from "../src/sim/85-products/games-tick";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { connect, type ActionResult } from "../src/sim/90-actions/hardware";
-import { buyDevice, panelServer, skipTo, withServer } from "./fixtures";
+import { buyDevice, panelServer, skipTo, withServer, newGame } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 const ok = (r: ActionResult) => {

@@ -6,6 +6,7 @@ import { sendReminder, setBillingRules, suspendServices, writeOff } from "../../
 import { t } from "../../../i18n/en";
 import { Confirm } from "../../desktop/Confirm";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
+import { useSessionState } from "../../session";
 import { useStore } from "../../store";
 import { More } from "../More";
 import { Locked } from "./Locked";
@@ -27,12 +28,15 @@ function invoiceMenu(inv: Invoice, onWriteOff: (i: Invoice) => void): MenuEntry[
 export function RemindersTab({ focus }: { focus: string | null }) {
   const game = useStore((s) => s.game), act = useStore((s) => s.act);
   const [writing, setWriting] = useState<Invoice | null>(null);
+  const [settings, setSettings] = useSessionState("books.reminderSettings", false);
   const late = game.invoices.filter((i) => i.status === "overdue").sort((a, b) => a.dueAt - b.dueAt);
   const name = (id: string) => game.customers.find((c) => c.id === id)?.name ?? id;
   return (
     <>
-      <div className="fin-toolbar"><Locked id="auto-reminders" label={t("books.autoReminders")} /></div>
-      <div className="fin-scroll">
+      <div className="fin-toolbar"><Locked id="auto-reminders" label={t("books.autoReminders")} />
+        <button className="btn books-settings" aria-pressed={settings} onClick={() => setSettings(!settings)}>{t("books.settings")}</button>
+      </div>
+      {settings ? <div className="fin-scroll"><Rules /></div> : <div className="fin-scroll">
         <table className="table fin-table">
           <thead>
             <tr><th>{t("books.col.number")}</th><th>{t("books.col.customer")}</th><th className="r">{t("books.col.amount")}</th><th className="r">{t("books.col.daysLate")}</th><th>{t("books.col.level")}</th><th /><th /></tr>
@@ -59,8 +63,7 @@ export function RemindersTab({ focus }: { focus: string | null }) {
           </tbody>
         </table>
         {late.length === 0 && <p className="books-none">{t("books.noLate")}</p>}
-        <Rules />
-      </div>
+      </div>}
       {writing && (
         <Confirm title={t("misc1.billing.writeOffTitle", { number: writing.number })} text={t("misc1.billing.writeOffText", { customer: name(writing.customerId), amount: euroCents(owed(writing)) })}
           action={t("misc1.billing.writeOff")} onCancel={() => setWriting(null)} onConfirm={() => { act(writeOff, writing.id); setWriting(null); }} />

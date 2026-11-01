@@ -2,15 +2,13 @@ import { describe, expect, it } from "vitest";
 import { nowMinutes } from "../src/sim/00-core/time";
 import { orderLead } from "../src/sim/30-market/orders";
 import { register, REGISTER_MINUTES, registering } from "../src/sim/30-customers/registry";
-import { newGame } from "../src/sim/50-state";
 import { bootUp } from "../src/sim/60-infra/power";
 import { BOOT_MINUTES, booting, working } from "../src/sim/60-infra/status";
 import { tick, tickMinute } from "../src/sim/88-tick/tick";
 import { runAction } from "../src/sim/90-actions/index";
 import { quoteOrder } from "../src/sim/90-actions/orders";
-import { startGame } from "../src/sim/90-actions/start";
 import { replay, runFile } from "../src/sim/92-run/run";
-import { readyGame, withServer } from "./fixtures";
+import { readyGame, withServer, newGame, startGame } from "./fixtures";
 
 const minutes = (s: Parameters<typeof tickMinute>[0], n: number) => { for (let i = 0; i < n; i++) tickMinute(s); };
 

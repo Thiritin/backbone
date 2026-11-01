@@ -12,6 +12,7 @@ export default {
   "books.tab.invoices": () => "Facturas",
   "books.tab.bank": () => "Banco",
   "books.tab.reminders": () => "Recordatorios",
+  "books.settings": () => "Ajustes",
   "books.tab.payables": () => "Facturas recibidas",
   "books.monthlyRun": () => "Facturación mensual",
   "books.matchByReference": () => "Asignar por concepto",

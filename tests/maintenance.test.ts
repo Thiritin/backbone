@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { dateOf, hourOf, yearOf } from "../src/sim/00-core/time";
 import { sizeSpec } from "../src/sim/10-catalog/products";
 import type { Profile } from "../src/sim/30-customers/customers";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { startOf } from "../src/sim/60-infra/maintenance";
 import { tick } from "../src/sim/88-tick/tick";
 import { provisionService } from "../src/sim/90-actions/clusters";
@@ -10,7 +10,7 @@ import { addCustomer } from "../src/sim/90-actions/customers";
 import { setPower } from "../src/sim/90-actions/hardware";
 import { cancelMaintenance, moveMaintenance, planMaintenance } from "../src/sim/90-actions/maintenance";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { basement, BASEMENT_SERVER, withServer } from "./fixtures";
+import { basement, BASEMENT_SERVER, withServer, newGame } from "./fixtures";
 
 const ok = (r: { ok: boolean; id?: string; error?: string }) => { expect(r.error).toBeUndefined(); return r.id!; };
 // 2005-01-07 is a Friday.

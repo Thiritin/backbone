@@ -37,6 +37,7 @@ export const STATUS: Record<TicketStatus, string> = {
 export const statusOf = (tk: { status: TicketStatus; outcome: string | null }): string => (tk.outcome === "withdrawn" ? t("support.status.withdrawn") : STATUS[tk.status]);
 
 export const PRODUCT: Record<Product, string> = {
+  reseller: t("web.reseller.product"),
   webHosting: t("support.product.webHosting"),
   domain: t("support.product.domain"),
   ssl: t("support.product.ssl"),

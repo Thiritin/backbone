@@ -37,3 +37,5 @@
 .da-card .cx-btn { justify-content: center; }
 .da-login[data-era="early"] .da-card { background: #ececec; border: 2px outset #f6f6f6; }
 .da-login[data-era="late"] { background: #1e2732; }
+.da-badge { display: inline-block; min-width: 20px; padding: 0 6px; border-radius: 10px; background: var(--accent); color: #fff; text-align: center; }
+.da-unread td { font-weight: 700; }

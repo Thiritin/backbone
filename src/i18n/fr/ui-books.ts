@@ -12,6 +12,7 @@ export default {
   "books.tab.invoices": () => "Factures",
   "books.tab.bank": () => "Banque",
   "books.tab.reminders": () => "Relances",
+  "books.settings": () => "Réglages",
   "books.tab.payables": () => "Factures fournisseurs",
   "books.monthlyRun": () => "Facturation mensuelle",
   "books.matchByReference": () => "Rapprocher par référence",

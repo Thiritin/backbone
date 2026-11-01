@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { rand } from "../src/sim/00-core/rng";
 import { DATACENTERS } from "../src/sim/20-world/datacenters";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { BOOKED_HOURS, FRIEND_FEE, handWork } from "../src/sim/60-infra/handwork";
 import { drive, travelTo } from "../src/sim/90-actions/travel";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { addLocation, atServer, buyRack, installPart, pullPower, setPower } from "../src/sim/90-actions/hardware";
-import { buyBare, buyDevice, skipTo, withServer } from "./fixtures";
+import { buyBare, buyDevice, skipTo, withServer, newGame } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 type R = { ok: boolean; id?: string; error?: string };

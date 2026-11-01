@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { newGame } from "../src/sim/50-state";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { ALERT_KEYS } from "../src/sim/alerts";
-import { registered } from "./fixtures";
+import { registered, newGame } from "./fixtures";
 
 describe("dock apps", () => {
   it("starts without Security in the dock and keeps the loans inside Finance", () => {

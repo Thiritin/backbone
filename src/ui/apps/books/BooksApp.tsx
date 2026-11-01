@@ -8,6 +8,8 @@ import { useFocus, useStore } from "../../store";
 import { BankTab } from "./BankTab";
 import { CustomersTab } from "./CustomersTab";
 import { InvoicesTab } from "./InvoicesTab";
+import { QuotesTab } from "./QuotesTab";
+import { NEW } from "./NewCustomer";
 import { PayablesTab } from "./PayablesTab";
 import { RemindersTab } from "./RemindersTab";
 import { Register } from "./Register";
@@ -15,12 +17,13 @@ import "../billing/billing.css";
 import "./books.css";
 
 export const drafts = (s: GameState) => s.invoices.filter((i) => i.status === "draft").length;
-export const unmatched = (s: GameState) => s.transfers.filter((x) => x.invoiceId === null).length;
+export const unmatched = (s: GameState) => s.transfers.filter((x) => x.matchedAt === null).length;
 export const late = (s: GameState) => s.invoices.filter((i) => i.status === "overdue").length;
 
 // Each tab: id, label key, dock count and body. The selection a tab opens on comes from the focus id.
 const TABS: { id: string; count: (s: GameState) => number; body: ComponentType<{ focus: string | null }> }[] = [
   { id: "customers", count: (s) => s.customers.filter((c) => c.churnedAt === null && !c.sponsor).length, body: CustomersTab },
+  { id: "quotes", count: (s) => s.quotes.filter((q) => q.status === "accepted").length, body: QuotesTab },
   { id: "invoices", count: drafts, body: InvoicesTab },
   { id: "bank", count: unmatched, body: BankTab },
   { id: "reminders", count: late, body: RemindersTab },
@@ -34,12 +37,13 @@ export function BooksApp() {
   const [register, setRegister] = useSessionState("books.register", false);
   useFocus("Books", (f) => {
     if (f.kind === "register") return setRegister(true);
-    const to = f.kind === "invoice" ? (game.invoices.find((i) => i.id === f.id && isUnpaid(i) && i.status === "overdue") ? "reminders" : "invoices") : f.kind === "customer" ? "customers" : null;
+    const to = f.kind === "invoice" ? (game.invoices.find((i) => i.id === f.id && isUnpaid(i) && i.status === "overdue") ? "reminders" : "invoices")
+      : f.kind === "customer" || f.kind === "newCustomer" ? "customers" : f.kind === "quote" ? "quotes" : null;
     if (!to) return;
     setTab(to);
-    setFocus(f.id);
+    setFocus(f.kind === "newCustomer" ? `${NEW}${f.id}` : f.id);
   });
-  const current = TABS.find((x) => x.id === tab) ?? TABS[1];
+  const current = TABS.find((x) => x.id === tab) ?? TABS[2];
   const Body = current.body;
   return (
     <div className="books">
@@ -58,7 +62,7 @@ export function BooksApp() {
       </div>
       {register && <Register onClose={() => setRegister(false)} />}
       <div className="books-body" role="tabpanel">
-        <Body key={current.id} focus={focus} />
+        <Body key={`${current.id}:${focus}`} focus={focus} />
       </div>
     </div>
   );

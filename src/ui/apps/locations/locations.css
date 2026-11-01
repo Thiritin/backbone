@@ -154,7 +154,6 @@ svg.logo-mark { flex: none; }
 .loc-port[aria-pressed="true"] { box-shadow: 0 0 0 1.6px var(--accent); background: oklch(0.24 0.04 262); }
 .loc-port:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
-.loc-mode { justify-self: start; margin-top: -4px; }
 
 .loc-card { border: var(--ar-bw) solid var(--line-strong); border-radius: var(--ar-card); background: var(--field); min-width: 0; }
 .loc-card-h { display: flex; align-items: center; gap: 8px; padding: 8px 10px 8px 14px; min-height: 44px; border-bottom: var(--ar-bw) solid var(--line); }
@@ -242,7 +241,7 @@ h2 .loc-az, h3 .loc-az { margin-left: 8px; vertical-align: middle; }
 .loc-sub { min-height: 36px; border-top: var(--ar-bw) solid var(--line); }
 
 /* Node card: booked and in-use meters side by side, then the workloads on the node. */
-.node-meters { display: grid; grid-template-columns: 44px minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 8px 12px; padding: 10px 14px; border-top: var(--ar-bw) solid var(--line); }
+.node-meters { display: grid; grid-template-columns: max-content minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 8px 12px; padding: 10px 14px; border-top: var(--ar-bw) solid var(--line); }
 .node-meters .loc-k { min-width: 0; }
 .node-meters .loc-meter-bar { width: 44px; flex: none; }
 .node-meters + .loc-row, .loc-card > .node-meters:first-child { border-top: var(--ar-bw) solid var(--line); }
@@ -265,7 +264,7 @@ h2 .loc-az, h3 .loc-az { margin-left: 8px; vertical-align: middle; }
 /* Server port table. */
 .loc-port-table td { height: 32px; cursor: default; }
 .loc-port-table tr[aria-selected="true"] td { background: color-mix(in oklch, var(--accent) 14%, transparent); }
-.loc-port-table .loc-link { color: var(--accent); }
+.loc-port-table .loc-link, .wl-service.loc-link { color: var(--accent); }
 .loc-port-table + .loc-row { flex-wrap: wrap; }
 
 /* Datacenter availability. */
@@ -359,12 +358,9 @@ button.loc-swatch[aria-checked="true"] { outline: 2px solid var(--accent); outli
 .insp > .loc-model { margin-top: -10px; }
 .insp > .tabs { padding: 0; }
 .insp > .loc-card { border: 0; border-radius: 0; background: none; border-top: var(--ar-bw) solid var(--line); }
-.insp > .loc-card > .loc-card-h { padding: 12px 0 4px; min-height: 0; border-bottom: 0; }
-.insp > .loc-card > .loc-row, .insp > .loc-card > .node-meters, .insp > .loc-card > .loc-facts, .insp > .loc-card .wl-row, .insp > .loc-card > .loc-sub { padding-left: 0; padding-right: 0; }
+.insp > .loc-card > .loc-card-h { padding: 8px 14px; min-height: 0; border-bottom: 0; }
 .insp > .loc-card > .loc-facts { padding-top: 6px; padding-bottom: 2px; }
 .insp > .loc-card > .node-meters { border-top: 0; }
-.insp > .loc-card .table th:first-child, .insp > .loc-card .table td:first-child { padding-left: 0; }
-.insp > .loc-card .table th:last-child, .insp > .loc-card .table td:last-child { padding-right: 0; }
 .insp > .loc-card .table th { background: var(--win); }
 .insp > .loc-card:has(> .loc-port-table) { border-top: 0; }
 .insp > .loc-row.insp-bond { padding: 0; margin-top: -6px; }

@@ -3,13 +3,13 @@ import { describe, expect, it } from "vitest";
 import { createRng } from "../src/sim/00-core/rng";
 import { hourOf } from "../src/sim/00-core/time";
 import { annuity, baseRate, billingTick, invoiceTotal, isSuspended, loanAvailable, PAY_ODDS, rollPayStep, YEAR_HOURS } from "../src/sim/45-billing/billing";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { metrics } from "../src/sim/metrics";
 import { tick } from "../src/sim/88-tick/tick";
 import { repayLoan, sendReminder, suspendServices, takeLoan, writeOff } from "../src/sim/90-actions/billing";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { sendDrafts, withServer } from "./fixtures";
+import { sendDrafts, withServer, newGame } from "./fixtures";
 
 const runTo = (s: GameState, hour: number) => { while (s.hour < hour) tick(s); };
 const at = (y: number, m: number, d: number) => hourOf(new Date(Date.UTC(y, m - 1, d)));
