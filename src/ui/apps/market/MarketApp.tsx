@@ -13,6 +13,7 @@ import { buyStudy } from "../../../sim/90-actions/market";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
 import { AUDIENCE } from "../marketing/MarketingApp";
+import { reviewCount, rivalScore } from "../../../sim/30-market/rivals";
 import { monthYear, patience, PRODUCT } from "../support/labels";
 import "../shop/shop.css";
 import "../billing/billing.css";
@@ -204,7 +205,7 @@ function ShareChart({ city }: { city: string }) {
   const log = game.shareLog, ci = CITIES.findIndex((c) => c.name === city);
   if (log.length < 2) return <div className="sup-none">{t("misc.noHistoryYet")}</div>;
   const hosts = [{ id: "you", name: t("misc1.market.you"), at: (i: number) => log[i].you[ci] ?? 0 },
-    ...game.competitors.map((r) => ({ id: r.id, name: r.name, at: (i: number) => log[i].rivals[r.id]?.[ci] ?? 0 }))];
+    ...game.competitors.map((r) => ({ id: r.id, name: r.name, at: (i: number) => log[i].rivals[r.id]?.[ci] ?? 0 }))].filter((h, k) => k === 0 || log.some((_, i) => h.at(i) > 0));
   const total = (i: number) => Math.max(1e-9, hosts.reduce((n, h) => n + h.at(i), 0));
   const x = (i: number) => PAD.l + (i / (log.length - 1)) * (W - PAD.l - PAD.r);
   const y = (v: number) => PAD.t + (1 - v) * (H - PAD.t - PAD.b);
@@ -228,7 +229,7 @@ function ShareChart({ city }: { city: string }) {
       <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={t("misc1.market.shareNew")} onMouseMove={move} onMouseLeave={() => setHover(null)}>
         {layers.map((l, k) => <polygon key={l.id} points={l.points} fill={k === 0 ? "var(--accent)" : shade(k - 1)} />)}
         {[0, 0.5, 1].map((f) => <text key={f} className="num" x={PAD.l - 6} y={y(f)} textAnchor="end" dominantBaseline="middle">{pct(f)}</text>)}
-        {log.map((e, i) => (e.month % 12 === 0 && i > 0 ? <text key={e.month} className="num" x={x(i)} y={H - 4} textAnchor="middle">{START_YEAR + e.month / 12}</text> : null))}
+        {log.map((e, i) => (e.month % 12 === 0 && i > 0 && x(i) < W - PAD.r - 14 ? <text key={e.month} className="num" x={x(i)} y={H - 4} textAnchor="middle">{START_YEAR + e.month / 12}</text> : null))}
         {hover !== null && <line className="cross" x1={x(hover)} x2={x(hover)} y1={PAD.t} y2={H - PAD.b} />}
       </svg>
       <ul className="mk-legend">
@@ -255,12 +256,11 @@ function Competitors() {
         <thead>
           <tr>
             <th>{t("misc1.market.competitor")}</th><th className="mkt-right">{t("misc1.market.performance")}</th><th className="mkt-right">{t("misc1.market.reliability")}</th>
-            <th className="mkt-right">{t("misc1.market.convenience")}</th><th>{t("misc1.market.price")}</th><th className="mkt-right">{t("misc1.market.customers")}</th>
+            <th className="mkt-right">{t("misc1.market.convenience")}</th><th className="mkt-right">{t("misc1.market.price")}</th><th className="mkt-right">{t("misc1.market.customers")}</th><th className="mkt-right">{t("misc1.market.reviews")}</th>
           </tr>
         </thead>
         <tbody>
-          {openRivals(game).map((c) => {
-            const diff = Math.round((c.priceFactor - 1) * 100);
+          {openRivals(game, city).map((c) => {
             return (
               <Fragment key={c.id}>
               <tr className="mk-main">
@@ -268,11 +268,12 @@ function Competitors() {
                 <td className="num">{Math.round(c.P)}</td>
                 <td className="num">{Math.round(c.R)}</td>
                 <td className="num">{Math.round(c.C)}</td>
-                <td>{diff < 0 ? t("misc1.market.under", { n: -diff }) : t("misc1.market.over", { n: diff })}</td>
+                <td className="num">{(c.priceFactor - 1).toLocaleString(LOCALE, { style: "percent", maximumFractionDigits: 0, signDisplay: "exceptZero" })}</td>
                 <td className="num">{(c.customers[city] ?? 0).toLocaleString(LOCALE)}</td>
+                <td className="num">{rivalScore(c).toLocaleString(LOCALE, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} ({reviewCount(c).toLocaleString(LOCALE)})</td>
               </tr>
               <tr className="mk-sub">
-                <td colSpan={6}>
+                <td colSpan={7}>
                   <div className="mkt-row"><span className="mkt-label">{t("misc1.market.sells")}</span><div className="mkt-chips">{c.sells.map((p) => <span key={p} className="mk-tag">{PRODUCT[p]}</span>)}</div></div>
                   <div className="mkt-row"><span className="mkt-label">{t("misc1.market.sellsTo")}</span><div className="mkt-chips">{segmentsOf(c).map((p) => <span key={p} className="mk-tag">{AUDIENCE[p]}</span>)}</div></div>
                 </td>
