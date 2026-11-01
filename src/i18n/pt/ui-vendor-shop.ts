@@ -42,5 +42,5 @@ export default {
   "error.notCancellable": () => "Esta licença não pode ser cancelada.",
   "ledger.order": (p) => `Encomenda ${p.order} na ${p.vendor}`,
   "ticket.mail.vendor.order.subject": (p) => `A sua encomenda ${p.order}`,
-  "ticket.mail.vendor.order.text": (p) => `Obrigado pela sua encomenda ${p.order}. Debitámos ${euroPrice(Number(p.total))} na sua conta bancária. As suas chaves de licença estão em A minha conta no nosso site.`,
+  "ticket.mail.vendor.order.text": (p) => `Obrigado pela sua encomenda ${p.order}. ${Number(p.card) ? `Debitámos ${euroPrice(Number(p.total))} no seu cartão de crédito.` : `Recebemos a sua transferência de ${euroPrice(Number(p.total))}.`} As suas chaves de licença estão em A minha conta no nosso site.`,
 } satisfies Dict;

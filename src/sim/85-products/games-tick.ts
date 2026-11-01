@@ -1,16 +1,20 @@
 // game-servers plan 3.3 to 3.6: the hourly crashes, restarts and release waves of every game server.
 import { hashRng, rand } from "../00-core/rng";
 import { dateOf, yearOf } from "../00-core/time";
-import { fadeDrain, modById, releaseHour, releasedAt, titleById } from "../10-catalog/games";
+import { modById, releaseHour, releasedAt, successorOf, titleById, type GameTitle } from "../10-catalog/games";
 import { idNum } from "../10-catalog/usage";
-import { bump, createTicket } from "../40-support/tickets";
+import { bump, createTicket, HOURS_PER_MONTH } from "../40-support/tickets";
+import { resize } from "../30-market/manual";
 import type { GameState } from "../50-state";
 import { workloadsOf } from "../60-infra/cluster";
 import { daemonBehind, daemonTick } from "../60-infra/daemons";
 import { brokenMods, modCount, playersOf, type GameServer } from "../60-infra/games";
+import { declineTitleSwitch, switchTicket } from "../90-actions/games";
 import { workloadPerf } from "./products";
 
 export const CRASH_BASE = 0.0008, LEAK_TITLE = 0.01, AUTO_PENALTY = 0.2, PEAK_PENALTY = 0.5;
+// economy.md, Happiness and churn: a quarter of a faded title's customers stay for good; the rest ask to move, more often every year.
+export const FAN_SHARE = 0.25, SWITCH_MONTHLY = 0.04, SWITCH_HOURS = 7 * 24;
 // Release waves: a customer left on an old version loses 0.15 happiness an hour-day after a month, up to 12 per release.
 export const OUTDATED_GRACE = 30, OUTDATED_DRAIN = 0.15, OUTDATED_CAP = 12, WAVE_DAYS = 14, WAVE_CHANCE = 0.25;
 
@@ -46,9 +50,39 @@ export function gamesTick(s: GameState): void {
     const p = g.crashedAt === null ? playersOf(s, g.serviceId) : null;
     if (p && p.players >= p.slots) g = { ...g, seenFull: s.hour };
     gameWave(s, g, c);
-    bump(c, -fadeDrain(t, yearOf(s.hour)) / 24);
-    return g;
+    return faded(s, g, c, t);
   });
+  for (const g of s.gameServers) {
+    const tk = g.switchTo ? switchTicket(s, g.serviceId) : undefined;
+    if (tk && s.hour - tk.createdAt >= SWITCH_HOURS) declineTitleSwitch(s, tk.id);
+  }
+}
+
+// Fans of a title stay when it fades; the seed decides who.
+export const isFan = (s: GameState, serviceId: string): boolean => rand(hashRng(s.seed, idNum(serviceId), 61)) < FAN_SHARE;
+
+// Past its fade a server shrinks once a month to the slots its busiest hour of the week needs, and a drifter may ask to move.
+function faded(s: GameState, g: GameServer, c: GameState["customers"][number], t: GameTitle): GameServer {
+  const year = yearOf(s.hour), id = idNum(g.serviceId);
+  if (year <= t.fade) return g;
+  if ((s.hour + id) % HOURS_PER_MONTH === 0) g = shrink(s, g, t);
+  const next = successorOf(t, year);
+  if (g.switchTo || !next || isFan(s, g.serviceId) || rand(hashRng(s.seed, id, s.hour, 62)) >= (SWITCH_MONTHLY * (year - t.fade)) / HOURS_PER_MONTH) return g;
+  createTicket(s, c, "upgrade", g.serviceId, "switchTitle");
+  return { ...g, switchTo: next.id };
+}
+
+function shrink(s: GameState, g: GameServer, t: GameTitle): GameServer {
+  const v = s.services.find((x) => x.id === g.serviceId), now = playersOf(s, g.serviceId);
+  if (!v || !now) return g;
+  let peak = 0;
+  for (let h = s.hour - 167; h <= s.hour; h++) peak = Math.max(peak, playersOf(s, g.serviceId, h)?.players ?? 0);
+  const need = Math.min(now.slots, Math.max(t.slots[0], peak));
+  if (need >= now.slots) return g;
+  const r = need / now.slots;
+  if (!resize(s, v, { ...v.spec, vcpu: v.spec.vcpu * r, ramGb: v.spec.ramGb * r }, "auto", "").ok) return g;
+  s.services = s.services.map((x) => (x.id === v.id ? { ...x, price: x.price * r } : x));
+  return g.slots === null ? g : { ...g, slots: need };
 }
 
 // An outdated server writes in once in four, on a day of the first two weeks, and then drains happiness after a month.

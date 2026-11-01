@@ -147,6 +147,8 @@ export default {
   "support.retentionOffers": () => "Retention offers",
   "support.noCost": () => "No cost",
   "support.accept": () => "Accept",
+  "support.toughLuck": () => "Tough luck",
+  "support.bannerBack": () => "Banner back up",
   "support.resolve": () => "Resolve",
   "support.box.open": () => "Open",
   "support.box.overdue": () => "Overdue",

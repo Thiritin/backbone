@@ -1,6 +1,6 @@
 import { chance, hashRng, rand } from "../00-core/rng";
 import { licenceExpired } from "./licence";
-import { dateOf } from "../00-core/time";
+import { dateOf, yearOf } from "../00-core/time";
 import { isOobPort, jacksOf, modelById } from "../10-catalog/hardware";
 import type { Resources } from "../10-catalog/products";
 import { REPLICA_COST, replicaDue } from "./replica";
@@ -12,7 +12,7 @@ import type { Device, End, GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { booked, clustersOn, controlPlanesOn, controlPlaneUp, controlPlaneUse, hostsOfVm, insideVm, isOwnVm, lostDisk, nodeVcpu, workloadsOf, workloadsOn, type Workload } from "./cluster";
 import { serviceMbps } from "./network";
-import { modById } from "../10-catalog/games";
+import { interestAt, modById, titleById } from "../10-catalog/games";
 import { fillOf } from "../30-customers/resellers";
 import { machineScreen } from "./oob";
 import { installedRamGb, portPeers, raidUsable, working } from "./status";
@@ -40,7 +40,7 @@ export function workloadLoad(s: GameState, w: Workload, hour: number): number {
   if (!v || !c) return 0;
   if (serviceHeld(s, v)) return HELD_LOAD;
   const jitter = 1 + 0.4 * (rand(hashRng(s.seed, idNum(w.id), hour)) - 0.5);
-  return Math.min(1, curveLoad(curveFor(v.product, c.profile, s.seed, c.id), hour) * daySwing(s.seed, w.id, hour) * demand(s, v, hour) * jitter + JOB_CPU * nightJob(s.seed, c.id, hour));
+  return Math.min(1, curveLoad(curveFor(v.product, c.profile, s.seed, c.id), hour) * daySwing(s.seed, w.id, hour) * demand(s, v, hour) * jitter * titleInterest(s, v, hour) + JOB_CPU * nightJob(s.seed, c.id, hour));
 }
 
 // The player's cluster backups this hour: each source node sends its workloads' changed data to the target's control plane.
@@ -82,6 +82,12 @@ function osUse(s: GameState, id: string, cpus: number, ramGb: number, hour: numb
   if (!busy && k !== "login" && k !== "desktop") return { vcpu: 0, ramGb: 0, diskGb: 0 };
   const r = rand(hashRng(s.seed, idNum(id), hour));
   return { vcpu: Math.min(cpus, busy ? 0.6 + 0.4 * r : 0.02 + 0.06 * r), ramGb: Math.min(ramGb * (busy ? 0.4 : 0.15), busy ? 1 : 0.5) * (0.9 + 0.2 * r), diskGb: 0 };
+}
+
+// A game server on a faded title has fewer players on.
+function titleInterest(s: GameState, v: Service, hour: number): number {
+  const t = v.product === "gameServer" ? titleById(s.gameServers.find((g) => g.serviceId === v.id)?.title ?? "") : undefined;
+  return t ? interestAt(t, yearOf(hour)) : 1;
 }
 
 // What a game server's mods multiply its resource use by.

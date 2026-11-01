@@ -18,6 +18,7 @@ import type { ActivityEntry } from "./47-staff/activity";
 import { newMarketing, type Marketing } from "./80-business/marketing";
 import type { Cluster, Workload } from "./60-infra/cluster";
 import type { Daemon } from "./60-infra/daemons";
+import type { TitleEntry } from "./60-infra/titles";
 import type { GameServer } from "./60-infra/games";
 import type { Maintenance } from "./60-infra/maintenance";
 import type { FrontOp } from "./60-infra/power";
@@ -251,6 +252,10 @@ export interface GameState {
   gameServers: GameServer[];
   // Pterodaktyl: the node daemons by node.
   daemons: Record<string, Daemon>;
+  // Titles each game panel offers besides the ones it ships, by panel and title.
+  gameTitles: Record<string, Record<string, TitleEntry>>;
+  // Leads lost because no panel offered their title: the hours of the last 90 days, by title.
+  gameLost: Record<string, number[]>;
   // Support: tickets, the minute the player's queued replies finish, and the hour each offline service went down.
   tickets: Ticket[];
   playerBusyUntil: number;
@@ -448,6 +453,8 @@ export const newGame = (seed: number): GameState => ({
   heldServices: {},
   gameServers: [],
   daemons: {},
+  gameTitles: {},
+  gameLost: {},
   tickets: [], playerBusyUntil: 0, friendFavours: { year: 0, used: 0 }, player: { at: "loc1", until: 0, doing: "work" }, downSince: {}, frozen: [],
   company: { name: "Basement Hosting", logo: "server", color: "oklch(0.55 0.15 255)", domain: null, mail: { kind: "free" }, tagline: "" },
   homeLine: { id: MOMS_DSL.id, next: null },

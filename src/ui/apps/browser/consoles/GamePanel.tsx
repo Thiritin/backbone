@@ -1,13 +1,15 @@
 import { useState, type ReactNode } from "react";
 import { LOCALE } from "../../../../i18n/lang";
 import { t } from "../../../../i18n/en";
-import { yearOf } from "../../../../sim/00-core/time";
-import { GAME_TITLES, MODS, titleById } from "../../../../sim/10-catalog/games";
+import { euro } from "../../../../sim/00-core/money";
+import { dateOf } from "../../../../sim/00-core/time";
+import { MODS, titleById, WRITE_COST } from "../../../../sim/10-catalog/games";
 import type { GameState } from "../../../../sim/50-state";
 import type { Cluster } from "../../../../sim/60-infra/cluster";
 import { POOL_SIZE, daemonOf, freePorts, nodeKeys } from "../../../../sim/60-infra/daemons";
 import { gameCrashed, gameLog, gameOf, latestVersion, playersOf } from "../../../../sim/60-infra/games";
-import { addAllocation, changeTitle, installMod, removeAllocation, removeMod, restartDaemon, restartGame, setAutoRestart, setGameVersion, setRestartSchedule, updateDaemon, updateGameVersion } from "../../../../sim/90-actions/games";
+import { addAllocation, changeTitle, importTitle, installMod, removeAllocation, removeMod, restartDaemon, restartGame, setAutoRestart, setGameVersion, setRestartSchedule, updateDaemon, updateGameVersion, writeTitleConfig } from "../../../../sim/90-actions/games";
+import { lostLeads, titleStatus, titlesOut } from "../../../../sim/60-infra/titles";
 import { usePageAct } from "../pageAct";
 
 // What a game server row shows next to its name: the title and the players online out of its slots.
@@ -24,6 +26,36 @@ export function TitlesSummary({ rows }: { rows: { game?: GameRow }[] }) {
   for (const { game: g } of rows) if (g) n.set(g.title, { title: g.title, faded: g.faded, count: (n.get(g.title)?.count ?? 0) + 1 });
   if (!n.size) return null;
   return <p className="cx-sub">{[...n.values()].map((x) => [t("games.titleCount", { title: x.title, count: x.count }), x.faded && t("games.faded")].filter(Boolean).join(" ")).join(" · ")}</p>;
+}
+
+const day = (hour: number) => new Intl.DateTimeFormat(LOCALE, { day: "numeric", month: "short", timeZone: "UTC" }).format(dateOf(hour));
+
+// The games a panel offers, the ones it can add, and the requests lost to each in the last 90 days.
+export function TitleCatalogue({ game, panel }: { game: GameState; panel: string }) {
+  const act = usePageAct();
+  return (
+    <>
+      <h2>{t("games.titles")}</h2>
+      <table className="cx-table">
+        <tbody>
+          {titlesOut(game).map((x) => {
+            const st = titleStatus(game, panel, x), lost = lostLeads(game, x.id), e = game.gameTitles[panel]?.[x.id];
+            return (
+              <tr key={x.id}>
+                <td><b>{t(`games.title.${x.id}`)}</b>{lost > 0 && <span className="cx-sub">{t("games.lost", { count: lost })}</span>}</td>
+                <td>
+                  {st === "offered" && t("games.offered")}
+                  {st === "writing" && t("games.writing", { date: day(e?.readyAt ?? game.hour) })}
+                  {st === "import" && <button className="cx-btn" onClick={() => act(importTitle, panel, x.id)}>{t("games.import")}</button>}
+                  {st === "write" && <button className="cx-btn" onClick={() => act(writeTitleConfig, panel, x.id)}>{t("games.write", { price: euro(WRITE_COST[panel]) })}</button>}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </>
+  );
 }
 
 // The sections each panel names in its own words; the ids pick the block that fills them.
@@ -63,8 +95,7 @@ export function GameDetails({ game, serviceId, panel }: { game: GameState; servi
           </label>
           {g.version < latest ? <button className="cx-btn primary" onClick={() => act(updateGameVersion, serviceId)}>{t("games.updateTo", { version: latest + 1 })}</button> : <span className="cx-note">{t("browser-consoles-2.upToDate")}</span>}
         </div>
-        <h4 className="cx-h">{t("games.titles")}</h4>
-        {chips(GAME_TITLES.filter((x) => x.id === g.title || (x.from <= yearOf(game.hour) && yearOf(game.hour) <= x.fade)).map((x) => [x.id, t(`games.title.${x.id}`)] as [string, string]), g.title, (id) => id !== g.title && act(changeTitle, serviceId, id))}
+        {g.switchTo && <div className="cx-tools"><button className="cx-btn primary" onClick={() => act(changeTitle, serviceId, g.switchTo!)}>{t("games.switchTo", { title: t(`games.title.${g.switchTo}`) })}</button></div>}
       </>
     ),
     mods: (

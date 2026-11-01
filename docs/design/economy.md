@@ -573,6 +573,7 @@ Every customer has a happiness value H from 0 to 100. Events move it up and down
 | --- | --- |
 | Ticket still open past the expected reply time | − wait penalty per hour that counts on the customer's clock (profile table) |
 | Ticket closed with the right answer | +5 |
+| Right first answer within 2 hours of the ticket opening | +2 |
 | Ticket closed with a wrong answer | −10, plus a follow-up ticket |
 | An hour of outage on one of their services, once the outage has outlasted their tolerance | − outage penalty per hour that counts on the customer's clock (profile table) |
 | Credit issued | +3 per 10% of the monthly fee |
@@ -670,24 +671,26 @@ Private customers and hobbyists use their sites in the evening and forgive a wee
 
 Shared links without an expiry that are older than 90 days leak with a monthly chance of 0.015 (0.003 with a password) and cost the customer 20 happiness. The expiry policy of 7, 30 or 90 days trades these leaks for extension tickets.
 
+**Game titles.** A faded title costs no happiness. Its players online fall to `max(0.15, 0.7 ^ (year - fade))` of normal, and once a month its servers shrink to the slots their busiest hour of the week needs, at a price scaled down alike. A quarter of its customers, picked by seed, stay for good. The rest ask to move to the current title of the same genre with a monthly chance of `0.04 * (year - fade)`; declining, or leaving the request a week, ends that game server, and the customer leaves when it was their last service. Writing a game config costs 400 on TCAdmen and 200 on Pterodaktyl.
+
 ## Tickets and work rates
 
-A low-skill customer creates about 0.3 tickets a month, so one average support agent keeps about 1,400 of them answered. Every job in the game, from tickets to cabling, is a task with a handling time, and staff work through tasks at a rate set by their skill.
+A low-skill customer creates about 0.15 tickets a month, so one average support agent keeps about 2,800 of them answered. Every job in the game, from tickets to cabling, is a task with a handling time, and staff work through tasks at a rate set by their skill.
 
 **Ticket rates** per customer per month, by technical skill:
 
 | Ticket type | Low skill | Medium skill | High skill | Handling time |
 | --- | --- | --- | --- | --- |
-| How-to question | 0.18 | 0.06 | 0.02 | 20 min |
-| Billing question | 0.04 | 0.04 | 0.02 | 15 min |
-| Abuse report | 0.005 | 0.005 | 0.02 | 30 min |
+| How-to question | 0.09 | 0.03 | 0.01 | 20 min |
+| Billing question | 0.02 | 0.02 | 0.01 | 15 min |
+| Abuse report | 0.0025 | 0.0025 | 0.01 | 30 min |
 | Upgrade request | From upgrades ([Happiness and churn](#happiness-and-churn)) | | | 20 min |
 | Cancellation | One per cancellation | | | 15 min |
 | Suspension appeal | From suspensions ([Billing and payment habits](#billing-and-payment-habits)) | | | 15 min |
 | Outage report | Per outage (below) | | | 10 min |
 | Colocation install | One per hardware delivery | | | 2 h (technician) |
 
-Gamers create abuse reports at 0.02, like high-skill customers. Each payment reminder also has a 10% chance to create a billing question.
+Gamers create abuse reports at 0.01, like high-skill customers. Each payment reminder also has a 10% chance to create a billing question.
 
 **Outage tickets.** When an outage hits a customer, they write in with a 30% chance at low budget, 60% at medium and 90% at high budget. High-budget customers write 3 tickets, everyone else 1. A public status page halves the chance.
 

@@ -5,6 +5,14 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-01
 
 - New hardware now comes out over the whole year, each model in its own month, instead of every release landing in January.
+- Customers write half as many support tickets, a right answer within two hours of a ticket opening makes them a little happier, and customers whose domain you registered no longer ask how to point it to their site.
+- A Sponsor-Bored sponsor who takes your banner down can now be blocked or cancelled from the Marketing app, and when a blocked sponsor writes in you can say tough luck or have them put the banner back up.
+- Free shop systems such as OrderBocks and free shop modules can now be started while your account is in the red.
+- The Website card in the Marketing app now shows in your language, and its buttons sit at the bottom of the card.
+- Customers on a game title past its prime no longer get unhappy; their servers empty out and shrink, and some ask to move to a newer game, staying if your panel runs it and leaving if it does not.
+- The delete user button in DirectAdmen is readable again.
+- TCAdmen and Pterodaktyl list every game on their Packages screen, where you can import community configs or pay to write your own, and see how many requests went to other hosts for games you do not offer.
+- Licence keys bought on a vendor website are paid by credit card or by bank transfer, and keys paid by transfer arrive once the money reaches the vendor.
 - From 2013 DOHLE replaces DohleFormular with the Mein DOHLE portal, where you log in with your certificate file and send the same returns.
 - Product prices in the books now show the market price for each term and the setup fee, so you can see what customers expect to pay.
 - Bookkeeping editions with the tax view connect to DOHLE with your certificate file, send the advance VAT returns in the monthly run and submit the yearly return once every invoice and transfer of the year is in the books.
@@ -12,8 +20,6 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - You can register on DOHLE for a certificate file, with the activation ID by email and the code by post, and download DohleFormular to send your advance VAT returns.
 - UPS units, PDUs and console switches can now be plugged in and unplugged at the back of the rack, and a UPS only carries the location through an outage while it is plugged in.
 - New UPS models with a network card have their own web interface and shut down servers cleanly in a long outage when the servers run the nuts-client agent or are VMwhere or HyperVee nodes.
-
-## 2026-11-01
 - Bookkeeping programs no longer send reminders, dunning notices and final notices by themselves; they go out when you or your staff send them, or after the Automation research.
 - Private customers and gamers now write the invoice number on four out of five transfers.
 - The DirectAdmen 1.30 release notes list the Enhanced skin once.

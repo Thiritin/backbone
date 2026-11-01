@@ -81,6 +81,9 @@ export const COMMUNITY_EN: Record<string, (p: Params) => string> = {
   "error.offersOpen": () => "Three offers are already open.",
   "error.unknownOffer": () => "This offer is no longer open.",
   "error.offerFull": () => "All slots of this offer are taken.",
+  "ticket.sponsor.board.held.subject": (p) => `${p.event}: our server is offline`,
+  "ticket.sponsor.board.held.text": () => `Hi, our server is suddenly offline. We only took your banner down for the new layout, surely that is no reason to block us? Please switch it back on.`,
+  "error.sponsorNotDropped": () => "This sponsorship still shows your banner.",
   "event.sponsorFailed.title": (p) => `${p.event} went wrong`,
   "event.sponsorFailed.text": (p) => `The servers for ${p.event} were down for ${p.hours} ${plural(p.hours, "hour", "hours")}. Two bad reviews were posted and your awareness dropped.`,
 };

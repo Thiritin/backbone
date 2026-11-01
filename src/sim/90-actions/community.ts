@@ -1,9 +1,9 @@
 // Answers to a sponsoring request in the inbox (80-business/sponsoring.ts raises them).
 import { yearOf } from "../00-core/time";
 import { sizeSpec } from "../10-catalog/products";
-import { eventOf, sponsorshipOf, type CommunityEvent, type Sponsorship } from "../80-business/community";
+import { eventOf, HELD_TOPIC, patchSponsorship, sponsorshipOf, type CommunityEvent, type Sponsorship } from "../80-business/community";
 import { BOARD, closeApplications, newOffer, offerOpen, takeSlot, validOffer, type SponsorOffer } from "../80-business/sponsorboard";
-import { isFinal } from "../40-support/tickets";
+import { isFinal, type Ticket } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import { addCustomer } from "./customers";
 import { provisionService } from "./clusters";
@@ -83,4 +83,40 @@ export function declineSponsorship(s: GameState, ticketId: string): ActionResult
   s.sponsorships = s.sponsorships.map((x) => (x.id === o.sp.id ? { ...x, status: "declined" } : x));
   settle(s, ticketId, "sponsorDeclined");
   return { ok: true, id: o.sp.id };
+}
+
+const dropped = (s: GameState, id: string) => s.sponsorships.find((x) => x.id === id && x.status === "running" && x.board?.dropped);
+
+// Holds the services of a sponsor who took the banner down; the sponsor writes in about it.
+export function blockSponsor(s: GameState, id: string): ActionResult {
+  const sp = dropped(s, id);
+  if (!sp) return fail("error.sponsorNotDropped");
+  if (sp.board!.heldTicket) return { ok: true, id };
+  s.heldServices = { ...s.heldServices, ...Object.fromEntries(sp.serviceIds.map((v) => [v, "manual" as const])) };
+  const ticket: Ticket = {
+    id: `tkt${s.nextId++}`, customerId: sp.customerId!, serviceId: null, kind: "sponsor", topic: HELD_TOPIC, status: "open",
+    createdAt: s.hour, dueAt: sp.endsAt, updatedAt: s.hour, unread: true, replies: [], outcome: null, work: null, assignee: null,
+  };
+  s.tickets = [...s.tickets, ticket];
+  patchSponsorship(s, id, (x) => ({ board: { ...x.board!, heldTicket: ticket.id } }));
+  return { ok: true, id };
+}
+
+// Ends a sponsorship whose banner is down; the services go in the next hour.
+export function cancelSponsor(s: GameState, id: string): ActionResult {
+  if (!dropped(s, id)) return fail("error.sponsorNotDropped");
+  patchSponsorship(s, id, () => ({ endsAt: s.hour }));
+  return { ok: true, id };
+}
+
+// Answers the blocked sponsor: the banner goes back up and the services with it, or the sponsorship ends.
+export function answerSponsor(s: GameState, ticketId: string, restore: boolean): ActionResult {
+  const t = s.tickets.find((x) => x.id === ticketId && x.kind === "sponsor" && x.topic === HELD_TOPIC), sp = t && sponsorshipOf(s, t);
+  if (!t || !sp) return fail("error.unknownTicket");
+  if (isFinal(t) || sp.status !== "running") return fail("error.ticketDone");
+  settle(s, ticketId, restore ? "sponsored" : "sponsorDeclined");
+  if (!restore) return cancelSponsor(s, sp.id);
+  s.heldServices = Object.fromEntries(Object.entries(s.heldServices).filter(([v]) => !sp.serviceIds.includes(v)));
+  patchSponsorship(s, sp.id, (x) => ({ board: { ...x.board!, drops: false, dropped: false } }));
+  return { ok: true, id: sp.id };
 }
