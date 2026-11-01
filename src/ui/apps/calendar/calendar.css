@@ -1,0 +1,11 @@
+.cal { flex: 1; min-height: 0; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.cal-head { display: flex; align-items: center; justify-content: space-between; }
+.cal-head h2 { font-size: 16px; font-weight: 650; text-transform: capitalize; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-dow { text-align: center; font-size: 12px; color: var(--text-2); }
+.cal-day { position: relative; height: 40px; border: 0; border-radius: 8px; background: var(--win-bar); color: inherit; font: inherit; cursor: pointer; }
+.cal-day:hover { box-shadow: inset 0 0 0 1px var(--accent); }
+.cal-day.today { font-weight: 700; color: var(--accent); }
+.cal-day.sel { box-shadow: inset 0 0 0 2px var(--accent); }
+.cal-dot { position: absolute; left: 50%; bottom: 5px; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: var(--accent); }
+.cal-list { display: flex; flex-direction: column; gap: 10px; }

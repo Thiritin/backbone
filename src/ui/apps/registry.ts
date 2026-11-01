@@ -1,9 +1,10 @@
 import {
-  Activity, Cloud, Mailbox, FolderOpen, Bug, BookOpen, Compass, ChartLine, ChartPie, Contact, FileText, Network, GraduationCap, LifeBuoy, Megaphone, Newspaper, Receipt, Server, Settings, ShieldAlert, ShoppingCart, SquareTerminal, Users,
+  Activity, CalendarDays, Cloud, Mailbox, FolderOpen, Bug, BookOpen, Compass, ChartLine, ChartPie, Contact, FileText, Network, GraduationCap, LifeBuoy, Megaphone, Newspaper, Receipt, Server, Settings, ShieldAlert, ShoppingCart, SquareTerminal, Users,
 } from "lucide-react";
 import type { ComponentType } from "react";
 import { t } from "../../i18n/en";
 import { BooksApp, drafts, late, unmatched } from "./books/BooksApp";
+import { CalendarApp } from "./calendar/CalendarApp";
 import { BrowserApp } from "./browser/BrowserApp";
 import { DevApp } from "./dev/DevApp";
 import { FinanceApp } from "./finance/FinanceApp";
@@ -68,6 +69,7 @@ export const APPS: AppDef[] = [
   { name: "Security", icon: ShieldAlert, tile: "oklch(0.58 0.17 25)", about: t("apps.about.Security"), body: SecurityApp,
     badge: (s) => s.lossReports.filter((r) => r.items.some((i) => !i.restored)).length },
   { name: "Notes", icon: FileText, tile: "oklch(0.7 0.13 85)", about: t("apps.about.Notes"), hidden: true },
+  { name: "Calendar", icon: CalendarDays, tile: "oklch(0.6 0.17 25)", about: t("apps.about.Calendar"), hidden: true, body: CalendarApp },
   { name: "News", icon: Newspaper, tile: "oklch(0.55 0.12 30)", about: t("apps.about.News"), hidden: true, body: NewsApp },
   { name: "Weather", icon: Cloud, tile: "oklch(0.62 0.12 240)", about: t("apps.about.Weather"), hidden: true, body: WeatherApp },
   { name: "Dev menu", icon: Bug, tile: "oklch(0.5 0.15 25)", about: t("apps.about.Dev menu"), hidden: true, body: DevApp },
