@@ -23,8 +23,7 @@ describe("shop section", () => {
     html = renderToString(<Shop game={s} />);
     expect(html).toContain("WHMCache");
     expect(html).toContain("Included");
-    expect(html).toContain("Free capacity");
-    expect(html).toContain("Server groups");
-    expect(html).toContain("Deploy automatic orders");
+    expect(html).not.toContain("Server groups");
+    expect(html).not.toContain("Pricing");
   });
 });

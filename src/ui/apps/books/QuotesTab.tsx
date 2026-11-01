@@ -8,9 +8,13 @@ import { orderOf } from "../../../sim/30-market/orders";
 import { type Quote, type QuoteStatus } from "../../../sim/30-market/quotes";
 import { setupFee } from "../../../sim/30-market/spec";
 import type { GameState } from "../../../sim/50-state";
-import { attachQuote, convertQuote, createQuote, deleteQuote, editQuote } from "../../../sim/90-actions/orders";
+import type { Cycle } from "../../../sim/10-catalog/cycles";
+import { cyclesFor } from "../../../sim/30-market/cycles";
+import { CYCLE_LABEL } from "../browser/sites/portal/shared/ProductEdit";
+import { attachQuote, convertQuote, createQuote, deleteQuote, editQuote, setQuoteCycle } from "../../../sim/90-actions/orders";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
+import { useBooks } from "./view";
 import { formatDay } from "../billing/format";
 import { PriceField } from "../sales/PriceField";
 import { DocBar, DocButton, DocFoot } from "./DocBar";
@@ -34,7 +38,7 @@ const quotable = (game: GameState) => game.tickets.filter((tk) => orderOf(game, 
 
 // Quotes as a document list: toolbar, list, A4 preview and a footer line.
 export function QuotesTab({ focus }: { focus: string | null }) {
-  const game = useStore((s) => s.game), act = useStore((s) => s.act), openApp = useStore((s) => s.openApp);
+  const game = useBooks(), act = useStore((s) => s.act), openApp = useStore((s) => s.openApp);
   const list = [...game.quotes].reverse(), open = quotable(game);
   const [selected, setSelected] = useState<string | null>(focus ?? list[0]?.id ?? null);
   const [ticket, setTicket] = useState(""), [editing, setEditing] = useState(false);
@@ -113,6 +117,11 @@ function QuotePreview({ q, game, editing }: { q: Quote; game: GameState; editing
         <div className="books-quote-edit">
           <PriceField value={monthly} reference={r.reference} onChange={(m) => edit(m, setup)} />
           <PriceField value={setup} reference={setupFee(game, r.product)} onChange={(f) => edit(monthly, f)} label={t("support.setupFee")} />
+          {cyclesFor(game, r.product).length > 1 && (
+            <select aria-label={t("shop-store.cycle")} value={q.cycle ?? "monthly"} onChange={(e) => act(setQuoteCycle, q.id, e.target.value === "monthly" ? null : (e.target.value as Cycle))}>
+              {cyclesFor(game, r.product).map((c) => <option key={c} value={c}>{CYCLE_LABEL[c]}</option>)}
+            </select>
+          )}
         </div>
       )}
     </div>

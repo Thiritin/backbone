@@ -5,11 +5,16 @@ import { vmStats } from "../../../../../sim/60-infra/stats";
 import { useStore } from "../../../../store";
 import { Chart, niceMax } from "../Chart";
 import { AlarmList, ALL, MediaMenu, NodeList, osText, ResourceBars, summaryOf, SizeFields, TaskLog, Toolbar, useNewVm, useVms, vmFacts, Wizard, type Sel, type Vm } from "../HypervisorBase";
-import { Actions, Backups, erasFrom, eraAt, Facts, LoginForm, useSoftware, type PanelProps } from "../PanelBase";
+import { Actions, erasFrom, eraAt, Facts, LoginForm, useSoftware, type PanelProps } from "../PanelBase";
 import "./proxmocks.css";
 import { t } from "../../../../../i18n/en";
 import { parseCreate } from "../../../../../sim/80-business/consoles";
 import { PackagesScreen } from "../PackageForms";
+import { JobsPanel, PointsPanel } from "../backup/Jobs";
+import { quorate } from "../../../../../sim/60-infra/quorum";
+import { ClusterInfo } from "./Cluster";
+import { FirewallPanel } from "./Firewall";
+import { CephPanel, Replication, StorageList } from "./Storage";
 
 // docs/design/software.md, section 9: the grey ExtJS manager from 2008, the flat white one with the orange mark from 2015.
 const ERAS = erasFrom(2008, 2015);
@@ -48,9 +53,9 @@ export function VmSummary({ game, c, v }: { game: GameState; c: Cluster; v: Vm }
 }
 
 export function Proxmocks(p: PanelProps) {
-  const era = eraAt(ERAS, p.game), { game, c, f } = p, openConsole = useStore((s) => s.openConsole);
+  const era = eraAt(ERAS, p), { game, c, f } = p, openConsole = useStore((s) => s.openConsole);
   const open = parseCreate("proxmocks", p.path), [sel, setSel] = useState<Sel>(open?.screen === "create" ? { kind: "new" } : open?.screen === "packages" ? { kind: "plans" } : ALL), [tab, setTab] = useState("Summary");
-  const tabNames: Record<string, string> = { Summary: t("browser-consoles-2.summary"), Console: t("browser-consoles-2.console"), Hardware: t("browser-consoles-2.hardware"), Options: t("browser-consoles-2.options"), Backup: t("browser-consoles-2.backup"), Updates: t("browser-consoles-2.updates"), Cluster: t("browser-consoles-2.cluster") };
+  const tabNames: Record<string, string> = { Summary: t("browser-consoles-2.summary"), Console: t("browser-consoles-2.console"), Hardware: t("browser-consoles-2.hardware"), Options: t("browser-consoles-2.options"), Backup: t("browser-consoles-2.backup"), Updates: t("browser-consoles-2.updates"), Cluster: t("browser-consoles-2.cluster"), Replication: t("pmx.replication"), Ceph: "Ceph", Storage: t("pmx.storage"), Firewall: t("pmx.firewall") };
   const { vms, dialog } = useVms(game, c, f), sw = useSoftware(game, c, f), nv = useNewVm(game, c, open?.screen === "create" ? open.order : undefined);
   if (!p.signedIn) return (
     <div className="cx pmx pmx-login" data-era={era}>
@@ -64,8 +69,8 @@ export function Proxmocks(p: PanelProps) {
   const pick = (s: Sel, tb = "Summary") => { setSel(s); setTab(tb); };
   const vm = sel.kind === "vm" ? vms.find((v) => v.id === sel.id) : undefined;
   const node = sel.kind === "node" ? sel.id : null;
-  const tabs = vm ? ["Summary", "Console", "Hardware", "Options", "Backup"]
-    : node ? ["Summary", "Updates"] : ["Summary", ...(f.cluster ? ["Cluster"] : []), ...(f.backups ? ["Backup"] : [])];
+  const tabs = vm ? ["Summary", "Console", "Hardware", "Options", "Backup", ...(c.nodes.length > 1 ? ["Replication"] : []), ...(vm.own ? ["Firewall"] : [])]
+    : node ? ["Summary", "Updates"] : ["Summary", ...(f.cluster ? ["Cluster", "Replication", "Ceph", "Storage"] : []), ...(f.backups ? ["Backup"] : [])];
   const shown = tabs.includes(tab) ? tab : "Summary";
   const nodes = c.nodes.map((n) => game.devices.find((d) => d.id === n.deviceId)!).filter(Boolean);
   const title = sel.kind === "plans" ? t("pkg.pmxPlans") : vm ? t("browser-consoles-2.vmTitle", { id: vmid(vm), name: vm.name, node: vm.node }) : node ? t("browser-consoles-2.nodeTitle", { name: nodes.find((d) => d.id === node)?.hostname ?? "" }) : t("browser-consoles-2.datacenter");
@@ -83,6 +88,7 @@ export function Proxmocks(p: PanelProps) {
       <div className="cx-hv-body">
         <aside className="cx-hv-tree pmx-tree">
           <div className="pmx-view">{t("browser-consoles-2.serverView")}</div>
+          {!quorate(game, c) && <div className="pmx-noquorum" role="alert">{t("pmx.noQuorum")}</div>}
           <ul>
             <li><button aria-pressed={sel.kind === "all"} onClick={() => pick(ALL)}><i>▤</i>{t("browser-consoles-2.datacenter")}</button>
               <ul>
@@ -120,7 +126,7 @@ export function Proxmocks(p: PanelProps) {
                 </>
               )}
               {vm && shown === "Options" && <Facts facts={[{ label: t("browser-consoles-2.name"), value: vm.name }, { label: t("browser-consoles-2.osType"), value: vm.own ? osText(vm.w) : vm.sub }, { label: t("browser-consoles-2.bootOrder"), value: vm.media ? "ide2, scsi0" : "scsi0" }]} />}
-              {vm && facts && shown === "Backup" && <Facts facts={[facts.backup]} />}
+              {vm && facts && shown === "Backup" && <><Facts facts={[facts.backup]} /><PointsPanel game={game} c={c} w={vm.w} /></>}
               {!vm && sel.kind !== "plans" && shown === "Summary" && (
                 <>
                   <section className="pmx-panel">
@@ -142,8 +148,13 @@ export function Proxmocks(p: PanelProps) {
                   </table>
                 </>
               )}
-              {!vm && shown === "Cluster" && <NodeList game={game} c={c} f={f} />}
-              {!vm && shown === "Backup" && <Backups game={game} c={c} />}
+              {!vm && shown === "Cluster" && <><ClusterInfo game={game} c={c} /><NodeList game={game} c={c} f={f} /></>}
+              {vm && shown === "Firewall" && <FirewallPanel w={vm.w} />}
+              {vm && shown === "Replication" && <Replication game={game} c={c} w={vm.w} />}
+              {!vm && shown === "Replication" && <Replication game={game} c={c} />}
+              {!vm && shown === "Ceph" && <CephPanel game={game} c={c} />}
+              {!vm && shown === "Storage" && <StorageList game={game} c={c} />}
+              {!vm && shown === "Backup" && <JobsPanel game={game} source={c} skin="proxmocks" />}
               {node && shown === "Updates" && (
                 <>
                   <Facts facts={sw.facts} />

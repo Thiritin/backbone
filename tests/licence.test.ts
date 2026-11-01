@@ -9,7 +9,7 @@ import { setLicenceTier } from "../src/sim/90-actions/licence";
 import { updateSoftware } from "../src/sim/90-actions/software";
 import { panelVm, readyGame } from "./fixtures";
 
-const MONTH = hourOf(new Date(Date.UTC(2006, 0, 1)));
+const MONTH = hourOf(new Date(Date.UTC(2020, 0, 1)));
 
 // A cPanic VM on the given tier's key, or on a trial until trialUntil without one.
 function setup(tier: string, trialUntil?: number) {

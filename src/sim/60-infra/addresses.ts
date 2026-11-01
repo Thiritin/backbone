@@ -1,5 +1,6 @@
 // GDD, Addresses and internet: private and public addresses, address prices, the nightly reconnect of dynamic home lines
 // and mail reputation. Numbers in economy.md, Addresses and internet.
+import { isFloating } from "./horizont";
 import { hashRng, rand } from "../00-core/rng";
 import { dateOf, yearOf } from "../00-core/time";
 import { modelById } from "../10-catalog/hardware";
@@ -14,7 +15,7 @@ import { isSuspended } from "../45-billing/billing";
 import { bounceFactor, listingTick, mailQueueTick } from "./netsvc-mail";
 import { jacked, locationOf } from "./status";
 import { mountedRouter } from "./routers";
-import { addressOf, shareOf } from "./lan";
+import { addressOf, isVm, shareOf } from "./lan";
 import type { SimEvent } from "../88-tick/tick";
 
 // line: comes with the home line; lineExtra: bought on a business line; provider: rented in a datacenter; lir: from an own block.
@@ -77,10 +78,11 @@ function workloadLocation(s: GameState, w: Workload): Location | undefined {
   return s.locations.find((l) => l.id === rack?.locationId);
 }
 
-// A machine's address on its network: a device's DHCP lease (lan.ts), or for an own VM or a customer workload one on its
-// host's internal network, 192.168.2.x in the basement and 10.n.1.x elsewhere.
+// A machine's address on its network: a device's or a VM's DHCP lease (lan.ts), or for another workload one on its host's
+// internal network, 192.168.2.x in the basement and 10.n.1.x elsewhere.
 export function machineAddress(s: GameState, id: string): string | null {
-  if (s.devices.some((d) => d.id === id)) return addressOf(s, id);
+  const w = s.workloads.find((x) => x.id === id);
+  if (s.devices.some((d) => d.id === id) || (w && isVm(s, w))) return addressOf(s, id);
   const loc = machineLocation(s, id);
   if (!loc) return null;
   const host = 10 + ((Number(id.replace(/\D/g, "")) || 0) % 240);
@@ -166,7 +168,7 @@ export function assignService(s: GameState, serviceId: string): string | null {
 export const RENUMBER_PENALTY = 5;
 export const RENUMBER_ANNOUNCED_PENALTY = 2;
 const announces = (s: GameState, loc: Location): boolean => s.ips.blocks.some((b) => b.locationId === loc.id);
-const keeps = (s: GameState, a: Address, from: Location, to: Location): boolean => a.source === "lir" && announces(s, from) && announces(s, to);
+const keeps = (s: GameState, a: Address, from: Location, to: Location): boolean => isFloating(s, a.ip) || a.source === "lir" && announces(s, from) && announces(s, to);
 const given = (s: GameState, id: string, from: Location, to: Location): Address[] =>
   s.ips.addresses.filter((a) => a.holder === id && a.v === 4 && !keeps(s, a, from, to));
 

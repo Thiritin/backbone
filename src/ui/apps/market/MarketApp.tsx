@@ -14,6 +14,7 @@ import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
 import { AUDIENCE } from "../marketing/MarketingApp";
 import { reviewCount, rivalScore } from "../../../sim/30-market/rivals";
+import { tierName } from "../../../sim/80-business/hosttoast";
 import { monthYear, patience, PRODUCT } from "../support/labels";
 import "../shop/shop.css";
 import "../billing/billing.css";
@@ -264,7 +265,7 @@ function Competitors() {
             return (
               <Fragment key={c.id}>
               <tr className="mk-main">
-                <td><strong>{c.name}</strong>{c.outage && <span className="pill bad">{t("misc1.market.outage")}</span>}</td>
+                <td><strong>{c.name}</strong> <span className="pill">{tierName(c.tier)}</span>{c.outage && <span className="pill bad">{t("misc1.market.outage")}</span>}</td>
                 <td className="num">{Math.round(c.P)}</td>
                 <td className="num">{Math.round(c.R)}</td>
                 <td className="num">{Math.round(c.C)}</td>

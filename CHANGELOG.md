@@ -5,6 +5,44 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-01
 
 - The shady used-hardware channel in the Shop is now Craigslost, a classifieds site, instead of a chat app that did not exist in 2005.
+- Your bank account now earns interest at each month start, following the real rates of each year, and from 2020 to 2021 the bank charges a custody fee on balances above 100,000 instead.
+- Books has a Products tab where you set up the packages you sell, each with a size, SLA, prices per billing cycle and a setup fee.
+- Online banking now has a Payees page where you save, delete and pay recipients, and the transfer form can pick a saved payee or save a new one.
+- The settings button in the Gmix and other mail desks is readable again on the classic desktop looks.
+- Software vendors now change how they sell licences over the years: Windoors and VMwhere move from one-time licences to per-core subscriptions, cPanic switches to account-based editions in June 2019, and DirectAdmen stops selling lifetime licences in September 2019, while licences already bought keep working.
+- Every licensed product's website has a shop with its editions and prices, a cart, a checkout paid from the bank, and an order email with the licence keys.
+- A My account page on each product website lists the licences bought there with their key, machine and renewal date, and cancels a monthly licence at the end of its term.
+- Password managers in your browser no longer offer to fill or save the logins inside the game.
+- The Debiant installer lets you type your own hostname for the machine or keep the one it suggests.
+- HyperVee VMs from 2012 can replicate to a second host and fail over to it, and HyperVee hosts get a Virtual Switch Manager with external, internal and private switches.
+- OpenVeeZee containers now show their beancounters and slow down or stop when the node is oversold, can use burst memory, and move between nodes with a checkpoint and restore.
+- Horizont now has Floating IPs that keep a service's address when its instance moves, Security Groups that filter ports, and Volumes.
+- The IPMI System Event Log now shows a severity and number for each event, can be filtered by severity and cleared, and records power supply, inlet temperature and cluster node events.
+- The game panels now have a Manage screen for every game server with versions, mods, restart schedules, a player chart and port allocations, and Pterodaktyl shows the status of its nodes.
+- Customers on a game title past its prime now lose happiness every day until you move them to a current title, and Pterodaktyl nodes run a daemon that fails now and then and has to keep up with its panel.
+- Backup jobs now keep restore points that you can test and copy offsite, Proxmocks clusters keep quorum, replicate VMs and run Ceph storage, and every VM can have its own firewall.
+- VMwhere clusters now come in Essentials, Standard and Enterprise editions, with DRS modes, host maintenance mode, editable and acknowledgeable alarms, and resource pools that cap the vCPUs and RAM of their VMs.
+- Books is now a choice: buy Lexwear Office, WIZO Mein Büro, Saga Office Line, orgaMIN or the web-based Collmix in the Pear Store, with sevDeck and lexoffize joining in later years, each with its own look, prices and modules.
+- Each bookkeeping vendor has its own site in the Browser and a place under Bookkeeping on Yahoy, and Getting started now asks you to install a program before your first customer.
+- Routers you mount in a datacenter now run their own network behind the provider's handoff with a WebFigg or J-Webb web interface, and the desk reaches that network only once you switch on the router's VPN.
+- Layer 3 switches can route between VLANs, every VM takes its own address from the local network's DHCP pool so a full pool stops new VPS sales, and enterprise customers need a private network carried as a VLAN to every server their VMs run on.
+- A new Chat app in the dock opens the Backbone Discord and changes from ICU to Skipe to Diskord as the years pass; you can remove it from the dock like any other app.
+- Backup servers now have a restore page that brings a lost machine back from its backup onto any server with room, in any location, including machines stranded on a seized server.
+- Game servers now crash now and then, more often with mods or on an overloaded host, and come back by themselves when auto-restart is on, and each server can restart on a daily or weekly schedule.
+- Dragging a window to a screen edge now shows a preview and tiles it to half the screen, to a quarter near a corner, or to the full screen at the top, and dragging it away restores its size.
+- Closing the last browser tab closes the browser window, and the dock menu can open a second browser window with its own tabs.
+- Progress bars in server panels now look like the ones each product used in its time, from boxed and segmented bars early on to thin flat ones later.
+- Backula no longer has a web console; its host page shows the director status and the backup disk the way its command line would.
+- Clicking the clock in the top bar opens a calendar that marks the days with announcements, and clicking your cash opens Finance.
+- Shop vendors now sell payment methods for your shop, from direct debit and PayPail to Visor cards, paysavecard, Instantly and Bitcorn Pay, each with its own fee and weekly payout, and customers whose favourite method is missing may buy elsewhere.
+- Returned debits, PayPail disputes and card chargebacks now arrive in Books as negative payments that reopen their invoice once you book them, and a chargeback on a stolen card suspends the fraudster.
+- A shop system now keeps its own customers and invoices, which reach Books when you press Import from shop, and its card payments arrive as one weekly payout that lists the invoices it covers.
+- Each shop vendor sells a Shop link module on its own website that sends new shop customers and invoices to Books at once and marks shop invoices paid when you book their payment.
+- Vendor and software websites now show their logos centred and complete in every era, and the ISO download buttons line up with their release rows.
+- The back button on the marketing website page is now its normal size and shows in your language.
+- The server details page has room at its edges again, long German button labels wrap, and the disk label no longer runs into its meter.
+- Each website on a panel host links to its domain, or to its address while it has none.
+- The dunning settings in Lexwear Office now open from a Settings button on the Reminders tab.
 - The first order form is now called the self-scripted order form in every language.
 - Software subscriptions now renew per licence key on the day of the month you bought them, with a receipt from the vendor, and a renewal the bank cannot pay lapses after a week of grace until the money is there.
 - The Debiant installer asks how to configure the network, so a server can take its address from the router or get a fixed address, netmask, gateway and name server, and the Windoors Server Manager has a Network adapter page for the same settings.
@@ -18,11 +56,13 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - The desktop only responds at normal speed; pause or fast forward to watch, then return to normal speed to act.
 - Quotes and invoices in Lexwear Office now show as a full A4 page that fits the pane, and a draft quote can be sent to the customer with the Send button.
 - Small hosting companies now open in one or two cities, collect reviews like the big ones, and go bust or get bought when they win too few customers, with each step in the news.
+- Software and operating systems past their vendor's end of updates or end of security updates are marked in the console, the vendor writes 90 days before security updates end, and a machine running a version without security updates gets compromised more often the longer it runs.
 - Competitors now change over the years: they move to new server generations, add features and have outages that make the news, the budget host cuts its prices each year, and the Market app charts each city's share of new customers.
 - A new game now starts with no money: you first open a business account on a bank's website, where your €3,500 savings arrive, and then register the company at the trade office for a €40 fee paid by bank transfer.
 - Used hardware now resells for less than it cost new, and buyers on the board and on eBuy no longer pay more than its resale value.
 - A part taken out of a server takes its share of the server's value along, so stripping a server and selling the pieces brings in the same as selling it whole.
 - Installed software now runs a real version number, and a new install takes the newest release out at the time.
+- A software console now looks like the version installed on the machine, so an old cPanic keeps its old look in later years.
 - The Marketing app has a Domain tile whose Buy button opens the domain resellers in the Yahoy! Directory, and the domains of other companies in the game can no longer be registered as your own.
 - Websites in the browser fill the whole window again instead of a narrow page.
 - Right-click a browser tab to close it, close all other tabs, or close every tab to its left or right.
@@ -48,6 +88,11 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Control panel trials now last as long as the real vendor's trial, 15 days for cPanic and 14 for Pleskit, and run only once per machine, so reinstalling a panel no longer starts a new trial. DirectAdmen has no trial and bills its top edition from the install.
 - The router now sits in the rack and hands out every address by DHCP, and its Fritz!OZ page at fritz.bocks lists your devices, fixes addresses and shares the web port with the one server that hosts websites on a home line.
 - Switches now come managed or unmanaged, and managed switches have VLANs, a saved configuration and their own web page at the address the router gives them.
+- HOSTtoast at hosttoast.de lists every host by tier and reviews: sign up for free, buy a higher tier for more trust and awareness, keep it by answering its monthly test ticket in time and keeping your uptime, and win host of the year or the uptime seal each January.
+
+## 2026-11-01
+
+- Browser tabs can be dragged left or right to reorder them.
 
 ## 2026-10-31
 

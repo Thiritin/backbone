@@ -1,5 +1,8 @@
 import { euroCents } from "../../sim/00-core/money";
-import type { Dict } from "../lang";
+import { dateOf } from "../../sim/00-core/time";
+import { LOCALE, type Dict } from "../lang";
+
+const day = (hour: string | number) => dateOf(Number(hour)).toLocaleDateString(LOCALE, { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" });
 
 export default {
   "error.portTaken": () => "Un software su questa macchina usa già una delle sue porte.",
@@ -13,4 +16,8 @@ export default {
   "ledger.licenseOnce": (p) => `Licenza ${p.name}, ${p.machine}`,
   "ledger.balancer": (p) => `${p.name}, ${p.cluster}`,
   "ledger.appSuite": (p) => `VMwhere App Suite, ${p.cluster}`,
+  "software.support.updatesEnded": () => "Aggiornamenti terminati",
+  "software.support.securityEnded": () => "Aggiornamenti di sicurezza terminati",
+  "ticket.mail.securityEnding.subject": (p) => `${p.software} ${p.version}: fine degli aggiornamenti di sicurezza`,
+  "ticket.mail.securityEnding.text": (p) => `Gli aggiornamenti di sicurezza per ${p.software} ${p.version} terminano il ${day(p.until)}. Dopo tale data non pubblichiamo più correzioni di vulnerabilità per questa versione.`,
 } satisfies Dict;

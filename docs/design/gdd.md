@@ -69,7 +69,7 @@ The menu bar holds the time controls, date and cash. The game saves itself in th
 | Website | Shortcut that opens the Browser at the company site |
 | Customers | Customer list, contracts, happiness |
 | Support | Ticket inbox with reply templates and actions |
-| Books | Lexwear Office: customer addresses, invoices sent by hand as PDF, bank transfers matched to invoices, reminders, dunning, collections |
+| Books | Lexwear Office: customer addresses, invoices sent by hand as PDF, bank transfers matched to invoices, reminders, dunning, collections, the product catalog |
 | Finance | Account statement, later profit and loss, cash flow, recurring revenue, churn |
 | Bank | Loan offers, active loans and repayments |
 | Staff | Job market, hiring, salaries, task assignment |
@@ -545,6 +545,8 @@ You accept or decline. A declined customer goes to a competitor. Requests you ca
 
 **Books.** Billing happens in Books, the bookkeeping program Lexwear Office. Each month's invoices arrive there as drafts, and a draft is only due, and only paid, once the player sends it as PDF. A customer pays by bank transfer, which lands in the Bank tab and moves the cash. The invoice stays open until the player matches the transfer to it. A shorter amount is booked as a partial payment, and the next reminder brings the rest, unless the player books it as paid in full. A larger amount pays the invoice and leaves the rest as the customer's credit. Most transfers name the invoice number, but some private customers and gamers write a bare word or their own name, and a few low-budget payers send a few cents short or a rounded amount. A reminder on an invoice whose payment is waiting unmatched costs 5 happiness and brings a billing ticket.
 
+**Products.** The Products tab in Books holds the packages the player sells, listed by line. New product adds one at the line's middle size, with the player's rate as the monthly price and the line's setup fee. Each product has a name that is unique within its line, a size, an SLA, a price per term for each billing cycle it offers, a setup fee, and can be hidden. Once a shop system is chosen, Books shows the catalog read-only.
+
 **Commitment.** Each contract has a minimum term: none for cloud servers, one month for hosting and VPS, twelve months for dedicated servers and colocation. Customers only leave when their term runs out, unless a missed SLA lets them leave early.
 
 **Features.** Each product line has features you switch on in its settings once the unlocks and the infrastructure allow them. Customers require some features and want others: a request whose required features are missing arrives greyed out, and every wanted feature you offer makes customers likelier to pick you and adds to the price.
@@ -884,7 +886,7 @@ Five fairs run every year: "SeeBIT" (CeBIT, until 2018), "CloudFeast" (CloudFest
 
 | Platform | Cost | Effect |
 | --- | --- | --- |
-| Free listing | Free | Collects reviews; small trust boost |
+| Free listing | Free | Collects reviews; the trust boost comes from the HOSTtoast listing |
 | "ProvenExpat" (ProvenExpert) | Moderate monthly fee | Review invites, a website badge; medium boost |
 | "TrustPylon" (Trustpilot) | High monthly fee | Strong marketing tools; the biggest boost |
 

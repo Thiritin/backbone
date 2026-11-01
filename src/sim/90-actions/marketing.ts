@@ -6,6 +6,8 @@ import { hasMarketingManager } from "../47-staff/staff";
 import { fairCost, upcomingFairs } from "../80-business/fairs";
 import { generationOf } from "../80-business/website";
 import { metrics } from "../metrics";
+import { TIERS, TIER_IDS, type TierId } from "../10-catalog/hosttoast";
+import { tierRefusal } from "../80-business/hosttoast";
 import type { ActionResult } from "./hardware";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -67,5 +69,24 @@ export function bookFair(s: GameState, fairId: string, employeeId: string): Acti
   s.cash = Math.round((s.cash - cost) * 100) / 100;
   s.ledger = [...s.ledger, { hour: s.hour, category: "marketing", key: "ledger.tradeFair", params: { name: next.fair.name }, amount: -cost }];
   s.fairs = [...s.fairs, { fair: fairId, year: next.year, employeeId, start: next.start, end: next.end, attended: null, leads: 0 }];
+  return { ok: true };
+}
+
+// Signing up lists the company as Registered.
+export function registerHostToast(s: GameState): ActionResult {
+  if (s.hosttoast.tier) return fail("error.hosttoast.registered");
+  s.hosttoast = { ...s.hosttoast, tier: "registered" };
+  return { ok: true };
+}
+
+// A higher tier needs its age and uptime now; a lower one is always granted. The fee is billed on the 1st.
+export function setHostToastTier(s: GameState, tier: TierId): ActionResult {
+  const now = s.hosttoast.tier;
+  if (!TIERS[tier]) return fail("error.hosttoast.unknownTier");
+  if (!now) return fail("error.hosttoast.notRegistered");
+  if (tier === now) return { ok: true };
+  const refusal = TIER_IDS.indexOf(tier) > TIER_IDS.indexOf(now) ? tierRefusal(s, tier) : null;
+  if (refusal) return fail(refusal);
+  s.hosttoast = { ...s.hosttoast, tier, audit: TIERS[tier].answer === null ? null : s.hosttoast.audit };
   return { ok: true };
 }

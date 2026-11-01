@@ -1,4 +1,5 @@
 // docs/design/software.md, 8.2: the site index at the browser's home, by game year. Pure; the browser draws it.
+import { HOSTTOAST, HOSTTOAST_HOST } from "../10-catalog/hosttoast";
 import { t } from "../../i18n/en";
 import { monthIndexOf, yearOf } from "../00-core/time";
 import { SOFTWARE } from "../10-catalog/platforms";
@@ -12,6 +13,8 @@ import { machineAddress } from "../60-infra/addresses";
 import { familyOf } from "../60-infra/vulns";
 import { consoleHost, consoleSuffix, consoleTitle } from "./consoles";
 import { OFFICE_HOST } from "./office";
+import { vendorsIn } from "../10-catalog/bookkeeping";
+import { booksHost } from "./bookkeeping";
 
 export interface IndexRow { title: string; url: string; desc: string; down: boolean }
 export interface Category { title: string; rows: IndexRow[] }
@@ -58,7 +61,8 @@ export function siteIndex(s: GameState): Category[] {
     ...software,
     { title: t("sim.index.cat.resellers"), rows: REGISTRARS.filter((r) => r.from <= year).map((r) => row(r.name, `${displayHost(registrarHost(r))}/`, t("sim.index.resellers"))) },
     { title: t("sim.index.cat.government"), rows: [row(t("browser-sites-1.of.title"), `www.${OFFICE_HOST}/`, t("sim.index.office"))] },
-    { title: t("sim.index.cat.community"), rows: [row(BOARD_TITLE, BOARD_URL, t("sim.index.board")), row(WIKI_TITLE, WIKI_URL, t("sim.index.wiki"))] },
+    { title: t("sim.index.cat.bookkeeping"), rows: vendorsIn(year).map((v) => row(v.program, `${displayHost(booksHost(v))}/`, t(`books-vendors.about.${v.id}`))) },
+    { title: t("sim.index.cat.community"), rows: [row(BOARD_TITLE, BOARD_URL, t("sim.index.board")), row(WIKI_TITLE, WIKI_URL, t("sim.index.wiki")), row(HOSTTOAST, `www.${HOSTTOAST_HOST}/`, t("sim.index.hosttoast"))] },
     { title: t("sim.index.cat.hardware"), rows: VENDORS.filter((m) => vendorLive(m, monthIndexOf(s.hour))).map((m) => row(m.name, `${displayHost(vendorHost(m.id))}/`, m.kinds.map((k) => t(`sim.index.kind.${k}`)).join(", "))) },
     { title: s.company.name, rows: own },
     { title: t("sim.index.cat.video"), rows: [row("YouTub", VIDEO_URL, VIDEO_TITLE)] },
