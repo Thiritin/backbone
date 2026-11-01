@@ -32,7 +32,7 @@ export function chooseShop(s: GameState, id: ShopId, own = false): ActionResult 
   pay(s, price, "ledger.shopSetup", { name: v.name });
   const first = s.shop.variant === null;
   const base = first && id === "handRolled" ? s.shop : newShop();
-  s.shop = { ...base, variant: id, owned: own, since: s.hour, readyAt: first && id === "handRolled" ? s.hour : s.hour + SHOP_SETUP_HOURS, groups: s.shop.groups.length || id === "handRolled" ? s.shop.groups : firstGroups(s) };
+  s.shop = { ...base, variant: id, owned: own, since: s.hour, readyAt: first && id === "handRolled" ? s.hour : s.hour + SHOP_SETUP_HOURS, groups: s.shop.groups.length || id === "handRolled" ? s.shop.groups : firstGroups(s), products: s.shop.products, productGroups: s.shop.productGroups };
   return { ok: true, id };
 }
 

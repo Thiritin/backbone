@@ -1,24 +1,27 @@
 import { chance, hashRng } from "../00-core/rng";
-import { dateOf, hourOf, isMonthStart, monthIndexOf, nowHours, yearOf } from "../00-core/time";
+import { runsHot } from "../60-infra/ha";
+import { POOL_LOW_PERF, sharesOf } from "../60-infra/vmwhere";
+import { hourOf, isMonthStart, monthIndexOf, nowHours, yearOf } from "../00-core/time";
 import { cpuModel, isFresh, skuOf, topBoost } from "../10-catalog/cpus";
 import { genOf, modelById } from "../10-catalog/hardware";
 import { balancerIn, isService, softwareById } from "../10-catalog/platforms";
-import { BACKUP_HOUR, slowTolerance } from "../10-catalog/usage";
+import { slowTolerance } from "../10-catalog/usage";
 import { channelOf, EDGE_HOWTO } from "../60-infra/channel";
-import { assignedKey, extendKey, licenceExpired, productOf, panelMachine, startTrial, updateKey } from "../60-infra/licence";
-import { LAPSE_GRACE_DAYS, tiersOf, topTier, type LicenceTier } from "../10-catalog/licence-tiers";
-import { APP_SUITE_FEE, licensingAt, serverOsById, type ServerOsId } from "../10-catalog/server-os";
+import { accountsOn, keyTiers, assignedKey, extendKey, productOf, panelMachine, startTrial, updateKey, yearly } from "../60-infra/licence";
+import { LAPSE_GRACE_DAYS, topTier, type LicenceTier } from "../10-catalog/licence-tiers";
+import { APP_SUITE_FEE, eraAt, serverOsById, type ServerOsId } from "../10-catalog/server-os";
 import { homeLineById } from "../20-world/datacenters";
 import type { Customer, Product } from "../30-customers/customers";
 import { bump, createTicket, deliverMail, slowed } from "../40-support/tickets";
 import { spendable } from "../46-finance/bank";
 import type { Device, GameState, Licence, Location } from "../50-state";
-import { backsUpCluster, controlPlaneUp, insideVm, isOwnVm, lostDisk, servedBy, vmOf, vmRoom, type Cluster, type Workload } from "../60-infra/cluster";
+import { insideVm, isOwnVm, lostDisk, servedBy, vmOf, type Cluster, type Workload } from "../60-infra/cluster";
 import { exitsOf } from "../60-infra/network";
+import { backupTarget, repoRoom, repoUsed, runBackups } from "../60-infra/backups";
 import { bootHours, customerWorkloads, liveServices } from "../60-infra/status";
 import { hostPerf, phpTickets } from "../60-infra/php";
 import { welcomeFriends } from "../90-actions/start";
-import { deviceVendor, installedCores, perCoreOf, raidUsable } from "../60-infra/status";
+import { deviceVendor, installedCores, perCoreOf } from "../60-infra/status";
 import { diskFill, nodeUsage } from "../60-infra/usage";
 import { addAwareness, addReview, announceReview, starsFor } from "../80-business/marketing";
 import type { SimEvent } from "../88-tick/tick";
@@ -30,8 +33,6 @@ export const LOSS_RESTORED_MAX = -40;
 export const REVIEW_CHANCE = 0.1;
 export const UNHAPPY_REVIEW_CHANCE = 0.2;
 export const UNHAPPY = 40;
-// Backup jobs start at BACKUP_HOUR, weekly ones on Sundays; the pool holds a full copy plus the extra days kept.
-export const BACKUP_POOL = 1.3;
 // GB moved per hour over a 1 Gbit/s link inside a zone and over the internet to another zone.
 export const LAN_GB_PER_HOUR = 450;
 export const WAN_GB_PER_HOUR = 45;
@@ -67,7 +68,7 @@ const machinesOf = (s: GameState, c: Cluster) => (c.vm ? s.workloads.filter((w) 
 
 // An in-place upgrade buys the new release in a once era; a monthly era already covers it.
 export const upgradeLicenseDue = (s: GameState, osId: ServerOsId): number => {
-  const era = licensingAt(serverOsById(osId), yearOf(s.hour));
+  const era = eraAt(serverOsById(osId), s.hour);
   return era.kind === "once" ? era.fee : 0;
 };
 
@@ -91,7 +92,7 @@ export const balancerFee = (s: GameState, c: Cluster): number =>
 export function licenseCost(s: GameState, c: Cluster): { panel: number; platform: number } {
   const machines = new Set(machinesOf(s, c).map((m) => m.id));
   const keys = s.licenses.filter((k) => k.machineId !== null && machines.has(k.machineId) && k.renewsAt !== null);
-  const sum = (ks: Licence[]) => Math.round(ks.reduce((n, k) => n + keyFee(s, k), 0) * 100) / 100;
+  const sum = (ks: Licence[]) => Math.round(ks.reduce((n, k) => n + keyFee(s, k) / (yearly(k.product, k.edition, s.hour) ? 12 : 1), 0) * 100) / 100;
   const extra = (c.appSuite ? APP_SUITE_FEE : 0) + balancerFee(s, c);
   return { panel: sum(keys.filter((k) => k.product === c.panel)), platform: sum(keys.filter((k) => k.product !== c.panel)) + extra };
 }
@@ -109,22 +110,15 @@ export function howToFactor(s: GameState, customerId: string): number {
   return factors.length ? factors.reduce((a, b) => a + b, 0) / factors.length : 1;
 }
 
-// Backup space a target cluster needs for every cluster backing up to it, and the free disk its nodes have.
+// Space the restore points written to a target cluster take, and the free disk its nodes have.
 export function backupPool(s: GameState, targetId: string): { need: number; room: number } {
   const target = s.clusters.find((c) => c.id === targetId);
-  const sources = new Set(s.clusters.filter((c) => c.backup.targetId === targetId && c.backup.every !== "off").map((c) => c.id));
-  const need = s.workloads.filter((w) => w.clusterId && sources.has(w.clusterId)).reduce((n, w) => n + w.diskGb * diskFill(s, w, s.hour) * BACKUP_POOL, 0);
-  const vm = target?.vm ? vmRoom(s, target) : null;
-  const room = vm ? vm.cap.diskGb - vm.used.diskGb : (target?.nodes ?? []).reduce((n, x) => {
-    const d = s.devices.find((y) => y.id === x.deviceId);
-    return d ? n + raidUsable(d) - nodeUsage(s, d.id).used.diskGb : n;
-  }, 0);
-  return { need, room };
+  return { need: repoUsed(s, targetId), room: target ? repoRoom(s, target) : 0 };
 }
 
-// Hours a restore of a workload takes from its cluster's backup target into zone az, its own cluster's by default.
+// Hours a restore of a workload takes from the repository that holds its newest good copy into zone az, its own cluster's by default.
 export function restoreHours(s: GameState, w: Workload, az?: string): number {
-  const c = s.clusters.find((x) => x.id === w.clusterId), target = c && s.clusters.find((x) => x.id === c.backup.targetId);
+  const c = s.clusters.find((x) => x.id === w.clusterId), target = c && backupTarget(s, c, w);
   const rate = target && target.az === (az ?? c.az) ? LAN_GB_PER_HOUR : WAN_GB_PER_HOUR;
   return Math.max(1, Math.ceil((w.diskGb * diskFill(s, w, w.backupAt ?? s.hour)) / rate));
 }
@@ -150,7 +144,8 @@ function finishSwitches(s: GameState, events: SimEvent[]) {
     // A licensed panel installed without a key runs its trial, once per machine.
     const host = kind === "panel" && topTier(to) ? panelMachine(c) : null;
     if (host && !assignedKey(s, host, to)) startTrial(s, host, to);
-    s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, switching: null, version: yearOf(s.hour), updatedAt: s.hour, ...(kind === "cloud" ? { platform: to } : { panel: to }), ...(fresh ? { channel: "stable" as const } : {}) } : x));
+    const licence = kind === "cloud" && to === "vmwhere" && fresh ? { tier: "essentials", trialUntil: null, lapsedAt: null } : undefined;
+    s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, switching: null, version: yearOf(s.hour), updatedAt: s.hour, ...(kind === "cloud" ? { platform: to, ...(licence && { licence }) } : { panel: to }), ...(fresh ? { channel: "stable" as const } : {}) } : x));
     events.push({ app: "Locations", key: fresh ? "event.installed" : "event.switched", params: { cluster: c.name, name: softwareById(to).name } });
     const d = fresh ? s.devices.find((x) => x.id === c.controlPlane) : undefined;
     if (d?.bootFrom === "usb") Object.assign(d, { bootFrom: "disk", bootUntil: nowHours(s) + bootHours(s, d) });
@@ -196,21 +191,6 @@ export function reportLoss(s: GameState, d: Device, lost: Workload[], hour: numb
   events.push({ app: "Locations", key: "event.dataLoss", params: { device: d.label ?? d.name, count: items.length } });
 }
 
-function runBackups(s: GameState, events: SimEvent[]) {
-  const d = dateOf(s.hour);
-  if (d.getUTCHours() !== BACKUP_HOUR) return;
-  for (const c of s.clusters) {
-    const target = s.clusters.find((x) => x.id === c.backup.targetId);
-    if (c.backup.every === "off" || !target || (c.backup.every === "weekly" && d.getUTCDay() !== 0)) continue;
-    const pool = backupPool(s, target.id);
-    if (!backsUpCluster(s, c, target) || !controlPlaneUp(s, target) || licenceExpired(s, target) || pool.need > pool.room) {
-      events.push({ app: "Locations", key: "event.backupFailed", params: { cluster: c.name, target: target.name } });
-      continue;
-    }
-    s.workloads = s.workloads.map((w) => (w.clusterId === c.id && !lostDisk(s, w) && w.busyUntil <= s.hour ? { ...w, backupAt: s.hour } : w));
-  }
-}
-
 // The speed a customer workload runs at, 1 when nothing slows it: the slowest of its node, its panel host and, for a game
 // server, one core.
 export function workloadPerf(s: GameState, w: Workload, product: Product | undefined, nodePerf: (deviceId: string) => number = (id) => nodeUsage(s, id).perf): number {
@@ -218,7 +198,10 @@ export function workloadPerf(s: GameState, w: Workload, product: Product | undef
   const vm = vmOf(s, w), at = w.deviceId ?? vm?.deviceId;
   if (!at || s.frozen.includes(at) || vm?.stopped) return 1;
   const c = s.clusters.find((x) => x.id === w.clusterId), node = product === "gameServer" ? s.devices.find((d) => d.id === at) : undefined;
-  return Math.min(nodePerf(at), hostPerf(s, c), node ? perCoreOf(node) : 1);
+  const base = Math.min(nodePerf(at), hostPerf(s, c), node ? perCoreOf(node) : 1), shares = sharesOf(c, w);
+  if (shares === "normal" || !runsHot(s, at)) return base;
+  // Under contention a high pool keeps its performance and a low pool gives some up.
+  return shares === "high" ? 1 : Math.min(base, POOL_LOW_PERF);
 }
 
 // Overloaded nodes slow every customer on them, web spaces in a panel VM included, and a PHP upgrade or a compromise slows
@@ -306,16 +289,20 @@ function billLicenses(s: GameState) {
   s.ledger = [...s.ledger, ...lines];
 }
 
-// The monthly fee of a subscription key: its edition's or its product's price per account, server, or core of its machine.
-// An unassigned key pays for one unit.
+// The fee per term of a subscription key: its edition's or its product's price per account, server, game server beyond the
+// free ones, or core of its machine, a server counting at least the era's minimum cores. An unassigned key pays for one unit.
 export function keyFee(s: GameState, k: Licence): number {
-  const tier = tiersOf(k.product).find((x) => x.id === k.edition);
+  const tier = keyTiers(k.product).find((x) => x.id === k.edition);
   const c = s.clusters.find((x) => x.panel === k.product && panelMachine(x) === k.machineId);
   if (tier) return c ? tierFee(s, c, tier) : tier.fee;
-  const era = licensingAt(productOf(k.product)!, yearOf(s.hour));
+  const era = eraAt(productOf(k.product)!, s.hour);
   if (era.kind === "once" || era.kind === "free") return 0;
   const m = [...s.devices, ...s.workloads].find((x) => x.id === k.machineId);
-  return Math.round(era.fee * (m && era.kind === "core" ? (isServer(m) ? installedCores(m) : m.vcpu) : 1) * 100) / 100;
+  const sockets = m && isServer(m) ? m.components.filter((p) => p.kind === "cpu").length : 0;
+  const units = !m ? 1
+    : era.kind === "core" ? (isServer(m) ? Math.max(installedCores(m), era.minCores ?? 0, (era.minCoresPerCpu ?? 0) * sockets) : m.vcpu)
+    : era.kind === "gameserver" ? Math.max(0, (c ? accountsOn(s, c) : 0) - (era.free ?? 0)) : 1;
+  return Math.round(era.fee * units * 100) / 100;
 }
 
 // Hourly: every subscription key that is due renews from the bank, one ledger line each and one receipt per product. A key
@@ -349,7 +336,7 @@ export function renewKeys(s: GameState): void {
 export function payLicence(s: GameState, c: Cluster, fee: number): void {
   if (fee <= 0) return;
   s.cash = Math.round((s.cash - fee) * 100) / 100;
-  s.ledger = [...s.ledger, { hour: s.hour, category: "licenses", key: "ledger.license", params: { cluster: c.name, name: softwareById(c.panel!).name }, amount: -fee }];
+  s.ledger = [...s.ledger, { hour: s.hour, category: "licenses", key: "ledger.license", params: { cluster: c.name, name: softwareById((c.panel ?? c.platform)!).name }, amount: -fee }];
 }
 
 // Hourly: finishes software switches, opens incident reports for lost disks, runs backups, slows overloaded nodes, bills licenses.

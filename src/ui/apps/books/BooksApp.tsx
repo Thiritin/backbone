@@ -1,9 +1,10 @@
-import type { ComponentType } from "react";
+import type { ComponentType, CSSProperties } from "react";
 import { isUnpaid, synced } from "../../../sim/45-billing/billing";
 import { hasModule } from "../../../sim/10-catalog/modules";
 import { unsynced } from "../../../sim/80-business/shoplink";
 import { importFromShop } from "../../../sim/90-actions/shoplink";
 import { overdue } from "../../../sim/46-finance/payables";
+import { booksHost, currentVendor } from "../../../sim/80-business/bookkeeping";
 import type { GameState } from "../../../sim/50-state";
 import { t } from "../../../i18n/en";
 import { useSessionState } from "../../session";
@@ -14,6 +15,7 @@ import { InvoicesTab } from "./InvoicesTab";
 import { QuotesTab } from "./QuotesTab";
 import { NEW } from "./NewCustomer";
 import { PayablesTab } from "./PayablesTab";
+import { ProductsTab } from "./ProductsTab";
 import { RemindersTab } from "./RemindersTab";
 import { Register } from "./Register";
 import { useBooks } from "./view";
@@ -32,6 +34,7 @@ const TABS: { id: string; count: (s: GameState) => number; body: ComponentType<{
   { id: "bank", count: unmatched, body: BankTab },
   { id: "reminders", count: late, body: RemindersTab },
   { id: "payables", count: (s) => s.payables.filter((p) => overdue(s, p)).length, body: PayablesTab },
+  { id: "products", count: () => 0, body: ProductsTab },
 ];
 
 export function BooksApp() {
@@ -52,8 +55,10 @@ export function BooksApp() {
   });
   const current = TABS.find((x) => x.id === tab) ?? TABS[2];
   const Body = current.body;
+  const v = currentVendor(game), skin = v?.skin;
   return (
-    <div className="books">
+    <div className="books" style={skin && { "--accent": skin.accent, "--bk-bar": skin.bar, "--bk-ink": skin.ink } as CSSProperties}>
+      {v && skin?.web && <div className="books-web num">{`https://www.${booksHost(v)}/app`}</div>}
       <div className="books-top">
       <div className="books-bar tabs" role="tablist" aria-label={t("books.title")}>
         {TABS.map((x) => {
@@ -66,9 +71,9 @@ export function BooksApp() {
         })}
       </div>
       {importing && <button className="btn books-import" onClick={() => act(importFromShop)}>{t("shop-link.import")}{waiting ? <span className="tab-count num">{waiting}</span> : null}</button>}
-      <button className="btn books-register-open" aria-expanded={register} onClick={() => setRegister(!register)}>{t("vendor-sites.register")}</button>
+      {v?.keys !== false && <button className="btn books-register-open" aria-expanded={register} onClick={() => setRegister(!register)}>{t("vendor-sites.register")}</button>}
       </div>
-      {register && <Register onClose={() => setRegister(false)} />}
+      {register && v?.keys !== false && <Register onClose={() => setRegister(false)} />}
       <div className="books-body" role="tabpanel">
         <Body key={`${current.id}:${focus}`} focus={focus} />
       </div>

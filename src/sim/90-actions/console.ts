@@ -124,9 +124,18 @@ const atInstaller = (s: GameState, machineId: string): Machine | string => {
 // after, a VM ejects its ISO. The stick and an ISO each hold one version of one OS. A server keeps the network
 // setting the installer chose, and its old files go with the old disk contents. A licensed OS takes the typed key or
 // runs its trial.
-export function installOs(s: GameState, machineId: string, osId: ServerOsId, confirm?: string, iface: IfaceConfig = { mode: "dhcp" }, key?: string): ActionResult {
+// The error key for a hostname the installer cannot take: RFC 1123 labels, lowercase, unique among servers and VMs.
+export function badHostname(s: GameState, machineId: string, name: string): string | null {
+  if (!/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/.test(name)) return "error.badHostname";
+  const taken = [...s.devices, ...s.workloads].some((x) => x.id !== machineId && x.hostname === name);
+  return taken ? "error.hostnameTaken" : null;
+}
+
+export function installOs(s: GameState, machineId: string, osId: ServerOsId, confirm?: string, iface: IfaceConfig = { mode: "dhcp" }, key?: string, hostname?: string): ActionResult {
   const m = atInstaller(s, machineId);
   if (typeof m === "string") return fail(m);
+  const badName = hostname === undefined ? null : badHostname(s, machineId, hostname);
+  if (badName) return fail(badName);
   if (!SERVER_OS.some((o) => o.id === osId)) return fail("error.unknownOs");
   const media = isDevice(m) ? stickOs(s, m.id) : m.media;
   if (!media || imageParts(media).id !== osId) return fail("error.otherMedia");
@@ -143,10 +152,11 @@ export function installOs(s: GameState, machineId: string, osId: ServerOsId, con
   setMachine(s, machineId, () => ({ os: { id: osId, version, installedAt: done }, software: [] }));
   releaseMachine(s, machineId);
   licenseInstall(s, machineId, osId, version, key);
+  const named = hostname === undefined ? {} : { hostname };
   if (isDevice(m)) {
-    Object.assign(m, { bootFrom: "disk", stuck: false, bootUntil: done + BOOT_HOURS + os.bootMinutes / 60, iface });
+    Object.assign(m, { bootFrom: "disk", stuck: false, bootUntil: done + BOOT_HOURS + os.bootMinutes / 60, iface }, named);
     delete s.files[m.id];
-  } else s.workloads = s.workloads.map((w) => (w.id === machineId ? { ...w, media: undefined } : w));
+  } else s.workloads = s.workloads.map((w) => (w.id === machineId ? { ...w, media: undefined, ...named } : w));
   return { ok: true };
 }
 

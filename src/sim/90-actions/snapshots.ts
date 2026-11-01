@@ -5,6 +5,7 @@ import type { GameState } from "../50-state";
 import { controlPlaneUp, hostsOfVm, isOwnVm, lostDisk, type Workload } from "../60-infra/cluster";
 import type { ActionResult } from "./hardware";
 import { settleLoss } from "./vms";
+import { quorumBlock } from "../60-infra/quorum";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 // A reverted VM is down as long as a resize restart.
@@ -29,6 +30,7 @@ function vmFor(s: GameState, workloadId: string): Workload | string {
 
 // Freezes the VM's disk and, for an own VM, its finished OS and software installs.
 export function takeSnapshot(s: GameState, workloadId: string): ActionResult & { id?: string } {
+  { const q = quorumBlock(s, s.clusters.find((x) => x.id === s.workloads.find((w) => w.id === workloadId)?.clusterId)); if (q) return fail(q); }
   const w = vmFor(s, workloadId);
   if (typeof w === "string") return fail(w);
   if (lostDisk(s, w)) return fail("error.lostDisk");
@@ -46,6 +48,7 @@ export function takeSnapshot(s: GameState, workloadId: string): ActionResult & {
 // Returns the VM to the snapshot: newer snapshots go, this one starts an empty delta, and the VM restarts. A snapshot older
 // than a pulled plug's corruption brings the data back.
 export function revertSnapshot(s: GameState, workloadId: string, snapshotId: string): ActionResult {
+  { const q = quorumBlock(s, s.clusters.find((x) => x.id === s.workloads.find((w) => w.id === workloadId)?.clusterId)); if (q) return fail(q); }
   const w = vmFor(s, workloadId);
   if (typeof w === "string") return fail(w);
   const at = w.snapshots?.findIndex((x) => x.id === snapshotId) ?? -1, snap = w.snapshots?.[at];

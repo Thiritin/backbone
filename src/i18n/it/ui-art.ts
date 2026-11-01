@@ -11,6 +11,7 @@ export default {
   "art.unplugPsu": (p) => `Scollega alimentatore ${p.n}`,
   "art.plugInPsu": (p) => `Collega alimentatore ${p.n}`,
   "art.plugInMonitor": () => "Collega monitor",
+  "art.portDsl": () => "DSL",
   "art.powerInlet": () => "Ingresso corrente",
   "art.psu": (p) => `Alimentatore ${p.n}`,
   "art.fan": (p) => `Ventola ${p.n}`,

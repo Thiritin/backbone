@@ -134,7 +134,7 @@ export function advisorChecks(s: GameState, c: Cluster): { score: number; checks
   }
   if (updateDue(s, c)) checks.push({ kind: "update", penalty: 10, count: 1 });
   if (phpDue(s, c)) checks.push({ kind: "php", penalty: 10, count: 1 });
-  if (c.backup.every === "off") checks.push({ kind: "backup", penalty: 15, count: 1 });
+  if (!c.jobs.length) checks.push({ kind: "backup", penalty: 15, count: 1 });
   if (family && autoUpdates(softwareById(family), yearOf(s.hour)) && !c.autoUpdate) checks.push({ kind: "auto", penalty: 5, count: 1 });
   if (s.security.offline.includes(c.id)) checks.push({ kind: "offline", penalty: 5, count: 1 });
   return { score: Math.max(0, Math.min(100, 100 - checks.reduce((n, x) => n + x.penalty, 0))), checks };
