@@ -2,6 +2,7 @@ import { registrarById, tierFor } from "../10-catalog/registrars";
 import { domainOf, REGISTRIES, register } from "../30-customers/registry";
 import { beginTransfer, TRANSFER_MINUTES } from "../30-customers/registrar";
 import { taken } from "../30-customers/domains";
+import { providerDomain } from "../80-business/browser";
 import { yearOf } from "../00-core/time";
 import { techsAt, OP_TASK, queueOp } from "../47-staff/technicians";
 import type { GameState } from "../50-state";
@@ -26,7 +27,7 @@ export function signRegistrar(s: GameState, id: string): ActionResult {
 export function companyDomainError(s: GameState, name: string): string | null {
   const tld = Object.keys(REGISTRIES).find((t) => name.endsWith(`.${t}`)), label = tld ? name.slice(0, -tld.length - 1) : "";
   if (!tld || label.length < 3 || label.length > 40 || !/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/.test(label)) return "error.domainInvalid";
-  return domainOf(s, name) || taken(s).has(name) ? "error.domainTaken" : null;
+  return domainOf(s, name) || taken(s).has(name) || providerDomain(name) ? "error.domainTaken" : null;
 }
 
 // Registers the company's own domain through the registrar under contract; it joins the domains under management.
