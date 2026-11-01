@@ -39,10 +39,10 @@ export function BooksApp() {
   useFocus("Books", (f) => {
     if (f.kind === "register") return setRegister(true);
     const to = f.kind === "invoice" ? (game.invoices.find((i) => i.id === f.id && isUnpaid(i) && i.status === "overdue") ? "reminders" : "invoices")
-      : f.kind === "customer" || f.kind === "newCustomer" ? "customers" : f.kind === "quote" ? "quotes" : null;
+      : f.kind === "customer" || f.kind === "newCustomer" ? "customers" : f.kind === "quote" ? "quotes" : f.kind === "tab" ? f.id : null;
     if (!to) return;
     setTab(to);
-    setFocus(f.kind === "newCustomer" ? `${NEW}${f.id}` : f.id);
+    setFocus(f.kind === "newCustomer" ? `${NEW}${f.id}` : f.kind === "tab" ? null : f.id);
   });
   const current = TABS.find((x) => x.id === tab) ?? TABS[2];
   const Body = current.body;

@@ -454,6 +454,7 @@ export const en: Record<string, (p: Params) => string> = {
   "os.current": () => "Pear OS is up to date",
   "doc.untitled": () => "Untitled",
   "guide.step.register": () => "Register your company",
+  "guide.step.payBill": () => "Pay your first bill",
   "guide.step.company": () => "Style your company",
   "guide.step.buyServer": () => "Buy a server",
   "guide.step.mountServer": () => "Mount and power it",

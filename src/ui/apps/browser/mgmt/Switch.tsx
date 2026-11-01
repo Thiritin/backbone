@@ -8,10 +8,10 @@ import { addressOf } from "../../../../sim/60-infra/lan";
 import { MGMT_VLAN, vlanOf, vlansIn } from "../../../../sim/60-infra/switches";
 import { setPortGroup } from "../../../../sim/90-actions/hardware";
 import { saveSwitchConfig, setPortVlan } from "../../../../sim/90-actions/switches";
-import { useStore } from "../../../store";
 import { devName, portName, speed } from "../../hw";
 import "../consoles/consoles.css";
 import "./switch.css";
+import { usePageAct } from "../pageAct";
 
 // Each maker's web interface; other makers show the plain one under the model's name.
 const LOOKS: Record<string, { look: string; title: string; frame: "side" | "top" }> = {
@@ -69,7 +69,7 @@ function Ports({ game, d }: { game: GameState; d: Device }) {
 }
 
 function Groups({ d }: { d: Device }) {
-  const act = useStore((s) => s.act), m = modelById(d.model);
+  const act = usePageAct(), m = modelById(d.model);
   const [sel, setSel] = useState<number[]>([]);
   const toggle = (i: number) => setSel((cur) => (cur.includes(i) ? cur.filter((x) => x !== i) : [...cur, i].sort((a, b) => a - b)));
   const run = (ports: number[]) => { if (act(setPortGroup, d.id, ports).ok) setSel([]); };
@@ -98,7 +98,7 @@ function Groups({ d }: { d: Device }) {
 }
 
 function VlanRow({ d, port }: { d: Device; port: number }) {
-  const act = useStore((s) => s.act), v = vlanOf(d, port);
+  const act = usePageAct(), v = vlanOf(d, port);
   const [untagged, setUntagged] = useState(String(v.untagged)), [tagged, setTagged] = useState(list(v.tagged));
   const changed = untagged !== String(v.untagged) || tagged !== list(v.tagged);
   const apply = () => {
@@ -142,7 +142,7 @@ function Vlans({ d }: { d: Device }) {
 }
 
 function Save({ d }: { d: Device }) {
-  const act = useStore((s) => s.act), saved = same(d);
+  const act = usePageAct(), saved = same(d);
   return (
     <div className="cx-tools">
       <span className={`cx-state ${saved ? "ok" : "warn"}`}>{saved ? t("switch.saved") : t("switch.unsaved")}</span>

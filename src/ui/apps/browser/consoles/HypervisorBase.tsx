@@ -34,6 +34,7 @@ import { ChangePackage, HYPERVISOR_ORDERS, hostChoices, OrderPicker, planChoices
 import { orderChoices } from "../../../../sim/30-market/manual";
 import { provisionOrder } from "../../../../sim/90-actions/orders";
 import "./hypervisor.css";
+import { usePageAct } from "../pageAct";
 
 // Toolbar glyphs; the consoles draw no images.
 export const GLYPH: Record<string, string> = {
@@ -54,7 +55,7 @@ export const isoName = (img: OsImage) => `${img.replace("@", "-")}.iso`.replace(
 
 // An own VM's size, changed through resizeVm.
 function SizeForm({ w, done }: { w: Workload; done: () => void }) {
-  const act = useStore((s) => s.act), [size, setSize] = useState<Resources>({ vcpu: w.vcpu, ramGb: w.ramGb, diskGb: w.diskGb });
+  const act = usePageAct(), [size, setSize] = useState<Resources>({ vcpu: w.vcpu, ramGb: w.ramGb, diskGb: w.diskGb });
   return (
     <div className="cx-inline">
       <SizeFields size={size} set={setSize} />
@@ -73,7 +74,7 @@ export function SizeFields({ size, set, labels = [t("browser-consoles-1.vcpu"), 
 
 // Every VM of the cluster with the actions its state allows; panel is the open form under it, dialog the hand work popover.
 export function useVms(game: GameState, c: Cluster, f: ConsoleFeatures): { vms: Vm[]; dialog: ReactNode } {
-  const act = useStore((s) => s.act), openConsole = useStore((s) => s.openConsole), hand = useHandWork(), holds = useHolds(game, c, f);
+  const act = usePageAct(), openConsole = useStore((s) => s.openConsole), hand = useHandWork(), holds = useHolds(game, c, f);
   const [open, setOpen] = useState<{ id: string; kind: string } | null>(null), close = () => setOpen(null);
   const vms = game.workloads.filter((w) => w.clusterId === c.id).map((w): Vm => {
     const st = vmState(game, w), [state, tone] = VM_STATE[st], host = hostOfVm(game, w.id), own = isOwnVm(w), label = vmLabel(game, w);
@@ -139,7 +140,7 @@ export function vmFacts(_game: GameState, v: Vm): Record<"status" | "node" | "ip
 
 // Where a VM's disk can move: its node and every working datastore of the cluster with room, each with the hours offline.
 function DiskMove({ game, w, c, done }: { game: GameState; w: Workload; c: Cluster; done: () => void }) {
-  const act = useStore((s) => s.act), node = game.devices.find((d) => d.id === w.deviceId), size = w.diskGb + deltaGb(w);
+  const act = usePageAct(), node = game.devices.find((d) => d.id === w.deviceId), size = w.diskGb + deltaGb(w);
   const to = [
     ...(w.datastore && node && nodeTakes(game, node, { ...w, diskGb: size, datastore: undefined }, w) ? [{ id: null, name: t("browser-consoles-1.local") }] : []),
     ...c.datastores.filter((x) => x.deviceId !== w.datastore && datastoreUp(game, x) && datastoreFits(game, x.deviceId, size)).map((x) => ({ id: x.deviceId, name: nodeName(game, x.deviceId) })),
@@ -159,7 +160,7 @@ function DiskMove({ game, w, c, done }: { game: GameState; w: Workload; c: Clust
 
 // Where a template's clone goes: the host the scheduler picks or an active, working host with room, with the copy hours.
 function Clone({ game, w, c, done }: { game: GameState; w: Workload; c: Cluster; done: () => void }) {
-  const act = useStore((s) => s.act), size = withDatastore(game, c, { vcpu: w.vcpu, ramGb: w.ramGb, diskGb: w.diskGb }), hours = cloneHours(game, w);
+  const act = usePageAct(), size = withDatastore(game, c, { vcpu: w.vcpu, ramGb: w.ramGb, diskGb: w.diskGb }), hours = cloneHours(game, w);
   const hosts = c.nodes.filter((n) => n.state === "active" && working(game, n.deviceId)).map((n) => game.devices.find((d) => d.id === n.deviceId)!).filter((d) => d && nodeTakes(game, d, size));
   const to = [{ id: undefined, name: t("browser-consoles-1.automatic") }, ...hosts.map((d) => ({ id: d.id, name: nodeName(game, d.id) }))];
   return (
@@ -172,7 +173,7 @@ function Clone({ game, w, c, done }: { game: GameState; w: Workload; c: Cluster;
 
 // The ISO loaded in an own VM, picked from the downloaded images.
 export function MediaMenu({ game, v, label = t("browser-consoles-1.media"), none = t("browser-consoles-1.noMedia"), className = "cx-field" }: { game: GameState; v: Vm; label?: string; none?: string; className?: string }) {
-  const act = useStore((s) => s.act);
+  const act = usePageAct();
   if (!v.own) return null;
   return (
     <label className={className}>{label}
@@ -189,7 +190,7 @@ export interface Step { id: string; label: string; body: ReactNode }
 // The new VM a wizard books: its size, the ISO it boots and, on a VMwhere cluster with the App Suite, the software it
 // deploys with. create returns the new VM's id.
 export function useNewVm(game: GameState, c: Cluster, order?: string) {
-  const act = useStore((s) => s.act), [size, setSize] = useState<Resources>(PANEL_VM_SIZE);
+  const act = usePageAct(), [size, setSize] = useState<Resources>(PANEL_VM_SIZE);
   const choices = orderChoices(game, HYPERVISOR_ORDERS), [ticket, setTicket] = useState(choices.some((o) => o.ticketId === order) ? order! : "");
   const [pkg, setPkg] = useState(""), [route, setRoute] = useState(c.id), picked = choices.find((o) => o.ticketId === ticket);
   const hosts = hostChoices(game, c);
@@ -252,7 +253,7 @@ export const windoorsLicence = (year: number) => { const e = licensingAt(serverO
 
 // The App Suite tile: bought and cancelled per cluster, with its monthly fee.
 export function AppSuiteTile({ c, className = "cx-suite" }: { c: Cluster; className?: string }) {
-  const act = useStore((s) => s.act);
+  const act = usePageAct();
   if (c.platform !== "vmwhere") return null;
   return (
     <div className={className}>
@@ -268,7 +269,7 @@ export function AppSuiteTile({ c, className = "cx-suite" }: { c: Cluster; classN
 
 // The paid balancer edition of the cluster's hypervisor: bought and cancelled per cluster, billed per node.
 export function BalancerTile({ game, c, className = "cx-suite" }: { game: GameState; c: Cluster; className?: string }) {
-  const act = useStore((s) => s.act), b = c.platform ? balancerIn(softwareById(c.platform), yearOf(game.hour)) : null;
+  const act = usePageAct(), b = c.platform ? balancerIn(softwareById(c.platform), yearOf(game.hour)) : null;
   if (!b || b.fee === 0) return null;
   return (
     <div className={className}>
@@ -282,7 +283,7 @@ export function BalancerTile({ game, c, className = "cx-suite" }: { game: GameSt
 
 // Cordon, drain, evacuate and uncordon one node of this software installation; other software on the server is untouched.
 export function NodeActions({ c, n, className }: { c: Cluster; n: ClusterNode; className: string }) {
-  const act = useStore((s) => s.act);
+  const act = usePageAct();
   return <>
     {n.state === "active"
       ? <button className={className} onClick={() => act(cordon, n.deviceId, c.id)}>{t("browser-consoles-1.cordon")}</button>
@@ -294,7 +295,7 @@ export function NodeActions({ c, n, className }: { c: Cluster; n: ClusterNode; c
 
 // The nodes with their usage; where the hypervisor clusters this year, Add node, Remove node and the HA flags.
 export function NodeList({ game, c, f, className = "cx-table" }: { game: GameState; c: Cluster; f: ConsoleFeatures; className?: string }) {
-  const act = useStore((s) => s.act), join = f.cluster ? joinableServers(game, c.id) : [], [adding, setAdding] = useState(false);
+  const act = usePageAct(), join = f.cluster ? joinableServers(game, c.id) : [], [adding, setAdding] = useState(false);
   const ha = f.cluster && game.unlocks.includes(HA_SKILL);
   const flags: [keyof Ha, string][] = [["live", t("browser-consoles-1.liveMigration")], ["balance", t("browser-consoles-1.loadBalancing")], ["failover", t("browser-consoles-1.failover")]];
   return (

@@ -46,7 +46,7 @@ const THEME_KEY = "backbone.theme";
 export interface WallpaperPref { pick: string; custom: string | null }
 const WALLPAPER_KEY = "backbone.wallpaper";
 
-interface Store {
+export interface Store {
   game: GameState;
   speed: Speed;
   windows: Win[];
@@ -74,6 +74,8 @@ interface Store {
   advance: (hours: number) => void;
   // Runs a 90-actions function on a copy of the game with these arguments; a success is kept and logged for replays.
   act: <A extends unknown[]>(fn: (s: GameState, ...args: A) => ActionResult, ...args: A) => ActionResult;
+  // act for pages that show the error themselves.
+  attempt: <A extends unknown[]>(fn: (s: GameState, ...args: A) => ActionResult, ...args: A) => ActionResult;
   setSpeed: (s: Speed) => void;
   openApp: (app: string, focus?: Omit<Focus, "n">) => void;
   // Opens a server's console in its own window, one per server.
@@ -265,6 +267,14 @@ export const useStore = create<Store>((set, get) => ({
     else set({ game });
   },
   act: (fn, ...args) => {
+    const r = get().attempt(fn, ...args);
+    if (!r.ok) {
+      lastBanner = Date.now();
+      get().notify("Settings", t("action.failed.title"), t(r.error));
+    }
+    return r;
+  },
+  attempt: (fn, ...args) => {
     const game = structuredClone(get().game);
     const name = actionName(fn);
     if (!name) console.error(`${fn.name || "An action"} is not in ACTIONS, so replays miss it.`);
@@ -273,11 +283,7 @@ export const useStore = create<Store>((set, get) => ({
       if (booted(get().game, game)) setTimeout(() => uiSound("post"), 1200);
       if (game.media.stick.in !== get().game.media.stick.in) uiSound(game.media.stick.in ? "plug" : "unplug");
       set({ game });
-    } else {
-      uiSound("error");
-      lastBanner = Date.now();
-      get().notify("Settings", t("action.failed.title"), t(r.error));
-    }
+    } else uiSound("error");
     return r;
   },
   setSpeed: (speed) => set({ speed }),

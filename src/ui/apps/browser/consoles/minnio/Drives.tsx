@@ -1,14 +1,14 @@
 import { t } from "../../../../../i18n/en";
 import { ecHealth, ecParity } from "../../../../../sim/60-infra/netsvc-storage";
 import { setParity } from "../../../../../sim/90-actions/netsvc-storage";
-import { useStore } from "../../../../store";
 import type { PanelProps } from "../PanelBase";
+import { usePageAct } from "../../pageAct";
 
 const STATE = { healthy: "netsvc.ecHealthy", degraded: "netsvc.ecDegraded", offline: "netsvc.ecOffline" } as const;
 
 // Drive states of the cluster, the health of its erasure set and the parity that sets how many drives may fail.
 export function Drives({ game, c }: { game: PanelProps["game"]; c: PanelProps["c"] }) {
-  const act = useStore((s) => s.act), h = ecHealth(game, c.id);
+  const act = usePageAct(), h = ecHealth(game, c.id);
   return (
     <section className="mn-drives">
       <h2>{t("netsvc.drives")}</h2>

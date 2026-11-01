@@ -13,8 +13,6 @@ export default {
   "ledger.savings": () => "Überweisung von deinem Privatkonto: Ersparnisse",
   "bank.savings": () => "Ersparnisse",
   "bank.savings.from": () => "Privatkonto",
-  "bank.office.payee": () => "Gewerbeamt",
-  "bank.office.reference": (p) => `Gewerbeanmeldung ${p.name}`,
   "error.hasBank": () => "Die Firma hat schon ein Bankkonto.",
   "sim.index.cat.banks": () => "Banken",
   "sim.index.bank": () => "Geschäftskonten und Online-Banking",

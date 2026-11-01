@@ -16,8 +16,7 @@ export interface StandingOrder { id: string; name: string; account: string; amou
 // A transfer the player sent; the money left at hour and reaches the payee at arriveAt.
 export interface Outgoing { id: string; hour: number; arriveAt: number; name: string; account: string; amount: number; reference: string; payableId?: string; arrived?: true }
 // What the transfer form holds; account is an IBAN, or an account number with its bank code before IBAN.
-// registration: the trade office application this transfer pays the fee for.
-export interface Draft { name: string; account: string; code?: string; amount: number; reference: string; payableId?: string; registration?: { name: string; owner: string; form: string } }
+export interface Draft { name: string; account: string; code?: string; amount: number; reference: string; payableId?: string }
 // A transfer waiting for its TAN: the list position asked for (iTAN), the code texted (mTAN) and the minute the text arrives.
 // day is set when the TAN confirms a standing order for that day of the month instead of a transfer.
 export interface Pending { draft: Draft; index: number | null; code: string | null; sendAt: number | null; day?: number }

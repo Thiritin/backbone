@@ -17,6 +17,7 @@ import { useStore } from "../../../store";
 import { stamp } from "../../support/labels";
 import "../consoles/consoles.css";
 import "./ipmi.css";
+import { usePageAct } from "../pageAct";
 
 // Each brand's controller keeps its own look and page structure whatever the desktop theme.
 export type BmcLook = "idraq" | "ilol" | "ipmi" | "xclarify";
@@ -35,7 +36,7 @@ const RATES: [RebuildRate, string][] = [["low", t("misc1.ipmi.low")], ["medium",
 
 // The array as the BIOS set it up, with the rebuild rate the controller can change while the server runs.
 function StorageTab({ game, d }: { game: GameState; d: Device }) {
-  const act = useStore((s) => s.act);
+  const act = usePageAct();
   const rb = d.rebuild, done = rb ? Math.max(0, Math.min(1, 1 - (rb.doneAt - game.hour) / rebuildHours(d))) : 0;
   return (
     <>
@@ -64,7 +65,7 @@ function Brand({ brand, size = 22 }: { brand: string; size?: number }) {
 }
 
 function PowerTab({ game, d }: { game: GameState; d: Device }) {
-  const act = useStore((s) => s.act);
+  const act = usePageAct();
   const state = !d.on ? t("misc1.ipmi.off") : booting(game, d) ? t("misc1.ipmi.booting") : halting(d) ? t("misc1.ipmi.shuttingDown") : t("misc1.ipmi.on");
   return (
     <>
@@ -107,7 +108,7 @@ function SensorsTab({ game, d }: { game: GameState; d: Device }) {
 
 // The images the controller can present to the server as a virtual drive.
 function MediaTab({ game, d }: { game: GameState; d: Device }) {
-  const act = useStore((s) => s.act), images = mountableImages(game);
+  const act = usePageAct(), images = mountableImages(game);
   return (
     <table className="bmc-table">
       <thead><tr><th>{t("readouts.media.image")}</th><th>{t("misc1.ipmi.reading")}</th><th /></tr></thead>

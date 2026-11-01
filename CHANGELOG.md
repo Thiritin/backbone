@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- Registering your company at the trade office now goes through at once and charges the fee only once, by a letter that arrives the same day, and paying it is the next step in Getting started.
+- Errors on web pages, such as a wrong TAN or a missing owner name, now appear on the page next to the field instead of as a notification.
 - Every bank now has a name of its own and a website laid out its own way, and each bank redesigns its site with a modern look at some point between 2010 and 2016.
 - Letters in the Post app now arrive as full A4 pages with each sender's letterhead, crest or logo, the address window, reference block and footer of an official German letter.
 - Authorities that seize servers or send legal requests now appear under their name in your chosen language.

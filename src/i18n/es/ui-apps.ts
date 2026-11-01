@@ -233,6 +233,7 @@ export default {
   "apps.guide.saving": () => "Guardado",
   "apps.guide.savingText": () => "El juego se guarda solo en este navegador. El menú del logotipo, a la izquierda del todo en la barra de menús, exporta tu partida a un archivo, importa una partida y borra tu progreso.",
   "apps.guide.step.register": () => "Registra tu empresa en la oficina de comercio del navegador.",
+  "apps.guide.step.payBill": () => "La oficina de comercio envía la tasa de registro por carta. Págala desde la pestaña Facturas recibidas en Books.",
   "apps.guide.step.company": () => "Elige el nombre, el logotipo y el color de tu empresa.",
   "apps.guide.step.buyServer": () => "Compra tu primer servidor en la tienda.",
   "apps.guide.step.mountServer": () => "Móntalo en un rack y enciéndelo en Ubicaciones.",

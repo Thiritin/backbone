@@ -14,6 +14,7 @@ import { Actions, Backups, erasFrom, eraAt, Facts, LoginForm, useSoftware, type 
 import { parseCreate } from "../../../../../sim/80-business/consoles";
 import { PackagesScreen } from "../PackageForms";
 import "./hypervee.css";
+import { usePageAct } from "../../pageAct";
 
 // docs/design/software.md, section 9: the glossy MMC from 2008, the same MMC with flat chrome from 2012.
 const ERAS = erasFrom(2008, 2012);
@@ -40,7 +41,7 @@ const checkpointName = (name: string, at: number) => {
 
 // The Checkpoints pane under the VM list and in the VM's settings: take, apply and delete.
 function Checkpoints({ v }: { v: Vm }) {
-  const act = useStore((s) => s.act), list = v.w.snapshots ?? [];
+  const act = usePageAct(), list = v.w.snapshots ?? [];
   return (
     <>
       <table className="cx-table">

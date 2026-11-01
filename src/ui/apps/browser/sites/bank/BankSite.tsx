@@ -11,8 +11,8 @@ import type { GameState } from "../../../../../sim/50-state";
 import { applyCard, applyOverdraft, openBankAccount, cancelTransfer, confirmTransfer, deleteStandingOrder, setTanMethod, startStandingOrder, startTransfer } from "../../../../../sim/90-actions/bank";
 import { takeLoan } from "../../../../../sim/90-actions/billing";
 import { readSession, writeSession } from "../../../../session";
-import { useStore } from "../../../../store";
 import "./bank-site.css";
+import { useFieldAct, usePageAct } from "../../pageAct";
 
 type Go = (url: string) => void;
 const day = (hour: number) => dateOf(hour).toLocaleDateString(LOCALE, { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" });
@@ -67,7 +67,7 @@ function Box({ title, children }: { title: string; children: ReactNode }) {
 }
 
 function Login({ game, bank, onIn, onOpen }: { game: GameState; bank: Bank; onIn: () => void; onOpen: () => void }) {
-  const act = useStore((s) => s.act);
+  const act = usePageAct();
   const [number, setNumber] = useState(""), [pin, setPin] = useState(""), [failed, setFailed] = useState(false);
   const submit = () => {
     const ok = game.bank?.id === bank.id && number.trim() === game.bank.number && pin.trim() === game.bank.pin;
@@ -157,8 +157,12 @@ function Statement({ game }: { game: GameState }) {
   );
 }
 
+// Shown under the field the bank turned down, or under the form.
+const FIELD: Record<string, string> = { "error.payeeName": "name", "error.payeeAccount": "account", "error.badAmount": "amount", "error.noCash": "amount" };
+
 function Transfer({ game, bank, prefill, go, standing }: { game: GameState; bank: Bank; prefill: URLSearchParams; go: Go; standing?: boolean }) {
-  const act = useStore((s) => s.act);
+  const [act, error] = useFieldAct();
+  const at = error ? FIELD[error] ?? "form" : null, note = (field: string) => at === field && <p className="bks-error" role="alert">{t(error!)}</p>;
   const b = game.bank!, iban = ibanEra(game);
   const [name, setName] = useState(prefill.get("name") ?? "");
   const [account, setAccount] = useState(prefill.get("account") ?? "");
@@ -194,6 +198,7 @@ function Transfer({ game, bank, prefill, go, standing }: { game: GameState; bank
         <form className="bks-form" onSubmit={(e) => { e.preventDefault(); if (act(confirmTransfer, tan).ok) setSent(true); setTan(""); }}>
           {b.tan === "itan" && <label>{t("bank.site.tanNo", { n: String(p.index! + 1).padStart(3, "0") })}<input inputMode="numeric" autoFocus value={tan} onChange={(e) => setTan(e.target.value)} /></label>}
           {b.tan === "mtan" && <label>{t("bank.site.mtan")}<input inputMode="numeric" autoFocus value={tan} onChange={(e) => setTan(e.target.value)} /></label>}
+          {note("form")}
           {b.wrong > 0 && <p className="bks-error">{t("bank.site.wrongLeft", { n: WRONG_LIMIT - b.wrong })}</p>}
           <div className="bks-row">
             <button className="bks-btn primary">{b.tan === "itan" || b.tan === "mtan" ? t("bank.site.send") : t(`bank.site.confirm.${b.tan}`)}</button>
@@ -208,15 +213,19 @@ function Transfer({ game, bank, prefill, go, standing }: { game: GameState; bank
     <Box title={title}>
       <form className="bks-form" onSubmit={(e) => { e.preventDefault(); if (standing) act(startStandingOrder, draft(), Number(orderDay)); else act(startTransfer, draft()); }}>
         <label>{t("bank.site.payee")}<input value={name} onChange={(e) => setName(e.target.value)} /></label>
+        {note("name")}
         {iban
-          ? <label>{t("bank.site.iban")}<input className="num" value={account} onChange={(e) => setAccount(e.target.value)} /></label>
+          ? <><label>{t("bank.site.iban")}<input className="num" value={account} onChange={(e) => setAccount(e.target.value)} /></label>{note("account")}</>
           : <>
             <label>{t("bank.site.payeeAccount")}<input inputMode="numeric" className="num" value={account} onChange={(e) => setAccount(e.target.value)} /></label>
             <label>{t("bank.site.code")}<input inputMode="numeric" className="num" value={code} onChange={(e) => setCode(e.target.value)} /></label>
+            {note("account")}
           </>}
         <label>{t("bank.site.amount")}<input inputMode="decimal" className="num" value={amount} onChange={(e) => setAmount(e.target.value)} /></label>
+        {note("amount")}
         <label>{t("bank.site.reference")}<input value={reference} maxLength={140} onChange={(e) => setReference(e.target.value)} /></label>
         {standing && <label>{t("bank.site.orderDay")}<input type="number" min={1} max={28} className="num" value={orderDay} onChange={(e) => setOrderDay(e.target.value)} /></label>}
+        {note("form")}
         <button className="bks-btn primary">{t("bank.site.next")}</button>
       </form>
     </Box>
@@ -224,7 +233,7 @@ function Transfer({ game, bank, prefill, go, standing }: { game: GameState; bank
 }
 
 function Loans({ game }: { game: GameState }) {
-  const act = useStore((s) => s.act);
+  const act = usePageAct();
   const [years, setYears] = useState(LOAN_YEARS[2]);
   const limit = Math.floor(loanAvailable(game)), rate = loanRate(game), blocked = game.hour < game.loansBlockedUntil;
   const min = bankById(game.bank!.id)!.loans.min;
@@ -260,7 +269,7 @@ function Loans({ game }: { game: GameState }) {
 }
 
 function Service({ game, bank }: { game: GameState; bank: Bank }) {
-  const act = useStore((s) => s.act);
+  const act = usePageAct();
   return (
     <Box title={t("bank.site.nav.service")}>
       <form className="bks-form" onSubmit={(e) => e.preventDefault()}>
@@ -275,7 +284,7 @@ function Service({ game, bank }: { game: GameState; bank: Bank }) {
 }
 
 function CardView({ game, bank }: { game: GameState; bank: Bank }) {
-  const act = useStore((s) => s.act), card = game.bank!.card;
+  const act = usePageAct(), card = game.bank!.card;
   return (
     <Box title={t("bank.site.nav.card")}>
       <table className="bks-table">
@@ -295,7 +304,7 @@ function CardView({ game, bank }: { game: GameState; bank: Bank }) {
 }
 
 function Overdraft({ game, bank }: { game: GameState; bank: Bank }) {
-  const act = useStore((s) => s.act), b = game.bank!;
+  const act = usePageAct(), b = game.bank!;
   return (
     <Box title={t("bank.site.nav.overdraft")}>
       <table className="bks-table">
@@ -311,7 +320,7 @@ function Overdraft({ game, bank }: { game: GameState; bank: Bank }) {
 }
 
 function Orders({ game, bank, go }: { game: GameState; bank: Bank; go: Go }) {
-  const act = useStore((s) => s.act), orders = game.bank!.standingOrders;
+  const act = usePageAct(), orders = game.bank!.standingOrders;
   return (
     <>
       <table className="bks-table bks-rows">

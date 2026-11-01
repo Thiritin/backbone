@@ -13,8 +13,6 @@ export const BANK_EN: Record<string, (p: Params) => string> = {
   "ledger.savings": () => "Transfer from your personal account: Savings",
   "bank.savings": () => "Savings",
   "bank.savings.from": () => "Personal account",
-  "bank.office.payee": () => "Trade office",
-  "bank.office.reference": (p) => `Business registration ${p.name}`,
   "error.hasBank": () => "The company already has a bank account.",
   "sim.index.cat.banks": () => "Banks",
   "sim.index.bank": () => "Business accounts and online banking",

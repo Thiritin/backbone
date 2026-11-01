@@ -33,7 +33,7 @@ The steps run in this order, with the 2005 prices from the game.
 | Step | Where | What it costs | How long it takes |
 | --- | --- | --- | --- |
 | Open a bank account | Browser, a bank's site from the Yahoy! directory | The bank's account fee, €8 a month at Sparklasse; the €3,500 savings arrive as the first booking | Instant |
-| Register your company | Browser, trade office | €40 registration fee, paid by bank transfer with a TAN | From 08:00 on Monday 3 January |
+| Register your company | Browser, trade office | €26 registration fee, billed by letter the same day | From 08:00 on Monday 3 January |
 | Buy a server | Shop | Dwell Balanced 1U G1, €2,500 (2 cores, 8 GB RAM, 500 GB disk, 250 W) | The first server arrives at once; later ones take 3 days |
 | Mount and power it | Locations | Nothing; the rack is already there | Instant |
 | Mount the router | Locations | Nothing; the Fritz!Bocks 5050 waits in storage and goes on a shelf in the rack, its DSL port cabled to the line jack | Instant |
@@ -47,7 +47,7 @@ The steps run in this order, with the 2005 prices from the game.
 | Set up company email | Email app | Hosted Exchange by Ionose, €10 a month for the one seat | Instant |
 | Win your first customer | Support | Nothing | Days |
 
-The registration fee and the server leave €960 of the €3,500. The fixed bills that follow are €80.40 a month with the business line (€59 line, €9.90 site, €10 email, €1.50 domain) or €66.40 with the DSL 16000 line, plus electricity at the household price.
+The registration fee and the server leave €974 of the €3,500. The fixed bills that follow are €80.40 a month with the business line (€59 line, €9.90 site, €10 email, €1.50 domain) or €66.40 with the DSL 16000 line, plus electricity at the household price.
 
 The three friends (Jonas, Mira and Tobi) sign up for web hosting at €6 a month once the first panel host is ready and the internet reaches it. They bring in €18 a month and always pay.
 
@@ -58,8 +58,8 @@ The player buys and sets up everything on the first day, then waits for the line
 | Real time at 1× | Game date | What happens | Player does | Teaches |
 | --- | --- | --- | --- | --- |
 | 0:00 | 1 Jan | The game opens paused on the basement | Names the company, opens a bank account, presses play | Desktop, Browser, time controls |
-| 0:02 | 3 Jan | The trade office opens at 08:00 and the company is registered | Fills in the office form and confirms the €40 transfer with a TAN | Bank site, TANs |
-| 0:02 | 3 Jan | The server and the router stand in the rack, the server cabled to the router, the router to the line jack, and powered on; cash is €960 | Buys, mounts and cables the Dwell server, mounts the router from storage | Shop, racks, ports |
+| 0:02 | 3 Jan | The trade office opens at 08:00 and the company is registered | Fills in the office form, then pays the €26 letter by transfer with a TAN | Post, Books, bank site, TANs |
+| 0:02 | 3 Jan | The server and the router stand in the rack, the server cabled to the router, the router to the line jack, and powered on; cash is €974 | Buys, mounts and cables the Dwell server, mounts the router from storage | Shop, racks, ports |
 | 0:02 | 3 Jan | The line is ordered and the panel installs in 2 hours | Orders the line, installs FreePanel | Lines, software |
 | 0:02 | 3 Jan | The domain, web design and company email are in place; cash is €560 | Signs NameCheep, registers the domain, buys the web design, lists web hosting, books email | Registrar, website, mail |
 | 0:16 | 17 Jan | The business line goes live and the friends move onto the panel host | Opens Customers | Customers arrive once the host is reachable |

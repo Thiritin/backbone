@@ -10,7 +10,7 @@ import type { Cluster } from "../../../../sim/60-infra/cluster";
 import { belowFloor, covers, defaultSpecFor, packageNamed, packageProducts, packageUse, packagesOf, type PackageDef } from "../../../../sim/80-business/packages";
 import { provisionOrder } from "../../../../sim/90-actions/orders";
 import { addPackage, changePackage, copyPackages, deletePackage, editPackage } from "../../../../sim/90-actions/packages";
-import { useStore } from "../../../store";
+import { usePageAct } from "../pageAct";
 
 const num = (n: number) => `${+n.toFixed(2)}`;
 export const specLine = (r: Resources): string => t("pkg.specLine", { vcpu: num(r.vcpu), ram: num(r.ramGb), disk: num(r.diskGb) });
@@ -29,7 +29,7 @@ export function OrderPicker({ choices, value, onChange, label = t("pkg.order"), 
 
 // The packages of an installation with how many accounts use each, and Edit, Delete and Copy to another installation.
 export function PackageTable({ game, c, onEdit, className = "cx-table" }: { game: GameState; c: Cluster; onEdit: (p: PackageDef) => void; className?: string }) {
-  const act = useStore((s) => s.act), web = c.kind === "panel";
+  const act = usePageAct(), web = c.kind === "panel";
   const others = game.clusters.filter((x) => x.id !== c.id && x.kind === c.kind && !!(x.panel || x.platform));
   return (
     <table className={className}>
@@ -61,7 +61,7 @@ export function PackageTable({ game, c, onEdit, className = "cx-table" }: { game
 
 // The Add and Edit form of a package. A package cannot be renamed, so the name is fixed while editing.
 export function PackageFields({ game, c, editing, done, className = "cx-form" }: { game: GameState; c: Cluster; editing?: PackageDef; done: () => void; className?: string }) {
-  const act = useStore((s) => s.act), products = packageProducts(c), web = (editing?.product ?? products[0]) === "webHosting";
+  const act = usePageAct(), products = packageProducts(c), web = (editing?.product ?? products[0]) === "webHosting";
   const [name, setName] = useState(editing?.name ?? ""), [product, setProduct] = useState<Product>(editing?.product ?? products[0]);
   const [spec, setSpec] = useState<Spec>(editing?.spec ?? defaultSpecFor(products[0], yearOf(game.hour)));
   const field = (key: keyof Spec, label: string) => (
@@ -132,7 +132,7 @@ export const HYPERVISOR_ORDERS: Product[] = ["vps", "gameServer", "cloud"];
 export function ProvisionForm({ game, c, products, order, sections, className = "cx-form", button = t("pkg.create") }: {
   game: GameState; c: Cluster; products: Product[]; order?: string; sections?: { order: string; account: string; plan: string }; className?: string; button?: string;
 }) {
-  const act = useStore((s) => s.act), choices = orderChoices(game, products);
+  const act = usePageAct(), choices = orderChoices(game, products);
   const [ticket, setTicket] = useState(choices.some((o) => o.ticketId === order) ? order! : ""), [pkg, setPkg] = useState(""), [user, setUser] = useState<string | null>(null);
   const hosts = hostChoices(game, c);
   const [route, setRoute] = useState(c.id);
@@ -187,7 +187,7 @@ export function planChoices(game: GameState, c: Cluster, serviceId: string | nul
 
 // The inline form under an account row that books another package on it.
 export function ChangePackage({ game, c, serviceId, label = t("pkg.changePlan"), done }: { game: GameState; c: Cluster; serviceId: string; label?: string; done: () => void }) {
-  const act = useStore((s) => s.act), v = game.services.find((x) => x.id === serviceId), [name, setName] = useState(v?.pkg ?? "");
+  const act = usePageAct(), v = game.services.find((x) => x.id === serviceId), [name, setName] = useState(v?.pkg ?? "");
   return (
     <div className="cx-inline">
       <label className="cx-field">{t("pkg.package")}
