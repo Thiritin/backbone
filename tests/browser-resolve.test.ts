@@ -37,6 +37,7 @@ describe("browser resolver", () => {
       expect(resolve(s, marketUrl(c.id))).toMatchObject({ page: { kind: "market", channel: c.id }, load: "fast" });
       expect(resolve(s, `${c.host}/itm/x?cat=Servers`).page).toEqual({ kind: "market", channel: c.id });
     }
+    expect(resolve(s, "www.craigslost.org/").page).toEqual({ kind: "market", channel: "chat" });
     expect(siteIndex(s).find((c) => c.title === "Used hardware")!.rows.map((r) => r.url)).toEqual(CHANNELS.map((c) => marketUrl(c.id)));
   });
 
