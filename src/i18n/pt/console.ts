@@ -18,4 +18,5 @@ export default {
   "error.noAppSuite": () => "Este cluster não tem App Suite.",
   "error.hasAppSuite": () => "Este cluster já tem a App Suite.",
   "error.noDownload": () => "O instalador não conseguiu descarregar o pacote.",
+  "error.noMirror": () => "Não é possível aceder ao espelho do arquivo Debiant indicado.",
 } satisfies Dict;

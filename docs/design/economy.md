@@ -788,6 +788,44 @@ The balance model books 6 staff minutes per customer and month for payments, whi
 
 **Working hours.** Each employee works their team's shifts: per weekday a start hour and 1 to 12 hours, and a shift may run past midnight. The salary is for 40 hours a week; each hour on shift earns salary / 173, paid at the month start, so pay follows the hours actually worked. An action starts only if it ends within the shift; whatever is left waits for the next shift. Technicians on shift handle operations at their location; when nobody there is on shift, the on-call technician covers.
 
+## Payment methods
+
+A shop system takes payment at checkout. Bank transfer is always offered; every other method is a module bought once on the shop vendor's site, registered with its licence key in Books and switched on or off in the shop. The code keeps the numbers in `src/sim/10-catalog/payments.ts`.
+
+| Method (real one) | From | Module | Fee per payment | Paid | Side effect |
+| --- | --- | --- | --- | --- | --- |
+| Bank transfer | 2005 | none | none | by the customer's habit, matched in Books | dunning as in Billing and payment habits |
+| Direct debit | 2005 | €49 | €0.35 | collected at checkout, weekly payout from the shop system | a bad payer's debit returns when their invoice would have paid late, with a €3 fee, 3 to 7 days after the payout |
+| PayPail (PayPal) | 2005 | €49 | 1.9% + €0.35 | prepaid at checkout, weekly payout | 1% of payments are disputed 5 to 20 days after the payout; the money is held 30 days, then comes back |
+| Visor (Visa) | 2006 | €199 | 2.9% + €0.30 | collected at checkout, weekly payout | 0.5% of honest payments are charged back 7 to 90 days after the payout with the chargeback fee; stolen cards (below) charge back fully |
+| paysavecard (paysafecard) | 2007 | €99 | 10% | prepaid at checkout, weekly payout | twice the base churn of the profile |
+| Instantly (Sofortüberweisung) | 2008 | €49 | 0.9% | the customer's own transfer arrives at checkout with the exact amount and invoice number | none |
+| Bitcorn Pay (Bitcoin) | 2012 | €99 | 1% | prepaid at checkout, weekly payout | three times the abuse ticket and real notice rate for each customer paying this way |
+
+**Preferences.** Each shop order draws the method its customer wants first, from the weights of its profile over the methods that exist that year. Customers from the other side of the Atlantic and shady customers use their own rows.
+
+| Crowd | Transfer | Debit | PayPail | Card | paysavecard | Instantly | Crypto |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Private individual | 45 | 10 | 35 | 5 | | 5 | |
+| Gamer | 15 | | 35 | 10 | 35 | 5 | |
+| Hobby developer | 25 | | 35 | 25 | | 5 | 10 |
+| Sole proprietor | 50 | 25 | 15 | 10 | | | |
+| Small business | 45 | 30 | 5 | 20 | | | |
+| Agency or startup | 40 | 15 | 10 | 35 | | | |
+| Doctor's or law office | 50 | 40 | | 10 | | | |
+| Online shop | 35 | 30 | 10 | 25 | | | |
+| Enterprise | 60 | 25 | | 15 | | | |
+| International | 10 | | 30 | 60 | | | |
+| Shady | | | | 20 | 20 | | 60 |
+
+**Missing method.** When the shop does not offer the wanted method, half of the orders go through by bank transfer and the rest are lost sales with the reason that names the method. paysavecard and crypto customers never switch. Email orders always pay by bank transfer.
+
+**Prepaid.** PayPail, paysavecard and crypto invoices are paid at checkout, so Books never sends a reminder or suspends for them; neither do direct debit and card, whose money the shop collects at checkout. Each gateway pays out on Monday at 09:00 as one transfer per method, less its fees, with a reference listing the invoices; Import from shop or Shop link books it.
+
+**Money taken back.** Returns, disputes and chargebacks arrive in Books as negative transfers of the invoice amount plus the fee. Matching one to its paid invoice reopens it: a disputed invoice waits for the released money, a returned or charged-back one is due again by bank transfer under the dunning steps. Match by reference books them on its own. A chargeback on a stolen card marks the customer as fraud and suspends their services when it is matched.
+
+**Stolen cards.** Through a shop only card orders can be fraudulent, at the shares in Fraud and chargebacks below; their chargeback 30 to 60 days after signing up arrives as one negative transfer per paid invoice instead of the automatic write-off.
+
 ## Fraud and chargebacks
 
 A small share of standard orders is paid with a stolen card or a stolen PayPail account. Sales leads are never fraudulent. The share is rolled once per order:
@@ -1662,7 +1700,7 @@ Service software anchors: BIND (Bound) and PowerDNS (PowerDNZ) both predate 2005
 
 Anchors: cPanel could copy accounts between servers with WHM's "Copy an account" since 2005 and gained its transfer tool for other panels around 2012; Plesk's Migration Manager appeared with Plesk 7.5.6 in 2005 and the Plesk Migrator extension (2015) imports cPanel, Confixx and others; DirectAdmin moves accounts through backup and restore since about 2010; ISPConfig 3 introduced multiserver setups in March 2009, which is where FreePanel clusters from, while cPanel and Plesk never clustered web serving (only DNS). Hypervisor years follow the products: OpenStack 2010, VMware ESX long before 2005, Proxmox VE 2008, Hyper-V 2008 (clustering of Hyper-V hosts from the 2012 release).
 
-- **Licenses** are billed on the 1st of each month per hypervisor cluster and per panel host, as ledger lines in the category "licenses".
+- **Licenses** on a subscription are billed per key on the day of the month the key was bought, one ledger line per key in the category "licenses" naming the product and the key, unassigned keys included. A per-account edition such as cPanic Premier charges its fee for every account on its panel host. The vendor emails one receipt per product. A renewal the bank cannot pay keeps the software running for `LAPSE_GRACE_DAYS`, then the key lapses and the vendor emails it; the next hour with the money renews it for a month from then. A cancelled key runs to the end of its paid month and expires. A key bought once is never billed again. The App Suite and the balancer are billed on the 1st per cluster.
 - **How-to tickets:** a customer's how-to rate is multiplied by the average factor of the software serving each of their workloads (the panel for web spaces, the service software for game servers, DNS, VPN and storage, the hypervisor for the rest).
 - **Booking:** software sets no limit on what a node books. Every hypervisor and panel books vCPU and RAM past the physical amounts and disk up to twice the usable RAID disk (see Usage curves and overcommit). Ballooning decides one thing: a resize of one of the player's own VMs that only grows its RAM is live on a hypervisor that balloons (Proxmocks and VMwhere, HyperVee from 2012; OpenStash and OpenVeeZee never); any other resize restarts the VM for 10 minutes.
 - **Software in a VM** gets 95% of the VM's vCPU and RAM (`IN_VM` in 10-catalog/platforms.ts): a panel VM's web hosting room is 0.95 times its booked vCPU and RAM, less the panel, with its full disk. The same panel on bare metal gets the whole server.

@@ -18,4 +18,5 @@ export default {
   "error.noAppSuite": () => "Ce cluster n'a pas d'App Suite.",
   "error.hasAppSuite": () => "Ce cluster a déjà l'App Suite.",
   "error.noDownload": () => "L'installateur n'a pas pu télécharger le paquet.",
+  "error.noMirror": () => "Le miroir de l'archive Debiant indiqué est injoignable.",
 } satisfies Dict;

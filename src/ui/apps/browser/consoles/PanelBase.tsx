@@ -5,7 +5,7 @@ import { ArrowRightLeft, CalendarClock, Circle, Code, Maximize2, Pause, Play, Po
 import { useMemo, useState, type ReactNode } from "react";
 import { yearOf } from "../../../../sim/00-core/time";
 import { GAME_UNIT } from "../../../../sim/10-catalog/games";
-import { gameOf, playersOf } from "../../../../sim/60-infra/games";
+import { gameCrashed, gameOf, playersOf } from "../../../../sim/60-infra/games";
 import { GameLine, type GameRow } from "./GamePanel";
 import { autoUpdates, phpAt, softwareById } from "../../../../sim/10-catalog/platforms";
 import type { Resources } from "../../../../sim/10-catalog/products";
@@ -24,12 +24,13 @@ import { migrateWebspace, migrateWorkload, migrationTargets, restoreWorkload, st
 import { useStore } from "../../../store";
 import { disk, ram } from "../../hw";
 import { VM_STATE, vmLabel, vmState } from "../../products/parts";
-import { hoursText } from "../../vms/migrate";
+import { hoursText } from "../../workload-menu";
 import { useHolds } from "./Holds";
 import { HostSettings } from "./HostSettings";
 import { eraOf } from "../sites/era";
+import { lookOf, panelMachine } from "../../../../sim/60-infra/licence";
 
-export type Tab = "objects" | "nodes" | "software" | "tasks" | "logs" | "licence" | "services" | "sysinfo" | "packages" | "create" | "easyapache" | "custombuild" | "resellers" | "autossl" | "transfer" | "fail2ban" | "toolkit" | "messages";
+export type Tab = "objects" | "nodes" | "restore" | "software" | "tasks" | "logs" | "licence" | "services" | "sysinfo" | "packages" | "create" | "easyapache" | "custombuild" | "resellers" | "autossl" | "transfer" | "fail2ban" | "toolkit" | "messages";
 
 // What ConsolePage hands a product console; the console draws its own login while signedIn is false.
 export interface PanelProps { game: GameState; c: Cluster; f: ConsoleFeatures; host: string; signedIn: boolean; login: () => void; logout: () => void;
@@ -37,7 +38,11 @@ export interface PanelProps { game: GameState; c: Cluster; f: ConsoleFeatures; h
   path?: string }
 
 export const erasFrom = (early: number, late: number): { from: number; look: Look }[] => [{ from: early, look: "early" }, { from: late, look: "late" }];
-export const eraAt = (eras: { from: number; look: Look }[], game: GameState): Look => eraOf(eras, yearOf(game.hour));
+// The look of the installed version, or the game year's when the version is unknown.
+export function eraAt(eras: { from: number; look: Look }[], { game, c }: { game: GameState; c: Cluster }): Look {
+  const m = panelMachine(c), product = familyOf(c);
+  return (m && product && lookOf(game, m, product)) || eraOf(eras, yearOf(game.hour));
+}
 
 export function usePanelTab(f: ConsoleFeatures, first: Tab = "objects"): [Tab, (t: Tab) => void] {
   const [tab, setTab] = useState<Tab>(first);
@@ -125,7 +130,7 @@ const PLAN_LABEL: Record<string, string> = { cpanic: "pkg.changeCpanic", directa
 function gameRow(game: GameState, c: Cluster, serviceId: string): GameRow | undefined {
   if (!c.panel || !GAME_UNIT[c.panel] || game.services.find((v) => v.id === serviceId)?.product !== "gameServer") return undefined;
   const g = gameOf(game, serviceId);
-  return { title: g ? t(`games.title.${g.title}`) : t("games.unknown"), players: playersOf(game, serviceId) };
+  return { title: g ? t(`games.title.${g.title}`) : t("games.unknown"), players: playersOf(game, serviceId), crashed: gameCrashed(game, serviceId) };
 }
 
 export interface Row {

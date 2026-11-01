@@ -11,5 +11,5 @@ import { domainDown } from "../30-customers/registry";
 // blackholed or its domain expired or a DNS, certificate or storage fault breaks it.
 export function serviceOnline(s: GameState, serviceId: string): boolean {
   const v = serviceById(s, serviceId);
-  return !v || (!serviceHeld(s, v) && !takenDown(s, v.id) && (workloadsUp(s, v.id) || (v.product === "dns" && dnsCovered(s, v.id))) && !s.network.attacks.some((a) => a.serviceId === v.id && a.blackholed) && !domainDown(s, v) && !netsvcBroken(s, v.id));
+  return !v || (!serviceHeld(s, v) && !s.gameServers.some((g) => g.serviceId === v.id && g.crashedAt !== null) && !takenDown(s, v.id) && (workloadsUp(s, v.id) || (v.product === "dns" && dnsCovered(s, v.id))) && !s.network.attacks.some((a) => a.serviceId === v.id && a.blackholed) && !domainDown(s, v) && !netsvcBroken(s, v.id));
 }

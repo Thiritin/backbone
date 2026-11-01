@@ -7,6 +7,7 @@ import type { GameState } from "../../../sim/50-state";
 import { sendInvoice } from "../../../sim/90-actions/billing";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
+import { useBooks } from "./view";
 import { formatDay } from "../billing/format";
 import { monthYear } from "../support/labels";
 import { DocBar, DocButton, DocFoot } from "./DocBar";
@@ -17,7 +18,7 @@ export const statusLabel = (i: Invoice) => t(`books.status.${i.status === "open"
 export const StatusPill = ({ inv }: { inv: Invoice }) => <span className={`pill ${PILL[inv.status]}`}>{statusLabel(inv)}</span>;
 
 export function InvoicesTab({ focus }: { focus: string | null }) {
-  const game = useStore((s) => s.game), act = useStore((s) => s.act);
+  const game = useBooks(), act = useStore((s) => s.act);
   const list = [...game.invoices].reverse();
   const [selected, setSelected] = useState<string | null>(focus ?? list.find((i) => i.status === "draft")?.id ?? list[0]?.id ?? null);
   const inv = game.invoices.find((i) => i.id === selected);

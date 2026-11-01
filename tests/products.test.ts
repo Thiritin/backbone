@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { updateKey } from "../src/sim/60-infra/licence";
 import { softwareById } from "../src/sim/10-catalog/platforms";
 import { curveLoad, slowTolerance } from "../src/sim/10-catalog/usage";
 import { sizeSpec } from "../src/sim/10-catalog/products";
@@ -17,7 +18,7 @@ import { monthlyValue } from "../src/sim/40-support/tickets";
 import { connect, setPower } from "../src/sim/90-actions/hardware";
 import { buyDevice } from "./fixtures";
 import { mountDevice } from "./plugged";
-import { migrateWorkload, restoreWorkload, startWorkload, stopWorkload } from "../src/sim/90-actions/vms";
+import { migrateWorkload, restoreTargets, restoreTo, restoreWorkload, startWorkload, stopWorkload } from "../src/sim/90-actions/vms";
 import { seize } from "../src/sim/60-infra/incidents";
 import { hashRng } from "../src/sim/00-core/rng";
 import { deserialize, serialize } from "../src/sim/91-save/save";
@@ -56,17 +57,16 @@ function setup(platform = "proxmocks") {
 const clusterById = (s: GameState, id: string) => s.clusters.find((c) => c.id === id)!;
 
 describe("platforms and licenses", () => {
-  it("bills each cluster's licenses at the start of the month by its pricing model", () => {
+  it("bills each cluster's subscription keys by their pricing model and keeps once keys free", () => {
     const { s, cluster } = setup("vmwhere");
-    // VMwhere is bought once until 2024, then two G1 nodes with 2 cores each at €8 per core.
+    // VMwhere is bought once until 2024; from 2024 a subscription on the two G1 nodes costs 2 cores each at 8 euros a core.
     expect(licenseCost(s, clusterById(s, cluster))).toEqual({ panel: 0, platform: 0 });
     skipTo(s, 2024);
+    expect(licenseCost(s, clusterById(s, cluster))).toEqual({ panel: 0, platform: 0 });
+    for (const k of s.licenses.filter((x) => x.product === "vmwhere")) updateKey(s, k.id, { kind: "core", covers: { kind: "term", until: s.hour + 1 }, renewsAt: s.hour + 1 });
     expect(licenseCost(s, clusterById(s, cluster))).toEqual({ panel: 0, platform: 32 });
-    s.hour += 743;
     tick(s);
-    expect(s.ledger.filter((l) => l.key === "ledger.license")).toEqual([
-      { hour: s.hour, category: "licenses", key: "ledger.license", params: { cluster: "Cloud 1", name: "VMwhere" }, amount: -32 },
-    ]);
+    expect(s.ledger.filter((l) => l.key === "ledger.licenceRenewal").map((l) => [l.params.name, l.amount])).toEqual([["VMwhere", -16], ["VMwhere", -16]]);
   });
   it("holds the installed RAM on every platform", () => {
     const a = setup("vmwhere"), b = setup("proxmocks");
@@ -207,6 +207,33 @@ describe("backups and lost disks", () => {
     run(s, 1);
     expect(serviceOnline(s, vps)).toBe(true);
     expect(err(restoreWorkload(s, w.id))).toBe("error.notLost");
+  });
+  it("restores a seized server's stranded VMs from the backup server onto another cluster", () => {
+    const { s, cluster, second, backup } = setup();
+    const other = hypervisor(s, [server(s, 4, 3)], "Cloud 2", "proxmocks"), node = clusterById(s, other).nodes[0].deviceId;
+    const gamer = addCustomer(s, "Gus Gamer", "gamer");
+    for (const at of ["dev3", "dev3", second]) ok(provisionService(s, gamer, "gameServer", { label: "Frag", spec: FRAG, clusterId: cluster, deviceId: at }));
+    ok(setBackup(s, cluster, backup, "daily"));
+    run(s, 3);
+    seize(s, "dev3", "Europoll", hashRng(1), []);
+    const [w, rest] = s.workloads.filter((x) => x.deviceId === "dev3");
+    const saved = w.backupAt;
+    expect(saved).not.toBeNull();
+    expect(lostDisk(s, w)).toBe(true);
+    run(s, 2);
+    expect(s.workloads.find((x) => x.id === w.id)!.backupAt).toBe(saved);
+    expect(restoreTargets(s, w.id).map((x) => x.to)).toContain(node);
+    expect(err(restoreTo(s, w.id, "dev3"))).toBe("error.noCapacity");
+    ok(restoreTo(s, w.id, node));
+    const moved = s.workloads.find((x) => x.id === w.id)!;
+    expect(moved).toMatchObject({ deviceId: node, clusterId: other, placedAt: s.hour });
+    expect(moved.busyUntil).toBeGreaterThan(s.hour);
+    expect(lostDisk(s, moved)).toBe(false);
+    run(s, moved.busyUntil - s.hour);
+    expect(serviceOnline(s, moved.serviceId!)).toBe(true);
+    s.workloads = s.workloads.map((x) => (x.id === rest.id ? { ...x, backupAt: null } : x));
+    expect(restoreTargets(s, rest.id)).toEqual([]);
+    expect(err(restoreTo(s, rest.id, node))).toBe("error.backupUnavailable");
   });
   it("asks for a refund once per customer in Support without a backup, and pays it back once", () => {
     const { s, cluster, cus } = setup();
