@@ -42,5 +42,5 @@ export default {
   "error.notCancellable": () => "Questa licenza non può essere disdetta.",
   "ledger.order": (p) => `Ordine ${p.order} presso ${p.vendor}`,
   "ticket.mail.vendor.order.subject": (p) => `Il tuo ordine ${p.order}`,
-  "ticket.mail.vendor.order.text": (p) => `Grazie per il tuo ordine ${p.order}. Abbiamo addebitato ${euroPrice(Number(p.total))} sul tuo conto bancario. Le tue chiavi di licenza si trovano in Il mio account sul nostro sito.`,
+  "ticket.mail.vendor.order.text": (p) => `Grazie per il tuo ordine ${p.order}. ${Number(p.card) ? `Abbiamo addebitato ${euroPrice(Number(p.total))} sulla tua carta di credito.` : `Abbiamo ricevuto il tuo bonifico di ${euroPrice(Number(p.total))}.`} Le tue chiavi di licenza si trovano in Il mio account sul nostro sito.`,
 } satisfies Dict;
