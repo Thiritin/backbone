@@ -36,7 +36,6 @@ import { booksVendor } from "../../../sim/10-catalog/bookkeeping";
 import { ShopVendorSite } from "./sites/shopvendors/registry";
 import { shopById } from "../../../sim/10-catalog/shops";
 import { WikiSite } from "./sites/wiki/WikiSite";
-import { LEXWEAR } from "../../../sim/80-business/lexwear";
 import { SoftwarePage } from "./sites/software/registry";
 import { RegistrarSite } from "./sites/registrars";
 import { SupplierSite } from "./sites/bank/SupplierSite";
@@ -89,7 +88,7 @@ function titleOf(game: GameState, r: Resolved): string {
     case "sponsorboard": return BOARD_TITLE;
     case "index": return t("browser-sites-1.ix.title");
     case "office": return t("browser-sites-1.of.title");
-    case "lexwear": return LEXWEAR;
+    case "lexwear": return booksVendor("lexwear")!.name;
     case "books": return booksVendor(p.id)!.program;
     case "shopVendor": return shopById(p.id).name;
     case "wiki": return WIKI_TITLE;

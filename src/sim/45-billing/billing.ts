@@ -10,6 +10,7 @@ import type { PaymentHabit, Profile, Service } from "../30-customers/customers";
 import { bump, cancelCustomer, createTicket, profileStats } from "../40-support/tickets";
 import type { GameState, LedgerEntry } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
+import { works } from "../80-business/bookkeeping";
 import { metrics } from "../metrics";
 import { logActivity } from "../47-staff/activity";
 import { mailDelay } from "../80-business/mail";
@@ -297,11 +298,11 @@ export function ruleSuspendsAt(s: GameState, inv: Invoice): number | null {
 }
 
 // The dunning step that runs by itself now: every rule after the Automation research, and the notices up to the final one
-// with the Automatic reminders module. Staff carry out the rest.
+// with an edition that sends reminders by itself. Staff carry out the rest.
 export function autoStep(s: GameState, inv: Invoice): number | null {
   const i = ruleStep(s, inv);
   if (i === null) return null;
-  return rulesAutomated(s) || (STEPS[i].key !== "collections" && hasModule(s, "auto-reminders")) ? i : null;
+  return rulesAutomated(s) || (STEPS[i].key !== "collections" && works(s, "auto-reminders")) ? i : null;
 }
 
 const automated = (s: GameState, inv: Invoice, key: string, by = "Automation") =>

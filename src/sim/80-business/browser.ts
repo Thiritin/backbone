@@ -22,9 +22,8 @@ import { vendorHost, vendorLive, VENDORS } from "./vendors";
 import { OFFICE_HOST, OFFICE_URL } from "./office";
 import { t } from "../../i18n/en";
 import { bankById, BANKS, type BankId } from "../10-catalog/banks";
-import { LEXWEAR_HOST } from "./lexwear";
 import { BOOKS_VENDORS, type BooksVendorId } from "../10-catalog/bookkeeping";
-import { booksHost } from "./bookkeeping";
+import { booksHost, LEXWEAR_HOST } from "./bookkeeping";
 import { SHOPS, type ShopId } from "../10-catalog/shops";
 import { shopHost } from "./shoplink";
 

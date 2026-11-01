@@ -1,0 +1,27 @@
+import type { Dict } from "./lang";
+
+// The bookkeeping programs' editions, seats and features on the vendors' sites and in Books.
+export default {
+  "books-editions.nav": () => "Editions",
+  "books-editions.yours": () => "Your edition",
+  "books-editions.upgradeFor": (p) => `Upgrade for ${p.price}`,
+  "books-editions.switch": () => "Switch",
+  "books-editions.perMonth": (p) => `${p.price} a month`,
+  "books-editions.free": () => "Free",
+  "books-editions.single": () => "Single user",
+  "books-editions.users": (p) => `${p.n} users`,
+  "books-editions.perSeat": (p) => `${p.n} user, more seats on sale`,
+  "books-editions.network": () => "Network version for any number of users",
+  "books-editions.seats": (p) => `Extra seats: ${p.n}`,
+  "books-editions.feature.quotes": () => "Quotes",
+  "books-editions.feature.monthly-run": () => "Monthly run",
+  "books-editions.feature.match-by-reference": () => "Match by reference",
+  "books-editions.feature.hbci": () => "HBCI online banking",
+  "books-editions.feature.tax": () => "Tax",
+  "books-editions.feature.reports": () => "Profit and loss and cash flow",
+  "books-editions.feature.auto-reminders": () => "Automatic reminders",
+  "books-editions.feature.helpdesk-link": () => "Helpdesk link",
+  "books-editions.feature.statistics": () => "Statistics",
+  "ledger.booksSeat": (p) => `${p.program} ${p.edition} seat`,
+  "error.unknownEdition": () => "This edition is not on sale.",
+} satisfies Dict;

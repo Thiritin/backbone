@@ -1,0 +1,26 @@
+import type { Dict } from "../lang";
+
+export default {
+  "books-editions.nav": () => `Edições`,
+  "books-editions.yours": () => `A sua edição`,
+  "books-editions.upgradeFor": (p) => `Atualizar por ${p.price}`,
+  "books-editions.switch": () => `Mudar`,
+  "books-editions.perMonth": (p) => `${p.price} por mês`,
+  "books-editions.free": () => `Grátis`,
+  "books-editions.single": () => `Utilizador único`,
+  "books-editions.users": (p) => `${p.n} utilizadores`,
+  "books-editions.perSeat": (p) => `${p.n} utilizador, mais lugares à venda`,
+  "books-editions.network": () => `Versão de rede para qualquer número de utilizadores`,
+  "books-editions.seats": (p) => `Lugares adicionais: ${p.n}`,
+  "books-editions.feature.quotes": () => `Orçamentos`,
+  "books-editions.feature.monthly-run": () => `Envio mensal`,
+  "books-editions.feature.match-by-reference": () => `Conciliação por referência`,
+  "books-editions.feature.hbci": () => `Banca online HBCI`,
+  "books-editions.feature.tax": () => `Impostos`,
+  "books-editions.feature.reports": () => `Lucros e perdas e fluxo de caixa`,
+  "books-editions.feature.auto-reminders": () => `Lembretes automáticos`,
+  "books-editions.feature.helpdesk-link": () => `Ligação ao helpdesk`,
+  "books-editions.feature.statistics": () => `Estatísticas`,
+  "ledger.booksSeat": (p) => `Lugar ${p.program} ${p.edition}`,
+  "error.unknownEdition": () => `Esta edição não está à venda.`,
+} satisfies Dict;

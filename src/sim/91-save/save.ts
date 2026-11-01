@@ -1,3 +1,4 @@
+import { migrateBooks } from "./books";
 import { fillShop } from "./shop";
 import { brandsOf, fillCpus, isOfficeRouter, MODELS, modelById, RENAMED_MODELS, wanPort } from "../10-catalog/hardware";
 import { freeSlots } from "../60-infra/status";
@@ -154,7 +155,8 @@ export function deserialize(raw: string): GameState {
   // Apps a save already has count as arrived, so they never send their email.
   s.arrived = data.arrived ?? WALK.filter((id) => s.installed.includes(id));
   // Saves from before the Bookkeeping category run Lexwear Office when they have Books.
-  if (!data.books) s.books = { vendor: s.installed.includes("Books") ? "lexwear" : null, installedAt: 0 };
+  if (!data.books) s.books = { vendor: s.installed.includes("Books") ? "lexwear" : null, installedAt: 0, edition: null, seats: 0 };
+  migrateBooks(s);
   return s;
 }
 

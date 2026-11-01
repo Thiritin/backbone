@@ -1,6 +1,7 @@
 import type { ComponentType, CSSProperties } from "react";
 import { isUnpaid, synced } from "../../../sim/45-billing/billing";
-import { hasModule } from "../../../sim/10-catalog/modules";
+import { hasModule, MODULES } from "../../../sim/10-catalog/modules";
+import { licenceMail } from "../../../sim/80-business/licences";
 import { unsynced } from "../../../sim/80-business/shoplink";
 import { importFromShop } from "../../../sim/90-actions/shoplink";
 import { overdue } from "../../../sim/46-finance/payables";
@@ -54,9 +55,11 @@ export function BooksApp() {
   const current = TABS.find((x) => x.id === tab) ?? TABS[2];
   const Body = current.body;
   const v = currentVendor(game), skin = v?.skin;
+  // Shop modules arrive with a licence key to register here.
+  const keys = MODULES.some((m) => licenceMail(game, m.id) && !hasModule(game, m.id));
   return (
     <div className="books" style={skin && { "--accent": skin.accent, "--bk-bar": skin.bar, "--bk-ink": skin.ink } as CSSProperties}>
-      {v && skin?.web && <div className="books-web num">{`https://www.${booksHost(v)}/app`}</div>}
+      {v?.deployment === "browser" && <div className="books-web num">{`https://www.${booksHost(v)}/app`}</div>}
       <div className="books-top">
       <div className="books-bar tabs" role="tablist" aria-label={t("books.title")}>
         {TABS.map((x) => {
@@ -69,9 +72,9 @@ export function BooksApp() {
         })}
       </div>
       {importing && <button className="btn books-import" onClick={() => act(importFromShop)}>{t("shop-link.import")}{waiting ? <span className="tab-count num">{waiting}</span> : null}</button>}
-      {v?.keys !== false && <button className="btn books-register-open" aria-expanded={register} onClick={() => setRegister(!register)}>{t("vendor-sites.register")}</button>}
+      {keys && <button className="btn books-register-open" aria-expanded={register} onClick={() => setRegister(!register)}>{t("vendor-sites.register")}</button>}
       </div>
-      {register && v?.keys !== false && <Register onClose={() => setRegister(false)} />}
+      {register && keys && <Register onClose={() => setRegister(false)} />}
       <div className="books-body" role="tabpanel">
         <Body key={`${current.id}:${focus}`} focus={focus} />
       </div>

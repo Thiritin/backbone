@@ -317,7 +317,7 @@ describe("mandates and HBCI", () => {
     const s = banked();
     run(s, FEB - s.hour);
     expect(payAllDue(s)).toEqual({ ok: false, error: "error.noHbci" });
-    s.modules = ["hbci"];
+    s.books = { vendor: "lexwear", installedAt: s.hour, edition: "financial-office", seats: 0 };
     const due = s.payables.filter((p) => p.paidAt === null).length;
     expect(due).toBeGreaterThan(1);
     expect(payAllDue(s).ok).toBe(true);

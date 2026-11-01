@@ -362,7 +362,8 @@ export interface GameState {
   // Bought software modules by id; "hbci" lets Books talk to the bank.
   modules: string[];
   // The bookkeeping program the Books app runs (10-catalog/bookkeeping.ts); null until one is installed.
-  books: { vendor: BooksVendorId | null; installedAt: number };
+  // The bookkeeping program, its edition and the seats bought beyond the edition's users.
+  books: { vendor: BooksVendorId | null; installedAt: number; edition: string | null; seats: number };
 }
 
 export interface LogEntry { hour: number; minute?: number; name: string; args: unknown[] }
@@ -452,7 +453,7 @@ export const newGame = (seed: number): GameState => ({
   letters: [],
   chamberYear: 0,
   modules: [],
-  books: { vendor: null, installedAt: 0 },
+  books: { vendor: null, installedAt: 0, edition: null, seats: 0 },
 });
 
 export const guideDoc = (): Doc => ({ id: "guide", kind: "guide", title: t("doc.guide"), body: "", x: 16, y: 46 });

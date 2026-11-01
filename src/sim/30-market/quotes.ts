@@ -5,6 +5,7 @@ import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { applyStep, AUTOMATION, quoteAccepted, stepsDone } from "./manual";
 import { orderOf } from "./orders";
+import { works } from "../80-business/bookkeeping";
 
 export type QuoteStatus = "draft" | "sent" | "accepted" | "countered" | "declined" | "invoiced";
 // customerId stays null until the order's account exists; ticketId is the order ticket it answers.
@@ -20,9 +21,8 @@ export function carryForward(s: GameState, ticketId: string, invoiceId: string):
   s.quotes = s.quotes.map((q) => (q.ticketId === ticketId && q.status === "accepted" ? { ...q, status: "invoiced", invoiceId } : q));
 }
 
-// The Lexwear module that joins Books and the helpdesk.
-export const HELPDESK_LINK = "helpdesk-link";
-export const hasHelpdeskLink = (s: GameState): boolean => s.modules.includes(HELPDESK_LINK);
+// The edition feature that joins Books and the helpdesk.
+export const hasHelpdeskLink = (s: GameState): boolean => works(s, "helpdesk-link");
 
 // The customer answered an order's quote: the quote that is out takes the answer. With the Helpdesk link an acceptance
 // creates the account from the order email and sends the first invoice.

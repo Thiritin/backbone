@@ -4,7 +4,7 @@ import { monthlySalary, priceAt } from "../10-catalog/economy";
 import { autoStep, cents, dueStep, isUnpaid, owed, ruleStep, ruleSuspendsAt, rulesAutomated, sendStep, STEPS, suspend, synced, type Invoice } from "../45-billing/billing";
 import { ACTION_MINUTES, logActivity } from "./activity";
 import { storeItem } from "../10-catalog/store";
-import { bookFor, sendDraft } from "../80-business/lexwear";
+import { bookFor, sendDraft } from "../80-business/bookkeeping";
 import { bump, createTicket, MINUTES, rightTemplate, TEMPLATES, TOPIC_ACTIONS, type Ticket, type TicketKind } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
