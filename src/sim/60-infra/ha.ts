@@ -20,7 +20,7 @@ const patch = (s: GameState, id: string, p: Partial<Workload>) => {
 const cluster = (s: GameState, id: string): Cluster => s.clusters.find((c) => c.id === id)!;
 
 // The services a VM carries: its own, or every web space in a panel VM.
-const servicesIn = (s: GameState, w: Workload): string[] =>
+export const servicesIn = (s: GameState, w: Workload): string[] =>
   isOwnVm(w) ? insideVm(s, w.id).map((x) => x.serviceId) : [w.serviceId];
 
 // Restarts the VMs of failed nodes on working nodes with room; the control plane moves first when its node failed. A VM
@@ -33,7 +33,7 @@ function failover(s: GameState, c: Cluster, events: SimEvent[]) {
   let moved = 0, stuck = 0;
   const pool = cephOn(c) && cephCopies(s, c) >= 1;
   const shared = (w: Workload) => pool || !(c.platform && softwareById(c.platform).datastores) || (datastoreOn(c, w) && working(s, w.datastore!));
-  const viaReplica = (w: Workload) => !w.datastore && !pool && replicaReady(s, w) && !dead.has(w.replica!.toNode);
+  const viaReplica = (w: Workload) => !w.datastore && !pool && replicaReady(s, w) && !dead.has(w.replica!.toNode) && c.nodes.some((n) => n.deviceId === w.replica!.toNode);
   for (const w of s.workloads.filter((x) => x.clusterId === c.id && x.deviceId && dead.has(x.deviceId) && !x.template && (((pool || !lostDisk(s, x)) && shared(x)) || viaReplica(x)))) {
     // A replica takes over on its own node, from the last copy: what was written since is gone.
     if (!pool && viaReplica(w) && (lostDisk(s, w) || !shared(w))) {

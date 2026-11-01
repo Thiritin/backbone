@@ -2,7 +2,7 @@ import { chance, hashRng, rand } from "../00-core/rng";
 import { dateOf } from "../00-core/time";
 import { isOobPort, jacksOf, modelById } from "../10-catalog/hardware";
 import type { Resources } from "../10-catalog/products";
-import { replicaDue } from "./replica";
+import { REPLICA_COST, replicaDue } from "./replica";
 import { BACKUP_CHANGED, curveFor, curveLoad, daySwing, growthRate, idNum, JOB_CPU, nightJob, weekMedian } from "../10-catalog/usage";
 import type { Service } from "../30-customers/customers";
 import { bump, createTicket, isFinal } from "../40-support/tickets";
@@ -63,7 +63,7 @@ export function backupFlows(s: GameState, hour: number = s.hour): BackupFlow[] {
     const r = w.replica;
     if (!r || !w.deviceId || w.stopped || lostDisk(s, w) || !replicaDue(r.every, hour)) continue;
     const f = flows.get(`${w.deviceId}>${r.toNode}`) ?? { from: w.deviceId, to: r.toNode, mbps: 0 };
-    f.mbps += (w.diskGb * diskFill(s, w, hour) * BACKUP_CHANGED * 8000) / 3600;
+    f.mbps += (w.diskGb * diskFill(s, w, hour) * BACKUP_CHANGED * REPLICA_COST[r.every] * 8000) / 3600;
     flows.set(`${w.deviceId}>${r.toNode}`, f);
   }
   return [...flows.values()];

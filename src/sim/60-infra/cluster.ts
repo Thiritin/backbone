@@ -17,6 +17,7 @@ import { coverage } from "./maintenance";
 import type { PackageDef } from "../80-business/packages";
 import type { BackupJob, RestorePoint } from "./backups";
 import type { Ceph, Replica } from "./replica";
+import { vswitchBlocks, type VSwitch } from "./vswitch";
 import { firewallBlocks, type Firewall } from "./exposure";
 
 // Active takes new workloads, cordoned keeps its own, draining moves them off, maintenance is empty after a drain.
@@ -55,6 +56,8 @@ export interface Cluster {
   qdevice?: string | null;
   // A Proxmocks shared storage pool built from the node disks (replica.ts); missing is none.
   ceph?: Ceph;
+  // HyperVee virtual switches; missing is the one external Default Switch (vswitch.ts).
+  switches?: VSwitch[];
   // The player's cap on booked vCPU per physical vCPU for a panel host; missing or null is no cap (oversell.ts).
   oversell?: number | null;
   // The update channel; missing is Release (channel.ts).
@@ -91,6 +94,8 @@ export interface Workload extends Resources, Partial<MachineState> {
   points?: RestorePoint[];
   // A copy of the disk on a second node of the cluster, refreshed on a schedule (replica.ts).
   replica?: Replica | null;
+  // HyperVee: the virtual switch the adapter is plugged into; missing or null is the cluster's default switch (vswitch.ts).
+  switchId?: string | null;
   // Own VMs only: the port macros the VM lets through (exposure.ts); missing or null is no firewall.
   firewall?: Firewall | null;
   // The sold size when a package booked less; the service uses the sold size times its load.
@@ -475,6 +480,7 @@ export function workloadOnline(s: GameState, w: Workload): boolean {
   if (c && w.deviceId && s.frozen.includes(w.deviceId)) return false;
   if (w.deviceId) {
     const d = s.devices.find((x) => x.id === w.deviceId);
+    if (c && vswitchBlocks(s, c, w)) return false;
     return !!d && !lostDisk(s, w) && linkStatus(s, d.id).online && (!w.datastore || working(s, w.datastore));
   }
   const rack = s.racks.find((r) => r.id === w.rackId);
