@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- A Sponsor-Bored sponsor who takes your banner down can now be blocked or cancelled from the Marketing app, and when a blocked sponsor writes in you can say tough luck or have them put the banner back up.
 - Licence keys bought on a vendor website are paid by credit card or by bank transfer, and keys paid by transfer arrive once the money reaches the vendor.
 - From 2013 DOHLE replaces DohleFormular with the Mein DOHLE portal, where you log in with your certificate file and send the same returns.
 - Product prices in the books now show the market price for each term and the setup fee, so you can see what customers expect to pay.

@@ -211,5 +211,7 @@ export default {
   "support.retentionOffers": () => "Offerte di fidelizzazione",
   "support.noCost": () => "Gratis",
   "support.accept": () => "Accetta",
+  "support.toughLuck": () => "Peccato",
+  "support.bannerBack": () => "Banner di nuovo su",
   "support.resolve": () => "Risolvi",
 } satisfies Dict;

@@ -11,7 +11,8 @@ import { orderOf } from "../../../sim/30-market/orders";
 import { addressLines, mailedAddress } from "../../../sim/30-customers/addresses";
 import { companyParams } from "../../../sim/40-support/replies";
 import type { GameState } from "../../../sim/50-state";
-import { acceptSponsorship, declineSponsorship } from "../../../sim/90-actions/community";
+import { acceptSponsorship, answerSponsor, declineSponsorship } from "../../../sim/90-actions/community";
+import { HELD_TOPIC } from "../../../sim/80-business/community";
 import { retentionOptions, type RetentionId } from "../../../sim/40-support/retention";
 import { assignTicket, closeTicket, escalateTicket, readTicket, replyTicket, resolveTicket, retainTicket } from "../../../sim/90-actions/support";
 import { t } from "../../../i18n/en";
@@ -478,8 +479,10 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
             ))}
             <span className="grow" />
             {tk.kind === "pear" && <button className="btn primary" onClick={() => tk.topic === OVERDRAFT ? openApp("Browser", { kind: "url", id: game.bank ? `${bankUrl(game.bank.id)}banking/overdraft` : HOME_URL }) : openApp(OFFERS.includes(tk.topic) ? "Shop" : tk.topic)}>{t("apps.open")}</button>}
-            {tk.kind === "sponsor" && <button className="btn ghost" disabled={locked} onClick={() => act(declineSponsorship, tk.id)}><CircleX />{t("support.decline")}</button>}
-            {tk.kind === "sponsor" && <button className="btn primary" disabled={locked} onClick={() => act(acceptSponsorship, tk.id)}><Check />{t("support.accept")}</button>}
+            {tk.kind === "sponsor" && tk.topic === HELD_TOPIC && <button className="btn ghost" disabled={locked} onClick={() => act(answerSponsor, tk.id, false)}><CircleX />{t("support.toughLuck")}</button>}
+            {tk.kind === "sponsor" && tk.topic === HELD_TOPIC && <button className="btn primary" disabled={locked} onClick={() => act(answerSponsor, tk.id, true)}><Check />{t("support.bannerBack")}</button>}
+            {tk.kind === "sponsor" && tk.topic !== HELD_TOPIC && <button className="btn ghost" disabled={locked} onClick={() => act(declineSponsorship, tk.id)}><CircleX />{t("support.decline")}</button>}
+            {tk.kind === "sponsor" && tk.topic !== HELD_TOPIC && <button className="btn primary" disabled={locked} onClick={() => act(acceptSponsorship, tk.id)}><Check />{t("support.accept")}</button>}
             {!stray && tk.kind !== "sponsor" && <button className="btn ghost" disabled={locked} onClick={() => act(closeTicket, tk.id)}><X />{tk.notice ? t("support.ignore") : t("support.close")}</button>}
             {tk.status === "waiting" && tk.kind !== "migration" && !tk.work && <button className="btn primary" disabled={locked} onClick={() => act(resolveTicket, tk.id)}><CircleCheck />{t("support.resolve")}</button>}
           </div>
