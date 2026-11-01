@@ -80,6 +80,9 @@ export default {
   "error.offersOpen": () => "Trois offres sont déjà ouvertes.",
   "error.unknownOffer": () => "Cette offre n'est plus ouverte.",
   "error.offerFull": () => "Toutes les places de cette offre sont prises.",
+  "ticket.sponsor.board.held.subject": (p) => `${p.event} : notre serveur est hors ligne`,
+  "ticket.sponsor.board.held.text": () => `Bonjour, notre serveur est soudain hors ligne. Nous avons seulement retiré votre bannière pour la nouvelle mise en page, ce n'est quand même pas une raison pour nous bloquer ? Merci de le réactiver.`,
+  "error.sponsorNotDropped": () => "Ce sponsoring affiche encore votre bannière.",
   "event.sponsorFailed.title": (p) => `${p.event} a mal tourné`,
   "event.sponsorFailed.text": (p) => `Les serveurs de ${p.event} ont été en panne pendant ${p.hours} ${plural(p.hours, "heure", "heures")}. Deux mauvais avis ont été publiés et ta notoriété a chuté.`,
 } satisfies Dict;
