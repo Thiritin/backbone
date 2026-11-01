@@ -2,6 +2,7 @@
 // expiry into lost sales and the monthly happiness drift. Decisions are recorded in docs/design/economy.md, "Requests, SLAs and growth".
 import { rand, type Rng } from "../00-core/rng";
 import { isMonthStart } from "../00-core/time";
+import { transferHost } from "../60-infra/transfers";
 import { arrivalWeight } from "../10-catalog/attention";
 import { CHOICE_TAU, NEVER_PAYS, ON_TIME } from "../10-catalog/economy";
 import { PRODUCTS, sizeSpec, SIZES } from "../10-catalog/products";
@@ -19,17 +20,22 @@ import { listed, siteFactor } from "../80-business/website";
 import { forumAwareness } from "../47-staff/staff";
 import type { SimEvent } from "../88-tick/tick";
 import { addCustomer } from "../90-actions/customers";
+import { hiddenTraits } from "../45-billing/fraud";
 import { domainFor } from "../30-customers/domains";
 import { CERT_SHARE, offerCertificate } from "../30-customers/certificates";
+import { shopPriceLevel } from "./cycles";
 import { emailFor, firstOrder, isStandard, orderLead, orderQueued } from "./orders";
+import { growSlots } from "../60-infra/games";
+import { LEAD_SHARE, resellerLeadsOpen } from "../30-customers/resellers";
 import { provisionService } from "../90-actions/clusters";
 import { addressesFit } from "../60-infra/addresses";
 import { withAddressNeeds } from "../10-catalog/addresses";
 import { grownSpec, setupPremium, sizeOf, specFor, specText } from "./spec";
 import { acceptQuote, resize, specParams } from "./manual";
+import { answerQuote } from "./quotes";
 import { logActivity } from "../47-staff/activity";
 import type { ActionResult } from "../90-actions/hardware";
-import { forSale, inStock, shopActive, soldOutVisit } from "../80-business/shop";
+import { forSale, inStock, shopStocked, soldOutVisit } from "../80-business/shop";
 import {
   acceptChance, acceptMid, FORUM_AWARENESS, FORUM_PROFILES, leadFlows, missingFor, needFor, referenceFor,
   requestName, share, values, type Need, type SalesMessage, type SalesRequest,
@@ -69,8 +75,11 @@ export function say(s: GameState, id: string, from: SalesMessage["from"], key: s
 export function addRequest(s: GameState, r: Omit<SalesRequest, "id" | "createdAt" | "status" | "quote" | "counter" | "replyAt" | "attempts" | "thread">, key: string): SalesRequest {
   const req: SalesRequest = { ...r, id: `req${s.nextId++}`, createdAt: s.hour, status: "open", quote: null, counter: null, replyAt: null, attempts: 0, thread: [] };
   if (req.product === "webHosting") req.domain = s.services.find((v) => v.id === req.serviceId)?.domain ?? domainFor(s, requestName(req), req.profile, req.city, Number(req.id.slice(3)));
+  const from = transferHost(s, req);
+  if (from) req.spec = { ...req.spec, transferFrom: from };
   const params = { spec: specText(req.product, req.spec), ...specParams(req.spec), city: req.city, sla: req.sla, name: req.contact, domain: req.domain ?? "" };
   req.thread = [msg(s, "customer", key, params)];
+  if (from) req.thread.push(msg(s, "customer", "sales.msg.transfer", { host: from }));
   if (req.discount > 0) req.thread.push(msg(s, "customer", "sales.msg.discount", { discount: Math.round(req.discount * 100) }));
   s.sales = { ...s.sales, requests: [...s.sales.requests, req] };
   return req;
@@ -104,10 +113,15 @@ function newLeads(s: GameState, events: SimEvent[]): void {
     for (let i = 0; i < n; i++) {
       // An order the form takes weighs the setup fee too.
       const need = needFor(s.rng, f.profile, yearOf(s.hour)), form = isStandard(f.profile, need.sla) && !emailFor(s), k = `${f.profile}/${need.product}/${f.city}/${form}`;
-      if (!cache.has(k)) cache.set(k, share(s, f.profile, need.product, f.city, form ? setupPremium(s, need.product) : 0));
+      if (!cache.has(k)) cache.set(k, share(s, f.profile, need.product, f.city, form ? setupPremium(s, need.product) : 0, form ? shopPriceLevel(s, f.profile, need.product) : undefined));
       if (rand(s.rng) >= Math.min(1, cache.get(k)! * f.conversion)) continue;
       // Leads only write about lines on the website, which needs a control plane that sells them.
       if (!lineOffered(s, need.product) || !listed(s, need.product)) continue;
+      // A few web hosting leads are resellers who want a block of accounts instead.
+      if (need.product === "webHosting" && resellerLeadsOpen(s) && rand(s.rng) < LEAD_SHARE) {
+        newLead(s, "reseller", f.city, events, { product: "reseller", size: Math.floor(rand(s.rng) * SIZES.reseller.length), sla: "business" });
+        continue;
+      }
       // The order form is part of the website: a down, slow or dated site loses its orders. Website leads already carry the factor in their count.
       if (form && !f.site && site < 1 && rand(s.rng) >= site) continue;
       if (!isStandard(f.profile, need.sla)) {
@@ -117,7 +131,7 @@ function newLeads(s: GameState, events: SimEvent[]): void {
       // Email orders thin out while delivery is impaired, and businesses shy away from a freemail address.
       if (!form && mailShare(s, f.profile) < 1 && rand(s.rng) >= mailShare(s, f.profile)) continue;
       // A shop sells only what is in stock; a sold-out visitor leaves no request.
-      const spec = form && shopActive(s) ? nextSpec(s, need, f.profile) : undefined;
+      const spec = form && shopStocked(s) ? nextSpec(s, need, f.profile) : undefined;
       if (spec && !inStock(s, { city: f.city, product: need.product, spec })) {
         soldOutVisit(s, need.product);
         continue;
@@ -196,8 +210,8 @@ export function fulfil(s: GameState, r: SalesRequest): ActionResult {
     }
   }
   if (!customerId) {
-    customerId = addCustomer(s, requestName(r), r.profile, r.shady ? "prompt" : habitFor(s.rng, r.profile));
-    if (r.shady) s.customers = s.customers.map((c) => (c.id === customerId ? { ...c, shady: true } : c));
+    customerId = addCustomer(s, requestName(r), r.profile, r.shady || r.fraud ? "prompt" : habitFor(s.rng, r.profile), r);
+    if (r.shady || r.fraud) s.customers = s.customers.map((c) => (c.id === customerId ? { ...c, ...hiddenTraits(s, r) } : c));
   }
   const target = targetFor(s, r);
   const placed: ActionResult = target
@@ -248,6 +262,7 @@ function replyUpgrade(s: GameState, r: SalesRequest, events: SimEvent[]): void {
   if (accepts) {
     say(s, r.id, "customer", "sales.reply.accept", { name: r.contact });
     if (!resize(s, v, r.spec!, r.route ?? "auto", r.city).ok) return loseRequest(s, r, "lost", "lost.noCapacity", { city: r.city });
+    growSlots(s, v.id, r.spec!.ramGb / v.spec.ramGb);
     s.services = s.services.map((x) => (x.id === v.id ? { ...x, price: price / 730, before: undefined } : x));
     say(s, r.id, "you", "sales.you.upgradeDone", { price });
     editRequest(s, r.id, () => ({ status: "won", replyAt: null }));
@@ -348,7 +363,11 @@ export function salesTick(s: GameState): SimEvent[] {
   newLeads(s, events);
   if (s.hour % 24 === MAIL_HOUR) morningMail(s, events);
   expansions(s);
-  for (const r of s.sales.requests) if (r.status === "quoted" && r.replyAt !== null && r.replyAt <= s.hour) reply(s, r, events);
+  for (const r of s.sales.requests) {
+    if (r.status !== "quoted" || r.replyAt === null || r.replyAt > s.hour) continue;
+    reply(s, r, events);
+    if (r.kind === "order") answerQuote(s, r.id, events);
+  }
   expire(s);
   return events;
 }

@@ -44,8 +44,11 @@ export const PROFILES: Profile[] = textFields("sim.profile", [
   { id: "enterprise", name: "Enterprise", budget: "high", skill: "high", mix: 0.02, wP: 0.35, wR: 0.55, wC: 0.1, lambda: 0.25, cap: 2.5, churn: 0.004, outagePenalty: 15, waitPenalty: 1.5, reply: always(4), tolerance: always(0), vpsShare: 0.8 },
 ], ["name"]);
 
+export type Template = "budget" | "wholesale" | "devCloud" | "premium" | "game" | "managed";
+
 export interface Competitor {
   name: string;
+  template: Template;
   priceFactor: number;
   P: number;
   R: number;
@@ -59,12 +62,12 @@ const EVERYTHING: Product[] = ["webHosting", "domain", "ssl", "dns", "gameServer
 
 // Customer choice, Competitors: the four archetypes plus two specialists (decision, recorded in economy.md).
 export const COMPETITORS: Competitor[] = [
-  { name: "Ionose", priceFactor: 0.8, P: 55, R: 60, C: 70, sells: ["webHosting", "domain", "ssl", "dns", "vps"] },
-  { name: "OVHeat", priceFactor: 0.75, P: 70, R: 65, C: 50, sells: EVERYTHING },
-  { name: "Hetzna", priceFactor: 0.7, P: 85, R: 70, C: 40, sells: ["vps", "dedicated", "storage", "cloud", "colocation", "gpu"] },
-  { name: "Rackspice", priceFactor: 1.3, P: 80, R: 90, C: 75, sells: EVERYTHING },
-  { name: "Nitradoh", priceFactor: 0.9, P: 75, R: 60, C: 60, sells: ["gameServer"], targets: ["gamer"] },
-  { name: "WP Engyne", priceFactor: 1.4, P: 70, R: 80, C: 85, sells: ["webHosting"], targets: ["sole", "small", "office", "agency"] },
+  { name: "Ionose", template: "budget", priceFactor: 0.8, P: 55, R: 60, C: 70, sells: ["webHosting", "domain", "ssl", "dns", "vps"] },
+  { name: "OVHeat", template: "wholesale", priceFactor: 0.75, P: 70, R: 65, C: 50, sells: EVERYTHING },
+  { name: "Hetzna", template: "devCloud", priceFactor: 0.7, P: 85, R: 70, C: 40, sells: ["vps", "dedicated", "storage", "cloud", "colocation", "gpu"] },
+  { name: "Rackspice", template: "premium", priceFactor: 1.3, P: 80, R: 90, C: 75, sells: EVERYTHING },
+  { name: "Nitradoh", template: "game", priceFactor: 0.9, P: 75, R: 60, C: 60, sells: ["gameServer"], targets: ["gamer"] },
+  { name: "WP Engyne", template: "managed", priceFactor: 1.4, P: 70, R: 80, C: 85, sells: ["webHosting"], targets: ["sole", "small", "office", "agency"] },
 ];
 
 export const CHOICE_TAU = 12;
@@ -181,4 +184,5 @@ export const LEVELS = [
 export const PACING_YEAR: Record<number, number> = { 2: 2005, 3: 2007, 4: 2010, 5: 2013, 6: 2018 };
 
 export const TAX_RATE = 0.3;
+// The savings the player transfers into the business account when it opens.
 export const START_CASH = 3500;

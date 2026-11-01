@@ -187,12 +187,82 @@ for (const [position, cat] of LAYOUT.entries()) {
 }
 
 const mention = Object.fromEntries(channels.map((c) => [c.name, `<#${c.id}>`]));
-const welcomeText = WELCOME.replace(/<#([a-z-]+)>/g, (m, name) => mention[name] ?? `#${name}`);
+const link = (text) => text.replace(/<#([a-z-]+)>/g, (m, name) => mention[name] ?? `#${name}`);
+const welcomeText = link(WELCOME);
 const welcome = find('welcome', TEXT);
 const posted = (await api('GET', `/channels/${welcome.id}/messages?limit=20`)).find((m) => m.author.id === me.id);
 if (posted) await api('PATCH', `/channels/${welcome.id}/messages/${posted.id}`, { content: welcomeText });
 else await api('POST', `/channels/${welcome.id}/messages`, { content: welcomeText });
 console.log('Welcome message posted');
+
+// Pinned, locked "Start here" post at the top of each forum.
+const START_HERE = {
+  'feature-requests': { name: 'Start here: how to request a feature', content: `# Start here: how to request a feature
+
+This forum collects ideas for Backbone, one post per idea. Search before you post. If your idea is already here, react with 👍 on that post instead of opening a new one, so the votes land in one place.
+
+## How to write a good request
+- Give the post a title that names the idea, like "Let me rename racks" instead of "Suggestion".
+- Pick a tag: Hardware, Network, Economy, Customers or UI.
+- Describe the problem you ran into while playing before you describe your solution. There is often a simpler fix than the one you have in mind.
+- Say where in the game you were: the year, the app or the screen.
+- Keep it to one idea. If you have three, open three posts.
+
+## Template
+\`\`\`
+What I want to do:
+Why I cannot do it right now:
+How I imagine it working:
+Where in the game:
+\`\`\`
+
+## What happens next
+A dev adds a status tag: 📌 Planned, 🔧 In progress, ✅ Done or ⛔ Declined. Declined posts get a short reply that says why. Shipped features show up in <#changelog>.` },
+  'bug-reports': { name: 'Start here: how to report a bug', content: `# Start here: how to report a bug
+
+One post per bug. Search first. If someone already reported it, reply in that post with your details instead of opening a new one.
+
+## What to include
+- A title that says what went wrong, like "Server stays offline after moving it to another rack" instead of "Bug".
+- The steps you took, in order, so we can repeat them.
+- What happened, and what you expected to happen instead.
+- Where you were in the game: the year and the app or window.
+- Your browser and device, like Chrome on Windows or Safari on iPhone.
+- A screenshot or a short recording, attached to the post.
+- For save problems, attach your save. The Backbone menu has "Export save…".
+
+If you prefer GitHub, "Report an issue" in the Backbone menu opens an issue with the build id filled in.
+
+## Tags
+💥 Crash when the game freezes or shows an error. 💾 Save when progress is lost or a save will not load. ⚖️ Balance when a number or price feels wrong. 🪟 UI when something looks wrong or is hard to use.
+
+## Template
+\`\`\`
+What I did:
+What happened:
+What I expected:
+Where in the game:
+Browser and device:
+\`\`\`
+
+A dev tags the post 📌 Planned, 🔧 In progress or ✅ Done once the fix ships, and the fix appears in <#changelog>.` },
+};
+
+const PINNED = 1 << 1;
+const active = (await api('GET', `/guilds/${guild.id}/threads/active`)).threads;
+for (const [channel, post] of Object.entries(START_HERE)) {
+  const forum = find(channel, FORUM);
+  const content = link(post.content);
+  const existing = active.find((th) => th.parent_id === forum.id && th.owner_id === me.id && th.name === post.name);
+  if (existing) {
+    // A forum post's first message shares the thread id.
+    await api('PATCH', `/channels/${existing.id}/messages/${existing.id}`, { content });
+  } else {
+    const th = await api('POST', `/channels/${forum.id}/threads`, { name: post.name, auto_archive_duration: 10080, message: { content } });
+    await api('PATCH', `/channels/${th.id}`, { flags: PINNED, locked: true });
+  }
+  console.log(`  Start here in #${channel}`);
+}
 
 await api('PATCH', `/guilds/${guild.id}`, {
   system_channel_id: find('general', TEXT).id,

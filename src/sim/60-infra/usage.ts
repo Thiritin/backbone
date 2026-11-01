@@ -5,13 +5,15 @@ import type { Resources } from "../10-catalog/products";
 import { BACKUP_CHANGED, BACKUP_HOUR, curveFor, curveLoad, daySwing, growthRate, idNum, JOB_CPU, nightJob, weekMedian } from "../10-catalog/usage";
 import type { Service } from "../30-customers/customers";
 import { bump, createTicket, isFinal } from "../40-support/tickets";
-import { isSuspended } from "../45-billing/billing";
+import { serviceHeld } from "../45-billing/billing";
 import type { Device, End, GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { booked, clustersOn, controlPlanesOn, controlPlaneUp, controlPlaneUse, hostsOfVm, insideVm, isOwnVm, lostDisk, nodeVcpu, workloadsOf, workloadsOn, type Workload } from "./cluster";
 import { serviceMbps } from "./network";
+import { fillOf } from "../30-customers/resellers";
 import { machineScreen } from "./oob";
 import { installedRamGb, portPeers, raidUsable, working } from "./status";
+import { THERMAL, throttled } from "./thermal";
 
 // economy.md: memory stays mostly resident, disks fill from 30% of booked at signup at the customer's growth rate up to the booked limit.
 const RAM_BASE = 0.6;
@@ -26,10 +28,14 @@ const demand = (s: GameState, v: Service, hour: number) => 1 + growthRate(s.seed
 
 // A workload's load at an hour: its customer's curve times its day's swing and their grown demand with ±20% jitter drawn from the seed, plus their
 // night job. Stopped, restoring and lost workloads idle.
+// A held account serves a parked page.
+export const HELD_LOAD = 0.02;
+
 export function workloadLoad(s: GameState, w: Workload, hour: number): number {
   if (w.stopped || w.busyUntil > hour || lostDisk(s, w)) return 0;
   const v = s.services.find((x) => x.id === w.serviceId), c = v && s.customers.find((x) => x.id === v.customerId);
   if (!v || !c) return 0;
+  if (serviceHeld(s, v)) return HELD_LOAD;
   const jitter = 1 + 0.4 * (rand(hashRng(s.seed, idNum(w.id), hour)) - 0.5);
   return Math.min(1, curveLoad(curveFor(v.product, c.profile, s.seed, c.id), hour) * daySwing(s.seed, w.id, hour) * demand(s, v, hour) * jitter + JOB_CPU * nightJob(s.seed, c.id, hour));
 }
@@ -76,7 +82,9 @@ export function workloadUse(s: GameState, w: Workload, hour: number = s.hour): R
     return u;
   }
   const load = workloadLoad(s, w, hour), lost = lostDisk(s, w);
-  return { vcpu: booked(s, w).vcpu * load, ramGb: w.stopped || lost ? 0 : w.ramGb * (RAM_BASE + (1 - RAM_BASE) * load), diskGb: lost ? 0 : w.diskGb * diskFill(s, w, hour) };
+  const fill = fillOf(s, w.serviceId);
+  const grow = (k: "vcpu" | "ramGb" | "diskGb") => fill * (w.promised && w[k] > 0 ? w.promised[k] / w[k] : 1);
+  return { vcpu: booked(s, w).vcpu * grow("vcpu") * load, ramGb: w.stopped || lost ? 0 : w.ramGb * grow("ramGb") * (RAM_BASE + (1 - RAM_BASE) * load), diskGb: lost ? 0 : w.diskGb * grow("diskGb") * diskFill(s, w, hour) };
 }
 
 // What a node physically has and uses at an hour, and the performance its workloads get: CPU contention slows everyone by
@@ -100,7 +108,8 @@ export function nodeUsage(s: GameState, deviceId: string, hour: number = s.hour)
   const physical = { vcpu: nodeVcpu(s, d), ramGb: installedRamGb(d), diskGb: raidUsable(d) };
   const cpu = used.vcpu > physical.vcpu ? physical.vcpu / used.vcpu : 1;
   const disk = used.diskGb > physical.diskGb ? 0.5 : 1;
-  return { used, physical, perf: Math.min(cpu, disk) * (d.rebuild ? REBUILD_PERF[d.rebuildRate] : 1) };
+  const heat = throttled(s, d) ? THERMAL.throttlePerf : 1;
+  return { used, physical, perf: Math.min(cpu, disk) * (d.rebuild ? REBUILD_PERF[d.rebuildRate] : 1) * heat };
 }
 
 // A working cluster node whose RAM in use exceeds its installed RAM freezes: every workload on it is down until it fits again.
@@ -253,7 +262,7 @@ export function usageTick(s: GameState): SimEvent[] {
   if (s.hour % 24 !== 12) return [];
   let copied = false;
   for (const v of s.services) {
-    const w = v.endedAt === null && !isSuspended(s, v.customerId) ? s.workloads.find((x) => x.serviceId === v.id && x.clusterId && !x.stopped) : undefined;
+    const w = v.endedAt === null && !serviceHeld(s, v) ? s.workloads.find((x) => x.serviceId === v.id && x.clusterId && !x.stopped) : undefined;
     const profile = w && s.customers.find((x) => x.id === v.customerId && x.churnedAt === null)?.profile;
     if (!w || !profile) continue;
     const fill = diskFill(s, w, s.hour), pegged = weekMedian(curveFor(v.product, profile, s.seed, v.customerId)) * demand(s, v, s.hour) >= PEGGED;

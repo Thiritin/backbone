@@ -1,7 +1,8 @@
+import { newGame } from "./fixtures";
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
-import { latestOs } from "../src/sim/10-catalog/os";
-import { newGame } from "../src/sim/50-state";
+import { existsSync } from "node:fs";
+import { OS_RELEASES, latestOs } from "../src/sim/10-catalog/os";
 import { updateOs } from "../src/sim/90-actions/os";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 
@@ -21,6 +22,10 @@ describe("Pear OS updates", () => {
     expect(updateOs(s).ok).toBe(true);
     expect(s.os).toBe("yosemite");
     expect(updateOs(s).ok).toBe(false);
+  });
+
+  it("ships a wallpaper for every release", () => {
+    for (const r of OS_RELEASES) expect(existsSync(`public/wallpapers/${r.id}.webp`), r.id).toBe(true);
   });
 
   it("loads saves from before the field on the first release", () => {

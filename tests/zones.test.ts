@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { REGIONS, regionOf } from "../src/sim/20-world/datacenters";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { storageStacks } from "../src/sim/60-infra/status";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
-import { addLocation, buyRack, closeLocation, mountDevice, mountStack, sellDevice, shipStock, unmountDevice } from "../src/sim/90-actions/hardware";
-import { buyCart, buyDevice, freeFloor } from "./fixtures";
+import { addLocation, buyRack, closeLocation, sellDevice, shipStock, unmountDevice } from "../src/sim/90-actions/hardware";
+import { mountDevice, mountStack } from "./plugged";
+import { buyCart, buyDevice, freeFloor, newGame } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { withServer } from "./fixtures";
 
@@ -149,7 +150,7 @@ describe("closeLocation and saves", () => {
     const loaded = deserialize(JSON.stringify(raw));
     expect(loaded.locations.map((l) => l.az)).toEqual(["fra1", "fra2", "lon1"]);
     expect(loaded.devices.find((d) => d.id === stored)).toMatchObject({ store: "loc1", transitTo: null, arriveAt: null });
-    expect(loaded.devices.filter((d) => d.store === null).map((d) => d.id)).toEqual(["dev3", "dev4", "dev5", s.devices.find((d) => d.panel === fr5)!.id, s.devices.find((d) => d.panel === lon)!.id]);
+    expect(loaded.devices.filter((d) => d.store === null).map((d) => d.id)).toEqual(["dev3", "dev4", "dev5", "dev6", s.devices.find((d) => d.panel === fr5)!.id, s.devices.find((d) => d.panel === lon)!.id]);
     expect(deserialize(serialize(s))).toEqual(s);
   });
 });

@@ -5,6 +5,7 @@ export default {
   "support.cause.generator": () => "Guasto al gruppo elettrogeno",
   "support.cause.feed": () => "Guasto alla linea di alimentazione",
   "support.cause.seizure": () => "Server sequestrato",
+  "support.cause.heat": () => "Surriscaldamento",
   "support.until": (p) => `Fino al ${p.day}`,
   "support.dark": (p) => `${p.d} al buio`,
   "support.noDowntime": () => "Nessun fermo",

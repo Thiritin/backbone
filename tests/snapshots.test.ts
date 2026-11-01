@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { datastoreUsed, nodeUsed, vmById, type Workload } from "../src/sim/60-infra/cluster";
 import { tick } from "../src/sim/88-tick/tick";
 import { createVm } from "../src/sim/90-actions/clusters";
 import { attachDatastore, moveDisk } from "../src/sim/90-actions/datastores";
 import { deleteSnapshot, revertSnapshot, takeSnapshot } from "../src/sim/90-actions/snapshots";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { buyDevice, hypervisor, withServer } from "./fixtures";
+import { buyDevice, hypervisor, skipTo, withServer, newGame } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 const ok = (r: { ok: boolean; id?: string; error?: string }) => { expect(r.error).toBeUndefined(); return r.id!; };
@@ -34,6 +34,19 @@ describe("snapshots", () => {
     expect(snaps(s, vm).map((x) => x.deltaGb)).toEqual([0, 0, 0]);
     const other = setup("proxmocks");
     expect(err(takeSnapshot(other.s, other.vm))).toBe("error.noSnapshots");
+  });
+
+  it("lets HyperVee take, revert and delete up to three checkpoints without datastores", () => {
+    const s = { ...withServer(newGame(1)), cash: 100_000 };
+    skipTo(s, 2009);
+    const c = hypervisor(s, ["dev3"], "HV 1", "hypervee"), vm = ok(createVm(s, c, SIZE));
+    const first = ok(takeSnapshot(s, vm));
+    for (let i = 0; i < 2; i++) ok(takeSnapshot(s, vm));
+    expect(err(takeSnapshot(s, vm))).toBe("error.snapshotsFull");
+    ok(revertSnapshot(s, vm, first) as never);
+    expect(snaps(s, vm)).toHaveLength(1);
+    ok(deleteSnapshot(s, vm, first) as never);
+    expect(snaps(s, vm)).toHaveLength(0);
   });
 
   it("grows each delta by 5% of the disk a day up to the whole disk, booked on the node", () => {

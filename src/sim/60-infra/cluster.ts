@@ -4,19 +4,22 @@ import { GPU_SKILL } from "../10-catalog/research";
 import { backsUp, balancerIn, fcGbit, IN_VM, isService, kindsServing, kindServing, phpAt, softwareById, type DatastoreProtocol, type SoftwareKind } from "../10-catalog/platforms";
 import { OVERCOMMIT, PRODUCTS, type Resources } from "../10-catalog/products";
 import type { Product } from "../30-customers/customers";
-import { isSuspended } from "../45-billing/billing";
+import { serviceHeld } from "../45-billing/billing";
 import type { Device, GameState, MachineState } from "../50-state";
 import type { OsImage } from "../10-catalog/server-os";
 import type { SimEvent } from "../88-tick/tick";
 import type { VmSample } from "./stats";
-import { deviceVendor, installedRamGb, installedVcpu, linkStatus, locationOf, raidUsable, rackPower, readOnlySweep, working, burning } from "./status";
+import { deviceVendor, drivesOf, installedRamGb, installedVcpu, linkStatus, locationOf, raidUsable, rackPower, readOnlySweep, serviceById, sweepGroups, working, burning } from "./status";
 import { COMPAT_VCPU } from "../10-catalog/cpus";
 import { hasPublicAddress, sellsFrom } from "./addresses";
+import { addressOf } from "./lan";
 import { coverage } from "./maintenance";
+import type { PackageDef } from "../80-business/packages";
 
 // Active takes new workloads, cordoned keeps its own, draining moves them off, maintenance is empty after a drain.
 export type NodeState = "active" | "cordoned" | "draining" | "maintenance";
-export interface ClusterNode { deviceId: string; state: NodeState }
+// ip is the address the node joined with (lan.md, Clusters); a node whose address moves drops out until it is back.
+export interface ClusterNode { deviceId: string; state: NodeState; ip?: string }
 export type Placement = "pack" | "spread";
 export type BackupEvery = "off" | "daily" | "weekly";
 // High availability, per hypervisor cluster once researched: live migration, auto-balancing and automatic failover.
@@ -36,6 +39,10 @@ export interface Cluster {
   switching: { kind: SoftwareKind; to: string; doneAt: number } | null;
   backup: { targetId: string | null; every: BackupEvery };
   ramGuard?: boolean;
+  // The player's cap on booked vCPU per physical vCPU for a panel host; missing or null is no cap (oversell.ts).
+  oversell?: number | null;
+  // The update channel; missing is Release (channel.ts).
+  channel?: "stable" | "release" | "edge";
   // Compatibility mode lets VMs move live between nodes of different CPU vendors, at COMPAT_VCPU of every node's vCPU.
   compat?: boolean;
   // Whether the software updates itself at AUTO_UPDATE_HOUR when an update is due (software.ts).
@@ -47,6 +54,8 @@ export interface Cluster {
   php: string; phpUntil: number; ha: Ha; version: number; updatedAt: number;
   // Servers attached as shared storage (economy.md, Datastores); VM disks on one stay off their node.
   datastores: Datastore[];
+  // Named specs this installation sells (80-business/packages.ts); absent reads as none.
+  packages?: PackageDef[];
 }
 // A datastore takes disks from readyAt on.
 export interface Datastore { deviceId: string; protocol: DatastoreProtocol; readyAt: number }
@@ -60,6 +69,8 @@ export interface Datastore { deviceId: string; protocol: DatastoreProtocol; read
 export interface Workload extends Resources, Partial<MachineState> {
   id: string; serviceId: string; clusterId: string | null; deviceId: string | null; rackId: string | null; slot: number; units: number; watts: number; placedAt: number;
   stopped: boolean; busyUntil: number; backupAt: number | null; stuck?: boolean;
+  // The sold size when a package booked less; the service uses the sold size times its load.
+  promised?: Resources;
   // vmNNN for the player's own VMs; a customer workload carries its service's hostname.
   hostname?: string;
   // The installer ISO of an operating system loaded in one of the player's own VMs (90-actions/console.ts); the VM boots
@@ -87,7 +98,7 @@ export const deltaGb = (w: Workload): number => w.snapshots?.reduce((n, x) => n 
 // Old saves are converted by upgradeCompute; this fills the fields every cluster has.
 // Software of a save from before versions runs its install year, or two years before the save while no install date is known.
 export const clusterDefaults = (c: Partial<Cluster> & Pick<Cluster, "nodes">, hour = 0): Cluster => ({
-  panel: null, platform: null, vm: null, switching: null, appSuite: false, datastores: [], backup: { targetId: null, every: "off" }, php: phpAt(yearOf(hour)), phpUntil: -1,
+  panel: null, platform: null, vm: null, switching: null, appSuite: false, datastores: [], packages: [], backup: { targetId: null, every: "off" }, php: phpAt(yearOf(hour)), phpUntil: -1,
   version: c.switching ? yearOf(c.switching.doneAt) : Math.max(START_YEAR, yearOf(hour) - 2), updatedAt: c.switching?.doneAt ?? hour, ...c,
   ha: { ...HA_OFF, ...c.ha },
   controlPlane: c.controlPlane === undefined ? c.nodes[0]?.deviceId ?? null : c.controlPlane,
@@ -101,8 +112,16 @@ const minus = (a: Resources, b: Resources): Resources => ({ vcpu: a.vcpu - b.vcp
 // What a node holds: the vCPU of its physical cores and its installed RAM, and the disk it books up to (usable RAID times
 // OVERCOMMIT.disk); with s, the vCPU its cluster's compatibility mode leaves. Booking CPU and RAM past the physical amounts is
 // always allowed; it costs performance and freezes (usage.ts).
+// MinnIO erasure sets: parity drives hold no data, never more than half the set.
+export const effParity = (parity: number, n: number): number => Math.min(parity, Math.floor(n / 2));
+function ecFactor(s: GameState, d: Device): number {
+  const c = s.clusters.find((x) => x.nodes.some((n) => n.deviceId === d.id));
+  if (!c || (c.panel ?? c.platform) !== "minnio") return 1;
+  const set = Math.min(16, c.nodes.reduce((n, x) => n + drivesOf(s.devices.find((y) => y.id === x.deviceId) ?? d).length, 0));
+  return set ? (set - effParity(s.netsvc.ec[c.id] ?? 2, set)) / set : 1;
+}
 export function nodeCapacity(d: Device, s?: GameState): Resources {
-  return modelById(d.model).server ? { vcpu: s ? nodeVcpu(s, d) : installedVcpu(d), ramGb: installedRamGb(d), diskGb: raidUsable(d) * OVERCOMMIT.disk } : ZERO;
+  return modelById(d.model).server ? { vcpu: s ? nodeVcpu(s, d) : installedVcpu(d), ramGb: installedRamGb(d), diskGb: raidUsable(d) * OVERCOMMIT.disk * (s ? ecFactor(s, d) : 1) } : ZERO;
 }
 export const nodeVcpu = (s: GameState, d: Device): number => (clusterOf(s, d.id)?.compat ? Math.round(installedVcpu(d) * COMPAT_VCPU * 100) / 100 : installedVcpu(d));
 // Whether a VM moves live between two servers: their boards share a vendor, or both clusters run compatibility mode.
@@ -246,9 +265,17 @@ export const backsUpCluster = (s: GameState, source: Cluster, target: Cluster): 
 // The clusters the source can back up to.
 export const backupTargets = (s: GameState, source: Cluster): Cluster[] => s.clusters.filter((t) => t.id !== source.id && backsUpCluster(s, source, t));
 export const hasHosts = (c: Cluster): boolean => c.nodes.length > 0 || !!c.vm;
+// A node takes part in its cluster while it works and holds the address it joined with.
+export const memberUp = (s: GameState, n: ClusterNode): boolean =>
+  working(s, n.deviceId) && (n.ip === undefined || addressOf(s, n.deviceId) === n.ip);
+// Hourly: a node that joined before it had an address, or from a save without one, keeps the first address it holds.
+export function pinMembers(s: GameState): void {
+  if (!s.clusters.some((c) => c.nodes.some((n) => n.ip === undefined && addressOf(s, n.deviceId)))) return;
+  s.clusters = s.clusters.map((c) => ({ ...c, nodes: c.nodes.map((n) => (n.ip === undefined && addressOf(s, n.deviceId) ? { ...n, ip: addressOf(s, n.deviceId)! } : n)) }));
+}
 // Whether the internet reaches a cluster: its panel VM or one of its servers has a public address.
 export const clusterReachable = (s: GameState, c: Cluster): boolean =>
-  c.vm ? hasPublicAddress(s, c.vm) : c.nodes.some((n) => linkStatus(s, n.deviceId).online && hasPublicAddress(s, n.deviceId));
+  c.vm ? hasPublicAddress(s, c.vm) : c.nodes.some((n) => memberUp(s, n) && linkStatus(s, n.deviceId).online && hasPublicAddress(s, n.deviceId));
 // Whether the player can deliver the product line anywhere: a reachable cluster with software that sells it, a spare
 // reachable server for dedicated servers, a rented location for colocation (gdd.md, Addresses and internet, The start).
 export function lineOffered(s: GameState, p: Product): boolean {
@@ -340,7 +367,10 @@ export function dropCluster(s: GameState, id: string) {
   if (s.company.mail.kind === "self" && s.company.mail.clusterId === id) s.company = { ...s.company, mail: { kind: "free" } };
   s.security = { ...s.security, offline: drop(s.security.offline), hacked: drop(s.security.hacked), patched: drop(s.security.patched) };
 }
-export const workloadsOf = (s: GameState, serviceId: string): Workload[] => s.workloads.filter((w) => w.serviceId === serviceId);
+export const workloadsOf = (s: GameState, serviceId: string): Workload[] => {
+  const by = sweepGroups(s, "workloads", () => s.workloads, (w) => w.serviceId);
+  return by ? by.get(serviceId) ?? [] : s.workloads.filter((w) => w.serviceId === serviceId);
+};
 export const workloadsOn = (s: GameState, deviceId: string): Workload[] => s.workloads.filter((w) => w.deviceId === deviceId);
 // A server taken by a cluster or rented whole as a dedicated server.
 export const serverTaken = (s: GameState, deviceId: string): boolean =>
@@ -361,7 +391,7 @@ export function pickNode(
   let best: { id: string; load: number; roomy: boolean } | null = null;
   for (const n of cluster.nodes) {
     const d = s.devices.find((x) => x.id === n.deviceId);
-    if (!d || n.state !== "active" || n.deviceId === skip || !working(s, d.id)) continue;
+    if (!d || n.state !== "active" || n.deviceId === skip || !memberUp(s, n)) continue;
     if ((r.gpus ?? 0) > cardsFree(s, d) || !nodeTakes(s, d, r)) continue;
     const cap = bookable(s, d), used = nodeUsed(s, d.id), roomy = used.ramGb + r.ramGb <= cap.ramGb + 1e-9;
     // Past every node's RAM, the one with the lowest share of RAM booked is the least likely to freeze.
@@ -447,7 +477,7 @@ export function computeTick(s: GameState): SimEvent[] {
     }
   }
   const ids = [...new Set(s.workloads.filter((w) => !isOwnVm(w)).map((w) => w.serviceId))];
-  const down = readOnlySweep(s, () => ids.filter((id) => !workloadsUp(s, id) && !isSuspended(s, s.services.find((v) => v.id === id)!.customerId)));
+  const down = readOnlySweep(s, () => ids.filter((id) => !workloadsUp(s, id) && !serviceHeld(s, serviceById(s, id)!)));
   // Hours inside an announced maintenance window are no downtime for the SLA; a late announcement counts half.
   const hours = (id: string) => coverage(s, s.services.find((v) => v.id === id)!)?.factor ?? 1;
   if (down.length) s.downHours = { ...s.downHours, ...Object.fromEntries(down.map((id) => [id, (s.downHours[id] ?? 0) + hours(id)])) };

@@ -74,6 +74,12 @@ function updateApps(s: GameState, ids: Set<string>): void {
   if (ids.size) s.services = s.services.map((v) => (ids.has(v.id) ? { ...v, spec: { ...v.spec, appVersion: yearOf(s.hour), appUpdatedAt: s.hour } } : v));
 }
 
+// Brings one site to this year's release, which closes every open vulnerability, and ends the update ticket the customer opened.
+export function updateSite(s: GameState, serviceId: string): void {
+  updateApps(s, new Set([serviceId]));
+  settle(s, serviceId, "update", "resolve");
+}
+
 // Ends the open ticket of the topic on a service; the player's own ticket is resolved, a customer who sorted it out withdraws theirs.
 function settle(s: GameState, serviceId: string, topic: string, how: "withdraw" | "resolve"): void {
   const done: Partial<Ticket> = how === "resolve" ? { status: "resolved", outcome: "cleaned" } : { status: "closed", outcome: "withdrawn" };

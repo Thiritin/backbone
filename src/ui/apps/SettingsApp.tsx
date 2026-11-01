@@ -2,7 +2,8 @@ import { ChevronRight } from "lucide-react";
 import { useRef, useState, type CSSProperties } from "react";
 import { canAutomate } from "../../sim/30-market/manual";
 import { setCompany } from "../../sim/90-actions/company";
-import { setAutoOrders } from "../../sim/90-actions/orders";
+import { setAutoOrders, setReviewOrders, setScreenOrders } from "../../sim/90-actions/orders";
+import { SCREENING_SKILL } from "../../sim/45-billing/fraud";
 import { t } from "../../i18n/en";
 import { APPS, appFor, appTitle } from "./registry";
 import { CompanyFields } from "./company";
@@ -11,9 +12,13 @@ import { NOTIFY_TYPES } from "../notify-types";
 import { prefOf, useFocus, useStore, type Theme } from "../store";
 import { playSound } from "../sounds";
 import { exportSave } from "../export-save";
+import { OS_RELEASES } from "../../sim/10-catalog/os";
+import { SOUND_CREDIT, WALLPAPER_CREDITS, wallpaperSvg, type WallpaperId } from "../desktop/wallpaper";
 import { LANGS, lang, setLang, type Lang } from "../../i18n/lang";
 
 const THEMES: [Theme, string][] = [["light", t("apps.settings.light")], ["dark", t("apps.settings.dark")], ["auto", t("apps.settings.auto")]];
+
+// Credit rows hold long link text next to a short label.
 
 export function SettingsApp() {
   const { notifyPrefs, setNotifyPref, game, act, theme, setTheme, sound, setSound } = useStore();
@@ -46,21 +51,30 @@ export function SettingsApp() {
         <CompanyFields company={{ ...game.company, name }} onCommit={commitName}
           onChange={(p) => (p.name !== undefined ? setName(p.name) : act(setCompany, p))} />
       </div>
-      {canAutomate(game) && <>
-        <h2 data-section="Orders">{t("apps.settings.orders")}</h2>
-        <div className="settings-group">
-          <div className="settings-line">
-            <span>{t("apps.settings.autoOrders")}</span>
-            <input type="checkbox" role="switch" className="switch" aria-label={t("apps.settings.autoOrders")} checked={game.autoOrders} onChange={(e) => act(setAutoOrders, e.target.checked)} />
+      <h2 data-section="Orders">{t("apps.settings.orders")}</h2>
+      <div className="settings-group">
+        {canAutomate(game) && <div className="settings-line">
+          <span>{t("apps.settings.autoOrders")}</span>
+          <input type="checkbox" role="switch" className="switch" aria-label={t("apps.settings.autoOrders")} checked={game.autoOrders} onChange={(e) => act(setAutoOrders, e.target.checked)} />
+        </div>}
+        <div className="settings-line">
+          <span>{t("apps.settings.reviewOrders")}</span>
+          <input type="checkbox" role="switch" className="switch" aria-label={t("apps.settings.reviewOrders")} checked={game.reviewOrders} onChange={(e) => act(setReviewOrders, e.target.checked)} />
+        </div>
+        {game.unlocks.includes(SCREENING_SKILL) && <div className="settings-line">
+          <span>{t("apps.settings.screenOrders")}</span>
+          <input type="checkbox" role="switch" className="switch" aria-label={t("apps.settings.screenOrders")} checked={game.screenOrders} onChange={(e) => act(setScreenOrders, e.target.checked)} />
+        </div>}
+      </div>
+      <h2 data-section="Appearance">{t("apps.settings.appearance")}</h2>
+      <div className="settings-group">
+        <div className="settings-line">
+          <span>{t("apps.settings.theme")}</span>
+          <div className="seg" role="group" aria-label={t("apps.settings.theme")}>
+            {THEMES.map(([id, label]) => <button key={id} aria-pressed={theme === id} onClick={() => setTheme(id)}>{label}</button>)}
           </div>
         </div>
-      </>}
-      <h2 data-section="Appearance">{t("apps.settings.appearance")}</h2>
-      <div className="settings-group settings-line">
-        <span>{t("apps.settings.theme")}</span>
-        <div className="seg" role="group" aria-label={t("apps.settings.theme")}>
-          {THEMES.map(([id, label]) => <button key={id} aria-pressed={theme === id} onClick={() => setTheme(id)}>{label}</button>)}
-        </div>
+        <WallpaperPicker os={game.os} />
       </div>
       <h2 data-section="Sound">{t("apps.settings.sound")}</h2>
       <div className="settings-group">
@@ -135,7 +149,67 @@ export function SettingsApp() {
           </select>
         </div>
       </div>
+      <h2 data-section="Credits">{t("apps.settings.credits")}</h2>
+      <div className="settings-group">
+        {OS_RELEASES.map((r) => {
+          const c = WALLPAPER_CREDITS[r.id as WallpaperId];
+          if (!c) return null;
+          return (
+            <div className="settings-line settings-credit" key={r.id}>
+              <span>{r.name}</span>
+              <a className="link" href={c.url} target="_blank" rel="noreferrer">{`${c.title}, ${c.author}, ${c.license}`}</a>
+            </div>
+          );
+        })}
+        <div className="settings-line settings-credit">
+          <span>{t("apps.settings.sound")}</span>
+          <a className="link" href={SOUND_CREDIT.url} target="_blank" rel="noreferrer">{SOUND_CREDIT.text}</a>
+        </div>
+      </div>
       <LeaderboardSettings />
+    </div>
+  );
+}
+
+// Own images are scaled down to 2560px and kept as a JPEG data URL so they fit in local storage.
+function WallpaperPicker({ os }: { os: string }) {
+  const { wallpaper, setWallpaper } = useStore();
+  const file = useRef<HTMLInputElement>(null);
+  const thumb = (id: string) => `url(${import.meta.env.BASE_URL}wallpapers/thumbs/${id}.webp)`;
+  const load = (f: File) => {
+    const url = URL.createObjectURL(f);
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, 2560 / img.width);
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.width * scale); c.height = Math.round(img.height * scale);
+      c.getContext("2d")?.drawImage(img, 0, 0, c.width, c.height);
+      setWallpaper({ pick: "custom", custom: c.toDataURL("image/jpeg", 0.85) });
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  };
+  const picks: [string, string, string | null][] = [
+    ["os", t("apps.settings.wallpaperOs"), thumb(os)],
+    ...OS_RELEASES.map((r): [string, string, string] => [r.id, r.name, thumb(r.id)]),
+    ["map", t("apps.settings.wallpaperMap"), null],
+    ["custom", t("apps.settings.wallpaperOwn"), wallpaper.custom ? `url(${wallpaper.custom})` : null],
+  ];
+  return (
+    <div className="settings-line settings-divide wp-line">
+      <span>{t("apps.settings.wallpaper")}</span>
+      <div className="wp-picks" role="group" aria-label={t("apps.settings.wallpaper")}>
+        {picks.map(([id, label, bg]) => (
+          <button key={id} className="wp-pick" aria-pressed={wallpaper.pick === id}
+            onClick={() => id === "custom" && (!wallpaper.custom || wallpaper.pick === "custom") ? file.current?.click() : setWallpaper({ pick: id })}>
+            {id === "map"
+              ? <span className="wp-thumb" dangerouslySetInnerHTML={{ __html: wallpaperSvg() }} />
+              : <span className="wp-thumb" style={bg ? { backgroundImage: bg } : undefined} />}
+            {label}
+          </button>
+        ))}
+      </div>
+      <input ref={file} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) load(f); e.target.value = ""; }} />
     </div>
   );
 }

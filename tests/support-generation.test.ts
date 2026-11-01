@@ -1,7 +1,7 @@
+import { newGame } from "./fixtures";
 import { describe, expect, it, vi } from "vitest";
 import type { Profile } from "../src/sim/30-customers/customers";
 import { type TicketKind } from "../src/sim/40-support/tickets";
-import { newGame } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { FEB_1, crowd, runTo } from "./support.helpers";
 
@@ -10,13 +10,14 @@ vi.mock("../src/sim/40-support/status", () => ({ serviceOnline: (_s: unknown, id
 
 describe("ticket generation", () => {
   it("follows the monthly rates per technical skill", () => {
-    const s = newGame(7);
-    crowd(s, "private", 300);
-    crowd(s, "enterprise", 300);
-    crowd(s, "gamer", 300);
-    runTo(s, 730);
-    const count = (profile: Profile, kind: TicketKind) =>
-      s.tickets.filter((t) => t.kind === kind && s.customers.find((c) => c.id === t.customerId)!.profile === profile).length;
+    // One game per profile: a tick costs customers squared, so three crowds of 300 are far cheaper than one of 900.
+    const games = new Map((["private", "enterprise", "gamer"] as Profile[]).map((profile) => {
+      const s = newGame(7);
+      crowd(s, profile, 300);
+      runTo(s, 730);
+      return [profile, s];
+    }));
+    const count = (profile: Profile, kind: TicketKind) => games.get(profile)!.tickets.filter((t) => t.kind === kind).length;
     const near = (n: number, expected: number) => expect(Math.abs(n - expected)).toBeLessThan(4 * Math.sqrt(expected));
     // New customers ask about 2.3 times the base how-to rate in their first month (tenureFactor).
     near(count("private", "howTo"), 125);
@@ -26,7 +27,7 @@ describe("ticket generation", () => {
     near(count("enterprise", "abuse"), 6);
     near(count("gamer", "howTo"), 42);
     near(count("gamer", "abuse"), 6);
-  }, 60_000);
+  });
 
   it("drops how-to questions to a trickle once customers are settled", () => {
     const s = newGame(7);

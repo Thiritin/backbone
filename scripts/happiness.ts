@@ -5,7 +5,7 @@
 // Logs per month the customers with a live service, MRR, average happiness, level and the happiness change per customer by source.
 // Usage: npx tsx scripts/happiness.ts [seeds=1-6] [months=12] [--upgrades] [--no-buy] [--quiet]
 import { counts } from "../src/sim/00-core/workhours";
-import { domainDown } from "../src/sim/30-customers/registry";
+import { authCode, domainDown } from "../src/sim/30-customers/registry";
 import { serviceOnline } from "../src/sim/40-support/status";
 import { isSuspended } from "../src/sim/45-billing/billing";
 import { lostDisk, workloadsOf, type Workload } from "../src/sim/60-infra/cluster";
@@ -30,18 +30,21 @@ import { openVulns } from "../src/sim/60-infra/vulns";
 import { sitesDown, supports, vmById, vmOf, vmRoom, type Cluster } from "../src/sim/60-infra/cluster";
 import { buyDevice, connect, orderHomeLine } from "../src/sim/90-actions/hardware";
 import { mountDevice } from "../tests/plugged";
+import { mailedAddress } from "../src/sim/30-customers/addresses";
 import { confirmOrder, createAccount, offerUpgrade, provisionOrder, quoteOrder, registerOrderDomain, renewDomain } from "../src/sim/90-actions/orders";
 import { closeTicket, replyTicket, resolveTicket } from "../src/sim/90-actions/support";
 import { startGame } from "../src/sim/90-actions/start";
 import { fillLines } from "../src/sim/80-business/website";
 import { OWNED, owns } from "../src/sim/80-business/marketing";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
+import { chooseShop } from "../src/sim/90-actions/shop";
+import { HAND_ROLLED } from "../src/sim/10-catalog/shops";
 import { bookMail } from "../src/sim/90-actions/mail";
 import { registerCompanyDomain, signRegistrar } from "../src/sim/90-actions/registrar";
 import { derivedDomain } from "../src/sim/30-customers/domains";
 import { research } from "../src/sim/90-actions/store";
 import { debt, LOAN_AMOUNTS, loanAvailable } from "../src/sim/45-billing/billing";
-import { takeLoan } from "../src/sim/90-actions/billing";
+import { matchTransfer, takeLoan } from "../src/sim/90-actions/billing";
 import { HOME_LINES, homeLineById } from "../src/sim/20-world/datacenters";
 import { homePeak } from "../src/sim/60-infra/network";
 import { freeV4 } from "../src/sim/60-infra/addresses";
@@ -89,7 +92,7 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
   // An order is quoted at the market price (or the counter), then worked by hand; the setup picks the first host with disk room.
   const doStep = (t: string, step: string, r: SalesRequest) =>
     step === "quote" ? quoteOrder(s, t, r.status === "countered" ? r.counter! : r.reference)
-      : step === "account" ? createAccount(s, t) : step === "invoice" ? confirmOrder(s, t) : step === "domain" ? registerOrderDomain(s, t) : provisionOrder(s, t, hostFor(s, r) ?? "");
+      : step === "account" ? createAccount(s, t, mailedAddress(s.seed, r)) : step === "invoice" ? confirmOrder(s, t) : step === "domain" ? registerOrderDomain(s, t, s.customers.find((c) => c.id === r.customerId)?.address, r.owned ? authCode(s.seed, r.id) : undefined) : provisionOrder(s, t, hostFor(s, r) ?? "");
   // The model's steady capacity rule: another basement server once the cluster's RAM is 80% booked and cash allows.
   // Web hosting lives in panel VMs: one 80% full grows by 2 GB, or a new one starts next to it once its node is full.
   const ramFits = (deviceId: string, gb: number) => nodeUsed(s, deviceId).ramGb + gb <= bookable(s, s.devices.find((d) => d.id === deviceId)!).ramGb;
@@ -159,8 +162,9 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
   const learn = () => {
     const next = ["products", "marketingBasics"].find((id) => !s.unlocks.includes(id));
     if (next && !s.training) research(s, next);
-    for (const c of ["website", "orderForm"] as const) if (!owns(s, c) && !needServer && s.cash >= OWNED[c].setup + 2000) setUpChannel(s, c);
-    for (const k of ["products", "orderForm"]) if (!(k in reached) && (s.unlocks.includes(k) || owns(s, k as "orderForm"))) reached[k] = Math.round((10 * s.hour) / MONTH) / 10;
+    if (!owns(s, "website") && !needServer && s.cash >= OWNED.website.setup + 2000) setUpChannel(s, "website");
+    if (owns(s, "website") && !s.shop.variant && !needServer && s.cash >= HAND_ROLLED.setup + 2000) chooseShop(s, "handRolled");
+    for (const k of ["products", "orderForm"]) if (!(k in reached) && (k === "orderForm" ? !!s.shop.variant : s.unlocks.includes(k))) reached[k] = Math.round((10 * s.hour) / MONTH) / 10;
   };
   // The cheapest line with more upload this year, once the basement's evening peak reaches 90% of the line.
   const upgradeLine = () => {
@@ -186,6 +190,8 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
     const churnedBefore = s.customers.filter((c) => c.churnedAt !== null && s.services.some((v) => v.customerId === c.id)).length, before = s.customers.length, lostBefore = s.sales.lost.length;
     for (let h = 0; h < MONTH; h++) {
       tick(s);
+      // Each payment is matched to the invoice it pays as it arrives.
+      for (const tr of s.transfers.filter((x) => x.invoiceId === null)) matchTransfer(s, tr.id, tr.forInvoice, true);
       joinReady();
       keepRoom();
       if (!s.marketing.lines.length && s.customers.some((c) => c.habit === "friend")) s.marketing.lines = fillLines(s, undefined).marketing.lines;

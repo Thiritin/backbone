@@ -11,7 +11,7 @@ import { locationOf } from "../60-infra/status";
 import { phpDue } from "./clusters";
 import { updateDue } from "./software";
 import { webspaceBlock } from "./vms";
-import type { ActionResult } from "./hardware";
+import { mountError, mountStack, type ActionResult } from "./hardware";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 const YEAR = 8760;
@@ -149,10 +149,11 @@ export function setOnCall(s: GameState, id: string, on: boolean): ActionResult {
 }
 
 // Queues an operation for the technicians at the device's location.
-export function queueOperation(s: GameState, kind: OpKind, deviceId: string, componentId: string | null = null, partId: string | null = null): ActionResult {
+// A mount names the rack in componentId and the position in slot; count above 1 mounts a stack of units like the device.
+export function queueOperation(s: GameState, kind: OpKind, deviceId: string, componentId: string | null = null, partId: string | null = null, slot = 0, count = 1): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
-  const loc = locationOf(s, d);
+  const loc = locationOf(s, d) ?? s.locations.find((l) => l.id === d.store);
   if (!loc) return fail("error.notMounted");
   if (!techsAt(s, loc.id, taskFor(s, kind, componentId)).length) return fail("error.noTechnician");
   if (kind === "update") {
@@ -168,9 +169,14 @@ export function queueOperation(s: GameState, kind: OpKind, deviceId: string, com
   if (kind === "recover" && !s.workloads.some((w) => w.id === componentId && w.deviceId === deviceId && w.corrupted)) return fail("error.notCorrupted");
   if (kind === "reset" && !d.hung) return fail("error.notHung");
   if (kind === "bmcreset" && !d.bmcHung) return fail("error.bmcFine");
-  const comp = kind === "replace" || kind === "part" || kind === "recover" || kind === "drain" ? componentId ?? null : null, spare = kind === "part" ? partId : null;
+  const stack = kind === "mount" && count > 1 ? mountStack(structuredClone(s), d.model, d.brand, componentId ?? "", count, slot, true) : null;
+  const rackError = stack ? (stack.ok ? null : stack.error) : kind === "mount" ? mountError(s, d, componentId ?? "", slot) : kind === "unmount" && !d.rackId ? "error.notMounted" : null;
+  if (rackError) return fail(rackError);
+  const comp = kind === "replace" || kind === "part" || kind === "recover" || kind === "drain" || kind === "mount" ? componentId ?? null : null, spare = kind === "part" ? partId : null;
   if (s.techOps.some((o) => o.kind === kind && o.deviceId === deviceId && o.componentId === comp && (o.partId ?? null) === spare)) return fail("error.alreadyQueued");
-  return { ok: true, id: queueOp(s, kind, deviceId, comp, false, undefined, spare).id };
+  const op = queueOp(s, kind, deviceId, comp, false, undefined, spare);
+  if (kind === "mount") Object.assign(op, { slot, ...(count > 1 && { count }) });
+  return { ok: true, id: op.id };
 }
 
 // A PHP upgrade of a panel host still on an older version or missing a released patch, done at the server it runs on.

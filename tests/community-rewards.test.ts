@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { visibleCandidates } from "../src/sim/47-staff/staff";
+import { type GameState } from "../src/sim/50-state";
 import { eventById } from "../src/sim/80-business/community";
 import { leadsThisMonth, PROFILE_IDS } from "../src/sim/80-business/marketing";
 import { type SimEvent } from "../src/sim/88-tick/tick";
 import { runTo, asked, through, done } from "./community.helpers";
+
+// The same request in another seeded game: the reward draws follow the seed, without waiting weeks for each request.
+const reseeded = (s: GameState, seed: number) => { s.seed = seed; return s; };
 
 describe("rewards", () => {
   it("pay know-how for tech events", () => {
@@ -55,7 +59,7 @@ describe("rewards", () => {
     let fives = 0, skipped = 0;
     const n = 40;
     for (let seed = 200; seed < 200 + n; seed++) {
-      const s = through(asked(seed, "lanTastic"));
+      const s = through(reseeded(asked(200, "lanTastic"), seed));
       if (!s) { skipped++; continue; }
       const sponsored = s.marketing.reviews.filter((r) => r.reason === "sponsor");
       expect(sponsored.every((r) => r.stars === 5)).toBe(true);
@@ -66,15 +70,16 @@ describe("rewards", () => {
     expect(ran).toBeGreaterThan(n * 0.7);
     expect(fives).toBeGreaterThan(ran * 0.25);
     expect(fives).toBeLessThan(ran * 0.75);
-  }, 90_000);
+  });
 
   it("put a +20 skill candidate in the Staff market for a month in 20% of tech events", () => {
     let hits = 0, ran = 0;
     const n = 60;
     for (let seed = 300; seed < 300 + n; seed++) {
-      const s = asked(seed, "chaosClub");
+      const s = reseeded(asked(300, "chaosClub"), seed);
       const known = new Set(s.candidates.map((c) => c.id));
-      if (!through(s)) continue;
+      // An outage during the event forfeits the reward.
+      if (!through(s) || !s.sponsorships[0].reward) continue;
       ran++;
       const fresh = s.candidates.filter((c) => !known.has(c.id) && c.id.startsWith("cand"));
       expect(fresh.length).toBe(s.sponsorships[0].reward!.recommendation ? 1 : 0);
@@ -89,5 +94,5 @@ describe("rewards", () => {
     expect(ran).toBeGreaterThan(n * 0.7);
     expect(hits).toBeGreaterThan(ran * 0.08);
     expect(hits).toBeLessThan(ran * 0.35);
-  }, 90_000);
+  });
 });

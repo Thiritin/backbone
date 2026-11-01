@@ -23,7 +23,8 @@ export interface HandTask {
   // The location the hands work at when it is not the device's own, like the far end of a server move.
   at?: string;
   // The technician operation that does the same work, when there is one.
-  tech?: { kind: OpKind; componentId?: string | null; partId?: string | null };
+  tech?: { kind: OpKind; componentId?: string | null; partId?: string | null; slot?: number; count?: number };
+  onDone?: () => void;
 }
 
 // Whether the device sits in a datacenter, where hand work has more than one way to get done.
@@ -34,7 +35,7 @@ export const atDatacenter = (game: GameState, deviceId: string): boolean => {
 
 const workLocation = (game: GameState, t: HandTask) => {
   const d = game.devices.find((x) => x.id === t.deviceId);
-  return t.at ? game.locations.find((l) => l.id === t.at) : d && locationOf(game, d);
+  return game.locations.find((l) => l.id === t.at) ?? (d && (locationOf(game, d) ?? game.locations.find((l) => l.id === d.store)));
 };
 
 // The last click, where the remote hands popover opens; callers start hand work from a click.
@@ -45,6 +46,7 @@ if (typeof window !== "undefined") window.addEventListener("pointerdown", (e) =>
 function run(t: HandTask, how: string): ActionResult {
   const { act, setSpeed } = useStore.getState(), r = act(t.action, ...t.args, how);
   if (r.ok && useStore.getState().game.devices.find((d) => d.id === t.deviceId)?.maintenance) setSpeed(SKIP);
+  if (r.ok) t.onDone?.();
   return r;
 }
 
@@ -90,7 +92,7 @@ function HandPopover({ task, x, y, onClose }: { task: HandTask; x: number; y: nu
     <div ref={ref} className="hand-pop" role="dialog" aria-label={task.title} style={at ?? { visibility: "hidden" }}>
       <strong>{task.title}</strong>
       <p>{"cost" in trial ? tr("locations-1.remoteHandsQuote", { loc: loc.name, cost: euro(trial.cost), wait: w.hands.wait }) : tr(trial.error)}</p>
-      {slot && t && <button className="hand-pop-alt" onClick={() => { if (act(queueOperation, t.kind, device.id, t.componentId ?? null, t.partId ?? null).ok) onClose(); }}>{tr("locations-1.technician", { name: slot.name.split(" ")[0], time: slotTime(game.hour, slot.hour) })}</button>}
+      {slot && t && <button className="hand-pop-alt" onClick={() => { if (act(queueOperation, t.kind, device.id, t.componentId ?? null, t.partId ?? null, t.slot ?? 0, t.count ?? 1).ok) onClose(); }}>{tr("locations-1.technician", { name: slot.name.split(" ")[0], time: slotTime(game.hour, slot.hour) })}</button>}
       {fare && <button className="hand-pop-alt" onClick={() => go("self")}>{tr("locations-1.driveYourself", { hours: fare.hours, fee: euro(fare.fee) })}</button>}
       {w.friend && w.friend.left > 0 && <button className="hand-pop-alt" onClick={() => go("friend")}>{tr("locations-1.sendFriend", { fee: euro(w.friend.fee), left: w.friend.left, total: FAVOURS_PER_YEAR })}</button>}
       <div className="hand-pop-actions">

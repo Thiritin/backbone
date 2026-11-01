@@ -2,14 +2,15 @@ import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
 import { brandsOf, isOfficeRouter, MODELS, modelById, priceOf, shopModels, type DeviceKind } from "../src/sim/10-catalog/hardware";
 import { DATACENTERS } from "../src/sim/20-world/datacenters";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { upsMinutes } from "../src/sim/60-infra/incidents";
 import { exitsOf, uplinkMbps } from "../src/sim/60-infra/network";
 import { pduOf } from "../src/sim/60-infra/pdu";
 import { deviceWatts, linkStatus } from "../src/sim/60-infra/status";
 import { announceBlock } from "../src/sim/90-actions/addresses";
-import { addLocation, atServer, buyRack, mountDevice, powerCycle, remotePower, reset, sellDevice, setPower } from "../src/sim/90-actions/hardware";
-import { buyDevice } from "./fixtures";
+import { addLocation, atServer, buyRack, powerCycle, remotePower, reset, sellDevice, setPower } from "../src/sim/90-actions/hardware";
+import { mountDevice } from "./plugged";
+import { buyDevice, newGame } from "./fixtures";
 import { orderTransit } from "../src/sim/90-actions/network";
 import { installRouter } from "../src/sim/90-actions/routers";
 import { powerTick } from "../src/sim/60-infra/power";
@@ -133,8 +134,8 @@ describe("the basement router", () => {
     const mid = ok(buyDevice(s, "fb-7390", "AVN", 1, "loc1"));
     expect(dev(s, mid)).toMatchObject({ store: "loc1", panel: null });
     ok(installRouter(s, mid));
-    expect(dev(s, mid)).toMatchObject({ store: null, panel: "loc1", name: "fra1-gw-01" });
-    expect(s.devices.some((d) => d.model === "home-router")).toBe(false);
+    expect(dev(s, mid)).toMatchObject({ store: null, rackId: "rack2", slot: 23, name: "fra1-gw-01" });
+    expect(dev(s, "dev5")).toMatchObject({ store: "loc1", rackId: null });
     expect(homeUp(s)).toBe(300);
     s.homeLine = { id: "vdsl-50", next: null };
     expect(homeUp(s)).toBe(10);
@@ -144,7 +145,7 @@ describe("the basement router", () => {
     ok(installRouter(s, fast));
     expect(homeUp(s)).toBe(1000);
     // The 7390 goes back into storage and can be sold.
-    expect(dev(s, mid)).toMatchObject({ store: "loc1", panel: null, name: expect.stringMatching(/^fra1-gw-/) });
+    expect(dev(s, mid)).toMatchObject({ store: "loc1", rackId: null, name: expect.stringMatching(/^fra1-gw-/) });
     expect(sellDevice(s, mid).ok).toBe(true);
   });
 
@@ -159,15 +160,17 @@ describe("the basement router", () => {
     expect(linkStatus(s, "dev3").online).toBe(true);
   });
 
-  it("only goes on the basement's carrier panel", () => {
+  it("only goes in the basement, on a shelf of its rack", () => {
     const s = { ...readyGame(1), cash: 1e6 };
     s.hour = jan(2018);
     const loc = ok(addLocation(s, "hetzler-park", "suite", 20));
     expect(err(buyDevice(s, "fb-7590", "AVN", 1, loc))).toBe("error.basementOnly");
     const fast = ok(buyDevice(s, "fb-7590", "AVN", 1, "loc1"));
     expect(isOfficeRouter(modelById("fb-7590"))).toBe(true);
-    expect(err(mountDevice(s, fast, "rack2", 5))).toBe("error.panelRouter");
     expect(err(installRouter(s, "dev3"))).toBe("error.alreadyMounted");
+    const spare = ok(buyDevice(s, "fb-7590", "AVN", 1, "loc1"));
+    ok(mountDevice(s, spare, "rack2", 5));
+    expect(dev(s, spare)).toMatchObject({ rackId: "rack2", slot: 5 });
     ok(installRouter(s, fast));
     expect(err(installRouter(s, fast))).toBe("error.alreadyMounted");
     const sw = ok(buyDevice(s, "sw-48y", "Sysko", 1, "loc1"));

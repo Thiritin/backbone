@@ -2,7 +2,7 @@ import type { ReactElement } from "react";
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { yearOf } from "../src/sim/00-core/time";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { consoleFeatures } from "../src/sim/80-business/consoles";
 import { addNode, createVm } from "../src/sim/90-actions/clusters";
 import { connect } from "../src/sim/90-actions/hardware";
@@ -14,11 +14,11 @@ import { CONSOLES } from "../src/ui/apps/browser/consoles/ConsolePage";
 import { useVms, type Vm } from "../src/ui/apps/browser/consoles/HypervisorBase";
 import { VmDetails } from "../src/ui/apps/browser/consoles/hypervee/HyperVee";
 import { InstanceOverview, Overview } from "../src/ui/apps/browser/consoles/openstash/Horizont";
-import { CtPage, HostPage } from "../src/ui/apps/browser/consoles/openveezee/OpenVeeZee";
+import { CtPage, HostPage, TemplatesPage } from "../src/ui/apps/browser/consoles/openveezee/OpenVeeZee";
 import { VmSummary as PmxSummary } from "../src/ui/apps/browser/consoles/proxmocks/Proxmocks";
 import { VmMonitor, VmSummary as VswSummary } from "../src/ui/apps/browser/consoles/vmwhere/VmWhere";
 import type { Cluster } from "../src/sim/60-infra/cluster";
-import { buyDevice, hypervisor, panelVm, skipTo, withServer } from "./fixtures";
+import { buyDevice, hypervisor, panelVm, skipTo, withServer, newGame } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 // docs/design/software.md, section 9: the first year of each hypervisor console's early and late look, and its mark.
@@ -87,7 +87,7 @@ describe("hypervisor consoles", () => {
       proxmocks: [(g, c, v) => <PmxSummary game={g} c={c} v={v} />, ["HA State", "Bootdisk size", "Network traffic", "Day (average)"]],
       vmwhere: [(g, _, v) => <><VswSummary game={g} v={v} era="late" /><VmMonitor game={g} v={v} /></>, ["VMwhere Tools", "MEMORY USAGE", "VM Hardware", "Performance Chart"]],
       hypervee: [(g, _, v) => <VmDetails game={g} v={v} generations />, ["Heartbeat", "Memory Demand", "Replication", "CPU Usage"]],
-      openveezee: [(g, c, v) => <><CtPage game={g} v={v} host="hv.example.com" /><HostPage game={g} c={c} id={c.nodes[0].deviceId} vms={[v]} open={() => {}} /></>, ["Start on boot", "Diskinodes", "Barrier", "Change settings", "OS templates", "allocated of"]],
+      openveezee: [(g, c, v) => <><CtPage game={g} v={v} host="hv.example.com" /><HostPage game={g} c={c} id={c.nodes[0].deviceId} vms={[v]} open={() => {}} /><TemplatesPage game={g} vms={[v]} /></>, ["Start on boot", "Diskinodes", "Barrier", "Change settings", "OS templates", "allocated of"]],
       openstash: [(g, c, v) => <><InstanceOverview game={g} v={v} flavor="m1.small" /><Overview game={g} c={c} vms={[v]} /></>, ["Security Groups", "Volumes Attached", "Limit Summary", "VCPU-Hours"]],
     };
     for (const [id, [page, marks]] of Object.entries(pages)) {

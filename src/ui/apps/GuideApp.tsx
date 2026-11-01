@@ -1,7 +1,7 @@
 import { Fragment } from "react";
 import { Check } from "lucide-react";
 import { t } from "../../i18n/en";
-import { checkDone, TUTORIAL } from "../../sim/checklist";
+import { checkDone, guideSteps } from "../../sim/checklist";
 import { STEP_WIKI, stepOf } from "./guide";
 import { wikiUrl } from "./browser/sites/wiki/articles";
 import { useStore } from "../store";
@@ -21,7 +21,7 @@ export function GuideApp() {
       <h3>{t("apps.guide.firstServer")}</h3>
       <p>{t("apps.guide.friends")}</p>
       <ol className="guide-steps">
-        {TUTORIAL.map((id) => {
+        {guideSteps(game).map((id) => {
           const done = checkDone(game, id);
           const step = stepOf(game, id);
           return (

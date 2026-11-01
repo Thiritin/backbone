@@ -4,8 +4,9 @@ import { isOfficeRouter, modelById } from "../../../sim/10-catalog/hardware";
 import type { Device, GameState, Location } from "../../../sim/50-state";
 import { euro } from "../../../sim/00-core/money";
 import { deviceValue, freeSlots, mountFrom, mountMax, storageStacks, travelCost } from "../../../sim/60-infra/status";
-import { mountDevice, mountStack, sellDevice, shipStock } from "../../../sim/90-actions/hardware";
+import { sellDevice, shipStock } from "../../../sim/90-actions/hardware";
 import { installRouter } from "../../../sim/90-actions/routers";
+import { mountedRouter } from "../../../sim/60-infra/routers";
 import { Isometric } from "../../art/Isometric";
 import { RackFront } from "../../art/RackFront";
 import { t } from "../../../i18n/en";
@@ -17,7 +18,8 @@ import { ListForSale } from "../shop/Used";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { More } from "../More";
 import { rackUnits } from "./Floor";
-import { rackItems } from "./RackView";
+import { mountTask, rackItems } from "./RackView";
+import { useHandWork, type HandTask } from "./HandSheet";
 import { LocName, Sheet, Zone } from "./ui";
 
 type Stack = ReturnType<typeof storageStacks>[number];
@@ -51,8 +53,7 @@ function Ship({ game, ids, onDone }: { game: GameState; ids: string[]; onDone: (
 type Mounted = (rackId: string, deviceId: string) => void;
 
 // Picks a rack of the zone, then a free slot on its front; a stack covers the clicked unit, its top there where it fits.
-function MountSheet({ game, stack, onClose, onMounted }: { game: GameState; stack: Stack; onClose: () => void; onMounted?: Mounted }) {
-  const act = useStore((s) => s.act);
+function MountSheet({ game, stack, onClose, onMount, onMounted }: { game: GameState; stack: Stack; onClose: () => void; onMount: (task: HandTask) => void; onMounted?: Mounted }) {
   const m = modelById(stack.model), zone = game.devices.find((d) => d.id === stack.ids[0])!.store!;
   const racks = game.racks.filter((r) => r.locationId === zone && r.arriveAt === null);
   const h = Math.max(1, m.height), fits = (id: string) => freeSlots(game, id, h).length > 0;
@@ -63,9 +64,9 @@ function MountSheet({ game, stack, onClose, onMounted }: { game: GameState; stac
   const mount = (unit: number) => {
     if (!rack) return;
     const k = mountMax(game, rack.id, h, n, unit), from = mountFrom(game, rack.id, h, k, unit), id = stack.ids[0];
-    if (from === undefined || !(k === 1 ? act(mountDevice, id, rack.id, from) : act(mountStack, stack.model, stack.brand, rack.id, k, from)).ok) return;
+    if (from === undefined) return;
     onClose();
-    onMounted?.(rack.id, id);
+    onMount({ ...mountTask(stack, rack.id, k, from), onDone: () => onMounted?.(rack.id, id) });
   };
   return (
     <Sheet title={t("locations-2.mountName", { name: `${stack.brand} ${m.name}` })} onClose={onClose}>
@@ -125,13 +126,13 @@ export function Storage({ game, loc, onMounted }: { game: GameState; loc: Locati
 
 function StackRow({ game, stack, onMounted }: { game: GameState; stack: Stack; onMounted?: Mounted }) {
   const act = useStore((s) => s.act);
-  const [mounting, setMounting] = useState(false);
+  const [mounting, setMounting] = useState(false), hand = useHandWork();
   const [selling, setSelling] = useState(false);
   const [shipping, setShipping] = useState(false);
   const [listing, setListing] = useState(false);
   // Leased units can't be sold, so Sell takes the first paid-off unit of the stack.
   const m = modelById(stack.model), units = game.devices.filter((d) => stack.ids.includes(d.id)), first = units.find((d) => !d.lease) ?? units[0];
-  const rackable = m.height > 0 || m.kind === "pdu" || m.kind === "kvm", office = isOfficeRouter(m), install = () => act(installRouter, units[0].id);
+  const rackable = m.height > 0 || m.kind === "pdu" || m.kind === "kvm", office = isOfficeRouter(m) && !!units[0].store && !!mountedRouter(game, units[0].store), install = () => act(installRouter, units[0].id);
   const entries = (): MenuEntry[] => [
     rackable && { label: t("locations-2.mountMenu"), run: () => setMounting(true) },
     office && { label: t("locations-2.install"), run: install },
@@ -153,7 +154,8 @@ function StackRow({ game, stack, onMounted }: { game: GameState; stack: Stack; o
         {office && <button className="btn" onClick={install}><Router />{t("locations-2.install")}</button>}
         <More label={`${stack.brand} ${m.name}`} entries={entries} />
       </div>
-      {mounting && <MountSheet game={game} stack={stack} onClose={() => setMounting(false)} onMounted={onMounted} />}
+      {mounting && <MountSheet game={game} stack={stack} onClose={() => setMounting(false)} onMount={(task) => hand.start(game, task)} onMounted={onMounted} />}
+      {hand.dialog}
       {shipping && <Ship game={game} ids={stack.ids} onDone={() => setShipping(false)} />}
       {listing && <ListForSale game={game} id={first.id} onDone={() => setListing(false)} />}
       {selling && (

@@ -1,5 +1,5 @@
+import { newGame } from "./fixtures";
 import { describe, expect, it } from "vitest";
-import { newGame } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { deserialize, serialize } from "../src/sim/91-save/save";

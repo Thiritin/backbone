@@ -22,7 +22,7 @@ import { NetworkTab, networkCount } from "./NetworkTab";
 import { Overview, Waitlist } from "./Overview";
 import { RackView, Upgrades } from "./RackView";
 import { Storage } from "./Storage";
-import { backupLabel, dcOf, exchangeLabel, feedsLabel, LocName, locationPower, PowerMeter, providerOf, spaceLabel, Zone } from "./ui";
+import { backupLabel, dcOf, exchangeLabel, feedsLabel, LocName, locationPower, PowerMeter, providerOf, RoomTemp, spaceLabel, Zone } from "./ui";
 import { REGIONS } from "../../../sim/20-world/datacenters";
 
 type Tab = "floor" | "cabling" | "storage" | "network" | "line";
@@ -54,10 +54,11 @@ export function LocationsApp() {
     }
     if (f.kind !== "device" && f.kind !== "location") return;
     const d = f.kind === "device" ? game.devices.find((x) => x.id === f.id) : undefined;
-    const l = d ? locationOf(game, d) : game.locations.find((x) => x.id === f.id);
+    const l = d?.store ? game.locations.find((x) => x.id === d.store) : d ? locationOf(game, d) : game.locations.find((x) => x.id === f.id);
     if (!l) return;
     go(l.id, d?.rackId ?? null);
-    if (d) { setTab("floor"); setDeviceId(d.id); }
+    if (d?.store) setTab("storage");
+    else if (d) { setTab("floor"); setDeviceId(d.id); }
   });
   const item = (key: string, active: boolean, label: ReactNode, onClick: () => void, count?: number, pending?: boolean) => (
     <button key={key} className={`side-item${active ? " active" : ""}${pending ? " loc-pending" : ""}`} aria-pressed={active} onClick={onClick}>
@@ -164,6 +165,7 @@ function LocationHead({ game, locId }: { game: GameState; locId: string }) {
       {dc?.green && <span className="pill">{t("locations-1.greenPower")}</span>}
       {dc && <span className="pill">{exchangeLabel(dc)}</span>}
       <PowerMeter watts={power.watts} limit={power.limit} tripped={power.tripped} />
+      <RoomTemp g={game} loc={loc} />
       <PlanButton target={target} plan={(t) => mnt.plan(t)} />
     </div>
     {windows.length > 0 && <div className="loc-head-meters"><Windows game={game} windows={windows} plan={mnt.plan} /></div>}

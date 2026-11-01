@@ -2,7 +2,7 @@
 // and mail reputation. Numbers in economy.md, Addresses and internet.
 import { hashRng, rand } from "../00-core/rng";
 import { dateOf, yearOf } from "../00-core/time";
-import { hasBmc, modelById } from "../10-catalog/hardware";
+import { modelById } from "../10-catalog/hardware";
 import type { Spec } from "../10-catalog/products";
 import { homeLineById } from "../20-world/datacenters";
 import { ABUSE_HIT, BOUNCE_CHANCE, IPV6_FROM, IPV6_MONTHLY, LINE_EXTRA_V4, LIR_FEES, NOTICES_RECONNECT, OWN_ADDRESS, providerV4, RECONNECT_HOUR, REP, SPAM, STATIC_LINE_ADDRESSES } from "../10-catalog/addresses";
@@ -10,7 +10,11 @@ import type { Product } from "../30-customers/customers";
 import { bump, createTicket, isFinal, profileStats } from "../40-support/tickets";
 import type { GameState, LedgerEntry, Location } from "../50-state";
 import { isOwnVm, vmById, type Workload } from "./cluster";
-import { locationOf } from "./status";
+import { isSuspended } from "../45-billing/billing";
+import { bounceFactor, listingTick, mailQueueTick } from "./netsvc-mail";
+import { jacked, locationOf } from "./status";
+import { mountedRouter } from "./routers";
+import { addressOf, shareOf } from "./lan";
 import type { SimEvent } from "../88-tick/tick";
 
 // line: comes with the home line; lineExtra: bought on a business line; provider: rented in a datacenter; lir: from an own block.
@@ -23,8 +27,9 @@ export interface Address {
   id: string; ip: string; v: 4 | 6; locationId: string; holder: string | null; source: AddressSource; blockId: string | null;
   rep: number; listed: boolean; spam: number; delistAt: number | null;
 }
-// A block of the player's own as a LIR: its prefix, its size in addresses and the location announcing it.
-export interface Block { id: string; prefix: string; size: number; locationId: string | null; boughtAt: number }
+// A block of the player's own as a LIR: its prefix, its size in addresses and the location announcing it, by the company's
+// own BGP router or by the datacenter provider.
+export interface Block { id: string; prefix: string; size: number; locationId: string | null; boughtAt: number; byProvider?: boolean }
 // lir holds the membership's start and the company's own AS number.
 export interface Ips { addresses: Address[]; lir: { since: number; asn: number } | null; blocks: Block[] }
 export const newIps = (): Ips => ({ addresses: [], lir: null, blocks: [] });
@@ -72,29 +77,14 @@ function workloadLocation(s: GameState, w: Workload): Location | undefined {
   return s.locations.find((l) => l.id === rack?.locationId);
 }
 
-// The private address every server and VM gets from its location's range: 192.168.x in the basement, 10.n elsewhere.
-export function privateIp(s: GameState, id: string): string | null {
+// A machine's address on its network: a device's DHCP lease (lan.ts), or for an own VM or a customer workload one on its
+// host's internal network, 192.168.2.x in the basement and 10.n.1.x elsewhere.
+export function machineAddress(s: GameState, id: string): string | null {
+  if (s.devices.some((d) => d.id === id)) return addressOf(s, id);
   const loc = machineLocation(s, id);
   if (!loc) return null;
-  const vm = !s.devices.some((d) => d.id === id), n = Number(id.replace(/\D/g, "")) || 0, host = 10 + (n % 240);
-  if (!loc.dc) return `192.168.${vm ? 2 : 1}.${host}`;
-  return `10.${s.locations.indexOf(loc) + 1}.${vm ? 1 : 0}.${host}`;
-}
-
-// A server's management address when it has a BMC: 192.168.3.x in the basement, 10.n.2.x elsewhere, the host octet as in privateIp.
-export function ipmiIp(s: GameState, id: string): string | null {
-  const d = s.devices.find((x) => x.id === id), loc = d && machineLocation(s, id);
-  if (!d || !loc || !hasBmc(d.model, d.brand)) return null;
   const host = 10 + ((Number(id.replace(/\D/g, "")) || 0) % 240);
-  return loc.dc ? `10.${s.locations.indexOf(loc) + 1}.2.${host}` : `192.168.3.${host}`;
-}
-
-// A KVM, console server or OOB switch's address on the management network, one subnet above the controllers.
-export function oobIp(s: GameState, id: string): string | null {
-  const d = s.devices.find((x) => x.id === id), loc = d && locationOf(s, d);
-  if (!d || !loc || !d.rackId || !["kvm", "console", "oob"].includes(modelById(d.model).kind)) return null;
-  const host = 10 + ((Number(id.replace(/\D/g, "")) || 0) % 240);
-  return loc.dc ? `10.${s.locations.indexOf(loc) + 1}.3.${host}` : `192.168.4.${host}`;
+  return loc.dc ? `10.${s.locations.indexOf(loc) + 1}.1.${host}` : `192.168.2.${host}`;
 }
 
 // Who holds addresses for a machine: a customer's VM holds them through its service.
@@ -110,9 +100,9 @@ export function publicV4(s: GameState, id: string): { ip: string; shared: boolea
   return loc && !loc.dc && line ? { ip: line.ip, shared: true } : null;
 }
 export const publicV6 = (s: GameState, id: string): string | null => addressesOf(s, id).find((a) => a.v === 6)?.ip ?? null;
-// Basement machines are reachable whenever a line is live.
+// A basement machine on the line's shared address is reachable while the line is live and the router shares a port to it.
 export const hasPublicAddress = (s: GameState, id: string): boolean =>
-  addressesOf(s, id).length > 0 || (lineActive(s) && machineLocation(s, id)?.dc === null);
+  addressesOf(s, id).length > 0 || (lineActive(s) && machineLocation(s, id)?.dc === null && !!shareOf(s, id));
 
 export const v6Offered = (s: GameState, loc: Location): boolean =>
   yearOf(s.hour) >= (loc.dc ? IPV6_FROM.dc : IPV6_FROM.home) && (!!loc.dc || lineActive(s));
@@ -220,9 +210,10 @@ const mailMachine = (s: GameState, clusterId: string): string | undefined => {
   const c = s.clusters.find((x) => x.id === clusterId);
   return c?.vm ?? c?.nodes[0]?.deviceId;
 };
-// The address a panel host's mail leaves from: its server's, or its panel VM's.
+// The address a panel host's mail leaves from: its relay's, its server's, or its panel VM's.
 export const mailAddress = (s: GameState, clusterId: string): Address | undefined => {
-  const machine = mailMachine(s, clusterId);
+  const via = s.netsvc.relay[clusterId];
+  const machine = mailMachine(s, via && s.clusters.some((c) => c.id === via) ? via : clusterId);
   if (!machine) return undefined;
   return addressesOf(s, machine).find((a) => a.v === 4) ?? (machineLocation(s, machine)?.dc ? undefined : sharedAddress(s));
 };
@@ -232,7 +223,7 @@ export const mailAddress = (s: GameState, clusterId: string): Address | undefine
 // The home line's addresses: the router's, dynamic and listed on dynamic lines, plus four more on a static line.
 function syncLine(s: GameState): void {
   const loc = homeLoc(s), line = lineActive(s) ? homeLineById(s.homeLine.id) : null;
-  const gw = loc && s.devices.find((d) => d.panel === loc.id && modelById(d.model).kind === "gateway");
+  const router = loc && mountedRouter(s, loc.id), gw = router && jacked(s, router.id);
   const want = line && gw ? `gw:${line.id}` : null;
   const ofLine = (a: Address) => (a.source === "line" || a.source === "lineExtra") && a.v === 4;
   const current = s.ips.addresses.filter(ofLine);
@@ -327,9 +318,10 @@ function abuseHits(s: GameState): void {
 // Daily: spam and abuse lower reputation, a listing follows below the threshold, clean days bring it back, delist requests clear.
 function reputation(s: GameState, events: SimEvent[]): void {
   abuseHits(s);
-  const hacked = s.security.hacked, shady = new Set(s.customers.filter((c) => c.shady && c.churnedAt === null).map((c) => c.id));
-  for (const id of hacked) { const machine = mailMachine(s, id); if (machine) addSpam(s, machine, SPAM.hacked); }
-  for (const v of s.services.filter((x) => x.endedAt === null && shady.has(x.customerId))) addSpam(s, v.id, SPAM.shady);
+  const hacked = s.security.hacked, shady = new Set(s.customers.filter((c) => c.shady && c.churnedAt === null && !isSuspended(s, c.id)).map((c) => c.id));
+  const spamTo = (a: Address | undefined, n: number) => a && patch(s, a.id, { spam: s.ips.addresses.find((x) => x.id === a.id)!.spam + n });
+  for (const id of hacked) spamTo(mailAddress(s, id), SPAM.hacked);
+  for (const v of s.services.filter((x) => x.endedAt === null && shady.has(x.customerId))) spamTo(serviceAddress(s, v.id), SPAM.shady);
   // A defaced customer site sends from its host's address.
   for (const id of s.sites.defaced) {
     const host = s.workloads.find((w) => w.serviceId === id)?.clusterId, machine = host ? mailMachine(s, host) : undefined;
@@ -351,11 +343,13 @@ function reputation(s: GameState, events: SimEvent[]): void {
 // Mail customers behind a listed address write in when their mail bounces.
 function bounces(s: GameState): void {
   for (const c of s.clusters.filter((x) => x.kind === "panel")) {
-    if (!mailAddress(s, c.id)?.listed) continue;
+    const addr = mailAddress(s, c.id);
+    if (!addr?.listed) continue;
+    const chance = BOUNCE_CHANCE * bounceFactor(s, addr.id);
     const ids = new Set(s.workloads.filter((w) => w.clusterId === c.id && w.serviceId).map((w) => w.serviceId));
     for (const v of s.services.filter((x) => ids.has(x.id) && x.endedAt === null && x.spec.mailboxes > 0)) {
       const cust = s.customers.find((x) => x.id === v.customerId);
-      if (!cust || cust.churnedAt !== null || rand(hashRng(s.seed, s.hour, Number(v.id.replace(/\D/g, "")), 263)) >= BOUNCE_CHANCE) continue;
+      if (!cust || cust.churnedAt !== null || rand(hashRng(s.seed, s.hour, Number(v.id.replace(/\D/g, "")), 263)) >= chance) continue;
       if (s.tickets.some((t) => t.customerId === cust.id && t.topic === "bounce" && !isFinal(t))) continue;
       createTicket(s, cust, "howTo", v.id, "bounce");
     }
@@ -372,6 +366,8 @@ export function addressTick(s: GameState): SimEvent[] {
   if (s.hour % 24 === RECONNECT_HOUR && dynamicLine(s)) reconnect(s);
   if (s.hour % 24 === 0) {
     reputation(s, events);
+    listingTick(s);
+    mailQueueTick(s);
     bounces(s);
   }
   return events;

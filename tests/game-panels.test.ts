@@ -4,7 +4,7 @@ import { hourOf } from "../src/sim/00-core/time";
 import { SERVES, SOFTWARE, softwareById } from "../src/sim/10-catalog/platforms";
 import { sizeSpec } from "../src/sim/10-catalog/products";
 import { targetFor } from "../src/sim/30-market/sales";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { bookable, nodeCapacity, setNodeState, supports, workloadOnline } from "../src/sim/60-infra/cluster";
 import { securityTick } from "../src/sim/60-infra/security";
 import { openVulns, vulnsFor } from "../src/sim/60-infra/vulns";
@@ -13,8 +13,9 @@ import { type SimEvent } from "../src/sim/88-tick/tick";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { connect, type ActionResult } from "../src/sim/90-actions/hardware";
-import { buyDevice, bootedMachine } from "./fixtures";
+import { buyDevice, bootedMachine, newGame } from "./fixtures";
 import { cleanUp } from "../src/sim/90-actions/security";
+import { addPackage, copyPackages } from "../src/sim/90-actions/packages";
 import { installSoftware, softwareOn, updateSoftware } from "../src/sim/90-actions/software";
 import { hypervisor, panelServer, skipTo, withServer } from "./fixtures";
 import { mountDevice } from "./plugged";
@@ -72,6 +73,16 @@ describe("game server panels", () => {
     expect(targetFor(s, want)?.clusterId).toBe(cloud);
     ok(order(s, cus, "second"));
     expect(s.workloads.filter((w) => w.serviceId).map((w) => w.clusterId)).toEqual([game, cloud]);
+  });
+
+  it("keep game server packages on the panel and on a hypervisor, and refuse web hosting ones", () => {
+    const { s, two } = start(2016), cloud = hypervisor(s, ["dev3"], "Cloud 1"), game = panelServer(s, two, "tcadmen");
+    const def = { name: "Small", product: "gameServer" as const, spec: SPEC };
+    ok(addPackage(s, game, def));
+    ok(addPackage(s, cloud, def));
+    expect(err(addPackage(s, game, { ...def, name: "Web", product: "webHosting" }))).toBe("error.packageProduct");
+    expect(cluster(s, game).packages).toHaveLength(1);
+    expect(ok(copyPackages(s, game, cloud))).toBe("0");
   });
 
   it("sell game servers but no web hosting", () => {

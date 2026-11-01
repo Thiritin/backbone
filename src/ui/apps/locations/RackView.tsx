@@ -27,7 +27,7 @@ import { clusterOf } from "../../../sim/60-infra/cluster";
 import { rackAlarms } from "../../../sim/60-infra/alarms";
 import { present } from "../../../sim/60-infra/handwork";
 import { useSessionState } from "../../session";
-import { useHandWork } from "./HandSheet";
+import { useHandWork, type HandTask } from "./HandSheet";
 
 export function rackItems(g: GameState, rackId: string): RackItem[] {
   return g.devices.filter((d) => d.rackId === rackId).map((d) => {
@@ -41,7 +41,7 @@ function rackLinks(g: GameState, rackId: string): RackLink[] {
   return g.cables.flatMap((c) => [[c.a, c.b], [c.b, c.a]].flatMap(([end, peer]) => (dev.get(end.device)?.rackId === rackId ? [{ id: c.id, end, peer, color: cableColor(c) }] : [])));
 }
 
-const KIND_LABEL: Record<DeviceKind, string> = { server: t("locations-2.kind.server"), switch: t("locations-2.kind.switch"), firewall: t("locations-2.kind.firewall"), gateway: t("locations-2.kind.gateway"), patch: t("locations-2.kind.patch"), ups: t("locations-2.kind.ups"), pdu: t("locations-2.kind.pdu"), part: t("locations-2.kind.part"), kvm: t("locations-2.kind.kvm"), console: t("locations-2.kind.console"), oob: t("locations-2.kind.oob"), chassis: t("locations-2.kind.chassis") };
+const KIND_LABEL: Record<DeviceKind, string> = { server: t("locations-2.kind.server"), switch: t("locations-2.kind.switch"), firewall: t("locations-2.kind.firewall"), gateway: t("locations-2.kind.gateway"), patch: t("locations-2.kind.patch"), ups: t("locations-2.kind.ups"), pdu: t("locations-2.kind.pdu"), part: t("locations-2.kind.part"), kvm: t("locations-2.kind.kvm"), console: t("locations-2.kind.console"), oob: t("locations-2.kind.oob"), chassis: t("locations-2.kind.chassis"), jack: t("locations-2.kind.jack") };
 
 // Devices outside the rack that it is cabled to, plus the location's carrier panel and patch panels to cable to.
 function rackRemotes(g: GameState, rack: Rack): RackRemote[] {
@@ -49,7 +49,7 @@ function rackRemotes(g: GameState, rack: Rack): RackRemote[] {
   const ids = new Set(g.devices.filter((d) => d.rackId === rack.id).map((d) => d.id));
   const cabled = new Set(g.cables.flatMap((c) => (ids.has(c.a.device) ? [c.b.device] : ids.has(c.b.device) ? [c.a.device] : [])));
   const kind = (d: Device) => modelById(d.model).kind;
-  return g.devices.filter((d) => !ids.has(d.id) && (cabled.has(d.id) || (here.includes(d) && (kind(d) === "gateway" || kind(d) === "patch")))).map((d) => {
+  return g.devices.filter((d) => !ids.has(d.id) && (cabled.has(d.id) || (here.includes(d) && (kind(d) === "gateway" || kind(d) === "patch" || kind(d) === "jack")))).map((d) => {
     const m = modelById(d.model), same = here.filter((x) => kind(x) === m.kind).sort((x, y) => x.name.localeCompare(y.name));
     const other = g.racks.find((r) => r.id === d.rackId);
     return {
@@ -219,7 +219,7 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
           </>
         )}
       </div>
-      {mount && <MountPop game={game} rack={rack} {...mount} onClose={() => setMount(null)} onMounted={(id) => { setMount(null); onDevice(id); }} />}
+      {mount && <MountPop game={game} rack={rack} {...mount} onClose={() => setMount(null)} onMount={(task) => { setMount(null); hand.start(game, { ...task, onDone: () => onDevice(task.deviceId) }); }} />}
       {moving && <MoveRack game={game} rack={rack} onClose={() => setMoving(false)} onMoved={(id) => { setMoving(false); onMoved(id); }} />}
       {movingServers && <MoveServers game={game} rack={rack} onClose={() => setMovingServers(false)} onMove={(ids, to) => { setMovingServers(false); hand.start(game, { title: t("locations-2.moveServersTitle", { n: ids.length, to: to.name }), deviceId: ids[0], at: to.id, action: moveServer, args: [ids, to.id] }); }} />}
       {dialog}
@@ -231,7 +231,7 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
 }
 
 // Stored units that fit the clicked free range; a stack fills the top of the range, each unit on top of the last.
-function MountPop({ game, rack, unit, top, left, onClose, onMounted }: { game: GameState; rack: Rack; unit: number; top: number; left: number; onClose: () => void; onMounted: (id: string) => void }) {
+function MountPop({ game, rack, unit, top, left, onClose, onMount }: { game: GameState; rack: Rack; unit: number; top: number; left: number; onClose: () => void; onMount: (task: HandTask) => void }) {
   const ref = useRef<HTMLDivElement>(null);
   useDismiss(ref, onClose);
   const rows = storageStacks(game, rack.locationId).filter((st) => { const h = modelById(st.model).height; return h > 0 && mountFrom(game, rack.id, h, 1, unit) !== undefined; });
@@ -240,23 +240,18 @@ function MountPop({ game, rack, unit, top, left, onClose, onMounted }: { game: G
     <div className="loc-shop" ref={ref} style={{ top, left }} role="dialog" aria-label={t("locations-2.mountAt", { where })}>
       <div className="loc-shop-h"><h3>{where}</h3></div>
       <div className="loc-shop-list">
-        {rows.map((st) => <MountRow key={`${st.model}|${st.brand}`} game={game} rack={rack} st={st} unit={unit} onMounted={onMounted} />)}
+        {rows.map((st) => <MountRow key={`${st.model}|${st.brand}`} game={game} rack={rack} st={st} unit={unit} onMount={onMount} />)}
         {!rows.length && <div className="loc-shop-none">{t("locations-2.noStoredFits")}</div>}
       </div>
     </div>
   );
 }
 
-function MountRow({ game, rack, st, unit, onMounted }: { game: GameState; rack: Rack; st: ReturnType<typeof storageStacks>[number]; unit: number; onMounted: (id: string) => void }) {
-  const act = useStore((s) => s.act);
+function MountRow({ game, rack, st, unit, onMount }: { game: GameState; rack: Rack; st: ReturnType<typeof storageStacks>[number]; unit: number; onMount: (task: HandTask) => void }) {
   const m = modelById(st.model), max = mountMax(game, rack.id, m.height, st.ids.length, unit);
   const [count, setCount] = useState(1);
   const n = Math.min(count, max), from = mountFrom(game, rack.id, m.height, n, unit) ?? unit;
-  const mount = () => {
-    const id = st.ids[0];
-    const r = (n === 1 ? act(mountDevice, id, rack.id, from) : act(mountStack, st.model, st.brand, rack.id, n, from));
-    if (r.ok) onMounted(id);
-  };
+  const mount = () => onMount(mountTask(st, rack.id, n, from));
   return (
     <div className="loc-shop-row">
       <Isometric model={m} brand={st.brand} w={64} />
@@ -416,3 +411,12 @@ export function Upgrades({ loc, rack }: { loc: Location; rack?: Rack }) {
     </div>
   );
 }
+
+// Mounting as hand work: a unit or a whole stack goes in one job.
+export const mountTask = (st: { ids: string[]; model: string; brand: string }, rackId: string, n: number, from: number): HandTask => ({
+  title: t("locations-2.mountName", { name: `${st.brand} ${modelById(st.model).name}` }),
+  deviceId: st.ids[0],
+  ...(n === 1
+    ? { action: mountDevice, args: [st.ids[0], rackId, from], tech: { kind: "mount" as const, componentId: rackId, slot: from } }
+    : { action: mountStack, args: [st.model, st.brand, rackId, n, from], tech: { kind: "mount" as const, componentId: rackId, slot: from, count: n } }),
+});

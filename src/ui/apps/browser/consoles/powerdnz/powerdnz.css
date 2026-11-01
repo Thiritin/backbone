@@ -29,3 +29,9 @@
 .pd-login { align-items: center; justify-content: center; padding: 48px 16px; }
 .pd[data-era="late"].pd-login { background: #222d32; }
 .pd-card { display: flex; flex-direction: column; gap: 12px; width: min(340px, 100%); padding: 24px; background: var(--panel); border: 1px solid var(--line); border-top: 4px solid var(--accent); border-radius: var(--r); }
+
+.pd-link { padding: 0; border: 0; background: none; color: var(--info); font: inherit; cursor: pointer; }
+.pd-zone .cx-tools { display: flex; gap: 8px; margin: 0 0 10px; }
+.pd-form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
+.pd-zone[data-era="early"] .cx-table th { background: #d8d8d8; }
+.pd-secondary { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }

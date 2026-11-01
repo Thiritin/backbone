@@ -3,7 +3,7 @@
 // stay down.
 import { nowHours, yearOf } from "../00-core/time";
 import { modelById } from "../10-catalog/hardware";
-import type { Device, GameState } from "../50-state";
+import type { Device, GameState, IfaceConfig } from "../50-state";
 import { clustersOn, dropCluster, insideVm, isOwnVm, machineOf, setMachine, vmById, workloadsOn, type Cluster, type Workload } from "../60-infra/cluster";
 import { imageOf, imageParts, nextVersion, SERVER_OS, serverOsById, type OsImage, type ServerOsId, type ServerOsVersion } from "../10-catalog/server-os";
 import { machineNet, osUp, stickOs } from "../60-infra/oob";
@@ -12,6 +12,7 @@ import { BOOT_HOURS, bootHours, booting, powered } from "../60-infra/status";
 import { buyLicenses, buyUpgradeLicense, licenseDue, reportLoss, upgradeLicenseDue } from "../85-products/products";
 import { leave } from "./clusters";
 import type { ActionResult } from "./hardware";
+import { staticRouter } from "../60-infra/lan";
 import { installSoftware, uninstallSoftware } from "./software";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -60,6 +61,8 @@ export function bootFromUsb(s: GameState, deviceId: string): ActionResult {
   if (!stickOs(s, d.id)) return fail("error.noBootDevice");
   d.bootFrom = "usb";
   d.stuck = false;
+  // Picking a boot device ends POST.
+  d.bootUntil = Math.min(d.bootUntil ?? 0, nowHours(s));
   pushLog(d, s.hour, "ipmi.log.usbBoot");
   return { ok: true };
 }
@@ -117,8 +120,9 @@ const atInstaller = (s: GameState, machineId: string): Machine | string => {
 
 // The installer's Install: whatever the disks held goes first, then the OS installs for its install hours, the version
 // on the media. os.installedAt is the hour it is done; a server is held in its boot until then and boots from its disk
-// after, a VM ejects its ISO. The stick and an ISO each hold one version of one OS.
-export function installOs(s: GameState, machineId: string, osId: ServerOsId, confirm?: string): ActionResult {
+// after, a VM ejects its ISO. The stick and an ISO each hold one version of one OS. A server keeps the network
+// setting the installer chose, and its old files go with the old disk contents.
+export function installOs(s: GameState, machineId: string, osId: ServerOsId, confirm?: string, iface: IfaceConfig = { mode: "dhcp" }): ActionResult {
   const m = atInstaller(s, machineId);
   if (typeof m === "string") return fail(m);
   if (!SERVER_OS.some((o) => o.id === osId)) return fail("error.unknownOs");
@@ -127,14 +131,18 @@ export function installOs(s: GameState, machineId: string, osId: ServerOsId, con
   // The Debiant image is a netinst; Windoors Setup carries everything on its image.
   const net = osId === "lunix" ? machineNet(s, machineId) : null;
   if (net) return fail(net === "noInterfaces" ? "error.noInterfaces" : "error.noAutoconf");
+  // A static setting reaches the mirror only through the router of its network.
+  if (osId === "lunix" && iface.mode === "static" && isDevice(m) && !staticRouter(s, m.id, iface)) return fail("error.noMirror");
   if (s.cash < licenseDue(s, machineId, osId, null)) return fail("error.noCash");
   const cleared = clear(s, m, confirm);
   if (!cleared.ok) return cleared;
   const os = serverOsById(osId), done = nowHours(s) + os.installHours;
   setMachine(s, machineId, () => ({ os: { id: osId, version: imageParts(media).version, installedAt: done }, software: [] }));
   buyLicenses(s, machineId, osId, null);
-  if (isDevice(m)) Object.assign(m, { bootFrom: "disk", stuck: false, bootUntil: done + BOOT_HOURS + os.bootMinutes / 60 });
-  else s.workloads = s.workloads.map((w) => (w.id === machineId ? { ...w, media: undefined } : w));
+  if (isDevice(m)) {
+    Object.assign(m, { bootFrom: "disk", stuck: false, bootUntil: done + BOOT_HOURS + os.bootMinutes / 60, iface });
+    delete s.files[m.id];
+  } else s.workloads = s.workloads.map((w) => (w.id === machineId ? { ...w, media: undefined } : w));
   return { ok: true };
 }
 

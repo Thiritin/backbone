@@ -77,3 +77,45 @@
 .cx-sev[data-sev="warning"] { color: #d39b00; }
 .cx-sev[data-sev="critical"] { color: var(--bad); }
 .cx-state.warn { background: color-mix(in oklab, #d39b00 18%, transparent); color: #a87a00; }
+
+/* The vendor sheets use :root[data-era] selectors to beat these rules. */
+:where(:root[data-era="aqua"]) .cx-toolbar button { padding: 2px 9px; border-color: color-mix(in oklab, var(--line) 55%, black); border-radius: 0; background: color-mix(in oklab, var(--panel) 72%, var(--line)); box-shadow: inset 1px 1px 0 rgb(255 255 255 / 0.85), inset -1px -1px 0 rgb(0 0 0 / 0.18); }
+:where(:root[data-era="aqua"]) .cx-toolbar button:hover { background: color-mix(in oklab, var(--panel) 62%, var(--line)); }
+:where(:root[data-era="aqua"]) .cx-wiz { box-shadow: 3px 3px 0 rgb(0 0 0 / 0.25); }
+:where(:root[data-era="aqua"]) .cx-wiz-title { background: color-mix(in oklab, var(--panel) 76%, var(--line)); color: var(--fg); font-size: 11px; }
+:where(:root[data-era="aqua"]) .cx-tasks h4 { background: color-mix(in oklab, var(--panel) 76%, var(--line)); font-size: 11px; }
+:where(:root[data-era="aqua"]) .cx-hv-tabs button { padding: 4px 12px; border: 1px solid var(--line); border-bottom: 0; background: color-mix(in oklab, var(--bg) 80%, var(--line)); }
+:where(:root[data-era="aqua"]) .cx-hv-tabs button[aria-pressed="true"] { background: var(--panel); box-shadow: inset 0 2px 0 var(--accent); }
+
+:where(:root[data-era="leopard"]) .cx-toolbar button { padding: 4px 12px; border-color: color-mix(in oklab, var(--line) 65%, black); border-radius: 999px; background: var(--gloss) var(--panel); box-shadow: 0 1px 2px rgb(0 0 0 / 0.14), inset 0 1px 0 color-mix(in srgb, white 35%, transparent); }
+:where(:root[data-era="leopard"]) .cx-toolbar button:hover { background: var(--gloss) var(--panel); filter: brightness(0.96); }
+:where(:root[data-era="leopard"]) .cx-wiz { border-radius: 10px; box-shadow: 0 14px 40px rgb(0 0 0 / 0.35); }
+:where(:root[data-era="leopard"]) .cx-wiz-title { border-radius: 9px 9px 0 0; background: linear-gradient(var(--panel), color-mix(in oklab, var(--panel) 82%, var(--line))); color: var(--fg); }
+:where(:root[data-era="leopard"]) .cx-tasks h4 { background: linear-gradient(var(--panel), color-mix(in oklab, var(--panel) 82%, var(--line))); }
+:where(:root[data-era="leopard"]) .cx-hv-tabs { gap: 3px; padding: 6px 8px 0; }
+:where(:root[data-era="leopard"]) .cx-hv-tabs button { border: 1px solid var(--line); border-bottom: 0; border-radius: 8px 8px 0 0; background: linear-gradient(var(--panel), color-mix(in oklab, var(--panel) 78%, var(--line))); }
+:where(:root[data-era="leopard"]) .cx-hv-tabs button[aria-pressed="true"] { margin-bottom: -1px; background: var(--panel); box-shadow: inset 0 3px 0 var(--accent); }
+:where(:root[data-era="leopard"]) .cx-hv-tree button[aria-pressed="true"] { background: var(--gloss) var(--accent); border-radius: 4px; }
+:where(:root[data-era="leopard"]) .cx-chart, :where(:root[data-era="leopard"]) .cx-suite { border-radius: 8px; box-shadow: 0 1px 3px rgb(0 0 0 / 0.1); }
+
+:where(:root[data-era="yosemite"]) .cx-toolbar button { padding: 4px 11px; border-color: color-mix(in oklab, var(--line) 80%, black); border-radius: 4px; }
+:where(:root[data-era="yosemite"]) .cx-wiz { border-radius: 6px; box-shadow: 0 5px 15px rgb(0 0 0 / 0.5); }
+:where(:root[data-era="yosemite"]) .cx-wiz-title { padding: 14px 16px; border-bottom: 1px solid var(--line); font-size: 16px; }
+:where(:root[data-era="yosemite"]) .cx-hv-tabs { gap: 2px; }
+:where(:root[data-era="yosemite"]) .cx-hv-tabs button { margin-bottom: -1px; border: 1px solid transparent; border-radius: 4px 4px 0 0; }
+:where(:root[data-era="yosemite"]) .cx-hv-tabs button[aria-pressed="true"] { border-color: var(--line) var(--line) var(--panel); background: var(--panel); }
+:where(:root[data-era="yosemite"]) .cx-hv-tree button { padding: 3px 8px; }
+:where(:root[data-era="yosemite"]) .cx-state.warn { background: #f0ad4e; color: #fff; }
+
+:where(:root[data-era="tahoe"]) .cx-toolbar button { padding: 5px 14px; border-color: color-mix(in srgb, var(--line) 70%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--panel) 65%, transparent); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: var(--hi), 0 1px 3px rgb(0 0 0 / 0.08); }
+:where(:root[data-era="tahoe"]) .cx-toolbar button:hover { background: color-mix(in srgb, var(--panel) 88%, transparent); }
+:where(:root[data-era="tahoe"]) .cx-wiz-back { -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); background: rgb(0 0 0 / 0.22); }
+:where(:root[data-era="tahoe"]) .cx-wiz { border-color: color-mix(in srgb, var(--line) 60%, transparent); border-radius: 26px; overflow: hidden; background: color-mix(in srgb, var(--panel) 70%, transparent); -webkit-backdrop-filter: blur(30px) saturate(1.8); backdrop-filter: blur(30px) saturate(1.8); box-shadow: var(--hi), 0 24px 60px rgb(0 0 0 / 0.3); }
+:where(:root[data-era="tahoe"]) .cx-wiz-title { padding: 14px 20px; }
+:where(:root[data-era="tahoe"]) .cx-tasks, :where(:root[data-era="tahoe"]) .cx-hv-tree { background: color-mix(in srgb, var(--panel) 60%, transparent); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); }
+:where(:root[data-era="tahoe"]) .cx-hv-tabs { gap: 4px; border-bottom: 0; }
+:where(:root[data-era="tahoe"]) .cx-hv-tabs button { border: 0; border-radius: 999px; }
+:where(:root[data-era="tahoe"]) .cx-hv-tabs button[aria-pressed="true"] { background: color-mix(in srgb, var(--panel) 92%, white); box-shadow: var(--hi), 0 2px 8px rgb(0 0 0 / 0.12); }
+:where(:root[data-era="tahoe"]) .cx-hv-tree button { border-radius: 10px; }
+:where(:root[data-era="tahoe"]) .cx-chart, :where(:root[data-era="tahoe"]) .cx-suite { border-color: color-mix(in srgb, var(--line) 60%, transparent); border-radius: 18px; background: color-mix(in srgb, var(--panel) 62%, transparent); box-shadow: var(--hi), 0 6px 20px rgb(0 0 0 / 0.06); }
+:where(:root[data-era="tahoe"]) .cx-state.warn { box-shadow: var(--hi); }

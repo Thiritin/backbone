@@ -3,11 +3,11 @@ import { familyById, familyFailure } from "../src/sim/10-catalog/families";
 import { yearOf } from "../src/sim/00-core/time";
 import { sizeSpec } from "../src/sim/10-catalog/products";
 import { COMPONENTS, componentKinds, modelById } from "../src/sim/10-catalog/hardware";
-import { newGame, type Device, type GameState } from "../src/sim/50-state";
+import { type Device, type GameState } from "../src/sim/50-state";
 import { arrayLost, deviceHealth, linkStatus, raidTolerance, raidUsable, rackPower } from "../src/sim/60-infra/status";
 import { failComponents, failureChance, rebuildHours, tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { addLocation, buyCircuit, buyRack, connect, replaceComponent, setCableColor, setFeed, setLabel, setPower, setRaid, setRebuildRate, unmountDevice } from "../src/sim/90-actions/hardware";
-import { buyDevice, freeFloor } from "./fixtures";
+import { buyDevice, freeFloor, newGame } from "./fixtures";
 import { mountDevice } from "./plugged";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { provisionService } from "../src/sim/90-actions/clusters";
@@ -52,7 +52,7 @@ describe("components and failure rates", () => {
     expect(modelById("part-hdd")).toMatchObject({ kind: "part", price: 120, height: 0 });
     expect(withServer(newGame(1)).devices[0].components.every((c) => c.installedAt === 0 && c.failedAt === null)).toBe(true);
   });
-  it("uses the rate before and after the life expectancy, the manufacturer factor and double while hot", () => {
+  it("uses the rate before and after the life expectancy, the manufacturer factor and the hours run hot", () => {
     const s = rich();
     const d = dev(s, "dev3");
     // The preset's Seagull drive fails 1.2 times as often as the kind's rate (families.ts).
@@ -64,7 +64,8 @@ describe("components and failure rates", () => {
     expect(failureChance(s, { ...d, brand: "SuperMacro" }, hdd)).toBeCloseTo((0.08 * 1.3 * f) / 8760, 12);
     fail(s, "dev3", comp(s, "dev3", "fan").id);
     expect(deviceHealth(s, "dev3").state).toBe("hot");
-    expect(failureChance(s, dev(s, "dev3"), hdd)).toBeCloseTo((0.08 * 2 * f) / 8760, 12);
+    expect(failureChance(s, dev(s, "dev3"), hdd)).toBeCloseTo((0.08 * f) / 8760, 12);
+    expect(failureChance(s, { ...dev(s, "dev3"), hotHours: 100 }, hdd)).toBeCloseTo((0.08 * 2 * f) / 8760, 12);
     // After 5 years only the drive is past its life; fans last 6.
     expect(deviceHealth(s, "dev3").worn.map((c) => c.kind)).toEqual(["hdd"]);
     expect(COMPONENTS.cpu).toEqual({ life: 7, before: 0.0005, after: 0.002, price: 400, hotSwap: "no" });
@@ -74,10 +75,11 @@ describe("components and failure rates", () => {
       const s = rich();
       ok(unmountDevice(s, "dev3"));
       const first = ok(buyDevice(s, "g1-archive", "Dwell", 5, "loc1"));
-      s.devices = s.devices.map((d) => ({ ...d, components: d.components.map((c) => ({ ...c, installedAt: -10 * 8760 })) }));
+      // A hot history makes failures ten times likelier.
+      s.devices = s.devices.map((d) => ({ ...d, hotHours: 900, components: d.components.map((c) => ({ ...c, installedAt: -10 * 8760 })) }));
       for (let i = 0; i < 5; i++) ok(mountDevice(s, `dev${Number(first.slice(3)) + i}`, "rack2", 1 + 4 * i));
       if (monitoring) s.unlocks = ["monitoring"];
-      const events = run(s, 8000);
+      const events = run(s, 1000);
       return { failed: s.devices.flatMap((d) => d.components.filter((c) => c.failedAt !== null)).length, events: events.filter((e) => e.key === "event.componentFailed").length };
     };
     const quiet = play(false), loud = play(true);
@@ -211,11 +213,11 @@ describe("power supplies, fans and power", () => {
   });
   it("takes everything behind a switch down when the switch is powered off", () => {
     const s = rich();
-    expect(rackPower(s, "rack2").watts).toBe(108);
+    expect(rackPower(s, "rack2").watts).toBe(118);
     ok(setPower(s, "dev4", false));
     expect(deviceHealth(s, "dev4").state).toBe("off");
     expect([linkStatus(s, "dev4").online, linkStatus(s, "dev3").online]).toEqual([false, false]);
-    expect(rackPower(s, "rack2").watts).toBe(100);
+    expect(rackPower(s, "rack2").watts).toBe(110);
     ok(setPower(s, "dev4", true));
     s.hour += 1;
     expect(linkStatus(s, "dev3").online).toBe(true);
@@ -231,7 +233,7 @@ describe("power supplies, fans and power", () => {
     expect(dev(s, "dev3").label).toBeNull();
     expect(err(setLabel(s, "dev3", "x".repeat(41)))).toBe("error.labelTooLong");
     ok(setCableColor(s, "cab6", "#ff8800"));
-    expect(s.cables[0].color).toBe("#ff8800");
+    expect(s.cables.find((c) => c.id === "cab6")!.color).toBe("#ff8800");
     expect(err(setCableColor(s, "cab6", "red"))).toBe("error.badColor");
     ok(setCableColor(s, "cab6", null));
     expect(err(setCableColor(s, "x", null))).toBe("error.unknownCable");

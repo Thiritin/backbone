@@ -1,8 +1,12 @@
 // docs/design/software.md, section 10: what every console offers, as blocks each product lays out in its own chrome.
+import { ChangePackage, planChoices } from "./PackageForms";
 import { t } from "../../../../i18n/en";
-import { ArrowRightLeft, CalendarClock, Circle, Code, Maximize2, Play, PowerOff, RefreshCw, RotateCcw, Square, Terminal, Trash2, X, type LucideIcon } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { ArrowRightLeft, CalendarClock, Circle, Code, Maximize2, Pause, Play, PowerOff, RefreshCw, RotateCcw, Square, Terminal, Trash2, X, type LucideIcon } from "lucide-react";
+import { useMemo, useState, type ReactNode } from "react";
 import { yearOf } from "../../../../sim/00-core/time";
+import { GAME_UNIT } from "../../../../sim/10-catalog/games";
+import { gameOf, playersOf } from "../../../../sim/60-infra/games";
+import { GameLine, type GameRow } from "./GamePanel";
 import { autoUpdates, phpAt, softwareById } from "../../../../sim/10-catalog/platforms";
 import type { Resources } from "../../../../sim/10-catalog/products";
 import type { Look } from "../../../../sim/10-catalog/sites";
@@ -11,6 +15,7 @@ import { backupTargets, hostOfVm, isOwnVm, vmById, workloadsOn, type BackupEvery
 import { deviceHealth } from "../../../../sim/60-infra/status";
 import { workloadUse } from "../../../../sim/60-infra/usage";
 import { familyOf, openVulns } from "../../../../sim/60-infra/vulns";
+import { accountUse, evcWarning, levelOf } from "../../../../sim/80-business/readouts";
 import { consoleTitle, type ConsoleFeatures } from "../../../../sim/80-business/consoles";
 import { deleteVm, phpDue, removePanelHost, resizePanelVm, setBackup, upgradePhp } from "../../../../sim/90-actions/clusters";
 import { setSitesOffline } from "../../../../sim/90-actions/security";
@@ -20,12 +25,16 @@ import { useStore } from "../../../store";
 import { disk, ram } from "../../hw";
 import { VM_STATE, vmLabel, vmState } from "../../products/parts";
 import { hoursText } from "../../vms/migrate";
+import { useHolds } from "./Holds";
+import { HostSettings } from "./HostSettings";
 import { eraOf } from "../sites/era";
 
-export type Tab = "objects" | "nodes" | "software";
+export type Tab = "objects" | "nodes" | "software" | "tasks" | "logs" | "licence" | "services" | "sysinfo" | "packages" | "create" | "easyapache" | "custombuild" | "resellers" | "autossl" | "transfer" | "fail2ban" | "toolkit" | "messages";
 
 // What ConsolePage hands a product console; the console draws its own login while signedIn is false.
-export interface PanelProps { game: GameState; c: Cluster; f: ConsoleFeatures; host: string; signedIn: boolean; login: () => void; logout: () => void }
+export interface PanelProps { game: GameState; c: Cluster; f: ConsoleFeatures; host: string; signedIn: boolean; login: () => void; logout: () => void;
+  // The address inside the console, which opens the create form or the packages screen.
+  path?: string }
 
 export const erasFrom = (early: number, late: number): { from: number; look: Look }[] => [{ from: early, look: "early" }, { from: late, look: "late" }];
 export const eraAt = (eras: { from: number; look: Look }[], game: GameState): Look => eraOf(eras, yearOf(game.hour));
@@ -39,7 +48,7 @@ export interface PanelAction { id: string; label: string; run: () => void; tone?
 
 const ICON: Record<string, LucideIcon> = {
   update: RefreshCw, auto: CalendarClock, php: Code, offline: PowerOff, resize: Maximize2, remove: Trash2, confirm: Trash2, cancel: X,
-  start: Play, stop: Square, restore: RotateCcw, migrate: ArrowRightLeft, console: Terminal, delete: Trash2,
+  hold: Pause, unhold: Play, terminate: Trash2, start: Play, stop: Square, restore: RotateCcw, migrate: ArrowRightLeft, console: Terminal, delete: Trash2,
 };
 export const ActionIcon = ({ id, size }: { id: string; size?: number }) => { const I = ICON[id] ?? Circle; return <I size={size} aria-hidden />; };
 
@@ -64,7 +73,7 @@ export function LoginForm({ onLogin, button, className, children }: { onLogin: (
 }
 
 const pct = (used: number, of: number) => `${Math.min(100, of > 0 ? (used / of) * 100 : 0)}%`;
-export const Bar = ({ use: [used, of] }: { use: [number, number] }) => <span className="cx-bar"><i style={{ width: pct(used, of) }} /></span>;
+export const Bar = ({ use: [used, of] }: { use: [number, number] }) => <span className="cx-bar" data-level={levelOf(used, of)}><i style={{ width: pct(used, of) }} /></span>;
 const num = (n: number) => `${+n.toFixed(2)}`;
 
 export function Resize({ game, host, done }: { game: GameState; host: Cluster; done: () => void }) {
@@ -89,18 +98,20 @@ export function Migrate({ game, w, c, done }: { game: GameState; w: Workload; c:
   const act = useStore((s) => s.act), hand = c.kind === "panel", [pick, setPick] = useState<string | null>(null);
   const clusterName = (id: string) => game.clusters.find((x) => x.id === id)?.name ?? "";
   const targets = hand
-    ? webspaceTargets(game, w.id).map((x) => ({ key: x.clusterId, label: t("browser-consoles-2.webspaceTarget", { panel: x.panel, name: x.name }), hours: x.hours, run: () => act(migrateWebspace, w.id, x.clusterId) }))
+    ? webspaceTargets(game, w.id).map((x) => ({ key: x.clusterId, label: t("browser-consoles-2.webspaceTarget", { panel: x.panel, name: x.name }), hours: x.hours, evc: false, run: () => act(migrateWebspace, w.id, x.clusterId) }))
     : migrationTargets(game, w.id).map((x) => ({
       key: x.to, hours: x.down, run: () => act(migrateWorkload, w.id, x.to),
       label: x.clusterId === c.id ? x.name : `${x.name} · ${clusterName(x.clusterId)}`,
+      evc: evcWarning(game, w, x.to),
     }));
-  const chosen = targets.find((t) => t.key === pick);
+  const chosen = targets.find((t) => t.key === pick), evc = chosen?.evc;
   const summary = !chosen ? "" : hand ? t("browser-consoles-2.migrationOnline", { hours: hoursText(chosen.hours) })
     : chosen.hours === 0 ? t("browser-consoles-2.machineKeepsRunning") : t("browser-consoles-2.machineOffline", { hours: hoursText(chosen.hours) });
   return (
     <div className="cx-inline">
       {targets.length === 0 && <span>{t("browser-consoles-2.noHost")}</span>}
       {targets.map((t) => <button key={t.key} className="cx-chip" aria-pressed={t.key === pick} onClick={() => setPick(t.key)}>{t.label}</button>)}
+      {evc && <span className="cx-note bad">{t(`readouts.evc.warning.${c.platform === "proxmocks" || c.platform === "openstash" ? c.platform : "vmwhere"}`)}</span>}
       {chosen && <span className="cx-note">{summary}</span>}
       {chosen && <button className="cx-btn primary" onClick={() => chosen.run().ok && done()}>{t("browser-consoles-2.migrate")}</button>}
       <button className="cx-btn" onClick={done}>{t("browser-consoles-2.cancel")}</button>
@@ -108,16 +119,28 @@ export function Migrate({ game, w, c, done }: { game: GameState; w: Workload; c:
   );
 }
 
+// Each console names the switch of an account's package in its own words.
+const PLAN_LABEL: Record<string, string> = { cpanic: "pkg.changeCpanic", directadmin: "pkg.changeDa" };
+
+function gameRow(game: GameState, c: Cluster, serviceId: string): GameRow | undefined {
+  if (!c.panel || !GAME_UNIT[c.panel] || game.services.find((v) => v.id === serviceId)?.product !== "gameServer") return undefined;
+  const g = gameOf(game, serviceId);
+  return { title: g ? t(`games.title.${g.title}`) : t("games.unknown"), players: playersOf(game, serviceId) };
+}
+
 export interface Row {
-  id: string; name: string; sub: string; node: string; state: string; tone: string;
-  cpu: [number, number]; ram: [number, number]; disk: [number, number]; lead: [number, number]; usage: string;
+  id: string; name: string; sub: string; pkg?: string; user?: string; node: string; state: string; tone: string;
+  cpu: [number, number]; ram: [number, number]; disk: [number, number]; lead: [number, number]; traffic: [number, number]; mail: number; usage: string;
   actions: PanelAction[]; panel: ReactNode;
+  // Game servers on a game panel.
+  game?: GameRow;
 }
 
 // One row per web space, game server or VM; panel is the open migrate or resize form under it.
 export function useRows(game: GameState, c: Cluster, f: ConsoleFeatures, node: string | null = null): Row[] {
-  const act = useStore((s) => s.act), openConsole = useStore((s) => s.openConsole), [open, setOpen] = useState<{ id: string; kind: "migrate" | "resize" } | null>(null);
-  const web = c.kind === "panel", cloud = c.kind === "cloud", close = () => setOpen(null);
+  const act = useStore((s) => s.act), openConsole = useStore((s) => s.openConsole), [open, setOpen] = useState<{ id: string; kind: "migrate" | "resize" | "plan" } | null>(null);
+  const uses = useMemo(() => new Map(c.kind === "panel" ? game.workloads.filter((w) => w.clusterId === c.id).map((w) => [w.id, accountUse(game, w)] as const) : []), [game.hour, game.workloads.length, c.id, c.kind]); // eslint-disable-line react-hooks/exhaustive-deps
+  const web = c.kind === "panel", cloud = c.kind === "cloud", close = () => setOpen(null), holds = useHolds(game, c, f);
   return game.workloads.filter((w) => w.clusterId === c.id && (!node || w.deviceId === node)).map((w) => {
     const st = vmState(game, w), [state, tone] = VM_STATE[st], u = workloadUse(game, w), host = hostOfVm(game, w.id);
     const on = st === "running" || st === "down" || st === "frozen", site = game.services.find((v) => v.id === w.serviceId);
@@ -128,41 +151,45 @@ export function useRows(game: GameState, c: Cluster, f: ConsoleFeatures, node: s
       st === "lost" && f.backups && { id: "restore", label: w.backupAt === null ? t("browser-consoles-2.startEmpty") : t("browser-consoles-2.restore"), run: () => act(restoreWorkload, w.id) },
       !!f.migrate && movable && { id: "migrate", label: t("browser-consoles-2.migrate"), run: () => setOpen({ id: w.id, kind: "migrate" }) },
       f.resize && !!host && cloud && { id: "resize", label: t("browser-consoles-2.resize"), run: () => setOpen({ id: w.id, kind: "resize" }) },
+      !!site && planChoices(game, c, site.id).length > 0 && { id: "plan", label: t(PLAN_LABEL[f.look] ?? "pkg.changePlan"), run: () => setOpen({ id: w.id, kind: "plan" }) },
       own && { id: "console", label: t("browser-consoles-2.console"), run: () => openConsole(w.id) },
       f.delete && own && !host && { id: "delete", label: t("browser-consoles-2.delete"), run: () => act(deleteVm, w.id) },
     ];
-    const o = open?.id === w.id ? open.kind : null;
+    const o = open?.id === w.id ? open.kind : null, hold = holds(w);
     return {
-      id: w.id, state, tone,
+      id: w.id, state: hold?.state?.[0] ?? state, tone: hold?.state?.[1] ?? tone, pkg: site?.pkg, user: site?.username,
       name: web ? site?.domain ?? w.hostname ?? "" : host?.name ?? w.hostname ?? vmLabel(game, w).name,
-      sub: host?.panel ? consoleTitle(host.panel) : "",
+      sub: [host?.panel ? consoleTitle(host.panel) : "", !web && site?.pkg].filter(Boolean).join(" · "),
+      game: gameRow(game, c, w.serviceId),
       node: d ? d.hostname ?? d.label ?? d.name : "",
-      cpu: [u.vcpu, w.vcpu], ram: [u.ramGb, w.ramGb], disk: [u.diskGb, w.diskGb], lead: web ? [u.diskGb, w.diskGb] : [u.vcpu, w.vcpu],
+      cpu: [u.vcpu, w.vcpu], ram: [u.ramGb, w.ramGb], disk: [u.diskGb, w.diskGb], lead: web ? [u.diskGb, w.diskGb] : [u.vcpu, w.vcpu], traffic: uses.get(w.id)?.traffic ?? [0, 0], mail: uses.get(w.id)?.mailboxes ?? 0,
       usage: web ? t("browser-consoles-2.of", { used: disk(Math.round(u.diskGb)), total: disk(w.diskGb) }) : t("browser-consoles-2.usageVm", { cpu: num(u.vcpu), vcpu: w.vcpu, ram: ram(+u.ramGb.toFixed(1)), ramTotal: ram(w.ramGb) }),
-      actions: actions.filter((a): a is PanelAction => !!a),
-      panel: o === "migrate" ? <Migrate game={game} w={w} c={c} done={close} /> : o === "resize" && host ? <Resize game={game} host={host} done={close} /> : null,
+      actions: [...actions.filter((a): a is PanelAction => !!a), ...(hold?.actions ?? [])],
+      panel: o === "migrate" ? <Migrate game={game} w={w} c={c} done={close} /> : o === "plan" && site ? <ChangePackage game={game} c={c} serviceId={site.id} label={t(PLAN_LABEL[f.look] ?? "pkg.changePlan")} done={close} /> : o === "resize" && host ? <Resize game={game} host={host} done={close} /> : hold?.panel ?? null,
     };
   });
 }
 
+export const trafficText = (r: Row) => t("readouts.trafficOf", { used: num(r.traffic[0]), total: num(r.traffic[1]) });
 export const cpuText = (r: Row) => t("browser-consoles-2.ofVcpu", { used: num(r.cpu[0]), total: r.cpu[1] });
 export const ramText = (r: Row) => t("browser-consoles-2.of", { used: ram(+r.ram[0].toFixed(1)), total: ram(r.ram[1]) });
 
 // The plain table most consoles show their objects in; name is the first column's heading.
-export function RowsTable({ rows, name, node = false, className = "cx-table" }: { rows: Row[]; name: string; node?: boolean; className?: string }) {
-  const span = node ? 5 : 4;
+export function RowsTable({ rows, name, node = false, className = "cx-table", extra, cols = [] }: { rows: Row[]; name: string; node?: boolean; className?: string; extra?: (r: Row) => ReactNode; cols?: ("user" | "pkg")[] }) {
+  const span = (node ? 5 : 4) + cols.length;
   return (
     <table className={className}>
-      <thead><tr><th>{name}</th>{node && <th>{t("browser-consoles-2.node")}</th>}<th>{t("browser-consoles-2.status")}</th><th>{t("browser-consoles-2.usage")}</th><th /></tr></thead>
+      <thead><tr><th>{name}</th>{cols.map((k) => <th key={k}>{t(k === "user" ? "pkg.username" : "pkg.package")}</th>)}{node && <th>{t("browser-consoles-2.node")}</th>}<th>{t("browser-consoles-2.status")}</th><th>{t("browser-consoles-2.usage")}</th><th /></tr></thead>
       <tbody>
         {rows.length === 0 && <tr><td colSpan={span} className="cx-empty">{t("browser-consoles-2.nothingHere")}</td></tr>}
         {rows.map((r) => (
           <RowLines key={r.id} r={r} span={span}>
-            <td><b>{r.name}</b>{r.sub && <span className="cx-sub">{r.sub}</span>}</td>
+            <td><b>{r.name}</b>{r.sub && <span className="cx-sub">{r.sub}</span>}<GameLine g={r.game} /></td>
+            {cols.map((k) => <td key={k}>{k === "user" ? r.user : r.pkg}</td>)}
             {node && <td>{r.node}</td>}
             <td><span className={`cx-state ${r.tone}`}>{r.state}</span></td>
-            <td><Bar use={r.lead} /><span className="cx-use num">{r.usage}</span></td>
-            <td><Actions actions={r.actions} className="cx-acts" /></td>
+            <td><Bar use={r.lead} /><span className="cx-use num">{r.usage}</span>{r.traffic[1] > 0 && <><Bar use={r.traffic} /><span className="cx-use num">{trafficText(r)}</span></>}</td>
+            <td><Actions actions={r.actions} className="cx-acts" />{extra?.(r)}</td>
           </RowLines>
         ))}
       </tbody>
@@ -232,7 +259,7 @@ export function useSoftware(game: GameState, c: Cluster, f: ConsoleFeatures): { 
   ];
   return {
     facts: facts.filter((x): x is Fact => !!x), actions: actions.filter((a): a is PanelAction => !!a),
-    note: f.update && !due ? t("browser-consoles-2.upToDate") : null, panel: sizing && c.vm ? <Resize game={game} host={c} done={() => setSizing(false)} /> : null,
+    note: f.update && !due ? t("browser-consoles-2.upToDate") : null, panel: <>{sizing && c.vm ? <Resize game={game} host={c} done={() => setSizing(false)} /> : null}<HostSettings game={game} c={c} /></>,
   };
 }
 

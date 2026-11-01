@@ -2,7 +2,7 @@ import { t } from "../../i18n/en";
 import { Gavel } from "lucide-react";
 import { useRef } from "react";
 import { euroCents } from "../../sim/00-core/money";
-import { formatDay } from "../apps/billing/BillingApp";
+import { formatDay } from "../apps/billing/format";
 import { useStore } from "../store";
 
 export function GameOver({ hour }: { hour: number }) {

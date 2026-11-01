@@ -3,6 +3,9 @@
 #root { position: fixed; inset: 0; }
 button { font: inherit; color: inherit; cursor: default; }
 .wallpaper-host { position: absolute; inset: 0; }
+.wallpaper-host.photo { background: oklch(0.2 0.05 265) center / cover no-repeat; }
+:root[data-theme="dark"] .wallpaper-host.photo { filter: brightness(0.7); }
+.live-only { display: contents; }
 .windows { position: absolute; inset: 0; z-index: 10; isolation: isolate; pointer-events: none; }
 .windows > .window { pointer-events: auto; }
 
@@ -96,6 +99,15 @@ button { font: inherit; color: inherit; cursor: default; }
 .settings-company { padding: 12px 14px; }
 .settings-company .field { max-width: 280px; }
 .settings-line { display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; }
+.settings-credit { gap: 16px; }
+.settings-credit .link { text-align: right; min-width: 0; }
+.settings-credit + .settings-credit { border-top: 0.5px solid var(--line); }
+.wp-line { flex-direction: column; align-items: stretch; gap: 8px; }
+.wp-picks { display: flex; flex-wrap: wrap; gap: 10px; }
+.wp-pick { width: 96px; padding: 0; border: 0; background: none; display: grid; gap: 4px; justify-items: center; font: inherit; font-size: 11px; color: var(--text-2); cursor: pointer; }
+.wp-thumb { position: relative; overflow: hidden; width: 96px; height: 60px; border-radius: 6px; background: oklch(0.2 0.05 265) center / cover no-repeat; box-shadow: inset 0 0 0 0.5px oklch(0 0 0 / 0.2); }
+.wp-pick[aria-pressed="true"] .wp-thumb, .wp-pick:focus-visible .wp-thumb { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wp-pick:focus-visible { outline: none; }
 .settings-divide { border-top: 0.5px solid var(--line); }
 .settings-volume { width: 180px; accent-color: var(--accent); }
 .settings-volume:disabled { opacity: 0.45; }
@@ -144,8 +156,8 @@ button { font: inherit; color: inherit; cursor: default; }
   backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5);
 }
 .notif-center .banner { background: var(--field); box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; animation: none; }
-.notif-head { display: flex; align-items: center; gap: 4px; padding: 4px 6px; }
-.notif-head h2 { margin-right: auto; font-size: 15px; font-weight: 650; }
+.notif-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 4px 6px; }
+.notif-head h2 { margin-right: auto; white-space: nowrap; font-size: 15px; font-weight: 650; }
 .b-gear svg.lucide { width: 15px; height: 15px; display: block; }
 .notif-empty { padding: 12px; border-radius: 14px; background: var(--field); color: var(--text-2); }
 

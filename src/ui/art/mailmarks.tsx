@@ -40,15 +40,15 @@ export const IonoseMark = svg(
   "Hosted Exchange by Ionose",
 );
 
-// Notmail: an envelope with an orange N badge.
-export const NotmailMark = svg(
+// GMix: an envelope with an orange X badge.
+export const GMixMark = svg(
   <>
     <rect x="2.5" y="5" width="16" height="12" rx="2" fill="white" />
     <path d="M4 7 10.5 12 17 7" fill="none" stroke="oklch(0.5 0.15 250)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     <circle cx="17.5" cy="16.5" r="5" fill="oklch(0.72 0.18 50)" />
-    <path d="M15.5 19v-5l4 5v-5" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M15.5 14l4 5m0-5-4 5" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
   </>,
-  "Notmail",
+  "GMix",
 );
 
 // Pear Mail: a white envelope with a pear leaf.

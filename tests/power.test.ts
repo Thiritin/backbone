@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { deviceHealth, linkStatus, powered, rackPower, working } from "../src/sim/60-infra/status";
 import { connect, mountDevice, mountStack, setPlugged, unmountDevice } from "../src/sim/90-actions/hardware";
-import { buyDevice } from "./fixtures";
+import { buyDevice, newGame } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { failComponents, powerPerHour, tick } from "../src/sim/88-tick/tick";
 import { runServers, withServer } from "./fixtures";
@@ -117,12 +117,12 @@ describe("power plugs", () => {
 describe("idle draw", () => {
   it("draws idle watts for a server with no running workload and rated watts once one runs", () => {
     const s = rich();
-    expect(rackPower(s, "rack2").watts).toBe(100 + 8);
+    expect(rackPower(s, "rack2").watts).toBe(100 + 8 + 10);
     const idle = powerPerHour(s);
     runServers(s);
-    expect(rackPower(s, "rack2").watts).toBe(250 + 8);
+    expect(rackPower(s, "rack2").watts).toBe(250 + 8 + 10);
     expect(powerPerHour(s)).toBeGreaterThan(idle);
     s.workloads = s.workloads.map((w) => ({ ...w, stopped: true }));
-    expect(rackPower(s, "rack2").watts).toBe(100 + 8);
+    expect(rackPower(s, "rack2").watts).toBe(100 + 8 + 10);
   });
 });

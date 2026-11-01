@@ -1,15 +1,17 @@
 import { t } from "../../i18n/en";
-import { Bell, Cloud, CloudRain, CloudSnow, CloudSun, Moon, Pause, Play, SkipForward, Sun } from "lucide-react";
+import { Bell, Moon, Pause, Play, SkipForward, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { Confirm } from "./Confirm";
 import { Intro } from "./Intro";
 import { newNote } from "./DesktopIcons";
 import { restoreGuide } from "../../sim/90-actions/docs";
-import { dateOf, formatClock, SKIP, SPEEDS, type Speed } from "../../sim/00-core/time";
+import { formatClock, SKIP, SPEEDS, type Speed } from "../../sim/00-core/time";
 import { euro } from "../../sim/00-core/money";
 import { playerAt } from "../../sim/60-infra/handwork";
-import { drive, travelTo } from "../../sim/90-actions/travel";
+import { sky } from "../../sim/20-world/weather";
+import { SkyIcon } from "../apps/weather/SkyIcon";
+import { degrees } from "../apps/weather/WeatherApp";
 import { uiSound, useStore, type Win } from "../store";
 import { CompanyMark } from "../apps/company";
 import { appFor, appTitle } from "../apps/registry";
@@ -62,10 +64,9 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
       {front ? item("app", appName(front), appMenu(front), appName(front), "mb-app") : <span className="mb-item mb-app">Backbone</span>}
       {item("window", t("desktop.menu.window"), windows.map((w) => (w.doc ? [docTitle(w.doc), () => openDoc(w.doc!)] : w.console ? [t("desktop.menu.console"), () => openConsole(w.console!)] : [appName(w), () => openApp(w.app)]) as [string, () => void]))}
       <span className="mb-spacer" />
-      {item("location", t("desktop.menu.location"), game.locations.flatMap((l) => {
-        const d = l.id !== here.id && drive(game, l.id);
-        return d ? [[t("desktop.menu.drive", { place: l.name, hours: d.hours, fee: euro(d.fee) }), () => act(travelTo, l.id)] as [string, () => void]] : [];
-      }), <span className="mb-place"><Weather city={here.city} hour={game.hour} />{here.name}</span>)}
+      <button className="mb-item mb-place" onClick={() => openApp("Weather")}>
+        <SkyIcon kind={sky(here.city, game.hour)} />{degrees(here.city, game.hour)} {here.name}
+      </button>
       <span className="mb-sep" />
       <div className="speed" role="group" aria-label={t("desktop.menu.speed")}>
         {SPEEDS.map((s: Speed, i) => {
@@ -98,14 +99,4 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
       )}
     </header>
   );
-}
-
-// Today's weather in a city: a pick per city and day, with snow only in winter.
-function Weather({ city, hour }: { city: string; hour: number }) {
-  const day = Math.floor(hour / 24), month = dateOf(hour).getUTCMonth();
-  let h = day;
-  for (const c of city) h = (h * 31 + c.charCodeAt(0)) >>> 0;
-  const icons = month < 2 || month === 11 ? [Sun, Cloud, CloudSnow, CloudSnow, Cloud] : [Sun, Sun, CloudSun, Cloud, CloudRain];
-  const Icon = icons[h % icons.length];
-  return <Icon />;
 }

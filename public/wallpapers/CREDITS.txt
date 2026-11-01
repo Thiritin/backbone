@@ -1,0 +1,23 @@
+Desktop wallpapers, one per Pear OS release. All come from Wikimedia Commons, resized to 2880px wide and saved as WebP.
+
+aqua.jpg (Panthera)
+  "China silk-crystalblue" by Party Fabrics, CC BY-SA 2.0, cropped to remove the watermark.
+  https://commons.wikimedia.org/wiki/File:China_silk-crystalblue.jpg
+  https://creativecommons.org/licenses/by-sa/2.0/
+
+leopard.jpg (Leapard)
+  "The Aurora Borealis or Northern Lights shine above Bear Lake in Alaska" by SSgt Joshua Strang, United States Air Force, public domain.
+  https://commons.wikimedia.org/wiki/File:The_Aurora_Borealis_or_Northern_Lights_shine_above_Bear_Lake_in_Alaska_050910-F-MS415-009.jpg
+
+yosemite.jpg (Yosemighty)
+  "Tunnel View overlook showing famous rock formations in Yosemite Valley 01" by EF5, CC0.
+  https://commons.wikimedia.org/wiki/File:%E2%80%9CTunnel_View%E2%80%9D_overlook_showing_famous_rock_formations_in_Yosemite_Valley_01.jpg
+
+bigsur.jpg (Big Sir)
+  "Pacific Coast at Bixby Creek Bridge 2013" by Tuxyso, CC BY-SA 3.0.
+  https://commons.wikimedia.org/wiki/File:Pacific_Coast_at_Bixby_Creek_Bridge_2013.jpg
+  https://creativecommons.org/licenses/by-sa/3.0/
+
+tahoe.jpg (Tahoo)
+  "Emerald Bay, Lake Tahoe, California. 2015" by Eric Philbin, CC0.
+  https://commons.wikimedia.org/wiki/File:Emerald_Bay,_Lake_Tahoe,_California._2015.jpg

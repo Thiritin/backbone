@@ -14,7 +14,6 @@ export function setUpChannel(s: GameState, channel: OwnedChannel): ActionResult 
   const def = OWNED[channel];
   if (!def) return fail("error.unknownChannel");
   if (owns(s, channel)) return fail("error.channelOwned");
-  if (channel === "orderForm" && s.shop.variant) return fail("error.shopInUse");
   if (def.needs && !owns(s, def.needs)) return fail("error.needsWebsite");
   if (channel === "website" && !s.marketing.launched) return fail("error.needsLaunch");
   if (yearOf(s.hour) < def.fromYear) return fail("error.channelLater");

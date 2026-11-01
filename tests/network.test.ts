@@ -5,13 +5,14 @@ import { yearOf } from "../src/sim/00-core/time";
 import { datacenterById } from "../src/sim/20-world/datacenters";
 import type { Profile } from "../src/sim/30-customers/customers";
 import { serviceOnline } from "../src/sim/40-support/status";
-import { newGame, type GameState } from "../src/sim/50-state";
-import { blackholed, burstFactor, capacityMbps, monthlyNetworkCost, networkBills, networkTick, p95, route, serviceMbps, transitBill, zoneDemand, zoneTraffic } from "../src/sim/60-infra/network";
+import { type GameState } from "../src/sim/50-state";
+import { attacks, blackholed, burstFactor, capacityMbps, monthlyNetworkCost, networkBills, networkTick, p95, route, serviceMbps, transitBill, zoneDemand, zoneTraffic } from "../src/sim/60-infra/network";
+import type { SimEvent } from "../src/sim/88-tick/tick";
 import { addressBills, addressTick } from "../src/sim/60-infra/addresses";
 import { buyAddresses } from "../src/sim/90-actions/addresses";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { addLocation } from "../src/sim/90-actions/hardware";
-import { buyDevice } from "./fixtures";
+import { buyDevice, newGame } from "./fixtures";
 import {
   acceptPeering, addUplinkLink, freeRouterPort, joinExchange, orderExchangePort, orderTransit, orderZoneLink, registerAsn, rejectPeering, requestPeering, setBlackhole, setProtection,
 } from "../src/sim/90-actions/network";
@@ -311,7 +312,7 @@ describe("DDoS", () => {
       const s = { ...newGame(11), homeLine: { id: "dsl-16", next: null } };
       for (let i = 0; i < 50; i++) service(s, "fra1", "vps", profile);
       let n = 0;
-      for (let h = 1; h <= 24 * 365; h++) { s.hour = h; n += networkTick(s).filter((e) => e.key === "event.ddos").length; }
+      for (let h = 1; h <= 24 * 365; h++) { s.hour = h; const events: SimEvent[] = []; attacks(s, events); n += events.filter((e) => e.key === "event.ddos").length; }
       return n;
     };
     const gamers = count("gamer"), others = count("smallBiz");
