@@ -3,6 +3,7 @@
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
 ## 2026-11-01
+- Removing an offsite backup server now discards its copies, a Proxmocks VM can no longer be moved into a cluster without quorum, and the Backula status lists only the jobs that write to that server with their real result.
 
 - The Debiant website now looks like a plain 2005 project page until its 2015 redesign.
 - Proxmocks clusters now have HA groups that decide where a failed guest restarts, and Horizont has projects that group your instances.

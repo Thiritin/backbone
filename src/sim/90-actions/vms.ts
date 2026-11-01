@@ -108,7 +108,7 @@ export function migrateWorkload(s: GameState, id: string, toId: string, announce
   const { w, c } = found, vmHost = s.clusters.find((x) => x.id === toId && x.vm), to = vmHost ?? clusterOf(s, toId, c.kind) ?? clusterOf(s, toId);
   const d = s.devices.find((x) => x.id === toId);
   if (!to || (!vmHost && !d)) return fail("error.notNode");
-  { const q = quorumBlock(s, c); if (q) return fail(q); }
+  { const q = quorumBlock(s, c) ?? (to.id !== c.id ? quorumBlock(s, to) : null); if (q) return fail(q); }
   if (c.kind === "panel" && to.id !== c.id) return migrateWebspace(s, id, to.id, announced);
   if (w.deviceId === toId || w.clusterId === vmHost?.id) return fail("error.sameHost");
   if (w.template) return fail("error.isTemplate");
