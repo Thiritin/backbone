@@ -68,4 +68,5 @@ export const SALES_EN: Record<string, (p: Params) => string> = {
   "error.unknownProfile": () => "There is no such customer group.",
   "error.studyDone": () => "You already have this study.",
   "ledger.marketStudy": (p) => `Market study by Gartnah: ${STUDY_NAME[p.profile] ?? p.profile}`,
+  "sales.msg.transfer": (p) => `My site currently runs at ${p.host}. Please move it over for me.`,
 };

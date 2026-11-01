@@ -20,4 +20,5 @@ export const CYCLE_SHARE: Record<Profile, [number, number, number, number]> = {
   office: [0.25, 0.12, 0.5, 0.13],
   onlineShop: [0.38, 0.15, 0.42, 0.05],
   enterprise: [0.2, 0.1, 0.5, 0.2],
+  reseller: [0.3, 0.15, 0.47, 0.08],
 };
