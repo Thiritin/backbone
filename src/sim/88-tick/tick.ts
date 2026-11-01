@@ -28,6 +28,7 @@ import { booksTick } from "../80-business/bookkeeping";
 import { deliverLicences, lexwearTick } from "../80-business/lexwear";
 import { payoutTick } from "../80-business/shoplink";
 import { paymentsTick } from "../45-billing/payments";
+import { lifecycleTick } from "../60-infra/lifecycle";
 import { salesTick } from "../30-market/sales";
 import { usedTick } from "../80-business/used";
 import { ordersTick } from "../30-market/manual";
@@ -366,6 +367,7 @@ export function tick(state: GameState): SimEvent[] {
   leaseTick(state);
   pinMembers(state);
   events.push(...networkTick(state));
+  lifecycleTick(state);
   events.push(...securityTick(state));
   events.push(...appsTick(state));
   events.push(...webpanelTick(state));
