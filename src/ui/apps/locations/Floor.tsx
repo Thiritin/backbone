@@ -9,7 +9,7 @@ import { buyRack } from "../../../sim/90-actions/hardware";
 import { DeviceSvg, LED } from "../../art/fronts";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
-import { day, deviceLamps, devName } from "../hw";
+import { day, deviceLamps, devName, portName } from "../hw";
 import { PowerMeter, useDismiss } from "./ui";
 
 export const rackUnits = (r: Rack) => simRackUnits(r.model);
@@ -79,7 +79,8 @@ function FreeTile({ loc, position, onBought }: { loc: Location; position: number
   );
 }
 
-export function CarrierPanel({ game, loc, selected, onDevice }: { game: GameState; loc: Location; selected: string | null; onDevice: (id: string) => void }) {
+// The panel shows each socket's ports; a click on one opens it in the inspector.
+export function CarrierPanel({ game, loc, selected, onDevice }: { game: GameState; loc: Location; selected: string | null; onDevice: (id: string, port?: number) => void }) {
   const gws = game.devices.filter((d) => d.panel === loc.id);
   return (
     <div className="loc-card">
@@ -89,7 +90,7 @@ export function CarrierPanel({ game, loc, selected, onDevice }: { game: GameStat
           const m = modelById(d.model);
           return (
             <button key={d.id} className="loc-panel-dev" aria-pressed={d.id === selected} onClick={() => onDevice(d.id)}>
-              <DeviceSvg model={m} brand={d.brand} name={devName(d)} {...deviceLamps(game, d.id, m)} w={420} u={26} />
+              <DeviceSvg model={m} brand={d.brand} name={devName(d)} {...deviceLamps(game, d.id, m)} w={420} u={26} back onPort={(i) => onDevice(d.id, i)} portLabel={(i) => portName(m, i)} />
             </button>
           );
         })}

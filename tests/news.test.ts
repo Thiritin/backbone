@@ -75,6 +75,6 @@ describe("news", () => {
     const loaded = deserialize(JSON.stringify(raw));
     expect(loaded.news).toEqual([]);
     const events = Array.from({ length: 48 }, () => tick(loaded)).flat();
-    expect(events.filter((e) => e.app === "News")).toEqual([]);
+    expect(events.filter((e) => e.app === "News" && e.key !== "event.news.swVersion")).toEqual([]);
   });
 });

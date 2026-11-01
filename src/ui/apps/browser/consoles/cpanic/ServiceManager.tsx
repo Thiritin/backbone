@@ -3,13 +3,13 @@ import { t } from "../../../../../i18n/en";
 import type { GameState } from "../../../../../sim/50-state";
 import type { Cluster } from "../../../../../sim/60-infra/cluster";
 import { setSitesOffline } from "../../../../../sim/90-actions/security";
-import { useStore } from "../../../../store";
+import { usePageAct } from "../../pageAct";
 
 const DAEMONS = ["web", "mail", "name", "ssh", "panel"] as const;
 
 // WHN > Service Configuration > Service Manager: only the web server has a switch in the sim.
 export function ServiceManager({ game, c }: { game: GameState; c: Cluster }) {
-  const act = useStore((s) => s.act), off = game.security.offline.includes(c.id);
+  const act = usePageAct(), off = game.security.offline.includes(c.id);
   return (
     <table className="cx-table">
       <thead><tr><th>{t("readouts.service")}</th><th>{t("readouts.enabled")}</th><th>{t("readouts.monitor")}</th><th>{t("readouts.status")}</th><th /></tr></thead>

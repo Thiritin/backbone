@@ -16,8 +16,8 @@ import { dcPerTb } from "../10-catalog/network";
 import { OVER_DRIFT, PAST_MAX_DRIFT, TOLERANCE } from "../30-customers/pricing";
 import { OFFER, ORGANIC_CONSIDER, PRICE_WEIGHT, REFERRAL_LEADS, SPILL_SHARE } from "../30-market/market";
 import { CYCLE_SHARE, MARKET_DISCOUNT } from "../10-catalog/cycles";
-import { HAND_ROLLED } from "../10-catalog/shops";
-import { BUDGETS, OWNED, PLATFORMS, PROFILE_IDS, SATURATION, WEBSITE_LEADS } from "../80-business/marketing";
+import { SHOPS } from "../10-catalog/shops";
+import { BUDGETS, OWNED, PROFILE_IDS, SATURATION, WEBSITE_LEADS } from "../80-business/marketing";
 import { generationOf, penaltyFor, SITE_RENT } from "../80-business/website";
 import { annuity, baseRate, LOAN_AMOUNTS, MIN_LIMIT, RISK_PREMIUM } from "../45-billing/billing";
 import { LEASE_FACTOR, LEASE_TERMS } from "../10-catalog/leasing";
@@ -31,7 +31,8 @@ import { BOT_SPEED } from "../47-staff/staff";
 import { botOdds, BOT_RIGHT, costPerTicket, type ChadKind } from "../47-staff/chad";
 import { marketPrice, marketSetup, type Spec } from "../10-catalog/products";
 import { EMAIL_SHARE } from "../30-market/orders";
-import { rollRivals, seedRivals, sellsIn, split, TEMPLATES, type Rival } from "../30-market/rivals";
+import { rollRivals, seedRivals, sellsIn, split, TEMPLATES, withBadges, yearAwards, type Rival } from "../30-market/rivals";
+import { rivalTrust, TIERS } from "../10-catalog/hosttoast";
 import { hourOf } from "../00-core/time";
 import { CHARGEBACK_FEE, fraudShare, TRANSFER_FACTOR } from "../45-billing/fraud";
 import { factorFor, REGISTRARS, tierFor } from "../10-catalog/registrars";
@@ -95,9 +96,11 @@ const CHAD = STORE.find((i) => i.id === "chadGpt")!;
 const CHAD_KNOW_HOW = ["people", "monitoring", "automation"].reduce((a, id) => a + skillById(id)!.knowHow, 0);
 // Awareness starts at 5% for private individuals and gamers and 2% for the rest (80-business/marketing.ts).
 const AWARENESS_START = (p: Profile) => (p.id === "private" || p.id === "gamer" ? 0.05 : 0.02);
-// The model has none of year 1's setup work (trainings, website, order form) and would fill the basement by April;
+// The model has none of year 1's setup work (trainings, website, shop) and would fill the basement by April;
 // the happiness run's careful player fills it in the last quarter, so the bot moves out no earlier than October.
 const MOVE_MONTH = 9;
+// The bot buys the cheapest shop system on sale with its website.
+const shopSetup = (year: number): number => Math.min(...SHOPS.filter((v) => year >= v.from && (v.until === undefined || year <= v.until)).map((v) => v.setup));
 function rackRent(watts: number): number {
   const kw = watts / 1000;
   const share = [8, 4, 2, 1].find((n) => kw <= HOME_DC.kwPerPosition / n);
@@ -188,7 +191,6 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     const year = 2005 + Math.floor(month / 12);
     const yf = 2005 + month / 12;
     const gen = generationAt(year);
-    // The rivals drift as in the game (30-market/rivals.ts); the game rolls its first month in February 2005.
     // The rivals' month as in the game (30-market/rivals.ts), with each city's buyers split among the rivals alone.
     if (month > 0) {
       const hour = hourOf(new Date(Date.UTC(2005, month, 1))), splits = new Map<string, Map<string, number>>();
@@ -197,6 +199,8 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
         return splits.get(city)!.get(r.id) ?? 0;
       };
       field = rollRivals(field, seed, hour, won).list;
+      // HOSTtoast's awards among the rivals; you are on the free tier and win none.
+      if (month % 12 === 0) field = withBadges(field, yearAwards(field, year - 1, null));
     }
 
     // Scores (Customer choice).
@@ -218,7 +222,7 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     // The model's price term is calibrated four times the game's; a rival's price cuts since 2005 count at the game's weight.
     const rivalU = (p: Profile, c: Rival) => {
       const from = TEMPLATES[c.template].priceFactor;
-      return p.wP * c.P + p.wR * c.R + p.wC * c.C - p.lambda * 100 * (from - 1) - PRICE_WEIGHT * p.lambda * 100 * (c.priceFactor - from);
+      return p.wP * c.P + p.wR * c.R + p.wC * c.C + rivalTrust(c) - p.lambda * 100 * (from - 1) - PRICE_WEIGHT * p.lambda * 100 * (c.priceFactor - from);
     };
     const best = (p: Profile, pr: Product) => Math.max(...rivals(p, pr).map((c) => rivalU(p, c)));
     const share = (p: Profile, pr: Product, city: string) => {
@@ -229,7 +233,7 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
 
     // Leads (Market and leads), as 30-market/market.ts leadFlows: organic by awareness and referrals from happy customers,
     // capped per city, plus website and search campaign leads, of which 10% spill to cities without a location.
-    if (!website && rackUnlocked && cash > 3000 + OWNED.website.setup + HAND_ROLLED.setup) { website = true; designYear = generationOf(year); cash -= OWNED.website.setup + HAND_ROLLED.setup; }
+    if (!website && rackUnlocked && cash > 3000 + OWNED.website.setup + shopSetup(year)) { website = true; designYear = generationOf(year); cash -= OWNED.website.setup + shopSetup(year); }
     // The bot redesigns once the site is 2 generations behind; its site stays on the rented host.
     if (website && generationOf(year) - designYear >= 8 && cash > 5000) { designYear = generationOf(year); cash -= OWNED.website.setup; }
     // The search campaign: the largest preset budget within the bot's ad share, spread over every profile and city.
@@ -256,12 +260,12 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
         });
       });
     }
-    // Awareness (Marketing and reviews): paid leads, the website, the review score, the free listing's trust and happy customers.
+    // Awareness (Marketing and reviews): paid leads, the website, the review score, the HOSTtoast listing and happy customers.
     const score = (3.5 * 20 + reviewSum) / (20 + reviewN);
     PROFILES.forEach((_, i) => {
       const happy = PRODUCTS.reduce((a, _, k) => a + happyOf(i, k), 0);
       const g = 0.05 * (1 - Math.exp(-paidBy[i] / 100)) + (website ? 0.004 : 0) + 0.006 * (score - 3.5)
-        + 0.001 * (website ? PLATFORMS.free.trust : 0) + Math.min(0.01, 0.0005 * happy);
+        + (website ? 0.001 * TIERS.registered.trust + TIERS.registered.awareness : 0) + Math.min(0.01, 0.0005 * happy);
       aware[i] = Math.min(1, Math.max(0.02, aware[i] + (1 - aware[i]) * g - 0.02 * aware[i]));
     });
 
@@ -419,7 +423,7 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
       collectedShare += v * (ON_TIME[p.budget] + (1 - ON_TIME[p.budget] - NEVER_PAYS[p.budget]) * processed);
       stuck += v * (1 - ON_TIME[p.budget] - NEVER_PAYS[p.budget]) * (1 - processed);
       // The bot places every order on acceptance, as a company with automatic orders would; the quote and setup steps done by
-      // hand are the happiness harness's. The order form bills its standard orders the market's setup fee once; big budgets and email orders pay none.
+      // hand are the happiness harness's. The shop bills its standard orders the market's setup fee once; big budgets and email orders pay none.
       if (website && p.budget !== "high") collectedShare += newCustomers[i][k] * (1 - EMAIL_SHARE) * marketSetup(LIVE[pr], year) * ON_TIME[p.budget];
       // A fraudulent signup takes back about two months of payments and costs the chargeback fee.
       const paidBy = website ? 1 - EMAIL_SHARE * (1 - TRANSFER_FACTOR) : TRANSFER_FACTOR;

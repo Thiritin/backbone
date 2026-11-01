@@ -94,6 +94,16 @@ Fees are flat over the years, like the review platforms. T replaces the free lis
 
 **Awards.** Each December HOSTtoast names a "Host of the year" per product, the best score with at least 30 reviews, and gives a "100% uptime" seal to hosts with no downtime that year. A badge adds +1 T for the following year.
 
+Decisions for phase 3:
+
+- The site is its own browser page (`80-business/browser.ts`, kind `hosttoast`) like Lexwear's, with the tiers in `10-catalog/hosttoast.ts`. It is listed in the Yahoy! Directory under Community. The early look runs to 2011, the late look from 2012.
+- The 90-day uptime is the mean of the last three months' uptime, each month 1 minus the hours down over 730 hours per live service, recorded on the 1st before billing clears the hours. A rival's 90-day uptime is 1 minus its outage hours of the last three months over 2,160.
+- Applying checks age and uptime only; the test ticket is judged by the audit. The audit ticket opens only on Premium and Diamond, the tiers that name an answer time, as a how-to ticket from a random active customer. A first reply later than the tier's hours, or none by the next 1st, drops the tier. A lower tier is always granted. The fee is billed on the 1st for the tier held then, as the ledger line "HOSTtoast listing".
+- Rival customer counts are market-wide, so the revenue rule alone puts every major on Diamond. A rival therefore also needs R of at least 60 for Premium and 85 for Diamond, the support quality that answers the test ticket in time; this gives the spec's start (majors Premium, Rackspice Diamond). Every January a rival takes the best tier it meets; in other months its uptime can drop it one tier.
+- The majors' 2005 scores were set without T, so a rival's T in the choice counts from its template's 2005 listing (Diamond plus the 2004 uptime seal for the premium template, Premium plus the seal for the rest). Every major holds the 2004 seal at the start. Counting it from Premium without the seal cost the player about 5 points of share in 2006, and level 6 was no longer reached by 2019.
+- Awards are decided on 1 January for the year that ended, so the uptime seal can look at the whole year. Host of the year covers web hosting, VPS and game servers; you take part once listed, with your review score and reviews of the last two years. Your seal needs a record for the year with no downtime and at least one live service. Each badge adds +1 T for the new year.
+- The balance model lists you on the free tier and runs the rivals' tiers and awards as the game does.
+
 ## 7. Where it shows
 
 - Market app, Competitors tab: share per city over time as a stacked area, and a table of rivals with scores, tier, stars and customers.

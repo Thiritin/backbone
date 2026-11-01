@@ -173,7 +173,7 @@ export function MailAttachments({ tk, r, m }: { tk: Ticket; r: SalesRequest; m: 
   );
 }
 
-// The step a custom order is at, with its button; the account can be created before the quote. Order form orders start accepted.
+// The step a custom order is at, with its button; the account can be created before the quote. Shop orders start accepted.
 export function CustomCompose({ tk, r }: { tk: Ticket; r: SalesRequest }) {
   const game = useStore((s) => s.game);
   const act = useStore((s) => s.act);
@@ -206,7 +206,7 @@ export function CustomCompose({ tk, r }: { tk: Ticket; r: SalesRequest }) {
     <div className="compose custom-steps">
       {((!done.quote && waiting) || done.provision) && <p className="step-wait">{t("support.status.waiting")}</p>}
       <ol className="steps">
-        {!r.form && row("quote", t("support.quote"), quoteValue, <Attachments tk={tk} locked={locked} open={!waiting} />)}
+        {!r.shop && row("quote", t("support.quote"), quoteValue, <Attachments tk={tk} locked={locked} open={!waiting} />)}
         {row("account", t("support.customerAccount"), done.account ? t("support.created") : t("support.none"),
           <button className="btn primary" disabled={locked} onClick={() => openApp("Books", { kind: "newCustomer", id: tk.id })}><UserPlus />{t("orderSteps.createCustomer")}</button>)}
         {row("invoice", t("support.orderConfirmation"), done.invoice ? t("support.perMonth", { price: euroCents(r.quote ?? 0) }) : invoiceOf(game, r) ? t("orderSteps.status.draft") : t("support.notSent"),

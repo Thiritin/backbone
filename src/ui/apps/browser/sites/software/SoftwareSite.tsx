@@ -9,14 +9,15 @@ import { useStore } from "../../../../store";
 import { downloadMbps } from "../../../../../sim/90-actions/media";
 import { startDownload, useProgress } from "../../../../downloads";
 import type { Look, Site } from "../../../../../sim/10-catalog/sites";
+import { Releases } from "./Releases";
 import { isLicensed } from "../../../../../sim/60-infra/licence";
 import { Account, Cart, cartCount, Editions } from "../shop/VendorShop";
 import "./software.css";
 
 // docs/design/software.md, 8.3: the pieces every software and OS site lays out in its own look.
-export type SitePage = "home" | "features" | "pricing" | "download" | "docs" | "cart" | "account";
+export type SitePage = "home" | "features" | "pricing" | "download" | "docs" | "versions" | "news" | "cart" | "account";
 export interface Product { id: string; name: string; site: Site; sw?: Software; os?: ServerOs }
-export interface SiteProps { p: Product; look: Look; page: SitePage; year: number; go: (path: string) => void }
+export interface SiteProps { p: Product; look: Look; page: SitePage; year: number; hour: number; go: (path: string) => void }
 
 export const productOf = (kind: "software" | "os", id: string): Product | null => {
   const sw = kind === "software" ? SOFTWARE.find((x) => x.id === id) : undefined, os = kind === "os" ? SERVER_OS.find((x) => x.id === id) : undefined;
@@ -24,7 +25,7 @@ export const productOf = (kind: "software" | "os", id: string): Product | null =
   return x ? { id: x.id, name: x.name, site: x.site, sw, os } : null;
 };
 
-const PAGES: SitePage[] = ["home", "features", "pricing", "download", "docs", "cart", "account"];
+const PAGES: SitePage[] = ["home", "features", "pricing", "download", "docs", "versions", "news", "cart", "account"];
 // Only sites of licensed products have a shop.
 const SHOP: SitePage[] = ["cart", "account"];
 export const pageOf = (path: string): SitePage => PAGES.find((x) => x === path.split(/[/?#]/)[1]) ?? "home";
@@ -36,7 +37,7 @@ export function Nav({ p, page, go, className, labels }: Pick<SiteProps, "p" | "p
   const n = useStore((s) => cartCount(s.game, p.site.host));
   const name: Record<SitePage, string> = {
     home: t("browser-sites-2.navHome"), features: t("browser-sites-2.navFeatures"), pricing: t("browser-sites-2.navPricing"), download: gui(p) ? t("browser-sites-2.navInstall") : t("browser-sites-2.navDownload"),
-    docs: t("browser-sites-2.navDocs"), cart: t("vendor-shop.cart", { n }), account: t("vendor-shop.myAccount"), ...labels,
+    docs: t("browser-sites-2.navDocs"), versions: t("releases.navVersions"), news: t("releases.navNews"), cart: t("vendor-shop.cart", { n }), account: t("vendor-shop.myAccount"), ...labels,
   };
   return (
     <nav className={className}>
@@ -55,9 +56,9 @@ export const Features = ({ p, className }: { p: Product; className?: string }) =
   <ul className={className}>{p.site.features.map((f) => <li key={f}>{f}</li>)}</ul>
 );
 
-const UNIT: Record<LicenseKind, string> = { free: "", once: "priceOnce", account: "priceAccount", server: "priceServer", core: "priceCore" };
+const UNIT: Record<LicenseKind, string> = { free: "", once: "priceOnce", account: "priceAccount", server: "priceServer", core: "priceCore", gameserver: "priceGameserver" };
 const OS_UNIT: Record<LicenseKind, string> = { ...UNIT, once: "priceOsOnce", core: "priceOsCore" };
-const price = (era: LicenseEra, unit: Record<LicenseKind, string>) => (era.kind === "free" ? t("browser-sites-2.free") : t(`browser-sites-2.${unit[era.kind]}`, { fee: euroPrice(era.fee) }));
+const price = (era: LicenseEra, unit: Record<LicenseKind, string>) => (era.kind === "free" ? t("browser-sites-2.free") : t(`browser-sites-2.${unit[era.kind]}${era.period === "year" ? "Year" : ""}`, { fee: euroPrice(era.fee) }));
 
 // The license of the game year as the catalog has it, and the Windoors license where the software runs on nothing else.
 export function Pricing({ p, className }: { p: Product; className?: string }) {
@@ -132,6 +133,7 @@ export function Commands({ p, year, className }: { p: Product; year: number; cla
         <pre>{text}</pre>
         <button type="button" onClick={copy}>{copied ? t("browser-sites-2.copied") : t("browser-sites-2.copy")}</button>
       </div>
+      {isLicensed(p.sw!.id) && <p>{t("browser-sites-2.keyFlag")}</p>}
     </div>
   );
 }
@@ -154,9 +156,10 @@ export function Docs({ p, className }: { p: Product; className?: string }) {
 }
 
 // The page body below a site's own header and hero.
-export function Body({ p, page, year, go, className }: SiteProps & { className?: string }) {
+export function Body({ p, page, year, hour, go, className }: SiteProps & { className?: string }) {
   if (page === "features") return <section className={className}><h2>{t("browser-sites-2.navFeatures")}</h2><Features p={p} /></section>;
   if (page === "pricing") return <section className={className}><h2>{t("browser-sites-2.navPricing")}</h2><Pricing p={p} /></section>;
+  if (page === "versions" || page === "news") return <section className={className}><h2>{t(page === "news" ? "releases.navNews" : "releases.navVersions")}</h2><Releases p={p} page={page} hour={hour} /></section>;
   if (page === "cart" && isLicensed(p.id)) return <section className={className}><h2>{t("vendor-shop.cart", { n: 0 })}</h2><Cart host={p.site.host} btn="sws-btn" account={() => go("/account")} /></section>;
   if (page === "account" && isLicensed(p.id)) return <section className={className}><h2>{t("vendor-shop.myAccount")}</h2><Account host={p.site.host} btn="sws-btn" /></section>;
   if (page === "docs") return <section className={className}><h2>{t("browser-sites-2.navDocs")}</h2><Docs p={p} /></section>;

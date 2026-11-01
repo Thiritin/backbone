@@ -8,6 +8,7 @@ import { MOMS_DSL, seedDcs } from "./20-world/datacenters";
 import { t } from "../i18n/en";
 import type { Customer, Product, Service } from "./30-customers/customers";
 import type { Quote } from "./30-market/quotes";
+import type { CatalogProduct } from "./80-business/catalog";
 import type { BillingRules, HoldReason, Invoice, Loan, Transfer } from "./45-billing/billing";
 import type { Ticket } from "./40-support/tickets";
 import type { Policy } from "./46-finance/finance";
@@ -28,6 +29,7 @@ import type { Breach } from "./60-infra/breach";
 import { newSecurity, type Security } from "./60-infra/security";
 import { newSales, type Sales } from "./30-market/market";
 import { seedRivals, type Rival, type ShareEntry } from "./30-market/rivals";
+import { newHostToast, type HostToast } from "./10-catalog/hosttoast";
 import type { FairBooking } from "./80-business/fairs";
 import type { Sponsorship } from "./80-business/community";
 import type { SponsorOffer } from "./80-business/sponsorboard";
@@ -217,6 +219,8 @@ export interface GameState {
   transfers: Transfer[];
   // Quotes written in Books for order tickets.
   quotes: Quote[];
+  // The products the player sells (80-business/catalog.ts).
+  catalog: CatalogProduct[];
   // Hour up to which each yearly service is invoiced.
   yearlyBilledUntil: Record<string, number>;
   loans: Loan[];
@@ -342,6 +346,8 @@ export interface GameState {
   // News already published, as "<id>@<hour>" (80-business/news.ts).
   news: string[];
   competitors: Rival[];
+  // The HOSTtoast listing (80-business/hosttoast.ts).
+  hosttoast: HostToast;
   shareLog: ShareEntry[];
   // Next server number, next own-VM number and next service number (30-customers/hostnames.ts).
   nextNode: number;
@@ -427,6 +433,7 @@ export const newGame = (seed: number): GameState => ({
   customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], files: {},
   invoices: [], transfers: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   quotes: [],
+  catalog: [],
   billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 }, autoOrders: false, reviewOrders: false, screenOrders: false, screenChecks: 0, chargebackStrikes: 0,
   shop: newShop(),
   heldCustomers: [],
@@ -455,6 +462,7 @@ export const newGame = (seed: number): GameState => ({
   webpanel: newWebPanel(),
   news: [],
   competitors: seedRivals(seed),
+  hosttoast: newHostToast(),
   shareLog: [],
   nextNode: 1, nextVm: 1, nextHostNo: firstHostNo(seed),
   used: [], usedRep: 0,

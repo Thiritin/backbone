@@ -39,7 +39,7 @@ export function Mark({ id, size = 28 }: { id: string | null; size?: number }) {
   return <span className="prd-mark" style={{ background: color, width: size, height: size }}><Icon size={Math.round(size * 0.62)} /></span>;
 }
 
-const UNIT: Record<LicenseKind, string> = { free: "", once: t("misc1.parts.perSocket"), account: t("misc1.parts.perWebSpace"), server: t("misc1.parts.perServer"), core: t("misc1.parts.perCore") };
+const UNIT: Record<LicenseKind, string> = { free: "", once: t("misc1.parts.perSocket"), account: t("misc1.parts.perWebSpace"), server: t("misc1.parts.perServer"), core: t("misc1.parts.perCore"), gameserver: t("misc1.parts.perGameserver") };
 export const licenseText = (sw: Software, year: number) => {
   const era = licensingAt(sw, year);
   return era.kind === "free" ? t("misc1.parts.free") : t("misc1.parts.fee", { fee: euroCents(era.fee), unit: UNIT[era.kind] });

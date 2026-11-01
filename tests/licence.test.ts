@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { licenceStatus } from "../src/sim/60-infra/licence";
+import { installSoftware, uninstallSoftware } from "../src/sim/90-actions/software";
 import { hourOf } from "../src/sim/00-core/time";
 import { LAPSE_GRACE_DAYS } from "../src/sim/10-catalog/licence-tiers";
 import { assignKey, issueKey, monthAfter, panelKey, panelMachine, updateKey } from "../src/sim/60-infra/licence";
@@ -9,7 +11,7 @@ import { setLicenceTier } from "../src/sim/90-actions/licence";
 import { updateSoftware } from "../src/sim/90-actions/software";
 import { panelVm, readyGame } from "./fixtures";
 
-const MONTH = hourOf(new Date(Date.UTC(2006, 0, 1)));
+const MONTH = hourOf(new Date(Date.UTC(2020, 0, 1)));
 
 // A cPanic VM on the given tier's key, or on a trial until trialUntil without one.
 function setup(tier: string, trialUntil?: number) {
@@ -129,16 +131,15 @@ describe("licence tiers", () => {
   });
 
   it("starts a new install on a 15 day trial once per machine", () => {
-    const { s, id, vm, host, add } = setup("pro", MONTH);
+    const { s, vm } = setup("pro", MONTH);
     s.licenses = [];
-    const install = () => { s.clusters = s.clusters.map((c) => (c.id === id ? { ...c, panel: null, switching: { kind: "panel", to: "cpanic", doneAt: s.hour } } : c)); productsTick(s); };
     s.trials = [];
-    install();
+    const reinstall = () => { expect(uninstallSoftware(s, vm, "cpanic")).toEqual({ ok: true }); expect(installSoftware(s, vm, "cpanic")).toMatchObject({ ok: true }); };
+    reinstall();
     expect(s.trials).toEqual([{ machineId: vm, product: "cpanic", until: MONTH + 15 * 24 }]);
-    expect(host().panel).toBe("cpanic");
     s.hour += 20 * 24;
-    install();
+    reinstall();
     expect(s.trials).toEqual([{ machineId: vm, product: "cpanic", until: MONTH + 15 * 24 }]);
-    expect(add("a.com")).toEqual({ ok: false, error: "error.licenceExpired" });
+    expect(licenceStatus(s, vm, "cpanic")).toBe("ended");
   });
 });

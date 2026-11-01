@@ -5,7 +5,7 @@ import { tick } from "../src/sim/88-tick/tick";
 import { createVm } from "../src/sim/90-actions/clusters";
 import { setPower } from "../src/sim/90-actions/hardware";
 import { failoverReplica, setReplication } from "../src/sim/90-actions/replication";
-import { skipTo, hypervisor } from "./fixtures";
+import { platformKeys, skipTo, hypervisor } from "./fixtures";
 import { err, ok, pmx, SMALL } from "./pmx";
 import type { ReplicaEvery } from "../src/sim/60-infra/replica";
 
@@ -13,6 +13,7 @@ import type { ReplicaEvery } from "../src/sim/60-infra/replica";
 function hv(every: ReplicaEvery = "5min") {
   const x = pmx(2);
   x.s.clusters = x.s.clusters.map((c) => (c.id === x.c ? { ...c, platform: "hypervee" } : c));
+  platformKeys(x.s, x.c);
   skipTo(x.s, 2012);
   const vm = ok(createVm(x.s, x.c, SMALL));
   x.s.workloads = x.s.workloads.map((w) => (w.id === vm ? { ...w, deviceId: "dev3" } : w));

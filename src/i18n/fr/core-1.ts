@@ -57,7 +57,6 @@ export default {
   "error.unknownSiteLine": () => "Ce produit ne peut pas figurer sur le site web.",
   "error.unknownLineRate": () => "Ce produit n'a pas ce tarif.",
   "error.badRate": () => "Saisis un tarif supérieur ou égal à zéro.",
-  "error.needsOrderForm": () => "Configure d'abord le formulaire de commande.",
   "error.notInShop": () => "La boutique ne vend pas ce modèle.",
   "error.outOfBounds": () => "L'appareil ne tient pas à cette hauteur.",
   "error.slotTaken": () => "Un autre appareil gêne le passage.",

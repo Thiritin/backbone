@@ -1,14 +1,23 @@
-import { hourOfMonth } from "../00-core/time";
+import { dateOf, hourOfMonth, yearOf } from "../00-core/time";
 import { SITES, type Site } from "./sites";
 
 // docs/design/software.md, section 1: the operating systems a server or one of the player's VMs runs.
 export type ServerOsId = "lunix" | "windoors";
-// A license era, from its year on: one price per machine at install (once, for software per CPU socket of a server), or a
-// monthly fee per physical core of the nodes (core, per vCPU of a VM for an OS), per node (server) or per web space (account).
-export type LicenseKind = "once" | "core" | "server" | "account" | "free";
-export interface LicenseEra { from: number; kind: LicenseKind; fee: number }
-export const licensingAt = (x: { licensing: LicenseEra[] }, year: number): LicenseEra =>
-  [...x.licensing].reverse().find((e) => e.from <= year) ?? x.licensing[0];
+// docs/design/plans/software-licences.md, Licence models over time: a license era runs from its year and month (January
+// unless set) until the next one. A once era sells a key for the major on sale, per machine for an OS and per CPU socket of a
+// server for software, and upgrade is its price for holders of the previous major's key bought within 12 months. Every other
+// kind is a term paid per month, or per year with period: per physical core of a server or vCPU of a VM (core, a server billed
+// for at least minCores and minCoresPerCpu per socket), per node (server), per web space (account) or per game server beyond
+// the free ones (gameserver). editions lists the tiers on sale; all of them when unset.
+export type LicenseKind = "once" | "core" | "server" | "account" | "gameserver" | "free";
+export interface LicenseEra {
+  from: number; month?: number; kind: LicenseKind; fee: number; period?: "year"; upgrade?: number;
+  minCores?: number; minCoresPerCpu?: number; free?: number; editions?: string[];
+}
+export const licensingAt = (x: { licensing: LicenseEra[] }, year: number, month = 1): LicenseEra =>
+  [...x.licensing].reverse().find((e) => e.from < year || (e.from === year && (e.month ?? 1) <= month)) ?? x.licensing[0];
+export const eraAt = (x: { licensing: LicenseEra[] }, hour: number): LicenseEra =>
+  licensingAt(x, yearOf(hour), dateOf(hour).getUTCMonth() + 1);
 // from is the first game year the version exists; an install takes the newest one out. updatesUntil and securityUntil are
 // the hours its fixes and its security fixes end (docs/design/software-versions.md).
 export interface ServerOsVersion { version: string; name: string; from: number; updatesUntil: number; securityUntil: number }
@@ -37,7 +46,7 @@ export const SERVER_OS: ServerOs[] = [
   },
   {
     id: "windoors", name: "Windoors Server", bootMinutes: 40, haltMinutes: 10, installHours: 2, site: SITES.windoors,
-    licensing: [{ from: 2005, kind: "once", fee: 600 }, { from: 2016, kind: "core", fee: 4 }], trialDays: 180,
+    licensing: [{ from: 2005, kind: "once", fee: 600, upgrade: 300 }, { from: 2016, month: 10, kind: "core", fee: 4, minCores: 16, minCoresPerCpu: 8 }], trialDays: 180,
     versions: [
       v("2003", 2005, "2010-07", "2015-07"), v("2008", 2008, "2015-01", "2020-01"), v("2008 R2", 2010, "2015-01", "2020-01"),
       v("2012", 2012, "2018-10", "2023-10"), v("2012 R2", 2014, "2018-10", "2023-10"), v("2016", 2016, "2022-01", "2027-01"),

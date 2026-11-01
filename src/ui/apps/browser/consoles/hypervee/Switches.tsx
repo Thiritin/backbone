@@ -5,13 +5,13 @@ import type { GameState } from "../../../../../sim/50-state";
 import type { Cluster } from "../../../../../sim/60-infra/cluster";
 import { DEFAULT_SWITCH, switchesOf, type VSwitchType } from "../../../../../sim/60-infra/vswitch";
 import { deleteSwitch, saveSwitch } from "../../../../../sim/90-actions/vswitch";
-import { useStore } from "../../../../store";
+import { usePageAct } from "../../pageAct";
 
 const TYPES: VSwitchType[] = ["external", "internal", "private"];
 
 // Virtual Switch Manager: the switches on the left, the selected one's name, connection type and adapter on the right.
 export function Switches({ game, c }: { game: GameState; c: Cluster }) {
-  const act = useStore((s) => s.act), all = switchesOf(c), [sel, setSel] = useState<string | null>(DEFAULT_SWITCH);
+  const act = usePageAct(), all = switchesOf(c), [sel, setSel] = useState<string | null>(DEFAULT_SWITCH);
   const cur = all.find((x) => x.id === sel), [name, setName] = useState(cur?.name ?? ""), [type, setType] = useState<VSwitchType>(cur?.type ?? "external"), [nic, setNic] = useState<number | null>(cur?.nic ?? null);
   const pick = (id: string | null) => { const x = all.find((y) => y.id === id); setSel(id); setName(x?.name ?? ""); setType(x?.type ?? "external"); setNic(x?.nic ?? null); };
   const ports = Math.min(...c.nodes.map((n) => { const d = game.devices.find((x) => x.id === n.deviceId); return d ? modelById(d.model).ports.length : 1; }));

@@ -22,8 +22,7 @@ export function buyLicence(s: GameState, id: string, vendor: BooksVendorId = "le
   if (m?.vendor === "shop") {
     if (m.year > yearOf(s.hour)) return fail("error.unknownModule");
     if (bought(s, id)) return fail("error.moduleBought");
-    // The hand-rolled order form has no vendor to link it.
-    if (!s.shop.variant || s.shop.variant === "handRolled") return fail("error.noShopSystem");
+    if (!s.shop.variant) return fail("error.noShopSystem");
     if (s.cash < m.price) return fail("error.noCash");
     s.cash = cents(s.cash - m.price);
     s.ledger = [...s.ledger, { hour: s.hour, category: "licenses", key: `ledger.module.${id}`, params: {}, amount: -m.price }];

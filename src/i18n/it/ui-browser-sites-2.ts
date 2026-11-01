@@ -10,6 +10,9 @@ export default {
   "browser-sites-2.priceAccount": (p) => `${p.fee} al mese per spazio web`,
   "browser-sites-2.priceServer": (p) => `${p.fee} al mese per server`,
   "browser-sites-2.priceCore": (p) => `${p.fee} al mese per core fisico`,
+  "browser-sites-2.priceCoreYear": (p) => `${p.fee} all'anno per core fisico`,
+  "browser-sites-2.priceServerYear": (p) => `${p.fee} all'anno per server`,
+  "browser-sites-2.priceGameserver": (p) => `${p.fee} al mese per server di gioco`,
   "browser-sites-2.priceOsOnce": (p) => `${p.fee} per macchina, pagamento unico`,
   "browser-sites-2.priceOsCore": (p) => `${p.fee} al mese per core o vCPU`,
   "browser-sites-2.free": () => "Gratis",
@@ -462,4 +465,5 @@ export default {
   "browser-sites-2.cli.relay": () => "Invia la posta di un host del pannello attraverso questo server, e off la invia di nuovo direttamente.",
   "browser-sites-2.cli.serverList": () => "Elenca i server di gioco su questa macchina e se sono in esecuzione.",
   "browser-sites-2.cli.shareList": () => "Elenca i link condivisi su questo server di archiviazione e quando scadono.",
+  "browser-sites-2.keyFlag": () => "Aggiungi --key seguito dalla tua chiave di licenza al comando per installare con una licenza.",
 } satisfies Dict;
