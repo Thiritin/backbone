@@ -65,3 +65,4 @@
 
 /* Tahoo: glass review list. */
 :root[data-os="tahoe"] .mkt-review-list { background: color-mix(in oklch, var(--field), transparent 30%); }
+.mkt-flat .shop-buy { margin-top: auto; }
