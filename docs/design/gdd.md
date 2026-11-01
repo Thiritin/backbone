@@ -69,7 +69,7 @@ The menu bar holds the time controls, date and cash. The game saves itself in th
 | Website | Shortcut that opens the Browser at the company site |
 | Customers | Customer list, contracts, happiness |
 | Support | Ticket inbox with reply templates and actions |
-| Books | Lexwear Office: customer addresses, invoices sent by hand as PDF, bank transfers matched to invoices, reminders, dunning, collections |
+| Books | Lexwear Office: customer addresses, invoices sent by hand as PDF, bank transfers matched to invoices, reminders, dunning, collections, the product catalog |
 | Finance | Account statement, later profit and loss, cash flow, recurring revenue, churn |
 | Bank | Loan offers, active loans and repayments |
 | Staff | Job market, hiring, salaries, task assignment |
@@ -544,6 +544,8 @@ You accept or decline. A declined customer goes to a competitor. Requests you ca
 **Billing.** Services are billed for every hour they run and invoiced once a month for the month that just ended. Hours a service is down are not billed, so an outage costs you its revenue. Business and Premium SLAs pay credits on top. Usage such as traffic over the included amount, object storage and CDN traffic is billed per TB on the same invoice. Domains and SSL certificates are the exception: they are paid a year in advance and renewed each year, and a customer who doesn't renew is gone.
 
 **Books.** Billing happens in Books, the bookkeeping program Lexwear Office. Each month's invoices arrive there as drafts, and a draft is only due, and only paid, once the player sends it as PDF. A customer pays by bank transfer, which lands in the Bank tab and moves the cash. The invoice stays open until the player matches the transfer to it. A shorter amount is booked as a partial payment, and the next reminder brings the rest, unless the player books it as paid in full. A larger amount pays the invoice and leaves the rest as the customer's credit. Most transfers name the invoice number, but some private customers and gamers write a bare word or their own name, and a few low-budget payers send a few cents short or a rounded amount. A reminder on an invoice whose payment is waiting unmatched costs 5 happiness and brings a billing ticket.
+
+**Products.** The Products tab in Books holds the packages the player sells, listed by line. New product adds one at the line's middle size, with the player's rate as the monthly price and the line's setup fee. Each product has a name that is unique within its line, a size, an SLA, a price per term for each billing cycle it offers, a setup fee, and can be hidden. Once a shop system is chosen, Books shows the catalog read-only.
 
 **Commitment.** Each contract has a minimum term: none for cloud servers, one month for hosting and VPS, twelve months for dedicated servers and colocation. Customers only leave when their term runs out, unless a missed SLA lets them leave early.
 

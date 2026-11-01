@@ -4,6 +4,7 @@ import * as addresses from "./addresses";
 import * as bank from "./bank";
 import * as billing from "./billing";
 import * as burnin from "./burnin";
+import * as catalog from "./catalog";
 import * as changes from "./changes";
 import * as checklist from "./checklist";
 import * as clusters from "./clusters";
@@ -67,7 +68,7 @@ export type Call = [Action, ...unknown[]];
 export type { LogEntry };
 export const LOG_CAP = 50_000;
 
-const modules = [addresses, lan, bank, billing, burnin, changes, checklist, clusters, community, datastores, company, console_, cpus, customers, dev, holds, licence, lexwear, oversell, packages, webpanel, docs, paperwork, files, finance, hardware, mail, maintenance, market, marketing, media, moves, netsvcDns, netsvcMail, netsvcQuota, netsvcStorage, netsvcVpn, network, os, orders, rates, registrar, remote, routers, sales, security, shop, snapshots, software, staff, start, store, suite, switches, support, templates, travel, used, vms, website];
+const modules = [addresses, lan, bank, billing, burnin, catalog, changes, checklist, clusters, community, datastores, company, console_, cpus, customers, dev, holds, licence, lexwear, oversell, packages, webpanel, docs, paperwork, files, finance, hardware, mail, maintenance, market, marketing, media, moves, netsvcDns, netsvcMail, netsvcQuota, netsvcStorage, netsvcVpn, network, os, orders, rates, registrar, remote, routers, sales, security, shop, snapshots, software, staff, start, store, suite, switches, support, templates, travel, used, vms, website];
 // Every exported function of 90-actions by its name, so a replay can call the actions a run logged.
 export const ACTIONS: Record<string, Action> = Object.fromEntries(modules.flatMap((m) => Object.entries(m).filter(([, f]) => typeof f === "function"))) as Record<string, Action>;
 const NAMES = new Map<unknown, string>(Object.entries(ACTIONS).map(([k, f]) => [f, k]));
