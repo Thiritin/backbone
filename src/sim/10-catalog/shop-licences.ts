@@ -67,7 +67,7 @@ const TERMS: Record<ShopId, Omit<ShopLicence, "id" | "name">> = {
     trialDays: null, caps: "servers",
     site: site("ubersmyth", "ubersmyth.com", 0, 2006),
   },
-  orderBocks: { licensing: [{ from: 2006, kind: "free", fee: 0, cut: 0.06 }] },
+  orderBocks: { licensing: [{ from: 2006, kind: "free", fee: 0, cut: 0.06 }], site: site("orderBocks", "orderbocks.com", 0, 2006) },
   boxBillin: { licensing: [{ from: 2011, kind: "free", fee: 0 }], site: site("boxBillin", "boxbillin.com", 0, 2011) },
 };
 

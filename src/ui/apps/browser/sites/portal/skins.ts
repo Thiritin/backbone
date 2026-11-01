@@ -8,6 +8,7 @@ import { clientExitSkin } from "./clientexit";
 import { hostBullSkin } from "./hostbull";
 import { ubersmythSkin } from "./ubersmyth";
 import { modemBillSkin } from "./modembill";
+import { orderBocksSkin } from "./orderbocks";
 import { makeSkin } from "./shared/makeSkin";
 import { Plain } from "./plain/Plain";
 import { WhmCacheAdmin } from "./whmCache/Admin";
@@ -27,6 +28,7 @@ const SKINS: Partial<Record<ShopId, Partial<Skin>>> = {
   modemBill: modemBillSkin, clientExit: clientExitSkin,
   blessta: blesstaSkin, boxBillin: boxBillinSkin, hostBull: hostBullSkin,
   ubersmyth: ubersmythSkin,
+  orderBocks: orderBocksSkin,
 };
 
 export const skinOf = (variant: ShopId): Skin => ({ ...Plain, ...SKINS[variant] });
