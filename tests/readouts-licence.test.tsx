@@ -7,7 +7,7 @@ import { panelVm, readyGame, skipTo } from "./fixtures";
 
 function page(panel: string) {
   const s = readyGame(1);
-  skipTo(s, 2008);
+  skipTo(s, 2020);
   s.cash = 1_000_000;
   const id = panelVm(s, s.clusters.find((y) => y.kind === "cloud")!.id, panel), c = s.clusters.find((x) => x.id === id)!;
   return { s, c, html: renderToString(<LicencePage game={s} c={c} />) };
@@ -28,5 +28,12 @@ describe("licence page", () => {
     const { html } = page("freepanel");
     expect(html).toContain("Free software");
     expect(html).not.toContain("€");
+  });
+
+  it("marks a panel past its end of security updates", () => {
+    const { s, c } = page("cpanic");
+    expect(renderToString(<LicencePage game={s} c={c} />)).not.toContain("Security updates ended");
+    s.hour += 10 * 365 * 24;
+    expect(renderToString(<LicencePage game={s} c={c} />)).toContain("Security updates ended");
   });
 });

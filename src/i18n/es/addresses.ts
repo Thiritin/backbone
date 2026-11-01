@@ -41,5 +41,7 @@ export default {
   "error.badAddress": () => "Introduce una dirección IPv4 privada.",
   "error.portShared": () => "El puerto 80 ya está compartido con otro dispositivo.",
   "error.noAddress": () => "Este dispositivo no tiene dirección en la red del router.",
+  "error.badIp": () => "La dirección IP no es válida.",
+  "error.notServerNet": () => "Solo los servidores tienen una configuración de red.",
   "error.notOfficeRouter": () => "Solo un router de oficina pequeña sustituye al del sótano.",
 } satisfies Dict;

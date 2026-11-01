@@ -7,6 +7,7 @@ import { bayCount, boardSpec, isManaged, isOfficeRouter, jacksOf, modelById, mod
 import { imageName } from "../../../sim/10-catalog/server-os";
 import type { Cable as CableT, Device, End, GameState } from "../../../sim/50-state";
 import { addressOf, FRITZ_HOST, macOf, routerPassword } from "../../../sim/60-infra/lan";
+import { isOwnRouter } from "../../../sim/60-infra/routers";
 import { clusterOf, workloadsOn } from "../../../sim/60-infra/cluster";
 import { deviceHealth, deviceVendor, deviceWatts, deviceValue, isPlugged, linkStatus, locationOf, pluggedIn, portPeers, resaleValue, working } from "../../../sim/60-infra/status";
 import { pduOf } from "../../../sim/60-infra/pdu";
@@ -114,9 +115,9 @@ const POWER = {
 // onHot reports the cable of the hovered or selected port, so the rack view can highlight it. rename opens the name field.
 type InspTab = "actions" | "ports" | "lease" | "psu" | "parts";
 
-export function Inspector({ game, device, side = "front", onSelect, onHot, rename = false, onRenaming, monitor = false, onUnplug, onConsole }: { game: GameState; device: Device; side?: Side; onSelect: (id: string | null) => void; onHot?: (cableId: string | null) => void; rename?: boolean; onRenaming?: () => void; monitor?: boolean; onUnplug?: () => void; onConsole?: () => void }) {
+export function Inspector({ game, device, port, side = "front", onSelect, onHot, rename = false, onRenaming, monitor = false, onUnplug, onConsole }: { game: GameState; device: Device; port?: number; side?: Side; onSelect: (id: string | null) => void; onHot?: (cableId: string | null) => void; rename?: boolean; onRenaming?: () => void; monitor?: boolean; onUnplug?: () => void; onConsole?: () => void }) {
   const act = useStore((s) => s.act);
-  const [sel, setSel] = useState<number[]>([]);
+  const [sel, setSel] = useState<number[]>(port === undefined ? [] : [port]);
   const [editing, setEditing] = useState(false);
   useEffect(() => { if (rename) { setEditing(true); onRenaming?.(); } }, [rename, onRenaming]);
   const menus = useDeviceMenu(game, onSelect, () => setEditing(true));
@@ -292,7 +293,7 @@ function Status({ game, device }: { game: GameState; device: Device }) {
       )}
       {model.kind === "server" && <div><dt>{t("locations-1.role")}</dt><dd>{role}</dd></div>}
       {model.kind === "server" && device.rackId && <AddressRows game={game} id={device.id} />}
-      {(isOfficeRouter(model) || (isManaged(model) && device.rackId)) && <RouterLabel game={game} device={device} />}
+      {(isOfficeRouter(model) || isOwnRouter(device) || (isManaged(model) && device.rackId)) && <RouterLabel game={game} device={device} />}
     </dl>
   );
 }

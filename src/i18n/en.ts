@@ -28,6 +28,7 @@ import { VENDORS_EN } from "./vendors";
 import { BANK_EN } from "./bank";
 import { PAPERWORK_EN } from "./paperwork";
 import { ALARMS_EN } from "./alarms";
+import { IFACE_EN } from "./iface";
 import { active, LOCALE, type Dict } from "./lang";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -51,6 +52,7 @@ export const en: Record<string, (p: Params) => string> = {
   ...ADDRESSES_EN,
   ...IPMI_EN,
   ...TERMINAL_EN,
+  ...IFACE_EN,
   ...REMOTE_EN,
   ...CONSOLE_EN,
   ...SECURITY_EN,
@@ -454,6 +456,7 @@ export const en: Record<string, (p: Params) => string> = {
   "os.current": () => "Pear OS is up to date",
   "doc.untitled": () => "Untitled",
   "guide.step.register": () => "Register your company",
+  "guide.step.payBill": () => "Pay your first bill",
   "guide.step.company": () => "Style your company",
   "guide.step.buyServer": () => "Buy a server",
   "guide.step.mountServer": () => "Mount and power it",

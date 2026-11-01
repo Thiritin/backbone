@@ -11,7 +11,7 @@ import "./freepanel.css";
 const ERAS = erasFrom(2005, 2016);
 
 export function FreePanel(p: PanelProps) {
-  const era = eraAt(ERAS, p.game), open = parseCreate("freepanel", p.path), [tab, setTab] = usePanelTab(p.f, open?.screen ?? "sysinfo");
+  const era = eraAt(ERAS, p), open = parseCreate("freepanel", p.path), [tab, setTab] = usePanelTab(p.f, open?.screen ?? "sysinfo");
   const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f);
   if (!p.signedIn) return (
     <div className="cx fp fp-login" data-era={era}>

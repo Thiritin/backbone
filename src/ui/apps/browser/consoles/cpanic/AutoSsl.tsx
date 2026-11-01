@@ -5,13 +5,13 @@ import type { GameState } from "../../../../../sim/50-state";
 import type { Cluster } from "../../../../../sim/60-infra/cluster";
 import { accountsOf, autoSslOn, sslStatus } from "../../../../../sim/60-infra/webpanel";
 import { renewCertificate, runAutoSslCheck, setAutoSsl } from "../../../../../sim/90-actions/webpanel";
-import { useStore } from "../../../../store";
+import { usePageAct } from "../../pageAct";
 
 type Part = "providers" | "managed" | "logs";
 
 // WHM > SSL/TLS > Manage AutoSSL with the real tabs.
 export function AutoSsl({ game, c }: { game: GameState; c: Cluster }) {
-  const act = useStore((s) => s.act), [part, setPart] = useState<Part>("managed"), on = autoSslOn(game, c.id);
+  const act = usePageAct(), [part, setPart] = useState<Part>("managed"), on = autoSslOn(game, c.id);
   const accounts = accountsOf(game, c.id), x = game.webpanel.ssl;
   const expired = accounts.filter((v) => sslStatus(game, v.id) === "expired").length;
   const name = (id: string) => game.services.find((v) => v.id === id)?.label ?? id;

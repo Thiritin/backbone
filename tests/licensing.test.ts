@@ -39,11 +39,12 @@ const sockets = (s: GameState, id: string) => dev(s, id).components.filter((p) =
 describe("license eras", () => {
   it("pick the era of the game year", () => {
     const w = serverOsById("windoors"), v = softwareById("vmwhere");
-    expect(licensingAt(w, 2005)).toEqual({ from: 2005, kind: "once", fee: 600 });
+    expect(licensingAt(w, 2005)).toEqual({ from: 2005, kind: "once", fee: 600, upgrade: 300 });
     expect(licensingAt(w, 2015).kind).toBe("once");
-    expect(licensingAt(w, 2016)).toEqual({ from: 2016, kind: "core", fee: 4 });
-    expect(licensingAt(v, 2023).kind).toBe("once");
-    expect(licensingAt(v, 2024)).toEqual({ from: 2024, kind: "core", fee: 8 });
+    expect(licensingAt(w, 2016, 9).kind).toBe("once");
+    expect(licensingAt(w, 2016, 10)).toMatchObject({ kind: "core", fee: 4, minCores: 16, minCoresPerCpu: 8 });
+    expect(licensingAt(v, 2023, 11).kind).toBe("once");
+    expect(licensingAt(v, 2023, 12)).toMatchObject({ kind: "core", fee: 96, period: "year", minCoresPerCpu: 16 });
     expect(licensingAt(softwareById("tcadmen"), 2030)).toEqual({ from: 2005, kind: "server", fee: 25 });
   });
 });
@@ -82,16 +83,17 @@ describe("Windoors Server", () => {
     ok(install(s, id, "lunix"));
   });
 
-  it("from 2016 costs nothing at install and 4 euros per core each month", () => {
+  it("from October 2016 costs nothing at install and 4 euros per core a month after, 16 at least", () => {
     const s = readyGame(7);
-    skipTo(s, 2016);
+    skipTo(s, 2017);
     const id = atInstaller(s);
     const cash = s.cash;
     ok(install(s, id, "windoors"));
     expect(s.cash).toBe(cash);
     expect(s.licenses).toMatchObject([{ product: "windoors", kind: "core", machineId: id }]);
-    monthEnd(s);
-    expect(s.ledger.filter((l) => l.key === "ledger.windoors").map((l) => l.amount)).toEqual([-4 * installedCores(dev(s, id))]);
+    s.hour = s.licenses[0].renewsAt! - 1;
+    tick(s);
+    expect(s.ledger.filter((l) => l.key === "ledger.licenceRenewal").map((l) => l.amount)).toEqual([-4 * Math.max(16, installedCores(dev(s, id)), 8 * sockets(s, id))]);
   });
 });
 
@@ -119,7 +121,7 @@ describe("VMwhere", () => {
     expect(err(installSoftware(s, id, "vmwhere"))).toBe("error.noCash");
   });
 
-  it("from 2024 costs nothing at install and 8 euros per physical core each month", () => {
+  it("from December 2023 costs nothing at install and 96 euros per physical core a year, 16 per CPU at least", () => {
     const s = readyGame(7);
     skipTo(s, 2024);
     const id = atInstaller(s);
@@ -130,7 +132,7 @@ describe("VMwhere", () => {
     expect(s.cash).toBe(cash);
     for (let h = 0; h < 6; h++) tick(s);
     const c = clusterOf(s, id)!;
-    expect(licenseCost(s, c)).toEqual({ panel: 0, platform: 8 * installedCores(dev(s, id)) });
+    expect(licenseCost(s, c)).toEqual({ panel: 0, platform: 8 * Math.max(installedCores(dev(s, id)), 16 * sockets(s, id)) });
   });
 });
 

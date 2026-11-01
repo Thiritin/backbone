@@ -20,6 +20,7 @@ export function appMenu(app: string) {
   const docked = !game.undocked.includes(app);
   return [
     { label: t("apps.finder.open"), run: () => openApp(app) },
+    app === "Browser" && { label: t("apps.finder.newWindow"), run: () => openApp(app, undefined, true) },
     null,
     { label: docked ? t("apps.finder.removeFromDock") : t("apps.finder.keepInDock"), run: () => act(setDocked, app, !docked) },
     { label: t("apps.finder.addToDesktop"), run: () => act(addAppLink, app) },

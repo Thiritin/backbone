@@ -213,7 +213,8 @@ button.loc-node:hover { background: var(--hover); }
 .loc-cab-port { cursor: crosshair; }
 .loc-cab-port rect.rj45, .loc-cab-port rect.sfp { fill: color-mix(in oklch, var(--text) 16%, var(--field)); stroke: color-mix(in oklch, var(--text) 40%, var(--field)); stroke-width: 0.7; }
 .loc-cab-port rect.sfp { fill: color-mix(in oklch, var(--text) 30%, var(--field)); }
-.loc-cab-port:hover rect.rj45, .loc-cab-port:hover rect.sfp, .loc-cab-port.src rect { stroke: var(--accent); stroke-width: 1.4; }
+.loc-cab-port rect.dsl { fill: color-mix(in oklch, var(--text) 55%, var(--field)); stroke: color-mix(in oklch, var(--text) 40%, var(--field)); stroke-width: 0.7; }
+.loc-cab-port:hover rect.rj45, .loc-cab-port:hover rect.sfp, .loc-cab-port:hover rect.dsl, .loc-cab-port.src rect { stroke: var(--accent); stroke-width: 1.4; }
 .loc-cab-port.hot rect.rj45, .loc-cab-port.hot rect.sfp { stroke: var(--accent); stroke-width: 1.6; }
 .loc-cab-port.dim { opacity: 0.18; }
 .loc-cab-wires path { fill: none; stroke-width: 1.8; stroke-linecap: round; pointer-events: none; }
@@ -241,7 +242,7 @@ h2 .loc-az, h3 .loc-az { margin-left: 8px; vertical-align: middle; }
 .loc-sub { min-height: 36px; border-top: var(--ar-bw) solid var(--line); }
 
 /* Node card: booked and in-use meters side by side, then the workloads on the node. */
-.node-meters { display: grid; grid-template-columns: 44px minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 8px 12px; padding: 10px 14px; border-top: var(--ar-bw) solid var(--line); }
+.node-meters { display: grid; grid-template-columns: max-content minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 8px 12px; padding: 10px 14px; border-top: var(--ar-bw) solid var(--line); }
 .node-meters .loc-k { min-width: 0; }
 .node-meters .loc-meter-bar { width: 44px; flex: none; }
 .node-meters + .loc-row, .loc-card > .node-meters:first-child { border-top: var(--ar-bw) solid var(--line); }
@@ -264,7 +265,7 @@ h2 .loc-az, h3 .loc-az { margin-left: 8px; vertical-align: middle; }
 /* Server port table. */
 .loc-port-table td { height: 32px; cursor: default; }
 .loc-port-table tr[aria-selected="true"] td { background: color-mix(in oklch, var(--accent) 14%, transparent); }
-.loc-port-table .loc-link { color: var(--accent); }
+.loc-port-table .loc-link, .wl-service.loc-link { color: var(--accent); }
 .loc-port-table + .loc-row { flex-wrap: wrap; }
 
 /* Datacenter availability. */
@@ -358,12 +359,9 @@ button.loc-swatch[aria-checked="true"] { outline: 2px solid var(--accent); outli
 .insp > .loc-model { margin-top: -10px; }
 .insp > .tabs { padding: 0; }
 .insp > .loc-card { border: 0; border-radius: 0; background: none; border-top: var(--ar-bw) solid var(--line); }
-.insp > .loc-card > .loc-card-h { padding: 12px 0 4px; min-height: 0; border-bottom: 0; }
-.insp > .loc-card > .loc-row, .insp > .loc-card > .node-meters, .insp > .loc-card > .loc-facts, .insp > .loc-card .wl-row, .insp > .loc-card > .loc-sub { padding-left: 0; padding-right: 0; }
+.insp > .loc-card > .loc-card-h { padding: 8px 14px; min-height: 0; border-bottom: 0; }
 .insp > .loc-card > .loc-facts { padding-top: 6px; padding-bottom: 2px; }
 .insp > .loc-card > .node-meters { border-top: 0; }
-.insp > .loc-card .table th:first-child, .insp > .loc-card .table td:first-child { padding-left: 0; }
-.insp > .loc-card .table th:last-child, .insp > .loc-card .table td:last-child { padding-right: 0; }
 .insp > .loc-card .table th { background: var(--win); }
 .insp > .loc-card:has(> .loc-port-table) { border-top: 0; }
 .insp > .loc-row.insp-bond { padding: 0; margin-top: -6px; }

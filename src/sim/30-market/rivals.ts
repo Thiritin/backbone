@@ -1,8 +1,10 @@
 // Rivals: the competitors as companies that refresh hardware, have outages and win customers.
 // Values and decisions are in docs/design/competitors.md.
+import { t } from "../../i18n/en";
 import { binomial, chance, hashRng, rand, type Rng } from "../00-core/rng";
 import { dateOf, monthIndexOf, START_YEAR, yearOf } from "../00-core/time";
-import { CHOICE_TAU, CITIES, COMPETITORS, GENERATIONS, generationAt, type Competitor, type Template } from "../10-catalog/economy";
+import { CHOICE_TAU, CITIES, COMPETITORS, GENERATIONS, generationAt, WEB_BASE, type Competitor, type Template } from "../10-catalog/economy";
+import { AWARD_PRODUCTS, AWARD_REVIEWS, lower, REVENUE_TIMES, TIER_IDS, TIERS, type Award, type AwardProduct, type TierId } from "../10-catalog/hosttoast";
 import { profileStats } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import { PROFILE_IDS } from "../80-business/marketing";
@@ -24,6 +26,10 @@ export interface Rival extends Competitor {
   weak: number;
   // Review stars and count per month, newest last, for the last REVIEW_MONTHS.
   reviews: { stars: number; count: number }[];
+  // HOSTtoast tier, badges won for this year and outage hours by month for the last 13 months.
+  tier: TierId;
+  badges: number;
+  down: { month: number; hours: number }[];
 }
 // New customers a month per city, in CITIES order, for you and each rival by id.
 export interface ShareEntry { month: number; you: number[]; rivals: Record<string, number[]> }
@@ -77,6 +83,7 @@ export function smallRival(list: Rival[], rng: Rng, month: number, templates: Te
   return {
     ...t, id: slug(name), name, P: t.P - SMALL_GAP, R: t.R - SMALL_GAP, C: Math.min(95, t.C - SMALL_GAP + steps), priceFactor: round(t.priceFactor - 0.1),
     founded: month, lag: Math.floor(rand(rng) * 19), outage: null, customers: { [home]: 0, [second]: 0 }, closed: null, weak: 0, reviews: [],
+    tier: "registered", badges: 0, down: [],
   };
 }
 
@@ -84,7 +91,7 @@ export function smallRival(list: Rival[], rng: Rng, month: number, templates: Te
 export function seedRivals(seed: number): Rival[] {
   const list: Rival[] = COMPETITORS.map((c, i) => ({
     ...c, id: slug(c.name), founded: -1, lag: Math.floor(rand(hashRng(seed, 0x7a11, i)) * 19), outage: null,
-    customers: Object.fromEntries(CITIES.map((x) => [x.name, 0])), closed: null, weak: 0, reviews: [],
+    customers: Object.fromEntries(CITIES.map((x) => [x.name, 0])), closed: null, weak: 0, reviews: [], tier: "registered" as TierId, badges: 0, down: [],
   }));
   const rng = hashRng(seed, 0x5ea1);
   for (let k = 0; k < 3; k++) list.push(smallRival(list, rng, 0, ["budget", "game", "managed"]));
@@ -92,7 +99,22 @@ export function seedRivals(seed: number): Rival[] {
     const flows = split(list, city.name, 0);
     for (const r of list) if (sellsIn(r, city.name)) r.customers[city.name] = Math.round((flows.get(r.id) ?? 0) / CHURN);
   }
+  // The majors hold HOSTtoast's uptime seal for 2004.
+  for (const r of list) Object.assign(r, { tier: bestTier(r, 0), badges: isSmall(r) ? 0 : 1 });
   return list;
+}
+
+// 90-day uptime from the outage hours of the last three months.
+export const rivalUptime = (r: Rival, month: number): number => 1 - r.down.filter((d) => d.month > month - 3).reduce((n, d) => n + d.hours, 0) / 2160;
+// The best tier a rival meets and whose yearly fee is under 1/REVENUE_TIMES of its yearly revenue estimate; a rival answers
+// the test ticket in time with R of at least the tier's rivalR.
+export function bestTier(r: Rival, month: number): TierId {
+  const age = isSmall(r) ? month - r.founded : Infinity, up = rivalUptime(r, month);
+  const revenue = Object.values(r.customers).reduce((a, b) => a + b, 0) * WEB_BASE * r.priceFactor * 12;
+  return [...TIER_IDS].reverse().find((id) => {
+    const t = TIERS[id];
+    return age >= t.months && up >= t.uptime && r.R >= t.rivalR && revenue >= REVENUE_TIMES * 12 * t.fee;
+  }) ?? "registered";
 }
 
 // Entry waves: the shared and VPS boom of 2006 to 2009, the cloud years to 2015, then a trickle; at most MAX_SMALL small rivals open.
@@ -140,7 +162,7 @@ export function driftRival(r: Rival, i: number, seed: number, hour: number): { r
   return { rival: { ...next, R: r.R - hit, outage: { months, hit } }, news };
 }
 
-export interface RivalEvent { kind: "outage" | "bust" | "bought" | "open"; id: string; params: (string | number)[] }
+export interface RivalEvent { kind: "outage" | "bust" | "bought" | "open" | "tier"; id: string; params: (string | number)[] }
 
 // One month for all rivals: scores drift, customers grow by won(rival, city) minus churn, reviews come in, a small rival
 // under EXIT_SHARE of its cities' customers for EXIT_MONTHS closes with 50% chance, and a new one may open.
@@ -156,6 +178,10 @@ export function rollRivals(list: Rival[], seed: number, hour: number, won: (r: R
     rival.reviews = [...r.reviews, rivalReviews(rival, rng, cities.reduce((n, city) => n + won(r, city), 0))].slice(-REVIEW_MONTHS);
     rival.weak = isSmall(r) && cities.every((city) => r.customers[city] < EXIT_SHARE * (totals.get(city) ?? 0)) ? r.weak + 1 : 0;
     if (news) events.push({ kind: "outage", id: r.id, params: [CITIES.findIndex((c) => c.name === news.city), news.hours] });
+    // HOSTtoast: each January the best tier it qualifies for, otherwise one down when its uptime is under the minimum.
+    rival.down = [...r.down.filter((d) => d.month > month - 13), ...(news ? [{ month, hours: news.hours }] : [])];
+    rival.tier = dateOf(hour).getUTCMonth() === 0 ? bestTier(rival, month) : rivalUptime(rival, month) < TIERS[r.tier].uptime ? lower(r.tier) : r.tier;
+    if (rival.tier !== r.tier) events.push({ kind: "tier", id: r.id, params: [TIER_IDS.indexOf(rival.tier)] });
     if (rival.weak < EXIT_MONTHS || !chance(rng, 0.5)) return rival;
     // A bust rival's customers leave; a bought one's move to the major of its template.
     if (chance(rng, 0.5)) events.push({ kind: "bust", id: r.id, params: [] });
@@ -177,13 +203,32 @@ export function rollRivals(list: Rival[], seed: number, hour: number, won: (r: R
   return { list: next, events };
 }
 
+// You as a contender for the year's awards: review score and count, products sold and a year without downtime.
+export interface Contender { score: number; count: number; sells: AwardProduct[]; clean: boolean }
+// HOSTtoast's awards for year: host of the year per product (best review score with AWARD_REVIEWS reviews) and the
+// uptime seal for every host without downtime that year.
+export function yearAwards(list: Rival[], year: number, you: Contender | null): Award[] {
+  const from = (year - START_YEAR) * 12, open = list.filter((r) => r.closed === null);
+  const host = AWARD_PRODUCTS.flatMap((product): Award[] => {
+    const field = open.filter((r) => r.sells.includes(product) && reviewCount(r) >= AWARD_REVIEWS).map((r) => ({ id: r.id, score: rivalScore(r) }));
+    if (you && you.sells.includes(product) && you.count >= AWARD_REVIEWS) field.push({ id: "you", score: you.score });
+    const best = field.reduce<{ id: string; score: number } | null>((b, x) => (!b || x.score > b.score ? x : b), null);
+    return best ? [{ year, kind: "host", product, id: best.id }] : [];
+  });
+  const clean = open.filter((r) => !r.down.some((d) => d.month >= from && d.month < from + 12)).map((r) => r.id);
+  return [...host, ...[...clean, ...(you?.clean ? ["you"] : [])].map((id): Award => ({ year, kind: "uptime", product: null, id }))];
+}
+export const withBadges = (list: Rival[], awards: Award[]): Rival[] => list.map((r) => ({ ...r, badges: awards.filter((a) => a.id === r.id).length }));
+
 // A rival news id reads rival.<kind>.<rival id>.<month>.<params>.
 export function rivalNews(s: GameState, id: string): NewsDef | undefined {
-  const [, kind, rid, , ...rest] = id.split("."), r = s.competitors.find((x) => x.id === rid);
+  const [, kind, rid, , ...rest] = id.split("."), r = rid === "you" ? { name: s.company.name } : s.competitors.find((x) => x.id === rid);
   if (!r) return undefined;
+  if (kind === "award") return { id, key: "event.news.toastAward", at: -1, params: { name: r.name, product: t(`sim.line.${AWARD_PRODUCTS[Number(rest[0])]}`), year: Number(rest[1]) } };
   if (kind === "open") return { id, key: "event.news.rivalOpen", at: -1, params: { name: r.name, city: CITIES[Number(rest[0])]?.name ?? "" } };
   if (kind === "bust") return { id, key: "event.news.rivalBust", at: -1, params: { name: r.name } };
   if (kind === "bought") return { id, key: "event.news.rivalBought", at: -1, params: { name: r.name, buyer: s.competitors.find((x) => x.id === rest[0])?.name ?? "" } };
+  if (kind === "tier") return { id, key: "event.news.rivalTier", at: -1, params: { name: r.name, tier: t(`hosttoast.tier.${TIER_IDS[Number(rest[0])] ?? "registered"}`) } };
   if (kind === "outage") return { id, key: "event.news.rivalOutage", at: -1, params: { name: r.name, city: CITIES[Number(rest[0])]?.name ?? "", hours: Number(rest[1]) } };
   return undefined;
 }

@@ -11,6 +11,7 @@ export default {
   "art.unplugPsu": (p) => `Unplug power supply ${p.n}`,
   "art.plugInPsu": (p) => `Plug in power supply ${p.n}`,
   "art.plugInMonitor": () => "Plug in monitor",
+  "art.portDsl": () => "DSL",
   "art.powerInlet": () => "Power inlet",
   "art.psu": (p) => `PSU ${p.n}`,
   "art.fan": (p) => `Fan ${p.n}`,

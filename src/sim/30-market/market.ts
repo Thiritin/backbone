@@ -5,9 +5,11 @@ import { CITY_TLD } from "../30-customers/domains";
 import type { Address } from "../30-customers/addresses";
 import { yearOf } from "../00-core/time";
 import type { Cycle } from "../10-catalog/cycles";
+import type { MethodId } from "../10-catalog/payments";
 import { CHOICE_TAU, CITIES, COMPETITORS, generationAt, leadCapShare, MARKET_GROWTH, type Budget, type Competitor, type Profile as ProfileStats } from "../10-catalog/economy";
 import { gpuDemand, GPU_SHARE } from "../10-catalog/gpu";
 import { modelById } from "../10-catalog/hardware";
+import { rivalTrust } from "../10-catalog/hosttoast";
 import { marketPrice, PRODUCTS, SIZES, type Sla, type Spec } from "../10-catalog/products";
 import type { Product, Profile } from "../30-customers/customers";
 import { profileStats } from "../40-support/tickets";
@@ -48,6 +50,10 @@ export interface SalesRequest {
   cycle?: Cycle;
   // Taken by a shop system rather than the hand-rolled form; a shop order that cannot be placed is cancelled, never lost.
   shop?: boolean;
+  // The shop product a form order buys; its server group and package decide where the service goes.
+  productId?: string;
+  // The payment method a shop order checked out with; absent for bank transfer.
+  method?: MethodId;
   // The one-time fee the manual quote's invoice carries; the line's rate where unset.
   setup?: number;
 }
@@ -156,7 +162,8 @@ export const rivals = <C extends Competitor>(profile: Profile, product: Product,
   const p = profileStats(profile);
   return list.filter((c) => c.priceFactor <= p.cap && c.sells.includes(product) && (!c.targets || c.targets.includes(p.id)));
 };
-export const rivalValue = (profile: Profile, c: Competitor): number => value(profileStats(profile), c.P, c.R, c.C, 0, c.priceFactor);
+export const rivalValue = (profile: Profile, c: Competitor & Partial<Pick<Rival, "tier" | "badges">>): number =>
+  value(profileStats(profile), c.P, c.R, c.C, rivalTrust(c), c.priceFactor);
 
 // Your value U and the best competitor's for a profile, product and city; dearer adds to your price level, which level replaces.
 export function values(s: GameState, profile: Profile, product: Product, city: string, dearer = 0, level?: number): { you: number; others: number[] } {

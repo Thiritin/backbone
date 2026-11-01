@@ -33,7 +33,7 @@ export const CONSOLES: Record<string, ComponentType<PanelProps>> = {
   cpanic: CPanic, pleskit: Pleskit, directadmen: DirectAdmen, freepanel: FreePanel, tcadmen: TCAdmen, multikraft: MultiKraft, pterodaktyl: Pterodaktyl,
   proxmocks: Proxmocks, vmwhere: VmWhere, hypervee: HyperVee, openveezee: OpenVeeZee, openstash: Horizont,
   powerdnz: PowerDnz, openveepeen: OpenVeePeeN, anyconnekt: AnyConnekt, ownclod: OwnClod, minnio: MinnIO, mailpig: Mailpig,
-  backula: BackupConsole, veeham: BackupConsole, proxmocksBackup: BackupConsole,
+  veeham: BackupConsole, proxmocksBackup: BackupConsole,
 };
 
 function Defaced() {
