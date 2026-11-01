@@ -1,10 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { newGame } from "../src/sim/50-state";
 import { STATS_HOURS, vmStats } from "../src/sim/60-infra/stats";
 import { tick } from "../src/sim/88-tick/tick";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { stopWorkload } from "../src/sim/90-actions/vms";
-import { hypervisor, panelVm, skipTo, withServer } from "./fixtures";
+import { hypervisor, panelVm, skipTo, withServer, newGame } from "./fixtures";
 
 // docs/design/software.md, section 9: an own VM keeps a day of hourly samples for its console's graphs.
 function panelOnVm() {

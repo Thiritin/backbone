@@ -1,5 +1,5 @@
 // Things that become available are announced by the News app on the day they do (gdd.md, The desktop, News).
-import { hourOf, START_YEAR, yearOf } from "../00-core/time";
+import { dateOf, hourOf, START_YEAR, yearOf } from "../00-core/time";
 import { IPV6_FROM } from "../10-catalog/addresses";
 import { DESKS } from "../10-catalog/desks";
 import { GENERATIONS } from "../10-catalog/economy";
@@ -17,6 +17,7 @@ import { t } from "../../i18n/en";
 import { familyOf } from "../60-infra/vulns";
 import type { SimEvent } from "../88-tick/tick";
 import { MAIL_PROVIDERS } from "./mail";
+import { rivalNews } from "../30-market/rivals";
 import { vendorHost, vendorReleases, VENDORS } from "./vendors";
 
 type Params = Record<string, string | number>;
@@ -98,7 +99,7 @@ export const appParams = (app: string): Params => ({ app: t(`apps.name.${app}`) 
 export function feed(s: GameState): { hour: number; key: string; params: Params }[] {
   return s.news.flatMap((e) => {
     const [id, hour] = e.split("@"), d = id.startsWith("line.") ? lineDef(id.slice(5)) : id.startsWith("release.") ? releaseDef(id)
-      : id.startsWith("app.") ? { id, key: "event.news.app", at: -1, params: appParams(id.slice(4)) } : NEWS.find((x) => x.id === id);
+      : id.startsWith("rival.") ? rivalNews(s, id) : id.startsWith("app.") ? { id, key: "event.news.app", at: -1, params: appParams(id.slice(4)) } : NEWS.find((x) => x.id === id);
     return d ? [{ hour: Number(hour), key: d.key, params: d.params }] : [];
   }).sort((a, b) => b.hour - a.hour);
 }
@@ -114,4 +115,14 @@ export function newsTick(s: GameState): SimEvent[] {
   const year = yearOf(s.hour), out = year > START_YEAR && s.hour === at(year) ? releases(s, year) : [];
   if (out.length) post(releaseDef(`release.${year}.${out.join("+")}`));
   return events;
+}
+
+// The published announcements grouped by UTC day, as "YYYY-MM-DD".
+export function feedByDay(s: GameState): Map<string, ReturnType<typeof feed>> {
+  const days = new Map<string, ReturnType<typeof feed>>();
+  for (const n of feed(s)) {
+    const k = dateOf(n.hour).toISOString().slice(0, 10);
+    days.set(k, [...(days.get(k) ?? []), n]);
+  }
+  return days;
 }

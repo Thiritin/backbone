@@ -29,11 +29,11 @@ Level 6 lands before the cloud and GPU boom, so the late game still has new prod
 
 ## Starting state
 
-A new game opens paused on 1 January 2005 at 00:00 with €3,500 in cash, an empty 24U rack in the basement next to the home router, and three friends waiting for web hosting. The savings buy the first server, a Dwell Balanced 1U G1 at €2,500, and leave the same €1,000 the company used to start with next to a free server, so year 1 pacing is unchanged. The Bank comes in for the second server, which the panel VM and the friends make due within the first month or two. The home router has 4 ports, one per basement server, so the basement needs no switch.
+A new game opens paused on 1 January 2005 at 00:00 with no cash and €3,500 of savings that arrive when the player opens the bank account, an empty 24U rack in the basement next to the home router, and three friends waiting for web hosting. The savings buy the first server, a Dwell Balanced 1U G1 at €2,500, and leave the same €1,000 the company used to start with next to a free server, so year 1 pacing is unchanged. The Bank comes in for the second server, which the panel VM and the friends make due within the first month or two. The home router has 4 ports, one per basement server, so the basement needs no switch.
 
 | Item | Starting value |
 | --- | --- |
-| Cash | €3,500, no debt; the bank lends up to the level 1 minimum of €10,000 from day one |
+| Cash | €0 until the bank account opens with the €3,500 savings, then €40 for the registration, no debt; the bank lends up to the level 1 minimum of €10,000 from day one |
 | Company | Level 1, 0 know-how, no reviews yet |
 | Basement | 1 rack position for a rack up to 24U, 3 kW at most; power at the household price |
 | Home line | Mom's DSL, free (Home line). The player orders a better one in Locations; it goes live after its install days, and every line on offer costs money |
@@ -52,7 +52,7 @@ A challenge starts from the normal starting state with one twist, chosen by ISO 
 | --- | --- |
 | 0 | Home line SDSL 2048 already in from hour 0 |
 | 1 | Every datacenter except Hetzler Park starts at its 2005 capacity; competitors cancel and refill as usual afterwards |
-| 2 | Starting cash €2,000 |
+| 2 | Savings of €2,000 arrive with the bank account |
 
 Scores count until 1 January 2008, 00:00: net worth then (rounded to the euro), the first day level 3 holds (checked once a day), and the mean of each hour's average happiness of active customers (rounded to a tenth). A replay passes when net worth is within €1, the level 3 day matches and happiness is within 0.1.
 
@@ -236,7 +236,18 @@ A router is built by one manufacturer only (Sysko, AVN, MicroTick or Junipurr, b
 | Edge XL | 2U | 36 × 400G | 800 Gbit/s | Yes | 2021 | €90,000 | 900 W |
 | Edge XXL | 2U | 36 × 400G | 1.6 Tbit/s | Yes | 2027 | €150,000 | 1,200 W |
 
-**Switches.** All switches are managed and keep their list price, less the yearly price erosion. Every switch comes from one maker in the maker's own numbering (`SWITCHES` in `hardware.ts`), so a model's price, power and years on sale are its maker's: Sysko Catalust and Nexxus (6 years on sale, 5 of support), Junipurr EX and QFX (6 and 5), Aristotle 7000 (5 and 5, datacenter only, cheapest per 10G, 25G, 100G and 400G port), Hewlett-Packet ProCurvy and Arugula (7 years on sale, lifetime support), MicroTick CRS (6 and 3, a quarter of the big makers' prices, 100G for 650 euro from 2021), Nettgear ProSafe and M4300 (5 and 3, the 60 euro 8 port box of 2005), Ubiquitea EdgeSwitch and UniFee (5 and 3, from 2015) and D-Lunk DGS (4 and 2, the cheapest 2005 to 2016). In every year the shop sells an 8, a 24 and a 48 port copper switch, one of them under 500 euro. Layer 3 can route between networks and act as a gateway, so within a maker it costs and draws more than the layer 2 model with the same ports. The generic switches of the first builds (`sw-8` to `sw-32e`) live on as Sysko models with their ports, so saved games keep their cabling: Catalust 2960-8TC (the starting switch, 8 × 1G, 60 euro, 8 W), 2960-24TT, 2960S-48TD, 3750X-48, Nexxus 3064, 9372PX, 93180YC-EX, 9336C-FX2, 9364D-GX2 and 9808. Switches, firewalls and gateways draw their full power at all times. Prices are estimates of launch street prices.
+**Switches.** Switches keep their list price, less the yearly price erosion. Every switch comes from one maker in the maker's own numbering (`SWITCHES` in `hardware.ts`), so a model's price, power and years on sale are its maker's: Sysko Catalust and Nexxus (6 years on sale, 5 of support), Junipurr EX and QFX (6 and 5), Aristotle 7000 (5 and 5, datacenter only, cheapest per 10G, 25G, 100G and 400G port), Hewlett-Packet ProCurvy and Arugula (7 years on sale, lifetime support), MicroTick CRS (6 and 3, a quarter of the big makers' prices, 100G for 650 euro from 2021), Nettgear ProSafe and M4300 (5 and 3, the 60 euro 8 port box of 2005), Ubiquitea EdgeSwitch and UniFee (5 and 3, from 2015) and D-Lunk DGS (4 and 2, the cheapest 2005 to 2016). In every year the shop sells an 8, a 24 and a 48 port copper switch, one of them under 500 euro. Layer 3 can route between networks and act as a gateway, so within a maker it costs and draws more than the layer 2 model with the same ports. The generic switches of the first builds (`sw-8` to `sw-32e`) live on as Sysko models with their ports, so saved games keep their cabling: Catalust 2960-8TC (the starting switch, 8 × 1G, 60 euro, 8 W), 2960-24TT, 2960S-48TD, 3750X-48, Nexxus 3064, 9372PX, 93180YC-EX, 9336C-FX2, 9364D-GX2 and 9808. Switches, firewalls and gateways draw their full power at all times. Prices are estimates of launch street prices.
+
+Every switch above is managed: it takes a management address, port groups and VLANs through its web interface. Four unmanaged switches have no address and no settings and forward between all their ports; the desktop ones stand on a 1U shelf. They make the basement's first switch cheaper than the Catalust 2960-8TC.
+
+| Unmanaged switch | Ports | Form | Sold from | Price | Power |
+| --- | --- | --- | --- | --- | --- |
+| D-Lunk DES-1008D | 8 × 100M | Desktop | 2005 | €25 | 3 W |
+| Nettgear GS108 | 8 × 1G | Desktop | 2005 | €75 | 4 W |
+| D-Lunk DGS-1024D | 24 × 1G | 1U | 2006 | €180 | 15 W |
+| Nettgear GS116 | 16 × 1G | Desktop | 2008 | €110 | 8 W |
+
+Anchors: the DES-1008D sold for about 25 euro and the GS108 for about 70 euro in 2005. Each row follows its maker's years on sale and support.
 
 **Security appliances.** 1U firewalls sit inline between the gateway and the switches. A firewall forwards like a switch, and every link through it runs at most at its throughput. Every firewall comes from one maker (`FIREWALLS` in `hardware.ts`) and also lists what it inspects (`ipsGbit`, lower than the throughput) and the connections it tracks (`sessions`); both show on the spec sheet and wait for the sim to use them. Sysko PIXel, ASAP and Firepowder (the old `fw-1g` to `fw-400g` are the ASAP 5520, ASAP 5585-X, Firepowder 4120, 4215 and 9300), Fortinope FortiGoat (the most throughput per euro), Pablo Alto PA (the dearest, the best inspection), Junipurr SRX (from 2009), Netgoat pfSinse boxes (from 2015, the cheapest, no inspection before 2018) and SoPhosphate UTM, XG and XGS (from 2011). In every year the shop sells a firewall under 1000 euro and a datacenter one.
 
@@ -389,7 +400,7 @@ P(j) = \frac{e^{U_j/\tau}}{\sum_k e^{U_k/\tau}}
 | Online shop | 0.30 | 0.55 | 0.15 | 1.3× | Premium | 5× |
 | Enterprise | 0.35 | 0.55 | 0.10 | 1.3× | Premium | 4× |
 
-**Competitors.** Four fixed archetypes sell in every city. Their scores never change.
+**Competitors.** Four archetypes sell in every city. Their scores drift over the years as described in [competitors.md](competitors.md).
 
 | Competitor | P | R | C | Sells |
 | --- | --- | --- | --- | --- |
@@ -539,6 +550,10 @@ d is the agency discount from a campaign, e is 1.15 for an existing customer and
 **Price changes.** Raising a running service's price costs happiness, lowering it wins some back, and an overpriced service keeps costing happiness every month. A raise takes effect from the month after it is made: the invoice for the current month bills the old price, and a customer who cancels over the raise leaves at that billing date without paying it. The numbers are in Happiness and churn, Price tolerance.
 
 **Market research.** A market study reveals one profile in the Market app for good; it is a one-time payment booked as marketing. Studies cost €800 for a low-budget profile, €2,000 for a medium one and €4,000 for a high one, €20,400 for all nine (decision). The Demand section counts a city's buyers of a product as the city's new customers × each profile's mix × that profile's product weight, your part as the expected requests from the lead flows above (leads × product weight × your choice share × conversion), and splits the remainder over the competitors by their softmax among themselves. Code: `src/sim/30-market/research.ts`.
+
+**Transfers.** From 2008, about 30% of new web hosting orders come from another host and name it in their first message. On a cPanic host the Transfer Tool copies such an account: it takes the player 15 minutes plus 5 minutes per 10 GB and runs one hour per 20 GB, at least one. A transfer that ends within 24 hours of the account's start gives the customer +3 happiness. It fails with 5%, or 15% when the host's PHP is newer than the site's app runs on; a failure opens a ticket and the player runs the transfer again.
+
+**Message System.** The DirectAdmin Message System stores nothing. It lists the outage, how-to, abuse, upgrade and migration tickets of customers whose sites run on the host, plus a system message for each expired certificate on it and for a published security advisory that affects it. The Open button shows the ticket in Support.
 
 **Measured flow.** `npx tsx scripts/sales-flow.ts [seed] [months]` runs the real tick with a bot that quotes 3% under the reference, answers tickets, sets up a website in month 3 and runs €250 of search ads from month 6. Seed 1 gets 6 to 9 requests a month in the basement, 16 to 26 with the website and ads, and fills the basement server at about 26 customers, after which most deals are lost for capacity until you buy hardware.
 
@@ -737,12 +752,26 @@ Resolving the ticket adds the usual +5 happiness on top. Handling an appeal take
 
 **Billing rules.** The rules in the Reminders tab of Books send the reminder, dunning and final notices on schedule, suspends after 7, 14 or 30 days overdue, and hands a debt to collections after 42, 60 or 90 days overdue once the final notice is out. Collections starts Off.
 
+**Lexwear modules.** Lexwear sells add-on modules for Books on lexwear.de, each a one-time licence in 2005 euros. The licence key arrives by email a minute after the purchase and turns the module on in Books. Lexwear's newsletter offers each module once, when its count is first reached.
+
+| Module | Price | Does | Newsletter when |
+| --- | --- | --- | --- |
+| Helpdesk link | €149 | Create quote button on order tickets | 3 domains registered for customers |
+| Monthly run | €99 | Sends every draft invoice on the 1st at 09:00 | 10 customers |
+| Match by reference | €129 | Books each transfer whose reference names an open invoice and whose amount is exact | 10 transfers matched |
+| Automatic reminders | €99 | Sends the reminder, dunning and final notices on their due day under the billing rules | First suspension |
+| HBCI online banking | €79 | Pulls the bank statement and pays payables | Never |
+
+The billing rules say what is sent; bookkeepers and accountants carry them out in their work hours, the Automation research runs all of them, and Automatic reminders runs the notices up to the final one while suspensions and collections stay with staff or the research. Bookkeepers also send drafts and match transfers, writing off a shortfall below €1, before any reminder in the same hour; a second bookkeeper doubles the rate.
+
 **Time per action.** Every employee action takes time from their workday, so one employee can't carry the whole company. Staff divide these times by their speed (0.5 plus skill/100, so skill 50 takes the times as listed); bots work at twice the speed. The code keeps them in `ACTION_MINUTES` (src/sim/47-staff/activity.ts), and ticket times in `MINUTES` (the ticket table above).
 
 | Action | Who | Time |
 | --- | --- | --- |
 | Answer or resolve a ticket | Support agent | Ticket handling time above |
 | Check an invoice, before every billing action | Bookkeeper or accountant | 6 min |
+| Send a draft invoice | Bookkeeper | 5 min |
+| Match a bank transfer to its invoice | Bookkeeper | 3 min |
 | Send a payment reminder | Bookkeeper | 15 min |
 | Send a dunning notice | Accountant | 30 min |
 | Send a final notice | Accountant | 30 min |
@@ -758,6 +787,44 @@ A billing action is the check plus the action, so a reminder takes 21 minutes an
 The balance model books 6 staff minutes per customer and month for payments, which matches the times above for a late-paying customer mix. Its steady bot hires a bookkeeper once the late payments left unchased in a month are worth more than a bookkeeper's salary; with that rule none of 20 steady runs goes bankrupt, and level 4 arrives in 2017.6 instead of 2018.5.
 
 **Working hours.** Each employee works their team's shifts: per weekday a start hour and 1 to 12 hours, and a shift may run past midnight. The salary is for 40 hours a week; each hour on shift earns salary / 173, paid at the month start, so pay follows the hours actually worked. An action starts only if it ends within the shift; whatever is left waits for the next shift. Technicians on shift handle operations at their location; when nobody there is on shift, the on-call technician covers.
+
+## Payment methods
+
+A shop system takes payment at checkout. Bank transfer is always offered; every other method is a module bought once on the shop vendor's site, registered with its licence key in Books and switched on or off in the shop. The code keeps the numbers in `src/sim/10-catalog/payments.ts`.
+
+| Method (real one) | From | Module | Fee per payment | Paid | Side effect |
+| --- | --- | --- | --- | --- | --- |
+| Bank transfer | 2005 | none | none | by the customer's habit, matched in Books | dunning as in Billing and payment habits |
+| Direct debit | 2005 | €49 | €0.35 | collected at checkout, weekly payout from the shop system | a bad payer's debit returns when their invoice would have paid late, with a €3 fee, 3 to 7 days after the payout |
+| PayPail (PayPal) | 2005 | €49 | 1.9% + €0.35 | prepaid at checkout, weekly payout | 1% of payments are disputed 5 to 20 days after the payout; the money is held 30 days, then comes back |
+| Visor (Visa) | 2006 | €199 | 2.9% + €0.30 | collected at checkout, weekly payout | 0.5% of honest payments are charged back 7 to 90 days after the payout with the chargeback fee; stolen cards (below) charge back fully |
+| paysavecard (paysafecard) | 2007 | €99 | 10% | prepaid at checkout, weekly payout | twice the base churn of the profile |
+| Instantly (Sofortüberweisung) | 2008 | €49 | 0.9% | the customer's own transfer arrives at checkout with the exact amount and invoice number | none |
+| Bitcorn Pay (Bitcoin) | 2012 | €99 | 1% | prepaid at checkout, weekly payout | three times the abuse ticket and real notice rate for each customer paying this way |
+
+**Preferences.** Each shop order draws the method its customer wants first, from the weights of its profile over the methods that exist that year. Customers from the other side of the Atlantic and shady customers use their own rows.
+
+| Crowd | Transfer | Debit | PayPail | Card | paysavecard | Instantly | Crypto |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Private individual | 45 | 10 | 35 | 5 | | 5 | |
+| Gamer | 15 | | 35 | 10 | 35 | 5 | |
+| Hobby developer | 25 | | 35 | 25 | | 5 | 10 |
+| Sole proprietor | 50 | 25 | 15 | 10 | | | |
+| Small business | 45 | 30 | 5 | 20 | | | |
+| Agency or startup | 40 | 15 | 10 | 35 | | | |
+| Doctor's or law office | 50 | 40 | | 10 | | | |
+| Online shop | 35 | 30 | 10 | 25 | | | |
+| Enterprise | 60 | 25 | | 15 | | | |
+| International | 10 | | 30 | 60 | | | |
+| Shady | | | | 20 | 20 | | 60 |
+
+**Missing method.** When the shop does not offer the wanted method, half of the orders go through by bank transfer and the rest are lost sales with the reason that names the method. paysavecard and crypto customers never switch. Email orders always pay by bank transfer.
+
+**Prepaid.** PayPail, paysavecard and crypto invoices are paid at checkout, so Books never sends a reminder or suspends for them; neither do direct debit and card, whose money the shop collects at checkout. Each gateway pays out on Monday at 09:00 as one transfer per method, less its fees, with a reference listing the invoices; Import from shop or Shop link books it.
+
+**Money taken back.** Returns, disputes and chargebacks arrive in Books as negative transfers of the invoice amount plus the fee. Matching one to its paid invoice reopens it: a disputed invoice waits for the released money, a returned or charged-back one is due again by bank transfer under the dunning steps. Match by reference books them on its own. A chargeback on a stolen card marks the customer as fraud and suspends their services when it is matched.
+
+**Stolen cards.** Through a shop only card orders can be fraudulent, at the shares in Fraud and chargebacks below; their chargeback 30 to 60 days after signing up arrives as one negative transfer per paid invoice instead of the automatic write-off.
 
 ## Fraud and chargebacks
 
@@ -1561,6 +1628,14 @@ Disk use starts at 30% of booked and stops at 100%; the average customer reaches
 
 **Before and after.** Measured over 30 days with a mixed set of customers (web hosting, VPS, game servers, VPN, storage, dedicated): early game in 2005 with 13 services moves 0.59 TB before and after, with a 95th percentile of 3.4 Mbit/s before and 3.8 after (night jobs add short peaks to a small base); mid game in 2012 with 200 services moves 17.9 TB before and 17.8 after, with a 95th percentile of 103 Mbit/s before and 88 after, so transit bills drop about 15% (€311 to €264 a month at Cogentle's price), because the floors and staggered peaks flatten the sum.
 
+## Resellers
+
+A reseller buys a block of accounts on a DirectAdmen or cPanic host and sells web space to their own customers. The three blocks are Small (20 accounts, 50 GB, 500 GB traffic), Medium (50 accounts, 150 GB, 1,500 GB) and Large (100 accounts, 350 GB, 4,000 GB). The monthly price of a block is 0.5 times the market price of an average web space times its account count, billed in full whether the block is filled or not.
+
+The block books its full compute and disk from the day it starts. The reseller's own customers arrive linearly over 6 months up to a fill of 70%, and a cheaper block than the market price fills faster (down to 3 months at half the price per account). Resource use follows the fill, so the host carries less than it has sold.
+
+Abuse reports arrive at the rate of the filled accounts, and the reseller handles half of them; the other half come to the player as abuse tickets with the reseller as the customer. Each month there is a 2% chance that the block holds a shady account, which draws the abuse and legal follow-ups of a shady customer until the player suspends the reseller. Reseller leads are 3% of web hosting leads from 2008, once a DirectAdmen or cPanic host exists.
+
 ## Platforms and licenses
 
 Every server and every one of the player's own VMs runs an operating system, and software on it must run on that system and share no TCP port with the software already there; at most one hypervisor runs on a machine. A hypervisor ("Cloud" below) runs on every node of a hypervisor cluster and sells VPS, game servers and, with failover on, cloud servers. A panel runs on a panel host, a bare-metal server or one of the player's own VMs, and sells web hosting. Service software runs the same way as a panel, on one bare-metal server or one of the player's VMs, and sells one line each: a game panel sells game servers, a DNS server DNS, a VPN server VPN and a storage server storage. Game servers also run on a hypervisor; DNS, VPN and storage need their own software. A DNS, VPN or storage service already on a hypervisor keeps running there. Dedicated servers, colocation, domains and certificates need neither. Values live in `src/sim/10-catalog/platforms.ts`; fees are monthly, in euros, and fixed over the years, except where a license lists a one-time price first.
@@ -1625,7 +1700,7 @@ Service software anchors: BIND (Bound) and PowerDNS (PowerDNZ) both predate 2005
 
 Anchors: cPanel could copy accounts between servers with WHM's "Copy an account" since 2005 and gained its transfer tool for other panels around 2012; Plesk's Migration Manager appeared with Plesk 7.5.6 in 2005 and the Plesk Migrator extension (2015) imports cPanel, Confixx and others; DirectAdmin moves accounts through backup and restore since about 2010; ISPConfig 3 introduced multiserver setups in March 2009, which is where FreePanel clusters from, while cPanel and Plesk never clustered web serving (only DNS). Hypervisor years follow the products: OpenStack 2010, VMware ESX long before 2005, Proxmox VE 2008, Hyper-V 2008 (clustering of Hyper-V hosts from the 2012 release).
 
-- **Licenses** are billed on the 1st of each month per hypervisor cluster and per panel host, as ledger lines in the category "licenses".
+- **Licenses** on a subscription are billed per key on the day of the month the key was bought, one ledger line per key in the category "licenses" naming the product and the key, unassigned keys included. A per-account edition such as cPanic Premier charges its fee for every account on its panel host. The vendor emails one receipt per product. A renewal the bank cannot pay keeps the software running for `LAPSE_GRACE_DAYS`, then the key lapses and the vendor emails it; the next hour with the money renews it for a month from then. A cancelled key runs to the end of its paid month and expires. A key bought once is never billed again. The App Suite and the balancer are billed on the 1st per cluster.
 - **How-to tickets:** a customer's how-to rate is multiplied by the average factor of the software serving each of their workloads (the panel for web spaces, the service software for game servers, DNS, VPN and storage, the hypervisor for the rest).
 - **Booking:** software sets no limit on what a node books. Every hypervisor and panel books vCPU and RAM past the physical amounts and disk up to twice the usable RAID disk (see Usage curves and overcommit). Ballooning decides one thing: a resize of one of the player's own VMs that only grows its RAM is live on a hypervisor that balloons (Proxmocks and VMwhere, HyperVee from 2012; OpenStash and OpenVeeZee never); any other resize restarts the VM for 10 minutes.
 - **Software in a VM** gets 95% of the VM's vCPU and RAM (`IN_VM` in 10-catalog/platforms.ts): a panel VM's web hosting room is 0.95 times its booked vCPU and RAM, less the panel, with its full disk. The same panel on bare metal gets the whole server.
@@ -1699,7 +1774,7 @@ A raise request left unanswered for 30 days counts as refused. Salaries are bill
 | Role | Task types |
 | --- | --- |
 | Support agent | How-to, billing, outage, upgrade, cancellation, abuse, suspension appeal |
-| Bookkeeper | Payment reminders |
+| Bookkeeper | Payment reminders, sending invoices, matching payments |
 | Accountant | Dunning notices, final notices |
 | Marketing manager | Campaigns, review platforms, trade fairs |
 
@@ -2194,6 +2269,7 @@ A first-year company earns about 300 know-how; a company with 10,000 customers e
 | Monitoring | 1 | 50 | 5 days | | Nagiosaurus, failure notifications |
 | Marketing basics | 1 | 50 | 5 days | | Leads to Marketing campaigns |
 | Employee management | 1 | 100 | 10 days | | Staff |
+| Company law | 1 | 100 | 10 days | | Founding a limited company |
 | Network operations | 2 | 300 | 14 days | Monitoring | Network |
 | Product management | 1 | 100 | 7 days | | Products |
 | Provisioning automation | 2 | 150 | 10 days | Product management | Automatic setup of orders, the Place orders automatically switch |
@@ -2203,7 +2279,7 @@ A first-year company earns about 300 know-how; a company with 10,000 customers e
 | Virtualization | 3 | 400 | 14 days | Product management, Monitoring | Virtual machines |
 | Automation | 3 | 1,500 | 21 days | Employee management, Monitoring | ChadGPT Support, Clipsy Reminders |
 
-The whole tree costs 3,950 know-how and 128 days of training.
+The whole tree costs 4,050 know-how and 138 days of training.
 
 Product management was tier 2 at 200 know-how and 14 days after Marketing basics. The happiness run showed a careful first-year company earns 15 to 40 know-how a month, so the 250 know-how path landed in September to November. As a tier 1 skill at 100 know-how and 7 days, the same company learns it between early May and early July (median early June).
 
@@ -2298,15 +2374,15 @@ The loan limit is the higher of the level's minimum and 12× the average monthly
 
 **Bankruptcy.** When cash stays below zero for 30 days and no loan is available that covers the deficit, the company is insolvent and the game ends.
 
-**Account fees.** A limited company (GmbH) must keep a business account, and business accounts cost more than a sole trader's, so the account fee a month depends on the legal form. Branch banks charge a limited company about twice the sole trader's fee and add a fee for every booking on a partnership's or limited company's account; the fintechs sell flat plans, the limited one at two to three times the sole trader's. A partnership pays between the two. Each month start books the fee for the month and, at a branch bank, one line for the bookings of the month before: every ledger line of that month except the bank's own fees. netbunk, like the direct banks that long opened no GmbH accounts, opens none for a limited company: the registration refuses that pair, and the trade office form greys netbunk out while the limited form is chosen. The legal form is fixed once registered, so an open account never needs to move.
+**Account fees.** A limited company (GmbH) must keep a business account, and business accounts cost more than a sole trader's, so the account fee a month depends on the legal form. Branch banks charge a limited company about twice the sole trader's fee and add a fee for every booking on a partnership's or limited company's account; the fintechs sell flat plans, the limited one at two to three times the sole trader's. A partnership pays between the two. Each month start books the fee for the month and, at a branch bank, one line for the bookings of the month before: every ledger line of that month except the bank's own fees. Ding-DiBa, like the direct banks that long opened no GmbH accounts, opens none for a limited company: the registration refuses that pair, and the trade office form greys Ding-DiBa out while the limited form is chosen. The legal form is fixed once registered, so an open account never needs to move.
 
 | Bank | Sole trader | Partnership | Limited company | Per booking (partnership, limited) |
 | --- | --- | --- | --- | --- |
 | Sparklasse | €8 | €12 | €16 | €0.30 |
-| Volksbunk | €6 | €9 | €12 | €0.25 |
+| Folksbank | €6 | €9 | €12 | €0.25 |
 | Deutsche Bunk | €12 | €18 | €24 | €0.15 |
-| Postbunk | €4 | €6 | €8 | €0.40 |
-| netbunk | €0 | €5 | no account | none |
+| Postbanq | €4 | €6 | €8 | €0.40 |
+| Ding-DiBa | €0 | €5 | no account | none |
 | Fidorr | €0 | €6 | €12 | none |
 | Quonto | €9 | €15 | €25 | none |
 

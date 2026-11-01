@@ -21,13 +21,18 @@ import { useFocus, useStore } from "../../store";
 import { Favicon } from "./Favicon";
 import { ConsolePage } from "./consoles/ConsolePage";
 import { bmcTitle, IpmiPage } from "./ipmi/IpmiPage";
+import { FritzOz } from "./mgmt/FritzOz";
 import { KvmPage, kvmTitle } from "./ipmi/KvmPage";
+import { SwitchPage, switchTitle } from "./mgmt/Switch";
 import { CompanySite } from "./sites/CompanySite";
 import { SponsorBoard } from "./sites/SponsorBoard";
 import { IndexSite } from "./sites/index/IndexSite";
 import { OfficeSite } from "./sites/office/OfficeSite";
+import { LexwearSite } from "./sites/lexwear/LexwearSite";
+import { ShopVendorSite } from "./sites/shopvendors/registry";
+import { shopById } from "../../../sim/10-catalog/shops";
 import { WikiSite } from "./sites/wiki/WikiSite";
-import { OFFICE_TITLE } from "../../../sim/80-business/office";
+import { LEXWEAR } from "../../../sim/80-business/lexwear";
 import { SoftwarePage } from "./sites/software/registry";
 import { RegistrarSite } from "./sites/registrars";
 import { SupplierSite } from "./sites/bank/SupplierSite";
@@ -67,11 +72,18 @@ function titleOf(game: GameState, r: Resolved): string {
       const d = game.devices.find((x) => x.id === p.deviceId);
       return d ? kvmTitle(d) : r.host;
     }
+    case "router": return "Fritz!OZ";
+    case "switch": {
+      const d = game.devices.find((x) => x.id === p.deviceId);
+      return d ? switchTitle(d) : r.host;
+    }
     case "video": return VIDEO_TITLE;
     case "phishing": return t("misc1.browser.onlineBanking", { name: senderById(p.sender).name });
     case "sponsorboard": return BOARD_TITLE;
-    case "index": return "Yahoy! Directory";
-    case "office": return OFFICE_TITLE;
+    case "index": return t("browser-sites-1.ix.title");
+    case "office": return t("browser-sites-1.of.title");
+    case "lexwear": return LEXWEAR;
+    case "shopVendor": return shopById(p.id).name;
     case "wiki": return WIKI_TITLE;
     case "software": return softwareById(p.id).name;
     case "os": return serverOsById(p.id).name;
@@ -94,26 +106,30 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "company") body = <CompanySite game={game} path={r.path} go={go} />;
   else if (p.kind === "customer") body = <CustomerSite game={game} serviceId={p.serviceId} />;
   else if (p.kind === "vendor") body = <VendorSite game={game} maker={p.maker} path={r.path} go={go} />;
-  else if (p.kind === "registrar") body = <RegistrarSite game={game} id={p.id} />;
+  else if (p.kind === "registrar") body = <RegistrarSite game={game} id={p.id} path={r.path} />;
   else if (p.kind === "supplier") body = <SupplierSite game={game} name={p.name} />;
   else if (p.kind === "bank") body = <BankSite game={game} id={p.id} path={r.path} go={go} />;
   else if (p.kind === "video") body = <VideoPage />;
   else if (p.kind === "phishing") body = <PhishingPage sender={p.sender} />;
   else if (p.kind === "sponsorboard") body = <SponsorBoard game={game} />;
   else if (p.kind === "office") body = <OfficeSite game={game} path={r.path} go={go} />;
+  else if (p.kind === "lexwear") body = <LexwearSite game={game} path={r.path} go={go} />;
+  else if (p.kind === "shopVendor") body = <ShopVendorSite game={game} id={p.id} />;
   else if (p.kind === "wiki") body = <WikiSite game={game} path={r.path} go={go} />;
   else if (p.kind === "index") body = <IndexSite game={game} path={r.path} go={go} />;
   else if (p.kind === "software" || p.kind === "os") body = <SoftwarePage game={game} kind={p.kind} id={p.id} path={r.path} go={go} />;
   else if (p.kind === "console") body = <ConsolePage game={game} hostname={p.hostname} host={r.host} cluster={game.clusters.find((x) => x.id === p.clusterId)} defaced={p.defaced} path={p.path} />;
   else if (p.kind === "ipmi") body = <IpmiPage game={game} deviceId={p.deviceId} host={r.host} />;
   else if (p.kind === "kvm") body = <KvmPage game={game} deviceId={p.deviceId} host={r.host} />;
+  else if (p.kind === "router") body = <FritzOz game={game} deviceId={p.deviceId} host={r.host} />;
+  else if (p.kind === "switch") body = <SwitchPage game={game} deviceId={p.deviceId} host={r.host} />;
   else if (p.kind === "host") body = <HostPage host={r.host} />;
   else body = <NotFound host={r.host} />;
   const paper = !waiting && r.load !== "down" && ["company", "customer", "vendor", "sponsorboard", "registrar", "bank", "supplier", "index", "office", "software", "os"].includes(p.kind);
   return (
     <>
       {waiting && <div className="web-load" aria-hidden />}
-      <div className={`web-view${paper ? " paper" : ""}`}>{body}</div>
+      <div className={`web-view${paper ? " white" : ""}`}>{body}</div>
     </>
   );
 }
@@ -161,12 +177,21 @@ export function BrowserApp() {
     setTabs([...tabs, { id, history: [to], at: 0, nav: 0 }]);
     setActive(id);
   };
-  const close = (id: number) => {
-    if (tabs.length < 2) return;
-    const rest = tabs.filter((x) => x.id !== id);
+  const keep = (rest: Tab[]) => {
+    if (!rest.length || rest.length === tabs.length) return;
     setTabs(rest);
-    if (id === active) setActive(rest[Math.max(0, tabs.findIndex((x) => x.id === id) - 1)].id);
+    if (!rest.some((x) => x.id === active)) {
+      const at = tabs.findIndex((x) => x.id === active);
+      setActive((tabs.slice(0, at).reverse().find((x) => rest.includes(x)) ?? rest[0]).id);
+    }
   };
+  const close = (id: number) => keep(tabs.filter((x) => x.id !== id));
+  const tabMenu = (i: number) => [
+    { label: t("misc1.browser.closeTab"), run: () => close(tabs[i].id), disabled: tabs.length < 2 },
+    { label: t("misc1.browser.closeOthers"), run: () => keep([tabs[i]]), disabled: tabs.length < 2 },
+    { label: t("misc1.browser.closeLeft"), run: () => keep(tabs.slice(i)), disabled: i === 0 },
+    { label: t("misc1.browser.closeRight"), run: () => keep(tabs.slice(0, i + 1)), disabled: i === tabs.length - 1 },
+  ];
 
   // Another app asked for an address: show the tab that already has it, else a new one.
   useFocus("Browser", (f) => {
@@ -184,10 +209,10 @@ export function BrowserApp() {
   return (
     <div className="br">
       <div className="br-tabs" role="tablist">
-        {tabs.map((x) => {
+        {tabs.map((x, i) => {
           const rx = resolve(game, x.history[x.at]);
           return (
-            <div key={x.id} role="tab" aria-selected={x.id === tab.id} className="br-tab" tabIndex={0} onClick={() => setActive(x.id)}
+            <div key={x.id} role="tab" aria-selected={x.id === tab.id} className="br-tab" tabIndex={0} onClick={() => setActive(x.id)} onContextMenu={menuOn(() => tabMenu(i))}
               onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setActive(x.id)}>
               <Favicon game={game} r={rx} />
               <span className="br-tab-title">{titleOf(game, rx)}</span>

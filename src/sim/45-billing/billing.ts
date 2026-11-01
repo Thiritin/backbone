@@ -2,7 +2,9 @@ import { chance, hashRng, rand, type Rng } from "../00-core/rng";
 import { bankById } from "../10-catalog/banks";
 import { dateOf, hourOf, isMonthStart, yearOf } from "../00-core/time";
 import type { Budget } from "../10-catalog/economy";
+import { hasModule } from "../10-catalog/modules";
 import { CYCLE_MONTHS } from "../10-catalog/cycles";
+import { methodById, methodFee, type MethodId } from "../10-catalog/payments";
 import { SLAS } from "../10-catalog/products";
 import type { PaymentHabit, Profile, Service } from "../30-customers/customers";
 import { bump, cancelCustomer, createTicket, profileStats } from "../40-support/tickets";
@@ -12,6 +14,7 @@ import { metrics } from "../metrics";
 import { logActivity } from "../47-staff/activity";
 import { mailDelay } from "../80-business/mail";
 import { sweepGroups } from "../60-infra/status";
+import { checkout, payeeOf, reopen } from "./payments";
 
 // A draft waits in Books until it is sent; it is not due and never pays.
 export type InvoiceStatus = "draft" | "open" | "overdue" | "paid" | "writtenOff";
@@ -42,10 +45,26 @@ export interface Invoice {
   received?: number;
   // Hour the payment extension granted on a suspension appeal runs out.
   extendedUntil: number | null;
+  // Issued by the shop system; absent reads as Books' own. synced false hides it from Books until an import.
+  source?: "manual" | "shop";
+  synced?: boolean;
+  // Paid at checkout through the shop gateway, and the weekly payout transfer that carried the money.
+  gateway?: true;
+  payout?: string;
+  // The shop's own record of the payment: the gateway, or a match in Books with the Shop link module.
+  shopPaid?: true;
+  // The method the shop collected it by, and the return, dispute or chargeback waiting for it (or a dispute's release).
+  method?: MethodId;
+  back?: { kind: BackKind; at: number };
 }
+export type BackKind = "return" | "dispute" | "chargeback" | "release";
 // A payment in the bank account. reference and params are the purpose line as an i18n key; invoiceId is the invoice the
 // player matched it to. forInvoice is the invoice the customer meant, never shown.
-export interface Transfer { id: string; hour: number; from: string; reference: string; params: Record<string, string>; amount: number; invoiceId: string | null; matchedAt: number | null; forInvoice: string }
+export interface Transfer { id: string; hour: number; from: string; reference: string; params: Record<string, string>; amount: number; invoiceId: string | null; matchedAt: number | null; forInvoice: string;
+  // A gateway payout: the invoices it pays.
+  covers?: string[];
+  // Money taken back from a paid invoice: matching it reopens the invoice; fraud marks a stolen card's chargeback.
+  back?: Exclude<BackKind, "release">; fraud?: true }
 // rate is yearly; left counts the instalments still to pay.
 export interface Loan { id: string; amount: number; rate: number; months: number; left: number; payment: number; balance: number; takenAt: number; missed: number }
 
@@ -115,7 +134,7 @@ export function issue(s: GameState, inv: Invoice, payDays = DUE_DAYS - 1): void 
 
 // How customers fill in a transfer: the share who write a bare word or their name instead of the invoice number, by profile,
 // and the share of low-budget payers who send a few cents short or a rounded-down amount.
-export const BARE_REFERENCE: Record<Profile, number> = { private: 0.3, gamer: 0.35, hobbyDev: 0.2, soleProp: 0.1, smallBiz: 0.05, agency: 0.03, office: 0.05, onlineShop: 0.03, enterprise: 0.01 };
+export const BARE_REFERENCE: Record<Profile, number> = { private: 0.3, gamer: 0.35, hobbyDev: 0.2, soleProp: 0.1, smallBiz: 0.05, agency: 0.03, office: 0.05, onlineShop: 0.03, enterprise: 0.01, reseller: 0.03 };
 export const SHORT_PAY = 0.15;
 const BARE_WORDS = ["hosting", "server", "domain"];
 // A reminder on an invoice whose payment sits unmatched in the bank.
@@ -127,13 +146,19 @@ export const payDelay = (r: Rng): number => DAY * (1 + Math.floor(rand(r) * 5));
 export const invoiceTotal = (inv: Invoice): number => cents(inv.lines.reduce((sum, l) => sum + l.amount, 0));
 export const isUnpaid = (inv: Invoice): boolean => inv.status === "open" || inv.status === "overdue";
 export const owed = (inv: Invoice): number => cents(invoiceTotal(inv) - (inv.received ?? 0));
+export const synced = (x: { synced?: boolean }): boolean => x.synced !== false;
+// A record the shop system creates: synced at once with the Shop link module, otherwise waiting for an import in Books.
+export const fromShop = (s: GameState): { source: "shop"; synced?: false } => ({ source: "shop", ...(!hasModule(s, "shop-link") && { synced: false as const }) });
+// Books chases only invoices it knows; the gateway collected its invoices at checkout.
+const chased = (inv: Invoice): boolean => synced(inv) && !inv.gateway;
 export const pendingTransfer = (s: GameState, inv: Invoice): Transfer | undefined => s.transfers.find((t) => t.forInvoice === inv.id && t.invoiceId === null);
 const pick = <T>(r: Rng, xs: readonly T[]): T => xs[Math.floor(rand(r) * xs.length)];
 
 // The customer's transfer for what is left of an invoice; only the first may carry an odd reference or amount.
 function transferFor(s: GameState, inv: Invoice): Transfer {
   const c = s.customers.find((x) => x.id === inv.customerId), a = c?.address;
-  const r = hashRng(s.seed, Number(inv.id.slice(3)) || 0, s.hour, 251), first = !inv.received;
+  // Instantly fills in the reference and amount itself.
+  const r = hashRng(s.seed, Number(inv.id.slice(3)) || 0, s.hour, 251), first = !inv.received && inv.method !== "instantly";
   const from = a?.company ?? (a ? `${a.contact[0]}. ${a.contact.split(" ").slice(1).join(" ")}` : c?.name ?? "");
   let amount = owed(inv);
   if (first && c && profileStats(c.profile).budget === "low" && chance(r, SHORT_PAY)) {
@@ -145,10 +170,25 @@ function transferFor(s: GameState, inv: Invoice): Transfer {
   return { id: `trf${s.nextId++}`, hour: s.hour, from, reference, params, amount, invoiceId: null, matchedAt: null, forInvoice: inv.id };
 }
 
+// Books a transfer against an unpaid invoice. A smaller amount is a partial payment unless settle writes the difference off;
+// a larger one pays the invoice and leaves the rest as the customer's credit.
+export function bookTransfer(s: GameState, tr: Transfer, inv: Invoice, settle: boolean): void {
+  if (tr.back) return reopen(s, tr, inv);
+  s.transfers = s.transfers.map((x) => (x === tr ? { ...x, invoiceId: inv.id, matchedAt: s.hour } : x));
+  const rest = cents(owed(inv) - tr.amount);
+  if (rest > 0 && !settle) inv.received = cents((inv.received ?? 0) + tr.amount);
+  else {
+    Object.assign(inv, { status: "paid", paidAt: s.hour, suspended: false, payAt: null });
+    renewTerms(s, inv);
+    if (inv.source === "shop" && hasModule(s, "shop-link")) inv.shopPaid = true;
+  }
+  if (rest < 0) s.customers = s.customers.map((c) => (c.id === inv.customerId ? { ...c, credit: cents(c.credit - rest) } : c));
+}
+
 // Index into STEPS of the dunning step that is due now, or null.
 export function dueStep(inv: Invoice, hour: number): number | null {
   const i = inv.reminders.length;
-  if (!isUnpaid(inv) || i >= STEPS.length) return null;
+  if (!isUnpaid(inv) || !chased(inv) || i >= STEPS.length) return null;
   return hour >= inv.dueAt + STEPS[i].days * DAY ? i : null;
 }
 
@@ -251,22 +291,30 @@ export function ruleStep(s: GameState, inv: Invoice): number | null {
 // Hour the suspend rule acts on an invoice: days after the due date, or again when an appeal's extension runs out.
 export function ruleSuspendsAt(s: GameState, inv: Invoice): number | null {
   const days = s.billingRules.autoSuspendDays;
-  if (!days || inv.status !== "overdue" || inv.suspended) return null;
+  if (!days || inv.status !== "overdue" || inv.suspended || !chased(inv)) return null;
   if (inv.suspendedAt === null) return inv.dueAt + days * DAY;
   return inv.extendedUntil !== null && inv.suspendedAt < inv.extendedUntil ? inv.extendedUntil : null;
 }
 
-const automated = (s: GameState, inv: Invoice, key: string) =>
-  logActivity(s, { customerId: inv.customerId, serviceId: null, by: "Automation", key: `activity.${key}`, params: { invoice: inv.number }, minutes: 0 });
+// The dunning step that runs by itself now: every rule after the Automation research, and the notices up to the final one
+// with the Automatic reminders module. Staff carry out the rest.
+export function autoStep(s: GameState, inv: Invoice): number | null {
+  const i = ruleStep(s, inv);
+  if (i === null) return null;
+  return rulesAutomated(s) || (STEPS[i].key !== "collections" && hasModule(s, "auto-reminders")) ? i : null;
+}
+
+const automated = (s: GameState, inv: Invoice, key: string, by = "Automation") =>
+  logActivity(s, { customerId: inv.customerId, serviceId: null, by, key: `activity.${key}`, params: { invoice: inv.number }, minutes: 0 });
 
 // Automated billing rules and suspended customers, once per hour for each unpaid invoice the caller owns.
 function chase(s: GameState, inv: Invoice, events: SimEvent[]): void {
   const c = s.customers.find((x) => x.id === inv.customerId);
   const auto = rulesAutomated(s);
-  const i = auto ? ruleStep(s, inv) : null;
+  const i = autoStep(s, inv);
   if (i !== null) {
     sendStep(s, inv, i);
-    automated(s, inv, STEPS[i].key);
+    automated(s, inv, STEPS[i].key, auto ? "Automation" : "Lexwear");
   }
   if (inv.status === "writtenOff") {
     if (c) events.push({ app: "Books", key: "event.collected", params: { customer: c.name, invoice: inv.number } });
@@ -288,7 +336,7 @@ function chase(s: GameState, inv: Invoice, events: SimEvent[]): void {
 }
 
 const needsChase = (s: GameState, inv: Invoice): boolean =>
-  isUnpaid(inv) && (inv.suspended || (rulesAutomated(s) && (ruleStep(s, inv) !== null || ruleSuspendsAt(s, inv) !== null)));
+  isUnpaid(inv) && (inv.suspended || autoStep(s, inv) !== null || (rulesAutomated(s) && ruleSuspendsAt(s, inv) !== null));
 
 // Bank: economy.md, Bank, insurance and tax.
 const BASE_RATE: [number, number][] = [[2005, 4], [2009, 2.5], [2015, 1], [2021, 1], [2023, 4.5], [2026, 4]];
@@ -353,6 +401,7 @@ export function billingTick(s: GameState): SimEvent[] {
         const tr = transferFor(s, inv);
         arrived.push(tr);
         book("payments", "ledger.transfer", { from: tr.from }, tr.amount);
+        if (inv.method === "instantly") book("fees", "ledger.paymentFees", { from: payeeOf(s, inv.method) }, -methodFee(methodById(inv.method), tr.amount));
         return { ...inv, payAt: null };
       }
       const collected = inv.status === "writtenOff";
@@ -437,6 +486,12 @@ export function billingTick(s: GameState): SimEvent[] {
       customerId, lines: ls, issuedAt: s.hour, dueAt: s.hour, status: "draft", reminders: [], suspended: false, suspendedAt: null, extendedUntil: null,
       payStep: 0, payAt: null, paidAt: null,
     });
+    // The shop system sends its customers' invoices itself.
+    if (owner?.source === "shop") {
+      Object.assign(issued[issued.length - 1], fromShop(s));
+      issue(s, issued[issued.length - 1]);
+      checkout(s, issued[issued.length - 1], owner);
+    }
   }
   if (changed || issued.length) s.invoices = [...invoices, ...issued];
   if (arrived.length) s.transfers = [...s.transfers, ...arrived];

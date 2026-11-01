@@ -13,8 +13,8 @@ import { tick } from "../src/sim/88-tick/tick";
 import { confirmOrder, createAccount, provisionOrder, quoteOrder, registerOrderDomain } from "../src/sim/90-actions/orders";
 import { addPackage } from "../src/sim/90-actions/packages";
 import { ChangePackage, planChoices, ProvisionForm } from "../src/ui/apps/browser/consoles/PackageForms";
-import { accountChoices, NewCustomer } from "../src/ui/apps/customers/NewCustomer";
-import { panelVm, readyGame } from "./fixtures";
+import { accountChoices, NewCustomer } from "../src/ui/apps/books/NewCustomer";
+import { mailed, owner, panelVm, readyGame } from "./fixtures";
 
 let s0: GameState;
 const run = (s: GameState, hours: number) => { for (let i = 0; i < hours; i++) tick(s); };
@@ -29,11 +29,11 @@ function order(seed: number, ready: boolean, product: "webHosting" | "vps" = "we
   const req = () => s.sales.requests.find((x) => x.id === r.id)!;
   for (let i = 0; i < 60 && req().status !== "accepted" && !req().customerId; i++) tick(s);
   if (ready) {
-    must(createAccount(s, id));
+    must(createAccount(s, id, mailed(s, id)));
     must(confirmOrder(s, id));
     s.invoices = s.invoices.map((i) => (i.id === invoiceOf(s, req())!.id ? { ...i, payStep: 0, payAt: s.hour } : i));
     run(s, 1);
-    if (product === "webHosting") must(registerOrderDomain(s, id));
+    if (product === "webHosting") must(registerOrderDomain(s, id, ...owner(s, id)));
   }
   return { s, id, req, host: hostFor(s, req())! };
 }
@@ -190,8 +190,8 @@ describe("create account form", () => {
     expect(accountChoices(s).map((o) => [o.ticketId, o.error])).toEqual([[id, null]]);
     const html = renderToString(<NewCustomer game={s} initial={id} onDone={() => {}} />);
     expect(html).toContain(req().contact);
-    expect(html).toContain(t("pkg.addClient"));
-    must(createAccount(s, id));
+    expect(html).toContain(t("orderSteps.saveCustomer"));
+    must(createAccount(s, id, mailed(s, id)));
     expect(accountChoices(s)).toEqual([]);
     expect(s.sales.requests.find((x) => x.id === req().id)!.customerId).toBeTruthy();
   });

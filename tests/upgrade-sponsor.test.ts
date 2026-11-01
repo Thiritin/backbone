@@ -1,10 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { expandable, templatesOf } from "../src/sim/40-support/tickets";
-import { newGame } from "../src/sim/50-state";
 import { eventById } from "../src/sim/80-business/community";
 import { tick } from "../src/sim/88-tick/tick";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
-import { readyGame } from "./fixtures";
+import { readyGame, newGame } from "./fixtures";
 import { FEB_1, MAR_1 } from "./support.helpers";
 
 describe("upgrade requests", () => {
