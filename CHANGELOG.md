@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- Used hardware is now bought on its own websites in the Browser: eBuy auctions, the WebHostingTalc forum and the Telegrump chat each look and filter the way they did in their year, from 2005 web pages to modern apps.
 - Registering your company at the trade office now goes through at once and charges the fee only once, by a letter that arrives the same day, and paying it is the next step in Getting started.
 - Errors on web pages, such as a wrong TAN or a missing owner name, now appear on the page next to the field instead of as a notification.
 - Ports now look like their connectors on every rear panel: RJ45 jacks, silver SFP cages and a grey, labelled DSL port set apart from the LAN ports.

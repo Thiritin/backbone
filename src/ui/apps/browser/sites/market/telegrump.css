@@ -1,0 +1,120 @@
+.web-view > .mk-tg { flex: 1 1 0; min-height: 480px; }
+.mk-tg { display: flex; flex-direction: column; text-align: left; }
+.mk-tg ul, .mk-tg ol { list-style: none; margin: 0; padding: 0; }
+.mk-tg p, .mk-tg h2 { margin: 0; }
+.mk-tg button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+.mk-tg select, .mk-tg input { font: inherit; color: inherit; }
+.mk-tg .tg-body { flex: 1; min-height: 0; display: flex; }
+.mk-tg .tg-log { flex: 1; min-width: 0; overflow: auto; }
+.mk-tg ol.tg-log { display: flex; flex-direction: column-reverse; }
+.mk-tg .tg-buy, .mk-tg .tg-kb { display: inline-flex; }
+.mk-tg .tg-detail { display: flex; gap: 16px; align-items: flex-start; }
+.mk-tg .tg-detail h2 { display: flex; align-items: center; gap: 6px; }
+.mk-tg .tg-facts > div { display: flex; gap: 8px; }
+.mk-tg .tg-facts dt { flex: none; width: 120px; }
+.mk-tg .tg-facts dd { margin: 0; }
+
+/* 2005: a web IRC gateway */
+.mk-tg.irc { font: 12px/1.4 "Courier New", Courier, monospace; color: #000000; background: #d4d0c8; }
+.mk-tg.irc header { display: flex; align-items: center; gap: 12px; padding: 3px 6px; background: #d4d0c8; font-family: Tahoma, Verdana, sans-serif; font-size: 11px; border-bottom: 1px solid #808080; }
+.mk-tg.irc header nav { display: flex; gap: 2px; flex: 1; }
+.mk-tg.irc header nav button { padding: 2px 10px; border: 1px solid #808080; border-bottom: 0; background: #c0bcb4; font-family: "Courier New", monospace; }
+.mk-tg.irc header nav button.on { background: #ffffff; font-weight: 700; }
+.mk-tg.irc .tg-ship select { font-size: 11px; }
+.mk-tg.irc .tg-topic { padding: 3px 6px; margin: 2px 4px; background: #ffffff; border: 2px inset #e0e0e0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mk-tg.irc .tg-body { gap: 4px; padding: 0 4px; }
+.mk-tg.irc .tg-chans, .mk-tg.irc .tg-nicks { flex: none; width: 150px; overflow: auto; background: #ffffff; border: 2px inset #e0e0e0; padding: 2px 0; }
+.mk-tg.irc .tg-chans li { display: flex; justify-content: space-between; padding: 0 6px; }
+.mk-tg.irc .tg-chans button { color: #00007f; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mk-tg.irc .tg-chans button.on { background: #000080; color: #ffffff; }
+.mk-tg.irc .tg-chans span { color: #808080; }
+.mk-tg.irc .tg-nicks { width: 130px; }
+.mk-tg.irc .tg-nicks p { padding: 0 6px 2px; border-bottom: 1px solid #c0c0c0; color: #808080; }
+.mk-tg.irc .tg-nicks li { padding: 0 6px; }
+.mk-tg.irc .tg-log { background: #ffffff; border: 2px inset #e0e0e0; padding: 4px 6px; }
+.mk-tg.irc .tg-log li, .mk-tg.irc .tg-log > p { padding: 1px 0; }
+.mk-tg.irc .tg-ts { color: #808080; }
+.mk-tg.irc .tg-sys { color: #009300; }
+.mk-tg.irc .tg-link { color: #0000fc; text-decoration: underline; }
+.mk-tg.irc .tg-thumb { display: inline-block; vertical-align: middle; }
+.mk-tg.irc .tg-detail { margin: 8px 0 0 64px; padding: 8px; border: 1px dashed #808080; }
+.mk-tg.irc .tg-detail h2 { font-size: 12px; margin-bottom: 6px; }
+.mk-tg.irc .tg-price { font-weight: 700; margin: 6px 0; }
+.mk-tg.irc .tg-input { display: flex; gap: 4px; padding: 4px; }
+.mk-tg.irc .tg-input input { flex: 1; border: 2px inset #e0e0e0; background: #ffffff; padding: 1px 4px; }
+.mk-tg.irc .mk-btn { padding: 1px 10px; background: #d4d0c8; border: 2px outset #f0f0f0; font: 11px Tahoma, Verdana, sans-serif; color: #000000; }
+.mk-tg.irc .mk-btn:active { border-style: inset; }
+.mk-tg.irc .mk-btn:disabled { color: #808080; text-shadow: 1px 1px #ffffff; cursor: default; }
+.mk-tg.irc .tg-log .mk-btn { padding: 0 6px; }
+
+/* 2013: Telegram Web */
+.mk-tg.web { --tg-accent: #5682a3; --tg-side: #ffffff; --tg-line: #e9edf0; --tg-text: #000000; --tg-dim: #999999; --tg-chat: #dfe8ef; --tg-bubble: #ffffff; --tg-on: #6490b1;
+  font: 13px/1.4 "Lucida Grande", "Segoe UI", Tahoma, sans-serif; color: var(--tg-text); background: var(--tg-chat); }
+.mk-tg.web header { padding: 10px 16px; background: var(--tg-accent); color: #ffffff; font-size: 15px; }
+.mk-tg.web aside { flex: none; width: 260px; display: flex; flex-direction: column; background: var(--tg-side); border-right: 1px solid var(--tg-line); }
+.mk-tg.web aside form { padding: 8px; border-bottom: 1px solid var(--tg-line); }
+.mk-tg.web aside input { width: 100%; box-sizing: border-box; padding: 6px 10px; border: 1px solid #d9dbde; border-radius: 3px; background: #f2f2f2; outline: none; }
+.mk-tg.web aside ul { flex: 1; overflow: auto; }
+.mk-tg.web aside li button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; text-align: left; }
+.mk-tg.web aside li button:hover { background: #f2f6fa; }
+.mk-tg.web aside li button.on { background: var(--tg-on); color: #ffffff; }
+.mk-tg.web aside li button.on small { color: inherit; }
+.mk-tg.web .tg-ava { flex: none; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; color: #ffffff; font-weight: 700; font-size: 17px; text-transform: uppercase; }
+.mk-tg.web .tg-chat { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.mk-tg.web .tg-chat small, .mk-tg.web .tg-meta small { color: var(--tg-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mk-tg.web .tg-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.mk-tg.web .tg-meta i { font-style: normal; font-size: 11px; padding: 0 6px; border-radius: 10px; background: #6cb0d8; color: #ffffff; }
+.mk-tg.web main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.mk-tg.web .tg-head { display: flex; align-items: center; gap: 10px; padding: 6px 14px; background: var(--tg-side); border-bottom: 1px solid var(--tg-line); }
+.mk-tg.web .tg-head .tg-ava { width: 34px; height: 34px; font-size: 14px; }
+.mk-tg.web .tg-back { font-size: 18px; color: var(--tg-accent); padding: 0 4px; }
+.mk-tg.web .tg-ship { color: var(--tg-dim); }
+.mk-tg.web .tg-ship select, .mk-tg.web .tg-tags select { border: 1px solid var(--tg-line); border-radius: 3px; background: var(--tg-side); padding: 2px 4px; }
+.mk-tg.web .tg-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 14px; background: var(--tg-side); border-bottom: 1px solid var(--tg-line); }
+.mk-tg.web .tg-tags button { padding: 2px 9px; border-radius: 12px; background: #eaf1f7; color: var(--tg-accent); }
+.mk-tg.web .tg-tags button.on { background: var(--tg-accent); color: #ffffff; }
+.mk-tg.web .tg-tags form { margin-left: auto; color: var(--tg-dim); }
+.mk-tg.web .tg-tags input { width: 70px; border: 1px solid var(--tg-line); border-radius: 3px; background: var(--tg-side); padding: 2px 4px; }
+.mk-tg.web .tg-log { padding: 12px 16px; gap: 10px; }
+.mk-tg.web .tg-log > li { display: flex; align-items: flex-end; gap: 8px; }
+.mk-tg.web .tg-log .tg-ava { width: 34px; height: 34px; font-size: 14px; }
+.mk-tg.web .tg-msg { display: flex; flex-direction: column; gap: 3px; max-width: 420px; }
+.mk-tg.web .tg-bubble { padding: 6px 10px 4px; background: var(--tg-bubble); border-radius: 6px; box-shadow: 0 1px 1px rgba(0, 0, 0, 0.12); }
+.mk-tg.web .tg-from { display: block; font-size: 12px; margin-bottom: 4px; }
+.mk-tg.web .tg-photo { display: block; margin: 0 -4px 6px; padding: 8px; border-radius: 4px; background: #f1f4f6; }
+.mk-tg.web .tg-name { display: flex; align-items: center; gap: 6px; font-weight: 700; }
+.mk-tg.web .tg-sum { color: var(--tg-text); opacity: 0.8; }
+.mk-tg.web .tg-facts { margin: 6px 0; }
+.mk-tg.web .tg-facts dt { color: var(--tg-dim); }
+.mk-tg.web .tg-foot { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-top: 4px; }
+.mk-tg.web .tg-foot small { color: var(--tg-dim); font-size: 11px; }
+.mk-tg.web .tg-kb, .mk-tg.web .tg-kb .mk-btn { width: 100%; }
+.mk-tg.web .mk-btn { padding: 6px 10px; border-radius: 6px; background: rgba(86, 130, 163, 0.75); color: #ffffff; font-weight: 600; text-align: center; }
+.mk-tg.web .mk-btn:hover { background: rgba(86, 130, 163, 0.9); }
+.mk-tg.web .mk-btn:disabled { opacity: 0.5; cursor: default; }
+.mk-tg.web .tg-sys { align-self: center; justify-content: center; }
+.mk-tg.web .tg-sys span { padding: 2px 10px; border-radius: 12px; background: rgba(0, 0, 0, 0.25); color: #ffffff; }
+
+/* 2021: Web K, dark and round */
+.mk-tg.web.k2 { --tg-accent: #8774e1; --tg-side: #212121; --tg-line: #2f2f2f; --tg-text: #ffffff; --tg-dim: #aaaaaa; --tg-bubble: #212121; --tg-on: #766ac8;
+  --tg-chat: linear-gradient(135deg, #1e2a24, #2b3a2c 45%, #1f2633); font: 14px/1.4 Roboto, "Segoe UI", system-ui, sans-serif; }
+.mk-tg.web.k2 .tg-body { background: var(--tg-chat); }
+.mk-tg.web.k2 aside { width: 300px; border-right-color: #0f0f0f; }
+.mk-tg.web.k2 aside form { border: 0; padding: 10px 12px; }
+.mk-tg.web.k2 aside input { border: 2px solid var(--tg-line); border-radius: 22px; background: #181818; padding: 8px 16px; }
+.mk-tg.web.k2 aside input:focus { border-color: var(--tg-accent); }
+.mk-tg.web.k2 aside ul { padding: 0 8px; }
+.mk-tg.web.k2 aside li button { border-radius: 12px; padding: 9px; }
+.mk-tg.web.k2 aside li button:hover { background: #2c2c2c; }
+.mk-tg.web.k2 aside li button.on { background: var(--tg-on); }
+.mk-tg.web.k2 .tg-ava { width: 50px; height: 50px; background-image: linear-gradient(rgba(255, 255, 255, 0.25), rgba(0, 0, 0, 0)); }
+.mk-tg.web.k2 .tg-meta i { background: var(--tg-accent); padding: 1px 7px; }
+.mk-tg.web.k2 .tg-head, .mk-tg.web.k2 .tg-tags { border-color: #0f0f0f; }
+.mk-tg.web.k2 .tg-ship select, .mk-tg.web.k2 .tg-tags select, .mk-tg.web.k2 .tg-tags input { border-radius: 10px; background: #181818; }
+.mk-tg.web.k2 .tg-tags button { background: #2c2c2c; color: #c4b8ff; border-radius: 16px; padding: 4px 12px; }
+.mk-tg.web.k2 .tg-tags button.on { background: var(--tg-accent); color: #ffffff; }
+.mk-tg.web.k2 .tg-bubble { border-radius: 15px 15px 15px 4px; padding: 8px 12px 6px; box-shadow: none; }
+.mk-tg.web.k2 .tg-photo { background: #2c2c2c; border-radius: 12px; }
+.mk-tg.web.k2 .mk-btn { background: rgba(33, 33, 33, 0.55); border-radius: 12px; backdrop-filter: blur(8px); }
+.mk-tg.web.k2 .mk-btn:hover { background: rgba(33, 33, 33, 0.8); }
+.mk-tg.web.k2 .tg-sys span { background: rgba(33, 33, 33, 0.6); }
