@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- Customers on a game title past its prime now lose happiness every day until you move them to a current title, and Pterodaktyl nodes run a daemon that fails now and then and has to keep up with its panel.
 - Game servers now crash now and then, more often with mods or on an overloaded host, and come back by themselves when auto-restart is on, and each server can restart on a daily or weekly schedule.
 - Progress bars in server panels now look like the ones each product used in its time, from boxed and segmented bars early on to thin flat ones later.
 - Backula no longer has a web console; its host page shows the director status and the backup disk the way its command line would.
