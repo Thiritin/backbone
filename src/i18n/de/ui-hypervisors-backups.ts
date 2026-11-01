@@ -119,7 +119,7 @@ export default {
   "vw.feature.pools": () => "Ressourcenpools",
   "error.maintenanceBlocked": () => "Eine laufende VM kann nicht live verschoben werden und verhindert den Wartungsmodus dieses Hosts.",
   "error.unknownRec": () => "Diese Empfehlung existiert nicht mehr.",
-  "vw.drs": () => "vSphere DRS",
+  "vw.drs": () => "vSphear DRS",
   "vw.drs.off": () => "Aus",
   "vw.drs.manual": () => "Manuell",
   "vw.drs.partial": () => "Teilautomatisiert",
