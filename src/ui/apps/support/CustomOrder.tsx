@@ -1,4 +1,4 @@
-import { CircleX, FilePlus, FileText, Globe, Receipt, Rocket, Send, UserPlus } from "lucide-react";
+import { ArrowRight, Check, CircleX, FilePlus, FileText, Globe, Receipt, Rocket, Send, UserPlus } from "lucide-react";
 import { useId, useState } from "react";
 import { t } from "../../../i18n/en";
 import { euroCents } from "../../../sim/00-core/money";
@@ -61,18 +61,21 @@ function Load({ title, cap, used, size }: { title: string; cap: Resources; used:
 // and the load of the chosen one. An upgrade frees the service it replaces wherever that runs now.
 function servers(game: GameState, product: Product, city: string, size: Resources) {
   return routeOptions(game, product, city, size).flatMap((c) =>
-    game.clusters.find((x) => x.id === c.id)?.vm ? [{ ...c, title: `${c.name} · ${c.az}` }] : c.nodes.map((d) => ({ ...d, title: `${d.name} · ${c.name}` })));
+    game.clusters.find((x) => x.id === c.id)?.vm ? [{ ...c, title: `${c.name} · ${c.az}` }] : c.nodes.map((d) => ({ ...d, title: d.name === c.name ? d.name : `${d.name} · ${c.name}` })));
 }
 
-// The server an upgrade grows on by default: the one it runs on now, else the first with room.
-function defaultServer(game: GameState, r: SalesRequest): string {
-  if (r.route && r.route !== "auto") return r.route;
-  const list = servers(game, r.product, r.city, sizeOf(r.spec!)), old = game.workloads.find((w) => w.serviceId === r.serviceId);
-  return (list.find((x) => x.id === old?.deviceId || x.id === old?.clusterId) ?? list.find((x) => x.fits) ?? list[0])?.id ?? "";
+// Where an upgrade grows: the server it runs on now when that has room for the growth, else the first with room.
+function upgradeHome(game: GameState, r: SalesRequest) {
+  const size = sizeOf(r.spec!), list = servers(game, r.product, r.city, size), old = game.workloads.find((w) => w.serviceId === r.serviceId);
+  const home = list.find((x) => x.id === old?.deviceId || x.id === old?.clusterId);
+  const holds = !!home && !!old && home.free.vcpu + old.vcpu >= size.vcpu && home.free.ramGb + old.ramGb >= size.ramGb && home.free.diskGb + old.diskGb >= size.diskGb;
+  const others = list.filter((x) => x !== home);
+  const route = r.route && r.route !== "auto" ? r.route : (holds ? home : others.find((x) => x.fits) ?? others[0])?.id ?? "";
+  return { home, holds, others: others.length > 0, route };
 }
 
-export function RouteCards({ product, city, size, value, onChange, disabled, serviceId }: {
-  product: Product; city: string; size: Resources; value: string; onChange: (v: string) => void; disabled?: boolean; serviceId?: string;
+export function RouteCards({ product, city, size, value, onChange, disabled, serviceId, load = true }: {
+  product: Product; city: string; size: Resources; value: string; onChange: (v: string) => void; disabled?: boolean; serviceId?: string; load?: boolean;
 }) {
   const game = useStore((s) => s.game);
   const list = servers(game, product, city, size), name = useId();
@@ -91,7 +94,7 @@ export function RouteCards({ product, city, size, value, onChange, disabled, ser
           </label>
         ))}
       </div>
-      {target && used && (size.vcpu || size.ramGb || size.diskGb) ? <Load title={target.title} cap={target.cap} used={used} size={size} /> : null}
+      {load && target && used && (size.vcpu || size.ramGb || size.diskGb) ? <Load title={target.title} cap={target.cap} used={used} size={size} /> : null}
     </>
   );
 }
@@ -230,32 +233,40 @@ export function CustomCompose({ tk, r }: { tk: Ticket; r: SalesRequest }) {
   );
 }
 
-// An upgrade of a custom service: current and requested resources, the new monthly price and where it grows.
+// An upgrade of a custom service: each resource from now to requested, the new monthly price, and a server choice only
+// when the one it runs on has no room for the growth.
 export function UpgradeCompose({ r }: { r: SalesRequest }) {
   const game = useStore((s) => s.game);
   const act = useStore((s) => s.act);
   const v = game.services.find((x) => x.id === r.serviceId);
   const [price, setPrice] = useState(r.counter ?? r.quote ?? r.reference);
-  const [route, setRoute] = useState(() => defaultServer(game, r));
+  const [{ home, holds, others, route: first }] = useState(() => (r.spec ? upgradeHome(game, r) : { home: undefined, holds: false, others: false, route: "" }));
+  const [route, setRoute] = useState(first);
   if (!v?.spec || !r.spec) return null;
-  const current = v.price * 730, open = ["open", "countered", "refused"].includes(r.status), locked = r.status === "quoted";
+  const current = v.price * 730, open = ["open", "countered", "refused"].includes(r.status), locked = r.status === "quoted", editing = open || locked;
   const rows: [string, number, number, string][] = r.product === "webHosting"
     ? [[t("support.space"), v.spec.diskGb, r.spec.diskGb, "GB"], [t("support.traffic"), v.spec.trafficGb, r.spec.trafficGb, "GB"], [t("support.mailboxes"), v.spec.mailboxes, r.spec.mailboxes, ""]]
     : [["vCPU", v.spec.vcpu, r.spec.vcpu, ""], ["RAM", v.spec.ramGb, r.spec.ramGb, "GB"], [t("support.disk"), v.spec.diskGb, r.spec.diskGb, "GB"]];
   return (
-    <>
-      <table className="table upgrade-table">
-        <thead><tr><th>{t("support.resource")}</th><th className="r">{t("support.now")}</th><th className="r">{t("support.requested")}</th></tr></thead>
-        <tbody>
-          {rows.map(([k, a, b, u]) => <tr key={k}><td>{k}</td><td className="r num">{n(a)} {u}</td><td className="r num">{n(b)} {u}</td></tr>)}
-          <tr><td>{t("support.monthlyPrice")}</td><td className="r num">{euroCents(current)}</td><td className="r num">{euroCents(price)}</td></tr>
-        </tbody>
-      </table>
-      {(open || locked) && (
+    <div className="upgrade">
+      <div className="upgrade-diff">
+        {rows.map(([k, a, b, u]) => (
+          <div key={k} className="upgrade-row"><span>{k}</span><span className="num">{n(a)} {u}</span><ArrowRight aria-hidden /><span className="num">{n(b)} {u}</span></div>
+        ))}
+        <div className="upgrade-row price">
+          <span>{t("support.monthlyPrice")}</span><span className="num">{euroCents(current)}</span><ArrowRight aria-hidden />
+          {editing
+            ? <span className="upgrade-price">
+                <PriceField value={price} reference={r.reference} onChange={setPrice} disabled={locked} label={t("support.newMonthlyPrice")} />
+                <span className="sales-total">{t("support.difference", { amount: `${price >= current ? "+" : ""}${euroCents(price - current)}` })}</span>
+              </span>
+            : <span className="num">{euroCents(price)}</span>}
+        </div>
+      </div>
+      {editing && (
         <div className="compose custom-steps">
-          <PriceField value={price} reference={r.reference} onChange={setPrice} disabled={locked} label={t("support.newMonthlyPrice")} />
-          <span className="sales-total">{t("support.difference", { amount: `${price >= current ? "+" : ""}${euroCents(price - current)}` })}</span>
-          <RouteCards product={r.product} city={r.city} size={sizeOf(r.spec)} value={route} onChange={setRoute} disabled={locked} serviceId={r.serviceId ?? undefined} />
+          {home && <div className="upgrade-home"><span>{home.title}</span>{holds ? <Check aria-hidden /> : <span className="pill">{t("support.full")}</span>}</div>}
+          {!holds && others && <RouteCards product={r.product} city={r.city} size={sizeOf(r.spec)} value={route} onChange={setRoute} disabled={locked} serviceId={r.serviceId ?? undefined} load={false} />}
           <div className="actions-row">
             <button className="btn ghost" disabled={locked} onClick={() => act(decline, r.id)}><CircleX />{t("support.decline")}</button>
             <span className="grow" />
@@ -263,6 +274,6 @@ export function UpgradeCompose({ r }: { r: SalesRequest }) {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
