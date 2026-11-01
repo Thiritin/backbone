@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- You can keep working while the game runs at 2× or 4×, and pausing now dims the desktop with a Paused overlay.
 - Routers you mount in a datacenter now run their own network behind the provider's handoff with a WebFigg or J-Webb web interface, and the desk reaches that network only once you switch on the router's VPN.
 - Layer 3 switches can route between VLANs, every VM takes its own address from the local network's DHCP pool so a full pool stops new VPS sales, and enterprise customers need a private network carried as a VLAN to every server their VMs run on.
 - A new Chat app in the dock opens the Backbone Discord and changes from ICU to Skipe to Diskord as the years pass; you can remove it from the dock like any other app.
