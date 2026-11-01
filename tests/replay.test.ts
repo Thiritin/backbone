@@ -8,6 +8,7 @@ import { type GameState } from "../src/sim/50-state";
 import { SCORE_END, scores } from "../src/sim/80-business/scores";
 import { ACTIONS, actionName, LOG_CAP, runAction } from "../src/sim/90-actions/index";
 import { installPanel } from "../src/sim/90-actions/clusters";
+import { setPortShare } from "../src/sim/90-actions/lan";
 import { setCompany } from "../src/sim/90-actions/company";
 import { openBankAccount } from "../src/sim/90-actions/bank";
 import { savingsOf } from "../src/sim/46-finance/bank";
@@ -43,6 +44,7 @@ function shortGame(): GameState {
   ok(store().act(orderHomeLine, "dsl-16"));
   play(24 * 9);
   ok(store().act(installPanel, srv, "freepanel"));
+  ok(store().act(setPortShare, "dev5", srv, "web"));
   play(24 * 20);
   return store().game;
 }
@@ -52,7 +54,7 @@ describe("action log", () => {
     const s = shortGame();
     const psus = s.log.filter((e) => e.name === "setPlugged").length;
     expect(psus).toBeGreaterThan(0);
-    expect(s.log.map((e) => e.name)).toEqual(["openBankAccount", "setCompany", "buyDevice", "mountDevice", ...Array(psus).fill("setPlugged"), "mountDevice", "connect", "connect", "orderHomeLine", "installPanel"]);
+    expect(s.log.map((e) => e.name)).toEqual(["openBankAccount", "setCompany", "buyDevice", "mountDevice", ...Array(psus).fill("setPlugged"), "mountDevice", "connect", "connect", "orderHomeLine", "installPanel", "setPortShare"]);
     expect(s.log[2]).toEqual({ hour: 0, minute: 0, name: "buyDevice", args: ["g1-compute", "Dwell", 1, "loc1"] });
     expect(store().act(mountDevice, "nope", "rack2", 1).ok).toBe(false);
     expect(store().game.log).toHaveLength(s.log.length);
