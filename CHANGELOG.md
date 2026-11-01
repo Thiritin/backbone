@@ -5,6 +5,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-01
 
 - Books has a Products tab where you set up the packages you sell, each with a size, SLA, prices per billing cycle and a setup fee.
+- Every licensed product's website has a shop with its editions and prices, a cart, a checkout paid from the bank, and an order email with the licence keys.
+- A My account page on each product website lists the licences bought there with their key, machine and renewal date, and cancels a monthly licence at the end of its term.
 - Password managers in your browser no longer offer to fill or save the logins inside the game.
 - The Debiant installer lets you type your own hostname for the machine or keep the one it suggests.
 - HyperVee VMs from 2012 can replicate to a second host and fail over to it, and HyperVee hosts get a Virtual Switch Manager with external, internal and private switches.

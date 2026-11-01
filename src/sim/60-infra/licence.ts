@@ -49,11 +49,15 @@ const isNewer = (product: string, installed: string | null, major: string): bool
 
 // An assigned key makes an install active until it lapses, unless it is for an older major version; without one the install
 // runs its trial or has ended. Null for free software.
+// A lapsed key, or a cancelled term key past the term it paid for.
+export const keyExpired = (s: GameState, k: Licence): boolean =>
+  k.lapsedAt !== null || (k.covers.kind === "term" && k.renewsAt === null && s.hour >= k.covers.until);
+
 export function licenceStatus(s: GameState, machineId: string, product: string): LicenceStatus | null {
   if (!isLicensed(product)) return null;
   const k = assignedKey(s, machineId, product);
   if (k?.covers.kind === "version" && isNewer(product, installedVersion(s, machineId, product), k.covers.major)) return "unlicensed";
-  if (k) return k.lapsedAt === null ? "active" : "lapsed";
+  if (k) return keyExpired(s, k) ? "lapsed" : "active";
   const trial = trialOf(s, machineId, product);
   return trial && s.hour < trial.until ? "trial" : "ended";
 }
