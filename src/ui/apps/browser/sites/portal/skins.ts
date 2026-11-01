@@ -2,6 +2,9 @@ import type { FC } from "react";
 import type { ShopId } from "../../../../../sim/10-catalog/shops";
 import type { GameState } from "../../../../../sim/50-state";
 import type { PortalArea, PortalIds, PortalRoute } from "../../../../../sim/80-business/portal";
+import { clientExitSkin } from "./clientexit";
+import { handRolledSkin } from "./handrolled";
+import { modemBillSkin } from "./modembill";
 import { makeSkin } from "./shared/makeSkin";
 import { Plain } from "./plain/Plain";
 import { WhmCacheAdmin } from "./whmCache/Admin";
@@ -13,6 +16,7 @@ export interface Skin { Admin: FC<SkinProps>; Store: FC<SkinProps>; Client: FC<S
 // A shop system without a skin of its own looks plain.
 const SKINS: Partial<Record<ShopId, Partial<Skin>>> = {
   whmCache: { ...makeSkin({ cls: "whm-shop", nav: "top", stepsFrom: 2013 }), Admin: WhmCacheAdmin },
+  handRolled: handRolledSkin, modemBill: modemBillSkin, clientExit: clientExitSkin,
 };
 
 export const skinOf = (variant: ShopId): Skin => ({ ...Plain, ...SKINS[variant] });

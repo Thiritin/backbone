@@ -1,0 +1,10 @@
+/* Hand-rolled: bare table and Times, then bootstrap 2 and 5 defaults */
+.sk-hand-early { font-family: "Times New Roman", serif; background: #fff; }
+.sk-hand-early .shop-head { border-bottom: 2px solid #000; }
+.sk-hand-early .btn { background: #d4d0c8; border: 2px outset #fff; color: #000; }
+.sk-hand-early .pt-table, .sk-hand-early .pt-table th, .sk-hand-early .pt-table td { border: 1px solid #000; }
+.sk-hand-mid { font-family: "Helvetica Neue", Arial, sans-serif; }
+.sk-hand-mid .shop-head { background: #f5f5f5; border-bottom: 1px solid #e5e5e5; }
+.sk-hand-mid .btn.primary { background: #0088cc; color: #fff; border: 1px solid #006dcc; }
+.sk-hand-late .shop-head { background: #212529; color: #fff; }
+.sk-hand-late .btn.primary { background: #0d6efd; color: #fff; border-radius: 6px; }
