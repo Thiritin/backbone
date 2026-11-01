@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- The Pear Store sells KeePassive, a password manager that offers to save your router and bank logins after you type them once and fills them in on every later visit.
 - Pulling the power cords, a power outage or overheating now aborts a running OS install, and a server can be shut down from the installer.
 - The RAID level can no longer be changed while an OS installs.
 - The Pleskit website now says its license is a monthly fee per server that grows with the domains it hosts.

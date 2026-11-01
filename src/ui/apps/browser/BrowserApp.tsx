@@ -18,6 +18,7 @@ import type { OsImage } from "../../../sim/10-catalog/server-os";
 import { useSessionState } from "../../session";
 import { t } from "../../../i18n/en";
 import { useFocus, useStore, useWin } from "../../store";
+import { VaultOffer } from "../../vault";
 import { Favicon } from "./Favicon";
 import { ConsolePage } from "./consoles/ConsolePage";
 import { PageError } from "./pageAct";
@@ -286,6 +287,7 @@ export function BrowserApp() {
           </button>
         ))}
       </div>
+      <VaultOffer />
       <Viewport key={`${tab.id}:${tab.nav}`} game={game} r={r} go={go} />
     </div>
   );
