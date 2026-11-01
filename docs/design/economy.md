@@ -389,7 +389,7 @@ P(j) = \frac{e^{U_j/\tau}}{\sum_k e^{U_k/\tau}}
 | Online shop | 0.30 | 0.55 | 0.15 | 1.3× | Premium | 5× |
 | Enterprise | 0.35 | 0.55 | 0.10 | 1.3× | Premium | 4× |
 
-**Competitors.** Four fixed archetypes sell in every city. Their scores never change.
+**Competitors.** Four archetypes sell in every city. Their scores drift over the years as described in [competitors.md](competitors.md).
 
 | Competitor | P | R | C | Sells |
 | --- | --- | --- | --- | --- |

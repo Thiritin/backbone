@@ -38,6 +38,8 @@ export const NEWS_EN: Record<string, (p: Params) => string> = {
     : "Handelsblah reports that generative AI has companies queuing for rented GPU servers, and hosters with free cards can name their price."),
   "event.news.design.title": (p) => `Web design of ${p.year}`,
   "event.news.design.text": (p) => `Handelsblah reports that visitors now expect the ${p.year} look from every website, and older designs lose requests.`,
+  "event.news.rivalOutage.title": (p) => `${p.name}: ${p.city} down for ${p.hours} hours`,
+  "event.news.rivalOutage.text": (p) => `Golem.dy reports that customers of ${p.name} in ${p.city} could not reach their sites for ${p.hours} hours.`,
   "event.news.line.title": (p) => `${p.line} could sell`,
   "event.news.line.text": (p) => `Handelsblah reports that you can deliver ${p.line} today and have not listed it on your website.`,
   "event.news.models.title": () => "New hardware in the shop",
