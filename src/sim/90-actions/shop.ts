@@ -28,7 +28,7 @@ export function chooseShop(s: GameState, id: ShopId, own = false): ActionResult 
   if (year < v.from || (v.until !== undefined && year > v.until)) return fail("error.shopNotSold");
   if (own && !v.own) return fail("error.shopNoOwn");
   const price = own && v.own ? v.own.price : v.setup;
-  if (s.cash < price) return fail("error.noCash");
+  if (price > 0 && s.cash < price) return fail("error.noCash");
   pay(s, price, "ledger.shopSetup", { name: v.name });
   s.shop = { ...newShop(), variant: id, owned: own, since: s.hour, readyAt: s.hour + SHOP_SETUP_HOURS, groups: s.shop.groups.length ? s.shop.groups : firstGroups(s), products: s.shop.products, productGroups: s.shop.productGroups };
   return { ok: true, id };
@@ -41,7 +41,7 @@ export function buyModule(s: GameState, module: string): ActionResult {
   if (!v) return fail("error.needsShop");
   if (v.extra === null) return fail("error.moduleNotSold");
   const price = v.extra;
-  if (s.cash < price) return fail("error.noCash");
+  if (price > 0 && s.cash < price) return fail("error.noCash");
   pay(s, price, "ledger.shopModule", { module });
   s.shop = { ...s.shop, modules: { ...s.shop.modules, [module]: s.hour + (v.extraHours ?? 0) } };
   return { ok: true, id: module };
