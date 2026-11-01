@@ -6,6 +6,9 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - Email orders and leads now pick the cheapest of your Books products that fits their needs and budget, accept any quote up to that product's price, and go elsewhere when none of your products fits.
 - Books products stay editable after you choose a shop system.
+- Prices now include VAT: unless you use the small business rule, the tax office expects an advance VAT return every month or quarter, and a late return brings a surcharge and then an estimate by post.
+- Switching banks now pays out the interest the old account has earned so far and keeps your saved payees.
+- After you register, the tax office sends a questionnaire by post that you answer on the new DOHLE site, choosing whether to use the small business rule, and your tax number follows by letter.
 - Every installed software now has its own command in the server's shell, such as `cpanic` or `esxwhere`, that shows its version and license, updates it, switches its channel, assigns a key or starts a trial, and runs the daily jobs of its kind.
 - Each software site has a new Docs page that lists its command and everything it takes.
 - Every bank now sells account plans, from a cheap Giro for sole traders to Business Plus and Premium with fewer booking fees and the card included, and a partnership or limited company needs the right plan before the paperwork, while a limited company also needs its share capital in the account.
