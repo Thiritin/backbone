@@ -43,6 +43,11 @@ const done = (s: GameState, id: string, patch: Partial<GameState["clusters"][num
   if (host && panel && isLicensed(panel) && !assignedKey(s, host, panel)) assignKey(s, issueKey(s, panel, topTier(panel)?.id ?? null).id, host);
   return id;
 };
+// Every node of a licensed platform holds a key, as an install from the console gives it.
+const platformKeys = (s: GameState, id: string) => {
+  const c = s.clusters.find((x) => x.id === id)!;
+  for (const n of c.nodes) if (c.platform && isLicensed(c.platform) && !assignedKey(s, n.deviceId, c.platform)) assignKey(s, issueKey(s, c.platform, null).id, n.deviceId);
+};
 const must = (r: { ok: boolean; id?: string; error?: string }): string => {
   if (!r.ok) throw new Error(r.error);
   return r.id!;
@@ -114,6 +119,7 @@ export function shareWith(s: GameState, id: string): void {
 export function hypervisor(s: GameState, deviceIds: string[], name?: string, platform = "proxmocks"): string {
   const [id] = deviceIds.map((d) => done(s, must(installHypervisor(s, bootedFor(s, d, platform), platform)), { platform }));
   for (const d of deviceIds.slice(1)) must({ ...addNode(s, id, d), id });
+  platformKeys(s, id);
   return name ? done(s, id, { name }) : id;
 }
 // Installs the cluster's hypervisor on the server, already done, and joins it to the cluster.
