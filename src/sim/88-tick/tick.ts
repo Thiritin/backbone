@@ -48,7 +48,7 @@ import { appsTick } from "../60-infra/apps";
 import { bansTick } from "../60-infra/bans";
 import { resellerTick } from "../30-customers/resellers";
 import { webpanelTick } from "../60-infra/webpanel";
-import { gamesTick } from "../60-infra/games";
+import { gamesTick } from "../85-products/games-tick";
 import { securityTick } from "../60-infra/security";
 import { usageTick } from "../60-infra/usage";
 import { productsTick } from "../85-products/products";
