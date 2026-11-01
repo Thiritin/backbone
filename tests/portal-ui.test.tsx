@@ -9,20 +9,19 @@ import { PortalSite } from "../src/ui/apps/browser/sites/portal/PortalSite";
 import { parsePortal } from "../src/sim/80-business/portal";
 import { readyGame } from "./fixtures";
 
-const shopGame = (id: Parameters<typeof chooseShop>[1] = "hostBull") => {
+const shopGame = (id: Parameters<typeof chooseShop>[1] = "whmCache") => {
   const s = readyGame(2);
   s.cash = 1e6;
   setUpChannel(s, "website");
   s.unlocks = [...s.unlocks, "shops"];
-  chooseShop(s, "hostBull");
-  if (id !== "hostBull") chooseShop(s, id);
+  chooseShop(s, id);
   s.hour += SHOP_SETUP_HOURS;
   return s;
 };
 
 describe("portal shell", () => {
   it("shows the login first", () => {
-    const html = renderToString(<PortalSite game={shopGame()} host="portal.x.test" path="/admin.php" go={() => {}} />);
+    const html = renderToString(<PortalSite game={shopGame()} host="portal.x.test" path="/admin/" go={() => {}} />);
     expect(html).toContain("Username");
     expect(html).toContain("admin");
     expect(html).toContain('type="password"');
@@ -31,16 +30,16 @@ describe("portal shell", () => {
 
   it("renders the plain admin home after the login", () => {
     const s = shopGame();
-    const route = parsePortal("hostBull", "/admin.php")!;
-    const { Admin } = skinOf("hostBull");
-    const out = renderToString(<Admin game={s} variant="hostBull" route={route} open={() => {}} />);
+    const route = parsePortal("whmCache", "/admin/")!;
+    const { Admin } = skinOf("whmCache");
+    const out = renderToString(<Admin game={s} variant="whmCache" route={route} open={() => {}} />);
     expect(out).toContain("Pending Orders");
     expect(out).toContain("Products/Services");
   });
 
   it("renders the store and client areas for every shop system", () => {
     const s = shopGame();
-    for (const v of ["hostBull", "whmCache"] as const) {
+    for (const v of ["modemBill", "whmCache"] as const) {
       const { Store, Client } = skinOf(v);
       expect(renderToString(<Store game={s} variant={v} route={{ area: "store", query: new URLSearchParams() }} open={() => {}} />)).toContain("portal");
       expect(renderToString(<Client game={s} variant={v} route={{ area: "client", query: new URLSearchParams() }} open={() => {}} />)).toContain("Client area");
