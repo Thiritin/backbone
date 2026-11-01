@@ -64,7 +64,7 @@ export default {
   "ticket.mail.bankOverdraft.subject": () => "Su descubierto",
   "ticket.mail.bankOverdraft.text": (p) => `${p.bank} ha fijado su límite de descubierto en ${euro(Number(p.limit))} con un interés del ${p.rate} % anual.`,
   "ticket.mail.bankWelcome.subject": (p) => `Su cuenta en ${p.bank}`,
-  "ticket.mail.bankWelcome.text": (p) => `Bienvenido a ${p.bank}. Su cuenta de empresa ${p.number} ya está abierta. Su PIN para la banca en línea es ${p.pin}. Puede acceder en ${p.url}.`,
+  "ticket.mail.bankWelcome.text": (p) => `Bienvenido a ${p.bank}. Su cuenta de empresa ya está abierta.\n\nNúmero de cuenta: ${p.number}\nPIN de la banca en línea: ${p.pin}\nAcceso: ${p.url}`,
   "ticket.mail.bankMtan.subject": () => "Su mTAN",
   "ticket.mail.bankMtan.text": (p) => `La mTAN de su transferencia de ${euroCents(Number(p.amount))} a ${p.name} es ${p.code}.`,
   "ticket.mail.bankTanList.subject": (p) => `Lista TAN n.º ${p.n}`,

@@ -16,7 +16,8 @@ import { BOARD_HOST } from "./sponsorboard";
 import { consoleAt, isDefaced } from "./consoles";
 import { customerSite, siteStatus, slowHost } from "./website";
 import { vendorHost, vendorLive, VENDORS } from "./vendors";
-import { OFFICE_HOST, OFFICE_TITLE, OFFICE_URL } from "./office";
+import { OFFICE_HOST, OFFICE_URL } from "./office";
+import { t } from "../../i18n/en";
 import { bankById, BANKS, type BankId } from "../10-catalog/banks";
 import { LEXWEAR_HOST } from "./lexwear";
 
@@ -72,16 +73,16 @@ export function displayHost(host: string): string {
 export const companyUrl = (s: GameState): string => `${displayHost(companyDomain(s))}/`;
 
 // The registrar under contract, or the first one before any contract.
-export function registrarUrl(s: GameState): string {
-  const r = (s.registrar && registrarById(s.registrar.id)) ?? REGISTRARS[0];
-  return `${displayHost(registrarHost(r))}/`;
-}
+export const partnerOf = (s: GameState) => (s.registrar && registrarById(s.registrar.id)) ?? REGISTRARS[0];
+export const registrarUrl = (s: GameState): string => `${displayHost(registrarHost(partnerOf(s)))}/`;
+// The partner's form that registers or transfers an order's domain.
+export const registrarFormUrl = (s: GameState, ticketId: string, transfer: boolean): string => `${registrarUrl(s)}${transfer ? "transfer" : "register"}?order=${ticketId}`;
 
 export const bankUrl = (id: BankId): string => `www.${bankById(id)!.host}/`;
 
 // Bookmarks every game has: the company site once launched, the bank and the registrar. The index lists the rest.
 export const defaultBookmarks = (s: GameState): { title: string; url: string }[] => [
-  ...(s.registration ? [] : [{ title: OFFICE_TITLE, url: OFFICE_URL }]),
+  ...(s.registration ? [] : [{ title: t("browser-sites-1.of.title"), url: OFFICE_URL }]),
   ...(s.bank ? [{ title: bankById(s.bank.id)!.name, url: bankUrl(s.bank.id) }] : []),
   ...(s.marketing.launched ? [{ title: s.company.name, url: companyUrl(s) }] : []),
   { title: ((s.registrar && registrarById(s.registrar.id)) ?? REGISTRARS[0]).name, url: registrarUrl(s) },

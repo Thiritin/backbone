@@ -7,6 +7,7 @@ import { yearOf } from "./00-core/time";
 import { MOMS_DSL, seedDcs } from "./20-world/datacenters";
 import { t } from "../i18n/en";
 import type { Customer, Product, Service } from "./30-customers/customers";
+import type { Quote } from "./30-market/quotes";
 import type { BillingRules, HoldReason, Invoice, Loan, Transfer } from "./45-billing/billing";
 import type { Ticket } from "./40-support/tickets";
 import type { Policy } from "./46-finance/finance";
@@ -42,6 +43,7 @@ import { firstHostNo } from "./30-customers/hostnames";
 import { newShop, type ShopState } from "./80-business/shop";
 import type { BankAccount } from "./46-finance/bank";
 import type { Payable } from "./46-finance/payables";
+import type { Letter } from "./40-support/letters";
 import type { TrendPoint } from "./80-business/trend";
 
 // 3: GPU line servers carry their preset cards.
@@ -133,8 +135,10 @@ export type RebuildRate = "low" | "medium" | "high";
 export interface HostFiles { since: number; paths: Record<string, string | boolean> }
 
 // A desktop document; x and y are its icon position on the desktop in pixels.
-// An "app" doc is a desktop link whose title is the app name.
-export interface Doc { id: string; kind: "guide" | "note" | "app"; title: string; body: string; x: number; y: number }
+// An "app" doc is a desktop link whose title is the app name; a "form" doc is a downloaded application to sign.
+export interface Doc { id: string; kind: "guide" | "note" | "app" | "form"; title: string; body: string; x: number; y: number; form?: DocForm }
+// from is the legal form the company held when the form was downloaded.
+export interface DocForm { form: string; from?: string; signed: number | null }
 // domain is the company's own domain once registered; mail is its email service.
 export interface Company { name: string; logo: string; color: string; domain: string | null; mail: CompanyMail; tagline: string }
 export interface Registration { hour: number; owner: string; form: string; number: number }
@@ -167,6 +171,8 @@ export interface GameState {
   invoices: Invoice[];
   // Bank transfers from customers, matched to invoices by hand in Books.
   transfers: Transfer[];
+  // Quotes written in Books for order tickets.
+  quotes: Quote[];
   // Hour up to which each yearly service is invoiced.
   yearlyBilledUntil: Record<string, number>;
   loans: Loan[];
@@ -308,6 +314,10 @@ export interface GameState {
   bank: BankAccount | null;
   // Supplier invoices to pay by transfer (46-finance/payables.ts).
   payables: Payable[];
+  // Paper post, delivered and on its way (40-support/letters.ts).
+  letters: Letter[];
+  // The last calendar year the chamber of commerce billed; 0 before the first bill (80-business/paperwork.ts).
+  chamberYear: number;
   // Bought software modules by id; "hbci" lets Books talk to the bank.
   modules: string[];
 }
@@ -359,6 +369,7 @@ export const newGame = (seed: number): GameState => ({
   ledger: [], licenses: [], media: { images: [], stick: { os: null, in: null } }, leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], contracts: [], unlocks: [], training: null, knowHow: 0, installed: ["Browser"], kbReads: {}, checklist: [], seenChanges: [], undocked: [], os: "aqua",
   customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], files: {},
   invoices: [], transfers: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
+  quotes: [],
   billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 }, autoOrders: false, reviewOrders: false, screenOrders: false, screenChecks: 0, chargebackStrikes: 0,
   shop: newShop(),
   heldCustomers: [],
@@ -389,6 +400,8 @@ export const newGame = (seed: number): GameState => ({
   log: [], challenge: null, registration: null, arrived: [], score: { netWorth: null, level3: null, happySum: 0, happyHours: 0 }, trend: [],
   bank: null,
   payables: [],
+  letters: [],
+  chamberYear: 0,
   modules: [],
 });
 

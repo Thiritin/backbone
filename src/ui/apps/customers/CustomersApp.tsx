@@ -12,7 +12,6 @@ import { monthYear, moodClass } from "../support/labels";
 import "../support/support.css";
 import "../billing/billing.css";
 import { CustomerPage, Mood, StatusChip, type Row, type Status, type Tab } from "./CustomerPage";
-import { NewCustomer } from "./NewCustomer";
 import { TrendCharts } from "./TrendCharts";
 import "./customers.css";
 
@@ -67,13 +66,14 @@ export function CustomerLink({ id, name }: { id: string; name: string }) {
 
 export function CustomersApp() {
   const game = useStore((s) => s.game);
+  const openApp = useStore((s) => s.openApp);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Status | "current">("current");
   const [band, setBand] = useState("any");
   const [withTickets, setWithTickets] = useState(false);
   const [sort, setSort] = useState<{ key: Key; dir: number }>({ key: "name", dir: 1 });
   const [charts, setCharts] = useState(false);
-  const [sel, setSel] = useState<string | null>(null), [adding, setAdding] = useState<string | null>(null);
+  const [sel, setSel] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("summary");
   const show = (id: string, t: Tab = "summary") => { setTab(t); setSel(id); };
   const menu = (id: string) => (): MenuEntry[] => [
@@ -85,7 +85,6 @@ export function CustomersApp() {
   ];
   const all = useMemo(() => rows(game), [game]);
   useFocus("Customers", (f) => {
-    if (f.kind === "newCustomer") { setSel(null); setAdding(f.id); return; }
     const r = all.find((x) => x.c.id === f.id);
     if (f.kind !== "customer" || !r) return;
     setQuery("");
@@ -106,14 +105,13 @@ export function CustomersApp() {
   const current = all.find((r) => r.c.id === sel);
   const sortBy = (key: Key) => setSort(sort.key === key ? { key, dir: -sort.dir } : { key, dir: 1 });
 
-  if (adding !== null) return <div className="cus"><div className="cus-scroll"><NewCustomer game={game} initial={adding} onDone={() => setAdding(null)} /></div></div>;
   if (current) return <div className="cus"><CustomerPage key={current.c.id} r={current} tab={tab} onBack={() => setSel(null)} /></div>;
   return (
     <div className="cus">
       <div className="cus-main">
         <div className="cus-bar">
           <label className="search"><Search /><input type="search" placeholder={t("misc.search")} aria-label={t("misc.searchCustomers")} value={query} onChange={(e) => setQuery(e.target.value)} /></label>
-          <button className="btn cus-toggle" onClick={() => setAdding("")}><UserPlus />{t("pkg.newCustomer")}</button>
+          <button className="btn cus-toggle" onClick={() => openApp("Books", { kind: "newCustomer", id: "" })}><UserPlus />{t("pkg.newCustomer")}</button>
           <button className="btn cus-toggle" aria-pressed={charts} onClick={() => setCharts(!charts)}><ChartLine />{t("misc.history")}</button>
           <div className="seg" role="group" aria-label={t("misc.status")}>
             {FILTERS.map((f) => <button key={f.id} aria-pressed={filter === f.id} onClick={() => setFilter(f.id)}>{f.label}</button>)}

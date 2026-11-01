@@ -8,6 +8,7 @@ import { senderById, subjectParams, TAKEDOWN_HOURS } from "../../../sim/40-suppo
 import { EXTENSION_DAYS } from "../../../sim/45-billing/billing";
 import { requestName, requirementsFor, type SalesRequest } from "../../../sim/30-market/market";
 import { orderOf } from "../../../sim/30-market/orders";
+import { addressLines, mailedAddress } from "../../../sim/30-customers/addresses";
 import { companyParams } from "../../../sim/40-support/replies";
 import type { GameState } from "../../../sim/50-state";
 import { acceptSponsorship, declineSponsorship } from "../../../sim/90-actions/community";
@@ -25,6 +26,7 @@ import { CustomerCard } from "./CustomerCard";
 import { Reports } from "./Reports";
 import { supportApp } from "./desk";
 import { CustomCompose, InvoicePill } from "./CustomOrder";
+import { Compose } from "./Compose";
 import { specText } from "../../../sim/30-market/spec";
 import { OFFERS } from "../../../sim/80-business/walk";
 import { LICENCE, lexwearUrl, NEWSLETTER } from "../../../sim/80-business/lexwear";
@@ -141,6 +143,7 @@ export function SupportApp() {
   const [query, setQuery] = useSessionState("support.query", "");
   // The email settings: the Settings button and the app menu open them.
   const [setup, setSetup] = useSessionState("support.setup", false);
+  const [composing, setComposing] = useSessionState("support.compose", false);
   const desk = deskOf(game);
   const { style, brand, icon: Logo, tile } = supportApp(game);
   const has = (f: DeskFeature) => deskHas(game, f);
@@ -191,7 +194,8 @@ export function SupportApp() {
       <header className="sup-brand">
         <span className="sup-logo" style={{ "--tile": tile } as CSSProperties}><Logo /></span>
         <strong>{brand}</strong>
-        <button className="btn sup-settings" onClick={() => setSetup(true)}>{t("support.settings")}</button>
+        <button className="btn ghost sup-settings" onClick={() => setComposing(true)}>{t("paperwork.mail.new")}</button>
+        <button className="btn ghost sup-settings sup-settings-2" onClick={() => setSetup(true)}>{t("support.settings")}</button>
       </header>
       {setup && <EmailSettings onClose={() => setSetup(false)} />}
       {desk && <aside className="sidebar sup-side">
@@ -224,7 +228,8 @@ export function SupportApp() {
         {!list.length && <div className="sup-none">{t("support.noEmails")}</div>}
       </div>
 
-      {upgrade ? <Card key={upgrade.id} r={upgrade} />
+      {composing ? <Compose onClose={() => setComposing(false)} />
+        : upgrade ? <Card key={upgrade.id} r={upgrade} />
         : current && order ? <OrderThread key={current.id} tk={current} r={order} gates={gates} />
         : current ? <Thread key={current.id} tk={current} gates={gates} />
         : <div className="sup-detail sup-none">{t("support.noEmailSelected")}</div>}
@@ -292,7 +297,7 @@ function OrderThread({ tk, r, gates }: { tk: Ticket; r: SalesRequest; gates: Gat
         {r.thread.map((m, i) => (
           <div key={i} className={`msg${m.from === "you" ? " you" : ""}`}>
             <div className="from">{m.from === "you" ? m.by ?? t("support.you") : r.contact} · <span className="num">{stamp(m.hour)}</span></div>
-            <p>{t(m.key, m.params)}{i === 0 && r.kind !== "expansion" && ` ${t(`request.use.${r.profile}`)}`}</p>
+            <p>{t(m.key, m.params)}{i === 0 && r.kind !== "expansion" && ` ${t(`request.use.${r.profile}`)}`}{i === 0 && r.kind === "order" && `\n\n${addressLines(mailedAddress(game.seed, r)).join("\n")}`}</p>
           </div>
         ))}
         {tk.work && <div className="event"><span>{t("support.queuedUntil", { time: stamp(tk.work.doneAt / 60) })}</span></div>}

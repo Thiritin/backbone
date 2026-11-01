@@ -1,4 +1,4 @@
-import { Users } from "lucide-react";
+import { UserPlus, Users } from "lucide-react";
 import { useState } from "react";
 import { euroPrice } from "../../../sim/00-core/money";
 import { activeServices } from "../../../sim/30-customers/customers";
@@ -10,18 +10,23 @@ import { menuOn } from "../../desktop/ContextMenu";
 import { useStore } from "../../store";
 import { formatDay } from "../billing/format";
 import { monthYear } from "../support/labels";
+import { NEW, NewCustomer } from "./NewCustomer";
 
 export function CustomersTab({ focus }: { focus: string | null }) {
   const game = useStore((s) => s.game), act = useStore((s) => s.act);
   const list = game.customers.filter((c) => !c.sponsor).sort((a, b) => Number(a.churnedAt !== null) - Number(b.churnedAt !== null) || b.since - a.since);
-  const [selected, setSelected] = useState<string | null>(focus ?? list[0]?.id ?? null);
+  const [selected, setSelected] = useState<string | null>(focus?.startsWith(NEW) ? null : focus ?? list[0]?.id ?? null);
+  const [adding, setAdding] = useState<string | null>(focus?.startsWith(NEW) ? focus.slice(NEW.length) : null);
   const c = list.find((x) => x.id === selected);
-  if (list.length === 0) return <div className="fin-empty"><Users />{t("books.noCustomers")}</div>;
+  if (adding !== null) return <NewCustomer game={game} initial={adding} onDone={() => setAdding(null)} />;
+  const add = <button className="btn" onClick={() => setAdding("")}><UserPlus />{t("pkg.newCustomer")}</button>;
+  if (list.length === 0) return <div className="fin-empty"><Users />{t("books.noCustomers")}{add}</div>;
   const services = c ? activeServices(game.services, c.id) : [];
   const domains = c ? game.domains.filter((d) => d.customerId === c.id) : [];
   return (
     <div className="books-customers">
       <nav className="sidebar books-list" aria-label={t("books.tab.customers")}>
+        {add}
         {list.map((x) => {
           const first = activeServices(game.services, x.id)[0];
           return (

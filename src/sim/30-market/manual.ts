@@ -1,13 +1,14 @@
 // GDD, Custom orders: an order email is worked step by step, each step a reply in its thread. Quote a price and wait for the
 // customer to accept, then create the customer account, confirm the order with its invoice, register or transfer the domain
 // and set up the service. Numbers in economy.md, Custom orders.
+import { carryForward } from "./quotes";
 import { hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
 import type { Product, Service } from "../30-customers/customers";
 import { DOMAIN_FEE, domainOf, register, TRANSFER_FEE } from "../30-customers/registry";
 import { CERT_SHARE, offerCertificate } from "../30-customers/certificates";
 import { cancelCustomer, isFinal, replyDue, type Ticket } from "../40-support/tickets";
-import { DUE_DAYS, rollPayStep, type Invoice, type InvoiceLine } from "../45-billing/billing";
+import { DUE_DAYS, issue, rollPayStep, type Invoice, type InvoiceLine } from "../45-billing/billing";
 import { ACTION_MINUTES, logActivity } from "../47-staff/activity";
 import type { GameState } from "../50-state";
 import { bookable, nodeUsed, workloadsOf } from "../60-infra/cluster";
@@ -22,6 +23,7 @@ import { missingFor, requestName, REQUEST_HOURS, type SalesRequest } from "./mar
 import { mailRequest, orderOf } from "./orders";
 import { answerAt, editRequest, habitFor, loseRequest, targetFor } from "./sales";
 import { mailDelay } from "../80-business/mail";
+import { hasModule } from "../80-business/shop";
 import { belowFloor, bookingFor, covers, packageNamed, suggestedUsername, type PackageDef } from "../80-business/packages";
 import type { Sla, Spec } from "../10-catalog/products";
 import { AUTOMATION_SKILL } from "../10-catalog/research";
@@ -56,6 +58,8 @@ export const specParams = (spec: Spec, suffix = ""): Record<string, number> => (
 
 export const invoiceOf = (s: GameState, r: SalesRequest): Invoice | undefined => (r.invoiceId ? s.invoices.find((i) => i.id === r.invoiceId) : undefined);
 const needsDomain = (r: SalesRequest) => r.product === "webHosting" && !!r.domain;
+// A shop whose system has the registrar module registers its own orders' domains; every other order goes through the registrar's form.
+export const shopRegisters = (s: GameState, r: SalesRequest): boolean => !!r.shop && hasModule(s, "registrar");
 const domainDone = (s: GameState, r: SalesRequest) => !needsDomain(r) || domainOf(s, r.domain!)?.customerId === r.customerId;
 
 // The sender of the steps automation runs.
@@ -70,7 +74,7 @@ export const hostFor = (s: GameState, r: SalesRequest): string | null => preferr
 
 // Which steps the order has behind it.
 export function stepsDone(s: GameState, r: SalesRequest): Record<OrderStep, boolean> {
-  return { quote: quoteAccepted(r), account: !!r.customerId, invoice: !!r.invoiceId, domain: !!r.customerId && domainDone(s, r), provision: !!r.serviceId };
+  return { quote: quoteAccepted(r), account: !!r.customerId, invoice: !!r.invoiceId && invoiceOf(s, r)?.status !== "draft", domain: !!r.customerId && domainDone(s, r), provision: !!r.serviceId };
 }
 
 // Why a step of a custom order cannot run now, or null. Steps run in order; the domain only for web hosting. The setup
@@ -127,6 +131,33 @@ export function issueInvoice(s: GameState, customerId: string, lines: InvoiceLin
   return inv;
 }
 
+// An invoice waiting in Books to be sent; it is not due and never pays.
+export function draftInvoice(s: GameState, customerId: string, lines: InvoiceLine[]): Invoice {
+  const inv: Invoice = {
+    id: `inv${s.nextId++}`, number: `${yearOf(s.hour)}-${String(s.invoices.length + 1).padStart(4, "0")}`, customerId, lines,
+    issuedAt: s.hour, dueAt: s.hour, status: "draft", reminders: [], suspended: false, suspendedAt: null, extendedUntil: null, payStep: 0, payAt: null, paidAt: null,
+  };
+  s.invoices = [...s.invoices, inv];
+  return inv;
+}
+
+// The first invoice of an order, and the quote for it: the setup fee, the first month and a new or moved domain.
+export function firstLines(s: GameState, r: SalesRequest, monthly = r.quote ?? 0, setup = r.setup ?? setupFee(s, r.product)): InvoiceLine[] {
+  const label = r.domain ?? requestName(r);
+  const lines: InvoiceLine[] = [
+    ...(setup > 0 ? [{ serviceId: null, key: "invoice.line.setupFee", params: { label }, amount: setup }] : []),
+    termLine({ cycle: r.cycle, quote: monthly }, label),
+  ];
+  if (needsDomain(r)) lines.push({ serviceId: null, key: r.owned ? "invoice.line.domainTransfer" : "invoice.line.domain", params: { domain: r.domain! }, amount: r.owned ? TRANSFER_FEE : DOMAIN_FEE });
+  return lines;
+}
+
+// Sends the first invoice of a live order as the confirmation step; false when the invoice belongs to no order that waits for it.
+export function sendOrderInvoice(s: GameState, inv: Invoice): boolean {
+  const r = s.sales.requests.find((x) => x.kind === "order" && x.invoiceId === inv.id), t = r && s.tickets.find((x) => x.id === r.ticketId);
+  return !!t && !stepError(s, t, "invoice") && !applyStep(s, t, "invoice");
+}
+
 const setTicket = (s: GameState, id: string, fields: Partial<Ticket>) => {
   s.tickets = s.tickets.map((x) => (x.id === id ? { ...x, ...fields } : x));
 };
@@ -156,20 +187,18 @@ export function applyStep(s: GameState, t: Ticket, step: OrderStep, by?: string)
     if (r.shady || r.fraud) s.customers = s.customers.map((c) => (c.id === id ? { ...c, ...hiddenTraits(s, r) } : c));
     editRequest(s, r.id, () => ({ customerId: id }));
     setTicket(s, t.id, { customerId: id, updatedAt: s.hour });
+    s.quotes = s.quotes.map((q) => (q.ticketId === t.id ? { ...q, customerId: id } : q));
     log(id);
     return null;
   }
   const customerId = r.customerId!;
   if (step === "invoice") {
-    const label = r.domain ?? requestName(r), setup = r.setup ?? setupFee(s, r.product);
-    const lines: InvoiceLine[] = [
-      ...(setup > 0 ? [{ serviceId: null, key: "invoice.line.setupFee", params: { label }, amount: setup }] : []),
-      termLine(r, label),
-    ];
-    if (needsDomain(r)) lines.push({ serviceId: null, key: r.owned ? "invoice.line.domainTransfer" : "invoice.line.domain", params: { domain: r.domain! }, amount: r.owned ? TRANSFER_FEE : DOMAIN_FEE });
-    const inv = issueInvoice(s, customerId, lines, ORDER_PAY_DAYS - 1);
+    // The draft converted from the quote, else one made now; the customer pays it by bank transfer.
+    const draft = invoiceOf(s, r), inv = draft?.status === "draft" ? draft : draftInvoice(s, customerId, firstLines(s, r));
+    issue(s, inv, ORDER_PAY_DAYS - 1);
     editRequest(s, r.id, () => ({ invoiceId: inv.id, status: "quoted", replyAt: null }));
-    mailRequest(s, r.id, "order.invoice", by, { invoice: inv.number, total: cents(lines.reduce((n, l) => n + l.amount, 0)) });
+    carryForward(s, t.id, inv.id);
+    mailRequest(s, r.id, "order.invoice", by, { invoice: inv.number, total: cents(inv.lines.reduce((n, l) => n + l.amount, 0)) });
     setTicket(s, t.id, { status: "waiting", updatedAt: s.hour });
   } else if (step === "domain") {
     register(s, r.domain!, customerId, !!r.owned);
@@ -248,7 +277,7 @@ export function ordersTick(s: GameState): SimEvent[] {
     s.customers = s.customers.map((x) => (x.id === c.id ? { ...x } : x));
     s.tickets = s.tickets.map((x) => ({ ...x }));
     cancelCustomer(s, s.customers.find((x) => x.id === c.id)!);
-    s.invoices = s.invoices.map((i) => (i.id === r.invoiceId && (i.status === "open" || i.status === "overdue") ? { ...i, status: "writtenOff", payAt: null, suspended: false } : i));
+    s.invoices = s.invoices.map((i) => (i.id === r.invoiceId && (i.status === "draft" || i.status === "open" || i.status === "overdue") ? { ...i, status: "writtenOff", payAt: null, suspended: false } : i));
   }
   return events;
 }
