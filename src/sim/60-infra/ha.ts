@@ -2,7 +2,8 @@
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { softwareById } from "../10-catalog/platforms";
-import { balances, datastoreOn, memberUp, diskMovesLive, insideVm, isOwnVm, liveBetween, lostDisk, moveControlPlaneOff, pickNode, type Cluster, type Workload } from "./cluster";
+import { balances, datastoreOn, memberUp, diskMovesLive, insideVm, isOwnVm, liveBetween, movesLive, lostDisk, moveControlPlaneOff, pickNode, type Cluster, type Workload } from "./cluster";
+import { groupNode, groupOf, rank, FAILBACK_HOURS } from "./hagroups";
 import { quorate } from "./quorum";
 import { cephCopies, cephOn, replicaReady, replicaStale, replicaTick } from "./replica";
 import { settleLoss } from "../90-actions/vms";
@@ -44,7 +45,7 @@ function failover(s: GameState, c: Cluster, events: SimEvent[]) {
       moved++;
       continue;
     }
-    const to = pickNode(s, cluster(s, c.id), w, w.deviceId, "spread");
+    const to = groupNode(s, cluster(s, c.id), w, w.deviceId);
     if (!to) {
       if (!w.stuck) stuck++;
       patch(s, w.id, { stuck: true });
@@ -56,6 +57,21 @@ function failover(s: GameState, c: Cluster, events: SimEvent[]) {
   }
   if (moved) events.push({ app: "Locations", key: "event.failedOver", params: { cluster: c.name, count: moved, web: c.kind === "panel" ? 1 : 0 } });
   if (stuck) events.push({ app: "Locations", key: "event.failoverStuck", params: { cluster: c.name, count: stuck, web: c.kind === "panel" ? 1 : 0 } });
+}
+
+// A VM of a group that sits below its best node moves back once that node has been available for FAILBACK_HOURS.
+function failback(s: GameState, c: Cluster) {
+  if (!quorate(s, c)) return;
+  for (const w of s.workloads.filter((x) => x.clusterId === c.id && x.deviceId && x.haGroup && !x.stopped && !x.template && x.busyUntil <= s.hour && !lostDisk(s, x))) {
+    const g = groupOf(c, w);
+    if (!g || g.noFailback) continue;
+    const to = groupNode(s, c, w, null);
+    if (!to || to === w.deviceId || rank(g, to) <= rank(g, w.deviceId)) { if (w.failbackAt !== undefined) patch(s, w.id, { failbackAt: undefined }); continue; }
+    if (w.failbackAt === undefined) { patch(s, w.id, { failbackAt: s.hour + FAILBACK_HOURS }); continue; }
+    if (s.hour < w.failbackAt) continue;
+    if (!movesLive(s, c, w, w.deviceId!, to)) for (const id of servicesIn(s, w)) s.downHours = { ...s.downHours, [id]: (s.downHours[id] ?? 0) + FAILOVER_MINUTES / 60 };
+    patch(s, w.id, { deviceId: to, placedAt: s.hour, failbackAt: undefined });
+  }
 }
 
 // A node runs hot when its RAM in use nears the installed RAM or its busy vCPUs outnumber its cores.
@@ -100,7 +116,7 @@ export function haTick(s: GameState): SimEvent[] {
   const back = (w: Workload) => w.stuck && !!w.deviceId && working(s, w.deviceId);
   if (s.workloads.some(back)) s.workloads = s.workloads.map((w) => (back(w) ? { ...w, stuck: undefined } : w));
   for (const id of s.clusters.filter((c) => c.kind === "cloud" && c.platform).map((c) => c.id)) {
-    if (cluster(s, id).ha.failover) failover(s, cluster(s, id), events);
+    if (cluster(s, id).ha.failover) { failover(s, cluster(s, id), events); failback(s, cluster(s, id)); }
     const c = cluster(s, id);
     if (c.drs !== "off" && c.ha.live && balances(s, c)) balance(s, c);
     else if (c.recs.length) s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, recs: [] } : x));
