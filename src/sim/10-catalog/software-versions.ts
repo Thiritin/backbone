@@ -191,26 +191,27 @@ export const nextMajor = (product: string, version: string, hour: number): Softw
 
 // docs/design/software-versions.md, UI generations: the first version of each generation and the console look it shows.
 // A console drawn per generation names its own look ids (docs/design/software.md, section 10); the others draw "early"
-// and "late", so each generation takes the nearer one. Horizont, HyperVee and OpenVeePeeN change look inside a generation,
-// at the version of the game year the look was drawn for.
+// and "late", so each generation takes the nearer one. Horizont and OpenVeePeeN change look inside a generation, at the
+// version of the game year the look was drawn for; HyperVee draws the flat 2012 manager as a look of its own.
 export const UI_LOOKS: Record<string, [version: string, look: string][]> = {
   cpanic: [["10", "x3"], ["11", "x3"], ["11.38", "paperLamp"], ["98", "jupitar"]],
   pleskit: [["7.5", "early"], ["10.0", "early"], ["12.0", "early"], ["17.0", "late"], ["18.0", "late"]],
   directadmen: [["1.24", "early"], ["1.60", "late"]],
   freepanel: [["1.200", "early"], ["1.700", "late"]],
-  tcadmen: [["1.0", "early"], ["2.0", "late"], ["3.0", "late"]],
+  tcadmen: [["1.0", "early"], ["2.0", "late"], ["3.0", "v3"]],
   multikraft: [["1.0", "early"], ["2.0", "late"]],
   pterodaktyl: [["0.5", "early"], ["1.0", "late"]],
-  proxmocks: [["0.9", "early"], ["2.0", "early"], ["4.0", "late"]],
-  vmwhere: [["2.5", "early"], ["5.0", "early"], ["6.5", "late"]],
-  hypervee: [["2008", "early"], ["2012", "late"], ["2019", "late"]],
+  proxmocks: [["0.9", "legacy"], ["2.0", "extGrey"], ["4.0", "flatline"]],
+  vmwhere: [["2.5", "thickClient"], ["5.0", "flecks"], ["6.5", "clearity"]],
+  hypervee: [["2008", "glossy"], ["2012", "flat"], ["2019", "honoloo"]],
   openveezee: [["2.6.9", "early"], ["7", "late"]],
-  openstash: [["Austin", "early"], ["Diablo", "early"], ["Essex", "early"], ["Havana", "early"], ["Mitaka", "late"]],
+  openstash: [["Austin", "dashboard"], ["Diablo", "dashboard"], ["Essex", "early"], ["Havana", "heat"], ["Mitaka", "late"]],
   powerdnz: [["2.9", "early"], ["4.0", "late"]],
   openveepeen: [["2.0", "early"], ["2.4", "late"]],
-  anyconnekt: [["2.0", "early"], ["4.0", "late"], ["5.0", "late"]],
+  anyconnekt: [["2.0", "early"], ["4.0", "late"], ["5.0", "secure"]],
   ownclod: [["1.0", "early"], ["10.0", "late"]],
-  minnio: [["RELEASE.2016-06-03", "early"], ["RELEASE.2021-05-11", "late"]],
+  minnio: [["RELEASE.2016-06-03", "early"], ["RELEASE.2021-05-11", "late"], ["RELEASE.2025-05-24", "browser"]],
+  veeham: [["1.0", "ribbon"], ["10.0", "refresh"], ["13.0", "web"]],
 };
 
 // What the vendor has released by the hour, oldest first.

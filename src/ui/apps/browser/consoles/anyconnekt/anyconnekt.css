@@ -1,4 +1,4 @@
-/* Sysko AnyConnekt: the blue device-manager window with big tab buttons until 2016, then flat white with teal. */
+/* Sysko AnyConnekt: the blue device-manager window with big tab buttons until 2016, flat white with teal until 2023, then the navy Sekure Client. */
 .sy[data-era="early"] { --bg: #d4d0c8; --panel: #ffffff; --line: #9ab0c8; --accent: #1f4f8f; --info: #1f4f8f; --font: Tahoma, "Segoe UI", sans-serif; --r: 0; font-size: 11.5px; }
 .sy[data-era="late"] { --bg: #f5f7f8; --panel: #ffffff; --line: #dfe3e6; --accent: #00a3b4; --info: #00808d; --font: "Helvetica Neue", Arial, sans-serif; --r: 2px; }
 
@@ -33,3 +33,25 @@
 
 .sy-gw { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; }
 .sy-gw[data-soon="true"] { color: #b26a00; }
+
+/* From 2023 the Sekure Client: a navy rail down the left, a light grey page with rounded white cards. */
+.sy[data-era="secure"] { --bg: #eef1f5; --panel: #ffffff; --fg: #1b2a3c; --muted: #5e6d80; --line: #dbe1e8; --accent: #049fd9; --info: #0a6ebd; --font: "Inter", "Segoe UI", Arial, sans-serif; --r: 10px; }
+.sy[data-era="secure"]:not(.sy-login) { flex-direction: row; }
+.sy[data-era="secure"] .sy-top { flex-direction: column; align-items: stretch; gap: 18px; width: 210px; flex: none; padding: 18px 12px; background: #0b1f3a; color: #c9d4e3; }
+.sy[data-era="secure"] .sy-logo { flex-direction: column; align-items: flex-start; gap: 2px; padding: 0 8px; font-size: 13px; color: #8fa3bd; }
+.sy[data-era="secure"] .sy-logo i { color: var(--accent); font-size: 16px; }
+.sy[data-era="secure"] .sy-logo b { color: #fff; font-size: 17px; }
+.sy[data-era="secure"] .sy-top nav { flex-direction: column; gap: 2px; flex: 1; }
+.sy[data-era="secure"] .sy-top nav button { padding: 9px 10px; border-radius: 8px; }
+.sy[data-era="secure"] .sy-top nav button:hover { background: rgb(255 255 255 / 0.06); }
+.sy[data-era="secure"] .sy-top nav button[aria-pressed="true"] { background: rgb(4 159 217 / 0.18); color: #fff; box-shadow: inset 3px 0 0 var(--accent); }
+.sy[data-era="secure"] .sy-top .cx-host { flex: none; text-align: left; padding: 0 10px; font-size: 11px; overflow-wrap: anywhere; }
+.sy[data-era="secure"] .sy-out { padding: 8px 10px; }
+.sy[data-era="secure"] .sy-main { min-width: 0; padding: 20px 24px; }
+.sy[data-era="secure"] .sy-box { border: 0; box-shadow: 0 1px 3px rgb(11 31 58 / 0.1); margin-bottom: 16px; }
+.sy[data-era="secure"] .sy-box h2 { padding: 14px 16px 8px; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.sy[data-era="secure"] .cx-table th { background: #f6f8fb; }
+.sy[data-era="secure"].sy-login { background: radial-gradient(circle at 30% 20%, #17406f, #0b1f3a 70%); }
+.sy[data-era="secure"] .sy-card { border: 0; box-shadow: 0 16px 40px rgb(0 0 0 / 0.3); }
+.sy[data-era="secure"] .sy-card .sy-logo { color: var(--muted); }
+.sy[data-era="secure"] .sy-card .sy-logo b { color: var(--fg); }

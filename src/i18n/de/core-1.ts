@@ -232,6 +232,7 @@ export default {
   "error.invoiceSettled": () => "Diese Rechnung ist bereits beglichen.",
   "error.invoiceSent": () => "Diese Rechnung wurde bereits versendet.",
   "error.transferMatched": () => "Diese Überweisung ist bereits gebucht.",
+  "error.transferChanged": () => "Die Rechnung hat sich seit der Buchung geändert.",
   "error.stepNotDue": () => "Es ist noch keine Mahnstufe fällig.",
   "error.notOverdue": () => "Diese Rechnung ist nicht überfällig.",
   "error.billingRule": () => "Diese Abrechnungsregel ist nicht verfügbar.",
