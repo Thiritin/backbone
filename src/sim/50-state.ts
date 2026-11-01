@@ -44,6 +44,7 @@ import { newShop, type ShopState } from "./80-business/shop";
 import type { BankAccount } from "./46-finance/bank";
 import type { Payable } from "./46-finance/payables";
 import type { TrendPoint } from "./80-business/trend";
+import type { StatusDay } from "./80-business/status";
 
 // 3: GPU line servers carry their preset cards.
 export const SAVE_VERSION = 3;
@@ -220,6 +221,8 @@ export interface GameState {
   installed: string[];
   // Knowledge base article reads by how-to topic, each one a ticket the customer did not write.
   kbReads: Record<string, number>;
+  // One entry per day, at most 90, of the product lines that were down, slowed or in an announced window (80-business/status.ts).
+  statusDays: StatusDay[];
   // Checklist goals the player ticked by hand.
   checklist: string[];
   // The changelog entries (date|text) the player has been shown.
@@ -359,7 +362,7 @@ export const newGame = (seed: number): GameState => ({
   racks: [{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null, overSince: { a: null, b: null } }],
   devices: [{ ...device("dev5", "home-router", "AVN", null, 0, null, "fra1-gw-01", 0), store: "loc1" }, device("dev6", "line-jack", "", null, 0, "loc1", "fra1-line-01", 0)],
   cables: [],
-  ledger: [], licenses: [], media: { images: [], stick: { os: null, in: null } }, leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], contracts: [], unlocks: [], training: null, knowHow: 0, installed: ["Browser"], kbReads: {}, checklist: [], seenChanges: [], undocked: [], os: "aqua",
+  ledger: [], licenses: [], media: { images: [], stick: { os: null, in: null } }, leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], contracts: [], unlocks: [], training: null, knowHow: 0, installed: ["Browser"], kbReads: {}, statusDays: [], checklist: [], seenChanges: [], undocked: [], os: "aqua",
   customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], files: {},
   invoices: [], transfers: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   quotes: [],

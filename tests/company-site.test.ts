@@ -11,7 +11,7 @@ describe("company site pages", () => {
     const s = readyGame(7);
     expect(sitePages(s)).toEqual(["home"]);
     s.marketing.owned = ["website"];
-    expect(sitePages(s)).toEqual(["home", "products", "about", "support"]);
+    expect(sitePages(s)).toEqual(["home", "products", "about", "contact", "legal", "support"]);
   });
 
   it("adds the knowledge base with the app and the help desk with enough customers", () => {
@@ -22,7 +22,7 @@ describe("company site pages", () => {
     expect(sitePages(s)).not.toContain("helpdesk");
     const c = s.customers[0];
     s.customers = Array.from({ length: HELPDESK_CUSTOMERS }, (_, i) => ({ ...c, id: `c${i}`, churnedAt: null }));
-    expect(sitePages(s)).toEqual(["home", "products", "kb", "helpdesk", "about", "support"]);
+    expect(sitePages(s)).toEqual(["home", "products", "kb", "helpdesk", "about", "contact", "legal", "support"]);
   });
 
   it("lists the basic how-to articles with their reads", () => {

@@ -16,6 +16,7 @@ import { salesAddress } from "./mail";
 import { CYCLE_MONTHS, CYCLES } from "../10-catalog/cycles";
 import { companyDomain } from "../30-customers/domains";
 import { lineHasProducts, portalPath, productsOf } from "./portal";
+import { STATUS_FROM_YEAR, STATUS_MIN_CUSTOMERS } from "./status";
 import { shopActive, type ShopProduct } from "./shop";
 
 export const SITE_LINES: Product[] = ["webHosting", "vps", "gameServer", "dns", "vpn", "storage", "cloud", "dedicated", "colocation", "gpu", "ssl"];
@@ -72,13 +73,16 @@ export const siteContent = (s: GameState): { lines: { product: Product; from: nu
 
 // The site grows with the company: the hand-written page is one page, the web design adds the menu, the Knowledge base
 // app adds its articles and enough customers fill a help desk with questions and answers.
-export type SitePage = "home" | "products" | "pricing" | "kb" | "helpdesk" | "about" | "support";
+export type SitePage = "home" | "products" | "pricing" | "kb" | "helpdesk" | "network" | "status" | "about" | "legal" | "contact" | "support";
 export const HELPDESK_CUSTOMERS = 25;
+export const statusPage = (s: GameState): boolean =>
+  yearOf(s.hour) >= STATUS_FROM_YEAR && s.customers.filter((c) => c.churnedAt === null).length >= STATUS_MIN_CUSTOMERS;
 export function sitePages(s: GameState): SitePage[] {
   if (!owns(s, "website")) return ["home"];
   const kb = s.installed.includes(KNOWLEDGE_BASE), desk = s.customers.filter((c) => c.churnedAt === null).length >= HELPDESK_CUSTOMERS;
   const priced = shopActive(s) && SITE_LINES.some((p) => listed(s, p) && (visibleProducts(s, p).length > 0 || !lineHasProducts(s, p)));
-  return ["home", "products", ...(priced ? ["pricing" as const] : []), ...(kb ? ["kb" as const] : []), ...(desk ? ["helpdesk" as const] : []), "about", "support"];
+  return ["home", "products", ...(priced ? ["pricing" as const] : []), ...(kb ? ["kb" as const] : []), ...(desk ? ["helpdesk" as const] : []),
+    ...(s.locations.some((l) => l.dc) ? ["network" as const] : []), ...(statusPage(s) ? ["status" as const] : []), "about", "contact", "legal", "support"];
 }
 // The articles the Knowledge base answers, with how often customers read each.
 export const kbArticles = (s: GameState): { topic: string; reads: number }[] =>

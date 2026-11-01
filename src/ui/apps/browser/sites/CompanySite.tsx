@@ -15,6 +15,7 @@ import { kbArticles, siteContent, sitePages, visibleProducts, orderLink, SITE_LI
 import { CompanyMark } from "../../company";
 import { PRODUCT } from "../../support/labels";
 import { BLURB, FEATURES, KB_STEPS, THREADS } from "./companyCopy";
+import { Contact, Legal, Network as NetworkPage, Status } from "./SitePages";
 import { AisleArt, DeskArt, RackArt } from "./SiteArt";
 import "./site.css";
 
@@ -26,7 +27,7 @@ const CYCLE_LABEL: Record<Cycle, string> = {
   monthly: t("shop-admin.cycleMonthly"), quarterly: t("shop-admin.cycleQuarterly"), annual: t("shop-admin.cycleAnnual"), biennial: t("shop-admin.cycleBiennial"),
 };
 const LABEL: Record<SitePage, string> = {
-  home: t("browser-sites-1.co.nav.home"), products: t("browser-sites-1.co.nav.products"), pricing: t("browser-sites-1.co.nav.pricing"), kb: t("browser-sites-1.co.nav.kb"), helpdesk: t("browser-sites-1.co.nav.helpdesk"), about: t("browser-sites-1.co.nav.about"), support: t("browser-sites-1.co.nav.support"),
+  home: t("browser-sites-1.co.nav.home"), products: t("browser-sites-1.co.nav.products"), pricing: t("browser-sites-1.co.nav.pricing"), network: t("browser-sites-1.co.nav.network"), status: t("browser-sites-1.co.nav.status"), legal: t("browser-sites-1.co.nav.legal"), contact: t("browser-sites-1.co.nav.contact"), kb: t("browser-sites-1.co.nav.kb"), helpdesk: t("browser-sites-1.co.nav.helpdesk"), about: t("browser-sites-1.co.nav.about"), support: t("browser-sites-1.co.nav.support"),
 };
 
 type Go = (path: string) => void;
@@ -50,7 +51,7 @@ export function CompanySite({ game, path, go }: { game: GameState; path: string;
         </div>
         {pages.length > 1 && (
           <nav className="site-nav">
-            {pages.filter((p) => p !== "home" && p !== "support").map((p) => <A key={p} to={`/${p}`} go={to} className={p === page ? "on" : undefined}>{LABEL[p]}</A>)}
+            {pages.filter((p) => p !== "home" && p !== "support" && p !== "legal" && p !== "contact").map((p) => <A key={p} to={`/${p}`} go={to} className={p === page ? "on" : undefined}>{LABEL[p]}</A>)}
             <A to="/support" go={to} className="site-button">{LABEL.support}</A>
           </nav>
         )}
@@ -60,6 +61,10 @@ export function CompanySite({ game, path, go }: { game: GameState; path: string;
       {page === "pricing" && <Pricing game={game} go={go} />}
       {page === "kb" && <Kb game={game} topic={second} go={to} />}
       {page === "helpdesk" && <HelpDesk game={game} />}
+      {page === "network" && <NetworkPage game={game} title={LABEL.network} />}
+      {page === "status" && <Status game={game} title={LABEL.status} />}
+      {page === "contact" && <Contact game={game} title={LABEL.contact} />}
+      {page === "legal" && <Legal game={game} title={LABEL.legal} />}
       {page === "about" && <About game={game} />}
       {page === "support" && <Support game={game} pages={pages} go={to} />}
       <footer className="site-foot">
