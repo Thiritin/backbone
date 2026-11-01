@@ -1675,11 +1675,11 @@ Disk use starts at 30% of booked and stops at 100%; the average customer reaches
 
 ## Resellers
 
-A reseller buys a block of accounts on a DirectAdmen or cPanic host and sells web space to their own customers. The three blocks are Small (20 accounts, 50 GB, 500 GB traffic), Medium (50 accounts, 150 GB, 1,500 GB) and Large (100 accounts, 350 GB, 4,000 GB). The monthly price of a block is 0.5 times the market price of an average web space times its account count, billed in full whether the block is filled or not.
+A reseller buys a block of accounts on a DirectAdmen or cPanic host and sells web space to their own customers. The three blocks are Small (20 accounts, 50 GB, 500 GB traffic), Medium (50 accounts, 150 GB, 1,500 GB) and Large (100 accounts, 350 GB, 4,000 GB). The player sets a price per GB of block disk; the market rate makes a Medium block cost 0.5 times the market price of an average web space times its 50 accounts. Each month the reseller pays for the share of the block in use, the block price times the mean fill of that month. HOSTtoast lists reseller blocks with the price per GB next to the rivals that sell them.
 
 The block books its full compute and disk from the day it starts. The reseller's own customers arrive linearly over 6 months up to a fill of 70%, and a cheaper block than the market price fills faster (down to 3 months at half the price per account). Resource use follows the fill, so the host carries less than it has sold.
 
-Abuse reports arrive at the rate of the filled accounts, and the reseller handles half of them; the other half come to the player as abuse tickets with the reseller as the customer. Each month there is a 2% chance that the block holds a shady account, which draws the abuse and legal follow-ups of a shady customer until the player suspends the reseller. Reseller leads are 3% of web hosting leads from 2008, once a DirectAdmen or cPanic host exists.
+Abuse reports arrive at the rate of the filled accounts, and the reseller handles half of them; the other half come to the player as abuse tickets with the reseller as the customer. Each month there is a 2% chance that the block holds a shady account, which draws the abuse and legal follow-ups of a shady customer until the player suspends the reseller. Reseller leads are 3% of web hosting leads, and 25% of an agency's, from 2008, once a DirectAdmen or cPanic host exists.
 
 ## Platforms and licenses
 

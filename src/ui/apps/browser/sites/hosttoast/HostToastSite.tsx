@@ -4,7 +4,7 @@ import { LOCALE } from "../../../../../i18n/lang";
 import { euro, euroCents } from "../../../../../sim/00-core/money";
 import { yearOf } from "../../../../../sim/00-core/time";
 import { CITIES } from "../../../../../sim/10-catalog/economy";
-import { AWARD_PRODUCTS, HOSTTOAST_HOST, TIER_IDS, TIERS, type AwardProduct, type TierId } from "../../../../../sim/10-catalog/hosttoast";
+import { HOSTTOAST_HOST, LISTED_PRODUCTS, TIER_IDS, TIERS, type ListedProduct, type TierId } from "../../../../../sim/10-catalog/hosttoast";
 import type { GameState } from "../../../../../sim/50-state";
 import { hosttoastList, tierName, uptime90 } from "../../../../../sim/80-business/hosttoast";
 import { registerHostToast, setHostToastTier } from "../../../../../sim/90-actions/marketing";
@@ -58,7 +58,7 @@ function ForHosts({ game }: { game: GameState }) {
 }
 
 function List({ game }: { game: GameState }) {
-  const [product, setProduct] = useState<AwardProduct>("webHosting");
+  const [product, setProduct] = useState<ListedProduct>("webHosting");
   const [city, setCity] = useState<string>("");
   const rows = hosttoastList(game, product, city || null), last = yearOf(game.hour) - 1;
   const hosts = game.hosttoast.awards.filter((a) => a.kind === "host" && a.year === last);
@@ -74,8 +74,8 @@ function List({ game }: { game: GameState }) {
       )}
       <div className="ht-filters">
         <label>{t("hosttoast.product")}
-          <select value={product} onChange={(e) => setProduct(e.target.value as AwardProduct)}>
-            {AWARD_PRODUCTS.map((p) => <option key={p} value={p}>{t(`sim.line.${p}`)}</option>)}
+          <select value={product} onChange={(e) => setProduct(e.target.value as ListedProduct)}>
+            {LISTED_PRODUCTS.map((p) => <option key={p} value={p}>{t(`sim.line.${p}`)}</option>)}
           </select>
         </label>
         <label>{t("hosttoast.city")}
@@ -89,7 +89,7 @@ function List({ game }: { game: GameState }) {
         <thead>
           <tr>
             <th className="r">#</th><th>{t("hosttoast.col.tier")}</th><th>{t("hosttoast.col.host")}</th><th className="r">{t("hosttoast.col.reviews")}</th>
-            <th className="r">{t("hosttoast.col.from")}</th><th>{t("hosttoast.col.p")}</th><th>{t("hosttoast.col.r")}</th><th>{t("hosttoast.col.c")}</th>
+            <th className="r">{t(product === "reseller" ? "hosttoast.col.perGb" : "hosttoast.col.from")}</th><th>{t("hosttoast.col.p")}</th><th>{t("hosttoast.col.r")}</th><th>{t("hosttoast.col.c")}</th>
           </tr>
         </thead>
         <tbody>

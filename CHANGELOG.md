@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- Agencies now book reseller blocks on your DirectAdmen and cPanic hosts and pay each month for the GB their clients use, at the price per GB you set in your rates.
+- HOSTtoast compares reseller blocks by price per GB, so you can see your rate next to the rivals that sell them.
 - Bookkeeping programs are no longer in the Pear Store: buy them on their maker's website, where desktop programs download over your internet line and install from the same page.
 - Web hosting, domains, dedicated servers and SSL certificates now change price over the years like the real market, with rises from cPanic, Pleskit, Windoors and the .com registry announced in the News months before they apply.
 - Free certificates from 2016 move private customers away from paid SSL, while businesses keep buying DV for a few years and offices, shops and enterprises keep paying for OV and EV certificates.

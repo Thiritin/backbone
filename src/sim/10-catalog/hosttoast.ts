@@ -19,6 +19,9 @@ export const TRUST_CAP = 10, BADGE_TRUST = 1, AWARD_REVIEWS = 30;
 export const REVENUE_TIMES = 50;
 export const AWARD_PRODUCTS = ["webHosting", "vps", "gameServer"] as const;
 export type AwardProduct = (typeof AWARD_PRODUCTS)[number];
+// The lines HOSTtoast compares: the award lines and reseller blocks, priced per GB.
+export const LISTED_PRODUCTS = [...AWARD_PRODUCTS, "reseller"] as const;
+export type ListedProduct = (typeof LISTED_PRODUCTS)[number];
 // "you" is the player.
 export interface Award { year: number; kind: "host" | "uptime"; product: AwardProduct | null; id: string }
 
