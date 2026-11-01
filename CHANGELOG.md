@@ -6,6 +6,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - Books is now a choice: buy Lexwear Office, WIZO Mein Büro, Saga Office Line, orgaMIN or the web-based Collmix in the Pear Store, with sevDeck and lexoffize joining in later years, each with its own look, prices and modules.
 - Each bookkeeping vendor has its own site in the Browser and a place under Bookkeeping on Yahoy, and Getting started now asks you to install a program before your first customer.
+- The back button on the marketing website page is now its normal size and shows in your language.
 - The server details page has room at its edges again, long German button labels wrap, and the disk label no longer runs into its meter.
 - Each website on a panel host links to its domain, or to its address while it has none.
 - The dunning settings in Lexwear Office now open from a Settings button on the Reminders tab.
