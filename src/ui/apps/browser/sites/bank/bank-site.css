@@ -1,4 +1,4 @@
-/* Online banking in 2005: a framed page with a logo bar, a link column and dense 11 px tables. The bank's skin sets the colours. */
+/* Online banking from 2005: a framed page with a logo bar, a link column and dense 11 px tables. The bank's skin sets the colours. */
 .bks { min-height: 100%; background: var(--bg); color: #111; font: 11px/1.35 Verdana, Geneva, Tahoma, sans-serif; display: flex; flex-direction: column; }
 .bks-head { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: var(--bar); color: #fff; border-bottom: 2px solid var(--accent); }
 .bks-logo { width: 26px; height: 26px; display: grid; place-items: center; background: #fff; color: var(--bar); font: bold 18px Arial, Helvetica, sans-serif; border-radius: 3px; }
@@ -34,16 +34,60 @@
 .bks-error { color: #c00000; font-weight: bold; }
 .bks-ok { color: #006600; font-weight: bold; }
 .bks-foot { padding: 4px 10px; font-size: 9px; color: #666; border-top: 1px solid #ccc; background: #f2f2f2; }
-/* Per-bank frames. */
+/* Per-bank frames: each bank lays out the same pages its own way. */
 .bks-branch .bks-head { border-bottom-width: 4px; }
 .bks-branch .bks-logo { border-radius: 50%; }
+.bks-branch .bks-nav { background: var(--bg); }
 .bks-frames .bks-nav { background: var(--bar); border-right-color: var(--accent); }
 .bks-frames .bks-nav a { color: #fff; border-bottom-color: rgba(255, 255, 255, 0.25); }
 .bks-frames .bks-nav a[aria-current] { color: #000; }
 .bks-corporate .bks-head { background: #fff; color: var(--bar); border-bottom: 1px solid #999; }
 .bks-corporate .bks-logo { background: var(--bar); color: #fff; border-radius: 0; }
+.bks-corporate .bks-cols { flex-direction: column; }
+.bks-corporate .bks-nav { width: auto; flex-direction: row; flex-wrap: wrap; padding: 0 6px; background: var(--bar); border-right: 0; }
+.bks-corporate .bks-nav a { color: #fff; border-bottom: 0; border-right: 1px solid rgba(255, 255, 255, 0.3); }
+.bks-corporate .bks-nav a[aria-current] { color: var(--bar); border-left: 0; padding-left: 10px; box-shadow: inset 0 -3px var(--accent); }
 .bks-plain .bks-head { color: #003366; }
 .bks-plain .bks-logo { background: #003366; color: var(--bar); }
+.bks-plain .bks-cols { flex-direction: row-reverse; }
+.bks-plain .bks-nav { border-right: 0; border-left: 3px double #bbb; }
+.bks-web { background: #ddd; }
+.bks-web > * { width: 100%; max-width: 760px; margin: 0 auto; box-sizing: border-box; }
+.bks-web .bks-cols { background: var(--bg); }
 .bks-web .bks-name { font-family: "Trebuchet MS", Verdana, sans-serif; text-transform: lowercase; }
+.bks-web .bks-logo { border-radius: 6px 0; }
 .bks-startup .bks-head, .bks-fintech .bks-head { padding: 10px 14px; }
 .bks-startup, .bks-fintech { font-size: 12px; font-family: Helvetica, Arial, sans-serif; }
+.bks-startup .bks-cols { flex-direction: column; }
+.bks-startup .bks-nav { width: auto; flex-direction: row; flex-wrap: wrap; gap: 4px; padding: 8px 14px; background: var(--bg); border-right: 0; }
+.bks-startup .bks-nav a { border: 1px solid var(--accent); border-radius: 12px; padding: 2px 10px; }
+.bks-startup .bks-nav a[aria-current] { background: var(--accent); color: #fff; border-left-width: 1px; padding-left: 10px; }
+.bks-fintech .bks-nav { background: var(--bar); border-right: 0; }
+.bks-fintech .bks-nav a { color: #ccc; border-bottom: 0; padding: 6px 14px; }
+.bks-fintech .bks-nav a[aria-current] { background: transparent; color: #fff; border-left-color: var(--accent); }
+/* After the redesign: larger type, flat controls, no bevels. */
+.bks.late { font: 13px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+.bks.late .bks-head { padding: 12px 18px; border-bottom-width: 0; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15); }
+.bks.late .bks-name { font: 600 19px system-ui, -apple-system, sans-serif; text-transform: none; }
+.bks.late .bks-logo { width: 30px; height: 30px; border-radius: 8px; font-family: system-ui, sans-serif; }
+.bks.late .bks-main { padding: 18px 22px; }
+.bks.late .bks-nav a { padding: 7px 14px; border-bottom: 0; color: inherit; }
+.bks.late .bks-nav a:hover { text-decoration: none; background: rgba(0, 0, 0, 0.05); }
+.bks.late .bks-box { border: 0; border-radius: 8px; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12); margin-bottom: 16px; }
+.bks.late .bks-box h2 { padding: 10px 12px 0; font-size: 14px; color: var(--accent); background: none; }
+.bks.late .bks-box > :not(h2) { margin: 10px 12px; }
+.bks.late .bks-box > table { width: calc(100% - 24px); }
+.bks.late .bks-form { grid-template-columns: max-content 260px; gap: 8px 14px; }
+.bks.late .bks-form input, .bks.late select { font: 13px system-ui, sans-serif; padding: 5px 8px; border: 1px solid #ccc; border-radius: 6px; }
+.bks.late .bks-btn { font: 13px system-ui, sans-serif; padding: 5px 14px; border: 1px solid #ccc; background: #fff; border-radius: 6px; }
+.bks.late .bks-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.bks.late .bks-head .bks-btn { background: transparent; color: inherit; border-color: currentColor; }
+.bks.late .bks-table td, .bks.late .bks-table th { padding: 6px 8px; }
+.bks.late .bks-rows { border: 0; }
+.bks.late .bks-rows th { background: none; border-bottom: 2px solid #e4e4e4; color: #666; font-weight: 600; }
+.bks.late .bks-rows tbody tr:nth-child(even) td { background: none; }
+.bks.late .bks-rows tbody td { border-bottom: 1px solid #eee; }
+.bks.late .bks-foot { padding: 10px 18px; font-size: 11px; background: none; border-top-color: #eee; }
+.bks-fintech.late .bks-nav a, .bks-frames.late .bks-nav a { color: #ddd; }
+.bks-fintech.late .bks-nav a[aria-current], .bks-frames.late .bks-nav a[aria-current] { color: #000; background: #fff; }
+.bks-corporate.late .bks-nav a:not([aria-current]) { color: #fff; }

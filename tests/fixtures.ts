@@ -24,6 +24,7 @@ import { setMachine } from "../src/sim/60-infra/cluster";
 import { assignedKey, assignKey, isLicensed, issueKey, panelMachine } from "../src/sim/60-infra/licence";
 import { topTier } from "../src/sim/10-catalog/licence-tiers";
 import { portPeers } from "../src/sim/60-infra/status";
+import { leaseTick } from "../src/sim/60-infra/lan";
 import { setPortShare } from "../src/sim/90-actions/lan";
 import { imageOf, serverOsAt, type OsImage, type ServerOsId } from "../src/sim/10-catalog/server-os";
 import { softwareById } from "../src/sim/10-catalog/platforms";
@@ -73,6 +74,15 @@ export function withStick(s: GameState, deviceId: string, os: ServerOsId = "luni
   withImage(s, os);
   s.media.stick = { os: isoOf(s, os), in: deviceId };
 }
+// The basement router swapped in place for a Fritz!Bocks 7390, whose DHCP registers names so the desk resolves node001,
+// with the leases of the clients it serves now stored.
+export function withNames(s: GameState): GameState {
+  const r = s.devices.find((d) => d.model === "home-router" && d.rackId);
+  if (r) r.model = "fb-7390";
+  leaseTick(s);
+  return s;
+}
+
 // The server cabled to a free port of the basement switch, which reaches the home router and its live line.
 export function withNetwork(s: GameState, id: string): void {
   const sw = s.devices.find((d) => modelById(d.model).kind === "switch")!;
