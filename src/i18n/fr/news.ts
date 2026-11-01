@@ -1,5 +1,9 @@
+import { euroCents } from "../../sim/00-core/money";
+import { dateOf } from "../../sim/00-core/time";
+import { LOCALE } from "../lang";
 import type { Dict, Params } from "../lang";
 
+const day = (hour: string | number) => dateOf(Number(hour)).toLocaleDateString(LOCALE, { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
 const list = (v: string | number) => { const a = String(v).split("|"); return a.length < 2 ? a[0] : `${a.slice(0, -1).join(", ")} et ${a[a.length - 1]}`; };
 const FEATURE: Record<string, string> = {
   cluster: "fonctionne en un seul cluster sur plusieurs serveurs",
@@ -65,5 +69,13 @@ export default {
   "event.news.ports.title": (p) => `Ports ${p.gbit} Gbit/s`,
   "event.news.ports.text": (p) => `Golem.dy rapporte que les opérateurs et points d'échange internet vendent désormais des ports ${p.gbit} Gbit/s.`,
   "event.news.freeSsl.title": () => "Certificats SSL gratuits",
-  "event.news.freeSsl.text": () => "Handelsblah rapporte que Let's Encryptly délivre désormais des certificats SSL gratuitement et que les clients ne s'attendent plus à en payer un.",
+  "event.news.freeSsl.text": () => "Handelsblah rapporte que Let's Encryptly délivre désormais des certificats SSL gratuitement et que les particuliers ne s'attendent plus à en payer un.",
+  "event.news.licenceModel.title": (p) => `${p.name} change ses licences`,
+  "event.news.licenceModel.text": (p) => `Heize online rapporte que ${p.name} vend ses licences à de nouvelles conditions à partir du ${day(p.at)}.`,
+  "event.news.licenceRise.title": (p) => `${p.name} augmente ses prix`,
+  "event.news.licenceRise.text": (p) => `Heize online rapporte que ${p.name} augmente ses prix de licence de ${p.pct} % le ${day(p.at)}.`,
+  "event.news.registryPrice.title": (p) => `${p.name} augmente ses tarifs`,
+  "event.news.registryPrice.text": (p) => `Golem.dy rapporte que ${p.name} facture aux registraires ${euroCents(Number(p.price))} par domaine et par an à partir du ${day(p.at)}.`,
+  "event.news.marketPrice.title": (p) => `Hausse des prix : ${p.line}`,
+  "event.news.marketPrice.text": (p) => `Handelsblah rapporte que les grands hébergeurs augmentent leurs prix (${p.line}) de ${p.pct} % le ${day(p.at)}.`,
 } satisfies Dict;

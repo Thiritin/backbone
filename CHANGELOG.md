@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- Web hosting, domains, dedicated servers and SSL certificates now change price over the years like the real market, with rises from cPanic, Pleskit, Windoors and the .com registry announced in the News months before they apply.
+- Free certificates from 2016 move private customers away from paid SSL, while businesses keep buying DV for a few years and offices, shops and enterprises keep paying for OV and EV certificates.
 - Every bookkeeping vendor's website now has its own look for its era: plain feature lists on the early pages and pricing tables with the editions side by side on the later ones.
 - The Yahoy! start page now searches the web, shows sponsored listings between the results, leads with Wikipedio as documentation and lists shop systems and web hosting panels.
 - Your company's own sites and consoles sit in a bookmark folder at the start of the bookmarks bar, grouped by category once there are more than twenty.

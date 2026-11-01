@@ -26,7 +26,7 @@ export function beginTransfer(s: GameState, doneAt: number): void {
 // What a partner charges a year for a domain at a tier.
 export function yearlyAt(s: GameState, r: Partner, tier: number, name: string): number {
   const tld = tldOf(name), d = dateOf(s.hour);
-  return cents(registryCost(name, d.getUTCFullYear()) * factorFor(r, tld, tier) + (tld === "com" ? icannFee(d.getUTCFullYear(), d.getUTCMonth()) : 0));
+  return cents(registryCost(name, d.getUTCFullYear(), d.getUTCMonth()) * factorFor(r, tld, tier) + (tld === "com" ? icannFee(d.getUTCFullYear(), d.getUTCMonth()) : 0));
 }
 
 // What the partner under contract charges a year for a domain at this tier; 0 without a contract.
@@ -54,6 +54,10 @@ export const monthlyDomains = (s: GameState): number => cents(s.domains.reduce((
 
 // The certificates resold through the partner: every running SSL service.
 export const certificateCount = (s: GameState): number => s.services.filter((v) => v.product === "ssl" && v.endedAt === null).length;
+// economy.md, SSL certificates: an OV or EV certificate costs this many times the partner's DV price.
+export const CERT_COST: Record<"dv" | "ov" | "ev", number> = { dv: 1, ov: 4, ev: 10 };
+const certUnits = (s: GameState): number =>
+  s.services.reduce((n, v) => n + (v.product === "ssl" && v.endedAt === null ? CERT_COST[v.spec.cert ?? "dv"] : 0), 0);
 
 // The ledger entries of a month start: the signup once, the fee or the unused part of the minimum, the domains and the certificates.
 export function registrarBill(s: GameState): LedgerEntry[] {
@@ -66,7 +70,7 @@ export function registrarBill(s: GameState): LedgerEntry[] {
   if (fee > 0) entry("ledger.registrar", { name: def.name }, fee);
   if (domains > 0) entry("ledger.domains", { name: def.name, count: s.domains.length }, domains);
   const certs = certificateCount(s);
-  if (certs > 0) entry("ledger.certificates", { name: def.name, count: certs }, cents((certs * def.ssl) / 12));
+  if (certs > 0) entry("ledger.certificates", { name: def.name, count: certs }, cents((certUnits(s) * def.ssl) / 12));
   return out;
 }
 

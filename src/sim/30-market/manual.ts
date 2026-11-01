@@ -5,7 +5,7 @@ import { carryForward } from "./quotes";
 import { hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
 import type { Product, Service } from "../30-customers/customers";
-import { DOMAIN_FEE, domainOf, register, TRANSFER_FEE } from "../30-customers/registry";
+import { domainFee, domainOf, register, TRANSFER_FEE } from "../30-customers/registry";
 import { CERT_SHARE, offerCertificate } from "../30-customers/certificates";
 import { cancelCustomer, isFinal, replyDue, type Ticket } from "../40-support/tickets";
 import { DUE_DAYS, fromShop, issue, rollPayStep, type Invoice, type InvoiceLine } from "../45-billing/billing";
@@ -154,7 +154,7 @@ export function firstLines(s: GameState, r: SalesRequest, monthly = r.quote ?? 0
     ...(setup > 0 ? [{ serviceId: null, key: "invoice.line.setupFee", params: { label }, amount: setup }] : []),
     termLine({ cycle: cycle ?? undefined, quote: monthly }, label),
   ];
-  if (needsDomain(r)) lines.push({ serviceId: null, key: r.owned ? "invoice.line.domainTransfer" : "invoice.line.domain", params: { domain: r.domain! }, amount: r.owned ? TRANSFER_FEE : DOMAIN_FEE });
+  if (needsDomain(r)) lines.push({ serviceId: null, key: r.owned ? "invoice.line.domainTransfer" : "invoice.line.domain", params: { domain: r.domain! }, amount: r.owned ? TRANSFER_FEE : domainFee(yearOf(s.hour)) });
   return lines;
 }
 

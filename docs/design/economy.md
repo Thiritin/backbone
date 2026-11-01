@@ -73,18 +73,55 @@ Here m is the multiplier in 2005. After 2026 prices stay flat.
 | Customer base rate per GB of RAM | 20 | VPS: about €1.50 per GB in 2026, €30 per GB in 2005 |
 | Customer base rate per TB of storage | 32 | Object storage: €6.50 per TB in 2026, €210 in 2005 |
 | Customer base rate per TB of traffic | 46 | Overage and traffic-heavy services |
-| Fixed-price products | 1 | Web hosting, domains and dedicated servers keep their price per size; the sizes get bigger |
+| Fixed-price products | Keyframes | Web hosting, domains and dedicated servers follow the fixed-price keyframes below; the sizes get bigger |
 | Rented space, rack or cage | 1 | Power is billed separately |
 | Server purchase price | Parts | Resources per server come from the generations table below; the price in later years follows the parts (Part prices by year) |
 | Salaries | 0.6 | Support agent, junior: €38,700 in 2026, about €23,000 in 2005 |
 | Search ads, per click | 0.6 | |
-| SSL certificate (DV) | Special | €50 per year until 2015, then free (the Let's Encrypt stand-in) |
+| SSL certificates | Keyframes | DV, OV and EV follow the SSL keyframes below; from 2016 a free certificate exists (the Let's Encrypt stand-in) |
 
 **Electricity.** Business prices follow these keyframes, with straight lines between them. The basement pays the household price, which is the business price × 1.6.
 
 | Year | | 2010 | 2014 | 2020 | 2022 | 2023 | 2026 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Business price (ct/kWh) | | 12 | 15 | 18 | 35 | 25 | 17 |
+
+**Fixed-price lines.** Web hosting, domains and dedicated servers multiply their 2005 rates (Per-resource pricing) by a factor that follows these keyframes, with straight lines between them and the last value after it. The sizes keep growing, so a gigabyte of web space gets much cheaper while the entry price only falls a little. German list prices are the reference: an entry web space cost about €5 a month in 2005 and €3 to €4 in the early 2020s, until energy costs pushed the large hosts to raise prices in 2023. A .de or .com domain has cost €12 to €15 a year at German hosts for the whole period, and a small dedicated server fell from about €79 to about €40 a month before rising again from 2022.
+
+| Line | 2005 | 2010 | 2012 | 2015 | 2021 | 2022 | 2023 | 2026 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Web hosting | 1 | 0.95 | | 0.85 | | 0.8 | 0.88 | 0.88 |
+| Domains | 1 | | 0.93 | | 0.93 | | | 1 |
+| Dedicated servers | 1 | | 0.8 | | 0.65 | | 0.75 | 0.8 |
+
+The yearly domain price the customer pays for a registration or renewal is the domain line's market rate of the year: €15 in 2005, €13.95 from 2012 to 2021 and €15 again in 2026. Values live in `FIXED_KEYS` in `src/sim/10-catalog/products.ts`.
+
+**SSL certificates.** The SSL line has three sizes: a DV, an OV and an EV certificate. Their yearly market prices follow these keyframes; the OV and EV rates are the difference to the DV price, so the player sets a base fee and an OV and EV validation on top. Values live in `SSL_KEYS` in `src/sim/10-catalog/products.ts`.
+
+| Certificate | 2005 | 2010 | 2015 | 2020 | 2026 |
+| --- | --- | --- | --- | --- | --- |
+| DV | €50 | €40 | €30 | €20 | €15 |
+| OV | €150 | | €120 | | €100 |
+| EV | €400 | | €300 | €250 | €200 |
+
+**Licence price rises.** On 1 January of each year below a vendor's list prices for new keys, renewals and editions become this multiple of its licence era's fees. cPanic follows cPanel's yearly rises after its 2019 switch to per-account pricing, Pleskit follows Plesk's rises, and Windoors Server follows the dearer core licences of Windows Server 2025. The jumps between licence models stay in the licence eras (Platforms and licenses): cPanic in June 2019, DirectAdmen in September 2019, Windoors in October 2016 and VMwhere's switch to per-core subscriptions in December 2023. Values live in `LICENCE_RISES` in `src/sim/10-catalog/licence-tiers.ts`.
+
+| Software | 2021 | 2022 | 2023 | 2024 | 2025 |
+| --- | --- | --- | --- | --- | --- |
+| cPanic | ×1.10 | ×1.21 | ×1.33 | ×1.46 | ×1.61 |
+| Pleskit | ×1.10 | | ×1.20 | | ×1.30 |
+| Windoors Server | | | | | ×1.10 |
+
+**Price announcements.** Every price change the player pays for, or that moves the market, is announced in the News app before it takes effect, at nine in the morning on the 1st of the month:
+
+| Change | Announced | News key |
+| --- | --- | --- |
+| A licence era after the first (software, operating systems, shop systems) | 3 months before | `event.news.licenceModel` |
+| A licence price rise | 3 months before, on 1 October | `event.news.licenceRise` |
+| A registry price step | 6 months before | `event.news.registryPrice` |
+| A fixed-price line rising 5% or more from one year to the next | 1 October before | `event.news.marketPrice` |
+
+Competitors price at the market times their price factor (Customer choice), so a market rise raises every rival's price on the same day; the 2023 web hosting rise of 10% and the dedicated server rises of 2022 and 2023 are announced this way.
 
 **Server generations.** A new 1U compute server generation arrives every three years. Each one costs a bit more but packs far more resources per watt, which is what makes replacing old servers pay off.
 
@@ -472,11 +509,11 @@ How the market above turns into order emails and sales requests in the Support a
 
 **Custom orders.** Every order names its own resources, by email or through the shop (`spec.ts`, `manual.ts`). It starts from the size its profile's budget picks (What a lead asks for). Web hosting, VPS and game server orders scale that size by one of 0.5, 0.75, 1, 1, 1.25 or 1.5, which average to 1: web disk in half GB steps, traffic in whole GB, 1 + up to 5 × factor mailboxes, with 0.1 vCPU and 0.25 GB RAM; VPS and game server RAM in quarter GB steps, vCPUs scaled (plus one, three times in ten), disk ±25% in 5 GB steps. DNS and VPN orders scale their zones or users and their traffic the same way (DNS zones and VPN users). Other lines take the size as it is. A spec's monthly market price comes from Per-resource pricing, and the SLA factor and the profile's offer factor apply on top. Step times: quote 5, account 5, confirmation and invoice 10, domain 5, setup 15 minutes. **Quoting an email order.** The first step is the quote, at the monthly price and setup fee the player enters (the market reference and the line's setup fee are prefilled). An email order draws its budget between 1.10 and 1.25 times the reference (`ORDER_BUDGET`, the upper half of a sales lead's range, because a standard order is a shelf product), which makes a quote at the reference taken about nine times in ten, and the customer answers like a sales lead: 4 to 24 hours after the quote, 2 hours after a quote that meets their counter, taking it with the logistic chance of Customer choice, countering once at 0.97 times their accepted price when within 0.12 of it and half the time, otherwise refusing; a second refusal ends the order as a lost sale. An accepted quote has 72 hours (`REQUEST_HOURS`) for the steps. A shop order is accepted at arrival at the website's price and setup fee and has the same 72 hours. **Setup.** The setup lists the cluster and panel hosts of the order's city that sell the product, with the RAM and disk booked against what each holds; disk is the only limit (Usage curves and overcommit). Automatic (`targetFor`) and the Place orders automatically switch need the Provisioning automation skill (Know-how and unlock costs). Staff set an order up on the first host with disk room, one with the RAM for it first. The balance model counts an order as placed on acceptance, as a company with the switch on would. An order invoice is due in 14 days; an on-time payer pays it within 1 to 3 days. Upgrades ask for 1.5 or 2 times every resource.
 
-**Domains.** Registry cost per year, 2005 to 2026, linear in between: .de €12 to €6, .at €25 to €12, .ch €15 to €9, .co.uk €8 to €7, .fr €20 to €9, .nl €10 to €6, .it €15 to €8, .com €6 to €9 (VeriSigh raised its price over the years). The customer pays €15 a year for a registration or renewal and €5 for a transfer, which includes its first year. The reminder comes 30 days before expiry.
+**Domains.** Registry cost per year, 2005 to 2026, linear in between: .de €12 to €6, .at €25 to €12, .ch €15 to €9, .co.uk €8 to €7, .fr €20 to €9, .nl €10 to €6, .it €15 to €8. VeriSigh raises the .com price in steps that follow VeriSign's, each announced six months ahead: €6 in 2005, €6.42 from October 2007, €6.86 from October 2008, €7.34 from July 2010, €7.85 from January 2012, €8.39 from September 2021, €8.97 from September 2022, €9.59 from September 2023 and €10.26 from September 2024. The customer pays the year's domain price (Prices over time, Fixed-price lines) for a registration or renewal and €5 for a transfer, which includes its first year. The reminder comes 30 days before expiry.
 
 **Registrar partners.** One contract at a time (`10-catalog/registrars.ts`, `30-customers/registrar.ts`). A domain's wholesale a year is the registry cost of the year above times the partner's factor for the tier, plus the ICANN fee on a .com (€0.18, €0.20 from July 2025). The tier is the number of domains under management (the company's and the customers') at the month start: 0, 100, 500 and 5,000. At a month start the partner invoices the signup once (first month under the contract), the fee, or for a minimum the part the domains did not use, and one twelfth of every domain's wholesale; the ledger books `ledger.registrarSignup`, `ledger.registrar` and `ledger.domains` in the category "domains". Registering and renewing book nothing; the customer pays €15 a year or €5 for a transfer, as above. Moving every domain to a new partner is a hand task of 5 minutes per domain (the Network row of the gdd By hand table). The factors follow the real reseller schemes: GoDaddy's Basic Reseller plan at USD 107.88 a year, Enom's USD 50 enrollment and the OpenSRS and Enom tiers (Essential none, Advanced USD 2,000 and 100 registrations, Premium USD 50,000 and 500, Enterprise USD 100,000 and 1,000), Name.com's Bronze, Silver and Gold at 100, 250 and 1,000 registrations, German resellers such as InterNetX with no setup fee but a monthly minimum, and Verisign's .com fee (USD 6.00 to 2007, 6.42 from October 2007, 7.85 from 2012, 8.39 in 2021, 8.97 in 2022, 9.59 in 2023, 10.26 in 2024, 10.97 from November 2026, which the .com curve above follows). The game uses the count of domains only.
 
-**SSL certificates.** The registrar partner resells them and bills each running certificate monthly at a twelfth of its yearly price: NameCheep €12, GoDuddy Reseller €10, InterNetY €9, OpenSRSly €8 (`30-customers/certificates.ts`). Once the website lists SSL certificates, a quarter of new web hosting customers take one with their order, and four in five who ask how to get the padlock take one after the SSL reply; a rate above the market's lowers both shares by market / rate. Nobody buys one once certificates turn free in 2016.
+**SSL certificates.** The registrar partner resells them and bills each running certificate monthly at a twelfth of its yearly price: NameCheep €12, GoDuddy Reseller €10, InterNetY €9, OpenSRSly €8 (`30-customers/certificates.ts`). Once the website lists SSL certificates, a quarter of new web hosting customers take one with their order, and four in five who ask how to get the padlock take one after the SSL reply; a rate above the market's lowers both shares by market / rate. Doctor's and law offices take an OV certificate, enterprises an EV one, and online shops an EV one until browsers drop the EV address bar in 2020 and an OV one after; everyone else takes a DV one. An OV certificate costs the player four times the partner's DV price and an EV one ten times. From 2016, when certificates turn free, low-budget customers never pay for a DV certificate, and the share of medium-budget customers who still do falls by an eighth a year, from 7/8 in 2016 to none in 2023; OV and EV buyers keep paying. On 1 January of each year from 2016, each paid DV certificate stays with the share of this year's paid buyers among last year's, and the others end, so every private customer's DV certificate ends on 1 January 2016 (`30-customers/certificates.ts`).
 
 | Partner (pun on) | Signup | Per month | Factor at 0+ / 100+ / 500+ / 5,000+ | Notes |
 | --- | --- | --- | --- | --- |
@@ -1474,10 +1511,10 @@ The core hop applies when the two locations are in different cities: both in one
 | Storage hosting | 100 GB, 500 GB, 1 TB | Disk only | About €8, €42, €83 a month | Cluster |
 | Cloud servers | 1 | Like the 1 × base RAM VPS | 1.25 × that VPS | High-availability cluster |
 | GPU servers | 4 | 1, 2, 4 or 8 cards; per card 4 vCPUs, 8 GB RAM × growth and 50 GB disk × growth | 1, 2, 4 or 8 × the card rate of GPU cards and rental | Cluster with free cards |
-| Dedicated servers | 2 | A whole server with at least 8 or 32 GB × growth | €79, €299 a month | A free server |
+| Dedicated servers | 2 | A whole server with at least 8 or 32 GB × growth | €79, €299 a month in 2005 | A free server |
 | Colocation | 1U, quarter, half, full rack | 1, 10, 21 or 42 units and 150 W, 1, 2 or 4 kW | €60, €415, €845, €1,675 a month | Datacenter rack |
-| Domains | 1 | Nothing | €15 a year | Resold |
-| SSL certificates | 1 | Nothing | €50 a year until 2015, then free | Resold |
+| Domains | 1 | Nothing | €15 a year in 2005, then the fixed-price keyframes | Resold |
+| SSL certificates | DV, OV, EV | Nothing | €50, €150 and €400 a year in 2005, then the SSL keyframes | Resold |
 
 **Per-resource pricing.** Every line charges a base fee per service plus a price per unit of the spec (`marketRates` and `specPrice` in `products.ts`). The market's rates are per month at the basic SLA, per year for domains and SSL, with r the year's VPS rate per GB of RAM (`vpsRatePerGb`, €30 in 2005) and g the base RAM. An SLA multiplies the sum by its price factor, and a request's market reference is that price × the profile's offer factor (Reference and budget).
 
@@ -1491,12 +1528,12 @@ The core hop applies when the two locations are in different cities: both in one
 | DNS hosting | €0.50 | €0.30 per zone |
 | VPN | €0.50 | €1.50 per user |
 | Domain | €15 a year | |
-| SSL certificate | €50 a year until 2015, then €0 | |
+| SSL certificate | The DV price a year (SSL keyframes) | OV and EV validation: the OV and EV prices less the DV price |
 | GPU server | €0 | The year's card rate per GPU (GPU cards and rental), 1% of the 2-card price taken by traffic |
 | Dedicated server | €6 | €220 ÷ 24 ÷ g per GB of the smallest server RAM it accepts |
 | Colocation | €15 | €30 per rack unit, €100 per kW |
 
-Each line with traffic also charges it per 100 GB a month (Traffic, below). The table gives the rates before traffic takes its share.
+Each line with traffic also charges it per 100 GB a month (Traffic, below). The table gives the rates before traffic takes its share. The web hosting, domain and dedicated server rates are the 2005 values; later years multiply them by the fixed-price keyframes (Prices over time).
 
 **Update service.** Web hosting has two more units, both with multiplier 1 (flat over the years, and not scaled by the traffic share). `updateOnce` is the one-off price of updating a site, €49, and is not part of a service's monthly price. `updates` is the monthly price of managed updates, €5 per site, charged on a service with `spec.managedUpdates`. Anchors: managed WordPress hosting costs a premium of USD 5 to 15 a month at Bluehost and GoDaddy, and one-off maintenance plans start at USD 49. A sold one-off books a sales ledger line at the player's rate; managed updates add the player's rate to the service's price.
 
@@ -1646,7 +1683,7 @@ Abuse reports arrive at the rate of the filled accounts, and the reseller handle
 
 ## Platforms and licenses
 
-Every server and every one of the player's own VMs runs an operating system, and software on it must run on that system and share no TCP port with the software already there; at most one hypervisor runs on a machine. A hypervisor ("Cloud" below) runs on every node of a hypervisor cluster and sells VPS, game servers and, with failover on, cloud servers. A panel runs on a panel host, a bare-metal server or one of the player's own VMs, and sells web hosting. Service software runs the same way as a panel, on one bare-metal server or one of the player's VMs, and sells one line each: a game panel sells game servers, a DNS server DNS, a VPN server VPN and a storage server storage. Game servers also run on a hypervisor; DNS, VPN and storage need their own software. A DNS, VPN or storage service already on a hypervisor keeps running there. Dedicated servers, colocation, domains and certificates need neither. Values live in `src/sim/10-catalog/platforms.ts`; fees are monthly, in euros, and fixed over the years, except where a license lists a one-time price first.
+Every server and every one of the player's own VMs runs an operating system, and software on it must run on that system and share no TCP port with the software already there; at most one hypervisor runs on a machine. A hypervisor ("Cloud" below) runs on every node of a hypervisor cluster and sells VPS, game servers and, with failover on, cloud servers. A panel runs on a panel host, a bare-metal server or one of the player's own VMs, and sells web hosting. Service software runs the same way as a panel, on one bare-metal server or one of the player's VMs, and sells one line each: a game panel sells game servers, a DNS server DNS, a VPN server VPN and a storage server storage. Game servers also run on a hypervisor; DNS, VPN and storage need their own software. A DNS, VPN or storage service already on a hypervisor keeps running there. Dedicated servers, colocation, domains and certificates need neither. Values live in `src/sim/10-catalog/platforms.ts`; fees are monthly, in euros, and change only with the licence eras and the licence price rises (Prices over time), except where a license lists a one-time price first.
 
 | Software | Kind | OS | License | Install | How-to tickets | Live migration | Control plane |
 | --- | --- | --- | --- | --- | --- | --- | --- |

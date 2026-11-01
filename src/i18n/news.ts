@@ -1,7 +1,11 @@
+import { euroCents } from "../sim/00-core/money";
+import { dateOf } from "../sim/00-core/time";
+import { LOCALE } from "./lang";
 type Params = Record<string, string | number>;
 
 // Headlines of the News app; spread into en. Heize online covers hardware and software, Golem.dy the internet, Handelsblah the market.
 // Names joined by "|" read as "A, B and C".
+const day = (hour: string | number) => dateOf(Number(hour)).toLocaleDateString(LOCALE, { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
 const list = (v: string | number) => { const a = String(v).split("|"); return a.length < 2 ? a[0] : `${a.slice(0, -1).join(", ")} and ${a[a.length - 1]}`; };
 const FEATURE: Record<string, string> = {
   cluster: "runs as one cluster across several servers",
@@ -67,5 +71,13 @@ export const NEWS_EN: Record<string, (p: Params) => string> = {
   "event.news.ports.title": (p) => `${p.gbit} Gbit/s ports`,
   "event.news.ports.text": (p) => `Golem.dy reports that carriers and internet exchanges now sell ${p.gbit} Gbit/s ports.`,
   "event.news.freeSsl.title": () => "Free SSL certificates",
-  "event.news.freeSsl.text": () => "Handelsblah reports that Let's Encryptly now issues SSL certificates for free, and customers no longer expect to pay for one.",
+  "event.news.freeSsl.text": () => "Handelsblah reports that Let's Encryptly now issues SSL certificates for free, and private customers no longer expect to pay for one.",
+  "event.news.licenceModel.title": (p) => `${p.name} changes its licences`,
+  "event.news.licenceModel.text": (p) => `Heize online reports that ${p.name} sells its licences on new terms from ${day(p.at)}.`,
+  "event.news.licenceRise.title": (p) => `${p.name} raises its prices`,
+  "event.news.licenceRise.text": (p) => `Heize online reports that ${p.name} raises its licence prices by ${p.pct}% on ${day(p.at)}.`,
+  "event.news.registryPrice.title": (p) => `${p.name} raises its fee`,
+  "event.news.registryPrice.text": (p) => `Golem.dy reports that ${p.name} charges registrars ${euroCents(Number(p.price))} a year per domain from ${day(p.at)}.`,
+  "event.news.marketPrice.title": (p) => `${p.line} prices rise`,
+  "event.news.marketPrice.text": (p) => `Handelsblah reports that the large hosts raise their prices for ${String(p.line).toLowerCase()} by ${p.pct}% on ${day(p.at)}.`,
 };
