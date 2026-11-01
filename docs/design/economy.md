@@ -1906,6 +1906,24 @@ A cluster of three or more Proxmocks nodes can build a Ceph pool with `setCeph` 
 
 An own VM on a Proxmocks cluster can switch its firewall on and tick the port macros it lets through (web, ssh, mail, db, rdp); every other port is dropped. A host in that VM serves its own ports (a panel serves web, a mail host serves mail): blocking one takes the service offline until the macro is ticked again. When the firewall closes a port the host's software listens on but does not serve (SSH, for instance), the hourly and daily compromise chances are halved (`FIREWALL_RISK`). A VM without a firewall behaves as before. The firewall costs no money.
 
+### HyperVee replica and virtual switches
+
+A HyperVee VM from 2012 can replicate to a second host: another node of its cluster, or a node of another HyperVee cluster in the same zone. The frequency is 30 seconds, 5 minutes or 15 minutes. The sim copies on the hour for all three; the shorter intervals send 4 and 2 times the changed data of the 15 minute one and lose less on a takeover (half an interval of writes plus the time since the last copy). The replica books the VM disk on the second host.
+
+Failover is a player action, since HyperVee has no automatic recovery before its cluster year. With a healthy primary the roles swap, nothing is lost and the VM is down for an hour. With a dead primary the VM starts on the replica host, writes since the last copy are lost and the replica is dropped. Replication Health reads Normal up to 2 hours since the last copy, Warning up to 12 hours, then Critical.
+
+A HyperVee cluster has virtual switches, up to 8, starting with one external Default Switch. A VM on an internal or private switch has no uplink and is offline. A VM on an external switch bound to a host port is offline while that port is unplugged or its far end is dead; a switch bound to no port follows whichever port is connected. Deleting a switch moves its VMs back to the default.
+
+### OpenVeeZee beancounters, burst and checkpoint
+
+A container shows its beancounters: kmemsize, privvmpages, oomguarpages, numproc and numtcpsock with held, maxheld, barrier, limit and failcnt. Memory is in 4 KB pages. Failcnt is stored on the container for privvmpages and numproc; the rest is derived from its use.
+
+Each hour a node with more than 90% of its RAM in use takes burst memory back first: only containers with a burst allowance collect privvmpages failcnt. A node out of RAM, or with more busy vCPUs than cores, makes every container fail privvmpages and numproc. The increment is 40 times the container's share of the node RAM, at least 1, per hour. Six hours in a row slow the site like any other slowdown. Past 24 failcounts in a day the OOM killer stops the container for an hour and the hour counts as downtime. The player fixes it by raising the container's size, moving it or selling less of the node.
+
+Burst memory ranges from 0 to twice the container's RAM, in steps of a quarter GB. It is not booked and costs nothing.
+
+Checkpoint freezes a container: it stays booked on its node, uses no CPU or RAM and is offline. Restore resumes it within a minute plus two seconds per GB of RAM in use, which counts as downtime. A cold move of a container on OpenVeeZee is a checkpoint, a copy and a restore, so it is down only for the copy of its disk over the link (at least 1 minute) instead of a full boot.
+
 ### Snapshots
 
 A snapshot freezes a VM's disk on a VMwhere cluster and, for the player's own VMs, its installed OS and software. Values live in `src/sim/10-catalog/platforms.ts`.

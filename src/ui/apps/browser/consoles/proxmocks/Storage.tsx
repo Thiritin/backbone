@@ -1,6 +1,6 @@
 import type { GameState } from "../../../../../sim/50-state";
 import type { Cluster, Workload } from "../../../../../sim/60-infra/cluster";
-import { CEPH_FROM_NODES, cephCapacity, cephCopies, cephOn, cephOsds, cephReadOnly, cephRebalancing, cephUsed, REPLICA_HOURS, type ReplicaEvery } from "../../../../../sim/60-infra/replica";
+import { CEPH_FROM_NODES, cephCapacity, cephCopies, cephOn, cephOsds, cephReadOnly, cephRebalancing, cephUsed, REPLICA_EVERY } from "../../../../../sim/60-infra/replica";
 import { raidUsable } from "../../../../../sim/60-infra/status";
 import { setCeph, setReplication } from "../../../../../sim/90-actions/replication";
 import { t } from "../../../../../i18n/en";
@@ -9,7 +9,7 @@ import { useStore } from "../../../../store";
 import { nodeName } from "../HypervisorBase";
 import { Bar, Facts } from "../PanelBase";
 
-const EVERY = Object.keys(REPLICA_HOURS) as ReplicaEvery[];
+const EVERY = REPLICA_EVERY.proxmocks;
 const gb = (n: number) => `${Math.round(n)} GB`;
 
 // Replication of one VM, or the table of every replicated VM of the cluster.
