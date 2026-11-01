@@ -8,7 +8,7 @@ import { clustersOn, dropCluster, insideVm, isOwnVm, machineOf, setMachine, vmBy
 import { imageOf, imageParts, nextVersion, SERVER_OS, serverOsById, type OsImage, type ServerOsId, type ServerOsVersion } from "../10-catalog/server-os";
 import { machineNet, osUp, stickOs } from "../60-infra/oob";
 import { pushLog } from "../60-infra/power";
-import { BOOT_HOURS, bootHours, booting, powered } from "../60-infra/status";
+import { BOOT_HOURS, bootHours, booting, osBootHours, powered } from "../60-infra/status";
 import { reportLoss } from "../85-products/products";
 import { installKeyBlock, licenseInstall, releaseMachine, upgradeKey, upgradeKeyBlock } from "../60-infra/licence";
 import { softwareById } from "../10-catalog/platforms";
@@ -45,14 +45,17 @@ export function enterSetup(s: GameState, deviceId: string): ActionResult {
   return { ok: true };
 }
 
-// Leaving setup, saved or discarded, lets the boot run on; every setting applied on the spot.
-export function exitSetup(s: GameState, deviceId: string): ActionResult {
+// Leaving setup, saved or discarded, lets the boot run on; every setting applied on the spot. A boot override skips the
+// rest of POST and starts that device for this boot.
+export function exitSetup(s: GameState, deviceId: string, override?: "disk" | "usb"): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
   if (!d.setup) return fail("error.notInSetup");
+  if (override === "usb" && !stickOs(s, d.id)) return fail("error.noBootDevice");
   d.setup = false;
-  d.bootUntil = nowHours(s) + bootHours(s, d);
-  pushLog(d, s.hour, "ipmi.log.setupLeft");
+  if (override) d.bootFrom = override;
+  d.bootUntil = nowHours(s) + (override === "usb" ? 0 : override ? osBootHours(s, d) : bootHours(s, d));
+  pushLog(d, s.hour, override === "usb" ? "ipmi.log.usbBoot" : "ipmi.log.setupLeft");
   return { ok: true };
 }
 
