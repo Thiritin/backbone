@@ -25,6 +25,7 @@ import { fillHostnames } from "../30-customers/hostnames";
 import { fillRegistrar } from "../30-customers/registrar";
 import { fillDesign, fillLaunch, fillLines } from "../80-business/website";
 import { fillSpecs } from "./specs";
+import { fillDaemons } from "../60-infra/daemons";
 import { fillGames } from "../60-infra/games";
 import { fillMachines, fillVersions } from "./machines";
 import { legacyLeads } from "./leads";
@@ -141,6 +142,7 @@ export function deserialize(raw: string): GameState {
   // Saves from before banks hold their account at Sparklasse; the next hour brings its welcome email and TAN list.
   if (data.bank === undefined) s.bank = legacyBank(s);
   fillGames(s);
+  fillDaemons(s);
   // A save from before accounts opened on the bank's site holds the savings as cash; they come back with the account.
   if ((data.version ?? 1) < 4 && !s.registration && !s.bank && s.cash >= savingsOf(s)) s.cash -= savingsOf(s);
   // Saves from before the account could come first opened it only after the customer accepted.
