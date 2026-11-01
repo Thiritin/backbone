@@ -13,10 +13,15 @@
 .bv h1 { font-size: 15px; color: var(--bv-brand); margin: 0 0 10px; }
 .bv h2 { font-size: 12px; margin: 0 0 3px; }
 .bv p { margin: 0 0 6px; }
-.bv-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
-.bv-list li { padding: 8px 10px; border: 1px solid #ccc; background: linear-gradient(#fff, #f4f4f4); }
 .bv-row { display: flex; align-items: center; gap: 12px; margin-top: 6px; }
-.bv-features { margin: 2px 0 0; padding-left: 16px; columns: 2; }
+.bv-edition { margin: 0 0 14px; }
+.bv-edition ul { margin: 2px 0 4px; padding-left: 20px; }
+.bv-table { border-collapse: collapse; width: 100%; }
+.bv-table th, .bv-table td { padding: 5px 8px; border-bottom: 1px solid #e3e3e3; text-align: center; }
+.bv-table th[scope="row"] { text-align: left; font-weight: normal; }
+.bv-table thead th { font-size: 13px; }
+.bv-price td { font-size: 15px; font-weight: bold; }
+.bv-price small { display: block; font-size: 10px; font-weight: normal; }
 .bv-amount { font-weight: bold; font-size: 13px; }
 .bv-buy { font: bold 11px var(--bv-font); color: var(--bv-ink); background: var(--bv-brand); border: 1px solid rgb(0 0 0 / 0.35); border-radius: 3px; padding: 3px 14px; cursor: pointer; }
 .bv-state { font-weight: bold; color: #2f7d1a; }
@@ -28,5 +33,4 @@
 .bv.flat .bv-head { padding: 20px 32px; }
 .bv.flat .bv-nav { background: #fff; padding: 0 18px; }
 .bv.flat .bv-main { padding: 20px 32px; max-width: 760px; }
-.bv.flat .bv-list li { border-radius: 10px; background: #fff; border-color: #e3e3e3; padding: 14px 16px; }
 .bv.flat .bv-buy { border: 0; border-radius: 999px; padding: 6px 18px; font-size: 13px; }

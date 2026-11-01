@@ -41,28 +41,50 @@ function Seats({ game, v, e }: { game: GameState; v: BooksVendor; e: Edition }) 
   );
 }
 
-// The vendor's editions with their price, users and features, and the seats of the edition the company runs.
-export function Editions({ game, v, one }: { game: GameState; v: BooksVendor; one?: string }) {
+// The vendor's editions with their price, users and features, and the seats of the edition the company runs:
+// a plain list on an early site, a pricing table with the editions side by side once table is set.
+export function Editions({ game, v, one, table }: { game: GameState; v: BooksVendor; one?: string; table?: boolean }) {
   const shown = one ? v.editions.filter((e) => e.id === one) : v.editions;
   const now = game.books.vendor === v.id ? currentEdition(game) : undefined;
+  const price = (e: Edition) => (e.price ? amount(v, e.price) : t("books-editions.free"));
+  const seated = shown.find((e) => now?.id === e.id && e.seat > 0);
+  if (table) {
+    const features = [...new Set(shown.flatMap((e) => e.features))];
+    return (
+      <>
+        <table className="bv-table">
+          <thead><tr><th />{shown.map((e) => <th key={e.id} scope="col">{e.name}</th>)}</tr></thead>
+          <tbody>
+            <tr className="bv-price"><th scope="row" />{shown.map((e) => <td key={e.id}><span className="num">{price(e)}</span>{e.update > 0 && <small>{t("books-vendors.priceUpdates", { price: euro(e.update) })}</small>}</td>)}</tr>
+            {features.map((f) => (
+              <tr key={f}><th scope="row">{t(`books-editions.feature.${f}`)}</th>{shown.map((e) => <td key={e.id}>{e.features.includes(f) ? "✓" : "–"}</td>)}</tr>
+            ))}
+            <tr><th scope="row" />{shown.map((e) => <td key={e.id}>{users(e)}</td>)}</tr>
+            <tr><th scope="row" />{shown.map((e) => <td key={e.id}><Action game={game} v={v} e={e} /></td>)}</tr>
+          </tbody>
+        </table>
+        {seated && <Seats game={game} v={v} e={seated} />}
+      </>
+    );
+  }
   return (
-    <ul className="bv-list">
+    <div className="bv-editions">
       {shown.map((e) => (
-        <li key={e.id}>
+        <div key={e.id} className="bv-edition">
           <h2>{v.program} {e.name}</h2>
-          <ul className="bv-features">
+          <ul>
             {e.features.map((f) => <li key={f}>{t(`books-editions.feature.${f}`)}</li>)}
             <li>{users(e)}</li>
           </ul>
-          <div className="bv-row">
-            <span className="num bv-amount">{e.price ? amount(v, e.price) : t("books-editions.free")}</span>
-            {e.update > 0 && <span>{t("books-vendors.priceUpdates", { price: euro(e.update) })}</span>}
-            <Action game={game} v={v} e={e} />
-          </div>
+          <p>
+            <b className="num">{price(e)}</b>
+            {e.update > 0 && <> {t("books-vendors.priceUpdates", { price: euro(e.update) })}</>}
+            {" "}<Action game={game} v={v} e={e} />
+          </p>
           {now?.id === e.id && e.seat > 0 && <Seats game={game} v={v} e={e} />}
-        </li>
+        </div>
       ))}
-    </ul>
+    </div>
   );
 }
 
