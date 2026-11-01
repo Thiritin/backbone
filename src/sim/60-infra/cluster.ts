@@ -19,6 +19,7 @@ import type { BackupJob, RestorePoint } from "./backups";
 import type { Ceph, Replica } from "./replica";
 import { vswitchBlocks, type VSwitch } from "./vswitch";
 import { firewallBlocks, type Firewall } from "./exposure";
+import { pushLog } from "./syslog";
 import type { FloatingIp, SecurityGroup, Volume } from "./horizont";
 
 // Active takes new workloads, cordoned keeps its own, draining moves them off, maintenance is empty after a drain.
@@ -472,7 +473,10 @@ export function moveControlPlaneOff(s: GameState, clusterId: string, deviceId: s
 
 // The node state of one software installation on a server; other software on the same server keeps its own.
 export function setNodeState(s: GameState, deviceId: string, state: NodeState, clusterId: string) {
+  const before = s.clusters.find((c) => c.id === clusterId)?.nodes.find((n) => n.deviceId === deviceId)?.state;
   s.clusters = s.clusters.map((c) => (c.id === clusterId ? { ...c, nodes: c.nodes.map((n) => (n.deviceId === deviceId ? { ...n, state } : n)) } : c));
+  const d = s.devices.find((x) => x.id === deviceId);
+  if (d && before && before !== state) pushLog(d, s.hour, `ipmi.log.node.${state}`);
 }
 
 // The web sites of a panel host the player took offline or that were compromised.

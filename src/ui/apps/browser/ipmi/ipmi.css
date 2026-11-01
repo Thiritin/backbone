@@ -94,3 +94,6 @@
 .cx[data-look="xclarify"] { --sensor-warn: #e2231a; --sensor-crit: #a00000; }
 .bmc-table tr[data-status="warning"] td { color: var(--sensor-warn, var(--bad)); font-weight: 600; }
 .bmc-table tr[data-status="critical"] td { color: var(--sensor-crit, var(--bad)); font-weight: 700; }
+.bmc-toolbar { display: flex; gap: 8px; margin-bottom: 8px; }
+.bmc-table tr[data-sev="crit"] td:first-child { color: var(--bad); font-weight: 600; }
+.bmc-table tr[data-sev="warn"] td:first-child { color: var(--warn, #b7791f); font-weight: 600; }

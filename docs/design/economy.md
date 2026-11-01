@@ -1945,6 +1945,10 @@ An instance has security groups. A new instance joins the default group, which l
 
 A volume is 1 to 1000 GB of block storage that counts toward the capacity of the first working datastore with room, or sits on a node disk when the cluster has no datastore. It costs nothing extra. It survives deleting the instance it is attached to and is detached afterwards. Before 2012 a volume leaves only a stopped instance.
 
+### IPMI System Event Log
+
+Each server's management controller keeps its last 20 events, each with a severity (information, warning or critical) and a number. Failed parts and shutdowns from heat are critical; lost power, a stalled operating system or controller, a lost power supply input, a lockout and an inlet temperature of 35 degrees or more are warnings. The inlet temperature is checked every hour, and a crossing of 35 or 40 degrees is logged once, with a note when it returns below 35. A change of a cluster node's state (active, cordoned, draining, maintenance) is logged on its server. The player can clear the log.
+
 ## PHP versions
 
 Each version becomes available on 1 January after its release, rounded so the start of the game has 4.4:

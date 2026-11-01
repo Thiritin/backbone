@@ -53,6 +53,7 @@ import { familyById, familyFailure } from "../10-catalog/families";
 import { lessorName } from "../10-catalog/leasing";
 import { BURNIN_BONUS_HOURS, BURNIN_FACTOR } from "../10-catalog/burnin";
 import { burninTick } from "../60-infra/burnin";
+import { sensorTick } from "../60-infra/sensors";
 import { THERMAL, thermalTick, throttled } from "../60-infra/thermal";
 import { FAILURE_FACTOR, unsupported } from "../10-catalog/lifecycle";
 import { skillById } from "../10-catalog/research";
@@ -278,6 +279,7 @@ export function tick(state: GameState): SimEvent[] {
   burninTick(state, events);
   if (state.devices.some((d) => d.maintenance || d.rebuild)) service(state, events);
   events.push(...powerTick(state));
+  sensorTick(state);
   const monthStart = isMonthStart(state.hour);
   if (monthStart) {
     competitorsCancel(state);

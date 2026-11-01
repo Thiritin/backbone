@@ -4,6 +4,7 @@ import { hashRng, rand } from "../00-core/rng";
 import { hasBmc, modelById } from "../10-catalog/hardware";
 import { CONTINUOUS } from "../20-world/datacenters";
 import type { Device, GameState, MachineState } from "../50-state";
+import { pushLog } from "./syslog";
 import { dropCluster, insideVm, installingOn, isOwnVm, type Workload } from "./cluster";
 import { rebuildHours, type SimEvent } from "../88-tick/tick";
 import { reportLoss } from "../85-products/products";
@@ -19,7 +20,6 @@ export const BMC_RESET_HOURS = 0.25;
 export const HANG_YEARLY = 0.01;
 export const BMC_HANG_YEARLY = 0.01;
 export const BMC_OLD_YEARS = 6;
-export const LOG_MAX = 20;
 
 // A server sticks at the firmware prompt after a hard power event or a part swap with this chance, until a console or hands
 // continue the boot (oob.ts).
@@ -31,9 +31,7 @@ export function rollStuck(s: GameState, d: Device): void {
   if (modelById(d.model).kind === "server" && rand(hashRng(s.seed, s.hour, Number(d.id.replace(/\D/g, "")) || 0, 41)) < STUCK_CHANCE) d.stuck = true;
 }
 
-export function pushLog(d: Pick<Device, "log">, hour: number, key: string): void {
-  d.log = [...d.log, { hour, key }].slice(-LOG_MAX);
-}
+export { LOG_MAX, pushLog, sevOf } from "./syslog";
 
 export function hangChance(s: GameState, d: Device): number {
   const state = deviceHealth(s, d.id).state;
@@ -159,6 +157,7 @@ export function plugCords(s: GameState, d: Device, plugged: boolean, ids = psusO
   const before = pluggedIn(d), after = pluggedIn({ ...d, components });
   // The roll reads the server as it ran, so it comes before the cords move.
   if (d.on && before && !after) losePower(s, d);
+  for (const c of d.components) if (ids.includes(c.id) && c.kind === "psu" && c.failedAt === null && !!c.plugged !== plugged) pushLog(d, s.hour, plugged ? "ipmi.log.psuRestored" : "ipmi.log.psuLost");
   d.components = components;
   if (d.on && !before && after) d.bootUntil = nowHours(s) + bootHours(s, d);
 }

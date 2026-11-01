@@ -1078,3 +1078,11 @@ export function orderHomeLine(s: GameState, lineId: string): ActionResult {
   s.homeLine = { ...s.homeLine, next: { id: lineId, at: s.hour + 24 * line.installDays } };
   return { ok: true };
 }
+
+// Empties the System Event Log of a device.
+export function clearLog(s: GameState, deviceId: string): ActionResult {
+  const d = s.devices.find((x) => x.id === deviceId);
+  if (!d) return fail("error.unknownDevice");
+  d.log = [];
+  return { ok: true };
+}
