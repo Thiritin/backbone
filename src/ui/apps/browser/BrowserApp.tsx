@@ -99,7 +99,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "company") body = <CompanySite game={game} path={r.path} go={go} />;
   else if (p.kind === "customer") body = <CustomerSite game={game} serviceId={p.serviceId} />;
   else if (p.kind === "vendor") body = <VendorSite game={game} maker={p.maker} path={r.path} go={go} />;
-  else if (p.kind === "registrar") body = <RegistrarSite game={game} id={p.id} />;
+  else if (p.kind === "registrar") body = <RegistrarSite game={game} id={p.id} path={r.path} />;
   else if (p.kind === "supplier") body = <SupplierSite game={game} name={p.name} />;
   else if (p.kind === "bank") body = <BankSite game={game} id={p.id} path={r.path} go={go} />;
   else if (p.kind === "video") body = <VideoPage />;

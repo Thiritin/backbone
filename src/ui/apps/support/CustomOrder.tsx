@@ -8,7 +8,8 @@ import type { Product } from "../../../sim/30-customers/customers";
 import { registryCost, registryOf } from "../../../sim/30-customers/registry";
 import { wholesale } from "../../../sim/30-customers/registrar";
 import { sizeOf } from "../../../sim/30-market/spec";
-import { canAutomate, hostFor, invoiceOf, stepsDone } from "../../../sim/30-market/manual";
+import { canAutomate, hostFor, invoiceOf, shopRegisters, stepsDone } from "../../../sim/30-market/manual";
+import { registrarFormUrl } from "../../../sim/80-business/browser";
 import type { SalesRequest } from "../../../sim/30-market/market";
 import { isFinal, type Ticket } from "../../../sim/40-support/tickets";
 import type { InvoiceStatus } from "../../../sim/45-billing/billing";
@@ -170,6 +171,8 @@ export function CustomCompose({ tk, r }: { tk: Ticket; r: SalesRequest }) {
   const link = host && createFormFor(familyOf(host), r.product) ? createLink(game, host.id, tk.id) : null;
   if (isFinal(tk)) return null;
   const done = stepsDone(game, r), locked = !!tk.work;
+  // An accepted quote is carried forward to the first invoice in Books.
+  const accepted = game.quotes.find((q) => q.ticketId === tk.id && q.status === "accepted");
   const web = r.product === "webHosting" && !!r.domain;
   const current = !done.quote ? "quote" : !done.account ? "account" : !done.invoice ? "invoice" : !done.domain ? "domain" : !done.provision ? "provision" : null;
   const cost = web ? (game.registrar ? wholesale(game, r.domain!) : registryCost(r.domain!, yearOf(game.hour))) : 0;
@@ -190,9 +193,11 @@ export function CustomCompose({ tk, r }: { tk: Ticket; r: SalesRequest }) {
         {row("account", t("support.customerAccount"), done.account ? t("support.created") : t("support.none"),
           <button className="btn primary" disabled={locked} onClick={() => openApp("Books", { kind: "newCustomer", id: tk.id })}><UserPlus />{t("orderSteps.createCustomer")}</button>)}
         {row("invoice", t("support.orderConfirmation"), done.invoice ? t("support.perMonth", { price: euroCents(r.quote ?? 0) }) : invoiceOf(game, r) ? t("orderSteps.status.draft") : t("support.notSent"),
-          <button className="btn primary" disabled={locked} onClick={() => { const res = act(invoiceOrder, tk.id); if (res.ok) openApp("Books", { kind: "invoice", id: res.id! }); }}><Receipt />{t("orderSteps.openInvoice")}</button>)}
+          accepted && !invoiceOf(game, r)
+            ? <button className="btn primary" disabled={locked} onClick={() => openApp("Books", { kind: "quote", id: accepted.id })}><FileText />{t("orderSteps.quote", { number: accepted.number })}</button>
+            : <button className="btn primary" disabled={locked} onClick={() => { const res = act(invoiceOrder, tk.id); if (res.ok) openApp("Books", { kind: "invoice", id: res.id! }); }}><Receipt />{t("orderSteps.openInvoice")}</button>)}
         {web && row("domain", r.owned ? t("support.domainTransfer") : t("support.domain"), done.domain ? t("support.registered") : t("support.domainLine", { domain: r.domain!, registry: registryOf(r.domain!).name, price: euroCents(cost) }),
-          <button className="btn primary" disabled={locked} onClick={() => act(registerOrderDomain, tk.id)}><Globe />{r.owned ? t("support.transferDomain") : t("support.registerDomain")}</button>)}
+          <button className="btn primary" disabled={locked} onClick={() => (shopRegisters(game, r) ? act(registerOrderDomain, tk.id) : openApp("Browser", { kind: "url", id: registrarFormUrl(game, tk.id, !!r.owned) }))}><Globe />{r.owned ? t("support.transferDomain") : t("support.registerDomain")}</button>)}
         {row("provision", t("support.setup"), done.provision ? t("support.live") : t("support.notSetUp"),
           <div className="step-col">
             <HostCards r={r} value={route} onChange={setRoute} disabled={locked} />

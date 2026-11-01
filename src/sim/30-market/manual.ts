@@ -1,6 +1,7 @@
 // GDD, Custom orders: an order email is worked step by step, each step a reply in its thread. Quote a price and wait for the
 // customer to accept, then create the customer account, confirm the order with its invoice, register or transfer the domain
 // and set up the service. Numbers in economy.md, Custom orders.
+import { carryForward } from "./quotes";
 import { hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
 import type { Product, Service } from "../30-customers/customers";
@@ -22,6 +23,7 @@ import { missingFor, requestName, REQUEST_HOURS, type SalesRequest } from "./mar
 import { mailRequest, orderOf } from "./orders";
 import { answerAt, editRequest, habitFor, loseRequest, targetFor } from "./sales";
 import { mailDelay } from "../80-business/mail";
+import { hasModule } from "../80-business/shop";
 import { belowFloor, bookingFor, covers, packageNamed, suggestedUsername, type PackageDef } from "../80-business/packages";
 import type { Sla, Spec } from "../10-catalog/products";
 import { AUTOMATION_SKILL } from "../10-catalog/research";
@@ -56,6 +58,8 @@ export const specParams = (spec: Spec, suffix = ""): Record<string, number> => (
 
 export const invoiceOf = (s: GameState, r: SalesRequest): Invoice | undefined => (r.invoiceId ? s.invoices.find((i) => i.id === r.invoiceId) : undefined);
 const needsDomain = (r: SalesRequest) => r.product === "webHosting" && !!r.domain;
+// A shop whose system has the registrar module registers its own orders' domains; every other order goes through the registrar's form.
+export const shopRegisters = (s: GameState, r: SalesRequest): boolean => !!r.shop && hasModule(s, "registrar");
 const domainDone = (s: GameState, r: SalesRequest) => !needsDomain(r) || domainOf(s, r.domain!)?.customerId === r.customerId;
 
 // The sender of the steps automation runs.
@@ -193,6 +197,7 @@ export function applyStep(s: GameState, t: Ticket, step: OrderStep, by?: string)
     const draft = invoiceOf(s, r), inv = draft?.status === "draft" ? draft : draftInvoice(s, customerId, firstLines(s, r));
     issue(s, inv, ORDER_PAY_DAYS - 1);
     editRequest(s, r.id, () => ({ invoiceId: inv.id, status: "quoted", replyAt: null }));
+    carryForward(s, t.id, inv.id);
     mailRequest(s, r.id, "order.invoice", by, { invoice: inv.number, total: cents(inv.lines.reduce((n, l) => n + l.amount, 0)) });
     setTicket(s, t.id, { status: "waiting", updatedAt: s.hour });
   } else if (step === "domain") {
