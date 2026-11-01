@@ -18,6 +18,7 @@ import { appFor, appTitle } from "../apps/registry";
 import { EMBEDDED } from "../embedded";
 import { BUILD_ID } from "../leaderboard";
 import { exportSave } from "../export-save";
+import { leaveImmersive, useImmersive } from "./immersive";
 
 interface Props { theme: string; onTheme: () => void; onBell: () => void }
 
@@ -29,6 +30,7 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
   const [menu, setMenu] = useState<string | null>(null);
   const [confirm, setConfirm] = useState(false);
   const [intro, setIntro] = useState(false);
+  const immersive = useImmersive();
   const here = playerAt(game);
   const front = [...windows].filter((w) => !w.minimized).sort((a, b) => b.z - a.z)[0];
 
@@ -60,7 +62,7 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
 
   return (
     <header className="menubar" role="menubar">
-      {item("backbone", "Backbone", [[t("desktop.menu.intro"), () => setIntro(true)], [t("desktop.menu.github"), () => window.open("https://github.com/Thiritin/backbone", "_blank", "noopener")], [t("desktop.menu.discord"), () => window.open(DISCORD_URL, "_blank", "noopener")], [t("desktop.menu.report"), () => window.open(`https://github.com/Thiritin/backbone/issues/new?body=${encodeURIComponent(`\n\nBuild: ${BUILD_ID}`)}`, "_blank", "noopener")], [t("desktop.icon.newNote"), () => newNote()], ...(guideGone ? [[t("desktop.menu.restoreGuide"), () => act(restoreGuide)] as [string, () => void]] : []), [t("desktop.menu.whatsNew"), () => openNews(EMBEDDED)], [t("desktop.menu.export"), () => exportSave(game)], [t("desktop.menu.mainMenu"), toMenu], [t("desktop.menu.delete"), () => setConfirm(true)]], <CompanyMark company={game.company} className="mb-mark" />, "mb-logo")}
+      {item("backbone", "Backbone", [[t("desktop.menu.intro"), () => setIntro(true)], [t("desktop.menu.github"), () => window.open("https://github.com/Thiritin/backbone", "_blank", "noopener")], [t("desktop.menu.discord"), () => window.open(DISCORD_URL, "_blank", "noopener")], [t("desktop.menu.report"), () => window.open(`https://github.com/Thiritin/backbone/issues/new?body=${encodeURIComponent(`\n\nBuild: ${BUILD_ID}`)}`, "_blank", "noopener")], [t("desktop.icon.newNote"), () => newNote()], ...(guideGone ? [[t("desktop.menu.restoreGuide"), () => act(restoreGuide)] as [string, () => void]] : []), [t("desktop.menu.whatsNew"), () => openNews(EMBEDDED)], [t("desktop.menu.export"), () => exportSave(game)], [t("desktop.menu.mainMenu"), toMenu], [t("desktop.menu.delete"), () => setConfirm(true)], ...(immersive ? [[t("desktop.menu.logout"), () => { leaveImmersive(); toMenu(); }] as [string, () => void]] : [])], <CompanyMark company={game.company} className="mb-mark" />, "mb-logo")}
       {front ? item("app", appName(front), appMenu(front), appName(front), "mb-app") : <span className="mb-item mb-app">Backbone</span>}
       {item("window", t("desktop.menu.window"), windows.map((w) => (w.doc ? [docTitle(w.doc), () => openDoc(w.doc!)] : w.console ? [t("desktop.menu.console"), () => openConsole(w.console!)] : [appName(w), () => openApp(w.app)]) as [string, () => void]))}
       <span className="mb-spacer" />

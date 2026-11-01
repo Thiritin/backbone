@@ -304,3 +304,17 @@ button { font: inherit; color: inherit; cursor: default; }
 }
 .away-lock strong { font-size: 18px; font-weight: 650; }
 .away-lock span { font-size: 13px; opacity: 0.75; }
+
+.switcher {
+  position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 1100;
+  display: grid; justify-items: center; gap: 8px; max-width: calc(100vw - 32px); padding: 14px 16px 12px;
+  border-radius: 24px; background: var(--dock); color: var(--text);
+  backdrop-filter: blur(28px) saturate(1.6); -webkit-backdrop-filter: blur(28px) saturate(1.6);
+  box-shadow: inset 0 0 0 0.5px var(--dock-line), 0 20px 50px -12px oklch(0 0 0 / 0.5);
+}
+.switch-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.switch-app { padding: 8px; border-radius: 16px; }
+.switch-app[aria-selected="true"] { background: oklch(0.5 0 0 / 0.28); }
+.switch-app .dock-tile { width: 64px; height: 64px; border-radius: 15px; }
+.switch-app .dock-tile svg.lucide { width: 32px; height: 32px; }
+.switcher strong { font-size: 13px; font-weight: 600; }

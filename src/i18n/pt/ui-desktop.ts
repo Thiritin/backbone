@@ -127,4 +127,12 @@ export default {
   "desktop.menu.deleteTitle": () => "Apagar todo o progresso?",
   "desktop.menu.deleteText": () => "A tua empresa e o respetivo jogo guardado são removidos deste navegador. Exporta primeiro um jogo guardado para manter uma cópia.",
   "desktop.menu.deleteAction": () => "Apagar",
+  "desktop.start.immersive": () => "Jogar em modo imersivo",
+  "desktop.immersive.title": () => "Modo imersivo",
+  "desktop.immersive.text": () => "O modo imersivo ocupa o ecrã inteiro e envia ao jogo atalhos de teclado como Cmd+Tab, Alt+Tab e F11, para que Cmd+Tab e Alt+Tab alternem entre as janelas do jogo.",
+  "desktop.immersive.browsers": () => "Abre o jogo no Chrome, Edge, Opera ou Brave num computador para usar o modo imersivo.",
+  "desktop.immersive.leave": () => "Para sair do modo imersivo, escolhe Terminar sessão no menu no canto superior esquerdo ou mantém Esc premido.",
+  "desktop.immersive.start": () => "Iniciar modo imersivo",
+  "desktop.menu.logout": () => "Terminar sessão",
+  "desktop.switcher": () => "Alternar janelas",
 } satisfies Dict;
