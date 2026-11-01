@@ -22,6 +22,7 @@ import { phpAbuse } from "../60-infra/php";
 import { APP_ACTIONS, applyAppWork } from "../60-infra/apps";
 import { decideBreach } from "../60-infra/breach";
 import { serviceOnline } from "./status";
+import { answerTransfer, DOMAIN_OUT } from "../30-customers/registrar";
 import { outgoing, sendAction } from "./replies";
 import { overpricing, revertPrice } from "../30-customers/pricing";
 import { CERT_SHARE, offerCertificate } from "../30-customers/certificates";
@@ -52,6 +53,10 @@ function finishWork(s: GameState, customer: (id: string) => Customer, events: Si
     t.work = null;
     if (t.kind === "extortion") {
       decideBreach(s, t, work.arg === "pay" ? "pay" : "refuse", events);
+      continue;
+    }
+    if (t.topic === DOMAIN_OUT) {
+      answerTransfer(s, t, c, work.arg, work.by);
       continue;
     }
     if (t.kind === "order") {
@@ -223,7 +228,7 @@ export function supportTick(s: GameState): SimEvent[] {
     if (t.notice || t.kind === "migration" || t.kind === "sponsor" || t.kind === "pear" || (t.kind === "order" && (!t.customerId || t.status !== "open"))) continue;
     if (t.status === "waiting" && s.hour - t.updatedAt >= WAITING_CLOSE_HOURS) resolve(s, t, c);
     else if (t.status === "escalated" && (!t.serviceId || serviceOnline(s, t.serviceId))) resolve(s, t, c);
-    else if (t.status === "open" && c.churnedAt === null && s.hour > t.dueAt) {
+    else if (t.status === "open" && (c.churnedAt === null || t.topic === DOMAIN_OUT) && s.hour > t.dueAt) {
       const p = profileStats(c.profile);
       if (counts(p.reply.clock, s.hour)) bump(c, -p.waitPenalty);
     }
@@ -232,7 +237,7 @@ export function supportTick(s: GameState): SimEvent[] {
   readOnlySweep(s, () => spawnHourly(s));
   if (isMonthStart(s.hour)) monthly(s);
 
-  const fresh = s.tickets.filter((t) => !before.has(t.id));
+  const fresh = s.tickets.filter((t) => !before.has(t.id) && t.kind !== "mail");
   if (fresh.length > 1) return [...events, { app: "Support", key: "event.tickets", params: { count: fresh.length } }];
   if (!fresh.length) return events;
   const t = fresh[0], service = s.services.find((v) => v.id === t.serviceId);

@@ -5,6 +5,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-01
 
 - A dunning letter now waits a week after a late payment reminder, and the reminder buttons in German show the step names capitalized.
+- Your registrar partner now has a reseller login that lists every domain with its owner, expiry, renewal and status, where you can cancel a domain or generate the auth code a leaving customer asks for in a transfer ticket.
+- The registrar renews every domain at its expiry and keeps billing you even after the customer left, and moving to a new partner books a year of each domain on arrival.
 - Customers without an active contract move to an archive at the bottom of the contracts list in your books, so the list shows only the customers you still serve.
 - The semiannual billing cycle now shows a proper name in every language.
 - Agencies now book reseller blocks on your DirectAdmen and cPanic hosts and pay each month for the GB their clients use, at the price per GB you set in your rates.
