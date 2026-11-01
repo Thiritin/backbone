@@ -4,7 +4,7 @@ import { serverOsAt } from "../src/sim/10-catalog/server-os";
 import { newGame } from "../src/sim/50-state";
 import { assignKey, licenceStatus } from "../src/sim/60-infra/licence";
 import { renewKeys } from "../src/sim/85-products/products";
-import { cartOf, keysOf, offers, ORDER, orderKeys } from "../src/sim/80-business/vendor-shop";
+import { cartOf, keysOf, lineMajor, offers, ORDER, orderKeys } from "../src/sim/80-business/vendor-shop";
 import { registerLicence } from "../src/sim/90-actions/lexwear";
 import { addToCart, cancelLicence, checkout, removeFromCart } from "../src/sim/90-actions/vendor-shop";
 import { deserialize, serialize } from "../src/sim/91-save/save";
@@ -18,6 +18,12 @@ const Y = (year: number) => hourOf(new Date(Date.UTC(year, 0, 1)));
 const game = (cash = 10_000, limit = 100_000) => withCard(Object.assign(newGame(31), { cash }), limit);
 
 describe("vendor shop", () => {
+  it("names the major a one-time key in the cart covers, and none for a term key", () => {
+    const s = game();
+    expect(lineMajor(s, { product: "vmwhere", edition: null })).toBe("2");
+    s.hour = Y(2017);
+    expect(lineMajor(s, { product: "windoors", edition: null })).toBeUndefined();
+  });
   it("sells the editions and prices of the game year, and nothing for free software", () => {
     expect(offers("pleskit", Y(2005)).map((o) => o.edition)).toEqual(["webAdmin", "webPro", "webHost"]);
     expect(offers("windoors", Y(2010))).toEqual([{ edition: null, fee: 600, kind: "once" }]);

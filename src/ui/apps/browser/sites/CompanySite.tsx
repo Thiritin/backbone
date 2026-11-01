@@ -10,6 +10,7 @@ import type { GameState } from "../../../../sim/50-state";
 import { salesAddress } from "../../../../sim/80-business/mail";
 import { owns } from "../../../../sim/80-business/marketing";
 import { packageSpec } from "../../../../sim/80-business/portal";
+import { specText } from "../../../../sim/30-market/spec";
 import { CYCLES, type Cycle } from "../../../../sim/10-catalog/cycles";
 import { kbArticles, siteContent, sitePages, visibleProducts, orderLink, SITE_LINES, listed, type SitePage } from "../../../../sim/80-business/website";
 import { CompanyMark } from "../../company";
@@ -84,7 +85,7 @@ function ProductCards({ game, full, go }: { game: GameState; full?: boolean; go?
   const designed = owns(game, "website");
   return (
     <div className={`site-products${full ? " full" : ""}`}>
-      {lines.map(({ product: p, from, link }) => {
+      {lines.map(({ product: p, from, link, items }) => {
         const Icon = ICON[p];
         return (
           <section key={p} className="site-product">
@@ -92,6 +93,17 @@ function ProductCards({ game, full, go }: { game: GameState; full?: boolean; go?
             <h3>{PRODUCT[p]}</h3>
             <p>{BLURB[p]}</p>
             {full && <ul className="site-checks">{FEATURES[p].map((f) => <li key={f}><Check size={14} />{f}</li>)}</ul>}
+            {items.length > 0 && (
+              <ul className="site-items">
+                {items.map((x) => (
+                  <li key={x.id}>
+                    <strong>{x.name}</strong>
+                    <span>{specText(x.line, x.spec)}</span>
+                    {CYCLES.filter((c) => x.prices[c] !== undefined).map((c) => <span key={c} className="num">{CYCLE_LABEL[c]} {euroCents(x.prices[c]!)}</span>)}
+                  </li>
+                ))}
+              </ul>
+            )}
             {from !== null && (
               <div className="site-order">
                 <span>{t(PRODUCTS[p].period === "year" ? "browser-sites-1.co.fromYear" : "browser-sites-1.co.fromMonth", { price: euroCents(from) })}</span>

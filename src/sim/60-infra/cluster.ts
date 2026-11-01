@@ -74,6 +74,8 @@ export interface Cluster {
   oversell?: number | null;
   // The edition of a VMwhere platform; missing is the top tier (vmwhere.ts).
   licence?: { tier: string; trialUntil: number | null; lapsedAt: number | null };
+  // A freshly installed licensed panel shows its licence setup on first sign-in; missing is set up.
+  setupPending?: boolean;
   // The update channel; missing is Release (channel.ts).
   channel?: "stable" | "release" | "edge";
   // Compatibility mode lets VMs move live between nodes of different CPU vendors, at COMPAT_VCPU of every node's vCPU.
@@ -424,9 +426,15 @@ export function dropCluster(s: GameState, id: string) {
   const c = s.clusters.find((x) => x.id === id);
   if (c) for (const m of machinesOf(c)) stripSoftware(s, c, m);
   const old = s.clusters;
-  s.clusters = s.clusters.filter((x) => x.id !== id).map((x) => ({ ...x, jobs: x.jobs.filter((j) => j.targetId !== id) }));
   const gone = new Set(old.flatMap((x) => x.jobs.filter((j) => j.targetId === id).map((j) => j.id)));
-  if (gone.size) s.workloads = s.workloads.map((w) => (w.points?.some((p) => gone.has(p.jobId)) ? { ...w, points: w.points.filter((p) => !gone.has(p.jobId)), backupAt: w.points.filter((p) => !gone.has(p.jobId)).reduce<number | null>((n, p) => (n === null || p.at > n ? p.at : n), null) } : w));
+  const offGone = new Set(old.flatMap((x) => x.jobs.filter((j) => j.offsiteId === id).map((j) => j.id)));
+  s.clusters = s.clusters.filter((x) => x.id !== id).map((x) => ({ ...x, jobs: x.jobs.filter((j) => j.targetId !== id).map((j) => (j.offsiteId === id ? { ...j, offsiteId: null } : j)) }));
+  const lost = (p: RestorePoint) => gone.has(p.jobId) || (p.offsite && offGone.has(p.jobId));
+  s.workloads = s.workloads.map((w) => {
+    if (!w.points?.some(lost)) return w;
+    const points = w.points.filter((p) => !lost(p));
+    return { ...w, points, backupAt: points.filter((p) => !(p.verified && p.bad)).reduce<number | null>((n, p) => (n === null || p.at > n ? p.at : n), null) };
+  });
   const drop = (ids: string[]) => ids.filter((x) => x !== id);
   if (s.company.mail.kind === "self" && s.company.mail.clusterId === id) s.company = { ...s.company, mail: { kind: "free" } };
   s.security = { ...s.security, offline: drop(s.security.offline), hacked: drop(s.security.hacked), patched: drop(s.security.patched) };

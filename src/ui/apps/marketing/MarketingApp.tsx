@@ -1,11 +1,11 @@
 import { Eye, HeartHandshake, Megaphone, Package, Presentation, ShoppingCart, Star, Waypoints } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
-import type { Profile } from "../../../sim/30-customers/customers";
+import type { Product, Profile } from "../../../sim/30-customers/customers";
 import { isAvailable } from "../../../sim/10-catalog/research";
 import {
-  BUDGETS, CAMPAIGNS, costPerLead, DISCOUNTS, leadsThisMonth, monthlyMarketingCost, OWNED, owns, PLATFORMS, PROFILE_IDS, reach, reviewScore,
+  BUDGETS, CAMPAIGNS, costPerLead, DISCOUNTS, leadsThisMonth, monthlyMarketingCost, OWNED, owns, PLATFORMS, PROFILE_IDS, reach, reviewScore, wonLeads,
   type CampaignChannel, type OwnedChannel, type PlatformId, type Review,
 } from "../../../sim/80-business/marketing";
 import { bookFair, setCampaign, setReviewPlatform, setUpChannel, stopCampaign } from "../../../sim/90-actions/marketing";
@@ -139,7 +139,33 @@ function Channels() {
         );
       })}
     </div>
+    <LostDemand />
   </>;
+}
+
+function LostDemand() {
+  const game = useStore((s) => s.game);
+  const { month, last } = game.marketing.unmet;
+  const lines = (Object.keys(PRODUCT) as Product[]).filter((p) => month[p] || last[p]);
+  if (!lines.length) return null;
+  const won = wonLeads(game, 0), wonLast = wonLeads(game, 1);
+  return (
+    <table className="mkt-aware">
+      <thead>
+        <tr><th rowSpan={2}>{t("marketing.line")}</th><th colSpan={2} className="mkt-right">{t("marketing.thisMonth")}</th><th colSpan={2} className="mkt-right">{t("marketing.lastMonth")}</th></tr>
+        <tr>{[0, 1].map((i) => <Fragment key={i}><th className="mkt-right">{t("marketing.won")}</th><th className="mkt-right">{t("lost.noFittingProduct")}</th></Fragment>)}</tr>
+      </thead>
+      <tbody>
+        {lines.map((p) => (
+          <tr key={p}>
+            <td>{PRODUCT[p]}</td>
+            <td className="num">{won[p] ?? 0}</td><td className="num">{month[p] ?? 0}</td>
+            <td className="num">{wonLast[p] ?? 0}</td><td className="num">{last[p] ?? 0}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
 }
 
 function Campaigns() {

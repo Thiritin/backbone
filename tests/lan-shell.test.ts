@@ -3,7 +3,7 @@ import type { GameState } from "../src/sim/50-state";
 import { releaseOf } from "../src/sim/60-infra/fs";
 import { addressOf, ifaceOf, macOf } from "../src/sim/60-infra/lan";
 import { linkStatus } from "../src/sim/60-infra/status";
-import { runCommand, runLine, type Session } from "../src/sim/60-infra/terminal";
+import { complete, runCommand, runLine, type Session } from "../src/sim/60-infra/terminal";
 import { setIface } from "../src/sim/90-actions/lan";
 import { reboot } from "../src/sim/90-actions/hardware";
 import type { Call } from "../src/sim/90-actions/index";
@@ -157,6 +157,8 @@ describe("names and reach from the desk", () => {
     const s = readyGame(3);
     expect(desk(s, "ssh node001").output).toEqual(["ssh: Could not resolve hostname node001: Name or service not known"]);
     expect(desk(s, "ssh 192.168.178.21").session).toEqual({ host: "node001", deviceId: "dev3" });
+    expect(complete(s, null, "ssh 192.168.178.2").options).toEqual(["192.168.178.21", "192.168.178.23"]);
+    expect(complete(s, null, "ssh 192.168.178.21").line).toBe("ssh 192.168.178.21 ");
     withNames(s);
     expect(desk(s, "ssh node001").session).toEqual({ host: "node001", deviceId: "dev3" });
     expect(desk(s, "ping node001.fritz.bocks").output[0]).toContain("node001.fritz.bocks (192.168.178.21)");

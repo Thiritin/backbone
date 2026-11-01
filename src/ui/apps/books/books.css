@@ -6,8 +6,9 @@
 .books-split { flex: 1; min-height: 0; display: flex; }
 .books-split > .fin-scroll { flex: 1 1 55%; }
 .books-preview { flex: 1 1 45%; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 14px; border-left: var(--ar-bw) solid var(--line); container-type: size; }
-/* A4, 210 by 297, filling the height the pane leaves; type is sized from the page's own width. */
-.books-a4 { flex: 1 1 0; min-height: 0; max-width: 100%; aspect-ratio: 210 / 297; background: #fff; color: #222; box-shadow: 0 1px 4px rgb(0 0 0 / 0.25); padding: 9% 10%;
+/* A4, 210 by 297, the largest that fits the space the pane leaves; type is sized from the page's own width. */
+.books-a4-fit { flex: 1 1 0; min-height: 0; align-self: stretch; display: grid; place-items: center; container-type: size; }
+.books-a4 { --page: min(100cqw, 100cqh * 210 / 297); width: var(--page); aspect-ratio: 210 / 297; background: #fff; color: #222; box-shadow: 0 1px 4px rgb(0 0 0 / 0.25); padding: calc(var(--page) * 0.09) calc(var(--page) * 0.1);
   display: flex; flex-direction: column; gap: 3%; container-type: inline-size; overflow: hidden; }
 .books-a4 > * { font-size: 2.4cqw; }
 .books-a4 h2 { font-size: 1.6em; font-weight: 700; margin: 0; }

@@ -3,6 +3,7 @@ import { yearOf } from "../../../../sim/00-core/time";
 import type { GameState } from "../../../../sim/50-state";
 import type { Cluster } from "../../../../sim/60-infra/cluster";
 import { familyOf } from "../../../../sim/60-infra/vulns";
+import { panelLocked } from "../../../../sim/60-infra/licence";
 import { consoleFeatures } from "../../../../sim/80-business/consoles";
 import { t } from "../../../../i18n/en";
 import { useSessionState } from "../../../session";
@@ -27,6 +28,7 @@ import { MinnIO } from "./minnio/MinnIO";
 import { OpenVeePeeN } from "./openveepeen/OpenVeePeeN";
 import { OwnClod } from "./ownclod/OwnClod";
 import { PowerDnz } from "./powerdnz/PowerDnz";
+import { LicenceGate } from "./Readouts";
 import "./consoles.css";
 
 export const CONSOLES: Record<string, ComponentType<PanelProps>> = {
@@ -52,5 +54,6 @@ export function ConsolePage({ game, hostname, host, cluster, defaced, path }: { 
   if (CLI_ONLY.has(family)) return <HostCli game={game} c={cluster} family={family} host={host} name={hostname} />;
   if (defaced) return <Defaced />;
   if (!Panel) return null;
+  if (logins.includes(hostname) && (cluster.setupPending || panelLocked(game, cluster))) return <LicenceGate game={game} c={cluster} host={host} />;
   return <Panel key={path ?? "/"} path={path} game={game} c={cluster} f={consoleFeatures(family, yearOf(game.hour))} host={host} signedIn={logins.includes(hostname)} login={() => setLogins([...logins, hostname])} logout={() => setLogins(logins.filter((x) => x !== hostname))} />;
 }

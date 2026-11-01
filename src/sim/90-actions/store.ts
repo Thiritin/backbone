@@ -51,6 +51,13 @@ export function cancel(s: GameState, id: string): ActionResult {
   return { ok: true };
 }
 
+// KeePassive saves a login the player typed by hand, so the Browser fills it in next time.
+export function rememberLogin(s: GameState, site: string, values: string[]): ActionResult {
+  if (!s.installed.includes("keepassive")) return fail("error.notInstalled");
+  s.logins = { ...s.logins, [site]: values };
+  return { ok: true };
+}
+
 // The Pear Store shelves are open: an item locked by research brings the Research app.
 export function browseStore(s: GameState): ActionResult {
   if (s.registration && lockedInStore(s)) arrive(s, "Research");

@@ -209,4 +209,6 @@ export default {
   "web.rs.question": (p) => `Frage zu ${p.domain}`,
   "web.rs.suspend": () => "Sperren",
   "web.rs.resume": () => "Entsperren",
+  "ticket.howTo.licence.subject": () => "Control Panel meldet abgelaufene Lizenz",
+  "ticket.howTo.licence.text": (p) => `Wenn ich mich im Control Panel für ${p.domain || "meine Website"} anmelde, sehe ich nur eine Seite, dass die Lizenz abgelaufen ist. Die Website läuft noch, aber ich kann nichts verwalten. Kannst du das beheben?`,
 } satisfies Dict;

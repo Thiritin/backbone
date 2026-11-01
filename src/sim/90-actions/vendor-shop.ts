@@ -5,7 +5,7 @@ import type { GameState } from "../50-state";
 import { cardReady, cardSpent } from "../46-finance/bank";
 import { invoice } from "../46-finance/payables";
 import { updateKey } from "../60-infra/licence";
-import { cartOf, lineOffer, sendKeys, upgradeOffers, vendorName, type CartLine, type KeyLine } from "../80-business/vendor-shop";
+import { cartOf, lineMajor, lineOffer, sendKeys, vendorName, type CartLine, type KeyLine } from "../80-business/vendor-shop";
 import type { ActionResult } from "./hardware";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -43,7 +43,7 @@ export function checkout(s: GameState, host: string, payment: LicencePayment): A
   if (payment === "card" && !cardReady(s)) return fail("error.noCard");
   if (payment === "card" && cardSpent(s) + total > s.bank.card!.limit) return fail("error.cardLimit");
   const order = `ORD-${s.nextId++}`, vendor = vendorName(lines[0].product);
-  const keys: KeyLine[] = lines.map((l) => ({ product: l.product, edition: l.edition, qty: l.qty, ...(l.from && { to: upgradeOffers(s, l.product).find((o) => o.from === l.from)!.to }) }));
+  const keys: KeyLine[] = lines.map((l) => { const to = lineMajor(s, l); return { product: l.product, edition: l.edition, qty: l.qty, ...(to && { to }) }; });
   const entry = { hour: s.hour, category: "licenses", key: "ledger.order", params: { vendor, order }, amount: -total };
   s.cart = s.cart.filter((l) => !lines.includes(l));
   if (payment === "card") {

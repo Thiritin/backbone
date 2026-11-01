@@ -4,7 +4,6 @@ import { dateOf, hourOf } from "../00-core/time";
 import { tiersOf, topTier, type LicenceTier } from "../10-catalog/licence-tiers";
 import { SOFTWARE } from "../10-catalog/platforms";
 import { eraAt, SERVER_OS } from "../10-catalog/server-os";
-import type { Look } from "../10-catalog/sites";
 import { UI_LOOKS, versionAt, versionInfo, versionsOf } from "../10-catalog/software-versions";
 import type { GameState, Licence } from "../50-state";
 import type { Cluster } from "./cluster";
@@ -37,8 +36,8 @@ export function installedVersion(s: GameState, machineId: string, product: strin
   const x = m?.software?.find((y) => y.id === product);
   return (x?.from && x.doneAt !== null && x.doneAt > s.hour ? x.from : x?.version) ?? null;
 }
-// The console look of the version the machine runs, or null when the version or its UI generations are unknown.
-export function lookOf(s: GameState, machineId: string, product: string): Look | null {
+// The console look id of the version the machine runs, or null when the version or its UI generations are unknown.
+export function lookOf(s: GameState, machineId: string, product: string): string | null {
   const vs = versionsOf(product), at = (v: string | null) => vs.findIndex((x) => x.version === v);
   const i = at(installedVersion(s, machineId, product));
   return i < 0 ? null : UI_LOOKS[product]?.filter(([from]) => at(from) <= i).at(-1)?.[1] ?? null;
@@ -208,6 +207,9 @@ export const licenceExpired = (s: GameState, c: Cluster): boolean => {
   const id = c.panel ?? c.platform;
   return !!id && isLicensed(id) && (c.vm ? [c.vm] : c.nodes.map((n) => n.deviceId)).some((m) => ["ended", "lapsed", "unlicensed"].includes(licenceStatus(s, m, id) ?? ""));
 };
+
+// A licensed panel whose licence ran out shows only its licence page; its sites keep serving.
+export const panelLocked = (s: GameState, c: Cluster): boolean => !!c.panel && isLicensed(c.panel) && licenceExpired(s, c);
 
 // The error that refuses one more account, VM or service on the cluster, or null.
 export function licenceBlock(s: GameState, c: Cluster): string | null {

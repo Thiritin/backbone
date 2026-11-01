@@ -1,4 +1,4 @@
-import { EyeOff, Package, Plus, Save, Trash2 } from "lucide-react";
+import { EyeOff, Globe, Package, Plus, Save, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { euroPrice } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
@@ -6,9 +6,9 @@ import { CYCLES, type Cycle } from "../../../sim/10-catalog/cycles";
 import { SIZES, sizeSpec, type Sla } from "../../../sim/10-catalog/products";
 import type { Product } from "../../../sim/30-customers/customers";
 import { specText } from "../../../sim/30-market/spec";
-import { PRODUCT_NAME_MAX, type CatalogProduct } from "../../../sim/80-business/catalog";
+import { PRODUCT_NAME_MAX, unpublished, type CatalogProduct } from "../../../sim/80-business/catalog";
 import type { GameState } from "../../../sim/50-state";
-import { addProduct, removeProduct, updateProduct } from "../../../sim/90-actions/catalog";
+import { addProduct, publishCatalog, removeProduct, updateProduct } from "../../../sim/90-actions/catalog";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
 
@@ -27,6 +27,7 @@ export function ProductsTab({ focus }: { focus: string | null }) {
         {LINES.map((l) => <option key={l} value={l}>{t(`sim.line.${l}`)}</option>)}
       </select>
       <button className="btn" onClick={() => { const r = act(addProduct, line); if (r.ok) setEditing(r.id!); }}><Plus />{t("books.newProduct")}</button>
+      <button className="btn" disabled={!unpublished(game)} onClick={() => act(publishCatalog)}><Globe />{t("books.publish")}</button>
     </div>
   );
   if (game.catalog.length === 0) return <div className="fin-empty"><Package />{t("books.noProducts")}{add}</div>;

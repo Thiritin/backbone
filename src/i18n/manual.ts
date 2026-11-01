@@ -18,6 +18,7 @@ const and = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(", ")} an
 
 // Custom orders, domains and upgrades of custom services; spread into en.
 export const MANUAL_EN: Record<string, (p: Params) => string> = {
+  "order.msg.item": (p) => `I would like the ${p.item} package from your website.`,
   "order.msg.webHosting.0": (p) => `Hello, I need web hosting for ${p.domain}: about ${web(p)}. ${domain(p)}`,
   "order.msg.webHosting.1": (p) => `A friend recommended you. My website ${p.domain} needs ${web(p)}. ${domain(p)} What would that cost?`,
   "order.msg.vps.0": (p) => `I would like a VPS in ${p.city} with ${box(p)}. Root access, please. I know what I am doing.`,

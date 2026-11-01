@@ -24,9 +24,15 @@ export const productsOf = (s: GameState, line: Product): CatalogProduct[] => s.c
 export const productNamed = (s: GameState, line: Product, name: string): CatalogProduct | undefined =>
   productsOf(s, line).find((p) => p.name.toLowerCase() === name.trim().toLowerCase());
 
-// What email orders and leads choose from: the line's visible products with a price.
-export const offeredProducts = (s: GameState, line: Product): CatalogProduct[] =>
-  productsOf(s, line).filter((p) => !p.hidden && Object.keys(p.prices).length > 0);
+// What publishing puts on the website: the visible products with a price.
+export const catalogOffered = (s: GameState): CatalogProduct[] => s.catalog.filter((p) => !p.hidden && Object.keys(p.prices).length > 0);
+// What email orders and leads choose from: the line's products as last published.
+export const offeredProducts = (s: GameState, line: Product): CatalogProduct[] => (s.marketing.published ?? []).filter((p) => p.line === line);
+// Offered products changed since the last publish, plus published ones no longer offered.
+export function unpublished(s: GameState): number {
+  const pub = s.marketing.published ?? [], now = catalogOffered(s), same = (a: CatalogProduct, b: CatalogProduct) => JSON.stringify(a) === JSON.stringify(b);
+  return now.filter((p) => !pub.some((x) => same(x, p))).length + pub.filter((x) => !now.some((p) => p.id === x.id)).length;
+}
 
 export const productCyclesOf = (p: CatalogProduct): Cycle[] => CYCLES.filter((c) => p.prices[c] !== undefined);
 
