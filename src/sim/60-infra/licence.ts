@@ -29,10 +29,13 @@ export const unassignedKeys = (s: GameState, product: string): Licence[] => s.li
 export const trialOf = (s: GameState, machineId: string, product: string): GameState["trials"][number] | undefined =>
   s.trials.find((x) => x.machineId === machineId && x.product === product);
 
-// The version the machine runs of an OS or software id, or null when it is not installed.
+// The version the machine runs of an OS or software id, or null when it is not installed. Software runs the version it
+// upgrades from until the upgrade is done.
 export function installedVersion(s: GameState, machineId: string, product: string): string | null {
   const m = s.devices.find((x) => x.id === machineId) ?? s.workloads.find((x) => x.id === machineId);
-  return (m?.os?.id === product ? m.os.version : m?.software?.find((x) => x.id === product)?.version) ?? null;
+  if (m?.os?.id === product) return m.os.version;
+  const x = m?.software?.find((y) => y.id === product);
+  return (x?.from && x.doneAt !== null && x.doneAt > s.hour ? x.from : x?.version) ?? null;
 }
 // The console look of the version the machine runs, or null when the version or its UI generations are unknown.
 export function lookOf(s: GameState, machineId: string, product: string): Look | null {
@@ -125,6 +128,20 @@ export function installKeyBlock(s: GameState, machineId: string, product: string
   if (!isLicensed(product)) return null;
   if (code) return keyFor(s, machineId, product, code, version) ? null : "error.licenceKey";
   return trialDaysOf(product) === null ? "error.licenceKey" : null;
+}
+
+// Why an in-place upgrade to the version cannot start: a typed key that does not cover it, or none typed while the machine's
+// key is for an older major.
+export function upgradeKeyBlock(s: GameState, machineId: string, product: string, version: string, code?: string): string | null {
+  if (!isLicensed(product)) return null;
+  if (code) return keyFor(s, machineId, product, code, version) ? null : "error.licenceKey";
+  const k = assignedKey(s, machineId, product);
+  return k && !covers(k, version) ? "error.licenceKey" : null;
+}
+// A key typed for an upgrade replaces the one the machine held, which goes back unassigned.
+export function upgradeKey(s: GameState, machineId: string, product: string, version: string, code?: string): void {
+  const k = code ? keyFor(s, machineId, product, code, version) : undefined;
+  if (k) assignKey(s, k.id, machineId);
 }
 
 // Licenses a started install with the typed key, or starts its trial.

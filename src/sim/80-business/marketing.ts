@@ -76,6 +76,8 @@ export interface Marketing {
   siteHost: SiteHost;
   designYear: number;
   siteOutage: boolean;
+  // Leads per line lost because no catalog product fitted, this month and last month.
+  unmet: { month: Partial<Record<Product, number>>; last: Partial<Record<Product, number>> };
 }
 export type SiteHost = { kind: "rented" } | { kind: "own"; clusterId: string };
 
@@ -84,7 +86,7 @@ const AWARENESS_DECAY = 0.02;
 export const REVIEW_HOURS = 2 * 8760;
 
 export const newMarketing = (): Marketing => ({
-  owned: [], campaigns: [], reviews: [], platform: null, studies: [], lines: [], emailOrders: true, siteReady: null, launched: false, siteHost: { kind: "rented" }, designYear: 2005, siteOutage: false,
+  owned: [], campaigns: [], reviews: [], platform: null, studies: [], lines: [], emailOrders: true, siteReady: null, launched: false, siteHost: { kind: "rented" }, designYear: 2005, siteOutage: false, unmet: { month: {}, last: {} },
   awareness: Object.fromEntries(PROFILE_IDS.map((p) => [p, p === "private" || p === "gamer" ? 0.05 : AWARENESS_FLOOR])) as Record<Profile, number>,
 });
 
@@ -231,6 +233,7 @@ export function marketingTick(s: GameState): SimEvent[] {
   }
   const total = bill(s);
   s.shop = { ...s.shop, soldOut: {} };
+  s.marketing = { ...s.marketing, unmet: { month: {}, last: s.marketing.unmet.month } };
   if (total > 0) events.push({ app: "Marketing", key: "event.marketingBills", params: { total } });
   invite(s, events);
   updateAwareness(s);

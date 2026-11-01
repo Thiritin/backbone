@@ -52,6 +52,7 @@ export const SALES_EN: Record<string, (p: Params) => string> = {
   "sales.req.age": (p) => `Company at least ${p.months} months old`,
   "sales.req.reviews": (p) => `Review score of ${p.stars} stars`,
   "lost.expired": () => "No answer in time",
+  "lost.noFittingProduct": () => "No fitting package",
   "lost.price": () => "Too expensive",
   "lost.declined": () => "Declined",
   "lost.noCapacity": (p) => `No capacity in ${p.city}`,

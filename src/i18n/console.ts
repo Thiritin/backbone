@@ -16,6 +16,7 @@ export const CONSOLE_EN: Record<string, (p: Params) => string> = {
   "error.noOs": () => "Install an operating system on this machine first.",
   "error.osNotUp": () => "The machine's operating system is not running.",
   "error.noUpgrade": () => "No newer release of this operating system is out yet.",
+  "error.noMajorUpgrade": () => "No newer major version of this software is out yet.",
   "error.notVmwhere": () => "The App Suite is sold for VMwhere clusters.",
   "error.noAppSuite": () => "This cluster has no App Suite.",
   "error.hasAppSuite": () => "This cluster already has the App Suite.",

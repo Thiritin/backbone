@@ -77,10 +77,10 @@ export interface Rack { id: string; model: RackModel; locationId: string; positi
 // a shipped unit has store null and transitTo/arriveAt set until it arrives.
 // docs/design/software.md, section 3: what a server's or own VM's disk holds. os null is an empty disk; a software whose
 // doneAt is still ahead is installing. An OS whose installedAt is ahead is installing, or upgrading in place from the
-// version in from.
+// version in from. Software whose doneAt is ahead with a from is upgrading from that version.
 export interface MachineState {
   os: { id: ServerOsId; version: string; installedAt: number; from?: string } | null;
-  software: { id: string; version: string; installedAt: number; doneAt: number | null }[];
+  software: { id: string; version: string; installedAt: number; doneAt: number | null; from?: string }[];
   // An OS install the network dropped out of, shown on the console until a key is pressed (software.md, section 4.2).
   installFailed?: NetFail;
 }
@@ -204,8 +204,9 @@ export interface GameState {
   licenses: Licence[];
   // One entry per machine and product whose trial started; it never starts again there. until is the hour it ends.
   trials: { machineId: string; product: string; until: number }[];
-  // The vendor sites' shared shopping cart; each site checks out the lines it sells.
-  cart: { product: string; edition: string | null; qty: number }[];
+  // The vendor sites' shared shopping cart; each site checks out the lines it sells. A line with from upgrades a key for that
+  // major to the next.
+  cart: { product: string; edition: string | null; qty: number; from?: string }[];
   // Operating system images downloaded from their sites, one per version, and the one USB stick: the image written on it,
   // the server it is in.
   media: { images: OsImage[]; stick: { os: OsImage | null; in: string | null } };

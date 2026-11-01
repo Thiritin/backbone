@@ -9,8 +9,10 @@ import { imageOf, imageParts, nextVersion, SERVER_OS, serverOsById, type OsImage
 import { machineNet, osUp, stickOs } from "../60-infra/oob";
 import { pushLog } from "../60-infra/power";
 import { BOOT_HOURS, bootHours, booting, powered } from "../60-infra/status";
-import { buyUpgradeLicense, reportLoss, upgradeLicenseDue } from "../85-products/products";
-import { installKeyBlock, licenseInstall, releaseMachine } from "../60-infra/licence";
+import { reportLoss } from "../85-products/products";
+import { installKeyBlock, licenseInstall, releaseMachine, upgradeKey, upgradeKeyBlock } from "../60-infra/licence";
+import { softwareById } from "../10-catalog/platforms";
+import { nextMajor, type SoftwareVersion } from "../10-catalog/software-versions";
 import { leave } from "./clusters";
 import type { ActionResult } from "./hardware";
 import { staticRouter } from "../60-infra/lan";
@@ -171,10 +173,19 @@ export const upgradeHours = (s: GameState, machineId: string): number => {
   return os.installHours + os.bootMinutes / 60 + (s.devices.some((d) => d.id === machineId) ? BOOT_HOURS : 0);
 };
 
+// What runs on the machine is down for the hours and counts them against its SLA; what was migrated off first stays up.
+function takeDown(s: GameState, machineId: string, hours: number): void {
+  const found = installCase(s, machineId), down = found.kind === "busy" ? [...found.workloads, ...found.lost] : [];
+  const ids = new Set(down.map((w) => w.id)), services = new Set(down.filter((w) => !isOwnVm(w)).map((w) => w.serviceId));
+  s.workloads = s.workloads.map((w) => (ids.has(w.id) ? { ...w, busyUntil: Math.max(w.busyUntil, s.hour + hours) } : w));
+  // The hourly tick counts every whole hour a workload is busy; the rest is added here, as for a software update.
+  const rest = hours - (Math.ceil(hours) - 1);
+  for (const id of services) s.downHours = { ...s.downHours, [id]: (s.downHours[id] ?? 0) + rest };
+}
+
 // Upgrades the machine's OS in place to the next release, keeping its software: Debiant from its running shell over the
-// network, Windoors from Setup on the next release's media. Everything still running on the machine is down for the
-// upgrade and counts it against its SLA; what was migrated off first stays up.
-export function upgradeOs(s: GameState, machineId: string): ActionResult {
+// network, Windoors from Setup on the next release's media. A key for an older major needs the key typed in Setup.
+export function upgradeOs(s: GameState, machineId: string, key?: string): ActionResult {
   const m = machineOf(s, machineId);
   if (!m?.os) return fail(m ? "error.noSoftware" : "error.unknownDevice");
   const next = upgradeTarget(s, machineId);
@@ -187,22 +198,47 @@ export function upgradeOs(s: GameState, machineId: string): ActionResult {
     if (typeof at === "string") return fail(at);
     if ((isDevice(at) ? stickOs(s, at.id) : at.media) !== imageOf(m.os.id, next.version)) return fail("error.otherMedia");
   }
-  if (s.cash < upgradeLicenseDue(s, m.os.id)) return fail("error.noCash");
+  const blocked = upgradeKeyBlock(s, machineId, m.os.id, next.version, key);
+  if (blocked) return fail(blocked);
   const hours = upgradeHours(s, machineId), done = nowHours(s) + serverOsById(m.os.id).installHours, from = m.os.version;
-  // What runs on the machine goes down with it; a VM's own console stays on and shows the upgrade.
-  const found = installCase(s, machineId), down = found.kind === "busy" ? [...found.workloads, ...found.lost] : [];
-  const ids = new Set(down.map((w) => w.id)), services = new Set(down.filter((w) => !isOwnVm(w)).map((w) => w.serviceId));
-  s.workloads = s.workloads.map((w) => (ids.has(w.id) ? { ...w, busyUntil: Math.max(w.busyUntil, s.hour + hours) } : w));
-  // The hourly tick counts every whole hour a workload is busy; the rest is added here, as for a software update.
-  const rest = hours - (Math.ceil(hours) - 1);
-  for (const id of services) s.downHours = { ...s.downHours, [id]: (s.downHours[id] ?? 0) + rest };
-  buyUpgradeLicense(s, machineId, m.os.id, next.version);
+  // A VM's own console stays on and shows the upgrade.
+  takeDown(s, machineId, hours);
+  upgradeKey(s, machineId, m.os.id, next.version, key);
   setMachine(s, machineId, (x) => ({ os: { ...x.os!, version: next.version, installedAt: done, from } }));
   if (isDevice(m)) {
     Object.assign(m, { bootFrom: "disk", stuck: false, bootUntil: nowHours(s) + hours });
     pushLog(m, s.hour, "ipmi.log.upgrade");
   } else s.workloads = s.workloads.map((w) => (w.id === machineId ? { ...w, media: undefined } : w));
   return { ok: true };
+}
+
+// docs/design/plans/software-licences.md, Versions: the release an upgrade of installed software takes it to, the newest of
+// the next major once it is out; null while it installs or upgrades.
+export const softwareTarget = (s: GameState, machineId: string, product: string): SoftwareVersion | null => {
+  const x = machineOf(s, machineId)?.software?.find((y) => y.id === product);
+  return x && (x.doneAt === null || x.doneAt <= s.hour) ? nextMajor(product, x.version, s.hour) : null;
+};
+
+// Why the software cannot step up one major now: nothing newer, no network, or a key for an older major and no upgrade key.
+export function softwareUpgradeBlock(s: GameState, machineId: string, product: string, key?: string): string | null {
+  if (!machineOf(s, machineId)?.software?.some((x) => x.id === product)) return "error.noSoftware";
+  const next = softwareTarget(s, machineId, product);
+  if (!next) return "error.noMajorUpgrade";
+  if (!osUp(s, machineId)) return "error.osNotUp";
+  if (machineNet(s, machineId)) return "error.noDownload";
+  return upgradeKeyBlock(s, machineId, product, next.version, key);
+}
+
+// Upgrades installed software one major in place over its install hours; what runs on the machine is down meanwhile and
+// the software runs its old version until the upgrade is done. A typed key replaces the one the machine held.
+export function upgradeSoftware(s: GameState, machineId: string, product: string, key?: string): ActionResult {
+  const blocked = softwareUpgradeBlock(s, machineId, product, key);
+  if (blocked) return fail(blocked);
+  const next = softwareTarget(s, machineId, product)!, hours = softwareById(product).installHours;
+  takeDown(s, machineId, hours);
+  upgradeKey(s, machineId, product, next.version, key);
+  setMachine(s, machineId, (m) => ({ software: m.software.map((x) => (x.id === product ? { ...x, version: next.version, from: x.version, doneAt: s.hour + hours } : x)) }));
+  return { ok: true, id: next.version };
 }
 
 // Any key on the failure an abandoned install left on the console.

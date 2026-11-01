@@ -1,4 +1,4 @@
-// Books > Products: the catalog before a shop system takes it over (docs/design/plans/product-catalog.md, 3.2).
+// Books > Products: the catalog email orders and leads choose from (docs/design/plans/product-catalog.md, 3.2).
 import { yearOf } from "../00-core/time";
 import { CYCLES } from "../10-catalog/cycles";
 import type { Product } from "../30-customers/customers";
@@ -12,7 +12,6 @@ import type { ActionResult } from "./hardware";
 export type ProductPatch = Partial<Pick<CatalogProduct, "name" | "spec" | "sla" | "prices" | "setup" | "hidden">>;
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
-const inShop = (s: GameState) => s.shop.variant !== null;
 
 function invalid(s: GameState, p: CatalogProduct): string | null {
   const name = p.name.trim(), prices = Object.entries(p.prices);
@@ -26,7 +25,6 @@ function invalid(s: GameState, p: CatalogProduct): string | null {
 
 // A product of the line at its middle size, the player's rate as the monthly price and the line's setup fee.
 export function addProduct(s: GameState, line: Product): ActionResult {
-  if (inShop(s)) return fail("error.catalogInShop");
   const label = t(`sim.line.${line}`);
   let n = 1;
   while (productNamed(s, line, `${label} ${n}`)) n++;
@@ -40,7 +38,6 @@ export function addProduct(s: GameState, line: Product): ActionResult {
 }
 
 export function updateProduct(s: GameState, id: string, patch: ProductPatch): ActionResult {
-  if (inShop(s)) return fail("error.catalogInShop");
   const p = s.catalog.find((x) => x.id === id);
   if (!p) return fail("error.productMissing");
   const next = { ...p, ...patch, id: p.id, line: p.line };
@@ -51,7 +48,6 @@ export function updateProduct(s: GameState, id: string, patch: ProductPatch): Ac
 }
 
 export function removeProduct(s: GameState, id: string): ActionResult {
-  if (inShop(s)) return fail("error.catalogInShop");
   if (!s.catalog.some((x) => x.id === id)) return fail("error.productMissing");
   s.catalog = s.catalog.filter((x) => x.id !== id);
   return { ok: true, id };

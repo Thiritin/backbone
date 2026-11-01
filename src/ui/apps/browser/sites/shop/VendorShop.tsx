@@ -5,7 +5,7 @@ import { tiersOf } from "../../../../../sim/10-catalog/licence-tiers";
 import type { LicenseKind } from "../../../../../sim/10-catalog/server-os";
 import type { GameState, Licence } from "../../../../../sim/50-state";
 import { keyExpired, productOf } from "../../../../../sim/60-infra/licence";
-import { cartOf, keysOf, offerOf, offers, orderKeys, type Offer } from "../../../../../sim/80-business/vendor-shop";
+import { cartOf, keysOf, lineOffer, offers, orderKeys, upgradeOffers, type CartLine, type Offer } from "../../../../../sim/80-business/vendor-shop";
 import { addToCart, cancelLicence, checkout, removeFromCart } from "../../../../../sim/90-actions/vendor-shop";
 import { useStore } from "../../../../store";
 import { day } from "../../../hw";
@@ -17,14 +17,15 @@ type ShopProps = { btn: string };
 
 const productName = (id: string) => productOf(id)?.name ?? id;
 const editionName = (product: string, edition: string | null) => tiersOf(product).find((x) => x.id === edition)?.name ?? "";
-const lineName = (product: string, edition: string | null) => [productName(product), editionName(product, edition)].filter(Boolean).join(" ");
+const lineName = (product: string, edition: string | null, from?: string) =>
+  [productName(product), editionName(product, edition), from ? t("vendor-shop.upgradeFrom", { from }) : ""].filter(Boolean).join(" ");
 const UNIT: Record<LicenseKind, string> = { once: "vendor-shop.once", server: "vendor-shop.perServer", core: "vendor-shop.perCore", account: "vendor-shop.perAccount", gameserver: "vendor-shop.perGameserver", free: "vendor-shop.once" };
 const priceOf = (o: Offer) => t(`${UNIT[o.kind]}${o.period === "year" ? "Year" : ""}`, { fee: euroPrice(o.fee) });
 
 export const cartCount = (s: GameState, host: string): number => cartOf(s, host).reduce((n, l) => n + l.qty, 0);
 
 export function Editions({ product, btn }: ShopProps & { product: string }) {
-  const hour = useStore((s) => s.game.hour), act = useStore((s) => s.act);
+  const game = useStore((s) => s.game), hour = game.hour, act = useStore((s) => s.act);
   const caps = tiersOf(product);
   return (
     <table className="shop-table">
@@ -39,7 +40,15 @@ export function Editions({ product, btn }: ShopProps & { product: string }) {
             <td><button type="button" className={btn} onClick={() => act(addToCart, product, o.edition)}>{t("vendor-shop.addToCart")}</button></td>
           </tr>
         );
-      })}</tbody>
+      })}
+      {upgradeOffers(game, product).map((o) => (
+        <tr key={`up.${o.from}`}>
+          <td>{lineName(product, null, o.from)}</td>
+          {caps.length > 0 && <td />}
+          <td className="num">{priceOf({ edition: null, fee: o.fee, kind: "once" })}</td>
+          <td><button type="button" className={btn} onClick={() => act(addToCart, product, null, o.from)}>{t("vendor-shop.addToCart")}</button></td>
+        </tr>
+      ))}</tbody>
     </table>
   );
 }
@@ -52,17 +61,17 @@ export function Cart({ host, btn, account }: ShopProps & { host: string; account
     if (!order) return <p>{t("vendor-shop.empty")}</p>;
     return <p>{t("vendor-shop.placed", { order })} <a href="#account" onClick={(e) => { e.preventDefault(); account(); }}>{t("vendor-shop.myAccount")}</a></p>;
   }
-  const total = lines.reduce((n, l) => n + (offerOf(l, game.hour)?.fee ?? 0) * l.qty, 0);
+  const total = lines.reduce((n, l) => n + (lineOffer(game, l)?.fee ?? 0) * l.qty, 0);
   return (
     <>
       <table className="shop-table">
         <thead><tr><th>{t("vendor-shop.product")}</th><th>{t("vendor-shop.qty")}</th><th>{t("vendor-shop.price")}</th><th /></tr></thead>
-        <tbody>{lines.map((l) => {
-          const o = offerOf(l, game.hour);
+        <tbody>{lines.map((l: CartLine) => {
+          const o = lineOffer(game, l);
           return (
-            <tr key={`${l.product}.${l.edition}`}>
-              <td>{lineName(l.product, l.edition)}</td><td className="num">{l.qty}</td><td className="num">{o ? priceOf(o) : ""}</td>
-              <td><button type="button" className={btn} onClick={() => act(removeFromCart, l.product, l.edition)}>{t("vendor-shop.remove")}</button></td>
+            <tr key={`${l.product}.${l.edition}.${l.from ?? ""}`}>
+              <td>{lineName(l.product, l.edition, l.from)}</td><td className="num">{l.qty}</td><td className="num">{o ? priceOf(o) : ""}</td>
+              <td><button type="button" className={btn} onClick={() => act(removeFromCart, l.product, l.edition, l.from)}>{t("vendor-shop.remove")}</button></td>
             </tr>
           );
         })}</tbody>

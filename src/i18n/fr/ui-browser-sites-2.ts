@@ -444,6 +444,7 @@ export default {
   "browser-sites-2.cli.channel": () => "Choisit le canal d'où viendront les prochaines mises à jour.",
   "browser-sites-2.cli.autoupdate": () => "Active ou désactive les mises à jour automatiques de nuit.",
   "browser-sites-2.cli.licenseSet": () => "Attribue une clé de licence libre à cette machine.",
+  "browser-sites-2.cli.upgrade": () => "Met le logiciel à niveau vers la version majeure suivante ; --key saisit la clé de mise à niveau qu'exige une licence d'une version antérieure.",
   "browser-sites-2.cli.licenseShow": () => "Affiche la clé attribuée, son édition et sa date d'expiration.",
   "browser-sites-2.cli.trial": () => "Démarre l'essai gratuit sur cette machine.",
   "browser-sites-2.cli.licenseTier": () => "Change l'édition de licence de cet hôte de panneau.",
