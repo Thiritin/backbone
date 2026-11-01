@@ -21,6 +21,7 @@ import { mountableImages } from "../../../../sim/90-actions/media";
 import { joinableServers } from "../../../../sim/90-actions/software";
 import { buyAppSuite, cancelAppSuite, deployFromSuite } from "../../../../sim/90-actions/suite";
 import { rescueTargets, rescueWorkload, restoreWorkload, startWorkload, stopWorkload } from "../../../../sim/90-actions/vms";
+import { freezeWorkload, thawWorkload } from "../../../../sim/90-actions/openveezee";
 import { diskMoveDowntime, moveDisk } from "../../../../sim/90-actions/datastores";
 import { cloneHours, cloneTemplate, makeTemplate, makeVm } from "../../../../sim/90-actions/templates";
 import { useHolds } from "./Holds";
@@ -83,6 +84,8 @@ export function useVms(game: GameState, c: Cluster, f: ConsoleFeatures): { vms: 
     const toggle = (kind: string) => () => setOpen(open?.id === w.id && open.kind === kind ? null : { id: w.id, kind });
     const actions: (PanelAction | false)[] = [
       f.start && st === "stopped" && !tpl && { id: "start", label: t("browser-consoles-1.hvStart"), run: () => act(startWorkload, w.id) },
+      c.platform === "openveezee" && st === "running" && !tpl && { id: "checkpoint", label: t("ovz.checkpoint"), run: () => act(freezeWorkload, w.id) },
+      st === "checkpointed" && { id: "thaw", label: t("ovz.restore"), run: () => act(thawWorkload, w.id) },
       f.stop && on && { id: "stop", label: t("browser-consoles-1.vmShutdown"), run: () => act(stopWorkload, w.id) },
       f.stop && on && own && { id: "reset", label: t("browser-consoles-1.hvReset"), run: () => { if (act(stopWorkload, w.id).ok) act(startWorkload, w.id); } },
       st === "lost" && { id: "restore", label: w.backupAt === null ? t("browser-consoles-1.startEmpty") : t("browser-consoles-1.hvRestore"), run: () => act(restoreWorkload, w.id) },

@@ -20,10 +20,12 @@ import { fillLines } from "../src/sim/80-business/website";
 import { derivedDomain } from "../src/sim/30-customers/domains";
 import { register } from "../src/sim/30-customers/registry";
 import { nodeName } from "../src/sim/30-customers/hostnames";
-import { setMachine } from "../src/sim/60-infra/cluster";
+import { setMachine, type Cluster } from "../src/sim/60-infra/cluster";
 import { assignedKey, assignKey, isLicensed, issueKey, panelMachine } from "../src/sim/60-infra/licence";
 import { topTier } from "../src/sim/10-catalog/licence-tiers";
+import { UI_LOOKS, versionsOf } from "../src/sim/10-catalog/software-versions";
 import { portPeers } from "../src/sim/60-infra/status";
+import { leaseTick } from "../src/sim/60-infra/lan";
 import { setPortShare } from "../src/sim/90-actions/lan";
 import { imageOf, serverOsAt, type OsImage, type ServerOsId } from "../src/sim/10-catalog/server-os";
 import { softwareById } from "../src/sim/10-catalog/platforms";
@@ -42,6 +44,11 @@ const done = (s: GameState, id: string, patch: Partial<GameState["clusters"][num
   const host = panelMachine(c), panel = patch.panel;
   if (host && panel && isLicensed(panel) && !assignedKey(s, host, panel)) assignKey(s, issueKey(s, panel, topTier(panel)?.id ?? null).id, host);
   return id;
+};
+// Every node of a licensed platform holds a key, as an install from the console gives it.
+const platformKeys = (s: GameState, id: string) => {
+  const c = s.clusters.find((x) => x.id === id)!;
+  for (const n of c.nodes) if (c.platform && isLicensed(c.platform) && !assignedKey(s, n.deviceId, c.platform)) assignKey(s, issueKey(s, c.platform, null).id, n.deviceId);
 };
 const must = (r: { ok: boolean; id?: string; error?: string }): string => {
   if (!r.ok) throw new Error(r.error);
@@ -73,6 +80,15 @@ export function withStick(s: GameState, deviceId: string, os: ServerOsId = "luni
   withImage(s, os);
   s.media.stick = { os: isoOf(s, os), in: deviceId };
 }
+// The basement router swapped in place for a Fritz!Bocks 7390, whose DHCP registers names so the desk resolves node001,
+// with the leases of the clients it serves now stored.
+export function withNames(s: GameState): GameState {
+  const r = s.devices.find((d) => d.model === "home-router" && d.rackId);
+  if (r) r.model = "fb-7390";
+  leaseTick(s);
+  return s;
+}
+
 // The server cabled to a free port of the basement switch, which reaches the home router and its live line.
 export function withNetwork(s: GameState, id: string): void {
   const sw = s.devices.find((d) => modelById(d.model).kind === "switch")!;
@@ -114,6 +130,7 @@ export function shareWith(s: GameState, id: string): void {
 export function hypervisor(s: GameState, deviceIds: string[], name?: string, platform = "proxmocks"): string {
   const [id] = deviceIds.map((d) => done(s, must(installHypervisor(s, bootedFor(s, d, platform), platform)), { platform }));
   for (const d of deviceIds.slice(1)) must({ ...addNode(s, id, d), id });
+  platformKeys(s, id);
   return name ? done(s, id, { name }) : id;
 }
 // Installs the cluster's hypervisor on the server, already done, and joins it to the cluster.
@@ -212,3 +229,12 @@ export const owner = (s: GameState, ticketId: string): [Address | undefined, str
   const r = s.sales.requests.find((x) => x.kind === "order" && x.ticketId === ticketId);
   return [s.customers.find((c) => c.id === r?.customerId)?.address, r?.owned ? authCode(s.seed, r.id) : undefined];
 };
+
+// The version just before a console's late look and the first version with it.
+export function lateVersions(product: string): [string, string] {
+  const vs = versionsOf(product).map((x) => x.version), from = UI_LOOKS[product].find(([, look]) => look === "late")![0];
+  return [vs[vs.indexOf(from) - 1], from];
+}
+// Sets the version the software runs on a cluster's machine.
+export const pinVersion = (s: GameState, c: Cluster, product: string, version: string): void =>
+  setMachine(s, panelMachine(c)!, (m) => ({ software: m.software.map((x) => (x.id === product ? { ...x, version } : x)) }));

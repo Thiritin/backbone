@@ -32,9 +32,9 @@ export function LexwearSite({ game, path, go }: { game: GameState; path: string;
   const year = yearOf(game.hour);
   const link = (url: string) => (e: MouseEvent) => { e.preventDefault(); go(url); };
   const id = /^\/module\/([\w-]+)/.exec(path)?.[1];
-  const m = id ? moduleById(id) : undefined;
-  const shown = MODULES.filter((x) => x.year <= year);
-  const page = m && m.year <= year ? "module" : path.startsWith("/support") ? "support" : "home";
+  const m = id ? moduleById(id) : undefined, ours = m?.vendor === "lexwear";
+  const shown = MODULES.filter((x) => x.vendor === "lexwear" && x.year <= year);
+  const page = m && ours && m.year <= year ? "module" : path.startsWith("/support") ? "support" : "home";
   const nav: [string, string, string][] = [["home", t("vendor-sites.navModules"), lexwearUrl()], ["support", t("vendor-sites.navSupport"), SUPPORT]];
   return (
     <div className="lx">

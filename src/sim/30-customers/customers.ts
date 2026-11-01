@@ -1,5 +1,6 @@
 import type { Resources, Sla, Spec } from "../10-catalog/products";
 import type { Cycle } from "../10-catalog/cycles";
+import type { MethodId } from "../10-catalog/payments";
 import type { Address } from "./addresses";
 
 export type Profile = "private" | "gamer" | "hobbyDev" | "soleProp" | "smallBiz" | "agency" | "office" | "onlineShop" | "enterprise" | "reseller";
@@ -17,7 +18,13 @@ export interface Customer { id: string; name: string; profile: Profile; since: n
   // A fraudster's order: the hour the stolen payment is charged back. Never shown to the player.
   chargebackAt?: number;
   // The organiser of a sponsored event: churned from the start so no customer count, mail or churn roll sees them, while their free services run.
-  sponsor?: true }
+  sponsor?: true;
+  // Created by the shop system; absent reads as entered in Books. synced false hides it from Books until an import.
+  source?: "manual" | "shop";
+  synced?: boolean;
+  // How a shop customer pays; absent reads as bank transfer. fraud is set once a fraud chargeback is booked.
+  method?: MethodId;
+  fraud?: true }
 // price is per hour for period "hour" (invoiced monthly in arrears) and per year for period "year" (invoiced in advance).
 // spec is what the customer ordered and the service books; its workloads point back at it by serviceId.
 export interface Service { id: string; customerId: string; product: Product; label: string; price: number; period: "hour" | "year"; commitMonths: number; startedAt: number; endedAt: number | null; zone: string | null;

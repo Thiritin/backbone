@@ -1,5 +1,5 @@
 import { booted, monthNet, pickSound, playSound, soundFor, WINDOW_MS, type Sound, type UiSound } from "./sounds";
-import { useEffect } from "react";
+import { createContext, useContext, useEffect } from "react";
 import { create } from "zustand";
 import type { GameState } from "../sim/50-state";
 import { weeklyChallenge } from "../sim/10-catalog/challenges";
@@ -14,6 +14,8 @@ import { SKIP, SPEEDS, type Speed } from "../sim/00-core/time";
 import { t } from "../i18n/en";
 import type { ActionResult, CartLine } from "../sim/90-actions/hardware";
 import { readSession, writeSession } from "./session";
+
+export const DISCORD_URL = "https://discord.gg/e8nTAV8Yk7";
 
 export const SAVE_KEY = "backbone.save";
 
@@ -77,7 +79,7 @@ export interface Store {
   // act for pages that show the error themselves.
   attempt: <A extends unknown[]>(fn: (s: GameState, ...args: A) => ActionResult, ...args: A) => ActionResult;
   setSpeed: (s: Speed) => void;
-  openApp: (app: string, focus?: Omit<Focus, "n">) => void;
+  openApp: (app: string, focus?: Omit<Focus, "n">, fresh?: boolean) => void;
   // Opens a server's console in its own window, one per server.
   openConsole: (deviceId: string) => void;
   // Opens a desktop document: the guide in Getting started, a note in its own Notes window.
@@ -288,9 +290,10 @@ export const useStore = create<Store>((set, get) => ({
   },
   setSpeed: (speed) => set({ speed }),
 
-  openApp: (app, target) => {
+  openApp: (app, target, fresh) => {
+    if (app === "Chat") return void window.open(DISCORD_URL, "_blank", "noopener");
     const ws = get().windows;
-    const open = ws.find((w) => w.app === app);
+    const open = fresh ? undefined : ws.filter((w) => w.app === app).sort((a, b) => b.z - a.z)[0];
     const focus = target ? { ...target, n: ++focusId } : open?.focus;
     if (open) return set({ windows: ws.map((w) => (w.id === open.id ? { ...w, minimized: false, z: topZ(ws) + 1, focus } : w)) });
     const n = ws.length % 8, size = WINDOW_SIZES[app] ?? { w: 760, h: 480 };
@@ -420,8 +423,13 @@ useStore.subscribe((s, prev) => {
 
 export const loadedFromSave = initial.loaded;
 
+// The window an app body renders in, so an app with several windows keeps state per window.
+export const WinContext = createContext({ id: "", close: () => {} });
+export const useWin = () => useContext(WinContext);
+
 // Runs apply with the focus another app opened this app's window on, on mount and on every new request.
 export function useFocus(app: string, apply: (f: Focus) => void): void {
-  const focus = useStore((s) => s.windows.find((w) => w.app === app)?.focus);
+  const { id } = useWin();
+  const focus = useStore((s) => s.windows.find((w) => (id ? w.id === id : w.app === app))?.focus);
   useEffect(() => { if (focus) apply(focus); }, [focus?.n]);
 }
