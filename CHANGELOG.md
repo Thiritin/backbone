@@ -3,6 +3,7 @@
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
 ## 2026-11-01
+- The Terminal button on a server now connects by its address, and Tab in the terminal completes server addresses as well as names.
 - Removing an offsite backup server now discards its copies, a Proxmocks VM can no longer be moved into a cluster without quorum, and the Backula status lists only the jobs that write to that server with their real result.
 
 - A charged-back renewal no longer extends a prepaid term twice, upgrades on a prepaid term are billed for the rest of the term, and customers leaving after a written-off term get no refund.
