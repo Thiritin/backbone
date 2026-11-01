@@ -1,6 +1,6 @@
-import { LogOut, Search } from "lucide-react";
+import { ArrowRightLeft, Circle, Code, KeyRound, ListChecks, Lock, LogOut, Network, Package, RefreshCw, ScrollText, Search, Server, UserPlus, Users, type LucideIcon } from "lucide-react";
 import { useState } from "react";
-import { Backups, erasFrom, eraAt, Facts, LoginForm, Nodes, RowsTable, Tiles, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
+import { Backups, eraAt, looks, Facts, LoginForm, Nodes, RowsTable, Tiles, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
 import { t } from "../../../../../i18n/en";
 import { yearOf } from "../../../../../sim/00-core/time";
 import { TRANSFER_FROM_YEAR } from "../../../../../sim/60-infra/transfers";
@@ -16,11 +16,16 @@ import { TransferTool } from "./TransferTool";
 import { ServiceManager } from "./ServiceManager";
 import "./cpanic.css";
 
-// docs/design/software.md, section 10: the x3 manager until 2014, then the flat one with grouped sections.
-const ERAS = erasFrom(2005, 2014);
+// docs/design/software.md, section 10: one look per WHM generation, ids as in UI_LOOKS.
+const LOOKS = looks({ x3: 2005, paperLamp: 2014, jupitar: 2021 });
+const ICON: Partial<Record<Tab, LucideIcon>> = {
+  objects: Users, nodes: Network, create: UserPlus, packages: Package, transfer: ArrowRightLeft, autossl: Lock, software: RefreshCw,
+  easyapache: Code, services: Server, tasks: ListChecks, logs: ScrollText, licence: KeyRound,
+};
+const TabIcon = ({ id }: { id: Tab }) => { const I = ICON[id] ?? Circle; return <I size={14} aria-hidden />; };
 
 export function CPanic(p: PanelProps) {
-  const era = eraAt(ERAS, p), open = parseCreate("cpanic", p.path), [tab, setTab] = usePanelTab(p.f, open?.screen ?? "objects"), [q, setQ] = useState(""), [as, setAs] = useSessionState<string | null>(`browser.cpanic.as.${p.c.id}`, null);
+  const era = eraAt(LOOKS, p), x3 = era === "x3", open = parseCreate("cpanic", p.path), [tab, setTab] = usePanelTab(p.f, open?.screen ?? "objects"), [q, setQ] = useState(""), [as, setAs] = useSessionState<string | null>(`browser.cpanic.as.${p.c.id}`, null);
   const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f);
   if (!p.signedIn) return (
     <div className="cx cp cp-login" data-era={era}>
@@ -45,33 +50,36 @@ export function CPanic(p: PanelProps) {
     ...(p.f.cluster ? [[t("browser-consoles-1.cpClusters"), [["nodes", t("browser-consoles-1.cpClusterStatus")]]] as [string, [Tab, string][]]] : []),
     [t("pkg.accountFunctions"), [["create", t("pkg.cpCreate")]]],
     [t("pkg.packages"), [["packages", t("pkg.addPackage")]]],
-    ...(yearOf(p.game.hour) >= TRANSFER_FROM_YEAR ? [[t("web.xfer.group"), [["transfer", era === "early" ? t("web.xfer.copy") : t("web.xfer.menu")]]] as [string, [Tab, string][]]] : []),
+    ...(yearOf(p.game.hour) >= TRANSFER_FROM_YEAR ? [[t("web.xfer.group"), [["transfer", x3 ? t("web.xfer.copy") : t("web.xfer.menu")]]] as [string, [Tab, string][]]] : []),
     ...(yearOf(p.game.hour) >= AUTOSSL_FROM ? [[t("web.ssl.group"), [["autossl", t("web.ssl.menu")]]] as [string, [Tab, string][]]] : []),
-    [t("browser-consoles-1.cpServerConfig"), [["software", t("browser-consoles-1.cpSoftwareUpdates")], ["easyapache", era === "early" ? t("web.ea.menu3") : t("web.ea.menu4")]]],
+    [t("browser-consoles-1.cpServerConfig"), [["software", t("browser-consoles-1.cpSoftwareUpdates")], ["easyapache", x3 ? t("web.ea.menu3") : t("web.ea.menu4")]]],
     ...(pages.length ? [[t("readouts.serverStatus"), [["services", t("readouts.services")] as [Tab, string], ...pages.map((g) => [g.id, g.label] as [Tab, string])]] as [string, [Tab, string][]]] : []),
   ];
-  const title = menu.flatMap(([, items]) => items).find(([id]) => id === tab)?.[1];
+  const [group, title] = menu.flatMap(([g, items]) => items.map(([id, label]) => [g, label, id])).find(([, , id]) => id === tab) ?? [];
+  const find = <label className="cp-find"><Search size={13} aria-hidden /><input placeholder={t("browser-consoles-1.find")} value={q} onChange={(e) => setQ(e.target.value)} /></label>;
   return (
     <div className="cx cp" data-era={era}>
       <header className="cp-top">
         <span className="cp-logo">cPanic<small>WebHost Manager</small></span>
+        {era === "jupitar" && find}
         <span className="cx-host">{p.host}</span>
         <button className="cp-out" onClick={p.logout}><LogOut size={14} aria-hidden />{t("browser-consoles-1.logOut")}</button>
       </header>
       <div className="cp-body">
         <aside className="cp-menu">
-          <label className="cp-find"><Search size={13} aria-hidden /><input placeholder={t("browser-consoles-1.find")} value={q} onChange={(e) => setQ(e.target.value)} /></label>
+          {era !== "jupitar" && find}
           {menu.map(([group, items]) => {
             const shown = items.filter(([, label]) => label.toLowerCase().includes(q.toLowerCase()));
             return shown.length > 0 && (
               <section key={group}>
                 <h3>{group}</h3>
-                {shown.map(([id, label]) => <button key={id} aria-pressed={tab === id} onClick={() => setTab(id)}>{label}</button>)}
+                {shown.map(([id, label]) => <button key={id} aria-pressed={tab === id} onClick={() => setTab(id)}><TabIcon id={id} />{label}</button>)}
               </section>
             );
           })}
         </aside>
         <main className="cp-main">
+          <div className="cp-crumb">{group}</div>
           <h1>{title}</h1>
           {tab === "objects" && <RowsTable rows={rows} name={t("browser-consoles-1.domain")} cols={["user", "pkg"]} extra={(r) => <button className="cx-btn" onClick={() => setAs(r.id)}>{t("readouts.cp.loginAs")}</button>} />}
           {tab === "create" && (
@@ -80,9 +88,9 @@ export function CPanic(p: PanelProps) {
           )}
           {tab === "packages" && <PackagesScreen game={p.game} c={p.c} />}
           {tab === "nodes" && <Nodes game={p.game} c={p.c} />}
-          {tab === "transfer" && <TransferTool game={p.game} c={p.c} x3={era === "early"} />}
+          {tab === "transfer" && <TransferTool game={p.game} c={p.c} x3={x3} />}
           {tab === "autossl" && <AutoSsl game={p.game} c={p.c} />}
-          {tab === "easyapache" && <PhpProfiles game={p.game} c={p.c} x3={era === "early"} />}
+          {tab === "easyapache" && <PhpProfiles game={p.game} c={p.c} x3={x3} />}
           {tab === "services" && <ServiceManager game={p.game} c={p.c} />}
           {pages.find((g) => g.id === tab)?.body}
           {tab === "software" && (
