@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- Bookkeeping editions with the tax view connect to DOHLE with your certificate file, send the advance VAT returns in the monthly run and submit the yearly return once every invoice and transfer of the year is in the books.
 - Income tax is no longer taken every April: you file a yearly return through DohleFormular, the assessment follows by post, and a late return costs a fee or brings an estimate that is always too high.
 - You can register on DOHLE for a certificate file, with the activation ID by email and the code by post, and download DohleFormular to send your advance VAT returns.
 

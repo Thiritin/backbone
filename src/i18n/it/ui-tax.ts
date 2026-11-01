@@ -51,4 +51,7 @@ export default {
   "ui-tax.formular.none": () => "Nessuna dichiarazione aperta",
   "ui-tax.returns.owed": () => "Importo",
   "books.tab.tax": () => "Imposte",
+  "ui-tax.books.connect": () => "Collega DOHLE",
+  "ui-tax.books.connected": () => "Collegato",
+  "ui-tax.books.submit": () => "Invia dichiarazione",
 } satisfies Dict;

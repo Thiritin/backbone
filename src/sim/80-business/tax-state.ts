@@ -20,6 +20,8 @@ export interface TaxState {
   dohleCode: string;
   codeAt: number | null;
   cert: string | null;
+  // The certificate Books was connected with; the connection holds while it is still the valid one.
+  booksCert: string | null;
 }
 
 // A return for the hours [from, to). booked is what filing booked; late is set once the surcharge letter went out and
@@ -29,4 +31,4 @@ export interface TaxReturn {
   filedAt: number | null; booked: number; late: boolean; estimate: string | null;
 }
 
-export const newTax = (): TaxState => ({ asked: null, answered: null, expected: 0, small: false, number: "", numberAt: null, since: 0, returns: [], checked: 0, dohleId: "", dohleCode: "", codeAt: null, cert: null });
+export const newTax = (): TaxState => ({ asked: null, answered: null, expected: 0, small: false, number: "", numberAt: null, since: 0, returns: [], checked: 0, dohleId: "", dohleCode: "", codeAt: null, cert: null, booksCert: null });

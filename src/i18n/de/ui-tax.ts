@@ -51,4 +51,7 @@ export default {
   "ui-tax.formular.none": () => "Keine offenen Erklärungen",
   "ui-tax.returns.owed": () => "Betrag",
   "books.tab.tax": () => "Steuern",
+  "ui-tax.books.connect": () => "DOHLE verbinden",
+  "ui-tax.books.connected": () => "Verbunden",
+  "ui-tax.books.submit": () => "Steuererklärung übermitteln",
 } satisfies Dict;
