@@ -551,6 +551,10 @@ d is the agency discount from a campaign, e is 1.15 for an existing customer and
 
 **Market research.** A market study reveals one profile in the Market app for good; it is a one-time payment booked as marketing. Studies cost €800 for a low-budget profile, €2,000 for a medium one and €4,000 for a high one, €20,400 for all nine (decision). The Demand section counts a city's buyers of a product as the city's new customers × each profile's mix × that profile's product weight, your part as the expected requests from the lead flows above (leads × product weight × your choice share × conversion), and splits the remainder over the competitors by their softmax among themselves. Code: `src/sim/30-market/research.ts`.
 
+**Transfers.** From 2008, about 30% of new web hosting orders come from another host and name it in their first message. On a cPanic host the Transfer Tool copies such an account: it takes the player 15 minutes plus 5 minutes per 10 GB and runs one hour per 20 GB, at least one. A transfer that ends within 24 hours of the account's start gives the customer +3 happiness. It fails with 5%, or 15% when the host's PHP is newer than the site's app runs on; a failure opens a ticket and the player runs the transfer again.
+
+**Message System.** The DirectAdmin Message System stores nothing. It lists the outage, how-to, abuse, upgrade and migration tickets of customers whose sites run on the host, plus a system message for each expired certificate on it and for a published security advisory that affects it. The Open button shows the ticket in Support.
+
 **Measured flow.** `npx tsx scripts/sales-flow.ts [seed] [months]` runs the real tick with a bot that quotes 3% under the reference, answers tickets, sets up a website in month 3 and runs €250 of search ads from month 6. Seed 1 gets 6 to 9 requests a month in the basement, 16 to 26 with the website and ads, and fills the basement server at about 26 customers, after which most deals are lost for capacity until you buy hardware.
 
 ## Happiness and churn
@@ -1585,6 +1589,14 @@ Disk use starts at 30% of booked and stops at 100%; the average customer reaches
 **Outgrowing a service.** Once a day at noon, a customer whose disk is at 90% or more, or whose CPU demand × the curve's weekly median reaches 0.9 (near 100% for more than half the week), writes an upgrade ticket with a chance of 1 in 7, so about a week after crossing the line; sales turns it into an expansion request. A full disk breaks the site: the customer loses 2 happiness a day and writes an "our site shows errors" upgrade ticket with a chance of 25% a day while none is open. A fast-growing disk crosses 90% after about 14 months and fills after 17. A fast-growing shop's CPU pegs after about 17 months, a news or enterprise site's after two years, while game servers and office sites, quiet for most of the week, take ten.
 
 **Before and after.** Measured over 30 days with a mixed set of customers (web hosting, VPS, game servers, VPN, storage, dedicated): early game in 2005 with 13 services moves 0.59 TB before and after, with a 95th percentile of 3.4 Mbit/s before and 3.8 after (night jobs add short peaks to a small base); mid game in 2012 with 200 services moves 17.9 TB before and 17.8 after, with a 95th percentile of 103 Mbit/s before and 88 after, so transit bills drop about 15% (€311 to €264 a month at Cogentle's price), because the floors and staggered peaks flatten the sum.
+
+## Resellers
+
+A reseller buys a block of accounts on a DirectAdmen or cPanic host and sells web space to their own customers. The three blocks are Small (20 accounts, 50 GB, 500 GB traffic), Medium (50 accounts, 150 GB, 1,500 GB) and Large (100 accounts, 350 GB, 4,000 GB). The monthly price of a block is 0.5 times the market price of an average web space times its account count, billed in full whether the block is filled or not.
+
+The block books its full compute and disk from the day it starts. The reseller's own customers arrive linearly over 6 months up to a fill of 70%, and a cheaper block than the market price fills faster (down to 3 months at half the price per account). Resource use follows the fill, so the host carries less than it has sold.
+
+Abuse reports arrive at the rate of the filled accounts, and the reseller handles half of them; the other half come to the player as abuse tickets with the reseller as the customer. Each month there is a 2% chance that the block holds a shady account, which draws the abuse and legal follow-ups of a shady customer until the player suspends the reseller. Reseller leads are 3% of web hosting leads from 2008, once a DirectAdmen or cPanic host exists.
 
 ## Platforms and licenses
 
