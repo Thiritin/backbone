@@ -28,11 +28,11 @@ export function PayablesTab() {
   return (
     <div className="fin-scroll">
       {hbci(game) ? (
-        <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 8 }}>
+        <div className="fin-toolbar">
           <button className="btn" onClick={() => act(payAllDue)}>{t("bank.pay.all")}</button>
           <label><input type="checkbox" checked={!!game.bank?.autoPay} onChange={(e) => act(setAutoPay, e.target.checked)} /> {t("bank.pay.auto")}</label>
         </div>
-      ) : <div style={{ marginBottom: 8 }}><Locked id="hbci" label={t("bank.pay.all")} /></div>}
+      ) : <div className="fin-toolbar"><Locked id="hbci" label={t("bank.pay.all")} /></div>}
       <table className="table">
         <thead><tr><th>{t("bank.pay.supplier")}</th><th>{t("bank.pay.number")}</th><th>{t("bank.pay.due")}</th><th className="r">{t("misc.amount")}</th><th>{t("bank.pay.status")}</th><th /></tr></thead>
         <tbody>
