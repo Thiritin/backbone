@@ -6,6 +6,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - Backup jobs now keep restore points that you can test and copy offsite, Proxmocks clusters keep quorum, replicate VMs and run Ceph storage, and every VM can have its own firewall.
 - VMwhere clusters now come in Essentials, Standard and Enterprise editions, with DRS modes, host maintenance mode, editable and acknowledgeable alarms, and resource pools that cap the vCPUs and RAM of their VMs.
+- HyperVee VMs from 2012 can replicate to a second host and fail over to it, and HyperVee hosts get a Virtual Switch Manager with external, internal and private switches.
+- OpenVeeZee containers now show their beancounters and slow down or stop when the node is oversold, can use burst memory, and move between nodes with a checkpoint and restore.
 - Letters in the Post app now arrive as full A4 pages with each sender's letterhead, crest or logo, the address window, reference block and footer of an official German letter.
 - Authorities that seize servers or send legal requests now appear under their name in your chosen language.
 - Resellers now rent blocks of 20, 50 or 100 accounts on a DirectAdmen or cPanic host and fill them over the months, their customers bring abuse reports of their own, and DirectAdmen has a Reseller login and a Manage Resellers page to watch and suspend them.
