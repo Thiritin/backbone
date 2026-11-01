@@ -9,6 +9,8 @@ import { GPU_CARDS } from "../10-catalog/gpu";
 import { CLEARANCE_SIZE, LOT_SIZE, USED_EVENTS } from "../10-catalog/used";
 import { PORT_SPEEDS } from "../10-catalog/network";
 import { phpAt, SOFTWARE, softwareById } from "../10-catalog/platforms";
+import { SERVER_OS } from "../10-catalog/server-os";
+import { versionsOf } from "../10-catalog/software-versions";
 import { SKILLS } from "../10-catalog/research";
 import { HOME_LINES } from "../20-world/datacenters";
 import { LINE_NAME } from "../30-market/spec";
@@ -67,6 +69,11 @@ export const NEWS: NewsDef[] = [
   ...PORT_SPEEDS.filter((p) => p.from > START_YEAR).map((p) => ({ id: `ports.${p.gbit}`, key: "event.news.ports", at: at(p.from), params: { gbit: p.gbit } })),
   // SSL certificates turn free (products.ts, marketRates).
   { id: "freeSsl", key: "event.news.freeSsl", at: at(2016), params: {} },
+  // A new major of a software or OS after its first, at ten on its release day, linking to the News page of its site.
+  ...[...SOFTWARE, ...SERVER_OS].flatMap((x) => versionsOf(x.id).flatMap((v, i, vs) => (i > 0 && v.major !== vs[i - 1].major && v.release > 0 ? [{
+    id: `swVersion.${x.id}.${v.version}`, key: "event.news.swVersion", at: v.release + 10,
+    params: { name: `${x.name} ${v.version}`, url: `www.${x.site.host}/news` },
+  }] : []))),
   // A manufacturer's releases of one month in one item that links to the News page of its site (vendors.ts).
   ...VENDORS.flatMap((v) => {
     const by = new Map<number, string[]>();

@@ -3,7 +3,7 @@ import { Body, Nav, type SiteProps } from "./SoftwareSite";
 import { SiteMark } from "./marks";
 import "./hypervee.css";
 
-const CRUMB = { home: t("browser-sites-1.hv.overview"), features: t("browser-sites-1.hv.new"), pricing: t("browser-sites-1.hv.licensing"), download: t("browser-sites-1.hv.installing") } as const;
+const CRUMB = { home: t("browser-sites-1.hv.overview"), features: t("browser-sites-1.hv.new"), pricing: t("browser-sites-1.hv.licensing"), download: t("browser-sites-1.hv.installing"), versions: t("releases.navVersions"), news: t("releases.navNews") } as const;
 
 // HyperVee: the dense 2008 library page with breadcrumbs; from 2016 the flat docs page with a left tree.
 export function HyperVee(props: SiteProps) {

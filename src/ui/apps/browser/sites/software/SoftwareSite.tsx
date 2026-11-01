@@ -8,12 +8,13 @@ import { useStore } from "../../../../store";
 import { downloadMbps } from "../../../../../sim/90-actions/media";
 import { startDownload, useProgress } from "../../../../downloads";
 import type { Look, Site } from "../../../../../sim/10-catalog/sites";
+import { Releases } from "./Releases";
 import "./software.css";
 
 // docs/design/software.md, 8.3: the pieces every software and OS site lays out in its own look.
-export type SitePage = "home" | "features" | "pricing" | "download";
+export type SitePage = "home" | "features" | "pricing" | "download" | "versions" | "news";
 export interface Product { id: string; name: string; site: Site; sw?: Software; os?: ServerOs }
-export interface SiteProps { p: Product; look: Look; page: SitePage; year: number; go: (path: string) => void }
+export interface SiteProps { p: Product; look: Look; page: SitePage; year: number; hour: number; go: (path: string) => void }
 
 export const productOf = (kind: "software" | "os", id: string): Product | null => {
   const sw = kind === "software" ? SOFTWARE.find((x) => x.id === id) : undefined, os = kind === "os" ? SERVER_OS.find((x) => x.id === id) : undefined;
@@ -21,13 +22,13 @@ export const productOf = (kind: "software" | "os", id: string): Product | null =
   return x ? { id: x.id, name: x.name, site: x.site, sw, os } : null;
 };
 
-const PAGES: SitePage[] = ["home", "features", "pricing", "download"];
+const PAGES: SitePage[] = ["home", "features", "pricing", "download", "versions", "news"];
 export const pageOf = (path: string): SitePage => PAGES.find((x) => x === path.split(/[/?#]/)[1]) ?? "home";
 const pathOf = (page: SitePage) => (page === "home" ? "/" : `/${page}`);
 const gui = (p: Product) => p.sw?.install.kind === "gui";
 
 export function Nav({ p, page, go, className, labels }: Pick<SiteProps, "p" | "page" | "go"> & { className?: string; labels?: Partial<Record<SitePage, string>> }) {
-  const name: Record<SitePage, string> = { home: t("browser-sites-2.navHome"), features: t("browser-sites-2.navFeatures"), pricing: t("browser-sites-2.navPricing"), download: gui(p) ? t("browser-sites-2.navInstall") : t("browser-sites-2.navDownload"), ...labels };
+  const name: Record<SitePage, string> = { home: t("browser-sites-2.navHome"), features: t("browser-sites-2.navFeatures"), pricing: t("browser-sites-2.navPricing"), download: gui(p) ? t("browser-sites-2.navInstall") : t("browser-sites-2.navDownload"), versions: t("releases.navVersions"), news: t("releases.navNews"), ...labels };
   return (
     <nav className={className}>
       {PAGES.map((x) => (
@@ -125,9 +126,10 @@ export function Commands({ p, year, className }: { p: Product; year: number; cla
 }
 
 // The page body below a site's own header and hero.
-export function Body({ p, page, year, go, className }: SiteProps & { className?: string }) {
+export function Body({ p, page, year, hour, go, className }: SiteProps & { className?: string }) {
   if (page === "features") return <section className={className}><h2>{t("browser-sites-2.navFeatures")}</h2><Features p={p} /></section>;
   if (page === "pricing") return <section className={className}><h2>{t("browser-sites-2.navPricing")}</h2><Pricing p={p} /></section>;
+  if (page === "versions" || page === "news") return <section className={className}><h2>{t(page === "news" ? "releases.navNews" : "releases.navVersions")}</h2><Releases p={p} page={page} hour={hour} /></section>;
   if (page === "download") return <section className={className}><h2>{gui(p) ? t("browser-sites-2.navInstall") : t("browser-sites-2.navDownload")}</h2><Commands p={p} year={year} /></section>;
   return (
     <section className={className}>
