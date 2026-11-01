@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- Used hardware is now bought on its own websites in the Browser: eBuy auctions, the WebHostingTalc forum and the Telegrump chat each look and filter the way they did in their year, from 2005 web pages to modern apps.
 - Competitors now change over the years: they move to new server generations, add features and have outages that make the news, the budget host cuts its prices each year, and the Market app charts each city's share of new customers.
 - A new game now starts with no money: you first open a business account on a bank's website, where your €3,500 savings arrive, and then register the company at the trade office for a €40 fee paid by bank transfer.
 - Used hardware now resells for less than it cost new, and buyers on the board and on eBuy no longer pay more than its resale value.
