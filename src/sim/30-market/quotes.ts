@@ -6,11 +6,18 @@ import type { SimEvent } from "../88-tick/tick";
 import { applyStep, AUTOMATION, quoteAccepted, stepsDone } from "./manual";
 import { orderOf } from "./orders";
 
-export type QuoteStatus = "draft" | "sent" | "accepted" | "countered" | "declined";
+export type QuoteStatus = "draft" | "sent" | "accepted" | "countered" | "declined" | "invoiced";
 // customerId stays null until the order's account exists; ticketId is the order ticket it answers.
 export interface Quote {
   id: string; number: string; customerId: string | null; ticketId: string | null; lines: InvoiceLine[]; monthly: number; setup: number;
   status: QuoteStatus; sentAt: number | null;
+  // When it was written, and the first invoice it was carried forward to.
+  createdAt?: number; invoiceId?: string;
+}
+
+// An accepted quote of the order becomes invoiced once the order's first invoice exists.
+export function carryForward(s: GameState, ticketId: string, invoiceId: string): void {
+  s.quotes = s.quotes.map((q) => (q.ticketId === ticketId && q.status === "accepted" ? { ...q, status: "invoiced", invoiceId } : q));
 }
 
 // The Lexwear module that joins Books and the helpdesk.
@@ -22,9 +29,10 @@ export const hasHelpdeskLink = (s: GameState): boolean => s.modules.includes(HEL
 export function answerQuote(s: GameState, requestId: string, events: SimEvent[]): void {
   const r = s.sales.requests.find((x) => x.id === requestId), q = r?.ticketId ? s.quotes.find((x) => x.ticketId === r.ticketId && x.status === "sent") : undefined;
   if (!r || !q) return;
-  const status: QuoteStatus | null = quoteAccepted(r) ? "accepted" : r.status === "countered" ? "countered" : r.status === "refused" || r.status === "lost" ? "declined" : null;
+  // With automatic orders the first invoice may exist already.
+  const status: QuoteStatus | null = quoteAccepted(r) ? (r.invoiceId ? "invoiced" : "accepted") : r.status === "countered" ? "countered" : r.status === "refused" || r.status === "lost" ? "declined" : null;
   if (!status) return;
-  s.quotes = s.quotes.map((x) => (x.id === q.id ? { ...x, status } : x));
+  s.quotes = s.quotes.map((x) => (x.id === q.id ? { ...x, status, ...(status === "invoiced" && { invoiceId: r.invoiceId }) } : x));
   if (status !== "accepted" || !hasHelpdeskLink(s) || reviewing(s, r.product)) return;
   for (const step of ["account", "invoice"] as const) {
     const t = s.tickets.find((x) => x.id === r.ticketId)!;

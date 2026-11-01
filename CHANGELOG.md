@@ -5,6 +5,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-01
 
 - Bank websites now show their own icon in the browser tab and address bar.
+- Quotes and invoices in Books now sit in a document list with a toolbar, and an accepted quote becomes its first invoice through Carry forward to invoice, after which it reads Invoiced with the invoice number.
 - The weather in the menu bar shows the name of the place you are at again, after the temperature.
 - The bank's welcome email now lists your account number, PIN and login address on their own lines.
 - Lexwear now sells modules for Books on lexwear.de: Monthly run, Match by reference and Automatic reminders take over the back office once you enter the licence key from Lexwear's email.
