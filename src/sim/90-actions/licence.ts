@@ -1,6 +1,6 @@
 import { tiersOf } from "../10-catalog/licence-tiers";
 import type { GameState } from "../50-state";
-import { accountsOn, assignedKey, assignKey, extendKey, installedVersion, isLicensed, issueKey, keyFor, licenceExpired, nameOf, panelKey, panelMachine, startTrial, tiersOnSale, trialDaysOf, trialOf, updateKey } from "../60-infra/licence";
+import { accountsOn, assignKey, extendKey, installedVersion, isLicensed, issueKey, keyFor, licenceExpired, nameOf, panelKey, panelMachine, startTrial, tiersOnSale, trialDaysOf, trialOf, updateKey } from "../60-infra/licence";
 import { machineOf } from "../60-infra/cluster";
 import { payLicence, tierFee } from "../85-products/products";
 import type { ActionResult } from "./hardware";
@@ -23,27 +23,6 @@ export function setLicenceTier(s: GameState, clusterId: string, tierId: string):
   return { ok: true, id: clusterId };
 }
 
-const installedOn = (s: GameState, machineId: string, product: string): boolean => !!machineOf(s, machineId)?.software?.some((x) => x.id === product);
-
-// Assigns an unassigned key to a machine that runs its product, in place of the key it had.
-export function assignLicence(s: GameState, keyId: string, machineId: string): ActionResult {
-  const k = s.licenses.find((x) => x.id === keyId);
-  if (!k || k.machineId !== null) return { ok: false, error: "error.licenceKey" };
-  if (!installedOn(s, machineId, k.product)) return { ok: false, error: "error.noSoftware" };
-  const old = assignedKey(s, machineId, k.product);
-  if (old) updateKey(s, old.id, { machineId: null });
-  assignKey(s, k.id, machineId);
-  return { ok: true, id: keyId };
-}
-
-// Starts the product's trial on the machine, once per machine.
-export function startLicenceTrial(s: GameState, machineId: string, product: string): ActionResult {
-  if (!isLicensed(product) || !installedOn(s, machineId, product)) return { ok: false, error: "error.noSoftware" };
-  if (trialDaysOf(product) === null || trialOf(s, machineId, product)) return { ok: false, error: "error.noTrial" };
-  startTrial(s, machineId, product);
-  return { ok: true };
-}
-
 // A build short of a key, naming the product.
 export const keysShort = (product: string): ActionResult => ({ ok: false, error: "error.licenceKeysShort", params: { name: nameOf(product) } });
 
@@ -56,4 +35,14 @@ export function activateLicence(s: GameState, machineId: string, product: string
   if (!k) return { ok: false, error: "error.licenceKey" };
   assignKey(s, k.id, machineId);
   return { ok: true, id: k.id };
+}
+
+const installedOn = (s: GameState, machineId: string, product: string): boolean => !!machineOf(s, machineId)?.software?.some((x) => x.id === product);
+
+// Starts the product's trial on the machine, once per machine.
+export function startLicenceTrial(s: GameState, machineId: string, product: string): ActionResult {
+  if (!isLicensed(product) || !installedOn(s, machineId, product)) return { ok: false, error: "error.noSoftware" };
+  if (trialDaysOf(product) === null || trialOf(s, machineId, product)) return { ok: false, error: "error.noTrial" };
+  startTrial(s, machineId, product);
+  return { ok: true };
 }
