@@ -6,6 +6,7 @@ import type { GameState } from "../50-state";
 import {
   bookable, clusterOf, controlPlaneUp, diskMovesLive, insideVm, isOwnVm, liveBetween, lostDisk, noRoomError, nodeTakes, nodeUsed, pickNode, supports, vmOf, vmRoom, type Cluster, type Workload,
 } from "../60-infra/cluster";
+import { backupTarget, syncBackupAt, usablePoint } from "../60-infra/backups";
 import { renumber, renumberError } from "../60-infra/addresses";
 import { handJob, type How } from "../60-infra/handwork";
 import { migrationHours } from "../60-infra/migration";
@@ -13,9 +14,10 @@ import { cutOs, RECOVER_HOURS } from "../60-infra/power";
 import { locationOf, working } from "../60-infra/status";
 import { freezeTick } from "../60-infra/usage";
 import {
-  LAN_GB_PER_HOUR, LOSS_RESTORED, LOSS_RESTORED_MAX, lossReview, moveGbit, restoreHours, type LossItem,
+  LAN_GB_PER_HOUR, LOSS_NO_BACKUP, LOSS_RESTORED, LOSS_RESTORED_MAX, lossReview, moveGbit, restoreHours, type LossItem,
 } from "../85-products/products";
 import type { ActionResult } from "./hardware";
+import { quorumBlock } from "../60-infra/quorum";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 // Below 10 Gbit/s a move between zones is cold: the workload is offline for the whole transfer.
@@ -104,6 +106,7 @@ export function migrateWorkload(s: GameState, id: string, toId: string, announce
   const { w, c } = found, vmHost = s.clusters.find((x) => x.id === toId && x.vm), to = vmHost ?? clusterOf(s, toId, c.kind) ?? clusterOf(s, toId);
   const d = s.devices.find((x) => x.id === toId);
   if (!to || (!vmHost && !d)) return fail("error.notNode");
+  { const q = quorumBlock(s, c); if (q) return fail(q); }
   if (c.kind === "panel" && to.id !== c.id) return migrateWebspace(s, id, to.id, announced);
   if (w.deviceId === toId || w.clusterId === vmHost?.id) return fail("error.sameHost");
   if (w.template) return fail("error.isTemplate");
@@ -188,15 +191,23 @@ export function restoreWorkload(s: GameState, id: string): ActionResult {
   if (!found) return fail("error.unknownWorkload");
   const { w, c } = found;
   if (!lostDisk(s, w)) return fail("error.notLost");
+  { const q = quorumBlock(s, c); if (q) return fail(q); }
   if (!controlPlaneUp(s, c)) return fail("error.controlPlaneDown");
-  const target = s.clusters.find((x) => x.id === c.backup.targetId);
+  const target = backupTarget(s, c, w), point = usablePoint(s, c, w);
   if (w.backupAt !== null && (!target || !controlPlaneUp(s, target))) return fail("error.backupUnavailable");
   const node = pickNode(s, c, w);
   if (!node) return fail("error.noCapacity");
   const hours = w.backupAt !== null ? restoreHours(s, w) : 0;
   const lostAt = s.devices.find((d) => d.id === w.deviceId)?.dataLost ?? s.hour;
   patch(s, w.id, { deviceId: node, placedAt: s.hour, busyUntil: s.hour + hours, stopped: !!w.template, stuck: undefined, corrupted: undefined, recoverDoneAt: undefined, recoverFailed: undefined, snapshots: undefined });
-  settleLoss(s, w, lostAt, w.backupAt);
+  // A bad copy nobody tested comes back empty after the wasted hours, and shows as bad from now on.
+  const bad = !!point?.bad;
+  if (bad) s.workloads = s.workloads.map((x) => (x.id === w.id ? syncBackupAt({ ...x, points: x.points?.map((p) => (p === point ? { ...p, verified: true } : p)) }) : x));
+  settleLoss(s, w, lostAt, bad ? null : w.backupAt);
+  if (bad) for (const item of [w, ...(isOwnVm(w) ? insideVm(s, w.id) : [])]) {
+    const cus = s.customers.find((x) => x.id === s.services.find((v) => v.id === item.serviceId)?.customerId);
+    if (cus) bump(cus, LOSS_NO_BACKUP);
+  }
   return { ok: true };
 }
 

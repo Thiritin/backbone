@@ -133,7 +133,7 @@ describe("control planes", () => {
     for (const w of old.workloads) for (const k of ["stopped", "busyUntil", "backupAt"]) delete w[k];
     delete old.lossReports;
     const loaded = deserialize(JSON.stringify(old));
-    expect(loaded.clusters[0]).toMatchObject({ kind: "cloud", panel: null, platform: "proxmocks", controlPlane: "dev3", switching: null, backup: { targetId: null, every: "off" } });
+    expect(loaded.clusters[0]).toMatchObject({ kind: "cloud", panel: null, platform: "proxmocks", controlPlane: "dev3", switching: null, jobs: [] });
     expect(loaded.clusters.find((c) => c.name === "Cloud 1 web")).toMatchObject({ kind: "panel", panel: "freepanel" });
     expect(loaded.workloads[0]).toMatchObject({ stopped: false, busyUntil: 0, backupAt: null });
     expect(loaded.lossReports).toEqual([]);
