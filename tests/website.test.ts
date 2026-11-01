@@ -5,10 +5,9 @@ import { listed } from "../src/sim/80-business/website";
 import { tick } from "../src/sim/88-tick/tick";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
-import { startGame } from "../src/sim/90-actions/start";
 import { setLine } from "../src/sim/90-actions/website";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { readyGame } from "./fixtures";
+import { readyGame, startGame } from "./fixtures";
 
 const run = (s: GameState, days: number) => { for (let i = 0; i < days * 24; i++) tick(s); };
 const leads = (s: GameState, from = 0) => s.sales.requests.filter((r) => r.customerId === null && r.createdAt >= from);

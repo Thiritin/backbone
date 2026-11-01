@@ -1,7 +1,7 @@
 // docs/design/plans/billing-by-hand.md, lane vendor-sites: Lexwear sells the Books modules on its site. A purchase is a
 // ledger line, the licence key follows by email a minute later, and the newsletter offers each module once.
 import { t } from "../../i18n/en";
-import { hashRng, rand } from "../00-core/rng";
+import { keyCode } from "../00-core/rng";
 import { dateOf } from "../00-core/time";
 import { hasModule, MODULES, type ModuleCount } from "../10-catalog/modules";
 import { deliverMail, type Ticket } from "../40-support/tickets";
@@ -15,12 +15,8 @@ export const LEXWEAR_HOST = "lexwear.de";
 export const lexwearUrl = (id?: string): string => `www.${LEXWEAR_HOST}/${id ? `module/${id}` : ""}`;
 export const MONTHLY_RUN_HOUR = 9;
 
-const KEY_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-// Four groups of four, fixed per game and module.
-export function licenceKey(s: GameState, id: string): string {
-  const r = hashRng(s.seed, MODULES.findIndex((m) => m.id === id) + 1, 607);
-  return Array.from({ length: 4 }, () => Array.from({ length: 4 }, () => KEY_CHARS[Math.floor(rand(r) * KEY_CHARS.length)]).join("")).join("-");
-}
+// Fixed per game and module.
+export const licenceKey = (s: GameState, id: string): string => keyCode(s.seed, MODULES.findIndex((m) => m.id === id) + 1, 607);
 
 const LEDGER = "ledger.module.";
 export const bought = (s: GameState, id: string): boolean => s.ledger.some((e) => e.key === LEDGER + id);

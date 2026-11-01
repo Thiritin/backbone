@@ -10,7 +10,8 @@ import { fqdn } from "../30-customers/domains";
 import type { GameState } from "../50-state";
 import type { Call } from "../90-actions/index";
 import { recover } from "../90-actions/vms";
-import { privateIp, publicV4, publicV6, ipmiIp } from "./addresses";
+import { publicV4, publicV6, machineAddress } from "./addresses";
+import { addressOf } from "./lan";
 import { isOwnVm, serverOf, vmOf, workloadOnline, type Workload } from "./cluster";
 import { latency } from "./network";
 import { hopDown, pathTo, powered, working, type Hop } from "./status";
@@ -52,9 +53,9 @@ export const deskRouter = (s: GameState): string | undefined => {
   return home && mountedRouter(s, home.id)?.id;
 };
 
-const addressOf = (s: GameState, id: string): string => {
+const targetIp = (s: GameState, id: string): string => {
   const own = publicV4(s, id);
-  return (own && !own.shared ? own.ip : privateIp(s, id)) ?? "0.0.0.0";
+  return (own && !own.shared ? own.ip : machineAddress(s, id)) ?? "0.0.0.0";
 };
 
 function resolveTarget(s: GameState, raw: string): Target | null {
@@ -63,18 +64,18 @@ function resolveTarget(s: GameState, raw: string): Target | null {
   const isIp = /^\d{1,3}(\.\d{1,3}){3}$/.test(key);
   for (const d of s.devices) {
     if (d.hostname === undefined) continue;
-    if (named(d.hostname) || (isIp && (privateIp(s, d.id) === key || (publicV4(s, d.id)?.ip === key && !publicV4(s, d.id)!.shared)))) {
-      return { label: isIp ? key : fqdn(s, d.hostname), ip: addressOf(s, d.id), kind: "server", deviceId: d.id, name: d.hostname };
+    if (named(d.hostname) || (isIp && (machineAddress(s, d.id) === key || (publicV4(s, d.id)?.ip === key && !publicV4(s, d.id)!.shared)))) {
+      return { label: isIp ? key : fqdn(s, d.hostname), ip: targetIp(s, d.id), kind: "server", deviceId: d.id, name: d.hostname };
     }
-    if (isIp && ipmiIp(s, d.id) === key) return { label: key, ip: key, kind: "bmc", deviceId: d.id, name: d.hostname };
+    if (isIp && addressOf(s, d.id, "bmc") === key) return { label: key, ip: key, kind: "bmc", deviceId: d.id, name: d.hostname };
   }
-  const owned = (w: Workload) => (named(w.hostname) || (isIp && privateIp(s, w.id) === key) ? w.hostname : undefined);
+  const owned = (w: Workload) => (named(w.hostname) || (isIp && machineAddress(s, w.id) === key) ? w.hostname : undefined);
   const service = s.services.find((v) => named(v.hostname));
   const w = s.workloads.find((x) => owned(x)) ?? (service && s.workloads.find((x) => x.serviceId === service.id));
   const deviceId = w && serverOf(s, w);
   if (!w || !deviceId) return null;
   const name = w.hostname ?? service?.hostname ?? w.id;
-  return { label: isIp ? key : fqdn(s, name), ip: privateIp(s, w.id) ?? "0.0.0.0", kind: "workload", deviceId, name, workload: w };
+  return { label: isIp ? key : fqdn(s, name), ip: machineAddress(s, w.id) ?? "0.0.0.0", kind: "workload", deviceId, name, workload: w };
 }
 
 // Whether the target answers: a server needs a working OS, a workload to be online, a controller power and no hang.

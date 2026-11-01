@@ -11,9 +11,9 @@ import { monthListings, usedTick } from "../src/sim/80-business/used";
 import { newsTick } from "../src/sim/80-business/news";
 import { tick } from "../src/sim/88-tick/tick";
 import { bidListing, buyListing, cancelListing, listForSale } from "../src/sim/90-actions/used";
-import { startChallenge, startGame } from "../src/sim/90-actions/start";
+import { startChallenge } from "../src/sim/90-actions/start";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { buyDevice, readyGame } from "./fixtures";
+import { buyDevice, readyGame, startGame } from "./fixtures";
 
 const idOf = (r: { ok: boolean; id?: string }): string => r.id!;
 const MARCH_2008 = hourOf(new Date(Date.UTC(2008, 2, 1)));
@@ -86,10 +86,12 @@ describe("used listings", () => {
     let scam = false;
     for (let m = 0; m < 48; m++) { s.hour = hourOf(new Date(Date.UTC(2008 + Math.floor(m / 12), m % 12, 1))); usedTick(s); scam ||= s.used.some((l) => l.scam); }
     for (const l of s.used) {
-      const share = l.price / presetPrice(modelById(l.model), yearOf(l.postedAt), l.brand, l.vendor) / (l.defect ? { psu: 0.85, drive: 0.8, rails: 0.95 }[l.defect] : 1);
+      const preset = presetPrice(modelById(l.model), yearOf(l.postedAt), l.brand, l.vendor) * (l.defect ? { psu: 0.85, drive: 0.8, rails: 0.95 }[l.defect] : 1);
+      const share = l.price / preset, slack = 0.01 + 0.5 / preset;
       const [lo, hi] = { board: [0.45, 0.6], chat: [0.3, 0.45], ebuy: [0.25, 0.25] }[l.channel];
-      expect(share).toBeGreaterThan(lo - 0.01);
-      expect(share).toBeLessThan(hi + 0.01);
+      // Prices are whole euros, which moves the share of a cheap model by up to half a euro.
+      expect(share).toBeGreaterThan(lo - slack);
+      expect(share).toBeLessThan(hi + slack);
       if (l.channel === "ebuy") expect(l.rival! / presetPrice(modelById(l.model), yearOf(l.postedAt), l.brand, l.vendor)).toBeGreaterThanOrEqual(0.349);
     }
     expect(scam).toBe(true);
@@ -189,7 +191,7 @@ describe("used listings", () => {
     expect(until(t, m.expiresAt).map((e) => e.key)).not.toContain("event.usedOutbidNow");
   });
 
-  it("sells on the board for more than the resale value, after a while", () => {
+  it("sells on the board below the resale value, after a while", () => {
     const s = game(), id = idOf(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
     const value = deviceValue(s, s.devices.find((d) => d.id === id)!), cash = s.cash, at = s.hour;
     const r = listForSale(s, id, "board");
@@ -198,8 +200,8 @@ describe("used listings", () => {
     const events = until(s, at + 31 * 24);
     const sold = events.find((e) => e.key === "event.usedSold")!;
     expect(sold).toBeDefined();
-    expect(s.cash - cash).toBe(Math.round(value * 1.3));
-    expect(s.cash - cash).toBeGreaterThan(value);
+    expect(s.cash - cash).toBe(Math.round(value * 0.9));
+    expect(s.cash - cash).toBeLessThan(value);
     expect(s.ledger.at(-1)!.key).toBe("ledger.usedSale");
     expect(s.usedRep).toBe(1);
   });
@@ -212,7 +214,7 @@ describe("used listings", () => {
 
     const t = game(), dev = idOf(buyDevice(t, "g1-compute", "Dwell", 1, "loc1"));
     const value = deviceValue(t, t.devices.find((d) => d.id === dev)!);
-    const kid = idOf(listForSale(t, dev, "board", Math.round(value * 1.6))), k = t.used.find((x) => x.id === kid)!;
+    const kid = idOf(listForSale(t, dev, "board", Math.round(value * 1.1))), k = t.used.find((x) => x.id === kid)!;
     expect(k.soldAt).toBeNull();
     expect(until(t, k.expiresAt).map((e) => e.key)).toContain("event.usedExpired");
     expect(t.devices.find((d) => d.id === dev)!.store).toBe("loc1");

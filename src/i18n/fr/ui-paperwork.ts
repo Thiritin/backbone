@@ -12,6 +12,7 @@ export default {
   "paperwork.of.pending": () => "En cours",
   "paperwork.of.registerFirst": () => "Veuillez d'abord immatriculer votre entreprise dans l'eService.",
   "paperwork.of.top": () => "L'entreprise a la forme juridique la plus élevée.",
+  "paperwork.of.none": () => "Aucune autre forme juridique n'est disponible pour l'entreprise.",
   "paperwork.doc.head.partnership": () => "Déclaration de modification d'immatriculation (formulaire GA-2)",
   "paperwork.doc.head.limited": () => "Statuts et demande d'inscription au registre du commerce",
   "paperwork.doc.current": () => "Forme juridique actuelle",

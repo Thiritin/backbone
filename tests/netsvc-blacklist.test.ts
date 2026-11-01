@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { sizeSpec } from "../src/sim/10-catalog/products";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { addressTick, mailAddress } from "../src/sim/60-infra/addresses";
 import { delistHours, mailStateOf, spamSenders } from "../src/sim/60-infra/netsvc-mail";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { requestDelist } from "../src/sim/90-actions/addresses";
 import { addCustomer, suspendCustomer } from "../src/sim/90-actions/customers";
 import { setMailRelay } from "../src/sim/90-actions/netsvc-mail";
-import { BASEMENT_SERVER, panelServer, withServer } from "./fixtures";
+import { BASEMENT_SERVER, panelServer, withServer, newGame } from "./fixtures";
 
 // One daily run of the address upkeep.
 const day = (s: GameState) => { s.hour = (Math.floor(s.hour / 24) + 1) * 24; addressTick(s); };

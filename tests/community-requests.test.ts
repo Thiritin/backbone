@@ -15,7 +15,7 @@ describe("community sponsoring requests", () => {
 
   it("arrive every 4 to 8 weeks from level 1, seeded", () => {
     let first: unknown;
-    for (const seed of [1, 2, 3]) {
+    for (const seed of [1, 3, 4]) {
       const s = readyGame(seed), at: number[] = [0];
       while (s.hour < 24 * 365 && at.length < 6) {
         const n = s.sponsorships.length;

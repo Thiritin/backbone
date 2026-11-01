@@ -4,7 +4,7 @@ import { sizeSpec } from "../src/sim/10-catalog/products";
 import { ZONE_LINK_LEAD_HOURS } from "../src/sim/10-catalog/network";
 import { dateOf, hourOf, yearOf } from "../src/sim/00-core/time";
 import type { Profile } from "../src/sim/30-customers/customers";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { workloadsOf } from "../src/sim/60-infra/cluster";
 import { tick } from "../src/sim/88-tick/tick";
 import { provisionService } from "../src/sim/90-actions/clusters";
@@ -23,7 +23,7 @@ import { closeTicket, resolveTicket } from "../src/sim/90-actions/support";
 import { migrateWorkload, migrationTargets, webspaceTargets } from "../src/sim/90-actions/vms";
 import { LAN_GB_PER_HOUR, moveGbit, WAN_GB_PER_HOUR, zoneLinkGbit } from "../src/sim/85-products/products";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { basement, buyDevice, hypervisor, panelVm, withServer } from "./fixtures";
+import { basement, buyDevice, hypervisor, panelVm, withServer, newGame } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 const ok = (r: { ok: boolean; id?: string; error?: string }) => { expect(r.error).toBeUndefined(); return r.id!; };

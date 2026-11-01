@@ -1,3 +1,4 @@
+import { startGame } from "./fixtures";
 import { describe, expect, it } from "vitest";
 import { sizeSpec } from "../src/sim/10-catalog/products";
 import { COMPETITORS } from "../src/sim/10-catalog/economy";
@@ -5,7 +6,6 @@ import { cityMarket } from "../src/sim/30-market/market";
 import { demand, lostReasons, segmentsOf, studied, studyCost } from "../src/sim/30-market/research";
 import { buyStudy } from "../src/sim/90-actions/market";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
-import { startGame } from "../src/sim/90-actions/start";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { t } from "../src/i18n/en";
 
