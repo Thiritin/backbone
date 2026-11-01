@@ -11,6 +11,7 @@ import { REGISTRAR_HUE } from "./sites/registrars/RegistrarPage";
 import { SiteMark } from "./sites/software/marks";
 import { softwareById } from "../../../sim/10-catalog/platforms";
 import { serverOsById } from "../../../sim/10-catalog/server-os";
+import { bankById } from "../../../sim/10-catalog/banks";
 
 const GREY = "oklch(0.62 0.01 255)";
 
@@ -49,6 +50,11 @@ export function Favicon({ game, r }: { game: GameState; r: Resolved }) {
     case "software": return <SiteMark id={p.id} name={softwareById(p.id).name} />;
     case "os": return <SiteMark id={p.id} name={serverOsById(p.id).name} />;
     case "registrar": return <Tile fill={`oklch(0.55 0.15 ${REGISTRAR_HUE[p.id]})`}><text x="8" y="11.6" textAnchor="middle" fontSize="9.5" fontWeight="700" fill="white" fontFamily="Inter, system-ui, sans-serif">{p.id[0].toUpperCase()}</text></Tile>;
+    case "bank": {
+      const { name, skin } = bankById(p.id)!;
+      const plain = skin.frame === "plain";
+      return <Tile fill={plain ? "#003366" : skin.bar}><text x="8" y="12" textAnchor="middle" fontSize="11" fontWeight="700" fill={plain ? skin.bar : "white"} fontFamily="Arial, Helvetica, sans-serif">{name[0].toUpperCase()}</text></Tile>;
+    }
     case "host": return <Tile fill="oklch(0.38 0.01 255)"><rect x="3.5" y="3.5" width="9" height="3" rx="0.8" fill="white" /><rect x="3.5" y="8.5" width="9" height="3" rx="0.8" fill="white" opacity="0.7" /></Tile>;
     case "console": {
       const c = game.clusters.find((x) => x.id === p.clusterId), family = c && familyOf(c), look = family ? consoleLook(family) : "game";
