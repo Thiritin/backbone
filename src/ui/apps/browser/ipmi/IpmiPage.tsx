@@ -2,12 +2,12 @@ import { LogOut, Monitor, Server } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { BMC_NAME } from "../../../../sim/10-catalog/hardware";
 import { t } from "../../../../i18n/en";
-import type { Device, GameState, RebuildRate } from "../../../../sim/50-state";
+import type { Device, GameState, LogSev, RebuildRate } from "../../../../sim/50-state";
 import { drivesOf, raidUsable } from "../../../../sim/60-infra/status";
 import { rebuildHours } from "../../../../sim/88-tick/tick";
 import { mountVirtualMedia, mountableImages } from "../../../../sim/90-actions/media";
 import { isoName } from "../consoles/HypervisorBase";
-import { setRebuildRate } from "../../../../sim/90-actions/hardware";
+import { clearLog, setRebuildRate } from "../../../../sim/90-actions/hardware";
 import { consoleName } from "../../console/ConsoleWindow";
 import { sensorRows } from "../../../../sim/80-business/readouts";
 import { booting, halting } from "../../../../sim/60-infra/status";
@@ -128,15 +128,27 @@ function MediaTab({ game, d }: { game: GameState; d: Device }) {
   );
 }
 
+const SEV_MARK = { info: "i", warn: "!", crit: "x" } as const;
+
+// The System Event Log: severity, time and description, newest first.
 function LogTab({ d }: { d: Device }) {
+  const act = useStore((s) => s.act), [sev, setSev] = useState<LogSev | "all">("all"), rows = [...d.log].reverse().filter((e) => sev === "all" || e.sev === sev);
   return (
-    <table className="bmc-table">
-      <thead><tr><th>{t("misc1.ipmi.time")}</th><th>{t("misc1.ipmi.event")}</th></tr></thead>
-      <tbody>
-        {[...d.log].reverse().map((e, i) => <tr key={i}><td className="num">{stamp(e.hour)}</td><td>{t(e.key)}</td></tr>)}
-        {!d.log.length && <tr><td colSpan={2} className="bmc-empty">{t("misc1.ipmi.noEntries")}</td></tr>}
-      </tbody>
-    </table>
+    <>
+      <div className="bmc-toolbar">
+        <select value={sev} onChange={(e) => setSev(e.target.value as LogSev | "all")} aria-label={t("sel.severity")}>
+          {(["all", "info", "warn", "crit"] as const).map((x) => <option key={x} value={x}>{t(`sel.${x}`)}</option>)}
+        </select>
+        <button className="cx-btn" disabled={!d.log.length} onClick={() => act(clearLog, d.id)}>{t("sel.clear")}</button>
+      </div>
+      <table className="bmc-table">
+        <thead><tr><th>{t("sel.severity")}</th><th>{t("sel.dateTime")}</th><th>{t("sel.description")}</th></tr></thead>
+        <tbody>
+          {rows.map((e) => <tr key={e.id} data-sev={e.sev}><td title={t(`sel.${e.sev}`)}>{SEV_MARK[e.sev]} {t(`sel.${e.sev}`)}</td><td className="num">{stamp(e.hour)}</td><td>{t(e.key)}</td></tr>)}
+          {!rows.length && <tr><td colSpan={3} className="bmc-empty">{t("misc1.ipmi.noEntries")}</td></tr>}
+        </tbody>
+      </table>
+    </>
   );
 }
 
