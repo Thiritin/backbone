@@ -8,7 +8,7 @@ import { hardReboot } from "../src/sim/60-infra/power";
 import { BOOT_HOURS, HALT_MINUTES } from "../src/sim/60-infra/status";
 import { tick } from "../src/sim/88-tick/tick";
 import { bootFromUsb, enterSetup, installOs } from "../src/sim/90-actions/console";
-import { reboot } from "../src/sim/90-actions/hardware";
+import { atServer, reboot, setRaid, shutdown } from "../src/sim/90-actions/hardware";
 import { plugStick, unplugStick } from "../src/sim/90-actions/media";
 import { installSoftware, uninstallSoftware } from "../src/sim/90-actions/software";
 import { isoOf, readyGame, skipTo, withServer, withStick, newGame } from "./fixtures";
@@ -123,5 +123,34 @@ describe("install pipeline", () => {
     const s = readyGame(4);
     expect(installSoftware(s, "dev3", "freepanel").ok).toBe(true);
     expect(err(uninstallSoftware(s, "dev3"))).toBe("error.softwareInUse");
+  });
+
+  const installing = () => {
+    const s = withServer(newGame(4));
+    withStick(s, "dev3");
+    ok(bootFromUsb(s, "dev3"));
+    ok(installOs(s, "dev3", "lunix"));
+    minutes(s, 10);
+    return s;
+  };
+
+  it("aborts the install when the power cords are pulled", () => {
+    const s = installing();
+    ok(atServer(s, "dev3", "pull"));
+    expect(dev(s).os).toBeNull();
+  });
+
+  it("shuts down from the installer, which aborts the install", () => {
+    const s = installing();
+    ok(shutdown(s, "dev3"));
+    expect(dev(s).os).toBeNull();
+    minutes(s, HALT_MINUTES + 1);
+    tick(s);
+    expect(dev(s).on).toBe(false);
+  });
+
+  it("refuses a RAID change while the OS installs", () => {
+    const s = installing();
+    expect(err(setRaid(s, "dev3", "none"))).toBe("error.installing");
   });
 });

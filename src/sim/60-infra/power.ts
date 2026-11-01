@@ -9,7 +9,7 @@ import { dropCluster, insideVm, installingOn, isOwnVm, type Workload } from "./c
 import { rebuildHours, type SimEvent } from "../88-tick/tick";
 import { reportLoss } from "../85-products/products";
 import { loadSaved } from "./switches";
-import { bootHours, booting, haltHours, deviceHealth, drivesOf, dualFed, HOURS_PER_YEAR, locationOf, powered, pluggedIn, psusOf, rackPower, working } from "./status";
+import { bootHours, booting, haltHours, deviceHealth, drivesOf, dualFed, HOURS_PER_YEAR, locationOf, powered, pluggedIn, psusOf, rackPower, takesShutdown } from "./status";
 
 // An unclean stop corrupts the data of the workloads that ran with this chance.
 export const CORRUPT_CHANCE = 0.15;
@@ -69,6 +69,7 @@ export function losePower(s: GameState, d: Device, key = "ipmi.log.pulled"): voi
   rollStuck(s, d);
   pushLog(d, s.hour, key);
   if (outcome) pushLog(d, s.hour, outcome);
+  leaveUsb(s, d);
 }
 
 // What a power cut leaves of an OS still installing: an empty disk, or after an in-place upgrade the release it came from.
@@ -91,7 +92,6 @@ export function leaveUsb(s: GameState, d: Device): void {
 // Cuts the power: the server is off and its OS no longer hung.
 export function pullPlug(s: GameState, d: Device): void {
   losePower(s, d);
-  leaveUsb(s, d);
   d.on = false;
   d.setup = false;
   d.haltUntil = undefined;
@@ -171,7 +171,7 @@ export type FrontOp = "power" | "hold" | "reset" | "pull" | "plug";
 // holding the button cuts the power, the reset button reboots it hard, and the cords leave or join the power strip.
 export function atFront(s: GameState, d: Device, op: FrontOp): void {
   if (op === "power" && !d.on) bootUp(s, d);
-  else if (op === "power") { if (working(s, d.id)) halt(s, d); }
+  else if (op === "power") { if (takesShutdown(s, d)) halt(s, d); }
   else if (op === "hold") { if (d.on) pullPlug(s, d); }
   else if (op === "reset") { if (d.on) hardReboot(s, d, "ipmi.log.reset"); }
   else plugCords(s, d, op === "plug");

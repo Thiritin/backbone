@@ -375,13 +375,13 @@ export function annuity(amount: number, rate: number, months: number): number {
   return cents(r === 0 ? amount / months : (amount * r) / (1 - (1 + r) ** -months));
 }
 
-// A paid renewal line extends the service's term by the months it bought.
-export function renewTerms(s: GameState, inv: Invoice): void {
+// A paid renewal line extends the service's term by the months it bought; money taken back (sign -1) shortens it again.
+export function renewTerms(s: GameState, inv: Invoice, sign = 1): void {
   const bought = new Map(inv.lines.filter((l) => l.key === "invoice.line.renewal" && l.serviceId).map((l) => [l.serviceId!, Number(l.params.months)]));
   if (!bought.size) return;
   s.services = s.services.map((v) => {
-    const months = bought.get(v.id);
-    return months && v.termEnd !== undefined ? { ...v, termEnd: v.termEnd + MONTH_HOURS * months, prepaidUntil: v.termEnd + MONTH_HOURS * months } : v;
+    const months = bought.get(v.id), end = v.termEnd === undefined ? 0 : v.termEnd + sign * MONTH_HOURS * (months ?? 0);
+    return months && v.termEnd !== undefined ? { ...v, termEnd: end, prepaidUntil: end } : v;
   });
 }
 

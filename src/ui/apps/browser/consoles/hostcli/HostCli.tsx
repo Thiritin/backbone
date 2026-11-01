@@ -14,6 +14,10 @@ import { Restores } from "../backup/Restores";
 import "./hostcli.css";
 
 // docs/design/software.md, section 10: the software without a web console; its host page prints what the product's CLI would.
+// The jobs that write to a repository and have run, oldest first.
+export const finishedJobs = (game: GameState, targetId: string) =>
+  game.clusters.flatMap((x) => x.jobs.filter((j) => j.targetId === targetId && j.lastRun !== null).map((j) => ({ name: `${x.name} ${j.name}`, last: j.lastRun!, ok: j.lastOk !== false }))).sort((a, b) => a.last - b.last);
+
 export const CLI_ONLY = new Set(["bound", "knut", "wireguarded", "vsftpeed", "postfixit", "backula"]);
 
 const serial = (game: GameState, zone: string) => {
@@ -68,12 +72,11 @@ function listing(game: GameState, c: Cluster, family: string, name: string): [st
     }
     case "backula": {
       const pool = backupPool(game, c.id), stamp = (h: number) => dateOf(h).toISOString().slice(0, 16).replace("T", " ");
-      const jobs = game.clusters.filter((x) => x.jobs.some((j) => j.targetId === c.id)).map((x) => ({ name: x.name, last: Math.max(-1, ...game.workloads.filter((w) => w.clusterId === x.id).map((w) => w.backupAt ?? -1)) }));
-      const done = jobs.filter((j) => j.last >= 0).sort((a, b) => a.last - b.last);
+      const done = finishedJobs(game, c.id);
       return [
         ["echo 'status director' | bconsole", [
           `${name}-dir Version: ${c.version}`, "", "Terminated Jobs:",
-          ...(done.length ? [" JobId  Level  Status  Finished          Name", ...done.map((j, i) => `${String(i + 1).padStart(6)}  Incr   OK      ${stamp(j.last)}  ${j.name}`)] : ["No Terminated Jobs."]),
+          ...(done.length ? [" JobId  Level  Status  Finished          Name", ...done.map((j, i) => `${String(i + 1).padStart(6)}  Incr   ${j.ok ? "OK    " : "Error "}  ${stamp(j.last)}  ${j.name}`)] : ["No Terminated Jobs."]),
         ]],
         ["df -h /var/lib/backula", ["Filesystem  Size  Used  Avail  Mounted on", `/dev/sdb1   ${Math.round(pool.need + Math.max(0, pool.room))}G  ${Math.round(pool.need)}G  ${Math.round(Math.max(0, pool.room))}G  /var/lib/backula`]],
       ];

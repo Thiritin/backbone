@@ -11,6 +11,7 @@ import { applyCard, applyOverdraft, openBankAccount, cancelTransfer, confirmTran
 import { repayLoan, takeLoan } from "../../../../../sim/90-actions/billing";
 import { readSession, writeSession } from "../../../../session";
 import { noAutofill } from "../../../../no-autofill";
+import { offerLogin, savedLogin } from "../../../../vault";
 import "./bank-site.css";
 import { useFieldAct, usePageAct } from "../../pageAct";
 
@@ -93,13 +94,16 @@ function Plans({ game, bank, last }: { game: GameState; bank: Bank; last: (p: Pl
 
 function Login({ game, bank, onIn, onOpen }: { game: GameState; bank: Bank; onIn: () => void; onOpen: () => void }) {
   const act = usePageAct();
-  const [number, setNumber] = useState(""), [pin, setPin] = useState(""), [failed, setFailed] = useState(false);
+  const site = `bank:${bank.id}`, saved = savedLogin(game, site, 2);
+  const [number, setNumber] = useState(saved[0]), [pin, setPin] = useState(saved[1]), [failed, setFailed] = useState(false);
   const [plan, setPlanPick] = useState<PlanId | undefined>(() => plansFor(bank, game.registration?.form ?? "sole")[0]?.id);
   const other = !!game.bank && game.bank.id !== bank.id;
   const submit = () => {
     const ok = game.bank?.id === bank.id && number.trim() === game.bank.number && pin.trim() === game.bank.pin;
     setFailed(!ok);
-    if (ok) onIn();
+    if (!ok) return;
+    offerLogin(game, site, `www.${bank.host}`, [number.trim(), pin.trim()]);
+    onIn();
   };
   return (
     <>

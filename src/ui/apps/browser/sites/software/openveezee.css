@@ -21,3 +21,17 @@
 .sw-openveezee .mod { margin-top: 32px; color: #555555; font-size: 11px; }
 .sw-openveezee.late .wiki { background: #ffffff; }
 .sw-openveezee.late aside { background: #f6f6f6; }
+.sw-openveezee.early { font: 12.7px/1.5 sans-serif; background: #f9f9f9; }
+.sw-openveezee.early a, .sw-openveezee.early aside a, .sw-openveezee.early aside p { color: #002bb8; }
+.sw-openveezee.early aside a[aria-current] { color: #000000; }
+.sw-openveezee.early aside h3 { display: inline-block; margin: 10px 0 0; padding: 0 10px; color: #000000; background: #ffffff; border: 1px solid #aaaaaa; border-bottom: 0; }
+.sw-openveezee.early aside nav, .sw-openveezee.early aside p { padding: 2px 6px 4px; background: #ffffff; border: 1px solid #aaaaaa; }
+.sw-openveezee.early main { border-color: #aaaaaa; }
+.sw-openveezee.early .sw-tabs span { color: #002bb8; background: #ffffff; border-color: #aaaaaa; }
+.sw-openveezee.early .sw-tabs .on { color: #000000; font-weight: 700; }
+.sw-openveezee.early h1 { font: 400 24px/1.3 sans-serif; border-bottom-color: #aaaaaa; }
+.sw-openveezee.early h2 { font: 400 19px/1.3 sans-serif; border-bottom-color: #aaaaaa; }
+.sw-openveezee.early ul { list-style: square; }
+.sw-openveezee.early table { border-color: #aaaaaa; background: #f9f9f9; }
+.sw-openveezee.early th, .sw-openveezee.early td { border-color: #aaaaaa; }
+.sw-openveezee.early th { background: #f2f2f2; }

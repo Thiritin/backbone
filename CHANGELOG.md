@@ -3,11 +3,19 @@
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
 ## 2026-11-01
+- Removing an offsite backup server now discards its copies, a Proxmocks VM can no longer be moved into a cluster without quorum, and the Backula status lists only the jobs that write to that server with their real result.
 
 - Bookkeeping programs now come in editions with their own prices, features, seats and look, GnuCache joins as a free program, and each bookkeeper needs a seat to work.
 - Books now holds the overview, statistics, tax and account statement, Finance is gone, loans live on your bank's website, and low cash brings an email about your bank's overdraft.
 - Hardware insurance is gone, so repairs cost what they cost.
+- A charged-back renewal no longer extends a prepaid term twice, upgrades on a prepaid term are billed for the rest of the term, and customers leaving after a written-off term get no refund.
+- The Pear Store sells KeePassive, a password manager that offers to save your router and bank logins after you type them once and fills them in on every later visit.
+- Pulling the power cords, a power outage or overheating now aborts a running OS install, and a server can be shut down from the installer.
+- The RAID level can no longer be changed while an OS installs.
 - The Pleskit website now says its license is a monthly fee per server that grows with the domains it hosts.
+- The OpenVeeZee, OpenStash, OwnClod, vsFTPeed and Postfixit websites and the plain project pages now look like the web of their time, and download buttons on 2005 pages are grey and bevelled.
+- Vendor shop carts, product pages and order emails now name the major version a one-time licence key covers.
+- OpenVeeZee lists its first release on its Versions page from the start of the game.
 - The Shop scrolls again, so every server and part in the catalog is reachable, and the add to cart button no longer spills out of narrow cards.
 - The BIOS setup can save changes without leaving, and its Boot Override starts the server from the hard disk or the attached USB stick right away.
 - A site you fixed after a broken WordPrass Toolkit update no longer keeps its old release around for a rollback.

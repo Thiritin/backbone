@@ -38,8 +38,9 @@ const newest = (a: RestorePoint[]) => a.reduce<RestorePoint | null>((n, p) => (!
 // The newest usable point stamps the workload's last backup.
 export const syncBackupAt = (w: Workload): Workload => ({ ...w, backupAt: newest(pointsOf(w).filter(usable))?.at ?? null });
 
-const repoOf = (s: GameState, c: Cluster, p: RestorePoint): Cluster | undefined => {
-  const j = c.jobs.find((x) => x.id === p.jobId);
+// The job may sit on the cluster the workload has since moved away from.
+const repoOf = (s: GameState, _c: Cluster, p: RestorePoint): Cluster | undefined => {
+  const j = jobById(s, p.jobId);
   return s.clusters.find((x) => x.id === (p.offsite ? j?.offsiteId : j?.targetId));
 };
 
@@ -184,13 +185,16 @@ export function fillBackups(s: GameState): GameState {
   s.clusters = s.clusters.map((c) => {
     const old = (c as unknown as { backup?: { targetId: string | null; every: string } }).backup;
     const { backup: _drop, ...rest } = c as Cluster & { backup?: unknown };
-    const jobs = ((!c.jobs.length && old?.targetId && old.every !== "off") ? [newJob(`job-old-${n++}`, old.targetId, old.every as "daily" | "weekly")] : c.jobs).filter((j) => known.has(j.targetId));
+    const fresh = (!c.jobs.length && old?.targetId && old.every !== "off") ? [newJob(`job-old-${n++}`, old.targetId, old.every as "daily" | "weekly")] : c.jobs;
+    const jobs = fresh.filter((j) => known.has(j.targetId)).map((j) => ({ ...newJob(j.id, j.targetId), ...j, keep: { ...KEEP_DEFAULT, ...j.keep }, offsiteId: j.offsiteId && known.has(j.offsiteId) ? j.offsiteId : null }));
     return { ...rest, jobs } as Cluster;
   });
   const first = new Map(s.clusters.filter((c) => c.jobs.length).map((c) => [c.id, c.jobs[0].id]));
+  const offsiteOf = new Map(s.clusters.flatMap((c) => c.jobs).map((j) => [j.id, j.offsiteId]));
   s.workloads = s.workloads.map((w) => {
     const jobId = w.clusterId && first.get(w.clusterId);
-    if (w.points || w.backupAt === null || !jobId) return w;
+    if (w.points) return syncBackupAt({ ...w, points: w.points.map((p) => ({ ...p, verified: !!p.verified, bad: !!p.bad, offsite: !!p.offsite })).filter((p) => !p.offsite || offsiteOf.get(p.jobId)) });
+    if (w.backupAt === null || !jobId) return w;
     return { ...w, points: [{ at: w.backupAt, gb: w.diskGb * diskFill(s, w, w.backupAt), jobId, verified: false, bad: false, offsite: false }] };
   });
   return s;
