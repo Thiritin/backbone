@@ -49,6 +49,7 @@ import type { BankAccount } from "./46-finance/bank";
 import type { Payable } from "./46-finance/payables";
 import type { Letter } from "./40-support/letters";
 import type { TrendPoint } from "./80-business/trend";
+import { newTax, type TaxState } from "./80-business/tax-state";
 import type { StatusDay } from "./80-business/status";
 
 // 3: GPU line servers carry their preset cards. 4: an unregistered game holds its savings until the bank account opens.
@@ -380,6 +381,8 @@ export interface GameState {
   modules: string[];
   // The bookkeeping program the Books app runs (10-catalog/bookkeeping.ts); null until one is installed.
   books: { vendor: BooksVendorId | null; installedAt: number };
+  // The tax office's file on the company (80-business/tax.ts).
+  tax: TaxState;
 }
 
 export interface LogEntry { hour: number; minute?: number; name: string; args: unknown[] }
@@ -473,6 +476,7 @@ export const newGame = (seed: number): GameState => ({
   chamberYear: 0,
   modules: [],
   books: { vendor: null, installedAt: 0 },
+  tax: newTax(),
 });
 
 export const guideDoc = (): Doc => ({ id: "guide", kind: "guide", title: t("doc.guide"), body: "", x: 16, y: 46 });

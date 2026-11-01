@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- After you register, the tax office sends a questionnaire by post that you answer on the new DOHLE site, choosing whether to use the small business rule, and your tax number follows by letter.
 - Every installed software now has its own command in the server's shell, such as `cpanic` or `esxwhere`, that shows its version and license, updates it, switches its channel, assigns a key or starts a trial, and runs the daily jobs of its kind.
 - Each software site has a new Docs page that lists its command and everything it takes.
 - Every bank now sells account plans, from a cheap Giro for sole traders to Business Plus and Premium with fewer booking fees and the card included, and a partnership or limited company needs the right plan before the paperwork, while a limited company also needs its share capital in the account.

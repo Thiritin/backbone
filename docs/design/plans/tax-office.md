@@ -18,6 +18,7 @@ The company pays VAT and income tax by filing returns itself. Today `46-finance/
 3. Five working days after sending, the tax office sends the tax number (Steuernummer, shown as `045 812 34567`, built from the seed) by letter, with the VAT period for the year.
 4. Without a tax number nothing can be filed, and every return is late from its due date as usual.
 5. Old saves that registered before this plan get a tax number on load, with the standard rule and the monthly period.
+6. The page refuses the small business rule when the expected revenue is above the year's limit. The letter's link is an Open button in the Post app.
 
 ## 3. VAT
 
