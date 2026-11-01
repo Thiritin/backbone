@@ -13,7 +13,7 @@ const LABEL: Record<string, string> = { monthly: "Monthly", quarterly: "Quarterl
 // Variants that run on the game's first years, then the ones that need a later start.
 const LEGACY: ShopId[] = ["handRolled", "modemBill", "clientExit"];
 const PRODUCTS_LABEL: Record<string, string> = { handRolled: "Plans", modemBill: "Packages", clientExit: "Product Groups", blessta: "Package Groups", boxBillin: "Product categories", hostBull: "Order pages" };
-const MODERN: ShopId[] = [];
+const MODERN: ShopId[] = ["blessta", "boxBillin", "hostBull"];
 
 const setup = (variant: ShopId): { s: GameState; g: string; p: string } => {
   const v = shopById(variant);
@@ -56,7 +56,7 @@ describe.each([...LEGACY, ...MODERN])("%s skin", (variant) => {
 
 describe("flat variants", () => {
   it("list the products without group headings", () => {
-    for (const variant of ["handRolled"] as ShopId[]) {
+    for (const variant of ["handRolled", "boxBillin"] as ShopId[]) {
       const { s, g } = setup(variant);
       const html = render(s, variant, "store", { group: g });
       expect(html).toContain("Starter");
