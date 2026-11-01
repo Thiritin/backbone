@@ -1,15 +1,15 @@
-import { OP_TASK, techsAt } from "../../../sim/47-staff/technicians";
-import type { GameState } from "../../../sim/50-state";
-import { anchorOf, type Workload } from "../../../sim/60-infra/cluster";
-import { locationOf } from "../../../sim/60-infra/status";
-import { queueMigration } from "../../../sim/90-actions/staff";
-import { announceMigration, moveTargets, offerMigration, type MoveTarget } from "../../../sim/90-actions/moves";
-import { migrateWebspace, migrateWorkload, migrationTargets, rescueTargets, rescueWorkload, restoreWorkload, startWorkload, stopWorkload, webspaceTargets } from "../../../sim/90-actions/vms";
-import type { MenuEntry } from "../../desktop/menu";
-import { useStore } from "../../store";
-import type { HandTask } from "../locations/HandSheet";
-import { vmLabel, vmState } from "../products/parts";
-import { t } from "../../../i18n/en";
+import { OP_TASK, techsAt } from "../../sim/47-staff/technicians";
+import type { GameState } from "../../sim/50-state";
+import { anchorOf, type Workload } from "../../sim/60-infra/cluster";
+import { locationOf } from "../../sim/60-infra/status";
+import { queueMigration } from "../../sim/90-actions/staff";
+import { announceMigration, moveTargets, offerMigration, type MoveTarget } from "../../sim/90-actions/moves";
+import { migrateWebspace, migrateWorkload, migrationTargets, rescueTargets, rescueWorkload, restoreWorkload, startWorkload, stopWorkload, webspaceTargets } from "../../sim/90-actions/vms";
+import type { MenuEntry } from "../desktop/menu";
+import { useStore } from "../store";
+import type { HandTask } from "./locations/HandSheet";
+import { vmLabel, vmState } from "./products/parts";
+import { t } from "../../i18n/en";
 
 // Quarter hours as "2 h 30 min".
 export function hoursText(hours: number): string {

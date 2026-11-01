@@ -25,13 +25,13 @@ import { migrateWebspace, migrateWorkload, migrationTargets, restoreWorkload, st
 import { useStore } from "../../../store";
 import { disk, ram } from "../../hw";
 import { VM_STATE, vmLabel, vmState } from "../../products/parts";
-import { hoursText } from "../../vms/migrate";
+import { hoursText } from "../../workload-menu";
 import { useHolds } from "./Holds";
 import { HostSettings } from "./HostSettings";
 import { eraOf } from "../sites/era";
 import { lookOf, panelMachine } from "../../../../sim/60-infra/licence";
 
-export type Tab = "objects" | "nodes" | "software" | "tasks" | "logs" | "licence" | "services" | "sysinfo" | "packages" | "create" | "easyapache" | "custombuild" | "resellers" | "autossl" | "transfer" | "fail2ban" | "toolkit" | "messages";
+export type Tab = "objects" | "nodes" | "restore" | "software" | "tasks" | "logs" | "licence" | "services" | "sysinfo" | "packages" | "create" | "easyapache" | "custombuild" | "resellers" | "autossl" | "transfer" | "fail2ban" | "toolkit" | "messages";
 
 // What ConsolePage hands a product console; the console draws its own login while signedIn is false.
 export interface PanelProps { game: GameState; c: Cluster; f: ConsoleFeatures; host: string; signedIn: boolean; login: () => void; logout: () => void;
