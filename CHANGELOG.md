@@ -6,6 +6,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - Routers you mount in a datacenter now run their own network behind the provider's handoff with a WebFigg or J-Webb web interface, and the desk reaches that network only once you switch on the router's VPN.
 - Layer 3 switches can route between VLANs, every VM takes its own address from the local network's DHCP pool so a full pool stops new VPS sales, and enterprise customers need a private network carried as a VLAN to every server their VMs run on.
+- The back button on the marketing website page is now its normal size and shows in your language.
 - The server details page has room at its edges again, long German button labels wrap, and the disk label no longer runs into its meter.
 - Each website on a panel host links to its domain, or to its address while it has none.
 - The dunning settings in Lexwear Office now open from a Settings button on the Reminders tab.
