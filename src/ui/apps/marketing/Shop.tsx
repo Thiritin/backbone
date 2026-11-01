@@ -16,6 +16,7 @@ import { NodeActions } from "../browser/consoles/HypervisorBase";
 import type { NodeState } from "../../../sim/60-infra/cluster";
 import { formatDay } from "../billing/format";
 import { PRODUCT } from "../support/labels";
+import { PaymentMethods } from "./payments";
 
 const ABOUT: Record<ShopId, string> = {
   handRolled: t("marketing.aboutHandRolled"),
@@ -51,6 +52,7 @@ export function Shop({ game }: { game: GameState }) {
     {v && <Modules game={game} />}
     {real && <Groups game={game} />}
     {real && <StockList game={game} />}
+    {real && <PaymentMethods game={game} />}
     {real && <ShopRecords game={game} />}
   </>;
 }
