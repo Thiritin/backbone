@@ -181,4 +181,10 @@ export default {
   "hvx.noUplink": () => "Ce commutateur n'a pas de connexion au réseau physique, la machine virtuelle est donc injoignable.",
   "error.noReplica": () => "Il n'y a aucune réplique terminée pour le basculement.",
   "error.noSwitch": () => "Ce commutateur virtuel n'est pas valide.",
+  "ovz.checkpoint": () => "Point de contrôle",
+  "ovz.restore": () => "Restaurer",
+  "ovz.frozen": () => "Gelé",
+  "ovz.burst": () => "RAM en rafale (Go)",
+  "ovz.apply": () => "Appliquer",
+  "error.badBurst": () => "La RAM en rafale peut valoir au plus le double de la RAM du conteneur.",
 } satisfies Dict;

@@ -96,6 +96,9 @@ export interface Workload extends Resources, Partial<MachineState> {
   replica?: Replica | null;
   // HyperVee: the virtual switch the adapter is plugged into; missing or null is the cluster's default switch (vswitch.ts).
   switchId?: string | null;
+  // OpenVeeZee: failcnt per beancounter, the most RAM held, the extra RAM allowed while the node has room, hours of failing
+  // in a row, failcounts today, and a live checkpoint (beancounters.ts).
+  failcnt?: Record<string, number>; maxheld?: number; burstGb?: number; failStreak?: number; failDay?: number; frozen?: boolean;
   // Own VMs only: the port macros the VM lets through (exposure.ts); missing or null is no firewall.
   firewall?: Firewall | null;
   // The sold size when a package booked less; the service uses the sold size times its load.
@@ -472,7 +475,7 @@ export const sitesDown = (s: GameState, hostId: string): boolean => s.security.o
 // A web space in a panel VM is up while the VM is. Colocation is up while its rack has power.
 // ponytail: colocation ignores the customer's uplinks until colocation cabling lands.
 export function workloadOnline(s: GameState, w: Workload): boolean {
-  if (w.stopped || w.busyUntil > s.hour) return false;
+  if (w.stopped || w.frozen || w.busyUntil > s.hour) return false;
   const c = w.clusterId ? s.clusters.find((x) => x.id === w.clusterId) : undefined;
   if (c?.switching) return false;
   if (c && (c.kind === "panel" ? sitesDown(s, c.id) : s.security.hacked.includes(c.id))) return false;

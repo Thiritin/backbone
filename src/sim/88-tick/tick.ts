@@ -35,6 +35,7 @@ import { computeTick } from "../60-infra/cluster";
 import { haltTick, powerTick, pushLog, tripTick } from "../60-infra/power";
 import { installNetTick } from "../60-infra/oob";
 import { pruneAcks } from "../60-infra/alarms";
+import { beancounterTick } from "../60-infra/beancounters";
 import { haTick } from "../60-infra/ha";
 import { migrationTick } from "../60-infra/migration";
 import { maintenanceTick } from "../60-infra/maintenance";
@@ -329,6 +330,7 @@ export function tick(state: GameState): SimEvent[] {
   events.push(...opsTick(state));
   events.push(...freezeTick(state));
   events.push(...haTick(state));
+  beancounterTick(state);
   pruneAcks(state);
   events.push(...maintenanceTick(state));
   events.push(...computeTick(state));

@@ -1853,6 +1853,16 @@ Failover is a player action, since HyperVee has no automatic recovery before its
 
 A HyperVee cluster has virtual switches, up to 8, starting with one external Default Switch. A VM on an internal or private switch has no uplink and is offline. A VM on an external switch bound to a host port is offline while that port is unplugged or its far end is dead; a switch bound to no port follows whichever port is connected. Deleting a switch moves its VMs back to the default.
 
+### OpenVeeZee beancounters, burst and checkpoint
+
+A container shows its beancounters: kmemsize, privvmpages, oomguarpages, numproc and numtcpsock with held, maxheld, barrier, limit and failcnt. Memory is in 4 KB pages. Failcnt is stored on the container for privvmpages and numproc; the rest is derived from its use.
+
+Each hour a node with more than 90% of its RAM in use takes burst memory back first: only containers with a burst allowance collect privvmpages failcnt. A node out of RAM, or with more busy vCPUs than cores, makes every container fail privvmpages and numproc. The increment is 40 times the container's share of the node RAM, at least 1, per hour. Six hours in a row slow the site like any other slowdown. Past 24 failcounts in a day the OOM killer stops the container for an hour and the hour counts as downtime. The player fixes it by raising the container's size, moving it or selling less of the node.
+
+Burst memory ranges from 0 to twice the container's RAM, in steps of a quarter GB. It is not booked and costs nothing.
+
+Checkpoint freezes a container: it stays booked on its node, uses no CPU or RAM and is offline. Restore resumes it within a minute plus two seconds per GB of RAM in use, which counts as downtime. A cold move of a container on OpenVeeZee is a checkpoint, a copy and a restore, so it is down only for the copy of its disk over the link (at least 1 minute) instead of a full boot.
+
 ### Snapshots
 
 A snapshot freezes a VM's disk on a VMwhere cluster and, for the player's own VMs, its installed OS and software. Values live in `src/sim/10-catalog/platforms.ts`.

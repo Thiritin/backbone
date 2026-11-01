@@ -67,6 +67,8 @@ export function migrationDowntime(s: GameState, w: Workload, gbit: number, other
   const live = !!c?.platform && softwareById(c.platform).live && c.ha.live && !!from && working(s, from.id) && (!otherZone || gbit >= LIVE_ZONE_GBIT)
     && (!to || liveBetween(s, from, to)) && diskMovesLive(s, c, w, toId);
   if (live || (!otherZone && !vm)) return 0;
+  // OpenVeeZee moves a container by checkpoint, copy and restore: only the copy keeps it down, not a boot.
+  if (c?.platform === "openveezee") return Math.max(0.02, Math.round((w.diskGb / (gbit * LAN_GB_PER_HOUR)) * 100) / 100);
   return Math.max(1, Math.ceil((w.diskGb + w.ramGb) / (gbit * LAN_GB_PER_HOUR)));
 }
 

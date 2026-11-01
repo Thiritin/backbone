@@ -181,4 +181,10 @@ export default {
   "hvx.noUplink": () => "Este comutador não tem ligação à rede física, por isso a máquina virtual não está acessível.",
   "error.noReplica": () => "Não existe nenhuma réplica concluída para o failover.",
   "error.noSwitch": () => "Este comutador virtual não é válido.",
+  "ovz.checkpoint": () => "Ponto de controlo",
+  "ovz.restore": () => "Restaurar",
+  "ovz.frozen": () => "Congelado",
+  "ovz.burst": () => "RAM de rajada (GB)",
+  "ovz.apply": () => "Aplicar",
+  "error.badBurst": () => "A RAM de rajada pode ser no máximo o dobro da RAM do contentor.",
 } satisfies Dict;

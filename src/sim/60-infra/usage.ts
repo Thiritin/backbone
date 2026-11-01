@@ -90,6 +90,7 @@ export function workloadUse(s: GameState, w: Workload, hour: number = s.hour): R
     for (const p of parts) { u.vcpu += p.vcpu; u.ramGb += p.ramGb; u.diskGb += p.diskGb; }
     return u;
   }
+  if (w.frozen) return { vcpu: 0, ramGb: 0, diskGb: w.diskGb * diskFill(s, w, hour) };
   const load = workloadLoad(s, w, hour), lost = lostDisk(s, w);
   const grow = (k: "vcpu" | "ramGb" | "diskGb") => (w.promised && w[k] > 0 ? w.promised[k] / w[k] : 1);
   return { vcpu: booked(s, w).vcpu * grow("vcpu") * load, ramGb: w.stopped || lost ? 0 : w.ramGb * grow("ramGb") * (RAM_BASE + (1 - RAM_BASE) * load), diskGb: lost ? 0 : w.diskGb * grow("diskGb") * diskFill(s, w, hour) };

@@ -181,4 +181,10 @@ export default {
   "hvx.noUplink": () => "Este conmutador no tiene conexión con la red física, por lo que no se puede acceder a la máquina virtual.",
   "error.noReplica": () => "No hay ninguna réplica terminada para la conmutación.",
   "error.noSwitch": () => "Este conmutador virtual no es válido.",
+  "ovz.checkpoint": () => "Punto de control",
+  "ovz.restore": () => "Restaurar",
+  "ovz.frozen": () => "Congelado",
+  "ovz.burst": () => "RAM de ráfaga (GB)",
+  "ovz.apply": () => "Aplicar",
+  "error.badBurst": () => "La RAM de ráfaga puede ser como máximo el doble de la RAM del contenedor.",
 } satisfies Dict;

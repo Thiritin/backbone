@@ -181,4 +181,10 @@ export default {
   "hvx.noUplink": () => "Dieser Switch hat keine Verbindung zum physischen Netzwerk, daher ist die virtuelle Maschine nicht erreichbar.",
   "error.noReplica": () => "Es gibt kein fertiges Replikat für ein Failover.",
   "error.noSwitch": () => "Dieser virtuelle Switch ist ungültig.",
+  "ovz.checkpoint": () => "Checkpoint",
+  "ovz.restore": () => "Wiederherstellen",
+  "ovz.frozen": () => "Eingefroren",
+  "ovz.burst": () => "Burst-RAM (GB)",
+  "ovz.apply": () => "Übernehmen",
+  "error.badBurst": () => "Burst-RAM darf höchstens das Doppelte des Container-RAMs betragen.",
 } satisfies Dict;

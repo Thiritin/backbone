@@ -181,4 +181,10 @@ export default {
   "hvx.noUplink": () => "This switch has no connection to the physical network, so the virtual machine cannot be reached.",
   "error.noReplica": () => "There is no finished replica to fail over to.",
   "error.noSwitch": () => "This virtual switch is not valid.",
+  "ovz.checkpoint": () => "Checkpoint",
+  "ovz.restore": () => "Restore",
+  "ovz.frozen": () => "Frozen",
+  "ovz.burst": () => "Burst RAM (GB)",
+  "ovz.apply": () => "Apply",
+  "error.badBurst": () => "Burst RAM can be at most twice the container's RAM.",
 } satisfies Dict;
