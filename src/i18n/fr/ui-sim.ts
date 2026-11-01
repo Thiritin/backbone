@@ -134,7 +134,7 @@ export default {
   "sim.site.pleskit.f1": () => "Le catalogue d'extensions ajoute des fonctions en un clic.",
   "sim.site.pleskit.f2": () => "Les clients ont leur propre identifiant pour leurs sites, leurs e-mails et leurs bases de données.",
   "sim.site.pleskit.f3": () => "Sauvegardes et restaurations se lancent depuis le panel.",
-  "sim.site.pleskit.f4": () => "Chaque serveur reçoit une licence forfaitaire.",
+  "sim.site.pleskit.f4": () => "Chaque serveur paie une licence mensuelle selon les domaines qu'il héberge.",
   "sim.site.directadmen.tagline": () => "Rapide, simple, abordable",
   "sim.site.directadmen.blurb": () => "DirectAdmin est un panel d'hébergement léger qui fait ce qu'il doit faire et rien de plus. Il s'installe en quelques minutes, tourne sur du matériel modeste et reste discret.",
   "sim.site.directadmen.f0": () => "Le panel utilise une fraction de la mémoire des grands noms.",

@@ -6,9 +6,22 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - A newly installed cPanic, Pleskit or DirectAdmen asks for its license on a setup page at first sign-in, where you can type a key, pick one you already own or continue on the trial.
 - When a panel's trial or license runs out, its admin pages show only the license page until a key is entered, and its customers write in that their control panel login shows a license error while their sites stay online.
+- The Terminal button on a server now connects by its address, and Tab in the terminal completes server addresses as well as names.
+- Removing an offsite backup server now discards its copies, a Proxmocks VM can no longer be moved into a cluster without quorum, and the Backula status lists only the jobs that write to that server with their real result.
+- Books has a Publish to website button: your website lists the published products of each line with their prices, and email orders and leads decide on those prices until you publish again.
+- An order email for one of your products now names that product.
+- A charged-back renewal no longer extends a prepaid term twice, upgrades on a prepaid term are billed for the rest of the term, and customers leaving after a written-off term get no refund.
+- The Pear Store sells KeePassive, a password manager that offers to save your router and bank logins after you type them once and fills them in on every later visit.
+- Pulling the power cords, a power outage or overheating now aborts a running OS install, and a server can be shut down from the installer.
+- The RAID level can no longer be changed while an OS installs.
+- The Pleskit website now says its license is a monthly fee per server that grows with the domains it hosts.
+- The OpenVeeZee, OpenStash, OwnClod, vsFTPeed and Postfixit websites and the plain project pages now look like the web of their time, and download buttons on 2005 pages are grey and bevelled.
+- Vendor shop carts, product pages and order emails now name the major version a one-time licence key covers.
+- OpenVeeZee lists its first release on its Versions page from the start of the game.
 - The Shop scrolls again, so every server and part in the catalog is reachable, and the add to cart button no longer spills out of narrow cards.
 - The BIOS setup can save changes without leaving, and its Boot Override starts the server from the hard disk or the attached USB stick right away.
 - A site you fixed after a broken WordPrass Toolkit update no longer keeps its old release around for a rollback.
+- The cPanic manager now has three looks that follow the installed version: x3, the flat Paper Lamp from 11.38 and the dark Jupitar sidebar from 98.
 - The Debiant website now looks like a plain 2005 project page until its 2015 redesign.
 - Proxmocks clusters now have HA groups that decide where a failed guest restarts, and Horizont has projects that group your instances.
 - Email orders and leads now pick the cheapest of your Books products that fits their needs and budget, accept any quote up to that product's price, and go elsewhere when none of your products fits.
