@@ -5,8 +5,8 @@ import { genOf, modelById } from "../10-catalog/hardware";
 import { balancerIn, isService, softwareById } from "../10-catalog/platforms";
 import { BACKUP_HOUR, slowTolerance } from "../10-catalog/usage";
 import { channelOf, EDGE_HOWTO } from "../60-infra/channel";
-import { assignedKey, extendKey, licenceExpired, productOf, panelMachine, updateKey } from "../60-infra/licence";
-import { LAPSE_GRACE_DAYS, tiersOf, type LicenceTier } from "../10-catalog/licence-tiers";
+import { assignedKey, extendKey, licenceExpired, productOf, panelMachine, startTrial, updateKey } from "../60-infra/licence";
+import { LAPSE_GRACE_DAYS, tiersOf, topTier, type LicenceTier } from "../10-catalog/licence-tiers";
 import { APP_SUITE_FEE, licensingAt, serverOsById, type ServerOsId } from "../10-catalog/server-os";
 import { homeLineById } from "../20-world/datacenters";
 import type { Customer, Product } from "../30-customers/customers";
@@ -147,6 +147,9 @@ function finishSwitches(s: GameState, events: SimEvent[]) {
   for (const c of s.clusters) {
     if (!c.switching || c.switching.doneAt > s.hour) continue;
     const { kind, to } = c.switching, fresh = !(kind === "cloud" ? c.platform : c.panel);
+    // A licensed panel installed without a key runs its trial, once per machine.
+    const host = kind === "panel" && topTier(to) ? panelMachine(c) : null;
+    if (host && !assignedKey(s, host, to)) startTrial(s, host, to);
     s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, switching: null, version: yearOf(s.hour), updatedAt: s.hour, ...(kind === "cloud" ? { platform: to } : { panel: to }), ...(fresh ? { channel: "stable" as const } : {}) } : x));
     events.push({ app: "Locations", key: fresh ? "event.installed" : "event.switched", params: { cluster: c.name, name: softwareById(to).name } });
     const d = fresh ? s.devices.find((x) => x.id === c.controlPlane) : undefined;

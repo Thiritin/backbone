@@ -175,7 +175,7 @@ describe("VMwhere", () => {
     ok(install(s, id, "lunix"));
     for (let h = 0; h < 2; h++) tick(s);
     const cash = s.cash;
-    ok(installSoftware(s, id, "vmwhere"));
+    ok(installSoftware(s, id, "vmwhere", issueKey(s, "vmwhere", null).key));
     expect(s.cash).toBe(cash);
     for (let h = 0; h < 6; h++) tick(s);
     const c = clusterOf(s, id)!;
