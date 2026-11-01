@@ -1,4 +1,4 @@
-/* A 2005 business software vendor: fixed 760 px page, red brand bar, Verdana 11 px, a box per edition. */
+/* Classic (2005 to 2009): fixed 760 px page, red brand bar, Verdana 11 px, a box per edition, plain edition lists. */
 .lx { --bv-brand: #c8102e; --bv-ink: #fff; --bv-font: Verdana, Geneva, Tahoma, sans-serif; min-height: 100%; background: #dcdcdc; color: #222; font: 11px/1.45 Verdana, Geneva, Tahoma, sans-serif; padding: 12px 0 24px; }
 .lx a { color: #b0001e; }
 .lx-page { width: 760px; max-width: 100%; margin: 0 auto; background: #fff; border: 1px solid #a0a0a0; }
@@ -19,3 +19,28 @@
 .lx-box-name { color: #fff; overflow-wrap: anywhere; hyphens: auto; }
 .lx-foot { padding: 6px 16px; border-top: 1px solid #ddd; color: #777; font-size: 10px; }
 .lx-boxes { display: flex; gap: 12px; margin: 4px 0 12px; }
+.lx-classic .bv-edition { padding-top: 8px; border-top: 1px dotted #bbb; }
+.lx-classic .bv-edition h2 { color: #b0001e; }
+
+/* Modern (2010 on): flat white 960 px page, red wordmark on white, red nav rule, Arial 13 px, comparison table. */
+.lx-modern { --bv-font: Arial, Helvetica, sans-serif; background: #f2f2f2; font: 13px/1.5 Arial, Helvetica, sans-serif; color: #333; padding: 0 0 32px; }
+.lx-modern .lx-page { width: 960px; border: 0; box-shadow: 0 0 0 1px #e2e2e2; }
+.lx-modern .lx-head { padding: 22px 24px 14px; background: #fff; color: #555; }
+.lx-modern .lx-logo { font-size: 32px; color: #c8102e; }
+.lx-modern .lx-tag { font-size: 13px; color: #777; }
+.lx-modern .lx-nav { gap: 0; padding: 0 24px; background: #fff; border-bottom: 3px solid #c8102e; }
+.lx-modern .lx-nav a { padding: 8px 16px; background: none; color: #555; font-weight: normal; }
+.lx-modern .lx-nav a[aria-current] { background: #c8102e; color: #fff; }
+.lx-modern .lx-main { padding: 20px 24px 28px; }
+.lx-modern h1 { font-size: 24px; font-weight: normal; margin-bottom: 16px; }
+.lx-modern .lx-boxes { gap: 20px; margin-bottom: 18px; }
+.lx-modern .lx-box { width: 72px; height: 92px; font-size: 9px; box-shadow: 3px 3px 6px rgb(0 0 0 / 0.2); }
+.lx-modern .bv-table { border: 1px solid #ddd; }
+.lx-modern .bv-table thead th { background: #c8102e; color: #fff; font-size: 15px; padding: 10px 8px; }
+.lx-modern .bv-table thead th:first-child { background: #fff; }
+.lx-modern .bv-table tbody tr:nth-child(even) { background: #f6f6f6; }
+.lx-modern .bv-table td { color: #c8102e; font-weight: bold; }
+.lx-modern .bv-table tr:last-child td, .lx-modern .bv-table tr:nth-last-child(2) td { color: #333; font-weight: normal; }
+.lx-modern .bv-price td { font-size: 20px; color: #333; padding: 12px 8px; }
+.lx-modern .bv-buy { border: 0; border-radius: 2px; padding: 7px 20px; font-size: 13px; }
+.lx-modern .lx-foot { padding: 12px 24px; background: #3c3c3c; color: #bbb; border: 0; font-size: 11px; }

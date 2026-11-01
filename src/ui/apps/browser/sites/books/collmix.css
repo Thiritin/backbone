@@ -1,0 +1,42 @@
+/* Collmix: a sparse web-app page in Verdana, slate and link blue; from 2012 a slate band and a price table. */
+.cx { min-height: 100%; background: #fff; color: #222; font: 11px/1.5 Verdana, Geneva, sans-serif; }
+.cx a { color: #2d6cdf; }
+.cx-page { width: 740px; max-width: 100%; margin: 0 auto; }
+.cx-head { display: flex; align-items: baseline; gap: 12px; padding: 14px 8px 8px; }
+.cx-logo { font: 26px/1 Arial, Helvetica, sans-serif; letter-spacing: -1px; color: #2d6cdf; }
+.cx-logo b { color: #3b4a5a; }
+.cx-tag { color: #777; }
+.cx-nav { display: flex; background: #3b4a5a; padding: 0 4px; }
+.cx-nav a { padding: 3px 10px; color: #fff; text-decoration: none; }
+.cx-nav a[aria-current] { font-weight: bold; text-decoration: underline; }
+.cx-main { padding: 12px 8px 18px; }
+.cx h1 { font-size: 14px; color: #3b4a5a; margin: 0 0 10px; }
+.cx h2 { font-size: 11px; margin: 0; }
+.cx p { margin: 0 0 6px; }
+.cx .bv-edition { margin: 0 0 12px; }
+.cx .bv-buy { font: 11px Verdana, Geneva, sans-serif; color: #000; background: #eee; border: 1px solid #999; border-radius: 0; padding: 1px 8px; cursor: pointer; }
+.cx .bv-state { color: #2f7d1a; font-weight: bold; }
+.cx .bv-row { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+.cx-foot { padding: 6px 8px; border-top: 1px solid #ccc; color: #888; font-size: 10px; }
+
+/* 2012 on: slate header band, tabs in it, editions side by side. */
+.cx-table { background: #eceff2; font-size: 12px; }
+.cx-table .cx-page { background: #fff; border: 1px solid #c8cfd6; border-top: 0; }
+.cx-table .cx-head { background: #3b4a5a; padding: 16px 20px 10px; }
+.cx-table .cx-logo, .cx-table .cx-logo b { color: #fff; }
+.cx-table .cx-logo b { opacity: 0.75; }
+.cx-table .cx-tag { color: #c8d2dc; }
+.cx-table .cx-nav { padding: 0 16px; border-bottom: 3px solid #2d6cdf; }
+.cx-table .cx-nav a { padding: 6px 12px; }
+.cx-table .cx-nav a[aria-current] { background: #2d6cdf; text-decoration: none; }
+.cx-table .cx-main { padding: 16px 20px 22px; }
+.cx-table h1 { font-size: 17px; }
+.cx .bv-table { border-collapse: collapse; width: 100%; }
+.cx .bv-table th, .cx .bv-table td { padding: 6px 10px; border: 1px solid #dde2e7; text-align: center; }
+.cx .bv-table th[scope="row"] { text-align: left; font-weight: normal; }
+.cx .bv-table thead th { background: #3b4a5a; color: #fff; font-size: 13px; border-color: #3b4a5a; }
+.cx .bv-table thead th:first-child { background: none; border-color: transparent; }
+.cx .bv-table tbody tr:nth-child(even) { background: #f4f6f8; }
+.cx .bv-price td { font-size: 16px; font-weight: bold; color: #3b4a5a; }
+.cx .bv-price small { display: block; font-size: 10px; font-weight: normal; }
+.cx-table .bv-buy { color: #fff; background: #2d6cdf; border: 1px solid #1f56b8; border-radius: 3px; padding: 4px 16px; font-weight: bold; }

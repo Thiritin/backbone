@@ -3,7 +3,7 @@ import { SOFTWARE } from "../src/sim/10-catalog/platforms";
 import { SERVER_OS } from "../src/sim/10-catalog/server-os";
 import { HOME_URL, resolve } from "../src/sim/80-business/browser";
 import { consoleBookmarks } from "../src/sim/80-business/consoles";
-import { siteIndex } from "../src/sim/80-business/index";
+import { companyFolder, siteIndex } from "../src/sim/80-business/index";
 import { setPower } from "../src/sim/90-actions/hardware";
 import { readyGame, skipTo, newGame } from "./fixtures";
 
@@ -15,11 +15,11 @@ describe("browser index", () => {
     expect(resolve(s, HOME_URL).page).toEqual({ kind: "index" });
     expect(resolve(s, "yahoy.com").page).toEqual({ kind: "index" });
     expect(siteIndex(s).map((c) => c.title)).toEqual([
-      "Banks", "Operating systems", "Virtualization", "Hosting panels", "Game panels", "DNS", "VPN", "Storage", "Mail", "Backup",
-      "Domain resellers", "Government", "Bookkeeping", "Community", "Hardware", "Used hardware", "Video",
+      "Documentation", "Banks", "Operating systems", "Virtualization", "Web hosting panels", "Game panels", "DNS", "VPN", "Storage", "Mail", "Backup",
+      "Shop systems", "Domain resellers", "Government", "Bookkeeping", "Community", "Hardware", "Used hardware", "Video",
     ]);
     const ready = readyGame(1);
-    expect(siteIndex(ready).map((c) => c.title).slice(-3)).toEqual(["Used hardware", ready.company.name, "Video"]);
+    expect(siteIndex(ready).map((c) => c.title)).not.toContain(ready.company.name);
     expect(titles(s, "Operating systems")).toEqual(["Debiant GNU/Lunix", "Windoors Server"]);
   });
 
@@ -46,7 +46,7 @@ describe("browser index", () => {
   });
 
   it("lists the company site once it is launched", () => {
-    const s = readyGame(1), titles = () => siteIndex(s).find((c) => c.title === s.company.name)!.rows.map((r) => r.title);
+    const s = readyGame(1), titles = () => companyFolder(s).rows.map((r) => r.title);
     s.marketing.launched = true;
     expect(titles()[0]).toBe(s.company.name);
     s.marketing.launched = false;
@@ -54,7 +54,7 @@ describe("browser index", () => {
   });
 
   it("lists the company's consoles from its clusters, down when the host cannot be reached", () => {
-    const s = readyGame(1), company = () => siteIndex(s).find((c) => c.title === s.company.name)!.rows.filter((r) => r.title !== s.company.name);
+    const s = readyGame(1), company = () => companyFolder(s).rows.filter((r) => r.title !== s.company.name);
     expect(company().map((r) => r.url)).toEqual(consoleBookmarks(s).map((m) => m.url));
     expect(company().map((r) => r.title.split(" ").at(-1)!.split(":")[0])).toEqual(consoleBookmarks(s).map((m) => m.url.split(".")[0]));
     expect(consoleBookmarks(s).length).toBeGreaterThan(0);
@@ -66,7 +66,7 @@ describe("browser index", () => {
   it("lists the consoles at their machines' private addresses before the company has a domain", () => {
     const s = readyGame(1);
     s.company.domain = null;
-    const rows = siteIndex(s).find((c) => c.title === s.company.name)!.rows.filter((r) => r.title !== s.company.name);
+    const rows = companyFolder(s).rows.filter((r) => r.title !== s.company.name);
     expect(rows.length).toBeGreaterThan(0);
     for (const r of rows) {
       expect(r.url).toMatch(/^\d+\.\d+\.\d+\.\d+(:\d+)?$/);

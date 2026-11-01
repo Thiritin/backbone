@@ -4,6 +4,12 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- Every bookkeeping vendor's website now has its own look for its era: plain feature lists on the early pages and pricing tables with the editions side by side on the later ones.
+<<<<<<< HEAD
+=======
+- The Yahoy! start page now searches the web, shows sponsored listings between the results, leads with Wikipedio as documentation and lists shop systems and web hosting panels.
+- Your company's own sites and consoles sit in a bookmark folder at the start of the bookmarks bar, grouped by category once there are more than twenty.
+>>>>>>> origin/main
 - Customers only rarely transfer a few cents too little or a rounded-down amount.
 - ClientExit has its own look in every era, from a 2005 table admin to the refreshed 7.0 console, and sells its keys, renewals and upgrades at clientexit.com.
 - Ubersmyth has its own website at ubersmyth.com with pricing, releases, add-ons and your keys, and its admin, store and client portal change their look with each major version, from the 2006 tabbed ironworks to the 2024 sectioned workspace.

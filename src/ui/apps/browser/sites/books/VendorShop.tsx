@@ -17,6 +17,11 @@ export interface Look { brand: string; ink: string; page: string; font: string; 
 export const editionIn = (path: string): string | undefined => /^\/edition\/([\w-]+)/.exec(path)?.[1];
 
 const amount = (v: BooksVendor, n: number) => (v.deployment === "browser" ? t("books-editions.perMonth", { price: euro(n) }) : euro(n));
+// The program and edition name without the words they share, as in Saga Office Line + Office Line Plus.
+const titleOf = (v: BooksVendor, e: Edition) => {
+  const p = v.program, i = [...p].findIndex((_, i) => (i === 0 || p[i - 1] === " ") && e.name.startsWith(p.slice(i)));
+  return i < 0 ? `${p} ${e.name}` : p.slice(0, i) + e.name;
+};
 const users = (e: Edition) => (e.users === Infinity ? t("books-editions.network") : e.seat ? t("books-editions.perSeat", { n: e.users }) : e.users > 1 ? t("books-editions.users", { n: e.users }) : t("books-editions.single"));
 
 function Action({ game, v, e }: { game: GameState; v: BooksVendor; e: Edition }) {
@@ -71,7 +76,7 @@ export function Editions({ game, v, one, table }: { game: GameState; v: BooksVen
     <div className="bv-editions">
       {shown.map((e) => (
         <div key={e.id} className="bv-edition">
-          <h2>{v.program} {e.name}</h2>
+          <h2>{titleOf(v, e)}</h2>
           <ul>
             {e.features.map((f) => <li key={f}>{t(`books-editions.feature.${f}`)}</li>)}
             <li>{users(e)}</li>

@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, CircleArrowDown, House, Plus, RotateCw, Star, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronDown, CircleArrowDown, Folder, House, Plus, RotateCw, Star, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { BOARD_TITLE, defaultBookmarks, HOME_URL, resolve, split, VIDEO_TITLE, WIKI_TITLE, type Resolved } from "../../../sim/80-business/browser";
 import { customerSite } from "../../../sim/80-business/website";
@@ -10,7 +10,8 @@ import { softwareById } from "../../../sim/10-catalog/platforms";
 import { serverOsById } from "../../../sim/10-catalog/server-os";
 import { registrarById } from "../../../sim/10-catalog/registrars";
 import { reduced } from "../../desktop/motion";
-import { menuOn } from "../../desktop/ContextMenu";
+import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
+import { companyFolder, type IndexRow } from "../../../sim/80-business/index";
 import { nowHours } from "../../../sim/00-core/time";
 import { isoFile } from "./sites/software/SoftwareSite";
 import { useDownloads } from "../../downloads";
@@ -250,6 +251,9 @@ export function BrowserApp() {
   const bookmarks = [...defaultBookmarks(game), ...marks];
   const marked = bookmarks.some((m) => m.url === url);
   const isDefault = defaultBookmarks(game).some((m) => m.url === url);
+  const folder = companyFolder(game);
+  const folderItem = (r: IndexRow): MenuEntry => ({ label: r.title, run: () => go(r.url) });
+  const folderMenu = (): MenuEntry[] => [...folder.rows.map(folderItem), null, ...folder.groups.map((g) => ({ label: g.title, items: g.rows.map(folderItem) }))];
   const toggleMark = () => setMarks(marked ? marks.filter((m) => m.url !== url) : [...marks, { title: titleOf(game, r), url }]);
 
   return (
@@ -285,6 +289,13 @@ export function BrowserApp() {
         <DownloadsButton game={game} />
       </div>
       <div className="br-marks">
+        {(folder.rows.length > 0 || folder.groups.length > 0) && (
+          <button className="br-mark br-folder" aria-haspopup="menu" onClick={menuOn(folderMenu)}>
+            <Folder aria-hidden />
+            <span>{folder.title}</span>
+            <ChevronDown aria-hidden />
+          </button>
+        )}
         {bookmarks.map((m) => (
           <button key={m.url} className="br-mark" onClick={() => go(m.url)}>
             <Favicon game={game} r={resolve(game, m.url)} />
