@@ -54,7 +54,7 @@ describe("Lexwear modules", () => {
     const s = newGame(9);
     expect(resolve(s, "www.lexwear.de/").page).toEqual({ kind: "lexwear" });
     expect(resolve(s, "www.lexwear.de/module/hbci").page).toEqual({ kind: "lexwear" });
-    expect(MODULES.map((m) => m.id)).toEqual(["helpdesk-link", "monthly-run", "match-by-reference", "auto-reminders", "hbci"]);
+    expect(MODULES.filter((m) => m.vendor === "lexwear").map((m) => m.id)).toEqual(["helpdesk-link", "monthly-run", "match-by-reference", "auto-reminders", "hbci"]);
   });
 
   it("are bought through the cart: the price is debited and the key arrives by email", () => {

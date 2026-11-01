@@ -3,7 +3,6 @@ import { t } from "../../../../../i18n/en";
 import { euroPrice } from "../../../../../sim/00-core/money";
 import { yearOf } from "../../../../../sim/00-core/time";
 import { tiersOf } from "../../../../../sim/10-catalog/licence-tiers";
-import { hasModule, moduleById } from "../../../../../sim/10-catalog/modules";
 import type { LicenseKind } from "../../../../../sim/10-catalog/server-os";
 import type { GameState, Licence } from "../../../../../sim/50-state";
 import { keyExpired, productOf } from "../../../../../sim/60-infra/licence";
@@ -17,7 +16,7 @@ import "./shop.css";
 // vendor site lays out in its own look; btn is the site's button class.
 type ShopProps = { btn: string };
 
-const productName = (id: string) => (moduleById(id) ? t(`vendor-sites.module.${id}`) : productOf(id)?.name ?? id);
+const productName = (id: string) => productOf(id)?.name ?? id;
 const editionName = (product: string, edition: string | null) => tiersOf(product).find((x) => x.id === edition)?.name ?? "";
 const lineName = (product: string, edition: string | null) => [productName(product), editionName(product, edition)].filter(Boolean).join(" ");
 const UNIT: Record<LicenseKind, string> = { once: "vendor-shop.once", server: "vendor-shop.perServer", core: "vendor-shop.perCore", account: "vendor-shop.perAccount", free: "vendor-shop.once" };
@@ -97,9 +96,7 @@ export function Account({ host, btn }: ShopProps & { host: string }) {
       <tbody>{keys.map((k) => (
         <tr key={k.id}>
           <td>{productName(k.product)}</td><td>{editionName(k.product, k.edition)}</td><td className="shop-key">{k.key}</td>
-          {moduleById(k.product)
-            ? <><td>{hasModule(game, k.product) ? t("vendor-sites.registered") : ""}</td><td /></>
-            : <><td>{machineName(game, k.machineId)}</td><td>{status(game, k)}</td></>}
+          <td>{machineName(game, k.machineId)}</td><td>{status(game, k)}</td>
           <td>{k.covers.kind === "term" && k.renewsAt !== null && !keyExpired(game, k) && <button type="button" className={btn} onClick={() => act(cancelLicence, k.id)}>{t("vendor-shop.cancel")}</button>}</td>
         </tr>
       ))}</tbody>

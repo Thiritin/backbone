@@ -118,6 +118,7 @@ export const TERMINAL_EN: Record<string, (p: Params) => string> = {
     "uptime             show how long the server has been up",
     "df -h              show disk usage",
     "free -m            show memory usage",
+    "ip a               show the network interfaces",
     "top                show the busiest processes",
     "shutdown -h now    power the server off",
     "reboot             restart the server",

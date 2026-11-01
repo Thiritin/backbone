@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
 import { serverOsAt } from "../src/sim/10-catalog/server-os";
 import { newGame } from "../src/sim/50-state";
-import { assignKey, licenceStatus, renewTerms } from "../src/sim/60-infra/licence";
+import { assignKey, licenceStatus } from "../src/sim/60-infra/licence";
+import { renewKeys } from "../src/sim/85-products/products";
 import { cartOf, keysOf, offers, ORDER, orderKeys } from "../src/sim/80-business/vendor-shop";
 import { registerLicence } from "../src/sim/90-actions/lexwear";
 import { addToCart, cancelLicence, checkout, removeFromCart } from "../src/sim/90-actions/vendor-shop";
@@ -83,7 +84,7 @@ describe("vendor shop", () => {
     s.hour = until - 1;
     expect(licenceStatus(s, "srv1", "cpanic")).toBe("active");
     s.hour = until;
-    renewTerms(s);
+    renewKeys(s);
     expect(s.licenses[0].covers).toEqual({ kind: "term", until });
     expect(licenceStatus(s, "srv1", "cpanic")).toBe("lapsed");
   });

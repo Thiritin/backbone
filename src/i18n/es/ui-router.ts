@@ -1,0 +1,32 @@
+import type { Dict } from "../lang";
+
+// docs/design/lan.md, Phases: the web interfaces of own routers in a datacenter.
+export default {
+  "router.system": () => "Sistema",
+  "router.dhcp": () => "Servidor DHCP",
+  "router.vpn": () => "Acceso remoto",
+  "router.model": () => "Modelo",
+  "router.name": () => "Nombre",
+  "router.uplink": () => "Dirección de enlace",
+  "router.address": () => "Dirección LAN",
+  "router.firmware": () => "Firmware",
+  "router.network": () => "Red",
+  "router.prefix": () => "Prefijo",
+  "router.poolFrom": () => "Inicio del pool",
+  "router.poolTo": () => "Fin del pool",
+  "router.free": () => "Direcciones libres",
+  "router.leases": () => "Concesiones",
+  "router.host": () => "Nombre de host",
+  "router.mac": () => "Dirección MAC",
+  "router.ip": () => "Dirección",
+  "router.vpnServer": () => "Servidor VPN",
+  "router.enabled": () => "Activado",
+  "router.disabled": () => "Desactivado",
+  "router.enable": () => "Activar",
+  "router.disable": () => "Desactivar",
+  "error.poolFull": () => "El pool DHCP del router no tiene ninguna dirección libre.",
+  "error.noVlanLeft": () => "Todas las VLAN del dominio de switches están ocupadas.",
+  "error.notLayer3": () => "Este switch no enruta entre VLAN.",
+  "error.notOwnRouter": () => "Solo los routers del centro de datos tienen este ajuste.",
+  "error.badPrefix": () => "El prefijo debe estar entre /16 y /30.",
+} satisfies Dict;

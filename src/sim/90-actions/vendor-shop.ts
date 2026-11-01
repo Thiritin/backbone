@@ -1,23 +1,19 @@
 // docs/design/plans/software-licences.md, lanes vendor-shop and my-account: buying licence keys on a vendor site and cancelling
 // a term licence from My account.
 import { yearOf } from "../00-core/time";
-import { moduleById } from "../10-catalog/modules";
 import { deliverMail } from "../40-support/tickets";
 import { cents } from "../45-billing/billing";
 import type { GameState } from "../50-state";
 import { issueKey, updateKey } from "../60-infra/licence";
-import { bought } from "../80-business/lexwear";
 import { cartOf, offerOf, ORDER, vendorName, type CartLine } from "../80-business/vendor-shop";
 import type { ActionResult } from "./hardware";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 const same = (a: Pick<CartLine, "product" | "edition">) => (b: CartLine) => a.product === b.product && a.edition === b.edition;
 
-// A Lexwear module is bought once, so its line never holds more than one.
 export function addToCart(s: GameState, product: string, edition: string | null): ActionResult {
   if (!offerOf({ product, edition }, yearOf(s.hour))) return fail("error.notForSale");
   const line = s.cart.find(same({ product, edition }));
-  if (moduleById(product) && (line || bought(s, product))) return fail("error.moduleBought");
   s.cart = line ? s.cart.map((l) => (l === line ? { ...l, qty: l.qty + 1 } : l)) : [...s.cart, { product, edition, qty: 1 }];
   return { ok: true };
 }

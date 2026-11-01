@@ -63,7 +63,7 @@ describe("server operating systems", () => {
     ok(installSoftware(s, bootedMachine(s, "dev3", "windoors"), "tcadmen"));
     expect(machineOf(s, "dev3")).toMatchObject({
       os: { id: "windoors", version: "2008 R2", installedAt: s.hour },
-      software: [{ id: "tcadmen", version: "2010", installedAt: s.hour, doneAt: s.hour + 2 }],
+      software: [{ id: "tcadmen", version: "1.0", installedAt: s.hour, doneAt: s.hour + 2 }],
     });
     const cloud = hypervisor(s, [second]);
     hypervisor(s, [third]);
@@ -83,21 +83,19 @@ describe("server operating systems", () => {
     expect(s.ops.seized[0].device).toMatchObject({ id: second, software: [] });
   });
 
-  it("bills Windoors per core from 2016 and the App Suite per cluster with the licenses", () => {
+  it("bills subscription keys and the App Suite, and keeps Windoors bought once free from 2016", () => {
     const { s, second } = threeServers();
     const host = panelServer(s, "dev3", "tcadmen");
     const cloud = hypervisor(s, [second], undefined, "hypervee");
     skipTo(s, 2016);
-    // Two cores per server at 4 euros each.
-    expect(licenseCost(s, s.clusters.find((c) => c.id === host)!)).toEqual({ panel: 25, platform: 8 });
-    expect(licenseCost(s, s.clusters.find((c) => c.id === cloud)!)).toEqual({ panel: 0, platform: 20 + 8 });
+    expect(licenseCost(s, s.clusters.find((c) => c.id === host)!)).toEqual({ panel: 25, platform: 0 });
+    expect(licenseCost(s, s.clusters.find((c) => c.id === cloud)!)).toEqual({ panel: 0, platform: 20 });
     s.clusters = s.clusters.map((c) => (c.id === cloud ? { ...c, appSuite: true } : c));
-    expect(licenseCost(s, s.clusters.find((c) => c.id === cloud)!).platform).toBe(20 + 8 + 25);
+    expect(licenseCost(s, s.clusters.find((c) => c.id === cloud)!).platform).toBe(20 + 25);
     monthEnd(s);
-    expect(s.ledger.filter((l) => l.category === "licenses").map((l) => [l.key, l.amount])).toEqual([
-      ["ledger.license", -25], ["ledger.license", -20], ["ledger.appSuite", -25], ["ledger.windoors", -16],
+    expect(s.ledger.filter((l) => l.category === "licenses").map((l) => [l.key, l.params.name, l.amount])).toEqual([
+      ["ledger.licenceRenewal", "TCAdmen", -25], ["ledger.licenceRenewal", "HyperVee", -20], ["ledger.appSuite", undefined, -25],
     ]);
-    expect(s.ledger.find((l) => l.key === "ledger.windoors")?.params).toEqual({ count: 2 });
   });
 });
 

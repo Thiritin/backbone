@@ -5,8 +5,9 @@ import type { GameState } from "../../../sim/50-state";
 import { softwareById } from "../../../sim/10-catalog/platforms";
 import { clusterOf, controlPlaneUse, workloadsOn, type Workload } from "../../../sim/60-infra/cluster";
 import { pegged, workloadUse } from "../../../sim/60-infra/usage";
+import { siteHost } from "../../../sim/80-business/website";
 import { migrateWorkload, migrationTargets, startWorkload, stopWorkload } from "../../../sim/90-actions/vms";
-import { announceEntries, migrateEntries, offerEntries, rescueEntries } from "../vms/migrate";
+import { announceEntries, migrateEntries, offerEntries, rescueEntries } from "../workload-menu";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
@@ -81,11 +82,14 @@ function WorkloadRow({ game, w, u }: { game: GameState; w: Workload; u: Resource
   const hot = st === "running" && pegged(game, w);
   const hand = useHandWork();
   const entries = () => workloadMenu(game, w, hand.start);
+  const site = w.serviceId ? siteHost(game, w.serviceId) : null;
   return (
     <div className="wl-row" onContextMenu={menuOn(entries)}>
       <div className="wl-line">
         <span className="wl-name">{name}</span>
-        <span className="loc-muted wl-service">{service}</span>
+        {site
+          ? <button className="loc-link wl-service num" onClick={() => useStore.getState().openApp("Browser", { kind: "url", id: `http://${site}/` })}>{site}</button>
+          : <span className="loc-muted wl-service">{service}</span>}
         <span className="grow" />
         {hot && <span className="pill warn">{t("locations-2.pegged")}</span>}
         {st !== "running" && <span className={`pill ${tone}`}>{label}</span>}

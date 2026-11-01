@@ -12,7 +12,7 @@ import "./ownclod.css";
 const ERAS = erasFrom(2010, 2016);
 
 export function OwnClod(p: PanelProps) {
-  const era = eraAt(ERAS, p.game), [panelTab, setTab] = usePanelTab(p.f), [view, setView] = useState<"shares" | "users" | null>(null), tab: Tab | "shares" | "users" = view ?? panelTab;
+  const era = eraAt(ERAS, p), [panelTab, setTab] = usePanelTab(p.f), [view, setView] = useState<"shares" | "users" | null>(null), tab: Tab | "shares" | "users" = view ?? panelTab;
   const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f);
   const logo = <span className="oc-logo"><Cloud size={22} aria-hidden />ownClod</span>;
   if (!p.signedIn) return (

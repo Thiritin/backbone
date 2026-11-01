@@ -5,6 +5,7 @@ import { CITY_TLD } from "../30-customers/domains";
 import type { Address } from "../30-customers/addresses";
 import { yearOf } from "../00-core/time";
 import type { Cycle } from "../10-catalog/cycles";
+import type { MethodId } from "../10-catalog/payments";
 import { CHOICE_TAU, CITIES, COMPETITORS, generationAt, leadCapShare, MARKET_GROWTH, type Budget, type Competitor, type Profile as ProfileStats } from "../10-catalog/economy";
 import { gpuDemand, GPU_SHARE } from "../10-catalog/gpu";
 import { modelById } from "../10-catalog/hardware";
@@ -48,6 +49,8 @@ export interface SalesRequest {
   cycle?: Cycle;
   // Taken by a shop system rather than the hand-rolled form; a shop order that cannot be placed is cancelled, never lost.
   shop?: boolean;
+  // The payment method a shop order checked out with; absent for bank transfer.
+  method?: MethodId;
   // The one-time fee the manual quote's invoice carries; the line's rate where unset.
   setup?: number;
 }
@@ -82,10 +85,11 @@ export const NEEDS: Record<Profile, [Product, number][]> = {
   office: [["webHosting", 0.9], ["vps", 0.1]],
   onlineShop: [["webHosting", 0.5], ["vps", 0.5], ["gpu", GPU_SHARE]],
   enterprise: [["vps", 0.5], ["dedicated", 0.5], ["gpu", GPU_SHARE]],
+  reseller: [["reseller", 1]],
 };
 export const SLA_ASKED: Record<Profile, Sla> = {
   private: "basic", gamer: "basic", hobbyDev: "basic", soleProp: "basic", smallBiz: "business", agency: "business",
-  office: "business", onlineShop: "premium", enterprise: "premium",
+  office: "business", onlineShop: "premium", enterprise: "premium", reseller: "business",
 };
 
 // A profile's needs in a year: the GPU share scaled by the year's demand, the other weights making room for it; none before GPU servers.
@@ -147,8 +151,9 @@ export function priceIndex(s: GameState): number {
 const value = (p: ProfileStats, P: number, R: number, C: number, T: number, priceFactor: number) =>
   p.wP * P + p.wR * R + p.wC * C + T - PRICE_WEIGHT * p.lambda * 100 * (priceFactor - 1);
 
-// The open rivals of a game (30-market/rivals.ts); the catalog table where no game is at hand.
-export const openRivals = (s: GameState): Rival[] => s.competitors.filter((r) => r.closed === null);
+// The open rivals of a game (30-market/rivals.ts), in a city if given; the catalog table where no game is at hand.
+export const openRivals = (s: GameState, city?: string): Rival[] =>
+  s.competitors.filter((r) => r.closed === null && (city === undefined || r.customers[city] !== undefined));
 
 export const rivals = <C extends Competitor>(profile: Profile, product: Product, list: readonly C[] = COMPETITORS as C[]): C[] => {
   const p = profileStats(profile);
@@ -161,7 +166,7 @@ export function values(s: GameState, profile: Profile, product: Product, city: s
   const p = profileStats(profile), sc = playerScores(s, profile, city);
   return {
     you: value(p, sc.P, sc.R, sc.C, trustBonus(s), (level ?? priceIndex(s)) + dearer),
-    others: rivals(profile, product, openRivals(s)).map((c) => rivalValue(profile, c)),
+    others: rivals(profile, product, openRivals(s, city)).map((c) => rivalValue(profile, c)),
   };
 }
 
@@ -279,7 +284,7 @@ export function senderFor(r: Rng, profile: Profile, shady = false, us = false): 
   const company: Record<Profile, string | null> = {
     private: null, gamer: null, hobbyDev: null,
     soleProp: `${last} ${pick(r, TRADES)}`, smallBiz: `${last} ${pick(r, FIRMS)}`, agency: pick(r, AGENCY),
-    office: `${pick(r, OFFICES)} ${last}`, onlineShop: `${pick(r, SHOPS)}-shop.${shop}`, enterprise: `${last} Industries ${corp}`,
+    office: `${pick(r, OFFICES)} ${last}`, onlineShop: `${pick(r, SHOPS)}-shop.${shop}`, enterprise: `${last} Industries ${corp}`, reseller: `${last} Webhosting`,
   };
   return { contact, company: company[profile] };
 }

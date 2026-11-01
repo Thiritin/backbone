@@ -3,8 +3,9 @@ import { keyCode } from "../00-core/rng";
 import { dateOf, hourOf, yearOf } from "../00-core/time";
 import { tiersOf, topTier, type LicenceTier } from "../10-catalog/licence-tiers";
 import { SOFTWARE } from "../10-catalog/platforms";
-import { licensingAt, SERVER_OS, serverOsAt } from "../10-catalog/server-os";
-import type { ServerOsId } from "../10-catalog/server-os";
+import { licensingAt, SERVER_OS } from "../10-catalog/server-os";
+import type { Look } from "../10-catalog/sites";
+import { UI_LOOKS, versionAt, versionInfo, versionsOf } from "../10-catalog/software-versions";
 import type { GameState, Licence } from "../50-state";
 import type { Cluster } from "./cluster";
 
@@ -16,6 +17,10 @@ export const productOf = (id: string) => SERVER_OS.find((o) => o.id === id) ?? S
 export const isLicensed = (product: string): boolean => productOf(product)?.trialDays !== undefined;
 // Days of the product's trial; null when it needs a key at install.
 export const trialDaysOf = (product: string): number | null => productOf(product)?.trialDays ?? null;
+// The editions a licence key can carry; VMwhere editions belong to its cluster instead.
+export const keyTiers = (product: string): LicenceTier[] => (SOFTWARE.find((x) => x.id === product)?.kind === "panel" ? tiersOf(product) : []);
+// A panel with editions starts on a trial of its top tier instead of a key at install.
+export const hasTrialTiers = (product: string): boolean => keyTiers(product).length > 0 && trialDaysOf(product) !== null;
 
 export const assignedKey = (s: GameState, machineId: string, product: string): Licence | undefined =>
   s.licenses.find((k) => k.machineId === machineId && k.product === product);
@@ -28,10 +33,18 @@ export function installedVersion(s: GameState, machineId: string, product: strin
   const m = [...s.devices, ...s.workloads].find((x) => x.id === machineId);
   return (m?.os?.id === product ? m.os.version : m?.software?.find((x) => x.id === product)?.version) ?? null;
 }
-// ponytail: only operating systems have ordered releases; software installs count as the key's major until it gets versions.
+// The console look of the version the machine runs, or null when the version or its UI generations are unknown.
+export function lookOf(s: GameState, machineId: string, product: string): Look | null {
+  const vs = versionsOf(product), at = (v: string | null) => vs.findIndex((x) => x.version === v);
+  const i = at(installedVersion(s, machineId, product));
+  return i < 0 ? null : UI_LOOKS[product]?.filter(([from]) => at(from) <= i).at(-1)?.[1] ?? null;
+}
+const installedMajor =(s: GameState, machineId: string, product: string): string | undefined =>
+  versionInfo(product, installedVersion(s, machineId, product) ?? "")?.major;
+// A key for a major the product never had (a year, from before versions) covers whatever is installed.
 const isNewer = (product: string, installed: string | null, major: string): boolean => {
-  const versions = SERVER_OS.find((o) => o.id === product)?.versions.map((v) => v.version);
-  return !!versions && installed !== null && versions.indexOf(installed) > versions.indexOf(major);
+  const vs = versionsOf(product), i = vs.findIndex((v) => v.version === installed), k = vs.findIndex((v) => v.major === major);
+  return i >= 0 && k >= 0 && vs[i].major !== major && i > k;
 };
 
 // An assigned key makes an install active until it lapses, unless it is for an older major version; without one the install
@@ -49,22 +62,21 @@ export function licenceStatus(s: GameState, machineId: string, product: string):
   return trial && s.hour < trial.until ? "trial" : "ended";
 }
 
-const nextMonth = (hour: number): number => {
-  const d = dateOf(hour);
-  return hourOf(new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1)));
+// The same day and hour a month later, or the last day of a shorter month.
+export const monthAfter = (hour: number): number => {
+  const d = dateOf(hour), y = d.getUTCFullYear(), m = d.getUTCMonth() + 1;
+  return hourOf(new Date(Date.UTC(y, m, Math.min(d.getUTCDate(), new Date(Date.UTC(y, m + 1, 0)).getUTCDate()), d.getUTCHours())));
 };
 
-// The release a one-time key bought now covers: the OS version on sale, or the year for software.
-const majorAt = (product: string, hour: number): string =>
-  SERVER_OS.some((o) => o.id === product) ? serverOsAt(product as ServerOsId, yearOf(hour)).version : String(yearOf(hour));
+// The major a one-time key bought now covers: the one of the newest release out.
+const majorAt = (product: string, hour: number): string => versionAt(product, hour).major;
 
 // Adds an unassigned key; its code is seeded by its number, one per order line. A key bought without an order is its own order.
-// A one-time key covers a major version, the release on sale unless major names one; any other key covers a monthly term.
-// A product outside the catalog, such as a Lexwear module, is sold once.
+// A one-time key covers a major version, the release on sale unless major names one; any other key covers a month from today.
 export function issueKey(s: GameState, product: string, edition: string | null, orderId?: string, major?: string): Licence {
   const n = 1 + Math.max(0, ...s.licenses.map((k) => Number(k.id.slice(3))));
-  const kind = tiersOf(product).find((x) => x.id === edition)?.kind ?? (productOf(product) ? licensingAt(productOf(product)!, yearOf(s.hour)).kind : "once");
-  const term = kind === "once" ? null : nextMonth(s.hour);
+  const kind = keyTiers(product).find((x) => x.id === edition)?.kind ?? licensingAt(productOf(product)!, yearOf(s.hour)).kind;
+  const term = kind === "once" ? null : monthAfter(s.hour);
   const k: Licence = {
     id: `lic${n}`, product, edition, kind, key: keyCode(s.seed, n, 611), orderId: orderId ?? `ord${n}`, boughtAt: s.hour, machineId: null,
     covers: term === null ? { kind: "version", major: major ?? majorAt(product, s.hour) } : { kind: "term", until: term }, renewsAt: term, lapsedAt: null,
@@ -76,11 +88,11 @@ export function issueKey(s: GameState, product: string, edition: string | null, 
 export const updateKey = (s: GameState, keyId: string, patch: Partial<Licence>): void => {
   s.licenses = s.licenses.map((k) => (k.id === keyId ? { ...k, ...patch } : k));
 };
-// The monthly bill pays every assigned term key through the next month, except cancelled ones.
-export function renewTerms(s: GameState): void {
-  const until = nextMonth(s.hour);
-  s.licenses = s.licenses.map((k) => (k.machineId !== null && k.covers.kind === "term" && k.renewsAt !== null ? { ...k, covers: { kind: "term", until }, renewsAt: until } : k));
-}
+// Pays a subscription key through a month from the given hour.
+export const extendKey = (s: GameState, keyId: string, from: number): void => {
+  const until = monthAfter(from);
+  updateKey(s, keyId, { covers: { kind: "term", until }, renewsAt: until, lapsedAt: null });
+};
 export const assignKey = (s: GameState, keyId: string, machineId: string): void => updateKey(s, keyId, { machineId });
 export const releaseKey = (s: GameState, keyId: string): void => updateKey(s, keyId, { machineId: null });
 
@@ -134,11 +146,11 @@ export function legacyLicences(s: GameState, held: { id: string; machineId: stri
     if (!assignedKey(s, machineId, product)) updateKey(s, issueKey(s, product, edition, undefined, major).id, { machineId, ...patch });
   };
   for (const l of held) {
-    const major = installedVersion(s, l.machineId, l.id) ?? majorAt(l.id, l.boughtAt);
+    const major = installedMajor(s, l.machineId, l.id) ?? majorAt(l.id, l.boughtAt);
     add(l.machineId, l.id, { kind: "once", boughtAt: l.boughtAt, covers: { kind: "version", major }, renewsAt: null });
   }
   for (const m of [...s.devices, ...s.workloads]) {
-    for (const id of [m.os?.id, ...(m.software ?? []).map((x) => x.id)]) if (id && isLicensed(id) && !tiersOf(id).length) add(m.id, id, {}, null, installedVersion(s, m.id, id) ?? undefined);
+    for (const id of [m.os?.id, ...(m.software ?? []).map((x) => x.id)]) if (id && isLicensed(id) && !hasTrialTiers(id)) add(m.id, id, {}, null, installedMajor(s, m.id, id));
   }
   s.clusters = s.clusters.map((c) => {
     const { licence, ...rest } = c as Cluster & { licence?: LegacyPanel };

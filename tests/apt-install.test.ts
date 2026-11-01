@@ -9,7 +9,7 @@ import type { Call } from "../src/sim/90-actions/index";
 import { softwareOn } from "../src/sim/90-actions/software";
 import { installLog } from "../src/sim/60-infra/apt";
 import { machineAddress } from "../src/sim/60-infra/addresses";
-import { bootedMachine, hypervisor, skipTo, withServer, newGame } from "./fixtures";
+import { bootedMachine, hypervisor, newGame, skipTo, withNames, withServer } from "./fixtures";
 
 // withServer: dev3 is a free server cabled to the desk's router; booted here with an OS.
 const act = (s: GameState) => ([fn, ...args]: Call) => fn(s, ...args);
@@ -21,6 +21,7 @@ function server(os: "lunix" | "windoors" = "lunix", year = 2017) {
   const s = withServer(newGame(5));
   skipTo(s, year);
   bootedMachine(s, "dev3", os);
+  withNames(s);
   const host = s.devices.find((d) => d.id === "dev3")!.hostname!;
   return { s, host, at: { host, deviceId: "dev3" } as Session };
 }
@@ -31,7 +32,7 @@ describe("installing software from the shell", () => {
     expect(run(s, `ssh ${host}`, null).session).toEqual({ host, deviceId: "dev3" });
     const win = server("windoors");
     expect(text(win.s, `ssh ${win.host}`, null)).toBe(`ssh: connect to host ${win.host} port 22: Connection refused`);
-    const empty = withServer(newGame(5)), name = empty.devices.find((d) => d.id === "dev3")!.hostname!;
+    const empty = withNames(withServer(newGame(5))), name = empty.devices.find((d) => d.id === "dev3")!.hostname!;
     expect(text(empty, `ssh ${name}`, null)).toBe(`ssh: connect to host ${name} port 22: Connection timed out`);
   });
 
@@ -58,7 +59,7 @@ describe("installing software from the shell", () => {
     expect(byHour.every((h) => h.length > 0)).toBe(true);
     expect(byHour.flat()).toEqual([...log.slice(1), "Proxmocks installation complete.", `You can access your new installation at https://${machineAddress(s, "dev3")}:8006/`, "Reboot now to finish the installation."]);
     expect(clusterOf(s, "dev3")?.platform).toBe("proxmocks");
-    expect(text(s, "dpkg -l", at)).toMatch(/ii {2}proxmocks-ve +2017 +amd64 +Proxmocks/);
+    expect(text(s, "dpkg -l", at)).toMatch(/ii {2}proxmocks-ve +4\.0 +amd64 +Proxmocks/);
   });
 
   it("does not find the package before its repo line, nor a script software's name", () => {
