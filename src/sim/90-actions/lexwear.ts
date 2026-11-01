@@ -16,9 +16,22 @@ export function activate(s: GameState, id: string): void {
   if (id === "auto-reminders") s.billingRules = { ...s.billingRules, autoRemind: true };
 }
 
+// A shop module, sold by the shop system's vendor.
+function buyShopModule(s: GameState, id: string): ActionResult {
+  const m = moduleById(id)!;
+  if (bought(s, id)) return fail("error.moduleBought");
+  // The hand-rolled order form has no vendor to link it.
+  if (!s.shop.variant || s.shop.variant === "handRolled") return fail("error.noShopSystem");
+  if (s.cash < m.price) return fail("error.noCash");
+  s.cash = cents(s.cash - m.price);
+  s.ledger = [...s.ledger, { hour: s.hour, category: "licenses", key: `ledger.module.${id}`, params: {}, amount: -m.price }];
+  return { ok: true };
+}
+
 // A licence key sells without the program; a keyless vendor's module turns on in the program, so that one must run.
 export function buyLicence(s: GameState, id: string, vendor: BooksVendorId = "lexwear"): ActionResult {
   const m = moduleById(id), v = booksVendor(vendor), year = yearOf(s.hour);
+  if (m?.vendor === "shop" && m.year <= year) return buyShopModule(s, id);
   const price = v ? modulePrice(v, id) : "never";
   if (!m || !v || m.year > year || v.from > year || price === "never") return fail("error.unknownModule");
   if (!v.keys && s.books.vendor !== v.id) return fail("error.programMissing");
@@ -34,8 +47,10 @@ export function buyLicence(s: GameState, id: string, vendor: BooksVendorId = "le
 
 // A key from a licence email of the running program's vendor turns its module on.
 export function registerLicence(s: GameState, key: string): ActionResult {
-  const k = key.trim().toUpperCase(), vendor = s.books.vendor ?? "lexwear";
-  const m = MODULES.find((x) => licenceMail(s, x.id, vendor) && licenceKey(s, x.id, vendor) === k);
+  const k = key.trim().toUpperCase(), program = s.books.vendor ?? "lexwear";
+  // Shop modules carry their shop vendor's key; Books modules the running program's.
+  const of = (id: string) => (moduleById(id)?.vendor === "lexwear" ? program : "lexwear");
+  const m = MODULES.find((x) => licenceMail(s, x.id, of(x.id)) && licenceKey(s, x.id, of(x.id)) === k);
   if (!m) return fail("error.licenceKey");
   if (hasModule(s, m.id)) return fail("error.moduleRegistered");
   activate(s, m.id);

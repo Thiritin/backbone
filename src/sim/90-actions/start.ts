@@ -33,7 +33,6 @@ export function startChallenge(id: string): GameState {
   const s = opened(c.seed);
   s.challenge = c.id;
   const t = c.twist;
-  if (t.kind === "cash") s.cash = t.cash;
   if (t.kind === "line") s.homeLine = { id: t.line, next: null };
   if (t.kind === "dc") s.dcs = Object.fromEntries(DATACENTERS.map((dc) => [dc.id, dc.id === t.dc ? s.dcs[dc.id] : { others: capacityAt(dc, 2005) }]));
   return s;

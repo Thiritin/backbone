@@ -1,16 +1,17 @@
 import { describe, expect, it } from "vitest";
+import { updateKey } from "../src/sim/60-infra/licence";
 import { softwareById } from "../src/sim/10-catalog/platforms";
 import { curveLoad, slowTolerance } from "../src/sim/10-catalog/usage";
 import { sizeSpec } from "../src/sim/10-catalog/products";
 import { serviceOnline } from "../src/sim/40-support/status";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { bookable, controlPlaneUp, lostDisk, workloadsOf } from "../src/sim/60-infra/cluster";
 import { nodeUsage } from "../src/sim/60-infra/usage";
 import { howToFactor, licenseCost, SLOW_PENALTY } from "../src/sim/85-products/products";
 import { tick } from "../src/sim/88-tick/tick";
 import { moveControlPlane, provisionService, setBackup, setHa } from "../src/sim/90-actions/clusters";
 import { installSoftware, uninstallSoftware } from "../src/sim/90-actions/software";
-import { hypervisor, named, panelServer, panelVm, skipTo, withServer } from "./fixtures";
+import { hypervisor, named, panelServer, panelVm, skipTo, withServer, newGame } from "./fixtures";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { resolveTicket } from "../src/sim/90-actions/support";
 import { monthlyValue } from "../src/sim/40-support/tickets";
@@ -56,17 +57,16 @@ function setup(platform = "proxmocks") {
 const clusterById = (s: GameState, id: string) => s.clusters.find((c) => c.id === id)!;
 
 describe("platforms and licenses", () => {
-  it("bills each cluster's licenses at the start of the month by its pricing model", () => {
+  it("bills each cluster's subscription keys by their pricing model and keeps once keys free", () => {
     const { s, cluster } = setup("vmwhere");
-    // VMwhere is bought once until 2024, then two G1 nodes with 2 cores each at €8 per core.
+    // VMwhere is bought once until 2024; from 2024 a subscription on the two G1 nodes costs 2 cores each at 8 euros a core.
     expect(licenseCost(s, clusterById(s, cluster))).toEqual({ panel: 0, platform: 0 });
     skipTo(s, 2024);
+    expect(licenseCost(s, clusterById(s, cluster))).toEqual({ panel: 0, platform: 0 });
+    for (const k of s.licenses.filter((x) => x.product === "vmwhere")) updateKey(s, k.id, { kind: "core", covers: { kind: "term", until: s.hour + 1 }, renewsAt: s.hour + 1 });
     expect(licenseCost(s, clusterById(s, cluster))).toEqual({ panel: 0, platform: 32 });
-    s.hour += 743;
     tick(s);
-    expect(s.ledger.filter((l) => l.key === "ledger.license")).toEqual([
-      { hour: s.hour, category: "licenses", key: "ledger.license", params: { cluster: "Cloud 1", name: "VMwhere" }, amount: -32 },
-    ]);
+    expect(s.ledger.filter((l) => l.key === "ledger.licenceRenewal").map((l) => [l.params.name, l.amount])).toEqual([["VMwhere", -16], ["VMwhere", -16]]);
   });
   it("holds the installed RAM on every platform", () => {
     const a = setup("vmwhere"), b = setup("proxmocks");

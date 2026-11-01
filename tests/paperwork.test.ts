@@ -4,18 +4,25 @@ import { inbox, post, postDay, POST_HOUR } from "../src/sim/40-support/letters";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { chamberFee, FEES, NOTARY_MAIL, NOTARY_NAME, OFFICE_MAIL, REGISTER_NAME, SHARE_CAPITAL } from "../src/sim/80-business/paperwork";
 import { tick } from "../src/sim/88-tick/tick";
+import { COMPANY_LAW_SKILL } from "../src/sim/10-catalog/research";
 import { registerCompany } from "../src/sim/90-actions/company";
+import { openBankAccount } from "../src/sim/90-actions/bank";
 import { downloadForm, signForm } from "../src/sim/90-actions/docs";
 import { sendMail } from "../src/sim/90-actions/paperwork";
+import { research } from "../src/sim/90-actions/store";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 
 // Hour 56 is Monday 3 January 2005, 08:00.
 const MONDAY_8 = 56;
 const run = (s: GameState, hours: number) => { for (let i = 0; i < hours; i++) tick(s); };
-const registered = (form = "sole", bank = "sparklasse"): GameState => {
+// A company registers as a sole trader; a later form and Company law are set directly.
+const registered = (form = "sole", bank = "sparklasse", law = true): GameState => {
   const s = newGame(7);
   s.hour = MONDAY_8;
-  expect(registerCompany(s, "Basement Hosting", "Becker, Tin", form, bank as never).ok).toBe(true);
+  expect(openBankAccount(s, bank as never).ok).toBe(true);
+  expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "sole").ok).toBe(true);
+  s.registration!.form = form;
+  if (law) s.unlocks = [...s.unlocks, COMPANY_LAW_SKILL];
   return s;
 };
 const signed = (s: GameState, form: string): string => {
@@ -123,6 +130,17 @@ describe("company paperwork", () => {
     expect(lastMail(s).topic).toBe("bounce");
     expect(sendMail(s, "not an address", "Hi", null)).toEqual({ ok: false, error: "error.mailAddress" });
     expect(s.letters.some((l) => l.form)).toBe(false);
+  });
+
+  it("offers a limited company only after Company law, while a partnership needs no training", () => {
+    const s = registered("sole", "sparklasse", false);
+    expect(downloadForm(s, "limited")).toEqual({ ok: false, error: "error.companyLaw" });
+    expect(downloadForm(s, "partnership").ok).toBe(true);
+    s.knowHow = 100;
+    expect(research(s, COMPANY_LAW_SKILL)).toEqual({ ok: true });
+    run(s, 24 * 11);
+    expect(s.unlocks).toContain(COMPANY_LAW_SKILL);
+    expect(downloadForm(s, "limited").ok).toBe(true);
   });
 
   it("refuses a limited company at a bank that opens no account for one", () => {

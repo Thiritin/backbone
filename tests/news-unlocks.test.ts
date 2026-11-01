@@ -2,10 +2,9 @@ import { describe, expect, it } from "vitest";
 import { t } from "../src/i18n/en";
 import { hourOf } from "../src/sim/00-core/time";
 import { phpAt } from "../src/sim/10-catalog/platforms";
-import { newGame } from "../src/sim/50-state";
 import { feed, NEWS, newsTick } from "../src/sim/80-business/news";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { readyGame } from "./fixtures";
+import { readyGame, newGame } from "./fixtures";
 
 const at = (year: number) => hourOf(new Date(Date.UTC(year, 0, 1, 9)));
 const on = (s: ReturnType<typeof newGame>, hour: number) => { s.hour = hour; return newsTick(s); };

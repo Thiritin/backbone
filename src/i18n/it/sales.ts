@@ -66,4 +66,5 @@ export default {
   "error.unknownProfile": () => "Questo gruppo di clienti non esiste.",
   "error.studyDone": () => "Hai già questo studio.",
   "ledger.marketStudy": (p) => `Studio di mercato di Gartnah: ${STUDY_NAME[p.profile] ?? p.profile}`,
+  "sales.msg.transfer": (p) => `Il mio sito è attualmente presso ${p.host}. Per favore, trasferitelo per me.`,
 } satisfies Dict;

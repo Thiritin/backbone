@@ -23,15 +23,16 @@ The Yahoy! Directory lists the trade office under Government.
 
 ## Flow
 
-1. The player registers the business in the trade office eService (GA-1, the Gewerbeanmeldung). Two working days later the trade office confirms by letter with its fee.
-2. The trade office site's Forms page lists the application for each higher legal form, whom to send it to and what it costs, and states that a change of legal form is final.
+1. The player registers the business in the trade office eService (GA-1, the Gewerbeanmeldung). Registration is always as a sole trader, so the eService shows the legal form as fixed and `registerCompany` refuses any other form with `error.registerSole`. Saves that registered as a partnership or limited company before this rule keep their form. Two working days later the trade office confirms by letter with its fee.
+2. The trade office site's Forms page lists the application for each higher legal form that is open to the company, whom to send it to and what it costs, and states that a change of legal form is final.
 3. Download puts the form on the desktop as a PDF document. Opening it shows the filled form with a signature line; one click signs it with the owner's name.
 4. The player writes a new email in the Email app, addressed to the trade office (partnership) or the notary (limited company), with the signed form attached.
 5. The recipient answers at once by email. A missing attachment, an unsigned form, the wrong office or missing share capital each get their own answer and nothing is filed. Any other address bounces.
 6. A partnership: the trade office confirms by letter three working days later, with its fee. The form changes when that letter lands.
 7. A limited company: the notary confirms it files within three working days and bills its fee by letter two working days later. The register's entry letter lands thirteen working days after sending, and the form changes then. The register's invoice follows three working days later.
 8. No downgrade exists. Every path that would lower the form, including a stale form on the desktop, is refused with `error.legalFormDown`. While a change waits for its letter, no second application is taken (`error.changePending`).
-9. A bank that opens no account for the target form refuses the change (`error.bankForm`); netbunk has no limited company account.
+9. A bank that opens no account for the target form refuses the change (`error.bankForm`); Ding-DiBa has no limited company account.
+10. A limited company needs the Company law training in Research (company track, tier 1, 100 know-how, 10 days, no prerequisites). Until it is learned, the Forms page does not list the limited company and every path to it is refused with `error.companyLaw`. A partnership needs no training.
 
 ## Numbers
 

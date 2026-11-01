@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { brandsOf, modelById, shopModels, wattsFactorOf } from "../src/sim/10-catalog/hardware";
 import { presetPrice } from "../src/sim/10-catalog/parts";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { deviceHealth, freeSlots, nodesOf, rackPower, working } from "../src/sim/60-infra/status";
 import { usedModels } from "../src/sim/80-business/used";
 import { deliverListing } from "../src/sim/90-actions/used";
@@ -10,7 +10,7 @@ import { provisionService } from "../src/sim/90-actions/clusters";
 import { workloadsOf } from "../src/sim/60-infra/cluster";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { buyDevice, hypervisor, skipTo, withServer } from "./fixtures";
+import { buyDevice, hypervisor, skipTo, withServer, newGame } from "./fixtures";
 import type { Listing } from "../src/sim/10-catalog/used";
 
 const ok = (r: { ok: boolean; id?: string; error?: string }) => {

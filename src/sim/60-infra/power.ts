@@ -7,6 +7,7 @@ import type { Device, GameState, MachineState } from "../50-state";
 import { dropCluster, insideVm, installingOn, isOwnVm, type Workload } from "./cluster";
 import { rebuildHours, type SimEvent } from "../88-tick/tick";
 import { reportLoss } from "../85-products/products";
+import { loadSaved } from "./switches";
 import { bootHours, booting, haltHours, deviceHealth, drivesOf, dualFed, HOURS_PER_YEAR, locationOf, powered, pluggedIn, psusOf, rackPower, working } from "./status";
 
 // An unclean stop corrupts the data of the workloads that ran with this chance.
@@ -65,6 +66,7 @@ function uncleanStop(s: GameState, d: Device): "ipmi.log.resync" | "ipmi.log.cor
 
 export function losePower(s: GameState, d: Device, key = "ipmi.log.pulled"): void {
   const outcome = uncleanStop(s, d);
+  loadSaved(d);
   d.hung = false;
   rollStuck(s, d);
   pushLog(d, s.hour, key);
@@ -100,6 +102,7 @@ export function pullPlug(s: GameState, d: Device): void {
 // A clean shutdown: the workloads stop at once and the device switches off once the OS has halted.
 export function halt(s: GameState, d: Device): void {
   leaveUsb(s, d);
+  loadSaved(d);
   d.haltUntil = nowHours(s) + haltHours(s, d);
   pushLog(d, s.hour, "ipmi.log.shutdown");
 }
@@ -178,6 +181,7 @@ export function atFront(s: GameState, d: Device, op: FrontOp): void {
 // Reboots without losing power or after a ten second cycle: the same roll, then the server boots again.
 export function hardReboot(s: GameState, d: Device, key: "ipmi.log.reset" | "ipmi.log.cycle"): void {
   const outcome = uncleanStop(s, d);
+  loadSaved(d);
   d.hung = false;
   d.setup = false;
   d.haltUntil = undefined;
@@ -201,7 +205,7 @@ export function powerTick(s: GameState): SimEvent[] {
     if (d.hands && d.hands.doneAt <= s.hour) {
       if (d.hands.kind === "bmcreset") { n.bmcHung = false; pushLog(n, s.hour, "ipmi.log.bmcReset"); }
       else if (d.hands.kind === "continue") { n.stuck = false; pushLog(n, s.hour, "ipmi.log.continued"); }
-      else if (d.hands.kind === "recover") { n.hung = false; n.locked = false; pushLog(n, s.hour, "ipmi.log.gearRecovered"); }
+      else if (d.hands.kind === "recover") { n.hung = false; n.locked = false; loadSaved(n); pushLog(n, s.hour, "ipmi.log.gearRecovered"); }
       else if (d.hands.kind === "stick") { s.media.stick = { ...s.media.stick, in: n.id }; pushLog(n, s.hour, "ipmi.log.stickIn"); }
       else atFront(s, n, d.hands.kind);
       n.hands = null;

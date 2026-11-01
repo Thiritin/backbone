@@ -1,5 +1,6 @@
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { panelMachine } from "../src/sim/60-infra/licence";
 import { setLicenceTier } from "../src/sim/90-actions/licence";
 import { LicencePage } from "../src/ui/apps/browser/consoles/Readouts";
 import { panelVm, readyGame, skipTo } from "./fixtures";
@@ -9,14 +10,21 @@ function setup(panel: string) {
   skipTo(s, 2008);
   s.cash = 1_000_000;
   const id = panelVm(s, s.clusters.find((y) => y.kind === "cloud")!.id, panel);
-  const view = () => renderToString(<LicencePage game={s} c={s.clusters.find((x) => x.id === id)!} />);
-  return { s, id, view };
+  const host = () => s.clusters.find((x) => x.id === id)!;
+  const view = () => renderToString(<LicencePage game={s} c={host()} />);
+  // Puts the panel on a trial until the hour, without its key.
+  const trial = (until: number) => {
+    const vm = panelMachine(host())!;
+    s.licenses = s.licenses.filter((k) => k.machineId !== vm);
+    s.trials = [{ machineId: vm, product: panel, until }];
+  };
+  return { s, id, view, trial };
 }
 
 describe("licence page tiers", () => {
   it("lists the editions of cPanic with their fees and the trial", () => {
-    const { s, id, view } = setup("cpanic");
-    s.clusters = s.clusters.map((x) => (x.id === id ? { ...x, licence: { tier: "premier", trialUntil: s.hour + 720, lapsedAt: null } } : x));
+    const { s, view, trial } = setup("cpanic");
+    trial(s.hour + 720);
     const html = view();
     for (const name of ["Solo", "Admin", "Pro", "Premier"]) expect(html).toContain(name);
     expect(html).toContain("per account");
@@ -34,9 +42,8 @@ describe("licence page tiers", () => {
   });
 
   it("shows the red notice once the trial is over", () => {
-    const { s, id, view } = setup("directadmen");
-    const c = s.clusters.find((x) => x.id === id)!;
-    s.clusters = s.clusters.map((x) => (x === c ? { ...x, licence: { ...x.licence!, trialUntil: s.hour - 1 } } : x));
+    const { s, view, trial } = setup("directadmen");
+    trial(s.hour - 1);
     expect(view()).toContain("Your license has expired.");
   });
 

@@ -8,7 +8,7 @@ import { LEGAL_FORMS } from "../../../../../sim/80-business/office";
 import { annuity, LOAN_AMOUNTS, LOAN_YEARS, loanAvailable, loanRate } from "../../../../../sim/45-billing/billing";
 import { cardSpent, groupIban, ibanEra, ownIban, spendable, WRONG_LIMIT, type Draft } from "../../../../../sim/46-finance/bank";
 import type { GameState } from "../../../../../sim/50-state";
-import { applyCard, applyOverdraft, cancelTransfer, confirmTransfer, deleteStandingOrder, setTanMethod, startStandingOrder, startTransfer } from "../../../../../sim/90-actions/bank";
+import { applyCard, applyOverdraft, openBankAccount, cancelTransfer, confirmTransfer, deleteStandingOrder, setTanMethod, startStandingOrder, startTransfer } from "../../../../../sim/90-actions/bank";
 import { takeLoan } from "../../../../../sim/90-actions/billing";
 import { readSession, writeSession } from "../../../../session";
 import { useStore } from "../../../../store";
@@ -20,7 +20,7 @@ const pct = (r: number) => `${(r * 100).toLocaleString(LOCALE, { maximumFraction
 const VIEWS = ["statement", "transfer", "orders", "card", "overdraft", "loans", "service"] as const;
 type View = (typeof VIEWS)[number];
 
-// One frame for every bank: the skin swaps colours and logo, the account's TAN method sets the transfer's last step.
+// One frame for every bank: the skin swaps colours, layout and era, the account's TAN method sets the transfer's last step.
 export function BankSite({ game, id, path, go }: { game: GameState; id: BankId; path: string; go: Go }) {
   const bank = bankById(id)!;
   // Written at once: the navigation that follows a login mounts the page anew.
@@ -31,7 +31,7 @@ export function BankSite({ game, id, path, go }: { game: GameState; id: BankId; 
   const query = new URLSearchParams(path.split("?")[1] ?? "");
   const home = `www.${bank.host}`;
   return (
-    <div className={`bks bks-${bank.skin.frame}`} style={{ "--bar": bank.skin.bar, "--accent": bank.skin.accent, "--bg": bank.skin.bg } as CSSProperties}>
+    <div className={`bks bks-${bank.skin.frame} ${yearOf(game.hour) >= bank.skin.redesign ? "late" : "early"}`} style={{ "--bar": bank.skin.bar, "--accent": bank.skin.accent, "--bg": bank.skin.bg } as CSSProperties}>
       <header className="bks-head">
         <span className="bks-logo" aria-hidden>{bank.name.charAt(0).toUpperCase()}</span>
         <span className="bks-name">{bank.name}</span>
@@ -46,7 +46,8 @@ export function BankSite({ game, id, path, go }: { game: GameState; id: BankId; 
             : <a href="#" aria-current onClick={(e) => e.preventDefault()}>{t("bank.site.nav.login")}</a>}
         </nav>
         <main className="bks-main">
-          {!own ? <Login game={game} bank={bank} onIn={() => { setLogin(true); if (!path.startsWith("/banking/")) go(`${home}/banking/statement`); }} />
+          {!own ? <Login game={game} bank={bank} onIn={() => { setLogin(true); if (!path.startsWith("/banking/")) go(`${home}/banking/statement`); }} onOpen={() => { setLogin(true); go(`${home}/banking/opened`); }} />
+            : path.startsWith("/banking/opened") ? <Opened game={game} />
             : view === "statement" ? <Statement game={game} />
             : view === "transfer" ? <Transfer key={path} game={game} bank={bank} prefill={query} go={go} />
             : view === "orders" ? <Orders key={path} game={game} bank={bank} go={go} />
@@ -65,7 +66,8 @@ function Box({ title, children }: { title: string; children: ReactNode }) {
   return <section className="bks-box"><h2>{title}</h2>{children}</section>;
 }
 
-function Login({ game, bank, onIn }: { game: GameState; bank: Bank; onIn: () => void }) {
+function Login({ game, bank, onIn, onOpen }: { game: GameState; bank: Bank; onIn: () => void; onOpen: () => void }) {
+  const act = useStore((s) => s.act);
   const [number, setNumber] = useState(""), [pin, setPin] = useState(""), [failed, setFailed] = useState(false);
   const submit = () => {
     const ok = game.bank?.id === bank.id && number.trim() === game.bank.number && pin.trim() === game.bank.pin;
@@ -100,8 +102,25 @@ function Login({ game, bank, onIn }: { game: GameState; bank: Bank; onIn: () => 
             <tr><td>{t("bank.site.overdraftRate")}</td><td className="r">{bank.overdraft === null ? "–" : pct(bank.overdraft)}</td></tr>
           </tbody>
         </table>
+        {!game.bank && <p><button className="bks-btn primary" onClick={() => { if (act(openBankAccount, bank.id).ok) onOpen(); }}>{t("bank.site.open")}</button></p>}
       </Box>
     </>
+  );
+}
+
+// Shown once after opening: the details the player logs in with from then on.
+function Opened({ game }: { game: GameState }) {
+  const b = game.bank!;
+  return (
+    <Box title={t("bank.site.opened")}>
+      <table className="bks-table">
+        <tbody>
+          <tr><td>{t("bank.site.number")}</td><td className="r num">{`${b.number} / ${bankById(b.id)!.code}`}</td></tr>
+          {ibanEra(game) && <tr><td>{t("bank.site.iban")}</td><td className="r num">{groupIban(ownIban(game))}</td></tr>}
+          <tr><td>{t("bank.site.pin")}</td><td className="r num">{b.pin}</td></tr>
+        </tbody>
+      </table>
+    </Box>
   );
 }
 

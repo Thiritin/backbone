@@ -1,5 +1,5 @@
+import { newGame } from "./fixtures";
 import { describe, expect, it } from "vitest";
-import { newGame } from "../src/sim/50-state";
 import { addNote, editNote, moveDoc, removeDoc, restoreGuide } from "../src/sim/90-actions/docs";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 

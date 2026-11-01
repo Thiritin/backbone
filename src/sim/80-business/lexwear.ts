@@ -1,12 +1,13 @@
 // docs/design/plans/billing-by-hand.md, lane vendor-sites: Lexwear sells the Books modules on its site. A purchase is a
 // ledger line, the licence key follows by email a minute later, and the newsletter offers each module once.
 import { t } from "../../i18n/en";
-import { hashRng, rand } from "../00-core/rng";
+import { keyCode } from "../00-core/rng";
 import { dateOf } from "../00-core/time";
 import { BOOKS_VENDORS, booksVendor, type BooksVendor, type BooksVendorId } from "../10-catalog/bookkeeping";
-import { hasModule, MODULES, type ModuleCount } from "../10-catalog/modules";
+import { hasModule, moduleById, MODULES, type ModuleCount } from "../10-catalog/modules";
+import { shopById } from "../10-catalog/shops";
 import { deliverMail, type Ticket } from "../40-support/tickets";
-import { bookTransfer, isUnpaid, issue, owed, type Invoice, type Transfer } from "../45-billing/billing";
+import { bookTransfer, isUnpaid, issue, owed, synced, type Invoice, type Transfer } from "../45-billing/billing";
 import { logActivity } from "../47-staff/activity";
 import type { GameState, LedgerEntry } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
@@ -16,14 +17,11 @@ export const LEXWEAR_HOST = "lexwear.de";
 export const lexwearUrl = (id?: string): string => `www.${LEXWEAR_HOST}/${id ? `module/${id}` : ""}`;
 export const MONTHLY_RUN_HOUR = 9;
 
-const KEY_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-// Four groups of four, fixed per game, vendor and module.
-export function licenceKey(s: GameState, id: string, vendor: BooksVendorId = "lexwear"): string {
-  const r = hashRng(s.seed, MODULES.findIndex((m) => m.id === id) + 1, 607 + BOOKS_VENDORS.findIndex((v) => v.id === vendor));
-  return Array.from({ length: 4 }, () => Array.from({ length: 4 }, () => KEY_CHARS[Math.floor(rand(r) * KEY_CHARS.length)]).join("")).join("-");
-}
+// Fixed per game, vendor and module; shop modules and Lexwear's share the first vendor's keys.
+export const licenceKey = (s: GameState, id: string, vendor: BooksVendorId = "lexwear"): string =>
+  keyCode(s.seed, MODULES.findIndex((m) => m.id === id) + 1, 607 + BOOKS_VENDORS.findIndex((v) => v.id === vendor));
 
-// Lexwear's module purchases keep their own ledger lines; the other bookkeeping vendors' lines carry the vendor's name.
+// Lexwear's and the shop vendors' module purchases keep their own ledger lines; the other bookkeeping vendors' lines carry the vendor's name.
 const LEDGER = "ledger.module.", VENDOR_LEDGER = "ledger.bookModule.";
 export const purchaseEntry = (s: GameState, v: BooksVendor, id: string, price: number): LedgerEntry => v.id === "lexwear"
   ? { hour: s.hour, category: "licenses", key: LEDGER + id, params: {}, amount: -price }
@@ -34,13 +32,16 @@ const purchaseOf = (e: LedgerEntry): { vendor: BooksVendorId; module: string } |
 export const bought = (s: GameState, id: string, vendor: BooksVendorId = "lexwear"): boolean =>
   s.ledger.some((e) => { const p = purchaseOf(e); return p?.vendor === vendor && p.module === id; });
 export const LICENCE = "lexwear.licence", NEWSLETTER = "lexwear.newsletter", BOOKS_LICENCE = "books.licence";
+// A shop vendor's licence email for a module it sells.
+export const SHOP_LICENCE = "shop-link.licence";
+export const isLicence = (topic: string): boolean => topic === LICENCE || topic === SHOP_LICENCE || topic === BOOKS_LICENCE;
 export const licenceMail = (s: GameState, id: string, vendor: BooksVendorId = "lexwear"): Ticket | undefined =>
   s.tickets.find((x) => x.kind === "mail" && x.mail?.params.module === id
-    && (vendor === "lexwear" ? x.topic === LICENCE : x.topic === BOOKS_LICENCE && x.mail.from === booksVendor(vendor)?.name));
+    && (vendor === "lexwear" ? x.topic === LICENCE || x.topic === SHOP_LICENCE : x.topic === BOOKS_LICENCE && x.mail.from === booksVendor(vendor)?.name));
 
 // A Lexwear email's params as shown: the module's name and pitch in the player's language.
 export const vendorParams = (p: Record<string, string | number>): Record<string, string> => ({
-  module: t(`vendor-sites.module.${p.module}`), pitch: t(`vendor-sites.pitch.${p.module}`), key: String(p.key ?? ""),
+  module: t(`vendor-sites.module.${p.module}`), pitch: t(`vendor-sites.pitch.${p.module}`), key: String(p.key ?? ""), shop: String(p.shop ?? ""),
 });
 
 function mail(s: GameState, topic: string, params: Record<string, string>, from = LEXWEAR): SimEvent {
@@ -55,7 +56,9 @@ export function deliverLicences(s: GameState): SimEvent[] {
     const p = purchaseOf(s.ledger[i]), v = p && booksVendor(p.vendor);
     if (!p || !v?.keys || licenceMail(s, p.module, v.id)) continue;
     const key = licenceKey(s, p.module, v.id);
-    out.push(v.id === "lexwear" ? mail(s, LICENCE, { module: p.module, key }) : mail(s, BOOKS_LICENCE, { module: p.module, key, program: v.program }, v.name));
+    const shop = moduleById(p.module)?.vendor === "shop" && s.shop.variant ? shopById(s.shop.variant).name : null;
+    out.push(shop ? mail(s, SHOP_LICENCE, { module: p.module, key, shop }, shop)
+      : v.id === "lexwear" ? mail(s, LICENCE, { module: p.module, key }) : mail(s, BOOKS_LICENCE, { module: p.module, key, program: v.program }, v.name));
   }
   return out;
 }
@@ -98,10 +101,11 @@ export function bookFor(s: GameState, tr: Transfer, inv: Invoice, settle: boolea
 
 export const monthlyRun = (s: GameState): void => s.invoices.filter((i) => i.status === "draft").forEach((inv) => sendDraft(s, inv, LEXWEAR));
 
-// The open invoice a transfer's reference names, when the amount is exactly what it owes.
+// The open invoice a transfer's reference names, when the amount is exactly what it owes; for money taken back, the paid one.
 export function referenced(s: GameState, tr: Transfer): Invoice | undefined {
+  if (tr.invoiceId === null && tr.back) return s.invoices.find((i) => i.number === tr.params.number && i.status === "paid" && synced(i));
   if (tr.invoiceId !== null || tr.reference !== "books.ref.invoice") return undefined;
-  const inv = s.invoices.find((i) => i.number === tr.params.number && isUnpaid(i));
+  const inv = s.invoices.find((i) => i.number === tr.params.number && isUnpaid(i) && synced(i));
   return inv && owed(inv) === tr.amount ? inv : undefined;
 }
 
