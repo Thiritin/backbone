@@ -1,0 +1,38 @@
+.weather { --wx-card: var(--field); --wx-ink: var(--ink, inherit); display: flex; flex-direction: column; gap: 10px; padding: 12px; flex: 1; min-width: 320px; height: 100%; overflow: auto; }
+.weather > * { flex-shrink: 0; }
+.wx-now { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 0 14px; padding: 14px 16px; border-radius: var(--r-win); background: var(--wx-card); }
+.wx-now h2 { grid-column: 1 / -1; margin: 0 0 4px; font-size: 13px; font-weight: 600; }
+.wx-now svg { grid-row: 2 / 4; width: 52px; height: 52px; }
+.wx-now strong { font-size: 34px; font-weight: 300; line-height: 1; }
+.wx-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border-radius: var(--r-win); background: var(--wx-card); overflow: hidden; }
+.wx-row { display: grid; grid-template-columns: 24px 1fr auto auto; align-items: center; gap: 10px; padding: 9px 12px; border-top: 1px solid color-mix(in oklch, currentColor 12%, transparent); }
+.wx-row:first-child { border-top: 0; }
+.wx-row svg { width: 22px; height: 22px; }
+.wx-place { display: flex; flex-direction: column; min-width: 0; }
+.wx-place span { font-size: 11px; opacity: 0.65; }
+.wx-here { font-size: 11px; opacity: 0.65; }
+.wx-drive { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border: 1px solid color-mix(in oklch, currentColor 25%, transparent); border-radius: var(--r-ctl); background: transparent; color: inherit; font: inherit; font-size: 12px; cursor: pointer; }
+.wx-drive svg { width: 14px; height: 14px; }
+.wx-drive small { opacity: 0.65; font-size: 11px; }
+.wx-drive:hover { background: color-mix(in oklch, currentColor 10%, transparent); }
+.sky-sun, .sky-partly { color: oklch(0.78 0.16 80); }
+.sky-rain { color: oklch(0.62 0.12 245); }
+.sky-snow { color: oklch(0.8 0.05 230); }
+
+/* Aqua and Leopard: a dark glossy widget with a sky gradient behind the current weather. */
+:root[data-os="aqua"] .weather, :root[data-os="leopard"] .weather { --wx-card: oklch(0.22 0.02 255); color: oklch(0.97 0 0); background: oklch(0.14 0.01 255); }
+:root[data-os="aqua"] .wx-now, :root[data-os="leopard"] .wx-now { background: linear-gradient(oklch(0.62 0.13 235), oklch(0.4 0.12 250)); box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.35); }
+:root[data-os="aqua"] .wx-list, :root[data-os="leopard"] .wx-list { border: 1px solid oklch(1 0 0 / 0.12); }
+
+/* Yosemite: a flat light notification-centre panel. */
+:root[data-os="yosemite"] .wx-now { background: linear-gradient(oklch(0.78 0.1 235), oklch(0.66 0.12 245)); color: oklch(1 0 0); }
+:root[data-os="yosemite"] .wx-list { border: 1px solid oklch(0.5 0 0 / 0.15); }
+
+/* Big Sur and Tahoe: rounded translucent cards. */
+:root[data-os="bigsur"] .weather, :root[data-os="tahoe"] .weather { gap: 12px; }
+:root[data-os="bigsur"] .wx-now, :root[data-os="tahoe"] .wx-now { background: linear-gradient(145deg, oklch(0.68 0.13 240), oklch(0.5 0.16 275)); color: oklch(1 0 0); border-radius: 18px; padding: 18px; }
+:root[data-os="bigsur"] .wx-now strong, :root[data-os="tahoe"] .wx-now strong { font-size: 44px; }
+:root[data-os="bigsur"] .wx-list, :root[data-os="tahoe"] .wx-list { border-radius: 18px; backdrop-filter: blur(20px); }
+:root[data-os="tahoe"] .wx-list, :root[data-os="tahoe"] .wx-now { box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.4), 0 4px 14px oklch(0 0 0 / 0.12); }
+.wx-head { margin: 6px 4px 0; font-size: 12px; font-weight: 600; opacity: 0.7; }
+.wx-city { grid-template-columns: 24px 1fr auto; }

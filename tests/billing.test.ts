@@ -3,13 +3,13 @@ import { describe, expect, it } from "vitest";
 import { createRng } from "../src/sim/00-core/rng";
 import { hourOf } from "../src/sim/00-core/time";
 import { annuity, baseRate, billingTick, invoiceTotal, isSuspended, loanAvailable, PAY_ODDS, rollPayStep, YEAR_HOURS } from "../src/sim/45-billing/billing";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { metrics } from "../src/sim/metrics";
 import { tick } from "../src/sim/88-tick/tick";
 import { repayLoan, sendReminder, suspendServices, takeLoan, writeOff } from "../src/sim/90-actions/billing";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { withServer } from "./fixtures";
+import { sendDrafts, withServer, newGame } from "./fixtures";
 
 const runTo = (s: GameState, hour: number) => { while (s.hour < hour) tick(s); };
 const at = (y: number, m: number, d: number) => hourOf(new Date(Date.UTC(y, m - 1, d)));
@@ -20,6 +20,7 @@ function withInvoice(payStep: number) {
   const c = addCustomer(s, "Ada", "private");
   addService(s, c, "domain", "ada.com", 12, "year");
   tick(s);
+  sendDrafts(s);
   s.invoices[0].payStep = payStep;
   s.invoices[0].payAt = null;
   return { s, inv: () => s.invoices[0], c };
@@ -33,6 +34,7 @@ describe("invoices", () => {
     runTo(s, at(2005, 2, 1));
     expect(s.invoices).toHaveLength(1);
     expect(s.invoices[0].lines).toEqual([{ serviceId: expect.any(String), key: "invoice.line.hours", params: { label: "Bob's server", hours: 516 }, amount: 5.16 }]);
+    sendDrafts(s);
     expect(s.invoices[0].dueAt).toBe(at(2005, 2, 15));
     runTo(s, at(2005, 3, 1));
     expect(s.invoices[1].lines[0].params.hours).toBe(28 * 24);
@@ -77,6 +79,7 @@ describe("payment habits", () => {
     const s = withServer(newGame(5));
     addService(s, addCustomer(s, "Eve", "office", "prompt"), "domain", "eve.com", 12, "year");
     tick(s);
+    sendDrafts(s);
     const inv = s.invoices[0];
     inv.payStep = 0;
     inv.payAt = inv.dueAt - 24;

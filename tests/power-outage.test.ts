@@ -23,6 +23,8 @@ describe("power outages", () => {
 
   it("a feed failure without a second feed takes the rack dark as an alert", () => {
     const s = readyGame(1);
+    // The router's power brick takes one feed, so it waits in storage.
+    Object.assign(s.devices.find((d) => d.id === "dev5")!, { rackId: null, store: "loc1" });
     const events: SimEvent[] = [];
     const inc = feedFailure(s, s.racks[0], "A", 60, createRng(1), events);
     expect(events[0].key).toBe("event.feedDark");
@@ -38,6 +40,8 @@ describe("power outages", () => {
       const psu = psusOf(d)[0];
       d.components = [...d.components, { ...psu, id: `${psu.id}b` }];
     }
+    // The router's power brick takes one feed, so it waits in storage.
+    Object.assign(s.devices.find((d) => d.id === "dev5")!, { rackId: null, store: "loc1" });
     const events: SimEvent[] = [];
     const inc = feedFailure(s, s.racks[0], "A", 60, createRng(1), events);
     expect(events[0].key).toBe("event.feedCarried");

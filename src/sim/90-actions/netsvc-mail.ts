@@ -33,3 +33,13 @@ export function deleteQueue(s: GameState, addressId: string): ActionResult {
   setDeferred(s, addressId, 0, { deletedAt: s.hour });
   return { ok: true };
 }
+
+// Sends a panel host's customers' mail through a mail server's address, or back through its own with null.
+export function setMailRelay(s: GameState, panelId: string, mailId: string | null): ActionResult {
+  if (s.clusters.find((c) => c.id === panelId)?.kind !== "panel") return fail("error.unknownCluster");
+  if (mailId !== null && s.clusters.find((c) => c.id === mailId)?.kind !== "mail") return fail("error.unknownCluster");
+  const relay = { ...s.netsvc.relay };
+  if (mailId === null) delete relay[panelId]; else relay[panelId] = mailId;
+  s.netsvc = { ...s.netsvc, relay };
+  return { ok: true };
+}

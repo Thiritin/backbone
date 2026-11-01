@@ -31,6 +31,18 @@ Your company now knows how to hire people, pay them and give them something to d
 
 Salaries are paid every month whether the person is busy or not. A good hire pays for themselves in saved hours, and a bad one is still cheaper than burning out.
 
+## Company law
+
+### Now available
+
+- **Limited company** is on the trade office's Forms page, where you download the application for the notary.
+
+### You can found a GmbH
+
+Your company now knows what a limited company takes: a notary who writes the articles, 25,000 EUR of share capital in the company account and an entry in the commercial register.
+
+A sole trader or a partnership can now apply on the trade office site. The change is final, and the register's letter makes it official.
+
 ## Marketing basics
 
 ### Now available
@@ -132,6 +144,18 @@ Setting up an order now offers **Automatic** next to your hosts. The game picks 
 Settings has a new **Place orders automatically** switch. With it on, an order form order is invoiced and set up the moment it arrives, as long as the form has a module or a custom script for the software it lands on, and an order by email runs from the customer account to the setup the moment the customer accepts your quote.
 
 An order email gets a quote at your own rate for the line, as long as a host in its city has room for it. An order with no room waits for you to quote it by hand. A step that cannot run, such as a setup with no room, waits in the inbox for you too.
+
+## Fraud screening
+
+### Now available
+
+- **Screen orders with MaxMined** in Settings sends every new order to a scoring service before it reaches you.
+
+### Scores instead of staff
+
+MaxMined scores each order the moment it arrives, by email, form or shop. It declines most orders paid with stolen cards and turns away a few honest customers too. Declined orders show up as lost sales. It needs no staff time and order automation keeps running.
+
+Every check costs a few cents, billed on the first of the month. With Review server orders by hand on as well, your staff only review the server orders MaxMined let through.
 
 ## High availability
 

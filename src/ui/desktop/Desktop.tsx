@@ -12,6 +12,7 @@ import { SkillSheet } from "../apps/research/SkillSheet";
 import { MenuBar } from "./MenuBar";
 import { StartScreen } from "./StartScreen";
 import { EarlyAccess } from "./EarlyAccess";
+import { latestOs } from "../../sim/10-catalog/os";
 import { wallpaperSvg } from "./wallpaper";
 import { Widgets } from "./Widgets";
 import { AlertSheet } from "./AlertSheet";
@@ -42,11 +43,18 @@ export function Desktop() {
   const os = useStore((s) => s.game.os);
   // The main menu shows the 2018 desktop behind it.
   useEffect(() => { document.documentElement.dataset.os = started ? os : "yosemite"; }, [os, started]);
+  // Web pages and vendor consoles follow the year, whatever the player has installed.
+  const era = useStore((s) => latestOs(s.game.hour).id);
+  useEffect(() => { document.documentElement.dataset.era = era; }, [era]);
+  const wallpaper = useStore((s) => s.wallpaper);
+  const photo = !started || wallpaper.pick === "map" ? null
+    : wallpaper.pick === "custom" ? wallpaper.custom
+    : `${import.meta.env.BASE_URL}wallpapers/${wallpaper.pick === "os" ? os : wallpaper.pick}.webp`;
 
   return (
     <div className="desktop">
-      {started
-        ? <div className="wallpaper-host photo" style={{ backgroundImage: `url(${import.meta.env.BASE_URL}wallpapers/${os}.jpg)` }} />
+      {photo
+        ? <div className="wallpaper-host photo" style={{ backgroundImage: `url(${photo})` }} />
         : <div className="wallpaper-host" dangerouslySetInnerHTML={{ __html: wallpaperSvg() }} />}
       {started ? <Shell theme={theme} onTheme={() => setTheme(theme === "dark" ? "light" : "dark")} /> : <StartScreen />}
       <EarlyAccess />
@@ -110,11 +118,14 @@ function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
   return (
     <>
       <MenuBar theme={theme} onTheme={onTheme} onBell={toggleCenter} />
-      <DesktopIcons />
-      <Widgets />
-      <div className="windows">{windows.map((w) => <AppWindow key={w.id} win={w} front={!w.minimized && w.z === frontZ} />)}</div>
-      {center ? <NotificationCenter onClose={() => setCenter(false)} /> : <Banners />}
-      <Dock />
+      {/* The company only takes orders at normal speed; paused or fast, the desktop is look-only. */}
+      <div className="live-only" inert={speed !== 1}>
+        <DesktopIcons />
+        <Widgets />
+        <div className="windows">{windows.map((w) => <AppWindow key={w.id} win={w} front={!w.minimized && w.z === frontZ} />)}</div>
+        {center ? <NotificationCenter onClose={() => setCenter(false)} /> : <Banners />}
+        <Dock />
+      </div>
       {news && <WhatsNew changes={news} />}
       {alert && <AlertSheet alert={alert} />}
       {gameOver !== null && <GameOver hour={gameOver} />}

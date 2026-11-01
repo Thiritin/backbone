@@ -2,7 +2,7 @@
 // Hardware, power and failures.
 import { hashRng, rand } from "../00-core/rng";
 import { nowHours, yearOf } from "../00-core/time";
-import { hasBmc, isOobPort, modelById, OOB_PORT, oobPorts, type OobPort } from "../10-catalog/hardware";
+import { hasBmc, isOfficeRouter, isOobPort, modelById, OOB_PORT, oobPorts, type OobPort } from "../10-catalog/hardware";
 import { softwareById } from "../10-catalog/platforms";
 import { serverOsById, type OsImage, type ServerOsId } from "../10-catalog/server-os";
 import type { Device, End, GameState, MachineState, NetFail } from "../50-state";
@@ -28,7 +28,7 @@ const kindOf = (d: Device) => modelById(d.model).kind;
 const num = (id: string) => Number(id.replace(/\D/g, "")) || 0;
 export const isMgmtDevice = (d: Device): boolean => ["kvm", "console", "oob"].includes(kindOf(d));
 // Switches and rack routers: the gear firmware updates can hang and port group changes can lock.
-export const isGear = (d: Device): boolean => { const m = modelById(d.model); return m.kind === "switch" || (m.kind === "gateway" && m.height > 0); };
+export const isGear = (d: Device): boolean => { const m = modelById(d.model); return m.kind === "switch" || (m.kind === "gateway" && m.height > 0 && !isOfficeRouter(m)); };
 
 // The ports of a kind on a device, as cable ends.
 export const oobEnds = (d: Device, kind: OobPort): End[] =>
@@ -105,8 +105,9 @@ export type MachineScreen =
 
 const share = (doneAt: number, hours: number, now: number) => Math.max(0, Math.min(1, 1 - (doneAt - now) / hours));
 
-// The OS the USB stick boots on this server: plugged in there and written.
-export const stickOs = (s: GameState, deviceId: string): OsImage | null => (s.media.stick.in === deviceId ? s.media.stick.os : null);
+// The OS the USB stick boots on this server: plugged in there and written, or else the image mounted through its controller.
+export const stickOs = (s: GameState, deviceId: string): OsImage | null =>
+  (s.media.stick.in === deviceId ? s.media.stick.os : null) ?? s.devices.find((d) => d.id === deviceId)?.virtualMedia ?? null;
 
 // The OS that is up on the disk: installing, installing software or at the login.
 function upScreen(s: GameState, m: MachineState, loggedIn: boolean): MachineScreen {

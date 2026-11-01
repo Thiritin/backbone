@@ -1,12 +1,15 @@
 import { rand } from "../00-core/rng";
-import { monthIndexOf, yearOf } from "../00-core/time";
-import { boardVendor, brandOnSale, brandsOf, cpuOptions, offersPart, isOfficeRouter, COMPONENT_KINDS, COMPONENTS, componentParts, deliveryHours, leadFactor, dualPsuModel, fits as chassisFits, genOf, hasBmc, isDriveKind, modelById, oobPortOf, partOffers, priceOf, samePart, shopModels, specOf, SWITCH_BRAND, slotsOf, vendorsOf, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "../10-catalog/hardware";
+import { HARDWARE_SHOP, invoice, shopBlocked } from "../46-finance/payables";
+import { bankOf, cardReady, cardSpent, spendable } from "../46-finance/bank";
+import { TRANSFER_HOURS } from "../10-catalog/banks";
+import { hourOf, dateOf, monthIndexOf, yearOf } from "../00-core/time";
+import { boardVendor, manufacturerByName, brandOnSale, brandsOf, cpuOptions, offersPart, isOfficeRouter, COMPONENT_KINDS, COMPONENTS, componentParts, deliveryHours, leadFactor, dualPsuModel, fits as chassisFits, genOf, hasBmc, isDriveKind, modelById, oobPortOf, partOffers, priceOf, samePart, shopModels, specOf, SWITCH_BRAND, slotsOf, vendorsOf, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "../10-catalog/hardware";
 import type { Vendor } from "../10-catalog/cpus";
 import { leaseOffers, lessorName } from "../10-catalog/leasing";
 import { greySurcharge, workFactor } from "../10-catalog/lifecycle";
-import { partPrice, partsPrice, presetPrice } from "../10-catalog/parts";
-import { BASEMENT, DATACENTERS, datacenterById, EXTRA_POWER_LEAD_DAYS, EXTRA_STEP_KW, FLAT_CONTRACTS, HOME_LINES, maxExtraKw, LEAD_DAYS, nextAz, RACK_MODELS, rackUnits, SHARE_RACKS, SPACE_SIZES, spacePrice } from "../20-world/datacenters";
-import { deviceDefaults, type BondMode, type Component, type Device, type End, type GameState, type RackModel, type RaidLevel, type RebuildRate } from "../50-state";
+import { chassisPrice, partPrice, partsPrice, presetPrice } from "../10-catalog/parts";
+import { BASEMENT, DATACENTERS, datacenterById, EXTRA_POWER_LEAD_DAYS, EXTRA_STEP_KW, FLAT_CONTRACTS, HOME_LINES, maxExtraKw, LEAD_DAYS, nextAz, NOTICE_MONTHS, RACK_MODELS, rackUnits, SHARE_RACKS, SPACE_SIZES, spacePrice } from "../20-world/datacenters";
+import { deviceDefaults, type BondMode, type Component, type Device, type End, type GameState, type LedgerEntry, type RackModel, type RaidLevel, type RebuildRate } from "../50-state";
 import { arrayLost, bootHours, connectError, drivesOf, energized, fits, flatOffer, freePositions, holdsData, nodesOf, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, isPlugged, locationOf, moveCost, psusOf, deviceValue, resaleValue, spotOf, travelCost, working } from "../60-infra/status";
 import { claimRepair } from "../46-finance/finance";
 import { atFront, BMC_RESET_HOURS, bootUp, halt, hardReboot, plugCords, pullPlug, pushLog, rollStuck, type FrontOp } from "../60-infra/power";
@@ -27,7 +30,7 @@ export type ActionResult = { ok: true; id?: string } | { ok: false; error: strin
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 const newId = (s: GameState, prefix: string) => `${prefix}${s.nextId++}`;
-const ROLE = { server: "srv", switch: "sw", firewall: "fw", gateway: "gw", patch: "pp", ups: "ups", pdu: "pdu", part: "part", kvm: "kvm", console: "con", oob: "oob", chassis: "twin" } as const;
+const ROLE = { server: "srv", switch: "sw", firewall: "fw", gateway: "gw", patch: "pp", ups: "ups", pdu: "pdu", part: "part", kvm: "kvm", console: "con", oob: "oob", chassis: "twin", jack: "line" } as const;
 const roleOf = (modelId: string) => ROLE[modelById(modelId).kind];
 const cents = (v: number) => Math.round(v * 100) / 100;
 
@@ -64,6 +67,7 @@ export function addLocation(s: GameState, dcId: string, space: "share" | "cage" 
   const positions = space === "share" ? 1 : size;
   const loc = { id: newId(s, "loc"), dc: dc.id, city: dc.city, az: nextAz(s.locations, dc.city), name: dc.name, space, positions, readyAt: s.hour + 24 * LEAD_DAYS[space], extraCircuit: false };
   s.locations.push(loc);
+  s.contracts.push({ id: newId(s, "contract"), provider: dc.provider, dc: dc.id, locationId: loc.id, space, positions: size, since: s.hour, monthly: spacePrice(dc, space, size), endsAt: null });
   const name = nextName(`${prefix(s, loc.id)}-gw`, s.devices.map((d) => d.name));
   s.devices.push({ id: newId(s, "dev"), model: "handoff", brand: SWITCH_BRAND, rackId: null, slot: 0, panel: loc.id, name, bond: "none", groups: [], price: 0, boughtAt: s.hour, lease: null, store: null, transitTo: null, arriveAt: null, ...deviceDefaults("handoff", s.hour) });
   const shareRack = space === "share" && SHARE_RACKS.find((m) => m.size === size)!;
@@ -92,18 +96,50 @@ export function leaveWaitlist(s: GameState, id: string): ActionResult {
   return { ok: true };
 }
 
-export function closeLocation(s: GameState, locationId: string): ActionResult {
+// Why a location cannot be handed back right now, or null when it is empty.
+function closeError(s: GameState, locationId: string): string | null {
   const loc = s.locations.find((l) => l.id === locationId);
-  if (!loc) return fail("error.unknownLocation");
-  if (loc.space === "basement") return fail("error.cannotClose");
-  if (s.devices.some((d) => d.store === locationId || d.transitTo === locationId)) return fail("error.storageNotEmpty");
+  if (!loc) return "error.unknownLocation";
+  if (loc.space === "basement") return "error.cannotClose";
+  if (s.devices.some((d) => d.store === locationId || d.transitTo === locationId)) return "error.storageNotEmpty";
   const racks = s.racks.filter((r) => r.locationId === locationId);
-  if (racks.some((r) => !r.provided || s.devices.some((d) => d.rackId === r.id))) return fail("error.locationNotEmpty");
+  if (racks.some((r) => !r.provided || s.devices.some((d) => d.rackId === r.id))) return "error.locationNotEmpty";
+  return null;
+}
+
+// Hour the notice period ends: midnight of the first day after `months` whole months from now.
+export function noticeEnd(hour: number, months: number): number {
+  const d = dateOf(hour);
+  return hourOf(new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + months + 1, 1)));
+}
+
+export function cancelContract(s: GameState, contractId: string): ActionResult {
+  const c = s.contracts.find((x) => x.id === contractId);
+  if (!c) return fail("error.unknownContract");
+  if (c.endsAt !== null) return fail("error.alreadyCancelled");
+  const why = closeError(s, c.locationId);
+  if (why) return fail(why);
+  c.endsAt = noticeEnd(s.hour, NOTICE_MONTHS[c.space]);
+  return { ok: true };
+}
+
+export function revokeCancel(s: GameState, contractId: string): ActionResult {
+  const c = s.contracts.find((x) => x.id === contractId);
+  if (!c) return fail("error.unknownContract");
+  if (c.endsAt === null) return fail("error.notCancelled");
+  c.endsAt = null;
+  return { ok: true };
+}
+
+export function closeLocation(s: GameState, locationId: string): ActionResult {
+  const why = closeError(s, locationId);
+  if (why) return fail(why);
   s.racks = s.racks.filter((r) => r.locationId !== locationId);
   const panel = new Set(s.devices.filter((d) => d.panel === locationId).map((d) => d.id));
   unplug(s, panel);
   s.devices = s.devices.filter((d) => !panel.has(d.id));
   s.locations = s.locations.filter((l) => l.id !== locationId);
+  s.contracts = s.contracts.filter((c) => c.locationId !== locationId);
   return { ok: true };
 }
 
@@ -143,6 +179,10 @@ export function moveRack(s: GameState, rackId: string, toLocationId: string, pos
   if (to.az !== from.az && (s.workloads.some((w) => w.rackId === rackId) || s.devices.some((d) => d.rackId === rackId && serverTaken(s, d.id)))) return fail("error.rackInUse");
   const move = moveCost(s, rackId, toLocationId);
   if (s.cash < move.price) return fail("error.noCash");
+  // A small-office router stays behind in the basement's storage.
+  const left = s.devices.filter((d) => d.rackId === rackId && to.dc && isOfficeRouter(modelById(d.model)));
+  for (const d of left) Object.assign(d, { rackId: null, slot: 0, store: from.id });
+  unplug(s, new Set(left.map((d) => d.id)));
   const inside = new Set(s.devices.filter((d) => d.rackId === rackId).map((d) => d.id));
   unplug(s, inside, (id) => inside.has(id));
   Object.assign(rack, { locationId: toLocationId, position, arriveAt: s.hour + move.hours });
@@ -238,16 +278,20 @@ export function stock(s: GameState, line: CartLine, lease: string | null, store:
   });
 }
 
+export const PREPAY_HOURS = 24;
 const lineTotal = (s: GameState, line: CartLine) => unitPrice(line, yearOf(s.hour)) * line.qty;
 const families = (line: CartLine): string[] => { const m = modelById(line.model); return m.kind === "part" ? [m.id.slice(5)] : [m.kind, ...lineParts(line).map((p) => p.kind)]; };
 // An order ships whole after its slowest line, except while the company owns no server: the first purchases arrive at once.
 export const deliveryWait = (s: GameState, lines: CartLine[]): number => (s.devices.some((d) => modelById(d.model).kind === "server")
   ? Math.round(deliveryHours(yearOf(s.hour)) * Math.max(1, ...lines.flatMap(families).map((f) => leadFactor(f, s.hour)))) : 0);
 
-function buyLine(s: GameState, line: CartLine, locationId: string, wait: number): string {
+// A card purchase books nothing yet: the card bill at the month start charges it. An invoiced one books when it is paid.
+function buyLine(s: GameState, line: CartLine, locationId: string, wait: number, pay: "now" | "card" | "later" = "now"): { id: string; entry: LedgerEntry } {
   const ids = stock(s, line, null, locationId, wait);
-  book(s, "hardware", "ledger.hardware", { model: modelById(line.model).name, qty: line.qty }, -lineTotal(s, line));
-  return ids[0];
+  const entry = { hour: s.hour, category: "hardware", key: "ledger.hardware", params: { model: modelById(line.model).name, qty: line.qty }, amount: -lineTotal(s, line) };
+  if (pay === "card") s.bank = { ...s.bank!, card: { ...s.bank!.card!, spent: [...s.bank!.card!.spent, entry] } };
+  else if (pay === "now") book(s, entry.category, entry.key, entry.params, entry.amount);
+  return { id: ids[0], entry };
 }
 
 // A small-office router only fits the basement's carrier panel.
@@ -261,20 +305,44 @@ export function buyDevice(s: GameState, modelId: string, brand: string, qty: num
   const error = lineError(s, line) ?? officeError(s, modelId, locationId);
   if (error) return fail(error);
   if (s.cash < lineTotal(s, line)) return fail("error.noCash");
-  return { ok: true, id: buyLine(s, line, locationId, deliveryWait(s, [line])) };
+  return { ok: true, id: buyLine(s, line, locationId, deliveryWait(s, [line])).id };
 }
 
-// Pays in cash or leases the whole cart; the lease offer must be one leaseOffers makes for the cart total right now.
-export function buyCart(s: GameState, lines: CartLine[], payment: { kind: "cash" } | { kind: "lease"; offerId: string }, locationId: string): ActionResult {
+export type Payment = { kind: "cash" } | { kind: "prepay" } | { kind: "card" } | { kind: "invoice" } | { kind: "lease"; offerId: string };
+// The hardware shop sends an invoice to customers with three paid orders.
+export const INVOICE_AFTER = 3;
+export const paidOrders = (s: GameState): number => new Set(s.ledger.filter((e) => e.key === "ledger.hardware").map((e) => e.hour)).size;
+// A shop abroad takes only a card for the cart.
+export const cardOnly = (lines: CartLine[]): boolean => lines.some((l) => manufacturerByName(l.brand)?.cardOnly);
+
+// Pays now, by prepaid transfer (ships once the money arrives), by card, or leases the whole cart; the lease offer must be one
+// leaseOffers makes for the cart total right now.
+export function buyCart(s: GameState, lines: CartLine[], payment: Payment, locationId: string): ActionResult {
   if (!s.locations.some((l) => l.id === locationId)) return fail("error.unknownLocation");
   if (!lines.length) return fail("error.emptyCart");
   const error = lines.map((l) => lineError(s, l) ?? officeError(s, l.model, locationId)).find((e) => e);
   if (error) return fail(error);
   const total = lines.reduce((sum, l) => sum + lineTotal(s, l), 0);
-  if (payment.kind === "cash") {
-    if (s.cash < total) return fail("error.noCash");
+  if (payment.kind !== "lease" && shopBlocked(s)) return fail("error.shopUnpaid");
+  if (cardOnly(lines) && payment.kind !== "card" && payment.kind !== "lease") return fail("error.cardOnly");
+  if (payment.kind === "invoice") {
+    if (paidOrders(s) < INVOICE_AFTER) return fail("error.noInvoice");
+    const wait = deliveryWait(s, lines), bought = lines.map((l) => buyLine(s, l, locationId, wait, "later"));
+    invoice(s, "hardware", HARDWARE_SHOP, bought.map((b) => b.entry));
+    return { ok: true, id: bought[0].id };
+  }
+  if (payment.kind === "card") {
+    if (!cardReady(s)) return fail("error.noCard");
+    if (cardSpent(s) + total > s.bank!.card!.limit) return fail("error.cardLimit");
     const wait = deliveryWait(s, lines);
-    return { ok: true, id: lines.map((l) => buyLine(s, l, locationId, wait))[0] };
+    return { ok: true, id: lines.map((l) => buyLine(s, l, locationId, wait, "card"))[0].id };
+  }
+  if (payment.kind === "cash" || payment.kind === "prepay") {
+    if (spendable(s) < total) return fail("error.noCash");
+    const wait = deliveryWait(s, lines);
+    // A prepaid order ships the day after the transfer reaches the shop.
+    const paid = payment.kind === "prepay" && wait ? PREPAY_HOURS + TRANSFER_HOURS[bankOf(s)?.speed ?? "nextDay"] : 0;
+    return { ok: true, id: lines.map((l) => buyLine(s, l, locationId, wait + paid))[0].id };
   }
   const offer = leaseOffers(s, total).find((o) => o.id === payment.offerId);
   if (!offer) return fail("error.offerExpired");
@@ -308,7 +376,6 @@ export function mountError(s: GameState, d: Device, rackId: string, slot: number
   if (!d.store) return "error.alreadyMounted";
   if (d.maintenance) return "error.handWork";
   if (modelById(d.model).kind === "part") return "error.notMountable";
-  if (isOfficeRouter(modelById(d.model))) return "error.panelRouter";
   const spot = spotOf(s, rackId);
   if (!spot) return "error.unknownRack";
   if (spot.moving) return "error.rackMoving";
@@ -367,7 +434,6 @@ export function mountStack(s: GameState, modelId: string, brand: string, rackId:
   if (rack.moving) return fail("error.rackMoving");
   if (modelById(modelId).kind === "part") return fail("error.notMountable");
   if (modelById(modelId).chassis) return fail("error.inChassis");
-  if (isOfficeRouter(modelById(modelId))) return fail("error.panelRouter");
   if (modelById(modelId).kind === "pdu" && (count > 1 || hasPdu(s, rackId))) return fail("error.pduInstalled");
   const same = (d: Device) => d.model === modelId && d.brand === brand;
   const stored = s.devices.filter((d) => same(d) && d.store === rack.locationId && !d.maintenance);
@@ -585,6 +651,7 @@ export function setPortGroup(s: GameState, switchId: string, ports: number[]): A
   if (!d) return fail("error.unknownDevice");
   const model = modelById(d.model);
   if (model.kind !== "switch") return fail("error.notSwitch");
+  if (!model.managed) return fail("error.unmanaged");
   const unique = [...new Set(ports)].sort((x, y) => x - y);
   if (unique.some((p) => !Number.isInteger(p) || !model.ports[p])) return fail("error.unknownPort");
   if (unique.length > 8) return fail("error.groupSize");
@@ -897,9 +964,9 @@ export function addSecondPsu(s: GameState, deviceId: string): ActionResult {
   const zone = d.rackId ? locationOf(s, d)?.id : d.store;
   if (!zone) return fail("error.inTransit");
   const spare = stock(s, { model: "part-psu", brand: "Generic", qty: 1 }, null, zone)[0];
+  s.devices.find((x) => x.id === spare)!.price = price;
   const r = installPart(s, deviceId, spare);
   if (!r.ok) { s.devices = s.devices.filter((x) => x.id !== spare); return r; }
-  d.price += price;
   book(s, "hardware", "ledger.secondPsu", { device: d.label ?? d.name }, -price);
   return r;
 }
@@ -968,6 +1035,7 @@ export function installPart(s: GameState, deviceId: string, partId: string, slot
   d.components.splice(at < 0 ? d.components.length : at + 1, 0, ...set.map((_, i): Component =>
     ({ id: `c${top + 1 + i}`, ...spec, installedAt: s.hour, failedAt: null, ...(kind === "psu" && d.rackId ? { plugged: false } : {}) })));
   if (isDriveKind(kind) && d.rackId && d.raid !== "none" && !d.rebuild && !arrayLost(d)) d.rebuild = { componentId: id, doneAt: s.hour + rebuildHours(d) };
+  d.price += set.reduce((n, x) => n + x.price, 0);
   syncPsuBuild(d);
   return { ok: true, id };
 }
@@ -987,12 +1055,17 @@ export function removePart(s: GameState, deviceId: string, componentId: string, 
   const w = handsOn(s, d, hotSwappable(d, c), how);
   if ("error" in w) return fail(w.error);
   startWork(s, d, "", w);
+  // The part takes its share of the server's price at purchase year prices along, so parts and server never resell for more.
+  const at = (p: PartSpec) => partPrice(p.kind, p.size, p.ff, yearOf(d.boughtAt), p);
+  const share = Math.round(d.price * at(asSpec(c)) / (chassisPrice(modelById(d.model)) + d.components.reduce((n, x) => n + at(asSpec(x)), 0)) * 100) / 100;
+  d.price -= share;
   d.components = d.components.filter((x) => x.id !== componentId);
   if (d.rebuild?.componentId === componentId) d.rebuild = null;
   syncPsuBuild(d);
   if (c.failedAt === null && s.hour - c.installedAt < COMPONENTS[c.kind].life * HOURS_PER_YEAR) {
     const spec = asSpec(c);
-    stock(s, { model: `part-${c.kind}`, brand: "Generic", qty: 1, ...(spec.size !== undefined || spec.ff ? { part: spec } : {}) }, null, zone);
+    const [id] = stock(s, { model: `part-${c.kind}`, brand: "Generic", qty: 1, ...(spec.size !== undefined || spec.ff ? { part: spec } : {}) }, null, zone);
+    Object.assign(s.devices.find((x) => x.id === id)!, { price: share, boughtAt: d.boughtAt, used: true });
   }
   return { ok: true };
 }

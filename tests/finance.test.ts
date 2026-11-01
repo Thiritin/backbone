@@ -3,11 +3,11 @@ import { hourOf } from "../src/sim/00-core/time";
 import { COMPONENTS } from "../src/sim/10-catalog/hardware";
 import { HOURS_PER_YEAR } from "../src/sim/60-infra/status";
 import { hardwarePremium, INSOLVENT_DAYS, nextTax, profitBetween, yearStart } from "../src/sim/46-finance/finance";
-import { newGame, type GameState, type LedgerEntry } from "../src/sim/50-state";
+import { type GameState, type LedgerEntry } from "../src/sim/50-state";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { buyInsurance, cancelInsurance } from "../src/sim/90-actions/finance";
 import { replaceComponent, type ActionResult } from "../src/sim/90-actions/hardware";
-import { buyDevice } from "./fixtures";
+import { buyDevice, newGame } from "./fixtures";
 import { deserialize } from "../src/sim/91-save/save";
 import { withServer } from "./fixtures";
 

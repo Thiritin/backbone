@@ -1,13 +1,14 @@
 // Values come from docs/design/economy.md (Server generations, Server lines, Manufacturers, Switches, Security appliances, Patch panels and gateways).
 import { hourOf } from "../00-core/time";
+import type { RouterLan } from "../50-state";
 import { GENERATIONS } from "./economy";
 import { cardAt, cardOf, gpuOffers, gpuPrice } from "./gpu";
 import { DDR_BY_GEN, defaultFamily, familiesOn, familyById, familySizes, isRamFamily, PART_MAKERS } from "./families";
 import { cpuModel, cpuSkus, cpuWatts, defaultSku, defaultVendor, genOfYear, skuById, skuOf, socketCores, socketOf, VENDOR_ARCH, VENDOR_NAME, VENDORS, vendorsAt, type Vendor } from "./cpus";
 
 // A chassis holds the nodes of a multi-node server with their shared power supplies and fans; the nodes are servers.
-export type DeviceKind = "server" | "switch" | "firewall" | "gateway" | "patch" | "ups" | "pdu" | "part" | "kvm" | "console" | "oob" | "chassis";
-export interface PortSpec { media: "rj45" | "sfp"; gbit: number }
+export type DeviceKind = "server" | "switch" | "firewall" | "gateway" | "patch" | "ups" | "pdu" | "part" | "kvm" | "console" | "oob" | "chassis" | "jack";
+export interface PortSpec { media: "rj45" | "sfp" | "dsl"; gbit: number }
 // Management ports outside the data plane, numbered from OOB_PORT: a server's console end, a switch or router's mgmt and RS-232
 // console ports, a KVM's outputs, a console server's serial ports, and the network jack of every management device.
 export type OobPort = "console" | "mgmt" | "kvm" | "serial" | "net";
@@ -236,6 +237,10 @@ export interface DeviceModel {
   supportYears: number;
   server?: ServerSpec;
   layer?: 2 | 3;
+  // Switches: a managed one has a management address, port groups, VLANs and a web interface; an unmanaged one forwards between all ports.
+  managed?: boolean;
+  // A desktop box that stands on a 1U shelf.
+  shelf?: true;
   // Firewalls cap every link through them at this speed; ipsGbit is what they inspect, sessions the connections they track.
   throughputGbit?: number;
   ipsGbit?: number;
@@ -268,13 +273,15 @@ export interface DeviceModel {
 // Within a class, manufacturers differ in price, failure rate, release month, end of sale and power draw, never in specs.
 // fromShift moves a model's release in months, untilShift its last year on sale in years, wattsFactor scales its draw; the
 // defaults are 0, 0 and 1.
-export interface Manufacturer { id: string; name: string; kinds: DeviceKind[]; priceFactor: number; failureFactor: number; fromShift?: number; untilShift?: number; wattsFactor?: number }
+export interface Manufacturer { id: string; name: string; kinds: DeviceKind[]; priceFactor: number; failureFactor: number; fromShift?: number; untilShift?: number; wattsFactor?: number;
+  // Sold from abroad: the hardware shop takes only a card for it.
+  cardOnly?: true }
 export const MANUFACTURERS: Manufacturer[] = [
   { id: "dwell", name: "Dwell", kinds: ["server", "chassis"], priceFactor: 1, failureFactor: 1 },
   { id: "hewlett-packet", name: "Hewlett-Packet", kinds: ["server", "switch"], priceFactor: 1.08, failureFactor: 0.8, fromShift: 3, untilShift: -1, wattsFactor: 0.95 },
-  { id: "supermacro", name: "SuperMacro", kinds: ["server", "chassis"], priceFactor: 0.9, failureFactor: 1.3, fromShift: -4, untilShift: 1, wattsFactor: 1.05 },
+  { id: "supermacro", name: "SuperMacro", kinds: ["server", "chassis"], priceFactor: 0.9, failureFactor: 1.3, fromShift: -4, untilShift: 1, wattsFactor: 1.05, cardOnly: true },
   { id: "lenovoid", name: "Lenovoid", kinds: ["server", "chassis"], priceFactor: 0.95, failureFactor: 1.1, fromShift: 6 },
-  { id: "gigabutt", name: "Gigabutt", kinds: ["server", "chassis"], priceFactor: 0.9, failureFactor: 1.25, fromShift: -1, wattsFactor: 1.04 },
+  { id: "gigabutt", name: "Gigabutt", kinds: ["server", "chassis"], priceFactor: 0.9, failureFactor: 1.25, fromShift: -1, wattsFactor: 1.04, cardOnly: true },
   { id: "sysko", name: "Sysko", kinds: ["switch", "firewall", "gateway"], priceFactor: 1, failureFactor: 1 },
   { id: "junipurr", name: "Junipurr", kinds: ["switch", "firewall", "gateway"], priceFactor: 1.1, failureFactor: 0.7 },
   { id: "aristotle", name: "Aristotle", kinds: ["switch"], priceFactor: 0.93, failureFactor: 1.2 },
@@ -482,7 +489,7 @@ const TWINS: DeviceModel[] = SERVERS.filter((m) => m.id.endsWith("-twin-node")).
   };
 });
 
-type Extra = Partial<Pick<DeviceModel, "layer" | "throughputGbit" | "ipsGbit" | "sessions" | "batteryWh" | "brand" | "fullTable" | "bgpSessions" | "outlets" | "psus" | "oob" | "atx" | "failYearly" | "until" | "supportYears">>;
+type Extra = Partial<Pick<DeviceModel, "layer" | "managed" | "shelf" | "throughputGbit" | "ipsGbit" | "sessions" | "batteryWh" | "brand" | "fullTable" | "bgpSessions" | "outlets" | "psus" | "oob" | "atx" | "failYearly" | "until" | "supportYears">>;
 // Years on sale after launch and years of support after that (economy.md, Hardware lifecycle); other kinds never end.
 const LIFE: Partial<Record<DeviceKind, { sale: number; support: number }>> = {
   switch: { sale: 6, support: 5 }, firewall: { sale: 6, support: 5 }, gateway: { sale: 6, support: 5 }, ups: { sale: 8, support: 3 }, pdu: { sale: 8, support: 3 },
@@ -495,6 +502,9 @@ const other = (id: string, name: string, kind: DeviceKind, height: number, p: Po
 };
 // Routers: throughput in Gbit, a full BGP table or not, and the BGP sessions they take.
 const router = (tp: number, bgp: number, full = false): Extra => ({ throughputGbit: tp, bgpSessions: bgp, fullTable: full });
+// A Fritz!Bocks: four LAN ports and the DSL port, on a shelf, with no management ports.
+const fritzPorts: PortSpec[] = [...ports(4, 1), { media: "dsl", gbit: 1 }];
+const fritz: Extra = { brand: "AVN", oob: [] };
 const oobs = (n: number, p: OobPort): OobPort[] => Array.from({ length: n }, () => p);
 // Switch and firewall makers: years on sale after launch and years of support after that. Hewlett-Packet's lifetime warranty
 // never runs out, the budget makers drop a model fast.
@@ -508,7 +518,10 @@ const net = (brand: string, kind: "switch" | "firewall", id: string, name: strin
   const life = NET_LIFE[brand];
   return other(id, name, kind, 1, p, watts, price, from, { brand, until: NEWEST.has(id) ? null : from + life.sale, supportYears: life.support, ...extra });
 };
-const sw = (brand: string, id: string, name: string, from: number, p: PortSpec[], watts: number, price: number, layer: 2 | 3 = 2): DeviceModel => net(brand, "switch", id, name, from, p, watts, price, { layer });
+const sw = (brand: string, id: string, name: string, from: number, p: PortSpec[], watts: number, price: number, layer: 2 | 3 = 2): DeviceModel => net(brand, "switch", id, name, from, p, watts, price, { layer, managed: true });
+// An unmanaged switch: no management ports, no firmware, no settings. A desktop one stands on a shelf.
+const dumb = (brand: string, id: string, name: string, from: number, p: PortSpec[], watts: number, price: number, shelf: boolean): DeviceModel =>
+  net(brand, "switch", id, name, from, p, watts, price, { layer: 2, managed: false, oob: [], ...(shelf ? { shelf: true as const } : {}) });
 // A firewall caps every link at its throughput; ipsGbit is what it inspects, sessions the connections it tracks.
 const fw = (brand: string, id: string, name: string, from: number, p: PortSpec[], watts: number, price: number, tp: number, ips: number, sessions: number): DeviceModel =>
   net(brand, "firewall", id, name, from, p, watts, price, { throughputGbit: tp, ipsGbit: ips, sessions });
@@ -601,7 +614,12 @@ const SWITCHES: DeviceModel[] = [
   sw("D-Lunk", "dl-dgs1510-28x", "DGS-1510-28X", 2015, copper(24, 4), 30, 350),
   sw("D-Lunk", "dl-dgs1210-08", "DGS-1210-08", 2012, ports(8, 1), 5, 50),
   sw("D-Lunk", "dl-dgs1510-52x", "DGS-1510-52X", 2016, copper(48, 4), 50, 600),
+  dumb("D-Lunk", "dl-des1008d", "DES-1008D", 2005, ports(8, 0.1, "rj45"), 3, 25, true),
+  dumb("Nettgear", "ng-gs108", "GS108", 2005, ports(8, 1), 4, 75, true),
+  dumb("D-Lunk", "dl-dgs1024d", "DGS-1024D", 2006, ports(24, 1), 15, 180, false),
+  dumb("Nettgear", "ng-gs116", "GS116", 2008, ports(16, 1), 8, 110, true),
 ];
+export const isManaged = (m: DeviceModel): boolean => m.kind === "switch" && !!m.managed;
 // Parodies: PIXel, ASAP and Firepowder (PIX, ASA, Firepower), FortiGoat (FortiGate), PA, SRX, pfSinse on Netgoat boxes
 // (pfSense, Netgate), SoPhosphate (Sophos). Every year sells a firewall under 1000 euro and a datacenter one.
 const FIREWALLS: DeviceModel[] = [
@@ -679,11 +697,11 @@ export const MODELS: DeviceModel[] = [
   other("edge-l", "Edge router L", "gateway", 2, ports(32, 100), 600, 40000, 2014, { brand: "Sysko", ...router(400, 512, true) }),
   other("edge-xl", "Edge router XL", "gateway", 2, ports(36, 400), 900, 90000, 2021, { brand: "Sysko", ...router(800, 2048, true) }),
   other("edge-xxl", "Edge router XXL", "gateway", 2, ports(36, 400), 1200, 150000, 2027, { brand: "Sysko", ...router(1600, 4096, true) }),
-  // Small-office routers replace the basement's carrier panel router; the routed speed caps the home line.
-  other("fb-7050", "Fritz!Bocks 7050", "gateway", 0, ports(4, 1), 8, 150, 2006, { brand: "AVN", ...router(0.1, 0) }),
-  other("fb-7390", "Fritz!Bocks 7390", "gateway", 0, ports(4, 1), 9, 220, 2010, { brand: "AVN", ...router(0.3, 0) }),
-  other("fb-7590", "Fritz!Bocks 7590", "gateway", 0, ports(4, 1), 12, 249, 2018, { brand: "AVN", ...router(1, 0) }),
-  other("fb-5690", "Fritz!Bocks 5690", "gateway", 0, ports(4, 1), 14, 330, 2024, { brand: "AVN", ...router(2.5, 0) }),
+  // Small-office routers replace the basement's router on its shelf; the routed speed caps the home line.
+  other("fb-7050", "Fritz!Bocks 7050", "gateway", 1, fritzPorts, 8, 150, 2006, { ...fritz, ...router(0.1, 0) }),
+  other("fb-7390", "Fritz!Bocks 7390", "gateway", 1, fritzPorts, 9, 220, 2010, { ...fritz, ...router(0.3, 0) }),
+  other("fb-7590", "Fritz!Bocks 7590", "gateway", 1, fritzPorts, 12, 249, 2018, { ...fritz, ...router(1, 0) }),
+  other("fb-5690", "Fritz!Bocks 5690", "gateway", 1, fritzPorts, 14, 330, 2024, { ...fritz, ...router(2.5, 0) }),
   // Business and branch routers mount in a rack; only the ones with a full table can run an own AS.
   other("isr-1841", "Router 1841", "gateway", 1, ports(2, 1), 40, 1300, 2005, { brand: "Sysko", ...router(0.1, 2) }),
   other("isr-2811", "Router 2811", "gateway", 2, ports(4, 1), 120, 2500, 2005, { brand: "Sysko", ...router(0.3, 4) }),
@@ -712,8 +730,11 @@ export const MODELS: DeviceModel[] = [
   other("ogb-16", "OpenGearbox 16", "console", 1, [], 18, 2500, 2005, { brand: "OpenGearbox", oob: ["net", ...oobs(16, "serial")] }),
   other("ogb-48", "OpenGearbox 48", "console", 1, [], 30, 6000, 2005, { brand: "OpenGearbox", oob: ["net", ...oobs(48, "serial")] }),
   other("oob-8", "OOB switch 8", "oob", 1, [], 8, 150, 2005, { brand: "Rarytan", oob: oobs(8, "net") }),
-  // Price 0 keeps gateways out of the shop; they come with the basement and with every datacenter location.
-  other("home-router", "Home router", "gateway", 0, ports(4, 1), 10, 0, 2005, router(0.1, 0)),
+  // Price 0 keeps these out of the shop; they come with the basement and with every datacenter location.
+  // The router the flat came with; it starts in the basement's storage.
+  other("home-router", "Fritz!Bocks 5050", "gateway", 1, fritzPorts, 10, 0, 2005, { ...fritz, ...router(0.1, 0) }),
+  // The carrier's socket on the basement's panel, where a router's DSL port takes the line.
+  other("line-jack", "Line jack", "jack", 0, [{ media: "dsl", gbit: 1 }], 0, 0),
   other("handoff", "Datacenter handoff", "gateway", 0, ports(2, 1), 0, 0),
   ...COMPONENT_KINDS.map((k) => other(`part-${k}`, `Spare ${COMPONENT_NAMES[k]}`, "part", 0, [], 0, COMPONENTS[k].price)),
 ];
@@ -752,8 +773,12 @@ export function oobFits(ma: DeviceModel, a: OobPort | PortSpec, mb: DeviceModel,
 export const hasFirmware = (m: DeviceModel): boolean => m.kind !== "server" && oobPorts(m).length > 0;
 // The kind of a management port; undefined for a data port or one the model does not have.
 export const oobPortOf = (m: DeviceModel, port: number): OobPort | undefined => (isOobPort(port) ? oobPorts(m)[port - OOB_PORT] : undefined);
-// A bought router that sits on the carrier panel in place of the location's provided one.
-export const isOfficeRouter = (m: DeviceModel): boolean => m.kind === "gateway" && m.height === 0 && m.price > 0;
+// A small-office router: it stands on a shelf in the basement rack and takes the line on its DSL port.
+export const isOfficeRouter = (m: DeviceModel): boolean => m.kind === "gateway" && m.brand === "AVN";
+// The network a Fritz!Bocks comes with.
+export const homeLan = (): RouterLan =>
+  ({ cidr: "192.168.178.0/24", gateway: "192.168.178.1", pool: ["192.168.178.20", "192.168.178.200"], leaseHours: 240, reservations: [], leases: [], shares: [] });
+export const wanPort = (m: DeviceModel): number => m.ports.findIndex((p) => p.media === "dsl");
 export const jacksOf =(m: DeviceModel): number => m.ports.length / 2;
 // Jacks on a 24-port panel; use jacksOf for the 48-port panels.
 export const PATCH_JACKS = 24;

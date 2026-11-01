@@ -30,7 +30,7 @@
 
 /* A page fills the viewport at least, so a short page's background runs to the bottom. */
 .web-view { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: auto; background: var(--win); }
-.web-view.paper { background: #ffffff; }
+.web-view.white { background: #ffffff; }
 .web-view > * { flex: 1 0 auto; min-height: 100%; }
 .web-load { height: 2px; background: linear-gradient(90deg, transparent, var(--accent), transparent); background-size: 40% 100%; background-repeat: no-repeat; animation: web-load 1.4s linear infinite; }
 @keyframes web-load { from { background-position: -40% 0; } to { background-position: 140% 0; } }
@@ -43,3 +43,165 @@
 .br-dl { position: relative; }
 .br-dl-bar { position: absolute; left: 5px; right: 5px; bottom: 2px; height: 2px; border-radius: 1px; background: var(--line-strong); overflow: hidden; }
 .br-dl-bar i { display: block; height: 100%; background: var(--accent); }
+
+/* Browser chrome by Pear OS release; Big Sir is the base above. */
+
+/* Panthera and Leapard: Safari 1 and 3, grey gel toolbar, capsule address field. */
+:root[data-os="aqua"] {
+  --br-top: oklch(0.95 0.003 250); --br-bot: oklch(0.82 0.005 250); --br-edge: oklch(0.5 0.01 250);
+  --br-gel: oklch(0.6 0.16 245); --br-shine: oklch(1 0 0 / 0.55);
+}
+:root[data-os="leopard"] {
+  --br-top: oklch(0.93 0.003 250); --br-bot: oklch(0.8 0.005 250); --br-edge: oklch(0.45 0.01 250);
+  --br-gel: oklch(0.58 0.15 248); --br-shine: oklch(1 0 0 / 0.5);
+}
+:root[data-os="aqua"][data-theme="dark"], :root[data-os="leopard"][data-theme="dark"] {
+  --br-top: oklch(0.42 0.008 258); --br-bot: oklch(0.29 0.008 258); --br-edge: oklch(0.12 0.006 258); --br-shine: oklch(1 0 0 / 0.16);
+}
+:root:is([data-os="aqua"], [data-os="leopard"]) .br-tabs {
+  gap: 1px; padding: 6px 10px 0; border-bottom: 1px solid var(--br-edge);
+  background: linear-gradient(var(--br-bot), color-mix(in oklch, var(--br-bot), black 10%));
+}
+:root:is([data-os="aqua"], [data-os="leopard"]) .br-bar {
+  gap: 6px; padding: 6px 10px; border-bottom: 1px solid var(--br-edge);
+  background-color: var(--br-bot); background-image: linear-gradient(var(--br-top), var(--br-bot));
+}
+:root:is([data-os="aqua"], [data-os="leopard"]) .br-bar .btn.icon.ghost {
+  height: 24px; border: 1px solid var(--br-edge); color: var(--text-2);
+  background-color: var(--br-bot);
+  background-image: linear-gradient(var(--br-shine), oklch(1 0 0 / 0.04) 50%, oklch(0 0 0 / 0.07) 51%, oklch(1 0 0 / 0.22));
+  box-shadow: 0 1px 0 oklch(1 0 0 / 0.35);
+}
+:root:is([data-os="aqua"], [data-os="leopard"]) .br-bar .btn.icon.ghost:hover:not(:disabled) { filter: brightness(1.07); color: var(--text); }
+:root:is([data-os="aqua"], [data-os="leopard"]) .br-bar .btn.icon.ghost:active:not(:disabled) { filter: brightness(0.9); }
+:root:is([data-os="aqua"], [data-os="leopard"]) .br-addr {
+  height: 24px; margin: 0 4px; padding: 0 4px 0 10px; border: 1px solid var(--br-edge); border-radius: 999px;
+  background: var(--field); box-shadow: inset 0 1px 3px oklch(0 0 0 / 0.28), 0 1px 0 oklch(1 0 0 / 0.4);
+}
+:root:is([data-os="aqua"], [data-os="leopard"]) .br-addr:focus-within {
+  outline: 3px solid color-mix(in oklch, var(--br-gel) 55%, transparent); outline-offset: 0;
+}
+:root:is([data-os="aqua"], [data-os="leopard"]) .br-marks {
+  min-height: 26px; padding: 2px 10px; border-bottom: 1px solid var(--br-edge);
+  background: linear-gradient(var(--br-top), color-mix(in oklch, var(--br-top), var(--br-bot) 55%));
+}
+:root:is([data-os="aqua"], [data-os="leopard"]) .br-mark { height: 20px; border-radius: 999px; }
+:root:is([data-os="aqua"], [data-os="leopard"]) .br-mark:hover {
+  color: white; text-shadow: 0 -1px 0 oklch(0 0 0 / 0.3);
+  background: linear-gradient(color-mix(in oklch, var(--br-gel), white 50%), color-mix(in oklch, var(--br-gel), white 15%) 50%, var(--br-gel) 51%, color-mix(in oklch, var(--br-gel), white 30%));
+}
+:root:is([data-os="aqua"], [data-os="leopard"]) .br-new, :root:is([data-os="aqua"], [data-os="leopard"]) .br-tab-x { border-radius: 50%; }
+
+/* Safari 1: metal texture, round gel buttons, rounded-top aqua tabs. */
+:root[data-os="aqua"] .br-bar {
+  background-image: repeating-linear-gradient(90deg, oklch(1 0 0 / 0.08) 0 1px, transparent 1px 3px), linear-gradient(var(--br-top), var(--br-bot));
+}
+:root[data-os="aqua"] .br-bar .btn.icon.ghost { width: 26px; height: 26px; border-radius: 50%; }
+:root[data-os="aqua"] .br-tab {
+  height: 26px; border: 1px solid var(--br-edge); border-bottom: 0; border-radius: 8px 8px 0 0; color: var(--text-2);
+  background: linear-gradient(var(--br-top), var(--br-bot));
+}
+:root[data-os="aqua"] .br-tab:hover { background: linear-gradient(var(--br-top), var(--br-bot)); filter: brightness(1.05); }
+:root[data-os="aqua"] .br-tab[aria-selected="true"] {
+  color: var(--text); filter: none; box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.7);
+  background: linear-gradient(color-mix(in oklch, var(--br-gel) 14%, var(--field)), var(--field));
+}
+:root[data-os="aqua"] .web-load {
+  height: 4px; animation: br-pole 0.7s linear infinite;
+  background: linear-gradient(135deg, color-mix(in oklch, var(--br-gel), white 50%) 25%, var(--br-gel) 25% 50%, color-mix(in oklch, var(--br-gel), white 50%) 50% 75%, var(--br-gel) 75%) 0 0 / 14px 14px;
+}
+@keyframes br-pole { to { background-position: 14px 0; } }
+@media (prefers-reduced-motion: reduce) { :root[data-os="aqua"] .web-load { animation: none; } }
+
+/* Safari 3: unified graphite toolbar, joined capsule tabs in the middle, glossy blue selection. */
+:root[data-os="leopard"] .br-tabs { justify-content: center; align-items: center; padding: 6px 10px; gap: 0; }
+:root[data-os="leopard"] .br-tab {
+  width: 160px; height: 22px; margin-left: -1px; border: 1px solid var(--br-edge); border-radius: 0; justify-content: center; color: var(--text-2);
+  background-color: var(--br-bot);
+  background-image: linear-gradient(var(--br-shine), oklch(1 0 0 / 0.04) 50%, oklch(0 0 0 / 0.07) 51%, oklch(1 0 0 / 0.22));
+}
+:root[data-os="leopard"] .br-tab:first-child { margin-left: 0; border-radius: 11px 0 0 11px; }
+:root[data-os="leopard"] .br-tab:nth-last-child(2) { border-radius: 0 11px 11px 0; }
+:root[data-os="leopard"] .br-tab:first-child:nth-last-child(2) { border-radius: 11px; }
+:root[data-os="leopard"] .br-tab:hover { filter: brightness(1.06); }
+:root[data-os="leopard"] .br-tab-title { text-align: center; }
+:root[data-os="leopard"] .br-tab[aria-selected="true"] {
+  color: white; text-shadow: 0 -1px 0 oklch(0 0 0 / 0.3); filter: none;
+  background-color: var(--br-gel);
+  background-image: linear-gradient(color-mix(in oklch, var(--br-gel), white 50%), color-mix(in oklch, var(--br-gel), white 15%) 50%, var(--br-gel) 51%, color-mix(in oklch, var(--br-gel), white 30%));
+}
+:root[data-os="leopard"] .br-tab[aria-selected="true"] .br-tab-x { color: oklch(1 0 0 / 0.8); }
+:root[data-os="leopard"] .br-new { margin: 0 0 0 6px; }
+:root[data-os="leopard"] .br-bar .btn.icon.ghost { width: 34px; border-radius: 11px; }
+:root[data-os="leopard"] .web-load { height: 3px; background: linear-gradient(90deg, transparent, color-mix(in oklch, var(--br-gel), white 25%), var(--br-gel), transparent) 0 0 / 40% 100% no-repeat; }
+
+/* Yosemighty: flat Safari 8, full-width tab segments, centred rounded address field, thin icons. */
+:root[data-os="yosemite"] .br-tabs { gap: 0; padding: 0; background: color-mix(in oklch, var(--win-side), var(--line) 35%); border-bottom: 0.5px solid var(--line-strong); align-items: stretch; }
+:root[data-os="yosemite"] .br-tab {
+  flex: 1 1 0; width: auto; max-width: 260px; height: 28px; justify-content: center; border-right: 0.5px solid var(--line-strong); border-radius: 0; color: var(--text-2);
+}
+:root[data-os="yosemite"] .br-tab-title { text-align: center; }
+:root[data-os="yosemite"] .br-tab[aria-selected="true"] { background: var(--win-bar); color: var(--text); }
+:root[data-os="yosemite"] .br-new { align-self: center; margin: 0 4px; border-radius: 4px; }
+:root[data-os="yosemite"] .br-bar { padding: 6px 10px; border-bottom: 0.5px solid var(--line); }
+:root[data-os="yosemite"] .br-bar svg.lucide, :root[data-os="yosemite"] .br-tab svg.lucide, :root[data-os="yosemite"] .br-new svg { stroke-width: 1.4; }
+:root[data-os="yosemite"] .br-bar .btn.icon.ghost { border-radius: 4px; }
+:root[data-os="yosemite"] .br-addr {
+  flex: 1 1 auto; max-width: 560px; height: 26px; margin: 0 auto; border-radius: 5px; border: 0.5px solid var(--line-strong);
+  background: color-mix(in oklch, var(--field) 55%, var(--hover));
+}
+:root[data-os="yosemite"] .br-addr input { text-align: center; }
+:root[data-os="yosemite"] .br-addr:focus-within { background: var(--field); outline: 3px solid color-mix(in oklch, var(--accent) 40%, transparent); outline-offset: 0; }
+:root[data-os="yosemite"] .br-marks { justify-content: center; min-height: 28px; padding: 0 10px 2px; border-bottom: 0.5px solid var(--line-strong); }
+:root[data-os="yosemite"] .br-mark { border-radius: 4px; }
+:root[data-os="yosemite"] .web-load { height: 2px; background: linear-gradient(90deg, var(--accent), var(--accent)) 0 0 / 30% 100% no-repeat; }
+
+/* Tahoo: glass Safari 26, capsule tab strip, floating capsule address bar. */
+:root[data-os="tahoe"] {
+  --br-glass: color-mix(in oklch, var(--win) 55%, transparent);
+  --br-spec: inset 0 1px 0 oklch(1 0 0 / 0.75), inset 0 0 0 0.5px oklch(1 0 0 / 0.45);
+  --br-lift: 0 4px 14px -6px oklch(0 0 0 / 0.3);
+}
+:root[data-os="tahoe"][data-theme="dark"] { --br-spec: inset 0 1px 0 oklch(1 0 0 / 0.2), inset 0 0 0 0.5px oklch(1 0 0 / 0.1); }
+:root[data-os="tahoe"] .br-tabs { align-items: center; gap: 4px; margin: 8px 12px 0; padding: 3px; border: 0; border-radius: 999px; background: var(--win-side); box-shadow: inset 0 1px 2px oklch(0 0 0 / 0.08); }
+:root[data-os="tahoe"] .br-tab { width: auto; flex: 1 1 0; max-width: 220px; height: 28px; padding: 0 12px; border-radius: 999px; justify-content: center; }
+:root[data-os="tahoe"] .br-tab-title { text-align: center; }
+:root[data-os="tahoe"] .br-tab[aria-selected="true"] {
+  background: var(--br-glass); backdrop-filter: blur(20px) saturate(1.8); -webkit-backdrop-filter: blur(20px) saturate(1.8);
+  box-shadow: var(--br-spec), var(--br-lift); color: var(--text);
+}
+:root[data-os="tahoe"] .br-new, :root[data-os="tahoe"] .br-tab-x { border-radius: 50%; }
+:root[data-os="tahoe"] .br-new { margin: 0 4px 0 0; }
+:root[data-os="tahoe"] .br-bar { gap: 6px; padding: 8px 12px; background: var(--win); }
+:root[data-os="tahoe"] .br-bar .btn.icon.ghost {
+  width: 34px; height: 34px; border: 0; border-radius: 50%; color: var(--text-2);
+  background: var(--br-glass); backdrop-filter: blur(20px) saturate(1.8); -webkit-backdrop-filter: blur(20px) saturate(1.8);
+  box-shadow: var(--br-spec), var(--br-lift);
+}
+:root[data-os="tahoe"] .br-bar .btn.icon.ghost:hover:not(:disabled) { background: color-mix(in oklch, var(--win) 80%, transparent); color: var(--text); }
+:root[data-os="tahoe"] .br-addr {
+  height: 36px; margin: 0 6px; padding: 0 6px 0 14px; border: 0; border-radius: 999px;
+  background: var(--br-glass); backdrop-filter: blur(24px) saturate(1.8); -webkit-backdrop-filter: blur(24px) saturate(1.8);
+  box-shadow: var(--br-spec), 0 8px 22px -10px oklch(0 0 0 / 0.4);
+}
+:root[data-os="tahoe"] .br-addr input:not(:focus) { text-align: center; }
+:root[data-os="tahoe"] .br-addr:focus-within { outline: 2px solid var(--accent); outline-offset: 1px; }
+:root[data-os="tahoe"] .br-star { border-radius: 50%; width: 26px; height: 26px; }
+:root[data-os="tahoe"] .br-marks { gap: 4px; padding: 0 12px 8px; border-bottom: 0.5px solid var(--line); background: var(--win); }
+:root[data-os="tahoe"] .br-mark { height: 26px; border-radius: 999px; background: var(--br-glass); box-shadow: var(--br-spec); }
+:root[data-os="tahoe"] .br-mark:hover { background: color-mix(in oklch, var(--win) 85%, transparent); }
+:root[data-os="tahoe"] .web-load { height: 3px; margin: 0 12px; border-radius: 999px; background: linear-gradient(90deg, transparent, oklch(0.72 0.17 250), oklch(0.74 0.16 310), transparent) 0 0 / 40% 100% no-repeat; }
+
+/* Late fixes: square Panthera field, static load bar under reduced motion, readable tab close, era download bars. */
+:root[data-os="aqua"] .br-addr { border-radius: 3px; padding-left: 8px; }
+@media (prefers-reduced-motion: reduce) { :root:is([data-os="leopard"], [data-os="yosemite"], [data-os="tahoe"]) .web-load { background-size: 100% 100%; } }
+:root:is([data-os="aqua"], [data-os="leopard"]) .br-tab-x { color: var(--text-2); }
+:root[data-os="aqua"] .br-dl-bar { height: 4px; border-radius: 2px; }
+:root[data-os="aqua"] .br-dl-bar i { background: linear-gradient(var(--br-gel), color-mix(in oklch, var(--br-gel), white 40%)); }
+:root[data-os="tahoe"] .br-dl-bar { height: 3px; border-radius: 999px; }
+
+/* The browser's own error page follows the installed OS. */
+:root[data-os="aqua"] .br-error, :root[data-os="leopard"] .br-error { font-family: "Lucida Grande", "Lucida Sans Unicode", Verdana, sans-serif; }
+:root[data-os="aqua"] .br-error h1, :root[data-os="leopard"] .br-error h1 { font-size: 16px; font-weight: 700; }
+:root[data-os="yosemite"] .br-error h1 { font-size: 28px; font-weight: 300; }
+:root[data-os="tahoe"] .br-error h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }

@@ -49,7 +49,7 @@ export function AppWindow({ win, front }: { win: Win; front: boolean }) {
   const was = useRef({ minimized: win.minimized, zoomed: win.zoomed });
   const game = useStore((s) => s.game);
   const app = appFor(game, win.app);
-  const title = win.console ? consoleTitle(game, win.console) : appTitle(app);
+  const title = win.console ? consoleTitle(game, win.console) : app.title ?? appTitle(app);
 
   useLayoutEffect(() => { animateOpen(ref.current!); }, []);
 

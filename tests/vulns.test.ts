@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { hourOf, yearOf } from "../src/sim/00-core/time";
+import { updateBreaks } from "../src/sim/60-infra/channel";
 import { sizeSpec } from "../src/sim/10-catalog/products";
 import { storeItem, subscriptionPrice } from "../src/sim/10-catalog/store";
 import { visibleCandidates, type Task } from "../src/sim/47-staff/staff";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { workloadOnline } from "../src/sim/60-infra/cluster";
 import { MONITORING, securityTick } from "../src/sim/60-infra/security";
 import {
@@ -13,7 +14,7 @@ import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { connect, type ActionResult } from "../src/sim/90-actions/hardware";
-import { buyDevice, bootedMachine } from "./fixtures";
+import { buyDevice, bootedMachine, newGame } from "./fixtures";
 import { cleanUp } from "../src/sim/90-actions/security";
 import { installSoftware, updateSoftware } from "../src/sim/90-actions/software";
 import { hire, queueOperation, setTechRules } from "../src/sim/90-actions/staff";
@@ -105,7 +106,7 @@ describe("generated vulnerabilities", () => {
   it("compromise a panel host by chance until it is updated", () => {
     const s = start(), a = host(s, "dev3", "ada.de"), b = host(s, second(s), "lang.de");
     s.hour = year(2030);
-    for (const id of [a, b]) patch(s, id, { version: 2005, updatedAt: 0 });
+    for (const id of [a, b]) patch(s, id, { version: 2005, updatedAt: 0, channel: "edge" });
     expect(openVulns(s, a).length).toBeGreaterThan(10);
     ok(updateSoftware(s, b));
     expect(openVulns(s, b)).toEqual([]);
@@ -122,7 +123,7 @@ describe("generated vulnerabilities", () => {
     const cus = addCustomer(s, "Ada Lang", "hobbyDev");
     ok(provisionService(s, cus, "vps", { label: "box", spec: sizeSpec("vps", 0, 2005), clusterId: id }));
     s.hour = year(2030);
-    patch(s, id, { version: 2005, updatedAt: 0 });
+    patch(s, id, { version: 2005, updatedAt: 0, channel: "edge" });
     const events: SimEvent[] = [];
     for (let d = 0; d < 200 && !s.security.hacked.length; d++) { s.hour += 24; events.push(...securityTick(s)); }
     expect(s.security.hacked).toEqual([id]);
@@ -138,7 +139,7 @@ describe("generated vulnerabilities", () => {
     const s = start();
     s.hour = year(2030);
     const empty = panelServer(s, "dev3");
-    patch(s, empty, { version: 2005, updatedAt: 0 });
+    patch(s, empty, { version: 2005, updatedAt: 0, channel: "edge" });
     for (let d = 0; d < 100; d++) { s.hour += 24; securityTick(s); }
     expect(s.security.hacked).toEqual([]);
   });
@@ -148,7 +149,7 @@ describe("updating software", () => {
   it("closes every vulnerability patched so far and lists the software worst first", () => {
     const s = start(), a = host(s, "dev3", "ada.de"), b = host(s, second(s), "lang.de");
     s.hour = year(2020);
-    patch(s, a, { version: 2005, updatedAt: 0 });
+    patch(s, a, { version: 2005, updatedAt: 0, channel: "edge" });
     patch(s, b, { version: 2020, updatedAt: s.hour });
     const rows = monitoring(s);
     expect(rows.map((r) => r.cluster.id)).toEqual([a, b]);
@@ -169,7 +170,7 @@ describe("updating software", () => {
   it("takes the sites of a panel host down for 30 minutes", () => {
     const s = start(), a = host(s);
     s.hour = year(2010);
-    patch(s, a, { version: 2009, updatedAt: 0 });
+    patch(s, a, { version: 2009, updatedAt: 0, channel: "edge" });
     ok(updateSoftware(s, a));
     const w = s.workloads.find((x) => x.serviceId)!;
     expect(w.busyUntil).toBe(s.hour + 0.5);
@@ -182,7 +183,8 @@ describe("updating software", () => {
       const id = hypervisor(s, nodes === 2 ? ["dev3", second(s)] : ["dev3"], "Web 1", platform);
       const cus = addCustomer(s, "Ada Lang", "hobbyDev");
       ok(provisionService(s, cus, "vps", { label: "box", spec: sizeSpec("vps", 0, 2005), clusterId: id }));
-      patch(s, id, { version: 2004 });
+      patch(s, id, { version: 2004, channel: "edge" });
+      while (updateBreaks(s, cluster(s, id))) s.hour++;
       const before = s.hour;
       ok(updateSoftware(s, id));
       const w = s.workloads.find((x) => x.serviceId)!;
@@ -194,7 +196,7 @@ describe("updating software", () => {
   it("takes the mail host through the same update without customers", () => {
     const s = withCompany(start());
     ok(installSoftware(s, bootedMachine(s, "dev3"), "postfixit"));
-    s.clusters = s.clusters.map((c) => ({ ...c, switching: null, panel: "postfixit", version: 2004 }));
+    s.clusters = s.clusters.map((c) => ({ ...c, switching: null, panel: "postfixit", version: 2004, channel: "edge" }));
     ok(updateSoftware(s, s.clusters[0].id));
     expect(s.clusters[0].version).toBe(2005);
   });
@@ -294,7 +296,7 @@ describe("technicians", () => {
     expect(err(queueOperation(s, "update", "dev3", id))).toBe("error.noTechnician");
     technician(s);
     expect(err(queueOperation(s, "update", "dev3", id))).toBe("error.upToDate");
-    patch(s, id, { version: 2004 });
+    patch(s, id, { version: 2004, channel: "edge" });
     expect(err(queueOperation(s, "update", "dev4", id))).toBe("error.unknownCluster");
     ok(queueOperation(s, "update", "dev3", id));
     expect(err(queueOperation(s, "update", "dev3", id))).toBe("error.alreadyQueued");

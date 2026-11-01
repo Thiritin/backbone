@@ -1,0 +1,234 @@
+# Plan: billing by hand
+
+Lane ids: `books`, `walk`, `bank`, `order-steps`, `vendor-sites`, `registrar-form`, `shop-link`, `payment-methods`, `registrar-panel`, `teardown`. Mockup: `docs/design/mockups/bookkeeping.html`. Related design: `docs/design/gdd.md` (Custom orders, the five order steps), `docs/design/economy.md` (Billing and payment habits), `docs/design/shop.md` (shop systems, modules, variants), `docs/design/plans/shop-portal.md`.
+
+## 1. Decisions
+
+- The game starts with every billing step done by hand in one bookkeeping program, Lexwear Office (pun on Lexware), bought from the Pear Store as the app "Books". Lexware, WISO Mein Büro and Sage sold exactly this to one-person firms in 2005: customer master data, quotes, invoices, open items, bank matching, dunning levels.
+- Invoices go out as PDF by email. No paper, no postage.
+- Customers have a postal address. It arrives in the order email, is entered once by click-to-fill, and is printed on quotes, invoices and used as domain owner data.
+- Quotes exist. A quote is a document in Books, A4, with the default price prefilled. Without the Helpdesk link module the player drags it from Books onto the order ticket; with the module the ticket has a Create quote button and acceptance converts the quote to the first invoice on its own.
+- Payments arrive as bank transfers in Books. The player matches each transfer to its invoice. Odd amounts and missing references are the player's judgement.
+- Domains are registered on the registrar's site in the Browser, a form with owner data filled by click from the customer record. A shop system with a registrar module does this itself.
+- Automation has two routes. The shop system takes the whole intake (customer, first invoice, domain, placement) for orders through the shop, and email orders can be switched off later, as designed. The back office (monthly run, bank matching, reminders) is automated by Lexwear modules or by a hired bookkeeper, and realistically both.
+- Modules are bought on the vendor's own site in the Browser, with a licence key by email that the player pastes into the app. The Pear Store sells apps only.
+- The shop and Books are separate systems until the Shop link module is bought. Before it, shop customers and invoices reach Books only through an Import button, and gateway payouts land as one bundled transfer.
+- Payment methods are shop modules with a year, a fee, a profile preference and a side effect: PayPal disputes, card chargebacks and fraud, paysafecard churn, crypto abuse.
+- The first hour shrinks: fewer apps in the dock, each app arrives when its problem does.
+- The registrar partner's site has a reseller login, reached from the first registration's confirmation email. Its domain list shows every domain the player holds there with owner, expiry and renewal status; per domain the player can generate an auth code to transfer it out, or cancel it so it lapses at expiry. The partner bills each renewal to the player whether or not the customer still pays.
+- Nothing is terminated on its own while billing is by hand. A customer who cancels or is written off stops being invoiced, but their services keep running on the server, their domains keep renewing and both keep costing until the player terminates them. A suspended customer stays suspended until paid or terminated.
+- Termination is automated by a shop system's automation settings (auto-suspend after a number of days overdue, auto-terminate after a number of days suspended or at the end of a cancelled term, cancel or release each domain) for customers the shop knows, and by the bookkeeper staff role for every customer, at the bookkeeper's rate.
+
+## 2. Lanes and order
+
+| Lane | Scope | Depends on |
+| --- | --- | --- |
+| `books` | The Books app: Customers with addresses, Invoices as drafts with A4 preview and manual Send, Bank with transfers and manual matching, Reminders moved from Billing; Billing app removed | none |
+| `walk` | Starter dock trimmed, trigger-based app unlocks, Getting started extended | none |
+| `bank` | Banks to choose from, the bank's website with PIN and TAN, payables paid by hand, credit card and overdraft, mandates and standing orders, HBCI | `books` for payables and the statement, earlier milestones none |
+| `order-steps` | Address on order emails and customers, order ticket steps 2 and 3 move into Books, quotes with drag onto the ticket, Helpdesk link module | `books` |
+| `vendor-sites` | Vendor pages in the Browser, licence key email and Register dialog, Lexwear modules (Monthly run, Match by reference, Automatic reminders, Helpdesk link), bookkeeper staff role | `books` |
+| `registrar-form` | Register and Transfer domain as a Browser form on the registrar's site, click-fill from the customer record; shop registrar module skips it | `order-steps` |
+| `shop-link` | Source and synced flags, Import from shop, Shop link module, bundled gateway payouts | `books`, `vendor-sites`, shop systems in code |
+| `payment-methods` | Method catalog, profile preference, lost sales by method, fees, chargebacks and returns as negative transfers, crypto abuse | `shop-link` |
+| `registrar-panel` | Reseller login on the registrar's site, domain list, auth code for transfer out, cancel at expiry, yearly renewals charged to the player, transfer-out requests from customers | `registrar-form` |
+| `teardown` | Cancelled and written-off customers keep their services until terminated, Terminate in Books, suspended stays suspended, shop automation settings, bookkeeper terminates | `books`, `registrar-panel`, `vendor-sites` |
+
+Build `books` and `walk` first, in parallel, with `bank` starting on its first three milestones at the same time. Then `order-steps` and `vendor-sites` in parallel. Then `registrar-form` and `shop-link`. Then `registrar-panel` and `payment-methods`. Then `teardown`.
+
+## 3. Lane `books`
+
+App id `Books`, shown as "Lexwear Office" in the window title and "Books" in the dock. Topic file `src/i18n/ui-books.ts` with mirrors in every `src/i18n/<lang>/`. Window 900 by 560, four toolbar tabs with a count badge each: Customers, Invoices, Bank, Reminders.
+
+Milestones:
+
+1. **Addresses.** `Customer` gets `address: { contact: string; company?: string; street: string; zip: string; city: string; email: string }`. `newGame` and `deserialize` fill it for old saves from a per-country generator in `src/sim/30-customers/addresses.ts` (street, postcode and city lists per country of the profile, contact from the existing name). Shown on the customer page and the invoice.
+2. **Drafts.** `billingTick` issues each month's invoices with the new status `draft` instead of `open`. A draft has no `dueAt` and no `payStep` roll. The new action `sendInvoice(s, invoiceId)` in `src/sim/90-actions/billing.ts` sets `issuedAt` to now, `dueAt` to now plus 14 days, rolls `payStep` and emails the PDF. Old saves keep their open invoices as they are. A draft left unsent costs nothing but the money never comes.
+3. **Transfers.** New state `s.transfers: Transfer[]` with `{ id, hour, from, reference, amount, invoiceId: string | null, matchedAt: number | null }`. When an invoice's `payAt` arrives, the tick appends a transfer instead of marking the invoice paid. Reference is `Rechnung <number>` for most, bare words like `Hosting` or the customer's name for a share by profile (private and gamer more often), and the amount is short by a few cents or a round number for a small share of low-budget payers. Action `matchTransfer(s, transferId, invoiceId)`: equal amounts mark the invoice paid; a smaller amount books a partial payment and leaves the rest open; a larger amount books the invoice paid and the rest as customer credit. A reminder sent on an invoice whose matching transfer sits unmatched for the same customer opens a short billing ticket ("already paid on <date>") and costs 5 happiness.
+4. **App.** Books app in `src/ui/apps/books/` with the four tabs as in the mockup. Invoices shows a table and an A4 preview (210 by 297 scaled to the pane) with company header, address block, lines, total and due date; Send as PDF on drafts. Bank shows transfers left and open invoices right, a click on each matches, with the differing-amount sheet. Reminders is the existing Billing flow moved here (steps, suspend, write off). Customers lists every customer with address and services.
+5. **Billing app removed.** Remove `Billing` from `STARTER_APPS` and from the dock on load, add `Books` in its place; saves with Billing in their dock or windows get Books. Finance keeps the statement.
+6. **Tests.** `tests/books.test.ts`: drafts are issued and unsent drafts never pay; `sendInvoice` sets due and rolls the step; a transfer appears at `payAt` and matching pays; partial and overpaid matching; reminder on an unmatched paid invoice opens the ticket; old save with open invoices and no transfers loads and pays as before. `tests/i18n.test.ts` passes.
+
+## 4. Lane `walk`
+
+1. `STARTER_APPS` shrinks to Applications, Locations, Shop, Browser, Terminal, Support, Books, Settings. The trade office registration installs these.
+2. New `s.unlocks: string[]` of app ids installed by trigger, checked daily in `src/sim/80-business/office.ts` or a new `walk.ts`: Finance at the first month end, Customers at five customers, Research when the Shop lists a locked item, Marketing when a server has free room for seven days with no order, Market at the first lost sale, Staff when open tickets pass ten or a draft invoice is a week old, Security at the first abuse report, Bank when cash is below two months of costs. Each unlock sends a Pear email and a News line and adds the app to the dock. Old saves with these apps installed keep them.
+3. The Getting started document gains one step per unlock, shown only once the app exists.
+4. `tests/walk.test.ts`: each trigger installs its app once; a save with everything installed changes nothing.
+
+## 5. Lane `order-steps`
+
+1. Order emails carry the address block (orders.ts). Customers created from them get it.
+2. Step 2 "Create customer" opens Books at New customer with the email pinned: a click on a line fills the focused field, a postcode line fills postcode and city. Save creates the customer with no service and the ticket ticks the step. No `createAccount` without an address.
+3. Quotes: `s.quotes: Quote[]` with `{ id, number, customerId, ticketId: string | null, lines, monthly, setup, status: draft | sent | accepted | countered | declined, sentAt }`. Customers tab has Create quote, lines and prices prefilled from the request and the player's Products rates. A4 preview like the invoice. The quote row is draggable (HTML5 drag) and the order ticket's attachment strip is the drop target; the drop calls `quoteOrder` with the quote's numbers. The customer answers as today; the answer updates the quote's status. Convert to invoice on an accepted quote creates the first invoice draft (setup, first month, domain fee); step 3 of the ticket is that draft being sent.
+4. Helpdesk link module (owned flag in `s.modules`, sold by lane `vendor-sites`): Create quote button on the ticket that opens Books with the quote ready, Send attaches it, acceptance converts and sends the first invoice itself.
+5. `tests/order-steps.test.ts`: order email carries an address; customer created with it; a quote dropped on the ticket quotes it; acceptance and convert produce the first invoice; with the module the whole chain runs from one Send.
+
+## 6. Lane `vendor-sites`
+
+1. `src/sim/10-catalog/modules.ts`: one list of modules with vendor, price, year and effect id: Lexwear Helpdesk link, Monthly run, Match by reference, Automatic reminders; shop vendors get Shop link and payment methods later. `s.modules: string[]` owned.
+2. Browser pages per vendor in `src/sim/80-business/browser.ts` and `src/ui/apps/browser/sites/`: Lexwear's site lists modules with Buy. Buying debits the price and emails a licence key a minute later. The Register dialog in Books takes the key and turns the module on. Greyed buttons in Books open the vendor page. One newsletter email per module when its trigger count is reached (three domains by hand, ten matches, ten customers, first suspension).
+3. Module effects: Monthly run sends every draft on the first of the month; Match by reference books transfers whose reference names an invoice and whose amount is exact, the rest stay; Automatic reminders send each step on its day.
+4. Bookkeeper role in Staff: salary by year, works through drafts, matches (including odd amounts) and reminders at a rate per hour, scales with a second hire.
+5. `tests/vendor-sites.test.ts`: buy sends a key, the key activates, each effect does its chore, a bookkeeper clears the queues.
+
+## 7. Lane `registrar-form`
+
+1. Step 4 opens the registrar partner's site in the Browser with a form: domain, owner block (click-fill from the customer record), nameservers prefilled with the player's two, auth code for a transfer (carried in the order email). Submit books the registry cost and the registry answers two minutes later as today.
+2. A shop system whose variant includes the registrar module registers without the form for shop orders; Place orders automatically covers email orders as designed.
+3. `tests/registrar-form.test.ts`: the form registers and transfers; the shop with the module skips it.
+
+## 8. Lane `shop-link`
+
+1. `Customer.source` and `Invoice.source` (`manual | shop`) and `synced: boolean`. Books shows synced records only; the shop admin lists its own. Shop-created records start unsynced.
+2. Import from shop in Books flips every unsynced record. Without it, transfers from shop customers cannot be matched and reminders never fire for them.
+3. Shop link module on the shop vendor's site syncs at creation and marks shop invoices paid when Books matches them.
+4. Gateway payouts arrive as one transfer per week per gateway listing the invoices it covers; Import or Shop link resolves it into its invoices.
+5. `tests/shop-link.test.ts`.
+
+## 9. Lane `payment-methods`
+
+Methods in `src/sim/10-catalog/payments.ts`, each a shop module with year, fee and effect: bank transfer (2005, none), direct debit (2005, returns with fee), PayPlus (2005, instant, disputes), card (2006, chargebacks, fraud orders), paysafecard (2007, prepaid, no dunning, churn), Instantly (2008, instant, clean reference), crypto (2012, prepaid, abuse). Each profile has a preference; a lead whose method is missing converts less or not at all, shown as a lost sale reason in Market. Prepaid methods skip dunning. Chargebacks and returns are negative transfers the player matches, reopening the invoice. Crypto share raises the abuse ticket rate. Economy numbers go into `docs/design/economy.md` under a new "Payment methods" heading when the lane starts. `tests/payment-methods.test.ts`.
+
+## 9b. Lane `bank`
+
+Money leaves by hand too. Supplier invoices are payables the player pays on the bank's website, and every chore has an automation that history offered.
+
+Banks are a catalog in `src/sim/10-catalog/banks.ts`, each a row of numbers and a site skin:
+
+| Bank (pun on) | From | Account a month (sole / partnership / limited) | Transfer | TAN | Card a year | Overdraft | Loans | Character |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Sparklasse (Sparkasse) | 2005 | 8 / 12 / 16 + 0.30 a booking | next day | iTAN list, mTAN 2009, pushTAN 2014 | 30, easy | 11% | big, slow | local, orange, branch look |
+| Folksbank (Volksbank) | 2005 | 6 / 9 / 12 + 0.25 a booking | next day | iTAN, card reader 2007 | 25 | 10% | fair, likes small firms | blue and orange frames |
+| Deutsche Bunk (Deutsche Bank) | 2005 | 12 / 18 / 24 + 0.15 a booking | same day | iTAN, photoTAN 2012 | 60, higher limit | 13% | large sums only | corporate |
+| Postbanq (Postbank) | 2005 | 4 / 6 / 8 + 0.40 a booking | next day | iTAN, mTAN 2008 | 20 | 12% | small, quick | yellow, cheap |
+| Ding-DiBa (direct banks) | 2005 | 0 / 5 / none | next day | iTAN, mTAN | 0 first year | 9% | none | web only, HBCI from day one |
+| Fidorr (Fidor) | 2009 | 0 / 6 / 12 | instant | mTAN | 0 | 14% | small | startup crowd, API 2013 |
+| Quonto (Qonto, Holvi) | 2016 | 9 / 15 / 25 | instant | app | included, virtual cards | none | none | fintech, API, no HBCI |
+
+A limited company (GmbH) must keep a business account, and business accounts cost more than a sole trader's, so the account fee a month depends on the legal form. Branch banks charge a limited company about twice the sole trader's fee and add a fee for every booking on a partnership's or limited company's account; the fintechs sell flat plans, the limited one at two to three times the sole trader's. A partnership pays between the two. Each month start books the fee for the month and, at a branch bank, one line for the bookings of the month before: every ledger line of that month except the bank's own fees. Ding-DiBa, like the direct banks that long opened no GmbH accounts, opens none for a limited company: the registration refuses that pair, and the trade office form greys Ding-DiBa out while the limited form is chosen. The legal form is fixed once registered, so an open account never needs to move.
+
+Milestones:
+
+1. **Catalog and account.** `banks.ts` with the table. `s.bank: { id, number, opened, tan: "itan" | "mtan" | "push" | "app", card: Card | null, overdraft: number, mandates: string[], standingOrders: StandingOrder[] }`. Cash stays `s.cash`, the one account's balance. Old saves get Sparklasse. The account fee is a monthly cost line.
+2. **Choice.** The trade office registration asks for the bank (the walk lane edits `office.ts` for the dock only; add the bank step beside it). Banks available by year only.
+3. **Bank site.** A page per bank in the Browser from one shared frame that swaps colours, logo and TAN flow: login with account number and PIN, statement from the ledger, transfer form (account number and bank code until 2008, IBAN after), standing orders, cards, overdraft, loans (the loan offers move here from Finance, Finance keeps the list of running loans). iTAN: a transfer asks for TAN number n, the TAN list is a document on the desktop next to Getting started, the player types it. mTAN: the code arrives as an email a minute later. pushTAN and app: a confirm click.
+4. **Payables.** Supplier invoices arrive by email and land in Books under a Payables tab: `s.payables: Payable[]` with `{ id, supplier, number, amount, issuedAt, dueAt, paidAt, consequence }`. Pay opens the bank's transfer form prefilled, TAN still needed. Consequences past due: the upstream line throttles after 7 days and cuts after 14, power cuts after 30, a licence expires, a domain lapses, an unpaid hardware shop does not ship the next order. Costs the tick deducts today move to payables one supplier at a time: upstream, electricity, rent, registrar, Pear subscriptions, hardware orders. Old saves keep the direct deduction for a supplier until its first new invoice. Needs the `books` lane merged; merge main before this milestone.
+5. **Card and overdraft.** Apply on the bank site, approved after a few days, limit from account history, yearly fee. Hardware shop checkout gets a payment choice: prepay by transfer (ships when the money arrives, one to two days), invoice after three paid orders, card ships now. SuperMacro and other foreign vendors take card only. The card bill is a monthly payable. Overdraft up to the bank's limit at its rate.
+6. **Automation.** A direct debit mandate per supplier, set up once on the supplier's site, after which that supplier debits itself. Standing orders on the bank site. HBCI module (sold by `vendor-sites` on Lexwear's site, effect built here): Books pulls the statement, pays every due payable with one click, later automatically. Fintech API from 2013 is the same effect without the module.
+7. **Switching banks**, last and optional: a second account, customers keep paying to the old one until told, both statements in Books, the old account closes when empty for a month.
+8. `tests/bank.test.ts`: fee charged, TAN flow accepts the right TAN and refuses a wrong one, a payable paid on time and one past due with its consequence, card approval and prepay shipping delay, mandate stops the manual payable, HBCI pays all due, old save loads with Sparklasse and keeps paying.
+
+## 9c. Lane `books-vendors`
+
+The bookkeeping program is a choice, like the bank and the shop. The Pear Store gets a Bookkeeping category; installing one of its programs installs the Books app in that vendor's skin and with that vendor's module list and prices. Books leaves the starter set. Getting started gains the step "Install a bookkeeping program" before the first customer step. Old saves keep Lexwear.
+
+| Vendor (pun on) | From | Licence | Modules | Character |
+| --- | --- | --- | --- | --- |
+| Lexwear Office (Lexware) | 2005 | 249 once, paid yearly updates 99 | all five at the plan's prices | market leader, grey Windows look |
+| WIZO Mein Büro (WISO Mein Büro) | 2005 | 149 once | Automatic reminders included, Monthly run 79, Match by reference 129, Helpdesk link 149, HBCI 49 | cheaper, friendlier, blue |
+| Saga Office Line (Sage) | 2005 | 599 once | all included except Helpdesk link 199 | business tier, higher support, slow start |
+| orgaMIN (orgaMAX) | 2005 | 199 once | Monthly run included, others 99 each | small-firm favourite, orange |
+| Collmix (Collmex) | 2005 | 0 once, 15 a month | HBCI and Match by reference included, no Helpdesk link ever | web based, runs in the Browser look inside the app frame |
+| sevDeck (sevDesk) | 2013 | 0 once, 19 a month | everything included, bank sync built in | fintech era, no licence keys, instant |
+| lexoffize (lexoffice) | 2014 | 0 once, 12 a month | everything included | Lexwear's cloud sibling |
+
+Switching programs keeps every customer, invoice, quote and transfer, since the data is the state, and drops the old program's modules. The new program's monthly fee is a payable like the others. Each vendor has a site in the Browser selling its modules on the Lexwear pattern.
+
+Milestones: catalog in `src/sim/10-catalog/bookkeeping.ts`; `s.books.vendor` with Lexwear as the default for old saves; Pear Store category and install; Books skin per vendor (colours, name in the title, module list); module prices read from the vendor; vendor sites; Getting started step; `tests/books-vendors.test.ts`.
+
+## 9d. Lane `books-editions`
+
+Decisions from the user:
+
+- The Finance app goes. The statement already lives in Books. Overview (cash, monthly recurring revenue, last month's profit, runway) becomes the first page of Books. Profit and loss, cash flow and the customer and revenue statistics become a Statistics section in Books. Tax moves to Books. Running loans and loan offers live on the bank's site. Finance leaves the Pear Store, the dock, the walk triggers and old saves, which open Books instead.
+- Insurance goes entirely: hardware insurance, the policy state, premiums, claims, the actions, the tests, the keys and the design text.
+- Bookkeeping features are not modules. Each vendor sells editions, and the edition decides which features the program has. The Lexwear module catalog, the licence key flow and the Register dialog are removed; the per-vendor sites sell editions and upgrades. Shop-side modules (Shop link, payment methods) stay modules, since the shop vendor sells them.
+- Each vendor has its own layout, not only colours.
+
+Features by edition, three tiers for every vendor where the vendor has three, named as the vendor named them:
+
+| Feature | Small | Medium | Large |
+| --- | --- | --- | --- |
+| Customers, quotes, invoices, bank statement, manual matching, reminders by hand, payables, overview page | yes | yes | yes |
+| Monthly run, match by reference, HBCI (pay all, statement pull), tax view | | yes | yes |
+| Profit and loss, cash flow chart | | yes | yes |
+| Automatic reminders, Helpdesk link, Statistics (customers, churn, revenue trend, lost sales) | | | yes |
+
+| Vendor | Small | Medium | Large | Notes |
+| --- | --- | --- | --- | --- |
+| Lexwear | buchhalter 249 | financial office 499 | financial office pro 899 | yearly update 99, 149, 199; upgrade pays the difference |
+| WIZO Mein Büro | S 149 | M 249 | L 399 | no yearly fee |
+| Saga Office Line | | Office Line 599 | Office Line Plus 999 | no small edition |
+| orgaMIN | Standard 199 | Professional 349 | Enterprise 549 | |
+| Collmix | basic 15 a month | plus 29 a month | | HBCI already in basic; no Helpdesk link ever |
+| sevDeck (2013) | Rechnung 9 a month | Buchhaltung 19 a month | Warenwirtschaft 39 a month | bank sync in every edition |
+| lexoffize (2014) | S 7 a month | M 12 a month | L 19 a month | |
+| GnuCache (GnuCash) | free | | | desktop, single user, HBCI included, P&L and cash flow reports, no quotes, no monthly run, no matching by reference, no automatic reminders, no statistics; GTK grey look |
+
+Deployment and seats:
+
+- Desktop programs (Lexwear, WIZO, Saga, orgaMIN, GnuCache) run on the player's PC and keep working when the internet line is down. Browser programs (Collmix, sevDeck, lexoffize) run inside the Browser look and are unusable while the line is down or throttled, so an unpaid line bill locks the books.
+- Licences are single user or multi user. A single-user licence means only the player works in the program: a hired bookkeeper cannot work until a multi-user licence or seats exist. Desktop vendors sell a network version as the multi-user step (Lexwear financial office pro and Saga Office Line Plus include it, WIZO L and orgaMIN Enterprise sell seats at a price each, GnuCache stays single user). Browser programs count seats per plan: Collmix plus 3 users, sevDeck and lexoffize one included and a monthly fee per further user. Each bookkeeper occupies one seat.
+- GnuCache has no Quotes view, so with it the order ticket keeps its plain Quote step where the player types the price without a document.
+
+Layouts, one per vendor: Lexwear a grey Windows 2000 program with a tree on the left and a toolbar of small icons; WIZO a blue program with a row of large icons on top; Saga a dense grey enterprise screen with menus; orgaMIN orange with top tabs; Collmix a web page inside the window with an address bar, blue links and plain tables; sevDeck flat cards with a teal sidebar; lexoffize flat and light with a green sidebar; GnuCache a GTK2 grey window with an account tree and a register table. Document views keep the 2005 toolbar from the quote work. Edition-locked features show as disabled entries that open the vendor's site at the upgrade page.
+
+Milestones: editions in the catalog and `s.books.edition` with deployment and seats; GnuCache as the free vendor; features read from the edition everywhere a module flag was read; remove the Lexwear modules, keys and Register; vendor sites sell editions and upgrades; Overview, Statistics and Tax in Books; remove Finance; remove insurance; layouts per vendor; old saves: Finance installed becomes Books, Lexwear with modules owned becomes the smallest edition that covers them; `tests/books-editions.test.ts` and the finance and insurance tests removed or moved.
+
+## 9e. Lane `data-flow`
+
+Decisions from the user:
+
+- A bookkeeping program is optional. A shop system that keeps customers, invoices and payments is enough to run the business; the player may uninstall the bookkeeping program and work from the shop alone once email orders are off. Only what a program provides exists on screen: with no bookkeeping program there is no Books window, the statement is read on the bank's site, payables are paid there from the emailed invoice, and the order ticket keeps its plain Quote step.
+- Programs declare capabilities: customers, quotes, invoices, payments, payables, statement, reminders, statistics, tax. A shop system has customers, invoices, payments and reminders for its own orders. Bookkeeping programs have everything their edition allows, and tax is theirs alone.
+- Two linked programs show the same data. Shop link stays the integration: with it, the shop and the bookkeeping program are two views of one record set. Without it the data has to travel as files.
+- Files. Programs export and import. An export lands as a file in the desktop's Documents (next to the TAN list and Getting started), with a name like `shop-export-2005-10.csv` or `statement-2005-10.csv`; an import dialog lists the files of the right kind, and importing one moves the records over. Formats are named by era: CSV in 2005, DATEV export from 2007 for the tax side, MT940 for bank statements.
+  - Shop to bookkeeping: the shop's admin has Export customers and invoices; the bookkeeping program's Import takes the file. This replaces the one-click Import from shop button, which only Shop link now makes unnecessary.
+  - Bank to bookkeeping: transfers live at the bank. A bookkeeping program without HBCI sees them only after the player downloads the statement on the bank's site and imports the file in Books; HBCI pulls it itself. The Bank tab is empty until the first import, which is the point of HBCI.
+  - Every edition can import and export; the file step is the small edition's chore and HBCI and Shop link are what the bigger ones remove.
+- Tax returns are the bookkeeping program's own job. Once a year the tax office (pun site) sends the letter; Books has Submit tax return, which needs every invoice of the year present in Books (imported or synced) and a matched statement, and files it on the tax office site. The shop never files taxes. A player without a bookkeeping program has to install one at tax time, GnuCache is free, or hire a tax advisor (lane 9f). Missing the deadline costs a late fee and a second letter, then an estimate that is always higher than the real tax.
+
+Milestones: capability table on the program catalogs; Books window absent without a program and the ticket's plain quote step with it; Documents as a file list with kinds; shop export and Books import of customers and invoices; bank statement download and import, HBCI pulls on its own; Import from shop button removed; tax office site and Submit tax return with the completeness check; late fee and estimate; old saves: records present count as imported; `tests/data-flow.test.ts`.
+
+## 9f. Lane `tax-advisors` (handoff, not built yet)
+
+A tax advisor is a firm (pun on DATEV members and the big names) hired on their site. They file the tax return, the yearly accounts and the advance VAT returns, and answer the tax office's letters, so the player never sees a tax step again. They are expensive: a monthly retainer by company size plus a fee per filing, several times what a bookkeeping program costs, worth it for a large company. They work from what they are given: with DATEV export the player or a bookkeeper exports once a month and uploads it on the advisor's portal, with a bookkeeping program's DATEV link (bigger editions, 2007 on) it flows itself. They do not chase invoices, match transfers, send reminders or pay payables, so bookkeepers stay needed. Mistakes in the delivered data (unmatched transfers, missing invoices) come back as a query letter with a fee per hour of their time. The design and numbers go into economy.md when the lane starts.
+
+## 9g. Lane `registrar-panel`
+
+1. The registrar partner's site gains a Login page, unlocked by the first registration and announced by its confirmation email. Domains lists every `Domain` the player registered or transferred in: name, owner, expiry, renewal on or off, status (active, transfer pending, cancelled, gone).
+2. Renewals: each domain renews at the partner a year after registration and books the registry cost to the player, independent of the customer's invoices. A cancelled domain does not renew and is gone at expiry.
+3. Transfer out: a leaving customer may open a "transfer my domain" ticket. Generate auth code in the panel shows the code; the player pastes it into the reply. The domain leaves the list two days later and stops renewing. A ticket left unanswered for three days costs happiness like any ticket, and a refusal costs more and can end in a complaint.
+4. Moving domains to another registrar (a cheaper partner, later the player's own accreditation) is a transfer per domain: the new registrar books one year on arrival, so each moved domain is paid a year early and its expiry no longer lines up with the customer's billing term.
+5. `tests/registrar-panel.test.ts`: renewals charge the player after the customer left; a cancelled domain lapses at expiry; the auth code ticket resolves and the domain leaves; a moved domain books a year and shifts its expiry.
+
+## 9h. Lane `teardown`
+
+1. A cancellation or write-off sets `churnedAt` and stops invoicing as today, but the customer's services stay on the server and keep their slot, power and licence costs, and their domains keep renewing. Services gain the status `orphaned`, shown in Books, Customers and the server's service list.
+2. Terminate in Books on the customer page: one action `terminateCustomer(s, customerId)` in `src/sim/90-actions/customers.ts` removes every service, frees the slots and cancels each domain at the partner. Terminating a domain is a separate click in the registrar panel until the shop or bookkeeper does both.
+3. A suspended customer stays suspended. Today's churn after `SUSPEND_CHURN_DAYS` writes the invoice off but leaves the services suspended until terminated.
+4. Orphaned services that run for 30 days raise the abuse report rate for their server, since nobody patches an abandoned site.
+5. Shop automation settings: auto-suspend after N days overdue, auto-terminate after N days suspended, terminate at the end of a cancelled term, domain on termination cancel or release. They act only on customers the shop knows (lane `shop-link`).
+6. The bookkeeper role terminates orphaned and long-suspended customers at a rate per hour, for every customer, with the same settings as the shop.
+7. `tests/teardown.test.ts`: a cancelled customer's services keep running and costing; terminate frees the slot and cancels the domain; a suspended customer stays suspended after churn; shop settings and the bookkeeper each terminate on their day; an old save loads with every churned customer's services already gone.
+
+## 10. Shared files
+
+| File | Lanes | Rule |
+| --- | --- | --- |
+| `src/sim/50-state.ts` and `newGame` | books (`transfers`), order-steps (`quotes`), vendor-sites (`modules`), walk (`unlocks`) | One field per lane on its own line, default in `newGame`, filled in `deserialize` |
+| `src/sim/88-tick/tick.ts` | books, vendor-sites, walk, bank | One call per lane on its own line |
+| `src/sim/10-catalog/store.ts` (`STARTER_APPS`) | books, walk, books-vendors | books swaps Billing for Books; walk trims the list; books-vendors removes Books from it |
+| `src/sim/90-actions/orders.ts` | order-steps, registrar-form | order-steps lands first |
+| `src/sim/80-business/browser.ts` | bank, vendor-sites, registrar-form, registrar-panel | bank adds the shared site frame first, the others reuse it |
+| `src/sim/80-business/office.ts` | walk, bank | walk edits the dock list, bank adds the bank choice |
+| `src/sim/45-billing/billing.ts` | books, teardown | books lands first |
+| `src/sim/47-staff/staff.ts` | vendor-sites, teardown | vendor-sites adds the bookkeeper first |
+
+## 11. Open questions, with recommendations
+
+1. Does the existing Customers app fold into Books? Recommendation: not yet. Books holds master data and money, Customers keeps happiness, contracts and the activity log. Fold later if players look for addresses in the wrong place.
+2. Does a reminder on an invoice with an unmatched payment cost happiness? Recommendation: yes, 5, plus the ticket. It is the reason to match.
+3. Do email orders without an address exist? Recommendation: not in the first lanes. Add a missing-postcode share with a reply round trip once the base flow plays well.
+4. Is the Books app free or a Pear Store subscription? Recommendation: free starter app. The money goes to Lexwear modules.

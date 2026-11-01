@@ -167,6 +167,7 @@ export default {
   "locations-2.kind.console": () => "Konsolenserver",
   "locations-2.kind.oob": () => "OOB-Switch",
   "locations-2.kind.chassis": () => "Gehäuse",
+  "locations-2.kind.jack": () => "Anschlussdose",
   "locations-2.moveMenu": () => "Verschieben…",
   "locations-2.moveServersMenu": () => "Server verschieben…",
   "locations-2.sellMenu": () => "Verkaufen…",

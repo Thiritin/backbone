@@ -1,9 +1,13 @@
 .sup { position: relative; flex: 1; min-width: 0; display: grid; grid-template-columns: 210px 340px minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
-.sup-brand { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 0.5px solid var(--line); background: var(--brand-bg, var(--win-side)); color: var(--brand-ink, var(--text)); }
+.sup-brand { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: var(--ar-bw) solid var(--line); background: var(--brand-bg, var(--win-side)); color: var(--brand-ink, var(--text)); }
 .sup-brand strong { font-size: 14px; font-weight: 650; }
-.sup-logo { width: 28px; height: 28px; border-radius: 7px; display: grid; place-items: center; flex: none; background: var(--tile); box-shadow: inset 0 0 0 0.5px oklch(0 0 0 / 0.12); }
+.sup-logo { width: 28px; height: 28px; border-radius: calc(var(--ar-pane) - 1px); display: grid; place-items: center; flex: none; background: var(--tile); box-shadow: inset 0 0 0 0.5px oklch(0 0 0 / 0.12); }
 .sup-logo svg.lucide { width: 20px; height: 20px; }
 .sup-settings { flex: none; margin-left: auto; }
+.sup-settings-2 { margin-left: 0; }
+.sup-compose { display: flex; flex-direction: column; gap: 10px; }
+.sup-compose label { display: grid; grid-template-columns: 90px 1fr; align-items: center; gap: 8px; padding: 0 16px; }
+.sup-compose-act { display: flex; justify-content: flex-end; gap: 8px; padding: 0 16px; }
 .sup .sup-brand .btn.sup-settings { color: inherit; background: color-mix(in oklch, var(--brand-ink, var(--text)) 12%, transparent); border-color: color-mix(in oklch, var(--brand-ink, var(--text)) 22%, transparent); }
 .sup .sup-brand .btn.sup-settings:hover { background: color-mix(in oklch, var(--brand-ink, var(--text)) 20%, transparent); }
 .sup button.side-item, .sup button.tk { width: 100%; border: 0; background: none; font: inherit; color: inherit; text-align: left; }
@@ -12,7 +16,7 @@
 .sup-none { color: var(--text-3); padding: 24px 12px; text-align: center; }
 .sup-detail.sup-none { display: grid; place-items: center; }
 
-.sup-list { border-right: 0.5px solid var(--line); overflow: auto; padding: 8px; display: grid; gap: 2px; align-content: start; }
+.sup-list { border-right: var(--ar-bw) solid var(--line); overflow: auto; padding: 8px; display: grid; gap: 2px; align-content: start; }
 .sup-list-h { display: flex; align-items: center; gap: 8px; padding: 6px 6px 8px; }
 .sup-list-h h2 { font-size: 13px; font-weight: 650; }
 .sup-busy { margin-left: auto; color: var(--text-3); font-size: 12px; }
@@ -33,15 +37,15 @@
 .sup .type svg.lucide { width: 12px; height: 12px; }
 
 .sup-detail { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
-.sup .d-head { padding: 16px 20px 12px; border-bottom: 0.5px solid var(--line); display: grid; gap: 8px; }
+.sup .d-head { padding: 16px 20px 12px; border-bottom: var(--ar-bw) solid var(--line); display: grid; gap: 8px; }
 .sup .d-head .top { display: flex; align-items: center; gap: 10px; }
 .sup .d-head h2 { font-size: 17px; font-weight: 650; letter-spacing: -0.01em; }
 .sup .d-head .id { color: var(--text-3); }
 .sup .d-head .facts { display: flex; gap: 8px; align-items: center; color: var(--text-2); flex-wrap: wrap; }
 .sup .pill svg.lucide { width: 12px; height: 12px; }
 
-.sup .cust { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 16px; align-items: center; padding: 12px 20px; border-bottom: 0.5px solid var(--line); background: var(--win-side); }
-.sup .cust .logo, .cus .logo { width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; background: color-mix(in oklch, var(--text) 55%, var(--accent)); color: var(--win); font-weight: 700; font-size: 12.5px; flex: none; }
+.sup .cust { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 16px; align-items: center; padding: 12px 20px; border-bottom: var(--ar-bw) solid var(--line); background: var(--win-side); }
+.sup .cust .logo, .cus .logo { width: 34px; height: 34px; border-radius: var(--ar-pane); display: grid; place-items: center; background: color-mix(in oklch, var(--text) 55%, var(--accent)); color: var(--win); font-weight: 700; font-size: 12.5px; flex: none; }
 .sup .cust .name { font-weight: 600; }
 .sup .cust .sub { color: var(--text-2); font-size: 12px; }
 .happy { width: 150px; }
@@ -52,25 +56,25 @@
 .happy .bar i.warn { background: var(--warn); }
 .happy .bar i.bad { background: var(--bad); }
 
-.sup .thread { flex: 1; overflow: auto; padding: 16px 20px; display: grid; gap: 12px; align-content: start; }
+.sup .thread { flex: 1; overflow: auto; padding: 16px 20px; display: grid; grid-auto-rows: max-content; gap: 12px; align-content: start; }
 .sup .thread-pair { display: grid; gap: 12px; }
-.sup .msg { max-width: 560px; padding: 11px 14px; border-radius: 12px; background: var(--win-side); border: 0.5px solid var(--line); }
+.sup .msg { max-width: 560px; padding: 11px 14px; border-radius: 12px; background: var(--win-side); border: var(--ar-bw) solid var(--line); }
 .sup .msg.you { justify-self: end; background: var(--accent-soft); border-color: transparent; }
 .sup .msg .from { font-size: 12px; color: var(--text-3); margin-bottom: 4px; }
 .sup .msg p { line-height: 1.5; white-space: pre-line; }
 .sup .event { display: flex; align-items: center; gap: 8px; color: var(--text-3); font-size: 12px; }
 .sup .event::before, .sup .event::after { content: ""; height: 0.5px; flex: 1; background: var(--line); }
 
-.sup .compose { border-top: 0.5px solid var(--line); padding: 14px 20px 16px; display: grid; gap: 12px; }
+.sup .compose { border-top: var(--ar-bw) solid var(--line); padding: 14px 20px 16px; display: grid; gap: 12px; }
 .sup .compose h3 { font-size: 12px; font-weight: 600; color: var(--text-2); }
 .sup .templates { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.sup .tpl { display: grid; align-content: start; gap: 2px; text-align: left; font: inherit; color: inherit; padding: 10px 12px; border-radius: 9px; border: 0.5px solid var(--line-strong); background: var(--field); cursor: pointer; }
+.sup .tpl { display: grid; align-content: start; gap: 2px; text-align: left; font: inherit; color: inherit; padding: 10px 12px; border-radius: 9px; border: var(--ar-bw) solid var(--line-strong); background: var(--field); cursor: pointer; }
 .sup .tpl:hover { border-color: var(--accent); }
 .sup .tpl .t { font-weight: 600; }
 .sup .tpl .p { color: var(--text-2); font-size: 12px; }
 .sup .tpl:disabled { opacity: 0.6; cursor: default; }
 .sup .offers { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
-.sup .offer { display: grid; align-content: start; gap: 4px; padding: 10px 12px; border-radius: 9px; border: 0.5px solid var(--line-strong); background: var(--field); color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.sup .offer { display: grid; align-content: start; gap: 4px; padding: 10px 12px; border-radius: 9px; border: var(--ar-bw) solid var(--line-strong); background: var(--field); color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .sup .offer:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-soft); }
 .sup .offer:disabled { opacity: 0.6; cursor: default; }
 .sup .offer .t { font-weight: 600; }
@@ -87,3 +91,38 @@
 .sup .inc-facts dt { color: var(--text-3); }
 .sup .inc-facts .inc-customers { display: flex; flex-wrap: wrap; gap: 4px 12px; }
 .sup .cust .sup-url { display: block; border: 0; padding: 0; background: none; font: inherit; font-size: 12px; color: var(--accent); text-align: left; cursor: pointer; overflow-wrap: anywhere; }
+
+.sup:is([data-style="pear"], [data-mode="desk"]) .tk { border-radius: var(--ar-pane); }
+.sup:is([data-style="pear"], [data-mode="desk"]) :is(.tpl, .offer) { border-radius: calc(var(--ar-pane) + 1px); box-shadow: var(--ar-lift); }
+.sup:is([data-style="pear"], [data-mode="desk"]) .d-head { background-image: var(--ar-head); }
+.happy .bar { box-shadow: var(--ar-well); }
+.happy .bar i { background-image: var(--ar-bar); }
+
+/* Panthera: Pear Mail with a grey gradient list header, gel selection and capsule bars. */
+:root[data-os="aqua"] .sup[data-style="pear"] .sup-list-h,
+:root[data-os="leopard"] .sup[data-style="pear"] .sup-list-h { background-image: var(--ar-head); }
+:root[data-os="aqua"] .sup[data-style="pear"] .tk.active,
+:root[data-os="leopard"] .sup[data-style="pear"] .tk.active { background: var(--ar-sel); color: var(--ar-sel-ink); }
+:root[data-os="aqua"] .sup[data-style="pear"] .tk.active :is(.subj, .sla, .type),
+:root[data-os="leopard"] .sup[data-style="pear"] .tk.active :is(.subj, .sla, .type) { color: inherit; opacity: 0.85; }
+:root[data-os="aqua"] .sup[data-style="pear"] .tk.active .dot,
+:root[data-os="leopard"] .sup[data-style="pear"] .tk.active .dot { background: white; }
+:root[data-os="aqua"] .happy .bar,
+:root[data-os="aqua"] .happy .bar i,
+:root[data-os="leopard"] .happy .bar,
+:root[data-os="leopard"] .happy .bar i,
+:root[data-os="tahoe"] .happy .bar,
+:root[data-os="tahoe"] .happy .bar i { border-radius: 999px; }
+:root[data-os="aqua"] .happy .bar { height: 8px; }
+:root[data-os="aqua"] .sup[data-style="pear"] .sup-list { background: repeating-linear-gradient(var(--win) 0 2px, color-mix(in oklch, var(--win), var(--text) 3%) 2px 4px); }
+
+/* Yosemighty: Pear Mail with a flat blue selection and a frosted list header. */
+:root[data-os="yosemite"] .sup[data-style="pear"] .tk.active { background: var(--accent); color: var(--accent-ink); }
+:root[data-os="yosemite"] .sup[data-style="pear"] .tk.active :is(.subj, .sla, .type) { color: inherit; opacity: 0.85; }
+:root[data-os="yosemite"] .sup[data-style="pear"] .tk.active .dot { background: var(--accent-ink); }
+:root[data-os="yosemite"] .sup[data-style="pear"] .sup-list-h { background: color-mix(in oklch, var(--win-side), transparent 15%); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+
+/* Tahoo: Pear Mail rows are capsule-ish glass tiles under a floating header. */
+:root[data-os="tahoe"] .sup[data-style="pear"] .sup-list-h { border: var(--ar-bw) solid var(--line); border-radius: var(--ar-pane); box-shadow: var(--ar-lift); }
+:root[data-os="tahoe"] .sup[data-style="pear"] .tk.active { box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.5); }
+:root[data-os="tahoe"] .sup:is([data-style="pear"], [data-mode="desk"]) :is(.tpl, .offer) { background: color-mix(in oklch, var(--field), transparent 30%); }

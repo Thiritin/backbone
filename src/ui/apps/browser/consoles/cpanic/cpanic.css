@@ -49,3 +49,16 @@
 .cp-login[data-era="early"] .cp-logo { color: var(--accent); }
 .cp-login[data-era="late"] .cp-card { border: 0; }
 .cp-login[data-era="late"] .cp-logo { color: #ff6c2c; text-align: center; }
+
+.cp[data-era="early"] .cx-group { background: #f4f6f9; border-color: #b9c4d4; }
+.cp[data-era="early"] .cx-group legend { color: #1d3f6e; background: #d9e0ea; }
+.cp[data-era="late"] .cx-group { background: var(--panel); border-color: transparent; box-shadow: 0 1px 3px rgb(0 0 0 / 0.12); }
+.cp-customer { display: flex; flex: 1; min-height: 0; }
+.cp-stats { display: flex; flex-direction: column; gap: 10px; width: 210px; flex: none; padding: 14px; background: var(--menu); color: var(--menu-fg); }
+.cp-stats h2 { margin: 0; font-size: 13px; }
+.cp-stats div { display: flex; flex-direction: column; gap: 3px; font-size: 12px; }
+.cp-cust-main { flex: 1; min-width: 0; padding: 16px 20px; overflow: auto; display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+.cp-icons { display: flex; flex-wrap: wrap; gap: 8px; }
+.cp[data-era="late"] .cp-cust-main .cx-tile { flex-direction: row; justify-content: flex-start; width: 220px; padding: 10px 12px; text-align: left; }
+.cp[data-era="late"] .cp-cust-main .cx-tile svg { width: 22px; height: 22px; }
+.cp-cust-main .cx-table, .cp-cust-main .cx-readout { width: 100%; }

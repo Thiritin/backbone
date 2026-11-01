@@ -2,14 +2,16 @@ import { describe, expect, it } from "vitest";
 import { orderLead } from "../src/sim/30-market/orders";
 import { issueInvoice, stepMinutes } from "../src/sim/30-market/manual";
 import type { SalesRequest } from "../src/sim/30-market/market";
-import { CHARGEBACK_DAYS, CHARGEBACK_FEE, failsReview, fraudShare, PROVIDER, REVIEW_MINUTES, WATCHED_FEE } from "../src/sim/45-billing/fraud";
+import { CHARGEBACK_DAYS, CHARGEBACK_FEE, failsReview, failsScreen, fraudShare, PROVIDER, REVIEW_MINUTES, screenFee, SCREENING_SKILL, WATCHED_FEE } from "../src/sim/45-billing/fraud";
 import type { GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { addCustomer } from "../src/sim/90-actions/customers";
-import { createAccount, quoteOrder, setReviewOrders } from "../src/sim/90-actions/orders";
+import { createAccount, quoteOrder, setReviewOrders, setScreenOrders } from "../src/sim/90-actions/orders";
+import { cents } from "../src/sim/45-billing/billing";
+import { yearOf } from "../src/sim/00-core/time";
 import { resolveTicket } from "../src/sim/90-actions/support";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { readyGame } from "./fixtures";
+import { mailed, readyGame } from "./fixtures";
 
 const run = (s: GameState, hours: number) => { for (let i = 0; i < hours; i++) tick(s); };
 const web = { product: "webHosting" as const, size: 0, sla: "basic" as const };
@@ -134,7 +136,7 @@ describe("order review", () => {
     expect(quoteOrder(s, r!.ticketId!, 20).ok).toBe(true);
     for (let i = 0; i < 60 && req(s, r!.id).status !== "accepted"; i++) tick(s);
     const customers = s.customers.length;
-    expect(createAccount(s, r!.ticketId!).ok).toBe(true);
+    expect(createAccount(s, r!.ticketId!, mailed(s, r!.ticketId!)).ok).toBe(true);
     run(s, 2);
     expect(req(s, r!.id).status).toBe("declined");
     expect(s.tickets.find((t) => t.id === r!.ticketId)).toMatchObject({ status: "closed", outcome: "declined" });
@@ -153,6 +155,60 @@ describe("order review", () => {
     const old = JSON.parse(serialize(s));
     delete old.reviewOrders;
     delete old.chargebackStrikes;
-    expect(deserialize(JSON.stringify(old))).toMatchObject({ reviewOrders: false, chargebackStrikes: 0 });
+    delete old.screenOrders;
+    delete old.screenChecks;
+    expect(deserialize(JSON.stringify(old))).toMatchObject({ reviewOrders: false, screenOrders: false, screenChecks: 0, chargebackStrikes: 0 });
+  });
+});
+
+describe("order screening", () => {
+  it("needs the skill before it can be switched on", () => {
+    const s = readyGame(1);
+    expect(setScreenOrders(s, true)).toEqual({ ok: false, error: "error.needsResearch" });
+    s.unlocks = [...s.unlocks, SCREENING_SKILL];
+    expect(setScreenOrders(s, true).ok).toBe(true);
+    expect(s.screenOrders).toBe(true);
+  });
+
+  it("declines most fraud and very few honest orders", () => {
+    const s = readyGame(1);
+    const keys = Array.from({ length: 2000 }, (_, i) => i);
+    const caught = keys.filter((k) => failsScreen(s, k, true)).length / keys.length;
+    const honest = keys.filter((k) => failsScreen(s, k, false)).length / keys.length;
+    expect(caught).toBeGreaterThan(0.75);
+    expect(caught).toBeLessThan(0.85);
+    expect(honest).toBeGreaterThan(0.002);
+    expect(honest).toBeLessThan(0.02);
+  });
+
+  it("counts every standard order and declines a failed one before it reaches Support", () => {
+    const s = readyGame(2);
+    s.unlocks = [...s.unlocks, SCREENING_SKILL];
+    setScreenOrders(s, true);
+    setReviewOrders(s, true);
+    let declined = 0, passed = 0;
+    for (let i = 0; i < 300; i++) {
+      const r = orderLead(s, "private", "Frankfurt", [], vps, true);
+      const fails = failsScreen(s, Number(r.id.slice(3)), !!r.fraud);
+      expect(req(s, r.id).status === "declined").toBe(fails);
+      expect(r.ticketId === null).toBe(fails);
+      if (fails) declined++;
+      else passed++;
+    }
+    expect(declined).toBeGreaterThan(0);
+    expect(passed).toBeGreaterThan(0);
+    expect(s.screenChecks).toBe(300);
+    expect(stepMinutes("account", s, orderLead(s, "private", "Frankfurt", [], web, true))).toBe(stepMinutes("account"));
+  });
+
+  it("bills the checks on the first of the month", () => {
+    const s = readyGame(3);
+    s.screenChecks = 120;
+    for (let i = 0; i < 800 && s.screenChecks; i++) tick(s);
+    const e = s.ledger.find((x) => x.key === "ledger.screening")!;
+    expect(e.params).toEqual({ count: 120 });
+    expect(e.amount).toBe(-cents(120 * screenFee(yearOf(e.hour))));
+    expect(screenFee(2026)).toBe(0.08);
+    expect(screenFee(2008)).toBeCloseTo(0.145, 3);
   });
 });

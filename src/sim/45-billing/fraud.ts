@@ -1,12 +1,14 @@
 // GDD, Fraud and chargebacks. Numbers in economy.md, Fraud and chargebacks.
 import { hashRng, rand } from "../00-core/rng";
-import { isMonthStart } from "../00-core/time";
+import { isMonthStart, yearOf } from "../00-core/time";
+import { priceAt } from "../10-catalog/economy";
 import type { Customer, Product } from "../30-customers/customers";
 import type { SalesRequest } from "../30-market/market";
 import { cancelCustomer } from "../40-support/tickets";
 import type { GameState, LedgerEntry } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { cents, invoiceTotal } from "./billing";
+import { takeBack } from "./payments";
 
 const DAY = 24;
 // Share of standard orders paid with a stolen card or wallet account.
@@ -40,6 +42,16 @@ export const reviewing = (s: GameState, product: Product): boolean => s.reviewOr
 export const failsReview = (s: GameState, r: SalesRequest): boolean =>
   reviewing(s, r.product) && rand(hashRng(s.seed, Number(r.id.slice(3)) || 0, 313)) < (r.fraud ? REVIEW_CATCH : REVIEW_FALSE);
 
+// Order screening by MaxMined scores each standard order as it arrives; manual review only sees the orders it lets through.
+export const SCREENING_SKILL = "fraudScreening";
+export const SCREEN_CATCH = 0.8;
+export const SCREEN_FALSE = 0.01;
+// Per check, billed on the first of the month: €0.08 in 2026 with m = 2 (about €0.15 in 2008).
+export const screenFee = (year: number): number => priceAt(0.08, 2, year);
+export const screening = (s: GameState): boolean => s.screenOrders && s.unlocks.includes(SCREENING_SKILL);
+export const failsScreen = (s: GameState, key: number, fraud: boolean): boolean =>
+  rand(hashRng(s.seed, key, 317)) < (fraud ? SCREEN_CATCH : SCREEN_FALSE);
+
 // The payment provider, PayPail.
 export const CHARGEBACK_FEE = 15;
 export const WATCHED_FEE = 25;
@@ -57,6 +69,11 @@ export function fraudTick(s: GameState): SimEvent[] {
   for (const due of s.customers.filter((c) => c.chargebackAt !== undefined && s.hour >= c.chargebackAt)) {
     s.customers = s.customers.map((c) => (c.id === due.id ? { ...c, chargebackAt: undefined } : c));
     const c = s.customers.find((x) => x.id === due.id)!;
+    // A stolen card through the shop: the card network takes back each payment in Books, where the player books it.
+    if (c.method === "card") {
+      for (const inv of s.invoices.filter((i) => i.customerId === c.id && i.status === "paid" && i.method === "card")) takeBack(s, inv, "chargeback", true);
+      continue;
+    }
     const paid = cents(s.invoices.filter((i) => i.customerId === c.id && i.status === "paid").reduce((n, i) => n + invoiceTotal(i), 0));
     s.invoices = s.invoices.map((i) => (i.customerId === c.id && i.status !== "writtenOff" ? { ...i, status: "writtenOff", payAt: null, suspended: false } : i));
     if (c.churnedAt === null) {
@@ -67,10 +84,16 @@ export function fraudTick(s: GameState): SimEvent[] {
     const fee = s.chargebackStrikes >= 2 ? WATCHED_FEE : CHARGEBACK_FEE;
     book("payments", "ledger.chargeback", { customer: c.name }, -paid);
     book("fees", "ledger.chargebackFee", { customer: c.name }, -fee);
-    events.push({ app: "Billing", key: "event.chargeback", params: { customer: c.name, amount: cents(paid + fee) } });
+    events.push({ app: "Books", key: "event.chargeback", params: { customer: c.name, amount: cents(paid + fee) } });
   }
   if (booked.length) s.ledger = [...s.ledger, ...booked];
   if (!isMonthStart(s.hour)) return events;
+  if (s.screenChecks > 0) {
+    const fee = cents(s.screenChecks * screenFee(yearOf(s.hour)));
+    s.cash = cents(s.cash - fee);
+    s.ledger = [...s.ledger, { hour: s.hour, category: "fees", key: "ledger.screening", params: { count: s.screenChecks }, amount: -fee }];
+    s.screenChecks = 0;
+  }
   const since = s.hour - PROVIDER.days * DAY;
   let backs = 0, payments = 0;
   for (const e of s.ledger) {
@@ -84,11 +107,11 @@ export function fraudTick(s: GameState): SimEvent[] {
   }
   s.chargebackStrikes = Math.min(2, s.chargebackStrikes + 1);
   if (s.chargebackStrikes === 1) {
-    events.push({ app: "Billing", key: "event.chargebackWarning", params: { count: backs } });
+    events.push({ app: "Books", key: "event.chargebackWarning", params: { count: backs } });
   } else {
     s.cash = cents(s.cash - PROVIDER.monthlyFee);
     s.ledger = [...s.ledger, { hour: s.hour, category: "fees", key: "ledger.chargebackProgram", params: {}, amount: -PROVIDER.monthlyFee }];
-    events.push({ app: "Billing", key: "event.chargebackFees", params: { fee: PROVIDER.monthlyFee, chargeback: WATCHED_FEE } });
+    events.push({ app: "Books", key: "event.chargebackFees", params: { fee: PROVIDER.monthlyFee, chargeback: WATCHED_FEE } });
   }
   return events;
 }

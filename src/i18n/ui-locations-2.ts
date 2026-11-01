@@ -167,6 +167,7 @@ export default {
   "locations-2.kind.console": () => "Console server",
   "locations-2.kind.oob": () => "OOB switch",
   "locations-2.kind.chassis": () => "Chassis",
+  "locations-2.kind.jack": () => "Line jack",
   "locations-2.moveMenu": () => "Move…",
   "locations-2.moveServersMenu": () => "Move servers…",
   "locations-2.sellMenu": () => "Sell…",

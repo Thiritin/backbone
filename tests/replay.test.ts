@@ -1,17 +1,21 @@
+import { newGame } from "./fixtures";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { challengeById, challengeFor, CHALLENGES, isoWeek, weeklyChallenge } from "../src/sim/10-catalog/challenges";
 import { capacityAt, DATACENTERS } from "../src/sim/20-world/datacenters";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { SCORE_END, scores } from "../src/sim/80-business/scores";
 import { ACTIONS, actionName, LOG_CAP, runAction } from "../src/sim/90-actions/index";
 import { installPanel } from "../src/sim/90-actions/clusters";
+import { setPortShare } from "../src/sim/90-actions/lan";
 import { setCompany } from "../src/sim/90-actions/company";
+import { openBankAccount } from "../src/sim/90-actions/bank";
+import { savingsOf } from "../src/sim/46-finance/bank";
 import { buyDevice, connect, mountDevice, orderHomeLine, setPlugged } from "../src/sim/90-actions/hardware";
 import { startChallenge } from "../src/sim/90-actions/start";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { buildLeaderboard, replay, runFile, runFileName, verify, type Verified } from "../src/sim/92-run/run";
+import { buildLeaderboard, mismatches, replay, runFile, runFileName, verify, type Verified } from "../src/sim/92-run/run";
 import { POWER_ACTION } from "../src/ui/apps/locations/power";
 import { useStore } from "../src/ui/store";
 
@@ -28,15 +32,19 @@ const play = (hours: number) => {
 // The first server through the store, as the player does it: bought, delivered, mounted, plugged, cabled, online, a panel.
 function shortGame(): GameState {
   useStore.setState({ game: startChallenge("2026-W43") });
+  ok(store().act(openBankAccount, "sparklasse"));
   ok(store().act(setCompany, { name: "Kellerkind Hosting", color: "oklch(0.65 0.17 50)" }));
   const srv = ok(store().act(buyDevice, "g1-compute", "Dwell", 1, "loc1"));
   play(24 * 6);
   ok(store().act(mountDevice, srv, "rack2", 1));
   for (const c of store().game.devices.find((d) => d.id === srv)!.components) if (c.kind === "psu") ok(store().act(setPlugged, srv, c.id, true));
+  ok(store().act(mountDevice, "dev5", "rack2", 24));
+  ok(store().act(connect, { device: "dev5", port: 4 }, { device: "dev6", port: 0 }));
   ok(store().act(connect, { device: srv, port: 0 }, { device: "dev5", port: 0 }));
   ok(store().act(orderHomeLine, "dsl-16"));
   play(24 * 9);
   ok(store().act(installPanel, srv, "freepanel"));
+  ok(store().act(setPortShare, "dev5", srv, "web"));
   play(24 * 20);
   return store().game;
 }
@@ -46,8 +54,8 @@ describe("action log", () => {
     const s = shortGame();
     const psus = s.log.filter((e) => e.name === "setPlugged").length;
     expect(psus).toBeGreaterThan(0);
-    expect(s.log.map((e) => e.name)).toEqual(["setCompany", "buyDevice", "mountDevice", ...Array(psus).fill("setPlugged"), "connect", "orderHomeLine", "installPanel"]);
-    expect(s.log[1]).toEqual({ hour: 0, minute: 0, name: "buyDevice", args: ["g1-compute", "Dwell", 1, "loc1"] });
+    expect(s.log.map((e) => e.name)).toEqual(["openBankAccount", "setCompany", "buyDevice", "mountDevice", ...Array(psus).fill("setPlugged"), "mountDevice", "connect", "connect", "orderHomeLine", "installPanel", "setPortShare"]);
+    expect(s.log[2]).toEqual({ hour: 0, minute: 0, name: "buyDevice", args: ["g1-compute", "Dwell", 1, "loc1"] });
     expect(store().act(mountDevice, "nope", "rack2", 1).ok).toBe(false);
     expect(store().game.log).toHaveLength(s.log.length);
   });
@@ -102,11 +110,12 @@ describe("replay", () => {
     expect(scores(end).netWorth).not.toBeNull();
     const run = runFile(end, "test");
     expect(run.claimed).toEqual(scores(end));
-    const { verified, errors } = verify(run);
-    expect(errors).toEqual([]);
+    // The claim only feeds the comparison, so one replay of an edited claim also shows the honest one passes.
+    const { verified, errors } = verify({ ...run, claimed: { ...run.claimed, netWorth: run.claimed.netWorth! + 500 } });
+    expect(errors).toHaveLength(1);
+    expect(mismatches(run.claimed, verified.scores)).toEqual([]);
     expect(verified.company.name).toBe("Kellerkind Hosting");
     expect(verified.ghost.length).toBeGreaterThan(100);
-    expect(verify({ ...run, claimed: { ...run.claimed, netWorth: run.claimed.netWorth! + 500 } }).errors).toHaveLength(1);
     expect(() => replay({ ...run, seed: run.seed + 1 })).toThrow();
     expect(() => replay({ ...run, actions: [{ ...run.actions[0], name: "noSuchAction" }] })).toThrow();
     expect(runFileName(end)).toBe(`kellerkind-hosting-${end.seed}.run.json`);
@@ -141,7 +150,8 @@ describe("weekly challenges", () => {
   it("starts each twist", () => {
     const line = startChallenge("2026-W42"), dc = startChallenge("2026-W43"), cash = startChallenge("2026-W44");
     expect(line.homeLine).toEqual({ id: "sdsl-2", next: null });
-    expect(cash.cash).toBe(2000);
+    expect(cash.cash).toBe(0);
+    expect(savingsOf(cash)).toBe(2000);
     expect(cash.challenge).toBe("2026-W44");
     for (const d of DATACENTERS) if (d.id !== "hetzler-park") expect(dc.dcs[d.id].others).toBe(capacityAt(d, 2005));
     expect(dc.dcs["hetzler-park"].others).toBeLessThan(capacityAt(DATACENTERS.find((d) => d.id === "hetzler-park")!, 2005));

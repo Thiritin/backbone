@@ -1,4 +1,4 @@
-import { CircleHelp, HeartHandshake, Copyright, DoorOpen, KeyRound, Landmark, LockKeyholeOpen, Receipt, ShieldAlert, ShoppingCart, TrendingUp, Truck, Undo2, Wrench, ZapOff, type LucideIcon } from "lucide-react";
+import { Apple, CircleHelp, HeartHandshake, Copyright, DoorOpen, KeyRound, Landmark, LockKeyholeOpen, Mail, Receipt, ShieldAlert, ShoppingCart, TrendingUp, Truck, Undo2, Wrench, ZapOff, type LucideIcon } from "lucide-react";
 import { t } from "../../../i18n/en";
 import { LOCALE } from "../../../i18n/lang";
 import { dateOf } from "../../../sim/00-core/time";
@@ -22,6 +22,8 @@ export const KINDS: { id: TicketKind; label: string; icon: LucideIcon }[] = [
   { id: "migration", label: t("support.kind.migration"), icon: Truck },
   { id: "maintenance", label: t("support.kind.maintenance"), icon: Wrench },
   { id: "sponsor", label: t("support.kind.sponsor"), icon: HeartHandshake },
+  { id: "pear", label: t("walk.from"), icon: Apple },
+  { id: "mail", label: t("support.kind.mail"), icon: Mail },
 ];
 export const kindOf = (id: TicketKind) => KINDS.find((k) => k.id === id)!;
 
@@ -35,6 +37,7 @@ export const STATUS: Record<TicketStatus, string> = {
 export const statusOf = (tk: { status: TicketStatus; outcome: string | null }): string => (tk.outcome === "withdrawn" ? t("support.status.withdrawn") : STATUS[tk.status]);
 
 export const PRODUCT: Record<Product, string> = {
+  reseller: t("web.reseller.product"),
   webHosting: t("support.product.webHosting"),
   domain: t("support.product.domain"),
   ssl: t("support.product.ssl"),

@@ -1,4 +1,6 @@
+import { createGameServer } from "../60-infra/games";
 import { betterHost } from "../60-infra/routes";
+import { keepPhp } from "../60-infra/webpanel";
 import { yearOf } from "../00-core/time";
 import { CONTINUOUS } from "../20-world/datacenters";
 import { modelById } from "../10-catalog/hardware";
@@ -9,12 +11,15 @@ import type { GameState } from "../50-state";
 import { balancerIn, balloons, clustersIn, conflict, isService, phpAt, softwareById, type Software, type SoftwareKind } from "../10-catalog/platforms";
 import { HA_SKILL } from "../10-catalog/research";
 import { serverOsAt } from "../10-catalog/server-os";
+import { versionAt } from "../10-catalog/software-versions";
 import { freezeTick } from "../60-infra/usage";
 import { PHP_UPGRADE_HOURS } from "../60-infra/php";
+import { withinOversell } from "../60-infra/oversell";
+import { licenceBlock } from "../60-infra/licence";
 import { markPatched, patchOut, vulnerable } from "../60-infra/security";
 import {
   anchorOf, clusterOf, clustersOf, dropCluster, gameFirst, controlPlaneUp, controlPlaneUse, fitsControlPlane, HA_OFF, hostOfVm, hostsOfVm, insideVm, isOwnVm, KEYS, vmCap, moveOff, noRoomError, nodeTakes, pickNode, serverTaken,
-  backsUpCluster, balances, datastoreFits, isDatastore, setMachine, withDatastore, setNodeState, stripSoftware, supports, vmById, vmRoom, workloadsOf, workloadsOn, type BackupEvery, type Cluster, type Ha, type Placement, type Workload,
+  backsUpCluster, balances, datastoreFits, isDatastore, setMachine, withDatastore, setNodeState, stripSoftware, supports, vmById, vmRoom, workloadsOf, workloadsOn, type BackupEvery, type Cluster, type ClusterNode, type Ha, type Placement, type Workload,
 } from "../60-infra/cluster";
 import { burning, freeSlots, installedRamGb, locationOf, rackPower, working } from "../60-infra/status";
 import { addService } from "./customers";
@@ -23,14 +28,17 @@ import type { ActionResult } from "./hardware";
 import { migrateWorkload } from "./vms";
 import { buyLicenses, licenseDue } from "../85-products/products";
 import { sizeOf } from "../30-market/spec";
+import { addressOf } from "../60-infra/lan";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
+// A node joins at the address it holds now, or pins the first one it gets (cluster.ts, pinMembers).
+const joined = (s: GameState, deviceId: string): ClusterNode => { const ip = addressOf(s, deviceId); return ip ? { deviceId, state: "active", ip } : { deviceId, state: "active" }; };
 // economy.md, Panel VMs: the size the setup and the Products app suggest, and the smallest the player can book.
 export const PANEL_VM_SIZE: Resources = { vcpu: 2, ramGb: 2, diskGb: 50 };
 export const PANEL_VM_MIN: Resources = { vcpu: 1, ramGb: 1, diskGb: 10 };
 
 const blank = (s: GameState, id: string, name: string, az: string, kind: SoftwareKind): Cluster => ({
-  id, name, az, kind, placement: "pack", nodes: [], panel: null, platform: null, vm: null, controlPlane: null, switching: null, appSuite: false, datastores: [],
+  id, name, az, kind, placement: "pack", nodes: [], panel: null, platform: null, vm: null, controlPlane: null, switching: null, appSuite: false, datastores: [], packages: [],
   backup: { targetId: null, every: "off" }, php: phpAt(yearOf(s.hour)), phpUntil: -1, ha: { ...HA_OFF }, version: yearOf(s.hour), updatedAt: s.hour,
 });
 // The name a cluster in one of the player's VMs gets, by the kind of its software.
@@ -56,7 +64,7 @@ const runs = (c: Cluster, softwareId?: string): boolean => !!softwareId && [c.pa
 
 // The software joins the machine's list, installing until doneAt.
 function addSoftware(s: GameState, machineId: string, sw: Software, doneAt: number): void {
-  setMachine(s, machineId, (m) => ({ software: [...m.software, { id: sw.id, version: String(yearOf(s.hour)), installedAt: s.hour, doneAt }] }));
+  setMachine(s, machineId, (m) => ({ software: [...m.software, { id: sw.id, version: versionAt(sw.id, s.hour).version, installedAt: s.hour, doneAt }] }));
 }
 
 // A VM made from a template: the OS is on its disk and booted from the start.
@@ -68,7 +76,7 @@ function installOnServer(s: GameState, deviceId: string, sw: Software, name: (la
   const d = s.devices.find((x) => x.id === deviceId), bad = freeServer(s, d, sw.id);
   if (bad) return fail(bad);
   const loc = locationOf(s, d!)!, id = `clu${s.nextId++}`, slot = sw.kind === "cloud" ? "platform" : "panel";
-  const c: Cluster = { ...blank(s, id, name(d!.label ?? d!.name, loc.name), loc.az, sw.kind), nodes: [{ deviceId, state: "active" }], controlPlane: deviceId };
+  const c: Cluster = { ...blank(s, id, name(d!.label ?? d!.name, loc.name), loc.az, sw.kind), nodes: [joined(s, deviceId)], controlPlane: deviceId };
   if (!fitsControlPlane(s, { ...c, [slot]: sw.id }, deviceId)) return fail(working(s, deviceId) ? "error.nodeFull" : "error.nodeDown");
   s.clusters = [...s.clusters, { ...c, switching: { kind: sw.kind, to: sw.id, doneAt: s.hour + sw.installHours } }];
   addSoftware(s, deviceId, sw, s.hour + sw.installHours);
@@ -247,7 +255,7 @@ export function addNode(s: GameState, clusterId: string, deviceId: string): Acti
   const kept = d.software;
   leave(s, own.id, d.id);
   d.software = kept;
-  update(s, c.id, (x) => ({ ...x, nodes: [...x.nodes, { deviceId, state: "active" }], controlPlane: x.controlPlane ?? deviceId }));
+  update(s, c.id, (x) => ({ ...x, nodes: [...x.nodes, joined(s, deviceId)], controlPlane: x.controlPlane ?? deviceId }));
   return { ok: true };
 }
 
@@ -263,12 +271,14 @@ export const leave = (s: GameState, clusterId: string, deviceId: string) => {
 export const phpDue = (s: GameState, c: Cluster): boolean => c.kind === "panel" && (c.php !== phpAt(yearOf(s.hour)) || (patchOut(s) && vulnerable(s, c)));
 
 // One panel host to the current PHP version with any released security patch; its sites run slower for the next hour.
-export function upgradePhp(s: GameState, hostId: string): ActionResult {
+// With keep the previous version stays installed in the pool and takes the accounts whose app does not run on the new one.
+export function upgradePhp(s: GameState, hostId: string, keep?: boolean): ActionResult {
   const c = s.clusters.find((x) => x.id === hostId);
   if (!c) return fail("error.unknownCluster");
   if (c.kind !== "panel") return fail("error.notPanelHost");
   if (!phpDue(s, c)) return fail(vulnerable(s, c) ? "error.patchPending" : "error.phpCurrent");
   update(s, c.id, (x) => ({ ...x, php: phpAt(yearOf(s.hour)), phpUntil: s.hour + PHP_UPGRADE_HOURS }));
+  if (keep && c.php !== phpAt(yearOf(s.hour))) keepPhp(s, c.id, c.php);
   markPatched(s, c.id);
   return { ok: true };
 }
@@ -385,9 +395,9 @@ export function placeService(s: GameState, serviceId: string, clusterId: string 
   const v = s.services.find((x) => x.id === serviceId);
   if (!v || v.endedAt !== null) return fail("error.unknownService");
   if (workloadsOf(s, v.id).length) return fail("error.placed");
-  const spec = PRODUCTS[v.product], size = sizeOf(v.spec);
+  const spec = PRODUCTS[v.product], size = v.pkgBook ?? sizeOf(v.spec);
   const inZone = (az: string) => v.zone === null || v.zone === az;
-  let w: Workload | null = null, az = "";
+  let w: Workload | null = null, az = "", capped = false, blocked = "";
   if (spec.runsOn === "none") return { ok: true };
   if (spec.runsOn === "cluster") {
     const candidates = s.clusters.filter((x) => (clusterId ? x.id === clusterId : inZone(x.az)) && supports(x, v.product)).sort((a, b) => gameFirst(a, b) || betterHost(s)(a, b));
@@ -395,12 +405,17 @@ export function placeService(s: GameState, serviceId: string, clusterId: string 
     for (const roomyOnly of [true, false]) {
       for (const c of candidates) {
         const disk = withDatastore(s, c, size);
-        const node = controlPlaneUp(s, c) ? pickNode(s, deviceId ? { ...c, nodes: c.nodes.filter((n) => n.deviceId === deviceId) } : c, disk, null, c.placement, roomyOnly) : null;
+        const room = withinOversell(s, c, disk), why = licenceBlock(s, c);
+        if (why) { blocked = why; continue; }
+        if (!room) capped = true;
+        const node = controlPlaneUp(s, c) && room ? pickNode(s, deviceId ? { ...c, nodes: c.nodes.filter((n) => n.deviceId === deviceId) } : c, disk, null, c.placement, roomyOnly) : null;
         if (node) { w = workload(s, v.id, { ...disk, clusterId: c.id, deviceId: c.vm ? null : node }); az = c.az; break; }
       }
       if (w) break;
     }
     const target = clusterId ? s.clusters.find((x) => x.id === clusterId) : undefined;
+    if (!w && blocked) return fail(blocked);
+    if (!w && capped) return fail("error.oversellCap");
     if (!w) return fail(target && supports(target, v.product) && !controlPlaneUp(s, target) ? "error.controlPlaneDown" : noRoomError(s, v.product, clusterId));
   } else if (spec.runsOn === "server") {
     const d = s.devices.find((x) => x.rackId && installedRamGb(x) >= size.ramGb && inZone(locationOf(s, x)?.az ?? "") && !serverTaken(s, x.id));
@@ -419,13 +434,18 @@ export function placeService(s: GameState, serviceId: string, clusterId: string 
     }
     if (!w) return fail("error.noRackSpace");
   }
+  if (v.pkgBook && (["vcpu", "ramGb", "diskGb"] as const).some((k) => size[k] < v.spec[k])) w = { ...w, promised: sizeOf(v.spec) };
   s.workloads = [...s.workloads, w];
   if (v.zone === null) s.services = s.services.map((x) => (x.id === v.id ? { ...x, zone: az } : x));
   return { ok: true, id: w.id };
 }
 
 // spec defaults to the line's smallest size this year.
-export interface Order { label: string; zone?: string | null; clusterId?: string | null; sla?: Sla; price?: number; spec?: Spec; deviceId?: string | null }
+export interface Order { label: string; zone?: string | null; clusterId?: string | null; sla?: Sla; price?: number; spec?: Spec; deviceId?: string | null;
+  // A package the order books: its name, what it books and the sold size when that is more. username is web hosting's login.
+  pkg?: { name: string; book: Resources; promised?: Resources }; username?: string;
+  // Game servers: the title, when the buyer names one.
+  title?: string }
 
 // Signs a contract with the catalog's terms and places it; nothing is recorded when it can't be placed.
 // price is per hour for hourly products and per year for yearly ones; it defaults to the market reference.
@@ -436,6 +456,7 @@ export function provisionService(s: GameState, customerId: string, product: Prod
   const price = order.price ?? (spec.period === "hour" ? reference / 730 : reference);
   const nextId = s.nextId;
   const id = addService(s, customerId, product, order.label, price, spec.period, spec.commitMonths, order.zone ?? null, want, sla);
+  if (order.pkg || order.username) s.services = s.services.map((v) => (v.id === id ? { ...v, ...(order.pkg && { pkg: order.pkg.name, pkgBook: order.pkg.book }), ...(order.username && { username: order.username }) } : v));
   const placed = placeService(s, id, order.clusterId ?? null, order.deviceId ?? null);
   const noAddress = placed.ok ? assignService(s, id) : null;
   if (noAddress) {
@@ -446,5 +467,6 @@ export function provisionService(s: GameState, customerId: string, product: Prod
     Object.assign(s, { services: s.services.filter((v) => v.id !== id), nextId });
     return placed;
   }
+  if (product === "gameServer") createGameServer(s, id, order.title);
   return { ok: true, id };
 }

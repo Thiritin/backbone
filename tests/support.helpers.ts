@@ -1,8 +1,10 @@
-import type { Profile } from "../src/sim/30-customers/customers";
+import type { PaymentHabit, Profile } from "../src/sim/30-customers/customers";
 import { createTicket, type Ticket, type TicketKind } from "../src/sim/40-support/tickets";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
+import { workload } from "../src/sim/90-actions/clusters";
+import { readyGame, newGame } from "./fixtures";
 
 export const FEB_1 = 744, MAR_1 = 744 + 672;
 
@@ -30,3 +32,16 @@ export const ticketOf = (s: GameState, kind: TicketKind, topic: string, cus: str
 };
 export const get = (s: GameState, id: string) => s.tickets.find((t) => t.id === id)!;
 export const runTo = (s: GameState, hour: number) => { while (s.hour < hour) tick(s); };
+
+// A running company with n customers of mixed payment habits, each with a web space or VPS on the friends' panel cluster;
+// every 20th one is stopped.
+export function bigGame(seed: number, n: number): GameState {
+  const s = readyGame(seed), template = s.workloads.find((w) => w.clusterId && s.services.some((v) => v.id === w.serviceId && v.product === "webHosting"))!;
+  const profiles: Profile[] = ["private", "enterprise", "gamer"], habits: PaymentHabit[] = ["prompt", "late", "bad"];
+  for (let i = 0; i < n; i++) {
+    const cus = addCustomer(s, `Customer ${i}`, profiles[i % 3], habits[i % 7 % 3]);
+    const svc = addService(s, cus, i % 2 ? "vps" : "webHosting", `site${i}`, 0.01, "hour");
+    s.workloads.push(workload(s, svc, { clusterId: template.clusterId, deviceId: template.deviceId, stopped: i % 20 === 0 }));
+  }
+  return s;
+}

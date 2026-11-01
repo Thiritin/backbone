@@ -32,8 +32,8 @@ export interface NotifyPref { allow: boolean; sound: boolean; types?: Record<str
 const WIDE = { w: 1240, h: 680 };
 const WINDOW_SIZES: Record<string, { w: number; h: number }> = {
   Security: { w: 900, h: 560 }, Browser: { w: 1100, h: 720 }, News: { w: 520, h: 640 },
-  Locations: { w: 1440, h: 860 }, Shop: { w: 1180, h: 700 }, Billing: WIDE, Customers: WIDE, Marketing: WIDE, Market: WIDE, Network: WIDE,
-  Support: { w: 1400, h: 840 }, Research: { w: 1140, h: 600 }, Staff: { w: 1240, h: 640 },
+  Locations: { w: 1440, h: 860 }, Shop: { w: 1180, h: 700 }, Books: { w: 900, h: 560 }, Customers: WIDE, Marketing: WIDE, Market: WIDE, Network: WIDE,
+  Support: { w: 1400, h: 840 }, Research: { w: 1140, h: 600 }, Staff: { w: 1240, h: 640 }, Post: { w: 1000, h: 820 },
 };
 
 export const prefOf = (prefs: Record<string, Partial<NotifyPref>>, app: string): NotifyPref => ({ allow: true, sound: true, ...prefs[app] });
@@ -42,6 +42,9 @@ const SOUND_DEFAULT: SoundPref = { on: true, volume: 0.6, ambience: 0.5 };
 const PREFS_KEY = "backbone.prefs";
 export type Theme = "light" | "dark" | "auto";
 const THEME_KEY = "backbone.theme";
+// "os" follows the installed Pear OS, "map" is the night map, a release id pins that release's photo, "custom" is the player's own image.
+export interface WallpaperPref { pick: string; custom: string | null }
+const WALLPAPER_KEY = "backbone.wallpaper";
 
 interface Store {
   game: GameState;
@@ -55,6 +58,8 @@ interface Store {
   setSound: (patch: Partial<SoundPref>) => void;
   theme: Theme;
   setTheme: (theme: Theme) => void;
+  wallpaper: WallpaperPref;
+  setWallpaper: (patch: Partial<WallpaperPref>) => void;
   // The Pear OS update sheet: the changelog days it lists, or null when closed.
   news: ChangelogDay[] | null;
   openNews: (days: ChangelogDay[]) => void;
@@ -127,7 +132,7 @@ function loadGame(): { game: GameState; loaded: boolean } {
 
 const initial = loadGame();
 // A reload (the dev server's after a code change, or the player's) reopens the windows of the saved game and keeps its clock running.
-const restored = initial.loaded ? readSession<Win[]>("windows", []) : [];
+const restored = initial.loaded ? readSession<Win[]>("windows", []).map((w) => (w.app === "Billing" ? { ...w, app: "Books" } : w)) : [];
 const savedSpeed = readSession<Speed>("speed", 0);
 const restoredSpeed: Speed = initial.loaded && SPEEDS.includes(savedSpeed) ? savedSpeed : 0;
 
@@ -179,6 +184,15 @@ function loadTheme(): Theme {
   return "auto";
 }
 
+function loadWallpaper(): WallpaperPref {
+  try {
+    const saved = JSON.parse(localStorage.getItem(WALLPAPER_KEY) ?? "{}");
+    return { pick: typeof saved.pick === "string" ? saved.pick : "os", custom: typeof saved.custom === "string" ? saved.custom : null };
+  } catch {
+    return { pick: "os", custom: null };
+  }
+}
+
 // Fraction of the current game hour that has run; outside the store so the clock can read it every frame without re-renders.
 export const clockCarry = { current: 0 };
 
@@ -197,6 +211,16 @@ export const useStore = create<Store>((set, get) => ({
       localStorage.setItem(THEME_KEY, theme);
     } catch {
       // Kept for this session only.
+    }
+  },
+  wallpaper: loadWallpaper(),
+  setWallpaper: (patch) => {
+    const wallpaper = { ...get().wallpaper, ...patch };
+    set({ wallpaper });
+    try {
+      localStorage.setItem(WALLPAPER_KEY, JSON.stringify(wallpaper));
+    } catch {
+      // Kept for this session only; a large image can exceed the storage quota.
     }
   },
   news: null,

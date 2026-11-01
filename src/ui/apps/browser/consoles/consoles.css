@@ -67,6 +67,8 @@
 .cx-state.accent { background: color-mix(in oklab, var(--info) 16%, transparent); color: var(--info); }
 .cx-bar { display: block; width: 120px; height: 5px; margin-bottom: 3px; border-radius: 3px; background: var(--hover); overflow: hidden; }
 .cx-bar i { display: block; height: 100%; background: var(--accent); }
+.cx-bar[data-level="warn"] i { background: var(--warn); }
+.cx-bar[data-level="bad"] i { background: var(--bad); }
 .cx-use { font-size: 11.5px; color: var(--muted); }
 .cx-open td { background: var(--bg); }
 .cx-inline { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
@@ -89,6 +91,125 @@
 .cx-tile.danger { border-color: var(--bad); color: var(--bad); }
 .cx-tile.danger svg { color: var(--bad); }
 
+.cx-form { display: flex; flex-direction: column; gap: 10px; max-width: 460px; }
+.cx-form select, .cx-form input { width: 100%; }
+.cx-group { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r); }
+.cx-group legend { padding: 0 6px; font-weight: 600; font-size: 12px; }
+.cx-summary { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin: 0; font-size: 12px; }
+.cx-summary dt { color: var(--muted); }
+.cx-summary dd { margin: 0; }
+.cx-log { margin: 8px 0 0; padding: 8px 10px; max-height: 360px; overflow: auto; border: 1px solid var(--line); border-radius: 4px; font: 11.5px/1.5 var(--mono, monospace); white-space: pre-wrap; word-break: break-all; }
+
+.cx-banner { margin: 0 0 8px; padding: 6px 10px; border-radius: 3px; }
+.cx-banner.bad { color: #fff; background: var(--bad); }
+/* Shared classes follow the web of the game year. Vendor sheets use :root[data-era] selectors to outrank these :where() rules. */
+
+/* 2003 to 2006: grey table pages in Verdana with bevelled buttons, grid tables and a flat header bar. */
+:where(:root[data-era="aqua"]) .cx { --r: 0; --font: Verdana, Geneva, Arial, sans-serif; --bg: #ebe9e4; --line: #b9b9b9; font-size: 12px; }
+:where(:root[data-era="aqua"]) .cx input { padding: 3px 5px; border-radius: 0; box-shadow: inset 1px 1px 0 rgb(0 0 0 / 0.12); }
+:where(:root[data-era="aqua"]) .cx-btn { padding: 3px 12px; border-color: color-mix(in oklab, var(--line) 55%, black); border-radius: 0; background: color-mix(in oklab, var(--panel) 72%, var(--line)); box-shadow: inset 1px 1px 0 rgb(255 255 255 / 0.85), inset -1px -1px 0 rgb(0 0 0 / 0.18); }
+:where(:root[data-era="aqua"]) .cx-btn:hover { background: color-mix(in oklab, var(--panel) 62%, var(--line)); }
+:where(:root[data-era="aqua"]) .cx-btn:active:not(:disabled) { box-shadow: inset 1px 1px 0 rgb(0 0 0 / 0.28); }
+:where(:root[data-era="aqua"]) .cx-btn.primary { background: var(--accent); border-color: color-mix(in oklab, var(--accent) 55%, black); }
+:where(:root[data-era="aqua"]) .cx-btn.danger { background: var(--bad); border-color: color-mix(in oklab, var(--bad) 55%, black); }
+:where(:root[data-era="aqua"]) .cx-btn.ghost { border-color: transparent; background: none; box-shadow: none; }
+:where(:root[data-era="aqua"]) .cx-head { gap: 10px; padding: 5px 10px; border-bottom: 1px solid color-mix(in oklab, var(--head) 55%, black); font-size: 11px; font-weight: 700; }
+:where(:root[data-era="aqua"]) .cx-brand b { font-size: 13px; letter-spacing: 0; }
+:where(:root[data-era="aqua"]) .cx-tabs { gap: 0; padding: 6px 8px 0; background: var(--bg); }
+:where(:root[data-era="aqua"]) .cx-tabs .cx-tab { margin-right: 2px; padding: 4px 12px; border: 1px solid var(--line); border-bottom: 0; background: color-mix(in oklab, var(--bg) 80%, var(--line)); font-size: 11px; }
+:where(:root[data-era="aqua"]) .cx-tabs .cx-tab[aria-pressed="true"] { margin-bottom: -1px; padding-bottom: 5px; background: var(--panel); box-shadow: inset 0 2px 0 var(--accent); font-weight: 700; }
+:where(:root[data-era="aqua"]) .cx-side { width: 180px; padding: 10px 6px; }
+:where(:root[data-era="aqua"]) .cx-side .cx-tab::before { content: "\25AA"; margin-right: 6px; opacity: 0.6; }
+:where(:root[data-era="aqua"]) .cx-card { box-shadow: 2px 2px 0 rgb(0 0 0 / 0.12); }
+:where(:root[data-era="aqua"]) .cx-table th, :where(:root[data-era="aqua"]) .cx-table td { padding: 4px 8px; border: 1px solid var(--line); }
+:where(:root[data-era="aqua"]) .cx-table th { background: color-mix(in oklab, var(--panel) 76%, var(--line)); color: var(--fg); font-size: 11px; font-weight: 700; }
+:where(:root[data-era="aqua"]) .cx-state { padding: 0 6px; border: 1px solid currentColor; border-radius: 0; }
+:where(:root[data-era="aqua"]) .cx-bar { height: 8px; border: 1px solid var(--line); border-radius: 0; background: var(--panel); }
+:where(:root[data-era="aqua"]) .cx-chip { border-radius: 0; }
+:where(:root[data-era="aqua"]) .cx-tile { box-shadow: inset 1px 1px 0 rgb(255 255 255 / 0.8), inset -1px -1px 0 rgb(0 0 0 / 0.15); }
+
+/* 2007 to 2013: glossy Web 2.0 with rounded panels, gradient tabs, pill buttons and soft shadows. */
+:where(:root[data-era="leopard"]) { --gloss: linear-gradient(color-mix(in srgb, white 30%, transparent), rgb(255 255 255 / 0.05) 50%, rgb(0 0 0 / 0.07) 51%, rgb(255 255 255 / 0.1)); }
+:where(:root[data-era="leopard"]) .cx { --r: 6px; --font: "Lucida Grande", "Lucida Sans Unicode", "Trebuchet MS", Verdana, sans-serif; --bg: #eaf0f7; --line: #c3cfdd; background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--panel) 45%, transparent) 0 5px, transparent 5px 10px), var(--bg); }
+:where(:root[data-era="leopard"]) .cx input { border-radius: 6px; box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.14); }
+:where(:root[data-era="leopard"]) .cx input:focus { border-color: var(--accent); outline: 0; box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 28%, transparent); }
+:where(:root[data-era="leopard"]) .cx-btn { padding: 5px 14px; border-color: color-mix(in oklab, var(--line) 65%, black); border-radius: 999px; background: var(--gloss) var(--panel); box-shadow: 0 1px 2px rgb(0 0 0 / 0.14), inset 0 1px 0 color-mix(in srgb, white 35%, transparent); }
+:where(:root[data-era="leopard"]) .cx-btn:hover { background: var(--gloss) var(--panel); filter: brightness(0.96); }
+:where(:root[data-era="leopard"]) .cx-btn.primary { background: var(--gloss) var(--accent); border-color: color-mix(in oklab, var(--accent) 65%, black); text-shadow: 0 -1px 0 rgb(0 0 0 / 0.3); }
+:where(:root[data-era="leopard"]) .cx-btn.danger { background: var(--gloss) var(--bad); border-color: color-mix(in oklab, var(--bad) 65%, black); text-shadow: 0 -1px 0 rgb(0 0 0 / 0.3); }
+:where(:root[data-era="leopard"]) .cx-btn.ghost { border-color: transparent; background: none; box-shadow: none; text-shadow: none; filter: none; }
+:where(:root[data-era="leopard"]) .cx-head { position: relative; z-index: 1; padding: 12px 18px; border-bottom: 1px solid color-mix(in oklab, var(--head) 60%, black); background: linear-gradient(rgb(255 255 255 / 0.3), rgb(255 255 255 / 0.05) 50%, rgb(0 0 0 / 0.1) 51%, rgb(0 0 0 / 0)) var(--head); box-shadow: 0 2px 8px rgb(0 0 0 / 0.25); text-shadow: 0 -1px 0 rgb(0 0 0 / 0.3); }
+:where(:root[data-era="leopard"]) .cx-brand b { font-size: 18px; }
+:where(:root[data-era="leopard"]) .cx-tabs { gap: 4px; padding: 10px 14px 0; background: linear-gradient(var(--panel), color-mix(in oklab, var(--panel) 70%, var(--bg))); }
+:where(:root[data-era="leopard"]) .cx-tabs .cx-tab { padding: 7px 16px; border: 1px solid var(--line); border-bottom: 0; border-radius: 8px 8px 0 0; background: linear-gradient(var(--panel), color-mix(in oklab, var(--panel) 78%, var(--line))); }
+:where(:root[data-era="leopard"]) .cx-tabs .cx-tab[aria-pressed="true"] { margin-bottom: -1px; background: var(--panel); box-shadow: inset 0 3px 0 var(--accent); }
+:where(:root[data-era="leopard"]) .cx-side { position: relative; z-index: 1; box-shadow: 3px 0 10px rgb(0 0 0 / 0.2); }
+:where(:root[data-era="leopard"]) .cx-side .cx-tab[aria-pressed="true"] { background: var(--gloss) var(--accent); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.3); }
+:where(:root[data-era="leopard"]) .cx-card { border-radius: 10px; box-shadow: 0 8px 24px rgb(0 0 0 / 0.16), inset 0 1px 0 rgb(255 255 255 / 0.8); }
+:where(:root[data-era="leopard"]) .cx-table { border-collapse: separate; border-spacing: 0; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgb(0 0 0 / 0.1); }
+:where(:root[data-era="leopard"]) .cx-table th { background: linear-gradient(var(--panel), color-mix(in oklab, var(--panel) 82%, var(--line))); color: var(--fg); }
+:where(:root[data-era="leopard"]) .cx-bar { height: 9px; border-radius: 5px; box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.2); }
+:where(:root[data-era="leopard"]) .cx-bar i { background: var(--gloss) var(--accent); }
+:where(:root[data-era="leopard"]) .cx-chip { background: var(--gloss) var(--panel); }
+:where(:root[data-era="leopard"]) .cx-tile { border-radius: 10px; background: linear-gradient(var(--panel), color-mix(in oklab, var(--panel) 85%, var(--line))); box-shadow: 0 1px 3px rgb(0 0 0 / 0.12), inset 0 1px 0 color-mix(in srgb, white 35%, transparent); }
+
+/* 2014 to 2019: flat Bootstrap look with a dark navbar, 4px controls, outlined secondary buttons and labelled states. */
+:where(:root[data-era="yosemite"]) .cx { --r: 4px; --font: "Helvetica Neue", Helvetica, Arial, sans-serif; --bg: #f6f7f8; --line: #dcdfe3; }
+:where(:root[data-era="yosemite"]) .cx-btn { padding: 6px 14px; border-color: color-mix(in oklab, var(--line) 80%, black); border-radius: 4px; }
+:where(:root[data-era="yosemite"]) .cx-btn.primary { border-color: color-mix(in oklab, var(--accent) 80%, black); }
+:where(:root[data-era="yosemite"]) .cx-btn.ghost { border-color: transparent; }
+:where(:root[data-era="yosemite"]) .cx-head { min-height: 50px; padding: 0 20px; background: color-mix(in oklab, var(--head) 38%, #1c1c1c); }
+:where(:root[data-era="yosemite"]) .cx-head .cx-btn.ghost { padding: 4px 12px; border: 1px solid rgb(255 255 255 / 0.35); }
+:where(:root[data-era="yosemite"]) .cx-tabs { gap: 2px; padding: 10px 20px 0; background: var(--bg); }
+:where(:root[data-era="yosemite"]) .cx-tabs .cx-tab { margin-bottom: -1px; border: 1px solid transparent; border-radius: 4px 4px 0 0; }
+:where(:root[data-era="yosemite"]) .cx-tabs .cx-tab:hover { border-color: var(--line) var(--line) transparent; background: var(--hover); }
+:where(:root[data-era="yosemite"]) .cx-tabs .cx-tab[aria-pressed="true"] { border-color: var(--line) var(--line) var(--panel); background: var(--panel); }
+:where(:root[data-era="yosemite"]) .cx-side { width: 220px; }
+:where(:root[data-era="yosemite"]) .cx-login { justify-content: flex-start; padding-top: 72px; background: linear-gradient(var(--head) 0 200px, var(--bg) 200px); }
+:where(:root[data-era="yosemite"]) .cx-card { padding: 30px; box-shadow: 0 1px 1px rgb(0 0 0 / 0.05); }
+:where(:root[data-era="yosemite"]) .cx-table th { border-bottom: 2px solid var(--line); background: none; color: var(--fg); font-weight: 700; }
+:where(:root[data-era="yosemite"]) .cx-table tbody tr:hover td { background: var(--hover); }
+:where(:root[data-era="yosemite"]) .cx-state { padding: 2px 7px; border-radius: 3px; background: var(--muted); color: var(--panel); font-size: 11px; font-weight: 700; }
+:where(:root[data-era="yosemite"]) .cx-state.ok { background: var(--ok); color: var(--panel); }
+:where(:root[data-era="yosemite"]) .cx-state.bad { background: var(--bad); color: var(--panel); }
+:where(:root[data-era="yosemite"]) .cx-state.accent { background: var(--info); color: var(--panel); }
+:where(:root[data-era="yosemite"]) .cx-bar { height: 8px; border-radius: 4px; }
+:where(:root[data-era="yosemite"]) .cx-chip { border-radius: 4px; }
+
+/* 2025 onwards: liquid glass with capsule controls, floating blurred panels and soft gradient backgrounds. */
+:where(:root[data-era="tahoe"]) { --blur: blur(22px) saturate(1.8); --hi: inset 0 1px 0 rgb(255 255 255 / 0.75); }
+:where(:root[data-era="tahoe"]) .cx { --r: 14px; --font: -apple-system, "SF Pro Text", Inter, system-ui, sans-serif; --bg: #edf0f7; --line: #d6dbe6; background: radial-gradient(900px 480px at 8% -8%, color-mix(in oklab, var(--accent) 24%, transparent), transparent 70%), radial-gradient(700px 420px at 100% 8%, color-mix(in oklab, var(--info) 18%, transparent), transparent 70%), var(--bg); }
+:where(:root[data-era="tahoe"]) .cx input { padding: 7px 14px; border-color: color-mix(in srgb, var(--line) 70%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--panel) 70%, transparent); box-shadow: var(--hi); }
+:where(:root[data-era="tahoe"]) .cx-btn { padding: 6px 16px; border-color: color-mix(in srgb, var(--line) 70%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--panel) 65%, transparent); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: var(--hi), 0 1px 3px rgb(0 0 0 / 0.08); }
+:where(:root[data-era="tahoe"]) .cx-btn:hover { background: color-mix(in srgb, var(--panel) 88%, transparent); }
+:where(:root[data-era="tahoe"]) .cx-btn.primary { border-color: transparent; background: linear-gradient(color-mix(in oklab, var(--accent) 80%, white), var(--accent)); box-shadow: var(--hi), 0 4px 14px color-mix(in srgb, var(--accent) 38%, transparent); }
+:where(:root[data-era="tahoe"]) .cx-btn.danger { border-color: transparent; background: linear-gradient(color-mix(in oklab, var(--bad) 80%, white), var(--bad)); box-shadow: var(--hi), 0 4px 14px color-mix(in srgb, var(--bad) 38%, transparent); }
+:where(:root[data-era="tahoe"]) .cx-btn.ghost { border-color: transparent; background: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+:where(:root[data-era="tahoe"]) .cx-head { margin: 10px 12px 0; padding: 9px 18px; border-radius: 26px; background: color-mix(in srgb, var(--head) 80%, transparent); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: var(--hi), 0 8px 24px color-mix(in srgb, var(--head) 30%, transparent); }
+:where(:root[data-era="tahoe"]) .cx-tabs { align-self: flex-start; gap: 2px; width: fit-content; max-width: calc(100% - 24px); margin: 10px 12px 0; padding: 4px; overflow-x: auto; border: 1px solid color-mix(in srgb, var(--line) 70%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--panel) 55%, transparent); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: var(--hi); }
+:where(:root[data-era="tahoe"]) .cx-tabs .cx-tab { padding: 6px 16px; border: 0; border-radius: 999px; }
+:where(:root[data-era="tahoe"]) .cx-tabs .cx-tab[aria-pressed="true"] { background: color-mix(in srgb, var(--panel) 92%, white); box-shadow: var(--hi), 0 2px 8px rgb(0 0 0 / 0.12); }
+:where(:root[data-era="tahoe"]) .cx-side { margin: 10px 0 10px 10px; border-radius: 26px; background: color-mix(in srgb, var(--side) 88%, transparent); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: var(--hi), 0 10px 30px rgb(0 0 0 / 0.18); }
+:where(:root[data-era="tahoe"]) .cx-side .cx-tab { border-radius: 999px; }
+:where(:root[data-era="tahoe"]) .cx-side .cx-tab[aria-pressed="true"] { box-shadow: var(--hi); }
+:where(:root[data-era="tahoe"]) .cx-card { padding: 32px; border-color: color-mix(in srgb, var(--line) 60%, transparent); border-radius: 26px; background: color-mix(in srgb, var(--panel) 62%, transparent); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: var(--hi), 0 14px 40px rgb(0 0 0 / 0.1); }
+:where(:root[data-era="tahoe"]) .cx-table { border-collapse: separate; border-spacing: 0; border-color: color-mix(in srgb, var(--line) 60%, transparent); border-radius: 18px; overflow: hidden; background: color-mix(in srgb, var(--panel) 62%, transparent); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: var(--hi), 0 8px 28px rgb(0 0 0 / 0.07); }
+:where(:root[data-era="tahoe"]) .cx-table tbody tr:hover td { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+:where(:root[data-era="tahoe"]) .cx-state { padding: 2px 10px; box-shadow: var(--hi); }
+:where(:root[data-era="tahoe"]) .cx-bar { height: 8px; border-radius: 999px; box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.15); }
+:where(:root[data-era="tahoe"]) .cx-bar i { background: linear-gradient(color-mix(in oklab, var(--accent) 78%, white), var(--accent)); border-radius: 999px; }
+:where(:root[data-era="tahoe"]) .cx-chip { padding: 4px 14px; background: color-mix(in srgb, var(--panel) 65%, transparent); box-shadow: var(--hi); }
+:where(:root[data-era="tahoe"]) .cx-tile { border-radius: 22px; background: color-mix(in srgb, var(--panel) 62%, transparent); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: var(--hi), 0 6px 20px rgb(0 0 0 / 0.07); }
+:where(:root[data-era="tahoe"]) .cx-login:is([data-look="ilol"], [data-look="xclarify"]) .cx-card { background: color-mix(in srgb, var(--panel) 88%, transparent); }
+
+/* Vendor top bars and login cards keep their brand colours and take the shape of the web era. */
+:root[data-era="leopard"] :is(.cp-top, .pk-top, .da-top, .tc-top, .mk-top, .pt-nav, .hz-top, .pd-top, .ov-top, .sy-top, .oc-top, .mp-top, .bk-top, .ovz-top) { position: relative; z-index: 1; box-shadow: inset 0 1px 0 color-mix(in srgb, white 30%, transparent), 0 2px 8px rgb(0 0 0 / 0.25); }
+:root[data-era="leopard"] :is(.cp-card, .pk-card, .da-card, .fp-card, .tc-card, .mk-card, .pt-card, .hz-card, .pd-card, .ov-card, .sy-card, .oc-card, .mp-card, .bk-card, .mn-card, .ovz-card) { border-radius: 10px; box-shadow: 0 8px 24px rgb(0 0 0 / 0.16); }
+:root[data-era="yosemite"] :is(.cp-top, .pk-top, .da-top, .tc-top, .mk-top, .pt-nav, .hz-top, .pd-top, .ov-top, .sy-top, .oc-top, .mp-top, .bk-top, .ovz-top) { min-height: 46px; border-radius: 0; box-shadow: none; }
+:root[data-era="yosemite"] :is(.cp-card, .pk-card, .da-card, .fp-card, .tc-card, .mk-card, .pt-card, .hz-card, .pd-card, .ov-card, .sy-card, .oc-card, .mp-card, .bk-card, .mn-card, .ovz-card) { border-radius: 4px; box-shadow: 0 1px 1px rgb(0 0 0 / 0.05); }
+:root[data-era="tahoe"] :is(.cp-top, .pk-top, .da-top, .tc-top, .mk-top, .pt-nav, .hz-top, .pd-top, .ov-top, .sy-top, .oc-top, .mp-top, .bk-top, .ovz-top) { margin: 8px 8px 0; border-radius: 22px; box-shadow: var(--hi), 0 8px 24px rgb(0 0 0 / 0.18); }
+:root[data-era="tahoe"] :is(.cp-card, .pk-card, .da-card, .fp-card, .tc-card, .mk-card, .pt-card, .hz-card, .pd-card, .ov-card, .sy-card, .oc-card, .mp-card, .bk-card, .mn-card, .ovz-card) { border-radius: 26px; box-shadow: var(--hi), 0 14px 40px rgb(0 0 0 / 0.14); }
+
 /* Bars follow the product's own era, not the desktop's: boxed and bevelled early on, thin and flat late. */
 .cx[data-era="early"] .cx-bar { height: 12px; border: 1px solid #8a8a8a; border-radius: 0; background: #fff; box-shadow: inset 1px 1px 0 rgb(0 0 0 / 0.12); }
 .cx[data-era="early"] .cx-bar i { background: linear-gradient(#8fb4e8, var(--accent) 55%, #2f5d9e); }
@@ -106,3 +227,4 @@
 .pk[data-era="early"] .cx-bar i { background: linear-gradient(#f9b25e, #e07b10); }
 .ovz[data-era="early"] .cx-bar { height: 10px; border-color: #777; background: #f6f6f6; box-shadow: none; }
 .ovz[data-era="early"] .cx-bar i { background: var(--accent); }
+.cx-note.bad { color: var(--bad); }

@@ -35,3 +35,18 @@ export function wallpaperSvg(): string {
     <g font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="0.08em" fill="oklch(0.85 0.05 230 / 0.55)">${cities.map(city).join("")}</g>
   </svg>`;
 }
+
+export interface WallpaperCredit { title: string; author: string; license: string; url: string }
+
+// Mirrors public/wallpapers/CREDITS.txt.
+export type WallpaperId = "aqua" | "leopard" | "yosemite" | "bigsur" | "tahoe";
+
+export const WALLPAPER_CREDITS: Record<WallpaperId, WallpaperCredit> = {
+  aqua: { title: "China silk-crystalblue", author: "Party Fabrics", license: "CC BY-SA 2.0", url: "https://commons.wikimedia.org/wiki/File:China_silk-crystalblue.jpg" },
+  leopard: { title: "Aurora Borealis above Bear Lake", author: "SSgt Joshua Strang, USAF", license: "Public domain", url: "https://commons.wikimedia.org/wiki/File:The_Aurora_Borealis_or_Northern_Lights_shine_above_Bear_Lake_in_Alaska_050910-F-MS415-009.jpg" },
+  yosemite: { title: "Tunnel View overlook, Yosemite Valley", author: "EF5", license: "CC0", url: "https://commons.wikimedia.org/wiki/File:%E2%80%9CTunnel_View%E2%80%9D_overlook_showing_famous_rock_formations_in_Yosemite_Valley_01.jpg" },
+  bigsur: { title: "Pacific Coast at Bixby Creek Bridge 2013", author: "Tuxyso", license: "CC BY-SA 3.0", url: "https://commons.wikimedia.org/wiki/File:Pacific_Coast_at_Bixby_Creek_Bridge_2013.jpg" },
+  tahoe: { title: "Emerald Bay, Lake Tahoe", author: "Eric Philbin", license: "CC0", url: "https://commons.wikimedia.org/wiki/File:Emerald_Bay,_Lake_Tahoe,_California._2015.jpg" },
+};
+
+export const SOUND_CREDIT = { text: "Kenney, CC0", url: "https://www.kenney.nl" };

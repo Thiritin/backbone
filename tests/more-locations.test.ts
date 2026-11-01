@@ -6,12 +6,12 @@ import type { Profile } from "../src/sim/30-customers/customers";
 import { CITY_TLD } from "../src/sim/30-customers/domains";
 import { registryCost } from "../src/sim/30-customers/registry";
 import { orderLead } from "../src/sim/30-market/orders";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { travelCost } from "../src/sim/60-infra/status";
 import { addLocation } from "../src/sim/90-actions/hardware";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { CITIES as MAP_CITIES } from "../src/ui/map/world-data";
-import { readyGame } from "./fixtures";
+import { readyGame, newGame } from "./fixtures";
 
 const NEW = ["Düsseldorf", "Kerkrade", "Nuremberg", "Falkenstein", "Munich", "Ashburn", "New York", "Chicago", "Dallas", "Los Angeles"];
 const US = ["Ashburn", "New York", "Chicago", "Dallas", "Los Angeles"];
@@ -36,7 +36,7 @@ describe("more locations", () => {
     }
     for (const dc of DATACENTERS.filter((d) => d.exchange)) expect(exchangeAt(dc)?.name).toBe(dc.exchange!.name);
     expect(datacenterById("skyblink-eygelshoven")).toMatchObject({ city: "Kerkrade", provider: "skyblink", carriers: 20, positionPrice: 300, size: "small" });
-    for (const id of ["equinox-du1", "interaction-dus", "ntd-dus1"]) expect(datacenterById(id).city).toBe("Düsseldorf");
+    for (const id of ["equinox-du1", "interaction-dus", "ntd-dus1", "myloch-dus"]) expect(datacenterById(id).city).toBe("Düsseldorf");
     expect(datacenterById("equinox-du1").positionPrice).toBeLessThan(datacenterById("equinox-fr5").positionPrice);
   });
 
