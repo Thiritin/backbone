@@ -48,7 +48,7 @@ import type { TrendPoint } from "./80-business/trend";
 import type { StatusDay } from "./80-business/status";
 
 // 3: GPU line servers carry their preset cards. 4: an unregistered game holds its savings until the bank account opens.
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 export type BondMode = "none" | "failover" | "balance";
 export type CableKind = "copper" | "dac" | "fiber" | "rollover";
@@ -121,7 +121,12 @@ export interface Device extends MachineState { id: string; model: string; brand:
   overheatedAt?: number; hotHours?: number;
   // A small-office router's home network (docs/design/lan.md); a datacenter handoff stores only once it hands out leases.
   lan?: RouterLan;
+  // A server's network setting as its OS stores it, and the one ip or ifdown set since boot (lan.md, Shell): it holds only
+  // while bootUntil is still the boot it was set in, so the next boot drops it.
+  iface?: IfaceConfig; runtime?: IfaceConfig & { down?: true; boot: number | null };
 }
+// DHCP, or a static address with its prefix, gateway and name server; static without ip leaves the interface unconfigured.
+export interface IfaceConfig { mode: "dhcp" | "static"; ip?: string; prefix?: number; gw?: string; dns?: string }
 // A router's range, DHCP pool and lease time, the addresses it always gives the same device, its live leases (until is the
 // hour a lease runs out) and its port shares, each pointing at an address on the network.
 export interface RouterLan {
@@ -366,6 +371,7 @@ export function deviceDefaults(modelId: string, at: number, partList?: PartSpec[
     hung: false, bmcHung: false, log: [] as { hour: number; key: string }[], os: null as MachineState["os"], software: [] as MachineState["software"],
     stuck: false, locked: false, setup: false, bootFrom: "disk" as const, ...(hasFirmware(modelById(modelId)) ? { fw: { version: yearOf(at), updatedAt: at } } : {}),
     ...(isOfficeRouter(modelById(modelId)) ? { lan: homeLan() } : {}),
+    ...(modelById(modelId).kind === "server" ? { iface: { mode: "dhcp" } as IfaceConfig } : {}),
     ...(isManaged(modelById(modelId)) ? { vlans: {} as Record<number, PortVlan>, saved: { groups: [], vlans: {} } as SwitchConfig } : {}),
   };
 }

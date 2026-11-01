@@ -41,5 +41,7 @@ export default {
   "error.badAddress": () => "Inserisci un indirizzo IPv4 privato.",
   "error.portShared": () => "La porta 80 è già condivisa con un altro dispositivo.",
   "error.noAddress": () => "Questo dispositivo non ha un indirizzo nella rete del router.",
+  "error.badIp": () => "L'indirizzo IP non è valido.",
+  "error.notServerNet": () => "Solo i server hanno un'impostazione di rete.",
   "error.notOfficeRouter": () => "Solo un router da piccolo ufficio sostituisce quello del seminterrato.",
 } satisfies Dict;

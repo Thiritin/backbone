@@ -14,11 +14,11 @@ import { buyDevice, freeFloor } from "./fixtures";
 import { hire, setTechRules } from "../src/sim/90-actions/staff";
 import type { Call } from "../src/sim/90-actions/index";
 import { mountDevice } from "./plugged";
-import { readyGame } from "./fixtures";
+import { readyGame, withNames } from "./fixtures";
 
 const run = (s: GameState, [fn, ...args]: Call) => fn(s, ...args);
 
-const base = readyGame(3);
+const base = withNames(readyGame(3));
 const fresh = (): GameState => structuredClone(base);
 const dev = (s: GameState, id: string) => s.devices.find((d) => d.id === id)!;
 const must = (r: { ok: boolean; id?: string; error?: string }): string => {
@@ -163,7 +163,7 @@ describe("terminal", () => {
     const lines = out(s, null, `traceroute ${host(s)}`).split("\n");
     expect(lines).toHaveLength(4);
     expect(lines[1]).toMatch(/^ 1  \S+  [\d.]+ ms  [\d.]+ ms  [\d.]+ ms$/);
-    expect(lines[3]).toContain(`${host(s)}.${s.company.domain} (192.168.178.`);
+    expect(lines[3]).toContain(`${host(s)}.fritz.bocks (192.168.178.`);
   });
 
   it("stops the trace at the last working hop when a switch is powered off", () => {
