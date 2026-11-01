@@ -28,6 +28,7 @@ export const STORE: StoreItem[] = [
   { id: "Nagiosaurus", kind: "app", name: "Nagiosaurus", monthly: 15 },
   { id: "Knowledge base", kind: "app", name: "Knowledge base", monthly: 10 },
   { id: "searchlight", kind: "upgrade", name: "Searchlight", monthly: 2 },
+  { id: "keepassive", kind: "upgrade", name: "KeePassive", monthly: 3 },
   ...WIDGETS.map(([id, name, monthly]): StoreItem => ({ id, kind: "upgrade", name, monthly })),
   // One subscription is one bot; what each bot does is in 47-staff/staff.ts.
   { id: "chadGpt", kind: "bot", name: "ChadGPT Support", monthly: 50 },

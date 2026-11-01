@@ -1,4 +1,4 @@
-import { Bot, Search, CalendarDays, Paperclip, ChartLine, Check, ChevronLeft, LifeBuoy, Trophy, Users, Wallet, type LucideIcon } from "lucide-react";
+import { Bot, KeyRound, Search, CalendarDays, Paperclip, ChartLine, Check, ChevronLeft, LifeBuoy, Trophy, Users, Wallet, type LucideIcon } from "lucide-react";
 import { useEffect, useState, type CSSProperties } from "react";
 import { useSessionState } from "../../session";
 import { euroCents } from "../../../sim/00-core/money";
@@ -19,6 +19,7 @@ import { t } from "../../../i18n/en";
 
 const UPGRADES: Record<string, { icon: LucideIcon; tile: string }> = {
   searchlight: { icon: Search, tile: "oklch(0.55 0.16 255)" },
+  keepassive: { icon: KeyRound, tile: "oklch(0.5 0.12 150)" },
   widgetCalendar: { icon: CalendarDays, tile: "oklch(0.6 0.2 25)" },
   widgetTickets: { icon: LifeBuoy, tile: "oklch(0.62 0.19 35)" },
   widgetCash: { icon: Wallet, tile: "oklch(0.55 0.13 175)" },
@@ -30,7 +31,7 @@ const UPGRADES: Record<string, { icon: LucideIcon; tile: string }> = {
 };
 
 const INCLUDES: Record<string, number> = {
-  Network: 3, Staff: 3, Marketing: 3, Nagiosaurus: 3, "Knowledge base": 3, Market: 3, searchlight: 3, widgetCalendar: 1, widgetTickets: 2, widgetCash: 2, widgetRevenue: 2, widgetCustomers: 2, widgetLevel: 3, chadGpt: 3, clipsy: 2,
+  Network: 3, Staff: 3, Marketing: 3, Nagiosaurus: 3, "Knowledge base": 3, Market: 3, searchlight: 3, keepassive: 3, widgetCalendar: 1, widgetTickets: 2, widgetCash: 2, widgetRevenue: 2, widgetCustomers: 2, widgetLevel: 3, chadGpt: 3, clipsy: 2,
 };
 
 const SHELVES: [string, string[]][] = [
@@ -38,7 +39,7 @@ const SHELVES: [string, string[]][] = [
   ["Growth", ["Staff", "Marketing", "Market"]],
   ["Bots", ["chadGpt", "clipsy"]],
   ["Support desks", ["ostickit", "zendusk", "freshdusk", "freescoot"]],
-  ["Upgrades", ["searchlight", "widgetCalendar", "widgetTickets", "widgetCash", "widgetRevenue", "widgetCustomers", "widgetLevel"]],
+  ["Upgrades", ["searchlight", "keepassive", "widgetCalendar", "widgetTickets", "widgetCash", "widgetRevenue", "widgetCustomers", "widgetLevel"]],
 ];
 
 export const artOf = (item: StoreItem) => (item.kind === "app" ? appByName(item.id) : item.kind === "desk" ? { icon: DESK[item.id].icon, tile: DESK[item.id].tile, about: t(`shop.deskAbout.${item.id}`) } : { ...UPGRADES[item.id], about: t(`shop.upgrade.${item.id}`) });
