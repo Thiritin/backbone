@@ -14,7 +14,7 @@ describe("shop section", () => {
     chooseShop(s, "handRolled");
     expect(s.shop.variant).toBe("handRolled");
     let html = renderToString(<Shop game={s} />);
-    expect(html).toContain("Hand-rolled order form");
+    expect(html).toContain("Self-scripted order form");
     expect(html).toContain("Custom scripts");
     expect(html).not.toContain("WHMCache");
     s.unlocks = [...s.unlocks, "shops"];
