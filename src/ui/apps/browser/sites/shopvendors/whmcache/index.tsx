@@ -170,7 +170,7 @@ function Download({ game }: { game: GameState }) {
   return (
     <div className="wcv-doc">
       {latest && <p className="wcv-big num">{`${shopById(ID).name} ${latest.version}`}</p>}
-      <ol>{[0, 1, 2, 3].map((i) => <li key={i}>{t(`shop-whmCache.install${i}`, { domain: game.company.domain ? `portal.${game.company.domain}/admin` : "portal" })}</li>)}</ol>
+      <ol>{[0, 1, 2, 3].map((i) => <li key={i}>{t(`shop-whmCache.install${i}`, { page: t("browser-consoles-1.cpSoftwareUpdates"), domain: game.company.domain ? `portal.${game.company.domain}/admin` : "portal" })}</li>)}</ol>
     </div>
   );
 }

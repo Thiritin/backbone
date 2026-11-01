@@ -38,7 +38,7 @@ export default {
   "shop-whmCache.allUpdates": () => "Alle Updates, solange die Miete läuft",
   "shop-whmCache.upgradeTo": (p) => `Upgrade von ${p.from} auf ${p.to}`,
   "shop-whmCache.install0": () => "Kaufe einen Lizenzschlüssel auf der Preisseite.",
-  "shop-whmCache.install1": () => "Öffne in der Konsole die Einstellungen eines deiner Panel-Hosts und gehe zu Shopsystem.",
+  "shop-whmCache.install1": (p) => `Öffne die Konsole eines deiner Panel-Hosts und gehe zu ${p.page}.`,
   "shop-whmCache.install2": () => "Gib den Schlüssel ein und klicke auf WHMCache installieren, um es auf einem Webspace dieses Hosts einzurichten.",
   "shop-whmCache.install3": (p) => `Melde dich im Admin unter ${p.domain} an.`,
   "shop-whmCache.installation": () => "Installation",

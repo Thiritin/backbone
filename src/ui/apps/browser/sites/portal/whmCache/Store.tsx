@@ -86,7 +86,7 @@ export function StoreFrame(props: SkinProps & { children: ReactNode }) {
     <div className="portal whc whc-store whc-flat">
       <header className="whc-brand">{brand}{tabs}</header>
       <div className="whc-wrap">
-        <p className="whc-path"><a href="#" onClick={link(() => open("store"))}>{t("shop-whmCache.store")}</a><span>/</span>{title}</p>
+        {title !== t("shop-whmCache.store") && <p className="whc-path"><a href="#" onClick={link(() => open("store"))}>{t("shop-whmCache.store")}</a><span>/</span>{title}</p>}
         {route.area === "store" && <Groups {...props} />}
         <main className="whc-main">{children}</main>
       </div>

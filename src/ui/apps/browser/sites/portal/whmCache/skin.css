@@ -2,7 +2,7 @@
 .whc { min-height: 100%; color: #1f2937; }
 .whc a { color: inherit; }
 .whc input, .whc select { font: inherit; color: #1f2937; background: #fff; border: 1px solid #b8bec8; padding: 3px 6px; }
-.whc .num { font-variant-numeric: tabular-nums; }
+.whc .num { font-family: inherit; font-variant-numeric: tabular-nums; }
 .whc .pt-version { font-size: 11px; }
 .whc-mark { text-decoration: none; letter-spacing: -0.02em; white-space: nowrap; }
 .whc-mark b { font-weight: 800; }

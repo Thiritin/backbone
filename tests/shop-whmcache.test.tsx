@@ -39,6 +39,12 @@ describe("WHMCache vendor site and skin", () => {
     expect(account).toContain("Unassigned");
   });
 
+  it("offers the upgrade to the next major under My account", () => {
+    const s = shopGame("whmCache", 2010);
+    issueKey(s, "whmCache", null, undefined, "3");
+    expect(site(s, "/account")).toContain("Upgrade to 4");
+  });
+
   it("picks the admin look from the installed major", () => {
     expect([lookOf("3.0"), lookOf("5"), lookOf("7.0"), lookOf("8.0"), lookOf("9.0")]).toEqual(["classic", "gloss", "gloss", "flat", "flat"]);
     const s = shopGame(), route = parsePortal("whmCache", portalPath("whmCache", "admin"))!;

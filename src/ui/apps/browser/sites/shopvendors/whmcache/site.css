@@ -2,7 +2,7 @@
 .wcv { min-height: 100%; color: #1f2937; background: #fff; }
 .wcv a { color: inherit; }
 .wcv h1, .wcv h2, .wcv h3 { margin: 0; }
-.wcv .num { font-variant-numeric: tabular-nums; }
+.wcv .num { font-family: inherit; font-variant-numeric: tabular-nums; }
 .wcv-mark { white-space: nowrap; letter-spacing: -0.02em; }
 .wcv-mark b { font-weight: 800; }
 .wcv-logo { text-decoration: none; }
@@ -48,7 +48,7 @@
 .wcv-boxed .wcv-hero p { margin: 0 0 10px; }
 .wcv-boxed .wcv-btn { padding: 3px 12px; font-weight: bold; font-size: 11px; color: #222; border: 1px solid; border-color: #fff #7a7a7a #7a7a7a #fff; background: linear-gradient(#f6f6f6, #d4d4d4); }
 .wcv-boxed .wcv-primary { color: #fff; border-color: #ffd08f #a85300 #a85300 #ffd08f; background: linear-gradient(#ffb04d, #f07c00); }
-.wcv-boxed .wcv-features { gap: 0; margin-top: 14px; border: 1px solid #c6cfdb; }
+.wcv-boxed .wcv-features { grid-template-columns: 1fr 1fr; gap: 0; margin-top: 14px; border: 1px solid #c6cfdb; }
 .wcv-boxed .wcv-features article { padding: 8px 10px; border: 1px solid #e3e8ef; }
 .wcv-boxed .wcv-features h3 { font-size: 12px; color: #17407a; }
 .wcv-boxed .wcv-features p { margin: 4px 0 0; }
