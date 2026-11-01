@@ -68,7 +68,8 @@ export function runsHot(s: GameState, deviceId: string): boolean {
 // Moves the smallest running VM off each hot node to the idlest node that is not hot itself, live, one per node an hour; a
 // node of another CPU vendor takes it only in compatibility mode.
 // ponytail: smallest-first is a plain heuristic; weigh by what the VM uses once balancing needs to be smarter.
-function balance(s: GameState, c: Cluster) {
+function balanceMoves(s: GameState, c: Cluster): { workloadId: string; to: string }[] {
+  const moves: { workloadId: string; to: string }[] = [];
   for (const n of c.nodes) {
     if (n.state !== "active" || !working(s, n.deviceId) || !runsHot(s, n.deviceId)) continue;
     const vms = s.workloads.filter((w) => w.clusterId === c.id && w.deviceId === n.deviceId && !w.stopped && w.busyUntil <= s.hour && !lostDisk(s, w))
@@ -76,10 +77,21 @@ function balance(s: GameState, c: Cluster) {
     for (const w of vms) {
       const to = pickNode(s, cluster(s, c.id), w, n.deviceId, "spread");
       if (!to || runsHot(s, to) || !liveBetween(s, s.devices.find((d) => d.id === n.deviceId)!, s.devices.find((d) => d.id === to)!) || !diskMovesLive(s, c, w, to)) continue;
-      patch(s, w.id, { deviceId: to, placedAt: s.hour });
+      moves.push({ workloadId: w.id, to });
       break;
     }
   }
+  return moves;
+}
+
+// DRS pass: Full moves the VMs itself, Manual and Partial keep up to five recommendations for the player to apply.
+function balance(s: GameState, c: Cluster) {
+  const moves = balanceMoves(s, c);
+  if (c.drs === "full") {
+    for (const m of moves) patch(s, m.workloadId, { deviceId: m.to, placedAt: s.hour });
+    return;
+  }
+  s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, recs: moves.slice(0, 5).map((m) => ({ ...m, at: s.hour })) } : x));
 }
 
 // Hourly, before the down hours are counted.
@@ -90,7 +102,8 @@ export function haTick(s: GameState): SimEvent[] {
   for (const id of s.clusters.filter((c) => c.kind === "cloud" && c.platform).map((c) => c.id)) {
     if (cluster(s, id).ha.failover) failover(s, cluster(s, id), events);
     const c = cluster(s, id);
-    if (c.ha.balance && c.ha.live && balances(s, c)) balance(s, c);
+    if (c.drs !== "off" && c.ha.live && balances(s, c)) balance(s, c);
+    else if (c.recs.length) s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, recs: [] } : x));
   }
   // A clustered panel host restarts the web spaces of a failed server on the others without any research.
   for (const c of s.clusters.filter((x) => x.kind === "panel" && x.nodes.length > 1)) failover(s, c, events);

@@ -39,7 +39,7 @@ export const PANEL_VM_MIN: Resources = { vcpu: 1, ramGb: 1, diskGb: 10 };
 
 const blank = (s: GameState, id: string, name: string, az: string, kind: SoftwareKind): Cluster => ({
   id, name, az, kind, placement: "pack", nodes: [], panel: null, platform: null, vm: null, controlPlane: null, switching: null, appSuite: false, datastores: [], packages: [],
-  jobs: [], php: phpAt(yearOf(s.hour)), phpUntil: -1, ha: { ...HA_OFF }, version: yearOf(s.hour), updatedAt: s.hour,
+  jobs: [], drs: "off", recs: [], php: phpAt(yearOf(s.hour)), phpUntil: -1, ha: { ...HA_OFF }, version: yearOf(s.hour), updatedAt: s.hour,
 });
 // The name a cluster in one of the player's VMs gets, by the kind of its software.
 const PREFIX: Record<SoftwareKind, string> = { panel: "Web", cloud: "Cloud", game: "Game", mail: "Mail", dns: "DNS", vpn: "VPN", storage: "Storage", backup: "Backup" };
@@ -107,7 +107,7 @@ export function createVm(s: GameState, clusterId: string, size: Resources): Acti
   { const q = quorumBlock(s, c); if (q) return fail(q); }
   if (KEYS.some((k) => !Number.isFinite(size[k]) || size[k] < PANEL_VM_MIN[k])) return fail("error.vmSize");
   if (cephOn(c) && cephUsed(s, c) + size.diskGb > cephCapacity(s, c)) return fail("error.cephFull");
-  const disk = withDatastore(s, c, size), node = pickNode(s, c, disk);
+  const disk = withDatastore(s, c, size), node = pickNode(s, c, disk, null, c.drs === "partial" || c.drs === "full" ? "spread" : c.placement);
   if (!node) return fail("error.noCapacity");
   const vm = workload(s, "", { ...disk, clusterId: c.id, deviceId: node, os: null, software: [] });
   s.workloads = [...s.workloads, vm];
@@ -370,8 +370,9 @@ export function setHa(s: GameState, clusterId: string, feature: keyof Ha, on: bo
   if (on && feature === "failover" && !editionAllows(c, "failover")) return fail("error.needsEdition");
   if (on && feature === "balance" && !c.ha.live) return fail("error.needsLiveMigration");
   if (on && feature === "balance" && !balances(s, c)) return fail("error.needsBalancer");
+  if (on && feature === "balance" && !editionAllows(c, "drs")) return fail("error.needsEdition");
   const ha = { ...c.ha, [feature]: on, ...(feature === "live" && !on ? { balance: false } : {}) };
-  update(s, c.id, (x) => ({ ...x, ha }));
+  update(s, c.id, (x) => ({ ...x, ha, ...(ha.balance !== c.ha.balance && { drs: ha.balance ? "full" as const : "off" as const }) }));
   return { ok: true };
 }
 
@@ -381,7 +382,7 @@ export function setBalancer(s: GameState, clusterId: string, on: boolean): Actio
   if (!c) return fail("error.unknownCluster");
   const b = c.platform ? balancerIn(softwareById(c.platform), yearOf(s.hour)) : null;
   if (!b || b.fee === 0) return fail("error.noBalancer");
-  update(s, c.id, (x) => ({ ...x, balancer: on, ...(!on && { ha: { ...x.ha, balance: false } }) }));
+  update(s, c.id, (x) => ({ ...x, balancer: on, ...(!on && { ha: { ...x.ha, balance: false }, drs: "off" as const }) }));
   return { ok: true };
 }
 
