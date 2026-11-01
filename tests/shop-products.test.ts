@@ -23,7 +23,6 @@ const shopGame = (seed = 5, id: Parameters<typeof chooseShop>[1] = "modemBill"):
   const s = readyGame(seed);
   s.cash = 1e6;
   setUpChannel(s, "website");
-  chooseShop(s, "hostBull");
   s.unlocks = [...s.unlocks, "shops"];
   expect(chooseShop(s, id).ok).toBe(true);
   s.hour += SHOP_SETUP_HOURS;

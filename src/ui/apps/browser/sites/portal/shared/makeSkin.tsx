@@ -19,7 +19,6 @@ export interface Look {
   // Admin screens in menu order, and the names this system gives them.
   screens?: ScreenName[];
   labels?: Partial<Record<ScreenName, string>>;
-  noClient?: boolean;
 }
 
 const ALL: ScreenName[] = ["home", "clients", "orders", "invoices", "products", "options", "servers"];
@@ -41,7 +40,7 @@ export function makeSkin(look: Look): Skin {
         {(look.screens ?? ALL).map((n) => <a key={n} href="#" className={current === n ? "on" : ""} onClick={(e) => { e.preventDefault(); go({ name: n }); }}>{look.labels?.[n] ?? SCREEN_LABEL[n]}</a>)}
       </nav>
     );
-    return <Frame {...props} nav={nav}><AdminScreen game={game} screen={screen} go={go} toClient={look.noClient ? undefined : (c) => open("client", {}, { c })} /></Frame>;
+    return <Frame {...props} nav={nav}><AdminScreen game={game} screen={screen} go={go} toClient={(c) => open("client", {}, { c })} /></Frame>;
   };
   const Store = (props: SkinProps) => <Frame {...props}><StoreFront {...props} flat={look.flat} steps={look.stepsFrom !== undefined && yearOf(props.game.hour) >= look.stepsFrom} /></Frame>;
   const Client = (props: SkinProps) => <Frame {...props}><ClientArea game={props.game} customerId={props.route.query.get("c")} /></Frame>;

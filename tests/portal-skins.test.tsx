@@ -11,8 +11,8 @@ import { shopGame, idOf, render } from "./portal-helpers";
 const LABEL: Record<string, string> = { monthly: "Monthly", quarterly: "Quarterly", semiannual: "Semi-annually", annual: "Annually", biennial: "Biennially", triennial: "Triennially" };
 
 // Variants that run on the game's first years, then the ones that need a later start.
-const LEGACY: ShopId[] = ["hostBull", "modemBill", "clientExit"];
-const PRODUCTS_LABEL: Record<string, string> = { handRolled: "Plans", modemBill: "Packages", clientExit: "Product Groups", blessta: "Package Groups", boxBillin: "Product categories", hostBull: "Order pages" };
+const LEGACY: ShopId[] = ["modemBill", "clientExit"];
+const PRODUCTS_LABEL: Record<string, string> = { modemBill: "Packages", clientExit: "Product Groups", blessta: "Package Groups", boxBillin: "Product categories", hostBull: "Order pages" };
 const MODERN: ShopId[] = ["blessta", "boxBillin", "hostBull"];
 
 const setup = (variant: ShopId): { s: GameState; g: string; p: string } => {
@@ -45,7 +45,7 @@ describe.each([...LEGACY, ...MODERN])("%s skin", (variant) => {
     expect(store).toContain(shopById(variant).name.replace("'", "&#x27;"));
     expect(render(s, variant, "configure", { group: g, product: p })).toContain("Add to Cart");
     s.customers.push({ id: "c1", name: "Ada Lovelace", since: 0, churnedAt: null } as never);
-    if (variant !== "hostBull") expect(render(s, variant, "client", {}, { c: "c1" }, "Client")).toContain("Ada Lovelace");
+    expect(render(s, variant, "client", {}, { c: "c1" }, "Client")).toContain("Ada Lovelace");
   });
 
   it("names the products screen in the system's own words", () => {
@@ -56,7 +56,7 @@ describe.each([...LEGACY, ...MODERN])("%s skin", (variant) => {
 
 describe("flat variants", () => {
   it("list the products without group headings", () => {
-    for (const variant of ["hostBull", "boxBillin"] as ShopId[]) {
+    for (const variant of ["boxBillin"] as ShopId[]) {
       const { s, g } = setup(variant);
       const html = render(s, variant, "store", { group: g });
       expect(html).toContain("Starter");
@@ -67,12 +67,5 @@ describe("flat variants", () => {
   it("keep groups on the others", () => {
     const { s, g } = setup("modemBill");
     expect(render(s, "modemBill", "store", { group: g })).toContain("<h2>Shared hosting</h2>");
-  });
-
-  it("have no client login in the hand-rolled admin", () => {
-    const { s } = setup("hostBull");
-    s.customers.push({ id: "c1", name: "Ada Lovelace", since: 0, churnedAt: null } as never);
-    expect(admin(s, "hostBull", { s: "client", id: "c1" })).not.toContain("Login as Client");
-    expect(admin(s, "clientExit", { s: "client", id: "c1" })).toBeDefined();
   });
 });

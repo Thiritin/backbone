@@ -31,5 +31,4 @@ export default {
   "shop-store.lblCategories": () => "Produktkategorien",
   "shop-store.lblGroups": () => "Produktgruppen",
   "shop-store.lblPackages": () => "Pakete",
-  "shop-store.lblPlans": () => "Tarife",
 } satisfies Dict;

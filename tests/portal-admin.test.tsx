@@ -15,7 +15,6 @@ const shopGame = (): GameState => {
   const s = readyGame(4);
   s.cash = 1e6;
   setUpChannel(s, "website");
-  chooseShop(s, "hostBull");
   s.unlocks = [...s.unlocks, "shops"];
   expect(chooseShop(s, "whmCache").ok).toBe(true);
   s.hour += SHOP_SETUP_HOURS;
