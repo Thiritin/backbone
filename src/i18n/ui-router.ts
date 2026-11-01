@@ -1,0 +1,32 @@
+import type { Dict } from "./lang";
+
+// docs/design/lan.md, Phases: the web interfaces of own routers in a datacenter.
+export default {
+  "router.system": () => "System",
+  "router.dhcp": () => "DHCP server",
+  "router.vpn": () => "Remote access",
+  "router.model": () => "Model",
+  "router.name": () => "Name",
+  "router.uplink": () => "Uplink address",
+  "router.address": () => "LAN address",
+  "router.firmware": () => "Firmware",
+  "router.network": () => "Network",
+  "router.prefix": () => "Prefix",
+  "router.poolFrom": () => "Pool start",
+  "router.poolTo": () => "Pool end",
+  "router.free": () => "Free addresses",
+  "router.leases": () => "Leases",
+  "router.host": () => "Host name",
+  "router.mac": () => "MAC address",
+  "router.ip": () => "Address",
+  "router.vpnServer": () => "VPN server",
+  "router.enabled": () => "Enabled",
+  "router.disabled": () => "Disabled",
+  "router.enable": () => "Enable",
+  "router.disable": () => "Disable",
+  "error.poolFull": () => "The router's DHCP pool has no free address.",
+  "error.noVlanLeft": () => "Every VLAN in the switch domain is taken.",
+  "error.notLayer3": () => "This switch does not route between VLANs.",
+  "error.notOwnRouter": () => "Only datacenter routers have this setting.",
+  "error.badPrefix": () => "The prefix must be between /16 and /30.",
+} satisfies Dict;

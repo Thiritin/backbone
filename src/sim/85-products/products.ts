@@ -17,7 +17,7 @@ import { spendable } from "../46-finance/bank";
 import type { Device, GameState, Licence, Location } from "../50-state";
 import { insideVm, isOwnVm, lostDisk, servedBy, vmOf, type Cluster, type Workload } from "../60-infra/cluster";
 import { exitsOf } from "../60-infra/network";
-import { backupTarget, linkHours, repoRoom, repoUsed, runBackups } from "../60-infra/backups";
+import { backupTarget, repoRoom, repoUsed, runBackups } from "../60-infra/backups";
 import { bootHours, customerWorkloads, liveServices } from "../60-infra/status";
 import { hostPerf, phpTickets } from "../60-infra/php";
 import { welcomeFriends } from "../90-actions/start";
@@ -148,10 +148,11 @@ export function backupPool(s: GameState, targetId: string): { need: number; room
   return { need: repoUsed(s, targetId), room: target ? repoRoom(s, target) : 0 };
 }
 
-// Hours a restore of a workload takes from the repository that holds its newest good copy.
-export function restoreHours(s: GameState, w: Workload): number {
-  const c = s.clusters.find((x) => x.id === w.clusterId);
-  return c ? linkHours(c, backupTarget(s, c, w), w.diskGb * diskFill(s, w, w.backupAt ?? s.hour)) : 1;
+// Hours a restore of a workload takes from the repository that holds its newest good copy into zone az, its own cluster's by default.
+export function restoreHours(s: GameState, w: Workload, az?: string): number {
+  const c = s.clusters.find((x) => x.id === w.clusterId), target = c && backupTarget(s, c, w);
+  const rate = target && target.az === (az ?? c.az) ? LAN_GB_PER_HOUR : WAN_GB_PER_HOUR;
+  return Math.max(1, Math.ceil((w.diskGb * diskFill(s, w, w.backupAt ?? s.hour)) / rate));
 }
 
 // economy.md, Reviews: 10% write one, 20% when unhappy.

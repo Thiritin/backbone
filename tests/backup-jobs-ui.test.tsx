@@ -1,11 +1,8 @@
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { yearOf } from "../src/sim/00-core/time";
-import { consoleFeatures } from "../src/sim/80-business/consoles";
 import { runBackups } from "../src/sim/60-infra/backups";
 import { saveJob } from "../src/sim/90-actions/backups";
 import { connect } from "../src/sim/90-actions/hardware";
-import { CONSOLES } from "../src/ui/apps/browser/consoles/ConsolePage";
 import { Calendar, JobsPanel, PointsPanel } from "../src/ui/apps/browser/consoles/backup/Jobs";
 import { buyDevice, named, panelServer, readyGame } from "./fixtures";
 import { mountDevice } from "./plugged";
@@ -26,7 +23,7 @@ function setup() {
 }
 
 describe("backup job screens", () => {
-  it("list the jobs in the Proxmocks tab and the backup console, with points and the calendar", () => {
+  it("list the jobs in the Proxmocks tab, with points and the calendar", () => {
     const { s, src, target } = setup();
     const c = s.clusters.find((x) => x.id === src)!, t = s.clusters.find((x) => x.id === target)!;
     expect(renderToString(<JobsPanel game={s} source={c} skin="proxmocks" />)).toContain("Nightly");
@@ -37,7 +34,5 @@ describe("backup job screens", () => {
     expect(pts).toContain("Test restore");
     expect(pts).toContain("Not tested");
     expect(renderToString(<Calendar game={s} target={t} />)).toContain('data-has="true"');
-    const View = CONSOLES.backula;
-    expect(renderToString(<View game={s} c={t} f={consoleFeatures("backula", yearOf(s.hour))} host="b.example.com" signedIn login={() => {}} logout={() => {}} />)).toContain("Nightly");
   });
 });

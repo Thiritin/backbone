@@ -249,7 +249,7 @@ function Datastores({ game, c }: { game: GameState; c: Cluster }) {
 }
 
 export function VmWhere(p: PanelProps) {
-  const era = eraAt(ERAS, p.game), { game, c, f } = p, year = yearOf(game.hour);
+  const era = eraAt(ERAS, p), { game, c, f } = p, year = yearOf(game.hour);
   const open = parseCreate("vmwhere", p.path), [sel, setSel] = useState<Sel>(open?.screen === "create" ? { kind: "new" } : open?.screen === "packages" ? { kind: "plans" } : ALL), [tab, setTab] = useState("Summary");
   const [byOrder, setByOrder] = useState(open?.screen === "create" && !!open.order);
   const tabNames: Record<string, string> = { Summary: t("browser-consoles-2.summary"), Monitor: t("browser-consoles-2.monitor"), Configure: t("browser-consoles-2.configure"), Snapshots: t("browser-consoles-2.snapshots"), Hosts: t("browser-consoles-2.hosts"), Datastores: t("browser-consoles-2.datastores"), Networks: t("browser-consoles-2.networks"), Licensing: t("vw.licensing"), DRS: t("vw.drs"), Alarms: t("vw.alarm.alarms"), Pools: t("vw.pool.pools") };

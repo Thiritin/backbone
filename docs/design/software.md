@@ -386,6 +386,8 @@ As built (`consoles/HypervisorBase.tsx` holds the shared blocks, each product la
 
 Each software with a web console gets its own component and stylesheet, modelled on the product. The actions stay what `ConsoleBody` has today (objects, nodes, update, auto-update, backups, migrate, clean up); only the chrome changes. Software without a web console (Bound, Knut DNS, WireGuarded, vsFTPeed, Postfixit) shows the host page with a plain text status listing in the style of the product's CLI (`named-checkconf`, `wg show`, `mailq`).
 
+Each console shows the look of the version installed on its machine, from the UI generations in `software-versions.md` (`UI_LOOKS`); the year in the table applies only when the installed version is unknown.
+
 | Console | Early look | Late look |
 | --- | --- | --- |
 | cPanic (WHM) | 2005: the x3 look, dark blue left menu with a search box, grey content, icon rows as tiles, Verdana | 2014: the flat "Paper Lantern", white, blue left bar with grouped sections |

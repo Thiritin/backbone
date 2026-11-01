@@ -111,7 +111,7 @@ export function VmDetails({ game, v, generations, c }: { game: GameState; v: Vm;
 }
 
 export function HyperVee(p: PanelProps) {
-  const era = eraAt(ERAS, p.game), { game, c, f } = p, openConsole = useStore((s) => s.openConsole), act = useStore((s) => s.act);
+  const era = eraAt(ERAS, p), { game, c, f } = p, openConsole = useStore((s) => s.openConsole), act = useStore((s) => s.act);
   const open = parseCreate("hypervee", p.path);
   const [page, setPage] = useState<Page>(open?.screen === "create" ? { kind: "new" } : open?.screen === "packages" ? { kind: "profiles" } : { kind: "list", node: null }), [selId, setSelId] = useState<string | null>(null);
   const [part, setPart] = useState<(typeof SETTINGS)[number]>("Memory"), [gen, setGen] = useState(1);

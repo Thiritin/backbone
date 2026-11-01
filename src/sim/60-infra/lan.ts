@@ -1,11 +1,12 @@
 // docs/design/lan.md, The derived layer: the broadcast domain each router serves, the leases it hands out and the address
 // every device holds. Every machine takes its address by DHCP; a lease is granted the moment a client is in the router's
 // domain, and the hourly tick stores and renews it.
-import { BMC_NAME, hasBmc, homeLan, isManaged, isOfficeRouter, isOobPort, jacksOf, modelById, OOB_PORT, oobPortOf, oobPorts, wanPort, type DeviceModel } from "../10-catalog/hardware";
+import { BMC_NAME, hasBmc, homeLan, isManaged, isOfficeRouter, isOobPort, jacksOf, modelById, OOB_PORT, oobPortOf, oobPorts, type DeviceModel } from "../10-catalog/hardware";
 import type { Device, End, GameState, IfaceConfig, PortShare, RouterLan } from "../50-state";
-import { mountedRouter } from "./routers";
-import { locationOf, peerOf, powered, sweepMemo, working } from "./status";
-import { egress, ingress, MGMT_VLAN, switchIp } from "./switches";
+import { isOwnRouter, mountedRouter, ownLan, uplinkPort } from "./routers";
+import { linkStatus, locationOf, peerOf, powered, sweepGroups, sweepMemo, working } from "./status";
+import type { Workload } from "./cluster";
+import { egress, ingress, MGMT_VLAN, routesTo, switchIp } from "./switches";
 
 export type Iface = "eth" | "bmc";
 export interface Grant { mac: string; ip: string; name: string; deviceId: string | null; iface: Iface }
@@ -18,8 +19,8 @@ export const FRITZ_HOST = "fritz.bocks";
 export const servesDhcp = (m: DeviceModel): boolean => m.kind === "gateway";
 // Fritz!OZ from the 7390 on registers the names its DHCP clients send under fritz.bocks; the older firmware registers none.
 export const registersNames = (m: DeviceModel): boolean => isOfficeRouter(m) && m.from >= 2010;
-const ipNum = (ip: string): number => ip.split(".").reduce((n, x) => n * 256 + Number(x), 0);
-const ipStr = (n: number): string => [24, 16, 8, 0].map((b) => Math.floor(n / 2 ** b) % 256).join(".");
+export const ipNum = (ip: string): number => ip.split(".").reduce((n, x) => n * 256 + Number(x), 0);
+export const ipStr = (n: number): string => [24, 16, 8, 0].map((b) => Math.floor(n / 2 ** b) % 256).join(".");
 export function inNet(cidr: string, ip: string): boolean {
   const [base, bits] = cidr.split("/"), size = 2 ** (32 - Number(bits));
   return /^\d{1,3}(\.\d{1,3}){3}$/.test(ip) && Math.floor(ipNum(ip) / size) === Math.floor(ipNum(base) / size);
@@ -31,6 +32,7 @@ export function lanOf(s: GameState, d: Device): RouterLan | null {
   if (!servesDhcp(m)) return null;
   if (d.lan) return d.lan;
   if (isOfficeRouter(m)) return homeLan();
+  if (isOwnRouter(d)) return ownLan(d);
   const loc = locationOf(s, d), n = loc ? s.locations.indexOf(loc) + 1 : 0;
   return { cidr: `10.${n}.0.0/16`, gateway: `10.${n}.0.1`, pool: [`10.${n}.0.20`, `10.${n}.255.200`], leaseHours: 240, reservations: [], leases: [], shares: [] };
 }
@@ -44,6 +46,13 @@ export function macOf(s: GameState, id: string, iface: Iface = "eth"): string {
   return `${oui}:${[16, 8, 0].map((b) => ((h >>> b) & 255).toString(16).padStart(2, "0")).join(":")}`;
 }
 
+// A VM on a hypervisor cluster; web spaces and other platforms' workloads use their host's address.
+export const isVm = (s: GameState, w: Workload): boolean => !!w.clusterId && s.clusters.find((c) => c.id === w.clusterId)?.kind === "cloud";
+function vmsOn(s: GameState, hostId: string): Workload[] {
+  const by = sweepGroups(s, "vmsOn", () => s.workloads.filter((w) => w.deviceId && isVm(s, w)), (w) => w.deviceId!);
+  return by ? by.get(hostId) ?? [] : s.workloads.filter((w) => w.deviceId === hostId && isVm(s, w));
+}
+
 // The DHCP clients in a router's broadcast domain, in device order: every end its LAN ports reach through powered switches,
 // firewalls, OOB switches and patch panels. The router sends untagged frames, and managed switches forward them only within
 // a VLAN (switches.ts). A server asks with its NIC on an untagged port and, on standby power, its management controller;
@@ -54,7 +63,7 @@ function computeDomain(s: GameState, routerId: string): Set<string> {
   if (!router || !rm || !working(s, routerId)) return new Set();
   const found = new Set<string>(), seen = new Set<string>([routerId]);
   const queue: { at: End; tag: number | null }[] = rm.ports.flatMap((_, port) => {
-    const at = port === wanPort(rm) ? null : peerOf(s, { device: routerId, port });
+    const at = port === uplinkPort(router) ? null : peerOf(s, { device: routerId, port });
     return at ? [{ at, tag: null }] : [];
   });
   while (queue.length) {
@@ -70,14 +79,18 @@ function computeDomain(s: GameState, routerId: string): Set<string> {
     else if (m.kind === "server" || m.kind === "kvm" || m.kind === "console") {
       if (vlan === null && (m.kind === "server" ? !isOobPort(at.port) : oobPortOf(m, at.port) === "net")) found.add(d.id);
     } else if (!working(s, d.id)) continue;
+    else if (m.kind === "gateway") { if (vlan === null && d.id !== routerId && isOwnRouter(d) && at.port === uplinkPort(d)) found.add(d.id); }
     else if (m.kind === "oob") { found.add(d.id); exits = oobPorts(m).map((_, i) => OOB_PORT + i); }
     else if ((m.kind === "switch" || m.kind === "firewall") && !isOobPort(at.port)) {
       exits = m.ports.map((_, i) => i);
       if (sw && vlan === MGMT_VLAN) found.add(d.id);
     }
     for (const port of exits) {
-      const out = sw ? egress(sw, port, vlan!) : vlan, p = peerOf(s, { device: d.id, port });
-      if (p && out !== undefined) queue.push({ at: p, tag: out });
+      const p = peerOf(s, { device: d.id, port });
+      for (const v of p ? (sw ? routesTo(sw, vlan!) : [vlan]) : []) {
+        const out = sw ? egress(sw, port, v!) : v;
+        if (out !== undefined) queue.push({ at: p!, tag: out });
+      }
     }
   }
   return found;
@@ -95,7 +108,7 @@ function clients(s: GameState, routerId: string): Grant[] {
   const router = s.devices.find((d) => d.id === routerId), rm = router && modelById(router.model), found = domainOf(s, routerId);
   if (!router || !rm || !found.size) return [];
   const home = locationOf(s, router), desk = isOfficeRouter(rm) && home && mountedRouter(s, home.id)?.id === routerId;
-  const out: Grant[] = desk ? [{ mac: macOf(s, DESK_NAME), ip: "", name: DESK_NAME, deviceId: null, iface: "eth" }] : [];
+  const out: Grant[] = desk ? [{ mac: macOf(s, DESK_NAME), ip: "", name: DESK_NAME, deviceId: null, iface: "eth" }] : [], vms: Grant[] = [];
   for (const d of s.devices) {
     if (!found.has(d.id)) continue;
     const name = d.hostname ?? d.name;
@@ -103,8 +116,11 @@ function clients(s: GameState, routerId: string): Grant[] {
     if (modelById(d.model).kind === "server" && hasBmc(d.model, d.brand) && powered(s, d.id)) {
       out.push({ mac: macOf(s, d.id, "bmc"), ip: "", name: `${(BMC_NAME[d.brand] ?? "bmc").toLowerCase()}-${name}`, deviceId: d.id, iface: "bmc" });
     }
+    // A running VM's interface is bridged onto its host's port and asks for an address of its own, after the devices, so a
+    // new VM never takes an address a device was just given.
+    if (working(s, d.id)) for (const w of vmsOn(s, d.id)) if (!w.stopped) vms.push({ mac: macOf(s, w.id), ip: "", name: w.hostname ?? w.id, deviceId: w.id, iface: "eth" });
   }
-  return out;
+  return [...out, ...vms];
 }
 
 // The address each client in the domain holds, by MAC: its live lease, else its reservation, else the lowest free address
@@ -136,7 +152,13 @@ function computeGrants(s: GameState, routerId: string): Map<string, Grant> {
 }
 export const grantsOf = (s: GameState, routerId: string): Map<string, Grant> => sweepMemo(s, `grants:${routerId}`, () => computeGrants(s, routerId));
 
-const dhcpRouters = (s: GameState): Device[] => s.devices.filter((d) => (d.rackId || d.panel) && servesDhcp(modelById(d.model)));
+const dhcpRouters = (s: GameState): Device[] => sweepMemo(s, "dhcpRouters", () => s.devices.filter((d) => (d.rackId || d.panel) && servesDhcp(modelById(d.model))));
+// Every grant by MAC with the router that made it, the first router winning.
+const grantBook = (s: GameState): Map<string, { router: string; ip: string }> => sweepMemo(s, "grantBook", () => {
+  const book = new Map<string, { router: string; ip: string }>();
+  for (const r of dhcpRouters(s)) for (const g of grantsOf(s, r.id).values()) if (!book.has(g.mac)) book.set(g.mac, { router: r.id, ip: g.ip });
+  return book;
+});
 
 // The servers in a router's domain that hold a static address, by device id.
 const staticsIn = (s: GameState, routerId: string): Map<string, string> => sweepMemo(s, `statics:${routerId}`, () => {
@@ -172,9 +194,8 @@ export function gatewayOf(s: GameState, deviceId: string, iface: Iface = "eth"):
     const r = working(s, deviceId) ? staticRouter(s, deviceId, ifaceOf(d)) : undefined;
     return r && !conflictsOf(s, r.id).has(`${deviceId}:eth`) ? r.id : null;
   }
-  const mac = macOf(s, deviceId, iface);
-  const r = dhcpRouters(s).find((x) => grantsOf(s, x.id).has(mac));
-  return r && !conflictsOf(s, r.id).has(`${deviceId}:${iface}`) ? r.id : null;
+  const r = grantBook(s).get(macOf(s, deviceId, iface))?.router;
+  return r && !conflictsOf(s, r).has(`${deviceId}:${iface}`) ? r : null;
 }
 
 // Whether the address a device's interface holds is also held by another in its domain.
@@ -186,11 +207,8 @@ export const conflicted = (s: GameState, deviceId: string, iface: Iface = "eth")
 export function addressOf(s: GameState, id: string, iface: Iface = "eth"): string | null {
   const own = iface === "eth" ? s.devices.find((x) => x.id === id) : undefined;
   if (own && isStatic(own)) return ifaceOf(own).down ? null : ifaceOf(own).ip ?? null;
-  const mac = macOf(s, id, iface);
-  for (const r of dhcpRouters(s)) {
-    const g = grantsOf(s, r.id).get(mac);
-    if (g) return g.ip;
-  }
+  const g = grantBook(s).get(macOf(s, id, iface));
+  if (g) return g.ip;
   const d = iface === "eth" ? s.devices.find((x) => x.id === id) : undefined;
   return d ? switchIp(d) : null;
 }
@@ -205,13 +223,25 @@ export function holderOf(s: GameState, ip: string): { deviceId: string; iface: I
   return null;
 }
 
-// Whether the desk reaches a device: on the basement router's network, or in a datacenter, which the desk reaches as if it
-// were next door (lan.md, Open points).
+// Whether the desk reaches a device (lan.md, Reaching datacenter networks from the desk): on the basement router's network
+// and on a datacenter handoff's, which the provider routes to the player; behind an own router only over its VPN.
 export function deskReaches(s: GameState, deviceId: string, iface: Iface | "router" = "eth"): boolean {
   const router = iface === "router" ? deviceId : gatewayOf(s, deviceId, iface);
   const d = s.devices.find((x) => x.id === router), home = s.locations.find((l) => !l.dc);
   if (!d || !working(s, d.id)) return false;
-  return !!locationOf(s, d)?.dc || (!!home && mountedRouter(s, home.id)?.id === d.id);
+  if (home && mountedRouter(s, home.id)?.id === d.id) return true;
+  if (isOwnRouter(d)) return !!lanOf(s, d)?.vpn && linkStatus(s, d.id).online;
+  return !!locationOf(s, d)?.dc;
+}
+
+// The pool addresses a router has left: neither granted, reserved, held by a stored lease nor its own.
+export function freeAddresses(s: GameState, routerId: string): number {
+  const router = s.devices.find((d) => d.id === routerId), lan = router && lanOf(s, router);
+  if (!lan) return 0;
+  const from = ipNum(lan.pool[0]), to = ipNum(lan.pool[1]);
+  const taken = new Set([lan.gateway, ...[...grantsOf(s, routerId).values()].map((g) => g.ip), ...lan.reservations.map((r) => r.ip),
+    ...lan.leases.filter((l) => l.until > s.hour).map((l) => l.ip)]);
+  return to - from + 1 - [...taken].filter((ip) => ipNum(ip) >= from && ipNum(ip) <= to).length;
 }
 
 // Every lease a router lists: the clients in its domain, then stored leases of clients that are gone, until they run out.
@@ -224,13 +254,13 @@ export function leasesOf(s: GameState, routerId: string): (Grant & { active: boo
   return [...live, ...gone];
 }
 
-// The port share that reaches a machine from the basement line: one pointing at its address, or at its host's for a VM.
+// The port share that reaches a machine from the basement line: one pointing at its address, or at its host's for a
+// workload; a VM takes a share on its own address too.
 export function shareOf(s: GameState, id: string): PortShare | undefined {
   const home = s.locations.find((l) => !l.dc), router = home && mountedRouter(s, home.id), lan = router && lanOf(s, router);
   if (!lan) return undefined;
-  const host = s.devices.some((d) => d.id === id) ? id : s.workloads.find((w) => w.id === id)?.deviceId;
-  const ip = host && addressOf(s, host);
-  return ip ? lan.shares.find((x) => x.ip === ip) : undefined;
+  const w = s.workloads.find((x) => x.id === id), ips = [w && isVm(s, w) ? addressOf(s, id) : null, addressOf(s, w ? w.deviceId ?? "" : id)];
+  return lan.shares.find((x) => ips.includes(x.ip));
 }
 
 // The password on a router's label: a word and four digits, fixed for the device.
