@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- After you register, the tax office sends a questionnaire by post that you answer on the new DOHLE site, choosing whether to use the small business rule, and your tax number follows by letter.
 - The Debiant installer lets you type your own hostname for the machine or keep the one it suggests.
 - HyperVee VMs from 2012 can replicate to a second host and fail over to it, and HyperVee hosts get a Virtual Switch Manager with external, internal and private switches.
 - OpenVeeZee containers now show their beancounters and slow down or stop when the node is oversold, can use burst memory, and move between nodes with a checkpoint and restore.

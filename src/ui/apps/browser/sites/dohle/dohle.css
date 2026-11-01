@@ -1,0 +1,31 @@
+/* The tax administration's filing portal around 2005: a navy band, grey tabs, Arial 12 px tables in a fixed 780 px page. */
+.dh { min-height: 100%; background: #c9d3de; color: #000; font: 12px/1.45 Arial, Helvetica, sans-serif; padding: 12px 0 24px; }
+.dh a { color: #003399; }
+.dh-page { width: 780px; max-width: 100%; margin: 0 auto; background: #fff; border: 1px solid #5d6f86; }
+.dh-head { display: flex; align-items: center; gap: 10px; padding: 8px 14px; background: #0b2c57; color: #fff; }
+.dh-head svg { width: 46px; height: 40px; flex: none; }
+.dh-title { font: bold 24px/1 Arial, Helvetica, sans-serif; letter-spacing: 3px; }
+.dh-sub { font-size: 11px; color: #b9c9de; }
+.dh-tabs { display: flex; flex-wrap: wrap; gap: 2px; padding: 4px 8px 0; background: #e3e8ee; border-bottom: 2px solid #f0b400; }
+.dh-tabs a { padding: 3px 10px; background: #f6f8fa; border: 1px solid #9aa7b8; border-bottom: none; color: #0b2c57; text-decoration: none; font-weight: bold; font-size: 11px; }
+.dh-tabs a[aria-current] { background: #f0b400; border-color: #c08f00; color: #000; }
+.dh-main { padding: 12px 16px 18px; }
+.dh h1 { font-size: 16px; color: #0b2c57; margin: 0 0 10px; }
+.dh h2 { font-size: 13px; color: #0b2c57; margin: 14px 0 6px; }
+.dh p { margin: 0 0 8px; }
+.dh-box { border: 1px solid #9aa7b8; margin: 0 0 12px; }
+.dh-box > header { background: #0b2c57; color: #fff; font-weight: bold; padding: 3px 8px; }
+.dh-box table { border-collapse: collapse; width: 100%; }
+.dh-box td, .dh-box th { padding: 4px 8px; border-top: 1px solid #dde3ea; text-align: left; vertical-align: middle; }
+.dh-box th { width: 42%; font-weight: normal; background: #f3f5f8; }
+.dh-box tr:first-child td, .dh-box tr:first-child th { border-top: none; }
+.dh-box .num { text-align: right; font-variant-numeric: tabular-nums; }
+.dh input:not([type]), .dh input[type="number"], .dh input[type="email"], .dh select {
+  font: 12px Arial, Helvetica, sans-serif; width: 220px; padding: 2px 3px; border: 1px solid #7f8da0; background: #fffbe6; color: #000; border-radius: 0;
+}
+.dh label { display: block; }
+.dh-buttons { display: flex; gap: 6px; padding: 6px 8px 8px; }
+.dh button { font: bold 12px Arial, Helvetica, sans-serif; padding: 2px 14px; background: linear-gradient(#ffffff, #d5dce5); border: 1px solid #5d6f86; color: #0b2c57; border-radius: 0; cursor: pointer; }
+.dh button:disabled { color: #8a96a6; cursor: default; }
+.dh-note { color: #a40000; font-weight: bold; }
+.dh-foot { display: flex; justify-content: space-between; padding: 4px 14px; background: #e3e8ee; border-top: 1px solid #9aa7b8; font-size: 10px; color: #445; }

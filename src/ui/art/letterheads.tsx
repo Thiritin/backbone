@@ -1,6 +1,7 @@
 // Letterheads for the paper post, keyed by the sender a letter carries. Marks are parodies of German authority styles.
 import type { ReactNode } from "react";
 import { CHAMBER_NAME, NOTARY_NAME, OFFICE_NAME, REGISTER_NAME } from "../../sim/80-business/paperwork";
+import { TAX_OFFICE_NAME } from "../../sim/80-business/tax";
 
 export interface Letterhead {
   org: string; dept: string; street: string; city: string; phone: string; web: string;
@@ -60,6 +61,10 @@ export const LETTERHEADS: Record<string, Letterhead> = {
   [CHAMBER_NAME]: {
     org: "IHQ Frankfurt am Main", dept: "paperwork.letter.chamber", street: "Börsenplatz 4", city: "60313 Frankfurt am Main",
     phone: "069 2197-0", web: "www.ihq-frankfurt.de", mark: Chamber,
+  },
+  [TAX_OFFICE_NAME]: {
+    org: "Finanzamt Frankfurt am Main III", dept: "paperwork.letter.tax", street: "Gutleutstr. 120", city: "60327 Frankfurt am Main",
+    phone: "069 2545-0", web: "www.dohle.de", mark: Eagle,
   },
   [NOTARY_NAME]: {
     org: NOTARY_NAME, dept: "paperwork.letter.notary", street: "Bockenheimer Landstr. 51", city: "60325 Frankfurt am Main",

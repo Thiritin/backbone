@@ -30,6 +30,7 @@ import { CompanySite } from "./sites/CompanySite";
 import { SponsorBoard } from "./sites/SponsorBoard";
 import { IndexSite } from "./sites/index/IndexSite";
 import { OfficeSite } from "./sites/office/OfficeSite";
+import { DohleSite } from "./sites/dohle/DohleSite";
 import { LexwearSite } from "./sites/lexwear/LexwearSite";
 import { BOOKS_SITES } from "./sites/books/sites";
 import { booksVendor } from "../../../sim/10-catalog/bookkeeping";
@@ -121,6 +122,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "phishing") body = <PhishingPage sender={p.sender} />;
   else if (p.kind === "sponsorboard") body = <SponsorBoard game={game} />;
   else if (p.kind === "office") body = <OfficeSite game={game} path={r.path} go={go} />;
+  else if (p.kind === "dohle") body = <DohleSite game={game} path={r.path} go={go} />;
   else if (p.kind === "lexwear") body = <LexwearSite game={game} path={r.path} go={go} />;
   else if (p.kind === "books" && p.id !== "lexwear") { const Site = BOOKS_SITES[p.id]; body = <Site game={game} path={r.path} go={go} />; }
   else if (p.kind === "shopVendor") body = <ShopVendorSite game={game} id={p.id} />;

@@ -13,6 +13,7 @@ import { skillById, skillFor } from "../10-catalog/research";
 import { STARTER_APPS, WIDGETS } from "../10-catalog/store";
 import { WALK } from "../80-business/walk";
 import { legacyRegistration } from "../80-business/office";
+import { legacyTax } from "../80-business/tax";
 import { legacyBank, savingsOf } from "../46-finance/bank";
 import type { Employee } from "../47-staff/staff";
 import { device, deviceDefaults, fillCards, fillSizes, newGame, SAVE_VERSION, type Device, type GameState, type Location } from "../50-state";
@@ -157,6 +158,7 @@ export function deserialize(raw: string): GameState {
   s.arrived = data.arrived ?? WALK.filter((id) => s.installed.includes(id));
   // Saves from before the Bookkeeping category run Lexwear Office when they have Books.
   if (!data.books) s.books = { vendor: s.installed.includes("Books") ? "lexwear" : null, installedAt: 0 };
+  s.tax = data.tax ? { ...base.tax, ...data.tax } : s.registration ? legacyTax(s) : base.tax;
   return s;
 }
 

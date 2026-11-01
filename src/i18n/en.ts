@@ -27,6 +27,7 @@ import { USED_EN } from "./used";
 import { VENDORS_EN } from "./vendors";
 import { BANK_EN } from "./bank";
 import { PAPERWORK_EN } from "./paperwork";
+import { TAX_EN } from "./tax";
 import { ALARMS_EN } from "./alarms";
 import { IFACE_EN } from "./iface";
 import { active, LOCALE, type Dict } from "./lang";
@@ -68,6 +69,7 @@ export const en: Record<string, (p: Params) => string> = {
   ...VENDORS_EN,
   ...BANK_EN,
   ...PAPERWORK_EN,
+  ...TAX_EN,
   ...USED_EN,
   ...BURNIN_EN,
   ...ALARMS_EN,

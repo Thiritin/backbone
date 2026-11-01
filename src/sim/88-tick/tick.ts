@@ -2,6 +2,7 @@ import { addressBills, addressTick } from "../60-infra/addresses";
 import { billSuppliers, invoicing, payablesTick } from "../46-finance/payables";
 import { lettersTick } from "../40-support/letters";
 import { paperworkTick } from "../80-business/paperwork";
+import { taxTick } from "../80-business/tax";
 import { netsvcTick } from "../60-infra/netsvc";
 import { binomial, rand } from "../00-core/rng";
 import { dateOf, isMonthStart, yearOf } from "../00-core/time";
@@ -374,6 +375,7 @@ export function tick(state: GameState): SimEvent[] {
   events.push(...financeTick(state));
   events.push(...bankTick(state));
   paperworkTick(state);
+  taxTick(state);
   lettersTick(state);
   payablesTick(state);
   events.push(...staffTick(state));
