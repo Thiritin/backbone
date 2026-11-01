@@ -14,8 +14,8 @@ const at = (y: number, m: number) => hourOf(new Date(Date.UTC(y, m - 1, 1)));
 describe("pear store", () => {
   it("starts with the Browser, gets the starter apps with the registration and has no know-how", () => {
     const s = newGame(1);
-    expect(s.installed).toEqual(["Browser"]);
-    expect([...registered(s).installed].sort()).toEqual([...STARTER_APPS].sort());
+    expect(s.installed).toEqual(["Browser", "Chat"]);
+    expect([...registered(s).installed].sort()).toEqual([...STARTER_APPS, "Chat"].sort());
     expect(s.knowHow).toBe(0);
   });
 
@@ -24,7 +24,7 @@ describe("pear store", () => {
     delete raw.installed;
     delete raw.knowHow;
     const s = deserialize(JSON.stringify(raw));
-    expect(s.installed).toEqual([...STARTER_APPS, ...WIDGETS.map(([id]) => id)]);
+    expect(s.installed).toEqual([...STARTER_APPS, "Chat", ...WIDGETS.map(([id]) => id)]);
     expect(s.knowHow).toBe(0);
     expect(deserialize(serialize({ ...s, installed: [...s.installed, "Network"] })).installed).toContain("Network");
   });

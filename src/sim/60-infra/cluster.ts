@@ -348,12 +348,13 @@ export const gameFirst = (a: Cluster, b: Cluster): number => Number(isService(b.
 export const servedBy = (s: GameState, w: Workload): SoftwareKind => s.clusters.find((c) => c.id === w.clusterId)?.kind ?? "cloud";
 
 // A workload lost its disk when the data of its server, or of the datastore its disk is on, was lost after the workload was
-// placed there; a web space in a panel VM loses it with the VM.
+// placed there, or that server is gone (seized); a web space in a panel VM loses it with the VM.
 export function lostDisk(s: GameState, w: Workload): boolean {
   const vm = vmOf(s, w);
   if (vm) return lostDisk(s, vm);
   if (w.corrupted) return true;
   const at = w.datastore ?? w.deviceId, d = at ? s.devices.find((x) => x.id === at) : undefined;
+  if (at && !d) return true;
   return !!d && d.dataLost !== null && d.dataLost >= w.placedAt;
 }
 

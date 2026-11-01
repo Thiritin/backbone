@@ -1,6 +1,6 @@
 import { FileText } from "lucide-react";
 import { useState } from "react";
-import { Archive, CalendarDays, HardDrive, LogOut, Settings, type LucideIcon } from "lucide-react";
+import { Archive, ArchiveRestore, CalendarDays, HardDrive, LogOut, Settings, type LucideIcon } from "lucide-react";
 import { softwareById } from "../../../../../sim/10-catalog/platforms";
 import { backupPool } from "../../../../../sim/85-products/products";
 import { disk } from "../../../hw";
@@ -8,9 +8,10 @@ import { Actions, Bar, Facts, LoginForm, useSoftware, type PanelProps } from "..
 import { useReadoutPages } from "../Readouts";
 import { t } from "../../../../../i18n/en";
 import { Calendar, JobsPanel, skinOf } from "./Jobs";
+import { Restores } from "./Restores";
 import "./backup.css";
 
-// One console for Veeham and Proxmocks Backup Server: the jobs that write here, the repository and the software.
+// One console for Veeham and Proxmocks Backup Server: the jobs that write here, restores, the repository and the software.
 export function BackupConsole(p: PanelProps) {
   const [tab, setTab] = useState<string>("objects"), skin = skinOf(p.c.panel), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f), name = softwareById(p.c.panel!).console;
   const logo = <span className="bk-logo"><Archive size={18} aria-hidden />{name}</span>;
@@ -20,7 +21,7 @@ export function BackupConsole(p: PanelProps) {
     </div>
   );
   const pool = backupPool(p.game, p.c.id);
-  const nav: [string, string, LucideIcon][] = [["objects", t("browser-consoles-1.bkJobs"), Archive], ["points", t("bk.points"), CalendarDays], ["nodes", t("browser-consoles-1.bkRepository"), HardDrive], ["software", t("browser-consoles-1.settings"), Settings], ...pages.map((g) => [g.id, g.label, FileText] as [string, string, LucideIcon])];
+  const nav: [string, string, LucideIcon][] = [["objects", t("browser-consoles-1.bkJobs"), Archive], ["points", t("bk.points"), CalendarDays], ["restore", t("browser-consoles-1.bkRestore"), ArchiveRestore], ["nodes", t("browser-consoles-1.bkRepository"), HardDrive], ["software", t("browser-consoles-1.settings"), Settings], ...pages.map((g) => [g.id, g.label, FileText] as [string, string, LucideIcon])];
   return (
     <div className="cx bk" data-skin={skin}>
       <header className="bk-top">{logo}<span className="cx-host">{p.host}</span><button className="cx-btn" onClick={p.logout}><LogOut size={14} aria-hidden />{t("browser-consoles-1.logOut")}</button></header>
@@ -28,6 +29,7 @@ export function BackupConsole(p: PanelProps) {
       <main className="bk-main">
         {tab === "objects" && <JobsPanel game={p.game} target={p.c} skin={skin} />}
         {tab === "points" && <Calendar game={p.game} target={p.c} />}
+        {tab === "restore" && <Restores game={p.game} c={p.c} />}
         {tab === "nodes" && (
           <table className="cx-table">
             <tbody>

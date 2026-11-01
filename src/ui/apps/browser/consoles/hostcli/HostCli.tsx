@@ -10,6 +10,7 @@ import { useMailQueue } from "../mailpig/MailQueue";
 import { queueEntries } from "../../../../../sim/60-infra/netsvc-mail";
 import { backupPool } from "../../../../../sim/85-products/products";
 import { hash, tenants, wgKey, type Tenant } from "../services";
+import { Restores } from "../backup/Restores";
 import "./hostcli.css";
 
 // docs/design/software.md, section 10: the software without a web console; its host page prints what the product's CLI would.
@@ -92,6 +93,7 @@ export function HostCli({ game, c, family, host, name }: { game: GameState; c: C
         {listing(game, c, family, name).map(([cmd, out]) => `root@${name}:~# ${cmd}\n${out.map((l) => `${l}\n`).join("")}`).join("")}
         {`root@${name}:~# `}
       </pre>
+      {family === "backula" && <div className="hc-actions"><Restores game={game} c={c} /></div>}
       {family === "postfixit" && <div className="hc-actions"><button className="cx-btn" onClick={q.flush}>postqueue -f</button><button className="cx-btn" onClick={q.clear}>postsuper -d ALL deferred</button></div>}
     </HostPage>
   );
