@@ -1,5 +1,5 @@
 import { createRng, type Rng } from "./00-core/rng";
-import { componentParts, hasFirmware, modelById, type ComponentKind, type FormFactor, type PartSpec } from "./10-catalog/hardware";
+import { componentParts, hasFirmware, homeLan, isManaged, isOfficeRouter, modelById, type ComponentKind, type FormFactor, type PartSpec } from "./10-catalog/hardware";
 import type { Vendor } from "./10-catalog/cpus";
 import type { LicenseKind, OsImage, ServerOsId } from "./10-catalog/server-os";
 import { yearOf } from "./00-core/time";
@@ -25,6 +25,7 @@ import { newSites, type Sites } from "./60-infra/apps";
 import type { Breach } from "./60-infra/breach";
 import { newSecurity, type Security } from "./60-infra/security";
 import { newSales, type Sales } from "./30-market/market";
+import { seedRivals, type Rival, type ShareEntry } from "./30-market/rivals";
 import type { FairBooking } from "./80-business/fairs";
 import type { Sponsorship } from "./80-business/community";
 import type { SponsorOffer } from "./80-business/sponsorboard";
@@ -75,6 +76,9 @@ export interface MachineState {
   installFailed?: NetFail;
 }
 export type NetFail = "noInterfaces" | "noLink";
+// A managed switch port's VLANs: the one its untagged frames belong to and the ones it carries tagged. A port without an entry is untagged in VLAN 1.
+export interface PortVlan { untagged: number; tagged: number[] }
+export interface SwitchConfig { groups: number[][]; vlans: Record<number, PortVlan> }
 export interface Device extends MachineState { id: string; model: string; brand: string; rackId: string | null; slot: number; panel: string | null; name: string; bond: BondMode; groups: number[][]; price: number; boughtAt: number; lease: string | null; store: string | null; transitTo: string | null; arriveAt: number | null;
   components: Component[]; on: boolean; label: string | null; raid: RaidLevel; rebuildRate: RebuildRate;
   // others are the further CPUs a swap of every socket replaces with the same spec.
@@ -98,6 +102,8 @@ export interface Device extends MachineState { id: string; model: string; brand:
   // The server sits in its BIOS setup (90-actions/console.ts): the boot waits until the player leaves it. bootFrom is what
   // this boot came from: the USB stick shows the installer in place of the operating system.
   setup: boolean; bootFrom: "disk" | "usb";
+  // A managed switch's running configuration is groups and vlans; saved is what it loads when it boots.
+  vlans?: Record<number, PortVlan>; saved?: SwitchConfig;
   // The image mounted through the management controller (90-actions/media.ts); it boots like the USB stick without a visit.
   virtualMedia?: OsImage;
   // What a spare part in storage is (size and form factor); spares without it fit any slot of their kind.
@@ -112,7 +118,16 @@ export interface Device extends MachineState { id: string; model: string; brand:
   refund?: { until: number; amount: number } | null;
   // thermal.ts: the game minute the server shut itself off from heat, and the hours it ran throttling hot.
   overheatedAt?: number; hotHours?: number;
+  // A small-office router's home network (docs/design/lan.md); a datacenter handoff stores only once it hands out leases.
+  lan?: RouterLan;
 }
+// A router's range, DHCP pool and lease time, the addresses it always gives the same device, its live leases (until is the
+// hour a lease runs out) and its port shares, each pointing at an address on the network.
+export interface RouterLan {
+  cidr: string; gateway: string; pool: [string, string]; leaseHours: number;
+  reservations: { mac: string; ip: string }[]; leases: { mac: string; ip: string; until: number; name: string }[]; shares: PortShare[];
+}
+export interface PortShare { ip: string; kind: "web" | "exposed" }
 // paid counts the monthly payments made so far; the lease ends after months payments.
 export interface Lease { id: string; lessor: string; monthly: number; months: number; startedAt: number; paid: number; devices: string[] }
 // A waitlist entry gets heldUntil once its space is free; the space is then reserved until that hour.
@@ -301,6 +316,8 @@ export interface GameState {
   webpanel: WebPanel;
   // News already published, as "<id>@<hour>" (80-business/news.ts).
   news: string[];
+  competitors: Rival[];
+  shareLog: ShareEntry[];
   // Next server number, next own-VM number and next service number (30-customers/hostnames.ts).
   nextNode: number;
   nextVm: number;
@@ -345,6 +362,8 @@ export function deviceDefaults(modelId: string, at: number, partList?: PartSpec[
     rebuild: null, maintenance: null, dataLost: null, burnin: null as Device["burnin"], burnedInAt: null as number | null, chassisId: null as string | null,
     hung: false, bmcHung: false, log: [] as { hour: number; key: string }[], os: null as MachineState["os"], software: [] as MachineState["software"],
     stuck: false, locked: false, setup: false, bootFrom: "disk" as const, ...(hasFirmware(modelById(modelId)) ? { fw: { version: yearOf(at), updatedAt: at } } : {}),
+    ...(isOfficeRouter(modelById(modelId)) ? { lan: homeLan() } : {}),
+    ...(isManaged(modelById(modelId)) ? { vlans: {} as Record<number, PortVlan>, saved: { groups: [], vlans: {} } as SwitchConfig } : {}),
   };
 }
 
@@ -405,6 +424,8 @@ export const newGame = (seed: number): GameState => ({
   netsvc: newNetSvc(),
   webpanel: newWebPanel(),
   news: [],
+  competitors: seedRivals(seed),
+  shareLog: [],
   nextNode: 1, nextVm: 1, nextHostNo: firstHostNo(seed),
   used: [], usedRep: 0,
   log: [], challenge: null, registration: null, arrived: [], score: { netWorth: null, level3: null, happySum: 0, happyHours: 0 }, trend: [],
