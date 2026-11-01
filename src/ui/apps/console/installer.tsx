@@ -189,9 +189,9 @@ function useWindoorsSetup(game: GameState, m: Machine, version: string): Keyed {
   const [step, setStep] = useState<WinStep>("start");
   const tg = useTarget(game, m), era = winEra(version), act = useStore((s) => s.act);
   const upgrade = m.os?.id === "windoors" && upgradeTarget(game, m.id)?.version === version;
-  const upgradeNow = () => { const r = act(upgradeOs, m.id); tg.setNote(r.ok ? "" : t(r.error ?? "")); if (r.ok) setStep("start"); };
   const go = (to: WinStep) => () => { setStep(to); tg.setNote(""); tg.setTyped(""); };
   const [key, setKey] = useState("");
+  const upgradeNow = () => { const r = act(upgradeOs, m.id, key || undefined); tg.setNote(r.ok ? "" : t(r.error ?? "")); if (r.ok) { setKey(""); setStep("start"); } };
   const typeKey = (k: string) => {
     if (k === "Backspace") setKey((v) => v.slice(0, -1));
     else if (/^[A-Za-z0-9-]$/.test(k)) setKey((v) => (v + k.toUpperCase()).slice(0, 19));

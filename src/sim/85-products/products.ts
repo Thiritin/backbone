@@ -9,7 +9,7 @@ import { slowTolerance } from "../10-catalog/usage";
 import { channelOf, EDGE_HOWTO } from "../60-infra/channel";
 import { accountsOn, keyTiers, assignedKey, extendKey, productOf, panelMachine, startTrial, tiersOnSale, updateKey, yearly } from "../60-infra/licence";
 import { LAPSE_GRACE_DAYS, topTier, type LicenceTier } from "../10-catalog/licence-tiers";
-import { APP_SUITE_FEE, eraAt, serverOsById, type ServerOsId } from "../10-catalog/server-os";
+import { APP_SUITE_FEE, eraAt } from "../10-catalog/server-os";
 import { homeLineById } from "../20-world/datacenters";
 import type { Customer, Product } from "../30-customers/customers";
 import { bump, createTicket, deliverMail, slowed } from "../40-support/tickets";
@@ -65,23 +65,6 @@ export const tierFee = (s: GameState, c: Cluster, tier: LicenceTier): number =>
   Math.round(tier.fee * (tier.kind === "account" ? panelAccounts(s, c) : 1) * 100) / 100;
 const isServer = (m: Device | Workload): m is Device => "components" in m;
 const machinesOf = (s: GameState, c: Cluster) => (c.vm ? s.workloads.filter((w) => w.id === c.vm) : s.devices.filter((d) => c.nodes.some((n) => n.deviceId === d.id)));
-
-// An in-place upgrade buys the new release in a once era; a monthly era already covers it.
-export const upgradeLicenseDue = (s: GameState, osId: ServerOsId): number => {
-  const era = eraAt(serverOsById(osId), s.hour);
-  return era.kind === "once" ? era.fee : 0;
-};
-
-export function buyUpgradeLicense(s: GameState, machineId: string, osId: ServerOsId, version: string): void {
-  const price = upgradeLicenseDue(s, osId);
-  if (!price) return;
-  const m = [...s.devices, ...s.workloads].find((x) => x.id === machineId);
-  const machine = m && ("components" in m ? m.hostname ?? m.label ?? m.name : m.hostname ?? m.id);
-  s.cash = Math.round((s.cash - price) * 100) / 100;
-  s.ledger = [...s.ledger, { hour: s.hour, category: "licenses", key: "ledger.licenseOnce", params: { name: `${serverOsById(osId).name} ${version}`, machine: machine ?? machineId }, amount: -price }];
-  const k = assignedKey(s, machineId, osId);
-  if (k?.covers.kind === "version") updateKey(s, k.id, { covers: { kind: "version", major: version } });
-}
 
 // The monthly license bill of a cluster: the renewing keys on its machines, the panel's apart; the other keys, the App
 // Suite and the balancer count under platform.

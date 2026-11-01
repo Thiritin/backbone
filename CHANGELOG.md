@@ -5,6 +5,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-01
 
 - Proxmocks clusters now have HA groups that decide where a failed guest restarts, and Horizont has projects that group your instances.
+- Email orders and leads now pick the cheapest of your Books products that fits their needs and budget, accept any quote up to that product's price, and go elsewhere when none of your products fits.
+- Books products stay editable after you choose a shop system.
 - The license set command of each software tool now takes a key the same way the installer does, and the DirectAdmen site shows its Docs page on its own.
 - Prices now include VAT: unless you use the small business rule, the tax office expects an advance VAT return every month or quarter, and a late return brings a surcharge and then an estimate by post.
 - The game no longer starts on a blank screen in development builds.
@@ -14,6 +16,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Each software site has a new Docs page that lists its command and everything it takes.
 - Every bank now sells account plans, from a cheap Giro for sole traders to Business Plus and Premium with fewer booking fees and the card included, and a partnership or limited company needs the right plan before the paperwork, while a limited company also needs its share capital in the account.
 - You can switch to another bank on its site once loans are repaid, and loan interest now differs from bank to bank.
+- Installed software can now be upgraded one major version at a time from its console's Licence page or with the upgrade command of its shell tool, and a licence for an older version needs an upgrade key, which vendors sell at the upgrade price for a year after the old licence was bought.
+- Upgrading Windoors in place no longer charges for the new release; a licence for the older release needs a key for the new one, typed in Setup.
 - A cPanic Dedicated licence now renews as the account-based edition that fits its web spaces at its first renewal from June 2019, and cPanic emails the change a month ahead.
 - The hand-rolled order form is gone: orders arrive by email until you run a shop system, every shop system needs the Shop systems research, and saves that had the form keep taking orders by email.
 - Getting started no longer asks you to style your company, since registering it already gives it a name.

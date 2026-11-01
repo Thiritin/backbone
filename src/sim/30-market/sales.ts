@@ -37,6 +37,7 @@ import { answerQuote } from "./quotes";
 import { logActivity } from "../47-staff/activity";
 import type { ActionResult } from "../90-actions/hardware";
 import { forSale, inStock, soldOutVisit, type ShopProduct } from "../80-business/shop";
+import { orderProduct, productMonthly } from "../80-business/catalog";
 import { chooseProduct, packageSpec } from "../80-business/portal";
 import { belowFloor, bookingFor, packageNamed } from "../80-business/packages";
 import {
@@ -305,7 +306,9 @@ function replyUpgrade(s: GameState, r: SalesRequest, events: SimEvent[]): void {
 function reply(s: GameState, r: SalesRequest, events: SimEvent[]): void {
   if (r.kind === "expansion" && r.spec) return replyUpgrade(s, r, events);
   const name = requestName(r), spec = specText(r.product, r.spec), price = r.quote!;
-  const accepts = (r.counter !== null && price <= r.counter) || rand(s.rng) < acceptChance(s, r, price);
+  // An order for a product takes any quote up to the product's price and refuses one above it.
+  const item = orderProduct(s, r), limit = item && productMonthly(item, r.cycle);
+  const accepts = limit !== undefined ? price <= limit : (r.counter !== null && price <= r.counter) || rand(s.rng) < acceptChance(s, r, price);
   const php = accepts && r.product === "webHosting" ? phpNeeded(s, r.id, targetFor(s, r)?.clusterId ?? null) : null;
   if (php) {
     say(s, r.id, "customer", "sales.reply.oldPhp", { name: r.contact, version: php });
@@ -318,7 +321,7 @@ function reply(s: GameState, r: SalesRequest, events: SimEvent[]): void {
     return acceptQuote(s, r, events);
   }
   const mid = acceptMid(s, r), ratio = price / r.reference;
-  if (r.attempts < 2 && ratio <= mid + NO_BUDGET_GAP && rand(s.rng) < COUNTER_CHANCE) {
+  if (!item && r.attempts < 2 && ratio <= mid + NO_BUDGET_GAP && rand(s.rng) < COUNTER_CHANCE) {
     const counter = Math.min(price - 0.01, Math.round(r.reference * mid * 0.97 * 100) / 100);
     editRequest(s, r.id, () => ({ status: "countered", counter, replyAt: null, deadline: s.hour + RETRY_HOURS }));
     say(s, r.id, "customer", "sales.reply.counter", { name: r.contact, price: counter });
@@ -326,7 +329,7 @@ function reply(s: GameState, r: SalesRequest, events: SimEvent[]): void {
     wake(s, r.id);
     return;
   }
-  const key = ratio > mid + NO_BUDGET_GAP ? "sales.reply.noBudget" : "sales.reply.refused";
+  const key = item || ratio > mid + NO_BUDGET_GAP ? "sales.reply.noBudget" : "sales.reply.refused";
   say(s, r.id, "customer", key, { name: r.contact });
   events.push({ app: "Support", key: "event.salesRefused", params: { name } });
   if (r.attempts < 2) {

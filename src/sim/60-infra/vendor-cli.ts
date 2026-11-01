@@ -7,6 +7,7 @@ import { BINARIES, softwareById, type Software, type SoftwareKind } from "../10-
 import type { GameState } from "../50-state";
 import type { Call } from "../90-actions/index";
 import { drain, setHa, upgradePhp } from "../90-actions/clusters";
+import { softwareTarget, softwareUpgradeBlock, upgradeSoftware } from "../90-actions/console";
 import { activateLicence, setLicenceTier, startLicenceTrial } from "../90-actions/licence";
 import { setSecondary } from "../90-actions/netsvc-dns";
 import { deleteQueue, flushQueue, setMailRelay } from "../90-actions/netsvc-mail";
@@ -51,7 +52,7 @@ const EXTRAS: Record<SoftwareKind, (sw: Software) => CliCommand[]> = {
 export function cliCommands(sw: Software): CliCommand[] {
   const licensed = sw.trialDays !== undefined;
   return [
-    cmd("version", "version", false), cmd("status", "status", false), cmd("update", "update"), cmd("channel", "channel stable|release|edge"), cmd("autoupdate", "autoupdate on|off"),
+    cmd("version", "version", false), cmd("status", "status", false), cmd("update", "update"), cmd("upgrade", "upgrade [--key <key>]"), cmd("channel", "channel stable|release|edge"), cmd("autoupdate", "autoupdate on|off"),
     ...(licensed ? [cmd("licenseSet", "license set <key>"), cmd("licenseShow", "license show", false)] : []),
     ...(licensed && sw.trialDays !== null ? [cmd("trial", "trial")] : []),
     ...(licensed && sw.kind === "panel" ? [cmd("licenseTier", "license tier <tier>")] : []),
@@ -115,6 +116,13 @@ function run(s: GameState, m: string, sw: Software, c: Cluster, id: string, rest
     case "status":
       return { output: [...lines(c.switching ? "term.vendor.updating" : "term.vendor.up", { name: sw.name }), ...licenceLine(s, m, sw)] };
     case "update": return act(updateSoftware, c.id);
+    case "upgrade": {
+      if (a !== undefined && (a !== "--key" || !b)) return undefined;
+      const blocked = softwareUpgradeBlock(s, m, sw.id, b);
+      if (blocked) return fail(blocked);
+      const to = softwareTarget(s, m, sw.id)!;
+      return { output: lines("term.vendor.upgrading", { name: sw.name, version: to.version, hours: sw.installHours }), action: [upgradeSoftware, m, sw.id, ...(b ? [b] : [])] };
+    }
     case "channel": return CHANNELS.includes(a as Channel) ? act(setChannel, c.id, a as Channel) : undefined;
     case "autoupdate": { const on = onOff(a); return on === undefined ? undefined : act(setAutoUpdate, c.id, on); }
     case "licenseSet": return a ? act(activateLicence, m, sw.id, a) : undefined;
