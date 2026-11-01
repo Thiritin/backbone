@@ -12,8 +12,6 @@ export default {
   "error.nothingToImport": () => "There is nothing to import.",
   "error.noShopSystem": () => "You need this vendor's shop system for this module.",
   "shop-link.import": () => "Import from shop",
-  "shop-link.customers": () => "Shop customers",
-  "shop-link.invoices": () => "Shop invoices",
   "shop-link.footer": (p) => `© ${p.year} ${p.maker}`,
   "shop-link.tagline.modemBill": () => "Billing and provisioning for web hosts",
   "shop-link.tagline.clientExit": () => "Client management and billing for hosting companies",

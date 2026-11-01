@@ -7,6 +7,8 @@ import { Orders } from "./Orders";
 import { ProductEdit } from "./ProductEdit";
 import { Products } from "./Products";
 import { Servers } from "./Servers";
+import { Modules } from "./Modules";
+import { PaymentMethods } from "./Payments";
 import { LicenceScreen, UpdatesScreen } from "./Licence";
 
 export const SCREEN_LABEL: Partial<Record<ScreenName, string>> = {
@@ -31,11 +33,11 @@ export function AdminScreen({ screen, ...props }: ScreenProps & { screen: Screen
     case "products": return <Products {...props} />;
     case "product": return <ProductEdit {...props} id={screen.id ?? ""} tab={screen.tab} />;
     case "options": return <Options {...props} />;
-    case "servers": return <Servers game={props.game} />;
+    case "servers": return <><Servers game={props.game} /><Modules game={props.game} /></>;
     case "orders": return <Orders {...props} />;
     case "clients": return <Clients {...props} />;
     case "client": return <ClientSummary {...props} id={screen.id ?? ""} tab={screen.tab} />;
-    case "invoices": return <Invoices {...props} />;
+    case "invoices": return <><Invoices {...props} /><PaymentMethods game={props.game} /></>;
     case "licence": return <LicenceScreen {...props} />;
     case "updates": return <UpdatesScreen {...props} />;
     default: return <Home {...props} />;

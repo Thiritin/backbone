@@ -5,18 +5,17 @@ import type { GameState } from "../src/sim/50-state";
 import { parsePortal, portalPath } from "../src/sim/80-business/portal";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { createProduct, createProductGroup, setOptionDiscount, setProductPrice, updateProduct } from "../src/sim/90-actions/portal";
-import { chooseShop, createGroup } from "../src/sim/90-actions/shop";
+import { createGroup } from "../src/sim/90-actions/shop";
 import { setLine } from "../src/sim/90-actions/website";
-import { Shop } from "../src/ui/apps/marketing/Shop";
 import { skinOf } from "../src/ui/apps/browser/sites/portal/skins";
-import { readyGame } from "./fixtures";
+import { readyGame, installWithKey } from "./fixtures";
 
 const shopGame = (): GameState => {
   const s = readyGame(4);
   s.cash = 1e6;
   setUpChannel(s, "website");
   s.unlocks = [...s.unlocks, "shops"];
-  expect(chooseShop(s, "whmCache").ok).toBe(true);
+  installWithKey(s, "whmCache");
   s.hour += SHOP_SETUP_HOURS;
   setLine(s, "webHosting", true);
   return s;
@@ -71,10 +70,9 @@ describe("WHMCache admin", () => {
     expect(page(s, { s: "invoices" })).toContain("Invoice");
   });
 
-  it("keeps Marketing to the choice of shop system and its modules", () => {
+  it("lists the shop's modules with its servers and its payment methods with its invoices", () => {
     const s = shopGame();
-    const html = renderToString(<Shop game={s} />);
-    expect(html).toContain("Open admin");
-    expect(html).not.toContain("Server groups");
+    expect(page(s, { s: "servers" })).toContain("Modules");
+    expect(page(s, { s: "invoices" })).toContain("Payment methods");
   });
 });
