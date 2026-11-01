@@ -43,24 +43,25 @@ export const WAITING_CLOSE_HOURS = 48;
 // economy.md, Tickets and work rates.
 export const MINUTES: Record<TicketKind, number> = { outage: 10, howTo: 20, billing: 15, upgrade: 20, cancellation: 15, abuse: 30, appeal: 15, notice: 15, legal: 30, refund: 10, order: 10, extortion: 10, migration: 10, maintenance: 10, sponsor: 10, pear: 0, mail: 0 };
 export const MONTHLY_RATES: Record<"howTo" | "billing" | "abuse", Record<Budget, number>> = {
-  howTo: { low: 0.18, medium: 0.06, high: 0.02 },
-  billing: { low: 0.04, medium: 0.04, high: 0.02 },
-  abuse: { low: 0.005, medium: 0.005, high: 0.02 },
+  howTo: { low: 0.09, medium: 0.03, high: 0.01 },
+  billing: { low: 0.02, medium: 0.02, high: 0.01 },
+  abuse: { low: 0.0025, medium: 0.0025, high: 0.01 },
 };
 // Customers ask most while they set up and rarely once settled: ×2.5 at signup, ×0.85 per month, never below ×0.15.
 export const tenureFactor = (s: GameState, c: Customer): number => Math.max(0.15, 2.5 * 0.85 ** ((s.hour - c.since) / HOURS_PER_MONTH));
-export const GAMER_ABUSE_RATE = 0.02;
+export const GAMER_ABUSE_RATE = 0.01;
 export const UPGRADE_CHANCE: Record<Budget, number> = { low: 0.02, medium: 0.03, high: 0.04 };
 export const OUTAGE_WRITE_CHANCE: Record<Budget, number> = { low: 0.3, medium: 0.6, high: 0.9 };
 
 // How-to questions by the services the customer runs and their months with us: newcomers ask how to set things up,
 // long-standing customers ask about what changes over the years. basic: answered by a Knowledge base article.
-export interface HowTo { on: Product[]; without?: Product; minMonths?: number; maxMonths?: number; basic?: true }
+// elsewhere: asked only about a domain registered at another registrar, since ours already uses our nameservers.
+export interface HowTo { on: Product[]; without?: Product; minMonths?: number; maxMonths?: number; basic?: true; elsewhere?: true }
 const SERVERS: Product[] = ["vps", "dedicated", "cloud", "gpu"];
 export const HOW_TO: Record<string, HowTo> = {
   upload: { on: ["webHosting"], maxMonths: 6, basic: true },
   email: { on: ["webHosting"], maxMonths: 12, basic: true },
-  dns: { on: ["webHosting"], maxMonths: 3, basic: true },
+  dns: { on: ["webHosting"], maxMonths: 3, basic: true, elsewhere: true },
   ssl: { on: ["webHosting"], without: "ssl", basic: true },
   ssh: { on: SERVERS, maxMonths: 6, basic: true },
   panel: { on: ["webHosting", ...SERVERS] },
@@ -77,7 +78,7 @@ export function pickHowTo(s: GameState, c: Customer): { topic: string; serviceId
   const services = activeServices(s.services, c.id), months = (s.hour - c.since) / HOURS_PER_MONTH;
   const fits = Object.entries(HOW_TO).flatMap(([topic, h]) => {
     if (months < (h.minMonths ?? 0) || months >= (h.maxMonths ?? Infinity) || (h.without && services.some((v) => v.product === h.without))) return [];
-    const on = services.filter((v) => h.on.includes(v.product));
+    const on = services.filter((v) => h.on.includes(v.product) && !(h.elsewhere && s.domains.some((d) => d.name === v.domain && !d.lapsed)));
     return on.length ? [{ topic, on }] : [];
   });
   if (!fits.length) return null;
@@ -101,10 +102,12 @@ export const ACTIONS: Record<TicketKind, TicketAction[]> = {
 };
 // Actions only tickets of one topic offer: the customer asks for help with an outdated site, or a defaced site waits for clean-up.
 export const TOPIC_ACTIONS: Record<string, TicketAction[]> = { "howTo.update": ["offerOnce", "offerManaged", "free"], "howTo.hacked": ["clean", "noBackup"] };
+// Topics with replies of their own and no actions: a suspended customer only needs the invoice to pay it.
+export const TOPIC_TEMPLATES: Record<string, string[]> = { "billing.suspended": ["resend", "askDetails"] };
 export const ACTION_MINUTES: Partial<Record<TicketAction, number>> = { clean: CLEAN_MINUTES };
-export const actionsOf = (t: Pick<Ticket, "kind" | "topic">): TicketAction[] => [...ACTIONS[t.kind], ...(TOPIC_ACTIONS[`${t.kind}.${t.topic}`] ?? [])];
+export const actionsOf = (t: Pick<Ticket, "kind" | "topic">): TicketAction[] => (`${t.kind}.${t.topic}` in TOPIC_TEMPLATES ? [] : [...ACTIONS[t.kind], ...(TOPIC_ACTIONS[`${t.kind}.${t.topic}`] ?? [])]);
 // Tickets with their own actions have no reply templates.
-export const templatesOf = (t: Pick<Ticket, "kind" | "topic">): string[] => (`${t.kind}.${t.topic}` in TOPIC_ACTIONS ? [] : TEMPLATES[t.kind]);
+export const templatesOf = (t: Pick<Ticket, "kind" | "topic">): string[] => TOPIC_TEMPLATES[`${t.kind}.${t.topic}`] ?? (`${t.kind}.${t.topic}` in TOPIC_ACTIONS ? [] : TEMPLATES[t.kind]);
 // A service that can grow in place: it runs on hardware and bills by the hour. Upgrade requests are only about these.
 export const expandable = (v: Service): boolean => PRODUCTS[v.product].runsOn !== "none" && PRODUCTS[v.product].period === "hour";
 export const canEscalate = (kind: TicketKind): boolean => kind === "outage";

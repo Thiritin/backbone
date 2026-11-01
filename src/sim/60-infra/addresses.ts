@@ -12,6 +12,7 @@ import { bump, createTicket, isFinal, profileStats } from "../40-support/tickets
 import type { GameState, LedgerEntry, Location } from "../50-state";
 import { isOwnVm, vmById, type Workload } from "./cluster";
 import { isSuspended } from "../45-billing/billing";
+import { serviceOnline } from "../40-support/status";
 import { bounceFactor, listingTick, mailQueueTick } from "./netsvc-mail";
 import { jacked, locationOf } from "./status";
 import { mountedRouter } from "./routers";
@@ -324,8 +325,8 @@ function reputation(s: GameState, events: SimEvent[]): void {
   const spamTo = (a: Address | undefined, n: number) => a && patch(s, a.id, { spam: s.ips.addresses.find((x) => x.id === a.id)!.spam + n });
   for (const id of hacked) spamTo(mailAddress(s, id), SPAM.hacked);
   for (const v of s.services.filter((x) => x.endedAt === null && shady.has(x.customerId))) spamTo(serviceAddress(s, v.id), SPAM.shady);
-  // A defaced customer site sends from its host's address.
-  for (const id of s.sites.defaced) {
+  // A defaced customer site sends from its host's address while it is online.
+  for (const id of s.sites.defaced.filter((id) => serviceOnline(s, id))) {
     const host = s.workloads.find((w) => w.serviceId === id)?.clusterId, machine = host ? mailMachine(s, host) : undefined;
     if (machine) addSpam(s, machine, SPAM.shady);
   }

@@ -13,6 +13,7 @@ import type { SimEvent } from "../88-tick/tick";
 import { maintParams } from "../60-infra/maintenance";
 import { askedIp } from "../60-infra/netsvc-dns";
 import { sponsorParams } from "../80-business/community";
+import { holdReason } from "../45-billing/billing";
 import { bump, cancelCustomer, credit, HOURS_PER_MONTH, monthlyValue, type Notice, type Ticket } from "./tickets";
 
 export interface Sender { id: string; name: string; domain: string; topics: string[]; agency: boolean }
@@ -56,9 +57,15 @@ const pick = <T>(r: Rng, xs: readonly T[]): T => xs[Math.floor(rand(r) * xs.leng
 const between = (r: Rng, [lo, hi]: readonly [number, number]) => lo + rand(r) * (hi - lo);
 const slug = (name: string) => name.toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
+// A suspended or ended account serves no content, so notices about it stop.
+const offline = (s: GameState, serviceId: string | null): boolean => {
+  const v = s.services.find((x) => x.id === serviceId);
+  return !!v && (v.endedAt !== null || !!holdReason(s, v));
+};
+
 // The domain a notice names: a service labelled with a domain, otherwise one made from the customer's name.
 export function domainOf(s: GameState, c: Customer): { domain: string; serviceId: string } | null {
-  const services = activeServices(s.services, c.id);
+  const services = activeServices(s.services, c.id).filter((v) => !offline(s, v.id));
   if (!services.length) return null;
   const v = services.find((x) => x.domain) ?? services.find((x) => x.label.includes(".") && !x.label.includes(" ")) ?? services[0];
   return { domain: v.domain ?? (v.label.includes(".") && !v.label.includes(" ") ? v.label : `${slug(c.name)}.de`), serviceId: v.id };
@@ -161,7 +168,10 @@ function deadlines(s: GameState, r: Rng, events: SimEvent[]): void {
   for (const t of s.tickets) {
     if (!t.notice || s.hour < t.dueAt || answeredInTime(t)) continue;
     if (t.kind === "extortion") { if (t.status === "open") decideBreach(s, t, "refuse", events); continue; }
-    if (t.kind === "notice" && t.status === "open") ignoreNotice(s, t, r);
+    if (t.kind === "notice" && t.status === "open") {
+      if (offline(s, t.serviceId)) Object.assign(t, { status: "resolved", outcome: "takenDown", updatedAt: s.hour, work: null });
+      else ignoreNotice(s, t, r);
+    }
     else if (t.kind === "legal" && (t.outcome === null || t.outcome === "ignored")) {
       Object.assign(t, { status: "closed", outcome: "seized", updatedAt: s.hour, work: null });
       const at = (w: Workload) => { const id = serverOf(s, w); return id && s.devices.some((d) => d.id === id) ? id : null; };
@@ -179,7 +189,7 @@ function followUps(s: GameState, r: Rng): Ticket[] {
     const { round, url } = t.notice;
     setNotice(t, { followAt: null });
     const c = s.customers.find((x) => x.id === t.customerId);
-    if (!c || c.churnedAt !== null) continue;
+    if (!c || c.churnedAt !== null || offline(s, t.serviceId)) continue;
     const next = t.kind === "notice" && round === 1
       ? spawnNotice(s, c, true, r, t.topic, 2)
       : spawnLegal(s, c, r, t.kind === "legal" ? 2 : 1, url);

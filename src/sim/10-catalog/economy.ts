@@ -149,7 +149,7 @@ export const SERVER_AFR = 0.08;
 export const REPAIR_HOURS = 8;
 
 // Tickets and work rates: tickets per customer per month by skill (how-to + billing + abuse).
-export const TICKETS_PER_CUSTOMER: Record<Skill, number> = { low: 0.225, medium: 0.105, high: 0.06 };
+export const TICKETS_PER_CUSTOMER: Record<Skill, number> = { low: 0.1125, medium: 0.0525, high: 0.03 };
 export const TICKET_MINUTES = 19;
 export const PAYMENT_MINUTES = 6;
 export const UPGRADE_CHANCE: Record<Budget, number> = { low: 0.02, medium: 0.03, high: 0.04 };
