@@ -6,11 +6,12 @@ Lane ids: `catalog-terms`, `licence-state`, `install-key`, `vendor-shop`, `my-ac
 
 Today installing licensed software charges the licence on the spot: `buyLicenses` books a ledger line at install, monthly fees run on their own, and a licensed panel starts on a 30-day trial of its top tier. After this plan, software is installed the way it is in real life:
 
-- Software whose real counterpart offers a trial or evaluation installs without a key and runs as a trial for the vendor's real trial length. When the trial ends, the software keeps its data but stops doing the thing the trial gates (a panel blocks new accounts as it does today, a hypervisor refuses to start VMs, a backup job stops running).
+- Software whose real counterpart offers a trial or evaluation installs without a key and runs as a trial for the vendor's real trial length. When the trial ends, the software keeps its data but stops doing the thing the trial gates (a panel blocks new accounts as it does today, a hypervisor refuses to start VMs, a backup job stops running). A licensed panel whose trial ended or whose key lapsed shows only its licence page after sign-in, where a typed key or an unassigned key from My account brings the admin UI back. Its sites keep serving, but each day a fifth of its customers without an open ticket write in that their panel login shows the licence page, and those tickets resolve once the panel is licensed again.
 - Software without a trial asks for a licence key during install. Without a valid, unassigned key the install does not start.
 - Keys are bought on the vendor's website in the Browser: a product page with editions, a shop with a cart, a checkout that pays from the bank account, and an order confirmation email with the keys.
 - Each vendor site has a My account page that lists every licence bought there: product, edition, key, the machine it is assigned to, and when it renews or expired. Monthly licences are cancelled there.
 - A trial is turned into a full licence by entering a key in the software's licence page (the `readouts` licence page frame), the Windoors activation dialog, or the console command the vendor's site documents.
+- A freshly installed licensed panel opens on a licence setup page at its first sign-in: the player enters a key, picks an unassigned one, or continues on the trial the install started. The setup page does not hold back accounts, since the install already licensed the panel; panels from older saves count as set up.
 - Free software (Debiant, FreePanel, Proxmocks and the rest) needs no key, but it is versioned and ages like everything else.
 
 ## Versions

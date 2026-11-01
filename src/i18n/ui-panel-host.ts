@@ -68,4 +68,8 @@ export default {
   "error.licenceKeysShort": (p) => `No unassigned license key for ${p.name}.`,
   "host.activate": () => "Activate",
   "host.activated": () => "Activated",
+  "host.setup": () => "Setup",
+  "host.ownedKeys": () => "Unassigned keys",
+  "host.continue": () => "Continue",
+  "host.useTrial": () => "Use trial",
 } satisfies Dict;

@@ -68,4 +68,8 @@ export default {
   "error.licenceKeysShort": (p) => `No hay ninguna clave de licencia libre para ${p.name}.`,
   "host.activate": () => "Activar",
   "host.activated": () => "Activada",
+  "host.setup": () => "Configuración",
+  "host.ownedKeys": () => "Claves sin asignar",
+  "host.continue": () => "Continuar",
+  "host.useTrial": () => "Usar prueba",
 } satisfies Dict;
