@@ -6,6 +6,38 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - Ports now look like their connectors on every rear panel: RJ45 jacks, silver SFP cages and a grey, labelled DSL port set apart from the LAN ports.
 - The carrier panel shows its ports, and clicking one opens it ready to connect a cable.
+- The game panels now have a Manage screen for every game server with versions, mods, restart schedules, a player chart and port allocations, and Pterodaktyl shows the status of its nodes.
+- Customers on a game title past its prime now lose happiness every day until you move them to a current title, and Pterodaktyl nodes run a daemon that fails now and then and has to keep up with its panel.
+- Backup jobs now keep restore points that you can test and copy offsite, Proxmocks clusters keep quorum, replicate VMs and run Ceph storage, and every VM can have its own firewall.
+- VMwhere clusters now come in Essentials, Standard and Enterprise editions, with DRS modes, host maintenance mode, editable and acknowledgeable alarms, and resource pools that cap the vCPUs and RAM of their VMs.
+- Books is now a choice: buy Lexwear Office, WIZO Mein Büro, Saga Office Line, orgaMIN or the web-based Collmix in the Pear Store, with sevDeck and lexoffize joining in later years, each with its own look, prices and modules.
+- Each bookkeeping vendor has its own site in the Browser and a place under Bookkeeping on Yahoy, and Getting started now asks you to install a program before your first customer.
+- Routers you mount in a datacenter now run their own network behind the provider's handoff with a WebFigg or J-Webb web interface, and the desk reaches that network only once you switch on the router's VPN.
+- Layer 3 switches can route between VLANs, every VM takes its own address from the local network's DHCP pool so a full pool stops new VPS sales, and enterprise customers need a private network carried as a VLAN to every server their VMs run on.
+- A new Chat app in the dock opens the Backbone Discord and changes from ICU to Skipe to Diskord as the years pass; you can remove it from the dock like any other app.
+- Backup servers now have a restore page that brings a lost machine back from its backup onto any server with room, in any location, including machines stranded on a seized server.
+- Game servers now crash now and then, more often with mods or on an overloaded host, and come back by themselves when auto-restart is on, and each server can restart on a daily or weekly schedule.
+- Dragging a window to a screen edge now shows a preview and tiles it to half the screen, to a quarter near a corner, or to the full screen at the top, and dragging it away restores its size.
+- Closing the last browser tab closes the browser window, and the dock menu can open a second browser window with its own tabs.
+- Progress bars in server panels now look like the ones each product used in its time, from boxed and segmented bars early on to thin flat ones later.
+- Backula no longer has a web console; its host page shows the director status and the backup disk the way its command line would.
+- Clicking the clock in the top bar opens a calendar that marks the days with announcements, and clicking your cash opens Finance.
+- Shop vendors now sell payment methods for your shop, from direct debit and PayPail to Visor cards, paysavecard, Instantly and Bitcorn Pay, each with its own fee and weekly payout, and customers whose favourite method is missing may buy elsewhere.
+- Returned debits, PayPail disputes and card chargebacks now arrive in Books as negative payments that reopen their invoice once you book them, and a chargeback on a stolen card suspends the fraudster.
+- A shop system now keeps its own customers and invoices, which reach Books when you press Import from shop, and its card payments arrive as one weekly payout that lists the invoices it covers.
+- Each shop vendor sells a Shop link module on its own website that sends new shop customers and invoices to Books at once and marks shop invoices paid when you book their payment.
+- Vendor and software websites now show their logos centred and complete in every era, and the ISO download buttons line up with their release rows.
+- The back button on the marketing website page is now its normal size and shows in your language.
+- The server details page has room at its edges again, long German button labels wrap, and the disk label no longer runs into its meter.
+- Each website on a panel host links to its domain, or to its address while it has none.
+- The dunning settings in Lexwear Office now open from a Settings button on the Reminders tab.
+- The first order form is now called the self-scripted order form in every language.
+- Software subscriptions now renew per licence key on the day of the month you bought them, with a receipt from the vendor, and a renewal the bank cannot pay lapses after a week of grace until the money is there.
+- The Debiant installer asks how to configure the network, so a server can take its address from the router or get a fixed address, netmask, gateway and name server, and the Windoors Server Manager has a Network adapter page for the same settings.
+- Server shells know `ip`, `ifconfig`, `dhclient`, `ifup`, `ifdown` and the networking restart commands, apply the edited network settings file when networking restarts, and two servers holding the same address both drop off the network.
+- Custom order tickets now show only the step you are at, and you can open the customer account before or after sending the offer, which appears as an attachment on the email you sent.
+- A custom order now sends the customer one email when everything is set up, with the account, the order confirmation and its invoice, the domain and the login details together.
+- Every bank now has a name of its own and a website laid out its own way, and each bank redesigns its site with a modern look at some point between 2010 and 2016.
 - Letters in the Post app now arrive as full A4 pages with each sender's letterhead, crest or logo, the address window, reference block and footer of an official German letter.
 - Authorities that seize servers or send legal requests now appear under their name in your chosen language.
 - Resellers now rent blocks of 20, 50 or 100 accounts on a DirectAdmen or cPanic host and fill them over the months, their customers bring abuse reports of their own, and DirectAdmen has a Reseller login and a Manage Resellers page to watch and suspend them.
@@ -17,6 +49,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Used hardware now resells for less than it cost new, and buyers on the board and on eBuy no longer pay more than its resale value.
 - A part taken out of a server takes its share of the server's value along, so stripping a server and selling the pieces brings in the same as selling it whole.
 - Installed software now runs a real version number, and a new install takes the newest release out at the time.
+- A software console now looks like the version installed on the machine, so an old cPanic keeps its old look in later years.
 - The Marketing app has a Domain tile whose Buy button opens the domain resellers in the Yahoy! Directory, and the domains of other companies in the game can no longer be registered as your own.
 - Websites in the browser fill the whole window again instead of a narrow page.
 - Right-click a browser tab to close it, close all other tabs, or close every tab to its left or right.

@@ -2,7 +2,10 @@
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { softwareById } from "../10-catalog/platforms";
-import { balances, datastoreOn, diskMovesLive, insideVm, isOwnVm, liveBetween, lostDisk, moveControlPlaneOff, pickNode, type Cluster, type Workload } from "./cluster";
+import { balances, datastoreOn, memberUp, diskMovesLive, insideVm, isOwnVm, liveBetween, lostDisk, moveControlPlaneOff, pickNode, type Cluster, type Workload } from "./cluster";
+import { quorate } from "./quorum";
+import { cephCopies, cephOn, replicaReady, replicaStale, replicaTick } from "./replica";
+import { settleLoss } from "../90-actions/vms";
 import { working } from "./status";
 import { nodeUsage } from "./usage";
 
@@ -24,12 +27,23 @@ const servicesIn = (s: GameState, w: Workload): string[] =>
 // that fits nowhere stays down, and the player hears about it once. On a hypervisor with datastores only a VM whose disk is
 // on a working datastore restarts; one with its disk on the dead node waits for the node. A template stays where it is.
 function failover(s: GameState, c: Cluster, events: SimEvent[]) {
-  const dead = new Set(c.nodes.filter((n) => !working(s, n.deviceId)).map((n) => n.deviceId));
-  if (!dead.size) return;
+  const dead = new Set(c.nodes.filter((n) => !memberUp(s, n)).map((n) => n.deviceId));
+  if (!dead.size || !quorate(s, c)) return;
   if (c.controlPlane && dead.has(c.controlPlane)) moveControlPlaneOff(s, c.id, c.controlPlane);
   let moved = 0, stuck = 0;
-  const shared = (w: Workload) => !(c.platform && softwareById(c.platform).datastores) || (datastoreOn(c, w) && working(s, w.datastore!));
-  for (const w of s.workloads.filter((x) => x.clusterId === c.id && x.deviceId && dead.has(x.deviceId) && !x.template && !lostDisk(s, x) && shared(x))) {
+  const pool = cephOn(c) && cephCopies(s, c) >= 1;
+  const shared = (w: Workload) => pool || !(c.platform && softwareById(c.platform).datastores) || (datastoreOn(c, w) && working(s, w.datastore!));
+  const viaReplica = (w: Workload) => !w.datastore && !pool && replicaReady(s, w) && !dead.has(w.replica!.toNode);
+  for (const w of s.workloads.filter((x) => x.clusterId === c.id && x.deviceId && dead.has(x.deviceId) && !x.template && (((pool || !lostDisk(s, x)) && shared(x)) || viaReplica(x)))) {
+    // A replica takes over on its own node, from the last copy: what was written since is gone.
+    if (!pool && viaReplica(w) && (lostDisk(s, w) || !shared(w))) {
+      const lag = replicaStale(s, w);
+      patch(s, w.id, { deviceId: w.replica!.toNode, placedAt: s.hour, replica: null, stuck: undefined });
+      settleLoss(s, w, s.hour, s.hour - lag);
+      for (const id of servicesIn(s, w)) s.downHours = { ...s.downHours, [id]: (s.downHours[id] ?? 0) + FAILOVER_MINUTES / 60 };
+      moved++;
+      continue;
+    }
     const to = pickNode(s, cluster(s, c.id), w, w.deviceId, "spread");
     if (!to) {
       if (!w.stuck) stuck++;
@@ -54,7 +68,8 @@ export function runsHot(s: GameState, deviceId: string): boolean {
 // Moves the smallest running VM off each hot node to the idlest node that is not hot itself, live, one per node an hour; a
 // node of another CPU vendor takes it only in compatibility mode.
 // ponytail: smallest-first is a plain heuristic; weigh by what the VM uses once balancing needs to be smarter.
-function balance(s: GameState, c: Cluster) {
+function balanceMoves(s: GameState, c: Cluster): { workloadId: string; to: string }[] {
+  const moves: { workloadId: string; to: string }[] = [];
   for (const n of c.nodes) {
     if (n.state !== "active" || !working(s, n.deviceId) || !runsHot(s, n.deviceId)) continue;
     const vms = s.workloads.filter((w) => w.clusterId === c.id && w.deviceId === n.deviceId && !w.stopped && w.busyUntil <= s.hour && !lostDisk(s, w))
@@ -62,10 +77,21 @@ function balance(s: GameState, c: Cluster) {
     for (const w of vms) {
       const to = pickNode(s, cluster(s, c.id), w, n.deviceId, "spread");
       if (!to || runsHot(s, to) || !liveBetween(s, s.devices.find((d) => d.id === n.deviceId)!, s.devices.find((d) => d.id === to)!) || !diskMovesLive(s, c, w, to)) continue;
-      patch(s, w.id, { deviceId: to, placedAt: s.hour });
+      moves.push({ workloadId: w.id, to });
       break;
     }
   }
+  return moves;
+}
+
+// DRS pass: Full moves the VMs itself, Manual and Partial keep up to five recommendations for the player to apply.
+function balance(s: GameState, c: Cluster) {
+  const moves = balanceMoves(s, c);
+  if (c.drs === "full") {
+    for (const m of moves) patch(s, m.workloadId, { deviceId: m.to, placedAt: s.hour });
+    return;
+  }
+  s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, recs: moves.slice(0, 5).map((m) => ({ ...m, at: s.hour })) } : x));
 }
 
 // Hourly, before the down hours are counted.
@@ -76,9 +102,11 @@ export function haTick(s: GameState): SimEvent[] {
   for (const id of s.clusters.filter((c) => c.kind === "cloud" && c.platform).map((c) => c.id)) {
     if (cluster(s, id).ha.failover) failover(s, cluster(s, id), events);
     const c = cluster(s, id);
-    if (c.ha.balance && c.ha.live && balances(s, c)) balance(s, c);
+    if (c.drs !== "off" && c.ha.live && balances(s, c)) balance(s, c);
+    else if (c.recs.length) s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, recs: [] } : x));
   }
   // A clustered panel host restarts the web spaces of a failed server on the others without any research.
   for (const c of s.clusters.filter((x) => x.kind === "panel" && x.nodes.length > 1)) failover(s, c, events);
+  replicaTick(s);
   return events;
 }

@@ -95,7 +95,7 @@ Software moves from the cluster to the machine. A machine is a `Device` or an ow
 
 `canInstall(s, machineId, softwareId)` in `90-actions/software.ts` gives the reasons in this order: another OS on the disk, a conflict with installed software, a server that is rented whole, burning in or already runs the software (`error.serverInUse`), then an OS that is not up (`error.noOs`, `error.osNotUp`). A machine belongs to one cluster per installed software: at most one hypervisor cluster, plus any number of panel, game, mail, DNS, VPN and storage clusters, so `Cluster.nodes` overlap across clusters of different software and two clusters of the same software never share a node. A panel on a Proxmocks node gets its own panel cluster on that node: its web spaces place there, VMs still place through the hypervisor cluster, and the node's bookable room loses both control planes. `clusterOf(s, deviceId, kind?)` returns the cluster of that kind, or without a kind the hypervisor cluster (the first cluster on a server without one), and `clustersOf` all of them; a VM's are `hostsOfVm`, and `insideVm` its web spaces across them. `uninstallSoftware(s, machineId, softwareId?)` drops only that software's cluster, the hypervisor's when none is named; the installer's erase drops every one. The installer's erase empties `os` and `software`. VMs made in one click from a hypervisor console (`createPanelVm`, `createSoftwareVm`) start from a template with the software's first OS on the disk.
 
-Licenses. `licenseCost` adds the Windoors fee of a core era (4 euros per core or vCPU) and the App Suite per cluster; its result keeps the `{ panel, platform }` shape the tests assert, with Windoors under `platform`. The monthly ledger has one line for all Windoors machines ("Windoors Server, 3 machines") and one per App Suite cluster ("VMwhere App Suite, Cloud 1"); a Windoors machine in no cluster is billed there too.
+Licenses. `licenseCost` adds the renewing keys on a cluster's machines (Windoors in a core era at 4 euros per core or vCPU) and the App Suite per cluster; its result keeps the `{ panel, platform }` shape the tests assert, with Windoors under `platform`. Every subscription key renews on its own day with one ledger line ("Windoors Server subscription, key ABCD-..."), and the 1st has one line per App Suite cluster ("VMwhere App Suite, Cloud 1").
 
 ## 4. The install pipeline
 
@@ -385,6 +385,8 @@ As built (`consoles/HypervisorBase.tsx` holds the shared blocks, each product la
 ## 10. Panel, game, mail, DNS, VPN and storage consoles by era
 
 Each software with a web console gets its own component and stylesheet, modelled on the product. The actions stay what `ConsoleBody` has today (objects, nodes, update, auto-update, backups, migrate, clean up); only the chrome changes. Software without a web console (Bound, Knut DNS, WireGuarded, vsFTPeed, Postfixit) shows the host page with a plain text status listing in the style of the product's CLI (`named-checkconf`, `wg show`, `mailq`).
+
+Each console shows the look of the version installed on its machine, from the UI generations in `software-versions.md` (`UI_LOOKS`); the year in the table applies only when the installed version is unknown.
 
 | Console | Early look | Late look |
 | --- | --- | --- |

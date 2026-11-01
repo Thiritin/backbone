@@ -15,6 +15,7 @@ const rented = (s: GameState) => s.locations.filter((l) => l.dc !== null);
 export const CHECKS: Record<string, (s: GameState) => boolean> = {
   bank: (s) => !!s.bank,
   register: (s) => !!s.registration,
+  books: (s) => s.books.vendor !== null,
   buyServer: (s) => s.devices.some((d) => modelById(d.model).kind === "server"),
   mountServer: (s) => s.devices.some((d) => modelById(d.model).kind === "server" && d.rackId && d.on),
   mountRouter: (s) => s.devices.some((d) => !!d.rackId && isOfficeRouter(modelById(d.model)) && jacked(s, d.id)),
@@ -55,7 +56,7 @@ export const tracked = (id: string): boolean => id in CHECKS;
 export const checkDone = (s: GameState, id: string): boolean => CHECKS[id]?.(s) || s.checklist.includes(id);
 
 // The Getting started tutorial: each step is a checklist goal, done in this order. company is ticked by any change in Settings under Company.
-export const TUTORIAL = ["bank", "register", "company", "buyServer", "mountServer", "mountRouter", "internet", "setup", "findAddress", "shareWeb", "website", "domain", "launch", "email", "firstCustomer"] as const;
+export const TUTORIAL = ["bank", "register", "company", "books", "buyServer", "mountServer", "mountRouter", "internet", "setup", "findAddress", "shareWeb", "website", "domain", "launch", "email", "firstCustomer"] as const;
 
 // The steps after the tutorial belong to apps that arrive later (80-business/walk.ts); each shows once its app is installed.
 export const GUIDE = [...TUTORIAL, "loan", "tenCustomers", "research", "patch", "hire", "study"] as const;
