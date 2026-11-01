@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- Craigslost now lives at craigslost.org and looks like a classifieds board: a plain list of postings with date, photo and price, filters on the side and a page per posting.
 - Suspending an account now stops abuse notices about its site, and an open notice counts as taken down once the account is suspended.
 - Customers write half as many support tickets, a right answer within two hours of a ticket opening makes them a little happier, and customers whose domain you registered no longer ask how to point it to their site.
 - A Sponsor-Bored sponsor who takes your banner down can now be blocked or cancelled from the Marketing app, and when a blocked sponsor writes in you can say tough luck or have them put the banner back up.
