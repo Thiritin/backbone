@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- The BIOS setup can save changes without leaving, and its Boot Override starts the server from the hard disk or the attached USB stick right away.
 - A site you fixed after a broken WordPrass Toolkit update no longer keeps its old release around for a rollback.
 - The Debiant website now looks like a plain 2005 project page until its 2015 redesign.
 - Proxmocks clusters now have HA groups that decide where a failed guest restarts, and Horizont has projects that group your instances.
