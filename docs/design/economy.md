@@ -2246,11 +2246,11 @@ Spending more in one channel and city gets dearer: the cost per lead is multipli
 | Platform | Invite rate per happy customer per month | Trust bonus T |
 | --- | --- | --- |
 | None | 0 | 0 |
-| Free listing | 0 | 2 |
+| Free listing | 0 | 0 |
 | "ProvenExpat" | 1% | 4 |
 | "TrustPylon" | 2% | 6 |
 
-Platform fees are flat: the free listing costs nothing, ProvenExpat €49 and TrustPylon €199 a month.
+Platform fees are flat: the free listing costs nothing, ProvenExpat €49 and TrustPylon €199 a month. The free listing's +2 now comes from the HOSTtoast listing (competitors.md, HOSTtoast), whose T adds to the platform's, capped at 10.
 
 **Owned channels.** Each step is a one-off setup plus monthly upkeep, flat over the years:
 

@@ -886,7 +886,7 @@ Five fairs run every year: "SeeBIT" (CeBIT, until 2018), "CloudFeast" (CloudFest
 
 | Platform | Cost | Effect |
 | --- | --- | --- |
-| Free listing | Free | Collects reviews; small trust boost |
+| Free listing | Free | Collects reviews; the trust boost comes from the HOSTtoast listing |
 | "ProvenExpat" (ProvenExpert) | Moderate monthly fee | Review invites, a website badge; medium boost |
 | "TrustPylon" (Trustpilot) | High monthly fee | Strong marketing tools; the biggest boost |
 
