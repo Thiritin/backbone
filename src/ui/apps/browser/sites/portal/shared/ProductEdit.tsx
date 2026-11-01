@@ -14,7 +14,7 @@ import { CommitInput, toNumber } from "./CommitInput";
 import type { ScreenProps } from "./nav";
 
 export const CYCLE_LABEL: Record<Cycle, string> = {
-  monthly: t("shop-admin.cycleMonthly"), quarterly: t("shop-admin.cycleQuarterly"), annual: t("shop-admin.cycleAnnual"), biennial: t("shop-admin.cycleBiennial"),
+  monthly: t("shop-admin.cycleMonthly"), quarterly: t("shop-admin.cycleQuarterly"), semiannual: t("shop-admin.cycleSemiannual"), annual: t("shop-admin.cycleAnnual"), biennial: t("shop-admin.cycleBiennial"), triennial: t("shop-admin.cycleTriennial"),
 };
 const SETUP: [SetupMode, string][] = [["payment", t("shop-admin.setupPayment")], ["accept", t("shop-admin.setupAccept")], ["off", t("shop-admin.setupOff")]];
 const TABS = [["details", t("shop-admin.tabDetails")], ["pricing", t("marketing.pricing")], ["module", t("shop-admin.tabModule")]] as const;
