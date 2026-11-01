@@ -31,6 +31,8 @@ import { SponsorBoard } from "./sites/SponsorBoard";
 import { IndexSite } from "./sites/index/IndexSite";
 import { OfficeSite } from "./sites/office/OfficeSite";
 import { LexwearSite } from "./sites/lexwear/LexwearSite";
+import { BOOKS_SITES } from "./sites/books/sites";
+import { booksVendor } from "../../../sim/10-catalog/bookkeeping";
 import { ShopVendorSite } from "./sites/shopvendors/registry";
 import { shopById } from "../../../sim/10-catalog/shops";
 import { WikiSite } from "./sites/wiki/WikiSite";
@@ -88,6 +90,7 @@ function titleOf(game: GameState, r: Resolved): string {
     case "index": return t("browser-sites-1.ix.title");
     case "office": return t("browser-sites-1.of.title");
     case "lexwear": return LEXWEAR;
+    case "books": return booksVendor(p.id)!.program;
     case "shopVendor": return shopById(p.id).name;
     case "wiki": return WIKI_TITLE;
     case "software": return softwareById(p.id).name;
@@ -119,6 +122,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "sponsorboard") body = <SponsorBoard game={game} />;
   else if (p.kind === "office") body = <OfficeSite game={game} path={r.path} go={go} />;
   else if (p.kind === "lexwear") body = <LexwearSite game={game} path={r.path} go={go} />;
+  else if (p.kind === "books" && p.id !== "lexwear") { const Site = BOOKS_SITES[p.id]; body = <Site game={game} path={r.path} go={go} />; }
   else if (p.kind === "shopVendor") body = <ShopVendorSite game={game} id={p.id} />;
   else if (p.kind === "wiki") body = <WikiSite game={game} path={r.path} go={go} />;
   else if (p.kind === "index") body = <IndexSite game={game} path={r.path} go={go} />;
