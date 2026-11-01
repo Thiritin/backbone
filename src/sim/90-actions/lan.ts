@@ -1,6 +1,6 @@
 // docs/design/lan.md: what the player sets in Fritz!OZ, the basement router's web interface.
 import { isOfficeRouter, modelById } from "../10-catalog/hardware";
-import type { Device, GameState, PortShare, RouterLan } from "../50-state";
+import type { Device, GameState, IfaceConfig, PortShare, RouterLan } from "../50-state";
 import { addressOf, grantsOf, inNet, lanOf, macOf } from "../60-infra/lan";
 import type { ActionResult } from "./hardware";
 
@@ -68,4 +68,32 @@ export function viewDevices(s: GameState, routerId: string): ActionResult {
   const first = s.devices.find((d) => modelById(d.model).kind === "server");
   if (first && grantsOf(s, routerId).has(macOf(s, first.id)) && !s.checklist.includes("findAddress")) s.checklist = [...s.checklist, "findAddress"];
   return { ok: true, id: routerId };
+}
+
+const server = (s: GameState, deviceId: string): Device | string => {
+  const d = s.devices.find((x) => x.id === deviceId);
+  return !d ? "error.unknownDevice" : modelById(d.model).kind !== "server" ? "error.notServerNet" : d;
+};
+const badSetting = (c: IfaceConfig) => (c.mode !== "dhcp" && c.mode !== "static") || [c.ip, c.gw, c.dns].some((x) => x !== undefined && !ipv4(x))
+  || (c.prefix !== undefined && (!Number.isInteger(c.prefix) || c.prefix < 0 || c.prefix > 32));
+
+// lan.md, Static addresses: the network setting a server's OS stores, from ifup, a networking restart or the Windoors
+// adapter page. It applies at once and replaces what ip set since boot.
+export function setIface(s: GameState, deviceId: string, iface: IfaceConfig): ActionResult {
+  const d = server(s, deviceId);
+  if (typeof d === "string") return fail(d);
+  if (badSetting(iface)) return fail("error.badIp");
+  d.iface = iface.mode === "dhcp" ? { mode: "dhcp" } : iface;
+  delete d.runtime;
+  return { ok: true, id: deviceId };
+}
+
+// What ip, dhclient or ifdown set on a running server: in force until its next boot. null drops it.
+export function setRuntimeIface(s: GameState, deviceId: string, runtime: (IfaceConfig & { down?: true }) | null): ActionResult {
+  const d = server(s, deviceId);
+  if (typeof d === "string") return fail(d);
+  if (runtime && badSetting(runtime)) return fail("error.badIp");
+  if (runtime) d.runtime = { ...runtime, boot: d.bootUntil ?? null };
+  else delete d.runtime;
+  return { ok: true, id: deviceId };
 }

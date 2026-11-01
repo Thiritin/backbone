@@ -41,5 +41,7 @@ export default {
   "error.badAddress": () => "Gib eine private IPv4-Adresse ein.",
   "error.portShared": () => "Port 80 ist schon für ein anderes Gerät freigegeben.",
   "error.noAddress": () => "Dieses Gerät hat keine Adresse im Netz des Routers.",
+  "error.badIp": () => "Die IP-Adresse ist ungültig.",
+  "error.notServerNet": () => "Nur Server haben eine Netzwerkeinstellung.",
   "error.notOfficeRouter": () => "Nur ein Router fürs kleine Büro ersetzt den Router im Keller.",
 } satisfies Dict;

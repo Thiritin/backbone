@@ -28,6 +28,7 @@ import { Shop } from "./Shop";
 type Section = "channels" | "products" | "shop" | "pricing" | "campaigns" | "awareness" | "reviews" | "fairs" | "community";
 
 export const AUDIENCE: Record<Profile, string> = {
+  reseller: t("web.reseller.audience"),
   private: t("marketing.audPrivate"), gamer: t("marketing.audGamer"), hobbyDev: t("marketing.audHobbyDev"), soleProp: t("marketing.audSoleProp"), smallBiz: t("marketing.audSmallBiz"), agency: t("marketing.audAgency"), office: t("marketing.audOffice"), onlineShop: t("marketing.audOnlineShop"), enterprise: t("marketing.audEnterprise"),
 };
 
@@ -106,7 +107,7 @@ function Channels() {
   const [managing, setManaging] = useState(false);
   const year = yearOf(game.hour), full = isAvailable("Marketing", game.unlocks);
   if (managing) return <>
-    <div className="mkt-list"><button className="btn" onClick={() => setManaging(false)}>Back</button></div>
+    <div className="mkt-list"><button className="btn" style={{ justifySelf: "start" }} onClick={() => setManaging(false)}>{t("desktop.back")}</button></div>
     <div className="mkt-list"><SiteCard /></div>
   </>;
   return <>

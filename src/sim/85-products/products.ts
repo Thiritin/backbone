@@ -5,13 +5,14 @@ import { genOf, modelById } from "../10-catalog/hardware";
 import { balancerIn, isService, softwareById } from "../10-catalog/platforms";
 import { BACKUP_HOUR, slowTolerance } from "../10-catalog/usage";
 import { channelOf, EDGE_HOWTO } from "../60-infra/channel";
-import { assignedKey, assignKey, installedVersion, isLicensed, issueKey, trialDaysOf, panelKey, panelMachine, panelStatus, renewTerms, startTrial, tierOf, updateKey } from "../60-infra/licence";
+import { assignedKey, assignKey, extendKey, installedVersion, isLicensed, issueKey, productOf, trialDaysOf, panelMachine, startTrial, updateKey } from "../60-infra/licence";
 import { LAPSE_GRACE_DAYS, tiersOf, topTier, type LicenceTier } from "../10-catalog/licence-tiers";
-import { APP_SUITE_FEE, licensingAt, serverOsAt, serverOsById, type LicenseEra, type LicenseKind, type ServerOsId } from "../10-catalog/server-os";
+import { APP_SUITE_FEE, licensingAt, serverOsAt, serverOsById, type LicenseEra, type ServerOsId } from "../10-catalog/server-os";
 import { homeLineById } from "../20-world/datacenters";
 import type { Customer, Product } from "../30-customers/customers";
-import { bump, createTicket, slowed } from "../40-support/tickets";
-import type { Device, GameState, Location } from "../50-state";
+import { bump, createTicket, deliverMail, slowed } from "../40-support/tickets";
+import { spendable } from "../46-finance/bank";
+import type { Device, GameState, Licence, Location } from "../50-state";
 import { backsUpCluster, controlPlaneUp, insideVm, isOwnVm, lostDisk, servedBy, vmOf, vmRoom, type Cluster, type Workload } from "../60-infra/cluster";
 import { exitsOf } from "../60-infra/network";
 import { bootHours, customerWorkloads, liveServices } from "../60-infra/status";
@@ -58,28 +59,10 @@ export function moveGbit(s: GameState, a: string, b: string): number {
   return Math.min(Math.min(mbps(from), mbps(to)) / 1000, WAN_GB_PER_HOUR / LAN_GB_PER_HOUR);
 }
 
-function units(s: GameState, c: Cluster, kind: LicenseKind): number {
-  if (kind === "account") return s.workloads.filter((w) => w.clusterId === c.id && servedBy(s, w) === "panel").length;
-  if (kind === "server") return c.kind === "cloud" ? c.nodes.length : 1;
-  if (kind === "core") return c.nodes.reduce((n, x) => n + installedCores(s.devices.find((d) => d.id === x.deviceId)!), 0);
-  return 0;
-}
+const panelAccounts = (s: GameState, c: Cluster): number => s.workloads.filter((w) => w.clusterId === c.id && servedBy(s, w) === "panel").length;
 export const tierFee = (s: GameState, c: Cluster, tier: LicenceTier): number =>
-  Math.round(tier.fee * (tier.kind === "account" ? units(s, c, "account") : 1) * 100) / 100;
-// The monthly fee of a panel edition: nothing during the trial, after a lapse or once the trial ended without a key.
-export const softwareFee = (s: GameState, c: Cluster, id: string | null): number => {
-  if (!id) return 0;
-  const tier = id === c.panel ? tierOf(s, c) : undefined;
-  if (tier) return panelStatus(s, c) === "active" ? tierFee(s, c, tier) : 0;
-  const era = licensingAt(softwareById(id), yearOf(s.hour));
-  return Math.round(era.fee * units(s, c, era.kind) * 100) / 100;
-};
+  Math.round(tier.fee * (tier.kind === "account" ? panelAccounts(s, c) : 1) * 100) / 100;
 const isServer = (m: Device | Workload): m is Device => "components" in m;
-// The monthly OS license of a machine, a server or one of the player's own VMs: per physical core or per vCPU in a core era.
-const osFee = (s: GameState, m: Device | Workload): number => {
-  const era = m.os && licensingAt(serverOsById(m.os.id), yearOf(s.hour));
-  return era?.kind !== "core" ? 0 : era.fee * (isServer(m) ? installedCores(m) : m.vcpu);
-};
 const machinesOf = (s: GameState, c: Cluster) => (c.vm ? s.workloads.filter((w) => w.id === c.vm) : s.devices.filter((d) => c.nodes.some((n) => n.deviceId === d.id)));
 // docs/design/software.md, section 1: in a once era the OS or the software is bought when its install starts, per machine
 // for an OS and per CPU socket of a server for software; the key it gets stays assigned for every later reinstall.
@@ -131,15 +114,18 @@ export function buyUpgradeLicense(s: GameState, machineId: string, osId: ServerO
   if (k?.covers.kind === "version") updateKey(s, k.id, { covers: { kind: "version", major: version } });
 }
 
-// The monthly license bill of a cluster's panel and platform; the operating systems of its machines and the App Suite
-// count under platform.
+// The monthly license bill of a cluster: the renewing keys on its machines, the panel's apart; the other keys, the App
+// Suite and the balancer count under platform.
 // A bought balancer edition is billed per node.
 export const balancerFee = (s: GameState, c: Cluster): number =>
   (c.balancer && c.platform ? balancerIn(softwareById(c.platform), yearOf(s.hour))?.fee ?? 0 : 0) * c.nodes.length;
 
 export function licenseCost(s: GameState, c: Cluster): { panel: number; platform: number } {
-  const extra = machinesOf(s, c).reduce((n, m) => n + osFee(s, m), 0) + (c.appSuite ? APP_SUITE_FEE : 0) + balancerFee(s, c);
-  return { panel: softwareFee(s, c, c.panel), platform: softwareFee(s, c, c.platform) + extra };
+  const machines = new Set(machinesOf(s, c).map((m) => m.id));
+  const keys = s.licenses.filter((k) => k.machineId !== null && machines.has(k.machineId) && k.renewsAt !== null);
+  const sum = (ks: Licence[]) => Math.round(ks.reduce((n, k) => n + keyFee(s, k), 0) * 100) / 100;
+  const extra = (c.appSuite ? APP_SUITE_FEE : 0) + balancerFee(s, c);
+  return { panel: sum(keys.filter((k) => k.product === c.panel)), platform: sum(keys.filter((k) => k.product !== c.panel)) + extra };
 }
 
 const tickets = (id: string | null) => (id ? softwareById(id).tickets : 1);
@@ -337,36 +323,58 @@ export function monthlyReviews(s: GameState, events: SimEvent[]): void {
   if (fresh.size) addAwareness(s, "gamer", Math.min(FRESH_AWARENESS_CAP, FRESH_AWARENESS * fresh.size));
 }
 
-// One line per paid software and cluster, one per App Suite, and one for every machine's Windoors together.
+// One line per App Suite and per balancer; software and operating systems renew per key in renewKeys.
 function billLicenses(s: GameState) {
   const line = (key: string, params: Record<string, string | number>, amount: number) => ({ hour: s.hour, category: "licenses", key, params, amount: -amount });
   const lines = s.clusters.flatMap((c) => [
-    ...[c.panel, c.platform].filter((id) => softwareFee(s, c, id) > 0).map((id) => line("ledger.license", { cluster: c.name, name: softwareById(id!).name }, softwareFee(s, c, id))),
     ...(c.appSuite ? [line("ledger.appSuite", { cluster: c.name }, APP_SUITE_FEE)] : []),
     ...(balancerFee(s, c) > 0 ? [line("ledger.balancer", { cluster: c.name, name: balancerIn(softwareById(c.platform!), yearOf(s.hour))!.name }, balancerFee(s, c))] : []),
   ]);
-  const windoors = [...s.devices, ...s.workloads].filter((m) => m.os?.id === "windoors");
-  const osTotal = Math.round(windoors.reduce((n, m) => n + osFee(s, m), 0) * 100) / 100;
-  if (osTotal > 0) lines.push(line("ledger.windoors", { count: windoors.length }, osTotal));
   // ponytail: sold, scrapped and deleted machines release their keys here, at the month's bill.
   const held = new Set([...s.devices, ...s.workloads, ...s.ops.seized.map((x) => x.device)].map((m) => m.id));
   s.licenses = s.licenses.map((k) => (k.machineId !== null && !held.has(k.machineId) ? { ...k, machineId: null } : k));
-  renewTerms(s);
   if (!lines.length) return;
   s.cash = Math.round((s.cash + lines.reduce((n, l) => n + l.amount, 0)) * 100) / 100;
   s.ledger = [...s.ledger, ...lines];
 }
 
-// On the 1st a panel whose licence the cash cannot pay lapses; a lapse that cash recovers within a week is paid and cleared.
-export function licenceTick(s: GameState): void {
-  for (const c of s.clusters) {
-    const k = panelKey(s, c), tier = tierOf(s, c);
-    if (!k || !tier) continue;
-    if (k.lapsedAt !== null && s.hour - k.lapsedAt <= LAPSE_GRACE_DAYS * 24) {
-      const fee = tierFee(s, c, tier);
-      if (s.cash >= fee) { updateKey(s, k.id, { lapsedAt: null }); payLicence(s, c, fee); }
-    } else if (k.lapsedAt === null && isMonthStart(s.hour) && s.cash < softwareFee(s, c, c.panel)) updateKey(s, k.id, { lapsedAt: s.hour });
+// The monthly fee of a subscription key: its edition's or its product's price per account, server, or core of its machine.
+// An unassigned key pays for one unit.
+export function keyFee(s: GameState, k: Licence): number {
+  const tier = tiersOf(k.product).find((x) => x.id === k.edition);
+  const c = s.clusters.find((x) => x.panel === k.product && panelMachine(x) === k.machineId);
+  if (tier) return c ? tierFee(s, c, tier) : tier.fee;
+  const era = licensingAt(productOf(k.product)!, yearOf(s.hour));
+  if (era.kind === "once" || era.kind === "free") return 0;
+  const m = [...s.devices, ...s.workloads].find((x) => x.id === k.machineId);
+  return Math.round(era.fee * (m && era.kind === "core" ? (isServer(m) ? installedCores(m) : m.vcpu) : 1) * 100) / 100;
+}
+
+// Hourly: every subscription key that is due renews from the bank, one ledger line each and one receipt per product. A key
+// still unpaid after the grace days lapses; paid later, it runs a month from then. A cancelled key expires when its term ends.
+export function renewKeys(s: GameState): void {
+  const receipts = new Map<string, { count: number; amount: number }>();
+  for (const k of s.licenses) {
+    if (k.covers.kind !== "term") continue;
+    if (k.renewsAt === null) {
+      if (k.lapsedAt === null && s.hour >= k.covers.until) updateKey(s, k.id, { lapsedAt: k.covers.until });
+      continue;
+    }
+    if (s.hour < k.renewsAt) continue;
+    const fee = keyFee(s, k), late = s.hour - k.renewsAt >= LAPSE_GRACE_DAYS * 24, name = productOf(k.product)!.name;
+    if (spendable(s) >= fee) {
+      extendKey(s, k.id, late ? s.hour : k.renewsAt);
+      if (fee <= 0) continue;
+      s.cash = Math.round((s.cash - fee) * 100) / 100;
+      s.ledger = [...s.ledger, { hour: s.hour, category: "licenses", key: "ledger.licenceRenewal", params: { name, key: k.key }, amount: -fee }];
+      const r = receipts.get(name) ?? { count: 0, amount: 0 };
+      receipts.set(name, { count: r.count + 1, amount: Math.round((r.amount + fee) * 100) / 100 });
+    } else if (late && k.lapsedAt === null) {
+      updateKey(s, k.id, { lapsedAt: s.hour });
+      deliverMail(s, name, "licenceLapsed", { name, key: k.key });
+    }
   }
+  for (const [name, r] of receipts) deliverMail(s, name, "licenceRenewed", { name, ...r });
 }
 
 // Charges a licence fee at once, as the monthly line does.
@@ -384,7 +392,7 @@ export function productsTick(s: GameState): SimEvent[] {
   reportLosses(s, events);
   runBackups(s, events);
   overload(s);
-  licenceTick(s);
+  renewKeys(s);
   if (isMonthStart(s.hour)) {
     monthlyReviews(s, events);
     billLicenses(s);
