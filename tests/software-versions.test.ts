@@ -5,7 +5,7 @@ import { SERVER_OS } from "../src/sim/10-catalog/server-os";
 import { nextMajor, versionAt, versionInfo, versionsOf } from "../src/sim/10-catalog/software-versions";
 import { newGame } from "../src/sim/50-state";
 import { machineOf } from "../src/sim/60-infra/cluster";
-import { assignKey, installedVersion, issueKey, licenceStatus, updateKey } from "../src/sim/60-infra/licence";
+import { assignedKey, assignKey, installedVersion, issueKey, licenceStatus, updateKey } from "../src/sim/60-infra/licence";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { BASEMENT_SERVER, hypervisor, skipTo, withServer } from "./fixtures";
 
@@ -55,9 +55,10 @@ describe("software versions", () => {
     expect(installedVersion(s, BASEMENT_SERVER, "vmwhere")).toBe("5.1");
     const key = issueKey(s, "vmwhere", null);
     expect(key.covers).toEqual({ kind: "version", major: "5" });
-    assignKey(s, key.id, BASEMENT_SERVER);
+    // The fixture may have assigned a key of its own already; the status follows whichever key the machine holds.
+    const held = assignedKey(s, BASEMENT_SERVER, "vmwhere") ?? (assignKey(s, key.id, BASEMENT_SERVER), key);
     expect(licenceStatus(s, BASEMENT_SERVER, "vmwhere")).toBe("active");
-    updateKey(s, key.id, { covers: { kind: "version", major: "4" } });
+    updateKey(s, held.id, { covers: { kind: "version", major: "4" } });
     expect(licenceStatus(s, BASEMENT_SERVER, "vmwhere")).toBe("unlicensed");
   });
 
