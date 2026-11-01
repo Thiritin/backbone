@@ -48,7 +48,9 @@ import * as orders from "./orders";
 import * as packages from "./packages";
 import * as portal from "./portal";
 import * as firewall from "./firewall";
+import * as haGroups from "./hagroups";
 import * as horizont from "./horizont";
+import * as projects from "./projects";
 import * as quorum from "./quorum";
 import * as replication from "./replication";
 import * as openveezee from "./openveezee";
@@ -83,8 +85,9 @@ export type { LogEntry };
 export const LOG_CAP = 50_000;
 
 const modules = [games, addresses, lan, backups, bank, billing, bookkeeping, burnin, catalog, changes, checklist, clusters, community, datastores, company, console_, cpus, customers, dev, holds, licence, lexwear, shoplink, vendorShop, oversell, packages, portal, firewall, horizont, quorum, replication, webpanel, docs, paperwork, tax, files, finance, hardware, mail, maintenance, market, marketing, media, moves, netsvcDns, netsvcMail, netsvcQuota, netsvcStorage, netsvcVpn, network, openveezee, os, orders, rates, registrar, remote, routers, sales, security, shop, snapshots, software, staff, start, store, suite, switches, support, templates, travel, used, vms, vmwhere, vswitch, website];
+const hyperModules = [haGroups, projects];
 // Every exported function of 90-actions by its name, so a replay can call the actions a run logged.
-export const ACTIONS: Record<string, Action> = Object.fromEntries(modules.flatMap((m) => Object.entries(m).filter(([, f]) => typeof f === "function"))) as Record<string, Action>;
+export const ACTIONS: Record<string, Action> = Object.fromEntries([...modules, ...hyperModules].flatMap((m) => Object.entries(m).filter(([, f]) => typeof f === "function"))) as Record<string, Action>;
 const NAMES = new Map<unknown, string>(Object.entries(ACTIONS).map(([k, f]) => [f, k]));
 
 export const actionName = (fn: unknown): string | undefined => NAMES.get(fn);

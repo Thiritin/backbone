@@ -76,6 +76,15 @@ describe("Toolkit mass update", () => {
     expect(a.s.webpanel.appBroken[id]).toBeUndefined();
   });
 
+  it("drops a broken site's rollback record once it runs again", () => {
+    const a = world(40, 2014, false, 3);
+    ok(massUpdateSites(a.s, a.host, a.ids));
+    const id = Object.keys(a.s.webpanel.appBroken)[0];
+    expect(a.s.webpanel.appBack[id]).toBeDefined();
+    a.s.hour += 48; webpanelTick(a.s);
+    expect(a.s.webpanel.appBack[id]).toBeUndefined();
+  });
+
   it("refuses sites that are up to date and other panels", () => {
     const { s, host, ids } = world(2, 2018);
     expect(massUpdateSites(s, host, ids)).toEqual({ ok: false, error: "error.nothingToUpdate" });

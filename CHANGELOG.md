@@ -6,6 +6,11 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - Books has a Publish to website button: your website lists the published products of each line with their prices, and email orders and leads decide on those prices until you publish again.
 - An order email for one of your products now names that product.
+- The Shop scrolls again, so every server and part in the catalog is reachable, and the add to cart button no longer spills out of narrow cards.
+- The BIOS setup can save changes without leaving, and its Boot Override starts the server from the hard disk or the attached USB stick right away.
+- A site you fixed after a broken WordPrass Toolkit update no longer keeps its old release around for a rollback.
+- The Debiant website now looks like a plain 2005 project page until its 2015 redesign.
+- Proxmocks clusters now have HA groups that decide where a failed guest restarts, and Horizont has projects that group your instances.
 - Email orders and leads now pick the cheapest of your Books products that fits their needs and budget, accept any quote up to that product's price, and go elsewhere when none of your products fits.
 - Books products stay editable after you choose a shop system.
 - The license set command of each software tool now takes a key the same way the installer does, and the DirectAdmen site shows its Docs page on its own.

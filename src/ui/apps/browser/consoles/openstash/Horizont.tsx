@@ -15,6 +15,7 @@ import { parseCreate } from "../../../../../sim/80-business/consoles";
 import { packagesOf } from "../../../../../sim/80-business/packages";
 import { PackagesScreen } from "../PackageForms";
 import { flavorCounts, FLAVORS, flavorOf as baseFlavorOf, same } from "./flavors";
+import { Projects } from "./HorizontProjects";
 import { FloatingIps, InstanceGroups, SecurityGroups, Volumes } from "./HorizontNetwork";
 import { volumesOf } from "../../../../../sim/60-infra/horizont";
 import "./horizont.css";
@@ -88,7 +89,7 @@ export function InstanceOverview({ game, c, v, flavor }: { game: GameState; c: C
   );
 }
 
-type Page = "overview" | "instances" | "floating" | "groups" | "volumes" | "images" | "keys" | "hypervisors" | "flavors" | "system" | { vm: string; tab: "Overview" | "Log" | "Console" };
+type Page = "overview" | "instances" | "floating" | "groups" | "volumes" | "images" | "keys" | "projects" | "hypervisors" | "flavors" | "system" | { vm: string; tab: "Overview" | "Log" | "Console" };
 const TAB_LABELS = { Overview: () => t("browser-consoles-1.hzOverview"), Log: () => t("browser-consoles-1.hzLog"), Console: () => t("browser-consoles-1.console") };
 
 export function Horizont(p: PanelProps) {
@@ -110,6 +111,7 @@ export function Horizont(p: PanelProps) {
     ["Project", t("browser-consoles-1.hzProject"), [["overview", t("browser-consoles-1.hzOverview")], ["instances", t("browser-consoles-1.hzInstances")], ["images", t("browser-consoles-1.hzImages")], ["keys", t("browser-consoles-1.hzKeyPairs")]]],
     ["Network", t("hzn.network"), [["floating", t("hzn.floatingIps")], ["groups", t("hzn.securityGroups")]]],
     ["Volumes", t("hzn.volumes"), [["volumes", t("hzn.volumes")]]],
+    ["Identity", t("hzp.identity"), [["projects", t("hzp.projects")]]],
     ["Admin", t("browser-consoles-1.hzAdmin"), [["hypervisors", t("browser-consoles-1.hzHypervisors")], ["flavors", t("readouts.flavors")], ["system", t("browser-consoles-1.hzSystemInfo")]]],
   ];
   return (
@@ -174,6 +176,7 @@ export function Horizont(p: PanelProps) {
           {page === "floating" && <FloatingIps game={game} c={c} vms={vms} />}
           {page === "groups" && <SecurityGroups c={c} vms={vms} />}
           {page === "volumes" && <Volumes c={c} vms={vms} />}
+          {page === "projects" && <Projects game={game} c={c} />}
           {page === "images" && (
             <>
               <h1>{t("browser-consoles-1.hzImages")}</h1>

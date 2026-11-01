@@ -25,6 +25,7 @@ import { vswitchBlocks, type VSwitch } from "./vswitch";
 import { firewallBlocks, type Firewall } from "./exposure";
 import { pushLog } from "./syslog";
 import type { FloatingIp, SecurityGroup, Volume } from "./horizont";
+import type { Project } from "./projects";
 
 // Active takes new workloads, cordoned keeps its own, draining moves them off, maintenance is empty after a drain.
 export type NodeState = "active" | "cordoned" | "draining" | "maintenance";
@@ -46,6 +47,8 @@ export const HA_OFF: Ha = { live: false, balance: false, failover: false };
 export interface Pool { id: string; name: string; vcpuLimit: number | null; ramLimitGb: number | null; shares: "low" | "normal" | "high" }
 export type Drs = "off" | "manual" | "partial" | "full";
 export interface DrsRec { workloadId: string; to: string; at: number }
+// A Proxmocks HA group: failover prefers the highest priority node; a restricted group never starts a VM outside its nodes.
+export interface HaGroup { id: string; name: string; nodes: { deviceId: string; priority: number }[]; restricted: boolean; noFailback?: boolean }
 export interface Cluster {
   id: string; name: string; az: string; kind: SoftwareKind; placement: Placement; nodes: ClusterNode[];
   panel: string | null; platform: string | null; vm: string | null; controlPlane: string | null;
@@ -61,6 +64,8 @@ export interface Cluster {
   ramGuard?: boolean;
   // A free server that casts one extra vote in a Proxmocks cluster (quorum.ts); missing is none.
   qdevice?: string | null;
+  // Proxmocks HA groups (hagroups.ts); missing is none.
+  haGroups?: HaGroup[];
   // A Proxmocks shared storage pool built from the node disks (replica.ts); missing is none.
   ceph?: Ceph;
   // HyperVee virtual switches; missing is the one external Default Switch (vswitch.ts).
@@ -82,6 +87,8 @@ export interface Cluster {
   php: string; phpUntil: number; ha: Ha; version: number; updatedAt: number;
   // OpenStash Horizont (horizont.ts); missing is none, and the one default group.
   floating?: FloatingIp[]; groups?: SecurityGroup[]; volumes?: Volume[];
+  // Horizont projects with quotas (projects.ts); missing is the one unlimited admin project.
+  projects?: Project[];
   // Servers attached as shared storage (economy.md, Datastores); VM disks on one stay off their node.
   datastores: Datastore[];
   // Named specs this installation sells (80-business/packages.ts); absent reads as none.
@@ -99,6 +106,10 @@ export interface Datastore { deviceId: string; protocol: DatastoreProtocol; read
 export interface Workload extends Resources, Partial<MachineState> {
   id: string; serviceId: string; clusterId: string | null; deviceId: string | null; rackId: string | null; slot: number; units: number; watts: number; placedAt: number;
   stopped: boolean; busyUntil: number; backupAt: number | null; stuck?: boolean; poolId?: string | null;
+  // The HA group the VM belongs to, and the hour its failback to the preferred node is due.
+  haGroup?: string | null; failbackAt?: number;
+  // Horizont: the project the instance belongs to; missing is admin.
+  projectId?: string;
   // Restore points the backup jobs wrote; backupAt is the newest one's hour.
   points?: RestorePoint[];
   // A copy of the disk on a second node of the cluster, refreshed on a schedule (replica.ts).
