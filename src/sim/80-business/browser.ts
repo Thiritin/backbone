@@ -17,7 +17,7 @@ import { linkStatus, powered, working } from "../60-infra/status";
 import { nodeUsage } from "../60-infra/usage";
 import { BOARD_HOST } from "./sponsorboard";
 import { consoleAt, isDefaced } from "./consoles";
-import { customerSite, siteStatus, slowHost } from "./website";
+import { customerSite, siteHost, siteStatus, slowHost } from "./website";
 import { vendorHost, vendorLive, VENDORS } from "./vendors";
 import { shopActive } from "./shop";
 import { OFFICE_HOST, OFFICE_URL } from "./office";
@@ -164,7 +164,8 @@ export function resolve(s: GameState, raw: string): Resolved {
     return out({ kind: "company" }, st === "up" ? "fast" : st === "slow" ? "slow" : "down");
   }
   if (host === `portal.${domain}`) return shopActive(s) ? out({ kind: "shop" }, shopLoad()) : out({ kind: "notfound" });
-  const site = s.services.find((v) => !!v.domain && (v.domain === host || `www.${v.domain}` === host));
+  const site = s.services.find((v) => !!v.domain && (v.domain === host || `www.${v.domain}` === host))
+    ?? s.services.find((v) => !v.domain && v.product === "webHosting" && siteHost(s, v.id) === host);
   if (site) {
     const c = customerSite(s, site.id);
     if (c) return out({ kind: "customer", serviceId: site.id }, c.status === "down" ? "down" : c.status === "slow" ? "slow" : "fast");

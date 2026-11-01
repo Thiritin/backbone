@@ -37,7 +37,7 @@ export function Shop({ game }: { game: GameState }) {
     <div className="mkt-list">
       <div className="mkt-row">
         <span className="mkt-label">{t("marketing.orders")}</span>
-        <span className="mkt-grow">{v ? (v.id === "handRolled" ? t("marketing.handRolledOrderForm") : v.name) : t("marketing.email")}</span>
+        <span className="mkt-grow">{v ? (v.id === "handRolled" ? t("marketing.selfScriptedOrderForm") : v.name) : t("marketing.email")}</span>
         {v && (shopActive(game) ? <span className="pill ok">{t("marketing.takingOrders")}</span> : <span className="pill">{t("marketing.readyDay", { day: formatDay(game.shop.readyAt) })}</span>)}
         {shopActive(game) && <button className="btn" onClick={() => openApp("Browser", { kind: "url", id: `portal.${companyDomain(game)}/admin` })}>{t("shop-admin.openAdmin")}</button>}
       </div>
