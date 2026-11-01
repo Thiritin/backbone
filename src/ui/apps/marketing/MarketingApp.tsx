@@ -104,7 +104,7 @@ function Channels() {
   const [managing, setManaging] = useState(false);
   const year = yearOf(game.hour), full = isAvailable("Marketing", game.unlocks);
   if (managing) return <>
-    <div className="mkt-list"><button className="btn" onClick={() => setManaging(false)}>Back</button></div>
+    <div className="mkt-list"><button className="btn" style={{ justifySelf: "start" }} onClick={() => setManaging(false)}>{t("desktop.back")}</button></div>
     <div className="mkt-list"><SiteCard /></div>
   </>;
   return <>
