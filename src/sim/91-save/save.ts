@@ -153,6 +153,8 @@ export function deserialize(raw: string): GameState {
   s.media = { images: [...new Set(media.images.map((x) => asImage(x, year)))], stick: { ...media.stick, os: media.stick.os && asImage(media.stick.os, year) } };
   // Apps a save already has count as arrived, so they never send their email.
   s.arrived = data.arrived ?? WALK.filter((id) => s.installed.includes(id));
+  // Saves from before the Bookkeeping category run Lexwear Office when they have Books.
+  if (!data.books) s.books = { vendor: s.installed.includes("Books") ? "lexwear" : null, installedAt: 0 };
   return s;
 }
 

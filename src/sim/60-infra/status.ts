@@ -8,7 +8,8 @@ import { BASEMENT, capacityAt, datacenterById, EXTRA_STEP_KW, extraStepPrice, ho
 import { CITY_TLD } from "../30-customers/domains";
 import { activeServices, type Service } from "../30-customers/customers";
 import { serverOsById } from "../10-catalog/server-os";
-import { egress, ingress, MGMT_VLAN } from "./switches";
+import { egress, ingress, MGMT_VLAN, routesTo } from "./switches";
+import { isOwnRouter, uplinkPort } from "./routers";
 import type { Component, Device, End, GameState, Location, NetFail, Rack, SpaceKind } from "../50-state";
 import { gatewayOf } from "./lan";
 import type { Workload } from "./cluster";
@@ -53,7 +54,18 @@ export const jacked = (s: GameState, gatewayId: string): boolean => {
   const wan = wanPort(modelOf(s, gatewayId)), jack = wan >= 0 && farEnd(s, { device: gatewayId, port: wan });
   return !!jack && kindOf(s, jack.end.device) === "jack";
 };
-const lineUp = (s: GameState, gatewayId: string): boolean => wanPort(modelOf(s, gatewayId)) < 0 || (jacked(s, gatewayId) && !!s.homeLine.id && !lineCut(s));
+// An own router carries traffic while its uplink reaches a router in front of it that does (lan.md, Phases).
+const climbing = new Set<string>();
+function lineUp(s: GameState, gatewayId: string): boolean {
+  const d = s.devices.find((x) => x.id === gatewayId)!;
+  if (!isOwnRouter(d)) return wanPort(modelOf(s, gatewayId)) < 0 || (jacked(s, gatewayId) && !!s.homeLine.id && !lineCut(s));
+  return sweepMemo(s, `up:${gatewayId}`, () => {
+    const peer = peerOf(s, { device: gatewayId, port: uplinkPort(d) });
+    if (!peer || isOobPort(peer.port) || climbing.has(gatewayId)) return false;
+    climbing.add(gatewayId);
+    try { return reachesGateway(s, peer, gatewayId, 0); } finally { climbing.delete(gatewayId); }
+  });
+}
 
 // A frame leaves the server untagged; managed switches forward it only between ports of its VLAN (switches.ts), and a
 // gateway takes it only untagged.
@@ -64,7 +76,11 @@ function reachesGateway(s: GameState, start: End, origin: string, minGbit: numbe
     const { at, tag } = queue.shift()!;
     const model = modelOf(s, at.device);
     if (!working(s, at.device)) continue;
-    if (model.kind === "gateway") { if (tag === null) return lineUp(s, at.device); continue; }
+    // A router's uplink leads to the network in front of it, not into the router's own.
+    if (model.kind === "gateway") {
+      if (tag === null && at.device !== origin && at.port !== uplinkPort(s.devices.find((x) => x.id === at.device)!)) return lineUp(s, at.device);
+      continue;
+    }
     if (model.kind === "firewall" && model.throughputGbit! < minGbit) continue;
     const sw = model.managed ? s.devices.find((x) => x.id === at.device)! : null;
     const vlan = sw ? ingress(sw, at.port, tag) : tag;
@@ -73,9 +89,12 @@ function reachesGateway(s: GameState, start: End, origin: string, minGbit: numbe
     seen.add(key);
     const exits = model.kind === "patch" ? [bridged(s, at)] : model.ports.map((_, i) => i);
     for (const port of exits) {
-      const out = sw ? egress(sw, port, vlan!) : vlan;
       const peer = peerOf(s, { device: at.device, port });
-      if (out !== undefined && peer && !isOobPort(peer.port)) queue.push({ at: peer, tag: out });
+      if (!peer || isOobPort(peer.port)) continue;
+      for (const v of sw ? routesTo(sw, vlan!) : [vlan]) {
+        const out = sw ? egress(sw, port, v!) : v;
+        if (out !== undefined) queue.push({ at: peer, tag: out });
+      }
     }
   }
   return false;

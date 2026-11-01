@@ -29,4 +29,12 @@ export default {
   "switch.saved": () => "Guardado",
   "switch.unsaved": () => "Alterações por guardar",
   "switch.saveConfig": () => "Guardar configuração",
+  "switch.all": () => "Todas as redes de clientes",
+  "switch.routing": () => "Encaminhamento",
+  "switch.routed": () => "VLANs encaminhadas",
+  "switch.customerNets": () => "Redes de clientes",
+  "switch.customer": () => "Cliente",
+  "switch.state": () => "Estado",
+  "switch.connected": () => "Ligada",
+  "switch.interrupted": () => "Interrompida",
 } satisfies Dict;

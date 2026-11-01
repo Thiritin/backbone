@@ -5,6 +5,10 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-01
 
 - Customers on a game title past its prime now lose happiness every day until you move them to a current title, and Pterodaktyl nodes run a daemon that fails now and then and has to keep up with its panel.
+- Books is now a choice: buy Lexwear Office, WIZO Mein Büro, Saga Office Line, orgaMIN or the web-based Collmix in the Pear Store, with sevDeck and lexoffize joining in later years, each with its own look, prices and modules.
+- Each bookkeeping vendor has its own site in the Browser and a place under Bookkeeping on Yahoy, and Getting started now asks you to install a program before your first customer.
+- Routers you mount in a datacenter now run their own network behind the provider's handoff with a WebFigg or J-Webb web interface, and the desk reaches that network only once you switch on the router's VPN.
+- Layer 3 switches can route between VLANs, every VM takes its own address from the local network's DHCP pool so a full pool stops new VPS sales, and enterprise customers need a private network carried as a VLAN to every server their VMs run on.
 - A new Chat app in the dock opens the Backbone Discord and changes from ICU to Skipe to Diskord as the years pass; you can remove it from the dock like any other app.
 - Backup servers now have a restore page that brings a lost machine back from its backup onto any server with room, in any location, including machines stranded on a seized server.
 - Game servers now crash now and then, more often with mods or on an overloaded host, and come back by themselves when auto-restart is on, and each server can restart on a daily or weekly schedule.

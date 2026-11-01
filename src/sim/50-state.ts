@@ -1,5 +1,6 @@
 import { createRng, type Rng } from "./00-core/rng";
 import { componentParts, hasFirmware, homeLan, isManaged, isOfficeRouter, modelById, type ComponentKind, type FormFactor, type PartSpec } from "./10-catalog/hardware";
+import type { BooksVendorId } from "./10-catalog/bookkeeping";
 import type { Vendor } from "./10-catalog/cpus";
 import type { LicenseKind, OsImage, ServerOsId } from "./10-catalog/server-os";
 import { yearOf } from "./00-core/time";
@@ -78,8 +79,9 @@ export interface MachineState {
 }
 export type NetFail = "noInterfaces" | "noLink";
 // A managed switch port's VLANs: the one its untagged frames belong to and the ones it carries tagged. A port without an entry is untagged in VLAN 1.
-export interface PortVlan { untagged: number; tagged: number[] }
-export interface SwitchConfig { groups: number[][]; vlans: Record<number, PortVlan> }
+// all carries every customer network tagged (60-infra/private.ts).
+export interface PortVlan { untagged: number; tagged: number[]; all?: true }
+export interface SwitchConfig { groups: number[][]; vlans: Record<number, PortVlan>; routed?: number[] }
 export interface Device extends MachineState { id: string; model: string; brand: string; rackId: string | null; slot: number; panel: string | null; name: string; bond: BondMode; groups: number[][]; price: number; boughtAt: number; lease: string | null; store: string | null; transitTo: string | null; arriveAt: number | null;
   components: Component[]; on: boolean; label: string | null; raid: RaidLevel; rebuildRate: RebuildRate;
   // others are the further CPUs a swap of every socket replaces with the same spec.
@@ -105,6 +107,8 @@ export interface Device extends MachineState { id: string; model: string; brand:
   setup: boolean; bootFrom: "disk" | "usb";
   // A managed switch's running configuration is groups and vlans; saved is what it loads when it boots.
   vlans?: Record<number, PortVlan>; saved?: SwitchConfig;
+  // The VLANs a layer 3 switch routes between, each with an interface on the switch.
+  routed?: number[];
   // The image mounted through the management controller (90-actions/media.ts); it boots like the USB stick without a visit.
   virtualMedia?: OsImage;
   // What a spare part in storage is (size and form factor); spares without it fit any slot of their kind.
@@ -131,8 +135,11 @@ export interface IfaceConfig { mode: "dhcp" | "static"; ip?: string; prefix?: nu
 // hour a lease runs out) and its port shares, each pointing at an address on the network.
 export interface RouterLan {
   cidr: string; gateway: string; pool: [string, string]; leaseHours: number;
+  // Remote access: the desk reaches the network behind an own datacenter router over its VPN.
+  vpn?: boolean;
   reservations: { mac: string; ip: string }[]; leases: { mac: string; ip: string; until: number; name: string }[]; shares: PortShare[];
 }
+export interface PrivateNet { customerId: string; vlan: number; since: number }
 export interface PortShare { ip: string; kind: "web" | "exposed" }
 // paid counts the monthly payments made so far; the lease ends after months payments.
 export interface Lease { id: string; lessor: string; monthly: number; months: number; startedAt: number; paid: number; devices: string[] }
@@ -223,6 +230,8 @@ export interface GameState {
   shop: ShopState;
   // Customers whose services the player holds offline.
   heldCustomers: string[];
+  // Customer private networks, each a VLAN on the player's switches (60-infra/private.ts).
+  privateNets: PrivateNet[];
   // Panel hosts: services the player holds offline one by one, with the reason shown in the consoles.
   heldServices: Record<string, HoldReason>;
   // Game servers: the title, slots and state of each game server service on a game panel.
@@ -355,6 +364,8 @@ export interface GameState {
   chamberYear: number;
   // Bought software modules by id; "hbci" lets Books talk to the bank.
   modules: string[];
+  // The bookkeeping program the Books app runs (10-catalog/bookkeeping.ts); null until one is installed.
+  books: { vendor: BooksVendorId | null; installedAt: number };
 }
 
 export interface LogEntry { hour: number; minute?: number; name: string; args: unknown[] }
@@ -411,6 +422,7 @@ export const newGame = (seed: number): GameState => ({
   billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 }, autoOrders: false, reviewOrders: false, screenOrders: false, screenChecks: 0, chargebackStrikes: 0,
   shop: newShop(),
   heldCustomers: [],
+  privateNets: [],
   heldServices: {},
   gameServers: [],
   daemons: {},
@@ -444,6 +456,7 @@ export const newGame = (seed: number): GameState => ({
   letters: [],
   chamberYear: 0,
   modules: [],
+  books: { vendor: null, installedAt: 0 },
 });
 
 export const guideDoc = (): Doc => ({ id: "guide", kind: "guide", title: t("doc.guide"), body: "", x: 16, y: 46 });
