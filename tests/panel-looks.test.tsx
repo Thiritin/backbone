@@ -55,5 +55,8 @@ describe("Pleskit, DirectAdmen and FreePanel looks", () => {
     expect(facts).toContain('<th>Version</th><td class="num">12.5</td>');
     const da = host("directadmen", "1.40");
     expect(render("directadmen", da.s, da.c, true)).toContain('<dt>Version</dt><dd class="num">1.40</dd>');
+    const ac = host("anyconnekt", "4.0"), html = render("anyconnekt", ac.s, ac.c, true);
+    expect(html).toContain(">AnyConnekt 4.0<");
+    expect(html).not.toContain(`AnyConnekt ${LATE}`);
   });
 });

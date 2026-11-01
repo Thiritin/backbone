@@ -2,6 +2,7 @@ import { FileText } from "lucide-react";
 import { Home, KeyRound, LogOut, Settings, type LucideIcon } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Actions, eraAt, looks, Facts, LoginForm, RowLines, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
+import { installedVersion, panelMachine } from "../../../../../sim/60-infra/licence";
 import { useReadoutPages } from "../Readouts";
 import { t } from "../../../../../i18n/en";
 import { IdentityCerts } from "./IdentityCerts";
@@ -36,7 +37,7 @@ export function AnyConnekt(p: PanelProps) {
       <main className="sy-main">
         {certs && <IdentityCerts game={p.game} c={p.c} era={era} />}
         {!certs && tab === "objects" && <>
-          {box(t("browser-consoles-1.acDeviceInfo"), <Facts facts={[{ label: t("browser-consoles-1.software"), value: `AnyConnekt ${p.c.version}`, num: true }, { label: t("browser-consoles-1.acVpnSessions"), value: String(sessions), num: true }, { label: t("browser-consoles-1.acGateways"), value: String(rows.length), num: true }]} />)}
+          {box(t("browser-consoles-1.acDeviceInfo"), <Facts facts={[{ label: t("browser-consoles-1.software"), value: `AnyConnekt ${installedVersion(p.game, panelMachine(p.c) ?? "", "anyconnekt") ?? ""}`, num: true }, { label: t("browser-consoles-1.acVpnSessions"), value: String(sessions), num: true }, { label: t("browser-consoles-1.acGateways"), value: String(rows.length), num: true }]} />)}
           {box(t("browser-consoles-1.acVpnGateways"), (
             <table className="cx-table">
               <thead><tr><th>{t("browser-consoles-1.acGateway")}</th><th>{t("browser-consoles-1.account")}</th><th>{t("browser-consoles-1.acLicensedUsers")}</th><th>{t("browser-consoles-1.status")}</th><th /></tr></thead>
