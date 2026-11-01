@@ -30,12 +30,12 @@ export function packageSpec(s: GameState, p: ShopProduct): Spec {
   return p.spec;
 }
 
-export const monthlyOf = (p: ShopProduct): number => {
+export const monthlyOf = (p: Pick<ShopProduct, "prices">): number => {
   const m = p.prices.monthly ?? Math.min(...CYCLES.filter((c) => p.prices[c] !== undefined).map((c) => p.prices[c]! / CYCLE_MONTHS[c]));
   return Number.isFinite(m) ? m : 0;
 };
 
-const covers = (a: Spec, b: Spec, line: Product): boolean =>
+export const covers = (a: Spec, b: Spec, line: Product): boolean =>
   a.vcpu >= b.vcpu && a.ramGb >= b.ramGb && a.diskGb >= b.diskGb && (line !== "webHosting" || (a.trafficGb >= b.trafficGb && a.mailboxes >= b.mailboxes));
 
 // Whether the product can take an order now: on sale, in stock and a server of its group has room.

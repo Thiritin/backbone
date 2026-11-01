@@ -50,6 +50,7 @@ export default {
   "sales.req.age": (p) => `Azienda con almeno ${p.months} mesi di vita`,
   "sales.req.reviews": (p) => `Valutazione di ${p.stars} stelle`,
   "lost.expired": () => "Nessuna risposta in tempo",
+  "lost.noFittingProduct": () => "Nessun pacchetto adatto",
   "lost.price": () => "Troppo caro",
   "lost.declined": () => "Rifiutato",
   "lost.noCapacity": (p) => `Nessuna capacità a ${p.city}`,

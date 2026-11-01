@@ -70,7 +70,6 @@ export default {
   "books.cycle.quarterly": () => "Trimestral",
   "books.cycle.annual": () => "Anual",
   "books.cycle.biennial": () => "Bienal",
-  "error.catalogInShop": () => "Os produtos são editados no sistema de loja.",
   "error.productName": () => "Os nomes de produto têm de 1 a 24 caracteres.",
   "error.productTaken": () => "Esta linha já tem um produto com este nome.",
   "error.productPrice": () => "Introduz preços acima de zero e uma taxa de ativação de zero ou mais.",

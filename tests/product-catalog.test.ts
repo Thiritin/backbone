@@ -6,7 +6,13 @@ import { addProduct, removeProduct, updateProduct } from "../src/sim/90-actions/
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import type { Product } from "../src/sim/30-customers/customers";
 import type { GameState } from "../src/sim/50-state";
-import { newGame } from "./fixtures";
+import { newGame, readyGame } from "./fixtures";
+import { sizeSpec, type Sla } from "../src/sim/10-catalog/products";
+import { orderLead } from "../src/sim/30-market/orders";
+import { applyStep } from "../src/sim/30-market/manual";
+import { editRequest, salesTick } from "../src/sim/30-market/sales";
+import { marketingTick } from "../src/sim/80-business/marketing";
+import { createQuote } from "../src/sim/90-actions/orders";
 
 const err = (r: { ok: boolean; error?: string }) => (r.ok ? "ok" : r.error);
 const added = (s: GameState, line: Product): string => {
@@ -44,17 +50,104 @@ describe("product catalog", () => {
     expect(err(updateProduct(s, a, { name: "PRO" }))).toBe("ok");
   });
 
-  it("fails in Books once a shop is chosen", () => {
+  it("stays editable in Books once a shop is chosen", () => {
     const s = newGame(4), id = added(s, "vps");
     s.shop.variant = "modemBill";
-    expect(err(addProduct(s, "vps"))).toBe("error.catalogInShop");
-    expect(err(updateProduct(s, id, { name: "Pro" }))).toBe("error.catalogInShop");
-    expect(err(removeProduct(s, id))).toBe("error.catalogInShop");
+    expect(err(addProduct(s, "vps"))).toBe("ok");
+    expect(err(updateProduct(s, id, { name: "Pro" }))).toBe("ok");
+    expect(err(removeProduct(s, id))).toBe("ok");
   });
 
   it("loads a save without a catalog", () => {
     const s = newGame(5);
     const { catalog: _, ...old } = JSON.parse(serialize(s));
     expect(deserialize(JSON.stringify(old)).catalog).toEqual([]);
+  });
+});
+
+describe("product-based demand", () => {
+  const need = { product: "vps" as Product, size: 1, sla: "basic" as Sla };
+  const sized = (s: GameState, size: number) => sizeSpec("vps", size, yearOf(s.hour));
+  const offer = (s: GameState, size: number, monthly: number, sla: Sla = "basic"): string => {
+    const id = added(s, "vps");
+    expect(err(updateProduct(s, id, { spec: sized(s, size), prices: { monthly }, sla }))).toBe("ok");
+    return id;
+  };
+  const lead = (s: GameState, budget = 100) => orderLead(s, "private", "Frankfurt", [], need, true, undefined, { budget });
+  const req = (s: GameState, id: string) => s.sales.requests.find((x) => x.id === id)!;
+
+  it("picks the cheapest offered product that covers the need and its SLA", () => {
+    const s = readyGame(11);
+    offer(s, 0, 2);
+    offer(s, 2, 30);
+    offer(s, 1, 12);
+    const premium = offer(s, 1, 8, "premium");
+    const hidden = offer(s, 1, 5);
+    expect(err(updateProduct(s, hidden, { hidden: true }))).toBe("ok");
+    const r = lead(s);
+    expect(r.productId).toBe(premium);
+    expect(r.quote).toBe(8);
+    expect(r.spec.ramGb).toBe(sized(s, 1).ramGb);
+  });
+
+  it("takes a bigger product when none of the needed size is offered", () => {
+    const s = readyGame(12);
+    offer(s, 0, 2);
+    const big = offer(s, 2, 15);
+    const r = lead(s);
+    expect(r.productId).toBe(big);
+    expect(r.spec.ramGb).toBe(sized(s, 2).ramGb);
+    expect(r.status).toBe("open");
+  });
+
+  it("loses the lead as no fitting package and counts it for the line", () => {
+    const s = readyGame(13);
+    offer(s, 0, 2);
+    offer(s, 1, 1e4);
+    const r = lead(s, 1);
+    expect(req(s, r.id).status).toBe("lost");
+    expect(s.sales.lost.at(-1)!.reason).toBe("lost.noFittingProduct");
+    expect(s.marketing.unmet.month.vps).toBe(1);
+    while (new Date(Date.UTC(2005, 0, 1) + s.hour * 3600e3).getUTCDate() !== 1 || s.hour % 24 !== 0) s.hour++;
+    marketingTick(s);
+    expect(s.marketing.unmet).toEqual({ month: {}, last: { vps: 1 } });
+  });
+
+  it("prefills the Books quote from the product and declines a quote above its price", () => {
+    const s = readyGame(14);
+    offer(s, 1, 9.99);
+    const r = lead(s), t = s.tickets.find((x) => x.id === r.ticketId)!;
+    expect(createQuote(s, t.id).ok).toBe(true);
+    expect(s.quotes.at(-1)!.monthly).toBe(9.99);
+    const answer = (price: number) => {
+      editRequest(s, r.id, () => ({ quote: price, status: "open", replyAt: null }));
+      expect(applyStep(s, t, "quote")).toBeNull();
+      s.hour = req(s, r.id).replyAt!;
+      salesTick(s);
+      return req(s, r.id).status;
+    };
+    expect(answer(12)).toBe("refused");
+    expect(req(s, r.id).counter).toBeNull();
+  });
+
+  it("accepts a quote at the product's price", () => {
+    const s = readyGame(14);
+    offer(s, 1, 9.99);
+    const r = lead(s), t = s.tickets.find((x) => x.id === r.ticketId)!;
+    expect(applyStep(s, t, "quote")).toBeNull();
+    s.hour = req(s, r.id).replyAt!;
+    salesTick(s);
+    expect(req(s, r.id).status).toBe("accepted");
+  });
+
+  it("leaves a line without offered products on free quotes", () => {
+    const a = readyGame(15), b = readyGame(15);
+    b.catalog = [
+      { id: "prdX", name: "Box", line: "dedicated", spec: sized(b, 1), sla: "basic", prices: { monthly: 1 }, setup: 0, hidden: false },
+      { id: "prdY", name: "Hidden", line: "vps", spec: sized(b, 2), sla: "premium", prices: { monthly: 1 }, setup: 0, hidden: true },
+    ];
+    const ra = lead(a), rb = lead(b);
+    expect(rb).toEqual(ra);
+    expect(rb.productId).toBeUndefined();
   });
 });
