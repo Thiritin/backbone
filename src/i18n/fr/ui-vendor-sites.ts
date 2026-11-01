@@ -34,7 +34,6 @@ export default {
   "vendor-sites.price": () => "Prix",
   "vendor-sites.licence": () => "Licence unique",
   "vendor-sites.details": () => "Détails",
-  "vendor-sites.buy": () => "Acheter",
   "vendor-sites.bought": () => "Acheté",
   "vendor-sites.registered": () => "Enregistré",
   "vendor-sites.support": () => "Écrivez à support@lexwear.de pour obtenir de l'aide sur votre licence.",

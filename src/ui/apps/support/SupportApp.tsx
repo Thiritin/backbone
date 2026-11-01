@@ -30,6 +30,9 @@ import { Compose } from "./Compose";
 import { specText } from "../../../sim/30-market/spec";
 import { OFFERS } from "../../../sim/80-business/walk";
 import { LICENCE, lexwearUrl, NEWSLETTER } from "../../../sim/80-business/lexwear";
+import { ORDER, orderKeys } from "../../../sim/80-business/vendor-shop";
+import { moduleById } from "../../../sim/10-catalog/modules";
+import { OrderKeys } from "../browser/sites/shop/VendorShop";
 import { due, initials, KINDS, kindOf, monthYear, moodClass, span, stamp, statusOf } from "./labels";
 import { SLAS } from "../../../sim/10-catalog/products";
 import { Card, LostSales, need, SLA_LABEL } from "../sales/SalesApp";
@@ -398,7 +401,8 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
         <div className={sent ? "msg you" : "msg"}>
           <div className="from">{sender ? sender.name : sent ? t("support.you") : tk.kind === "sponsor" ? p.event : tk.mail ? tk.mail.from : tk.kind === "pear" ? t("walk.from") : c?.name} · <span className="num">{stamp(tk.createdAt)}</span></div>
           <p>{t(`ticket.${tk.kind}.${tk.topic}.text`, p)}</p>
-          {tk.topic === LICENCE && <p><button className="btn primary" onClick={() => openApp("Books", { kind: "register", id: "" })}>{t("vendor-sites.register")}</button></p>}
+          {tk.topic === ORDER && <OrderKeys game={game} order={String(tk.mail!.params.order)} />}
+          {(tk.topic === LICENCE || (tk.topic === ORDER && orderKeys(game, String(tk.mail!.params.order)).some((k) => moduleById(k.product)))) && <p><button className="btn primary" onClick={() => openApp("Books", { kind: "register", id: "" })}>{t("vendor-sites.register")}</button></p>}
           {tk.topic === NEWSLETTER && <p><button className="btn primary" onClick={() => openApp("Browser", { kind: "url", id: lexwearUrl(String(tk.mail!.params.module)) })}>{t("vendor-sites.viewModule")}</button></p>}
         </div>
         {tk.replies.map((r, i) => (

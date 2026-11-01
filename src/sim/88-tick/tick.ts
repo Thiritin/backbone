@@ -24,7 +24,7 @@ import { communityTick } from "../80-business/sponsoring";
 import { marketingTick } from "../80-business/marketing";
 import { newsTick } from "../80-business/news";
 import { walkTick } from "../80-business/walk";
-import { deliverLicences, lexwearTick } from "../80-business/lexwear";
+import { lexwearTick } from "../80-business/lexwear";
 import { salesTick } from "../30-market/sales";
 import { usedTick } from "../80-business/used";
 import { ordersTick } from "../30-market/manual";
@@ -383,5 +383,5 @@ export function tickMinute(state: GameState): SimEvent[] {
   installNetTick(state);
   const tripped = tripTick(state);
   tanTick(state);
-  return [...tripped, ...thermalTick(state), ...workTick(state), ...deliverLicences(state)];
+  return [...tripped, ...thermalTick(state), ...workTick(state)];
 }

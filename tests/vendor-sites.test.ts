@@ -4,12 +4,14 @@ import { MODULES } from "../src/sim/10-catalog/modules";
 import { billingTick, owed } from "../src/sim/45-billing/billing";
 import { staffTick } from "../src/sim/47-staff/staff";
 import { newGame, type GameState } from "../src/sim/50-state";
-import { lexwearTick, licenceKey, licenceMail } from "../src/sim/80-business/lexwear";
+import { lexwearTick, LEXWEAR_HOST } from "../src/sim/80-business/lexwear";
+import { ORDER, orderKeys } from "../src/sim/80-business/vendor-shop";
 import { resolve } from "../src/sim/80-business/browser";
-import { tick, tickMinute } from "../src/sim/88-tick/tick";
+import { tick } from "../src/sim/88-tick/tick";
 import { sendInvoice } from "../src/sim/90-actions/billing";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
-import { buyLicence, registerLicence } from "../src/sim/90-actions/lexwear";
+import { registerLicence } from "../src/sim/90-actions/lexwear";
+import { addToCart, checkout } from "../src/sim/90-actions/vendor-shop";
 import { hire } from "../src/sim/90-actions/staff";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { withServer } from "./fixtures";
@@ -36,11 +38,15 @@ function books(seed = 9) {
   return { s, A: () => inv(a), B: () => inv(b), C: () => inv(c) };
 }
 
+// Buys a module through the vendor shop and returns its key.
+function buy(s: GameState, id: string): string {
+  addToCart(s, id, null);
+  const r = checkout(s, LEXWEAR_HOST);
+  return r.ok ? orderKeys(s, r.id!)[0].key : "";
+}
 function owned(s: GameState, id: string) {
   s.cash = 10_000;
-  buyLicence(s, id);
-  tickMinute(s);
-  registerLicence(s, licenceKey(s, id));
+  registerLicence(s, buy(s, id));
 }
 
 describe("Lexwear modules", () => {
@@ -51,29 +57,27 @@ describe("Lexwear modules", () => {
     expect(MODULES.map((m) => m.id)).toEqual(["helpdesk-link", "monthly-run", "match-by-reference", "auto-reminders", "hbci"]);
   });
 
-  it("debit the price and email the licence key a minute later", () => {
+  it("are bought through the cart: the price is debited and the key arrives by email", () => {
     const s = withServer(newGame(9));
     s.cash = 1000;
-    expect(buyLicence(s, "monthly-run")).toEqual({ ok: true });
+    const key = buy(s, "monthly-run");
     expect(s.cash).toBe(901);
-    expect(s.ledger.at(-1)).toMatchObject({ category: "licenses", key: "ledger.module.monthly-run", amount: -99 });
-    expect(licenceMail(s, "monthly-run")).toBeUndefined();
-    tickMinute(s);
-    expect(licenceMail(s, "monthly-run")).toMatchObject({ kind: "mail", topic: "lexwear.licence", unread: true, mail: { from: "Lexwear", params: { module: "monthly-run", key: licenceKey(s, "monthly-run") } } });
-    expect(buyLicence(s, "monthly-run")).toEqual({ ok: false, error: "error.moduleBought" });
+    expect(s.ledger.at(-1)).toMatchObject({ category: "licenses", key: "ledger.order", params: { vendor: "Lexwear" }, amount: -99 });
+    expect(s.licenses.at(-1)).toMatchObject({ product: "monthly-run", key, machineId: null, kind: "once" });
+    expect(s.tickets.at(-1)).toMatchObject({ kind: "mail", topic: ORDER, unread: true, mail: { from: "Lexwear" } });
+    expect(addToCart(s, "monthly-run", null)).toEqual({ ok: false, error: "error.moduleBought" });
     s.cash = 10;
-    expect(buyLicence(s, "hbci")).toEqual({ ok: false, error: "error.noCash" });
+    addToCart(s, "hbci", null);
+    expect(addToCart(s, "hbci", null)).toEqual({ ok: false, error: "error.moduleBought" });
+    expect(checkout(s, LEXWEAR_HOST)).toEqual({ ok: false, error: "error.noCash" });
   });
 
   it("turn on with the emailed key and refuse a wrong one", () => {
     const s = withServer(newGame(9));
     s.cash = 1000;
-    buyLicence(s, "match-by-reference");
-    tickMinute(s);
-    const key = licenceKey(s, "match-by-reference");
+    const key = buy(s, "match-by-reference");
     expect(key).toMatch(/^[A-Z2-9]{4}(-[A-Z2-9]{4}){3}$/);
     expect(registerLicence(s, "AAAA-BBBB-CCCC-DDDD")).toEqual({ ok: false, error: "error.licenceKey" });
-    expect(registerLicence(s, licenceKey(s, "monthly-run"))).toEqual({ ok: false, error: "error.licenceKey" });
     expect(s.modules).toEqual([]);
     expect(registerLicence(s, ` ${key.toLowerCase()} `)).toEqual({ ok: true, id: "match-by-reference" });
     expect(s.modules).toEqual(["match-by-reference"]);

@@ -5,11 +5,12 @@ import { yearOf } from "../../../../../sim/00-core/time";
 import { hasModule, moduleById, MODULES, type Module } from "../../../../../sim/10-catalog/modules";
 import type { GameState } from "../../../../../sim/50-state";
 import { bought, LEXWEAR, LEXWEAR_HOST, lexwearUrl } from "../../../../../sim/80-business/lexwear";
-import { buyLicence } from "../../../../../sim/90-actions/lexwear";
+import { addToCart } from "../../../../../sim/90-actions/vendor-shop";
 import { useStore } from "../../../../store";
+import { Account, Cart, cartCount } from "../shop/VendorShop";
 import "./lexwear.css";
 
-const SUPPORT = `www.${LEXWEAR_HOST}/support`;
+const SUPPORT = `www.${LEXWEAR_HOST}/support`, CART = `www.${LEXWEAR_HOST}/cart`, ACCOUNT = `www.${LEXWEAR_HOST}/account`;
 const name = (m: Module) => t(`vendor-sites.module.${m.id}`);
 
 // A software box drawn in CSS, its spine in the module's colour.
@@ -25,7 +26,8 @@ function Buy({ game, m }: { game: GameState; m: Module }) {
   const act = useStore((s) => s.act);
   if (hasModule(game, m.id)) return <span className="lx-state">{t("vendor-sites.registered")}</span>;
   if (bought(game, m.id)) return <span className="lx-state">{t("vendor-sites.bought")}</span>;
-  return <button type="button" className="lx-buy" onClick={() => act(buyLicence, m.id)}>{t("vendor-sites.buy")}</button>;
+  if (game.cart.some((l) => l.product === m.id)) return <span className="lx-state">{t("vendor-shop.inCart")}</span>;
+  return <button type="button" className="lx-buy" onClick={() => act(addToCart, m.id, null)}>{t("vendor-shop.addToCart")}</button>;
 }
 
 export function LexwearSite({ game, path, go }: { game: GameState; path: string; go: (url: string) => void }) {
@@ -34,8 +36,11 @@ export function LexwearSite({ game, path, go }: { game: GameState; path: string;
   const id = /^\/module\/([\w-]+)/.exec(path)?.[1];
   const m = id ? moduleById(id) : undefined;
   const shown = MODULES.filter((x) => x.year <= year);
-  const page = m && m.year <= year ? "module" : path.startsWith("/support") ? "support" : "home";
-  const nav: [string, string, string][] = [["home", t("vendor-sites.navModules"), lexwearUrl()], ["support", t("vendor-sites.navSupport"), SUPPORT]];
+  const page = m && m.year <= year ? "module" : (["support", "cart", "account"].find((x) => path.startsWith(`/${x}`)) ?? "home");
+  const nav: [string, string, string][] = [
+    ["home", t("vendor-sites.navModules"), lexwearUrl()], ["cart", t("vendor-shop.cart", { n: cartCount(game, LEXWEAR_HOST) }), CART],
+    ["account", t("vendor-shop.myAccount"), ACCOUNT], ["support", t("vendor-sites.navSupport"), SUPPORT],
+  ];
   return (
     <div className="lx">
       <div className="lx-page">
@@ -44,7 +49,7 @@ export function LexwearSite({ game, path, go }: { game: GameState; path: string;
           <span className="lx-tag">{t("vendor-sites.tagline")}</span>
         </header>
         <nav className="lx-nav">
-          {nav.map(([k, label, url]) => <a key={k} href={`#${k}`} aria-current={(k === "support") === (page === "support") ? "page" : undefined} onClick={link(url)}>{label}</a>)}
+          {nav.map(([k, label, url]) => <a key={k} href={`#${k}`} aria-current={k === page || (k === "home" && page === "module") ? "page" : undefined} onClick={link(url)}>{label}</a>)}
         </nav>
         <main className="lx-main">
           {page === "module" && m && (
@@ -62,6 +67,8 @@ export function LexwearSite({ game, path, go }: { game: GameState; path: string;
               </div>
             </section>
           )}
+          {page === "cart" && <><h1>{t("vendor-shop.cart", { n: 0 })}</h1><Cart host={LEXWEAR_HOST} btn="lx-buy" account={() => go(ACCOUNT)} /></>}
+          {page === "account" && <><h1>{t("vendor-shop.myAccount")}</h1><Account host={LEXWEAR_HOST} btn="lx-buy" /></>}
           {page === "support" && <><h1>{t("vendor-sites.navSupport")}</h1><p>{t("vendor-sites.support")}</p></>}
           {page === "home" && (
             <>

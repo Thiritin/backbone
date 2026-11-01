@@ -1,10 +1,9 @@
-// docs/design/plans/billing-by-hand.md, lane vendor-sites: Lexwear sells the Books modules on its site. A purchase is a
-// ledger line, the licence key follows by email a minute later, and the newsletter offers each module once.
+// docs/design/plans/billing-by-hand.md, lane vendor-sites: Lexwear sells the Books modules on its site through the shared
+// vendor shop, and the newsletter offers each module once.
 import { t } from "../../i18n/en";
-import { keyCode } from "../00-core/rng";
 import { dateOf } from "../00-core/time";
 import { hasModule, MODULES, type ModuleCount } from "../10-catalog/modules";
-import { deliverMail, type Ticket } from "../40-support/tickets";
+import { deliverMail } from "../40-support/tickets";
 import { bookTransfer, isUnpaid, issue, owed, type Invoice, type Transfer } from "../45-billing/billing";
 import { logActivity } from "../47-staff/activity";
 import type { GameState } from "../50-state";
@@ -15,14 +14,9 @@ export const LEXWEAR_HOST = "lexwear.de";
 export const lexwearUrl = (id?: string): string => `www.${LEXWEAR_HOST}/${id ? `module/${id}` : ""}`;
 export const MONTHLY_RUN_HOUR = 9;
 
-// Fixed per game and module.
-export const licenceKey = (s: GameState, id: string): string => keyCode(s.seed, MODULES.findIndex((m) => m.id === id) + 1, 607);
-
-const LEDGER = "ledger.module.";
-export const bought = (s: GameState, id: string): boolean => s.ledger.some((e) => e.key === LEDGER + id);
+export const bought = (s: GameState, id: string): boolean => s.licenses.some((k) => k.product === id);
+// Licence emails are from saves before the shared vendor shop.
 export const LICENCE = "lexwear.licence", NEWSLETTER = "lexwear.newsletter";
-export const licenceMail = (s: GameState, id: string): Ticket | undefined =>
-  s.tickets.find((x) => x.kind === "mail" && x.topic === LICENCE && x.mail?.params.module === id);
 
 // A Lexwear email's params as shown: the module's name and pitch in the player's language.
 export const vendorParams = (p: Record<string, string | number>): Record<string, string> => ({
@@ -32,16 +26,6 @@ export const vendorParams = (p: Record<string, string | number>): Record<string,
 function mail(s: GameState, topic: string, params: Record<string, string>): SimEvent {
   const m = deliverMail(s, LEXWEAR, topic, params);
   return { app: "Support", key: "event.ticket", params: { ...vendorParams(params), ticketId: m.id, name: LEXWEAR, subject: `ticket.mail.${topic}.subject` } };
-}
-
-// Every minute and hour: purchases of the last hour without their licence email get it now.
-export function deliverLicences(s: GameState): SimEvent[] {
-  const out: SimEvent[] = [];
-  for (let i = s.ledger.length - 1; i >= 0 && s.ledger[i].hour >= s.hour - 1; i--) {
-    const e = s.ledger[i], id = e.key.slice(LEDGER.length);
-    if (e.key.startsWith(LEDGER) && !licenceMail(s, id)) out.push(mail(s, LICENCE, { module: id, key: licenceKey(s, id) }));
-  }
-  return out;
 }
 
 export const COUNTS: Record<ModuleCount, (s: GameState) => number> = {
@@ -92,9 +76,9 @@ export const matchByReference = (s: GameState): void => [...s.transfers].forEach
   if (inv) bookFor(s, tr, inv, false, LEXWEAR);
 });
 
-// Hourly, after billing and before staff: newsletters, late licence emails and the modules' chores.
+// Hourly, after billing and before staff: newsletters and the modules' chores.
 export function lexwearTick(s: GameState): SimEvent[] {
-  const events = [...newsletters(s), ...deliverLicences(s)];
+  const events = newsletters(s);
   const d = dateOf(s.hour);
   if (hasModule(s, "monthly-run") && d.getUTCDate() === 1 && d.getUTCHours() === MONTHLY_RUN_HOUR) monthlyRun(s);
   if (hasModule(s, "match-by-reference")) matchByReference(s);

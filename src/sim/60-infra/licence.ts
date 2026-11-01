@@ -11,7 +11,7 @@ import type { Cluster } from "./cluster";
 // unlicensed: the assigned key is for an older major version than the one installed.
 export type LicenceStatus = "trial" | "active" | "ended" | "lapsed" | "unlicensed";
 
-const productOf = (id: string) => SERVER_OS.find((o) => o.id === id) ?? SOFTWARE.find((x) => x.id === id);
+export const productOf = (id: string) => SERVER_OS.find((o) => o.id === id) ?? SOFTWARE.find((x) => x.id === id);
 // Free software has no licence terms.
 export const isLicensed = (product: string): boolean => productOf(product)?.trialDays !== undefined;
 // Days of the product's trial; null when it needs a key at install.
@@ -36,11 +36,15 @@ const isNewer = (product: string, installed: string | null, major: string): bool
 
 // An assigned key makes an install active until it lapses, unless it is for an older major version; without one the install
 // runs its trial or has ended. Null for free software.
+// A lapsed key, or a cancelled term key past the term it paid for.
+export const keyExpired = (s: GameState, k: Licence): boolean =>
+  k.lapsedAt !== null || (k.covers.kind === "term" && k.renewsAt === null && s.hour >= k.covers.until);
+
 export function licenceStatus(s: GameState, machineId: string, product: string): LicenceStatus | null {
   if (!isLicensed(product)) return null;
   const k = assignedKey(s, machineId, product);
   if (k?.covers.kind === "version" && isNewer(product, installedVersion(s, machineId, product), k.covers.major)) return "unlicensed";
-  if (k) return k.lapsedAt === null ? "active" : "lapsed";
+  if (k) return keyExpired(s, k) ? "lapsed" : "active";
   const trial = trialOf(s, machineId, product);
   return trial && s.hour < trial.until ? "trial" : "ended";
 }
@@ -56,9 +60,10 @@ const majorAt = (product: string, hour: number): string =>
 
 // Adds an unassigned key; its code is seeded by its number, one per order line. A key bought without an order is its own order.
 // A one-time key covers a major version, the release on sale unless major names one; any other key covers a monthly term.
+// A product outside the catalog, such as a Lexwear module, is sold once.
 export function issueKey(s: GameState, product: string, edition: string | null, orderId?: string, major?: string): Licence {
   const n = 1 + Math.max(0, ...s.licenses.map((k) => Number(k.id.slice(3))));
-  const kind = tiersOf(product).find((x) => x.id === edition)?.kind ?? licensingAt(productOf(product)!, yearOf(s.hour)).kind;
+  const kind = tiersOf(product).find((x) => x.id === edition)?.kind ?? (productOf(product) ? licensingAt(productOf(product)!, yearOf(s.hour)).kind : "once");
   const term = kind === "once" ? null : nextMonth(s.hour);
   const k: Licence = {
     id: `lic${n}`, product, edition, kind, key: keyCode(s.seed, n, 611), orderId: orderId ?? `ord${n}`, boughtAt: s.hour, machineId: null,
@@ -71,10 +76,10 @@ export function issueKey(s: GameState, product: string, edition: string | null, 
 export const updateKey = (s: GameState, keyId: string, patch: Partial<Licence>): void => {
   s.licenses = s.licenses.map((k) => (k.id === keyId ? { ...k, ...patch } : k));
 };
-// The monthly bill pays every assigned term key through the next month.
+// The monthly bill pays every assigned term key through the next month, except cancelled ones.
 export function renewTerms(s: GameState): void {
   const until = nextMonth(s.hour);
-  s.licenses = s.licenses.map((k) => (k.machineId !== null && k.covers.kind === "term" ? { ...k, covers: { kind: "term", until }, renewsAt: until } : k));
+  s.licenses = s.licenses.map((k) => (k.machineId !== null && k.covers.kind === "term" && k.renewsAt !== null ? { ...k, covers: { kind: "term", until }, renewsAt: until } : k));
 }
 export const assignKey = (s: GameState, keyId: string, machineId: string): void => updateKey(s, keyId, { machineId });
 export const releaseKey = (s: GameState, keyId: string): void => updateKey(s, keyId, { machineId: null });

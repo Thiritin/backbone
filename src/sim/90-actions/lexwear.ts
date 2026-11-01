@@ -1,27 +1,16 @@
-// docs/design/plans/billing-by-hand.md, lane vendor-sites: buying a module on Lexwear's site and registering it in Books.
-import { yearOf } from "../00-core/time";
-import { hasModule, moduleById, MODULES } from "../10-catalog/modules";
-import { cents, dueStep, isUnpaid, sendStep, STEPS } from "../45-billing/billing";
-import { bought, licenceKey, licenceMail, matchByReference, monthlyRun } from "../80-business/lexwear";
+// docs/design/plans/billing-by-hand.md, lane vendor-sites: registering a module bought on Lexwear's site in Books.
+import { hasModule, moduleById } from "../10-catalog/modules";
+import { dueStep, isUnpaid, sendStep, STEPS } from "../45-billing/billing";
+import { matchByReference, monthlyRun } from "../80-business/lexwear";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 
-export function buyLicence(s: GameState, id: string): ActionResult {
-  const m = moduleById(id);
-  if (!m || m.year > yearOf(s.hour)) return fail("error.unknownModule");
-  if (bought(s, id)) return fail("error.moduleBought");
-  if (s.cash < m.price) return fail("error.noCash");
-  s.cash = cents(s.cash - m.price);
-  s.ledger = [...s.ledger, { hour: s.hour, category: "licenses", key: `ledger.module.${id}`, params: {}, amount: -m.price }];
-  return { ok: true };
-}
-
-// A key from a licence email turns its module on; Automatic reminders also switches the reminder rule on.
+// A key from a Lexwear order email turns its module on; Automatic reminders also switches the reminder rule on.
 export function registerLicence(s: GameState, key: string): ActionResult {
   const k = key.trim().toUpperCase();
-  const m = MODULES.find((x) => licenceMail(s, x.id) && licenceKey(s, x.id) === k);
+  const m = moduleById(s.licenses.find((x) => x.key === k)?.product ?? "");
   if (!m) return fail("error.licenceKey");
   if (hasModule(s, m.id)) return fail("error.moduleRegistered");
   s.modules = [...s.modules, m.id];
