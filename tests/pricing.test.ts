@@ -1,9 +1,10 @@
+import { newGame } from "./fixtures";
 import { describe, expect, it, vi } from "vitest";
 import { isMonthStart } from "../src/sim/00-core/time";
 import type { Profile } from "../src/sim/30-customers/customers";
 import { limits, overpricing, OVER_DRIFT, PAST_MAX_DRIFT } from "../src/sim/30-customers/pricing";
 import { createTicket, isFinal, rightTemplate } from "../src/sim/40-support/tickets";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { changePrice } from "../src/sim/90-actions/sales";
@@ -178,7 +179,7 @@ describe("raise notice", () => {
   });
 
   it("bills a raise the customer stays through from the month after it", () => {
-    const { s, ids, svc } = shop(4, 3);
+    const { s, ids, svc } = shop(5, 3);
     const { c, v } = ids[0];
     nextMonth(s);
     changePrice(s, v, 3.3);

@@ -15,7 +15,7 @@ const GROUPS: Record<string, NotifyType[]> = {
     type("Migration offers", "moveAccepted", "moveDeclined", "moveWindow", "moveDone", "moveMissed"),
     type("Orders and sales", "order", "orderAccepted", "orderQuoted", "orderFailed", "orderDeclined", "orderPaid", "sales*"),
     type("Sponsoring requests", "sponsorRequest", "boardApplication"),
-    type("Notices and legal", "seized", "breach", "vpnIntrusion", "vpnCertSoon"),
+    type("Notices and legal", "seized", "breach", "vpnIntrusion", "vpnCertSoon", "bucketExposed", "linkLeaked"),
     type("Power", "gridDark", "gridCarried", "feedDark", "feedCarried", "feedCascade", "coolingFailed", "overheated"),
   ],
   Browser: [
@@ -26,7 +26,7 @@ const GROUPS: Record<string, NotifyType[]> = {
   Locations: [
     type("Planned maintenance", "maintenanceStart", "maintenanceEnd"),
     type("Hardware failures", "componentFailed", "dataLoss", "dataCorrupted", "recovered", "serverHung", "serverStuck", "breakerTripped", "feedTripped", "bmcHung", "nodeFrozen", "nodeThawed"),
-    type("Deliveries and moves", "rackArrived", "stockArrived", "drained", "spaceHeld", "holdExpired", "seizedBack"),
+    type("Deliveries and moves", "rackArrived", "stockArrived", "drained", "spaceHeld", "holdExpired", "seizedBack", "contractEnded", "contractRolled"),
     type("Internet line", "lineReady", "lineFull"),
     type("Burn-in and refunds", "burninQuick", "burninFull", "burninAborted", "usedRefund"),
     type("Hand work", "workDone"),
@@ -45,10 +45,10 @@ const GROUPS: Record<string, NotifyType[]> = {
     type("On call and tech", "onCallAbuse", "onCallBlackhole", "phpUpgraded", "techFailed", "techReplaced", "techInstalled", "techRemoved", "techUpdated", "botIncident*"),
   ],
   Customers: [type("Orders and sign-ups", "orderPlaced", "certificateSold", "friendsJoined")],
-  Billing: [type("Payments and dunning", "collected", "invoices", "suspended", "suspendedLeft", "chargeback", "chargebackWarning", "chargebackFees"), type("Domains", "domainExpired", "domainExpiring")],
+  Books: [type("Payments and dunning", "collected", "invoices", "suspended", "suspendedLeft", "chargeback", "chargebackWarning", "chargebackFees"), type("Domains", "domainExpired", "domainExpiring")],
   Research: [type("Unlocks", "trainingDone")],
   Shop: [type("Used market", "used*")],
-  News: [type("Hardware", "news.generation", "news.endOfSale", "news.gpu", "news.models", "news.shape", "news.vendor"), type("Software", "news.software", "news.autoUpdate", "news.feature", "news.desk", "news.training", "news.release", "news.app"), type("Internet", "news.ipv6*", "news.ripe*", "news.homeLines", "news.ports"), type("Market", "news.design", "news.line", "news.mail", "news.gpuDemand", "news.used*", "news.freeSsl")],
+  News: [type("Hardware", "news.generation", "news.endOfSale", "news.gpu", "news.models", "news.shape", "news.vendor"), type("Software", "news.software", "news.autoUpdate", "news.feature", "news.desk", "news.training", "news.release", "news.app"), type("Internet", "news.ipv6*", "news.ripe*", "news.homeLines", "news.ports"), type("Market", "news.design", "news.line", "news.mail", "news.gpuDemand", "news.used*", "news.freeSsl", "news.rival*")],
 };
 
 const OTHER: NotifyType = { id: "other", label: t("core.notify.other"), match: () => true };

@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
-import { freeBlock, providerV4, REP, retailV4, withAddressNeeds } from "../src/sim/10-catalog/addresses";
+import { freeBlock, PROVIDER_ROUTING_SETUP, providerV4, REP, retailV4, withAddressNeeds } from "../src/sim/10-catalog/addresses";
 import { noticed, type Segment } from "../src/sim/10-catalog/attention";
 import { sizeSpec } from "../src/sim/10-catalog/products";
 import { requirementsFor } from "../src/sim/30-market/market";
 import { specText } from "../src/sim/30-market/spec";
 import { createTicket } from "../src/sim/40-support/tickets";
-import { device, newGame, type GameState } from "../src/sim/50-state";
+import { device, type GameState } from "../src/sim/50-state";
 import { addressBills, addressesOf, addressTick, addSpam, mailAddress, publicV4, sharedAddress, machineAddress } from "../src/sim/60-infra/addresses";
 import { lineOffered } from "../src/sim/60-infra/cluster";
 import { tick } from "../src/sim/88-tick/tick";
@@ -14,7 +14,7 @@ import { addAddress, announceBlock, assignAddress, buyAddresses, joinLir, releas
 import { createVm, provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { addLocation, buyRack, connect } from "../src/sim/90-actions/hardware";
-import { buyDevice, freeFloor } from "./fixtures";
+import { buyDevice, freeFloor, newGame } from "./fixtures";
 import { cleanUp } from "../src/sim/90-actions/security";
 import { setLine } from "../src/sim/90-actions/website";
 import { deserialize, serialize } from "../src/sim/91-save/save";
@@ -141,6 +141,24 @@ describe("addresses", () => {
     ok(announceBlock(s, block.id, loc));
     addressTick(s);
     expect(s.ips.addresses.find((a) => a.source === "lir")?.ip.startsWith(block.prefix.split(".").slice(0, 2).join("."))).toBe(true);
+  });
+
+  it("lets the provider announce an own block for a setup fee without an own BGP router", () => {
+    const s = withServer(newGame(1));
+    s.ips = { ...s.ips, blocks: [] };
+    s.cash = 10_000;
+    const { loc } = datacenter(s);
+    ok(joinLir(s));
+    const block = s.ips.blocks[0], cash = s.cash;
+    expect(err(announceBlock(s, block.id, loc))).toBe("error.needsBgpRouter");
+    s.cash = 0;
+    expect(err(announceBlock(s, block.id, loc, true))).toBe("error.noCash");
+    s.cash = cash;
+    ok(announceBlock(s, block.id, loc, true));
+    expect(s.cash).toBe(cash - PROVIDER_ROUTING_SETUP);
+    expect(s.ips.blocks[0]).toMatchObject({ locationId: loc, byProvider: true });
+    addressTick(s);
+    expect(s.ips.addresses.some((a) => a.source === "lir" && a.blockId === block.id)).toBe(true);
   });
 });
 

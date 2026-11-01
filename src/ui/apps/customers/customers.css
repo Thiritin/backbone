@@ -89,3 +89,4 @@
 :root[data-os="tahoe"] .cus-chart { background: color-mix(in oklch, var(--field), transparent 30%); }
 :root[data-os="tahoe"] .cus-mood .bar,
 :root[data-os="tahoe"] .cus-mood .bar i { border-radius: 999px; }
+

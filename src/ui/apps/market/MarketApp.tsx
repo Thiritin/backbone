@@ -1,10 +1,10 @@
 import { ChartColumn, Lock, Swords, TrendingDown, Users } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 import { euro, euroCents } from "../../../sim/00-core/money";
-import { CITIES, COMPETITORS } from "../../../sim/10-catalog/economy";
+import { CITIES } from "../../../sim/10-catalog/economy";
 import type { Profile } from "../../../sim/30-customers/customers";
-import { yearOf } from "../../../sim/00-core/time";
-import { cityMarket, needsOf, OFFER, SLA_ASKED } from "../../../sim/30-market/market";
+import { hourOf, START_YEAR, yearOf } from "../../../sim/00-core/time";
+import { cityMarket, needsOf, OFFER, openRivals, SLA_ASKED } from "../../../sim/30-market/market";
 import { BUDGET_RANGE } from "../../../sim/30-market/sales";
 import { demand, lostReasons, segmentsOf, studied, studyCost } from "../../../sim/30-market/research";
 import { profileStats } from "../../../sim/40-support/tickets";
@@ -13,10 +13,11 @@ import { buyStudy } from "../../../sim/90-actions/market";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
 import { AUDIENCE } from "../marketing/MarketingApp";
-import { patience, PRODUCT } from "../support/labels";
+import { monthYear, patience, PRODUCT } from "../support/labels";
 import "../shop/shop.css";
 import "../billing/billing.css";
 import "../marketing/marketing.css";
+import "../customers/customers.css";
 import "./market.css";
 import { noticesOutages } from "../customers/notice";
 import { LOCALE } from "../../../i18n/lang";
@@ -46,7 +47,7 @@ export function MarketApp() {
     ["demand", t("misc1.market.demand"), <ChartColumn />, null],
     ["profiles", t("misc1.market.profiles"), <Users />, game.marketing.studies.length || null],
     ["lost", t("misc1.market.lostSales"), <TrendingDown />, lostReasons(game, 3).reduce((n, g) => n + g.count, 0) || null],
-    ["competitors", t("misc1.market.competitors"), <Swords />, COMPETITORS.length],
+    ["competitors", t("misc1.market.competitors"), <Swords />, openRivals(game).length],
   ];
   return (
     <div className="fin">
@@ -193,33 +194,94 @@ function Lost() {
   );
 }
 
-function Competitors() {
+const W = 520, H = 160, PAD = { l: 32, r: 8, t: 8, b: 20 };
+// Rival layers are neutral steps so the accent stays yours.
+const shade = (k: number) => `color-mix(in oklch, var(--text) ${[10, 34, 18, 42, 26, 50, 14, 38][k % 8]}%, var(--win))`;
+
+function ShareChart({ city }: { city: string }) {
+  const game = useStore((s) => s.game);
+  const [hover, setHover] = useState<number | null>(null);
+  const log = game.shareLog, ci = CITIES.findIndex((c) => c.name === city);
+  if (log.length < 2) return <div className="sup-none">{t("misc.noHistoryYet")}</div>;
+  const hosts = [{ id: "you", name: t("misc1.market.you"), at: (i: number) => log[i].you[ci] ?? 0 },
+    ...game.competitors.map((r) => ({ id: r.id, name: r.name, at: (i: number) => log[i].rivals[r.id]?.[ci] ?? 0 }))];
+  const total = (i: number) => Math.max(1e-9, hosts.reduce((n, h) => n + h.at(i), 0));
+  const x = (i: number) => PAD.l + (i / (log.length - 1)) * (W - PAD.l - PAD.r);
+  const y = (v: number) => PAD.t + (1 - v) * (H - PAD.t - PAD.b);
+  const base = log.map(() => 0);
+  const layers = hosts.map((h) => {
+    const low = [...base];
+    log.forEach((_, i) => { base[i] += h.at(i) / total(i); });
+    const top = log.map((_, i) => `${x(i).toFixed(1)},${y(base[i]).toFixed(1)}`), bottom = low.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).reverse();
+    return { ...h, points: [...top, ...bottom].join(" ") };
+  });
+  const shown = hover ?? log.length - 1, hourAt = (i: number) => hourOf(new Date(Date.UTC(START_YEAR, log[i].month, 1)));
+  const move = (e: React.MouseEvent<SVGSVGElement>) => {
+    const m = e.currentTarget.getScreenCTM();
+    if (!m) return;
+    const px = new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse()).x;
+    setHover(Math.max(0, Math.min(log.length - 1, Math.round(((px - PAD.l) / (W - PAD.l - PAD.r)) * (log.length - 1)))));
+  };
   return (
-    <div className="shop-grid">
-      {COMPETITORS.map((c) => {
-        const diff = Math.round((c.priceFactor - 1) * 100);
-        return (
-          <div key={c.name} className="shop-card mk-card">
-            <div className="mkt-head">
-              <strong>{c.name}</strong>
-              <span className="pill">{diff < 0 ? t("misc1.market.under", { n: -diff }) : t("misc1.market.over", { n: diff })}</span>
-            </div>
-            <div className="mk-bars">
-              <Bar label={t("misc1.market.performance")} value={c.P / 100} />
-              <Bar label={t("misc1.market.reliability")} value={c.R / 100} />
-              <Bar label={t("misc1.market.convenience")} value={c.C / 100} />
-            </div>
-            <div className="mkt-row">
-              <span className="mkt-label">{t("misc1.market.sells")}</span>
-              <div className="mkt-chips">{c.sells.map((p) => <span key={p} className="mk-tag">{PRODUCT[p]}</span>)}</div>
-            </div>
-            <div className="mkt-row">
-              <span className="mkt-label">{t("misc1.market.sellsTo")}</span>
-              <div className="mkt-chips">{segmentsOf(c).map((p) => <span key={p} className="mk-tag">{AUDIENCE[p]}</span>)}</div>
-            </div>
-          </div>
-        );
-      })}
-    </div>
+    <figure className="cus-chart mk-share">
+      <figcaption><b>{t("misc1.market.shareNew")}</b><span className="num">{monthYear(hourAt(shown))}</span></figcaption>
+      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={t("misc1.market.shareNew")} onMouseMove={move} onMouseLeave={() => setHover(null)}>
+        {layers.map((l, k) => <polygon key={l.id} points={l.points} fill={k === 0 ? "var(--accent)" : shade(k - 1)} />)}
+        {[0, 0.5, 1].map((f) => <text key={f} className="num" x={PAD.l - 6} y={y(f)} textAnchor="end" dominantBaseline="middle">{pct(f)}</text>)}
+        {log.map((e, i) => (e.month % 12 === 0 && i > 0 ? <text key={e.month} className="num" x={x(i)} y={H - 4} textAnchor="middle">{START_YEAR + e.month / 12}</text> : null))}
+        {hover !== null && <line className="cross" x1={x(hover)} x2={x(hover)} y1={PAD.t} y2={H - PAD.b} />}
+      </svg>
+      <ul className="mk-legend">
+        {hosts.map((h, k) => (
+          <li key={h.id}><i style={{ background: k === 0 ? "var(--accent)" : shade(k - 1) }} />{h.name}<span className="num">{pct(h.at(shown) / total(shown))}</span></li>
+        ))}
+      </ul>
+    </figure>
+  );
+}
+
+function Competitors() {
+  const game = useStore((s) => s.game);
+  const [city, setCity] = useState(game.locations[0]?.city ?? CITIES[0].name);
+  return (
+    <>
+      <div className="mk-bar-top">
+        <div className="seg" role="group" aria-label={t("misc1.market.city")}>
+          {CITIES.map((c) => <button key={c.name} aria-pressed={city === c.name} onClick={() => setCity(c.name)}>{c.name}</button>)}
+        </div>
+      </div>
+      <div className="mk-pad"><ShareChart city={city} /></div>
+      <table className="mkt-aware mk-rivals">
+        <thead>
+          <tr>
+            <th>{t("misc1.market.competitor")}</th><th className="mkt-right">{t("misc1.market.performance")}</th><th className="mkt-right">{t("misc1.market.reliability")}</th>
+            <th className="mkt-right">{t("misc1.market.convenience")}</th><th>{t("misc1.market.price")}</th><th className="mkt-right">{t("misc1.market.customers")}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {openRivals(game).map((c) => {
+            const diff = Math.round((c.priceFactor - 1) * 100);
+            return (
+              <Fragment key={c.id}>
+              <tr className="mk-main">
+                <td><strong>{c.name}</strong>{c.outage && <span className="pill bad">{t("misc1.market.outage")}</span>}</td>
+                <td className="num">{Math.round(c.P)}</td>
+                <td className="num">{Math.round(c.R)}</td>
+                <td className="num">{Math.round(c.C)}</td>
+                <td>{diff < 0 ? t("misc1.market.under", { n: -diff }) : t("misc1.market.over", { n: diff })}</td>
+                <td className="num">{(c.customers[city] ?? 0).toLocaleString(LOCALE)}</td>
+              </tr>
+              <tr className="mk-sub">
+                <td colSpan={6}>
+                  <div className="mkt-row"><span className="mkt-label">{t("misc1.market.sells")}</span><div className="mkt-chips">{c.sells.map((p) => <span key={p} className="mk-tag">{PRODUCT[p]}</span>)}</div></div>
+                  <div className="mkt-row"><span className="mkt-label">{t("misc1.market.sellsTo")}</span><div className="mkt-chips">{segmentsOf(c).map((p) => <span key={p} className="mk-tag">{AUDIENCE[p]}</span>)}</div></div>
+                </td>
+              </tr>
+              </Fragment>
+            );
+          })}
+        </tbody>
+      </table>
+    </>
   );
 }

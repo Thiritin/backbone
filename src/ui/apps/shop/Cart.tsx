@@ -7,7 +7,9 @@ import { skuById } from "../../../sim/10-catalog/cpus";
 import { VENDOR_NAME } from "../../../sim/10-catalog/cpus";
 import { leaseOffers } from "../../../sim/10-catalog/leasing";
 import { REGIONS } from "../../../sim/20-world/datacenters";
-import { buyCart, deliveryWait, unitPrice } from "../../../sim/90-actions/hardware";
+import { buyCart, cardOnly, deliveryWait, INVOICE_AFTER, paidOrders, PREPAY_HOURS, unitPrice, type Payment } from "../../../sim/90-actions/hardware";
+import { bankOf, cardReady, cardSpent } from "../../../sim/46-finance/bank";
+import { TRANSFER_HOURS } from "../../../sim/10-catalog/banks";
 import { Isometric } from "../../art/Isometric";
 import { Logo } from "../../art/logos";
 import { useStore } from "../../store";
@@ -30,19 +32,23 @@ export function Cart() {
   const cart = useStore((s) => s.cart), setCartQty = useStore((s) => s.setCartQty), clearCart = useStore((s) => s.clearCart);
   const act = useStore((s) => s.act), notify = useStore((s) => s.notify);
   const game = useStore((s) => s.game);
-  const [pay, setPay] = useState("cash");
+  const [pick, setPay] = useState("prepay");
   const openLoc = useStore((s) => s.openLoc);
   const [to, setTo] = useState<string | null>(null);
   const dest = game.locations.find((l) => l.id === (to ?? openLoc)) ?? game.locations[0];
-  const wait = deliveryWait(game, cart), year = yearOf(game.hour), total = cart.reduce((n, l) => n + unitPrice(l, year) * l.qty, 0), units = cart.reduce((n, l) => n + l.qty, 0);
+  const onlyCard = cardOnly(cart), card = cardReady(game) && cardSpent(game) + cart.reduce((n, l) => n + unitPrice(l, yearOf(game.hour)) * l.qty, 0) <= game.bank!.card!.limit;
+  const pay = onlyCard && (pick === "prepay") ? "card" : pick;
+  const base = deliveryWait(game, cart);
+  const wait = pay === "prepay" && base ? base + PREPAY_HOURS + TRANSFER_HOURS[bankOf(game)?.speed ?? "nextDay"] : base, year = yearOf(game.hour), total = cart.reduce((n, l) => n + unitPrice(l, year) * l.qty, 0), units = cart.reduce((n, l) => n + l.qty, 0);
   const offers = total ? leaseOffers(game, total) : [];
   const offer = offers.find((o) => o.id === pay);
   const best = Math.min(...offers.map((o) => o.total));
   const checkout = () => {
-    const r = act(buyCart, cart, offer ? { kind: "lease", offerId: offer.id } : { kind: "cash" }, dest.id);
+    const payment: Payment = offer ? { kind: "lease", offerId: offer.id } : { kind: pay === "card" || pay === "invoice" ? pay : "prepay" };
+    const r = act(buyCart, cart, payment, dest.id);
     if (!r.ok) return;
     clearCart();
-    setPay("cash");
+    setPay("prepay");
     notify("Shop", wait ? t("shop.orderedFor", { az: dest.az }) : t("shop.addedToStorage", { az: dest.az }), t("shop.units", { n: units }));
   };
 
@@ -82,8 +88,14 @@ export function Cart() {
         <div className="shop-cart-total"><span>{t("shop.delivery")}</span><span className="grow" /><span className="num">{wait ? t("shop.arrivesIn", { n: wait > 24 ? Math.ceil(wait / 24) : 1 }) : t("shop.arrivesNow")}</span></div>
         <div className="shop-cart-total"><span>{t("shop.total")}</span><span className="grow" /><strong className="num">{euro(total)}</strong></div>
         <div className="shop-pay" role="radiogroup" aria-label={t("shop.payment")}>
-          <button role="radio" aria-checked={!offer} className="shop-offer" onClick={() => setPay("cash")}>
-            <strong>{t("shop.payNow")}</strong><span className="grow" /><span className="num">{euro(total)}</span>
+          {!onlyCard && <button role="radio" aria-checked={pay === "prepay"} className="shop-offer" onClick={() => setPay("prepay")}>
+            <strong>{t("bank.shop.prepay")}</strong><span className="grow" /><span className="num">{euro(total)}</span>
+          </button>}
+          {!onlyCard && paidOrders(game) >= INVOICE_AFTER && <button role="radio" aria-checked={pay === "invoice"} className="shop-offer" onClick={() => setPay("invoice")}>
+            <strong>{t("bank.shop.invoice")}</strong><span className="grow" /><span className="num">{euro(total)}</span>
+          </button>}
+          <button role="radio" aria-checked={pay === "card"} className="shop-offer" disabled={!card} onClick={() => setPay("card")}>
+            <strong>{t("bank.shop.card")}</strong><span className="grow" /><span className="num">{euro(total)}</span>
           </button>
           {offers.map((o) => (
             <button key={o.id} role="radio" aria-checked={offer?.id === o.id} className="shop-offer" onClick={() => setPay(o.id)}>
@@ -102,7 +114,7 @@ export function Cart() {
           ))}
         </div>
         <div className="shop-cart-foot">
-          <button className="btn primary" onClick={checkout}>{offer ? t("shop.leaseFor", { price: euro(offer.monthly) }) : t("shop.pay", { price: euro(total) })}</button>
+          <button className="btn primary" disabled={pay === "card" && !card} onClick={checkout}>{offer ? t("shop.leaseFor", { price: euro(offer.monthly) }) : t("shop.pay", { price: euro(total) })}</button>
         </div>
       </>}
     </aside>

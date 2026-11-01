@@ -1,4 +1,5 @@
 import { nowHours, yearOf } from "../00-core/time";
+import { lineCut } from "../46-finance/payables";
 import { wanPort, wattsFactorOf, boardVendor, COMPONENTS, cpuWattsShift, genOf, isOobPort, jacksOf, modelById, oobFits, oobPortOf, type ComponentKind, type DeviceKind } from "../10-catalog/hardware";
 import { cpuModel, skuOf, SMT_SHARE, type Vendor } from "../10-catalog/cpus";
 import { cardWatts } from "../10-catalog/gpu";
@@ -57,7 +58,7 @@ export const jacked = (s: GameState, gatewayId: string): boolean => {
 const climbing = new Set<string>();
 function lineUp(s: GameState, gatewayId: string): boolean {
   const d = s.devices.find((x) => x.id === gatewayId)!;
-  if (!isOwnRouter(d)) return wanPort(modelOf(s, gatewayId)) < 0 || (jacked(s, gatewayId) && !!s.homeLine.id);
+  if (!isOwnRouter(d)) return wanPort(modelOf(s, gatewayId)) < 0 || (jacked(s, gatewayId) && !!s.homeLine.id && !lineCut(s));
   return sweepMemo(s, `up:${gatewayId}`, () => {
     const peer = peerOf(s, { device: gatewayId, port: uplinkPort(d) });
     if (!peer || isOobPort(peer.port) || climbing.has(gatewayId)) return false;
@@ -177,7 +178,7 @@ function cabled(s: GameState, from: string, goal: (id: string) => boolean, live:
 }
 
 // Whether a hop of a route is cut: a stopped device, or a basement without an internet line.
-export const hopDown = (s: GameState, h: Hop): boolean => (h.device ? !working(s, h.device) : h.kind === "line" && !s.homeLine.id);
+export const hopDown = (s: GameState, h: Hop): boolean => (h.device ? !working(s, h.device) : h.kind === "line" && (!s.homeLine.id || lineCut(s)));
 
 // The hops from a device out to its location's edge: the gateway, then the carrier line (basement) or the datacenter's uplink.
 function toEdge(s: GameState, id: string, loc: Location, live: boolean, exempt?: string): Hop[] | null {
@@ -252,16 +253,16 @@ export function locationOf(s: GameState, d: Device): Location | undefined {
 
 export const holdsData = (s: GameState, d: Device): boolean => s.workloads.some((w) => w.deviceId === d.id);
 
-// 100% to 80% over the first month, then down to 20% over the next 24 months.
+// 90% right after buying, 80% after the first month, then down to 20% over the next 24 months.
 export function resaleValue(s: GameState, price: number, boughtAt: number): number {
   const months = Math.max(0, s.hour - boughtAt) / MONTH;
-  const share = months <= 1 ? 1 - 0.2 * months : Math.max(0.2, 0.8 - (0.6 * (months - 1)) / 24);
+  const share = months <= 1 ? 0.9 - 0.1 * months : Math.max(0.2, 0.8 - (0.6 * (months - 1)) / 24);
   return Math.round(price * share * 100) / 100;
 }
 
-// What a device sells for. A sized spare part sells at the current part price, anything else at what was paid.
+// What a device sells for. A new sized spare part sells at the current part price, anything else at what was paid.
 export const deviceValue = (s: GameState, d: Device): number =>
-  resaleValue(s, d.part ? partPrice(d.model.slice(5) as ComponentKind, d.part.size, d.part.ff, yearOf(s.hour), d.part) : d.price, d.boughtAt);
+  resaleValue(s, d.part && !d.used ? partPrice(d.model.slice(5) as ComponentKind, d.part.size, d.part.ff, yearOf(s.hour), d.part) : d.price, d.boughtAt);
 
 export const psusOf = (d: Device) => d.components.filter((c) => c.kind === "psu");
 export const isPlugged = (c: Component) => c.plugged !== false;
@@ -556,7 +557,8 @@ export function locationRent(s: GameState, loc: Location): number {
   if (!loc.dc) return 0;
   const dc = datacenterById(loc.dc);
   const extra = s.racks.filter((r) => r.locationId === loc.id).reduce((sum, r) => sum + (r.extraKw / EXTRA_STEP_KW) * extraStepPrice(dc), 0);
-  return spacePrice(dc, loc.space as Exclude<SpaceKind, "basement">, rentedSize(s, loc)) + extra;
+  const contract = s.contracts.find((c) => c.locationId === loc.id);
+  return (contract?.monthly ?? spacePrice(dc, loc.space as Exclude<SpaceKind, "basement">, rentedSize(s, loc))) + extra;
 }
 
 // How a rack in this location can bill power: flat-rate contracts are offered on own racks in cages and suites.

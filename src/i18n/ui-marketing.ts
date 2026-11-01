@@ -42,6 +42,7 @@ export default {
   "marketing.build": () => "Build",
   "marketing.readyOn": () => "Ready on",
   "marketing.domain": () => "Domain",
+  "marketing.domainText": () => "Register your company's web address at a domain reseller.",
   "marketing.buyDomain": (p) => `Buy a domain for your company at ${p.registrar}.`,
   "marketing.launch": () => "Launch",
   "marketing.setUp": () => "Set up",
@@ -54,6 +55,7 @@ export default {
   "marketing.emailOrders": () => "Take orders by email",
   "marketing.listProduct": (p) => `List ${p.product}`,
 
+  "marketing.aboutHandRolled": () => "Takes orders through a form you built yourself, for a single payment. Each software needs its own script.",
   "marketing.aboutModemBill": () => "Sells web hosting on cPanic and Pleskit for a single payment.",
   "marketing.aboutClientExit": () => "Sells panel hosting cheaply and adds other software through third-party modules.",
   "marketing.aboutWhmCache": () => "Connects to every web panel and, from 2008, every game panel.",

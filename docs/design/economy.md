@@ -29,11 +29,11 @@ Level 6 lands before the cloud and GPU boom, so the late game still has new prod
 
 ## Starting state
 
-A new game opens paused on 1 January 2005 at 00:00 with €3,500 in cash, an empty 24U rack in the basement next to the home router, and three friends waiting for web hosting. The savings buy the first server, a Dwell Balanced 1U G1 at €2,500, and leave the same €1,000 the company used to start with next to a free server, so year 1 pacing is unchanged. The Bank comes in for the second server, which the panel VM and the friends make due within the first month or two. The home router has 4 ports, one per basement server, so the basement needs no switch.
+A new game opens paused on 1 January 2005 at 00:00 with no cash and €3,500 of savings that arrive when the player opens the bank account, an empty 24U rack in the basement next to the home router, and three friends waiting for web hosting. The savings buy the first server, a Dwell Balanced 1U G1 at €2,500, and leave the same €1,000 the company used to start with next to a free server, so year 1 pacing is unchanged. The Bank comes in for the second server, which the panel VM and the friends make due within the first month or two. The home router has 4 ports, one per basement server, so the basement needs no switch.
 
 | Item | Starting value |
 | --- | --- |
-| Cash | €3,500, no debt; the bank lends up to the level 1 minimum of €10,000 from day one |
+| Cash | €0 until the bank account opens with the €3,500 savings, then €40 for the registration, no debt; the bank lends up to the level 1 minimum of €10,000 from day one |
 | Company | Level 1, 0 know-how, no reviews yet |
 | Basement | 1 rack position for a rack up to 24U, 3 kW at most; power at the household price |
 | Home line | Mom's DSL, free (Home line). The player orders a better one in Locations; it goes live after its install days, and every line on offer costs money |
@@ -52,7 +52,7 @@ A challenge starts from the normal starting state with one twist, chosen by ISO 
 | --- | --- |
 | 0 | Home line SDSL 2048 already in from hour 0 |
 | 1 | Every datacenter except Hetzler Park starts at its 2005 capacity; competitors cancel and refill as usual afterwards |
-| 2 | Starting cash €2,000 |
+| 2 | Savings of €2,000 arrive with the bank account |
 
 Scores count until 1 January 2008, 00:00: net worth then (rounded to the euro), the first day level 3 holds (checked once a day), and the mean of each hour's average happiness of active customers (rounded to a tenth). A replay passes when net worth is within €1, the level 3 day matches and happiness is within 0.1.
 
@@ -400,7 +400,7 @@ P(j) = \frac{e^{U_j/\tau}}{\sum_k e^{U_k/\tau}}
 | Online shop | 0.30 | 0.55 | 0.15 | 1.3× | Premium | 5× |
 | Enterprise | 0.35 | 0.55 | 0.10 | 1.3× | Premium | 4× |
 
-**Competitors.** Four fixed archetypes sell in every city. Their scores never change.
+**Competitors.** Four archetypes sell in every city. Their scores drift over the years as described in [competitors.md](competitors.md).
 
 | Competitor | P | R | C | Sells |
 | --- | --- | --- | --- | --- |
@@ -657,6 +657,9 @@ Private customers and hobbyists use their sites in the evening and forgive a wee
 
 **Planned maintenance.** An outage on a machine covered by a window the customer was told about at least 24 hours ahead costs no happiness, writes no outage ticket and adds no hours down to the month, so it earns no SLA credit. Work that runs past the window counts as a normal outage from the window's end, noticed from that hour on. A window announced less than 24 hours ahead keeps half of every penalty: half the happiness loss, half the chance of a ticket and half the hours down. Online shops ask to move a window that touches a weekday between 08:00 and 20:00, and gamers decline a window that starts on a Friday or Saturday night (17:00 to 09:00); neither is covered by it until the window is moved, so their outages cost the full penalties. Moving a window is free and starts the 24 hours of notice again.
 
+
+Shared links without an expiry that are older than 90 days leak with a monthly chance of 0.015 (0.003 with a password) and cost the customer 20 happiness. The expiry policy of 7, 30 or 90 days trades these leaks for extension tickets.
+
 ## Tickets and work rates
 
 A low-skill customer creates about 0.3 tickets a month, so one average support agent keeps about 1,400 of them answered. Every job in the game, from tickets to cabling, is a task with a handling time, and staff work through tasks at a rate set by their skill.
@@ -714,6 +717,9 @@ Staff work 8 hours a day, Monday to Friday, with 30 days of holiday and about 10
 
 **AI support bot.** It works 24 hours a day at 10× the rate of a skill-50 agent, is right 85% of the time, never improves, and only takes how-to and billing questions. It costs €1,500 per month when it unlocks.
 
+
+Bucket requests: each month a storage service raises a request to make a bucket public with probability 0.06. Approving gives the customer +3 happiness, declining by closing the ticket costs 2, and closing a public bucket again costs 1. A public bucket has a 0.04 monthly chance of exposing its files, which costs 25 happiness. Shared links: OwnClod customers hand out about half a link per user each month; an expired link has a 0.10 chance of a request to extend it.
+
 ## Billing and payment habits
 
 Invoices are due 14 days after they go out. Most customers pay on time, and the rest only pay once the matching dunning step is sent. A step the player never sends means that money never arrives while the service keeps running.
@@ -740,7 +746,19 @@ Invoices are due 14 days after they go out. Most customers pay on time, and the 
 
 Resolving the ticket adds the usual +5 happiness on top. Handling an appeal takes 15 minutes.
 
-**Billing rules.** The Automation entry in the Billing app sends the reminder, dunning and final notices on schedule, suspends after 7, 14 or 30 days overdue, and hands a debt to collections after 42, 60 or 90 days overdue once the final notice is out. Collections starts Off.
+**Billing rules.** The rules in the Reminders tab of Books send the reminder, dunning and final notices on schedule, suspends after 7, 14 or 30 days overdue, and hands a debt to collections after 42, 60 or 90 days overdue once the final notice is out. Collections starts Off.
+
+**Lexwear modules.** Lexwear sells add-on modules for Books on lexwear.de, each a one-time licence in 2005 euros. The licence key arrives by email a minute after the purchase and turns the module on in Books. Lexwear's newsletter offers each module once, when its count is first reached.
+
+| Module | Price | Does | Newsletter when |
+| --- | --- | --- | --- |
+| Helpdesk link | €149 | Create quote button on order tickets | 3 domains registered for customers |
+| Monthly run | €99 | Sends every draft invoice on the 1st at 09:00 | 10 customers |
+| Match by reference | €129 | Books each transfer whose reference names an open invoice and whose amount is exact | 10 transfers matched |
+| Automatic reminders | €99 | Sends the reminder, dunning and final notices on their due day under the billing rules | First suspension |
+| HBCI online banking | €79 | Pulls the bank statement and pays payables | Never |
+
+The billing rules say what is sent; bookkeepers and accountants carry them out in their work hours, the Automation research runs all of them, and Automatic reminders runs the notices up to the final one while suspensions and collections stay with staff or the research. Bookkeepers also send drafts and match transfers, writing off a shortfall below €1, before any reminder in the same hour; a second bookkeeper doubles the rate.
 
 **Time per action.** Every employee action takes time from their workday, so one employee can't carry the whole company. Staff divide these times by their speed (0.5 plus skill/100, so skill 50 takes the times as listed); bots work at twice the speed. The code keeps them in `ACTION_MINUTES` (src/sim/47-staff/activity.ts), and ticket times in `MINUTES` (the ticket table above).
 
@@ -748,6 +766,8 @@ Resolving the ticket adds the usual +5 happiness on top. Handling an appeal take
 | --- | --- | --- |
 | Answer or resolve a ticket | Support agent | Ticket handling time above |
 | Check an invoice, before every billing action | Bookkeeper or accountant | 6 min |
+| Send a draft invoice | Bookkeeper | 5 min |
+| Match a bank transfer to its invoice | Bookkeeper | 3 min |
 | Send a payment reminder | Bookkeeper | 15 min |
 | Send a dunning notice | Accountant | 30 min |
 | Send a final notice | Accountant | 30 min |
@@ -946,7 +966,7 @@ Prices between the years are straight lines. Anchors: RIPE NCC's last /8 policy 
 
 **IPv6.** Datacenters offer it from 2010, home lines from 2013 (Telekom dual stack, December 2012). One address per machine, €0.10 a month at a provider, free on a home line.
 
-**Own networks.** With a rented location the company can join RIPE NCC as a LIR: €2,000 sign-up, €1,400 a year, an AS number and the free allocation of the year, a /21 (2,048 addresses) until September 2012, a /22 (1,024) until November 2019 and a /24 (256) after. More /24s come from the transfer market at a price per address: €7 (2014), €10 (2016), €17 (2018), €22 (2020), €40 (2021), €50 (2022), €35 (2024), €30 (2026). A block is announced from one rented location, where its addresses become free; own addresses cost nothing a month.
+**Own networks.** With a rented location the company can join RIPE NCC as a LIR: €2,000 sign-up, €1,400 a year, an AS number and the free allocation of the year, a /21 (2,048 addresses) until September 2012, a /22 (1,024) until November 2019 and a /24 (256) after. More /24s come from the transfer market at a price per address: €7 (2014), €10 (2016), €17 (2018), €22 (2020), €40 (2021), €50 (2022), €35 (2024), €30 (2026). A block is announced from one rented location, where its addresses become free; own addresses cost nothing a month. The company announces it from its own router with a full table, or the provider announces it under the company's AS for a one-off €250 setup fee.
 
 **Reputation.** Every IPv4 has a mail reputation from 0 to 100: 80 when new, 70 on a static line, 20 on a dynamic line, whose addresses always sit on dynamic-range blocklists. Each 1,000 spam mails a day cost 5 points; a compromised panel host sends 12,000 a day and a spamming customer 2,000. Abuse reports cost points too: phishing 15, spam 10, attack 5, copyright 3. Below 30 the address is listed and stays listed until it is back at 50; a clean day adds 1 point. A delist request, once the spam stopped, clears the listing after 24 hours and adds 20 points. Mail customers behind a listed address write in about bounced mail with a 1% chance a day.
 
@@ -970,7 +990,7 @@ Prices are for 2005 and rise 8% every January. With a 10% chance each year, Pear
 
 | Module | App | Base per month | Plus | Needs |
 | --- | --- | --- | --- | --- |
-| Starter | Locations, Shop, Customers, Support (shown as Email), Billing (manual), Finance (account statement), Bank, Research, Settings, Pear Store | Free | | Start |
+| Starter | Locations, Shop, Customers, Support (shown as Email), Books (manual), Finance (account statement), Bank, Research, Settings, Pear Store | Free | | Start |
 | Monitoring | Monitoring | €10 | €0.50 per monitored device | Monitoring skill |
 | Nagiosaurus | Monitoring tab in Security | €15 | | Monitoring skill |
 | Virtual machines | Virtual machines | Free | | A hypervisor installed |
@@ -1263,6 +1283,11 @@ Prices follow the same yearly multipliers as other hardware (see [Prices over ti
 
 An outage reaches the servers for the minutes the UPS and the site can't bridge, rounded up to whole hours of downtime. Customers hit by an hour or more ask for a refund with a 10% chance at low budget, 15% at medium and 30% at high budget (decision).
 
+
+### Erasure sets
+
+The drives of a MinnIO cluster form sets of up to 16. Parity 2 or 4 is how many drives of a set can fail; the data shards leave `(n - parity) / n` of the disk, so EC:2 on 8 drives is 75% and EC:4 is 50%. One to parity failed drives mean a degraded set: the storage customers are marked slow, and after 72 hours without a replacement each loses 1 happiness a day. More failed drives than the parity take the set offline until a drive is back. A replaced drive heals at 40 GB per hour.
+
 ## Notices and legal requests
 
 Rates per active customer per month (decisions):
@@ -1495,6 +1520,8 @@ The link speed is the slowest link between the two nodes, shared by every migrat
 
 ## Usage curves and overcommit
 
+**Packages.** A software installation holds up to 12 named packages (`80-business/packages.ts`). The provision step of an order takes 8 minutes (`orderProvisionPackage`) with a package that covers the ordered vCPU, RAM and disk, and 15 minutes with a custom spec or a smaller package. A package may book as little as 25% of the sold vCPU and 50% of the sold RAM and disk; below that the step fails. A smaller package books less than was sold, and the service keeps using the sold size times its load, so the node slows through the usual contention. Web hosting usernames have 8 characters before 2012 and 16 from 2012, start with a lowercase letter and are unique among services.
+
 **Usage curves.** Each workload's load is a share of what it booked, from 0 to 1, read from its type's curve below. Values between keyframes are straight lines. Each day of the week then scales the curve by its weekday factor below, each service's day strays up to ±15% from it (drawn from the seed per day), and each workload adds ±20% hourly jitter drawn from the seed. Fridays from 18:00 count as weekend for game servers and VPNs.
 
 | Curve | Used by | Weekdays (hour → load) | Weekends (hour → load) | Week average |
@@ -1639,6 +1666,20 @@ Anchors: cPanel could copy accounts between servers with WHM's "Copy an account"
 
 **Migration offers.** The player can ask a customer to agree to a move (gdd.md, Support, Migration offers). The customer answers when their reply time is up: below happiness 40 they decline, otherwise they accept and name a window from the segment of Noticing outages. Players want the first 02:00 to 06:00 after the answer, businesses the next weekday from 18:00 to 22:00 (never the day of the answer), private customers any time, so their move runs at once. The accepted move runs at the first hour of the window as the move above, with its downtime. A customer whose service moves from the basement into a datacenter gains 5 happiness. A move that has not run within 48 hours of the window's start costs 10 happiness and reopens the ticket. The numbers are `DECLINE_BELOW`, `BASEMENT_BONUS`, `MISSED_PENALTY` and `MISSED_AFTER_HOURS` in `src/sim/90-actions/moves.ts`, the windows `MOVE_WINDOW` in `src/sim/10-catalog/attention.ts`.
 
+### SSL certificates and AutoSSL
+
+From 2016 every web space on a panel host has a certificate of its own that lives 90 days; a domain with a certificate bought through the registrar is not affected. The first expiry of each domain is spread over the first 90 days. A certificate that runs out slows the site until it is renewed.
+
+| Effect | Value |
+| --- | --- |
+| AutoSSL (cPanic hosts only, switched on by the player) | Renews in the last 30 days; each daily attempt fails with 3% and is retried the next day |
+| Without AutoSSL, the customer renews on the last day | High skill 60%, medium 30%, low 5% |
+| Expiry | The site is slowed every day, the customer loses 12 happiness once and 60% open a ticket |
+| Renewing by hand (any panel) | 5 minutes of the player's time; ends the incident and gives +5 happiness if a ticket was open |
+| Check now (cPanic with AutoSSL on) | 5 minutes of the player's time; renews every certificate due within 30 days |
+
+AutoSSL is what makes the per-web-space cPanic licence worth its price: a host of 200 web spaces sees about 800 renewals a year, and most of them lapse without it.
+
 ## Staff: salaries, skill growth and quitting
 
 A junior support agent hired in 2005 costs the company about €2,600 a month. A senior asks about 37% more, which is less than the gap in work rate, so juniors win only if they stay.
@@ -1683,7 +1724,7 @@ A raise request left unanswered for 30 days counts as refused. Salaries are bill
 | Role | Task types |
 | --- | --- |
 | Support agent | How-to, billing, outage, upgrade, cancellation, abuse, suspension appeal |
-| Bookkeeper | Payment reminders |
+| Bookkeeper | Payment reminders, sending invoices, matching payments |
 | Accountant | Dunning notices, final notices |
 | Marketing manager | Campaigns, review platforms, trade fairs |
 
@@ -1857,6 +1898,21 @@ A cluster runs its oldest node's version. With b the number of newer versions ou
 | Performance of a node's sites in the hour after its upgrade | 70% |
 
 A request that needs a supported version asks for the oldest one still supported and is lost when it would land on the old cluster. Through 2005 to 2009 the catalogue moves slowly, so a cluster set up in 2005 is unsupported from 2010; from 2015 a new version comes every year, and a cluster left alone for three years starts losing sales.
+
+### Legacy versions on a panel host
+
+A panel host keeps up to two older versions besides its newest, and each account runs one of them (the newest unless the player moves it). The ticket and abuse rows above use the oldest version an account on the host still runs, b counted from that version. The sales row keeps using the newest version.
+
+| Effect | Value |
+| --- | --- |
+| Versions kept besides the newest | At most 2 |
+| Installing or removing a version | A rebuild: the host's sites run at 70% for an hour |
+| A CMS release runs on | PHP up to the version of the release year + 2; static sites run on any |
+| A site on a newer version than its release runs on | Slowed every day, and 35% write in once per version (drawn per site) |
+| Upgrading with Keep | The old version stays installed and takes the accounts that would break |
+| An advisory | Applies to a host when any installed version is affected |
+
+The rows for tickets, abuse and advisories are the price of keeping a legacy version; the rebuild and the lost sites are the price of not keeping one.
 
 ## Security advisories
 
@@ -2163,6 +2219,7 @@ A first-year company earns about 300 know-how; a company with 10,000 customers e
 | Monitoring | 1 | 50 | 5 days | | Nagiosaurus, failure notifications |
 | Marketing basics | 1 | 50 | 5 days | | Leads to Marketing campaigns |
 | Employee management | 1 | 100 | 10 days | | Staff |
+| Company law | 1 | 100 | 10 days | | Founding a limited company |
 | Network operations | 2 | 300 | 14 days | Monitoring | Network |
 | Product management | 1 | 100 | 7 days | | Products |
 | Provisioning automation | 2 | 150 | 10 days | Product management | Automatic setup of orders, the Place orders automatically switch |
@@ -2172,7 +2229,7 @@ A first-year company earns about 300 know-how; a company with 10,000 customers e
 | Virtualization | 3 | 400 | 14 days | Product management, Monitoring | Virtual machines |
 | Automation | 3 | 1,500 | 21 days | Employee management, Monitoring | ChadGPT Support, Clipsy Reminders |
 
-The whole tree costs 3,950 know-how and 128 days of training.
+The whole tree costs 4,050 know-how and 138 days of training.
 
 Product management was tier 2 at 200 know-how and 14 days after Marketing basics. The happiness run showed a careful first-year company earns 15 to 40 know-how a month, so the 250 know-how path landed in September to November. As a tier 1 skill at 100 know-how and 7 days, the same company learns it between early May and early July (median early June).
 
@@ -2266,6 +2323,18 @@ The loan limit is the higher of the level's minimum and 12× the average monthly
 **Missed repayments.** Each one adds 2 points to the loan's rate, costs a €100 fee and blocks new loans for 12 months. After three in a row the bank calls in the whole loan.
 
 **Bankruptcy.** When cash stays below zero for 30 days and no loan is available that covers the deficit, the company is insolvent and the game ends.
+
+**Account fees.** A limited company (GmbH) must keep a business account, and business accounts cost more than a sole trader's, so the account fee a month depends on the legal form. Branch banks charge a limited company about twice the sole trader's fee and add a fee for every booking on a partnership's or limited company's account; the fintechs sell flat plans, the limited one at two to three times the sole trader's. A partnership pays between the two. Each month start books the fee for the month and, at a branch bank, one line for the bookings of the month before: every ledger line of that month except the bank's own fees. netbunk, like the direct banks that long opened no GmbH accounts, opens none for a limited company: the registration refuses that pair, and the trade office form greys netbunk out while the limited form is chosen. The legal form is fixed once registered, so an open account never needs to move.
+
+| Bank | Sole trader | Partnership | Limited company | Per booking (partnership, limited) |
+| --- | --- | --- | --- | --- |
+| Sparklasse | €8 | €12 | €16 | €0.30 |
+| Volksbunk | €6 | €9 | €12 | €0.25 |
+| Deutsche Bunk | €12 | €18 | €24 | €0.15 |
+| Postbunk | €4 | €6 | €8 | €0.40 |
+| netbunk | €0 | €5 | no account | none |
+| Fidorr | €0 | €6 | €12 | none |
+| Quonto | €9 | €15 | €25 | none |
 
 **SLA insurance.** The monthly premium is 2% of the recurring revenue from customers with an SLA, times an uptime factor: 1.0 at 99.95% or better over 90 days, 1.5 at 99.9% or better, and 2.5 below that. A missed SLA owes the customer 10% of their monthly fee per 0.1% of uptime below the promise, up to the full fee. The insurer pays those credits for three claims, then blocks the company for a year.
 
@@ -2450,3 +2519,24 @@ The solo bot reaches level 5 in 2012.8 instead of 2012.9. Neither bot goes bankr
 ## Shop systems
 
 Variants, licences, module prices, the custom script price of the hand-rolled form (€400 per software) and stock rules are in `shop.md`, section 2.3. The research "Shop systems" costs 60 know-how and 4 days. Shop licences are billed with marketing on the 1st.
+
+### Billing cycles
+
+A shop sells its products for a month, a quarter, a year or two years. A longer cycle is billed in advance at N times the monthly price less the cycle's discount. The hand-rolled form sells monthly and annual, ModemBill adds quarterly, OrderBocks adds biennial and the other systems sell all four.
+
+| Cycle | Months | Market discount |
+| --- | --- | --- |
+| Monthly | 1 | 0% |
+| Quarterly | 3 | 3% |
+| Annual | 12 | 10% |
+| Biennial | 24 | 15% |
+
+A form order draws its cycle from the profile's base shares (`CYCLE_SHARE` in `cycles.ts`: a private customer takes monthly 78%, quarterly 10%, annual 11%, biennial 1%; an enterprise 20, 10, 50, 20). Each offered non-monthly cycle's weight is its base share times `exp(8 * (d - m))`, where `d` is the discount the player sets and `m` the market discount; the weights are normalised over the offered cycles. Ten points above the market's discount multiplies a share by 2.2, ten below by 0.45. Cycles the player has not priced use the market discount.
+
+Lead conversion for form orders reads the advertised price level: the line's rate against the market for its middle size, times the weighted cycle price against the same weighting at market discounts. A changed rate or discount reaches new leads at once, where the sold-services index follows only after sales.
+
+A customer inside a paid term skips the monthly churn roll unless happiness is below 15. In the month before the term ends the customer rolls once with `min(0.9, N * base) + 0.5 * max(0, (50 - H) / 50)`, where `base` is the profile's monthly churn and `N` the term months. A customer who leaves inside a paid term, with no invoice open, gets the unused whole months back as a ledger entry.
+
+A renewal invoice for the next term goes out at the month start before a term ends, at the service's current price. Paying it extends the term by N months. A prepaid service has no monthly arrears lines.
+
+The balance model takes the annual share of form orders as a revenue discount.

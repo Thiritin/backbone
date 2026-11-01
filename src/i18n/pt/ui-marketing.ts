@@ -42,6 +42,7 @@ export default {
   "marketing.build": () => "Construir",
   "marketing.readyOn": () => "Pronto em",
   "marketing.domain": () => "Domínio",
+  "marketing.domainText": () => "Regista o endereço web da tua empresa num revendedor de domínios.",
   "marketing.buyDomain": (p) => `Compra um domínio para a tua empresa na ${p.registrar}.`,
   "marketing.launch": () => "Lançar",
   "marketing.setUp": () => "Configurar",
@@ -54,6 +55,7 @@ export default {
   "marketing.emailOrders": () => "Receber pedidos por e-mail",
   "marketing.listProduct": (p) => `Oferecer ${p.product}`,
 
+  "marketing.aboutHandRolled": () => "Recebe pedidos com um formulário feito por você, por um único pagamento. Cada software precisa do seu próprio script.",
   "marketing.aboutModemBill": () => "Vende hospedagem web em cPanic e Pleskit por um único pagamento.",
   "marketing.aboutClientExit": () => "Vende hospedagem com painel a baixo preço e junta outro software através de módulos de terceiros.",
   "marketing.aboutWhmCache": () => "Liga-se a todos os painéis web e, desde 2008, a todos os painéis de jogos.",

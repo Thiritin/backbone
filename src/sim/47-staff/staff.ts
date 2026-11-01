@@ -1,9 +1,10 @@
 import { hashRng, rand, type Rng } from "../00-core/rng";
 import { dateOf, isMonthStart, yearOf } from "../00-core/time";
 import { monthlySalary, priceAt } from "../10-catalog/economy";
-import { cents, dueStep, ruleStep, ruleSuspendsAt, rulesAutomated, sendStep, STEPS, suspend, type Invoice } from "../45-billing/billing";
+import { autoStep, cents, dueStep, isUnpaid, owed, ruleStep, ruleSuspendsAt, rulesAutomated, sendStep, STEPS, suspend, type Invoice } from "../45-billing/billing";
 import { ACTION_MINUTES, logActivity } from "./activity";
 import { storeItem } from "../10-catalog/store";
+import { bookFor, sendDraft } from "../80-business/lexwear";
 import { bump, createTicket, MINUTES, rightTemplate, TEMPLATES, TOPIC_ACTIONS, type Ticket, type TicketKind } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
@@ -14,7 +15,7 @@ import { orderMinutes, staffOrderStep } from "../30-market/manual";
 import { billAttempt, billChadUsage, BOT_RIGHT, BOT_RUNAROUND, BOT_TRIES, type ChadKind } from "./chad";
 
 export type Role = "support" | "bookkeeper" | "accountant" | "marketing" | "technician";
-export type Task = Exclude<TicketKind, "pear"> | "reminder" | "dunning" | "final" | "suspend" | "campaigns" | "reviews" | "fairs" | "hardware" | "servers" | "panels";
+export type Task = Exclude<TicketKind, "pear"> | "invoices" | "transfers" | "reminder" | "dunning" | "final" | "suspend" | "campaigns" | "reviews" | "fairs" | "hardware" | "servers" | "panels";
 // queue: works the role's tasks. trainer: trains colleagues of the same role. forum: posts in hosting and gaming forums.
 export type Assignment = "queue" | "trainer" | "forum";
 
@@ -57,7 +58,7 @@ export function shiftEndAt(t: Team, hour: number): number | null {
 export const ROLES: Role[] = ["support", "bookkeeper", "accountant", "marketing", "technician"];
 export const TASKS: Record<Role, Task[]> = {
   support: ["howTo", "billing", "outage", "upgrade", "cancellation", "abuse", "appeal", "order"],
-  bookkeeper: ["reminder"],
+  bookkeeper: ["reminder", "invoices", "transfers"],
   accountant: ["dunning", "final", "suspend"],
   marketing: ["campaigns", "reviews", "fairs"],
   // Hardware: part swaps and power. Servers: draining nodes. Panels: PHP upgrades.
@@ -65,6 +66,8 @@ export const TASKS: Record<Role, Task[]> = {
 };
 // The task each dunning step needs, in STEPS order; whoever sends final notices also hands debts to collections.
 const STEP_TASK: Task[] = ["reminder", "dunning", "final", "final"];
+// A bookkeeper writes off a shortfall below one euro: a few cents short or a rounded-down amount.
+export const ODD_AMOUNT = 1;
 
 const DAY = 24, YEAR = 8760;
 export const MARKET_PER_ROLE = 2;
@@ -262,12 +265,12 @@ function runaround(s: GameState, customerId: string): void {
 
 type BillingWork = { inv: Invoice; step: number } | { inv: Invoice; step: "suspend" };
 
-// What the billing rules ask for now, in due-date order: the next dunning step before a suspension.
+// What the billing rules ask for now and no module runs by itself, in due-date order: the next dunning step before a suspension.
 function ruleWork(s: GameState): BillingWork[] {
   const live = new Set(s.customers.filter((c) => c.churnedAt === null).map((c) => c.id));
   return [...s.invoices].sort((a, b) => a.dueAt - b.dueAt).flatMap((inv): BillingWork[] => {
     const step = ruleStep(s, inv), at = ruleSuspendsAt(s, inv);
-    return [...(step !== null ? [{ inv, step }] : []), ...(at !== null && s.hour >= at && live.has(inv.customerId) ? [{ inv, step: "suspend" as const }] : [])];
+    return [...(step !== null && autoStep(s, inv) === null ? [{ inv, step }] : []), ...(at !== null && s.hour >= at && live.has(inv.customerId) ? [{ inv, step: "suspend" as const }] : [])];
   });
 }
 
@@ -275,11 +278,38 @@ function ruleWork(s: GameState): BillingWork[] {
 const botWork = (s: GameState): BillingWork[] => [...s.invoices].sort((a, b) => a.dueAt - b.dueAt)
   .flatMap((inv) => { const step = dueStep(inv, s.hour); return step !== null ? [{ inv, step }] : []; });
 
+// Bookkeepers book the transfers that arrived, odd amounts written off, and send the drafts, before any reminder goes out.
+function keepBooks(s: GameState, clerks: Employee[], done: Set<string>): void {
+  const check = ACTION_MINUTES.checkInvoice;
+  for (const e of clerks) {
+    if (e.trained.includes("transfers")) {
+      for (const tr of s.transfers.filter((x) => x.invoiceId === null)) {
+        const inv = s.invoices.find((i) => i.id === tr.forInvoice && isUnpaid(i));
+        if (!inv || done.has(inv.id)) continue;
+        const took = take(s, e, check + ACTION_MINUTES.matchTransfer);
+        if (took === null) break;
+        done.add(inv.id);
+        const short = cents(owed(inv) - tr.amount);
+        bookFor(s, tr, inv, short > 0 && short < ODD_AMOUNT, e.name, took);
+      }
+    }
+    if (e.trained.includes("invoices")) {
+      for (const inv of s.invoices.filter((i) => i.status === "draft" && !done.has(i.id))) {
+        const took = take(s, e, check + ACTION_MINUTES.sendInvoice);
+        if (took === null) break;
+        done.add(inv.id);
+        sendDraft(s, inv, e.name, took);
+      }
+    }
+  }
+}
+
 // Bookkeepers and accountants carry out the billing rules until the Automation research runs them; each action starts
 // with checking the invoice. One action per invoice and hour.
 function chaseInvoices(s: GameState, clerks: Employee[], events: SimEvent[]): BotTask[] {
-  const staffWork = rulesAutomated(s) ? [] : ruleWork(s), forBots = clerks.some((e) => e.bot) ? botWork(s) : [];
   const done = new Set<string>(), byBot: BotTask[] = [];
+  keepBooks(s, clerks, done);
+  const staffWork = rulesAutomated(s) ? [] : ruleWork(s), forBots = clerks.some((e) => e.bot) ? botWork(s) : [];
   for (const e of clerks) {
     for (const { inv, step } of e.bot ? forBots : staffWork) {
       const task = step === "suspend" ? "suspend" : STEP_TASK[step], key = step === "suspend" ? "suspend" : STEPS[step].key;
@@ -290,8 +320,8 @@ function chaseInvoices(s: GameState, clerks: Employee[], events: SimEvent[]): Bo
       const copy = { ...inv }, c = s.customers.find((x) => x.id === inv.customerId);
       s.invoices = s.invoices.map((x) => (x.id === inv.id ? copy : x));
       if (step !== "suspend") sendStep(s, copy, step);
-      else if (suspend(s, copy) && c) events.push({ app: "Billing", key: "event.suspended", params: { customer: c.name, invoice: inv.number } });
-      if (copy.status === "writtenOff" && c) events.push({ app: "Billing", key: "event.collected", params: { customer: c.name, invoice: inv.number } });
+      else if (suspend(s, copy) && c) events.push({ app: "Books", key: "event.suspended", params: { customer: c.name, invoice: inv.number } });
+      if (copy.status === "writtenOff" && c) events.push({ app: "Books", key: "event.collected", params: { customer: c.name, invoice: inv.number } });
       const share = took / (ACTION_MINUTES.checkInvoice + ACTION_MINUTES[key]);
       const log = (k: string, minutes: number) => logActivity(s, { customerId: inv.customerId, serviceId: null, by: e.name, key: `activity.${k}`, params: { invoice: inv.number }, minutes: minutes * share });
       log("checkInvoice", ACTION_MINUTES.checkInvoice);

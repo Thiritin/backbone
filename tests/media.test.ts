@@ -7,8 +7,7 @@ import { createVm, PANEL_VM_SIZE } from "../src/sim/90-actions/clusters";
 import { downloadImage, downloadMbps, mountableImages, plugStick, stickHome, unplugStick, writeStick } from "../src/sim/90-actions/media";
 import { clusterOf } from "../src/sim/60-infra/cluster";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { newGame } from "../src/sim/50-state";
-import { bootedMachine, isoOf, readyGame } from "./fixtures";
+import { bootedMachine, isoOf, readyGame, newGame } from "./fixtures";
 
 // readyGame: dev3 is a server in the basement rack, cabled and up, with a hypervisor cluster on it.
 const dev = (s: ReturnType<typeof readyGame>, id = "dev3") => s.devices.find((d) => d.id === id)!;

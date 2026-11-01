@@ -1,6 +1,7 @@
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { yearOf } from "../src/sim/00-core/time";
+import { addPackage } from "../src/sim/90-actions/packages";
 import { consoleFeatures } from "../src/sim/80-business/consoles";
 import { CONSOLES } from "../src/ui/apps/browser/consoles/ConsolePage";
 import { panelVm, readyGame, skipTo } from "./fixtures";
@@ -11,14 +12,14 @@ const ERAS: Record<string, [number, number, string]> = {
   freepanel: [2005, 2016, "Software and updates"], tcadmen: [2005, 2016, "Game Servers"], multikraft: [2010, 2018, "Servers"], pterodaktyl: [2016, 2021, "Servers"],
 };
 
-function render(id: string, year: number, signedIn: boolean) {
+function render(id: string, year: number, signedIn: boolean, path?: string) {
   const s = readyGame(1);
   skipTo(s, year);
   s.cash = 1_000_000;
   const basement = s.clusters.find((c) => c.kind === "cloud")!;
   const host = panelVm(s, basement.id, id), c = s.clusters.find((x) => x.id === host)!;
   const View = CONSOLES[id];
-  return { year: yearOf(s.hour), html: renderToString(<View game={s} c={c} f={consoleFeatures(id, yearOf(s.hour))} host="panel.example.com" signedIn={signedIn} login={() => {}} logout={() => {}} />) };
+  return { year: yearOf(s.hour), html: renderToString(<View game={s} c={c} f={consoleFeatures(id, yearOf(s.hour))} host="panel.example.com" path={path} signedIn={signedIn} login={() => {}} logout={() => {}} />) };
 }
 
 describe("hosting and game panel consoles", () => {
@@ -47,5 +48,20 @@ describe("hosting and game panel consoles", () => {
     expect(html).toContain("Remove host");
     expect(html).toContain("PHP");
     expect(html).toContain("Weekly");
+  });
+
+  it("draws the cPanic packages screen in both eras, with and without packages", () => {
+    for (const year of [2010, 2016]) {
+      const empty = render("cpanic", year, true, "/scripts/addpkg");
+      expect(empty.html).toContain("Add a Package");
+      expect(empty.html).toContain("Package Name");
+      const s = readyGame(1);
+      skipTo(s, year);
+      const host = panelVm(s, s.clusters.find((c) => c.kind === "cloud")!.id, "cpanic"), c = s.clusters.find((x) => x.id === host)!;
+      addPackage(s, host, { name: "Starter", product: "webHosting", spec: { vcpu: 1, ramGb: 1, diskGb: 10, trafficGb: 100, mailboxes: 5 } });
+      const View = CONSOLES.cpanic;
+      const html = renderToString(<View game={s} c={c} f={consoleFeatures("cpanic", yearOf(s.hour))} host="panel.example.com" path="/scripts/addpkg" signedIn login={() => {}} logout={() => {}} />);
+      expect(html).toContain("Starter");
+    }
   });
 });

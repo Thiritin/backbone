@@ -4,10 +4,10 @@ import { GENERATIONS } from "../src/sim/10-catalog/economy";
 import { CPU_SKUS, cpuModel, cpuSkus, defaultSku, skuById, skuOf, VENDORS } from "../src/sim/10-catalog/cpus";
 import { brandsOf, componentParts, cpuOptions, cpuWattsOf, fits, LINEUP, MODELS, modelById, modelName, partOffers, presetSku } from "../src/sim/10-catalog/hardware";
 import { partPrice, presetPrice } from "../src/sim/10-catalog/parts";
-import { device, deviceDefaults, newGame, type GameState } from "../src/sim/50-state";
+import { device, deviceDefaults, type GameState } from "../src/sim/50-state";
 import { installedCores, perCoreOf } from "../src/sim/60-infra/status";
 import { unitPrice } from "../src/sim/90-actions/hardware";
-import { buyCart, buyDevice, withServer } from "./fixtures";
+import { buyCart, buyDevice, withServer, newGame } from "./fixtures";
 
 const ok = (r: { ok: boolean; id?: string; error?: string }) => {
   if (!r.ok) throw new Error(r.error);

@@ -1,20 +1,26 @@
 import { useState } from "react";
-import { yearOf } from "../../../../../sim/00-core/time";
+import { dateOf, yearOf } from "../../../../../sim/00-core/time";
+import { SNAPSHOTS_MAX } from "../../../../../sim/10-catalog/platforms";
+import { deleteSnapshot, revertSnapshot, takeSnapshot } from "../../../../../sim/90-actions/snapshots";
 import { t } from "../../../../../i18n/en";
 import { useStore } from "../../../../store";
 import type { GameState } from "../../../../../sim/50-state";
+import type { Cluster } from "../../../../../sim/60-infra/cluster";
 import { vmStats } from "../../../../../sim/60-infra/stats";
+import { integrationServices } from "../../../../../sim/80-business/readouts";
 import { Chart } from "../Chart";
 import { AlarmList, ConsoleThumb, MediaMenu, NodeList, ResourceBars, SizeFields, summaryOf, TaskLog, useNewVm, useVms, vmFacts, Wizard, type Vm } from "../HypervisorBase";
 import { Actions, Backups, erasFrom, eraAt, Facts, LoginForm, useSoftware, type PanelAction, type PanelProps } from "../PanelBase";
+import { parseCreate } from "../../../../../sim/80-business/consoles";
+import { PackagesScreen } from "../PackageForms";
 import "./hypervee.css";
 
 // docs/design/software.md, section 9: the glossy MMC from 2008, the same MMC with flat chrome from 2012.
 const ERAS = erasFrom(2008, 2012);
 const LABELS: Record<string, string> = { start: t("browser-consoles-1.hvStart"), stop: t("browser-consoles-1.hvShutDown"), reset: t("browser-consoles-1.hvReset"), restore: t("browser-consoles-1.hvRestore"), recover: t("browser-consoles-1.hvRecover"), migrate: t("browser-consoles-1.hvMove"), resize: t("browser-consoles-1.hvSettingsDots"), console: t("browser-consoles-1.hvConnect"), delete: t("browser-consoles-1.hvDelete") };
-type Page = { kind: "list"; node: string | null } | { kind: "cluster" } | { kind: "settings"; id: string } | { kind: "new" } | { kind: "server" };
-const SETTINGS = ["BIOS", "Memory", "Processor", "DVD Drive", "Network Adapter", "Name", "Checkpoints"] as const;
-const SETTING_LABELS: Record<(typeof SETTINGS)[number], string> = { BIOS: t("browser-consoles-1.hvBios"), Memory: t("browser-consoles-1.memory"), Processor: t("browser-consoles-1.hvProcessor"), "DVD Drive": t("browser-consoles-1.hvDvdDrive"), "Network Adapter": t("browser-consoles-1.hvNetworkAdapter"), Name: t("browser-consoles-1.name"), Checkpoints: t("browser-consoles-1.hvCheckpoints") };
+type Page = { kind: "list"; node: string | null } | { kind: "cluster" } | { kind: "settings"; id: string } | { kind: "new" } | { kind: "server" } | { kind: "profiles" };
+const SETTINGS = ["BIOS", "Memory", "Processor", "DVD Drive", "Network Adapter", "Name", "Checkpoints", "Integration Services"] as const;
+const SETTING_LABELS: Record<(typeof SETTINGS)[number], string> = { BIOS: t("browser-consoles-1.hvBios"), Memory: t("browser-consoles-1.memory"), Processor: t("browser-consoles-1.hvProcessor"), "DVD Drive": t("browser-consoles-1.hvDvdDrive"), "Network Adapter": t("browser-consoles-1.hvNetworkAdapter"), Name: t("browser-consoles-1.name"), Checkpoints: t("browser-consoles-1.hvCheckpoints"), "Integration Services": t("readouts.is.title") };
 
 function ActionsPane({ title, actions }: { title: string; actions: (PanelAction | false)[] }) {
   return (
@@ -22,6 +28,35 @@ function ActionsPane({ title, actions }: { title: string; actions: (PanelAction 
       <h4>{title}</h4>
       {actions.filter((a): a is PanelAction => !!a).map((a) => <button key={a.id} className={a.tone ?? ""} onClick={a.run}>{LABELS[a.id] ?? a.label}</button>)}
     </section>
+  );
+}
+
+const integrationText = (game: GameState, c: Cluster, v: Vm) => { const x = integrationServices(game, c, v.w); return x.version === "off" ? "" : x.version === "update" ? t("readouts.is.update") : String(x.guest); };
+// The automatic checkpoint name: the VM's name and the time it was taken.
+const checkpointName = (name: string, at: number) => {
+  const d = dateOf(at), p = (n: number) => String(n).padStart(2, "0");
+  return `${name} - (${p(d.getUTCDate())}/${p(d.getUTCMonth() + 1)}/${d.getUTCFullYear()} - ${p(d.getUTCHours())}:00:00)`;
+};
+
+// The Checkpoints pane under the VM list and in the VM's settings: take, apply and delete.
+function Checkpoints({ v }: { v: Vm }) {
+  const act = useStore((s) => s.act), list = v.w.snapshots ?? [];
+  return (
+    <>
+      <table className="cx-table">
+        <thead><tr><th>{t("browser-consoles-1.name")}</th><th /></tr></thead>
+        <tbody>
+          {list.length === 0 && <tr><td colSpan={2} className="cx-empty">{t("readouts.checkpoints.none")}</td></tr>}
+          {list.map((x) => (
+            <tr key={x.id}>
+              <td>{checkpointName(v.name, x.at)}</td>
+              <td><button className="cx-btn" onClick={() => act(revertSnapshot, v.id, x.id)}>{t("readouts.checkpoints.apply")}</button>{" "}<button className="cx-btn" onClick={() => act(deleteSnapshot, v.id, x.id)}>{t("readouts.checkpoints.delete")}</button></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {list.length < SNAPSHOTS_MAX && <div className="cx-inline"><button className="cx-btn primary" onClick={() => act(takeSnapshot, v.id)}>{t("readouts.checkpoints.create")}</button></div>}
+    </>
   );
 }
 
@@ -73,9 +108,10 @@ export function VmDetails({ game, v, generations }: { game: GameState; v: Vm; ge
 
 export function HyperVee(p: PanelProps) {
   const era = eraAt(ERAS, p.game), { game, c, f } = p, openConsole = useStore((s) => s.openConsole);
-  const [page, setPage] = useState<Page>({ kind: "list", node: null }), [selId, setSelId] = useState<string | null>(null);
+  const open = parseCreate("hypervee", p.path);
+  const [page, setPage] = useState<Page>(open?.screen === "create" ? { kind: "new" } : open?.screen === "packages" ? { kind: "profiles" } : { kind: "list", node: null }), [selId, setSelId] = useState<string | null>(null);
   const [part, setPart] = useState<(typeof SETTINGS)[number]>("Memory"), [gen, setGen] = useState(1);
-  const { vms, dialog } = useVms(game, c, f), sw = useSoftware(game, c, f), nv = useNewVm(game, c);
+  const { vms, dialog } = useVms(game, c, f), sw = useSoftware(game, c, f), nv = useNewVm(game, c, open?.screen === "create" ? open.order : undefined);
   if (!p.signedIn) return (
     <div className="cx hv hv-login" data-era={era}>
       <LoginForm className="hv-card" onLogin={p.login} button={t("browser-consoles-1.hvConnectBtn")}>
@@ -88,7 +124,7 @@ export function HyperVee(p: PanelProps) {
   const vm: Vm | undefined = vms.find((v) => v.id === (page.kind === "settings" ? page.id : selId));
   const list = vms.filter((v) => page.kind !== "list" || !page.node || v.w.deviceId === page.node);
   const generations = yearOf(game.hour) >= 2012;
-  const finish = () => { const id = nv.create(); if (id) { setSelId(id); setPage({ kind: "list", node: null }); } };
+  const finish = () => { if (nv.ordered) { if (nv.submit()) setPage({ kind: "list", node: null }); return; } const id = nv.create(); if (id) { setSelId(id); setPage({ kind: "list", node: null }); } };
   const facts = vm && vmFacts(game, vm), health = summaryOf(game, c, page.kind === "list" ? page.node : null), cluster = summaryOf(game, c, null);
   const vmActions = vm ? vm.actions.map((a) => (a.id === "resize" ? { ...a, run: () => setPage({ kind: "settings", id: vm.id }) } : a)) : [];
   return (
@@ -101,6 +137,7 @@ export function HyperVee(p: PanelProps) {
             <li><button aria-pressed={page.kind === "list" && !page.node} onClick={() => setPage({ kind: "list", node: null })}><i>⧉</i>{t("browser-consoles-1.hvManager")}</button>
               <ul>{nodes.map((d) => <li key={d.id}><button aria-pressed={page.kind === "list" && page.node === d.id} onClick={() => setPage({ kind: "list", node: d.id })}><i>▦</i>{(d.hostname ?? d.name).toUpperCase()}</button></li>)}</ul>
             </li>
+            <li><button aria-pressed={page.kind === "profiles"} onClick={() => setPage({ kind: "profiles" })}><i>▤</i>{t("pkg.hvProfiles")}</button></li>
             {f.cluster && <li><button aria-pressed={page.kind === "cluster"} onClick={() => setPage({ kind: "cluster" })}><i>⛁</i>{t("browser-consoles-1.hvFailoverClusterManager")}</button></li>}
           </ul>
         </aside>
@@ -110,13 +147,13 @@ export function HyperVee(p: PanelProps) {
               <h4 className="hv-h">{t("browser-consoles-1.hvVirtualMachines")}</h4>
               <div className="hv-list">
                 <table className="cx-table">
-                  <thead><tr><th>{t("browser-consoles-1.name")}</th><th>{t("browser-consoles-1.hvState")}</th><th>{t("browser-consoles-1.hvCpuUsage")}</th><th>{t("browser-consoles-1.hvAssignedMemory")}</th><th>{t("browser-consoles-1.status")}</th></tr></thead>
+                  <thead><tr><th>{t("browser-consoles-1.name")}</th><th>{t("browser-consoles-1.hvState")}</th><th>{t("browser-consoles-1.hvCpuUsage")}</th><th>{t("browser-consoles-1.hvAssignedMemory")}</th><th>{t("browser-consoles-1.status")}</th><th>{t("readouts.is.version")}</th></tr></thead>
                   <tbody>
-                    {list.length === 0 && <tr><td colSpan={5} className="cx-empty">{t("browser-consoles-1.hvNoVms")}</td></tr>}
+                    {list.length === 0 && <tr><td colSpan={6} className="cx-empty">{t("browser-consoles-1.hvNoVms")}</td></tr>}
                     {list.map((v) => (
                       <tr key={v.id} aria-selected={v.id === selId} onClick={() => setSelId(v.id)}>
                         <td>{v.name}</td><td>{v.st === "stopped" ? t("browser-consoles-1.hvOff") : v.state}</td><td className="num">{Math.round((v.use.vcpu / Math.max(1, v.w.vcpu)) * 100)} %</td>
-                        <td className="num">{v.st === "stopped" ? "" : `${Math.round(v.w.ramGb * 1024)} MB`}</td><td>{v.sub}</td>
+                        <td className="num">{v.st === "stopped" ? "" : `${Math.round(v.w.ramGb * 1024)} MB`}</td><td>{v.sub}</td><td>{integrationText(game, c, v)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -131,6 +168,13 @@ export function HyperVee(p: PanelProps) {
               <div className="hv-details">
                 {vm ? <>{vm.panel}<VmDetails game={game} v={vm} generations={generations} /></> : <span className="cx-empty">{t("browser-consoles-1.hvNoItem")}</span>}
               </div>
+              {vm?.w.deviceId && <><h4 className="hv-h">{t("readouts.checkpoints.title")}</h4><div className="hv-details"><Checkpoints v={vm} /></div></>}
+            </>
+          )}
+          {page.kind === "profiles" && (
+            <>
+              <h4 className="hv-h">{t("pkg.hvProfiles")}</h4>
+              <div className="hv-details"><PackagesScreen game={game} c={c} /></div>
             </>
           )}
           {page.kind === "server" && (
@@ -176,7 +220,8 @@ export function HyperVee(p: PanelProps) {
                   )}
                   {part === "Network Adapter" && <Facts facts={[{ label: t("browser-consoles-1.hvVirtualSwitch"), value: t("browser-consoles-1.hvExternalNetwork") }]} />}
                   {part === "Name" && <Facts facts={[{ label: t("browser-consoles-1.name"), value: vm.name }]} />}
-                  {part === "Checkpoints" && <Facts facts={[{ label: t("browser-consoles-1.lastBackup"), value: facts.backup.value }]} />}
+                  {part === "Integration Services" && <table className="cx-table"><tbody>{integrationServices(game, c, vm.w).services.map((x) => <tr key={x.key}><td>{t(`readouts.is.${x.key}`)}</td><td>{t(`readouts.is.${x.state}`)}</td></tr>)}</tbody></table>}
+                  {part === "Checkpoints" && <><Facts facts={[{ label: t("browser-consoles-1.lastBackup"), value: facts.backup.value }]} />{vm.w.deviceId && <Checkpoints v={vm} />}</>}
                 </div>
               </div>
               <div className="cx-tools"><button className="cx-btn primary" onClick={() => setPage({ kind: "list", node: null })}>{t("browser-consoles-1.ok")}</button></div>
@@ -195,7 +240,7 @@ export function HyperVee(p: PanelProps) {
       {page.kind === "new" && (
         <div className="cx-wiz-back">
           <Wizard title={t("browser-consoles-1.hvNewVmWizard")} className="hv-wiz" finish={t("browser-consoles-1.hvFinish")} onCancel={() => setPage({ kind: "list", node: null })} onFinish={finish} steps={[
-            { id: "name", label: t("browser-consoles-1.hvSpecifyName"), body: <Facts facts={[{ label: t("browser-consoles-1.hvLocation"), value: "C:\\ProgramData\\HyperVee\\" }]} /> },
+            { id: "name", label: t("browser-consoles-1.hvSpecifyName"), body: <><div className="hv-order">{nv.orderFields}</div><Facts facts={[{ label: t("browser-consoles-1.hvLocation"), value: "C:\\ProgramData\\HyperVee\\" }]} /></> },
             ...(generations ? [{ id: "gen", label: t("browser-consoles-1.hvSpecifyGeneration"), body: (
               <div className="hv-radios">
                 {[1, 2].map((g) => <label key={g} className="cx-check"><input type="radio" name="hv-gen" checked={gen === g} onChange={() => setGen(g)} />{t("browser-consoles-1.hvGenerationN", { n: g })}</label>)}

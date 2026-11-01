@@ -9,7 +9,7 @@ import { eventOf, OFFER_HOURS } from "../../../../sim/80-business/community";
 import { BOARD_MONTHS, BOARD_PRODUCTS, BOARD_SLOTS, offerOpen, type Ad } from "../../../../sim/80-business/sponsorboard";
 import { acceptSponsorship, declineSponsorship, offerHalf, postOffer, withdrawOffer } from "../../../../sim/90-actions/community";
 import { AUDIENCE } from "../../marketing/MarketingApp";
-import { formatDay } from "../../billing/BillingApp";
+import { formatDay } from "../../billing/format";
 import { PRODUCT } from "../../support/labels";
 import { useStore } from "../../../store";
 import { eraOf } from "./era";

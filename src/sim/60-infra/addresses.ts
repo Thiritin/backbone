@@ -27,8 +27,9 @@ export interface Address {
   id: string; ip: string; v: 4 | 6; locationId: string; holder: string | null; source: AddressSource; blockId: string | null;
   rep: number; listed: boolean; spam: number; delistAt: number | null;
 }
-// A block of the player's own as a LIR: its prefix, its size in addresses and the location announcing it.
-export interface Block { id: string; prefix: string; size: number; locationId: string | null; boughtAt: number }
+// A block of the player's own as a LIR: its prefix, its size in addresses and the location announcing it, by the company's
+// own BGP router or by the datacenter provider.
+export interface Block { id: string; prefix: string; size: number; locationId: string | null; boughtAt: number; byProvider?: boolean }
 // lir holds the membership's start and the company's own AS number.
 export interface Ips { addresses: Address[]; lir: { since: number; asn: number } | null; blocks: Block[] }
 export const newIps = (): Ips => ({ addresses: [], lir: null, blocks: [] });
