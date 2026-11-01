@@ -4,7 +4,7 @@ import type { SalesRequest } from "../30-market/market";
 import type { Address } from "../30-customers/addresses";
 import { canAutomate, draftInvoice, firstLines, invoiceOf, issueInvoice, resize, shopRegisters, stepError, stepMinutes, type OrderStep } from "../30-market/manual";
 import { offerPrice, setupFee } from "../30-market/spec";
-import type { Quote } from "../30-market/quotes";
+import { carryForward, type Quote } from "../30-market/quotes";
 import { orderOf } from "../30-market/orders";
 import { answerAt, editRequest, say } from "../30-market/sales";
 import { isFinal } from "../40-support/tickets";
@@ -106,7 +106,7 @@ export function createQuote(s: GameState, ticketId: string): ActionResult {
   const monthly = r.counter ?? Math.round(offerPrice(s, r.product, r.spec, r.sla) * 100) / 100, setup = r.setup ?? setupFee(s, r.product);
   const q: Quote = {
     id: `quo${s.nextId++}`, number: `${yearOf(s.hour)}-${String(s.quotes.length + 1).padStart(4, "0")}`, customerId: r.customerId, ticketId,
-    lines: firstLines(s, r, monthly, setup), monthly, setup, status: "draft", sentAt: null,
+    lines: firstLines(s, r, monthly, setup), monthly, setup, status: "draft", sentAt: null, createdAt: s.hour,
   };
   s.quotes = [...s.quotes, q];
   return { ok: true, id: q.id };
@@ -143,13 +143,23 @@ export function invoiceOrder(s: GameState, ticketId: string): ActionResult {
   if (draft) return { ok: true, id: draft.id };
   const inv = draftInvoice(s, r.customerId!, firstLines(s, r));
   editRequest(s, r.id, () => ({ invoiceId: inv.id }));
+  carryForward(s, ticketId, inv.id);
   return { ok: true, id: inv.id };
 }
 
+// Carry forward: an accepted quote becomes the order's first invoice, as a draft.
 export function convertQuote(s: GameState, quoteId: string): ActionResult {
   const q = s.quotes.find((x) => x.id === quoteId);
+  if (q?.status === "invoiced") return fail("error.quoteInvoiced");
   if (q?.status !== "accepted" || !q.ticketId) return fail("error.quoteNotAccepted");
   return invoiceOrder(s, q.ticketId);
+}
+
+// Deletes a quote that was never sent.
+export function deleteQuote(s: GameState, quoteId: string): ActionResult {
+  if (!draftQuote(s, quoteId)) return fail("error.quoteSentAlready");
+  s.quotes = s.quotes.filter((q) => q.id !== quoteId);
+  return { ok: true };
 }
 
 // Confirms the accepted quote and sends the invoice.

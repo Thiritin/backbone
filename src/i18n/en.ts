@@ -26,6 +26,7 @@ import { BURNIN_EN } from "./burnin";
 import { USED_EN } from "./used";
 import { VENDORS_EN } from "./vendors";
 import { BANK_EN } from "./bank";
+import { PAPERWORK_EN } from "./paperwork";
 import { ALARMS_EN } from "./alarms";
 import { active, LOCALE, type Dict } from "./lang";
 
@@ -64,6 +65,7 @@ export const en: Record<string, (p: Params) => string> = {
   ...NEWS_EN,
   ...VENDORS_EN,
   ...BANK_EN,
+  ...PAPERWORK_EN,
   ...USED_EN,
   ...BURNIN_EN,
   ...ALARMS_EN,
