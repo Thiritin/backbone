@@ -5,7 +5,7 @@ Each bank sells account plans. A dearer plan costs more a month and makes each b
 ## Today
 
 - Seven banks in `src/sim/10-catalog/banks.ts`. Each has one fee a month per legal form (`monthly`), a booking fee for partnerships and limited companies, a yearly card fee, an overdraft rate and a loan limit factor.
-- The company opens one account (`openBankAccount`) and can never switch. netbunk opens no account for a limited company, so a company that banks there can never become one.
+- The company opens one account (`openBankAccount`) and can never switch. Ding-DiBa opens no account for a limited company, so a company that banks there can never become one.
 - When the legal form changes, the account fee follows the new form without the player doing anything.
 - `loanRate` is the base rate plus the level's risk premium. It is the same at every bank.
 - The notary turns the limited company application down by mail when the cash is below the share capital of 25,000 euros.
@@ -21,8 +21,8 @@ A bank row gets `plans` in place of `monthly` and `booking`. A plan has an id, a
 | Business Plus | all forms | 2x Business | 100 | 1/3 of Business | included |
 | Premium | partnership, limited | 4x Business | all | 0 | included, 2x limit |
 
-- The traditional banks (Sparklasse, Volksbunk, Deutsche Bunk, Postbunk) sell all four plans. Deutsche Bunk sells no Giro plan.
-- netbunk sells Giro and Business. Fidorr and Quonto sell Business and Business Plus with their own names.
+- The traditional banks (Sparklasse, Folksbank, Deutsche Bunk, Postbanq) sell all four plans. Deutsche Bunk sells no Giro plan.
+- Ding-DiBa sells Giro and Business. Fidorr and Quonto sell Business and Business Plus with their own names.
 - A booking is any transfer in or out of the account. A business with many small customers feels the booking fee, which is the reason to move up a plan.
 - A limited company pays more on the same plan. Its fee a month is the Business fee times the ratio of the bank's limited fee to its partnership fee today.
 
@@ -53,9 +53,9 @@ A bank row gets `plans` in place of `monthly` and `booking`. A plan has an id, a
 |---|---|---|
 | Deutsche Bunk | 0 | 50,000 |
 | Sparklasse | +0.5 | 2,500 |
-| Volksbunk | +0.5 | 2,500 |
-| Postbunk | +1.5 | 2,500 |
-| netbunk | +1.0 | 2,500 |
+| Folksbank | +0.5 | 2,500 |
+| Postbanq | +1.5 | 2,500 |
+| Ding-DiBa | +1.0 | 2,500 |
 | Fidorr | +2.0 | 2,500 |
 | Quonto | +1.5 | 2,500 |
 
@@ -64,7 +64,7 @@ The Bank app's loan form shows the rate of the company's own bank.
 ## Saves
 
 - `newGame` opens no account, as today. Every account gets a `plan` field.
-- `deserialize` gives an old account the cheapest plan of its bank that serves the company's current form. A netbunk account of a limited company in an old save keeps working on Business, since the save must load.
+- `deserialize` gives an old account the cheapest plan of its bank that serves the company's current form. A Ding-DiBa account of a limited company in an old save keeps working on Business, since the save must load.
 
 ## Code
 

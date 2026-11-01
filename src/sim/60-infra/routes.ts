@@ -4,8 +4,7 @@ import { genOf, modelById } from "../10-catalog/hardware";
 import type { Resources } from "../10-catalog/products";
 import type { Product } from "../30-customers/customers";
 import type { GameState } from "../50-state";
-import { working } from "./status";
-import { bookable, clusterOf, clustersOf, controlPlaneUp, hasHosts, KEYS, noRoomError, nodeUsed, pickNode, supports, vmById, vmRoom, withDatastore, type Cluster } from "./cluster";
+import { bookable, clusterOf, clustersOf, controlPlaneUp, hasHosts, KEYS, memberUp, noRoomError, nodeUsed, pickNode, supports, vmById, vmRoom, withDatastore, type Cluster } from "./cluster";
 
 // cap and used are what the target can book and has booked; free is the room left.
 export interface RouteNode { id: string; name: string; cap: Resources; used: Resources; free: Resources; fits: boolean }
@@ -25,7 +24,7 @@ export function routeOptions(s: GameState, product: Product, city: string, size:
       const vm = vmRoom(s, c);
       return { id: c.id, name: c.name, az: c.az, ...room(vm.cap, vm.used), fits: up && !!pickNode(s, c, size), nodes: [] };
     }
-    const nodes = c.nodes.filter((n) => n.state === "active" && working(s, n.deviceId)).map((n): RouteNode => {
+    const nodes = c.nodes.filter((n) => n.state === "active" && memberUp(s, n)).map((n): RouteNode => {
       const d = s.devices.find((x) => x.id === n.deviceId)!;
       return { id: d.id, name: d.label ?? d.name, ...room(bookable(s, d), nodeUsed(s, d.id)), fits: up && !!pickNode(s, only(c, d.id), withDatastore(s, c, size)) };
     });

@@ -82,7 +82,7 @@ describe("Windoors Server", () => {
     ok(install(s, id, "lunix"));
   });
 
-  it("from 2016 costs nothing at install and 4 euros per core each month", () => {
+  it("from 2016 costs nothing at install and 4 euros per core a month after", () => {
     const s = readyGame(7);
     skipTo(s, 2016);
     const id = atInstaller(s);
@@ -90,8 +90,9 @@ describe("Windoors Server", () => {
     ok(install(s, id, "windoors"));
     expect(s.cash).toBe(cash);
     expect(s.licenses).toMatchObject([{ product: "windoors", kind: "core", machineId: id }]);
-    monthEnd(s);
-    expect(s.ledger.filter((l) => l.key === "ledger.windoors").map((l) => l.amount)).toEqual([-4 * installedCores(dev(s, id))]);
+    s.hour = s.licenses[0].renewsAt! - 1;
+    tick(s);
+    expect(s.ledger.filter((l) => l.key === "ledger.licenceRenewal").map((l) => l.amount)).toEqual([-4 * installedCores(dev(s, id))]);
   });
 });
 

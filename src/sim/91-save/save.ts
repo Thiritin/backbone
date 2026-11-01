@@ -143,6 +143,8 @@ export function deserialize(raw: string): GameState {
   fillDaemons(s);
   // A save from before accounts opened on the bank's site holds the savings as cash; they come back with the account.
   if ((data.version ?? 1) < 4 && !s.registration && !s.bank && s.cash >= savingsOf(s)) s.cash -= savingsOf(s);
+  // Saves from before the account could come first opened it only after the customer accepted.
+  if ((data.version ?? 1) < 5) s.sales = { ...s.sales, requests: s.sales.requests.map((r) => (r.kind === "order" && r.customerId && ["open", "countered", "refused"].includes(r.status) ? { ...r, status: "accepted" } : r)) };
   shelveRouter(s);
   fillVersions(s);
   // Saves from before licence keys; machines from before one-time licenses hold theirs for free, since the fee was never charged.
