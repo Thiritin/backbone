@@ -16,6 +16,7 @@ import "../../../../sales/sales.css";
 
 const LINES: Product[] = ["webHosting", "vps", "gameServer", "dns", "vpn", "storage", "cloud", "gpu", "dedicated", "colocation", "domain", "ssl"];
 const UNIT: Record<Unit | "setup", string> = {
+  account: t("web.reseller.unitAccount"),
   base: t("marketing.unitBase"), vcpu: t("marketing.unitVcpu"), ramGb: t("marketing.unitRamGb"), diskGb: t("marketing.unitDiskGb"), mailbox: t("marketing.unitMailbox"), zone: t("marketing.unitZone"), user: t("marketing.unitUser"), unit: t("marketing.unitUnit"), kw: t("marketing.unitKw"), traffic: t("marketing.unitTraffic"), ip: t("marketing.unitIp"), gpu: t("marketing.unitGpu"), updates: t("marketing.unitUpdates"), updateOnce: t("marketing.unitUpdateOnce"), setup: t("marketing.unitSetup"),
 };
 // Rates below ten cents need a tenth of a cent, below one cent a hundredth.
