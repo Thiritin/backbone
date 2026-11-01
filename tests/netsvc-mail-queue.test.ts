@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { sizeSpec } from "../src/sim/10-catalog/products";
-import { newGame, type GameState } from "../src/sim/50-state";
+import { type GameState } from "../src/sim/50-state";
 import { addressTick, mailAddress } from "../src/sim/60-infra/addresses";
 import { bounceFactor, mailsPerBox, mailStateOf, queueEntries } from "../src/sim/60-infra/netsvc-mail";
 import { tick } from "../src/sim/88-tick/tick";
@@ -8,7 +8,7 @@ import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { deleteQueue, flushQueue } from "../src/sim/90-actions/netsvc-mail";
 import { cleanUp } from "../src/sim/90-actions/security";
-import { BASEMENT_SERVER, panelServer, withServer } from "./fixtures";
+import { BASEMENT_SERVER, panelServer, withServer, newGame } from "./fixtures";
 
 const run = (s: GameState, hours: number) => { for (let h = 0; h < hours; h++) tick(s); };
 

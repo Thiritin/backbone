@@ -9,7 +9,7 @@ import { deserialize, serialize } from "../src/sim/91-save/save";
 import { orderLead } from "../src/sim/30-market/orders";
 import type { GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
-import { attachQuote, convertQuote, createAccount, createQuote, editQuote, quoteOrder } from "../src/sim/90-actions/orders";
+import { attachQuote, convertQuote, createAccount, createQuote, deleteQuote, editQuote, quoteOrder } from "../src/sim/90-actions/orders";
 import { readyGame } from "./fixtures";
 
 const web = { product: "webHosting" as const, size: 0, sla: "basic" as const };
@@ -100,6 +100,37 @@ describe("order steps", () => {
     expect(s.tickets.find((x) => x.id === id)!.status).toBe("open");
   });
 
+  it("carries an accepted quote forward to the first invoice once", () => {
+    const s = readyGame(9);
+    const { id, req } = order(s);
+    const q = idOf(createQuote(s, id));
+    const status = () => s.quotes.find((x) => x.id === q)!;
+    expect(convertQuote(s, q)).toEqual({ ok: false, error: "error.quoteNotAccepted" });
+    expect(attachQuote(s, q, id).ok).toBe(true);
+    expect(convertQuote(s, q)).toEqual({ ok: false, error: "error.quoteNotAccepted" });
+    for (let i = 0; i < 60 && status().status === "sent"; i++) tick(s);
+    expect(createAccount(s, id, mailedAddress(s.seed, req())).ok).toBe(true);
+    run(s, 1);
+    expect(status().status).toBe("accepted");
+    const inv = idOf(convertQuote(s, q));
+    expect(s.invoices.find((i) => i.id === inv)).toMatchObject({ status: "draft", customerId: req().customerId, lines: status().lines });
+    expect(status()).toMatchObject({ status: "invoiced", invoiceId: inv });
+    expect(req().invoiceId).toBe(inv);
+    expect(convertQuote(s, q)).toEqual({ ok: false, error: "error.quoteInvoiced" });
+    expect(s.invoices.filter((i) => i.customerId === req().customerId)).toHaveLength(1);
+  });
+
+  it("deletes only quotes that were never sent", () => {
+    const s = readyGame(9);
+    const { id } = order(s);
+    const q = idOf(createQuote(s, id));
+    expect(deleteQuote(s, q).ok).toBe(true);
+    expect(s.quotes).toEqual([]);
+    const r = idOf(createQuote(s, id));
+    expect(attachQuote(s, r, id).ok).toBe(true);
+    expect(deleteQuote(s, r)).toEqual({ ok: false, error: "error.quoteSentAlready" });
+  });
+
   it("marks the quote declined when the customer turns it down", () => {
     const s = readyGame(10);
     const { id } = order(s, 0.01);
@@ -118,7 +149,8 @@ describe("order steps", () => {
     for (let i = 0; i < 60 && !req().invoiceId; i++) tick(s);
     const c = s.customers.find((x) => x.id === req().customerId)!;
     expect(c.address).toEqual(mailedAddress(s.seed, req()));
-    expect(s.quotes.find((x) => x.id === q)).toMatchObject({ status: "accepted", customerId: c.id });
+    // The quote shows it was carried forward on its own.
+    expect(s.quotes.find((x) => x.id === q)).toMatchObject({ status: "invoiced", customerId: c.id, invoiceId: req().invoiceId });
     expect(invoiceOf(s, req())).toMatchObject({ status: "open", bank: true, customerId: c.id });
     expect(stepsDone(s, req())).toMatchObject({ quote: true, account: true, invoice: true, provision: false });
   });

@@ -1,19 +1,30 @@
+import { authCode } from "../src/sim/30-customers/registry";
+import type { Address } from "../src/sim/30-customers/addresses";
 import { mailedAddress } from "../src/sim/30-customers/addresses";
 import { sendInvoice } from "../src/sim/90-actions/billing";
 import { MODULE_IDS } from "../src/sim/10-catalog/shops";
 import { hourOf } from "../src/sim/00-core/time";
 import { componentParts, fits, genOf, modelById, type FormFactor, type PartSpec } from "../src/sim/10-catalog/hardware";
 import type { Resources } from "../src/sim/10-catalog/products";
-import { device, deviceDefaults, type GameState } from "../src/sim/50-state";
+import { device, deviceDefaults, newGame as blankGame, type GameState } from "../src/sim/50-state";
+import { START_CASH } from "../src/sim/10-catalog/economy";
+
+// Games with the savings already in hand and no bank account, the way every game started before the account came first.
+const funded = (s: GameState): GameState => { s.cash = START_CASH; return s; };
+export const newGame = (seed: number): GameState => funded(blankGame(seed));
+export const startGame = (seed: number): GameState => funded(startBlank(seed));
 import { buyCart as buyCartReal, buyDevice as buyDeviceReal, type CartLine } from "../src/sim/90-actions/hardware";
 import { addNode, createPanelVm, installHypervisor, installPanel, workload } from "../src/sim/90-actions/clusters";
-import { startGame, welcomeFriends } from "../src/sim/90-actions/start";
+import { startGame as startBlank, welcomeFriends } from "../src/sim/90-actions/start";
 import { fillLines } from "../src/sim/80-business/website";
 import { derivedDomain } from "../src/sim/30-customers/domains";
 import { register } from "../src/sim/30-customers/registry";
 import { nodeName } from "../src/sim/30-customers/hostnames";
 import { setMachine } from "../src/sim/60-infra/cluster";
+import { assignedKey, assignKey, isLicensed, issueKey, panelMachine } from "../src/sim/60-infra/licence";
+import { topTier } from "../src/sim/10-catalog/licence-tiers";
 import { portPeers } from "../src/sim/60-infra/status";
+import { setPortShare } from "../src/sim/90-actions/lan";
 import { imageOf, serverOsAt, type OsImage, type ServerOsId } from "../src/sim/10-catalog/server-os";
 import { softwareById } from "../src/sim/10-catalog/platforms";
 import { yearOf } from "../src/sim/00-core/time";
@@ -27,6 +38,9 @@ const done = (s: GameState, id: string, patch: Partial<GameState["clusters"][num
     setMachine(s, m, (x) => ({ software: x.software.map((sw) => (sw.doneAt !== null && sw.doneAt > s.hour ? { ...sw, doneAt: s.hour } : sw)) }));
   }
   s.clusters = s.clusters.map((x) => (x.id === id ? { ...x, ...patch, switching: null } : x));
+  // A licensed panel holds a key, for its top tier when it has tiers.
+  const host = panelMachine(c), panel = patch.panel;
+  if (host && panel && isLicensed(panel) && !assignedKey(s, host, panel)) assignKey(s, issueKey(s, panel, topTier(panel)?.id ?? null).id, host);
   return id;
 };
 const must = (r: { ok: boolean; id?: string; error?: string }): string => {
@@ -73,7 +87,7 @@ export const runServers = (s: GameState): void => {
 };
 
 // The basement server and switch new games used to start with, cabled to the home router and paid from the savings, on the
-// business DSL line with an own /24 announced there; suites that are not about the first server or addresses start from it.
+// business DSL line with an own /24 announced there and the router's web port shared with the server; suites that are not about the first server or addresses start from it.
 export function withServer(s: GameState): GameState {
   s.cash -= 2500;
   s.homeLine = { id: "dsl-16-biz", next: null };
@@ -85,7 +99,15 @@ export function withServer(s: GameState): GameState {
     { id: "cab6", a: { device: "dev3", port: 0 }, b: { device: "dev4", port: 0 }, kind: "copper", color: null },
     { id: "cab7", a: { device: "dev4", port: 7 }, b: { device: "dev5", port: 0 }, kind: "copper", color: null },
   );
+  setPortShare(s, "dev5", "dev3", "web");
   return s;
+}
+
+// The basement router's one web share moved to the machine.
+export function shareWith(s: GameState, id: string): void {
+  const r = s.devices.find((d) => d.id === "dev5")!;
+  r.lan = { ...r.lan!, shares: [] };
+  if (!setPortShare(s, "dev5", id, "web").ok) throw new Error(`no share for ${id}`);
 }
 
 // The servers with the hypervisor already installed, joined into one cluster under the name; returns the cluster id.
@@ -182,4 +204,11 @@ export const sendDrafts = (s: GameState) => {
 export const mailed = (s: GameState, ticketId: string) => {
   const r = s.sales.requests.find((x) => x.kind === "order" && x.ticketId === ticketId);
   return r && mailedAddress(s.seed, r);
+};
+
+// The owner and transfer code the player enters on the registrar's form for a ticket: the customer record and the code
+// from the order email.
+export const owner = (s: GameState, ticketId: string): [Address | undefined, string | undefined] => {
+  const r = s.sales.requests.find((x) => x.kind === "order" && x.ticketId === ticketId);
+  return [s.customers.find((c) => c.id === r?.customerId)?.address, r?.owned ? authCode(s.seed, r.id) : undefined];
 };

@@ -20,9 +20,9 @@ export const monthStartOf = (hour: number): number => {
   return hourOf(new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)));
 };
 
-// Loan principal moves cash without being profit; an instalment counts only its interest.
+// Loan principal and the owner's capital move cash without being profit; an instalment counts only its interest.
 export function profitOf(e: LedgerEntry): number {
-  if (e.category === "tax") return 0;
+  if (e.category === "tax" || e.category === "capital") return 0;
   if (e.category !== "loans") return e.amount;
   if (e.key === "ledger.loanRepayment") return -Number(e.params.interest);
   return e.key === "ledger.loanFee" ? e.amount : 0;

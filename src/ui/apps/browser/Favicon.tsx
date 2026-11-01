@@ -11,6 +11,7 @@ import { REGISTRAR_HUE } from "./sites/registrars/RegistrarPage";
 import { SiteMark } from "./sites/software/marks";
 import { softwareById } from "../../../sim/10-catalog/platforms";
 import { serverOsById } from "../../../sim/10-catalog/server-os";
+import { bankById } from "../../../sim/10-catalog/banks";
 
 const GREY = "oklch(0.62 0.01 255)";
 
@@ -49,6 +50,11 @@ export function Favicon({ game, r }: { game: GameState; r: Resolved }) {
     case "software": return <SiteMark id={p.id} name={softwareById(p.id).name} />;
     case "os": return <SiteMark id={p.id} name={serverOsById(p.id).name} />;
     case "registrar": return <Tile fill={`oklch(0.55 0.15 ${REGISTRAR_HUE[p.id]})`}><text x="8" y="11.6" textAnchor="middle" fontSize="9.5" fontWeight="700" fill="white" fontFamily="Inter, system-ui, sans-serif">{p.id[0].toUpperCase()}</text></Tile>;
+    case "bank": {
+      const { name, skin } = bankById(p.id)!;
+      const plain = skin.frame === "plain";
+      return <Tile fill={plain ? "#003366" : skin.bar}><text x="8" y="12" textAnchor="middle" fontSize="11" fontWeight="700" fill={plain ? skin.bar : "white"} fontFamily="Arial, Helvetica, sans-serif">{name[0].toUpperCase()}</text></Tile>;
+    }
     case "host": return <Tile fill="oklch(0.38 0.01 255)"><rect x="3.5" y="3.5" width="9" height="3" rx="0.8" fill="white" /><rect x="3.5" y="8.5" width="9" height="3" rx="0.8" fill="white" opacity="0.7" /></Tile>;
     case "console": {
       const c = game.clusters.find((x) => x.id === p.clusterId), family = c && familyOf(c), look = family ? consoleLook(family) : "game";
@@ -60,6 +66,8 @@ export function Favicon({ game, r }: { game: GameState; r: Resolved }) {
       return <Tile fill={BMC_LOOK[brand]?.color ?? GREY}><rect x="3.5" y="5" width="9" height="6" rx="1" fill="none" stroke="white" strokeWidth="1.3" /><path d="M5.5 8h2" stroke="white" strokeWidth="1.3" strokeLinecap="round" /></Tile>;
     }
     case "kvm": return <Tile fill="#555555"><rect x="3.5" y="4.5" width="9" height="6" rx="1" fill="none" stroke="white" strokeWidth="1.3" /><path d="M6.5 12.5h3" stroke="white" strokeWidth="1.3" strokeLinecap="round" /></Tile>;
+    case "router": return <Tile fill="#c4161c"><path d="M4 10.5h8M5.5 10.5V7.5h5v3M6.5 5.5l1.5-1.5 1.5 1.5" fill="none" stroke="white" strokeWidth="1.3" strokeLinecap="round" /></Tile>;
+    case "switch": return <Tile fill="#005073"><path d="M4 6h8M4 10h8M10 4.5 12 6l-2 1.5M6 8.5 4 10l2 1.5" fill="none" stroke="white" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /></Tile>;
     case "video": return <Tile fill="oklch(0.58 0.22 27)"><path d="M6.4 5.2v5.6L11 8z" fill="white" /></Tile>;
     default: return <Tile fill={GREY}><path d="M6 6.4a2 2 0 1 1 2.6 1.9c-.5.2-.6.5-.6 1M8 11.4v.2" fill="none" stroke="white" strokeWidth="1.4" strokeLinecap="round" /></Tile>;
   }

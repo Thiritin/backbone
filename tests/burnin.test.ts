@@ -3,7 +3,7 @@ import { hourOf } from "../src/sim/00-core/time";
 import { BURNIN_BONUS_HOURS, BURNIN_FACTOR, REFUND_HOURS } from "../src/sim/10-catalog/burnin";
 import { COMPONENTS } from "../src/sim/10-catalog/hardware";
 import type { Listing } from "../src/sim/10-catalog/used";
-import { newGame, type Device, type GameState } from "../src/sim/50-state";
+import { type Device, type GameState } from "../src/sim/50-state";
 import { burninTick } from "../src/sim/60-infra/burnin";
 import { busyDevices, drawWatts, HOURS_PER_YEAR } from "../src/sim/60-infra/status";
 import { serverTaken } from "../src/sim/60-infra/cluster";
@@ -13,7 +13,7 @@ import { startBurnin } from "../src/sim/90-actions/burnin";
 import { deliverListing } from "../src/sim/90-actions/used";
 import { setPower } from "../src/sim/90-actions/hardware";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { withServer } from "./fixtures";
+import { withServer, newGame } from "./fixtures";
 
 const dev = (s: GameState): Device => s.devices.find((d) => d.id === "dev3")!;
 const game = (seed = 1): GameState => ({ ...withServer(newGame(seed)), cash: 100_000 });
