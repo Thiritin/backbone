@@ -7,12 +7,12 @@ import { quorate } from "./quorum";
 import { cephCopies, cephOn, replicaReady, replicaStale, replicaTick } from "./replica";
 import { settleLoss } from "../90-actions/vms";
 import { working } from "./status";
+import { HOT_RAM } from "./alarms";
 import { nodeUsage } from "./usage";
 
 // economy.md, High availability: a failed node's VMs are back on other nodes after five minutes; a node runs hot from 90%
-// of its installed RAM or with more busy vCPUs than cores.
+// of its installed RAM (HOT_RAM in alarms.ts) or with more busy vCPUs than cores.
 export const FAILOVER_MINUTES = 5;
-export const HOT_RAM = 0.9;
 
 const patch = (s: GameState, id: string, p: Partial<Workload>) => {
   s.workloads = s.workloads.map((w) => (w.id === id ? { ...w, ...p } : w));
@@ -20,7 +20,7 @@ const patch = (s: GameState, id: string, p: Partial<Workload>) => {
 const cluster = (s: GameState, id: string): Cluster => s.clusters.find((c) => c.id === id)!;
 
 // The services a VM carries: its own, or every web space in a panel VM.
-const servicesIn = (s: GameState, w: Workload): string[] =>
+export const servicesIn = (s: GameState, w: Workload): string[] =>
   isOwnVm(w) ? insideVm(s, w.id).map((x) => x.serviceId) : [w.serviceId];
 
 // Restarts the VMs of failed nodes on working nodes with room; the control plane moves first when its node failed. A VM
@@ -33,7 +33,7 @@ function failover(s: GameState, c: Cluster, events: SimEvent[]) {
   let moved = 0, stuck = 0;
   const pool = cephOn(c) && cephCopies(s, c) >= 1;
   const shared = (w: Workload) => pool || !(c.platform && softwareById(c.platform).datastores) || (datastoreOn(c, w) && working(s, w.datastore!));
-  const viaReplica = (w: Workload) => !w.datastore && !pool && replicaReady(s, w) && !dead.has(w.replica!.toNode);
+  const viaReplica = (w: Workload) => !w.datastore && !pool && replicaReady(s, w) && !dead.has(w.replica!.toNode) && c.nodes.some((n) => n.deviceId === w.replica!.toNode);
   for (const w of s.workloads.filter((x) => x.clusterId === c.id && x.deviceId && dead.has(x.deviceId) && !x.template && (((pool || !lostDisk(s, x)) && shared(x)) || viaReplica(x)))) {
     // A replica takes over on its own node, from the last copy: what was written since is gone.
     if (!pool && viaReplica(w) && (lostDisk(s, w) || !shared(w))) {

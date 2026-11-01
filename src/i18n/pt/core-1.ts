@@ -57,7 +57,6 @@ export default {
   "error.unknownSiteLine": () => "Este produto não pode ir para o site.",
   "error.unknownLineRate": () => "Este produto não tem essa tarifa.",
   "error.badRate": () => "Introduz uma tarifa de zero ou mais.",
-  "error.needsOrderForm": () => "Configura primeiro o formulário de pedido.",
   "error.notInShop": () => "A loja não vende este modelo.",
   "error.outOfBounds": () => "O dispositivo não cabe a esta altura.",
   "error.slotTaken": () => "Outro dispositivo está no caminho.",

@@ -32,10 +32,11 @@ export function PostApp() {
           <div className="letter-fit">
             <Letter letter={l} company={game.company.name} owner={game.registration?.owner} />
           </div>
-          {bill && (
+          {(bill || l.link) && (
             <div className="letter-actions">
-              {bill.paidAt !== null ? <span>{t("bank.pay.paid")}</span>
-                : game.bank && <button className="btn" onClick={() => openApp("Browser", { kind: "url", id: payUrl(game, bill) })}>{t("bank.pay.pay")}</button>}
+              {l.link && <button className="btn" onClick={() => openApp("Browser", { kind: "url", id: l.link! })}>{t("paperwork.post.open")}</button>}
+              {bill && (bill.paidAt !== null ? <span>{t("bank.pay.paid")}</span>
+                : game.bank && <button className="btn" onClick={() => openApp("Browser", { kind: "url", id: payUrl(game, bill) })}>{t("bank.pay.pay")}</button>)}
             </div>
           )}
         </div>

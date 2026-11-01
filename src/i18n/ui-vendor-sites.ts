@@ -9,6 +9,7 @@ export default {
   "ledger.module.auto-reminders": () => "Lexwear Automatic reminders licence",
   "ledger.module.hbci": () => "Lexwear HBCI online banking licence",
   "error.licenceKey": () => "This licence key is not valid.",
+  "error.noTrial": () => "No trial is available for this software on this machine.",
   "error.moduleBought": () => "You have already bought this module.",
   "error.moduleRegistered": () => "This module is already registered.",
   "vendor-sites.taskInvoices": () => "Sending invoices",

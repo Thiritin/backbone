@@ -3,6 +3,7 @@ import { t } from "../../i18n/en";
 import { hashRng, rand, type Rng } from "../00-core/rng";
 import { isMonthStart, yearOf } from "../00-core/time";
 import { priceAt, SEARCH_AD_COST } from "../10-catalog/economy";
+import { BADGE_TRUST, TIERS, TRUST_CAP } from "../10-catalog/hosttoast";
 import type { Product, Profile } from "../30-customers/customers";
 import { profileStats } from "../40-support/tickets";
 import type { GameState, LedgerEntry } from "../50-state";
@@ -10,7 +11,7 @@ import type { SimEvent } from "../88-tick/tick";
 import { campaignBoost, hasMarketingManager, reviewBoost } from "../47-staff/staff";
 import { communityBatches } from "./community";
 import { fairBatches, fairGain } from "./fairs";
-import { shopActive, shopBills, shopTick } from "./shop";
+import { shopBills, shopTick } from "./shop";
 import { siteBuiltEvent, siteDownEvent, siteFactor, siteHostingCost, siteStatus } from "./website";
 
 export const PROFILE_IDS: Profile[] = ["private", "gamer", "hobbyDev", "soleProp", "smallBiz", "agency", "office", "onlineShop", "enterprise"];
@@ -46,8 +47,9 @@ export const WEBSITE_LEADS = 4;
 
 export type PlatformId = "free" | "provenExpat" | "trustPylon";
 // fee: euros per month; invite: share of customers with happiness 60 or more asked for a review each month; trust: bonus T.
+// The free listing's T moved to the HOSTtoast listing (competitors.md, HOSTtoast).
 export const PLATFORMS: Record<PlatformId, { name: string; fee: number; invite: number; trust: number }> = {
-  free: { get name() { return t("sim.platform.free.name"); }, fee: 0, invite: 0, trust: 2 },
+  free: { get name() { return t("sim.platform.free.name"); }, fee: 0, invite: 0, trust: 0 },
   provenExpat: { name: "ProvenExpat", fee: 49, invite: 0.01, trust: 4 },
   trustPylon: { name: "TrustPylon", fee: 199, invite: 0.02, trust: 6 },
 };
@@ -74,20 +76,21 @@ export interface Marketing {
   siteHost: SiteHost;
   designYear: number;
   siteOutage: boolean;
+  // Leads per line lost because no catalog product fitted, this month and last month.
+  unmet: { month: Partial<Record<Product, number>>; last: Partial<Record<Product, number>> };
 }
 export type SiteHost = { kind: "rented" } | { kind: "own"; clusterId: string };
 
 const AWARENESS_FLOOR = 0.02;
 const AWARENESS_DECAY = 0.02;
-const REVIEW_HOURS = 2 * 8760;
+export const REVIEW_HOURS = 2 * 8760;
 
 export const newMarketing = (): Marketing => ({
-  owned: [], campaigns: [], reviews: [], platform: null, studies: [], lines: [], emailOrders: true, siteReady: null, launched: false, siteHost: { kind: "rented" }, designYear: 2005, siteOutage: false,
+  owned: [], campaigns: [], reviews: [], platform: null, studies: [], lines: [], emailOrders: true, siteReady: null, launched: false, siteHost: { kind: "rented" }, designYear: 2005, siteOutage: false, unmet: { month: {}, last: {} },
   awareness: Object.fromEntries(PROFILE_IDS.map((p) => [p, p === "private" || p === "gamer" ? 0.05 : AWARENESS_FLOOR])) as Record<Profile, number>,
 });
 
 export const owns = (s: GameState, c: OwnedChannel): boolean => s.marketing.owned.includes(c);
-export const hasOrderForm = (s: GameState): boolean => shopActive(s);
 export const costPerLead = (channel: CampaignChannel, p: Profile, year: number): number => priceAt(CAMPAIGNS[channel].cost[p] ?? 0, 0.6, year);
 export const reach = (channel: CampaignChannel): Profile[] => PROFILE_IDS.filter((p) => CAMPAIGNS[channel].cost[p]);
 export const awareness = (s: GameState, p: Profile): number => s.marketing.awareness[p];
@@ -125,7 +128,11 @@ export function reviewScore(s: GameState): number {
   return (3.5 * 20 + recent.reduce((n, r) => n + r.stars, 0)) / (20 + recent.length);
 }
 export const reviewMultiplier = (s: GameState): number => 0.4 + 0.25 * (reviewScore(s) - 1);
-export const trustBonus = (s: GameState): number => (s.marketing.platform ? PLATFORMS[s.marketing.platform].trust : 0);
+// Badges you won last year on HOSTtoast.
+export const playerBadges = (s: GameState): number => s.hosttoast.awards.filter((a) => a.id === "you" && a.year === yearOf(s.hour) - 1).length;
+export const hosttoastTrust = (s: GameState): number => (s.hosttoast.tier ? TIERS[s.hosttoast.tier].trust + BADGE_TRUST * playerBadges(s) : 0);
+export const trustBonus = (s: GameState): number =>
+  Math.min(TRUST_CAP, hosttoastTrust(s) + (s.marketing.platform ? PLATFORMS[s.marketing.platform].trust : 0));
 
 export const starsFor = (happiness: number, r: Rng): number => Math.min(5, Math.max(1, Math.round(1 + (4 * happiness) / 100 + rand(r) - 0.5)));
 
@@ -175,7 +182,7 @@ function updateAwareness(s: GameState): void {
   const paid = Object.fromEntries(PROFILE_IDS.map((p) => [p, 0])) as Record<Profile, number>;
   for (const b of leadsThisMonth(s)) if (b.source !== "website" && b.source !== "fair" && b.source !== "community") paid[b.profile] += b.count;
   const reviews = 0.006 * (reviewScore(s) - 3.5) + 0.001 * trustBonus(s);
-  const site = owns(s, "website") && siteStatus(s) !== "down" ? 0.004 : 0;
+  const site = (owns(s, "website") && siteStatus(s) !== "down" ? 0.004 : 0) + (s.hosttoast.tier ? TIERS[s.hosttoast.tier].awareness : 0);
   const next = { ...s.marketing.awareness };
   for (const p of PROFILE_IDS) {
     const happy = s.customers.filter((c) => c.profile === p && c.churnedAt === null && c.happiness >= 70).length;
@@ -226,6 +233,7 @@ export function marketingTick(s: GameState): SimEvent[] {
   }
   const total = bill(s);
   s.shop = { ...s.shop, soldOut: {} };
+  s.marketing = { ...s.marketing, unmet: { month: {}, last: s.marketing.unmet.month } };
   if (total > 0) events.push({ app: "Marketing", key: "event.marketingBills", params: { total } });
   invite(s, events);
   updateAwareness(s);

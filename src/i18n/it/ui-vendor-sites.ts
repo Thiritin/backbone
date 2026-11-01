@@ -8,6 +8,7 @@ export default {
   "ledger.module.auto-reminders": () => "Licenza Lexwear Solleciti automatici",
   "ledger.module.hbci": () => "Licenza Lexwear Home banking HBCI",
   "error.licenceKey": () => "Questa chiave di licenza non è valida.",
+  "error.noTrial": () => "Nessuna prova è disponibile per questo software su questa macchina.",
   "error.moduleBought": () => "Hai già acquistato questo modulo.",
   "error.moduleRegistered": () => "Questo modulo è già registrato.",
   "vendor-sites.taskInvoices": () => "Invio fatture",

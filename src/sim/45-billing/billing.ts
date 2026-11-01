@@ -1,5 +1,5 @@
 import { chance, hashRng, rand, type Rng } from "../00-core/rng";
-import { bankById } from "../10-catalog/banks";
+import { bankById, PREVIOUS_HOURS } from "../10-catalog/banks";
 import { dateOf, hourOf, isMonthStart, yearOf } from "../00-core/time";
 import type { Budget } from "../10-catalog/economy";
 import { hasModule } from "../10-catalog/modules";
@@ -356,7 +356,9 @@ export function baseRate(year: number): number {
   return (r0 + ((r1 - r0) * (y - y0)) / (y1 - y0)) / 100;
 }
 
-export const loanRate = (s: GameState): number => baseRate(yearOf(s.hour)) + RISK_PREMIUM[metrics(s).level.level - 1] / 100;
+// The rate at a bank, the company's own by default.
+export const loanRate = (s: GameState, bank = s.bank?.id): number =>
+  baseRate(yearOf(s.hour)) + RISK_PREMIUM[metrics(s).level.level - 1] / 100 + ((bank && bankById(bank)?.margin) || 0);
 export const debt = (s: GameState): number => cents(s.loans.reduce((sum, l) => sum + l.balance, 0));
 
 // The higher of the level's minimum and 12x the average monthly gross profit of the last 6 months, times the bank's factor,
@@ -397,7 +399,10 @@ export function billingTick(s: GameState): SimEvent[] {
   const invoices = s.invoices.map((inv) => {
     if (inv.payAt !== null && s.hour >= inv.payAt) {
       changed = true;
-      // The money reaches the account; the invoice stays open until the player matches it.
+      // The money reaches the account; the invoice stays open until the player matches it. A payment to the account the
+      // company left bounces once PREVIOUS_HOURS have passed.
+      const old = s.bank?.previous;
+      if (inv.bank && old && inv.issuedAt < old.at && s.hour >= old.at + PREVIOUS_HOURS) return { ...inv, payAt: null };
       if (inv.bank && inv.status !== "writtenOff") {
         const tr = transferFor(s, inv);
         arrived.push(tr);

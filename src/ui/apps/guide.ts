@@ -30,10 +30,10 @@ export function stepOf(s: GameState, id: StepId): Step {
       return { title: t("guide.step.bank"), text: t("apps.guide.step.bank"), app: "Browser", focus: { kind: "url", id: HOME_URL } };
     case "register":
       return { title: t("guide.step.register"), text: t("apps.guide.step.register"), app: "Browser", focus: { kind: "url", id: OFFICE_URL } };
-    case "company":
-      return { title: t("guide.step.company"), text: t("apps.guide.step.company"), app: "Settings" };
-    case "books":
+    case "payBill":
+      return { title: t("guide.step.payBill"), text: t("apps.guide.step.payBill"), app: "Post" };
       return { title: t("guide.step.books"), text: t("apps.guide.step.books"), app: "Shop", focus: { kind: "software", id: "Bookkeeping" } };
+    case "books":
     case "buyServer":
       return { title: t("guide.step.buyServer"), text: t("apps.guide.step.buyServer"), app: "Shop" };
     case "mountServer":

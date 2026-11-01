@@ -25,9 +25,9 @@ export function cycleWeights(s: GameState, profile: Profile, offered: Cycle[]): 
   return sum > 0 ? raw.map(([c, w]) => [c, w / sum]) : [["monthly", 1]];
 }
 
-export function drawCycle(s: GameState, profile: Profile, product: Product, roll: number): Cycle {
+export function drawCycle(s: GameState, profile: Profile, product: Product, roll: number, offered = cyclesFor(s, product)): Cycle {
   let left = roll;
-  const weights = cycleWeights(s, profile, cyclesFor(s, product));
+  const weights = cycleWeights(s, profile, offered);
   for (const [c, w] of weights) if ((left -= w) < 0) return c;
   return weights[weights.length - 1][0];
 }

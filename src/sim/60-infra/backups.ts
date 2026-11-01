@@ -4,6 +4,7 @@ import { dateOf } from "../00-core/time";
 import { BACKUP_CHANGED, BACKUP_HOUR, idNum } from "../10-catalog/usage";
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
+import { licenceExpired } from "./licence";
 import { backsUpCluster, controlPlaneUp, lostDisk, vmRoom, type Cluster, type Workload } from "./cluster";
 import { nodeUsage, diskFill } from "./usage";
 import { raidUsable } from "./status";
@@ -114,7 +115,7 @@ function settle(s: GameState, c: Cluster, job: BackupJob, why: Why, events: SimE
 export function runJob(s: GameState, c: Cluster, j: BackupJob, events: SimEvent[], only?: string): void {
   const target = s.clusters.find((x) => x.id === j.targetId);
   let why: Why = null;
-  if (!target || !backsUpCluster(s, c, target) || !controlPlaneUp(s, target)) why = "unreachable";
+  if (!target || !backsUpCluster(s, c, target) || !controlPlaneUp(s, target) || licenceExpired(s, target)) why = "unreachable";
   else {
     let used = repoUsed(s, target.id);
     const room = repoRoom(s, target);
@@ -135,7 +136,7 @@ export function runJob(s: GameState, c: Cluster, j: BackupJob, events: SimEvent[
 function copyOffsite(s: GameState, c: Cluster, j: BackupJob, events: SimEvent[]): void {
   const off = s.clusters.find((x) => x.id === j.offsiteId);
   let why: Why = null;
-  if (!off || !backsUpCluster(s, c, off) || !controlPlaneUp(s, off)) why = "unreachable";
+  if (!off || !backsUpCluster(s, c, off) || !controlPlaneUp(s, off) || licenceExpired(s, off)) why = "unreachable";
   else {
     let used = repoUsed(s, off.id);
     const room = repoRoom(s, off);

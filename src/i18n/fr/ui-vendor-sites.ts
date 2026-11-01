@@ -8,6 +8,7 @@ export default {
   "ledger.module.auto-reminders": () => "Licence Lexwear Relances automatiques",
   "ledger.module.hbci": () => "Licence Lexwear Banque en ligne HBCI",
   "error.licenceKey": () => "Cette clé de licence n'est pas valide.",
+  "error.noTrial": () => "Aucun essai n'est disponible pour ce logiciel sur cette machine.",
   "error.moduleBought": () => "Vous avez déjà acheté ce module.",
   "error.moduleRegistered": () => "Ce module est déjà enregistré.",
   "vendor-sites.taskInvoices": () => "Envoi des factures",

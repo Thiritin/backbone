@@ -21,9 +21,10 @@ export function sendMail(s: GameState, to: string, subject: string, attachment: 
   else if (FILED_WITH[form.form] !== address) deliverMail(s, from, "wrongDesk", params);
   else if (form.signed === null) deliverMail(s, from, "unsigned", params);
   else {
+    // Cash that dropped below the share capital after signing gets the notary's letter.
     const err = applyError(s, form.form);
-    if (err) return fail(err);
-    if (form.form === "limited" && s.cash < SHARE_CAPITAL) {
+    if (err && err !== "error.shareCapital") return fail(err);
+    if (err) {
       deliverMail(s, from, "capital", { ...params, amount: SHARE_CAPITAL });
       return { ok: true };
     }

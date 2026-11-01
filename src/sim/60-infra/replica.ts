@@ -6,14 +6,23 @@ import { deltaGb, lostDisk, type Cluster, type Workload } from "./cluster";
 import { quorate } from "./quorum";
 import { drivesOf, raidUsable, working } from "./status";
 
-export type ReplicaEvery = "15min" | "hourly" | "daily";
+export type ReplicaEvery = "30s" | "5min" | "15min" | "hourly" | "daily";
 export interface Replica { toNode: string; every: ReplicaEvery; lastAt: number | null }
 export interface Ceph { enabled: boolean; size: 2 | 3; down: number; rebalanceUntil: number | null }
 
 // Hours between two copies; the sim copies on the hour, so the first two both run every hour and differ in staleness.
-export const REPLICA_HOURS: Record<ReplicaEvery, number> = { "15min": 0.25, hourly: 1, daily: 24 };
+export const REPLICA_HOURS: Record<ReplicaEvery, number> = { "30s": 1 / 120, "5min": 1 / 12, "15min": 0.25, hourly: 1, daily: 24 };
+// The intervals each hypervisor offers, and the bandwidth a copy costs relative to the 15 minute one: HyperVee sends more often.
+export const REPLICA_EVERY: Record<string, ReplicaEvery[]> = { proxmocks: ["15min", "hourly", "daily"], hypervee: ["30s", "5min", "15min"] };
+export const REPLICA_COST: Record<ReplicaEvery, number> = { "30s": 4, "5min": 2, "15min": 1, hourly: 1, daily: 1 };
 export const REPLICA_DAILY_HOUR = 3;
 export const CEPH_FROM_NODES = 3;
+
+// A replica goes to a node of the cluster, or on HyperVee to a node of another HyperVee cluster in the same zone.
+export function replicaHost(s: GameState, c: Cluster, toNode: string): boolean {
+  if (c.nodes.some((n) => n.deviceId === toNode)) return true;
+  return c.platform === "hypervee" && s.clusters.some((x) => x.id !== c.id && x.platform === "hypervee" && x.az === c.az && x.nodes.some((n) => n.deviceId === toNode));
+}
 
 export const replicaDue = (every: ReplicaEvery, hour: number): boolean => every !== "daily" || dateOf(hour).getUTCHours() === REPLICA_DAILY_HOUR;
 
@@ -41,7 +50,7 @@ export function replicaTick(s: GameState): void {
       const r = w.replica;
       if (!r) return w;
       const c = s.clusters.find((x) => x.id === w.clusterId);
-      if (!c || !w.deviceId || r.toNode === w.deviceId || !c.nodes.some((n) => n.deviceId === r.toNode)) return { ...w, replica: null };
+      if (!c || !w.deviceId || r.toNode === w.deviceId || !replicaHost(s, c, r.toNode)) return { ...w, replica: null };
       if (!replicaDue(r.every, s.hour) || w.stopped || lostDisk(s, w) || !working(s, w.deviceId) || !working(s, r.toNode) || !quorate(s, c)) return w;
       return { ...w, replica: { ...r, lastAt: s.hour } };
     });

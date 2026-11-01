@@ -9,10 +9,10 @@ import { privateNetHosts, privateNetUp } from "../../../../sim/60-infra/private"
 import { MGMT_VLAN, vlanOf, vlansIn } from "../../../../sim/60-infra/switches";
 import { setPortGroup } from "../../../../sim/90-actions/hardware";
 import { saveSwitchConfig, setPortVlan, setRouted } from "../../../../sim/90-actions/switches";
-import { useStore } from "../../../store";
 import { devName, portName, speed } from "../../hw";
 import "../consoles/consoles.css";
 import "./switch.css";
+import { usePageAct } from "../pageAct";
 
 // Each maker's web interface, for its switches and routers; other makers show the plain one under the model's name.
 const LOOKS: Record<string, { look: string; title: string; frame: "side" | "top" }> = {
@@ -73,7 +73,7 @@ function Ports({ game, d }: { game: GameState; d: Device }) {
 }
 
 function Groups({ d }: { d: Device }) {
-  const act = useStore((s) => s.act), m = modelById(d.model);
+  const act = usePageAct(), m = modelById(d.model);
   const [sel, setSel] = useState<number[]>([]);
   const toggle = (i: number) => setSel((cur) => (cur.includes(i) ? cur.filter((x) => x !== i) : [...cur, i].sort((a, b) => a - b)));
   const run = (ports: number[]) => { if (act(setPortGroup, d.id, ports).ok) setSel([]); };
@@ -104,7 +104,7 @@ function Groups({ d }: { d: Device }) {
 const numbers = (text: string) => text.split(/[\s,]+/).filter(Boolean).map(Number);
 
 function VlanRow({ d, port }: { d: Device; port: number }) {
-  const act = useStore((s) => s.act), v = vlanOf(d, port);
+  const act = usePageAct(), v = vlanOf(d, port);
   const [untagged, setUntagged] = useState(String(v.untagged)), [tagged, setTagged] = useState(list(v.tagged)), [all, setAll] = useState(!!v.all);
   const changed = untagged !== String(v.untagged) || tagged !== list(v.tagged) || all !== !!v.all;
   const apply = () => {
@@ -143,7 +143,7 @@ function CustomerNets({ game, d }: { game: GameState; d: Device }) {
 }
 
 function Routing({ d }: { d: Device }) {
-  const act = useStore((s) => s.act), [text, setText] = useState(list(d.routed ?? []));
+  const act = usePageAct(), [text, setText] = useState(list(d.routed ?? []));
   return (
     <form className="cx-tools" onSubmit={(e) => { e.preventDefault(); if (!act(setRouted, d.id, numbers(text)).ok) setText(list(d.routed ?? [])); }}>
       <label>{t("switch.routed")} <input className="num" value={text} onChange={(e) => setText(e.target.value)} /></label>
@@ -180,7 +180,7 @@ function Vlans({ game, d }: { game: GameState; d: Device }) {
 }
 
 function Save({ d }: { d: Device }) {
-  const act = useStore((s) => s.act), saved = same(d);
+  const act = usePageAct(), saved = same(d);
   return (
     <div className="cx-tools">
       <span className={`cx-state ${saved ? "ok" : "warn"}`}>{saved ? t("switch.saved") : t("switch.unsaved")}</span>

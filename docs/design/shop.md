@@ -6,9 +6,9 @@ The website stays the marketing presentation of product lines (Marketing > Produ
 
 ## 1. What exists today
 
-- The order form is the shop variant "Hand-rolled order form" (€900 once, no monthly fee, needs the website, no research). With it, standard-SLA leads become form orders; 25% still arrive as email orders while email orders are on.
-- `s.autoOrders` places form orders and runs accepted quotes without the player, gated by `canAutomate` (research "Provisioning automation", 150 know-how, needs "Product management").
-- A form order that cannot be placed is lost (`lost.noCapacity`), or falls back to an order email that later fails. Lost sales carry no reputation hit, but they fill the lost-sales list and the market research reasons, which reads as a penalty, and the player has no way to say "sold out".
+- Orders arrive by email until a shop system is active. Every shop system needs the research "Shop systems". Orders that are not email orders are shop orders: they take the spec at the player's rates and bill the setup fee plus the first term at once. With a shop and email orders on, 25% of order leads still write an email; email orders can only be switched off with an active shop.
+- `s.autoOrders` places shop orders through the shop's module, otherwise they wait in Support as accepted orders, and it runs accepted quotes without the player, gated by `canAutomate` (research "Provisioning automation", 150 know-how, needs "Product management").
+- A shop order that cannot be placed is cancelled (`lost.noCapacity`). Lost sales carry no reputation hit, but they fill the lost-sales list and the market research reasons, which reads as a penalty, and the player has no way to say "sold out".
 - `targetFor` (`src/sim/30-market/sales.ts`) picks any fitting software installation in any zone. There is no way to keep a server out of sales.
 - Cordon, uncordon and drain are in the Locations device menu, keyed by server, and `setNodeState` writes the state into every software installation on that server.
 
@@ -17,9 +17,9 @@ The website stays the marketing presentation of product lines (Marketing > Produ
 ### 2.1 Unlock and setup
 
 - New research "Shop systems", tier 1, 60 know-how, 4 days, no prerequisite. A first year yields about 300 know-how, so it is reachable in the first months.
-- The shop runs on the website's host (`setSiteHost`). While the site is down the shop takes no orders and leads behave as if there were no form.
-- Choosing a shop replaces the hand-rolled order form channel. Switching takes 3 days of setup, during which only email orders arrive. A switch pays the new variant's setup again; owned licences of the old one are lost.
-- The current order form stays as the variant "Hand-rolled order form", so the game starts unchanged and old saves keep their form.
+- The shop runs on the website's host (`setSiteHost`). While the site is down the shop takes no orders and leads behave as if there were no shop.
+- Choosing a shop replaces the current one. Switching takes 3 days of setup, during which only email orders arrive. A switch pays the new variant's setup again; owned licences of the old one are lost.
+- Old saves with the hand-rolled order form load with no shop, its custom scripts dropped and email orders on.
 
 ### 2.2 Modules
 
@@ -31,7 +31,6 @@ Prices are game euros. "Modules" lists what is included; "Extra" is what a missi
 
 | Variant (real product) | Available | Licence | Included modules | Extra modules | Stock | Upside | Downside |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Hand-rolled order form (own PHP) | 2005 on | €900 once, no monthly fee | none | custom script, €400 once per software | none | no licence, no cut | sold-out orders are lost as today; no server groups |
 | ModemBill (ModernBill) | 2005, sold until 2010 | €300 once | cPanic, Pleskit, registrars | none sold | manual | cheapest real shop | Parallax buys it in 2008; no updates and no new modules after 2011 |
 | ClientExit (ClientExec) | 2005 on | €250 once, €60 a year for updates | cPanic, DirectAdmen, registrars | €150 once (third party) | manual and auto | cheap to own | few modules; no game panel modules before 2010 |
 | WHMCache (WHMCS) | 2005 on | €15 a month leased, or €450 once and €90 a year | every panel, registrars, certificates, game panels from 2008 | hypervisor modules from ModulesGardn, €200 once per hypervisor | manual and auto | widest panel coverage, the default choice | 2012 breach event; from 2020 the lease scales with active customers (€18 up to 250, €30 up to 500, €50 up to 1,000, then €15 per further 1,000) |
@@ -51,14 +50,14 @@ Notes:
 
 Each product line in the shop has a stock setting:
 
-- **Off**: the shop does not sell the line. Leads for it do not become form orders, and no lost sale is recorded.
-- **A number**: the shop sells that many units. Every form order takes one; the player tops it up.
+- **Off**: the shop does not sell the line. Leads for it do not become shop orders, and no lost sale is recorded.
+- **A number**: the shop sells that many units. Every shop order takes one; the player tops it up.
 - **Free capacity** (variants with auto stock): the shop sells while a new order fits into a for-sale server group (section 4). A reserve is left out for now; a group that is not for sale keeps headroom instead.
 
 What the shop shows as available is the smaller of the stock number and what fits. When nothing is available the line is "Sold out":
 
 - Leads for a sold-out line are counted as sold-out visitors for the month, shown in the shop console. They are not lost sales, they do not appear in lost-sales reasons, and they never become email orders.
-- A form order is taken only while a target has room. Capacity is not reserved: a shop order that cannot be set up later, or is not set up within 72 hours, is cancelled and refunded, counts as a sold-out visit and never as a lost sale.
+- A shop order is taken only while a target has room. Capacity is not reserved: a shop order that cannot be set up later, or is not set up within 72 hours, is cancelled and refunded, counts as a sold-out visit and never as a lost sale.
 - Cordoned, draining and maintenance installations count as no capacity.
 
 Customers ordering on their own is the base of every shop. Orders wait in the order queue for the player. With "Provisioning automation" and the module for the target software, the shop provisions them at once. `s.autoOrders` becomes this switch.
@@ -73,6 +72,12 @@ Server groups are a software-level concept and live in the shop console ("Server
 - Per group: name, members, **for sale** (which of its product lines the shop sells from it), **auto-deploy** (whether automatic provisioning may use it), and fill mode pack or spread across members (the existing placement modes).
 - `targetFor` filters to members of for-sale groups when a shop is installed, and to auto-deploy groups when provisioning automatically. Without a shop, placement works as today.
 - Locations and hardware never carry group, sale or stock settings. Dedicated servers and colocation are sold from hardware stock (free servers, free rack units), which only Ubersmyth automates.
+
+## 4b. Products and product groups
+
+A shop with a variant sells plans. A product belongs to a product group and has a line, a spec, a price for each billing cycle the variant supports, a setup fee, stock, a server group, an optional package name and a setup mode (on payment, on accept, by hand). A form visit buys the smallest plan whose spec covers what the visitor wanted. When none covers it, the largest plan is sold if its monthly price is at most 1.35 times what the visitor expected, otherwise the visit counts as sold out and not as a lost sale. A line without plans sells through its configurable options, priced per unit, with a discount per billing cycle that the market sets until the player changes it.
+
+Before a shop exists, email quotes start at the market rate. Once a shop is active they start at the configurable option rates.
 
 ## 5. Cordon, drain and evacuate at software level
 
@@ -131,10 +136,10 @@ Missing, with the year it appeared and its value to the game:
 
 Each milestone lands on main with seeded tests, `newGame` defaults, `deserialize` fills and a CHANGELOG bullet.
 
-1. **Shop catalog and choice.** Catalog of variants and modules in `src/sim/10-catalog/shops.ts`; research "Shop systems"; state `s.shop` (variant, owned modules, switch timer); actions `chooseShop`, `buyModule` in `src/sim/90-actions/shop.ts`; licence billing. The hand-rolled form maps to today's order form.
+1. **Shop catalog and choice.** Catalog of variants and modules in `src/sim/10-catalog/shops.ts`; research "Shop systems"; state `s.shop` (variant, owned modules, switch timer); actions `chooseShop`, `buyModule` in `src/sim/90-actions/shop.ts`; licence billing. The first variants are the pun-named systems of section 2.3.
 2. **Stock limits.** Stock setting per line, reservation on order, sold-out visitors instead of lost sales, `autoOrders` routed through modules.
 3. **Server groups.** Group state and actions (`createGroup`, `addToGroup`, `removeFromGroup`, `setGroupSale`, `setGroupDeploy`); `targetFor` filtering; auto stock from group capacity and reserve.
-4. **Shop UI.** Marketing, Shop holds the variant choice, modules or custom scripts, and stock (built). Server groups join it with milestone 3. A styled admin console per variant in the Browser can follow.
+4. **Shop UI.** Marketing, Shop holds the variant choice, modules and stock (built). Server groups join it with milestone 3. A styled admin console per variant in the Browser can follow.
 5. **Software-level cordon, drain, evacuate.** Per-installation `setNodeState`, evacuate action, console buttons, removal from the Locations device menu, technician task moved to an admin task.
 6. **Era events.** ModemBill sunset, WHMCache 2012 breach and 2020 pricing, BoxBillin' abandonment and revival.
 
@@ -143,4 +148,3 @@ The vSphere gaps are not part of this build. Each can become its own task after 
 ## 8. Open questions
 
 - Should "Shop systems" research stay without prerequisite, or need "Product management"?
-- Should the hand-rolled form keep automatic provisioning with no scripts (as today), or require the €400 custom script per software as proposed?

@@ -16,7 +16,7 @@ The page lives at `www.trade-office.gov/eservice/` and looks like a government s
 
 The online service only answers during office hours, Monday to Friday from 08:00 to 16:00. Outside them the page shows the hours and nothing else. Since the game starts on a Saturday night, the first thing the player learns is to press play or fast-forward. At 08:00 on Monday the game posts a Browser notification that the trade office is open, which also stops "Skip to next event" there, so one click on Skip gets the player to the opening.
 
-The form asks for the company name, the owner, the legal form (sole trader, partnership or limited company) and a declaration checkbox. The form also shows the €40 registration fee. Submitting it fills in the fee transfer to the trade office on the bank's site, and the player confirms it with a TAN. The confirmed transfer registers the company under that name at once, installs the starter apps in the dock and ticks the guide step. From then on the page shows the registration extract: the name, the legal form, a register number and the date.
+The form asks for the company name, the owner, the legal form (sole trader, partnership or limited company) and a declaration checkbox. The form also shows the €26 registration fee. Submitting it registers the company under that name at once, installs the starter apps in the dock and ticks the guide step; the trade office's letter with the fee arrives the same day, and paying it is the next guide step. A refused form shows the error next to the field it concerns. From then on the page shows the registration extract: the name, the legal form, a register number and the date.
 
 A submit outside office hours fails with "The online service is closed." An empty owner or a bad company name fails with the same errors the Settings company fields use, and a company without a bank account cannot apply.
 
@@ -51,7 +51,7 @@ The registration installs Applications, Locations, Shop, Browser, Terminal, Supp
 
 When cash falls below two months of running costs, Pear sends one email about the bank's overdraft, and its Open button shows the Overdraft page on the bank's website.
 
-Staff and Market are paid Pear Store apps, so their email offers them and the player buys them in the Shop once Research has trained their skill. The others go straight into the dock. Each app arrives once. Getting started shows the steps of an app, such as Build your website for Marketing or Take a loan for Finance, only once that app is installed.
+Staff and Market are paid Pear Store apps, so their email offers them and the player buys them in the Shop once Research has trained their skill. The others go straight into the dock. Each app arrives once. Getting started shows the steps of an app, such as Build your website for Marketing or Hire someone for Staff, only once that app is installed.
 
 ## Old saves
 

@@ -31,7 +31,6 @@ function shopGame(seed = 5, link = false): GameState {
   const s = readyGame(seed);
   s.cash = 1e6;
   setUpChannel(s, "website");
-  chooseShop(s, "handRolled");
   s.unlocks = [...s.unlocks, "shops"];
   expect(chooseShop(s, "modemBill").ok).toBe(true);
   s.hour += SHOP_SETUP_HOURS;

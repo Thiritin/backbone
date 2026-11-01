@@ -40,7 +40,7 @@ describe("server operating systems", () => {
   it("has Debiant and Windoors with their fees, boot minutes and install hours", () => {
     expect(SERVER_OS.map((o) => [o.id, o.name, o.licensing, o.bootMinutes, o.installHours])).toEqual([
       ["lunix", "Debiant GNU/Lunix", [{ from: 2005, kind: "free", fee: 0 }], 20, 1],
-      ["windoors", "Windoors Server", [{ from: 2005, kind: "once", fee: 600 }, { from: 2016, kind: "core", fee: 4 }], 40, 2],
+      ["windoors", "Windoors Server", [{ from: 2005, kind: "once", fee: 600, upgrade: 300 }, { from: 2016, month: 10, kind: "core", fee: 4, minCores: 16, minCoresPerCpu: 8 }], 40, 2],
     ]);
     expect(APP_SUITE_FEE).toBe(25);
     expect(SOFTWARE.every((sw) => sw.os.length > 0 && /^[a-z.-]+\.(com|org|net|io|de|cz)$/.test(sw.site.host))).toBe(true);

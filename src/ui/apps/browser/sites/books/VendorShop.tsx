@@ -6,7 +6,7 @@ import { booksVendor, type BooksVendor, type BooksVendorId, type Edition } from 
 import type { GameState } from "../../../../../sim/50-state";
 import { booksUrl, currentEdition, licencePrice } from "../../../../../sim/80-business/bookkeeping";
 import { installBooks, setSeats, upgradeBooks } from "../../../../../sim/90-actions/bookkeeping";
-import { useStore } from "../../../../store";
+import { usePageAct } from "../../pageAct";
 import "./books-vendors.css";
 
 export interface SiteProps { game: GameState; path: string; go: (url: string) => void }
@@ -20,7 +20,7 @@ const amount = (v: BooksVendor, n: number) => (v.deployment === "browser" ? t("b
 const users = (e: Edition) => (e.users === Infinity ? t("books-editions.network") : e.seat ? t("books-editions.perSeat", { n: e.users }) : e.users > 1 ? t("books-editions.users", { n: e.users }) : t("books-editions.single"));
 
 function Action({ game, v, e }: { game: GameState; v: BooksVendor; e: Edition }) {
-  const act = useStore((s) => s.act);
+  const act = usePageAct();
   const running = game.books.vendor === v.id, now = running ? currentEdition(game) : undefined;
   if (now?.id === e.id) return <span className="bv-state">{t("books-editions.yours")}</span>;
   if (!running) return <button type="button" className="bv-buy" onClick={() => act(installBooks, v.id, e.id)}>{t("vendor-sites.buy")}</button>;
@@ -30,7 +30,7 @@ function Action({ game, v, e }: { game: GameState; v: BooksVendor; e: Edition })
 }
 
 function Seats({ game, v, e }: { game: GameState; v: BooksVendor; e: Edition }) {
-  const act = useStore((s) => s.act), n = game.books.seats;
+  const act = usePageAct(), n = game.books.seats;
   return (
     <div className="bv-row">
       <span>{t("books-editions.seats", { n })}</span>

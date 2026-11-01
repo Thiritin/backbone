@@ -5,12 +5,12 @@ import type { Cluster } from "../../../../../sim/60-infra/cluster";
 import { hasBackup } from "../../../../../sim/60-infra/apps";
 import { phpInstalled, phpRunning, sslStatus } from "../../../../../sim/60-infra/webpanel";
 import { setAccountPhp } from "../../../../../sim/90-actions/webpanel";
-import { useStore } from "../../../../store";
 import { Bar, type Row } from "../PanelBase";
+import { usePageAct } from "../../pageAct";
 
 // User Level: the host's users, and for the picked one the account page the real panel shows after "Login as".
 export function UserLevel({ game, c, rows }: { game: GameState; c: Cluster; rows: Row[] }) {
-  const act = useStore((s) => s.act), [pick, setPick] = useState<string | null>(null);
+  const act = usePageAct(), [pick, setPick] = useState<string | null>(null);
   const serviceOf = (r: Row) => game.workloads.find((w) => w.id === r.id)?.serviceId ?? null;
   const owner = (r: Row) => game.customers.find((x) => x.id === game.services.find((v) => v.id === serviceOf(r))?.customerId)?.name ?? r.name;
   const row = rows.find((r) => r.id === pick), id = row && serviceOf(row);

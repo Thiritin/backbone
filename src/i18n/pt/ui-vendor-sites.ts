@@ -8,6 +8,7 @@ export default {
   "ledger.module.auto-reminders": () => "Licença Lexwear Lembretes automáticos",
   "ledger.module.hbci": () => "Licença Lexwear Banco online HBCI",
   "error.licenceKey": () => "Esta chave de licença não é válida.",
+  "error.noTrial": () => "Não há avaliação disponível para este software nesta máquina.",
   "error.moduleBought": () => "Já comprou este módulo.",
   "error.moduleRegistered": () => "Este módulo já está registado.",
   "vendor-sites.taskInvoices": () => "Enviar faturas",

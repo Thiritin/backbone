@@ -9,7 +9,10 @@ import { imageOf, imageParts, nextVersion, SERVER_OS, serverOsById, type OsImage
 import { machineNet, osUp, stickOs } from "../60-infra/oob";
 import { pushLog } from "../60-infra/power";
 import { BOOT_HOURS, bootHours, booting, powered } from "../60-infra/status";
-import { buyLicenses, buyUpgradeLicense, licenseDue, reportLoss, upgradeLicenseDue } from "../85-products/products";
+import { reportLoss } from "../85-products/products";
+import { installKeyBlock, licenseInstall, releaseMachine, upgradeKey, upgradeKeyBlock } from "../60-infra/licence";
+import { softwareById } from "../10-catalog/platforms";
+import { nextMajor, type SoftwareVersion } from "../10-catalog/software-versions";
 import { leave } from "./clusters";
 import type { ActionResult } from "./hardware";
 import { staticRouter } from "../60-infra/lan";
@@ -121,10 +124,20 @@ const atInstaller = (s: GameState, machineId: string): Machine | string => {
 // The installer's Install: whatever the disks held goes first, then the OS installs for its install hours, the version
 // on the media. os.installedAt is the hour it is done; a server is held in its boot until then and boots from its disk
 // after, a VM ejects its ISO. The stick and an ISO each hold one version of one OS. A server keeps the network
-// setting the installer chose, and its old files go with the old disk contents.
-export function installOs(s: GameState, machineId: string, osId: ServerOsId, confirm?: string, iface: IfaceConfig = { mode: "dhcp" }): ActionResult {
+// setting the installer chose, and its old files go with the old disk contents. A licensed OS takes the typed key or
+// runs its trial.
+// The error key for a hostname the installer cannot take: RFC 1123 labels, lowercase, unique among servers and VMs.
+export function badHostname(s: GameState, machineId: string, name: string): string | null {
+  if (!/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/.test(name)) return "error.badHostname";
+  const taken = [...s.devices, ...s.workloads].some((x) => x.id !== machineId && x.hostname === name);
+  return taken ? "error.hostnameTaken" : null;
+}
+
+export function installOs(s: GameState, machineId: string, osId: ServerOsId, confirm?: string, iface: IfaceConfig = { mode: "dhcp" }, key?: string, hostname?: string): ActionResult {
   const m = atInstaller(s, machineId);
   if (typeof m === "string") return fail(m);
+  const badName = hostname === undefined ? null : badHostname(s, machineId, hostname);
+  if (badName) return fail(badName);
   if (!SERVER_OS.some((o) => o.id === osId)) return fail("error.unknownOs");
   const media = isDevice(m) ? stickOs(s, m.id) : m.media;
   if (!media || imageParts(media).id !== osId) return fail("error.otherMedia");
@@ -133,16 +146,19 @@ export function installOs(s: GameState, machineId: string, osId: ServerOsId, con
   if (net) return fail(net === "noInterfaces" ? "error.noInterfaces" : "error.noAutoconf");
   // A static setting reaches the mirror only through the router of its network.
   if (osId === "lunix" && iface.mode === "static" && isDevice(m) && !staticRouter(s, m.id, iface)) return fail("error.noMirror");
-  if (s.cash < licenseDue(s, machineId, osId, null)) return fail("error.noCash");
+  const version = imageParts(media).version, bad = installKeyBlock(s, machineId, osId, version, key);
+  if (bad) return fail(bad);
   const cleared = clear(s, m, confirm);
   if (!cleared.ok) return cleared;
   const os = serverOsById(osId), done = nowHours(s) + os.installHours;
-  setMachine(s, machineId, () => ({ os: { id: osId, version: imageParts(media).version, installedAt: done }, software: [] }));
-  buyLicenses(s, machineId, osId, null);
+  setMachine(s, machineId, () => ({ os: { id: osId, version, installedAt: done }, software: [] }));
+  releaseMachine(s, machineId);
+  licenseInstall(s, machineId, osId, version, key);
+  const named = hostname === undefined ? {} : { hostname };
   if (isDevice(m)) {
-    Object.assign(m, { bootFrom: "disk", stuck: false, bootUntil: done + BOOT_HOURS + os.bootMinutes / 60, iface });
+    Object.assign(m, { bootFrom: "disk", stuck: false, bootUntil: done + BOOT_HOURS + os.bootMinutes / 60, iface }, named);
     delete s.files[m.id];
-  } else s.workloads = s.workloads.map((w) => (w.id === machineId ? { ...w, media: undefined } : w));
+  } else s.workloads = s.workloads.map((w) => (w.id === machineId ? { ...w, media: undefined, ...named } : w));
   return { ok: true };
 }
 
@@ -157,10 +173,19 @@ export const upgradeHours = (s: GameState, machineId: string): number => {
   return os.installHours + os.bootMinutes / 60 + (s.devices.some((d) => d.id === machineId) ? BOOT_HOURS : 0);
 };
 
+// What runs on the machine is down for the hours and counts them against its SLA; what was migrated off first stays up.
+function takeDown(s: GameState, machineId: string, hours: number): void {
+  const found = installCase(s, machineId), down = found.kind === "busy" ? [...found.workloads, ...found.lost] : [];
+  const ids = new Set(down.map((w) => w.id)), services = new Set(down.filter((w) => !isOwnVm(w)).map((w) => w.serviceId));
+  s.workloads = s.workloads.map((w) => (ids.has(w.id) ? { ...w, busyUntil: Math.max(w.busyUntil, s.hour + hours) } : w));
+  // The hourly tick counts every whole hour a workload is busy; the rest is added here, as for a software update.
+  const rest = hours - (Math.ceil(hours) - 1);
+  for (const id of services) s.downHours = { ...s.downHours, [id]: (s.downHours[id] ?? 0) + rest };
+}
+
 // Upgrades the machine's OS in place to the next release, keeping its software: Debiant from its running shell over the
-// network, Windoors from Setup on the next release's media. Everything still running on the machine is down for the
-// upgrade and counts it against its SLA; what was migrated off first stays up.
-export function upgradeOs(s: GameState, machineId: string): ActionResult {
+// network, Windoors from Setup on the next release's media. A key for an older major needs the key typed in Setup.
+export function upgradeOs(s: GameState, machineId: string, key?: string): ActionResult {
   const m = machineOf(s, machineId);
   if (!m?.os) return fail(m ? "error.noSoftware" : "error.unknownDevice");
   const next = upgradeTarget(s, machineId);
@@ -173,22 +198,47 @@ export function upgradeOs(s: GameState, machineId: string): ActionResult {
     if (typeof at === "string") return fail(at);
     if ((isDevice(at) ? stickOs(s, at.id) : at.media) !== imageOf(m.os.id, next.version)) return fail("error.otherMedia");
   }
-  if (s.cash < upgradeLicenseDue(s, m.os.id)) return fail("error.noCash");
+  const blocked = upgradeKeyBlock(s, machineId, m.os.id, next.version, key);
+  if (blocked) return fail(blocked);
   const hours = upgradeHours(s, machineId), done = nowHours(s) + serverOsById(m.os.id).installHours, from = m.os.version;
-  // What runs on the machine goes down with it; a VM's own console stays on and shows the upgrade.
-  const found = installCase(s, machineId), down = found.kind === "busy" ? [...found.workloads, ...found.lost] : [];
-  const ids = new Set(down.map((w) => w.id)), services = new Set(down.filter((w) => !isOwnVm(w)).map((w) => w.serviceId));
-  s.workloads = s.workloads.map((w) => (ids.has(w.id) ? { ...w, busyUntil: Math.max(w.busyUntil, s.hour + hours) } : w));
-  // The hourly tick counts every whole hour a workload is busy; the rest is added here, as for a software update.
-  const rest = hours - (Math.ceil(hours) - 1);
-  for (const id of services) s.downHours = { ...s.downHours, [id]: (s.downHours[id] ?? 0) + rest };
-  buyUpgradeLicense(s, machineId, m.os.id, next.version);
+  // A VM's own console stays on and shows the upgrade.
+  takeDown(s, machineId, hours);
+  upgradeKey(s, machineId, m.os.id, next.version, key);
   setMachine(s, machineId, (x) => ({ os: { ...x.os!, version: next.version, installedAt: done, from } }));
   if (isDevice(m)) {
     Object.assign(m, { bootFrom: "disk", stuck: false, bootUntil: nowHours(s) + hours });
     pushLog(m, s.hour, "ipmi.log.upgrade");
   } else s.workloads = s.workloads.map((w) => (w.id === machineId ? { ...w, media: undefined } : w));
   return { ok: true };
+}
+
+// docs/design/plans/software-licences.md, Versions: the release an upgrade of installed software takes it to, the newest of
+// the next major once it is out; null while it installs or upgrades.
+export const softwareTarget = (s: GameState, machineId: string, product: string): SoftwareVersion | null => {
+  const x = machineOf(s, machineId)?.software?.find((y) => y.id === product);
+  return x && (x.doneAt === null || x.doneAt <= s.hour) ? nextMajor(product, x.version, s.hour) : null;
+};
+
+// Why the software cannot step up one major now: nothing newer, no network, or a key for an older major and no upgrade key.
+export function softwareUpgradeBlock(s: GameState, machineId: string, product: string, key?: string): string | null {
+  if (!machineOf(s, machineId)?.software?.some((x) => x.id === product)) return "error.noSoftware";
+  const next = softwareTarget(s, machineId, product);
+  if (!next) return "error.noMajorUpgrade";
+  if (!osUp(s, machineId)) return "error.osNotUp";
+  if (machineNet(s, machineId)) return "error.noDownload";
+  return upgradeKeyBlock(s, machineId, product, next.version, key);
+}
+
+// Upgrades installed software one major in place over its install hours; what runs on the machine is down meanwhile and
+// the software runs its old version until the upgrade is done. A typed key replaces the one the machine held.
+export function upgradeSoftware(s: GameState, machineId: string, product: string, key?: string): ActionResult {
+  const blocked = softwareUpgradeBlock(s, machineId, product, key);
+  if (blocked) return fail(blocked);
+  const next = softwareTarget(s, machineId, product)!, hours = softwareById(product).installHours;
+  takeDown(s, machineId, hours);
+  upgradeKey(s, machineId, product, next.version, key);
+  setMachine(s, machineId, (m) => ({ software: m.software.map((x) => (x.id === product ? { ...x, version: next.version, from: x.version, doneAt: s.hour + hours } : x)) }));
+  return { ok: true, id: next.version };
 }
 
 // Any key on the failure an abandoned install left on the console.
@@ -199,8 +249,8 @@ export function dismissInstallFail(s: GameState, machineId: string): ActionResul
 }
 
 // Software whose installer comes from its website: Server Manager, Add or Remove Programs, apt and the script lines.
-export function installFromSite(s: GameState, machineId: string, softwareId: string): ActionResult {
-  return machineNet(s, machineId) ? fail("error.noDownload") : installSoftware(s, machineId, softwareId);
+export function installFromSite(s: GameState, machineId: string, softwareId: string, key?: string): ActionResult {
+  return machineNet(s, machineId) ? fail("error.noDownload") : installSoftware(s, machineId, softwareId, key);
 }
 
 // The installer's Erase disk: bare metal, or an empty VM, under the same confirmation as a reinstall.
@@ -210,6 +260,7 @@ export function eraseDisk(s: GameState, machineId: string, confirm?: string): Ac
   if (installCase(s, machineId).kind === "empty" && !m.os) return fail("error.noSoftware");
   const cleared = clear(s, m, confirm);
   if (cleared.ok) setMachine(s, machineId, () => ({ os: null, software: [] }));
+  if (cleared.ok) releaseMachine(s, machineId);
   return cleared;
 }
 

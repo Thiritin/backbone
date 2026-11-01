@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
-import { buyUpgradeLicense, productsTick } from "../src/sim/85-products/products";
+import { productsTick } from "../src/sim/85-products/products";
 import { SOFTWARE } from "../src/sim/10-catalog/platforms";
 import { SERVER_OS } from "../src/sim/10-catalog/server-os";
 import { newGame } from "../src/sim/50-state";
@@ -79,16 +79,16 @@ describe("renewal days", () => {
 });
 
 describe("panel installs", () => {
-  it("start cPanic on a trial and give DirectAdmen, which has none, a key for its top tier", () => {
+  it("start cPanic on a trial and give DirectAdmen, which has none, the first unassigned key in My account", () => {
     const s = readyGame(1);
-    s.cash = 10_000;
     const cloud = s.clusters.find((c) => c.kind === "cloud")!.id;
     const vm = (panel: string) => { const r = createPanelVm(s, cloud, panel); if (!r.ok) throw new Error(r.error); return panelMachine(s.clusters.find((c) => c.id === r.id)!)!; };
+    expect(createPanelVm(s, cloud, "directadmen")).toMatchObject({ ok: false, error: "error.licenceKeysShort", params: { name: "DirectAdmen" } });
+    const first = issueKey(s, "directadmen", "standard");
+    issueKey(s, "directadmen", "standard");
     const da = vm("directadmen"), cp = vm("cpanic");
-    expect(assignedKey(s, da, "directadmen")).toMatchObject({ edition: "standard", kind: "server", covers: { kind: "term" } });
+    expect(assignedKey(s, da, "directadmen")).toMatchObject({ id: first.id, edition: "standard", kind: "server", covers: { kind: "term" } });
     expect(assignedKey(s, cp, "cpanic")).toBeUndefined();
-    s.hour += 24;
-    productsTick(s);
     expect(trialOf(s, cp, "cpanic")).toBeDefined();
     expect(trialOf(s, da, "directadmen")).toBeUndefined();
     expect([licenceStatus(s, cp, "cpanic"), licenceStatus(s, da, "directadmen")]).toEqual(["trial", "active"]);
@@ -96,15 +96,14 @@ describe("panel installs", () => {
 });
 
 describe("version-bound keys", () => {
-  it("leave a newer major unlicensed until a paid upgrade moves the key, and term keys renew a month on", () => {
+  it("leave a newer major unlicensed until a key for it replaces theirs, and term keys renew a month on", () => {
     const s = readyGame(7), id = s.devices.find((d) => d.os)!.id;
     s.devices = s.devices.map((d) => (d.id === id ? { ...d, os: { id: "windoors", version: "2003", installedAt: 0 } } : d));
     assignKey(s, issueKey(s, "windoors", null).id, id);
     expect(licenceStatus(s, id, "windoors")).toBe("active");
     s.devices = s.devices.map((d) => (d.id === id ? { ...d, os: { ...d.os!, version: "2008" } } : d));
     expect(licenceStatus(s, id, "windoors")).toBe("unlicensed");
-    s.cash = 1000;
-    buyUpgradeLicense(s, id, "windoors", "2008");
+    assignKey(s, issueKey(s, "windoors", null, undefined, "2008").id, id);
     expect(assignedKey(s, id, "windoors")!.covers).toEqual({ kind: "version", major: "2008" });
     expect(licenceStatus(s, id, "windoors")).toBe("active");
     const term = issueKey(s, "tcadmen", null);

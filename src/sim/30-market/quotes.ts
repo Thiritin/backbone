@@ -1,5 +1,6 @@
 // Quotes: A4 documents in Books with an order's price, sent onto its ticket (90-actions/orders.ts, attachQuote).
 import type { InvoiceLine } from "../45-billing/billing";
+import type { Cycle } from "../10-catalog/cycles";
 import { reviewing } from "../45-billing/fraud";
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
@@ -14,6 +15,8 @@ export interface Quote {
   status: QuoteStatus; sentAt: number | null;
   // When it was written, and the first invoice it was carried forward to.
   createdAt?: number; invoiceId?: string;
+  // The prepaid term offered at the cycle discount; absent for month-to-month. monthly stays the list price.
+  cycle?: Cycle;
 }
 
 // An accepted quote of the order becomes invoiced once the order's first invoice exists.

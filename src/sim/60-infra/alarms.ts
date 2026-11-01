@@ -2,7 +2,6 @@
 // workloads book of it and what they use right now, and the alarms those numbers raise.
 import type { GameState } from "../50-state";
 import { booked, controlPlanesOn, KEYS, memberUp, type Cluster, type ClusterNode, type NodeState } from "./cluster";
-import { HOT_RAM } from "./ha";
 import { rackPower } from "./status";
 import { CONTINUOUS } from "../20-world/datacenters";
 import { nodeUsage } from "./usage";
@@ -11,6 +10,7 @@ import { cephRebalancing } from "./replica";
 // Booked vCPUs per core a mixed cluster still runs at its peak (economy.md, Usage curves: mixing peaks near 0.5 load),
 // and the share of the usable disk past which a pool counts as nearly full. RAM warns from HOT_RAM, where balancing starts.
 export const CPU_RATIO = 2;
+export const HOT_RAM = 0.9;
 export const DISK_FULL = 0.9;
 
 export interface AlarmRules { cpu: number; ram: number; disk: number }

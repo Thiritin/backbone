@@ -4,6 +4,8 @@ type Params = Record<string, string | number>;
 export const CONSOLE_EN: Record<string, (p: Params) => string> = {
   "error.unknownOs": () => "There is no such operating system.",
   "error.otherMedia": () => "The installer media holds another operating system.",
+  "error.badHostname": () => "Hostnames use lowercase letters, digits and hyphens, up to 63 characters.",
+  "error.hostnameTaken": () => "Another machine already has this hostname.",
   "error.noBootDevice": () => "No bootable device",
   "error.noImage": () => "Download this operating system's ISO from its website first.",
   "error.stickIn": () => "The USB stick is already in this server.",
@@ -14,6 +16,7 @@ export const CONSOLE_EN: Record<string, (p: Params) => string> = {
   "error.noOs": () => "Install an operating system on this machine first.",
   "error.osNotUp": () => "The machine's operating system is not running.",
   "error.noUpgrade": () => "No newer release of this operating system is out yet.",
+  "error.noMajorUpgrade": () => "No newer major version of this software is out yet.",
   "error.notVmwhere": () => "The App Suite is sold for VMwhere clusters.",
   "error.noAppSuite": () => "This cluster has no App Suite.",
   "error.hasAppSuite": () => "This cluster already has the App Suite.",

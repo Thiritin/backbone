@@ -1,10 +1,12 @@
 // docs/design/software.md, 8.2: the site index at the browser's home, by game year. Pure; the browser draws it.
+import { HOSTTOAST, HOSTTOAST_HOST } from "../10-catalog/hosttoast";
 import { t } from "../../i18n/en";
 import { monthIndexOf, yearOf } from "../00-core/time";
 import { SOFTWARE } from "../10-catalog/platforms";
 import { banksOpen } from "../10-catalog/banks";
 import { registrarHost, REGISTRARS } from "../10-catalog/registrars";
 import { SERVER_OS } from "../10-catalog/server-os";
+import { CHANNELS, marketUrl } from "../10-catalog/used";
 import { companyDomain, fqdn } from "../30-customers/domains";
 import type { GameState } from "../50-state";
 import { BOARD_TITLE, BOARD_URL, companyUrl, WIKI_TITLE, WIKI_URL, displayHost, resolve, vendorHost, vendorLive, VENDORS, VIDEO_TITLE, VIDEO_URL } from "./browser";
@@ -12,6 +14,7 @@ import { machineAddress } from "../60-infra/addresses";
 import { familyOf } from "../60-infra/vulns";
 import { consoleHost, consoleSuffix, consoleTitle } from "./consoles";
 import { OFFICE_HOST } from "./office";
+import { DOHLE_URL } from "./tax";
 import { vendorsIn } from "../10-catalog/bookkeeping";
 import { booksHost } from "./bookkeeping";
 
@@ -59,10 +62,11 @@ export function siteIndex(s: GameState): Category[] {
     { title: t("sim.index.cat.os"), rows: SERVER_OS.map((o) => row(o.name, `${displayHost(o.site.host)}/`, o.site.tagline)) },
     ...software,
     { title: t("sim.index.cat.resellers"), rows: REGISTRARS.filter((r) => r.from <= year).map((r) => row(r.name, `${displayHost(registrarHost(r))}/`, t("sim.index.resellers"))) },
-    { title: t("sim.index.cat.government"), rows: [row(t("browser-sites-1.of.title"), `www.${OFFICE_HOST}/`, t("sim.index.office"))] },
+    { title: t("sim.index.cat.government"), rows: [row(t("browser-sites-1.of.title"), `www.${OFFICE_HOST}/`, t("sim.index.office")), row("DOHLE", DOHLE_URL, t("sim.index.dohle"))] },
     { title: t("sim.index.cat.bookkeeping"), rows: vendorsIn(year).map((v) => row(v.program, `${displayHost(booksHost(v))}/`, t(`books-vendors.about.${v.id}`))) },
-    { title: t("sim.index.cat.community"), rows: [row(BOARD_TITLE, BOARD_URL, t("sim.index.board")), row(WIKI_TITLE, WIKI_URL, t("sim.index.wiki"))] },
+    { title: t("sim.index.cat.community"), rows: [row(BOARD_TITLE, BOARD_URL, t("sim.index.board")), row(WIKI_TITLE, WIKI_URL, t("sim.index.wiki")), row(HOSTTOAST, `www.${HOSTTOAST_HOST}/`, t("sim.index.hosttoast"))] },
     { title: t("sim.index.cat.hardware"), rows: VENDORS.filter((m) => vendorLive(m, monthIndexOf(s.hour))).map((m) => row(m.name, `${displayHost(vendorHost(m.id))}/`, m.kinds.map((k) => t(`sim.index.kind.${k}`)).join(", "))) },
+    { title: t("sim.index.cat.used"), rows: CHANNELS.map((c) => row(c.name, marketUrl(c.id), t(`sim.index.market.${c.id}`))) },
     { title: s.company.name, rows: own },
     { title: t("sim.index.cat.video"), rows: [row("YouTub", VIDEO_URL, VIDEO_TITLE)] },
   ].filter((c) => c.rows.length > 0);

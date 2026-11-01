@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { issueKey } from "../src/sim/60-infra/licence";
 import { t } from "../src/i18n/en";
 import { hourOf } from "../src/sim/00-core/time";
 import { SERVES, SOFTWARE, softwareById } from "../src/sim/10-catalog/platforms";
@@ -44,7 +45,7 @@ const cluster = (s: GameState, id: string) => s.clusters.find((c) => c.id === id
 describe("game server panels", () => {
   it("are game software that sells game servers next to the hypervisors", () => {
     expect(SOFTWARE.filter((x) => x.kind === "game").map((x) => [x.id, x.from, x.licensing])).toEqual([
-      ["tcadmen", 2005, [{ from: 2005, kind: "server", fee: 25 }]], ["multikraft", 2010, [{ from: 2005, kind: "server", fee: 20 }]],
+      ["tcadmen", 2005, [{ from: 2005, kind: "server", fee: 25 }]], ["multikraft", 2010, [{ from: 2010, kind: "server", fee: 20 }, { from: 2020, kind: "gameserver", fee: 1.2, free: 25 }]],
       ["pterodaktyl", 2016, [{ from: 2005, kind: "free", fee: 0 }]],
     ]);
     expect(SERVES.game).toEqual(["gameServer"]);
@@ -54,7 +55,7 @@ describe("game server panels", () => {
   it("install from their year only, one per machine", () => {
     const { s } = start(2010);
     expect(err(installSoftware(s, "dev3", "pterodaktyl"))).toBe("error.softwareNotYet");
-    ok(installSoftware(s, bootedMachine(s, "dev3"), "multikraft"));
+    ok(installSoftware(s, bootedMachine(s, "dev3"), "multikraft", issueKey(s, "multikraft", null).key));
     expect(softwareOn(s, "dev3")[0]).toMatchObject({ id: "multikraft", cluster: { kind: "game" } });
     expect(err(installSoftware(s, "dev3", "tcadmen"))).toBe("error.wrongOs");
     const { s: late } = start(2016);

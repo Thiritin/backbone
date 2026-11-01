@@ -1,11 +1,8 @@
 import type { Company, GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
 import { STARTER_APPS } from "../10-catalog/store";
-import { LEGAL_FORMS, OFFICE_ACCOUNT, OFFICE_CODE, officeOpen, REGISTRATION_FEE, registerNumber } from "../80-business/office";
-import { iban, ibanEra, send, spendable, type Draft } from "../46-finance/bank";
-import { t } from "../../i18n/en";
-import { bankById, monthlyFee } from "../10-catalog/banks";
-import { startTransfer } from "./bank";
+import { LEGAL_FORMS, officeOpen, registerNumber } from "../80-business/office";
+import { bankById, planById } from "../10-catalog/banks";
 
 // Logo marks by id; the UI draws each one as an icon on a tile in the chosen colour.
 export const COMPANY_LOGOS = ["server", "cloud", "zap", "globe", "rocket", "database", "cpu", "shield", "leaf", "mountain", "waves", "flame", "wolf", "fox", "cat", "toaster"];
@@ -16,7 +13,6 @@ export const COMPANY_COLORS = [
 export const NAME_MAX = 32;
 export const TAGLINE_MAX = 60;
 
-// Any saved change ticks the company step of Getting started.
 export function setCompany(s: GameState, patch: Partial<Company>): ActionResult {
   const name = patch.name?.trim();
   if (name !== undefined && (name.length === 0 || name.length > NAME_MAX)) return { ok: false, error: "error.companyName" };
@@ -25,7 +21,6 @@ export function setCompany(s: GameState, patch: Partial<Company>): ActionResult 
   if (patch.logo !== undefined && !COMPANY_LOGOS.includes(patch.logo)) return { ok: false, error: "error.companyLogo" };
   if (patch.color !== undefined && !COMPANY_COLORS.includes(patch.color)) return { ok: false, error: "error.companyColor" };
   s.company = { ...s.company, ...patch, ...(name !== undefined && { name }), ...(tagline !== undefined && { tagline }) };
-  if (!s.checklist.includes("company")) s.checklist = [...s.checklist, "company"];
   return { ok: true };
 }
 
@@ -38,30 +33,15 @@ export function registrationError(s: GameState, name: string, owner: string, for
   if (!(form in LEGAL_FORMS)) return "error.legalForm";
   if (form !== "sole") return "error.registerSole";
   if (!s.bank) return "error.noBank";
-  if (monthlyFee(bankById(s.bank.id)!, form) === null) return "error.bankForm";
-  if (REGISTRATION_FEE > spendable(s)) return "error.noCash";
+  if (!planById(bankById(s.bank.id)!, s.bank.plan)?.forms.includes(form)) return "error.bankPlan";
   return null;
 }
 
-// The fee transfer to the office, filled in from the application.
-export const officeDraft = (s: GameState, name: string): Draft => ibanEra(s)
-  ? { name: t("bank.office.payee"), account: iban(OFFICE_CODE, OFFICE_ACCOUNT), amount: REGISTRATION_FEE, reference: t("bank.office.reference", { name: name.trim() }) }
-  : { name: t("bank.office.payee"), account: OFFICE_ACCOUNT, code: OFFICE_CODE, amount: REGISTRATION_FEE, reference: t("bank.office.reference", { name: name.trim() }) };
-
-// The office form fills in the fee transfer on the bank's site; the TAN that sends it completes the registration.
-export function applyForRegistration(s: GameState, name: string, owner: string, form: string): ActionResult {
-  const error = registrationError(s, name, owner, form);
-  if (error) return { ok: false, error };
-  return startTransfer(s, { ...officeDraft(s, name), registration: { name: name.trim(), owner: owner.trim(), form } });
-}
-
-// The trade office registers the company under its name once the fee is sent, and Pear One installs the starter apps.
+// The trade office registers the company under its name and bills its fee by letter; Pear One installs the starter apps.
 export function registerCompany(s: GameState, name: string, owner: string, form: string): ActionResult {
   const error = registrationError(s, name, owner, form);
   if (error) return { ok: false, error };
-  send(s, officeDraft(s, name));
   setCompany(s, { name });
-  s.checklist = s.checklist.filter((id) => id !== "company");
   s.registration = { hour: s.hour, owner: owner.trim(), form, number: registerNumber(s.seed) };
   s.installed = [...new Set([...s.installed, ...STARTER_APPS])];
   return { ok: true };

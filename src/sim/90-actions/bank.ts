@@ -1,17 +1,23 @@
 // Player actions on the bank's website (46-finance/bank.ts).
 import { nowMinutes, yearOf } from "../00-core/time";
 import { hashRng, rand } from "../00-core/rng";
-import { banksOpen, tanMethods, type BankId, type TanMethod } from "../10-catalog/banks";
-import { APPROVAL_HOURS, bankOf, openWithSavings, hbci, payAll, ibanEra, limitFor, LOCK_HOURS, MIN_CARD_LIMIT, nextTanIndex, placeTanList, send, spendable, useTan, WRONG_LIMIT, type Draft } from "../46-finance/bank";
+import { bankById, banksOpen, defaultPlan, planById, tanMethods, type BankId, type PlanId, type TanMethod } from "../10-catalog/banks";
+import { APPROVAL_HOURS, bankOf, openWithSavings, openAccount, hbci, payAll, ibanEra, limitFor, LOCK_HOURS, MIN_CARD_LIMIT, nextTanIndex, placeTanList, send, spendable, useTan, WRONG_LIMIT, type Draft, type Payee } from "../46-finance/bank";
+import { invoice } from "../46-finance/payables";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
-import { registerCompany, registrationError } from "./company";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 
-function draftError(s: GameState, d: Draft): string | null {
+function payeeError(s: GameState, d: Omit<Payee, "id">): string | null {
   if (!d.name.trim()) return "error.payeeName";
   if (ibanEra(s) ? !/^DE\d{20}$/.test(d.account.replace(/\s/g, "")) : !/^\d{1,10}$/.test(d.account) || !/^\d{8}$/.test(d.code ?? "")) return "error.payeeAccount";
+  return null;
+}
+
+function draftError(s: GameState, d: Draft): string | null {
+  const payee = payeeError(s, d);
+  if (payee) return payee;
   if (!(d.amount > 0) || Math.abs(Math.round(d.amount * 100) - d.amount * 100) > 1e-6) return "error.badAmount";
   if (d.amount > spendable(s)) return "error.noCash";
   return null;
@@ -44,6 +50,23 @@ export function deleteStandingOrder(s: GameState, id: string): ActionResult {
   return { ok: true };
 }
 
+// Saves a payee for the transfer form; one with the same account is replaced.
+export function savePayee(s: GameState, payee: Omit<Payee, "id">): ActionResult {
+  if (!s.bank) return fail("error.noBank");
+  const error = payeeError(s, payee);
+  if (error) return fail(error);
+  const account = payee.account.replace(/\s/g, ""), code = ibanEra(s) ? undefined : payee.code;
+  const kept = (s.bank.payees ?? []).filter((p) => p.account !== account || p.code !== code);
+  s.bank = { ...s.bank, payees: [...kept, { id: `payee${s.nextId++}`, name: payee.name.trim(), account, ...(code && { code }) }] };
+  return { ok: true };
+}
+
+export function deletePayee(s: GameState, id: string): ActionResult {
+  if (!s.bank?.payees?.some((p) => p.id === id)) return fail("error.noPayee");
+  s.bank = { ...s.bank, payees: s.bank.payees.filter((p) => p.id !== id) };
+  return { ok: true };
+}
+
 export function cancelTransfer(s: GameState): ActionResult {
   if (!s.bank?.pending) return fail("error.noTransfer");
   s.bank = { ...s.bank, pending: null };
@@ -55,8 +78,6 @@ export function confirmTransfer(s: GameState, tan = ""): ActionResult {
   const b = s.bank, p = b?.pending;
   if (!b || !p) return fail("error.noTransfer");
   if (s.hour < b.lockedUntil) return fail("error.bankLocked");
-  const reg = p.draft.registration, refused = reg && registrationError(s, reg.name, reg.owner, reg.form);
-  if (refused) return fail(refused);
   const want = b.tan === "itan" ? b.tans.codes[p.index!] : b.tan === "mtan" ? p.code : null;
   if (want !== null && tan.trim() !== want) {
     const wrong = b.wrong + 1;
@@ -71,7 +92,6 @@ export function confirmTransfer(s: GameState, tan = ""): ActionResult {
     s.bank = { ...s.bank, standingOrders: [...s.bank.standingOrders, { id, name: d.name, account: d.account, amount: d.amount, reference: d.reference, day: p.day }] };
     return { ok: true, id };
   }
-  if (reg) return registerCompany(s, reg.name, reg.owner, reg.form);
   return { ok: true, id: send(s, p.draft).id };
 }
 
@@ -92,7 +112,7 @@ export function applyCard(s: GameState): ActionResult {
   if (!bank || !s.bank) return fail("error.noBank");
   if (s.bank.card) return fail("error.hasCard");
   const readyAt = s.hour + APPROVAL_HOURS;
-  s.bank = { ...s.bank, card: { appliedAt: s.hour, readyAt, limit: limitFor(s, bank.card.factor, MIN_CARD_LIMIT), spent: [], feeAt: readyAt } };
+  s.bank = { ...s.bank, card: { appliedAt: s.hour, readyAt, limit: limitFor(s, bank.card.factor * (planById(bank, s.bank.plan)?.card === "double" ? 2 : 1), MIN_CARD_LIMIT), spent: [], feeAt: readyAt } };
   return { ok: true };
 }
 
@@ -128,10 +148,60 @@ export function setAutoPay(s: GameState, on: boolean): ActionResult {
   return { ok: true };
 }
 
+// The plan must serve the current form and any form an application is under way for.
+function planError(s: GameState, id: BankId, plan: string): string | null {
+  const p = planById(bankById(id)!, plan);
+  if (!p) return "error.unknownPlan";
+  const forms = [s.registration?.form ?? "sole", ...s.letters.flatMap((l) => (l.form && !l.arrived ? [l.form] : []))];
+  return forms.every((f) => p.forms.includes(f)) ? null : "error.bankPlan";
+}
+
 // Opens the company's account on the bank's site; the player's savings arrive as its first booking.
-export function openBankAccount(s: GameState, id: BankId): ActionResult {
+export function openBankAccount(s: GameState, id: BankId, plan?: string): ActionResult {
   if (s.bank) return fail("error.hasBank");
   if (!banksOpen(yearOf(s.hour)).some((b) => b.id === id)) return fail("error.unknownBank");
-  openWithSavings(s, id);
+  const p = plan ?? defaultPlan(bankById(id)!, s.registration?.form ?? "sole"), err = planError(s, id, p);
+  if (err) return fail(err);
+  openWithSavings(s, id, p as PlanId);
+  return { ok: true };
+}
+
+// The new plan takes over at the next month start; picking the current one drops a pending change.
+export function setPlan(s: GameState, plan: string): ActionResult {
+  if (!s.bank) return fail("error.noBank");
+  const err = planError(s, s.bank.id, plan);
+  if (err) return fail(err);
+  s.bank = { ...s.bank, planNext: plan === s.bank.plan ? undefined : (plan as PlanId) };
+  return { ok: true };
+}
+
+// Moves the balance to a new account at another bank. Standing orders, mandates and the card stay behind; the card's
+// open spending is billed now.
+export function switchBank(s: GameState, id: BankId, plan: string): ActionResult {
+  const old = s.bank, from = bankOf(s);
+  if (!old || !from) return fail("error.noBank");
+  if (old.id === id) return fail("error.hasBank");
+  if (!banksOpen(yearOf(s.hour)).some((b) => b.id === id)) return fail("error.unknownBank");
+  const err = planError(s, id, plan);
+  if (err) return fail(err);
+  if (s.loans.some((l) => l.balance > 0)) return fail("error.switchLoan");
+  if (s.cash < 0) return fail("error.switchOverdraft");
+  if (old.previous && !old.previous.closed) return fail("error.switchPending");
+  if (old.card?.spent.length) invoice(s, "card", from.name, old.card.spent);
+  // The old account settles its interest now.
+  const settle = (category: string, key: string, amount: number) => {
+    s.cash = Math.round((s.cash + amount) * 100) / 100;
+    s.ledger = [...s.ledger, { hour: s.hour, category, key, params: { bank: from.name }, amount }];
+  };
+  const owed = Math.round(old.interest * 100) / 100, credit = Math.round((old.credit ?? 0) * 100) / 100;
+  if (owed > 0) settle("fees", "ledger.overdraftInterest", -owed);
+  if (credit > 0) settle("interest", "ledger.depositInterest", credit);
+  if (credit < 0) settle("fees", "ledger.custodyFee", credit);
+  s.bank = {
+    ...openAccount(s, id, plan as PlanId), outgoing: old.outgoing, payees: old.payees ?? [],
+    previous: { id: old.id, number: old.number, plan: old.plan, at: s.hour, closed: false, standingOrders: old.standingOrders, mandates: old.mandates },
+  };
+  // The next hour sends the welcome email; an iTAN list replaces the old one there.
+  if (s.bank.tan !== "itan") s.docs = s.docs.filter((d) => d.id !== "tans");
   return { ok: true };
 }

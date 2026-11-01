@@ -1,20 +1,20 @@
 import type { GameState } from "../../../../../sim/50-state";
 import type { Cluster, Workload } from "../../../../../sim/60-infra/cluster";
-import { CEPH_FROM_NODES, cephCapacity, cephCopies, cephOn, cephOsds, cephReadOnly, cephRebalancing, cephUsed, REPLICA_HOURS, type ReplicaEvery } from "../../../../../sim/60-infra/replica";
+import { CEPH_FROM_NODES, cephCapacity, cephCopies, cephOn, cephOsds, cephReadOnly, cephRebalancing, cephUsed, REPLICA_EVERY } from "../../../../../sim/60-infra/replica";
 import { raidUsable } from "../../../../../sim/60-infra/status";
 import { setCeph, setReplication } from "../../../../../sim/90-actions/replication";
 import { t } from "../../../../../i18n/en";
 import { formatClock } from "../../../../../sim/00-core/time";
-import { useStore } from "../../../../store";
 import { nodeName } from "../HypervisorBase";
 import { Bar, Facts } from "../PanelBase";
+import { usePageAct } from "../../pageAct";
 
-const EVERY = Object.keys(REPLICA_HOURS) as ReplicaEvery[];
+const EVERY = REPLICA_EVERY.proxmocks;
 const gb = (n: number) => `${Math.round(n)} GB`;
 
 // Replication of one VM, or the table of every replicated VM of the cluster.
 export function Replication({ game, c, w }: { game: GameState; c: Cluster; w?: Workload }) {
-  const act = useStore((s) => s.act), rows = game.workloads.filter((x) => x.clusterId === c.id && x.replica);
+  const act = usePageAct(), rows = game.workloads.filter((x) => x.clusterId === c.id && x.replica);
   const one = (v: Workload) => (
     <section className="pmx-panel" key={v.id}>
       <h4>{t("pmx.replication")}</h4>
@@ -46,7 +46,7 @@ export function Replication({ game, c, w }: { game: GameState; c: Cluster; w?: W
 
 // Datacenter > Ceph: health, monitors, OSDs, the pool and its usage.
 export function CephPanel({ game, c }: { game: GameState; c: Cluster }) {
-  const act = useStore((s) => s.act), on = cephOn(c), capable = c.nodes.length >= CEPH_FROM_NODES;
+  const act = usePageAct(), on = cephOn(c), capable = c.nodes.length >= CEPH_FROM_NODES;
   const health = !on ? "" : cephReadOnly(game, c) ? "HEALTH_ERR" : cephCopies(game, c) < c.ceph!.size || cephRebalancing(game, c) ? "HEALTH_WARN" : "HEALTH_OK";
   return (
     <>

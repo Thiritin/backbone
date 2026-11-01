@@ -27,6 +27,7 @@ import { USED_EN } from "./used";
 import { VENDORS_EN } from "./vendors";
 import { BANK_EN } from "./bank";
 import { PAPERWORK_EN } from "./paperwork";
+import { TAX_EN } from "./tax";
 import { ALARMS_EN } from "./alarms";
 import { IFACE_EN } from "./iface";
 import { active, LOCALE, type Dict } from "./lang";
@@ -40,7 +41,7 @@ const COMPONENT_LABELS: Record<string, string> = {
   hdd: "hard drive", ssd: "SSD", nvme: "NVMe drive", psu: "power supply", fan: "fan", ram: "RAM stick", board: "mainboard", cpu: "CPU", nic: "network card",
 };
 const CHANNELS: Record<string, string> = {
-  website: "Website", orderForm: "Order form", searchAds: "Goggle Ads", aiAds: "AI ads",
+  website: "Website", searchAds: "Goggle Ads", aiAds: "AI ads",
   search: "Goggle Ads", ai: "AI ads", gaming: "Gaming communities", coldCall: "Cold calling", agency: "Agency outreach",
 };
 const thing = (p: Params) => `${p.web ? "web space" : "virtual machine"}${p.count === 1 ? "" : "s"}`;
@@ -68,6 +69,7 @@ export const en: Record<string, (p: Params) => string> = {
   ...VENDORS_EN,
   ...BANK_EN,
   ...PAPERWORK_EN,
+  ...TAX_EN,
   ...USED_EN,
   ...BURNIN_EN,
   ...ALARMS_EN,
@@ -119,7 +121,6 @@ export const en: Record<string, (p: Params) => string> = {
   "error.unknownSiteLine": () => "This product cannot go on the website.",
   "error.unknownLineRate": () => "This product has no such rate.",
   "error.badRate": () => "Enter a rate of zero or more.",
-  "error.needsOrderForm": () => "Set up the order form first.",
   "error.notInShop": () => "The shop does not sell this model.",
   "error.outOfBounds": () => "The device does not fit at this height.",
   "error.slotTaken": () => "Another device is in the way.",
@@ -454,7 +455,7 @@ export const en: Record<string, (p: Params) => string> = {
   "os.current": () => "Pear OS is up to date",
   "doc.untitled": () => "Untitled",
   "guide.step.register": () => "Register your company",
-  "guide.step.company": () => "Style your company",
+  "guide.step.payBill": () => "Pay your first bill",
   "guide.step.buyServer": () => "Buy a server",
   "guide.step.mountServer": () => "Mount and power it",
   "guide.step.mountRouter": () => "Mount the router",

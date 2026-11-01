@@ -9,6 +9,7 @@ import { buyDevice, newGame } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { readyGame, registered } from "./fixtures";
 import { legacyRegistration } from "../src/sim/80-business/office";
+import { taxNumberOf } from "../src/sim/80-business/tax";
 
 describe("tick", () => {
   it("emits a month event on the first hour of each month", () => {
@@ -67,6 +68,8 @@ describe("save", () => {
       domains: [expect.objectContaining({ name: "basement-hosting.de", customerId: null })],
       // Saves from before banks hold their account at Sparklasse.
       bank: expect.objectContaining({ id: "sparklasse", welcomed: false }),
+      // Registered saves from before the tax office hold a tax number.
+      tax: expect.objectContaining({ number: taxNumberOf(4), numberAt: 0, small: false }),
     });
     expect(s.devices.map((d) => d.model)).toEqual(["home-router", "line-jack"]);
     tick(s);

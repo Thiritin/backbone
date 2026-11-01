@@ -8,6 +8,7 @@ export default {
   "ledger.module.auto-reminders": () => "Lexwear-Lizenz Automatische Mahnungen",
   "ledger.module.hbci": () => "Lexwear-Lizenz HBCI-Onlinebanking",
   "error.licenceKey": () => "Dieser Lizenzschlüssel ist nicht gültig.",
+  "error.noTrial": () => "Für diese Software ist auf dieser Maschine keine Testversion verfügbar.",
   "error.moduleBought": () => "Sie haben dieses Modul bereits gekauft.",
   "error.moduleRegistered": () => "Dieses Modul ist bereits registriert.",
   "vendor-sites.taskInvoices": () => "Rechnungen versenden",

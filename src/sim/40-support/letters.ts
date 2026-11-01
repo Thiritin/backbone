@@ -13,6 +13,8 @@ export interface Letter {
   payable?: string;
   // The legal form the company holds from this letter on.
   form?: string;
+  // A web address the letter points to, opened from the Post app.
+  link?: string;
 }
 
 export const POST_APP = "Post";
@@ -29,7 +31,7 @@ export function postDay(hour: number, days: number): number {
   return day * 24 + POST_HOUR;
 }
 
-export function post(s: GameState, from: string, topic: string, params: Record<string, string | number>, days: number, extra: Pick<Letter, "bill" | "form"> = {}): Letter {
+export function post(s: GameState, from: string, topic: string, params: Record<string, string | number>, days: number, extra: Pick<Letter, "bill" | "form" | "link"> = {}): Letter {
   const l: Letter = { id: `let${s.nextId++}`, from, topic, params, at: postDay(s.hour, days), read: false, arrived: false, ...extra };
   s.letters = [...s.letters, l];
   return l;

@@ -17,6 +17,7 @@ import { InvoicesTab } from "./InvoicesTab";
 import { QuotesTab } from "./QuotesTab";
 import { NEW } from "./NewCustomer";
 import { PayablesTab } from "./PayablesTab";
+import { ProductsTab } from "./ProductsTab";
 import { RemindersTab } from "./RemindersTab";
 import { OverviewTab, StatementTab, StatisticsTab, TaxTab } from "./Reports";
 import { Register } from "./Register";
@@ -38,6 +39,7 @@ const TABS: { id: string; group: Group; count: (s: GameState) => number; body: C
   { id: "invoices", group: "sales", count: drafts, body: InvoicesTab },
   { id: "bank", group: "payments", count: unmatched, body: BankTab },
   { id: "reminders", group: "payments", count: late, body: RemindersTab },
+  { id: "products", group: "sales", count: () => 0, body: ProductsTab },
   { id: "payables", group: "payments", count: (s) => s.payables.filter((p) => overdue(s, p)).length, body: PayablesTab },
   { id: "statistics", group: "reports", count: () => 0, body: StatisticsTab, features: ["reports", "statistics"] },
   { id: "tax", group: "reports", count: () => 0, body: TaxTab, features: ["tax"] },
@@ -48,7 +50,7 @@ export function BooksApp() {
   const game = useBooks(), act = useStore((s) => s.act), openApp = useStore((s) => s.openApp);
   const waiting = useStore((s) => unsynced(s.game));
   // Before Shop link, a shop system hands its records over only on import.
-  const importing = !!game.shop.variant && game.shop.variant !== "handRolled" && !hasModule(game, "shop-link");
+  const importing = !!game.shop.variant && !hasModule(game, "shop-link");
   const [tab, setTab] = useSessionState("books.tab", "overview");
   const [focus, setFocus] = useSessionState<string | null>("books.focus", null);
   const [register, setRegister] = useSessionState("books.register", false);

@@ -1,4 +1,5 @@
 import { rand } from "../00-core/rng";
+import { releaseGone } from "../60-infra/licence";
 import { HARDWARE_SHOP, invoice, shopBlocked } from "../46-finance/payables";
 import { bankOf, cardReady, cardSpent, spendable } from "../46-finance/bank";
 import { TRANSFER_HOURS } from "../10-catalog/banks";
@@ -25,7 +26,7 @@ import { freeName } from "./clusters";
 import { nodeName } from "../30-customers/hostnames";
 
 // error is an i18n key.
-export type ActionResult = { ok: true; id?: string } | { ok: false; error: string };
+export type ActionResult = { ok: true; id?: string } | { ok: false; error: string; params?: Record<string, string> };
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 const newId = (s: GameState, prefix: string) => `${prefix}${s.nextId++}`;
@@ -613,6 +614,7 @@ export function sellDevice(s: GameState, deviceId: string): ActionResult {
   if ([...gone].some((id) => serverTaken(s, id))) return fail("error.serverInUse");
   unplug(s, gone);
   s.devices = s.devices.filter((x) => !gone.has(x.id));
+  releaseGone(s);
   s.files = Object.fromEntries(Object.entries(s.files).filter(([id]) => !gone.has(id)));
   book(s, "sales", "ledger.sale", { device: d.name }, deviceValue(s, d));
   return { ok: true };
@@ -1081,5 +1083,13 @@ export function orderHomeLine(s: GameState, lineId: string): ActionResult {
   if (line.from > yearOf(s.hour)) return fail("error.lineNotYet");
   if (s.homeLine.next?.id === lineId) return fail("error.lineOrdered");
   s.homeLine = { ...s.homeLine, next: { id: lineId, at: s.hour + 24 * line.installDays } };
+  return { ok: true };
+}
+
+// Empties the System Event Log of a device.
+export function clearLog(s: GameState, deviceId: string): ActionResult {
+  const d = s.devices.find((x) => x.id === deviceId);
+  if (!d) return fail("error.unknownDevice");
+  d.log = [];
   return { ok: true };
 }
