@@ -68,6 +68,7 @@ export default {
   "books.col.hidden": () => "Nascosto",
   "books.line": () => "Linea",
   "books.prices": () => "Prezzo per periodo",
+  "books.market": (p) => `Mercato: ${p.price}`,
   "books.cycle.monthly": () => "Mensile",
   "books.cycle.quarterly": () => "Trimestrale",
   "books.cycle.annual": () => "Annuale",
