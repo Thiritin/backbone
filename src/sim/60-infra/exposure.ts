@@ -2,6 +2,7 @@
 import { softwareById } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
 import { vmById, type Cluster } from "./cluster";
+import { groupAllow, isHorizont } from "./horizont";
 
 export const MACROS = ["web", "ssh", "mail", "db", "rdp"] as const;
 export type Macro = (typeof MACROS)[number];
@@ -21,9 +22,12 @@ export function listens(c: Cluster): Macro[] {
 }
 
 // The firewall of the VM a cluster runs in, when it is on.
+// On OpenStash the security groups of the instance take its place.
 export const firewallOf = (s: GameState, c: Cluster): Firewall | null => {
-  const f = c.vm ? vmById(s, c.vm)?.firewall : null;
-  return f?.on ? f : null;
+  const vm = c.vm ? vmById(s, c.vm) : undefined, f = vm?.firewall;
+  if (f?.on) return f;
+  const host = vm && s.clusters.find((x) => x.id === vm.clusterId), allow = host && isHorizont(host) ? groupAllow(host, vm.groupIds) : null;
+  return allow ? { on: true, allow } : null;
 };
 // A closed port the software serves takes it offline.
 export const firewallBlocks = (s: GameState, c: Cluster): boolean => {

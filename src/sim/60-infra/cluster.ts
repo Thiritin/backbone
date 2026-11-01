@@ -1,9 +1,9 @@
 import { modelById } from "../10-catalog/hardware";
+import { topTier } from "../10-catalog/licence-tiers";
 import { START_YEAR, yearOf } from "../00-core/time";
 import { GPU_SKILL } from "../10-catalog/research";
 import { backsUp, balancerIn, fcGbit, IN_VM, isService, kindsServing, kindServing, phpAt, softwareById, type DatastoreProtocol, type SoftwareKind } from "../10-catalog/platforms";
 import { OVERCOMMIT, PRODUCTS, type Resources } from "../10-catalog/products";
-import { topTier } from "../10-catalog/licence-tiers";
 import type { Product } from "../30-customers/customers";
 import { serviceHeld } from "../45-billing/billing";
 import type { Device, GameState, MachineState } from "../50-state";
@@ -22,6 +22,8 @@ import type { BackupJob, RestorePoint } from "./backups";
 import type { Ceph, Replica } from "./replica";
 import { vswitchBlocks, type VSwitch } from "./vswitch";
 import { firewallBlocks, type Firewall } from "./exposure";
+import { pushLog } from "./syslog";
+import type { FloatingIp, SecurityGroup, Volume } from "./horizont";
 
 // Active takes new workloads, cordoned keeps its own, draining moves them off, maintenance is empty after a drain.
 export type NodeState = "active" | "cordoned" | "draining" | "maintenance";
@@ -64,10 +66,10 @@ export interface Cluster {
   switches?: VSwitch[];
   // The player's cap on booked vCPU per physical vCPU for a panel host; missing or null is no cap (oversell.ts).
   oversell?: number | null;
+  // The edition of a VMwhere platform; missing is the top tier (vmwhere.ts).
+  licence?: { tier: string; trialUntil: number | null; lapsedAt: number | null };
   // The update channel; missing is Release (channel.ts).
   channel?: "stable" | "release" | "edge";
-  // The edition of a licensed cloud platform; lapsedAt the hour an unpaid licence expired. Missing is the top tier without expiry.
-  licence?: { tier: string; trialUntil: number | null; lapsedAt: number | null };
   // Compatibility mode lets VMs move live between nodes of different CPU vendors, at COMPAT_VCPU of every node's vCPU.
   compat?: boolean;
   // Whether the software updates itself at AUTO_UPDATE_HOUR when an update is due (software.ts).
@@ -77,6 +79,8 @@ export interface Cluster {
   // Whether the cluster pays for its hypervisor's balancer edition (Software.balancer).
   balancer?: boolean;
   php: string; phpUntil: number; ha: Ha; version: number; updatedAt: number;
+  // OpenStash Horizont (horizont.ts); missing is none, and the one default group.
+  floating?: FloatingIp[]; groups?: SecurityGroup[]; volumes?: Volume[];
   // Servers attached as shared storage (economy.md, Datastores); VM disks on one stay off their node.
   datastores: Datastore[];
   // Named specs this installation sells (80-business/packages.ts); absent reads as none.
@@ -105,6 +109,8 @@ export interface Workload extends Resources, Partial<MachineState> {
   failcnt?: Record<string, number>; maxheld?: number; burstGb?: number; failStreak?: number; failDay?: number; frozen?: boolean;
   // Own VMs only: the port macros the VM lets through (exposure.ts); missing or null is no firewall.
   firewall?: Firewall | null;
+  // Horizont: the security groups of the instance (horizont.ts); missing is none.
+  groupIds?: string[];
   // The sold size when a package booked less; the service uses the sold size times its load.
   promised?: Resources;
   // vmNNN for the player's own VMs; a customer workload carries its service's hostname.
@@ -185,7 +191,9 @@ export const datastoreOn = (c: Cluster, r: Disk): boolean => !!r.datastore && c.
 // What a VM books on a node of the cluster: none of its disk while that is on one of the cluster's datastores.
 const onNode = (c: Cluster | undefined, r: Disk): Resources => (c && datastoreOn(c, r) ? { ...r, diskGb: 0 } : r);
 export const isDatastore = (s: GameState, deviceId: string): boolean => s.clusters.some((c) => c.datastores.some((x) => x.deviceId === deviceId) || c.qdevice === deviceId);
-export const datastoreUsed = (s: GameState, deviceId: string): number => s.workloads.reduce((n, w) => n + (w.datastore === deviceId ? w.diskGb + deltaGb(w) : 0), 0);
+export const datastoreUsed = (s: GameState, deviceId: string): number =>
+  s.workloads.reduce((n, w) => n + (w.datastore === deviceId ? w.diskGb + deltaGb(w) : 0), 0) +
+  s.clusters.reduce((n, c) => n + (c.volumes ?? []).reduce((m, v) => m + (v.datastore === deviceId ? v.gb : 0), 0), 0);
 export const datastoreCapacity = (s: GameState, deviceId: string): number => {
   const d = s.devices.find((x) => x.id === deviceId);
   return d ? nodeCapacity(d).diskGb : 0;
@@ -478,7 +486,10 @@ export function moveControlPlaneOff(s: GameState, clusterId: string, deviceId: s
 
 // The node state of one software installation on a server; other software on the same server keeps its own.
 export function setNodeState(s: GameState, deviceId: string, state: NodeState, clusterId: string) {
+  const before = s.clusters.find((c) => c.id === clusterId)?.nodes.find((n) => n.deviceId === deviceId)?.state;
   s.clusters = s.clusters.map((c) => (c.id === clusterId ? { ...c, nodes: c.nodes.map((n) => (n.deviceId === deviceId ? { ...n, state } : n)) } : c));
+  const d = s.devices.find((x) => x.id === deviceId);
+  if (d && before && before !== state) pushLog(d, s.hour, `ipmi.log.node.${state}`);
 }
 
 // The web sites of a panel host the player took offline or that were compromised.

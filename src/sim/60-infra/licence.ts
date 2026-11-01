@@ -153,9 +153,10 @@ export function legacyLicences(s: GameState, held: { id: string; machineId: stri
     for (const id of [m.os?.id, ...(m.software ?? []).map((x) => x.id)]) if (id && isLicensed(id) && !hasTrialTiers(id)) add(m.id, id, {}, null, installedMajor(s, m.id, id));
   }
   s.clusters = s.clusters.map((c) => {
+    if (!c.panel) return c;
     const { licence, ...rest } = c as Cluster & { licence?: LegacyPanel };
     const m = panelMachine(c), top = topTier(c.panel);
-    if (!m || !c.panel || !top) return rest;
+    if (!m || !top) return rest;
     const lic = licence ?? { tier: top.id, trialUntil: null, lapsedAt: null };
     if (lic.trialUntil !== null) s.trials = [...s.trials, { machineId: m, product: c.panel, until: lic.trialUntil }];
     else add(m, c.panel, { lapsedAt: lic.lapsedAt }, lic.tier);

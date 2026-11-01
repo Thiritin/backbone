@@ -15,7 +15,10 @@ import { parseCreate } from "../../../../../sim/80-business/consoles";
 import { packagesOf } from "../../../../../sim/80-business/packages";
 import { PackagesScreen } from "../PackageForms";
 import { flavorCounts, FLAVORS, flavorOf as baseFlavorOf, same } from "./flavors";
+import { FloatingIps, InstanceGroups, SecurityGroups, Volumes } from "./HorizontNetwork";
+import { volumesOf } from "../../../../../sim/60-infra/horizont";
 import "./horizont.css";
+import { noAutofill } from "../../../../no-autofill";
 
 // docs/design/software.md, section 9: the purple dashboard from 2010, the dark-sidebar one with the red mark from 2016.
 const ERAS = erasFrom(2010, 2016);
@@ -58,7 +61,7 @@ export function Overview({ game, c, vms }: { game: GameState; c: Cluster; vms: V
 }
 
 // The instance Overview tab: info, specs, addresses, security groups, metadata, volumes and the day's usage.
-export function InstanceOverview({ game, v, flavor }: { game: GameState; v: Vm; flavor: string }) {
+export function InstanceOverview({ game, c, v, flavor }: { game: GameState; c: Cluster; v: Vm; flavor: string }) {
   const facts = vmFacts(game, v), ring = vmStats(game, v.id)!.ring, net = ring.map((x) => x.netMbit), end = game.hour;
   return (
     <>
@@ -69,11 +72,11 @@ export function InstanceOverview({ game, v, flavor }: { game: GameState; v: Vm; 
       <h4 className="cx-h">{t("browser-consoles-1.hvIpAddresses")}</h4>
       <Facts facts={[{ label: t("browser-consoles-1.hzPrivate"), value: v.ip || "-", num: true }]} />
       <h4 className="cx-h">{t("browser-consoles-1.hzSecurityGroups")}</h4>
-      <Facts facts={[{ label: "default", value: "ALLOW IPv4 to 0.0.0.0/0, ALLOW IPv4 from default" }]} />
+      <InstanceGroups c={c} v={v} />
       <h4 className="cx-h">{t("browser-consoles-1.hzMetadata")}</h4>
       <Facts facts={[{ label: t("browser-consoles-1.hzKeyName"), value: t("browser-consoles-1.none") }, { label: t("browser-consoles-1.hzImageName"), value: v.media ? isoName(v.media) : v.own ? v.os : "-" }]} />
       <h4 className="cx-h">{t("browser-consoles-1.hzVolumesAttached")}</h4>
-      <Facts facts={[{ label: t("browser-consoles-1.hzVolume"), value: t("browser-consoles-1.hzNoVolumes") }]} />
+      <Facts facts={volumesOf(c).filter((x) => x.attachedTo === v.id).map((x) => ({ label: x.name, value: `${x.gb}GB`, num: true })).concat(volumesOf(c).some((x) => x.attachedTo === v.id) ? [] : [{ label: t("browser-consoles-1.hzVolume"), value: t("browser-consoles-1.hzNoVolumes"), num: false }])} />
       <MediaMenu game={game} v={v} label={t("browser-consoles-1.hzRescueImage")} none={t("browser-consoles-1.none")} />
       <div className="cx-charts">
         <Chart className="hz-chart" kind="line" title="cpu_util" values={ring.map((x) => x.cpu)} end={end} />
@@ -85,7 +88,7 @@ export function InstanceOverview({ game, v, flavor }: { game: GameState; v: Vm; 
   );
 }
 
-type Page = "overview" | "instances" | "images" | "keys" | "hypervisors" | "flavors" | "system" | { vm: string; tab: "Overview" | "Log" | "Console" };
+type Page = "overview" | "instances" | "floating" | "groups" | "volumes" | "images" | "keys" | "hypervisors" | "flavors" | "system" | { vm: string; tab: "Overview" | "Log" | "Console" };
 const TAB_LABELS = { Overview: () => t("browser-consoles-1.hzOverview"), Log: () => t("browser-consoles-1.hzLog"), Console: () => t("browser-consoles-1.console") };
 
 export function Horizont(p: PanelProps) {
@@ -97,7 +100,7 @@ export function Horizont(p: PanelProps) {
       <LoginForm className="hz-card" onLogin={p.login} button={t("browser-consoles-1.hvConnectBtn")}>
         <div className="hz-logo">openstash</div>
         <div className="cx-host">{p.host}</div>
-        <label className="cx-field">{t("browser-consoles-1.domain")}<input defaultValue="default" autoComplete="off" /></label>
+        <label className="cx-field">{t("browser-consoles-1.domain")}<input defaultValue="default" {...noAutofill} /></label>
       </LoginForm>
     </div>
   );
@@ -105,6 +108,8 @@ export function Horizont(p: PanelProps) {
   const finish = () => { if (nv.ordered) { if (nv.submit()) { setLaunching(false); setPage("instances"); } return; } const id = nv.create(); if (id) { setLaunching(false); setPage({ vm: id, tab: "Overview" }); } };
   const nav: [string, string, [Page, string][]][] = [
     ["Project", t("browser-consoles-1.hzProject"), [["overview", t("browser-consoles-1.hzOverview")], ["instances", t("browser-consoles-1.hzInstances")], ["images", t("browser-consoles-1.hzImages")], ["keys", t("browser-consoles-1.hzKeyPairs")]]],
+    ["Network", t("hzn.network"), [["floating", t("hzn.floatingIps")], ["groups", t("hzn.securityGroups")]]],
+    ["Volumes", t("hzn.volumes"), [["volumes", t("hzn.volumes")]]],
     ["Admin", t("browser-consoles-1.hzAdmin"), [["hypervisors", t("browser-consoles-1.hzHypervisors")], ["flavors", t("readouts.flavors")], ["system", t("browser-consoles-1.hzSystemInfo")]]],
   ];
   return (
@@ -150,7 +155,7 @@ export function Horizont(p: PanelProps) {
               <div className="cx-hv-head"><h1>{vm.name}</h1><Toolbar actions={vm.actions} className="cx-toolbar hz-tools" labels={{ start: t("browser-consoles-1.hzStartInstance"), stop: t("browser-consoles-1.hzShutOffInstance"), reset: t("browser-consoles-1.hzHardReboot"), resize: t("browser-consoles-1.hzResizeInstance"), migrate: t("browser-consoles-1.hzLiveMigrate"), delete: t("browser-consoles-1.hzDeleteInstance"), console: t("browser-consoles-1.console") }} /></div>
               {vm.panel}
               <nav className="cx-hv-tabs hz-tabs">{(["Overview", "Log", "Console"] as const).map((x) => <button key={x} aria-pressed={page.tab === x} onClick={() => setPage({ vm: vm.id, tab: x })}>{TAB_LABELS[x]()}</button>)}</nav>
-              {page.tab === "Overview" && <InstanceOverview game={game} v={vm} flavor={flavorOf(vm.w, c)} />}
+              {page.tab === "Overview" && <InstanceOverview game={game} c={c} v={vm} flavor={flavorOf(vm.w, c)} />}
               {page.tab === "Log" && (
                 <>
                   <h4 className="cx-h">{t("browser-consoles-1.hzConsoleLog")}</h4>
@@ -166,6 +171,9 @@ export function Horizont(p: PanelProps) {
               )}
             </>
           )}
+          {page === "floating" && <FloatingIps game={game} c={c} vms={vms} />}
+          {page === "groups" && <SecurityGroups c={c} vms={vms} />}
+          {page === "volumes" && <Volumes c={c} vms={vms} />}
           {page === "images" && (
             <>
               <h1>{t("browser-consoles-1.hzImages")}</h1>
