@@ -120,6 +120,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Switches now come managed or unmanaged, and managed switches have VLANs, a saved configuration and their own web page at the address the router gives them.
 - HOSTtoast at hosttoast.de lists every host by tier and reviews: sign up for free, buy a higher tier for more trust and awareness, keep it by answering its monthly test ticket in time and keeping your uptime, and win host of the year or the uptime seal each January.
 - Browser tabs can be dragged left or right to reorder them.
+- The Marketing channels page lists, per product, the orders won and the email leads lost for lack of a fitting package this month and last month.
 
 ## 2026-10-31
 
