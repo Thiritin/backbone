@@ -1,5 +1,5 @@
 import {
-  Activity, CalendarDays, Cloud, Mailbox, FolderOpen, Bug, BookOpen, Compass, ChartLine, ChartPie, Contact, FileText, Network, GraduationCap, LifeBuoy, Megaphone, Newspaper, Receipt, Server, Settings, ShieldAlert, ShoppingCart, SquareTerminal, Users,
+  Activity, CalendarDays, Cloud, Mailbox, FolderOpen, Bug, BookOpen, Compass, ChartLine, ChartPie, Contact, FileText, Network, GraduationCap, LifeBuoy, Megaphone, MessageCircle, Newspaper, Receipt, Server, Settings, ShieldAlert, ShoppingCart, SquareTerminal, Users,
 } from "lucide-react";
 import type { ComponentType } from "react";
 import { t } from "../../i18n/en";
@@ -29,6 +29,7 @@ import { TerminalApp } from "./terminal/TerminalApp";
 import { isFinal } from "../../sim/40-support/tickets";
 import { deviceHealth } from "../../sim/60-infra/status";
 import { currentVendor } from "../../sim/80-business/bookkeeping";
+import { yearOf } from "../../sim/00-core/time";
 
 export interface AppDef {
   name: string;
@@ -74,6 +75,7 @@ export const APPS: AppDef[] = [
   { name: "News", icon: Newspaper, tile: "oklch(0.55 0.12 30)", about: t("apps.about.News"), hidden: true, body: NewsApp },
   { name: "Weather", icon: Cloud, tile: "oklch(0.62 0.12 240)", about: t("apps.about.Weather"), hidden: true, body: WeatherApp },
   { name: "Dev menu", icon: Bug, tile: "oklch(0.5 0.15 25)", about: t("apps.about.Dev menu"), hidden: true, body: DevApp },
+  { name: "Chat", icon: MessageCircle, tile: "oklch(0.55 0.16 275)", about: t("apps.about.Chat") },
   { name: "Settings", icon: Settings, tile: "oklch(0.55 0.01 260)", about: t("apps.about.Settings") },
 ];
 
@@ -86,7 +88,10 @@ export const appTitle = (a: Pick<AppDef, "name">): string => {
 export const appByName = (name: string): AppDef => APPS.find((a) => a.name === name) ?? APPS[0];
 
 
+// Chat wears the messenger of the year; every one of them opens the Backbone Discord.
+const CHATS = [{ from: 2016, name: "Diskord", tile: "oklch(0.55 0.16 275)" }, { from: 2008, name: "Skipe", tile: "oklch(0.62 0.13 230)" }, { from: 0, name: "ICU", tile: "oklch(0.62 0.17 140)" }];
+
 // The app as the player sees it: Support is Email, or the installed desk, with its own name, mark and tile.
 export const appFor = (s: GameState, name: string): AppDef =>
-  name === "Support" ? { ...appByName(name), ...supportApp(s) } : name === "Applications" ? { ...appByName(name), name: "Finder" }
+  name === "Support" ? { ...appByName(name), ...supportApp(s) } : name === "Chat" ? { ...appByName(name), ...CHATS.find((c) => c.from <= yearOf(s.hour))! } : name === "Applications" ? { ...appByName(name), name: "Finder" }
   : name === "Books" ? { ...appByName(name), title: currentVendor(s)?.program ?? t("books.title") } : appByName(name);

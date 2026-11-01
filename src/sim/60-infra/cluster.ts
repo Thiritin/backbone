@@ -9,6 +9,8 @@ import type { Device, GameState, MachineState } from "../50-state";
 import type { OsImage } from "../10-catalog/server-os";
 import type { SimEvent } from "../88-tick/tick";
 import type { VmSample } from "./stats";
+import { isVm } from "./lan";
+import { privateNetDown } from "./private";
 import { deviceVendor, drivesOf, installedRamGb, installedVcpu, linkStatus, locationOf, raidUsable, rackPower, readOnlySweep, serviceById, sweepGroups, working, burning } from "./status";
 import { COMPAT_VCPU } from "../10-catalog/cpus";
 import { hasPublicAddress, sellsFrom } from "./addresses";
@@ -318,12 +320,13 @@ export const gameFirst = (a: Cluster, b: Cluster): number => Number(isService(b.
 export const servedBy = (s: GameState, w: Workload): SoftwareKind => s.clusters.find((c) => c.id === w.clusterId)?.kind ?? "cloud";
 
 // A workload lost its disk when the data of its server, or of the datastore its disk is on, was lost after the workload was
-// placed there; a web space in a panel VM loses it with the VM.
+// placed there, or that server is gone (seized); a web space in a panel VM loses it with the VM.
 export function lostDisk(s: GameState, w: Workload): boolean {
   const vm = vmOf(s, w);
   if (vm) return lostDisk(s, vm);
   if (w.corrupted) return true;
   const at = w.datastore ?? w.deviceId, d = at ? s.devices.find((x) => x.id === at) : undefined;
+  if (at && !d) return true;
   return !!d && d.dataLost !== null && d.dataLost >= w.placedAt;
 }
 
@@ -440,7 +443,8 @@ export function setNodeState(s: GameState, deviceId: string, state: NodeState, c
 // The web sites of a panel host the player took offline or that were compromised.
 export const sitesDown = (s: GameState, hostId: string): boolean => s.security.offline.includes(hostId) || s.security.hacked.includes(hostId);
 
-// A workload on a server is up while the server reaches the internet and still holds the data written since it was placed.
+// A workload on a server is up while the server reaches the internet and still holds the data written since it was placed;
+// a VM also needs an address on its host's network and, for a customer with a private network, that network (private.ts).
 // A web space in a panel VM is up while the VM is. Colocation is up while its rack has power.
 // ponytail: colocation ignores the customer's uplinks until colocation cabling lands.
 export function workloadOnline(s: GameState, w: Workload): boolean {
@@ -452,7 +456,8 @@ export function workloadOnline(s: GameState, w: Workload): boolean {
   if (c && w.deviceId && s.frozen.includes(w.deviceId)) return false;
   if (w.deviceId) {
     const d = s.devices.find((x) => x.id === w.deviceId);
-    return !!d && !lostDisk(s, w) && linkStatus(s, d.id).online && (!w.datastore || working(s, w.datastore));
+    return !!d && !lostDisk(s, w) && linkStatus(s, d.id).online && (!w.datastore || working(s, w.datastore))
+      && (!isVm(s, w) || (!!addressOf(s, w.id) && !privateNetDown(s, w)));
   }
   const rack = s.racks.find((r) => r.id === w.rackId);
   const loc = rack && s.locations.find((l) => l.id === rack.locationId);

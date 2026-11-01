@@ -117,6 +117,7 @@ export default {
   "apps.hw.driveSpeed": () => "Laufwerksgeschwindigkeit",
 
   "apps.finder.open": () => "Öffnen",
+  "apps.finder.newWindow": () => "Neues Fenster",
   "apps.finder.removeFromDock": () => "Aus dem Dock entfernen",
   "apps.finder.keepInDock": () => "Im Dock behalten",
   "apps.finder.addToDesktop": () => "Zum Schreibtisch hinzufügen",
@@ -295,6 +296,7 @@ export default {
   "apps.about.Dev menu": () => "Setzt zum Testen das Datum, dein Geld und deine Forschungspunkte.",
   "apps.about.Settings": () => "Legt Firmennamen und Logo, das Design und die Apps fest, die Mitteilungen senden dürfen.",
   "apps.about.Weather": () => "Zeigt das Wetter an deinen Standorten und lässt dich dorthin fahren.",
+  "apps.about.Chat": () => "Öffnet den Community-Chat von Backbone, in dem du mit anderen Spielern und dem Entwickler sprechen kannst.",
   "weather.sky.sun": () => "Sonnig",
   "weather.sky.partly": () => "Teils bewölkt",
   "weather.sky.cloud": () => "Bewölkt",
