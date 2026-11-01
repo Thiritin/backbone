@@ -1,14 +1,15 @@
 import { FileText } from "lucide-react";
-import { Archive, HardDrive, LogOut, Settings, type LucideIcon } from "lucide-react";
+import { Archive, ArchiveRestore, HardDrive, LogOut, Settings, type LucideIcon } from "lucide-react";
 import { softwareById } from "../../../../../sim/10-catalog/platforms";
 import { backupPool } from "../../../../../sim/85-products/products";
 import { disk } from "../../../hw";
 import { Actions, Bar, Facts, LoginForm, usePanelTab, useSoftware, type PanelProps, type Tab } from "../PanelBase";
 import { useReadoutPages } from "../Readouts";
 import { t } from "../../../../../i18n/en";
+import { Restores } from "./Restores";
 import "./backup.css";
 
-// One console for Backula, Veeham and Proxmocks Backup Server: the jobs that write here, the repository and the software.
+// One console for Veeham and Proxmocks Backup Server: the jobs that write here, restores, the repository and the software.
 export function BackupConsole(p: PanelProps) {
   const [tab, setTab] = usePanelTab(p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f), name = softwareById(p.c.panel!).console;
   const logo = <span className="bk-logo"><Archive size={18} aria-hidden />{name}</span>;
@@ -19,7 +20,7 @@ export function BackupConsole(p: PanelProps) {
   );
   const jobs = p.game.clusters.filter((c) => c.backup.targetId === p.c.id);
   const pool = backupPool(p.game, p.c.id);
-  const nav: [Tab, string, LucideIcon][] = [["objects", t("browser-consoles-1.bkJobs"), Archive], ["nodes", t("browser-consoles-1.bkRepository"), HardDrive], ["software", t("browser-consoles-1.settings"), Settings], ...pages.map((g) => [g.id, g.label, FileText] as [Tab, string, LucideIcon])];
+  const nav: [Tab, string, LucideIcon][] = [["objects", t("browser-consoles-1.bkJobs"), Archive], ["restore", t("browser-consoles-1.bkRestore"), ArchiveRestore], ["nodes", t("browser-consoles-1.bkRepository"), HardDrive], ["software", t("browser-consoles-1.settings"), Settings], ...pages.map((g) => [g.id, g.label, FileText] as [Tab, string, LucideIcon])];
   return (
     <div className="cx bk">
       <header className="bk-top">{logo}<span className="cx-host">{p.host}</span><button className="cx-btn" onClick={p.logout}><LogOut size={14} aria-hidden />{t("browser-consoles-1.logOut")}</button></header>
@@ -44,6 +45,7 @@ export function BackupConsole(p: PanelProps) {
             </tbody>
           </table>
         ))}
+        {tab === "restore" && <Restores game={p.game} c={p.c} />}
         {tab === "nodes" && (
           <table className="cx-table">
             <tbody>
