@@ -194,6 +194,7 @@ export default {
   "shop.listAction": () => "List",
 
   "shop.upgrade.searchlight": () => "Finds apps, customers, machines, tickets and sites from one field.",
+  "shop.upgrade.keepassive": () => "Saves router and bank logins and fills them in on the next visit.",
   "shop.upgrade.widgetCalendar": () => "Shows today's date on your desktop.",
   "shop.upgrade.widgetTickets": () => "Shows your open tickets on your desktop.",
   "shop.upgrade.widgetCash": () => "Shows your cash on your desktop.",
@@ -235,6 +236,9 @@ export default {
   "shop.inc.searchlight.0": () => "Opens with Ctrl+K or Cmd+K",
   "shop.inc.searchlight.1": () => "Apps, customers and machines",
   "shop.inc.searchlight.2": () => "Tickets, sites and settings",
+  "shop.inc.keepassive.0": () => "Asks to save a login after you sign in",
+  "shop.inc.keepassive.1": () => "Fills in saved passwords",
+  "shop.inc.keepassive.2": () => "Router and online banking logins",
   "shop.inc.widgetCalendar.0": () => "Weekday, date and year",
   "shop.inc.widgetTickets.0": () => "Open ticket count",
   "shop.inc.widgetTickets.1": () => "Opens Support",

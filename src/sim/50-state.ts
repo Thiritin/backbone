@@ -384,6 +384,8 @@ export interface GameState {
   books: { vendor: BooksVendorId | null; installedAt: number };
   // The tax office's file on the company (80-business/tax.ts).
   tax: TaxState;
+  // Logins KeePassive saved, by site ("fritz:<router id>", "bank:<bank id>"): the form's values in field order.
+  logins: Record<string, string[]>;
 }
 
 export interface LogEntry { hour: number; minute?: number; name: string; args: unknown[] }
@@ -478,6 +480,7 @@ export const newGame = (seed: number): GameState => ({
   modules: [],
   books: { vendor: null, installedAt: 0 },
   tax: newTax(),
+  logins: {},
 });
 
 export const guideDoc = (): Doc => ({ id: "guide", kind: "guide", title: t("doc.guide"), body: "", x: 16, y: 46 });
