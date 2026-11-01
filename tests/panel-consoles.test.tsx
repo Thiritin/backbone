@@ -4,20 +4,21 @@ import { yearOf } from "../src/sim/00-core/time";
 import { addPackage } from "../src/sim/90-actions/packages";
 import { consoleFeatures } from "../src/sim/80-business/consoles";
 import { CONSOLES } from "../src/ui/apps/browser/consoles/ConsolePage";
-import { panelVm, readyGame, skipTo } from "./fixtures";
+import { lateVersions, panelVm, pinVersion, readyGame, skipTo } from "./fixtures";
 
-// docs/design/software.md, section 10: the first year of each console's early and late look.
+// docs/design/software.md, section 10: a year of each console's early look, a year of its late look, and a mark of its page.
 const ERAS: Record<string, [number, number, string]> = {
   cpanic: [2005, 2014, "WebHost Manager"], pleskit: [2005, 2015, "Websites &amp; Domains"], directadmen: [2005, 2018, "Server Manager"],
   freepanel: [2005, 2016, "Software and updates"], tcadmen: [2005, 2016, "Game Servers"], multikraft: [2010, 2018, "Servers"], pterodaktyl: [2016, 2021, "Servers"],
 };
 
-function render(id: string, year: number, signedIn: boolean, path?: string) {
+function render(id: string, year: number, signedIn: boolean, path?: string, version?: string) {
   const s = readyGame(1);
   skipTo(s, year);
   s.cash = 1_000_000;
   const basement = s.clusters.find((c) => c.kind === "cloud")!;
   const host = panelVm(s, basement.id, id), c = s.clusters.find((x) => x.id === host)!;
+  if (version) pinVersion(s, c, id, version);
   const View = CONSOLES[id];
   return { year: yearOf(s.hour), html: renderToString(<View game={s} c={c} f={consoleFeatures(id, yearOf(s.hour))} host="panel.example.com" path={path} signedIn={signedIn} login={() => {}} logout={() => {}} />) };
 }
@@ -27,15 +28,16 @@ describe("hosting and game panel consoles", () => {
     for (const id of Object.keys(ERAS)) expect(CONSOLES[id], id).toBeDefined();
   });
 
-  it("wear the early look before the late year and the late look from it, signed in or not", () => {
+  it("wear the look of the installed version, signed in or not", () => {
     for (const [id, [early, late, mark]] of Object.entries(ERAS)) {
-      for (const [year, look] of [[early, "early"], [late - 1, "early"], [late, "late"]] as const) {
-        const out = render(id, year, true);
+      const [before, from] = lateVersions(id);
+      for (const [year, look, version] of [[early, "early", undefined], [late, "early", before], [late, "late", from]] as const) {
+        const out = render(id, year, true, undefined, version);
         expect(out.year, id).toBe(year);
         expect(out.html, `${id} ${year}`).toContain(`data-era="${look}"`);
         expect(out.html, `${id} ${year}`).toContain(mark);
         expect(out.html).toContain("panel.example.com");
-        const login = render(id, year, false).html;
+        const login = render(id, year, false, undefined, version).html;
         expect(login, id).toContain(`data-era="${look}"`);
         expect(login).toContain("Password");
       }

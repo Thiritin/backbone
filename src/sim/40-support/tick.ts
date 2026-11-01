@@ -1,4 +1,5 @@
 import { chance, rand } from "../00-core/rng";
+import { CRYPTO_ABUSE, PAYSAFE_CHURN } from "../10-catalog/payments";
 import { refundUnused, termRoll } from "./terms";
 import { isMonthStart, nowMinutes } from "../00-core/time";
 import { counts } from "../00-core/workhours";
@@ -119,12 +120,17 @@ const allHeld = (s: GameState, customerId: string): boolean => {
   return mine.length > 0 && mine.every((v) => serviceHeld(s, v));
 };
 
+// Tickets of a kind a customer opens per month.
+export function monthlyRate(s: GameState, c: Customer, kind: "howTo" | "billing" | "abuse"): number {
+  const { skill } = profileStats(c.profile);
+  return (kind === "abuse" && c.profile === "gamer" ? GAMER_ABUSE_RATE : MONTHLY_RATES[kind][skill] * (kind === "howTo" ? howToFactor(s, c.id) * tenureFactor(s, c) : 1)) * (kind === "abuse" && c.shady ? SHADY_ABUSE : 1) * (kind === "abuse" && c.method === "crypto" ? CRYPTO_ABUSE : 1) * (kind === "abuse" ? phpAbuse(s, c.id) * resellerAbuse(s, c.id) * (allHeld(s, c.id) ? 0 : 1) : 1);
+}
+
 function spawnHourly(s: GameState): void {
   for (const c of s.customers) {
     if (c.churnedAt !== null) continue;
-    const { skill } = profileStats(c.profile);
     for (const kind of ["howTo", "billing", "abuse"] as const) {
-      const rate = (kind === "abuse" && c.profile === "gamer" ? GAMER_ABUSE_RATE : MONTHLY_RATES[kind][skill] * (kind === "howTo" ? howToFactor(s, c.id) * tenureFactor(s, c) : 1)) * (kind === "abuse" && c.shady ? SHADY_ABUSE : 1) * (kind === "abuse" ? phpAbuse(s, c.id) * resellerAbuse(s, c.id) * (allHeld(s, c.id) ? 0 : 1) : 1);
+      const rate = monthlyRate(s, c, kind);
       if (!chance(s.rng, rate / HOURS_PER_MONTH)) continue;
       if (kind !== "howTo") { createTicket(s, c, kind); continue; }
       const ask = pickHowTo(s, c);
@@ -172,7 +178,7 @@ function monthly(s: GameState): void {
   for (const c of s.customers) {
     if (c.churnedAt !== null) continue;
     const p = profileStats(c.profile), term = termRoll(s, c.id);
-    const cancels = !(term.committed && c.happiness >= 15) && (c.happiness < 15 || chance(s.rng, Math.min(0.9, p.churn * term.months) + 0.5 * Math.max(0, (50 - c.happiness) / 50)));
+    const cancels = !(term.committed && c.happiness >= 15) && (c.happiness < 15 || chance(s.rng, Math.min(0.9, p.churn * (c.method === "paysafe" ? PAYSAFE_CHURN : 1) * term.months) + 0.5 * Math.max(0, (50 - c.happiness) / 50)));
     if (cancels && !s.tickets.some((t) => t.customerId === c.id && t.kind === "cancellation" && !isFinal(t))) createTicket(s, c, "cancellation", null).topic = cancelReason(s, c);
     else if (chance(s.rng, UPGRADE_CHANCE[p.budget] * fullBoost(s, c.id))) {
       const grow = activeServices(s.services, c.id).filter(expandable), full = fullServer(s, c.id);

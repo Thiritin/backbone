@@ -4,6 +4,19 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- Game servers now crash now and then, more often with mods or on an overloaded host, and come back by themselves when auto-restart is on, and each server can restart on a daily or weekly schedule.
+- Progress bars in server panels now look like the ones each product used in its time, from boxed and segmented bars early on to thin flat ones later.
+- Backula no longer has a web console; its host page shows the director status and the backup disk the way its command line would.
+- Clicking the clock in the top bar opens a calendar that marks the days with announcements, and clicking your cash opens Finance.
+- Shop vendors now sell payment methods for your shop, from direct debit and PayPail to Visor cards, paysavecard, Instantly and Bitcorn Pay, each with its own fee and weekly payout, and customers whose favourite method is missing may buy elsewhere.
+- Returned debits, PayPail disputes and card chargebacks now arrive in Books as negative payments that reopen their invoice once you book them, and a chargeback on a stolen card suspends the fraudster.
+- A shop system now keeps its own customers and invoices, which reach Books when you press Import from shop, and its card payments arrive as one weekly payout that lists the invoices it covers.
+- Each shop vendor sells a Shop link module on its own website that sends new shop customers and invoices to Books at once and marks shop invoices paid when you book their payment.
+- Vendor and software websites now show their logos centred and complete in every era, and the ISO download buttons line up with their release rows.
+- The back button on the marketing website page is now its normal size and shows in your language.
+- The server details page has room at its edges again, long German button labels wrap, and the disk label no longer runs into its meter.
+- Each website on a panel host links to its domain, or to its address while it has none.
+- The dunning settings in Lexwear Office now open from a Settings button on the Reminders tab.
 - The first order form is now called the self-scripted order form in every language.
 - Software subscriptions now renew per licence key on the day of the month you bought them, with a receipt from the vendor, and a renewal the bank cannot pay lapses after a week of grace until the money is there.
 - The Debiant installer asks how to configure the network, so a server can take its address from the router or get a fixed address, netmask, gateway and name server, and the Windoors Server Manager has a Network adapter page for the same settings.
@@ -22,6 +35,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Used hardware now resells for less than it cost new, and buyers on the board and on eBuy no longer pay more than its resale value.
 - A part taken out of a server takes its share of the server's value along, so stripping a server and selling the pieces brings in the same as selling it whole.
 - Installed software now runs a real version number, and a new install takes the newest release out at the time.
+- A software console now looks like the version installed on the machine, so an old cPanic keeps its old look in later years.
 - The Marketing app has a Domain tile whose Buy button opens the domain resellers in the Yahoy! Directory, and the domains of other companies in the game can no longer be registered as your own.
 - Websites in the browser fill the whole window again instead of a narrow page.
 - Right-click a browser tab to close it, close all other tabs, or close every tab to its left or right.

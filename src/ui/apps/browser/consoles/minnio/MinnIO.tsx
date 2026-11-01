@@ -14,7 +14,7 @@ import "./minnio.css";
 const ERAS = erasFrom(2016, 2021);
 
 export function MinnIO(p: PanelProps) {
-  const era = eraAt(ERAS, p.game), [tab, setTab] = usePanelTab(p.f);
+  const era = eraAt(ERAS, p), [tab, setTab] = usePanelTab(p.f);
   const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f);
   const logo = <span className="mn-logo">MINN<b>IO</b></span>;
   if (!p.signedIn) return (

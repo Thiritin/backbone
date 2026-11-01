@@ -5,7 +5,7 @@ import { consoleFeatures } from "../src/sim/80-business/consoles";
 import { CONSOLES } from "../src/ui/apps/browser/consoles/ConsolePage";
 import { panelVm, readyGame, skipTo } from "./fixtures";
 
-const IDS = ["tcadmen", "multikraft", "pterodaktyl", "powerdnz", "mailpig", "openveepeen", "anyconnekt", "minnio", "ownclod", "backula"];
+const IDS = ["tcadmen", "multikraft", "pterodaktyl", "powerdnz", "mailpig", "openveepeen", "anyconnekt", "minnio", "ownclod", "veeham"];
 
 function render(id: string, year: number) {
   const s = readyGame(1);
