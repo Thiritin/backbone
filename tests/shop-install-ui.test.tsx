@@ -2,9 +2,8 @@ import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { hourOfMonth } from "../src/sim/00-core/time";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
-import { chooseShop } from "../src/sim/90-actions/shop";
 import { LicenceScreen, NotTakingOrders, UpdatesScreen, VersionFooter } from "../src/ui/apps/browser/sites/portal/shared/Licence";
-import { readyGame } from "./fixtures";
+import { readyGame, installWithKey } from "./fixtures";
 
 const shop = () => {
   const s = readyGame(5);
@@ -12,7 +11,7 @@ const shop = () => {
   s.cash = 1e6;
   setUpChannel(s, "website");
   s.unlocks = [...s.unlocks, "shops"];
-  expect(chooseShop(s, "whmCache", true).ok).toBe(true);
+  installWithKey(s, "whmCache", true);
   return s;
 };
 

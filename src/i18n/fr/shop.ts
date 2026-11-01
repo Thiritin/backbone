@@ -5,7 +5,6 @@ export default {
   "error.needsShopSkill": () => "Recherche d'abord les systèmes de boutique.",
   "error.shopInUse": () => "Ce système de boutique gère déjà tes commandes.",
   "error.shopNotSold": () => "Ce système de boutique n'est pas vendu cette année.",
-  "error.shopNoOwn": () => "Ce système de boutique n'existe qu'en location.",
   "error.unknownModule": () => "Ce module n'existe pas.",
   "error.moduleOwned": () => "Tu as déjà ce module.",
   "error.moduleNotSold": () => "Ton système de boutique ne vend pas de modules supplémentaires.",
