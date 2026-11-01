@@ -33,7 +33,7 @@ function certified(s: GameState): string {
   run(s, s.tax.codeAt! - s.hour + 1);
   const code = inbox(s).filter((l) => l.topic === "dohleCode").at(-1)!.params.code as string;
   const r = activateDohle(s, String(mail(s).mail!.params.id), code);
-  expect(r.ok).toBe(true);
+  if (!r.ok) throw new Error(r.error);
   return r.id!;
 }
 
