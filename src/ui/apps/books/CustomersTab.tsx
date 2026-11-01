@@ -18,14 +18,18 @@ import "../customers/customers.css";
 
 export function CustomersTab({ focus }: { focus: string | null }) {
   const game = useBooks(), act = useStore((s) => s.act);
-  const list = game.customers.filter((c) => !c.sponsor).sort((a, b) => Number(a.churnedAt !== null) - Number(b.churnedAt !== null) || b.since - a.since);
+  const all = game.customers.filter((c) => !c.sponsor).sort((a, b) => b.since - a.since);
+  const archived = all.filter((c) => activeServices(game.services, c.id).length === 0);
+  const [archive, setArchive] = useState(() => !!focus && archived.some((c) => c.id === focus));
+  const current = all.filter((c) => !archived.includes(c)), list = archive ? archived : current;
   const [selected, setSelected] = useState<string | null>(focus?.startsWith(NEW) ? null : focus ?? list[0]?.id ?? null);
   const [adding, setAdding] = useState<string | null>(focus?.startsWith(NEW) ? focus.slice(NEW.length) : null);
   const [crediting, setCrediting] = useState(false), [pricing, setPricing] = useState<string | null>(null);
   const c = list.find((x) => x.id === selected);
   if (adding !== null) return <NewCustomer game={game} initial={adding} onDone={() => setAdding(null)} />;
   const add = <button className="btn" onClick={() => setAdding("")}><UserPlus />{t("pkg.newCustomer")}</button>;
-  if (list.length === 0) return <div className="fin-empty"><Users />{t("books.noCustomers")}{add}</div>;
+  const toggle = archived.length > 0 && <button className="btn books-archive" aria-pressed={archive} onClick={() => { setArchive(!archive); setSelected((archive ? current : archived)[0]?.id ?? null); }}>{archive ? t("books.tab.customers") : t("books.archive", { n: archived.length })}</button>;
+  if (list.length === 0) return <div className="fin-empty"><Users />{t("books.noCustomers")}{add}{toggle}</div>;
   const services = c ? activeServices(game.services, c.id) : [];
   const held = !!c && game.heldCustomers.includes(c.id);
   const domains = c ? game.domains.filter((d) => d.customerId === c.id) : [];
@@ -45,6 +49,7 @@ export function CustomersTab({ focus }: { focus: string | null }) {
             </button>
           );
         })}
+        {toggle}
       </nav>
       {c && (
         <section className="books-customer">

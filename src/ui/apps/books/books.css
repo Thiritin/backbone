@@ -33,6 +33,7 @@
 .books-customers { flex: 1; min-height: 0; display: flex; }
 .books-list { width: 260px; flex: none; overflow: auto; display: flex; flex-direction: column; gap: 1px; }
 .books-item { width: 100%; padding: 6px 8px; border: 0; border-radius: 6px; background: none; font: inherit; color: var(--text); text-align: left; display: flex; align-items: flex-start; gap: 8px; }
+.books-archive { margin-top: auto; }
 .books-item:hover { background: var(--hover); }
 .books-item.active { background: var(--ar-sel, var(--accent)); color: var(--ar-sel-ink, var(--accent-ink)); }
 .books-li { flex: 1; min-width: 0; display: grid; }
