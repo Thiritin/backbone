@@ -1,4 +1,3 @@
-import { day } from "../tax";
 import type { Dict } from "../lang";
 import { t } from "../en";
 import { euro } from "../../sim/00-core/money";
@@ -101,7 +100,7 @@ export default {
   "ticket.cancellation.slow.subject": () => "Per favore, disdite il mio contratto",
   "ticket.cancellation.slow.text": () => "I miei servizi sono lentissimi da settimane. Passo a un provider più veloce, quindi per favore disdite tutto a fine mese.",
   "ticket.cancellation.byHost.subject": () => "Disdetta del tuo contratto",
-  "ticket.cancellation.byHost.text": (p) => (Number(p.now) ? `Abbiamo disdetto il tuo contratto per ${p.service} con effetto immediato. Motivo: ${p.why}.` : `Disdiciamo il tuo contratto per ${p.service}. Termina il ${day(p.end)}.${p.why ? ` Motivo: ${p.why}.` : ""}`),
+  "ticket.cancellation.byHost.text": (p) => (Number(p.now) ? `Abbiamo disdetto il tuo contratto per ${p.service} con effetto immediato. Motivo: ${p.why}.` : `Disdiciamo il tuo contratto per ${p.service}. Termina il ${p.end}.${p.why ? ` Motivo: ${p.why}.` : ""}`),
   "ticket.abuse.spam.subject": (p) => `Spam inviato ${p.hostname || p.service ? `da ${p.hostname || p.service}` : "dalla tua rete"}`,
   "ticket.abuse.spam.text": () => "Un provider di posta segnala migliaia di e-mail di spam dal server di questo cliente.",
   "ticket.abuse.attack.subject": (p) => `Traffico di attacco ${p.hostname || p.service ? `da ${p.hostname || p.service}` : "dalla tua rete"}`,

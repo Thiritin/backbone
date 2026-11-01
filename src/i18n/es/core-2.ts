@@ -1,4 +1,3 @@
-import { day } from "../tax";
 import type { Dict } from "../lang";
 import { t } from "../en";
 import { euro } from "../../sim/00-core/money";
@@ -101,7 +100,7 @@ export default {
   "ticket.cancellation.slow.subject": () => "Por favor, cancelad mi contrato",
   "ticket.cancellation.slow.text": () => "Mis servicios llevan semanas siendo muy lentos. Me cambio a un proveedor más rápido, así que por favor cancelad todo a final de mes.",
   "ticket.cancellation.byHost.subject": () => "Rescisión de tu contrato",
-  "ticket.cancellation.byHost.text": (p) => (Number(p.now) ? `Hemos rescindido tu contrato de ${p.service} con efecto inmediato. Motivo: ${p.why}.` : `Rescindimos tu contrato de ${p.service}. Finaliza el ${day(p.end)}.${p.why ? ` Motivo: ${p.why}.` : ""}`),
+  "ticket.cancellation.byHost.text": (p) => (Number(p.now) ? `Hemos rescindido tu contrato de ${p.service} con efecto inmediato. Motivo: ${p.why}.` : `Rescindimos tu contrato de ${p.service}. Finaliza el ${p.end}.${p.why ? ` Motivo: ${p.why}.` : ""}`),
   "ticket.abuse.spam.subject": (p) => `Spam enviado desde ${who(p, "tu red")}`,
   "ticket.abuse.spam.text": () => "Un proveedor de correo denuncia miles de correos de spam procedentes del servidor de este cliente.",
   "ticket.abuse.attack.subject": (p) => `Tráfico de ataque desde ${who(p, "tu red")}`,

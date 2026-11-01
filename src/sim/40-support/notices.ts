@@ -6,6 +6,8 @@ import { activeServices, type Customer } from "../30-customers/customers";
 import { serviceFqdn } from "../30-customers/hostnames";
 import type { GameState } from "../50-state";
 import { t } from "../../i18n/en";
+import { LOCALE } from "../../i18n/lang";
+import { dateOf } from "../00-core/time";
 import { serverOf, type Workload } from "../60-infra/cluster";
 import { breachOf, decideBreach } from "../60-infra/breach";
 import { gridTick, maybeReview, returnSeized, seize } from "../60-infra/incidents";
@@ -228,7 +230,7 @@ const switchParams = (s: GameState, tk: Ticket) => {
 };
 
 // The hoster's termination notice: the end hour, whether it ended at once and the reason as shown.
-const termParams = (term: NonNullable<Ticket["term"]>) => ({ end: term.end, now: term.now ? 1 : 0, why: term.reason ? t(`host.reason.${term.reason}`) : "" });
+const termParams = (term: NonNullable<Ticket["term"]>) => ({ end: dateOf(term.end).toLocaleDateString(LOCALE, { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }), now: term.now ? 1 : 0, why: term.reason ? t(`host.reason.${term.reason}`) : "" });
 
 export const subjectParams = (s: GameState, t: Ticket): Record<string, string | number> => ({
   service: s.services.find((v) => v.id === t.serviceId)?.label ?? "", hostname: serviceFqdn(s, s.services.find((v) => v.id === t.serviceId)), domain: t.domain ?? s.services.find((v) => v.id === t.serviceId)?.domain ?? s.sales.requests.find((r) => r.ticketId === t.id)?.domain ?? "", url: t.notice?.url ?? "", ip: t.topic === "dnsChange" ? askedIp(s, t.id) : "", video: t.notice?.video ?? "",

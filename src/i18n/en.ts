@@ -27,7 +27,7 @@ import { USED_EN } from "./used";
 import { VENDORS_EN } from "./vendors";
 import { BANK_EN } from "./bank";
 import { PAPERWORK_EN } from "./paperwork";
-import { day, TAX_EN } from "./tax";
+import { TAX_EN } from "./tax";
 import { ALARMS_EN } from "./alarms";
 import { IFACE_EN } from "./iface";
 import { active, LOCALE, type Dict } from "./lang";
@@ -392,7 +392,7 @@ export const en: Record<string, (p: Params) => string> = {
   "ticket.cancellation.slow.subject": () => "Please cancel my contract",
   "ticket.cancellation.slow.text": () => "My services have been far too slow for weeks. I am moving to a faster host, so please cancel everything at the end of the month.",
   "ticket.cancellation.byHost.subject": () => "Termination of your contract",
-  "ticket.cancellation.byHost.text": (p) => (Number(p.now) ? `We have terminated your contract for ${p.service} with immediate effect. Reason: ${p.why}.` : `We are terminating your contract for ${p.service}. It ends on ${day(p.end)}.${p.why ? ` Reason: ${p.why}.` : ""}`),
+  "ticket.cancellation.byHost.text": (p) => (Number(p.now) ? `We have terminated your contract for ${p.service} with immediate effect. Reason: ${p.why}.` : `We are terminating your contract for ${p.service}. It ends on ${p.end}.${p.why ? ` Reason: ${p.why}.` : ""}`),
   "ticket.abuse.spam.subject": (p) => `Spam sent from ${p.hostname || p.service || "your network"}`,
   "ticket.abuse.spam.text": () => "A mail provider reports thousands of spam mails from this customer's server.",
   "ticket.abuse.attack.subject": (p) => `Attack traffic from ${p.hostname || p.service || "your network"}`,
