@@ -1,6 +1,5 @@
 import { hourOfMonth } from "../00-core/time";
 import { SERVER_OS } from "./server-os";
-import type { Look } from "./sites";
 
 // docs/design/software-versions.md: the releases of every operating system and software, oldest first. release,
 // updatesUntil and securityUntil are game hours; an end is null while the vendor has not set one. major is the line a
@@ -191,10 +190,11 @@ export const nextMajor = (product: string, version: string, hour: number): Softw
 };
 
 // docs/design/software-versions.md, UI generations: the first version of each generation and the console look it shows.
-// The consoles draw two looks, so each generation takes the nearer one; Horizont, HyperVee and OpenVeePeeN change look
-// inside a generation, at the version of the game year the look was drawn for.
-export const UI_LOOKS: Record<string, [version: string, look: Look][]> = {
-  cpanic: [["10", "early"], ["11", "early"], ["11.38", "late"], ["98", "late"]],
+// A console drawn per generation names its own look ids (docs/design/software.md, section 10); the others draw "early"
+// and "late", so each generation takes the nearer one. Horizont, HyperVee and OpenVeePeeN change look inside a generation,
+// at the version of the game year the look was drawn for.
+export const UI_LOOKS: Record<string, [version: string, look: string][]> = {
+  cpanic: [["10", "x3"], ["11", "x3"], ["11.38", "paperLamp"], ["98", "jupitar"]],
   pleskit: [["7.5", "early"], ["10.0", "early"], ["12.0", "early"], ["17.0", "late"], ["18.0", "late"]],
   directadmen: [["1.24", "early"], ["1.60", "late"]],
   freepanel: [["1.200", "early"], ["1.700", "late"]],
