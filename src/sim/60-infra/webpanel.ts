@@ -9,12 +9,20 @@ import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { cmsOf } from "./apps";
 import type { Cluster } from "./cluster";
+import type { HostBans } from "./bans";
+import { transferTick, type Transfer } from "./transfers";
+import type { Reseller } from "../30-customers/resellers";
 
 export interface WebPanel {
   phpPool: Record<string, string[]>; // panel host id -> legacy PHP versions kept installed besides Cluster.php
   phpOf: Record<string, string>; // web hosting service id -> the PHP version it runs; missing means the host's newest
   phpBroken: Record<string, string>; // web hosting service id -> the version it broke on
   ssl: Ssl;
+  bans: Record<string, HostBans>; // Pleskit host id -> its Fail2ban jail
+  appBack: Record<string, { appVersion: number; appUpdatedAt: number }>; // site id -> the release before a Toolkit update
+  transfers: Record<string, Transfer>; // web hosting service id -> the move of its site from another host
+  resellers: Record<string, Reseller>; // customer id -> the reseller block they fill
+  appBroken: Record<string, number>; // site id -> the hour the site a Toolkit update broke runs normally again
 }
 
 // economy.md, SSL certificates and AutoSSL: auto lists the cPanic hosts with AutoSSL on, expires the hour each domain's
@@ -23,12 +31,13 @@ export interface SslLog { hour: number; serviceId: string; ok: boolean }
 export interface Ssl { auto: string[]; expires: Record<string, number>; expired: string[]; log: SslLog[] }
 export const newSsl = (): Ssl => ({ auto: [], expires: {}, expired: [], log: [] });
 
-export const newWebPanel = (): WebPanel => ({ phpPool: {}, phpOf: {}, phpBroken: {}, ssl: newSsl() });
+export const newWebPanel = (): WebPanel => ({ phpPool: {}, phpOf: {}, phpBroken: {}, ssl: newSsl(), bans: {}, appBack: {}, appBroken: {}, transfers: {}, resellers: {} });
 
 // A save keeps what it has per sub-record, so a save from an earlier milestone still gets the later sub-fields.
 export const mergeWebPanel = (base: WebPanel, data: Partial<WebPanel> | undefined): WebPanel => ({
   phpPool: { ...base.phpPool, ...data?.phpPool }, phpOf: { ...base.phpOf, ...data?.phpOf }, phpBroken: { ...base.phpBroken, ...data?.phpBroken },
-  ssl: { ...base.ssl, ...data?.ssl },
+  ssl: { ...base.ssl, ...data?.ssl }, bans: { ...base.bans, ...data?.bans },
+  appBack: { ...base.appBack, ...data?.appBack }, appBroken: { ...base.appBroken, ...data?.appBroken }, transfers: { ...base.transfers, ...data?.transfers }, resellers: { ...base.resellers, ...data?.resellers },
 });
 
 export const POOL_MAX = 2;
@@ -189,12 +198,22 @@ export function sslTick(s: GameState): void {
   }
 }
 
+// Daily: a site a Toolkit update broke runs slowed until its hour; ended sites drop out.
+function updateBrokenTick(s: GameState): void {
+  const live = new Set(s.services.filter((v) => v.endedAt === null).map((v) => v.id));
+  const entries = Object.entries(s.webpanel.appBroken), slow = new Set(entries.filter(([id, until]) => live.has(id) && until > s.hour).map(([id]) => id));
+  if (slow.size !== entries.length) s.webpanel = { ...s.webpanel, appBroken: Object.fromEntries(entries.filter(([id]) => slow.has(id))) };
+  if (slow.size) s.services = s.services.map((v) => (slow.has(v.id) ? { ...v, slowedAt: s.hour } : v));
+}
+
 export function webpanelTick(s: GameState): SimEvent[] {
+  transferTick(s);
   if (s.hour % 24 !== 0) return [];
   const hosts = new Set(s.clusters.filter((c) => c.kind === "panel").map((c) => c.id));
   const stale = Object.keys(s.webpanel.phpPool).filter((id) => !hosts.has(id));
   if (stale.length) s.webpanel = { ...s.webpanel, phpPool: Object.fromEntries(Object.entries(s.webpanel.phpPool).filter(([id]) => hosts.has(id))) };
   phpCompat(s);
   sslTick(s);
+  updateBrokenTick(s);
   return [];
 }
