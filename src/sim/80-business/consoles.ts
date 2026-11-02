@@ -62,24 +62,29 @@ export function consoleFeatures(softwareId: string, year: number): ConsoleFeatur
     : cloud ? (year >= (sw.migration.same ?? sw.from) ? (sw.live ? "live" : "cold") : null) : null;
   return {
     look,
-    create: !mail, delete: !mail, stop: !mail, start: !mail,
+    // A web panel manages sites, never the host it runs on.
+    create: !mail, delete: !mail && !panel, stop: !mail, start: !mail,
     migrate,
-    resize: (panel && softwareId !== "freepanel") || cloud,
+    resize: cloud,
     // Every console with a backup server that reads it schedules its jobs there.
     backups: !mail && sw.kind !== "backup",
     update: true,
-    sitesOffline: panel || game,
+    sitesOffline: game,
     cleanUp: panel || game,
     cluster: !game && !mail && sw.cluster !== null && year >= sw.cluster,
   };
 }
 
-// Every cluster whose software answers at a hostname, the hypervisor first and then the panel: a server's, or those in
-// the player's own VM.
+// docs/design/software.md, section 10: the software that has no web console and is run from the machine's terminal.
+const NO_WEB_CONSOLE = new Set(["bound", "knut", "wireguarded", "vsftpeed", "postfixit", "backula"]);
+export const hasWebConsole = (family: string | null): boolean => !!family && !NO_WEB_CONSOLE.has(family);
+
+// Every cluster whose software answers at a hostname with a web console, the hypervisor first and then the panel: a
+// server's, or those in the player's own VM.
 export function consoleClusters(s: GameState, hostname: string): Cluster[] {
   const d = s.devices.find((x) => x.hostname === hostname);
   const vm = d ? undefined : s.workloads.find((w) => w.hostname === hostname && isOwnVm(w));
-  return (d ? clustersOf(s, d.id) : vm ? hostsOfVm(s, vm.id) : []).filter((c) => familyOf(c));
+  return (d ? clustersOf(s, d.id) : vm ? hostsOfVm(s, vm.id) : []).filter((c) => hasWebConsole(familyOf(c)));
 }
 
 // docs/design/software.md, 8.2: the port each console also answers on, next to the host's own address; Mailpig and the

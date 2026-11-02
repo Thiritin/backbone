@@ -72,7 +72,7 @@ export function rescueEntries(game: GameState, w: Workload, start: (game: GameSt
 export function workloadActions(game: GameState, w: Workload, start?: (game: GameState, t: HandTask) => void): MenuEntry[] {
   const act = useStore.getState().act;
   const st = vmState(game, w);
-  const on = st === "running" || st === "down" || st === "frozen";
+  const on = st === "running" || st === "down";
   const web = game.clusters.find((c) => c.id === w.clusterId)?.kind === "panel";
   const targets = !web && (on || st === "stopped") ? migrationTargets(game, w.id) : [];
   const where = (id: string) => game.clusters.find((c) => c.id === id)?.name;

@@ -1,8 +1,12 @@
-import { BookOpen, Check, Hourglass, Lock, Play, Store } from "lucide-react";
+import { BookOpen, Check, Hourglass, Lock, Package, Play } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { SKILLS, skillById, TRACKS, type Skill } from "../../../sim/10-catalog/research";
+import { SOFTWARE } from "../../../sim/10-catalog/platforms";
+import { SKILLS, skillById, TRACKS, type Skill, type Unlock } from "../../../sim/10-catalog/research";
+import { SHOPS } from "../../../sim/10-catalog/shops";
 import { storeItem } from "../../../sim/10-catalog/store";
 import type { GameState } from "../../../sim/50-state";
+import { yearOf } from "../../../sim/00-core/time";
+import { shopVendorUrl } from "../../../sim/80-business/shoplink";
 import { knowHowPerMonth } from "../../../sim/88-tick/tick";
 import { research } from "../../../sim/90-actions/store";
 import { useFocus, useStore } from "../../store";
@@ -58,8 +62,42 @@ function Links({ g }: { g: GameState }) {
   );
 }
 
+// Platform software and shop systems are sold on their vendor's site.
+const vendor = (id: string) => {
+  const sw = SOFTWARE.find((x) => x.id === id), shop = SHOPS.find((x) => x.id === id)!;
+  return sw ? { name: sw.name, from: sw.from, url: `www.${sw.site.host}/` } : { name: shop.name, from: shop.from, url: shopVendorUrl(shop.id) };
+};
+const inUse = (g: GameState, id: string) =>
+  g.shop.variant === id || g.clusters.some((c) => c.platform === id || c.panel === id) || g.devices.some((d) => d.software.some((x) => x.id === id));
+
+function UnlockRow({ u, g }: { u: Unlock; g: GameState }) {
+  const openApp = useStore((s) => s.openApp);
+  if (u.kind === "app") {
+    const item = storeItem(u.id)!;
+    const open = () => (g.installed.includes(u.id) ? openApp(u.id === "Nagiosaurus" ? "Security" : u.id) : openApp("Shop", { kind: "software", id: u.id }));
+    return <li><button className="rs-unlock" onClick={open}><Tile item={item} size={24} />{item.name}</button></li>;
+  }
+  if (u.kind === "product") return <li><button className="rs-unlock" onClick={() => openApp("Marketing", { kind: "page", id: "products" })}><span className="rs-grant"><Package /></span>{t(`sim.line.${u.id}`)}</button></li>;
+  if (u.kind === "software") {
+    const v = vendor(u.id);
+    return <li><button className="rs-unlock" onClick={() => openApp("Browser", { kind: "url", id: v.url })}><span className="rs-grant"><Package /></span>{v.name}</button></li>;
+  }
+  const year = yearOf(g.hour), software = u.software?.map(vendor).filter((v) => v.from <= year);
+  const muted = !!u.software && !u.software.some((id) => inUse(g, id));
+  return (
+    <li>
+      <span className="rs-grant"><Check /></span>
+      <span className="rs-feature">{t(`sim.unlock.${u.id}`)}
+        {software && software.length > 0 && <span className={`rs-software${muted ? " muted" : ""}`}>
+          {software.map((v) => <button key={v.name} className="link" onClick={() => openApp("Browser", { kind: "url", id: v.url })}>{v.name}</button>)}
+        </span>}
+      </span>
+    </li>
+  );
+}
+
 function Panel({ k, g }: { k: Skill; g: GameState }) {
-  const { act, openApp, setExplain } = useStore();
+  const { act, setExplain } = useStore();
   const state = stateOf(g, k);
   const next = SKILLS.filter((s) => s.needs.includes(k.id));
   const canStart = state === "open" && !g.training && g.knowHow >= k.knowHow;
@@ -74,13 +112,10 @@ function Panel({ k, g }: { k: Skill; g: GameState }) {
       <h2>{k.name}</h2>
       <p>{k.about}</p>
       <dl className="rs-facts">{facts.map(([dt, dd]) => <div key={dt}><dt>{dt}</dt><dd>{dd}</dd></div>)}</dl>
-      {(k.opens.length > 0 || k.grants) && (
+      {k.unlocks.length > 0 && (
         <section>
           <h3>{t("misc2.unlocks")}</h3>
-          <ul className="rs-opens">
-            {k.opens.map((id) => <li key={id}><Tile item={storeItem(id)!} size={24} />{storeItem(id)!.name}</li>)}
-            {k.grants?.map((g) => <li key={g}><span className="rs-grant"><Check /></span>{g}</li>)}
-          </ul>
+          <ul className="rs-opens">{k.unlocks.map((u) => <UnlockRow key={`${u.kind}-${u.id}`} u={u} g={g} />)}</ul>
         </section>
       )}
       {state === "training" && (
@@ -90,12 +125,8 @@ function Panel({ k, g }: { k: Skill; g: GameState }) {
         </div>
       )}
       <div className="rs-actions">
-        {state === "learned" ? <>
-          <button className="btn" onClick={() => setExplain(k.id)}><BookOpen />{t("misc2.howItWorks")}</button>
-          {k.opens.length > 0 && (g.installed.includes(k.opens[0])
-            ? <button className="btn" onClick={() => openApp(k.opens[0])}>{t("misc2.openApp", { name: storeItem(k.opens[0])!.name })}</button>
-            : <button className="btn" onClick={() => openApp("Shop", { kind: "software", id: "" })}><Store />Pear Store</button>)}
-        </> : state !== "training" && <button className="btn primary" disabled={!canStart} onClick={() => act(research, k.id)}>{t("misc2.startTraining")}</button>}
+        <button className="btn" onClick={() => setExplain(k.id)}><BookOpen />{t("misc2.howItWorks")}</button>
+        {(state === "open" || state === "locked") && <button className="btn primary" disabled={!canStart} onClick={() => act(research, k.id)}>{t("misc2.startTraining")}</button>}
       </div>
     </aside>
   );

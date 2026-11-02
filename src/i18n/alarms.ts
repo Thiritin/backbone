@@ -5,7 +5,7 @@ const vms = (p: Params) => `${p.count} ${p.count === 1 ? "VM" : "VMs"}`;
 export const ALARMS_EN: Record<string, (p: Params) => string> = {
   "alarm.hostDown": (p) => `Host ${p.host} is not responding with ${vms(p)} on it.`,
   "alarm.hostMaintenance": (p) => `Host ${p.host} is ${p.state === "draining" ? "draining" : "in maintenance"} with ${vms(p)} on it.`,
-  "alarm.memoryFull": (p) => `Host ${p.host} uses ${p.used} GB of ${p.capacity} GB memory and is frozen.`,
+  "alarm.memoryFull": (p) => `Host ${p.host} uses ${p.used} GB of ${p.capacity} GB memory and is swapping.`,
   "alarm.memoryHigh": (p) => `Host memory usage on ${p.host} is at ${p.percent}%.`,
   "alarm.memoryOverallocated": (p) => `Host ${p.host} has ${p.allocated} GB memory allocated of ${p.capacity} GB installed.`,
   "alarm.cpuContention": (p) => `Host ${p.host} runs ${p.used} busy vCPUs on ${p.capacity} cores.`,

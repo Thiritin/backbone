@@ -231,6 +231,8 @@ export default {
   "ipmi.log.inlet.warn": () => "Einlasstemperatur über 35 Grad",
   "ipmi.log.inlet.crit": () => "Einlasstemperatur über 40 Grad",
   "ipmi.log.inlet.normal": () => "Einlasstemperatur wieder normal",
+  "ipmi.log.cpu.throttle": () => "CPU wegen Temperatur gedrosselt",
+  "ipmi.log.cpu.normal": () => "CPU-Temperatur wieder normal",
   "ipmi.log.node.active": () => "Cluster-Knoten auf aktiv gesetzt",
   "ipmi.log.node.cordoned": () => "Cluster-Knoten gesperrt",
   "ipmi.log.node.draining": () => "Cluster-Knoten wird geleert",

@@ -1,7 +1,8 @@
 import { Play } from "lucide-react";
 import { useState, type CSSProperties, type ReactNode } from "react";
 import { t } from "../../../../i18n/en";
-import { VIDEO_ARTIST, VIDEO_REAL, VIDEO_TITLE } from "../../../../sim/80-business/browser";
+import { split, VIDEO_ARTIST, VIDEO_REAL, VIDEO_TITLE } from "../../../../sim/80-business/browser";
+import { dateOf } from "../../../../sim/00-core/time";
 import type { GameState } from "../../../../sim/50-state";
 import { customerSite } from "../../../../sim/80-business/website";
 import { senderById } from "../../../../sim/40-support/notices";
@@ -59,8 +60,69 @@ export function VideoPage() {
   );
 }
 
+// What a notice's address shows: its host, folder, file and a date to stamp it with.
+function reported(game: GameState, ticketId: string) {
+  const tk = game.tickets.find((x) => x.id === ticketId);
+  if (!tk?.notice) return null;
+  const { host, path } = split(tk.notice.url), cut = path.lastIndexOf("/");
+  const date = dateOf(tk.createdAt).toLocaleString(LOCALE, { timeZone: "UTC", dateStyle: "medium", timeStyle: "short" });
+  return { tk, host, dir: path.slice(0, cut) || "/", file: path.slice(cut + 1), date };
+}
+
+const humanize = (slug: string) => slug.charAt(0).toUpperCase() + slug.slice(1).replace(/-/g, " ");
+
+export function noticeTitle(game: GameState, ticketId: string): string {
+  const r = reported(game, ticketId);
+  if (!r) return "";
+  switch (r.tk.topic) {
+    case "phishing": return t("misc1.browser.onlineBanking", { name: senderById(r.tk.notice!.sender).name });
+    case "youtuber": return humanize(r.file);
+    case "spam": return r.file;
+    default: return t("browser-sites-1.pg.indexOf", { dir: r.dir });
+  }
+}
+
+// The page a notice reports, as it stands until the player takes it down.
+export function NoticePage({ game, ticketId }: { game: GameState; ticketId: string }) {
+  const r = reported(game, ticketId);
+  if (!r) return null;
+  const { tk, host, dir, file, date } = r;
+  if (tk.topic === "phishing") return <PhishingPage sender={tk.notice!.sender} />;
+  if (tk.topic === "spam") return (
+    <div className="ap">
+      <h1>{file}</h1>
+      <form className="ap-mailer" onSubmit={(e) => e.preventDefault()}>
+        <label>{t("browser-sites-1.pg.recipients")}<textarea rows={6} {...noAutofill} /></label>
+        <label>{t("browser-sites-1.pg.subject")}<input {...noAutofill} /></label>
+        <label>{t("browser-sites-1.pg.message")}<textarea rows={8} {...noAutofill} /></label>
+        <button>{t("browser-sites-1.pg.send")}</button>
+      </form>
+    </div>
+  );
+  if (tk.topic === "youtuber") return (
+    <article className="ap-post">
+      <h1>{humanize(file)}</h1>
+      <p className="ap-date">{t("browser-sites-1.pg.posted", { date })}</p>
+      <p>{t("browser-sites-1.pg.criticism")}</p>
+    </article>
+  );
+  return (
+    <div className="ap">
+      <h1>{t("browser-sites-1.pg.indexOf", { dir })}</h1>
+      <table className="ap-index">
+        <thead><tr><th>{t("browser-sites-1.pg.colName")}</th><th>{t("browser-sites-1.pg.colModified")}</th><th>{t("browser-sites-1.pg.colSize")}</th></tr></thead>
+        <tbody>
+          <tr><td><a href="#" onClick={(e) => e.preventDefault()}>{t("browser-sites-1.pg.parentDir")}</a></td><td /><td /></tr>
+          <tr><td><a href="#" onClick={(e) => e.preventDefault()}>{file}</a></td><td>{date}</td><td>{tk.topic === "movie" ? "412M" : "68M"}</td></tr>
+        </tbody>
+      </table>
+      <address>{t("browser-sites-1.pg.apache", { host })}</address>
+    </div>
+  );
+}
+
 // The bank login a phishing notice reports; the form goes nowhere.
-export function PhishingPage({ sender }: { sender: string }) {
+function PhishingPage({ sender }: { sender: string }) {
   const bank = senderById(sender);
   return (
     <div className="bk">

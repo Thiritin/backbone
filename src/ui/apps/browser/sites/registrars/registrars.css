@@ -30,3 +30,16 @@
 .rgf-rec address { display: grid; font-style: normal; }
 .rgf-l { border: 0; background: none; font: inherit; color: inherit; text-align: left; padding: 1px 4px; cursor: pointer; }
 .rgf-l:hover { background: var(--accent); color: #fff; }
+/* Reseller panel pages inside the bank-style frame. */
+.bks .rg-find { --rg: var(--accent); }
+.bks .rg-search input { padding: 2px 4px; }
+.bks .rg-search button, .bks .rg-btn { padding: 2px 10px; }
+.rgp-ns { display: grid; gap: 6px; justify-items: start; }
+.rgp-facts th { width: 160px; font-weight: normal; color: #555; }
+/* Parking page of a domain on the partner's name servers. */
+.rg-parked { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 48px 16px; text-align: center; font-family: Verdana, Geneva, sans-serif; background: oklch(0.97 0.02 var(--hue, 45)); }
+.rg-parked .wm { font-size: 1.6em; font-weight: 700; color: var(--rg); }
+.rg-parked h1 { font-size: 2em; overflow-wrap: anywhere; }
+.rg-parked dl { display: grid; gap: 2px; padding: 10px 18px; border: 1px solid oklch(0.85 0.05 var(--hue, 45)); background: #ffffff; }
+.rg-parked dt { font-size: 0.85em; opacity: 0.7; }
+.rg-parked footer { font-size: 0.8em; opacity: 0.6; }

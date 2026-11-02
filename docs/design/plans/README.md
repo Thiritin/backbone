@@ -17,6 +17,7 @@ Billing, quotes, bank matching, the first-hour walk, vendor sites, payment metho
 - [web-services](web-services.md): PHP profiles, CustomBuild, AutoSSL, banned IPs, Pleskit subscriptions, WordPrass mass update, account transfer, DirectAdmen Message System, DirectAdmen resellers (deferred, last). 9 milestones.
 - [mail-dns-vpn-storage](mail-dns-vpn-storage.md): mail queue, blacklist incident and relay, mailbox quotas, PowerDNZ zones and secondary DNS, VPN certificates and expiry, MinnIO buckets and erasure health, OwnClod links and quotas. 11 milestones.
 - [hypervisors-backups](hypervisors-backups.md): backup jobs, restore tests and offsite copy, Proxmocks quorum, replication, Ceph and firewall, VMwhere editions, DRS, maintenance mode, alarms and pools, HyperVee Replica and switches, OpenVeeZee beancounters, Horizont networking and volumes, IPMI event log; HA groups and Horizont projects deferred, last. 15 milestones.
+- [research-unlocks](research-unlocks.md): every skill in the Research app lists what it switches on as clickable rows that name the software a feature needs, then reseller hosting as a product line behind a new skill.
 
 ## Build order
 

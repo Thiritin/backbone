@@ -7,15 +7,31 @@ import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import type { Service } from "./customers";
 import { sweepGroups } from "../60-infra/status";
+import { registrarById, registrarHost, REGISTRARS } from "../10-catalog/registrars";
+import { companyDomain } from "./domains";
 
 // transfer marks a domain the customer owned before; lapsed is set once it expired without a renewal or left for another
 // registrar, and the partner no longer holds it. The company's own domain has no customer.
 // readyAt is the game minute the registry answers; saves from before it have none and count as ready.
 // cancelled stops the renewal at the partner, leavesAt is the hour a domain transferred out is gone, code its auth code.
+// ns picks the name servers (nsHosts with custom); a change answers from nsReadyAt, nsPrev until then.
 export interface Domain {
   name: string; customerId: string | null; registeredAt: number; expiresAt: number; transfer: boolean; lapsed: boolean; readyAt?: number;
   cancelled?: boolean; leavesAt?: number; code?: string;
+  ns: NameServerMode; nsHosts?: [string, string]; nsReadyAt?: number; nsPrev?: { ns: NameServerMode; nsHosts?: [string, string] };
 }
+export type NameServerMode = "registrar" | "company" | "custom";
+export const NS_MINUTES = 60;
+export const nsPropagating = (s: GameState, d: Domain): boolean => (d.nsReadyAt ?? 0) > nowMinutes(s);
+// The name servers the domain answers with now.
+export const nsActive = (s: GameState, d: Domain): { ns: NameServerMode; nsHosts?: [string, string] } => (nsPropagating(s, d) && d.nsPrev) || d;
+export function nameServers(s: GameState, d: Domain): [string, string] {
+  const a = nsActive(s, d);
+  if (a.ns === "custom" && a.nsHosts) return a.nsHosts;
+  const host = a.ns === "registrar" ? registrarHost((s.registrar && registrarById(s.registrar.id)) || REGISTRARS[0]) : companyDomain(s);
+  return [`ns1.${host}`, `ns2.${host}`];
+}
+export const parked = (s: GameState, d: Domain): boolean => nsActive(s, d).ns !== "company";
 export type DomainStatus = "active" | "transfer" | "cancelled" | "gone";
 export const domainStatus = (d: Domain): DomainStatus => (d.lapsed ? "gone" : d.leavesAt !== undefined ? "transfer" : d.cancelled ? "cancelled" : "active");
 // The domains the partner holds and bills.
@@ -63,7 +79,7 @@ export const outCode = (seed: number, name: string): string => codeFrom(hashRng(
 
 // Records the domain for a year; the registrar bills its registry cost monthly (30-customers/registrar.ts).
 export function register(s: GameState, name: string, customerId: string | null, transfer: boolean): void {
-  const d: Domain = { name, customerId, registeredAt: s.hour, expiresAt: s.hour + YEAR, transfer, lapsed: false, readyAt: nowMinutes(s) + REGISTER_MINUTES };
+  const d: Domain = { name, customerId, registeredAt: s.hour, expiresAt: s.hour + YEAR, transfer, lapsed: false, readyAt: nowMinutes(s) + REGISTER_MINUTES, ns: "company" };
   s.domains = [...s.domains.filter((x) => x.name !== name), d];
 }
 

@@ -158,3 +158,18 @@
 :root[data-era="tahoe"] .bk-form { max-width: 340px; padding: 28px; border: 1px solid #ffffff99; border-radius: 26px; background: #ffffff73; backdrop-filter: blur(24px) saturate(1.8); -webkit-backdrop-filter: blur(24px) saturate(1.8); box-shadow: inset 0 1px 0 #ffffffcc, 0 18px 40px -18px #1a1f3659; }
 :root[data-era="tahoe"] .bk-form input { padding: 10px 16px; border: 0; border-radius: 999px; background: #ffffffb3; box-shadow: inset 0 1px 2px #1a1f3626, inset 0 0 0 1px #ffffff99; }
 :root[data-era="tahoe"] .bk-form button { padding: 11px; border-radius: 999px; background: linear-gradient(oklch(0.58 0.2 265), oklch(0.44 0.2 270)); box-shadow: inset 0 1px 0 #ffffff66, 0 6px 14px -6px oklch(0.4 0.2 265); }
+
+.ap { min-height: 100%; padding: 8px 12px; background: #ffffff; color: #000000; font: 14px/1.3 "Times New Roman", serif; }
+.ap h1 { margin: 0 0 12px; font-size: 26px; font-weight: 700; }
+.ap a { color: #0000ee; }
+.ap-index { border-collapse: collapse; }
+.ap-index th { padding: 0 24px 4px 0; text-align: left; border-bottom: 1px solid #000000; }
+.ap-index td { padding: 2px 24px 2px 0; }
+.ap-index td:last-child { text-align: right; }
+.ap address { margin-top: 12px; padding-top: 6px; border-top: 1px solid #000000; }
+.ap-mailer { display: grid; gap: 8px; max-width: 420px; }
+.ap-mailer label { display: grid; gap: 2px; }
+.ap-mailer button { justify-self: start; }
+.ap-post { min-height: 100%; max-width: 560px; margin: 0 auto; padding: 32px 20px; background: #fdfcf8; color: #2a2a2a; font: 15px/1.6 Georgia, serif; }
+.ap-post h1 { margin: 0 0 4px; font-size: 24px; }
+.ap-date { margin: 0 0 16px; color: #777777; font-size: 13px; }

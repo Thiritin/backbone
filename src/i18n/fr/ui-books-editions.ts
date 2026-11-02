@@ -20,6 +20,7 @@ export default {
   "books-editions.feature.reports": () => `Compte de résultat et trésorerie`,
   "books-editions.feature.helpdesk-link": () => `Liaison helpdesk`,
   "books-editions.feature.statistics": () => `Statistiques`,
+  "books-editions.feature.dunning": () => "Niveaux de relance",
   "ledger.booksSeat": (p) => `Poste ${p.program} ${p.edition}`,
   "error.unknownEdition": () => `Cette édition n'est pas en vente.`,
   "books-editions.noSeat": () => `Aucun poste`,

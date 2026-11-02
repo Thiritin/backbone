@@ -10,6 +10,7 @@ import { addLocation, joinWaitlist } from "../../../../../sim/90-actions/hardwar
 import { formatDay } from "../../../billing/format";
 import { backupLabel, exchangeLabel, feedsLabel, shareUnits, spaceSize } from "../../../locations/ui";
 import { usePageAct } from "../../pageAct";
+import { Portal } from "./portal/Portal";
 import "./providers.css";
 
 // docs/design/plans/colo-portals.md, section 4: the pages every provider site shares; each provider lays them out in its own look.
@@ -19,7 +20,8 @@ export type Route =
   | { page: "sites" }
   | { page: "site"; dc: Datacenter }
   | { page: "order"; dc: string | null; space: string | null; size: number }
-  | { page: "account" }
+  // sub is the path below /account: ["contracts", "<id>"], ["invoices"], ...
+  | { page: "account"; sub: string[] }
   | { page: "notfound" };
 export interface ProviderProps { game: GameState; p: Provider; look: Look; route: Route; year: number; go: (path: string) => void }
 
@@ -39,7 +41,7 @@ export function routeOf(id: string, path: string): Route {
     const q = new URLSearchParams(query);
     return { page: "order", dc: q.get("dc"), space: q.get("space"), size: Number(q.get("size")) };
   }
-  if (top === "account") return { page: "account" };
+  if (top === "account") return { page: "account", sub: base.split("/").filter(Boolean).slice(1) };
   return { page: "notfound" };
 }
 
@@ -65,7 +67,7 @@ export const titleOf = (r: Route): string => (r.page === "site" ? r.dc.name : r.
 
 const yesNo = (v: boolean) => (v ? t("providers.yes") : t("providers.no"));
 const kwOf = (dc: Datacenter, space: Rented, size: number) => +(space === "share" ? dc.kwPerPosition / size : dc.kwPerPosition * size).toFixed(2);
-const spaceText = (space: Rented, size: number) => (space === "share" ? `${spaceSize(space, size)}, ${shareUnits(size)} U` : spaceSize(space, size));
+export const spaceText = (space: Rented, size: number) => (space === "share" ? `${spaceSize(space, size)}, ${shareUnits(size)} U` : spaceSize(space, size));
 const kinds = (dc: Datacenter): Rented[] => (["share", "cage", "suite"] as Rented[]).filter((k) => k !== "cage" || dc.cages);
 export const orderPath = (dc: Datacenter, space: Rented, size: number) => `/order?dc=${dc.id}&space=${space}&size=${size}`;
 
@@ -108,7 +110,7 @@ export function PriceTable({ game, dc, go, className }: { game: GameState; dc: D
           const wait = game.waitlist.find((w) => w.dc === dc.id && w.space === k && w.size === n), open = fits(game, dc.id, k, n) || wait?.heldUntil != null;
           return (
             <tr key={`${k}-${n}`}>
-              <td>{spaceText(k, n)}</td><td className="ps-num">{kwOf(dc, k, n)} kW</td><td className="ps-num">{t("providers.days", { n: LEAD_DAYS[k] })}</td><td className="ps-num">{euro(spacePrice(dc, k, n))}</td>
+              <td>{spaceText(k, n)}</td><td className="ps-num">{kwOf(dc, k, n)} kW</td><td className="ps-num">{t("providers.days", { n: LEAD_DAYS[k] })}</td><td className="ps-num">{euro(spacePrice(dc, k, n, game.providerPrices))}</td>
               <td><span className={`ps-pill ${open ? "ok" : "bad"}`}>{wait?.heldUntil != null ? t("providers.held") : open ? t("providers.available") : wait ? t("providers.waiting") : t("providers.full")}</span></td>
               <td>{open ? <A to={orderPath(dc, k, n)} go={go} className="ps-btn pri">{t("providers.orderNow")}</A> : !wait && <button className="ps-btn" onClick={() => act(joinWaitlist, dc.id, k, n)}>{t("providers.joinWaitlist")}</button>}</td>
             </tr>
@@ -152,7 +154,7 @@ export function OrderForm({ game, p, route, className }: { game: GameState; p: P
   };
   const summary: [string, ReactNode][] = [
     [t("providers.site"), dc.name], [t("providers.space"), spaceText(k, n)], [t("providers.power"), `${kwOf(dc, k, n)} kW`],
-    [t("providers.perMonth"), euro(spacePrice(dc, k, n))], [t("providers.term"), t("providers.termValue")], [t("providers.notice"), t("providers.noticeValue", { n: NOTICE_MONTHS[k] })],
+    [t("providers.perMonth"), euro(spacePrice(dc, k, n, game.providerPrices))], [t("providers.term"), t("providers.termValue")], [t("providers.notice"), t("providers.noticeValue", { n: NOTICE_MONTHS[k] })],
   ];
   const Kv = ({ rows }: { rows: [string, ReactNode][] }) => <dl className="ps-kv">{rows.map(([a, b]) => <div key={a}><dt>{a}</dt><dd>{b}</dd></div>)}</dl>;
 
@@ -178,7 +180,7 @@ export function OrderForm({ game, p, route, className }: { game: GameState; p: P
         </label>
         <label className="ps-field"><span>{t("providers.space")}</span>
           <select value={`${k}-${n}`} onChange={(e) => { const [a, b] = e.target.value.split("-"); setKind(a as Rented); setSize(Number(b)); }}>
-            {kinds(dc).flatMap((x) => SPACE_SIZES[x].map((s) => <option key={`${x}-${s}`} value={`${x}-${s}`}>{spaceText(x, s)}, {euro(spacePrice(dc, x, s))}</option>))}
+            {kinds(dc).flatMap((x) => SPACE_SIZES[x].map((s) => <option key={`${x}-${s}`} value={`${x}-${s}`}>{spaceText(x, s)}, {euro(spacePrice(dc, x, s, game.providerPrices))}</option>))}
           </select>
         </label>
         <Kv rows={[[t("providers.power"), `${kwOf(dc, k, n)} kW`], [t("providers.readyIn"), t("providers.days", { n: LEAD_DAYS[k] })], [t("providers.availability"), open ? t("providers.available") : t("providers.full")]]} />
@@ -196,13 +198,13 @@ export function OrderForm({ game, p, route, className }: { game: GameState; p: P
   );
 }
 
-// Until the customer portal exists, every page under /account is its sign-in.
-export function SignIn({ className }: { className?: string }) {
+// The portal's sign-in: the company email prefilled, any password accepted.
+export function SignIn({ className, game, onSignIn }: { className?: string; game?: GameState; onSignIn?: () => void }) {
   return (
-    <form className={`ps-signin ${className ?? ""}`} onSubmit={(e) => e.preventDefault()}>
-      <label className="ps-field"><span>{t("providers.email")}</span><input type="email" /></label>
+    <form className={`ps-signin ${className ?? ""}`} onSubmit={(e) => { e.preventDefault(); onSignIn?.(); }}>
+      <label className="ps-field"><span>{t("providers.email")}</span><input type="email" defaultValue={game && ownAddress(game).email} /></label>
       <label className="ps-field"><span>{t("providers.password")}</span><input type="password" /></label>
-      <div className="ps-actions"><button className="ps-btn pri" disabled>{t("providers.signIn")}</button></div>
+      <div className="ps-actions"><button className="ps-btn pri" disabled={!onSignIn}>{t("providers.signIn")}</button></div>
     </form>
   );
 }
@@ -212,6 +214,6 @@ export function Body({ game, p, route, go, className }: ProviderProps & { classN
   if (route.page === "sites") return <SitesList p={p} go={go} className={className} />;
   if (route.page === "site") return <SiteDetail game={game} dc={route.dc} go={go} className={className} />;
   if (route.page === "order") return <OrderForm game={game} p={p} route={route} className={className} />;
-  if (route.page === "account") return <SignIn className={className} />;
+  if (route.page === "account") return <Portal game={game} p={p} route={route} go={go} className={className} />;
   return null;
 }

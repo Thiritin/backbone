@@ -17,7 +17,7 @@ export const CORRUPT_CHANCE = 0.15;
 export const RECOVER_FINE = 0.7;
 export const RECOVER_HOURS = 0.5;
 export const BMC_RESET_HOURS = 0.25;
-// Yearly hang rates: the operating system doubles while degraded or hot and triples while frozen from RAM overcommit; the BMC triples after six years.
+// Yearly hang rates: the operating system doubles while degraded or hot; the BMC triples after six years.
 export const HANG_YEARLY = 0.01;
 export const BMC_HANG_YEARLY = 0.01;
 export const BMC_OLD_YEARS = 6;
@@ -36,7 +36,7 @@ export { LOG_MAX, pushLog, sevOf } from "./syslog";
 
 export function hangChance(s: GameState, d: Device): number {
   const state = deviceHealth(s, d.id).state;
-  const factor = (state === "degraded" || state === "hot" ? 2 : 1) * (s.frozen.includes(d.id) ? 3 : 1);
+  const factor = (state === "degraded" || state === "hot" ? 2 : 1);
   return (HANG_YEARLY * factor) / HOURS_PER_YEAR;
 }
 

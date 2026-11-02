@@ -1,0 +1,25 @@
+import type { Dict } from "../lang";
+
+export default {
+  "providers.nextlair.navHome": () => "Home",
+  "providers.nextlair.navSites": () => "Rechenzentrum",
+  "providers.nextlair.navOrder": () => "Housing",
+  "providers.nextlair.navAccount": () => "Kundenportal",
+  "providers.nextlair.tagline": () => "Internet · Daten · Wien",
+  "providers.nextlair.news": () => "Neuigkeiten",
+  "providers.nextlair.news1": () => "Unser Rechenzentrum peert jetzt direkt am Wiener Internetknoten.",
+  "providers.nextlair.news2": () => "Neue Racks mit A- und B-Versorgung sind bezugsfertig.",
+  "providers.nextlair.hotline": () => "Hotline",
+  "providers.nextlair.hotlineText": () => "Unser Network Operations Center ist rund um die Uhr unter +43 1 890 40 00 erreichbar.",
+  "providers.nextlair.heroEarly": () => "Server-Housing und Anbindung aus Wien",
+  "providers.nextlair.heroLate": (p) => `Ihre Infrastruktur in ${p.city}, in unserem Netz`,
+  "providers.nextlair.text": (p) => `Next Lair betreibt eigenes Rechenzentrum und eigenen Backbone in ${p.city}, damit Ihre Server nur einen Hop von Österreichs Carriern entfernt stehen.`,
+  "providers.nextlair.svc1": () => "Housing",
+  "providers.nextlair.svc1Text": () => "Einzelne Höheneinheiten, geteilte Racks und eigene Suites für Ihre Hardware.",
+  "providers.nextlair.svc2": () => "Anbindung",
+  "providers.nextlair.svc2Text": () => "Transit und Peering laufen über unseren eigenen Glasfaserring durch die Stadt.",
+  "providers.nextlair.svc3": () => "Service",
+  "providers.nextlair.svc3Text": () => "Unsere Techniker in Wien erledigen Remote Hands kurzfristig.",
+  "providers.nextlair.cta": () => "Housing anfragen",
+  "providers.nextlair.footer": (p) => `© ${p.year} Next Lair Telecom Service GmbH`,
+} satisfies Dict;

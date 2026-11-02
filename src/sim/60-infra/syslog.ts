@@ -6,7 +6,7 @@ export const LOG_MAX = 20;
 // Failures and heat are critical, losses and stalls warnings, the rest information.
 export function sevOf(key: string): LogSev {
   if (/^ipmi\.log\.(failed\.|overheat$|corrupted$|inlet\.crit$)/.test(key)) return "crit";
-  if (/^ipmi\.log\.(pulled|hung|bmcHung|lockedOut|stuck|psuLost|installAborted|upgradeAborted|inlet\.warn|node\.maintenance)$/.test(key)) return "warn";
+  if (/^ipmi\.log\.(pulled|hung|bmcHung|lockedOut|stuck|psuLost|installAborted|upgradeAborted|inlet\.warn|cpu\.throttle|node\.maintenance)$/.test(key)) return "warn";
   return "info";
 }
 

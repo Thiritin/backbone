@@ -3,10 +3,14 @@ import { describe, expect, it } from "vitest";
 import { yearOf } from "../src/sim/00-core/time";
 import { softwareById } from "../src/sim/10-catalog/platforms";
 import { sizeSpec } from "../src/sim/10-catalog/products";
-import { consoleFeatures } from "../src/sim/80-business/consoles";
+import { fqdn } from "../src/sim/30-customers/domains";
+import { installDone } from "../src/sim/60-infra/apt";
+import { resolve } from "../src/sim/80-business/browser";
+import { siteIndex } from "../src/sim/80-business/index";
+import { consoleBookmarks, consoleFeatures } from "../src/sim/80-business/consoles";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
-import { CONSOLES, ConsolePage } from "../src/ui/apps/browser/consoles/ConsolePage";
+import { CONSOLES } from "../src/ui/apps/browser/consoles/ConsolePage";
 import { lateVersions, panelVm, pinVersion, readyGame, skipTo } from "./fixtures";
 
 // docs/design/software.md, section 10: a year of each console's early look, a year of its late look, and a word only that look prints.
@@ -70,26 +74,17 @@ describe("DNS, VPN, storage and mail consoles", () => {
 });
 
 describe("software without a web console", () => {
-  const CLI: Record<string, [number, string]> = {
-    bound: [2005, "named-checkconf -z"], knut: [2011, "knotc status"], wireguarded: [2018, "wg show"], vsftpeed: [2005, "tail -n 10 /var/log/vsftpeed.log"], postfixit: [2005, "mailq"],
-  };
-  it("shows the host page with the product's CLI status, in both eras", () => {
-    for (const [id, [from, cmd]] of Object.entries(CLI)) {
+  const CLI: Record<string, number> = { bound: 2005, knut: 2011, wireguarded: 2018, vsftpeed: 2005, postfixit: 2005, backula: 2005 };
+  it("resolves its host to the plain host page with no bookmark, directory row or install address, in both eras", () => {
+    for (const [id, from] of Object.entries(CLI)) {
       for (const year of [from, 2022]) {
-        const { s, c } = setup(id, year);
-        const html = renderToString(<ConsolePage game={s} hostname="dns-1" host="dns-1.example.com" cluster={c} defaced={false} />);
-        expect(html, `${id} ${year}`).toContain("This host serves no web page");
-        expect(html, id).toContain(`root@dns-1:~# ${cmd}`);
+        const { s, c } = setup(id, year), host = s.workloads.find((w) => w.id === c.vm)!.hostname!;
+        expect(resolve(s, fqdn(s, host)).page, `${id} ${year}`).toEqual({ kind: "host", hostname: host });
+        expect(consoleBookmarks(s).some((b) => b.url.includes(host)), id).toBe(false);
+        expect(JSON.stringify(siteIndex(s)), id).not.toContain(host);
+        expect(installDone(s, c.vm!, softwareById(id)).join("\n"), id).not.toContain("https://");
       }
     }
   });
-
-  it("prints the zones and peers the machine holds", () => {
-    const zones = (id: string) => { const { s, c } = setup(id, 2019); return renderToString(<ConsolePage game={s} hostname="h" host="h.example.com" cluster={c} defaced={false} />); };
-    expect(zones("bound")).toMatch(/zone [a-z0-9.-]+\/IN: loaded serial \d{10}/);
-    expect(zones("bound")).toMatch(/number of zones: [1-9]/);
-    expect(zones("knut")).toMatch(/\[[a-z0-9.-]+\.\] role: master/);
-    expect(zones("wireguarded")).toMatch(/peer: [A-Za-z0-9+/]{43}=/);
-    expect(zones("postfixit")).toContain("Mail queue is empty");
-  });
 });
+
