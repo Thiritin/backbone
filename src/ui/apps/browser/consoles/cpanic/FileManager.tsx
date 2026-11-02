@@ -4,6 +4,7 @@ import {
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { t } from "../../../../../i18n/en";
+import { useT } from "../look";
 import { LOCALE } from "../../../../../i18n/lang";
 import { dateOf } from "../../../../../sim/00-core/time";
 import { ARCHIVE_EXT } from "../../../../../sim/10-catalog/archives";
@@ -50,6 +51,7 @@ const when = (hour: number) => dateOf(hour).toLocaleString(LOCALE, { dateStyle: 
 
 // docs/design/web-hosting.md 4.1: cPanel's File Manager over the web space, tree on the left, the folder's listing on the right.
 export function FileManager({ game, c, workloadId }: { game: GameState; c: Cluster; workloadId: string }) {
+  const t = useT();
   const ws = webspaceOf(game, workloadId), x3 = eraAt(LOOKS, { game, c }) === "x3";
   const [at, setAt] = useState(ws?.webroot ?? ""), [sel, setSel] = useState<string[]>([]), [dialog, setDialog] = useState<Dialog | null>(null);
   const [uploading, setUploading] = useState(false), [typed, setTyped] = useState<string | null>(null), [opened, setOpened] = useState<string[]>(ws ? [ws.webroot] : []);

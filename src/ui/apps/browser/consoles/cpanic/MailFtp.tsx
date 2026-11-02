@@ -1,6 +1,6 @@
 import { FolderUp, Forward, Mail, MessageSquareReply, ShieldBan, type LucideIcon } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { t } from "../../../../../i18n/en";
+import { useT } from "../look";
 import { LOCALE } from "../../../../../i18n/lang";
 import { yearOf } from "../../../../../sim/00-core/time";
 import type { GameState } from "../../../../../sim/50-state";
@@ -30,6 +30,7 @@ const DomainPick = ({ ws, value, set, subs = true }: { ws: Webspace; value: stri
 );
 
 export function MailFtp({ game, ws, page }: { game: GameState; ws: Webspace; page: MailFtpPage }) {
+  const t = useT();
   const title = mailFtpIcons(yearOf(game.hour)).find(([id]) => id === page)![1];
   return (
     <>
@@ -44,6 +45,7 @@ export function MailFtp({ game, ws, page }: { game: GameState; ws: Webspace; pag
 }
 
 function Accounts({ ws }: { ws: Webspace }) {
+  const t = useT();
   const act = usePageAct(), openApp = useStore((s) => s.openApp);
   const [local, setLocal] = useState(""), [domain, setDomain] = useState(ws.domain), [pass, setPass] = useState(""), [again, setAgain] = useState(""), [quota, setQuota] = useState("250");
   const [mismatch, setMismatch] = useState(false);
@@ -82,6 +84,7 @@ function Accounts({ ws }: { ws: Webspace }) {
 }
 
 function Forwarders({ ws }: { ws: Webspace }) {
+  const t = useT();
   const act = usePageAct();
   const [local, setLocal] = useState(""), [domain, setDomain] = useState(ws.domain), [to, setTo] = useState("");
   const rows = Object.values(ws.forwarders);
@@ -105,6 +108,7 @@ function Forwarders({ ws }: { ws: Webspace }) {
 }
 
 function Autoresponders({ ws }: { ws: Webspace }) {
+  const t = useT();
   const act = usePageAct();
   const [local, setLocal] = useState(""), [domain, setDomain] = useState(ws.domain), [from, setFrom] = useState(""), [subject, setSubject] = useState(""), [body, setBody] = useState(""), [interval, setGap] = useState("8");
   const rows = Object.values(ws.autoresponders);
@@ -134,6 +138,7 @@ function Autoresponders({ ws }: { ws: Webspace }) {
 }
 
 function Spam({ ws }: { ws: Webspace }) {
+  const t = useT();
   const act = usePageAct(), [f, setF] = useState<SpamFilter>(ws.spam), [saved, setSaved] = useState(false);
   const toggle = (k: "on" | "spamBox" | "autoDelete", label: string) => (
     <label><input type="checkbox" checked={f[k]} disabled={k !== "on" && !f.on} onChange={(e) => { setSaved(false); setF({ ...f, [k]: e.target.checked }); }} /> {t(label)}</label>
@@ -154,6 +159,7 @@ function Spam({ ws }: { ws: Webspace }) {
 }
 
 function Ftp({ ws }: { ws: Webspace }) {
+  const t = useT();
   const act = usePageAct(), domains = Object.values(ws.domains).filter((d) => d.kind !== "sub");
   const [login, setLogin] = useState(""), [domain, setDomain] = useState(ws.domain), [pass, setPass] = useState(""), [again, setAgain] = useState("");
   const [dir, setDir] = useState<string | null>(null), [quota, setQuota] = useState("0"), [mismatch, setMismatch] = useState(false);

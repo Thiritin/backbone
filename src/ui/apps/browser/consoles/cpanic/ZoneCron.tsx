@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { t } from "../../../../../i18n/en";
+import { useT } from "../look";
 import { LOCALE } from "../../../../../i18n/lang";
 import type { GameState } from "../../../../../sim/50-state";
 import { TTLS, type DnsType } from "../../../../../sim/60-infra/netsvc-dns";
@@ -13,6 +13,7 @@ const TYPES: DnsType[] = ["A", "AAAA", "CNAME", "MX", "TXT", "NS"];
 
 // Zone Editor: the records PowerDNZ shows for the domain. The early Simple DNS Zone Editor adds only A and CNAME records.
 export function ZoneEditor({ game, ws, simple }: { game: GameState; ws: Webspace; simple: boolean }) {
+  const t = useT();
   const act = usePageAct(), zones = zoneNames(ws), [zone, setZone] = useState(ws.domain);
   const [type, setType] = useState<DnsType>("A"), [name, setName] = useState(""), [ttl, setTtl] = useState(TTLS[1]), [data, setData] = useState("");
   const z = webZone(game, ws, zone), types = simple ? TYPES.slice(0, 1).concat("CNAME") : TYPES;
@@ -44,6 +45,7 @@ const pct = new Intl.NumberFormat(LOCALE, { style: "percent", maximumFractionDig
 
 // Cron Jobs: the add form with its Common Settings list, and the current jobs with the share of a core each keeps busy.
 export function CronJobs({ ws }: { ws: Webspace }) {
+  const t = useT();
   const act = usePageAct(), [f, setF] = useState(["*", "*", "*", "*", "*"]), [cmd, setCmd] = useState("");
   const jobs = Object.values(ws.cron), heads = ["minute", "hour", "day", "month", "weekday"] as const;
   return (
