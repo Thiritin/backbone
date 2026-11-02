@@ -23,12 +23,13 @@ import "../shop/shop.css";
 import "../billing/billing.css";
 import "./marketing.css";
 import { Products, SiteCard } from "./Website";
+import { FlyerCard } from "./FlyerCard";
 
 type Section = "channels" | "products" | "campaigns" | "awareness" | "reviews" | "fairs" | "community";
 
 export const AUDIENCE: Record<Profile, string> = {
   reseller: t("web.reseller.audience"),
-  private: t("marketing.audPrivate"), gamer: t("marketing.audGamer"), hobbyDev: t("marketing.audHobbyDev"), soleProp: t("marketing.audSoleProp"), smallBiz: t("marketing.audSmallBiz"), agency: t("marketing.audAgency"), office: t("marketing.audOffice"), onlineShop: t("marketing.audOnlineShop"), enterprise: t("marketing.audEnterprise"),
+  private: t("marketing.audPrivate"), gamer: t("marketing.audGamer"), hobbyDev: t("marketing.audHobbyDev"), soleProp: t("marketing.audSoleProp"), smallBiz: t("marketing.audSmallBiz"), agency: t("marketing.audAgency"), webDev: t("marketing.audWebDev"), office: t("marketing.audOffice"), onlineShop: t("marketing.audOnlineShop"), enterprise: t("marketing.audEnterprise"),
 };
 
 const OWNED_INFO: { id: OwnedChannel | "email"; name: string; text: string }[] = [
@@ -169,6 +170,7 @@ function LostDemand() {
 function Campaigns() {
   return (
     <div className="mkt-list">
+      <FlyerCard />
       {(Object.keys(CAMPAIGNS) as CampaignChannel[]).map((c) => <CampaignCard key={c} channel={c} />)}
     </div>
   );

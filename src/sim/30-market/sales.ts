@@ -1,7 +1,7 @@
 // Requests over time: new leads through the day, expansion requests from upgrade tickets, customer replies to quotes,
 // expiry into lost sales and the monthly happiness drift. Decisions are recorded in docs/design/economy.md, "Requests, SLAs and growth".
 import { rand, type Rng } from "../00-core/rng";
-import { isMonthStart } from "../00-core/time";
+import { DAYS_PER_MONTH, isMonthStart } from "../00-core/time";
 import { transferHost } from "../60-infra/transfers";
 import { arrivalWeight } from "../10-catalog/attention";
 import { CHOICE_TAU, NEVER_PAYS, ON_TIME } from "../10-catalog/economy";
@@ -28,7 +28,7 @@ import { shopPriceLevel } from "./cycles";
 import { emailFor, firstOrder, isStandard, orderLead, orderQueued } from "./orders";
 import { growSlots } from "../60-infra/games";
 import { gameLeadLost } from "../60-infra/titles";
-import { AGENCY_LEAD_SHARE, LEAD_SHARE, resellerLeadsOpen } from "../30-customers/resellers";
+import { AGENCY_LEAD_SHARE, LEAD_SHARE, resellerLeadsOpen, WEBDEV_LEAD_SHARE } from "../30-customers/resellers";
 import { provisionService } from "../90-actions/clusters";
 import { addressesFit } from "../60-infra/addresses";
 import { withAddressNeeds } from "../10-catalog/addresses";
@@ -46,7 +46,6 @@ import {
   requestName, share, values, type Need, type SalesMessage, type SalesRequest,
 } from "./market";
 
-const DAYS_PER_MONTH = 30.4;
 const MAIL_HOUR = 8;
 // A shady request about every three months, from the fourth month on.
 const SHADY_PER_MONTH = 0.3;
@@ -132,8 +131,8 @@ function newLeads(s: GameState, events: SimEvent[]): void {
       // A gamer wants one game; when none of your panels runs it, they go elsewhere.
       if (need.product === "gameServer" && gameLeadLost(s)) continue;
       // A few web hosting leads, and many from agencies, want a reseller block instead.
-      if (need.product === "webHosting" && resellerLeadsOpen(s) && rand(s.rng) < (f.profile === "agency" ? AGENCY_LEAD_SHARE : LEAD_SHARE)) {
-        newLead(s, f.profile === "agency" ? "agency" : "reseller", f.city, events, { product: "reseller", size: Math.floor(rand(s.rng) * SIZES.reseller.length), sla: "business" });
+      if (need.product === "webHosting" && resellerLeadsOpen(s) && rand(s.rng) < (f.profile === "agency" ? AGENCY_LEAD_SHARE : f.profile === "webDev" ? WEBDEV_LEAD_SHARE : LEAD_SHARE)) {
+        newLead(s, f.profile === "agency" || f.profile === "webDev" ? f.profile : "reseller", f.city, events, { product: "reseller", size: Math.floor(rand(s.rng) * SIZES.reseller.length), sla: "business" });
         continue;
       }
       // The shop is part of the website: a down, slow or dated site loses its orders. Website leads already carry the factor in their count.

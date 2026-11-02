@@ -19,6 +19,7 @@ const PROFILE_BLOCKS: Record<Profile, string[]> = {
   smallBiz: ["services", "hours", "map", "contactForm", "priceList"],
   reseller: ["services", "priceList", "contactForm"],
   agency: ["caseStudies", "clientLogos", "letsTalk"],
+  webDev: ["projects", "caseStudies", "letsTalk"],
   office: ["consultHours", "appointment", "privacy"],
   onlineShop: ["productGrid", "cart", "checkout", "sale"],
   enterprise: ["press", "investors", "careers", "handshake"],

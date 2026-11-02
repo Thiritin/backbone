@@ -1,0 +1,69 @@
+/* Flyerlarm: a loud order form until 2014, a flat web shop after. */
+.fl { min-height: 100%; }
+.fl-head { display: flex; align-items: baseline; gap: 6px 16px; flex-wrap: wrap; }
+.fl-logo { font-weight: 900; }
+.fl-nav { display: flex; }
+.fl-nav a { cursor: pointer; text-decoration: none; }
+.fl-main { display: grid; }
+.fl-hero h1 { margin: 0 0 6px; }
+.fl-hero p { margin: 0 0 10px; }
+.fl-card h2 { margin: 0; }
+.fl-table { width: 100%; border-collapse: collapse; }
+.fl-table th { text-align: left; }
+.fl-table .r { text-align: right; }
+.fl-num { font-variant-numeric: tabular-nums; }
+.fl-field { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.fl-label { flex: 0 0 90px; font-weight: 700; }
+.fl-seg { display: flex; flex-wrap: wrap; gap: 4px; }
+.fl-seg button, .fl-button { font: inherit; cursor: pointer; }
+.fl-specs { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin: 10px 0; }
+.fl-specs dt { font-weight: 700; }
+.fl-specs dd { margin: 0; }
+.fl-foot { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 18px; }
+
+.fl.early { background: #fff6c8; color: #000000; font: 12px/1.4 Verdana, Arial, Helvetica, sans-serif; }
+.fl.early .fl-head { padding: 8px 12px; background: #d6001c; color: #ffffff; border-bottom: 4px solid #ffcc00; }
+.fl.early .fl-logo { font: 900 30px/1 "Arial Black", Impact, sans-serif; font-style: italic; letter-spacing: -1px; }
+.fl.early .fl-logo b { color: #ffcc00; }
+.fl.early .fl-tag { font-weight: 700; }
+.fl.early .fl-nav { background: #ffcc00; border-bottom: 1px solid #000000; }
+.fl.early .fl-nav a { padding: 4px 14px; border-right: 1px solid #000000; color: #000000; font-weight: 700; }
+.fl.early .fl-nav a[aria-current="page"] { background: #d6001c; color: #ffffff; }
+.fl.early .fl-main { gap: 10px; padding: 10px; }
+.fl.early .fl-hero { padding: 10px; border: 3px dashed #d6001c; background: #ffffff; text-align: center; }
+.fl.early .fl-hero h1 { color: #d6001c; font: 900 22px "Arial Black", Impact, sans-serif; }
+.fl.early .fl-card { border: 2px solid #000000; background: #ffffff; }
+.fl.early .fl-card > :not(h2) { margin-left: 8px; margin-right: 8px; }
+.fl.early .fl-card > :last-child { margin-bottom: 8px; }
+.fl.early .fl-card h2 { margin-bottom: 8px; padding: 3px 8px; background: #000000; color: #ffcc00; font-size: 12px; }
+.fl.early .fl-table th, .fl.early .fl-table td { padding: 3px 6px; border: 1px solid #999999; }
+.fl.early .fl-table th { background: #ffcc00; }
+.fl.early .fl-seg button, .fl.early .fl-button { padding: 1px 10px; border: 2px outset #dddddd; background: #f0f0f0; color: #000000; font-size: 12px; }
+.fl.early .fl-seg button[aria-pressed="true"] { border-style: inset; background: #ffcc00; font-weight: 700; }
+.fl.early .fl-button { background: #d6001c; color: #ffffff; font-weight: 700; }
+.fl.early .fl-none { color: #444444; }
+.fl.early .fl-foot { margin-top: 6px; padding: 8px; background: #d6001c; color: #ffffff; font-size: 10px; }
+.fl.early .fl-counter b { padding: 0 4px; background: #000000; color: #33ff33; font: 700 12px "Courier New", monospace; letter-spacing: 2px; }
+
+.fl.late { background: #f6f7f9; color: #1c2430; font: 14px/1.5 "Helvetica Neue", "Segoe UI", Arial, sans-serif; }
+.fl.late .fl-head { padding: 16px 32px; background: #ffffff; border-bottom: 1px solid #e2e6ec; }
+.fl.late .fl-logo { font-size: 24px; letter-spacing: -0.03em; color: #1c2430; }
+.fl.late .fl-logo b { color: #e3202f; }
+.fl.late .fl-tag { color: #6b7686; }
+.fl.late .fl-nav { gap: 4px; padding: 0 28px; background: #ffffff; border-bottom: 1px solid #e2e6ec; }
+.fl.late .fl-nav a { padding: 10px 8px; border-bottom: 2px solid transparent; color: #4a5565; }
+.fl.late .fl-nav a[aria-current="page"] { border-bottom-color: #e3202f; color: #1c2430; font-weight: 600; }
+.fl.late .fl-main { gap: 16px; max-width: 760px; margin: 0 auto; padding: 24px 32px 16px; }
+.fl.late .fl-hero { padding: 28px; border-radius: 10px; background: #e3202f; color: #ffffff; }
+.fl.late .fl-hero h1 { font-size: 26px; letter-spacing: -0.02em; }
+.fl.late .fl-card { padding: 16px 18px; border: 1px solid #e2e6ec; border-radius: 8px; background: #ffffff; }
+.fl.late .fl-card h2 { margin-bottom: 10px; font-size: 15px; }
+.fl.late .fl-table th, .fl.late .fl-table td { padding: 8px 6px; border-top: 1px solid #eef0f4; }
+.fl.late .fl-table th { border-top: 0; color: #6b7686; font-weight: 600; }
+.fl.late .fl-label, .fl.late .fl-none, .fl.late .fl-specs dt { color: #6b7686; }
+.fl.late .fl-seg button { height: 28px; padding: 0 12px; border: 1px solid #d5dae2; border-radius: 6px; background: #ffffff; color: #1c2430; }
+.fl.late .fl-seg button[aria-pressed="true"] { border-color: #e3202f; background: #e3202f; color: #ffffff; }
+.fl.late .fl-button { height: 32px; padding: 0 18px; border: 0; border-radius: 6px; background: #e3202f; color: #ffffff; font-weight: 600; }
+.fl.late .fl-hero .fl-button { background: #ffffff; color: #e3202f; }
+.fl.late .fl-foot { padding: 8px 32px 24px; color: #6b7686; font-size: 12px; }
+@media (max-width: 560px) { .fl-field { flex-wrap: wrap; } .fl.late .fl-head, .fl.late .fl-main { padding-left: 16px; padding-right: 16px; } }
