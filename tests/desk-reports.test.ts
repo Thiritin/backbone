@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { hourOf, monthIndexOf } from "../src/sim/00-core/time";
 import { PROFILES } from "../src/sim/10-catalog/economy";
 import { deskReport, firstDue, firstResponse, slaMet, slaPlans } from "../src/sim/40-support/desk-reports";
-import { importDeskTickets } from "../src/sim/40-support/desk-work";
+import { importDeskTickets } from "../src/sim/40-support/desk-channels";
 import { createTicket, type Ticket } from "../src/sim/40-support/tickets";
 import type { GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";

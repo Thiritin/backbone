@@ -183,4 +183,5 @@ export default {
   "error.deskForwarding": () => "Falha na verificação do encaminhamento",
   "ticket.mail.deskForwardTest.subject": (p) => `${p.desk}: verificação do encaminhamento`,
   "ticket.mail.deskForwardTest.text": (p) => `Esta mensagem verifica se o e-mail para este endereço é encaminhado para ${p.address}.`,
+  "zd.admin.addAddress": () => "Adicionar endereço",
 } satisfies Dict;

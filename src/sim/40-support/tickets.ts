@@ -37,7 +37,7 @@ export interface Ticket {
   // The support agent (an employee id) who takes the ticket before anyone else.
   assignee: string | null;
   // An email from a company (bank, supplier) that asks for no reply: who sent it and what fills its text.
-  mail?: { from: string; params: Record<string, string | number> };
+  mail?: { from: string; params: Record<string, string | number>; msg?: string };  // msg: the message a desk channel made this ticket from
   // The hoster's termination notice: when the service ends and why.
   term?: { end: number; now: boolean; reason: TerminateReason | null };
   // Support desk (40-support/desk.ts): the channel that imported the ticket, how it came in, the number the desk shows,

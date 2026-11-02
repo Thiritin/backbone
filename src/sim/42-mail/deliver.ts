@@ -10,10 +10,11 @@ import { SENDERS } from "../10-catalog/mail-senders";
 import { JUNK_CAP_PER_DAY, JUNK_TOPICS, SELF_TRAINED_CATCH, catchOf, falseJunkOf, junkFloor, spamShare } from "../10-catalog/mail-senders";
 import type { GameState } from "../50-state";
 import { roleAccount, vacationOn } from "./accounts";
-import { capsOf, mxTarget, selfHostCaps } from "./caps";
+import { capsOf, mailHooks, mxTarget, selfHostCaps } from "./caps";
 import { accountByAddress, isRead, MAIL_KEEP, SYS_FOLDERS, tenantOf, view } from "./model";
 import { GMIX_DOMAIN } from "./new";
-import type { Attachment, MailAccount, MailCond, MailGroup, MailKind, MailParams, MailTenant, Message, Queued, TraceEntry } from "./types";
+import type { Ticket } from "../40-support/tickets";
+import type { Attachment, DeskChannel, MailAccount, MailCond, MailGroup, MailKind, MailParams, MailTenant, Message, Queued, TraceEntry } from "./types";
 
 export interface Inbound {
   to: string; from: string; kind: MailKind; topic?: string; p?: MailParams; own?: { subject: string; text: string };
@@ -55,11 +56,12 @@ function knownDomain(s: GameState, domain: string): boolean {
     s.customers.some((c) => of(c.address.email) === domain) || hostedDesk(s) === domain;
 }
 
-// The address a hosted desk takes mail on, so a forward rule can reach it.
+// The domain a hosted desk takes mail on, so a forward rule can reach it.
 function hostedDesk(s: GameState): string | null {
   const d = deskOf(s);
   return d?.hosting === "hosted" && s.desk!.tenant ? tenantHost(d, s.desk!.tenant) : null;
 }
+export const hostedDeskAddress = (s: GameState): string | null => { const h = hostedDesk(s); return h && `support@${h}`; };
 
 type Resolved = { accounts: MailAccount[]; group?: MailGroup } | { why: "unknown" | "closed" | "stale" | "external" };
 
@@ -144,6 +146,7 @@ export function deliver(s: GameState, inb: Inbound, o: { junkChecked?: boolean }
   if ("why" in r) {
     if (r.why !== "external") return bounce(s, m, r.why);
     trace(s, m, "accepted", "ok", null);
+    if (m.to === hostedDeskAddress(s)) mailHooks.deskInbound(s, m);
     return { result: "accepted", why: "ok", account: null };
   }
   let first: Delivery | null = null;
@@ -220,18 +223,33 @@ function accept(s: GameState, a: MailAccount, m: Message, hops: number, junkChec
     if (caught) { m.folder = "junk"; result = "quarantined"; why = "junk"; }
   }
   if (keep && !(m.folder === "junk" && m.kind === "spam" && a.prefs?.spamAction === "delete")) {
-    const ch = s.mail.channels.find((c) => c.accountId === a.id);
-    if (ch && m.folder === "inbox") {
-      if (ch.after === "read") m.read = true;
-      else if (ch.after === "move" && ch.folder) m.folder = ch.folder;
-      else if (ch.after === "delete") { m.prev = m.folder; m.folder = "trash"; }
-    }
     store(s, a, m);
   }
   trace(s, m, result, why, a.id);
   if (onward) for (const to of forwards) deliver(s, { ...m, to, hops: hops + 1 }, { junkChecked: true });
   if (keep && m.folder === "inbox") vacationReply(s, boxById(s, a.id)!, m, hops);
   return { result, why, account: a.id, id: m.id };
+}
+
+// What a desk channel does with a message it imported: keep and read leave a copy, move files it, delete sends it to Trash.
+export function applyAfter(s: GameState, ch: DeskChannel, id: string): void {
+  if (ch.after === "keep") return;
+  const box = s.mail.msgs[ch.accountId] ?? [];
+  const patch = (m: Message): Message => ch.after === "read" ? { ...m, read: true } : ch.after === "move" && ch.folder ? { ...m, folder: ch.folder }
+    : ch.after === "delete" ? { ...m, prev: m.folder, folder: "trash" } : m;
+  s.mail = { ...s.mail, msgs: { ...s.mail.msgs, [ch.accountId]: box.map((m) => (m.id === id ? patch(m) : m)) } };
+}
+
+// The Sent copy of a ticket reply in the mailbox it went out from, with the desk's number token when it has one.
+export function sentCopy(s: GameState, t: Ticket, reply: number, accountId: string, token = ""): void {
+  const a = boxById(s, accountId);
+  if (!a) return;
+  const to = s.customers.find((c) => c.id === t.customerId)?.address.email ?? "";
+  const m: Message = {
+    id: `msg${s.nextId++}`, thread: t.id, folder: "sent", from: `acct:${a.id}`, to, kind: "reply", topic: "", ticket: t.id, reply,
+    ...(token && { p: { token } }), at: nowMinutes(s), kb: kbOf("reply", yearOf(s.hour)), read: true,
+  };
+  store(s, a, m);
 }
 
 // Out-of-office: only to the company's own boxes and addresses the player wrote to. Hosts with loop protection answer a

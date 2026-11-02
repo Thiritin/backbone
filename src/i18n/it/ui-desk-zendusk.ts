@@ -183,4 +183,5 @@ export default {
   "error.deskForwarding": () => "Verifica dell’inoltro non riuscita",
   "ticket.mail.deskForwardTest.subject": (p) => `${p.desk}: verifica dell’inoltro`,
   "ticket.mail.deskForwardTest.text": (p) => `Questo messaggio verifica che la posta a questo indirizzo venga inoltrata a ${p.address}.`,
+  "zd.admin.addAddress": () => "Aggiungi indirizzo",
 } satisfies Dict;
