@@ -8,7 +8,7 @@ import { renewDomain } from "../../../sim/90-actions/orders";
 import { t } from "../../../i18n/en";
 import { menuOn } from "../../desktop/ContextMenu";
 import { useStore } from "../../store";
-import { useBooks } from "./view";
+import { arrowRows, useBooks } from "./view";
 import { formatDay } from "../billing/format";
 import { monthYear } from "../support/labels";
 import { NEW, NewCustomer } from "./NewCustomer";
@@ -33,7 +33,7 @@ export function CustomersTab({ focus }: { focus: string | null }) {
   const domains = c ? game.domains.filter((d) => d.customerId === c.id) : [];
   return (
     <div className="books-customers">
-      <nav className="sidebar books-list" aria-label={t("books.tab.customers")}>
+      <nav className="sidebar books-list" aria-label={t("books.tab.customers")} onKeyDown={arrowRows}>
         {add}
         {list.map((x) => {
           const first = activeServices(game.services, x.id)[0];
