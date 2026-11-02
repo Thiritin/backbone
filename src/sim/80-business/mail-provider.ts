@@ -3,7 +3,7 @@
 import { hourOfMonth, isMonthStart, yearOf } from "../00-core/time";
 import { GOGGLE_CONVERSION } from "../10-catalog/mail-consumer";
 import { GRACE_DAYS } from "../10-catalog/mail-providers";
-import { mailboxTaken, removeMailbox } from "../42-mail/accounts";
+import { mailboxTaken, openBoxes, removeMailbox } from "../42-mail/accounts";
 import { GMIX_DOMAIN } from "../42-mail/new";
 import type { MailTenant, Message } from "../42-mail/types";
 import type { GameState } from "../50-state";
@@ -64,3 +64,18 @@ export function mailProviderTick(s: GameState): void {
 export const GMIX_ADS = 8;
 export const gmixAd = (hour: number, accountId: string, slot = 0): number =>
   (hour + (Number(accountId.replace(/\D/g, "")) || 0) * 3 + slot * 5) % GMIX_ADS;
+
+// The Admin console's Reports: per user the messages sent and received and the kilobytes stored, and how many of the sent
+// messages went to an address on the tenant's own domain.
+export function goggleReport(s: GameState, tenantId: string): { rows: { id: string; sent: number; received: number; kb: number }[]; sent: number; inside: number } {
+  const t = s.mail.tenants.find((x) => x.id === tenantId), boxes = openBoxes(s, tenantId);
+  const sent = boxes.flatMap((a) => (s.mail.msgs[a.id] ?? []).filter((m) => m.folder === "sent"));
+  return {
+    rows: boxes.map((a) => {
+      const m = (s.mail.msgs[a.id] ?? []).filter((x) => !x.draft);
+      return { id: a.id, sent: m.filter((x) => x.folder === "sent").length, received: m.filter((x) => x.folder !== "sent").length, kb: m.reduce((n, x) => n + x.kb, 0) };
+    }),
+    sent: sent.length,
+    inside: sent.filter((m) => !!t && m.to.toLowerCase().endsWith(`@${t.domain}`)).length,
+  };
+}

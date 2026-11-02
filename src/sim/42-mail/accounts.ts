@@ -69,11 +69,12 @@ export const sharedMailboxesOf = (s: GameState, accountId: string): MailAccount[
 export const vacationOn = (a: MailAccount, hour: number): boolean => !!a.vacation?.on && (a.vacation.until === null || hour < a.vacation.until);
 
 // The one place a password is compared.
-export function checkMailLogin(s: GameState, address: string, password: string): { ok: true; account: MailAccount } | { ok: false; error: string } {
+// adminConsole: the Goggle Admin console's sign-in, which lets a locked tenant's administrator reach the page that unlocks it.
+export function checkMailLogin(s: GameState, address: string, password: string, adminConsole = false): { ok: true; account: MailAccount } | { ok: false; error: string } {
   const a = accountByAddress(s, address), t = a && tenantOf(s, a);
   if (!a || !t || a.closedAt !== null) return { ok: false, error: "error.mailLogin" };
   if (a.shared) return { ok: false, error: "error.mailShared" };
-  if (t.locked) return { ok: false, error: "error.mailLocked" };
+  if (t.locked && !(adminConsole && t.admin === a.id)) return { ok: false, error: "error.mailLocked" };
   if (a.suspended) return { ok: false, error: "error.mailSuspended" };
   if (a.password !== password) return { ok: false, error: "error.mailLogin" };
   return { ok: true, account: a };
