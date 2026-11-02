@@ -9,7 +9,8 @@ import { tick } from "../src/sim/88-tick/tick";
 import { sendReminder, setBillingRules, suspendServices } from "../src/sim/90-actions/billing";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { changePrice } from "../src/sim/90-actions/sales";
-import { addTeam, assign, hire, removeTeam, setShift, setTeam } from "../src/sim/90-actions/staff";
+import { addTeam, assign, removeTeam, setShift, setTeam } from "../src/sim/90-actions/staff";
+import { hire } from "./fixtures";
 import { replyTicket } from "../src/sim/90-actions/support";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 

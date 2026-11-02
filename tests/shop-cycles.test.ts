@@ -29,6 +29,11 @@ const place = (s: GameState) => {
   const req = s.sales.requests.find((x) => x.id === r.id)!;
   return { req, svc: s.services.find((v) => v.id === req.serviceId)! };
 };
+// The renewal cases pay through a gateway, whatever method the seeded customer drew.
+const byGateway = (s: GameState, svcId: string) => {
+  const id = s.services.find((v) => v.id === svcId)!.customerId;
+  s.customers = s.customers.map((c) => (c.id === id ? { ...c, method: "paypail" } : c));
+};
 const toMonthStart = (s: GameState) => { do tick(s); while (!isMonthStart(s.hour)); };
 
 describe("billing cycles", () => {
@@ -69,6 +74,7 @@ describe("billing cycles", () => {
     const { svc } = place(s);
     const end = s.hour + 100;
     s.services = s.services.map((v) => (v.id === svc.id ? { ...v, termEnd: end, prepaidUntil: end } : v));
+    byGateway(s, svc.id);
     toMonthStart(s);
     const inv = s.invoices.find((i) => i.lines.some((l) => l.key === "invoice.line.renewal"))!;
     const line = inv.lines.find((l) => l.key === "invoice.line.renewal")!;
@@ -116,6 +122,7 @@ describe("billing cycles money flow", () => {
   const renewalInvoice = (s: GameState, end: number) => {
     const { svc } = place(s);
     s.services = s.services.map((v) => (v.id === svc.id ? { ...v, termEnd: end, prepaidUntil: end } : v));
+    byGateway(s, svc.id);
     toMonthStart(s);
     const inv = s.invoices.find((i) => i.lines.some((l) => l.key === "invoice.line.renewal"))!;
     return { svc, inv };

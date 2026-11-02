@@ -9,7 +9,7 @@ import {
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { setCampaign, setReviewPlatform, setUpChannel, stopCampaign } from "../src/sim/90-actions/marketing";
-import { hire } from "../src/sim/90-actions/staff";
+import { hire } from "./fixtures";
 import { visibleCandidates } from "../src/sim/47-staff/staff";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { withCompany, newGame } from "./fixtures";

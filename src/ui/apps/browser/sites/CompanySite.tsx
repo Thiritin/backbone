@@ -1,4 +1,5 @@
 import { useState, type CSSProperties, type ReactNode } from "react";
+import { roleAddress } from "../../../../sim/42-mail/accounts";
 import { BookOpen, Building2, Check, CircleCheck, Cloud, Cpu, Gamepad2, Globe, HardDrive, LifeBuoy, Lock, Mail, MessagesSquare, Network, Server, ShieldCheck, Zap, type LucideIcon } from "lucide-react";
 import { t } from "../../../../i18n/en";
 import { START_YEAR, yearOf } from "../../../../sim/00-core/time";
@@ -287,7 +288,7 @@ function About({ game }: { game: GameState }) {
 }
 
 function Support({ game, pages, go }: { game: GameState; pages: SitePage[]; go: Go }) {
-  const address = game.company.mail.kind === "free" ? salesAddress(game) : `support@${companyDomain(game)}`;
+  const address = roleAddress(game, "support");
   return (
     <>
       <PageHead title={LABEL.support} lead={t("browser-sites-1.co.supportLead")} />
