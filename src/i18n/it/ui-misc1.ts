@@ -222,7 +222,6 @@ export default {
   "misc1.parts.controlPlane": () => "Control plane",
   "misc1.parts.loadDay": () => "Carico durante la giornata",
   "misc1.parts.running": () => "In esecuzione",
-  "misc1.parts.frozen": () => "Congelata",
   "misc1.parts.stopped": () => "Ferma",
   "misc1.parts.lostDisk": () => "Disco perso",
   "misc1.parts.restoring": () => "Ripristino",

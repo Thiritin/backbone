@@ -13,7 +13,6 @@ import { balancerIn, balloons, clustersIn, conflict, isService, phpAt, softwareB
 import { HA_SKILL } from "../10-catalog/research";
 import { serverOsAt } from "../10-catalog/server-os";
 import { versionAt } from "../10-catalog/software-versions";
-import { freezeTick } from "../60-infra/usage";
 import { PHP_UPGRADE_HOURS } from "../60-infra/php";
 import { withinOversell } from "../60-infra/oversell";
 import { buildKeys, licenceBlock, licenceExpired, licenseBuild, releaseGone } from "../60-infra/licence";
@@ -198,7 +197,6 @@ export function resizePanelVm(s: GameState, hostId: string, size: Resources): Ac
   const d = vm.deviceId ? s.devices.find((x) => x.id === vm.deviceId) : undefined;
   if ((d && !nodeTakes(s, d, { ...size, datastore: vm.datastore }, vm)) || (vm.datastore && !datastoreFits(s, vm.datastore, size.diskGb - vm.diskGb))) return fail("error.nodeFull");
   s.workloads = s.workloads.map((w) => (w.id === vm.id ? { ...w, ...size } : w));
-  freezeTick(s);
   return { ok: true };
 }
 
@@ -221,7 +219,6 @@ export function resizeVm(s: GameState, vmId: string, size: Resources): ActionRes
   const live = !!c?.platform && balloons(softwareById(c.platform), yearOf(s.hour)) && size.ramGb >= vm.ramGb && size.vcpu === vm.vcpu && size.diskGb === vm.diskGb;
   const busyUntil = live || vm.stopped ? vm.busyUntil : Math.max(vm.busyUntil, s.hour + RESIZE_MINUTES / 60);
   s.workloads = s.workloads.map((w) => (w.id === vm.id ? { ...w, ...size, busyUntil } : w));
-  freezeTick(s);
   return { ok: true };
 }
 

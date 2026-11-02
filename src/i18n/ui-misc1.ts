@@ -222,7 +222,6 @@ export default {
   "misc1.parts.controlPlane": () => "Control plane",
   "misc1.parts.loadDay": () => "Load over the day",
   "misc1.parts.running": () => "Running",
-  "misc1.parts.frozen": () => "Frozen",
   "misc1.parts.stopped": () => "Stopped",
   "misc1.parts.lostDisk": () => "Lost disk",
   "misc1.parts.restoring": () => "Restoring",

@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- A server that runs out of memory no longer freezes with every workload on it: it slows down while it swaps, and past that only its largest VM is killed for an hour.
 - A busy OpenVeeZee node no longer racks up memory failures from CPU load alone, and when it runs out of memory the OOM killer now stops only the largest container for an hour, shown as "OOM killed".
 - Slow sites now bother business customers most during business hours and more the longer the slowdown lasts, while private customers barely notice.
 - The new Traffic billing training lets you set one standing answer for customers who go over their traffic, and your books then throttle, bill or offer an upgrade every day on their own.
