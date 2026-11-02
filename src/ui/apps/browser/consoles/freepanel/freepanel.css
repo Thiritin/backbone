@@ -56,3 +56,18 @@
 .fp-login[data-era="authentic"] { background: linear-gradient(#3a4148, #24292e); }
 .fp-login[data-era="authentic"] .fp-card { border: 0; box-shadow: 0 10px 30px rgb(0 0 0 / 0.35); }
 .fp-login[data-era="authentic"] .fp-logo { color: var(--accent); }
+
+/* Customer side: one virtual server's Virtualmin frame. */
+.fp-server { display: flex; align-items: center; gap: 6px; font-weight: 700; }
+.fp-switch { display: flex; }
+.fp-switch span { flex: 1; padding: 9px 0; text-align: center; font-size: 12px; }
+.fp-switch span:first-child { background: var(--accent); color: #fff; }
+.fp-tabs { display: flex; gap: 2px; margin-bottom: 12px; border-bottom: 1px solid var(--line); }
+.fp-tabs button { padding: 5px 12px; border: 1px solid var(--line); border-bottom: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+.fp-tabs button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+.fp[data-era="gray"] .fp-server { padding: 4px 6px; background: #fff; border: 1px solid #9a9a9a; }
+.fp[data-era="gray"] .fp-tabs button { background: #d9d9d9; border-radius: 0; }
+.fp[data-era="gray"] .fp-tabs button[aria-pressed="true"] { background: #9999ff; color: #000; }
+.fp[data-era="authentic"] .fp-switch { background: #24292e; color: #c9d0d6; }
+.fp[data-era="authentic"] .fp-server { padding: 12px 16px; background: #24292e; color: #fff; }
+.fp[data-era="authentic"] .fp-tabs button { border-radius: var(--r) var(--r) 0 0; }

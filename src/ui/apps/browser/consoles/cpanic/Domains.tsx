@@ -1,6 +1,6 @@
 import { Clock, Cog, Globe, Link2, Lock, Network, Waypoints, type LucideIcon } from "lucide-react";
 import { useState } from "react";
-import { t } from "../../../../../i18n/en";
+import { useT } from "../look";
 import { formatClock, yearOf } from "../../../../../sim/00-core/time";
 import type { GameState } from "../../../../../sim/50-state";
 import type { Cluster } from "../../../../../sim/60-infra/cluster";
@@ -29,6 +29,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 // Addon Domains, Subdomains and Parked Domains (Aliases): the form to add one and the list with Remove.
 function DomainList({ ws, kind, year }: { ws: Webspace; kind: DomainKind; year: number }) {
+  const t = useT();
   const act = usePageAct(), [name, setName] = useState(""), [label, setLabel] = useState(""), [folder, setFolder] = useState("");
   const parents = Object.values(ws.domains).filter((d) => d.kind === "main" || d.kind === "addon").map((d) => d.name);
   const [parent, setParent] = useState(ws.domain);
@@ -62,6 +63,7 @@ function DomainList({ ws, kind, year }: { ws: Webspace; kind: DomainKind; year: 
 }
 
 function Ssl({ game, ws }: { game: GameState; ws: Webspace }) {
+  const t = useT();
   return (
     <table className="cx-table">
       <thead><tr><th>{t("cpd.domain")}</th><th>{t("cpd.ssl.cert")}</th><th>{t("cpd.ssl.expires")}</th><th>{t("cpd.ssl.status")}</th></tr></thead>
@@ -82,6 +84,7 @@ function Ssl({ game, ws }: { game: GameState; ws: Webspace }) {
 
 // MultiPHP Manager picks a version per domain; before it the host runs one version for every domain.
 function Php({ game, c, ws }: { game: GameState; c: Cluster; ws: Webspace }) {
+  const t = useT();
   const act = usePageAct(), multi = yearOf(game.hour) >= MULTI_PHP_YEAR, versions = phpInstalled(game, c);
   return (
     <table className="cx-table">
@@ -102,6 +105,7 @@ function Php({ game, c, ws }: { game: GameState; c: Cluster; ws: Webspace }) {
 
 // The customer pages for domains, DNS, SSL, PHP and cron (docs/design/web-hosting.md, 4.5).
 export function DomainPage({ game, c, workloadId, page }: { game: GameState; c: Cluster; workloadId: string; page: DomainPageId }) {
+  const t = useT();
   const ws = webspaceOf(game, workloadId), year = yearOf(game.hour);
   if (!ws) return null;
   const title = domainTiles(year).find(([id]) => id === page)![1];

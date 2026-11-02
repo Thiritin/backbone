@@ -1,6 +1,6 @@
 import { FolderUp, Forward, Mail, MessageSquareReply, ShieldBan, type LucideIcon } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { t } from "../../../../../i18n/en";
+import { useT } from "../look";
 import { LOCALE } from "../../../../../i18n/lang";
 import { yearOf } from "../../../../../sim/00-core/time";
 import type { GameState } from "../../../../../sim/50-state";
@@ -30,6 +30,7 @@ const DomainPick = ({ ws, value, set, subs = true }: { ws: Webspace; value: stri
 );
 
 export function MailFtp({ game, ws, page }: { game: GameState; ws: Webspace; page: MailFtpPage }) {
+  const t = useT();
   const title = mailFtpIcons(yearOf(game.hour)).find(([id]) => id === page)![1];
   return (
     <>
@@ -44,6 +45,7 @@ export function MailFtp({ game, ws, page }: { game: GameState; ws: Webspace; pag
 }
 
 function Accounts({ ws }: { ws: Webspace }) {
+  const t = useT();
   const act = usePageAct(), openApp = useStore((s) => s.openApp);
   const [local, setLocal] = useState(""), [domain, setDomain] = useState(ws.domain), [pass, setPass] = useState(""), [again, setAgain] = useState(""), [quota, setQuota] = useState("250");
   const [mismatch, setMismatch] = useState(false);
@@ -82,6 +84,7 @@ function Accounts({ ws }: { ws: Webspace }) {
 }
 
 function Forwarders({ ws }: { ws: Webspace }) {
+  const t = useT();
   const act = usePageAct();
   const [local, setLocal] = useState(""), [domain, setDomain] = useState(ws.domain), [to, setTo] = useState("");
   const rows = Object.values(ws.forwarders);
@@ -105,6 +108,7 @@ function Forwarders({ ws }: { ws: Webspace }) {
 }
 
 function Autoresponders({ ws }: { ws: Webspace }) {
+  const t = useT();
   const act = usePageAct();
   const [local, setLocal] = useState(""), [domain, setDomain] = useState(ws.domain), [from, setFrom] = useState(""), [subject, setSubject] = useState(""), [body, setBody] = useState(""), [interval, setGap] = useState("8");
   const rows = Object.values(ws.autoresponders);
@@ -134,6 +138,7 @@ function Autoresponders({ ws }: { ws: Webspace }) {
 }
 
 function Spam({ ws }: { ws: Webspace }) {
+  const t = useT();
   const act = usePageAct(), [f, setF] = useState<SpamFilter>(ws.spam), [saved, setSaved] = useState(false);
   const toggle = (k: "on" | "spamBox" | "autoDelete", label: string) => (
     <label><input type="checkbox" checked={f[k]} disabled={k !== "on" && !f.on} onChange={(e) => { setSaved(false); setF({ ...f, [k]: e.target.checked }); }} /> {t(label)}</label>
@@ -154,6 +159,7 @@ function Spam({ ws }: { ws: Webspace }) {
 }
 
 function Ftp({ ws }: { ws: Webspace }) {
+  const t = useT();
   const act = usePageAct(), domains = Object.values(ws.domains).filter((d) => d.kind !== "sub");
   const [login, setLogin] = useState(""), [domain, setDomain] = useState(ws.domain), [pass, setPass] = useState(""), [again, setAgain] = useState("");
   const [dir, setDir] = useState<string | null>(null), [quota, setQuota] = useState("0"), [mismatch, setMismatch] = useState(false);
@@ -179,7 +185,7 @@ function Ftp({ ws }: { ws: Webspace }) {
         <Field label={t("cpmail.password")}><input type="password" value={pass} onChange={(e) => setPass(e.target.value)} autoComplete="new-password" /></Field>
         <Field label={t("cpmail.password2")}><input type="password" value={again} onChange={(e) => setAgain(e.target.value)} autoComplete="new-password" /></Field>
         {mismatch && <p className="cx-note bad">{t("cpmail.mismatch")}</p>}
-        <Field label={t("cpmail.directory")}><span className="cx-inline"><span className="cx-note">/home/{ws.account}/</span><input value={folder} onChange={(e) => setDir(e.target.value)} /></span></Field>
+        <Field label={t("cpmail.directory")}><span className="cx-inline"><span className="cx-note">{ws.home}/</span><input value={folder} onChange={(e) => setDir(e.target.value)} /></span></Field>
         <Field label={t("cpmail.quotaMb")}><input type="number" min={0} value={quota} onChange={(e) => setQuota(e.target.value)} /></Field>
         <p><button className="cx-btn primary" type="submit">{t("cpmail.createFtp")}</button></p>
       </form>
@@ -188,7 +194,7 @@ function Ftp({ ws }: { ws: Webspace }) {
         <tbody>
           {Object.values(ws.ftp).map((a) => (
             <tr key={a.user}>
-              <td>{a.user}</td><td>/home/{ws.account}/{a.folder}</td>
+              <td>{a.user}</td><td>{ws.home}/{a.folder}</td>
               <td className="num">{a.quotaMb ? t("cpmail.ftpUsageOf", { used: mb(usedIn(a.folder)), quota: mb(a.quotaMb) }) : t("cpmail.ftpUsageUnlimited", { used: mb(usedIn(a.folder)) })}</td>
               <td className="cx-acts"><button className="cx-btn" onClick={() => act(deleteFtpAccount, ws.workloadId, a.user)}>{t("cpmail.delete")}</button></td>
             </tr>

@@ -55,7 +55,7 @@ export const PARTS: PartName[] = ["files", "domains", "databases", "dbUsers", "m
 export type WebspaceOverlay = { [K in PartName]?: Record<string, WebParts[K][string] | false> } & { spam?: SpamFilter };
 
 export interface Webspace extends WebParts {
-  workloadId: string; panel: string; account: string; prefix: string; webroot: string; domain: string;
+  workloadId: string; panel: string; account: string; prefix: string; webroot: string; domain: string; home: string;
   app: WebApp | null; limits: WebLimits; usage: WebUsage; spam: SpamFilter;
   // The files an attacker left on a defaced site, before the overlay; deleting all of them cleans it.
   shells: string[];
@@ -98,6 +98,8 @@ const shellName = (s: GameState, serviceId: string, hack: number): string => {
 };
 
 export const webrootOf = (panel: string): string => (panel === "pleskit" ? "httpdocs" : "public_html");
+// Plesk keeps each subscription under its domain in the vhosts folder; the other panels use the account's home.
+export const homeOf = (panel: string, account: string, domain: string): string => (panel === "pleskit" ? `/var/www/vhosts/${domain}` : `/home/${account}`);
 // cPanel puts the first eight characters of the username in front of every database and database user.
 export const prefixOf = (account: string): string => `${account.slice(0, 8)}_`;
 // MySQL user names were capped at 16 characters until MySQL 5.7.
@@ -137,7 +139,7 @@ export function deriveWebspace(s: GameState, workloadId: string): Webspace | nul
   const account = own?.account ?? v?.username ?? accountFor(domain);
   const panel = c.panel!, webroot = webrootOf(panel), prefix = prefixOf(account), since = own?.at ?? v?.startedAt ?? w.placedAt, year = yearOf(s.hour);
   const ws: Webspace = {
-    workloadId, panel, account, prefix, webroot, domain, app: null, shells: [], files: {}, domains: {}, databases: {}, dbUsers: {}, mailboxes: {}, forwarders: {}, ftp: {}, cron: {}, rows: {}, autoresponders: {},
+    workloadId, panel, account, prefix, webroot, domain, home: homeOf(panel, account, domain), app: null, shells: [], files: {}, domains: {}, databases: {}, dbUsers: {}, mailboxes: {}, forwarders: {}, ftp: {}, cron: {}, rows: {}, autoresponders: {},
     limits: own ? UNLIMITED : limitsOf(v?.pkg ? packageNamed(c, v.pkg) : undefined, v?.spec.mailboxes ?? 0), usage: undefined!, spam: SPAM_OFF,
   };
   for (const p of [webroot, "logs", "tmp", "mail"]) ws.files[p] = { dir: true, mb: 0, at: since };
@@ -172,7 +174,7 @@ export function deriveWebspace(s: GameState, workloadId: string): Webspace | nul
     }
     // WordPass sites past their first month run wp-cron from the system cron, as hosts advise.
     if (app === "wordpass" && s.hour - since >= 30 * 24) {
-      ws.cron.cron1 = { id: "cron1", command: `php -q /home/${account}/${webroot}/wp-cron.php > /dev/null 2>&1`, everyHours: 1 };
+      ws.cron.cron1 = { id: "cron1", command: `php -q ${ws.home}/${webroot}/wp-cron.php > /dev/null 2>&1`, everyHours: 1 };
     }
   }
   return ws;
