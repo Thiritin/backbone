@@ -10,6 +10,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Every stack in a storage room now has a Ship button that sends the units to another of your sites, such as from the basement to Frankfurt.
 - Customers no longer send requests that need a company older than a year or better reviews than you have.
 - The CPU overcommit warning on hypervisor hosts now fires at 8 vCPUs per core instead of 2.
+- FreeScoot now runs at your help desk address with shared mailboxes and their folders, conversations you can assign, note, merge and close, mailbox connection, auto reply and permission settings, users, a fetch log, system status and a list of paid modules.
 - Upgrade requests no longer mark the current server as full.
 - Storage in Locations shows stored hardware as a grid of cards and sells several units of a model at once.
 - The Flyerlarm order table no longer runs past the right edge of its box, and the Locations storage tab is called Lager in German.
