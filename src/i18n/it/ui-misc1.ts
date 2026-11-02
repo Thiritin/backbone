@@ -51,6 +51,7 @@ export default {
   "misc1.billing.sendReminders": () => "Invia solleciti",
   "misc1.billing.suspendAfter": () => "Sospendi i servizi dopo",
   "misc1.billing.collectAfter": () => "Passa al recupero crediti dopo",
+  "misc1.billing.overTraffic": () => "Traffico oltre il piano",
   "misc1.billing.suspended": () => "Sospeso",
   "misc1.billing.invoice": (p) => `Fattura ${p.number}`,
   "misc1.billing.invoiceLower": (p) => `fattura ${p.number}`,

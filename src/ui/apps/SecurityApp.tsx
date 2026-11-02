@@ -1,6 +1,6 @@
 import { ShieldCheck } from "lucide-react";
 import { useRef, useState } from "react";
-import { euro } from "../../sim/00-core/money";
+import { euro, euroCents } from "../../sim/00-core/money";
 import { formatClock } from "../../sim/00-core/time";
 import { t } from "../../i18n/en";
 import type { GameState } from "../../sim/50-state";
@@ -9,7 +9,10 @@ import { anchorOf, type Cluster } from "../../sim/60-infra/cluster";
 import { advisoryNodes, ADVISORY_KEYS, MONITORING, patchOut, STAGE_HOURS, vulnById, vulnerable, webOn } from "../../sim/60-infra/security";
 import { phpDue, upgradePhp } from "../../sim/90-actions/clusters";
 import { urgentSoftware, type Severity } from "../../sim/60-infra/vulns";
-import { cleanUp, setSitesOffline } from "../../sim/90-actions/security";
+import { cleanSite, cleanUp, offerCleanup, remindCustomer, setSitesOffline } from "../../sim/90-actions/security";
+import { cleanupPrice, hasBackup } from "../../sim/60-infra/apps";
+import { suspendService } from "../../sim/90-actions/holds";
+import { APP_NAME } from "../../sim/10-catalog/apps";
 import { updateSoftware } from "../../sim/90-actions/software";
 import { updateFirmware } from "../../sim/90-actions/remote";
 import { exposedDevices, firmwareDue, firmwareVulns } from "../../sim/60-infra/oob";
@@ -79,6 +82,53 @@ function Compromised({ game, skip }: { game: GameState; skip: Cluster[] }) {
             <td>{c.name}</td>
             <td>{d && devName(d)}</td>
             <td className="r"><button className="btn" onClick={() => act(cleanUp, c.id)}>{t("apps.cleanUp")}</button></td>
+          </tr>
+        );
+      })}</tbody>
+    </table>
+  );
+}
+
+// Defaced customer sites that send spam: restored from a backup, their owner offered paid clean-up or reminded, or suspended
+// with a notice that names the hack.
+function DefacedSites({ game }: { game: GameState }) {
+  const act = useStore((s) => s.act);
+  const sites = game.sites.defaced.flatMap((id) => {
+    const v = game.services.find((x) => x.id === id && x.endedAt === null), c = v && game.customers.find((x) => x.id === v.customerId);
+    return v && c ? [{ v, c }] : [];
+  });
+  if (!sites.length) return null;
+  return (
+    <table className="table">
+      <thead><tr><th>{t("apps.security.defacedSite")}</th><th>{t("apps.monitoring.customer")}</th><th>{t("apps.software")}</th><th>{t("apps.state")}</th><th /></tr></thead>
+      <tbody>{sites.map(({ v, c }) => {
+        const held = !!game.heldServices[v.id], offered = game.sites.notified.includes(`${v.id}|offer`), reminded = game.sites.notified.includes(`${v.id}|remind`);
+        const price = euroCents(cleanupPrice(game, c));
+        const menu = (): MenuEntry[] => [
+          hasBackup(game, v.id) && { label: t("apps.security.restore"), run: () => act(cleanSite, v.id) },
+          !offered && { label: t("apps.security.offerCleanupFor", { price }), run: () => act(offerCleanup, v.id) },
+          !reminded && { label: t("apps.security.remind"), run: () => act(remindCustomer, v.id) },
+          !held && { label: t("apps.security.suspendAbuse"), run: () => act(suspendService, v.id, "abuse") },
+        ];
+        return (
+          <tr key={v.id} id={`site-${v.id}`} onContextMenu={menuOn(menu)}>
+            <td>{v.label}</td>
+            <td>{c.name}</td>
+            <td>{APP_NAME[v.spec.app!]}</td>
+            <td>
+              <span className="pill bad">{t("apps.defaced")}</span>
+              {held && <> <span className="pill warn">{t("apps.security.suspended")}</span></>}
+              {offered && <> <span className="pill">{t("apps.security.offerDeclined")}</span></>}
+              {reminded && <> <span className="pill">{t("apps.security.reminded")}</span></>}
+            </td>
+            <td className="r">
+              <span style={{ display: "inline-flex", gap: 6, justifyContent: "flex-end" }}>
+                <button className="btn" disabled={!hasBackup(game, v.id)} onClick={() => act(cleanSite, v.id)}>{t("apps.security.restore")}</button>
+                <button className="btn" disabled={offered} onClick={() => act(offerCleanup, v.id)}>{t("apps.security.offerCleanup")} <span className="num">{price}</span></button>
+                <button className="btn" disabled={reminded} onClick={() => act(remindCustomer, v.id)}>{t("apps.security.remind")}</button>
+                <button className="btn" disabled={held} onClick={() => act(suspendService, v.id, "abuse")}>{t("apps.security.suspendAbuse")}</button>
+              </span>
+            </td>
           </tr>
         );
       })}</tbody>
@@ -177,6 +227,7 @@ export function SecurityApp() {
   const open = game.lossReports.filter((r) => r.items.some((i) => !i.restored)).length;
   useFocus("Security", (f) => {
     if (f.kind === "tab" && (f.id === "monitoring" || f.id === "incidents")) setTab(f.id);
+    if (f.kind === "site") { setTab("advisories"); requestAnimationFrame(() => document.getElementById(`site-${f.id}`)?.scrollIntoView({ block: "nearest" })); }
     if (f.kind === "card" && f.id === "software") { setTab("advisories"); requestAnimationFrame(() => card.current?.scrollIntoView({ block: "start" })); }
   });
   return (
@@ -200,10 +251,11 @@ export function SecurityApp() {
           </div>
         )}
         {view === "advisories" && <div className="fin-scroll">
+          <DefacedSites game={game} />
           <Compromised game={game} skip={nodes} />
           <SoftwareCard game={game} cardRef={card} />
           <ManagementCard game={game} />
-          {nodes.length === 0 ? !game.breaches.length && <div className="fin-empty"><ShieldCheck />{t("apps.security.noHosts")}</div> : (
+          {nodes.length === 0 ? !game.breaches.length && !game.sites.defaced.length && <div className="fin-empty"><ShieldCheck />{t("apps.security.noHosts")}</div> : (
             <table className="table">
               <thead><tr><th>{t("apps.security.panelHost")}</th><th>{t("apps.server")}</th><th>PHP</th><th className="r">{t("apps.sites")}</th><th>{t("apps.security.sitesState")}</th><th>{t("apps.patch")}</th><th /></tr></thead>
               <tbody>{nodes.map((n) => <NodeRow key={n.id} game={game} n={n} />)}</tbody>

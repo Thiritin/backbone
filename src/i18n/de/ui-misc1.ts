@@ -51,6 +51,7 @@ export default {
   "misc1.billing.sendReminders": () => "Mahnungen senden",
   "misc1.billing.suspendAfter": () => "Dienste sperren nach",
   "misc1.billing.collectAfter": () => "An Inkasso übergeben nach",
+  "misc1.billing.overTraffic": () => "Traffic über Tarif",
   "misc1.billing.suspended": () => "Gesperrt",
   "misc1.billing.invoice": (p) => `Rechnung ${p.number}`,
   "misc1.billing.invoiceLower": (p) => `Rechnung ${p.number}`,
