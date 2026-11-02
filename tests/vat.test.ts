@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hourOf } from "../src/sim/00-core/time";
+import { hourOf, nextMonthStart } from "../src/sim/00-core/time";
 import { inbox } from "../src/sim/40-support/letters";
 import { profitOf } from "../src/sim/46-finance/finance";
 import { newGame, type GameState, type LedgerEntry } from "../src/sim/50-state";
@@ -13,6 +13,11 @@ import { deserialize, serialize } from "../src/sim/91-save/save";
 const at = (y: number, m: number, d = 1, h = 0) => hourOf(new Date(Date.UTC(y, m - 1, d, h)));
 const run = (s: GameState, hours: number) => { for (let i = 0; i < hours; i++) tick(s); };
 const runTo = (s: GameState, hour: number) => run(s, hour - s.hour);
+// Ticks only the month starts on the way, then every hour after the last one.
+const monthsTo = (s: GameState, hour: number) => {
+  for (let m = nextMonthStart(s.hour); m <= hour; m = nextMonthStart(m)) { s.hour = m - 1; tick(s); }
+  runTo(s, hour);
+};
 const entry = (hour: number, category: string, amount: number): LedgerEntry => ({ hour, category, key: "ledger.test", params: {}, amount });
 // Registered on Monday 3 January 2005 with the standard rule and the tax number in hand.
 function company(small = false): GameState {
@@ -109,10 +114,10 @@ describe("VAT", () => {
 
   it("files nothing for a small business and ends the rule above the limit", () => {
     const s = company(true);
-    runTo(s, at(2005, 3, 1) + 1);
+    monthsTo(s, at(2005, 3, 1) + 1);
     expect(vatReturns(s)).toEqual([]);
     s.ledger = [...s.ledger, entry(at(2005, 6, 1), "payments", smallLimit(2006) + 1)];
-    runTo(s, at(2006, 1, 3, 12));
+    monthsTo(s, at(2006, 1, 3, 12));
     expect(s.tax.small).toBe(false);
     expect(letters(s, "taxSmallEnd")).toHaveLength(1);
     expect(vatPeriod(s, 2006)).toBe("month");

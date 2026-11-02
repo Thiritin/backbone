@@ -24,6 +24,8 @@ function shop(seed: number, monthly: number, profile: Profile = "smallBiz", n = 
   return { s, ids, cus: (id: string) => s.customers.find((x) => x.id === id)!, svc: (id: string) => s.services.find((x) => x.id === id)! };
 }
 const nextMonth = (s: GameState) => { do tick(s); while (!isMonthStart(s.hour)); };
+// Drift, churn and billing run at the month start, so the hours before it need no ticks.
+const toMonthStart = (s: GameState) => { while (!isMonthStart(s.hour + 1)) s.hour++; tick(s); };
 const open = (s: GameState, id: string, kind: string, topic?: string) =>
   s.tickets.find((t) => t.customerId === id && t.kind === kind && (!topic || t.topic === topic) && !isFinal(t));
 
@@ -53,7 +55,7 @@ describe("price tolerance", () => {
     changePrice(s, v, 3.15);
     expect(cus(c).happiness).toBeCloseTo(65);
     expect(open(s, c, "cancellation")).toBeUndefined();
-    nextMonth(s);
+    toMonthStart(s);
     expect(cus(c).churnedAt).toBeNull();
     expect(cus(c).happiness).toBeGreaterThan(60);
   });
@@ -79,7 +81,7 @@ describe("price tolerance", () => {
     s.services = s.services.map((x) => (x.id === v ? { ...x, price: (max * 0.97) / 730 } : x));
     for (let m = 0; m < 12 && cus(c).churnedAt === null; m++) {
       if (m < 3) changePrice(s, v, svc(v).price * 730 * 1.03);
-      nextMonth(s);
+      toMonthStart(s);
       // Answer complaints right away so waiting on support costs nothing.
       for (const t of s.tickets) if (t.customerId === c && t.kind !== "cancellation" && !isFinal(t)) t.status = "resolved";
     }
@@ -119,7 +121,7 @@ describe("price complaints", () => {
     // 15% over the €3.75 market for the smallest web space.
     for (const { v } of ids) changePrice(s, v, 4.31);
     for (const t of s.tickets) t.status = "resolved";
-    nextMonth(s);
+    toMonthStart(s);
     expect(s.tickets.filter((t) => t.topic === "price" && !isFinal(t)).length).toBeGreaterThan(0);
   });
 });

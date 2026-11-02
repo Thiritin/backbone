@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { nextMonthStart } from "../src/sim/00-core/time";
 import { businessPowerPrice } from "../src/sim/10-catalog/economy";
 import { DATACENTERS, datacenterById, FLAT_CONTRACTS, flatMonthly } from "../src/sim/20-world/datacenters";
 import { device, type GameState } from "../src/sim/50-state";
@@ -74,7 +75,8 @@ describe("flat-rate power contract", () => {
     const metered = powerPerHour(s);
     rackOf(s, rack).flatKw = 4.4;
     expect(powerPerHour(s)).toBeLessThan(metered);
-    run(s, 24 * 31);
+    s.hour = nextMonthStart(s.hour) - 1;
+    tick(s);
     const line = s.ledger.find((l) => l.key === "ledger.flatPower")!;
     expect(line.amount).toBe(-flatMonthly(datacenterById("hetzler-park"), 4.4, 2005));
     expect(line.params).toMatchObject({ kw: 4.4 });

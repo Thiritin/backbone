@@ -19,8 +19,9 @@ import { useStore } from "../src/ui/store";
 import { DESK_ADMIN, handDesk, readyGame } from "./fixtures";
 
 const panel = (s: GameState) => s.clusters.find((x) => x.kind === "panel")!;
+let base: GameState | null = null;
 function game(version = "1.0", year = 2019): GameState {
-  const s = readyGame(5);
+  const s = structuredClone((base ??= readyGame(5)));
   s.hour = hourOf(new Date(Date.UTC(year, 0, 1)));
   s.cash = 1_000_000;
   handDesk(s, panel(s).id, "freescoot");
@@ -49,17 +50,18 @@ beforeEach(() => { sessionStorage.clear(); go = []; });
 afterEach(cleanup);
 
 describe("FreeScoot", () => {
-  it("renders every page in the 1.0 and 1.8 looks", () => {
-    for (const [version, look] of [["1.0", "fs-classic"], ["1.6", "fs-classic"], ["1.8", "fs-current"]] as const) {
-      const s = game(version, 2023), tk = ticket(s, "howTo");
-      agent();
-      for (const page of deskPages("freescoot")) {
-        const path = deskPath("freescoot", page, { n: tk.ref, id: box(s), folder: "mine", section: "incoming", log: "fetch" });
-        const { container, unmount } = show(s, path);
-        expect(container.querySelector(`.fs.${look}`), `${version} ${path}`).not.toBeNull();
-        unmount();
-      }
+  it.each([["1.0", "fs-classic"], ["1.6", "fs-classic"], ["1.8", "fs-current"]] as const)("renders every page of %s in the %s look", (version, look) => {
+    const s = game(version, 2023), tk = ticket(s, "howTo");
+    agent();
+    for (const page of deskPages("freescoot")) {
+      const path = deskPath("freescoot", page, { n: tk.ref, id: box(s), folder: "mine", section: "incoming", log: "fetch" });
+      const { container, unmount } = show(s, path);
+      expect(container.querySelector(`.fs.${look}`), `${version} ${path}`).not.toBeNull();
+      unmount();
     }
+  });
+
+  it("parses the mailbox permissions path", () => {
     expect(parseDesk("freescoot", "/mailbox/permissions/3")).toEqual({ page: "permissions", args: { id: "3" } });
   });
 

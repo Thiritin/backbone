@@ -298,7 +298,9 @@ describe("bankruptcy", () => {
     const s = withServer(fixtureGame(15));
     s.cash = -50_000;
     s.loansBlockedUntil = at(2010, 1, 1, 0);
-    const events = runFor(s, INSOLVENT_DAYS * 24);
+    const events = runFor(s, 24);
+    s.hour = s.brokeSince! + INSOLVENT_DAYS * 24 - 2;
+    events.push(...runFor(s, 1));
     expect(events.filter((e) => e.key === "event.cashNegative")).toHaveLength(1);
     expect(s.gameOver).toBe(null);
     expect(runFor(s, 1)).toContainEqual({ app: "Books", key: "event.bankrupt", params: { days: INSOLVENT_DAYS } });
@@ -308,14 +310,20 @@ describe("bankruptcy", () => {
   it("keeps going while a loan could cover the deficit, and resets once cash is back above zero", () => {
     const s = withServer(fixtureGame(16));
     s.cash = -100;
-    runFor(s, (INSOLVENT_DAYS + 2) * 24);
+    runFor(s, 1);
+    // Skips to the daily checks after the 30 days.
+    s.hour = s.brokeSince! + INSOLVENT_DAYS * 24 - 1;
+    runFor(s, 2 * 24 + 1);
+    expect(s.brokeSince).not.toBe(null);
     expect(s.gameOver).toBe(null);
     s.loansBlockedUntil = at(2010, 1, 1, 0);
     s.cash = 100;
     runFor(s, 1);
     expect(s.brokeSince).toBe(null);
     s.cash = -100;
-    runFor(s, (INSOLVENT_DAYS - 1) * 24);
+    runFor(s, 1);
+    s.hour += (INSOLVENT_DAYS - 2) * 24;
+    runFor(s, 24);
     expect(s.gameOver).toBe(null);
   });
 

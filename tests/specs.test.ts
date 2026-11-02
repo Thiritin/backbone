@@ -4,7 +4,8 @@ import { yearOf } from "../src/sim/00-core/time";
 import { CYCLE_MONTHS } from "../src/sim/10-catalog/cycles";
 import { sizeSpec, specPrice } from "../src/sim/10-catalog/products";
 import { orderLead } from "../src/sim/30-market/orders";
-import { loseRequest, nextSpec } from "../src/sim/30-market/sales";
+import { loseRequest, newLead, nextSpec } from "../src/sim/30-market/sales";
+import type { Profile } from "../src/sim/30-customers/customers";
 import { sizeOf, specText } from "../src/sim/30-market/spec";
 import type { GameState } from "../src/sim/50-state";
 import { siteContent } from "../src/sim/80-business/website";
@@ -15,6 +16,7 @@ import { deserialize, serialize } from "../src/sim/91-save/save";
 import { automate, readyGame, openShop } from "./fixtures";
 
 const OLD_NAMES = ["Web S", "Web M", "Web L", "VPS S", "VPS M", "VPS L", "VPS XL", "Game S", "Game L", "Dedicated S", "Dedicated L", "package"];
+const PROFILES: Profile[] = ["private", "gamer", "hobbyDev", "soleProp", "smallBiz", "agency", "webDev", "office", "onlineShop", "enterprise"];
 const run = (s: GameState, days: number) => {
   const events: SimEvent[] = [];
   for (let i = 0; i < days * 24; i++) events.push(...tick(s));
@@ -104,9 +106,12 @@ describe("email orders", () => {
 
 describe("sim text", () => {
   it.each([1, 2, 3])("names no old package in events, request threads or lost sales, seed %i", (seed) => {
-    const s = withShop(seed);
-    const said = texts(s, run(s, 90));
-    expect(orders(s).length).toBeGreaterThan(0);
+    // Leads of every profile and a few shop orders up front stand in for months of arrivals; three days answer, place or lose them.
+    const s = withShop(seed), events: SimEvent[] = [];
+    PROFILES.forEach((p, i) => { newLead(s, p, "London", events); newLead(s, p, "Frankfurt", events, undefined, true); if (i < 4) shopOrder(s, i % 2 ? vps : web); });
+    const said = texts(s, [...events, ...run(s, 3)]);
+    expect(orders(s).filter((r) => r.status === "won").length).toBeGreaterThan(0);
+    expect(s.sales.lost.length).toBeGreaterThan(0);
     expect(said.filter((x) => OLD_NAMES.some((n) => x.includes(n)))).toEqual([]);
   });
 });

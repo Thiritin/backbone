@@ -20,11 +20,17 @@ export const dateOf = (hour: number): Date => new Date(START + hour * HOUR);
 
 export const hourOf = (d: Date): number => Math.floor((d.getTime() - START) / HOUR);
 
-export const yearOf = (hour: number): number => dateOf(hour).getUTCFullYear();
+// Single-hour caches: most callers ask about the current hour many times per tick.
+let yearAt = { hour: NaN, year: 0 };
+export const yearOf = (hour: number): number => (yearAt.hour === hour ? yearAt.year : (yearAt = { hour, year: dateOf(hour).getUTCFullYear() }).year);
 // The first hour of a month written "2013-05".
 export const hourOfMonth = (ym: string): number => { const [y, m] = ym.split("-").map(Number); return hourOf(new Date(Date.UTC(y, m - 1, 1))); };
 // Months since year 0, January 0, for comparing against a release month.
-export const monthIndexOf = (hour: number): number => { const d = dateOf(hour); return d.getUTCFullYear() * 12 + d.getUTCMonth(); };
+let monthAt = { hour: NaN, month: 0 };
+export const monthIndexOf = (hour: number): number => {
+  if (monthAt.hour !== hour) { const d = dateOf(hour); monthAt = { hour, month: d.getUTCFullYear() * 12 + d.getUTCMonth() }; }
+  return monthAt.month;
+};
 export const nextMonthStart = (hour: number): number => { const i = monthIndexOf(hour) + 1; return hourOfMonth(`${Math.floor(i / 12)}-${(i % 12) + 1}`); };
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -40,7 +46,8 @@ export function formatClock(hour: number, minute = 0): string {
 // Average days in a month, for turning monthly lead rates into hourly ones.
 export const DAYS_PER_MONTH = 30.4;
 
+let startAt = { hour: NaN, start: false };
 export const isMonthStart = (hour: number): boolean => {
-  const d = dateOf(hour);
-  return d.getUTCDate() === 1 && d.getUTCHours() === 0;
+  if (startAt.hour !== hour) { const d = dateOf(hour); startAt = { hour, start: d.getUTCDate() === 1 && d.getUTCHours() === 0 }; }
+  return startAt.start;
 };

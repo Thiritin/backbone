@@ -1,14 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { yearOf } from "../src/sim/00-core/time";
+import { nextMonthStart, yearOf } from "../src/sim/00-core/time";
 import { marketPrice, sizeSpec } from "../src/sim/10-catalog/products";
 import { EVENTS, eventById, HALF_HOURS, MAX_DOWN_HOURS, OFFER_HOURS } from "../src/sim/80-business/community";
 import { leadsThisMonth, reviewScore } from "../src/sim/80-business/marketing";
-import { tick, type SimEvent } from "../src/sim/88-tick/tick";
+import { type SimEvent } from "../src/sim/88-tick/tick";
 import { acceptSponsorship, declineSponsorship, offerHalf } from "../src/sim/90-actions/community";
 import { closeTicket } from "../src/sim/90-actions/support";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { mrr, metrics } from "../src/sim/metrics";
-import { readyGame, runTo, ticketOf, asked, accept, done } from "./community.helpers";
+import { readyGame, runTo, ticketOf, accept, done } from "./community.helpers";
+import { asked, awaitRequests, communityTo } from "./community-fast.helpers";
 
 describe("accepting and declining", () => {
   it("provisions every service at EUR 0 through the normal placement and ends on time", () => {
@@ -57,7 +58,7 @@ describe("accepting and declining", () => {
     expect(s.tickets.find((t) => t.kind === "sponsor")).toMatchObject({ status: "closed", outcome: "sponsorDeclined" });
     expect([s.cash, s.marketing.awareness, reviewScore(s), s.customers.map((c) => c.happiness)]).toEqual([cash, awareness, score, happy]);
     expect(declineSponsorship(s, s.sponsorships[0].ticketId)).toEqual({ ok: false, error: "error.ticketDone" });
-    while (s.sponsorships.length < 2) tick(s);
+    awaitRequests(s, 2);
     expect(closeTicket(s, ticketOf(s).id).ok).toBe(true);
     expect(s.sponsorships[1].status).toBe("declined");
   });
@@ -94,11 +95,11 @@ describe("answering with 50% off", () => {
 
   it("waits for the answer past the request's two weeks", () => {
     const s = asked(2), sp = s.sponsorships[0];
-    runTo(s, sp.offeredAt + OFFER_HOURS - 2);
+    communityTo(s, sp.offeredAt + OFFER_HOURS - 2);
     offerHalf(s, sp.ticketId);
-    runTo(s, sp.offeredAt + OFFER_HOURS + 1);
+    communityTo(s, sp.offeredAt + OFFER_HOURS + 1);
     expect(s.sponsorships[0].status).toBe("offered");
-    runTo(s, sp.offeredAt + OFFER_HOURS - 2 + HALF_HOURS);
+    communityTo(s, sp.offeredAt + OFFER_HOURS - 2 + HALF_HOURS);
     expect(s.sponsorships[0].status).not.toBe("offered");
   }, 60_000);
 
@@ -138,10 +139,11 @@ describe("downtime", () => {
 
     const s = asked(14, "hackASorus");
     accept(s);
-    const id = s.sponsorships[0].serviceIds[0];
-    s.sponsorships[0].endsAt = Math.ceil(s.hour / 730) * 730 + 40;
+    const id = s.sponsorships[0].serviceIds[0], month = nextMonthStart(s.hour);
+    s.sponsorships[0].endsAt = month + 40;
+    communityTo(s, month - 3);
     s.downHours = { ...s.downHours, [id]: 1.5 };
-    runTo(s, Math.ceil(s.hour / 730) * 730 + 5);
+    runTo(s, month + 5);
     expect(s.downHours[id] ?? 0).toBeLessThan(1.5);
     s.downHours = { ...s.downHours, [id]: (s.downHours[id] ?? 0) + 1 };
     runTo(s, s.sponsorships[0].endsAt + 2);
@@ -160,12 +162,11 @@ describe("overbooked hardware", () => {
 describe("old saves", () => {
   it("load with no sponsorships and get a first request", () => {
     const s = readyGame(15);
-    runTo(s, 24 * 70);
     const old = JSON.parse(serialize(s)) as Record<string, unknown>;
     delete old.sponsorships;
     const loaded = deserialize(JSON.stringify(old));
     expect(loaded.sponsorships).toEqual([]);
-    while (!loaded.sponsorships.length) tick(loaded);
+    awaitRequests(loaded, 1);
     expect(deserialize(serialize(loaded)).sponsorships).toEqual(loaded.sponsorships);
   });
 

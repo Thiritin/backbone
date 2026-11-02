@@ -92,11 +92,11 @@ const ACTIVITY_SHOWN = 6;
 // The Mail Activity pane at the foot of the mailbox list, newest line first.
 function ActivityPane({ game }: { game: GameState }) {
   const act = useStore((s) => s.act), pm = game.pearMail;
-  const lines = pm.activity.slice(-ACTIVITY_SHOWN).reverse();
+  const lines = pm.activity.filter((l) => pm.accounts.some((c) => c.id === l.clientId)).slice(-ACTIVITY_SHOWN).reverse();
   return (
     <div className="pm-activity" aria-label={t("pearMail.activity")}>
       {lines.map((l, i) => {
-        const account = pm.accounts.find((c) => c.id === l.clientId)?.description ?? "";
+        const c = pm.accounts.find((x) => x.id === l.clientId)!, account = c.description || c.address;
         return (
           <div key={i} className={l.error ? "pm-act-line error" : "pm-act-line"}>
             <span>{l.error ? t("pearMail.activity.failed", { account, error: t(l.error) }) : t("pearMail.activity.checked", { account, count: l.count.toLocaleString(LOCALE) })}</span>

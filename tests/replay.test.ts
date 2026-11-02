@@ -1,7 +1,7 @@
 import { newGame } from "./fixtures";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import { challengeById, challengeFor, CHALLENGES, isoWeek, weeklyChallenge } from "../src/sim/10-catalog/challenges";
 import { capacityAt, DATACENTERS } from "../src/sim/20-world/datacenters";
 import { type GameState } from "../src/sim/50-state";
@@ -18,6 +18,7 @@ import { deserialize, serialize } from "../src/sim/91-save/save";
 import { buildLeaderboard, mismatches, replay, runFile, runFileName, verify, type Verified } from "../src/sim/92-run/run";
 import { POWER_ACTION } from "../src/ui/apps/locations/power";
 import { useStore } from "../src/ui/store";
+import { metrics } from "../src/sim/metrics";
 
 const ok = (r: { ok: boolean; id?: string; error?: string }) => {
   if (!r.ok) throw new Error(r.error);
@@ -45,13 +46,19 @@ function shortGame(): GameState {
   play(24 * 9);
   ok(store().act(installPanel, srv, "freepanel"));
   ok(store().act(setPortShare, "dev5", srv, "web"));
-  play(24 * 20);
+  play(24 * 5);
   return store().game;
 }
 
+// Tests only read it, and a failed act leaves the game alone.
+let short: GameState;
+beforeAll(() => {
+  short = shortGame();
+});
+
 describe("action log", () => {
   it("logs every successful action from the store and skips failed ones", () => {
-    const s = shortGame();
+    const s = short;
     const psus = s.log.filter((e) => e.name === "setPlugged").length;
     expect(psus).toBeGreaterThan(0);
     expect(s.log.map((e) => e.name)).toEqual(["openBankAccount", "setCompany", "buyDevice", "mountDevice", ...Array(psus).fill("setPlugged"), "mountDevice", "connect", "connect", "orderHomeLine", "installPanel", "setPortShare"]);
@@ -95,30 +102,29 @@ describe("action log", () => {
 
 describe("replay", () => {
   it("replays a short game from its log to the same state", () => {
-    const s = shortGame();
+    const s = short;
     expect(s.webOpenedAt).not.toBeNull();
-    const again = replay(runFile(s, "test"), undefined, s.hour);
+    // The metrics verify reads every week leave the replay unchanged.
+    const again = replay(runFile(s, "test"), (g) => void metrics(g), s.hour);
     expect(serialize(again)).toEqual(serialize({ ...s, log: s.log.filter((e) => e.hour < SCORE_END) }));
     // A reload in between changes nothing either.
     expect(deserialize(serialize(s))).toEqual(s);
   });
 
   it("verifies honest scores at the end of 2007 and fails an edited claim", () => {
-    const short = runFile(shortGame(), "test");
-    const end = replay(short);
-    expect(end.hour).toBe(SCORE_END);
-    expect(scores(end).netWorth).not.toBeNull();
-    const run = runFile(end, "test");
-    expect(run.claimed).toEqual(scores(end));
-    // The claim only feeds the comparison, so one replay of an edited claim also shows the honest one passes.
-    const { verified, errors } = verify({ ...run, claimed: { ...run.claimed, netWorth: run.claimed.netWorth! + 500 } });
-    expect(errors).toHaveLength(1);
-    expect(mismatches(run.claimed, verified.scores)).toEqual([]);
+    const run = runFile(short, "test");
+    expect(run.claimed).toEqual(scores(short));
+    expect(runFileName(short)).toBe(`kellerkind-hosting-${short.seed}.run.json`);
+    // One replay to the end: its scores are the honest claim, and the day-35 claim fails against them.
+    const { verified, errors } = verify(run);
+    expect(verified.scores.netWorth).not.toBeNull();
+    expect(errors[0]).toMatch(/^net worth null claimed/);
+    expect(mismatches(verified.scores, verified.scores)).toEqual([]);
+    expect(mismatches({ ...verified.scores, netWorth: verified.scores.netWorth! + 500 }, verified.scores)).toHaveLength(1);
     expect(verified.company.name).toBe("Kellerkind Hosting");
     expect(verified.ghost.length).toBeGreaterThan(100);
     expect(() => replay({ ...run, seed: run.seed + 1 })).toThrow();
     expect(() => replay({ ...run, actions: [{ ...run.actions[0], name: "noSuchAction" }] })).toThrow();
-    expect(runFileName(end)).toBe(`kellerkind-hosting-${end.seed}.run.json`);
   }, 120_000);
 
   it("ranks runs per build and challenge and keeps the net worth leader's ghost", () => {

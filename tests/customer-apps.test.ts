@@ -157,12 +157,14 @@ describe("notifying customers", () => {
   it("makes half of those who would not update themselves ask for help, and offers split 70, 20 and 10 by budget", () => {
     const s = newGame(3), v = critical(3), ids = open(s, v, "smallBiz", 1000);
     ok(notifyCustomers(s, "joomlah", v.id));
-    const stay = ids.filter((id) => selfUpdateAt(s, service(s, id), v) === null);
+    // Maps instead of find per id: a thousand lookups over a thousand services are slow.
+    const svc = new Map(s.services.map((x) => [x.id, x])), cus = new Map(s.customers.map((c) => [c.id, c]));
+    const stay = new Set(ids.filter((id) => selfUpdateAt(s, svc.get(id)!, v) === null));
     const asking = s.tickets.filter((t) => t.kind === "howTo" && t.topic === "update");
-    expect(asking.every((t) => stay.includes(t.serviceId!))).toBe(true);
-    expect(Math.abs(share(asking.length, stay.length) - 0.5)).toBeLessThan(0.05);
-    expect(stay.filter((id) => asksForHelp(service(s, id), v)).length).toBe(asking.length);
-    const wishes = asking.map((t) => wishOf(s, customerOf(s, t.serviceId!), t));
+    expect(asking.every((t) => stay.has(t.serviceId!))).toBe(true);
+    expect(Math.abs(share(asking.length, stay.size) - 0.5)).toBeLessThan(0.05);
+    expect([...stay].filter((id) => asksForHelp(svc.get(id)!, v)).length).toBe(asking.length);
+    const wishes = asking.map((t) => wishOf(s, cus.get(svc.get(t.serviceId!)!.customerId)!, t));
     const of = (w: string) => share(wishes.filter((x) => x === w).length, wishes.length);
     expect(Math.abs(of("once") - 0.7)).toBeLessThan(0.06);
     expect(Math.abs(of("managed") - 0.2)).toBeLessThan(0.06);
@@ -172,7 +174,8 @@ describe("notifying customers", () => {
   it("never sells managed updates to a basic budget", () => {
     const s = newGame(3), v = critical(3), ids = open(s, v, "private", 600);
     ok(notifyCustomers(s, "joomlah", v.id));
-    const wishes = s.tickets.filter((t) => t.topic === "update").map((t) => wishOf(s, customerOf(s, t.serviceId!), t));
+    const svc = new Map(s.services.map((x) => [x.id, x])), cus = new Map(s.customers.map((c) => [c.id, c]));
+    const wishes = s.tickets.filter((t) => t.topic === "update").map((t) => wishOf(s, cus.get(svc.get(t.serviceId!)!.customerId)!, t));
     expect(wishes.length).toBeGreaterThan(100);
     expect(wishes).not.toContain("managed");
     expect(ids.length).toBe(600);

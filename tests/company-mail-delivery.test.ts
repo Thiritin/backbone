@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { mailDelay, mailImpaired, mailShare } from "../src/sim/80-business/mail";
 import { issueInvoice } from "../src/sim/30-market/manual";
+import { salesTick } from "../src/sim/30-market/sales";
 import { type GameState } from "../src/sim/50-state";
 import { readyGame } from "./fixtures";
 import { run, selfHosted } from "./company-mail.helpers";
@@ -25,24 +26,21 @@ describe("impaired delivery", () => {
     expect(mailImpaired(s)).toBe(true);
   });
 
-  it("brings fewer order emails than external mail over the same weeks", () => {
+  it("brings fewer order emails than external mail over the same days", () => {
     const orders = (impaired: boolean) => {
-      let n = 0;
-      for (const seed of [1, 2, 3, 4, 5, 6]) {
-        const s = readyGame(seed);
-        s.marketing.owned = ["website"];
-        if (impaired) {
-          selfHosted(s);
-          s.homeLine = { id: "dsl-16", next: null };
-        }
-        run(s, 24 * 30);
-        n += s.sales.requests.filter((r) => r.kind === "order").length;
+      const s = readyGame(3);
+      if (impaired) {
+        selfHosted(s);
+        s.homeLine = { id: "dsl-16", next: null };
+        run(s, 2);
       }
-      return n;
+      s.marketing = { ...s.marketing, campaigns: Array.from({ length: 20 }, () => ({ channel: "search" as const, profiles: ["smallBiz" as const], budget: 5000, discount: 0 })) };
+      for (let h = 0; h < 72; h++) { s.hour++; salesTick(s); }
+      return s.sales.requests.filter((r) => r.kind === "order").length;
     };
-    const healthy = orders(false), impaired = orders(true);
-    expect(healthy).toBeGreaterThan(0);
-    expect(impaired).toBeLessThan(healthy);
+    const healthy = orders(false);
+    expect(healthy).toBeGreaterThan(10);
+    expect(orders(true)).toBeLessThan(healthy * 0.75);
   });
 
   it("pays invoices sent in that window three days later", () => {

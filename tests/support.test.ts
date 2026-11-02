@@ -3,6 +3,7 @@ import { START_CASH } from "../src/sim/10-catalog/economy";
 import { hourOf } from "../src/sim/00-core/time";
 import { describe, expect, it, vi } from "vitest";
 import { monthlyValue, rightTemplate, shownTemplates, SHORT_REPLIES } from "../src/sim/40-support/tickets";
+import { supportTick } from "../src/sim/40-support/tick";
 import { tick } from "../src/sim/88-tick/tick";
 import { addService } from "../src/sim/90-actions/customers";
 import { closeTicket, escalateTicket, readTicket, replyTicket, resolveTicket, retainTicket } from "../src/sim/90-actions/support";
@@ -24,10 +25,12 @@ describe("happiness and churn", () => {
   it("files a cancellation for a very unhappy customer and processes it at the next billing date", () => {
     const { s, cus, svc, c } = one(4);
     c().happiness = 10;
+    s.hour = FEB_1 - 1;
     runTo(s, FEB_1);
     const cancel = s.tickets.find((t) => t.kind === "cancellation")!;
     expect(cancel.customerId).toBe(cus);
     expect(c().churnedAt).toBeNull();
+    s.hour = MAR_1 - 1;
     runTo(s, MAR_1);
     expect(c().churnedAt).toBe(MAR_1);
     expect(get(s, cancel.id)).toMatchObject({ status: "closed", outcome: "cancelled" });
@@ -37,14 +40,15 @@ describe("happiness and churn", () => {
   it("rolls monthly churn from base churn and happiness", () => {
     const rate = (h: number) => {
       const s = newGame(11);
-      runTo(s, FEB_1 - 1);
-      crowd(s, "private", 2000).forEach((id) => (s.customers.find((c) => c.id === id)!.happiness = h));
-      runTo(s, FEB_1);
+      s.hour = FEB_1 - 1;
+      crowd(s, "private", 1000).forEach((id) => (s.customers.find((c) => c.id === id)!.happiness = h));
+      s.hour++;
+      supportTick(s);
       return s.tickets.filter((t) => t.kind === "cancellation").length;
     };
     const happy = rate(90), unhappy = rate(30);
-    expect(Math.abs(happy - 50)).toBeLessThan(4 * Math.sqrt(50));
-    expect(Math.abs(unhappy - 450)).toBeLessThan(4 * Math.sqrt(450));
+    expect(Math.abs(happy - 25)).toBeLessThan(4 * Math.sqrt(25));
+    expect(Math.abs(unhappy - 225)).toBeLessThan(4 * Math.sqrt(225));
   });
 });
 
@@ -230,8 +234,8 @@ describe("support saves", () => {
 
   it("round-trips customers, services and tickets", () => {
     const s = newGame(9);
-    crowd(s, "private", 300).forEach((id) => addService(s, id, "webHosting", "Web S", 0.004, "hour"));
-    runTo(s, 400);
+    crowd(s, "private", 12).forEach((id) => ticketOf(s, "howTo", "upload", id, addService(s, id, "webHosting", "Web S", 0.004, "hour")));
+    runTo(s, 5);
     replyTicket(s, s.tickets[0].id, "ftp");
     expect(s.tickets.length).toBeGreaterThan(10);
     expect(deserialize(serialize(s))).toEqual(s);

@@ -5,6 +5,7 @@ import { FIXED_KEYS, marketPrice, PRODUCTS, SIZES, sizeSpec } from "../src/sim/1
 import { keyframes } from "../src/sim/10-catalog/economy";
 import { serviceOnline } from "../src/sim/40-support/status";
 import { bumpProbe } from "../src/sim/40-support/tickets";
+import { supportTick } from "../src/sim/40-support/tick";
 import { invoiceTotal, SLA_KEPT_HAPPINESS } from "../src/sim/45-billing/billing";
 import { type GameState } from "../src/sim/50-state";
 import { nodeCapacity, nodeUsed, vmOf, workloadsOf, workloadsOn } from "../src/sim/60-infra/cluster";
@@ -33,6 +34,8 @@ const run = (s: GameState, hours: number) => {
   return events;
 };
 const FEB_1 = 744;
+// Billing reads only the down hours counted so far, so the quiet hours up to February 1 are skipped.
+const toFeb = (s: GameState) => { s.hour = FEB_1 - 1; return tick(s); };
 
 // The basement with a second G1 server cabled to the switch and both servers in one cluster.
 function twoNodes() {
@@ -87,11 +90,11 @@ describe("starting company", () => {
   });
   it("takes the customers offline and opens outage tickets when the switch loses power", () => {
     // A seed where a customer writes in once the outage is noticed.
-    const s = readyGame(2);
+    const s = readyGame(5);
     run(s, 2);
     ok(setPower(s, "dev4", false));
     // Private customers notice slowly (economy/noticing-outages.md, Noticing outages): by two weeks one has written in.
-    run(s, 336);
+    for (let h = 0; h < 336; h++) { s.hour++; supportTick(s); }
     expect(s.services.some((v) => serviceOnline(s, v.id))).toBe(false);
     const outages = s.tickets.filter((t) => t.kind === "outage");
     expect(outages.length).toBeGreaterThan(0);
@@ -109,7 +112,8 @@ describe("starting company", () => {
     ok(setPower(s, "dev3", false));
     run(s, 4);
     ok(setPower(s, "dev3", true));
-    run(s, FEB_1 - 14);
+    run(s, 2);
+    toFeb(s);
     const inv = s.invoices.filter((i) => i.issuedAt === FEB_1);
     expect(inv).toHaveLength(3);
     expect(inv[0].lines).toMatchObject([{ key: "invoice.line.hours", params: { hours: FEB_1 - 4 } }]);
@@ -251,7 +255,8 @@ describe("outages and billing", () => {
     ok(setPower(s, "dev4", false));
     run(s, 5);
     ok(setPower(s, "dev4", true));
-    run(s, FEB_1 - 6);
+    run(s, 2);
+    toFeb(s);
     const inv = s.invoices.find((i) => i.customerId === cus)!;
     expect(inv.lines).toEqual([
       { serviceId: id, key: "invoice.line.hours", params: { label: "shop", hours: FEB_1 - 5 }, amount: (FEB_1 - 5) * 0.1 },
@@ -264,10 +269,10 @@ describe("outages and billing", () => {
       ok(provisionService(s, cus, "vps", { label: "shop", spec: sizeSpec("vps", 0, yearOf(s.hour)), sla: "business", price: 0.1 }));
       run(s, 1);
       if (outage) { ok(setPower(s, "dev4", false)); run(s, outage); ok(setPower(s, "dev4", true)); }
-      run(s, FEB_1 - 2 - outage);
+      run(s, 2);
       const seen: number[] = [];
       bumpProbe.fn = (c, d) => { if (c.id === cus) seen.push(d); };
-      run(s, 1);
+      toFeb(s);
       bumpProbe.fn = null;
       return seen;
     };

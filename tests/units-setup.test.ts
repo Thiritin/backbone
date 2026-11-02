@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { t } from "../src/i18n/en";
-import { yearOf } from "../src/sim/00-core/time";
+import { nextMonthStart, yearOf } from "../src/sim/00-core/time";
 import { marketRates, marketSetup, sizeSpec, specPrice, TRAFFIC_SHARE } from "../src/sim/10-catalog/products";
 import { orderLead } from "../src/sim/30-market/orders";
 import { setupFee, specFor, specText } from "../src/sim/30-market/spec";
@@ -69,9 +69,10 @@ describe("setup fees", () => {
     // The first month start after the order bills nothing for it; the one after bills the hours past the prepaid month.
     const until = s.services.find((v) => v.id === won.serviceId)!.prepaidUntil!;
     expect(until).toBe(s.hour + 730);
-    while (s.hour < until) tick(s);
+    const toMonthStart = () => { s.hour = nextMonthStart(s.hour) - 1; tick(s); };
+    while (nextMonthStart(s.hour) < until) toMonthStart();
     expect(hours()).toHaveLength(0);
-    for (let i = 0; i < 800 && !hours().length; i++) tick(s);
+    toMonthStart();
     expect(hours()).toHaveLength(1);
     expect(hours()[0].params.hours).toBeLessThan(730);
   });

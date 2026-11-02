@@ -47,7 +47,10 @@ export function clientError(s: GameState, c: ClientAccount, gapMin?: number): st
 const patch = (s: GameState, id: string, p: Partial<ClientAccount>): void => {
   s.pearMail = { ...s.pearMail, accounts: s.pearMail.accounts.map((c) => (c.id === id ? { ...c, ...p } : c)) };
 };
-const log = (s: GameState, line: ActivityLine): void => { s.pearMail = { ...s.pearMail, activity: [...s.pearMail.activity, line].slice(-ACTIVITY_KEEP) }; };
+// One line per account: a new check replaces the account's last one.
+const log = (s: GameState, line: ActivityLine): void => {
+  s.pearMail = { ...s.pearMail, activity: [...s.pearMail.activity.filter((l) => l.clientId !== line.clientId), line].slice(-ACTIVITY_KEEP) };
+};
 
 // One check of one account; returns its new-mail events. A check right after new settings skips the poll gap, which
 // counts from the last check that got in.

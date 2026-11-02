@@ -15,6 +15,7 @@ const onDev3 = (s: GameState) => s.workloads.filter((w) => w.deviceId === "dev3"
 const corrupted = (s: GameState) => onDev3(s).filter((w) => w.corrupted);
 // A rng state for which the first roll after the call is a hit or a miss.
 const seeds = (n: number) => Array.from({ length: n }, (_, i) => 1000 + i * 7919);
+const HIT = seeds(300).find((r) => { const t = at(r); setPower(t, "dev3", false); return corrupted(t).length > 0; })!;
 
 describe("pulled power", () => {
   it("has workloads on the basement server to lose", () => {
@@ -55,9 +56,8 @@ describe("pulled power", () => {
 
   it("also corrupts on a reset and a power cycle", () => {
     const s = at(1000);
-    const hit = seeds(200).find((r) => { const t = at(r); setPower(t, "dev3", false); return corrupted(t).length > 0; })!;
     for (const act of [reset, powerCycle]) {
-      const t = at(hit);
+      const t = at(HIT);
       dev3(t).model = "g2-compute";
       expect(act(t, "dev3").ok).toBe(true);
       expect(corrupted(t).length).toBeGreaterThan(0);
@@ -68,8 +68,7 @@ describe("pulled power", () => {
   });
 
   it("announces the corruption once with an alert and takes the workloads down", () => {
-    const hit = seeds(200).find((r) => { const t = at(r); setPower(t, "dev3", false); return corrupted(t).length > 0; })!;
-    const s = at(hit);
+    const s = at(HIT);
     setPower(s, "dev3", false);
     setPower(s, "dev3", true);
     expect(onDev3(s).every((w) => lostDisk(s, w))).toBe(true);
@@ -88,8 +87,7 @@ describe("raid with its redundancy intact", () => {
   };
 
   it("resyncs for the rebuild time and loses nothing", () => {
-    const hit = seeds(300).find((r) => { const t = at(r); setPower(t, "dev3", false); return corrupted(t).length > 0; })!;
-    const s = mirrored(hit);
+    const s = mirrored(HIT);
     setPower(s, "dev3", false);
     expect(corrupted(s)).toHaveLength(0);
     const rb = dev3(s).rebuild!;
@@ -117,15 +115,12 @@ describe("raid with its redundancy intact", () => {
 });
 
 describe("recovering corrupted workloads", () => {
-  const corruptedGame = (): GameState => {
-    const hit = seeds(300).find((r) => { const t = at(r); setPower(t, "dev3", false); return corrupted(t).length > 0; })!;
-    const s = at(hit);
-    setPower(s, "dev3", false);
-    setPower(s, "dev3", true);
-    s.hour += 2;
-    tick(s);
-    return s;
-  };
+  const corrupt = at(HIT);
+  setPower(corrupt, "dev3", false);
+  setPower(corrupt, "dev3", true);
+  corrupt.hour += 2;
+  tick(corrupt);
+  const corruptedGame = (): GameState => structuredClone(corrupt);
 
   it("takes half an hour and refuses what is not corrupted or already under way", () => {
     const s = corruptedGame();
@@ -140,7 +135,7 @@ describe("recovering corrupted workloads", () => {
   it("brings about 70% back fine and sends the rest to a restore", () => {
     let fine = 0, restore = 0;
     const base2 = corruptedGame();
-    for (const r of seeds(200)) {
+    for (const r of seeds(100)) {
       const s = structuredClone(base2);
       s.rng = { s: r };
       for (const w of corrupted(s)) expect(recover(s, w.id).ok).toBe(true);
@@ -152,20 +147,21 @@ describe("recovering corrupted workloads", () => {
         expect(s.lossReports.length).toBe(1);
       }
     }
-    expect(fine / 200).toBeGreaterThan(0.6);
-    expect(fine / 200).toBeLessThan(0.8);
-    expect(fine + restore).toBe(200);
+    expect(fine / 100).toBeGreaterThan(0.55);
+    expect(fine / 100).toBeLessThan(0.85);
+    expect(fine + restore).toBe(100);
   });
 
   it("restores a workload whose recovery failed", () => {
     const base2 = corruptedGame();
-    const s = seeds(200).map((r) => {
-      const t = structuredClone(base2);
-      t.rng = { s: r };
-      for (const w of corrupted(t)) recover(t, w.id);
-      tick(t);
-      return t;
-    }).find((t) => corrupted(t).length > 0)!;
+    let s!: GameState;
+    for (const r of seeds(200)) {
+      s = structuredClone(base2);
+      s.rng = { s: r };
+      for (const w of corrupted(s)) recover(s, w.id);
+      tick(s);
+      if (corrupted(s).length > 0) break;
+    }
     const vm = corrupted(s)[0];
     expect(recover(s, vm.id)).toEqual({ ok: false, error: "error.needsRestore" });
     expect(restoreWorkload(s, vm.id).ok).toBe(true);

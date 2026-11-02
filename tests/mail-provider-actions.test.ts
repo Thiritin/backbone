@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hourOfMonth } from "../src/sim/00-core/time";
+import { hourOfMonth, nextMonthStart } from "../src/sim/00-core/time";
 import { goggleToken, verificationAt } from "../src/sim/10-catalog/mail-consumer";
 import { checkMailLogin } from "../src/sim/42-mail/accounts";
 import type { GameState } from "../src/sim/50-state";
@@ -11,8 +11,12 @@ import { createMailAccount } from "../src/sim/90-actions/mailbox";
 import { hire } from "../src/sim/90-actions/staff";
 import { visibleCandidates } from "../src/sim/47-staff/staff";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { err, idOf, toMonthStart } from "./company-mail.helpers";
+import { err, idOf } from "./company-mail.helpers";
 import { readyGame } from "./fixtures";
+import { tick } from "../src/sim/88-tick/tick";
+
+// Skips to the hour before the next month start and ticks into it.
+const toMonthStart = (s: GameState) => { s.hour = nextMonthStart(s.hour) - 1; tick(s); };
 
 const at = (ym: string) => hourOfMonth(ym);
 const charged = (s: GameState) => s.ledger.filter((e) => e.hour === s.hour && e.key === "ledger.companyMail" && e.params?.name === "GMix");

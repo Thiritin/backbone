@@ -39,16 +39,14 @@ describe("colocation provider sites", () => {
     expect(routeOf("hetzler", "/account/contracts")).toEqual({ page: "account", sub: ["contracts"] });
   });
 
-  it("renders every page of every provider in both looks", () => {
-    for (const year of [2005, 2020]) {
-      const s = newGame(7);
-      skipTo(s, year);
-      for (const p of PROVIDERS) {
-        const dc = DATACENTERS.find((d) => d.provider === p.id)!;
-        for (const path of ["/", "/sites", `/sites/${dc.id}`, `/order?dc=${dc.id}&space=share&size=2`, "/account"]) {
-          const html = renderToString(<ProviderSite game={s} id={p.id} path={path} go={() => {}} />);
-          expect(html).toContain(path === "/" ? "ps ps-" : path === "/account" ? "password" : dc.name);
-        }
+  it.each([2005, 2020])("renders every page of every provider in the %i look", (year) => {
+    const s = newGame(7);
+    skipTo(s, year);
+    for (const p of PROVIDERS) {
+      const dc = DATACENTERS.find((d) => d.provider === p.id)!;
+      for (const path of ["/", "/sites", `/sites/${dc.id}`, `/order?dc=${dc.id}&space=share&size=2`, "/account"]) {
+        const html = renderToString(<ProviderSite game={s} id={p.id} path={path} go={() => {}} />);
+        expect(html).toContain(path === "/" ? "ps ps-" : path === "/account" ? "password" : dc.name);
       }
     }
   });

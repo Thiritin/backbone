@@ -1,7 +1,7 @@
 import { newGame } from "./fixtures";
 import { describe, expect, it, vi } from "vitest";
 import type { Profile } from "../src/sim/30-customers/customers";
-import { type TicketKind } from "../src/sim/40-support/tickets";
+import { monthlyRate } from "../src/sim/40-support/tick";
 import { tick } from "../src/sim/88-tick/tick";
 import { FEB_1, crowd, runTo } from "./support.helpers";
 
@@ -9,33 +9,38 @@ const down = vi.hoisted(() => new Set<string>());
 vi.mock("../src/sim/40-support/status", () => ({ serviceOnline: (_s: unknown, id: string) => !down.has(id) }));
 
 describe("ticket generation", () => {
+  // Expected tickets from 300 customers in their first hours, summed hour by hour from the rate the hourly roll uses.
+  const month = (profile: Profile, kind: "howTo" | "billing" | "abuse", settled = false, hours = 730) => {
+    const s = newGame(7);
+    const [id] = crowd(s, profile, 1);
+    const c = s.customers.find((x) => x.id === id)!;
+    if (settled) c.since = s.hour - 36 * 730;
+    let n = 0;
+    for (let h = 0; h < hours; h++) { s.hour = h; n += monthlyRate(s, c, kind) / 730; }
+    return 300 * n;
+  };
+
   it("follows the monthly rates per technical skill", () => {
-    // One game per profile: a tick costs customers squared, so three crowds of 300 are far cheaper than one of 900.
-    const games = new Map((["private", "enterprise", "gamer"] as Profile[]).map((profile) => {
-      const s = newGame(7);
-      crowd(s, profile, 300);
-      runTo(s, 730);
-      return [profile, s];
-    }));
-    const count = (profile: Profile, kind: TicketKind) => games.get(profile)!.tickets.filter((t) => t.kind === kind).length;
-    const near = (n: number, expected: number) => expect(Math.abs(n - expected)).toBeLessThan(4 * Math.sqrt(expected));
+    const close = (n: number, expected: number) => expect(n).toBeCloseTo(expected, 0);
     // New customers ask about 2.3 times the base how-to rate in their first month (tenureFactor).
-    near(count("private", "howTo"), 62);
-    near(count("private", "billing"), 6);
-    near(count("private", "abuse"), 0.75);
-    near(count("enterprise", "howTo"), 7);
-    near(count("enterprise", "abuse"), 3);
-    near(count("gamer", "howTo"), 21);
-    near(count("gamer", "abuse"), 3);
+    close(month("private", "howTo"), 62);
+    close(month("private", "billing"), 6);
+    expect(month("private", "abuse")).toBeCloseTo(0.75, 2);
+    close(month("enterprise", "howTo"), 7);
+    close(month("enterprise", "abuse"), 3);
+    close(month("gamer", "howTo"), 21);
+    close(month("gamer", "abuse"), 3);
+    // The hourly roll turns the rate into tickets, checked on 200 customers over ten days.
+    const s = newGame(7);
+    crowd(s, "private", 200);
+    runTo(s, 240);
+    const expected = (month("private", "howTo", false, 240) * 2) / 3;
+    expect(Math.abs(s.tickets.filter((t) => t.kind === "howTo").length - expected)).toBeLessThan(3 * Math.sqrt(expected));
   });
 
   it("drops how-to questions to a trickle once customers are settled", () => {
-    const s = newGame(7);
-    for (const id of crowd(s, "private", 300)) s.customers.find((c) => c.id === id)!.since = s.hour - 36 * 730;
-    runTo(s, 730);
-    const n = s.tickets.filter((t) => t.kind === "howTo").length;
-    expect(Math.abs(n - 4)).toBeLessThan(4 * Math.sqrt(4));
-  }, 60_000);
+    expect(month("private", "howTo", true)).toBeCloseTo(4, 0);
+  });
 
   it("notifies Support about new tickets", () => {
     const s = newGame(3);

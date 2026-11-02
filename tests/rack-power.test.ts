@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { nextMonthStart } from "../src/sim/00-core/time";
 import { extraStepPrice, datacenterById, spacePrice } from "../src/sim/20-world/datacenters";
 import { type GameState } from "../src/sim/50-state";
 import { rackPower } from "../src/sim/60-infra/status";
@@ -52,7 +53,8 @@ describe("extra power on a share", () => {
     run(s, 72);
     const dc = datacenterById(DC), name = s.locations.find((l) => l.id === id)!.name;
     expect(extraStepPrice(dc)).toBe(30);
-    while (!s.ledger.some((e) => e.key === "ledger.space" && e.params.location === name && e.hour > 72)) tick(s);
+    s.hour = nextMonthStart(s.hour) - 1;
+    tick(s);
     const bill = s.ledger.filter((e) => e.key === "ledger.space" && e.params.location === name).at(-1)!;
     expect(bill.amount).toBe(-(spacePrice(dc, "share", 8) + 2 * 30));
   });

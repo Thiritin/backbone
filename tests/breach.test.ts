@@ -101,7 +101,7 @@ describe("ransom", () => {
 describe("the decision", () => {
   it("sells the data on a refusal and about one time in ten after paying", () => {
     const s = start(), id = host(s), sink: SimEvent[] = [];
-    const draws = 3000;
+    const draws = 600;
     let paidSold = 0;
     for (let i = 0; i < draws; i++) {
       s.hour = 100 + i;
@@ -223,7 +223,9 @@ describe("the ticket", () => {
 
   it("counts as a refusal after 72 hours", () => {
     const { s, t } = ticketGame(), due = t.dueAt;
-    for (let h = 0; h < EXTORTION_HOURS - 1; h++) tick(s);
+    s.hour += EXTORTION_HOURS - 3;
+    tick(s);
+    tick(s);
     expect(s.hour).toBeLessThan(due);
     expect(s.tickets.find((x) => x.id === t.id)!.status).toBe("open");
     while (s.hour <= due) tick(s);

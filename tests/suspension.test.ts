@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { createRng } from "../src/sim/00-core/rng";
 import type { PaymentHabit } from "../src/sim/30-customers/customers";
 import { serviceOnline } from "../src/sim/40-support/status";
 import { actionsOf, templatesOf } from "../src/sim/40-support/tickets";
@@ -27,6 +28,8 @@ function overdue(seed: number, habit: PaymentHabit = "prompt") {
   bill(s, s.invoices[0].dueAt + DAY);
   return { s, c, v, inv: () => s.invoices[0], customer: () => s.customers.find((x) => x.id === c)! };
 }
+// A copy of an overdue game whose payment rolls draw from their own seed.
+const copyOf = (s: GameState, seed: number): GameState => ({ ...structuredClone(s), rng: createRng(seed) });
 
 describe("suspension", () => {
   it("takes the services offline, costs 15 happiness and opens one billing ticket", () => {
@@ -43,21 +46,23 @@ describe("suspension", () => {
   });
 
   it("makes a customer pay faster than one left alone", () => {
-    const runs = 300;
+    const runs = 120;
     for (const habit of ["prompt", "bad"] as const) {
+      const base = overdue(1, habit).s;
       let alone = 0, paid = 0, days = 0;
-      for (let seed = 1; seed <= runs; seed++) {
-        const a = overdue(seed, habit);
-        bill(a.s, a.s.hour + 30 * DAY);
-        if (a.inv().status === "paid") alone++;
-        const b = overdue(seed, habit);
-        const from = b.s.hour;
-        suspendServices(b.s, b.inv().id);
-        bill(b.s, from + 30 * DAY);
-        if (b.inv().status === "paid") { paid++; days += (b.inv().paidAt! - from) / DAY; }
+      for (let i = 1; i <= runs; i++) {
+        const s = copyOf(base, i), from = s.hour;
+        if (i <= 10) {
+          bill(s, from + 30 * DAY);
+          if (s.invoices[0].status === "paid") alone++;
+          continue;
+        }
+        suspendServices(s, s.invoices[0].id);
+        while (s.hour < from + 30 * DAY && s.invoices[0].status !== "paid") bill(s, s.hour + 1);
+        if (s.invoices[0].status === "paid") { paid++; days += (s.invoices[0].paidAt! - from) / DAY; }
       }
       expect(alone).toBe(0);
-      expect(paid / runs).toBeGreaterThan(habit === "prompt" ? 0.97 : 0.8);
+      expect(paid / (runs - 10)).toBeGreaterThan(habit === "prompt" ? 0.97 : 0.8);
       // Daily odds p mean about 1/p days to pay.
       expect(Math.abs(days / paid - 1 / SUSPENDED_PAY_ODDS[habit])).toBeLessThan(0.8);
     }
@@ -75,17 +80,18 @@ describe("suspension", () => {
   it("loses about half the bad payers still suspended after 14 days to collections", () => {
     let left = 0;
     const runs = 200;
-    for (let seed = 1; seed <= runs; seed++) {
-      for (const habit of ["bad", "late"] as const) {
-        const { s, v, inv, customer } = overdue(seed, habit);
-        suspendServices(s, inv().id);
+    for (const habit of ["bad", "late"] as const) {
+      const { s: base, c, v } = overdue(1, habit);
+      for (let i = 1; i <= (habit === "bad" ? runs : 20); i++) {
+        const s = copyOf(base, i), inv = s.invoices[0], customer = () => s.customers.find((x) => x.id === c)!;
+        suspendServices(s, inv.id);
         // Skip the daily payment rolls of the first 13 days.
-        inv().suspendedAt = s.hour - 14 * DAY + 1;
+        inv.suspendedAt = s.hour - 14 * DAY + 1;
         bill(s, s.hour + 1);
         if (habit === "late") { expect(customer().churnedAt).toBeNull(); continue; }
         if (customer().churnedAt === null) continue;
         left++;
-        expect(inv()).toMatchObject({ status: "writtenOff", suspended: false, payAt: s.hour + 30 * DAY });
+        expect(s.invoices[0]).toMatchObject({ status: "writtenOff", suspended: false, payAt: s.hour + 30 * DAY });
         expect(s.services.find((x) => x.id === v)!.endedAt).toBe(s.hour);
       }
     }

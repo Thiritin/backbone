@@ -10,7 +10,7 @@ const medianYear = (runs: RunResult[], level: number) => median(runs.map((r) => 
 
 describe("balance run (docs/design/economy/balancing.md, Balancing)", () => {
   it("is deterministic per seed", () => {
-    expect(run(STEADY, 3)).toEqual(run(STEADY, 3));
+    expect(run(STEADY, 3, 2)).toEqual(run(STEADY, 3, 2));
   });
 
   it("never bankrupts the steady bot", () => {

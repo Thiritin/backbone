@@ -138,13 +138,15 @@ describe("new game", () => {
 });
 
 describe("reload clock", () => {
+  let reloads = 0;
   // Re-creates the store module the way a page reload does, over the given storages.
   async function reload(local: Map<string, string>, session: Map<string, string>) {
     const mem = (m: Map<string, string>) => ({ getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => m.set(k, v), removeItem: (k: string) => m.delete(k) });
     vi.stubGlobal("localStorage", mem(local));
     vi.stubGlobal("sessionStorage", mem(session));
-    vi.resetModules();
-    return (await import("../src/ui/store")).useStore;
+    // A fresh query makes a new store module over the already loaded sim, which is all a reload re-reads.
+    const mod = (await import(/* @vite-ignore */ `../src/ui/store.ts?reload=${++reloads}`)) as typeof import("../src/ui/store");
+    return mod.useStore;
   }
 
   it("keeps the speed of a loaded game across a reload and starts a new game paused", async () => {

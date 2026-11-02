@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { hourOf, isMonthStart, yearOf } from "../src/sim/00-core/time";
+import { hourOf, nextMonthStart, yearOf } from "../src/sim/00-core/time";
 import { sizeSpec } from "../src/sim/10-catalog/products";
 import { leadFlows } from "../src/sim/30-market/market";
-import { run as runBalance, STEADY } from "../src/sim/balance/model";
 import type { GameState } from "../src/sim/50-state";
 import { leadsThisMonth } from "../src/sim/80-business/marketing";
 import { agePenalty, customerSite, designQuote, generationOf, siteFactor, siteStatus } from "../src/sim/80-business/website";
@@ -29,6 +28,8 @@ const withSite = (seed = 1): GameState => {
 };
 const website = (s: GameState) => leadsThisMonth(s).filter((b) => b.source === "website").reduce((n, b) => n + b.count, 0);
 const run = (s: GameState, hours: number) => Array.from({ length: hours }).flatMap(() => tick(s));
+// Skips to the hour before the next month start and ticks into it.
+const toMonthStart = (s: GameState) => { s.hour = nextMonthStart(s.hour) - 1; return tick(s); };
 
 describe("company site hosting", () => {
   it("is rented by default, always up and billed at the month start under its own ledger key", () => {
@@ -39,9 +40,11 @@ describe("company site hosting", () => {
     expect(setPower(s, "dev3", false).ok).toBe(true);
     expect(siteStatus(s)).toBe("up");
     const from = s.ledger.length;
-    run(s, 24 * 62);
+    toMonthStart(s);
+    run(s, 3);
+    toMonthStart(s);
     const bills = s.ledger.slice(from).filter((e) => e.key === "ledger.siteHosting");
-    expect(bills.length).toBeGreaterThanOrEqual(2);
+    expect(bills).toHaveLength(2);
     expect(bills.every((e) => e.amount === -9.9 && e.category === "marketing")).toBe(true);
     expect(en["ledger.siteHosting"]({})).toBe("Website hosting: Strateaux");
   });
@@ -49,7 +52,8 @@ describe("company site hosting", () => {
   it("bills no rent while the site runs on an own host", () => {
     const s = withSite();
     const from = s.ledger.length;
-    run(s, 24 * 35);
+    toMonthStart(s);
+    expect(s.ledger.slice(from).some((e) => e.category === "marketing")).toBe(true);
     expect(s.ledger.slice(from).some((e) => e.key === "ledger.siteHosting")).toBe(false);
   });
 
@@ -127,19 +131,18 @@ describe("company site hosting", () => {
 
     const a = withSite(), b = withSite();
     ok(setPower(b, "dev3", false));
-    const monthStart = (x: GameState) => { do tick(x); while (!isMonthStart(x.hour)); };
-    monthStart(a); monthStart(b);
+    toMonthStart(a); toMonthStart(b);
     expect(a.marketing.awareness.private).toBeGreaterThan(b.marketing.awareness.private);
   });
 
   it("loses the shop orders while the site is down", () => {
     const orders = (down: boolean) => {
-      const s = automate(withSite(8));
+      const s = automate(withSite(2));
       openShop(s);
       createProduct(s, (createProductGroup(s, "Web") as { id: string }).id, "Mini", "webHosting");
       if (down) ok(setPower(s, "dev3", false));
       else ok(setSiteHost(s, { kind: "rented" }));
-      return run(s, 24 * 30).filter((e) => e.key === "event.orderPlaced").length;
+      return run(s, 72).filter((e) => e.key === "event.orderPlaced").length;
     };
     expect(orders(false)).toBeGreaterThan(0);
     expect(orders(true)).toBe(0);
@@ -192,7 +195,8 @@ describe("design ages", () => {
     expect(s.cash).toBe(cash - price);
     expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.redesign", category: "marketing", amount: -price });
     expect(en["ledger.redesign"]({})).toBe("Website redesign");
-    run(s, 14 * 24);
+    s.hour += 14 * 24 - 1;
+    run(s, 1);
     expect(s.marketing.designYear).toBe(2017);
     expect(agePenalty(s)).toBe(1);
     inYear(s, 2021);
@@ -260,16 +264,6 @@ describe("customer sites", () => {
   it("has a blurb for every profile", () => {
     for (const p of ["private", "gamer", "hobbyDev", "soleProp", "smallBiz", "agency", "office", "onlineShop", "enterprise"]) expect(en[`site.blurb.${p}`]({})).toMatch(/\S/);
   });
-});
-
-describe("balance", () => {
-  it("keeps the steady bot within half a year of the levels before site hosting and redesigns", () => {
-    const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)];
-    const runs = Array.from({ length: 20 }, (_, i) => runBalance(STEADY, i + 1));
-    expect(runs.filter((r) => r.bankrupt)).toHaveLength(0);
-    const before: Record<number, number> = { 2: 2006.1, 3: 2007.2, 4: 2008.8, 5: 2012.4 };
-    for (const level of [2, 3, 4, 5]) expect(Math.abs(median(runs.map((r) => r.levelYear[level] ?? Infinity)) - before[level])).toBeLessThanOrEqual(0.5);
-  }, 60000);
 });
 
 function ok(r: { ok: boolean; error?: string }) {

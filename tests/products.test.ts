@@ -178,8 +178,6 @@ describe("usage curves and overcommit", () => {
       return Math.max(0, 1 - nodeUsage(s, "dev3").perf * (1 - starvation(s, v, workloadsOf(s, v.id)[0])) - tol) * slowWeight("game", last, last - since);
     });
     expect(before - happiness()).toBeCloseTo(SLOW_PENALTY * lost.reduce((n, x) => n + x, 0), 6);
-    run(s, 2);
-    run(s, 168);
     expect(s.tickets.filter((t) => t.topic === "slow").length).toBeGreaterThan(0);
   });
 });

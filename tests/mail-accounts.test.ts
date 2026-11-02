@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hourOfMonth } from "../src/sim/00-core/time";
+import { hourOfMonth, nextMonthStart } from "../src/sim/00-core/time";
 import { roleAddress, seatsBilled, serverStatus, vacationOn } from "../src/sim/42-mail/accounts";
 import { mxTarget } from "../src/sim/42-mail/caps";
 import { visibleCandidates } from "../src/sim/47-staff/staff";
@@ -10,8 +10,12 @@ import { bookMail, cancelMail, createTenant, setTenantPlan } from "../src/sim/90
 import { createMailAccount, deleteMailAccount, setExternalAccess, setRoleMailbox } from "../src/sim/90-actions/mailbox";
 import { fire, hire } from "../src/sim/90-actions/staff";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { idOf, mailLedger, toMonthStart } from "./company-mail.helpers";
+import { idOf, mailLedger } from "./company-mail.helpers";
 import { readyGame } from "./fixtures";
+import { tick } from "../src/sim/88-tick/tick";
+
+// Skips to the hour before the next month start and ticks into it.
+const toMonthStart = (s: GameState) => { s.hour = nextMonthStart(s.hour) - 1; tick(s); };
 
 const at = (ym: string) => hourOfMonth(ym);
 // Candidates of the start stay on the market at whatever hour a case jumps to.

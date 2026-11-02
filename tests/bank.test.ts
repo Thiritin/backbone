@@ -9,7 +9,7 @@ import { resolve } from "../src/sim/80-business/browser";
 import { tickMinute } from "../src/sim/88-tick/tick";
 import { cancelTransfer, confirmTransfer, deletePayee, openBankAccount, payAllDue, savePayee, setAutoPay, setMandate, setTanMethod, startTransfer } from "../src/sim/90-actions/bank";
 import { type GameState } from "../src/sim/50-state";
-import { tick } from "../src/sim/88-tick/tick";
+import { powerPerHour, tick } from "../src/sim/88-tick/tick";
 import { registerCompany } from "../src/sim/90-actions/company";
 import { newGame as blankGame } from "../src/sim/50-state";
 import { bankById, BANKS, defaultPlan, type BankId } from "../src/sim/10-catalog/banks";
@@ -21,6 +21,13 @@ import { checkDone } from "../src/sim/checklist";
 // Hour 0 is Saturday 1 January 2005, 00:00; Monday 08:00 is hour 56.
 const MONDAY_8 = 56;
 const run = (s: GameState, hours: number) => { for (let i = 0; i < hours; i++) tick(s); };
+// Bills, dues and bookings fall on set hours, so a long wait jumps to its last hour with the power drawn meanwhile.
+const skip = (s: GameState, hours: number) => {
+  if (hours <= 0) return;
+  s.powerDue += powerPerHour(s) * (hours - 1);
+  s.hour += hours - 1;
+  tick(s);
+};
 const earned = (s: GameState, from = 0) => s.ledger.filter((e) => e.key === "ledger.depositInterest" && e.hour > from).reduce((n, e) => n + e.amount, 0);
 export const opened = (seed = 1, bank: BankId = "sparklasse", form = "sole"): GameState => {
   const s = blankGame(seed);
@@ -54,7 +61,7 @@ describe("bank account", () => {
   it("charges the account fee every month start", () => {
     const s = opened(1, "deutscheBunk");
     const cash = s.cash;
-    run(s, hourOf(new Date(Date.UTC(2005, 1, 1))) - s.hour);
+    skip(s, hourOf(new Date(Date.UTC(2005, 1, 1))) - s.hour);
     expect(s.ledger.filter((e) => e.key === "ledger.bankFee")).toEqual([expect.objectContaining({ amount: -18, category: "fees" })]);
     expect(s.cash).toBeLessThanOrEqual(cash - 18 + earned(s));
   });
@@ -62,7 +69,7 @@ describe("bank account", () => {
   it("charges a limited company the dearer fee and every booking of the month before above the free ones", () => {
     const s = opened(1, "sparklasse", "limited"), feb = hourOf(new Date(Date.UTC(2005, 1, 1)));
     for (let i = 0; i < 25; i++) s.ledger = [...s.ledger, { hour: s.hour, category: "sales", key: "ledger.usedSale", params: {}, amount: 10 }];
-    run(s, feb - s.hour);
+    skip(s, feb - s.hour);
     const bookings = s.ledger.filter((e) => e.hour < feb && e.amount !== 0 && e.category !== "fees").length;
     expect(bookings).toBeGreaterThanOrEqual(25);
     expect(s.ledger.filter((e) => e.hour === feb && e.category === "fees")).toEqual([
@@ -74,7 +81,7 @@ describe("bank account", () => {
   it("charges a sole trader no booking fees", () => {
     const s = opened(1, "sparklasse");
     s.ledger = [...s.ledger, { hour: s.hour, category: "sales", key: "ledger.usedSale", params: {}, amount: 10 }];
-    run(s, hourOf(new Date(Date.UTC(2005, 1, 1))) - s.hour);
+    skip(s, hourOf(new Date(Date.UTC(2005, 1, 1))) - s.hour);
     expect(s.ledger.filter((e) => e.category === "fees").map((e) => [e.key, e.amount])).toEqual([["ledger.bankFee", -8]]);
   });
 
@@ -91,7 +98,7 @@ describe("bank account", () => {
     delete old.registration;
     const s = deserialize(JSON.stringify(old));
     expect(s.bank).toMatchObject({ id: "sparklasse", welcomed: false });
-    run(s, hourOf(new Date(Date.UTC(2005, 1, 1))));
+    skip(s, hourOf(new Date(Date.UTC(2005, 1, 1))));
     expect(mailsAbout(s, "bankWelcome").length).toBeGreaterThan(0);
     expect(s.ledger.filter((e) => e.key === "ledger.bankFee").map((e) => e.amount)).toEqual([-8]);
   });
@@ -232,7 +239,7 @@ describe("card and overdraft", () => {
     expect(buyCart(s, CART, { kind: "prepay" }, "loc1").ok).toBe(true);
     expect(s.devices.at(-1)!.arriveAt).toBe(s.hour + wait + PREPAY_HOURS + 24);
     expect(s.cash).toBeLessThan(cash);
-    run(s, hourOf(new Date(Date.UTC(2005, 1, 1))) - s.hour);
+    skip(s, hourOf(new Date(Date.UTC(2005, 1, 1))) - s.hour);
     expect(s.bank!.card!.spent).toEqual([]);
     expect(s.payables.find((p) => p.supplier === "card")).toMatchObject({ amount: 2500, paidAt: null });
   });
@@ -250,7 +257,7 @@ describe("card and overdraft", () => {
     s.cash = -1000;
     run(s, 24 * 20);
     expect(s.brokeSince).toBeNull();
-    run(s, hourOf(new Date(Date.UTC(2005, 1, 1))) - s.hour);
+    skip(s, hourOf(new Date(Date.UTC(2005, 1, 1))) - s.hour);
     expect(s.ledger.find((e) => e.key === "ledger.overdraftInterest")!.amount).toBeLessThan(0);
   });
 
@@ -262,7 +269,7 @@ describe("card and overdraft", () => {
     expect(paid.amount).toBeCloseTo((20_000 * 0.015 * 31) / 365, 0);
     s.hour = hourOf(new Date(Date.UTC(2020, 5, 1)));
     s.cash = 200_000;
-    run(s, 24 * 30);
+    skip(s, 24 * 30);
     expect(s.ledger.find((e) => e.key === "ledger.custodyFee")!.amount).toBeLessThan(0);
   });
 });
@@ -296,7 +303,7 @@ const pay = (s: GameState, p: Payable) => {
 describe("payables", () => {
   it("turns the month's line and power bills into invoices by email and settles one paid on time", () => {
     const s = banked();
-    run(s, FEB - s.hour);
+    skip(s, FEB - s.hour);
     const line = s.payables.find((p) => p.supplier === "upstream")!;
     expect(line).toMatchObject({ name: "Deutsche Telekomm", amount: 59, paidAt: null, dueAt: FEB + 14 * 24 });
     expect(s.payables.some((p) => p.supplier === "power")).toBe(true);
@@ -312,12 +319,12 @@ describe("payables", () => {
 
   it("throttles and then cuts an unpaid line, and powers it back once paid", () => {
     const s = banked();
-    run(s, FEB - s.hour);
+    skip(s, FEB - s.hour);
     const line = s.payables.find((p) => p.supplier === "upstream")!;
-    run(s, 14 * 24 + 7 * 24 + 1);
+    skip(s, 14 * 24 + 7 * 24 + 1);
     expect(lineFactor(s)).toBeLessThan(1);
     expect(lineCut(s)).toBe(false);
-    run(s, 7 * 24);
+    skip(s, 7 * 24);
     expect(lineCut(s)).toBe(true);
     expect(mailsAbout(s, "consequence.cut").length).toBeGreaterThan(0);
     pay(s, s.payables.find((p) => p.id === line.id)!);
@@ -327,9 +334,9 @@ describe("payables", () => {
 
   it("cuts the basement's power thirty days past due", () => {
     const s = banked();
-    run(s, FEB - s.hour);
+    skip(s, FEB - s.hour);
     const power = s.payables.find((p) => p.supplier === "power")!;
-    run(s, power.dueAt + 30 * 24 - s.hour);
+    skip(s, power.dueAt + 30 * 24 - s.hour);
     expect(s.ops.dark.loc1).toBeGreaterThan(s.hour);
   });
 
@@ -348,12 +355,12 @@ describe("payables", () => {
 describe("mandates and HBCI", () => {
   it("lets a supplier with a mandate debit its next invoice, so nothing waits to be paid by hand", () => {
     const s = banked();
-    run(s, FEB - s.hour);
+    skip(s, FEB - s.hour);
     const line = s.payables.find((p) => p.supplier === "upstream")!;
     expect(resolve(s, `www.${supplierHost(line.name)}/account`).page).toEqual({ kind: "supplier", name: "Deutsche Telekomm" });
     expect(setMandate(s, line.name, true).ok).toBe(true);
     const cash = s.cash;
-    run(s, hourOf(new Date(Date.UTC(2005, 2, 1))) - s.hour);
+    skip(s, hourOf(new Date(Date.UTC(2005, 2, 1))) - s.hour);
     const next = s.payables.filter((p) => p.supplier === "upstream").at(-1)!;
     expect(next.id).not.toBe(line.id);
     expect(next.paidAt).not.toBeNull();
@@ -363,7 +370,7 @@ describe("mandates and HBCI", () => {
 
   it("pays every open invoice in one go and later by itself once the account has HBCI", () => {
     const s = banked();
-    run(s, FEB - s.hour);
+    skip(s, FEB - s.hour);
     expect(payAllDue(s)).toEqual({ ok: false, error: "error.noHbci" });
     s.books = { vendor: "lexwear", installedAt: s.hour, edition: "financial-office", seats: 0, download: null };
     const due = s.payables.filter((p) => p.paidAt === null).length;
@@ -373,7 +380,7 @@ describe("mandates and HBCI", () => {
     run(s, 25);
     expect(s.payables.every((p) => p.paidAt !== null)).toBe(true);
     expect(setAutoPay(s, true).ok).toBe(true);
-    run(s, hourOf(new Date(Date.UTC(2005, 2, 1))) - s.hour);
+    skip(s, hourOf(new Date(Date.UTC(2005, 2, 1))) - s.hour);
     const march = s.payables.filter((p) => p.paidAt === null);
     expect(march.length).toBeGreaterThan(0);
     run(s, 14 * 24);

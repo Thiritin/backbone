@@ -33,9 +33,16 @@ function setup(id: string, year: number) {
   return { s, c: s.clusters.find((x) => x.id === host)! };
 }
 
+// Renders only read the game, so the signed-in and login views share one setup.
+const games = new Map<string, ReturnType<typeof setup>>();
 function render(id: string, year: number, signedIn: boolean, version?: string) {
-  const { s, c } = setup(id, year), View = CONSOLES[id];
-  if (version) pinVersion(s, c, id, version);
+  const key = `${id} ${year} ${version}`;
+  if (!games.has(key)) {
+    const g = setup(id, year);
+    if (version) pinVersion(g.s, g.c, id, version);
+    games.set(key, g);
+  }
+  const { s, c } = games.get(key)!, View = CONSOLES[id];
   return { s, year: yearOf(s.hour), html: renderToString(<View game={s} c={c} f={consoleFeatures(id, yearOf(s.hour))} host="svc.example.com" signedIn={signedIn} login={() => {}} logout={() => {}} />) };
 }
 

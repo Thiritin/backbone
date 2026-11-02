@@ -107,8 +107,12 @@ describe("compute", () => {
 
   it("books web hosting on a panel server until its disk is full and slows it once the RAM in use passes the installed RAM", () => {
     const s = withServer(startGame(1)), cus = addCustomer(s, "Ada Lang", "hobbyDev");
+    const d = s.devices.find((x) => x.id === "dev3")!;
+    // A small disk and one RAM stick keep the fill short.
+    d.components.find((c) => c.kind === "hdd")!.size = 80;
+    d.components = d.components.filter((c) => c.kind !== "ram" || c.id === "c7");
     panelServer(s, "dev3");
-    const d = s.devices.find((x) => x.id === "dev3")!, spec = sizeSpec("webHosting", 1, yearOf(s.hour));
+    const spec = sizeSpec("webHosting", 1, yearOf(s.hour));
     const n = fill(s, cus);
     expect(n).toBe(Math.floor((nodeCapacity(d).diskGb - 2 + 1e-9) / spec.diskGb));
     expect(nodeUsed(s, "dev3").ramGb).toBeGreaterThan(installedRamGb(d));

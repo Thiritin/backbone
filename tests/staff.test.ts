@@ -8,6 +8,7 @@ import {
 } from "../src/sim/47-staff/staff";
 import { type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
+import { staffTick } from "../src/sim/47-staff/staff";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { answerRaise, assign, fire, planTraining, postJobAd } from "../src/sim/90-actions/staff";
 import { hire } from "./fixtures";
@@ -15,6 +16,10 @@ import { deserialize, serialize } from "../src/sim/91-save/save";
 
 const FEB_1 = 744, MONDAY_9 = 48 + 9;
 const runTo = (s: GameState, hour: number) => { while (s.hour < hour) tick(s); };
+// Growth, quitting, raises and the market move at month starts only (or on the hour a raise falls due), so the hours between are skipped.
+const monthStartsTo = (s: GameState, hour: number, events: unknown[] = []) => {
+  for (let h = s.hour + 1; h <= hour; h++) if (isMonthStart(h)) { s.hour = h - 1; events.push(...tick(s)); }
+};
 
 function hireOne(s: GameState, role: Role, skill = 50): string {
   const c = visibleCandidates(s).find((x) => x.role === role)!;
@@ -34,7 +39,7 @@ describe("job market", () => {
     const s = newGame(3);
     expect(ROLES.map((r) => visibleCandidates(s).filter((c) => c.role === r).length)).toEqual(ROLES.map(() => MARKET_PER_ROLE));
     const first = visibleCandidates(s).map((c) => c.id);
-    runTo(s, FEB_1);
+    monthStartsTo(s, FEB_1);
     const now = visibleCandidates(s).map((c) => c.id);
     expect(now).toHaveLength(ROLES.length * MARKET_PER_ROLE);
     expect(now.some((id) => first.includes(id))).toBe(false);
@@ -42,7 +47,7 @@ describe("job market", () => {
 
   it("asks a salary by skill, juniors cheap and seniors expensive", () => {
     const s = newGame(9);
-    for (let m = 0; m < 24; m++) runTo(s, s.hour + 730);
+    monthStartsTo(s, 24 * 730);
     const all = s.candidates.filter((c) => c.role === "support");
     const junior = all.reduce((a, b) => (a.skill < b.skill ? a : b)), senior = all.reduce((a, b) => (a.skill > b.skill ? a : b));
     expect(senior.salary).toBeGreaterThan(junior.salary);
@@ -191,7 +196,7 @@ describe("work", () => {
 describe("pay, raises and quitting", () => {
   it("bills salaries monthly to the ledger for the hours worked in the first month", () => {
     const s = newGame(13);
-    runTo(s, FEB_1 / 2);
+    s.hour = FEB_1 / 2;
     const id = hireOne(s, "support");
     const salary = emp(s, id).salary;
     const events = [];
@@ -214,17 +219,17 @@ describe("pay, raises and quitting", () => {
     const id = hireOne(s, "support", 20);
     emp(s, id).talent = 40;
     emp(s, id).salary = 1e6;
-    runTo(s, 8760);
+    monthStartsTo(s, 8760);
     expect(emp(s, id).skill).toBeCloseTo(32);
-    runTo(s, 2 * 8760);
+    monthStartsTo(s, 2 * 8760);
     expect(emp(s, id).skill).toBe(40);
   });
 
   it("asks for a raise yearly; refusing raises the quit chance", () => {
     const s = newGame(15);
     const id = hireOne(s, "support", 20);
-    const events = [];
-    while (s.hour < 8760) events.push(...tick(s));
+    const events: { key: string }[] = [];
+    monthStartsTo(s, 8760, events);
     const e = emp(s, id);
     expect(e.raise).not.toBeNull();
     expect(e.raise!.ask).toBeGreaterThan(e.salary * 1.03);
@@ -238,7 +243,7 @@ describe("pay, raises and quitting", () => {
   it("accepting a raise sets the new salary", () => {
     const s = newGame(16);
     const id = hireOne(s, "bookkeeper", 30);
-    runTo(s, 8760);
+    monthStartsTo(s, 8760);
     const ask = emp(s, id).raise!.ask;
     answerRaise(s, id, true);
     expect(emp(s, id)).toMatchObject({ salary: ask, raise: null, refusedAt: null });
@@ -246,11 +251,13 @@ describe("pay, raises and quitting", () => {
 
   it("loses underpaid staff faster", () => {
     let left = 0;
+    const base = newGame(0);
+    for (let i = 0; i < 6; i++) emp(base, hireOne(base, ROLES[i % 3])).salary = 100;
     for (let seed = 0; seed < 40; seed++) {
-      const s = newGame(seed);
-      for (let i = 0; i < 6; i++) emp(s, hireOne(s, ROLES[i % 3])).salary = 100;
+      // The quit rolls hash the seed, so a reseeded copy draws its own.
+      const s = { ...structuredClone(base), seed };
       // Before its first raise an employee only quits at a month start, so the hours between are skipped.
-      for (let h = FEB_1; h <= FEB_1 + 730 * 3; h++) if (isMonthStart(h)) { s.hour = h - 1; tick(s); }
+      for (let h = FEB_1; h <= FEB_1 + 730 * 3; h++) if (isMonthStart(h)) { s.hour = h; staffTick(s); }
       left += 6 - s.staff.length;
     }
     // About 3.5% a month over 4 month starts for 240 employees.

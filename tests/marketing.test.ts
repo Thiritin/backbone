@@ -7,6 +7,7 @@ import {
   addAwareness, addReview, announceReview, awareness, discountFor, leadsThisMonth, monthlyMarketingCost, reviewMultiplier, reviewScore, trustBonus,
 } from "../src/sim/80-business/marketing";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
+import { marketingTick } from "../src/sim/80-business/marketing";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { setCampaign, setReviewPlatform, setUpChannel, stopCampaign } from "../src/sim/90-actions/marketing";
 import { hire } from "./fixtures";
@@ -17,8 +18,10 @@ import { withCompany, newGame } from "./fixtures";
 const FEB_1 = 744;
 // Paid review platforms need a marketing manager on staff.
 const hireManager = (s: GameState) => hire(s, visibleCandidates(s).find((c) => c.role === "marketing")!.id);
-const until = (s: GameState, hour: number) => { while (s.hour < hour) tick(s); };
-const months = (s: GameState, n: number) => { for (let i = 0; i < n; i++) { tick(s); while (!isMonthStart(s.hour)) tick(s); } };
+// Jumps to the hour before so only the month start itself is ticked.
+const until = (s: GameState, hour: number) => { s.hour = hour - 1; tick(s); };
+// Awareness moves only in the monthly marketing step, so the rest of the sim is skipped.
+const months = (s: GameState, n: number) => { for (let i = 0; i < n; i++) { do s.hour++; while (!isMonthStart(s.hour)); marketingTick(s); } };
 
 describe("owned channels", () => {
   it("sets up the website, then a shop and ads that need it", () => {

@@ -4,7 +4,7 @@
 import { BMC_NAME, hasBmc, homeLan, isManaged, isManagedUps, isOfficeRouter, isOobPort, jacksOf, modelById, OOB_PORT, oobPortOf, oobPorts, type DeviceModel } from "../10-catalog/hardware";
 import type { Device, End, GameState, IfaceConfig, PortShare, RouterLan } from "../50-state";
 import { isOwnRouter, mountedRouter, ownLan, uplinkPort } from "./routers";
-import { linkStatus, locationOf, peerOf, powered, sweepGroups, sweepMemo, working } from "./status";
+import { linkStatus, locationOf, peerOf, powered, readOnlySweep, sweepGroups, sweepMemo, working } from "./status";
 import type { Workload } from "./cluster";
 import { egress, ingress, MGMT_VLAN, routesTo, switchIp } from "./switches";
 
@@ -19,11 +19,28 @@ export const FRITZ_HOST = "fritz.bocks";
 export const servesDhcp = (m: DeviceModel): boolean => m.kind === "gateway";
 // Fritz!OZ from the 7390 on registers the names its DHCP clients send under fritz.bocks; the older firmware registers none.
 export const registersNames = (m: DeviceModel): boolean => isOfficeRouter(m) && m.from >= 2010;
-export const ipNum = (ip: string): number => ip.split(".").reduce((n, x) => n * 256 + Number(x), 0);
-export const ipStr = (n: number): string => [24, 16, 8, 0].map((b) => Math.floor(n / 2 ** b) % 256).join(".");
+const ipNums = new Map<string, number>();
+export const ipNum = (ip: string): number => {
+  let n = ipNums.get(ip);
+  if (n === undefined) ipNums.set(ip, (n = ip.split(".").reduce((a, x) => a * 256 + Number(x), 0)));
+  return n;
+};
+const ipStrs = new Map<number, string>();
+export const ipStr = (n: number): string => {
+  let ip = ipStrs.get(n);
+  if (ip === undefined) ipStrs.set(n, (ip = [24, 16, 8, 0].map((b) => Math.floor(n / 2 ** b) % 256).join(".")));
+  return ip;
+};
+const inNets = new Map<string, Map<string, boolean>>();
 export function inNet(cidr: string, ip: string): boolean {
-  const [base, bits] = cidr.split("/"), size = 2 ** (32 - Number(bits));
-  return /^\d{1,3}(\.\d{1,3}){3}$/.test(ip) && Math.floor(ipNum(ip) / size) === Math.floor(ipNum(base) / size);
+  let by = inNets.get(cidr);
+  if (!by) inNets.set(cidr, (by = new Map()));
+  let hit = by.get(ip);
+  if (hit === undefined) {
+    const [base, bits] = cidr.split("/"), size = 2 ** (32 - Number(bits));
+    by.set(ip, (hit = /^\d{1,3}(\.\d{1,3}){3}$/.test(ip) && Math.floor(ipNum(ip) / size) === Math.floor(ipNum(base) / size)));
+  }
+  return hit;
 }
 
 // A datacenter's routers hand out the location's 10.n.0.0/16, n counting the locations from 1.
@@ -39,11 +56,17 @@ export function lanOf(s: GameState, d: Device): RouterLan | null {
 
 // MAC addresses follow the device and its interface; the first three bytes name the maker.
 const OUI: Record<string, string> = { Dwell: "00:14:22", "Hewlett-Packet": "00:1b:78", SuperMacro: "00:25:90", Lenovoid: "00:1a:6b", Gigabutt: "00:1d:7d", Sysko: "00:1a:a1", AVN: "00:04:0e", Avoscent: "00:10:e3", OpenGearbox: "00:13:c6", Rarytan: "00:0d:5d" };
+const macTails = new Map<string, string>();
 export function macOf(s: GameState, id: string, iface: Iface = "eth"): string {
-  let h = 2166136261;
-  for (const c of `${id}:${iface}`) h = Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0;
+  const key = `${id}:${iface}`;
+  let tail = macTails.get(key);
+  if (tail === undefined) {
+    let h = 2166136261;
+    for (const c of key) h = Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0;
+    macTails.set(key, (tail = [16, 8, 0].map((b) => ((h >>> b) & 255).toString(16).padStart(2, "0")).join(":")));
+  }
   const oui = id === DESK_NAME ? "00:0d:93" : OUI[s.devices.find((d) => d.id === id)?.brand ?? ""] ?? "00:16:3e";
-  return `${oui}:${[16, 8, 0].map((b) => ((h >>> b) & 255).toString(16).padStart(2, "0")).join(":")}`;
+  return `${oui}:${tail}`;
 }
 
 // A VM on a hypervisor cluster; web spaces and other platforms' workloads use their host's address.
@@ -66,8 +89,8 @@ function computeDomain(s: GameState, routerId: string): Set<string> {
     const at = port === uplinkPort(router) ? null : peerOf(s, { device: routerId, port });
     return at ? [{ at, tag: null }] : [];
   });
-  while (queue.length) {
-    const { at, tag } = queue.shift()!, d = s.devices.find((x) => x.id === at.device);
+  for (let qi = 0; qi < queue.length; qi++) {
+    const { at, tag } = queue[qi], d = s.devices.find((x) => x.id === at.device);
     if (!d) continue;
     const m = modelById(d.model), sw = isManaged(m) && working(s, d.id) ? d : null;
     const vlan = sw ? ingress(sw, at.port, tag) : tag;
@@ -274,7 +297,7 @@ export function routerPassword(s: GameState, routerId: string): string {
 
 // Hourly: every router stores the leases it granted, renews those past half their time and drops the ones that ran out.
 export function leaseTick(s: GameState): void {
-  s.devices = s.devices.map((d) => {
+  s.devices = readOnlySweep(s, () => s.devices.map((d) => {
     const lan = (d.rackId || d.panel) ? lanOf(s, d) : null;
     if (!lan) return d;
     const grants = grantsOf(s, d.id);
@@ -288,5 +311,5 @@ export function leaseTick(s: GameState): void {
     const known = new Set(lan.leases.map((l) => l.mac));
     for (const g of grants.values()) if (!known.has(g.mac)) { changed = true; leases.push({ mac: g.mac, ip: g.ip, until: s.hour + lan.leaseHours, name: g.name }); }
     return changed ? { ...d, lan: { ...lan, leases } } : d;
-  });
+  }));
 }

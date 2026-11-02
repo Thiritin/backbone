@@ -42,24 +42,21 @@ beforeEach(() => sessionStorage.clear());
 afterEach(cleanup);
 
 describe("Freshdusk", () => {
-  it("renders every page in the 2011, 2014 and Mint looks", () => {
-    for (const [year, look] of [[2012, "classic"], [2016, "flat"], [2021, "mint"]] as const) {
-      const s = game(year), tk = ticket(s, "howTo");
-      agent();
-      const sections = ["helpdesk", "portal", "email", "agents", "groups", "canned", "scenarios", "dispatcher", "supervisor", "observer", "sla", "account"];
-      const paths = [...deskPages("freshdusk").map((page) => deskPath("freshdusk", page, { n: tk.ref, id: "upload", view: "all", section: "email" })),
-        ...sections.map((section) => deskPath("freshdusk", "adminScreen", { section }))];
-      for (const path of paths) {
-        const { container, unmount } = show(s, path);
-        expect(container.querySelector(`.fd.fd-${look}`), `${year} ${path}`).not.toBeNull();
-        unmount();
-      }
-      show(s, "/admin");
-      expect(screen.queryByText(t("fd.admin.dispatcher")) !== null).toBe(look !== "mint");
-      expect(screen.queryByText(t("fd.admin.dispatcher.mint")) !== null).toBe(look === "mint");
-      expect(screen.queryByLabelText(t("fd.nav.contacts")) !== null).toBe(look === "mint");
-      cleanup();
+  it.each([[2012, "classic"], [2016, "flat"], [2021, "mint"]] as const)("renders every page in %i in the %s look", (year, look) => {
+    const s = game(year), tk = ticket(s, "howTo");
+    agent();
+    const sections = ["helpdesk", "portal", "email", "agents", "groups", "canned", "scenarios", "dispatcher", "supervisor", "observer", "sla", "account"];
+    const paths = [...deskPages("freshdusk").map((page) => deskPath("freshdusk", page, { n: tk.ref, id: "upload", view: "all", section: "email" })),
+      ...sections.map((section) => deskPath("freshdusk", "adminScreen", { section }))];
+    for (const path of paths) {
+      const { container, unmount } = show(s, path);
+      expect(container.querySelector(`.fd.fd-${look}`), `${year} ${path}`).not.toBeNull();
+      unmount();
     }
+    show(s, "/admin");
+    expect(screen.queryByText(t("fd.admin.dispatcher")) !== null).toBe(look !== "mint");
+    expect(screen.queryByText(t("fd.admin.dispatcher.mint")) !== null).toBe(look === "mint");
+    expect(screen.queryByLabelText(t("fd.nav.contacts")) !== null).toBe(look === "mint");
   });
 
   it("asks agents to log in first", () => {

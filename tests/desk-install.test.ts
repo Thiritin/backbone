@@ -28,7 +28,8 @@ import { deserialize, serialize } from "../src/sim/91-save/save";
 import { DESK_ADMIN, handDesk, readyGame, registered, newGame, mailsAbout } from "./fixtures";
 
 const at = (y: number, m = 1) => hourOf(new Date(Date.UTC(y, m - 1, 1)));
-const runTo = (s: GameState, hour: number) => { while (s.hour < hour) tick(s); };
+// Skips to the last hour before a month start and ticks through it, where the monthly bills go out.
+const runTo = (s: GameState, hour: number) => { s.hour = hour - 1; tick(s); };
 const year = (y: number): GameState => registered({ ...newGame(1), hour: at(y), cash: 1_000_000 });
 const hosted = (y: number): GameState => { const s = readyGame(5); s.hour = at(y); s.cash = 1_000_000; return s; };
 const panelOf = (s: GameState) => s.clusters.find((c) => c.kind === "panel")!;

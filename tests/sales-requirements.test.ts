@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import { blocksContact } from "../src/sim/30-market/market";
 import { salesTick } from "../src/sim/30-market/sales";
 import { profileStats } from "../src/sim/40-support/tickets";
@@ -18,13 +18,19 @@ const lowReviews = (s: GameState) => {
 };
 
 describe("requests the company visibly cannot meet", () => {
+  // A year-old company with no reviews, shared by the cases that expect requests to arrive.
+  let mature: ReturnType<typeof arrivals>;
+  beforeAll(() => {
+    const s = readyGame(3);
+    s.hour = YEAR;
+    mature = arrivals(s);
+  });
+
   it("brings no premium requests in the first year and some after it", () => {
     const young = readyGame(3);
     young.hour = 100;
     expect(arrivals(young).filter((r) => r.sla === "premium")).toHaveLength(0);
-    const old = readyGame(3);
-    old.hour = YEAR;
-    expect(arrivals(old).filter((r) => r.sla === "premium").length).toBeGreaterThan(0);
+    expect(mature.filter((r) => r.sla === "premium").length).toBeGreaterThan(0);
   });
 
   it("brings no high-budget requests below 3 stars and some at the prior score", () => {
@@ -32,9 +38,7 @@ describe("requests the company visibly cannot meet", () => {
     low.hour = YEAR;
     lowReviews(low);
     expect(arrivals(low).filter((r) => profileStats(r.profile).budget === "high")).toHaveLength(0);
-    const fine = readyGame(3);
-    fine.hour = YEAR;
-    expect(arrivals(fine).filter((r) => profileStats(r.profile).budget === "high").length).toBeGreaterThan(0);
+    expect(mature.filter((r) => profileStats(r.profile).budget === "high").length).toBeGreaterThan(0);
   });
 
   it("blocks on age and reviews only", () => {

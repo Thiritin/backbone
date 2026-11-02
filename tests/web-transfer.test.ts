@@ -21,6 +21,9 @@ function world(spec = {}, panel = "cpanic") {
   const id = ok(provisionService(s, cust, "webHosting", { label: "mover.de", spec: { ...sizeSpec("webHosting", 0, 2005), transferFrom: "old-host-7.example", ...spec }, clusterId: host }));
   return { s, host, id, cust };
 }
+// The default world, built once and copied for each seed of the loops.
+let base: ReturnType<typeof world> | null = null;
+const copy = () => { base ??= world(); return { ...base, s: structuredClone(base.s) }; };
 
 describe("account transfers", () => {
   it("flags about 30% of web hosting orders from 2008 and none before", () => {
@@ -58,7 +61,7 @@ describe("account transfers", () => {
   it("ends in time, raising happiness when quick, and fails more often behind on PHP", () => {
     let done = 0, failed = 0, tickets = 0;
     for (let seed = 1; seed <= 200; seed++) {
-      const { s, host, id, cust } = world();
+      const { s, host, id, cust } = copy();
       s.seed = seed;
       ok(startTransfer(s, host, id));
       const happy = s.customers.find((c) => c.id === cust)!.happiness;
@@ -78,7 +81,7 @@ describe("account transfers", () => {
 
   it("can run a failed transfer again and resolves its ticket", () => {
     for (let seed = 1; seed < 400; seed++) {
-      const { s, host, id } = world();
+      const { s, host, id } = copy();
       s.seed = seed;
       ok(startTransfer(s, host, id));
       s.hour = s.webpanel.transfers[id].doneAt;

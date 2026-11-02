@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { LEASE_FACTOR, leaseOffers, LESSORS } from "../src/sim/10-catalog/leasing";
+import { nextMonthStart } from "../src/sim/00-core/time";
 import { type GameState } from "../src/sim/50-state";
 import { connectError, storageStacks } from "../src/sim/60-infra/status";
 import { tick } from "../src/sim/88-tick/tick";
@@ -8,6 +9,8 @@ import { buyCart, buyDevice, newGame } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { withServer } from "./fixtures";
 
+// Leases are billed at month start, so the hours between are skipped.
+const nextMonth = (s: GameState) => { s.hour = nextMonthStart(s.hour) - 1; tick(s); };
 const rich = (cash = 100_000): GameState => ({ ...withServer(newGame(1)), cash });
 const ok = (r: ReturnType<typeof buyCart>) => {
   if (!r.ok) throw new Error(r.error);
@@ -85,11 +88,7 @@ describe("lease payments", () => {
   it("charges one payment at each month start until the term is paid, then the devices are owned", () => {
     const s = rich();
     const { offer } = lease(s);
-    let hours = 0;
-    while (s.leases.length && hours < 40 * 744) {
-      tick(s);
-      hours++;
-    }
+    for (let m = 0; s.leases.length && m < 40; m++) nextMonth(s);
     const payments = s.ledger.filter((l) => l.key === "ledger.lease");
     expect(payments).toHaveLength(offer.months);
     expect(payments.every((p) => p.category === "leasing" && p.amount === -offer.monthly)).toBe(true);
@@ -101,7 +100,7 @@ describe("lease payments", () => {
     const s = rich();
     const { offer, lease: l } = lease(s);
     expect(err(sellDevice(s, "dev9"))).toBe("error.leased");
-    for (let h = 0; h < 744; h++) tick(s);
+    nextMonth(s);
     expect(s.leases[0].paid).toBe(1);
     const cash = s.cash;
     s.cash = (offer.months - 1) * offer.monthly - 1;

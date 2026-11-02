@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { hourOf } from "../src/sim/00-core/time";
-import { MAIL_PROVIDERS, mailDelay, mailImpaired, mailShare, providerById, salesAddress, seatsFor } from "../src/sim/80-business/mail";
-import { visibleCandidates } from "../src/sim/47-staff/staff";
+import { hourOf, isMonthStart } from "../src/sim/00-core/time";
+import { salesTick } from "../src/sim/30-market/sales";
+import type { GameState } from "../src/sim/50-state";
+import { MAIL_PROVIDERS, mailDelay, mailImpaired, mailShare, mailTick, providerById, salesAddress, seatsFor } from "../src/sim/80-business/mail";
+import { candidate } from "../src/sim/47-staff/staff";
 import { createVm } from "../src/sim/90-actions/clusters";
 import { bookMail, cancelMail, selectMailServer } from "../src/sim/90-actions/mail";
 import { signRegistrar, registerCompanyDomain } from "../src/sim/90-actions/registrar";
@@ -11,7 +13,11 @@ import { setEmailOrders } from "../src/sim/90-actions/website";
 import { CHECKS } from "../src/sim/checklist";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { bootedMachine, readyGame, newGame } from "./fixtures";
-import { err, idOf, run, toMonthStart, mailLedger, selfHosted } from "./company-mail.helpers";
+import { err, idOf, run, mailLedger, selfHosted } from "./company-mail.helpers";
+
+// Only the systems under test: the monthly mail bill, and the hourly lead flow.
+const toMonthStart = (s: GameState) => { do s.hour++; while (!isMonthStart(s.hour)); mailTick(s); };
+const runSales = (s: GameState, hours: number) => { for (let h = 0; h < hours; h++) { s.hour++; salesTick(s); } };
 
 describe("external providers", () => {
   it("price a seat by the year, Hosted Exchange falling from 10 to 6", () => {
@@ -40,7 +46,10 @@ describe("external providers", () => {
     const s = readyGame(2);
     toMonthStart(s);
     expect(mailLedger(s)).toMatchObject([{ category: "subscriptions", amount: -10, params: { seats: 1 } }]);
-    for (const role of ["support", "technician"] as const) hire(s, visibleCandidates(s).find((c) => c.role === role)!.id);
+    for (const role of ["support", "technician"] as const) {
+      s.candidates = [...s.candidates, candidate(s.rng, `cand-${role}`, role, s.hour)];
+      hire(s, `cand-${role}`);
+    }
     expect(seatsFor(s)).toBe(3);
     toMonthStart(s);
     expect(mailLedger(s)).toMatchObject([{ amount: -30, params: { seats: 3 } }]);
@@ -114,15 +123,11 @@ describe("email orders", () => {
     const s = newGame(1);
     expect(s.company.mail).toEqual({ kind: "free" });
     expect(salesAddress(s)).toBe("basement-hosting@gmix.com");
-    let n = 0;
-    for (const seed of [1, 2, 3]) {
-      const g = readyGame(seed);
-      cancelMail(g);
-      run(g, 24 * 60);
-      n += g.sales.requests.filter((r) => r.kind === "order").length;
-    }
-    expect(n).toBeGreaterThan(0);
-  }, 60_000);
+    const g = readyGame(1);
+    cancelMail(g);
+    runSales(g, 24 * 30);
+    expect(g.sales.requests.filter((r) => r.kind === "order").length).toBeGreaterThan(1);
+  });
 
   it("lose half of the business email orders on free mail and none of the private ones", () => {
     const s = readyGame(6);
@@ -133,20 +138,20 @@ describe("email orders", () => {
     expect(mailShare(s, "enterprise")).toBe(0.5);
     bookMail(s, "hostedExchange");
     expect(mailShare(s, "smallBiz")).toBe(1);
+    // Standard small business orders by email from a heavy search campaign; quote requests are not thinned.
     const orders = (free: boolean) => {
-      const seen = new Set<string>();
-      for (let seed = 1; seed <= 16; seed++) {
-        const g = readyGame(seed);
-        if (free) cancelMail(g);
-        for (let day = 0; day < 90; day++) {
-          run(g, 24);
-          for (const r of g.sales.requests) if (r.kind === "order" && r.profile !== "private" && r.profile !== "gamer" && r.profile !== "hobbyDev") seen.add(`${seed}/${r.id}`);
-        }
-      }
-      return seen.size;
+      const g = readyGame(6);
+      cancelMail(g);
+      if (!free) bookMail(g, "hostedExchange");
+      g.marketing = { ...g.marketing, campaigns: Array.from({ length: 20 }, () => ({ channel: "search" as const, profiles: ["smallBiz" as const], budget: 5000, discount: 0 })) };
+      runSales(g, 24 * 6);
+      return g.sales.requests.filter((r) => r.kind === "order" && r.profile === "smallBiz" && r.thread[0].key.startsWith("order.msg")).length;
     };
-    expect(orders(true)).toBeLessThan(orders(false));
-  }, 240_000);
+    const free = orders(true), paid = orders(false);
+    expect(paid).toBeGreaterThan(25);
+    expect(free).toBeGreaterThan(paid * 0.3);
+    expect(free).toBeLessThan(paid * 0.7);
+  });
 
   it("can be switched on with free mail", () => {
     const s = readyGame(6);
