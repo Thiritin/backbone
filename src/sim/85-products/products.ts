@@ -184,7 +184,7 @@ export function workloadPerf(s: GameState, w: Workload, product: Product | undef
   const base = Math.min(nodePerf(at), hostPerf(s, c), node ? perCoreOf(node) : 1), shares = sharesOf(c, w);
   if (shares === "normal" || !runsHot(s, at)) return base;
   // Under contention a high pool keeps its performance and a low pool gives some up.
-  return shares === "high" ? 1 : Math.min(base, POOL_LOW_PERF);
+  return shares === "high" ? 1 : base * POOL_LOW_PERF;
 }
 
 // Overloaded nodes slow every customer on them, web spaces in a panel VM included, and a PHP upgrade or a compromise slows

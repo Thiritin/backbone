@@ -57,7 +57,7 @@ import { resellerTick } from "../30-customers/resellers";
 import { webpanelTick } from "../60-infra/webpanel";
 import { gamesTick } from "../85-products/games-tick";
 import { securityTick } from "../60-infra/security";
-import { usageTick } from "../60-infra/usage";
+import { timeoutTick, usageTick } from "../60-infra/usage";
 import { overuseTick } from "../80-business/overuse";
 import { productsTick } from "../85-products/products";
 import { COMPONENTS, manufacturerByName, modelById, specOf } from "../10-catalog/hardware";
@@ -354,6 +354,7 @@ export function tick(state: GameState): SimEvent[] {
   events.push(...netsvcTick(state));
   events.push(...opsTick(state));
   vmOomTick(state);
+  timeoutTick(state);
   events.push(...haTick(state));
   beancounterTick(state);
   pruneAcks(state);

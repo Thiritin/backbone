@@ -111,8 +111,8 @@ export function workloadUse(s: GameState, w: Workload, hour: number = s.hour): R
 
 liveRam.of = (s, w) => workloadUse(s, w).ramGb;
 
-// What a node physically has and uses at an hour, and the performance its workloads get: CPU contention slows everyone by
-// cores ÷ busy vCPUs, a disk pool over 100% stalls writes to 50%, a full-VM node past its RAM swaps.
+// What a node physically has and uses at an hour, and the performance its workloads get: CPU load slows everyone along
+// cpuPerf, a disk pool over 100% stalls writes to 50%, a full-VM node past its RAM swaps.
 // economy.md, RAID: the share of its performance a node keeps while its array rebuilds, by rebuild rate.
 export const REBUILD_PERF = { low: 0.95, medium: 0.8, high: 0.6 } as const;
 export interface NodeUsage { used: Resources; physical: Resources; perf: number }
@@ -121,7 +121,7 @@ export function nodeUsage(s: GameState, deviceId: string, hour: number = s.hour)
   const d = s.devices.find((x) => x.id === deviceId), v = d && modelById(d.model).server;
   if (!d || !v) { const used = { vcpu: 0, ramGb: 0, diskGb: 0 }; return { used, physical: { ...used }, perf: 1 }; }
   const { used, physical } = nodeLoad(s, d, hour);
-  const cpu = used.vcpu > physical.vcpu ? physical.vcpu / used.vcpu : 1;
+  const cpu = cpuPerf(physical.vcpu ? used.vcpu / physical.vcpu : 0);
   const disk = used.diskGb > physical.diskGb ? 0.5 : 1;
   const heat = throttled(s, d) ? THERMAL.throttlePerf : 1;
   const over = used.ramGb / physical.ramGb - 1, ovz = clustersOn(s, deviceId).some((c) => c.kind === "cloud" && c.platform === "openveezee");
@@ -132,6 +132,16 @@ export function nodeUsage(s: GameState, deviceId: string, hour: number = s.hour)
 // economy.md, What runs over: a full-VM node swaps up to SWAP_MAX of its RAM, losing SWAP_SLOW × the overcommit in speed;
 // past it the host OOM-kills its largest VM (vmOomTick). OpenVeeZee hands RAM pressure to its beancounters instead.
 export const SWAP_MAX = 1.1, SWAP_SLOW = 5;
+// economy.md, What runs over: performance by CPU utilisation u, like a queue: full to 70%, 85% at 100%, then 0.85 ÷ u.
+export const cpuPerf = (u: number): number => (u <= 0.7 ? 1 : u <= 1 ? 1 - 0.5 * (u - 0.7) : 0.85 / u);
+// Below SLOW_PERF a site loads visibly slowly; below TIMEOUT_PERF for TIMEOUT_HOURS in a row it times out (timedOut).
+export const SLOW_PERF = 0.95, TIMEOUT_PERF = 0.25;
+// Hourly: counts the hours each cluster node has run below TIMEOUT_PERF.
+export function timeoutTick(s: GameState): void {
+  const low: Record<string, number> = {};
+  for (const id of new Set(s.clusters.flatMap((c) => c.nodes.map((n) => n.deviceId)))) if (working(s, id) && nodeUsage(s, id).perf < TIMEOUT_PERF) low[id] = (s.lowPerf[id] ?? 0) + 1;
+  s.lowPerf = low;
+}
 export const ramShare = (u: NodeUsage) => u.used.ramGb / Math.max(1e-9, u.physical.ramGb);
 
 // What a node uses and physically has, before performance; heat reads this through power draw, so it cannot ask for perf.
