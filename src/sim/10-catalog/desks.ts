@@ -13,6 +13,8 @@ export interface Desk {
   hosting: "hosted" | "self";
   // The vendor's site, and for a hosted desk the address every tenant gets on the day it signs up.
   hosts: { vendor: string; tenant?: string };
+  // Hosted desks only: the SPF include and DKIM CNAMEs that let replies go out as the company's own domain.
+  sender?: { spf: string; dkim: { name: string; target: string }[] };
   // How the desk numbers tickets and the token it puts in the subject of every outgoing mail; <n> is the number.
   ref: { kind: "random" | "sequential"; digits?: number; token: string | null };
   // Self-hosted desks only: each release and its year.
@@ -37,12 +39,14 @@ export const DESKS: Desk[] = [
   {
     id: "zendusk", name: "Zendusk", from: 2007, monthly: 49, hosting: "hosted",
     hosts: { vendor: "zendusk.com", tenant: "<tenant>.zendusk.com" }, ref: { kind: "sequential", token: "[Request #<n>]" },
+    sender: { spf: "mail.zendusk.com", dkim: [1, 2].map((n) => ({ name: `zendusk${n}._domainkey`, target: `zendusk${n}._domainkey.zendusk.com` })) },
     features: { filters: 2007, search: 2007, assign: 2007, templates: 2007, customerSidebar: 2007, departments: 2007, rules: 2007, portal: 2007, reports: 2007, merge: 2010, slaTimers: 2013, ai: 2013 },
     aiFrom: { suggestedArticles: 2013, answerBot: 2017, autoAnswer: 2023, drafting: 2023 },
   },
   {
     id: "freshdusk", name: "Freshdusk", from: 2011, monthly: 15, hosting: "hosted",
     hosts: { vendor: "freshdusk.com", tenant: "<tenant>.freshdusk.com" }, ref: { kind: "sequential", token: "[#<n>]" },
+    sender: { spf: "email.freshdusk.com", dkim: [1, 2].map((n) => ({ name: `fd${n}._domainkey`, target: `fd${n}.dkim.freshdusk.com` })) },
     features: { filters: 2011, search: 2011, assign: 2011, templates: 2011, slaTimers: 2011, customerSidebar: 2011, reports: 2011, merge: 2011, departments: 2011, rules: 2011, portal: 2011, ai: 2011 },
     aiFrom: { suggestedArticles: 2011, answerBot: 2018, autoAnswer: 2023, drafting: 2023 },
   },
