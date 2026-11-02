@@ -8,12 +8,12 @@ import { seededPassword } from "../src/sim/42-mail/new";
 import { rightTemplate, templatesOf } from "../src/sim/40-support/tickets";
 import type { GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
-import { confirmOrder, createAccount, provisionOrder, quoteOrder, sendOrderAccess } from "../src/sim/90-actions/orders";
+import { confirmOrder, createAccount, provisionOrder, sendOrderAccess } from "../src/sim/90-actions/orders";
 import { replyTicket } from "../src/sim/90-actions/support";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { CustomCompose } from "../src/ui/apps/support/CustomOrder";
 import { useStore } from "../src/ui/store";
-import { mailed, readyGame } from "./fixtures";
+import { mailed, quoteOrder, readyGame } from "./fixtures";
 
 const run = (s: GameState, hours: number) => { for (let i = 0; i < hours; i++) tick(s); };
 const ok = (s: GameState, res: { ok: boolean; error?: string }) => {

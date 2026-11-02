@@ -43,8 +43,8 @@ describe("shop order links and pricing page", () => {
     s.shop.productGroups = [{ id: "g1", name: "Hosting", hidden: false }];
     const spec = sizeSpec("webHosting", 0, 2005);
     s.shop.products = [
-      { id: "p1", groupId: "g1", name: "Small", line: "webHosting", serverGroupId: null, packageName: null, spec, prices: { monthly: 5, annual: 48 }, setup: 0, stock: "auto", hidden: false, setupMode: "payment" },
-      { id: "p2", groupId: "g1", name: "Secret", line: "webHosting", serverGroupId: null, packageName: null, spec, prices: { monthly: 1 }, setup: 0, stock: "auto", hidden: true, setupMode: "payment" },
+      { id: "p1", groupId: "g1", name: "Small", line: "webHosting", serverGroupId: null, packageName: null, spec, prices: { monthly: 5, annual: 48 }, autoCycles: false, setup: 0, stock: "auto", hidden: false, setupMode: "payment" },
+      { id: "p2", groupId: "g1", name: "Secret", line: "webHosting", serverGroupId: null, packageName: null, spec, prices: { monthly: 1 }, autoCycles: false, setup: 0, stock: "auto", hidden: true, setupMode: "payment" },
     ];
     return s;
   };

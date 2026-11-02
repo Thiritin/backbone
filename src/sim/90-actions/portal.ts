@@ -1,9 +1,10 @@
 // Product groups, products and cycle discounts of the shop portal (docs/design/shop.md).
 import { yearOf } from "../00-core/time";
-import { CYCLE_MONTHS, CYCLES, MARKET_DISCOUNT, type Cycle } from "../10-catalog/cycles";
+import { CYCLES, type Cycle } from "../10-catalog/cycles";
 import { marketPrice, marketSetup, sizeSpec } from "../10-catalog/products";
 import { shopById } from "../10-catalog/shops";
 import type { Product } from "../30-customers/customers";
+import { termPrice } from "../30-market/cycles";
 import type { GameState } from "../50-state";
 import { SITE_LINES } from "../80-business/website";
 import type { ProductGroup, ShopProduct } from "../80-business/shop";
@@ -17,6 +18,14 @@ const cleanName = (name: string): string => name.trim().slice(0, NAME_MAX);
 const variantOf = (s: GameState) => (s.shop.variant ? shopById(s.shop.variant) : null);
 const setGroups = (s: GameState, productGroups: ProductGroup[]) => void (s.shop = { ...s.shop, productGroups });
 const setProducts = (s: GameState, products: ShopProduct[]) => void (s.shop = { ...s.shop, products });
+
+// Offered cycles of an autoCycles product priced from its monthly price; without one the product falls back to manual.
+function repriced(s: GameState, p: ShopProduct): ShopProduct {
+  const monthly = p.prices.monthly;
+  if (!p.autoCycles) return p;
+  if (monthly === undefined) return { ...p, autoCycles: false };
+  return { ...p, prices: Object.fromEntries(Object.keys(p.prices).map((c) => [c, c === "monthly" ? monthly : termPrice(s, monthly, c as Cycle)])) };
+}
 
 export function createProductGroup(s: GameState, name: string): ActionResult {
   if (!variantOf(s)) return fail("error.needsShop");
@@ -51,7 +60,7 @@ export function deleteProductGroup(s: GameState, id: string): ActionResult {
   return { ok: true };
 }
 
-// A new product: the line's smallest size at market prices for every cycle the shop sells, and the market's setup fee.
+// A new product: the line's smallest size at the market's monthly price for every cycle the shop sells, and the market's setup fee.
 export function createProduct(s: GameState, groupId: string, name: string, line: Product): ActionResult {
   const v = variantOf(s);
   if (!v) return fail("error.needsShop");
@@ -61,13 +70,13 @@ export function createProduct(s: GameState, groupId: string, name: string, line:
   if (!n) return fail("error.badProductName");
   const year = yearOf(s.hour), spec = sizeSpec(line, 0, year), monthly = marketPrice(line, spec, year);
   const cycles = line === "ssl" ? (["monthly"] as Cycle[]) : v.cycles;
-  const prices = Object.fromEntries(cycles.map((c) => [c, Math.round(monthly * CYCLE_MONTHS[c] * (1 - MARKET_DISCOUNT[c]) * 100) / 100]));
+  const prices = Object.fromEntries(cycles.map((c) => [c, termPrice(s, monthly, c)]));
   const id = `prod${s.nextId++}`;
-  setProducts(s, [...s.shop.products, { id, groupId, name: n, line, serverGroupId: null, packageName: null, spec, prices, setup: marketSetup(line, year), stock: v.autoStock ? "auto" : 10, hidden: false, setupMode: "payment" }]);
+  setProducts(s, [...s.shop.products, { id, groupId, name: n, line, serverGroupId: null, packageName: null, spec, prices, autoCycles: true, setup: marketSetup(line, year), stock: v.autoStock ? "auto" : 10, hidden: false, setupMode: "payment" }]);
   return { ok: true, id };
 }
 
-export type ProductPatch = Partial<Pick<ShopProduct, "name" | "groupId" | "serverGroupId" | "packageName" | "spec" | "setup" | "stock" | "hidden" | "setupMode" | "title" | "slots">>;
+export type ProductPatch = Partial<Pick<ShopProduct, "name" | "groupId" | "serverGroupId" | "packageName" | "spec" | "setup" | "stock" | "hidden" | "setupMode" | "title" | "slots" | "autoCycles">>;
 
 export function updateProduct(s: GameState, id: string, patch: ProductPatch): ActionResult {
   const v = variantOf(s);
@@ -82,12 +91,13 @@ export function updateProduct(s: GameState, id: string, patch: ProductPatch): Ac
     if (patch.stock === "auto" && !v.autoStock) return fail("error.noAutoStock");
     if (typeof patch.stock === "number" && !(Number.isInteger(patch.stock) && patch.stock >= 0)) return fail("error.badStock");
   }
+  if (patch.autoCycles && s.shop.products.find((p) => p.id === id)!.prices.monthly === undefined) return fail("error.needsMonthlyPrice");
   if (patch.packageName !== undefined && patch.packageName !== null) next.packageName = patch.packageName.trim() || null;
-  setProducts(s, s.shop.products.map((p) => (p.id === id ? { ...p, ...next } : p)));
+  setProducts(s, s.shop.products.map((p) => (p.id === id ? repriced(s, { ...p, ...next }) : p)));
   return { ok: true };
 }
 
-// The total price of one term; null stops offering the cycle.
+// The total price of one term; null stops offering the cycle. An autoCycles product prices any cycle but the monthly one itself.
 export function setProductPrice(s: GameState, id: string, cycle: Cycle, price: number | null): ActionResult {
   const v = variantOf(s);
   if (!v) return fail("error.needsShop");
@@ -96,7 +106,7 @@ export function setProductPrice(s: GameState, id: string, cycle: Cycle, price: n
   if (!CYCLES.includes(cycle) || !v.cycles.includes(cycle)) return fail("error.cycleNotSupported");
   if (price !== null && !(Number.isFinite(price) && price >= 0 && price <= 100000)) return fail("error.badProductPrice");
   const { [cycle]: _, ...rest } = p.prices;
-  setProducts(s, s.shop.products.map((x) => (x.id === id ? { ...x, prices: price === null ? rest : { ...rest, [cycle]: Math.round(price * 100) / 100 } } : x)));
+  setProducts(s, s.shop.products.map((x) => (x.id === id ? repriced(s, { ...x, prices: price === null ? rest : { ...rest, [cycle]: Math.round(price * 100) / 100 } }) : x)));
   return { ok: true };
 }
 
@@ -107,7 +117,7 @@ export function deleteProduct(s: GameState, id: string): ActionResult {
   return { ok: true };
 }
 
-// The discount off N times the monthly price for a cycle of lines sold through configurable options; null returns to the market's.
+// The discount off N times the monthly price for a cycle; it reprices every autoCycles product. null returns to none.
 export function setOptionDiscount(s: GameState, cycle: Cycle, discount: number | null): ActionResult {
   const v = variantOf(s);
   if (!v) return fail("error.needsShop");
@@ -115,5 +125,6 @@ export function setOptionDiscount(s: GameState, cycle: Cycle, discount: number |
   if (discount !== null && !(Number.isFinite(discount) && discount >= 0 && discount <= 0.5)) return fail("error.badDiscount");
   const { [cycle]: _, ...rest } = s.shop.optionDiscount;
   s.shop = { ...s.shop, optionDiscount: discount === null ? rest : { ...rest, [cycle]: Math.round(discount * 1000) / 1000 } };
+  setProducts(s, s.shop.products.map((p) => repriced(s, p)));
   return { ok: true };
 }

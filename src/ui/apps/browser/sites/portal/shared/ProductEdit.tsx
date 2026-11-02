@@ -66,12 +66,21 @@ export function ProductEdit({ game, go, id, tab = "details" }: ScreenProps & { i
               <td className="num">{euroCents(marketSetup(p.line, year))}</td>
               <td />
             </tr>
+            <tr>
+              <th scope="row">{t("shop-admin.manualPrices")}</th>
+              <td><input type="checkbox" aria-label={t("shop-admin.manualPrices")} checked={!p.autoCycles} disabled={p.prices.monthly === undefined} onChange={(e) => patch({ autoCycles: !e.target.checked })} /></td>
+              <td /><td />
+            </tr>
             {cycles.map((c) => {
               const price = p.prices[c], save = price !== undefined && c !== "monthly" ? 1 - price / (CYCLE_MONTHS[c] * base) : 0;
               return (
                 <tr key={c}>
                   <th scope="row">{CYCLE_LABEL[c]}</th>
-                  <td><CommitInput className="num" type="number" min={0} step={0.01} aria-label={CYCLE_LABEL[c]} value={price === undefined ? "" : String(price)} onCommit={(x) => act(setProductPrice, p.id, c, toNumber(x))} /></td>
+                  <td>
+                    {p.autoCycles && c !== "monthly"
+                      ? <label><input type="checkbox" aria-label={CYCLE_LABEL[c]} checked={price !== undefined} onChange={(e) => act(setProductPrice, p.id, c, e.target.checked ? 0 : null)} /> <span className="num">{price === undefined ? "" : euroCents(price)}</span></label>
+                      : <CommitInput className="num" type="number" min={0} step={0.01} aria-label={CYCLE_LABEL[c]} value={price === undefined ? "" : String(price)} onCommit={(x) => act(setProductPrice, p.id, c, toNumber(x))} />}
+                  </td>
                   <td className="num">{euroCents(Math.round(monthly * CYCLE_MONTHS[c] * (1 - MARKET_DISCOUNT[c]) * 100) / 100)}</td>
                   <td className="num">{save > 0.005 && t("shop-admin.save", { pct: Math.round(save * 100) })}</td>
                 </tr>

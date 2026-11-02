@@ -29,7 +29,7 @@ export const mailHooks = {
     for (const host of mxHostsAt(s, hour)) {
       const own = host === d || host.endsWith(`.${d}`), ips = own ? addressesAt(s, host, hour) : [];
       if ((own && !ips.length) || isIpv4(host)) continue;
-      return s.mail.tenants.find((t) => t.domain === d && t.endsAt === null &&
+      return s.mail.tenants.find((t) => t.domain === d && (t.endsAt === null || t.endsAt > s.hour) &&
         (t.host === "self" ? !!t.clusterId && ips.includes(mailAddress(s, t.clusterId)?.ip ?? "") : mxOf(t.host, d).includes(host))) ?? null;
     }
     return null;

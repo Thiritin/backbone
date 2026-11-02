@@ -102,7 +102,11 @@ export interface FetchRule {
   lastAt: number;              // game minute of the last run
   upTo: number;                // message number the next run starts from
   err: string | null;
+  until?: number;              // hour the rule stops by itself, for an import's continuing pass
 }
+
+// One importMailPair run: the source's mail numbered from `since` up to `upTo` is copied into the target at `doneAt`.
+export interface MailImport { id: string; from: string; to: string; since: number; upTo: number; doneAt: number; n: number | null }
 
 // One delivery outcome, kept for Lookout 365 Message trace: the last 200 entries of the last 7 days.
 export interface TraceEntry {
@@ -144,6 +148,7 @@ export interface MailState {
   groups: MailGroup[];
   snoozed: { account: string; id: string; until: number }[];  // at most 50 per mailbox, flushed by the hourly pass
   fetch: FetchRule[];
+  imports: MailImport[];
   trace: TraceEntry[];
   retired: { address: string; until: number }[];  // addresses removed recently, still written to by old contacts
   seen: number;                             // highest ticket number that has an envelope

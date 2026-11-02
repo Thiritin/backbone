@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CYCLE_MONTHS } from "../src/sim/10-catalog/cycles";
+import { CYCLE_MONTHS, MARKET_DISCOUNT } from "../src/sim/10-catalog/cycles";
 import { SHOPS } from "../src/sim/10-catalog/shops";
 import { isMonthStart } from "../src/sim/00-core/time";
 import { cycleWeights, shopPriceLevel } from "../src/sim/30-market/cycles";
@@ -47,12 +47,12 @@ describe("billing cycles", () => {
 
   it("weigh cycles at the base shares at the market discount and shift with exp(8 * gap)", () => {
     const s = annualGame();
-    s.shop.optionDiscount = {};
+    s.shop.optionDiscount = { ...MARKET_DISCOUNT };
     const ratio = () => { const w = new Map(cycleWeights(s, "private", ["monthly", "annual"])); return w.get("annual")! / w.get("monthly")!; };
     expect(ratio()).toBeCloseTo(0.11 / 0.78, 9);
     s.shop.optionDiscount = { annual: 0.2 };
     expect(ratio()).toBeCloseTo((0.11 / 0.78) * Math.exp(0.8), 9);
-    s.shop.optionDiscount = { annual: 0 };
+    s.shop.optionDiscount = {};
     expect(ratio()).toBeCloseTo((0.11 / 0.78) * Math.exp(-0.8), 9);
   });
 
@@ -109,7 +109,7 @@ describe("billing cycles", () => {
 
   it("move the advertised price level, and with it lead conversion, at once", () => {
     const s = annualGame();
-    s.shop.optionDiscount = {};
+    s.shop.optionDiscount = { ...MARKET_DISCOUNT };
     expect(shopPriceLevel(s, "private", "webHosting")).toBeCloseTo(1, 9);
     const at = (d: number) => { s.shop.optionDiscount = { annual: d }; const level = shopPriceLevel(s, "private", "webHosting"); return { level, share: share(s, "private", "webHosting", "Frankfurt", 0, level) }; };
     const cheap = at(0.3), dear = at(0.1);

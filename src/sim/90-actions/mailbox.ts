@@ -1,12 +1,13 @@
 // Mailbox actions (docs/design/plans/mail-core.md, Account actions and Passwords). Provider sites and server panels call these.
 import { hashRng, rand } from "../00-core/rng";
 import { post } from "../40-support/letters";
-import { addMailbox, canAddMailbox, mailboxInUse, mailboxTaken, openBoxes, PROVIDER_NAMES, RETIRE_HOURS, removeMailbox } from "../42-mail/accounts";
+import { addMailbox, canAddMailbox, mailboxInUse, mailboxTaken, openBoxes, PROVIDER_NAMES, RETIRE_HOURS, removeMailbox, roleBoxes } from "../42-mail/accounts";
 import { capsOf } from "../42-mail/caps";
 import { GMIX_DOMAIN } from "../42-mail/new";
 import { mailHost } from "../10-catalog/mail-providers";
 import { accountByAddress, tenantOf } from "../42-mail/model";
 import { fetchError, runFetch } from "../42-mail/fetch";
+import { queueImport } from "../42-mail/imports";
 import type { FetchRule, Folder, MailAccount, MailGroup, MailRole, MailTenant, ServerFilter } from "../42-mail/types";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
@@ -16,7 +17,7 @@ const box = (s: GameState, id: string) => s.mail.accounts.find((a) => a.id === i
 
 // The provider's Forgot password page, which the reset letter links to.
 const RESET_PAGES: Record<string, string> = {
-  gmix: "www.gmix.net/reset", goggle: "accounts.goggle.com/recovery", ionose: "www.ionose.com/control/reset", lookout: "login.lookout365.com/reset",
+  gmix: "www.gmix.net/reset", goggle: "accounts.goggle.com/recovery", ionose: "www.ionose.com/control/reset", lookout: "admin.lookout365.macrosoft.com/reset",
 };
 const RESET_TRIES = 3;
 
@@ -38,9 +39,10 @@ export function deleteMailAccount(s: GameState, id: string): ActionResult {
   const a = box(s, id);
   if (!a) return fail("error.mailUnknown");
   if (a.employee) return fail("error.mailInUse", { sources: s.staff.find((e) => e.id === a.employee)?.name ?? "" });
-  if (openBoxes(s, a.tenant).length <= 1) return fail("error.mailRoleInUse");
   const busy = mailboxInUse(s, a);
   if (busy) return fail(busy);
+  const t = tenantOf(s, a);
+  if (t?.admin === a.id && t.host !== "self" && t.host !== "gmix") return fail("error.mailAdminDelete");
   removeMailbox(s, a);
   return { ok: true };
 }
@@ -67,6 +69,14 @@ export function setPrimary(s: GameState, id: string): ActionResult {
   const a = box(s, id);
   if (!a || a.closedAt !== null || a.shared) return fail("error.mailUnknown");
   s.mail = { ...s.mail, primary: id };
+  return { ok: true, id };
+}
+
+// Marketing, Email: one mailbox per role, and the main address is the primary.
+export function setRoleMailbox(s: GameState, role: MailRole, id: string): ActionResult {
+  if (!roleBoxes(s).some((a) => a.id === id && !a.shared)) return fail("error.mailUnknown");
+  if (role === "owner") return setPrimary(s, id);
+  s.mail = { ...s.mail, accounts: s.mail.accounts.map((a) => (a.id === id ? { ...a, roles: [...new Set([...a.roles, role])] } : { ...a, roles: a.roles.filter((r) => r !== role) })) };
   return { ok: true, id };
 }
 
@@ -243,7 +253,8 @@ export function setAccountQuota(s: GameState, id: string, mb: number): ActionRes
 
 // GMix Mail Collector and Gmial's Check mail from other accounts: the source answers with its password, the plan has a
 // collector left, and the source does not already collect from the target, directly or through other rules.
-export function saveFetchRule(s: GameState, accountId: string, r: { source: string; proto: "pop" | "imap"; password: string; leave: boolean; folder?: string | null; label?: string | null; every?: number }): ActionResult {
+// upTo and until come from an import's continuing pass: it starts where the import stopped and ends by itself.
+export function saveFetchRule(s: GameState, accountId: string, r: { source: string; proto: "pop" | "imap"; password: string; leave: boolean; folder?: string | null; label?: string | null; every?: number; upTo?: number; until?: number }): ActionResult {
   const a = box(s, accountId), src = box(s, r.source);
   if (!a || a.closedAt !== null || !src) return fail("error.mailUnknown");
   if (r.source === accountId) return fail("error.mailFetchLoop");
@@ -260,7 +271,8 @@ export function saveFetchRule(s: GameState, accountId: string, r: { source: stri
   const old = mine.find((x) => x.source === r.source);
   const rule: FetchRule = {
     id: old?.id ?? `fr${s.nextId++}`, accountId, source: r.source, proto: r.proto, password: r.password, every: Math.max(1, Math.min(24, r.every ?? 1)),
-    leave: r.leave, folder: r.folder ?? null, label: r.label ?? null, lastAt: old?.lastAt ?? 0, upTo: old?.upTo ?? 0, err: null,
+    leave: r.leave, folder: r.folder ?? null, label: r.label ?? null, lastAt: old?.lastAt ?? 0, upTo: Math.max(old?.upTo ?? 0, r.upTo ?? 0), err: null,
+    ...(r.until !== undefined && { until: r.until }),
   };
   s.mail = { ...s.mail, fetch: old ? s.mail.fetch.map((x) => (x.id === old.id ? rule : x)) : [...s.mail.fetch, rule] };
   return { ok: true, id: rule.id };
@@ -279,4 +291,12 @@ export function runFetchRule(s: GameState, id: string): ActionResult {
   runFetch(s, { ...r, err: null });
   const after = s.mail.fetch.find((x) => x.id === id)!;
   return after.err ? fail(after.err) : { ok: true };
+}
+
+// Both are the company's own mailboxes, in one tenant or two; the copy lands when the run is done.
+export function importMailPair(s: GameState, from: string, to: string): ActionResult {
+  const a = box(s, from), b = box(s, to);
+  if (!a || !b || b.closedAt !== null || b.shared) return fail("error.mailUnknown");
+  if (from === to) return fail("error.mailFetchLoop");
+  return { ok: true, id: queueImport(s, from, to).id };
 }

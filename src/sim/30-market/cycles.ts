@@ -12,7 +12,7 @@ import { offerPrice } from "./spec";
 export const HOURS_PER_MONTH = 730;
 
 // The player's discount for a cycle off N times the monthly price.
-export const discountOf = (s: GameState, c: Cycle): number => s.shop.optionDiscount?.[c] ?? MARKET_DISCOUNT[c];
+export const discountOf = (s: GameState, c: Cycle): number => s.shop.optionDiscount?.[c] ?? 0;
 
 // Cycles the active shop sells for the line; domains and certificates are always annual.
 export const cyclesFor = (s: GameState, product: Product): Cycle[] =>

@@ -57,3 +57,4 @@
 .smw-test { padding: 12px 16px; }
 .smw-test h1 { font-size: 18px; }
 .smw-test li.fail { color: #cc0000; font-weight: 700; }
+.smw-source { margin: 4px 6px; padding: 6px; border: 1px solid #999999; background: #ffffff; font-size: 12px; white-space: pre-wrap; }

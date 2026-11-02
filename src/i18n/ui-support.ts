@@ -95,7 +95,6 @@ export default {
   "support.ramBooked": () => "RAM booked",
   "support.diskBooked": () => "Disk booked",
   "support.setupFee": () => "Setup fee",
-  "support.sendQuote": () => "Send quote",
   "support.provisionWeb": () => "Provision web hosting",
   "support.provisionVps": () => "Provision VPS",
   "support.provisionGame": () => "Provision game server",

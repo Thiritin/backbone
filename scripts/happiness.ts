@@ -31,7 +31,8 @@ import { sitesDown, supports, vmById, vmOf, vmRoom, type Cluster } from "../src/
 import { buyDevice, connect, orderHomeLine } from "../src/sim/90-actions/hardware";
 import { mountDevice } from "../tests/plugged";
 import { mailedAddress } from "../src/sim/30-customers/addresses";
-import { confirmOrder, createAccount, offerUpgrade, provisionOrder, quoteOrder, registerOrderDomain, renewDomain, sendOrderAccess } from "../src/sim/90-actions/orders";
+import { confirmOrder, createAccount, offerUpgrade, provisionOrder, registerOrderDomain, renewDomain, sendOrderAccess } from "../src/sim/90-actions/orders";
+import { quoteOrder } from "../tests/fixtures";
 import { closeTicket, replyTicket, resolveTicket } from "../src/sim/90-actions/support";
 import { startGame } from "../src/sim/90-actions/start";
 import { fillLines } from "../src/sim/80-business/website";

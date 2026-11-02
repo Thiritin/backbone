@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { GameState } from "../src/sim/50-state";
-import { createProduct, createProductGroup, setProductPrice, updateProduct } from "../src/sim/90-actions/portal";
+import { createProduct, createProductGroup, setOptionDiscount, setProductPrice, updateProduct } from "../src/sim/90-actions/portal";
 import { idOf, render, shopGame } from "./portal-helpers";
 
 const withProduct = (s: GameState) => {
@@ -32,6 +32,7 @@ describe("WHMCache store front", () => {
 
   it("offers the cycles with their price and savings on the configure page", () => {
     const s = shopGame();
+    setOptionDiscount(s, "annual", 0.1);
     const { g, p } = withProduct(s);
     const html = render(s, "whmCache", "configure", { group: g, product: p });
     expect(html).toContain("Monthly");

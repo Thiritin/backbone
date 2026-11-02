@@ -95,7 +95,6 @@ export default {
   "support.ramBooked": () => "RAM gebucht",
   "support.diskBooked": () => "Festplatte gebucht",
   "support.setupFee": () => "Einrichtungsgebühr",
-  "support.sendQuote": () => "Angebot senden",
   "support.provisionWeb": () => "Webhosting bereitstellen",
   "support.provisionVps": () => "vServer bereitstellen",
   "support.provisionGame": () => "Gameserver bereitstellen",

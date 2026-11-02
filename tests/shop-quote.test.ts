@@ -48,13 +48,13 @@ describe("email quotes and option discounts", () => {
     setUpChannel(s, "website");
     s.unlocks = [...s.unlocks, "shops"];
     installWithKey(s, "modemBill");
-    expect(termPrice(s, 10, "annual")).toBe(108);
+    expect(termPrice(s, 10, "annual")).toBe(120);
     expect(setOptionDiscount(s, "annual", 0.2).ok).toBe(true);
     expect(termPrice(s, 10, "annual")).toBe(96);
     expect(setOptionDiscount(s, "annual", 0.6)).toMatchObject({ ok: false, error: "error.badDiscount" });
     expect(setOptionDiscount(s, "biennial", 0.1)).toMatchObject({ ok: false, error: "error.cycleNotSupported" });
     expect(setOptionDiscount(s, "annual", null).ok).toBe(true);
-    expect(termPrice(s, 10, "annual")).toBe(108);
+    expect(termPrice(s, 10, "annual")).toBe(120);
   });
 });
 
@@ -66,6 +66,7 @@ describe("email quote with a billing cycle", () => {
     s.unlocks = [...s.unlocks, "shops"];
     installWithKey(s, "whmCache");
     s.shop.variant = "whmCache";
+    setOptionDiscount(s, "triennial", 0.2);
     const { r } = quoted(s);
     const t = s.tickets.find((x) => x.id === r.ticketId)!;
     const qid = (createQuote(s, t.id) as { id: string }).id;

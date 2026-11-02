@@ -8,7 +8,7 @@ export function GtkLayout({ entries, active, pick, children }: LayoutProps) {
   return (
     <div className="bk-gtk">
       <div className="bk-gtk-tools" role="toolbar">
-        {entries.filter((e) => e.group !== "reports").map((e) => { const Icon = ICONS[e.id]; return <button key={e.id} {...navProps(e, active, pick)}><Icon /><Label e={e} /></button>; })}
+        {entries.filter((e) => e.group !== "reports").map((e) => { const Icon = ICONS[e.id]; return <button key={e.id} {...navProps(e, active, pick)}><Icon /><Label e={e} k={e.id === "quotes" ? "books.tab.unposted" : undefined} /></button>; })}
       </div>
       <div className="bk-gtk-split">
         <nav className="bk-gtk-tree" role="tree">
@@ -16,7 +16,7 @@ export function GtkLayout({ entries, active, pick, children }: LayoutProps) {
           {GROUPS.map((g) => (
             <div key={g} role="group">
               <div className="bk-gtk-node">{t(`books-editions.group.${g}`)}</div>
-              {entries.filter((e) => e.group === g).map((e) => <button key={e.id} role="treeitem" className="bk-gtk-leaf" {...navProps(e, active, pick)}><Label e={e} /></button>)}
+              {entries.filter((e) => e.group === g).map((e) => <button key={e.id} role="treeitem" className="bk-gtk-leaf" {...navProps(e, active, pick)}><Label e={e} k={e.id === "quotes" ? "books.tab.unposted" : undefined} /></button>)}
             </div>
           ))}
         </nav>
