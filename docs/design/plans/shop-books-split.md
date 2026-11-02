@@ -1,6 +1,6 @@
 # Plan: shop and books split
 
-Lane id: `shop-books-split`. Status: planned, open decisions in section 9.
+Lane id: `shop-books-split`. Status: planned, decisions settled in section 10.
 
 The bookkeeping program and the shop system both write quotes, both hold a product catalog and both reach invoices. Players see two ways to do the same thing, and with a shop installed and email orders off, quote requests still arrive by email. This plan gives each program one job, makes the shop automate the customer side the way WHMCS does, and gives every program the same setup flow.
 
@@ -17,7 +17,7 @@ The bookkeeping program and the shop system both write quotes, both hold a produ
 
 ## 2. Target split
 
-Recommended (decision A in section 9):
+Decision A (section 10):
 
 | | Books program | Shop system |
 | --- | --- | --- |
@@ -36,13 +36,14 @@ Before the first shop, the company works by email: a request arrives, the player
 
 - Fixed products exist only in the shop. Books > Products, `state.catalog`, `publishCatalog` and `offeredProducts` are removed. Before a shop every email request is priced in its own quote.
 - `deserialize` drops `state.catalog`. Open email requests that referenced a catalog product keep their price in the request.
-- Each shop product gets `autoCycles: boolean`, default true. When on, the product's monthly price is the only input and every other offered cycle is `monthly × months` (decision D: optional cycle discount). The cycle fields show the computed value read-only, and a checkbox "Preise manuell verwalten" turns them editable. The quarterly to triennial toggles (which cycles are offered) stay.
+- Each shop product gets `autoCycles: boolean`, default true. When on, the product's monthly price is the only input and every other offered cycle is `monthly × months × (1 - discount of that cycle)`. The discounts sit once in the shop settings, one percentage per cycle, default 0 (decision D). Changing a discount reprices every product with `autoCycles` on; running services keep their price until renewal. The cycle fields show the computed value read-only, and a checkbox "Preise manuell verwalten" turns them editable. The quarterly to triennial toggles (which cycles are offered) stay.
 - A product without a monthly cycle cannot use `autoCycles`; the checkbox is forced on manual.
 
 ## 4. Leads and quotes
 
-- One quote flow. Before a shop every Books program writes quotes the same way through the Books quote document (GnuCache included, under its own label). `QuoteFields` and `quoteOrder` go away, and the order ticket always links a quote document (decision B).
-- With an active shop, quotes are written in the shop admin (WHMCS: Billing > Quotes) with the same steps: draft, send, accepted or declined, convert to invoice. The sim reuses `src/sim/30-market/quotes.ts`; the quote gets an `origin: "books" | "shop"`.
+- One quote flow. Before a shop every Books program writes quotes the same way through the Books quote document. `QuoteFields` and `quoteOrder` go away, and the order ticket always links a quote document.
+- GnuCache (decision B) follows real GnuCash, which has no quote module: a quote is an unposted invoice, and posting it is the convert step. The sim object is the same quote; GnuCache labels it "Rechnung (nicht gebucht)" and the convert button "Buchen". GnuCache gains the `quotes` feature.
+- With an active shop, quotes are written only in the shop admin (WHMCS: Billing > Quotes) with the same steps: draft, send, accepted or declined, convert to invoice (decision C). Books > Quotes turns read-only and lists shop quotes; its New button is gone. The sim reuses `src/sim/30-market/quotes.ts`; the quote gets an `origin: "books" | "shop"`. Quotes still open in Books when the shop goes live stay editable there until they are accepted, declined or expire.
 - Routing with an active shop:
   - Standard orders go through the storefront, as today.
   - Non-standard leads and unlisted products arrive as a quote request in the shop (WHMCS: a ticket in the "Sales" department, answered with a quote) instead of an email.
@@ -78,14 +79,73 @@ Orders become their own entity in the shop and services get a detail page, follo
 
 ## 8. One setup flow
 
-Every Books program and every shop variant uses the same steps, styled like the product:
+### 8.1 What differs today
 
-1. Buy (or start trial) on the vendor site.
-2. Install: desktop programs download for `setupHours`, browser programs start at once, shops install on a panel host and take `SHOP_SETUP_HOURS`.
-3. First-run wizard in the app: company details (from `company`), tax settings, bank account. A shop adds: currency and cycles, first product group, first server group (from `firstGroups`), payment gateway.
-4. Done screen with links to the main tabs.
+- Books: bought on the vendor site, then a desktop program downloads for `setupHours` and is installed, or a browser program starts at once. No setup steps after that; locked tabs link to the vendor site.
+- Shop: installed from a panel host's console software page with a key or the trial, then 72 hours of setup. Server groups are seeded by `firstGroups`, everything else (products, modules, payment methods) is found and configured by hand.
+- Nothing tells the player what changes for running customers when the shop goes live.
 
-The wizard is one shared component with per-program labels; steps a program lacks (GnuCache tax) are skipped.
+### 8.2 Same steps for every program
+
+Every Books program and every shop variant goes through the same four steps, styled like the product:
+
+1. Buy or start the trial on the vendor site. Shops additionally pick the panel host they run on.
+2. Install. Desktop programs download for `setupHours`, browser programs start at once, shops install for `SHOP_SETUP_HOURS`. The desktop shows a progress item in both cases.
+3. First-run wizard when the app is first opened after install. One shared component, labels and look per program; steps a program lacks are skipped (GnuCache has no tax step).
+   - Books: company details (prefilled from `company`), tax settings (Kleinunternehmer or regular VAT, filing interval), bank account (picked from the bank accounts the company has), invoice number format.
+   - Shop: company details and the invoice number format (taken from Books when set), currency, cycle discounts (section 3), first product group and product, server groups (prefilled from `firstGroups`, fill mode per group), payment gateways (only those included or bought, section 7), email sender address (section 9), and the go-live step below.
+4. Done screen with links to the main pages.
+
+The wizard can be closed and reopened from the program's settings page; closing it keeps what was entered.
+
+### 8.3 Go-live of the shop
+
+The last wizard step moves running business into the shop. It shows what will happen and asks once:
+
+- Existing customers and their services are imported into the shop as active services. A service that matches a product (line, spec, package) is linked to it; the rest become services with a custom price. Recurring invoices move to the shop from each service's next due date.
+- Open Books invoices stay in Books until paid or written off. Open Books quotes stay as described in section 4.
+- Email order handling switches from email to the storefront, following the `emailOrders` setting.
+- Shop-link, when bought, syncs from go-live on; without it, the Books Invoices tab offers the manual import as today.
+
+Skipping go-live keeps billing for existing customers in Books; the step stays available in the shop settings as "Bestandskunden übernehmen".
+
+## 9. Customer communication and access data
+
+### 9.1 Shop emails
+
+The shop sends emails to customers on its own, the way WHMCS does. Each email is a template in the shop:
+
+| Template (WHMCS name) | Sent when |
+| --- | --- |
+| Order Confirmation | an order is placed |
+| Hosting Account Welcome Email | Create succeeds for a service; carries username, password, panel or server address and name servers |
+| Invoice Created | a recurring or order invoice is issued |
+| Invoice Payment Confirmation | a payment is matched |
+| Invoice Payment Reminder, First/Second/Third Overdue Notice | dunning steps |
+| Service Suspension Notification, Service Unsuspension Notification | Suspend or Unsuspend |
+| Cancellation Request Confirmation, Service Termination | Terminate |
+| Quote Delivery | a quote is sent |
+| Password Changed | Change Password |
+
+- The shop admin gets an email log (WHMCS: System Logs > Email Message Log, plus the Emails tab per client): date, recipient, subject, and the full message when opened. The customer page shows the same log for that customer.
+- Each template can be turned off in the shop settings. A turned-off Welcome Email means the customer gets no access data from the shop (section 9.3).
+- A service page has "Resend Welcome Email". An invoice page has "Resend".
+- The sim stores a sent email as `{ id, customerId, template, params, at }` and renders it through `t()` when opened, so logs stay small and translate. The log keeps the last 12 months.
+- Emails go out through the company's mail setup (`src/sim/90-actions/mail.ts`). Without a working mailbox the shop logs the email as failed and the wizard's sender step warns.
+
+### 9.2 Access data on services
+
+- Every service with a login gets `username` (exists for web hosting) and `password`, generated with `seededPassword` on Create. Change Password generates a new one.
+- The service page shows the access data with a reveal button: username, password, panel address, server IP, name servers. Which fields apply depends on the line (web hosting: panel login; VPS and dedicated: root login and IP; mail: mailbox login).
+
+### 9.3 Sending access data by hand
+
+Without a shop, or for a service the shop cannot create:
+
+- The manual order steps (`src/sim/30-market/manual.ts:35`) gain a last step `access`, after `provision`: send the customer the access data.
+- The order ticket gets a reply template "Zugangsdaten" next to the existing templates of `replyTicket`. It fills username, password, panel or server address from the provisioned service, and the player sends it as the reply.
+- The same template is available on any ticket of a customer with services, for a customer who lost the login.
+- A service whose access data was never sent (no Welcome Email, no Zugangsdaten reply) produces a follow-up ticket "Wie komme ich in meinen Account?" within a day and costs happiness, the same way other unanswered orders do. This is the sim effect that makes the step matter.
 
 Terminology per shop variant (filled from research, `docs/design/shop.md` keeps the canonical table):
 
@@ -104,26 +164,29 @@ Sources: WHMCS order statuses and Accept Order (docs.whmcs.com orders/order-stat
 
 Variants without server groups place by today's ranking and show no fill option. Variants without quotes get the quote page anyway, because every shop must answer quote requests; it is labelled after the variant's ticket or estimate wording.
 
-## 9. Open decisions
+## 10. Decisions
 
-- A. Where the split sits: shop owns customer billing and Books keeps the ledger (recommended, section 2), or the shop replaces Books entirely, or Books keeps invoices and the shop only takes orders and provisions.
-- B. GnuCache quotes: same quote document as every other program (recommended), or GnuCache stays without quotes.
-- C. With a shop, does Books still allow a hand-written quote for a one-off deal, or is the shop the only place?
-- D. Auto cycle prices: plain `monthly × months`, or with a discount per cycle set once in the shop settings.
+- A. The shop owns everything a customer sees; Books keeps the ledger (bank, matching, payables, tax, reports). Replacing Books would drop that gameplay and make the eight Books programs useless after the first shop.
+- B. GnuCache gets the same quote document as every other program, presented as an unposted invoice like real GnuCash.
+- C. With an active shop, quotes are written only in the shop. Books shows them read-only.
+- D. Automatic cycle prices are `monthly × months` minus a discount per cycle, set once in the shop settings, default 0. Longer cycles lower churn, so the discount is a real lever.
 
-## 10. Milestones
+## 11. Milestones
 
 Each milestone is one pull request with a seeded test.
 
 1. Remove the Books catalog; quotes priced per request; save migration. (`catalog.ts`, `ProductsTab.tsx`, `sales.ts`, `91-save`)
-2. One quote flow in Books for every program; remove `QuoteFields`.
+2. One quote flow in Books for every program, GnuCache as unposted invoice; remove `QuoteFields`.
 3. Shop quotes: quote origin, shop admin Quotes page, Books shows shop quotes read-only.
 4. Lead routing with a shop: non-standard and unlisted leads become shop quote requests; `emailOrders` off means no email.
-5. `autoCycles` on shop products with the manual checkbox.
+5. `autoCycles` on shop products, cycle discounts in shop settings, manual checkbox.
 6. Server group fill mode, disabled members, member order; `targetFor`.
-7. `ShopOrder` entity and Orders list and detail page with Accept running Create per item.
-8. Service detail page with module buttons and per-variant labels.
-9. Marketplace page with included, buyable and unavailable modules per variant; manual products without a module.
-10. Shared setup wizard for Books programs and shops.
+7. Access data: service `password`, manual `access` order step, "Zugangsdaten" ticket template, follow-up ticket when never sent.
+8. `ShopOrder` entity and Orders list and detail page with Accept running Create per item.
+9. Service detail page with module buttons, per-variant labels and access data.
+10. Shop emails: templates, email log in shop admin and on the customer page, resend, Welcome Email on Create.
+11. Marketplace page with included, buyable and unavailable modules per variant; manual products without a module.
+12. Shared setup wizard for Books programs and shops.
+13. Shop go-live step: import customers and services, move recurring billing, "Bestandskunden übernehmen".
 
-Milestones 1 to 4 are one chain. 5 and 6 are independent of everything. 7 and 8 depend on each other; 9 depends on 8.
+Order: 1 to 4 are one chain. 5, 6 and 7 are independent of everything. 8 then 9; 10 needs 7 and 9; 11 needs 9; 12 needs 5 and 11; 13 needs 12.
