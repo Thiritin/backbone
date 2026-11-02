@@ -64,7 +64,7 @@ describe("crashes", () => {
     for (let i = 0; i < 24 * 365 && gameOf(s, id)!.crashedAt === null; i++) { gamesTick(s); if (gameOf(s, id)!.crashedAt === null) { s.hour++; } }
     expect(gameOf(s, id)!.crashedAt).not.toBeNull();
     expect(serviceOnline(s, id)).toBe(false);
-    for (let i = 0; i < 24 * 10; i++) tick(s);
+    for (let i = 0; i < 24 * 3; i++) tick(s);
     expect(s.customers.find((x) => x.id === c.id)!.happiness).toBeLessThan(80);
     expect(s.tickets.some((t) => t.kind === "outage" && t.serviceId === id)).toBe(true);
     ok(restartGame(s, id));

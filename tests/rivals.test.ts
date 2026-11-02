@@ -4,7 +4,7 @@ import { COMPETITORS } from "../src/sim/10-catalog/economy";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { openRivals, share } from "../src/sim/30-market/market";
 import { rivalsTick } from "../src/sim/30-market/rivals-tick";
-import { GEN_PENALTY, isSmall, MAX_SMALL, monthOf, reviewCount, rivalScore, SMALL_GAP, TEMPLATES, type Rival } from "../src/sim/30-market/rivals";
+import { GEN_PENALTY, isSmall, MAX_SMALL, monthOf, reviewCount, rivalScore, rollRivals, SMALL_GAP, TEMPLATES, type Rival } from "../src/sim/30-market/rivals";
 import { feed } from "../src/sim/80-business/news";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 
@@ -35,8 +35,9 @@ describe("rivals", () => {
 
   it("drifts scores, prices and customers month by month from the seed", () => {
     const a = newGame(5), b = newGame(5), c = newGame(5);
-    rollTo(a, 2009, 6);
-    rollTo(b, 2009, 6);
+    // A year through one January is enough to prove the roll is seeded.
+    rollTo(a, 2006, 0);
+    rollTo(b, 2006, 0);
     expect(a.competitors).toEqual(b.competitors);
     // A rival with no lag follows the market each January.
     c.competitors = c.competitors.map((r) => ({ ...r, lag: 0 }));
@@ -50,14 +51,16 @@ describe("rivals", () => {
     expect(rackspice.C).toBe(75 + 6);
     expect(byId(c, "hetzna").C).toBe(40 + 4);
     // A slow rival adopts the 2009 feature only after its lag.
-    const slow = newGame(5);
-    slow.competitors = slow.competitors.map((r) => ({ ...r, lag: 9 }));
-    rollTo(slow, 2009, 8);
-    expect(byId(slow, "ionose").C).toBe(74);
-    rollTo(slow, 2009, 9);
-    expect(byId(slow, "ionose").C).toBe(78);
-    expect(a.shareLog.length).toBe(54);
-    expect(a.shareLog.at(-1)!.rivals.ionose[0]).toBeGreaterThan(0);
+    // Feature adoption lives in the roll itself, so the market demand of each city is skipped here.
+    let slow = newGame(5).competitors.map((r) => ({ ...r, lag: 9 })), at = 0;
+    const ionoseC = (to: number) => {
+      while (at < to) slow = rollRivals(slow, 5, month(2005, ++at), () => 0).list;
+      return slow.find((r) => r.id === "ionose")!.C;
+    };
+    expect(ionoseC(4 * 12 + 8)).toBe(74);
+    expect(ionoseC(4 * 12 + 9)).toBe(78);
+    expect(c.shareLog.length).toBe(54);
+    expect(c.shareLog.at(-1)!.rivals.ionose[0]).toBeGreaterThan(0);
   });
 
   it("lags a new server generation by each rival's own months", () => {

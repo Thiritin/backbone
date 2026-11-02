@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hourOf, isMonthStart } from "../src/sim/00-core/time";
+import { hourOf, nextMonthStart } from "../src/sim/00-core/time";
 import { registrarById, tierFor } from "../src/sim/10-catalog/registrars";
 import { companyDomain, derivedDomain } from "../src/sim/30-customers/domains";
 import { monthlyDomains, spinNames, wholesale, yearlyAt } from "../src/sim/30-customers/registrar";
@@ -18,7 +18,8 @@ import { deserialize, serialize } from "../src/sim/91-save/save";
 import { readyGame, registered, newGame } from "./fixtures";
 
 const err = (r: { ok: boolean; error?: string }) => (r.ok ? "ok" : r.error);
-const toMonthStart = (s: GameState) => { do tick(s); while (!isMonthStart(s.hour)); };
+// Domain billing runs at month starts only, so the hours between are skipped.
+const toMonthStart = (s: GameState) => { s.hour = nextMonthStart(s.hour) - 1; tick(s); };
 const domainLedger = (s: GameState) => s.ledger.filter((e) => e.hour === s.hour && e.category === "domains");
 const sum = (xs: { amount: number }[]) => Math.round(xs.reduce((n, e) => n + e.amount, 0) * 100) / 100;
 const many = (s: GameState, n: number, from = 0) => { for (let i = from; i < from + n; i++) register(s, `kunde${i}.de`, "cus-test", false); };

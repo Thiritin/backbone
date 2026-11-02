@@ -57,8 +57,10 @@ function at(keys: Keys, h: number): number {
 }
 
 // Load at a game hour, a share of booked that a busy day can push past 1. Fridays from 18:00 count as weekend for game servers and VPNs.
+let dayHour = { hour: NaN, day: 0, h: 0 };
 export function curveLoad(id: CurveId, hour: number): number {
-  const d = dateOf(hour), day = d.getUTCDay(), h = d.getUTCHours();
+  if (dayHour.hour !== hour) { const d = dateOf(hour); dayHour = { hour, day: d.getUTCDay(), h: d.getUTCHours() }; }
+  const { day, h } = dayHour;
   const weekend = day === 0 || day === 6 || (day === 5 && h >= 18 && (id === "game" || id === "vpn"));
   return at(CURVES[id][weekend ? "weekend" : "weekday"], h) * DAYS[id][day];
 }
@@ -79,7 +81,16 @@ export const BACKUP_CHANGED = 0.1;
 // Yearly growth of disk use (share of booked) and of CPU demand (share of the first year's), by share of customers.
 export const GROWTH: [share: number, perYear: number][] = [[0.3, 0.02], [0.5, 0.15], [0.2, 0.5]];
 
-export const idNum = (id: string): number => [...id].reduce((h, ch) => Math.imul(h ^ ch.charCodeAt(0), 0x01000193), 0x811c9dc5);
+const idNums = new Map<string, number>();
+export const idNum = (id: string): number => {
+  let h = idNums.get(id);
+  if (h === undefined) {
+    h = 0x811c9dc5;
+    for (const ch of id) h = Math.imul(h ^ ch.charCodeAt(0), 0x01000193);
+    idNums.set(id, h);
+  }
+  return h;
+};
 const JOB_SALT = -1, DISK_SALT = -2, CPU_SALT = -3;
 
 const weeks = new Map<CurveId, number[]>();
@@ -88,7 +99,12 @@ function week(id: CurveId): number[] {
   if (!weeks.has(id)) weeks.set(id, Array.from({ length: 168 }, (_, h) => curveLoad(id, h)).sort((a, b) => a - b));
   return weeks.get(id)!;
 }
-export const weekAverage = (id: CurveId): number => week(id).reduce((n, v) => n + v, 0) / 168;
+const averages = new Map<CurveId, number>();
+export const weekAverage = (id: CurveId): number => {
+  let a = averages.get(id);
+  if (a === undefined) averages.set(id, (a = week(id).reduce((n, v) => n + v, 0) / 168));
+  return a;
+};
 export const weekMedian = (id: CurveId): number => week(id)[84];
 
 // Share of the hour a customer's night job runs: it starts on a half hour from 00:00 to 05:30 and lasts an hour.
@@ -114,7 +130,14 @@ export const serviceFloor = (seed: number, product: Product, profile: Profile, c
   SERVICE_FLOOR[curveFor(product, profile, seed, customerId)] * (0.5 + rand(hashRng(seed, idNum(customerId), FLOOR_SALT)));
 
 // Disk and CPU grow at rates drawn separately: a big database and a busy shop are different customers.
+const growths = new Map<string, number>();
 export function growthRate(seed: number, customerId: string, kind: "disk" | "cpu"): number {
+  const key = `${seed}|${kind}|${customerId}`;
+  let g = growths.get(key);
+  if (g === undefined) growths.set(key, (g = drawGrowth(seed, customerId, kind)));
+  return g;
+}
+function drawGrowth(seed: number, customerId: string, kind: "disk" | "cpu"): number {
   let r = rand(hashRng(seed, idNum(customerId), kind === "disk" ? DISK_SALT : CPU_SALT));
   for (const [share, perYear] of GROWTH) if ((r -= share) < 0) return perYear;
   return GROWTH[GROWTH.length - 1][1];

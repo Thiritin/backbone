@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { t } from "../src/i18n/en";
 import { hourOf } from "../src/sim/00-core/time";
@@ -17,8 +18,9 @@ import { useStore } from "../src/ui/store";
 import { readyGame } from "./fixtures";
 
 const HOST = "acme.zendusk.com";
+let base: GameState | undefined;
 function game(year: number): GameState {
-  const s = readyGame(5);
+  const s = structuredClone((base ??= readyGame(5)));
   s.hour = hourOf(new Date(Date.UTC(year, 2, 1)));
   s.cash = 1_000_000;
   expect(subscribeDesk(s, "acme", "zendusk").ok).toBe(true);
@@ -49,10 +51,12 @@ describe("Zendusk", () => {
       const sections = ["people", "groups", "views", "macros", "triggers", "automations", "sla", "email", "branding", "subscription"];
       const paths = [...deskPages("zendusk").map((page) => deskPath("zendusk", page, { n: tk.ref, id: "general", view: "all-unsolved", section: "email" })),
         ...sections.map((section) => deskPath("zendusk", "adminScreen", { section }))];
+      useStore.setState({ game: s });
+      // Static markup is enough to find the look and is cheaper than mounting each page.
       for (const path of paths) {
-        const { container, unmount } = show(s, path);
-        expect(container.querySelector(`.zd.zd-${look}`), `${year} ${path}`).not.toBeNull();
-        unmount();
+        const r = resolve(s, HOST + path);
+        const html = r.page.kind === "desk" ? renderToString(<DeskSite game={s} id={r.page.id} host={HOST} path={path} go={() => {}} />) : "";
+        expect(html, `${year} ${path}`).toContain(`class="zd zd-${look}`);
       }
       show(s, "/agent");
       expect(screen.queryByText(t("zd.nav.manage")) !== null).toBe(look === "classic");

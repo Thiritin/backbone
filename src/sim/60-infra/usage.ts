@@ -15,7 +15,7 @@ import { serviceMbps } from "./network";
 import { interestAt, modById, titleById } from "../10-catalog/games";
 import { fillOf } from "../30-customers/resellers";
 import { machineScreen } from "./oob";
-import { coreSpeed, cpuLoad, installedRamGb, portPeers, raidUsable, working } from "./status";
+import { coreSpeed, cpuLoad, installedRamGb, portPeers, raidUsable, readOnlySweep, sweepCache, working } from "./status";
 import { heatOf } from "./thermal";
 
 // economy/usage-curves-and-overcommit.md: VM memory stays mostly resident, a web space's PHP memory follows its visitors, and disks fill
@@ -133,6 +133,13 @@ export const mysqlVcpu = (s: GameState, w: Workload): number =>
   (Object.values(s.webspaces[w.id]?.databases ?? {}).reduce((a, d) => a + (d ? d.mb : 0), 0) / 1024) * MYSQL_VCPU_PER_GB;
 
 export function workloadUse(s: GameState, w: Workload, hour: number = s.hour): Resources {
+  const cache = hour === s.hour ? sweepCache<Workload, Resources>(s, "workloadUse") : null;
+  if (!cache) return computeUse(s, w, hour);
+  let u = cache.get(w);
+  if (!u) cache.set(w, (u = computeUse(s, w, hour)));
+  return u;
+}
+function computeUse(s: GameState, w: Workload, hour: number): Resources {
   if (isOwnVm(w)) {
     const hosts = hostsOfVm(s, w.id), u: Resources = { vcpu: 0, ramGb: 0, diskGb: 0 };
     if (w.stopped || lostDisk(s, w)) return u;
@@ -176,13 +183,15 @@ export const cpuPerf = (u: number): number => (u <= 0.7 ? 1 : u <= 1 ? 1 - 0.5 *
 export const SLOW_PERF = 0.95, TIMEOUT_PERF = 0.25;
 // Hourly: counts the hours each cluster node and each VM with software has run below TIMEOUT_PERF.
 export function timeoutTick(s: GameState): void {
-  const low: Record<string, number> = {};
-  for (const id of new Set(s.clusters.flatMap((c) => c.nodes.map((n) => n.deviceId)))) if (working(s, id) && nodeUsage(s, id).perf < TIMEOUT_PERF) low[id] = (s.lowPerf[id] ?? 0) + 1;
-  for (const id of new Set(s.clusters.flatMap((c) => (c.vm ? [c.vm] : [])))) {
-    const vm = s.workloads.find((w) => w.id === id);
-    if (vm && vmPerf(s, vm) < TIMEOUT_PERF) low[id] = (s.lowPerf[id] ?? 0) + 1;
-  }
-  s.lowPerf = low;
+  s.lowPerf = readOnlySweep(s, () => {
+    const low: Record<string, number> = {};
+    for (const id of new Set(s.clusters.flatMap((c) => c.nodes.map((n) => n.deviceId)))) if (working(s, id) && nodeUsage(s, id).perf < TIMEOUT_PERF) low[id] = (s.lowPerf[id] ?? 0) + 1;
+    for (const id of new Set(s.clusters.flatMap((c) => (c.vm ? [c.vm] : [])))) {
+      const vm = s.workloads.find((w) => w.id === id);
+      if (vm && vmPerf(s, vm) < TIMEOUT_PERF) low[id] = (s.lowPerf[id] ?? 0) + 1;
+    }
+    return low;
+  });
 }
 
 // What a running VM's software and what it hosts ask of its CPU and RAM, as shares of its size.

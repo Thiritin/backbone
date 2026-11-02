@@ -7,6 +7,7 @@ import { HELD_TOPIC, MONTH, type Sponsorship } from "../src/sim/80-business/comm
 import { leadsThisMonth } from "../src/sim/80-business/marketing";
 import { APPLICANTS, BOARD, boardGranted, boardTick, offerOpen, type SponsorOffer } from "../src/sim/80-business/sponsorboard";
 import { resolve } from "../src/sim/80-business/browser";
+import { communityTick } from "../src/sim/80-business/sponsoring";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { acceptSponsorship, answerSponsor, blockSponsor, cancelSponsor, postOffer, withdrawOffer } from "../src/sim/90-actions/community";
 import { closeTicket } from "../src/sim/90-actions/support";
@@ -15,6 +16,10 @@ import { deserialize, serialize } from "../src/sim/91-save/save";
 import { readyGame, newGame } from "./fixtures";
 
 const runTo = (s: GameState, hour: number, events: SimEvent[] = []) => { while (s.hour < hour) events.push(...tick(s)); };
+// Skips the hours before and ticks into the given one; the board sends every application due by then.
+const jumpTo = (s: GameState, hour: number) => { s.hour = Math.max(s.hour, hour - 1); tick(s); };
+// Steps only the community systems, which hold the board, hour by hour.
+const communityTo = (s: GameState, hour: number) => { while (s.hour < hour) { s.hour++; communityTick(s); } };
 const offer = { product: "gameServer", size: 0, months: 1, slots: 2, free: true } as const;
 const board = (s: GameState) => s.sponsorships.filter((x) => x.board);
 
@@ -28,7 +33,7 @@ function roomy(seed: number): GameState {
 function applied(seed: number, o: Partial<SponsorOffer> = {}): GameState {
   const s = roomy(seed);
   expect(postOffer(s, { ...offer, ...o })).toMatchObject({ ok: true });
-  while (!board(s).length) tick(s);
+  jumpTo(s, s.sponsorOffers[0].applyAt[0]);
   return s;
 }
 
@@ -48,7 +53,7 @@ describe("the Sponsor-Bored board", () => {
     const run = (seed: number) => {
       const s = roomy(seed), at = s.hour;
       postOffer(s, offer);
-      runTo(s, at + 24 * 10 + 1);
+      communityTo(s, at + 24 * 10 + 1);
       return { at, apps: board(s).map((x) => ({ in: x.offeredAt - at, name: x.board!.name, audience: x.board!.audience, kind: x.board!.kind })) };
     };
     const a = run(3);
@@ -74,7 +79,7 @@ describe("the Sponsor-Bored board", () => {
 
   it("runs an accepted application as a free sponsorship and fills the offer", () => {
     const s = applied(6);
-    runTo(s, s.hour + 24 * 10);
+    jumpTo(s, s.sponsorOffers[0].applyAt.at(-1)!);
     const [first, second, third] = board(s);
     accept(s, first);
     const sp = board(s)[0];
@@ -101,14 +106,14 @@ describe("the Sponsor-Bored board", () => {
   it("withdraws an open offer and closes its waiting applications", () => {
     const s = applied(7);
     accept(s, board(s)[0]);
-    while (board(s).length < 2) tick(s);
+    jumpTo(s, s.sponsorOffers[0].applyAt[1]);
     const o = s.sponsorOffers[0], [running, waiting] = board(s);
     expect(withdrawOffer(s, o.id)).toEqual({ ok: true, id: o.id });
     expect(board(s).find((x) => x.id === waiting.id)!.status).toBe("declined");
     expect(s.tickets.find((t) => t.id === waiting.ticketId)).toMatchObject({ status: "closed", outcome: "ignored" });
     expect(board(s).find((x) => x.id === running.id)!.status).toBe("running");
     expect(offerOpen(s, s.sponsorOffers[0])).toBe(false);
-    runTo(s, s.hour + 24 * 11);
+    jumpTo(s, s.hour + 24 * 11);
     expect(board(s)).toHaveLength(2);
     expect(withdrawOffer(s, o.id)).toEqual({ ok: false, error: "error.unknownOffer" });
     expect(withdrawOffer(s, "ofr0")).toEqual({ ok: false, error: "error.unknownOffer" });
@@ -152,13 +157,14 @@ describe("the Sponsor-Bored board", () => {
     const s = roomy(10);
     const h = s.hour, big: SponsorOffer = { id: "ofr9999", postedAt: h, ...offer, slots: 4, applyAt: Array.from({ length: 2000 }, (_, i) => h + i), sent: 0, taken: 0 };
     s.sponsorOffers = [big];
-    // One application an hour, each closed before the next so every name is free again.
+    // One application an hour, each taken off the board before the next so every name is free again.
+    const all: NonNullable<Sponsorship["board"]>[] = [];
     for (let i = 0; i < 2000; i++) {
       s.hour = h + i;
       boardTick(s, []);
-      s.sponsorships = s.sponsorships.map((x) => ({ ...x, status: "declined" }));
+      all.push(...board(s).map((x) => x.board!));
+      s.sponsorships = [];
     }
-    const all = board(s).map((x) => x.board!);
     expect(all).toHaveLength(2000);
     const share = (f: (b: (typeof all)[number]) => boolean) => all.filter(f).length / all.length;
     expect(share((b) => b.abuser)).toBeGreaterThan(0.08);
@@ -240,11 +246,15 @@ describe("the Sponsor-Bored board", () => {
   }, 60_000);
 
   it("does not change the cadence of the community requests", () => {
-    const withBoard = roomy(15), without = roomy(15);
+    const withBoard = roomy(15);
+    withBoard.unlocks = [...withBoard.unlocks, "marketingBasics"];
+    const without = structuredClone(withBoard);
     postOffer(withBoard, offer);
-    runTo(withBoard, 24 * 120);
-    runTo(without, 24 * 120);
+    communityTo(withBoard, 24 * 120);
+    communityTo(without, 24 * 120);
     const mine = (s: GameState) => s.sponsorships.filter((x) => !x.board).map((x) => x.offeredAt);
+    expect(board(withBoard).length).toBeGreaterThan(0);
+    expect(mine(without).length).toBeGreaterThanOrEqual(2);
     expect(mine(withBoard)).toEqual(mine(without));
   }, 90_000);
 
@@ -260,7 +270,7 @@ describe("the Sponsor-Bored board", () => {
     delete old.sponsorOffers;
     expect(deserialize(JSON.stringify(old)).sponsorOffers).toEqual([]);
     postOffer(s, offer);
-    runTo(s, 24 * 11);
+    jumpTo(s, 24 * 11);
     const back = deserialize(serialize(s));
     expect(back.sponsorOffers).toEqual(s.sponsorOffers);
     expect(back.sponsorships.filter((x) => x.board)).toEqual(s.sponsorships.filter((x) => x.board));
@@ -272,7 +282,7 @@ describe("an unlisted line", () => {
     const s = roomy(3), at = s.hour;
     postOffer(s, offer);
     expect(setLine(s, "gameServer", false)).toMatchObject({ ok: true });
-    runTo(s, at + 24 * 40);
+    jumpTo(s, at + 24 * 40);
     expect(board(s)).toEqual([]);
     expect(offerOpen(s, s.sponsorOffers[0])).toBe(false);
     expect(s.news.some((e) => e.startsWith("line."))).toBe(false);

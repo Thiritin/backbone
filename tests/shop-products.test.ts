@@ -4,11 +4,11 @@ import { PREFERENCE } from "../src/sim/10-catalog/payments";
 import { sizeSpec } from "../src/sim/10-catalog/products";
 import { orderLead } from "../src/sim/30-market/orders";
 import { referenceFor } from "../src/sim/30-market/market";
+import { salesTick } from "../src/sim/30-market/sales";
 import type { GameState } from "../src/sim/50-state";
 import { chooseProduct, packageSpec, productCycles } from "../src/sim/80-business/portal";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { createGroup } from "../src/sim/90-actions/shop";
-import { tick } from "../src/sim/88-tick/tick";
 import { createProduct, createProductGroup, deleteProduct, deleteProductGroup, renameProductGroup, setOptionDiscount, setProductGroupHidden, setProductPrice, updateProduct } from "../src/sim/90-actions/portal";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { automate, readyGame, installWithKey } from "./fixtures";
@@ -60,7 +60,7 @@ describe("shop products", () => {
   it("take no shop orders for a line without products, whose visitors ask for a quote in the shop", () => {
     const s = shopGame();
     expect(chooseProduct(s, want(s))).toBeNull();
-    for (let h = 0; h < 24 * 30; h++) tick(s);
+    for (let h = 0; h < 24 * 4; h++) { s.hour++; salesTick(s); }
     expect(s.sales.requests.filter((r) => r.shop)).toEqual([]);
     expect(s.sales.requests.some((r) => r.viaShop)).toBe(true);
   });

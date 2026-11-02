@@ -57,7 +57,9 @@ describe("early capacity (docs/design/economy/README.md, Home line)", () => {
     const s = readyGame(1);
     ok(orderHomeLine(s, "sdsl-2"));
     expect(s.homeLine.next?.id).toBe("sdsl-2");
-    while (s.homeLine.id !== "sdsl-2") tick(s);
+    s.hour = s.homeLine.next!.at - 1;
+    tick(s);
+    expect(s.homeLine.id).toBe("sdsl-2");
     expect(checkDone(s, "homeLine")).toBe(true);
     sendAt(s, 1.5);
     const before = happiness(s);

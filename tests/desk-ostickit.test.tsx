@@ -48,7 +48,8 @@ describe("OsTickit", () => {
     for (const version of ["1.3", "1.6", "1.10", "1.18"]) {
       const s = game(version), tk = ticket(s, "howTo");
       agent();
-      for (const page of deskPages("ostickit")) {
+      // 1.3 shares the 1.6 look and 1.18 the 1.10 look, so those two show one page each.
+      for (const page of version === "1.6" || version === "1.10" ? deskPages("ostickit") : deskPages("ostickit").slice(0, 1)) {
         const { container, unmount } = show(s, deskPath("ostickit", page, { n: tk.ref, id: "email", view: "open", section: "tickets" }));
         expect(container.querySelector(".ost"), `${version} ${page}`).not.toBeNull();
         expect(container.querySelector(".ost-110") !== null).toBe(version === "1.10" || version === "1.18");

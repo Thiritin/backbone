@@ -258,9 +258,16 @@ describe("switched PDUs", () => {
   });
 
   it("rolls for corruption like a pulled plug", () => {
-    const hits = seeds.filter((r) => { const s = withPdu(at(r)); setPower(s, "dev3", false); return corrupted(s).length > 0; });
+    // Stops at the first three seeds where a pulled plug corrupts and three where it does not.
+    const hits: number[] = [], misses: number[] = [];
+    for (const r of seeds) {
+      if (hits.length >= 3 && misses.length >= 3) break;
+      const s = withPdu(at(r));
+      setPower(s, "dev3", false);
+      (corrupted(s).length > 0 ? hits : misses).push(r);
+    }
     expect(hits.length).toBeGreaterThan(0);
-    for (const r of hits.slice(0, 3)) {
+    for (const r of hits) {
       const s = withPdu(at(r));
       expect(powerCycle(s, "dev3").ok).toBe(true);
       expect(corrupted(s).length).toBe(onSrv(s).length);
@@ -268,8 +275,7 @@ describe("switched PDUs", () => {
       expect(remotePower(t, "dev3", false).ok).toBe(true);
       expect(corrupted(t).length).toBe(onSrv(t).length);
     }
-    const misses = seeds.filter((r) => !hits.includes(r)).slice(0, 3);
-    for (const r of misses) { const s = withPdu(at(r)); powerCycle(s, "dev3"); expect(corrupted(s)).toHaveLength(0); }
+    for (const r of misses.slice(0, 3)) { const s = withPdu(at(r)); powerCycle(s, "dev3"); expect(corrupted(s)).toHaveLength(0); }
   });
 
   it("works through a 0U PDU, covers other devices in the rack, and not a PDU that is off or a rack without one", () => {

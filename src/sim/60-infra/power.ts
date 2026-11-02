@@ -9,7 +9,7 @@ import { dropCluster, insideVm, installingOn, isOwnVm, type Workload } from "./c
 import { rebuildHours, type SimEvent } from "../88-tick/tick";
 import { reportLoss } from "../85-products/products";
 import { loadSaved } from "./switches";
-import { bootHours, booting, haltHours, osBootHours, deviceHealth, drivesOf, dualFed, HOURS_PER_YEAR, locationOf, powered, pluggedIn, psusOf, rackPower, takesShutdown } from "./status";
+import { bootHours, booting, haltHours, osBootHours, deviceHealth, drivesOf, dualFed, HOURS_PER_YEAR, locationOf, powered, pluggedIn, psusOf, rackPower, readOnlySweep, takesShutdown } from "./status";
 
 // An unclean stop corrupts the data of the workloads that ran with this chance.
 export const CORRUPT_CHANCE = 0.15;
@@ -128,7 +128,7 @@ export function tripTick(s: GameState): SimEvent[] {
   const isServer = (d: Device) => d.on && modelById(d.model).kind === "server";
   const now = nowHours(s), events: SimEvent[] = [], out = new Set<string>();
   let changed = false;
-  const racks = s.racks.map((r) => {
+  const racks = readOnlySweep(s, () => s.racks.map((r) => {
     const servers = s.devices.filter((d) => d.rackId === r.id && isServer(d));
     const p = servers.length ? rackPower(s, r.id) : null;
     const since = (load: number, at: number | null) => (p && load > CONTINUOUS.share * p.limitWatts ? at ?? now : null);
@@ -146,7 +146,7 @@ export function tripTick(s: GameState): SimEvent[] {
     if (overSince.a === r.overSince.a && overSince.b === r.overSince.b) return r;
     changed = true;
     return { ...r, overSince };
-  });
+  }));
   if (changed) s.racks = racks;
   if (out.size) s.devices = s.devices.map((d) => {
     if (!out.has(d.id)) return d;

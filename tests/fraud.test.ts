@@ -8,7 +8,7 @@ import { tick } from "../src/sim/88-tick/tick";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { createAccount, setReviewOrders, setScreenOrders } from "../src/sim/90-actions/orders";
 import { cents } from "../src/sim/45-billing/billing";
-import { hourOf, yearOf } from "../src/sim/00-core/time";
+import { hourOf, nextMonthStart, yearOf } from "../src/sim/00-core/time";
 import { PREFERENCE } from "../src/sim/10-catalog/payments";
 import { resolveTicket } from "../src/sim/90-actions/support";
 import { deserialize, serialize } from "../src/sim/91-save/save";
@@ -17,7 +17,7 @@ import { mailed, openShop, readyGame, quoteOrder } from "./fixtures";
 const run = (s: GameState, hours: number) => { for (let i = 0; i < hours; i++) tick(s); };
 const web = { product: "webHosting" as const, size: 0, sla: "basic" as const };
 const vps = { product: "vps" as const, size: 0, sla: "basic" as const };
-const MONTH = 730;
+const toMonthStart = (s: GameState) => { s.hour = nextMonthStart(s.hour) - 1; tick(s); };
 const req = (s: GameState, id: string) => s.sales.requests.find((x) => x.id === id)!;
 const setFraud = (s: GameState, id: string, fraud: boolean) => {
   s.sales.requests = s.sales.requests.map((r) => (r.id === id ? { ...r, fraud, budget: 100 } : r));
@@ -93,7 +93,8 @@ describe("chargebacks", () => {
     const s = readyGame(2);
     const backs = () => s.ledger.push(...Array.from({ length: PROVIDER.min }, () => ({ hour: s.hour, category: "payments", key: "ledger.chargeback", params: {}, amount: -1 })));
     const until = (strikes: number) => {
-      for (let i = 0; i < 2 * MONTH && s.chargebackStrikes !== strikes; i++) tick(s);
+      // Strikes change only at a month start, so the hours between are skipped.
+      for (let i = 0; i < 2 && s.chargebackStrikes !== strikes; i++) toMonthStart(s);
       return s.chargebackStrikes;
     };
     backs();
@@ -214,7 +215,10 @@ describe("order screening", () => {
   it("bills the checks on the first of the month", () => {
     const s = readyGame(3);
     s.screenChecks = 120;
-    for (let i = 0; i < 800 && s.screenChecks; i++) tick(s);
+    run(s, 2);
+    expect(s.screenChecks).toBe(120);
+    toMonthStart(s);
+    expect(s.screenChecks).toBe(0);
     const e = s.ledger.find((x) => x.key === "ledger.screening")!;
     expect(e.params).toEqual({ count: 120 });
     expect(e.amount).toBe(-cents(120 * screenFee(yearOf(e.hour))));

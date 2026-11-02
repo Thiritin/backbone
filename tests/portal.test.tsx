@@ -11,6 +11,8 @@ import { buyDevice, freeFloor, newGame, withServer } from "./fixtures";
 
 const ok = (r: { ok: boolean; error?: string; id?: string }) => { if (!r.ok) throw new Error(r.error); return r.id!; };
 const runTo = (s: GameState, hour: number) => { while (s.hour < hour) tick(s); };
+// Billing runs on the month-start tick; the hours before it change nothing these tests read.
+const tickAt = (s: GameState, hour: number) => { s.hour = hour - 1; tick(s); };
 const setup = () => {
   const s: GameState = freeFloor({ ...withServer(newGame(7)), cash: 1_000_000 });
   const fr5 = ok(addLocation(s, "equinox-fr5", "share", 2)), nbg = ok(addLocation(s, "hetzler-nbg", "share", 1));
@@ -26,7 +28,8 @@ describe("customer portal", () => {
     ok(revokeCancel(s, fr5.id, true));
     expect(fr5).toMatchObject({ endsAt: null, retainedAt: s.hour });
     const first = noticeEnd(s.hour, 0), second = noticeEnd(first, 0);
-    runTo(s, second + 1);
+    tickAt(s, first);
+    tickAt(s, second);
     expect(spaceLine(s, first, "equinox-fr5")?.amount).toBe(0);
     expect(spaceLine(s, second, "equinox-fr5")?.amount).toBe(-fr5.monthly);
     ok(cancelContract(s, fr5.id));
@@ -41,7 +44,8 @@ describe("customer portal", () => {
     const rack = s.racks.find((r) => r.locationId === nbg.locationId)!.id;
     ok(mountDevice(s, ok(buyDevice(s, "sw-8", "Sysko", 1, nbg.locationId)), rack, 1));
     const month = noticeEnd(s.hour, 0);
-    runTo(s, month + 1);
+    runTo(s, s.hour + 48);
+    tickAt(s, month);
     const [eq] = providerInvoices(s, "equinox"), [hz] = providerInvoices(s, "hetzler");
     expect(eq.lines.map((e) => e.params.dc)).toEqual(["equinox-fr5"]);
     expect(hz.lines.every((e) => e.params.dc === "hetzler-nbg")).toBe(true);
@@ -60,7 +64,7 @@ describe("customer portal", () => {
 
   it("renders every portal page for a signed-in customer", () => {
     const { s, fr5 } = setup();
-    runTo(s, noticeEnd(s.hour, 0) + 1);
+    tickAt(s, noticeEnd(s.hour, 0));
     const p = dcProvider("equinox"), inv = providerInvoices(s, "equinox")[0];
     const page = (path: string) => {
       const route = routeOf("equinox", path);

@@ -36,12 +36,10 @@ describe("vendor versions and news", () => {
     }
   });
 
-  it("shows both pages on every software and OS site", () => {
-    for (const id of Object.keys(SITES)) {
-      const last = versionsOf(id).at(-1)!;
-      for (const html of page(id, hourOfMonth("2026-11"), "versions")) expect(html).toContain(last.version);
-      for (const html of page(id, hourOfMonth("2026-11"), "news")) expect(html).toContain(`${productOf(kindOf(id), id)!.name} ${last.version}`);
-    }
+  it.each(Object.keys(SITES))("shows both pages on the %s site", (id) => {
+    const last = versionsOf(id).at(-1)!;
+    for (const html of page(id, hourOfMonth("2026-11"), "versions")) expect(html).toContain(last.version);
+    for (const html of page(id, hourOfMonth("2026-11"), "news")) expect(html).toContain(`${productOf(kindOf(id), id)!.name} ${last.version}`);
   });
 
   it("has two to four headline features for every version in every language", () => {

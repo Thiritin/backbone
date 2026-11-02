@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { checkDone } from "../src/sim/checklist";
 import type { GameState } from "../src/sim/50-state";
 import { listed } from "../src/sim/80-business/website";
+import { salesTick } from "../src/sim/30-market/sales";
 import { tick } from "../src/sim/88-tick/tick";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
@@ -10,6 +11,8 @@ import { deserialize, serialize } from "../src/sim/91-save/save";
 import { readyGame, startGame } from "./fixtures";
 
 const run = (s: GameState, days: number) => { for (let i = 0; i < days * 24; i++) tick(s); };
+// Leads arrive in the sales step alone, so lead windows skip the rest of the tick.
+const sell = (s: GameState, days: number) => { for (let i = 0; i < days * 24; i++, s.hour++) salesTick(s); };
 const leads = (s: GameState, from = 0) => s.sales.requests.filter((r) => r.customerId === null && r.createdAt >= from);
 
 describe("company website", () => {
@@ -37,19 +40,20 @@ describe("company website", () => {
   it("brings no leads for unlisted lines", () => {
     const off = readyGame(3);
     off.marketing = { ...off.marketing, lines: [], customRequests: false };
-    run(off, 60);
+    sell(off, 60);
     expect(leads(off)).toHaveLength(0);
 
     const web = readyGame(3);
     web.marketing = { ...web.marketing, lines: [], customRequests: false };
     setLine(web, "webHosting", true);
-    run(web, 60);
+    sell(web, 60);
     expect(leads(web).length).toBeGreaterThan(0);
     expect(leads(web).every((r) => r.product === "webHosting")).toBe(true);
   });
 
   it("keeps existing customers when a line comes off the website", () => {
     const s = readyGame(4);
+    s.marketing = { ...s.marketing, customRequests: false };
     const cus = addCustomer(s, "Ada Lang", "hobbyDev");
     expect(provisionService(s, cus, "vps", { label: "Box", clusterId: s.clusters[0].id }).ok).toBe(true);
     const before = s.services.map((v) => v.id);
@@ -57,8 +61,9 @@ describe("company website", () => {
     expect(listed(s, "vps")).toBe(false);
     expect(s.services.map((v) => v.id)).toEqual(before);
     const from = s.hour;
-    run(s, 60);
+    run(s, 2);
     expect(s.services.find((v) => v.customerId === cus)?.endedAt).toBeNull();
+    sell(s, 60);
     expect(leads(s, from).some((r) => r.product === "vps")).toBe(false);
   });
 

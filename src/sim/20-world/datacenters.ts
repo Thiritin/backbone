@@ -177,7 +177,13 @@ export const SHARE_RACKS: { id: RackModel; units: number; size: number }[] = [
   { id: "share-21", units: 21, size: 2 },
   { id: "share-42", units: 42, size: 1 },
 ];
-export const rackUnits = (model: RackModel): number => [...RACK_MODELS, ...SHARE_RACKS].find((m) => m.id === model)!.units;
+let unitsById: Map<RackModel, number> | undefined;
+export const rackUnits = (model: RackModel): number => {
+  if (!unitsById) { unitsById = new Map(); for (const m of [...RACK_MODELS, ...SHARE_RACKS]) if (!unitsById.has(m.id)) unitsById.set(m.id, m.units); }
+  const u = unitsById.get(model);
+  if (u === undefined) throw new TypeError(`unknown rack model ${model}`);
+  return u;
+};
 
 export const BASEMENT = { positions: 1, maxUnits: 24, kw: 3 } as const;
 // A circuit carries 80% of its limit continuously; a draw above that for three hours trips its breaker.

@@ -308,18 +308,22 @@ describe("DDoS", () => {
   });
 
   it("hits gamers far more often than other customers, deterministically by seed", () => {
-    const count = (profile: Profile) => {
+    const attacked = (profile: Profile, hours: number) => {
       const s = { ...newGame(11), homeLine: { id: "dsl-16", next: null } };
-      for (let i = 0; i < 50; i++) service(s, "fra1", "vps", profile);
-      let n = 0;
-      for (let h = 1; h <= 24 * 365; h++) { s.hour = h; const events: SimEvent[] = []; attacks(s, events); n += events.filter((e) => e.key === "event.ddos").length; }
-      return n;
+      // Few services over many hours: the cost of an hour grows faster than its service count.
+      for (let i = 0; i < 5; i++) service(s, "fra1", "vps", profile);
+      const hit: SimEvent[] = [];
+      for (let h = 1; h <= hours; h++) { s.hour = h; const events: SimEvent[] = []; attacks(s, events); hit.push(...events.filter((e) => e.key === "event.ddos")); }
+      return hit;
     };
-    const gamers = count("gamer"), others = count("smallBiz");
-    expect(gamers).toBe(count("gamer"));
-    expect(gamers).toBeGreaterThan(others * 3);
-    expect(gamers).toBeGreaterThan(5);
-  }, 20000);
+    const gamers = attacked("gamer", 730 * 80), others = attacked("smallBiz", 730 * 80).length;
+    // The rolls hash the hour, so a rerun of the first months repeats their attacks.
+    const early = attacked("gamer", 730 * 24);
+    expect(early.length).toBeGreaterThan(0);
+    expect(gamers.slice(0, early.length)).toEqual(early);
+    expect(gamers.length).toBeGreaterThan(others * 3);
+    expect(gamers.length).toBeGreaterThan(5);
+  });
 });
 
 describe("monthly cost", () => {

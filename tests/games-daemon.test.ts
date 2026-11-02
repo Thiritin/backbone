@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { sizeSpec } from "../src/sim/10-catalog/products";
 import { serviceOnline } from "../src/sim/40-support/status";
 import { newGame, type GameState } from "../src/sim/50-state";
-import { POOL_SIZE, POOL_START, daemonBehind, nodeOf } from "../src/sim/60-infra/daemons";
+import { POOL_SIZE, POOL_START, daemonBehind, daemonTick, nodeOf } from "../src/sim/60-infra/daemons";
 import { gameOf } from "../src/sim/60-infra/games";
 import { crashChance, gamesTick } from "../src/sim/85-products/games-tick";
 import { provisionService } from "../src/sim/90-actions/clusters";
@@ -42,9 +42,10 @@ describe("node daemons", () => {
   it("fail now and then, and their servers are unreachable until the daemon is back", () => {
     const { s, id, key } = node();
     let outages = 0, was = "online";
+    // Daemons fail and recover in their own step; the game servers' part of the tick plays no role here.
     for (let i = 0; i < 24 * 365 * 3; i++) {
       s.hour++;
-      gamesTick(s);
+      daemonTick(s);
       if (s.daemons[key].state === "offline" && was === "online") outages++;
       was = s.daemons[key].state;
     }

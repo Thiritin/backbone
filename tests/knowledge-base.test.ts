@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { HOURS_PER_MONTH, KNOWLEDGE_BASE, pickHowTo } from "../src/sim/40-support/tickets";
 import { type GameState } from "../src/sim/50-state";
-import { tick } from "../src/sim/88-tick/tick";
+import { supportTick } from "../src/sim/40-support/tick";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { withCompany, newGame } from "./fixtures";
@@ -58,7 +58,8 @@ describe("knowledge base", () => {
     const s = withCompany(newGame(7));
     if (kb) s.installed = [...s.installed, KNOWLEDGE_BASE];
     for (let i = 0; i < 150; i++) addService(s, addCustomer(s, `Customer ${i}`, "private"), "webHosting", "site", 5, "year");
-    while (s.hour < 2 * HOURS_PER_MONTH) tick(s);
+    // Questions are drawn in the support step alone.
+    while (s.hour < 1 * HOURS_PER_MONTH) { s.hour++; supportTick(s); }
     return s;
   };
 
@@ -71,7 +72,7 @@ describe("knowledge base", () => {
     expect(reads / (reads + asked(withKb))).toBeLessThan(0.45);
     expect(asked(withKb)).toBeLessThan(asked(without));
     expect(deserialize(serialize(withKb)).kbReads).toEqual(withKb.kbReads);
-  }, 60_000);
+  });
 
   it("loads old saves without article reads", () => {
     const data = JSON.parse(serialize(newGame(1)));

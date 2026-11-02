@@ -3,6 +3,7 @@ import type { Profile } from "../src/sim/30-customers/customers";
 import { serviceOnline } from "../src/sim/40-support/status";
 import { supportTick } from "../src/sim/40-support/tick";
 import { billingTick, EXTENSION_DAYS, isSuspended, SUSPENDED_PAY_ODDS_HIGH } from "../src/sim/45-billing/billing";
+import { createRng } from "../src/sim/00-core/rng";
 import { type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { setBillingRules, suspendServices } from "../src/sim/90-actions/billing";
@@ -17,7 +18,17 @@ const bill = (s: GameState, hour: number) => { while (s.hour < hour) { s.hour++;
 const run = (s: GameState, hour: number) => { while (s.hour < hour) { s.hour++; billingTick(s); supportTick(s); } };
 
 // A yearly domain whose invoice is overdue by a day and never paid unless something moves the customer.
+// Built once per profile; each seed is a copy with its own seed and rng.
+const bases = new Map<Profile, GameState>();
 function overdue(seed: number, profile: Profile = "enterprise") {
+  if (!bases.has(profile)) bases.set(profile, build(1, profile));
+  const s = structuredClone(bases.get(profile)!);
+  Object.assign(s, { seed, rng: createRng(seed) });
+  const c = s.customers[0].id, v = s.services[0].id;
+  return { s, c, v, inv: () => s.invoices[0], customer: () => s.customers.find((x) => x.id === c)! };
+}
+
+function build(seed: number, profile: Profile) {
   const s = withServer(newGame(seed));
   // Billing rules run by themselves after the Automation research; staff carry them out before it (staff-time.test.ts).
   s.unlocks = ["people", "monitoring", "automation"];
@@ -27,7 +38,8 @@ function overdue(seed: number, profile: Profile = "enterprise") {
   sendDrafts(s);
   Object.assign(s.invoices[0], { payStep: 4, payAt: null });
   bill(s, s.invoices[0].dueAt + DAY);
-  return { s, c, v, inv: () => s.invoices[0], customer: () => s.customers.find((x) => x.id === c)! };
+  expect([s.customers[0].id, s.services[0].id]).toEqual([c, v]);
+  return s;
 }
 
 // The first seed whose enterprise customer appeals the suspension.

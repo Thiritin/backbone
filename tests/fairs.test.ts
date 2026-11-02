@@ -12,6 +12,11 @@ import { hire } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 
 const runTo = (s: GameState, hour: number, events: SimEvent[] = []) => { while (s.hour < hour) events.push(...tick(s)); };
+// Skips the quiet hours before a moment, then ticks through it.
+const skipTo = (s: GameState, hour: number, events: SimEvent[] = []) => {
+  s.hour = Math.max(s.hour, hour - 2);
+  runTo(s, hour, events);
+};
 const at = (y: number, m: number, d = 1) => hourOf(new Date(Date.UTC(y, m - 1, d)));
 
 // A rich company in January 2009 with one employee of the given role.
@@ -62,10 +67,10 @@ describe("trade fairs", () => {
     bookFair(s, "seebit", id);
     const seebit = fairById("seebit")!, start = fairStart(seebit, 2009), end = start + seebit.days * 24;
     const events: SimEvent[] = [];
-    runTo(s, start + 12, events);
+    skipTo(s, start + 12, events);
     expect(atFair(s, s.staff[0])).toBe(true);
     expect(tradeFairBonus(s)).toBe(0);
-    runTo(s, end + 1, events);
+    skipTo(s, end + 1, events);
     expect(atFair(s, s.staff[0])).toBe(false);
     expect(events.find((e) => e.key === "event.fairDone")!.params).toMatchObject({ fair: "SeeBIT", leads: seebit.leads });
     const fair = leadsThisMonth(s).filter((b) => b.source === "fair");
@@ -74,9 +79,9 @@ describe("trade fairs", () => {
     expect(tradeFairBonus(s)).toBeCloseTo(seebit.bonus, 2);
     expect(s.network.goodwill).toBeGreaterThan(0);
     const before = s.marketing.awareness.smallBiz, others = s.marketing.awareness.gamer;
-    runTo(s, at(2009, 4) + 1);
+    skipTo(s, at(2009, 4) + 1);
     expect(s.marketing.awareness.smallBiz - before).toBeGreaterThan(s.marketing.awareness.gamer - others);
-    runTo(s, end + 731);
+    skipTo(s, end + 731);
     expect(leadsThisMonth(s).some((b) => b.source === "fair")).toBe(false);
     s.hour = end + 8760 / 2;
     expect(tradeFairBonus(s)).toBeCloseTo(seebit.bonus / 2, 2);
@@ -90,7 +95,7 @@ describe("trade fairs", () => {
     expect(bookFair(s, "seebit", id)).toEqual({ ok: true });
     const events: SimEvent[] = [];
     const seebit = fairById("seebit")!;
-    runTo(s, fairStart(seebit, 2009) + seebit.days * 24 + 1, events);
+    skipTo(s, fairStart(seebit, 2009) + seebit.days * 24 + 1, events);
     expect(events.find((e) => e.key === "event.fairDone")!.params.leads).toBe(Math.round(seebit.leads * 1.5));
   });
 
@@ -100,7 +105,7 @@ describe("trade fairs", () => {
     fire(s, id);
     const events: SimEvent[] = [];
     const seebit = fairById("seebit")!;
-    runTo(s, fairStart(seebit, 2009) + seebit.days * 24 + 1, events);
+    skipTo(s, fairStart(seebit, 2009) + seebit.days * 24 + 1, events);
     expect(events.some((e) => e.key === "event.fairMissed")).toBe(true);
     expect(tradeFairBonus(s)).toBe(0);
   });

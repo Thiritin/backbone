@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { hourOfMonth } from "../src/sim/00-core/time";
+import { hourOfMonth, isMonthStart } from "../src/sim/00-core/time";
+import { tick } from "../src/sim/88-tick/tick";
 import { mailPlan } from "../src/sim/10-catalog/mail-providers";
 import { checkMailLogin, seatsBilled } from "../src/sim/42-mail/accounts";
 import { mxTarget } from "../src/sim/42-mail/caps";
@@ -12,10 +13,12 @@ import { setTenantLock, verifyTenant } from "../src/sim/90-actions/mail";
 import { deleteGoggleUser, makeGoggleAdmin, migrateMailbox, signUpGmix, signUpGoggle, suspendUser, upgradeGoggleEdition } from "../src/sim/90-actions/mail-provider";
 import { addAlias, createMailAccount, createMailGroup, setCatchAll, setExternalAccess } from "../src/sim/90-actions/mailbox";
 import { hire } from "../src/sim/90-actions/staff";
-import { err, idOf, mailLedger, toMonthStart } from "./company-mail.helpers";
+import { err, idOf, mailLedger } from "./company-mail.helpers";
 import { readyGame } from "./fixtures";
 
 const at = (ym: string) => hourOfMonth(ym);
+// Skips to the hour before the next month start and ticks through it, where the monthly bills go out.
+const toMonthStart = (s: GameState) => { let h = s.hour + 1; while (!isMonthStart(h)) h++; s.hour = h - 1; tick(s); };
 const goggle = (s: GameState) => s.mail.tenants.find((t) => t.host === "goggle")!;
 // Inbox mail from the test sender, so a mailbox's welcome message does not count.
 const inbox = (s: GameState, id: string) => (s.mail.msgs[id] ?? []).filter((m) => m.folder === "inbox" && (m.from === "n:Supplier" || m.from === "n:Bank"));

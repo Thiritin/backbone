@@ -13,6 +13,8 @@ const ok = (r: ReturnType<typeof addLocation>) => { if (!r.ok) throw new Error(r
 const err = (r: ReturnType<typeof addLocation>) => (r.ok ? "ok" : r.error);
 const rich = (): GameState => freeFloor({ ...newGame(1), cash: 1_000_000 });
 const runTo = (s: GameState, hour: number) => { const ev: SimEvent[] = []; while (s.hour < hour) ev.push(...tick(s)); return ev; };
+// Contracts end only at their notice date, so the hours before it are skipped.
+const skipTo = (s: GameState, hour: number) => { s.hour = Math.max(s.hour, hour - 2); return runTo(s, hour); };
 const FR5 = DATACENTERS.find((d) => d.id === "equinox-fr5")!;
 
 describe("contracts", () => {
@@ -61,10 +63,10 @@ describe("contracts", () => {
     const second = s.contracts[1];
     ok(cancelContract(s, second.id));
     ok(buyRack(s, second.locationId, "rack-42", 1));
-    expect(runTo(s, end + 1).filter((e) => e.key.startsWith("event.contract")).map((e) => e.key)).toEqual(["event.contractEnded"]);
+    expect(skipTo(s, end + 1).filter((e) => e.key.startsWith("event.contract")).map((e) => e.key)).toEqual(["event.contractEnded"]);
     expect(s.locations.some((l) => l.id === id)).toBe(false);
     expect(s.contracts.map((x) => x.id)).toEqual([second.id]);
-    const rolled = runTo(s, second.endsAt! + 1).filter((e) => e.key === "event.contractRolled");
+    const rolled = skipTo(s, second.endsAt! + 1).filter((e) => e.key === "event.contractRolled");
     expect(rolled).toHaveLength(1);
     expect(second.endsAt).toBe(noticeEnd(second.endsAt! - 1, 0));
     expect(s.locations.some((l) => l.id === second.locationId)).toBe(true);

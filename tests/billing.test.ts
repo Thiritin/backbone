@@ -2,7 +2,7 @@ import { START_CASH } from "../src/sim/10-catalog/economy";
 import { describe, expect, it } from "vitest";
 import { createRng } from "../src/sim/00-core/rng";
 import { hourOf } from "../src/sim/00-core/time";
-import { annuity, baseRate, billingTick, dueStep, invoiceTotal, isSuspended, loanAvailable, PAY_ODDS, rollPayStep, YEAR_HOURS } from "../src/sim/45-billing/billing";
+import { annuity, baseRate, billingTick, dueStep, invoiceTotal, isSuspended, loanAvailable, MISSED_FEE, PAY_ODDS, rollPayStep, YEAR_HOURS } from "../src/sim/45-billing/billing";
 import { type GameState } from "../src/sim/50-state";
 import { metrics } from "../src/sim/metrics";
 import { tick } from "../src/sim/88-tick/tick";
@@ -11,7 +11,8 @@ import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { sendDrafts, withServer, newGame } from "./fixtures";
 
-const runTo = (s: GameState, hour: number) => { while (s.hour < hour) tick(s); };
+// Only the billing step runs, as tick runs it after advancing the hour; invoices count hours from timestamps.
+const runTo = (s: GameState, hour: number) => { while (s.hour < hour) { s.hour++; billingTick(s); } };
 const at = (y: number, m: number, d: number) => hourOf(new Date(Date.UTC(y, m - 1, d)));
 
 // One customer with a yearly domain, invoiced on the first tick.
@@ -92,11 +93,17 @@ describe("payment habits", () => {
 
   it("writes the invoice number on at least four in five transfers", () => {
     const refs: string[] = [];
-    for (let seed = 1; seed <= 200; seed++) {
-      const s = withServer(newGame(seed));
-      addService(s, addCustomer(s, "Ada", seed % 2 ? "private" : "gamer"), "domain", "ada.com", 12, "year");
+    // The reference is drawn from the seed, so copies of one game per profile with another seed each stand in for new games.
+    const base = (["gamer", "private"] as const).map((p) => {
+      const s = withServer(newGame(1));
+      addService(s, addCustomer(s, "Ada", p), "domain", "ada.com", 12, "year");
       tick(s);
       for (const i of s.invoices) { sendInvoice(s, i.id); Object.assign(i, { payStep: 0, payAt: s.hour }); }
+      return s;
+    });
+    for (let seed = 1; seed <= 200; seed++) {
+      const s = structuredClone(base[seed % 2]);
+      s.seed = seed;
       billingTick(s);
       refs.push(...s.transfers.map((x) => x.reference));
     }
@@ -217,7 +224,7 @@ describe("bank", () => {
     s.cash = 0;
     runTo(s, at(2005, 2, 1));
     expect(s.loans[0]).toMatchObject({ missed: 1, rate: rate + 0.02 });
-    expect(s.cash).toBeLessThan(-100);
+    expect(s.cash).toBe(-MISSED_FEE);
     expect(takeLoan(s, 5_000, 1)).toEqual({ ok: false, error: "error.loanBlocked" });
     runTo(s, at(2005, 4, 1));
     expect(s.loans).toHaveLength(0);

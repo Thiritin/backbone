@@ -9,12 +9,19 @@ describe("customer happiness history", () => {
   it("records happiness at each month start and keeps the last 12", () => {
     const s = newGame(21);
     const id = addCustomer(s, "Gil", "office");
-    const end = hourOf(new Date(Date.UTC(2006, 3, 1)));
-    // Gil never leaves, so every month start records a value.
-    while (s.hour < end) { tick(s); s.customers[0].churnedAt = null; }
-    const c = s.customers.find((x) => x.id === id)!;
-    expect(c.history).toHaveLength(12);
-    expect(c.history.every((h) => h >= 0 && h <= 100)).toBe(true);
+    const c = () => s.customers.find((x) => x.id === id)!;
+    // Gil never leaves, so every month start records a value; the hours between record nothing.
+    for (let m = 1; m <= 13; m++) {
+      s.hour = hourOf(new Date(Date.UTC(2005, m, 1))) - 1;
+      tick(s);
+      s.customers[0].churnedAt = null;
+      if (m === 3) {
+        tick(s);
+        expect(c().history).toHaveLength(3);
+      }
+    }
+    expect(c().history).toHaveLength(12);
+    expect(c().history.every((h) => h >= 0 && h <= 100)).toBe(true);
   });
 
   it("fills an empty history into customers of an old save", () => {

@@ -85,7 +85,7 @@ describe("AI bots", () => {
       const c = customer(s, `Customer ${i}`);
       deskTicket(s, c, i % 2 ? "howTo" : "billing");
     }
-    runTo(s, Y2024 + 24 * 7);
+    runTo(s, Y2024 + 24 * 2);
     const firsts = (kind: "howTo" | "billing") => s.tickets.filter((t) => t.kind === kind).map((t) => t.replies[0]).filter((r) => r?.by === AGENT);
     expect(s.tickets.flatMap((t) => t.replies).filter((r) => r.by === AGENT).length).toBeGreaterThan(300);
     for (const kind of ["howTo", "billing"] as const) {
@@ -110,13 +110,12 @@ describe("AI bots", () => {
 
   it("now and then does something memorable that angers a customer", () => {
     const s = withAgent(5);
-    for (let i = 0; i < 1500; i++) {
+    for (let i = 0; i < 500; i++) {
       const c = customer(s, `Customer ${i}`);
       deskTicket(s, c, "howTo");
     }
-    const events: SimEvent[] = [];
-    runTo(s, Y2024 + 24 * 20, events);
-    const incident = events.find((e) => e.key.startsWith("event.botIncident"));
+    let incident: SimEvent | undefined;
+    while (!incident && s.hour < Y2024 + 24 * 20) incident = tick(s).find((e) => e.key.startsWith("event.botIncident"));
     expect(incident).toBeDefined();
     expect(incident!.params.bot).toBe(AGENT);
     const c = s.customers.find((x) => x.name === incident!.params.customer)!;

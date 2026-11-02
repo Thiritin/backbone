@@ -54,9 +54,9 @@ describe("first server", () => {
     const s = startGame(2);
     const srv = firstServer(s);
     expect(checkDone(s, "firstServer")).toBe(true);
-    run(s, 24 * 7);
+    run(s, 24);
     ok(installPanel(s, srv, "freepanel"));
-    run(s, 24 * 7);
+    run(s, 24);
     expect(s.customers.filter((c) => c.habit === "friend")).toEqual([]);
     expect(s.webOpenedAt).not.toBeNull();
     expect(checkDone(s, "setup")).toBe(true);

@@ -11,8 +11,9 @@ import { mxTarget } from "../src/sim/42-mail/caps";
 import { roleAccount, serverStatus } from "../src/sim/42-mail/accounts";
 import { mailShare, mailUnrouted } from "../src/sim/80-business/mail";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { err, run, selfHosted } from "./company-mail.helpers";
+import { err, selfHosted } from "./company-mail.helpers";
 import { readyGame } from "./fixtures";
+import { salesTick } from "../src/sim/30-market/sales";
 
 const mailCluster = (s: ReturnType<typeof readyGame>) => s.clusters.find((c) => c.kind === "mail")!;
 
@@ -84,9 +85,10 @@ const pointMx = (s: ReturnType<typeof readyGame>, data: string) => {
   for (const id of mxIds(s)) removeCompanyRecord(s, id);
   return setCompanyRecord(s, { type: "MX", name: "@", ttl: 300, data });
 };
+// Email orders arrive in the sales step alone.
 const orders = (s: ReturnType<typeof readyGame>, hours: number) => {
   const before = s.sales.requests.filter((r) => r.kind === "order").length;
-  run(s, hours);
+  for (let h = 0; h < hours; h++) { s.hour++; salesTick(s); }
   return s.sales.requests.filter((r) => r.kind === "order").length - before;
 };
 
@@ -149,5 +151,5 @@ describe("mail routing through the zone", () => {
     expect(orders(s, 24 * 30)).toBe(0);
     expect(pointMx(s, `10 mail.${s.company.domain}`).ok).toBe(true);
     expect(orders(s, 24 * 30)).toBeGreaterThan(0);
-  }, 300_000);
+  });
 });

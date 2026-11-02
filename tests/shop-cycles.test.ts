@@ -34,7 +34,8 @@ const byGateway = (s: GameState, svcId: string) => {
   const id = s.services.find((v) => v.id === svcId)!.customerId;
   s.customers = s.customers.map((c) => (c.id === id ? { ...c, method: "paypail" } : c));
 };
-const toMonthStart = (s: GameState) => { do tick(s); while (!isMonthStart(s.hour)); };
+// Month start billing reads the service dates, so the hours before it need no ticks.
+const toMonthStart = (s: GameState) => { while (!isMonthStart(s.hour + 1)) s.hour++; tick(s); };
 
 describe("billing cycles", () => {
   it("are supported per shop variant", () => {

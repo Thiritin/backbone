@@ -47,7 +47,9 @@ describe("redesign", () => {
     expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.redesign", category: "marketing", amount: -price });
     expect(redesign(s)).toEqual({ ok: false, error: "error.designOrdered" });
     s.marketing = { ...s.marketing, designYear: 2013 };
-    run(s, DESIGN_DAYS * 24 - 2);
+    // Nothing else of the design changes in between, so the wait is skipped up to its last hours.
+    s.hour += DESIGN_DAYS * 24 - 4;
+    run(s, 2);
     expect(s.marketing.designYear).toBe(2013);
     run(s, 4);
     expect(s.marketing).toMatchObject({ designYear: 2017, designReady: null });

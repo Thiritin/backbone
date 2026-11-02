@@ -4,7 +4,7 @@ import { datastoreUsed, nodeUsed, vmById, type Workload } from "../src/sim/60-in
 import { tick } from "../src/sim/88-tick/tick";
 import { createVm } from "../src/sim/90-actions/clusters";
 import { attachDatastore, moveDisk } from "../src/sim/90-actions/datastores";
-import { deleteSnapshot, revertSnapshot, takeSnapshot } from "../src/sim/90-actions/snapshots";
+import { deleteSnapshot, revertSnapshot, snapshotTick, takeSnapshot } from "../src/sim/90-actions/snapshots";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { buyDevice, hypervisor, skipTo, withServer, newGame } from "./fixtures";
 import { mountDevice } from "./plugged";
@@ -56,7 +56,8 @@ describe("snapshots", () => {
     days(s, 2);
     expect(snaps(s, vm)[0].deltaGb).toBeCloseTo(2);
     expect(nodeUsed(s, "dev3").diskGb).toBeCloseTo(before + 2);
-    days(s, 20);
+    // The cap needs only the snapshot step.
+    for (let i = 0; i < 20 * 24; i++) { s.hour++; snapshotTick(s); }
     expect(snaps(s, vm)[0].deltaGb).toBe(20);
   });
 

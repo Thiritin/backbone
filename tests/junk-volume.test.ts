@@ -1,17 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { deliver } from "../src/sim/42-mail/deliver";
+import { deliver, mailDeliveryTick } from "../src/sim/42-mail/deliver";
 import type { GameState } from "../src/sim/50-state";
-import { tick } from "../src/sim/88-tick/tick";
 import { startGame } from "./fixtures";
 
 const count = (s: GameState, spam: boolean, folder: string) =>
   (s.mail.msgs[s.mail.primary] ?? []).filter((m) => (m.kind === "spam") === spam && m.folder === folder).length;
 
+// Steps only mail delivery: the real mail goes out at noon and the junk is rolled at 03:00 the next day.
 const run = (s: GameState, days: number, legitPerDay = 0) => {
   const a = s.mail.accounts.find((x) => x.id === s.mail.primary)!;
-  for (let h = 0; h < days * 24; h++) {
-    if (h % 24 === 12) for (let i = 0; i < legitPerDay; i++) deliver(s, { to: `${a.local}@${a.domain}`, from: "ext:friend@yahoy.com", kind: "reply", own: { subject: "Hi", text: "Hi" } });
-    tick(s);
+  for (let d = 0; d < days; d++) {
+    s.hour = (Math.floor(s.hour / 24) + 1) * 24 + 12;
+    for (let i = 0; i < legitPerDay; i++) deliver(s, { to: `${a.local}@${a.domain}`, from: "ext:friend@yahoy.com", kind: "reply", own: { subject: "Hi", text: "Hi" } });
+    mailDeliveryTick(s);
+    s.hour += 15;
+    mailDeliveryTick(s);
   }
 };
 

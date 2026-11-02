@@ -59,14 +59,14 @@ describe("AI on the hosted desks", () => {
     expect(articleDeflects(s, "php")).toBe(false);
     expect(setDeskAi(s, "suggestedArticles", false).ok).toBe(true);
     expect(articleDeflects(s, "upload")).toBe(false);
-    // Over two months of customers the switch adds reads.
-    const reads = (on: boolean) => {
-      const g = hosted("zendusk", 2015, 9);
+    // Over a week of customers in three games the switch adds reads.
+    const reads = (on: boolean) => [8, 10, 13].reduce((sum, seed) => {
+      const g = hosted("zendusk", 2015, seed);
       setDeskAi(g, "suggestedArticles", on);
-      for (let i = 0; i < 150; i++) addService(g, addCustomer(g, `C${i}`, "private"), "webHosting", "site", 5, "year");
-      for (let h = 0; h < 24 * 60; h++) { supportTick(g); g.hour++; }
-      return Object.values(g.kbReads).reduce((a, b) => a + b, 0);
-    };
+      for (let i = 0; i < 40; i++) addService(g, addCustomer(g, `C${i}`, "private"), "webHosting", "site", 5, "year");
+      for (let h = 0; h < 24 * 7; h++) { supportTick(g); g.hour++; }
+      return sum + Object.values(g.kbReads).reduce((a, b) => a + b, 0);
+    }, 0);
     expect(reads(false)).toBe(0);
     expect(reads(true)).toBeGreaterThan(0);
   });

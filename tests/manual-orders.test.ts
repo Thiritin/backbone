@@ -1,4 +1,4 @@
-import { yearOf } from "../src/sim/00-core/time";
+import { nextMonthStart, yearOf } from "../src/sim/00-core/time";
 import { describe, expect, it } from "vitest";
 import { orderLead } from "../src/sim/30-market/orders";
 import { setupFee, specText } from "../src/sim/30-market/spec";
@@ -25,6 +25,8 @@ import { mailed, owner, panelVm, readyGame, openShop } from "./fixtures";
 const MONDAY_9 = 48 + 9;
 const run = (s: GameState, hours: number) => { for (let i = 0; i < hours; i++) tick(s); };
 const runTo = (s: GameState, hour: number) => { while (s.hour < hour) tick(s); };
+// Skips to the hour before the next month start and ticks into it.
+const toMonthStart = (s: GameState) => { s.hour = nextMonthStart(s.hour) - 1; tick(s); };
 const web = { product: "webHosting" as const, size: 0, sla: "basic" as const };
 const vps = { product: "vps" as const, size: 0, sla: "basic" as const };
 
@@ -134,7 +136,8 @@ describe("custom orders", () => {
     expect(req().status).toBe("won");
     expect(tk()).toMatchObject({ status: "resolved", outcome: "accepted", serviceId: v.id });
     // The first month is prepaid: the next monthly invoice bills only the hours past it.
-    runTo(s, 62 * 24 + 1);
+    toMonthStart(s);
+    toMonthStart(s);
     const bill = s.invoices.find((i) => i.lines.some((l) => l.serviceId === v.id))!;
     expect(bill.lines.find((l) => l.serviceId === v.id)!.params.hours).toBe(bill.issuedAt - v.prepaidUntil!);
   });
@@ -223,9 +226,13 @@ describe("domains", () => {
     const name = req().domain!, v = req().serviceId!, d = domainOf(s, name)!;
     expect(serviceOnline(s, v)).toBe(true);
     expect(setDomainRenewal(s, name, false).ok).toBe(true);
-    s.hour = d.expiresAt - 30 * 24 - (d.expiresAt % 24) - 1;
     const events = [] as string[];
-    while (s.hour < d.expiresAt + 24) events.push(...tick(s).map((e) => e.key));
+    const runTo = (hour: number) => { while (s.hour < hour) events.push(...tick(s).map((e) => e.key)); };
+    // The notice goes out on the midnight 30 days ahead and the domain lapses on the first midnight after it expires.
+    s.hour = d.expiresAt - 30 * 24 - (d.expiresAt % 24) - 1;
+    runTo(s.hour + 2);
+    s.hour = d.expiresAt - 1;
+    runTo(d.expiresAt + 24);
     expect(events).toContain("event.domainExpiring");
     expect(events).toContain("event.domainExpired");
     expect(serviceOnline(s, v)).toBe(false);

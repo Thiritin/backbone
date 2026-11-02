@@ -102,8 +102,8 @@ describe("security advisories", () => {
       base.security = { ...base.security, vuln: "mopb", seen: ["mopb"], stage };
       base.hour = MOPB.at + STAGE_HOURS[stage];
       for (let i = 0; i < 300; i++) {
-        const s = structuredClone(base);
-        s.rng = createRng(i + 1);
+        // The step replaces what it changes rather than editing it, so a shallow copy keeps the trials apart.
+        const s = { ...base, rng: createRng(i + 1) };
         for (let h = 0; h < hours; h++) { securityTick(s); s.hour++; }
         hacked += s.security.hacked.length;
       }

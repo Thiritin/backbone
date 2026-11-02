@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { t } from "../src/i18n/en";
-import { hourOfMonth } from "../src/sim/00-core/time";
+import { hourOfMonth, nextMonthStart } from "../src/sim/00-core/time";
 import { GMIX_DOMAIN } from "../src/sim/42-mail/new";
 import type { GameState } from "../src/sim/50-state";
 import { defaultBookmarks, providerDomain, resolve } from "../src/sim/80-business/browser";
@@ -13,7 +13,7 @@ import { tick } from "../src/sim/88-tick/tick";
 import { acceptGmixOffer, signUpGmix } from "../src/sim/90-actions/mail-provider";
 import { GmixSite } from "../src/ui/apps/browser/sites/mail/gmix/GmixSite";
 import { useStore } from "../src/ui/store";
-import { idOf, mailLedger, toMonthStart } from "./company-mail.helpers";
+import { idOf, mailLedger } from "./company-mail.helpers";
 import { startGame } from "./fixtures";
 
 const at = (ym: string) => hourOfMonth(ym);
@@ -134,7 +134,9 @@ describe("GMix site", () => {
     expect(acceptGmixOffer(s, tenant).ok).toBe(false);
     const amounts: number[] = [];
     for (let i = 0; i < 4; i++) {
-      toMonthStart(s);
+      // Only the month-start tick bills, so the hours before it are skipped.
+      s.hour = nextMonthStart(s.hour) - 1;
+      tick(s);
       amounts.push(...mailLedger(s).filter((e) => e.params?.name === "GMix").map((e) => -e.amount));
     }
     expect(amounts).toEqual([0.99, 0.99, 0.99, 4.99]);

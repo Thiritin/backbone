@@ -207,22 +207,22 @@ describe("out-of-band management", () => {
 
   it("hangs a switch on 10% of firmware updates and locks it on 2% of port group changes", () => {
     let hung = 0, locked = 0;
+    // The rolls hash the hour and the device, and both actions touch only the device: reset it for every hour.
+    const s = at(2008), start = s.hour, i4 = s.devices.findIndex((d) => d.id === "dev4"), fresh = structuredClone(s.devices[i4]);
     for (let i = 0; i < 400; i++) {
-      const s = at(2008);
-      s.hour += i;
-      dev(s, "dev4").fw = { version: 2005, updatedAt: 0 };
+      s.hour = start + i;
+      s.devices[i4] = { ...structuredClone(fresh), fw: { version: 2005, updatedAt: 0 } };
       must(updateFirmware(s, "dev4"));
       if (dev(s, "dev4").hung) hung++;
-      const t = at(2008);
-      t.hour += i;
-      must(setPortGroup(t, "dev4", [2, 3]));
-      if (dev(t, "dev4").locked) locked++;
+      s.devices[i4] = structuredClone(fresh);
+      must(setPortGroup(s, "dev4", [2, 3]));
+      if (dev(s, "dev4").locked) locked++;
     }
     expect(hung / 400).toBeGreaterThan(0.05);
     expect(hung / 400).toBeLessThan(0.16);
     expect(locked).toBeGreaterThan(0);
     expect(locked / 400).toBeLessThan(0.06);
-    const s = at(2008);
+    s.devices[i4] = structuredClone(fresh);
     dev(s, "dev4").fw = { version: 2008, updatedAt: s.hour };
     expect(err(updateFirmware(s, "dev4"))).toBe("error.upToDate");
     dev(s, "dev4").locked = true;

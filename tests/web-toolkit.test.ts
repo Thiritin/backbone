@@ -43,10 +43,13 @@ describe("Toolkit mass update", () => {
   });
 
   it("breaks about the table's share of sites, fewer when managed", () => {
+    // One world reused under six seeds, which is all the break roll draws on.
+    const base = world(40);
     const rate = (managed: boolean) => {
       let broke = 0, total = 0;
       for (let seed = 1; seed <= 6; seed++) {
-        const { s, host, ids } = world(40, 2014, managed, seed);
+        const s = { ...structuredClone(base.s), seed }, { host, ids } = base;
+        s.services = s.services.map((v) => ({ ...v, spec: { ...v.spec, managedUpdates: managed } }));
         ok(massUpdateSites(s, host, ids));
         broke += Object.keys(s.webpanel.appBroken).length; total += ids.length;
       }

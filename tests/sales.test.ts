@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { sizeSpec } from "../src/sim/10-catalog/products";
 import { isMonthStart, yearOf } from "../src/sim/00-core/time";
 import { acceptChance, acceptMid, cityMarket, leadBoost, leadFlows, missingFor, priceIndex, rivals, share, type SalesRequest } from "../src/sim/30-market/market";
-import { addRequest, newLead } from "../src/sim/30-market/sales";
+import { addRequest, newLead, salesTick } from "../src/sim/30-market/sales";
+import { productsTick } from "../src/sim/85-products/products";
 import { createTicket, profileStats } from "../src/sim/40-support/tickets";
 import { leadCapShare } from "../src/sim/10-catalog/economy";
 import type { GameState } from "../src/sim/50-state";
@@ -18,6 +19,8 @@ import { readyGame } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 
 const run = (s: GameState, hours: number) => { for (let i = 0; i < hours; i++) tick(s); };
+// The monthly sales step needs only the month start itself.
+const toMonthStart = (s: GameState) => { while (!isMonthStart(s.hour + 1)) s.hour++; tick(s); };
 const req = (s: GameState, id: string) => s.sales.requests.find((r) => r.id === id)!;
 // A web hosting request from Frankfurt with a known budget.
 function webRequest(s: GameState, over: Partial<SalesRequest> = {}): SalesRequest {
@@ -30,7 +33,9 @@ function webRequest(s: GameState, over: Partial<SalesRequest> = {}): SalesReques
 describe("lead generation", () => {
   it("brings a few requests a month from the basement and more with a website", () => {
     const s = readyGame(1);
-    run(s, 730);
+    // The products tick notes the web opening; the lead flow alone brings the requests.
+    productsTick(s);
+    for (let i = 0; i < 730; i++) { s.hour++; salesTick(s); }
     const first = s.sales.requests.length;
     expect(first).toBeGreaterThanOrEqual(2);
     expect(first).toBeLessThanOrEqual(15);
@@ -58,7 +63,7 @@ describe("lead generation", () => {
     expect(hire(s, s.candidates[0].id).ok).toBe(true);
     expect(assign(s, s.staff[0].id, "forum").ok).toBe(true);
     const before = s.marketing.awareness.hobbyDev;
-    run(s, 745);
+    toMonthStart(s);
     expect(s.marketing.awareness.hobbyDev).toBeGreaterThan(before);
   });
 });
@@ -164,8 +169,7 @@ describe("price changes", () => {
     const c = s.customers.find((x) => x.id === v.customerId)!;
     c.happiness = 40;
     const hit = c.happiness;
-    while (!isMonthStart(s.hour + 1)) tick(s);
-    tick(s);
+    toMonthStart(s);
     expect(s.customers.find((x) => x.id === v.customerId)!.happiness).toBeGreaterThan(hit);
   });
 });

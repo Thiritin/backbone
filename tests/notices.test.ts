@@ -5,7 +5,7 @@ import { applyNoticeWork, domainOf, opsTick, spawnLegal, spawnNotice, TAKEDOWN_H
 import { monthlyValue, type Ticket } from "../src/sim/40-support/tickets";
 import type { GameState } from "../src/sim/50-state";
 import { serverOf, vmOf, workloadsOf } from "../src/sim/60-infra/cluster";
-import { DATA_LOSS, gridOutage, RESTORED, seize } from "../src/sim/60-infra/incidents";
+import { DATA_LOSS, gridOutage, gridTick, RESTORED, seize } from "../src/sim/60-infra/incidents";
 import { linkStatus, powered } from "../src/sim/60-infra/status";
 import { tick } from "../src/sim/88-tick/tick";
 
@@ -149,7 +149,9 @@ describe("legal requests", () => {
     const t = spawnLegal(s, friend(s), createRng(5))!;
     expect(t.dueAt - t.createdAt).toBeGreaterThanOrEqual(5 * 24);
     ok(resolveTicket(s, t.id, "comply"));
-    run(s, t.dueAt - s.hour + 2);
+    run(s, 1);
+    s.hour = t.dueAt + 1;
+    opsTick(s);
     expect(ticket(s, t.id).outcome).toBe("complied");
     expect(s.devices.some((d) => d.id === "dev3")).toBe(true);
   });
@@ -255,7 +257,10 @@ describe("grid outages", () => {
 
   it("happens a few times a year in the basement and shows up as incidents", () => {
     const s = readyGame(2);
-    run(s, 8760);
+    for (let h = 0; h < 8760; h++) {
+      s.hour++;
+      gridTick(s);
+    }
     const grid = s.ops.incidents.filter((i) => i.cause === "grid");
     expect(grid.length).toBeGreaterThan(0);
     expect(grid.length).toBeLessThan(10);

@@ -9,6 +9,7 @@ import { bump } from "../40-support/tickets";
 import { serviceHeld } from "../45-billing/billing";
 import { mailAddress, serviceAddress } from "./addresses";
 import { workloadsUp } from "./cluster";
+import { readOnlySweep } from "./status";
 import type { MailState } from "./netsvc";
 
 export const QUEUE_CAP = 20_000;
@@ -36,14 +37,14 @@ export function mailServices(s: GameState, addressId: string): Service[] {
 export function mailQueueTick(s: GameState): void {
   const ids = new Set([...Object.keys(s.netsvc.mail), ...s.clusters.filter((c) => c.kind === "panel").flatMap((c) => mailAddress(s, c.id)?.id ?? [])]);
   const mail = { ...s.netsvc.mail }, perBox = mailsPerBox(yearOf(s.hour));
-  for (const id of ids) {
+  readOnlySweep(s, () => { for (const id of ids) {
     const svcs = mailServices(s, id), cur = mailStateOf(s, id);
     const blocked = s.ips.addresses.find((a) => a.id === id)?.listed || svcs.some((v) => !workloadsUp(s, v.id));
     const boxes = (id: string, n: number) => mailboxHook.of(s, s.workloads.find((w) => w.serviceId === id)?.id ?? "", n);
     const perDay = svcs.reduce((n, v) => n + boxes(v.id, v.spec.mailboxes) * perBox, 0);
     const deferred = blocked ? Math.min(QUEUE_CAP, cur.deferred + perDay) : Math.floor(cur.deferred / 2);
     if (deferred !== cur.deferred) mail[id] = { ...cur, deferred };
-  }
+  } });
   s.netsvc = { ...s.netsvc, mail };
 }
 

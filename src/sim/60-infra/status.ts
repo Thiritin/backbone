@@ -267,15 +267,27 @@ export const deviceValue = (s: GameState, d: Device): number =>
 export const psusOf = (d: Device) => d.components.filter((c) => c.kind === "psu");
 export const isPlugged = (c: Component) => c.plugged !== false;
 // A device gets power through a plugged-in supply that has not failed; one without supplies needs none.
-export const pluggedIn = (d: Device) => { const p = psusOf(d); return !p.length || p.some((c) => isPlugged(c) && c.failedAt === null); };
+export const pluggedIn = (d: Device) => {
+  let any = false;
+  for (const c of d.components) {
+    if (c.kind !== "psu") continue;
+    if (isPlugged(c) && c.failedAt === null) return true;
+    any = true;
+  }
+  return !any;
+};
 // A server with two live supplies in a rack with feed B splits its draw over both feeds; everything else hangs on feed A.
 export const dualFed = (rack: Rack, d: Device): boolean => rack.feedB && psusOf(d).filter((c) => isPlugged(c) && c.failedAt === null).length >= 2;
 
 // The servers that run at least one workload; the rest draw their idle power. Working GPU cards add their watts either way.
 // A server under burn-in draws full power and takes no customers.
 export const burning = (s: GameState, d: Device): boolean => !!d.burnin && d.burnin.until > s.hour;
-export const busyDevices = (s: GameState): Set<string | null> =>
-  new Set([...s.workloads.filter((w) => !w.stopped && w.deviceId).map((w) => w.deviceId), ...s.devices.filter((d) => burning(s, d)).map((d) => d.id)]);
+export const busyDevices = (s: GameState): Set<string | null> => sweepMemo(s, "busy", () => {
+  const busy = new Set<string | null>();
+  for (const w of s.workloads) if (!w.stopped && w.deviceId) busy.add(w.deviceId);
+  for (const d of s.devices) if (burning(s, d)) busy.add(d.id);
+  return busy;
+});
 // A server's CPUs draw their own watts in place of its preset's (cpuWattsShift); idle they draw the model's idle share of it.
 export const deviceWatts = (d: Device): number => { const m = modelById(d.model), k = wattsFactorOf(m, d.brand); return (m.watts + cpuWattsShift(m, d.components)) * k + cardWatts(d.components); };
 // A busy server's CPU utilisation from 0 to 1; usage.ts fills it in, since it imports this file.
@@ -315,15 +327,17 @@ function computeRackPower(s: GameState, rackId: string): RackPower {
 // Link, rack power and lookup results memoised for one sweep. Only for code that reads the infrastructure and never changes it.
 // a and b are the draw on each feed; limitWatts is the limit of one feed.
 type RackPower = { watts: number; a: number; b: number; limitWatts: number; tripped: boolean };
-let memo: { s: GameState; link: Map<string, LinkStatus>; power: Map<string, RackPower>; groups: Map<string, Map<string, unknown[]>>; other: Map<string, unknown> } | null = null;
+type Memo = { s: GameState; link?: Map<string, LinkStatus>; power?: Map<string, RackPower>; working?: Map<string, boolean>; powered?: Map<string, boolean>; groups?: Map<string, Map<string, unknown[]>>; other?: Map<string, unknown> };
+let memo: Memo | null = null;
 export function readOnlySweep<T>(s: GameState, fn: () => T): T {
   if (memo) return fn();
-  memo = { s, link: new Map(), power: new Map(), groups: new Map(), other: new Map() };
+  memo = { s };
   try { return fn(); } finally { memo = null; }
 }
 // Items grouped by key in state order, built once per sweep; null outside a sweep, where callers scan instead.
 export function sweepGroups<T>(s: GameState, name: string, items: () => T[], key: (t: T) => string): Map<string, T[]> | null {
   if (memo?.s !== s) return null;
+  memo.groups ??= new Map();
   let groups = memo.groups.get(name) as Map<string, T[]> | undefined;
   if (!groups) {
     groups = new Map();
@@ -349,7 +363,7 @@ export const customerWorkloads = (s: GameState, customerId: string): Workload[] 
   const by = sweepGroups(s, "customerWorkloads", () => s.workloads, (w) => serviceById(s, w.serviceId)?.customerId ?? "");
   return by ? by.get(customerId) ?? [] : s.workloads;
 };
-const memoised = <V>(s: GameState, key: string, pick: (m: NonNullable<typeof memo>) => Map<string, V>, compute: () => V): V => {
+const memoised = <V>(s: GameState, key: string, pick: (m: Memo) => Map<string, V>, compute: () => V): V => {
   if (memo?.s !== s) return compute();
   const map = pick(memo);
   const hit = map.get(key);
@@ -358,8 +372,16 @@ const memoised = <V>(s: GameState, key: string, pick: (m: NonNullable<typeof mem
   map.set(key, v);
   return v;
 };
+// A map that lives for the sweep, keyed by objects of the state; null outside a sweep and inside a rack's power sum.
+export function sweepCache<K, V>(s: GameState, name: string): Map<K, V> | null {
+  if (memo?.s !== s || summing.size) return null;
+  memo.other ??= new Map();
+  let m = memo.other.get(name) as Map<K, V> | undefined;
+  if (!m) memo.other.set(name, (m = new Map()));
+  return m;
+}
 // Any other derived value memoised for the sweep under its key.
-export const sweepMemo = <V>(s: GameState, key: string, compute: () => V): V => memoised(s, key, (m) => m.other as Map<string, V>, compute);
+export const sweepMemo = <V>(s: GameState, key: string, compute: () => V): V => memoised(s, key, (m) => (m.other ??= new Map()) as Map<string, V>, compute);
 // docs/design/software.md, section 4.2: why a server's cables give it no internet, null when they do. Unlike linkStatus it
 // leaves the server's own state out, since an installer runs while the server still counts as booting.
 export function cabledOut(s: GameState, deviceId: string): NetFail | null {
@@ -370,11 +392,11 @@ export function cabledOut(s: GameState, deviceId: string): NetFail | null {
   const used = d!.bond === "none" ? ends.slice(first, first + 1) : ends;
   return used.some((f) => f && gatewayCap(s, f.end, deviceId) !== null) ? null : "noLink";
 }
-export const linkStatus = (s: GameState, deviceId: string): LinkStatus => memoised(s, deviceId, (m) => m.link, () => computeLinkStatus(s, deviceId));
+export const linkStatus = (s: GameState, deviceId: string): LinkStatus => memoised(s, deviceId, (m) => (m.link ??= new Map()), () => computeLinkStatus(s, deviceId));
 // A server's CPU load asks whether its rack has power while the rack's draw is being summed; inside that sum the rack counts as untripped.
 const summing = new Set<string>();
 export const rackPower = (s: GameState, rackId: string): RackPower =>
-  summing.has(rackId) ? { watts: 0, a: 0, b: 0, limitWatts: 0, tripped: false } : memoised(s, rackId, (m) => m.power, () => {
+  summing.has(rackId) ? { watts: 0, a: 0, b: 0, limitWatts: 0, tripped: false } : memoised(s, rackId, (m) => (m.power ??= new Map()), () => {
     summing.add(rackId);
     try { return computeRackPower(s, rackId); } finally { summing.delete(rackId); }
   });
@@ -489,7 +511,11 @@ export const haltHours = (s: GameState, d: Device): number => (HALT_MINUTES + (d
 export const osHaltHours = (s: GameState, m: Partial<MachineState>): number => (m.os && m.os.installedAt <= nowHours(s) ? serverOsById(m.os.id).haltMinutes / 60 : 0);
 
 // A device works when it has power, is switched on, and no failure or power-off swap has taken it down.
-export function working(s: GameState, deviceId: string): boolean {
+// Memoised outside a rack's power sum only, where powered sees the rack untripped.
+const flagMemo = (s: GameState, deviceId: string, pick: (m: Memo) => Map<string, boolean>, compute: () => boolean): boolean =>
+  summing.size ? compute() : memoised(s, deviceId, pick, compute);
+export const working = (s: GameState, deviceId: string): boolean => flagMemo(s, deviceId, (m) => (m.working ??= new Map()), () => computeWorking(s, deviceId));
+function computeWorking(s: GameState, deviceId: string): boolean {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d || !d.on || d.hung || d.stuck || d.locked || booting(s, d) || halting(d) || !powered(s, deviceId) || failedDown(d) || d.maintenance?.mount) return false;
   const swap = d.maintenance && d.components.find((c) => c.id === d.maintenance!.componentId);
@@ -500,7 +526,8 @@ export function working(s: GameState, deviceId: string): boolean {
 export const osInstalling = (s: GameState, d: Device): boolean => !!d.os && d.os.installedAt > nowHours(s);
 export const takesShutdown = (s: GameState, d: Device): boolean => working(s, d.id) || (d.on && !halting(d) && osInstalling(s, d) && powered(s, d.id));
 
-export function powered(s: GameState, deviceId: string): boolean {
+export const powered = (s: GameState, deviceId: string): boolean => flagMemo(s, deviceId, (m) => (m.powered ??= new Map()), () => computePowered(s, deviceId));
+function computePowered(s: GameState, deviceId: string): boolean {
   const d = s.devices.find((x) => x.id === deviceId);
   const loc = d && locationOf(s, d);
   if (!d || !loc || loc.readyAt > s.hour || (s.ops.dark[loc.id] ?? 0) > s.hour) return false;
