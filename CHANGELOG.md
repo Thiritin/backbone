@@ -12,6 +12,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Pear Mail can reply, reply to all, forward, delete, junk and move mail, and writes new messages in their own window with forms from the desktop attached.
 - Incident reports in Security can now be archived, which takes them off the incident list and out of the open count.
 - A new game no longer starts with three friends waiting for web hosting; the first order email now arrives within two weeks of your first web host going online.
+- Freshdusk now runs at your help desk address with its support portal, a helpdesk with ticket views, a Ticket properties sidebar, canned responses and scenarios, and an Admin for support emails, groups, Dispatch'r rules and SLA policies, in the look of each year from 2011 to Mint.
 - Support desks now fetch the mailboxes you add as channels by IMAP, POP3 or forwarding, number new requests, answer them from that address and keep every reply in its Sent folder.
 - The OsTickit Emails page and the Zendusk support addresses page let you add and remove mailboxes, and OsTickit sets the protocol, schedule, auto-response and what happens to fetched mail, with a test email.
 - Five new ultrawide desktop pictures (Annapurna, Milky Way, Hong Kong, Sossusvlei and Matterhorn) join the wallpaper choices in Settings, and every built-in wallpaper is now sharper at full screen.
