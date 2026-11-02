@@ -1,6 +1,6 @@
 # Plan: shop and books split
 
-Lane id: `shop-books-split`. Status: decisions settled in section 10; milestones 1 to 3 built.
+Lane id: `shop-books-split`. Status: decisions settled in section 10; milestones 1 to 4 built.
 
 The bookkeeping program and the shop system both write quotes, both hold a product catalog and both reach invoices. Players see two ways to do the same thing, and with a shop installed and email orders off, quote requests still arrive by email. This plan gives each program one job, makes the shop automate the customer side the way WHMCS does, and gives every program the same setup flow.
 

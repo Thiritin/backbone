@@ -10,8 +10,7 @@ import { wholesale } from "../../../sim/30-customers/registrar";
 import { sizeOf } from "../../../sim/30-market/spec";
 import { canAutomate, hostFor, invoiceOf, shopRegisters, stepsDone } from "../../../sim/30-market/manual";
 import { shopActive } from "../../../sim/80-business/shop";
-import { portalPath } from "../../../sim/80-business/portal";
-import { companyDomain } from "../../../sim/30-customers/domains";
+import { shopAdminUrl } from "../../../sim/80-business/portal";
 import { registrarFormUrl } from "../../../sim/80-business/browser";
 import type { SalesMessage, SalesRequest } from "../../../sim/30-market/market";
 import { isFinal, type Ticket } from "../../../sim/40-support/tickets";
@@ -146,7 +145,7 @@ function Attachments({ tk, locked, open }: { tk: Ticket; locked: boolean; open: 
       {open && (shop || hasHelpdeskLink(game)) && (
         <button className="btn primary" disabled={locked} onClick={() => {
           const r = act(createQuote, tk.id);
-          if (r.ok && shop) openApp("Browser", { kind: "url", id: `portal.${companyDomain(game)}${portalPath(game.shop.variant!, "admin", {}, { s: "quotes", id: r.id! })}` });
+          if (r.ok && shop) openApp("Browser", { kind: "url", id: shopAdminUrl(game, { s: "quotes", id: r.id! }) });
           else if (r.ok) openApp("Books", { kind: "quote", id: r.id! });
         }}><FilePlus />{t("orderSteps.createQuote")}</button>
       )}

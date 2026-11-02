@@ -58,7 +58,7 @@ function place(s: GameState, r: SalesRequest): ActionResult & { reason?: string;
 // rates, which counts as the accepted quote, and one unit of the line's stock. With automation switched on the shop places
 // it at once, otherwise it waits in Support like an email order.
 // lead marks a sales lead: an email in its own words (key), with the budget it brings and the shady flag, owning no domain.
-export interface LeadTraits { budget: number; shady?: boolean; key?: string }
+export interface LeadTraits { budget: number; shady?: boolean; key?: string; viaShop?: boolean }
 export function orderLead(s: GameState, profile: Profile, city: string, events: SimEvent[], need = needFor(s.rng, profile, yearOf(s.hour)), email = emailFor(s), given?: Spec, lead?: LeadTraits, pick?: ShopProduct): SalesRequest {
   const who = senderFor(s.rng, profile, !!lead?.shady, inUs(city)), variant = Math.floor(rand(s.rng) * 2);
   const key = s.nextId, spec = given ?? nextSpec(s, need, profile), reference = referenceFor(s, profile, need.product, spec, need.sla), discount = discountFor(s, profile);
@@ -84,6 +84,7 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
     ...(pick && { productId: pick.id, setup: pick.setup, ...(pick.packageName && { pkg: pick.packageName }) }),
     ...(months > 1 && { cycle }),
     ...(shop && { shop: true }),
+    ...(lead?.viaShop && { viaShop: true }),
     ...(method && method !== "transfer" && { method }),
     ...(email && { owned, thread: x.thread.map((m, i) => (i ? m : { ...m, params: { ...m.params, owned: owned ? 1 : 0, ...(owned && { auth: authCode(s.seed, x.id) }) } })) }),
   }));
@@ -159,9 +160,10 @@ export const ORDER_BUDGET: [number, number] = [1.1, 1.25];
 
 // With a shop and email orders on, this share of order leads still writes an email.
 export const EMAIL_SHARE = 0.25;
-// Whether the next order lead writes an email: always before a shop, never with email orders off.
-export const emailFor = (s: GameState): boolean =>
-  !shopActive(s) || (s.marketing.emailOrders && rand(hashRng(s.seed, s.hour, s.nextId, 233)) < EMAIL_SHARE);
+// Whether the next order lead writes an email although a shop is active: never with email orders off.
+export const emailDrawn = (s: GameState): boolean => s.marketing.emailOrders && rand(hashRng(s.seed, s.hour, s.nextId, 233)) < EMAIL_SHARE;
+// Whether the next order lead writes an email: always before a shop.
+export const emailFor = (s: GameState): boolean => !shopActive(s) || emailDrawn(s);
 
 // Why a request is declined, in the customer's terms: the product is not sold there, there is no room, or neither.
 export const declineReason = (s: GameState, r: SalesRequest): string =>
