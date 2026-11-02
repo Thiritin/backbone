@@ -231,6 +231,7 @@ export default {
   "ledger.loanCalled": (p) => `O empréstimo de ${euro(Number(p.amount))} foi exigido`,
   "error.invoiceSettled": () => "Esta fatura já está paga.",
   "error.invoiceSent": () => "Esta fatura já foi enviada.",
+  "error.invoiceOrdered": () => "Esta fatura pertence a um pedido ainda em aberto.",
   "error.transferMatched": () => "Esta transferência já está lançada.",
   "error.transferChanged": () => "A fatura mudou depois do lançamento.",
   "error.stepNotDue": () => "Ainda não é devido nenhum passo de cobrança.",

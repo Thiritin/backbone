@@ -297,6 +297,7 @@ export const en: Record<string, (p: Params) => string> = {
   "ledger.loanCalled": (p) => `The ${euro(Number(p.amount))} loan was called in`,
   "error.invoiceSettled": () => "This invoice is already settled.",
   "error.invoiceSent": () => "This invoice was already sent.",
+  "error.invoiceOrdered": () => "This invoice belongs to an order that is still open.",
   "error.transferMatched": () => "This transfer is already booked.",
   "error.transferChanged": () => "This invoice changed after the booking.",
   "error.stepNotDue": () => "No dunning step is due yet.",
