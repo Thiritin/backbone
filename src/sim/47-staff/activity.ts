@@ -9,6 +9,8 @@ export const ACTION_MINUTES = {
   techOp: 60,
   // The steps of a custom order (30-market/manual.ts).
   orderQuote: 5, orderAccount: 5, orderInvoice: 10, orderDomain: 5, orderProvision: 15, orderProvisionPackage: 8,
+  // Setting a customer service's resource limits (90-actions/limits.ts).
+  limits: 2,
 };
 
 // key and params are an i18n line; serviceId null is the whole customer, as for invoices.

@@ -16,7 +16,7 @@ function ovz(shares: number[]) {
   skipTo(x.s, 2009);
   const r = nodeUsage(x.s, "dev3").physical.ramGb;
   const ids = shares.map(() => ok(createVm(x.s, x.c, { vcpu: 1, ramGb: 1, diskGb: 10 })));
-  ids.forEach((_, i) => x.s.services.push({ id: `svc${i}`, customerId: "none", startedAt: 0, endedAt: null, spec: { vcpu: 1, ramGb: 1, diskGb: 10 } } as never));
+  ids.forEach((_, i) => x.s.services.push({ id: `svc${i}`, customerId: "none", startedAt: 0, endedAt: null, spec: { vcpu: 1, ramGb: shares[i] * r, diskGb: 10 } } as never));
   x.s.workloads = x.s.workloads.map((w) => (ids.includes(w.id) ? { ...w, deviceId: "dev3", serviceId: `svc${ids.indexOf(w.id)}`, ramGb: shares[ids.indexOf(w.id)] * r } : w));
   return { ...x, ids, r, fail: (i = 0) => x.s.workloads.find((w) => w.id === ids[i])!.failcnt?.privvmpages ?? 0 };
 }

@@ -22,7 +22,7 @@ import { bootHours, customerWorkloads, liveServices } from "../60-infra/status";
 import { hostPerf, phpTickets } from "../60-infra/php";
 import { welcomeFriends } from "../90-actions/start";
 import { deviceVendor, installedCores, perCoreOf } from "../60-infra/status";
-import { diskFill, nodeUsage } from "../60-infra/usage";
+import { diskFill, nodeUsage, starvation } from "../60-infra/usage";
 import { addAwareness, addReview, announceReview, starsFor } from "../80-business/marketing";
 import type { SimEvent } from "../88-tick/tick";
 
@@ -188,22 +188,24 @@ export function workloadPerf(s: GameState, w: Workload, product: Product | undef
 }
 
 // Overloaded nodes slow every customer on them, web spaces in a panel VM included, and a PHP upgrade or a compromise slows
-// its panel host's sites: happiness drops with the performance lost and some write in.
+// its panel host's sites; a customer who outgrows their limit slows only themselves. Happiness drops with the performance
+// lost and some write in.
 function overload(s: GameState) {
   const perfs = new Map<string, number>();
   const perfOf = (id: string) => perfs.get(id) ?? perfs.set(id, nodeUsage(s, id).perf).get(id)!;
-  const services = new Map(s.services.map((v) => [v.id, v])), slow = new Set<string>();
+  const services = new Map(s.services.map((v) => [v.id, v])), slow = new Set<string>(), starved = new Set<string>();
   for (const w of s.workloads) {
-    const v = services.get(w.serviceId), perf = workloadPerf(s, w, v?.product, perfOf);
-    if (perf >= 1) continue;
+    const v = services.get(w.serviceId), host = workloadPerf(s, w, v?.product, perfOf), starve = v ? starvation(s, v, w) : 0;
+    if (host >= 1 && starve <= 0) continue;
     const cus = v && customerCopy(s, v.customerId);
     if (!v || !cus) continue;
-    slow.add(v.id);
+    if (host < 1) slow.add(v.id);
+    if (starve > 0) starved.add(v.id);
     // Customers notice only the slowdown past what they expect from what they run.
-    const lost = 1 - perf - slowTolerance(s.seed, v.product, cus.profile, cus.id);
+    const lost = 1 - host * (1 - starve) - slowTolerance(s.seed, v.product, cus.profile, cus.id);
     if (lost > 0) slowed(s, cus, v.id, lost);
   }
-  if (slow.size) s.services = s.services.map((v) => (slow.has(v.id) ? { ...v, slowedAt: s.hour } : v));
+  if (slow.size || starved.size) s.services = s.services.map((v) => (slow.has(v.id) || starved.has(v.id) ? { ...v, ...(slow.has(v.id) && { slowedAt: s.hour }), ...(starved.has(v.id) && { starvedAt: s.hour }) } : v));
 }
 
 // economy.md, Marketing and reviews: a fast game server and a smooth month.

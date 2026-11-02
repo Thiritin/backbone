@@ -5,7 +5,7 @@ import { isOobPort, jacksOf, modelById } from "../10-catalog/hardware";
 import type { Resources } from "../10-catalog/products";
 import { REPLICA_COST, replicaDue } from "./replica";
 import { BACKUP_CHANGED, curveFor, curveLoad, daySwing, growthRate, idNum, JOB_CPU, nightJob, weekMedian } from "../10-catalog/usage";
-import type { Service } from "../30-customers/customers";
+import type { Product, Service } from "../30-customers/customers";
 import { bump, createTicket, isFinal } from "../40-support/tickets";
 import { serviceHeld } from "../45-billing/billing";
 import type { Device, End, GameState } from "../50-state";
@@ -93,7 +93,33 @@ function titleInterest(s: GameState, v: Service, hour: number): number {
 // What a game server's mods multiply its resource use by.
 const modLoad = (s: GameState, serviceId: string): number => (s.gameServers.find((g) => g.serviceId === serviceId)?.mods ?? []).reduce((n, id) => n * (modById(id)?.load ?? 1), 1);
 
-// What a workload uses of its booking at an hour; a panel VM uses what its panel and web spaces use.
+// economy.md, Limits: a limit above the sold size lets peaks run up to STRETCH_MAX of it; a VM line feels its limit from
+// NOTICE of it, a web space only once it reaches it, and a full disk stalls the site to DISK_STARVE.
+export const STRETCH_MAX = 1.5;
+export const NOTICE: Partial<Record<Product, number>> = { vps: 0.9, gameServer: 0.9 };
+export const DISK_STARVE = 0.3;
+
+// What a customer workload would use at an hour without its limit: the sold size times its load.
+export function need(s: GameState, v: { id: string; spec: Resources }, w: Workload, hour: number = s.hour): Resources {
+  const load = workloadLoad(s, w, hour), lost = lostDisk(s, w), mods = modLoad(s, v.id), busy = Math.min(1, load * mods), fill = fillOf(s, v.id);
+  const stretch = (k: "vcpu" | "ramGb") => (v.spec[k] > 0 ? Math.min(STRETCH_MAX, Math.max(1, w[k] / v.spec[k])) : 1);
+  return {
+    vcpu: v.spec.vcpu * fill * load * mods * stretch("vcpu"),
+    ramGb: w.stopped || lost ? 0 : v.spec.ramGb * fill * (RAM_BASE + (1 - RAM_BASE) * busy) * stretch("ramGb"),
+    diskGb: lost ? 0 : v.spec.diskGb * fill * diskFill(s, w, hour),
+  };
+}
+
+// The share of performance a customer loses to their own limit at an hour.
+export function starvation(s: GameState, v: Service, w: Workload, hour: number = s.hour): number {
+  if (!w.clusterId || w.stopped || w.frozen || isOwnVm(w)) return 0;
+  const n = need(s, v, w, hour), cap = booked(s, w), notice = NOTICE[v.product] ?? 1;
+  const short = (k: "vcpu" | "ramGb") => (cap[k] > 0 && n[k] > 0 ? Math.max(0, 1 - (notice * cap[k]) / n[k]) : 0);
+  return Math.max(short("vcpu"), short("ramGb"), w.diskGb > 0 && n.diskGb > w.diskGb + 1e-9 ? DISK_STARVE : 0);
+}
+
+// What a workload uses of its booking at an hour: a customer what they need up to their limit, a panel VM what its panel
+// and web spaces use.
 export function workloadUse(s: GameState, w: Workload, hour: number = s.hour): Resources {
   if (isOwnVm(w)) {
     const hosts = hostsOfVm(s, w.id), u: Resources = { vcpu: 0, ramGb: 0, diskGb: 0 };
@@ -102,11 +128,9 @@ export function workloadUse(s: GameState, w: Workload, hour: number = s.hour): R
     for (const p of parts) { u.vcpu += p.vcpu; u.ramGb += p.ramGb; u.diskGb += p.diskGb; }
     return u;
   }
-  if (w.frozen) return { vcpu: 0, ramGb: 0, diskGb: w.diskGb * diskFill(s, w, hour) };
-  const load = workloadLoad(s, w, hour), lost = lostDisk(s, w), mods = modLoad(s, w.serviceId), busy = Math.min(1, load * mods);
-  const fill = fillOf(s, w.serviceId);
-  const grow = (k: "vcpu" | "ramGb" | "diskGb") => fill * (w.promised && w[k] > 0 ? w.promised[k] / w[k] : 1);
-  return { vcpu: booked(s, w).vcpu * grow("vcpu") * load * mods, ramGb: w.stopped || lost ? 0 : w.ramGb * grow("ramGb") * (RAM_BASE + (1 - RAM_BASE) * busy), diskGb: lost ? 0 : w.diskGb * grow("diskGb") * diskFill(s, w, hour) };
+  const n = need(s, s.services.find((x) => x.id === w.serviceId) ?? { id: w.serviceId, spec: w }, w, hour), disk = Math.min(w.diskGb, n.diskGb);
+  if (w.frozen) return { vcpu: 0, ramGb: 0, diskGb: disk };
+  return { vcpu: Math.min(booked(s, w).vcpu, n.vcpu), ramGb: Math.min(w.ramGb, n.ramGb), diskGb: disk };
 }
 
 // What a node physically has and uses at an hour, and the performance its workloads get: CPU contention slows everyone by
