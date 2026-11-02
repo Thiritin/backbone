@@ -51,6 +51,8 @@ import type { Letter } from "./40-support/letters";
 import type { TrendPoint } from "./80-business/trend";
 import { newTax, type TaxState } from "./80-business/tax-state";
 import type { StatusDay } from "./80-business/status";
+import type { MailState } from "./42-mail/types";
+import { newMail } from "./42-mail/new";
 
 // 3: GPU line servers carry their preset cards. 4: an unregistered game holds its savings until the bank account opens.
 export const SAVE_VERSION = 5;
@@ -390,6 +392,8 @@ export interface GameState {
   tax: TaxState;
   // Logins KeePassive saved, by site ("fritz:<router id>", "bank:<bank id>"): the form's values in field order.
   logins: Record<string, string[]>;
+  // Company email: tenants, mailboxes and their messages (42-mail, docs/design/plans/mail-core.md).
+  mail: MailState;
 }
 
 export interface LogEntry { hour: number; minute?: number; name: string; args: unknown[] }
@@ -433,6 +437,8 @@ export const device = (id: string, model: string, brand: string, rackId: string 
 
 // Starting infrastructure: an empty 24U basement rack, the line jack on its panel and the flat's router in storage. The player
 // mounts the router, buys, mounts and cables the first server.
+const START_NAME = "Basement Hosting";
+
 export const newGame = (seed: number): GameState => ({
   version: SAVE_VERSION, seed, rng: createRng(seed), hour: 0, minute: 0, cash: 0, nextId: 8,
   locations: [{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: t("location.basement"), space: "basement", positions: 1, readyAt: 0, extraCircuit: false }],
@@ -453,7 +459,7 @@ export const newGame = (seed: number): GameState => ({
   gameTitles: {},
   gameLost: {},
   tickets: [], playerBusyUntil: 0, friendFavours: { year: 0, used: 0 }, player: { at: "loc1", until: 0, doing: "work" }, downSince: {}, frozen: [],
-  company: { name: "Basement Hosting", logo: "server", color: "oklch(0.55 0.15 255)", domain: null, mail: { kind: "free" }, tagline: "" },
+  company: { name: START_NAME, logo: "server", color: "oklch(0.55 0.15 255)", domain: null, mail: { kind: "free" }, tagline: "" },
   homeLine: { id: MOMS_DSL.id, next: null },
   taxLoss: 0, brokeSince: null, gameOver: null,
   staff: [], teams: defaultTeams(), candidates: applications(seed, 0), activity: [], techOps: [], techRules: { failed: true, worn: false, blackhole: true, updates: false, recover: true }, onCall: { roster: [], lastCall: {}, month: {} },
@@ -486,6 +492,7 @@ export const newGame = (seed: number): GameState => ({
   books: { vendor: null, installedAt: 0, edition: null, seats: 0, download: null },
   tax: newTax(),
   logins: {},
+  mail: newMail(seed, START_NAME),
 });
 
 export const guideDoc = (): Doc => ({ id: "guide", kind: "guide", title: t("doc.guide"), body: "", x: 16, y: 46 });
