@@ -143,7 +143,7 @@ export default {
   "locations-1.location": () => "Standort",
   "locations-1.overview": () => "Übersicht",
   "locations-1.waitlist": () => "Warteliste",
-  "locations-1.storage": () => "Speicher",
+  "locations-1.storage": () => "Lager",
   "locations-1.readyIn": () => "Bereit in",
   "locations-1.sellTitle": (p) => `${p.name} verkaufen?`,
   "locations-1.sellText": (p) => `Wiederverkaufswert ${p.value}, bezahlt ${p.price}.${Number(p.cables) ? ` ${Number(p.cables) === 1 ? "Das Kabel wird" : `Die ${p.cables} Kabel werden`} abgezogen.` : ""}`,

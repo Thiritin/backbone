@@ -50,6 +50,22 @@ function Ship({ game, ids, onDone }: { game: GameState; ids: string[]; onDone: (
   );
 }
 
+// Sells the first n paid-off units of a stack.
+function SellMany({ game, units, onDone }: { game: GameState; units: Device[]; onDone: () => void }) {
+  const act = useStore((s) => s.act);
+  const [n, setN] = useState(units.length);
+  const pick = units.slice(0, n), value = pick.reduce((v, d) => v + deviceValue(game, d), 0);
+  const sell = () => { for (const d of pick) act(sellDevice, d.id); onDone(); };
+  return (
+    <div className="loc-row loc-ship">
+      <Stepper value={n} min={1} onChange={(v) => setN(Math.min(v, units.length))} />
+      <span className="grow" />
+      <button className="btn" onClick={onDone}>{t("locations-1.cancel")}</button>
+      <button className="btn primary" onClick={sell}>{t("locations-1.sellFor", { value: euro(value) })}</button>
+    </div>
+  );
+}
+
 type Mounted = (rackId: string, deviceId: string) => void;
 
 // Picks a rack of the zone, then a free slot on its front; a stack covers the clicked unit, its top there where it fits.
@@ -109,7 +125,7 @@ export function Storage({ game, loc, onMounted }: { game: GameState; loc: Locati
   return (
     <div className="loc-card">
       <div className="loc-card-h"><h3>{t("locations-2.storage")}</h3><Zone loc={loc} /><span className="grow" /><span className="num loc-muted">{stacks.reduce((n, s) => n + s.ids.length, 0)}</span></div>
-      {stacks.length ? stacks.map((s) => <StackRow key={`${s.model}|${s.brand}`} game={game} stack={s} onMounted={onMounted} />) : <div className="loc-row loc-muted">{t("locations-2.empty")}</div>}
+      {stacks.length ? <div className="loc-stack-grid">{stacks.map((s) => <StackRow key={`${s.model}|${s.brand}`} game={game} stack={s} onMounted={onMounted} />)}</div> : <div className="loc-row loc-muted">{t("locations-2.empty")}</div>}
       {transit.size > 0 && <div className="loc-card-h loc-sub"><h3><Truck />{t("locations-2.inTransit")}</h3></div>}
       {[...transit].map(([k, ds]) => {
         const m = modelById(ds[0].model), to = game.locations.find((l) => l.id === ds[0].transitTo)!;
@@ -130,8 +146,8 @@ function StackRow({ game, stack, onMounted }: { game: GameState; stack: Stack; o
   const [selling, setSelling] = useState(false);
   const [shipping, setShipping] = useState(false);
   const [listing, setListing] = useState(false);
-  // Leased units can't be sold, so Sell takes the first paid-off unit of the stack.
-  const m = modelById(stack.model), units = game.devices.filter((d) => stack.ids.includes(d.id)), first = units.find((d) => !d.lease) ?? units[0];
+  // Leased units can't be sold, so Sell takes paid-off units of the stack.
+  const m = modelById(stack.model), units = game.devices.filter((d) => stack.ids.includes(d.id)), owned = units.filter((d) => !d.lease), first = owned[0] ?? units[0];
   const rackable = m.height > 0 || m.kind === "pdu" || m.kind === "kvm", office = isOfficeRouter(m) && !!units[0].store && !!mountedRouter(game, units[0].store), install = () => act(installRouter, units[0].id);
   const entries = (): MenuEntry[] => [
     rackable && { label: t("locations-2.mountMenu"), run: () => setMounting(true) },
@@ -142,24 +158,26 @@ function StackRow({ game, stack, onMounted }: { game: GameState; stack: Stack; o
     { label: t("locations-2.sellMenu"), disabled: !!first.lease, run: () => setSelling(true) },
   ];
   return (
-    <div className="loc-stack" onContextMenu={menuOn(entries)}>
+    <div className={`loc-stack${shipping || listing || selling ? " open" : ""}`} onContextMenu={menuOn(entries)}>
       <div className="loc-stack-main">
         <Isometric model={m} brand={stack.brand} w={96} count={stack.ids.length} />
         <div className="loc-stack-name">
           <strong>{stack.brand} {m.name}</strong>
           <span className="num loc-muted">{height(m)} · {t("locations-2.nInStorage", { n: stack.ids.length })}</span>
         </div>
-        <span className="grow" />
-        {rackable && <button className="btn" onClick={() => setMounting(true)}><ArrowDownToLine />{t("locations-2.mount")}</button>}
-        {office && <button className="btn" onClick={install}><Router />{t("locations-2.install")}</button>}
-        <More label={`${stack.brand} ${m.name}`} entries={entries} />
+        <div className="loc-stack-acts">
+          {rackable && <button className="btn" onClick={() => setMounting(true)}><ArrowDownToLine />{t("locations-2.mount")}</button>}
+          {office && <button className="btn" onClick={install}><Router />{t("locations-2.install")}</button>}
+          <More label={`${stack.brand} ${m.name}`} entries={entries} />
+        </div>
       </div>
       {mounting && <MountSheet game={game} stack={stack} onClose={() => setMounting(false)} onMount={(task) => hand.start(game, task)} onMounted={onMounted} />}
       {hand.dialog}
       {shipping && <Ship game={game} ids={stack.ids} onDone={() => setShipping(false)} />}
       {listing && <ListForSale game={game} id={first.id} onDone={() => setListing(false)} />}
-      {selling && (
-        <SellConfirm game={game} name={first.name} price={first.price} boughtAt={first.boughtAt} value={deviceValue(game, first)}
+      {selling && (owned.length > 1
+        ? <SellMany game={game} units={owned} onDone={() => setSelling(false)} />
+        : <SellConfirm game={game} name={first.name} price={first.price} boughtAt={first.boughtAt} value={deviceValue(game, first)}
           onCancel={() => setSelling(false)}
           onSell={() => { setSelling(false); act(sellDevice, first.id); }} />
       )}
