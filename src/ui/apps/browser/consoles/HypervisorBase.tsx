@@ -16,6 +16,7 @@ import { deviceHealth, working } from "../../../../sim/60-infra/status";
 import { shownNode, shownWorkload } from "../../../../sim/60-infra/usage";
 import { consoleTitle, type ConsoleFeatures } from "../../../../sim/80-business/consoles";
 import { setMedia } from "../../../../sim/90-actions/console";
+import { setLimits } from "../../../../sim/90-actions/limits";
 import { addNode, cordon, createVm, deleteVm, drain, evacuate, uncordon, PANEL_VM_SIZE, removeNode, resizeVm, setBalancer, setHa } from "../../../../sim/90-actions/clusters";
 import { mountableImages } from "../../../../sim/90-actions/media";
 import { joinableServers } from "../../../../sim/90-actions/software";
@@ -56,23 +57,26 @@ export const nodeName = (game: GameState, id: string | null) => { const d = game
 export const osText = (w: Workload) => (w.os ? `${serverOsById(w.os.id).name} ${w.os.version}` : t("browser-consoles-1.none"));
 export const isoName = (img: OsImage) => `${img.replace("@", "-")}.iso`.replace(/\s+/g, "-").toLowerCase();
 
-// An own VM's size, changed through resizeVm.
+// A VM's size: an own VM is resized, a customer VM gets its limits booked.
 function SizeForm({ w, done }: { w: Workload; done: () => void }) {
   const act = usePageAct(), [size, setSize] = useState<Resources>({ vcpu: w.vcpu, ramGb: w.ramGb, diskGb: w.diskGb });
   return (
     <div className="cx-inline">
       <SizeFields size={size} set={setSize} />
-      <button className="cx-btn primary" onClick={() => act(resizeVm, w.id, size).ok && done()}>{t("browser-consoles-1.resize")}</button>
+      <button className="cx-btn primary" onClick={() => (isOwnVm(w) ? act(resizeVm, w.id, size) : act(setLimits, w.serviceId, size)).ok && done()}>{t("browser-consoles-1.resize")}</button>
       <button className="cx-btn" onClick={done}>{t("browser-consoles-1.cancel")}</button>
     </div>
   );
 }
 
-export function SizeFields({ size, set, labels = [t("browser-consoles-1.vcpu"), t("browser-consoles-1.memoryGb"), t("browser-consoles-1.diskGb")], only }: { size: Resources; set: (r: Resources) => void; labels?: [string, string, string]; only?: keyof Resources }) {
-  const keys: (keyof Resources)[] = ["vcpu", "ramGb", "diskGb"];
-  return <>{keys.map((k, i) => (!only || only === k) && (
-    <label key={k} className="cx-field">{labels[i]}<input type="number" min={1} value={size[k]} onChange={(e) => set({ ...size, [k]: Number(e.target.value) })} /></label>
-  ))}</>;
+const SIZE_STEP = { vcpu: 0.1, ramGb: 0.25, diskGb: 1 };
+
+// ramScale shows memory in another unit than GB (HyperVee takes MB).
+export function SizeFields({ size, set, labels = [t("browser-consoles-1.vcpu"), t("browser-consoles-1.memoryGb"), t("browser-consoles-1.diskGb")], only, ramScale = 1 }: { size: Resources; set: (r: Resources) => void; labels?: [string, string, string]; only?: keyof typeof SIZE_STEP; ramScale?: number }) {
+  const keys = ["vcpu", "ramGb", "diskGb"] as const;
+  return <>{keys.map((k, i) => { const m = k === "ramGb" ? ramScale : 1; return (!only || only === k) && (
+    <label key={k} className="cx-field">{labels[i]}<input type="number" min={SIZE_STEP[k] * m} step={SIZE_STEP[k] * m} value={size[k] * m} onChange={(e) => set({ ...size, [k]: Number(e.target.value) / m })} /></label>
+  ); })}</>;
 }
 
 // Every VM of the cluster with the actions its state allows; panel is the open form under it, dialog the hand work popover.

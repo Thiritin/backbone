@@ -30,6 +30,7 @@ function world() {
     label: `site${i}.de`, spec: { ...sizeSpec("webHosting", 0, 2005), app: "wordpass", appVersion: 2014, appUpdatedAt: hourOf(new Date(Date.UTC(2014, 0, 1))) }, clusterId: host,
   })));
   s.workloads = s.workloads.map((w) => (w.serviceId === a ? { ...w, diskGb: 100 } : w));
+  s.services = s.services.map((v) => (v.id === a ? { ...v, spec: { ...v.spec, diskGb: 100 } } : v));
   ok(saveJob(s, host, { targetId: store, every: "daily" }));
   const c = s.clusters.find((x) => x.id === host)!;
   runJob(s, c, c.jobs[0], []);

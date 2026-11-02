@@ -6,6 +6,10 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - Software now installs on any virtual machine with the disk for it, but a VM too small for its software and sites sits at 100% CPU and RAM, its web console stops answering and its sites slow down until you resize it.
 - CPU and RAM readouts now move a little from hour to hour, and every software website lists the system requirements of the current year on its download page.
+- You now set how much CPU, memory and disk each customer's service may use, on the customer's page and in the hypervisor consoles, and a customer uses what they bought: give them more and their peaks may go above it, give them less and their own service slows down while your host stays fine.
+- A customer who writes in about a slow server can be told to upgrade: if their own limit was too tight, they get a quote for more, and if your host was the problem, they take it badly.
+- Customers no longer buy SSL certificates on their own until your shop sells them; before that, the few who want one write in and you quote an SSL upgrade to their web hosting, and offices, shops and enterprises ask far more often than small sites.
+- Every SSL certificate you sell is now bought from the certificate authority VeriSigh at close to its market price, so certificates earn a small margin.
 - The license page of cPanic, Pleskit and DirectAdmen now asks for the key the way each product does, and entering a key or starting the trial opens the panel at once.
 - The trade office registration now asks for the company address, and the online bank shows the credit card number, expiry date and security code.
 - Buying licences on vendor websites now goes through a checkout with billing details, payment and a review, and a card payment needs the card details from the online bank.

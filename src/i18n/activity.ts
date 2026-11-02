@@ -1,4 +1,5 @@
 import { euroCents } from "../sim/00-core/money";
+import { LOCALE } from "./lang";
 
 type Params = Record<string, string | number>;
 
@@ -15,6 +16,7 @@ const RESOLVED: Record<string, string> = {
   refund: "Refunded the payment", accept: "Accepted the order", quote: "Sent the quote", account: "Created the customer account",
   invoice: "Confirmed the order and sent the invoice", domain: "Registered the domain", provision: "Set up the service",
 };
+const num = (x: string | number) => Number(x).toLocaleString(LOCALE);
 const ticket = (p: Params) => `${KIND[p.kind] ?? "a"} ticket`;
 
 export const ACTIVITY_EN: Record<string, (p: Params) => string> = {
@@ -32,4 +34,5 @@ export const ACTIVITY_EN: Record<string, (p: Params) => string> = {
   "activity.unsuspend": (p) => `Resumed the services over invoice ${p.invoice}`,
   "activity.writeOff": (p) => `Wrote off invoice ${p.invoice}`,
   "activity.price": (p) => `Changed the price to ${euroCents(Number(p.price))} a month`,
+  "activity.limits": (p) => `Set the limits to ${num(p.vcpu)} vCPU, ${num(p.ram)} GB RAM and ${num(p.disk)} GB disk`,
 };

@@ -33,7 +33,7 @@ The booking on the workload is the limit; `Service.spec` stays the sold spec. No
 
 `setLimits(s, serviceId, size: Resources): ActionResult` in `src/sim/90-actions/limits.ts`:
 - Errors: `error.unknownService` (none, ended, or no cluster workload), `error.vmSize` (non-finite or below `LIMIT_MIN = { vcpu: 0.25, ramGb: 0.25, diskGb: 1 }`), `error.vmTooSmall` (disk below what is stored: `diskFill` share of the sold disk plus snapshot deltas), `error.nodeFull` (node or datastore cannot take the growth, via `nodeTakes` and `datastoreFits` as `resizeVm` does), `error.oversellCap`.
-- Rebooks the workload in place (`{ ...w, ...size }`), `freezeTick`. Dedicated and colocation services have no limit (`error.unknownService`).
+- Rebooks the workload in place (`{ ...w, ...size }`). Dedicated and colocation services have no limit (`error.unknownService`).
 - `ACTION_MINUTES.limits = 2`, logged as `activity.limits` with the new size.
 
 ### 3.2 Use (feature 2)

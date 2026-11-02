@@ -204,7 +204,7 @@ export default {
   "browser-consoles-1.hvLocation": () => "Posizione",
   "browser-consoles-1.hvSpecifyGeneration": () => "Specifica la generazione",
   "browser-consoles-1.hvAssignMemory": () => "Assegna memoria",
-  "browser-consoles-1.hvStartupMemoryGb": () => "Memoria di avvio, GB",
+  "browser-consoles-1.hvStartupMemoryMb": () => "Memoria di avvio, MB",
   "browser-consoles-1.hvConfigureNetworking": () => "Configura la rete",
   "browser-consoles-1.hvConnection": () => "Connessione",
   "browser-consoles-1.hvConnectVhd": () => "Connetti disco rigido virtuale",

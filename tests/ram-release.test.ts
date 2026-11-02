@@ -46,6 +46,7 @@ describe("RAM a stopped workload releases", () => {
   it("an OpenVeeZee container refuses to start once the RAM in use is full", () => {
     const x = node("openveezee");
     x.s.workloads = x.s.workloads.map((w) => (w.id === x.ids[0] ? { ...w, ramGb: 1.5 * x.r } : w));
+    x.s.services = x.s.services.map((v) => (v.id === "svc0" ? { ...v, spec: { ...v.spec, ramGb: 1.5 * x.r } } : v));
     ok(stopWorkload(x.s, x.ids[1]));
     expect(err(startWorkload(x.s, x.ids[1]))).toBe("error.noRamToStart");
   });

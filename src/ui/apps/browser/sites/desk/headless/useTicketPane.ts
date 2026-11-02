@@ -65,6 +65,7 @@ export function useTicketPane(s: GameState, tk: Ticket): PaneModel {
   for (const m of tk.move?.log ?? []) items.push({ type: "msg", msg: { from: name, hour: m.hour, text: t(m.key, m.params), you: false } });
   if (tk.move?.windowAt != null && tk.status === "waiting") items.push({ type: "event", text: t("support.moveAt", { time: stamp(tk.move.windowAt) }), hour: null });
   if (tk.outcome === "withdrawn") items.push({ type: "msg", msg: { from: name, hour: tk.updatedAt, text: t("ticket.withdrawn.text"), you: false } });
+  if (tk.outcome === "upgradeDeclined") items.push({ type: "msg", msg: { from: name, hour: tk.updatedAt, text: t("ticket.reply.upgradeDeclined"), you: false } });
   if (tk.work) items.push({ type: "event", text: t("support.queuedUntil", { time: stamp(tk.work.doneAt / 60) }), hour: null });
   if (tk.status === "escalated" || isFinal(tk)) items.push({ type: "event", text: t(`outcome.${tk.outcome ?? (tk.status === "closed" ? "closed" : tk.status === "escalated" ? "escalated" : "resolved")}`), hour: tk.updatedAt });
 

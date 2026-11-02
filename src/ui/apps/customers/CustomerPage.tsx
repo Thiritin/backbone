@@ -8,7 +8,10 @@ import { subjectParams } from "../../../sim/40-support/notices";
 import { isFinal, profileStats, serviceMonthly } from "../../../sim/40-support/tickets";
 import { invoiceTotal, isUnpaid, type Invoice, type InvoiceStatus } from "../../../sim/45-billing/billing";
 import type { GameState } from "../../../sim/50-state";
+import { workloadsOf, type Workload } from "../../../sim/60-infra/cluster";
+import { workloadUse } from "../../../sim/60-infra/usage";
 import { zoneOf } from "../../../sim/60-infra/network";
+import { setLimits } from "../../../sim/90-actions/limits";
 import { answerTraffic, creditCustomer, liftThrottle } from "../../../sim/90-actions/customers";
 import { overuseHandled, overuseOf } from "../../../sim/80-business/overuse";
 import { LOCALE } from "../../../i18n/lang";
@@ -272,6 +275,7 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
                       {v.hostname && <div><dt>{t("misc.hostname")}</dt><dd className="num">{fqdn(game, v.hostname)}</dd></div>}
                       {v.domain && <div><dt>{t("misc.domain")}</dt><dd>{v.domain}{v.product === "webHosting" && <> <button className="btn" onClick={() => openSite(v.domain!)}>{t("misc.openSite")}</button></>}</dd></div>}
                       <div><dt>{t("misc.resources")}</dt><dd className="num">{specText(v.product, v.spec)}</dd></div>
+                      {v.endedAt === null && <LimitRows s={game} v={v} />}
                       <TrafficRow v={v} />
                       <div><dt>{t("misc.price")}</dt><dd className="num">{price(v)}</dd></div>
                       <div><dt>{t("misc.billing")}</dt><dd>{v.period === "hour" ? t("misc.monthly") : t("misc.yearly")}</dd></div>
@@ -364,6 +368,33 @@ export function CreditSheet({ customerId, onClose }: { customerId: string; onClo
         <button className="btn primary" disabled={!(amount > 0)} onClick={save}>{t("misc.credit")}</button>
       </div>
     </div>
+  );
+}
+
+const num = (n: number) => n.toLocaleString(LOCALE, { maximumFractionDigits: 2 });
+const LIMIT_FIELDS = [["vcpu", "misc.vcpu", 0.1, "misc.useVcpu"], ["ramGb", "misc.ramGb", 0.25, "misc.useRam"], ["diskGb", "misc.diskGb", 1, "misc.useDisk"]] as const;
+
+// The size booked for a customer's workload and what it uses of it.
+function LimitRows({ s, v }: { s: GameState; v: Service }) {
+  const w = workloadsOf(s, v.id).find((x) => x.clusterId);
+  return w ? <LimitForm key={`${w.vcpu}/${w.ramGb}/${w.diskGb}`} s={s} v={v} w={w} /> : null;
+}
+
+function LimitForm({ s, v, w }: { s: GameState; v: Service; w: Workload }) {
+  const act = useStore((x) => x.act), [size, setSize] = useState({ vcpu: w.vcpu, ramGb: w.ramGb, diskGb: w.diskGb }), use = workloadUse(s, w);
+  return (
+    <>
+      <div>
+        <dt>{t("misc.limits")}</dt>
+        <dd className="cus-limits">
+          {LIMIT_FIELDS.map(([k, label, step]) => (
+            <label key={k}>{t(label)}<input type="number" min={step} step={step} value={size[k]} onChange={(e) => setSize({ ...size, [k]: Number(e.target.value) })} /></label>
+          ))}
+          <button className="btn primary" onClick={() => act(setLimits, v.id, size)}>{t("misc.saveLimits")}</button>
+        </dd>
+      </div>
+      <div><dt>{t("misc.useNow")}</dt><dd className="num">{LIMIT_FIELDS.map(([k, , , key]) => t(key, { used: num(use[k]), limit: num(w[k]) })).join(" \u00b7 ")}</dd></div>
+    </>
   );
 }
 
