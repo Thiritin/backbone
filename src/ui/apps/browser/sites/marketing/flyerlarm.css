@@ -34,6 +34,7 @@
 .fl.early .fl-hero h1 { color: #d6001c; font: 900 22px "Arial Black", Impact, sans-serif; }
 .fl.early .fl-card { border: 2px solid #000000; background: #ffffff; }
 .fl.early .fl-card > :not(h2) { margin-left: 8px; margin-right: 8px; }
+.fl.early .fl-card > .fl-table { width: calc(100% - 16px); }
 .fl.early .fl-card > :last-child { margin-bottom: 8px; }
 .fl.early .fl-card h2 { margin-bottom: 8px; padding: 3px 8px; background: #000000; color: #ffcc00; font-size: 12px; }
 .fl.early .fl-table th, .fl.early .fl-table td { padding: 3px 6px; border: 1px solid #999999; }
