@@ -1,3 +1,4 @@
+import { importDeskTickets } from "./desk-work";
 import { chance, rand } from "../00-core/rng";
 import { CRYPTO_ABUSE, PAYSAFE_CHURN } from "../10-catalog/payments";
 import { refundUnused, termRoll } from "./terms";
@@ -237,6 +238,7 @@ export function supportTick(s: GameState): SimEvent[] {
   outages(s, customer);
   readOnlySweep(s, () => spawnHourly(s));
   if (isMonthStart(s.hour)) monthly(s);
+  importDeskTickets(s);
 
   const fresh = s.tickets.filter((t) => !before.has(t.id) && t.kind !== "mail");
   if (fresh.length > 1) return [...events, { app: "Support", key: "event.tickets", params: { count: fresh.length } }];

@@ -11,6 +11,7 @@ import { breachOf } from "../60-infra/breach";
 import { hasBackup } from "../60-infra/apps";
 import { answerSponsor, declineSponsorship } from "./community";
 import { HELD_TOPIC } from "../80-business/community";
+import { deskNote, validAssignee } from "../40-support/desk-work";
 import { retentionOptions, type RetentionId } from "../40-support/retention";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -42,13 +43,16 @@ export function readTicket(s: GameState, id: string): ActionResult {
   return { ok: true, id };
 }
 
-// Reserves a ticket for one support agent, who answers it before the rest of the queue; null hands it back.
+// Reserves a ticket for one support agent, who answers it before the rest of the queue, or for the player, whose tickets
+// staff skip; null hands it back.
 export function assignTicket(s: GameState, id: string, employeeId: string | null): ActionResult {
   const t = s.tickets.find((x) => x.id === id);
   if (!t) return fail("error.unknownTicket");
   if (isFinal(t)) return fail("error.ticketDone");
-  if (employeeId !== null && !s.staff.some((e) => e.id === employeeId && e.role === "support")) return fail("error.unknownEmployee");
+  if (employeeId !== null && !validAssignee(s, employeeId)) return fail("error.unknownEmployee");
   t.assignee = employeeId;
+  const name = s.staff.find((e) => e.id === employeeId)?.name;
+  if (s.desk) deskNote(s, t, name ? "desk.note.assigned" : employeeId ? "desk.note.assignedOwner" : "desk.note.unassigned", name ? { name } : {});
   return { ok: true, id };
 }
 

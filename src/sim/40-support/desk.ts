@@ -45,8 +45,9 @@ export function deskStatus(s: GameState): SiteStatus {
   return h.kind === "self" ? hostStatus(s, h.clusterId, DESK_MACHINE) : "up";
 }
 
-// Whether a ticket can be worked: one only a mailbox holds always can, one the desk imported only while the desk is up.
-export const deskReachable = (s: GameState, t: Pick<Ticket, "channelId">): boolean => !t.channelId || deskStatus(s) !== "down";
+// Whether a ticket can be worked: one only a mailbox holds always can, one the desk imported or its portal took only
+// while the desk is up.
+export const deskReachable = (s: GameState, t: Pick<Ticket, "channelId" | "via">): boolean => !(t.channelId || t.via === "web") || deskStatus(s) !== "down";
 
 // The next ticket number in the desk's style: sequential, or random digits unused by any ticket.
 export function nextRef(s: GameState, t: Pick<Ticket, "id">): string {

@@ -5,6 +5,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-02
 
 - Every colocation provider now has its own website in the browser, listed on Yahoy, where you compare its data centers and prices, join a waitlist and order space, and the Visit site button in Locations opens that order form with your pick.
+- Support desks can merge duplicate tickets, mark spam, keep internal notes, set priorities, sort tickets into departments with their own agents and routing rules, keep tickets for yourself that staff leave alone, and take requests through a customer portal with a status lookup.
 - SquirrelMeal webmail and Postfixit Admin can be installed beside a Postfixit mail server, which now brings Dovecoat for IMAP and POP, and the webmail answers at webmail on the company domain.
 - GMix FreeMix, ProMix and TopMix now offer 1, 5 and 10 GB as the real tiers did, and Goggle sells its free edition from August 2006 until December 2012 beside the paid one, with the user limits, storage, names and MX records of each year.
 - A support desk now gives every ticket a number in its own style, and saves with a desk keep all their tickets in it.
