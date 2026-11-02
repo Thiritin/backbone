@@ -11,6 +11,9 @@ import { accountByAddress, addressesOf, ownsAddress, tenantOf } from "./address"
 export { accountByAddress, addressesOf, ownsAddress, tenantOf };
 import { SENDERS } from "../10-catalog/mail-senders";
 import { isLicence, vendorParams } from "../80-business/licences";
+import { orderOf } from "../30-market/orders";
+import { addressLines, mailedAddress } from "../30-customers/addresses";
+import type { SalesRequest } from "../30-market/market";
 
 export const SYS_FOLDERS: SysFolder[] = ["inbox", "sent", "drafts", "junk", "trash", "archive"];
 // Live messages a mailbox keeps before the retention pass folds the oldest into `older`.
@@ -69,13 +72,21 @@ function sender(s: GameState, m: Message): [string, string] {
   return [t("mail.daemon"), `mailer-daemon@${m.to.split("@")[1] ?? GMIX_DOMAIN}`];
 }
 
+// An order mail carries the request's opening message with the profile, the item and the postal address.
+function orderText(s: GameState, r: SalesRequest): string {
+  const m = r.thread[0];
+  return `${t(m.key, m.params)} ${t(`request.use.${r.profile}`)}${m.params.item ? ` ${t("order.msg.item", m.params)}` : ""}\n\n${addressLines(mailedAddress(s.seed, r)).join("\n")}`;
+}
+
 // The only place mail text is rendered, in the active language, so a filter, a search and a screen agree.
 export function view(s: GameState, m: Message): MailView {
   const tk = ticketOf(s, m), [fromName, fromAddress] = sender(s, m);
   const r = tk && m.reply !== undefined ? tk.replies[m.reply] : undefined;
+  const order = tk && !r && tk.kind === "order" ? orderOf(s, tk) : undefined;
   const [subject, text] = m.own ? [m.own.subject, m.own.text]
     : tk && r ? [t("mail.replySubject", { subject: [m.p?.token, t(`ticket.${tk.kind}.${tk.topic}.subject`, subjectParams(s, tk))].filter(Boolean).join(" ") }),
       r.key ? t(r.key, r.params) : t(`template.${r.template}.text`, companyParams(s))]
+    : tk && order ? [t(`ticket.${tk.kind}.${tk.topic}.subject`, subjectParams(s, tk)), orderText(s, order)]
     : tk ? (["subject", "text"] as const).map((x) => t(`ticket.${tk.kind}.${tk.topic}.${x}`, subjectParams(s, tk)))
     : (["subject", "text"] as const).map((x) => t(`ticket.mail.${m.topic}.${x}`, isLicence(m.topic) ? { ...m.p, ...vendorParams(m.p ?? {}) } : m.p));
   return { subject, text: m.foot ? `${text}\n\n${t(m.foot)}` : text, fromName, fromAddress, to: m.to, cc: m.cc ?? [], att: m.att ?? [] };

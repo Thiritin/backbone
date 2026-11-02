@@ -6,8 +6,10 @@ import { deliver, drop, kbOf, store } from "../42-mail/deliver";
 import { ownsAddress, SYS_FOLDERS, tenantOf } from "../42-mail/model";
 import type { Attachment, Folder, MailAccount, Message } from "../42-mail/types";
 import type { GameState } from "../50-state";
+import { folderByPath, parseSieve } from "../80-business/sieve";
 import { freeSpot } from "./docs";
 import type { ActionResult } from "./hardware";
+import { saveFilter } from "./mailbox";
 import { respond, RESPONDERS } from "./paperwork";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -286,4 +288,20 @@ export function saveAttachment(s: GameState, account: string, id: string, index:
   const doc = { ...(src ?? { kind: "note" as const, title: att.k === "file" ? att.name : "", body: "" }), id: `doc${s.nextId++}`, ...freeSpot(s) };
   s.docs = [...s.docs, doc];
   return { ok: true, id: doc.id };
+}
+
+// ManageSieve PUTSCRIPT: the script replaces the mailbox's filters and its vacation, or nothing changes.
+export function saveSieveScript(s: GameState, accountId: string, text: string): ActionResult {
+  const a = s.mail.accounts.find((x) => x.id === accountId);
+  if (!a) return fail("error.mailUnknown");
+  if (capsOf(s, a).serverFilters === "none") return fail("error.mailNoFilters");
+  const p = parseSieve(text, (name) => folderByPath(s, accountId, name));
+  if (!p.ok) return { ok: false, error: `mailserver.sieve.${p.error.key}`, params: { ...p.error.p, line: String(p.error.line) } };
+  const before = s.mail;
+  s.mail = { ...s.mail, filters: s.mail.filters.filter((f) => f.accountId !== accountId) };
+  for (const r of [...p.rules.map((r) => () => saveFilter(s, accountId, r)), () => setVacation(s, accountId, p.vacation)]) {
+    const res = r();
+    if (!res.ok) { s.mail = before; return res; }
+  }
+  return { ok: true };
 }
