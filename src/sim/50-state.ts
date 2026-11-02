@@ -54,6 +54,7 @@ import { newTax, type TaxState } from "./80-business/tax-state";
 import type { StatusDay } from "./80-business/status";
 import type { MailState } from "./42-mail/types";
 import { newMail } from "./42-mail/new";
+import type { DeskState } from "./40-support/desk";
 
 // 3: GPU line servers carry their preset cards. 4: an unregistered game holds its savings until the bank account opens.
 export const SAVE_VERSION = 5;
@@ -395,6 +396,8 @@ export interface GameState {
   logins: Record<string, string[]>;
   // Company email: tenants, mailboxes and their messages (42-mail, docs/design/plans/mail-core.md).
   mail: MailState;
+  // The support desk website, null until one is set up (40-support/desk.ts, docs/design/plans/support-desk.md).
+  desk: DeskState | null;
 }
 
 export interface LogEntry { hour: number; minute?: number; name: string; args: unknown[] }
@@ -494,6 +497,7 @@ export const newGame = (seed: number): GameState => ({
   tax: newTax(),
   logins: {},
   mail: newMail(seed, START_NAME),
+  desk: null,
 });
 
 export const guideDoc = (): Doc => ({ id: "guide", kind: "guide", title: t("doc.guide"), body: "", x: 16, y: 46 });
