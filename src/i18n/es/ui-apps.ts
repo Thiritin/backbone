@@ -161,6 +161,7 @@ export default {
   "apps.settings.dark": () => "Oscuro",
   "apps.settings.auto": () => "Automático",
   "apps.settings.sound": () => "Sonido",
+  "apps.settings.icons": () => "Iconos",
   "apps.settings.soundEffects": () => "Efectos de sonido",
   "apps.settings.volume": () => "Volumen",
   "apps.settings.ambience": () => "Ambiente",

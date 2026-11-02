@@ -13,6 +13,7 @@ import { prefOf, useFocus, useStore, type Theme } from "../store";
 import { playSound } from "../sounds";
 import { exportSave } from "../export-save";
 import { OS_RELEASES } from "../../sim/10-catalog/os";
+import { ICON_CREDITS } from "../art/era-icon";
 import { SOUND_CREDIT, WALLPAPER_CREDITS, wallpaperSvg, type WallpaperId } from "../desktop/wallpaper";
 import { LANGS, lang, setLang, type Lang } from "../../i18n/lang";
 
@@ -165,6 +166,12 @@ export function SettingsApp() {
           <span>{t("apps.settings.sound")}</span>
           <a className="link" href={SOUND_CREDIT.url} target="_blank" rel="noreferrer">{SOUND_CREDIT.text}</a>
         </div>
+        {ICON_CREDITS.map((c) => (
+          <div className="settings-line settings-credit" key={c.url}>
+            <span>{t("apps.settings.icons")}</span>
+            <a className="link" href={c.url} target="_blank" rel="noreferrer">{c.text}</a>
+          </div>
+        ))}
       </div>
       <LeaderboardSettings />
     </div>

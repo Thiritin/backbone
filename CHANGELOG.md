@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- App and file icons now follow the system release: Panthera shows the Crystal Clear icons, Leapard shows the Oxygen icons, and later releases keep their flat tiles.
 - VPS plans now start small and cheap, from 256 MB for about €13 a month in 2005, and grow every few years until they reach 4 to 32 GB in 2026.
 - Many more customers now ask for a VPS as the years go by, on top of the web hosting customers you already get, while VPS prices per GB fall every year.
 - Web hosting panels show each account's disk and traffic as compact numbers and the whole server's CPU, memory and disk above the account list.
