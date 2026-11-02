@@ -53,8 +53,7 @@ describe("provision from a package", () => {
     const w = s.workloads.find((x) => x.serviceId === req().serviceId)!;
     expect(w.ramGb).toBe(req().spec.ramGb * 0.5);
     expect(w.promised).toMatchObject({ vcpu: req().spec.vcpu, ramGb: req().spec.ramGb, diskGb: req().spec.diskGb });
-    const full = { ...w, promised: undefined };
-    expect(workloadUse(s, w).ramGb).toBeCloseTo(workloadUse(s, full).ramGb * 2, 9);
+    expect(workloadUse(s, w).ramGb).toBeCloseTo(w.ramGb, 9);
   });
 
   it("refuses a package below the floor or one that is missing", () => {

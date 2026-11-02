@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- You now set how much CPU, memory and disk each customer's service may use, on the customer's page and in the hypervisor consoles, and a customer uses what they bought: give them more and their peaks may go above it, give them less and their own service slows down while your host stays fine.
+- A customer who writes in about a slow server can be told to upgrade: if their own limit was too tight, they get a quote for more, and if your host was the problem, they take it badly.
 - Customers no longer buy SSL certificates on their own until your shop sells them; before that, the few who want one write in and you quote an SSL upgrade to their web hosting, and offices, shops and enterprises ask far more often than small sites.
 - Every SSL certificate you sell is now bought from the certificate authority VeriSigh at close to its market price, so certificates earn a small margin.
 - The license page of cPanic, Pleskit and DirectAdmen now asks for the key the way each product does, and entering a key or starting the trial opens the panel at once.

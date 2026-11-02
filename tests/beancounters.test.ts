@@ -19,7 +19,7 @@ function ovz(shares: number[]) {
   skipTo(x.s, 2009);
   const r = nodeUsage(x.s, "dev3").physical.ramGb;
   const ids = shares.map(() => ok(createVm(x.s, x.c, { vcpu: 1, ramGb: 1, diskGb: 10 })));
-  ids.forEach((_, i) => x.s.services.push({ id: `svc${i}`, customerId: "none", startedAt: 0, endedAt: null, spec: { vcpu: 1, ramGb: 1, diskGb: 10 } } as never));
+  ids.forEach((_, i) => x.s.services.push({ id: `svc${i}`, customerId: "none", startedAt: 0, endedAt: null, spec: { vcpu: 1, ramGb: shares[i] * r, diskGb: 10 } } as never));
   x.s.workloads = x.s.workloads.map((w) => (ids.includes(w.id) ? { ...w, deviceId: "dev3", serviceId: `svc${ids.indexOf(w.id)}`, ramGb: shares[ids.indexOf(w.id)] * r } : w));
   return { ...x, ids, r, fail: (i = 0) => x.s.workloads.find((w) => w.id === ids[i])!.failcnt?.privvmpages ?? 0 };
 }
@@ -69,6 +69,7 @@ describe("beancounters", () => {
     x.s.heldServices = { ...x.s.heldServices, svc0: "manual", svc1: "manual" };
     const cores = nodeUsage(x.s, "dev3").physical.vcpu;
     x.s.workloads = x.s.workloads.map((w) => (x.ids.includes(w.id) ? { ...w, vcpu: cores * 40 } : w));
+    x.s.services = x.s.services.map((v) => (v.id.startsWith("svc") ? { ...v, spec: { ...v.spec, vcpu: cores * 40 } } : v));
     const u = nodeUsage(x.s, "dev3");
     expect(u.used.vcpu).toBeGreaterThan(1.4 * u.physical.vcpu);
     expect(u.used.ramGb).toBeLessThan(0.9 * u.physical.ramGb);

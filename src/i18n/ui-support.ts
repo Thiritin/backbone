@@ -156,6 +156,7 @@ export default {
   "support.box.overdue": () => "Overdue",
   "support.box.closed": () => "Closed",
   "support.action.credit": () => "Credit 10%",
+  "support.action.upgrade": () => "Recommend an upgrade",
   "support.action.cancel": () => "Process cancellation",
   "support.action.unsuspend": (p) => `Unsuspend with ${p.days}-day extension`,
   "support.action.keep": () => "Keep suspended",

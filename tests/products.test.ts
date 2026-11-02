@@ -6,7 +6,7 @@ import { sizeSpec } from "../src/sim/10-catalog/products";
 import { serviceOnline } from "../src/sim/40-support/status";
 import { type GameState } from "../src/sim/50-state";
 import { bookable, controlPlaneUp, lostDisk, workloadsOf } from "../src/sim/60-infra/cluster";
-import { nodeUsage } from "../src/sim/60-infra/usage";
+import { nodeUsage, starvation } from "../src/sim/60-infra/usage";
 import { howToFactor, licenseCost, SLOW_PENALTY } from "../src/sim/85-products/products";
 import { slowWeight } from "../src/sim/40-support/tickets";
 import { tick } from "../src/sim/88-tick/tick";
@@ -170,11 +170,14 @@ describe("usage curves and overcommit", () => {
     const happiness = () => s.customers.find((c) => c.id === gamer)!.happiness;
     run(s, SAT_20);
     // An hour on the slowed node costs each customer on the node SLOW_PENALTY × the performance lost past their tolerance
-    // × the slowdown weight, once per workload.
+    // × the slowdown weight, once per workload; the small RAM bookings starve the servers on top of the node.
     const before = happiness(), tol = slowTolerance(s.seed, "gameServer", "gamer", gamer);
     run(s, 1);
-    const { since, last } = s.services.find((v) => v.customerId === gamer)!.slowRun!;
-    expect(before - happiness()).toBeCloseTo(2 * SLOW_PENALTY * (1 - nodeUsage(s, "dev3").perf - tol) * slowWeight("game", last, last - since), 6);
+    const lost = s.services.filter((v) => v.customerId === gamer).map((v) => {
+      const { since, last } = v.slowRun!;
+      return Math.max(0, 1 - nodeUsage(s, "dev3").perf * (1 - starvation(s, v, workloadsOf(s, v.id)[0])) - tol) * slowWeight("game", last, last - since);
+    });
+    expect(before - happiness()).toBeCloseTo(SLOW_PENALTY * lost.reduce((n, x) => n + x, 0), 6);
     run(s, 2);
     run(s, 168);
     expect(s.tickets.filter((t) => t.topic === "slow").length).toBeGreaterThan(0);

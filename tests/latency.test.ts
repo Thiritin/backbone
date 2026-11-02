@@ -21,7 +21,10 @@ describe("load to latency", () => {
     const r = provisionService(s, cus, "gameServer", { label: "Big", spec: { ...sizeSpec("gameServer", 0, 2005), vcpu: 1, ramGb: 1, diskGb: 10 }, clusterId: c, deviceId: "dev3" });
     expect(r.ok).toBe(true);
     const w = s.workloads.find((x) => x.deviceId === "dev3" && x.serviceId)!;
-    const cores = nodeUsage(s, "dev3").physical.vcpu, scale = (k: number) => { s.workloads = s.workloads.map((x) => (x.id === w.id ? { ...x, vcpu: k } : x)); };
+    const cores = nodeUsage(s, "dev3").physical.vcpu, scale = (k: number) => {
+      s.workloads = s.workloads.map((x) => (x.id === w.id ? { ...x, vcpu: k } : x));
+      s.services = s.services.map((v) => (v.id === w.serviceId ? { ...v, spec: { ...v.spec, vcpu: k } } : v));
+    };
     scale(cores * 1000);
     const u = nodeUsage(s, "dev3");
     expect(u.used.vcpu / u.physical.vcpu).toBeGreaterThan(4);
