@@ -61,7 +61,7 @@ export const NEWS_EN: Record<string, (p: Params) => string> = {
   "event.news.feature.title": (p) => `${p.name} update`,
   "event.news.feature.text": (p) => `Heize online reports that the new release of ${p.name} ${FEATURE[p.feature] ?? p.feature}.`,
   "event.news.desk.title": (p) => `${p.name} released`,
-  "event.news.desk.text": (p) => `Heize online reports that the help desk ${p.name} is out and can be subscribed to in the Pear Store.`,
+  "event.news.desk.text": (p) => `Heize online reports that the help desk ${p.name} is out at ${p.host}.`,
   "event.news.training.title": (p) => `${p.name} training offered`,
   "event.news.training.text": (p) => `Heize online reports that a training in ${p.name} is now offered, and your team can take it in Research.`,
   "event.news.release.title": (p) => `Software releases of ${p.year}`,
