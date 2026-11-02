@@ -24,6 +24,7 @@ import { shopActive, shopCount, type ShopProduct } from "./shop";
 import { assignedKey, licenceStatus, SHOP_MACHINE, tiersOnSale } from "../60-infra/licence";
 import { tiersOf, type LicenceTier } from "../10-catalog/licence-tiers";
 import { offeredProducts, type CatalogProduct } from "./catalog";
+import { siteDesign, type SiteDesign } from "./site-design";
 
 export { SITE_LINES };
 
@@ -201,7 +202,7 @@ export type CustomerSiteStatus = "up" | "slow" | "defaced" | "down";
 
 // A web hosting customer's own site, from the customer's name and the profile; blurb is an i18n key.
 // sponsored: a running sponsorship covers the site and its banner still hangs, so the company's logo shows on it.
-export function customerSite(s: GameState, serviceId: string): { title: string; blurb: string; status: CustomerSiteStatus; sponsored: boolean } | null {
+export function customerSite(s: GameState, serviceId: string): { title: string; blurb: string; status: CustomerSiteStatus; sponsored: boolean; design: SiteDesign } | null {
   const v = s.services.find((x) => x.id === serviceId), cus = v && s.customers.find((c) => c.id === v.customerId);
   if (!v || !cus || v.product !== "webHosting") return null;
   const ws = workloadsOf(s, serviceId);
@@ -211,7 +212,7 @@ export function customerSite(s: GameState, serviceId: string): { title: string; 
     : !serviceOnline(s, serviceId) ? "down"
     : ws.some((w) => slowHost(s, w, s.clusters.find((c) => c.id === w.clusterId))) ? "slow" : "up";
   const sponsored = s.sponsorships.some((x) => x.status === "running" && x.serviceIds.includes(serviceId) && !x.board?.dropped);
-  return { title: cus.name, blurb: `site.blurb.${cus.profile}`, status, sponsored };
+  return { title: cus.name, blurb: `site.blurb.${cus.profile}`, status, sponsored, design: siteDesign(s, cus.id) };
 }
 
 // Where a customer's site answers: its domain, or the private address of its account until it has one.

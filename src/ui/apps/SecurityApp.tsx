@@ -92,7 +92,7 @@ function Compromised({ game, skip }: { game: GameState; skip: Cluster[] }) {
 // Defaced customer sites that send spam: restored from a backup, their owner offered paid clean-up or reminded, or suspended
 // with a notice that names the hack.
 function DefacedSites({ game }: { game: GameState }) {
-  const act = useStore((s) => s.act);
+  const act = useStore((s) => s.act), openApp = useStore((s) => s.openApp);
   const sites = game.sites.defaced.flatMap((id) => {
     const v = game.services.find((x) => x.id === id && x.endedAt === null), c = v && game.customers.find((x) => x.id === v.customerId);
     return v && c ? [{ v, c }] : [];
@@ -105,6 +105,7 @@ function DefacedSites({ game }: { game: GameState }) {
         const held = !!game.heldServices[v.id], offered = game.sites.notified.includes(`${v.id}|offer`), reminded = game.sites.notified.includes(`${v.id}|remind`);
         const price = euroCents(cleanupPrice(game, c));
         const menu = (): MenuEntry[] => [
+          !!v.domain && { label: t("misc.openSite"), run: () => openApp("Browser", { kind: "url", id: `${v.domain}/` }) },
           hasBackup(game, v.id) && { label: t("apps.security.restore"), run: () => act(cleanSite, v.id) },
           !offered && { label: t("apps.security.offerCleanupFor", { price }), run: () => act(offerCleanup, v.id) },
           !reminded && { label: t("apps.security.remind"), run: () => act(remindCustomer, v.id) },
@@ -123,6 +124,7 @@ function DefacedSites({ game }: { game: GameState }) {
             </td>
             <td className="r">
               <span style={{ display: "inline-flex", gap: 6, justifyContent: "flex-end" }}>
+                {v.domain && <button className="btn" onClick={() => openApp("Browser", { kind: "url", id: `${v.domain}/` })}>{t("misc.openSite")}</button>}
                 <button className="btn" disabled={!hasBackup(game, v.id)} onClick={() => act(cleanSite, v.id)}>{t("apps.security.restore")}</button>
                 <button className="btn" disabled={offered} onClick={() => act(offerCleanup, v.id)}>{t("apps.security.offerCleanup")} <span className="num">{price}</span></button>
                 <button className="btn" disabled={reminded} onClick={() => act(remindCustomer, v.id)}>{t("apps.security.remind")}</button>
