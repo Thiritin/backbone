@@ -49,8 +49,8 @@ The front ends are new software of a new kind `mailweb`. `kind: "mail"` stays th
 
 | Id | Name | From | OS | Ports | Install | Control plane | Licence |
 |---|---|---|---|---|---|---|---|
-| `squirrelmeal` | SquirrelMeal | 2005 | lunix | 80, 443 | `apt-get install -y squirrelmeal` | 0.25 vCPU, 0.5 GB, 1 GB | free |
-| `postfixitadmin` | Postfixit Admin | 2005 | lunix | 80, 443 | `apt-get install -y postfixitadmin` | 0.25 vCPU, 0.5 GB, 2 GB | free |
+| `squirrelmeal` | SquirrelMeal | 2005 | lunix | 80, 443 | `apt-get install -y squirrelmeal` | 0.05 vCPU, 0.1 GB, 0.1 GB | free |
+| `postfixitadmin` | Postfixit Admin | 2005 | lunix | 80, 443 | `apt-get install -y postfixitadmin` | 0.05 vCPU, 0.1 GB, 0.5 GB | free |
 | `squarecube` | Squarecube | 2008 | lunix | 80, 443 | `apt-get install -y squarecube` | 0.25 vCPU, 0.5 GB, 2 GB | free |
 | `sogoat` | SOGoat | 2009 | lunix | 80, 443, 20000 | repo line, `apt-get update`, `apt-get install -y sogoat` | 1 vCPU, 2 GB, 10 GB | free |
 

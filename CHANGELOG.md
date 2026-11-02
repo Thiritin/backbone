@@ -5,6 +5,15 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-02
 
 - A server that runs out of memory no longer freezes with every workload on it: it slows down while it swaps, and past that only its largest VM is killed for an hour.
+- Servers now draw power and heat up by how busy their CPUs are, and the server management page shows the CPU temperature and fans that speed up with it.
+- Bound, Knut DNS, WireGuarded, vsFTPeed, Postfixit and Backula no longer show a web page in the browser, and Backula's finished jobs and restores of lost machines now run from its command line tool in the terminal.
+- The command line tools of free software no longer list license commands or a license key option.
+- The Terminal editor shows light text on a dark background again instead of white on white.
+- Cancelling an invoice draft in the bookkeeping program now asks before it deletes the draft, and the Up and Down keys move through the invoices, quotes, bank bookings and customers.
+- The Mark as paid dialog now lists the open transfers in a list to pick from, and long names in the bank list no longer push the Accept button out of view.
+- The Terminal now finds a basement server by its name when it sits behind your own router, the same way it finds your VMs.
+- Every training in Research now has a How it works guide you can open before you start it, and each guide lists what the training unlocks and where to find it.
+- Every virtualization console now shows a VM's or container's public IP address next to its local one, and the VMwhere VM list has an IP address column.
 - A busy OpenVeeZee node no longer racks up memory failures from CPU load alone, and when it runs out of memory the OOM killer now stops only the largest container for an hour, shown as "OOM killed".
 - Slow sites now bother business customers most during business hours and more the longer the slowdown lasts, while private customers barely notice.
 - The new Traffic billing training lets you set one standing answer for customers who go over their traffic, and your books then throttle, bill or offer an upgrade every day on their own.
@@ -38,6 +47,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Every company now holds a real mailbox on its mail service, with its own password and a welcome message from the provider.
 - Your registrar's login now has a DNS page for your company domain, where you add, edit and delete records such as MX and TXT, and each change reaches the world once the TTL of the record it replaces has run out.
 - Every abuse notice links to the reported address, and the Browser shows whether the file, mailer or page is really there before you decide.
+- Hosting panels, hypervisors and backup servers now take realistic CPU, RAM and disk, and panels and hypervisors need more RAM and disk each year.
+- Your own mail server now needs disk for every company mailbox it holds, while the webmail and mail admin tools take only a sliver of a server.
 
 ## 2026-11-01
 

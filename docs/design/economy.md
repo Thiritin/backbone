@@ -164,7 +164,7 @@ Backup and archive servers use HDDs whatever the generation's disk type. Archive
 | Large HDD (backup) | 500 GB | 1 TB | 3 TB | 6 TB | 10 TB | 16 TB | 22 TB |
 | Densest HDD (archive) | 750 GB | 2 TB | 4 TB | 8 TB | 14 TB | 20 TB | 28 TB |
 
-- **Power draw.** A server draws 40% of its full power when idle, rising in a straight line with CPU load. The game applies the two ends: a server with no running workload draws the idle 40%, one with a running workload draws its full power, in the power bill and in the rack's fuse limit.
+- **Power draw.** A server draws 40% of its full power when idle, rising in a straight line with CPU load. A server with no running workload draws its idle power; one with a running workload draws from idle to full power by its CPU utilisation (the vCPUs its OS, control plane and workloads use over its cores, at most 1), in the power bill, the rack's fuse limit and the IPMI power reading. A server under burn-in draws full power.
 - **Port speed.** Server ports run at 1G until 2011, then 10G, 25G from 2017 and 100G from 2023.
 - **Ports.** 1G ports are copper (RJ45); 10G and faster ports are SFP cages.
 - **Shop window.** A generation stays in the shop until the generation two steps newer arrives, so G1 is sold until the end of 2010 and G2 until the end of 2013. G6 and G7 stay in the shop.
@@ -536,7 +536,7 @@ How the market above turns into order emails and sales requests in the Support a
 
 | Mail server | From | License | Install | Needs |
 | --- | --- | --- | --- | --- |
-| Postfixit (Postfix) | 2005 | Free | 4 h | 0.5 vCPU, 1 GB, 20 GB |
+| Postfixit (Postfix) | 2005 | Free | 4 h | 0.1 vCPU, 0.25 GB, 2 GB |
 | Mailpig (mailcow) | 2015 | Free | 2 h | 1 vCPU, 2 GB, 20 GB |
 
 One mail server per company, on a server or in a VM. Its address is the host's public address; on a dynamic line that address is always listed (Addresses and internet), so a basement mail server works on a business line only. While the host is down or its address is listed, delivery is impaired: order emails arrive at half the rate (`IMPAIRED_SHARE` 0.5) and invoices issued in that window get their payment day 72 hours later (`MAIL_DELAY_HOURS`, applied to the first payment day and to the day a reminder sets). Without any mail service no order email arrives (`mailShare` 0). The balance model's steady bot books Hosted Exchange for the owner and every employee from the start, signs NameCheep, and pays the wholesale of the company domain and of the domains of web customers who ordered by email, against the €15 a year those customers pay; the shift moves the medians by about 0.1 to 0.2 years.
@@ -1206,6 +1206,8 @@ A server has 4 fans; a switch or router 2 fans, 1 or 2 power supplies and a boar
 
 P is the kW the location's racks draw and m the room's mass: its positions in a hall, 4 in the basement. A hall's cooling C is 1.2 × the kW limits of its racks, so it never falls short while it works, and it sheds s = 0.02 kW per position and degree through the building. The basement has no cooling unit: it sheds C = 3 kW at its normal temperature and s = 0.2 kW more per degree, so a basement drawing 4.5 kW on its extra circuit settles 7.5 °C warmer. A hall's cooling fails 0.3 times a year per location for a log-normal duration (median 40 minutes, σ 1, 5 minutes to 8 hours); C is then 0. A full 3.3 kW position climbs 1.6 °C a minute and reaches 45 °C after about 14 minutes, a 0.3 kW position 0.15 °C a minute.
 
+**CPU temperature and fans.** A server's CPU runs at inlet + 20 °C × utilisation × (1 + 0.5 per failed fan); it equals the inlet when the server is off. Its fans spin at 30% of their 12,500 rpm maximum up to 50 °C CPU and rise in a straight line to full speed at 80 °C; a failed fan reads 0 rpm. The IPMI sensor page shows the CPU temperature (warning from 85 °C, critical from 95 °C), each fan's rpm (warning below 2,000) and the fan speed in percent. The CPU temperature has no effect on performance or wear yet.
+
 | Inlet | Effect |
 | --- | --- |
 | 35 °C or more | The server throttles to 60% of its performance, which slows the customer apps on it (see Usage curves), and every hour counts as a hot hour |
@@ -1720,27 +1722,37 @@ Every server and every one of the player's own VMs runs an operating system, and
 
 | Software | Kind | OS | License | Install | How-to tickets | Live migration | Control plane |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| cPanic | Panel | Lunix | €12 per server (Dedicated), from June 2019 the editions Solo to Premier (€0.40 per web space) | 3 h | ×0.8 |  | 0.25 vCPU, 0.25 GB, 5 GB |
-| Pleskit | Panel | Lunix, Windoors | €12 per panel host | 3 h | ×0.9 |  | 0.25 vCPU, 0.25 GB, 5 GB |
+| cPanic | Panel | Lunix | €12 per server (Dedicated), from June 2019 the editions Solo to Premier (€0.40 per web space) | 3 h | ×0.8 |  | 0.5 vCPU, 1 GB, 10 GB |
+| Pleskit | Panel | Lunix, Windoors | €12 per panel host | 3 h | ×0.9 |  | 0.5 vCPU, 0.5 GB, 10 GB |
 | DirectAdmen | Panel | Lunix | €100 lifetime per major or Standard at €4 per panel host, from September 2019 the editions Personal to Standard | 2 h | ×1.2 |  | 0.1 vCPU, 0.1 GB, 2 GB |
 | FreePanel | Panel | Lunix | Free | 2 h | ×1.5 |  | 0.1 vCPU, 0.1 GB, 2 GB |
 | OpenVeeZee | Cloud | Lunix | Free | 3 h | ×1.4 | No | 0.1 vCPU, 0.1 GB, 2 GB |
-| OpenStash | Cloud | Lunix | Free | 8 h | ×1.3 | Yes | 2 vCPU, 2 GB, 20 GB |
+| OpenStash | Cloud | Lunix | Free | 8 h | ×1.3 | Yes | 4 vCPU, 8 GB, 50 GB |
 | VMwhere | Cloud | Lunix | €600 once per CPU socket, from December 2023 €96 a year per physical core with 16 cores per CPU at least | 5 h | ×0.7 | Yes | 1 vCPU, 2 GB, 10 GB |
-| Proxmocks | Cloud | Lunix | Free | 3 h | ×1.0 | Yes | 0.25 vCPU, 0.25 GB, 5 GB |
-| HyperVee | Cloud | Windoors | €20 per node | 4 h | ×0.9 | No | 1 vCPU, 1 GB, 10 GB |
+| Proxmocks | Cloud | Lunix | Free | 3 h | ×1.0 | Yes | 0.25 vCPU, 1 GB, 10 GB |
+| HyperVee | Cloud | Windoors | €20 per node | 4 h | ×0.9 | No | 1 vCPU, 2 GB, 32 GB |
 | TCAdmen | Game | Windoors | €25 per server | 2 h | ×0.9 | No | 0.25 vCPU, 0.5 GB, 5 GB |
-| MultiKraft | Game | Lunix, Windoors | €20 per server, from 2020 €1.20 per game server beyond 25 | 2 h | ×1.0 | No | 0.25 vCPU, 0.5 GB, 5 GB |
+| MultiKraft | Game | Lunix, Windoors | €20 per server, from 2020 €1.20 per game server beyond 25 | 2 h | ×1.0 | No | 0.1 vCPU, 0.25 GB, 1 GB |
 | Pterodaktyl | Game | Lunix | Free | 3 h | ×1.2 | No | 0.25 vCPU, 0.5 GB, 5 GB |
 | Bound | DNS | Lunix, Windoors | Free | 2 h | ×1.3 | No | 0.1 vCPU, 0.25 GB, 2 GB |
 | PowerDNZ | DNS | Lunix | Free | 2 h | ×1.0 | No | 0.25 vCPU, 0.5 GB, 5 GB |
 | Knut DNS | DNS | Lunix | Free | 1 h | ×1.1 | No | 0.1 vCPU, 0.25 GB, 2 GB |
-| OpenVeePeeN | VPN | Lunix, Windoors | Free | 2 h | ×1.3 | No | 0.25 vCPU, 0.25 GB, 2 GB |
+| OpenVeePeeN | VPN | Lunix, Windoors | Free | 2 h | ×1.3 | No | 0.25 vCPU, 1 GB, 2 GB |
 | Sysko AnyConnekt | VPN | Lunix | €30 per server | 3 h | ×0.7 | No | 0.5 vCPU, 1 GB, 5 GB |
 | WireGuarded | VPN | Lunix | Free | 1 h | ×0.9 | No | 0.1 vCPU, 0.1 GB, 1 GB |
-| vsFTPeed | Storage | Lunix | Free | 1 h | ×1.4 | No | 0.1 vCPU, 0.25 GB, 2 GB |
+| vsFTPeed | Storage | Lunix | Free | 1 h | ×1.4 | No | 0.05 vCPU, 0.05 GB, 0.1 GB |
 | OwnClod | Storage | Lunix | Free | 2 h | ×1.2 | No | 0.5 vCPU, 1 GB, 10 GB |
 | MinnIO | Storage | Lunix, Windoors | Free | 2 h | ×1.0 | No | 0.5 vCPU, 1 GB, 10 GB |
+
+| Software | Kind | Control plane |
+| --- | --- | --- |
+| SquirrelMeal | Webmail | 0.05 vCPU, 0.1 GB, 0.1 GB |
+| Postfixit Admin | Webmail | 0.05 vCPU, 0.1 GB, 0.5 GB |
+| Backula | Backup | 0.5 vCPU, 1 GB, 10 GB |
+| Veeham Backup | Backup | 2 vCPU, 4 GB, 60 GB |
+| Proxmocks Backup Server | Backup | 1 vCPU, 2 GB, 32 GB |
+
+**Control plane growth.** The control plane column is what the software takes in its first year (the From column of the table below, 2010 for OpenStash, 2005 or 2008 for the rest). Panels and hypervisors grow RAM and disk with the square root of the server RAM growth (`vpsPlanGb`) since that year, half as fast as server RAM: cPanic takes 1 GB and 10 GB in 2005 and 2.83 GB and 28 GB in 2026. RAM rounds to 0.01 GB and disk to whole GB, and the vCPU stays flat. Game panels, DNS, VPN, storage, mail, webmail and backup software stay at their first-year size. A panel VM sized in an earlier year keeps running as the panel grows: the growth comes out of the room the VM holds for web spaces, RAM can run over as on any overbooked VM, only disk refuses new web spaces, and installing or resizing needs a VM that holds this year's panel. A mail server also books 1 GB × `vpsPlanGb` of disk for every company mailbox it holds (8 GB a mailbox in 2026); customers' mailboxes live in their web space disk and are not booked again.
 
 | Operating system | License | Install | Boot |
 | --- | --- | --- | --- |

@@ -125,8 +125,8 @@ function Panel({ k, g }: { k: Skill; g: GameState }) {
         </div>
       )}
       <div className="rs-actions">
-        {state === "learned" ? <button className="btn" onClick={() => setExplain(k.id)}><BookOpen />{t("misc2.howItWorks")}</button>
-          : state !== "training" && <button className="btn primary" disabled={!canStart} onClick={() => act(research, k.id)}>{t("misc2.startTraining")}</button>}
+        <button className="btn" onClick={() => setExplain(k.id)}><BookOpen />{t("misc2.howItWorks")}</button>
+        {(state === "open" || state === "locked") && <button className="btn primary" disabled={!canStart} onClick={() => act(research, k.id)}>{t("misc2.startTraining")}</button>}
       </div>
     </aside>
   );

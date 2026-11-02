@@ -10,7 +10,7 @@ import { More } from "../More";
 import { invoiceMenu, InvoiceDialog, type Asking } from "./InvoiceMenu";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
-import { useBooks } from "./view";
+import { arrowRows, useBooks } from "./view";
 import { formatDay } from "../billing/format";
 import { monthYear } from "../support/labels";
 import { DocBar, DocButton, DocFoot } from "./DocBar";
@@ -37,7 +37,7 @@ export function InvoicesTab({ focus }: { focus: string | null }) {
         <Locked id="monthly-run" label={t("books.monthlyRun")} />
       </DocBar>
       <div className="books-split">
-        <div className="fin-scroll">
+        <div className="fin-scroll" onKeyDown={arrowRows}>
           {list.length === 0 ? <div className="fin-empty"><Receipt />{t("books.noInvoices")}</div> : (
             <table className="table fin-table books-doclist">
               <thead>

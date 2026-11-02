@@ -115,8 +115,8 @@ describe("Memory reservation", () => {
     ok(setHa(s, cluster, "live", true));
     const dev3 = s.devices.find((d) => d.id === "dev3")!;
     ok(setRamGuard(s, cluster, true));
-    // 8 GB installed less the hypervisor's 0.25 GB.
-    expect(bookable(s, dev3).ramGb).toBeCloseTo(8 - 0.25);
+    // 8 GB installed less the hypervisor's 1 GB.
+    expect(bookable(s, dev3).ramGb).toBeCloseTo(8 - 1);
     const moved = s.workloads.find((w) => w.deviceId === "dev3")!;
     ok(migrateWorkload(s, moved.id, second));
     // 4 GB booked plus another 4 GB would pass the installed 8 GB less the control plane.
