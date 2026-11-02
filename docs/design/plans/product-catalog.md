@@ -1,5 +1,7 @@
 # Plan: product catalog
 
+Superseded by `shop-books-split.md`: the Books catalog was removed, and fixed products live only in the shop.
+
 Lane id: `product-catalog`. Related design: `docs/design/plans/billing-by-hand.md` (Books, quotes), `docs/design/plans/shop-portal.md` (3.3 Product groups and products, which this plan reshapes), `docs/design/shop.md` (shop variants), `docs/design/gdd/README.md` (Custom orders).
 
 ## 1. Decisions

@@ -17,7 +17,6 @@ import { InvoicesTab } from "./InvoicesTab";
 import { QuotesTab } from "./QuotesTab";
 import { NEW } from "./NewCustomer";
 import { PayablesTab } from "./PayablesTab";
-import { ProductsTab } from "./ProductsTab";
 import { RemindersTab } from "./RemindersTab";
 import { OverviewTab, StatementTab, StatisticsTab } from "./Reports";
 import { TaxTab } from "./TaxTab";
@@ -25,7 +24,6 @@ import { Register } from "./Register";
 import { useBooks } from "./view";
 import { LAYOUTS } from "./layouts";
 import type { Entry, Group } from "./layouts/types";
-import { unpublished } from "../../../sim/80-business/catalog";
 import "../billing/billing.css";
 import "./books.css";
 
@@ -42,7 +40,6 @@ const TABS: { id: string; group: Group; count: (s: GameState) => number; body: C
   { id: "invoices", group: "sales", count: drafts, body: InvoicesTab },
   { id: "bank", group: "payments", count: unmatched, body: BankTab },
   { id: "reminders", group: "payments", count: late, body: RemindersTab, features: ["dunning"] },
-  { id: "products", group: "sales", count: unpublished, body: ProductsTab },
   { id: "payables", group: "payments", count: (s) => s.payables.filter((p) => lateInBooks(s, p)).length, body: PayablesTab },
   { id: "statistics", group: "reports", count: () => 0, body: StatisticsTab, features: ["reports", "statistics"] },
   { id: "tax", group: "reports", count: (s) => s.tax.returns.filter((r) => r.filedAt === null && s.hour >= r.dueAt).length, body: TaxTab, features: ["tax"] },

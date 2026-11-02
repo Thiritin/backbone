@@ -11,7 +11,6 @@ import { MOMS_DSL, seedDcs } from "./20-world/datacenters";
 import { t } from "../i18n/en";
 import type { Customer, Product, Service } from "./30-customers/customers";
 import type { Quote } from "./30-market/quotes";
-import type { CatalogProduct } from "./80-business/catalog";
 import type { BillingRules, HoldReason, Invoice, Loan, Transfer } from "./45-billing/billing";
 import type { Ticket } from "./40-support/tickets";
 import { applications, defaultTeams, type Candidate, type Employee, type Team } from "./47-staff/staff";
@@ -241,8 +240,6 @@ export interface GameState {
   transfers: Transfer[];
   // Quotes written in Books for order tickets.
   quotes: Quote[];
-  // The products the player sells (80-business/catalog.ts).
-  catalog: CatalogProduct[];
   // Hour up to which each yearly service is invoiced.
   yearlyBilledUntil: Record<string, number>;
   loans: Loan[];
@@ -482,7 +479,6 @@ export const newGame = (seed: number): GameState => ({
   customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], webOpenedAt: null, files: {}, webspaces: {}, ownWebspaces: [], installers: {},
   invoices: [], transfers: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   quotes: [],
-  catalog: [],
   billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 }, autoOrders: false, reviewOrders: false, screenOrders: false, screenChecks: 0, chargebackStrikes: 0,
   shop: newShop(),
   privateNets: [],

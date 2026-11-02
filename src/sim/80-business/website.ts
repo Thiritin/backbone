@@ -24,7 +24,6 @@ import { STATUS_FROM_YEAR, STATUS_MIN_CUSTOMERS } from "./status";
 import { shopActive, shopCount, type ShopProduct } from "./shop";
 import { assignedKey, licenceStatus, SHOP_MACHINE, tiersOnSale } from "../60-infra/licence";
 import { tiersOf, type LicenceTier } from "../10-catalog/licence-tiers";
-import { offeredProducts, type CatalogProduct } from "./catalog";
 import { metrics } from "../metrics";
 import { siteDesign, type SiteDesign } from "./site-design";
 
@@ -70,17 +69,15 @@ export function orderLink(s: GameState, product?: ShopProduct): string | null {
   return `portal.${companyDomain(s)}${path}`;
 }
 
-// What the website shows: each listed line, with its published products before a shop, else the price from its cheapest
-// visible shop product, or from the line's smallest size at the player's rates for lines sold through configurable options,
-// and the order address while orders still come by email.
-export interface SiteLine { product: Product; from: number | null; link: string | null; items: CatalogProduct[] }
+// What the website shows: each listed line with the price from its cheapest visible shop product, or from the line's
+// smallest size at the player's rates for lines sold through configurable options, and the order address while orders
+// still come by email.
+export interface SiteLine { product: Product; from: number | null; link: string | null }
 export const siteContent = (s: GameState): { lines: SiteLine[]; email: string | null } => ({
   lines: SITE_LINES.filter((p) => listed(s, p)).map((p) => {
-    const items = shopActive(s) ? [] : offeredProducts(s, p);
-    if (items.length) return { product: p, from: null, link: null, items };
     const best = visibleProducts(s, p).filter((x) => Number.isFinite(fromMonthly(x))).sort((x, y) => fromMonthly(x) - fromMonthly(y))[0];
-    if (best) return { product: p, from: fromMonthly(best), link: orderLink(s, best), items };
-    return { product: p, from: shopActive(s) ? offerPrice(s, p, sizeSpec(p, 0, yearOf(s.hour))) : null, link: orderLink(s), items };
+    if (best) return { product: p, from: fromMonthly(best), link: orderLink(s, best) };
+    return { product: p, from: shopActive(s) ? offerPrice(s, p, sizeSpec(p, 0, yearOf(s.hour))) : null, link: orderLink(s) };
   }),
   email: s.marketing.emailOrders ? salesAddress(s) : null,
 });
