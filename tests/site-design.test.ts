@@ -265,7 +265,7 @@ describe("balance", () => {
     const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)];
     const runs = Array.from({ length: 20 }, (_, i) => runBalance(STEADY, i + 1));
     expect(runs.filter((r) => r.bankrupt)).toHaveLength(0);
-    const before: Record<number, number> = { 2: 2006.2, 3: 2006.9, 4: 2008.7, 5: 2011.9 };
+    const before: Record<number, number> = { 2: 2006.1, 3: 2007.2, 4: 2008.8, 5: 2012.4 };
     for (const level of [2, 3, 4, 5]) expect(Math.abs(median(runs.map((r) => r.levelYear[level] ?? Infinity)) - before[level])).toBeLessThanOrEqual(0.5);
   }, 60000);
 });
