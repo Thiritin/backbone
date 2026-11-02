@@ -2,7 +2,7 @@ import {
   Activity, Archive, ArrowDownUp, CalendarDays, FileSearch, Landmark, Cloud, Mailbox, FolderOpen, Bug, BookOpen, Compass, ChartPie, Contact, FileText, Network, GraduationCap, LifeBuoy, Megaphone, MessageCircle, Newspaper, Receipt, Server, Settings, ShieldAlert, ShoppingCart, SquareTerminal,
 } from "lucide-react";
 import type { ComponentType } from "react";
-import { era } from "../art/era-icon";
+import { era, PearMailIcon } from "../art/era-icon";
 import { t } from "../../i18n/en";
 import { BooksApp, drafts, late, unmatched } from "./books/BooksApp";
 import { CalendarApp } from "./calendar/CalendarApp";
@@ -20,7 +20,7 @@ import { ApplicationsApp } from "./ApplicationsApp";
 import type { GameState } from "../../sim/50-state";
 import { SupportApp } from "./support/SupportApp";
 import { supportApp } from "./support/desk";
-import { PearMailMark, type MarkProps } from "../art/mailmarks";
+import type { MarkProps } from "../art/mailmarks";
 import { ResearchApp } from "./research/ResearchApp";
 import { canResearchAny } from "../../sim/90-actions/store";
 import { openReports } from "../../sim/85-products/products";
@@ -72,7 +72,7 @@ export const APPS: AppDef[] = [
     badge: (s) => drafts(s) + unmatched(s) + late(s) },
   { name: "Post", icon: era(Mailbox, "post"), tile: "oklch(0.72 0.15 85)", about: t("apps.about.Post"), body: PostApp,
     badge: (s) => inbox(s).filter((l) => !l.read).length },
-  { name: "Pear Mail", icon: PearMailMark, tile: "oklch(0.62 0.15 245)", about: t("apps.about.Pear Mail"), body: PearMailApp, badge: unreadBadge, menus: pearMenus },
+  { name: "Pear Mail", icon: PearMailIcon, tile: "oklch(0.62 0.15 245)", about: t("apps.about.Pear Mail"), body: PearMailApp, badge: unreadBadge, menus: pearMenus },
   { name: "DocuWhere", icon: era(Archive, "docuwhere"), tile: "oklch(0.55 0.13 265)", about: t("apps.about.DocuWhere"), body: DocuWhereApp },
   { name: "DohleFormular", icon: era(Landmark, "dohleformular"), tile: "oklch(0.36 0.09 255)", about: t("apps.about.DohleFormular"), body: DohleFormularApp },
   { name: "Staff", icon: era(Contact, "staff"), tile: "oklch(0.7 0.15 70)", about: t("apps.about.Staff"), body: StaffApp },

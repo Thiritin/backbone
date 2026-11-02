@@ -133,3 +133,29 @@
 .pm-field > span { text-align: right; color: var(--text-3); }
 .pm-field input, .pm-field select { height: 22px; padding: 0 6px; border: var(--ar-bw, 0.5px) solid var(--line-strong); border-radius: var(--ar-field, 4px); background: var(--win); color: var(--text); font: inherit; }
 .pm-text { flex: 1; min-height: 120px; margin: 0; padding: 12px 14px; border: none; resize: none; outline: none; background: var(--win); color: var(--text); font: 13px/1.45 inherit; }
+
+/* Set Color of Message. */
+.pm-table tr[data-color]:not(.sel) td { background: color-mix(in oklab, var(--pm-tint) 22%, transparent); }
+.pm-table tr[data-color="red"] { --pm-tint: oklch(0.65 0.2 25); }
+.pm-table tr[data-color="orange"] { --pm-tint: oklch(0.75 0.16 60); }
+.pm-table tr[data-color="yellow"] { --pm-tint: oklch(0.88 0.16 95); }
+.pm-table tr[data-color="green"] { --pm-tint: oklch(0.75 0.16 145); }
+.pm-table tr[data-color="blue"] { --pm-tint: oklch(0.7 0.13 245); }
+.pm-table tr[data-color="purple"] { --pm-tint: oklch(0.65 0.16 305); }
+.pm-table tr[data-color="gray"] { --pm-tint: oklch(0.7 0 0); }
+
+.pm-rule, .pm-prefs { width: min(640px, 92%); align-items: stretch; text-align: left; max-height: 90%; overflow: auto; }
+.pm-conds { display: grid; gap: 6px; }
+.pm-cond { display: flex; gap: 6px; align-items: start; flex-wrap: wrap; }
+.pm-cond > select, .pm-cond > input { flex: 1; min-width: 0; }
+.pm-plusminus { display: flex; gap: 4px; margin-left: auto; }
+.pm-plusminus .btn { width: 26px; padding: 0; }
+.pm-unit, .pm-reply { display: flex; gap: 6px; align-items: center; flex: 1; }
+.pm-reply { flex-direction: column; align-items: stretch; }
+.pm-reply textarea { min-height: 60px; }
+.pm-match { font-size: 12.5px; }
+.pm-check { display: flex; gap: 6px; align-items: center; font-size: 12.5px; }
+.pm-rules-row { display: flex; gap: 10px; }
+.pm-rules { flex: 1; font-size: 12px; }
+.pm-rules tr.sel td { background: var(--accent); color: var(--accent-ink); }
+.pm-rules-buttons { display: grid; gap: 6px; align-content: start; }

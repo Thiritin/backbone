@@ -1,5 +1,5 @@
 // Pear Mail, the desktop mail client: what the client keeps apart from the server mailboxes (docs/design/plans/mail-client.md, Client state).
-import type { Folder, MailAct, MailRule, Message } from "../42-mail/types";
+import type { Folder, MailAct, MailCond, MailRule, Message } from "../42-mail/types";
 
 export type PopRemove = "now" | "day" | "week" | "month" | "never";
 
@@ -28,6 +28,11 @@ export type ClientAct = MailAct | { do: "color"; color: string } | { do: "sound"
 // clientId null applies to every account.
 export interface ClientRule extends Omit<MailRule, "acts"> { clientId: string | null; acts: ClientAct[] }
 
+// A Smart Mailbox: a saved search over every message the client can see. The client-only fields: account (a client id),
+// mailbox (a folder id), days (received within the last N), unread, flagged, junk and content (the shown text).
+export interface SmartCond { field: MailCond["field"] | "account" | "mailbox" | "days" | "unread" | "flagged" | "junk" | "content"; op: MailCond["op"]; value: string | number }
+export interface SmartMailbox { id: string; name: string; match: "all" | "any"; conds: SmartCond[]; trash: boolean; sent: boolean }
+
 // error is an i18n key; a line without one is a good check.
 export interface ActivityLine { at: number; clientId: string; count: number; error?: string }
 
@@ -36,6 +41,10 @@ export interface PearMailState {
   rules: ClientRule[];
   local: { folders: Folder[]; messages: Message[] };  // On My Pear folders and POP downloads, Folder.accountId "pear"
   activity: ActivityLine[];    // newest last, at most ACTIVITY_KEEP
+  smart: SmartMailbox[];
+  replied: Record<string, number>;  // "<rule id>:<sender address>" to the minute a rule's auto reply answered that sender
+  colors: Record<string, string>;   // message id to the colour a rule gave it
+  chimes: number;              // sounds rules asked for; the window plays one each time it rises
   welcomed: boolean;           // the first-launch welcome was dismissed
   seenBuild: string;           // version of the last build whose What's new sheet was shown
 }
@@ -46,7 +55,7 @@ export const localFolder = (clientId: string, folder: string): string => `${PEAR
 // The client id of On My Pear mailboxes: their mail sits in localFolder(MY_PEAR, folder id).
 export const MY_PEAR = "my";
 
-export const newPearMail = (): PearMailState => ({ accounts: [], rules: [], local: { folders: [], messages: [] }, activity: [], welcomed: false, seenBuild: "" });
+export const newPearMail = (): PearMailState => ({ accounts: [], rules: [], local: { folders: [], messages: [] }, activity: [], smart: [], replied: {}, colors: {}, chimes: 0, welcomed: false, seenBuild: "" });
 
 export const clientAccount = (id: string, o: { accountId: string; address: string; description: string; fullName: string; password: string; protocol: "imap" | "pop" }, at: number): ClientAccount => ({
   ...o, id, server: null, smtp: null, enabled: true, checkEvery: 5, checkedAt: at, syncedAt: at, popRemove: "now", popDue: [], signature: null, storeSent: true, addedAt: at,

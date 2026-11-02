@@ -2,16 +2,17 @@
 // menu shows the key that runs the same thing (docs/design/plans/mail-client.md, Toolbar and menus; Context menus and shortcuts).
 import { t } from "../../../i18n/en";
 import { isRead } from "../../../sim/42-mail/model";
-import { MY_PEAR, type ClientAccount } from "../../../sim/43-pear-mail/state";
+import { MY_PEAR, type ClientAccount, type ClientRule } from "../../../sim/43-pear-mail/state";
 import type { Row, SortKey } from "../../../sim/43-pear-mail/view";
 import type { GameState } from "../../../sim/50-state";
 import { getMail } from "../../../sim/90-actions/pear-mail";
+import { applyClientRules, removeSmartMailbox } from "../../../sim/90-actions/pear-rules";
 import type { AppMenu, MenuEntry, MenuItem } from "../../desktop/menu";
 import type { useStore } from "../../store";
-import { customBox, deleteRows, junkRows, markRows, targets, transferRows, type Box } from "./commands";
+import { customBox, deleteRows, SMART, junkRows, markRows, targets, transferRows, type Box } from "./commands";
 
 type Act = ReturnType<typeof useStore.getState>["act"];
-export type Sheet = { k: "new" } | { k: "rename"; b: Box } | { k: "delete"; b: Box } | { k: "info"; c: string } | { k: "erase"; folder: "trash" | "junk"; c?: string };
+export type Sheet = { k: "rules" } | { k: "rule"; rule?: ClientRule; from?: Row } | { k: "smart"; id?: string } | { k: "new" } | { k: "rename"; b: Box } | { k: "delete"; b: Box } | { k: "info"; c: string } | { k: "erase"; folder: "trash" | "junk"; c?: string };
 export interface Sort { key: SortKey; asc: boolean }
 
 // What the front Pear Mail window offers the menu bar and the shortcuts, refreshed on every render of the window.
@@ -38,7 +39,7 @@ export function pressed(e: KeyboardEvent, spec: string): boolean {
   const cmd = MAC ? e.metaKey : e.ctrlKey;
   if (cmd !== parts.includes("cmd") || e.altKey !== parts.includes("alt") || e.shiftKey !== parts.includes("shift")) return false;
   if (key === "backspace") return e.code === "Backspace" || e.code === "Delete";
-  return e.code === (/\d/.test(key) ? `Digit${key}` : `Key${key.toUpperCase()}`);
+  return e.code === (key === "," ? "Comma" : /\d/.test(key) ? `Digit${key}` : `Key${key.toUpperCase()}`);
 }
 
 interface Cmd { label: string; key?: string; run: () => void; disabled?: boolean; checked?: boolean }
@@ -58,6 +59,9 @@ function messageCmds(x: PearCtx, rows: Row[]) {
     junk: { label: t(junk ? "pearMail.notJunk" : "pearMail.junk"), key: "cmd+shift+j", run: () => junkRows(act, rows, !junk), disabled: !rows.length },
     read: { label: t(read ? "pearMail.mark.unread" : "pearMail.mark.read"), key: "cmd+shift+u", run: () => markRows(act, rows, { read: !read }), disabled: !rows.length },
     flag: { label: t(flagged ? "pearMail.mark.unflagged" : "pearMail.mark.flagged"), key: "cmd+shift+l", run: () => markRows(act, rows, { star: !flagged }), disabled: !rows.length },
+    apply: { label: t("pearMail.rule.apply"), key: "cmd+alt+l", disabled: !rows.length,
+      run: () => { for (const c of new Set(rows.map((r) => r.c.id))) act(applyClientRules, c, rows.filter((r) => r.c.id === c).map((r) => r.m.id)); } },
+    ruleFrom: { label: t("pearMail.rule.fromMessage"), run: () => one && x.sheet({ k: "rule", from: one }), disabled: !one },
   } satisfies Record<string, Cmd>;
 }
 
@@ -78,6 +82,9 @@ function appCmds(x: PearCtx) {
     info: { label: t("pearMail.info"), run: () => info && x.sheet({ k: "info", c: info.id }), disabled: !info },
     search: { label: t("pearMail.search"), key: "cmd+alt+f", run: x.search },
     activity: { label: t("pearMail.activity"), key: "cmd+alt+0", run: () => x.setActivity(!x.activity), checked: x.activity },
+    prefs: { label: t("pearMail.prefs"), key: "cmd+,", run: () => x.sheet({ k: "rules" }) },
+    newSmart: { label: t("pearMail.smart.new"), run: () => x.sheet({ k: "smart" }) },
+    editSmart: { label: t("pearMail.smart.edit"), run: () => x.sheet({ k: "smart", id: box.f }), disabled: box.c !== SMART },
   } satisfies Record<string, Cmd>;
 }
 
@@ -100,12 +107,14 @@ export function messageMenu(x: PearCtx, rows: Row[]): MenuEntry[] {
     { label: t("pearMail.mark"), disabled: !rows.length, items: [item(m.read), item(m.flag)] },
     { label: t("pearMail.moveTo"), disabled: !oneAccount(rows), items: fileItems(x, rows, false) },
     { label: t("pearMail.copyTo"), disabled: !oneAccount(rows), items: fileItems(x, rows, true) },
-    null, item(m.remove), item(m.junk),
+    null, item(m.remove), item(m.junk), null, item(m.apply), item(m.ruleFrom),
   ];
 }
 
 // The context menu of a mailbox row or an account header (f null).
 export function mailboxMenu(x: PearCtx, c: string | null, f: string | null): MenuEntry[] {
+  if (c === SMART) return f ? [{ label: t("pearMail.smart.edit"), run: () => x.sheet({ k: "smart", id: f }) }, { label: t("pearMail.smart.delete"), run: () => x.act(removeSmartMailbox, f) }]
+    : [{ label: t("pearMail.smart.new"), run: () => x.sheet({ k: "smart" }) }];
   const b: Box = { c, f: f ?? "" }, mine = f ? customBox(x.game, b) : undefined;
   const imap = c ? x.game.pearMail.accounts.find((a) => a.id === c && a.protocol === "imap") : undefined;
   return [
@@ -123,7 +132,7 @@ export function mailboxMenu(x: PearCtx, c: string | null, f: string | null): Men
 const TITLES = ["file", "view", "mailbox", "message"] as const;
 export function pearMenus(): AppMenu[] {
   const x = live;
-  if (!x) return TITLES.map((id) => ({ id, title: t(id === "message" ? "pearMail.message" : `pearMail.menu.${id}`), items: [] }));
+  if (!x) return [...TITLES.map((id) => ({ id, title: t(id === "message" ? "pearMail.message" : `pearMail.menu.${id}`), items: [] })), { id: "app", title: "", items: [] }];
   const a = appCmds(x), sortBy = (k: SortKey): MenuItem => ({ label: t(k === "from" && (x.box.f === "sent" || x.box.f === "drafts") ? "pearMail.col.to" : `pearMail.col.${k}`), checked: x.sort.key === k, run: () => x.setSort({ key: k, asc: k !== "date" }) });
   return [
     { id: "file", title: t("pearMail.menu.file"), items: [item(a.newMessage), item(a.newMailbox), item(a.addAccount), null, item(a.close)] },
@@ -132,10 +141,11 @@ export function pearMenus(): AppMenu[] {
       { label: t("pearMail.organize"), checked: x.threads, run: () => x.setThreads(!x.threads) },
     ] },
     { id: "mailbox", title: t("pearMail.menu.mailbox"), items: [
-      item(a.getMail), null, item(a.eraseTrash), item(a.eraseJunk), null, item(a.newMailbox), item(a.rename), item(a.remove), null, item(a.info),
+      item(a.getMail), null, item(a.eraseTrash), item(a.eraseJunk), null, item(a.newMailbox), item(a.rename), item(a.remove), null, item(a.newSmart), item(a.editSmart), null, item(a.info),
     ] },
     { id: "message", title: t("pearMail.message"), items: messageMenu(x, x.picked) },
     { id: "window", title: "", items: [item(a.activity)] },
+    { id: "app", title: "", items: [item(a.prefs)] },
   ];
 }
 
