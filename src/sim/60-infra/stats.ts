@@ -2,7 +2,7 @@
 import type { GameState } from "../50-state";
 import { insideVm, isOwnVm, lostDisk, vmById, type Workload } from "./cluster";
 import { serviceMbps } from "./network";
-import { workloadUse } from "./usage";
+import { shownWorkload } from "./usage";
 
 export const STATS_HOURS = 24;
 // Shares of the VM's booked vCPU, RAM and disk, and the Mbit/s its traffic runs at.
@@ -19,7 +19,7 @@ function netMbit(s: GameState, w: Workload): number {
 }
 
 export function sample(s: GameState, w: Workload, hour: number = s.hour): VmSample {
-  const u = workloadUse(s, w, hour);
+  const u = shownWorkload(s, w, hour);
   return { cpu: share(u.vcpu, w.vcpu), ram: share(u.ramGb, w.ramGb), disk: share(u.diskGb, w.diskGb), netMbit: netMbit(s, w) };
 }
 

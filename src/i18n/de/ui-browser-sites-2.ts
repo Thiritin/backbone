@@ -474,4 +474,10 @@ export default {
   "browser-sites-2.cli.restoreList": () => "Listet die verlorenen Maschinen mit einer Sicherung auf diesem Server und die Knoten auf, auf die sie zurückgespielt werden können.",
   "browser-sites-2.cli.restore": () => "Spielt eine verlorene Maschine aus ihrer Sicherung auf den angegebenen Knoten zurück, sonst auf den ersten freien.",
   "browser-sites-2.keyFlag": () => "Hänge --key und deinen Lizenzschlüssel an den Befehl an, um mit Lizenz zu installieren.",
+  "browser-sites-2.requirements": () => "Systemvoraussetzungen",
+  "browser-sites-2.reqCpu": () => "Prozessor",
+  "browser-sites-2.reqRam": () => "Arbeitsspeicher",
+  "browser-sites-2.reqDisk": () => "Festplattenspeicher",
+  "browser-sites-2.reqMailbox": () => "Speicher pro Postfach",
+  "browser-sites-2.reqOs": () => "Betriebssystem",
 } satisfies Dict;

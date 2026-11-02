@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { GameState } from "../../../../../sim/50-state";
 import { vmStats } from "../../../../../sim/60-infra/stats";
-import { nodeUsage } from "../../../../../sim/60-infra/usage";
+import { shownNode } from "../../../../../sim/60-infra/usage";
 import { mountableImages } from "../../../../../sim/90-actions/media";
 import { ram } from "../../../hw";
 import { Chart } from "../Chart";
@@ -206,7 +206,7 @@ export function OpenVeeZee(p: PanelProps) {
                 <thead><tr><th>{t("browser-consoles-2.host")}</th><th>{t("browser-consoles-2.virtualServers")}</th><th>CPU</th><th>{t("browser-consoles-2.memory")}</th></tr></thead>
                 <tbody>
                   {nodes.map((d) => {
-                    const u = nodeUsage(game, d.id);
+                    const u = shownNode(game, d.id);
                     return (
                       <tr key={d.id}>
                         <td><button className="ovz-a" onClick={() => setPage({ node: d.id })}>{d.hostname ?? d.name}</button></td>

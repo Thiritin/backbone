@@ -165,11 +165,54 @@ export const SWAP_MAX = 1.1, SWAP_SLOW = 5;
 export const cpuPerf = (u: number): number => (u <= 0.7 ? 1 : u <= 1 ? 1 - 0.5 * (u - 0.7) : 0.85 / u);
 // Below SLOW_PERF a site loads visibly slowly; below TIMEOUT_PERF for TIMEOUT_HOURS in a row it times out (timedOut).
 export const SLOW_PERF = 0.95, TIMEOUT_PERF = 0.25;
-// Hourly: counts the hours each cluster node has run below TIMEOUT_PERF.
+// Hourly: counts the hours each cluster node and each VM with software has run below TIMEOUT_PERF.
 export function timeoutTick(s: GameState): void {
   const low: Record<string, number> = {};
   for (const id of new Set(s.clusters.flatMap((c) => c.nodes.map((n) => n.deviceId)))) if (working(s, id) && nodeUsage(s, id).perf < TIMEOUT_PERF) low[id] = (s.lowPerf[id] ?? 0) + 1;
+  for (const id of new Set(s.clusters.flatMap((c) => (c.vm ? [c.vm] : [])))) {
+    const vm = s.workloads.find((w) => w.id === id);
+    if (vm && vmPerf(s, vm) < TIMEOUT_PERF) low[id] = (s.lowPerf[id] ?? 0) + 1;
+  }
   s.lowPerf = low;
+}
+
+// What a running VM's software and what it hosts ask of its CPU and RAM, as shares of its size.
+// ponytail: cached per hour, workloads and clusters array like cpuUtil, since every web space asks for its VM's.
+const strainCache = new WeakMap<GameState, { hour: number; workloads: Workload[]; clusters: GameState["clusters"]; by: Map<string, { cpu: number; ram: number }> }>();
+export function vmStrain(s: GameState, vm: Workload, hour: number = s.hour): { cpu: number; ram: number } {
+  if (!isOwnVm(vm) || vm.stopped) return { cpu: 0, ram: 0 };
+  let c = strainCache.get(s);
+  if (hour === s.hour && (!c || c.hour !== s.hour || c.workloads !== s.workloads || c.clusters !== s.clusters)) strainCache.set(s, (c = { hour: s.hour, workloads: s.workloads, clusters: s.clusters, by: new Map() }));
+  const hit = hour === s.hour ? c!.by.get(vm.id) : undefined;
+  if (hit) return hit;
+  const u = workloadUse(s, vm, hour), r = { cpu: u.vcpu / Math.max(1e-9, vm.vcpu), ram: u.ramGb / Math.max(1e-9, vm.ramGb) };
+  if (hour === s.hour) c!.by.set(vm.id, r);
+  return r;
+}
+// A VM asked for more CPU or RAM than it has is frozen: its readouts sit at 100% and its consoles stop answering.
+export const vmFrozen = (s: GameState, vm: Workload, hour: number = s.hour): boolean => { const r = vmStrain(s, vm, hour); return r.cpu > 1 || r.ram > 1; };
+// The speed a VM gives what runs in it, like a node's: CPU along cpuPerf, RAM past its size swapping.
+export function vmPerf(s: GameState, vm: Workload, hour: number = s.hour): number {
+  const r = vmStrain(s, vm, hour);
+  return Math.min(cpuPerf(r.cpu), r.ram > 1 ? 1 / (1 + SWAP_SLOW * (r.ram - 1)) : 1);
+}
+
+// economy.md, What runs over: a CPU or RAM readout wobbles by up to WOBBLE of its value each hour within 0 to its capacity,
+// drawn from the seed, the machine and the hour; one at or past its capacity stays full.
+export const WOBBLE = 0.08;
+const wobble = (s: GameState, id: string, k: number, used: number, cap: number, hour: number): number =>
+  cap <= 0 ? 0 : used >= cap ? cap : Math.max(0, Math.min(cap, used * (1 + WOBBLE * (2 * rand(hashRng(s.seed, idNum(id), k, Math.floor(hour))) - 1))));
+export const shown = (s: GameState, id: string, used: Resources, cap: Resources, hour: number = s.hour): Resources =>
+  ({ vcpu: wobble(s, id, 1, used.vcpu, cap.vcpu, hour), ramGb: wobble(s, id, 2, used.ramGb, cap.ramGb, hour), diskGb: used.diskGb });
+// A node's use as its readouts show it.
+export function shownNode(s: GameState, deviceId: string, hour: number = s.hour): NodeUsage {
+  const u = nodeUsage(s, deviceId, hour);
+  return { ...u, used: shown(s, deviceId, u.used, u.physical, hour) };
+}
+// A workload's use as its readouts show it, against its booking; a frozen VM reads full.
+export function shownWorkload(s: GameState, w: Workload, hour: number = s.hour): Resources {
+  const u = workloadUse(s, w, hour);
+  return vmFrozen(s, w, hour) ? { vcpu: w.vcpu, ramGb: w.ramGb, diskGb: u.diskGb } : shown(s, w.id, u, w, hour);
 }
 export const ramShare = (u: NodeUsage) => u.used.ramGb / Math.max(1e-9, u.physical.ramGb);
 
@@ -235,7 +278,7 @@ const workloadMbps = (s: GameState, w: Workload): number => {
 const serverMbps = (s: GameState, d: Device) => workloadsOn(s, d.id).reduce((n, w) => n + workloadMbps(s, w), 0);
 
 function serverSums(s: GameState, d: Device, out: Sums) {
-  const u = nodeUsage(s, d.id);
+  const u = shownNode(s, d.id);
   for (const k of ["vcpu", "ramGb", "diskGb"] as const) out.physical[k] += u.physical[k];
   out.gbit += linkedGbit(s, d);
   if (!working(s, d.id)) return;

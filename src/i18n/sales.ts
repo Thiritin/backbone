@@ -10,7 +10,7 @@ const box = (p: Params) => `${p.cpu} vCPU${Number(p.cpu) === 1 ? "" : "s"}, ${p.
 
 const STUDY_NAME: Record<string, string> = {
   private: "Private individuals", gamer: "Gamers", hobbyDev: "Hobby developers", soleProp: "Sole proprietors", smallBiz: "Small businesses",
-  agency: "Agencies and startups", office: "Doctor's and law offices", onlineShop: "Online shops", enterprise: "Enterprises",
+  agency: "Agencies and startups", webDev: "Web developers", office: "Doctor's and law offices", onlineShop: "Online shops", enterprise: "Enterprises",
 };
 
 // Sales requests, customer replies and lost-sale reasons; spread into en.
@@ -22,6 +22,7 @@ export const SALES_EN: Record<string, (p: Params) => string> = {
   "request.use.soleProp": () => "Customers find me through the site, and I look at it every few days.",
   "request.use.smallBiz": () => "Our team works with it every day during office hours.",
   "request.use.agency": () => "Our clients are on it all day, so we spot problems quickly.",
+  "request.use.webDev": () => "Our clients' websites run on it, so we notice problems quickly.",
   "request.use.office": () => "Clients book their appointments through it every morning.",
   "request.use.onlineShop": () => "Orders come in around the clock, so every minute offline costs us money.",
   "request.use.enterprise": () => "Our staff rely on it around the clock.",

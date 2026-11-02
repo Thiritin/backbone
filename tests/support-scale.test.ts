@@ -16,15 +16,15 @@ describe("support at scale", () => {
     expect({ kinds, happiness: happiness.toFixed(4), down: Object.keys(s.downSince).length, last: s.tickets.at(-1)?.id }).toMatchInlineSnapshot(`
       {
         "down": 15,
-        "happiness": "66.9799",
+        "happiness": "66.5805",
         "kinds": {
           "billing": 2,
-          "howTo": 18,
+          "howTo": 23,
           "notice": 1,
-          "order": 9,
+          "order": 2,
           "outage": 18,
         },
-        "last": "tkt996",
+        "last": "tkt987",
       }
     `);
 

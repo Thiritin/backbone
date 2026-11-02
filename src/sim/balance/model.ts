@@ -19,7 +19,7 @@ import { CYCLE_SHARE, MARKET_DISCOUNT } from "../10-catalog/cycles";
 import { SHOPS } from "../10-catalog/shops";
 import { shopOnSale, shopUpfront } from "../10-catalog/shop-licences";
 import { BUDGETS, OWNED, PROFILE_IDS, SATURATION, WEBSITE_LEADS } from "../80-business/marketing";
-import { generationOf, penaltyFor, SITE_RENT } from "../80-business/website";
+import { designPrice, generationOf, penaltyFor, SITE_RENT } from "../80-business/website";
 import { annuity, baseRate, LOAN_AMOUNTS, MIN_LIMIT, RISK_PREMIUM } from "../45-billing/billing";
 import { LEASE_FACTOR, LEASE_TERMS } from "../10-catalog/leasing";
 import { genOf, modelById, type DeviceModel } from "../10-catalog/hardware";
@@ -44,7 +44,7 @@ import type { Product as LiveProduct } from "../30-customers/customers";
 // Average hours a ticket written at a random hour waits for the office to open: four 16-hour nights and a 64-hour weekend.
 const OFF_HOURS_WAIT = (4 * 16 ** 2 + 64 ** 2) / 2 / 168;
 
-const BUSINESS_IDS = ["small", "agency", "office", "shop", "enterprise"];
+const BUSINESS_IDS = ["small", "agency", "webdev", "office", "shop", "enterprise"];
 
 // Calendar hours past a patience window; a business-hours window stretches over nights and weekends.
 const beyond =(e: Patience, calendarHours: number): number =>
@@ -96,7 +96,7 @@ const cityRent = (city: string) => Math.min(...DATACENTERS.filter((d) => d.city 
 const CHAD = STORE.find((i) => i.id === "chadGpt")!;
 const CHAD_KNOW_HOW = ["people", "monitoring", "automation"].reduce((a, id) => a + skillById(id)!.knowHow, 0);
 // Awareness starts at 5% for private individuals and gamers and 2% for the rest (80-business/marketing.ts).
-const AWARENESS_START = (p: Profile) => (p.id === "private" || p.id === "gamer" ? 0.05 : 0.02);
+const AWARENESS_START = (p: Profile) => (p.id === "private" || p.id === "gamer" ? 0.05 : p.id === "webdev" ? 0.005 : 0.02);
 // The model has none of year 1's setup work (trainings, website, shop) and would fill the basement by April;
 // the happiness run's careful player fills it in the last quarter, so the bot moves out no earlier than October.
 const MOVE_MONTH = 9;
@@ -237,9 +237,9 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
 
     // Leads (Market and leads), as 30-market/market.ts leadFlows: organic by awareness and referrals from happy customers,
     // capped per city, plus website and search campaign leads, of which 10% spill to cities without a location.
-    if (!website && rackUnlocked && cash > 3000 + OWNED.website.setup + shopSetup(year)) { website = true; designYear = generationOf(year); cash -= OWNED.website.setup + shopSetup(year); }
+    if (!website && rackUnlocked && cash > 3000 + designPrice(year, level) + shopSetup(year)) { website = true; designYear = generationOf(year); cash -= designPrice(year, level) + shopSetup(year); }
     // The bot redesigns once the site is 2 generations behind; its site stays on the rented host.
-    if (website && generationOf(year) - designYear >= 8 && cash > 5000) { designYear = generationOf(year); cash -= OWNED.website.setup; }
+    if (website && generationOf(year) - designYear >= 8 && cash > 5000 + designPrice(year, level)) { designYear = generationOf(year); cash -= designPrice(year, level); }
     // The search campaign: the largest preset budget within the bot's ad share, spread over every profile and city.
     const adSpent = cash > 3000 ? BUDGETS.filter((b) => b <= bot.adShare * lastMrr).at(-1) ?? 0 : 0;
     const perCity = adSpent / cities, dearer = 1 + perCity / SATURATION;
@@ -266,11 +266,11 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     }
     // Awareness (Marketing and reviews): paid leads, the website, the review score, the HOSTtoast listing and happy customers.
     const score = (3.5 * 20 + reviewSum) / (20 + reviewN);
-    PROFILES.forEach((_, i) => {
+    PROFILES.forEach((p, i) => {
       const happy = PRODUCTS.reduce((a, _, k) => a + happyOf(i, k), 0);
       const g = 0.05 * (1 - Math.exp(-paidBy[i] / 100)) + (website ? 0.004 : 0) + 0.006 * (score - 3.5)
         + (website ? 0.001 * TIERS.registered.trust + TIERS.registered.awareness : 0) + Math.min(0.01, 0.0005 * happy);
-      aware[i] = Math.min(1, Math.max(0.02, aware[i] + (1 - aware[i]) * g - 0.02 * aware[i]));
+      aware[i] = Math.min(1, Math.max(p.id === "webdev" ? 0.005 : 0.02, aware[i] + (1 - aware[i]) * g - 0.02 * aware[i]));
     });
 
     // Capacity, like the live game: every product books RAM, the cluster keeps RAM for its control planes, and while the

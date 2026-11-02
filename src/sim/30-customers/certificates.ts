@@ -17,7 +17,7 @@ import type { Profile, Service } from "./customers";
 // who asks how to get the padlock wants one CERT_ASKED times as often. Small sites rarely care; offices, shops and
 // enterprises need the OV or EV one.
 export const CERT_WANT: Record<Profile, number> = {
-  private: 0.01, gamer: 0, hobbyDev: 0.02, soleProp: 0.03, smallBiz: 0.04, agency: 0.08, reseller: 0.03, office: 0.3, onlineShop: 0.6, enterprise: 0.8,
+  private: 0.01, gamer: 0, hobbyDev: 0.02, soleProp: 0.03, smallBiz: 0.04, agency: 0.08, webDev: 0.1, reseller: 0.03, office: 0.3, onlineShop: 0.6, enterprise: 0.8,
 };
 export const CERT_ASKED = 3;
 // The topic of the upgrade ticket that asks for a certificate.

@@ -1,0 +1,62 @@
+/* Young von Mutt: a freelancer's table page in 2005, a studio from 2013, a full agency from 2021. */
+.ag { min-height: 100%; }
+.ag nav a { text-decoration: none; }
+.ag-work, .ag-team { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.ag-work i, .ag-team i { display: block; background: hsl(var(--hue) 55% 62%); }
+.ag-quote dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 24px; margin: 12px 0 16px; }
+.ag-quote dd { margin: 0; font-variant-numeric: tabular-nums; }
+.ag-button { display: inline-block; font: inherit; cursor: pointer; text-decoration: none; }
+.ag-button:disabled { opacity: 0.45; cursor: default; }
+
+.ag.f { padding: 8px; background: #ffffcc; color: #000000; font: 14px/1.4 "Times New Roman", Times, serif; }
+.ag.f .ag-table { width: 100%; max-width: 720px; margin: 0 auto; border-collapse: collapse; background: #ffffff; border: 2px solid #336699; }
+.ag.f .ag-logo { padding: 8px 12px; background: #336699; color: #ffffff; font: 700 22px Arial, sans-serif; }
+.ag.f .ag-menu { width: 130px; padding: 10px; vertical-align: top; background: #cce0f5; border-right: 1px solid #336699; }
+.ag.f .ag-menu nav { display: grid; gap: 6px; }
+.ag.f .ag-menu a { color: #0000ee; text-decoration: underline; font: 13px Arial, sans-serif; }
+.ag.f .ag-menu a.on { color: #cc0000; font-weight: 700; }
+.ag.f .ag-body { padding: 12px 16px; vertical-align: top; }
+.ag.f h1 { font-size: 24px; color: #336699; }
+.ag.f h2 { font-size: 18px; margin: 0 0 8px; color: #336699; }
+.ag.f .ag-construction { margin: 10px 0; padding: 6px; text-align: center; font: 700 12px Arial, sans-serif; background: repeating-linear-gradient(-45deg, #ffcc00 0 10px, #000000 10px 20px); }
+.ag.f .ag-construction span { padding: 2px 10px; background: #ffcc00; color: #000000; }
+.ag.f .ag-link { color: #0000ee; text-decoration: underline; }
+.ag.f .ag-work { grid-template-columns: repeat(2, 1fr); }
+.ag.f .ag-work i { height: 40px; }
+.ag.f .ag-button { padding: 2px 14px; background: #d4d0c8; color: #000000; border: 2px outset #ffffff; font: 13px Arial, sans-serif; }
+.ag.f .ag-foot { margin-top: 8px; text-align: center; font-size: 12px; color: #555555; }
+
+.ag.s { background: #fafafa; color: #1c1c1c; font: 15px/1.5 "Helvetica Neue", Helvetica, Arial, sans-serif; }
+.ag.s .ag-head, .ag.a .ag-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 32px; }
+.ag.s .ag-head { background: #ffffff; border-bottom: 1px solid #e2e2e2; }
+.ag.s .ag-logo { font: 800 20px "Helvetica Neue", Arial, sans-serif; color: #e8590c; }
+.ag.s nav { display: flex; gap: 20px; }
+.ag.s nav a { color: #555555; }
+.ag.s nav a.on { color: #e8590c; border-bottom: 2px solid #e8590c; }
+.ag.s .ag-body { padding: 24px 32px; }
+.ag.s .ag-hero h1 { font-size: 26px; font-weight: 300; max-width: 520px; margin-bottom: 16px; }
+.ag.s h2 { margin: 24px 0 12px; font-size: 16px; font-weight: 700; }
+.ag.s .ag-work { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.ag.s .ag-work li { font-size: 13px; }
+.ag.s .ag-work i { height: 90px; margin-bottom: 6px; }
+.ag.s .ag-button { padding: 8px 20px; background: #e8590c; color: #ffffff; border: 0; border-radius: 2px; font-weight: 600; }
+.ag.s .ag-foot { padding: 16px 32px; border-top: 1px solid #e2e2e2; font-size: 12px; color: #777777; }
+
+.ag.a { background: #ffffff; color: #111111; font: 16px/1.55 Inter, system-ui, sans-serif; }
+.ag.a .ag-head { position: sticky; top: 0; background: rgb(255 255 255 / 0.92); backdrop-filter: blur(8px); }
+.ag.a .ag-logo { font: 700 20px Inter, system-ui, sans-serif; letter-spacing: -0.02em; }
+.ag.a nav { display: flex; gap: 24px; }
+.ag.a nav a { color: #555555; font-weight: 500; }
+.ag.a nav a.on { color: #111111; }
+.ag.a .ag-body { padding: 0 32px 32px; }
+.ag.a .ag-hero { padding: 56px 0 40px; }
+.ag.a .ag-hero h1 { max-width: 640px; margin-bottom: 24px; font-size: 40px; line-height: 1.1; letter-spacing: -0.03em; font-weight: 700; }
+.ag.a h2 { margin: 32px 0 14px; font-size: 20px; font-weight: 650; }
+.ag.a .ag-work { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 16px; }
+.ag.a .ag-work i { height: 130px; margin-bottom: 8px; border-radius: 12px; }
+.ag.a .ag-team { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.ag.a .ag-team li { display: grid; gap: 2px; }
+.ag.a .ag-team i { width: 72px; height: 72px; margin-bottom: 6px; border-radius: 50%; }
+.ag.a .ag-team span { color: #666666; font-size: 14px; }
+.ag.a .ag-button { padding: 11px 24px; background: #111111; color: #ffffff; border: 0; border-radius: 999px; font-weight: 600; }
+.ag.a .ag-foot { padding: 20px 32px; font-size: 13px; color: #777777; }

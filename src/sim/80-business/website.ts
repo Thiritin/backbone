@@ -8,10 +8,10 @@ import type { GameState } from "../50-state";
 import { serviceOnline } from "../40-support/status";
 import { serviceHeld } from "../45-billing/billing";
 import { HOW_TO, KNOWLEDGE_BASE } from "../40-support/tickets";
-import { bookable, diskFits, lineOffered, noRoomError, nodeUsed, serverOf, vmRoom, workloadOnline, workloadsOf, type Cluster, type Workload } from "../60-infra/cluster";
+import { bookable, diskFits, lineOffered, noRoomError, nodeUsed, serverOf, vmOf, vmRoom, workloadOnline, workloadsOf, type Cluster, type Workload } from "../60-infra/cluster";
 import { machineAddress } from "../60-infra/addresses";
 import { hostPerf } from "../60-infra/php";
-import { nodeUsage, SLOW_PERF } from "../60-infra/usage";
+import { nodeUsage, SLOW_PERF, vmPerf } from "../60-infra/usage";
 import type { SimEvent } from "../88-tick/tick";
 import { owns, SITE_LINES } from "./marketing";
 import { salesAddress } from "./mail";
@@ -24,6 +24,7 @@ import { shopActive, shopCount, type ShopProduct } from "./shop";
 import { assignedKey, licenceStatus, SHOP_MACHINE, tiersOnSale } from "../60-infra/licence";
 import { tiersOf, type LicenceTier } from "../10-catalog/licence-tiers";
 import { offeredProducts, type CatalogProduct } from "./catalog";
+import { metrics } from "../metrics";
 import { siteDesign, type SiteDesign } from "./site-design";
 
 export { SITE_LINES };
@@ -118,10 +119,10 @@ function siteWorkload(c: Cluster, id = "site"): Workload {
   };
 }
 
-// Whether the workload's host runs it noticeably slowly: an overloaded node or a PHP upgrade on its panel host.
+// Whether the workload's host runs it noticeably slowly: an overloaded node or VM or a PHP upgrade on its panel host.
 export function slowHost(s: GameState, w: Workload, c: Cluster | undefined): boolean {
-  const at = serverOf(s, w);
-  return Math.min(at ? nodeUsage(s, at).perf : 1, hostPerf(s, c)) < SLOW_PERF;
+  const at = serverOf(s, w), vm = vmOf(s, w);
+  return Math.min(at ? nodeUsage(s, at).perf : 1, vm ? vmPerf(s, vm) : 1, hostPerf(s, c)) < SLOW_PERF;
 }
 
 // Whether a panel host has the disk for the site next to its web spaces, and whether its RAM is over 90% booked with the site.
@@ -179,9 +180,28 @@ export const agePenalty = (s: GameState): number => penaltyFor(generationsBehind
 export const STATUS_FACTOR: Record<SiteStatus, number> = { up: 1, slow: 0.5, down: 0 };
 export const siteFactor = (s: GameState): number => STATUS_FACTOR[siteStatus(s)] * agePenalty(s);
 
+// What the agency charges for a design: a base per generation, interpolated by year and flat from 2025, plus half the
+// base for each company level above the first (economy.md, "Design generations").
+export const DESIGN_DAYS = 14;
+const DESIGN_BASE: [number, number][] = [[2005, 400], [2009, 650], [2013, 1000], [2017, 1500], [2021, 2200], [2025, 3500]];
+export function designPrice(year: number, level: number): number {
+  const y = Math.min(2025, Math.max(2005, year)), i = Math.min(DESIGN_BASE.length - 2, Math.floor((y - 2005) / 4));
+  const [y0, p0] = DESIGN_BASE[i], [y1, p1] = DESIGN_BASE[i + 1];
+  return Math.round(Math.round(p0 + ((p1 - p0) * (y - y0)) / (y1 - y0)) * (1 + 0.5 * (level - 1)));
+}
+export const designQuote = (s: GameState): number => designPrice(yearOf(s.hour), metrics(s).level.level);
+
 // Saves from before design years get the generation of the game year when the web design is owned.
 export const fillDesign = (s: GameState, saved: number | undefined): GameState =>
   saved !== undefined || !owns(s, "website") ? s : { ...s, marketing: { ...s.marketing, designYear: generationOf(yearOf(s.hour)) } };
+
+// Hourly: delivers the ordered design once its days are up; the old design stays live until then.
+export function designTick(s: GameState, events: SimEvent[]): void {
+  const d = s.marketing.designReady;
+  if (!d || s.hour < d.hour) return;
+  s.marketing = { ...s.marketing, designYear: d.year, designReady: null };
+  events.push({ app: "Marketing", key: "event.designReady", params: {} });
+}
 
 // Hourly: tells the player when the first site is written.
 export function siteBuiltEvent(s: GameState, events: SimEvent[]): void {

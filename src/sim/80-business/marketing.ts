@@ -14,10 +14,11 @@ import { campaignBoost, hasMarketingManager, reviewBoost } from "../47-staff/sta
 export const SITE_LINES: Product[] = ["webHosting", "vps", "gameServer", "dns", "vpn", "storage", "cloud", "dedicated", "colocation", "gpu", "ssl"];
 import { communityBatches } from "./community";
 import { fairBatches, fairGain } from "./fairs";
+import { flyerBatches, flyerTick, type FlyerRun } from "./flyers";
 import { shopBills, shopTick } from "./shop";
-import { siteBuiltEvent, siteDownEvent, siteFactor, siteHostingCost, siteStatus } from "./website";
+import { designTick, siteBuiltEvent, siteDownEvent, siteFactor, siteHostingCost, siteStatus } from "./website";
 
-export const PROFILE_IDS: Profile[] = ["private", "gamer", "hobbyDev", "soleProp", "smallBiz", "agency", "office", "onlineShop", "enterprise"];
+export const PROFILE_IDS: Profile[] = ["private", "gamer", "hobbyDev", "soleProp", "smallBiz", "agency", "webDev", "office", "onlineShop", "enterprise"];
 
 export type OwnedChannel = "website" | "searchAds" | "aiAds";
 // Setup and monthly upkeep in euros; email is always on and free.
@@ -82,15 +83,21 @@ export interface Marketing {
   // Where the company site runs, the generation of its design and whether the current outage has been announced.
   siteHost: SiteHost;
   designYear: number;
+  // The redesign on order: the hour it is delivered and the generation it brings. Null when none is on order.
+  designReady: { hour: number; year: number } | null;
   siteOutage: boolean;
   // Leads per line lost because no catalog product fitted, this month and last month.
   unmet: { month: Partial<Record<Product, number>>; last: Partial<Record<Product, number>> };
   // The catalog as last published to the website; leads decide on it. Null until the first publish.
   published: CatalogProduct[] | null;
+  // Flyer runs from the print shop, newest last; finished runs stay for the order history.
+  flyers: FlyerRun[];
 }
 export type SiteHost = { kind: "rented" } | { kind: "own"; clusterId: string };
 
 const AWARENESS_FLOOR = 0.02;
+// Web developers start unknown to the host: a quarter of the usual awareness, until the first events and fairs reach them.
+const floorOf = (p: Profile): number => (p === "webDev" ? AWARENESS_FLOOR / 4 : AWARENESS_FLOOR);
 const AWARENESS_DECAY = 0.02;
 export const REVIEW_HOURS = 2 * 8760;
 
@@ -102,8 +109,8 @@ export function wonLeads(s: GameState, ago: 0 | 1): Partial<Record<Product, numb
 }
 
 export const newMarketing = (): Marketing => ({
-  owned: [], campaigns: [], reviews: [], platform: null, studies: [], lines: [], custom: [...SITE_LINES], emailOrders: true, customRequests: true, siteReady: null, launched: false, siteHost: { kind: "rented" }, designYear: 2005, siteOutage: false, unmet: { month: {}, last: {} }, published: null,
-  awareness: Object.fromEntries(PROFILE_IDS.map((p) => [p, p === "private" || p === "gamer" ? 0.05 : AWARENESS_FLOOR])) as Record<Profile, number>,
+  owned: [], campaigns: [], reviews: [], platform: null, studies: [], lines: [], custom: [...SITE_LINES], emailOrders: true, customRequests: true, siteReady: null, launched: false, siteHost: { kind: "rented" }, designYear: 2005, designReady: null, siteOutage: false, unmet: { month: {}, last: {} }, published: null, flyers: [],
+  awareness: Object.fromEntries(PROFILE_IDS.map((p) => [p, p === "private" || p === "gamer" ? 0.05 : floorOf(p)])) as Record<Profile, number>,
 });
 
 export const owns = (s: GameState, c: OwnedChannel): boolean => s.marketing.owned.includes(c);
@@ -112,7 +119,7 @@ export const reach = (channel: CampaignChannel): Profile[] => PROFILE_IDS.filter
 export const awareness = (s: GameState, p: Profile): number => s.marketing.awareness[p];
 const marketCities = (s: GameState): string[] => [...new Set(s.locations.map((l) => l.city))];
 
-export interface LeadBatch { profile: Profile; city: string; source: CampaignChannel | "website" | "fair" | "community"; count: number; conversion: number }
+export interface LeadBatch { profile: Profile; city: string; source: CampaignChannel | "website" | "fair" | "community" | "flyer"; count: number; conversion: number }
 
 // Expected leads this month from the website and running campaigns; organic leads and referrals belong to the market.
 export function leadsThisMonth(s: GameState): LeadBatch[] {
@@ -130,7 +137,7 @@ export function leadsThisMonth(s: GameState): LeadBatch[] {
       out.push({ profile, city, source: c.channel, count, conversion: CAMPAIGNS[c.channel].conversion });
     }
   }
-  out.push(...fairBatches(s, cities), ...communityBatches(s, cities));
+  out.push(...fairBatches(s, cities), ...communityBatches(s, cities), ...flyerBatches(s));
   return out;
 }
 
@@ -204,7 +211,7 @@ function updateAwareness(s: GameState): void {
     const happy = s.customers.filter((c) => c.profile === p && c.churnedAt === null && c.happiness >= 70).length;
     const gain = 0.05 * (1 - Math.exp(-paid[p] / 100)) + site + reviews + Math.min(0.01, 0.0005 * happy) + fairGain(s, p);
     const a = next[p];
-    next[p] = Math.min(1, Math.max(AWARENESS_FLOOR, a + (1 - a) * gain - AWARENESS_DECAY * a));
+    next[p] = Math.min(1, Math.max(floorOf(p), a + (1 - a) * gain - AWARENESS_DECAY * a));
   }
   s.marketing.awareness = next;
 }
@@ -240,8 +247,10 @@ export function marketingTick(s: GameState): SimEvent[] {
   const events: SimEvent[] = [];
   rollReviews(s, events);
   siteBuiltEvent(s, events);
+  designTick(s, events);
   siteDownEvent(s, events);
   shopTick(s, events);
+  flyerTick(s);
   if (!isMonthStart(s.hour)) return events;
   if (s.marketing.platform && PLATFORMS[s.marketing.platform].fee > 0 && !hasMarketingManager(s)) {
     events.push({ app: "Marketing", key: "event.platformDropped", params: { name: PLATFORMS[s.marketing.platform].name } });

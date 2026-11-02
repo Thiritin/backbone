@@ -9,7 +9,7 @@ import { SERVER_OS } from "../10-catalog/server-os";
 import { CHANNELS, marketUrl } from "../10-catalog/used";
 import { companyDomain, fqdn } from "../30-customers/domains";
 import type { GameState } from "../50-state";
-import { BOARD_TITLE, BOARD_URL, companyUrl, providerUrl, WIKI_TITLE, WIKI_URL, displayHost, resolve, vendorHost, vendorLive, VENDORS, VIDEO_TITLE, VIDEO_URL } from "./browser";
+import { AGENCY_TITLE, AGENCY_URL, BOARD_TITLE, BOARD_URL, companyUrl, providerUrl, WIKI_TITLE, WIKI_URL, displayHost, resolve, vendorHost, vendorLive, VENDORS, VIDEO_TITLE, VIDEO_URL } from "./browser";
 import { machineAddress } from "../60-infra/addresses";
 import { familyOf } from "../60-infra/vulns";
 import { consoleHost, consoleSuffix, consoleTitle } from "./consoles";
@@ -21,6 +21,7 @@ import { booksHost } from "./bookkeeping";
 import { SHOPS } from "../10-catalog/shops";
 import { shopVendorUrl } from "./shoplink";
 import { shopActive } from "./shop";
+import { FLYER_HOST, FLYER_NAME } from "../10-catalog/flyers";
 
 export interface IndexRow { title: string; url: string; desc: string; down: boolean }
 export interface Category { title: string; rows: IndexRow[] }
@@ -66,6 +67,7 @@ export function siteIndex(s: GameState): Category[] {
     { title: t("sim.index.cat.resellers"), rows: REGISTRARS.filter((r) => r.from <= year).map((r) => row(r.name, `${displayHost(registrarHost(r))}/`, t("sim.index.resellers"))) },
     { title: t("sim.index.cat.government"), rows: [row(t("browser-sites-1.of.title"), `www.${OFFICE_HOST}/`, t("sim.index.office")), row("DOHLE", DOHLE_URL, t("sim.index.dohle"))] },
     { title: t("sim.index.cat.bookkeeping"), rows: vendorsIn(year).map((v) => row(v.program, `${displayHost(booksHost(v))}/`, t(`books-vendors.about.${v.id}`))) },
+    { title: t("sim.index.cat.marketing"), rows: [row(FLYER_NAME, `${displayHost(FLYER_HOST)}/`, t("sim.index.flyers")), row(AGENCY_TITLE, AGENCY_URL, t("sim.index.agency"))] },
     { title: t("sim.index.cat.community"), rows: [row(BOARD_TITLE, BOARD_URL, t("sim.index.board")), row(HOSTTOAST, `www.${HOSTTOAST_HOST}/`, t("sim.index.hosttoast"))] },
     { title: t("sim.index.cat.hardware"), rows: VENDORS.filter((m) => vendorLive(m, monthIndexOf(s.hour))).map((m) => row(m.name, `${displayHost(vendorHost(m.id))}/`, m.kinds.map((k) => t(`sim.index.kind.${k}`)).join(", "))) },
     { title: t("sim.index.cat.colocation"), rows: PROVIDERS.map((p) => row(p.name, providerUrl(p.id), [...new Set(DATACENTERS.filter((d) => d.provider === p.id).map((d) => d.city))].join(", "))) },

@@ -49,7 +49,7 @@ export function PostApp() {
 const HOME = ["Kellerweg 3", "60311 Frankfurt am Main"];
 
 // One A4 page laid out after DIN 5008 form B: letterhead, window address, reference block, fold and punch marks, footer.
-function Letter({ letter: l, company, owner }: { letter: Post; company: string; owner?: string }) {
+export function Letter({ letter: l, company, owner }: { letter: Post; company: string; owner?: string }) {
   const h = LETTERHEADS[l.from], p = l.params;
   const ref = p.number ?? (p.reg ? `GA ${p.reg}` : null);
   const bank = p.iban ? `IBAN ${p.iban}` : p.account ? `${t("paperwork.letter.account")} ${p.account} · ${t("paperwork.letter.code")} ${p.code}` : null;

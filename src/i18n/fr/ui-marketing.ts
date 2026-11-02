@@ -110,6 +110,7 @@ export default {
   "marketing.audSoleProp": () => "Indépendants",
   "marketing.audSmallBiz": () => "Petites entreprises",
   "marketing.audAgency": () => "Agences",
+  "marketing.audWebDev": () => "Développeurs web",
   "marketing.audOffice": () => "Bureaux et cabinets",
   "marketing.audOnlineShop": () => "Boutiques en ligne",
   "marketing.audEnterprise": () => "Grandes entreprises",

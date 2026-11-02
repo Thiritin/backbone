@@ -16,8 +16,9 @@ import { isManaged, isManagedUps, modelById } from "../10-catalog/hardware";
 import { mountedRouter } from "../60-infra/routers";
 import { isMgmtDevice, oobUp } from "../60-infra/oob";
 import { linkStatus, powered, working } from "../60-infra/status";
-import { nodeUsage, SLOW_PERF } from "../60-infra/usage";
+import { nodeUsage, SLOW_PERF, vmFrozen } from "../60-infra/usage";
 import { BOARD_HOST } from "./sponsorboard";
+import { FLYER_HOST } from "../10-catalog/flyers";
 import { consoleAt, consoleHost, isDefaced } from "./consoles";
 import { defaultWebmail } from "./webmail";
 import { customerSite, shopStatus, siteHost, siteStatus, slowHost } from "./website";
@@ -63,6 +64,8 @@ export type Page =
   | { kind: "video" }
   | { kind: "notice"; ticketId: string }
   | { kind: "sponsorboard" }
+  | { kind: "flyers" }
+  | { kind: "agency" }
   | { kind: "index" }
   | { kind: "office" }
   | { kind: "dohle" }
@@ -84,6 +87,10 @@ export const VIDEO_REAL = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
 export { vendorHost, vendorLive, VENDORS } from "./vendors";
 
 export const BOARD_URL = `${BOARD_HOST}/`;
+// The web design agency (Jung von Matt) where the company site is ordered and redesigned.
+export const AGENCY_HOST = "youngvonmutt.de";
+export const AGENCY_TITLE = "Young von Mutt";
+export const AGENCY_URL = `www.${AGENCY_HOST}/`;
 // docs/design/software.md, 8.1: the home icon and a new browser session open the site index.
 export const INDEX_HOST = "yahoy.com";
 export const HOME_URL = `www.${INDEX_HOST}/dir/`;
@@ -106,7 +113,7 @@ export const dirSlug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]
 export const resellersUrl = (): string => `${HOME_URL}${dirSlug(t("sim.index.cat.resellers"))}`;
 // Domains the game's other companies hold in any year, and every name under them.
 export function providerDomain(name: string): boolean {
-  const hosts = [INDEX_HOST, OFFICE_HOST, DOHLE_HOST, WIKI_HOST, LEXWEAR_HOST, HOSTTOAST_HOST, BOARD_HOST, VIDEO_HOST, ...CHANNELS.map((c) => c.host), ...SOFTWARE.map((x) => x.site.host), ...SERVER_OS.map((x) => x.site.host), ...DESKS.map((d) => d.hosts.vendor),
+  const hosts = [INDEX_HOST, OFFICE_HOST, DOHLE_HOST, WIKI_HOST, LEXWEAR_HOST, HOSTTOAST_HOST, BOARD_HOST, FLYER_HOST, AGENCY_HOST, VIDEO_HOST, ...CHANNELS.map((c) => c.host), ...SOFTWARE.map((x) => x.site.host), ...SERVER_OS.map((x) => x.site.host), ...DESKS.map((d) => d.hosts.vendor),
     ...VENDORS.map((m) => vendorHost(m.id)), ...BANKS.map((b) => b.host), ...REGISTRARS.map(registrarHost), ...PROVIDERS.map((p) => p.host)].map((h) => h.replace(/^www\./, ""));
   return hosts.some((h) => h === name || h.endsWith(`.${name}`));
 }
@@ -140,9 +147,9 @@ function serverLoad(s: GameState, id: string): Load {
   return !working(s, id) || !linkStatus(s, id).online ? "down" : slow(nodeUsage(s, id).perf < SLOW_PERF);
 }
 
-// The player's own VM answers like its workload; a customer's workload like its service.
+// The player's own VM answers like its workload, never while frozen; a customer's workload like its service.
 function vmLoad(s: GameState, w: Workload): Load {
-  if (!workloadOnline(s, w)) return "down";
+  if (!workloadOnline(s, w) || vmFrozen(s, w)) return "down";
   return slow(slowHost(s, w, s.clusters.find((c) => c.id === w.clusterId)));
 }
 
@@ -235,6 +242,8 @@ export function resolve(s: GameState, raw: string): Resolved {
   const colo = PROVIDERS.find((p) => named(p.host));
   if (colo) return out({ kind: "provider", id: colo.id });
   if (named(BOARD_HOST)) return out({ kind: "sponsorboard" });
+  if (named(FLYER_HOST)) return out({ kind: "flyers" });
+  if (named(AGENCY_HOST)) return out({ kind: "agency" });
   const bank = BANKS.find((b) => named(b.host) && b.from <= year);
   if (bank) return out({ kind: "bank", id: bank.id });
   const registrar = REGISTRARS.find((r) => named(registrarHost(r)));

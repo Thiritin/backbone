@@ -1,5 +1,5 @@
 import {
-  Activity, CalendarDays, FileSearch, Landmark, Cloud, Mailbox, FolderOpen, Bug, BookOpen, Compass, ChartPie, Contact, FileText, Network, GraduationCap, LifeBuoy, Megaphone, MessageCircle, Newspaper, Receipt, Server, Settings, ShieldAlert, ShoppingCart, SquareTerminal,
+  Activity, Archive, CalendarDays, FileSearch, Landmark, Cloud, Mailbox, FolderOpen, Bug, BookOpen, Compass, ChartPie, Contact, FileText, Network, GraduationCap, LifeBuoy, Megaphone, MessageCircle, Newspaper, Receipt, Server, Settings, ShieldAlert, ShoppingCart, SquareTerminal,
 } from "lucide-react";
 import type { ComponentType } from "react";
 import { t } from "../../i18n/en";
@@ -23,6 +23,7 @@ import { ResearchApp } from "./research/ResearchApp";
 import { StaffApp } from "./staff/StaffApp";
 import { WeatherApp } from "./weather/WeatherApp";
 import { PostApp } from "./PostApp";
+import { DocuWhereApp } from "./DocuWhereApp";
 import { PreviewApp } from "./PreviewApp";
 import { inbox } from "../../sim/40-support/letters";
 import { TerminalApp } from "./terminal/TerminalApp";
@@ -59,6 +60,7 @@ export const APPS: AppDef[] = [
     badge: (s) => drafts(s) + unmatched(s) + late(s) },
   { name: "Post", icon: Mailbox, tile: "oklch(0.72 0.15 85)", about: t("apps.about.Post"), body: PostApp,
     badge: (s) => inbox(s).filter((l) => !l.read).length },
+  { name: "DocuWhere", icon: Archive, tile: "oklch(0.55 0.13 265)", about: t("apps.about.DocuWhere"), body: DocuWhereApp },
   { name: "DohleFormular", icon: Landmark, tile: "oklch(0.36 0.09 255)", about: t("apps.about.DohleFormular"), body: DohleFormularApp },
   { name: "Staff", icon: Contact, tile: "oklch(0.7 0.15 70)", about: t("apps.about.Staff"), body: StaffApp },
   { name: "Marketing", icon: Megaphone, tile: "oklch(0.62 0.19 350)", about: t("apps.about.Marketing"), body: MarketingApp },

@@ -10,7 +10,7 @@ const box = (p: Params) => `${p.cpu} vCPU, ${p.ram} GB de RAM y ${p.disk} GB de 
 
 const STUDY_NAME: Record<string, string> = {
   private: "Particulares", gamer: "Jugadores", hobbyDev: "Desarrolladores aficionados", soleProp: "Autónomos", smallBiz: "Pequeñas empresas",
-  agency: "Agencias y startups", office: "Consultas médicas y despachos de abogados", onlineShop: "Tiendas online", enterprise: "Grandes empresas",
+  agency: "Agencias y startups", webDev: "Desarrolladores web", office: "Consultas médicas y despachos de abogados", onlineShop: "Tiendas online", enterprise: "Grandes empresas",
 };
 
 export default {
@@ -20,6 +20,7 @@ export default {
   "request.use.soleProp": () => "Los clientes me encuentran por la web, y la miro cada pocos días.",
   "request.use.smallBiz": () => "Nuestro equipo trabaja con ella cada día en horario de oficina.",
   "request.use.agency": () => "Nuestros clientes la usan todo el día, así que vemos los problemas enseguida.",
+  "request.use.webDev": () => "Los sitios de nuestros clientes funcionan ahí, así que notamos enseguida los problemas.",
   "request.use.office": () => "Los pacientes reservan sus citas por ahí cada mañana.",
   "request.use.onlineShop": () => "Los pedidos entran las 24 horas, y cada minuto sin conexión nos cuesta dinero.",
   "request.use.enterprise": () => "Nuestra plantilla depende de ella las 24 horas.",
