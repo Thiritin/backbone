@@ -61,10 +61,20 @@ const round2 = (v: number) => Math.round(v * 100) / 100;
 const cents = round2;
 
 // A running service's Mbit/s this hour: its GB per month, grown 20% a year since it started, spread over the month's seconds and
-// shaped by its activity and night job.
+// shaped by its activity and night job. A throttled service stays at its booked traffic.
 export function serviceMbps(s: GameState, v: Service, hour: number = s.hour): number {
   const c = s.customers.find((x) => x.id === v.customerId);
-  return (v.spec.trafficGb * Math.pow(TRAFFIC_GROWTH, Math.max(0, hour - v.startedAt) / 8760) * 8000) / (730 * 3600) * (c ? trafficShape(s.seed, v, c.profile, hour) : 1);
+  const grown = v.throttled ? 1 : Math.pow(TRAFFIC_GROWTH, Math.max(0, hour - v.startedAt) / 8760);
+  return (v.spec.trafficGb * grown * 8000) / (730 * 3600) * (c ? trafficShape(s.seed, v, c.profile, hour) : 1);
+}
+
+export const TRAFFIC_SAMPLE_HOURS = 6, TRAFFIC_WINDOW_HOURS = 730;
+// GB a service moved over the last month, summed from sampled Mbit/s.
+export function serviceTrafficGb(s: GameState, v: Service, now: number = s.hour): number {
+  const end = v.endedAt ?? now;
+  let mbps = 0;
+  for (let h = Math.max(v.startedAt, now - TRAFFIC_WINDOW_HOURS); h <= Math.min(now, end); h += TRAFFIC_SAMPLE_HOURS) mbps += serviceMbps(s, v, h);
+  return (mbps * TRAFFIC_SAMPLE_HOURS * 3600) / 8000;
 }
 
 export const zoneOf = (s: GameState, v: Service): Location | undefined => (v.zone ? s.locations.find((l) => l.az === v.zone) : undefined);
