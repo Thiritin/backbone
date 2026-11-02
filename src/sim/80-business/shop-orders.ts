@@ -4,6 +4,10 @@ import { CYCLE_MONTHS, type Cycle } from "../10-catalog/cycles";
 import { LINE_NAME, setupFee } from "../30-market/spec";
 import { requestName, type SalesRequest } from "../30-market/market";
 import type { GameState } from "../50-state";
+import type { Service } from "../30-customers/customers";
+import { holdReason } from "../45-billing/billing";
+import { workloadsOf } from "../60-infra/cluster";
+import { hasModule, moduleFor } from "./shop";
 
 export type OrderStatus = "pending" | "active" | "fraud" | "cancelled";
 // amount is the first term with the setup fee, as charged at checkout.
@@ -44,3 +48,14 @@ export function syncOrder(s: GameState, r: SalesRequest): void {
 export function pruneOrders(s: GameState): void {
   s.shop = { ...s.shop, orders: s.shop.orders.filter((o) => o.status === "pending" || s.hour - o.placedAt < KEEP_HOURS) };
 }
+
+export type ServiceStatus = "active" | "suspended" | "terminated" | "cancelled";
+// Terminated once ended, cancelled while a termination with notice runs out, suspended while held.
+export const serviceStatus = (s: GameState, v: Service): ServiceStatus =>
+  v.endedAt !== null ? "terminated" : v.endsAt !== undefined ? "cancelled" : holdReason(s, v) ? "suspended" : "active";
+export const serviceCluster = (s: GameState, v: Service) => {
+  const id = workloadsOf(s, v.id)[0]?.clusterId;
+  return id ? s.clusters.find((c) => c.id === id) : undefined;
+};
+// Whether the shop has the provisioning module for the software the service runs on; without it the player works on the panel.
+export const moduleRuns = (s: GameState, v: Service): boolean => hasModule(s, moduleFor(s, v.product, serviceCluster(s, v)?.id ?? null));

@@ -2,10 +2,6 @@ import type { Dict } from "../lang";
 
 export default {
   "shop-orders.any": () => "Tutti",
-  "shop-orders.status.pending": () => "In attesa",
-  "shop-orders.status.active": () => "Attivo",
-  "shop-orders.status.fraud": () => "Frode",
-  "shop-orders.status.cancelled": () => "Annullato",
   "shop-orders.number": () => "Ordine n.",
   "shop-orders.payment": () => "Stato pagamento",
   "shop-orders.invoice": () => "Fattura n.",

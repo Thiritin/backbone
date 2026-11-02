@@ -6,6 +6,7 @@ import { Invoices } from "./Invoices";
 import { Quotes } from "./Quotes";
 import { Settings } from "./Settings";
 import { OrderDetail, Orders } from "./Orders";
+import { ServiceDetail } from "./Service";
 import { ProductEdit } from "./ProductEdit";
 import { Products } from "./Products";
 import { Servers } from "./Servers";
@@ -38,6 +39,7 @@ export function AdminScreen({ screen, ...props }: ScreenProps & { screen: Screen
     case "servers": return <><Servers game={props.game} /><Modules game={props.game} /></>;
     case "orders": return <Orders {...props} />;
     case "order": return <OrderDetail {...props} id={screen.id ?? ""} />;
+    case "service": return <ServiceDetail {...props} id={screen.id ?? ""} />;
     case "clients": return <Clients {...props} />;
     case "client": return <ClientSummary {...props} id={screen.id ?? ""} tab={screen.tab} />;
     case "invoices": return <><Invoices {...props} /><PaymentMethods game={props.game} /></>;
