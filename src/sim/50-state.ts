@@ -1,3 +1,4 @@
+import type { OveruseChoice } from "./80-business/overuse";
 import { createRng, type Rng } from "./00-core/rng";
 import { componentParts, hasFirmware, homeLan, isManaged, isOfficeRouter, modelById, type ComponentKind, type FormFactor, type PartSpec } from "./10-catalog/hardware";
 import type { BooksDownload, BooksVendorId } from "./10-catalog/bookkeeping";
@@ -251,6 +252,8 @@ export interface GameState {
   privateNets: PrivateNet[];
   // Panel hosts: services the player holds offline one by one, with the reason shown in the consoles.
   heldServices: Record<string, HoldReason>;
+  // What the tick does on its own with a service over its plan's traffic; null leaves it to the player.
+  overusePolicy: OveruseChoice | null;
   // Game servers: the title, slots and state of each game server service on a game panel.
   gameServers: GameServer[];
   // Pterodaktyl: the node daemons by node.
@@ -461,6 +464,7 @@ export const newGame = (seed: number): GameState => ({
   shop: newShop(),
   privateNets: [],
   heldServices: {},
+  overusePolicy: null,
   gameServers: [],
   daemons: {},
   gameTitles: {},
