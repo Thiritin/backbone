@@ -214,8 +214,8 @@ export interface GameState {
   // One entry per machine and product whose trial started; it never starts again there. until is the hour it ends.
   trials: { machineId: string; product: string; until: number }[];
   // The vendor sites' shared shopping cart; each site checks out the lines it sells. A line with from upgrades a key for that
-  // major to the next.
-  cart: { product: string; edition: string | null; qty: number; from?: string }[];
+  // major to the next; a line with replaces changes the edition of that key.
+  cart: { product: string; edition: string | null; qty: number; from?: string; replaces?: string }[];
   // Operating system images downloaded from their sites, one per version, and the one USB stick: the image written on it,
   // the server it is in.
   media: { images: OsImage[]; stick: { os: OsImage | null; in: string | null } };

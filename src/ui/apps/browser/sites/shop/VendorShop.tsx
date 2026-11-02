@@ -5,8 +5,8 @@ import { tiersOf } from "../../../../../sim/10-catalog/licence-tiers";
 import type { LicenseKind } from "../../../../../sim/10-catalog/server-os";
 import type { GameState, Licence } from "../../../../../sim/50-state";
 import { keyExpired, productOf } from "../../../../../sim/60-infra/licence";
-import { cartOf, keysOf, lineMajor, lineOffer, offers, orderKeys, upgradeOffers, type CartLine, type Offer } from "../../../../../sim/80-business/vendor-shop";
-import { addToCart, cancelLicence, checkout, removeFromCart } from "../../../../../sim/90-actions/vendor-shop";
+import { cartOf, editionBlock, editionChange, keysOf, lineMajor, lineOffer, offers, orderKeys, upgradeOffers, type CartLine, type Offer } from "../../../../../sim/80-business/vendor-shop";
+import { addToCart, cancelLicence, changeEdition, checkout, removeFromCart } from "../../../../../sim/90-actions/vendor-shop";
 import { groupIban, ibanEra } from "../../../../../sim/46-finance/bank";
 import { supplierAccount, supplierCode, supplierIban } from "../../../../../sim/46-finance/payables";
 import { Checkout, type Confirmation, type PaymentKind } from "../shared/Checkout";
@@ -21,8 +21,8 @@ type ShopProps = { btn: string };
 const productName = (id: string) => productOf(id)?.name ?? id;
 const editionName = (product: string, edition: string | null) => tiersOf(product).find((x) => x.id === edition)?.name ?? "";
 // A one-time key covers one major version, so its line names it.
-const lineName = (product: string, edition: string | null, major?: string, from?: string) =>
-  [productName(product), major ?? "", editionName(product, edition), from ? t("vendor-shop.upgradeFrom", { from }) : ""].filter(Boolean).join(" ");
+const lineName = (product: string, edition: string | null, major?: string, from?: string, replaces?: string) =>
+  [productName(product), major ?? "", editionName(product, edition), from ? t("vendor-shop.upgradeFrom", { from }) : "", replaces ? t("vendor-shop.editionChange") : ""].filter(Boolean).join(" ");
 const UNIT: Record<LicenseKind, string> = { once: "vendor-shop.once", server: "vendor-shop.perServer", core: "vendor-shop.perCore", account: "vendor-shop.perAccount", gameserver: "vendor-shop.perGameserver", free: "vendor-shop.once" };
 const priceOf = (o: Offer) => t(`${UNIT[o.kind]}${o.period === "year" ? "Year" : ""}`, { fee: euroPrice(o.fee) });
 
@@ -92,9 +92,9 @@ export function Cart({ host, btn, account }: ShopProps & { host: string; account
         <tbody>{lines.map((l: CartLine) => {
           const o = lineOffer(game, l);
           return (
-            <tr key={`${l.product}.${l.edition}.${l.from ?? ""}`}>
-              <td>{lineName(l.product, l.edition, lineMajor(game, l), l.from)}</td><td className="num">{l.qty}</td><td className="num">{o ? priceOf(o) : ""}</td>
-              <td><button type="button" className={btn} onClick={() => act(removeFromCart, l.product, l.edition, l.from)}>{t("vendor-shop.remove")}</button></td>
+            <tr key={`${l.product}.${l.edition}.${l.from ?? ""}.${l.replaces ?? ""}`}>
+              <td>{lineName(l.product, l.edition, lineMajor(game, l), l.from, l.replaces)}</td><td className="num">{l.qty}</td><td className="num">{o ? priceOf(o) : ""}</td>
+              <td><button type="button" className={btn} onClick={() => act(removeFromCart, l.product, l.edition, l.from, l.replaces)}>{t("vendor-shop.remove")}</button></td>
             </tr>
           );
         })}</tbody>
@@ -117,6 +117,19 @@ function status(s: GameState, k: Licence): string {
   return k.renewsAt === null ? t("vendor-shop.endsOn", { date: day(k.covers.until) }) : t("vendor-shop.renewsOn", { date: day(k.renewsAt) });
 }
 
+// The other editions on sale for a key, each with the price of the change; picking one puts it in the cart.
+function EditionChange({ k }: { k: Licence }) {
+  const game = useStore((s) => s.game), act = useStore((s) => s.act);
+  const options = offers(k.product, game.hour).flatMap((o) => { const c = editionChange(game, k.id, o.edition); return c && !editionBlock(game, k.id, o.edition) ? [{ edition: o.edition!, price: k.covers.kind === "term" ? o : c }] : []; });
+  if (!options.length || keyExpired(game, k)) return null;
+  return (
+    <select value="" aria-label={t("vendor-shop.changeEdition")} onChange={(e) => e.target.value && act(changeEdition, k.id, e.target.value)}>
+      <option value="">{t("vendor-shop.changeEdition")}</option>
+      {options.map(({ edition, price }) => <option key={edition} value={edition}>{`${editionName(k.product, edition)} · ${priceOf(price)}`}</option>)}
+    </select>
+  );
+}
+
 export function Account({ host, btn }: ShopProps & { host: string }) {
   const game = useStore((s) => s.game), act = useStore((s) => s.act);
   const keys = keysOf(game, host);
@@ -128,7 +141,10 @@ export function Account({ host, btn }: ShopProps & { host: string }) {
         <tr key={k.id}>
           <td>{productName(k.product)}</td><td>{editionName(k.product, k.edition)}</td><td className="shop-key">{k.key}</td>
           <td>{machineName(game, k.machineId)}</td><td>{status(game, k)}</td>
-          <td>{k.covers.kind === "term" && k.renewsAt !== null && !keyExpired(game, k) && <button type="button" className={btn} onClick={() => act(cancelLicence, k.id)}>{t("vendor-shop.cancel")}</button>}</td>
+          <td>
+            <EditionChange k={k} />
+            {k.covers.kind === "term" && k.renewsAt !== null && !keyExpired(game, k) && <button type="button" className={btn} onClick={() => act(cancelLicence, k.id)}>{t("vendor-shop.cancel")}</button>}
+          </td>
         </tr>
       ))}</tbody>
     </table>

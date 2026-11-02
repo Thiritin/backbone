@@ -2,16 +2,18 @@ import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
 import { serverOsAt } from "../src/sim/10-catalog/server-os";
 import { newGame } from "../src/sim/50-state";
-import { assignKey, licenceStatus } from "../src/sim/60-infra/licence";
-import { renewKeys } from "../src/sim/85-products/products";
-import { cartOf, keysOf, lineMajor, offers, ORDER, orderKeys } from "../src/sim/80-business/vendor-shop";
+import { assignKey, issueKey, licenceStatus, monthAfter, panelKey, panelMachine, updateKey } from "../src/sim/60-infra/licence";
+import { renewKeys, productsTick } from "../src/sim/85-products/products";
+import { cartOf, hostOf, keysOf, lineMajor, lineOffer, offers, ORDER, orderKeys } from "../src/sim/80-business/vendor-shop";
 import { registerLicence } from "../src/sim/90-actions/licences";
-import { addToCart, cancelLicence, checkout, removeFromCart, type LicencePayment } from "../src/sim/90-actions/vendor-shop";
+import { addToCart, cancelLicence, changeEdition, checkout, removeFromCart, type LicencePayment } from "../src/sim/90-actions/vendor-shop";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { bankTick, cardSpent, send } from "../src/sim/46-finance/bank";
 import { supplierIban } from "../src/sim/46-finance/payables";
 import { deliverPaidOrders } from "../src/sim/80-business/vendor-shop";
-import { orderDetails, withCard } from "./fixtures";
+import { provisionService } from "../src/sim/90-actions/clusters";
+import { addCustomer } from "../src/sim/90-actions/customers";
+import { orderDetails, panelVm, readyGame, withCard } from "./fixtures";
 
 const PLESKIT = "pleskit.com", WINDOORS = "windoors.macrosoft.com";
 const Y = (year: number) => hourOf(new Date(Date.UTC(year, 0, 1)));
@@ -175,5 +177,86 @@ describe("vendor shop", () => {
     const old = JSON.parse(serialize(s));
     delete old.cart;
     expect(deserialize(JSON.stringify(old)).cart).toEqual([]);
+  });
+});
+
+describe("edition change", () => {
+  // A cPanic VM in January 2020 on a Pro key bought for it, with the given number of accounts.
+  function host(accounts = 0) {
+    const s = withCard(readyGame(1));
+    s.hour = Y(2020);
+    const id = panelVm(s, s.clusters.find((c) => c.kind === "cloud")!.id, "cpanic");
+    const c = () => s.clusters.find((x) => x.id === id)!;
+    s.licenses = s.licenses.filter((k) => k.machineId !== panelMachine(c()));
+    assignKey(s, issueKey(s, "cpanic", "pro").id, panelMachine(c())!);
+    const cus = addCustomer(s, "Ada Lang", "hobbyDev");
+    for (let i = 0; i < accounts; i++) provisionService(s, cus, "webHosting", { label: `a${i}.com`, clusterId: id });
+    return { s, c, key: () => panelKey(s, c())! };
+  }
+
+  it("turns a term key in place at no charge and bills the new fee from the next renewal", () => {
+    const { s, c, key } = host();
+    const was = key(), machine = panelMachine(c());
+    expect(changeEdition(s, was.id, "admin")).toEqual({ ok: true });
+    expect(s.cart).toEqual([{ product: "cpanic", edition: "admin", qty: 1, replaces: was.id }]);
+    expect(lineOffer(s, s.cart[0])).toMatchObject({ edition: "admin", fee: 0 });
+    const r = checkout(s, hostOf("cpanic")!, orderDetails(s, "card"));
+    expect(r.ok).toBe(true);
+    expect(s.cart).toEqual([]);
+    expect(cardSpent(s) === 0).toBe(true);
+    expect(s.licenses.filter((k) => k.product === "cpanic")).toHaveLength(1);
+    expect(key()).toMatchObject({ id: was.id, key: was.key, edition: "admin", machineId: machine, renewsAt: was.renewsAt });
+    expect(s.tickets.find((x) => x.topic === "licenceEditionSwitched")).toMatchObject({ topic: "licenceEditionSwitched", mail: { params: { key: was.key, to: "Admin" } } });
+    s.hour = was.renewsAt!;
+    productsTick(s);
+    expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.licenceRenewal", amount: -4 });
+    expect(key().renewsAt).toBe(monthAfter(was.renewsAt!));
+  });
+
+  it("refuses an edition below the host's account count when it goes in the cart", () => {
+    const { s, key } = host(2);
+    expect(changeEdition(s, key().id, "solo")).toEqual({ ok: false, error: "error.licenceCap" });
+    expect(changeEdition(s, key().id, "pro")).toEqual({ ok: false, error: "error.notForSale" });
+    expect(changeEdition(s, key().id, "gold")).toEqual({ ok: false, error: "error.notForSale" });
+    expect(changeEdition(s, "lic99", "admin")).toEqual({ ok: false, error: "error.unknownLicence" });
+    expect(s.cart).toEqual([]);
+  });
+
+  it("keeps one change per key in the cart and removes it", () => {
+    const { s, key } = host();
+    changeEdition(s, key().id, "admin");
+    changeEdition(s, key().id, "premier");
+    expect(s.cart).toEqual([{ product: "cpanic", edition: "premier", qty: 1, replaces: key().id }]);
+    expect(removeFromCart(s, "cpanic", "premier")).toEqual({ ok: false, error: "error.notInCart" });
+    expect(removeFromCart(s, "cpanic", "premier", undefined, key().id)).toEqual({ ok: true });
+    expect(s.cart).toEqual([]);
+  });
+
+  it("charges a one-time key the price difference once the transfer arrives, and never refunds a downgrade", () => {
+    const s = game(1000);
+    const k = issueKey(s, "pleskit", "webAdmin");
+    updateKey(s, k.id, { covers: { kind: "version", major: "1" }, renewsAt: null, machineId: "srv1" });
+    expect(changeEdition(s, k.id, "webHost")).toEqual({ ok: true });
+    expect(lineOffer(s, s.cart[0])).toMatchObject({ fee: 7, kind: "once" });
+    const order = (checkout(s, PLESKIT, orderDetails(s, "transfer")) as { id: string }).id;
+    const p = s.payables.at(-1)!;
+    expect(p).toMatchObject({ amount: 7, keys: { order } });
+    expect(s.licenses[0].edition).toBe("webAdmin");
+    const out = send(s, { name: "Pleskit", account: supplierIban("software"), amount: p.amount, reference: p.number });
+    s.hour = out.arriveAt;
+    bankTick(s);
+    deliverPaidOrders(s);
+    expect(s.licenses).toHaveLength(1);
+    expect(s.licenses[0]).toMatchObject({ id: k.id, edition: "webHost", machineId: "srv1" });
+    changeEdition(s, k.id, "webAdmin");
+    expect(lineOffer(s, s.cart[0])).toMatchObject({ fee: 0 });
+    expect(checkout(s, PLESKIT, orderDetails(s, "transfer")).ok).toBe(true);
+    expect(s.payables.at(-1)!.amount).toBe(7);
+  });
+
+  it("keeps the replaced key in the saved cart and loads older lines without it", () => {
+    const { s, key } = host();
+    changeEdition(s, key().id, "admin");
+    expect(deserialize(serialize(s)).cart).toEqual([{ product: "cpanic", edition: "admin", qty: 1, replaces: key().id }]);
   });
 });

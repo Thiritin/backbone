@@ -8,7 +8,7 @@ import type { GameState } from "../50-state";
 import type { Call } from "../90-actions/index";
 import { drain, setHa, upgradePhp } from "../90-actions/clusters";
 import { softwareTarget, softwareUpgradeBlock, upgradeSoftware } from "../90-actions/console";
-import { activateLicence, setLicenceTier, startLicenceTrial } from "../90-actions/licence";
+import { activateLicence, startLicenceTrial } from "../90-actions/licence";
 import { setSecondary } from "../90-actions/netsvc-dns";
 import { deleteQueue, flushQueue, setMailRelay } from "../90-actions/netsvc-mail";
 import { renewCert, revokeCert, setAutoEnroll } from "../90-actions/netsvc-vpn";
@@ -56,13 +56,12 @@ export function cliCommands(sw: Software): CliCommand[] {
     cmd("version", "version", false), cmd("status", "status", false), cmd("update", "update"), cmd("upgrade", "upgrade [--key <key>]"), cmd("channel", "channel stable|release|edge"), cmd("autoupdate", "autoupdate on|off"),
     ...(licensed ? [cmd("licenseSet", "license set <key>"), cmd("licenseShow", "license show", false)] : []),
     ...(licensed && sw.trialDays !== null ? [cmd("trial", "trial")] : []),
-    ...(licensed && sw.kind === "panel" ? [cmd("licenseTier", "license tier <tier>")] : []),
     ...EXTRAS[sw.kind](sw),
   ];
 }
 
 const TWO: Record<string, Record<string, string>> = {
-  license: { set: "licenseSet", show: "licenseShow", tier: "licenseTier" }, php: { upgrade: "php" }, ssl: { renew: "sslRenew" }, vm: { list: "vmList" },
+  license: { set: "licenseSet", show: "licenseShow" }, php: { upgrade: "php" }, ssl: { renew: "sslRenew" }, vm: { list: "vmList" },
   node: { drain: "nodeDrain" }, zone: { list: "zoneList" }, cert: { renew: "certRenew", revoke: "certRevoke" }, queue: { flush: "queueFlush", delete: "queueDelete" },
   server: { list: "serverList" }, share: { list: "shareList" },
 };
@@ -135,11 +134,6 @@ function run(s: GameState, m: string, sw: Software, c: Cluster, id: string, rest
       return { output: lines("term.vendor.key", { key: k.key, edition, expires }) };
     }
     case "trial": return act(startLicenceTrial, m, sw.id);
-    case "licenseTier": {
-      if (!a) return undefined;
-      const tier = tiersOf(sw.id).find((x) => same(x.id, a) || same(x.name.replaceAll(" ", ""), a.replaceAll(" ", "")));
-      return tier ? act(setLicenceTier, c.id, tier.id) : missing(a);
-    }
     case "php": return a === undefined || a === "--keep" ? act(upgradePhp, c.id, a === "--keep") : undefined;
     case "sslRenew": {
       if (!a) return undefined;

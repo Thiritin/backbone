@@ -12,7 +12,7 @@ import { panelMachine } from "../../../../sim/60-infra/licence";
 import { supportOn } from "../../../../sim/60-infra/lifecycle";
 import { yearOf } from "../../../../sim/00-core/time";
 import { LOG_SOURCES, logLines, panelTasks, type LogSource } from "../../../../sim/80-business/readouts";
-import { LicenceTiers } from "./HostSettings";
+import { LicenceFacts } from "./HostSettings";
 import { assignedKey, installedVersion, isLicensed, licenceStatus, panelLocked, panelStatus, trialDaysOf, trialOf, unassignedKeys, upgradeKeyBlock } from "../../../../sim/60-infra/licence";
 import { machineOf } from "../../../../sim/60-infra/cluster";
 import { familyOf } from "../../../../sim/60-infra/vulns";
@@ -81,7 +81,7 @@ export function LicencePage({ game, c }: { game: GameState; c: Cluster }) {
           })}
         </tbody>
       </table>
-      <LicenceTiers game={game} c={c} />
+      <LicenceFacts game={game} c={c} />
       <KeyEntry game={game} c={c} />
       <UpgradeEntry game={game} c={c} />
     </div>

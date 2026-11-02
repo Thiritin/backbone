@@ -12,9 +12,10 @@ import { MODULE_IDS } from "../src/sim/10-catalog/shops";
 import { hourOf } from "../src/sim/00-core/time";
 import { brandFrom, componentParts, fits, genOf, modelById, type FormFactor, type PartSpec } from "../src/sim/10-catalog/hardware";
 import type { Resources } from "../src/sim/10-catalog/products";
-import { device, deviceDefaults, newGame as blankGame, type GameState } from "../src/sim/50-state";
+import { device, deviceDefaults, newGame as blankGame, type GameState, type Licence } from "../src/sim/50-state";
 import { cardDetails, openAccount } from "../src/sim/46-finance/bank";
-import type { OrderDetails } from "../src/sim/90-actions/vendor-shop";
+import { hostOf } from "../src/sim/80-business/vendor-shop";
+import { addToCart, checkout, type OrderDetails } from "../src/sim/90-actions/vendor-shop";
 import { START_CASH } from "../src/sim/10-catalog/economy";
 
 // Games with the savings already in hand and no bank account, the way every game started before the account came first.
@@ -294,4 +295,12 @@ export function orderDetails(s: GameState, kind: "card" | "transfer"): OrderDeta
     company: s.company.name, name: "Tin Becker", address: { street: "Kellerweg 1", zip: "60311", city: "Frankfurt" }, email: "tin@example.com",
     payment: kind === "card" ? { kind, number: c?.number ?? "", expiry: c?.expires ?? "", cvc: c?.cvc ?? "" } : { kind },
   };
+}
+
+// Buys one key of an edition on the vendor's site with the card and returns it, unassigned; the key is typed into a panel by activateLicence.
+export function buyKey(s: GameState, product: string, edition: string | null): Licence {
+  if (!s.bank?.card) withCard(s);
+  const bought = addToCart(s, product, edition), paid = bought.ok ? checkout(s, hostOf(product)!, orderDetails(s, "card")) : bought;
+  if (!paid.ok) throw new Error(paid.error);
+  return s.licenses.at(-1)!;
 }

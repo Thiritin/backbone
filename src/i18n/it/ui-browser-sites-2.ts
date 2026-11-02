@@ -447,7 +447,6 @@ export default {
   "browser-sites-2.cli.upgrade": () => "Aggiorna il software alla versione principale successiva; --key inserisce la chiave di aggiornamento richiesta da una licenza per una versione precedente.",
   "browser-sites-2.cli.licenseShow": () => "Mostra la chiave assegnata, la sua edizione e quando scade.",
   "browser-sites-2.cli.trial": () => "Avvia la prova gratuita su questa macchina.",
-  "browser-sites-2.cli.licenseTier": () => "Cambia l'edizione della licenza di questo host del pannello.",
   "browser-sites-2.cli.php": () => "Porta PHP alla versione attuale, e --keep lascia installata la versione precedente per i siti più vecchi.",
   "browser-sites-2.cli.sslRenew": () => "Emette un nuovo certificato per un dominio.",
   "browser-sites-2.cli.autossl": () => "Attiva o disattiva il rinnovo automatico dei certificati.",

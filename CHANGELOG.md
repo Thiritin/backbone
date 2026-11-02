@@ -7,6 +7,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - The license page of cPanic, Pleskit and DirectAdmen now asks for the key the way each product does, and entering a key or starting the trial opens the panel at once.
 - The trade office registration now asks for the company address, and the online bank shows the credit card number, expiry date and security code.
 - Buying licences on vendor websites now goes through a checkout with billing details, payment and a review, and a card payment needs the card details from the online bank.
+- Panel consoles no longer sell licence editions; the licence page shows the edition and its limits, and editions are changed from My account on the vendor's website.
+- Vendor websites offer a Change edition choice for every licence key, which switches the key to the new edition after checkout without entering a new key.
 - Colocation provider sites now keep their own layout, including their facility lists and front page banner, after the Shop app has been opened.
 - Colocation provider sites now keep their own layout after the Shop app has been opened.
 - Support desks now keep the numbers for their reports: first response times, how many tickets met the response time each customer expects, and tickets per agent, kind and month.
