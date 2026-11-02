@@ -3,6 +3,7 @@ import { type GameState } from "../src/sim/50-state";
 import { assignedKey, issueKey, panelMachine, trialOf } from "../src/sim/60-infra/licence";
 import { complete, runLine, type Session } from "../src/sim/60-infra/terminal";
 import { vendorCli } from "../src/sim/60-infra/vendor-cli";
+import { removeLicence } from "../src/sim/90-actions/licence";
 import type { Call } from "../src/sim/90-actions/index";
 import { hypervisor, newGame, panelVm, skipTo, withNames, withServer } from "./fixtures";
 
@@ -47,11 +48,12 @@ describe("vendor command line tools", () => {
 
   it("assigns a key and shows it, without a command to change the edition", () => {
     const { s, panel, vm, guest } = setup();
+    removeLicence(s, vm, "cpanic");
+    expect(text(s, "cpanic license set NOPE-0000", guest)).toBe("This licence key is not valid.");
     const k = issueKey(s, "cpanic", "solo");
     expect(text(s, `cpanic license set ${k.key}`, guest)).toBe("");
     expect(assignedKey(s, vm, "cpanic")!.id).toBe(k.id);
     expect(text(s, "cpanic license show", guest)).toContain(`Key: ${k.key}\nEdition: Solo`);
-    expect(text(s, "cpanic license set NOPE-0000", guest)).toBe("This licence key is not valid.");
     expect(text(s, "cpanic license tier pro", guest)).toContain("Usage: cpanic <command>");
     expect(assignedKey(s, vm, "cpanic")!.edition).toBe("solo");
     expect(s.clusters.find((c) => c.id === panel)!.kind).toBe("panel");

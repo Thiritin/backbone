@@ -49,7 +49,7 @@ export function Customer({ game, c, workloadId, openPma }: { game: GameState; c:
     <div className="cp-customer">
       <aside className="cp-stats">
         <h2>{t("readouts.cp.stats")}</h2>
-        <div><span>{t("readouts.cp.disk")}</span>{u ? <Bar use={u.disk} /> : <b className="num">{disk(+(ws.usage.diskMb / 1024).toFixed(3))}</b>}</div>
+        <div><span>{t("readouts.cp.disk")}</span>{Number.isFinite(ws.usage.quotaMb) ? <Bar use={[ws.usage.diskMb / 1024, ws.usage.quotaMb / 1024]} /> : <b className="num">{disk(+(ws.usage.diskMb / 1024).toFixed(3))}</b>}</div>
         {u && u.traffic[1] > 0 && <div><span>{t("readouts.cp.bandwidth")}</span><Bar use={u.traffic} /></div>}
         <div><span>{t("readouts.cp.mail")}</span><b className="num">{u?.mailboxes ?? ws.usage.mailboxes}</b></div>
         <div><span>{v ? APP_NAME[app ?? "static"] : t("pkg.domain")}</span><b>{domain}</b></div>
