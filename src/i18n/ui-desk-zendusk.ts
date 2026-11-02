@@ -193,4 +193,5 @@ export default {
   "error.deskForwarding": () => "Forwarding verification failed",
   "ticket.mail.deskForwardTest.subject": (p) => `${p.desk} forwarding verification`,
   "ticket.mail.deskForwardTest.text": (p) => `This message checks that mail to this address is forwarded to ${p.address}.`,
+  "zd.admin.addAddress": () => "Add address",
 } satisfies Dict;

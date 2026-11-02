@@ -6,7 +6,7 @@ import { isIpv4 } from "../60-infra/netsvc-dns";
 import type { GameState } from "../50-state";
 import { companyDomain } from "../30-customers/domains";
 import { FILTER_CAP, FOLDER_CAP, mailHost, mailPlan, mxOf, quotaMbAt, type MailCaps } from "../10-catalog/mail-providers";
-import type { MailAccount, MailTenant } from "./types";
+import type { MailAccount, MailTenant, Message } from "./types";
 
 // junkBonus is added to the own server's catch rate by its spam filter.
 export interface SelfHostCaps { imap: boolean; pop: boolean; sieve: boolean; junkBonus: number }
@@ -14,6 +14,8 @@ export interface SelfHostCaps { imap: boolean; pop: boolean; sieve: boolean; jun
 // webmail-server assigns installedWebmail and selfHostCaps at load; mxTarget reads the company zone of webmail-consumer.
 export const mailHooks = {
   installedWebmail: (_s: GameState): string | null => null,
+  // A hosted desk takes the mail forwarded to its own address; support-desk sets this.
+  deskInbound: (_s: GameState, _m: Message): void => {},
   // Postfixit installs Dovecoat and Mailpig bundles it.
   selfHostCaps: (_s: GameState): SelfHostCaps => ({ imap: true, pop: true, sieve: false, junkBonus: 0 }),
   // The tenant that receives the company domain's mail: the live tenant behind the best MX host that resolves. A name in

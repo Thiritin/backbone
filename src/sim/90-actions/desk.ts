@@ -1,5 +1,9 @@
-import { deskHas, type DeskFeature } from "../10-catalog/desks";
-import { deskStatus, type Department, type DeskRule, type Priority } from "../40-support/desk";
+import { deskById, deskHas, type DeskFeature, type DeskId } from "../10-catalog/desks";
+import { deskStatus, newChannel, type Department, type DeskRule, type Priority } from "../40-support/desk";
+import { channelError, fetchChannel } from "../40-support/desk-channels";
+import { serverStatus } from "../42-mail/accounts";
+import { deliver } from "../42-mail/deliver";
+import type { DeskChannel } from "../42-mail/types";
 import { autoAssignee, deskNote, importTicket, inDesk, PRIORITIES, validAssignee, WEB_KINDS } from "../40-support/desk-work";
 import { createTicket, isFinal, pickHowTo, TOPICS, type TicketKind } from "../40-support/tickets";
 import type { GameState } from "../50-state";
@@ -163,4 +167,70 @@ export function lookupTicket(s: GameState, email: string, ref: string): ActionRe
   const c = byEmail(s, email), n = ref.trim().replace(/^#/, "");
   const t = c && n ? s.tickets.find((x) => x.customerId === c.id && x.ref === n && inDesk(x)) : undefined;
   return t ? { ok: true, id: t.id } : fail("error.ticketLookup");
+}
+
+type ChannelSettings = Partial<Pick<DeskChannel, "mode" | "every" | "after" | "folder" | "deptId" | "autoReply" | "unknown">>;
+// IMAP and POP3 for a self-hosted desk, forwarding for a hosted one; Freshdusk also fetches by IMAP.
+const MODES: Record<DeskId, DeskChannel["mode"][]> = { ostickit: ["imap", "pop"], freescoot: ["imap", "pop"], zendusk: ["forward"], freshdusk: ["forward", "imap"] };
+
+function checkChannel(s: GameState, ch: DeskChannel): string | null {
+  const modes = s.desk!.hosting.kind === "legacy" ? ["imap", "pop"] : MODES[s.desk!.id];
+  if (!modes.includes(ch.mode) || !Number.isInteger(ch.every) || ch.every < 1 || ch.every > 24) return "error.deskChannel";
+  if (ch.mode === "pop" && ch.after !== "keep" && ch.after !== "delete") return "error.deskChannel";
+  if (ch.after === "move" && !s.mail.folders.some((f) => f.id === ch.folder && f.accountId === ch.accountId && !f.label)) return "error.mailNoFolder";
+  if (ch.deptId && !s.desk!.departments.some((d) => d.id === ch.deptId)) return "error.unknownDepartment";
+  if (ch.mode !== "forward" && s.desk!.hosting.kind !== "legacy" && serverStatus(s, ch.accountId, ch.mode) === "external") return "error.mailExternal";
+  return null;
+}
+
+// Adds one of the company's mailboxes as a channel and imports the mail already in it.
+export function addDeskChannel(s: GameState, accountId: string, settings: ChannelSettings = {}): ActionResult {
+  const g = gate(s);
+  if (g) return g;
+  const a = s.mail.accounts.find((x) => x.id === accountId && x.closedAt === null);
+  if (!a) return fail("error.mailUnknown");
+  if (s.mail.channels.some((c) => c.accountId === accountId)) return fail("error.deskChannelTaken");
+  const ch = { ...newChannel(s, accountId, s.desk!.id, s.desk!.hosting.kind === "hosted"), ...settings };
+  const error = checkChannel(s, ch);
+  if (error) return fail(error);
+  s.mail = { ...s.mail, channels: [...s.mail.channels, ch] };
+  if (ch.mode !== "forward" && deskStatus(s) !== "down") fetchChannel(s, ch);
+  return { ok: true, id: ch.id };
+}
+
+const channelOf = (s: GameState, id: string) => s.mail.channels.find((c) => c.id === id && c.desk === s.desk?.id);
+
+export function setDeskChannel(s: GameState, id: string, settings: ChannelSettings): ActionResult {
+  const g = gate(s);
+  if (g) return g;
+  const old = channelOf(s, id);
+  if (!old) return fail("error.deskChannelUnknown");
+  const ch = { ...old, ...settings };
+  const error = checkChannel(s, ch);
+  if (error) return fail(error);
+  s.mail = { ...s.mail, channels: s.mail.channels.map((c) => (c.id === id ? ch : c)) };
+  return { ok: true };
+}
+
+// Tickets the channel imported stay in the desk; the mailbox keeps its mail.
+export function removeDeskChannel(s: GameState, id: string): ActionResult {
+  const g = gate(s);
+  if (g) return g;
+  if (!channelOf(s, id)) return fail("error.deskChannelUnknown");
+  s.mail = { ...s.mail, channels: s.mail.channels.filter((c) => c.id !== id) };
+  s.desk = { ...s.desk!, departments: s.desk!.departments.map((d) => (d.channelId === id ? { ...d, channelId: null } : d)) };
+  return { ok: true };
+}
+
+// Send test email: the owner writes to the channel's mailbox and the desk fetches it at once; it opens no ticket.
+export function testDeskChannel(s: GameState, id: string): ActionResult {
+  const g = gate(s);
+  if (g) return g;
+  const ch = channelOf(s, id), a = ch && s.mail.accounts.find((x) => x.id === ch.accountId);
+  if (!ch || !a) return fail("error.deskChannelUnknown");
+  if (deskStatus(s) === "down") return fail("error.deskDown");
+  const error = channelError(s, ch);
+  if (error) return fail(error);
+  deliver(s, { to: `${a.local}@${a.domain}`, from: `acct:${s.mail.primary}`, kind: "system", topic: "deskTest", p: { desk: deskById(ch.desk)?.name ?? "" } });
+  return { ok: true, id: String(ch.mode === "forward" ? 1 : fetchChannel(s, channelOf(s, id)!)) };
 }
