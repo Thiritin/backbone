@@ -5,7 +5,7 @@ import { APP_NAME, NOTIFY_BATCH, NOTIFY_MINUTES } from "../../sim/10-catalog/app
 import { softwareById } from "../../sim/10-catalog/platforms";
 import type { GameState } from "../../sim/50-state";
 import { anchorOf } from "../../sim/60-infra/cluster";
-import { appMonitoring, cleanSite, hasBackup, notifyCustomers, type AppRow } from "../../sim/60-infra/apps";
+import { appMonitoring, notifyCustomers, type AppRow } from "../../sim/60-infra/apps";
 import { monitoring, type MonitorRow, type Severity } from "../../sim/60-infra/vulns";
 import { updateDue, updateSoftware } from "../../sim/90-actions/software";
 import { cleanUp } from "../../sim/90-actions/security";
@@ -74,39 +74,15 @@ function AppRowView({ r }: { r: AppRow }) {
   );
 }
 
-function DefacedRow({ game, id }: { game: GameState; id: string }) {
-  const act = useStore((s) => s.act), openApp = useStore((s) => s.openApp), v = game.services.find((x) => x.id === id), c = v && game.customers.find((x) => x.id === v.customerId);
-  if (!v || !c) return null;
-  return (
-    <tr onContextMenu={menuOn(() => [{ label: t("apps.cleanUp"), run: () => act(cleanSite, id) }])}>
-      <td>{v.label}</td>
-      <td>{c.name}</td>
-      <td>{APP_NAME[v.spec.app!]}</td>
-      <td><span className="pill bad">{t("apps.defaced")}</span></td>
-      <td className="r">{v.domain && <button className="btn" onClick={() => openApp("Browser", { kind: "url", id: `${v.domain}/` })}>{t("misc.openSite")}</button>} <button className="btn" disabled={!hasBackup(game, id)} onClick={() => act(cleanSite, id)}>{t("apps.cleanUp")}</button></td>
-    </tr>
-  );
-}
-
-// Customer sites by app and vulnerability, with the defaced ones to clean up.
+// Customer sites by app and vulnerability; the defaced ones are listed under Advisories.
 function CustomerSites({ game }: { game: GameState }) {
-  const rows = appMonitoring(game), defaced = game.sites.defaced;
-  if (!rows.length && !defaced.length) return <div className="fin-empty"><ShieldCheck />{t("apps.monitoring.noSites")}</div>;
+  const rows = appMonitoring(game);
+  if (!rows.length) return <div className="fin-empty"><ShieldCheck />{t("apps.monitoring.noSites")}</div>;
   return (
-    <>
-      {rows.length > 0 && (
-        <table className="table">
-          <thead><tr><th>{t("apps.monitoring.customerSoftware")}</th><th>{t("apps.patched")}</th><th>{t("apps.worst")}</th><th className="r">{t("apps.exposed")}</th><th className="r">{t("apps.sites")}</th><th className="r">{t("apps.monitoring.notNotified")}</th><th /></tr></thead>
-          <tbody>{rows.map((r) => <AppRowView key={`${r.app}-${r.vuln?.id ?? ""}`} r={r} />)}</tbody>
-        </table>
-      )}
-      {defaced.length > 0 && (
-        <table className="table">
-          <thead><tr><th>{t("apps.monitoring.site")}</th><th>{t("apps.monitoring.customer")}</th><th>{t("apps.software")}</th><th>{t("apps.state")}</th><th /></tr></thead>
-          <tbody>{defaced.map((id) => <DefacedRow key={id} game={game} id={id} />)}</tbody>
-        </table>
-      )}
-    </>
+    <table className="table">
+      <thead><tr><th>{t("apps.monitoring.customerSoftware")}</th><th>{t("apps.patched")}</th><th>{t("apps.worst")}</th><th className="r">{t("apps.exposed")}</th><th className="r">{t("apps.sites")}</th><th className="r">{t("apps.monitoring.notNotified")}</th><th /></tr></thead>
+      <tbody>{rows.map((r) => <AppRowView key={`${r.app}-${r.vuln?.id ?? ""}`} r={r} />)}</tbody>
+    </table>
   );
 }
 

@@ -86,7 +86,7 @@ function PowerTab({ game, d }: { game: GameState; d: Device }) {
 
 const PSU_STATE = { ok: t("misc1.ipmi.ok"), failed: t("misc1.ipmi.failed"), unplugged: t("misc1.ipmi.noInput") } as const;
 
-const UNIT = { inlet: " °C", fan: " RPM", power: " W", load: " %", psu: "" } as const;
+const UNIT = { inlet: " °C", cpu: " °C", fan: " RPM", duty: " %", power: " W", load: " %", psu: "" } as const;
 
 function SensorsTab({ game, d }: { game: GameState; d: Device }) {
   return (
@@ -96,7 +96,7 @@ function SensorsTab({ game, d }: { game: GameState; d: Device }) {
         {sensorRows(game, d).map((r) => (
           <tr key={`${r.kind}${r.n}`} data-status={r.status}>
             <td>{t(`readouts.sensor.${r.kind}`, { n: r.n })}</td>
-            <td className="num">{r.psu ? PSU_STATE[r.psu] : `${r.kind === "inlet" ? r.value!.toFixed(1) : r.value}${UNIT[r.kind]}`}</td>
+            <td className="num">{r.psu ? PSU_STATE[r.psu] : `${r.kind === "inlet" || r.kind === "cpu" ? r.value!.toFixed(1) : r.value}${UNIT[r.kind]}`}</td>
             <td>{t(`readouts.sensor.${r.status}`)}</td>
             <td className="num">{r.lower === null ? "" : `${r.lower}${UNIT[r.kind]}`}</td>
             <td className="num">{r.upper === null ? "" : `${r.upper}${UNIT[r.kind]}`}</td>

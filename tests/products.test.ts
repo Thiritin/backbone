@@ -8,6 +8,7 @@ import { type GameState } from "../src/sim/50-state";
 import { bookable, controlPlaneUp, lostDisk, workloadsOf } from "../src/sim/60-infra/cluster";
 import { nodeUsage } from "../src/sim/60-infra/usage";
 import { howToFactor, licenseCost, SLOW_PENALTY } from "../src/sim/85-products/products";
+import { slowWeight } from "../src/sim/40-support/tickets";
 import { tick } from "../src/sim/88-tick/tick";
 import { moveControlPlane, provisionService, setBackup, setHa } from "../src/sim/90-actions/clusters";
 import { installSoftware, uninstallSoftware } from "../src/sim/90-actions/software";
@@ -106,7 +107,7 @@ describe("control planes", () => {
     const { s, cluster, second, cus } = setup();
     const c = clusterById(s, cluster);
     expect(c.controlPlane).toBe("dev3");
-    expect(bookable(s, s.devices.find((d) => d.id === "dev3")!).ramGb).toBeCloseTo(8 - 0.25);
+    expect(bookable(s, s.devices.find((d) => d.id === "dev3")!).ramGb).toBeCloseTo(8 - 1);
     ok(setPower(s, "dev3", false));
     expect(err(provisionService(s, cus, "vps", { label: "Box", clusterId: cluster }))).toBe("error.controlPlaneDown");
     ok(moveControlPlane(s, cluster, second));
@@ -168,11 +169,12 @@ describe("usage curves and overcommit", () => {
     expect(sat.perf).toBeLessThan(0.7);
     const happiness = () => s.customers.find((c) => c.id === gamer)!.happiness;
     run(s, SAT_20);
-    // An hour on the slowed node costs each customer on the node SLOW_PENALTY × the performance lost past their tolerance,
-    // once per workload.
+    // An hour on the slowed node costs each customer on the node SLOW_PENALTY × the performance lost past their tolerance
+    // × the slowdown weight, once per workload.
     const before = happiness(), tol = slowTolerance(s.seed, "gameServer", "gamer", gamer);
     run(s, 1);
-    expect(before - happiness()).toBeCloseTo(2 * SLOW_PENALTY * (1 - nodeUsage(s, "dev3").perf - tol), 6);
+    const { since, last } = s.services.find((v) => v.customerId === gamer)!.slowRun!;
+    expect(before - happiness()).toBeCloseTo(2 * SLOW_PENALTY * (1 - nodeUsage(s, "dev3").perf - tol) * slowWeight("game", last, last - since), 6);
     run(s, 2);
     run(s, 168);
     expect(s.tickets.filter((t) => t.topic === "slow").length).toBeGreaterThan(0);

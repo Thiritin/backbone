@@ -35,7 +35,7 @@ export function Meter({ used, cap, text }: { used: number; cap: number; text: st
 // Booked against what the servers physically hold, next to live use against the hardware, row by row.
 export function BookedMeters({ game, devices }: { game: GameState; devices: Device[] }) {
   const live = devices.map((d) => nodeUsage(game, d.id));
-  const cap = sumOf(devices.map((d) => bookable(game, d))), used = sumOf(devices.map((d) => nodeUsed(game, d.id)));
+  const cap = sumOf(devices.map((d) => bookable(game, d))), used = sumOf(devices.map((d) => nodeUsed(game, d.id, true)));
   const u = sumOf(live.map((l) => l.used)), p = sumOf(live.map((l) => l.physical));
   const rows: [string, ReactNode, ReactNode][] = [
     ["CPU", <Meter used={used.vcpu} cap={cap.vcpu} text={`${num(used.vcpu)}/${num(cap.vcpu)} vCPU`} />, <Meter used={u.vcpu} cap={p.vcpu} text={`${num(u.vcpu)}/${cores(p.vcpu)}`} />],
@@ -51,13 +51,10 @@ export function BookedMeters({ game, devices }: { game: GameState; devices: Devi
 }
 
 function NodeMeters({ game, d }: { game: GameState; d: Device }) {
-  const live = nodeUsage(game, d.id), { used: u, physical: p } = live;
+  const live = nodeUsage(game, d.id);
   return (
     <>
       <BookedMeters game={game} devices={[d]} />
-      {game.frozen.includes(d.id) && (
-        <div className="loc-row"><span className="loc-k">{t("locations-1.frozen")}</span><span className="pill bad">{t("locations-1.ramInUse", { used: ram(+u.ramGb.toFixed(1)), total: ram(p.ramGb) })}</span></div>
-      )}
       {live.perf < 1 && <div className="loc-row"><span className="loc-k">{t("locations-1.performance")}</span><span className="pill warn">{Math.round(live.perf * 100)}%</span></div>}
     </>
   );
@@ -102,7 +99,6 @@ export function NodeCard({ game, device }: { game: GameState; device: Device }) 
       <div className="loc-card-h">
         <h3><Boxes />{softwareName(cluster.switching?.to ?? cluster.panel ?? cluster.platform)}</h3>
         <span className={`pill ${tone}`}>{label}</span>
-        {game.frozen.includes(device.id) && <span className="pill bad">{t("locations-1.frozen")}</span>}
         <span className="grow" />
         {cluster.controlPlane === device.id && <ControlPlanePill game={game} cluster={cluster} />}
       </div>

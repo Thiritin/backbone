@@ -1,34 +1,23 @@
 import { Mail } from "lucide-react";
-import { openCustomer } from "../customers/open";
 import { useState } from "react";
 import { euroCents } from "../../../sim/00-core/money";
-import { AUTO_COLLECT_DAYS, AUTO_SUSPEND_DAYS, dueStep, owed, rulesAutomated, STEPS, type BillingRules, type Invoice } from "../../../sim/45-billing/billing";
-import { sendReminder, setBillingRules, suspendServices, writeOff } from "../../../sim/90-actions/billing";
+import { AUTO_COLLECT_DAYS, AUTO_SUSPEND_DAYS, dueStep, owed, rulesAutomated, STEPS, type BillingRules } from "../../../sim/45-billing/billing";
+import { sendReminder, setBillingRules } from "../../../sim/90-actions/billing";
+import { setOverusePolicy } from "../../../sim/90-actions/customers";
+import type { OveruseChoice } from "../../../sim/80-business/overuse";
 import { t } from "../../../i18n/en";
-import { Confirm } from "../../desktop/Confirm";
-import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
+import { menuOn } from "../../desktop/ContextMenu";
 import { useSessionState } from "../../session";
 import { useStore } from "../../store";
 import { useBooks } from "./view";
+import { invoiceMenu, InvoiceDialog, reminder, type Asking } from "./InvoiceMenu";
 import { More } from "../More";
 
 const DAY = 24;
-const reminder = (step: number) => STEPS[step].key === "collections" ? t("misc1.billing.toCollections") : t("misc1.billing.sendStep", { step: t(`invoice.step.${STEPS[step].key}`) });
-
-// Suspension, write-off and the customer for a late invoice.
-function invoiceMenu(inv: Invoice, onWriteOff: (i: Invoice) => void): MenuEntry[] {
-  const { act } = useStore.getState();
-  return [
-    { label: inv.suspended ? t("misc1.billing.resume") : t("misc1.billing.suspend"), run: () => act(suspendServices, inv.id, !inv.suspended) },
-    { label: t("misc1.billing.writeOffMenu"), run: () => onWriteOff(inv) },
-    null,
-    { label: t("misc1.billing.openCustomer"), run: () => openCustomer(inv.customerId) },
-  ];
-}
 
 export function RemindersTab({ focus }: { focus: string | null }) {
   const game = useBooks(), act = useStore((s) => s.act);
-  const [writing, setWriting] = useState<Invoice | null>(null);
+  const [asking, setAsking] = useState<Asking | null>(null);
   const [settings, setSettings] = useSessionState("books.reminderSettings", false);
   const late = game.invoices.filter((i) => i.status === "overdue").sort((a, b) => a.dueAt - b.dueAt);
   const name = (id: string) => game.customers.find((c) => c.id === id)?.name ?? id;
@@ -45,7 +34,7 @@ export function RemindersTab({ focus }: { focus: string | null }) {
           <tbody>
             {late.map((i) => {
               const step = dueStep(i, game.hour), sent = i.reminders.length;
-              const menu = () => invoiceMenu(i, setWriting);
+              const menu = () => invoiceMenu(i, game.hour, setAsking);
               return (
                 <tr key={i.id} className={i.id === focus ? "sel" : ""} onContextMenu={menuOn(menu)}>
                   <td className="num">{i.number}</td>
@@ -65,10 +54,7 @@ export function RemindersTab({ focus }: { focus: string | null }) {
         </table>
         {late.length === 0 && <p className="books-none">{t("books.noLate")}</p>}
       </div>}
-      {writing && (
-        <Confirm title={t("misc1.billing.writeOffTitle", { number: writing.number })} text={t("misc1.billing.writeOffText", { customer: name(writing.customerId), amount: euroCents(owed(writing)) })}
-          action={t("misc1.billing.writeOff")} onCancel={() => setWriting(null)} onConfirm={() => { act(writeOff, writing.id); setWriting(null); }} />
-      )}
+      {asking && <InvoiceDialog asking={asking} onClose={() => setAsking(null)} />}
     </>
   );
 }
@@ -79,6 +65,22 @@ function DaysRule<D extends number>({ label, days, value, onChange }: { label: s
       <span>{label}</span>
       <div className="seg" role="group" aria-label={label}>
         {days.map((d) => <button key={d} aria-pressed={value === d} onClick={() => onChange(d)}>{d ? t("misc1.billing.nDays", { n: d }) : t("misc1.billing.off")}</button>)}
+      </div>
+    </div>
+  );
+}
+
+const POLICIES: [OveruseChoice | null, string][] = [[null, "misc1.billing.off"], ["throttle", "misc.throttleTraffic"], ["bill", "misc.billOverage"], ["upgrade", "misc.offerUpgrade"]];
+
+function OverusePolicy() {
+  const policy = useBooks().overusePolicy, act = useStore((s) => s.act), label = t("misc1.billing.overTraffic");
+  return (
+    <div className="settings-group">
+      <div className="settings-line">
+        <span>{label}</span>
+        <div className="seg" role="group" aria-label={label}>
+          {POLICIES.map(([p, key]) => <button key={key} aria-pressed={policy === p} onClick={() => act(setOverusePolicy, p)}>{t(key)}</button>)}
+        </div>
       </div>
     </div>
   );
@@ -114,6 +116,7 @@ function Rules() {
         <DaysRule label={t("misc1.billing.suspendAfter")} days={AUTO_SUSPEND_DAYS} value={rules.autoSuspendDays} onChange={(d) => set({ autoSuspendDays: d })} />
         <DaysRule label={t("misc1.billing.collectAfter")} days={AUTO_COLLECT_DAYS} value={rules.autoCollectDays} onChange={(d) => set({ autoCollectDays: d })} />
       </div>
+      {game.unlocks.includes("trafficBilling") && <OverusePolicy />}
     </div>
   );
 }

@@ -4,8 +4,8 @@ import { sizeSpec } from "../src/sim/10-catalog/products";
 import { serviceOnline } from "../src/sim/40-support/status";
 import { type GameState } from "../src/sim/50-state";
 import { bookable, nodeUsed } from "../src/sim/60-infra/cluster";
-import { nodeUsage, pegged, peggedHours } from "../src/sim/60-infra/usage";
-import { tick, type SimEvent } from "../src/sim/88-tick/tick";
+import { nodeUsage, pegged, peggedHours, ramShare } from "../src/sim/60-infra/usage";
+import { tick } from "../src/sim/88-tick/tick";
 import { provisionService, setHa, setRamGuard } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { connect, setPower } from "../src/sim/90-actions/hardware";
@@ -36,13 +36,13 @@ function setup() {
   return { s, cluster, second, gamer };
 }
 
-// Ticks until the basement server freezes, within the first Saturday; returns the events of the hour it froze.
-function freeze(s: GameState): SimEvent[] {
+// Ticks until the basement server uses more RAM than it has, within the first Saturday.
+function over(s: GameState): void {
   for (let h = 0; h < 24; h++) {
-    const events = tick(s);
-    if (s.frozen.includes("dev3")) return events;
+    tick(s);
+    if (ramShare(nodeUsage(s, "dev3")) > 1) return;
   }
-  throw new Error("never froze");
+  throw new Error("never ran over");
 }
 
 describe("RAM over-provisioning", () => {
@@ -56,41 +56,39 @@ describe("RAM over-provisioning", () => {
     expect(Math.max(nodeUsed(s, "dev3").ramGb, nodeUsed(s, second).ramGb)).toBeGreaterThan(8);
   });
 
-  it("books more RAM than installed on a node the player picks and freezes it once RAM in use exceeds it", () => {
+  it("books more RAM than installed on a node the player picks and slows it once RAM in use exceeds it", () => {
     const { s } = setup();
     expect(nodeUsed(s, "dev3").ramGb).toBe(8);
     expect(s.workloads.filter((w) => w.deviceId === "dev3")).toHaveLength(2);
-    const events = freeze(s);
+    over(s);
     const u = nodeUsage(s, "dev3");
     expect(u.used.ramGb).toBeGreaterThan(u.physical.ramGb);
-    expect(events.map((e) => e.key)).toContain("event.nodeFrozen");
+    expect(u.perf).toBeLessThan(1);
   });
 
-  it("takes every workload on a frozen node down and counts the hours for each customer", () => {
+  it("keeps at most one workload of an overcommitted node down at a time", () => {
     const { s } = setup();
-    freeze(s);
+    over(s);
     const services = s.workloads.filter((w) => w.deviceId === "dev3").map((w) => w.serviceId);
-    for (const id of services) expect(serviceOnline(s, id)).toBe(false);
-    // The hour it froze already counts as down for each of them.
-    for (const id of services) expect(s.downHours[id]).toBe(1);
+    expect(services.filter((id) => !serviceOnline(s, id)).length).toBeLessThanOrEqual(1);
   });
 
-  it("thaws as soon as a stop brings RAM in use under the installed RAM", () => {
+  it("fits again as soon as a stop brings RAM in use under the installed RAM", () => {
     const { s } = setup();
-    freeze(s);
+    over(s);
     const w = s.workloads.find((x) => x.deviceId === "dev3")!;
     ok(stopWorkload(s, w.id));
-    expect(s.frozen).not.toContain("dev3");
+    expect(ramShare(nodeUsage(s, "dev3"))).toBeLessThanOrEqual(1);
+    tick(s);
     const other = s.workloads.find((x) => x.deviceId === "dev3" && x.id !== w.id)!;
     expect(serviceOnline(s, other.serviceId)).toBe(true);
-    expect(tick(s).some((e) => e.key === "event.nodeFrozen")).toBe(false);
   });
 
-  it("thaws after a migration from the workload menu onto another node", () => {
+  it("fits again after a migration from the workload menu onto another node", () => {
     const { s, cluster, second } = setup();
     s.unlocks = [...s.unlocks, "virtualization"];
     ok(setHa(s, cluster, "live", true));
-    freeze(s);
+    over(s);
     const w = s.workloads.find((x) => x.deviceId === "dev3")!;
     const targets = migrationTargets(s, w.id);
     expect(targets.map((t) => t.to)).toEqual([second]);
@@ -98,7 +96,7 @@ describe("RAM over-provisioning", () => {
     expect(targets[0].down).toBe(0);
     ok(migrateWorkload(s, w.id, second));
     expect(s.workloads.find((x) => x.id === w.id)!.deviceId).toBe(second);
-    expect(s.frozen).toEqual([]);
+    expect(ramShare(nodeUsage(s, "dev3"))).toBeLessThanOrEqual(1);
   });
 });
 
@@ -117,8 +115,8 @@ describe("Memory reservation", () => {
     ok(setHa(s, cluster, "live", true));
     const dev3 = s.devices.find((d) => d.id === "dev3")!;
     ok(setRamGuard(s, cluster, true));
-    // 8 GB installed less the hypervisor's 0.25 GB.
-    expect(bookable(s, dev3).ramGb).toBeCloseTo(8 - 0.25);
+    // 8 GB installed less the hypervisor's 1 GB.
+    expect(bookable(s, dev3).ramGb).toBeCloseTo(8 - 1);
     const moved = s.workloads.find((w) => w.deviceId === "dev3")!;
     ok(migrateWorkload(s, moved.id, second));
     // 4 GB booked plus another 4 GB would pass the installed 8 GB less the control plane.

@@ -83,12 +83,12 @@ describe("custom orders", () => {
     expect(s.customers.map((c) => c.id)).toEqual([req().customerId]);
   });
 
-  it("opens the account any time and the other steps once the quote is accepted", () => {
+  it("opens the account and the other steps only once the quote is accepted", () => {
     const s = readyGame(1);
     const { id } = order(s);
     const a = accepted(s);
     const hostId = host(s, a);
-    done(s, createAccount(s, id, mailed(s, id)));
+    expect(createAccount(s, id, mailed(s, id))).toEqual({ ok: false, error: "error.needsQuote" });
     expect(confirmOrder(s, id)).toEqual({ ok: false, error: "error.needsQuote" });
     expect(provisionOrder(s, id, hostId)).toEqual({ ok: false, error: "error.needsQuote" });
     expect(quoteOrder(s, id, 0)).toEqual({ ok: false, error: "error.quotePrice" });

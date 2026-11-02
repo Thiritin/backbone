@@ -12,7 +12,7 @@ function host(year: number) {
   const s = readyGame(1);
   skipTo(s, year);
   s.cash = 1_000_000;
-  const id = panelVm(s, s.clusters.find((y) => y.kind === "cloud")!.id, "cpanic"), c = s.clusters.find((x) => x.id === id)!;
+  const id = panelVm(s, s.clusters.find((y) => y.kind === "cloud")!.id, "cpanic", { vcpu: 2, ramGb: 4, diskGb: 50 }), c = s.clusters.find((x) => x.id === id)!;
   s.services.push({ id: "svc-x", domain: "shop.example.com", startedAt: 0, endedAt: null, spec: { vcpu: 0.1, ramGb: 0.25, diskGb: 2, trafficGb: 5, mailboxes: 3, app: "wordpass" } } as never);
   s.workloads.push({ id: "w-x", serviceId: "svc-x", clusterId: c.id, diskGb: 2, vcpu: 0.1, ramGb: 0.25, busyUntil: 0, backupAt: null, stopped: false } as never);
   return { s, c };

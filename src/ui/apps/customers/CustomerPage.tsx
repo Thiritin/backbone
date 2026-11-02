@@ -9,7 +9,9 @@ import { isFinal, profileStats, serviceMonthly } from "../../../sim/40-support/t
 import { invoiceTotal, isUnpaid, type Invoice, type InvoiceStatus } from "../../../sim/45-billing/billing";
 import type { GameState } from "../../../sim/50-state";
 import { zoneOf } from "../../../sim/60-infra/network";
-import { creditCustomer } from "../../../sim/90-actions/customers";
+import { answerTraffic, creditCustomer, liftThrottle } from "../../../sim/90-actions/customers";
+import { overuseHandled, overuseOf } from "../../../sim/80-business/overuse";
+import { LOCALE } from "../../../i18n/lang";
 import { renewDomain } from "../../../sim/90-actions/orders";
 import { changePrice } from "../../../sim/90-actions/sales";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
@@ -100,8 +102,14 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
   const openTicket = (id: string) => openApp("Support", { kind: "ticket", id });
   const serviceMenu = (v: Service) => (): MenuEntry[] => {
     const w = v.endedAt === null ? game.workloads.find((x) => x.serviceId === v.id) : undefined;
+    const use = overuseOf(game, v), over = !!use && use.overGb > 0 && !overuseHandled(game, v);
     return [
       v.endedAt === null && v.period === "hour" && { label: t("misc.changePrice"), run: () => { setTab("services"); setPricing(v.id); } },
+      null,
+      over && !v.throttled && { label: t("misc.throttleTraffic"), run: () => act(answerTraffic, v.id, "throttle") },
+      over && { label: t("misc.billOverage"), run: () => act(answerTraffic, v.id, "bill") },
+      over && { label: t("misc.offerUpgrade"), run: () => act(answerTraffic, v.id, "upgrade") },
+      v.throttled && { label: t("misc.liftThrottle"), run: () => act(liftThrottle, v.id) },
       null,
       ...(w ? workloadActions(game, w) : []),
       null,
@@ -264,6 +272,7 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
                       {v.hostname && <div><dt>{t("misc.hostname")}</dt><dd className="num">{fqdn(game, v.hostname)}</dd></div>}
                       {v.domain && <div><dt>{t("misc.domain")}</dt><dd>{v.domain}{v.product === "webHosting" && <> <button className="btn" onClick={() => openSite(v.domain!)}>{t("misc.openSite")}</button></>}</dd></div>}
                       <div><dt>{t("misc.resources")}</dt><dd className="num">{specText(v.product, v.spec)}</dd></div>
+                      <TrafficRow v={v} />
                       <div><dt>{t("misc.price")}</dt><dd className="num">{price(v)}</dd></div>
                       <div><dt>{t("misc.billing")}</dt><dd>{v.period === "hour" ? t("misc.monthly") : t("misc.yearly")}</dd></div>
                       <div><dt>{t("misc.sla")}</dt><dd>{SLA[v.sla]}</dd></div>
@@ -370,6 +379,19 @@ export function ChangePrice({ v, profile, onClose }: { v: Service; profile: Prof
         <button className="btn ghost" onClick={onClose}>{t("misc.cancel")}</button>
         <button className="btn primary" disabled={!(monthly > 0)} onClick={save}>{t("misc.savePrice")}</button>
       </div>
+    </div>
+  );
+}
+
+function TrafficRow({ v }: { v: Service }) {
+  const game = useStore((s) => s.game);
+  const use = overuseOf(game, v);
+  if (!use) return null;
+  const gb = (x: number) => Math.round(x).toLocaleString(LOCALE);
+  return (
+    <div>
+      <dt>{t("misc.traffic")}</dt>
+      <dd className="num">{t("misc.trafficOf", { used: gb(use.usedGb), included: gb(use.includedGb) })}{v.throttled && ` · ${t("misc.throttled")}`}</dd>
     </div>
   );
 }

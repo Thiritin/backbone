@@ -110,7 +110,7 @@ export function PriceTable({ game, dc, go, className }: { game: GameState; dc: D
           const wait = game.waitlist.find((w) => w.dc === dc.id && w.space === k && w.size === n), open = fits(game, dc.id, k, n) || wait?.heldUntil != null;
           return (
             <tr key={`${k}-${n}`}>
-              <td>{spaceText(k, n)}</td><td className="ps-num">{kwOf(dc, k, n)} kW</td><td className="ps-num">{t("providers.days", { n: LEAD_DAYS[k] })}</td><td className="ps-num">{euro(spacePrice(dc, k, n))}</td>
+              <td>{spaceText(k, n)}</td><td className="ps-num">{kwOf(dc, k, n)} kW</td><td className="ps-num">{t("providers.days", { n: LEAD_DAYS[k] })}</td><td className="ps-num">{euro(spacePrice(dc, k, n, game.providerPrices))}</td>
               <td><span className={`ps-pill ${open ? "ok" : "bad"}`}>{wait?.heldUntil != null ? t("providers.held") : open ? t("providers.available") : wait ? t("providers.waiting") : t("providers.full")}</span></td>
               <td>{open ? <A to={orderPath(dc, k, n)} go={go} className="ps-btn pri">{t("providers.orderNow")}</A> : !wait && <button className="ps-btn" onClick={() => act(joinWaitlist, dc.id, k, n)}>{t("providers.joinWaitlist")}</button>}</td>
             </tr>
@@ -154,7 +154,7 @@ export function OrderForm({ game, p, route, className }: { game: GameState; p: P
   };
   const summary: [string, ReactNode][] = [
     [t("providers.site"), dc.name], [t("providers.space"), spaceText(k, n)], [t("providers.power"), `${kwOf(dc, k, n)} kW`],
-    [t("providers.perMonth"), euro(spacePrice(dc, k, n))], [t("providers.term"), t("providers.termValue")], [t("providers.notice"), t("providers.noticeValue", { n: NOTICE_MONTHS[k] })],
+    [t("providers.perMonth"), euro(spacePrice(dc, k, n, game.providerPrices))], [t("providers.term"), t("providers.termValue")], [t("providers.notice"), t("providers.noticeValue", { n: NOTICE_MONTHS[k] })],
   ];
   const Kv = ({ rows }: { rows: [string, ReactNode][] }) => <dl className="ps-kv">{rows.map(([a, b]) => <div key={a}><dt>{a}</dt><dd>{b}</dd></div>)}</dl>;
 
@@ -180,7 +180,7 @@ export function OrderForm({ game, p, route, className }: { game: GameState; p: P
         </label>
         <label className="ps-field"><span>{t("providers.space")}</span>
           <select value={`${k}-${n}`} onChange={(e) => { const [a, b] = e.target.value.split("-"); setKind(a as Rented); setSize(Number(b)); }}>
-            {kinds(dc).flatMap((x) => SPACE_SIZES[x].map((s) => <option key={`${x}-${s}`} value={`${x}-${s}`}>{spaceText(x, s)}, {euro(spacePrice(dc, x, s))}</option>))}
+            {kinds(dc).flatMap((x) => SPACE_SIZES[x].map((s) => <option key={`${x}-${s}`} value={`${x}-${s}`}>{spaceText(x, s)}, {euro(spacePrice(dc, x, s, game.providerPrices))}</option>))}
           </select>
         </label>
         <Kv rows={[[t("providers.power"), `${kwOf(dc, k, n)} kW`], [t("providers.readyIn"), t("providers.days", { n: LEAD_DAYS[k] })], [t("providers.availability"), open ? t("providers.available") : t("providers.full")]]} />

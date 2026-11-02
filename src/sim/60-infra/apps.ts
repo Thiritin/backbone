@@ -2,8 +2,8 @@
 import { hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
 import {
-  APP_NAME, ASK_SHARE, CLEAN_MINUTES, CMS, HACKS_TO_LEAVE, NOTIFY_BATCH, NOTIFY_MINUTES, SELF_CLEAN, SELF_CLEAN_DAYS, SELF_UPDATE_DAYS, selfUpdateShare,
-  updatePrice, WISH, type App, type Wish,
+  APP_NAME, ASK_SHARE, CLEAN_ACCEPT, CLEAN_LEAVE, CLEAN_MINUTES, cleanHours, cleanMarket, CMS, HACKS_TO_LEAVE, NOTIFY_BATCH, NOTIFY_MINUTES, REMIND_CLEAN,
+  SELF_CLEAN, SELF_CLEAN_DAYS, SELF_UPDATE_DAYS, selfUpdateShare, updatePrice, WISH, type App, type Wish,
 } from "../10-catalog/apps";
 import { reprice } from "../30-customers/pricing";
 import type { Customer, Service } from "../30-customers/customers";
@@ -18,11 +18,12 @@ import { HOURS_PER_YEAR } from "./status";
 import { affects, exposureDays, instanceRisk, rank, vulnsFor, type OpenVuln, type Vulnerability } from "./vulns";
 
 // defaced holds the services whose site is defaced until cleaned up, hacks the hours each was defaced in the last year, and
-// notified the "service|vulnerability" pairs the player wrote to.
+// notified the "service|vulnerability" pairs the player wrote to, and "service|offer" and "service|remind" for a defaced site.
 export interface Sites { defaced: string[]; hacks: Record<string, number[]>; notified: string[] }
 export const newSites = (): Sites => ({ defaced: [], hacks: {}, notified: [] });
 
-export const APP_ACTIONS: TicketAction[] = ["offerOnce", "offerManaged", "free", "clean", "noBackup"];
+export const APP_ACTIONS: TicketAction[] = ["offerOnce", "offerManaged", "free", "clean", "cleanPaid", "noBackup"];
+const HACK_TOPICS = ["hacked", "abuseHold"];
 
 // Only a backup of the site, or of the panel VM it lives in, lets the player restore it after a defacement.
 export function hasBackup(s: GameState, serviceId: string | null): boolean {
@@ -83,11 +84,65 @@ export function updateSite(s: GameState, serviceId: string): void {
 // Ends the open ticket of the topic on a service; the player's own ticket is resolved, a customer who sorted it out withdraws theirs.
 function settle(s: GameState, serviceId: string, topic: string, how: "withdraw" | "resolve"): void {
   const done: Partial<Ticket> = how === "resolve" ? { status: "resolved", outcome: "cleaned" } : { status: "closed", outcome: "withdrawn" };
-  s.tickets = s.tickets.map((t) => (t.serviceId === serviceId && t.kind === "howTo" && t.topic === topic && !isFinal(t) && !t.work ? { ...t, ...done, updatedAt: s.hour, unread: false } : t));
+  const topics = topic === "hacked" ? HACK_TOPICS : [topic];
+  s.tickets = s.tickets.map((t) => (t.serviceId === serviceId && t.kind === "howTo" && topics.includes(t.topic) && !isFinal(t) && !t.work ? { ...t, ...done, updatedAt: s.hour, unread: false } : t));
 }
 
+// A clean site sends no more spam, so a hold for its abuse ends and the next hack starts a fresh round of letters.
 function clearDefacement(s: GameState, serviceId: string): void {
-  s.sites = { ...s.sites, defaced: s.sites.defaced.filter((id) => id !== serviceId) };
+  s.sites = { ...s.sites, defaced: s.sites.defaced.filter((id) => id !== serviceId), notified: s.sites.notified.filter((k) => k !== `${serviceId}|offer` && k !== `${serviceId}|remind`) };
+  if (s.heldServices[serviceId] !== "abuse") return;
+  const { [serviceId]: _lifted, ...rest } = s.heldServices;
+  s.heldServices = rest;
+}
+
+// What cleaning a defaced site by hand costs the customer: the player's hourly rate, the market's where unset, times its hours.
+export function cleanupPrice(s: GameState, c: Customer): number {
+  return cleanRate(s) * cleanHours(profileStats(c.profile).budget);
+}
+const cleanRate = (s: GameState): number => s.rates.webHosting?.cleanHour ?? cleanMarket(yearOf(s.hour));
+
+// The customer's answer to an offer of paid clean-up, fixed per key. Accepting books the price and the player's hours and cleans
+// the site; a customer who declines may cancel everything, the likelier the dearer the player is against the market.
+function sellCleanup(s: GameState, v: Service, c: Customer, key: number): "cleanSold" | "cancelled" | null {
+  const ratio = cleanRate(s) / cleanMarket(yearOf(s.hour)), r = hashRng(s.seed, idNum(v.id), key, 98);
+  if (rand(r) < CLEAN_ACCEPT / ratio) {
+    const amount = cleanupPrice(s, c);
+    s.cash = Math.round((s.cash + amount) * 100) / 100;
+    s.ledger = [...s.ledger, { hour: s.hour, category: "sales", key: "ledger.siteCleanup", params: { customer: c.name, site: v.label, hours: cleanHours(profileStats(c.profile).budget) }, amount }];
+    s.playerBusyUntil = Math.max(s.playerBusyUntil, s.hour * 60) + cleanHours(profileStats(c.profile).budget) * 60;
+    clearDefacement(s, v.id);
+    return "cleanSold";
+  }
+  if (rand(r) >= CLEAN_LEAVE * ratio) return null;
+  cancelCustomer(s, c);
+  return "cancelled";
+}
+
+const defacedSite = (s: GameState, serviceId: string) => {
+  const v = s.services.find((x) => x.id === serviceId && x.endedAt === null), c = v && s.customers.find((x) => x.id === v.customerId && x.churnedAt === null);
+  return v && c && s.sites.defaced.includes(serviceId) ? { v, c } : null;
+};
+
+// The player writes to the owner of a defaced site offering to clean it by the hour; the answer comes at once.
+export function offerCleanup(s: GameState, serviceId: string): ActionResult {
+  const f = defacedSite(s, serviceId);
+  if (!f) return { ok: false, error: "error.notDefaced" };
+  if (s.sites.notified.includes(`${serviceId}|offer`)) return { ok: false, error: "error.alreadyOffered" };
+  s.customers = s.customers.map((c) => (c.id === f.c.id ? { ...c } : c));
+  const out = sellCleanup(s, f.v, s.customers.find((c) => c.id === f.c.id)!, s.hour);
+  if (!out) s.sites = { ...s.sites, notified: [...s.sites.notified, `${serviceId}|offer`] };
+  if (out === "cleanSold") settle(s, serviceId, "hacked", "resolve");
+  return { ok: true, id: out ?? "declined" };
+}
+
+// The player reminds the owner of a defaced site to clean and update it; whether they do is up to them (appsTick).
+export function remindCustomer(s: GameState, serviceId: string): ActionResult {
+  if (!defacedSite(s, serviceId)) return { ok: false, error: "error.notDefaced" };
+  if (s.sites.notified.includes(`${serviceId}|remind`)) return { ok: false, error: "error.alreadyReminded" };
+  s.playerBusyUntil = Math.max(s.playerBusyUntil, s.hour * 60) + NOTIFY_MINUTES / NOTIFY_BATCH;
+  s.sites = { ...s.sites, notified: [...s.sites.notified, `${serviceId}|remind`] };
+  return { ok: true, id: serviceId };
 }
 
 // The player restores a defaced site from its backup: 30 minutes of their time, and the customer's ticket is resolved.
@@ -108,7 +163,7 @@ function deface(s: GameState, v: Service, events: SimEvent[]): void {
   const hacks = [...(s.sites.hacks[v.id] ?? []), s.hour].filter((h) => s.hour - h < HOURS_PER_YEAR);
   s.sites = { ...s.sites, hacks: { ...s.sites.hacks, [v.id]: hacks }, defaced: [...s.sites.defaced, v.id] };
   s.customers = s.customers.map((c) => (c.id === v.customerId ? { ...c } : c));
-  const c = s.customers.find((x) => x.id === v.customerId)!, params = { customer: c.name, site: v.label, software: APP_NAME[v.spec.app!] };
+  const c = s.customers.find((x) => x.id === v.customerId)!, params = { customer: c.name, site: v.label, software: APP_NAME[v.spec.app!], serviceId: v.id };
   if (hacks.length >= HACKS_TO_LEAVE) {
     s.tickets = s.tickets.map((t) => ({ ...t }));
     cancelCustomer(s, c);
@@ -133,10 +188,10 @@ export function appsTick(s: GameState): SimEvent[] {
   updateApps(s, updating);
   for (const id of updating) settle(s, id, "update", "withdraw");
   for (const id of s.sites.defaced) {
-    const v = s.services.find((x) => x.id === id), last = s.sites.hacks[id]?.at(-1);
-    if (!v || last === undefined || skillOf(s, v) === "low") continue;
-    const r = hashRng(s.seed, idNum(id), last, 93);
-    if (rand(r) < SELF_CLEAN && s.hour >= last + (1 + Math.floor(rand(r) * SELF_CLEAN_DAYS)) * 24) {
+    const v = s.services.find((x) => x.id === id), last = s.sites.hacks[id]?.at(-1), reminded = s.sites.notified.includes(`${id}|remind`);
+    if (!v || last === undefined || (skillOf(s, v) === "low" && !reminded)) continue;
+    const r = hashRng(s.seed, idNum(id), last, reminded ? 94 : 93);
+    if (rand(r) < (reminded ? REMIND_CLEAN[skillOf(s, v)] : SELF_CLEAN) && s.hour >= last + (1 + Math.floor(rand(r) * SELF_CLEAN_DAYS)) * 24) {
       clearDefacement(s, id);
       settle(s, id, "hacked", "withdraw");
     }
@@ -208,6 +263,7 @@ export function applyAppWork(s: GameState, t: Ticket, c: Customer, action: strin
     bump(c, REBUILT);
     return "noBackup";
   }
+  if (action === "cleanPaid") return sellCleanup(s, v, c, idNum(t.id));
   if (action === "free") {
     updateApps(s, new Set([v.id]));
     return "updated";

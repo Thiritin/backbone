@@ -106,6 +106,11 @@ const MAILS: Record<string, [Mail, Mail, Mail]> = {
     (p) => `Por desgracia, no hay copia de seguridad de ${site(p)} por nuestra parte. Tendrás que restaurarlo desde tus propios archivos y cambiar tus contraseñas.`,
     (p) => `No podemos restaurar ${site(p)} porque no existe ninguna copia de seguridad. Reconstrúyelo desde tu propia copia y mantén el software actualizado.`,
   ],
+  cleanPaid: [
+    (p) => `Podemos limpiar ${site(p)} a mano y eliminar los archivos del intruso. El trabajo cuesta ${euroCents(Number(p.cleanup))} a nuestra tarifa por hora.`,
+    (p) => `No hay copia de seguridad de ${site(p)}, pero podemos limpiarlo manualmente por ${euroCents(Number(p.cleanup))}. Después, elige contraseñas nuevas.`,
+    (p) => `Con gusto eliminamos el hackeo de ${site(p)} a mano. Facturada por horas, la limpieza cuesta ${euroCents(Number(p.cleanup))}.`,
+  ],
   "tpl.explain": [
     () => "El segundo pago corresponde al consumo del mes pasado, que facturamos a mes vencido. No se te ha cobrado dos veces.",
     () => "Hay dos facturas porque el consumo se factura a final de cada mes por el mes anterior. Las dos son correctas, y no se ha cobrado nada dos veces.",
