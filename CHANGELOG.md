@@ -6,6 +6,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - HOSTtoast no longer has a city filter, so its list always shows every open host.
 - The browser's Back button no longer leaves the game: in the browser app it goes back one page, everywhere else it does nothing.
+- OsTickit now runs at your support address in the browser, with its own customer portal, Staff Control Panel and Admin Panel in the 1.6 look and, from version 1.10, the newer one, and the Support tile opens it once it is installed.
 - Web hosting panels can now create an account for your own company domain, which starts empty, counts against the panel licence and is where your website and shop will live.
 - A license key that is installed in a panel or product has to be removed before another key can be entered, and the license page shows the installed key with a Remove button instead of listing your unused keys.
 - Software now installs on any virtual machine with the disk for it, but a VM too small for its software and sites sits at 100% CPU and RAM, its web console stops answering and its sites slow down until you resize it.
