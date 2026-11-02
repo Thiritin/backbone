@@ -358,6 +358,8 @@ export interface GameState {
   webspaces: Record<string, WebspaceOverlay>;
   // The company's own accounts on panel hosts, by id; their contents are in webspaces like a customer's.
   ownWebspaces: OwnWebspace[];
+  // Desktop program installers in Downloads by program id: the hour the download started and the hour it is complete.
+  installers: Record<string, { startedAt: number; readyAt: number }>;
   // Customer data stolen from a host, the ransom decision and the fine that follows a sale (60-infra/breach.ts).
   breaches: Breach[];
   // Customer sites defaced, their hacks and the customers written to (60-infra/apps.ts).
@@ -474,7 +476,7 @@ export const newGame = (seed: number): GameState => ({
   devices: [{ ...device("dev5", "home-router", "AVN", null, 0, null, "fra1-gw-01", 0), store: "loc1" }, device("dev6", "line-jack", "", null, 0, "loc1", "fra1-line-01", 0)],
   cables: [],
   ledger: [], licenses: [], trials: [], cart: [], media: { images: [], files: [], dumps: {}, stick: { os: null, in: null } }, leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], contracts: [], crossConnects: [], providerPrices: {}, unlocks: [], training: null, knowHow: 0, installed: ["Browser", "Chat"], kbReads: {}, statusDays: [], checklist: [], seenChanges: [], undocked: [], os: "aqua",
-  customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], files: {}, webspaces: {}, ownWebspaces: [],
+  customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], files: {}, webspaces: {}, ownWebspaces: [], installers: {},
   invoices: [], transfers: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   quotes: [],
   catalog: [],

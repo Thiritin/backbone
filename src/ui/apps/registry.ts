@@ -1,5 +1,5 @@
 import {
-  Activity, Archive, CalendarDays, FileSearch, Landmark, Cloud, Mailbox, FolderOpen, Bug, BookOpen, Compass, ChartPie, Contact, FileText, Network, GraduationCap, LifeBuoy, Megaphone, MessageCircle, Newspaper, Receipt, Server, Settings, ShieldAlert, ShoppingCart, SquareTerminal,
+  Activity, Archive, ArrowDownUp, CalendarDays, FileSearch, Landmark, Cloud, Mailbox, FolderOpen, Bug, BookOpen, Compass, ChartPie, Contact, FileText, Network, GraduationCap, LifeBuoy, Megaphone, MessageCircle, Newspaper, Receipt, Server, Settings, ShieldAlert, ShoppingCart, SquareTerminal,
 } from "lucide-react";
 import type { ComponentType } from "react";
 import { t } from "../../i18n/en";
@@ -8,6 +8,7 @@ import { CalendarApp } from "./calendar/CalendarApp";
 import { DohleFormularApp } from "./dohle/DohleFormularApp";
 import { BrowserApp } from "./browser/BrowserApp";
 import { DevApp } from "./dev/DevApp";
+import { FileGorillaApp } from "./filegorilla/FileGorillaApp";
 import { MarketingApp } from "./marketing/MarketingApp";
 import { MarketApp } from "./market/MarketApp";
 import { NetworkApp } from "./network/NetworkApp";
@@ -77,6 +78,7 @@ export const APPS: AppDef[] = [
   { name: "Weather", icon: Cloud, tile: "oklch(0.62 0.12 240)", about: t("apps.about.Weather"), hidden: true, body: WeatherApp },
   { name: "Preview", icon: FileSearch, tile: "oklch(0.6 0.13 250)", about: t("apps.about.Preview"), hidden: true, body: PreviewApp },
   { name: "Dev menu", icon: Bug, tile: "oklch(0.5 0.15 25)", about: t("apps.about.Dev menu"), hidden: true, body: DevApp },
+  { name: "FileGorilla", icon: ArrowDownUp, tile: "oklch(0.55 0.2 27)", about: t("apps.about.FileGorilla"), body: FileGorillaApp },
   { name: "Chat", icon: MessageCircle, tile: "oklch(0.55 0.16 275)", about: t("apps.about.Chat") },
   { name: "Settings", icon: Settings, tile: "oklch(0.55 0.01 260)", about: t("apps.about.Settings") },
 ];

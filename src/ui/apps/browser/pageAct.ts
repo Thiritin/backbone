@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useState } from "react";
+import { t } from "../../../i18n/en";
 import { useStore, type Store } from "../../store";
 
 // The Browser's viewport shows a page's failed action on the page; outside it the error stays a notification.
@@ -10,7 +11,7 @@ export function usePageAct(): Store["act"] {
   return useCallback<Store["act"]>((fn, ...args) => {
     if (!report) return act(fn, ...args);
     const r = attempt(fn, ...args);
-    report(r.ok ? null : r.error);
+    report(r.ok ? null : t(r.error, r.params));
     return r;
   }, [act, attempt, report]);
 }

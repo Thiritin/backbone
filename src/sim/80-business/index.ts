@@ -1,4 +1,5 @@
 // docs/design/software.md, 8.2: the site index at the browser's home, by game year. Pure; the browser draws it.
+import { PROGRAMS } from "../10-catalog/programs";
 import { HOSTTOAST, HOSTTOAST_HOST } from "../10-catalog/hosttoast";
 import { t } from "../../i18n/en";
 import { monthIndexOf, yearOf } from "../00-core/time";
@@ -60,6 +61,7 @@ export function siteIndex(s: GameState): Category[] {
   }));
   return [
     { title: t("sim.index.cat.docs"), rows: [row(WIKI_TITLE, WIKI_URL, t("sim.index.wiki"))] },
+    { title: t("sim.index.cat.desktop"), rows: PROGRAMS.filter((p) => p.from <= year).map((p) => row(p.id, `${displayHost(p.host)}/`, t(`programs.tagline.${p.id}`))) },
     { title: t("sim.index.cat.banks"), rows: banksOpen(year).map((b) => row(b.name, `${displayHost(b.host)}/`, t("sim.index.bank"))) },
     { title: t("sim.index.cat.os"), rows: SERVER_OS.map((o) => row(o.name, `${displayHost(o.site.host)}/`, o.site.tagline)) },
     ...software,

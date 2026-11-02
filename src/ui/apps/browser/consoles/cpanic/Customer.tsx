@@ -1,4 +1,4 @@
-import { Database, Folder, Mail, ScrollText, TriangleAlert, type LucideIcon } from "lucide-react";
+import { Database, Folder, ScrollText, TriangleAlert, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { t } from "../../../../../i18n/en";
 import { APP_NAME } from "../../../../../sim/10-catalog/apps";
@@ -13,10 +13,11 @@ import { FileManager } from "./FileManager";
 import { LogPage } from "../Readouts";
 import { MySqlDatabases } from "./MySqlDatabases";
 import { DomainPage, domainTiles, type DomainPageId } from "./Domains";
+import { isMailFtpPage, MailFtp, mailFtpIcons, type MailFtpPage } from "./MailFtp";
 
-type Page = "files" | "mail" | "db" | "access" | "errors" | DomainPageId;
+type Page = "files" | "db" | "access" | "errors" | DomainPageId | MailFtpPage;
 const ICONS: [Page | "pma", string, LucideIcon][] = [
-  ["files", "readouts.cp.files", Folder], ["mail", "readouts.cp.mail", Mail],
+  ["files", "readouts.cp.files", Folder],
   ["db", "webdb.title", Database], ["pma", "webdb.pma.app", Database], ["access", "readouts.cp.access", ScrollText], ["errors", "readouts.cp.errors", TriangleAlert],
 ];
 
@@ -30,18 +31,13 @@ export function Customer({ game, c, workloadId, openPma }: { game: GameState; c:
   const body = () => {
     if (offline) return <p className="cx-empty">{t("readouts.cp.offline")}</p>;
     if (page === "files") return <FileManager game={game} c={c} workloadId={workloadId} />;
-    if (page === "mail") return (
-      <table className="cx-table">
-        <thead><tr><th>{t("readouts.cp.address")}</th><th>{t("readouts.cp.quota")}</th></tr></thead>
-        <tbody>{Object.values(ws.mailboxes).map((m) => <tr key={m.address}><td>{m.address}</td><td><Bar use={[m.usedMb, m.quotaMb]} /></td></tr>)}</tbody>
-      </table>
-    );
+    if (isMailFtpPage(page)) return <MailFtp game={game} ws={ws} page={page} />;
     if (page === "db") return <MySqlDatabases game={game} workloadId={workloadId} />;
     if (page === "access" || page === "errors") return <LogPage game={game} c={c} only={page === "errors" ? "error" : "access"} />;
     if (page) return <DomainPage game={game} c={c} workloadId={workloadId} page={page} />;
     return (
       <div className="cp-icons">
-        {[...ICONS, ...domainTiles(yearOf(game.hour))].map(([id, key, Icon]) => <button key={id} className="cx-tile" onClick={() => (id === "pma" ? openPma?.() : setPage(id))}><Icon size={28} aria-hidden /><span>{t(key)}</span></button>)}
+        {[...ICONS, ...domainTiles(yearOf(game.hour)), ...mailFtpIcons(yearOf(game.hour))].map(([id, key, Icon]) => <button key={id} className="cx-tile" onClick={() => (id === "pma" ? openPma?.() : setPage(id))}><Icon size={28} aria-hidden /><span>{t(key)}</span></button>)}
       </div>
     );
   };
