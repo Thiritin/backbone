@@ -7,6 +7,7 @@ import type { GameState } from "../50-state";
 export function fillDesk(s: GameState, saved: boolean): void {
   const bought = s.installed.find((id) => deskById(id));
   s.installed = s.installed.filter((id) => !deskById(id));
+  for (const c of s.mail.channels) c.verified ??= false;
   if (saved) return;
   for (const t of s.tickets) Object.assign(t, { channelId: t.channelId ?? null, via: t.via ?? "email", ref: t.ref ?? "", deptId: t.deptId ?? null, notes: t.notes ?? [] });
   s.desk = null;

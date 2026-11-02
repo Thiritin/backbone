@@ -2,6 +2,7 @@ import { deskUrl } from "./apps/browser/sites/desk/DeskSite";
 import { booted, monthNet, pickSound, playSound, soundFor, WINDOW_MS, type Sound, type UiSound } from "./sounds";
 import { createContext, useContext, useEffect } from "react";
 import { create } from "zustand";
+import { mailBuild, mailHas } from "../sim/10-catalog/pear-mail";
 import type { GameState } from "../sim/50-state";
 import { weeklyChallenge } from "../sim/10-catalog/challenges";
 import type { ChangelogDay } from "./changelog";
@@ -29,7 +30,8 @@ export interface Banner { id: number; app: string; title: string; text: string; 
 export const focusOf = (p: Record<string, string | number>): Omit<Focus, "n"> | undefined =>
   p.ticketId !== undefined ? { kind: "ticket", id: String(p.ticketId) } :
   p.deviceId !== undefined ? { kind: "device", id: String(p.deviceId) } :
-  p.serviceId !== undefined ? { kind: "site", id: String(p.serviceId) } : undefined;
+  p.serviceId !== undefined ? { kind: "site", id: String(p.serviceId) } :
+  p.messageId !== undefined ? { kind: "message", id: String(p.messageId) } : undefined;
 // Older prefs also carry a banners flag, which is ignored: an allowed app shows banners and fills the notification centre.
 // types holds the notification types switched off or on by id (notify-types.ts); a missing id is on.
 export interface NotifyPref { allow: boolean; sound: boolean; types?: Record<string, boolean> }
@@ -160,10 +162,12 @@ function savePrefs(notify: Record<string, Partial<NotifyPref>>, sound: SoundPref
   }
 }
 
-// A new game starts from nothing stored but the sound settings.
+// A new game starts from nothing stored but the sound settings and the one-time zsh setup.
 function wipeLocal(sound: SoundPref) {
   try {
+    const shell = localStorage.getItem("backbone.shell");
     localStorage.clear();
+    if (shell) localStorage.setItem("backbone.shell", shell);
     sessionStorage.clear();
   } catch {
     // Storage blocked; nothing was kept.
@@ -259,6 +263,8 @@ export const useStore = create<Store>((set, get) => ({
     for (let i = 0, n = Math.round(hours * 60); i < n; i++) {
       for (const e of tickMinute(game)) {
         happened = true;
+        // Pear Mail has no banners before Notification Center; the Dock bounce and the sound announce mail.
+        if (e.app === "Pear Mail" && !mailHas(mailBuild(game.os, game.hour), "banners")) continue;
         get().notify(e.app, t(`${e.key}.title`, e.params), t(`${e.key}.text`, e.params), e.key, focusOf(e.params));
         if (e.key === "event.trainingDone") set({ explain: String(e.params.id) });
         if (isAlert(e.key) && !alert) alert = { id: ++bannerId, app: e.app, title: t(`${e.key}.title`, e.params), text: t(`${e.key}.text`, e.params), hour: game.hour, key: e.key, focus: focusOf(e.params) };

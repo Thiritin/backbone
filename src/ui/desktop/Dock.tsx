@@ -1,10 +1,11 @@
 import { t } from "../../i18n/en";
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { Trash2 } from "lucide-react";
 import type { CSSProperties } from "react";
 import { APPS, appFor, appTitle } from "../apps/registry";
 import { appMenu, APP, dragApp, dropTarget, trashApp } from "../apps/ApplicationsApp";
-import { useStore } from "../store";
+import { uiSound, useStore } from "../store";
+import { unreadBadge } from "../../sim/43-pear-mail/view";
 import { deskUrl } from "../apps/browser/sites/desk/DeskSite";
 import { deskStatus } from "../../sim/40-support/desk";
 import { menuOn } from "./ContextMenu";
@@ -15,6 +16,16 @@ export function Dock() {
   const minimized = windows.filter((w) => w.minimized);
   const [over, setOver] = useState(false);
   const deskDown = !!deskUrl(game) && deskStatus(game) === "down";
+  // New mail bounces the Pear Mail tile and plays the new mail sound, with its window open or closed.
+  const mail = game.installed.includes("Pear Mail") ? unreadBadge(game) : 0, seen = useRef(mail);
+  useEffect(() => {
+    if (mail > seen.current) {
+      const tile = document.querySelector('.dock-app[data-app="Pear Mail"] .dock-tile');
+      if (tile) bounce(tile);
+      uiSound("post");
+    }
+    seen.current = mail;
+  }, [mail]);
 
   return (
     <nav className="dock" aria-label={t("desktop.dock.apps")}>
@@ -27,6 +38,7 @@ export function Dock() {
             {i > 0 && i % 4 === 0 && <span className="dock-divider" />}
             <button
               className={`dock-app${win ? " running" : ""}`}
+              data-app={a.name}
               aria-label={badge ? t("desktop.dock.open", { name: appTitle(shown), n: badge }) : appTitle(shown)}
               onClick={(e) => {
                 if (!win) bounce(e.currentTarget.querySelector(".dock-tile")!);
@@ -41,6 +53,7 @@ export function Dock() {
               <span className="dock-tile" style={{ "--tile": shown.tile } as CSSProperties}><shown.icon /></span>
               <span className="dot" />
               {a.name === "Support" && deskDown && <span className="warn" />}
+              {a.dot?.(game) && <span className="notice" />}
               {badge > 0 && <span className="count">{badge > 99 ? "99+" : badge}</span>}
             </button>
           </Fragment>

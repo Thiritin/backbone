@@ -6,7 +6,7 @@ import type { Profile } from "../30-customers/customers";
 import { anchorOf, controlPlaneUp, type Cluster } from "../60-infra/cluster";
 import { mailAddress } from "../60-infra/addresses";
 import { linkStatus } from "../60-infra/status";
-import { mailPlan } from "../10-catalog/mail-providers";
+import { GMIX_OFFER, mailPlan } from "../10-catalog/mail-providers";
 import { roleAccount, roleAddress, seatsBilled } from "../42-mail/accounts";
 import { mxTarget } from "../42-mail/caps";
 import { tenantOf } from "../42-mail/address";
@@ -93,7 +93,7 @@ export function mailTick(s: GameState): void {
   const year = yearOf(s.hour);
   for (const t of s.mail.tenants) {
     if (t.since >= s.hour || (t.endsAt !== null && t.endsAt <= s.hour)) continue;
-    const price = mailPlan(t.host, t.plan)?.price(year) ?? 0, seats = seatsBilled(s, t), amount = Math.round(seats * price * 100) / 100;
+    const price = t.offerUntil !== undefined && s.hour <= t.offerUntil ? GMIX_OFFER : mailPlan(t.host, t.plan)?.price(year) ?? 0, seats = seatsBilled(s, t), amount = Math.round(seats * price * 100) / 100;
     if (amount <= 0) continue;
     const e: LedgerEntry = { hour: s.hour, category: "subscriptions", key: "ledger.companyMail", params: { name: hostName(t.host), seats }, amount: -amount };
     s.cash = Math.round((s.cash - amount) * 100) / 100;

@@ -39,6 +39,8 @@ import { SHOPS, type ShopId } from "../10-catalog/shops";
 import { shopHost } from "./shoplink";
 import { HOSTTOAST_HOST } from "../10-catalog/hosttoast";
 import { dcProvider, PROVIDERS, type Datacenter } from "../20-world/datacenters";
+import { MAIL_SITES, mailSiteUrl, type MailSiteId } from "../10-catalog/mail-consumer";
+import { roleAccount } from "../42-mail/accounts";
 
 // fast loads at once, slow shows a progress bar first, down cannot be reached.
 export type Load = "fast" | "slow" | "down";
@@ -58,6 +60,7 @@ export type Page =
   | { kind: "books"; id: BooksVendorId }
   | { kind: "shopVendor"; id: ShopId }
   | { kind: "deskVendor"; id: DeskId }
+  | { kind: "mailProvider"; id: MailSiteId }
   | { kind: "desk"; id: DeskId }
   | { kind: "hosttoast" }
   | { kind: "host"; hostname: string }
@@ -121,7 +124,7 @@ export const resellersUrl = (): string => `${HOME_URL}${dirSlug(t("sim.index.cat
 // Domains the game's other companies hold in any year, and every name under them.
 export function providerDomain(name: string): boolean {
   const hosts = [INDEX_HOST, OFFICE_HOST, DOHLE_HOST, WIKI_HOST, LEXWEAR_HOST, HOSTTOAST_HOST, BOARD_HOST, FLYER_HOST, AGENCY_HOST, VIDEO_HOST, ...CHANNELS.map((c) => c.host), ...SOFTWARE.map((x) => x.site.host), ...SERVER_OS.map((x) => x.site.host), ...DESKS.map((d) => d.hosts.vendor),
-    ...VENDORS.map((m) => vendorHost(m.id)), ...BANKS.map((b) => b.host), ...REGISTRARS.map(registrarHost), ...PROVIDERS.map((p) => p.host)].map((h) => h.replace(/^www\./, ""));
+    ...VENDORS.map((m) => vendorHost(m.id)), ...BANKS.map((b) => b.host), ...REGISTRARS.map(registrarHost), ...PROVIDERS.map((p) => p.host), ...Object.values(MAIL_SITES).flat()].map((h) => h.replace(/^www\./, ""));
   return hosts.some((h) => h === name || h.endsWith(`.${name}`));
 }
 // The partner's form that registers or transfers an order's domain.
@@ -132,12 +135,19 @@ export const bankUrl = (id: BankId): string => `www.${bankById(id)!.host}/`;
 export const providerUrl = (id: string): string => `${displayHost(dcProvider(id).host)}/`;
 export const orderUrl = (dc: Datacenter, space: string, size: number): string => `${providerUrl(dc.provider)}order?dc=${dc.id}&space=${space}&size=${size}`;
 
-// Bookmarks every game has: the bank and the registrar. The company's own sites sit in its bookmark folder.
+// Bookmarks every game has: the bank, the registrar and the webmail. The company's own sites sit in its bookmark folder.
 export const defaultBookmarks = (s: GameState): { title: string; url: string }[] => [
   ...(s.registration ? [] : [{ title: t("browser-sites-1.of.title"), url: OFFICE_URL }]),
   ...(s.bank ? [{ title: bankById(s.bank.id)!.name, url: bankUrl(s.bank.id) }] : []),
   { title: ((s.registrar && registrarById(s.registrar.id)) ?? REGISTRARS[0]).name, url: registrarUrl(s) },
+  ...webmailMark(s),
 ];
+
+// The webmail of the sales mailbox's provider, once that provider has a site.
+function webmailMark(s: GameState): { title: string; url: string }[] {
+  const a = roleAccount(s, "sales"), host = a && s.mail.tenants.find((x) => x.id === a.tenant)?.host;
+  return host && host in MAIL_SITES ? [{ title: t("sim.index.webmail"), url: mailSiteUrl(host as MailSiteId) }] : [];
+}
 
 // Splits what the player typed into a lowercase host and a path with its query; the scheme and a trailing dot fall away.
 export function split(raw: string): { host: string; path: string } {
@@ -247,6 +257,8 @@ export function resolve(s: GameState, raw: string): Resolved {
   if (shopSite) return out({ kind: "shopVendor", id: shopSite.id });
   const deskSite = DESKS.find((d) => d.from <= yearOf(s.hour) && named(d.hosts.vendor));
   if (deskSite) return out({ kind: "deskVendor", id: deskSite.id });
+  const mailSite = (Object.keys(MAIL_SITES) as MailSiteId[]).find((id) => MAIL_SITES[id].some(named));
+  if (mailSite) return out({ kind: "mailProvider", id: mailSite });
   if (named(HOSTTOAST_HOST)) return out({ kind: "hosttoast" });
   // A software's site exists from the year the software does; an operating system's always.
   const year = yearOf(s.hour), sw = SOFTWARE.find((x) => named(x.site.host) && x.from <= year);

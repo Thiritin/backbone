@@ -7,6 +7,7 @@ import type { Ticket } from "../../../../../sim/40-support/tickets";
 import type { GameState } from "../../../../../sim/50-state";
 import { deskPath, parseDesk, type DeskRoute } from "../../../../../sim/80-business/deskroutes";
 import { OsTickitSite } from "./ostickit/OsTickitSite";
+import { ZenduskSite } from "./zendusk/ZenduskSite";
 
 export interface DeskSiteProps { game: GameState; host: string; route: DeskRoute; go: (url: string) => void }
 // A desk's own web software: its pages, the path of its staff home and of a ticket's staff page.
@@ -14,6 +15,7 @@ export interface DeskApp { Site: ComponentType<DeskSiteProps>; staff: string; ti
 
 export const DESK_APPS: Partial<Record<DeskId, DeskApp>> = {
   ostickit: { Site: OsTickitSite, staff: deskPath("ostickit", "scp"), ticket: (tk) => deskPath("ostickit", "staffTicket", { n: tk.ref ?? "" }) },
+  zendusk: { Site: ZenduskSite, staff: deskPath("zendusk", "agent"), ticket: (tk) => deskPath("zendusk", "ticket", { n: tk.ref ?? "" }) },
 };
 
 // support.<domain> or a tenant address: the installed desk's app on that path, or the server's not-found page.

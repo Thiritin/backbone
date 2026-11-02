@@ -116,7 +116,7 @@ describe("reload", () => {
 });
 
 describe("new game", () => {
-  it("clears every stored tab, shell and flag but the sound settings", () => {
+  it("clears every stored tab and flag but the sound settings and the one-time zsh setup", () => {
     const mem = (m: Map<string, string>) => ({ getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => m.set(k, v), clear: () => m.clear() });
     const local = new Map([["backbone.shell", "1"], ["backbone.theme", "dark"], ["backbone.earlyAccessSeen", "1"]]);
     const session = new Map([["backbone.ui.browser.tabs", "[]"], ["backbone.ui.terminal.history", "[\"ls\"]"]]);
@@ -127,7 +127,7 @@ describe("new game", () => {
       s().setSound({ volume: 0.2 });
       s().setNotifyPref("Books", { allow: false });
       s().startGame();
-      expect([...local.keys()].sort()).toEqual(["backbone.prefs", "backbone.save"]);
+      expect([...local.keys()].sort()).toEqual(["backbone.prefs", "backbone.save", "backbone.shell"]);
       expect(JSON.parse(local.get("backbone.prefs")!)).toEqual({ notify: {}, sound: expect.objectContaining({ volume: 0.2 }) });
       expect([...session.keys()].every((k) => k === "backbone.ui.windows" || k === "backbone.ui.speed")).toBe(true);
       expect(s().notifyPrefs).toEqual({});
@@ -151,11 +151,11 @@ describe("reload clock", () => {
     const local = new Map<string, string>(), session = new Map<string, string>();
     try {
       const first = await reload(local, session);
-      first.getState().setSpeed(2);
-      expect(session.get("backbone.ui.speed")).toBe("2");
+      first.getState().setSpeed(8);
+      expect(session.get("backbone.ui.speed")).toBe("8");
       expect((await reload(local, session)).getState().speed).toBe(0);
       local.set("backbone.save", serialize(readyGame(1)));
-      expect((await reload(local, session)).getState().speed).toBe(2);
+      expect((await reload(local, session)).getState().speed).toBe(8);
       session.set("backbone.ui.speed", "3");
       expect((await reload(local, session)).getState().speed).toBe(0);
     } finally {
@@ -171,23 +171,23 @@ describe("alerts", () => {
     const game = readyGame(11);
     game.cash = -1000;
     game.brokeSince = null;
-    useStore.setState({ game, speed: 4, alert: null, resume: 0 });
+    useStore.setState({ game, speed: 60, alert: null, resume: 0 });
     s().setNotifyPref("Books", { allow: false });
     const start = game.hour;
     s().advance(48);
     expect(s().alert).toMatchObject({ key: "event.cashNegative", title: expect.any(String) });
     expect(s().speed).toBe(0);
-    expect(s().resume).toBe(4);
+    expect(s().resume).toBe(60);
     expect(s().game.hour).toBeLessThan(start + 48);
     s().closeAlert(true);
     expect(s().alert).toBeNull();
-    expect(s().speed).toBe(4);
+    expect(s().speed).toBe(60);
     s().setNotifyPref("Books", { allow: true });
   });
 
   it("keeps the game paused when the sheet opens an app", () => {
     const s = useStore.getState;
-    useStore.setState({ speed: 0, resume: 4, alert: { id: 1, app: "Books", title: "a", text: "b", hour: 0, key: "event.cashNegative" } });
+    useStore.setState({ speed: 0, resume: 60, alert: { id: 1, app: "Books", title: "a", text: "b", hour: 0, key: "event.cashNegative" } });
     s().closeAlert(false);
     expect(s()).toMatchObject({ alert: null, speed: 0 });
   });

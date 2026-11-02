@@ -22,6 +22,7 @@ import { SupportApp } from "./support/SupportApp";
 import { supportApp } from "./support/desk";
 import { PearMailMark, type MarkProps } from "../art/mailmarks";
 import { ResearchApp } from "./research/ResearchApp";
+import { canResearchAny } from "../../sim/90-actions/store";
 import { StaffApp } from "./staff/StaffApp";
 import { WeatherApp } from "./weather/WeatherApp";
 import { PostApp } from "./PostApp";
@@ -47,6 +48,8 @@ export interface AppDef {
   body?: ComponentType;
   // The red count on the dock tile.
   badge?: (s: GameState) => number;
+  // The plain dot on the dock tile.
+  dot?: (s: GameState) => boolean;
 }
 
 // Dock order; a divider follows every 4th app.
@@ -72,7 +75,7 @@ export const APPS: AppDef[] = [
   { name: "Market", icon: era(ChartPie, "market"), tile: "oklch(0.62 0.12 230)", about: t("apps.about.Market"), body: MarketApp },
   { name: "Knowledge base", icon: era(BookOpen, "knowledge-base"), tile: "oklch(0.6 0.12 200)", about: t("apps.about.Knowledge base"), body: KnowledgeBaseApp },
   { name: "Nagiosaurus", icon: era(Activity, "nagiosaurus"), tile: "oklch(0.58 0.14 150)", about: t("apps.about.Nagiosaurus"), hidden: true },
-  { name: "Research", icon: era(GraduationCap, "research"), tile: "oklch(0.72 0.15 95)", about: t("apps.about.Research"), body: ResearchApp },
+  { name: "Research", icon: era(GraduationCap, "research"), tile: "oklch(0.72 0.15 95)", about: t("apps.about.Research"), body: ResearchApp, dot: canResearchAny },
   { name: "Getting started", icon: era(BookOpen, "getting-started"), tile: "oklch(0.55 0.15 255)", about: t("apps.about.Getting started"), hidden: true },
   { name: "Security", icon: era(ShieldAlert, "security"), tile: "oklch(0.58 0.17 25)", about: t("apps.about.Security"), body: SecurityApp,
     badge: (s) => s.lossReports.filter((r) => r.items.some((i) => !i.restored)).length },

@@ -129,8 +129,10 @@ button { font: inherit; color: inherit; cursor: default; }
 .co-colors button { width: 20px; height: 20px; border: 0; border-radius: 50%; background: var(--tile); }
 .co-colors button[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--banner), 0 0 0 4px var(--tile); }
 .co-logos button:focus-visible, .co-colors button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.menubar .mb-mark { width: 17px; height: 17px; border-radius: 4px; display: grid; place-items: center; color: white; background: var(--tile); }
-.menubar .mb-logo .mb-mark svg.lucide { width: 11px; height: 11px; stroke-width: 2.4; }
+.menubar .mb-pear { display: grid; place-items: center; }
+.menubar .mb-pear .intro-pear { width: 17px; height: 17px; color: var(--text); }
+:root[data-os="aqua"] .menubar .mb-pear .intro-pear { color: oklch(0.5 0.1 250); filter: drop-shadow(0 1px 0 oklch(1 0 0 / 0.8)); }
+:root[data-os="leopard"] .menubar .mb-pear .intro-pear { color: oklch(0.2 0 0); filter: drop-shadow(0 1px 0 oklch(1 0 0 / 0.6)); }
 .switch {
   appearance: none; width: 32px; height: 19px; margin: 0; border-radius: 10px; position: relative;
   background: var(--line-strong); transition: background 160ms;

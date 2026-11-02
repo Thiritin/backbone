@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { shopById } from "../../../sim/10-catalog/shops";
 import { DESK } from "../support/desk";
+import { GMixMark } from "../../art/mailmarks";
 import type { CSSProperties } from "react";
 import type { Resolved } from "../../../sim/80-business/browser";
 import type { GameState } from "../../../sim/50-state";
@@ -51,6 +52,7 @@ export function Favicon({ game, r }: { game: GameState; r: Resolved }) {
       const v = booksVendor(p.id)!;
       return <Tile fill={v.skin.accent}><text x="8" y="11.8" textAnchor="middle" fontSize="10" fontWeight="800" fill="white" fontFamily="Verdana, sans-serif">{v.name[0].toUpperCase()}</text></Tile>;
     }
+    case "mailProvider": return <span className="fav fav-mark" style={{ "--tile": "#1c449b" } as CSSProperties}><GMixMark /></span>;
     case "deskVendor": case "desk": { const M = DESK[p.id].icon; return <span className="fav fav-mark" style={{ "--tile": DESK[p.id].tile } as CSSProperties}><M /></span>; }
     case "shopVendor": {
       const name = shopById(p.id).name;

@@ -17,6 +17,7 @@ export interface MailTenant {
   clusterId?: string;          // the mail server of a "self" tenant
   admin: string | null;        // the account id of the tenant's administrator: the first mailbox created in it
   locked?: true;               // the 2022 conversion lock: sign-in is refused and incoming mail bounces, as for a closed box
+  offerUntil?: number;         // the last month start billed at the retention price; it stays as the mark of a used offer
   next?: string;               // a cheaper plan that takes over at the next month start, after the paid month
 }
 
@@ -112,6 +113,7 @@ export interface DeskChannel {
   id: string; accountId: string; desk: string;
   after: "keep" | "read" | "move" | "delete"; folder: string | null;  // what the desk does with an imported message
   since: number;
+  verified: boolean;  // a hosted desk has seen its forwarding test arrive
   // support-desk adds its own fields (department, mode, fetch interval) beside these.
 }
 
