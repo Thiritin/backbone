@@ -32,7 +32,7 @@ const signed = (s: GameState, form: string): string => {
   expect(signForm(s, r.id!)).toEqual({ ok: true });
   return r.id!;
 };
-const lastMail = (s: GameState) => s.tickets.filter((t) => t.kind === "mail").at(-1)!;
+const lastMail = (s: GameState) => Object.values(s.mail.msgs).flat().sort((a, b) => Number(a.id.slice(3)) - Number(b.id.slice(3))).at(-1)!;
 
 describe("letters", () => {
   it("land with the morning post after working days, skipping the weekend", () => {
@@ -107,7 +107,7 @@ describe("company paperwork", () => {
     expect(sendMail(s, OFFICE_MAIL, "GmbH", doc)).toEqual({ ok: true });
     expect(lastMail(s).topic).toBe("wrongDesk");
     expect(sendMail(s, NOTARY_MAIL, "GmbH", doc)).toEqual({ ok: true });
-    expect(lastMail(s)).toMatchObject({ topic: "notaryFiled", mail: { from: NOTARY_NAME } });
+    expect(lastMail(s)).toMatchObject({ topic: "notaryFiled", from: `n:${NOTARY_NAME}` });
     run(s, 24 * 14);
     expect(s.registration!.form).toBe("partnership");
     run(s, 24 * 10);

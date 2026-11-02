@@ -1,3 +1,4 @@
+import { mailsAbout } from "./fixtures";
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
 import { rivalTrust, TIERS } from "../src/sim/10-catalog/hosttoast";
@@ -83,7 +84,7 @@ describe("HOSTtoast", () => {
     const events = hosttoastTick(s);
     expect(s.hosttoast.tier).toBe("verified");
     expect(s.hosttoast.audit).toBeNull();
-    expect(s.tickets.at(-1)).toMatchObject({ kind: "mail", topic: "hosttoastLate", mail: { from: "HOSTtoast" } });
+    expect(mailsAbout(s, "hosttoastLate").at(-1)).toMatchObject({ from: "n:HOSTtoast", kind: "host" });
     expect(events.some((e) => e.key === "event.ticket")).toBe(true);
     expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.hosttoast", amount: -29 });
   });
@@ -98,7 +99,7 @@ describe("HOSTtoast", () => {
     hosttoastTick(s);
     expect(s.hosttoast.uptime.at(-1)).toBe(1);
     expect(s.hosttoast.tier).toBe("premium");
-    expect(s.tickets.at(-1)).toMatchObject({ topic: "hosttoastUptime" });
+    expect(mailsAbout(s, "hosttoastUptime")).toHaveLength(1);
   });
 
   it("drops a rival on an outage that breaks its minimum and lets each January set the best tier it qualifies for", () => {

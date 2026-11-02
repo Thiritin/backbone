@@ -7,7 +7,7 @@ import { yearOf } from "../00-core/time";
 import type { GameState, Licence } from "../50-state";
 import { nextMajor, versionAt, versionsOf } from "../10-catalog/software-versions";
 import { accountsOn, issueKey, isLicensed, keyTiers, panelMachine, productOf, tiersOnSale, updateKey, yearAfter } from "../60-infra/licence";
-import { deliverMail } from "../40-support/tickets";
+import { contactAddress, deliverMail } from "../42-mail/sources";
 import { editionFactor, editionKnown, syncEdition } from "../60-infra/vmwhere";
 import type { Payable } from "../46-finance/payables";
 
@@ -100,19 +100,20 @@ export const orderKeys = (s: GameState, orderId: string): Licence[] => s.license
 
 export type KeyLine = NonNullable<Payable["keys"]>["lines"][number];
 
-// Issues an unassigned key per licence of the order and sends the order email; card says the card paid rather than a transfer.
-// An edition change turns the key it replaces in place, so it stays on its machine.
-export function sendKeys(s: GameState, vendor: string, order: string, lines: KeyLine[], total: number, card: boolean): void {
+// Issues an unassigned key per licence of the order and sends the order email to mailTo; card says the card paid rather than a
+// transfer. An edition change turns the key it replaces in place, so it stays on its machine.
+export function sendKeys(s: GameState, vendor: string, order: string, lines: KeyLine[], total: number, card: boolean, mailTo?: string): void {
+  const to = mailTo ?? contactAddress(s, "");
   lines.forEach((l) => {
     const k = l.replaces ? s.licenses.find((x) => x.id === l.replaces) : undefined, tier = tiersOf(l.product).find((x) => x.id === l.edition);
     if (k && tier) {
       // A VMwhere edition keeps the kind of key it was sold as.
-      updateKey(s, k.id, { edition: tier.id, ...(keyTiers(l.product).includes(tier) && { kind: tier.kind }) });
+      updateKey(s, k.id, { edition: tier.id, mailTo: to, ...(keyTiers(l.product).includes(tier) && { kind: tier.kind }) });
       syncEdition(s, k.machineId);
-      deliverMail(s, vendor, "licenceEditionSwitched", { name: vendor, key: k.key, to: tier.name });
-    } else for (let i = 0; i < l.qty; i++) issueKey(s, l.product, l.edition, order, l.to);
+      deliverMail(s, vendor, "licenceEditionSwitched", { name: vendor, key: k.key, to: tier.name }, { source: "vendor", to });
+    } else for (let i = 0; i < l.qty; i++) issueKey(s, l.product, l.edition, order, l.to).mailTo = to;
   });
-  deliverMail(s, vendor, ORDER, { order, total, card: card ? 1 : 0 });
+  deliverMail(s, vendor, ORDER, { order, total, card: card ? 1 : 0 }, { source: "vendor", to, att: [{ k: "key", order }] });
 }
 
 // Hourly: a licence order whose transfer has arrived gets its keys.
@@ -120,5 +121,5 @@ export function deliverPaidOrders(s: GameState): void {
   const paid = s.payables.filter((p) => p.keys && p.paidAt !== null);
   if (!paid.length) return;
   s.payables = s.payables.map((p) => (paid.includes(p) ? { ...p, keys: undefined } : p));
-  for (const p of paid) sendKeys(s, p.name, p.keys!.order, p.keys!.lines, p.amount, false);
+  for (const p of paid) sendKeys(s, p.name, p.keys!.order, p.keys!.lines, p.amount, false, p.keys!.mailTo);
 }

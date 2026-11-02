@@ -13,6 +13,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Shops, game servers and other demanding customers now notice when their server's CPU is too slow for them, even when it is idle.
 - Goggle has an Admin console in the look of each era, where you add users, aliases and groups, route unknown addresses, migrate old mailboxes, see the bill and accept the 2022 upgrade before the free edition locks.
 - Zendusk and Freshdusk suggest help articles to customers on the request form and to agents beside the ticket, and from 2017 and 2018 an answer bot closes some basic how-to tickets for a small fee per solved ticket.
+- Pear Mail replaces the Support inbox in the dock: customer requests, bank letters, invoices and licence keys arrive as email in your mailboxes, and the Support icon appears once you run a help desk.
+- Vendor shops ask which of your own addresses gets the order email with the keys, and renewal and lapse notices follow that address.
 - Pear Mail adds your mail accounts with an Add Account assistant that asks for the server names, sets them up automatically from Pear Mail 3, tells you what went wrong when a server refuses, and then checks each account for new mail in the background.
 - VMwhere balances with DRS once its hosts run an Enterprise key, without a separate Enterprise Plus subscription, and HyperVee no longer offers SysCenter VMM.
 - Every licensed console shows its edition, licence status, renewal date and key with Remove, opens on its licence page at the first sign-in during a trial, and sends you to the vendor's website for upgrades and update renewals.

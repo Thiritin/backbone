@@ -11,7 +11,7 @@ import { addCustomer } from "../src/sim/90-actions/customers";
 import { activateLicence, removeLicence } from "../src/sim/90-actions/licence";
 import { cancelLicence, changeEdition, checkout } from "../src/sim/90-actions/vendor-shop";
 import { updateSoftware } from "../src/sim/90-actions/software";
-import { buyKey, orderDetails, panelVm, readyGame, withCard } from "./fixtures";
+import { buyKey, orderDetails, panelVm, readyGame, withCard, mailsAbout } from "./fixtures";
 
 const MONTH = hourOf(new Date(Date.UTC(2020, 0, 1)));
 
@@ -28,7 +28,7 @@ function setup(tier: string, trialUntil?: number) {
   const host = () => s.clusters.find((c) => c.id === id)!;
   const add = (label: string) => provisionService(s, cus, "webHosting", { label, clusterId: id });
   const fees = () => s.ledger.filter((l) => l.key === "ledger.licenceRenewal").map((l) => l.amount);
-  const mails = (topic: string) => s.tickets.filter((x) => x.kind === "mail" && x.topic === topic);
+  const mails = (topic: string) => mailsAbout(s, topic);
   return { s, id, vm, host, add, fees, mails, key: () => panelKey(s, host()) };
 }
 
@@ -44,7 +44,7 @@ describe("licence tiers", () => {
     productsTick(s);
     expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.licenceRenewal", params: { name: "cPanic", key: key()!.key }, amount: -10 });
     expect(key()).toMatchObject({ renewsAt: monthAfter(renews), covers: { kind: "term", until: monthAfter(renews) }, lapsedAt: null });
-    expect(mails("licenceRenewed").map((m) => m.mail!.params)).toEqual([{ name: "cPanic", count: 1, amount: 10 }]);
+    expect(mails("licenceRenewed").map((m) => m.p)).toEqual([{ name: "cPanic", count: 1, amount: 10 }]);
     s.hour++;
     productsTick(s);
     expect(fees()).toEqual([-10]);
@@ -57,7 +57,7 @@ describe("licence tiers", () => {
     s.hour = key()!.renewsAt!;
     productsTick(s);
     expect(fees()).toEqual([-1.2, -0.4]);
-    expect(mails("licenceRenewed").map((m) => m.mail!.params)).toEqual([{ name: "cPanic", count: 2, amount: 1.6 }]);
+    expect(mails("licenceRenewed").map((m) => m.p)).toEqual([{ name: "cPanic", count: 2, amount: 1.6 }]);
     expect(s.licenses.find((k) => k.id === spare.id)!.renewsAt).toBe(monthAfter(s.hour));
   });
 
@@ -115,7 +115,7 @@ describe("licence tiers", () => {
     s.cash = 0; s.hour = monthAfter(MONTH) + LAPSE_GRACE_DAYS * 24;
     productsTick(s);
     expect(key()!.lapsedAt).toBe(s.hour);
-    expect(mails("licenceLapsed").map((m) => m.mail!.params)).toEqual([{ name: "cPanic", key: key()!.key }]);
+    expect(mails("licenceLapsed").map((m) => m.p)).toEqual([{ name: "cPanic", key: key()!.key }]);
     expect(add("a.com")).toEqual({ ok: false, error: "error.licenceExpired" });
     s.cash = 100; s.hour += 30 * 24;
     productsTick(s);

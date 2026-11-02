@@ -3,7 +3,7 @@ import { dateOf, hourOf } from "../src/sim/00-core/time";
 import { cardDetails, iban, openAccount, type Draft } from "../src/sim/46-finance/bank";
 import { buyCart, deliveryWait, PREPAY_HOURS, type CartLine } from "../src/sim/90-actions/hardware";
 import { applyCard, applyOverdraft, deleteStandingOrder, startStandingOrder } from "../src/sim/90-actions/bank";
-import { withServer, newGame } from "./fixtures";
+import { withServer, newGame, mailsAbout } from "./fixtures";
 import { lineCut, lineFactor, supplierAccount, supplierCode, supplierHost, type Payable } from "../src/sim/46-finance/payables";
 import { resolve } from "../src/sim/80-business/browser";
 import { tickMinute } from "../src/sim/88-tick/tick";
@@ -38,8 +38,8 @@ describe("bank account", () => {
     const s = opened(1, "postbunk");
     expect(s.bank).toMatchObject({ id: "postbunk", tan: "itan", card: null, overdraft: 0 });
     expect(s.bank!.number).toMatch(/^\d{10}$/);
-    const mail = s.tickets.find((t) => t.kind === "mail" && t.topic === "bankWelcome")!;
-    expect(mail.mail!.params).toMatchObject({ number: s.bank!.number, pin: s.bank!.pin });
+    const mail = mailsAbout(s, "bankWelcome")[0];
+    expect(mail.p).toMatchObject({ number: s.bank!.number, pin: s.bank!.pin });
     const list = s.docs.find((d) => d.id === "tans")!;
     expect(list.body).toContain(`001  ${s.bank!.tans.codes[0]}`);
     expect(new Set(s.bank!.tans.codes).size).toBeGreaterThan(90);
@@ -92,7 +92,7 @@ describe("bank account", () => {
     const s = deserialize(JSON.stringify(old));
     expect(s.bank).toMatchObject({ id: "sparklasse", welcomed: false });
     run(s, hourOf(new Date(Date.UTC(2005, 1, 1))));
-    expect(s.tickets.some((t) => t.topic === "bankWelcome")).toBe(true);
+    expect(mailsAbout(s, "bankWelcome").length).toBeGreaterThan(0);
     expect(s.ledger.filter((e) => e.key === "ledger.bankFee").map((e) => e.amount)).toEqual([-8]);
   });
 
@@ -150,10 +150,10 @@ describe("bank site and TANs", () => {
     expect(s.docs.some((d) => d.id === "tans")).toBe(false);
     const sepa = { ...payee, account: "DE89 3704 0044 0532 0130 00", code: undefined };
     expect(startTransfer(s, sepa).ok).toBe(true);
-    expect(s.tickets.some((t) => t.topic === "bankMtan")).toBe(false);
+    expect(mailsAbout(s, "bankMtan")).toEqual([]);
     tickMinute(s);
-    const mail = s.tickets.find((t) => t.topic === "bankMtan")!;
-    expect(confirmTransfer(s, String(mail.mail!.params.code)).ok).toBe(true);
+    const mail = mailsAbout(s, "bankMtan")[0];
+    expect(confirmTransfer(s, String(mail.p!.code)).ok).toBe(true);
     expect(setTanMethod(s, "push")).toEqual({ ok: false, error: "error.tanMethod" });
     s.hour = hourOf(new Date(Date.UTC(2014, 2, 1, 9)));
     setTanMethod(s, "push");
@@ -200,7 +200,7 @@ describe("card and overdraft", () => {
     expect(buyCart(s, CART, { kind: "card" }, "loc1")).toEqual({ ok: false, error: "error.noCard" });
     run(s, 72);
     expect(s.bank!.card!.limit).toBe(4500);
-    expect(s.tickets.some((t) => t.topic === "bankCard")).toBe(true);
+    expect(mailsAbout(s, "bankCard").length).toBeGreaterThan(0);
     expect(s.ledger.some((e) => e.key === "ledger.cardFee" && e.amount === -30)).toBe(true);
   });
 
@@ -217,7 +217,7 @@ describe("card and overdraft", () => {
     expect(c.expires).toBe(`${String(ready.getUTCMonth() + 1).padStart(2, "0")}/${String((ready.getUTCFullYear() + 3) % 100).padStart(2, "0")}`);
     expect(c.holder).toBe(s.company.name);
     expect(cardDetails(s)).toEqual(c);
-    expect(s.tickets.find((t) => t.topic === "bankCard")!.mail!.params).toMatchObject({ last4: c.number.slice(-4) });
+    expect(mailsAbout(s, "bankCard")[0].p).toMatchObject({ last4: c.number.slice(-4) });
   });
 
   it("ships a card order now and debits it with the card bill; prepay waits for the transfer", () => {
@@ -281,7 +281,7 @@ describe("standing orders", () => {
     expect(s.ledger.filter((e) => e.key === "ledger.transferReturned")).toHaveLength(2);
     s.cash = 50;
     run(s, hourOf(new Date(Date.UTC(2005, 2, 5, 1))) - s.hour);
-    expect(s.tickets.some((t) => t.topic === "bankOrderFailed")).toBe(true);
+    expect(mailsAbout(s, "bankOrderFailed").length).toBeGreaterThan(0);
     expect(deleteStandingOrder(s, id.ok ? id.id! : "").ok).toBe(true);
   });
 });
@@ -301,7 +301,7 @@ describe("payables", () => {
     expect(line).toMatchObject({ name: "Deutsche Telekomm", amount: 59, paidAt: null, dueAt: FEB + 14 * 24 });
     expect(s.payables.some((p) => p.supplier === "power")).toBe(true);
     expect(s.ledger.some((e) => e.key === "ledger.homeLine")).toBe(false);
-    expect(s.tickets.some((t) => t.topic === "invoice" && t.mail!.params.number === line.number)).toBe(true);
+    expect(mailsAbout(s, "invoice").some((m) => m.p!.number === line.number)).toBe(true);
     const cash = s.cash;
     expect(pay(s, line).ok).toBe(true);
     expect(s.cash).toBe(cash - 59);
@@ -319,7 +319,7 @@ describe("payables", () => {
     expect(lineCut(s)).toBe(false);
     run(s, 7 * 24);
     expect(lineCut(s)).toBe(true);
-    expect(s.tickets.some((t) => t.topic === "consequence.cut")).toBe(true);
+    expect(mailsAbout(s, "consequence.cut").length).toBeGreaterThan(0);
     pay(s, s.payables.find((p) => p.id === line.id)!);
     run(s, 25);
     expect(lineCut(s)).toBe(false);
@@ -357,7 +357,7 @@ describe("mandates and HBCI", () => {
     const next = s.payables.filter((p) => p.supplier === "upstream").at(-1)!;
     expect(next.id).not.toBe(line.id);
     expect(next.paidAt).not.toBeNull();
-    expect(s.tickets.some((t) => t.topic === "debit" && t.mail!.params.number === next.number)).toBe(true);
+    expect(mailsAbout(s, "debit").some((m) => m.p!.number === next.number)).toBe(true);
     expect(s.cash).toBeLessThan(cash - 58 + earned(s, FEB));
   });
 

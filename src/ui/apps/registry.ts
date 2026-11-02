@@ -68,7 +68,7 @@ export const APPS: AppDef[] = [
     badge: (s) => drafts(s) + unmatched(s) + late(s) },
   { name: "Post", icon: era(Mailbox, "post"), tile: "oklch(0.72 0.15 85)", about: t("apps.about.Post"), body: PostApp,
     badge: (s) => inbox(s).filter((l) => !l.read).length },
-  { name: "Pear Mail", icon: PearMailMark, tile: "oklch(0.62 0.15 245)", about: t("apps.about.Pear Mail"), hidden: true, body: PearMailApp, badge: unreadBadge },
+  { name: "Pear Mail", icon: PearMailMark, tile: "oklch(0.62 0.15 245)", about: t("apps.about.Pear Mail"), body: PearMailApp, badge: unreadBadge },
   { name: "DocuWhere", icon: era(Archive, "docuwhere"), tile: "oklch(0.55 0.13 265)", about: t("apps.about.DocuWhere"), body: DocuWhereApp },
   { name: "DohleFormular", icon: era(Landmark, "dohleformular"), tile: "oklch(0.36 0.09 255)", about: t("apps.about.DohleFormular"), body: DohleFormularApp },
   { name: "Staff", icon: era(Contact, "staff"), tile: "oklch(0.7 0.15 70)", about: t("apps.about.Staff"), body: StaffApp },
@@ -98,6 +98,9 @@ export const appTitle = (a: Pick<AppDef, "name">): string => {
 };
 
 export const appByName = (name: string): AppDef => APPS.find((a) => a.name === name) ?? APPS[0];
+
+// An installed app the dock, Finder and search show; Support opens the desk, so it shows once there is one.
+export const listed = (s: GameState, a: AppDef): boolean => !a.hidden && s.installed.includes(a.name) && (a.name !== "Support" || !!s.desk);
 
 
 // Chat wears the messenger of the year; every one of them opens the Backbone Discord.

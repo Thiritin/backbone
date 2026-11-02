@@ -225,7 +225,7 @@ export function sendMessage(s: GameState, account: string, m: Draft & { from: st
   if (att.some((x) => x.k === "file" && x.kb > caps.attachMb * 1024)) return fail("error.mailAttach");
   const body = own(m), doc = att.find((x) => x.k === "doc");
   for (const r of all.filter((x) => RESPONDERS.includes(x))) {
-    const res = respond(s, r, body.subject, doc?.k === "doc" ? doc.id : null);
+    const res = respond(s, r, body.subject, doc?.k === "doc" ? doc.id : null, m.from);
     if (!res.ok) return res;
   }
   const thread = m.re ? msgsOf(s, account).find((x) => x.id === m.re)?.thread : undefined;

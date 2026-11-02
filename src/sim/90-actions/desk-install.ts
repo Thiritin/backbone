@@ -6,7 +6,7 @@ import { deskPath } from "../80-business/deskroutes";
 import { dropDesk, openDesk } from "../40-support/desk";
 import { deskRecords } from "../40-support/desk-records";
 import { deliver } from "../42-mail/deliver";
-import { deliverMail } from "../40-support/tickets";
+import { deliverMail } from "../42-mail/sources";
 import { licenceBlock } from "../60-infra/licence";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";

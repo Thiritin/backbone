@@ -3,17 +3,22 @@ import { FileText, KeyRound, Paperclip, Receipt } from "lucide-react";
 import { t } from "../../../i18n/en";
 import { LOCALE } from "../../../i18n/lang";
 import type { Attachment } from "../../../sim/42-mail/types";
-import { view } from "../../../sim/42-mail/model";
+import { ticketOf, view } from "../../../sim/42-mail/model";
+import { orderOf } from "../../../sim/30-market/orders";
+import { CustomCompose } from "../support/CustomOrder";
+import { deskUrl } from "../browser/sites/desk/DeskSite";
 import type { Row } from "../../../sim/43-pear-mail/view";
 import type { GameState } from "../../../sim/50-state";
 import { saveAttachment } from "../../../sim/90-actions/mailmsg";
 import { useStore } from "../../store";
 import { TicketSlot } from "../mail-kit/TicketSlot";
 import { mailDate } from "./List";
+import { LOGIN_MAILS } from "../browser/sites/desk/headless/useTicketPane";
+import { isLicence } from "../../../sim/80-business/licences";
 
 function Att({ game, row, att, i }: { game: GameState; row: Row; att: Attachment; i: number }) {
   const act = useStore((s) => s.act);
-  const openDoc = useStore((s) => s.openDoc);
+  const openDoc = useStore((s) => s.openDoc), openApp = useStore((s) => s.openApp);
   const local = row.c.protocol === "pop";
   if (att.k === "key") {
     const keys = game.licenses.filter((k) => k.orderId === att.order);
@@ -24,7 +29,7 @@ function Att({ game, row, att, i }: { game: GameState; row: Row; att: Attachment
       </li>
     );
   }
-  if (att.k === "invoice") return <li className="pm-att"><Receipt /><span className="pm-att-name">{t("pearMail.att.invoice")}</span></li>;
+  if (att.k === "invoice") return <li className="pm-att"><Receipt /><span className="pm-att-name">{t("pearMail.att.invoice")}</span><button className="btn sm" onClick={() => openApp("Preview", { kind: "payable", id: att.id })}>{t("pearMail.att.open")}</button></li>;
   const doc = att.k === "doc" ? game.docs.find((d) => d.id === att.id) : undefined;
   return (
     <li className="pm-att">
@@ -51,7 +56,7 @@ function Transfer({ locked, onAnswer }: { locked: boolean; onAnswer: (code: stri
 export function Preview({ game, row }: { game: GameState; row: Row | null }) {
   const openApp = useStore((s) => s.openApp);
   if (!row) return <div className="pm-preview empty">{t("pearMail.noMessage")}</div>;
-  const v = view(game, row.m);
+  const v = view(game, row.m), tk = ticketOf(game, row.m), order = tk?.kind === "order" ? orderOf(game, tk) : undefined;
   return (
     <article className="pm-preview">
       <header className="pm-head">
@@ -64,6 +69,8 @@ export function Preview({ game, row }: { game: GameState; row: Row | null }) {
         </dl>
       </header>
       <div className="pm-body">{v.text}</div>
+      {LOGIN_MAILS.includes(row.m.topic) && row.m.p?.url && <p><button className="btn primary" onClick={() => openApp("Browser", { kind: "url", id: String(row.m.p!.url) })}>{t("apps.open")}</button></p>}
+      {isLicence(row.m.topic) && <p><button className="btn primary" onClick={() => openApp("Books", { kind: "register", id: "" })}>{t("vendor-sites.register")}</button></p>}
       {v.att.length > 0 && <ul className="pm-atts">{v.att.map((a, i) => <Att key={i} game={game} row={row} att={a} i={i} />)}</ul>}
       <TicketSlot
         game={game}
@@ -96,6 +103,7 @@ export function Preview({ game, row }: { game: GameState; row: Row | null }) {
           </div>
         )}
       />
+      {tk && order?.spec && !deskUrl(game, { kind: "ticket", id: tk.id }) && <CustomCompose tk={tk} r={order} />}
     </article>
   );
 }

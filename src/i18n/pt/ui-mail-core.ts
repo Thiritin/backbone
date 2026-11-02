@@ -58,6 +58,7 @@ export default {
   "error.mailFilterRule": () => "Um filtro precisa de 1 a 5 condições e de 1 a 5 ações.",
   "error.mailFilterMax": () => "Esta caixa não aceita mais filtros.",
   "error.mailFrom": () => "Esta caixa não pode enviar a partir deste endereço.",
+  "error.mailTo": () => "Este endereço não pertence a nenhuma das suas caixas postais.",
   "error.mailAttach": () => "O anexo é maior do que esta caixa aceita.",
   "error.mailFetchLoop": () => "Esta caixa já coleta dessa conta, ou essa conta coleta desta.",
   "error.mailCollectors": (p) => `Este plano coleta de no máximo ${p.n} contas.`,

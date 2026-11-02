@@ -84,7 +84,7 @@ describe("checklist", () => {
     raw.installed = [...raw.installed, "Checklist"];
     const s = deserialize(JSON.stringify(raw));
     expect(s.installed).not.toContain("Checklist");
-    expect(s.installed).toContain("Support");
+    expect(s.installed).toContain("Pear Mail");
     expect(newGame(1).installed).not.toContain("Checklist");
   });
 

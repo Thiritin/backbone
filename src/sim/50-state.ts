@@ -204,6 +204,7 @@ export interface Licence {
   id: string; product: string; edition: string | null; kind: LicenseKind; key: string; orderId: string; boughtAt: number;
   machineId: string | null; covers: { kind: "version"; major: string } | { kind: "term"; until: number };
   renewsAt: number | null; lapsedAt: number | null; updatesUntil?: number;
+  mailTo?: string;  // the address chosen at checkout, where renewal, lapse and edition mail goes; absent for the owner
 }
 
 export interface GameState {

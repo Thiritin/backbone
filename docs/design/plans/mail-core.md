@@ -323,7 +323,7 @@ Pear Mail is planned in [mail-client](mail-client.md). It stores its own state (
 
 ## Routing
 
-`deliver(s, inbound)` in `src/sim/42-mail/deliver.ts` is the only way a message enters a mailbox. The callers keep using `deliverMail(s, from, topic, params)` from `tickets.ts`, which gains an optional last argument, the source id (`bank`, `supplier:<name>`, `registrar`, `tax`, `office`, `hosttoast`, `vendor`). It looks the source up in `contacts`, falls back to the owner mailbox, and calls `deliver`.
+`deliver(s, inbound)` in `src/sim/42-mail/deliver.ts` is the only way a message enters a mailbox. System mail goes through `deliverMail(s, from, topic, params, { source, to, att })` in `src/sim/42-mail/sources.ts`, which returns the message id or null for a bounce. The source id is `bank`, `supplier:<name>`, `registrar`, `tax`, `office`, `hosttoast` or `vendor`; the source's kind sets the message kind. It looks the source up in `contacts`, falls back to the owner mailbox, and calls `deliver`; `to` overrides the contact for a licence's `mailTo` and for an answer to a mail the player sent. `sources.ts` imports nothing heavy, because low modules such as `payables.ts` send mail; `deliver.ts` fills in its `mailSend` hook.
 
 ### Who receives what
 
@@ -349,8 +349,8 @@ Pear Mail is planned in [mail-client](mail-client.md). It stores its own state (
 
 ### Checkout and licence orders
 
-- `checkout(s, host, payment, to)` in `90-actions/vendor-shop.ts` takes the address as a new last parameter. It must be an address of an own mailbox, else `error.mailTo`. The vendor site preselects the last used address, else the mailbox named `info@`, else `primary`.
-- The address is kept on the order (`Payable.keys.to` for a transfer that waits for payment) and on each `Licence` as `mailTo`. `sendKeys` creates the order email with `deliver`, with a `{ k: "key", order }` attachment. If the address no longer exists when a transfer is paid, the email bounces to the vendor, the keys remain in My account, and the player sees nothing but the missing mail. That is the real failure mode, and it needs no extra rule.
+- `checkout(s, host, details)` in `90-actions/vendor-shop.ts` takes the address as `details.email`, which the vendor checkout form offers as a choice of the company's own addresses (`ownAddresses`). It must be an address of an own mailbox, else `error.mailTo`. The vendor site preselects the last used address, else the mailbox named `info@`, else `primary` (`defaultMailTo`).
+- The address is kept on the order (`Payable.keys.mailTo` for a transfer that waits for payment) and on each `Licence` as `mailTo`. `sendKeys` creates the order email with `deliver`, with a `{ k: "key", order }` attachment. If the address no longer exists when a transfer is paid, the email bounces to the vendor, the keys remain in My account, and the player sees nothing but the missing mail. That is the real failure mode, and it needs no extra rule.
 
 ### Resolution and failure
 
@@ -415,7 +415,8 @@ Delivery raises no event of its own. Pear Mail's check raises `event.newMail` fo
 - Replies sent from the desk create the same Sent copy in the channel's mailbox.
 - A first request from a customer who writes to a stale address and finds no catch-all is lost to the player, as described under Routing.
 - The `mail` ticket kind stops being created at the cutover (milestone 7) and is removed in the cleanup (milestone 11). Its entries in `MINUTES`, `TOPICS`, `TEMPLATES`, `ACTIONS` and the staff `Task` union go. `Ticket.mail` goes. `deliverMail` no longer returns a `Ticket`; the two callers that use the result for an event (`hosttoast.ts`, `licences.ts`) use the message id, and `licences.ts` finds an earlier module licence mail with `findMail` instead of searching `s.tickets`.
-- The `Support` app id stays in sim events and alerts (`event.ticket`, `alerts.ts`, Searchlight). `openApp("Support", ticket)` is routed in the store: to the desk site when a channel has imported the thread, else to Pear Mail at the message. The dock icon changes from Support to Pear Mail in `STARTER_APPS` and `deserialize`. `supportApp()` and the Email/desk branding in `src/ui/apps/support/desk.ts` go with the Support app.
+- The `Support` app id stays in sim events and alerts (`event.ticket`, `alerts.ts`, Searchlight). `openApp("Support", ticket)` and `openApp("Support")` are routed in the store: to the desk site when a channel has imported the thread, else to Pear Mail at the message (a POP account's local copy first). The dock icon changes from Support to Pear Mail in `STARTER_APPS`; a registered save gets Pear Mail from the starter apps on load. The Support launcher shows in the dock, Finder and search only while a desk exists, and `openDesk` installs it. The Support window still opens for the `mailSetup` sheet until the provider sites replace it.
+- Until the cleanup, the `mail` ticket kind is still made by a desk that imports a message without a ticket; `deliverMail` no longer makes one, and `fillMail` turns an old save's mail tickets into messages in the primary mailbox. `supportApp()` and the Email/desk branding in `src/ui/apps/support/desk.ts` go with the Support app.
 
 ## Saves and migration
 

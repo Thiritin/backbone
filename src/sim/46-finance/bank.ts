@@ -6,7 +6,7 @@ import { dateOf, isMonthStart, monthIndexOf, nowMinutes, yearOf } from "../00-co
 import { bankById, bookingFee, CUSTODY_ALLOWANCE, DEFAULT_BANK, defaultPlan, depositRate, IBAN_YEAR, monthlyFee, planById, RETURN_DAYS, tanMethods, TRANSFER_HOURS, type Bank, type BankId, type PlanId, type TanMethod } from "../10-catalog/banks";
 import { challengeById } from "../10-catalog/challenges";
 import { START_CASH } from "../10-catalog/economy";
-import { deliverMail } from "../40-support/tickets";
+import { deliverMail } from "../42-mail/sources";
 import type { Doc, GameState, LedgerEntry } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { works } from "../80-business/bookkeeping";
@@ -126,7 +126,7 @@ export function placeTanList(s: GameState): void {
 export function welcome(s: GameState): void {
   const bank = bankOf(s)!;
   s.bank = { ...s.bank!, welcomed: true };
-  deliverMail(s, bank.name, "bankWelcome", { bank: bank.name, number: s.bank.number, pin: s.bank.pin, url: `www.${bank.host}` });
+  deliverMail(s, bank.name, "bankWelcome", { bank: bank.name, number: s.bank.number, pin: s.bank.pin, url: `www.${bank.host}` }, { source: "bank" });
   placeTanList(s);
 }
 
@@ -163,7 +163,7 @@ export function useTan(s: GameState, index: number): void {
   s.bank = used.length >= TAN_COUNT
     ? { ...b, tans: { list: b.tans.list + 1, codes: tanCodes(s.seed, b.tans.list + 1), used: [] } }
     : { ...b, tans: { ...b.tans, used } };
-  if (used.length >= TAN_COUNT) deliverMail(s, bankOf(s)!.name, "bankTanList", { bank: bankOf(s)!.name, n: s.bank.tans.list });
+  if (used.length >= TAN_COUNT) deliverMail(s, bankOf(s)!.name, "bankTanList", { bank: bankOf(s)!.name, n: s.bank.tans.list }, { source: "bank" });
   placeTanList(s);
 }
 
@@ -206,7 +206,7 @@ function bounce(s: GameState, o: Outgoing): void {
   s.cash = cents(s.cash + o.amount);
   s.ledger = [...s.ledger, { hour: s.hour, category: "transfers", key: "ledger.transferReturned", params: { name: o.name, reference: o.reference }, amount: o.amount }];
   s.transfers = [...s.transfers, { id: `trf${s.nextId++}`, hour: s.hour, from: o.name, reference: "bank.ref.returned", params: { reference: o.reference }, amount: o.amount, invoiceId: null, matchedAt: s.hour, forInvoice: "" }];
-  deliverMail(s, bankOf(s)!.name, "bankReturned", { amount: o.amount, name: o.name, account: o.account });
+  deliverMail(s, bankOf(s)!.name, "bankReturned", { amount: o.amount, name: o.name, account: o.account }, { source: "bank" });
 }
 
 // HBCI: the program's edition, a bank that includes it, or a fintech's API from its year.
@@ -233,7 +233,7 @@ export function tanTick(s: GameState): void {
   const p = s.bank?.pending;
   if (!p || p.sendAt === null || nowMinutes(s) < p.sendAt) return;
   s.bank = { ...s.bank!, pending: { ...p, sendAt: null } };
-  deliverMail(s, bankOf(s)!.name, "bankMtan", { bank: bankOf(s)!.name, code: p.code!, amount: p.draft.amount, name: p.draft.name });
+  deliverMail(s, bankOf(s)!.name, "bankMtan", { bank: bankOf(s)!.name, code: p.code!, amount: p.draft.amount, name: p.draft.name }, { source: "bank" });
 }
 
 // The average monthly income of the last six months, from the ledger.
@@ -288,7 +288,7 @@ export function bankTick(s: GameState): SimEvent[] {
   const rate = depositRate(yearOf(s.hour)), base = rate < 0 ? s.cash - CUSTODY_ALLOWANCE : s.cash;
   if (base > 0 && rate !== 0) next.credit = (next.credit ?? 0) + (base * rate) / HOURS_PER_YEAR;
   const card = next.card;
-  if (card && s.hour === card.readyAt) deliverMail(s, bank.name, "bankCard", { bank: bank.name, limit: card.limit, last4: cardDetails(s)!.number.slice(-4) });
+  if (card && s.hour === card.readyAt) deliverMail(s, bank.name, "bankCard", { bank: bank.name, limit: card.limit, last4: cardDetails(s)!.number.slice(-4) }, { source: "bank" });
   if (card && s.hour >= card.feeAt) {
     const free = bank.card.freeFirstYear && card.feeAt === card.readyAt;
     if (bank.card.yearly > 0 && !free && !planById(bank, b.plan)?.card) book("fees", "ledger.cardFee", { bank: bank.name }, -bank.card.yearly);
@@ -296,13 +296,13 @@ export function bankTick(s: GameState): SimEvent[] {
   }
   if (next.overdraftAt !== null && s.hour >= next.overdraftAt) {
     next = { ...next, overdraft: limitFor(s, 1, MIN_OVERDRAFT), overdraftAt: null };
-    deliverMail(s, bank.name, "bankOverdraft", { bank: bank.name, limit: next.overdraft, rate: Math.round(bank.overdraft! * 1000) / 10 });
+    deliverMail(s, bank.name, "bankOverdraft", { bank: bank.name, limit: next.overdraft, rate: Math.round(bank.overdraft! * 1000) / 10 }, { source: "bank" });
   }
   const date = dateOf(s.hour);
   if (date.getUTCHours() === 0) {
     for (const o of next.standingOrders.filter((x) => x.day === date.getUTCDate())) {
       s.bank = next;
-      if (o.amount > spendable(s)) deliverMail(s, bank.name, "bankOrderFailed", { bank: bank.name, name: o.name, amount: o.amount });
+      if (o.amount > spendable(s)) deliverMail(s, bank.name, "bankOrderFailed", { bank: bank.name, name: o.name, amount: o.amount }, { source: "bank" });
       else send(s, { name: o.name, account: o.account, amount: o.amount, reference: o.reference }, "transfers", "ledger.standingOrder");
       next = { ...s.bank!, interest: next.interest };
     }

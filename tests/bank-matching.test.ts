@@ -9,7 +9,7 @@ import { assignPayment, confirmTransfer, startTransfer, unassignPayment } from "
 import { sendInvoice } from "../src/sim/90-actions/billing";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { newGame, withServer } from "./fixtures";
+import { newGame, withServer, mailsAbout } from "./fixtures";
 
 const banked = (): GameState => {
   const s = withServer(newGame(2));
@@ -36,7 +36,7 @@ describe("transfers to an account that does not exist", () => {
     expect(s.bank!.outgoing[0].returned).toBe(true);
     expect(s.ledger.find((e) => e.key === "ledger.transferReturned")).toMatchObject({ amount: 100, params: { name: "Hans Wurst" } });
     expect(s.transfers.find((x) => x.reference === "bank.ref.returned")).toMatchObject({ amount: 100, matchedAt: expect.any(Number), invoiceId: null });
-    expect(s.tickets.some((t) => t.topic === "bankReturned")).toBe(true);
+    expect(mailsAbout(s, "bankReturned").length).toBeGreaterThan(0);
   });
 
   it("include a supplier's account number at another bank code, while the right one stays", () => {

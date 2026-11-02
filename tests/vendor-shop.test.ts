@@ -13,7 +13,7 @@ import { supplierIban } from "../src/sim/46-finance/payables";
 import { deliverPaidOrders } from "../src/sim/80-business/vendor-shop";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
-import { orderDetails, panelVm, readyGame, withCard } from "./fixtures";
+import { orderDetails, panelVm, readyGame, withCard, mailsAbout } from "./fixtures";
 
 const PLESKIT = "pleskit.com", WINDOORS = "windoors.macrosoft.com";
 const Y = (year: number) => hourOf(new Date(Date.UTC(year, 0, 1)));
@@ -61,7 +61,7 @@ describe("vendor shop", () => {
     expect(s.bank!.card!.spent.at(-1)).toMatchObject({ category: "licenses", key: "ledger.order", params: { vendor: "Pleskit", order }, amount: -18 });
     expect(orderKeys(s, order).map((k) => [k.edition, k.machineId, k.covers.kind])).toEqual([["webAdmin", null, "term"], ["webAdmin", null, "term"], ["webPro", null, "term"]]);
     expect(new Set(orderKeys(s, order).map((k) => k.key)).size).toBe(3);
-    expect(s.tickets.at(-1)).toMatchObject({ kind: "mail", topic: ORDER, mail: { from: "Pleskit", params: { order, total: 18, card: 1 } } });
+    expect(mailsAbout(s, ORDER).at(-1)).toMatchObject({ from: "n:Pleskit", p: { order, total: 18, card: 1 }, att: [{ k: "key", order }] });
     expect(cartOf(s, PLESKIT)).toEqual([]);
     expect(cartOf(s, WINDOORS)).toEqual([{ product: "windoors", edition: null, qty: 1 }]);
     expect(checkout(s, PLESKIT, orderDetails(s, "card"))).toEqual({ ok: false, error: "error.cartEmpty" });
@@ -122,7 +122,7 @@ describe("vendor shop", () => {
     expect(cartOf(s, PLESKIT)).toEqual([]);
     const p = s.payables.at(-1)!;
     expect(p).toMatchObject({ supplier: "software", name: "Pleskit", amount: 5, paidAt: null, keys: { order } });
-    expect(s.tickets.at(-1)).toMatchObject({ topic: "invoice", mail: { from: "Pleskit" } });
+    expect(mailsAbout(s, "invoice").at(-1)).toMatchObject({ from: "n:Pleskit" });
     deliverPaidOrders(s);
     expect(s.licenses).toEqual([]);
     const out = send(s, { name: "Pleskit", account: supplierIban("software"), amount: p.amount, reference: p.number });
@@ -131,7 +131,7 @@ describe("vendor shop", () => {
     bankTick(s);
     deliverPaidOrders(s);
     expect(orderKeys(s, order).map((k) => [k.edition, k.machineId])).toEqual([["webAdmin", null]]);
-    expect(s.tickets.at(-1)).toMatchObject({ topic: ORDER, mail: { from: "Pleskit", params: { order, total: 5, card: 0 } } });
+    expect(mailsAbout(s, ORDER).at(-1)).toMatchObject({ from: "n:Pleskit", p: { order, total: 5, card: 0 } });
     expect(s.payables.at(-1)!.keys).toBeUndefined();
     deliverPaidOrders(s);
     expect(s.licenses).toHaveLength(1);
@@ -206,7 +206,7 @@ describe("edition change", () => {
     expect(cardSpent(s) === 0).toBe(true);
     expect(s.licenses.filter((k) => k.product === "cpanic")).toHaveLength(1);
     expect(key()).toMatchObject({ id: was.id, key: was.key, edition: "admin", machineId: machine, renewsAt: was.renewsAt });
-    expect(s.tickets.find((x) => x.topic === "licenceEditionSwitched")).toMatchObject({ topic: "licenceEditionSwitched", mail: { params: { key: was.key, to: "Admin" } } });
+    expect(mailsAbout(s, "licenceEditionSwitched")[0]).toMatchObject({ topic: "licenceEditionSwitched", p: { key: was.key, to: "Admin" } });
     s.hour = was.renewsAt!;
     productsTick(s);
     expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.licenceRenewal", amount: -4 });

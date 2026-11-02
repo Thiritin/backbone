@@ -148,7 +148,7 @@ describe("shop link", () => {
     deliverLicences(s);
     const mail = licenceMail(s, "shop-link")!;
     expect(mail.topic).toBe("shop-link.licence");
-    expect(mail.mail!.params.shop).toBe("ModemBill");
+    expect(mail.p!.shop).toBe("ModemBill");
     expect(registerLicence(s, licenceKey(s, "shop-link")).ok).toBe(true);
     expect(s.modules).toContain("shop-link");
   });

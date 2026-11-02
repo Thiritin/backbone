@@ -7,7 +7,7 @@ import { keyFee, licenseCost, renewKeys } from "../src/sim/85-products/products"
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { addToCart, checkout } from "../src/sim/90-actions/vendor-shop";
-import { BASEMENT_SERVER, newGame, panelVm, readyGame, startGame, orderDetails, withCard, withServer } from "./fixtures";
+import { BASEMENT_SERVER, newGame, panelVm, readyGame, startGame, orderDetails, withCard, withServer, mailsAbout } from "./fixtures";
 
 const at = (y: number, m: number, d = 1) => hourOf(new Date(Date.UTC(y, m - 1, d)));
 const game = (hour: number) => Object.assign(newGame(41), { hour, cash: 50_000 });
@@ -93,13 +93,13 @@ describe("licence eras", () => {
     assignKey(s, k.id, vm);
     const cus = addCustomer(s, "Ada Lang", "hobbyDev");
     for (const label of ["a.com", "b.com"]) expect(provisionService(s, cus, "webHosting", { label, clusterId: id }).ok).toBe(true);
-    const renews = at(2019, 6, 10), notices = () => s.tickets.filter((x) => x.topic === "licenceEditionChange");
+    const renews = at(2019, 6, 10), notices = () => mailsAbout(s, "licenceEditionChange");
     s.hour = renews - 30 * 24 - 1;
     renewKeys(s);
     expect(notices()).toEqual([]);
     s.hour = renews - 30 * 24;
     renewKeys(s);
-    expect(notices().map((x) => x.mail!.params)).toEqual([{ name: "cPanic", key: k.key, from: "Dedicated", to: "Admin", amount: 4 }]);
+    expect(notices().map((x) => x.p)).toEqual([{ name: "cPanic", key: k.key, from: "Dedicated", to: "Admin", amount: 4 }]);
     s.hour = renews - 1;
     renewKeys(s);
     expect(s.licenses[0].edition).toBe("dedicated");

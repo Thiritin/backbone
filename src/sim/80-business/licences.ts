@@ -4,7 +4,8 @@ import { t } from "../../i18n/en";
 import { keyCode } from "../00-core/rng";
 import { moduleById, MODULES } from "../10-catalog/modules";
 import { shopById, type ShopId } from "../10-catalog/shops";
-import { deliverMail, type Ticket } from "../40-support/tickets";
+import { deliverMail, findMail } from "../42-mail/sources";
+import type { Message } from "../42-mail/types";
 import type { GameState, LedgerEntry } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 
@@ -18,8 +19,8 @@ export const bought = (s: GameState, id: string, shop = s.shop.variant): boolean
 // A shop vendor's licence email for a module it sells.
 export const SHOP_LICENCE = "shop-link.licence";
 export const isLicence = (topic: string): boolean => topic === SHOP_LICENCE;
-export const licenceMail = (s: GameState, id: string, shop = s.shop.variant): Ticket | undefined =>
-  s.tickets.find((x) => x.kind === "mail" && x.mail?.params.module === id && x.topic === SHOP_LICENCE && !!shop && x.mail.params.shop === shopById(shop).name);
+export const licenceMail = (s: GameState, id: string, shop = s.shop.variant): Message | undefined =>
+  findMail(s, (m) => m.topic === SHOP_LICENCE && m.p?.module === id && !!shop && m.p.shop === shopById(shop).name);
 
 // A licence email's params as shown: the module's name and pitch in the player's language.
 export const vendorParams = (p: Record<string, string | number>): Record<string, string> => ({
@@ -33,8 +34,9 @@ export function deliverLicences(s: GameState): SimEvent[] {
     const id = purchaseOf(s.ledger[i]), vendor = s.ledger[i].params.shop as ShopId | undefined;
     if (!id || moduleById(id)?.vendor !== "shop" || !vendor || licenceMail(s, id, vendor)) continue;
     const shop = shopById(vendor).name, params = { module: id, key: licenceKey(s, id), shop };
-    const m = deliverMail(s, shop, SHOP_LICENCE, params);
-    out.push({ app: "Support", key: "event.ticket", params: { ...params, ...vendorParams(params), ticketId: m.id, name: shop, subject: `ticket.mail.${SHOP_LICENCE}.subject` } });
+    const m = deliverMail(s, shop, SHOP_LICENCE, params, { source: "vendor" });
+    if (!m) continue;
+    out.push({ app: "Support", key: "event.ticket", params: { ...params, ...vendorParams(params), ticketId: m, name: shop, subject: `ticket.mail.${SHOP_LICENCE}.subject` } });
   }
   return out;
 }

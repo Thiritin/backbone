@@ -2,7 +2,7 @@ import { t } from "../../i18n/en";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { Trash2 } from "lucide-react";
 import type { CSSProperties } from "react";
-import { APPS, appFor, appTitle } from "../apps/registry";
+import { APPS, appFor, appTitle, listed } from "../apps/registry";
 import { appMenu, APP, dragApp, dropTarget, trashApp } from "../apps/ApplicationsApp";
 import { uiSound, useStore } from "../store";
 import { unreadBadge } from "../../sim/43-pear-mail/view";
@@ -29,7 +29,7 @@ export function Dock() {
 
   return (
     <nav className="dock" aria-label={t("desktop.dock.apps")}>
-      {APPS.filter((a) => !a.hidden && game.installed.includes(a.name) && (!game.undocked.includes(a.name) || windows.some((w) => w.app === a.name))).map((a, i) => {
+      {APPS.filter((a) => listed(game, a) && (!game.undocked.includes(a.name) || windows.some((w) => w.app === a.name))).map((a, i) => {
         const win = windows.find((w) => w.app === a.name);
         const badge = a.badge?.(game) ?? 0;
         const shown = appFor(game, a.name);

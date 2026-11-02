@@ -15,7 +15,7 @@ import { registerCompany } from "../src/sim/90-actions/company";
 import { downloadForm, signForm } from "../src/sim/90-actions/docs";
 import { deletePearMessages, discardPearDraft, movePearMessages, savePearDraft, sendPearMessage } from "../src/sim/90-actions/pear-mail";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { readyGame } from "./fixtures";
+import { readyGame, mailsAbout } from "./fixtures";
 
 const sales = (s: GameState) => s.mail.accounts.find((a) => a.local === "sales")!;
 const address = (s: GameState) => `${sales(s).local}@${sales(s).domain}`;
@@ -39,9 +39,8 @@ describe("Pear Mail compose", () => {
     const form = downloadForm(s, "partnership");
     expect(form).toMatchObject({ ok: true });
     expect(signForm(s, idOf(form)).ok).toBe(true);
-    const tickets = s.tickets.length;
     expect(sendPearMessage(s, "cl1", { ...draft([OFFICE_MAIL]), from: address(s), att: [{ k: "doc", id: idOf(form) }] }).ok).toBe(true);
-    expect(s.tickets.slice(tickets).map((t) => t.topic)).toContain("officeReceived");
+    expect(mailsAbout(s, "officeReceived").map((m) => m.to)).toEqual([address(s)]);
     expect(clientFolder(s, c1(s), "sent").map((m) => m.own?.subject)).toContain("Hello");
   });
 

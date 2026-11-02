@@ -12,7 +12,8 @@ import { LAPSE_GRACE_DAYS, licenceIndex, type LicenceTier } from "../10-catalog/
 import { APP_SUITE_FEE, eraAt } from "../10-catalog/server-os";
 import { homeLineById } from "../20-world/datacenters";
 import type { Customer, Product } from "../30-customers/customers";
-import { bump, createTicket, deliverMail, slowed } from "../40-support/tickets";
+import { bump, createTicket, slowed } from "../40-support/tickets";
+import { deliverMail } from "../42-mail/sources";
 import { spendable } from "../46-finance/bank";
 import type { Device, GameState, Licence, Location } from "../50-state";
 import { clusterReachable, insideVm, isOwnVm, lostDisk, servedBy, vmOf, type Cluster, type Workload } from "../60-infra/cluster";
@@ -301,7 +302,7 @@ function renewalTier(s: GameState, k: Licence, hour: number): LicenceTier | unde
 // still unpaid after the grace days lapses; paid later, it runs a month from then. A cancelled key expires when its term ends.
 // A key whose edition the vendor stopped selling renews as the edition that fits it, with a notice 30 days before.
 export function renewKeys(s: GameState): void {
-  const receipts = new Map<string, { count: number; amount: number }>();
+  const receipts = new Map<string, { name: string; to?: string; count: number; amount: number }>();
   for (let k of s.licenses) {
     if (k.covers.kind !== "term") continue;
     if (k.renewsAt === null) {
@@ -312,7 +313,7 @@ export function renewKeys(s: GameState): void {
       const next = renewalTier(s, k, k.renewsAt), c = keyCluster(s, k);
       if (next && next.id !== k.edition) {
         const name = productOf(k.product)!.name, from = keyTiers(k.product).find((x) => x.id === k.edition)!.name;
-        deliverMail(s, name, "licenceEditionChange", { name, key: k.key, from, to: next.name, amount: Math.round((c ? tierFee(s, c, next) : next.fee) * licenceIndex(k.product, yearOf(k.renewsAt)) * 100) / 100 });
+        deliverMail(s, name, "licenceEditionChange", { name, key: k.key, from, to: next.name, amount: Math.round((c ? tierFee(s, c, next) : next.fee) * licenceIndex(k.product, yearOf(k.renewsAt)) * 100) / 100 }, { source: "vendor", to: k.mailTo });
       }
     }
     if (s.hour < k.renewsAt) continue;
@@ -327,14 +328,14 @@ export function renewKeys(s: GameState): void {
       if (fee <= 0) continue;
       s.cash = Math.round((s.cash - fee) * 100) / 100;
       s.ledger = [...s.ledger, { hour: s.hour, category: "licenses", key: "ledger.licenceRenewal", params: { name, key: k.key }, amount: -fee }];
-      const r = receipts.get(name) ?? { count: 0, amount: 0 };
-      receipts.set(name, { count: r.count + 1, amount: Math.round((r.amount + fee) * 100) / 100 });
+      const at = `${name}\n${k.mailTo ?? ""}`, r = receipts.get(at) ?? { name, to: k.mailTo, count: 0, amount: 0 };
+      receipts.set(at, { ...r, count: r.count + 1, amount: Math.round((r.amount + fee) * 100) / 100 });
     } else if (late && k.lapsedAt === null) {
       updateKey(s, k.id, { lapsedAt: s.hour });
-      deliverMail(s, name, "licenceLapsed", { name, key: k.key });
+      deliverMail(s, name, "licenceLapsed", { name, key: k.key }, { source: "vendor", to: k.mailTo });
     }
   }
-  for (const [name, r] of receipts) deliverMail(s, name, "licenceRenewed", { name, ...r });
+  for (const { name, to, count, amount } of receipts.values()) deliverMail(s, name, "licenceRenewed", { name, count, amount }, { source: "vendor", to });
 }
 
 // Hourly: finishes software switches, opens incident reports for lost disks, runs backups, slows overloaded nodes, bills licenses.

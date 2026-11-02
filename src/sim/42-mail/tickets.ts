@@ -13,7 +13,7 @@ import type { MailAccount, MailKind } from "./types";
 const num = (id: string): number => Number(id.replace(/\D/g, "")) || 0;
 const KIND: Partial<Record<TicketKind, MailKind>> = { order: "order", sponsor: "order", abuse: "notice", notice: "notice", legal: "notice", extortion: "notice", pear: "system" };
 
-// Mail tickets are system mail until the cutover makes them messages, or were made from a message.
+// A ticket of kind mail was made from a message a desk imported, so it has one already.
 const enveloped = (t: Ticket): boolean => t.kind !== "mail" && !t.mail;
 
 function senderOf(s: GameState, t: Ticket): string {

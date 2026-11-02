@@ -182,10 +182,11 @@ export function deserialize(raw: string): GameState {
   s.books = { ...s.books, download: s.books.download ?? null };
   migrateBooks(s);
   s.tax = data.tax ? { ...base.tax, ...data.tax } : s.registration ? legacyTax(s) : base.tax;
+  // Mail first, so the shop's credentials email a fill sends lands in the loaded mailboxes.
+  fillMail(s, data.mail, !!data.company?.zone);
   if (data.shop && data.shop.install === undefined) installSavedShop(s);
   if (!data.ownWebspaces) ownShopWebspace(s);
   if (data.shop?.install && !data.shop.install.ws) fillShopWebspace(s);
-  fillMail(s, data.mail, !!data.company?.zone);
   fillPearMail(s, data.pearMail);
   fillDesk(s, data.desk !== undefined);
   s.webmail = { ...base.webmail, ...data.webmail };
