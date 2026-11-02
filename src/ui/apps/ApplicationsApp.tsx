@@ -1,5 +1,6 @@
 import { deskUrl } from "./browser/sites/desk/DeskSite";
-import { BookOpen, CircleArrowDown, CircleX, Disc3, FileText, LayoutGrid, Monitor, Usb } from "lucide-react";
+import { CircleArrowDown, CircleX, Disc3, LayoutGrid, Monitor, Usb } from "lucide-react";
+import { FILE_ICON } from "../art/era-icon";
 import { useEffect, useState, type CSSProperties, type DragEvent, type ReactNode } from "react";
 import { imageParts, type OsImage } from "../../sim/10-catalog/server-os";
 import { addAppLink, setDocked } from "../../sim/90-actions/docs";
@@ -73,7 +74,7 @@ export function ApplicationsApp() {
         })}
         {at === "desktop" && game.docs.map((d) => {
           const app = d.kind === "app" && APPS.some((a) => a.name === d.title) ? appFor(game, d.title) : null;
-          const Icon = app?.icon ?? (d.kind === "guide" ? BookOpen : FileText);
+          const Icon = app?.icon ?? FILE_ICON[d.kind] ?? FILE_ICON.note;
           const open = () => useStore.getState().openDoc(d.id);
           return (
             <Item key={d.id} label={app ? appTitle(app) : d.title} open={open} menu={() => [{ label: t("apps.finder.open"), run: open }]}>
@@ -84,11 +85,11 @@ export function ApplicationsApp() {
         {at === "downloads" && game.media.images.map((id) => (
           <Item key={id} label={isoFile(id)} menu={() => [{ label: t("apps.finder.writeToUsb"), disabled: !home, run: () => write(id) }]}
             drag={(e) => { e.dataTransfer.setData(ISO, id); e.dataTransfer.effectAllowed = "copy"; }}>
-            <span className="di-page"><Disc3 /></span>
+            <span className="di-page"><FILE_ICON.iso /></span>
           </Item>
         ))}
         {at === "usb" && game.media.stick.os && (
-          <Item label={isoFile(game.media.stick.os)}><span className="di-page"><Disc3 /></span></Item>
+          <Item label={isoFile(game.media.stick.os)}><span className="di-page"><FILE_ICON.iso /></span></Item>
         )}
       </div>
     </div>

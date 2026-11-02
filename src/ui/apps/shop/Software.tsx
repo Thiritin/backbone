@@ -1,5 +1,7 @@
-import { Bot, KeyRound, Search, CalendarDays, Paperclip, ChartLine, Check, ChevronLeft, LifeBuoy, Trophy, Users, Wallet, type LucideIcon } from "lucide-react";
-import { useState, type CSSProperties } from "react";
+import { Bot, KeyRound, Search, CalendarDays, Paperclip, ChartLine, Check, ChevronLeft, LifeBuoy, Trophy, Users, Wallet } from "lucide-react";
+import { useState, type ComponentType, type CSSProperties } from "react";
+import { era } from "../../art/era-icon";
+import type { MarkProps } from "../../art/mailmarks";
 import { useSessionState } from "../../session";
 import { euroCents } from "../../../sim/00-core/money";
 import { pricePerMTokens } from "../../../sim/47-staff/chad";
@@ -14,17 +16,17 @@ import { rowLabel } from "./filter";
 import { useFocus, useStore } from "../../store";
 import { t } from "../../../i18n/en";
 
-const UPGRADES: Record<string, { icon: LucideIcon; tile: string }> = {
-  searchlight: { icon: Search, tile: "oklch(0.55 0.16 255)" },
-  keepassive: { icon: KeyRound, tile: "oklch(0.5 0.12 150)" },
-  widgetCalendar: { icon: CalendarDays, tile: "oklch(0.6 0.2 25)" },
-  widgetTickets: { icon: LifeBuoy, tile: "oklch(0.62 0.19 35)" },
-  widgetCash: { icon: Wallet, tile: "oklch(0.55 0.13 175)" },
-  widgetRevenue: { icon: ChartLine, tile: "oklch(0.55 0.13 175)" },
-  widgetCustomers: { icon: Users, tile: "oklch(0.52 0.17 268)" },
-  widgetLevel: { icon: Trophy, tile: "oklch(0.72 0.15 95)" },
+const UPGRADES: Record<string, { icon: ComponentType<MarkProps>; tile: string }> = {
+  searchlight: { icon: era(Search, "searchlight"), tile: "oklch(0.55 0.16 255)" },
+  keepassive: { icon: era(KeyRound, "keepassive"), tile: "oklch(0.5 0.12 150)" },
+  widgetCalendar: { icon: era(CalendarDays, "calendar"), tile: "oklch(0.6 0.2 25)" },
+  widgetTickets: { icon: era(LifeBuoy, "support"), tile: "oklch(0.62 0.19 35)" },
+  widgetCash: { icon: era(Wallet, "cash"), tile: "oklch(0.55 0.13 175)" },
+  widgetRevenue: { icon: era(ChartLine, "market"), tile: "oklch(0.55 0.13 175)" },
+  widgetCustomers: { icon: era(Users, "customers"), tile: "oklch(0.52 0.17 268)" },
+  widgetLevel: { icon: era(Trophy, "level"), tile: "oklch(0.72 0.15 95)" },
   chadGpt: { icon: Bot, tile: "oklch(0.55 0.16 300)" },
-  clipsy: { icon: Paperclip, tile: "oklch(0.6 0.14 220)" },
+  clipsy: { icon: era(Paperclip, "clipsy"), tile: "oklch(0.6 0.14 220)" },
 };
 
 const INCLUDES: Record<string, number> = {

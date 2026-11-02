@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- App and file icons now follow the system release: Panthera shows the Crystal Clear icons, Leapard shows the Oxygen icons, and later releases keep their flat tiles.
 - Web hosting panels show each account's disk and traffic as compact numbers and the whole server's CPU, memory and disk above the account list.
 - Web hosting accounts now use memory by their visitors, so a quiet personal page needs only a few megabytes while a busy shop needs far more.
 - The software page in the Pear Store shows its price, skill and status side by side again, with the same spacing in every macOS era.

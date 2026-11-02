@@ -1,5 +1,5 @@
 import { t } from "../../i18n/en";
-import { BookOpen, FileText } from "lucide-react";
+import { FILE_ICON } from "../art/era-icon";
 import { useEffect, useState } from "react";
 import type { CSSProperties, PointerEvent as RPointerEvent } from "react";
 import type { Doc } from "../../sim/50-state";
@@ -89,7 +89,7 @@ export function DesktopIcons() {
     <div className="desktop-icons">
       {docs.map((d) => {
         const app = d.kind === "app" && APPS.some((a) => a.name === d.title) ? appFor(game, d.title) : null;
-        const Icon = app?.icon ?? (d.kind === "guide" ? BookOpen : FileText);
+        const Icon = app?.icon ?? FILE_ICON[d.kind] ?? FILE_ICON.note;
         const at = drag?.id === d.id ? drag : d;
         return (
           <div

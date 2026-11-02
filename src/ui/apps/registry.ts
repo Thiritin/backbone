@@ -2,6 +2,7 @@ import {
   Activity, Archive, CalendarDays, FileSearch, Landmark, Cloud, Mailbox, FolderOpen, Bug, BookOpen, Compass, ChartPie, Contact, FileText, Network, GraduationCap, LifeBuoy, Megaphone, MessageCircle, Newspaper, Receipt, Server, Settings, ShieldAlert, ShoppingCart, SquareTerminal,
 } from "lucide-react";
 import type { ComponentType } from "react";
+import { era } from "../art/era-icon";
 import { t } from "../../i18n/en";
 import { BooksApp, drafts, late, unmatched } from "./books/BooksApp";
 import { CalendarApp } from "./calendar/CalendarApp";
@@ -47,38 +48,38 @@ export interface AppDef {
 
 // Dock order; a divider follows every 4th app.
 export const APPS: AppDef[] = [
-  { name: "Applications", icon: FolderOpen, tile: "oklch(0.6 0.12 240)", about: t("apps.about.Applications"), body: ApplicationsApp },
-  { name: "Locations", icon: Server, tile: "oklch(0.5 0.06 250)", about: t("apps.about.Locations"),
+  { name: "Applications", icon: era(FolderOpen, "applications"), tile: "oklch(0.6 0.12 240)", about: t("apps.about.Applications"), body: ApplicationsApp },
+  { name: "Locations", icon: era(Server, "locations"), tile: "oklch(0.5 0.06 250)", about: t("apps.about.Locations"),
     badge: (s) => s.devices.reduce((n, d) => n + deviceHealth(s, d.id).failed.length, 0) + s.network.requests.length + s.network.attacks.length },
-  { name: "Shop", icon: ShoppingCart, tile: "oklch(0.6 0.15 40)", about: t("apps.about.Shop") },
-  { name: "Network", icon: Network, tile: "oklch(0.58 0.12 210)", about: t("apps.about.Network"), body: NetworkApp },
-  { name: "Terminal", icon: SquareTerminal, tile: "oklch(0.3 0.01 255)", about: t("apps.about.Terminal"), body: TerminalApp },
-  { name: "Browser", icon: Compass, tile: "oklch(0.56 0.15 250)", about: t("apps.about.Browser"), body: BrowserApp },
-  { name: "Support", icon: LifeBuoy, tile: "oklch(0.62 0.19 35)", about: t("apps.about.Support"), body: SupportApp,
+  { name: "Shop", icon: era(ShoppingCart, "shop"), tile: "oklch(0.6 0.15 40)", about: t("apps.about.Shop") },
+  { name: "Network", icon: era(Network, "network"), tile: "oklch(0.58 0.12 210)", about: t("apps.about.Network"), body: NetworkApp },
+  { name: "Terminal", icon: era(SquareTerminal, "terminal"), tile: "oklch(0.3 0.01 255)", about: t("apps.about.Terminal"), body: TerminalApp },
+  { name: "Browser", icon: era(Compass, "browser"), tile: "oklch(0.56 0.15 250)", about: t("apps.about.Browser"), body: BrowserApp },
+  { name: "Support", icon: era(LifeBuoy, "support"), tile: "oklch(0.62 0.19 35)", about: t("apps.about.Support"), body: SupportApp,
     badge: (s) => s.tickets.filter((t) => !isFinal(t)).length },
-  { name: "Books", icon: Receipt, tile: "oklch(0.6 0.14 160)", about: t("apps.about.Books"), body: BooksApp, title: t("books.title"),
+  { name: "Books", icon: era(Receipt, "books"), tile: "oklch(0.6 0.14 160)", about: t("apps.about.Books"), body: BooksApp, title: t("books.title"),
     badge: (s) => drafts(s) + unmatched(s) + late(s) },
-  { name: "Post", icon: Mailbox, tile: "oklch(0.72 0.15 85)", about: t("apps.about.Post"), body: PostApp,
+  { name: "Post", icon: era(Mailbox, "post"), tile: "oklch(0.72 0.15 85)", about: t("apps.about.Post"), body: PostApp,
     badge: (s) => inbox(s).filter((l) => !l.read).length },
-  { name: "DocuWhere", icon: Archive, tile: "oklch(0.55 0.13 265)", about: t("apps.about.DocuWhere"), body: DocuWhereApp },
-  { name: "DohleFormular", icon: Landmark, tile: "oklch(0.36 0.09 255)", about: t("apps.about.DohleFormular"), body: DohleFormularApp },
-  { name: "Staff", icon: Contact, tile: "oklch(0.7 0.15 70)", about: t("apps.about.Staff"), body: StaffApp },
-  { name: "Marketing", icon: Megaphone, tile: "oklch(0.62 0.19 350)", about: t("apps.about.Marketing"), body: MarketingApp },
-  { name: "Market", icon: ChartPie, tile: "oklch(0.62 0.12 230)", about: t("apps.about.Market"), body: MarketApp },
-  { name: "Knowledge base", icon: BookOpen, tile: "oklch(0.6 0.12 200)", about: t("apps.about.Knowledge base"), body: KnowledgeBaseApp },
-  { name: "Nagiosaurus", icon: Activity, tile: "oklch(0.58 0.14 150)", about: t("apps.about.Nagiosaurus"), hidden: true },
-  { name: "Research", icon: GraduationCap, tile: "oklch(0.72 0.15 95)", about: t("apps.about.Research"), body: ResearchApp },
-  { name: "Getting started", icon: BookOpen, tile: "oklch(0.55 0.15 255)", about: t("apps.about.Getting started"), hidden: true },
-  { name: "Security", icon: ShieldAlert, tile: "oklch(0.58 0.17 25)", about: t("apps.about.Security"), body: SecurityApp,
+  { name: "DocuWhere", icon: era(Archive, "docuwhere"), tile: "oklch(0.55 0.13 265)", about: t("apps.about.DocuWhere"), body: DocuWhereApp },
+  { name: "DohleFormular", icon: era(Landmark, "dohleformular"), tile: "oklch(0.36 0.09 255)", about: t("apps.about.DohleFormular"), body: DohleFormularApp },
+  { name: "Staff", icon: era(Contact, "staff"), tile: "oklch(0.7 0.15 70)", about: t("apps.about.Staff"), body: StaffApp },
+  { name: "Marketing", icon: era(Megaphone, "marketing"), tile: "oklch(0.62 0.19 350)", about: t("apps.about.Marketing"), body: MarketingApp },
+  { name: "Market", icon: era(ChartPie, "market"), tile: "oklch(0.62 0.12 230)", about: t("apps.about.Market"), body: MarketApp },
+  { name: "Knowledge base", icon: era(BookOpen, "knowledge-base"), tile: "oklch(0.6 0.12 200)", about: t("apps.about.Knowledge base"), body: KnowledgeBaseApp },
+  { name: "Nagiosaurus", icon: era(Activity, "nagiosaurus"), tile: "oklch(0.58 0.14 150)", about: t("apps.about.Nagiosaurus"), hidden: true },
+  { name: "Research", icon: era(GraduationCap, "research"), tile: "oklch(0.72 0.15 95)", about: t("apps.about.Research"), body: ResearchApp },
+  { name: "Getting started", icon: era(BookOpen, "getting-started"), tile: "oklch(0.55 0.15 255)", about: t("apps.about.Getting started"), hidden: true },
+  { name: "Security", icon: era(ShieldAlert, "security"), tile: "oklch(0.58 0.17 25)", about: t("apps.about.Security"), body: SecurityApp,
     badge: (s) => s.lossReports.filter((r) => r.items.some((i) => !i.restored)).length },
-  { name: "Notes", icon: FileText, tile: "oklch(0.7 0.13 85)", about: t("apps.about.Notes"), hidden: true },
-  { name: "Calendar", icon: CalendarDays, tile: "oklch(0.6 0.17 25)", about: t("apps.about.Calendar"), hidden: true, body: CalendarApp },
-  { name: "News", icon: Newspaper, tile: "oklch(0.55 0.12 30)", about: t("apps.about.News"), hidden: true, body: NewsApp },
-  { name: "Weather", icon: Cloud, tile: "oklch(0.62 0.12 240)", about: t("apps.about.Weather"), hidden: true, body: WeatherApp },
-  { name: "Preview", icon: FileSearch, tile: "oklch(0.6 0.13 250)", about: t("apps.about.Preview"), hidden: true, body: PreviewApp },
-  { name: "Dev menu", icon: Bug, tile: "oklch(0.5 0.15 25)", about: t("apps.about.Dev menu"), hidden: true, body: DevApp },
-  { name: "Chat", icon: MessageCircle, tile: "oklch(0.55 0.16 275)", about: t("apps.about.Chat") },
-  { name: "Settings", icon: Settings, tile: "oklch(0.55 0.01 260)", about: t("apps.about.Settings") },
+  { name: "Notes", icon: era(FileText, "notes"), tile: "oklch(0.7 0.13 85)", about: t("apps.about.Notes"), hidden: true },
+  { name: "Calendar", icon: era(CalendarDays, "calendar"), tile: "oklch(0.6 0.17 25)", about: t("apps.about.Calendar"), hidden: true, body: CalendarApp },
+  { name: "News", icon: era(Newspaper, "news"), tile: "oklch(0.55 0.12 30)", about: t("apps.about.News"), hidden: true, body: NewsApp },
+  { name: "Weather", icon: era(Cloud, "weather", ["oxygen"]), tile: "oklch(0.62 0.12 240)", about: t("apps.about.Weather"), hidden: true, body: WeatherApp },
+  { name: "Preview", icon: era(FileSearch, "preview"), tile: "oklch(0.6 0.13 250)", about: t("apps.about.Preview"), hidden: true, body: PreviewApp },
+  { name: "Dev menu", icon: era(Bug, "dev-menu"), tile: "oklch(0.5 0.15 25)", about: t("apps.about.Dev menu"), hidden: true, body: DevApp },
+  { name: "Chat", icon: era(MessageCircle, "chat"), tile: "oklch(0.55 0.16 275)", about: t("apps.about.Chat") },
+  { name: "Settings", icon: era(Settings, "settings"), tile: "oklch(0.55 0.01 260)", about: t("apps.about.Settings") },
 ];
 
 // The app name on screen; the name itself stays the window id.
