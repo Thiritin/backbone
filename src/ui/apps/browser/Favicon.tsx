@@ -21,7 +21,7 @@ import { bankById } from "../../../sim/10-catalog/banks";
 const GREY = "oklch(0.62 0.01 255)";
 
 // A deterministic hue from a name, so a customer's letter keeps its colour.
-const hueOf = (name: string): number => [...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7);
+export const hueOf = (name: string): number => [...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7);
 
 const Tile = ({ fill, children }: { fill: string; children: ReactNode }) => (
   <svg className="fav" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
