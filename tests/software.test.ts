@@ -90,7 +90,7 @@ describe("software on machines", () => {
   });
 
   it("gives software in a VM five percent less CPU and RAM than the same booking on bare metal", () => {
-    const s = readyGame(1), host = s.clusters.find((c) => c.vm)!, vm = vmById(s, host.vm)!, cp = controlPlaneUse(host);
+    const s = readyGame(1), host = s.clusters.find((c) => c.vm)!, vm = vmById(s, host.vm)!, cp = controlPlaneUse(s, host);
     const { cap } = vmRoom(s, host);
     expect(IN_VM).toBe(0.95);
     expect(cap.vcpu).toBeCloseTo(vm.vcpu * 0.95 - cp.vcpu, 9);

@@ -1,0 +1,23 @@
+/* The shared order form: structure only, the site around it sets fonts, colours and buttons. */
+.co { max-width: 560px; }
+.co-steps { display: flex; gap: 0; margin: 0 0 12px; padding: 0; list-style: none; counter-reset: co-step; }
+.co-steps li { flex: 1; padding: 4px 6px; border-bottom: 3px solid color-mix(in srgb, currentColor 18%, transparent); opacity: 0.6; counter-increment: co-step; }
+.co-steps li::before { content: counter(co-step) ". "; }
+.co-steps li.done { opacity: 0.85; }
+.co-steps li.on { opacity: 1; font-weight: bold; border-bottom-color: currentColor; }
+.co-fields { border-collapse: collapse; }
+.co-fields td { padding: 3px 6px 3px 0; vertical-align: top; }
+.co-fields td:first-child { white-space: nowrap; padding-top: 6px; }
+.co-fields input:not([type="radio"]) { width: 240px; max-width: 100%; box-sizing: border-box; }
+.co-fields input[size] { width: auto; }
+.co-autofill { display: block; margin-top: 2px; width: 240px; max-width: 100%; padding: 4px 6px; text-align: left; font: inherit; cursor: pointer; background: Canvas; color: CanvasText; border: 1px solid color-mix(in srgb, CanvasText 30%, transparent); border-radius: 3px; box-shadow: 0 2px 6px rgb(0 0 0 / 0.18); }
+.co-autofill:hover { background: color-mix(in srgb, Highlight 15%, Canvas); }
+.co-methods { display: flex; flex-direction: column; gap: 4px; margin: 0 0 8px; }
+.co-table { border-collapse: collapse; width: 100%; margin-bottom: 10px; }
+.co-table th, .co-table td { padding: 3px 6px; text-align: left; border-bottom: 1px solid color-mix(in srgb, currentColor 15%, transparent); }
+.co-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.co-summary { display: flex; gap: 24px; flex-wrap: wrap; }
+.co-summary h3 { margin: 0 0 4px; font-size: 1em; }
+.co-summary p { margin: 0 0 10px; }
+.co-buttons { display: flex; gap: 8px; }
+.co-error { color: #b00020; }

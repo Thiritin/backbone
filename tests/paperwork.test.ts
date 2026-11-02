@@ -20,7 +20,7 @@ const registered = (form = "sole", bank = "sparklasse", law = true): GameState =
   const s = newGame(7);
   s.hour = MONDAY_8;
   expect(openBankAccount(s, bank as never).ok).toBe(true);
-  expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "sole").ok).toBe(true);
+  expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "sole", { street: "Kellerweg 1", zip: "60311", city: "Frankfurt" }).ok).toBe(true);
   s.registration!.form = form;
   s.bank!.plan = "business";
   if (law) s.unlocks = [...s.unlocks, COMPANY_LAW_SKILL];

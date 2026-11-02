@@ -149,7 +149,7 @@ export function Docs({ p, className }: { p: Product; className?: string }) {
       <table>
         <thead><tr><th>{t("browser-sites-2.docsCommand")}</th><th>{t("browser-sites-2.docsDescription")}</th></tr></thead>
         <tbody>{cliCommands(p.sw!).map((c) => (
-          <tr key={c.id}><td><code>{bin} {c.syntax}</code></td><td>{t(`browser-sites-2.cli.${c.id}`)}{c.root && ` ${t("browser-sites-2.cli.root")}`}</td></tr>
+          <tr key={c.id}><td><code>{bin} {c.syntax}</code></td><td>{t(`browser-sites-2.cli.${c.doc}`)}{c.root && ` ${t("browser-sites-2.cli.root")}`}</td></tr>
         ))}</tbody>
       </table>
     </div>

@@ -7,9 +7,9 @@ import type { Product } from "../../../sim/30-customers/customers";
 import { AGENCY_URL } from "../../../sim/80-business/browser";
 import { OWNED, owns, type SiteHost } from "../../../sim/80-business/marketing";
 import { shopActive } from "../../../sim/80-business/shop";
-import { designQuote, lineBlocker, listed, SITE_LINES, SITE_RENT, siteBuilt, siteRoom, siteStatus, type SiteStatus } from "../../../sim/80-business/website";
+import { customOpen, designQuote, lineBlocker, listed, SITE_LINES, SITE_RENT, siteBuilt, siteRoom, siteStatus, type SiteStatus } from "../../../sim/80-business/website";
 import { setCompany, TAGLINE_MAX } from "../../../sim/90-actions/company";
-import { buildSite, launchSite, setCustomRequests, setEmailOrders, setLine, setSiteHost } from "../../../sim/90-actions/website";
+import { buildSite, launchSite, setCustom, setCustomRequests, setEmailOrders, setLine, setSiteHost } from "../../../sim/90-actions/website";
 import { useStore } from "../../store";
 import { formatDay } from "../billing/format";
 import { PRODUCT } from "../support/labels";
@@ -154,6 +154,13 @@ function LineRow({ p, addon = false }: { p: Product; addon?: boolean }) {
           onChange={(e) => act(setLine, p, e.target.checked)} />
       </label>
       {!on && why && <p className="mkt-sub">{t(why)}</p>}
+      {on && (
+        <label className="mkt-line-row">
+          <span className="mkt-sub">{t("marketing.customLine")}</span>
+          <input type="checkbox" role="switch" className="switch" aria-label={t("marketing.customProduct", { product: PRODUCT[p] })} checked={customOpen(game, p)}
+            onChange={(e) => act(setCustom, p, e.target.checked)} />
+        </label>
+      )}
     </div>
   );
 }

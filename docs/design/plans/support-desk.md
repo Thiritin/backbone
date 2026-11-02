@@ -149,7 +149,7 @@ The three options for the current Support app are the desk itself, a launcher an
 
 1. The vendor's own site (`ostickit.com`, `freescoot.net`, in the software site pattern with Versions and News) lists the release. The install itself is a tile in the web host's app catalogue (Fantastiko from 2005, Softaculus from 2009 in `web-presence`'s `app-catalogue` lane) and in Strateaux's dashboard when the package allows apps: pick the web space, install. One desk at a time; installing another replaces the first and drops its channels, departments, rules and canned text. Tickets and mail stay.
 2. The first visit to `support.<company domain>/setup` (OsTickit) shows the installer: helpdesk name, default email (a MailAccount), admin user. FreeScoot shows its installer with the same fields. Leaving the setup directory in place is a security hint the admin screen shows in red until the player removes it.
-3. A record `A support <host address>` is needed in the company zone.
+3. The record `A support <host address>` is needed in the company zone. The game sets it automatically from the panel host's public address (mail-core.md, Company zone).
 4. Mail comes in by fetching IMAP or POP3 on a schedule. Piping through an alias on a mail server the player runs (Postfixit, Mailpig) is a later option.
 
 ### Domain records
@@ -410,6 +410,7 @@ Each milestone is one pull request, green on `npm run typecheck`, `npm test` and
 - UI: none of its own. Each desk's admin shows the host mapping and domain records page in its own style (M10 to M13): the records to add as copyable rows, status chips, Verify, and a link to the registrar DNS page.
 - i18n: keys in `ui-desk.ts`.
 - Tests: `tests/desk-records.test.ts` (records listed per desk, resolves with and without the record and before the TTL has passed, hosted tenant URL, Verify result, an old save).
+- Built: `40-support/desk-records.ts` holds `deskRecords`, `deskHostReachable` (the ticket check keeps the name `deskReachable`), `deskAddress` and `senderVerified`; the vendor's SPF include and DKIM names are `sender` in `desks.ts`; `verifyDesk` is in `90-actions/desk-install.ts`. Until M10 to M13 draw each desk's page, a shared stand-in table shows the records on the vendor's account page and under the panel host's help desk install, and the Browser still answers `support.<domain>` with not found.
 
 **M6. Channels and fetch.**
 - Sim: `addChannel`, `setChannel`, `removeChannel`, `testChannel` over `s.mail.channels`; `deskTick` import: IMAP and POP3 at the hour, forwarding at once, `ref` assignment, `channelId`, department, rules, auto-reply, the channel's `after` rule through `applyAfter`, ticketless messages adopted as kind `mail`, a queued message waits; replies reach Sent through `sentCopy`; `deskImports` and `deskHandles` for the clients. Until `mail-core` lands the built-in stand-in channel treats every ticket as fetched.

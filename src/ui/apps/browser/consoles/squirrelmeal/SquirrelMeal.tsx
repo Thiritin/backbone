@@ -6,13 +6,12 @@ import type { GameState } from "../../../../../sim/50-state";
 import { controlPlaneUp, type Cluster } from "../../../../../sim/60-infra/cluster";
 import { installedVersion, panelMachine } from "../../../../../sim/60-infra/licence";
 import { familyOf } from "../../../../../sim/60-infra/vulns";
-import { imapUp, mailClusterAt, webmailOf, webmailSignIn } from "../../../../../sim/80-business/webmail";
+import { confValue, imapUp, mailClusterAt, webmailOf, webmailSignIn } from "../../../../../sim/80-business/webmail";
 import { t } from "../../../../../i18n/en";
 import { LOCALE } from "../../../../../i18n/lang";
 import { useSessionState } from "../../../../session";
 import { offerLogin, savedLogin } from "../../../../vault";
 import type { PanelProps } from "../PanelBase";
-import { SetupMenu } from "./SetupMenu";
 import "./squirrelmeal.css";
 
 // docs/design/plans/webmail-server.md, section 3: plain HTML in two frames, no scripts.
@@ -23,10 +22,18 @@ const Logo = () => <div className="smw-logo"><span>Squirrel</span>Meal</div>;
 export function SquirrelMeal(p: PanelProps) {
   const sub = (p.path ?? "/").replace(/^\/squirrelmeal/, "") || "/";
   const [account, setAccount] = useSessionState<string | null>(`webmail.${p.c.id}`, null);
-  if (p.c.setupPending) return <SetupMenu game={p.game} c={p.c} />;
+  if (p.c.setupPending) return <ErrorBox text={t("mailserver.noConfig")} />;
   if (sub.includes("configtest.php")) return <ConfigTest game={p.game} c={p.c} host={p.host} />;
   if (account && p.game.mail.accounts.some((a) => a.id === account)) return <Frames game={p.game} account={account} out={() => setAccount(null)} />;
   return <Login game={p.game} c={p.c} host={p.host} signIn={setAccount} />;
+}
+
+function ErrorBox({ text, back }: { text: string; back?: () => void }) {
+  return (
+    <div className="smw smw-error">
+      <table><tbody><tr><th>{t("mailserver.login.error")}</th></tr><tr><td>{text.split("\n").map((l) => <p key={l}>{l}</p>)}{back && <a href="#login" onClick={(e) => { e.preventDefault(); back(); }}>{t("mailserver.login.back")}</a>}</td></tr></tbody></table>
+    </div>
+  );
 }
 
 function Login({ game, c, host, signIn }: { game: GameState; c: Cluster; host: string; signIn: (account: string) => void }) {
@@ -42,11 +49,7 @@ function Login({ game, c, host, signIn }: { game: GameState; c: Cluster; host: s
     offerLogin(game, `mail:${a.local}@${a.domain}`, host, [name, pass]);
     signIn(r.account);
   };
-  if (error) return (
-    <div className="smw smw-error">
-      <table><tbody><tr><th>{t("mailserver.login.error")}</th></tr><tr><td>{error.split("\n").map((l) => <p key={l}>{l}</p>)}<a href="#login" onClick={(e) => { e.preventDefault(); setError(null); }}>{t("mailserver.login.back")}</a></td></tr></tbody></table>
-    </div>
-  );
+  if (error) return <ErrorBox text={error} back={() => setError(null)} />;
   return (
     <div className="smw smw-login">
       <Logo />
@@ -97,10 +100,13 @@ function ConfigTest({ game, c, host }: { game: GameState; c: Cluster; host: stri
   const lines: [string, boolean][] = [
     [t("mailserver.test.version", { version: versionOf(game, c) }), true],
     [t("mailserver.test.php", { version: phpAt(yearOf(game.hour)) }), true],
-    [t("mailserver.test.paths"), true],
+    [t("mailserver.test.config", { version: "1.4.0" }), true],
+    [t("mailserver.test.paths", { data: confValue(cfg, "data_dir"), attach: confValue(cfg, "attachment_dir") }), true],
+    [t("mailserver.test.plugins", { list: cfg.plugins.map((x) => t(`mailserver.plugin.${x}`)).join(", ") || "-" }), true],
     [t("mailserver.test.baseUrl", { url: `https://${host}/squirrelmeal/src` }), true],
+    [t("mailserver.test.lang", { lang: confValue(cfg, "squirrelmail_default_language"), charset: confValue(cfg, "default_charset") }), true],
     [smtpOk ? t("mailserver.test.smtpOk", { host: cfg.smtpHost }) : t("mailserver.test.smtpFail", { host: cfg.smtpHost, port: cfg.smtpPort }), smtpOk],
-    [imap ? t("mailserver.test.imapOk") : t("mailserver.test.imapFail", { host: cfg.imapHost, port: cfg.imapPort }), imap],
+    [imap ? t("mailserver.test.imapOk", { host: cfg.imapHost, port: cfg.imapPort, type: confValue(cfg, "imap_server_type") }) : t("mailserver.test.imapFail", { host: cfg.imapHost, port: cfg.imapPort }), imap],
   ];
   return (
     <div className="smw smw-test">

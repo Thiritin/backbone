@@ -5,7 +5,8 @@ import type { Budget } from "../10-catalog/economy";
 import { hasModule } from "../10-catalog/modules";
 import { CYCLE_MONTHS } from "../10-catalog/cycles";
 import { methodById, methodFee, type MethodId } from "../10-catalog/payments";
-import { SLAS } from "../10-catalog/products";
+import { CA_NAME, caPrice, SLAS } from "../10-catalog/products";
+import { invoice, invoicing } from "../46-finance/payables";
 import type { Customer, PaymentHabit, Profile, Service } from "../30-customers/customers";
 import { fillAt } from "../30-customers/resellers";
 import { bump, cancelCustomer, createTicket, profileStats } from "../40-support/tickets";
@@ -484,14 +485,20 @@ export function billingTick(s: GameState): SimEvent[] {
     s.downHours = {};
   }
   let billed = s.yearlyBilledUntil;
+  const certs: Service[] = [];
   for (const v of s.services) {
     if (v.period !== "year" || v.endedAt !== null) continue;
     const until = billed[v.id] ?? v.startedAt;
     if (s.hour < until) continue;
     billed = { ...billed, [v.id]: until + YEAR_HOURS };
     add(v.customerId, { serviceId: v.id, key: "invoice.line.year", params: { label: v.label }, amount: v.price });
+    if (v.product === "ssl") certs.push(v);
   }
   s.yearlyBilledUntil = billed;
+  // economy.md, SSL certificates: each certificate billed, new or renewed, is bought from the certificate authority.
+  const certCost = cents(certs.reduce((n, v) => n + caPrice(v.spec.cert ?? "dv", yearOf(s.hour)), 0)), certParams = { name: CA_NAME, count: certs.length };
+  if (certs.length && invoicing(s)) invoice(s, "registrar", CA_NAME, [{ hour: s.hour, category: "domains", key: "ledger.certificates", params: certParams, amount: -certCost }]);
+  else if (certs.length) book("domains", "ledger.certificates", certParams, -certCost);
 
   const issued: Invoice[] = [];
   for (const [customerId, ls] of lines) {

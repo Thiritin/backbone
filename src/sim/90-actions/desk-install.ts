@@ -4,6 +4,7 @@ import { versionAt } from "../10-catalog/software-versions";
 import { deskItem, monthlyCharge, subscriptionEntry } from "../10-catalog/store";
 import { deskPath } from "../80-business/deskroutes";
 import { dropDesk, openDesk } from "../40-support/desk";
+import { deskRecords } from "../40-support/desk-records";
 import { deliverMail } from "../40-support/tickets";
 import { licenceBlock } from "../60-infra/licence";
 import type { GameState } from "../50-state";
@@ -56,4 +57,11 @@ export function removeDesk(s: GameState): ActionResult {
   if (!s.desk) return fail("error.noDesk");
   dropDesk(s);
   return { ok: true };
+}
+
+// The Verify button on the desk's domain page: passes once the world sees every record the desk needs.
+export function verifyDesk(s: GameState): ActionResult {
+  const rows = deskRecords(s);
+  if (!s.desk || !rows.length) return fail("error.noDesk");
+  return rows.every((r) => r.ok) ? { ok: true } : fail("error.deskRecords");
 }

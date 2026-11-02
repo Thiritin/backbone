@@ -79,7 +79,7 @@ export default {
   "error.cardLimit": () => "El pedido supera el límite de la tarjeta.",
   "error.cardOnly": () => "Esta tienda solo acepta tarjetas de crédito.",
   "ticket.mail.bankCard.subject": () => "Su tarjeta de crédito",
-  "ticket.mail.bankCard.text": (p) => `${p.bank} ha aprobado su tarjeta de crédito con un límite de ${euro(Number(p.limit))}. Recibirá el recibo de la tarjeta a principios de cada mes.`,
+  "ticket.mail.bankCard.text": (p) => `${p.bank} ha aprobado su tarjeta de crédito${p.last4 ? ` terminada en ${p.last4}` : ""} con un límite de ${euro(Number(p.limit))}. Recibirá el recibo de la tarjeta a principios de cada mes.`,
   "ticket.mail.bankOverdraft.subject": () => "Su descubierto",
   "ticket.mail.bankOverdraft.text": (p) => `${p.bank} ha fijado su límite de descubierto en ${euro(Number(p.limit))} con un interés del ${p.rate} % anual.`,
   "ticket.mail.bankWelcome.subject": (p) => `Su cuenta en ${p.bank}`,

@@ -50,6 +50,8 @@ Milestones:
 5. **Services.** Per contract: extra power (`setExtraKw`), feed B (`setFeedB`), flat-rate power (`setFlatKw`), remote hands job list from `handwork.ts`. Each one shows price and the month it starts billing. Existing actions only.
 6. **Tickets.** Remote-hands requests the player already books appear as tickets with the provider's response time and status. Read-only in this lane; booking stays in the Locations app.
 
+The order form picks the space and then runs the shared checkout from the vendor shops, with billing details prefilled from the company and its trade office address, a choice of direct debit from the company account or invoice by bank transfer, and a review of site, space, power, monthly price, term and notice. A direct debit order gives the site a mandate, so its rent invoices are debited at once. The portal's profile page shows the billing address given with the latest order and the payment method of each site, with the same mandate toggle as the supplier portals.
+
 ## 6. Lane `services`
 
 Milestones:
@@ -57,6 +59,8 @@ Milestones:
 1. **Cross-connects.** `CrossConnect { id; contractId; to: string; monthly: number; since: number }` on the contract. `orderCrossConnect(s, contractId, carrierOrExchange)` and `cancelCrossConnect`. Price per datacenter in `datacenters.ts` (`crossConnect: { setup, monthly }`), exchange cross-connects only where `exchange.onSite`. The network app treats a cross-connect like an uplink port that can be ordered an uplink on. Test: order, bill, cancel.
 2. **Portal page.** Cross-connects on the contract detail and on Services, with the setup fee shown before confirm.
 3. **Price changes.** Once a game year, a provider raises `positionPrice` by a few percent and emails existing customers that the new price applies to new contracts only. Cheap flavour, uses the lane 1 contract price. Test: seeded raise, existing `monthly` unchanged.
+
+Built: `s.crossConnects` with `contractId`; setup fee `crossConnectSetup` is two months of `dc.crossConnect` (kept a number, so no `{ setup, monthly }` object). Targets are `carriersAt(dc)` plus the exchange when on site. The network hook is billing only: an ordered cross-connect to an uplink's partner in that zone covers one of its links in `crossConnects()`, so nothing is billed twice; ordering an uplink does not require one. The raise is `s.providerPrices[provider]`, passed to `spacePrice` by `addLocation` and the order pages.
 
 ## 7. Shared files
 

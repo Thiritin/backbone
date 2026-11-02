@@ -27,6 +27,7 @@ export default {
   "marketing.unitGpu": () => "Per GPU",
   "marketing.unitUpdates": () => "Managed updates",
   "marketing.unitUpdateOnce": () => "One-off update",
+  "marketing.unitCleanHour": () => "Clean-up per hour",
   "marketing.unitSetup": () => "Setup fee",
 
   "marketing.statusUp": () => "Online",
@@ -59,6 +60,8 @@ export default {
   "marketing.requests": () => "Requests",
   "marketing.customRequests": () => "Take requests for products you do not sell",
   "marketing.listProduct": (p) => `List ${p.product}`,
+  "marketing.customLine": () => "Custom packages on request",
+  "marketing.customProduct": (p) => `Custom requests for ${p.product}`,
   "marketing.hwDomains": () => "Domains",
   "marketing.hwCertificates": () => "Certificates",
   "marketing.hwDedicated": () => "Dedicated servers",

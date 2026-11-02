@@ -231,6 +231,7 @@ export default {
   "ledger.loanCalled": (p) => `Il prestito da ${euro(Number(p.amount))} è stato revocato`,
   "error.invoiceSettled": () => "Questa fattura è già saldata.",
   "error.invoiceSent": () => "Questa fattura è già stata inviata.",
+  "error.invoiceOrdered": () => "Questa fattura appartiene a un ordine ancora aperto.",
   "error.transferMatched": () => "Questo bonifico è già registrato.",
   "error.transferChanged": () => "La fattura è cambiata dopo la registrazione.",
   "error.stepNotDue": () => "Non è ancora previsto nessun passaggio di sollecito.",

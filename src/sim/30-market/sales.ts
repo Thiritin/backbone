@@ -16,14 +16,14 @@ import { gameFirst, lineOffered, noRoomError, pickNode, serverTaken, supports, w
 import { phpNeeded } from "../60-infra/php";
 import { installedRamGb, locationOf } from "../60-infra/status";
 import { addAwareness } from "../80-business/marketing";
-import { mailShare } from "../80-business/mail";
-import { listed, shopBlock, siteFactor } from "../80-business/website";
+import { mailShare, mailUnrouted } from "../80-business/mail";
+import { customOpen, listed, shopBlock, siteFactor } from "../80-business/website";
 import { forumAwareness } from "../47-staff/staff";
 import type { SimEvent } from "../88-tick/tick";
 import { addCustomer } from "../90-actions/customers";
 import { hiddenTraits } from "../45-billing/fraud";
 import { domainFor } from "../30-customers/domains";
-import { CERT_SHARE, offerCertificate } from "../30-customers/certificates";
+import { CERT_TOPIC, CERT_WANT, certificateOf, certSpec, wantCertificate } from "../30-customers/certificates";
 import { shopPriceLevel } from "./cycles";
 import { emailFor, firstOrder, isStandard, orderLead, orderQueued } from "./orders";
 import { growSlots } from "../60-infra/games";
@@ -117,8 +117,10 @@ function newLeads(s: GameState, events: SimEvent[]): void {
   for (const f of leadFlows(s)) {
     const n = poisson(s.rng, (f.leads / DAYS_PER_MONTH / 24) * arrivalWeight(f.profile, s.hour));
     for (let i = 0; i < n; i++) {
+      // A line without custom requests sells its plans only: the visitor takes the basic plan or buys elsewhere.
+      const asked = needFor(s.rng, f.profile, yearOf(s.hour)), plain = listed(s, asked.product) && !customOpen(s, asked.product);
       // A shop order weighs the setup fee too.
-      const need = needFor(s.rng, f.profile, yearOf(s.hour)), shop = isStandard(f.profile, need.sla) && !emailFor(s), k = `${f.profile}/${need.product}/${f.city}/${shop}`;
+      const need = plain ? { ...asked, sla: "basic" as const } : asked, standard = plain || isStandard(f.profile, need.sla), shop = standard && !emailFor(s), k = `${f.profile}/${need.product}/${f.city}/${shop}`;
       if (!cache.has(k)) cache.set(k, share(s, f.profile, need.product, f.city, shop ? setupPremium(s, need.product) : 0, shop ? shopPriceLevel(s, f.profile, need.product) : undefined));
       if (rand(s.rng) >= Math.min(1, cache.get(k)! * f.conversion)) continue;
       // Leads order only lines on the website, which needs a control plane that sells them; some ask for the rest by email.
@@ -137,7 +139,9 @@ function newLeads(s: GameState, events: SimEvent[]): void {
       if (shop && !f.site && site < 1 && rand(s.rng) >= site) continue;
       // A shop that takes no orders loses its visitors, as a down site does.
       if (shop && closed) continue;
-      if (!isStandard(f.profile, need.sla)) {
+      // A request by email bounces while the domain's MX is wrong.
+      if (!shop && mailUnrouted(s)) continue;
+      if (!standard) {
         newLead(s, f.profile, f.city, events, need);
         continue;
       }
@@ -173,16 +177,20 @@ function expansions(s: GameState): void {
   for (const t of s.tickets) {
     if (t.kind !== "upgrade" || isFinal(t) || s.sales.requests.some((r) => r.ticketId === t.id)) continue;
     const c = s.customers.find((x) => x.id === t.customerId), v = s.services.find((x) => x.id === t.serviceId);
-    if (!c || c.churnedAt !== null || !v || v.endedAt !== null || !expandable(v)) continue;
+    // A certificate request asks for an SSL add-on to the web hosting; its quote is a yearly price.
+    const cert = t.topic === CERT_TOPIC;
+    if (!c || c.churnedAt !== null || !v || v.endedAt !== null || !(cert || expandable(v))) continue;
     const loc = s.locations.find((l) => l.az === v.zone);
-    const spec = grownSpec(s.seed, Number(t.id.slice(3)) || 0, v.product, v.spec), old = v.spec;
+    const product = cert ? "ssl" : v.product, sla = cert ? "basic" : v.sla, old = v.spec;
+    const spec = cert ? certSpec(c.profile, yearOf(s.hour)) : grownSpec(s.seed, Number(t.id.slice(3)) || 0, v.product, v.spec);
     const r = addRequest(s, {
       kind: "expansion", customerId: c.id, contact: c.name, company: null, profile: c.profile, city: loc?.city ?? s.locations[0].city,
-      product: v.product, spec, sla: v.sla, reference: referenceFor(s, c.profile, v.product, spec, v.sla), discount: 0, budget: budgetOf(s.rng),
+      product, spec, sla, reference: referenceFor(s, c.profile, product, spec, sla), discount: 0, budget: budgetOf(s.rng),
       shady: !!c.shady, serviceId: v.id, ticketId: t.id, deadline: s.hour + EXPANSION_HOURS,
-    }, "sales.msg.upgrade");
-    editRequest(s, r.id, (x) => ({ thread: x.thread.map((m, n) => (n ? m : { ...m, params: { ...m.params, product: v.product, ...specParams(old, "0"), ...specParams(spec, "1") } })) }));
-    s.tickets = s.tickets.map((x) => (x.id === t.id ? { ...x, topic: "more" } : x));
+    }, cert ? "sales.msg.cert" : "sales.msg.upgrade");
+    const params: Record<string, string | number> = cert ? { domain: v.domain ?? v.label } : { product: v.product, ...specParams(old, "0"), ...specParams(spec, "1") };
+    editRequest(s, r.id, (x) => ({ thread: x.thread.map((m, n) => (n ? m : { ...m, params: { ...m.params, ...params } })) }));
+    if (!cert) s.tickets = s.tickets.map((x) => (x.id === t.id ? { ...x, topic: "more" } : x));
   }
 }
 
@@ -248,7 +256,7 @@ export function fulfil(s: GameState, r: SalesRequest): ActionResult {
   else if (r.kind !== "expansion") {
     editRequest(s, r.id, () => ({ customerId }));
     const v = r.product === "webHosting" && s.services.find((x) => x.id === placed.id);
-    if (v) offerCertificate(s, v, CERT_SHARE.order);
+    if (v) wantCertificate(s, v, CERT_WANT[r.profile]);
   }
   return placed;
 }
@@ -286,6 +294,16 @@ function replyUpgrade(s: GameState, r: SalesRequest, events: SimEvent[]): void {
   const name = requestName(r), price = r.quote!, v = s.services.find((x) => x.id === r.serviceId && x.endedAt === null);
   if (!v) return loseRequest(s, r, "lost", "lost.declined");
   const accepts = (r.counter !== null && price <= r.counter) || rand(s.rng) < acceptChance(s, r, price);
+  if (accepts && r.product === "ssl") {
+    say(s, r.id, "customer", "sales.reply.accept", { name: r.contact });
+    const domain = v.domain ?? v.label;
+    if (certificateOf(s, domain) || !provisionService(s, v.customerId, "ssl", { label: domain, price, spec: r.spec! }).ok) return loseRequest(s, r, "lost", "lost.declined");
+    say(s, r.id, "you", "sales.you.certDone", { price, domain });
+    editRequest(s, r.id, () => ({ status: "won", replyAt: null }));
+    closeTicket(s, r);
+    events.push({ app: "Books", key: "event.certificateSold", params: { name, domain } });
+    return;
+  }
   if (accepts) {
     say(s, r.id, "customer", "sales.reply.accept", { name: r.contact });
     if (!resize(s, v, r.spec!, r.route ?? "auto", r.city).ok) return loseRequest(s, r, "lost", "lost.noCapacity", { city: r.city });

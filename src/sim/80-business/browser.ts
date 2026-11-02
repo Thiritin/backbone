@@ -16,7 +16,7 @@ import { isManaged, isManagedUps, modelById } from "../10-catalog/hardware";
 import { mountedRouter } from "../60-infra/routers";
 import { isMgmtDevice, oobUp } from "../60-infra/oob";
 import { linkStatus, powered, working } from "../60-infra/status";
-import { nodeUsage } from "../60-infra/usage";
+import { nodeUsage, SLOW_PERF } from "../60-infra/usage";
 import { BOARD_HOST } from "./sponsorboard";
 import { FLYER_HOST } from "../10-catalog/flyers";
 import { consoleAt, consoleHost, isDefaced } from "./consoles";
@@ -62,7 +62,7 @@ export type Page =
   | { kind: "switch"; deviceId: string }
   | { kind: "ups"; deviceId: string }
   | { kind: "video" }
-  | { kind: "phishing"; sender: string }
+  | { kind: "notice"; ticketId: string }
   | { kind: "sponsorboard" }
   | { kind: "flyers" }
   | { kind: "agency" }
@@ -144,7 +144,7 @@ const slow = (hostSlow: boolean): Load => (hostSlow ? "slow" : "fast");
 
 // How a machine answers: a server that is off, failed or cut from the internet cannot be reached, a loaded one answers slowly.
 function serverLoad(s: GameState, id: string): Load {
-  return !working(s, id) || !linkStatus(s, id).online ? "down" : slow(nodeUsage(s, id).perf < 1);
+  return !working(s, id) || !linkStatus(s, id).online ? "down" : slow(nodeUsage(s, id).perf < SLOW_PERF);
 }
 
 // The player's own VM answers like its workload; a customer's workload like its service.
@@ -178,14 +178,26 @@ function machinePage(s: GameState, m: { hostname: string; load: Load }, port: st
   return { page: c ? { kind: "console", hostname: m.hostname, clusterId: c.id, defaced: isDefaced(s, c), path } : { kind: "host", hostname: m.hostname }, load: m.load };
 }
 
+// The customer site a host serves and how fast it loads.
+function siteAt(s: GameState, host: string): { serviceId: string; load: Load } | null {
+  const v = s.services.find((x) => !!x.domain && (x.domain === host || `www.${x.domain}` === host))
+    ?? s.services.find((x) => !x.domain && x.product === "webHosting" && siteHost(s, x.id) === host);
+  const c = v && customerSite(s, v.id);
+  return v && c ? { serviceId: v.id, load: c.status === "down" ? "down" : c.status === "slow" ? "slow" : "fast" } : null;
+}
+
 export function resolve(s: GameState, raw: string): Resolved {
   const { host, path } = split(raw), url = `${host}${path}`;
   const out = (page: Page, load: Load = "fast"): Resolved => ({ url, host, path, page, load });
   const domain = companyDomain(s);
   const shopLoad = (): Load => { const st = shopStatus(s); return st === "up" ? "fast" : st === "slow" ? "slow" : "down"; };
-  // A phishing page a notice reports stays up until the player takes it down.
-  const phish = s.tickets.filter((t) => t.topic === "phishing" && t.notice && split(t.notice.url).host === host && split(t.notice.url).path === path);
-  if (phish.length && !phish.some((t) => t.outcome === "takenDown" || t.outcome === "seized")) return out({ kind: "phishing", sender: phish[0].notice!.sender });
+  // What a notice reports stays up until the player takes it down; a fake download claim points at nothing.
+  const reported = s.tickets.filter((t) => t.kind === "notice" && t.notice && split(t.notice.url).host === host && split(t.notice.url).path === path);
+  if (reported.length && !reported.some((t) => t.outcome === "takenDown" || t.outcome === "seized")) {
+    const shown = reported.find((t) => t.notice!.real || t.topic === "youtuber");
+    if (shown) return out({ kind: "notice", ticketId: shown.id });
+    return out({ kind: "notfound" }, siteAt(s, host)?.load);
+  }
   // A domain on the partner's name servers shows its parking page; on custom ones nothing the company runs answers.
   const held = s.domains.find((d) => !d.lapsed && (host === d.name || host === `www.${d.name}`));
   if (held && parked(s, held)) return out(nsActive(s, held).ns === "registrar" ? { kind: "parked", registrar: partnerOf(s).id, domain: held.name } : { kind: "notfound" });
@@ -202,12 +214,8 @@ export function resolve(s: GameState, raw: string): Resolved {
     return c && m ? { url, host, path, page: { kind: "console", hostname: m.hostname, clusterId: c.id, defaced: isDefaced(s, c), path }, load: m.load } : out({ kind: "notfound" });
   }
   if (host === `portal.${domain}`) return shopActive(s) && s.shop.install ? out({ kind: "shop" }, shopLoad()) : out({ kind: "notfound" });
-  const site = s.services.find((v) => !!v.domain && (v.domain === host || `www.${v.domain}` === host))
-    ?? s.services.find((v) => !v.domain && v.product === "webHosting" && siteHost(s, v.id) === host);
-  if (site) {
-    const c = customerSite(s, site.id);
-    if (c) return out({ kind: "customer", serviceId: site.id }, c.status === "down" ? "down" : c.status === "slow" ? "slow" : "fast");
-  }
+  const site = siteAt(s, host);
+  if (site) return out({ kind: "customer", serviceId: site.serviceId }, site.load);
   const named = (bare: string) => host === bare || host === `www.${bare}`;
   if (named(INDEX_HOST)) return out({ kind: "index" });
   if (named(OFFICE_HOST)) return out({ kind: "office" });

@@ -1,3 +1,8 @@
+import { bookMail } from "../src/sim/90-actions/mail";
+import { mxSetAt } from "../src/sim/10-catalog/mail-providers";
+import { hire as hireReal } from "../src/sim/90-actions/staff";
+import { mxTarget } from "../src/sim/42-mail/caps";
+import { companyDomain } from "../src/sim/30-customers/domains";
 import { PAYMENT_METHODS } from "../src/sim/10-catalog/payments";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { installShop } from "../src/sim/90-actions/shop";
@@ -12,8 +17,10 @@ import { MODULE_IDS } from "../src/sim/10-catalog/shops";
 import { hourOf } from "../src/sim/00-core/time";
 import { brandFrom, componentParts, fits, genOf, modelById, type FormFactor, type PartSpec } from "../src/sim/10-catalog/hardware";
 import type { Resources } from "../src/sim/10-catalog/products";
-import { device, deviceDefaults, newGame as blankGame, type GameState } from "../src/sim/50-state";
-import { openAccount } from "../src/sim/46-finance/bank";
+import { device, deviceDefaults, newGame as blankGame, type GameState, type Licence } from "../src/sim/50-state";
+import { cardDetails, openAccount } from "../src/sim/46-finance/bank";
+import { hostOf } from "../src/sim/80-business/vendor-shop";
+import { addToCart, checkout, type OrderDetails } from "../src/sim/90-actions/vendor-shop";
 import { START_CASH } from "../src/sim/10-catalog/economy";
 
 // Games with the savings already in hand and no bank account, the way every game started before the account came first.
@@ -28,6 +35,8 @@ import { derivedDomain } from "../src/sim/30-customers/domains";
 import { register } from "../src/sim/30-customers/registry";
 import { nodeName } from "../src/sim/30-customers/hostnames";
 import { setMachine, type Cluster } from "../src/sim/60-infra/cluster";
+import { tickMinute } from "../src/sim/88-tick/tick";
+import { stopWorkload } from "../src/sim/90-actions/vms";
 import { assignedKey, assignKey, isLicensed, issueKey, panelMachine, trialDaysOf } from "../src/sim/60-infra/licence";
 import { topTier } from "../src/sim/10-catalog/licence-tiers";
 import { UI_LOOKS, versionsOf } from "../src/sim/10-catalog/software-versions";
@@ -35,7 +44,7 @@ import { portPeers } from "../src/sim/60-infra/status";
 import { leaseTick } from "../src/sim/60-infra/lan";
 import { setPortShare } from "../src/sim/90-actions/lan";
 import { imageOf, serverOsAt, type OsImage, type ServerOsId } from "../src/sim/10-catalog/server-os";
-import { softwareById } from "../src/sim/10-catalog/platforms";
+import { footprint, IN_VM, softwareById } from "../src/sim/10-catalog/platforms";
 import { yearOf } from "../src/sim/00-core/time";
 import { STARTER_APPS } from "../src/sim/10-catalog/store";
 import { legacyRegistration } from "../src/sim/80-business/office";
@@ -76,6 +85,13 @@ export function routerOnLine(s: GameState, slot = 23): GameState {
   Object.assign(s.devices.find((d) => d.id === "dev5")!, { store: null, rackId: "rack2", slot });
   s.cables.push({ id: "cab-line", a: { device: "dev6", port: 0 }, b: { device: "dev5", port: 4 }, kind: "copper", color: null });
   return s;
+}
+
+// Stops a VM and lets the minutes pass until its OS has halted.
+export function stopVm(s: GameState, id: string): ReturnType<typeof stopWorkload> {
+  const r = stopWorkload(s, id);
+  while (s.workloads.find((w) => w.id === id)?.haltUntil !== undefined) tickMinute(s);
+  return r;
 }
 
 // The machine has the OS installed and booted, as the installer leaves it; returns the machine id.
@@ -154,7 +170,9 @@ export function join(s: GameState, clusterId: string, deviceId: string) {
 // A panel VM on a hypervisor cluster with its panel already installed; returns the panel host id.
 export const panelVm = (s: GameState, clusterId: string, panel = "freepanel", size?: Resources): string => {
   if (isLicensed(panel) && trialDaysOf(panel) === null) issueKey(s, panel, topTier(panel)?.id ?? null);
-  return done(s, must(createPanelVm(s, clusterId, panel, size)), { panel });
+  // The panel's own footprint of the year, so the fixture fits whatever the catalog asks.
+  const fit = footprint(softwareById(panel), yearOf(s.hour)), min = { vcpu: Math.max(2, Math.ceil(fit.vcpu / IN_VM) + 1), ramGb: Math.max(2, Math.ceil(fit.ramGb / IN_VM) + 1), diskGb: Math.max(50, fit.diskGb + 40) };
+  return done(s, must(createPanelVm(s, clusterId, panel, size ?? min)), { panel });
 };
 
 // A bare-metal panel host on a free mounted server with its panel already installed; returns the panel host id.
@@ -192,8 +210,9 @@ export function readyGame(seed: number): GameState {
 export function withCompany(s: GameState): GameState {
   s.registrar = { id: "nameCheep", since: 0, tier: 0, billed: true, transfer: null };
   const name = derivedDomain(s);
-  s.company = { ...s.company, domain: name, mail: { kind: "external", provider: "hostedExchange", seats: 1 } };
+  s.company = { ...s.company, domain: name };
   register(s, name, null, false);
+  must(bookMail(s, "hostedExchange"));
   s.marketing = { ...s.marketing, siteReady: 0, launched: true };
   return s;
 }
@@ -285,3 +304,30 @@ export function withCard<S extends GameState>(s: S, limit = 100_000): S {
   s.bank = { ...openAccount(s, "sparklasse"), card: { appliedAt: s.hour, readyAt: s.hour, limit, spent: [], feeAt: s.hour } };
   return s;
 }
+
+// A licence order as the checkout form sends it; a card payment types in the company card's own details.
+export function orderDetails(s: GameState, kind: "card" | "transfer"): OrderDetails {
+  const c = cardDetails(s);
+  return {
+    company: s.company.name, name: "Tin Becker", address: { street: "Kellerweg 1", zip: "60311", city: "Frankfurt" }, email: "tin@example.com",
+    payment: kind === "card" ? { kind, number: c?.number ?? "", expiry: c?.expires ?? "", cvc: c?.cvc ?? "" } : { kind },
+  };
+}
+
+// Buys one key of an edition on the vendor's site with the card and returns it, unassigned; the key is typed into a panel by activateLicence.
+export function buyKey(s: GameState, product: string, edition: string | null): Licence {
+  if (!s.bank?.card) withCard(s);
+  const bought = addToCart(s, product, edition), paid = bought.ok ? checkout(s, hostOf(product)!, orderDetails(s, "card")) : bought;
+  if (!paid.ok) throw new Error(paid.error);
+  return s.licenses.at(-1)!;
+}
+// An Ionose tenant on the company domain with its MX records live, so a hire gets a mailbox. An own-server tenant would
+// need a running mail server for its MX to resolve.
+export function withDomainMail(s: GameState): GameState {
+  if (mxTarget(s)) return s;
+  const d = companyDomain(s);
+  s.mail = { ...s.mail, tenants: [...s.mail.tenants, { id: `tn${s.nextId++}`, host: "ionose", domain: d, plan: "exchange", since: s.hour, verified: true, endsAt: null, admin: null }] };
+  s.company = { ...s.company, zone: [...s.company.zone, ...mxSetAt("ionose", d, s.hour).map(([p, h]) => ({ id: `z${s.nextId++}`, type: "MX" as const, name: "@", ttl: 3600, data: `${p} ${h}` }))] };
+  return s;
+}
+export const hire = (s: GameState, candidateId: string, team?: string) => hireReal(withDomainMail(s), candidateId, team);

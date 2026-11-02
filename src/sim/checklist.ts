@@ -25,7 +25,7 @@ export const CHECKS: Record<string, (s: GameState) => boolean> = {
   domain: (s) => !!s.registrar && !!s.company.domain,
   website: siteBuilt,
   launch: (s) => s.marketing.launched && s.marketing.lines.length > 0,
-  email: (s) => s.company.mail.kind !== "free",
+  email: (s) => !!s.company.domain && s.mail.accounts.some((a) => a.domain === s.company.domain && a.closedAt === null),
   loan: (s) => booked(s, "ledger.loanTaken"),
   firstServer: (s) => onlineServers(s).length >= 1,
   setup: (s) => s.clusters.some((c) => c.platform || c.panel),

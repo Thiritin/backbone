@@ -9,7 +9,7 @@ import { matchTransfer, unmatchTransfer } from "../../../sim/90-actions/billing"
 import { t } from "../../../i18n/en";
 import { useSessionState } from "../../session";
 import { useStore } from "../../store";
-import { useBooks } from "./view";
+import { arrowRows, useBooks } from "./view";
 import { formatDay } from "../billing/format";
 import { Locked } from "./Locked";
 
@@ -82,16 +82,16 @@ export function BankTab() {
         <Locked id="match-by-reference" label={t("books.matchByReference")} />
       </div>
       <div className="books-bank">
-        <div className="fin-scroll">
+        <div className="fin-scroll" onKeyDown={arrowRows}>
           <table className="table fin-table">
             <thead><tr><th>{t("books.col.date")}</th><th>{t("books.col.name")}</th><th>{t("books.col.reference")}</th><th className="r">{t("books.col.amount")}</th><th>{t("books.col.assignment")}</th></tr></thead>
             <tbody>
               {rows.map((r) => {
-                const amount = r.tr ? r.tr.amount : -r.out!.amount, ref = r.tr ? t(r.tr.reference, r.tr.params) : r.out!.reference;
+                const amount = r.tr ? r.tr.amount : -r.out!.amount, ref = r.tr ? t(r.tr.reference, r.tr.params) : r.out!.reference, name = r.tr ? r.tr.from : r.out!.name;
                 return (
                   <tr key={r.id} className={r.id === selected ? "sel" : ""} tabIndex={0} onClick={() => choose(r.id === selected ? null : r.id)} onKeyDown={(e) => e.key === "Enter" && choose(r.id)}>
                     <td className="num">{formatDay(r.hour)}</td>
-                    <td>{r.tr ? r.tr.from : r.out!.name}</td>
+                    <td className="books-name" title={name}>{name}</td>
                     <td className="books-ref" title={ref}>{ref}{r.out?.debit && <span className="pill">{t("books.debit")}</span>}</td>
                     <td className={`r num${amount < 0 ? " neg" : ""}`}>{euroCents(amount)}</td>
                     <td>{cell(r)}</td>

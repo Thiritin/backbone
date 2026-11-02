@@ -18,6 +18,7 @@ export function FormDoc({ doc }: { doc: Doc }) {
   const rows: [string, string][] = [
     [t("browser-sites-1.of.businessName"), game.company.name],
     [t("browser-sites-1.of.ownerField"), r?.owner ?? ""],
+    [t("checkout.address"), game.company.address ? `${game.company.address.street}, ${game.company.address.zip} ${game.company.address.city}` : ""],
     [t("browser-sites-1.of.regNumber"), r ? `GA ${r.number}` : ""],
     [t("paperwork.doc.current"), LEGAL_FORMS[f.from ?? r?.form ?? ""] ?? ""],
     [t("paperwork.doc.next"), LEGAL_FORMS[f.form]],

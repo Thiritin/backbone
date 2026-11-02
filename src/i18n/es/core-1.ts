@@ -231,6 +231,7 @@ export default {
   "ledger.loanCalled": (p) => `Se reclamó el préstamo de ${euro(Number(p.amount))}`,
   "error.invoiceSettled": () => "Esta factura ya está pagada.",
   "error.invoiceSent": () => "Esta factura ya se ha enviado.",
+  "error.invoiceOrdered": () => "Esta factura pertenece a un pedido todavía abierto.",
   "error.transferMatched": () => "Esta transferencia ya está contabilizada.",
   "error.transferChanged": () => "La factura cambió después de la contabilización.",
   "error.stepNotDue": () => "Todavía no toca ningún paso de reclamación.",

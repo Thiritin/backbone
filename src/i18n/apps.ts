@@ -22,4 +22,10 @@ export const APPS_EN: Record<string, (p: Params) => string> = {
   "error.noBackup": () => "This site has no backup to restore.",
   "error.unknownVulnerability": () => "This vulnerability is not known.",
   "error.nobodyToNotify": () => "No customers to notify.",
+  "ticket.howTo.abuseHold.subject": () => "Why is my website suspended?",
+  "ticket.howTo.abuseHold.text": (p) => `You wrote that ${p.domain || "my website"} was hacked and sends spam, and you suspended it. What do I have to do to get it back online?`,
+  "outcome.cleanSold": () => "Clean-up sold",
+  "ledger.siteCleanup": (p) => `Clean-up of ${p.site}, ${p.hours} h`,
+  "error.alreadyOffered": () => "The customer already turned this offer down.",
+  "error.alreadyReminded": () => "The customer was already reminded.",
 };

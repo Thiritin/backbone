@@ -231,6 +231,8 @@ export default {
   "ipmi.log.inlet.warn": () => "Temperatura di ingresso sopra i 35 gradi",
   "ipmi.log.inlet.crit": () => "Temperatura di ingresso sopra i 40 gradi",
   "ipmi.log.inlet.normal": () => "Temperatura di ingresso tornata normale",
+  "ipmi.log.cpu.throttle": () => "CPU rallentata per temperatura",
+  "ipmi.log.cpu.normal": () => "Temperatura CPU tornata normale",
   "ipmi.log.node.active": () => "Nodo del cluster impostato su attivo",
   "ipmi.log.node.cordoned": () => "Nodo del cluster isolato",
   "ipmi.log.node.draining": () => "Nodo del cluster in svuotamento",

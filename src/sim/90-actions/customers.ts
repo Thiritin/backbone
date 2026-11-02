@@ -8,6 +8,7 @@ import { addressFor, homeAddress, requestAddress } from "../30-customers/address
 import type { SalesRequest } from "../30-market/market";
 import { serviceHostname } from "../30-customers/hostnames";
 import type { ActionResult } from "./hardware";
+import { answerOveruse, type OveruseChoice } from "../80-business/overuse";
 
 // who is the request the customer comes from; without one the address is drawn for the company's home city.
 export function addCustomer(s: GameState, name: string, profile: Profile, habit: PaymentHabit = "prompt", who?: Pick<SalesRequest, "contact" | "company" | "city"> & Partial<Pick<SalesRequest, "id" | "address">>): string {
@@ -38,4 +39,27 @@ export function creditCustomer(s: GameState, customerId: string, amount: number)
   if (!Number.isFinite(amount) || amount <= 0) return { ok: false, error: "error.creditAmount" };
   c.credit = Math.round((c.credit + amount) * 100) / 100;
   return { ok: true, id: c.id };
+}
+
+// A service over its plan's traffic: throttle it to the booked traffic, bill the overage, or offer a bigger plan.
+export function answerTraffic(s: GameState, serviceId: string, choice: OveruseChoice): ActionResult {
+  const v = s.services.find((x) => x.id === serviceId);
+  if (!v || !["throttle", "bill", "upgrade"].includes(choice)) return { ok: false, error: "error.unknownService" };
+  const error = answerOveruse(s, v, choice);
+  return error ? { ok: false, error } : { ok: true, id: v.id };
+}
+
+// The answer the daily noon check gives every service over its traffic; null leaves them to the player.
+export function setOverusePolicy(s: GameState, policy: OveruseChoice | null): ActionResult {
+  if (!s.unlocks.includes("trafficBilling")) return { ok: false, error: "error.missingSkill" };
+  if (policy !== null && !["throttle", "bill", "upgrade"].includes(policy)) return { ok: false, error: "error.unknownService" };
+  s.overusePolicy = policy;
+  return { ok: true };
+}
+
+export function liftThrottle(s: GameState, serviceId: string): ActionResult {
+  const v = s.services.find((x) => x.id === serviceId && x.throttled);
+  if (!v) return { ok: false, error: "error.unknownService" };
+  s.services = s.services.map((x) => (x.id === v.id ? { ...x, throttled: undefined } : x));
+  return { ok: true, id: v.id };
 }

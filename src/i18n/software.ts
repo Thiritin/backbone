@@ -17,6 +17,8 @@ export const SOFTWARE_EN: Record<string, (p: Params) => string> = {
   "ticket.mail.licenceLapsed.text": (p) => `We could not charge the renewal of your ${p.name} key ${p.key}. The licence has lapsed and will be renewed as soon as the payment goes through.`,
   "ticket.mail.licenceEditionChange.subject": (p) => `${p.name} licence change`,
   "ticket.mail.licenceEditionChange.text": (p) => `We no longer sell the ${p.from} edition. At its next renewal, your ${p.name} key ${p.key} renews as ${p.to} at ${euroCents(Number(p.amount))} a month.`,
+  "ticket.mail.licenceEditionSwitched.subject": (p) => `${p.name} licence changed`,
+  "ticket.mail.licenceEditionSwitched.text": (p) => `Your ${p.name} key ${p.key} now has the ${p.to} edition.`,
   "ledger.licenseOnce": (p) => `${p.name} license, ${p.machine}`,
   "ledger.balancer": (p) => `${p.name}, ${p.cluster}`,
   "ledger.appSuite": (p) => `VMwhere App Suite, ${p.cluster}`,

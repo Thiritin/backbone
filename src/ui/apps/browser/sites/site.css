@@ -10,6 +10,7 @@
 .site-product p { margin-top: 3px; }
 .site-order { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 6px; font-size: 13px; color: #404040; }
 .site-order .site-button { margin-top: 0; }
+.site-custom { margin-top: 6px; font-size: 13px; color: #404040; }
 .site-items { display: grid; gap: 8px; margin: 8px 0 0; padding: 0; list-style: none; font-size: 13px; }
 .site-items li { display: flex; flex-wrap: wrap; gap: 4px 12px; }
 .site-link { color: #0000ee; text-decoration: underline; }

@@ -21,4 +21,10 @@ export default {
   "error.noBackup": () => "Ce site n'a pas de sauvegarde à restaurer.",
   "error.unknownVulnerability": () => "Cette vulnérabilité n'est pas connue.",
   "error.nobodyToNotify": () => "Aucun client à prévenir.",
+  "ticket.howTo.abuseHold.subject": () => "Pourquoi mon site est-il suspendu ?",
+  "ticket.howTo.abuseHold.text": (p) => `Tu as écrit que ${p.domain || "mon site web"} a été piraté et envoie du spam, et tu l'as suspendu. Que dois-je faire pour qu'il soit de nouveau en ligne ?`,
+  "outcome.cleanSold": () => "Nettoyage vendu",
+  "ledger.siteCleanup": (p) => `Nettoyage de ${p.site}, ${p.hours} h`,
+  "error.alreadyOffered": () => "Le client a déjà refusé cette offre.",
+  "error.alreadyReminded": () => "Le client a déjà été relancé.",
 } satisfies Dict;

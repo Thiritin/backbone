@@ -10,7 +10,9 @@ import { placeService } from "./clusters";
 const fail = (error: string): ActionResult => ({ ok: false, error });
 const KEYS = ["vcpu", "ramGb", "diskGb"] as const;
 const validSpec = (spec: Spec): boolean => KEYS.every((k) => Number.isFinite(spec[k]) && spec[k] > 0);
-const installed = (c: Cluster): boolean => !!(c.panel || c.platform);
+const COUNTS = ["databases", "ftpAccounts", "addonDomains", "subdomains"] as const;
+const validCounts = (def: PackageDef): boolean => COUNTS.every((k) => def[k] === undefined || (Number.isInteger(def[k]) && def[k]! >= 0));
+const installed =(c: Cluster): boolean => !!(c.panel || c.platform);
 
 // Adds a package to a software installation. The name is the key and cannot change later.
 export function addPackage(s: GameState, clusterId: string, def: PackageDef): ActionResult {
@@ -20,7 +22,7 @@ export function addPackage(s: GameState, clusterId: string, def: PackageDef): Ac
   if (!installed(c) || !SERVES[c.kind].includes(def.product)) return fail("error.packageProduct");
   if (!PACKAGE_NAME.test(name)) return fail("error.packageName");
   if (packageNamed(c, name)) return fail("error.packageTaken");
-  if (!validSpec(def.spec)) return fail("error.packageSpec");
+  if (!validSpec(def.spec) || !validCounts(def)) return fail("error.packageSpec");
   if (packagesOf(c).length >= PACKAGE_LIMIT) return fail("error.packageLimit");
   c.packages = [...packagesOf(c), { ...def, name }];
   return { ok: true, id: name };

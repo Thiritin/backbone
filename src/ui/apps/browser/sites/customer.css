@@ -1,0 +1,101 @@
+/* Customer sites: scheme colours, then period looks, then layouts, then blocks. */
+.csx {
+  --bg: #ffffff; --fg: #202124; --card: #f4f4f4; --line: #dddddd;
+  --accent: oklch(0.55 0.15 var(--hue)); --on-accent: #ffffff;
+  position: relative; min-height: 100%; background: var(--bg); color: var(--fg); font: 15px/1.5 Georgia, "Times New Roman", serif;
+}
+.csx.cs-scheme-dark { --bg: #15161a; --fg: #e8e8ea; --card: #23252b; --line: #3a3c44; --accent: oklch(0.7 0.14 var(--hue)); --on-accent: #111111; }
+.csx.cs-scheme-pastel { --bg: oklch(0.97 0.03 var(--hue)); --fg: #3a3340; --card: oklch(0.93 0.05 calc(var(--hue) + 40)); --line: oklch(0.85 0.06 var(--hue)); --accent: oklch(0.72 0.11 var(--hue)); }
+.csx.cs-scheme-loud { --bg: oklch(0.9 0.18 calc(var(--hue) + 180)); --fg: #000000; --card: #ffffff; --line: #000000; --accent: oklch(0.58 0.26 var(--hue)); }
+.csx .cs-sponsor { color: inherit; border-top-color: var(--line); opacity: 0.75; }
+
+.csx-head { padding: 28px 40px; background: var(--accent); color: var(--on-accent); }
+.csx-head h1 { font-size: 28px; font-weight: 700; }
+.csx .cs-body { display: flex; flex-direction: column; gap: 16px; padding: 24px 40px; }
+.csx .cs-block h2 { margin-bottom: 6px; font-size: 18px; }
+.csx .cs-block h3 { font-size: 15px; }
+.csx .cs-block ul { padding-left: 18px; }
+.csx .cs-block table { border-collapse: collapse; }
+.csx .cs-block td, .csx .cs-block th { padding: 2px 10px 2px 0; text-align: left; }
+.csx .cs-block a { color: var(--accent); text-decoration: underline; cursor: pointer; }
+.csx .cs-block button { padding: 4px 12px; border: 1px solid var(--line); background: var(--card); color: var(--fg); font: inherit; cursor: pointer; }
+.csx .cs-block input, .csx .cs-block textarea { padding: 3px 6px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); font: inherit; }
+.csx .cs-block form { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.csx .cs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+.csx .cs-grid figure { display: flex; flex-direction: column; gap: 4px; padding: 10px; background: var(--card); border: 1px solid var(--line); }
+
+/* 2005 to 2008: tiled backgrounds, Verdana and Comic Sans, bevelled boxes. */
+.csx.cs-p0 { font: 12px/1.4 Verdana, Geneva, sans-serif; background-image: repeating-linear-gradient(45deg, transparent 0 8px, oklch(0.5 0.1 var(--hue) / 0.08) 8px 16px); }
+.csx.cs-p0 .csx-head { padding: 12px 16px; border-bottom: 4px ridge var(--line); }
+.csx.cs-p0 .csx-head h1 { font: 700 24px "Comic Sans MS", "Comic Neue", cursive; text-shadow: 2px 2px 0 #00000055; }
+.csx.cs-p0 .cs-body { padding: 12px 16px; gap: 10px; }
+.csx.cs-p0 .cs-block { padding: 8px; border: 3px outset var(--line); background: var(--card); }
+.csx.cs-p0 .cs-block h2 { font: 700 14px "Comic Sans MS", "Comic Neue", cursive; color: var(--accent); }
+.csx.cs-p0 .cs-block button { border: 2px outset var(--line); }
+
+/* 2009 to 2013: glossy header, rounded widgets, Trebuchet. */
+.csx.cs-p1 { font: 14px/1.5 "Lucida Grande", "Trebuchet MS", sans-serif; }
+.csx.cs-p1 .csx-head { background: linear-gradient(oklch(0.68 0.14 var(--hue)), var(--accent)); box-shadow: inset 0 -1px 0 #00000030; }
+.csx.cs-p1 .cs-block { padding: 12px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); box-shadow: 0 1px 3px #00000020; }
+.csx.cs-p1 .cs-block button { border-radius: 4px; background: linear-gradient(#ffffff, var(--card)); }
+
+/* 2014 to 2019: flat, wide hero, Helvetica. */
+.csx.cs-p2 { font: 16px/1.6 "Helvetica Neue", Helvetica, Arial, sans-serif; }
+.csx.cs-p2 .csx-head { padding: 48px 40px; }
+.csx.cs-p2 .csx-head h1 { font-size: 40px; font-weight: 300; }
+.csx.cs-p2 .cs-block button { border: 0; background: var(--accent); color: var(--on-accent); }
+
+/* 2020 on: cards, big radii, system font. */
+.csx.cs-p3 { font: 16px/1.6 Inter, system-ui, sans-serif; }
+.csx.cs-p3 .csx-head { padding: 56px 40px; background: linear-gradient(135deg, var(--accent), oklch(0.45 0.13 calc(var(--hue) + 40))); }
+.csx.cs-p3 .csx-head h1 { font-size: 38px; letter-spacing: -0.02em; }
+.csx.cs-p3 .cs-block { padding: 20px 24px; border-radius: 16px; background: var(--card); }
+.csx.cs-p3 .cs-block button { border: 0; border-radius: 999px; padding: 6px 16px; background: var(--accent); color: var(--on-accent); }
+
+/* Layouts. */
+.csx.cs-centered .cs-body, .csx.cs-brochure .cs-body { max-width: 640px; margin: 0 auto; }
+.csx.cs-centered .csx-head, .csx.cs-hero .csx-head { text-align: center; }
+.csx.cs-sidebar .cs-body, .csx.cs-split .cs-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
+.csx.cs-sidebar .cs-block:nth-child(odd) { grid-column: 1; }
+.csx.cs-sidebar .cs-block:nth-child(even), .csx.cs-split .cs-block { grid-column: 2; }
+.csx.cs-split .cs-block:first-child { grid-column: 1; grid-row: 1 / span 9; }
+.csx.cs-frames { display: grid; grid-template-columns: 160px minmax(0, 1fr); grid-template-rows: auto 1fr; }
+.csx.cs-frames .csx-head { grid-column: 1 / -1; }
+.csx.cs-frames .cs-body { grid-column: 1 / -1; border-left: 160px solid var(--card); }
+.csx.cs-classic .cs-body { padding-top: 8px; }
+.csx.cs-corporate .csx-head { display: flex; align-items: center; justify-content: space-between; padding-top: 20px; padding-bottom: 20px; }
+.csx.cs-hero .csx-head { padding-top: 90px; padding-bottom: 90px; }
+@media (max-width: 560px) {
+  .csx.cs-sidebar .cs-body, .csx.cs-split .cs-body { display: flex; }
+  .csx.cs-frames .cs-body { border-left: 0; }
+}
+
+/* Blocks. */
+.csx .cs-b-marquee { overflow: hidden; white-space: nowrap; background: #000080; color: #ffff00; }
+.csx .cs-b-marquee span { display: inline-block; padding-left: 100%; animation: cs-marquee 14s linear infinite; }
+@keyframes cs-marquee { to { transform: translateX(-100%); } }
+.csx .cs-b-construction { padding: 8px; background: repeating-linear-gradient(-45deg, #ffcc00 0 14px, #111111 14px 28px); }
+.csx .cs-b-construction p { display: inline-block; padding: 2px 8px; background: #ffcc00; color: #000000; font-weight: 700; }
+.csx .cs-counter { display: inline-block; padding: 2px 6px; background: #000000; color: #33ff33; font-family: "Courier New", monospace; }
+.csx .cs-b-bestViewed, .csx .cs-b-midi { font-size: 10px; text-align: center; }
+.csx .cs-b-photos figure, .csx .cs-b-productGrid figure { justify-content: flex-end; min-height: 110px; background: linear-gradient(160deg, oklch(0.8 0.08 var(--ph)), oklch(0.55 0.1 calc(var(--ph) + 30))); }
+.csx .cs-b-photos figcaption, .csx .cs-b-productGrid b { color: #ffffff; text-shadow: 0 1px 2px #000000aa; }
+.csx .cs-b-tagCloud a { margin-right: 6px; }
+.csx .cs-b-hero { padding: 40px 24px; background: oklch(0.85 0.06 var(--hue)); color: #111111; text-align: center; }
+.csx .cs-b-hero h2 { font-size: 30px; }
+.csx .cs-overlay { position: sticky; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; background: var(--card); border: 1px solid var(--line); box-shadow: 0 4px 16px #00000030; }
+.csx .cs-b-cookieBanner { bottom: 0; order: 99; }
+.csx .cs-b-chatBubble { bottom: 12px; order: 100; align-self: flex-end; max-width: 280px; border-radius: 16px 16px 4px 16px; }
+.csx .cs-b-cookieWall { top: 0; order: -1; flex-direction: column; text-align: center; }
+.csx .cs-b-testimonials blockquote { font-style: italic; }
+.csx .cs-b-testimonials cite { display: block; margin-top: 4px; font-size: 13px; }
+.csx .cs-badge { display: inline-flex; margin-right: 6px; font: 11px Verdana, sans-serif; }
+.csx .cs-badge i { padding: 1px 6px; background: #555555; color: #ffffff; font-style: normal; border-radius: 3px 0 0 3px; }
+.csx .cs-badge b { padding: 1px 6px; background: #44cc11; color: #ffffff; border-radius: 0 3px 3px 0; }
+.csx .cs-map { position: relative; height: 140px; margin-bottom: 6px; background: repeating-linear-gradient(0deg, #e8e4d8 0 22px, #ffffff 22px 26px), #e8e4d8; border: 1px solid var(--line); }
+.csx .cs-map::after { content: ""; position: absolute; top: 40%; left: var(--px); width: 14px; height: 14px; border-radius: 50% 50% 50% 0; background: #d93025; transform: rotate(-45deg); }
+.csx .cs-b-sale { padding: 10px; background: #d93025; color: #ffffff; font-weight: 700; text-align: center; }
+.csx .cs-b-clientLogos p { display: flex; flex-wrap: wrap; gap: 18px; opacity: 0.7; letter-spacing: 0.08em; text-transform: uppercase; }
+.csx .cs-b-handshake figure { display: flex; align-items: flex-end; height: 160px; padding: 10px; background: linear-gradient(120deg, #c9d6df, #52616b); color: #ffffff; }
+.csx .cs-b-appBadges a { display: inline-block; margin-right: 8px; padding: 6px 12px; border-radius: 8px; background: #000000; color: #ffffff; text-decoration: none; }
+.csx .cs-b-letsTalk button { font-size: 18px; }

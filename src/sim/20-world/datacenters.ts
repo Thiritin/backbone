@@ -217,9 +217,12 @@ export const RETENTION_PROVIDERS = ["equinox", "digitalreality", "interaction", 
 // Shares, cages and suites cost a multiple of one position, by size; a share of size n is 1/n of a rack.
 const MULTIPLIERS: Record<RentedSpace, Record<number, number>> = { share: { 8: 0.2, 4: 0.35, 2: 0.6, 1: 1.1 }, cage: { 4: 3.4, 8: 6.4, 16: 12 }, suite: { 20: 15, 40: 28 } };
 
-export function spacePrice(dc: Datacenter, space: RentedSpace, positions: number): number {
-  return Math.round(dc.positionPrice * (MULTIPLIERS[space][positions] ?? positions));
+// prices is GameState.providerPrices; without it the list price applies.
+export function spacePrice(dc: Datacenter, space: RentedSpace, positions: number, prices?: Record<string, number>): number {
+  return Math.round(dc.positionPrice * (prices?.[dc.provider] ?? 1) * (MULTIPLIERS[space][positions] ?? positions));
 }
+// A cross-connect's one-off setup fee, two months of its monthly price.
+export const crossConnectSetup = (dc: Datacenter): number => 2 * dc.crossConnect;
 
 // Extra power on a provided share: steps of 0.25 kW up to the share's base limit again, billed monthly with the rent.
 export const EXTRA_STEP_KW = 0.25;

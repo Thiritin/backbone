@@ -7,7 +7,8 @@ import { fairById, fairCost, fairStart, FAIRS, tradeFairBonus, upcomingFairs } f
 import { leadsThisMonth } from "../src/sim/80-business/marketing";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { bookFair } from "../src/sim/90-actions/marketing";
-import { fire, hire } from "../src/sim/90-actions/staff";
+import { fire } from "../src/sim/90-actions/staff";
+import { hire } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 
 const runTo = (s: GameState, hour: number, events: SimEvent[] = []) => { while (s.hour < hour) events.push(...tick(s)); };

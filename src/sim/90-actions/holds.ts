@@ -28,7 +28,10 @@ export function suspendService(s: GameState, serviceId: string, reason: HoldReas
   }
   if (first && !(reason === "abuse" && c.shady)) {
     bump(c, -SUSPEND_HAPPINESS[profileStats(c.profile).budget]);
-    createTicket(s, c, "billing").topic = "suspended";
+    // The abuse notice names the defaced site, so its owner writes about the hack instead of an invoice.
+    if (reason === "abuse" && s.sites.defaced.includes(v.id)) {
+      if (!s.tickets.some((t) => t.serviceId === v.id && t.kind === "howTo" && t.topic === "hacked" && !isFinal(t))) createTicket(s, c, "howTo", v.id, "abuseHold");
+    } else createTicket(s, c, "billing").topic = "suspended";
   }
   return { ok: true, id: serviceId };
 }

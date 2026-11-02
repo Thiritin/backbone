@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { t } from "../../../../i18n/en";
-import { euroPrice } from "../../../../sim/00-core/money";
 import { formatClock } from "../../../../sim/00-core/time";
 import type { GameState } from "../../../../sim/50-state";
 import type { Cluster } from "../../../../sim/60-infra/cluster";
@@ -11,13 +10,13 @@ import { CHANNELS, channelOf } from "../../../../sim/60-infra/channel";
 import { setChannel } from "../../../../sim/90-actions/software";
 import { setOversell } from "../../../../sim/90-actions/oversell";
 import { tiersOf } from "../../../../sim/10-catalog/licence-tiers";
-import { accountsOn, isLicensed, licenceExpired, panelMachine, panelStatus, tierOf, tiersOnSale, trialOf } from "../../../../sim/60-infra/licence";
-import { setLicenceTier } from "../../../../sim/90-actions/licence";
+import { accountsOn, isLicensed, licenceExpired, panelMachine, panelStatus, tierOf, trialOf } from "../../../../sim/60-infra/licence";
 import { installShop } from "../../../../sim/90-actions/shop";
 import { shopById, SHOPS, type ShopId } from "../../../../sim/10-catalog/shops";
 import { shopOnSale } from "../../../../sim/10-catalog/shop-licences";
 import { deskById, deskReady, DESKS, type DeskId } from "../../../../sim/10-catalog/desks";
 import { installDesk, removeDesk } from "../../../../sim/90-actions/desk-install";
+import { DomainRecords } from "../sites/desks/DomainRecords";
 import { ram } from "../../hw";
 import { Facts, type Fact } from "./PanelBase";
 import { usePageAct } from "../pageAct";
@@ -72,12 +71,11 @@ export function ChannelPicker({ c }: { c: Cluster }) {
 export const LicenceBanner = ({ game, c }: { game: GameState; c: Cluster }) =>
   tiersOf(c.panel).length > 0 && licenceExpired(game, c) ? <p className="cx-banner bad" role="alert">{t("error.licenceExpired")}</p> : null;
 
-// Edition, accounts against the cap, expiry and the editions to switch to.
-export function LicenceTiers({ game, c }: { game: GameState; c: Cluster }) {
-  const act = usePageAct(), tier = tierOf(game, c);
+// Edition, accounts against the cap and expiry of the key the host holds; editions are bought on the vendor site.
+export function LicenceFacts({ game, c }: { game: GameState; c: Cluster }) {
+  const tier = tierOf(game, c);
   if (!tier) return null;
   const status = panelStatus(game, c), machine = panelMachine(c), trial = machine && c.panel ? trialOf(game, machine, c.panel) : undefined;
-  const fee = (x: typeof tier) => t(x.kind === "account" ? "host.perAccount" : "host.perMonth", { fee: euroPrice(x.fee) });
   const facts: Fact[] = [
     { label: t("host.edition"), value: tier.name },
     { label: t("host.accounts"), value: tier.cap === null ? t("host.unlimited", { n: accountsOn(game, c) }) : t("host.of", { n: accountsOn(game, c), cap: tier.cap }), num: true },
@@ -87,9 +85,6 @@ export function LicenceTiers({ game, c }: { game: GameState; c: Cluster }) {
     <>
       <LicenceBanner game={game} c={c} />
       <Facts facts={facts} />
-      <div className="cx-tools">
-        {tiersOf(c.panel).filter((x) => x.id === tier.id || tiersOnSale(c.panel, game.hour).includes(x)).map((x) => <button key={x.id} className="cx-chip" aria-pressed={x.id === tier.id && !licenceExpired(game, c)} onClick={() => act(setLicenceTier, c.id, x.id)}>{`${x.name} · ${fee(x)}`}</button>)}
-      </div>
     </>
   );
 }
@@ -133,11 +128,12 @@ export function DeskInstall({ game, c }: { game: GameState; c: Cluster }) {
         <button className="cx-btn primary" onClick={() => act(installDesk, c.id, id)}>{t("desk-sites.host.install", { name: deskById(id)!.name })}</button>
         {here && <button className="cx-btn" onClick={() => act(removeDesk)}>{t("desk-sites.host.remove")}</button>}
       </div>
+      {here && <DomainRecords game={game} />}
     </>
   );
 }
 
-// What the software page of a panel or game host adds under its actions.
+// What the software page of a panel or game host adds under its actions; web panels set booking limits in the Locations app.
 export function HostSettings({ game, c }: { game: GameState; c: Cluster }) {
-  return oversold(c) ? <div className="cx-host-settings"><LicenceBanner game={game} c={c} />{c.kind === "panel" && <ChannelPicker c={c} />}<Oversell game={game} c={c} /><ShopInstall game={game} c={c} /><DeskInstall game={game} c={c} /></div> : null;
+  return oversold(c) ? <div className="cx-host-settings"><LicenceBanner game={game} c={c} />{c.kind === "game" && <Oversell game={game} c={c} />}<ShopInstall game={game} c={c} /><DeskInstall game={game} c={c} /></div> : null;
 }

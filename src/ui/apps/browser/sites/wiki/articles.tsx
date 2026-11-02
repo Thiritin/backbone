@@ -234,6 +234,9 @@ export const ARTICLES: Article[] = [
       </table>
       <h2>{R(go, "browser-sites-2.wikiDomainName8")}</h2>
       <p>{R(go, "browser-sites-2.wikiDomainName9")}</p>
+      <h2>{R(go, "browser-sites-2.wikiDomainName10")}</h2>
+      <p>{R(go, "browser-sites-2.wikiDomainName11")}</p>
+      <p>{R(go, "browser-sites-2.wikiDomainName12")}</p>
     </>,
   },
   {

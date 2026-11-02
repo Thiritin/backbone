@@ -35,6 +35,8 @@ export default {
   "vendor-shop.endsOn": (p) => `Termina el ${p.date}`,
   "vendor-shop.expired": () => "Caducada",
   "vendor-shop.cancel": () => "Cancelar",
+  "vendor-shop.editionChange": () => "(cambio de edición)",
+  "vendor-shop.changeEdition": () => "Cambiar edición",
   "error.notForSale": () => "Esta licencia no está a la venta.",
   "error.notInCart": () => "Este artículo no está en tu carrito.",
   "error.cartEmpty": () => "Tu carrito está vacío.",

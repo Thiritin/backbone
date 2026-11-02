@@ -1,0 +1,26 @@
+import type { Dict } from "../lang";
+
+export default {
+  "providers.digitalreality.navSites": () => "Standorte",
+  "providers.digitalreality.navOrder": () => "Colocation",
+  "providers.digitalreality.navPortal": () => "Kundenportal",
+  "providers.digitalreality.investors": () => "Investoren",
+  "providers.digitalreality.careers": () => "Karriere",
+  "providers.digitalreality.ticker": () => "NYSE: DRLT",
+  "providers.digitalreality.heroEarly": () => "Turn-Key-Reality-Lösungen für Unternehmen",
+  "providers.digitalreality.heroLate": () => "Die Plattform, auf der Daten zu Hause sind",
+  "providers.digitalreality.text": (p) => `Eigens gebaute Rechenzentrumsflächen in ${p.cities} Metropolen, im Besitz und Betrieb eines Immobilien-Investmentfonds.`,
+  "providers.digitalreality.cta": () => "Standorte entdecken",
+  "providers.digitalreality.statSites": () => "Rechenzentren",
+  "providers.digitalreality.statMetros": () => "Metropolen",
+  "providers.digitalreality.statCarriers": () => "Carrier-Anbindungen",
+  "providers.digitalreality.solutions": () => "Lösungen",
+  "providers.digitalreality.sol1": () => "Turn-Key Reality",
+  "providers.digitalreality.sol1Text": () => "Beziehen Sie fertige Flächen mit Strom und Kühlung auf lange Laufzeit.",
+  "providers.digitalreality.sol2": () => "Colocation",
+  "providers.digitalreality.sol2Text": () => "Mieten Sie Racks und Cages monatlich in einer gemeinsamen Halle.",
+  "providers.digitalreality.sol3": () => "Interconnection",
+  "providers.digitalreality.sol3Text": () => "Erreichen Sie Carrier und Exchanges im Gebäude über einen Cross-Connect.",
+  "providers.digitalreality.markets": () => "Märkte",
+  "providers.digitalreality.footer": (p) => `© ${p.year} Digital Reality Trust, Inc.`,
+} satisfies Dict;

@@ -2,10 +2,11 @@
 // site shares.
 import { eraAt, type LicenseKind } from "../10-catalog/server-os";
 import { licenceIndex } from "../10-catalog/licence-tiers";
+import { cents } from "../45-billing/billing";
 import { yearOf } from "../00-core/time";
 import type { GameState, Licence } from "../50-state";
 import { nextMajor, versionAt, versionsOf } from "../10-catalog/software-versions";
-import { issueKey, isLicensed, productOf, tiersOnSale, yearAfter } from "../60-infra/licence";
+import { accountsOn, issueKey, isLicensed, keyTiers, panelMachine, productOf, tiersOnSale, updateKey, yearAfter } from "../60-infra/licence";
 import { deliverMail } from "../40-support/tickets";
 import type { Payable } from "../46-finance/payables";
 
@@ -17,13 +18,15 @@ export type CartLine = GameState["cart"][number];
 export const hostOf = (product: string): string | undefined => productOf(product)?.site?.host;
 export const vendorName = (product: string): string => productOf(product)?.name ?? product;
 
+const listed = (product: string, fee: number, hour: number): number => Math.round(fee * licenceIndex(product, yearOf(hour)) * 100) / 100;
+
 // What a product's site sells at the hour: the editions of its licensing era, and one licence at the era's price when the
 // era sells keys for a major or the product has no editions.
 export function offers(product: string, hour: number): Offer[] {
   const p = productOf(product);
   const era = p && isLicensed(product) ? eraAt(p, hour) : undefined;
   if (era?.closed) return [];
-  const at = (fee: number) => Math.round(fee * licenceIndex(product, yearOf(hour)) * 100) / 100;
+  const at = (fee: number) => listed(product, fee, hour);
   const tiers: Offer[] = tiersOnSale(product, hour).map((x) => ({ edition: x.id, fee: at(x.fee), kind: x.kind }));
   const own = era && era.kind !== "free" && (era.kind === "once" || !tiers.length) ? [{ edition: null, fee: at(era.fee), kind: era.kind, period: era.period }] : [];
   return [...tiers, ...own];
@@ -52,15 +55,33 @@ export function upgradeOffers(s: GameState, product: string): UpgradeOffer[] {
     return to && o ? [{ from, to: to.major, ...o }] : [];
   });
 }
+// What changing the edition of a key costs at checkout: nothing for a term key, which bills the new fee from its next renewal, and the
+// price difference for a one-time key, never a refund. Undefined while the key or the edition is not on offer.
+export function editionChange(s: GameState, keyId: string, edition: string | null): Offer | undefined {
+  const k = s.licenses.find((x) => x.id === keyId), to = offerOf({ product: k?.product ?? "", edition }, s.hour);
+  if (!k || !to || edition === k.edition || !keyTiers(k.product).some((x) => x.id === edition)) return undefined;
+  if (k.covers.kind === "term") return { ...to, fee: 0 };
+  const was = keyTiers(k.product).find((x) => x.id === k.edition)?.fee ?? 0;
+  return { ...to, fee: Math.max(0, cents(to.fee - listed(k.product, was, s.hour))), kind: "once" };
+}
+// Why the key cannot take the edition: the host it is assigned to serves more accounts than the edition allows.
+export function editionBlock(s: GameState, keyId: string, edition: string | null): string | null {
+  const k = s.licenses.find((x) => x.id === keyId), tier = keyTiers(k?.product ?? "").find((x) => x.id === edition);
+  const c = s.clusters.find((x) => x.panel === k?.product && panelMachine(x) === k?.machineId);
+  return tier && c && tier.cap !== null && accountsOn(s, c) > tier.cap ? "error.licenceCap" : null;
+}
+
 // What a cart line sells now, an upgrade at its upgrade price; undefined once it is no longer sold.
-export const lineOffer = (s: GameState, line: Pick<CartLine, "product" | "edition" | "from">): Offer | undefined => {
+export const lineOffer = (s: GameState, line: Pick<CartLine, "product" | "edition" | "from" | "replaces">): Offer | undefined => {
+  if (line.replaces) return editionChange(s, line.replaces, line.edition);
   if (!line.from) return offerOf(line, s.hour);
   const u = upgradeOffers(s, line.product).find((o) => o.from === line.from);
   return u && { edition: null, fee: u.fee, kind: "once" };
 };
 
 // The major a cart line's key will cover: the upgrade's target, or the release on sale for a one-time key; undefined for a term key.
-export const lineMajor = (s: GameState, line: Pick<CartLine, "product" | "edition" | "from">): string | undefined => {
+export const lineMajor = (s: GameState, line: Pick<CartLine, "product" | "edition" | "from" | "replaces">): string | undefined => {
+  if (line.replaces) return undefined;
   if (line.from) return upgradeOffers(s, line.product).find((u) => u.from === line.from)?.to;
   return lineOffer(s, line)?.kind === "once" ? versionAt(line.product, s.hour)?.major : undefined;
 };
@@ -71,8 +92,15 @@ export const orderKeys = (s: GameState, orderId: string): Licence[] => s.license
 export type KeyLine = NonNullable<Payable["keys"]>["lines"][number];
 
 // Issues an unassigned key per licence of the order and sends the order email; card says the card paid rather than a transfer.
+// An edition change turns the key it replaces in place, so it stays on its machine.
 export function sendKeys(s: GameState, vendor: string, order: string, lines: KeyLine[], total: number, card: boolean): void {
-  lines.forEach((l) => { for (let i = 0; i < l.qty; i++) issueKey(s, l.product, l.edition, order, l.to); });
+  lines.forEach((l) => {
+    const k = l.replaces ? s.licenses.find((x) => x.id === l.replaces) : undefined, tier = keyTiers(l.product).find((x) => x.id === l.edition);
+    if (k && tier) {
+      updateKey(s, k.id, { edition: tier.id, kind: tier.kind });
+      deliverMail(s, vendor, "licenceEditionSwitched", { name: vendor, key: k.key, to: tier.name });
+    } else for (let i = 0; i < l.qty; i++) issueKey(s, l.product, l.edition, order, l.to);
+  });
   deliverMail(s, vendor, ORDER, { order, total, card: card ? 1 : 0 });
 }
 

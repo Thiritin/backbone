@@ -1,6 +1,6 @@
-import { ArrowRightLeft, Circle, Code, KeyRound, ListChecks, Lock, LogOut, Network, Package, RefreshCw, ScrollText, Search, Server, UserPlus, Users, type LucideIcon } from "lucide-react";
+import { Archive, ArrowRightLeft, Blocks, Circle, Code, Download, KeyRound, ListChecks, Lock, LogOut, Network, Package, RefreshCw, ScrollText, Search, Server, UserPlus, Users, type LucideIcon } from "lucide-react";
 import { useState } from "react";
-import { Backups, eraAt, looks, Facts, LoginForm, Nodes, RowsTable, Tiles, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
+import { eraAt, looks, Facts, LoginForm, Nodes, RowsTable, Tiles, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
 import { t } from "../../../../../i18n/en";
 import { yearOf } from "../../../../../sim/00-core/time";
 import { TRANSFER_FROM_YEAR } from "../../../../../sim/60-infra/transfers";
@@ -14,13 +14,16 @@ import { AutoSsl } from "./AutoSsl";
 import { PhpProfiles } from "./EasyApache";
 import { TransferTool } from "./TransferTool";
 import { ServiceManager } from "./ServiceManager";
+import { ComponentsPage } from "../ComponentsPage";
+import { BackupManager } from "../BackupManager";
+import { hasUpdates, UpdatesPage } from "../UpdatesPage";
 import "./cpanic.css";
 
 // docs/design/software.md, section 10: one look per WHM generation, ids as in UI_LOOKS.
 const LOOKS = looks({ x3: 2005, paperLamp: 2014, jupitar: 2021 });
 const ICON: Partial<Record<Tab, LucideIcon>> = {
-  objects: Users, nodes: Network, create: UserPlus, packages: Package, transfer: ArrowRightLeft, autossl: Lock, software: RefreshCw,
-  easyapache: Code, services: Server, tasks: ListChecks, logs: ScrollText, licence: KeyRound,
+  objects: Users, nodes: Network, create: UserPlus, packages: Package, transfer: ArrowRightLeft, autossl: Lock, software: RefreshCw, updates: Download,
+  easyapache: Code, components: Blocks, services: Server, backup: Archive, tasks: ListChecks, logs: ScrollText, licence: KeyRound,
 };
 const TabIcon = ({ id }: { id: Tab }) => { const I = ICON[id] ?? Circle; return <I size={14} aria-hidden />; };
 
@@ -52,8 +55,10 @@ export function CPanic(p: PanelProps) {
     [t("pkg.packages"), [["packages", t("pkg.addPackage")]]],
     ...(yearOf(p.game.hour) >= TRANSFER_FROM_YEAR ? [[t("web.xfer.group"), [["transfer", x3 ? t("web.xfer.copy") : t("web.xfer.menu")]]] as [string, [Tab, string][]]] : []),
     ...(yearOf(p.game.hour) >= AUTOSSL_FROM ? [[t("web.ssl.group"), [["autossl", t("web.ssl.menu")]]] as [string, [Tab, string][]]] : []),
-    [t("browser-consoles-1.cpServerConfig"), [["software", t("browser-consoles-1.cpSoftwareUpdates")], ["easyapache", x3 ? t("web.ea.menu3") : t("web.ea.menu4")]]],
-    ...(pages.length ? [[t("readouts.serverStatus"), [["services", t("readouts.services")] as [Tab, string], ...pages.map((g) => [g.id, g.label] as [Tab, string])]] as [string, [Tab, string][]]] : []),
+    [t("browser-consoles-1.cpServerConfig"), [["software", t("browser-consoles-1.cpSoftwareUpdates")], ...(hasUpdates(p.game, p.c) ? [["updates", t("panel-updates.cpTitle")] as [Tab, string]] : []), ["easyapache", x3 ? t("web.ea.menu3") : t("web.ea.menu4")], ["components", t("panel-services.cpMenu")]]],
+    [t("panel-services.cpServiceConfig"), [["services", t("readouts.services")]]],
+    ...(p.f.backups ? [[t("panel-backup.tab.cpanic"), [["backup", t("panel-backup.tab.cpanic")]]] as [string, [Tab, string][]]] : []),
+    ...(pages.length ? [[t("readouts.serverStatus"), [...pages.map((g) => [g.id, g.label] as [Tab, string])]] as [string, [Tab, string][]]] : []),
   ];
   const [group, title] = menu.flatMap(([g, items]) => items.map(([id, label]) => [g, label, id])).find(([, , id]) => id === tab) ?? [];
   const find = <label className="cp-find"><Search size={13} aria-hidden /><input placeholder={t("browser-consoles-1.find")} value={q} onChange={(e) => setQ(e.target.value)} /></label>;
@@ -92,6 +97,8 @@ export function CPanic(p: PanelProps) {
           {tab === "autossl" && <AutoSsl game={p.game} c={p.c} />}
           {tab === "easyapache" && <PhpProfiles game={p.game} c={p.c} x3={x3} />}
           {tab === "services" && <ServiceManager game={p.game} c={p.c} />}
+          {tab === "components" && <ComponentsPage game={p.game} c={p.c} />}
+          {tab === "backup" && <BackupManager game={p.game} c={p.c} />}
           {pages.find((g) => g.id === tab)?.body}
           {tab === "software" && (
             <>
@@ -100,9 +107,10 @@ export function CPanic(p: PanelProps) {
               <h2>{t("browser-consoles-1.software")}</h2>
               {sw.note && <p className="cx-note">{sw.note}</p>}
               <Tiles actions={sw.actions} />
-              {sw.panel}{p.f.backups && <Backups game={p.game} c={p.c} />}
+              {sw.panel}
             </>
           )}
+          {tab === "updates" && <UpdatesPage game={p.game} c={p.c} />}
         </main>
       </div>
     </div>

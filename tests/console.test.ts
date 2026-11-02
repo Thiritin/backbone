@@ -8,12 +8,11 @@ import { BOOT_HOURS, booting, deviceHealth, working } from "../src/sim/60-infra/
 import { tick } from "../src/sim/88-tick/tick";
 import { bootFromUsb, enterSetup, eraseDisk, exitSetup, installCase, installOs, setMedia } from "../src/sim/90-actions/console";
 import { createVm, PANEL_VM_SIZE } from "../src/sim/90-actions/clusters";
-import { stopWorkload } from "../src/sim/90-actions/vms";
 import { installSoftware, softwareOn } from "../src/sim/90-actions/software";
 import { setPower, setRaid } from "../src/sim/90-actions/hardware";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { nowHours } from "../src/sim/00-core/time";
-import { readyGame, isoOf, withImage, withNetwork, withStick } from "./fixtures";
+import { readyGame, isoOf, withImage, withNetwork, withStick, stopVm } from "./fixtures";
 
 // readyGame: dev3 is a G1 Dwell server in rack2, cabled and up.
 const dev = (s: GameState, id: string) => s.devices.find((d) => d.id === id)!;
@@ -244,7 +243,7 @@ describe("VM console", () => {
     expect(vmById(deserialize(serialize(s)), vm)?.os).toMatchObject({ id: "lunix" });
     tick(s);
     expect(machineScreen(s, vm)).toEqual({ kind: "login", os: "lunix" });
-    ok(stopWorkload(s, vm));
+    ok(stopVm(s, vm));
     withImage(s, "lunix");
     ok(setMedia(s, vm, isoOf(s, "lunix")));
     expect(err(installOs(s, vm, "lunix"))).toBe("error.alreadyStopped");
