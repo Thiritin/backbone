@@ -1,6 +1,7 @@
 import { chance, rand } from "../00-core/rng";
 import { addHoursOn } from "../00-core/workhours";
 import { CLEAN_MINUTES } from "../10-catalog/apps";
+import { attention, segmentOf, SENSITIVITY, type Segment } from "../10-catalog/attention";
 import { PRODUCTS } from "../10-catalog/products";
 import { PROFILES, type Budget, type Profile as ProfileStats } from "../10-catalog/economy";
 import { activeServices, type Customer, type Product, type Profile, type Service, type TerminateReason } from "../30-customers/customers";
@@ -173,12 +174,22 @@ export const bump = (c: Customer, delta: number): void => {
   c.happiness = next;
 };
 
-// economy.md, Usage: per hour a slowed service costs SLOW_PENALTY × the share of performance lost, and some write in.
+// economy.md, Usage: per hour a slowed service costs SLOW_PENALTY × the share of performance lost × who is looking × how long it
+// has dragged on, and some write in. Business customers at full attention pay the base rate.
 export const SLOW_PENALTY = 0.1;
 export const SLOW_TICKET_CHANCE = 0.1;
+export const SLOW_RAMP_HOURS = 24;
+export const SLOW_RAMP_MAX = 3;
+export const slowWeight = (seg: Segment, hour: number, hours: number): number =>
+  attention(seg, hour) * Math.min(1, SENSITIVITY[seg] / SENSITIVITY.business) * (1 + ((SLOW_RAMP_MAX - 1) * Math.min(hours, SLOW_RAMP_HOURS)) / SLOW_RAMP_HOURS);
 export function slowed(s: GameState, c: Customer, serviceId: string, lost: number): void {
-  bump(c, -SLOW_PENALTY * lost);
-  if (s.tickets.some((t) => t.serviceId === serviceId && !isFinal(t)) || !chance(s.rng, SLOW_TICKET_CHANCE * lost)) return;
+  const v = s.services.find((x) => x.id === serviceId);
+  if (!v) return;
+  const run = v.slowRun && v.slowRun.last >= s.hour - 1 ? v.slowRun : { since: s.hour, last: s.hour };
+  s.services = s.services.map((x) => (x === v ? { ...v, slowRun: { since: run.since, last: s.hour } } : x));
+  const felt = lost * slowWeight(segmentOf(c.profile, v.product), s.hour, s.hour - run.since);
+  bump(c, -SLOW_PENALTY * felt);
+  if (s.tickets.some((t) => t.serviceId === serviceId && !isFinal(t)) || !chance(s.rng, SLOW_TICKET_CHANCE * felt)) return;
   createTicket(s, c, "outage", serviceId).topic = "slow";
 }
 

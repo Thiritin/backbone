@@ -1,13 +1,15 @@
 import { describe, expect, it } from "vitest";
-import type { GameState } from "../src/sim/50-state";
+import { device, type GameState } from "../src/sim/50-state";
 import { releaseOf } from "../src/sim/60-infra/fs";
 import { addressOf, ifaceOf, macOf } from "../src/sim/60-infra/lan";
 import { linkStatus } from "../src/sim/60-infra/status";
 import { complete, runCommand, runLine, type Session } from "../src/sim/60-infra/terminal";
+import { createVm } from "../src/sim/90-actions/clusters";
 import { setIface } from "../src/sim/90-actions/lan";
+import { setRemoteAccess } from "../src/sim/90-actions/routers";
 import { reboot } from "../src/sim/90-actions/hardware";
 import type { Call } from "../src/sim/90-actions/index";
-import { readyGame, withNames } from "./fixtures";
+import { bootedMachine, hypervisor, newGame, readyGame, routerOnLine, withNames } from "./fixtures";
 import { dhclient, ifconfig, ipAddr, ipCommand, ipRoute, maskOf, nicNames, parseInterfaces, prefixOf, renderInterfaces, type NetView } from "../src/sim/60-infra/ifaces";
 
 const STATIC = { mode: "static" as const, ip: "192.168.178.10", prefix: 24, gw: "192.168.178.1", dns: "192.168.178.1" };
@@ -168,5 +170,25 @@ describe("names and reach from the desk", () => {
     const s = readyGame(3);
     setIface(s, "dev3", { mode: "static", ip: "192.168.178.5", prefix: 24, gw: "192.168.178.254" });
     expect(desk(s, "ssh 192.168.178.5").output).toEqual(["ssh: connect to host 192.168.178.5 port 22: Connection timed out"]);
+  });
+
+  // The Fritz!Bocks 5050 on the line, a Sysko Edge router S behind it, a Catalust switch and hypervisor node001 with a VM.
+  it("resolves a server's name through the own router that leased its address, as it does its VMs'", () => {
+    const s = routerOnLine(newGame(5));
+    s.homeLine = { id: "dsl-16", next: null };
+    s.devices.push(device("rtr", "edge-s", "Sysko", "rack2", 20, null, "rtr", 3000), device("sw", "sw-8", "Sysko", "rack2", 18, null, "sw", 60),
+      device("srv", "g1-compute", "Dwell", "rack2", 1, null, "srv", 2500));
+    s.devices.find((d) => d.id === "srv")!.hostname = "node001";
+    const cable = (a: string, ap: number, b: string, bp: number) => s.cables.push({ id: `cab-${a}`, a: { device: a, port: ap }, b: { device: b, port: bp }, kind: "copper", color: null });
+    cable("rtr", 0, "dev5", 0);
+    cable("sw", 0, "rtr", 1);
+    cable("srv", 0, "sw", 1);
+    const made = createVm(s, hypervisor(s, ["srv"]), { vcpu: 1, ramGb: 1, diskGb: 10 }), vm = made.ok ? made.id! : "";
+    bootedMachine(s, vm);
+    expect(desk(s, "ssh node001").output).toEqual(["ssh: connect to host node001 port 22: Connection timed out"]);
+    setRemoteAccess(s, "rtr", true);
+    expect(desk(s, "ssh vm001").session).toEqual({ host: "vm001", deviceId: vm });
+    expect(desk(s, "ssh node001").session).toEqual({ host: "node001", deviceId: "srv" });
+    expect(desk(s, "ssh node001.fritz.bocks").output).toEqual(["ssh: Could not resolve hostname node001.fritz.bocks: Name or service not known"]);
   });
 });
