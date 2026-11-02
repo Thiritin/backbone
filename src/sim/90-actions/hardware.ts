@@ -12,7 +12,7 @@ import { chassisPrice, partPrice, partsPrice, presetPrice } from "../10-catalog/
 import { BASEMENT, DATACENTERS, datacenterById, EXTRA_POWER_LEAD_DAYS, EXTRA_STEP_KW, FLAT_CONTRACTS, HOME_LINES, maxExtraKw, LEAD_DAYS, nextAz, NOTICE_MONTHS, RACK_MODELS, rackUnits, RETENTION_PROVIDERS, SHARE_RACKS, SPACE_SIZES, spacePrice, crossConnectSetup } from "../20-world/datacenters";
 import { crossConnectTargets, targetName } from "../10-catalog/network";
 import { deviceDefaults, type Billing, type BondMode, type Component, type Device, type End, type GameState, type LedgerEntry, type RackModel, type RaidLevel, type RebuildRate } from "../50-state";
-import { arrayLost, bootHours, connectError, drivesOf, energized, fits, flatOffer, freePositions, holdsData, nodesOf, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, isPlugged, locationOf, moveCost, psusOf, deviceValue, resaleValue, spotOf, travelCost, osInstalling, takesShutdown } from "../60-infra/status";
+import { arrayLost, bootHours, connectError, drivesOf, energized, fits, flatOffer, freePositions, holdsData, nodesOf, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, isPlugged, locationOf, moveCost, parcelCost, psusOf, deviceValue, resaleValue, spotOf, travelCost, osInstalling, takesShutdown } from "../60-infra/status";
 import { atFront, BMC_RESET_HOURS, bootUp, halt, hardReboot, plugCords, pullPlug, pushLog, rollStuck, type FrontOp } from "../60-infra/power";
 import { hasPdu, pduOf } from "../60-infra/pdu";
 import { kvmPower, lockoutRoll } from "../60-infra/oob";
@@ -521,8 +521,8 @@ export function unmountDevice(s: GameState, deviceId: string, how: How | boolean
   return { ok: true };
 }
 
-// Ships stored units from one zone to another at the cost and time of a rack move, once per shipment.
-export function shipStock(s: GameState, deviceIds: string[], toLocationId: string): ActionResult {
+// Ships stored units from one zone to another by courier, or the player drives them over and stays there.
+export function shipStock(s: GameState, deviceIds: string[], toLocationId: string, self = false): ActionResult {
   const units = [...new Set(deviceIds)].map((id) => s.devices.find((d) => d.id === id));
   if (!units.length) return fail("error.emptyShipment");
   if (units.some((d) => !d)) return fail("error.unknownDevice");
@@ -534,10 +534,20 @@ export function shipStock(s: GameState, deviceIds: string[], toLocationId: strin
   const to = s.locations.find((l) => l.id === toLocationId);
   if (!to) return fail("error.unknownLocation");
   if (to.id === from) return fail("error.sameZone");
-  const trip = travelCost(s, from, to.id);
+  let trip = parcelCost(s, from, to.id, units.length);
+  if (self) {
+    if (!present(s, from)) return fail("error.notThere");
+    if (s.player.until > s.hour) return fail("error.away");
+    const fare = driveTo(s, to.id);
+    if (!fare) return fail("error.tooFar");
+    trip = { price: fare.fee, hours: fare.hours };
+  }
   if (s.cash < trip.price) return fail("error.noCash");
   for (const d of units) { Object.assign(d!, { store: null, transitTo: to.id, arriveAt: s.hour + trip.hours }); carry(s, d!); }
-  book(s, "moving", "ledger.ship", { count: units.length, location: to.name }, -trip.price);
+  if (self) {
+    book(s, "maintenance", "ledger.drive", { place: to.name }, -trip.price);
+    s.player = { at: to.id, until: s.hour + trip.hours, doing: "travel" };
+  } else book(s, "moving", "ledger.ship", { count: units.length, location: to.name }, -trip.price);
   return { ok: true, id: units[0]!.id };
 }
 

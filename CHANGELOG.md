@@ -5,6 +5,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-02
 
 - Shop modules, Shop link and payment methods now belong to the shop system you bought them for: switching systems starts without them, and switching back brings them back.
+- Shipping stored hardware to another site now costs a courier fee per unit, never more than a rack move.
+- You can drive stored hardware to another site yourself for the fuel and arrive there with it.
 - Newer CPUs are faster per core, so the same customers load an old server more than a new one, and old servers get busier as software grows.
 - Shops, game servers and other demanding customers now notice when their server's CPU is too slow for them, even when it is idle.
 - Goggle has an Admin console in the look of each era, where you add users, aliases and groups, route unknown addresses, migrate old mailboxes, see the bill and accept the 2022 upgrade before the free edition locks.
