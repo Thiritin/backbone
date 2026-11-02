@@ -6,7 +6,8 @@ import { foldersOf, listFolder } from "../42-mail/model";
 import type { GameState } from "../50-state";
 import { webmailOf, webmailUser, type Contact, type Identity, type WebmailUser } from "../80-business/webmail";
 import type { ActionResult } from "./hardware";
-import { deleteMessages, expungeMessages, moveMessages } from "./mailmsg";
+import { specialFolder } from "../80-business/webmail-view";
+import { deleteMessages, expungeMessages, moveMessages, saveDraft, sendMessage, type Draft } from "./mailmsg";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 
@@ -68,7 +69,7 @@ export function runLocalFilters(s: GameState, clusterId: string, accountId: stri
 
 // A delete moves to the Trash the account picked, or removes the mail when it uses no Trash or deletes inside it.
 export function deleteWebmailMessages(s: GameState, clusterId: string, accountId: string, ids: string[]): ActionResult {
-  const trash = String(webmailUser(s, clusterId, accountId).prefs.trash ?? "trash");
+  const trash = specialFolder(s, clusterId, accountId, "trash");
   const inTrash = (s.mail.msgs[accountId] ?? []).some((m) => ids.includes(m.id) && m.folder === trash);
   if (!trash || inTrash) return expungeMessages(s, accountId, ids);
   return trash === "trash" ? deleteMessages(s, accountId, ids) : moveMessages(s, accountId, ids, trash);
@@ -79,4 +80,17 @@ export function setFolderSubscribed(s: GameState, accountId: string, folderId: s
   const now = (s.webmail.subs[accountId] ?? []).filter((x) => x !== folderId);
   s.webmail = { ...s.webmail, subs: { ...s.webmail.subs, [accountId]: on ? now : [...now, folderId] } };
   return { ok: true };
+}
+
+// Squarecube's Special Folders: a saved draft and the Sent copy move to the folders the account picked.
+export function saveWebmailDraft(s: GameState, clusterId: string, accountId: string, d: Draft & { id?: string }): ActionResult {
+  const r = saveDraft(s, accountId, d), to = specialFolder(s, clusterId, accountId, "drafts");
+  if (r.ok && r.id && to !== "drafts") moveMessages(s, accountId, [r.id], to);
+  return r;
+}
+export function sendWebmailMessage(s: GameState, clusterId: string, accountId: string, m: Parameters<typeof sendMessage>[2]): ActionResult {
+  const first = s.nextId, r = sendMessage(s, accountId, m), to = specialFolder(s, clusterId, accountId, "sent");
+  const copy = (s.mail.msgs[accountId] ?? []).filter((x) => x.folder === "sent" && Number(x.id.slice(3)) >= first).map((x) => x.id);
+  if (r.ok && to !== "sent" && copy.length) moveMessages(s, accountId, copy, to);
+  return r;
 }
