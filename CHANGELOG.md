@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- Every training in Research now has a How it works guide you can open before you start it, and each guide lists what the training unlocks and where to find it.
 - Every virtualization console now shows a VM's or container's public IP address next to its local one, and the VMwhere VM list has an IP address column.
 - A busy OpenVeeZee node no longer racks up memory failures from CPU load alone, and when it runs out of memory the OOM killer now stops only the largest container for an hour, shown as "OOM killed".
 - Slow sites now bother business customers most during business hours and more the longer the slowdown lasts, while private customers barely notice.
