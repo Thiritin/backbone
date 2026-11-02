@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- Cancelling an invoice draft in the bookkeeping program now asks before it deletes the draft, and the Up and Down keys move through the invoices, quotes, bank bookings and customers.
+- The Mark as paid dialog now lists the open transfers in a list to pick from, and long names in the bank list no longer push the Accept button out of view.
 - The Terminal now finds a basement server by its name when it sits behind your own router, the same way it finds your VMs.
 - Every training in Research now has a How it works guide you can open before you start it, and each guide lists what the training unlocks and where to find it.
 - Every virtualization console now shows a VM's or container's public IP address next to its local one, and the VMwhere VM list has an IP address column.
