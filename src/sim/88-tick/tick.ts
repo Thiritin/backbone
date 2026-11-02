@@ -44,6 +44,7 @@ import { mailProviderTick } from "../80-business/mail-provider";
 import { mailDeliveryTick } from "../42-mail/deliver";
 import { syncTicketMail } from "../42-mail/tickets";
 import { fetchTick } from "../42-mail/fetch";
+import { importTick } from "../42-mail/imports";
 import { deliverMail } from "../42-mail/sources";
 import { pearMailTick } from "../43-pear-mail/check";
 import { computeTick, pinMembers } from "../60-infra/cluster";
@@ -406,6 +407,7 @@ export function tick(state: GameState): SimEvent[] {
   mailTick(state);
   mailDeliveryTick(state);
   fetchTick(state);
+  importTick(state);
   events.push(...pearMailTick(state));
   leaseTick(state);
   pinMembers(state);
