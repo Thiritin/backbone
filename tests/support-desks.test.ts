@@ -7,7 +7,8 @@ import { openDesk } from "../src/sim/40-support/desk";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { stepOf } from "../src/ui/apps/guide";
 import { supportApp } from "../src/ui/apps/support/desk";
-import { FreeScootMark, FreshduskMark, GoggleMark, IonoseMark, LookoutMark, GMixMark, OsTickitMark, PearMailMark, ZenduskMark } from "../src/ui/art/mailmarks";
+import { FreeScootMark, FreshduskMark, GoggleMark, IonoseMark, LookoutMark, GMixMark, OsTickitMark, ZenduskMark } from "../src/ui/art/mailmarks";
+import { PearMailIcon } from "../src/ui/art/era-icon";
 import { registered, newGame } from "./fixtures";
 
 const at = (y: number, m: number) => hourOf(new Date(Date.UTC(y, m - 1, 1)));
@@ -56,7 +57,7 @@ describe("support desks", () => {
     expect(mail({ kind: "external", provider: "goggleWorkspace", seats: 1 })).toMatchObject({ name: "Email", brand: "Goggle Workspace", icon: GoggleMark, style: "goggle" });
     expect(mail({ kind: "external", provider: "lookout365", seats: 1 })).toMatchObject({ icon: LookoutMark, style: "lookout" });
     expect(mail({ kind: "external", provider: "hostedExchange", seats: 1 })).toMatchObject({ icon: IonoseMark, style: "ionose" });
-    expect(mail({ kind: "self", software: "postfixit", clusterId: "c1" })).toMatchObject({ icon: PearMailMark, style: "pear" });
+    expect(mail({ kind: "self", software: "postfixit", clusterId: "c1" })).toMatchObject({ icon: PearMailIcon, style: "pear" });
   });
 
   it("shows the app as Support with the desk's mark once one is installed, whatever the mail", () => {
