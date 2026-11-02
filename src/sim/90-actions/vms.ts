@@ -4,7 +4,7 @@ import type { Resources } from "../10-catalog/products";
 import { bump } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import {
-  bookable, clusterOf, controlPlaneUp, diskMovesLive, insideVm, isOwnVm, liveBetween, lostDisk, noRoomError, nodeTakes, nodeUsed, pickNode, supports, vmOf, vmRoom, type Cluster, type Workload,
+  bookable, clusterOf, controlPlaneUp, diskMovesLive, insideVm, isOwnVm, liveBetween, lostDisk, noRoomError, nodeTakes, nodeUsed, pickNode, roomToStart, supports, vmOf, vmRoom, type Cluster, type Workload,
 } from "../60-infra/cluster";
 import { backupTarget, syncBackupAt, usablePoint } from "../60-infra/backups";
 import { renumber, renumberError } from "../60-infra/addresses";
@@ -51,6 +51,7 @@ export function startWorkload(s: GameState, id: string): ActionResult {
   if (found.w.template) return fail("error.isTemplate");
   if (!controlPlaneUp(s, found.c)) return fail("error.controlPlaneDown");
   if (lostDisk(s, found.w)) return fail("error.lostDisk");
+  if (!roomToStart(s, found.w)) return fail("error.noRamToStart");
   patch(s, id, { stopped: false });
   freezeTick(s);
   return { ok: true };

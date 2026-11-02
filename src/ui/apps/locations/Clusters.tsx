@@ -35,7 +35,7 @@ export function Meter({ used, cap, text }: { used: number; cap: number; text: st
 // Booked against what the servers physically hold, next to live use against the hardware, row by row.
 export function BookedMeters({ game, devices }: { game: GameState; devices: Device[] }) {
   const live = devices.map((d) => nodeUsage(game, d.id));
-  const cap = sumOf(devices.map((d) => bookable(game, d))), used = sumOf(devices.map((d) => nodeUsed(game, d.id)));
+  const cap = sumOf(devices.map((d) => bookable(game, d))), used = sumOf(devices.map((d) => nodeUsed(game, d.id, true)));
   const u = sumOf(live.map((l) => l.used)), p = sumOf(live.map((l) => l.physical));
   const rows: [string, ReactNode, ReactNode][] = [
     ["CPU", <Meter used={used.vcpu} cap={cap.vcpu} text={`${num(used.vcpu)}/${num(cap.vcpu)} vCPU`} />, <Meter used={u.vcpu} cap={p.vcpu} text={`${num(u.vcpu)}/${cores(p.vcpu)}`} />],

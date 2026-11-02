@@ -1663,6 +1663,8 @@ A cluster of nothing but game servers peaks at about 1.0 on Saturday evenings, w
 
 **Memory reservation.** A tier 2 training after Monitoring, 100 know-how and 5 days. It adds a Memory reservation switch to every cluster, off by default. With it on, a placement or a move that would book RAM beyond a node's installed RAM less its control plane is refused, so the node cannot freeze; it is the only way RAM refuses a booking.
 
+**Stopped workloads and starting.** A stopped VM keeps its disk on its node but holds none of its CPU or RAM, so it counts toward neither the booked RAM of the node, placement, Memory reservation nor the overallocation alarm. A VM takes its whole booked RAM when it starts: starting is refused while the RAM the node's running VMs book plus its own exceeds what the node can book. On OpenVeeZee RAM is not reserved: a running container holds the RAM it uses, a stopped or frozen one none, and a container starts or is restored only while the RAM in use on its node plus what it will use fits the node. The booked RAM of containers is shown next to the RAM in use and never refuses anything.
+
 **Pegged workloads.** A workload is pegged when its CPU ran at 95% or more of its booked vCPUs in more than 12 of the last 24 hours. The node's workload list marks it.
 
 **Traffic shape.** A service's Mbit/s each hour is its monthly average × (floor + (1 − floor) × activity + 2 × night job) ÷ the week's average of that sum, where activity is the curve with the service's own ±20% jitter. A month's traffic therefore stays at the table in Traffic and bandwidth.
@@ -1996,7 +1998,7 @@ Each hour a node with more than 90% of its RAM in use takes burst memory back fi
 
 Burst memory ranges from 0 to twice the container's RAM, in steps of a quarter GB. It is not booked and costs nothing.
 
-Checkpoint freezes a container: it stays booked on its node, uses no CPU or RAM and is offline. Restore resumes it within a minute plus two seconds per GB of RAM in use, which counts as downtime. A cold move of a container on OpenVeeZee is a checkpoint, a copy and a restore, so it is down only for the copy of its disk over the link (at least 1 minute) instead of a full boot.
+Checkpoint freezes a container: it stays on its node, holds no CPU or RAM and is offline. A container is created from an OS template the player has downloaded and runs its OS at once, without an installer or ISO. Restore resumes it within a minute plus two seconds per GB of RAM in use, which counts as downtime. A cold move of a container on OpenVeeZee is a checkpoint, a copy and a restore, so it is down only for the copy of its disk over the link (at least 1 minute) instead of a full boot.
 
 ### Snapshots
 
