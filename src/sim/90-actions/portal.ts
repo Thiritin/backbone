@@ -7,7 +7,7 @@ import type { Product } from "../30-customers/customers";
 import { termPrice } from "../30-market/cycles";
 import type { GameState } from "../50-state";
 import { SITE_LINES } from "../80-business/website";
-import { groupKind, type ProductGroup, type ShopProduct } from "../80-business/shop";
+import { groupKind, groupProvisions, type ProductGroup, type ShopProduct } from "../80-business/shop";
 import { SERVES } from "../10-catalog/platforms";
 import type { ActionResult } from "./hardware";
 
@@ -73,7 +73,7 @@ export function createProduct(s: GameState, groupId: string, name: string, line:
   const year = yearOf(s.hour), spec = sizeSpec(line, 0, year), monthly = marketPrice(line, spec, year);
   const cycles = line === "ssl" ? (["monthly"] as Cycle[]) : v.cycles;
   const prices = Object.fromEntries(cycles.map((c) => [c, termPrice(s, monthly, c)]));
-  const id = `prod${s.nextId++}`, serverGroupId = s.shop.groups.find((g) => { const k = groupKind(s, g); return !!k && SERVES[k].includes(line); })?.id ?? null;
+  const id = `prod${s.nextId++}`, serverGroupId = s.shop.groups.find((g) => { const k = groupKind(s, g); return !!k && SERVES[k].includes(line) && groupProvisions(s, g); })?.id ?? null;
   setProducts(s, [...s.shop.products, { id, groupId, name: n, line, serverGroupId, packageName: null, spec, prices, autoCycles: true, setup: marketSetup(line, year), stock: v.autoStock ? "auto" : 10, hidden: false, setupMode: "payment" }]);
   return { ok: true, id };
 }
@@ -87,7 +87,9 @@ export function updateProduct(s: GameState, id: string, patch: ProductPatch): Ac
   const next: ProductPatch = { ...patch };
   if (patch.name !== undefined && !(next.name = cleanName(patch.name))) return fail("error.badProductName");
   if (patch.groupId !== undefined && !s.shop.productGroups.some((g) => g.id === patch.groupId)) return fail("error.unknownProductGroup");
-  if (patch.serverGroupId && !s.shop.groups.some((g) => g.id === patch.serverGroupId)) return fail("error.unknownServerGroup");
+  const group = patch.serverGroupId ? s.shop.groups.find((g) => g.id === patch.serverGroupId) : undefined;
+  if (patch.serverGroupId && !group) return fail("error.unknownServerGroup");
+  if (group && !groupProvisions(s, group)) return fail("error.noShopModule");
   if (patch.setup !== undefined && !(Number.isFinite(patch.setup) && patch.setup >= 0 && patch.setup <= 100000)) return fail("error.badProductPrice");
   if (patch.stock !== undefined) {
     if (patch.stock === "auto" && !v.autoStock) return fail("error.noAutoStock");

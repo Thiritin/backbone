@@ -100,6 +100,9 @@ export const accountsOn = (s: GameState, clusterId: string): number => s.workloa
 export const deployable = (s: GameState, clusterId: string | null, productId?: string): boolean =>
   !clusterId || !productId || !!s.shop.products.find((p) => p.id === productId)?.serverGroupId;
 
+// Whether the shop has the module for every server of the group; a product can bind only such a group, or none and be manual.
+export const groupProvisions = (s: GameState, g: ServerGroup): boolean => g.members.every((id) => hasModule(s, moduleFor(s, "webHosting", id)));
+
 export function soldOutVisit(s: GameState, p: string): void {
   s.shop = { ...s.shop, soldOut: { ...s.shop.soldOut, [p]: (s.shop.soldOut[p] ?? 0) + 1 } };
 }

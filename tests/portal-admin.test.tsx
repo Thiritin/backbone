@@ -70,9 +70,9 @@ describe("WHMCache admin", () => {
     expect(page(s, { s: "invoices" })).toContain("Invoice");
   });
 
-  it("lists the shop's modules with its servers and its payment methods with its invoices", () => {
+  it("lists the shop's modules on Apps & Integrations and its payment methods with its invoices", () => {
     const s = shopGame();
-    expect(page(s, { s: "servers" })).toContain("Modules");
+    expect(page(s, { s: "marketplace" })).toContain("Provisioning Modules");
     expect(page(s, { s: "invoices" })).toContain("Payment methods");
   });
 });

@@ -7,7 +7,7 @@ import { marketPrice, marketSetup } from "../../../../../../sim/10-catalog/produ
 import { moduleName, shopById } from "../../../../../../sim/10-catalog/shops";
 import { packagesOf } from "../../../../../../sim/80-business/packages";
 import { monthlyOf, packageSpec } from "../../../../../../sim/80-business/portal";
-import { groupKind, type SetupMode, type Stock } from "../../../../../../sim/80-business/shop";
+import { groupKind, groupProvisions, type SetupMode, type Stock } from "../../../../../../sim/80-business/shop";
 import { setProductPrice, updateProduct, type ProductPatch } from "../../../../../../sim/90-actions/portal";
 import { useStore } from "../../../../../store";
 import { CommitInput, toNumber } from "./CommitInput";
@@ -97,7 +97,7 @@ export function ProductEdit({ game, go, id, tab = "details" }: ScreenProps & { i
           <dd>
             <select aria-label={t("shop-admin.serverGroup")} value={p.serverGroupId ?? ""} onChange={(e) => patch({ serverGroupId: e.target.value || null, packageName: null })}>
               <option value="">{t("shop-admin.none")}</option>
-              {serverGroups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+              {serverGroups.map((g) => <option key={g.id} value={g.id} disabled={!groupProvisions(game, g)}>{g.name}</option>)}
             </select>
           </dd>
           <dt>{t("shop-admin.packageName")}</dt>

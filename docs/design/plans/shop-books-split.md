@@ -1,6 +1,6 @@
 # Plan: shop and books split
 
-Lane id: `shop-books-split`. Status: decisions settled in section 10; milestones 1 to 4 and 6 to 10 built.
+Lane id: `shop-books-split`. Status: decisions settled in section 10; milestones 1 to 4 and 6 to 11 built.
 
 The bookkeeping program and the shop system both write quotes, both hold a product catalog and both reach invoices. Players see two ways to do the same thing, and with a shop installed and email orders off, quote requests still arrive by email. This plan gives each program one job, makes the shop automate the customer side the way WHMCS does, and gives every program the same setup flow.
 
@@ -89,7 +89,7 @@ The shop admin page "Konfigurierbare Optionen" mixes three unrelated things: cyc
 ## 7. Marketplace and modules
 
 - Shop admin gets a Marketplace page (WHMCS: Apps & Integrations). It lists provisioning modules (cPanic, Pleskit, DirectAdmin, each hypervisor), payment gateways (debit, PayPail, card, paysafe, instantly, crypto) and shop-link.
-- Each variant marks each module as included, buyable (price) or unavailable. WHMCache includes cPanic, Pleskit and DirectAdmin, for example; BoxBillin' includes fewer and lacks some entirely. This replaces the buttons on the vendor browser sites; purchases still post to the ledger as today.
+- Each variant marks each module as included, buyable (price) or unavailable. WHMCache includes cPanic, Pleskit and DirectAdmin, for example; BoxBillin' includes fewer and lacks some entirely. This replaces the buttons on the vendor browser sites; purchases still post to the ledger as today. Built: provisioning modules are bought on the page; gateways and the Books link keep their purchase on the vendor site with the licence key, and the page links there with the price.
 - A product can only be bound to a server group whose kind has an installed provisioning module; otherwise the product is "manual" and orders wait for the player.
 
 ## 8. One setup flow

@@ -11,14 +11,14 @@ import { Emails } from "./Emails";
 import { ProductEdit } from "./ProductEdit";
 import { Products } from "./Products";
 import { Servers } from "./Servers";
-import { Modules } from "./Modules";
+import { Marketplace } from "./Marketplace";
 import { PaymentMethods } from "./Payments";
 import { LicenceScreen, UpdatesScreen } from "./Licence";
 
 export const SCREEN_LABEL: Partial<Record<ScreenName, string>> = {
   home: t("shop-admin.home"), products: t("shop-admin.products"), settings: t("shop-admin.settings"), servers: t("shop-admin.servers"),
   orders: t("shop-admin.pendingOrders"), clients: t("shop-admin.clients"), invoices: t("shop-admin.invoices"), quotes: t("shop-admin.quotes"),
-  emails: t("shop-mail.emails"), licence: t("shop-admin.licence"), updates: t("shop-admin.updates"),
+  emails: t("shop-mail.emails"), marketplace: t("shop-market.title"), licence: t("shop-admin.licence"), updates: t("shop-admin.updates"),
 };
 
 function Home({ game, go }: ScreenProps) {
@@ -37,7 +37,8 @@ export function AdminScreen({ screen, ...props }: ScreenProps & { screen: Screen
     case "products": return <Products {...props} />;
     case "product": return <ProductEdit {...props} id={screen.id ?? ""} tab={screen.tab} />;
     case "settings": return <Settings {...props} />;
-    case "servers": return <><Servers game={props.game} /><Modules game={props.game} /></>;
+    case "servers": return <Servers game={props.game} />;
+    case "marketplace": return <Marketplace game={props.game} />;
     case "orders": return <Orders {...props} />;
     case "order": return <OrderDetail {...props} id={screen.id ?? ""} />;
     case "service": return <ServiceDetail {...props} id={screen.id ?? ""} />;
