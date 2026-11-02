@@ -1,0 +1,73 @@
+/* Goggle: the 2006 Apps pages in Arial with pale blue boxes, the 2016 G Swoot cards and the 2020 Workspace pills. */
+.gg { --gg-ink: #000; --gg-link: #00c; --gg-box: #e5ecf9; --gg-line: #c3d9ff; --gg-cta: #3366cc; --gg-radius: 0; --gg-font: Arial, Helvetica, sans-serif;
+  min-height: 100%; background: #fff; color: var(--gg-ink); font: 13px/1.45 var(--gg-font); }
+.gg-swoot { --gg-ink: #212121; --gg-link: #4285f4; --gg-box: #f5f5f5; --gg-line: #e0e0e0; --gg-cta: #4285f4; --gg-radius: 2px; --gg-font: Roboto, Arial, sans-serif; }
+.gg-workspace { --gg-ink: #202124; --gg-link: #1a73e8; --gg-box: #f8f9fa; --gg-line: #dadce0; --gg-cta: #1a73e8; --gg-radius: 20px; --gg-font: Roboto, Arial, sans-serif; }
+.gg a { color: var(--gg-link); }
+.gg h1 { font-size: 22px; margin: 0 0 10px; font-weight: normal; }
+.gg h2 { font-size: 16px; margin: 16px 0 8px; }
+.gg h3 { font-size: 13px; margin: 0 0 4px; }
+.gg code { font: 12px "Courier New", monospace; word-break: break-all; }
+.gg-head { display: flex; align-items: center; gap: 16px; padding: 10px 16px; border-bottom: 1px solid var(--gg-line); }
+.gg-apps .gg-head, .gg-appsDomain .gg-head { background: var(--gg-box); }
+.gg-logo { display: flex; align-items: center; gap: 6px; text-decoration: none; color: var(--gg-ink) !important; }
+.gg-logo b { font-size: 18px; font-weight: normal; }
+.gg-mark { width: 30px; height: 30px; flex: none; }
+.gg-beta { color: #c00; font-size: 10px; font-weight: bold; }
+.gg-nav { display: flex; align-items: center; gap: 14px; margin-left: auto; flex-wrap: wrap; }
+.gg-main { padding: 16px; max-width: 960px; margin: 0 auto; }
+.gg-foot { padding: 12px 16px; color: #676767; font-size: 11px; text-align: center; border-top: 1px solid var(--gg-line); }
+.gg-cta, .gg button { display: inline-block; padding: 5px 14px; border: 1px solid var(--gg-cta); border-radius: var(--gg-radius); background: var(--gg-cta); color: #fff !important;
+  font: bold 13px var(--gg-font); text-decoration: none; cursor: pointer; }
+.gg-appsDomain button, .gg-apps button, .gg-search button { background: linear-gradient(#fff, #ddd); color: #000 !important; border-color: #999; font-weight: normal; }
+.gg .gg-quiet { background: #fff; color: var(--gg-ink) !important; border-color: var(--gg-line); }
+.gg-more { margin-left: 12px; }
+.gg-small { display: block; font-size: 11px; margin-top: 8px; }
+.gg-error { color: #c00; }
+.gg-ok { color: #188038; }
+.gg-joke { color: #676767; font-style: italic; }
+.gg-pitch { font-size: 15px; max-width: 640px; }
+.gg-free { font-weight: bold; color: #188038; }
+
+.gg-search { display: flex; flex-direction: column; align-items: center; gap: 12px; padding-top: 60px; }
+.gg-word { display: flex; align-items: center; gap: 8px; font-size: 40px !important; letter-spacing: -1px; }
+.gg-word .gg-mark { width: 48px; height: 48px; }
+.gg-search input { width: min(420px, 100%); padding: 4px; font-size: 15px; }
+
+.gg-hero { padding: 16px; background: var(--gg-box); border: 1px solid var(--gg-line); border-radius: var(--gg-radius); }
+.gg-workspace .gg-hero, .gg-swoot .gg-hero { border: 0; padding: 32px 24px; }
+.gg-workspace .gg-hero h1, .gg-swoot .gg-hero h1 { font-size: 34px; }
+.gg-features { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; padding: 0; list-style: none; margin: 16px 0; }
+.gg-features li { padding: 10px; border-top: 3px solid var(--gg-line); }
+.gg-customers ul { display: flex; flex-wrap: wrap; gap: 18px; padding: 0; list-style: none; color: #676767; font-weight: bold; }
+
+.gg-table { border-collapse: collapse; width: 100%; margin: 8px 0; }
+.gg-table th, .gg-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--gg-line); vertical-align: top; }
+.gg-table thead th { background: var(--gg-box); }
+.gg-sales { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
+.gg-card { flex: 1 1 180px; padding: 12px; border: 1px solid var(--gg-line); border-radius: min(var(--gg-radius), 8px); }
+
+.gg-steps { display: flex; flex-wrap: wrap; gap: 6px 18px; padding: 0; list-style: none; margin: 0 0 14px; color: #676767; }
+.gg-steps li.on { color: var(--gg-ink); font-weight: bold; }
+.gg-steps li.done { color: #188038; }
+.gg-form { display: flex; flex-direction: column; gap: 10px; max-width: 420px; }
+.gg-form label { display: flex; flex-direction: column; gap: 3px; font-weight: bold; }
+.gg-form input:not([type="radio"]) { padding: 4px; font: 13px var(--gg-font); border: 1px solid #999; border-radius: calc(var(--gg-radius) / 4); }
+.gg-addr { display: flex; align-items: center; gap: 4px; font-weight: normal; }
+.gg-addr input { flex: 1; min-width: 0; }
+.gg-plans { border: 1px solid var(--gg-line); }
+.gg-plans label { flex-direction: row; align-items: center; gap: 6px; font-weight: normal; }
+.gg-plans small { color: #676767; margin-left: auto; }
+.gg-summary { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 0; }
+.gg-summary dt { font-weight: bold; }
+.gg-summary dd { margin: 0; }
+.gg-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+.gg-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.gg .gg-chip { background: #fff; color: var(--gg-ink) !important; border: 1px solid var(--gg-line); border-radius: 16px; font-weight: normal; }
+.gg-connect { margin-top: 16px; padding: 14px; border: 2px solid #1bdbdb; background: #f5fefe; max-width: 520px; }
+.gg-connect h3 { color: #111; font-size: 16px; }
+.gg-connect ul { padding-left: 18px; }
+
+.gg-signin { display: flex; flex-direction: column; align-items: center; gap: 16px; padding-top: 30px; }
+.gg-signin-box .gg-form { padding: 14px; background: var(--gg-box); border: 1px solid var(--gg-line); }
+.gg-signin-card .gg-form { padding: 28px; border: 1px solid #dadce0; border-radius: 8px; width: min(380px, 100%); box-sizing: border-box; }

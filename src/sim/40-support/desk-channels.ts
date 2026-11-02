@@ -1,8 +1,9 @@
 // Desk channels: the mailboxes a desk reads, when it fetches them and what it makes of their mail
 // (docs/design/plans/support-desk.md, Channels).
 import { hashRng, rand } from "../00-core/rng";
-import { DESK_ROUTE, deskById, deskHas, refToken } from "../10-catalog/desks";
-import { roleAccount, serverStatus, type ServerStatus } from "../42-mail/accounts";
+import { deskById, deskHas, refToken } from "../10-catalog/desks";
+import { serverStatus, type ServerStatus } from "../42-mail/accounts";
+import { syncTicketMail } from "../42-mail/tickets";
 import { applyAfter, deliver, hostedDeskAddress } from "../42-mail/deliver";
 import { mailHooks } from "../42-mail/caps";
 import { boxOf, ticketOf, view } from "../42-mail/model";
@@ -89,11 +90,6 @@ export function fetchChannel(s: GameState, ch: DeskChannel): number {
   if (error) return 0;
   const upto = s.nextId;
   let n = 0;
-  // ponytail: until mail-core gives every ticket its envelope message, a ticket counts as mail in the mailbox of its role.
-  for (const t of [...s.tickets].sort((a, b) => a.createdAt - b.createdAt)) {
-    if (held(t) || isFinal(t) || !inDesk(t) || num(t.id) >= upto || roleAccount(s, DESK_ROUTE[t.kind].role)?.id !== ch.accountId) continue;
-    take(s, ch, t);
-  }
   if (ch.mode !== "forward") {
     for (const m of boxOf(s, ch.accountId)) if (m.folder === "inbox" && num(m.id) > ch.seen && num(m.id) < upto && importMessage(s, ch, m)) n++;
     patch(s, ch.id, { seen: upto - 1 });
@@ -114,6 +110,7 @@ mailHooks.deskInbound = (s, m) => {
 // pauses while the desk is down and the mailbox keeps the mail.
 export function importDeskTickets(s: GameState): void {
   if (!s.desk || deskStatus(s) === "down") return;
+  syncTicketMail(s);
   if (deskHas(s, "portal")) for (const t of s.tickets) {
     if (held(t) || isFinal(t) || !inDesk(t) || !t.customerId || !WEB_KINDS.includes(t.kind)) continue;
     if (rand(hashRng(s.seed, Number(t.id.slice(3)) || 0, 62)) < WEB_SHARE) importTicket(s, t, true);

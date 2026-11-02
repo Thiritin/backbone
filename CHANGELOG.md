@@ -6,12 +6,19 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - VMwhere balances with DRS once its hosts run an Enterprise key, without a separate Enterprise Plus subscription, and HyperVee no longer offers SysCenter VMM.
 - Every licensed console shows its edition, licence status, renewal date and key with Remove, opens on its licence page at the first sign-in during a trial, and sends you to the vendor's website for upgrades and update renewals.
+- Every stack in a storage room now has a Ship button that sends the units to another of your sites, such as from the basement to Frankfurt.
+- Customers no longer send requests that need a company older than a year or better reviews than you have.
+- The CPU overcommit warning on hypervisor hosts now fires at 8 vCPUs per core instead of 2.
+- Upgrade requests no longer mark the current server as full.
 - Storage in Locations shows stored hardware as a grid of cards and sells several units of a model at once.
 - The Flyerlarm order table no longer runs past the right edge of its box, and the Locations storage tab is called Lager in German.
 - VMwhere editions are now bought as licence keys on vmwhere.com and take effect once every host runs a key of that edition, and the shop only sells an edition once your team has learned its features.
+- Every customer request, order, abuse report and notice now also arrives as an email in the mailbox of its role, such as support@ or abuse@, and your replies appear in that mailbox's Sent folder.
 - Pear Mail can reply, reply to all, forward, delete, junk and move mail, and writes new messages in their own window with forms from the desktop attached.
+- Goggle now has its own website in the Browser, where you sign up for the edition of the year, verify your domain with a DNS record and see whether your MX records point at Goggle.
 - Incident reports in Security can now be archived, which takes them off the incident list and out of the open count.
 - A new game no longer starts with three friends waiting for web hosting; the first order email now arrives within two weeks of your first web host going online.
+- Freshdusk now runs at your help desk address with its support portal, a helpdesk with ticket views, a Ticket properties sidebar, canned responses and scenarios, and an Admin for support emails, groups, Dispatch'r rules and SLA policies, in the look of each year from 2011 to Mint.
 - Support desks now fetch the mailboxes you add as channels by IMAP, POP3 or forwarding, number new requests, answer them from that address and keep every reply in its Sent folder.
 - The OsTickit Emails page and the Zendusk support addresses page let you add and remove mailboxes, and OsTickit sets the protocol, schedule, auto-response and what happens to fetched mail, with a test email.
 - Five new ultrawide desktop pictures (Annapurna, Milky Way, Hong Kong, Sossusvlei and Matterhorn) join the wallpaper choices in Settings, and every built-in wallpaper is now sharper at full screen.

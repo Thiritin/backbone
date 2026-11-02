@@ -2,7 +2,7 @@
 // mailbox, group, alias, password and tenant actions directly; these add what a provider's own flow decides.
 import { nextMonthStart, yearOf } from "../00-core/time";
 import { goggleToken, verificationAt } from "../10-catalog/mail-consumer";
-import { mailPlan } from "../10-catalog/mail-providers";
+import { mailPlan, mxSetAt } from "../10-catalog/mail-providers";
 import { companyDomain } from "../30-customers/domains";
 import { checkMailLogin, mailboxInUse, removeMailbox } from "../42-mail/accounts";
 import type { MailAccount, MailTenant } from "../42-mail/types";
@@ -10,6 +10,7 @@ import type { GameState } from "../50-state";
 import { recordAt } from "../60-infra/company-zone";
 import type { ActionResult } from "./hardware";
 import { createTenant, setTenantLock, setTenantPlan, verifyTenant } from "./mail";
+import { removeCompanyRecord, setCompanyRecord } from "./domains";
 import { createMailAccount } from "./mailbox";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -76,6 +77,23 @@ export function verifyDomain(s: GameState, tenantId: string): ActionResult {
   const want = verificationAt(t.since, goggleToken(s.seed, t.domain));
   if (!recordAt(s, want.type, want.name, s.hour).some((r) => bare(r.data) === want.data)) return fail("error.goggleVerify");
   return verifyTenant(s, tenantId);
+}
+
+// GoDuddy's Domain Connect, from 2019: the verification record and the MX set in one step, replacing the MX records there.
+export function connectGoggleDns(s: GameState, tenantId: string): ActionResult {
+  const t = tenantOn(s, tenantId, "goggle");
+  if (!t || s.registrar?.id !== "goDuddy" || yearOf(s.hour) < 2019) return fail("error.mailNoService");
+  const v = verificationAt(t.since, goggleToken(s.seed, t.domain)), live = s.company.zone.filter((r) => !r.gone);
+  for (const r of live.filter((x) => x.type === "MX")) removeCompanyRecord(s, r.id);
+  const drafts = [
+    ...(live.some((r) => r.type === v.type && r.name === v.name && bare(r.data) === v.data) ? [] : [{ ...v, ttl: 3600 }]),
+    ...mxSetAt("goggle", t.domain, s.hour).map(([p, host]) => ({ type: "MX" as const, name: "@", ttl: 3600, data: `${p} ${host}` })),
+  ];
+  for (const d of drafts) {
+    const r = setCompanyRecord(s, d);
+    if (!r.ok) return r;
+  }
+  return { ok: true, id: tenantId };
 }
 
 // Suspended users cannot sign in and still bill, as in the real console; the admin cannot suspend itself.

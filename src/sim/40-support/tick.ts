@@ -1,6 +1,7 @@
 import { importDeskTickets } from "./desk-channels";
 import { deskById, refToken } from "../10-catalog/desks";
 import { sentCopy } from "../42-mail/deliver";
+import { envelopeBox } from "../42-mail/tickets";
 import { chance, rand } from "../00-core/rng";
 import { CRYPTO_ABUSE, PAYSAFE_CHURN } from "../10-catalog/payments";
 import { refundUnused, termRoll } from "./terms";
@@ -51,13 +52,17 @@ function resolve(s: GameState, t: Ticket, c: Customer, outcome: Ticket["outcome"
 }
 
 // Player work queued by the support actions takes effect once its time has passed.
-// Replies to a ticket a desk channel imported go out from the channel's mailbox with the desk's number in the subject.
+// Replies to a ticket a desk channel imported go out from the channel's mailbox with the desk's number in the subject,
+// the others from the mailbox that holds the ticket's envelope.
 function sentCopies(s: GameState, answered: Map<string, number>): void {
   const d = s.desk && deskById(s.desk.id);
   for (const t of s.tickets) {
-    const ch = t.channelId ? s.mail.channels.find((c) => c.id === t.channelId) : undefined;
-    if (!ch || !d) continue;
-    for (let i = answered.get(t.id) ?? 0; i < t.replies.length; i++) sentCopy(s, t, i, ch.accountId, refToken(d, t.ref ?? ""));
+    const from = answered.get(t.id) ?? 0;
+    if (from >= t.replies.length) continue;
+    const ch = d && t.channelId ? s.mail.channels.find((c) => c.id === t.channelId) : undefined;
+    const box = ch?.accountId ?? envelopeBox(s, t.id)?.id;
+    if (!box) continue;
+    for (let i = from; i < t.replies.length; i++) sentCopy(s, t, i, box, ch && d ? refToken(d, t.ref ?? "") : "");
   }
 }
 

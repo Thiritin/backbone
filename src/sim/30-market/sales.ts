@@ -43,7 +43,7 @@ import { chooseProduct, packageSpec } from "../80-business/portal";
 import { belowFloor, bookingFor, packageNamed } from "../80-business/packages";
 import { LIMIT_TOPICS } from "../40-support/webspace-tickets";
 import {
-  acceptChance, acceptMid, FORUM_AWARENESS, FORUM_PROFILES, leadFlows, missingFor, needFor, referenceFor,
+  acceptChance, acceptMid, blocksContact, FORUM_AWARENESS, FORUM_PROFILES, leadFlows, missingFor, needFor, referenceFor,
   requestName, share, values, type Need, type SalesMessage, type SalesRequest,
 } from "./market";
 
@@ -124,6 +124,7 @@ function newLeads(s: GameState, events: SimEvent[]): void {
       const need = plain ? { ...asked, sla: "basic" as const } : asked, standard = plain || isStandard(f.profile, need.sla), shop = standard && !emailFor(s), k = `${f.profile}/${need.product}/${f.city}/${shop}`;
       if (!cache.has(k)) cache.set(k, share(s, f.profile, need.product, f.city, shop ? setupPremium(s, need.product) : 0, shop ? shopPriceLevel(s, f.profile, need.product) : undefined));
       if (rand(s.rng) >= Math.min(1, cache.get(k)! * f.conversion)) continue;
+      if (blocksContact(s, { sla: need.sla, profile: f.profile })) continue;
       // Leads order only lines on the website, which needs a control plane that sells them; some ask for the rest by email.
       if (!lineOffered(s, need.product) || !listed(s, need.product)) {
         if (s.marketing.customRequests && rand(s.rng) < CUSTOM_ASK * mailShare(s, f.profile)) newLead(s, f.profile, f.city, events, need);

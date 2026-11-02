@@ -6,6 +6,7 @@ import { held, inDesk } from "../../../../../sim/40-support/desk-work";
 import type { Ticket } from "../../../../../sim/40-support/tickets";
 import type { GameState } from "../../../../../sim/50-state";
 import { deskPath, parseDesk, type DeskRoute } from "../../../../../sim/80-business/deskroutes";
+import { FreshduskSite } from "./freshdusk/FreshduskSite";
 import { OsTickitSite } from "./ostickit/OsTickitSite";
 import { ZenduskSite } from "./zendusk/ZenduskSite";
 
@@ -16,6 +17,7 @@ export interface DeskApp { Site: ComponentType<DeskSiteProps>; staff: string; ti
 export const DESK_APPS: Partial<Record<DeskId, DeskApp>> = {
   ostickit: { Site: OsTickitSite, staff: deskPath("ostickit", "scp"), ticket: (tk) => deskPath("ostickit", "staffTicket", { n: tk.ref ?? "" }) },
   zendusk: { Site: ZenduskSite, staff: deskPath("zendusk", "agent"), ticket: (tk) => deskPath("zendusk", "ticket", { n: tk.ref ?? "" }) },
+  freshdusk: { Site: FreshduskSite, staff: deskPath("freshdusk", "dashboard"), ticket: (tk) => deskPath("freshdusk", "ticket", { n: tk.ref ?? "" }) },
 };
 
 // support.<domain> or a tenant address: the installed desk's app on that path, or the server's not-found page.
