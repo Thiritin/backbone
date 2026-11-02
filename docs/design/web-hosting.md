@@ -74,7 +74,7 @@ A two-pane file manager in the panel's look: a folder tree on the left and a lis
 - **MySQL Databases** creates databases and users and grants a user privileges on a database, with the prefix `<account>_` that real cPanel adds.
 - **phpMyAdmon** opens from the panel and lists the tables of a database with their row counts and sizes. Tables come from the app that uses the database (`wp_posts`, `tblclients` and so on), and their row counts grow with the site's age and traffic.
 - A database counts towards the web space's disk and towards the host's MySQL load, which feeds the existing overload readouts.
-- From the era where it fits, a separate database host (a MySQL server role on its own machine) becomes possible, and the panel's "Remote MySQL" page points web spaces at it.
+- Databases always run on the same host as the web space, with `localhost` as the database host, as on a standard shared hosting server. A separate database server is a later plan.
 
 ### 4.3 Mail
 
@@ -90,7 +90,7 @@ These screens edit the parts listed in section 2. The zone editor writes to the 
 
 ### 4.6 App installer
 
-Fantastiko (from 2005) and Softaculus (from 2009) stay as the shortcut planned in `web-presence.md`: pick an app, a domain and a folder, and the installer creates the files, the database and the admin account in one step. This is how customers install their own apps. Shop systems are listed there only in the eras when the real installers carried them.
+Fantastiko (from 2005) and Softaculus (from 2009) stay as the shortcut planned in `web-presence.md`: pick an app, a domain and a folder, and the installer creates the files, the database and the admin account in one step. This is how customers install their own apps. Shop systems are listed there only in the eras when the real installers carried them, and the player may install their own shop through it too: the installer still asks for the licence key and the admin account, and creates the folder, the database and the user that section 5 sets up by hand.
 
 ## 5. Installing the shop system by hand
 
@@ -138,10 +138,14 @@ The model in section 2 lets customers ask for things the player does in the pane
 8. **Customer tickets that name panel tasks.**
 9. **Remaining panels' customer sides.** Pleskit, DirectAdmen and FreePanel layouts over the same tools.
 
-## 9. Open questions
+## 9. Decisions
 
-1. Should every customer web space be browsable and editable, or only those a ticket or an incident points at? Editing all of them is free with the overlay, but it turns support into a lot of clicking at scale.
-2. Should the shop install stay possible through Softaculus as a shortcut once that era arrives, or always by hand for the player's own shop?
-3. Should databases on a separate host be part of this redesign or a later plan?
-4. Should the FTP program be a desktop app bought from a vendor site (FileZiller, a CuteFTP pun) or always installed?
-5. Should a lost shop admin password be recoverable only through the reset mail, or also through phpMyAdmon by editing the admin table, as real admins do?
+- Every customer web space can be opened and edited in its panel, not only those a ticket points at.
+- Fantastiko and Softaculus may install the player's own shop once a real installer carried that shop system. Installing by hand stays possible in every era.
+- Databases always live on the same host as the web server.
+- Realism comes first: every screen, message and step copies the real product of its era.
+
+## 10. Open questions
+
+1. Should the FTP program be a desktop app bought from a vendor site (FileZiller, a CuteFTP pun) or always installed?
+2. Should a lost shop admin password be recoverable only through the reset mail, or also through phpMyAdmon by editing the admin table, as real admins do?
