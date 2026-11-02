@@ -17,6 +17,7 @@ export interface MailTenant {
   clusterId?: string;          // the mail server of a "self" tenant
   admin: string | null;        // the account id of the tenant's administrator: the first mailbox created in it
   locked?: true;               // the 2022 conversion lock: sign-in is refused and incoming mail bounces, as for a closed box
+  next?: string;               // a cheaper plan that takes over at the next month start, after the paid month
 }
 
 export interface MailAccount {
@@ -29,6 +30,7 @@ export interface MailAccount {
   reset: { code: string; letter: string; tries?: number } | null;  // an open Forgot password request: the code, the id of the letter that carries it, wrong codes so far
   employee: string | null;     // the Employee.id whose mailbox this is, when hiring made it
   shared?: true;               // a shared mailbox: no password and no direct sign-in, opened from the other mailboxes of its tenant
+  suspended?: true;            // the admin blocked sign-in; the box still receives and bills
   external?: boolean;          // "Allow external programs to fetch mail": IMAP and POP logins fail while it is false; new GMix boxes start false
   prefs?: Record<string, string | number | boolean>;  // webmail preferences, at most 30 keys; core reads spam, spamAction and imapDelete
   roles: MailRole[];           // roles the player assigned; the name adds more

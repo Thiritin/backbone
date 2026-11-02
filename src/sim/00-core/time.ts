@@ -25,6 +25,7 @@ export const yearOf = (hour: number): number => dateOf(hour).getUTCFullYear();
 export const hourOfMonth = (ym: string): number => { const [y, m] = ym.split("-").map(Number); return hourOf(new Date(Date.UTC(y, m - 1, 1))); };
 // Months since year 0, January 0, for comparing against a release month.
 export const monthIndexOf = (hour: number): number => { const d = dateOf(hour); return d.getUTCFullYear() * 12 + d.getUTCMonth(); };
+export const nextMonthStart = (hour: number): number => { const i = monthIndexOf(hour) + 1; return hourOfMonth(`${Math.floor(i / 12)}-${(i % 12) + 1}`); };
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];

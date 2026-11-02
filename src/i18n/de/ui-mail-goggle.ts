@@ -18,4 +18,12 @@ export default {
   "mail.gmial.folder.junk": () => "Spam",
   "mail.gmial.folder.trash": () => "Papierkorb",
   "mail.gmial.folder.archive": () => "Alle Nachrichten",
+  "error.mailSuspended": () => "Dieser Nutzer ist gesperrt.",
+  "error.goggleVerify": () => "Wir konnten den Eintrag noch nicht finden. DNS-Änderungen können bis zu 48 Stunden dauern. Oder vier Minuten. Niemand weiß es.",
+  "ticket.mail.goggleClosing.subject": () => "Änderungen an Goggle Apps Standard Edition",
+  "ticket.mail.goggleClosing.text": () => "Neukunden können sich nicht mehr für die kostenlose Standard Edition registrieren. Ihre Domain behält ihre kostenlose Version und ihre Nutzer.",
+  "ticket.mail.goggleConversion.subject": () => "Handlungsbedarf: Upgrade Ihrer kostenlosen Legacy-Version",
+  "ticket.mail.goggleConversion.text": () => "Die kostenlose Legacy-Version von Goggle Workspace wird eingestellt. Wählen Sie bis zum 1. Mai 2022 in der Admin-Konsole eine kostenpflichtige Version. Andernfalls können sich Ihre Nutzer nicht mehr anmelden und eingehende E-Mails werden zurückgewiesen, bis Sie das nachholen.",
+  "ticket.mail.goggleReminder.subject": () => "Erinnerung: Ihre kostenlose Version endet am 1. Mai 2022",
+  "ticket.mail.goggleReminder.text": () => "Wählen Sie vor dem 1. Mai 2022 in der Admin-Konsole eine kostenpflichtige Version, damit Ihre Nutzer angemeldet bleiben und Ihre E-Mails weiter ankommen.",
 } satisfies Dict;

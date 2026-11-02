@@ -18,4 +18,12 @@ export default {
   "mail.gmial.folder.junk": () => "Spam",
   "mail.gmial.folder.trash": () => "Cestino",
   "mail.gmial.folder.archive": () => "Tutti i messaggi",
+  "error.mailSuspended": () => "Questo utente è sospeso.",
+  "error.goggleVerify": () => "Non abbiamo ancora trovato il record. Le modifiche DNS possono richiedere fino a 48 ore. O quattro minuti. Nessuno lo sa.",
+  "ticket.mail.goggleClosing.subject": () => "Modifiche a Goggle Apps Standard Edition",
+  "ticket.mail.goggleClosing.text": () => "I nuovi clienti non possono più registrarsi alla Standard Edition gratuita. Il tuo dominio mantiene la sua edizione gratuita e i suoi utenti.",
+  "ticket.mail.goggleConversion.subject": () => "Azione richiesta: esegui l'upgrade della tua edizione gratuita legacy",
+  "ticket.mail.goggleConversion.text": () => "L'edizione gratuita legacy di Goggle Workspace termina. Scegli un'edizione a pagamento nella Console di amministrazione entro il 1° maggio 2022. Altrimenti nessun utente potrà accedere e la posta in arrivo verrà respinta finché non lo farai.",
+  "ticket.mail.goggleReminder.subject": () => "Promemoria: la tua edizione gratuita termina il 1° maggio 2022",
+  "ticket.mail.goggleReminder.text": () => "Scegli un'edizione a pagamento nella Console di amministrazione prima del 1° maggio 2022 per mantenere attivo l'accesso dei tuoi utenti e continuare a ricevere la posta.",
 } satisfies Dict;

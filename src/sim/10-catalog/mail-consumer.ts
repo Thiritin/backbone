@@ -1,4 +1,5 @@
 // GMix and Goggle terms by date (docs/design/plans/webmail-consumer.md, 3.1 and 4.1). The rows are in mail-providers.ts.
+import { hashRng, rand } from "../00-core/rng";
 import { hourOfMonth } from "../00-core/time";
 import type { MailKind, Message } from "../42-mail/types";
 import { stepAt, type Steps } from "./mail-providers";
@@ -19,6 +20,12 @@ export const editionAt = (plan: string, hour: number): string => stepAt(EDITIONS
 
 // Free legacy tenants get the notice from this month and lock on the deadline unless upgraded.
 export const GOGGLE_CONVERSION = { notice: "2022-01", lock: "2022-05" } as const;
+
+// The verification token of a domain, fixed by the game seed.
+export function goggleToken(seed: number, domain: string): string {
+  const r = hashRng(seed, 7919, ...[...domain].map((c) => c.charCodeAt(0)));
+  return Array.from({ length: 16 }, () => "abcdefghijklmnopqrstuvwxyz0123456789"[Math.floor(rand(r) * 36)]).join("");
+}
 
 // The record that proves the domain: a CNAME before 2012, a TXT from 2012.
 export const verificationAt = (hour: number, token: string): { type: "CNAME" | "TXT"; name: string; data: string } =>
