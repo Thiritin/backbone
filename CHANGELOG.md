@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- Every stack in a storage room now has a Ship button that sends the units to another of your sites, such as from the basement to Frankfurt.
 - Customers no longer send requests that need a company older than a year or better reviews than you have.
 - The CPU overcommit warning on hypervisor hosts now fires at 8 vCPUs per core instead of 2.
 - Upgrade requests no longer mark the current server as full.

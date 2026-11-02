@@ -168,6 +168,7 @@ function StackRow({ game, stack, onMounted }: { game: GameState; stack: Stack; o
         <div className="loc-stack-acts">
           {rackable && <button className="btn" onClick={() => setMounting(true)}><ArrowDownToLine />{t("locations-2.mount")}</button>}
           {office && <button className="btn" onClick={install}><Router />{t("locations-2.install")}</button>}
+          {game.locations.length > 1 && <button className="btn" aria-pressed={shipping} onClick={() => setShipping(!shipping)}><Truck />{t("locations-2.ship")}</button>}
           <More label={`${stack.brand} ${m.name}`} entries={entries} />
         </div>
       </div>
