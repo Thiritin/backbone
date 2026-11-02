@@ -1,27 +1,17 @@
 import { AlarmClock, BadgeCheck, ChartColumn, Check, CircleCheck, CircleX, Hourglass, Inbox, Layers, Mails, Search, Timer, TrendingDown, TriangleAlert, Wrench, X } from "lucide-react";
-import { useState, type CSSProperties } from "react";
-import { euroCents, euroPrice } from "../../../sim/00-core/money";
-import { updatePrice } from "../../../sim/10-catalog/apps";
+import { useState, type CSSProperties, type ReactNode } from "react";
+import { euroCents } from "../../../sim/00-core/money";
 import { deskHas, deskOf, type DeskFeature } from "../../../sim/10-catalog/desks";
-import { actionsOf, canEscalate, isFinal, monthlyValue, shownTemplates, templatesOf, type Ticket, type TicketAction, type TicketKind } from "../../../sim/40-support/tickets";
-import { senderById, senderName, subjectParams, TAKEDOWN_HOURS } from "../../../sim/40-support/notices";
-import { EXTENSION_DAYS } from "../../../sim/45-billing/billing";
+import { canEscalate, isFinal, type Ticket, type TicketKind } from "../../../sim/40-support/tickets";
+import { senderById, senderName, subjectParams } from "../../../sim/40-support/notices";
 import { requestName, requirementsFor, type SalesRequest } from "../../../sim/30-market/market";
 import { orderOf } from "../../../sim/30-market/orders";
 import { addressLines, mailedAddress } from "../../../sim/30-customers/addresses";
-import { companyParams } from "../../../sim/40-support/replies";
 import type { GameState } from "../../../sim/50-state";
-import { acceptSponsorship, answerSponsor, declineSponsorship } from "../../../sim/90-actions/community";
-import { HELD_TOPIC } from "../../../sim/80-business/community";
-import { changeTitle } from "../../../sim/90-actions/games";
-import { gameOf } from "../../../sim/60-infra/games";
-import { retentionOptions, type RetentionId } from "../../../sim/40-support/retention";
-import { answerDomainTransfer } from "../../../sim/90-actions/registrar";
-import { DOMAIN_OUT } from "../../../sim/30-customers/registrar";
-import { assignTicket, closeTicket, escalateTicket, readTicket, replyTicket, resolveTicket, retainTicket } from "../../../sim/90-actions/support";
+import { assignTicket, closeTicket, escalateTicket, readTicket, resolveTicket } from "../../../sim/90-actions/support";
 import { t } from "../../../i18n/en";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
-import { uiSound, useFocus, useStore } from "../../store";
+import { useFocus, useStore } from "../../store";
 import { useSessionState } from "../../session";
 import { More } from "../More";
 import { EmailSettings } from "../EmailSettings";
@@ -33,12 +23,12 @@ import { supportApp } from "./desk";
 import { CustomCompose, InvoicePill, MailAttachments } from "./CustomOrder";
 import { Compose } from "./Compose";
 import { specText } from "../../../sim/30-market/spec";
-import { OVERDRAFT } from "../../../sim/80-business/walk";
-import { bankUrl, HOME_URL } from "../../../sim/80-business/browser";
-import { isLicence } from "../../../sim/80-business/licences";
-import { ORDER } from "../../../sim/80-business/vendor-shop";
 import { OrderKeys } from "../browser/sites/shop/VendorShop";
-import { due, initials, KINDS, kindOf, monthYear, moodClass, span, stamp, statusOf } from "./labels";
+import { ReplyPanel } from "../browser/sites/desk/headless/ReplyPanel";
+import { TicketPane } from "../browser/sites/desk/headless/TicketPane";
+import type { ReplyAnswer } from "../browser/sites/desk/headless/useTicketReplies";
+import type { PaneExtra, PaneMessage } from "../browser/sites/desk/headless/useTicketPane";
+import { due, initials, KINDS, kindOf, moodClass, span, stamp, statusOf } from "./labels";
 import { SLAS } from "../../../sim/10-catalog/products";
 import { Card, LostSales, need, SLA_LABEL } from "../sales/SalesApp";
 import "./support.css";
@@ -52,39 +42,6 @@ const BOXES: { id: TicketBox; label: string; icon: typeof Inbox; match: (t: Tick
   { id: "escalated", label: t("support.status.escalated"), icon: Wrench, match: (t) => t.status === "escalated" },
   { id: "done", label: t("support.box.closed"), icon: CircleCheck, match: isFinal },
 ];
-const ACTION_LABEL: Record<TicketAction, string> = {
-  credit: t("support.action.credit"),
-  cancel: t("support.action.cancel"),
-  unsuspend: t("support.action.unsuspend", { days: EXTENSION_DAYS }),
-  keep: t("support.action.keep"),
-  forward: t("support.action.forward"),
-  takedown: t("support.action.takedown", { h: TAKEDOWN_HOURS }),
-  reject: t("support.action.reject"),
-  comply: t("support.action.comply"),
-  object: t("support.action.object"),
-  refund: t("support.action.refund"),
-  revert: t("support.action.revert"),
-  pay: t("support.action.pay"),
-  refuse: t("support.action.refuse"),
-  accept: t("support.action.accept"),
-  offerOnce: t("support.action.offerOnce"),
-  offerManaged: t("support.action.offerManaged"),
-  free: t("support.action.free"),
-  clean: t("support.action.clean"),
-  noBackup: t("support.action.noBackup"),
-};
-const OFFER_TITLE: Record<RetentionId, string> = {
-  half: t("support.offer.half"),
-  free: t("support.offer.free"),
-  d3: t("support.offer.d3"),
-  d6: t("support.offer.d6"),
-  d12: t("support.offer.d12"),
-  upgrade: t("support.offer.upgrade"),
-  fix: t("support.offer.fix"),
-  move: t("support.offer.move"),
-};
-const ODDS_LABEL = { unlikely: t("support.odds.unlikely"), even: t("support.odds.even"), likely: t("support.odds.likely") } as const;
-const actionLabel = (tk: Ticket, a: TicketAction) => (tk.kind === "refund" && a === "reject" ? t("support.action.refuse") : ACTION_LABEL[a]);
 
 // Read, escalate and close for a ticket, and the customer or request behind it.
 function ticketMenu(game: GameState, tk: Ticket): MenuEntry[] {
@@ -327,189 +284,160 @@ function OrderThread({ tk, r, gates }: { tk: Ticket; r: SalesRequest; gates: Gat
   );
 }
 
+const ANSWER_ICON: Record<ReplyAnswer, typeof Check | null> = { overdraft: null, sponsorNo: CircleX, sponsorYes: Check, sponsorDecline: CircleX, sponsorAccept: Check, titleAccept: Check };
+
+function Message({ m, children }: { m: PaneMessage; children?: ReactNode }) {
+  return (
+    <div className={m.you ? "msg you" : "msg"}>
+      <div className="from">{m.from} · <span className="num">{stamp(m.hour)}</span></div>
+      <p>{m.text}</p>
+      {children}
+    </div>
+  );
+}
+
 function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
   const game = useStore((s) => s.game);
   const act = useStore((s) => s.act);
-  const reply: typeof act = (fn, ...args) => {
-    const r = act(fn, ...args);
-    if (r.ok) uiSound("typing");
-    return r;
-  };
-  const c = game.customers.find((x) => x.id === tk.customerId);
-  const svc = game.services.find((v) => v.id === tk.serviceId);
-  const p = subjectParams(game, tk);
-  const sender = tk.notice && senderById(tk.notice.sender);
   const openApp = useStore((s) => s.openApp);
   const K = kindOf(tk.kind);
-  const monthly = c ? monthlyValue(game.services, c.id) : 0;
-  const stray = tk.kind === "notice" && !tk.customerId;
-  const left = tk.dueAt - game.hour;
-  const services = game.services.filter((v) => v.customerId === tk.customerId && v.endedAt === null);
-  const locked = !!tk.work || isFinal(tk);
-  const agents = game.staff.filter((e) => e.role === "support");
-  const sent = tk.kind === "migration" || !!tk.term || (tk.kind === "maintenance" && (tk.topic === "notice" || tk.topic === "moved"));
+
+  const opening = (extra: PaneExtra | null) =>
+    extra === "login" ? <p><button className="btn primary" onClick={() => openApp("Browser", { kind: "url", id: String(tk.mail!.params.url) })}>{t("apps.open")}</button></p>
+    : extra === "order" ? <OrderKeys game={game} order={String(tk.mail!.params.order)} />
+    : extra === "licence" ? <p><button className="btn primary" onClick={() => openApp("Books", { kind: "register", id: "" })}>{t("vendor-sites.register")}</button></p>
+    : null;
 
   const body = (
     <div className="sup-detail">
-      <div className="d-head">
-        <div className="top"><h2>{t(`ticket.${tk.kind}.${tk.topic}.subject`, p)}</h2><span className="id num">#{tk.id.slice(3)}</span><More label={t("support.ticketNo", { n: tk.id.slice(3) })} entries={() => ticketMenu(game, tk)} /></div>
-        <div className="facts">
-          <span className="type"><K.icon />{K.label}</span>
-          <span>{t("support.opened", { time: stamp(tk.createdAt) })}</span>
-          {tk.status === "open" && gates.slaTimers
-            ? <span className={`pill ${left < 0 ? "bad" : left <= (tk.dueAt - tk.createdAt) / 4 ? "warn" : ""}`}><Timer />{tk.notice || left < 0
-                ? <span>{t(left < 0 ? "support.overdueBy" : "support.toRespondIn", { span: span(left) })}</span>
-                : <span>{t("support.due", { time: due(tk.dueAt, game.hour) })}</span>}</span>
-            : <span className="pill">{statusOf(tk)}</span>}
-        </div>
-        {gates.assign && agents.length > 0 && !isFinal(tk) && (
-          <div className="facts">
-            <span>{t("support.assign")}</span>
-            <span className="seg wrap" role="group" aria-label={t("support.assign")}>
-              {[{ id: null, name: t("support.nobody") }, ...agents].map((a) => (
-                <button key={a.id ?? "none"} aria-pressed={tk.assignee === a.id} onClick={() => act(assignTicket, tk.id, a.id)}>{a.name}</button>
-              ))}
-            </span>
-          </div>
-        )}
-      </div>
-
-      {sender ? (
-        <div className="cust">
-          <div className="logo">{initials(senderName(sender.id))}</div>
-          <div>
-            <div className="name"><Sender id={sender.id} /></div>
-            <div className="sub">{tk.notice!.from}</div>
-            {tk.topic === "phishing" && <button className="sup-url" onClick={() => openApp("Browser", { kind: "url", id: tk.notice!.url })}>{tk.notice!.url}</button>}
-          </div>
-          <div className="happy">
-            <div className="k">{t("support.customer")}</div>
-            <div>{c ? <CustomerLink id={c.id} name={c.name} /> : t("support.none")}</div>
-          </div>
-        </div>
-      ) : c && !gates.customerSidebar && (
-      <div className="cust">
-        <div className="logo">{initials(c.name)}</div>
-        <div>
-          <div className="name"><CustomerLink id={c.id} name={c.name} /></div>
-          <div className="sub">
-            {t("support.custLine", { what: svc ? svc.label : services.length === 1 ? services[0].label : t("support.nServices", { n: services.length }), price: euroPrice(monthly), since: monthYear(c.since) })}
-          </div>
-        </div>
-        <div className="happy">
-          <div className="k">{t("support.happiness", { n: Math.round(c.happiness) })}</div>
-          <div className="bar"><i className={moodClass(c.happiness)} style={{ width: `${c.happiness}%` }} /></div>
-        </div>
-      </div>
-      )}
-
-      <div className="thread">
-        <div className={sent ? "msg you" : "msg"}>
-          <div className="from">{sender ? senderName(sender.id) : sent ? t("support.you") : tk.kind === "sponsor" ? p.event : tk.mail ? tk.mail.from : tk.kind === "pear" ? t("walk.from") : c?.name} · <span className="num">{stamp(tk.createdAt)}</span></div>
-          <p>{t(`ticket.${tk.kind}.${tk.topic}.text`, p)}</p>
-          {tk.mail && tk.topic === "registrarLogin" && <p><button className="btn primary" onClick={() => openApp("Browser", { kind: "url", id: String(tk.mail!.params.url) })}>{t("apps.open")}</button></p>}
-          {tk.topic === ORDER && <OrderKeys game={game} order={String(tk.mail!.params.order)} />}
-          {isLicence(tk.topic) && <p><button className="btn primary" onClick={() => openApp("Books", { kind: "register", id: "" })}>{t("vendor-sites.register")}</button></p>}
-        </div>
-        {tk.replies.map((r, i) => (
-          <div key={i} className="thread-pair">
-            <div className="msg you">
-              <div className="from">{r.by ?? t("support.you")} · <span className="num">{stamp(r.hour)}</span></div>
-              <p>{r.key ? t(r.key, r.params) : t(`template.${r.template}.text`, companyParams(game))}</p>
+      <TicketPane
+        game={game}
+        ticket={tk}
+        head={(m) => (
+          <div className="d-head">
+            <div className="top"><h2>{m.subject}</h2><span className="id num">#{m.ref}</span><More label={t("support.ticketNo", { n: m.ref })} entries={() => ticketMenu(game, tk)} /></div>
+            <div className="facts">
+              <span className="type"><K.icon />{K.label}</span>
+              <span>{t("support.opened", { time: stamp(m.opened) })}</span>
+              {m.due && gates.slaTimers
+                ? <span className={`pill ${m.due.tone}`}><Timer /><span>{m.due.text}</span></span>
+                : <span className="pill">{m.status}</span>}
             </div>
-            {!r.right && (
-              <div className="msg">
-                <div className="from">{c?.name} · <span className="num">{stamp(r.hour)}</span></div>
-                <p>{t("ticket.followUp.text")}</p>
+            {gates.assign && m.assignees.length > 0 && (
+              <div className="facts">
+                <span>{t("support.assign")}</span>
+                <span className="seg wrap" role="group" aria-label={t("support.assign")}>
+                  {m.assignees.map((a) => (
+                    <button key={a.id ?? "none"} aria-pressed={a.active} onClick={() => act(assignTicket, tk.id, a.id)}>{a.name}</button>
+                  ))}
+                </span>
               </div>
             )}
           </div>
-        ))}
-        {tk.move?.log.map((m, i) => (
-          <div key={`m${i}`} className="msg">
-            <div className="from">{c?.name} · <span className="num">{stamp(m.hour)}</span></div>
-            <p>{t(m.key, m.params)}</p>
+        )}
+        party={({ sender, customer: c }) => sender ? (
+          <div className="cust">
+            <div className="logo">{initials(senderName(sender.id))}</div>
+            <div>
+              <div className="name"><Sender id={sender.id} /></div>
+              <div className="sub">{sender.from}</div>
+              {sender.url && <button className="sup-url" onClick={() => openApp("Browser", { kind: "url", id: sender.url! })}>{sender.url}</button>}
+            </div>
+            <div className="happy">
+              <div className="k">{t("support.customer")}</div>
+              <div>{c ? <CustomerLink id={c.id} name={c.name} /> : t("support.none")}</div>
+            </div>
           </div>
-        ))}
-        {tk.move?.windowAt != null && tk.status === "waiting" && <div className="event"><span>{t("support.moveAt", { time: stamp(tk.move.windowAt) })}</span></div>}
-        {tk.outcome === "withdrawn" && (
-          <div className="msg">
-            <div className="from">{c?.name} · <span className="num">{stamp(tk.updatedAt)}</span></div>
-            <p>{t("ticket.withdrawn.text")}</p>
+        ) : c && !gates.customerSidebar && (
+          <div className="cust">
+            <div className="logo">{initials(c.name)}</div>
+            <div>
+              <div className="name"><CustomerLink id={c.id} name={c.name} /></div>
+              <div className="sub">{c.line}</div>
+            </div>
+            <div className="happy">
+              <div className="k">{t("support.happiness", { n: Math.round(c.happiness) })}</div>
+              <div className="bar"><i className={moodClass(c.happiness)} style={{ width: `${c.happiness}%` }} /></div>
+            </div>
           </div>
         )}
-        {tk.work && <div className="event"><span>{t("support.queuedUntil", { time: stamp(tk.work.doneAt / 60) })}</span></div>}
-        {(tk.status === "escalated" || isFinal(tk)) && (
-          <div className="event"><span>{t(`outcome.${tk.outcome ?? (tk.status === "closed" ? "closed" : tk.status === "escalated" ? "escalated" : "resolved")}`)} · <span className="num">{stamp(tk.updatedAt)}</span></span></div>
+        thread={(m) => (
+          <div className="thread">
+            {m.items.map((it, i) =>
+              it.type === "opening" ? <Message key={i} m={it.msg}>{opening(it.extra)}</Message>
+              : it.type === "reply" ? <div key={i} className="thread-pair"><Message m={it.msg} />{it.followUp && <Message m={it.followUp} />}</div>
+              : it.type === "msg" ? <Message key={i} m={it.msg} />
+              : <div key={i} className="event"><span>{it.text}{it.hour !== null && <> · <span className="num">{stamp(it.hour)}</span></>}</span></div>)}
+          </div>
         )}
-      </div>
-
-      {!isFinal(tk) && (
-        <div className="compose">
-          {tk.status === "open" && templatesOf(tk).length > 0 && (
+      >
+        <ReplyPanel
+          game={game}
+          ticket={tk}
+          previews={gates.templates}
+          frame={(b) => <div className="compose">{b}</div>}
+          templates={(m, h) => (
             <>
               <h3>{t("support.reply")}</h3>
               <div className="templates">
-                {shownTemplates(game, tk, gates.templates).map((id) => (
-                  <button key={id} className="tpl" disabled={locked} onClick={() => reply(replyTicket, tk.id, id)}>
-                    <span className="t">{t(`template.${id}.title`)}</span>
-                    {gates.templates && <span className="p">{t(`template.${id}.text`, { ...companyParams(game), ...p })}</span>}
+                {m.templates!.map((x) => (
+                  <button key={x.id} className="tpl" disabled={m.locked} onClick={() => h.reply(x.id)}>
+                    <span className="t">{x.title}</span>
+                    {x.preview !== null && <span className="p">{x.preview}</span>}
                   </button>
                 ))}
               </div>
             </>
           )}
-          {tk.kind === "cancellation" && tk.status === "open" && (
+          offers={(m, h) => (
             <>
               <h3>{t("support.retentionOffers")}</h3>
               <div className="offers">
-                {retentionOptions(game, tk).map((o) => {
-                  const v = game.services.find((x) => x.id === o.serviceId);
-                  return (
-                    <button key={o.id} className="offer" disabled={locked} onClick={() => reply(retainTicket, tk.id, o.id)}>
-                      <span className="t">{OFFER_TITLE[o.id]}</span>
-                      <span className="v num">{o.spec && v ? specText(v.product, o.spec) : o.target ?? (o.cost > 0 ? euroCents(o.cost) : t("support.noCost"))}</span>
-                      <span className={`odds ${o.odds}`}>{ODDS_LABEL[o.odds]}</span>
-                    </button>
-                  );
-                })}
+                {m.offers!.map((o) => (
+                  <button key={o.id} className="offer" disabled={m.locked} onClick={() => h.retain(o.id)}>
+                    <span className="t">{o.title}</span>
+                    <span className="v num">{o.value}</span>
+                    <span className={`odds ${o.odds}`}>{o.oddsLabel}</span>
+                  </button>
+                ))}
               </div>
             </>
           )}
-          {tk.topic === DOMAIN_OUT && tk.status === "open" && <TransferAnswer id={tk.id} locked={locked} />}
-          <div className="actions-row">
-            {actionsOf(tk).filter((a) => (a !== "revert" || tk.topic === "price") && (!stray || a === "reject")).map((a) => (
-              <button key={a} className="btn" disabled={locked || ((a === "forward" || a === "takedown") && !c)} onClick={() => reply(resolveTicket, tk.id, a)}>
-                {actionLabel(tk, a)}{a === "credit" && <span className="num">({euroCents(monthly * 0.1)})</span>}{a === "refund" && <span className="num">({euroCents(monthly)})</span>}{a === "pay" && <span className="num">({euroCents(Number(p.ransom))})</span>}{a === "offerOnce" && <span className="num">({euroCents(updatePrice(game.rates.webHosting, "updateOnce"))})</span>}{a === "offerManaged" && <span className="num">({t("support.perMonth", { price: euroCents(updatePrice(game.rates.webHosting, "updates")) })})</span>}
-              </button>
-            ))}
-            <span className="grow" />
-            {tk.kind === "pear" && tk.topic === OVERDRAFT && <button className="btn primary" onClick={() => openApp("Browser", { kind: "url", id: game.bank ? `${bankUrl(game.bank.id)}banking/overdraft` : HOME_URL })}>{t("apps.open")}</button>}
-            {tk.kind === "sponsor" && tk.topic === HELD_TOPIC && <button className="btn ghost" disabled={locked} onClick={() => act(answerSponsor, tk.id, false)}><CircleX />{t("support.toughLuck")}</button>}
-            {tk.kind === "sponsor" && tk.topic === HELD_TOPIC && <button className="btn primary" disabled={locked} onClick={() => act(answerSponsor, tk.id, true)}><Check />{t("support.bannerBack")}</button>}
-            {tk.kind === "sponsor" && tk.topic !== HELD_TOPIC && <button className="btn ghost" disabled={locked} onClick={() => act(declineSponsorship, tk.id)}><CircleX />{t("support.decline")}</button>}
-            {tk.kind === "sponsor" && tk.topic !== HELD_TOPIC && <button className="btn primary" disabled={locked} onClick={() => act(acceptSponsorship, tk.id)}><Check />{t("support.accept")}</button>}
-            {tk.topic === "switchTitle" && !isFinal(tk) && <button className="btn primary" disabled={locked} onClick={() => act(changeTitle, tk.serviceId!, gameOf(game, tk.serviceId!)?.switchTo ?? "")}><Check />{t("support.accept")}</button>}
-            {!stray && tk.kind !== "sponsor" && <button className="btn ghost" disabled={locked} onClick={() => act(closeTicket, tk.id)}><X />{tk.notice ? t("support.ignore") : tk.topic === "switchTitle" ? t("support.decline") : t("support.close")}</button>}
-            {tk.status === "waiting" && tk.kind !== "migration" && !tk.work && <button className="btn primary" disabled={locked} onClick={() => act(resolveTicket, tk.id)}><CircleCheck />{t("support.resolve")}</button>}
-          </div>
-        </div>
-      )}
+          transfer={(m, h) => <TransferAnswer locked={m.locked} onAnswer={h.transfer} />}
+          buttons={(m, h) => (
+            <div className="actions-row">
+              {m.actions.map((a) => (
+                <button key={a.id} className="btn" disabled={a.disabled} onClick={() => h.action(a.id)}>
+                  {a.label}{a.amount !== null && <span className="num">({a.amount})</span>}
+                </button>
+              ))}
+              <span className="grow" />
+              {m.answers.map((a) => {
+                const Icon = ANSWER_ICON[a.id];
+                return <button key={a.id} className={a.primary ? "btn primary" : "btn ghost"} disabled={a.disabled} onClick={() => h.answer(a.id)}>{Icon && <Icon />}{a.label}</button>;
+              })}
+              {m.close !== null && <button className="btn ghost" disabled={m.locked} onClick={h.close}><X />{m.close}</button>}
+              {m.resolve && <button className="btn primary" disabled={m.locked} onClick={h.resolve}><CircleCheck />{t("support.resolve")}</button>}
+            </div>
+          )}
+        />
+      </TicketPane>
     </div>
   );
+  const c = game.customers.find((x) => x.id === tk.customerId);
   return gates.customerSidebar && c ? <div className="sup-split">{body}<CustomerCard game={game} id={c.id} /></div> : body;
 }
 
 // A transfer request: the auth code from the registrar's panel goes into the reply, or the transfer is refused.
-function TransferAnswer({ id, locked }: { id: string; locked: boolean }) {
-  const act = useStore((s) => s.act), [code, setCode] = useState("");
+function TransferAnswer({ locked, onAnswer }: { locked: boolean; onAnswer: (code: string | null) => void }) {
+  const [code, setCode] = useState("");
   return (
     <>
       <h3>{t("support.reply")}</h3>
-      <form className="actions-row" onSubmit={(e) => { e.preventDefault(); act(answerDomainTransfer, id, code); }}>
+      <form className="actions-row" onSubmit={(e) => { e.preventDefault(); onAnswer(code); }}>
         <input className="field" aria-label={t("registrarForm.authCode")} placeholder={t("registrarForm.authCode")} spellCheck={false} autoCapitalize="characters" value={code} onChange={(e) => setCode(e.target.value)} />
         <button className="btn primary" disabled={locked || !code.trim()}><Check />{t("support.sendCode")}</button>
-        <button type="button" className="btn ghost" disabled={locked} onClick={() => act(answerDomainTransfer, id, null)}><CircleX />{t("support.refuseTransfer")}</button>
+        <button type="button" className="btn ghost" disabled={locked} onClick={() => onAnswer(null)}><CircleX />{t("support.refuseTransfer")}</button>
       </form>
     </>
   );

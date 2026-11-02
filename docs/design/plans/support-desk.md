@@ -361,7 +361,7 @@ A save with a desk in `s.installed` and no `s.desk` loads with a legacy desk: ho
 | `src/sim/88-tick/tick.ts` | one `deskTick` call | own line |
 | `src/sim/10-catalog/store.ts`, `desks.ts` | desk items leave the Pear Store catalog; desk catalog grows | `install(id)` keeps working for saves and old tests |
 | `src/sim/90-actions/index.ts` | one export line for `desk.ts` | |
-| `src/ui/apps/support/` | `Thread` logic moves to `reply/` as the headless `ReplyPanel` and `TicketPane` (M1); `SupportApp.tsx` is deleted in M14 | `mail-client` imports the headless pieces, never SupportApp |
+| `src/ui/apps/support/` | `Thread` renders the headless `ReplyPanel` and `TicketPane` from `browser/sites/desk/headless/` (M1); `SupportApp.tsx` is deleted in M14 | `mail-client` imports the headless pieces, never SupportApp |
 | `src/ui/apps/browser/sites/desk/` | `DeskSite.tsx` (dispatcher), `headless/`, and one folder per desk | a desk folder never imports another desk's folder |
 | `src/ui/apps/shop/Software.tsx`, `src/ui/apps/staff/StaffApp.tsx` | the desk shelf leaves the Pear Store (M4); the ChadGPT tile and usage facts go (M16) | |
 | `docs/design/economy.md`, `docs/design/gdd.md` | Support desks (M2), AI bots and ChadGPT usage (M16) | |
@@ -375,7 +375,7 @@ Each milestone is one pull request, green on `npm run typecheck`, `npm test` and
 
 **M1. Headless reply panel and ticket pane.**
 - Sim: none.
-- UI: move the logic of `Thread` into `src/ui/apps/browser/sites/desk/headless/` as `useTicketReplies(game, ticket)`, `useTicketPane(game, ticket)` and the headless `ReplyPanel` and `TicketPane`. They hold the templates with previews, retention offers, actions with their amounts, the domain transfer answer, Resolve and Close, the thread items, notes, events and properties, and they render only the slots they are given. `SupportApp` uses them with no visible change, and Pear Mail's Response list and resolve banner use `useTicketReplies`.
+- UI: move the logic of `Thread` into `src/ui/apps/browser/sites/desk/headless/` as `useTicketReplies(game, ticket)`, `useTicketPane(game, ticket)` and the headless `ReplyPanel` and `TicketPane`. They hold the templates with previews, retention offers, actions with their amounts, the domain transfer answer, Resolve and Close, the thread items, notes, events and properties, and they render only the slots they are given. `SupportApp` uses them with no visible change. `useTicketReplies` takes a third argument, `previews`, which shows every template with its text (the desk feature `templates`); without it the model holds the three `shownTemplates` titles a mail client shows. Both hooks are plain functions of the state, so tests call them directly. Pear Mail's Response list and resolve banner use `useTicketReplies` when `mail-client` builds the client.
 - i18n: none; existing keys.
 - Tests: `tests/support-reply-model.test.ts` for the hooks' output per kind (howTo, billing, cancellation, refund, domain transfer), and the existing support suites unchanged.
 
