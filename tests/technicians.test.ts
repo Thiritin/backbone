@@ -16,7 +16,8 @@ import { addCustomer } from "../src/sim/90-actions/customers";
 import { addLocation, buyRack, connect, setPower } from "../src/sim/90-actions/hardware";
 import { buyDevice } from "./fixtures";
 import { mountDevice } from "./plugged";
-import { cancelOperation, hire, queueOperation, queuePhpUpgrade, setTechLocation, setTechRules } from "../src/sim/90-actions/staff";
+import { cancelOperation, queueOperation, queuePhpUpgrade, setTechLocation, setTechRules } from "../src/sim/90-actions/staff";
+import { hire } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 
 type R = ReturnType<typeof setPower>;

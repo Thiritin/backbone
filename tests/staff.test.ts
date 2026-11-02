@@ -9,7 +9,8 @@ import {
 import { type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { addCustomer } from "../src/sim/90-actions/customers";
-import { answerRaise, assign, fire, hire, planTraining, postJobAd } from "../src/sim/90-actions/staff";
+import { answerRaise, assign, fire, planTraining, postJobAd } from "../src/sim/90-actions/staff";
+import { hire } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 
 const FEB_1 = 744, MONDAY_9 = 48 + 9;

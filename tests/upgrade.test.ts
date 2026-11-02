@@ -6,7 +6,8 @@ import { BOOT_HOURS, deviceHealth, installedRamGb } from "../src/sim/60-infra/st
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { addLocation, addSecondPsu, buyRack, installPart, removePart, setPower, type CartLine } from "../src/sim/90-actions/hardware";
 import { buyBare, buyDevice, newGame } from "./fixtures";
-import { hire, queueOperation } from "../src/sim/90-actions/staff";
+import { queueOperation } from "../src/sim/90-actions/staff";
+import { hire } from "./fixtures";
 import { mountDevice } from "./plugged";
 import { withServer } from "./fixtures";
 

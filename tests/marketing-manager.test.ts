@@ -6,7 +6,8 @@ import { type GameState } from "../src/sim/50-state";
 import { leadsThisMonth } from "../src/sim/80-business/marketing";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { setCampaign, setReviewPlatform } from "../src/sim/90-actions/marketing";
-import { assign, fire, hire } from "../src/sim/90-actions/staff";
+import { assign, fire } from "../src/sim/90-actions/staff";
+import { hire } from "./fixtures";
 
 const FEB_1 = 744;
 

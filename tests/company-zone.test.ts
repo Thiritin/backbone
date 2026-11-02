@@ -6,11 +6,13 @@ import { removeCompanyRecord, setCompanyRecord } from "../src/sim/90-actions/dom
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { readyGame } from "./fixtures";
 
+// readyGame books Hosted Exchange, which points the MX record at Ionose; these cases start from the registrar's parking zone.
+const parked = (s: ReturnType<typeof readyGame>) => { s.company = { ...s.company, zone: PARKING }; return s; };
 const data = (s: ReturnType<typeof readyGame>, type: "MX" | "TXT", name: string, hour: number) => recordAt(s, type, name, hour).map((r) => r.data);
 
 describe("company zone", () => {
   it("shows a new record after the default TTL and an edit after the TTL it replaces", () => {
-    const s = readyGame(5), h = nowHours(s);
+    const s = parked(readyGame(5)), h = nowHours(s);
     const r = setCompanyRecord(s, { type: "MX", name: "@", ttl: 86400, data: "10 mx1.gmix.net" });
     expect(r.ok).toBe(true);
     expect(data(s, "MX", "@", h + 0.9)).toEqual([]);
@@ -35,7 +37,7 @@ describe("company zone", () => {
   });
 
   it("names the mail exchanger before and after an MX change", () => {
-    const s = readyGame(7), h = nowHours(s);
+    const s = parked(readyGame(7)), h = nowHours(s);
     setCompanyRecord(s, { type: "MX", name: "@", ttl: 3600, data: "20 alt1.aspmx.l.goggle.com" });
     const r = setCompanyRecord(s, { type: "MX", name: "@", ttl: 3600, data: "10 aspmx.l.goggle.com." });
     expect(mxHostsAt(s, h + 1)).toEqual(["aspmx.l.goggle.com", "alt1.aspmx.l.goggle.com"]);
@@ -57,7 +59,9 @@ describe("company zone", () => {
   it("loads an old save with the parking records and keeps edits across a save", () => {
     const s = readyGame(9), raw = JSON.parse(serialize(s));
     delete raw.company.zone;
-    expect(deserialize(JSON.stringify(raw)).company.zone).toEqual(PARKING);
+    const zone = deserialize(JSON.stringify(raw)).company.zone;
+    expect(zone.slice(0, PARKING.length)).toEqual(PARKING);
+    expect(zone.slice(PARKING.length).map((r) => r.data)).toEqual(["10 mx00.ionose.de", "20 mx01.ionose.de"]);
     setCompanyRecord(s, { type: "TXT", name: "@", ttl: 3600, data: "v=spf1 include:_spf.goggle.com ~all" });
     expect(deserialize(serialize(s)).company.zone).toEqual(s.company.zone);
   });

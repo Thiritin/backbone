@@ -2,7 +2,7 @@ import { newGame } from "./fixtures";
 import { describe, expect, it } from "vitest";
 import { monthlyBurn, runwayMonths } from "../src/sim/46-finance/finance";
 import { monthlyPay, payOf, visibleCandidates } from "../src/sim/47-staff/staff";
-import { hire } from "../src/sim/90-actions/staff";
+import { hire } from "./fixtures";
 
 describe("hiring part-time", () => {
   it("hires into the chosen team and rejects unknown teams", () => {
