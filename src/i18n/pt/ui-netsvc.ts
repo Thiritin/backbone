@@ -48,6 +48,7 @@ export default {
   "netsvc.ttl": () => "TTL",
   "netsvc.data": () => "Dados",
   "error.badRecord": () => "Este registo não é válido para a zona.",
+  "error.managedRecord": () => "Este registo é gerido automaticamente.",
   "error.unknownZone": () => "Esta zona já não existe.",
   "ticket.howTo.dnsChange.subject": () => "Alterem o nosso registo DNS, por favor",
   "ticket.howTo.dnsChange.text": (p) => `O nosso site ${p.domain} tem de apontar para ${p.ip}. Ponham o registo www nesse endereço, por favor.`,

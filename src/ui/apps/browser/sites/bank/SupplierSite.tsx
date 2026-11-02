@@ -14,9 +14,14 @@ import { usePageAct } from "../../pageAct";
 const day = (hour: number) => dateOf(hour).toLocaleDateString(LOCALE, { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" });
 const SKIN = { "--bar": "#3c4a5c", "--accent": "#6b7f99", "--bg": "#f2f2ee" } as CSSProperties;
 
+// The button that sets up or cancels the direct debit for invoices under that name.
+export function MandateButton({ game, name, className }: { game: GameState; name: string; className: string }) {
+  const act = usePageAct(), on = !!game.bank?.mandates.includes(name);
+  return game.bank && <button className={className} onClick={() => act(setMandate, name, !on)}>{t(on ? "bank.supplier.cancel" : "bank.supplier.setUp")}</button>;
+}
+
 // A supplier's customer portal: its invoices, and the direct debit mandate.
 export function SupplierSite({ game, name }: { game: GameState; name: string }) {
-  const act = usePageAct();
   const bills = game.payables.filter((p) => p.name === name).reverse();
   const b = game.bank, on = !!b?.mandates.includes(name);
   return (
@@ -34,7 +39,7 @@ export function SupplierSite({ game, name }: { game: GameState; name: string }) 
               <tr><td>{t("bank.pay.status")}</td><td className="r">{t(on ? "bank.supplier.active" : "bank.supplier.inactive")}</td></tr>
             </tbody>
           </table>
-          {b && <p><button className="bks-btn primary" onClick={() => act(setMandate, name, !on)}>{t(on ? "bank.supplier.cancel" : "bank.supplier.setUp")}</button></p>}
+          {b && <p><MandateButton game={game} name={name} className="bks-btn primary" /></p>}
         </section>
         <table className="bks-table bks-rows">
           <thead><tr><th>{t("bank.pay.number")}</th><th>{t("bank.pay.due")}</th><th className="r">{t("bank.site.amount")}</th><th>{t("bank.pay.status")}</th></tr></thead>

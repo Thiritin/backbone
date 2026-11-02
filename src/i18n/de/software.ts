@@ -15,6 +15,8 @@ export default {
   "ticket.mail.licenceLapsed.text": (p) => `Wir konnten die Verlängerung Ihres ${p.name}-Schlüssels ${p.key} nicht abbuchen. Die Lizenz ist abgelaufen und wird verlängert, sobald die Zahlung eingeht.`,
   "ticket.mail.licenceEditionChange.subject": (p) => `Änderung Ihrer ${p.name}-Lizenz`,
   "ticket.mail.licenceEditionChange.text": (p) => `Wir verkaufen die Edition ${p.from} nicht mehr. Bei der nächsten Verlängerung wird Ihr ${p.name}-Schlüssel ${p.key} als ${p.to} für ${euroCents(Number(p.amount))} im Monat verlängert.`,
+  "ticket.mail.licenceEditionSwitched.subject": (p) => `Ihre ${p.name}-Lizenz wurde geändert`,
+  "ticket.mail.licenceEditionSwitched.text": (p) => `Ihr ${p.name}-Schlüssel ${p.key} hat jetzt die Edition ${p.to}.`,
   "ledger.licenseOnce": (p) => `${p.name}-Lizenz, ${p.machine}`,
   "ledger.balancer": (p) => `${p.name}, ${p.cluster}`,
   "ledger.appSuite": (p) => `VMwhere App Suite, ${p.cluster}`,

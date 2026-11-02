@@ -19,7 +19,8 @@
 .books-a4 td { padding: 0.3em 0; border-bottom: 1px solid #ddd; }
 .books-a4 .r { text-align: right; }
 .books-a4 .books-total td { font-weight: 700; border-bottom: 0; }
-.books-a4 footer { margin-top: auto; display: flex; align-items: center; gap: 0.6em; }
+.books-a4 footer { margin-top: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 0.6em 1.4em; }
+.books-a4 footer > span { white-space: nowrap; }
 .books-a4 footer .pill { font-size: 1em; height: auto; min-height: 0; line-height: 1.4; padding: 0 0.6em; }
 
 /* Bank: the bookings on top, what the selected one can pay or pays below. */

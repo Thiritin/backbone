@@ -17,7 +17,9 @@ import { Page } from "../../../../books/InvoicesTab";
 import { formatDay } from "../../../../billing/format";
 import { monthYear } from "../../../../support/labels";
 import { useFieldAct, usePageAct } from "../../../pageAct";
-import { A, ownAddress, SignIn, spaceText, type ProviderProps, type Route } from "../ProviderSite";
+import { ownAddress } from "../../../../../../sim/30-customers/addresses";
+import { MandateButton } from "../../bank/SupplierSite";
+import { A, SignIn, spaceText, type ProviderProps, type Route } from "../ProviderSite";
 import "../../../../books/books.css";
 import "./portal.css";
 
@@ -315,12 +317,25 @@ function Tickets({ game, p }: Props) {
   );
 }
 
+// The billing address given with the latest order, else the company's own, and how each site's rent is paid.
 function Profile({ game, p }: Props) {
-  const own = ownAddress(game);
-  return <Kv rows={[
-    [t("portal.customerNo"), customerNo(game, p)], [t("providers.company"), game.company.name], [t("providers.contact"), own.contact],
-    [t("providers.street"), own.street], [t("providers.city"), `${own.zip} ${own.city}`], [t("providers.email"), own.email],
-  ]} />;
+  const own = ownAddress(game), mine = game.contracts.filter((c) => c.provider === p.id);
+  const b = [...mine].reverse().find((c) => c.billing)?.billing ?? { company: game.company.name, name: own.contact, address: own };
+  const sites = [...new Set(mine.map((c) => datacenterById(c.dc).name))];
+  return <>
+    <Kv rows={[
+      [t("portal.customerNo"), customerNo(game, p)], [t("providers.company"), b.company], [t("providers.contact"), b.name],
+      [t("providers.street"), b.address.street], [t("providers.city"), `${b.address.zip} ${b.address.city}`], [t("providers.email"), own.email],
+    ]} />
+    {sites.length > 0 && <>
+      <h3 className="ps-portal-h">{t("checkout.paymentMethod")}</h3>
+      <table className="ps-table"><tbody>
+        {sites.map((name) => (
+          <tr key={name}><td>{name}</td><td>{game.bank?.mandates.includes(name) ? t("bank.supplier.mandate") : t("providers.byInvoice")}</td><td><MandateButton game={game} name={name} className="ps-btn" /></td></tr>
+        ))}
+      </tbody></table>
+    </>}
+  </>;
 }
 
 // The signed-in portal: a bar with the customer, a menu of the sections and the page.

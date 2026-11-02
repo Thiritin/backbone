@@ -1,5 +1,5 @@
 import {
-  Activity, CalendarDays, Landmark, Cloud, Mailbox, FolderOpen, Bug, BookOpen, Compass, ChartPie, Contact, FileText, Network, GraduationCap, LifeBuoy, Megaphone, MessageCircle, Newspaper, Receipt, Server, Settings, ShieldAlert, ShoppingCart, SquareTerminal,
+  Activity, CalendarDays, FileSearch, Landmark, Cloud, Mailbox, FolderOpen, Bug, BookOpen, Compass, ChartPie, Contact, FileText, Network, GraduationCap, LifeBuoy, Megaphone, MessageCircle, Newspaper, Receipt, Server, Settings, ShieldAlert, ShoppingCart, SquareTerminal,
 } from "lucide-react";
 import type { ComponentType } from "react";
 import { t } from "../../i18n/en";
@@ -23,6 +23,7 @@ import { ResearchApp } from "./research/ResearchApp";
 import { StaffApp } from "./staff/StaffApp";
 import { WeatherApp } from "./weather/WeatherApp";
 import { PostApp } from "./PostApp";
+import { PreviewApp } from "./PreviewApp";
 import { inbox } from "../../sim/40-support/letters";
 import { TerminalApp } from "./terminal/TerminalApp";
 import { isFinal } from "../../sim/40-support/tickets";
@@ -72,6 +73,7 @@ export const APPS: AppDef[] = [
   { name: "Calendar", icon: CalendarDays, tile: "oklch(0.6 0.17 25)", about: t("apps.about.Calendar"), hidden: true, body: CalendarApp },
   { name: "News", icon: Newspaper, tile: "oklch(0.55 0.12 30)", about: t("apps.about.News"), hidden: true, body: NewsApp },
   { name: "Weather", icon: Cloud, tile: "oklch(0.62 0.12 240)", about: t("apps.about.Weather"), hidden: true, body: WeatherApp },
+  { name: "Preview", icon: FileSearch, tile: "oklch(0.6 0.13 250)", about: t("apps.about.Preview"), hidden: true, body: PreviewApp },
   { name: "Dev menu", icon: Bug, tile: "oklch(0.5 0.15 25)", about: t("apps.about.Dev menu"), hidden: true, body: DevApp },
   { name: "Chat", icon: MessageCircle, tile: "oklch(0.55 0.16 275)", about: t("apps.about.Chat") },
   { name: "Settings", icon: Settings, tile: "oklch(0.55 0.01 260)", about: t("apps.about.Settings") },

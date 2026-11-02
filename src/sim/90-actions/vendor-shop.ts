@@ -1,16 +1,17 @@
 // docs/design/plans/software-licences.md, lanes vendor-shop and my-account: buying licence keys on a vendor site and cancelling
 // a term licence from My account.
 import { cents } from "../45-billing/billing";
-import type { GameState } from "../50-state";
-import { cardReady, cardSpent } from "../46-finance/bank";
+import type { GameState, PostalAddress } from "../50-state";
+import { cardDetails, cardReady, cardSpent } from "../46-finance/bank";
+import { orderError } from "./company";
 import { invoice } from "../46-finance/payables";
 import { updateKey } from "../60-infra/licence";
-import { cartOf, lineMajor, lineOffer, sendKeys, vendorName, type CartLine, type KeyLine } from "../80-business/vendor-shop";
+import { cartOf, editionBlock, editionChange, lineMajor, lineOffer, sendKeys, vendorName, type CartLine, type KeyLine } from "../80-business/vendor-shop";
 import type { ActionResult } from "./hardware";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
-type LineId = Pick<CartLine, "product" | "edition" | "from">;
-const same = (a: LineId) => (b: CartLine) => a.product === b.product && a.edition === b.edition && a.from === b.from;
+type LineId = Pick<CartLine, "product" | "edition" | "from" | "replaces">;
+const same = (a: LineId) => (b: CartLine) => a.product === b.product && a.edition === b.edition && a.from === b.from && a.replaces === b.replaces;
 
 // from puts the upgrade from that major in the cart instead of an edition.
 export function addToCart(s: GameState, product: string, edition: string | null, from?: string): ActionResult {
@@ -21,33 +22,59 @@ export function addToCart(s: GameState, product: string, edition: string | null,
   return { ok: true };
 }
 
-export function removeFromCart(s: GameState, product: string, edition: string | null, from?: string): ActionResult {
-  const id = { product, edition, from };
+// Puts the change of a key to another edition in the cart, one line per key.
+export function changeEdition(s: GameState, keyId: string, edition: string): ActionResult {
+  const k = s.licenses.find((x) => x.id === keyId);
+  if (!k) return fail("error.unknownLicence");
+  if (!editionChange(s, keyId, edition)) return fail("error.notForSale");
+  const blocked = editionBlock(s, keyId, edition);
+  if (blocked) return fail(blocked);
+  s.cart = [...s.cart.filter((l) => l.replaces !== keyId), { product: k.product, edition, qty: 1, replaces: keyId }];
+  return { ok: true };
+}
+
+export function removeFromCart(s: GameState, product: string, edition: string | null, from?: string, replaces?: string): ActionResult {
+  const id = { product, edition, from, replaces };
   if (!s.cart.some(same(id))) return fail("error.notInCart");
   s.cart = s.cart.filter((l) => !same(id)(l));
   return { ok: true };
 }
 
-export type LicencePayment = "card" | "transfer";
+export type LicencePayment = { kind: "card"; number: string; expiry: string; cvc: string } | { kind: "transfer" };
+// What the checkout form sends: the billing contact and address, and how to pay.
+export interface OrderDetails { company: string; name: string; address: PostalAddress; email: string; payment: LicencePayment }
+
+const digits = (x: string) => x.replace(/\D/g, "");
+// Whether the card details typed in are the ones on the company card; the expiry may name the year in two or four digits.
+function cardMatches(s: GameState, p: { number: string; expiry: string; cvc: string }): boolean {
+  const c = cardDetails(s)!, [mm, yy] = c.expires.split("/"), exp = digits(p.expiry);
+  return digits(p.number) === digits(c.number) && p.cvc.trim() === c.cvc && (exp === mm + yy || exp === `${mm}20${yy}`);
+}
 
 // Places the site's cart lines as one order. A card pays at once and the keys come with the order email; a transfer gets an
 // invoice, and the keys come once the money arrives. A one-time licence costs its price; a term licence pays its first term
 // for one unit; an upgrade is a key for the next major.
-export function checkout(s: GameState, host: string, payment: LicencePayment): ActionResult {
+export function checkout(s: GameState, host: string, details: OrderDetails): ActionResult {
   const lines = cartOf(s, host);
   if (!lines.length) return fail("error.cartEmpty");
   const fees = lines.map((l) => lineOffer(s, l)?.fee);
   if (fees.some((f) => f === undefined)) return fail("error.notForSale");
-  if (!s.bank) return fail("error.noBank");
-  const total = cents(lines.reduce((n, l, i) => n + fees[i]! * l.qty, 0));
-  if (payment === "card" && !cardReady(s)) return fail("error.noCard");
-  if (payment === "card" && cardSpent(s) + total > s.bank.card!.limit) return fail("error.cardLimit");
+  const total = cents(lines.reduce((n, l, i) => n + fees[i]! * l.qty, 0)), payment = details.payment;
+  if (!s.bank && total > 0) return fail("error.noBank");
+  const bad = orderError(details);
+  if (bad) return fail(bad);
+  if (lines.some((l) => l.replaces && editionBlock(s, l.replaces, l.edition))) return fail("error.licenceCap");
+  if (total > 0 && payment.kind === "card" && !cardReady(s)) return fail("error.noCard");
+  if (total > 0 && payment.kind === "card" && !cardMatches(s, payment)) return fail("error.cardDeclined");
+  if (total > 0 && payment.kind === "card" && cardSpent(s) + total > s.bank!.card!.limit) return fail("error.cardLimit");
   const order = `ORD-${s.nextId++}`, vendor = vendorName(lines[0].product);
-  const keys: KeyLine[] = lines.map((l) => { const to = lineMajor(s, l); return { product: l.product, edition: l.edition, qty: l.qty, ...(to && { to }) }; });
+  const keys: KeyLine[] = lines.map((l) => { const to = lineMajor(s, l); return { product: l.product, edition: l.edition, qty: l.qty, ...(to && { to }), ...(l.replaces && { replaces: l.replaces }) }; });
   const entry = { hour: s.hour, category: "licenses", key: "ledger.order", params: { vendor, order }, amount: -total };
   s.cart = s.cart.filter((l) => !lines.includes(l));
-  if (payment === "card") {
-    s.bank = { ...s.bank, card: { ...s.bank.card!, spent: [...s.bank.card!.spent, entry] } };
+  // A free order, such as an edition change on a term key, needs no payment.
+  if (total === 0) { sendKeys(s, vendor, order, keys, total, false); return { ok: true, id: order }; }
+  if (payment.kind === "card") {
+    s.bank = { ...s.bank!, card: { ...s.bank!.card!, spent: [...s.bank!.card!.spent, entry] } };
     sendKeys(s, vendor, order, keys, total, true);
     return { ok: true, id: order };
   }
