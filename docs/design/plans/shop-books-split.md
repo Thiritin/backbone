@@ -64,12 +64,27 @@ Orders become their own entity in the shop and services get a detail page, follo
 
 ## 6. Server groups and placement
 
-- Members stay software installations (a panel host or a hypervisor cluster), which is what WHMCS calls a server.
-- `ServerGroup` gains `fill: "spread" | "fill"` (WHMCS: "Add to the least full server" / "Fill active server until full then switch to next least used"; Blesta: round robin / first non-full) and `disabled: string[]`.
-- `targetFor` with a product's server group: drop disabled members, then with `spread` take the least full member, with `fill` take the first member in list order that still has room. Groups without a fill mode keep today's ranking. Placement inside a cluster (`pack | spread`) is unchanged.
-- A disabled member only stops automatic placement from shop orders. Services on it keep running, and Create from a service page can still pick it by hand.
-- The group page gets an order to members (up/down) because `fill` depends on it.
-- Fill support per variant: variants without it show only the default (section 8).
+Today's Servers page in the shop admin is too much: each group has a software kind, members with their nodes and node actions (cordon, drain, maintenance), a sell switch per product line and a deploy switch for the whole group. The sell switches repeat what the product's server group already says, and node actions belong in the console. The page is cut down to what WHMCS shows.
+
+A server group is a name, a list of servers and a fill mode. Nothing else.
+
+- Members stay software installations (a panel host or a hypervisor cluster), which is what WHMCS calls a server. The group's kind is taken from its first member; the add list only offers matching servers. The kind selector on "New group" goes away.
+- Each server row shows name, accounts on it and fill level, and one switch "Aktiv". Off means new shop orders are not placed there; services on it keep running, and Create from a service page can still pick it by hand.
+- One choice per group, "Verteilung": "Gleichmäßig verteilen" (WHMCS: "Add to the least full server") or "Erst einen Server füllen" (WHMCS: "Fill active server until full then switch to next least used server"). Rows can be moved up and down, which sets the fill order.
+- Removed: the per-line sell switches (`sale`, `setGroupSale`), the group deploy switch (`deploy`, `setGroupDeploy`), node rows and node actions. `deserialize` drops `sale` and turns `deploy: false` into every member inactive.
+- Products choose their server group in the product editor, as today. A product without a group is manual: orders wait for the player.
+- On shop install one group per installed software kind is created with every matching server active (today's `firstGroups`), and new products default to it. A player with one panel host never has to open the page.
+- `ServerGroup` becomes `{ id, name, members: string[], inactive: string[], fill: "spread" | "fill" }`.
+- `targetFor` with a product's group: drop inactive members, then `spread` takes the least full member and `fill` takes the first member in list order with room. Placement inside a cluster (`pack | spread`) is unchanged.
+- Variants without server groups in the real product (section 8 table) show no Verteilung choice and always spread.
+
+### 6.1 Configurable options page removed
+
+The shop admin page "Konfigurierbare Optionen" mixes three unrelated things: cycle discounts, per-unit rates for lines without a product (`src/sim/90-actions/rates.ts`, the former Marketing > Rates), and stock per line. None of them is what WHMCS calls configurable options, and the name explains nothing. The page goes away:
+
+- Cycle discounts (`optionDiscount`, `setOptionDiscount`) move to the shop settings under "Laufzeitrabatte" and drive `autoCycles` (section 3).
+- Per-unit rates are removed. Everything the storefront sells is a product with a price; anything else is a quote request (section 4). Leads that today price from rates go to the quote path. `deserialize` drops the rates.
+- Stock per line is removed; stock per product (`ShopProduct.stock`) stays in the product editor.
 
 ## 7. Marketplace and modules
 
@@ -180,7 +195,7 @@ Each milestone is one pull request with a seeded test.
 3. Shop quotes: quote origin, shop admin Quotes page, Books shows shop quotes read-only.
 4. Lead routing with a shop: non-standard and unlisted leads become shop quote requests; `emailOrders` off means no email.
 5. `autoCycles` on shop products, cycle discounts in shop settings, manual checkbox.
-6. Server group fill mode, disabled members, member order; `targetFor`.
+6. Simpler server groups: name, servers with Aktiv switch, Verteilung, member order; drop sell and deploy switches and node rows; `targetFor`. Remove the configurable options page: cycle discounts to shop settings, rates and line stock removed.
 7. Access data: service `password`, manual `access` order step, "Zugangsdaten" ticket template, follow-up ticket when never sent.
 8. `ShopOrder` entity and Orders list and detail page with Accept running Create per item.
 9. Service detail page with module buttons, per-variant labels and access data.
