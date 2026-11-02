@@ -66,3 +66,34 @@
 .ps-spree.late .ps-btn { padding: 7px 16px; border: 1px solid #ced4da; border-radius: 4px; background: #ffffff; font-size: 14px; }
 .ps-spree.late .ps-btn.pri { border-color: #17a2b8; background: #17a2b8; color: #ffffff; }
 .ps-spree.late footer { padding: 24px 36px; background: #1d2b3a; color: #8a9bab; font-size: 13px; text-align: center; }
+
+/* Customer login: 2005 grey menu table with square bullets; 2014 Bootstrap panel with a navy side list. */
+.ps-spree { --ps-accent: #0e5a72; }
+.ps-spree .ps-portal { border: 1px solid #9fb3b9; }
+.ps-spree .ps-portal-bar { padding: 4px 8px; background: #0e5a72; color: #ffffff; border: 0; font-size: 11px; }
+.ps-spree .ps-portal-out { color: #f2b705; }
+.ps-spree .ps-portal-frame { grid-template-columns: 140px minmax(0, 1fr); }
+.ps-spree .ps-portal-nav { padding: 4px; background: #eef4f6; border-color: #c9d7db; }
+.ps-spree main .ps-portal-nav a[href] { padding: 3px 4px; color: #0e5a72; font-weight: 700; text-decoration: none; box-shadow: none; }
+.ps-spree main .ps-portal-nav a[href]::before { content: ""; display: inline-block; width: 6px; height: 6px; margin: 0 6px 1px 0; background: #f2b705; }
+.ps-spree main .ps-portal-nav a[aria-current] { background: #0e5a72; color: #ffffff; }
+.ps-spree .ps-portal-main { padding: 8px 12px 14px; }
+.ps-spree h2.ps-portal-title { margin: 0 0 8px; }
+.ps-spree .ps-portal-h { color: #0e5a72; font-size: 12px; }
+.ps-spree .ps-btn.ps-danger { color: #b02020; }
+.ps-spree .ps-sheet { border: 2px solid #0e5a72; }
+.ps-spree .ps-sheet-h { padding: 4px 8px; background: #0e5a72; color: #ffffff; font-size: 12px; }
+.ps-spree.late { --ps-accent: #17a2b8; }
+.ps-spree.late .ps-portal { border: 1px solid #dee2e6; border-radius: 4px; overflow: hidden; }
+.ps-spree.late .ps-portal-bar { padding: 12px 16px; background: #f4f6f8; color: #2c3e50; border-bottom: 1px solid #dee2e6; font-size: 14px; }
+.ps-spree.late .ps-portal-out { color: #138496; }
+.ps-spree.late .ps-portal-frame { grid-template-columns: 200px minmax(0, 1fr); }
+.ps-spree.late .ps-portal-nav { padding: 0; background: #1d2b3a; border: 0; }
+.ps-spree.late main .ps-portal-nav a[href] { padding: 12px 18px; border-bottom: 1px solid #2c3e50; color: #c8d3de; font-weight: 400; }
+.ps-spree.late main .ps-portal-nav a[href]::before { content: none; }
+.ps-spree.late main .ps-portal-nav a[aria-current] { background: #4fd1c5; color: #1d2b3a; font-weight: 600; }
+.ps-spree.late .ps-portal-main { padding: 20px 24px 26px; }
+.ps-spree.late h2.ps-portal-title { font-size: 22px; }
+.ps-spree.late .ps-portal-h { color: #1d2b3a; font-size: 16px; }
+.ps-spree.late .ps-sheet { border: 0; border-radius: 6px; overflow: hidden; }
+.ps-spree.late .ps-sheet-h { padding: 14px 18px; background: #1d2b3a; font-size: 16px; }

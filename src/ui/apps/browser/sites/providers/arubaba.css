@@ -74,3 +74,30 @@
 .ps-arubaba.late .ps-steps li { padding: 6px 16px; border-radius: 18px; }
 .ps-arubaba.late .ps-field input, .ps-arubaba.late .ps-field select { padding: 8px 10px; border-color: #c5cdd8; border-radius: 4px; }
 .ps-arubaba.late footer { padding: 28px 40px; background: #0d2a4a; color: #8ea3bd; font-size: 12px; }
+
+/* Customer area: 2005 orange title bar with a grey link column; 2015 white card, navy side menu and orange marks. */
+.ps-arubaba { --ps-accent: #f07d00; }
+.ps-arubaba .ps-portal { border: 1px solid #cccccc; }
+.ps-arubaba .ps-portal-bar { background: linear-gradient(#ff9c2a, #f07d00); color: #ffffff; border: 0; font-weight: 700; }
+.ps-arubaba .ps-portal-out { color: #4a2600; }
+.ps-arubaba .ps-portal-frame { grid-template-columns: 160px minmax(0, 1fr); }
+.ps-arubaba .ps-portal-nav { padding: 0; background: #f1f1f1; border-color: #cccccc; }
+.ps-arubaba main .ps-portal-nav a[href] { padding: 5px 10px; border-bottom: 1px solid #dddddd; color: #4a4a4a; font-weight: 700; text-decoration: none; box-shadow: none; }
+.ps-arubaba main .ps-portal-nav a[aria-current] { background: #ffffff; color: #f07d00; box-shadow: inset 4px 0 #f07d00; }
+.ps-arubaba h2.ps-portal-title { margin: 0 0 8px; padding-bottom: 3px; border-bottom: 2px solid #f07d00; color: #f07d00; font-size: 14px; }
+.ps-arubaba .ps-portal-h { color: #4a4a4a; font-size: 12px; }
+.ps-arubaba .ps-btn.ps-danger { color: #c00000; }
+.ps-arubaba .ps-sheet-h { background: #f07d00; color: #ffffff; font-size: 12px; }
+.ps-arubaba .ps-offer { border-color: #f7c58a; background: #fff7ee; }
+.ps-arubaba.late .ps-portal { border: 0; border-radius: 8px; overflow: hidden; background: #ffffff; box-shadow: 0 8px 24px rgba(13, 42, 74, 0.1); }
+.ps-arubaba.late .ps-portal-bar { padding: 14px 20px; background: #ffffff; color: #0d2a4a; border-bottom: 1px solid #e8ebf0; font-weight: 400; }
+.ps-arubaba.late .ps-portal-out { color: #f07d00; font-weight: 500; }
+.ps-arubaba.late .ps-portal-frame { grid-template-columns: 210px minmax(0, 1fr); }
+.ps-arubaba.late .ps-portal-nav { padding: 10px 0; background: #0d2a4a; border: 0; }
+.ps-arubaba.late main .ps-portal-nav a[href] { padding: 11px 20px; border: 0; color: #c9d8ea; font-weight: 400; }
+.ps-arubaba.late main .ps-portal-nav a[aria-current] { background: #1b4f86; color: #ffffff; box-shadow: inset 4px 0 #f07d00; }
+.ps-arubaba.late .ps-portal-main { padding: 22px 26px 28px; }
+.ps-arubaba.late h2.ps-portal-title { border: 0; color: #0d2a4a; font-size: 24px; }
+.ps-arubaba.late .ps-portal-h { color: #0d2a4a; font-size: 16px; }
+.ps-arubaba.late .ps-sheet { border-radius: 8px; overflow: hidden; }
+.ps-arubaba.late .ps-sheet-h { padding: 14px 18px; background: #0d2a4a; font-size: 16px; }

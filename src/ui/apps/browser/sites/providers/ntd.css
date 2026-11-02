@@ -86,3 +86,38 @@
 .ps-ntd.late .ps-pill.bad { color: #ff6b6b; }
 .ps-ntd.late footer { padding: 28px 48px; border-top: 1px solid #262626; background: #000000; color: #777777; font-size: 12px; }
 .ps-ntd.late .ps-signin input { color: #ffffff; }
+
+/* Customer portal: 2005 blue-headed side menu and dotted rows; 2019 black console with a dark rail and blue marks. */
+.ps-ntd { --ps-accent: #0068b7; }
+.ps-ntd .ps-portal { border: 1px solid #b5cde3; }
+.ps-ntd .ps-portal-bar { background: #e5eff8; border-color: #b5cde3; font-size: 11px; }
+.ps-ntd .ps-portal-out { color: #0068b7; }
+.ps-ntd .ps-portal-nav { padding: 0; background: #f4f4f4; border-color: #b5cde3; }
+.ps-ntd main .ps-portal-nav a[href] { padding: 5px 10px; border-bottom: 1px dotted #b8c9db; color: #333333; text-decoration: none; box-shadow: none; }
+.ps-ntd main .ps-portal-nav a[href]::before { content: ""; display: inline-block; margin-right: 6px; border: 4px solid transparent; border-left-color: #0068b7; }
+.ps-ntd main .ps-portal-nav a[aria-current] { background: #0068b7; color: #ffffff; }
+.ps-ntd main .ps-portal-nav a[aria-current]::before { border-left-color: #ffffff; }
+.ps-ntd h2.ps-portal-title { margin: 0 0 10px; padding: 3px 0 3px 8px; border-left: 5px solid #0068b7; border-bottom: 1px solid #cccccc; color: #333333; font-size: 13px; }
+.ps-ntd .ps-portal-h { color: #003c74; font-size: 12px; }
+.ps-ntd .ps-btn.ps-danger { color: #c0262d; }
+.ps-ntd .ps-sheet-h { background: #0068b7; color: #ffffff; font-size: 12px; }
+.ps-ntd.late { --ps-accent: #1f8fff; }
+.ps-ntd.late .ps-portal { border: 1px solid #262626; }
+.ps-ntd.late .ps-portal-bar { padding: 14px 20px; background: #0a0a0a; border-color: #262626; color: #9a9a9a; font-size: 13px; }
+.ps-ntd.late .ps-portal-who strong { color: #ffffff; }
+.ps-ntd.late .ps-portal-out { color: #1f8fff; }
+.ps-ntd.late .ps-portal-frame { grid-template-columns: 220px minmax(0, 1fr); }
+.ps-ntd.late .ps-portal-nav { padding: 16px 0; background: #0a0a0a; border-color: #262626; }
+.ps-ntd.late main .ps-portal-nav a[href] { padding: 10px 22px; border: 0; color: #9a9a9a; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; box-shadow: inset 3px 0 transparent; }
+.ps-ntd.late main .ps-portal-nav a[href]::before { content: none; }
+.ps-ntd.late main .ps-portal-nav a[aria-current] { background: #10203a; color: #ffffff; box-shadow: inset 3px 0 #1f8fff; }
+.ps-ntd.late .ps-portal-main { padding: 26px 30px 32px; }
+.ps-ntd.late h2.ps-portal-title { padding: 0; border: 0; color: #ffffff; font-size: 26px; font-weight: 700; letter-spacing: -0.01em; }
+.ps-ntd.late .ps-portal-h { color: #ffffff; font-size: 16px; font-weight: 400; }
+.ps-ntd.late .ps-portal-empty { color: #777777; }
+.ps-ntd.late .ps-offer { border-color: #1f8fff; background: #10203a; }
+.ps-ntd.late .ps-error { color: #ff6b6b; }
+.ps-ntd.late .ps-btn.ps-danger { border-color: #ff6b6b; color: #ff6b6b; }
+.ps-ntd.late .ps-sheet { background: #111111; color: #e6e6e6; border: 1px solid #333333; }
+.ps-ntd.late .ps-sheet-h { padding: 14px 18px; background: #000000; border-color: #262626; font-size: 15px; font-weight: 400; }
+.ps-ntd.late .ps-sheet-f { border-color: #262626; }

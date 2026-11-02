@@ -69,3 +69,31 @@
 .ps-greenchz.late .ps-steps li.now { background: #111111; }
 .ps-greenchz.late .ps-field input, .ps-greenchz.late .ps-field select { padding: 8px 10px; border-color: #cccccc; border-radius: 0; }
 .ps-greenchz.late footer { padding: 28px 56px; border-top: 1px solid #e5e5e5; color: #888888; font-size: 13px; text-align: left; }
+
+/* Customer centre: 2005 rounded green-headed box with pill links; 2013 Swiss minimal with an underlined top menu. */
+.ps-greenchz { --ps-accent: #4fa21c; }
+.ps-greenchz .ps-portal { border: 1px solid #c6dcb0; border-radius: 8px; overflow: hidden; background: #ffffff; }
+.ps-greenchz .ps-portal-bar { background: linear-gradient(#f4faee, #e1f0d2); border-color: #c6dcb0; color: #3f8f12; }
+.ps-greenchz .ps-portal-out { color: #3f8f12; }
+.ps-greenchz .ps-portal-nav { gap: 4px; padding: 10px 8px; border-color: #e1f0d2; }
+.ps-greenchz main .ps-portal-nav a[href] { padding: 4px 10px; border-radius: 12px; color: #3f8f12; font-weight: 700; text-decoration: none; box-shadow: none; }
+.ps-greenchz main .ps-portal-nav a[aria-current] { background: linear-gradient(#8fd14f, #4fa21c); color: #ffffff; }
+.ps-greenchz h2.ps-portal-title { margin: 0 0 8px; color: #3f8f12; font-size: 16px; }
+.ps-greenchz .ps-portal-h { color: #3f8f12; font-size: 13px; }
+.ps-greenchz .ps-btn.ps-danger { color: #c0392b; }
+.ps-greenchz .ps-sheet { border-radius: 8px; overflow: hidden; }
+.ps-greenchz .ps-sheet-h { background: linear-gradient(#8fd14f, #4fa21c); color: #ffffff; font-size: 13px; }
+.ps-greenchz .ps-offer { border-color: #a8c08f; background: #f4faee; }
+.ps-greenchz.late { --ps-accent: #5bb318; }
+.ps-greenchz.late .ps-portal { border: 0; border-radius: 0; }
+.ps-greenchz.late .ps-portal-bar { padding: 0 0 16px; background: none; border-color: #e5e5e5; color: #111111; }
+.ps-greenchz.late .ps-portal-out { color: #111111; }
+.ps-greenchz.late .ps-portal-frame { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
+.ps-greenchz.late .ps-portal-nav { flex-direction: row; gap: 28px; padding: 0; border: 0; border-bottom: 1px solid #e5e5e5; }
+.ps-greenchz.late main .ps-portal-nav a[href] { padding: 14px 0 12px; border-radius: 0; color: #111111; font-weight: 400; }
+.ps-greenchz.late main .ps-portal-nav a[aria-current] { background: none; color: #5bb318; box-shadow: inset 0 -2px #5bb318; }
+.ps-greenchz.late .ps-portal-main { padding: 28px 0 0; }
+.ps-greenchz.late h2.ps-portal-title { color: #111111; font-size: 28px; letter-spacing: -0.02em; }
+.ps-greenchz.late .ps-portal-h { color: #111111; font-size: 18px; }
+.ps-greenchz.late .ps-sheet { border-radius: 0; }
+.ps-greenchz.late .ps-sheet-h { padding: 16px 20px; background: #111111; font-size: 16px; font-weight: 500; }

@@ -72,3 +72,30 @@
 .ps-data5.late .ps-steps li.now { background: #12153a; }
 .ps-data5.late .ps-field input, .ps-data5.late .ps-field select { padding: 7px 10px; border-color: #c9cfdb; border-radius: 3px; }
 .ps-data5.late footer { max-width: none; padding: 28px 40px; background: #12153a; color: #8d95b8; font-size: 12px; }
+
+/* Customer area: 2006 blue tab bar over a framed box; 2017 navy side menu with cyan marks. */
+.ps-data5 { --ps-accent: #00a3d9; }
+.ps-data5 .ps-portal { border: 1px solid #c8d3df; }
+.ps-data5 .ps-portal-bar { background: #f3f6f9; border-color: #c8d3df; font-size: 11px; }
+.ps-data5 .ps-portal-out { color: #0b5fa5; }
+.ps-data5 .ps-portal-frame { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
+.ps-data5 .ps-portal-nav { flex-direction: row; padding: 0; background: linear-gradient(#174f86, #0b3c6e); border: 0; }
+.ps-data5 main .ps-portal-nav a[href] { padding: 6px 14px; color: #ffffff; font-size: 11px; font-weight: 700; text-transform: uppercase; border-right: 1px solid #2c6aa5; box-shadow: none; }
+.ps-data5 main .ps-portal-nav a[aria-current] { background: #00a3d9; }
+.ps-data5 h2.ps-portal-title { margin: 0 0 10px; padding: 0 0 4px; border-bottom: 1px solid #d5dde6; color: #0b3c6e; font-size: 14px; }
+.ps-data5 .ps-portal-h { color: #0b3c6e; font-size: 12px; }
+.ps-data5 .ps-btn.ps-danger { color: #a83224; }
+.ps-data5 .ps-sheet-h { background: #0b3c6e; color: #ffffff; font-size: 12px; }
+.ps-data5 .ps-offer { border-color: #00a3d9; background: #e6f6fc; }
+.ps-data5.late .ps-portal { border: 0; box-shadow: 0 10px 30px rgba(18, 21, 58, 0.12); }
+.ps-data5.late .ps-portal-bar { padding: 14px 20px; background: #12153a; color: #ffffff; border: 0; font-size: 13px; }
+.ps-data5.late .ps-portal-out { color: #00b5e2; }
+.ps-data5.late .ps-portal-frame { grid-template-columns: 210px minmax(0, 1fr); grid-template-rows: none; }
+.ps-data5.late .ps-portal-nav { flex-direction: column; padding: 12px 0; background: #1b2050; }
+.ps-data5.late main .ps-portal-nav a[href] { padding: 10px 20px; border: 0; color: #b8c0dd; font-size: 13px; font-weight: 400; text-transform: none; box-shadow: inset 3px 0 transparent; }
+.ps-data5.late main .ps-portal-nav a[aria-current] { background: #12153a; color: #ffffff; box-shadow: inset 3px 0 #00b5e2; }
+.ps-data5.late .ps-portal-main { padding: 24px 28px 30px; }
+.ps-data5.late h2.ps-portal-title { border: 0; font: 300 26px/1.2 "Helvetica Neue", Arial, sans-serif; color: #12153a; }
+.ps-data5.late .ps-portal-h { font-size: 15px; font-weight: 600; }
+.ps-data5.late .ps-sheet { border-radius: 6px; overflow: hidden; }
+.ps-data5.late .ps-sheet-h { padding: 14px 18px; background: #12153a; font-size: 15px; font-weight: 400; }
