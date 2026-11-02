@@ -14,7 +14,7 @@ import { playSound } from "../sounds";
 import { exportSave } from "../export-save";
 import { OS_RELEASES } from "../../sim/10-catalog/os";
 import { ICON_CREDITS } from "../art/era-icon";
-import { SOUND_CREDIT, WALLPAPER_CREDITS, wallpaperSvg, type WallpaperId } from "../desktop/wallpaper";
+import { PHOTO_WALLPAPERS, SOUND_CREDIT, WALLPAPER_CREDITS, wallpaperSvg, type WallpaperId } from "../desktop/wallpaper";
 import { LANGS, lang, setLang, type Lang } from "../../i18n/lang";
 
 const THEMES: [Theme, string][] = [["light", t("apps.settings.light")], ["dark", t("apps.settings.dark")], ["auto", t("apps.settings.auto")]];
@@ -162,6 +162,15 @@ export function SettingsApp() {
             </div>
           );
         })}
+        {PHOTO_WALLPAPERS.map((id) => {
+          const c = WALLPAPER_CREDITS[id];
+          return (
+            <div className="settings-line settings-credit" key={id}>
+              <span>{t(`apps.settings.wp.${id}`)}</span>
+              <a className="link" href={c.url} target="_blank" rel="noreferrer">{`${c.title}, ${c.author}, ${c.license}`}</a>
+            </div>
+          );
+        })}
         <div className="settings-line settings-credit">
           <span>{t("apps.settings.sound")}</span>
           <a className="link" href={SOUND_CREDIT.url} target="_blank" rel="noreferrer">{SOUND_CREDIT.text}</a>
@@ -182,7 +191,7 @@ export function SettingsApp() {
 function WallpaperPicker({ os }: { os: string }) {
   const { wallpaper, setWallpaper } = useStore();
   const file = useRef<HTMLInputElement>(null);
-  const thumb = (id: string) => `url(${import.meta.env.BASE_URL}wallpapers/thumbs/${id}.webp)`;
+  const thumb = (id: string) => `url(${import.meta.env.BASE_URL}wallpapers/thumbs/${id}.png)`;
   const load = (f: File) => {
     const url = URL.createObjectURL(f);
     const img = new Image();
@@ -199,6 +208,7 @@ function WallpaperPicker({ os }: { os: string }) {
   const picks: [string, string, string | null][] = [
     ["os", t("apps.settings.wallpaperOs"), thumb(os)],
     ...OS_RELEASES.map((r): [string, string, string] => [r.id, r.name, thumb(r.id)]),
+    ...PHOTO_WALLPAPERS.map((id): [string, string, string] => [id, t(`apps.settings.wp.${id}`), thumb(id)]),
     ["map", t("apps.settings.wallpaperMap"), null],
     ["custom", t("apps.settings.wallpaperOwn"), wallpaper.custom ? `url(${wallpaper.custom})` : null],
   ];

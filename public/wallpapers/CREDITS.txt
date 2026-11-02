@@ -1,23 +1,47 @@
-Desktop wallpapers, one per Pear OS release. All come from Wikimedia Commons, resized to 2880px wide and saved as WebP.
+Desktop wallpapers: one per Pear OS release plus five ultrawide photos. All come from Wikimedia Commons and are saved as lossless PNG. The release wallpapers keep their source size, capped at 5120px wide; the ultrawide photos are cropped to 5120x2160.
 
-aqua.jpg (Panthera)
+aqua.png (Panthera)
   "China silk-crystalblue" by Party Fabrics, CC BY-SA 2.0, cropped to remove the watermark.
   https://commons.wikimedia.org/wiki/File:China_silk-crystalblue.jpg
   https://creativecommons.org/licenses/by-sa/2.0/
 
-leopard.jpg (Leapard)
+leopard.png (Leapard)
   "The Aurora Borealis or Northern Lights shine above Bear Lake in Alaska" by SSgt Joshua Strang, United States Air Force, public domain.
   https://commons.wikimedia.org/wiki/File:The_Aurora_Borealis_or_Northern_Lights_shine_above_Bear_Lake_in_Alaska_050910-F-MS415-009.jpg
 
-yosemite.jpg (Yosemighty)
+yosemite.png (Yosemighty)
   "Tunnel View overlook showing famous rock formations in Yosemite Valley 01" by EF5, CC0.
   https://commons.wikimedia.org/wiki/File:%E2%80%9CTunnel_View%E2%80%9D_overlook_showing_famous_rock_formations_in_Yosemite_Valley_01.jpg
 
-bigsur.jpg (Big Sir)
+bigsur.png (Big Sir)
   "Pacific Coast at Bixby Creek Bridge 2013" by Tuxyso, CC BY-SA 3.0.
   https://commons.wikimedia.org/wiki/File:Pacific_Coast_at_Bixby_Creek_Bridge_2013.jpg
   https://creativecommons.org/licenses/by-sa/3.0/
 
-tahoe.jpg (Tahoo)
+tahoe.png (Tahoo)
   "Emerald Bay, Lake Tahoe, California. 2015" by Eric Philbin, CC0.
   https://commons.wikimedia.org/wiki/File:Emerald_Bay,_Lake_Tahoe,_California._2015.jpg
+
+annapurna.png (Annapurna)
+  "Snowy Annapurna Range - panorama" by Ali Sabbagh, CC0.
+  https://commons.wikimedia.org/wiki/File:Snowy_Annapurna_Range_-_panorama.jpg
+
+milkyway.png (Milky Way)
+  "Bontecou Lake Milky Way panorama" by Juliancolton, CC BY-SA 4.0.
+  https://commons.wikimedia.org/wiki/File:Bontecou_Lake_Milky_Way_panorama.jpg
+  https://creativecommons.org/licenses/by-sa/4.0/
+
+hongkong.png (Hong Kong)
+  "Hong Kong Harbour Night 2019-06-11" by Benh LIEU SONG, CC BY-SA 4.0.
+  https://commons.wikimedia.org/wiki/File:Hong_Kong_Harbour_Night_2019-06-11.jpg
+  https://creativecommons.org/licenses/by-sa/4.0/
+
+sossusvlei.png (Sossusvlei)
+  "Sossusvlei south view" by Hans Hillewaert, CC BY-SA 3.0.
+  https://commons.wikimedia.org/wiki/File:Sossusvlei_south_view.jpg
+  https://creativecommons.org/licenses/by-sa/3.0/
+
+matterhorn.png (Matterhorn)
+  "Wide view to Gornergletscher, Monte Rosa and Matterhorn, 2012 August" by Ximonic (Simo Räsänen), CC BY-SA 3.0.
+  https://commons.wikimedia.org/wiki/File:Wide_view_to_Gornergletscher,_Monte_Rosa_and_Matterhorn,_2012_August.jpg
+  https://creativecommons.org/licenses/by-sa/3.0/

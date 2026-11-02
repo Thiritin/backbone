@@ -39,7 +39,8 @@ export function wallpaperSvg(): string {
 export interface WallpaperCredit { title: string; author: string; license: string; url: string }
 
 // Mirrors public/wallpapers/CREDITS.txt.
-export type WallpaperId = "aqua" | "leopard" | "yosemite" | "bigsur" | "tahoe";
+export const PHOTO_WALLPAPERS = ["annapurna", "milkyway", "hongkong", "sossusvlei", "matterhorn"] as const;
+export type WallpaperId = "aqua" | "leopard" | "yosemite" | "bigsur" | "tahoe" | (typeof PHOTO_WALLPAPERS)[number];
 
 export const WALLPAPER_CREDITS: Record<WallpaperId, WallpaperCredit> = {
   aqua: { title: "China silk-crystalblue", author: "Party Fabrics", license: "CC BY-SA 2.0", url: "https://commons.wikimedia.org/wiki/File:China_silk-crystalblue.jpg" },
@@ -47,6 +48,11 @@ export const WALLPAPER_CREDITS: Record<WallpaperId, WallpaperCredit> = {
   yosemite: { title: "Tunnel View overlook, Yosemite Valley", author: "EF5", license: "CC0", url: "https://commons.wikimedia.org/wiki/File:%E2%80%9CTunnel_View%E2%80%9D_overlook_showing_famous_rock_formations_in_Yosemite_Valley_01.jpg" },
   bigsur: { title: "Pacific Coast at Bixby Creek Bridge 2013", author: "Tuxyso", license: "CC BY-SA 3.0", url: "https://commons.wikimedia.org/wiki/File:Pacific_Coast_at_Bixby_Creek_Bridge_2013.jpg" },
   tahoe: { title: "Emerald Bay, Lake Tahoe", author: "Eric Philbin", license: "CC0", url: "https://commons.wikimedia.org/wiki/File:Emerald_Bay,_Lake_Tahoe,_California._2015.jpg" },
+  annapurna: { title: "Snowy Annapurna Range", author: "Ali Sabbagh", license: "CC0", url: "https://commons.wikimedia.org/wiki/File:Snowy_Annapurna_Range_-_panorama.jpg" },
+  milkyway: { title: "Bontecou Lake Milky Way panorama", author: "Juliancolton", license: "CC BY-SA 4.0", url: "https://commons.wikimedia.org/wiki/File:Bontecou_Lake_Milky_Way_panorama.jpg" },
+  hongkong: { title: "Hong Kong Harbour Night 2019", author: "Benh LIEU SONG", license: "CC BY-SA 4.0", url: "https://commons.wikimedia.org/wiki/File:Hong_Kong_Harbour_Night_2019-06-11.jpg" },
+  sossusvlei: { title: "Sossusvlei south view", author: "Hans Hillewaert", license: "CC BY-SA 3.0", url: "https://commons.wikimedia.org/wiki/File:Sossusvlei_south_view.jpg" },
+  matterhorn: { title: "Gornergletscher, Monte Rosa and Matterhorn", author: "Ximonic (Simo Räsänen)", license: "CC BY-SA 3.0", url: "https://commons.wikimedia.org/wiki/File:Wide_view_to_Gornergletscher,_Monte_Rosa_and_Matterhorn,_2012_August.jpg" },
 };
 
 export const SOUND_CREDIT = { text: "Kenney, CC0", url: "https://www.kenney.nl" };

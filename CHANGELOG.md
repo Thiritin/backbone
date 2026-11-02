@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- Five new ultrawide desktop pictures (Annapurna, Milky Way, Hong Kong, Sossusvlei and Matterhorn) join the wallpaper choices in Settings, and every built-in wallpaper is now sharper at full screen.
 - The device picture in the inspector now matches the one in the rack, so a server shows the same drive bays, vent and control panel in both places.
 - Downloaded programs now arrive in Downloads as disk images and install by dragging them into Applications; a Trash at the end of the dock uninstalls them, and installing a second bookkeeping program asks before it replaces the current one.
 - Pleskit, DirectAdmen and FreePanel now open each web space in their own customer screens, where you manage files, databases, mailboxes, FTP accounts, domains and cron jobs as in cPanic.
