@@ -30,7 +30,7 @@ export function Quotes({ game, id }: ScreenProps & { id?: string }) {
   const open = game.tickets.filter((tk) => orderOf(game, tk) && !stepError(game, tk, "quote") && !game.quotes.some((q) => q.ticketId === tk.id && q.status === "draft" && q.origin === "books"));
   const [ticket, setTicket] = useState(""), [selected, setSelected] = useState<string | null>(id ?? null);
   const list = game.quotes.filter((q) => q.origin === "shop").reverse();
-  const q = list.find((x) => x.id === selected);
+  const q = list.find((x) => x.id === selected), picked = open.find((tk) => tk.id === (ticket || open[0]?.id)), asked = picked && orderOf(game, picked)!.thread[0];
   const name = (x: Quote) => game.customers.find((c) => c.id === x.customerId)?.name ?? (orderFor(game, x) ? requestName(orderFor(game, x)!) : "");
   const create = () => {
     const r = act(createQuote, ticket || open[0]?.id);
@@ -44,6 +44,7 @@ export function Quotes({ game, id }: ScreenProps & { id?: string }) {
         </select>
         <button className="btn" disabled={!open.length} onClick={create}>{t("shop-admin.newQuote")}</button>
       </div>
+      {asked && <p>{t(asked.key, asked.params)}</p>}
       <table className="pt-table">
         <thead><tr><th>{t("books.col.number")}</th><th>{t("shop-admin.client")}</th><th>{t("shop-admin.date")}</th><th>{t("shop-admin.total")}</th><th>{t("shop-admin.status")}</th></tr></thead>
         <tbody>

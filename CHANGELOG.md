@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- With an active shop, leads that need a quote now ask in the shop admin instead of by email, and with email orders off no request arrives by email at all.
 - With an active shop you now write quotes in the shop admin under Billing, and Books lists them read-only.
 - Switching email provider now happens on the provider sites: Ionose has a Mail migration page, Gmial imports mail and contacts, the Data migration at Goggle and the Migration page at Lookout 365 run for a few hours, and every old provider lists the mail and addresses still waiting to move before you cancel.
 - Installing your own mail server while a provider receives your mail adds the server beside it, so your mail moves once you point the MX record at the server.

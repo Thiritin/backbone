@@ -34,7 +34,9 @@ export function syncTicketMail(s: GameState): void {
   for (let i = s.tickets.length - 1; i >= 0 && num(s.tickets[i].id) > s.mail.seen; i--) fresh.push(s.tickets[i]);
   if (!fresh.length) return;
   s.mail = { ...s.mail, seen: fresh.reduce((n, t) => Math.max(n, num(t.id)), s.mail.seen) };
-  for (const t of fresh.reverse()) if (enveloped(t) && !(first && isFinal(t))) deliver(s, inbound(s, t));
+  // A quote request sent through the shop waits there and sends no email.
+  const asked = new Set(s.sales.requests.filter((r) => r.viaShop).map((r) => r.ticketId));
+  for (const t of fresh.reverse()) if (enveloped(t) && !(first && isFinal(t)) && !asked.has(t.id)) deliver(s, inbound(s, t));
 }
 
 // The mailbox holding a ticket's envelope, where its replies leave from.
