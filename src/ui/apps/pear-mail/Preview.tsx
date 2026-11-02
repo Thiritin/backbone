@@ -73,7 +73,7 @@ export function Preview({ game, row }: { game: GameState; row: Row | null }) {
           {v.cc.length > 0 && <><dt>{t("pearMail.field.cc")}</dt><dd>{v.cc.join(", ")}</dd></>}
         </dl>
       </header>
-      <div className="pm-body">{v.text}</div>
+      <div className="pm-body">{game.pearMail.prefs.quoteColor ? v.text.split("\n").map((l, i) => <span key={i} className={l.startsWith(">") ? "pm-quoted" : undefined}>{l}{"\n"}</span>) : v.text}</div>
       {LOGIN_MAILS.includes(row.m.topic) && row.m.p?.url && <p><button className="btn primary" onClick={() => openApp("Browser", { kind: "url", id: String(row.m.p!.url) })}>{t("apps.open")}</button></p>}
       {isLicence(row.m.topic) && <p><button className="btn primary" onClick={() => openApp("Books", { kind: "register", id: "" })}>{t("vendor-sites.register")}</button></p>}
       {v.att.length > 0 && <ul className="pm-atts">{v.att.map((a, i) => <Att key={i} game={game} row={row} att={a} i={i} />)}</ul>}

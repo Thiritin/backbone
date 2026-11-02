@@ -89,7 +89,6 @@ export default {
   "desktop.icon.trashApp": () => "Die Verknüpfung wird vom Schreibtisch entfernt.",
   "desktop.icon.trashNote": () => "Die Notiz und ihr Text werden gelöscht.",
 
-  "desktop.menu.changeProvider": () => "Anbieter wechseln …",
   "desktop.menu.settings": () => "Einstellungen …",
   "desktop.menu.intro": () => "Einführung …",
   "desktop.menu.github": () => "Backbone auf GitHub",

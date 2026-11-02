@@ -63,7 +63,7 @@ export function stepOf(s: GameState, id: StepId): Step {
     case "launch":
       return { title: t("guide.step.launch"), text: t("apps.guide.step.launch"), app: "Marketing", focus: { kind: "page", id: "channels" } };
     case "email":
-      return { title: t("guide.step.email"), text: t("apps.guide.step.email", { app: mailApp }), app: "Support", focus: { kind: "mailSetup", id: "" } };
+      return { title: t("guide.step.email"), text: t("apps.guide.step.email"), app: "Browser", focus: { kind: "url", id: `${HOME_URL}${dirSlug(t("sim.index.cat.mailProviders"))}` } };
     case "firstCustomer":
       return { title: t("guide.step.firstCustomer"), text: t("apps.guide.step.firstCustomer", { app: s.desk ? mailApp : "Pear Mail" }), app: s.desk ? "Support" : "Pear Mail" };
     case "loan":

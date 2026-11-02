@@ -1,5 +1,5 @@
 import { useState, type DragEvent, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
-import { Activity, Archive, FolderCog, FileText, Folder, Inbox, MailX, Plus, Send, Trash2, TriangleAlert, type LucideIcon } from "lucide-react";
+import { Activity, Archive, Ban, FolderCog, FileText, Folder, Inbox, MailX, Plus, Send, Trash2, TriangleAlert, type LucideIcon } from "lucide-react";
 import { t } from "../../../i18n/en";
 import { LOCALE } from "../../../i18n/lang";
 import { isRead } from "../../../sim/42-mail/model";
@@ -133,7 +133,7 @@ export function Sidebar({ game, box, onBox, onAdd, onAlert, activity, onActivity
           <div key={c.id} className={c.enabled ? "pm-account" : "pm-account off"}>
             <Header nest={c.protocol === "imap" ? { c: c.id, f: null } : undefined} onMenu={menu(c.id, null)}>
               <span>{c.description}</span>
-              {error && <button className="pm-warn" title={t(error)} aria-label={t(error)} onClick={() => onAlert(c.id)}><TriangleAlert /></button>}
+              {error && <button className={error === "error.mailClosed" ? "pm-warn closed" : "pm-warn"} title={t(error)} aria-label={t(error)} onClick={() => onAlert(c.id)}>{error === "error.mailClosed" ? <Ban /> : <TriangleAlert />}</button>}
             </Header>
             {tree(c.id, clientFolders(game, c), (f) => (c.enabled ? clientUnread(game, c, f) : 0))}
           </div>

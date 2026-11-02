@@ -83,7 +83,7 @@ function appCmds(x: PearCtx) {
     info: { label: t("pearMail.info"), run: () => info && x.sheet({ k: "info", c: info.id }), disabled: !info },
     search: { label: t("pearMail.search"), key: "cmd+alt+f", run: x.search },
     activity: { label: t("pearMail.activity"), key: "cmd+alt+0", run: () => x.setActivity(!x.activity), checked: x.activity },
-    prefs: { label: t("pearMail.prefs"), key: "cmd+,", run: () => x.sheet({ k: "prefs", tab: "junk" }) },
+    prefs: { label: t("pearMail.prefs"), key: "cmd+,", run: () => x.sheet({ k: "prefs", tab: "general" }) },
     newSmart: { label: t("pearMail.smart.new"), run: () => x.sheet({ k: "smart" }) },
     editSmart: { label: t("pearMail.smart.edit"), run: () => x.sheet({ k: "smart", id: box.f }), disabled: box.c !== SMART },
   } satisfies Record<string, Cmd>;
