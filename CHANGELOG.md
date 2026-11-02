@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- The menu bar now shows the Pear logo in the style of each system release, and the Panthera and Leapard icons for Locations, Post and Security now show a house, a fax machine and a shield.
 - Pear Mail now checks each mail account on its own interval in the background, downloading POP mail to the computer and showing IMAP mail at the next check.
 - App and file icons now follow the system release: Panthera shows the Crystal Clear icons, Leapard shows the Oxygen icons, and later releases keep their flat tiles.
 - VPS plans now start small and cheap, from 256 MB for about €13 a month in 2005, and grow every few years until they reach 4 to 32 GB in 2026.
