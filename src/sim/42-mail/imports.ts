@@ -4,7 +4,8 @@ import type { GameState } from "../50-state";
 import { capsOf } from "./caps";
 import { store } from "./deliver";
 import { SYS_FOLDERS } from "./model";
-import type { Folder, MailAct, MailImport, Message, SysFolder } from "./types";
+import { GMIX_DOMAIN } from "./new";
+import type { Folder, MailAct, MailImport, MailTenant, Message, SysFolder } from "./types";
 
 export const IMPORT_KB_HOUR = 10240;
 export const importHours = (kb: number): number => Math.max(2, Math.ceil(kb / IMPORT_KB_HOUR));
@@ -61,7 +62,7 @@ function finish(s: GameState, job: MailImport): void {
     const filters = s.mail.filters.filter((f) => f.accountId === src.id).slice(0, Math.max(0, room)).map((f) => ({ ...f, id: `flt${s.nextId++}`, accountId: dst.id, acts: acts(f.acts) }));
     const roles = src.roles;
     s.mail = {
-      ...s.mail, filters: [...s.mail.filters, ...filters],
+      ...s.mail, filters: [...s.mail.filters, ...filters], primary: s.mail.primary === src.id ? dst.id : s.mail.primary,
       accounts: s.mail.accounts.map((a) => (a.id === src.id ? { ...a, roles: [] } : a.id === dst.id ? { ...a, roles: [...new Set([...a.roles, ...roles])] } : a)),
     };
   }
@@ -71,4 +72,24 @@ function finish(s: GameState, job: MailImport): void {
 // Hourly: runs that are due copy their mail.
 export function importTick(s: GameState): void {
   for (const job of s.mail.imports) if (job.n === null && job.doneAt <= s.hour) finish(s, job);
+}
+
+// What a tenant still holds while the company moves away from it (it is cancelled, or a newer company-domain tenant
+// is live): stored mail no finished run took to another tenant, the primary mailbox or a role, and the collectors of
+// other mailboxes that read from it. Null while no switch away from it is under way.
+export function leftBehind(s: GameState, tenantId: string): { mail: number; roles: boolean; collectors: number } | null {
+  const t = s.mail.tenants.find((x) => x.id === tenantId);
+  const away = (x: MailTenant) => num(x.id) > num(tenantId) && x.domain !== GMIX_DOMAIN && (x.endsAt === null || x.endsAt > s.hour);
+  if (!t || (t.endsAt === null && !s.mail.tenants.some(away))) return null;
+  const boxes = s.mail.accounts.filter((a) => a.tenant === tenantId && a.closedAt === null), ids = new Set(boxes.map((a) => a.id));
+  const tenantOf = (id: string) => s.mail.accounts.find((a) => a.id === id)?.tenant;
+  let mail = 0;
+  for (const a of boxes) {
+    const took = Math.max(0, ...s.mail.imports.filter((x) => x.from === a.id && x.n !== null && tenantOf(x.to) !== tenantId).map((x) => x.upTo));
+    mail += (s.mail.msgs[a.id] ?? []).filter((m) => copied(m) && num(m.id) >= took).length;
+  }
+  return {
+    mail, roles: boxes.some((a) => a.id === s.mail.primary || a.roles.length > 0),
+    collectors: s.mail.fetch.filter((r) => ids.has(r.source) && !ids.has(r.accountId)).length,
+  };
 }

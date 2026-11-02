@@ -1,4 +1,4 @@
-import { ArrowRight, Check, CircleX, FilePlus, FileText, Globe, Receipt, Rocket, Send, UserPlus } from "lucide-react";
+import { ArrowRight, Check, CircleX, FilePlus, FileText, Globe, KeyRound, Receipt, Rocket, Send, UserPlus } from "lucide-react";
 import { useId, useState } from "react";
 import { t } from "../../../i18n/en";
 import { euroCents } from "../../../sim/00-core/money";
@@ -7,18 +7,20 @@ import type { Resources } from "../../../sim/10-catalog/products";
 import type { Product } from "../../../sim/30-customers/customers";
 import { registryCost, registryOf } from "../../../sim/30-customers/registry";
 import { wholesale } from "../../../sim/30-customers/registrar";
-import { setupFee, sizeOf } from "../../../sim/30-market/spec";
+import { sizeOf } from "../../../sim/30-market/spec";
 import { canAutomate, hostFor, invoiceOf, shopRegisters, stepsDone } from "../../../sim/30-market/manual";
+import { shopActive } from "../../../sim/80-business/shop";
+import { portalPath } from "../../../sim/80-business/portal";
+import { companyDomain } from "../../../sim/30-customers/domains";
 import { registrarFormUrl } from "../../../sim/80-business/browser";
 import type { SalesMessage, SalesRequest } from "../../../sim/30-market/market";
 import { isFinal, type Ticket } from "../../../sim/40-support/tickets";
 import type { InvoiceStatus } from "../../../sim/45-billing/billing";
 import type { GameState } from "../../../sim/50-state";
 import { betterHost, hostQuality, routeOptions } from "../../../sim/60-infra/routes";
-import { attachQuote, createQuote, invoiceOrder, offerUpgrade, provisionOrder, quoteOrder, registerOrderDomain } from "../../../sim/90-actions/orders";
-import { hasFeature } from "../../../sim/80-business/bookkeeping";
+import { attachQuote, createQuote, invoiceOrder, offerUpgrade, provisionOrder, registerOrderDomain, sendOrderAccess } from "../../../sim/90-actions/orders";
 import { hasHelpdeskLink } from "../../../sim/30-market/quotes";
-import { QUOTE_DRAG, QuotePill } from "../books/QuotesTab";
+import { QUOTE_DRAG, QuotePill, quoteTitle } from "../books/QuotesTab";
 import { decline } from "../../../sim/90-actions/sales";
 import { closeTicket } from "../../../sim/90-actions/support";
 import { useStore } from "../../store";
@@ -126,29 +128,14 @@ function HostCards({ r, value, onChange, disabled }: { r: SalesRequest; value: s
   );
 }
 
-// Without a Quotes view in the bookkeeping program the price and setup fee are typed on the ticket; they start over with
-// the counter-offer after each answer.
-function QuoteFields({ tk, r, locked }: { tk: Ticket; r: SalesRequest; locked: boolean }) {
-  const game = useStore((s) => s.game);
-  const act = useStore((s) => s.act);
-  const fee = setupFee(game, r.product);
-  const [price, setPrice] = useState(r.counter ?? r.quote ?? r.reference), [setup, setSetup] = useState(r.setup ?? fee);
-  return (
-    <div className="step-row">
-      <PriceField value={price} reference={r.reference} onChange={setPrice} disabled={locked} />
-      <PriceField value={setup} reference={fee} onChange={setSetup} disabled={locked} label={t("support.setupFee")} />
-      <button className="btn primary" disabled={locked || !(price > 0) || !(setup >= 0)} onClick={() => act(quoteOrder, tk.id, price, setup)}><Send />{t("support.sendQuote")}</button>
-    </div>
-  );
-}
-
 // The attachments of the offer: a quote row dragged here from Books is sent to the customer; with the Helpdesk link the strip
-// has Create quote, which opens the quote in Books.
+// has Create quote, which opens the quote in Books, and with an active shop it opens the quote in the shop admin.
 function Attachments({ tk, locked, open }: { tk: Ticket; locked: boolean; open: boolean }) {
   const game = useStore((s) => s.game);
   const act = useStore((s) => s.act);
   const openApp = useStore((s) => s.openApp);
   const [over, setOver] = useState(false);
+  const shop = shopActive(game);
   const takes = (e: React.DragEvent) => open && !locked && e.dataTransfer.types.includes(QUOTE_DRAG);
   return (
     <div className={`attach-strip${over ? " over" : ""}`} aria-label={t("orderSteps.attachments")}
@@ -156,8 +143,12 @@ function Attachments({ tk, locked, open }: { tk: Ticket; locked: boolean; open: 
       onDragLeave={() => setOver(false)}
       onDrop={(e) => { setOver(false); const id = e.dataTransfer.getData(QUOTE_DRAG); if (takes(e) && id) { e.preventDefault(); act(attachQuote, id, tk.id); } }}>
       <span className="attach-k">{t("orderSteps.attachments")}</span>
-      {open && hasHelpdeskLink(game) && (
-        <button className="btn primary" disabled={locked} onClick={() => { const r = act(createQuote, tk.id); if (r.ok) openApp("Books", { kind: "quote", id: r.id! }); }}><FilePlus />{t("orderSteps.createQuote")}</button>
+      {open && (shop || hasHelpdeskLink(game)) && (
+        <button className="btn primary" disabled={locked} onClick={() => {
+          const r = act(createQuote, tk.id);
+          if (r.ok && shop) openApp("Browser", { kind: "url", id: `portal.${companyDomain(game)}${portalPath(game.shop.variant!, "admin", {}, { s: "quotes", id: r.id! })}` });
+          else if (r.ok) openApp("Books", { kind: "quote", id: r.id! });
+        }}><FilePlus />{t("orderSteps.createQuote")}</button>
       )}
     </div>
   );
@@ -187,7 +178,7 @@ export function MailAttachments({ tk, r, m }: { tk: Ticket; r: SalesRequest; m: 
   if (!q && !inv) return null;
   return (
     <div className="attach-strip">
-      {q && <button className="attach-chip" onClick={() => openApp("Books", { kind: "quote", id: q.id })}><FileText />{t("orderSteps.quote", { number: q.number })}<QuotePill q={q} /></button>}
+      {q && <button className="attach-chip" onClick={() => openApp("Books", { kind: "quote", id: q.id })}><FileText />{quoteTitle(game, q.number)}<QuotePill q={q} /></button>}
       {inv && <button className="attach-chip" onClick={() => openApp("Books", { kind: "invoice", id: inv.id })}><Receipt /><InvoicePill r={r} /></button>}
     </div>
   );
@@ -207,8 +198,8 @@ export function CustomCompose({ tk, r }: { tk: Ticket; r: SalesRequest }) {
   const accepted = game.quotes.find((q) => q.ticketId === tk.id && q.status === "accepted");
   const web = r.product === "webHosting" && !!r.domain;
   const waiting = r.replyAt !== null;
-  // Only the step the order is at: the offer until the customer accepts, then account, invoice, domain, setup.
-  const shown = [!done.quote ? (waiting ? "" : "quote") : !done.account ? "account" : !done.invoice ? "invoice" : web && !done.domain ? "domain" : !done.provision ? "provision" : ""];
+  // Only the step the order is at: the offer until the customer accepts, then account, invoice, domain, setup, access data.
+  const shown = [!done.quote ? (waiting ? "" : "quote") : !done.account ? "account" : !done.invoice ? "invoice" : web && !done.domain ? "domain" : !done.provision ? "provision" : !done.access ? "access" : ""];
   const cost = web ? (game.registrar ? wholesale(game, r.domain!) : registryCost(r.domain!, yearOf(game.hour))) : 0;
   const quoteValue = done.quote ? t("support.perMonth", { price: euroCents(r.quote ?? 0) }) : waiting ? t("support.sent") : r.status === "countered" ? t("support.counter", { price: euroCents(r.counter ?? 0) }) : r.status === "refused" ? t("support.refused") : t("support.notSent");
   const row = (id: string, label: string, value: string, body?: React.ReactNode) => (
@@ -223,14 +214,14 @@ export function CustomCompose({ tk, r }: { tk: Ticket; r: SalesRequest }) {
   );
   return (
     <div className="compose custom-steps">
-      {((!done.quote && waiting) || done.provision) && <p className="step-wait">{t("support.status.waiting")}</p>}
+      {((!done.quote && waiting) || (done.provision && done.access)) && <p className="step-wait">{t("support.status.waiting")}</p>}
       <ol className="steps">
-        {!r.shop && row("quote", t("support.quote"), quoteValue, hasFeature(game, "quotes") ? <Attachments tk={tk} locked={locked} open={!waiting} /> : !waiting && <QuoteFields tk={tk} r={r} locked={locked} />)}
+        {!r.shop && row("quote", t("support.quote"), quoteValue, <Attachments tk={tk} locked={locked} open={!waiting} />)}
         {row("account", t("support.customerAccount"), done.account ? t("support.created") : t("support.none"),
           <button className="btn primary" disabled={locked} onClick={() => openApp("Books", { kind: "newCustomer", id: tk.id })}><UserPlus />{t("orderSteps.createCustomer")}</button>)}
         {row("invoice", t("support.orderConfirmation"), done.invoice ? t("support.perMonth", { price: euroCents(r.quote ?? 0) }) : invoiceOf(game, r) ? t("orderSteps.status.draft") : t("support.notSent"),
           accepted && !invoiceOf(game, r)
-            ? <button className="btn primary" disabled={locked} onClick={() => openApp("Books", { kind: "quote", id: accepted.id })}><FileText />{t("orderSteps.quote", { number: accepted.number })}</button>
+            ? <button className="btn primary" disabled={locked} onClick={() => openApp("Books", { kind: "quote", id: accepted.id })}><FileText />{quoteTitle(game, accepted.number)}</button>
             : <button className="btn primary" disabled={locked} onClick={() => { const res = act(invoiceOrder, tk.id); if (res.ok) openApp("Books", { kind: "invoice", id: res.id! }); }}><Receipt />{t("orderSteps.openInvoice")}</button>)}
         {web && row("domain", r.owned ? t("support.domainTransfer") : t("support.domain"), done.domain ? t("support.registered") : t("support.domainLine", { domain: r.domain!, registry: registryOf(r.domain!).name, price: euroCents(cost) }),
           <button className="btn primary" disabled={locked} onClick={() => (shopRegisters(game, r) ? act(registerOrderDomain, tk.id) : openApp("Browser", { kind: "url", id: registrarFormUrl(game, tk.id, !!r.owned) }))}><Globe />{r.owned ? t("support.transferDomain") : t("support.registerDomain")}</button>)}
@@ -241,6 +232,8 @@ export function CustomCompose({ tk, r }: { tk: Ticket; r: SalesRequest }) {
               ? <button className="btn primary" disabled={locked} onClick={() => openApp("Browser", { kind: "url", id: `http://${link}` })}><Rocket />{t("pkg.openForm")}</button>
               : <button className="btn primary" disabled={locked || !route} onClick={() => act(provisionOrder, tk.id, route!)}><Rocket />{PROVISION[r.product]}</button>}
           </div>)}
+        {row("access", t("support.access"), t("support.notSent"),
+          <button className="btn primary" disabled={locked} onClick={() => act(sendOrderAccess, tk.id)}><KeyRound />{t("support.sendAccess")}</button>)}
       </ol>
       <div className="actions-row">
         <button className="btn ghost" disabled={locked} onClick={() => act(closeTicket, tk.id)}><CircleX />{t("support.decline")}</button>

@@ -1,3 +1,6 @@
+import { attachQuote, createQuote, editQuote, setQuoteCycle } from "../src/sim/90-actions/orders";
+import type { Cycle } from "../src/sim/10-catalog/cycles";
+import type { ActionResult } from "../src/sim/90-actions/hardware";
 import { bookMail } from "../src/sim/90-actions/mail";
 import { mxSetAt } from "../src/sim/10-catalog/mail-providers";
 import { hire as hireReal } from "../src/sim/90-actions/staff";
@@ -360,3 +363,16 @@ export const hire = (s: GameState, candidateId: string, team?: string) => hireRe
 // Company emails about this topic in every mailbox, oldest first.
 export const mailsAbout = (s: GameState, topic: string): Message[] =>
   Object.values(s.mail.msgs).flat().filter((m) => m.topic === topic).sort((a, b) => a.at - b.at);
+
+// The player's quote for an order: written in Books, priced and sent onto the order ticket.
+export function quoteOrder(s: GameState, ticketId: string, monthly: number, setup?: number, cycle?: Cycle): ActionResult {
+  const made = createQuote(s, ticketId);
+  if (!made.ok) return made;
+  const id = made.id!, edited = editQuote(s, id, monthly, setup ?? s.quotes.find((q) => q.id === id)!.setup);
+  if (!edited.ok) return edited;
+  if (cycle) {
+    const cycled = setQuoteCycle(s, id, cycle);
+    if (!cycled.ok) return cycled;
+  }
+  return attachQuote(s, id, ticketId);
+}

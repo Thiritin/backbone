@@ -9,8 +9,7 @@ import { booksOffline, booksTick, hasFeature, seated, works } from "../src/sim/8
 import { staffTick } from "../src/sim/47-staff/staff";
 import { orderLead } from "../src/sim/30-market/orders";
 import { stepsDone } from "../src/sim/30-market/manual";
-import { hire } from "./fixtures";
-import { quoteOrder } from "../src/sim/90-actions/orders";
+import { hire, quoteOrder } from "./fixtures";
 import { resolve } from "../src/sim/80-business/browser";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { sendInvoice } from "../src/sim/90-actions/billing";
@@ -71,7 +70,7 @@ describe("editions", () => {
     expect(booksVendor("saga")!.editions[0].features).toEqual(MEDIUM);
     expect(booksVendor("collmix")!.editions[0].features).toContain("hbci");
     expect(booksVendor("collmix")!.editions.some((e) => e.features.includes("helpdesk-link"))).toBe(false);
-    expect(booksVendor("gnucache")!.editions).toEqual([expect.objectContaining({ price: 0, users: 1, features: ["hbci", "reports"] })]);
+    expect(booksVendor("gnucache")!.editions).toEqual([expect.objectContaining({ price: 0, users: 1, features: ["quotes", "hbci", "reports"] })]);
     expect(resolve(game(), "www.gnucache.org/").page).toEqual({ kind: "books", id: "gnucache" });
   });
 
@@ -225,15 +224,16 @@ describe("browser programs", () => {
 });
 
 describe("GnuCache", () => {
-  it("has no quotes, and the order ticket takes a typed price instead", () => {
+  it("writes the quote as an unposted invoice and posts it to the order's first invoice", () => {
     const s = readyGame(9);
     own(s, "gnucache");
     expect(s.books.edition).toBe("free");
-    expect(hasFeature(s, "quotes")).toBe(false);
+    expect(hasFeature(s, "quotes")).toBe(true);
     expect(hasFeature(s, "reports")).toBe(true);
     const r = orderLead(s, "smallBiz", "Frankfurt", [], { product: "webHosting", size: 0, sla: "basic" }, true);
     s.sales.requests = s.sales.requests.map((x) => (x.id === r.id ? { ...x, budget: 100, owned: false } : x));
     expect(quoteOrder(s, r.ticketId!, 10, 0)).toMatchObject({ ok: true });
+    expect(s.quotes.at(-1)!.status).toBe("sent");
     for (let i = 0; i < 60 && !stepsDone(s, s.sales.requests.find((x) => x.id === r.id)!).quote; i++) tick(s);
     expect(stepsDone(s, s.sales.requests.find((x) => x.id === r.id)!).quote).toBe(true);
   });

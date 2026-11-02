@@ -25,7 +25,7 @@ const MENUS: [string, ScreenName[]][] = [
   ["shop-admin.home", ["home"]],
   ["shop-admin.menuClients", ["clients"]],
   ["shop-admin.menuOrders", ["orders"]],
-  ["shop-admin.menuBilling", ["invoices"]],
+  ["shop-admin.menuBilling", ["invoices", "quotes"]],
   ["shop-admin.menuSetup", ["products", "options", "servers"]],
   ["shop-admin.menuHelp", ["licence", "updates"]],
 ];

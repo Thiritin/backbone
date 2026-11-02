@@ -35,6 +35,7 @@ import { fillDaemons } from "../60-infra/daemons";
 import { fillGames } from "../60-infra/games";
 import { fillMachines, fillVersions } from "./machines";
 import { legacyLeads } from "./leads";
+import { seededPassword } from "../42-mail/new";
 
 // ponytail: plain JSON in localStorage; compress once saves approach the ~5 MB limit.
 export const serialize = (state: GameState): string => JSON.stringify(state);
@@ -106,6 +107,8 @@ export function deserialize(raw: string): GameState {
   const s = fillMachines(dropGone(gone, fillRegistrar(fill(fillLaunch(fillDesign(fillLines(fillHostnames(upgradeCompute(fillDomains(fillSpecs({
     ...base, ...data, dcs, locations, devices, racks, cables, rng: { ...base.rng, ...data.rng }, version: SAVE_VERSION,
     billingRules: { ...base.billingRules, ...data.billingRules },
+    // Quotes from before the shop wrote its own were all written in Books.
+    quotes: (data.quotes ?? []).map((q) => ({ ...q, origin: q.origin ?? "books" })),
     waitlist: (data.waitlist ?? []).filter((w: { space: string }) => w.space !== "positions"),
     // Saves from before contracts get one per rented location at today's price.
     contracts: data.contracts?.map((c: Contract) => ({ ...c, retainedAt: c.retainedAt ?? null })) ?? locations.filter((l) => l.dc).map((l, i) => {
@@ -142,7 +145,7 @@ export function deserialize(raw: string): GameState {
     tickets: (data.tickets ?? []).map((t) => ({ ...t, assignee: t.assignee ?? null })),
     // Saves from before name servers ran every domain on the company's own.
     domains: (data.domains ?? []).map((d) => ({ ...d, ns: d.ns ?? "company" })),
-    services: (data.services ?? []).map((v) => ({ ...v, zone: v.zone ?? null, sla: v.sla ?? "basic" })),
+    services: (data.services ?? []).map((v) => ({ ...v, zone: v.zone ?? null, sla: v.sla ?? "basic", password: v.password ?? seededPassword(base.seed, Number(v.id.slice(3)) || 0) })),
     // Saves from before clusters keep their services unplaced, which leaves them online.
     sales: { ...base.sales, ...data.sales },
     // Rivals saved before small rivals, reviews and HOSTtoast.

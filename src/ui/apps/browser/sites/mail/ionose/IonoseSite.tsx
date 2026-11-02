@@ -9,6 +9,7 @@ import { GRACE_DAYS, mailboxCap, mailHost, mailPlan, mxSetAt, quotaMbAt } from "
 import { companyDomain } from "../../../../../../sim/30-customers/domains";
 import { checkMailLogin, openBoxes, PROVIDER_NAMES, seatsBilled } from "../../../../../../sim/42-mail/accounts";
 import { capsOf, mxTarget } from "../../../../../../sim/42-mail/caps";
+import { leftBehind } from "../../../../../../sim/42-mail/imports";
 import type { MailAccount, MailRole, MailTenant } from "../../../../../../sim/42-mail/types";
 import type { GameState } from "../../../../../../sim/50-state";
 import { mxHostsAt, recordAt } from "../../../../../../sim/60-infra/company-zone";
@@ -23,12 +24,13 @@ import { IonoseMark } from "../../../../../art/mailmarks";
 import { useSessionState, writeSession } from "../../../../../session";
 import { offerLogin, savedLogin } from "../../../../../vault";
 import { usePageAct } from "../../../pageAct";
+import { ImportForm, ImportRuns, LeftBehind } from "../switching";
 import "./ionose.css";
 
 // docs/design/plans/webmail-server.md, 7.1: the product site, the order and the Control area of Hosted Exchange.
 export const IONOSE_SESSION = "ionose.account";
 const PLANS = ["exchange", "business"] as const;
-const TABS = ["mailboxes", "addresses", "forwarding", "vacation", "plan", "domain", "switch"] as const;
+const TABS = ["mailboxes", "addresses", "forwarding", "vacation", "plan", "domain", "import", "switch"] as const;
 const ROLES: MailRole[] = ["sales", "support", "abuse"];
 const HOST = mailSiteUrl("ionose").split("/")[0];
 
@@ -247,6 +249,7 @@ function Control({ game, to, go, tenant, admin, tab }: ControlProps & { to: To; 
     if (tab === "vacation") return <Vacation game={game} tenant={tenant} admin={admin} />;
     if (tab === "plan") return <Plan game={game} tenant={tenant} admin={admin} />;
     if (tab === "domain") return <Domain game={game} tenant={tenant} admin={admin} go={go} />;
+    if (tab === "import") return <Migration game={game} tenant={tenant} admin={admin} />;
     if (tab === "switch") return <Switching game={game} tenant={tenant} admin={admin} to={to} />;
     return <Mailboxes game={game} tenant={tenant} admin={admin} />;
   })();
@@ -398,6 +401,7 @@ function Plan({ game, tenant }: ControlProps) {
         ))}
       </div>
       <h2>{t("ionose.plan.cancelTitle")}</h2>
+      <LeftBehind game={game} tenantId={tenant.id} className="io-error" />
       {tenant.endsAt === null
         ? <Confirm danger label={t("ionose.plan.cancel")} ask={t("ionose.plan.cancelConfirm", { days: GRACE_DAYS.ionose })} onYes={() => act(endTenant, tenant.id)} />
         : <button type="button" onClick={() => act(resubscribe, tenant.id)}>{t("ionose.plan.keep")}</button>}
@@ -428,15 +432,30 @@ function Domain({ game, tenant, go }: ControlProps & { go: (url: string) => void
   );
 }
 
+function Migration({ game, tenant }: ControlProps) {
+  const boxes = openBoxes(game, tenant.id);
+  return (
+    <>
+      <h1>{t("ionose.tab.import")}</h1>
+      <ImportForm targets={boxes} proto="imap" className="io-form io-inline" />
+      <ImportRuns game={game} into={boxes.map((a) => a.id)} className="io-table" />
+    </>
+  );
+}
+
 const STEPS = ["create", "mx", "import", "cancel"] as const;
 
 function Switching({ game, tenant, to }: ControlProps & { to: To }) {
   const others = game.mail.tenants.filter((x) => x.id !== tenant.id && x.domain === tenant.domain && x.endsAt === null && openBoxes(game, x.id).length > 0);
-  const done: Record<(typeof STEPS)[number], boolean> = { create: others.length > 0, mx: !!mxTarget(game) && mxTarget(game)!.id !== tenant.id, import: false, cancel: tenant.endsAt !== null };
+  const left = leftBehind(game, tenant.id);
+  const done: Record<(typeof STEPS)[number], boolean> = {
+    create: others.length > 0, mx: !!mxTarget(game) && mxTarget(game)!.id !== tenant.id, import: !!left && left.mail === 0 && !left.roles, cancel: tenant.endsAt !== null,
+  };
   return (
     <>
       <h1>{t("ionose.tab.switch")}</h1>
       <ol className="io-steps">{STEPS.map((id) => <li key={id} className={done[id] ? "done" : ""}>{t(`ionose.switch.${id}`)}</li>)}</ol>
+      <LeftBehind game={game} tenantId={tenant.id} className="io-error" />
       <Link to={to} path="control/plan" className="io-cta">{t("ionose.plan.cancelTitle")}</Link>
     </>
   );

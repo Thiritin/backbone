@@ -8,6 +8,7 @@ export default {
   "shop-boxBillin.nav.orders": () => "Ordini in attesa",
   "shop-boxBillin.nav.clients": () => "Clienti",
   "shop-boxBillin.nav.invoices": () => "Fatture",
+  "shop-boxBillin.nav.quotes": () => "Richieste di preventivo",
   "shop-boxBillin.nav.licence": () => "Licenza",
   "shop-boxBillin.nav.updates": () => "Aggiornamenti",
   "shop-boxBillin.group.shop": () => "Negozio",

@@ -13,7 +13,7 @@ const RESOLVED: Record<string, string> = {
   unsuspend: "Servicios reactivados con una prórroga de pago", keep: "Servicios mantenidos suspendidos", forward: "Denuncia de abuso reenviada",
   takedown: "Contenido retirado", reject: "Solicitud rechazada", comply: "Solicitud atendida", object: "Solicitud impugnada",
   refund: "Pago reembolsado", accept: "Pedido aceptado", quote: "Presupuesto enviado", account: "Cuenta de cliente creada",
-  invoice: "Pedido confirmado y factura enviada", domain: "Dominio registrado", provision: "Servicio configurado",
+  invoice: "Pedido confirmado y factura enviada", domain: "Dominio registrado", provision: "Servicio configurado", access: "Datos de acceso enviados",
 };
 const ticket = (p: Params) => KIND[p.kind] ?? "ticket";
 

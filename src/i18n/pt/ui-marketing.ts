@@ -56,6 +56,7 @@ export default {
   "marketing.webDesign": () => "Web design",
   "marketing.orders": () => "Pedidos",
   "marketing.email": () => "E-mail",
+  "marketing.mainAddress": () => "Endereço principal",
   "marketing.emailOrders": () => "Receber pedidos por e-mail",
   "marketing.requests": () => "Pedidos especiais",
   "marketing.customRequests": () => "Receber pedidos de produtos que você não vende",

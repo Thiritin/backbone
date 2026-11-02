@@ -1,4 +1,5 @@
 // The steps of a custom order, domain renewals and upgrades of custom services (30-market/manual.ts).
+import { shopActive } from "../80-business/shop";
 import { authCode, domainFee, domainOf, extend } from "../30-customers/registry";
 import type { SalesRequest } from "../30-market/market";
 import type { Address } from "../30-customers/addresses";
@@ -83,7 +84,6 @@ export function provisionOrder(s: GameState, ticketId: string, route: string, op
   return step(s, ticketId, "provision", route, extra);
 }
 
-// Sends the customer a monthly price and a setup fee (the line's rate where omitted); they answer within their reply time.
 // A cycle other than monthly offers a prepaid term at the shop's discount; the customer weighs the discounted monthly price.
 export const effectiveMonthly = (s: GameState, monthly: number, cycle?: Cycle): number =>
   Math.round(monthly * (cycle ? 1 - discountOf(s, cycle) : 1) * 100) / 100;
@@ -91,21 +91,22 @@ export const effectiveMonthly = (s: GameState, monthly: number, cycle?: Cycle): 
 // A prepaid term the shop sells for the line.
 const cycleOffered = (s: GameState, r: SalesRequest, cycle: Cycle): boolean => cycle !== "monthly" && cyclesFor(s, r.product).includes(cycle);
 
-export function quoteOrder(s: GameState, ticketId: string, monthly: number, setup?: number, cycle?: Cycle): ActionResult {
+// Sends the customer a monthly price and a setup fee; they answer within their reply time.
+function sendQuote(s: GameState, ticketId: string, monthly: number, setup: number, cycle?: Cycle): ActionResult {
   const t = s.tickets.find((x) => x.id === ticketId), r = t && orderOf(s, t);
   if (!r) return fail("error.unknownRequest");
   if (!validPrice(monthly, r.reference)) return fail("error.quotePrice");
-  if (setup !== undefined && !validPrice(setup + 1, r.reference)) return fail("error.quotePrice");
+  if (!validPrice(setup + 1, r.reference)) return fail("error.quotePrice");
   if (cycle && !cycleOffered(s, r, cycle)) return fail("error.cycleNotSupported");
   const before = { quote: r.quote, setup: r.setup, cycle: r.cycle };
-  editRequest(s, r.id, () => ({ quote: effectiveMonthly(s, monthly, cycle), cycle, setup: setup === undefined ? undefined : Math.round(setup * 100) / 100 }));
+  editRequest(s, r.id, () => ({ quote: effectiveMonthly(s, monthly, cycle), cycle, setup: Math.round(setup * 100) / 100 }));
   const done = step(s, ticketId, "quote");
   if (!done.ok) editRequest(s, r.id, () => before);
   return done;
 }
 
-// A quote in Books for an order that waits for one, priced at the player's rates or the customer's counter-offer. An
-// unsent quote of the order is reused.
+// A quote for an order that waits for one, priced at the player's rates or the customer's counter-offer: in the shop while
+// one is active, else in Books. An unsent quote of the order is reused.
 export function createQuote(s: GameState, ticketId: string): ActionResult {
   const t = s.tickets.find((x) => x.id === ticketId), r = t && orderOf(s, t);
   if (!t || !r) return fail("error.unknownRequest");
@@ -117,7 +118,7 @@ export function createQuote(s: GameState, ticketId: string): ActionResult {
   const setup = r.setup ?? setupFee(s, r.product);
   const q: Quote = {
     id: `quo${s.nextId++}`, number: `${yearOf(s.hour)}-${String(s.quotes.length + 1).padStart(4, "0")}`, customerId: r.customerId, ticketId,
-    lines: firstLines(s, r, monthly, setup, null), monthly, setup, status: "draft", sentAt: null, createdAt: s.hour,
+    lines: firstLines(s, r, monthly, setup, null), monthly, setup, status: "draft", sentAt: null, createdAt: s.hour, origin: shopActive(s) ? "shop" : "books",
   };
   s.quotes = [...s.quotes, q];
   return { ok: true, id: q.id };
@@ -149,7 +150,7 @@ export function attachQuote(s: GameState, quoteId: string, ticketId: string): Ac
   const q = draftQuote(s, quoteId);
   if (!q) return fail("error.quoteSentAlready");
   if (q.ticketId !== ticketId) return fail("error.quoteOtherOrder");
-  const done = quoteOrder(s, ticketId, q.monthly, q.setup, q.cycle);
+  const done = sendQuote(s, ticketId, q.monthly, q.setup, q.cycle);
   if (done.ok) s.quotes = s.quotes.map((x) => (x.id === q.id ? { ...x, status: "sent", sentAt: s.hour } : x));
   return done;
 }
@@ -185,6 +186,8 @@ export function deleteQuote(s: GameState, quoteId: string): ActionResult {
 
 // Confirms the accepted quote with its first invoice as a draft; it goes out with the setup.
 export const confirmOrder = (s: GameState, ticketId: string): ActionResult => step(s, ticketId, "invoice");
+// Mails the customer the login of the service set up for the order.
+export const sendOrderAccess = (s: GameState, ticketId: string): ActionResult => step(s, ticketId, "access");
 
 // Switches the automatic run of accepted orders; it needs the provisioning skill.
 export function setAutoOrders(s: GameState, on: boolean): ActionResult {
