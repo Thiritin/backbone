@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- Pear Mail Preferences now have General, Accounts, Fonts & Colors, Viewing, Composing and Signatures tabs, so you can edit or remove accounts, pick fonts and new mail behaviour, and add signatures to your messages, and a What's new sheet lists the features each new Pear Mail version brings.
 - Pear Mail has its own junk mail filter that marks junk brown with a Not Junk banner, learns from every message you mark, and in Automatic mode moves junk to the Junk mailbox; its Preferences now open with Junk Mail and Rules tabs.
 - Shop products now price their longer billing cycles from the monthly price and the cycle discounts you set once for the whole shop, which start at 0%, and "Manage prices manually" lets you enter each price yourself.
 - Books no longer has a Products tab: before your first shop every email request is priced in its own quote, and fixed products live only in the shop.
