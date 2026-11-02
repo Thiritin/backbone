@@ -69,7 +69,8 @@ import { sensorTick } from "../60-infra/sensors";
 import { THERMAL, thermalTick, throttled } from "../60-infra/thermal";
 import { FAILURE_FACTOR, unsupported } from "../10-catalog/lifecycle";
 import { skillById } from "../10-catalog/research";
-import { KNOW_HOW, storeItem, subscriptionEntry } from "../10-catalog/store";
+import { deskItem, KNOW_HOW, storeItem, subscriptionEntry } from "../10-catalog/store";
+import { deskById } from "../10-catalog/desks";
 import { capacityAt, DATACENTERS, datacenterById, flatMonthly, homeLineById, HOUSEHOLD_FACTOR } from "../20-world/datacenters";
 import type { Component, Device, GameState, LedgerEntry, Location } from "../50-state";
 import { scoreTick } from "../80-business/scores";
@@ -335,6 +336,8 @@ export function tick(state: GameState): SimEvent[] {
       const item = storeItem(id);
       if (item && item.monthly > 0) bills.push(subscriptionEntry(state, item));
     }
+    const desk = state.desk && state.desk.hosting.kind !== "self" ? deskById(state.desk.id) : undefined;
+    if (desk && desk.monthly > 0) bills.push(subscriptionEntry(state, deskItem(desk)));
     if (power > 0) bills.unshift({ hour: state.hour, category: "power", key: "ledger.power", params: {}, amount: -power });
     const dc = state.locations.find((l) => l.dc);
     const direct = invoicing(state) ? billSuppliers(state, bills, { upstream: line.isp, datacenter: dc && datacenterById(dc.dc!).name }) : bills;

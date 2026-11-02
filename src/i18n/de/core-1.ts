@@ -43,7 +43,7 @@ export default {
   "error.missingSkill": () => "Lerne zuerst die Fähigkeiten, auf denen diese Schulung aufbaut.",
   "error.noKnowHow": () => "Dir fehlt das nötige Know-how.",
   "error.needsResearch": () => "Lerne dafür zuerst die Fähigkeit in der Forschung.",
-  "error.deskNotYet": () => "Dieser Schreibtisch ist noch nicht im Verkauf.",
+  "error.deskNotYet": () => "Dieses Helpdesk ist noch nicht erhältlich.",
   "error.installed": () => "Das ist bereits installiert.",
   "error.notInstalled": () => "Das ist nicht installiert.",
   "ledger.hardware": (p) => `${Number(p.qty) > 1 ? `${p.qty} × ` : ""}${p.model}${p.device ? ` für ${p.device}` : ""}`,
