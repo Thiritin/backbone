@@ -35,6 +35,9 @@ export interface Service { id: string; customerId: string; product: Product; lab
   pkgBook?: Resources;
   // Web hosting only: the account's login name.
   username?: string;
+  // Traffic over the plan (80-business/overuse.ts): held at the booked traffic, and the hour the last overage bill or upgrade offer went out.
+  throttled?: true;
+  overuseAt?: number;
   // The last hour the service ran slowed; a month without one earns a review.
   slowedAt?: number;
   // Hourly price from before the first of a run of raises; unset once the price is back at or below it.

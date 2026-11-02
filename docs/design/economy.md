@@ -1694,6 +1694,18 @@ Disk use starts at 30% of booked and stops at 100%; the average customer reaches
 
 **Before and after.** Measured over 30 days with a mixed set of customers (web hosting, VPS, game servers, VPN, storage, dedicated): early game in 2005 with 13 services moves 0.59 TB before and after, with a 95th percentile of 3.4 Mbit/s before and 3.8 after (night jobs add short peaks to a small base); mid game in 2012 with 200 services moves 17.9 TB before and 17.8 after, with a 95th percentile of 103 Mbit/s before and 88 after, so transit bills drop about 15% (€311 to €264 a month at Cogentle's price), because the floors and staggered peaks flatten the sum.
 
+### Traffic overuse
+
+A service's traffic grows 20% a year from the day it started while its plan stays the same, so a service that keeps its plan for a few years moves more traffic in a month than the plan includes. The customer page shows the last month's traffic against the plan for every service with included traffic, and a service over its plan offers three answers.
+
+| Answer | Effect |
+| --- | --- |
+| Throttle traffic | The service stays at its booked traffic from then on, so the transit it costs stops growing. The customer loses 10 happiness. Lifting the throttle lets the traffic grow again. |
+| Bill overage | An invoice for the GB over the plan, at the line's traffic rate per 100 GB (the player's rate in Products, else the market's). The customer loses 5 happiness. |
+| Offer upgrade | The customer answers with an upgrade request for the next bigger plan, which the player quotes in Sales and the customer accepts or counters like any other upgrade. |
+
+A bill or an upgrade offer covers 730 hours, so the same service can be billed or offered an upgrade once a month. The state holds a company-wide `overusePolicy` (null by default): when it is set, the daily noon check applies that answer to every service over its traffic that is not yet throttled or handled this month. The player sets it in the Books app's billing rules after the Traffic billing training (250 know-how, 10 days, after Product management); the choices are off, throttle, bill or offer upgrade. An upgrade offer still waits for the player to quote it in Sales.
+
 ## Resellers
 
 A reseller buys a block of accounts on a DirectAdmen or cPanic host and sells web space to their own customers. The three blocks are Small (20 accounts, 50 GB, 500 GB traffic), Medium (50 accounts, 150 GB, 1,500 GB) and Large (100 accounts, 350 GB, 4,000 GB). The player sets a price per GB of block disk; the market rate makes a Medium block cost 0.5 times the market price of an average web space times its 50 accounts. Each month the reseller pays for the share of the block in use, the block price times the mean fill of that month. HOSTtoast lists reseller blocks with the price per GB next to the rivals that sell them.
@@ -2275,6 +2287,17 @@ Each service records `appVersion` (the release year it runs) and `appUpdatedAt` 
 | Clean-up by the customer | Medium and high skill: 50% clean it up themselves 1 to 3 days after the hit; low skill never |
 | Third hack within 365 days | The customer cancels all services |
 
+**Site clean-up.** Defaced sites are listed in the Security app under Advisories, and the notification opens it on the site. Each offers four actions; any clean-up ends an abuse hold on the site, so it comes back online and stops sending spam.
+
+| Action | Effect |
+| --- | --- |
+| Restore backup | `cleanSite` above; needs a backup |
+| Offer clean-up | The customer answers at once: accepts with 60% ÷ (player rate ÷ market rate), which books the price as a sales ledger line, takes the player that many hours and cleans the site; of those who decline, 25% × (player rate ÷ market rate) cancel all services. Offered once per hack |
+| Remind | 3 minutes of the player's time. The customer cleans the site 1 to 3 days after the hit with 90%, 60% or 30% by high, medium or low skill, low skill included. Once per hack |
+| Suspend for abuse | An abuse hold. The customer's ticket asks about the hack (how-to, topic abuseHold, the same actions as hacked) instead of an invoice |
+
+The price is the web hosting `cleanHour` rate times the hours the site takes: 1, 2 or 4 by the customer's budget, like their order sizes. The market's hourly rate is €85 in 2026 with multiplier 0.6 (€51 in 2005), shown in Pricing beside the player's. Anchor: German web agencies bill €60 to €100 an hour for WordPress clean-up. The hacked and abuseHold tickets also offer paid clean-up as an action, decided the same way; a decline keeps the thread open.
+
 **Notifying.** Notify customers, per app and vulnerability from Monitoring, writes to every site open to it that has not been written to yet: 30 minutes of the player's time per 10 customers. Of the customers who would not update by themselves, 50% answer with a how-to ticket, topic update. Each customer who asks has a fixed wish, drawn by their profile's budget:
 
 | Budget | One-off update | Managed updates | Refuses |
@@ -2440,6 +2463,7 @@ A first-year company earns about 300 know-how; a company with 10,000 customers e
 | Network operations | 2 | 300 | 14 days | Monitoring | Network, buying transit, peering with other networks |
 | Provisioning automation | 2 | 150 | 10 days | Product management | Automatic host for a setup, order automation for quotes, accounts, invoices and setups |
 | Fraud screening | 2 | 200 | 7 days, from 2008 | Product management | Order screening by MaxMined |
+| Traffic billing | 2 | 250 | 10 days | Product management | Automatic answer to traffic over the plan |
 | Documentation | 2 | 200 | 10 days | Product management | Knowledge base |
 | Marketing campaigns | 2 | 300 | 14 days | Marketing basics, Employee management | Marketing |
 | Market research | 3 | 800 | 21 days | Product management, Marketing campaigns | Market |
@@ -2448,7 +2472,7 @@ A first-year company earns about 300 know-how; a company with 10,000 customers e
 | Automation | 3 | 1,500 | 21 days | Employee management, Monitoring | ChadGPT Support, Clipsy Reminders, automated billing rules |
 | Cloud orchestration | 4 | 3,000 | 45 days, from 2010 | High availability, Network operations, Provisioning automation | OpenStash, the Cloud server product line, Watchman auto-balancing (OpenStash) |
 
-The whole tree costs 7,810 know-how and 216 days of training.
+The whole tree costs 8,060 know-how and 226 days of training.
 
 Product management was tier 2 at 200 know-how and 14 days after Marketing basics. The happiness run showed a careful first-year company earns 15 to 40 know-how a month, so the 250 know-how path landed in September to November. As a tier 1 skill at 100 know-how and 7 days, the same company learns it between early May and early July (median early June).
 
