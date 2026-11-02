@@ -250,10 +250,17 @@ export function requirementsFor(s: GameState, r: Pick<SalesRequest, "city" | "pr
     const fits = here.some((l) => addressesFit(s, l, r.product, r.spec!));
     out.push({ key: need.v6 && !need.v4 ? "sales.need.ipv6" : "sales.need.ipv4", params: { city: r.city }, ok: fits });
   }
-  if (r.sla === "premium") out.push({ key: "sales.need.age", params: { months: 12 }, ok: s.hour >= 8760 });
-  if (profileStats(r.profile).budget === "high") out.push({ key: "sales.need.reviews", params: { stars: 3 }, ok: reviewScore(s) >= 3 });
-  return out;
+  return [...out, ...standingFor(s, r)];
 }
+
+// The requirements a customer can judge from outside: the age of the company and its review score.
+const standingFor = (s: GameState, r: Pick<SalesRequest, "sla" | "profile">): Requirement[] => [
+  ...(r.sla === "premium" ? [{ key: "sales.need.age", params: { months: 12 }, ok: s.hour >= 8760 }] : []),
+  ...(profileStats(r.profile).budget === "high" ? [{ key: "sales.need.reviews", params: { stars: 3 }, ok: reviewScore(s) >= 3 }] : []),
+];
+
+// A customer who sees the company is too young or reviewed too low does not write in at all.
+export const blocksContact = (s: GameState, r: Pick<SalesRequest, "sla" | "profile">): boolean => standingFor(s, r).some((x) => !x.ok);
 
 export const missingFor = (s: GameState, r: Parameters<typeof requirementsFor>[1]): Requirement[] => requirementsFor(s, r).filter((x) => !x.ok);
 
