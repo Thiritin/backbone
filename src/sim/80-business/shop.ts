@@ -7,11 +7,12 @@ import { PRODUCTS } from "../10-catalog/products";
 import type { Cycle } from "../10-catalog/cycles";
 import type { MethodId } from "../10-catalog/payments";
 import { includes, shopById, type ShopId } from "../10-catalog/shops";
-import { shopEra, shopLicence } from "../10-catalog/shop-licences";
-import { assignedKey, covers, SHOP_MACHINE } from "../60-infra/licence";
+import { shopEra, shopLicence, shopOnSale } from "../10-catalog/shop-licences";
+import { assignedKey, covers, isLicensed, SHOP_MACHINE } from "../60-infra/licence";
 import { releasedAt, versionsOf, type SoftwareVersion } from "../10-catalog/software-versions";
 import type { Licence } from "../50-state";
 import { supportOn } from "../60-infra/lifecycle";
+import { shopBroken } from "../60-infra/shop-files";
 import { modelById } from "../10-catalog/hardware";
 import type { Product } from "../30-customers/customers";
 import type { Spec } from "../10-catalog/products";
@@ -42,7 +43,6 @@ export interface ShopState {
   // Owned licence instead of the lease, for variants that sell one.
   owned: boolean;
   since: number;
-  readyAt: number;
   // Bought modules and the hour each starts working.
   modules: Record<string, number>;
   stock: Partial<Record<Product, Stock>>;
@@ -57,12 +57,15 @@ export interface ShopState {
   methodsOff: MethodId[];
   // The web space on a panel host the shop runs in, and the version it runs; null while it is not installed.
   install: ShopInstall | null;
+  // The admin password reset mailed last: its link's token, the admin row it resets and the hour the link runs out.
+  reset: { token: string; pk: number; until: number } | null;
 }
-export interface ShopInstall { clusterId: string; version: string; at: number }
+// ws, folder and db name where the installer put the shop (web-hosting.md 5); a hosted shop has none.
+export interface ShopInstall { clusterId: string; version: string; at: number; ws?: string; folder?: string; db?: string }
 
-export const newShop = (): ShopState => ({ variant: null, owned: false, since: 0, readyAt: 0, modules: {}, stock: {}, soldOut: {}, groups: [], optionDiscount: {}, products: [], productGroups: [], methodsOff: [], install: null });
+export const newShop = (): ShopState => ({ variant: null, owned: false, since: 0, modules: {}, stock: {}, soldOut: {}, groups: [], optionDiscount: {}, products: [], productGroups: [], methodsOff: [], install: null, reset: null });
 
-export const shopActive = (s: GameState): boolean => s.shop.variant !== null && s.hour >= s.shop.readyAt;
+export const shopActive = (s: GameState): boolean => s.shop.variant !== null && !shopBroken(s);
 
 // A manual-stock shop starts each line at this many units.
 export const START_STOCK = 10;
@@ -109,6 +112,16 @@ export function installable(s: GameState, id: ShopId, k: Licence | undefined): S
   return releasedAt(id, until).filter((v) => !k || covers(k, v.version)).at(-1);
 }
 // The release Install update takes the installed shop to; null while it runs the newest its key may install.
+// The release the vendor's download area hands out (web-hosting.md 5, step 1): the newest one the best key the company
+// holds covers, else the newest one while the shop is sold with a trial or for free; null while there is nothing to fetch.
+export function downloadableRelease(s: GameState, id: ShopId): SoftwareVersion | null {
+  const keys = s.licenses.filter((k) => k.product === id);
+  const best = keys.map((k) => installable(s, id, k)).filter((v): v is SoftwareVersion => !!v).sort((a, b) => b.release - a.release)[0];
+  if (best) return best;
+  const latest = releasedAt(id, s.hour).at(-1) ?? null;
+  return latest && shopOnSale(id, s.hour) && (!isLicensed(id) || shopLicence(id).trialDays !== null) ? latest : null;
+}
+
 export function shopUpdate(s: GameState): SoftwareVersion | null {
   const id = s.shop.variant, at = s.shop.install;
   if (!id || !at) return null;

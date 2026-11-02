@@ -1,4 +1,4 @@
-import { Database, Folder, ScrollText, TriangleAlert, type LucideIcon } from "lucide-react";
+import { Database, Folder, Package, ScrollText, TriangleAlert, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { t } from "../../../../../i18n/en";
 import { APP_NAME } from "../../../../../sim/10-catalog/apps";
@@ -9,13 +9,13 @@ import { accountUse } from "../../../../../sim/80-business/readouts";
 import { webspaceOf } from "../../../../../sim/60-infra/webspace";
 import { disk } from "../../../hw";
 import { Bar } from "../PanelBase";
-import { FileManager } from "./FileManager";
-import { LogPage } from "../Readouts";
-import { MySqlDatabases } from "./MySqlDatabases";
-import { DomainPage, domainTiles, type DomainPageId } from "./Domains";
-import { isMailFtpPage, MailFtp, mailFtpIcons, type MailFtpPage } from "./MailFtp";
+import { domainTiles } from "./Domains";
+import { mailFtpIcons } from "./MailFtp";
+import { WebTool, type ToolId as Page } from "../WebTool";
 
-type Page = "files" | "db" | "access" | "errors" | DomainPageId | MailFtpPage;
+// Softaculus arrived in cPanic in 2009.
+const SOFTACULUS_YEAR = 2009;
+
 const ICONS: [Page | "pma", string, LucideIcon][] = [
   ["files", "readouts.cp.files", Folder],
   ["db", "webdb.title", Database], ["pma", "webdb.pma.app", Database], ["access", "readouts.cp.access", ScrollText], ["errors", "readouts.cp.errors", TriangleAlert],
@@ -30,14 +30,10 @@ export function Customer({ game, c, workloadId, openPma }: { game: GameState; c:
   const u = w && accountUse(game, w), domain = ws.domain, app = v?.spec.app, offline = game.security.offline.includes(c.id);
   const body = () => {
     if (offline) return <p className="cx-empty">{t("readouts.cp.offline")}</p>;
-    if (page === "files") return <FileManager game={game} c={c} workloadId={workloadId} />;
-    if (isMailFtpPage(page)) return <MailFtp game={game} ws={ws} page={page} />;
-    if (page === "db") return <MySqlDatabases game={game} workloadId={workloadId} />;
-    if (page === "access" || page === "errors") return <LogPage game={game} c={c} only={page === "errors" ? "error" : "access"} />;
-    if (page) return <DomainPage game={game} c={c} workloadId={workloadId} page={page} />;
+    if (page) return <WebTool game={game} c={c} workloadId={workloadId} page={page} />;
     return (
       <div className="cp-icons">
-        {[...ICONS, ...domainTiles(yearOf(game.hour)), ...mailFtpIcons(yearOf(game.hour))].map(([id, key, Icon]) => <button key={id} className="cx-tile" onClick={() => (id === "pma" ? openPma?.() : setPage(id))}><Icon size={28} aria-hidden /><span>{t(key)}</span></button>)}
+        {[...ICONS, ...domainTiles(yearOf(game.hour)), ...mailFtpIcons(yearOf(game.hour)), ...(!w && yearOf(game.hour) >= SOFTACULUS_YEAR ? [["apps", "shop-setup.app.title", Package] as const] : [])].map(([id, key, Icon]) => <button key={id} className="cx-tile" onClick={() => (id === "pma" ? openPma?.() : setPage(id))}><Icon size={28} aria-hidden /><span>{t(key)}</span></button>)}
       </div>
     );
   };

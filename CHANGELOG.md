@@ -6,11 +6,25 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - Incident reports in Security can now be archived, which takes them off the incident list and out of the open count.
 - A new game no longer starts with three friends waiting for web hosting; the first order email now arrives within two weeks of your first web host going online.
+- Five new ultrawide desktop pictures (Annapurna, Milky Way, Hong Kong, Sossusvlei and Matterhorn) join the wallpaper choices in Settings, and every built-in wallpaper is now sharper at full screen.
+- Typed text in the Gmix login fields is now readable.
+- Supplier invoices in Preview now carry each supplier's logo and colours, laid out in one of three letterheads depending on the company, with bank details in the footer.
+- A browser bookkeeping program now stays reachable while the internet line is only throttled for an overdue bill and goes offline once the line is cut.
+- Counts in the Collmix menu now show in brackets after the entry name.
+- The shop system is now installed by hand: download its archive from the vendor, upload and extract it into your web space, create a database and run its web installer, then log in to the admin area with the account you chose there.
+- Softaculus can install BoxBillin', ClientExit and Blessta in one step in the years it listed them, a forgotten shop admin password can be reset by mail, and existing shops get their files, database and a new admin password sent by mail.
+- The device picture in the inspector now matches the one in the rack, so a server shows the same drive bays, vent and control panel in both places.
+- Downloaded programs now arrive in Downloads as disk images and install by dragging them into Applications; a Trash at the end of the dock uninstalls them, and installing a second bookkeeping program asks before it replaces the current one.
+- Pleskit, DirectAdmen and FreePanel now open each web space in their own customer screens, where you manage files, databases, mailboxes, FTP accounts, domains and cron jobs as in cPanic.
+- The second and third game speeds now run at 8× and 60× instead of 2× and 4×, so playing fast moves much quicker while skipping to the next event stays the fastest.
+- Pear Mail shows every added account in one window with unified mailboxes, sortable columns, threads, search and a reader that answers customer requests from the message.
+- Customers now come from a much larger pool of real first and last names, with more trades, shops, agencies and offices, so names repeat far less often.
 - The Terminal installs zsh only the first time you ever open it, not again in every new game.
 - The menu bar now shows the Pear logo in the style of each system release, and the Panthera and Leapard icons for Locations, Post and Security now show a house, a fax machine and a shield.
 - The Research icon in the dock shows a dot whenever a new research can be started.
 - A Zendusk account now has its own agent site with views, macros, triggers and a Help Center, in the look of each era, and its support address is verified once your mailbox forwards to it.
 - Pear Mail now checks each mail account on its own interval in the background, downloading POP mail to the computer and showing IMAP mail at the next check.
+- GMix now has its own website at gmix.net in the look of each era, where you can compare FreeMix, ProMix and TopMix, sign up for a new address, log in with KeePassive, change your plan or password, cancel or delete a mailbox, and order a password reset code by post.
 - App and file icons now follow the system release: Panthera shows the Crystal Clear icons, Leapard shows the Oxygen icons, and later releases keep their flat tiles.
 - VPS plans now start small and cheap, from 256 MB for about €13 a month in 2005, and grow every few years until they reach 4 to 32 GB in 2026.
 - Many more customers now ask for a VPS as the years go by, on top of the web hosting customers you already get, while VPS prices per GB fall every year.

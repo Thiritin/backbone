@@ -12,7 +12,7 @@ import { displayHost } from "../../../../../../sim/80-business/browser";
 import { portalPath } from "../../../../../../sim/80-business/portal";
 import { bought } from "../../../../../../sim/80-business/licences";
 import { shopHost } from "../../../../../../sim/80-business/shoplink";
-import { upgradeShop } from "../../../../../../sim/90-actions/shop";
+import { installShop, upgradeShop } from "../../../../../../sim/90-actions/shop";
 import { buyShopLink } from "../../../../../../sim/90-actions/shoplink";
 import { useStore } from "../../../../../store";
 import { feeText } from "../../../../marketing/payments";
@@ -100,10 +100,14 @@ function Install({ game }: VendorProps) {
 // The installation the account runs, with the free move to the next major; keys bought elsewhere show below it.
 function MyAccount({ game }: VendorProps) {
   const act = usePageAct(), at = game.shop.variant === ID ? game.shop.install : null;
+  const panel = game.clusters.find((c) => c.kind === "panel" && c.panel);
   const info = at ? versionInfo(ID, at.version) : undefined, next = at ? nextMajor(ID, at.version, game.hour) : null;
   return (
     <>
       <h1>{t("vendor-shop.myAccount")}</h1>
+      {game.shop.variant !== ID && (
+        <p><button type="button" className="obv-btn" disabled={!panel} onClick={() => panel && act(installShop, panel.id, ID)}>{t("shop-downloads.activate", { name: shopById(ID).name })}</button></p>
+      )}
       {!at ? <p>{t("orderbocks.v.noInstall")}</p> : (
         <table className="obv-table">
           <thead><tr><th>{t("vendor-shop.product")}</th><th>{t("vendor-shop.edition")}</th><th>{t("releases.version")}</th><th>{t("orderbocks.v.installation")}</th><th>{t("releases.updatesUntil")}</th><th /></tr></thead>

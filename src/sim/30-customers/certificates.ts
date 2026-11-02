@@ -12,6 +12,7 @@ import { createTicket, isFinal, profileStats } from "../40-support/tickets";
 import { includes, shopById } from "../10-catalog/shops";
 import type { SimEvent } from "../88-tick/tick";
 import type { Profile, Service } from "./customers";
+import { shopBroken } from "../60-infra/shop-files";
 
 // Share of a profile's web hosting customers who want a paid certificate at the market price with a new order; a customer
 // who asks how to get the padlock wants one CERT_ASKED times as often. Small sites rarely care; offices, shops and
@@ -45,7 +46,7 @@ export const certificateOf = (s: GameState, domain: string): Service | undefined
 // The module check is 80-business/shop.ts hasModule, which this file cannot import without a cycle.
 export function shopSellsSsl(s: GameState): boolean {
   const v = s.shop.variant && shopById(s.shop.variant);
-  if (!v || s.hour < s.shop.readyAt || s.shop.stock.ssl === "off" || !listed(s, "ssl")) return false;
+  if (!v || shopBroken(s) || s.shop.stock.ssl === "off" || !listed(s, "ssl")) return false;
   return includes(v, "ssl", yearOf(s.hour)) || (s.shop.modules.ssl ?? Infinity) <= s.hour;
 }
 // The certificate a profile would buy now.

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { shopById } from "../../../sim/10-catalog/shops";
 import { DESK } from "../support/desk";
+import { GMixMark } from "../../art/mailmarks";
 import type { CSSProperties } from "react";
 import type { Resolved } from "../../../sim/80-business/browser";
 import type { GameState } from "../../../sim/50-state";
@@ -20,7 +21,7 @@ import { bankById } from "../../../sim/10-catalog/banks";
 const GREY = "oklch(0.62 0.01 255)";
 
 // A deterministic hue from a name, so a customer's letter keeps its colour.
-const hueOf = (name: string): number => [...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7);
+export const hueOf = (name: string): number => [...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7);
 
 const Tile = ({ fill, children }: { fill: string; children: ReactNode }) => (
   <svg className="fav" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
@@ -51,6 +52,7 @@ export function Favicon({ game, r }: { game: GameState; r: Resolved }) {
       const v = booksVendor(p.id)!;
       return <Tile fill={v.skin.accent}><text x="8" y="11.8" textAnchor="middle" fontSize="10" fontWeight="800" fill="white" fontFamily="Verdana, sans-serif">{v.name[0].toUpperCase()}</text></Tile>;
     }
+    case "mailProvider": return <span className="fav fav-mark" style={{ "--tile": "#1c449b" } as CSSProperties}><GMixMark /></span>;
     case "deskVendor": case "desk": { const M = DESK[p.id].icon; return <span className="fav fav-mark" style={{ "--tile": DESK[p.id].tile } as CSSProperties}><M /></span>; }
     case "shopVendor": {
       const name = shopById(p.id).name;

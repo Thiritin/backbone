@@ -51,7 +51,7 @@ export function Desktop() {
   const wallpaper = useStore((s) => s.wallpaper);
   const photo = !started || wallpaper.pick === "map" ? null
     : wallpaper.pick === "custom" ? wallpaper.custom
-    : `${import.meta.env.BASE_URL}wallpapers/${wallpaper.pick === "os" ? os : wallpaper.pick}.webp`;
+    : `${import.meta.env.BASE_URL}wallpapers/${wallpaper.pick === "os" ? os : wallpaper.pick}.png`;
 
   return (
     <div className="desktop">

@@ -38,8 +38,6 @@ export const SHOPS: ShopVariant[] = [
 
 export const shopById = (id: ShopId): ShopVariant => SHOPS.find((x) => x.id === id)!;
 
-// Days a new shop needs before it takes orders.
-export const SHOP_SETUP_HOURS = 72;
 const kindOf = (id: string): SoftwareKind | undefined => SOFTWARE.find((x) => x.id === id)?.kind;
 export const MODULE_IDS: string[] = [...SOFTWARE.filter((x) => x.kind !== "mail" && x.kind !== "backup").map((x) => x.id), ...HARDWARE_MODULES];
 export const moduleName = (id: string): string => SOFTWARE.find((x) => x.id === id)?.name ?? id;

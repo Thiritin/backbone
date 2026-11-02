@@ -24,6 +24,7 @@ import { usePageAct } from "../../../pageAct";
 import { Cart, cartCount, Editions } from "../../shop/VendorShop";
 import { Releases } from "../../software/Releases";
 import { Mark } from "../../portal/blessta";
+import { InstallSteps, ShopDownload } from "../ShopDownload";
 import type { VendorProps } from "../ShopVendorSite";
 import "./site.css";
 
@@ -142,10 +143,10 @@ function Download({ game }: { game: GameState }) {
   return (
     <>
       {latest && <p className="bv-version">{t("blessta.v.current")}: <strong className="num">{name} {latest.version}</strong></p>}
+      <ShopDownload game={game} id={ID} />
       <ol className="bv-steps">
         <li>{t("blessta.v.step0")}</li>
-        <li>{t("blessta.v.step1")}</li>
-        <li>{t("blessta.v.step2", { name, section: t("host.shop"), button: t("host.installShop", { name }) })}</li>
+        <InstallSteps game={game} />
         <li>{t("blessta.v.step3", { name, days: shopLicence(ID).trialDays ?? 0 })}</li>
       </ol>
     </>

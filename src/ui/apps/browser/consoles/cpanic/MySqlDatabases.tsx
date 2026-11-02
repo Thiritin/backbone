@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { t } from "../../../../../i18n/en";
+import { useT } from "../look";
 import { LOCALE } from "../../../../../i18n/lang";
 import { yearOf } from "../../../../../sim/00-core/time";
 import type { GameState } from "../../../../../sim/50-state";
@@ -25,6 +26,7 @@ type Confirm = { kind: "db" | "user"; name: string } | null;
 // cPanic's MySQL Databases page: create a database, create a user, add the user to a database with privileges, and the
 // current databases and users with their delete links. Databases always run on localhost.
 export function MySqlDatabases({ game, workloadId }: { game: GameState; workloadId: string }) {
+  const t = useT();
   const act = usePageAct(), ws = webspaceOf(game, workloadId), year = yearOf(game.hour);
   const [db, setDb] = useState(""), [user, setUser] = useState(""), [pass, setPass] = useState(""), [again, setAgain] = useState("");
   const [addUser, setAddUser] = useState(""), [addDb, setAddDb] = useState(""), [manage, setManage] = useState<{ user: string; db: string } | null>(null);

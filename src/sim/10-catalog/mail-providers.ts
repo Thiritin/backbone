@@ -58,6 +58,8 @@ export const SELF_QUOTA_MB = 1024;
 // The year IMAP opens to GMix FreeMix (mail-suite ruling: from webmail-consumer).
 export const IMAP_FREE_FROM = 2012;
 // Days an ended tenant's closed boxes stay before they go with their mail; GMix and the own server delete at once.
+// The monthly price GMix offers for three months to a paid tier that is being cancelled.
+export const GMIX_OFFER = 0.99;
 export const GRACE_DAYS: Record<string, number> = { goggle: 20, ionose: 30, lookout: 30 };
 export const WEBMAIL_IDS = ["gmix", "gmial", "ionose", "lookout", "squarecube"] as const;
 

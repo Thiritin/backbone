@@ -297,7 +297,7 @@ export function openShop(s: GameState, id: ShopId = "clientExit"): GameState {
   const modules = s.shop.modules;
   installWithKey(s, id);
   // Keeps the modules automate() bought.
-  s.shop = { ...s.shop, readyAt: s.hour, modules: { ...modules, ...s.shop.modules } };
+  s.shop = { ...s.shop, modules: { ...modules, ...s.shop.modules } };
   // Every payment method, so no checkout is lost for a missing one.
   s.modules = [...new Set([...s.modules, ...PAYMENT_METHODS.map((m) => m.id)])];
   return s;

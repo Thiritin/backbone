@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { SHOP_SETUP_HOURS } from "../src/sim/10-catalog/shops";
 import { marketPrice } from "../src/sim/10-catalog/products";
 import { yearOf } from "../src/sim/00-core/time";
 import { termPrice } from "../src/sim/30-market/cycles";
@@ -36,7 +35,6 @@ describe("email quotes and option discounts", () => {
     setUpChannel(s, "website");
     s.unlocks = [...s.unlocks, "shops"];
     installWithKey(s, "modemBill");
-    s.hour += SHOP_SETUP_HOURS;
     setRate(s, "webHosting", "base", 99);
     const { r, discount } = quoted(s);
     expect(r.quote).toBe(Math.round(offerPrice(s, "webHosting", r.spec, "basic") * (1 - discount) * 100) / 100);

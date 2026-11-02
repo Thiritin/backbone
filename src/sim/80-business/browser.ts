@@ -1,5 +1,6 @@
 // GDD, The desktop (Browser): what an address in the in-game browser leads to. Pure; the UI draws the page.
 import { PROGRAMS } from "../10-catalog/programs";
+import { filesIn, installDirIn, shopBroken, shopFolderAt } from "../60-infra/shop-files";
 import { DESKS, type DeskId } from "../10-catalog/desks";
 import { supplierHost } from "../46-finance/payables";
 import { monthIndexOf, yearOf } from "../00-core/time";
@@ -39,6 +40,8 @@ import { SHOPS, type ShopId } from "../10-catalog/shops";
 import { shopHost } from "./shoplink";
 import { HOSTTOAST_HOST } from "../10-catalog/hosttoast";
 import { dcProvider, PROVIDERS, type Datacenter } from "../20-world/datacenters";
+import { MAIL_SITES, mailSiteUrl, type MailSiteId } from "../10-catalog/mail-consumer";
+import { roleAccount } from "../42-mail/accounts";
 
 // fast loads at once, slow shows a progress bar first, down cannot be reached.
 export type Load = "fast" | "slow" | "down";
@@ -58,6 +61,7 @@ export type Page =
   | { kind: "books"; id: BooksVendorId }
   | { kind: "shopVendor"; id: ShopId }
   | { kind: "deskVendor"; id: DeskId }
+  | { kind: "mailProvider"; id: MailSiteId }
   | { kind: "desk"; id: DeskId }
   | { kind: "hosttoast" }
   | { kind: "host"; hostname: string }
@@ -76,7 +80,10 @@ export type Page =
   | { kind: "office" }
   | { kind: "dohle" }
   | { kind: "wiki" }
-  | { kind: "shop" }
+  // base is the folder in the path a shop under a domain's folder answers at, such as "/billing".
+  | { kind: "shop"; base?: string }
+  // A shop's files outside a running install: its installer under /install/, the note to run it, or its error page.
+  | { kind: "shopSetup"; ws: string; folder: string; base: string; id: ShopId; version: string; screen: "installer" | "notInstalled" | "maintenance" | "dbError" }
   | { kind: "software"; id: string }
   | { kind: "program"; id: string }
   | { kind: "os"; id: ServerOsId }
@@ -121,7 +128,7 @@ export const resellersUrl = (): string => `${HOME_URL}${dirSlug(t("sim.index.cat
 // Domains the game's other companies hold in any year, and every name under them.
 export function providerDomain(name: string): boolean {
   const hosts = [INDEX_HOST, OFFICE_HOST, DOHLE_HOST, WIKI_HOST, LEXWEAR_HOST, HOSTTOAST_HOST, BOARD_HOST, FLYER_HOST, AGENCY_HOST, VIDEO_HOST, ...CHANNELS.map((c) => c.host), ...SOFTWARE.map((x) => x.site.host), ...SERVER_OS.map((x) => x.site.host), ...DESKS.map((d) => d.hosts.vendor),
-    ...VENDORS.map((m) => vendorHost(m.id)), ...BANKS.map((b) => b.host), ...REGISTRARS.map(registrarHost), ...PROVIDERS.map((p) => p.host)].map((h) => h.replace(/^www\./, ""));
+    ...VENDORS.map((m) => vendorHost(m.id)), ...BANKS.map((b) => b.host), ...REGISTRARS.map(registrarHost), ...PROVIDERS.map((p) => p.host), ...Object.values(MAIL_SITES).flat()].map((h) => h.replace(/^www\./, ""));
   return hosts.some((h) => h === name || h.endsWith(`.${name}`));
 }
 // The partner's form that registers or transfers an order's domain.
@@ -132,12 +139,19 @@ export const bankUrl = (id: BankId): string => `www.${bankById(id)!.host}/`;
 export const providerUrl = (id: string): string => `${displayHost(dcProvider(id).host)}/`;
 export const orderUrl = (dc: Datacenter, space: string, size: number): string => `${providerUrl(dc.provider)}order?dc=${dc.id}&space=${space}&size=${size}`;
 
-// Bookmarks every game has: the bank and the registrar. The company's own sites sit in its bookmark folder.
+// Bookmarks every game has: the bank, the registrar and the webmail. The company's own sites sit in its bookmark folder.
 export const defaultBookmarks = (s: GameState): { title: string; url: string }[] => [
   ...(s.registration ? [] : [{ title: t("browser-sites-1.of.title"), url: OFFICE_URL }]),
   ...(s.bank ? [{ title: bankById(s.bank.id)!.name, url: bankUrl(s.bank.id) }] : []),
   { title: ((s.registrar && registrarById(s.registrar.id)) ?? REGISTRARS[0]).name, url: registrarUrl(s) },
+  ...webmailMark(s),
 ];
+
+// The webmail of the sales mailbox's provider, once that provider has a site.
+function webmailMark(s: GameState): { title: string; url: string }[] {
+  const a = roleAccount(s, "sales"), host = a && s.mail.tenants.find((x) => x.id === a.tenant)?.host;
+  return host && host in MAIL_SITES ? [{ title: t("sim.index.webmail"), url: mailSiteUrl(host as MailSiteId) }] : [];
+}
 
 // Splits what the player typed into a lowercase host and a path with its query; the scheme and a trailing dot fall away.
 export function split(raw: string): { host: string; path: string } {
@@ -208,6 +222,17 @@ export function resolve(s: GameState, raw: string): Resolved {
   // A domain on the partner's name servers shows its parking page; on custom ones nothing the company runs answers.
   const held = s.domains.find((d) => !d.lapsed && (host === d.name || host === `www.${d.name}`));
   if (held && parked(s, held)) return out(nsActive(s, held).ns === "registrar" ? { kind: "parked", registrar: partnerOf(s).id, domain: held.name } : { kind: "notfound" });
+  // The shop's files in a folder of an own web space: the installer under /install/, the note to run it, the store once
+  // installed there, or its error while its files and install disagree.
+  const own = shopFolderAt(s, host, path), files = own && filesIn(own.ws, own.folder);
+  if (own && files) {
+    const i = s.shop.install, setup = (screen: "installer" | "notInstalled" | "maintenance" | "dbError") =>
+      out({ kind: "shopSetup", ws: own.ws.workloadId, folder: own.folder, base: own.base, id: files.id, version: files.version, screen });
+    if (/^\/install(\/|$)/.test(own.rest) && installDirIn(own.ws, own.folder)) return setup("installer");
+    if (i?.ws !== own.ws.workloadId || i.folder !== own.folder) return setup("notInstalled");
+    if (files.version !== i.version) return setup("maintenance");
+    return shopBroken(s) ? setup("dbError") : out({ kind: "shop", ...(own.base && { base: own.base }) }, shopLoad());
+  }
   if (host === domain || host === `www.${domain}`) {
     if (!s.marketing.launched) return out({ kind: "notfound" });
     const st = siteStatus(s);
@@ -226,7 +251,7 @@ export function resolve(s: GameState, raw: string): Resolved {
   // A site on a web space answers as its folder says; the shop's address shows the panel's default page until the shop is installed.
   const pageOf = (hit: WebsiteHit): Resolved => out(hit.body.kind === "customer" ? { kind: "customer", serviceId: hit.body.serviceId } : { kind: "webspace", body: hit.body }, hit.load);
   if (host === `portal.${domain}`) {
-    if (shopActive(s) && s.shop.install) return out({ kind: "shop" }, shopLoad());
+    if (shopActive(s) && s.shop.install && !s.shop.install.ws) return out({ kind: "shop" }, shopLoad());
     const hit = webspaceSite(s, host) ?? placeholderSite(s, host);
     return hit ? pageOf(hit) : out({ kind: "notfound" });
   }
@@ -247,6 +272,8 @@ export function resolve(s: GameState, raw: string): Resolved {
   if (shopSite) return out({ kind: "shopVendor", id: shopSite.id });
   const deskSite = DESKS.find((d) => d.from <= yearOf(s.hour) && named(d.hosts.vendor));
   if (deskSite) return out({ kind: "deskVendor", id: deskSite.id });
+  const mailSite = (Object.keys(MAIL_SITES) as MailSiteId[]).find((id) => MAIL_SITES[id].some(named));
+  if (mailSite) return out({ kind: "mailProvider", id: mailSite });
   if (named(HOSTTOAST_HOST)) return out({ kind: "hosttoast" });
   // A software's site exists from the year the software does; an operating system's always.
   const year = yearOf(s.hour), sw = SOFTWARE.find((x) => named(x.site.host) && x.from <= year);

@@ -116,7 +116,7 @@ describe("FileGorilla", () => {
   it("downloads for a while, then installs into the dock", () => {
     const s = withServer(newGame(3));
     const p = programById("FileGorilla")!;
-    expect(installerFile(p, 2005)).toBe("FileGorilla_2.2.15_win32-setup.exe");
+    expect(installerFile(p, 2005)).toBe("FileGorilla_2.2.15.dmg");
     expect(programRelease(p, 2012).version).toBe("3.5.3");
     expect(err(installProgram(s, "FileGorilla"))).toBe("error.booksNotDownloaded");
     ok(downloadProgram(s, "FileGorilla"));

@@ -129,3 +129,16 @@
 .pk-ring[data-level="bad"] { --ring: #cf3b3b; }
 .pk-ring::before { content: ""; position: absolute; inset: 8px; border-radius: 50%; background: var(--panel); }
 .pk-ring b { position: relative; font-size: 22px; }
+
+/* Customer side: Plesk 8 icon groups, 10 and 12 tabs across the top, Onyx on the tabs in the sidebar. */
+.pk-cust .pk-main > h1 { margin-bottom: 10px; }
+.pk-cust .pk-main > .cx-btn { margin-bottom: 10px; }
+.pk-tabs { display: flex; flex-wrap: wrap; gap: 2px; margin-bottom: 14px; border-bottom: 1px solid var(--line); }
+.pk-tabs button { padding: 7px 14px; border: 1px solid transparent; border-bottom: 0; border-radius: var(--r) var(--r) 0 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+.pk-tabs button[aria-pressed="true"] { margin-bottom: -1px; border-color: var(--line); background: var(--panel); color: var(--accent); font-weight: 600; }
+.pk[data-era="parallax"] .pk-tabs button { background: linear-gradient(#f6f7f8, #dfe3e7); border-color: var(--line); }
+.pk[data-era="parallax"] .pk-tabs button[aria-pressed="true"] { background: var(--panel); }
+.pk-tools { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+.pk-tools .cx-tile { flex-direction: row; width: auto; gap: 6px; padding: 6px 10px; }
+.pk[data-era="reload"] .pk-tools .cx-tile { flex-direction: column; width: 96px; text-align: center; }
+.pk-cust .cx-table code, .pk-cust p code { margin-left: 4px; opacity: 0.8; }

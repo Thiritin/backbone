@@ -12,7 +12,7 @@ const status = (game: GameState, id: string): "defaced" | "sslExpired" | "active
 const TONE = { defaced: "bad", sslExpired: "bad", active: "ok" } as const;
 
 // Websites & Domains: Plesk 8 to 11 list the clients and the domains apart, Onyx on groups the domains under their subscription.
-export function SubscriptionList({ game, c, rows, late }: { game: GameState; c: Cluster; rows: Row[]; late: boolean }) {
+export function SubscriptionList({ game, c, rows, late, onLogin }: { game: GameState; c: Cluster; rows: Row[]; late: boolean; onLogin?: (workloadId: string) => void }) {
   const [open, setOpen] = useState<string[]>([]), subs = subscriptionsOf(game, c.id);
   const rowOf = (serviceId: string) => rows.find((r) => game.workloads.find((w) => w.id === r.id)?.serviceId === serviceId);
   if (!late) {
@@ -28,7 +28,7 @@ export function SubscriptionList({ game, c, rows, late }: { game: GameState; c: 
           </tbody>
         </table>
         <h3>{t("browser-consoles-2.domains")}</h3>
-        <RowsTable rows={rows} name={t("browser-consoles-2.domain")} />
+        <RowsTable rows={rows} name={t("browser-consoles-2.domain")} extra={(r) => onLogin && <button className="cx-btn" onClick={() => onLogin(r.id)}>{t("pkc.loginAs")}</button>} />
       </>
     );
   }
@@ -45,7 +45,7 @@ export function SubscriptionList({ game, c, rows, late }: { game: GameState; c: 
               <td>{v.pkg ?? t("web.sub.custom")}</td>
               <td><span className={`cx-state ${TONE[st]}`}>{t(`web.sub.${st}`)}</span></td>
               <td className="num">{domains.length}</td>
-              <td>{r && <Actions actions={r.actions} className="cx-acts" />}</td>
+              <td>{r && <Actions actions={r.actions} className="cx-acts" />}{r && onLogin && <button className="cx-btn" onClick={() => onLogin(r.id)}>{t("pkc.loginAs")}</button>}</td>
             </tr>,
             ...(shown ? domains.map((d) => { const ds = d.product === "ssl" ? st : "active"; return <tr key={`${v.id}-${d.id}`}><td colSpan={2}>{d.label}<span className="cx-sub">{t(`web.sub.${d.product}`)}</span></td><td colSpan={3}><span className={`cx-state ${TONE[ds]}`}>{t(`web.sub.${ds}`)}</span></td></tr>; }) : []),
           ];

@@ -27,9 +27,9 @@ function take(s: GameState, v: BooksVendor, e: Edition, seats: number): ActionRe
 }
 
 // The data stays where it is; the old program's edition, seats and fee go. A program bought before costs only what its
-// edition adds.
+// edition adds. The installer stays in Downloads for a reinstall.
 function setUp(s: GameState, v: BooksVendor, e: Edition): void {
-  s.books = { vendor: v.id, installedAt: s.hour, edition: e.id, seats: 0, download: s.books.download?.vendor === v.id ? null : s.books.download };
+  s.books = { vendor: v.id, installedAt: s.hour, edition: e.id, seats: 0, download: s.books.download };
   if (!s.installed.includes("Books")) s.installed = [...s.installed, "Books"];
   const fee = monthlyFee(v, e, 0);
   if (fee) bill(s, v, MONTHLY_KEY, fee, { edition: e.name });
@@ -65,6 +65,7 @@ export function buyBooks(s: GameState, id: string, editionId?: string): ActionRe
 export function installBooks(s: GameState, id: string): ActionResult {
   const v = booksVendor(id), d = s.books.download;
   if (!v || !d || d.vendor !== v.id) return fail("error.booksNotDownloaded");
+  if (s.books.vendor === v.id) return fail("error.installed");
   if (s.hour < d.readyAt) return fail("error.booksDownloading");
   const e = editionById(v, d.edition);
   if (!e) return fail("error.unknownEdition");
@@ -81,7 +82,8 @@ export function upgradeBooks(s: GameState, editionId: string): ActionResult {
   if (updateOpen(s)) return fail("error.updateOpen");
   const r = take(s, v, e, s.books.seats);
   if (!r.ok) return r;
-  s.books = { ...s.books, edition: e.id, seats: e.seat ? s.books.seats : 0 };
+  const d = s.books.download;
+  s.books = { ...s.books, edition: e.id, seats: e.seat ? s.books.seats : 0, download: d?.vendor === v.id ? { ...d, edition: e.id } : d };
   return { ok: true };
 }
 

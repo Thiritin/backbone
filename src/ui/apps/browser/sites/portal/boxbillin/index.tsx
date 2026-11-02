@@ -7,7 +7,8 @@ import { AdminScreen } from "../shared/AdminScreen";
 import { ClientArea } from "../shared/ClientArea";
 import { screenArgs, screenOf, type Screen, type ScreenName } from "../shared/nav";
 import { StoreFront } from "../shared/StoreFront";
-import type { Skin, SkinProps } from "../skins";
+import type { LoginProps, Skin, SkinProps } from "../skins";
+import { LoginNote } from "../Login";
 import { Cube, Icon, OpenBox } from "./marks";
 import "../portal.css";
 import "./skin.css";
@@ -110,15 +111,16 @@ function Client(props: SkinProps) {
   );
 }
 
-function Login(props: SkinProps & { onLogin: () => void }) {
+function Login(props: SkinProps & LoginProps) {
   const era = eraOf(props.major);
   return (
     <div className={`portal shop bx bx-${era} bx-gate`}>
-      <form className="bx-login" onSubmit={(e) => { e.preventDefault(); props.onLogin(); }}>
+      <form className="bx-login" onSubmit={(e) => { e.preventDefault(); props.onLogin(e.currentTarget); }}>
         <header><Brand era={era} variant={props.variant} version={props.version} /></header>
-        <label>{t("shop-admin.username")}<input name="username" defaultValue="admin" autoComplete="off" /></label>
-        <label>{t("shop-admin.password")}<input name="password" type="password" defaultValue="password" autoComplete="off" /></label>
+        <label>{t("shop-setup.email")}<input name="username" type="email" autoComplete="off" /></label>
+        <label>{t("shop-admin.password")}<input name="password" type="password" autoComplete="off" /></label>
         <button type="submit" className="btn primary">{t("shop-boxBillin.signIn")}</button>
+        <LoginNote error={props.error} onForgot={props.onForgot} />
       </form>
       <Version variant={props.variant} version={props.version} />
     </div>

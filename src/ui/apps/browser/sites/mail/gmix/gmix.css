@@ -1,0 +1,111 @@
+/* GMix: the 2005 portal in Verdana with the blue login box and orange accents, the 2012 hub with stacked login tiles,
+   and the flat 2018 page with one login card. */
+.gx { min-height: 100%; background: #fff; color: #244e7e; font: 11px/1.45 Verdana, Geneva, sans-serif; }
+.gx a { color: #2269c3; }
+.gx h1 { font-size: 18px; margin: 0 0 10px; color: #1c449b; }
+.gx h2 { font-size: 13px; margin: 14px 0 6px; color: #1c449b; }
+.gx h3 { margin: 0 0 6px; font-size: 11px; }
+.gx-head { display: flex; align-items: center; gap: 14px; padding: 8px 12px; background: #dfe0e6; border-bottom: 3px solid #f78600; }
+.gx-logo { display: flex; align-items: center; gap: 6px; text-decoration: none; }
+.gx-logo b { font: bold 24px/1 Arial, Helvetica, sans-serif; color: #1c449b; letter-spacing: -1px; }
+.gx-mark { width: 28px; height: 28px; background: #1c449b; border-radius: 5px; }
+.gx-tag { color: #a5abb9; font-style: italic; }
+.gx-nav { display: flex; gap: 12px; margin-left: auto; }
+.gx-nav a { font-weight: bold; text-decoration: none; }
+.gx-main { padding: 12px; max-width: 980px; margin: 0 auto; }
+.gx-foot { padding: 10px 12px; color: #a5abb9; border-top: 1px solid #dfe0e6; text-align: center; }
+.gx-counter { font-family: "Courier New", monospace; color: #c00; }
+.gx-small { display: block; font-size: 10px; margin-top: 4px; }
+.gx-error { color: #c00; font-weight: bold; margin: 4px 0; }
+.gx-ok { color: #7fa63b; font-weight: bold; margin-left: 8px; }
+.gx-button, .gx button { display: inline-block; padding: 3px 10px; border: 1px solid #1c449b; background: #568ed8; color: #fff; font: bold 11px Verdana, sans-serif; text-decoration: none; cursor: pointer; margin: 4px 6px 4px 0; }
+.gx a.gx-button { color: #fff; }
+.gx .gx-quiet, .gx a.gx-quiet { background: #fff; color: #888; border-color: #d1d1d1; }
+.gx .gx-danger { background: #c00; border-color: #800; }
+.gx input:not([type]), .gx input[type="password"] { display: block; width: 100%; box-sizing: border-box; font: 11px Verdana, sans-serif; padding: 2px 3px; border: 1px solid #a5abb9; background: #fff; color: #000; }
+
+.gx-login { background: #568ed8; border: 1px solid #1c449b; color: #fff; padding: 8px; width: 180px; }
+.gx-login h3 { color: #fff; }
+.gx-login label { display: block; font-weight: bold; text-transform: lowercase; margin-bottom: 4px; }
+.gx-login a, .gx-login .gx-error { color: #fff; }
+.gx-login button { background: #f78600; border-color: #c06000; }
+.gx-box { border: 1px solid #dfe0e6; padding: 6px 8px; }
+.gx-box h3 { background: #dfe0e6; margin: -6px -8px 6px; padding: 2px 8px; }
+.gx-box ul { margin: 0; padding-left: 14px; }
+
+.gx-portal { display: flex; gap: 12px; }
+.gx-promos { width: 150px; flex: none; display: flex; flex-direction: column; gap: 6px; }
+.gx-promo { background: #f78600; color: #fff; font-weight: bold; padding: 10px 6px; text-align: center; }
+.gx-promo:nth-child(2) { background: #7fa63b; }
+.gx-promo:nth-child(3) { background: #2269c3; }
+.gx-content { flex: 1; min-width: 0; }
+.gx-crumb { color: #a5abb9; margin: 0 0 6px; }
+.gx-grid { display: grid; grid-template-columns: 200px 1fr 1fr; gap: 8px; align-items: start; }
+.gx-grid .gx-login { grid-row: span 2; }
+.gx-claim { margin-top: 12px; text-align: center; }
+.gx-claim a { color: #c00; font-weight: bold; text-decoration: blink; }
+
+.gx-page { max-width: 760px; }
+.gx-narrow { max-width: 380px; }
+.gx-narrow .gx-login { width: auto; }
+.gx-form label { display: block; margin-bottom: 8px; font-weight: bold; }
+.gx-addr { display: flex; align-items: center; gap: 4px; font-weight: normal; }
+.gx-addr input { flex: 1; }
+.gx-taken p { margin: 2px 0 8px; }
+.gx .gx-suggest { background: #fff; color: #2269c3; border-color: #2269c3; font-weight: normal; }
+.gx-strength { position: relative; height: 26px; margin: -4px 0 8px; }
+.gx-strength span { display: block; font-size: 10px; }
+.gx-strength i { display: block; height: 5px; background: #c00; }
+.gx-strength[data-level="2"] i { background: #f78600; }
+.gx-strength[data-level="3"] i { background: #7fa63b; }
+.gx-strength b { position: absolute; right: 0; top: 0; font-size: 10px; }
+.gx-tiers, .gx-reasons { border: 1px solid #dfe0e6; margin: 0 0 8px; padding: 6px 8px; }
+.gx-tiers label, .gx-reasons label { display: block; font-weight: normal; }
+.gx-tiers small { color: #888; margin-left: 6px; }
+
+.gx-plans { border-collapse: collapse; width: 100%; }
+.gx-plans th, .gx-plans td { border: 1px solid #dfe0e6; padding: 4px 6px; text-align: left; vertical-align: top; }
+.gx-plans thead th { background: #1c449b; color: #fff; }
+.gx-plans thead a { color: #fff; font-size: 13px; }
+.gx-plans small { display: block; font-weight: normal; }
+.gx-plans tbody th { background: #f4f5f8; }
+.gx-facts th { text-align: left; padding: 2px 12px 2px 0; }
+.gx-facts small { color: #888; display: block; }
+.gx-actions { margin: 10px 0; }
+
+.gx-cancel { max-width: 460px; }
+.gx-frames-box { font: 11px/1.45 Verdana, Geneva, sans-serif; color: #244e7e; border: 1px solid #1c449b; padding: 10px; background: #fff; }
+.gx-sad { font-size: 42px; color: #a5abb9; transform: rotate(-12deg); width: max-content; }
+.gx-adfree { text-align: center; max-width: none; padding: 40px 0; }
+.gx .gx-big { font-size: 18px; padding: 12px 28px; background: #6e9804; border-color: #4f6f00; }
+.gx a.gx-grey { color: #aaa; }
+
+/* 2012: blue band, red accents, stacked tier logins beside the tiles. */
+.gx-navigator { font: 12px/1.45 Arial, Helvetica, sans-serif; color: #333; }
+.gx-navigator .gx-head { background: #2269c3; border-bottom-color: #c80d23; }
+.gx-navigator .gx-logo b, .gx-navigator .gx-nav a { color: #fff; }
+.gx-navigator .gx-tag { color: #d6dded; }
+.gx-navigator .gx-login { background: #f4f4f4; color: #333; border-color: #d1d1d1; width: auto; }
+.gx-navigator .gx-login h3, .gx-navigator .gx-login a { color: #2269c3; }
+.gx-navigator .gx-login label { text-transform: none; }
+.gx-navigator .gx-login button { background: #c80d23; border-color: #900; }
+.gx-nav-home { display: grid; grid-template-columns: 220px 1fr; gap: 12px; align-items: start; }
+.gx-logins { display: flex; flex-direction: column; gap: 8px; grid-row: span 2; }
+.gx-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.gx-tile { background: #2269c3; color: #fff; padding: 22px 10px; font-weight: bold; min-height: 70px; }
+.gx-tile-cloud { background: #f78600; }
+.gx-tile-contacts, .gx-tile-calendar { background: #d6dded; color: #888; }
+.gx-cols { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; }
+
+/* 2018: white, one card, the brand blue and a green call to action. */
+.gx-flat { font: 14px/1.5 "Helvetica Neue", Arial, sans-serif; color: #515151; }
+.gx-flat .gx-head { background: #fff; border-bottom: 1px solid #dadada; }
+.gx-flat .gx-tag { display: none; }
+.gx-flat .gx-login { background: #fff; color: #515151; border: 1px solid #dadada; border-radius: 6px; box-shadow: 0 2px 10px #0001; width: 300px; padding: 20px; }
+.gx-flat .gx-login h3, .gx-flat .gx-login a { color: #1c449b; }
+.gx-flat .gx-login label { text-transform: none; font-weight: normal; }
+.gx-flat .gx-login button, .gx-flat .gx-button, .gx-flat button { border-radius: 4px; background: #1c449b; border-color: #1c449b; padding: 8px 16px; font: 14px "Helvetica Neue", Arial, sans-serif; }
+.gx-flat input:not([type]), .gx-flat input[type="password"] { padding: 8px; font-size: 14px; border-radius: 4px; border-color: #dadada; }
+.gx-flat-home { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; padding-top: 24px; }
+.gx-banner { flex: 1; min-width: 240px; background: #d6dded; border-radius: 6px; padding: 28px; display: flex; flex-direction: column; gap: 12px; align-items: flex-start; font-size: 20px; color: #1c449b; }
+.gx-flat .gx-banner .gx-button { background: #6e9804; border-color: #6e9804; }

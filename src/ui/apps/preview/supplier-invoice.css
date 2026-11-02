@@ -1,0 +1,40 @@
+/* A supplier's invoice on the books-a4 page, drawn in its colour (--brand) in one of three layouts. */
+.inv { position: relative; }
+.inv .inv-head { display: flex; align-items: center; justify-content: space-between; gap: 1em; }
+.inv .logo { gap: 0.4em; }
+.inv .logo-mark { width: 2.2em; height: 2.2em; }
+.inv .logo-word { font-size: 1.5em; color: var(--brand); }
+.inv .inv-sender { display: flex; flex-direction: column; align-items: flex-end; font-size: 0.8em; line-height: 1.4; color: #555; }
+.inv .inv-addr { display: flex; justify-content: space-between; align-items: flex-start; gap: 1em; }
+.inv address small { display: block; margin-bottom: 0.6em; font-size: 0.7em; color: #777; text-decoration: underline; }
+.inv .inv-meta { margin: 0; display: grid; gap: 0.15em; font-size: 0.85em; }
+.inv .inv-meta div { display: flex; justify-content: space-between; gap: 1.2em; }
+.inv .inv-meta dt { color: #666; }
+.inv .inv-meta dd { margin: 0; }
+.inv h2 { color: #222; }
+.inv .inv-pos { width: 2.6em; color: #777; }
+.inv .inv-total td { font-weight: 700; border-bottom: 0; }
+.inv .inv-vat { margin: -1.5% 0 0; text-align: right; font-size: 0.8em; color: #666; }
+.inv .inv-foot { padding-top: 0.6em; border-top: 1px solid #ccc; font-size: 0.7em; color: #666; gap: 0.3em 1.4em; }
+
+/* Classic: a colour bar across the top, logo left, sender right. */
+.inv-classic::before { content: ""; position: absolute; inset: 0 0 auto; height: 1.8cqw; background: var(--brand); }
+.inv-classic th { border-bottom: 2px solid var(--brand); }
+.inv-classic .inv-total td { border-top: 1px solid #999; }
+
+/* Modern: a large logo over a thick accent rule, the total in a box of the brand colour. */
+.inv-modern .logo-mark { width: 3.4em; height: 3.4em; }
+.inv-modern .logo-word { font-size: 2em; }
+.inv-modern .inv-head { padding-bottom: 0.9em; border-bottom: 0.7cqw solid var(--brand); }
+.inv-modern h2 { font-size: 2.1em; color: var(--brand); }
+.inv-modern th { padding: 0.4em; border-bottom: 0; background: color-mix(in oklab, var(--brand) 12%, white); }
+.inv-modern td { padding: 0.35em 0.4em; }
+.inv-modern .inv-total td:not(:empty) { padding: 0.5em 0.4em; background: var(--brand); color: #fff; }
+.inv-modern .inv-total td:nth-child(2) { text-align: right; }
+
+/* Letterhead: the logo centred between two thin lines, the sender in a centred footer line. */
+.inv-letterhead .inv-head { flex-direction: column; justify-content: center; padding: 0.8em 0; border-block: 1px solid var(--brand); }
+.inv-letterhead .inv-sender { display: none; }
+.inv-letterhead h2 { font-family: Georgia, "Times New Roman", serif; font-weight: 400; }
+.inv-letterhead th { font-weight: 600; border-bottom: 1px solid var(--brand); }
+.inv-letterhead .inv-foot { justify-content: center; border-top-color: var(--brand); }

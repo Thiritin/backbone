@@ -30,7 +30,7 @@ describe("bookkeeping programs from the vendor's site", () => {
     expect(installBooks(s, "wizo")).toEqual({ ok: false, error: "error.booksDownloading" });
     s.hour = d.readyAt;
     expect(installBooks(s, "wizo")).toEqual({ ok: true });
-    expect(s.books).toMatchObject({ vendor: "wizo", edition: "m", download: null });
+    expect(s.books).toMatchObject({ vendor: "wizo", edition: "m", download: { vendor: "wizo" } });
     expect(s.installed).toContain("Books");
     expect(s.cash).toBe(cash - 249);
   });
@@ -70,7 +70,7 @@ describe("bookkeeping programs from the vendor's site", () => {
     expect(s.books.vendor).toBe("gnucache");
     s.hour = s.books.download!.readyAt;
     installBooks(s, "lexwear");
-    expect(s.books).toMatchObject({ vendor: "lexwear", download: null });
+    expect(s.books).toMatchObject({ vendor: "lexwear", download: { vendor: "lexwear" } });
   });
 
   it("a download survives a save and old saves load without one", () => {

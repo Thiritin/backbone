@@ -6,23 +6,42 @@ import { PackagesScreen, ProvisionForm } from "../PackageForms";
 import { OwnAccountForm, OwnAccountRows } from "../OwnAccounts";
 import { useReadoutPages } from "../Readouts";
 import { SystemInfo } from "./SystemInfo";
+import { Customer } from "./Customer";
+import { PhpMyAdmon } from "../cpanic/PhpMyAdmon";
+import { useSessionState } from "../../../../session";
 import { ServicesPage } from "../ServicesPage";
 import { ComponentsPage } from "../ComponentsPage";
 import { BackupManager } from "../BackupManager";
+import type { GameState } from "../../../../../sim/50-state";
+import type { Cluster } from "../../../../../sim/60-infra/cluster";
+import type { ConsoleFeatures } from "../../../../../sim/80-business/consoles";
 import "./freepanel.css";
 
 // docs/design/software.md, section 10: one look per Webmin theme, ids as in UI_LOOKS.
 const LOOKS = looks({ gray: 2005, authentic: 2014 });
 
+// List Virtual Servers, each with Virtualmin's switch into that server.
+export function VirtualServers({ game, c, f, onLogin }: { game: GameState; c: Cluster; f: ConsoleFeatures; onLogin: (id: string) => void }) {
+  const rows = useRows(game, c, f);
+  return <><ServerUse game={game} c={c} /><RowsTable rows={rows} name={t("browser-consoles-1.domain")} extra={(r) => <button className="cx-btn" onClick={() => onLogin(r.id)}>{t("cust-fp.loginAs")}</button>} /><OwnAccountRows game={game} c={c} onLogin={onLogin} /></>;
+}
+
 export function FreePanel(p: PanelProps) {
   const era = eraAt(LOOKS, p), open = parseCreate("freepanel", p.path), [tab, setTab] = usePanelTab(p.f, open?.screen ?? "sysinfo");
-  const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f);
+  const sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f);
+  const [as, setAs] = useSessionState<string | null>(`browser.freepanel.as.${p.c.id}`, null), [pma, setPma] = useSessionState<string | null>(`browser.freepanel.pma.${p.c.id}`, null);
   if (!p.signedIn) return (
     <div className="cx fp fp-login" data-era={era}>
       <LoginForm className="fp-card" onLogin={p.login} button={t("browser-consoles-1.signIn")}>
         <div className="fp-logo">FreePanel</div>
         <div className="cx-host">{p.host}</div>
       </LoginForm>
+    </div>
+  );
+  if (as && pma === as) return <PhpMyAdmon game={p.game} workloadId={as} close={() => setPma(null)} />;
+  if (as) return (
+    <div className="cx fp" data-era={era}>
+      <Customer game={p.game} c={p.c} workloadId={as} era={era} openPma={() => setPma(as)} back={<button className="fp-out" onClick={() => setAs(null)}>{t("cust-fp.back")}</button>} />
     </div>
   );
   const fp = (id: string, key: string) => { const g = pages.find((x) => x.id === id); return g ? [[id as Tab, t(key)] as [Tab, string]] : []; };
@@ -52,7 +71,7 @@ export function FreePanel(p: PanelProps) {
         {tab === "components" && <ComponentsPage game={p.game} c={p.c} />}
         {tab === "backup" && <BackupManager game={p.game} c={p.c} />}
         {tab === "sysinfo" && <SystemInfo game={p.game} c={p.c} host={p.host} />}
-        {tab === "objects" && <><ServerUse game={p.game} c={p.c} /><RowsTable rows={rows} name={t("browser-consoles-1.domain")} /><OwnAccountRows game={p.game} c={p.c} /></>}
+        {tab === "objects" && <VirtualServers game={p.game} c={p.c} f={p.f} onLogin={setAs} />}
         {tab === "create" && <><ProvisionForm game={p.game} c={p.c} products={["webHosting"]} order={open?.screen === "create" ? open.order : undefined} /><OwnAccountForm game={p.game} c={p.c} /></>}
         {tab === "packages" && <PackagesScreen game={p.game} c={p.c} />}
         {tab === "nodes" && <Nodes game={p.game} c={p.c} />}

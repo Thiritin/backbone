@@ -35,8 +35,6 @@ export default {
   "blessta.v.free": () => "Free",
   "blessta.v.current": () => "Current version",
   "blessta.v.step0": () => "Buy a key on the Pricing page.",
-  "blessta.v.step1": () => "Open Software and Updates in the panel of one of your hosts.",
-  "blessta.v.step2": (p) => `Choose ${p.name} under ${p.section}, enter your key and press ${p.button}.`,
   "blessta.v.step3": (p) => `Without a key, ${p.name} runs as a ${p.days}-day trial; enter the key later on the Licence page of its admin.`,
   "blessta.v.copy": () => "Copy key",
   "blessta.v.copied": () => "Copied",

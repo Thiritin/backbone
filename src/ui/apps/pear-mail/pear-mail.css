@@ -1,14 +1,76 @@
-/* Pear Mail follows the installed Pear OS release: brushed metal on Panthera, unified on Leapard, flat on Yosemighty,
-   rounded on Big Sir, glass on Tahoo. */
+/* Pear Mail follows the installed Pear OS release: Mail 2's grey unified window with capsule buttons and a blue mailbox
+   list on Panthera, the Leopard source list on Leapard, flat on Yosemighty, rounded on Big Sir, glass on Tahoo. */
 .pm { position: relative; flex: 1; min-width: 0; display: flex; flex-direction: column; background: var(--win); }
-.pm-toolbar { height: 52px; flex: none; display: flex; align-items: center; gap: 6px; padding: 0 10px; border-bottom: var(--ar-bw, 0.5px) solid var(--line); background: var(--win-bar); }
+.pm-toolbar { height: 56px; flex: none; display: flex; align-items: center; gap: 4px; padding: 0 10px; border-bottom: var(--ar-bw, 0.5px) solid var(--line); background: var(--win-bar); }
+.pm-grow { flex: 1; }
+.pm-tool { display: grid; justify-items: center; gap: 2px; min-width: 52px; padding: 2px 4px; font-size: 11px; color: var(--text); background: none; border: none; }
+.pm-tool:disabled { opacity: 0.45; }
+.pm-tool-face { display: grid; place-items: center; width: 34px; height: 24px; border-radius: 6px; }
+.pm-tool-face svg { width: 17px; height: 17px; }
+.pm-tool:not(:disabled):active .pm-tool-face { filter: brightness(0.85); }
+.pm-search { display: flex; align-items: center; gap: 4px; height: 24px; padding: 0 8px; border: var(--ar-bw, 0.5px) solid var(--line-strong); border-radius: 12px; background: var(--win); }
+.pm-search svg { width: 13px; height: 13px; color: var(--text-3); }
+.pm-search select { border: none; background: none; font-size: 11px; color: var(--text-2); max-width: 110px; }
+.pm-search input { width: 150px; border: none; background: none; outline: none; font-size: 12px; color: var(--text); }
+.pm-searchbar { display: flex; gap: 6px; padding: 4px 10px; border-bottom: var(--ar-bw, 0.5px) solid var(--line); background: var(--win-side); }
+.pm-searchbar button { padding: 1px 10px; border-radius: 9px; border: none; background: none; font-size: 11px; color: var(--text); }
+.pm-searchbar button.on { background: var(--accent); color: white; }
+
 .pm-split { flex: 1; min-height: 0; display: flex; }
-.pm-side { width: 190px; }
-.pm-main { flex: 1; min-width: 0; display: grid; place-items: center; }
-.pm-build { color: var(--text-3); font-size: 13px; }
+.pm-side { width: 190px; padding: 6px 6px 10px; }
+.pm-box { width: 100%; height: 24px; border: none; background: none; text-align: left; font-size: 12px; }
+.pm-box svg { width: 15px; height: 15px; flex: none; }
+.pm-box.active { background: var(--ar-sel, var(--accent)); color: white; }
+.pm-box.active svg { color: white; }
+.pm-box-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pm-count { min-width: 18px; padding: 0 6px; border-radius: 9px; font-size: 11px; font-weight: 650; text-align: center; background: oklch(0.6 0.03 255); color: white; }
+.pm-count.grey { background: var(--text-3); }
+.pm-box.active .pm-count { background: white; color: var(--accent-text); }
+.pm-account-h { display: flex; align-items: center; gap: 6px; }
+.pm-account.off { opacity: 0.5; }
+.pm-warn { width: 13px; height: 13px; color: oklch(0.7 0.16 70); }
+
+.pm-content { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.pm-list { flex: 0 0 42%; min-height: 80px; overflow: auto; border-bottom: 1px solid var(--line-strong); outline: none; }
+.pm-table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 12px; }
+.pm-table th { position: sticky; top: 0; z-index: 1; height: 20px; padding: 0 6px; text-align: left; font-weight: 450; background: var(--ar-head, var(--win-bar)); border-bottom: var(--ar-bw, 0.5px) solid var(--line-strong); border-right: var(--ar-bw, 0.5px) solid var(--line); }
+.pm-table th button { display: flex; align-items: center; gap: 4px; width: 100%; padding: 0; border: none; background: none; font: inherit; color: inherit; }
+.pm-table td { height: 19px; padding: 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pm-table tbody tr:nth-child(even) { background: color-mix(in oklch, var(--accent) 5%, transparent); }
+.pm-table tr.sel, .pm-table tr.sel:nth-child(even) { background: var(--ar-sel, var(--accent)); color: white; }
+.pm-table tr.unread .pm-c-subject, .pm-table tr.unread .pm-c-from { font-weight: 650; }
+.pm-c-mark { width: 20px; padding: 0 2px !important; text-align: center; }
+.pm-c-mark svg { width: 12px; height: 12px; vertical-align: middle; }
+.pm-c-from { width: 28%; }
+.pm-c-date { width: 130px; }
+.pm-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; vertical-align: middle; background: radial-gradient(circle at 35% 30%, oklch(0.85 0.08 240), oklch(0.55 0.18 255) 70%); }
+.pm-flag { color: oklch(0.6 0.2 27); fill: currentColor; }
+.pm-disclose { display: grid; place-items: center; width: 16px; height: 16px; padding: 0; border: none; background: none; color: inherit; }
+.pm-thread-n { margin-left: 6px; padding: 0 5px; border-radius: 8px; font-size: 10px; background: var(--text-3); color: white; }
+.pm-arrow { width: 0; height: 0; margin-left: auto; border: 4px solid transparent; border-top: 5px solid currentColor; border-bottom: none; }
+.pm-arrow.up { border-top: none; border-bottom: 5px solid currentColor; }
+
+.pm-preview { flex: 1; min-height: 0; overflow: auto; background: var(--win); }
+.pm-preview.empty { display: grid; place-items: center; color: var(--text-3); font-size: 15px; }
+.pm-head { padding: 10px 14px; border-bottom: var(--ar-bw, 0.5px) solid var(--line); background: var(--win-side); }
+.pm-head dl { display: grid; grid-template-columns: max-content 1fr; gap: 2px 8px; margin: 0; font-size: 12px; }
+.pm-head dt { color: var(--text-3); text-align: right; }
+.pm-head dd { margin: 0; }
+.pm-addr { color: var(--text-3); }
+.pm-body { padding: 14px; white-space: pre-wrap; font-size: 13px; line-height: 1.45; }
+.pm-atts { display: grid; gap: 6px; margin: 0 14px 12px; padding: 8px 0 0; border-top: var(--ar-bw, 0.5px) dashed var(--line-strong); list-style: none; }
+.pm-att { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12px; }
+.pm-att svg { width: 15px; height: 15px; color: var(--text-2); }
+.pm-att-name { font-weight: 650; }
+.pm-att-size { color: var(--text-3); }
+.pm-key { display: inline-flex; align-items: center; gap: 6px; }
+.pm-banner { display: flex; align-items: center; gap: 10px; margin: 0 14px 12px; padding: 6px 10px; border-radius: var(--ar-pane, 6px); background: color-mix(in oklch, var(--accent) 12%, var(--win)); font-size: 12px; }
+.pm-banner span { flex: 1; }
+.pm-ticket { display: grid; gap: 8px; margin: 0 14px 14px; padding: 10px; border: var(--ar-bw, 0.5px) solid var(--line-strong); border-radius: var(--ar-pane, 6px); background: var(--win-side); }
+.pm-replies { display: flex; flex-wrap: wrap; gap: 6px; }
 
 .pm-sheet {
-  position: absolute; top: 52px; left: 50%; transform: translateX(-50%); width: 380px; padding: 22px 24px 20px;
+  position: absolute; top: 56px; left: 50%; transform: translateX(-50%); width: 380px; padding: 22px 24px 20px; z-index: 3;
   display: grid; justify-items: center; gap: 12px; text-align: center;
   background: var(--win); border: var(--ar-bw, 0.5px) solid var(--line-strong); border-top: none;
   border-radius: 0 0 var(--ar-sheet, 12px) var(--ar-sheet, 12px); box-shadow: 0 10px 28px oklch(0 0 0 / 0.28);
@@ -16,20 +78,28 @@
 .pm-sheet-icon { width: 56px; height: 56px; }
 .pm-sheet h2 { font-size: 15px; font-weight: 650; }
 
-/* Brushed metal: the title bar, toolbar and window frame are one textured surface. */
-:root[data-os="aqua"] .window:has(.pm) { --metal: repeating-linear-gradient(90deg, oklch(1 0 0 / 0.05) 0 1px, oklch(0 0 0 / 0.03) 1px 2px, oklch(1 0 0 / 0.04) 2px 3px), linear-gradient(oklch(0.9 0 0), oklch(0.76 0 0)); }
-:root[data-os="aqua"][data-theme="dark"] .window:has(.pm) { --metal: repeating-linear-gradient(90deg, oklch(1 0 0 / 0.03) 0 1px, oklch(0 0 0 / 0.05) 1px 2px, oklch(1 0 0 / 0.02) 2px 3px), linear-gradient(oklch(0.4 0 0), oklch(0.28 0 0)); }
-:root[data-os="aqua"] .window:has(.pm) .titlebar { background: var(--metal); background-size: auto, 100% 600px; border-bottom: none; }
-:root[data-os="aqua"] .pm { background: var(--metal); background-size: auto, 100% 600px; background-position: 0 -44px; padding: 0 8px 8px; }
-:root[data-os="aqua"] .pm-toolbar { background: none; border-bottom: none; height: 58px; }
-:root[data-os="aqua"] .pm-split { border: 1px solid var(--line-strong); background: var(--win); }
+/* Panthera, as Mail 2: title bar and toolbar are one grey gradient, buttons sit in glossy capsules, the mailbox list is pale blue. */
+:root[data-os="aqua"] .window:has(.pm) .titlebar { background: linear-gradient(oklch(0.9 0 0), oklch(0.83 0 0)); border-bottom: none; }
+:root[data-os="aqua"] .pm-toolbar { height: 58px; background: linear-gradient(oklch(0.83 0 0), oklch(0.72 0 0)); border-bottom: 1px solid oklch(0.48 0 0); }
+:root[data-os="aqua"] .pm-tool-face { width: 38px; height: 22px; border-radius: 11px; border: 1px solid oklch(0.5 0 0); background: linear-gradient(oklch(0.99 0 0), oklch(0.9 0 0) 50%, oklch(0.82 0 0) 51%, oklch(0.93 0 0)); box-shadow: 0 1px 1px oklch(0 0 0 / 0.2); }
+:root[data-os="aqua"] .pm-side { background: oklch(0.91 0.025 245); }
+:root[data-os="aqua"] .pm-side .side-h { font-size: 11px; color: oklch(0.45 0.03 250); }
+:root[data-os="aqua"][data-theme="dark"] .window:has(.pm) .titlebar { background: linear-gradient(oklch(0.38 0 0), oklch(0.32 0 0)); }
+:root[data-os="aqua"][data-theme="dark"] .pm-toolbar { background: linear-gradient(oklch(0.32 0 0), oklch(0.25 0 0)); border-bottom-color: oklch(0.15 0 0); }
+:root[data-os="aqua"][data-theme="dark"] .pm-tool-face { border-color: oklch(0.2 0 0); background: linear-gradient(oklch(0.5 0 0), oklch(0.4 0 0) 50%, oklch(0.33 0 0) 51%, oklch(0.42 0 0)); }
+:root[data-os="aqua"][data-theme="dark"] .pm-side { background: oklch(0.27 0.02 250); }
+:root[data-os="aqua"][data-theme="dark"] .pm-side .side-h { color: oklch(0.72 0.03 250); }
 
+/* Leapard, as Mail 3: a unified darker toolbar, the blue-grey source list with small uppercase headers and grey count pills. */
 :root[data-os="leopard"] .window:has(.pm) .titlebar { border-bottom: none; }
 :root[data-os="leopard"] .pm-toolbar { background: linear-gradient(var(--bar-top), var(--bar-bottom)); border-bottom-color: oklch(0.45 0 0); }
+:root[data-os="leopard"] .pm-side .side-h { text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.02em; }
+:root[data-os="leopard"] .pm-count { background: oklch(0.62 0.03 255); }
+:root[data-os="leopard"] .pm-tool-face { width: 32px; border: 1px solid oklch(0.55 0 0 / 0.6); background: linear-gradient(oklch(0.97 0 0), oklch(0.86 0 0)); }
 
 :root[data-os="yosemite"] .pm-toolbar { background: color-mix(in oklch, var(--win-bar), transparent 14%); }
-
-:root[data-os="bigsur"] .pm-toolbar { height: 56px; }
-
+:root[data-os="yosemite"] .pm-dot, :root[data-os="bigsur"] .pm-dot, :root[data-os="tahoe"] .pm-dot { background: var(--accent); }
+:root[data-os="bigsur"] .pm-box { border-radius: 6px; }
 :root[data-os="tahoe"] .pm-toolbar { background: color-mix(in oklch, var(--win-bar), transparent 50%); backdrop-filter: blur(14px) saturate(1.6); }
 :root[data-os="tahoe"] .pm-side { margin: 8px; border: none; border-radius: 14px; }
+:root[data-os="tahoe"] .pm-search { border-radius: 14px; }

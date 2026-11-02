@@ -70,7 +70,7 @@ export function InvoicesTab({ focus }: { focus: string | null }) {
 }
 
 // A sole trader without a registered owner has the company as contact too, printed once.
-const lines = (a: Address) => [...new Set([a.company, a.contact, a.street, `${a.zip} ${a.city}`].filter(Boolean) as string[])];
+export const addressLines = (a: Address) => [...new Set([a.company, a.contact, a.street, `${a.zip} ${a.city}`].filter(Boolean) as string[])];
 
 // A document of the company as an A4 page, scaled to the pane: an invoice or a quote. from replaces the sender line for a supplier's invoice.
 export function Page({ game, title, from, to, items, footer }: { game: GameState; title: string; from?: string; to?: Address; items: InvoiceLine[]; footer: ReactNode }) {
@@ -82,7 +82,7 @@ export function Page({ game, title, from, to, items, footer }: { game: GameState
           <h2>{title}</h2>
           <p className="books-from">{from ?? [game.company.name, own.street, `${own.zip} ${own.city}`].join(" · ")}</p>
         </header>
-        {to && <address>{lines(to).map((l) => <div key={l}>{l}</div>)}</address>}
+        {to && <address>{addressLines(to).map((l) => <div key={l}>{l}</div>)}</address>}
         <table>
           <thead><tr><th>{t("books.col.item")}</th><th className="r">{t("books.col.amount")}</th></tr></thead>
           <tbody>

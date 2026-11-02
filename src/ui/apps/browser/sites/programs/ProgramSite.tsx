@@ -3,7 +3,7 @@ import { nowHours, yearOf } from "../../../../../sim/00-core/time";
 import { installerFile, programById, programRelease } from "../../../../../sim/10-catalog/programs";
 import type { GameState } from "../../../../../sim/50-state";
 import { displayHost } from "../../../../../sim/80-business/browser";
-import { downloadProgram, installProgram } from "../../../../../sim/90-actions/programs";
+import { downloadProgram } from "../../../../../sim/90-actions/programs";
 import { usePageAct } from "../../pageAct";
 import "./programs.css";
 
@@ -15,7 +15,7 @@ export function ProgramSite({ game, id, path, go }: { game: GameState; id: strin
   const link = (to: string, label: string) => <a href={`#${to}`} className={page === (to || "home") ? "on" : undefined} onClick={(e) => { e.preventDefault(); go(`${displayHost(p.host)}/${to}`); }}>{label}</a>;
   const state = () => {
     if (game.installed.includes(id)) return <span className="pg-state">{t("programs.installed")}</span>;
-    if (d && game.hour >= d.readyAt) return <button type="button" className="pg-btn" onClick={() => act(installProgram, id)}>{t("programs.install")}</button>;
+    if (d && game.hour >= d.readyAt) return <span className="pg-state">{t("programs.inDownloads")}</span>;
     if (d) return <progress max={1} value={Math.min(1, (nowHours(game) - d.startedAt) / (d.readyAt - d.startedAt))} />;
     return <button type="button" className="pg-btn" onClick={() => act(downloadProgram, id)}>{t("programs.download", { name: id })}</button>;
   };
