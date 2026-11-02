@@ -17,7 +17,6 @@ import type { ActionResult } from "./hardware";
 import { routeTarget } from "../60-infra/routes";
 import { yearOf } from "../00-core/time";
 import { belowFloor, packageNamed, usernameError } from "../80-business/packages";
-import { orderProduct, productMonthly } from "../80-business/catalog";
 import { find, queue } from "./support";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -89,9 +88,8 @@ export function provisionOrder(s: GameState, ticketId: string, route: string, op
 export const effectiveMonthly = (s: GameState, monthly: number, cycle?: Cycle): number =>
   Math.round(monthly * (cycle ? 1 - discountOf(s, cycle) : 1) * 100) / 100;
 
-// A prepaid term the shop sells for the line, or one the order's product has a price for.
-const cycleOffered = (s: GameState, r: SalesRequest, cycle: Cycle): boolean =>
-  cycle !== "monthly" && (cyclesFor(s, r.product).includes(cycle) || orderProduct(s, r)?.prices[cycle] !== undefined);
+// A prepaid term the shop sells for the line.
+const cycleOffered = (s: GameState, r: SalesRequest, cycle: Cycle): boolean => cycle !== "monthly" && cyclesFor(s, r.product).includes(cycle);
 
 export function quoteOrder(s: GameState, ticketId: string, monthly: number, setup?: number, cycle?: Cycle): ActionResult {
   const t = s.tickets.find((x) => x.id === ticketId), r = t && orderOf(s, t);
@@ -115,14 +113,11 @@ export function createQuote(s: GameState, ticketId: string): ActionResult {
   if (error) return fail(error);
   const open = s.quotes.find((q) => q.ticketId === ticketId && q.status === "draft");
   if (open) return { ok: true, id: open.id };
-  // An order for a product is quoted at its price on the order's cycle: the monthly price before the term discount.
-  const item = orderProduct(s, r), cycle = item ? r.cycle : undefined;
-  const monthly = item ? Math.floor((productMonthly(item, cycle) / (cycle ? 1 - discountOf(s, cycle) : 1)) * 100 + 1e-6) / 100
-    : r.counter ?? Math.round(offerPrice(s, r.product, r.spec, r.sla) * 100) / 100;
+  const monthly = r.counter ?? Math.round(offerPrice(s, r.product, r.spec, r.sla) * 100) / 100;
   const setup = r.setup ?? setupFee(s, r.product);
   const q: Quote = {
     id: `quo${s.nextId++}`, number: `${yearOf(s.hour)}-${String(s.quotes.length + 1).padStart(4, "0")}`, customerId: r.customerId, ticketId,
-    lines: firstLines(s, r, effectiveMonthly(s, monthly, cycle), setup, cycle ?? null), monthly, setup, ...(cycle && { cycle }), status: "draft", sentAt: null, createdAt: s.hour,
+    lines: firstLines(s, r, monthly, setup, null), monthly, setup, status: "draft", sentAt: null, createdAt: s.hour,
   };
   s.quotes = [...s.quotes, q];
   return { ok: true, id: q.id };
