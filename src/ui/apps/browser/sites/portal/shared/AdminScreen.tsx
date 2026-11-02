@@ -5,6 +5,7 @@ import { Clients, ClientSummary } from "./Clients";
 import { Invoices } from "./Invoices";
 import { Quotes } from "./Quotes";
 import { Settings } from "./Settings";
+import { ShopSetup } from "./Setup";
 import { OrderDetail, Orders } from "./Orders";
 import { ServiceDetail } from "./Service";
 import { Emails } from "./Emails";
@@ -33,6 +34,7 @@ function Home({ game, go }: ScreenProps) {
 
 // The admin screen an address names; every shop system shows the same functions under its own navigation.
 export function AdminScreen({ screen, ...props }: ScreenProps & { screen: Screen }) {
+  if (screen.name === "setup" || (screen.name === "home" && props.game.shop.setupDone === false)) return <ShopSetup screen={screen} {...props} />;
   switch (screen.name) {
     case "products": return <Products {...props} />;
     case "product": return <ProductEdit {...props} id={screen.id ?? ""} tab={screen.tab} />;

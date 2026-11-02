@@ -132,3 +132,10 @@ export function setOptionDiscount(s: GameState, cycle: Cycle, discount: number |
   setProducts(s, s.shop.products.map((p) => repriced(s, p)));
   return { ok: true };
 }
+
+// Finishing or closing the setup wizard keeps what it set; the shop's settings open it again.
+export function finishShopSetup(s: GameState): ActionResult {
+  if (!variantOf(s)) return fail("error.needsShop");
+  s.shop = { ...s.shop, setupDone: true };
+  return { ok: true };
+}

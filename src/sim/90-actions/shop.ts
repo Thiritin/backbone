@@ -53,7 +53,7 @@ export function installShop(s: GameState, clusterId: string, id: ShopId, key?: s
     // Modules belong to the system they were bought for: the old one's stay with it, the new one starts with its own.
     const was = s.shop.variant, modulesBy = { ...s.shop.modulesBy, ...(was && { [was]: { modules: s.shop.modules, licences: s.modules } }) };
     const back = modulesBy[id];
-    s.shop = { ...newShop(), variant: id, since: s.hour, groups: s.shop.groups.length ? s.shop.groups : firstGroups(s), products: s.shop.products, productGroups: s.shop.productGroups, modulesBy, modules: back?.modules ?? {} };
+    s.shop = { ...newShop(), variant: id, since: s.hour, groups: s.shop.groups.length ? s.shop.groups : firstGroups(s), products: s.shop.products, productGroups: s.shop.productGroups, modulesBy, modules: back?.modules ?? {}, setupDone: false };
     s.modules = back?.licences ?? [];
   }
   s.shop = { ...s.shop, install: { clusterId, version: v, at: s.hour } };

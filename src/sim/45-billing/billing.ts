@@ -92,7 +92,15 @@ export const COLLECTIONS_SHARE = 0.3;
 export const COLLECTIONS_DAYS = 30;
 
 // economy/README.md, Suspension.
-export interface BillingRules { autoRemind: boolean; autoSuspendDays: 0 | 7 | 14 | 30; autoCollectDays: 0 | 42 | 60 | 90 }
+export interface BillingRules { autoRemind: boolean; autoSuspendDays: 0 | 7 | 14 | 30; autoCollectDays: 0 | 42 | 60 | 90; numbering: Numbering }
+// Invoice numbers: 2026-0001, 2026-11-0001 or 10001, counted over all invoices.
+export type Numbering = "year" | "month" | "plain";
+export const NUMBERINGS: Numbering[] = ["year", "month", "plain"];
+export function invoiceNumber(s: { hour: number; billingRules: BillingRules }, n: number): string {
+  const seq = String(n).padStart(4, "0"), year = yearOf(s.hour);
+  if (s.billingRules.numbering === "plain") return String(10000 + n);
+  return s.billingRules.numbering === "month" ? `${year}-${String(dateOf(s.hour).getUTCMonth() + 1).padStart(2, "0")}-${seq}` : `${year}-${seq}`;
+}
 export const AUTO_SUSPEND_DAYS = [0, 7, 14, 30] as const;
 export const AUTO_COLLECT_DAYS = [0, 42, 60, 90] as const;
 // High-budget customers run their business on the services, so suspension hits harder and they pay faster.
@@ -516,7 +524,7 @@ export function billingTick(s: GameState): SimEvent[] {
       s.customers = s.customers.map((c) => (c === owner ? { ...c, credit: cents(c.credit - take) } : c));
     }
     issued.push({
-      id: `inv${s.nextId++}`, number: `${yearOf(s.hour)}-${String(invoices.length + issued.length + 1).padStart(4, "0")}`,
+      id: `inv${s.nextId++}`, number: invoiceNumber(s, invoices.length + issued.length + 1),
       customerId, lines: ls, issuedAt: s.hour, dueAt: s.hour, status: "draft", reminders: [], suspended: false, suspendedAt: null, extendedUntil: null,
       payStep: 0, payAt: null, paidAt: null,
     });

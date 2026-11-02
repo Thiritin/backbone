@@ -11,7 +11,7 @@ import { bump, cancelCustomer, createTicket, isFinal, replyDue, type Ticket } fr
 import { accessParams, sendAccess } from "../40-support/replies";
 import { deliverMail } from "../42-mail/sources";
 import { partnerOf, registrarUrl } from "../80-business/browser";
-import { DUE_DAYS, fromShop, issue, rollPayStep, type Invoice, type InvoiceLine } from "../45-billing/billing";
+import { DUE_DAYS, fromShop, invoiceNumber, issue, rollPayStep, type Invoice, type InvoiceLine } from "../45-billing/billing";
 import { checkout } from "../45-billing/payments";
 import { ACTION_MINUTES, logActivity } from "../47-staff/activity";
 import type { GameState } from "../50-state";
@@ -134,7 +134,7 @@ export function issueInvoice(s: GameState, customerId: string, lines: InvoiceLin
   const c = s.customers.find((x) => x.id === customerId);
   const payStep = rollPayStep(s.rng, c?.habit ?? "prompt");
   const inv: Invoice = {
-    id: `inv${s.nextId++}`, number: `${yearOf(s.hour)}-${String(s.invoices.length + 1).padStart(4, "0")}`, customerId, lines,
+    id: `inv${s.nextId++}`, number: invoiceNumber(s, s.invoices.length + 1), customerId, lines,
     issuedAt: s.hour, dueAt: s.hour + DUE_DAYS * DAY, status: "open", reminders: [], suspended: false, suspendedAt: null, extendedUntil: null,
     payStep, payAt: payStep === 0 ? s.hour + DAY + Math.floor(rand(s.rng) * payDays * DAY) + mailDelay(s) : null, paidAt: null,
     ...(c?.source === "shop" && { ...fromShop(s), bank: true as const }),
@@ -148,7 +148,7 @@ export function issueInvoice(s: GameState, customerId: string, lines: InvoiceLin
 // An invoice waiting in Books to be sent; it is not due and never pays.
 export function draftInvoice(s: GameState, customerId: string, lines: InvoiceLine[]): Invoice {
   const inv: Invoice = {
-    id: `inv${s.nextId++}`, number: `${yearOf(s.hour)}-${String(s.invoices.length + 1).padStart(4, "0")}`, customerId, lines,
+    id: `inv${s.nextId++}`, number: invoiceNumber(s, s.invoices.length + 1), customerId, lines,
     issuedAt: s.hour, dueAt: s.hour, status: "draft", reminders: [], suspended: false, suspendedAt: null, extendedUntil: null, payStep: 0, payAt: null, paidAt: null,
   };
   s.invoices = [...s.invoices, inv];

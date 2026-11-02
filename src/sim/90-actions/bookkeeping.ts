@@ -29,7 +29,7 @@ function take(s: GameState, v: BooksVendor, e: Edition, seats: number): ActionRe
 // The data stays where it is; the old program's edition, seats and fee go. A program bought before costs only what its
 // edition adds. The installer stays in Downloads for a reinstall.
 function setUp(s: GameState, v: BooksVendor, e: Edition): void {
-  s.books = { vendor: v.id, installedAt: s.hour, edition: e.id, seats: 0, download: s.books.download };
+  s.books = { vendor: v.id, installedAt: s.hour, edition: e.id, seats: 0, download: s.books.download, setupDone: false };
   if (!s.installed.includes("Books")) s.installed = [...s.installed, "Books"];
   const fee = monthlyFee(v, e, 0);
   if (fee) bill(s, v, MONTHLY_KEY, fee, { edition: e.name });
@@ -107,5 +107,12 @@ export function runFeature(s: GameState, id: Feature): ActionResult {
   if (id === "monthly-run") monthlyRun(s);
   else if (id === "match-by-reference") matchByReference(s);
   else return fail("error.unknownEdition");
+  return { ok: true };
+}
+
+// Finishing or closing the setup wizard keeps what it set; the program's settings open it again.
+export function finishBooksSetup(s: GameState): ActionResult {
+  if (!s.books.vendor) return fail("error.booksNotDownloaded");
+  s.books = { ...s.books, setupDone: true };
   return { ok: true };
 }
