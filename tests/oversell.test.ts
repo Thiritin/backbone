@@ -38,7 +38,7 @@ describe("oversell", () => {
   it("slows from ratio 4 and floors at 0.85", () => {
     const { s, host, add } = setup();
     add("a.com"); const w = s.workloads.find((x) => x.clusterId === host().id)!;
-    const phys = physicalOf(s, host()).vcpu;
+    const phys = physicalOf(s, host(), true).vcpu;
     w.vcpu = phys * 4;
     expect(hostPerf(s, host())).toBe(1);
     w.vcpu = phys * 6;

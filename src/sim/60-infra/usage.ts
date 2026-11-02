@@ -10,12 +10,12 @@ import { bump, createTicket, isFinal } from "../40-support/tickets";
 import { serviceHeld } from "../45-billing/billing";
 import type { Device, End, GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
-import { booked, liveRam, oomKilled, clustersOn, controlPlanesOn, controlPlaneUp, controlPlaneUse, hostsOfVm, insideVm, isOwnVm, lostDisk, nodeVcpu, workloadsOf, workloadsOn, type Workload } from "./cluster";
+import { booked, liveRam, oomKilled, clustersOn, controlPlanesOn, controlPlaneUp, controlPlaneUse, hostsOfVm, insideVm, isOwnVm, lostDisk, nodeVcpu, serverOf, workloadsOf, workloadsOn, type Workload } from "./cluster";
 import { serviceMbps } from "./network";
 import { interestAt, modById, titleById } from "../10-catalog/games";
 import { fillOf } from "../30-customers/resellers";
 import { machineScreen } from "./oob";
-import { cpuLoad, installedRamGb, portPeers, raidUsable, working } from "./status";
+import { coreSpeed, cpuLoad, installedRamGb, portPeers, raidUsable, working } from "./status";
 import { heatOf } from "./thermal";
 
 // economy/usage-curves-and-overcommit.md: VM memory stays mostly resident, a web space's PHP memory follows its visitors, and disks fill
@@ -142,7 +142,9 @@ export function workloadUse(s: GameState, w: Workload, hour: number = s.hour): R
   }
   const n = need(s, s.services.find((x) => x.id === w.serviceId) ?? { id: w.serviceId, spec: w }, w, hour), disk = Math.min(w.diskGb, n.diskGb);
   if (w.frozen) return { vcpu: 0, ramGb: 0, diskGb: disk };
-  return { vcpu: Math.min(booked(s, w).vcpu, n.vcpu + (w.stopped || lostDisk(s, w) ? 0 : mysqlVcpu(s, w))), ramGb: Math.min(w.ramGb, n.ramGb), diskGb: disk };
+  // Need is in this year's vCPU; a slower core needs more of its time for the same work.
+  const at = serverOf(s, w), d = at ? s.devices.find((x) => x.id === at) : undefined, speed = d ? coreSpeed(d, hour) : 1;
+  return { vcpu: Math.min(booked(s, w).vcpu, (n.vcpu + (w.stopped || lostDisk(s, w) ? 0 : mysqlVcpu(s, w))) / speed), ramGb: Math.min(w.ramGb, n.ramGb), diskGb: disk };
 }
 
 liveRam.of = (s, w) => workloadUse(s, w).ramGb;

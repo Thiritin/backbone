@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { sizeSpec, type Resources } from "../src/sim/10-catalog/products";
 import { curveFor } from "../src/sim/10-catalog/usage";
-import { workloadsOf } from "../src/sim/60-infra/cluster";
+import { serverOf, workloadsOf } from "../src/sim/60-infra/cluster";
+import { coreSpeed } from "../src/sim/60-infra/status";
 import { need, starvation, STRETCH_MAX, workloadUse } from "../src/sim/60-infra/usage";
 import { productsTick, workloadPerf } from "../src/sim/85-products/products";
 import { provisionService } from "../src/sim/90-actions/clusters";
@@ -67,9 +68,10 @@ describe("use and starvation", () => {
     const { s, ada, vps, wl, svc, sold } = setup();
     const id = vps(ada, "a.example");
     must(setLimits(s, id, { vcpu: 0.25, ramGb: 0.25, diskGb: sold(id).diskGb }));
+    const node = s.devices.find((d) => d.id === serverOf(s, wl(id)))!;
     for (let h = 0; h < 48; h++) {
       const u = workloadUse(s, wl(id), s.hour + h), n = need(s, svc(id), wl(id), s.hour + h);
-      expect(u.vcpu).toBeCloseTo(Math.min(0.25, n.vcpu), 9);
+      expect(u.vcpu).toBeCloseTo(Math.min(0.25, n.vcpu / coreSpeed(node, s.hour + h)), 9);
       expect(u.ramGb).toBeCloseTo(Math.min(0.25, n.ramGb), 9);
     }
     const base = need(s, svc(id), wl(id));

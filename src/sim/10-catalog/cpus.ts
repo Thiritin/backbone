@@ -1,6 +1,6 @@
 // CPU makers per generation (economy/prices-over-time.md, Prices over time, CPU vendors): two x86 makers that swap the lead and an ARM maker
 // from 2020. Anchors: Opteron 2005, Xeon 5500 2009, EPYC 2017, Ampere Altra 2020.
-import { GENERATIONS, generationAt } from "./economy";
+import { GENERATIONS, generationAt, keyframes } from "./economy";
 
 export type Vendor = "indel" | "amb" | "ampear";
 export const VENDORS: Vendor[] = ["indel", "amb", "ampear"];
@@ -38,6 +38,12 @@ export const CPU_MODELS: CpuModel[] = GENERATIONS.flatMap((g, i): CpuModel[] => 
   ];
 });
 export const cpuModel = (vendor: Vendor, gen: number): CpuModel | undefined => CPU_MODELS.find((c) => c.vendor === vendor && c.gen === gen);
+// economy/usage-curves-and-overcommit.md, Core speed: single-thread speed of an Indel core per generation, a 2005 core is 1.
+// Other lines and SKUs scale it by their perCore against Indel's of the same generation.
+export const CORE_SCORE = [1.0, 1.7, 2.3, 2.8, 3.3, 3.9, 4.6];
+// What one sold vCPU of work asks of a core in a year: software catches up with a generation's core two years after its launch.
+const ERA_DEMAND_KEYS: [number, number][] = [[2007, 1.0], [2010, 1.7], [2013, 2.3], [2016, 2.8], [2019, 3.3], [2022, 3.9], [2025, 4.6], [2037, 7.4]];
+export const eraDemand = (year: number): number => keyframes(ERA_DEMAND_KEYS, year);
 // The socket of a vendor's CPUs in a generation; undefined where the vendor builds none.
 export const socketOf = (vendor: Vendor, gen: number): string | undefined => cpuModel(vendor, gen)?.socket;
 // The generations whose CPUs a board of this vendor and generation takes.

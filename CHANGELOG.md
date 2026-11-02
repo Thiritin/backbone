@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- Newer CPUs are faster per core, so the same customers load an old server more than a new one, and old servers get busier as software grows.
+- Shops, game servers and other demanding customers now notice when their server's CPU is too slow for them, even when it is idle.
 - Every stack in a storage room now has a Ship button that sends the units to another of your sites, such as from the basement to Frankfurt.
 - Customers no longer send requests that need a company older than a year or better reviews than you have.
 - The CPU overcommit warning on hypervisor hosts now fires at 8 vCPUs per core instead of 2.
