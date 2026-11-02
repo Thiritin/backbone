@@ -61,6 +61,12 @@ export function addressFor(seed: number, key: number, contact: string, company: 
   return { contact, ...(company && { company }), street, zip, city: town, email };
 }
 
+// The company's own address: the registered one, else the address the seed gives the basement.
+export const ownAddress = (s: GameState): Address => ({
+  ...addressFor(s.seed, 0, s.registration?.owner ?? s.company.name, s.company.name, s.locations[0]?.city ?? "Frankfurt"),
+  ...s.company.address,
+});
+
 // Saves from before addresses: the name is the contact of a private customer and the company of any other.
 export const legacyAddress = (seed: number, key: number, name: string, profile: Profile, contact: string, city: string): Address =>
   PERSONAL.includes(profile) ? addressFor(seed, key, name, null, city) : addressFor(seed, key, contact, name, city);

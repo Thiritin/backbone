@@ -79,7 +79,7 @@ export default {
   "error.cardLimit": () => "La commande dépasse le plafond de la carte.",
   "error.cardOnly": () => "Cette boutique n'accepte que les cartes de crédit.",
   "ticket.mail.bankCard.subject": () => "Votre carte de crédit",
-  "ticket.mail.bankCard.text": (p) => `${p.bank} a accepté votre carte de crédit avec un plafond de ${euro(Number(p.limit))}. Vous recevrez le relevé de la carte au début de chaque mois.`,
+  "ticket.mail.bankCard.text": (p) => `${p.bank} a accepté votre carte de crédit${p.last4 ? ` se terminant par ${p.last4}` : ""} avec un plafond de ${euro(Number(p.limit))}. Vous recevrez le relevé de la carte au début de chaque mois.`,
   "ticket.mail.bankOverdraft.subject": () => "Votre découvert",
   "ticket.mail.bankOverdraft.text": (p) => `${p.bank} a fixé votre découvert autorisé à ${euro(Number(p.limit))} avec un taux d'intérêt de ${p.rate} % par an.`,
   "ticket.mail.bankWelcome.subject": (p) => `Votre compte chez ${p.bank}`,

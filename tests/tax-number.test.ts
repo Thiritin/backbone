@@ -19,7 +19,7 @@ const registered = (): GameState => {
   const s = newGame(7);
   s.hour = MONDAY_8;
   expect(openBankAccount(s, "sparklasse").ok).toBe(true);
-  expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "sole").ok).toBe(true);
+  expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "sole", { street: "Kellerweg 1", zip: "60311", city: "Frankfurt" }).ok).toBe(true);
   return s;
 };
 const letter = (s: GameState, topic: string) => inbox(s).find((l) => l.topic === topic);

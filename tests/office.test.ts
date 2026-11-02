@@ -30,7 +30,7 @@ describe("trade office", () => {
 
   it("refuses the form outside office hours and announces the opening once", () => {
     const s = newGame(1);
-    expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "sole")).toEqual({ ok: false, error: "error.officeClosed" });
+    expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "sole", { street: "Kellerweg 1", zip: "60311", city: "Frankfurt" })).toEqual({ ok: false, error: "error.officeClosed" });
     const opened: number[] = [];
     while (s.hour < MONDAY_8 + 24) if (tick(s).some((e) => e.key === "event.officeOpen")) opened.push(s.hour);
     expect(opened).toEqual([MONDAY_8, MONDAY_8 + 24]);
@@ -39,18 +39,20 @@ describe("trade office", () => {
   it("registers the company, installs the starter apps and ticks the guide step", () => {
     const s = newGame(1);
     s.hour = MONDAY_8;
-    expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "sole")).toEqual({ ok: false, error: "error.noBank" });
+    expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "sole", { street: "Kellerweg 1", zip: "60311", city: "Frankfurt" })).toEqual({ ok: false, error: "error.noBank" });
     expect(openBankAccount(s, "sparklasse").ok).toBe(true);
-    expect(registerCompany(s, "Basement Hosting", " ", "sole")).toEqual({ ok: false, error: "error.ownerName" });
-    expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "limited")).toEqual({ ok: false, error: "error.registerSole" });
-    expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "partnership")).toEqual({ ok: false, error: "error.registerSole" });
-    expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "sole").ok).toBe(true);
+    expect(registerCompany(s, "Basement Hosting", " ", "sole", { street: "Kellerweg 1", zip: "60311", city: "Frankfurt" })).toEqual({ ok: false, error: "error.ownerName" });
+    expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "sole", { street: "Kellerweg 1", zip: " ", city: "Frankfurt" })).toEqual({ ok: false, error: "error.companyAddress" });
+    expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "limited", { street: "Kellerweg 1", zip: "60311", city: "Frankfurt" })).toEqual({ ok: false, error: "error.registerSole" });
+    expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "partnership", { street: "Kellerweg 1", zip: "60311", city: "Frankfurt" })).toEqual({ ok: false, error: "error.registerSole" });
+    expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "sole", { street: "Kellerweg 1", zip: "60311", city: "Frankfurt" }).ok).toBe(true);
     expect(s.company.name).toBe("Basement Hosting");
+    expect(s.company.address).toEqual({ street: "Kellerweg 1", zip: "60311", city: "Frankfurt" });
     expect(s.registration).toMatchObject({ hour: MONDAY_8, owner: "Becker, Tin", form: "sole" });
     expect(s.installed).toEqual(expect.arrayContaining(STARTER_APPS));
     expect(checkDone(s, "register")).toBe(true);
     expect(checkDone(s, "company")).toBe(false);
-    expect(registerCompany(s, "Again", "Becker, Tin", "sole")).toEqual({ ok: false, error: "error.registered" });
+    expect(registerCompany(s, "Again", "Becker, Tin", "sole", { street: "Kellerweg 1", zip: "60311", city: "Frankfurt" })).toEqual({ ok: false, error: "error.registered" });
     s.hour += 24;
     expect(tick(s).some((e) => e.key === "event.officeOpen")).toBe(false);
   });
@@ -59,5 +61,11 @@ describe("trade office", () => {
     const data = JSON.parse(serialize(newGame(1)));
     delete data.registration;
     expect(deserialize(JSON.stringify(data)).registration).toMatchObject({ hour: 0 });
+  });
+
+  it("loads saves from before the company address without one", () => {
+    const data = JSON.parse(serialize(newGame(1)));
+    delete data.company.address;
+    expect(deserialize(JSON.stringify(data)).company.address).toBeNull();
   });
 });

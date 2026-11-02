@@ -92,3 +92,7 @@
 .bks-fintech.late .bks-nav a, .bks-frames.late .bks-nav a { color: #ddd; }
 .bks-fintech.late .bks-nav a[aria-current], .bks-frames.late .bks-nav a[aria-current] { color: #000; background: #fff; }
 .bks-corporate.late .bks-nav a:not([aria-current]) { color: #fff; }
+.bks-card { width: 228px; aspect-ratio: 1.586; box-sizing: border-box; margin: 4px 0 8px; padding: 12px 14px; border-radius: 9px; display: flex; flex-direction: column; justify-content: space-between; background: linear-gradient(135deg, var(--bar), var(--accent)); color: #fff; font: 11px Arial, Helvetica, sans-serif; text-transform: uppercase; }
+.bks-card-bank { font-weight: bold; font-size: 13px; text-transform: none; }
+.bks-card-number { font: 15px "Courier New", monospace; letter-spacing: 0.06em; }
+.bks-card-foot { display: flex; justify-content: space-between; }

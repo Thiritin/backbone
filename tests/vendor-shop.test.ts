@@ -6,12 +6,12 @@ import { assignKey, licenceStatus } from "../src/sim/60-infra/licence";
 import { renewKeys } from "../src/sim/85-products/products";
 import { cartOf, keysOf, lineMajor, offers, ORDER, orderKeys } from "../src/sim/80-business/vendor-shop";
 import { registerLicence } from "../src/sim/90-actions/licences";
-import { addToCart, cancelLicence, checkout, removeFromCart } from "../src/sim/90-actions/vendor-shop";
+import { addToCart, cancelLicence, checkout, removeFromCart, type LicencePayment } from "../src/sim/90-actions/vendor-shop";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { bankTick, cardSpent, send } from "../src/sim/46-finance/bank";
 import { supplierIban } from "../src/sim/46-finance/payables";
 import { deliverPaidOrders } from "../src/sim/80-business/vendor-shop";
-import { withCard } from "./fixtures";
+import { orderDetails, withCard } from "./fixtures";
 
 const PLESKIT = "pleskit.com", WINDOORS = "windoors.macrosoft.com";
 const Y = (year: number) => hourOf(new Date(Date.UTC(year, 0, 1)));
@@ -51,7 +51,7 @@ describe("vendor shop", () => {
     addToCart(s, "pleskit", "webAdmin");
     addToCart(s, "pleskit", "webPro");
     addToCart(s, "windoors", null);
-    const r = checkout(s, PLESKIT, "card");
+    const r = checkout(s, PLESKIT, orderDetails(s, "card"));
     expect(r.ok).toBe(true);
     const order = r.ok ? r.id! : "";
     expect(s.cash).toBe(1000);
@@ -62,18 +62,49 @@ describe("vendor shop", () => {
     expect(s.tickets.at(-1)).toMatchObject({ kind: "mail", topic: ORDER, mail: { from: "Pleskit", params: { order, total: 18, card: 1 } } });
     expect(cartOf(s, PLESKIT)).toEqual([]);
     expect(cartOf(s, WINDOORS)).toEqual([{ product: "windoors", edition: null, qty: 1 }]);
-    expect(checkout(s, PLESKIT, "card")).toEqual({ ok: false, error: "error.cartEmpty" });
+    expect(checkout(s, PLESKIT, orderDetails(s, "card"))).toEqual({ ok: false, error: "error.cartEmpty" });
+  });
+
+  it("declines a card whose number, expiry or security code does not match the company card", () => {
+    const s = game();
+    addToCart(s, "windoors", null);
+    const ok = orderDetails(s, "card"), card = ok.payment as Extract<LicencePayment, { kind: "card" }>;
+    const wrong = (patch: Partial<typeof card>) => checkout(s, WINDOORS, { ...ok, payment: { ...card, ...patch } });
+    expect(wrong({ number: card.number.slice(0, -1) + ((Number(card.number.slice(-1)) + 1) % 10) })).toEqual({ ok: false, error: "error.cardDeclined" });
+    expect(wrong({ cvc: card.cvc === "999" ? "998" : String(Number(card.cvc) + 1) })).toEqual({ ok: false, error: "error.cardDeclined" });
+    expect(wrong({ expiry: "01/01" })).toEqual({ ok: false, error: "error.cardDeclined" });
+    expect(s.cart).toHaveLength(1);
+    const [mm, yy] = card.expiry.split("/");
+    expect(wrong({ number: card.number.replace(/ /g, ""), expiry: `${mm} / 20${yy}` }).ok).toBe(true);
+  });
+
+  it("refuses an order without a name or a complete billing address", () => {
+    const s = game();
+    addToCart(s, "windoors", null);
+    const ok = orderDetails(s, "transfer");
+    expect(checkout(s, WINDOORS, { ...ok, name: " " })).toEqual({ ok: false, error: "error.orderName" });
+    expect(checkout(s, WINDOORS, { ...ok, address: { ...ok.address, zip: "" } })).toEqual({ ok: false, error: "error.orderAddress" });
+    expect(s.cart).toHaveLength(1);
+  });
+
+  it("accepts the registered company address as the autofill puts it in", () => {
+    const s = game();
+    s.company.address = { street: "Kellerweg 1", zip: "60311", city: "Frankfurt" };
+    addToCart(s, "windoors", null);
+    const autofilled = { ...orderDetails(s, "card"), company: s.company.name, address: { ...s.company.address } };
+    expect(checkout(s, WINDOORS, autofilled).ok).toBe(true);
+    expect(s.cart).toEqual([]);
   });
 
   it("refuses a card order above the card limit, or without a card or bank account, and changes nothing", () => {
     const s = game(10_000, 500);
     addToCart(s, "windoors", null);
     const before = { ledger: s.ledger.length, licenses: s.licenses.length, tickets: s.tickets.length };
-    expect(checkout(s, WINDOORS, "card")).toEqual({ ok: false, error: "error.cardLimit" });
+    expect(checkout(s, WINDOORS, orderDetails(s, "card"))).toEqual({ ok: false, error: "error.cardLimit" });
     s.bank = { ...s.bank!, card: null };
-    expect(checkout(s, WINDOORS, "card")).toEqual({ ok: false, error: "error.noCard" });
+    expect(checkout(s, WINDOORS, orderDetails(s, "card"))).toEqual({ ok: false, error: "error.noCard" });
     s.bank = null;
-    expect(checkout(s, WINDOORS, "transfer")).toEqual({ ok: false, error: "error.noBank" });
+    expect(checkout(s, WINDOORS, orderDetails(s, "transfer"))).toEqual({ ok: false, error: "error.noBank" });
     expect({ ledger: s.ledger.length, licenses: s.licenses.length, tickets: s.tickets.length }).toEqual(before);
     expect(s.cart).toHaveLength(1);
   });
@@ -81,7 +112,7 @@ describe("vendor shop", () => {
   it("invoices an order paid by transfer and sends its keys once the money arrives", () => {
     const s = game(1000);
     addToCart(s, "pleskit", "webAdmin");
-    const r = checkout(s, PLESKIT, "transfer");
+    const r = checkout(s, PLESKIT, orderDetails(s, "transfer"));
     const order = r.ok ? r.id! : "";
     expect(r.ok).toBe(true);
     expect(s.licenses).toEqual([]);
@@ -107,7 +138,7 @@ describe("vendor shop", () => {
   it("binds a one-time Windoors key to the version on sale", () => {
     const s = game();
     addToCart(s, "windoors", null);
-    checkout(s, WINDOORS, "card");
+    checkout(s, WINDOORS, orderDetails(s, "card"));
     expect(keysOf(s, WINDOORS)).toMatchObject([{ kind: "once", covers: { kind: "version", major: serverOsAt("windoors", 2005).version }, renewsAt: null }]);
     expect(cancelLicence(s, keysOf(s, WINDOORS)[0].id)).toEqual({ ok: false, error: "error.notCancellable" });
   });
@@ -115,7 +146,7 @@ describe("vendor shop", () => {
   it("cancels a monthly licence, which runs until its term ends and is not renewed", () => {
     const s = game();
     addToCart(s, "pleskit", "webHost");
-    checkout(s, PLESKIT, "card");
+    checkout(s, PLESKIT, orderDetails(s, "card"));
     const k = keysOf(s, PLESKIT)[0];
     assignKey(s, k.id, "srv1");
     expect(cancelLicence(s, k.id)).toEqual({ ok: true, id: k.id });
@@ -133,7 +164,7 @@ describe("vendor shop", () => {
   it("registers only Lexwear keys in Books", () => {
     const s = game();
     addToCart(s, "pleskit", "webAdmin");
-    checkout(s, PLESKIT, "card");
+    checkout(s, PLESKIT, orderDetails(s, "card"));
     expect(registerLicence(s, s.licenses[0].key)).toEqual({ ok: false, error: "error.licenceKey" });
   });
 

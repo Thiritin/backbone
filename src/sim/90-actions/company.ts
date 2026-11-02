@@ -1,4 +1,4 @@
-import type { Company, GameState } from "../50-state";
+import type { Company, GameState, PostalAddress } from "../50-state";
 import type { ActionResult } from "./hardware";
 import { STARTER_APPS } from "../10-catalog/store";
 import { LEGAL_FORMS, officeOpen, registerNumber } from "../80-business/office";
@@ -27,12 +27,15 @@ export function setCompany(s: GameState, patch: Partial<Company>): ActionResult 
   return { ok: true };
 }
 
+export const addressComplete = (a: PostalAddress): boolean => !!(a.street.trim() && a.zip.trim() && a.city.trim());
+
 // Why the trade office would turn the application down, if it would.
-export function registrationError(s: GameState, name: string, owner: string, form: string): string | null {
+export function registrationError(s: GameState, name: string, owner: string, form: string, address: PostalAddress): string | null {
   if (s.registration) return "error.registered";
   if (!officeOpen(s.hour)) return "error.officeClosed";
   if (!name.trim() || name.trim().length > NAME_MAX) return "error.companyName";
   if (!owner.trim()) return "error.ownerName";
+  if (!addressComplete(address)) return "error.companyAddress";
   if (!(form in LEGAL_FORMS)) return "error.legalForm";
   if (form !== "sole") return "error.registerSole";
   if (!s.bank) return "error.noBank";
@@ -41,10 +44,10 @@ export function registrationError(s: GameState, name: string, owner: string, for
 }
 
 // The trade office registers the company under its name and bills its fee by letter; Pear One installs the starter apps.
-export function registerCompany(s: GameState, name: string, owner: string, form: string): ActionResult {
-  const error = registrationError(s, name, owner, form);
+export function registerCompany(s: GameState, name: string, owner: string, form: string, address: PostalAddress): ActionResult {
+  const error = registrationError(s, name, owner, form, address);
   if (error) return { ok: false, error };
-  setCompany(s, { name });
+  setCompany(s, { name, address: { street: address.street.trim(), zip: address.zip.trim(), city: address.city.trim() } });
   s.registration = { hour: s.hour, owner: owner.trim(), form, number: registerNumber(s.seed) };
   s.installed = [...new Set([...s.installed, ...STARTER_APPS])];
   return { ok: true };

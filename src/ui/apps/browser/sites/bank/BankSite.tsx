@@ -5,7 +5,7 @@ import { euro, euroCents } from "../../../../../sim/00-core/money";
 import { dateOf, hourOf, yearOf } from "../../../../../sim/00-core/time";
 import { bankById, monthlyFee, plansFor, tanMethods, type Bank, type BankId, type Plan, type PlanId, type TanMethod } from "../../../../../sim/10-catalog/banks";
 import { annuity, LOAN_AMOUNTS, LOAN_YEARS, loanAvailable, loanRate } from "../../../../../sim/45-billing/billing";
-import { cardSpent, groupIban, iban as toIban, ibanEra, ownIban, spendable, WRONG_LIMIT, type Draft, type Payee } from "../../../../../sim/46-finance/bank";
+import { cardDetails, cardSpent, groupIban, iban as toIban, ibanEra, ownIban, spendable, WRONG_LIMIT, type Draft, type Payee } from "../../../../../sim/46-finance/bank";
 import type { GameState } from "../../../../../sim/50-state";
 import { applyCard, applyOverdraft, openBankAccount, cancelTransfer, confirmTransfer, deletePayee, deleteStandingOrder, savePayee, setPlan, setTanMethod, startStandingOrder, startTransfer, switchBank } from "../../../../../sim/90-actions/bank";
 import { repayLoan, takeLoan } from "../../../../../sim/90-actions/billing";
@@ -395,14 +395,25 @@ function Service({ game, bank }: { game: GameState; bank: Bank }) {
 }
 
 function CardView({ game, bank }: { game: GameState; bank: Bank }) {
-  const act = usePageAct(), card = game.bank!.card;
+  const act = usePageAct(), card = game.bank!.card, ready = card && game.hour >= card.readyAt ? cardDetails(game) : null;
   return (
     <Box title={t("bank.site.nav.card")}>
+      {ready && (
+        <div className="bks-card">
+          <span className="bks-card-bank">{bank.name}</span>
+          <span className="bks-card-number">{ready.number}</span>
+          <span className="bks-card-foot"><span>{ready.holder}</span><span>{ready.expires}</span></span>
+        </div>
+      )}
       <table className="bks-table">
         <tbody>
           <tr><td>{t("bank.site.cardFee")}</td><td className="r num">{euro(bank.card.yearly)}</td></tr>
           {card && game.hour < card.readyAt && <tr><td>{t("bank.site.appliedOn")}</td><td className="r num">{day(card.appliedAt)}</td></tr>}
-          {card && game.hour >= card.readyAt && <>
+          {card && ready && <>
+            <tr><td>{t("checkout.cardNumber")}</td><td className="r num">{ready.number}</td></tr>
+            <tr><td>{t("checkout.holder")}</td><td className="r">{ready.holder}</td></tr>
+            <tr><td>{t("checkout.validUntil")}</td><td className="r num">{ready.expires}</td></tr>
+            <tr><td>{t("checkout.cvc")}</td><td className="r num">{ready.cvc}</td></tr>
             <tr><td>{t("bank.site.limit")}</td><td className="r num">{euro(card.limit)}</td></tr>
             <tr><td>{t("bank.site.cardSpent")}</td><td className="r num">{euroCents(cardSpent(game))}</td></tr>
             <tr><td>{t("bank.site.available")}</td><td className="r num">{euroCents(card.limit - cardSpent(game))}</td></tr>

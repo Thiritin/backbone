@@ -13,7 +13,8 @@ import { hourOf } from "../src/sim/00-core/time";
 import { brandFrom, componentParts, fits, genOf, modelById, type FormFactor, type PartSpec } from "../src/sim/10-catalog/hardware";
 import type { Resources } from "../src/sim/10-catalog/products";
 import { device, deviceDefaults, newGame as blankGame, type GameState } from "../src/sim/50-state";
-import { openAccount } from "../src/sim/46-finance/bank";
+import { cardDetails, openAccount } from "../src/sim/46-finance/bank";
+import type { OrderDetails } from "../src/sim/90-actions/vendor-shop";
 import { START_CASH } from "../src/sim/10-catalog/economy";
 
 // Games with the savings already in hand and no bank account, the way every game started before the account came first.
@@ -284,4 +285,13 @@ export const pinVersion = (s: GameState, c: Cluster, product: string, version: s
 export function withCard<S extends GameState>(s: S, limit = 100_000): S {
   s.bank = { ...openAccount(s, "sparklasse"), card: { appliedAt: s.hour, readyAt: s.hour, limit, spent: [], feeAt: s.hour } };
   return s;
+}
+
+// A licence order as the checkout form sends it; a card payment types in the company card's own details.
+export function orderDetails(s: GameState, kind: "card" | "transfer"): OrderDetails {
+  const c = cardDetails(s);
+  return {
+    company: s.company.name, name: "Tin Becker", address: { street: "Kellerweg 1", zip: "60311", city: "Frankfurt" }, email: "tin@example.com",
+    payment: kind === "card" ? { kind, number: c?.number ?? "", expiry: c?.expires ?? "", cvc: c?.cvc ?? "" } : { kind },
+  };
 }

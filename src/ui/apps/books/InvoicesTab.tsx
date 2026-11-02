@@ -1,7 +1,7 @@
 import { Receipt, Send } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { euroCents } from "../../../sim/00-core/money";
-import { addressFor, type Address } from "../../../sim/30-customers/addresses";
+import { ownAddress, type Address } from "../../../sim/30-customers/addresses";
 import { invoiceTotal, type Invoice, type InvoiceLine, type InvoiceStatus } from "../../../sim/45-billing/billing";
 import type { GameState } from "../../../sim/50-state";
 import { sendInvoice } from "../../../sim/90-actions/billing";
@@ -66,7 +66,7 @@ const lines = (a: Address) => [a.company, a.contact, a.street, `${a.zip} ${a.cit
 
 // A document of the company as an A4 page, scaled to the pane: an invoice or a quote.
 export function Page({ game, title, to, items, footer }: { game: GameState; title: string; to?: Address; items: InvoiceLine[]; footer: ReactNode }) {
-  const own = addressFor(game.seed, 0, game.registration?.owner ?? game.company.name, game.company.name, game.locations[0]?.city ?? "Frankfurt");
+  const own = ownAddress(game);
   return (
     <div className="books-a4-fit">
       <article className="books-a4" aria-label={title}>
