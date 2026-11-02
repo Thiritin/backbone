@@ -78,7 +78,7 @@ describe("hosting and game panel consoles", () => {
       const s = readyGame(1);
       skipTo(s, 2020);
       s.cash = 1_000_000;
-      const host = panelVm(s, s.clusters.find((k) => k.kind === "cloud")!.id, id), c = s.clusters.find((x) => x.id === host)!;
+      const host = panelVm(s, s.clusters.find((k) => k.kind === "cloud")!.id, id, { vcpu: 4, ramGb: 8, diskGb: 100 }), c = s.clusters.find((x) => x.id === host)!;
       const Ids = () => <>{useSoftware(s, c, consoleFeatures(id, 2020)).actions.map((a) => a.id).join(",")}</>;
       const ids = renderToString(<Ids />).split(",");
       expect(ids, id).toContain("restart");
