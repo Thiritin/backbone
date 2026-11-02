@@ -20,7 +20,7 @@ import type { SimEvent } from "../88-tick/tick";
 import type { ActionResult } from "../90-actions/hardware";
 import { missingFor, needFor, referenceFor, REQUEST_HOURS, requestName, senderFor, type SalesRequest } from "./market";
 import { addRequest, cancelShopOrder, editRequest, fulfil, loseRequest, nextSpec, say, targetFor } from "./sales";
-import { deployable, hasModule, moduleFor, shopActive, takeStock, type ShopProduct } from "../80-business/shop";
+import { deployable, hasModule, moduleFor, shopActive, type ShopProduct } from "../80-business/shop";
 import { productCycles, takeProductStock } from "../80-business/portal";
 import { companyParams, variant } from "../40-support/replies";
 import { failsScreen, reviewing, rollFraud, screening } from "../45-billing/fraud";
@@ -72,7 +72,7 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
   const screened = !lead && screening(s);
   if (screened) s.screenChecks++;
   const declined = screened && failsScreen(s, key, fraud);
-  if (shop && !declined && method) pick ? takeProductStock(s, pick.id) : takeStock(s, need.product);
+  if (shop && !declined && method && pick) takeProductStock(s, pick.id);
   const price = email ? reference : offerPrice(s, need.product, spec, need.sla);
   const cycle = email ? "monthly" : drawCycle(s, profile, need.product, rand(hashRng(s.seed, key, 281)), pick && productCycles(s, pick)), months = CYCLE_MONTHS[cycle];
   let r = addRequest(s, {
@@ -98,7 +98,7 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
   const params = { name: requestName(r), spec: specText(r.product, r.spec) };
   // The shop places an order itself only through the module for the software it lands on.
   const auto = !email && s.autoOrders && pick?.setupMode !== "accept" && pick?.setupMode !== "off" && canAutomate(s) && !reviewing(s, need.product), target = auto && !missingFor(s, r).length ? targetFor(s, r) : null;
-  if (auto && (!target || (hasModule(s, moduleFor(s, r.product, target.clusterId)) && deployable(s, target.clusterId)))) {
+  if (auto && (!target || (hasModule(s, moduleFor(s, r.product, target.clusterId)) && deployable(s, target.clusterId, r.productId)))) {
     const done = target ? place(s, r) : null;
     if (done?.ok) {
       formInvoice(s, r.id);

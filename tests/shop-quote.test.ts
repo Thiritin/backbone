@@ -8,7 +8,6 @@ import { emailRate, orderLead } from "../src/sim/30-market/orders";
 import { offerPrice } from "../src/sim/30-market/spec";
 import { discountFor } from "../src/sim/80-business/marketing";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
-import { setRate } from "../src/sim/90-actions/rates";
 import { setOptionDiscount } from "../src/sim/90-actions/portal";
 import type { GameState } from "../src/sim/50-state";
 import { automate, readyGame, installWithKey } from "./fixtures";
@@ -20,22 +19,20 @@ const quoted = (s: GameState) => {
 };
 
 describe("email quotes and option discounts", () => {
-  it("quote at the market rate without a shop, even with saved rates", () => {
+  it("quote at the market rate without a shop", () => {
     const s = automate(readyGame(4));
-    setRate(s, "webHosting", "base", 99);
     const { r, discount } = quoted(s);
-    expect(offerPrice(s, "webHosting", r.spec)).not.toBeCloseTo(marketPrice("webHosting", r.spec, yearOf(s.hour)), 2);
+    expect(offerPrice(s, "webHosting", r.spec)).toBeCloseTo(marketPrice("webHosting", r.spec, yearOf(s.hour)), 2);
     expect(emailRate(s, "webHosting", r.spec, "basic")).toBe(marketPrice("webHosting", r.spec, yearOf(s.hour), "basic"));
     expect(r.quote).toBe(Math.round(marketPrice("webHosting", r.spec, yearOf(s.hour), "basic") * (1 - discount) * 100) / 100);
   });
 
-  it("quote at the configurable option rates once a shop is active", () => {
+  it("quote at the shop's option prices once a shop is active", () => {
     const s = automate(readyGame(4));
     s.cash = 1e6;
     setUpChannel(s, "website");
     s.unlocks = [...s.unlocks, "shops"];
     installWithKey(s, "modemBill");
-    setRate(s, "webHosting", "base", 99);
     const { r, discount } = quoted(s);
     expect(r.quote).toBe(Math.round(offerPrice(s, "webHosting", r.spec, "basic") * (1 - discount) * 100) / 100);
     expect(emailRate(s, "webHosting", r.spec, "basic")).toBe(offerPrice(s, "webHosting", r.spec, "basic"));

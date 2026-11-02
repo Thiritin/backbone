@@ -64,12 +64,12 @@ export interface ReplyModel {
   resolve: boolean;
 }
 
-function amountOf(s: GameState, a: TicketAction, monthly: number, ransom: number): string | null {
+function amountOf(a: TicketAction, monthly: number, ransom: number): string | null {
   if (a === "credit") return euroCents(monthly * 0.1);
   if (a === "refund") return euroCents(monthly);
   if (a === "pay") return euroCents(ransom);
-  if (a === "offerOnce") return euroCents(updatePrice(s.rates.webHosting, "updateOnce"));
-  if (a === "offerManaged") return t("support.perMonth", { price: euroCents(updatePrice(s.rates.webHosting, "updates")) });
+  if (a === "offerOnce") return euroCents(updatePrice("updateOnce"));
+  if (a === "offerManaged") return t("support.perMonth", { price: euroCents(updatePrice("updates")) });
   return null;
 }
 
@@ -104,7 +104,7 @@ export function useTicketReplies(s: GameState, tk: Ticket, previews = false): Re
     actions: actionsOf(tk).filter((a) => (a !== "revert" || tk.topic === "price") && (!stray || a === "reject")).map((a) => ({
       id: a,
       label: tk.kind === "refund" && a === "reject" ? t("support.action.refuse") : ACTION_LABEL[a],
-      amount: a === "cleanPaid" && c ? euroCents(cleanupPrice(s, c)) : amountOf(s, a, monthly, Number(p.ransom)),
+      amount: a === "cleanPaid" && c ? euroCents(cleanupPrice(s, c)) : amountOf(a, monthly, Number(p.ransom)),
       disabled: locked || ((a === "forward" || a === "takedown") && !c),
     })),
     answers,

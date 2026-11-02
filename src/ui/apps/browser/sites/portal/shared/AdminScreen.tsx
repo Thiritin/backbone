@@ -2,7 +2,7 @@ import { t } from "../../../../../../i18n/en";
 import type { Screen, ScreenName, ScreenProps } from "./nav";
 import { Clients, ClientSummary } from "./Clients";
 import { Invoices } from "./Invoices";
-import { Options } from "./Options";
+import { Settings } from "./Settings";
 import { Orders } from "./Orders";
 import { ProductEdit } from "./ProductEdit";
 import { Products } from "./Products";
@@ -12,7 +12,7 @@ import { PaymentMethods } from "./Payments";
 import { LicenceScreen, UpdatesScreen } from "./Licence";
 
 export const SCREEN_LABEL: Partial<Record<ScreenName, string>> = {
-  home: t("shop-admin.home"), products: t("shop-admin.products"), options: t("shop-admin.options"), servers: t("shop-admin.servers"),
+  home: t("shop-admin.home"), products: t("shop-admin.products"), settings: t("shop-admin.settings"), servers: t("shop-admin.servers"),
   orders: t("shop-admin.pendingOrders"), clients: t("shop-admin.clients"), invoices: t("shop-admin.invoices"),
   licence: t("shop-admin.licence"), updates: t("shop-admin.updates"),
 };
@@ -32,7 +32,7 @@ export function AdminScreen({ screen, ...props }: ScreenProps & { screen: Screen
   switch (screen.name) {
     case "products": return <Products {...props} />;
     case "product": return <ProductEdit {...props} id={screen.id ?? ""} tab={screen.tab} />;
-    case "options": return <Options {...props} />;
+    case "settings": return <Settings {...props} />;
     case "servers": return <><Servers game={props.game} /><Modules game={props.game} /></>;
     case "orders": return <Orders {...props} />;
     case "clients": return <Clients {...props} />;

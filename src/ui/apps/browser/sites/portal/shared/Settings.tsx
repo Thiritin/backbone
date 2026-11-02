@@ -5,12 +5,10 @@ import { setOptionDiscount } from "../../../../../../sim/90-actions/portal";
 import { useStore } from "../../../../../store";
 import { CommitInput, toNumber } from "./CommitInput";
 import { CYCLE_LABEL } from "./ProductEdit";
-import { LineStock } from "./LineStock";
-import { Rates } from "./Rates";
 import type { ScreenProps } from "./nav";
 
-// Per-unit rates for lines without a product, the discount per billing cycle, and the stock of those lines.
-export function Options({ game }: ScreenProps) {
+// Shop settings: the discount per billing cycle that prices products with automatic cycle prices.
+export function Settings({ game }: ScreenProps) {
   const act = useStore((s) => s.act);
   const v = shopById(game.shop.variant!);
   return (
@@ -23,7 +21,8 @@ export function Options({ game }: ScreenProps) {
               <tr key={c}>
                 <th scope="row">{CYCLE_LABEL[c]}</th>
                 <td>
-                  <CommitInput className="num" type="number" min={0} max={50} step={0.1} aria-label={CYCLE_LABEL[c]} value={String(Math.round((game.shop.optionDiscount[c] ?? 0) * 1000) / 10)}
+                  <CommitInput className="num" type="number" min={0} max={50} step={0.1} aria-label={CYCLE_LABEL[c]}
+                    value={String(Math.round((game.shop.optionDiscount[c] ?? 0) * 1000) / 10)}
                     onCommit={(x) => { const n = toNumber(x); act(setOptionDiscount, c, n === null ? null : n / 100); }} /> %
                 </td>
                 <td className="num">{t("shop-admin.market")} {MARKET_DISCOUNT[c] * 100} %</td>
@@ -32,8 +31,6 @@ export function Options({ game }: ScreenProps) {
           </tbody>
         </table>
       </section>
-      <Rates game={game} />
-      <LineStock game={game} />
     </div>
   );
 }

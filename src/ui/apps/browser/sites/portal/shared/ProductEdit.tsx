@@ -7,7 +7,7 @@ import { marketPrice, marketSetup } from "../../../../../../sim/10-catalog/produ
 import { moduleName, shopById } from "../../../../../../sim/10-catalog/shops";
 import { packagesOf } from "../../../../../../sim/80-business/packages";
 import { monthlyOf, packageSpec } from "../../../../../../sim/80-business/portal";
-import type { SetupMode, Stock } from "../../../../../../sim/80-business/shop";
+import { groupKind, type SetupMode, type Stock } from "../../../../../../sim/80-business/shop";
 import { setProductPrice, updateProduct, type ProductPatch } from "../../../../../../sim/90-actions/portal";
 import { useStore } from "../../../../../store";
 import { CommitInput, toNumber } from "./CommitInput";
@@ -30,7 +30,7 @@ export function ProductEdit({ game, go, id, tab = "details" }: ScreenProps & { i
   const stockKind = p.stock === "off" ? "off" : p.stock === "auto" ? "auto" : "units";
   const packages = [...new Set((group?.members ?? []).flatMap((m) => packagesOf(game.clusters.find((c) => c.id === m)!).map((x) => x.name)))];
   const member = game.clusters.find((c) => c.id === group?.members[0]), software = member && (member.panel ?? member.platform);
-  const serverGroups = game.shop.groups.filter((g) => SERVES[g.kind].includes(p.line));
+  const serverGroups = game.shop.groups.filter((g) => { const k = groupKind(game, g); return !!k && SERVES[k].includes(p.line); });
   return (
     <div className="pt-screen">
       <h3>{p.name}</h3>

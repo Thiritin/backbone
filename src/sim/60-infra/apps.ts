@@ -100,7 +100,7 @@ function clearDefacement(s: GameState, serviceId: string): void {
 export function cleanupPrice(s: GameState, c: Customer): number {
   return cleanRate(s) * cleanHours(profileStats(c.profile).budget);
 }
-const cleanRate = (s: GameState): number => s.rates.webHosting?.cleanHour ?? cleanMarket(yearOf(s.hour));
+const cleanRate = (s: GameState): number => cleanMarket(yearOf(s.hour));
 
 // The customer's answer to an offer of paid clean-up, fixed per key. Accepting books the price and the player's hours and cleans
 // the site; a customer who declines may cancel everything, the likelier the dearer the player is against the market.
@@ -278,13 +278,13 @@ export function applyAppWork(s: GameState, t: Ticket, c: Customer, action: strin
   if (action === "offerOnce" ? wish !== "once" : wish !== "managed") return null;
   updateApps(s, new Set([v.id]));
   if (action === "offerOnce") {
-    const amount = updatePrice(s.rates.webHosting, "updateOnce");
+    const amount = updatePrice("updateOnce");
     s.cash = Math.round((s.cash + amount) * 100) / 100;
     s.ledger = [...s.ledger, { hour: s.hour, category: "sales", key: "ledger.appUpdate", params: { customer: c.name, site: v.label }, amount }];
     return "updateSold";
   }
   s.services = s.services.map((x) => (x.id === v.id ? { ...x, spec: { ...x.spec, managedUpdates: true } } : x));
   const sold = s.services.find((x) => x.id === v.id)!;
-  reprice(s, sold, sold.price * 730 + updatePrice(s.rates.webHosting, "updates"), true);
+  reprice(s, sold, sold.price * 730 + updatePrice("updates"), true);
   return "managedSold";
 }

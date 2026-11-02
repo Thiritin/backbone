@@ -7,7 +7,8 @@ import { referenceFor } from "../src/sim/30-market/market";
 import type { GameState } from "../src/sim/50-state";
 import { chooseProduct, packageSpec, productCycles } from "../src/sim/80-business/portal";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
-import { createGroup, setGroupSale } from "../src/sim/90-actions/shop";
+import { createGroup } from "../src/sim/90-actions/shop";
+import { tick } from "../src/sim/88-tick/tick";
 import { createProduct, createProductGroup, deleteProduct, deleteProductGroup, renameProductGroup, setOptionDiscount, setProductGroupHidden, setProductPrice, updateProduct } from "../src/sim/90-actions/portal";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { automate, readyGame, installWithKey } from "./fixtures";
@@ -56,11 +57,12 @@ describe("shop products", () => {
     expect(deleteProductGroup(s, g).ok).toBe(true);
   });
 
-  it("sell a line without products through its configurable options", () => {
+  it("take no shop orders for a line without products, whose visitors ask for a quote", () => {
     const s = shopGame();
     expect(chooseProduct(s, want(s))).toBeNull();
-    const r = orderLead(s, "private", "Frankfurt", [], web, false);
-    expect(s.sales.requests.find((x) => x.id === r.id)).toMatchObject({ status: "won", shop: true });
+    for (let h = 0; h < 24 * 30; h++) tick(s);
+    expect(s.sales.requests.filter((r) => r.shop)).toEqual([]);
+    expect(s.sales.requests.length).toBeGreaterThan(0);
   });
 
   it("pick the smallest plan that covers the spec, else the largest near the market, else no fitting plan", () => {
@@ -120,8 +122,7 @@ describe("shop products", () => {
     const g = idOf(createProductGroup(s, "Web"));
     const p = idOf(createProduct(s, g, "Small", "webHosting"));
     expect(updateProduct(s, p, { serverGroupId: "nope" })).toMatchObject({ ok: false, error: "error.unknownServerGroup" });
-    const empty = idOf(createGroup(s, "panel", "Empty"));
-    setGroupSale(s, empty, "webHosting", true);
+    const empty = idOf(createGroup(s, "Empty"));
     updateProduct(s, p, { serverGroupId: empty });
     expect(chooseProduct(s, want(s))).toBe("soldOut");
     updateProduct(s, p, { serverGroupId: null });

@@ -30,7 +30,7 @@ export function outgoing(s: GameState, t: Ticket, c: Customer | undefined, what:
     key: variant(s, what, Number(t.id.slice(3)) || 0, t.replies.length),
     params: {
       ...companyParams(s), name: c && PERSONS.includes(c.profile) ? c.name.split(" ")[0] : "", service: v?.label ?? "", hostname: serviceFqdn(s, v), domain: v?.domain ?? "",
-      credit: cents(0.1 * monthly), once: updatePrice(s.rates.webHosting, "updateOnce"), managed: updatePrice(s.rates.webHosting, "updates"), refund: cents(monthly), cleanup: c ? cleanupPrice(s, c) : 0, days: EXTENSION_DAYS, hours: TAKEDOWN_HOURS,
+      credit: cents(0.1 * monthly), once: updatePrice("updateOnce"), managed: updatePrice("updates"), refund: cents(monthly), cleanup: c ? cleanupPrice(s, c) : 0, days: EXTENSION_DAYS, hours: TAKEDOWN_HOURS,
       url: t.notice?.url ?? "", sender: t.notice ? senderName(t.notice.sender) : "",
     },
   };

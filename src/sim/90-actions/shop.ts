@@ -1,16 +1,14 @@
-// Installing a shop system, buying its modules and setting stock (docs/design/shop.md).
+// Installing a shop system, buying its modules and arranging its server groups (docs/design/shop.md).
 import { MODULE_IDS, shopById, SHOPS, type ShopId } from "../10-catalog/shops";
 import { shopOnSale } from "../10-catalog/shop-licences";
 import { nextMajor, versionAt } from "../10-catalog/software-versions";
 import { assignedKey, assignKey, covers, installKeyBlock, issueKey, licenceBlock, licenseInstall, SHOP_MACHINE, updateKey, yearAfter } from "../60-infra/licence";
 import { upgradeOffer } from "../80-business/vendor-shop";
 import { shopBroken } from "../60-infra/shop-files";
-import { PRODUCTS } from "../10-catalog/products";
-import type { Product } from "../30-customers/customers";
 import type { GameState } from "../50-state";
 import { owns } from "../80-business/marketing";
-import { groupOf, hasModule, installable, newShop, shopUpdate, shopUpdatesFee, type ServerGroup, type Stock } from "../80-business/shop";
-import { SERVES, type SoftwareKind } from "../10-catalog/platforms";
+import { groupKind, groupOf, hasModule, installable, newShop, shopUpdate, shopUpdatesFee, type Fill, type ServerGroup } from "../80-business/shop";
+import { SERVES } from "../10-catalog/platforms";
 import { t } from "../../i18n/en";
 import type { ActionResult } from "./hardware";
 
@@ -125,20 +123,10 @@ export function buyModule(s: GameState, module: string): ActionResult {
   return { ok: true, id: module };
 }
 
-export function setStock(s: GameState, product: Product, stock: Stock): ActionResult {
-  const v = s.shop.variant && shopById(s.shop.variant);
-  if (!v) return fail("error.needsShop");
-  if (!PRODUCTS[product]) return fail("error.unknownProduct");
-  if (stock === "auto" && !v.autoStock) return fail("error.noAutoStock");
-  if (typeof stock === "number" && !(Number.isInteger(stock) && stock >= 0)) return fail("error.badStock");
-  s.shop = { ...s.shop, stock: { ...s.shop.stock, [product]: stock } };
-  return { ok: true };
-}
-
-// A first shop gets one group per kind of software the company runs, selling everything it serves.
+// A first shop gets one group per kind of software the company runs, every installation active.
 function firstGroups(s: GameState): ServerGroup[] {
   const kinds = [...new Set(s.clusters.map((c) => c.kind))].filter((k) => SERVES[k].length);
-  return kinds.map((kind) => ({ id: `grp${s.nextId++}`, name: t(`group.${kind}`), kind, members: s.clusters.filter((c) => c.kind === kind).map((c) => c.id), sale: [...SERVES[kind]], deploy: true }));
+  return kinds.map((kind) => ({ id: `grp${s.nextId++}`, name: t(`group.${kind}`), members: s.clusters.filter((c) => c.kind === kind).map((c) => c.id), inactive: [], fill: "spread" }));
 }
 
 const editGroup = (s: GameState, id: string, f: (g: ServerGroup) => Partial<ServerGroup>): ActionResult => {
@@ -148,37 +136,44 @@ const editGroup = (s: GameState, id: string, f: (g: ServerGroup) => Partial<Serv
   return { ok: true, id };
 };
 
-export function createGroup(s: GameState, kind: SoftwareKind, name: string): ActionResult {
+export function createGroup(s: GameState, name: string): ActionResult {
   if (!s.shop.variant) return fail("error.needsShop");
-  if (!SERVES[kind]?.length) return fail("error.groupKind");
   if (!name.trim()) return fail("error.groupName");
   const id = `grp${s.nextId++}`;
-  s.shop = { ...s.shop, groups: [...s.shop.groups, { id, name: name.trim(), kind, members: [], sale: [], deploy: false }] };
+  s.shop = { ...s.shop, groups: [...s.shop.groups, { id, name: name.trim(), members: [], inactive: [], fill: "spread" }] };
   return { ok: true, id };
 }
 
 export function deleteGroup(s: GameState, id: string): ActionResult {
   if (!s.shop.groups.some((g) => g.id === id)) return fail("error.unknownGroup");
-  s.shop = { ...s.shop, groups: s.shop.groups.filter((g) => g.id !== id) };
+  s.shop = { ...s.shop, groups: s.shop.groups.filter((g) => g.id !== id), products: s.shop.products.map((p) => (p.serverGroupId === id ? { ...p, serverGroupId: null } : p)) };
   return { ok: true };
 }
 
-// Adds a software installation (a panel host, a whole hypervisor cluster) of the group's kind.
+// Adds a software installation (a panel host, a whole hypervisor cluster) of the group's kind, active, at the end.
 export function addToGroup(s: GameState, id: string, clusterId: string): ActionResult {
   const c = s.clusters.find((x) => x.id === clusterId), g = s.shop.groups.find((x) => x.id === id);
   if (!c) return fail("error.unknownCluster");
-  if (g && c.kind !== g.kind) return fail("error.groupKind");
+  if (!SERVES[c.kind].length || (g && groupKind(s, g) && c.kind !== groupKind(s, g))) return fail("error.groupKind");
   if (groupOf(s, clusterId)) return fail("error.inGroup");
   return editGroup(s, id, (x) => ({ members: [...x.members, clusterId] }));
 }
 
 export const removeFromGroup = (s: GameState, id: string, clusterId: string): ActionResult =>
-  editGroup(s, id, (x) => ({ members: x.members.filter((m) => m !== clusterId) }));
+  editGroup(s, id, (x) => ({ members: x.members.filter((m) => m !== clusterId), inactive: x.inactive.filter((m) => m !== clusterId) }));
 
-export function setGroupSale(s: GameState, id: string, product: Product, on: boolean): ActionResult {
-  const g = s.shop.groups.find((x) => x.id === id);
-  if (g && !SERVES[g.kind].includes(product)) return fail("error.groupKind");
-  return editGroup(s, id, (x) => ({ sale: on ? [...new Set([...x.sale, product])] : x.sale.filter((p) => p !== product) }));
+// Off: new shop orders are not placed on the installation; its services keep running.
+export const setMemberActive = (s: GameState, id: string, clusterId: string, on: boolean): ActionResult =>
+  editGroup(s, id, (x) => ({ inactive: on ? x.inactive.filter((m) => m !== clusterId) : [...new Set([...x.inactive, clusterId])] }));
+
+export const setGroupFill = (s: GameState, id: string, fill: Fill): ActionResult => editGroup(s, id, () => ({ fill }));
+
+// Moves a member one place up (-1) or down (1) in the fill order.
+export function moveMember(s: GameState, id: string, clusterId: string, by: -1 | 1): ActionResult {
+  const g = s.shop.groups.find((x) => x.id === id), i = g?.members.indexOf(clusterId) ?? -1, j = i + by;
+  if (!g || i < 0) return fail("error.unknownGroup");
+  if (j < 0 || j >= g.members.length) return { ok: true, id };
+  const members = [...g.members];
+  [members[i], members[j]] = [members[j], members[i]];
+  return editGroup(s, id, () => ({ members }));
 }
-
-export const setGroupDeploy = (s: GameState, id: string, on: boolean): ActionResult => editGroup(s, id, () => ({ deploy: on }));

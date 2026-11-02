@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- Server groups in the shop are now a name, a list of servers with an Active switch and an order you can rearrange, and WHMCache, HostBull and Blessta let each group spread orders evenly or fill one server first.
+- The shop's configurable options page is gone: cycle discounts moved to the shop settings, every line is priced through its products, and a visitor for a line without products asks for a quote.
 - Shop products now price their longer billing cycles from the monthly price and the cycle discounts you set once for the whole shop, which start at 0%, and "Manage prices manually" lets you enter each price yourself.
 - Books no longer has a Products tab: before your first shop every email request is priced in its own quote, and fixed products live only in the shop.
 - Lookout 365 has its own website from 2011, where you sign up for Business Basic or Business Standard, and an admin center for users, free shared mailboxes, domain verification, mail flow rules, mailbox migration, billing and a password reset by post.

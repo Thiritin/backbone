@@ -61,12 +61,12 @@ export function grownSpec(seed: number, key: number, product: Product, spec: Spe
 
 // What the market charges for a running service's spec this year.
 export const serviceMarket = (v: Pick<Service, "product" | "sla" | "spec">, year: number): number => marketPrice(v.product, v.spec, year, v.sla);
-// A spec at the player's rates for its line (Products app), per month for hourly lines.
+// A spec at this year's market rates for its line, per month for hourly lines.
 export const offerPrice = (s: GameState, product: Product, spec: Spec, sla: Sla = "basic"): number =>
-  specPrice(product, spec, yearOf(s.hour), sla, s.rates[product]);
+  specPrice(product, spec, yearOf(s.hour), sla);
 
-// The one-time fee a shop order pays on top of its first month (Products app), the market's where unset.
-export const setupFee = (s: GameState, product: Product): number => s.rates[product]?.setup ?? marketSetup(product, yearOf(s.hour));
+// The market's one-time fee on top of a first month.
+export const setupFee = (s: GameState, product: Product): number => marketSetup(product, yearOf(s.hour));
 // Customers weigh a setup fee as if spread over this many months of the line's middle size.
 export const SETUP_MONTHS = 36;
 // How much dearer a setup fee above the market's makes the shop, as a share of the monthly price; negative below it.

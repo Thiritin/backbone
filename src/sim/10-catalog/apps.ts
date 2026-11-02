@@ -1,7 +1,6 @@
 // economy/security-advisories.md, Security advisories, Customer applications: what web hosting customers run and how they keep it up to date.
 import { hashRng, rand } from "../00-core/rng";
 import { BUDGET_SIZE, priceAt, type Budget, type Skill } from "./economy";
-import type { Rates } from "./products";
 
 export type App = "wordpass" | "joomlah" | "drupel" | "static";
 export const CMS: App[] = ["wordpass", "joomlah", "drupel"];
@@ -51,7 +50,7 @@ export const FREE_MINUTES = 20;
 
 // Monthly or one-off price in euros per site: the market's, flat over the years (multiplier 1).
 export const UPDATE_PRICE = { updateOnce: 49, updates: 5 } as const;
-export const updatePrice = (rates: Rates | undefined, unit: keyof typeof UPDATE_PRICE): number => rates?.[unit] ?? UPDATE_PRICE[unit];
+export const updatePrice = (unit: keyof typeof UPDATE_PRICE): number => UPDATE_PRICE[unit];
 
 // economy/README.md, Site clean-up: the market's hourly rate for cleaning a defaced site by hand (EUR 85 in 2026, multiplier 0.6),
 // and the hours a site takes, which grow with the customer's business like their order sizes.

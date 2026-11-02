@@ -18,12 +18,13 @@ import type { Product } from "../30-customers/customers";
 import type { Spec } from "../10-catalog/products";
 import type { SoftwareKind } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
-import { targetFor } from "../30-market/sales";
-import type { SalesRequest } from "../30-market/market";
 
 export type Stock = number | "auto" | "off";
-// A server group: software installations of one kind (a panel host, a hypervisor cluster) the shop sells from.
-export interface ServerGroup { id: string; name: string; kind: SoftwareKind; members: string[]; sale: Product[]; deploy: boolean }
+// How a group places new orders: on its least full server, or on the first server in list order with room.
+export type Fill = "spread" | "fill";
+// A server group: software installations of one kind (a panel host, a hypervisor cluster) the shop sells from, in fill
+// order. Its kind is its first member's; inactive members take no new shop orders.
+export interface ServerGroup { id: string; name: string; members: string[]; inactive: string[]; fill: Fill }
 // When a product's order is set up: on the first payment, after the admin accepts it, or by hand.
 export type SetupMode = "payment" | "accept" | "off";
 export interface ProductGroup { id: string; name: string; hidden: boolean }
@@ -49,11 +50,10 @@ export interface ShopState {
   modules: Record<string, number>;
   // What the systems in use before had: their modules and registered licences (s.modules), back on switching back.
   modulesBy: Partial<Record<ShopId, { modules: Record<string, number>; licences: string[] }>>;
-  stock: Partial<Record<Product, Stock>>;
-  // Visitors this month who found the line (or, with products, no fitting plan) sold out.
+  // Visitors this month who found no fitting plan in stock.
   soldOut: Record<string, number>;
   groups: ServerGroup[];
-  // Discount off N times the monthly price per cycle; 0 where unset.
+  // Discount off N times the monthly price per cycle for products with automatic cycle prices; 0 where unset.
   optionDiscount: Partial<Record<Cycle, number>>;
   products: ShopProduct[];
   productGroups: ProductGroup[];
@@ -67,14 +67,10 @@ export interface ShopState {
 // ws, folder and db name where the installer put the shop (web-hosting.md 5); a hosted shop has none.
 export interface ShopInstall { clusterId: string; version: string; at: number; ws?: string; folder?: string; db?: string }
 
-export const newShop = (): ShopState => ({ variant: null, owned: false, since: 0, modules: {}, modulesBy: {}, stock: {}, soldOut: {}, groups: [], optionDiscount: {}, products: [], productGroups: [], methodsOff: [], install: null, reset: null });
+export const newShop = (): ShopState => ({ variant: null, owned: false, since: 0, modules: {}, modulesBy: {}, soldOut: {}, groups: [], optionDiscount: {}, products: [], productGroups: [], methodsOff: [], install: null, reset: null });
 
 export const shopActive = (s: GameState): boolean => s.shop.variant !== null && !shopBroken(s);
 
-// A manual-stock shop starts each line at this many units.
-export const START_STOCK = 10;
-export const stockOf = (s: GameState, p: Product): Stock =>
-  s.shop.stock[p] ?? (s.shop.variant && shopById(s.shop.variant).autoStock ? "auto" : START_STOCK);
 
 export function hasModule(s: GameState, module: string): boolean {
   const v = s.shop.variant && shopById(s.shop.variant);
@@ -89,22 +85,14 @@ export function moduleFor(s: GameState, product: Product, clusterId: string | nu
   return on === "server" ? "dedicated" : on === "rack" ? "colo" : product === "ssl" ? "ssl" : "registrar";
 }
 
-// Whether the shop can sell this order now: the line is on, stock is left and a target has room.
-export function inStock(s: GameState, r: Pick<SalesRequest, "city" | "product" | "spec">): boolean {
-  const n = stockOf(s, r.product);
-  return n !== "off" && n !== 0 && !!targetFor(s, { ...r, shop: true });
-}
-
 export const groupOf = (s: GameState, clusterId: string): ServerGroup | undefined => s.shop.groups.find((g) => g.members.includes(clusterId));
-// Installations in a group that sells the line.
-export const forSale = (s: GameState, p: Product): Set<string> => new Set(s.shop.groups.filter((g) => g.sale.includes(p)).flatMap((g) => g.members));
-// Whether automatic provisioning may use this target: hardware targets always, software only in a deploy group.
-export const deployable = (s: GameState, clusterId: string | null): boolean => !clusterId || !s.shop.variant || !!groupOf(s, clusterId)?.deploy;
-
-export function takeStock(s: GameState, p: Product): void {
-  const n = stockOf(s, p);
-  if (typeof n === "number") s.shop = { ...s.shop, stock: { ...s.shop.stock, [p]: Math.max(0, n - 1) } };
-}
+// The kind of software a group holds: its first member's; undefined while it is empty.
+export const groupKind = (s: GameState, g: ServerGroup): SoftwareKind | undefined => s.clusters.find((c) => c.id === g.members[0])?.kind;
+// Customer accounts on an installation.
+export const accountsOn = (s: GameState, clusterId: string): number => s.workloads.filter((w) => w.clusterId === clusterId && w.serviceId).length;
+// Whether automatic provisioning may use this target: a product without a server group waits for the player.
+export const deployable = (s: GameState, clusterId: string | null, productId?: string): boolean =>
+  !clusterId || !productId || !!s.shop.products.find((p) => p.id === productId)?.serverGroupId;
 
 export function soldOutVisit(s: GameState, p: string): void {
   s.shop = { ...s.shop, soldOut: { ...s.shop.soldOut, [p]: (s.shop.soldOut[p] ?? 0) + 1 } };

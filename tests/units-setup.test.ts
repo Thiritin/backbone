@@ -2,12 +2,11 @@ import { describe, expect, it } from "vitest";
 import { t } from "../src/i18n/en";
 import { yearOf } from "../src/sim/00-core/time";
 import { marketRates, marketSetup, sizeSpec, specPrice, TRAFFIC_SHARE } from "../src/sim/10-catalog/products";
-import { share } from "../src/sim/30-market/market";
 import { orderLead } from "../src/sim/30-market/orders";
-import { offerPrice, setupFee, setupPremium, specFor, specText } from "../src/sim/30-market/spec";
+import { setupFee, specFor, specText } from "../src/sim/30-market/spec";
 import type { GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
-import { resetRates, setRate } from "../src/sim/90-actions/rates";
+import { createProduct, createProductGroup } from "../src/sim/90-actions/portal";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { automate, readyGame, openShop } from "./fixtures";
 
@@ -16,7 +15,9 @@ const withShop = (seed: number) => {
   s.cash = 1e6;
   openShop(s);
   s.shop.optionDiscount = { quarterly: -3, annual: -3, biennial: -3 };
-  return automate(s);
+  automate(s);
+  createProduct(s, (createProductGroup(s, "Plans") as { id: string }).id, "Web", "webHosting");
+  return s;
 };
 const web = { product: "webHosting" as const, size: 1, sla: "basic" as const };
 
@@ -39,22 +40,10 @@ describe("DNS zones and VPN users", () => {
     expect(specPrice("vpn", sizeSpec("vpn", 1, 2005), 2005)).toBeCloseTo(5, 0);
     expect(specPrice("vpn", sizeSpec("vpn", 2, 2005), 2005)).toBeGreaterThan(specPrice("vpn", sizeSpec("vpn", 0, 2005), 2005));
   });
-
-  it("charge the player's per-zone rate in the shop", () => {
-    const s = withShop(1), spec = { ...sizeSpec("dns", 1, yearOf(s.hour)), zones: 10 };
-    const before = offerPrice(s, "dns", spec);
-    expect(setRate(s, "dns", "zone", 1).ok).toBe(true);
-    expect(offerPrice(s, "dns", spec)).toBeCloseTo(before + 10 * (1 - marketRates("dns", yearOf(s.hour)).zone!), 2);
-  });
 });
 
 describe("traffic", () => {
-  it("charges per 100 GB at its rate, a few percent of a bill that falls with the years", () => {
-    const s = withShop(1), year = yearOf(s.hour), spec = sizeSpec("vps", 1, year);
-    const before = offerPrice(s, "vps", spec);
-    expect(setRate(s, "vps", "traffic", 10).ok).toBe(true);
-    // Both prices round to cents, so they can differ by half a cent.
-    expect(offerPrice(s, "vps", spec)).toBeCloseTo(before + (10 - marketRates("vps", year).traffic!) * (spec.trafficGb / 100), 1);
+  it("charges per 100 GB at the market rate, a few percent of a bill that falls with the years", () => {
     for (const p of ["webHosting", "vps", "gameServer", "dns", "vpn"] as const) {
       const mid = sizeSpec(p, 1, 2005), total = specPrice(p, mid, 2005), traffic = (marketRates(p, 2005).traffic! * mid.trafficGb) / 100;
       expect(traffic / total).toBeGreaterThan(0.01);
@@ -68,14 +57,13 @@ describe("traffic", () => {
 
 describe("setup fees", () => {
   it("bill a shop order at once with the first month, and the monthly run skips that month", () => {
-    const s = withShop(1);
-    expect(setRate(s, "webHosting", "setup", 25).ok).toBe(true);
-    const r = orderLead(s, "private", "Frankfurt", [], web, false);
+    const s = withShop(1), fee = setupFee(s, "webHosting");
+    const r = orderLead(s, "private", "Frankfurt", [], web, false, undefined, undefined, s.shop.products[0]);
     const won = s.sales.requests.find((x) => x.id === r.id)!;
     expect(won.status).toBe("won");
     const invs = s.invoices.filter((i) => i.customerId === won.customerId);
     expect(invs).toHaveLength(1);
-    expect(invs[0].lines.map((l) => [l.key, l.amount])).toEqual([["invoice.line.setupFee", 25], ["invoice.line.firstMonth", won.quote]]);
+    expect(invs[0].lines.map((l) => [l.key, l.amount])).toEqual([["invoice.line.setupFee", fee], ["invoice.line.firstMonth", won.quote]]);
     expect(t(invs[0].lines[0].key, invs[0].lines[0].params)).toMatch(/setup fee$/);
     const hours = () => s.invoices.flatMap((i) => i.lines).filter((l) => l.serviceId === won.serviceId && l.key === "invoice.line.hours");
     // The first month start after the order bills nothing for it; the one after bills the hours past the prepaid month.
@@ -88,37 +76,16 @@ describe("setup fees", () => {
     expect(hours()[0].params.hours).toBeLessThan(730);
   });
 
-  it("default to the market's, are set per line and leave out a zero fee", () => {
+  it("default to the market's and fall with the years", () => {
     const s = withShop(3), year = yearOf(s.hour);
     expect(setupFee(s, "vps")).toBe(marketSetup("vps", year));
     expect(marketSetup("dedicated", 2005)).toBeGreaterThan(marketSetup("vps", 2005));
     expect(marketSetup("vps", 2026)).toBeLessThan(marketSetup("vps", 2005));
-    expect(setRate(s, "domain", "setup", 5)).toEqual({ ok: false, error: "error.unknownLineRate" });
-    expect(setRate(s, "webHosting", "setup", 0).ok).toBe(true);
-    const r = orderLead(s, "private", "Frankfurt", [], web, false);
-    const won = s.sales.requests.find((x) => x.id === r.id)!;
-    expect(s.invoices.find((i) => i.customerId === won.customerId)!.lines.map((l) => l.key)).toEqual(["invoice.line.firstMonth"]);
-    expect(resetRates(s, "webHosting").ok).toBe(true);
-    expect(setupFee(s, "webHosting")).toBe(marketSetup("webHosting", year));
-  });
-
-  it("lower the shop's share of leads when above the market and raise it below", () => {
-    const s = withShop(4), base = share(s, "private", "webHosting", "Frankfurt");
-    expect(setupPremium(s, "webHosting")).toBe(0);
-    setRate(s, "webHosting", "setup", 60);
-    const dear = share(s, "private", "webHosting", "Frankfurt", setupPremium(s, "webHosting"));
-    setRate(s, "webHosting", "setup", 0);
-    const free = share(s, "private", "webHosting", "Frankfurt", setupPremium(s, "webHosting"));
-    expect(dear).toBeLessThan(base);
-    expect(free).toBeGreaterThan(base);
-    // A small effect: twice the market fee costs less than a tenth of the share.
-    setRate(s, "webHosting", "setup", 2 * marketSetup("webHosting", yearOf(s.hour)));
-    expect(share(s, "private", "webHosting", "Frankfurt", setupPremium(s, "webHosting"))).toBeGreaterThan(0.9 * base);
   });
 });
 
 describe("old saves", () => {
-  it("give DNS and VPN services without units the count their price buys, and keep rates and setup fees at the market", () => {
+  it("give DNS and VPN services without units the count their price buys, and drop saved rates", () => {
     const s: GameState = readyGame(5), year = yearOf(s.hour), friend = s.services[0];
     const dnsMarket = marketRates("dns", year);
     const spec = { ...sizeSpec("dns", 1, year) };
@@ -131,11 +98,11 @@ describe("old saves", () => {
       { ...friend, id: "svc-vpn", product: "vpn", spec: vpnSpec, sla: "business", price: 6 / 730 },
     ];
     const raw = JSON.parse(serialize(s));
-    delete raw.rates;
+    raw.rates = { dns: { zone: 1 } };
     const back = deserialize(JSON.stringify(raw));
     expect(back.services.find((v) => v.id === "svc-dns")!.spec.zones).toBe(8);
     expect(back.services.find((v) => v.id === "svc-vpn")!.spec.users).toBeGreaterThanOrEqual(1);
-    expect(back.rates).toEqual({});
+    expect("rates" in back).toBe(false);
     expect(setupFee(back, "vps")).toBe(marketSetup("vps", year));
   });
 });

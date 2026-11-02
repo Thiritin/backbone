@@ -120,8 +120,6 @@ export const en: Record<string, (p: Params) => string> = {
   "error.unknownReport": () => "This incident report no longer exists.",
   "error.unknownBrand": () => "This brand does not sell servers.",
   "error.unknownSiteLine": () => "This product cannot go on the website.",
-  "error.unknownLineRate": () => "This product has no such rate.",
-  "error.badRate": () => "Enter a rate of zero or more.",
   "error.notInShop": () => "The shop does not sell this model.",
   "error.outOfBounds": () => "The device does not fit at this height.",
   "error.slotTaken": () => "Another device is in the way.",

@@ -25,7 +25,7 @@ export function overuseOf(s: GameState, v: Service): Overuse | null {
 export const overuseHandled = (s: GameState, v: Service): boolean => v.overuseAt !== undefined && s.hour - v.overuseAt < TRAFFIC_WINDOW_HOURS;
 
 // The player's rate per 100 GB for the line, or the market's.
-export const trafficRate = (s: GameState, v: Service): number => s.rates[v.product]?.traffic ?? marketRates(v.product, yearOf(s.hour)).traffic ?? 0;
+export const trafficRate = (s: GameState, v: Service): number => marketRates(v.product, yearOf(s.hour)).traffic ?? 0;
 export const overageAmount = (s: GameState, v: Service, overGb: number): number => Math.round((overGb / 100) * trafficRate(s, v) * 100) / 100;
 
 const liveCustomer = (s: GameState, v: Service) => s.customers.find((c) => c.id === v.customerId && c.churnedAt === null);

@@ -9,7 +9,6 @@ import { appsTick, cleanSite, cleanupPrice, offerCleanup, remindCustomer } from 
 import { tick } from "../src/sim/88-tick/tick";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { suspendService } from "../src/sim/90-actions/holds";
-import { setRate } from "../src/sim/90-actions/rates";
 import { resolveTicket } from "../src/sim/90-actions/support";
 import { t } from "../src/i18n/en";
 import { newGame } from "./fixtures";
@@ -33,13 +32,11 @@ const backed = (s: GameState, id: string) => {
 const settle = (s: GameState) => { for (let h = 0; h < 300 && s.tickets.some((x) => x.work); h++) tick(s); };
 
 describe("site clean-up", () => {
-  it("prices an hour at the market's rate, drifting over the years and set in Pricing", () => {
+  it("prices an hour at the market's rate, drifting over the years", () => {
     expect(marketRates("webHosting", 2026).cleanHour).toBe(85);
     expect(marketRates("webHosting", 2005).cleanHour).toBe(51);
     const s = newGame(1), id = defaced(s, "office");
     expect(cleanupPrice(s, customerOf(s, id))).toBe(cleanMarket(yearOf(s.hour)) * cleanHours("high"));
-    ok(setRate(s, "webHosting", "cleanHour", 100));
-    expect(cleanupPrice(s, customerOf(s, id))).toBe(400);
   });
 
   it("restores a site with a backup from the customer's ticket", () => {
@@ -72,26 +69,20 @@ describe("site clean-up", () => {
     for (const x of open) expect(s.sites.defaced).toContain(x.serviceId);
   });
 
-  it("loses more customers to a proactive offer the dearer the player is", () => {
-    const run = (rate: number | null) => {
-      const s = newGame(4);
-      if (rate !== null) ok(setRate(s, "webHosting", "cleanHour", rate));
-      const out = Array.from({ length: 60 }, () => {
-        const id = defaced(s);
-        createTicket(s, customerOf(s, id), "howTo", id, "hacked");
-        return ok(offerCleanup(s, id));
-      });
-      return { s, count: (o: string) => out.filter((x) => x === o).length };
-    };
-    const market = run(null), dear = run(3 * cleanMarket(2005) + 100);
-    expect(market.count("cleanSold")).toBeGreaterThan(dear.count("cleanSold"));
-    expect(dear.count("cancelled")).toBeGreaterThan(market.count("cancelled"));
+  it("answers the customer's open ticket when a proactive offer sells", () => {
+    const s = newGame(4);
+    const out = Array.from({ length: 60 }, () => {
+      const id = defaced(s);
+      createTicket(s, customerOf(s, id), "howTo", id, "hacked");
+      return ok(offerCleanup(s, id));
+    });
+    const count = (o: string) => out.filter((x) => x === o).length;
     // A sold clean-up answers the customer's open ticket about the hack.
-    const s = market.s, sold = s.services.filter((v) => !s.sites.defaced.includes(v.id) && v.endedAt === null && v.product === "webHosting");
-    expect(sold.length).toBe(market.count("cleanSold"));
+    const sold = s.services.filter((v) => !s.sites.defaced.includes(v.id) && v.endedAt === null && v.product === "webHosting");
+    expect(sold.length).toBe(count("cleanSold"));
     for (const v of sold) expect(s.tickets.find((x) => x.serviceId === v.id)).toMatchObject({ status: "resolved", outcome: "cleaned" });
-    const declined = market.s.sites.defaced.find((id) => market.s.sites.notified.includes(`${id}|offer`))!;
-    expect(offerCleanup(market.s, declined)).toEqual({ ok: false, error: "error.alreadyOffered" });
+    const declined = s.sites.defaced.find((id) => s.sites.notified.includes(`${id}|offer`))!;
+    expect(offerCleanup(s, declined)).toEqual({ ok: false, error: "error.alreadyOffered" });
   });
 
   it("explains an abuse suspension with the hack and lifts it once the site is clean", () => {

@@ -110,11 +110,9 @@ A network with two upstreams survives one carrier having a bad day. A network wi
 
 Your company learns to sell plans instead of improvising a price for every customer. Every product line is priced per unit, such as per GB of disk, per vCPU or per mailbox, plus a setup fee.
 
-### Setting rates
+### Prices
 
-The Options page of the shop admin, which opens once a shop system is installed, has one card per product line with a field for every unit. The market's rate stands beside each field. An empty field charges the market's rate, and **Market rates** resets the whole line. The card also shows the price of the smallest plan at your rates and at the market's.
-
-Your rates apply to new shop orders, and to the price an email quote starts at once a shop is active. Services you already sold keep their price. A price above the market brings fewer leads, and customers who find a service too expensive complain and leave.
+Every unit costs the market's rate. The player sets prices per shop product instead (`shop.md`, section 4b), and services already sold keep their price. A price above the market brings fewer leads, and customers who find a service too expensive complain and leave.
 
 ## Shop systems
 
@@ -141,7 +139,7 @@ Every product line has a stock on the Options page of the shop admin. Set a numb
 ### What it unlocks
 
 - **Automatic** placement picks a host for you when you set up an order.
-- **Place orders automatically** in Settings quotes order emails at your rates and runs accepted orders from account to setup by itself.
+- **Place orders automatically** in Settings quotes order emails at the market's rates and runs accepted orders from account to setup by itself.
 
 ### Setup without picking a host
 

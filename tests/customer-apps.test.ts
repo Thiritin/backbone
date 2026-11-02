@@ -14,7 +14,6 @@ import { vulnsFor, type Severity, type Vulnerability } from "../src/sim/60-infra
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
-import { setRate } from "../src/sim/90-actions/rates";
 import { resolveTicket } from "../src/sim/90-actions/support";
 import { suspendService } from "../src/sim/90-actions/holds";
 import { customerSite } from "../src/sim/80-business/website";
@@ -203,14 +202,6 @@ describe("notifying customers", () => {
     expect(service(s, svc).spec.managedUpdates).toBeUndefined();
   });
 
-  it("books the one-off at the player's own rate", () => {
-    const { s, t } = asked("once");
-    ok(setRate(s, "webHosting", "updateOnce", 80));
-    ok(resolveTicket(s, t.id, "offerOnce"));
-    settle(s, t.id);
-    expect(s.ledger.find((l) => l.key === "ledger.appUpdate")?.amount).toBe(80);
-  });
-
   it("sells managed updates and raises the price by the monthly rate without a complaint", () => {
     const { s, t, svc } = asked("managed");
     const monthly = service(s, svc).price * 730, happy = customerOf(s, svc).happiness, priced = () => s.tickets.some((x) => x.customerId === service(s, svc).customerId && x.topic === "price");
@@ -269,9 +260,7 @@ describe("managed updates", () => {
     const spec = sizeSpec("webHosting", 1, 2026);
     expect(specPrice("webHosting", { ...spec, managedUpdates: true }, 2026)).toBeCloseTo(specPrice("webHosting", spec, 2026) + 5, 2);
     const s = newGame(1);
-    ok(setRate(s, "webHosting", "updates", 8));
-    expect(offerPrice(s, "webHosting", { ...spec, managedUpdates: true })).toBeCloseTo(offerPrice(s, "webHosting", spec) + 8, 2);
-    expect(setRate(s, "vps", "updates", 1).ok).toBe(false);
+    expect(offerPrice(s, "webHosting", { ...spec, managedUpdates: true })).toBeCloseTo(offerPrice(s, "webHosting", spec) + 5, 2);
   });
 });
 

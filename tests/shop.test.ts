@@ -4,13 +4,16 @@ import { hourOf } from "../src/sim/00-core/time";
 import { PREFERENCE } from "../src/sim/10-catalog/payments";
 import { orderLead } from "../src/sim/30-market/orders";
 import type { GameState } from "../src/sim/50-state";
-import { hasModule, inStock, shopActive, shopBills, shopTick, stockOf, WHM_BREACH_AT } from "../src/sim/80-business/shop";
+import { hasModule, shopActive, shopBills, shopTick, WHM_BREACH_AT } from "../src/sim/80-business/shop";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
-import { addToGroup, buyModule, createGroup, installShop, removeFromGroup, setGroupDeploy, setGroupSale, setStock } from "../src/sim/90-actions/shop";
+import { addToGroup, buyModule, createGroup, installShop, moveMember, removeFromGroup, setGroupFill, setMemberActive } from "../src/sim/90-actions/shop";
+import { createProduct, createProductGroup, updateProduct } from "../src/sim/90-actions/portal";
+import { targetFor } from "../src/sim/30-market/sales";
+import { sizeSpec } from "../src/sim/10-catalog/products";
 import { cordon, uncordon } from "../src/sim/90-actions/clusters";
 import { keyFee } from "../src/sim/85-products/products";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { automate, readyGame, installWithKey } from "./fixtures";
+import { automate, readyGame, installWithKey, panelVm } from "./fixtures";
 
 // Private customers pay by bank transfer here, so no shop order is lost for its payment method.
 const saved = PREFERENCE.private;
@@ -26,6 +29,10 @@ const withShop = (seed: number, id: ShopId = "whmCache") => {
   s.unlocks = [...s.unlocks, "shops"];
   installWithKey(s, id);
   return s;
+};
+const plan = (s: GameState) => {
+  const id = (createProduct(s, (createProductGroup(s, "Web") as { id: string }).id, "Mini", "webHosting") as { id: string }).id;
+  return s.shop.products.find((p) => p.id === id)!;
 };
 const at = (s: GameState, year: number) => { s.hour = hourOf(new Date(Date.UTC(year, 0, 1))); return s; };
 
@@ -80,21 +87,18 @@ describe("shop systems", () => {
     expect(s.cash).toBe(-500);
   });
 
-  it("sell from stock, and cancel an order they cannot set up without a lost sale", () => {
+  it("sell from a plan's stock, and cancel an order they cannot set up without a lost sale", () => {
     const s = automate(withShop(5, "modemBill"));
-    expect(stockOf(s, "webHosting")).toBe(10);
-    expect(setStock(s, "webHosting", "auto")).toMatchObject({ ok: false, error: "error.noAutoStock" });
-    expect(setStock(s, "webHosting", 1).ok).toBe(true);
-    const first = orderLead(s, "private", "Frankfurt", [], web, false);
+    const p = plan(s);
+    expect(updateProduct(s, p.id, { stock: 1 }).ok).toBe(true);
+    const first = orderLead(s, "private", "Frankfurt", [], web, false, undefined, undefined, p);
     expect(s.sales.requests.find((x) => x.id === first.id)!.status).toBe("won");
-    expect(stockOf(s, "webHosting")).toBe(0);
-    expect(inStock(s, first)).toBe(false);
-    setStock(s, "webHosting", 5);
+    expect(s.shop.products[0].stock).toBe(0);
+    updateProduct(s, p.id, { stock: 5 });
     const lost = s.sales.lost.length;
-    const r = orderLead(s, "private", "London", [], web, false);
+    const r = orderLead(s, "private", "London", [], web, false, undefined, undefined, p);
     expect(s.sales.requests.find((x) => x.id === r.id)!.status).toBe("lost");
     expect(s.sales.lost.length).toBe(lost);
-    expect(s.shop.soldOut.webHosting).toBe(1);
   });
 
   it("lease as licence keys and bill only revenue shares", () => {
@@ -110,7 +114,6 @@ describe("shop systems", () => {
 
   it("keeps the shop through a save and gives old saves none", () => {
     const s = withShop(9);
-    setStock(s, "vps", "off");
     const back = deserialize(serialize(s));
     expect(back.shop).toEqual(s.shop);
     const old = JSON.parse(serialize(readyGame(9)));
@@ -120,34 +123,64 @@ describe("shop systems", () => {
 });
 
 describe("server groups", () => {
-  it("start with the company's software, and decide what the shop sells and where it deploys", () => {
+  // A second panel host on the basement hypervisor, in the shop's panel group behind the first.
+  const twoHosts = () => {
     const s = automate(withShop(10));
-    const g = s.shop.groups.find((x) => x.kind === "panel")!;
-    expect(g.members).toEqual(s.clusters.filter((c) => c.kind === "panel").map((c) => c.id));
-    expect(g.sale).toEqual(["webHosting"]);
-    const first = orderLead(s, "private", "Frankfurt", [], web, false);
+    const g = s.shop.groups.find((x) => x.members.some((m) => s.clusters.find((c) => c.id === m)?.kind === "panel"))!, [a] = g.members;
+    const b = panelVm(s, s.clusters.find((c) => c.name === "Basement 1")!.id);
+    expect(addToGroup(s, g.id, b).ok).toBe(true);
+    const p = plan(s), r = { city: s.locations[0].city, product: "webHosting" as const, spec: sizeSpec("webHosting", 0, 2005), shop: true, productId: p.id };
+    return { s, g, a, b, p, on: () => targetFor(s, r)?.clusterId };
+  };
+
+  it("start with the company's software, all active, and new plans sell from it", () => {
+    const s = automate(withShop(10));
+    const g = s.shop.groups.find((x) => x.members.some((m) => s.clusters.find((c) => c.id === m)?.kind === "panel"))!;
+    expect(g).toMatchObject({ members: s.clusters.filter((c) => c.kind === "panel").map((c) => c.id), inactive: [], fill: "spread" });
+    const p = plan(s);
+    expect(p.serverGroupId).toBe(g.id);
+    const first = orderLead(s, "private", "Frankfurt", [], web, false, undefined, undefined, p);
     expect(s.sales.requests.find((x) => x.id === first.id)!.status).toBe("won");
-
-    expect(setGroupDeploy(s, g.id, false).ok).toBe(true);
-    const waiting = orderLead(s, "private", "Frankfurt", [], web, false);
+    updateProduct(s, p.id, { serverGroupId: null });
+    const waiting = orderLead(s, "private", "Frankfurt", [], web, false, undefined, undefined, s.shop.products[0]);
     expect(s.sales.requests.find((x) => x.id === waiting.id)!.status).toBe("accepted");
+  });
 
-    expect(setGroupSale(s, g.id, "webHosting", false).ok).toBe(true);
-    expect(inStock(s, first)).toBe(false);
-    expect(setGroupSale(s, g.id, "vps", true)).toMatchObject({ ok: false, error: "error.groupKind" });
+  it("spread to the least full server, or fill the first active one in their order", () => {
+    const { s, g, a, b, on } = twoHosts();
+    expect(on()).toBe(b);
+    expect(setGroupFill(s, g.id, "fill").ok).toBe(true);
+    expect(on()).toBe(a);
+    expect(moveMember(s, g.id, b, -1).ok).toBe(true);
+    expect(s.shop.groups.find((x) => x.id === g.id)!.members).toEqual([b, a]);
+    expect(on()).toBe(b);
+    expect(setMemberActive(s, g.id, b, false).ok).toBe(true);
+    expect(on()).toBe(a);
+    setMemberActive(s, g.id, a, false);
+    expect(on()).toBeUndefined();
   });
 
   it("hold each installation once and only of their kind", () => {
     const s = withShop(11);
     const panel = s.clusters.find((c) => c.kind === "panel")!, g = s.shop.groups.find((x) => x.members.includes(panel.id))!;
-    const id = (createGroup(s, "cloud", "Rack two") as { id: string }).id;
-    expect(addToGroup(s, id, panel.id)).toMatchObject({ ok: false, error: "error.groupKind" });
-    const other = (createGroup(s, "panel", "Second") as { id: string }).id;
+    const cloud = s.shop.groups.find((x) => x.id !== g.id && x.members.length)!;
+    expect(addToGroup(s, cloud.id, panel.id)).toMatchObject({ ok: false, error: "error.groupKind" });
+    const other = (createGroup(s, "Second") as { id: string }).id;
     expect(addToGroup(s, other, panel.id)).toMatchObject({ ok: false, error: "error.inGroup" });
     expect(removeFromGroup(s, g.id, panel.id).ok).toBe(true);
     expect(addToGroup(s, other, panel.id).ok).toBe(true);
     const back = deserialize(serialize(s));
     expect(back.shop.groups).toEqual(s.shop.groups);
+  });
+
+  it("load old groups without their kind and sell switches, a group that did not deploy with every server inactive", () => {
+    const s = withShop(12);
+    const old = JSON.parse(serialize(s)), [g] = old.shop.groups;
+    old.shop.groups = [{ ...g, kind: "panel", sale: ["webHosting"], deploy: false, inactive: undefined, fill: undefined }];
+    old.shop.stock = { webHosting: 3 };
+    const back = deserialize(JSON.stringify(old)).shop;
+    expect(back.groups).toEqual([{ id: g.id, name: g.name, members: g.members, inactive: g.members, fill: "spread" }]);
+    expect("stock" in back).toBe(false);
   });
 });
 

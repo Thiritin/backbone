@@ -20,7 +20,7 @@ export const OpenBox = ({ size = 26 }: { size?: number }) => (
 const PATHS: Partial<Record<ScreenName, string>> = {
   home: "M2 8 8 3 14 8 M4 7V13H12V7",
   products: "M2 5 8 2 14 5V11L8 14 2 11Z M2 5 8 8 14 5 M8 8V14",
-  options: "M3 4H13 M3 8H13 M3 12H13 M6 2.5V5.5 M10 6.5V9.5 M5 10.5V13.5",
+  settings: "M3 4H13 M3 8H13 M3 12H13 M6 2.5V5.5 M10 6.5V9.5 M5 10.5V13.5",
   servers: "M2.5 2.5H13.5V6.5H2.5Z M2.5 9.5H13.5V13.5H2.5Z M5 4.5H6 M5 11.5H6",
   orders: "M1.5 2.5H3.5L5 10.5H12.5L14 4.5H4 M6 13.5H6.5 M11 13.5H11.5",
   clients: "M6 7.5A2.5 2.5 0 1 0 6 2.5A2.5 2.5 0 1 0 6 7.5 M1.5 13.5C2 10.5 10 10.5 10.5 13.5 M11 3A2 2 0 0 1 11 7 M12.5 9.5C14 10.2 14.5 11.5 14.5 13",
