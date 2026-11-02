@@ -61,8 +61,8 @@ export function DirectAdmen(p: PanelProps) {
       </header>
       <main className="da-main">
         {as ? <>
-          <p><button className="da-link" onClick={() => setAs(null)}>{level === "user" ? t("web.da.back") : level === "reseller" ? t("web.rs.level") : t("browser-consoles-2.adminLevel")}</button></p>
-          <UserHome game={p.game} c={p.c} workloadId={as} rows={rows} openPma={() => setPma(as)} />
+          <UserHome game={p.game} c={p.c} workloadId={as} rows={rows} openPma={() => setPma(as)}
+            up={<button className="da-link" onClick={() => setAs(null)}>{level === "user" ? t("web.da.back") : level === "reseller" ? t("web.rs.level") : t("browser-consoles-2.adminLevel")}</button>} />
         </> : level === "user" ? <UserLevel game={p.game} c={p.c} rows={rows} onPick={setAs} /> : level === "reseller" ? <ResellerLevel game={p.game} c={p.c} onUserLevel={setAs} /> : <>
         <nav className="da-crumb"><button className="da-link" onClick={() => setTab("software")}>{t("browser-consoles-2.home")}</button>{crumb && <> » {crumb}</>}</nav>
         {tab === "custombuild" && <><CustomBuild game={p.game} c={p.c} late={late} /><ComponentsPage game={p.game} c={p.c} /></>}

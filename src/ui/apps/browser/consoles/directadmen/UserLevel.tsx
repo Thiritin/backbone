@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { t } from "../../../../../i18n/en";
 import type { GameState } from "../../../../../sim/50-state";
 import type { Cluster } from "../../../../../sim/60-infra/cluster";
@@ -37,7 +37,7 @@ export function UserLevel({ game, rows, onPick }: { game: GameState; c: Cluster;
 }
 
 // One web space's User Level after "Login as": DirectAdmin's link sections, and a tool page per link.
-export function UserHome({ game, c, workloadId, rows, openPma, initial = null }: { game: GameState; c: Cluster; workloadId: string; rows: Row[]; openPma?: () => void; initial?: UserPage | null }) {
+export function UserHome({ game, c, workloadId, rows, openPma, initial = null, up }: { game: GameState; c: Cluster; workloadId: string; rows: Row[]; openPma?: () => void; initial?: UserPage | null; up?: ReactNode }) {
   const act = usePageAct(), openApp = useStore((s) => s.openApp), [page, setPage] = useState<UserPage | null>(initial);
   const ws = webspaceOf(game, workloadId);
   if (!ws) return null;
@@ -54,7 +54,7 @@ export function UserHome({ game, c, workloadId, rows, openPma, initial = null }:
   ];
   const go = (id: Link) => (id === "pma" ? openPma?.() : id === "webmail" ? openApp("Browser", { kind: "url", id: `webmail.${ws.domain}/` }) : setPage(id));
   const link = (id: Link) => <button key={id} className="da-link" onClick={() => go(id)}>{tt(keys[id])}</button>;
-  const crumb = <nav className="da-crumb"><button className="da-link" onClick={() => setPage(null)}>{ownerOf(game, workloadId) ?? ws.account}</button>{page && <> » {tt(keys[page])}</>}</nav>;
+  const crumb = <nav className="da-crumb">{up && <>{up} » </>}<button className="da-link" onClick={() => setPage(null)}>{ownerOf(game, workloadId) ?? ws.account}</button>{page && <> » {tt(keys[page])}</>}</nav>;
   if (game.security.offline.includes(c.id)) return <>{crumb}<p className="cx-empty">{t("readouts.cp.offline")}</p></>;
   if (page === "logs") return <>{crumb}<p className="da-ul-logs">{ws.domain}: {link("access")} | {link("errors")}</p></>;
   if (page) return <LookContext.Provider value="directadmen">{crumb}<WebTool game={game} c={c} workloadId={workloadId} page={page} /></LookContext.Provider>;
