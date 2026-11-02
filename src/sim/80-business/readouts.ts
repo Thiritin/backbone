@@ -2,7 +2,7 @@
 import { softwareById } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
 import type { Cluster, Workload } from "../60-infra/cluster";
-import { serviceMbps } from "../60-infra/network";
+import { serviceMbps, serviceTrafficGb } from "../60-infra/network";
 import { diskFill, workloadLoad, workloadUse } from "../60-infra/usage";
 import { ascii, companyDomain } from "../30-customers/domains";
 import { controlPlaneUp, liveBetween, workloadOnline } from "../60-infra/cluster";
@@ -50,20 +50,16 @@ export function panelTasks(s: GameState, c: Cluster, now: number = s.hour): Pane
 }
 
 export const LEVEL_WARN = 0.8, LEVEL_BAD = 0.95;
-export const TRAFFIC_SAMPLE_HOURS = 6, TRAFFIC_WINDOW_HOURS = 730;
+export { TRAFFIC_SAMPLE_HOURS, TRAFFIC_WINDOW_HOURS } from "../60-infra/network";
 export type Level = "ok" | "warn" | "bad";
 export const levelOf = (used: number, of: number): Level => { const f = of > 0 ? used / of : 0; return f >= LEVEL_BAD ? "bad" : f >= LEVEL_WARN ? "warn" : "ok"; };
 
 export interface AccountUse { disk: [number, number]; traffic: [number, number]; mailboxes: number; level: Level }
 
-// GB moved by the account's service over the last month, summed from sampled Mbit/s.
+// GB moved by the account's service over the last month.
 export function trafficUsedGb(s: GameState, w: Workload, now: number = s.hour): number {
   const v = s.services.find((x) => x.id === w.serviceId);
-  if (!v) return 0;
-  const end = v.endedAt ?? now;
-  let mbps = 0;
-  for (let h = Math.max(v.startedAt, now - TRAFFIC_WINDOW_HOURS); h <= Math.min(now, end); h += TRAFFIC_SAMPLE_HOURS) mbps += serviceMbps(s, v, h);
-  return (mbps * TRAFFIC_SAMPLE_HOURS * 3600) / 8000;
+  return v ? serviceTrafficGb(s, v, now) : 0;
 }
 
 export function accountUse(s: GameState, w: Workload): AccountUse {

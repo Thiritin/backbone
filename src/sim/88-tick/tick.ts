@@ -59,6 +59,7 @@ import { webpanelTick } from "../60-infra/webpanel";
 import { gamesTick } from "../85-products/games-tick";
 import { securityTick } from "../60-infra/security";
 import { usageTick } from "../60-infra/usage";
+import { overuseTick } from "../80-business/overuse";
 import { productsTick } from "../85-products/products";
 import { COMPONENTS, manufacturerByName, modelById, specOf } from "../10-catalog/hardware";
 import { familyById, familyFailure } from "../10-catalog/families";
@@ -364,6 +365,7 @@ export function tick(state: GameState): SimEvent[] {
   events.push(...migrationTick(state));
   events.push(...productsTick(state));
   events.push(...usageTick(state));
+  overuseTick(state);
   gamesTick(state);
   statsTick(state);
   events.push(...billingTick(state));

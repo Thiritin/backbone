@@ -1661,7 +1661,7 @@ A personal page (the other three quarters of private individuals, unless they bo
 
 A cluster of nothing but game servers peaks at about 1.0 on Saturday evenings, while a mixed cluster stays near 0.5, so mixing customer types roughly doubles safe overcommit. The cluster view shows booked capacity, this week's forecast peak and last week's actual peak.
 
-**How the first build plays.** Usage follows the curves with ±20% jitter per workload and hour, without surges yet. A node's use is the sum of its workloads plus its control plane at full load; a stopped, restoring or lost workload uses nothing. Instead of killing workloads, an overloaded node slows them: performance is cores ÷ busy vCPUs, and 50% when the disk pool runs over. A node whose RAM in use exceeds its installed RAM freezes instead of slowing: every workload on it is down, an outage for each customer on it, until the player stops or moves enough workloads or the hourly load drops. The freeze is checked every hour and again right after a stop, start or move. Customers notice only the performance lost past their tolerance, which depends on what the service runs (its usage curve): game 5%, shop and enterprise 10%, news and VPN 15%, business 20%, blog 25%, dev 35%, backup 60%, scaled by 0.5 to 1.5 per customer from the seed and never shown to the player. Every hour each customer on a slowed node loses 0.1 × the noticed loss in happiness, and each of their services opens a "really slow" outage ticket with a chance of 10% × the noticed loss unless one is already open. **Overprovisioning is always allowed.** Players may book more vCPU and RAM than a node, a cluster or a panel VM has, whatever the software; it only costs performance. The owner's rule (bug report): no cluster may report no room when room is there, webhosting packages need minimal resources, overprovisioning should always be allowed and only hurts performance when customers use it, and limits per software make no sense because overprovisioning is not a per software thing. So the one hard limit is disk, at twice the usable RAID disk for a node and at the VM's disk inside a panel VM, because data has to sit somewhere. The scheduler still prefers a node whose installed RAM the booking fits (pack takes the busiest of them, spread the idlest) and falls back to the idlest node when none is left. The consequences are the ones above: slowdowns while the CPU in use passes the cores, the freeze while the RAM in use passes the installed RAM. The capacity bars show booked against physical and run past 100% in the warning colour.
+**How the first build plays.** Usage follows the curves with ±20% jitter per workload and hour, without surges yet. A node's use is the sum of its workloads plus its control plane at full load; a stopped, restoring or lost workload uses nothing. Instead of killing workloads, an overloaded node slows them: performance is cores ÷ busy vCPUs, and 50% when the disk pool runs over. A node whose RAM in use exceeds its installed RAM freezes instead of slowing: every workload on it is down, an outage for each customer on it, until the player stops or moves enough workloads or the hourly load drops. The freeze is checked every hour and again right after a stop, start or move. Customers notice only the performance lost past their tolerance, which depends on what the service runs (its usage curve): game 5%, shop and enterprise 10%, news and VPN 15%, business 20%, blog 25%, dev 35%, backup 60%, scaled by 0.5 to 1.5 per customer from the seed and never shown to the player. Every hour each customer on a slowed node loses 0.1 × the felt loss in happiness, and each of their services opens a "really slow" outage ticket with a chance of 10% × the felt loss unless one is already open. The felt loss is the noticed loss × the share of the customer's segment looking at that hour (Noticing outages) × the segment's sensitivity relative to business customers, capped at 1 (private customers 0.0075) × a duration factor that grows from 1 to 3 over the first 24 hours of an unbroken slowdown. A slow evening barely registers with a private customer, and a slowdown dragging through business hours costs an office the most. **Overprovisioning is always allowed.** Players may book more vCPU and RAM than a node, a cluster or a panel VM has, whatever the software; it only costs performance. The owner's rule (bug report): no cluster may report no room when room is there, webhosting packages need minimal resources, overprovisioning should always be allowed and only hurts performance when customers use it, and limits per software make no sense because overprovisioning is not a per software thing. So the one hard limit is disk, at twice the usable RAID disk for a node and at the VM's disk inside a panel VM, because data has to sit somewhere. The scheduler still prefers a node whose installed RAM the booking fits (pack takes the busiest of them, spread the idlest) and falls back to the idlest node when none is left. The consequences are the ones above: slowdowns while the CPU in use passes the cores, the freeze while the RAM in use passes the installed RAM. The capacity bars show booked against physical and run past 100% in the warning colour.
 
 **Memory reservation.** A tier 2 training after Monitoring, 100 know-how and 5 days. It adds a Memory reservation switch to every cluster, off by default. With it on, a placement or a move that would book RAM beyond a node's installed RAM less its control plane is refused, so the node cannot freeze; it is the only way RAM refuses a booking.
 
@@ -1695,6 +1695,18 @@ Disk use starts at 30% of booked and stops at 100%; the average customer reaches
 **Outgrowing a service.** Once a day at noon, a customer whose disk is at 90% or more, or whose CPU demand × the curve's weekly median reaches 0.9 (near 100% for more than half the week), writes an upgrade ticket with a chance of 1 in 7, so about a week after crossing the line; sales turns it into an expansion request. A full disk breaks the site: the customer loses 2 happiness a day and writes an "our site shows errors" upgrade ticket with a chance of 25% a day while none is open. A fast-growing disk crosses 90% after about 14 months and fills after 17. A fast-growing shop's CPU pegs after about 17 months, a news or enterprise site's after two years, while game servers and office sites, quiet for most of the week, take ten.
 
 **Before and after.** Measured over 30 days with a mixed set of customers (web hosting, VPS, game servers, VPN, storage, dedicated): early game in 2005 with 13 services moves 0.59 TB before and after, with a 95th percentile of 3.4 Mbit/s before and 3.8 after (night jobs add short peaks to a small base); mid game in 2012 with 200 services moves 17.9 TB before and 17.8 after, with a 95th percentile of 103 Mbit/s before and 88 after, so transit bills drop about 15% (€311 to €264 a month at Cogentle's price), because the floors and staggered peaks flatten the sum.
+
+### Traffic overuse
+
+A service's traffic grows 20% a year from the day it started while its plan stays the same, so a service that keeps its plan for a few years moves more traffic in a month than the plan includes. The customer page shows the last month's traffic against the plan for every service with included traffic, and a service over its plan offers three answers.
+
+| Answer | Effect |
+| --- | --- |
+| Throttle traffic | The service stays at its booked traffic from then on, so the transit it costs stops growing. The customer loses 10 happiness. Lifting the throttle lets the traffic grow again. |
+| Bill overage | An invoice for the GB over the plan, at the line's traffic rate per 100 GB (the player's rate in Products, else the market's). The customer loses 5 happiness. |
+| Offer upgrade | The customer answers with an upgrade request for the next bigger plan, which the player quotes in Sales and the customer accepts or counters like any other upgrade. |
+
+A bill or an upgrade offer covers 730 hours, so the same service can be billed or offered an upgrade once a month. The state holds a company-wide `overusePolicy` (null by default): when it is set, the daily noon check applies that answer to every service over its traffic that is not yet throttled or handled this month. The player sets it in the Books app's billing rules after the Traffic billing training (250 know-how, 10 days, after Product management); the choices are off, throttle, bill or offer upgrade. An upgrade offer still waits for the player to quote it in Sales.
 
 ## Resellers
 
@@ -1996,7 +2008,7 @@ A HyperVee cluster has virtual switches, up to 8, starting with one external Def
 
 A container shows its beancounters: kmemsize, privvmpages, oomguarpages, numproc and numtcpsock with held, maxheld, barrier, limit and failcnt. Memory is in 4 KB pages. Failcnt is stored on the container for privvmpages and numproc; the rest is derived from its use.
 
-Each hour a node with more than 90% of its RAM in use takes burst memory back first: only containers with a burst allowance collect privvmpages failcnt. A node out of RAM, or with more busy vCPUs than cores, makes every container fail privvmpages and numproc. The increment is 40 times the container's share of the node RAM, at least 1, per hour. Six hours in a row slow the site like any other slowdown. Past 24 failcounts in a day the OOM killer stops the container for an hour and the hour counts as downtime. The player fixes it by raising the container's size, moving it or selling less of the node.
+Each hour a node with more than 90% of its RAM in use takes burst memory back first: only containers with a burst allowance collect privvmpages failcnt. A node out of RAM makes every container fail privvmpages; busy vCPUs past the cores slow the node but never touch the beancounters. The increment is 40 times the container's share of the node RAM, at least 1, per hour. Six hours in a row slow the site like any other slowdown. Each hour a node out of RAM has the OOM killer stop one container for an hour, the one furthest past its barrier, else the largest. It frees its RAM, shows "OOM killed" in the console, and the hour counts as downtime. The player fixes it by raising the container's size, moving it or selling less of the node.
 
 Burst memory ranges from 0 to twice the container's RAM, in steps of a quarter GB. It is not booked and costs nothing.
 
@@ -2277,6 +2289,17 @@ Each service records `appVersion` (the release year it runs) and `appUpdatedAt` 
 | Clean-up by the customer | Medium and high skill: 50% clean it up themselves 1 to 3 days after the hit; low skill never |
 | Third hack within 365 days | The customer cancels all services |
 
+**Site clean-up.** Defaced sites are listed in the Security app under Advisories, and the notification opens it on the site. Each offers four actions; any clean-up ends an abuse hold on the site, so it comes back online and stops sending spam.
+
+| Action | Effect |
+| --- | --- |
+| Restore backup | `cleanSite` above; needs a backup |
+| Offer clean-up | The customer answers at once: accepts with 60% ÷ (player rate ÷ market rate), which books the price as a sales ledger line, takes the player that many hours and cleans the site; of those who decline, 25% × (player rate ÷ market rate) cancel all services. Offered once per hack |
+| Remind | 3 minutes of the player's time. The customer cleans the site 1 to 3 days after the hit with 90%, 60% or 30% by high, medium or low skill, low skill included. Once per hack |
+| Suspend for abuse | An abuse hold. The customer's ticket asks about the hack (how-to, topic abuseHold, the same actions as hacked) instead of an invoice |
+
+The price is the web hosting `cleanHour` rate times the hours the site takes: 1, 2 or 4 by the customer's budget, like their order sizes. The market's hourly rate is €85 in 2026 with multiplier 0.6 (€51 in 2005), shown in Pricing beside the player's. Anchor: German web agencies bill €60 to €100 an hour for WordPress clean-up. The hacked and abuseHold tickets also offer paid clean-up as an action, decided the same way; a decline keeps the thread open.
+
 **Notifying.** Notify customers, per app and vulnerability from Monitoring, writes to every site open to it that has not been written to yet: 30 minutes of the player's time per 10 customers. Of the customers who would not update by themselves, 50% answer with a how-to ticket, topic update. Each customer who asks has a fixed wish, drawn by their profile's budget:
 
 | Budget | One-off update | Managed updates | Refuses |
@@ -2442,6 +2465,7 @@ A first-year company earns about 300 know-how; a company with 10,000 customers e
 | Network operations | 2 | 300 | 14 days | Monitoring | Network, buying transit, peering with other networks |
 | Provisioning automation | 2 | 150 | 10 days | Product management | Automatic host for a setup, order automation for quotes, accounts, invoices and setups |
 | Fraud screening | 2 | 200 | 7 days, from 2008 | Product management | Order screening by MaxMined |
+| Traffic billing | 2 | 250 | 10 days | Product management | Automatic answer to traffic over the plan |
 | Documentation | 2 | 200 | 10 days | Product management | Knowledge base |
 | Marketing campaigns | 2 | 300 | 14 days | Marketing basics, Employee management | Marketing |
 | Market research | 3 | 800 | 21 days | Product management, Marketing campaigns | Market |
@@ -2450,7 +2474,7 @@ A first-year company earns about 300 know-how; a company with 10,000 customers e
 | Automation | 3 | 1,500 | 21 days | Employee management, Monitoring | ChadGPT Support, Clipsy Reminders, automated billing rules |
 | Cloud orchestration | 4 | 3,000 | 45 days, from 2010 | High availability, Network operations, Provisioning automation | OpenStash, the Cloud server product line, Watchman auto-balancing (OpenStash) |
 
-The whole tree costs 7,810 know-how and 216 days of training.
+The whole tree costs 8,060 know-how and 226 days of training.
 
 Product management was tier 2 at 200 know-how and 14 days after Marketing basics. The happiness run showed a careful first-year company earns 15 to 40 know-how a month, so the 250 know-how path landed in September to November. As a tier 1 skill at 100 know-how and 7 days, the same company learns it between early May and early July (median early June).
 

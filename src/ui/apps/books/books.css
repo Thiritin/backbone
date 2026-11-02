@@ -28,8 +28,8 @@
 .books-bankbar .seg button { display: inline-flex; align-items: center; gap: 6px; }
 .books-suggest { display: inline-flex; align-items: center; gap: 6px; }
 .books-bank tr.sel .btn { color: var(--text); }
-/* The reference takes the room the other columns leave and cuts off the rest. */
-.books-ref { max-width: 0; width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The name and the reference share the room the other columns leave and cut off the rest. */
+.books-ref, .books-name { max-width: 0; width: 35%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .books-assigned { display: inline-flex; align-items: center; gap: 4px; }
 .books-assigned svg { width: 13px; height: 13px; color: var(--ok); }
 .books-muted { color: var(--text-3); }
@@ -107,5 +107,12 @@
 .books-offline h2 { font-size: 18px; margin: 0 0 10px; }
 .books-offline p { color: #555; }
 
-.books-markpaid-pick { flex-direction: column; align-items: stretch; margin: 12px 0; max-height: 240px; overflow: auto; }
-.books-markpaid-pick button { display: flex; justify-content: space-between; gap: 12px; height: auto; padding: 5px 10px; text-align: left; }
+.alert.books-markpaid { width: 360px; }
+.books-markpaid-pick { width: 100%; box-sizing: border-box; max-height: 240px; overflow: auto; display: grid; gap: 1px; margin: 4px 0 2px; padding: 4px; text-align: left; border: 0.5px solid var(--line-strong); border-radius: 8px; background: var(--field); }
+.books-markpaid-pick label { display: grid; grid-template-columns: auto auto 1fr auto; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 5px; font-size: 11.5px; }
+.books-markpaid-pick label:has(:checked) { background: var(--accent-soft); }
+.books-markpaid-pick input { margin: 0; accent-color: var(--accent); }
+.books-markpaid-wide { grid-column: 2 / -1; }
+.books-markpaid-from { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* A row reached with the arrow keys scrolls clear of the sticky header. */
+.books tbody tr { scroll-margin-top: 32px; }

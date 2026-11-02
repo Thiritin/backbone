@@ -106,6 +106,11 @@ const MAILS: Record<string, [Mail, Mail, Mail]> = {
     (p) => `Malheureusement, nous n'avons pas de sauvegarde de ${site(p)}. Tu devras le restaurer à partir de tes propres fichiers et changer tes mots de passe.`,
     (p) => `Nous ne pouvons pas restaurer ${site(p)} faute de sauvegarde. Reconstruis-le à partir de ta propre copie et garde le logiciel à jour.`,
   ],
+  cleanPaid: [
+    (p) => `Nous pouvons nettoyer ${site(p)} à la main et supprimer les fichiers de l'intrus. Le travail coûte ${euroCents(Number(p.cleanup))} à notre tarif horaire.`,
+    (p) => `Il n'existe aucune sauvegarde de ${site(p)}, mais nous pouvons le nettoyer manuellement pour ${euroCents(Number(p.cleanup))}. Choisis ensuite de nouveaux mots de passe.`,
+    (p) => `Nous retirons volontiers le piratage de ${site(p)} à la main. Facturé à l'heure, le nettoyage revient à ${euroCents(Number(p.cleanup))}.`,
+  ],
   "tpl.explain": [
     () => "Le deuxième paiement correspond à la consommation du mois dernier, que nous facturons à terme échu. Tu n'as pas été débité deux fois.",
     () => "Il y a deux factures parce que la consommation est facturée à la fin de chaque mois pour le mois précédent. Les deux sont correctes, et rien n'a été débité deux fois.",
