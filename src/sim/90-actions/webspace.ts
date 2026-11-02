@@ -5,39 +5,21 @@ import { companyDomain } from "../30-customers/domains";
 import type { GameState } from "../50-state";
 import { licenceBlock } from "../60-infra/licence";
 import {
-  accountFor, ALL_PRIVILEGES, deriveWebspace, hostOf, dbUserMax, MULTI_PHP_YEAR, webspaceOf,
-  type DomainKind, type PartName, type WebLimits, type WebParts, type Webspace,
+  accountFor, ALL_PRIVILEGES, dbUserMax, MULTI_PHP_YEAR, webspaceOf,
+  type DomainKind, type WebLimits, type Webspace,
 } from "../60-infra/webspace";
 import { addSubdomainRecord, dropSubdomainRecord } from "../60-infra/webzone";
 import type { ActionResult } from "./hardware";
+import { fail, FILE_NAME, fixed, folderOk, isFail, join, open, put, under } from "./webspace-base";
 
-const fail = (error: string, params?: Record<string, string>): ActionResult => ({ ok: false, error, ...(params && { params }) });
 const DOMAIN = /^(?=.{4,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24}$/;
 const LABEL = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/;
 const LOCAL = /^[a-z0-9]([a-z0-9._-]{0,62}[a-z0-9])?$/;
 const DB_PART = /^[a-z0-9_]+$/;
-const FILE_NAME = /^[^/\0]{1,255}$/;
 
-// Writes one entry to the overlay; removing an entry the derivation lacks just drops the stored one.
-function put<K extends PartName>(s: GameState, id: string, part: K, key: string, value: WebParts[K][string] | false): void {
-  const o = (s.webspaces[id] ??= {}), m = (o[part] ??= {}) as Record<string, WebParts[K][string] | false>;
-  if (value === false && !(key in (deriveWebspace(s, id)?.[part] ?? {}))) delete m[key];
-  else m[key] = value;
-  if (!Object.keys(m).length) delete o[part];
-  if (!Object.keys(o).length) delete s.webspaces[id];
-}
-
-// The web space, or the error for an unknown one or a host that is offline.
-function open(s: GameState, id: string): Webspace | ActionResult {
-  const ws = webspaceOf(s, id);
-  if (!ws) return fail("error.unknownWorkload");
-  return s.security.offline.includes(hostOf(s, id)!.c.id) ? fail("webspace.error.offline") : ws;
-}
-const isFail = (x: Webspace | ActionResult): x is ActionResult => "ok" in x;
 const full = (ws: Webspace, k: keyof WebLimits, used: number): ActionResult | null =>
   used >= ws.limits[k] ? fail(`webspace.error.limit.${k}`, { max: String(ws.limits[k]) }) : null;
 const password = (p: string): boolean => p.length >= 5 && p.length <= 64;
-const folderOk = (ws: Webspace, folder: string): boolean => !!ws.files[folder]?.dir;
 
 export function createDatabase(s: GameState, workloadId: string, name: string): ActionResult {
   const ws = open(s, workloadId);
@@ -243,16 +225,13 @@ export function deleteCron(s: GameState, workloadId: string, id: string): Action
   return { ok: true, id };
 }
 
-const under = (ws: Webspace, p: string) => Object.keys(ws.files).filter((k) => k === p || k.startsWith(`${p}/`));
-// The four top folders the panel keeps; the player can work inside them but not remove them.
-const fixed = (ws: Webspace, p: string) => [ws.webroot, "logs", "tmp", "mail"].includes(p);
 
 export function createFolder(s: GameState, workloadId: string, parent: string, name: string): ActionResult {
   const ws = open(s, workloadId);
   if (isFail(ws)) return ws;
   if (!FILE_NAME.test(name) || name === "." || name === "..") return fail("webspace.error.fileName");
   if (!folderOk(ws, parent)) return fail("webspace.error.noFolder");
-  const path = `${parent}/${name}`;
+  const path = join(parent, name);
   if (ws.files[path]) return fail("webspace.error.fileTaken");
   put(s, workloadId, "files", path, { dir: true, mb: 0, at: s.hour });
   return { ok: true, id: path };
@@ -275,7 +254,7 @@ export function renameFile(s: GameState, workloadId: string, path: string, name:
   if (!ws.files[path]) return fail("webspace.error.noFile");
   if (fixed(ws, path)) return fail("webspace.error.fixedFolder");
   if (!FILE_NAME.test(name) || name === "." || name === "..") return fail("webspace.error.fileName");
-  const to = `${path.slice(0, path.lastIndexOf("/"))}/${name}`;
+  const to = join(path.slice(0, Math.max(0, path.lastIndexOf("/"))), name);
   if (ws.files[to]) return fail("webspace.error.fileTaken");
   for (const k of under(ws, path)) {
     put(s, workloadId, "files", to + k.slice(path.length), { ...ws.files[k], at: s.hour });
