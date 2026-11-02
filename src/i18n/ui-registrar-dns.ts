@@ -6,6 +6,7 @@ export default {
   "registrarDns.pointsTo": () => "Points to",
   "registrarDns.priority": () => "Priority",
   "registrarDns.pending": () => "Pending",
+  "registrarDns.managed": () => "Automatic",
   "registrarDns.ttl.300": () => "5 minutes",
   "registrarDns.ttl.3600": () => "1 hour",
   "registrarDns.ttl.86400": () => "1 day",
