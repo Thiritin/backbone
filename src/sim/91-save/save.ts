@@ -1,3 +1,4 @@
+import { fillDesk } from "./desk";
 import { fillMail } from "./mail";
 import { migrateBooks } from "./books";
 import { fillShop, installSavedShop } from "./shop";
@@ -179,6 +180,8 @@ export function deserialize(raw: string): GameState {
   s.tax = data.tax ? { ...base.tax, ...data.tax } : s.registration ? legacyTax(s) : base.tax;
   if (data.shop && data.shop.install === undefined) installSavedShop(s);
   fillMail(s, data.mail, !!data.company?.zone);
+  fillDesk(s, data.desk !== undefined);
+  s.webmail = { ...base.webmail, ...data.webmail };
   return s;
 }
 

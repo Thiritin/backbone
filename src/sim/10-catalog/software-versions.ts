@@ -12,6 +12,8 @@ const line = (rows: Row[], majorOf: (version: string) => string = (x) => x): Sof
   rows.map(([version, release, updates, security, name = ""]) =>
     ({ version, name, major: majorOf(version), release: hourOfMonth(release), updatesUntil: at(updates), securityUntil: at(security) }));
 const whole = (version: string): string => version.split(".")[0];
+// The name that marks a development release.
+export const DEVEL = "devel";
 
 // Release months marked unverified in the doc take January of the year given; their ends follow each product's pattern.
 const SOFTWARE_LINES: Record<string, SoftwareVersion[]> = {
@@ -133,6 +135,20 @@ const SOFTWARE_LINES: Record<string, SoftwareVersion[]> = {
     ["RELEASE.2016-06-03", "2016-06", "2021-05", "2021-05"], ["RELEASE.2021-05-11", "2021-05", "2025-05", "2025-05"],
     ["RELEASE.2025-05-24", "2025-05", "2025-10", "2025-10"], ["RELEASE.2025-10-15", "2025-10", "2025-12", "2026-02"],
   ]),
+  // docs/design/plans/webmail-server.md, 3.1: updates end with the next stable release, security fixes a year later.
+  // Rows named devel are the development line, which only the Edge channel takes.
+  squirrelmeal: line([
+    ["1.4.4", "2005-01", "2005-07", "2006-07"], ["1.5.1", "2005-02", "2006-12", "2007-12", DEVEL], ["1.4.5", "2005-07", "2006-02", "2007-02"],
+    ["1.4.6", "2006-02", "2007-05", "2008-05"], ["1.4.10", "2007-05", "2007-12", "2008-12"], ["1.4.13", "2007-12", "2008-05", "2009-05"],
+    ["1.4.15", "2008-05", "2008-09", "2009-09"], ["1.4.16", "2008-09", "2008-12", "2009-12"], ["1.4.17", "2008-12", "2009-05", "2010-05"],
+    ["1.4.19", "2009-05", "2010-03", "2011-03"], ["1.4.20", "2010-03", "2010-07", "2011-07"], ["1.4.21", "2010-07", "2011-07", "2012-07"],
+    ["1.4.22", "2011-07", "2013-05", "2014-07"], ["1.4.23", "2013-05", "2021-10", "2022-10"], ["1.4.23 (2021)", "2021-10", null, null],
+    ["1.5.2", "2021-11", null, null, DEVEL],
+  ]),
+  postfixitadmin: line([
+    ["2.1", "2005-01", "2008-01", "2009-01"], ["2.2", "2008-01", "2009-07", "2010-07"], ["2.3", "2009-07", "2016-08", "2017-08"],
+    ["3.0", "2016-08", "2018-05", "2019-05"], ["3.2", "2018-05", "2020-11", "2021-11"], ["3.3", "2020-11", null, null],
+  ]),
   // The last four stable releases are maintained.
   postfixit: line([
     ["2.2", "2005-03", "2009-05", "2009-05"], ["2.3", "2006-07", "2010-02", "2010-02"], ["2.4", "2007-03", "2011-01", "2011-01"],
@@ -212,13 +228,23 @@ const LINES: Record<string, SoftwareVersion[]> = { ...SOFTWARE_LINES, ...OS_LINE
 export const versionsOf = (product: string): SoftwareVersion[] => LINES[product] ?? [];
 export const versionInfo = (product: string, version: string): SoftwareVersion | undefined => versionsOf(product).find((x) => x.version === version);
 // The newest release out at the hour; the first one before any is out.
-export const versionAt = (product: string, hour: number): SoftwareVersion => {
-  const vs = versionsOf(product);
+// The releases a channel takes: Edge the development line once one is out, every other channel the rest.
+const pool = (product: string, edge: boolean, hour: number): SoftwareVersion[] => {
+  const vs = versionsOf(product), devel = edge && vs.some((x) => x.name === DEVEL && x.release <= hour);
+  return vs.filter((x) => (x.name === DEVEL) === devel);
+};
+export const versionAt = (product: string, hour: number, edge = false): SoftwareVersion => {
+  const vs = pool(product, edge, hour);
   return [...vs].reverse().find((x) => x.release <= hour) ?? vs[0];
 };
-// The newest release out at the hour of the major after the installed version's, or null while there is none.
-export const nextMajor = (product: string, version: string, hour: number): SoftwareVersion | null => {
-  const vs = versionsOf(product), i = vs.findIndex((x) => x.version === version);
+// The newest release out at the hour of the major after the installed version's, or null while there is none. On Edge a
+// development line moves to its newest release.
+export const nextMajor = (product: string, version: string, hour: number, edge = false): SoftwareVersion | null => {
+  if (edge && pool(product, true, hour).some((x) => x.name === DEVEL)) {
+    const v = versionAt(product, hour, true);
+    return v.version !== version && v.release <= hour ? v : null;
+  }
+  const vs = pool(product, false, hour), i = vs.findIndex((x) => x.version === version);
   const major = i < 0 ? undefined : vs.slice(i + 1).find((x) => x.major !== vs[i].major)?.major;
   return vs.filter((x) => x.major === major && x.release <= hour).at(-1) ?? null;
 };

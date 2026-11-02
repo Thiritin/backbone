@@ -1,0 +1,26 @@
+import type { Dict } from "../lang";
+
+export default {
+  "swnews.squirrelmeal.1.4.4": () => "Correções de segurança na página de redação|Melhor tratamento de e-mail MIME com defeito|Traduções atualizadas",
+  "swnews.squirrelmeal.1.5.1": () => "Versão de desenvolvimento da linha 1.5|Ícones novos na lista de pastas|Modelos para o layout das páginas",
+  "swnews.squirrelmeal.1.4.5": () => "Correções de falhas de cross-site scripting|Lista de pastas mais rápida|Compatibilidade com PHP 5",
+  "swnews.squirrelmeal.1.4.6": () => "Correções de segurança no catálogo de endereços|Mensagens de erro do IMAP melhores|Traduções atualizadas",
+  "swnews.squirrelmeal.1.4.10": () => "Correções de segurança para e-mail HTML|Correções na ordenação de pastas|Melhor suporte ao PHP 5.2",
+  "swnews.squirrelmeal.1.4.13": () => "Os downloads da 1.4.11 e da 1.4.12 foram substituídos por cópias adulteradas após uma invasão do servidor de downloads|Reinstale a partir desta versão e confira seus arquivos|Correções de segurança",
+  "swnews.squirrelmeal.1.4.15": () => "Correções de segurança|Melhor tratamento de UTF-8|Correções no gerenciamento de sessões",
+  "swnews.squirrelmeal.1.4.16": () => "Correção de um vazamento do cookie de sessão por HTTP sem criptografia|Traduções atualizadas|Correções menores",
+  "swnews.squirrelmeal.1.4.17": () => "Correções de segurança para cross-site scripting|Melhor filtro HTML|Correções menores",
+  "swnews.squirrelmeal.1.4.19": () => "Correções de segurança na função map_yp_alias|Correções na exibição de mensagens|Traduções atualizadas",
+  "swnews.squirrelmeal.1.4.20": () => "Suporte ao PHP 5.3|Correções de segurança|Correções menores",
+  "swnews.squirrelmeal.1.4.21": () => "Correções para o login com senhas longas|Correções de segurança|Correções menores",
+  "swnews.squirrelmeal.1.4.22": () => "A última versão numerada|Correções de segurança para e-mail HTML|Melhor proteção contra clickjacking",
+  "swnews.squirrelmeal.1.4.23": () => "Snapshot para PHP 5.4 e 5.5|Correções de segurança|Filtro HTML atualizado",
+  "swnews.squirrelmeal.1.4.23 (2021)": () => "Snapshot que roda no PHP 8|Correções de segurança|Traduções atualizadas",
+  "swnews.squirrelmeal.1.5.2": () => "Versão de desenvolvimento para PHP 8|Novo conjunto de modelos|Plugins atualizados",
+  "swnews.postfixitadmin.2.1": () => "Domínios virtuais, caixas de correio e aliases|Administradores de domínio|Respostas de ausência",
+  "swnews.postfixitadmin.2.2": () => "Buscar e-mail de outras contas|Melhor criptografia de senhas|Traduções atualizadas",
+  "swnews.postfixitadmin.2.3": () => "Domínios alias|Interface de linha de comando|Esquemas de senha do Dovecoat",
+  "swnews.postfixitadmin.3.0": () => "Novo visual baseado em Bootstrap|Suporte ao PHP 7|Senha de instalação mais segura",
+  "swnews.postfixitadmin.3.2": () => "Instalação em duas etapas|Melhor exibição da cota|Suporte ao PHP 7.2",
+  "swnews.postfixitadmin.3.3": () => "Suporte ao PHP 8|Expiração de senhas|Correções de segurança",
+} satisfies Dict;

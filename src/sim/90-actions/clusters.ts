@@ -51,7 +51,7 @@ const blank = (s: GameState, id: string, name: string, az: string, kind: Softwar
   jobs: [], drs: "off", recs: [], acks: [], pools: [], php: phpAt(yearOf(s.hour)), phpUntil: -1, ha: { ...HA_OFF }, version: yearOf(s.hour), updatedAt: s.hour,
 });
 // The name a cluster in one of the player's VMs gets, by the kind of its software.
-const PREFIX: Record<SoftwareKind, string> = { panel: "Web", cloud: "Cloud", game: "Game", mail: "Mail", dns: "DNS", vpn: "VPN", storage: "Storage", backup: "Backup" };
+const PREFIX: Record<SoftwareKind, string> = { panel: "Web", cloud: "Cloud", game: "Game", mail: "Mail", mailweb: "Webmail", dns: "DNS", vpn: "VPN", storage: "Storage", backup: "Backup" };
 
 // The next free name of the pattern, numbered from 1.
 export const freeName = (s: GameState, base: string): string => {

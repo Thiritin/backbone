@@ -391,6 +391,7 @@ Each milestone is one pull request, green on `npm run typecheck`, `npm test` and
 - Tests: `tests/desk-catalog.test.ts` (every page of every desk round-trips, `parseDesk` rejects other desks' paths, token formats, priority table, a feature starts in the researched year), and `tests/support-desks.test.ts` rewritten from the old gates to the new ones.
 
 **M3. Desk state, ticket fields, old saves.**
+- Built: `DeskState` in `40-support/desk.ts` has `hosting` as `legacy`, `hosted` or `self` with its `clusterId`, and `lastRef` for sequential numbers; `nextRef` draws OsTickit's random six digits from the seed, so a save numbers its tickets the same way every time it loads. Until M4 the Pear Store install sets up a legacy desk and cancelling removes it, so `s.desk` always matches `s.installed`. The ticket fields are optional in the type, filled for every saved ticket by `fillDesk`. No action refuses anything yet, so no error keys were added.
 - Sim: `DeskState` (`id`, `hosting`, `departments`, `rules`, `addons`, `tenant`; channels live in `s.mail.channels` of `mail-core`), `s.desk`, ticket fields with defaults, `fillDesk` for old saves and the legacy desk, `deskStatus`, `deskReachable(s, ticket)`, `closeTicket` and `supportTick` for customerless kinds, `resolve()` returning `notfound` for `support.<domain>` until a desk exists.
 - UI: none.
 - i18n: error keys.

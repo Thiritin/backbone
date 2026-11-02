@@ -16,7 +16,8 @@ import { isMgmtDevice, oobUp } from "../60-infra/oob";
 import { linkStatus, powered, working } from "../60-infra/status";
 import { nodeUsage } from "../60-infra/usage";
 import { BOARD_HOST } from "./sponsorboard";
-import { consoleAt, isDefaced } from "./consoles";
+import { consoleAt, consoleHost, isDefaced } from "./consoles";
+import { defaultWebmail } from "./webmail";
 import { customerSite, shopStatus, siteHost, siteStatus, slowHost } from "./website";
 import { vendorHost, vendorLive, VENDORS } from "./vendors";
 import { shopActive } from "./shop";
@@ -178,6 +179,13 @@ export function resolve(s: GameState, raw: string): Resolved {
     if (!s.marketing.launched) return out({ kind: "notfound" });
     const st = siteStatus(s);
     return out({ kind: "company" }, st === "up" ? "fast" : st === "slow" ? "slow" : "down");
+  }
+  // No page answers on the desk address until the desk site exists.
+  if (host === `support.${domain}`) return out({ kind: "notfound" });
+  // The default webmail front end answers at webmail.<domain> like on its machine.
+  if (s.company.domain && host === `webmail.${domain}`) {
+    const c = defaultWebmail(s), h = c && consoleHost(s, c), m = h && machineOf(s, h, false);
+    return c && m ? { url, host, path, page: { kind: "console", hostname: m.hostname, clusterId: c.id, defaced: isDefaced(s, c), path }, load: m.load } : out({ kind: "notfound" });
   }
   if (host === `portal.${domain}`) return shopActive(s) && s.shop.install ? out({ kind: "shop" }, shopLoad()) : out({ kind: "notfound" });
   const site = s.services.find((v) => !!v.domain && (v.domain === host || `www.${v.domain}` === host))
