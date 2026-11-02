@@ -1,7 +1,7 @@
 import { Receipt, Send } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { euroCents } from "../../../sim/00-core/money";
-import { addressFor, type Address } from "../../../sim/30-customers/addresses";
+import { ownAddress, type Address } from "../../../sim/30-customers/addresses";
 import { invoiceTotal, type Invoice, type InvoiceLine, type InvoiceStatus } from "../../../sim/45-billing/billing";
 import type { GameState } from "../../../sim/50-state";
 import { sendInvoice } from "../../../sim/90-actions/billing";

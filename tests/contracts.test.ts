@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
 import { DATACENTERS, spacePrice } from "../src/sim/20-world/datacenters";
+import { openAccount } from "../src/sim/46-finance/bank";
 import { type GameState } from "../src/sim/50-state";
 import { locationRent } from "../src/sim/60-infra/status";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
-import { addLocation, buyRack, cancelContract, closeLocation, noticeEnd, revokeCancel, sellRack } from "../src/sim/90-actions/hardware";
+import { addLocation, buyRack, type ColoOrder, cancelContract, closeLocation, noticeEnd, revokeCancel, sellRack } from "../src/sim/90-actions/hardware";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { freeFloor, newGame } from "./fixtures";
 
@@ -77,5 +78,38 @@ describe("contracts", () => {
     const list = FR5.positionPrice;
     FR5.positionPrice = list * 2;
     try { expect(locationRent(s, loc)).toBe(before); } finally { FR5.positionPrice = list; }
+  });
+});
+
+describe("colocation order details", () => {
+  const order = (s: GameState, kind: "debit" | "transfer", address = { street: "Kellerweg 1", zip: "60311", city: "Frankfurt" }): ColoOrder => ({
+    company: s.company.name, name: "Tin Becker", address, payment: kind === "debit" ? { kind, iban: "DE00", holder: s.company.name } : { kind },
+  });
+  const banked = () => { const s = rich(); s.bank = openAccount(s, "sparklasse"); return s; };
+
+  it("refuses a billing address that is not complete", () => {
+    const s = banked();
+    expect(err(addLocation(s, FR5.id, "share", 2, order(s, "transfer", { street: "", zip: "60311", city: "Frankfurt" })))).toBe("error.orderAddress");
+    expect(err(addLocation(s, FR5.id, "share", 2, { ...order(s, "transfer"), name: " " }))).toBe("error.orderName");
+    expect(s.contracts).toEqual([]);
+  });
+
+  it("keeps the billing contact on the contract and debits the rent of a direct debit order", () => {
+    const s = banked();
+    ok(addLocation(s, FR5.id, "share", 2, order(s, "debit")));
+    expect(s.contracts[0].billing).toEqual({ company: s.company.name, name: "Tin Becker", address: { street: "Kellerweg 1", zip: "60311", city: "Frankfurt" } });
+    expect(s.bank!.mandates).toEqual([FR5.name]);
+    runTo(s, s.hour + 24 * 32);
+    const rent = s.payables.find((p) => p.name === FR5.name);
+    expect(rent?.paidAt).not.toBeNull();
+  });
+
+  it("sends an invoice for a transfer order and needs a bank account for a direct debit", () => {
+    const s = banked();
+    ok(addLocation(s, FR5.id, "share", 2, order(s, "transfer")));
+    expect(s.bank!.mandates).toEqual([]);
+    const t = rich();
+    expect(err(addLocation(t, FR5.id, "share", 2, order(t, "debit")))).toBe("error.noBank");
+    expect(ok(addLocation(t, FR5.id, "share", 2))).toMatch(/^loc/);
   });
 });

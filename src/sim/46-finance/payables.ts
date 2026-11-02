@@ -39,7 +39,7 @@ export interface Payable {
   // What Books counts as paid: the payments out assigned to it there. sent is what the supplier received.
   booked: number;
   // A licence order paid by transfer, whose keys the vendor sends once the money arrives.
-  keys?: { order: string; lines: { product: string; edition: string | null; qty: number; to?: string }[] };
+  keys?: { order: string; lines: { product: string; edition: string | null; qty: number; to?: string; replaces?: string }[] };
 }
 
 export const supplierAccount = (supplier: SupplierId): string => {

@@ -17,8 +17,10 @@ import { MODULE_IDS } from "../src/sim/10-catalog/shops";
 import { hourOf } from "../src/sim/00-core/time";
 import { brandFrom, componentParts, fits, genOf, modelById, type FormFactor, type PartSpec } from "../src/sim/10-catalog/hardware";
 import type { Resources } from "../src/sim/10-catalog/products";
-import { device, deviceDefaults, newGame as blankGame, type GameState } from "../src/sim/50-state";
-import { openAccount } from "../src/sim/46-finance/bank";
+import { device, deviceDefaults, newGame as blankGame, type GameState, type Licence } from "../src/sim/50-state";
+import { cardDetails, openAccount } from "../src/sim/46-finance/bank";
+import { hostOf } from "../src/sim/80-business/vendor-shop";
+import { addToCart, checkout, type OrderDetails } from "../src/sim/90-actions/vendor-shop";
 import { START_CASH } from "../src/sim/10-catalog/economy";
 
 // Games with the savings already in hand and no bank account, the way every game started before the account came first.
@@ -42,7 +44,7 @@ import { portPeers } from "../src/sim/60-infra/status";
 import { leaseTick } from "../src/sim/60-infra/lan";
 import { setPortShare } from "../src/sim/90-actions/lan";
 import { imageOf, serverOsAt, type OsImage, type ServerOsId } from "../src/sim/10-catalog/server-os";
-import { softwareById } from "../src/sim/10-catalog/platforms";
+import { footprint, IN_VM, softwareById } from "../src/sim/10-catalog/platforms";
 import { yearOf } from "../src/sim/00-core/time";
 import { STARTER_APPS } from "../src/sim/10-catalog/store";
 import { legacyRegistration } from "../src/sim/80-business/office";
@@ -168,7 +170,9 @@ export function join(s: GameState, clusterId: string, deviceId: string) {
 // A panel VM on a hypervisor cluster with its panel already installed; returns the panel host id.
 export const panelVm = (s: GameState, clusterId: string, panel = "freepanel", size?: Resources): string => {
   if (isLicensed(panel) && trialDaysOf(panel) === null) issueKey(s, panel, topTier(panel)?.id ?? null);
-  return done(s, must(createPanelVm(s, clusterId, panel, size)), { panel });
+  // The panel's own footprint of the year, so the fixture fits whatever the catalog asks.
+  const fit = footprint(softwareById(panel), yearOf(s.hour)), min = { vcpu: Math.max(2, Math.ceil(fit.vcpu / IN_VM) + 1), ramGb: Math.max(2, Math.ceil(fit.ramGb / IN_VM) + 1), diskGb: Math.max(50, fit.diskGb + 40) };
+  return done(s, must(createPanelVm(s, clusterId, panel, size ?? min)), { panel });
 };
 
 // A bare-metal panel host on a free mounted server with its panel already installed; returns the panel host id.
@@ -301,6 +305,22 @@ export function withCard<S extends GameState>(s: S, limit = 100_000): S {
   return s;
 }
 
+// A licence order as the checkout form sends it; a card payment types in the company card's own details.
+export function orderDetails(s: GameState, kind: "card" | "transfer"): OrderDetails {
+  const c = cardDetails(s);
+  return {
+    company: s.company.name, name: "Tin Becker", address: { street: "Kellerweg 1", zip: "60311", city: "Frankfurt" }, email: "tin@example.com",
+    payment: kind === "card" ? { kind, number: c?.number ?? "", expiry: c?.expires ?? "", cvc: c?.cvc ?? "" } : { kind },
+  };
+}
+
+// Buys one key of an edition on the vendor's site with the card and returns it, unassigned; the key is typed into a panel by activateLicence.
+export function buyKey(s: GameState, product: string, edition: string | null): Licence {
+  if (!s.bank?.card) withCard(s);
+  const bought = addToCart(s, product, edition), paid = bought.ok ? checkout(s, hostOf(product)!, orderDetails(s, "card")) : bought;
+  if (!paid.ok) throw new Error(paid.error);
+  return s.licenses.at(-1)!;
+}
 // An Ionose tenant on the company domain with its MX records live, so a hire gets a mailbox. An own-server tenant would
 // need a running mail server for its MX to resolve.
 export function withDomainMail(s: GameState): GameState {

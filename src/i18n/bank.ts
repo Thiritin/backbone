@@ -79,7 +79,7 @@ export const BANK_EN: Record<string, (p: Params) => string> = {
   "error.cardLimit": () => "The order is above the card limit.",
   "error.cardOnly": () => "This shop takes only credit cards.",
   "ticket.mail.bankCard.subject": () => "Your credit card",
-  "ticket.mail.bankCard.text": (p) => `${p.bank} has approved your credit card with a limit of ${euro(Number(p.limit))}. You receive the card bill at the start of each month.`,
+  "ticket.mail.bankCard.text": (p) => `${p.bank} has approved your credit card${p.last4 ? ` ending in ${p.last4}` : ""} with a limit of ${euro(Number(p.limit))}. You receive the card bill at the start of each month.`,
   "ticket.mail.bankOverdraft.subject": () => "Your overdraft",
   "ticket.mail.bankOverdraft.text": (p) => `${p.bank} has set your overdraft limit to ${euro(Number(p.limit))} at ${p.rate} % interest a year.`,
   "ticket.mail.bankWelcome.subject": (p) => `Your account at ${p.bank}`,
