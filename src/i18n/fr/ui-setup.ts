@@ -33,4 +33,10 @@ export default {
   "setup.mail.working": () => "Fonctionne",
   "setup.mail.failed": () => "Échec",
   "setup.done": () => "La configuration est terminée.",
+  "setup.golive.title": () => "Reprendre les clients existants",
+  "setup.golive.customers": () => "Clients",
+  "setup.golive.matched": () => "Services liés à un produit",
+  "setup.golive.custom": () => "Services à prix personnalisé",
+  "setup.golive.open": () => "Factures ouvertes qui restent dans Books",
+  "setup.golive.done": () => "Repris",
 } satisfies Dict;

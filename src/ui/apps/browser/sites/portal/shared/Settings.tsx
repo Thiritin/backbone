@@ -6,6 +6,7 @@ import { useStore } from "../../../../../store";
 import { CommitInput, toNumber } from "./CommitInput";
 import { CYCLE_LABEL } from "./ProductEdit";
 import type { ScreenProps } from "./nav";
+import { GoLive } from "./GoLive";
 import type { GameState } from "../../../../../../sim/50-state";
 
 // Shop settings: the setup wizard and the discount per billing cycle that prices products with automatic cycle prices.
@@ -16,6 +17,10 @@ export function Settings({ game, go }: ScreenProps) {
       <section>
         <h3>{t("shop-admin.cycleDiscounts")}</h3>
         <CycleDiscounts game={game} />
+      </section>
+      <section>
+        <h3>{t("setup.golive.title")}</h3>
+        <GoLive game={game} />
       </section>
     </div>
   );

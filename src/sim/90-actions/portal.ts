@@ -7,6 +7,7 @@ import type { Product } from "../30-customers/customers";
 import { termPrice } from "../30-market/cycles";
 import type { GameState } from "../50-state";
 import { SITE_LINES } from "../80-business/website";
+import { goLivePlan, matchProduct } from "../80-business/portal";
 import { groupKind, groupProvisions, type ProductGroup, type ShopProduct } from "../80-business/shop";
 import { SERVES } from "../10-catalog/platforms";
 import type { ActionResult } from "./hardware";
@@ -137,5 +138,20 @@ export function setOptionDiscount(s: GameState, cycle: Cycle, discount: number |
 export function finishShopSetup(s: GameState): ActionResult {
   if (!variantOf(s)) return fail("error.needsShop");
   s.shop = { ...s.shop, setupDone: true };
+  return { ok: true };
+}
+
+// Moves running Books customers into the shop: the shop bills their services from the next due date and sends them its
+// emails, and a service matching a product is linked to it. Open Books invoices stay where they are.
+export function importExisting(s: GameState): ActionResult {
+  if (!variantOf(s)) return fail("error.needsShop");
+  const { customers, services } = goLivePlan(s);
+  if (!customers.length) return fail("error.nothingToImport");
+  const ids = new Set(customers.map((c) => c.id)), moving = new Set(services.map((v) => v.id));
+  s.customers = s.customers.map((c) => (ids.has(c.id) ? { ...c, source: "shop" as const } : c));
+  s.services = s.services.map((v) => {
+    const p = moving.has(v.id) ? matchProduct(s, v) : undefined;
+    return p ? { ...v, productId: p.id } : v;
+  });
   return { ok: true };
 }

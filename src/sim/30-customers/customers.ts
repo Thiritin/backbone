@@ -57,6 +57,8 @@ export interface Service { id: string; customerId: string; product: Product; lab
   hostname?: string;
   // Ordered through a shop system, whose revenue cut it then carries.
   viaShop?: boolean;
+  // The shop product a Books service was linked to when existing customers moved into the shop.
+  productId?: string;
   // The hour up to which an email order's first invoice paid it.
   prepaidUntil?: number;
   // A multi-month billing cycle: the hour the paid term ends, its cycle, and the term end the churn roll already ran for.

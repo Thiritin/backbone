@@ -39,7 +39,7 @@ export function ServiceDetail({ game, go, id }: ScreenProps & { id: string }) {
     <div className="pt-screen">
       <dl className="pt-fields">
         <div><dt>{t("shop-admin.client")}</dt><dd><a href="#" onClick={(e) => { e.preventDefault(); go({ name: "client", id: v.customerId }); }}>{game.customers.find((c) => c.id === v.customerId)?.name}</a></dd></div>
-        {field(t("shop-admin.product"), `${PRODUCT[v.product]}: ${v.label}`)}
+        {field(t("shop-admin.product"), game.shop.products.find((p) => p.id === v.productId)?.name ?? `${PRODUCT[v.product]}: ${v.label}`)}
         {field(t("shop-store.cycle"), CYCLE_LABEL[v.cycle ?? "monthly"])}
         {field(t("shop-admin.price"), euroCents(v.price * 730))}
         {live && field(t("shop-terms.nextDue"), formatDay(v.termEnd ?? nextMonthStart(game.hour)))}

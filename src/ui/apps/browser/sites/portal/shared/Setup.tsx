@@ -9,6 +9,7 @@ import { CycleDiscounts } from "./Settings";
 import { Products } from "./Products";
 import { Servers } from "./Servers";
 import { PaymentMethods } from "./Payments";
+import { GoLive } from "./GoLive";
 
 // The shop's first-run wizard; the step sits in the address so a product opened from it comes back to the same step.
 export function ShopSetup({ screen, ...props }: ScreenProps & { screen: Screen }) {
@@ -28,6 +29,7 @@ export function ShopSetup({ screen, ...props }: ScreenProps & { screen: Screen }
         <div><dt>{t("setup.mail.delivery")}</dt><dd>{t(mailImpaired(game) ? "setup.mail.failed" : "setup.mail.working")}</dd></div>
       </dl>
     ) },
+    { id: "golive", label: t("setup.golive.title"), body: <GoLive game={game} /> },
     { id: "done", label: t("setup.step.done"), body: <DoneStep links={done.map(([name, key]) => [t(key), () => finish(name)])} /> },
   ];
   return <SetupWizard program={shopById(game.shop.variant!).name} steps={steps} step={screen.tab} onStep={(tab) => go({ name: screen.name, tab })} onClose={() => finish()} />;
