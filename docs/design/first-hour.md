@@ -1,16 +1,16 @@
 # Backbone first hour
 
-This script follows a new player from the first second of a new game to the tenth customer after the three friends, using the numbers in the [economy model](economy/README.md). At 1×, one game day lasts one real minute, so those ten customers arrive after about an hour of play, between 9 February and 16 March 2005.
+This script follows a new player from the first second of a new game to the tenth customer, using the numbers in the [economy model](economy/README.md). At 1×, one game day lasts one real minute, so those ten customers arrive after about an hour of play, between 9 February and 16 March 2005.
 
 ## Goals
 
 | Goal | Target |
 | --- | --- |
 | Everything bought and set up | Day 2, Monday 3 January, once the company is registered |
-| Friends moved in | The day the line goes live, day 14 with the business line |
-| First paying customer after the friends | Days 15 to 18 |
+| Web host online | The day the line goes live, day 14 with the business line |
+| First paying customer | Days 15 to 18 |
 | First invoice paid | Days 17 to 20 |
-| Ten customers after the friends | Days 39 to 74, typically day 56 |
+| Ten customers | Days 39 to 74, typically day 56 |
 | Level 2 | End of game year 1 (about 3 to 4 hours of play) |
 
 The Getting started document on the desktop lists the steps. Each step names where to do it and opens that place, and it ticks itself when done.
@@ -50,11 +50,11 @@ The steps run in this order, with the 2005 prices from the game.
 
 The registration fee, the server and Lexwear Office leave €725 of the €3,500; with WIZO Mein Büro €825, or €974 less €15 a month with Collmix. The fixed bills that follow are €80.40 a month with the business line (€59 line, €9.90 site, €10 email, €1.50 domain) or €66.40 with the DSL 16000 line, plus electricity at the household price.
 
-The three friends (Jonas, Mira and Tobi) sign up for web hosting at €6 a month once the first panel host is ready and the internet reaches it. They bring in €18 a month and always pay.
+The company starts without customers. The first order email arrives within 14 days of the first panel host going online with the internet reaching it.
 
 ## Beat sheet
 
-The player buys and sets up everything on the first day, then waits for the line. The days and cash below follow the seeded happiness runs (seeds 1 to 5), moved to the Monday registration, for a player who follows the steps above, buys the web design on day 2 and picks the business line. The beats after the friends arrive come from the normal simulation and shift with the seed.
+The player buys and sets up everything on the first day, then waits for the line. The days and cash below follow the seeded happiness runs (seeds 1 to 5), moved to the Monday registration, for a player who follows the steps above, buys the web design on day 2 and picks the business line. The beats after the line goes live come from the normal simulation and shift with the seed.
 
 | Real time at 1× | Game date | What happens | Player does | Teaches |
 | --- | --- | --- | --- | --- |
@@ -63,11 +63,11 @@ The player buys and sets up everything on the first day, then waits for the line
 | 0:02 | 3 Jan | The server and the router stand in the rack, the server cabled to the router, the router to the line jack, and powered on; cash is €974 | Buys, mounts and cables the Dwell server, mounts the router from storage | Shop, racks, ports |
 | 0:02 | 3 Jan | The line is ordered and the panel installs in 2 hours | Orders the line, installs FreePanel | Lines, software |
 | 0:02 | 3 Jan | The domain, web design and company email are in place; cash is €560 | Signs NameCheep, registers the domain, buys the web design, lists web hosting, books email | Registrar, website, mail |
-| 0:16 | 17 Jan | The business line goes live and the friends move onto the panel host | Opens Customers | Customers arrive once the host is reachable |
-| 0:17 to 0:20 | 18 to 21 Jan | The first customer after the friends writes in, and the last step of Getting started ticks | Answers in Support | Tickets, sales |
+| 0:16 | 17 Jan | The business line goes live and the internet reaches the panel host | Opens Customers | Customers arrive once the host is reachable |
+| 0:17 to 0:20 | 18 to 21 Jan | The first customer writes in, and the last step of Getting started ticks | Answers in Support | Tickets, sales |
 | 0:19 to 0:22 | 20 to 23 Jan | The first invoice is paid | Opens Billing | Invoices pay themselves |
 | 0:31 | 1 Feb | The monthly tick books the fixed bills, the registrar and the first report | Opens Books | Monthly rhythm |
-| 0:39 to 1:14 | 9 Feb to 16 Mar | The tenth customer after the friends signs up, typically on day 56 (26 February) | Answers tickets, reminds late payers | Sales arrive on their own |
+| 0:39 to 1:14 | 9 Feb to 16 Mar | The tenth customer signs up, typically on day 56 (26 February) | Answers tickets, reminds late payers | Sales arrive on their own |
 
 Cash stays between about €510 and €660 until the first customers pay. By the end of February the seeded runs have earned 15 to 30 know-how and taken a bank loan for the second server. The Bank lends up to €10,000 from the first day.
 

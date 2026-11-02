@@ -59,6 +59,8 @@ export default {
   "error.mailFilterMax": () => "Este buzón no admite más filtros.",
   "error.mailFrom": () => "Este buzón no puede enviar desde esta dirección.",
   "error.mailAttach": () => "El adjunto supera el tamaño que acepta este buzón.",
+  "error.mailFetchLoop": () => "Este buzón ya recoge de esa cuenta, o esa cuenta recoge de este buzón.",
+  "error.mailCollectors": (p) => `Este plan recoge de un máximo de ${p.n} cuentas.`,
   "error.mailFolder": () => "Este buzón no admite más carpetas.",
   "error.mailNoFolder": () => "Esta carpeta no existe.",
   "error.mailFolderName": () => "Elija otro nombre para esta carpeta.",

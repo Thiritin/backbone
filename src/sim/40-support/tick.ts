@@ -1,4 +1,6 @@
-import { importDeskTickets } from "./desk-work";
+import { importDeskTickets } from "./desk-channels";
+import { deskById, refToken } from "../10-catalog/desks";
+import { sentCopy } from "../42-mail/deliver";
 import { chance, rand } from "../00-core/rng";
 import { CRYPTO_ABUSE, PAYSAFE_CHURN } from "../10-catalog/payments";
 import { refundUnused, termRoll } from "./terms";
@@ -49,6 +51,16 @@ function resolve(s: GameState, t: Ticket, c: Customer, outcome: Ticket["outcome"
 }
 
 // Player work queued by the support actions takes effect once its time has passed.
+// Replies to a ticket a desk channel imported go out from the channel's mailbox with the desk's number in the subject.
+function sentCopies(s: GameState, answered: Map<string, number>): void {
+  const d = s.desk && deskById(s.desk.id);
+  for (const t of s.tickets) {
+    const ch = t.channelId ? s.mail.channels.find((c) => c.id === t.channelId) : undefined;
+    if (!ch || !d) continue;
+    for (let i = answered.get(t.id) ?? 0; i < t.replies.length; i++) sentCopy(s, t, i, ch.accountId, refToken(d, t.ref ?? ""));
+  }
+}
+
 function finishWork(s: GameState, customer: (id: string) => Customer, events: SimEvent[]): void {
   const due = s.tickets.filter((t) => t.work && t.work.doneAt <= nowMinutes(s)).sort((a, b) => a.work!.doneAt - b.work!.doneAt);
   for (const t of due) {
@@ -216,7 +228,9 @@ export function workTick(s: GameState): SimEvent[] {
   const byId = new Map(s.customers.map((c) => [c.id, c]));
   const customer = (id: string) => byId.get(id) ?? s.customers.find((c) => c.id === id)!;
   const events: SimEvent[] = [];
+  const answered = new Map(s.tickets.map((t) => [t.id, t.replies.length]));
   finishWork(s, customer, events);
+  sentCopies(s, answered);
   return events;
 }
 
@@ -231,7 +245,9 @@ export function supportTick(s: GameState): SimEvent[] {
   const before = new Set(s.tickets.map((t) => t.id));
 
   const events: SimEvent[] = [];
+  const answered = new Map(s.tickets.map((t) => [t.id, t.replies.length]));
   finishWork(s, customer, events);
+  sentCopies(s, answered);
   events.push(...movesTick(s, customer));
   for (const t of s.tickets) {
     const c = customer(t.customerId);

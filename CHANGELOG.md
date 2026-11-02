@@ -5,6 +5,12 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-02
 
 - VMwhere editions are now bought as licence keys on vmwhere.com and take effect once every host runs a key of that edition, and the shop only sells an edition once your team has learned its features.
+- Pear Mail can reply, reply to all, forward, delete, junk and move mail, and writes new messages in their own window with forms from the desktop attached.
+- Incident reports in Security can now be archived, which takes them off the incident list and out of the open count.
+- A new game no longer starts with three friends waiting for web hosting; the first order email now arrives within two weeks of your first web host going online.
+- Support desks now fetch the mailboxes you add as channels by IMAP, POP3 or forwarding, number new requests, answer them from that address and keep every reply in its Sent folder.
+- The OsTickit Emails page and the Zendusk support addresses page let you add and remove mailboxes, and OsTickit sets the protocol, schedule, auto-response and what happens to fetched mail, with a test email.
+- Five new ultrawide desktop pictures (Annapurna, Milky Way, Hong Kong, Sossusvlei and Matterhorn) join the wallpaper choices in Settings, and every built-in wallpaper is now sharper at full screen.
 - Typed text in the Gmix login fields is now readable.
 - Supplier invoices in Preview now carry each supplier's logo and colours, laid out in one of three letterheads depending on the company, with bank details in the footer.
 - A browser bookkeeping program now stays reachable while the internet line is only throttled for an overdue bill and goes offline once the line is cut.
@@ -14,6 +20,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - The device picture in the inspector now matches the one in the rack, so a server shows the same drive bays, vent and control panel in both places.
 - Downloaded programs now arrive in Downloads as disk images and install by dragging them into Applications; a Trash at the end of the dock uninstalls them, and installing a second bookkeeping program asks before it replaces the current one.
 - Pleskit, DirectAdmen and FreePanel now open each web space in their own customer screens, where you manage files, databases, mailboxes, FTP accounts, domains and cron jobs as in cPanic.
+- The GMix website now has its webmail, where you read, sort, answer and delete your mail in folders of your own, with spam settings, filter rules, a signature, forwarding and an absence note, a storage meter and, on FreeMix, the ads of the time.
+- The GMix Mail Collector fetches the mail of your other mailboxes into one inbox, and the POP3/IMAP switch decides whether mail programs may connect.
 - The second and third game speeds now run at 8× and 60× instead of 2× and 4×, so playing fast moves much quicker while skipping to the next event stays the fastest.
 - Pear Mail shows every added account in one window with unified mailboxes, sortable columns, threads, search and a reader that answers customer requests from the message.
 - Customers now come from a much larger pool of real first and last names, with more trades, shops, agencies and offices, so names repeat far less often.

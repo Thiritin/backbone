@@ -1,8 +1,8 @@
 // The shared mail UI kit: selection, search, folder rows, actions and drag and drop that Pear Mail, the webmail sites and
 // the desk build their own visuals on (docs/design/plans/mail-client.md, The shared mail UI kit).
-import { useState, type DragEvent, type KeyboardEvent, type MouseEvent } from "react";
+import { useEffect, useRef, useState, type DragEvent, type KeyboardEvent, type MouseEvent } from "react";
 import { foldersOf, isRead, listFolder, unread, view } from "../../../sim/42-mail/model";
-import type { Message } from "../../../sim/42-mail/types";
+import type { Attachment, Message } from "../../../sim/42-mail/types";
 import { sortMessages, threadsOf, type SortKey } from "../../../sim/43-pear-mail/view";
 import type { GameState } from "../../../sim/50-state";
 import {
@@ -119,6 +119,46 @@ export function useFolderDrop(accountId: string, folderId: string, onMove?: (ids
       if (!d || d.accountId !== accountId) return;
       e.preventDefault();
       if (onMove) onMove(d.ids); else move(d.ids, folderId);
+    },
+  };
+}
+
+export interface DraftFields { to: string; cc: string; bcc: string; subject: string; text: string; att: Attachment[]; re?: string }
+export interface DraftOps { save: (d: DraftFields) => void; discard: () => void; send: (d: DraftFields) => string | null }
+export const draftEmpty = (d: DraftFields): boolean => !d.to.trim() && !d.cc.trim() && !d.bcc.trim() && !d.subject.trim() && !d.text.trim() && !d.att.length;
+
+// An open draft: edits are saved after a pause, an empty draft is discarded when the window goes, send returns the error key.
+export function useDraft(initial: DraftFields, ops: DraftOps, delay = 600) {
+  const [draft, setDraft] = useState(initial);
+  const latest = useRef({ draft, ops, sent: false, timer: 0, alive: false });
+  latest.current.draft = draft;
+  latest.current.ops = ops;
+  useEffect(() => {
+    const l = latest.current;
+    l.alive = true;
+    // Deferred, so a remount in the same tick (React's development double mount) keeps the draft.
+    return () => {
+      l.alive = false;
+      setTimeout(() => {
+        if (l.alive || l.sent) return;
+        clearTimeout(l.timer);
+        if (draftEmpty(l.draft)) l.ops.discard(); else l.ops.save(l.draft);
+      }, 0);
+    };
+  }, []);
+  return {
+    draft,
+    set: (patch: Partial<DraftFields>) => {
+      const next = { ...latest.current.draft, ...patch };
+      setDraft(next);
+      clearTimeout(latest.current.timer);
+      latest.current.timer = window.setTimeout(() => latest.current.ops.save(latest.current.draft), delay);
+    },
+    send: (): string | null => {
+      clearTimeout(latest.current.timer);
+      const error = latest.current.ops.send(latest.current.draft);
+      if (!error) latest.current.sent = true;
+      return error;
     },
   };
 }

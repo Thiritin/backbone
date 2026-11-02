@@ -1,6 +1,8 @@
 import { hashRng, rand } from "../00-core/rng";
 import { ascii, companyDomain } from "../30-customers/domains";
 import { deskById, type DeskId } from "../10-catalog/desks";
+import { capsOf } from "../42-mail/caps";
+import type { DeskChannel } from "../42-mail/types";
 import type { GameState } from "../50-state";
 import { hostStatus, type SiteStatus } from "../80-business/website";
 import { monthlyValue, profileStats, type Ticket, type TicketKind } from "./tickets";
@@ -63,9 +65,20 @@ export function nextRef(s: GameState, t: Pick<Ticket, "id">): string {
   }
 }
 
-// A new desk: one Support department and one channel on the primary mailbox that has fetched every ticket at its creation hour.
+// A channel as the desk's Add form fills it: a hosted desk takes mail by forwarding, a self-hosted one by IMAP where the
+// mailbox offers it, else POP3.
+export function newChannel(s: GameState, accountId: string, desk: DeskId, hosted: boolean): DeskChannel {
+  const a = s.mail.accounts.find((x) => x.id === accountId);
+  return {
+    id: `ch${s.nextId++}`, accountId, desk, after: "keep", folder: null, since: s.hour, verified: false,
+    mode: hosted ? "forward" : a && capsOf(s, a).imap ? "imap" : "pop", every: 1, deptId: null, autoReply: false, unknown: true, seen: 0, error: null,
+  };
+}
+
+// A new desk: one Support department and one channel on the primary mailbox that has fetched every ticket at its creation
+// hour and reads only mail that arrives from now on.
 export function openDesk(s: GameState, id: DeskId, hosting: DeskHosting = { kind: "legacy" }, tenant: string | null = null): void {
-  const channel = { id: `ch${s.nextId++}`, accountId: s.mail.primary, desk: id, after: "keep" as const, folder: null, since: 0, verified: false };
+  const channel = { ...newChannel(s, s.mail.primary, id, hosting.kind === "hosted"), seen: s.nextId - 1 };
   s.mail = { ...s.mail, channels: [...s.mail.channels.filter((c) => !s.desk || c.desk !== s.desk.id), channel] };
   s.desk = {
     id, hosting, tenant, rules: [], addons: {}, lastRef: 0,

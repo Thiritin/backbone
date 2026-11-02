@@ -155,8 +155,6 @@ export default {
   "event.switched.text": (p) => `${p.cluster} läuft jetzt mit ${p.name}.`,
   "event.installed.title": () => "Control Plane installiert",
   "event.installed.text": (p) => `${p.name} läuft auf ${p.cluster}.`,
-  "event.friendsJoined.title": () => "Deine Freunde sind eingezogen",
-  "event.friendsJoined.text": (p) => `Jonas, Mira und Tobi haben ihre Websites auf ${p.cluster} umgezogen.`,
   "event.dataLoss.title": () => "Daten verloren",
   "event.dataLoss.text": (p) => `${p.device} hat seine Festplatten verloren. ${p.count} ${Number(p.count) === 1 ? "Workload ist" : "Workloads sind"} betroffen.`,
   "event.failedOver.title": () => "Failover",

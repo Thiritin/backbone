@@ -183,4 +183,5 @@ export default {
   "error.deskForwarding": () => "Error en la verificación del reenvío",
   "ticket.mail.deskForwardTest.subject": (p) => `${p.desk}: verificación del reenvío`,
   "ticket.mail.deskForwardTest.text": (p) => `Este mensaje comprueba que el correo a esta dirección se reenvía a ${p.address}.`,
+  "zd.admin.addAddress": () => "Agregar dirección",
 } satisfies Dict;

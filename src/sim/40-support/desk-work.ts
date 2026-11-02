@@ -1,8 +1,8 @@
-import { hashRng, rand } from "../00-core/rng";
-import { DESK_ROUTE, deskHas } from "../10-catalog/desks";
+import { DESK_ROUTE } from "../10-catalog/desks";
+import type { DeskChannel } from "../42-mail/types";
 import type { Employee } from "../47-staff/staff";
 import type { GameState } from "../50-state";
-import { deskReachable, deskStatus, nextRef, priorityOf, type Department, type Priority } from "./desk";
+import { deskReachable, nextRef, priorityOf, type Department, type Priority } from "./desk";
 import { isFinal, type Ticket, type TicketKind } from "./tickets";
 
 // The assignee of the player's own queue, which staff skip.
@@ -12,7 +12,8 @@ export const WEB_KINDS: TicketKind[] = ["outage", "howTo", "billing"];
 export const WEB_SHARE = 0.3;
 export const PRIORITIES: Priority[] = ["urgent", "high", "normal", "low"];
 
-export const inDesk = (t: Pick<Ticket, "kind">): boolean => DESK_ROUTE[t.kind].dept !== null || t.kind === "spam";
+// Customer support, spam, and mail a channel took in without a ticket.
+export const inDesk = (t: Pick<Ticket, "kind"> & { mail?: Ticket["mail"] }): boolean => DESK_ROUTE[t.kind].dept !== null || t.kind === "spam" || !!t.mail?.msg;
 // A ticket the desk holds: fetched from one of its channels or opened on its portal.
 export const held = (t: Pick<Ticket, "channelId" | "via">): boolean => !!t.channelId || t.via === "web";
 
@@ -34,11 +35,11 @@ export function autoAssignee(s: GameState, d: Department): string | null {
 
 export const validAssignee = (s: GameState, id: string): boolean => id === OWNER || s.staff.some((e) => e.id === id && e.role === "support");
 
-// Department, priority and assignee from the desk's rules in order, the first department when no rule names one.
-export function routeTicket(s: GameState, t: Ticket): void {
+// Department, priority and assignee from the desk's rules in order, starting from the channel's department or the first.
+export function routeTicket(s: GameState, t: Ticket, base: string | null = null): void {
   const d = s.desk;
   if (!d) return;
-  let deptId = d.departments[0]?.id ?? null, priority: Priority | undefined, assignee: string | undefined;
+  let deptId = d.departments.find((x) => x.id === base)?.id ?? d.departments[0]?.id ?? null, priority: Priority | undefined, assignee: string | undefined;
   for (const r of d.rules) {
     if (r.when !== "*" && r.when !== t.kind) continue;
     if (r.set.deptId && d.departments.some((x) => x.id === r.set.deptId)) deptId = r.set.deptId;
@@ -52,23 +53,11 @@ export function routeTicket(s: GameState, t: Ticket): void {
 }
 
 // Takes a ticket into the desk: its number, how it came in, the channel and its routing.
-export function importTicket(s: GameState, t: Ticket, web: boolean): void {
+export function importTicket(s: GameState, t: Ticket, web: boolean, channel: DeskChannel | null = null): void {
   s.desk = { ...s.desk! };
-  const dept = s.desk.departments[0], channel = s.mail.channels.find((c) => c.id === dept?.channelId) ?? s.mail.channels.find((c) => c.desk === s.desk!.id);
-  Object.assign(t, { ref: t.ref || nextRef(s, t), via: web ? "web" : "email", channelId: web ? null : channel?.id ?? null });
-  routeTicket(s, t);
-}
-
-// ponytail: stand-in import until channels fetch (M6): every desk ticket comes in at the hour, by the portal for a share
-// of customers, otherwise by the desk's channel when it has one.
-export function importDeskTickets(s: GameState): void {
-  if (!s.desk || deskStatus(s) === "down") return;
-  const portal = deskHas(s, "portal"), mailIn = s.mail.channels.some((c) => c.desk === s.desk!.id);
-  for (const t of s.tickets) {
-    if (held(t) || isFinal(t) || !inDesk(t)) continue;
-    const web = portal && !!t.customerId && WEB_KINDS.includes(t.kind) && rand(hashRng(s.seed, Number(t.id.slice(3)) || 0, 62)) < WEB_SHARE;
-    if (web || mailIn) importTicket(s, t, web);
-  }
+  const ch = web ? null : channel ?? s.mail.channels.find((c) => c.desk === s.desk!.id);
+  Object.assign(t, { ref: t.ref || nextRef(s, t), via: web ? "web" : "email", channelId: ch?.id ?? null });
+  routeTicket(s, t, ch?.deptId ?? null);
 }
 
 // The order an employee takes open tickets in: assigned to them, unassigned in a department they belong to, unassigned in

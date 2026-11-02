@@ -58,3 +58,9 @@ export function mailProviderTick(s: GameState): void {
   s.mail = { ...s.mail, tenants: s.mail.tenants.map(({ next, ...t }) => (next ? { ...t, plan: next } : t)) };
   goggleEras(s);
 }
+
+// FreeMix ads: gmix.mail.ad.0 to .7 in i18n, ad 0 the visitor prize. A slot shows the same ad for an hour and a mailbox,
+// so a render never reshuffles it.
+export const GMIX_ADS = 8;
+export const gmixAd = (hour: number, accountId: string, slot = 0): number =>
+  (hour + (Number(accountId.replace(/\D/g, "")) || 0) * 3 + slot * 5) % GMIX_ADS;

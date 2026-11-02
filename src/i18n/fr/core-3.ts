@@ -156,8 +156,6 @@ export default {
   "event.switched.text": (p) => `${p.cluster} tourne maintenant sous ${p.name}.`,
   "event.installed.title": () => "Plan de contrôle installé",
   "event.installed.text": (p) => `${p.name} tourne sur ${p.cluster}.`,
-  "event.friendsJoined.title": () => "Tes amis ont emménagé",
-  "event.friendsJoined.text": (p) => `Jonas, Mira et Tobi ont déplacé leurs sites sur ${p.cluster}.`,
   "event.dataLoss.title": () => "Données perdues",
   "event.dataLoss.text": (p) => `${p.device} a perdu ses disques. ${p.count} ${one(p) ? "charge de travail est touchée" : "charges de travail sont touchées"}.`,
   "event.failedOver.title": () => "Basculement",

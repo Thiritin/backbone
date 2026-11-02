@@ -24,6 +24,7 @@ import { TechButton } from "./locations/TechButton";
 import { MonitoringTab } from "./Monitoring";
 import { More } from "./More";
 import { IncidentReports } from "./products/parts";
+import { openReports } from "../../sim/85-products/products";
 
 // The advisory's current stage title, and the hour its patch is due.
 export const advisoryOf = (game: GameState) => {
@@ -226,7 +227,7 @@ export function SecurityApp() {
   const [tab, setTab] = useState<"advisories" | "incidents" | "monitoring">("advisories");
   const card = useRef<HTMLElement>(null);
   const monitored = game.installed.includes(MONITORING), view = monitored || tab !== "monitoring" ? tab : "advisories";
-  const open = game.lossReports.filter((r) => r.items.some((i) => !i.restored)).length;
+  const open = openReports(game).length;
   useFocus("Security", (f) => {
     if (f.kind === "tab" && (f.id === "monitoring" || f.id === "incidents")) setTab(f.id);
     if (f.kind === "site") { setTab("advisories"); requestAnimationFrame(() => document.getElementById(`site-${f.id}`)?.scrollIntoView({ block: "nearest" })); }

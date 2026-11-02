@@ -53,6 +53,7 @@ export default {
   "error.unknownDevice": () => "Cet appareil n'existe plus.",
   "error.unknownPort": () => "Ce port n'existe pas.",
   "error.unknownCable": () => "Ce câble n'existe plus.",
+  "error.unknownReport": () => "Ce rapport d'incident n'existe plus.",
   "error.unknownBrand": () => "Cette marque ne vend pas de serveurs.",
   "error.unknownSiteLine": () => "Ce produit ne peut pas figurer sur le site web.",
   "error.unknownLineRate": () => "Ce produit n'a pas ce tarif.",

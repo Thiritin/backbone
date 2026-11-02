@@ -59,6 +59,8 @@ export default {
   "error.mailFilterMax": () => "Esta caixa não aceita mais filtros.",
   "error.mailFrom": () => "Esta caixa não pode enviar a partir deste endereço.",
   "error.mailAttach": () => "O anexo é maior do que esta caixa aceita.",
+  "error.mailFetchLoop": () => "Esta caixa já coleta dessa conta, ou essa conta coleta desta.",
+  "error.mailCollectors": (p) => `Este plano coleta de no máximo ${p.n} contas.`,
   "error.mailFolder": () => "Esta caixa não aceita mais pastas.",
   "error.mailNoFolder": () => "Esta pasta não existe.",
   "error.mailFolderName": () => "Escolha outro nome para esta pasta.",

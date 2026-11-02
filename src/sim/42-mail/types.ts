@@ -33,7 +33,7 @@ export interface MailAccount {
   shared?: true;               // a shared mailbox: no password and no direct sign-in, opened from the other mailboxes of its tenant
   suspended?: true;            // the admin blocked sign-in; the box still receives and bills
   external?: boolean;          // "Allow external programs to fetch mail": IMAP and POP logins fail while it is false; new GMix boxes start false
-  prefs?: Record<string, string | number | boolean>;  // webmail preferences, at most 30 keys; core reads spam, spamAction and imapDelete
+  prefs?: Record<string, string | number | boolean>;  // webmail preferences, at most 30 keys; core reads spam, spamAction, imapDelete, allow and block
   roles: MailRole[];           // roles the player assigned; the name adds more
   aliases: string[];           // extra local parts on the same domain
   quotaMb: number | null;      // null follows the plan; own servers store the player's value
@@ -76,6 +76,7 @@ export interface Message {
   labels?: string[];           // Folder ids with label set, on label hosts only
   prev?: string;               // folder before Trash, used by Restore
   re?: string;                 // id of the message answered
+  reply?: number;              // on a Sent copy of a ticket: the index of the reply in the ticket
   late?: true;                 // delivered after waiting in the queue
   snooze?: number;             // hour the message returns to the top of the Inbox as unread; it is out of the list until then
   foot?: string;               // i18n key of the host's footer (a free tier's signature), appended when the message is shown
@@ -94,10 +95,13 @@ export interface MailGroup { id: string; tenant: string; local: string; title: s
 // A continuing collect rule: the target mailbox pulls new Inbox mail of another own mailbox (GMix Mail Collector, Gmial Check mail from other accounts).
 export interface FetchRule {
   id: string; accountId: string; source: string; proto: "pop" | "imap";
+  password: string;            // the source's password as entered; a changed password stops the rule
   every: number;               // hours between runs, 1 to 24
   leave: boolean;              // keep the copy on the source
   folder: string | null; label: string | null;  // where the collected mail lands in the target
-  lastAt: number; err: string | null;
+  lastAt: number;              // game minute of the last run
+  upTo: number;                // message number the next run starts from
+  err: string | null;
 }
 
 // One delivery outcome, kept for Lookout 365 Message trace: the last 200 entries of the last 7 days.
@@ -114,7 +118,14 @@ export interface DeskChannel {
   after: "keep" | "read" | "move" | "delete"; folder: string | null;  // what the desk does with an imported message
   since: number;
   verified: boolean;  // a hosted desk has seen its forwarding test arrive
-  // support-desk adds its own fields (department, mode, fetch interval) beside these.
+  // support-desk's fields: how the desk reads the box, every how many hours, where new tickets go and what it answers.
+  mode: "imap" | "pop" | "forward";
+  every: number;
+  deptId: string | null;
+  autoReply: boolean;
+  unknown: boolean;           // accept mail from senders who are not customers
+  seen: number;               // highest message number the desk has looked at
+  error: string | null;       // why the last fetch failed
 }
 
 export interface Queued { accountId: string; msg: Message; until: number; why: "down" | "full" }

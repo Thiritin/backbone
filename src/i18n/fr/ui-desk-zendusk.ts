@@ -183,4 +183,5 @@ export default {
   "error.deskForwarding": () => "Échec de la vérification du transfert",
   "ticket.mail.deskForwardTest.subject": (p) => `${p.desk} : vérification du transfert`,
   "ticket.mail.deskForwardTest.text": (p) => `Ce message vérifie que les e-mails envoyés à cette adresse sont transférés vers ${p.address}.`,
+  "zd.admin.addAddress": () => "Ajouter une adresse",
 } satisfies Dict;

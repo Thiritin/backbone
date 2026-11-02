@@ -19,7 +19,7 @@ import { connect, setPower } from "../src/sim/90-actions/hardware";
 import { buyDevice, bootedMachine, newGame, startGame } from "./fixtures";
 import { migrateWorkload } from "../src/sim/90-actions/vms";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { basement, hypervisor, join, panelServer, panelVm, readyGame, skipTo, withServer } from "./fixtures";
+import { basement, firstCustomers, hypervisor, join, panelServer, panelVm, readyGame, skipTo, withServer } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 const ok = (r: { ok: boolean; id?: string; error?: string }) => { expect(r.error).toBeUndefined(); return r.id!; };
@@ -59,22 +59,22 @@ describe("compute", () => {
     expect(err(addNode(s, host, "dev3"))).toBe("error.panelHostOneServer");
     // Changing the panel needs the server empty of web spaces.
     run(s, softwareById("freepanel").installHours);
-    expect(s.customers.filter((c) => c.habit === "friend")).toHaveLength(3);
+    firstCustomers(s, host);
     expect(err(uninstallSoftware(s, "dev3"))).toBe("error.softwareInUse");
   });
 
-  it("sets the basement up as a panel server: installs for the panel's hours, then the friends move in and only web hosting sells", () => {
+  it("sets the basement up as a panel server: installs for the panel's hours, opens to the internet with no customers, and only web hosting sells", () => {
     const s = withServer(startGame(1));
     const host = ok(installPanel(s, "dev3", "cpanic"));
     run(s, softwareById("cpanic").installHours - 1);
     expect(s.customers).toHaveLength(0);
     const events = run(s, 1);
-    expect(events.map((e) => e.key)).toEqual(expect.arrayContaining(["event.installed", "event.friendsJoined"]));
-    expect(s.services.every((v) => workloadsOf(s, v.id)[0].clusterId === host && serviceOnline(s, v.id))).toBe(true);
+    expect(events.map((e) => e.key)).toContain("event.installed");
+    expect([s.customers.length, s.webOpenedAt, s.clusters.find((c) => c.id === host)!.panel]).toEqual([0, s.hour, "cpanic"]);
     expect([lineOffered(s, "webHosting"), lineOffered(s, "vps")]).toEqual([true, false]);
   });
 
-  it("sets the basement up as a hypervisor with a panel VM: the panel follows the hypervisor, then the friends move in", () => {
+  it("sets the basement up as a hypervisor with a panel VM: the panel follows the hypervisor, then the host opens with no customers", () => {
     const s = withServer(startGame(1));
     skipTo(s, 2010);
     const cluster = ok(installSoftware(s, bootedMachine(s, "dev3"), "proxmocks"));
@@ -82,9 +82,9 @@ describe("compute", () => {
     const hours = softwareById("proxmocks").installHours + softwareById("freepanel").installHours;
     run(s, hours - 1);
     expect(s.customers).toHaveLength(0);
+    expect(s.webOpenedAt).toBeNull();
     run(s, 1);
-    expect(s.services.map((v) => vmOf(s, workloadsOf(s, v.id)[0])?.id)).toEqual(Array(3).fill(s.clusters.find((c) => c.id === host)!.vm));
-    expect(s.services.every((v) => serviceOnline(s, v.id))).toBe(true);
+    expect([s.customers.length, s.webOpenedAt, !!s.clusters.find((c) => c.id === host)!.vm]).toEqual([0, s.hour, true]);
     expect([lineOffered(s, "webHosting"), lineOffered(s, "vps")]).toEqual([true, true]);
   });
 

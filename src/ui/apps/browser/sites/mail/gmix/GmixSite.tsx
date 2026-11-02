@@ -21,6 +21,7 @@ import { offerLogin, savedLogin } from "../../../../../vault";
 import { degrees } from "../../../../weather/WeatherApp";
 import { usePageAct } from "../../../pageAct";
 import { eraAtHour } from "../../era";
+import { GmixMail } from "./GmixMail";
 import "./gmix.css";
 
 // docs/design/plans/webmail-consumer.md, sections 3.2 to 3.5 and 5: the GMix portal in its three looks.
@@ -61,6 +62,10 @@ export function GmixSite({ game, path, go }: SiteProps) {
     if (route === "signup") return <SignUp game={game} to={to} plan={params.get("plan") ?? "free"} signIn={setSignedIn} />;
     if (route === "reset") return <Reset game={game} to={to} />;
     if (route === "account/delete") return <Delete game={game} to={to} account={account} signOut={() => setSignedIn(null)} />;
+    if (route === "mail" || route.startsWith("mail/")) {
+      if (!account) return <LoginPage game={game} to={to} signIn={setSignedIn} />;
+      return <GmixMail game={game} to={to} go={go} account={account} look={look} route={route.slice(5)} params={params} />;
+    }
     if (route.startsWith("account") || route === "welcome" || route === "login") {
       if (!account) return <LoginPage game={game} to={to} signIn={setSignedIn} />;
       if (route === "welcome") return <AdFree to={to} />;
@@ -77,6 +82,7 @@ export function GmixSite({ game, path, go }: SiteProps) {
         <nav className="gx-nav">
           <Link to={to} path="">{t("gmix.nav.home")}</Link>
           <Link to={to} path="plans">{t("gmix.nav.plans")}</Link>
+          {account && <Link to={to} path="mail/inbox">{t("gmix.nav.mail")}</Link>}
           {account ? <Link to={to} path="account">{t("gmix.nav.account")}</Link> : <Link to={to} path="signup">{t("gmix.nav.join")}</Link>}
           {account && <a href="#logout" onClick={(e) => { e.preventDefault(); setSignedIn(null); to(""); }}>{t("gmix.nav.logout")}</a>}
         </nav>
@@ -96,7 +102,7 @@ function LoginBox({ game, to, signIn, title }: { game: GameState; to: To; signIn
     if (!r.ok || r.account.domain !== GMIX_DOMAIN) return setError(t(r.ok ? "error.mailLogin" : r.error));
     offerLogin(game, `mail:${r.account.local}@${r.account.domain}`, SITE, [address, password]);
     signIn(r.account.id);
-    to(gmixLook(game.hour) === "flat" && tenantOf(game, r.account)?.plan === "free" ? "welcome" : "account");
+    to(gmixLook(game.hour) === "flat" && tenantOf(game, r.account)?.plan === "free" ? "welcome" : "mail/inbox");
   };
   return (
     <form className="gx-login" onSubmit={(e) => { e.preventDefault(); submit(); }}>
@@ -272,7 +278,7 @@ function AdFree({ to }: { to: To }) {
     <section className="gx-page gx-adfree">
       <h1>{t("gmix.adfree.title")}</h1>
       <Link to={to} path="promix" className="gx-button gx-big">{t("gmix.adfree.go")}</Link>
-      <Link to={to} path="account" className="gx-small gx-grey">{t("gmix.adfree.continue")}</Link>
+      <Link to={to} path="mail/inbox" className="gx-small gx-grey">{t("gmix.adfree.continue")}</Link>
     </section>
   );
 }

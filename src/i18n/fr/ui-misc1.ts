@@ -242,6 +242,7 @@ export default {
   "misc1.parts.lost": () => "Perdu",
   "misc1.parts.startEmpty": () => "Démarrer à vide",
   "misc1.parts.restore": () => "Restaurer",
+  "misc1.parts.archive": () => "Archiver",
   "misc1.parts.installing": (p) => `Installation, ${p.n} h restantes`,
   "misc1.parts.noControlPlane": () => "Aucun plan de contrôle",
   "misc1.parts.cpUp": () => "Plan de contrôle actif",

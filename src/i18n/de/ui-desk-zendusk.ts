@@ -183,4 +183,5 @@ export default {
   "error.deskForwarding": () => "Weiterleitungsprüfung fehlgeschlagen",
   "ticket.mail.deskForwardTest.subject": (p) => `${p.desk}: Prüfung der Weiterleitung`,
   "ticket.mail.deskForwardTest.text": (p) => `Diese Nachricht prüft, ob E-Mails an diese Adresse an ${p.address} weitergeleitet werden.`,
+  "zd.admin.addAddress": () => "Adresse hinzufügen",
 } satisfies Dict;

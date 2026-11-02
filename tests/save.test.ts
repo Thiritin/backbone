@@ -105,7 +105,7 @@ describe("save", () => {
   it("keeps the basement server of a save from before the empty start", () => {
     const s = deserialize(serialize(readyGame(3)));
     expect(linkStatus(s, "dev3").online).toBe(true);
-    expect(s.customers.filter((c) => c.habit === "friend")).toHaveLength(3);
+    expect(s.customers).toHaveLength(3);
   });
   it("rejects garbage", () => {
     expect(() => deserialize("{}")).toThrow();
@@ -116,7 +116,7 @@ describe("retired tower servers", () => {
   it("loads a save with a tower on the shelf and one in storage without them or anything pointing at them", () => {
     const old = JSON.parse(serialize(readyGame(7)));
     const dev3 = old.devices.find((d: { id: string }) => d.id === "dev3");
-    // The basement server running the cluster, the panel VM and the friends' sites becomes a tower on the shelf.
+    // The basement server running the cluster, the panel VM and the customers' sites becomes a tower on the shelf.
     Object.assign(dev3, { model: "g1-tower", rackId: "shelf:loc1", slot: 1 });
     old.devices.push({ ...dev3, id: "dev900", model: "g2-tower", rackId: null, slot: 0, store: "loc1" });
     old.leases.push({ id: "lease901", lessor: "Dwell", monthly: 10, months: 12, startedAt: 0, paid: 0, devices: ["dev900"] });

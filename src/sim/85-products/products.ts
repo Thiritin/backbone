@@ -15,12 +15,11 @@ import type { Customer, Product } from "../30-customers/customers";
 import { bump, createTicket, deliverMail, slowed } from "../40-support/tickets";
 import { spendable } from "../46-finance/bank";
 import type { Device, GameState, Licence, Location } from "../50-state";
-import { insideVm, isOwnVm, lostDisk, servedBy, vmOf, type Cluster, type Workload } from "../60-infra/cluster";
+import { clusterReachable, insideVm, isOwnVm, lostDisk, servedBy, vmOf, type Cluster, type Workload } from "../60-infra/cluster";
 import { exitsOf } from "../60-infra/network";
 import { backupTarget, repoRoom, repoUsed, runBackups } from "../60-infra/backups";
 import { bootHours, customerWorkloads, liveServices } from "../60-infra/status";
 import { hostPerf, phpTickets } from "../60-infra/php";
-import { welcomeFriends } from "../90-actions/start";
 import { deviceVendor, installedCores, perCoreOf } from "../60-infra/status";
 import { diskFill, nodeUsage, starvation, vmPerf } from "../60-infra/usage";
 import { addAwareness, addReview, announceReview, starsFor } from "../80-business/marketing";
@@ -40,8 +39,10 @@ export { SLOW_PENALTY, SLOW_TICKET_CHANCE } from "../40-support/tickets";
 
 // One lost disk in an incident report.
 export interface LossItem { workloadId: string; serviceId: string; customerId: string; diskGb: number; backupAt: number | null; restored: boolean }
-// The incident report the game opens when a server's array is lost.
-export interface LossReport { id: string; hour: number; deviceId: string; items: LossItem[] }
+// The incident report the game opens when a server's array is lost; an archived one leaves the incident list.
+export interface LossReport { id: string; hour: number; deviceId: string; items: LossItem[]; archived?: boolean }
+// Reports still in the incident list with a disk not yet restored.
+export const openReports = (s: GameState): LossReport[] => s.lossReports.filter((r) => !r.archived && r.items.some((i) => !i.restored));
 
 // The speed of the links between two zones in Gbit/s, 0 without a ready one; parallel links add up.
 export const zoneLinkGbit = (s: GameState, a: string, b: string): number => {
@@ -134,16 +135,12 @@ function finishSwitches(s: GameState, events: SimEvent[]) {
     const d = fresh ? s.devices.find((x) => x.id === c.controlPlane) : undefined;
     if (d?.bootFrom === "usb") Object.assign(d, { bootFrom: "disk", bootUntil: nowHours(s) + bootHours(s, d) });
     if (fresh && c.vm) s.workloads = s.workloads.map((w) => (w.id === c.vm && w.media ? { ...w, media: undefined } : w));
-    if (kind === "panel" && welcomeFriends(s, c.id)) events.push({ app: "Books", key: "event.friendsJoined", params: { cluster: c.name } });
   }
 }
 
-// The friends wait for the first panel host the internet reaches, which may go online after its install. They only come to
-// a company without customers.
-function friendsArrive(s: GameState, events: SimEvent[]) {
-  if (s.customers.length) return;
-  const c = s.clusters.find((x) => x.kind === "panel" && x.panel && !x.switching);
-  if (c && welcomeFriends(s, c.id)) events.push({ app: "Books", key: "event.friendsJoined", params: { cluster: c.name } });
+// Notes the hour the first panel host goes online and the internet reaches it; the first order email counts from there.
+function webOpens(s: GameState) {
+  if (s.webOpenedAt === null && s.clusters.some((c) => c.kind === "panel" && c.panel && !c.switching && clusterReachable(s, c))) s.webOpenedAt = s.hour;
 }
 
 function reportLosses(s: GameState, events: SimEvent[]) {
@@ -346,7 +343,7 @@ export function renewKeys(s: GameState): void {
 export function productsTick(s: GameState): SimEvent[] {
   const events: SimEvent[] = [];
   finishSwitches(s, events);
-  friendsArrive(s, events);
+  webOpens(s);
   reportLosses(s, events);
   runBackups(s, events);
   overload(s);
