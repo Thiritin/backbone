@@ -150,6 +150,11 @@ export const SSL_KEYS: Record<"dv" | "ov" | "ev", [number, number][]> = {
   ov: [[2005, 150], [2015, 120], [2026, 100]],
   ev: [[2005, 400], [2015, 300], [2020, 250], [2026, 200]],
 };
+// economy.md, SSL certificates: the certificate authority every certificate is bought from, at this share of the year's
+// market price, so the player keeps 15% on a DV, 10% on an OV and 6% on an EV certificate.
+export const CA_NAME = "VeriSigh";
+export const CA_SHARE: Record<"dv" | "ov" | "ev", number> = { dv: 0.85, ov: 0.9, ev: 0.94 };
+export const caPrice = (cert: "dv" | "ov" | "ev", year: number): number => Math.round(keyframes(SSL_KEYS[cert], year) * CA_SHARE[cert] * 100) / 100;
 const scaled = (product: Product, year: number, rates: Rates): Rates => {
   const f = keyframes(FIXED_KEYS[product]!, year);
   return Object.fromEntries(Object.entries(rates).map(([u, x]) => [u, x * f]));

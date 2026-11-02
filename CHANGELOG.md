@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- Customers no longer buy SSL certificates on their own until your shop sells them; before that, the few who want one write in and you quote an SSL upgrade to their web hosting, and offices, shops and enterprises ask far more often than small sites.
+- Every SSL certificate you sell is now bought from the certificate authority VeriSigh at close to its market price, so certificates earn a small margin.
 - The Research app now lists exactly what each training switches on, every entry takes you to where it is used, and an entry that depends on software names that software.
 - Your registrar's login now has a Register page where you order further domains of your own, and every domain has a page where you set its name servers: a domain parked at the registrar shows its parking page in the browser, one on your own name servers reaches your site, and a change takes an hour to spread.
 - Interaction, mainqubes, Tellyhouse, Global Snitch, Docklands Data and Iron Molehill now have their own websites in the style of their companies, with an early look and a modern one that arrives in later years.

@@ -251,17 +251,18 @@ export function CustomCompose({ tk, r }: { tk: Ticket; r: SalesRequest }) {
 }
 
 // An upgrade of a custom service: each resource from now to requested, the new monthly price, and a server choice only
-// when the one it runs on has no room for the growth.
+// when the one it runs on has no room for the growth. A certificate request takes only its yearly price.
 export function UpgradeCompose({ r }: { r: SalesRequest }) {
   const game = useStore((s) => s.game);
   const act = useStore((s) => s.act);
   const v = game.services.find((x) => x.id === r.serviceId);
   const [price, setPrice] = useState(r.counter ?? r.quote ?? r.reference);
-  const [{ home, holds, others, route: first }] = useState(() => (r.spec ? upgradeHome(game, r) : { home: undefined, holds: false, others: false, route: "" }));
+  const cert = r.product === "ssl";
+  const [{ home, holds, others, route: first }] = useState(() => (cert ? { home: undefined, holds: true, others: false, route: "auto" } : r.spec ? upgradeHome(game, r) : { home: undefined, holds: false, others: false, route: "" }));
   const [route, setRoute] = useState(first);
   if (!v?.spec || !r.spec) return null;
   const current = v.price * 730, open = ["open", "countered", "refused"].includes(r.status), locked = r.status === "quoted", editing = open || locked;
-  const rows: [string, number, number, string][] = r.product === "webHosting"
+  const rows: [string, number, number, string][] = cert ? [] : r.product === "webHosting"
     ? [[t("support.space"), v.spec.diskGb, r.spec.diskGb, "GB"], [t("support.traffic"), v.spec.trafficGb, r.spec.trafficGb, "GB"], [t("support.mailboxes"), v.spec.mailboxes, r.spec.mailboxes, ""]]
     : [["vCPU", v.spec.vcpu, r.spec.vcpu, ""], ["RAM", v.spec.ramGb, r.spec.ramGb, "GB"], [t("support.disk"), v.spec.diskGb, r.spec.diskGb, "GB"]];
   return (
@@ -270,7 +271,12 @@ export function UpgradeCompose({ r }: { r: SalesRequest }) {
         {rows.map(([k, a, b, u]) => (
           <div key={k} className="upgrade-row"><span>{k}</span><span className="num">{n(a)} {u}</span><ArrowRight aria-hidden /><span className="num">{n(b)} {u}</span></div>
         ))}
-        <div className="upgrade-row price">
+        {cert ? (
+          <div className="upgrade-row price">
+            <span>{t("support.yearlyPrice")}</span>
+            {editing ? <PriceField value={price} reference={r.reference} onChange={setPrice} disabled={locked} label={t("support.yearlyPrice")} /> : <span className="num">{euroCents(price)}</span>}
+          </div>
+        ) : <div className="upgrade-row price">
           <span>{t("support.monthlyPrice")}</span><span className="num">{euroCents(current)}</span><ArrowRight aria-hidden />
           {editing
             ? <span className="upgrade-price">
@@ -278,7 +284,7 @@ export function UpgradeCompose({ r }: { r: SalesRequest }) {
                 <span className="sales-total">{t("support.difference", { amount: `${price >= current ? "+" : ""}${euroCents(price - current)}` })}</span>
               </span>
             : <span className="num">{euroCents(price)}</span>}
-        </div>
+        </div>}
       </div>
       {editing && (
         <div className="compose custom-steps">

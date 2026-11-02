@@ -132,6 +132,7 @@ export default {
   "support.disk": () => "Disk",
   "support.monthlyPrice": () => "Monthly price",
   "support.newMonthlyPrice": () => "New monthly price",
+  "support.yearlyPrice": () => "Yearly price",
   "support.difference": (p) => `Difference ${p.amount} a month`,
   "support.sendOffer": () => "Send offer",
   "support.ticketNo": (p) => `ticket ${p.n}`,

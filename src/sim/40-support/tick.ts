@@ -26,7 +26,7 @@ import { serviceOnline } from "./status";
 import { answerTransfer, DOMAIN_OUT } from "../30-customers/registrar";
 import { outgoing, sendAction } from "./replies";
 import { overpricing, revertPrice } from "../30-customers/pricing";
-import { CERT_SHARE, offerCertificate } from "../30-customers/certificates";
+import { CERT_ASKED, CERT_WANT, wantCertificate } from "../30-customers/certificates";
 import { applyRetention, cancelReason, endDiscounts, FIX_CHECK, sendOffer, settleFix, type RetentionId } from "./retention";
 import {
   bump, cancelCustomer, createTicket, credit, expandable, GAMER_ABUSE_RATE, HOURS_PER_MONTH, HOW_TO, isFinal, KB_DEFLECT, KNOWLEDGE_BASE, MONTHLY_RATES, OUTAGE_WRITE_CHANCE,
@@ -89,7 +89,7 @@ function finishWork(s: GameState, customer: (id: string) => Customer, events: Si
       if (right) {
         t.status = "waiting";
         const hosting = t.kind === "howTo" && t.topic === "ssl" && s.services.find((v) => v.id === t.serviceId && v.endedAt === null);
-        if (hosting && offerCertificate(s, hosting, CERT_SHARE.asked)) events.push({ app: "Books", key: "event.certificateSold", params: { name: c.name, domain: hosting.domain ?? hosting.label } });
+        if (hosting && wantCertificate(s, hosting, Math.min(1, CERT_WANT[c.profile] * CERT_ASKED))) events.push({ app: "Books", key: "event.certificateSold", params: { name: c.name, domain: hosting.domain ?? hosting.label } });
       } else {
         // A wrong answer brings a follow-up in the same thread with a fresh response time.
         bump(c, WRONG_ANSWER);
