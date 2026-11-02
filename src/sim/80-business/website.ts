@@ -13,7 +13,7 @@ import { machineAddress } from "../60-infra/addresses";
 import { hostPerf } from "../60-infra/php";
 import { nodeUsage } from "../60-infra/usage";
 import type { SimEvent } from "../88-tick/tick";
-import { owns } from "./marketing";
+import { owns, SITE_LINES } from "./marketing";
 import { salesAddress } from "./mail";
 import { CYCLE_MONTHS, CYCLES } from "../10-catalog/cycles";
 import { companyDomain } from "../30-customers/domains";
@@ -25,9 +25,11 @@ import { assignedKey, licenceStatus, SHOP_MACHINE, tiersOnSale } from "../60-inf
 import { tiersOf, type LicenceTier } from "../10-catalog/licence-tiers";
 import { offeredProducts, type CatalogProduct } from "./catalog";
 
-export const SITE_LINES: Product[] = ["webHosting", "vps", "gameServer", "dns", "vpn", "storage", "cloud", "dedicated", "colocation", "gpu", "ssl"];
+export { SITE_LINES };
 
 export const listed = (s: GameState, p: Product): boolean => s.marketing.lines.includes(p);
+// Whether a listed line takes custom requests; otherwise its visitors order the shop plans or leave.
+export const customOpen = (s: GameState, p: Product): boolean => listed(s, p) && s.marketing.custom.includes(p);
 
 // The error key for why a line cannot go on the website, or null when it can. SSL is an add-on for web hosting customers.
 export function lineBlocker(s: GameState, p: Product): string | null {
