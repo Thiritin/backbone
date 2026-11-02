@@ -218,4 +218,12 @@ export default {
   "console.installFromNetwork": () => "Installa un programma dalla rete",
   "console.winProductKey": () => "Codice Product Key",
   "console.winNoKey": () => "Non ho un codice Product Key",
+  "console.winShuttingDown": () => "Arresto in corso...",
+  "console.winRebooting": () => "Riavvio in corso...",
+  "console.confirm.stopTitle": (p) => `Arrestare ${p.name}?`,
+  "console.confirm.stopText": (p) => `${p.name} si arresta in modo pulito e resta offline finché non lo riavvii.`,
+  "console.confirm.rebootTitle": (p) => `Riavviare ${p.name}?`,
+  "console.confirm.rebootText": (p) => `${p.name} si arresta in modo pulito e poi si riavvia. Resta offline finché l'avvio non è terminato.`,
+  "console.confirm.checkpointTitle": (p) => `Creare un checkpoint di ${p.name}?`,
+  "console.confirm.checkpointText": (p) => `Un checkpoint di OpenVeeZee salva la memoria di ${p.name} su disco e sospende il container. Resta offline finché non lo ripristini, poi riprende da dove si era fermato senza riavviarsi.`,
 } satisfies Dict;

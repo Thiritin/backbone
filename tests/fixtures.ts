@@ -1,3 +1,7 @@
+import { bookMail } from "../src/sim/90-actions/mail";
+import { hire as hireReal } from "../src/sim/90-actions/staff";
+import { mxTarget } from "../src/sim/42-mail/caps";
+import { companyDomain } from "../src/sim/30-customers/domains";
 import { PAYMENT_METHODS } from "../src/sim/10-catalog/payments";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { installShop } from "../src/sim/90-actions/shop";
@@ -30,6 +34,8 @@ import { derivedDomain } from "../src/sim/30-customers/domains";
 import { register } from "../src/sim/30-customers/registry";
 import { nodeName } from "../src/sim/30-customers/hostnames";
 import { setMachine, type Cluster } from "../src/sim/60-infra/cluster";
+import { tickMinute } from "../src/sim/88-tick/tick";
+import { stopWorkload } from "../src/sim/90-actions/vms";
 import { assignedKey, assignKey, isLicensed, issueKey, panelMachine, trialDaysOf } from "../src/sim/60-infra/licence";
 import { topTier } from "../src/sim/10-catalog/licence-tiers";
 import { UI_LOOKS, versionsOf } from "../src/sim/10-catalog/software-versions";
@@ -78,6 +84,13 @@ export function routerOnLine(s: GameState, slot = 23): GameState {
   Object.assign(s.devices.find((d) => d.id === "dev5")!, { store: null, rackId: "rack2", slot });
   s.cables.push({ id: "cab-line", a: { device: "dev6", port: 0 }, b: { device: "dev5", port: 4 }, kind: "copper", color: null });
   return s;
+}
+
+// Stops a VM and lets the minutes pass until its OS has halted.
+export function stopVm(s: GameState, id: string): ReturnType<typeof stopWorkload> {
+  const r = stopWorkload(s, id);
+  while (s.workloads.find((w) => w.id === id)?.haltUntil !== undefined) tickMinute(s);
+  return r;
 }
 
 // The machine has the OS installed and booted, as the installer leaves it; returns the machine id.
@@ -196,8 +209,9 @@ export function readyGame(seed: number): GameState {
 export function withCompany(s: GameState): GameState {
   s.registrar = { id: "nameCheep", since: 0, tier: 0, billed: true, transfer: null };
   const name = derivedDomain(s);
-  s.company = { ...s.company, domain: name, mail: { kind: "external", provider: "hostedExchange", seats: 1 } };
+  s.company = { ...s.company, domain: name };
   register(s, name, null, false);
+  must(bookMail(s, "hostedExchange"));
   s.marketing = { ...s.marketing, siteReady: 0, launched: true };
   return s;
 }
@@ -306,3 +320,12 @@ export function buyKey(s: GameState, product: string, edition: string | null): L
   if (!paid.ok) throw new Error(paid.error);
   return s.licenses.at(-1)!;
 }
+// A free own-server tenant on the company domain with its MX record live, so a hire gets a mailbox.
+export function withDomainMail(s: GameState): GameState {
+  if (mxTarget(s)) return s;
+  const d = companyDomain(s);
+  s.mail = { ...s.mail, tenants: [...s.mail.tenants, { id: `tn${s.nextId++}`, host: "self", domain: d, plan: "self", since: s.hour, verified: true, endsAt: null, admin: null }] };
+  s.company = { ...s.company, zone: [...s.company.zone, { id: `z${s.nextId++}`, type: "MX", name: "@", ttl: 3600, data: `10 mail.${d}` }] };
+  return s;
+}
+export const hire = (s: GameState, candidateId: string, team?: string) => hireReal(withDomainMail(s), candidateId, team);

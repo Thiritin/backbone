@@ -4,8 +4,10 @@ import type { GameState } from "../50-state";
 import type { Ticket } from "../40-support/tickets";
 import { subjectParams } from "../40-support/notices";
 import { ascii } from "../30-customers/domains";
-import type { Attachment, Folder, MailAccount, MailTenant, Message, SysFolder } from "./types";
+import type { Attachment, Folder, Message, SysFolder } from "./types";
 import { GMIX_DOMAIN, gmixLocal } from "./new";
+import { accountByAddress, addressesOf, ownsAddress, tenantOf } from "./address";
+export { accountByAddress, addressesOf, ownsAddress, tenantOf };
 import { SENDERS } from "../10-catalog/mail-senders";
 
 export const SYS_FOLDERS: SysFolder[] = ["inbox", "sent", "drafts", "junk", "trash", "archive"];
@@ -22,13 +24,8 @@ export function renameStartBox(s: GameState, oldName: string): void {
 }
 
 export const boxOf = (s: GameState, accountId: string): Message[] => s.mail.msgs[accountId] ?? [];
-export const tenantOf = (s: GameState, a: MailAccount): MailTenant | undefined => s.mail.tenants.find((x) => x.id === a.tenant);
 export const ticketOf = (s: GameState, m: Message): Ticket | undefined => (m.ticket ? s.tickets.find((x) => x.id === m.ticket) : undefined);
 
-export const addressesOf = (a: MailAccount): string[] => [a.local, ...a.aliases].map((l) => `${l}@${a.domain}`);
-export const ownsAddress = (a: MailAccount, address: string): boolean => addressesOf(a).includes(address.trim().toLowerCase());
-export const accountByAddress = (s: GameState, address: string, tenantId?: string): MailAccount | undefined =>
-  s.mail.accounts.find((a) => (!tenantId || a.tenant === tenantId) && ownsAddress(a, address));
 
 // System folders first, then the custom folders and labels of the mailbox.
 export const foldersOf = (s: GameState, accountId: string): Folder[] => [

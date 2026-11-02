@@ -6,7 +6,7 @@ import { TASKS, visibleCandidates, type Role } from "../src/sim/47-staff/staff";
 import { type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { addCustomer, addService, creditCustomer } from "../src/sim/90-actions/customers";
-import { hire } from "../src/sim/90-actions/staff";
+import { hire } from "./fixtures";
 import { assignTicket } from "../src/sim/90-actions/support";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 

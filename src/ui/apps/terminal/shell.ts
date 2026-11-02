@@ -1,7 +1,7 @@
 import { useEffect, useRef, type ClipboardEvent, type KeyboardEvent } from "react";
 import { splitPaste } from "../../../sim/60-infra/shell";
 import { t } from "../../../i18n/en";
-import { complete, hostOf, promptOf, runLine, watchStep, type Editing, type Session, type Watch } from "../../../sim/60-infra/terminal";
+import { complete, hostOf, promptOf, runLine, sessionStep, watchStep, type Editing, type Session, type Watch } from "../../../sim/60-infra/terminal";
 import { useSessionState } from "../../session";
 import { useStore } from "../../store";
 
@@ -37,6 +37,17 @@ export function useShell(prefix: string, start: Session | null = null) {
     if (out.length) setLines([...lines, ...out].slice(-MAX_LINES));
     setWatching(steps.flatMap((x) => (x.next ? [x.next] : [])));
   }, [game, watching, lines, setLines, setWatching]);
+
+  // An ssh session hears its machine shut down and drops with it; a console's own login stays with its screen.
+  const remote = start === null;
+  useEffect(() => {
+    if (!remote) return;
+    const step = sessionStep(game, session);
+    if (step.next === session) return;
+    setLines([...lines, ...step.output.map((text) => ({ text }))].slice(-MAX_LINES));
+    setSession(step.next);
+    if (!step.next) { setCwd(null); setPending(null); }
+  }, [game, session, lines, remote, setLines, setSession, setCwd, setPending]);
 
   const tab = () => {
     if (pending !== null) return;

@@ -1,6 +1,6 @@
 import { AppWindow, Bird, Boxes, Container, Feather, Gamepad2, Gauge, Layers, Mail, PanelsTopLeft, Pickaxe, PiggyBank, Server, SquareTerminal, TriangleAlert, type LucideIcon } from "lucide-react";
 import { euroCents } from "../../../sim/00-core/money";
-import { formatClock, START_YEAR, yearOf } from "../../../sim/00-core/time";
+import { formatClock, nowHours, START_YEAR, yearOf } from "../../../sim/00-core/time";
 import { footprint, SERVES, softwareById, softwareOf, type Software, type SoftwareKind } from "../../../sim/10-catalog/platforms";
 import { PRODUCTS } from "../../../sim/10-catalog/products";
 import { licensingAt, type LicenseKind } from "../../../sim/10-catalog/server-os";
@@ -118,9 +118,10 @@ export function Sparkline({ values, from, w = 240, h = 44 }: { values: number[];
   );
 }
 
-export type VmState = "running" | "stopped" | "lost" | "restoring" | "migrating" | "cloning" | "down" | "checkpointed" | "oom";
+export type VmState = "running" | "stopped" | "lost" | "restoring" | "migrating" | "cloning" | "down" | "checkpointed" | "oom" | "booting" | "halting";
 export const VM_STATE: Record<VmState, [string, string]> = {
   running: [t("misc1.parts.running"), "ok"], checkpointed: [t("ovz.frozen"), "accent"], stopped: [t("misc1.parts.stopped"), ""], lost: [t("misc1.parts.lostDisk"), "bad"], restoring: [t("misc1.parts.restoring"), "accent"], migrating: [t("misc1.parts.migrating"), "accent"], cloning: [t("misc1.parts.cloning"), "accent"], down: [t("misc1.parts.down"), "bad"], oom: [t("misc1.parts.oomKilled"), "bad"],
+  booting: [t("misc1.ipmi.booting"), "accent"], halting: [t("misc1.ipmi.shuttingDown"), "accent"],
 };
 export function vmState(game: GameState, w: Workload): VmState {
   if (lostDisk(game, w)) return "lost";
@@ -129,6 +130,8 @@ export function vmState(game: GameState, w: Workload): VmState {
   if (oomKilled(w, game.hour)) return "oom";
   if (w.busyUntil > game.hour) return game.lossReports.some((r) => r.items.some((i) => i.workloadId === w.id && i.restored)) ? "restoring" : "migrating";
   if (w.stopped) return "stopped";
+  if (w.haltUntil !== undefined) return "halting";
+  if ((w.bootUntil ?? 0) > nowHours(game)) return "booting";
   if (w.frozen) return "checkpointed";
   return workloadOnline(game, w) ? "running" : "down";
 }
