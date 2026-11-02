@@ -10,7 +10,7 @@ import { bump, createTicket, isFinal } from "../40-support/tickets";
 import { serviceHeld } from "../45-billing/billing";
 import type { Device, End, GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
-import { booked, liveRam, clustersOn, controlPlanesOn, controlPlaneUp, controlPlaneUse, hostsOfVm, insideVm, isOwnVm, lostDisk, nodeVcpu, workloadsOf, workloadsOn, type Workload } from "./cluster";
+import { booked, liveRam, oomKilled, clustersOn, controlPlanesOn, controlPlaneUp, controlPlaneUse, hostsOfVm, insideVm, isOwnVm, lostDisk, nodeVcpu, workloadsOf, workloadsOn, type Workload } from "./cluster";
 import { serviceMbps } from "./network";
 import { interestAt, modById, titleById } from "../10-catalog/games";
 import { fillOf } from "../30-customers/resellers";
@@ -35,7 +35,7 @@ const demand = (s: GameState, v: Service, hour: number) => 1 + growthRate(s.seed
 export const HELD_LOAD = 0.02;
 
 export function workloadLoad(s: GameState, w: Workload, hour: number): number {
-  if (w.stopped || w.busyUntil > hour || lostDisk(s, w)) return 0;
+  if (w.stopped || w.busyUntil > hour || oomKilled(w, hour) || lostDisk(s, w)) return 0;
   const v = s.services.find((x) => x.id === w.serviceId), c = v && s.customers.find((x) => x.id === v.customerId);
   if (!v || !c) return 0;
   if (serviceHeld(s, v)) return HELD_LOAD;
@@ -106,7 +106,7 @@ export function workloadUse(s: GameState, w: Workload, hour: number = s.hour): R
   const load = workloadLoad(s, w, hour), lost = lostDisk(s, w), mods = modLoad(s, w.serviceId), busy = Math.min(1, load * mods);
   const fill = fillOf(s, w.serviceId);
   const grow = (k: "vcpu" | "ramGb" | "diskGb") => fill * (w.promised && w[k] > 0 ? w.promised[k] / w[k] : 1);
-  return { vcpu: booked(s, w).vcpu * grow("vcpu") * load * mods, ramGb: w.stopped || lost ? 0 : w.ramGb * grow("ramGb") * (RAM_BASE + (1 - RAM_BASE) * busy), diskGb: lost ? 0 : w.diskGb * grow("diskGb") * diskFill(s, w, hour) };
+  return { vcpu: booked(s, w).vcpu * grow("vcpu") * load * mods, ramGb: w.stopped || lost || oomKilled(w, hour) ? 0 : w.ramGb * grow("ramGb") * (RAM_BASE + (1 - RAM_BASE) * busy), diskGb: lost ? 0 : w.diskGb * grow("diskGb") * diskFill(s, w, hour) };
 }
 
 liveRam.of = (s, w) => workloadUse(s, w).ramGb;
