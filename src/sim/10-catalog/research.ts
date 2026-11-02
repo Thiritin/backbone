@@ -58,6 +58,8 @@ export const TRACKS: { id: Track; name: string }[] = [
 
 // The skill that unlocks live migration, auto-balancing and failover per hypervisor cluster; its id predates the rename.
 export const HA_SKILL = "virtualization";
+// The skill that unlocks failure alerts and VMwhere alarm thresholds.
+export const MONITORING_SKILL = "monitoring";
 // The skill that lets a sole trader or partnership found a limited company.
 export const COMPANY_LAW_SKILL = "companyLaw";
 // The skill that lets a hypervisor cluster rent out its GPU cards.

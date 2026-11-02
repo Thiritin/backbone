@@ -1,6 +1,7 @@
 import type { GameState } from "../50-state";
 import { assignedKey, assignKey, installedVersion, isLicensed, keyFor, nameOf, panelLocked, releaseKey, startTrial, trialDaysOf, trialOf } from "../60-infra/licence";
 import { machineOf } from "../60-infra/cluster";
+import { syncEdition } from "../60-infra/vmwhere";
 import type { ActionResult } from "./hardware";
 
 // A build short of a key, naming the product.
@@ -15,6 +16,7 @@ export function activateLicence(s: GameState, machineId: string, product: string
   const k = keyFor(s, machineId, product, key, version);
   if (!k) return { ok: false, error: "error.licenceKey" };
   assignKey(s, k.id, machineId);
+  syncEdition(s, machineId);
   return { ok: true, id: k.id };
 }
 
@@ -23,6 +25,7 @@ export function removeLicence(s: GameState, machineId: string, product: string):
   const held = assignedKey(s, machineId, product);
   if (!held) return { ok: false, error: "error.noSoftware" };
   releaseKey(s, held.id);
+  syncEdition(s, machineId);
   return { ok: true, id: held.id };
 }
 

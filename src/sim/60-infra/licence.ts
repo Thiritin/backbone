@@ -18,7 +18,8 @@ export const nameOf = (product: string): string => productOf(product)?.name ?? p
 export const isLicensed = (product: string): boolean => productOf(product)?.trialDays !== undefined;
 // Days of the product's trial; null when it needs a key at install.
 export const trialDaysOf = (product: string): number | null => productOf(product)?.trialDays ?? null;
-// The editions a licence key can carry: a panel's or a shop system's; VMwhere editions belong to its cluster instead.
+// The tiers a licence key can carry, each with its own fee and kind: a panel's or a shop system's. A VMwhere key's edition
+// keeps the era's kind and sets its cluster's edition instead (vmwhere.ts).
 export const keyTiers = (product: string): LicenceTier[] =>
   (SOFTWARE.find((x) => x.id === product)?.kind === "panel" || SHOP_LICENCES.some((x) => x.id === product) ? tiersOf(product) : []);
 // A panel with editions starts on a trial of its top tier instead of a key at install.

@@ -22,7 +22,7 @@ const game = (cash = 10_000, limit = 100_000) => withCard(Object.assign(newGame(
 describe("vendor shop", () => {
   it("names the major a one-time key in the cart covers, and none for a term key", () => {
     const s = game();
-    expect(lineMajor(s, { product: "vmwhere", edition: null })).toBe("2");
+    expect(lineMajor(s, { product: "vmwhere", edition: "essentials" })).toBe("2");
     s.hour = Y(2017);
     expect(lineMajor(s, { product: "windoors", edition: null })).toBeUndefined();
   });

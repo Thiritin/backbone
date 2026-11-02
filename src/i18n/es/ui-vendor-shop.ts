@@ -3,6 +3,7 @@ import type { Dict } from "../lang";
 
 export default {
   "vendor-shop.cart": (p) => (Number(p.n) ? `Carrito (${p.n})` : "Carrito"),
+  "error.unknownFeature": () => "Tu equipo aún no conoce todas las funciones de esta edición.",
   "vendor-shop.myAccount": () => "Mi cuenta",
   "vendor-shop.edition": () => "Edición",
   "vendor-shop.accounts": () => "Cuentas",

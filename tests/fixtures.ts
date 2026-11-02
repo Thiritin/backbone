@@ -21,6 +21,7 @@ import { device, deviceDefaults, newGame as blankGame, type GameState, type Lice
 import { cardDetails, openAccount } from "../src/sim/46-finance/bank";
 import { hostOf } from "../src/sim/80-business/vendor-shop";
 import { addToCart, checkout, type OrderDetails } from "../src/sim/90-actions/vendor-shop";
+import { activateLicence, removeLicence } from "../src/sim/90-actions/licence";
 import { START_CASH } from "../src/sim/10-catalog/economy";
 
 // Games with the savings already in hand and no bank account, the way every game started before the account came first.
@@ -320,6 +321,14 @@ export function buyKey(s: GameState, product: string, edition: string | null): L
   const bought = addToCart(s, product, edition), paid = bought.ok ? checkout(s, hostOf(product)!, orderDetails(s, "card")) : bought;
   if (!paid.ok) throw new Error(paid.error);
   return s.licenses.at(-1)!;
+}
+// Buys a key of the edition on vmwhere.com for every host of a VMwhere cluster and types it in, replacing the host's key.
+export function vmwhereKeys(s: GameState, clusterId: string, edition: string): void {
+  for (const n of s.clusters.find((x) => x.id === clusterId)!.nodes) {
+    const k = buyKey(s, "vmwhere", edition);
+    removeLicence(s, n.deviceId, "vmwhere");
+    must(activateLicence(s, n.deviceId, "vmwhere", k.key));
+  }
 }
 // An Ionose tenant on the company domain with its MX records live, so a hire gets a mailbox. An own-server tenant would
 // need a running mail server for its MX to resolve.

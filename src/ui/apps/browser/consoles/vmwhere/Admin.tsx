@@ -1,20 +1,19 @@
 import { useState } from "react";
-import { euro } from "../../../../../sim/00-core/money";
 import { tiersOf } from "../../../../../sim/10-catalog/licence-tiers";
 import type { GameState } from "../../../../../sim/50-state";
 import { alarmKey, clusterSummary, rulesOf } from "../../../../../sim/60-infra/alarms";
 import { isOwnVm, type Cluster, type Drs, type Pool } from "../../../../../sim/60-infra/cluster";
-import { EDITION_COST, editionAllows, editionOf, upgradeCost, type Feature } from "../../../../../sim/60-infra/vmwhere";
-import { acknowledgeAlarm, applyRec, deletePool, resetAlarms, savePool, setAlarmRules, setDrs, setPool, upgradeEdition } from "../../../../../sim/90-actions/vmwhere";
+import { editionAllows, editionOf, type Feature } from "../../../../../sim/60-infra/vmwhere";
+import { acknowledgeAlarm, applyRec, deletePool, resetAlarms, savePool, setAlarmRules, setDrs, setPool } from "../../../../../sim/90-actions/vmwhere";
 import { t } from "../../../../../i18n/en";
 import { nodeName } from "../HypervisorBase";
 import { usePageAct } from "../../pageAct";
 
 const FEATURES: Feature[] = ["failover", "alarms", "drs", "pools"];
 
-// Administration > Licensing: the editions of the cluster, what each unlocks and the upgrade button.
+// Administration > Licensing: the edition of the cluster and what each edition unlocks.
 export function Licensing({ c }: { game: GameState; c: Cluster }) {
-  const act = usePageAct(), now = editionOf(c);
+  const now = editionOf(c);
   return (
     <>
       <table className="cx-table">
@@ -30,7 +29,7 @@ export function Licensing({ c }: { game: GameState; c: Cluster }) {
             <tr key={x.id}>
               <td>{x.name}</td>
               {FEATURES.map((f) => <td key={f}>{editionAllows({ ...c, licence: { tier: x.id, trialUntil: null, lapsedAt: null } }, f) ? "✓" : ""}</td>)}
-              <td>{x.id === now ? t("vw.current") : EDITION_COST[x.id] > EDITION_COST[now] && <button className="cx-btn" onClick={() => act(upgradeEdition, c.id, x.id)}>{t("vw.upgrade", { price: euro(upgradeCost(c, x.id)) })}</button>}</td>
+              <td>{x.id === now && t("vw.current")}</td>
             </tr>
           ))}
         </tbody>

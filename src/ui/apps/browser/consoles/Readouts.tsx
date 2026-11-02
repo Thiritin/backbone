@@ -5,6 +5,7 @@ import type { GameState } from "../../../../sim/50-state";
 import type { Cluster } from "../../../../sim/60-infra/cluster";
 import type { ConsoleFeatures } from "../../../../sim/80-business/consoles";
 import { euroCents, euroPrice } from "../../../../sim/00-core/money";
+import { tiersOf } from "../../../../sim/10-catalog/licence-tiers";
 import { softwareById } from "../../../../sim/10-catalog/platforms";
 import { licensingAt } from "../../../../sim/10-catalog/server-os";
 import { licenseCost } from "../../../../sim/85-products/products";
@@ -13,7 +14,7 @@ import { supportOn } from "../../../../sim/60-infra/lifecycle";
 import { yearOf } from "../../../../sim/00-core/time";
 import { LOG_SOURCES, logLines, panelTasks, type LogSource } from "../../../../sim/80-business/readouts";
 import { LicenceFacts } from "./HostSettings";
-import { assignedKey, installedVersion, isLicensed, keyExpired, keyTiers, licenceStatus, panelKey, panelLocked, panelStatus, trialDaysOf, trialOf, upgradeKeyBlock } from "../../../../sim/60-infra/licence";
+import { assignedKey, installedVersion, isLicensed, keyExpired, licenceStatus, panelKey, panelLocked, panelStatus, trialDaysOf, trialOf, upgradeKeyBlock } from "../../../../sim/60-infra/licence";
 import { machineOf } from "../../../../sim/60-infra/cluster";
 import { familyOf } from "../../../../sim/60-infra/vulns";
 import { upgradeOffers } from "../../../../sim/80-business/vendor-shop";
@@ -133,7 +134,7 @@ function KeyEntry({ game, c, onDone }: { game: GameState; c: Cluster; onDone?: (
   const held = assignedKey(game, m, id);
   const activate = () => { const r = act(activateLicence, m, id, key); setDone(r.ok); setErr(r.ok ? "" : t(r.error)); if (r.ok) { setKey(""); onDone?.(); } };
   if (held) {
-    const edition = keyTiers(id).find((x) => x.id === held.edition)?.name;
+    const edition = tiersOf(id).find((x) => x.id === held.edition)?.name;
     return (
       <div className="cx-inline">
         <span className="num">{held.key}</span>

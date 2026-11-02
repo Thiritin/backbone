@@ -1,13 +1,14 @@
 // docs/design/plans/software-licences.md, lanes vendor-shop and my-account: the cart, checkout and order email every vendor
 // site shares.
 import { eraAt, type LicenseKind } from "../10-catalog/server-os";
-import { licenceIndex } from "../10-catalog/licence-tiers";
+import { licenceIndex, tiersOf } from "../10-catalog/licence-tiers";
 import { cents } from "../45-billing/billing";
 import { yearOf } from "../00-core/time";
 import type { GameState, Licence } from "../50-state";
 import { nextMajor, versionAt, versionsOf } from "../10-catalog/software-versions";
 import { accountsOn, issueKey, isLicensed, keyTiers, panelMachine, productOf, tiersOnSale, updateKey, yearAfter } from "../60-infra/licence";
 import { deliverMail } from "../40-support/tickets";
+import { editionFactor, editionKnown, syncEdition } from "../60-infra/vmwhere";
 import type { Payable } from "../46-finance/payables";
 
 export const ORDER = "vendor.order";
@@ -21,14 +22,16 @@ export const vendorName = (product: string): string => productOf(product)?.name 
 const listed = (product: string, fee: number, hour: number): number => Math.round(fee * licenceIndex(product, yearOf(hour)) * 100) / 100;
 
 // What a product's site sells at the hour: the editions of its licensing era, and one licence at the era's price when the
-// era sells keys for a major or the product has no editions.
+// era sells keys for a major or the product has no editions; VMwhere sells that licence in its editions.
 export function offers(product: string, hour: number): Offer[] {
   const p = productOf(product);
   const era = p && isLicensed(product) ? eraAt(p, hour) : undefined;
   if (era?.closed) return [];
   const at = (fee: number) => listed(product, fee, hour);
   const tiers: Offer[] = tiersOnSale(product, hour).map((x) => ({ edition: x.id, fee: at(x.fee), kind: x.kind }));
-  const own = era && era.kind !== "free" && (era.kind === "once" || !tiers.length) ? [{ edition: null, fee: at(era.fee), kind: era.kind, period: era.period }] : [];
+  const own = era && era.kind !== "free" && (era.kind === "once" || !tiers.length)
+    ? (product === "vmwhere" ? tiersOf(product).map((x) => x.id) : [null]).map((edition) => ({ edition, fee: at(era.fee * editionFactor(product, edition)), kind: era.kind, period: era.period }))
+    : [];
   return [...tiers, ...own];
 }
 export const offerOf = (line: Pick<CartLine, "product" | "edition">, hour: number): Offer | undefined =>
@@ -59,9 +62,10 @@ export function upgradeOffers(s: GameState, product: string): UpgradeOffer[] {
 // price difference for a one-time key, never a refund. Undefined while the key or the edition is not on offer.
 export function editionChange(s: GameState, keyId: string, edition: string | null): Offer | undefined {
   const k = s.licenses.find((x) => x.id === keyId), to = offerOf({ product: k?.product ?? "", edition }, s.hour);
-  if (!k || !to || edition === k.edition || !keyTiers(k.product).some((x) => x.id === edition)) return undefined;
+  if (!k || !to || edition === k.edition || !tiersOf(k.product).some((x) => x.id === edition)) return undefined;
   if (k.covers.kind === "term") return { ...to, fee: 0 };
-  const was = keyTiers(k.product).find((x) => x.id === k.edition)?.fee ?? 0;
+  // A VMwhere key's edition is a multiple of the era's fee.
+  const was = k.product === "vmwhere" ? eraAt(productOf(k.product)!, s.hour).fee * editionFactor(k.product, k.edition) : keyTiers(k.product).find((x) => x.id === k.edition)?.fee ?? 0;
   return { ...to, fee: Math.max(0, cents(to.fee - listed(k.product, was, s.hour))), kind: "once" };
 }
 // Why the key cannot take the edition: the host it is assigned to serves more accounts than the edition allows.
@@ -69,6 +73,11 @@ export function editionBlock(s: GameState, keyId: string, edition: string | null
   const k = s.licenses.find((x) => x.id === keyId), tier = keyTiers(k?.product ?? "").find((x) => x.id === edition);
   const c = s.clusters.find((x) => x.panel === k?.product && panelMachine(x) === k?.machineId);
   return tier && c && tier.cap !== null && accountsOn(s, c) > tier.cap ? "error.licenceCap" : null;
+}
+// Why a cart line cannot be bought: an edition with a feature the company has not learned, or an edition change editionBlock refuses.
+export function lineBlock(s: GameState, line: Pick<CartLine, "product" | "edition" | "replaces">): string | null {
+  if (!editionKnown(s, line.product, line.edition)) return "error.unknownFeature";
+  return line.replaces ? editionBlock(s, line.replaces, line.edition) : null;
 }
 
 // What a cart line sells now, an upgrade at its upgrade price; undefined once it is no longer sold.
@@ -95,9 +104,11 @@ export type KeyLine = NonNullable<Payable["keys"]>["lines"][number];
 // An edition change turns the key it replaces in place, so it stays on its machine.
 export function sendKeys(s: GameState, vendor: string, order: string, lines: KeyLine[], total: number, card: boolean): void {
   lines.forEach((l) => {
-    const k = l.replaces ? s.licenses.find((x) => x.id === l.replaces) : undefined, tier = keyTiers(l.product).find((x) => x.id === l.edition);
+    const k = l.replaces ? s.licenses.find((x) => x.id === l.replaces) : undefined, tier = tiersOf(l.product).find((x) => x.id === l.edition);
     if (k && tier) {
-      updateKey(s, k.id, { edition: tier.id, kind: tier.kind });
+      // A VMwhere edition keeps the kind of key it was sold as.
+      updateKey(s, k.id, { edition: tier.id, ...(keyTiers(l.product).includes(tier) && { kind: tier.kind }) });
+      syncEdition(s, k.machineId);
       deliverMail(s, vendor, "licenceEditionSwitched", { name: vendor, key: k.key, to: tier.name });
     } else for (let i = 0; i < l.qty; i++) issueKey(s, l.product, l.edition, order, l.to);
   });

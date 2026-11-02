@@ -4,6 +4,7 @@ import type { Dict } from "./lang";
 // The shop and My account on every vendor site, and its order email.
 export default {
   "vendor-shop.cart": (p) => (Number(p.n) ? `Cart (${p.n})` : "Cart"),
+  "error.unknownFeature": () => "Your team does not know every feature of this edition yet.",
   "vendor-shop.myAccount": () => "My account",
   "vendor-shop.edition": () => "Edition",
   "vendor-shop.accounts": () => "Accounts",
