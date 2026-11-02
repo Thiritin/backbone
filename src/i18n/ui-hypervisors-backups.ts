@@ -231,6 +231,8 @@ export default {
   "ipmi.log.inlet.warn": () => "Inlet temperature above 35 degrees",
   "ipmi.log.inlet.crit": () => "Inlet temperature above 40 degrees",
   "ipmi.log.inlet.normal": () => "Inlet temperature back to normal",
+  "ipmi.log.cpu.throttle": () => "CPU throttled by temperature",
+  "ipmi.log.cpu.normal": () => "CPU temperature back to normal",
   "ipmi.log.node.active": () => "Cluster node set to active",
   "ipmi.log.node.cordoned": () => "Cluster node cordoned",
   "ipmi.log.node.draining": () => "Cluster node draining",

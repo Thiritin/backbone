@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { GameState } from "../src/sim/50-state";
-import { inletTemperature } from "../src/sim/60-infra/sensors";
+import { cpuTemperature, inletTemperature, sensorTick } from "../src/sim/60-infra/sensors";
+import { hourOfMonth } from "../src/sim/00-core/time";
 import { cpuLoad, rackPower } from "../src/sim/60-infra/status";
 import { THERMAL, thermalTick } from "../src/sim/60-infra/thermal";
 import { nodeUsage } from "../src/sim/60-infra/usage";
@@ -72,5 +73,28 @@ describe("cooling and overheating", () => {
     const before = failureChance(s, dev(s), c);
     dev(s).hotHours = THERMAL.wearHours;
     expect(failureChance(s, dev(s), c)).toBeCloseTo(before * 2 / (1 + 1 / THERMAL.wearHours));
+  });
+
+  it("throttles a basement CPU with two failed fans in July, wears it, and logs it; healthy fans at full load do not", () => {
+    const s = readyGame(1);
+    s.hour = hourOfMonth("2005-07");
+    runServers(s);
+    const perf = nodeUsage(s, BASEMENT_SERVER).perf;
+    expect(cpuTemperature(s, dev(s))).toBeLessThan(THERMAL.cpuThrottleC);
+    tick(s);
+    expect(dev(s).hotHours ?? 0).toBe(0);
+
+    dev(s).components.filter((c) => c.kind === "fan").slice(0, 2).forEach((c) => (c.failedAt = s.hour));
+    expect(cpuTemperature(s, dev(s))).toBeGreaterThanOrEqual(THERMAL.cpuHotC);
+    expect(inletTemperature(s, dev(s))).toBeLessThan(THERMAL.throttleC);
+    expect(nodeUsage(s, BASEMENT_SERVER).perf).toBeLessThan(perf);
+    expect(nodeUsage(s, BASEMENT_SERVER).perf).toBeGreaterThanOrEqual(perf * THERMAL.cpuFloorPerf);
+    const cpu = dev(s).components.find((c) => c.kind === "cpu")!;
+    const before = failureChance(s, dev(s), cpu);
+    tick(s);
+    expect(dev(s).hotHours).toBe(1);
+    expect(failureChance(s, dev(s), cpu)).toBeGreaterThan(before);
+    sensorTick(s);
+    expect(dev(s).log.some((l) => l.key === "ipmi.log.cpu.throttle")).toBe(true);
   });
 });

@@ -39,7 +39,7 @@ describe("load-based power draw", () => {
 });
 
 describe("CPU temperature and fan curve", () => {
-  it("runs 20 degrees over the inlet at full load with low fans, hotter and faster with two failed fans", () => {
+  it("runs 20 degrees over the inlet at full load with low fans, another 20 per failed fan with faster fans", () => {
     const { s, d } = setup();
     vi.spyOn(cpuLoad, "of").mockReturnValue(1);
     const healthy = sensorsOf(s, d);
@@ -50,7 +50,7 @@ describe("CPU temperature and fan curve", () => {
     expect(fans.length).toBeGreaterThanOrEqual(2);
     fans.slice(0, 2).forEach((c) => (c.failedAt = s.hour));
     const hot = sensorsOf(s, d);
-    expect(hot.cpuC).toBeCloseTo(inletTemperature(s, d) + 40, 0);
+    expect(hot.cpuC).toBeCloseTo(inletTemperature(s, d) + 60, 0);
     expect(hot.fanDuty).toBeGreaterThan(healthy.fanDuty);
     expect(hot.fans.filter((f) => f.rpm === 0)).toHaveLength(2);
     expect(Math.max(...hot.fans.map((f) => f.rpm))).toBeGreaterThan(Math.max(...healthy.fans.map((f) => f.rpm)));

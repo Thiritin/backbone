@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- A server with failed fans now runs its CPU hot under load: from 85 °C it slows down, and every hour above 90 °C wears its parts.
 - You can order cross-connects to carriers and exchanges in a provider's customer portal, and once a year a provider raises its rack prices for new contracts and tells its customers by email.
 - Dragging a browser tab out of its window now opens it in a new browser window, and dragging a tab onto another browser window moves it there.
 - SkyBlink, Boris Network, Digital Reality, CoreSpite, Telex and myLoch now each have a website in their own style, which changes from an early look to a modern one over the years.
