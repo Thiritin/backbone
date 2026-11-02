@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- The Research icon in the dock shows a dot whenever a new research can be started.
 - A Zendusk account now has its own agent site with views, macros, triggers and a Help Center, in the look of each era, and its support address is verified once your mailbox forwards to it.
 - Pear Mail now checks each mail account on its own interval in the background, downloading POP mail to the computer and showing IMAP mail at the next check.
 - App and file icons now follow the system release: Panthera shows the Crystal Clear icons, Leapard shows the Oxygen icons, and later releases keep their flat tiles.

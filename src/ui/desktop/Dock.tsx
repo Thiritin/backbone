@@ -37,6 +37,7 @@ export function Dock() {
               <span className="dock-tile" style={{ "--tile": shown.tile } as CSSProperties}><shown.icon /></span>
               <span className="dot" />
               {a.name === "Support" && deskDown && <span className="warn" />}
+              {a.dot?.(game) && <span className="notice" />}
               {badge > 0 && <span className="count">{badge > 99 ? "99+" : badge}</span>}
             </button>
           </Fragment>
