@@ -20,6 +20,7 @@ import type { OsImage } from "../../../sim/10-catalog/server-os";
 import { useSessionState, writeSession } from "../../session";
 import { t } from "../../../i18n/en";
 import { useFocus, useStore, useWin } from "../../store";
+import { useBack } from "../../desktop/back";
 import { VaultOffer } from "../../vault";
 import { Favicon } from "./Favicon";
 import { ConsolePage } from "./consoles/ConsolePage";
@@ -231,6 +232,7 @@ export function BrowserApp() {
     patch(tab.id, (x) => ({ ...x, history: [...x.history.slice(0, x.at + 1), next], at: x.at + 1, nav: x.nav + 1 }));
   };
   const step = (d: number) => patch(tab.id, (x) => ({ ...x, at: x.at + d, nav: x.nav + 1 }));
+  useBack(win.id, () => tab.at > 0 && step(-1));
   const reload = () => patch(tab.id, (x) => ({ ...x, nav: x.nav + 1 }));
   const open = (to: string) => {
     const id = Math.max(...tabs.map((x) => x.id)) + 1;

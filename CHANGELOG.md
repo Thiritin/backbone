@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- The browser's Back button no longer leaves the game: in the browser app it goes back one page, everywhere else it does nothing.
 - Web hosting panels can now create an account for your own company domain, which starts empty, counts against the panel licence and is where your website and shop will live.
 - A license key that is installed in a panel or product has to be removed before another key can be entered, and the license page shows the installed key with a Remove button instead of listing your unused keys.
 - Software now installs on any virtual machine with the disk for it, but a VM too small for its software and sites sits at 100% CPU and RAM, its web console stops answering and its sites slow down until you resize it.

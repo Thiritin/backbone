@@ -16,4 +16,7 @@ import { loadLang } from "./i18n/lang";
 await loadLang();
 const { Desktop } = await import("./ui/desktop/Desktop");
 const { MobileGate, isMobile } = await import("./ui/desktop/MobileGate");
+const { useStore } = await import("./ui/store");
+const { trapBack } = await import("./ui/desktop/back");
+trapBack(window, () => useStore.getState().windows.filter((w) => !w.minimized).sort((a, b) => b.z - a.z)[0]?.id);
 createRoot(document.getElementById("root")!).render(<StrictMode>{isMobile ? <MobileGate /> : <Desktop />}</StrictMode>);
