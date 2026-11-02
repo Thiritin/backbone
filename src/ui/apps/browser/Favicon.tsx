@@ -58,6 +58,7 @@ export function Favicon({ game, r }: { game: GameState; r: Resolved }) {
     }
     case "hosttoast": return <Tile fill="#e8821f"><rect x="4" y="4.5" width="8" height="7.5" rx="2.5" fill="#fff3d6" /><rect x="5.5" y="6" width="5" height="4.5" rx="1" fill="#d9731b" /></Tile>;
     case "wiki": return <Tile fill="#f8f9fa"><text x="8" y="12" textAnchor="middle" fontSize="11" fontFamily="Georgia, serif" fill="#202122">W</text></Tile>;
+    case "agency": return <Tile fill="oklch(0.62 0.19 45)"><path d="M3 12V4h2.2l2.8 4.4L10.8 4H13v8h-1.8V7.2L8 12 4.8 7.2V12z" fill="white" /></Tile>;
     case "sponsorboard": return <Tile fill="oklch(0.66 0.17 55)"><path d="M3.5 5h9v4.5h-4L6 12V9.5H3.5z" fill="white" /></Tile>;
     case "vendor": return <Logo provider={p.maker} size={16} />;
     case "provider": return <Logo provider={p.id} size={16} />;
