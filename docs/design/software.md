@@ -440,7 +440,7 @@ Bound, Knut DNS, WireGuarded, vsFTPeed, Postfixit and Backula have no web consol
 
 ## 11. Economy
 
-Add to `docs/design/economy.md` under "Platforms and licenses":
+Add to `docs/design/economy/platforms-and-licenses.md` under "Platforms and licenses":
 
 - Windoors Server: 600 euros once per machine until 2015, paid when the OS install starts; from 2016, 4 euros a month per physical core of a server or per vCPU of a VM, billed with the licenses.
 - VMwhere: 600 euros once per CPU socket of the node until 2023, paid when the install starts; from 2024, 8 euros a month per physical core.

@@ -1,4 +1,4 @@
-// economy.md, UPS: a UPS with a network card signals a grid outage to the servers it protects, which shut down cleanly before
+// economy/README.md, UPS: a UPS with a network card signals a grid outage to the servers it protects, which shut down cleanly before
 // its battery runs out. A server listens through the agent installed on its OS or through its hypervisor's API.
 import { isManagedUps, modelById } from "../10-catalog/hardware";
 import type { Device, GameState } from "../50-state";

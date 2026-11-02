@@ -1,4 +1,4 @@
-// High availability per hypervisor cluster (gdd.md, Compute): automatic failover and auto-balancing. Clustered panel hosts fail over too.
+// High availability per hypervisor cluster (gdd/README.md, Compute): automatic failover and auto-balancing. Clustered panel hosts fail over too.
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { softwareById } from "../10-catalog/platforms";
@@ -11,7 +11,7 @@ import { working } from "./status";
 import { HOT_RAM } from "./alarms";
 import { nodeUsage } from "./usage";
 
-// economy.md, High availability: a failed node's VMs are back on other nodes after five minutes; a node runs hot from 90%
+// economy/README.md, High availability: a failed node's VMs are back on other nodes after five minutes; a node runs hot from 90%
 // of its installed RAM (HOT_RAM in alarms.ts) or with more busy vCPUs than cores.
 export const FAILOVER_MINUTES = 5;
 

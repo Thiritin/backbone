@@ -33,7 +33,7 @@ Packages and the order forms come from `packages-provisioning`. This lane adds t
 
 - `src/sim/80-business/index.ts:20` registers `gamePanels` as `tcadmen`, `multikraft`, `pterodaktyl`. `src/sim/80-business/consoles.ts:23` has `GAME_PANELS`, line 30 `GAME_NAMES`, line 75 to 76 the ports. All three share the `game` look and the same `ConsoleFeatures`. Nothing differs between them except the title and port.
 - Game servers are the product `gameServer` (`src/sim/10-catalog/products.ts:34`, runs on a cluster, hourly period). Size comes from `game(share)` at line 56 (0.5 vCPU and 0.5 GB RAM times share, grown by year). There is no title, slot count, version, mod or restart state. `Service` (`src/sim/30-customers/customers.ts:17`) has `label`, `price`, `product` but no game fields.
-- Load: `curveFor(gameServer, ...)` gives the "game" curve (`src/sim/10-catalog/usage.ts:22`), documented in economy.md "Usage curves and overcommit" (weekday peak 0.45, weekend peak 1.0, week average about 0.35). `workloadUse` (`src/sim/60-infra/usage.ts:70`, curve line 34) returns used resources, not the load share, so a player count has no source yet.
+- Load: `curveFor(gameServer, ...)` gives the "game" curve (`src/sim/10-catalog/usage.ts:22`), documented in economy/usage-curves-and-overcommit.md "Usage curves and overcommit" (weekday peak 0.45, weekend peak 1.0, week average about 0.35). `workloadUse` (`src/sim/60-infra/usage.ts:70`, curve line 34) returns used resources, not the load share, so a player count has no source yet.
 - Upgrade requests: `src/sim/40-support/tick.ts:163` to `170` draws `UPGRADE_CHANCE[p.budget]` (2, 3, 4 percent, `src/sim/40-support/tickets.ts:51`) per customer and opens an `upgrade` ticket on a random `expandable` service (`tickets.ts:107`). Growth uses `grownSpec` (`src/sim/30-market/spec.ts:51`) with `UPGRADE_FACTOR` 1.5 (`src/sim/40-support/retention.ts:27`). Churn is `p.churn` plus a happiness term at lines 163 to 165 of the same file.
 - Provisioning: `provisionService` at `src/sim/90-actions/clusters.ts:431`.
 - Console UI: `TCAdmen.tsx` (53 lines, era split at 2016 via `erasFrom(2005, 2016)`), `MultiKraft.tsx` (72), `Pterodaktyl.tsx` (52). Each lays out `RowsTable`/`useRows` from `PanelBase.tsx` (`useRows` line 118 builds rows with start, stop, migrate, resize actions; `Row` type line 111). Pterodaktyl draws its own `pt-server` articles with CPU and memory bars.
@@ -77,7 +77,7 @@ Titles (all puns; the real names are never used):
 | `valhome` | Valhome | Valheim | 2021 | never | 0.10, 0.09, 0.06 |
 | `pallworld` | Pallworld | Palworld | 2024 | never | 0.12, 0.12, 0.08 |
 
-`perSlot` is the conversion. The existing `game(1)` size is 0.5 vCPU and 0.5 GB RAM, so 16 slots of an average title (0.03 vCPU, 0.03 GB) fit the existing resource model; economy.md's example value of 0.05 vCPU and 32 MB per slot is the middle of this table. Capacity, overcommit and pricing stay on resources: a slot service books `slots * perSlot` as its `Resources`.
+`perSlot` is the conversion. The existing `game(1)` size is 0.5 vCPU and 0.5 GB RAM, so 16 slots of an average title (0.03 vCPU, 0.03 GB) fit the existing resource model; economy/README.md's example value of 0.05 vCPU and 32 MB per slot is the middle of this table. Capacity, overcommit and pricing stay on resources: a slot service books `slots * perSlot` as its `Resources`.
 
 Which unit applies is decided by the software on the cluster the service runs on (`softwareById(c.softwareId).id`):
 
@@ -88,7 +88,7 @@ Which unit applies is decided by the software on the cluster the service runs on
 | `pterodaktyl` | RAM (512 MB steps) and CPU limit (percent of a core, 50 steps) | Memory limit and CPU limit on the eggs and servers |
 | hypervisor cluster | RAM only, no title | existing VM row |
 
-Economy extension: this lane extends economy.md "Usage curves and overcommit" with a new subsection "Game titles". Per-resource pricing (Prices over time) stays unchanged because a slot service is priced on its converted `Resources`. A slot-sold package carries a price per slot per month (proposal: 2005 about 0.60 per slot, falling to 0.25 per slot by 2012, derived from the Per-resource pricing of the converted resources times the product's margin so no new curve is needed; the implementer should derive it from `priceAt` and not hard-code it).
+Economy extension: this lane extends economy/README.md "Usage curves and overcommit" with a new subsection "Game titles". Per-resource pricing (Prices over time) stays unchanged because a slot service is priced on its converted `Resources`. A slot-sold package carries a price per slot per month (proposal: 2005 about 0.60 per slot, falling to 0.25 per slot by 2012, derived from the Per-resource pricing of the converted resources times the product's margin so no new curve is needed; the implementer should derive it from `priceAt` and not hard-code it).
 
 Titles available at a year: `from <= year`, weighted by `weight * decay` where `decay` is 1 until `fade`, then falls 25 percent a year to a floor of 0.1. New orders and shop demand use this weight (sales draw lives in `src/sim/30-market/`, the hook is one function `pickTitle(seed, key, year)` in the catalog so no market file needs more than one call; if `packages-provisioning` already owns the order draw, the call goes there).
 
@@ -120,7 +120,7 @@ Provisioning: `provisionService` (`clusters.ts:431`) gets one hook at the end: f
 
 Add `gameLoad(s, w, hour): number` in `src/sim/60-infra/usage.ts` by extracting the load computation of line 34 (curve times day swing times demand times jitter, capped at 1) so `workloadUse` and the player count share it. Slots-sold services: `players = round(slots * gameLoad)`. RAM-sold services: `slotsEq = floor(ramGb / perSlot.ramGb)` of the title, same formula. No new state.
 
-Full at peak: in the hourly games tick, when `players >= slots` (load times slots rounds to all slots) mark `seenFull = s.hour`. The upgrade chance in `src/sim/40-support/tick.ts:168` multiplies: `chance(UPGRADE_CHANCE[p.budget] * fullBoost(s, c))` where `fullBoost` is 3 if any of the customer's game servers has `s.hour - seenFull <= 168` (7 days) else 1. When a game server is the pick for the upgrade ticket, prefer the full one. The accepted upgrade grows slots to `ceil(slots * factor / 4) * 4` (acceptUpgrade path through `grownSpec`; add a branch next to it). To keep one draw per customer the change is a multiplier on the existing probability, not an extra draw, so seeded tests stay stable. Economy extension: "Happiness and churn", Expansion paragraph (economy.md line 534).
+Full at peak: in the hourly games tick, when `players >= slots` (load times slots rounds to all slots) mark `seenFull = s.hour`. The upgrade chance in `src/sim/40-support/tick.ts:168` multiplies: `chance(UPGRADE_CHANCE[p.budget] * fullBoost(s, c))` where `fullBoost` is 3 if any of the customer's game servers has `s.hour - seenFull <= 168` (7 days) else 1. When a game server is the pick for the upgrade ticket, prefer the full one. The accepted upgrade grows slots to `ceil(slots * factor / 4) * 4` (acceptUpgrade path through `grownSpec`; add a branch next to it). To keep one draw per customer the change is a multiplier on the existing probability, not an extra draw, so seeded tests stay stable. Economy extension: "Happiness and churn", Expansion paragraph (economy/happiness-and-churn.md line 534).
 
 ### 3.3 Game versions (feature 7)
 
@@ -174,18 +174,18 @@ Per panel:
 
 **Lost sales.** A game server lead draws a title with `pickTitle`; when none of the player's game panels offers it, the lead is lost and counted per title for 90 days. A lead that goes through draws its title again at provisioning, among the titles the panel offers. The Packages screen of TCAdmen and Pterodaktyl opens with the catalogue table: each title out by now with its status (Offered, Config ready on {date}, Import config, Write config for {price}) and "Requests declined: {count}" under its name.
 
-Economy extension: "Happiness and churn" in economy.md drops the faded drain and gets the fan share and drifter switch chance; the write-it-yourself costs go under "Game titles".
+Economy extension: "Happiness and churn" in economy/happiness-and-churn.md drops the faded drain and gets the fan share and drifter switch chance; the write-it-yourself costs go under "Game titles".
 ### 3.6 Crashes, auto-restart and scheduled restarts (features 9, 10)
 
 Hourly in `gamesTick`, per running `GameServer`:
 - Crash chance per hour: `base * (1 + 0.25 * mods) * (1 + 2 * brokenMods) * (1 + 2 * leak) * (overloaded ? 2 : 1)` with `base = 0.0008` (about one crash in 52 days). One draw `hashRng(s.seed, idNum(serviceId), s.hour)` per server, no `s.rng` advance.
 - Leak grows by `0.01` per hour for titles with `leak: true` (Blockcraft, ARC Archaic, Rost with a little) plus mod `leak`; capped at 1; reset to 0 by any restart.
-- A crashed server sets `crashedAt = s.hour`. While `crashedAt !== null` the service is down for its customer: it counts as an outage the same way `workloadOnline` false does for noticing (economy.md "Noticing outages"); the implementer wires `crashedAt` into the one function that decides a service is down for happiness (the lane must read `src/sim/45-billing` and `src/sim/40-support/status.ts` and add to the existing check, not a new path).
+- A crashed server sets `crashedAt = s.hour`. While `crashedAt !== null` the service is down for its customer: it counts as an outage the same way `workloadOnline` false does for noticing (economy/noticing-outages.md "Noticing outages"); the implementer wires `crashedAt` into the one function that decides a service is down for happiness (the lane must read `src/sim/45-billing` and `src/sim/40-support/status.ts` and add to the existing check, not a new path).
 - Auto-restart (`auto: true`): the server restarts 2 game minutes later, `crashedAt` cleared, leak reset, the customer loses no more happiness than 0.2. Off: the customer notices after 1 hour and opens an `outage` ticket; each hour down costs 0.5 happiness, capped at 10; the player clears it with `restartGame(s, serviceId)`. This makes auto-restart a visible decision. Default for new servers: `auto: false` in 2005 to 2011, `true` from the year of MultiKraft (2011) because its panel offers it, `true` always on Pterodaktyl (Wings restarts crashed containers). The toggle is a per-console action `setAutoRestart`.
 - Scheduled restart: `restart.every` and `hour` (and `day` for weekly). Executing it costs 3 minutes of downtime, resets `leak`, and costs `0.5` happiness if it fires between 17:00 and 23:00 or on weekend afternoons (the gamers' peak per the Game server curve) so the player has a real choice of hour. Default `off`. Action `setRestartSchedule(s, serviceId, every, hour, day)`.
 - Not in scope: refunds, SLA credits for crashes.
 
-Economy extension: economy.md "Noticing outages" and "Tickets and work rates" (an outage ticket for crashes uses the existing 10 minute work).
+Economy extension: economy/README.md "Noticing outages" and "Tickets and work rates" (an outage ticket for crashes uses the existing 10 minute work).
 
 ### 3.7 Pterodaktyl node daemon and port allocations (features 11, 12)
 

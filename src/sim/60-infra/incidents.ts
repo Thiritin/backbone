@@ -1,4 +1,4 @@
-// economy.md, Power outages and Legal requests: grid outages per location, server seizures and the incident log.
+// economy/README.md, Power outages and Legal requests: grid outages per location, server seizures and the incident log.
 import { holdsCopy } from "./backups";
 import { noticeChance, segmentOf } from "../10-catalog/attention";
 import { hashRng, rand, type Rng } from "../00-core/rng";
@@ -41,7 +41,7 @@ export const hasBackupElsewhere = (s: GameState, workloadId: string): boolean =>
   return !!w && w.backupAt !== null && holdsCopy(s, w);
 };
 
-// economy.md, Reviews: 10% of affected customers write one, 20% below happiness 40.
+// economy/README.md, Reviews: 10% of affected customers write one, 20% below happiness 40.
 export function maybeReview(s: GameState, c: Customer, reason: ReviewReason, r: Rng, events: SimEvent[], stars = starsFor(c.happiness, r)): void {
   if (rand(r) >= (c.happiness < 40 ? 0.2 : 0.1)) return;
   announceReview(s, addReview(s, c.id, stars, reason), events);

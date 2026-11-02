@@ -1,4 +1,4 @@
-// Values from docs/design/economy.md, section "Know-how and unlock costs". Each skill is a training the company takes once.
+// Values from docs/design/economy/know-how-and-unlock-costs.md, section "Know-how and unlock costs". Each skill is a training the company takes once.
 import { textFields } from "../00-core/text";
 import type { Product } from "../30-customers/customers";
 import { SOFTWARE } from "./platforms";

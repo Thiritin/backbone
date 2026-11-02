@@ -1,4 +1,4 @@
-// Values come from docs/design/economy.md (Leasing).
+// Values come from docs/design/economy/leasing.md (Leasing).
 import { hashRng, rand } from "../00-core/rng";
 import { dateOf } from "../00-core/time";
 import type { GameState } from "../50-state";

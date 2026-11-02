@@ -4,7 +4,7 @@ import { vpsPlanGb } from "./economy";
 import type { LicenseEra, ServerOsId } from "./server-os";
 import { SITES, type Site } from "./sites";
 
-// Values from docs/design/economy.md, section "Platforms and licenses". EU competition rules make Pear offer four of each.
+// Values from docs/design/economy/platforms-and-licenses.md, section "Platforms and licenses". EU competition rules make Pear offer four of each.
 export type SoftwareKind = "panel" | "cloud" | "game" | "mail" | "mailweb" | "dns" | "vpn" | "storage" | "backup";
 export interface Software {
   id: string;
@@ -40,7 +40,7 @@ export interface Software {
   // The edition or add-on that spreads VMs over the nodes by load, in euros per node a month (0 when included) from its
   // year; null when the hypervisor never balances.
   balancer?: { name: string; fee: number; from: number };
-  // Shared datastores (economy.md, Datastores): VMs move live only off a datastore until the shared-nothing year, and
+  // Shared datastores (economy/README.md, Datastores): VMs move live only off a datastore until the shared-nothing year, and
   // failover restarts only VMs on one.
   datastores?: { sharedNothing: number };
   // Snapshots (checkpoints): up to SNAPSHOTS_MAX per VM, on a hypervisor that sets this flag.
@@ -125,7 +125,7 @@ const CATALOG: Omit<Software, MachineFields>[] = [
   { id: "vsftpeed", kind: "storage", name: "vsFTPeed", console: "vsFTPeed", licensing: [{ from: 2005, kind: "free", fee: 0 }], tickets: 1.4, live: false, split: true, balloon: null, controlPlane: { vcpu: 0.05, ramGb: 0.05, diskGb: 0.1 }, installHours: 1, from: 2005, migration: { same: null, other: null }, cluster: null, autoUpdate: null },
   { id: "ownclod", kind: "storage", name: "OwnClod", console: "OwnClod", licensing: [{ from: 2005, kind: "free", fee: 0 }], tickets: 1.2, live: false, split: true, balloon: null, controlPlane: { vcpu: 0.5, ramGb: 1, diskGb: 10 }, installHours: 2, from: 2010, migration: { same: null, other: null }, cluster: null, autoUpdate: null },
   { id: "minnio", kind: "storage", name: "MinnIO", console: "MinnIO Console", licensing: [{ from: 2005, kind: "free", fee: 0 }], tickets: 1, live: false, split: true, balloon: null, controlPlane: { vcpu: 0.5, ramGb: 1, diskGb: 10 }, installHours: 2, from: 2016, migration: { same: null, other: null }, cluster: null, autoUpdate: null },
-  // Mail servers: the company's own mail on a server or VM; the control plane is what the server takes (economy.md, Company email).
+  // Mail servers: the company's own mail on a server or VM; the control plane is what the server takes (economy/README.md, Company email).
   { id: "postfixit", kind: "mail", name: "Postfixit", console: "Postfixit", licensing: [{ from: 2005, kind: "free", fee: 0 }], tickets: 1.4, live: false, split: true, balloon: null, controlPlane: { vcpu: 0.1, ramGb: 0.25, diskGb: 2 }, installHours: 4, from: 2005 , migration: { same: null, other: null }, cluster: null, autoUpdate: null },
   { id: "mailpig", kind: "mail", name: "Mailpig", console: "Mailpig", licensing: [{ from: 2005, kind: "free", fee: 0 }], tickets: 1, live: false, split: true, balloon: null, controlPlane: { vcpu: 1, ramGb: 2, diskGb: 20 }, installHours: 2, from: 2015 , migration: { same: null, other: null }, cluster: null, autoUpdate: null },
   // Webmail and mail admin front ends of the own mail server (docs/design/plans/webmail-server.md, 2.1).
@@ -153,11 +153,11 @@ const served = (p: Product): Product => (p === "reseller" ? "webHosting" : p);
 export const kindsServing = (p: Product): SoftwareKind[] => (Object.keys(SERVES) as SoftwareKind[]).filter((k) => SERVES[k].includes(served(p)));
 export const kindServing = (p: Product): SoftwareKind | null => (["panel", "cloud", "dns", "vpn", "storage"] as SoftwareKind[]).find((k) => SERVES[k].includes(served(p))) ?? null;
 
-// economy.md, Platforms and licenses: software in a virtual machine gets this share of the VM's CPU and RAM.
+// economy/platforms-and-licenses.md, Platforms and licenses: software in a virtual machine gets this share of the VM's CPU and RAM.
 export const IN_VM = 0.95;
 
 export const softwareById =(id: string): Software => SOFTWARE.find((x) => x.id === id) ?? SOFTWARE.find((x) => x.id === "proxmocks")!;
-// economy.md, Platforms and licenses: a panel's or VM manager's RAM and disk grow half as fast as server RAM after its first year.
+// economy/platforms-and-licenses.md, Platforms and licenses: a panel's or VM manager's RAM and disk grow half as fast as server RAM after its first year.
 export function footprint(sw: Software, year: number): Resources {
   const cp = sw.controlPlane;
   if (sw.kind !== "panel" && sw.kind !== "cloud") return cp;
@@ -182,7 +182,7 @@ export const clustersIn = (sw: Software, year: number): boolean => sw.cluster !=
 // Whether backup software reads clusters running the source software in that year.
 export const backsUp = (target: Software, source: string | null, year: number): boolean => !!source && (target.backs?.[source] ?? Infinity) <= year;
 // The balancer the software offers in that year, or null.
-// economy.md, Datastores: the protocols from their year, up to four datastores per cluster ready an hour after attaching,
+// economy/README.md, Datastores: the protocols from their year, up to four datastores per cluster ready an hour after attaching,
 // and Fibre Channel's host adapter per cluster node and link speed by year.
 export type DatastoreProtocol = "nfs" | "iscsi" | "fc";
 export const DATASTORE_FROM: Record<DatastoreProtocol, number> = { nfs: 2005, iscsi: 2006, fc: 2005 };
@@ -192,7 +192,7 @@ export const FC_HBA_PRICE = 700;
 export const fcGbit = (year: number): number => (year >= 2011 ? 16 : year >= 2008 ? 8 : 4);
 // From this year a disk moves between datastores with its VM running (Storage vMotion).
 export const LIVE_DISK_MOVE = 2007;
-// economy.md, Snapshots: per VM on a hypervisor with datastores, each delta growing by a share of the VM's disk a day.
+// economy/README.md, Snapshots: per VM on a hypervisor with datastores, each delta growing by a share of the VM's disk a day.
 export const SNAPSHOTS_MAX = 3;
 export const SNAPSHOT_GROWTH = 0.05;
 export const balancerIn = (sw: Software, year: number): Software["balancer"] | null => (sw.balancer && year >= sw.balancer.from ? sw.balancer : null);
@@ -204,7 +204,7 @@ export const conflict = (a: Software, b: Software): string | null =>
 export const runsOn = (sw: Software, osId: ServerOsId): boolean => sw.os.includes(osId);
 export const softwareOf = (kind: SoftwareKind): Software[] => SOFTWARE.filter((x) => x.kind === kind);
 
-// economy.md, PHP versions: each from 1 January after its release, when web hosts start to install it.
+// economy/php-versions.md, PHP versions: each from 1 January after its release, when web hosts start to install it.
 export const PHP: { version: string; year: number }[] = [
   { version: "4.4", year: 2005 }, { version: "5.1", year: 2006 }, { version: "5.2", year: 2007 }, { version: "5.3", year: 2010 },
   { version: "5.4", year: 2013 }, { version: "5.5", year: 2014 }, { version: "5.6", year: 2015 }, { version: "7.0", year: 2016 },

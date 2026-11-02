@@ -30,7 +30,7 @@ function sendAt(s: GameState, mbit: number) {
   expect(zoneDemand(s).loc1).toBeCloseTo(mbit, 6);
 }
 
-describe("early capacity (docs/design/economy.md, Home line)", () => {
+describe("early capacity (docs/design/economy/README.md, Home line)", () => {
   it("slows the basement sites by the traffic the full home line drops, and says so once", () => {
     const s = readyGame(1);
     sendAt(s, 1.5);

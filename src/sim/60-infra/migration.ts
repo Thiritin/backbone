@@ -6,7 +6,7 @@ import { renumber, renumberError } from "./addresses";
 import { pickNode, type Cluster, type Workload } from "./cluster";
 import { LAN_GB_PER_HOUR, moveGbit } from "../85-products/products";
 
-// economy.md, Workloads and migration: a web space moves between panel hosts as a hand task. Hours are a base (2 within the
+// economy/workloads-and-migration.md, Workloads and migration: a web space moves between panel hosts as a hand task. Hours are a base (2 within the
 // same panel, 4 between different ones) plus 3 minutes per GB of web storage, halved by a migration tool; the site is
 // unreachable for the last ten minutes. Into another zone the copy also takes its disk ÷ the link speed.
 export const MIGRATE_BASE = { same: 2, other: 4 };

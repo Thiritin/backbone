@@ -7,7 +7,7 @@ import type { Cluster } from "./cluster";
 export type Channel = "stable" | "release" | "edge";
 export const CHANNELS: Channel[] = ["stable", "release", "edge"];
 
-// economy.md, Security advisories, Updating: a channel takes a year's release from this month on (January is 0); before it, the previous year's.
+// economy/security-advisories.md, Security advisories, Updating: a channel takes a year's release from this month on (January is 0); before it, the previous year's.
 const FROM_MONTH: Record<Channel, number> = { edge: 0, release: 3, stable: 6 };
 export const BREAK_CHANCE: Record<Channel, number> = { stable: 0.01, release: 0.04, edge: 0.12 };
 export const BREAK_HOURS: Record<Channel, number> = { stable: 3, release: 3, edge: 6 };

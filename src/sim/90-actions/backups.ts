@@ -1,4 +1,4 @@
-// economy.md, "Backup jobs and restore points": scheduled copies of a cluster's workloads to a backup cluster.
+// economy/README.md, "Backup jobs and restore points": scheduled copies of a cluster's workloads to a backup cluster.
 import { jobById, linkHours, KEEP_MAX, MAX_JOBS, newJob, pruneJob, runJob, syncBackupAt, type BackupJob } from "../60-infra/backups";
 import { diskFill, workloadUse } from "../60-infra/usage";
 import { RESTORE_MINUTES_PER_GB } from "../60-infra/webpanel";

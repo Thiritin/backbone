@@ -1,4 +1,4 @@
-// Values from docs/design/economy.md, "Trade fairs".
+// Values from docs/design/economy/README.md, "Trade fairs".
 import { hourOf, yearOf } from "../00-core/time";
 import { priceAt } from "../10-catalog/economy";
 import type { Profile } from "../30-customers/customers";

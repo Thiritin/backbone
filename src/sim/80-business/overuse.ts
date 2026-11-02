@@ -1,4 +1,4 @@
-// economy.md, "Traffic overuse": a service that moves more traffic in a month than its plan includes, and the three answers.
+// economy/README.md, "Traffic overuse": a service that moves more traffic in a month than its plan includes, and the three answers.
 import { marketRates } from "../10-catalog/products";
 import { yearOf } from "../00-core/time";
 import type { Service } from "../30-customers/customers";

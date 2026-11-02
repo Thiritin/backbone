@@ -1,5 +1,5 @@
 // GDD, Domains: domains registered or transferred for customers, renewed yearly at the registry of their TLD.
-// Numbers in economy.md, Domains.
+// Numbers in economy/README.md, Domains.
 import { hashRng, rand } from "../00-core/rng";
 import { hourOf, nowMinutes } from "../00-core/time";
 import { marketRates } from "../10-catalog/products";

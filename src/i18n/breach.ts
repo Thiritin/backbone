@@ -2,7 +2,7 @@ import { euro } from "../sim/00-core/money";
 
 type Params = Record<string, string | number>;
 
-// Breaches, ransom and fines (economy.md, Security advisories, Breaches and ransom).
+// Breaches, ransom and fines (economy/security-advisories.md, Security advisories, Breaches and ransom).
 export const BREACH_EN: Record<string, (p: Params) => string> = {
   "event.breach.title": () => "Customer data stolen",
   "event.breach.text": (p) => `Attackers copied the customer data on ${p.host} and demand ${euro(Number(p.ransom))} within ${p.hours} hours.`,

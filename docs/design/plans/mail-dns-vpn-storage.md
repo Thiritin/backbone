@@ -2,7 +2,7 @@
 
 > Critic note (i18n): `src/i18n/en.ts` loads every `ui-*.ts` by glob and `lang.ts` loads every `<lang>/*.ts` by glob, so this lane's new English file is `src/i18n/ui-<topic>.ts` with mirrors `src/i18n/<lang>/ui-<topic>.ts`, and no `en.ts` or `lang.ts` registration edit is needed anywhere below that says otherwise.
 
-Lane id `mail-dns-vpn-storage`. Source of truth for scope is `docs/design/panel-features.md` (sections "Infrastructure consoles" and "Signature mechanics"). Numbers extend `economy.md`, sections "Addresses and internet", "Happiness and churn", "Noticing outages" and "Tickets and work rates".
+Lane id `mail-dns-vpn-storage`. Source of truth for scope is `docs/design/panel-features.md` (sections "Infrastructure consoles" and "Signature mechanics"). Numbers extend `economy/README.md`, sections "Addresses and internet", "Happiness and churn", "Noticing outages" and "Tickets and work rates".
 
 ## 1. Scope
 
@@ -87,7 +87,7 @@ Actions (`src/sim/90-actions/netsvc-mail.ts`, registered in `90-actions/index.ts
 - `flushQueue(s, addressId)`: fails with `error.mailStillListed` when the address is listed or the host is down; otherwise sets `deferred = 0`.
 - `deleteQueue(s, addressId)`: sets `deferred = 0` and every mail customer on the address loses 2 happiness (their mail is gone); allowed once per 24 hours per address.
 
-The Mailpig Queue tab lists up to 30 invented deferred entries derived from `hash` of the address and day (entries are a readout of the count, not stored) with the count, the reason, Flush and Delete buttons. Extends `economy.md`, "Addresses and internet".
+The Mailpig Queue tab lists up to 30 invented deferred entries derived from `hash` of the address and day (entries are a readout of the count, not stored) with the count, the reason, Flush and Delete buttons. Extends `economy/addresses-and-internet.md`, "Addresses and internet".
 
 ### 3.2 Blacklist incident (Mailpig, Postfixit)
 
@@ -96,7 +96,7 @@ Reuse the existing reputation engine; add what it lacks.
 - Sender attribution: `spamSenders(s, addressId)` returns the active, non-suspended shady customers' services whose mail leaves that address, sorted by service id, each with its daily thousands (`SPAM.shady`). The Blacklist tab and the Postfixit page print them (Postfixit as a `mailq`-style top-senders block).
 - Suspend stops spam: the spam loops in `reputation()` (`addresses.ts:329-338`) skip customers where `isSuspended(s, customerId)` is true. A suspended sender's spam falls to zero from the next daily run, after which `requestDelist` works.
 - Mail relay so a mail console has customers: `setMailRelay(s, panelClusterId, mailClusterId | null)` stores `netsvc.relay[panel]`. `mailAddress(s, clusterId)` resolves the relay first, so the customers of a relayed panel host send from the mail server's IP. Default is no relay, which keeps the current behavior and old saves. Mailpig's Domains tab imitates Mailu's "Relayed domains": each panel host in the cluster's zone gets a toggle "Relay through this server".
-- Happiness: on the day an address becomes listed, every mail customer on it loses 3 happiness; each further day listed costs 1 more. `netsvc.mail[id].hit` accumulates the loss and stops at 10 per listing episode; it resets when the address clears. Extends `economy.md`, "Happiness and churn" with a line "A listed mail address".
+- Happiness: on the day an address becomes listed, every mail customer on it loses 3 happiness; each further day listed costs 1 more. `netsvc.mail[id].hit` accumulates the loss and stops at 10 per listing episode; it resets when the address clears. Extends `economy/happiness-and-churn.md`, "Happiness and churn" with a line "A listed mail address".
 - Delisting delay: `listings` holds the hours of the last listings. `requestDelist` uses `delistHours = DELIST_HOURS * min(4, 1 + listings in the last 30 days)` (24, 48, 72, 96). Repeat offenders wait longer, which makes suspending quickly matter. The change is in `src/sim/90-actions/addresses.ts:70`, a shared file with the address code (no other lane in this program edits it).
 - UI: Mailpig gets a Blacklist tab drawn as a Spamhaus-style lookup box (mailcow's own Blacklist tab is a sender allow and deny list, so it is not the model): address, status "Listed" or "Not listed", reputation bar from `rep`, delisting countdown from `delistAt`, the senders table with a Suspend button (calls `suspendCustomer`), and a "Request delisting" button (calls `requestDelist`). When the `panel-host-sim` lane adds its Suspend control to the panel rows, both call the same action.
 
@@ -113,7 +113,7 @@ Tick (monthly): `usedMb += perUserMb * users * 0.08 * (0.5 + rand)`, where `user
 
 Actions: `setQuota(s, serviceId, perUserMb)` raises or lowers the quota. Booked disk is `users * perUserMb * 0.25` (typical fill); the action fails with `error.quotaNoDisk` when the booked sum on the workload's host exceeds its disk. Raising resolves the open quota ticket; lowering below current use sets `usedMb` to the new cap and the customer loses 3 happiness. Overselling disk by quota is the decision.
 
-UI: Mailpig's Mailboxes tab replaces the `hash()` noise (`Mailpig.tsx:30`) with real quota and usage columns and a Quota dropdown (the Mailu "Edit user > Quota" field); OwnClod's Users page imitates ownCloud's "Users" admin table with the "Quota" dropdown (Default, 1 GB, 5 GB, Unlimited is not offered). Extends `economy.md`, "Tickets and work rates" (one new ticket topic each).
+UI: Mailpig's Mailboxes tab replaces the `hash()` noise (`Mailpig.tsx:30`) with real quota and usage columns and a Quota dropdown (the Mailu "Edit user > Quota" field); OwnClod's Users page imitates ownCloud's "Users" admin table with the "Quota" dropdown (Default, 1 GB, 5 GB, Unlimited is not offered). Extends `economy/tickets-and-work-rates.md`, "Tickets and work rates" (one new ticket topic each).
 
 ### 3.4 PowerDNZ zones and records editor
 
@@ -125,13 +125,13 @@ Actions (`src/sim/90-actions/netsvc-dns.ts`): `saveRecord(s, zone, record)`, `de
 
 Zone typo incident: when the apex or `www` `A` record of a zone that belongs to a customer's web hosting service stores a valid address that is not that service's address, `netsvc.broken[webServiceId] = { cause: "dns", since }` is set and `typoAt` records the hour. The site is then offline by `serviceOnline`, so the existing outage penalty, SLA credit and the Browser app's "site not found" page (`src/sim/80-business/browser.ts`) apply. The customer writes in after 4 hours (a `howTo` ticket with topic `dnsChange`). Saving the correct address clears `broken`. Numbers: ticket after 4 h of broken DNS; no extra happiness constants, the outage machinery in "Noticing outages" decides the loss.
 
-Why the player edits at all: each month a DNS service with at least one zone that has a web hosting service raises a `dnsChange` ticket with probability 0.10, asking to move `www` to a new address (the address is given in the ticket text). The player opens the editor and types it; a wrong digit is the typo. Resolving needs the expected value, and a wrong but valid value breaks the site until fixed. This is the only generator of edits, which keeps the editor a decision and not a chore. Extends `economy.md`, "Tickets and work rates", and "Noticing outages" (a DNS fault is an outage).
+Why the player edits at all: each month a DNS service with at least one zone that has a web hosting service raises a `dnsChange` ticket with probability 0.10, asking to move `www` to a new address (the address is given in the ticket text). The player opens the editor and types it; a wrong digit is the typo. Resolving needs the expected value, and a wrong but valid value breaks the site until fixed. This is the only generator of edits, which keeps the editor a decision and not a chore. Extends `economy/README.md`, "Tickets and work rates", and "Noticing outages" (a DNS fault is an outage).
 
 ### 3.5 Secondary servers (PowerDNZ)
 
 Real screen: PowerDNS-Admin's "Create zone" type `Slave` with "Master" addresses, and the zone list showing Type Native, Master or Slave. Here the zone page gets a "Secondary" row with a dropdown of other `dns` clusters in the same zone or region (`setSecondary(s, zone, clusterId | null)`).
 
-Effect: `dnsCovered(s, serviceId)` is true when every zone of the service has a secondary on a cluster whose workloads are up. `serviceOnline` for a `dns` product service stays true while the primary is down and `dnsCovered` holds. So a second DNS cluster, in a different location, protects against an outage penalty. Requirement: the secondary cluster must differ from the primary and have room (one extra workload slot per zone is not modeled; it costs nothing, which keeps the feature a placement decision). The zones list shows the Secondary column; the Server tab shows "Slaves served" for a cluster used as a secondary. Extends `economy.md`, "Noticing outages".
+Effect: `dnsCovered(s, serviceId)` is true when every zone of the service has a secondary on a cluster whose workloads are up. `serviceOnline` for a `dns` product service stays true while the primary is down and `dnsCovered` holds. So a second DNS cluster, in a different location, protects against an outage penalty. Requirement: the secondary cluster must differ from the primary and have room (one extra workload slot per zone is not modeled; it costs nothing, which keeps the feature a placement decision). The zones list shows the Secondary column; the Server tab shows "Slaves served" for a cluster used as a secondary. Extends `economy/noticing-outages.md`, "Noticing outages".
 
 ### 3.6 VPN user certificates with revoke (OpenVeePeeN, AnyConnekt)
 
@@ -141,13 +141,13 @@ State: `netsvc.vpn[serviceId] = { serverIssuedAt, serverExpiresAt, revoked: numb
 
 Actions (`src/sim/90-actions/netsvc-vpn.ts`): `revokeCert(s, serviceId, index)`, `reissueCert(s, serviceId, index)` (free; reissuing a revoked user costs the customer 1 happiness for the hassle).
 
-Lost-laptop incident (decision generator): each month a VPN service with `users` users has a chance of `0.015 * ceil(users / 10)` capped at 0.2 that one user's device is lost: `lost` and `lostAt` are set and a `certLost` ticket opens naming the user. Revoking within 72 hours resolves it with +1 happiness. Left unrevoked after 72 hours, the intruder gets in: the customer loses 20 happiness once and the event log gets `event.vpnIntrusion`. Extends `economy.md`, "Happiness and churn".
+Lost-laptop incident (decision generator): each month a VPN service with `users` users has a chance of `0.015 * ceil(users / 10)` capped at 0.2 that one user's device is lost: `lost` and `lostAt` are set and a `certLost` ticket opens naming the user. Revoking within 72 hours resolves it with +1 happiness. Left unrevoked after 72 hours, the intruder gets in: the customer loses 20 happiness once and the event log gets `event.vpnIntrusion`. Extends `economy/happiness-and-churn.md`, "Happiness and churn".
 
 ### 3.7 Certificate expiry incident (OpenVeePeeN, AnyConnekt)
 
 The gateway certificate of each VPN service is valid 365 days from the service start. Thirty days before expiry the sim posts `event.vpnCertSoon` (also visible in the console as an amber expiry cell). At expiry `netsvc.broken[serviceId] = { cause: "cert", since }`, the service is offline by `serviceOnline`, and the usual outage penalty runs until the player renews.
 
-Renewal: OpenVeePeeN offers "Regenerate certificate" in its Configuration > Web Server page (the real AS admin page for SSL), free, manual, never automatic. AnyConnekt offers "Enroll" with a CA fee of 12 per service per year, and an "Auto-enroll (SCEP)" switch (`autoEnroll`) that renews 7 days early and charges the fee each year on the ledger. The paid product therefore buys the absence of the incident, matching the AutoSSL rationale in `panel-features.md`. Action: `renewCert(s, serviceId)` and `setAutoEnroll(s, serviceId, on)` (only for AnyConnekt clusters, `error.noAutoEnroll` otherwise). Extends `economy.md`, "Platforms and licenses" with the fee and "Noticing outages".
+Renewal: OpenVeePeeN offers "Regenerate certificate" in its Configuration > Web Server page (the real AS admin page for SSL), free, manual, never automatic. AnyConnekt offers "Enroll" with a CA fee of 12 per service per year, and an "Auto-enroll (SCEP)" switch (`autoEnroll`) that renews 7 days early and charges the fee each year on the ledger. The paid product therefore buys the absence of the incident, matching the AutoSSL rationale in `panel-features.md`. Action: `renewCert(s, serviceId)` and `setAutoEnroll(s, serviceId, on)` (only for AnyConnekt clusters, `error.noAutoEnroll` otherwise). Extends `economy/README.md`, "Platforms and licenses" with the fee and "Noticing outages".
 
 ### 3.8 MinnIO buckets with access policies
 
@@ -157,7 +157,7 @@ State: `netsvc.buckets[serviceId] = Bucket[]` with `{ id, name, policy: "private
 
 Actions (`src/sim/90-actions/netsvc-storage.ts`): `setBucketPolicy(s, serviceId, bucketId, policy)`.
 
-Decision generator: each month a storage service raises a `bucketPublic` ticket with probability 0.06 asking to make a bucket public. Approving (setting `public`) gives +3 happiness and starts exposure risk: each month a public bucket has a 0.04 chance of a data exposure, which costs the customer 25 happiness and posts `event.bucketExposed`. Declining (resolving without the change) costs 2 happiness. Setting a public bucket back to private costs 1 happiness. Extends `economy.md`, "Happiness and churn", and uses the same breach-style event wording as "Breaches and ransom".
+Decision generator: each month a storage service raises a `bucketPublic` ticket with probability 0.06 asking to make a bucket public. Approving (setting `public`) gives +3 happiness and starts exposure risk: each month a public bucket has a 0.04 chance of a data exposure, which costs the customer 25 happiness and posts `event.bucketExposed`. Declining (resolving without the change) costs 2 happiness. Setting a public bucket back to private costs 1 happiness. Extends `economy/happiness-and-churn.md`, "Happiness and churn", and uses the same breach-style event wording as "Breaches and ransom".
 
 ### 3.9 Erasure coding health (MinnIO)
 
@@ -167,7 +167,7 @@ State: `netsvc.ec[clusterId]` is the parity, default 2 (EC:2); the console offer
 - `degraded` when `0 < failed <= parity`, shown as "Healing" with a progress bar once the failed drive has been replaced (heal progress is `(hour - installedAt of the replacement) * 40 GB per hour / usedGb`, derived and not stored);
 - `offline` when `failed > parity`.
 
-Effects (`netsvc-storage.ts` tick, hourly): `degraded` marks every storage service on the cluster as slowed (`Service.slowedAt = hour`, so no month-without-slowdown review); degraded for more than 72 hours without a replacement costs each customer 1 happiness a day. `offline` sets `netsvc.broken[serviceId] = { cause: "storage" }` for all storage services on the cluster and clears when `failed <= parity` again. Parity trades capacity: usable disk in `src/sim/85-products/products.ts:159` is multiplied by `(n - parity) / n` for MinnIO clusters (EC:2 on 8 drives is 75%, EC:4 is 50%). Verify the capacity function's inputs when starting that milestone. Extends `economy.md`, "Hardware, power and failures" (a short "Erasure sets" paragraph).
+Effects (`netsvc-storage.ts` tick, hourly): `degraded` marks every storage service on the cluster as slowed (`Service.slowedAt = hour`, so no month-without-slowdown review); degraded for more than 72 hours without a replacement costs each customer 1 happiness a day. `offline` sets `netsvc.broken[serviceId] = { cause: "storage" }` for all storage services on the cluster and clears when `failed <= parity` again. Parity trades capacity: usable disk in `src/sim/85-products/products.ts:159` is multiplied by `(n - parity) / n` for MinnIO clusters (EC:2 on 8 drives is 75%, EC:4 is 50%). Verify the capacity function's inputs when starting that milestone. Extends `economy/hardware-power-and-failures.md`, "Hardware, power and failures" (a short "Erasure sets" paragraph).
 
 UI: the MinnIO Settings tab shows the Drives panel imitating the MinIO Console "Drives" page (per drive state Online or Offline, and the "Healing" status from `mc admin heal`), with the overall "Erasure code health" line and the parity dropdown (Storage class standard, EC:2 or EC:4).
 
@@ -179,7 +179,7 @@ State: `netsvc.shares[serviceId] = Share[]` with `{ id, name, createdAt, expires
 
 Tick (monthly): each storage service on OwnClod gains `round(users * 0.5 * (0.5 + rand))` links; 30% carry an expiry, 25% a password. A link without expiry older than 90 days has a monthly exposure chance of 0.015 (0.003 with a password): the customer loses 20 happiness and `event.linkLeaked` is posted. With `shareExpiryDays > 0`, new links get that expiry and existing links without one are given it when the policy is saved; an expired link is dropped, and each expired link has a 0.10 chance to produce a `linkExpired` ticket (resolved by `extendShare`). That is the trade-off: loose links leak, strict expiry produces tickets.
 
-Actions: `deleteShare`, `setShareExpiry`, `extendShare`, `setSharePolicy(days)` in `netsvc-storage.ts`. Extends `economy.md`, "Happiness and churn".
+Actions: `deleteShare`, `setShareExpiry`, `extendShare`, `setSharePolicy(days)` in `netsvc-storage.ts`. Extends `economy/happiness-and-churn.md`, "Happiness and churn".
 
 ## 4. Milestones
 

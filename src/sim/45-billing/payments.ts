@@ -1,5 +1,5 @@
 // docs/design/plans/billing-by-hand.md, lane payment-methods: how a shop customer pays, what the gateways take back and
-// what Books does when the player matches it. Numbers in docs/design/economy.md, Payment methods.
+// what Books does when the player matches it. Numbers in docs/design/economy/payment-methods.md, Payment methods.
 import { chance, hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
 import { hasModule } from "../10-catalog/modules";

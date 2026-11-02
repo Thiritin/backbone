@@ -84,4 +84,4 @@ Each phase is one pull request with a seeded test, i18n keys in every language a
 5. `books-dohle`: Connect DOHLE in Books, filing from the monthly run and Submit tax return. `tests/books-dohle.test.ts`.
 6. `mein-dohle`: the portal from 2013 and DohleFormular's retirement.
 
-The numbers above go into `docs/design/economy.md` (Bank, insurance and tax) in phase 2.
+The numbers above go into `docs/design/economy/README.md` (Bank, insurance and tax) in phase 2.

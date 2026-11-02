@@ -1,4 +1,4 @@
-// Part prices by year (economy.md, Prices over time, Part prices by year). Enterprise parts are priced in: RDIMM about 1.6 x
+// Part prices by year (economy/prices-over-time.md, Prices over time, Part prices by year). Enterprise parts are priced in: RDIMM about 1.6 x
 // consumer RAM, enterprise SSD about 1.5 x, enterprise HDD about 1.6 x.
 import { erodedPrice } from "./lifecycle";
 import { cardOf, gpuPrice } from "./gpu";

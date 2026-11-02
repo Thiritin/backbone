@@ -1,4 +1,4 @@
-// Burn-in (economy.md, Hardware, power and failures, Burn-in): test lengths, what each test finds and the rewards.
+// Burn-in (economy/hardware-power-and-failures.md, Hardware, power and failures, Burn-in): test lengths, what each test finds and the rewards.
 export const BURNIN_HOURS = { quick: 6, full: 48 } as const;
 // Quick marks parts past this share of their life; full fails this share of the parts past their life.
 export const QUICK_WORN_SHARE = 0.8;

@@ -1,4 +1,4 @@
-// GDD, Infrastructure consoles: mailbox quotas and OwnClod per-user quotas. Numbers in economy.md, Tickets and work rates.
+// GDD, Infrastructure consoles: mailbox quotas and OwnClod per-user quotas. Numbers in economy/tickets-and-work-rates.md, Tickets and work rates.
 import { hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
 import type { Service } from "../30-customers/customers";

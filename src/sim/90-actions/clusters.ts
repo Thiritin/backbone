@@ -41,7 +41,7 @@ import { addressOf } from "../60-infra/lan";
 const fail = (error: string): ActionResult => ({ ok: false, error });
 // A node joins at the address it holds now, or pins the first one it gets (cluster.ts, pinMembers).
 const joined = (s: GameState, deviceId: string): ClusterNode => { const ip = addressOf(s, deviceId); return ip ? { deviceId, state: "active", ip } : { deviceId, state: "active" }; };
-// economy.md, Panel VMs: the size the setup and the Products app suggest, and the smallest the player can book.
+// economy/README.md, Panel VMs: the size the setup and the Products app suggest, and the smallest the player can book.
 export const PANEL_VM_SIZE: Resources = { vcpu: 2, ramGb: 2, diskGb: 50 };
 export const PANEL_VM_MIN: Resources = { vcpu: 1, ramGb: 1, diskGb: 10 };
 
@@ -449,7 +449,7 @@ export function placeService(s: GameState, serviceId: string, clusterId: string 
     }
     const target = clusterId ? s.clusters.find((x) => x.id === clusterId) : undefined;
     if (!w && blocked) return fail(blocked);
-    // An enterprise customer's VMs need a private network (gdd.md, Network and DDoS).
+    // An enterprise customer's VMs need a private network (gdd/network-and-ddos.md, Network and DDoS).
     const customer = s.customers.find((x) => x.id === v.customerId);
     if (w && customer?.profile === "enterprise" && isVmCluster(s, w.clusterId) && !privateNetOf(s, customer.id)) {
       const vlan = nextPrivateVlan(s);

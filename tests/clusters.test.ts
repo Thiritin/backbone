@@ -50,9 +50,9 @@ describe("product catalog", () => {
   it("prices sizes at the market reference for the year", () => {
     const web = (y: number) => marketPrice("webHosting", sizeSpec("webHosting", 1, y), y);
     expect(web(2005)).toBe(6);
-    // economy.md, Prices over time: sizes grow while the price follows the web hosting keyframes.
+    // economy/prices-over-time.md, Prices over time: sizes grow while the price follows the web hosting keyframes.
     expect(web(2020)).toBeCloseTo(6 * keyframes(FIXED_KEYS.webHosting!, 2020), 0);
-    // economy.md: 1 vCPU, 512 MB and 10 GB in 2005 come to 0.65 × the €30 GB rate, less the traffic below the middle size's.
+    // economy/README.md: 1 vCPU, 512 MB and 10 GB in 2005 come to 0.65 × the €30 GB rate, less the traffic below the middle size's.
     const vps = (y: number, sla?: "premium") => marketPrice("vps", sizeSpec("vps", 0, y), y, sla);
     expect(vps(2005)).toBeCloseTo(19.41, 2);
     // A small game server costs about €29 in 2005 and €12 in 2026.
@@ -93,7 +93,7 @@ describe("starting company", () => {
     const s = readyGame(2);
     run(s, 2);
     ok(setPower(s, "dev4", false));
-    // Private customers notice slowly (economy.md, Noticing outages): by two weeks one has written in.
+    // Private customers notice slowly (economy/noticing-outages.md, Noticing outages): by two weeks one has written in.
     run(s, 336);
     expect(s.services.some((v) => serviceOnline(s, v.id))).toBe(false);
     const outages = s.tickets.filter((t) => t.kind === "outage");

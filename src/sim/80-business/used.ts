@@ -1,4 +1,4 @@
-// The used hardware market (gdd.md, Racks, hardware and cabling, Used hardware): listings each month by seed, auctions
+// The used hardware market (gdd/racks-hardware-and-cabling.md, Racks, hardware and cabling, Used hardware): listings each month by seed, auctions
 // that close, chat deals that never arrive, buyers for the player's own listings, the yearly lot and clearance, the board lead.
 import { hashRng, rand, type Rng } from "../00-core/rng";
 import { isMonthStart, monthIndexOf, yearOf } from "../00-core/time";

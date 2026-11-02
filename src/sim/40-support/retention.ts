@@ -1,4 +1,4 @@
-// GDD, Support, Retention offers; economy.md, Happiness and churn.
+// GDD, Support, Retention offers; economy/happiness-and-churn.md, Happiness and churn.
 import { chance } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
 import { BUSINESS_PROFILES } from "../10-catalog/attention";

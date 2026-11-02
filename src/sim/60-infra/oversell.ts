@@ -3,7 +3,7 @@ import type { GameState } from "../50-state";
 import { installedRamGb } from "./status";
 import { nodeVcpu, vmById, type Cluster } from "./cluster";
 
-// economy.md, Usage curves and overcommit: past OVERSELL_KNEE booked vCPU per physical vCPU a panel host slows at every hour,
+// economy/usage-curves-and-overcommit.md, Usage curves and overcommit: past OVERSELL_KNEE booked vCPU per physical vCPU a panel host slows at every hour,
 // by OVERSELL_SLOPE per extra booked vCPU down to OVERSELL_FLOOR.
 export const OVERSELL_KNEE = 4;
 export const OVERSELL_SLOPE = 0.04;

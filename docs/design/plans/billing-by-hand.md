@@ -1,6 +1,6 @@
 # Plan: billing by hand
 
-Lane ids: `books`, `walk`, `bank`, `order-steps`, `vendor-sites`, `registrar-form`, `shop-link`, `payment-methods`, `registrar-panel`, `teardown`. Mockup: `docs/design/mockups/bookkeeping.html`. Related design: `docs/design/gdd.md` (Custom orders, the five order steps), `docs/design/economy.md` (Billing and payment habits), `docs/design/shop.md` (shop systems, modules, variants), `docs/design/plans/shop-portal.md`.
+Lane ids: `books`, `walk`, `bank`, `order-steps`, `vendor-sites`, `registrar-form`, `shop-link`, `payment-methods`, `registrar-panel`, `teardown`. Mockup: `docs/design/mockups/bookkeeping.html`. Related design: `docs/design/gdd/README.md` (Custom orders, the five order steps), `docs/design/economy/README.md` (Billing and payment habits), `docs/design/shop.md` (shop systems, modules, variants), `docs/design/plans/shop-portal.md`.
 
 ## 1. Decisions
 
@@ -88,7 +88,7 @@ Milestones:
 
 ## 9. Lane `payment-methods`
 
-Methods in `src/sim/10-catalog/payments.ts`, each a shop module with year, fee and effect: bank transfer (2005, none), direct debit (2005, returns with fee), PayPlus (2005, instant, disputes), card (2006, chargebacks, fraud orders), paysafecard (2007, prepaid, no dunning, churn), Instantly (2008, instant, clean reference), crypto (2012, prepaid, abuse). Each profile has a preference; a lead whose method is missing converts less or not at all, shown as a lost sale reason in Market. Prepaid methods skip dunning. Chargebacks and returns are negative transfers the player matches, reopening the invoice. Crypto share raises the abuse ticket rate. Economy numbers go into `docs/design/economy.md` under a new "Payment methods" heading when the lane starts. `tests/payment-methods.test.ts`.
+Methods in `src/sim/10-catalog/payments.ts`, each a shop module with year, fee and effect: bank transfer (2005, none), direct debit (2005, returns with fee), PayPlus (2005, instant, disputes), card (2006, chargebacks, fraud orders), paysafecard (2007, prepaid, no dunning, churn), Instantly (2008, instant, clean reference), crypto (2012, prepaid, abuse). Each profile has a preference; a lead whose method is missing converts less or not at all, shown as a lost sale reason in Market. Prepaid methods skip dunning. Chargebacks and returns are negative transfers the player matches, reopening the invoice. Crypto share raises the abuse ticket rate. Economy numbers go into `docs/design/economy/payment-methods.md` under a new "Payment methods" heading when the lane starts. `tests/payment-methods.test.ts`.
 
 ## 9b. Lane `bank`
 
@@ -193,7 +193,7 @@ Milestones: capability table on the program catalogs; Books window absent withou
 
 ## 9f. Lane `tax-advisors` (handoff, not built yet)
 
-A tax advisor is a firm (pun on DATEV members and the big names) hired on their site. They file the tax return, the yearly accounts and the advance VAT returns, and answer the tax office's letters, so the player never sees a tax step again. They are expensive: a monthly retainer by company size plus a fee per filing, several times what a bookkeeping program costs, worth it for a large company. They work from what they are given: with DATEV export the player or a bookkeeper exports once a month and uploads it on the advisor's portal, with a bookkeeping program's DATEV link (bigger editions, 2007 on) it flows itself. They do not chase invoices, match transfers, send reminders or pay payables, so bookkeepers stay needed. Mistakes in the delivered data (unmatched transfers, missing invoices) come back as a query letter with a fee per hour of their time. The design and numbers go into economy.md when the lane starts.
+A tax advisor is a firm (pun on DATEV members and the big names) hired on their site. They file the tax return, the yearly accounts and the advance VAT returns, and answer the tax office's letters, so the player never sees a tax step again. They are expensive: a monthly retainer by company size plus a fee per filing, several times what a bookkeeping program costs, worth it for a large company. They work from what they are given: with DATEV export the player or a bookkeeper exports once a month and uploads it on the advisor's portal, with a bookkeeping program's DATEV link (bigger editions, 2007 on) it flows itself. They do not chase invoices, match transfers, send reminders or pay payables, so bookkeepers stay needed. Mistakes in the delivered data (unmatched transfers, missing invoices) come back as a query letter with a fee per hour of their time. The design and numbers go into economy/README.md when the lane starts.
 
 ## 9g. Lane `registrar-panel`
 

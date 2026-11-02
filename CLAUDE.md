@@ -2,7 +2,7 @@
 
 Browser management game: grow a hosting company from a 2005 basement to an own datacenter. Static site, TypeScript + Vite + React + Zustand, simulation in plain TypeScript.
 
-Design: `docs/design/gdd.md` (game), `docs/design/economy.md` (numbers), `DESIGN.md` (visual system).
+Design: `docs/design/gdd/` (game) and `docs/design/economy/` (numbers) hold one file per section, indexed in their README.md; read only the section you need. `DESIGN.md` (visual system). `docs/archive/` holds finished plans and is not read.
 
 ## Commands
 
@@ -27,6 +27,6 @@ Design: `docs/design/gdd.md` (game), `docs/design/economy.md` (numbers), `DESIGN
 - Work on a branch and open a pull request for every change; never push code to main directly. Pull requests run no checks: run `npm run typecheck` and the tests your change touches before opening one, and merge it right after it is opened with `gh pr merge --squash --delete-branch`. Stage only the paths your change touches, since other work may be in progress in the same tree. Commit messages stay short, so the pull request description says what changed and why in plain sentences: the pull request history is the commit log.
 - A pull request is done when it is merged, not when it is opened. If the merge fails because main moved (usually a CHANGELOG.md conflict), merge `origin/main` into the branch, keep both sides (for CHANGELOG.md take main's file and put the branch's bullets at the top of today's heading), push, and merge again.
 - Exception: changes that only add or edit files under `docs/` (plans, design notes) skip the branch and pull request. Commit them straight to main and push.
-- Every pull request adds one or two bullets to CHANGELOG.md under today's `## YYYY-MM-DD` heading, added to the heading that already exists, never a second heading for the same day: one player-facing sentence each saying what changed in the game, no file or code names. Merging to main publishes that day's GitHub release (the date is the version, `2026.10.31`), posts the new bullets to Discord without repeating a day header already sent, and deploys the site. The game shows new bullets when it offers a reload, and tests/update.test.ts checks the shape.
+- Every pull request adds one or two bullets to CHANGELOG.md under today's `## YYYY-MM-DD` heading, added to the heading that already exists, never a second heading for the same day: one player-facing sentence each saying what changed in the game, no file or code names. Merging to main publishes that day's GitHub release (the date is the version, `2026.10.31`), posts the new bullets to Discord without repeating a day header already sent, and deploys the site. The game shows new bullets when it offers a reload, and tests/update.test.ts checks the shape. Read CHANGELOG.md with `limit: 15` before editing it; only the top heading matters.
 - No em dashes in code, comments, docs or UI copy.
 - UI copy: labels and values only, no filler hints; captions are full sentences with a verb.

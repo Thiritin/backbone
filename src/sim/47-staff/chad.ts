@@ -2,7 +2,7 @@ import { cents } from "../45-billing/billing";
 import { monthlySalary, STAFF_HOURS_PER_MONTH, TICKET_MINUTES, tasksPerHour } from "../10-catalog/economy";
 import type { GameState } from "../50-state";
 
-// economy.md, ChadGPT usage. ChadGPT bills every reply it sends in tokens, and each reply rereads the whole thread.
+// economy/README.md, ChadGPT usage. ChadGPT bills every reply it sends in tokens, and each reply rereads the whole thread.
 export type ChadKind = "howTo" | "billing";
 export const BOT_RIGHT: Record<ChadKind, number> = { howTo: 0.6, billing: 0.5 };
 // After this many replies of its own the bot leaves the ticket to the humans, and the customer resents the runaround.

@@ -1,4 +1,4 @@
-// economy.md, Pleskit banned IPs: the Fail2ban jail turns away scanner addresses and now and then locks a customer out.
+// economy/README.md, Pleskit banned IPs: the Fail2ban jail turns away scanner addresses and now and then locks a customer out.
 import { hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
 import { createTicket, isFinal } from "../40-support/tickets";

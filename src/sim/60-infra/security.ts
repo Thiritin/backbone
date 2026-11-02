@@ -1,4 +1,4 @@
-// economy.md, Security advisories: scripted PHP vulnerabilities, their stages and the exploitation risk.
+// economy/security-advisories.md, Security advisories: scripted PHP vulnerabilities, their stages and the exploitation risk.
 import { chance, hashRng, rand } from "../00-core/rng";
 import { softwareById } from "../10-catalog/platforms";
 import { formatClock, hourOf } from "../00-core/time";

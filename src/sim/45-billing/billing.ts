@@ -80,7 +80,7 @@ const LONGEST_MONTH = 744;
 export const DUE_DAYS = 14;
 export const cents = (v: number) => Math.round(v * 100) / 100;
 
-// economy.md, Billing and payment habits. days count from the due date.
+// economy/billing-and-payment-habits.md, Billing and payment habits. days count from the due date.
 export const STEPS = [
   { key: "reminder", days: 7, fee: 0 },
   { key: "dunning", days: 14, fee: 5 },
@@ -90,7 +90,7 @@ export const STEPS = [
 export const COLLECTIONS_SHARE = 0.3;
 export const COLLECTIONS_DAYS = 30;
 
-// economy.md, Suspension.
+// economy/README.md, Suspension.
 export interface BillingRules { autoRemind: boolean; autoSuspendDays: 0 | 7 | 14 | 30; autoCollectDays: 0 | 42 | 60 | 90 }
 export const AUTO_SUSPEND_DAYS = [0, 7, 14, 30] as const;
 export const AUTO_COLLECT_DAYS = [0, 42, 60, 90] as const;
@@ -102,7 +102,7 @@ export const APPEAL_CHANCE = 0.6;
 export const EXTENSION_DAYS = 7;
 export const EXTENSION_PAY_CHANCE = 0.85;
 export const UNSUSPEND_HAPPINESS = 15;
-// economy.md, Happiness and churn: a month in which every service kept its SLA uptime.
+// economy/happiness-and-churn.md, Happiness and churn: a month in which every service kept its SLA uptime.
 export const SLA_KEPT_HAPPINESS = 2;
 export const KEEP_SUSPENDED_HAPPINESS = -15;
 export const SUSPEND_CHURN_DAYS = 14;
@@ -353,7 +353,7 @@ function chase(s: GameState, inv: Invoice, events: SimEvent[]): void {
 const needsChase = (s: GameState, inv: Invoice): boolean =>
   isUnpaid(inv) && (inv.suspended || autoStep(s, inv) !== null || (rulesAutomated(s) && ruleSuspendsAt(s, inv) !== null));
 
-// Bank: economy.md, Bank and tax.
+// Bank: economy/bank-and-tax.md, Bank and tax.
 const BASE_RATE: [number, number][] = [[2005, 4], [2009, 2.5], [2015, 1], [2021, 1], [2023, 4.5], [2026, 4]];
 export const RISK_PREMIUM = [6, 4, 3, 2, 1, 0.5];
 export const MIN_LIMIT = [10_000, 25_000, 100_000, 500_000, 3_000_000, 20_000_000];
@@ -495,7 +495,7 @@ export function billingTick(s: GameState): SimEvent[] {
     if (v.product === "ssl") certs.push(v);
   }
   s.yearlyBilledUntil = billed;
-  // economy.md, SSL certificates: each certificate billed, new or renewed, is bought from the certificate authority.
+  // economy/README.md, SSL certificates: each certificate billed, new or renewed, is bought from the certificate authority.
   const certCost = cents(certs.reduce((n, v) => n + caPrice(v.spec.cert ?? "dv", yearOf(s.hour)), 0)), certParams = { name: CA_NAME, count: certs.length };
   if (certs.length && invoicing(s)) invoice(s, "registrar", CA_NAME, [{ hour: s.hour, category: "domains", key: "ledger.certificates", params: certParams, amount: -certCost }]);
   else if (certs.length) book("domains", "ledger.certificates", certParams, -certCost);

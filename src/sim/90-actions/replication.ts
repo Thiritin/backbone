@@ -1,4 +1,4 @@
-// economy.md, Storage replication and Ceph: a second copy of a VM disk on another node, and a shared pool built from node disks.
+// economy/README.md, Storage replication and Ceph: a second copy of a VM disk on another node, and a shared pool built from node disks.
 import { yearOf } from "../00-core/time";
 import { softwareById } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";

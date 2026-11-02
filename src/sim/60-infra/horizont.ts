@@ -1,4 +1,4 @@
-// economy.md, Horizont: floating IPs, security groups and volumes of an OpenStash cluster.
+// economy/README.md, Horizont: floating IPs, security groups and volumes of an OpenStash cluster.
 import type { GameState } from "../50-state";
 import type { Macro } from "./exposure";
 import type { Cluster } from "./cluster";

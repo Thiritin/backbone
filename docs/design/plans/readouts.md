@@ -4,7 +4,7 @@
 
 This lane gives every console the read-only screens its real product has, drawn from state the sim already holds. It adds no game state, no save fields and no economy numbers. Where a screen needs numbers, they are derived by pure functions of the existing state and the seed, so the same save always shows the same readout.
 
-Source of truth for scope: `docs/design/panel-features.md` (sections "Shared across all panels", each console, and "Build order" step 1). Numbers extend `docs/design/economy.md`, sections "Traffic and bandwidth", "Usage curves and overcommit", "Platforms and licenses", "Power outages and Legal requests" and "Notices and legal requests". Console looks follow `docs/design/software.md`, sections 9 and 10.
+Source of truth for scope: `docs/design/panel-features.md` (sections "Shared across all panels", each console, and "Build order" step 1). Numbers extend `docs/design/economy/README.md`, sections "Traffic and bandwidth", "Usage curves and overcommit", "Platforms and licenses", "Power outages and Legal requests" and "Notices and legal requests". Console looks follow `docs/design/software.md`, sections 9 and 10.
 
 ## 1. Scope
 
@@ -106,7 +106,7 @@ Two tiny edits outside the module, both backward compatible:
 
 All randomness uses `hashRng(s.seed, ...)` with the cluster or workload number and the hour, as `usage.ts:35` does, so a readout never changes between renders.
 
-Numbers extend economy.md "Usage curves and overcommit" and "Traffic and bandwidth". They are display thresholds, not balance values:
+Numbers extend economy/README.md "Usage curves and overcommit" and "Traffic and bandwidth". They are display thresholds, not balance values:
 
 | Constant | Value | Meaning |
 | --- | --- | --- |
@@ -225,7 +225,7 @@ OpenVeeZee templates. Real screen: the OpenVZ/SolusVM style "OS Templates" page 
 
 Real screen: PowerDNS Admin dashboard and the pdns "Statistics" charts (queries per second). The late look already has a stat strip (`PowerDnz.tsx:30`); the chart goes below it. The early look gets a plain "Statistics" table of totals, because the early product had counters only.
 
-Queries per hour for a zone are derived: `zones x QUERIES_PER_ZONE_HOUR x workloadLoad(hour) x TRAFFIC_GROWTH^(years since 2005)` with `QUERIES_PER_ZONE_HOUR = 90` in 2005, so the curve follows the same daily swing and 20% yearly growth as traffic in economy.md. The chart is the 24-hour ring (`Chart` kind `bars`, `end = game.hour`). A zone on a stopped or down DNS workload reads zero.
+Queries per hour for a zone are derived: `zones x QUERIES_PER_ZONE_HOUR x workloadLoad(hour) x TRAFFIC_GROWTH^(years since 2005)` with `QUERIES_PER_ZONE_HOUR = 90` in 2005, so the curve follows the same daily swing and 20% yearly growth as traffic in economy/README.md. The chart is the 24-hour ring (`Chart` kind `bars`, `end = game.hour`). A zone on a stopped or down DNS workload reads zero.
 
 ### 3.14 Mail SPF and DKIM (item 15)
 

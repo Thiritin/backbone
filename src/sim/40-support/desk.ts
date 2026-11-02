@@ -28,7 +28,7 @@ export interface DeskState {
 // The machine id of a self-hosted desk on its web space.
 export const DESK_MACHINE = "desk";
 
-// A cancelling customer paying at least this much a month is high priority (docs/design/economy.md, Support desks).
+// A cancelling customer paying at least this much a month is high priority (docs/design/economy/README.md, Support desks).
 export const HIGH_VALUE_MONTHLY = 50;
 
 // The priority a desk shows: the agent's override, else derived from the kind and the customer.

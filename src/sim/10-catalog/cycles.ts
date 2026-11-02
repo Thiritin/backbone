@@ -1,4 +1,4 @@
-// Billing cycles a shop sells (docs/design/economy.md, Billing cycles).
+// Billing cycles a shop sells (docs/design/economy/README.md, Billing cycles).
 import type { Profile } from "../30-customers/customers";
 
 export type Cycle = "monthly" | "quarterly" | "semiannual" | "annual" | "biennial" | "triennial";

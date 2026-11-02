@@ -1,6 +1,6 @@
 import type { Dict } from "../lang";
 
-// economy.md, UPS: the web interface of a managed UPS.
+// economy/README.md, UPS: the web interface of a managed UPS.
 export default {
   "ups.status": () => "Estado",
   "ups.shutdown": () => "Desligamento",

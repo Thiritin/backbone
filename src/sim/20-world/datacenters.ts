@@ -1,5 +1,5 @@
 import { t } from "../../i18n/en";
-// Values come from docs/design/economy.md (Datacenters and space).
+// Values come from docs/design/economy/datacenters-and-space.md (Datacenters and space).
 import { hashRng, rand } from "../00-core/rng";
 import { businessPowerPrice } from "../10-catalog/economy";
 import type { RackModel, SpaceKind } from "../50-state";
@@ -184,7 +184,7 @@ export const BASEMENT = { positions: 1, maxUnits: 24, kw: 3 } as const;
 export const CONTINUOUS = { share: 0.8, hours: 3 } as const;
 export const HOUSEHOLD_FACTOR = 1.6;
 
-// Internet lines the basement can get, in Mbit/s and euros a month (docs/design/economy.md, Home line).
+// Internet lines the basement can get, in Mbit/s and euros a month (docs/design/economy/README.md, Home line).
 export interface HomeLine { id: string; isp: string; name: string; down: number; up: number; monthly: number; from: number; installDays: number; staticIp: boolean }
 export const HOME_LINES: HomeLine[] = [
   { id: "dsl-16", isp: "Deutsche Telekomm", name: "DSL 16000", down: 16, up: 1, monthly: 45, from: 2005, installDays: 7, staticIp: false },

@@ -1,4 +1,4 @@
-// GDD, Domain registration: the registrar partners a company resells domains through. Numbers in economy.md, Sales and quotes (Domains).
+// GDD, Domain registration: the registrar partners a company resells domains through. Numbers in economy/sales-and-quotes.md, Sales and quotes (Domains).
 export type RegistrarId = "nameCheep" | "goDuddy" | "interNetY" | "openSrsly";
 
 // Domains under management at which each tier starts.

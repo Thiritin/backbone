@@ -58,7 +58,7 @@ export const SERVER_OS: ServerOs[] = [
   },
 ];
 
-// economy.md, Platforms and licenses: monthly euros per VMwhere cluster with the App Suite.
+// economy/platforms-and-licenses.md, Platforms and licenses: monthly euros per VMwhere cluster with the App Suite.
 export const APP_SUITE_FEE = 25;
 
 export const serverOsById = (id: ServerOsId): ServerOs => SERVER_OS.find((o) => o.id === id)!;

@@ -1,4 +1,4 @@
-// economy.md, Security advisories, Customer applications: what web hosting customers run and how they keep it up to date.
+// economy/security-advisories.md, Security advisories, Customer applications: what web hosting customers run and how they keep it up to date.
 import { hashRng, rand } from "../00-core/rng";
 import { BUDGET_SIZE, priceAt, type Budget, type Skill } from "./economy";
 import type { Rates } from "./products";
@@ -53,7 +53,7 @@ export const FREE_MINUTES = 20;
 export const UPDATE_PRICE = { updateOnce: 49, updates: 5 } as const;
 export const updatePrice = (rates: Rates | undefined, unit: keyof typeof UPDATE_PRICE): number => rates?.[unit] ?? UPDATE_PRICE[unit];
 
-// economy.md, Site clean-up: the market's hourly rate for cleaning a defaced site by hand (EUR 85 in 2026, multiplier 0.6),
+// economy/README.md, Site clean-up: the market's hourly rate for cleaning a defaced site by hand (EUR 85 in 2026, multiplier 0.6),
 // and the hours a site takes, which grow with the customer's business like their order sizes.
 export const CLEAN_RATE = 85;
 export const cleanMarket = (year: number): number => Math.round(priceAt(CLEAN_RATE, 0.6, year));

@@ -1,4 +1,4 @@
-// economy.md, HyperVee virtual switches: a VM reaches the network through the switch its adapter is plugged into.
+// economy/README.md, HyperVee virtual switches: a VM reaches the network through the switch its adapter is plugged into.
 import type { GameState } from "../50-state";
 import type { Cluster, Workload } from "./cluster";
 import { farEnd, working } from "./status";

@@ -2,7 +2,7 @@
 
 > Critic note (i18n): `src/i18n/en.ts` loads every `ui-*.ts` by glob and `lang.ts` loads every `<lang>/*.ts` by glob, so this lane's new English file is `src/i18n/ui-<topic>.ts` with mirrors `src/i18n/<lang>/ui-<topic>.ts`, and no `en.ts` or `lang.ts` registration edit is needed anywhere below that says otherwise.
 
-Status: proposed. Source of truth for scope is `docs/design/panel-features.md` (sections "Packages and products", "Manual customer accounts", build order steps 2, 3, 4 and 9). Numbers extend `docs/design/economy.md`; console looks follow `docs/design/software.md`, sections 9 and 10.
+Status: proposed. Source of truth for scope is `docs/design/panel-features.md` (sections "Packages and products", "Manual customer accounts", build order steps 2, 3, 4 and 9). Numbers extend `docs/design/economy/README.md`; console looks follow `docs/design/software.md`, sections 9 and 10.
 
 This lane is the foundation for `shop-portal` and `game-servers`. Section 3.1 states the package data model on its own so those lanes can build on it without reading the rest.
 
@@ -98,7 +98,7 @@ Provisioning:
 - A resize or an upgrade (`manual.ts:238`, `retention.ts:146`) books the new sold spec and clears `pkgBook` and `promised`; the service keeps its `pkg` name for display.
 - The booking never exceeds what the package says, and a package larger than the order books the package size. A larger package has no other effect.
 
-Economy numbers (new rows under `economy.md` "Tickets and work rates", Time per action, and under "Usage curves and overcommit"):
+Economy numbers (new rows under `economy/README.md` "Tickets and work rates", Time per action, and under "Usage curves and overcommit"):
 
 | Value | Amount |
 | --- | --- |
@@ -109,7 +109,7 @@ Economy numbers (new rows under `economy.md` "Tickets and work rates", Time per 
 | Smallest package that may be booked against a sold spec | vCPU 25%, RAM 50%, disk 50% of the sold size; below that `error.packageTooSmall` |
 | Web hosting username length | 8 characters before 2012, 16 from 2012; lowercase letters and digits, starting with a letter, unique among services |
 
-The saving of 7 minutes is the reason to build a package; staff divide it by their speed like every action (`economy.md`, line 733).
+The saving of 7 minutes is the reason to build a package; staff divide it by their speed like every action (`economy/README.md`, line 733).
 
 Tick effects: none are added. The consequence of overselling by hand runs through the existing loop. `workloadUse` (`usage.ts:79`) scales `vcpu`, `ramGb` and `diskGb` by `w.promised ?? w` instead of by the booking, so use is the sold size times the load. Node CPU contention (`cores ÷ busy vCPUs`) and the disk stall over 100% then slow the customer's service, which sets `slowedAt` (`src/sim/85-products/products.ts:274-276`) and costs the monthly review. That is the "existing slowdown risk" the plan names. `panel-host-sim`'s oversell ratio per host multiplies the booking on top and reads the same field.
 
@@ -225,7 +225,7 @@ Shared hotspots are marked **[HOT]**. "Edits" lists the line or block touched.
 | M | Creates | Edits |
 | --- | --- | --- |
 | 1 | `src/sim/80-business/packages.ts`, `src/sim/90-actions/packages.ts`, `src/i18n/ui-packages.ts`, `src/i18n/{de,es,fr,it,pt}/ui-packages.ts`, `tests/packages.test.ts` | **[HOT]** `src/sim/60-infra/cluster.ts` (the `Cluster` field and `clusterDefaults`), **[HOT]** `src/sim/90-actions/clusters.ts` (`blank()`), **[HOT]** `src/sim/90-actions/index.ts` (module list, one line). `50-state.ts`, `91-save` need no edit: the default flows through `clusterDefaults` and `upgradeCompute`, and the optional service and request fields need no fill |
-| 2 | `tests/package-provision.test.ts` | **[HOT]** `src/sim/30-customers/customers.ts` (`Service.pkg`, `pkgBook`, `username`), **[HOT]** `src/sim/30-market/market.ts` (`SalesRequest.pkg`, `username`), **[HOT]** `src/sim/60-infra/cluster.ts` (`Workload.promised`), `src/sim/30-market/manual.ts` (`applyStep`, `orderChoices`), **[HOT]** `src/sim/90-actions/clusters.ts` (`placeService`, `provisionService`, `Order`), `src/sim/90-actions/orders.ts`, `src/sim/90-actions/customers.ts` (`addService`), **[HOT]** `src/sim/60-infra/usage.ts` (`workloadUse`), `src/sim/47-staff/activity.ts` (`ACTION_MINUTES`), `src/sim/30-market/manual.ts` (`stepMinutes`), `docs/design/economy.md`, `src/i18n/ui-packages.ts` and the five translations. `consoles.ts` is not touched |
+| 2 | `tests/package-provision.test.ts` | **[HOT]** `src/sim/30-customers/customers.ts` (`Service.pkg`, `pkgBook`, `username`), **[HOT]** `src/sim/30-market/market.ts` (`SalesRequest.pkg`, `username`), **[HOT]** `src/sim/60-infra/cluster.ts` (`Workload.promised`), `src/sim/30-market/manual.ts` (`applyStep`, `orderChoices`), **[HOT]** `src/sim/90-actions/clusters.ts` (`placeService`, `provisionService`, `Order`), `src/sim/90-actions/orders.ts`, `src/sim/90-actions/customers.ts` (`addService`), **[HOT]** `src/sim/60-infra/usage.ts` (`workloadUse`), `src/sim/47-staff/activity.ts` (`ACTION_MINUTES`), `src/sim/30-market/manual.ts` (`stepMinutes`), `docs/design/economy/README.md`, `src/i18n/ui-packages.ts` and the five translations. `consoles.ts` is not touched |
 | 3 | `src/ui/apps/browser/consoles/PackageForms.tsx`, `tests/package-links.test.ts` | **[HOT]** `src/sim/80-business/browser.ts` (`Resolved.page` console path), **[HOT]** `src/sim/80-business/consoles.ts` (`CREATE_PATH`, `createLink`, `createFormFor`), `src/ui/apps/browser/BrowserApp.tsx` (passes path), **[HOT]** `src/ui/apps/browser/consoles/ConsolePage.tsx` (path prop), **[HOT]** `src/ui/apps/browser/consoles/PanelBase.tsx` (`PanelProps.path`, `Tab` union, `usePanelTab`), `src/ui/apps/browser/consoles/cpanic/CPanic.tsx`, `cpanic.css`, `tests/panel-consoles.test.tsx`, ui-packages files |
 | 4 | `tests/package-forms.test.tsx` | `CPanic.tsx`, `cpanic.css`, **[HOT]** `PanelBase.tsx` (`Row.pkg`, `Row.user`, `useRows`, `RowsTable`), `src/ui/apps/support/CustomOrder.tsx`, `PackageForms.tsx`, ui-packages files |
 | 5 | none | `Proxmocks.tsx`, `proxmocks.css`, **[HOT]** `HypervisorBase.tsx` (`useNewVm` order mode, `PlanSelect`), `PackageForms.tsx`, `consoles.ts` (`createFormFor`), ui-packages files, `tests/hypervisor-consoles.test.tsx` |

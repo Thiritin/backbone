@@ -1,5 +1,5 @@
 // GDD, Addresses and internet: private and public addresses, address prices, the nightly reconnect of dynamic home lines
-// and mail reputation. Numbers in economy.md, Addresses and internet.
+// and mail reputation. Numbers in economy/addresses-and-internet.md, Addresses and internet.
 import { isFloating } from "./horizont";
 import { hashRng, rand } from "../00-core/rng";
 import { dateOf, yearOf } from "../00-core/time";
@@ -164,7 +164,7 @@ export function assignService(s: GameState, serviceId: string): string | null {
   return null;
 }
 
-// Renumbering (economy.md, Workloads and migration): a service that moves to another location gives its IPv4 addresses back and
+// Renumbering (economy/workloads-and-migration.md, Workloads and migration): a service that moves to another location gives its IPv4 addresses back and
 // takes new ones from the target's pool. Addresses of an own block stay when the company announces a block at both ends.
 export const RENUMBER_PENALTY = 5;
 export const RENUMBER_ANNOUNCED_PENALTY = 2;

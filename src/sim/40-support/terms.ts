@@ -1,4 +1,4 @@
-// Prepaid billing cycles and churn (docs/design/economy.md, Billing cycles).
+// Prepaid billing cycles and churn (docs/design/economy/README.md, Billing cycles).
 import { CYCLE_MONTHS } from "../10-catalog/cycles";
 import { cents } from "../45-billing/billing";
 import type { GameState } from "../50-state";

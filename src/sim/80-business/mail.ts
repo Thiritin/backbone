@@ -1,5 +1,5 @@
 // GDD, Company email: the company starts on free GMix and can move to an external provider or a mail server of its own.
-// Numbers in economy.md, Company email.
+// Numbers in economy/README.md, Company email.
 import { isMonthStart, yearOf } from "../00-core/time";
 import type { GameState, LedgerEntry } from "../50-state";
 import type { Profile } from "../30-customers/customers";

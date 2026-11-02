@@ -1,4 +1,4 @@
-// Values from docs/design/economy.md, "Marketing and reviews" (the Sponsor-Bored board).
+// Values from docs/design/economy/marketing-and-reviews.md, "Marketing and reviews" (the Sponsor-Bored board).
 import { hashRng, rand } from "../00-core/rng";
 import type { Product, Profile } from "../30-customers/customers";
 import { SIZES } from "../10-catalog/products";

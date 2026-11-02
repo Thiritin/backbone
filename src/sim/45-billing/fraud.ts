@@ -1,4 +1,4 @@
-// GDD, Fraud and chargebacks. Numbers in economy.md, Fraud and chargebacks.
+// GDD, Fraud and chargebacks. Numbers in economy/fraud-and-chargebacks.md, Fraud and chargebacks.
 import { hashRng, rand } from "../00-core/rng";
 import { isMonthStart, yearOf } from "../00-core/time";
 import { priceAt } from "../10-catalog/economy";

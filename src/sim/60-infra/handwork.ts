@@ -1,4 +1,4 @@
-// Who does the hand work at a datacenter: the provider's remote hands, the player, a friend, or a technician (docs/design/economy.md, Hardware, power and failures).
+// Who does the hand work at a datacenter: the provider's remote hands, the player, a friend, or a technician (docs/design/economy/hardware-power-and-failures.md, Hardware, power and failures).
 import { rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
 import { COUNTRY, datacenterById } from "../20-world/datacenters";
