@@ -5,6 +5,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-02
 
 - Ticket replies, retention offers and ticket actions are now built so the coming mail client can show them too.
+- Every company now holds a real mailbox on its mail service, with its own password and a welcome message from the provider.
 
 ## 2026-11-01
 
