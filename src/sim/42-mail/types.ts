@@ -94,10 +94,13 @@ export interface MailGroup { id: string; tenant: string; local: string; title: s
 // A continuing collect rule: the target mailbox pulls new Inbox mail of another own mailbox (GMix Mail Collector, Gmial Check mail from other accounts).
 export interface FetchRule {
   id: string; accountId: string; source: string; proto: "pop" | "imap";
+  password: string;            // the source's password as entered; a changed password stops the rule
   every: number;               // hours between runs, 1 to 24
   leave: boolean;              // keep the copy on the source
   folder: string | null; label: string | null;  // where the collected mail lands in the target
-  lastAt: number; err: string | null;
+  lastAt: number;              // game minute of the last run
+  upTo: number;                // message number the next run starts from
+  err: string | null;
 }
 
 // One delivery outcome, kept for Lookout 365 Message trace: the last 200 entries of the last 7 days.

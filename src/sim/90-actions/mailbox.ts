@@ -6,7 +6,8 @@ import { capsOf } from "../42-mail/caps";
 import { GMIX_DOMAIN } from "../42-mail/new";
 import { mailHost } from "../10-catalog/mail-providers";
 import { accountByAddress, tenantOf } from "../42-mail/model";
-import type { Folder, MailAccount, MailGroup, MailRole, MailTenant, ServerFilter } from "../42-mail/types";
+import { fetchError, runFetch } from "../42-mail/fetch";
+import type { FetchRule, Folder, MailAccount, MailGroup, MailRole, MailTenant, ServerFilter } from "../42-mail/types";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
 
@@ -238,4 +239,44 @@ export function setAccountQuota(s: GameState, id: string, mb: number): ActionRes
   if (t.host !== "self") return fail("error.mailQuotaHost");
   if (!Number.isInteger(mb) || mb < 1) return fail("error.mailQuota");
   return patch(s, id, { quotaMb: mb });
+}
+
+// GMix Mail Collector and Gmial's Check mail from other accounts: the source answers with its password, the plan has a
+// collector left, and the source does not already collect from the target, directly or through other rules.
+export function saveFetchRule(s: GameState, accountId: string, r: { source: string; proto: "pop" | "imap"; password: string; leave: boolean; folder?: string | null; label?: string | null; every?: number }): ActionResult {
+  const a = box(s, accountId), src = box(s, r.source);
+  if (!a || a.closedAt !== null || !src) return fail("error.mailUnknown");
+  if (r.source === accountId) return fail("error.mailFetchLoop");
+  const mine = s.mail.fetch.filter((x) => x.accountId === accountId), max = capsOf(s, a).collectors;
+  if (!mine.some((x) => x.source === r.source) && mine.length >= max) return fail("error.mailCollectors", { n: String(max) });
+  const reach = new Set([accountId]);
+  for (let grew = true; grew;) {
+    grew = false;
+    for (const x of s.mail.fetch) if (reach.has(x.source) && !reach.has(x.accountId)) { reach.add(x.accountId); grew = true; }
+  }
+  if (reach.has(r.source)) return fail("error.mailFetchLoop");
+  const err = fetchError(s, r);
+  if (err) return fail(err);
+  const old = mine.find((x) => x.source === r.source);
+  const rule: FetchRule = {
+    id: old?.id ?? `fr${s.nextId++}`, accountId, source: r.source, proto: r.proto, password: r.password, every: Math.max(1, Math.min(24, r.every ?? 1)),
+    leave: r.leave, folder: r.folder ?? null, label: r.label ?? null, lastAt: old?.lastAt ?? 0, upTo: old?.upTo ?? 0, err: null,
+  };
+  s.mail = { ...s.mail, fetch: old ? s.mail.fetch.map((x) => (x.id === old.id ? rule : x)) : [...s.mail.fetch, rule] };
+  return { ok: true, id: rule.id };
+}
+
+export function deleteFetchRule(s: GameState, id: string): ActionResult {
+  if (!s.mail.fetch.some((x) => x.id === id)) return fail("error.mailUnknown");
+  s.mail = { ...s.mail, fetch: s.mail.fetch.filter((x) => x.id !== id) };
+  return { ok: true };
+}
+
+// Check now: runs the rule at once, also one that stopped.
+export function runFetchRule(s: GameState, id: string): ActionResult {
+  const r = s.mail.fetch.find((x) => x.id === id);
+  if (!r) return fail("error.mailUnknown");
+  runFetch(s, { ...r, err: null });
+  const after = s.mail.fetch.find((x) => x.id === id)!;
+  return after.err ? fail(after.err) : { ok: true };
 }

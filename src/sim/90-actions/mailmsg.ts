@@ -221,7 +221,7 @@ export function sendMessage(s: GameState, account: string, m: Draft & { from: st
   const to = list(m.to), cc = list(m.cc), bcc = list(m.bcc), all = [...new Set([...to, ...cc, ...bcc])];
   if (!all.length) return fail("error.mailAddress");
   const caps = capsOf(s, a), att = m.att ?? [];
-  if (att.some((x) => x.k === "file" && x.kb > caps.attachMb * 1024)) return fail("error.mailAttach");
+  if (att.some((x) => x.k === "file" && x.kb > caps.attachMb * 1024)) return { ok: false, error: "error.mailAttach", params: { mb: String(caps.attachMb) } };
   const body = own(m), doc = att.find((x) => x.k === "doc");
   for (const r of all.filter((x) => RESPONDERS.includes(x))) {
     const res = respond(s, r, body.subject, doc?.k === "doc" ? doc.id : null);
