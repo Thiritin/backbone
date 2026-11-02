@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
 import { createTicket, deliverMail, type Ticket } from "../src/sim/40-support/tickets";
-import { deskReachable, deskStatus } from "../src/sim/40-support/desk";
+import { deskReachable, deskStatus, newDeskAi } from "../src/sim/40-support/desk";
 import type { GameState } from "../src/sim/50-state";
 import { companyDomain } from "../src/sim/30-customers/domains";
 import { resolve } from "../src/sim/80-business/browser";
@@ -95,7 +95,7 @@ describe("desk state", () => {
   it("follows the web space for a self-hosted desk and is up when hosted", () => {
     const s = readyGame(5);
     const panel = s.clusters.find((c) => c.kind === "panel")!;
-    s.desk = { id: "ostickit", hosting: { kind: "self", clusterId: panel.id, version: "1.3" }, tenant: null, departments: [], rules: [], addons: {}, lastRef: 0 };
+    s.desk = { id: "ostickit", hosting: { kind: "self", clusterId: panel.id, version: "1.3" }, tenant: null, departments: [], rules: [], addons: {}, lastRef: 0, ai: newDeskAi() };
     expect(deskStatus(s)).not.toBe("down");
     s.desk = { ...s.desk, hosting: { kind: "self", clusterId: "gone", version: "1.3" } };
     expect(deskStatus(s)).toBe("down");

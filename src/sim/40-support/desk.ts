@@ -1,6 +1,6 @@
 import { hashRng, rand } from "../00-core/rng";
 import { ascii, companyDomain } from "../30-customers/domains";
-import { deskById, type DeskId } from "../10-catalog/desks";
+import { deskById, type DeskAi, type DeskId } from "../10-catalog/desks";
 import { capsOf } from "../42-mail/caps";
 import type { DeskChannel } from "../42-mail/types";
 import type { GameState } from "../50-state";
@@ -25,7 +25,12 @@ export interface DeskState {
   addons: Partial<Record<"chat" | "phone", boolean>>;
   // The last sequential ticket number handed out.
   lastRef: number;
+  ai: DeskAiState;
 }
+
+// The AI switches of a hosted desk and this month's answer bot results, billed at the month start.
+export interface DeskAiState { on: Partial<Record<DeskAi, boolean>>; solved: number; tried: number }
+export const newDeskAi = (): DeskAiState => ({ on: { suggestedArticles: true }, solved: 0, tried: 0 });
 
 // The machine id of a self-hosted desk on its web space.
 export const DESK_MACHINE = "desk";
@@ -81,7 +86,7 @@ export function openDesk(s: GameState, id: DeskId, hosting: DeskHosting = { kind
   const channel = { ...newChannel(s, s.mail.primary, id, hosting.kind === "hosted"), seen: s.nextId - 1 };
   s.mail = { ...s.mail, channels: [...s.mail.channels.filter((c) => !s.desk || c.desk !== s.desk.id), channel] };
   s.desk = {
-    id, hosting, tenant, rules: [], addons: {}, lastRef: 0,
+    id, hosting, tenant, rules: [], addons: {}, lastRef: 0, ai: newDeskAi(),
     departments: [{ id: "support", name: "Support", members: [], autoAssign: false, channelId: channel.id }],
   };
   for (const t of [...s.tickets].sort((a, b) => a.createdAt - b.createdAt)) Object.assign(t, { channelId: channel.id, ref: nextRef(s, t), deptId: "support" });

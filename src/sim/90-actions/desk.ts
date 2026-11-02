@@ -1,4 +1,5 @@
-import { deskById, deskHas, type DeskFeature, type DeskId } from "../10-catalog/desks";
+import { deskById, deskHas, type DeskAi, type DeskFeature, type DeskId } from "../10-catalog/desks";
+import { aiOffered } from "../40-support/desk-ai";
 import { deskStatus, newChannel, type Department, type DeskRule, type Priority } from "../40-support/desk";
 import { channelError, fetchChannel } from "../40-support/desk-channels";
 import { serverStatus } from "../42-mail/accounts";
@@ -233,4 +234,13 @@ export function testDeskChannel(s: GameState, id: string): ActionResult {
   if (error) return fail(error);
   deliver(s, { to: `${a.local}@${a.domain}`, from: `acct:${s.mail.primary}`, kind: "system", topic: "deskTest", p: { desk: deskById(ch.desk)?.name ?? "" } });
   return { ok: true, id: String(ch.mode === "forward" ? 1 : fetchChannel(s, channelOf(s, id)!)) };
+}
+
+// A switch on the AI page of a hosted desk.
+export function setDeskAi(s: GameState, feature: DeskAi, on: boolean): ActionResult {
+  const g = gate(s);
+  if (g) return g;
+  if (!aiOffered(s, feature)) return fail("error.deskFeature");
+  s.desk = { ...s.desk!, ai: { ...s.desk!.ai, on: { ...s.desk!.ai.on, [feature]: on } } };
+  return { ok: true };
 }
