@@ -1,4 +1,5 @@
 import { deliverMail } from "../40-support/tickets";
+import { DOC_TYPES, type DocType } from "../40-support/letters";
 import type { GameState } from "../50-state";
 import { applyError, file, FILE_DAYS, FILED_WITH, NOTARY_MAIL, NOTARY_NAME, OFFICE_MAIL, OFFICE_NAME, SHARE_CAPITAL } from "../80-business/paperwork";
 import type { ActionResult } from "./hardware";
@@ -37,5 +38,13 @@ export function sendMail(s: GameState, to: string, subject: string, attachment: 
 export function readLetter(s: GameState, id: string): ActionResult {
   if (!s.letters.some((l) => l.id === id)) return fail("error.unknownLetter");
   s.letters = s.letters.map((l) => (l.id === id ? { ...l, read: true } : l));
+  return { ok: true };
+}
+
+// Files a letter under another document type in DocuWhere.
+export function retypeLetter(s: GameState, id: string, type: DocType): ActionResult {
+  if (!s.letters.some((l) => l.id === id)) return fail("error.unknownLetter");
+  if (!DOC_TYPES.includes(type)) return fail("error.unknownDocType");
+  s.letters = s.letters.map((l) => (l.id === id ? { ...l, type } : l));
   return { ok: true };
 }
