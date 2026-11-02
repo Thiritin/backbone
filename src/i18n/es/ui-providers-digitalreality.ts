@@ -1,0 +1,26 @@
+import type { Dict } from "../lang";
+
+export default {
+  "providers.digitalreality.navSites": () => "Ubicaciones",
+  "providers.digitalreality.navOrder": () => "Colocation",
+  "providers.digitalreality.navPortal": () => "Portal de clientes",
+  "providers.digitalreality.investors": () => "Inversores",
+  "providers.digitalreality.careers": () => "Empleo",
+  "providers.digitalreality.ticker": () => "NYSE: DRLT",
+  "providers.digitalreality.heroEarly": () => "Soluciones Turn-Key Reality para la empresa",
+  "providers.digitalreality.heroLate": () => "La plataforma donde viven los datos",
+  "providers.digitalreality.text": (p) => `Espacio de centro de datos construido a medida en ${p.cities} áreas metropolitanas, propiedad de un fondo de inversión inmobiliaria que también lo opera.`,
+  "providers.digitalreality.cta": () => "Ver ubicaciones",
+  "providers.digitalreality.statSites": () => "Centros de datos",
+  "providers.digitalreality.statMetros": () => "Áreas metropolitanas",
+  "providers.digitalreality.statCarriers": () => "Conexiones de operadores",
+  "providers.digitalreality.solutions": () => "Soluciones",
+  "providers.digitalreality.sol1": () => "Turn-Key Reality",
+  "providers.digitalreality.sol1Text": () => "Ocupe espacio terminado, con energía y refrigeración, con un contrato largo.",
+  "providers.digitalreality.sol2": () => "Colocation",
+  "providers.digitalreality.sol2Text": () => "Alquile racks y jaulas por meses en una sala compartida.",
+  "providers.digitalreality.sol3": () => "Interconexión",
+  "providers.digitalreality.sol3Text": () => "Llegue a operadores y puntos neutros del edificio con una conexión cruzada.",
+  "providers.digitalreality.markets": () => "Mercados",
+  "providers.digitalreality.footer": (p) => `© ${p.year} Digital Reality Trust, Inc.`,
+} satisfies Dict;
