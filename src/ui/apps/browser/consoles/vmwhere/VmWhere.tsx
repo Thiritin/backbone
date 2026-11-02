@@ -61,7 +61,7 @@ export function VmSummary({ game, v, era }: { game: GameState; v: Vm; era: VswLo
           <tr><th>{t("browser-consoles-2.compatibility")}</th><td>{compat}</td></tr>
           <tr><th>{t("browser-consoles-2.vmwhereTools")}</th><td>{tools}</td></tr>
           <tr><th>{t("browser-consoles-2.dnsName")}</th><td>{w.hostname ?? v.name}</td></tr>
-          <tr><th>{t("browser-consoles-2.ipAddresses2")}</th><td className="num">{v.ip}</td></tr>
+          <tr><th>{t("browser-consoles-2.ipAddresses2")}</th><td className="num">{v.ips}</td></tr>
           <tr><th>{t("browser-consoles-2.host")}</th><td>{v.node}</td></tr>
         </tbody></table>
         <div className="vsw-meters">
@@ -155,14 +155,14 @@ function ClusterSummaryView({ game, c, node, vms, pick }: { game: GameState; c: 
         </table>
       )}
       <table className="cx-table">
-        <thead><tr><th>{t("browser-consoles-2.name")}</th><th>{t("browser-consoles-2.state")}</th><th>{t("browser-consoles-2.status")}</th><th>{t("browser-consoles-2.host")}</th><th>CPUs</th><th>{t("browser-consoles-2.memory")}</th><th>{t("browser-consoles-2.hostMem")}</th><th>{t("browser-consoles-2.provisionedSpace")}</th><th>{t("browser-consoles-2.usedSpace")}</th><th>{t("browser-consoles-2.hostCpu")}</th></tr></thead>
+        <thead><tr><th>{t("browser-consoles-2.name")}</th><th>{t("browser-consoles-2.state")}</th><th>{t("browser-consoles-2.status")}</th><th>{t("browser-consoles-2.host")}</th><th>{t("browser-consoles-2.ipAddress")}</th><th>CPUs</th><th>{t("browser-consoles-2.memory")}</th><th>{t("browser-consoles-2.hostMem")}</th><th>{t("browser-consoles-2.provisionedSpace")}</th><th>{t("browser-consoles-2.usedSpace")}</th><th>{t("browser-consoles-2.hostCpu")}</th></tr></thead>
         <tbody>
           {vms.map((v) => (
             <tr key={v.id} onClick={() => pick({ kind: "vm", id: v.id })}>
               <td><b>{v.name}</b>{v.sub && <span className="cx-sub">{v.sub}</span>}</td>
               <td>{v.w.template ? t("browser-consoles-2.template") : v.st === "stopped" ? t("browser-consoles-2.poweredOff") : v.st === "running" ? t("browser-consoles-2.poweredOn") : v.state}</td>
               <td><Status sev={worst(sum.alarms.filter((a) => a.on.id === v.id)) ?? (v.tone === "bad" ? "critical" : null)} /></td>
-              <td>{v.node}</td><td className="num">{v.w.vcpu}</td><td className="num">{gb(v.w.ramGb)}</td><td className="num">{gb(v.use.ramGb)}</td>
+              <td>{v.node}</td><td className="num">{v.publicIp || "-"}</td><td className="num">{v.w.vcpu}</td><td className="num">{gb(v.w.ramGb)}</td><td className="num">{gb(v.use.ramGb)}</td>
               <td className="num">{gb(v.w.diskGb)}</td><td className="num">{gb(v.use.diskGb)}</td><td className="num">{Math.round(v.use.vcpu * MHZ)} MHz</td>
             </tr>
           ))}

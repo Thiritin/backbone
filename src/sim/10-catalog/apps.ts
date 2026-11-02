@@ -1,6 +1,6 @@
 // economy.md, Security advisories, Customer applications: what web hosting customers run and how they keep it up to date.
 import { hashRng, rand } from "../00-core/rng";
-import type { Budget, Skill } from "./economy";
+import { BUDGET_SIZE, priceAt, type Budget, type Skill } from "./economy";
 import type { Rates } from "./products";
 
 export type App = "wordpass" | "joomlah" | "drupel" | "static";
@@ -52,3 +52,15 @@ export const FREE_MINUTES = 20;
 // Monthly or one-off price in euros per site: the market's, flat over the years (multiplier 1).
 export const UPDATE_PRICE = { updateOnce: 49, updates: 5 } as const;
 export const updatePrice = (rates: Rates | undefined, unit: keyof typeof UPDATE_PRICE): number => rates?.[unit] ?? UPDATE_PRICE[unit];
+
+// economy.md, Site clean-up: the market's hourly rate for cleaning a defaced site by hand (EUR 85 in 2026, multiplier 0.6),
+// and the hours a site takes, which grow with the customer's business like their order sizes.
+export const CLEAN_RATE = 85;
+export const cleanMarket = (year: number): number => Math.round(priceAt(CLEAN_RATE, 0.6, year));
+export const cleanHours = (budget: Budget): number => BUDGET_SIZE[budget];
+// At the market rate this share of customers accepts paid clean-up; of those who decline, this share cancels. Both scale with
+// the player's rate against the market's.
+export const CLEAN_ACCEPT = 0.6;
+export const CLEAN_LEAVE = 0.25;
+// Of customers reminded to clean their site, this share by skill does it within SELF_CLEAN_DAYS.
+export const REMIND_CLEAN: Record<Skill, number> = { high: 0.9, medium: 0.6, low: 0.3 };

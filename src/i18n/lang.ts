@@ -13,7 +13,8 @@ function stored(): Lang {
   } catch {
     // No storage: fall through to the browser language.
   }
-  const nav = typeof navigator === "undefined" ? "en" : navigator.language.slice(0, 2);
+  // Node also has a navigator, carrying the OS locale; only a browser's counts.
+  const nav = typeof window === "undefined" ? "en" : navigator.language.slice(0, 2);
   return nav in LANGS ? (nav as Lang) : "en";
 }
 

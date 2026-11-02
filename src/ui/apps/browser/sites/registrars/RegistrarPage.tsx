@@ -5,10 +5,10 @@ import { registrarById, TIERS, type Registrar, type RegistrarId } from "../../..
 import type { Look } from "../../../../../sim/10-catalog/sites";
 import { derivedDomain } from "../../../../../sim/30-customers/domains";
 import { certificateCount, monthlyDomains, spinNames, TRANSFER_MINUTES, wholesale, yearlyAt } from "../../../../../sim/30-customers/registrar";
-import { registering, REGISTRIES } from "../../../../../sim/30-customers/registry";
+import { domainOf, registering, REGISTRIES } from "../../../../../sim/30-customers/registry";
 import type { GameState } from "../../../../../sim/50-state";
 import { techsAt, OP_TASK } from "../../../../../sim/47-staff/technicians";
-import { companyDomainError, orderCompanyDomain, queueTransfer, signRegistrar, transferDomains } from "../../../../../sim/90-actions/registrar";
+import { companyDomainError, orderCompanyDomain, orderDomain, queueTransfer, signRegistrar, transferDomains } from "../../../../../sim/90-actions/registrar";
 import { formatDay } from "../../../billing/format";
 import "./registrars.css";
 import { LOCALE } from "../../../../../i18n/lang";
@@ -31,7 +31,7 @@ const tierOf = (game: GameState, r: Registrar) => (own(game, r) ? game.registrar
 
 const Head = ({ title }: { title?: ReactNode }) => (title ? <h2>{title}</h2> : null);
 
-// The domain search with its name spinner; Buy orders the company domain.
+// The domain search with its name spinner; Buy orders the company domain, then further domains under contract.
 export function DomainSearch({ game, r, title, button = t("browser-sites-1.rg.search") }: { game: GameState; r: Registrar; title?: ReactNode; button?: string }) {
   const act = usePageAct();
   const [query, setQuery] = useState(() => derivedDomain(game));
@@ -55,8 +55,9 @@ export function DomainSearch({ game, r, title, button = t("browser-sites-1.rg.se
                 <tr key={n}>
                   <td>{n}</td>
                   <td className="r num">{free ? euroCents(yearlyAt(game, r, tier, n)) : ""}</td>
-                  <td className="r">{!free ? <span className="rg-taken">{n === game.company.domain ? t("browser-sites-1.rg.yours") : t("browser-sites-1.rg.taken")}</span>
-                    : !game.company.domain && <button className="rg-btn" onClick={() => act(orderCompanyDomain, r.id, n)}>{t("browser-sites-1.rg.buy")}</button>}</td>
+                  <td className="r">{!free ? <span className="rg-taken">{domainOf(game, n)?.customerId === null ? t("browser-sites-1.rg.yours") : t("browser-sites-1.rg.taken")}</span>
+                    : !game.company.domain ? <button className="rg-btn" onClick={() => act(orderCompanyDomain, r.id, n)}>{t("browser-sites-1.rg.buy")}</button>
+                    : own(game, r) && <button className="rg-btn" onClick={() => act(orderDomain, n)}>{t("browser-sites-1.rg.buy")}</button>}</td>
                 </tr>
               );
             })}

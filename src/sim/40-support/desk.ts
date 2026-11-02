@@ -1,4 +1,5 @@
 import { hashRng, rand } from "../00-core/rng";
+import { ascii, companyDomain } from "../30-customers/domains";
 import { deskById, type DeskId } from "../10-catalog/desks";
 import type { GameState } from "../50-state";
 import { hostStatus, type SiteStatus } from "../80-business/website";
@@ -10,10 +11,12 @@ export type Priority = "low" | "normal" | "high" | "urgent";
 export interface Department { id: string; name: string; members: string[]; autoAssign: boolean; channelId: string | null }
 // Evaluated at import: OsTickit ticket filters, Zendusk triggers, Freshdusk creation rules.
 export interface DeskRule { when: TicketKind | "*"; set: { deptId?: string; assignee?: string; priority?: Priority } }
+// self: installed in a web space of a panel host, with the release it runs.
+export type DeskHosting = { kind: "legacy" } | { kind: "hosted" } | { kind: "self"; clusterId: string; version: string };
 export interface DeskState {
   id: DeskId;
   // legacy: a desk bought in the Pear Store before desks were websites, up always.
-  hosting: { kind: "legacy" } | { kind: "hosted" } | { kind: "self"; clusterId: string };
+  hosting: DeskHosting;
   tenant: string | null;
   departments: Department[];
   rules: DeskRule[];
@@ -60,13 +63,12 @@ export function nextRef(s: GameState, t: Pick<Ticket, "id">): string {
   }
 }
 
-// A desk from the Pear Store: one Support department and one channel on the primary mailbox that has fetched every
-// ticket at its creation hour.
-export function legacyDesk(s: GameState, id: DeskId): void {
+// A new desk: one Support department and one channel on the primary mailbox that has fetched every ticket at its creation hour.
+export function openDesk(s: GameState, id: DeskId, hosting: DeskHosting = { kind: "legacy" }, tenant: string | null = null): void {
   const channel = { id: `ch${s.nextId++}`, accountId: s.mail.primary, desk: id, after: "keep" as const, folder: null, since: 0 };
   s.mail = { ...s.mail, channels: [...s.mail.channels.filter((c) => !s.desk || c.desk !== s.desk.id), channel] };
   s.desk = {
-    id, hosting: { kind: "legacy" }, tenant: null, rules: [], addons: {}, lastRef: 0,
+    id, hosting, tenant, rules: [], addons: {}, lastRef: 0,
     departments: [{ id: "support", name: "Support", members: [], autoAssign: false, channelId: channel.id }],
   };
   for (const t of [...s.tickets].sort((a, b) => a.createdAt - b.createdAt)) Object.assign(t, { channelId: channel.id, ref: nextRef(s, t), deptId: "support" });
@@ -80,3 +82,6 @@ export function dropDesk(s: GameState): void {
   for (const t of s.tickets) if (t.channelId) Object.assign(t, { channelId: null, deptId: null });
   s.desk = null;
 }
+
+// The tenant name a sign-up form suggests: the company domain without its ending.
+export const defaultTenant = (s: GameState): string => ascii(companyDomain(s).split(".")[0]) || "hosting";

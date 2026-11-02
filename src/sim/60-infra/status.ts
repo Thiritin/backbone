@@ -278,14 +278,18 @@ export const busyDevices = (s: GameState): Set<string | null> =>
   new Set([...s.workloads.filter((w) => !w.stopped && w.deviceId).map((w) => w.deviceId), ...s.devices.filter((d) => burning(s, d)).map((d) => d.id)]);
 // A server's CPUs draw their own watts in place of its preset's (cpuWattsShift); idle they draw the model's idle share of it.
 export const deviceWatts = (d: Device): number => { const m = modelById(d.model), k = wattsFactorOf(m, d.brand); return (m.watts + cpuWattsShift(m, d.components)) * k + cardWatts(d.components); };
-export const drawWatts = (d: Device, busy: Set<string | null>): number => {
+// A busy server's CPU utilisation from 0 to 1; usage.ts fills it in, since it imports this file.
+export const cpuLoad = { of: (_s: GameState, _d: Device): number => 1 };
+export const utilOf = (s: GameState, d: Device, busy: Set<string | null>): number => (!busy.has(d.id) ? 0 : burning(s, d) ? 1 : cpuLoad.of(s, d));
+// A server draws from its idle to its rated watts by CPU utilisation; one without workloads draws idle.
+export const drawWatts = (s: GameState, d: Device, busy: Set<string | null>): number => {
   const m = modelById(d.model), cpus = cpuWattsShift(m, d.components), k = wattsFactorOf(m, d.brand);
-  return (busy.has(d.id) ? m.watts + cpus : m.idleWatts + (cpus && (cpus * m.idleWatts) / m.watts)) * k + cardWatts(d.components);
+  const idle = m.idleWatts + (cpus && (cpus * m.idleWatts) / m.watts), u = utilOf(s, d, busy);
+  return (idle + (m.watts + cpus - idle) * u) * k + cardWatts(d.components);
 };
 
 const circuitKw = (loc: Location): number => BASEMENT.kw + (loc.extraCircuit ? EXTRA_CIRCUIT_KW : 0);
 
-// ponytail: a device draws its rated power, or its idle power when it runs no workload; no finer load-based draw.
 function computeRackPower(s: GameState, rackId: string): RackPower {
   const rack = s.racks.find((r) => r.id === rackId);
   const loc = rack && s.locations.find((l) => l.id === rack.locationId);
@@ -295,7 +299,7 @@ function computeRackPower(s: GameState, rackId: string): RackPower {
   if (rack.arriveAt === null) {
     for (const d of s.devices) {
       if (d.rackId !== rackId || !d.on || !pluggedIn(d) || chassisOut(s, d)) continue;
-      const w = drawWatts(d, busy);
+      const w = drawWatts(s, d, busy);
       if (dualFed(rack, d)) { a += w / 2; b += w / 2; } else a += w;
     }
     a += s.workloads.reduce((sum, w) => sum + (w.rackId === rackId ? w.watts : 0), 0);
@@ -367,7 +371,13 @@ export function cabledOut(s: GameState, deviceId: string): NetFail | null {
   return used.some((f) => f && gatewayCap(s, f.end, deviceId) !== null) ? null : "noLink";
 }
 export const linkStatus = (s: GameState, deviceId: string): LinkStatus => memoised(s, deviceId, (m) => m.link, () => computeLinkStatus(s, deviceId));
-export const rackPower = (s: GameState, rackId: string): RackPower => memoised(s, rackId, (m) => m.power, () => computeRackPower(s, rackId));
+// A server's CPU load asks whether its rack has power while the rack's draw is being summed; inside that sum the rack counts as untripped.
+const summing = new Set<string>();
+export const rackPower = (s: GameState, rackId: string): RackPower =>
+  summing.has(rackId) ? { watts: 0, a: 0, b: 0, limitWatts: 0, tripped: false } : memoised(s, rackId, (m) => m.power, () => {
+    summing.add(rackId);
+    try { return computeRackPower(s, rackId); } finally { summing.delete(rackId); }
+  });
 
 // Stored devices, devices in a moving or tripped rack and devices in a location that is not ready have no power.
 export const EXTRA_CIRCUIT_KW = 3;

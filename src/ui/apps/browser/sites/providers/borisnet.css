@@ -1,0 +1,107 @@
+.ps-borisnet { font: 11px/1.5 Verdana, Geneva, sans-serif; color: #333333; background: #ffffff; }
+.ps-borisnet header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 6px 20px; max-width: 900px; padding: 16px 18px 10px; }
+.ps-borisnet .ps-wm { display: flex; align-items: center; gap: 8px; font: 400 22px/1 Verdana, Geneva, sans-serif; color: #00468c; text-decoration: none; letter-spacing: -0.02em; }
+.ps-borisnet .ps-wm b { font-weight: 700; }
+.ps-borisnet .bn-claim { color: #7a7a7a; font-size: 11px; }
+.ps-borisnet .bn-nav { gap: 1px; padding: 0 18px; background: #00468c; }
+.ps-borisnet .bn-nav a { padding: 5px 14px; background: linear-gradient(#e9e9e9, #c9c9c9); color: #333333; text-decoration: none; font-weight: 700; border-top: 3px solid #00468c; }
+.ps-borisnet .bn-nav a[aria-current] { background: #ffffff; color: #00468c; }
+.ps-borisnet .bn-crumb { padding: 4px 18px; background: #f2f2f2; border-bottom: 1px solid #dddddd; color: #777777; }
+.ps-borisnet .bn-crumb a { color: #00468c; }
+.ps-borisnet .bn-frame { display: grid; grid-template-columns: 190px minmax(0, 1fr); max-width: 900px; }
+.ps-borisnet aside { padding: 12px 0 12px 18px; }
+.ps-borisnet .bn-box { margin-bottom: 12px; border: 1px solid #c7d3e0; }
+.ps-borisnet .bn-box h3 { margin: 0; padding: 3px 8px; background: #00468c; color: #ffffff; font-size: 11px; }
+.ps-borisnet .bn-box nav { flex-direction: column; padding: 4px 8px; }
+.ps-borisnet .bn-box nav a { padding: 2px 0 2px 10px; color: #00468c; text-decoration: none; background: linear-gradient(90deg, #e2001a 3px, transparent 3px) 0 50% / 4px 4px no-repeat; }
+.ps-borisnet .bn-box nav a[aria-current] { font-weight: 700; }
+.ps-borisnet .bn-box p { margin: 0; padding: 6px 8px; }
+.ps-borisnet main { padding: 12px 18px 24px; min-width: 0; }
+.ps-borisnet h1 { margin: 0 0 8px; font-size: 15px; color: #00468c; }
+.ps-borisnet h2 { margin: 16px 0 8px; padding-bottom: 2px; font-size: 12px; color: #00468c; border-bottom: 1px solid #c7d3e0; }
+.ps-borisnet main a:not(.ps-btn) { color: #00468c; }
+.ps-borisnet .bn-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.ps-borisnet .bn-tile h3 { margin: 0 0 3px; font-size: 11px; color: #e2001a; }
+.ps-borisnet .bn-tile p { margin: 0; }
+.ps-borisnet .bn-certs { margin-top: 14px; color: #777777; }
+.ps-borisnet .ps-table th { padding: 3px 5px; background: #dfe6ee; border-bottom: 1px solid #a9b8c8; }
+.ps-borisnet .ps-table td { padding: 3px 5px; border-bottom: 1px solid #e6e6e6; }
+.ps-borisnet .ps-table tr:nth-child(even) td { background: #f6f8fa; }
+.ps-borisnet .ps-facts div, .ps-borisnet .ps-kv div { padding: 2px 0; border-bottom: 1px solid #e6e6e6; }
+.ps-borisnet .ps-kv { margin-bottom: 12px; }
+.ps-borisnet .ps-steps { gap: 0; margin: 0 0 12px; border: 1px solid #c7d3e0; width: max-content; }
+.ps-borisnet .ps-steps li { padding: 2px 12px; color: #999999; }
+.ps-borisnet .ps-steps li + li { border-left: 1px solid #c7d3e0; }
+.ps-borisnet .ps-steps li.done { color: #333333; }
+.ps-borisnet .ps-steps li.now { background: #00468c; color: #ffffff; font-weight: 700; }
+.ps-borisnet .ps-field { margin-bottom: 6px; }
+.ps-borisnet .ps-field input, .ps-borisnet .ps-field select { padding: 2px 4px; border: 1px solid #a9b8c8; font-size: 11px; }
+.ps-borisnet .ps-btn { padding: 2px 10px; border: 1px solid #7f8c99; background: linear-gradient(#ffffff, #d6dce2); color: #333333; font-size: 11px; }
+.ps-borisnet .ps-btn.pri { background: linear-gradient(#2a6cb0, #00468c); border-color: #00305f; color: #ffffff; font-weight: 700; }
+.ps-borisnet .ps-pill.ok { color: #2b7a2b; }
+.ps-borisnet .ps-pill.bad { color: #e2001a; font-weight: 700; }
+.ps-borisnet footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; padding: 8px 18px; border-top: 3px solid #00468c; color: #777777; }
+
+.ps-borisnet.late { font: 15px/1.6 "Segoe UI", "Helvetica Neue", Arial, sans-serif; color: #26313d; }
+.ps-borisnet.late .bn-top { display: flex; align-items: center; gap: 30px; padding: 0 40px; border-bottom: 1px solid #e3e8ee; }
+.ps-borisnet.late header { flex: 1; justify-content: flex-start; align-items: center; max-width: none; padding: 18px 0; }
+.ps-borisnet.late .ps-wm { font: 300 22px/1 "Segoe UI", "Helvetica Neue", Arial, sans-serif; letter-spacing: 0; }
+.ps-borisnet.late .ps-wm b { font-weight: 600; }
+.ps-borisnet.late .bn-claim { color: #8a96a3; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+.ps-borisnet.late .bn-nav { gap: 30px; padding: 0; background: none; }
+.ps-borisnet.late .bn-nav a { padding: 0 0 4px; background: none; border: 0; color: #26313d; font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; }
+.ps-borisnet.late .bn-nav a[aria-current] { color: #00468c; box-shadow: inset 0 -3px #e2001a; }
+.ps-borisnet.late .bn-frame { display: block; max-width: none; }
+.ps-borisnet.late main { padding: 0 0 32px; }
+.ps-borisnet.late .bn-hero { padding: 64px 40px 96px; background: linear-gradient(110deg, #00305f, #00468c 55%, #1b6ab8); color: #ffffff; clip-path: polygon(0 0, 100% 0, 100% 78%, 0 100%); }
+.ps-borisnet.late .bn-hero h1 { max-width: 640px; margin: 0 0 12px; font: 300 36px/1.2 "Segoe UI", "Helvetica Neue", Arial, sans-serif; color: #ffffff; }
+.ps-borisnet.late .bn-hero p { max-width: 580px; margin: 0 0 24px; color: #cfdced; }
+.ps-borisnet.late .bn-tiles { gap: 24px; padding: 8px 40px 0; }
+.ps-borisnet.late .bn-tile { padding: 22px; background: #f4f6f9; border-top: 3px solid #00468c; }
+.ps-borisnet.late .bn-tile h3 { margin: 0 0 6px; font-size: 16px; color: #00468c; }
+.ps-borisnet.late .bn-certs { padding: 0 40px; font-size: 13px; letter-spacing: 0.04em; }
+.ps-borisnet.late .bn-body { padding: 32px 40px; }
+.ps-borisnet.late .bn-body h1 { font: 300 30px/1.2 "Segoe UI", "Helvetica Neue", Arial, sans-serif; }
+.ps-borisnet.late h2 { border: 0; font-size: 18px; font-weight: 600; }
+.ps-borisnet.late .ps-table th { padding: 8px; background: none; border-bottom: 2px solid #00468c; }
+.ps-borisnet.late .ps-table td { padding: 8px; background: none; }
+.ps-borisnet.late .ps-steps { border: 0; gap: 8px; }
+.ps-borisnet.late .ps-steps li { padding: 4px 12px; border: 0; border-bottom: 3px solid #e3e8ee; }
+.ps-borisnet.late .ps-steps li.now { background: none; color: #00468c; border-bottom-color: #e2001a; }
+.ps-borisnet.late .ps-field input, .ps-borisnet.late .ps-field select { padding: 6px 8px; font-size: 14px; border-color: #c3ccd6; }
+.ps-borisnet.late .ps-btn { padding: 9px 20px; border: 2px solid #ffffff; background: transparent; color: inherit; font-size: 14px; font-weight: 600; }
+.ps-borisnet.late .bn-body .ps-btn { border-color: #00468c; color: #00468c; }
+.ps-borisnet.late .ps-btn.pri { background: #e2001a; border-color: #e2001a; color: #ffffff; }
+.ps-borisnet.late footer { max-width: none; padding: 20px 40px; background: #26313d; border: 0; color: #a8b3bf; font-size: 13px; }
+
+/* Customer portal: 2005 a grey framed area with the navy tab row and Verdana tables; from 2016 a navy sidebar with a red marker. */
+.ps-borisnet .ps-portal { border: 1px solid #c7d3e0; }
+.ps-borisnet .ps-portal-bar { padding: 4px 10px; background: #f2f2f2; border-bottom: 1px solid #c7d3e0; color: #777777; }
+.ps-borisnet .ps-portal-who strong { color: #00468c; }
+.ps-borisnet .ps-portal-out { color: #00468c; }
+.ps-borisnet .ps-portal-frame { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
+.ps-borisnet .ps-portal-nav { flex-direction: row; gap: 1px; padding: 0 10px; background: #00468c; border: 0; }
+.ps-borisnet main .ps-portal-nav a { padding: 4px 12px; background: linear-gradient(#e9e9e9, #c9c9c9); color: #333333; font-weight: 700; box-shadow: none; border-top: 3px solid #00468c; }
+.ps-borisnet main .ps-portal-nav a[aria-current] { background: #ffffff; color: #00468c; }
+.ps-borisnet .ps-portal-title { font-size: 13px; color: #00468c; }
+.ps-borisnet .ps-portal-h { padding-bottom: 2px; font-size: 11px; color: #00468c; border-bottom: 1px solid #c7d3e0; }
+.ps-borisnet .ps-sheet { border: 1px solid #00468c; }
+.ps-borisnet .ps-sheet-h { padding: 4px 10px; background: #00468c; color: #ffffff; font-size: 11px; }
+.ps-borisnet .ps-btn.ps-danger { color: #e2001a; }
+.ps-borisnet .ps-offer { border-color: #c7d3e0; background: #f6f8fa; }
+.ps-borisnet.late .ps-portal { margin: 0 -40px; border: 0; min-height: 540px; }
+.ps-borisnet.late .ps-portal-bar { padding: 12px 40px; background: #f4f6f9; color: #8a96a3; border: 0; font-size: 13px; }
+.ps-borisnet.late .ps-portal-out { text-transform: uppercase; font-size: 12px; text-decoration: none; letter-spacing: 0.06em; }
+.ps-borisnet.late .ps-portal-frame { grid-template-columns: 230px minmax(0, 1fr); grid-template-rows: none; }
+.ps-borisnet.late .ps-portal-nav { flex-direction: column; gap: 0; padding: 16px 0; background: #00305f; }
+.ps-borisnet.late main .ps-portal-nav a { padding: 11px 24px; background: none; border: 0; color: #cfdced; font-weight: 400; font-size: 14px; }
+.ps-borisnet.late main .ps-portal-nav a[aria-current] { background: #00468c; color: #ffffff; font-weight: 600; box-shadow: inset 4px 0 #e2001a; }
+.ps-borisnet.late .ps-portal-main { padding: 28px 40px; }
+.ps-borisnet.late .ps-portal-title { font: 300 28px/1.2 "Segoe UI", "Helvetica Neue", Arial, sans-serif; }
+.ps-borisnet.late .ps-portal-h { border: 0; font-size: 16px; font-weight: 600; }
+.ps-borisnet.late .ps-sheet { border: 0; border-top: 4px solid #e2001a; }
+.ps-borisnet.late .ps-sheet-h { padding: 14px 18px; background: #ffffff; color: #00468c; font-size: 18px; font-weight: 600; }
+.ps-borisnet.late .ps-sheet .ps-btn, .ps-borisnet.late .ps-portal .ps-btn { border-color: #00468c; color: #00468c; }
+.ps-borisnet.late .ps-portal .ps-btn.pri, .ps-borisnet.late .ps-sheet .ps-btn.pri { border-color: #e2001a; color: #ffffff; }
+.ps-borisnet.late .ps-btn.ps-danger { border-color: #e2001a; color: #e2001a; }
+.ps-borisnet.late .ps-offer { padding: 14px 16px; border: 0; border-left: 4px solid #00468c; background: #f4f6f9; }

@@ -5,7 +5,7 @@ const vms = (p: Params) => `${p.count} VM`;
 export default {
   "alarm.hostDown": (p) => `El host ${p.host} no responde y tiene ${vms(p)}.`,
   "alarm.hostMaintenance": (p) => `El host ${p.host} está ${p.state === "draining" ? "vaciándose" : "en mantenimiento"} y tiene ${vms(p)}.`,
-  "alarm.memoryFull": (p) => `El host ${p.host} usa ${p.used} GB de ${p.capacity} GB de memoria y está congelado.`,
+  "alarm.memoryFull": (p) => `El host ${p.host} usa ${p.used} GB de ${p.capacity} GB de memoria y está usando swap.`,
   "alarm.memoryHigh": (p) => `El uso de memoria del host ${p.host} está al ${p.percent} %.`,
   "alarm.memoryOverallocated": (p) => `El host ${p.host} tiene ${p.allocated} GB de memoria asignados de ${p.capacity} GB instalados.`,
   "alarm.cpuContention": (p) => `El host ${p.host} ejecuta ${p.used} vCPU ocupadas en ${p.capacity} núcleos.`,

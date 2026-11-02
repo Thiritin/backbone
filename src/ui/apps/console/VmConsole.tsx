@@ -19,9 +19,9 @@ export function VmConsole({ game, vm: w, front }: { game: GameState; vm: Workloa
   const box = useRef<HTMLDivElement>(null);
   const os = useOsScreen(game, w, front, w.media ?? null);
   useEffect(() => { if (front) focusIn(box.current); }, [front, w.id, os.screen.kind]);
-  const st = vmState(game, w), on = st === "running" || st === "down" || st === "frozen" || st === "booting";
-  // A checkpointed VM or one on a frozen node keeps its picture and takes no input.
-  const paused = st === "checkpointed" || st === "frozen";
+  const st = vmState(game, w), on = st === "running" || st === "down" || st === "booting";
+  // A checkpointed VM keeps its picture and takes no input.
+  const paused = st === "checkpointed";
   const dark = !(on || paused || st === "halting") || os.screen.kind === "dark", deaf = dark || paused;
   const name = w.hostname ?? vmLabel(game, w).name;
   const media = () => [

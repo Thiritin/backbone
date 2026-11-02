@@ -77,7 +77,7 @@ export function useTicketPane(s: GameState, tk: Ticket): PaneModel {
       : null,
     status: statusOf(tk),
     assignees: agents.length ? [{ id: null, name: t("support.nobody"), active: tk.assignee === null }, { id: OWNER, name: t("support.you"), active: tk.assignee === OWNER }, ...agents.map((a) => ({ id: a.id, name: a.name, active: tk.assignee === a.id }))] : [],
-    sender: tk.notice ? { id: tk.notice.sender, from: tk.notice.from, url: tk.topic === "phishing" ? tk.notice.url : null } : null,
+    sender: tk.notice ? { id: tk.notice.sender, from: tk.notice.from, url: tk.notice.url } : null,
     customer: customer || null,
     items,
   };

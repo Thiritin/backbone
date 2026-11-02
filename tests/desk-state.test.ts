@@ -7,7 +7,7 @@ import { companyDomain } from "../src/sim/30-customers/domains";
 import { resolve } from "../src/sim/80-business/browser";
 import { tick } from "../src/sim/88-tick/tick";
 import { addCustomer } from "../src/sim/90-actions/customers";
-import { cancel, install } from "../src/sim/90-actions/store";
+import { removeDesk, subscribeDesk } from "../src/sim/90-actions/desk-install";
 import { closeTicket } from "../src/sim/90-actions/support";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { newGame, readyGame, registered } from "./fixtures";
@@ -52,7 +52,7 @@ describe("desk state", () => {
     expect(back.tickets.map((t) => t.ref)).toEqual(["1", "2", "3", "4"]);
     expect(back.desk!.lastRef).toBe(4);
     expect(deskStatus(back)).toBe("up");
-    expect(back.installed).toContain("zendusk");
+    expect(back.installed).not.toContain("zendusk");
   });
 
   it("numbers OsTickit tickets with unique random six digits", () => {
@@ -73,31 +73,31 @@ describe("desk state", () => {
 
   it("keeps a saved desk as it is", () => {
     const s = withTickets(2008);
-    install(s, "zendusk");
+    subscribeDesk(s, "pxl", "zendusk");
     const back = deserialize(serialize(s));
     expect(back.desk).toEqual(s.desk);
     expect(back.mail.channels).toEqual(s.mail.channels);
   });
 
-  it("sets up and removes the desk with the Pear Store item", () => {
+  it("sets up and removes the desk", () => {
     const s = withTickets(2011);
-    expect(install(s, "zendusk")).toEqual({ ok: true });
+    expect(subscribeDesk(s, "pxl", "zendusk")).toEqual({ ok: true });
     expect(s.desk?.id).toBe("zendusk");
-    expect(install(s, "freshdusk")).toEqual({ ok: true });
+    expect(subscribeDesk(s, "pxl", "freshdusk")).toEqual({ ok: true });
     expect(s.desk?.id).toBe("freshdusk");
     expect(s.mail.channels.map((c) => c.desk)).toEqual(["freshdusk"]);
-    expect(cancel(s, "freshdusk")).toEqual({ ok: true });
+    expect(removeDesk(s)).toEqual({ ok: true });
     expect(s.desk).toBeNull();
     expect(s.mail.channels).toEqual([]);
-    expect(s.tickets.every((t) => t.channelId === null)).toBe(true);
+    expect(s.tickets.every((t) => !t.channelId)).toBe(true);
   });
 
   it("follows the web space for a self-hosted desk and is up when hosted", () => {
     const s = readyGame(5);
     const panel = s.clusters.find((c) => c.kind === "panel")!;
-    s.desk = { id: "ostickit", hosting: { kind: "self", clusterId: panel.id }, tenant: null, departments: [], rules: [], addons: {}, lastRef: 0 };
+    s.desk = { id: "ostickit", hosting: { kind: "self", clusterId: panel.id, version: "1.3" }, tenant: null, departments: [], rules: [], addons: {}, lastRef: 0 };
     expect(deskStatus(s)).not.toBe("down");
-    s.desk = { ...s.desk, hosting: { kind: "self", clusterId: "gone" } };
+    s.desk = { ...s.desk, hosting: { kind: "self", clusterId: "gone", version: "1.3" } };
     expect(deskStatus(s)).toBe("down");
     const imported = { channelId: "ch1" } as Ticket, mailbox = { channelId: null } as Ticket;
     expect([deskReachable(s, imported), deskReachable(s, mailbox)]).toEqual([false, true]);
@@ -120,7 +120,7 @@ describe("desk state", () => {
   it("finds nothing at the support address", () => {
     const s = withTickets(2008);
     expect(resolve(s, `support.${companyDomain(s)}`).page).toEqual({ kind: "notfound" });
-    install(s, "zendusk");
+    subscribeDesk(s, "pxl", "zendusk");
     expect(resolve(s, `support.${companyDomain(s)}`).page).toEqual({ kind: "notfound" });
   });
 });

@@ -1,11 +1,11 @@
 import { registrarById, tierFor } from "../10-catalog/registrars";
-import { domainOf, heldDomains, outCode, REGISTRIES, register } from "../30-customers/registry";
+import { domainOf, heldDomains, NS_MINUTES, nsActive, outCode, REGISTRIES, register, type NameServerMode } from "../30-customers/registry";
 import { beginTransfer, DOMAIN_OUT, TRANSFER_MINUTES } from "../30-customers/registrar";
 import { deliverMail, MINUTES } from "../40-support/tickets";
 import { find, queue } from "./support";
 import { taken } from "../30-customers/domains";
 import { partnerOf, providerDomain, registrarUrl } from "../80-business/browser";
-import { yearOf } from "../00-core/time";
+import { nowMinutes, yearOf } from "../00-core/time";
 import { techsAt, OP_TASK, queueOp } from "../47-staff/technicians";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
@@ -97,6 +97,31 @@ export function generateAuthCode(s: GameState, name: string): ActionResult {
 export function setDomainRenewal(s: GameState, name: string, on: boolean): ActionResult {
   if (!heldAt(s, name)) return fail("error.unknownDomain");
   s.domains = s.domains.map((d) => (d.name === name ? { ...d, cancelled: on ? undefined : true } : d));
+  return { ok: true };
+}
+
+// A further domain of the company's own, parked at the partner like any new order there; the partner bills it monthly.
+export function orderDomain(s: GameState, input: string): ActionResult {
+  const name = input.trim().toLowerCase();
+  if (!s.registrar) return fail("error.needsRegistrar");
+  const bad = companyDomainError(s, name);
+  if (bad) return fail(bad);
+  register(s, name, null, false);
+  s.domains = s.domains.map((d) => (d.name === name ? { ...d, ns: "registrar" } : d));
+  return { ok: true, id: name };
+}
+
+const HOST = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/;
+
+// Points a domain at other name servers; it answers with the old ones for NS_MINUTES.
+export function setNameServers(s: GameState, name: string, ns: NameServerMode, hosts?: [string, string]): ActionResult {
+  const d = heldAt(s, name);
+  if (!d) return fail("error.unknownDomain");
+  const nsHosts = ns === "custom" ? hosts?.map((h) => h.trim().toLowerCase()) as [string, string] | undefined : undefined;
+  if (ns === "custom" && (nsHosts?.length !== 2 || !nsHosts.every((h) => HOST.test(h)) || nsHosts[0] === nsHosts[1])) return fail("error.nsInvalid");
+  if (d.ns === ns && d.nsHosts?.join() === nsHosts?.join()) return { ok: true };
+  const nsPrev = nsActive(s, d);
+  s.domains = s.domains.map((x) => (x.name === name ? { ...x, ns, nsHosts, nsPrev: { ns: nsPrev.ns, nsHosts: nsPrev.nsHosts }, nsReadyAt: nowMinutes(s) + NS_MINUTES } : x));
   return { ok: true };
 }
 

@@ -1,7 +1,7 @@
 import type { Product } from "../30-customers/customers";
 import { keyframes, priceAt, vpsPlanGb, vpsRatePerGb } from "./economy";
 import { retailV4 } from "./addresses";
-import { UPDATE_PRICE, type App } from "./apps";
+import { cleanMarket, UPDATE_PRICE, type App } from "./apps";
 import { gpuRent } from "./gpu";
 
 // What one unit of a product takes from a node: booked vCPUs, GB of RAM and GB of disk, and whole GPU cards.
@@ -106,11 +106,12 @@ export function sizeSpec(product: Product, i: number, year: number): Spec {
 }
 
 // What a line charges for: a base fee per service and a price per resource unit; traffic is per 100 GB a month.
-// ip is a dedicated IPv4 address a month; gpu is a card a month; updates is managed updates a month and updateOnce a one-off update, which only web hosting sells.
-export type Unit = "base" | "ov" | "ev" | "vcpu" | "ramGb" | "diskGb" | "mailbox" | "zone" | "user" | "unit" | "kw" | "traffic" | "ip" | "gpu" | "updates" | "updateOnce" | "account";
+// ip is a dedicated IPv4 address a month; gpu is a card a month; updates is managed updates a month, updateOnce a one-off update
+// and cleanHour an hour of cleaning a defaced site, which only web hosting sells.
+export type Unit = "base" | "ov" | "ev" | "vcpu" | "ramGb" | "diskGb" | "mailbox" | "zone" | "user" | "unit" | "kw" | "traffic" | "ip" | "gpu" | "updates" | "updateOnce" | "cleanHour" | "account";
 const VM: Unit[] = ["base", "vcpu", "ramGb", "diskGb", "traffic", "ip"];
 export const UNITS: Record<Product, Unit[]> = {
-  webHosting: ["base", "diskGb", "mailbox", "traffic", "ip", "updates", "updateOnce"], vps: VM, gameServer: VM, cloud: VM, storage: ["base", "diskGb", "traffic"],
+  webHosting: ["base", "diskGb", "mailbox", "traffic", "ip", "updates", "updateOnce", "cleanHour"], vps: VM, gameServer: VM, cloud: VM, storage: ["base", "diskGb", "traffic"],
   dns: ["base", "zone", "traffic"], vpn: ["base", "user", "traffic"], domain: ["base"], ssl: ["base", "ov", "ev"], dedicated: ["base", "ramGb", "traffic", "ip"],
   colocation: ["base", "unit", "kw", "traffic", "ip"], gpu: ["gpu", "traffic", "ip"], reseller: ["diskGb"],
 };
@@ -131,11 +132,11 @@ export const marketSetup = (product: Product, year: number): number => Math.roun
 // economy.md, Per-resource pricing: the market's rates in a year at the basic SLA, per month for hourly lines and per
 // year for yearly ones. They keep the sizes above near their former package prices.
 export function marketRates(product: Product, year: number): Rates {
-  const rates = { ...resourceRates(product, year), ...(UNITS[product].includes("ip") && { ip: retailV4(year) }), ...(product === "webHosting" && UPDATE_PRICE) }, share = TRAFFIC_SHARE[product];
+  const rates = { ...resourceRates(product, year), ...(UNITS[product].includes("ip") && { ip: retailV4(year) }), ...(product === "webHosting" && { ...UPDATE_PRICE, cleanHour: cleanMarket(year) }) }, share = TRAFFIC_SHARE[product];
   if (!share) return rates;
   const mid = sizeSpec(product, Math.floor((SIZES[product].length - 1) / 2), year);
   const rest = UNITS[product].reduce((n, u) => n + (rates[u] ?? 0) * unitAmount(mid, u), 0);
-  const scaled = Object.fromEntries(Object.entries(rates).map(([u, x]) => [u, u === "ip" || u in UPDATE_PRICE ? x : x * (1 - share)]));
+  const scaled = Object.fromEntries(Object.entries(rates).map(([u, x]) => [u, u === "ip" || u === "cleanHour" || u in UPDATE_PRICE ? x : x * (1 - share)]));
   return { ...scaled, traffic: (share * rest) / unitAmount(mid, "traffic") };
 }
 // economy.md, Prices over time: the share of the 2005 rates a fixed-price line charges in a year, and the yearly SSL
@@ -177,7 +178,7 @@ function resourceRates(product: Product, year: number): Rates {
 export const unitAmount = (spec: Spec, u: Unit): number =>
   u === "base" ? 1 : u === "ov" || u === "ev" ? Number(spec.cert === u) : u === "account" ? spec.accounts ?? 0 : u === "mailbox" ? spec.mailboxes : u === "zone" ? spec.zones ?? 0 : u === "user" ? spec.users ?? 0
     : u === "unit" ? spec.units ?? 0 : u === "kw" ? (spec.watts ?? 0) / 1000 : u === "traffic" ? spec.trafficGb / 100 : u === "ip" ? spec.ipv4 ?? 0 : u === "gpu" ? spec.gpus ?? 0
-      : u === "updates" ? Number(!!spec.managedUpdates) : u === "updateOnce" ? 0 : spec[u];
+      : u === "updates" ? Number(!!spec.managedUpdates) : u === "updateOnce" || u === "cleanHour" ? 0 : spec[u];
 
 // A spec's price at a line's rates (the market's where unset) and an SLA, rounded to cents.
 export function specPrice(product: Product, spec: Spec, year: number, sla: Sla = "basic", rates: Rates = {}): number {

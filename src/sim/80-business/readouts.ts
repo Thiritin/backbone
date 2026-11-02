@@ -2,12 +2,12 @@
 import { softwareById } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
 import type { Cluster, Workload } from "../60-infra/cluster";
-import { serviceMbps } from "../60-infra/network";
+import { serviceMbps, serviceTrafficGb } from "../60-infra/network";
 import { diskFill, workloadLoad, workloadUse } from "../60-infra/usage";
 import { ascii, companyDomain } from "../30-customers/domains";
 import { controlPlaneUp, liveBetween, workloadOnline } from "../60-infra/cluster";
 import { sensorsOf } from "../60-infra/sensors";
-import { deviceWatts } from "../60-infra/status";
+import { busyDevices, drawWatts } from "../60-infra/status";
 import { modelById } from "../10-catalog/hardware";
 import type { Device } from "../50-state";
 import { hashRng, rand } from "../00-core/rng";
@@ -50,20 +50,16 @@ export function panelTasks(s: GameState, c: Cluster, now: number = s.hour): Pane
 }
 
 export const LEVEL_WARN = 0.8, LEVEL_BAD = 0.95;
-export const TRAFFIC_SAMPLE_HOURS = 6, TRAFFIC_WINDOW_HOURS = 730;
+export { TRAFFIC_SAMPLE_HOURS, TRAFFIC_WINDOW_HOURS } from "../60-infra/network";
 export type Level = "ok" | "warn" | "bad";
 export const levelOf = (used: number, of: number): Level => { const f = of > 0 ? used / of : 0; return f >= LEVEL_BAD ? "bad" : f >= LEVEL_WARN ? "warn" : "ok"; };
 
 export interface AccountUse { disk: [number, number]; traffic: [number, number]; mailboxes: number; level: Level }
 
-// GB moved by the account's service over the last month, summed from sampled Mbit/s.
+// GB moved by the account's service over the last month.
 export function trafficUsedGb(s: GameState, w: Workload, now: number = s.hour): number {
   const v = s.services.find((x) => x.id === w.serviceId);
-  if (!v) return 0;
-  const end = v.endedAt ?? now;
-  let mbps = 0;
-  for (let h = Math.max(v.startedAt, now - TRAFFIC_WINDOW_HOURS); h <= Math.min(now, end); h += TRAFFIC_SAMPLE_HOURS) mbps += serviceMbps(s, v, h);
-  return (mbps * TRAFFIC_SAMPLE_HOURS * 3600) / 8000;
+  return v ? serviceTrafficGb(s, v, now) : 0;
 }
 
 export function accountUse(s: GameState, w: Workload): AccountUse {
@@ -203,21 +199,24 @@ export function evcWarning(s: GameState, w: Workload, toDeviceId: string): boole
   return !!from && !!to && !liveBetween(s, from, to);
 }
 
-// IPMI sensors (plan 3.17): thresholds are display constants, the readings come from sensorsOf and deviceWatts.
-export const INLET_WARN_C = 35, INLET_CRIT_C = 42, FAN_WARN_RPM = 4000, PSU_HEADROOM = 1.5;
+// IPMI sensors (plan 3.17): thresholds are display constants, the readings come from sensorsOf and drawWatts.
+export const INLET_WARN_C = 35, INLET_CRIT_C = 42, CPU_WARN_C = 85, CPU_CRIT_C = 95, FAN_WARN_RPM = 2000, PSU_HEADROOM = 1.5;
 export type SensorStatus = "ok" | "warning" | "critical";
 export const inletStatus = (c: number): SensorStatus => (c >= INLET_CRIT_C ? "critical" : c >= INLET_WARN_C ? "warning" : "ok");
+export const cpuStatus = (c: number): SensorStatus => (c >= CPU_CRIT_C ? "critical" : c >= CPU_WARN_C ? "warning" : "ok");
 export const fanStatus = (rpm: number): SensorStatus => (rpm <= 0 ? "critical" : rpm < FAN_WARN_RPM ? "warning" : "ok");
 const PSU_STATUS = { ok: "ok", unplugged: "warning", failed: "critical" } as const;
 
-export interface SensorRow { kind: "inlet" | "fan" | "psu" | "power" | "load"; n: number; value: number | null; psu?: "ok" | "failed" | "unplugged"; status: SensorStatus; lower: number | null; upper: number | null }
+export interface SensorRow { kind: "inlet" | "cpu" | "fan" | "duty" | "psu" | "power" | "load"; n: number; value: number | null; psu?: "ok" | "failed" | "unplugged"; status: SensorStatus; lower: number | null; upper: number | null }
 
 // A powered-off server reports no fan or draw alarms; each supply is rated PSU_HEADROOM times the model's base draw, and the load is shared over the working ones.
 export function sensorRows(s: GameState, d: Device): SensorRow[] {
-  const x = sensorsOf(s, d), watts = d.on ? Math.round(deviceWatts(d)) : 0, working = Math.max(1, x.psus.filter((p) => p.state === "ok").length);
+  const x = sensorsOf(s, d), watts = d.on ? Math.round(drawWatts(s, d, busyDevices(s))) : 0, working = Math.max(1, x.psus.filter((p) => p.state === "ok").length);
   return [
     { kind: "inlet", n: 1, value: x.inletC, status: inletStatus(x.inletC), lower: null, upper: INLET_WARN_C },
+    { kind: "cpu", n: 1, value: x.cpuC, status: cpuStatus(x.cpuC), lower: null, upper: CPU_WARN_C },
     ...x.fans.map((f, i): SensorRow => ({ kind: "fan", n: i + 1, value: f.rpm, status: d.on ? fanStatus(f.rpm) : "ok", lower: FAN_WARN_RPM, upper: null })),
+    { kind: "duty", n: 1, value: x.fanDuty, status: "ok", lower: null, upper: null },
     ...x.psus.map((p, i): SensorRow => ({ kind: "psu", n: i + 1, value: null, psu: p.state, status: PSU_STATUS[p.state], lower: null, upper: null })),
     { kind: "power", n: 1, value: watts, status: "ok", lower: null, upper: null },
     { kind: "load", n: 1, value: Math.round((watts / (modelById(d.model).watts * PSU_HEADROOM * working)) * 100), status: "ok", lower: null, upper: null },

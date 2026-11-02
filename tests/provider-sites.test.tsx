@@ -30,7 +30,7 @@ describe("colocation provider sites", () => {
     expect(r.page).toEqual({ kind: "provider", id: "hetzler" });
     expect(routeOf("hetzler", r.path)).toEqual({ page: "order", dc: "hetzler-nbg", space: "share", size: 4 });
     expect(routeOf("hetzler", "/sites/equinox-fr5")).toEqual({ page: "notfound" });
-    expect(routeOf("hetzler", "/account/contracts")).toEqual({ page: "account" });
+    expect(routeOf("hetzler", "/account/contracts")).toEqual({ page: "account", sub: ["contracts"] });
   });
 
   it("renders every page of every provider in both looks", () => {

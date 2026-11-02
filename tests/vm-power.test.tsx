@@ -115,9 +115,9 @@ describe("VM power", () => {
     renderToString(<View />);
     vms.find((v) => v.id === x.id)!.actions.find((a) => a.id === "checkpoint")!.run();
     const game = () => useStore.getState().game.workloads.find((w) => w.id === x.id)!;
+    expect(game().frozen).toBeFalsy();
     const asked = useAsk.getState().ask!;
     expect(asked.text).toContain("saves the memory");
-    expect(game().frozen).toBeFalsy();
     asked.run();
     expect(game().frozen).toBe(true);
   });

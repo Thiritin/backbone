@@ -10,7 +10,7 @@ import { setPower } from "../src/sim/90-actions/hardware";
 import { setSiteHost } from "../src/sim/90-actions/website";
 import { readyGame, registered, skipTo, newGame } from "./fixtures";
 import { createRng } from "../src/sim/00-core/rng";
-import { spawnNotice } from "../src/sim/40-support/notices";
+import { applyNoticeWork, spawnNotice } from "../src/sim/40-support/notices";
 import { customerSite, siteHost } from "../src/sim/80-business/website";
 
 const web = (s: ReturnType<typeof readyGame>) => s.services.find((v) => v.product === "webHosting" && v.domain)!;
@@ -101,10 +101,22 @@ describe("browser resolver", () => {
   it("serves a reported phishing page until it is taken down", () => {
     const s = readyGame(1);
     const t = spawnNotice(s, null, true, createRng(3), "phishing");
-    expect(resolve(s, t.notice!.url).page).toEqual({ kind: "phishing", sender: "baenk" });
-    expect(resolve(s, `${t.notice!.url}x`).page.kind).not.toBe("phishing");
+    expect(resolve(s, t.notice!.url).page).toEqual({ kind: "notice", ticketId: t.id });
+    expect(resolve(s, `${t.notice!.url}x`).page.kind).not.toBe("notice");
     t.outcome = "takenDown";
-    expect(resolve(s, t.notice!.url).page.kind).not.toBe("phishing");
+    expect(resolve(s, t.notice!.url).page.kind).not.toBe("notice");
+  });
+
+  it("serves what a real notice or a YouTuber reports and nothing at a fake download claim", () => {
+    const s = readyGame(1), c = s.customers.find((x) => x.id === web(s).customerId)!;
+    const real = spawnNotice(s, c, true, createRng(4), "music");
+    const fake = spawnNotice(s, c, false, createRng(5), "movie");
+    const blog = spawnNotice(s, c, false, createRng(6), "youtuber");
+    expect(resolve(s, real.notice!.url).page).toEqual({ kind: "notice", ticketId: real.id });
+    expect(resolve(s, fake.notice!.url).page).toEqual({ kind: "notfound" });
+    expect(resolve(s, blog.notice!.url).page).toEqual({ kind: "notice", ticketId: blog.id });
+    applyNoticeWork(s, real, c, "takedown");
+    expect(resolve(s, real.notice!.url).page.kind).not.toBe("notice");
   });
 
   it("shows the company's logo on a sponsored site while the sponsorship runs and its banner hangs", () => {

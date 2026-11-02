@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { type GameState } from "../src/sim/50-state";
-import { deviceHealth, linkStatus, powered, rackPower, working } from "../src/sim/60-infra/status";
+import { cpuLoad, deviceHealth, linkStatus, powered, rackPower, working } from "../src/sim/60-infra/status";
 import { connect, mountDevice, mountStack, setPlugged, unmountDevice } from "../src/sim/90-actions/hardware";
 import { buyDevice, newGame } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
@@ -115,13 +115,17 @@ describe("power plugs", () => {
 });
 
 describe("idle draw", () => {
-  it("draws idle watts for a server with no running workload and rated watts once one runs", () => {
+  it("draws idle watts for a server with no running workload and up to rated watts by its load once one runs", () => {
     const s = rich();
     expect(rackPower(s, "rack2").watts).toBe(100 + 8 + 10);
     const idle = powerPerHour(s);
     runServers(s);
-    expect(rackPower(s, "rack2").watts).toBe(250 + 8 + 10);
+    vi.spyOn(cpuLoad, "of").mockReturnValue(0.5);
+    expect(rackPower(s, "rack2").watts).toBe(175 + 8 + 10);
     expect(powerPerHour(s)).toBeGreaterThan(idle);
+    vi.spyOn(cpuLoad, "of").mockReturnValue(1);
+    expect(rackPower(s, "rack2").watts).toBe(250 + 8 + 10);
+    vi.restoreAllMocks();
     s.workloads = s.workloads.map((w) => ({ ...w, stopped: true }));
     expect(rackPower(s, "rack2").watts).toBe(100 + 8 + 10);
   });
