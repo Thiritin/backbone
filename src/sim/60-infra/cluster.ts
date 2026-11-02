@@ -165,9 +165,10 @@ export const clusterDefaults = (c: Partial<Cluster> & Pick<Cluster, "nodes">, ho
   controlPlane: c.controlPlane === undefined ? c.nodes[0]?.deviceId ?? null : c.controlPlane,
 }) as Cluster;
 export const oomKilled = (w: Workload, hour: number): boolean => (w.oomUntil ?? 0) > hour;
-// A cluster node that ran below TIMEOUT_PERF (usage.ts) for TIMEOUT_HOURS in a row: its workloads time out and count as down.
+// A cluster node or a VM with software that ran below TIMEOUT_PERF (usage.ts) for TIMEOUT_HOURS in a row: its workloads
+// time out and count as down.
 export const TIMEOUT_HOURS = 2;
-export const timedOut = (s: GameState, deviceId: string): boolean => (s.lowPerf[deviceId] ?? 0) >= TIMEOUT_HOURS;
+export const timedOut = (s: GameState, id: string): boolean => (s.lowPerf[id] ?? 0) >= TIMEOUT_HOURS;
 export const workloadDefaults = (w: Partial<Workload>): Workload => ({ stopped: false, busyUntil: 0, backupAt: null, ...w }) as Workload;
 
 const ZERO: Resources = { vcpu: 0, ramGb: 0, diskGb: 0 };
@@ -269,6 +270,7 @@ export function booked(s: GameState, w: Workload): Resources {
 
 // economy.md, Platforms and licenses: disk a mail server keeps for each mailbox it holds, in 2005, growing with server RAM.
 export const MAILBOX_GB = 1;
+export const mailboxGb = (year: number): number => MAILBOX_GB * vpsPlanGb(year);
 // The company mailboxes a mail server holds.
 export const mailboxesOn = (s: GameState, clusterId: string): number => {
   const tenants = new Set(s.mail.tenants.filter((x) => x.host === "self" && x.clusterId === clusterId).map((x) => x.id));
@@ -279,7 +281,7 @@ export function controlPlaneUse(s: GameState, c: Pick<Cluster, "id" | "panel" | 
   const id = c.panel ?? c.platform;
   if (!id) return ZERO;
   const sw = softwareById(id), year = yearOf(s.hour), r = footprint(sw, year);
-  return sw.kind === "mail" ? { ...r, diskGb: r.diskGb + mailboxesOn(s, c.id) * MAILBOX_GB * vpsPlanGb(year) } : r;
+  return sw.kind === "mail" ? { ...r, diskGb: r.diskGb + mailboxesOn(s, c.id) * mailboxGb(year) } : r;
 }
 // What a node holds for workloads: its capacity less the control plane it runs. Bars show booked against it.
 export function bookable(s: GameState, d: Device): Resources {
@@ -550,14 +552,14 @@ export const sitesDown = (s: GameState, hostId: string): boolean => s.security.o
 
 // A workload on a server is up while the server reaches the internet and still holds the data written since it was placed;
 // a VM also needs an address on its host's network and, for a customer with a private network, that network (private.ts).
-// A web space in a panel VM is up while the VM is. Colocation is up while its rack has power.
+// A web space in a panel VM is up while the VM is and has not timed out. Colocation is up while its rack has power.
 // ponytail: colocation ignores the customer's uplinks until colocation cabling lands.
 export function workloadOnline(s: GameState, w: Workload): boolean {
   if (w.stopped || w.frozen || w.busyUntil > s.hour || oomKilled(w, s.hour) || (w.serviceId && s.webpanel.restoring[w.serviceId])) return false;
   const c = w.clusterId ? s.clusters.find((x) => x.id === w.clusterId) : undefined;
   if (c?.switching) return false;
   if (c && (c.kind === "panel" ? sitesDown(s, c.id) : s.security.hacked.includes(c.id))) return false;
-  if (c?.vm) { const vm = vmById(s, c.vm); return !!vm && workloadOnline(s, vm) && !firewallBlocks(s, c); }
+  if (c?.vm) { const vm = vmById(s, c.vm); return !!vm && workloadOnline(s, vm) && !timedOut(s, vm.id) && !firewallBlocks(s, c); }
   if (c && w.deviceId && timedOut(s, w.deviceId)) return false;
   if (w.deviceId) {
     const d = s.devices.find((x) => x.id === w.deviceId);

@@ -4,7 +4,7 @@ import { imageName, imageOf } from "../../../../../sim/10-catalog/server-os";
 import type { GameState } from "../../../../../sim/50-state";
 import { vmById, type Cluster } from "../../../../../sim/60-infra/cluster";
 import { vmStats } from "../../../../../sim/60-infra/stats";
-import { nodeUsage } from "../../../../../sim/60-infra/usage";
+import { shownNode } from "../../../../../sim/60-infra/usage";
 import { updateDue } from "../../../../../sim/90-actions/software";
 import { Bar, Facts, type Fact } from "../PanelBase";
 
@@ -18,7 +18,7 @@ export function SystemInfo({ game, c, host }: { game: GameState; c: Cluster; hos
   const ring = stats?.ring.map((x) => x.cpu) ?? [], vcpu = w?.vcpu ?? 1;
   let cpu = 0, ram = 0, dsk = 0;
   if (stats) { cpu = stats.now.cpu; ram = stats.now.ram; dsk = stats.now.disk; } else if (device) {
-    const u = nodeUsage(game, device.id);
+    const u = shownNode(game, device.id);
     cpu = u.physical.vcpu ? u.used.vcpu / u.physical.vcpu : 0; ram = u.physical.ramGb ? u.used.ramGb / u.physical.ramGb : 0; dsk = u.physical.diskGb ? u.used.diskGb / u.physical.diskGb : 0;
   }
   const load = [1, 5, 15].map((n) => (ring.length ? avg(ring.slice(-n)) : cpu) * vcpu), hours = stats?.uptimeHours ?? 0;

@@ -13,7 +13,7 @@ import type { Resources } from "../../../../sim/10-catalog/products";
 import type { GameState } from "../../../../sim/50-state";
 import { backupTargets, hostOfVm, isOwnVm, vmById, workloadsOn, type BackupEvery, type Cluster, type Workload } from "../../../../sim/60-infra/cluster";
 import { deviceHealth } from "../../../../sim/60-infra/status";
-import { workloadUse } from "../../../../sim/60-infra/usage";
+import { shownWorkload } from "../../../../sim/60-infra/usage";
 import { familyOf, openVulns } from "../../../../sim/60-infra/vulns";
 import { accountUse, evcWarning, levelOf } from "../../../../sim/80-business/readouts";
 import { consoleTitle, type ConsoleFeatures } from "../../../../sim/80-business/consoles";
@@ -153,7 +153,7 @@ export function useRows(game: GameState, c: Cluster, f: ConsoleFeatures, node: s
   const uses = useMemo(() => new Map(c.kind === "panel" ? game.workloads.filter((w) => w.clusterId === c.id).map((w) => [w.id, accountUse(game, w)] as const) : []), [game.hour, game.workloads.length, c.id, c.kind]); // eslint-disable-line react-hooks/exhaustive-deps
   const web = c.kind === "panel", cloud = c.kind === "cloud", close = () => setOpen(null), holds = useHolds(game, c, f);
   return game.workloads.filter((w) => w.clusterId === c.id && (!node || w.deviceId === node)).map((w) => {
-    const st = vmState(game, w), [state, tone] = VM_STATE[st], u = workloadUse(game, w), host = hostOfVm(game, w.id);
+    const st = vmState(game, w), [state, tone] = VM_STATE[st], u = shownWorkload(game, w), host = hostOfVm(game, w.id);
     const on = st === "running" || st === "down", site = game.services.find((v) => v.id === w.serviceId);
     const d = game.devices.find((x) => x.id === w.deviceId), movable = (on || st === "stopped") && !w.migrating, own = cloud && isOwnVm(w);
     const actions: (PanelAction | false)[] = [

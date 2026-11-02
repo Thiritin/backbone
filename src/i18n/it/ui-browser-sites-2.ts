@@ -472,4 +472,10 @@ export default {
   "browser-sites-2.cli.restoreList": () => "Elenca le macchine perse con un backup su questo server e i nodi su cui ripristinarle.",
   "browser-sites-2.cli.restore": () => "Ripristina una macchina persa dal suo backup sul nodo indicato, oppure sul primo libero.",
   "browser-sites-2.keyFlag": () => "Aggiungi --key seguito dalla tua chiave di licenza al comando per installare con una licenza.",
+  "browser-sites-2.requirements": () => "Requisiti di sistema",
+  "browser-sites-2.reqCpu": () => "Processore",
+  "browser-sites-2.reqRam": () => "Memoria",
+  "browser-sites-2.reqDisk": () => "Spazio su disco",
+  "browser-sites-2.reqMailbox": () => "Disco per casella",
+  "browser-sites-2.reqOs": () => "Sistema operativo",
 } satisfies Dict;

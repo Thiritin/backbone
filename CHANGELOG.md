@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- Software now installs on any virtual machine with the disk for it, but a VM too small for its software and sites sits at 100% CPU and RAM, its web console stops answering and its sites slow down until you resize it.
+- CPU and RAM readouts now move a little from hour to hour, and every software website lists the system requirements of the current year on its download page.
 - A server with failed fans now runs its CPU hot under load: from 85 °C it slows down, and every hour above 90 °C wears its parts.
 - You can order cross-connects to carriers and exchanges in a provider's customer portal, and once a year a provider raises its rack prices for new contracts and tells its customers by email.
 - Dragging a browser tab out of its window now opens it in a new browser window, and dragging a tab onto another browser window moves it there.

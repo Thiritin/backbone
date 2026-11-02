@@ -114,7 +114,7 @@ export function createVm(s: GameState, clusterId: string, size: Resources, poolI
   if (c.platform && !controlPlaneUp(s, c)) return fail("error.controlPlaneDown");
   if (licenceExpired(s, c)) return fail("error.licenceExpired");
   { const q = quorumBlock(s, c); if (q) return fail(q); }
-  if (KEYS.some((k) => !Number.isFinite(size[k]) || size[k] < PANEL_VM_MIN[k])) return fail("error.vmSize");
+  { const bad = sizeError(size); if (bad) return fail(bad); }
   if (c.platform === "openstash") { const b = quotaBlock(s, c, projectId, sizeAdd(size)); if (b) return fail(b); }
   if (cephOn(c) && cephUsed(s, c) + size.diskGb > cephCapacity(s, c)) return fail("error.cephFull");
   if (poolId !== null && !poolRoom(s, c, poolId, size)) return fail(c.pools.some((p) => p.id === poolId) ? "error.poolFull" : "error.unknownPool");
@@ -152,7 +152,7 @@ export function installPanelInVm(s: GameState, vmId: string, panelId: string): A
   const c = s.clusters.find((x) => x.id === vm.clusterId);
   if (!c) return fail("error.unknownCluster");
   if (c.platform && !controlPlaneUp(s, c)) return fail("error.controlPlaneDown");
-  if (sizeError(vm, footprint(sw, yearOf(s.hour)))) return fail("error.vmSize");
+  { const bad = sizeError(vm, footprint(sw, yearOf(s.hour))); if (bad) return fail(bad); }
   const after = Math.max(s.hour, c.switching?.doneAt ?? s.hour);
   return { ok: true, id: hostInVm(s, vm.id, c.az, sw, after + sw.installHours) };
 }
@@ -182,8 +182,9 @@ export function createPanelVm(s: GameState, clusterId: string, panelId: string, 
   return done;
 }
 
-const sizeError = (r: Resources, panel: Resources): string | null =>
-  KEYS.some((k) => !Number.isFinite(r[k]) || r[k] < PANEL_VM_MIN[k] || vmCap(r, panel)[k] < 0) ? "error.vmSize" : null;
+// A VM takes software bigger than its CPU and RAM and then sits frozen at 100% (usage.ts, vmFrozen); only its disk must hold it.
+const sizeError = (r: Resources, panel: Resources = { vcpu: 0, ramGb: 0, diskGb: 0 }): string | null =>
+  KEYS.some((k) => !Number.isFinite(r[k]) || r[k] < PANEL_VM_MIN[k]) ? "error.vmSize" : r.diskGb < panel.diskGb ? "error.vmDisk" : null;
 
 // Books a panel VM bigger or smaller: its disk must still hold its web spaces and fit on its node.
 export function resizePanelVm(s: GameState, hostId: string, size: Resources): ActionResult {
@@ -209,7 +210,7 @@ export function resizeVm(s: GameState, vmId: string, size: Resources): ActionRes
   const vm = vmById(s, vmId);
   if (!vm || !isOwnVm(vm)) return fail("error.notOwnVm");
   if (hostOfVm(s, vm.id)) return fail("error.softwareInUse");
-  const bad = sizeError(size, { vcpu: 0, ramGb: 0, diskGb: 0 });
+  const bad = sizeError(size);
   if (bad) return fail(bad);
   { const pc = s.clusters.find((x) => x.id === vm.clusterId); if (pc && vm.poolId && !poolRoom(s, pc, vm.poolId, size, vm.id)) return fail("error.poolFull"); }
   { const pc = s.clusters.find((x) => x.id === vm.clusterId); if (pc?.platform === "openstash") { const b = quotaBlock(s, pc, vm.projectId ?? ADMIN, sizeAdd(size, vm)); if (b) return fail(b); } }

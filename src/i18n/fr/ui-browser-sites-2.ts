@@ -472,4 +472,10 @@ export default {
   "browser-sites-2.cli.restoreList": () => "Liste les machines perdues qui ont une sauvegarde sur ce serveur et les nœuds sur lesquels les restaurer.",
   "browser-sites-2.cli.restore": () => "Restaure une machine perdue depuis sa sauvegarde sur le nœud indiqué, ou sur le premier nœud libre.",
   "browser-sites-2.keyFlag": () => "Ajoute --key suivi de ta clé de licence à la commande pour installer avec une licence.",
+  "browser-sites-2.requirements": () => "Configuration requise",
+  "browser-sites-2.reqCpu": () => "Processeur",
+  "browser-sites-2.reqRam": () => "Mémoire",
+  "browser-sites-2.reqDisk": () => "Espace disque",
+  "browser-sites-2.reqMailbox": () => "Disque par boîte aux lettres",
+  "browser-sites-2.reqOs": () => "Système d'exploitation",
 } satisfies Dict;

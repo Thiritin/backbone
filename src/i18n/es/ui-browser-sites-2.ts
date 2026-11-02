@@ -472,4 +472,10 @@ export default {
   "browser-sites-2.cli.restoreList": () => "Lista las máquinas perdidas con una copia en este servidor y los nodos en los que se pueden restaurar.",
   "browser-sites-2.cli.restore": () => "Restaura una máquina perdida desde su copia en el nodo indicado, o en el primero libre.",
   "browser-sites-2.keyFlag": () => "Añade --key seguido de tu clave de licencia al comando para instalar con licencia.",
+  "browser-sites-2.requirements": () => "Requisitos del sistema",
+  "browser-sites-2.reqCpu": () => "Procesador",
+  "browser-sites-2.reqRam": () => "Memoria",
+  "browser-sites-2.reqDisk": () => "Espacio en disco",
+  "browser-sites-2.reqMailbox": () => "Disco por buzón",
+  "browser-sites-2.reqOs": () => "Sistema operativo",
 } satisfies Dict;

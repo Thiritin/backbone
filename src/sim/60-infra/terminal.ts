@@ -17,7 +17,7 @@ import { isOwnVm, serverOf, vmOf, workloadOnline, type Workload } from "./cluste
 import { latency } from "./network";
 import { hopDown, locationOf, pathTo, powered, working, type Hop } from "./status";
 import { isOwnRouter, mountedRouter } from "./routers";
-import { nodeUsage, workloadUse } from "./usage";
+import { nodeUsage, shownNode, shownWorkload } from "./usage";
 import { RECOVER_HOURS } from "./power";
 import { reboot, shutdown, type ActionResult } from "../90-actions/hardware";
 import { apt, dpkg, installScript, installStep } from "./apt";
@@ -224,7 +224,7 @@ function up(s: GameState, deviceId: string): string {
 }
 
 function loadAverage(s: GameState, deviceId: string): [string, string, string] {
-  const load = nodeUsage(s, deviceId).used.vcpu;
+  const load = shownNode(s, deviceId).used.vcpu;
   return [load, load * 0.95, load * 0.9].map((v) => v.toFixed(2)) as [string, string, string];
 }
 
@@ -241,15 +241,15 @@ function df(s: GameState, deviceId: string): string[] {
 
 // RAM figures in MiB: what the workloads use on top of a small base, a tenth of the rest as cache.
 function memory(s: GameState, deviceId: string) {
-  const { used, physical } = nodeUsage(s, deviceId), total = physical.ramGb * 1024;
+  const { used, physical } = shownNode(s, deviceId), total = physical.ramGb * 1024;
   const inUse = Math.min(total, used.ramGb * 1024 + 300), cache = (total - inUse) * 0.1;
   return { total, used: inUse, cache, free: total - inUse - cache, avail: total - inUse };
 }
 
 function top(s: GameState, deviceId: string): string[] {
-  const { used, physical } = nodeUsage(s, deviceId), m = memory(s, deviceId), mib = (v: number) => v.toFixed(1);
+  const { used, physical } = shownNode(s, deviceId), m = memory(s, deviceId), mib = (v: number) => v.toFixed(1);
   const mine = s.workloads.filter((w) => w.deviceId === deviceId && !w.stopped);
-  const rows = mine.map((w) => ({ w, u: workloadUse(s, w) })).sort((a, b) => b.u.vcpu - a.u.vcpu).slice(0, 8);
+  const rows = mine.map((w) => ({ w, u: shownWorkload(s, w) })).sort((a, b) => b.u.vcpu - a.u.vcpu).slice(0, 8);
   const busy = physical.vcpu > 0 ? Math.min(100, (used.vcpu / physical.vcpu) * 100) : 0, sy = busy * 0.12;
   const [a, b, c] = loadAverage(s, deviceId);
   const gb = (v: number) => (v >= 10 ? `${Math.round(v)}g` : `${v.toFixed(1)}g`);

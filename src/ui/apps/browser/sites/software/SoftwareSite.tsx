@@ -1,7 +1,9 @@
 import { t } from "../../../../../i18n/en";
 import { useState, type ReactNode } from "react";
 import { euroPrice } from "../../../../../sim/00-core/money";
-import { BINARIES, SOFTWARE, type Software } from "../../../../../sim/10-catalog/platforms";
+import { BINARIES, footprint, SOFTWARE, type Software } from "../../../../../sim/10-catalog/platforms";
+import { mailboxGb } from "../../../../../sim/60-infra/cluster";
+import { LOCALE } from "../../../../../i18n/lang";
 import { cliCommands } from "../../../../../sim/60-infra/vendor-cli";
 import { imageOf, imageParts, licensingAt, SERVER_OS, serverOsById, type LicenseEra, type LicenseKind, type OsImage, type ServerOs, type ServerOsId } from "../../../../../sim/10-catalog/server-os";
 import { yearOf } from "../../../../../sim/00-core/time";
@@ -111,7 +113,7 @@ export function Commands({ p, year, className }: { p: Product; year: number; cla
       </div>
     );
   }
-  if (gui(p)) return <div className={className}><p>{t("browser-sites-2.installsFromDesktop", { name: p.name })}</p></div>;
+  if (gui(p)) return <div className={className}><p>{t("browser-sites-2.installsFromDesktop", { name: p.name })}</p><Requirements sw={p.sw!} year={year} /></div>;
   const text = p.sw!.install.commands.join("\n");
   // The clipboard API needs a secure page and permission; a selected textarea copies where it is refused.
   const copy = async () => {
@@ -135,6 +137,26 @@ export function Commands({ p, year, className }: { p: Product; year: number; cla
         <button type="button" onClick={copy}>{copied ? t("browser-sites-2.copied") : t("browser-sites-2.copy")}</button>
       </div>
       {isLicensed(p.sw!.id) && <p>{t("browser-sites-2.keyFlag")}</p>}
+      <Requirements sw={p.sw!} year={year} />
+    </div>
+  );
+}
+
+const amount = (n: number, unit: string) => `${n.toLocaleString(LOCALE, { maximumFractionDigits: 2 })} ${unit}`;
+// The smallest machine the software runs on in the game year, as the footprint has it, and the systems it installs on.
+export function Requirements({ sw, year }: { sw: Software; year: number }) {
+  const r = footprint(sw, year);
+  const rows: [string, string][] = [
+    [t("browser-sites-2.reqCpu"), amount(r.vcpu, "vCPU")],
+    [t("browser-sites-2.reqRam"), amount(r.ramGb, "GB")],
+    [t("browser-sites-2.reqDisk"), amount(r.diskGb, "GB")],
+    ...(sw.kind === "mail" ? [[t("browser-sites-2.reqMailbox"), amount(mailboxGb(year), "GB")] as [string, string]] : []),
+    [t("browser-sites-2.reqOs"), sw.os.map((id) => serverOsById(id).name).join(", ")],
+  ];
+  return (
+    <div className="sws-req">
+      <h3>{t("browser-sites-2.requirements")}</h3>
+      <table><tbody>{rows.map(([k, v]) => <tr key={k}><th scope="row">{k}</th><td className="num">{v}</td></tr>)}</tbody></table>
     </div>
   );
 }

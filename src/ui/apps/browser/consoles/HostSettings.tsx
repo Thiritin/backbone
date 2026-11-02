@@ -5,7 +5,7 @@ import { formatClock } from "../../../../sim/00-core/time";
 import type { GameState } from "../../../../sim/50-state";
 import type { Cluster } from "../../../../sim/60-infra/cluster";
 import { bookedOn, oversellRatio, oversold, physicalOf } from "../../../../sim/60-infra/oversell";
-import { workloadUse } from "../../../../sim/60-infra/usage";
+import { shownWorkload } from "../../../../sim/60-infra/usage";
 import { familyOf } from "../../../../sim/60-infra/vulns";
 import { CHANNELS, channelOf } from "../../../../sim/60-infra/channel";
 import { setChannel } from "../../../../sim/90-actions/software";
@@ -32,7 +32,7 @@ export function Oversell({ game, c }: { game: GameState; c: Cluster }) {
   const [value, setValue] = useState(shown(c.oversell));
   const mine = game.workloads.filter((w) => w.clusterId === c.id), ids = new Set(mine.map((w) => w.serviceId));
   const phys = physicalOf(game, c), booked = bookedOn(game, c), ratio = oversellRatio(game, c);
-  const used = mine.reduce((a, w) => a + workloadUse(game, w).vcpu, 0);
+  const used = mine.reduce((a, w) => a + shownWorkload(game, w).vcpu, 0);
   const slow = Math.max(-1, ...game.services.filter((v) => ids.has(v.id)).map((v) => v.slowedAt ?? -1));
   const facts: Fact[] = [
     { label: t("host.accounts"), value: String(mine.length), num: true },
