@@ -1,8 +1,9 @@
 import { t } from "../../i18n/en";
-import { Fragment, useEffect, useRef } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
+import { Trash2 } from "lucide-react";
 import type { CSSProperties } from "react";
 import { APPS, appFor, appTitle } from "../apps/registry";
-import { appMenu } from "../apps/ApplicationsApp";
+import { appMenu, APP, dragApp, dropTarget, trashApp } from "../apps/ApplicationsApp";
 import { uiSound, useStore } from "../store";
 import { unreadBadge } from "../../sim/43-pear-mail/view";
 import { deskUrl } from "../apps/browser/sites/desk/DeskSite";
@@ -13,6 +14,7 @@ import { bounce, rememberSlot } from "./motion";
 export function Dock() {
   const { windows, openApp, openDoc, game } = useStore();
   const minimized = windows.filter((w) => w.minimized);
+  const [over, setOver] = useState(false);
   const deskDown = !!deskUrl(game) && deskStatus(game) === "down";
   // New mail bounces the Pear Mail tile and plays the new mail sound, with its window open or closed.
   const mail = game.installed.includes("Pear Mail") ? unreadBadge(game) : 0, seen = useRef(mail);
@@ -44,6 +46,8 @@ export function Dock() {
                 openApp(a.name);
               }}
               onContextMenu={menuOn(() => appMenu(a.name))}
+              draggable={!!dragApp(a.name)}
+              onDragStart={dragApp(a.name)}
             >
               <span className="tip">{appTitle(shown)}</span>
               <span className="dock-tile" style={{ "--tile": shown.tile } as CSSProperties}><shown.icon /></span>
@@ -69,6 +73,12 @@ export function Dock() {
           </button>
         );
       })}
+      <span className="dock-divider" />
+      <button className={`dock-app${over ? " drop" : ""}`} aria-label={t("apps.finder.trash")} onClick={() => openApp("Applications", { kind: "folder", id: "trash" })} {...dropTarget(APP, trashApp, setOver)}>
+        <span className="tip">{t("apps.finder.trash")}</span>
+        <span className="dock-tile dock-trash"><Trash2 /></span>
+        <span className="dot" />
+      </button>
     </nav>
   );
 }

@@ -31,5 +31,5 @@ export default {
   "error.booksNotDownloaded": () => "Lade das Programm zuerst herunter.",
   "books-vendors.download": () => "Herunterladen",
   "books-vendors.downloading": (p) => `Lädt ${p.pct} %`,
-  "books-vendors.install": () => "Installieren",
+  "books-vendors.inDownloads": () => "In Downloads",
 } satisfies Dict;

@@ -24,7 +24,7 @@ export default {
   "programs.latest": (p) => `Die aktuelle stabile Version des ${p.name} Client ist ${p.version}.`,
   "programs.size": (p) => `${p.mb} MB`,
   "programs.download": (p) => `${p.name} Client herunterladen`,
-  "programs.install": () => "Installieren",
+  "programs.inDownloads": () => "In Downloads",
   "programs.installed": () => "Installiert",
   "programs.footer": (p) => `© 2004-${p.year} das FileGorilla-Projekt`,
 

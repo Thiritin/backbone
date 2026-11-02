@@ -26,3 +26,15 @@ export function installProgram(s: GameState, id: string): ActionResult {
   s.installed = [...s.installed, id];
   return { ok: true };
 }
+
+// Downloaded programs and the bookkeeping program go to the Trash; the bookkeeping data stays for the next program.
+export const removable = (id: string): boolean => id === "Books" || !!programById(id);
+
+export function uninstallApp(s: GameState, id: string): ActionResult {
+  if (!removable(id)) return fail("error.unknownProgram");
+  if (!s.installed.includes(id)) return fail("error.notInstalled");
+  s.installed = s.installed.filter((a) => a !== id);
+  s.docs = s.docs.filter((d) => !(d.kind === "app" && d.title === id));
+  if (id === "Books") s.books = { ...s.books, vendor: null, edition: null, seats: 0 };
+  return { ok: true };
+}

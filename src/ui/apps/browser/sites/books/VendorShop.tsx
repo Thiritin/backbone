@@ -5,7 +5,7 @@ import { nowHours, yearOf } from "../../../../../sim/00-core/time";
 import { booksVendor, type BooksVendor, type BooksVendorId, type Edition } from "../../../../../sim/10-catalog/bookkeeping";
 import type { GameState } from "../../../../../sim/50-state";
 import { booksUrl, currentEdition, licencePrice } from "../../../../../sim/80-business/bookkeeping";
-import { buyBooks, installBooks, setSeats, upgradeBooks } from "../../../../../sim/90-actions/bookkeeping";
+import { buyBooks, setSeats, upgradeBooks } from "../../../../../sim/90-actions/bookkeeping";
 import { usePageAct } from "../../pageAct";
 import "./books-vendors.css";
 
@@ -31,7 +31,7 @@ function Action({ game, v, e }: { game: GameState; v: BooksVendor; e: Edition })
   if (!running) {
     const d = game.books.download?.vendor === v.id ? game.books.download : null;
     if (d && d.edition !== e.id) return null;
-    if (d && game.hour >= d.readyAt) return <button type="button" className="bv-buy" onClick={() => act(installBooks, v.id)}>{t("books-vendors.install")}</button>;
+    if (d && game.hour >= d.readyAt) return <span className="bv-state">{t("books-vendors.inDownloads")}</span>;
     if (d) return <span className="bv-state num">{t("books-vendors.downloading", { pct: Math.floor((100 * (nowHours(game) - d.startedAt)) / (d.readyAt - d.startedAt)) })}</span>;
     return <button type="button" className="bv-buy" onClick={() => act(buyBooks, v.id, e.id)}>{t(v.deployment === "desktop" ? "books-vendors.download" : "vendor-sites.buy")}</button>;
   }
