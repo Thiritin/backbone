@@ -1,4 +1,4 @@
-import { ArrowRightLeft, Circle, Code, Download, KeyRound, ListChecks, Lock, LogOut, Network, Package, RefreshCw, ScrollText, Search, Server, UserPlus, Users, type LucideIcon } from "lucide-react";
+import { ArrowRightLeft, Blocks, Circle, Code, Download, KeyRound, ListChecks, Lock, LogOut, Network, Package, RefreshCw, ScrollText, Search, Server, UserPlus, Users, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { eraAt, looks, Facts, LoginForm, Nodes, RowsTable, Tiles, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
 import { t } from "../../../../../i18n/en";
@@ -14,6 +14,7 @@ import { AutoSsl } from "./AutoSsl";
 import { PhpProfiles } from "./EasyApache";
 import { TransferTool } from "./TransferTool";
 import { ServiceManager } from "./ServiceManager";
+import { ComponentsPage } from "../ComponentsPage";
 import { hasUpdates, UpdatesPage } from "../UpdatesPage";
 import "./cpanic.css";
 
@@ -21,7 +22,7 @@ import "./cpanic.css";
 const LOOKS = looks({ x3: 2005, paperLamp: 2014, jupitar: 2021 });
 const ICON: Partial<Record<Tab, LucideIcon>> = {
   objects: Users, nodes: Network, create: UserPlus, packages: Package, transfer: ArrowRightLeft, autossl: Lock, software: RefreshCw, updates: Download,
-  easyapache: Code, services: Server, tasks: ListChecks, logs: ScrollText, licence: KeyRound,
+  easyapache: Code, components: Blocks, services: Server, tasks: ListChecks, logs: ScrollText, licence: KeyRound,
 };
 const TabIcon = ({ id }: { id: Tab }) => { const I = ICON[id] ?? Circle; return <I size={14} aria-hidden />; };
 
@@ -53,8 +54,9 @@ export function CPanic(p: PanelProps) {
     [t("pkg.packages"), [["packages", t("pkg.addPackage")]]],
     ...(yearOf(p.game.hour) >= TRANSFER_FROM_YEAR ? [[t("web.xfer.group"), [["transfer", x3 ? t("web.xfer.copy") : t("web.xfer.menu")]]] as [string, [Tab, string][]]] : []),
     ...(yearOf(p.game.hour) >= AUTOSSL_FROM ? [[t("web.ssl.group"), [["autossl", t("web.ssl.menu")]]] as [string, [Tab, string][]]] : []),
-    [t("browser-consoles-1.cpServerConfig"), [["software", t("browser-consoles-1.cpSoftwareUpdates")], ...(hasUpdates(p.game, p.c) ? [["updates", t("panel-updates.cpTitle")] as [Tab, string]] : []), ["easyapache", x3 ? t("web.ea.menu3") : t("web.ea.menu4")]]],
-    ...(pages.length ? [[t("readouts.serverStatus"), [["services", t("readouts.services")] as [Tab, string], ...pages.map((g) => [g.id, g.label] as [Tab, string])]] as [string, [Tab, string][]]] : []),
+    [t("browser-consoles-1.cpServerConfig"), [["software", t("browser-consoles-1.cpSoftwareUpdates")], ...(hasUpdates(p.game, p.c) ? [["updates", t("panel-updates.cpTitle")] as [Tab, string]] : []), ["easyapache", x3 ? t("web.ea.menu3") : t("web.ea.menu4")], ["components", t("panel-services.cpMenu")]]],
+    [t("panel-services.cpServiceConfig"), [["services", t("readouts.services")]]],
+    ...(pages.length ? [[t("readouts.serverStatus"), [...pages.map((g) => [g.id, g.label] as [Tab, string])]] as [string, [Tab, string][]]] : []),
   ];
   const [group, title] = menu.flatMap(([g, items]) => items.map(([id, label]) => [g, label, id])).find(([, , id]) => id === tab) ?? [];
   const find = <label className="cp-find"><Search size={13} aria-hidden /><input placeholder={t("browser-consoles-1.find")} value={q} onChange={(e) => setQ(e.target.value)} /></label>;
@@ -93,6 +95,7 @@ export function CPanic(p: PanelProps) {
           {tab === "autossl" && <AutoSsl game={p.game} c={p.c} />}
           {tab === "easyapache" && <PhpProfiles game={p.game} c={p.c} x3={x3} />}
           {tab === "services" && <ServiceManager game={p.game} c={p.c} />}
+          {tab === "components" && <ComponentsPage game={p.game} c={p.c} />}
           {pages.find((g) => g.id === tab)?.body}
           {tab === "software" && (
             <>

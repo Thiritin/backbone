@@ -29,4 +29,5 @@ export default {
   "panel-services.daServices": () => "Service Monitor",
   "panel-services.fpServices": () => "Bootup and Shutdown",
   "panel-services.fpMenu": () => "Software Packages",
+  "panel-services.cpServiceConfig": () => "Service Configuration",
 } satisfies Dict;

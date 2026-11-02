@@ -5,6 +5,8 @@ import { euroPrice } from "../src/sim/00-core/money";
 import { hourOf } from "../src/sim/00-core/time";
 import { newGame } from "../src/sim/50-state";
 import { tickMinute } from "../src/sim/88-tick/tick";
+import { consoleFeatures } from "../src/sim/80-business/consoles";
+import { CONSOLES } from "../src/ui/apps/browser/consoles/ConsolePage";
 import { useStore } from "../src/ui/store";
 import { ComponentsPage } from "../src/ui/apps/browser/consoles/ComponentsPage";
 import { ServicesPage } from "../src/ui/apps/browser/consoles/ServicesPage";
@@ -75,5 +77,17 @@ describe("panel Components page", () => {
     fireEvent.click(within(av).getByRole("button", { name: "Install" }));
     expect(screen.getByText("Installing ImmunofyAV (15 min)")).toBeTruthy();
     expect(within(row("WordPass Toolkit")).getByRole("button", { name: "Install" })).toHaveProperty("disabled", true);
+  });
+});
+
+describe("panel consoles", () => {
+  it("link the Services and Components pages", () => {
+    for (const [family, labels] of [["cpanic", ["Service Manager", "Install Software"]], ["pleskit", ["Services Management", "Add/Remove Components"]],
+      ["directadmen", ["Service Monitor", "Custom Build"]], ["freepanel", ["Bootup and Shutdown", "Software Packages"]]] as const) {
+      const id = host(2018, family), game = useStore.getState().game, View = CONSOLES[family];
+      render(<View game={game} c={game.clusters.find((x) => x.id === id)!} f={consoleFeatures(family, 2018)} host="panel.example.com" signedIn login={() => {}} logout={() => {}} />);
+      for (const label of labels) expect(screen.getAllByText(label).length, `${family} ${label}`).toBeGreaterThan(0);
+      cleanup();
+    }
   });
 });

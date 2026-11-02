@@ -5,6 +5,8 @@ import { parseCreate } from "../../../../../sim/80-business/consoles";
 import { PackagesScreen, ProvisionForm } from "../PackageForms";
 import { useReadoutPages } from "../Readouts";
 import { SystemInfo } from "./SystemInfo";
+import { ServicesPage } from "../ServicesPage";
+import { ComponentsPage } from "../ComponentsPage";
 import "./freepanel.css";
 
 // docs/design/software.md, section 10: one look per Webmin theme, ids as in UI_LOOKS.
@@ -25,7 +27,7 @@ export function FreePanel(p: PanelProps) {
   const tree: [string, [Tab, string][]][] = [
     [t("readouts.fp.dashboard"), [["sysinfo", t("readouts.fp.sysinfo")]]],
     [t("readouts.fp.virtualmin"), [["objects", t("readouts.fp.virtual")], ["create", t("pkg.fpCreate")], ["packages", t("pkg.fpPlans")]]],
-    [t("browser-consoles-1.fpSystem"), [["software", t("browser-consoles-1.fpSoftwareUpdates")], ...fp("logs", "readouts.fp.logs"), ...fp("tasks", "readouts.fp.actions"), ...fp("licence", "readouts.fp.licence")]],
+    [t("browser-consoles-1.fpSystem"), [["software", t("browser-consoles-1.fpSoftwareUpdates")], ["services", t("panel-services.fpServices")], ["components", t("panel-services.fpMenu")], ...fp("logs", "readouts.fp.logs"), ...fp("tasks", "readouts.fp.actions"), ...fp("licence", "readouts.fp.licence")]],
     ...(p.f.cluster ? [[t("browser-consoles-1.fpCluster"), [["nodes", t("browser-consoles-1.fpNodes")]]] as [string, [Tab, string][]]] : []),
   ];
   const title = tree.flatMap(([, items]) => items).find(([id]) => id === tab)?.[1];
@@ -44,6 +46,8 @@ export function FreePanel(p: PanelProps) {
       </aside>
       <main className="fp-main">
         <h1>{title}</h1>
+        {tab === "services" && <ServicesPage game={p.game} c={p.c} />}
+        {tab === "components" && <ComponentsPage game={p.game} c={p.c} />}
         {tab === "sysinfo" && <SystemInfo game={p.game} c={p.c} host={p.host} />}
         {tab === "objects" && <RowsTable rows={rows} name={t("browser-consoles-1.domain")} />}
         {tab === "create" && <ProvisionForm game={p.game} c={p.c} products={["webHosting"]} order={open?.screen === "create" ? open.order : undefined} />}

@@ -28,4 +28,5 @@ export default {
   "panel-services.daServices": () => "Monitor de serviços",
   "panel-services.fpServices": () => "Inicialização e desligamento",
   "panel-services.fpMenu": () => "Pacotes de software",
+  "panel-services.cpServiceConfig": () => "Configuração de serviços",
 } satisfies Dict;

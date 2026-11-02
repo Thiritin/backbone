@@ -28,4 +28,5 @@ export default {
   "panel-services.daServices": () => "Dienstüberwachung",
   "panel-services.fpServices": () => "Systemstart und -herunterfahren",
   "panel-services.fpMenu": () => "Softwarepakete",
+  "panel-services.cpServiceConfig": () => "Dienstkonfiguration",
 } satisfies Dict;
