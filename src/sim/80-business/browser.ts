@@ -6,6 +6,7 @@ import { SOFTWARE } from "../10-catalog/platforms";
 import { registrarById, registrarHost, REGISTRARS, type RegistrarId } from "../10-catalog/registrars";
 import { SERVER_OS, type ServerOsId } from "../10-catalog/server-os";
 import { companyDomain } from "../30-customers/domains";
+import { nsActive, parked } from "../30-customers/registry";
 import { serviceOnline } from "../40-support/status";
 import type { GameState } from "../50-state";
 import { isOwnVm, workloadOnline, workloadsOf, type Workload } from "../60-infra/cluster";
@@ -43,6 +44,7 @@ export type Page =
   | { kind: "vendor"; maker: string }
   | { kind: "provider"; id: string }
   | { kind: "registrar"; id: RegistrarId }
+  | { kind: "parked"; registrar: RegistrarId; domain: string }
   | { kind: "bank"; id: BankId }
   | { kind: "supplier"; name: string }
   | { kind: "lexwear" }
@@ -177,6 +179,9 @@ export function resolve(s: GameState, raw: string): Resolved {
   // A phishing page a notice reports stays up until the player takes it down.
   const phish = s.tickets.filter((t) => t.topic === "phishing" && t.notice && split(t.notice.url).host === host && split(t.notice.url).path === path);
   if (phish.length && !phish.some((t) => t.outcome === "takenDown" || t.outcome === "seized")) return out({ kind: "phishing", sender: phish[0].notice!.sender });
+  // A domain on the partner's name servers shows its parking page; on custom ones nothing the company runs answers.
+  const held = s.domains.find((d) => !d.lapsed && (host === d.name || host === `www.${d.name}`));
+  if (held && parked(s, held)) return out(nsActive(s, held).ns === "registrar" ? { kind: "parked", registrar: partnerOf(s).id, domain: held.name } : { kind: "notfound" });
   if (host === domain || host === `www.${domain}`) {
     if (!s.marketing.launched) return out({ kind: "notfound" });
     const st = siteStatus(s);

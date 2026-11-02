@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- Your registrar's login now has a Register page where you order further domains of your own, and every domain has a page where you set its name servers: a domain parked at the registrar shows its parking page in the browser, one on your own name servers reaches your site, and a change takes an hour to spread.
 - Interaction, mainqubes, Tellyhouse, Global Snitch, Docklands Data and Iron Molehill now have their own websites in the style of their companies, with an early look and a modern one that arrives in later years.
 - Data5, NTD, Spree Colo, Arubaba, Next Lair and Green.chz now each have their own website, with one look in the early years and a modern one later.
 - Every colocation provider's site now has a customer portal where you sign in to see your contracts, invoices and remote-hands tickets, book extra power, feed B and power contracts, and cancel a contract with its notice date, and the large providers offer a free month to stay.

@@ -17,6 +17,7 @@ import { owns } from "./marketing";
 import { salesAddress } from "./mail";
 import { CYCLE_MONTHS, CYCLES } from "../10-catalog/cycles";
 import { companyDomain } from "../30-customers/domains";
+import { domainOf, parked } from "../30-customers/registry";
 import { lineHasProducts, portalPath, productsOf } from "./portal";
 import { STATUS_FROM_YEAR, STATUS_MIN_CUSTOMERS } from "./status";
 import { shopActive, shopCount, type ShopProduct } from "./shop";
@@ -131,9 +132,10 @@ export function siteRoom(s: GameState, c: Cluster): { fits: boolean; crowded: bo
 export type SiteStatus = "up" | "slow" | "down";
 
 // A rented site is always up. On an own host it is down while the site's workload is offline and slow while the host
-// performs below 1 or has over 90% of its RAM booked.
+// performs below 1 or has over 90% of its RAM booked. It is down while the company domain is off the company's name servers.
 export function siteStatus(s: GameState): SiteStatus {
-  const host = s.marketing.siteHost;
+  const host = s.marketing.siteHost, d = s.company.domain ? domainOf(s, s.company.domain) : undefined;
+  if (d && parked(s, d)) return "down";
   return host.kind === "rented" ? "up" : hostStatus(s, host.clusterId, "site");
 }
 export function hostStatus(s: GameState, clusterId: string, id: string): SiteStatus {

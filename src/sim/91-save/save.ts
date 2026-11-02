@@ -131,6 +131,8 @@ export function deserialize(raw: string): GameState {
     unlocks: [...new Set((data.unlocks ?? []).flatMap(learned))],
     customers: (data.customers ?? []).map((c) => ({ ...c, history: c.history ?? [], credit: c.credit ?? 0, address: c.address ?? homeAddress({ seed: base.seed, locations }, Number(c.id.slice(3)) || 0, c.name, c.profile) })),
     tickets: (data.tickets ?? []).map((t) => ({ ...t, assignee: t.assignee ?? null })),
+    // Saves from before name servers ran every domain on the company's own.
+    domains: (data.domains ?? []).map((d) => ({ ...d, ns: d.ns ?? "company" })),
     services: (data.services ?? []).map((v) => ({ ...v, zone: v.zone ?? null, sla: v.sla ?? "basic" })),
     // Saves from before clusters keep their services unplaced, which leaves them online.
     sales: { ...base.sales, ...data.sales },
