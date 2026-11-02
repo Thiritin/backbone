@@ -4,7 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
-- Colocation provider sites now keep their own layout after the Shop app has been opened.
+- Colocation provider sites now keep their own layout, including their facility lists and front page banner, after the Shop app has been opened.
 - Every colocation provider now has its own website in the browser, listed on Yahoy, where you compare its data centers and prices, join a waitlist and order space, and the Visit site button in Locations opens that order form with your pick.
 - Support desks can merge duplicate tickets, mark spam, keep internal notes, set priorities, sort tickets into departments with their own agents and routing rules, keep tickets for yourself that staff leave alone, and take requests through a customer portal with a status lookup.
 - SquirrelMeal webmail and Postfixit Admin can be installed beside a Postfixit mail server, which now brings Dovecoat for IMAP and POP, and the webmail answers at webmail on the company domain.
