@@ -28,7 +28,7 @@ import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { installShop, renewShopUpdates, updateShop, upgradeShop } from "../src/sim/90-actions/shop";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import type { ActionResult } from "../src/sim/90-actions/hardware";
-import { readyGame, installWithKey } from "./fixtures";
+import { readyGame, installWithKey, mailsAbout } from "./fixtures";
 
 // readyGame's FreePanel VM is the first panel host.
 const panelHost = (s: GameState) => s.clusters.find((c) => c.kind === "panel")!;
@@ -246,17 +246,17 @@ describe("installing the shop by hand", () => {
     const { s, ws, folder, form } = prepared("2016-05", "blessta");
     ok(runShopInstaller(s, ws, folder, form));
     ok(requestShopReset(s, "nobody@example.com"));
-    expect(s.tickets.some((t) => t.topic === "shopReset")).toBe(false);
+    expect(mailsAbout(s, "shopReset")).toEqual([]);
     ok(requestShopReset(s, admin.email));
-    const mail = s.tickets.find((t) => t.topic === "shopReset")!;
-    const token = new URLSearchParams(String(mail.mail!.params.url).split("?")[1]).get("reset")!;
+    const mail = mailsAbout(s, "shopReset")[0];
+    const token = new URLSearchParams(String(mail.p!.url).split("?")[1]).get("reset")!;
     expect(err(resetShopPassword(s, "bad", "newpass1"))).toBe("shop-setup.reset.expired");
     ok(resetShopPassword(s, token, "newpass1"));
     expect(err(shopLogin(s, "ada", admin.pass))).toBe("shop-setup.login.blessta");
     ok(shopLogin(s, "ada", "newpass1"));
     expect(err(resetShopPassword(s, token, "again123"))).toBe("shop-setup.reset.expired");
     ok(requestShopReset(s, admin.email));
-    const late = new URLSearchParams(String(s.tickets.filter((t) => t.topic === "shopReset").pop()!.mail!.params.url).split("?")[1]).get("reset")!;
+    const late = new URLSearchParams(String(mailsAbout(s, "shopReset").pop()!.p!.url).split("?")[1]).get("reset")!;
     s.hour += 25;
     expect(err(resetShopPassword(s, late, "again123"))).toBe("shop-setup.reset.expired");
   });
@@ -311,8 +311,8 @@ describe("installing the shop by hand", () => {
     expect(at.folder).toBe("public_html/portal");
     expect(installDirLeft(t)).toBe(false);
     expect(shopActive(t)).toBe(true);
-    const mail = t.tickets.find((x) => x.topic === "shopCredentials")!;
-    ok(shopLogin(t, String(mail.mail!.params.user), String(mail.mail!.params.pass)));
-    expect(deserialize(serialize(t)).tickets.filter((x) => x.topic === "shopCredentials")).toHaveLength(1);
+    const mail = mailsAbout(t, "shopCredentials")[0];
+    ok(shopLogin(t, String(mail.p!.user), String(mail.p!.pass)));
+    expect(mailsAbout(deserialize(serialize(t)), "shopCredentials")).toHaveLength(1);
   });
 });

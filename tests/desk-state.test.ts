@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
-import { createTicket, deliverMail, type Ticket } from "../src/sim/40-support/tickets";
+import { createTicket, type Ticket } from "../src/sim/40-support/tickets";
+import { deliverMail } from "../src/sim/42-mail/sources";
 import { deskReachable, deskStatus, newDeskAi } from "../src/sim/40-support/desk";
 import type { GameState } from "../src/sim/50-state";
 import { companyDomain } from "../src/sim/30-customers/domains";
@@ -24,6 +25,12 @@ function withTickets(y: number, seed = 1): GameState {
   deliverMail(s, "bank", "welcome");
   return s;
 }
+
+// A company email a desk made into a ticket.
+const mailTicket = (s: GameState, from: string, topic: string): Ticket => ({
+  id: `tkt${s.nextId++}`, customerId: "", serviceId: null, kind: "mail", topic, status: "closed", createdAt: s.hour, dueAt: s.hour, updatedAt: s.hour,
+  unread: true, replies: [], outcome: null, work: null, assignee: null, mail: { from, params: {} },
+});
 // A save as written before desk websites existed: no desk, no channels, tickets without desk fields.
 function oldSave(s: GameState): string {
   const raw = JSON.parse(serialize(s));
@@ -49,8 +56,8 @@ describe("desk state", () => {
     const ch = back.mail.channels[0].id;
     expect(back.tickets).toHaveLength(s.tickets.length);
     expect(back.tickets.map((t) => [t.channelId, t.deptId, t.via])).toEqual(back.tickets.map(() => [ch, "support", "email"]));
-    expect(back.tickets.map((t) => t.ref)).toEqual(["1", "2", "3", "4"]);
-    expect(back.desk!.lastRef).toBe(4);
+    expect(back.tickets.map((t) => t.ref)).toEqual(["1", "2", "3"]);
+    expect(back.desk!.lastRef).toBe(3);
     expect(deskStatus(back)).toBe("up");
     expect(back.installed).not.toContain("zendusk");
   });
@@ -108,8 +115,8 @@ describe("desk state", () => {
 
   it("charges no wait for mail and spam tickets and closes them without a customer", () => {
     const s = withTickets(2008);
-    const spam = { ...deliverMail(s, "junk", "offer"), kind: "spam" as const, status: "open" as const, dueAt: s.hour - 10 };
-    const mail = { ...deliverMail(s, "info", "question"), status: "open" as const, dueAt: s.hour - 10 };
+    const spam = { ...mailTicket(s, "junk", "offer"), kind: "spam" as const, status: "open" as const, dueAt: s.hour - 10 };
+    const mail = { ...mailTicket(s, "info", "question"), status: "open" as const, dueAt: s.hour - 10 };
     s.tickets = [...s.tickets.slice(0, -2), spam, mail];
     for (let i = 0; i < 5; i++) tick(s);
     expect(closeTicket(s, spam.id)).toEqual({ ok: true, id: spam.id });

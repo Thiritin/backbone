@@ -105,10 +105,10 @@ describe("reload", () => {
     const kept = new Map<string, string>();
     vi.stubGlobal("sessionStorage", { getItem: (k: string) => kept.get(k) ?? null, setItem: (k: string, v: string) => kept.set(k, v) });
     try {
-      useStore.getState().openApp("Support", { kind: "ticket", id: "tkt1" });
+      useStore.getState().openApp("Pear Mail", { kind: "message", id: "msg1" });
       const ws = readSession<Win[]>("windows", []);
-      expect(ws.map((w) => w.app)).toContain("Support");
-      expect(ws.find((w) => w.app === "Support")!.focus).toBeUndefined();
+      expect(ws.map((w) => w.app)).toContain("Pear Mail");
+      expect(ws.find((w) => w.app === "Pear Mail")!.focus).toBeUndefined();
     } finally {
       vi.unstubAllGlobals();
     }

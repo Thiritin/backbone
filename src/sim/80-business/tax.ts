@@ -1,7 +1,7 @@
 // docs/design/plans/tax-office.md: the tax office (Finanzamt) and DOHLE, its online filing service.
 import { dateOf, hourOf, isMonthStart, monthIndexOf, yearOf } from "../00-core/time";
 import { post } from "../40-support/letters";
-import { deliverMail } from "../40-support/tickets";
+import { deliverMail } from "../42-mail/sources";
 import { taxFor } from "../46-finance/finance";
 import type { GameState, LedgerEntry } from "../50-state";
 import { synced } from "../45-billing/billing";
@@ -224,7 +224,7 @@ export const normalCode = (v: string) => v.toUpperCase().replace(/[^A-Z0-9]/g, "
 export function registerDohle(s: GameState): void {
   const n = s.seed * 7919 + s.nextId * 104_729;
   const id = `${code36(n, 4)}-${code36(n / 7, 4)}`, code = `${code36(n * 13, 4)}-${code36(n * 17, 4)}-${code36(n * 19, 4)}`;
-  deliverMail(s, DOHLE_NAME, "dohleId", { id, number: s.tax.number });
+  deliverMail(s, DOHLE_NAME, "dohleId", { id, number: s.tax.number }, { source: "tax" });
   const days = CODE_DAYS + (n % 3 === 0 ? 1 : 0);
   const l = post(s, DOHLE_NAME, "dohleCode", { code, number: s.tax.number }, days);
   s.tax = { ...s.tax, dohleId: id, dohleCode: code, codeAt: l.at, cert: null, booksCert: null };

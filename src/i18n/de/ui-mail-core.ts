@@ -58,6 +58,7 @@ export default {
   "error.mailFilterRule": () => "Ein Filter braucht 1 bis 5 Bedingungen und 1 bis 5 Aktionen.",
   "error.mailFilterMax": () => "Dieses Postfach fasst keine weiteren Filter.",
   "error.mailFrom": () => "Dieses Postfach kann nicht von dieser Adresse senden.",
+  "error.mailTo": () => "Diese Adresse gehört zu keinem Ihrer Postfächer.",
   "error.mailAttach": () => "Der Anhang ist größer, als dieses Postfach annimmt.",
   "error.mailFetchLoop": () => "Dieses Postfach ruft das Konto schon ab, oder das Konto ruft dieses Postfach ab.",
   "error.mailCollectors": (p) => `Mit diesem Tarif rufen Sie höchstens ${p.n} Konten ab.`,

@@ -1,4 +1,4 @@
-import { deliverMail } from "../40-support/tickets";
+import { deliverMail } from "../42-mail/sources";
 import { DOC_TYPES, type DocType } from "../40-support/letters";
 import type { GameState } from "../50-state";
 import { applyError, file, FILE_DAYS, FILED_WITH, NOTARY_MAIL, NOTARY_NAME, OFFICE_MAIL, OFFICE_NAME, SHARE_CAPITAL } from "../80-business/paperwork";
@@ -21,24 +21,24 @@ export function sendMail(s: GameState, to: string, subject: string, attachment: 
 // Addresses that answer mail: the trade office and the notary.
 export const RESPONDERS = [OFFICE_MAIL, NOTARY_MAIL];
 
-// The office's or the notary's answer to a mail with this subject and attached document.
-export function respond(s: GameState, address: string, subject: string, attachment: string | null): ActionResult {
+// The office's or the notary's answer to a mail with this subject and attached document, sent back to the address it came from.
+export function respond(s: GameState, address: string, subject: string, attachment: string | null, replyTo?: string): ActionResult {
   const params = { subject: subject.trim(), to: address };
-  const from = address === OFFICE_MAIL ? OFFICE_NAME : NOTARY_NAME;
+  const from = address === OFFICE_MAIL ? OFFICE_NAME : NOTARY_NAME, back = { source: "office", to: replyTo };
   const form = s.docs.find((d) => d.id === attachment)?.form;
-  if (!form) deliverMail(s, from, "noForm", params);
-  else if (FILED_WITH[form.form] !== address) deliverMail(s, from, "wrongDesk", params);
-  else if (form.signed === null) deliverMail(s, from, "unsigned", params);
+  if (!form) deliverMail(s, from, "noForm", params, back);
+  else if (FILED_WITH[form.form] !== address) deliverMail(s, from, "wrongDesk", params, back);
+  else if (form.signed === null) deliverMail(s, from, "unsigned", params, back);
   else {
     // Cash that dropped below the share capital after signing gets the notary's letter.
     const err = applyError(s, form.form);
     if (err && err !== "error.shareCapital") return fail(err);
     if (err) {
-      deliverMail(s, from, "capital", { ...params, amount: SHARE_CAPITAL });
+      deliverMail(s, from, "capital", { ...params, amount: SHARE_CAPITAL }, back);
       return { ok: true };
     }
     file(s, form.form);
-    deliverMail(s, from, form.form === "limited" ? "notaryFiled" : "officeReceived", { ...params, days: FILE_DAYS, name: s.company.name });
+    deliverMail(s, from, form.form === "limited" ? "notaryFiled" : "officeReceived", { ...params, days: FILE_DAYS, name: s.company.name }, back);
   }
   return { ok: true };
 }

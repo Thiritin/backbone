@@ -6,7 +6,8 @@ import { dateOf, isMonthStart } from "../00-core/time";
 import { factorFor, icannFee, registrarById, tierFor, type Registrar as Partner, type RegistrarId } from "../10-catalog/registrars";
 import type { GameState, LedgerEntry } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
-import { bump, createTicket, deliverMail, type Ticket } from "../40-support/tickets";
+import { bump, createTicket, type Ticket } from "../40-support/tickets";
+import { deliverMail } from "../42-mail/sources";
 import { companyParams } from "../40-support/replies";
 import type { Customer } from "./customers";
 import { derivedDomain } from "./domains";
@@ -140,7 +141,7 @@ export function answerTransfer(s: GameState, t: Ticket, c: Customer, arg: string
   if (give) return release(s, name);
   bump(c, -REFUSE_PENALTY);
   if (rand(hashRng(s.seed, Number(t.id.slice(3)) || 0, 291)) >= COMPLAINT_CHANCE) return;
-  deliverMail(s, registrarById(s.registrar?.id ?? "nameCheep")!.name, "transferComplaint", { domain: name, customer: c.name });
+  deliverMail(s, registrarById(s.registrar?.id ?? "nameCheep")!.name, "transferComplaint", { domain: name, customer: c.name }, { source: "registrar" });
   release(s, name);
 }
 

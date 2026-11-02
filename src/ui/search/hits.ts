@@ -7,7 +7,7 @@ import { publicV4, machineAddress } from "../../sim/60-infra/addresses";
 import { companyUrl, resolve, WIKI_TITLE } from "../../sim/80-business/browser";
 import { ARTICLES, wikiUrl } from "../apps/browser/sites/wiki/articles";
 import { registrarHost, REGISTRARS } from "../../sim/10-catalog/registrars";
-import { APPS, appFor } from "../apps/registry";
+import { APPS, appFor, listed } from "../apps/registry";
 import { vmLabel } from "../apps/products/parts";
 import { rank, type Rankable } from "./rank";
 
@@ -28,12 +28,11 @@ export const SETTINGS_SECTIONS = ["Company", "Appearance", "Sound", "Notificatio
 const TICKETS = 300;
 
 function collect(s: GameState): Hit[] {
-  const has = (app: string) => s.installed.includes(app);
   const hits: Hit[] = [];
   const add = (h: Omit<Hit, "id"> & { id?: string }) => hits.push({ ...h, id: h.id ?? h.title });
 
   for (const a of APPS) {
-    if (a.hidden || !has(a.name)) continue;
+    if (!listed(s, a)) continue;
     const shown = appFor(s, a.name).name;
     add({ group: "Apps", title: shown, keys: [...new Set([a.name, shown])], app: a.name });
   }

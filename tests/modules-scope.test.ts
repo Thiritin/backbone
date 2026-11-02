@@ -45,7 +45,7 @@ describe("modules belong to the shop system they were bought for", () => {
     expect(buyShopLink(s, "whmCache", "paypail").ok).toBe(true);
     s.hour++;
     deliverLicences(s);
-    expect(licenceMail(s, "paypail")!.mail!.params.shop).toBe("WHMCache");
+    expect(licenceMail(s, "paypail")!.p!.shop).toBe("WHMCache");
 
     installWithKey(s, "clientExit");
     expect(hasModule(s, "pleskit")).toBe(true);

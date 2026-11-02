@@ -52,10 +52,9 @@ describe("mail messages", () => {
     const n = boxOf(s, a).length;
     expect(send(s, a, ["someone@nowhere-at-all.xyz"])).toEqual({ ok: true });
     expect(boxOf(s, a).slice(n).map((m) => m.topic)).toEqual(["bounceUser"]);
-    const tickets = s.tickets.length;
+    const m = boxOf(s, a).length;
     expect(send(s, a, [NOTARY_MAIL]).ok).toBe(true);
-    expect(s.tickets.length).toBe(tickets + 1);
-    expect(s.tickets.at(-1)!.topic).toBe("noForm");
+    expect(boxOf(s, a).slice(m).filter((x) => x.folder === "inbox").map((x) => x.topic)).toEqual(["noForm"]);
   });
 
   it("refuses an attachment over the plan's limit", () => {

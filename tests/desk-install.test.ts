@@ -10,7 +10,7 @@ import { resolve } from "../src/sim/80-business/browser";
 import { tick } from "../src/sim/88-tick/tick";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { installDesk, removeDesk, subscribeDesk } from "../src/sim/90-actions/desk-install";
-import { readyGame, registered, newGame } from "./fixtures";
+import { readyGame, registered, newGame, mailsAbout } from "./fixtures";
 
 const at = (y: number, m = 1) => hourOf(new Date(Date.UTC(y, m - 1, 1)));
 const runTo = (s: GameState, hour: number) => { while (s.hour < hour) tick(s); };
@@ -57,7 +57,7 @@ describe("desk install and subscribe", () => {
   it("mails the agent address on sign-up", () => {
     const s = year(2011);
     subscribeDesk(s, "pxl", "freshdusk");
-    expect(s.tickets.at(-1)).toMatchObject({ kind: "mail", topic: "deskWelcome", mail: { from: "Freshdusk", params: { url: "pxl.freshdusk.com/helpdesk", address: "support@pxl.freshdusk.com" } } });
+    expect(mailsAbout(s, "deskWelcome").at(-1)).toMatchObject({ from: "n:Freshdusk", p: { url: "pxl.freshdusk.com/helpdesk", address: "support@pxl.freshdusk.com" } });
   });
 
   it("refuses a desk before its year, without cash, with a bad tenant or twice", () => {
@@ -115,7 +115,7 @@ describe("desk install and subscribe", () => {
     expect(deskOf(s)?.id).toBe("freescoot");
     expect(s.desk!.rules).toEqual([]);
     expect(s.mail.channels.map((x) => x.desk)).toEqual(["freescoot"]);
-    expect(s.tickets).toHaveLength(tickets + 1);
+    expect(s.tickets).toHaveLength(tickets);
     expect(s.tickets.filter((t) => t.kind === "howTo").every((t) => t.channelId === s.mail.channels[0].id)).toBe(true);
     runTo(s, at(2018, 2));
     expect(deskBills(s)).toHaveLength(1);

@@ -202,16 +202,6 @@ export function slowed(s: GameState, c: Customer, serviceId: string, lost: numbe
 }
 
 // With both serviceId and topic given, no random number is drawn.
-// Delivers a company's email to the inbox; it needs no reply, so it arrives closed.
-export function deliverMail(s: GameState, from: string, topic: string, params: Record<string, string | number> = {}): Ticket {
-  const t: Ticket = {
-    id: `tkt${s.nextId++}`, customerId: "", serviceId: null, kind: "mail", topic, status: "closed",
-    createdAt: s.hour, dueAt: s.hour, updatedAt: s.hour, unread: true, replies: [], outcome: null, work: null, assignee: null, mail: { from, params },
-  };
-  s.tickets = [...s.tickets, t];
-  return t;
-}
-
 export function createTicket(s: GameState, c: Customer, kind: TicketKind, serviceId?: string | null, topic?: string): Ticket {
   const services = activeServices(s.services, c.id);
   const topics = TOPICS[kind];

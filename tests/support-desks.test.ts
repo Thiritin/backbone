@@ -71,7 +71,8 @@ describe("support desks", () => {
 
   it("names the dock's mail app in the Getting started steps", () => {
     const s = year(2018);
-    for (const id of ["email", "firstCustomer"] as const) expect(stepOf(s, id).text).toContain("in Email.");
+    expect(stepOf(s, "email").text).toContain("in Email.");
+    expect(stepOf(s, "firstCustomer").text).toContain("in Pear Mail.");
     install(s, "zendusk");
     for (const id of ["email", "firstCustomer"] as const) expect(stepOf(s, id).text).toContain("in Support.");
   });

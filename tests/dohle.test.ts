@@ -1,3 +1,4 @@
+import { mailsAbout } from "./fixtures";
 import { createElement } from "react";
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
@@ -26,13 +27,13 @@ function company(): GameState {
   s.tax = { ...s.tax, answered: s.hour, number: taxNumberOf(7), numberAt: s.hour };
   return s;
 }
-const mail = (s: GameState) => s.tickets.filter((t) => t.kind === "mail" && t.topic === "dohleId").at(-1)!;
+const mail = (s: GameState) => mailsAbout(s, "dohleId").at(-1)!;
 // Registers, waits for the code's letter and activates.
 function certified(s: GameState): string {
   expect(registerForDohle(s, taxNumberOf(7), salesAddress(s)).ok).toBe(true);
   run(s, s.tax.codeAt! - s.hour + 1);
   const code = inbox(s).filter((l) => l.topic === "dohleCode").at(-1)!.params.code as string;
-  const r = activateDohle(s, String(mail(s).mail!.params.id), code);
+  const r = activateDohle(s, String(mail(s).p!.id), code);
   if (!r.ok) throw new Error(r.error);
   return r.id!;
 }
@@ -48,7 +49,7 @@ describe("DOHLE", () => {
   it("emails the activation ID at once and posts the code after two or three working days", () => {
     const s = company();
     registerForDohle(s, taxNumberOf(7), salesAddress(s));
-    expect(mail(s).mail!.params.id).toBe(s.tax.dohleId);
+    expect(mail(s).p!.id).toBe(s.tax.dohleId);
     expect([postDay(s.hour, CODE_DAYS), postDay(s.hour, CODE_DAYS + 1)]).toContain(s.tax.codeAt);
     expect(activateDohle(s, s.tax.dohleId, s.tax.dohleCode)).toEqual({ ok: false, error: "error.dohleNoCode" });
   });

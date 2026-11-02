@@ -65,7 +65,7 @@ export function stepOf(s: GameState, id: StepId): Step {
     case "email":
       return { title: t("guide.step.email"), text: t("apps.guide.step.email", { app: mailApp }), app: "Support", focus: { kind: "mailSetup", id: "" } };
     case "firstCustomer":
-      return { title: t("guide.step.firstCustomer"), text: t("apps.guide.step.firstCustomer", { app: mailApp }), app: "Support" };
+      return { title: t("guide.step.firstCustomer"), text: t("apps.guide.step.firstCustomer", { app: s.desk ? mailApp : "Pear Mail" }), app: s.desk ? "Support" : "Pear Mail" };
     case "loan":
       return { title: t("guide.step.loan"), text: t("apps.guide.step.loan"), app: "Browser", focus: { kind: "url", id: s.bank ? `${bankUrl(s.bank.id)}banking/loans` : HOME_URL } };
     case "tenCustomers":

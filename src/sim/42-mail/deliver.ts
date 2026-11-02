@@ -9,7 +9,8 @@ import { deskOf, tenantHost } from "../10-catalog/desks";
 import { SENDERS } from "../10-catalog/mail-senders";
 import { JUNK_CAP_PER_DAY, JUNK_TOPICS, SELF_TRAINED_CATCH, catchOf, falseJunkOf, junkFloor, spamShare } from "../10-catalog/mail-senders";
 import type { GameState } from "../50-state";
-import { roleAccount, vacationOn } from "./accounts";
+import { roleAccount, roleAddress, vacationOn } from "./accounts";
+import { CONTACTS, mailSend, SOURCE_KIND, type MailFrom } from "./sources";
 import { capsOf, mailHooks, mxTarget, selfHostCaps } from "./caps";
 import { accountByAddress, MAIL_KEEP, SYS_FOLDERS, tenantOf, view } from "./model";
 import { GMIX_DOMAIN } from "./new";
@@ -395,3 +396,19 @@ export function mailDeliveryTick(s: GameState): void {
 
 export const groupMembers = (s: GameState, groupId: string): MailAccount[] =>
   (s.mail.groups.find((g) => g.id === groupId)?.members ?? []).map((id) => boxById(s, id)).filter((a): a is MailAccount => !!a);
+
+const base = (source: string): string => source.split(":")[0];
+Object.assign(mailSend, {
+  contactAddress(s: GameState, source: string): string {
+    const id = s.mail.contacts[source], a = id ? boxById(s, id) : undefined;
+    if (a) return `${a.local}@${a.domain}`;
+    const owner = roleAccount(s, "owner");
+    if (!owner) return roleAddress(s, "owner");
+    if (CONTACTS.includes(base(source))) s.mail = { ...s.mail, contacts: { ...s.mail.contacts, [source]: owner.id } };
+    return `${owner.local}@${owner.domain}`;
+  },
+  deliverMail(s: GameState, from: string, topic: string, params: MailParams, o: MailFrom): string | null {
+    const source = o.source ?? "", to = o.to ?? mailSend.contactAddress(s, source);
+    return deliver(s, { to, from: `n:${from}`, kind: SOURCE_KIND[base(source)] ?? "system", topic, p: params, ...(o.att?.length && { att: o.att }) }).id ?? null;
+  },
+});

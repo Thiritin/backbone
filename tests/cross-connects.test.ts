@@ -7,7 +7,7 @@ import { crossConnects, type Uplink } from "../src/sim/60-infra/network";
 import { priceRaise, tick } from "../src/sim/88-tick/tick";
 import { addLocation, cancelContract, cancelCrossConnect, closeLocation, orderCrossConnect } from "../src/sim/90-actions/hardware";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { freeFloor, newGame } from "./fixtures";
+import { freeFloor, newGame, mailsAbout } from "./fixtures";
 
 const ok = (r: ReturnType<typeof addLocation>) => { if (!r.ok) throw new Error(r.error); return r.id!; };
 const err = (r: ReturnType<typeof addLocation>) => (r.ok ? "ok" : r.error);
@@ -77,7 +77,7 @@ describe("price changes", () => {
     expect(factor).toBeGreaterThanOrEqual(1.02);
     expect(factor).toBeLessThanOrEqual(1.05);
     expect(s.contracts[0].monthly).toBe(before);
-    expect(s.tickets.at(-1)).toMatchObject({ kind: "mail", topic: "priceRaise", mail: { from: "Equinox", params: { percent: Math.round((factor - 1) * 100), year: 2006 } } });
+    expect(mailsAbout(s, "priceRaise").at(-1)).toMatchObject({ from: "n:Equinox", p: { percent: Math.round((factor - 1) * 100), year: 2006 } });
     ok(addLocation(s, FR5.id, "share", 2));
     expect(s.contracts[1].monthly).toBe(spacePrice(FR5, "share", 2, s.providerPrices));
     expect(s.contracts[1].monthly).toBeGreaterThan(before);

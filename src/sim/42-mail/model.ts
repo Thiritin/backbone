@@ -10,6 +10,7 @@ import { GMIX_DOMAIN, gmixLocal } from "./new";
 import { accountByAddress, addressesOf, ownsAddress, tenantOf } from "./address";
 export { accountByAddress, addressesOf, ownsAddress, tenantOf };
 import { SENDERS } from "../10-catalog/mail-senders";
+import { isLicence, vendorParams } from "../80-business/licences";
 
 export const SYS_FOLDERS: SysFolder[] = ["inbox", "sent", "drafts", "junk", "trash", "archive"];
 // Live messages a mailbox keeps before the retention pass folds the oldest into `older`.
@@ -75,6 +76,6 @@ export function view(s: GameState, m: Message): MailView {
     : tk && r ? [t("mail.replySubject", { subject: [m.p?.token, t(`ticket.${tk.kind}.${tk.topic}.subject`, subjectParams(s, tk))].filter(Boolean).join(" ") }),
       r.key ? t(r.key, r.params) : t(`template.${r.template}.text`, companyParams(s))]
     : tk ? (["subject", "text"] as const).map((x) => t(`ticket.${tk.kind}.${tk.topic}.${x}`, subjectParams(s, tk)))
-    : (["subject", "text"] as const).map((x) => t(`ticket.mail.${m.topic}.${x}`, m.p));
+    : (["subject", "text"] as const).map((x) => t(`ticket.mail.${m.topic}.${x}`, isLicence(m.topic) ? { ...m.p, ...vendorParams(m.p ?? {}) } : m.p));
   return { subject, text: m.foot ? `${text}\n\n${t(m.foot)}` : text, fromName, fromAddress, to: m.to, cc: m.cc ?? [], att: m.att ?? [] };
 }

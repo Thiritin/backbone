@@ -5,7 +5,7 @@ import { yearOf } from "../00-core/time";
 import { shopArchive } from "../10-catalog/archives";
 import { shopById, type ShopId } from "../10-catalog/shops";
 import { versionAt } from "../10-catalog/software-versions";
-import { deliverMail } from "../40-support/tickets";
+import { deliverMail } from "../42-mail/sources";
 import type { GameState } from "../50-state";
 import { SHOP_MACHINE, upgradeKey, upgradeKeyBlock } from "../60-infra/licence";
 import {

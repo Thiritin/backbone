@@ -16,7 +16,7 @@ import { menuOn, type MenuEntry } from "../desktop/ContextMenu";
 import { uiSound, useFocus, useStore } from "../store";
 import { isoFile } from "./browser/sites/software/SoftwareSite";
 import { t } from "../../i18n/en";
-import { APPS, appFor, appTitle } from "./registry";
+import { APPS, appFor, appTitle, listed } from "./registry";
 
 type Folder = "apps" | "desktop" | "downloads" | "usb" | "trash";
 const ISO = "application/x-backbone-iso";
@@ -104,7 +104,7 @@ export function ApplicationsApp() {
       </nav>
       {copy && <Copying key={copy} file={isoFile(copy)} size={IMAGE_MB[imageParts(copy).id]} onStop={() => setCopy(null)} onDone={() => { setCopy(null); act(writeStick, copy); }} />}
       <div className="app-grid" {...target(at)}>
-        {at === "apps" && APPS.filter((a) => !a.hidden && game.installed.includes(a.name)).map((a) => {
+        {at === "apps" && APPS.filter((a) => listed(game, a)).map((a) => {
           const shown = appFor(game, a.name);
           return (
             <Item key={a.name} label={appTitle(shown)} open={() => useStore.getState().openApp(a.name)} drag={dragApp(a.name)}

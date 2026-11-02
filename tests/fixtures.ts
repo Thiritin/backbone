@@ -52,6 +52,8 @@ import { footprint, IN_VM, softwareById } from "../src/sim/10-catalog/platforms"
 import { yearOf } from "../src/sim/00-core/time";
 import { STARTER_APPS } from "../src/sim/10-catalog/store";
 import { legacyRegistration } from "../src/sim/80-business/office";
+import { defaultMailTo } from "../src/sim/42-mail/sources";
+import type { Message } from "../src/sim/42-mail/types";
 
 // The cluster's install is finished, on its machines too.
 const done = (s: GameState, id: string, patch: Partial<GameState["clusters"][number]>) => {
@@ -319,11 +321,12 @@ export function withCard<S extends GameState>(s: S, limit = 100_000): S {
   return s;
 }
 
-// A licence order as the checkout form sends it; a card payment types in the company card's own details.
+// A licence order as the checkout form sends it, mailed to the preselected address; a card payment types in the company
+// card's own details.
 export function orderDetails(s: GameState, kind: "card" | "transfer"): OrderDetails {
   const c = cardDetails(s);
   return {
-    company: s.company.name, name: "Tin Becker", address: { street: "Kellerweg 1", zip: "60311", city: "Frankfurt" }, email: "tin@example.com",
+    company: s.company.name, name: "Tin Becker", address: { street: "Kellerweg 1", zip: "60311", city: "Frankfurt" }, email: defaultMailTo(s),
     payment: kind === "card" ? { kind, number: c?.number ?? "", expiry: c?.expires ?? "", cvc: c?.cvc ?? "" } : { kind },
   };
 }
@@ -353,3 +356,7 @@ export function withDomainMail(s: GameState): GameState {
   return s;
 }
 export const hire = (s: GameState, candidateId: string, team?: string) => hireReal(withDomainMail(s), candidateId, team);
+
+// Company emails about this topic in every mailbox, oldest first.
+export const mailsAbout = (s: GameState, topic: string): Message[] =>
+  Object.values(s.mail.msgs).flat().filter((m) => m.topic === topic).sort((a, b) => a.at - b.at);

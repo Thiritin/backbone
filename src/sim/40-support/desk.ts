@@ -89,6 +89,8 @@ export function openDesk(s: GameState, id: DeskId, hosting: DeskHosting = { kind
     id, hosting, tenant, rules: [], addons: {}, lastRef: 0, ai: newDeskAi(),
     departments: [{ id: "support", name: "Support", members: [], autoAssign: false, channelId: channel.id }],
   };
+  // The Support launcher opens the desk.
+  if (!s.installed.includes("Support")) s.installed = [...s.installed, "Support"];
   for (const t of [...s.tickets].sort((a, b) => a.createdAt - b.createdAt)) Object.assign(t, { channelId: channel.id, ref: nextRef(s, t), deptId: "support" });
 }
 

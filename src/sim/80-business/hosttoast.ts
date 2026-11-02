@@ -8,7 +8,8 @@ import { marketPrice, marketRates, sizeSpec } from "../10-catalog/products";
 import type { Profile } from "../30-customers/customers";
 import { locationCities, offers, openRivals, playerScores, priceIndex } from "../30-market/market";
 import { monthOf, reviewCount, rivalScore, withBadges, yearAwards } from "../30-market/rivals";
-import { createTicket, deliverMail } from "../40-support/tickets";
+import { createTicket } from "../40-support/tickets";
+import { deliverMail } from "../42-mail/sources";
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { REVIEW_HOURS, reviewScore } from "./marketing";
@@ -50,8 +51,8 @@ export function tierRefusal(s: GameState, tier: TierId): string | null {
 export const tierName = (tier: TierId): string => t(`hosttoast.tier.${tier}`);
 
 export function hosttoastMail(s: GameState, topic: string, params: Record<string, string | number>): SimEvent {
-  const m = deliverMail(s, HOSTTOAST, topic, params);
-  return { app: "Support", key: "event.ticket", params: { ...params, ticketId: m.id, name: HOSTTOAST, subject: `ticket.mail.${topic}.subject` } };
+  const id = deliverMail(s, HOSTTOAST, topic, params, { source: "hosttoast" });
+  return { app: "Support", key: "event.ticket", params: { ...params, ticketId: id ?? "", name: HOSTTOAST, subject: `ticket.mail.${topic}.subject` } };
 }
 
 // Last year's awards for you and the rivals; the rivals' badges count for the new year.

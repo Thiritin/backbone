@@ -1,6 +1,6 @@
 // docs/design/plans/software-licences.md, lane lifecycle: where each installed version stands against its vendor's end
 // of updates and end of security updates.
-import { deliverMail } from "../40-support/tickets";
+import { deliverMail } from "../42-mail/sources";
 import { SOFTWARE } from "../10-catalog/platforms";
 import { SERVER_OS } from "../10-catalog/server-os";
 import { SHOP_LICENCES } from "../10-catalog/shop-licences";
@@ -52,7 +52,7 @@ export const clusterFactor = (s: GameState, c: Pick<Cluster, "id" | "vm" | "node
 export const WARN_DAYS = 90;
 const warnHours = new Set([...SOFTWARE, ...SERVER_OS, ...SHOP_LICENCES].flatMap((x) => versionsOf(x.id).flatMap((v) => (v.securityUntil === null ? [] : [v.securityUntil - WARN_DAYS * 24]))));
 
-// The vendor writes once per installed version WARN_DAYS before its security updates end.
+// The vendor writes once per installed version WARN_DAYS before its security updates end, to the address of its licence.
 export function lifecycleTick(s: GameState): void {
   if (!warnHours.has(s.hour)) return;
   const seen = new Set<string>();
@@ -62,7 +62,8 @@ export function lifecycleTick(s: GameState): void {
       if (end == null || s.hour !== end - WARN_DAYS * 24 || seen.has(key) || versionAt(x.id, s.hour).version === x.version) continue;
       seen.add(key);
       const name = nameOf(x.id);
-      deliverMail(s, name, "securityEnding", { software: name, version: x.version, until: end });
+      const k = s.licenses.find((l) => l.product === x.id && l.machineId === m.id) ?? s.licenses.find((l) => l.product === x.id);
+      deliverMail(s, name, "securityEnding", { software: name, version: x.version, until: end }, { source: "vendor", to: k?.mailTo });
     }
   }
 }

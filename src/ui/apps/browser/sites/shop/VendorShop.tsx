@@ -6,6 +6,7 @@ import type { LicenseKind } from "../../../../../sim/10-catalog/server-os";
 import type { GameState, Licence } from "../../../../../sim/50-state";
 import { keyExpired, productOf } from "../../../../../sim/60-infra/licence";
 import { cartOf, editionChange, lineBlock, keysOf, lineMajor, lineOffer, offers, orderKeys, upgradeOffers, type CartLine, type Offer } from "../../../../../sim/80-business/vendor-shop";
+import { defaultMailTo, ownAddresses } from "../../../../../sim/42-mail/sources";
 import { addToCart, cancelLicence, changeEdition, checkout, removeFromCart } from "../../../../../sim/90-actions/vendor-shop";
 import { groupIban, ibanEra } from "../../../../../sim/46-finance/bank";
 import { supplierAccount, supplierCode, supplierIban } from "../../../../../sim/46-finance/payables";
@@ -78,6 +79,7 @@ export function Cart({ host, btn, account }: ShopProps & { host: string; account
         <Checkout game={game} btn={btn} total={euroPrice(total)}
           lines={lines.map((l) => ({ label: lineName(l.product, l.edition, lineMajor(game, l), l.from), qty: l.qty, price: euroPrice((lineOffer(game, l)?.fee ?? 0) * l.qty) }))}
           methods={[{ kind: "card", label: t("bank.shop.card") }, { kind: "transfer", label: t("bank.shop.prepay") }]}
+          emails={[defaultMailTo(game), ...ownAddresses(game).filter((x) => x !== defaultMailTo(game))]}
           place={(d) => attempt(checkout, host, { ...d, payment: d.payment.kind === "card" ? d.payment : { kind: "transfer" } })}
           confirm={confirm} />
         <p><a href="#account" onClick={(e) => { e.preventDefault(); account(); }}>{t("vendor-shop.myAccount")}</a></p>

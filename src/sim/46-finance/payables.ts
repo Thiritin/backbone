@@ -3,7 +3,7 @@
 import { hashRng, rand } from "../00-core/rng";
 import { registrarHost, REGISTRARS } from "../10-catalog/registrars";
 import { storeItem } from "../10-catalog/store";
-import { deliverMail } from "../40-support/tickets";
+import { deliverMail } from "../42-mail/sources";
 import type { GameState, LedgerEntry } from "../50-state";
 import { groupIban, iban, ibanEra } from "./bank";
 
@@ -39,7 +39,7 @@ export interface Payable {
   // What Books counts as paid: the payments out assigned to it there. sent is what the supplier received.
   booked: number;
   // A licence order paid by transfer, whose keys the vendor sends once the money arrives.
-  keys?: { order: string; lines: { product: string; edition: string | null; qty: number; to?: string; replaces?: string }[] };
+  keys?: { order: string; lines: { product: string; edition: string | null; qty: number; to?: string; replaces?: string }[]; mailTo?: string };
 }
 
 export const supplierAccount = (supplier: SupplierId): string => {
@@ -95,8 +95,8 @@ export function invoice(s: GameState, supplier: SupplierId, name: string, lines:
     Object.assign(p, { sent: amount, paidAt: s.hour, booked: amount });
     const debit = { id: `out${s.nextId++}`, hour: s.hour, arriveAt: s.hour, name, account: ibanEra(s) ? supplierIban(supplier) : supplierAccount(supplier), amount, reference: p.number, payableId: id, matched: id, arrived: true as const, debit: true as const };
     s.bank = { ...s.bank, outgoing: [...s.bank.outgoing, debit] };
-    deliverMail(s, name, "debit", { name, number: p.number, amount, payable: id });
-  } else if (!paper) deliverMail(s, name, "invoice", { name, number: p.number, amount, payable: id, due: p.dueAt, iban: ibanEra(s) ? groupIban(supplierIban(supplier)) : "", account: supplierAccount(supplier), code: SUPPLIER_CODE, url: supplierUrl(name) });
+    deliverMail(s, name, "debit", { name, number: p.number, amount, payable: id }, { source: `supplier:${supplier}`, att: [{ k: "invoice", id }] });
+  } else if (!paper) deliverMail(s, name, "invoice", { name, number: p.number, amount, payable: id, due: p.dueAt, iban: ibanEra(s) ? groupIban(supplierIban(supplier)) : "", account: supplierAccount(supplier), code: SUPPLIER_CODE, url: supplierUrl(name) }, { source: `supplier:${supplier}`, att: [{ k: "invoice", id }] });
   s.payables = [...s.payables, p];
   return p;
 }
@@ -172,7 +172,7 @@ export function payablesTick(s: GameState): void {
       held = Object.fromEntries(s.domains.map((d) => [d.name, d.expiresAt]));
       s.domains = s.domains.map((d) => ({ ...d, expiresAt: Math.min(d.expiresAt, s.hour) }));
     }
-    deliverMail(s, p.name, `consequence.${effect}`, { name: p.name, number: p.number, amount: cents(p.amount - p.sent) });
+    deliverMail(s, p.name, `consequence.${effect}`, { name: p.name, number: p.number, amount: cents(p.amount - p.sent) }, { source: `supplier:${p.supplier}` });
     return { ...p, consequence: effect, held };
   });
   const dark = new Set<string>();

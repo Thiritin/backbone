@@ -10,7 +10,7 @@ import { clusterFactor, lifecycleTick, supportOf, supportOn, unsupportedFactor, 
 import { securityTick } from "../src/sim/60-infra/security";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
-import { newGame, panelServer, withServer } from "./fixtures";
+import { newGame, panelServer, withServer, mailsAbout } from "./fixtures";
 
 const at = hourOfMonth;
 const year = (y: number) => hourOf(new Date(Date.UTC(y, 0, 1)));
@@ -85,12 +85,12 @@ describe("software lifecycle", () => {
     setOs(s, "8");
     const end = versionInfo("lunix", "8")!.securityUntil!, name = SERVER_OS.find((o) => o.id === "lunix")!.name;
     s.hour = end - WARN_DAYS * 24 - 1;
-    const mails = () => s.tickets.filter((x) => x.topic === "securityEnding");
+    const mails = () => mailsAbout(s, "securityEnding");
     lifecycleTick(s);
     expect(mails()).toEqual([]);
     s.hour++;
     lifecycleTick(s);
-    expect(mails().map((x) => x.mail)).toEqual([{ from: name, params: { software: name, version: "8", until: end } }]);
+    expect(mails().map((x) => [x.from, x.p])).toEqual([[`n:${name}`, { software: name, version: "8", until: end }]]);
     s.hour++;
     lifecycleTick(s);
     expect(mails().length).toBe(1);

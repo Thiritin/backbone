@@ -58,6 +58,7 @@ export default {
   "error.mailFilterRule": () => "A filter needs 1 to 5 conditions and 1 to 5 actions.",
   "error.mailFilterMax": () => "This mailbox holds no more filters.",
   "error.mailFrom": () => "This mailbox cannot send from this address.",
+  "error.mailTo": () => "This address belongs to none of your mailboxes.",
   "error.mailAttach": () => "The attachment is larger than this mailbox accepts.",
   "error.mailFetchLoop": () => "This mailbox already collects from that account, or that account collects from this one.",
   "error.mailCollectors": (p) => `This plan collects from at most ${p.n} accounts.`,

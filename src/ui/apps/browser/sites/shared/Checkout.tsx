@@ -59,12 +59,13 @@ function splitName(owner: string): [string, string] {
 
 const STEPS = ["checkout.billing", "checkout.payment", "checkout.review"];
 // The step whose fields an error from the shop is about.
-const STEP_OF: Record<string, number> = { "error.orderName": 0, "error.orderAddress": 0, "error.cardDeclined": 1, "error.noCard": 1, "error.cardLimit": 1 };
+const STEP_OF: Record<string, number> = { "error.orderName": 0, "error.orderAddress": 0, "error.mailTo": 0, "error.cardDeclined": 1, "error.noCard": 1, "error.cardLimit": 1 };
 
 // A web shop's order form in three steps and its confirmation; the site puts it in its own page and passes its button class.
-// The review lists the cart lines, or facts for an order of one thing; onBack leaves the first step.
-export function Checkout({ game, btn, lines, total, facts, methods, place, confirm, onBack }: {
-  game: GameState; btn: string; lines?: CheckoutLine[]; total?: string; facts?: [string, string][]; onBack?: () => void;
+// The review lists the cart lines, or facts for an order of one thing; onBack leaves the first step. emails makes the email a
+// choice of the company's own addresses, the first preselected.
+export function Checkout({ game, btn, lines, total, facts, methods, place, confirm, onBack, emails }: {
+  game: GameState; btn: string; lines?: CheckoutLine[]; total?: string; facts?: [string, string][]; onBack?: () => void; emails?: string[];
   methods: { kind: PaymentKind; label: string }[];
   place: (d: CheckoutDetails) => ActionResult;
   confirm: (order: string, kind: PaymentKind) => Confirmation;
@@ -74,7 +75,7 @@ export function Checkout({ game, btn, lines, total, facts, methods, place, confi
   const [placed, setPlaced] = useState<{ order: string; info: Confirmation } | null>(null);
   const [first0, last0] = splitName(game.registration?.owner ?? "");
   const [first, setFirst] = useState(first0), [last, setLast] = useState(last0);
-  const [email, setEmail] = useState(salesAddress(game));
+  const [email, setEmail] = useState(emails?.[0] ?? salesAddress(game));
   const [address, setAddress] = useState<AddressValue>({ company: game.company.name, street: "", zip: "", city: "" });
   const [kind, setKind] = useState<PaymentKind>(methods[0].kind);
   const [card, setCard] = useState({ number: "", expiry: "", cvc: "", holder: "" });
@@ -126,7 +127,12 @@ export function Checkout({ game, btn, lines, total, facts, methods, place, confi
             {input("last", t("checkout.lastName"), last, setLast)}
             <AddressFields id="co" value={address} set={setAddress} autofill={autofill} />
             <tr><td>{t("checkout.country")}</td><td>{t("checkout.germany")}</td></tr>
-            {input("email", t("checkout.email"), email, setEmail, { type: "email" })}
+            {emails ? (
+              <tr>
+                <td><label htmlFor="co-email">{t("checkout.email")} <b>*</b></label></td>
+                <td><select id="co-email" value={email} onChange={(e) => setEmail(e.target.value)}>{emails.map((x) => <option key={x}>{x}</option>)}</select></td>
+              </tr>
+            ) : input("email", t("checkout.email"), email, setEmail, { type: "email" })}
           </tbody></table>
           {alert}
           <p className="co-buttons">{back}<button type="submit" className={btn}>{t("checkout.continue")}</button></p>

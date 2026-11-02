@@ -1,4 +1,6 @@
 import { deskUrl } from "./apps/browser/sites/desk/DeskSite";
+import { findMail } from "../sim/42-mail/sources";
+import type { Message } from "../sim/42-mail/types";
 import { booted, monthNet, pickSound, playSound, soundFor, WINDOW_MS, type Sound, type UiSound } from "./sounds";
 import { createContext, useContext, useEffect } from "react";
 import { create } from "zustand";
@@ -304,6 +306,13 @@ export const useStore = create<Store>((set, get) => ({
     if (app === "Chat") return void window.open(DISCORD_URL, "_blank", "noopener");
     const desk = app === "Support" && deskUrl(get().game, target);
     if (desk) return get().openApp("Browser", { kind: "url", id: desk });
+    // Without a desk holding it, a request or a company email opens in Pear Mail at its message.
+    if (app === "Support" && (!target || target.kind === "ticket")) {
+      const s = get().game, hit = (x: Message) => x.id === target!.id || (x.ticket === target!.id && x.reply === undefined && !x.folder.endsWith("sent"));
+      // A POP account holds its mail in Pear Mail's local folders.
+      const m = target && (s.pearMail.local.messages.find(hit) ?? findMail(s, hit));
+      return get().openApp("Pear Mail", m ? { kind: "message", id: m.id } : undefined, fresh);
+    }
     const ws = get().windows;
     const open = fresh ? undefined : ws.filter((w) => w.app === app && !w.draft).sort((a, b) => b.z - a.z)[0];
     const focus = target ? { ...target, n: ++focusId } : open?.focus;
