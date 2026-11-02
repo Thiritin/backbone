@@ -2,6 +2,10 @@
 
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
+## 2026-11-02
+
+- Ticket replies, retention offers and ticket actions are now built so the coming mail client can show them too.
+
 ## 2026-11-01
 
 - A transfer to an account that does not exist now comes back within a few days, and a payment without an invoice number goes to the sender's oldest open invoice, at your suppliers and, when matching by reference is on, in your books.
