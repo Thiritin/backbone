@@ -98,7 +98,7 @@ export function workloadUse(s: GameState, w: Workload, hour: number = s.hour): R
   if (isOwnVm(w)) {
     const hosts = hostsOfVm(s, w.id), u: Resources = { vcpu: 0, ramGb: 0, diskGb: 0 };
     if (w.stopped || lostDisk(s, w)) return u;
-    const parts = [...hosts.map(controlPlaneUse), ...insideVm(s, w.id).map((x) => workloadUse(s, x, hour)), osUse(s, w.id, w.vcpu, w.ramGb, hour)];
+    const parts = [...hosts.map((h) => controlPlaneUse(s, h)), ...insideVm(s, w.id).map((x) => workloadUse(s, x, hour)), osUse(s, w.id, w.vcpu, w.ramGb, hour)];
     for (const p of parts) { u.vcpu += p.vcpu; u.ramGb += p.ramGb; u.diskGb += p.diskGb; }
     return u;
   }

@@ -1,7 +1,7 @@
 import { AppWindow, Bird, Boxes, Container, Feather, Gamepad2, Gauge, Layers, Mail, PanelsTopLeft, Pickaxe, PiggyBank, Server, SquareTerminal, TriangleAlert, type LucideIcon } from "lucide-react";
 import { euroCents } from "../../../sim/00-core/money";
 import { formatClock, START_YEAR, yearOf } from "../../../sim/00-core/time";
-import { SERVES, softwareById, softwareOf, type Software, type SoftwareKind } from "../../../sim/10-catalog/platforms";
+import { footprint, SERVES, softwareById, softwareOf, type Software, type SoftwareKind } from "../../../sim/10-catalog/platforms";
 import { PRODUCTS } from "../../../sim/10-catalog/products";
 import { licensingAt, type LicenseKind } from "../../../sim/10-catalog/server-os";
 import { licenceIndex } from "../../../sim/10-catalog/licence-tiers";
@@ -47,7 +47,7 @@ export const licenseText = (sw: Software, year: number) => {
   const era = licensingAt(sw, year);
   return era.kind === "free" ? t("misc1.parts.free") : t("misc1.parts.fee", { fee: euroCents(era.fee * licenceIndex(sw.id, year)), unit: UNIT[era.kind] });
 };
-const cp = (sw: Software) => `${+sw.controlPlane.vcpu.toFixed(2)} vCPU · ${+sw.controlPlane.ramGb.toFixed(2)} GB`;
+const cp = (sw: Software, year: number) => { const r = footprint(sw, year); return `${+r.vcpu.toFixed(2)} vCPU · ${+r.ramGb.toFixed(2)} GB`; };
 
 export const KIND_NAME: Record<SoftwareKind, string> = {
   panel: t("misc1.parts.kindPanel"), cloud: t("misc1.parts.hypervisor"), game: t("misc1.parts.kindGame"), mail: t("misc1.parts.mailServer"), mailweb: t("mailserver.kind"), dns: t("misc1.parts.dnsServer"), vpn: t("misc1.parts.vpnServer"), storage: t("misc1.parts.storageServer"), backup: t("misc1.parts.backupServer"),
@@ -83,13 +83,13 @@ export function SoftwareCards({ kind, value, onPick, compact, blocked }: { kind:
           <dl>
             <div><dt>{t("misc1.parts.license")}</dt><dd className="num">{licenseText(sw, year)}</dd></div>
             <div><dt>{t("misc1.parts.install")}</dt><dd className="num">{sw.installHours} h</dd></div>
-            {kind === "mail" ? <div><dt>{t("misc1.parts.needs")}</dt><dd className="num">{cp(sw)} · {sw.controlPlane.diskGb} GB</dd></div>
+            {kind === "mail" ? <div><dt>{t("misc1.parts.needs")}</dt><dd className="num">{cp(sw, year)} · {footprint(sw, year).diskGb} GB</dd></div>
             : kind === "cloud" && <div><dt>{t("misc1.parts.ballooning")}</dt><dd className="num">{sw.balloon === null ? t("misc1.parts.no") : sw.balloon <= sw.from ? t("misc1.parts.yes") : t("misc1.parts.from", { year: sw.balloon })}</dd></div>}
             {compact || kind === "mail" ? null : <>
             <div><dt>{t("misc1.parts.tickets")}</dt><dd className="num">×{sw.tickets}</dd></div>
             {kind === "cloud" && <div><dt>{t("misc1.parts.liveMigration")}</dt><dd>{sw.live ? t("misc1.parts.yes") : t("misc1.parts.no")}</dd></div>}
             {kind === "cloud" && <div><dt>{t("misc1.parts.splitCores")}</dt><dd>{sw.split ? t("misc1.parts.yes") : t("misc1.parts.no")}</dd></div>}
-            <div><dt>{t("misc1.parts.controlPlane")}</dt><dd className="num">{cp(sw)}</dd></div>
+            <div><dt>{t("misc1.parts.controlPlane")}</dt><dd className="num">{cp(sw, year)}</dd></div>
             </>}
           </dl>
           <span className="prd-traits">{traits(sw, compact).map((x) => <span key={x} className="pill">{x}</span>)}</span>

@@ -9,7 +9,7 @@ function page(panel: string) {
   const s = readyGame(1);
   skipTo(s, 2020);
   s.cash = 1_000_000;
-  const id = panelVm(s, s.clusters.find((y) => y.kind === "cloud")!.id, panel), c = s.clusters.find((x) => x.id === id)!;
+  const id = panelVm(s, s.clusters.find((y) => y.kind === "cloud")!.id, panel, { vcpu: 2, ramGb: 4, diskGb: 50 }), c = s.clusters.find((x) => x.id === id)!;
   return { s, c, html: renderToString(<LicencePage game={s} c={c} />) };
 }
 
