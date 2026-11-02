@@ -12,6 +12,7 @@ import type { SimEvent } from "../88-tick/tick";
 import { campaignBoost, hasMarketingManager, reviewBoost } from "../47-staff/staff";
 import { communityBatches } from "./community";
 import { fairBatches, fairGain } from "./fairs";
+import { flyerBatches, flyerTick, type FlyerRun } from "./flyers";
 import { shopBills, shopTick } from "./shop";
 import { siteBuiltEvent, siteDownEvent, siteFactor, siteHostingCost, siteStatus } from "./website";
 
@@ -83,6 +84,8 @@ export interface Marketing {
   unmet: { month: Partial<Record<Product, number>>; last: Partial<Record<Product, number>> };
   // The catalog as last published to the website; leads decide on it. Null until the first publish.
   published: CatalogProduct[] | null;
+  // Flyer runs from the print shop, newest last; finished runs stay for the order history.
+  flyers: FlyerRun[];
 }
 export type SiteHost = { kind: "rented" } | { kind: "own"; clusterId: string };
 
@@ -98,7 +101,7 @@ export function wonLeads(s: GameState, ago: 0 | 1): Partial<Record<Product, numb
 }
 
 export const newMarketing = (): Marketing => ({
-  owned: [], campaigns: [], reviews: [], platform: null, studies: [], lines: [], emailOrders: true, customRequests: true, siteReady: null, launched: false, siteHost: { kind: "rented" }, designYear: 2005, siteOutage: false, unmet: { month: {}, last: {} }, published: null,
+  owned: [], campaigns: [], reviews: [], platform: null, studies: [], lines: [], emailOrders: true, customRequests: true, siteReady: null, launched: false, siteHost: { kind: "rented" }, designYear: 2005, siteOutage: false, unmet: { month: {}, last: {} }, published: null, flyers: [],
   awareness: Object.fromEntries(PROFILE_IDS.map((p) => [p, p === "private" || p === "gamer" ? 0.05 : AWARENESS_FLOOR])) as Record<Profile, number>,
 });
 
@@ -108,7 +111,7 @@ export const reach = (channel: CampaignChannel): Profile[] => PROFILE_IDS.filter
 export const awareness = (s: GameState, p: Profile): number => s.marketing.awareness[p];
 const marketCities = (s: GameState): string[] => [...new Set(s.locations.map((l) => l.city))];
 
-export interface LeadBatch { profile: Profile; city: string; source: CampaignChannel | "website" | "fair" | "community"; count: number; conversion: number }
+export interface LeadBatch { profile: Profile; city: string; source: CampaignChannel | "website" | "fair" | "community" | "flyer"; count: number; conversion: number }
 
 // Expected leads this month from the website and running campaigns; organic leads and referrals belong to the market.
 export function leadsThisMonth(s: GameState): LeadBatch[] {
@@ -126,7 +129,7 @@ export function leadsThisMonth(s: GameState): LeadBatch[] {
       out.push({ profile, city, source: c.channel, count, conversion: CAMPAIGNS[c.channel].conversion });
     }
   }
-  out.push(...fairBatches(s, cities), ...communityBatches(s, cities));
+  out.push(...fairBatches(s, cities), ...communityBatches(s, cities), ...flyerBatches(s));
   return out;
 }
 
@@ -238,6 +241,7 @@ export function marketingTick(s: GameState): SimEvent[] {
   siteBuiltEvent(s, events);
   siteDownEvent(s, events);
   shopTick(s, events);
+  flyerTick(s);
   if (!isMonthStart(s.hour)) return events;
   if (s.marketing.platform && PLATFORMS[s.marketing.platform].fee > 0 && !hasMarketingManager(s)) {
     events.push({ app: "Marketing", key: "event.platformDropped", params: { name: PLATFORMS[s.marketing.platform].name } });

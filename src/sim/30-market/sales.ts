@@ -1,7 +1,7 @@
 // Requests over time: new leads through the day, expansion requests from upgrade tickets, customer replies to quotes,
 // expiry into lost sales and the monthly happiness drift. Decisions are recorded in docs/design/economy.md, "Requests, SLAs and growth".
 import { rand, type Rng } from "../00-core/rng";
-import { isMonthStart } from "../00-core/time";
+import { DAYS_PER_MONTH, isMonthStart } from "../00-core/time";
 import { transferHost } from "../60-infra/transfers";
 import { arrivalWeight } from "../10-catalog/attention";
 import { CHOICE_TAU, NEVER_PAYS, ON_TIME } from "../10-catalog/economy";
@@ -46,7 +46,6 @@ import {
   requestName, share, values, type Need, type SalesMessage, type SalesRequest,
 } from "./market";
 
-const DAYS_PER_MONTH = 30.4;
 const MAIL_HOUR = 8;
 // A shady request about every three months, from the fourth month on.
 const SHADY_PER_MONTH = 0.3;

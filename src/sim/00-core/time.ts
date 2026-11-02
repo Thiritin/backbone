@@ -36,6 +36,9 @@ export function formatClock(hour: number, minute = 0): string {
   return `${date} · ${hh}:${String(minute).padStart(2, "0")}`;
 }
 
+// Average days in a month, for turning monthly lead rates into hourly ones.
+export const DAYS_PER_MONTH = 30.4;
+
 export const isMonthStart = (hour: number): boolean => {
   const d = dateOf(hour);
   return d.getUTCDate() === 1 && d.getUTCHours() === 0;

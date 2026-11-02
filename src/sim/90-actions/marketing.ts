@@ -5,6 +5,7 @@ import { BUDGETS, CAMPAIGNS, DISCOUNTS, OWNED, owns, PLATFORMS, reach, type Camp
 import { hasMarketingManager } from "../47-staff/staff";
 import { fairCost, upcomingFairs } from "../80-business/fairs";
 import { generationOf } from "../80-business/website";
+import { FLYER_SIZES, flyerPrice } from "../10-catalog/flyers";
 import { metrics } from "../metrics";
 import { TIERS, TIER_IDS, type TierId } from "../10-catalog/hosttoast";
 import { tierRefusal } from "../80-business/hosttoast";
@@ -89,4 +90,17 @@ export function setHostToastTier(s: GameState, tier: TierId): ActionResult {
   if (refusal) return fail(refusal);
   s.hosttoast = { ...s.hosttoast, tier, audit: TIERS[tier].answer === null ? null : s.hosttoast.audit };
   return { ok: true };
+}
+
+// Orders a flyer run for one of your cities; delivery and hand-out follow in the tick.
+export function orderFlyers(s: GameState, city: string, size: number): ActionResult {
+  if (!FLYER_SIZES.includes(size)) return fail("error.flyerSize");
+  if (!s.locations.some((l) => l.city === city)) return fail("error.flyerCity");
+  const cost = flyerPrice(size, yearOf(s.hour));
+  if (s.cash < cost) return fail("error.noCash");
+  const id = `flyer-${s.marketing.flyers.length + 1}`;
+  s.cash = Math.round((s.cash - cost) * 100) / 100;
+  s.ledger = [...s.ledger, { hour: s.hour, category: "marketing", key: "ledger.flyers", params: { city, size }, amount: -cost }];
+  s.marketing = { ...s.marketing, flyers: [...s.marketing.flyers, { id, city, size, orderedAt: s.hour, flyersLeft: size, leads: 0 }] };
+  return { ok: true, id };
 }

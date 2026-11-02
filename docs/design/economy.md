@@ -2296,6 +2296,7 @@ In 2005 a low-budget lead from search ads costs about €9, so a new private cus
 | Gaming communities | Gamers | €8 per lead | None |
 | Trade fair | Business profiles | See Trade fairs below | Company level 3 to 5 |
 | Partner program | Sole proprietors, small businesses | Commission of the first 2 months' revenue | Each agency customer brings 0.5 leads a month |
+| Flyers | Private, sole proprietors, small businesses | €22.50 / €17.50 / €15 per lead by run size in 2026 (see Flyers below) | Your own location in the city |
 
 Spending more in one channel and city gets dearer: the cost per lead is multiplied by 1 + monthly spend ÷ €5,000.
 
@@ -2323,6 +2324,8 @@ Spending more in one channel and city gets dearer: the cost per lead is multipli
 | "TrustPylon" | 2% | 6 |
 
 Platform fees are flat: the free listing costs nothing, ProvenExpat €49 and TrustPylon €199 a month. The free listing's +2 now comes from the HOSTtoast listing (competitors.md, HOSTtoast), whose T adds to the platform's, capped at 10.
+
+**Flyers.** The print shop "Flyerlarm" (flyerlarm.de) sells runs of 1,000, 5,000 and 10,000 flyers at 0.09, 0.07 and 0.06 euros each in 2026, scaled back with m = 0.6 like search ads, and books the price at the order (ledger line "Flyers"). A run is delivered after 3 days and handed out evenly over the next 28 days in one city where you have a location, so a run is done 31 days after the order. Every flyer handed out brings 0.004 leads, split over private, sole proprietor and small business customers by their mix, with a conversion multiplier of 0.8. A lead therefore costs the flyer price ÷ 0.004: €22.50, €17.50 and €15 for the three runs in 2026, and 0.6 times that in 2005. Flyers need neither a website nor research, the Marketing app lists the running runs and the print shop keeps the order history. Decision: flyers reach only the three consumer and small business profiles because they read a flyer in the letterbox.
 
 **Owned channels.** Each step is a one-off setup plus monthly upkeep, flat over the years:
 
