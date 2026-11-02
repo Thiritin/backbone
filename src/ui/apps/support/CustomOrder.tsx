@@ -287,7 +287,7 @@ export function UpgradeCompose({ r }: { r: SalesRequest }) {
       </div>
       {editing && (
         <div className="compose custom-steps">
-          {home && <div className="upgrade-home"><span>{home.title}</span>{holds ? <Check aria-hidden /> : <span className="pill">{t("support.full")}</span>}</div>}
+          {home && <div className="upgrade-home"><span>{home.title}</span>{holds && <Check aria-hidden />}</div>}
           {!holds && others && <RouteCards product={r.product} city={r.city} size={sizeOf(r.spec)} value={route} onChange={setRoute} disabled={locked} serviceId={r.serviceId ?? undefined} load={false} />}
           <div className="actions-row">
             <button className="btn ghost" disabled={locked} onClick={() => act(decline, r.id)}><CircleX />{t("support.decline")}</button>

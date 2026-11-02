@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- Upgrade requests no longer mark the current server as full.
+
 - Storage in Locations shows stored hardware as a grid of cards and sells several units of a model at once.
 - The Flyerlarm order table no longer runs past the right edge of its box, and the Locations storage tab is called Lager in German.
 - VMwhere editions are now bought as licence keys on vmwhere.com and take effect once every host runs a key of that edition, and the shop only sells an edition once your team has learned its features.
