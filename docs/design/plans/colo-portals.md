@@ -43,7 +43,7 @@ Milestones:
 
 Milestones:
 
-1. **Sign-in and account shell.** `/account` shows a sign-in page with the company email prefilled and a password field that accepts anything; the session lasts while the tab is open. Inside: left nav Contracts, Invoices, Services, Tickets, Account. Tabs are the portal's own look per skin, not the public site's.
+1. **Sign-in and account shell.** `/account` shows a sign-in page with the company email prefilled and a password field that accepts anything; the session lasts while the tab is open. Inside: left nav Contracts, Invoices, Services, Tickets, Account. The portal has each provider's own customer-area look, copied from the real company's portal.
 2. **Contracts.** One row per contract at this provider: datacenter, space, since, monthly, next invoice, status (`active`, `ends <date>`, `provisioning` while `readyAt` is ahead). Detail page lists the racks and their feeds, power contract and extra kW, cross-connects from lane 4.
 3. **Cancel.** The detail page's Cancel button opens a confirm sheet with the end date from `NOTICE_MONTHS`, what must be empty by then, and a retention offer on the large carrier-neutral providers (Equinox, Digital Reality, Interaction, NTD, Telex, CoreSpite) (one free month if the player keeps the space, accepted by `revokeCancel`). Confirm calls `cancelContract`. A cancelled contract shows Revoke until `endsAt`.
 4. **Invoices.** List of the provider's monthly charges from the ledger, filtered by provider, with a view page per invoice using the same PDF frame as customer invoices. Read-only.
