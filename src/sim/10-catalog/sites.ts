@@ -43,4 +43,6 @@ export const SITES: Record<string, Site> = {
   veeham: site("veeham", "veeham.com", 5, 2008),
   proxmocksBackup: site("proxmocksBackup", "backup.proxmocks.com", 5, 2020),
   mailpig: site("mailpig", "mailpig.io", 6, 2015),
+  squirrelmeal: site("squirrelmeal", "squirrelmeal.org", 5, 2005),
+  postfixitadmin: site("postfixitadmin", "postfixitadmin.org", 5, 2005, 2016),
 };

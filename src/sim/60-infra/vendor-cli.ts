@@ -43,6 +43,7 @@ const EXTRAS: Record<SoftwareKind, (sw: Software) => CliCommand[]> = {
     ...(sw.id === "anyconnekt" ? [cmd("autoenroll", "autoenroll <service> on|off")] : []),
   ],
   mail: () => [cmd("queueFlush", "queue flush"), cmd("queueDelete", "queue delete"), cmd("relay", "relay <host> [off]")],
+  mailweb: () => [],
   game: () => [cmd("serverList", "server list", false)],
   storage: () => [cmd("shareList", "share list", false)],
   backup: () => [],

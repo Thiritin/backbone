@@ -4,7 +4,7 @@ import type { LicenseEra, ServerOsId } from "./server-os";
 import { SITES, type Site } from "./sites";
 
 // Values from docs/design/economy.md, section "Platforms and licenses". EU competition rules make Pear offer four of each.
-export type SoftwareKind = "panel" | "cloud" | "game" | "mail" | "dns" | "vpn" | "storage" | "backup";
+export type SoftwareKind = "panel" | "cloud" | "game" | "mail" | "mailweb" | "dns" | "vpn" | "storage" | "backup";
 export interface Software {
   id: string;
   kind: SoftwareKind;
@@ -88,8 +88,10 @@ const ON_MACHINE: Record<string, Omit<Pick<Software, MachineFields>, "site">> = 
   vsftpeed: { os: L, ports: [21], install: apt("vsftpeed") },
   ownclod: { os: L, ports: WEB, install: apt("ownclod", repo("http://download.ownclod.org/debiant /", "ownclod")) },
   minnio: { os: LW, ports: [9000, 9001], install: script("wget https://dl.minn.io/server/minnio && chmod +x minnio && ./minnio server /data") },
-  postfixit: { os: L, ports: [25, 587], install: apt("postfixit") },
+  postfixit: { os: L, ports: [25, 587, 110, 143, 993, 995], install: apt("postfixit") },
   mailpig: { os: L, ports: [25, ...WEB, 587, 143, 993], install: apt("mailpig", repo("http://repo.mailpig.io/debiant stable main", "mailpig"), "apt-get update") },
+  squirrelmeal: { os: L, ports: WEB, install: apt("squirrelmeal") },
+  postfixitadmin: { os: L, ports: WEB, install: apt("postfixitadmin") },
   backula: { os: LW, ports: [9101, 9102, 9103], install: apt("backula-director", "apt-get update") },
   veeham: { os: W, ports: [9392, 10001], install: GUI },
   proxmocksBackup: { os: L, ports: [8007], install: apt("proxmocks-backup-server", repo("http://download.proxmocks.com/debiant bookworm pbs-no-subscription", "pbs"), "apt-get update") },
@@ -125,6 +127,9 @@ const CATALOG: Omit<Software, MachineFields>[] = [
   // Mail servers: the company's own mail on a server or VM; the control plane is what the server takes (economy.md, Company email).
   { id: "postfixit", kind: "mail", name: "Postfixit", console: "Postfixit", licensing: [{ from: 2005, kind: "free", fee: 0 }], tickets: 1.4, live: false, split: true, balloon: null, controlPlane: { vcpu: 0.5, ramGb: 1, diskGb: 20 }, installHours: 4, from: 2005 , migration: { same: null, other: null }, cluster: null, autoUpdate: null },
   { id: "mailpig", kind: "mail", name: "Mailpig", console: "Mailpig", licensing: [{ from: 2005, kind: "free", fee: 0 }], tickets: 1, live: false, split: true, balloon: null, controlPlane: { vcpu: 1, ramGb: 2, diskGb: 20 }, installHours: 2, from: 2015 , migration: { same: null, other: null }, cluster: null, autoUpdate: null },
+  // Webmail and mail admin front ends of the own mail server (docs/design/plans/webmail-server.md, 2.1).
+  { id: "squirrelmeal", kind: "mailweb", name: "SquirrelMeal", console: "SquirrelMeal", licensing: [{ from: 2005, kind: "free", fee: 0 }], tickets: 0, live: false, split: true, balloon: null, controlPlane: { vcpu: 0.25, ramGb: 0.5, diskGb: 1 }, installHours: 1, from: 2005, migration: { same: null, other: null }, cluster: null, autoUpdate: null },
+  { id: "postfixitadmin", kind: "mailweb", name: "Postfixit Admin", console: "Postfixit Admin", licensing: [{ from: 2005, kind: "free", fee: 0 }], tickets: 0, live: false, split: true, balloon: null, controlPlane: { vcpu: 0.25, ramGb: 0.5, diskGb: 2 }, installHours: 1, from: 2005, migration: { same: null, other: null }, cluster: null, autoUpdate: null },
   // Backup software: a repository other clusters back up to; backs lists what it reads.
   { id: "backula", kind: "backup", name: "Backula", console: "Backula", licensing: [{ from: 2005, kind: "free", fee: 0 }], tickets: 0, live: false, split: true, balloon: null, controlPlane: { vcpu: 0.5, ramGb: 1, diskGb: 10 }, installHours: 3, from: 2005, migration: { same: null, other: null }, cluster: null, autoUpdate: null, backs: { ...Object.fromEntries(FILES.map((id) => [id, 2005])), proxmocks: 2005, openstash: 2012 } },
   { id: "veeham", kind: "backup", name: "Veeham Backup", console: "Veeham Backup and Replication", licensing: [{ from: 2008, kind: "once", fee: 600, upgrade: 300 }, { from: 2018, kind: "server", fee: 480, period: "year" }], trialDays: 30, tickets: 0, live: false, split: true, balloon: null, controlPlane: { vcpu: 2, ramGb: 4, diskGb: 20 }, installHours: 2, from: 2008, migration: { same: null, other: null }, cluster: null, autoUpdate: 2016, backs: { vmwhere: 2008, hypervee: 2011, proxmocks: 2024 } },
@@ -134,13 +139,13 @@ export const SOFTWARE: Software[] = CATALOG.map((x) => ({ ...x, ...ON_MACHINE[x.
 
 // The product lines each kind of software lets a cluster sell; the rest runs on whole servers, in racks or nowhere.
 export const SERVES: Record<SoftwareKind, Product[]> = {
-  panel: ["webHosting"], cloud: ["vps", "gameServer", "cloud", "gpu"], game: ["gameServer"], mail: [], dns: ["dns"], vpn: ["vpn"], storage: ["storage"], backup: [],
+  panel: ["webHosting"], cloud: ["vps", "gameServer", "cloud", "gpu"], game: ["gameServer"], mail: [], mailweb: [], dns: ["dns"], vpn: ["vpn"], storage: ["storage"], backup: [],
 };
 // Kinds that run customers' workloads as containers on one server or VM, the way a game panel does. They take the panel slot.
 export const SERVICE_KINDS: SoftwareKind[] = ["game", "dns", "vpn", "storage"];
 export const isService = (k: SoftwareKind): boolean => SERVICE_KINDS.includes(k);
 // The order the software picker lists the kinds in.
-export const KINDS: SoftwareKind[] = ["cloud", "panel", "game", "dns", "vpn", "storage", "mail", "backup"];
+export const KINDS: SoftwareKind[] = ["cloud", "panel", "game", "dns", "vpn", "storage", "mail", "mailweb", "backup"];
 // Game servers also run on plain virtual machines, so a line can have more than one kind; kindServing is the general one.
 // A reseller block lives on a web panel host but is never sold from the shop, so it is not in SERVES.
 const served = (p: Product): Product => (p === "reseller" ? "webHosting" : p);
@@ -156,7 +161,7 @@ export const BINARIES: Record<string, string> = {
   cpanic: "cpanic", pleskit: "pleskit", directadmen: "da", freepanel: "freepanel", openveezee: "vzctl", openstash: "stash", vmwhere: "esxwhere",
   proxmocks: "pvm", hypervee: "hypervee", tcadmen: "tcadmen", multikraft: "multikraft", pterodaktyl: "ptero", bound: "boundc", powerdnz: "pdnzutil",
   knut: "knutc", openveepeen: "ovpn", anyconnekt: "anyconnekt", wireguarded: "wgd", vsftpeed: "vsftpeed", ownclod: "occ", minnio: "mnc",
-  postfixit: "postfixit", mailpig: "mailpig", backula: "bconsola", veeham: "veeham",
+  postfixit: "postfixit", mailpig: "mailpig", squirrelmeal: "squirrelmeal-configure", postfixitadmin: "postfixitadmin-cli", backula: "bconsola", veeham: "veeham",
 };
 // Whether the target's migration tool applies to a web space coming from the source panel in that year.
 export const importsFrom = (target: Software, source: string, year: number): boolean => {
@@ -184,9 +189,10 @@ export const SNAPSHOTS_MAX = 3;
 export const SNAPSHOT_GROWTH = 0.05;
 export const balancerIn = (sw: Software, year: number): Software["balancer"] | null => (sw.balancer && year >= sw.balancer.from ? sw.balancer : null);
 export const balloons = (sw: Software, year: number): boolean => sw.balloon !== null && year >= sw.balloon;
-// Why a and b cannot share a machine, as an error key, or null.
+// Why a and b cannot share a machine, as an error key, or null. Mail front ends share one web server under their own paths.
 export const conflict = (a: Software, b: Software): string | null =>
-  a.exclusive && a.exclusive === b.exclusive ? "error.oneHypervisor" : a.ports.some((p) => b.ports.includes(p)) ? "error.portTaken" : null;
+  a.exclusive && a.exclusive === b.exclusive ? "error.oneHypervisor"
+    : !(a.kind === "mailweb" && b.kind === "mailweb" && a.id !== b.id) && a.ports.some((p) => b.ports.includes(p)) ? "error.portTaken" : null;
 export const runsOn = (sw: Software, osId: ServerOsId): boolean => sw.os.includes(osId);
 export const softwareOf = (kind: SoftwareKind): Software[] => SOFTWARE.filter((x) => x.kind === kind);
 

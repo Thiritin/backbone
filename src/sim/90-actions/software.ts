@@ -14,6 +14,7 @@ import type { Resources } from "../10-catalog/products";
 import { createVm, freeServer, installHypervisor, installPanel, installPanelInVm, PANEL_VM_SIZE, phpDue, removeNode, templateOs, upgradeNodePhp } from "./clusters";
 import type { ActionResult } from "./hardware";
 import { keysShort } from "./licence";
+import { dropWebmail, startWebmail } from "./mail-server";
 
 // A machine is a server or one of the player's own VMs, with the software on its disk; VMs take no hypervisor. Each
 // software is the control plane of one of the machine's clusters. doneAt is null once installed.
@@ -92,6 +93,7 @@ export function installSoftware(s: GameState, machineId: string, softwareId: str
   if (block) return { ok: false, error: block };
   const done = !isServer(s, machineId) ? installPanelInVm(s, machineId, sw.id) : sw.kind === "cloud" ? installHypervisor(s, machineId, sw.id) : installPanel(s, machineId, sw.id);
   if (done.ok) licenseInstall(s, machineId, sw.id, version, key);
+  if (done.ok && sw.kind === "mailweb") startWebmail(s, done.id!);
   if (done.ok && sw.kind === "mail") s.company = { ...s.company, mail: { kind: "self", software: sw.id as "postfixit" | "mailpig", clusterId: done.id! } };
   return done;
 }
@@ -114,7 +116,7 @@ export function createSoftwareVm(s: GameState, clusterId: string, softwareId: st
 
 // economy.md, Security advisories, Updating: minutes the customers on a cluster are down while its software updates. A
 // hypervisor takes 2 hours per node, with every node down at once unless the software moves virtual machines live.
-export const UPDATE_MINUTES: Record<SoftwareKind, number> = { panel: 30, game: 30, mail: 15, cloud: 120, dns: 15, vpn: 15, storage: 30, backup: 15 };
+export const UPDATE_MINUTES: Record<SoftwareKind, number> = { panel: 30, game: 30, mail: 15, mailweb: 15, cloud: 120, dns: 15, vpn: 15, storage: 30, backup: 15 };
 
 export const updateDue = (s: GameState, c: Cluster): boolean =>
   !!familyOf(c) && !c.switching && (c.version < targetYear(channelOf(c), s.hour) || openVulns(s, c.id).length > 0);
@@ -183,6 +185,7 @@ export function uninstallSoftware(s: GameState, machineId: string, softwareId?: 
   const busy = node ? !emptyOf(s, c, machineId) : s.workloads.some((w) => w.clusterId === c.id);
   if (busy) return { ok: false, error: "error.softwareInUse" };
   const done = node ? removeNode(s, machineId, c.id) : (dropCluster(s, c.id), { ok: true as const });
+  if (done.ok && c.kind === "mailweb") dropWebmail(s, c.id);
   releaseGone(s);
   return done;
 }
@@ -193,7 +196,7 @@ export interface Upgrade { pkg: string; from: string; to: string; minutes: numbe
 
 const release = (hour: number) => `${yearOf(hour)}.${dateOf(hour).getUTCMonth() + 1}`;
 // Debian named PHP by its major version up to 5, then by major and minor.
-const phpPackage = (v: string) => { const [a, b] = v.split("."); return Number(a) < 7 ? `php${a}` : `php${a}.${b}`; };
+export const phpPackage = (v: string) => { const [a, b] = v.split("."); return Number(a) < 7 ? `php${a}` : `php${a}.${b}`; };
 
 export function upgradable(s: GameState, deviceId: string): Upgrade[] {
   const mine = s.clusters.filter((c) => c.nodes.some((n) => n.deviceId === deviceId) || anchorOf(s, c) === deviceId);

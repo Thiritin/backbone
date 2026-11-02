@@ -1,0 +1,26 @@
+import type { Dict } from "../lang";
+
+export default {
+  "swnews.squirrelmeal.1.4.4": () => "Correctifs de sécurité pour la page de rédaction|Meilleure gestion des courriers MIME défectueux|Traductions mises à jour",
+  "swnews.squirrelmeal.1.5.1": () => "Version de développement de la branche 1.5|Nouvelles icônes dans la liste des dossiers|Modèles pour la mise en page",
+  "swnews.squirrelmeal.1.4.5": () => "Correctifs pour des failles de cross-site scripting|Liste des dossiers plus rapide|Compatibilité avec PHP 5",
+  "swnews.squirrelmeal.1.4.6": () => "Correctifs de sécurité dans le carnet d'adresses|Meilleurs messages d'erreur IMAP|Traductions mises à jour",
+  "swnews.squirrelmeal.1.4.10": () => "Correctifs de sécurité pour le courrier HTML|Correctifs du tri des dossiers|Meilleure prise en charge de PHP 5.2",
+  "swnews.squirrelmeal.1.4.13": () => "Les téléchargements de 1.4.11 et 1.4.12 ont été remplacés par des copies altérées après une intrusion sur le serveur de téléchargement|Réinstallez à partir de cette version et vérifiez vos fichiers|Correctifs de sécurité",
+  "swnews.squirrelmeal.1.4.15": () => "Correctifs de sécurité|Meilleure gestion de l'UTF-8|Correctifs pour la gestion des sessions",
+  "swnews.squirrelmeal.1.4.16": () => "Correctif d'une fuite du cookie de session sur HTTP non chiffré|Traductions mises à jour|Correctifs mineurs",
+  "swnews.squirrelmeal.1.4.17": () => "Correctifs de sécurité pour le cross-site scripting|Meilleur filtre HTML|Correctifs mineurs",
+  "swnews.squirrelmeal.1.4.19": () => "Correctifs de sécurité pour la fonction map_yp_alias|Correctifs de l'affichage des messages|Traductions mises à jour",
+  "swnews.squirrelmeal.1.4.20": () => "Prise en charge de PHP 5.3|Correctifs de sécurité|Correctifs mineurs",
+  "swnews.squirrelmeal.1.4.21": () => "Correctifs pour la connexion avec de longs mots de passe|Correctifs de sécurité|Correctifs mineurs",
+  "swnews.squirrelmeal.1.4.22": () => "La dernière version numérotée|Correctifs de sécurité pour le courrier HTML|Meilleure protection contre le clickjacking",
+  "swnews.squirrelmeal.1.4.23": () => "Instantané pour PHP 5.4 et 5.5|Correctifs de sécurité|Filtre HTML mis à jour",
+  "swnews.squirrelmeal.1.4.23 (2021)": () => "Instantané qui fonctionne sous PHP 8|Correctifs de sécurité|Traductions mises à jour",
+  "swnews.squirrelmeal.1.5.2": () => "Version de développement pour PHP 8|Nouveau jeu de modèles|Plugins mis à jour",
+  "swnews.postfixitadmin.2.1": () => "Domaines, boîtes aux lettres et alias virtuels|Administrateurs de domaine|Réponses d'absence",
+  "swnews.postfixitadmin.2.2": () => "Récupération du courrier d'autres comptes|Meilleur chiffrement des mots de passe|Traductions mises à jour",
+  "swnews.postfixitadmin.2.3": () => "Domaines alias|Interface en ligne de commande|Schémas de mot de passe de Dovecoat",
+  "swnews.postfixitadmin.3.0": () => "Nouvel aspect basé sur Bootstrap|Prise en charge de PHP 7|Mot de passe d'installation plus sûr",
+  "swnews.postfixitadmin.3.2": () => "Installation en deux étapes|Meilleur affichage du quota|Prise en charge de PHP 7.2",
+  "swnews.postfixitadmin.3.3": () => "Prise en charge de PHP 8|Expiration des mots de passe|Correctifs de sécurité",
+} satisfies Dict;

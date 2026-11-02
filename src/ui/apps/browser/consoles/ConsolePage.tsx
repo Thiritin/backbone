@@ -28,13 +28,15 @@ import { MinnIO } from "./minnio/MinnIO";
 import { OpenVeePeeN } from "./openveepeen/OpenVeePeeN";
 import { OwnClod } from "./ownclod/OwnClod";
 import { PowerDnz } from "./powerdnz/PowerDnz";
+import { PostfixitAdmin } from "./postfixitadmin/PostfixitAdmin";
+import { SquirrelMeal } from "./squirrelmeal/SquirrelMeal";
 import { LicenceGate } from "./Readouts";
 import "./consoles.css";
 
 export const CONSOLES: Record<string, ComponentType<PanelProps>> = {
   cpanic: CPanic, pleskit: Pleskit, directadmen: DirectAdmen, freepanel: FreePanel, tcadmen: TCAdmen, multikraft: MultiKraft, pterodaktyl: Pterodaktyl,
   proxmocks: Proxmocks, vmwhere: VmWhere, hypervee: HyperVee, openveezee: OpenVeeZee, openstash: Horizont,
-  powerdnz: PowerDnz, openveepeen: OpenVeePeeN, anyconnekt: AnyConnekt, ownclod: OwnClod, minnio: MinnIO, mailpig: Mailpig,
+  powerdnz: PowerDnz, openveepeen: OpenVeePeeN, anyconnekt: AnyConnekt, ownclod: OwnClod, minnio: MinnIO, mailpig: Mailpig, squirrelmeal: SquirrelMeal, postfixitadmin: PostfixitAdmin,
   veeham: BackupConsole, proxmocksBackup: BackupConsole,
 };
 
@@ -54,6 +56,6 @@ export function ConsolePage({ game, hostname, host, cluster, defaced, path }: { 
   if (CLI_ONLY.has(family)) return <HostCli game={game} c={cluster} family={family} host={host} name={hostname} />;
   if (defaced) return <Defaced />;
   if (!Panel) return null;
-  if (logins.includes(hostname) && (cluster.setupPending || panelLocked(game, cluster))) return <LicenceGate game={game} c={cluster} host={host} />;
+  if (cluster.kind !== "mailweb" && logins.includes(hostname) && (cluster.setupPending || panelLocked(game, cluster))) return <LicenceGate game={game} c={cluster} host={host} />;
   return <Panel key={path ?? "/"} path={path} game={game} c={cluster} f={consoleFeatures(family, yearOf(game.hour))} host={host} signedIn={logins.includes(hostname)} login={() => setLogins([...logins, hostname])} logout={() => setLogins(logins.filter((x) => x !== hostname))} />;
 }
