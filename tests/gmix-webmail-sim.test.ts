@@ -32,7 +32,7 @@ describe("GMix webmail rules", () => {
     s.hour = hourOfMonth("2010-06");
     const mail = { from: addr(s, a.id), to: ["friend@yahoy.com"], subject: "Photos", text: "", att: [{ k: "file" as const, name: "photos.zip", kb: 21 * 1024 }] };
     const r = sendMessage(s, a.id, mail);
-    expect(r).toMatchObject({ ok: false, error: "error.mailAttach", params: { mb: "5" } });
+    expect(err(r)).toBe("error.mailAttach");
     s.hour = hourOfMonth("2012-06");
     expect(err(sendMessage(s, a.id, mail))).toBe("error.mailAttach");
     expect(setGmixTier(s, a.tenant, "pro").ok).toBe(true);

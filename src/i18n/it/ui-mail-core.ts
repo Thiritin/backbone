@@ -58,7 +58,7 @@ export default {
   "error.mailFilterRule": () => "Un filtro richiede da 1 a 5 condizioni e da 1 a 5 azioni.",
   "error.mailFilterMax": () => "Questa casella non accetta altri filtri.",
   "error.mailFrom": () => "Questa casella non può inviare da questo indirizzo.",
-  "error.mailAttach": (p) => `L'allegato supera ${p.mb} MB, il limite di questa casella.`,
+  "error.mailAttach": () => "L'allegato supera la dimensione accettata da questa casella.",
   "error.mailFetchLoop": () => "Questa casella raccoglie già da quell'account, oppure quell'account raccoglie da questa.",
   "error.mailCollectors": (p) => `Questo piano raccoglie al massimo da ${p.n} account.`,
   "error.mailFolder": () => "Questa casella non accetta altre cartelle.",

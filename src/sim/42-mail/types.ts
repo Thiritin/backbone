@@ -33,7 +33,7 @@ export interface MailAccount {
   shared?: true;               // a shared mailbox: no password and no direct sign-in, opened from the other mailboxes of its tenant
   suspended?: true;            // the admin blocked sign-in; the box still receives and bills
   external?: boolean;          // "Allow external programs to fetch mail": IMAP and POP logins fail while it is false; new GMix boxes start false
-  prefs?: Record<string, string | number | boolean>;  // webmail preferences, at most 30 keys; core reads spam, spamAction and imapDelete
+  prefs?: Record<string, string | number | boolean>;  // webmail preferences, at most 30 keys; core reads spam, spamAction, imapDelete, allow and block
   roles: MailRole[];           // roles the player assigned; the name adds more
   aliases: string[];           // extra local parts on the same domain
   quotaMb: number | null;      // null follows the plan; own servers store the player's value

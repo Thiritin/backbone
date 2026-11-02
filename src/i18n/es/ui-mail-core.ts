@@ -58,7 +58,7 @@ export default {
   "error.mailFilterRule": () => "Un filtro necesita de 1 a 5 condiciones y de 1 a 5 acciones.",
   "error.mailFilterMax": () => "Este buzón no admite más filtros.",
   "error.mailFrom": () => "Este buzón no puede enviar desde esta dirección.",
-  "error.mailAttach": (p) => `El adjunto supera ${p.mb} MB, el límite de este buzón.`,
+  "error.mailAttach": () => "El adjunto supera el tamaño que acepta este buzón.",
   "error.mailFetchLoop": () => "Este buzón ya recoge de esa cuenta, o esa cuenta recoge de este buzón.",
   "error.mailCollectors": (p) => `Este plan recoge de un máximo de ${p.n} cuentas.`,
   "error.mailFolder": () => "Este buzón no admite más carpetas.",
