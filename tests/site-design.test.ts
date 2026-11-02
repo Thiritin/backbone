@@ -4,8 +4,8 @@ import { sizeSpec } from "../src/sim/10-catalog/products";
 import { leadFlows } from "../src/sim/30-market/market";
 import { run as runBalance, STEADY } from "../src/sim/balance/model";
 import type { GameState } from "../src/sim/50-state";
-import { leadsThisMonth, OWNED } from "../src/sim/80-business/marketing";
-import { agePenalty, customerSite, generationOf, siteFactor, siteStatus } from "../src/sim/80-business/website";
+import { leadsThisMonth } from "../src/sim/80-business/marketing";
+import { agePenalty, customerSite, designQuote, generationOf, siteFactor, siteStatus } from "../src/sim/80-business/website";
 import { tick } from "../src/sim/88-tick/tick";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
@@ -178,23 +178,21 @@ describe("design ages", () => {
     expect(generationOf(yearOf(s.hour))).toBe(2013);
   });
 
-  it("redesigns for the web design price, resets the penalty and refuses a current design", () => {
+  it("orders a redesign for the agency price and resets the penalty once it is delivered", () => {
     const s = readyGame(1);
     s.cash = 100000;
     expect(redesign(s)).toEqual({ ok: false, error: "error.needsWebsite" });
     ok(setUpChannel(s, "website"));
-    expect(redesign(s)).toEqual({ ok: false, error: "error.designCurrent" });
     inYear(s, 2017);
     expect(agePenalty(s)).toBe(0.6);
     const cash = s.cash;
     ok(redesign(s));
-    expect(s.cash).toBe(cash - OWNED.website.setup);
-    expect(s.cash).toBe(cash - 400);
+    expect(s.cash).toBe(cash - designQuote(s));
+    expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.redesign", category: "marketing", amount: -designQuote(s) });
+    expect(en["ledger.redesign"]({})).toBe("Website redesign");
+    run(s, 14 * 24);
     expect(s.marketing.designYear).toBe(2017);
     expect(agePenalty(s)).toBe(1);
-    expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.redesign", category: "marketing", amount: -400 });
-    expect(en["ledger.redesign"]({})).toBe("Website redesign");
-    expect(redesign(s)).toEqual({ ok: false, error: "error.designCurrent" });
     inYear(s, 2021);
     s.cash = 100;
     expect(redesign(s)).toEqual({ ok: false, error: "error.noCash" });

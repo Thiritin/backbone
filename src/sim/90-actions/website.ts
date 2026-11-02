@@ -1,9 +1,9 @@
 import { yearOf } from "../00-core/time";
 import type { Product } from "../30-customers/customers";
 import type { GameState } from "../50-state";
-import { OWNED, owns, type SiteHost } from "../80-business/marketing";
+import { owns, type SiteHost } from "../80-business/marketing";
 import { shopActive } from "../80-business/shop";
-import { generationOf, lineBlocker, SITE_BUILD_HOURS, SITE_LINES, siteBuilt, siteRoom } from "../80-business/website";
+import { DESIGN_DAYS, designQuote, generationOf, lineBlocker, SITE_BUILD_HOURS, SITE_LINES, siteBuilt, siteRoom } from "../80-business/website";
 import type { ActionResult } from "./hardware";
 
 // Lists or removes a product line on the website; removing one stops new requests and keeps existing customers.
@@ -60,14 +60,14 @@ export function setSiteHost(s: GameState, host: SiteHost): ActionResult {
   return { ok: true };
 }
 
-// A new design for the price of the web design setup, in the generation of the current year.
+// Orders a new design from the agency at its price for the year and the company level; it goes live DESIGN_DAYS later.
 export function redesign(s: GameState): ActionResult {
-  const { setup } = OWNED.website, generation = generationOf(yearOf(s.hour));
   if (!owns(s, "website")) return { ok: false, error: "error.needsWebsite" };
-  if (s.marketing.designYear >= generation) return { ok: false, error: "error.designCurrent" };
-  if (s.cash < setup) return { ok: false, error: "error.noCash" };
-  s.cash = Math.round((s.cash - setup) * 100) / 100;
-  s.ledger = [...s.ledger, { hour: s.hour, category: "marketing", key: "ledger.redesign", params: {}, amount: -setup }];
-  s.marketing = { ...s.marketing, designYear: generation };
+  if (s.marketing.designReady) return { ok: false, error: "error.designOrdered" };
+  const price = designQuote(s);
+  if (s.cash < price) return { ok: false, error: "error.noCash" };
+  s.cash = Math.round((s.cash - price) * 100) / 100;
+  s.ledger = [...s.ledger, { hour: s.hour, category: "marketing", key: "ledger.redesign", params: {}, amount: -price }];
+  s.marketing = { ...s.marketing, designReady: { hour: s.hour + DESIGN_DAYS * 24, year: generationOf(yearOf(s.hour)) } };
   return { ok: true };
 }

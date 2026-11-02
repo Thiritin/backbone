@@ -13,7 +13,7 @@ import { campaignBoost, hasMarketingManager, reviewBoost } from "../47-staff/sta
 import { communityBatches } from "./community";
 import { fairBatches, fairGain } from "./fairs";
 import { shopBills, shopTick } from "./shop";
-import { siteBuiltEvent, siteDownEvent, siteFactor, siteHostingCost, siteStatus } from "./website";
+import { designTick, siteBuiltEvent, siteDownEvent, siteFactor, siteHostingCost, siteStatus } from "./website";
 
 export const PROFILE_IDS: Profile[] = ["private", "gamer", "hobbyDev", "soleProp", "smallBiz", "agency", "office", "onlineShop", "enterprise"];
 
@@ -78,6 +78,8 @@ export interface Marketing {
   // Where the company site runs, the generation of its design and whether the current outage has been announced.
   siteHost: SiteHost;
   designYear: number;
+  // The redesign on order: the hour it is delivered and the generation it brings. Null when none is on order.
+  designReady: { hour: number; year: number } | null;
   siteOutage: boolean;
   // Leads per line lost because no catalog product fitted, this month and last month.
   unmet: { month: Partial<Record<Product, number>>; last: Partial<Record<Product, number>> };
@@ -98,7 +100,7 @@ export function wonLeads(s: GameState, ago: 0 | 1): Partial<Record<Product, numb
 }
 
 export const newMarketing = (): Marketing => ({
-  owned: [], campaigns: [], reviews: [], platform: null, studies: [], lines: [], emailOrders: true, customRequests: true, siteReady: null, launched: false, siteHost: { kind: "rented" }, designYear: 2005, siteOutage: false, unmet: { month: {}, last: {} }, published: null,
+  owned: [], campaigns: [], reviews: [], platform: null, studies: [], lines: [], emailOrders: true, customRequests: true, siteReady: null, launched: false, siteHost: { kind: "rented" }, designYear: 2005, designReady: null, siteOutage: false, unmet: { month: {}, last: {} }, published: null,
   awareness: Object.fromEntries(PROFILE_IDS.map((p) => [p, p === "private" || p === "gamer" ? 0.05 : AWARENESS_FLOOR])) as Record<Profile, number>,
 });
 
@@ -236,6 +238,7 @@ export function marketingTick(s: GameState): SimEvent[] {
   const events: SimEvent[] = [];
   rollReviews(s, events);
   siteBuiltEvent(s, events);
+  designTick(s, events);
   siteDownEvent(s, events);
   shopTick(s, events);
   if (!isMonthStart(s.hour)) return events;

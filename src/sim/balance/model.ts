@@ -19,7 +19,7 @@ import { CYCLE_SHARE, MARKET_DISCOUNT } from "../10-catalog/cycles";
 import { SHOPS } from "../10-catalog/shops";
 import { shopOnSale, shopUpfront } from "../10-catalog/shop-licences";
 import { BUDGETS, OWNED, PROFILE_IDS, SATURATION, WEBSITE_LEADS } from "../80-business/marketing";
-import { generationOf, penaltyFor, SITE_RENT } from "../80-business/website";
+import { designPrice, generationOf, penaltyFor, SITE_RENT } from "../80-business/website";
 import { annuity, baseRate, LOAN_AMOUNTS, MIN_LIMIT, RISK_PREMIUM } from "../45-billing/billing";
 import { LEASE_FACTOR, LEASE_TERMS } from "../10-catalog/leasing";
 import { genOf, modelById, type DeviceModel } from "../10-catalog/hardware";
@@ -237,9 +237,9 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
 
     // Leads (Market and leads), as 30-market/market.ts leadFlows: organic by awareness and referrals from happy customers,
     // capped per city, plus website and search campaign leads, of which 10% spill to cities without a location.
-    if (!website && rackUnlocked && cash > 3000 + OWNED.website.setup + shopSetup(year)) { website = true; designYear = generationOf(year); cash -= OWNED.website.setup + shopSetup(year); }
+    if (!website && rackUnlocked && cash > 3000 + designPrice(year, level) + shopSetup(year)) { website = true; designYear = generationOf(year); cash -= designPrice(year, level) + shopSetup(year); }
     // The bot redesigns once the site is 2 generations behind; its site stays on the rented host.
-    if (website && generationOf(year) - designYear >= 8 && cash > 5000) { designYear = generationOf(year); cash -= OWNED.website.setup; }
+    if (website && generationOf(year) - designYear >= 8 && cash > 5000 + designPrice(year, level)) { designYear = generationOf(year); cash -= designPrice(year, level); }
     // The search campaign: the largest preset budget within the bot's ad share, spread over every profile and city.
     const adSpent = cash > 3000 ? BUDGETS.filter((b) => b <= bot.adShare * lastMrr).at(-1) ?? 0 : 0;
     const perCity = adSpent / cities, dearer = 1 + perCity / SATURATION;

@@ -4,7 +4,6 @@ type Params = Record<string, string | number>;
 export const SITE_EN: Record<string, (p: Params) => string> = {
   "ledger.siteHosting": () => "Website hosting: Strateaux",
   "ledger.redesign": () => "Website redesign",
-  "error.designCurrent": () => "The website already has the current design.",
   "error.siteHostPanel": () => "Only a web hosting panel host can run the website.",
   "error.siteHostNoRoom": () => "This host has no room for the website.",
   "error.siteStarted": () => "The website is already being built.",
