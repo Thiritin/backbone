@@ -5,6 +5,7 @@ import { deskItem, monthlyCharge, subscriptionEntry } from "../10-catalog/store"
 import { deskPath } from "../80-business/deskroutes";
 import { dropDesk, openDesk } from "../40-support/desk";
 import { deskRecords } from "../40-support/desk-records";
+import { deliver } from "../42-mail/deliver";
 import { deliverMail } from "../40-support/tickets";
 import { licenceBlock } from "../60-infra/licence";
 import type { GameState } from "../50-state";
@@ -64,4 +65,17 @@ export function verifyDesk(s: GameState): ActionResult {
   const rows = deskRecords(s);
   if (!s.desk || !rows.length) return fail("error.noDesk");
   return rows.every((r) => r.ok) ? { ok: true } : fail("error.deskRecords");
+}
+
+// Verify forwarding on a hosted desk's support address: the vendor mails the address, and the mailbox's forward rule must
+// pass the message on to the tenant's own address.
+export function verifyForwarding(s: GameState, channelId: string): ActionResult {
+  const d = s.desk && deskById(s.desk.id), ch = s.mail.channels.find((c) => c.id === channelId && c.desk === s.desk?.id);
+  const a = ch && s.mail.accounts.find((x) => x.id === ch.accountId);
+  if (d?.hosting !== "hosted" || !ch || !a) return fail("error.noDesk");
+  const target = `support@${tenantHost(d, s.desk!.tenant ?? "")}`, seen = new Set(s.mail.trace);
+  deliver(s, { to: `${a.local}@${a.domain}`, from: `n:${d.name}`, kind: "system", topic: "deskForwardTest", p: { desk: d.name, address: target } });
+  const passed = s.mail.trace.some((e) => !seen.has(e) && e.to === target && e.result === "accepted");
+  s.mail = { ...s.mail, channels: s.mail.channels.map((c) => (c.id === ch.id ? { ...c, verified: passed } : c)) };
+  return passed ? { ok: true } : fail("error.deskForwarding");
 }

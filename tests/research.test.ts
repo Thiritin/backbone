@@ -9,7 +9,7 @@ import { en } from "../src/i18n/en";
 import type { Dict } from "../src/i18n/lang";
 import { type GameState } from "../src/sim/50-state";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
-import { install, research } from "../src/sim/90-actions/store";
+import { canResearchAny, install, research } from "../src/sim/90-actions/store";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { SKILL_PAGES } from "../src/ui/desktop/intro-text";
 
@@ -71,6 +71,15 @@ describe("research", () => {
     expect(s.knowHow).toBe(950);
     expect(s.training).toEqual({ id: "monitoring", doneAt: s.hour + 5 * 24 });
     expect(research(s, "people")).toEqual({ ok: false, error: "error.trainingBusy" });
+  });
+
+  it("flags a startable research only while affordable and idle", () => {
+    const s = newGame(11);
+    expect(canResearchAny(s)).toBe(false);
+    s.knowHow = 1000;
+    expect(canResearchAny(s)).toBe(true);
+    research(s, "monitoring");
+    expect(canResearchAny(s)).toBe(false);
   });
 
   it("learns the skill when the training ends and opens its Pear Store item", () => {

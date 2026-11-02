@@ -8,7 +8,7 @@ import type { GameState } from "../../../sim/50-state";
 import { yearOf } from "../../../sim/00-core/time";
 import { shopVendorUrl } from "../../../sim/80-business/shoplink";
 import { knowHowPerMonth } from "../../../sim/88-tick/tick";
-import { research } from "../../../sim/90-actions/store";
+import { research, researchBlocker } from "../../../sim/90-actions/store";
 import { useFocus, useStore } from "../../store";
 import { Tile } from "../shop/Software";
 import "./research.css";
@@ -100,7 +100,7 @@ function Panel({ k, g }: { k: Skill; g: GameState }) {
   const { act, setExplain } = useStore();
   const state = stateOf(g, k);
   const next = SKILLS.filter((s) => s.needs.includes(k.id));
-  const canStart = state === "open" && !g.training && g.knowHow >= k.knowHow;
+  const canStart = state === "open" && !researchBlocker(g, k.id);
   const facts: [string, ReactNode][] = [
     [t("misc2.cost"), <span className="num">{t("misc2.costValue", { n: k.knowHow })}</span>],
     [t("misc2.training"), <span className="num">{t("misc2.trainingValue", { n: k.days })}</span>],

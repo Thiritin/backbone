@@ -65,7 +65,7 @@ export function nextRef(s: GameState, t: Pick<Ticket, "id">): string {
 
 // A new desk: one Support department and one channel on the primary mailbox that has fetched every ticket at its creation hour.
 export function openDesk(s: GameState, id: DeskId, hosting: DeskHosting = { kind: "legacy" }, tenant: string | null = null): void {
-  const channel = { id: `ch${s.nextId++}`, accountId: s.mail.primary, desk: id, after: "keep" as const, folder: null, since: 0 };
+  const channel = { id: `ch${s.nextId++}`, accountId: s.mail.primary, desk: id, after: "keep" as const, folder: null, since: 0, verified: false };
   s.mail = { ...s.mail, channels: [...s.mail.channels.filter((c) => !s.desk || c.desk !== s.desk.id), channel] };
   s.desk = {
     id, hosting, tenant, rules: [], addons: {}, lastRef: 0,
