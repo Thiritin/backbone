@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { hourOf } from "../src/sim/00-core/time";
-import { iban, openAccount, type Draft } from "../src/sim/46-finance/bank";
+import { dateOf, hourOf } from "../src/sim/00-core/time";
+import { cardDetails, iban, openAccount, type Draft } from "../src/sim/46-finance/bank";
 import { buyCart, deliveryWait, PREPAY_HOURS, type CartLine } from "../src/sim/90-actions/hardware";
 import { applyCard, applyOverdraft, deleteStandingOrder, startStandingOrder } from "../src/sim/90-actions/bank";
 import { withServer, newGame } from "./fixtures";
@@ -202,6 +202,22 @@ describe("card and overdraft", () => {
     expect(s.bank!.card!.limit).toBe(4500);
     expect(s.tickets.some((t) => t.topic === "bankCard")).toBe(true);
     expect(s.ledger.some((e) => e.key === "ledger.cardFee" && e.amount === -30)).toBe(true);
+  });
+
+  it("prints a fixed card number that passes Luhn and names it in the approval mail", () => {
+    const s = banked();
+    expect(cardDetails(s)).toBeNull();
+    applyCard(s);
+    run(s, 72);
+    const c = cardDetails(s)!, digits = c.number.replace(/ /g, "").split("").map(Number);
+    expect(c.number).toMatch(/^\d{4} \d{4} \d{4} \d{4}$/);
+    expect(digits.reverse().reduce((n, d, i) => n + (i % 2 ? (d * 2 > 9 ? d * 2 - 9 : d * 2) : d), 0) % 10).toBe(0);
+    expect(c.cvc).toMatch(/^\d{3}$/);
+    const ready = dateOf(s.bank!.card!.readyAt);
+    expect(c.expires).toBe(`${String(ready.getUTCMonth() + 1).padStart(2, "0")}/${String((ready.getUTCFullYear() + 3) % 100).padStart(2, "0")}`);
+    expect(c.holder).toBe(s.company.name);
+    expect(cardDetails(s)).toEqual(c);
+    expect(s.tickets.find((t) => t.topic === "bankCard")!.mail!.params).toMatchObject({ last4: c.number.slice(-4) });
   });
 
   it("ships a card order now and debits it with the card bill; prepay waits for the transfer", () => {
