@@ -4,7 +4,9 @@ import { PROFILES } from "../../../../../../sim/10-catalog/economy";
 import { deskById } from "../../../../../../sim/10-catalog/desks";
 import { slaPlans } from "../../../../../../sim/40-support/desk-reports";
 import { deskHosts } from "../../../../../../sim/40-support/desk-records";
-import { addDepartment, removeDepartment } from "../../../../../../sim/90-actions/desk";
+import { addDepartment, addDeskChannel, removeDepartment, removeDeskChannel, setDeskChannel, testDeskChannel } from "../../../../../../sim/90-actions/desk";
+import type { DeskChannel } from "../../../../../../sim/42-mail/types";
+import { LOCALE } from "../../../../../../i18n/lang";
 import { useStore } from "../../../../../store";
 import { HELP_TOPICS } from "./Client";
 import { Section, Sub, type OstPage, type OstProps } from "./OsTickitSite";
@@ -90,19 +92,75 @@ const accountOf = ({ game }: OstProps, channelId: string | null): string => {
   return a ? `${a.local}@${a.domain}` : "";
 };
 
+const FREQUENCIES = [1, 2, 4, 6, 12, 24];
+const AFTER: Record<DeskChannel["mode"], DeskChannel["after"][]> = { imap: ["keep", "read", "move", "delete"], pop: ["keep", "delete"], forward: ["keep"] };
+
+// Emails: the mailboxes the desk fetches, each with its protocol, schedule, what happens to fetched mail, and a test email.
 function Emails(p: OstProps) {
-  const { game } = p, desk = game.desk!;
+  const { game } = p, desk = game.desk!, act = useStore((s) => s.act);
   const chans = game.mail.channels.filter((c) => c.desk === desk.id);
+  const free = game.mail.accounts.filter((a) => a.closedAt === null && !game.mail.channels.some((c) => c.accountId === a.id));
+  const [pick, setPick] = useState(""), [open, setOpen] = useState(chans[0]?.id ?? ""), [result, setResult] = useState<string | null>(null);
+  const ch = chans.find((c) => c.id === open);
+  const set = (patch: Partial<DeskChannel>) => { setResult(null); act(setDeskChannel, ch!.id, patch); };
+  const folders = ch ? game.mail.folders.filter((f) => f.accountId === ch.accountId && !f.label) : [];
   return (
     <Section title={t("ost.admin.emailAddresses")}>
       <table className="ost-list">
-        <thead><tr><th>{t("ost.client.email")}</th><th>{t("ost.department")}</th><th>{t("ost.admin.fetching")}</th></tr></thead>
+        <thead><tr><th>{t("ost.client.email")}</th><th>{t("ost.department")}</th><th>{t("ost.email.protocol")}</th><th>{t("ost.admin.fetching")}</th><th /></tr></thead>
         <tbody>
           {chans.map((c) => (
-            <tr key={c.id}><td>{accountOf(p, c.id)}</td><td>{desk.departments.find((d) => d.channelId === c.id)?.name ?? ""}</td><td>{t("ost.enabled")}</td></tr>
+            <tr key={c.id}>
+              <td><a onClick={() => { setOpen(c.id); setResult(null); }}>{accountOf(p, c.id)}</a></td>
+              <td>{desk.departments.find((d) => d.id === c.deptId)?.name ?? t("ost.email.systemDefault")}</td>
+              <td>{t(`ost.email.${c.mode}`)}</td>
+              <td>{c.error ? <span className="ost-error">{t(c.error)}</span> : t("ost.enabled")}</td>
+              <td><button className="ost-btn alt" onClick={() => act(removeDeskChannel, c.id)}>{t("ost.delete")}</button></td>
+            </tr>
           ))}
         </tbody>
       </table>
+      <form className="ost-inline" onSubmit={(e) => { e.preventDefault(); const r = act(addDeskChannel, pick); if (r.ok) { setPick(""); setOpen(r.id!); } }}>
+        <select aria-label={t("ost.client.email")} value={pick} onChange={(e) => setPick(e.target.value)}>
+          <option value="" />
+          {free.map((a) => <option key={a.id} value={a.id}>{`${a.local}@${a.domain}`}</option>)}
+        </select>
+        <button className="ost-btn" disabled={!pick}>{t("ost.email.addNew")}</button>
+      </form>
+      {ch && (
+        <div className="ost-form">
+          <h3>{accountOf(p, ch.id)}</h3>
+          <label><span>{t("ost.department")}</span>
+            <select value={ch.deptId ?? ""} onChange={(e) => set({ deptId: e.target.value || null })}>
+              <option value="">{t("ost.email.systemDefault")}</option>
+              {desk.departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+            </select></label>
+          <label><span>{t("ost.email.protocol")}</span>
+            <select value={ch.mode} onChange={(e) => { const mode = e.target.value as DeskChannel["mode"]; set({ mode, after: AFTER[mode].includes(ch.after) ? ch.after : "keep" }); }}>
+              {(["imap", "pop"] as const).map((m) => <option key={m} value={m}>{t(`ost.email.${m}`)}</option>)}
+            </select></label>
+          <label><span>{t("ost.email.frequency")}</span>
+            <select value={ch.every} onChange={(e) => set({ every: Number(e.target.value) })}>
+              {FREQUENCIES.map((h) => <option key={h} value={h}>{t("ost.email.minutes", { n: (h * 60).toLocaleString(LOCALE) })}</option>)}
+            </select></label>
+          <label><span>{t("ost.email.fetched")}</span>
+            <select value={ch.after} onChange={(e) => { const after = e.target.value as DeskChannel["after"]; set({ after, folder: after === "move" ? folders[0]?.id ?? null : ch.folder }); }}>
+              {AFTER[ch.mode].map((a) => <option key={a} value={a} disabled={a === "move" && !folders.length}>{t(`ost.email.after.${a}`)}</option>)}
+            </select></label>
+          {ch.after === "move" && (
+            <label><span>{t("ost.email.folder")}</span>
+              <select value={ch.folder ?? ""} onChange={(e) => set({ folder: e.target.value })}>
+                {folders.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+              </select></label>
+          )}
+          <label><span>{t("ost.email.autoResponse")}</span><input type="checkbox" checked={ch.autoReply} onChange={(e) => set({ autoReply: e.target.checked })} /></label>
+          <label><span>{t("ost.email.unknown")}</span><input type="checkbox" checked={ch.unknown} onChange={(e) => set({ unknown: e.target.checked })} /></label>
+          <p className="ost-buttons">
+            <button type="button" className="ost-btn" onClick={() => { const r = act(testDeskChannel, ch.id); setResult(r.ok ? t("ost.email.imported", { n: Number(r.id) }) : null); }}>{t("ost.email.test")}</button>
+          </p>
+          {result && <p className="ost-notice">{result}</p>}
+        </div>
+      )}
     </Section>
   );
 }

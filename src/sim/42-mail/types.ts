@@ -76,6 +76,7 @@ export interface Message {
   labels?: string[];           // Folder ids with label set, on label hosts only
   prev?: string;               // folder before Trash, used by Restore
   re?: string;                 // id of the message answered
+  reply?: number;              // on a Sent copy of a ticket: the index of the reply in the ticket
   late?: true;                 // delivered after waiting in the queue
   snooze?: number;             // hour the message returns to the top of the Inbox as unread; it is out of the list until then
   foot?: string;               // i18n key of the host's footer (a free tier's signature), appended when the message is shown
@@ -114,7 +115,14 @@ export interface DeskChannel {
   after: "keep" | "read" | "move" | "delete"; folder: string | null;  // what the desk does with an imported message
   since: number;
   verified: boolean;  // a hosted desk has seen its forwarding test arrive
-  // support-desk adds its own fields (department, mode, fetch interval) beside these.
+  // support-desk's fields: how the desk reads the box, every how many hours, where new tickets go and what it answers.
+  mode: "imap" | "pop" | "forward";
+  every: number;
+  deptId: string | null;
+  autoReply: boolean;
+  unknown: boolean;           // accept mail from senders who are not customers
+  seen: number;               // highest message number the desk has looked at
+  error: string | null;       // why the last fetch failed
 }
 
 export interface Queued { accountId: string; msg: Message; until: number; why: "down" | "full" }

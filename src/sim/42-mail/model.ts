@@ -3,6 +3,7 @@ import { t } from "../../i18n/en";
 import type { GameState } from "../50-state";
 import type { Ticket } from "../40-support/tickets";
 import { subjectParams } from "../40-support/notices";
+import { companyParams } from "../40-support/replies";
 import { ascii } from "../30-customers/domains";
 import type { Attachment, Folder, Message, SysFolder } from "./types";
 import { GMIX_DOMAIN, gmixLocal } from "./new";
@@ -69,7 +70,10 @@ function sender(s: GameState, m: Message): [string, string] {
 // The only place mail text is rendered, in the active language, so a filter, a search and a screen agree.
 export function view(s: GameState, m: Message): MailView {
   const tk = ticketOf(s, m), [fromName, fromAddress] = sender(s, m);
+  const r = tk && m.reply !== undefined ? tk.replies[m.reply] : undefined;
   const [subject, text] = m.own ? [m.own.subject, m.own.text]
+    : tk && r ? [t("mail.replySubject", { subject: [m.p?.token, t(`ticket.${tk.kind}.${tk.topic}.subject`, subjectParams(s, tk))].filter(Boolean).join(" ") }),
+      r.key ? t(r.key, r.params) : t(`template.${r.template}.text`, companyParams(s))]
     : tk ? (["subject", "text"] as const).map((x) => t(`ticket.${tk.kind}.${tk.topic}.${x}`, subjectParams(s, tk)))
     : (["subject", "text"] as const).map((x) => t(`ticket.mail.${m.topic}.${x}`, m.p));
   return { subject, text: m.foot ? `${text}\n\n${t(m.foot)}` : text, fromName, fromAddress, to: m.to, cc: m.cc ?? [], att: m.att ?? [] };

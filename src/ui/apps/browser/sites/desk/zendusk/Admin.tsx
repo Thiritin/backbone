@@ -11,7 +11,7 @@ import { OWNER, PRIORITIES } from "../../../../../../sim/40-support/desk-work";
 import { TEMPLATES, type TicketKind } from "../../../../../../sim/40-support/tickets";
 import type { GameState } from "../../../../../../sim/50-state";
 import { registrarUrl } from "../../../../../../sim/80-business/browser";
-import { addDepartment, addRule, removeDepartment, removeRule } from "../../../../../../sim/90-actions/desk";
+import { addDepartment, addDeskChannel, addRule, removeDepartment, removeDeskChannel, removeRule } from "../../../../../../sim/90-actions/desk";
 import { removeDesk, verifyDesk, verifyForwarding } from "../../../../../../sim/90-actions/desk-install";
 import { Confirm } from "../../../../../desktop/Confirm";
 import { useStore } from "../../../../../store";
@@ -84,8 +84,9 @@ const tenantAddress = (s: GameState) => `support@${tenantHost(deskById("zendusk"
 
 // Support addresses: the account's own address, and each mailbox that forwards to it once Verify forwarding has seen a message arrive.
 function Email({ game }: { game: GameState }) {
-  const act = useStore((s) => s.act);
+  const act = useStore((s) => s.act), [pick, setPick] = useState("");
   const chans = game.mail.channels.filter((c) => c.desk === "zendusk"), target = tenantAddress(game);
+  const free = game.mail.accounts.filter((a) => a.closedAt === null && !game.mail.channels.some((c) => c.accountId === a.id));
   return (
     <Panel title={t("zd.admin.addresses")}>
       <table className="zd-table">
@@ -97,11 +98,21 @@ function Email({ game }: { game: GameState }) {
               <td>{address(game, c.accountId)}</td>
               <td><code>{target}</code></td>
               <td><span className={c.verified ? "zd-chip ok" : "zd-chip"}>{t(c.verified ? "zd.admin.verified" : "zd.admin.unverified")}</span></td>
-              <td><button type="button" className="zd-btn" onClick={() => act(verifyForwarding, c.id)}>{t("zd.admin.verify")}</button></td>
+              <td>
+                <button type="button" className="zd-btn" onClick={() => act(verifyForwarding, c.id)}>{t("zd.admin.verify")}</button>{" "}
+                <button type="button" className="zd-btn" onClick={() => act(removeDeskChannel, c.id)}>{t("zd.delete")}</button>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
+      <form className="zd-row" onSubmit={(e) => { e.preventDefault(); if (act(addDeskChannel, pick).ok) setPick(""); }}>
+        <select aria-label={t("zd.email")} value={pick} onChange={(e) => setPick(e.target.value)}>
+          <option value="" />
+          {free.map((a) => <option key={a.id} value={a.id}>{address(game, a.id)}</option>)}
+        </select>
+        <button className="zd-btn primary" disabled={!pick}>{t("zd.admin.addAddress")}</button>
+      </form>
     </Panel>
   );
 }
