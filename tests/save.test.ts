@@ -72,6 +72,8 @@ describe("save", () => {
       bank: expect.objectContaining({ id: "sparklasse", welcomed: false }),
       // Registered saves from before the tax office hold a tax number.
       tax: expect.objectContaining({ number: taxNumberOf(4), numberAt: 0, small: false }),
+      // Saves from before Pear Mail get an account for the primary mailbox.
+      pearMail: expect.objectContaining({ welcomed: true, accounts: [expect.objectContaining({ accountId: "mb1" })] }),
     });
     expect(s.devices.map((d) => d.model)).toEqual(["home-router", "line-jack"]);
     tick(s);

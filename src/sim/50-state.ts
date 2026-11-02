@@ -57,6 +57,7 @@ import { newTax, type TaxState } from "./80-business/tax-state";
 import type { StatusDay } from "./80-business/status";
 import type { MailState } from "./42-mail/types";
 import { newMail } from "./42-mail/new";
+import { newPearMail, type PearMailState } from "./43-pear-mail/state";
 import type { DeskState } from "./40-support/desk";
 import type { WebmailState } from "./80-business/webmail";
 
@@ -420,6 +421,8 @@ export interface GameState {
   logins: Record<string, string[]>;
   // Company email: tenants, mailboxes and their messages (42-mail, docs/design/plans/mail-core.md).
   mail: MailState;
+  // Pear Mail, the desktop mail client (43-pear-mail, docs/design/plans/mail-client.md).
+  pearMail: PearMailState;
   // The support desk website, null until one is set up (40-support/desk.ts, docs/design/plans/support-desk.md).
   desk: DeskState | null;
   // The webmail front ends of the own mail server (80-business/webmail.ts).
@@ -524,6 +527,7 @@ export const newGame = (seed: number): GameState => ({
   tax: newTax(),
   logins: {},
   mail: newMail(seed, START_NAME),
+  pearMail: newPearMail(),
   desk: null,
   webmail: { installs: {}, default: null, options: {} },
 });

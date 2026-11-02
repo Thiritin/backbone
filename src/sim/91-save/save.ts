@@ -1,5 +1,6 @@
 import { fillDesk } from "./desk";
 import { fillMail } from "./mail";
+import { fillPearMail } from "./pear-mail";
 import { migrateBooks } from "./books";
 import { fillShop, installSavedShop, ownShopWebspace } from "./shop";
 import { brandsOf, fillCpus, isOfficeRouter, MODELS, modelById, RENAMED_MODELS, wanPort } from "../10-catalog/hardware";
@@ -183,6 +184,7 @@ export function deserialize(raw: string): GameState {
   if (data.shop && data.shop.install === undefined) installSavedShop(s);
   if (!data.ownWebspaces) ownShopWebspace(s);
   fillMail(s, data.mail, !!data.company?.zone);
+  fillPearMail(s, data.pearMail);
   fillDesk(s, data.desk !== undefined);
   s.webmail = { ...base.webmail, ...data.webmail };
   s.webmail.installs = Object.fromEntries(Object.entries(s.webmail.installs).map(([id, cfg]) => [id, { ...cfg, conf: cfg.conf ?? {} }]));
