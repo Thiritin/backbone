@@ -247,7 +247,7 @@ export default {
   "gmix.mail.action.delete": () => "Elimina subito",
   "gmix.mail.allowed": () => "Mittenti consentiti",
   "gmix.mail.blockedList": () => "Mittenti bloccati",
-  "gmix.mail.count": (p) => `${p.n} di ${p.max}`,
+  "gmix.mail.count": (p) => `${p.what}: ${p.n} di ${p.max}`,
   "gmix.mail.on": () => "Attivo",
   "gmix.mail.newFilter": () => "Nuova regola di filtro",
   "gmix.mail.filterName": () => "Nome",

@@ -425,7 +425,7 @@ function FilterSettings({ game, account }: MailProps) {
   };
   return (
     <>
-      <p>{t("gmix.mail.count", { n: mine.length, max: caps.filterMax })}</p>
+      <p>{t("gmix.mail.count", { what: t("gmix.mail.set.filters"), n: mine.length, max: caps.filterMax })}</p>
       {mine.length > 0 && (
         <table className="gxm-list"><tbody>{mine.map((f) => (
           <tr key={f.id}><td><input type="checkbox" aria-label={t("gmix.mail.on")} checked={f.on} onChange={(e) => act(setFilterOn, f.id, e.target.checked)} /></td><td>{f.name}</td>
@@ -471,7 +471,7 @@ function FolderSettings({ game, account }: MailProps) {
   const create = () => { if (act(createMailFolder, account.id, name, parent || null).ok) setName(""); };
   return (
     <>
-      <p>{t("gmix.mail.count", { n: mine.length, max: caps.folderMax })}</p>
+      <p>{t("gmix.mail.count", { what: t("gmix.mail.set.folders"), n: mine.length, max: caps.folderMax })}</p>
       {mine.length > 0 && <table className="gxm-list"><tbody>{mine.map((f) => <FolderRow key={f.id} game={game} account={account} id={f.id} />)}</tbody></table>}
       <form className="gx-form" onSubmit={(e) => { e.preventDefault(); create(); }}>
         <h2>{t("gmix.mail.newFolder")}</h2>
@@ -521,7 +521,7 @@ function CollectorSettings({ game, account }: MailProps) {
   const add = () => { if (act(saveFetchRule, account.id, { source, proto, password, leave, folder: folder === "inbox" ? null : folder }).ok) setPassword(""); };
   return (
     <>
-      <p>{t("gmix.mail.count", { n: mine.length, max: caps.collectors })}</p>
+      <p>{t("gmix.mail.count", { what: t("gmix.mail.set.collector"), n: mine.length, max: caps.collectors })}</p>
       {mine.length > 0 && (
         <table className="gxm-list"><tbody>{mine.map((r) => (
           <tr key={r.id}>
