@@ -174,6 +174,8 @@ export function resolve(s: GameState, raw: string): Resolved {
     const st = siteStatus(s);
     return out({ kind: "company" }, st === "up" ? "fast" : st === "slow" ? "slow" : "down");
   }
+  // No page answers on the desk address until the desk site exists.
+  if (host === `support.${domain}`) return out({ kind: "notfound" });
   if (host === `portal.${domain}`) return shopActive(s) && s.shop.install ? out({ kind: "shop" }, shopLoad()) : out({ kind: "notfound" });
   const site = s.services.find((v) => !!v.domain && (v.domain === host || `www.${v.domain}` === host))
     ?? s.services.find((v) => !v.domain && v.product === "webHosting" && siteHost(s, v.id) === host);

@@ -136,7 +136,7 @@ export function siteStatus(s: GameState): SiteStatus {
   const host = s.marketing.siteHost;
   return host.kind === "rented" ? "up" : hostStatus(s, host.clusterId, "site");
 }
-function hostStatus(s: GameState, clusterId: string, id: string): SiteStatus {
+export function hostStatus(s: GameState, clusterId: string, id: string): SiteStatus {
   const c = s.clusters.find((x) => x.id === clusterId);
   if (!c) return "down";
   const w = siteWorkload(c, id);

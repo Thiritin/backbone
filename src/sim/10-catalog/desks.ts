@@ -90,6 +90,8 @@ export const DESK_ROUTE: Record<TicketKind, { role: DeskRole; dept: DeskDept | n
   abuse: { role: "abuse", dept: "abuse" }, notice: { role: "abuse", dept: "abuse" }, legal: { role: "abuse", dept: "abuse" },
   order: { role: "sales", dept: null }, sponsor: { role: "sales", dept: null },
   pear: { role: "owner", dept: null }, mail: { role: "owner", dept: null }, extortion: { role: "owner", dept: null },
+  // Junk an imported mailbox lets through; the desk files it apart from every department.
+  spam: { role: "support", dept: null },
 };
 
 // The label each desk gives a simulation status (ids of i18n keys under desk.status). "new" is an open ticket nobody read yet.
