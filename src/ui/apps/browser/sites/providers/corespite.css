@@ -1,4 +1,4 @@
-.ps-corespite { display: block; font: 12px/1.5 "Lucida Grande", "Lucida Sans Unicode", Arial, sans-serif; color: #333333; background: #f4f4f4; }
+.ps-corespite { font: 12px/1.5 "Lucida Grande", "Lucida Sans Unicode", Arial, sans-serif; color: #333333; background: #f4f4f4; }
 .ps-corespite header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 24px; max-width: 920px; margin: 0 auto; padding: 16px 20px; background: #ffffff; }
 .ps-corespite .ps-wm { display: flex; align-items: center; gap: 8px; font: 700 24px/1 Arial, sans-serif; color: #1d3c5a; text-decoration: none; }
 .ps-corespite .ps-wm b { color: #3aa35a; }
@@ -62,3 +62,35 @@
 .ps-corespite.late .ps-btn { padding: 10px 22px; border: 2px solid #0f2b46; border-radius: 4px; background: #ffffff; color: #0f2b46; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; }
 .ps-corespite.late .ps-btn.pri { background: #3aa35a; border-color: #3aa35a; color: #ffffff; }
 .ps-corespite.late footer { max-width: none; padding: 24px 36px; background: #0f2b46; color: #8fa6bb; font-size: 13px; }
+
+/* Customer portal: 2005 the glossy grey tab strip with a green active tab; from 2014 a white portal with a green bar and a filled green menu item. */
+.ps-corespite .ps-portal { border: 1px solid #d6d6d6; border-radius: 6px; overflow: hidden; }
+.ps-corespite .ps-portal-bar { background: linear-gradient(#eef7f0, #d7ecdc); border-color: #b9dcc2; }
+.ps-corespite .ps-portal-who strong { color: #1d3c5a; }
+.ps-corespite .ps-portal-out { color: #2a7d43; }
+.ps-corespite .ps-portal-frame { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
+.ps-corespite .ps-portal-nav { flex-direction: row; margin: 10px 12px 0; padding: 0; width: max-content; border: 1px solid #b8b8b8; border-radius: 4px; overflow: hidden; background: linear-gradient(#fafafa, #dcdcdc); }
+.ps-corespite main .ps-portal .ps-portal-nav a { padding: 4px 12px; color: #444444; font-weight: 700; text-shadow: 0 1px #ffffff; box-shadow: none; }
+.ps-corespite main .ps-portal .ps-portal-nav a + a { border-left: 1px solid #c4c4c4; }
+.ps-corespite main .ps-portal .ps-portal-nav a[aria-current] { background: linear-gradient(#5cbf74, #3aa35a); color: #ffffff; text-shadow: none; }
+.ps-corespite .ps-portal-title { font: 700 16px/1.3 Arial, sans-serif; color: #1d3c5a; }
+.ps-corespite .ps-portal-h { padding: 3px 8px; background: #3aa35a; color: #ffffff; font: 700 12px/1.4 Arial, sans-serif; border-radius: 3px; }
+.ps-corespite .ps-sheet { border-radius: 6px; overflow: hidden; }
+.ps-corespite .ps-sheet-h { background: linear-gradient(#5cbf74, #3aa35a); color: #ffffff; font-size: 13px; }
+.ps-corespite .ps-btn.ps-danger { color: #c0392b; }
+.ps-corespite .ps-offer { border-color: #b9dcc2; background: #eef7f0; }
+.ps-corespite.late .ps-portal { border: 0; border-radius: 0; min-height: 540px; box-shadow: inset 0 4px #3aa35a; }
+.ps-corespite.late .ps-portal-bar { padding: 16px 24px 12px; background: #ffffff; border-bottom: 1px solid #e2e8ee; font-size: 13px; }
+.ps-corespite.late .ps-portal-out { color: #3aa35a; font-weight: 600; text-decoration: none; }
+.ps-corespite.late .ps-portal-frame { grid-template-columns: 220px minmax(0, 1fr); grid-template-rows: none; }
+.ps-corespite.late .ps-portal-nav { flex-direction: column; width: auto; margin: 0; padding: 16px 12px; background: #f2f6f9; border: 0; border-radius: 0; }
+.ps-corespite.late main .ps-portal .ps-portal-nav a { padding: 9px 14px; border: 0; border-radius: 4px; color: #2b3a48; font-weight: 600; font-size: 14px; text-shadow: none; }
+.ps-corespite.late main .ps-portal .ps-portal-nav a + a { border: 0; }
+.ps-corespite.late main .ps-portal .ps-portal-nav a[aria-current] { background: #3aa35a; color: #ffffff; }
+.ps-corespite.late .ps-portal-main { padding: 24px 32px; }
+.ps-corespite.late .ps-portal-title { font: 700 26px/1.2 "Helvetica Neue", Arial, sans-serif; color: #0f2b46; }
+.ps-corespite.late .ps-portal-h { padding: 0; background: none; color: #0f2b46; font: 700 17px/1.3 "Helvetica Neue", Arial, sans-serif; border-radius: 0; }
+.ps-corespite.late .ps-sheet { border-radius: 4px; box-shadow: 0 10px 40px rgba(15, 43, 70, 0.35); }
+.ps-corespite.late .ps-sheet-h { padding: 14px 18px; background: #0f2b46; font-size: 16px; }
+.ps-corespite.late .ps-btn.ps-danger { border-color: #c0392b; color: #c0392b; }
+.ps-corespite.late .ps-offer { padding: 14px 16px; border: 0; border-left: 4px solid #3aa35a; background: #f2f6f9; }

@@ -20,7 +20,7 @@ function SkyBlink(props: ProviderProps) {
           {look === "late" && <A to="/order" go={go} className="ps-btn pri sky-quote">{t("providers.skyblink.quote")}</A>}
         </header>
         <div className="sky-frame">
-          {look === "early" && (
+          {look === "early" && route.page !== "account" && (
             <aside>
               <h3>{t("providers.skyblink.side", { city: dc.city })}</h3>
               <SiteFacts dc={dc} className="sky-side" />

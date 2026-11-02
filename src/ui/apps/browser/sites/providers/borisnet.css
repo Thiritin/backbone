@@ -73,3 +73,35 @@
 .ps-borisnet.late .bn-body .ps-btn { border-color: #00468c; color: #00468c; }
 .ps-borisnet.late .ps-btn.pri { background: #e2001a; border-color: #e2001a; color: #ffffff; }
 .ps-borisnet.late footer { max-width: none; padding: 20px 40px; background: #26313d; border: 0; color: #a8b3bf; font-size: 13px; }
+
+/* Customer portal: 2005 a grey framed area with the navy tab row and Verdana tables; from 2016 a navy sidebar with a red marker. */
+.ps-borisnet .ps-portal { border: 1px solid #c7d3e0; }
+.ps-borisnet .ps-portal-bar { padding: 4px 10px; background: #f2f2f2; border-bottom: 1px solid #c7d3e0; color: #777777; }
+.ps-borisnet .ps-portal-who strong { color: #00468c; }
+.ps-borisnet .ps-portal-out { color: #00468c; }
+.ps-borisnet .ps-portal-frame { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
+.ps-borisnet .ps-portal-nav { flex-direction: row; gap: 1px; padding: 0 10px; background: #00468c; border: 0; }
+.ps-borisnet main .ps-portal-nav a { padding: 4px 12px; background: linear-gradient(#e9e9e9, #c9c9c9); color: #333333; font-weight: 700; box-shadow: none; border-top: 3px solid #00468c; }
+.ps-borisnet main .ps-portal-nav a[aria-current] { background: #ffffff; color: #00468c; }
+.ps-borisnet .ps-portal-title { font-size: 13px; color: #00468c; }
+.ps-borisnet .ps-portal-h { padding-bottom: 2px; font-size: 11px; color: #00468c; border-bottom: 1px solid #c7d3e0; }
+.ps-borisnet .ps-sheet { border: 1px solid #00468c; }
+.ps-borisnet .ps-sheet-h { padding: 4px 10px; background: #00468c; color: #ffffff; font-size: 11px; }
+.ps-borisnet .ps-btn.ps-danger { color: #e2001a; }
+.ps-borisnet .ps-offer { border-color: #c7d3e0; background: #f6f8fa; }
+.ps-borisnet.late .ps-portal { margin: 0 -40px; border: 0; min-height: 540px; }
+.ps-borisnet.late .ps-portal-bar { padding: 12px 40px; background: #f4f6f9; color: #8a96a3; border: 0; font-size: 13px; }
+.ps-borisnet.late .ps-portal-out { text-transform: uppercase; font-size: 12px; text-decoration: none; letter-spacing: 0.06em; }
+.ps-borisnet.late .ps-portal-frame { grid-template-columns: 230px minmax(0, 1fr); grid-template-rows: none; }
+.ps-borisnet.late .ps-portal-nav { flex-direction: column; gap: 0; padding: 16px 0; background: #00305f; }
+.ps-borisnet.late main .ps-portal-nav a { padding: 11px 24px; background: none; border: 0; color: #cfdced; font-weight: 400; font-size: 14px; }
+.ps-borisnet.late main .ps-portal-nav a[aria-current] { background: #00468c; color: #ffffff; font-weight: 600; box-shadow: inset 4px 0 #e2001a; }
+.ps-borisnet.late .ps-portal-main { padding: 28px 40px; }
+.ps-borisnet.late .ps-portal-title { font: 300 28px/1.2 "Segoe UI", "Helvetica Neue", Arial, sans-serif; }
+.ps-borisnet.late .ps-portal-h { border: 0; font-size: 16px; font-weight: 600; }
+.ps-borisnet.late .ps-sheet { border: 0; border-top: 4px solid #e2001a; }
+.ps-borisnet.late .ps-sheet-h { padding: 14px 18px; background: #ffffff; color: #00468c; font-size: 18px; font-weight: 600; }
+.ps-borisnet.late .ps-sheet .ps-btn, .ps-borisnet.late .ps-portal .ps-btn { border-color: #00468c; color: #00468c; }
+.ps-borisnet.late .ps-portal .ps-btn.pri, .ps-borisnet.late .ps-sheet .ps-btn.pri { border-color: #e2001a; color: #ffffff; }
+.ps-borisnet.late .ps-btn.ps-danger { border-color: #e2001a; color: #e2001a; }
+.ps-borisnet.late .ps-offer { padding: 14px 16px; border: 0; border-left: 4px solid #00468c; background: #f4f6f9; }

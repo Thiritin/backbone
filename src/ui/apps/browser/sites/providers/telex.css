@@ -67,3 +67,32 @@
 .ps-telex.late .ps-btn { padding: 9px 22px; border: 1px solid #5c6878; border-radius: 0; background: #ffffff; color: #36404d; font-weight: 400; text-transform: uppercase; letter-spacing: 0.1em; font-size: 12px; }
 .ps-telex.late .ps-btn.pri { background: #f7941d; border-color: #f7941d; color: #ffffff; }
 .ps-telex.late footer { margin-top: 40px; padding: 22px 36px; background: #ffffff; border-top: 1px solid #e1e4e8; color: #8a919b; font-size: 12px; }
+
+/* Customer portal: 2005 a slate bar with orange tabs; from 2012 a white card with an orange underline menu. */
+.ps-telex .ps-portal { border: 1px solid #cfd4db; }
+.ps-telex .ps-portal-bar { background: linear-gradient(#5c6878, #36404d); color: #d8dde4; border-bottom: 3px solid #f7941d; font-size: 11px; }
+.ps-telex .ps-portal-who strong { color: #ffffff; }
+.ps-telex .ps-portal-out { color: #f7941d; }
+.ps-telex .ps-portal-frame { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
+.ps-telex .ps-portal-nav { flex-direction: row; gap: 3px; padding: 8px 12px 0; border: 0; border-bottom: 2px solid #f7941d; }
+.ps-telex main .ps-portal-nav a { padding: 3px 12px; background: #e1e4e8; color: #3a3f47; font-size: 11px; font-weight: 700; text-transform: uppercase; box-shadow: none; }
+.ps-telex main .ps-portal-nav a[aria-current] { background: linear-gradient(#fbab4a, #f7941d); color: #ffffff; }
+.ps-telex .ps-portal-title { font: 700 15px/1.3 "Trebuchet MS", Arial, sans-serif; color: #2c3440; }
+.ps-telex .ps-sheet { border: 1px solid #5c6878; }
+.ps-telex .ps-sheet-h { background: #3a4452; color: #ffffff; border-bottom: 3px solid #f7941d; font-size: 13px; }
+.ps-telex .ps-btn.ps-danger { color: #c0392b; }
+.ps-telex .ps-offer { border-color: #fbab4a; background: #fff4e6; }
+.ps-telex.late .ps-portal { border: 0; background: #ffffff; min-height: 520px; }
+.ps-telex.late .ps-portal-bar { padding: 14px 28px; background: #ffffff; color: #8a919b; border-bottom: 1px solid #e1e4e8; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+.ps-telex.late .ps-portal-who strong { color: #36404d; }
+.ps-telex.late .ps-portal-out { text-decoration: none; }
+.ps-telex.late .ps-portal-nav { gap: 28px; padding: 0 28px; border-bottom: 1px solid #e1e4e8; }
+.ps-telex.late main .ps-portal-nav a { padding: 14px 0 12px; background: none; color: #5c6878; font-weight: 400; letter-spacing: 0.1em; }
+.ps-telex.late main .ps-portal-nav a[aria-current] { background: none; color: #36404d; box-shadow: inset 0 -3px #f7941d; }
+.ps-telex.late .ps-portal-main { padding: 24px 28px; }
+.ps-telex.late .ps-portal-title { font: 300 26px/1.2 "Helvetica Neue", Arial, sans-serif; color: #36404d; }
+.ps-telex.late .ps-portal-h { font-size: 13px; }
+.ps-telex.late .ps-sheet { border: 0; }
+.ps-telex.late .ps-sheet-h { padding: 14px 18px; background: #ffffff; color: #36404d; font: 300 20px/1.2 "Helvetica Neue", Arial, sans-serif; }
+.ps-telex.late .ps-btn.ps-danger { border-color: #c0392b; color: #c0392b; }
+.ps-telex.late .ps-offer { padding: 14px 16px; border: 0; border-left: 3px solid #f7941d; background: #f5f6f8; }

@@ -1,4 +1,4 @@
-.ps-skyblink { display: block; font: 12px/1.5 Tahoma, Verdana, sans-serif; color: #24364a; background: #dcebf7; }
+.ps-skyblink { font: 12px/1.5 Tahoma, Verdana, sans-serif; color: #24364a; background: #dcebf7; }
 .ps-skyblink .sky-page { max-width: 800px; margin: 0 auto; background: #ffffff; box-shadow: 0 0 0 1px #b9d3ea; }
 .ps-skyblink header { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; padding: 22px 18px 0; color: #ffffff;
   background: radial-gradient(ellipse 70px 22px at 78% 38%, #ffffff 60%, transparent 62%), radial-gradient(ellipse 48px 18px at 84% 30%, #ffffff 60%, transparent 62%),
@@ -12,6 +12,7 @@
 .ps-skyblink header nav a + a::before { content: "|"; margin: 0 10px; color: #6fa3d3; font-weight: 400; }
 .ps-skyblink header nav a[aria-current] { color: #fff4b8; }
 .ps-skyblink .sky-frame { display: grid; grid-template-columns: 200px minmax(0, 1fr); }
+.ps-skyblink .sky-frame:not(:has(aside)) { display: block; }
 .ps-skyblink aside { padding: 14px; background: #eef5fb; border-right: 1px solid #c9dcee; }
 .ps-skyblink aside h3 { margin: 0 0 8px; font-size: 12px; color: #0d4f8c; }
 .ps-skyblink .sky-side { display: block; margin-bottom: 8px; font-size: 11px; }
@@ -69,3 +70,33 @@
 .ps-skyblink.late .sky-quote { margin-left: 8px; }
 .ps-skyblink.late .ps-steps li { border-radius: 20px; padding: 4px 14px; }
 .ps-skyblink.late footer { padding: 20px 32px; background: #0b2f52; color: #9fbcd6; font-size: 12px; }
+
+/* Customer portal: 2005 a blue bar over a rounded light-blue menu box; from 2016 white cards with a green marker. */
+.ps-skyblink .ps-portal { border: 1px solid #b9d3ea; }
+.ps-skyblink .ps-portal-bar { background: linear-gradient(#3d8fd6, #0d4f8c); color: #dcebf7; border: 0; font-size: 11px; }
+.ps-skyblink .ps-portal-who strong { color: #fff4b8; }
+.ps-skyblink .ps-portal-out { color: #ffffff; }
+.ps-skyblink .ps-portal-nav { margin: 10px; padding: 6px 0; background: #eef5fb; border: 1px solid #c9dcee; border-radius: 6px; align-self: start; }
+.ps-skyblink main .ps-portal-nav a { padding: 4px 12px; color: #1a6fbf; font-weight: 700; }
+.ps-skyblink main .ps-portal-nav a[aria-current] { color: #0d4f8c; background: #d7e7f5; box-shadow: none; }
+.ps-skyblink .ps-portal-h { font-size: 12px; color: #0d4f8c; }
+.ps-skyblink .ps-portal-empty { color: #7a93ab; font-style: italic; }
+.ps-skyblink .ps-sheet { border: 1px solid #7f9fbf; border-radius: 6px; overflow: hidden; }
+.ps-skyblink .ps-sheet-h { background: #0d4f8c; color: #ffffff; font-size: 13px; }
+.ps-skyblink .ps-btn.ps-danger { color: #c0392b; }
+.ps-skyblink .ps-offer { border-color: #e8d580; background: #fff8d6; }
+.ps-skyblink.late .ps-portal { border: 0; background: #f4f8fb; min-height: 520px; }
+.ps-skyblink.late .ps-portal-bar { padding: 12px 24px; background: #ffffff; color: #6a7f94; border-bottom: 1px solid #e5edf4; font-size: 13px; }
+.ps-skyblink.late .ps-portal-who strong { color: #0f4c81; }
+.ps-skyblink.late .ps-portal-out { color: #2b9be0; text-decoration: none; }
+.ps-skyblink.late .ps-portal-frame { grid-template-columns: 210px minmax(0, 1fr); gap: 20px; padding: 20px 24px; }
+.ps-skyblink.late .ps-portal-nav { margin: 0; padding: 8px 0; background: #ffffff; border: 0; border-radius: 8px; box-shadow: 0 1px 3px rgba(15, 76, 129, 0.12); }
+.ps-skyblink.late main .ps-portal-nav a { padding: 10px 18px; color: #1b2b3c; font-weight: 500; }
+.ps-skyblink.late main .ps-portal-nav a[aria-current] { background: none; color: #0f4c81; box-shadow: inset 4px 0 #7cc34d; }
+.ps-skyblink.late .ps-portal-main { padding: 24px; background: #ffffff; border-radius: 8px; box-shadow: 0 1px 3px rgba(15, 76, 129, 0.12); }
+.ps-skyblink.late .ps-portal-title { font: 300 24px/1.2 "Helvetica Neue", Arial, sans-serif; color: #0f4c81; }
+.ps-skyblink.late .ps-portal-h { font-size: 16px; font-weight: 500; }
+.ps-skyblink.late .ps-sheet { border: 0; border-radius: 10px; }
+.ps-skyblink.late .ps-sheet-h { padding: 14px 18px; background: #ffffff; color: #0f4c81; border-bottom: 1px solid #e5edf4; font-size: 17px; font-weight: 500; }
+.ps-skyblink.late .ps-btn.ps-danger { border-color: #c0392b; }
+.ps-skyblink.late .ps-offer { padding: 14px 16px; border: 0; border-left: 4px solid #7cc34d; background: #f1f8ea; }
