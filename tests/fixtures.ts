@@ -37,7 +37,7 @@ import { portPeers } from "../src/sim/60-infra/status";
 import { leaseTick } from "../src/sim/60-infra/lan";
 import { setPortShare } from "../src/sim/90-actions/lan";
 import { imageOf, serverOsAt, type OsImage, type ServerOsId } from "../src/sim/10-catalog/server-os";
-import { softwareById } from "../src/sim/10-catalog/platforms";
+import { footprint, IN_VM, softwareById } from "../src/sim/10-catalog/platforms";
 import { yearOf } from "../src/sim/00-core/time";
 import { STARTER_APPS } from "../src/sim/10-catalog/store";
 import { legacyRegistration } from "../src/sim/80-business/office";
@@ -156,7 +156,9 @@ export function join(s: GameState, clusterId: string, deviceId: string) {
 // A panel VM on a hypervisor cluster with its panel already installed; returns the panel host id.
 export const panelVm = (s: GameState, clusterId: string, panel = "freepanel", size?: Resources): string => {
   if (isLicensed(panel) && trialDaysOf(panel) === null) issueKey(s, panel, topTier(panel)?.id ?? null);
-  return done(s, must(createPanelVm(s, clusterId, panel, size)), { panel });
+  // The panel's own footprint of the year, so the fixture fits whatever the catalog asks.
+  const fit = footprint(softwareById(panel), yearOf(s.hour)), min = { vcpu: Math.max(2, Math.ceil(fit.vcpu / IN_VM) + 1), ramGb: Math.max(2, Math.ceil(fit.ramGb / IN_VM) + 1), diskGb: Math.max(50, fit.diskGb + 40) };
+  return done(s, must(createPanelVm(s, clusterId, panel, size ?? min)), { panel });
 };
 
 // A bare-metal panel host on a free mounted server with its panel already installed; returns the panel host id.

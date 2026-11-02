@@ -107,6 +107,7 @@ export default {
   "misc.delist": () => "Austragen",
   "misc.delisting": () => "Wird ausgetragen",
   "misc.domain": () => "Domain",
+  "misc.openSite": () => "Seite öffnen",
   "misc.domains": () => "Domains",
   "misc.droppedNow": () => "Gerade abgesprungen",
   "misc.due": () => "Fällig",
