@@ -240,6 +240,7 @@ export const subjectParams = (s: GameState, t: Ticket): Record<string, string | 
   ...(t.kind === "sponsor" && sponsorParams(s, t)),
   ...(t.topic === "switchTitle" && switchParams(s, t)),
   ...(t.term && termParams(t.term)),
+  ...(t.task && { task: t.task.key }),
   ...t.mail?.params,
   ...(t.kind === "mail" && t.topic === SHOP_LICENCE && vendorParams(t.mail!.params)),
 });

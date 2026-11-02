@@ -42,6 +42,8 @@ export type WebspaceOverlay = { [K in PartName]?: Record<string, WebParts[K][str
 export interface Webspace extends WebParts {
   workloadId: string; panel: string; account: string; prefix: string; webroot: string; domain: string;
   app: WebApp | null; limits: WebLimits; usage: WebUsage;
+  // The files an attacker left on a defaced site, before the overlay; deleting all of them cleans it.
+  shells: string[];
 }
 
 // A web space the player made for the company on a panel host, as an admin does in WHM's Create a New Account. It has no
@@ -59,16 +61,24 @@ const MAIL_SHARE = 0.1, DB_SHARE = 0.2;
 
 // The files an app ships with, in share of the disk the files use; the config file is the one the app reads its database from.
 const APP_FILES: Record<App, { files: [string, number][]; config?: string; db?: string }> = {
-  wordpass: { files: [["wp-admin", 30], ["wp-content", 55], ["wp-includes", 12], ["index.php", 1], ["wp-config.php", 1], [".htaccess", 1]], config: "wp-config.php", db: "wp" },
-  joomlah: { files: [["administrator", 25], ["components", 30], ["media", 35], ["templates", 8], ["index.php", 1], ["configuration.php", 1]], config: "configuration.php", db: "joom" },
-  drupel: { files: [["core", 40], ["modules", 20], ["sites", 34], ["sites/default", 1], ["themes", 3], ["index.php", 1], ["sites/default/settings.php", 1]], config: "sites/default/settings.php", db: "drup" },
+  wordpass: { files: [["wp-admin", 30], ["wp-content", 35], ["wp-content/uploads", 20], ["wp-includes", 12], ["index.php", 1], ["wp-config.php", 1], [".htaccess", 1]], config: "wp-config.php", db: "wp" },
+  joomlah: { files: [["administrator", 25], ["components", 30], ["media", 30], ["images", 5], ["templates", 8], ["index.php", 1], ["configuration.php", 1]], config: "configuration.php", db: "joom" },
+  drupel: { files: [["core", 40], ["modules", 20], ["sites", 30], ["sites/default", 1], ["sites/default/files", 4], ["themes", 3], ["index.php", 1], ["sites/default/settings.php", 1]], config: "sites/default/settings.php", db: "drup" },
   static: { files: [["images", 80], ["css", 5], ["index.html", 5], ["about.html", 5], ["contact.html", 5]] },
 };
+
+// The writable folder a backdoor is dropped into on a defaced site.
+const SHELL_DIR: Partial<Record<App, string>> = { wordpass: "wp-content/uploads", joomlah: "images", drupel: "sites/default/files" };
 
 const strHash = (text: string): number => [...text].reduce((h, ch) => Math.imul(h ^ ch.charCodeAt(0), 0x01000193) >>> 0, 0x811c9dc5);
 const password = (s: GameState, ...parts: string[]): string => {
   const r = hashRng(s.seed, ...parts.map(strHash));
   return Array.from({ length: 12 }, () => "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"[Math.floor(rand(r) * 57)]).join("");
+};
+// Named after the hack, so a file deleted after an earlier hack never hides the next one.
+const shellName = (s: GameState, serviceId: string, hack: number): string => {
+  const r = hashRng(s.seed, strHash(serviceId), hack, 334);
+  return Array.from({ length: 8 }, () => "abcdefghijklmnopqrstuvwxyz0123456789"[Math.floor(rand(r) * 36)]).join("");
 };
 
 export const webrootOf = (panel: string): string => (panel === "pleskit" ? "httpdocs" : "public_html");
@@ -111,7 +121,7 @@ export function deriveWebspace(s: GameState, workloadId: string): Webspace | nul
   const account = own?.account ?? v?.username ?? accountFor(domain);
   const panel = c.panel!, webroot = webrootOf(panel), prefix = prefixOf(account), since = own?.at ?? v?.startedAt ?? w.placedAt, year = yearOf(s.hour);
   const ws: Webspace = {
-    workloadId, panel, account, prefix, webroot, domain, app: null, files: {}, domains: {}, databases: {}, dbUsers: {}, mailboxes: {}, forwarders: {}, ftp: {}, cron: {},
+    workloadId, panel, account, prefix, webroot, domain, app: null, shells: [], files: {}, domains: {}, databases: {}, dbUsers: {}, mailboxes: {}, forwarders: {}, ftp: {}, cron: {},
     limits: own ? UNLIMITED : limitsOf(v?.pkg ? packageNamed(c, v.pkg) : undefined, v?.spec.mailboxes ?? 0), usage: undefined!,
   };
   for (const p of [webroot, "logs", "tmp", "mail"]) ws.files[p] = { dir: true, mb: 0, at: since };
@@ -135,6 +145,12 @@ export function deriveWebspace(s: GameState, workloadId: string): Webspace | nul
       const address = `${i === 0 ? "info" : `user${i}`}@${domain}`;
       ws.mailboxes[address] = { address, password: password(s, w.id, address), quotaMb, usedMb: +Math.min(quotaMb * 0.95, mailMb * wt / total).toFixed(3) };
     });
+    const hack = s.sites.hacks[v.id]?.at(-1);
+    if (SHELL_DIR[app] && hack !== undefined && s.sites.defaced.includes(v.id)) {
+      const path = `${webroot}/${SHELL_DIR[app]}/${shellName(s, v.id, hack)}.php`;
+      ws.files[path] = { mb: 0.08, at: hack };
+      ws.shells.push(path);
+    }
     // WordPass sites past their first month run wp-cron from the system cron, as hosts advise.
     if (app === "wordpass" && s.hour - since >= 30 * 24) {
       ws.cron.cron1 = { id: "cron1", command: `php -q /home/${account}/${webroot}/wp-cron.php > /dev/null 2>&1`, everyHours: 1 };
