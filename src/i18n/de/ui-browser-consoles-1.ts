@@ -204,7 +204,7 @@ export default {
   "browser-consoles-1.hvLocation": () => "Speicherort",
   "browser-consoles-1.hvSpecifyGeneration": () => "Generation angeben",
   "browser-consoles-1.hvAssignMemory": () => "Arbeitsspeicher zuweisen",
-  "browser-consoles-1.hvStartupMemoryGb": () => "Startspeicher, GB",
+  "browser-consoles-1.hvStartupMemoryMb": () => "Startspeicher, MB",
   "browser-consoles-1.hvConfigureNetworking": () => "Netzwerk konfigurieren",
   "browser-consoles-1.hvConnection": () => "Verbindung",
   "browser-consoles-1.hvConnectVhd": () => "Virtuelle Festplatte verbinden",
