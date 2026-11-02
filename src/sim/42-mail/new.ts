@@ -16,7 +16,7 @@ export const gmixLocal = (companyName: string): string => ascii(companyName) || 
 
 export const emptyMail = (): MailState => ({
   tenants: [], accounts: [], primary: "", catchAll: null, contacts: {}, folders: [], msgs: {}, filters: [], queue: [],
-  channels: [], groups: [], snoozed: [], fetch: [], trace: [], retired: [], seen: 0,
+  channels: [], groups: [], snoozed: [], fetch: [], imports: [], trace: [], retired: [], seen: 0,
 });
 
 export const newAccount = (id: string, tenant: MailTenant, local: string, title: string, password: string, at: number): MailAccount => ({

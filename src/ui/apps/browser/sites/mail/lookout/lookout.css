@@ -1,0 +1,51 @@
+/* Lookout 365: the orange 2011 portal and Segoe pages, the dark 2011 admin bar, then the white 2017 admin center. */
+.lk { --lk-ink: #333; --lk-accent: #dc3c00; --lk-link: #0072c6; --lk-bar: #262626; --lk-side: #f4f4f4; --lk-line: #ddd; --lk-sel: #e6f2fa; --lk-font: "Segoe UI", Tahoma, sans-serif;
+  min-height: 100%; background: #fff; color: var(--lk-ink); font: 14px/1.45 var(--lk-font); display: flex; flex-direction: column; }
+.lk-late { --lk-accent: #0078d4; --lk-bar: #0078d4; --lk-side: #f8f8f8; --lk-sel: #deecf9; }
+.lk a { color: var(--lk-link); }
+.lk h1 { font: 300 26px var(--lk-font); margin: 0 0 12px; }
+.lk h2 { font: 600 15px var(--lk-font); margin: 16px 0 8px; }
+.lk code { font: 12px Consolas, monospace; word-break: break-all; }
+.lk-head { display: flex; align-items: center; gap: 16px; padding: 10px 20px; border-bottom: 1px solid var(--lk-line); }
+.lk-logo { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--lk-ink) !important; font-size: 18px; }
+.lk-mark { width: 26px; height: 26px; background: var(--lk-accent); border-radius: 3px; }
+.lk-nav { margin-left: auto; display: flex; gap: 16px; flex-wrap: wrap; }
+.lk-main { padding: 20px; max-width: 1000px; width: 100%; box-sizing: border-box; margin: 0 auto; }
+.lk-foot { margin-top: auto; padding: 12px 20px; font-size: 12px; color: #777; border-top: 1px solid var(--lk-line); }
+.lk-hero { padding: 32px; background: var(--lk-side); border-left: 6px solid var(--lk-accent); }
+.lk-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.lk-card { border: 1px solid var(--lk-line); border-top: 4px solid var(--lk-accent); padding: 16px; }
+.lk-price { font-size: 20px; font-weight: 300; }
+.lk-cta, .lk button { display: inline-block; padding: 6px 18px; border: 1px solid var(--lk-accent); background: var(--lk-accent); color: #fff !important; font: 14px var(--lk-font); text-decoration: none; cursor: pointer; }
+.lk .lk-quiet { background: #fff; color: var(--lk-link) !important; border-color: var(--lk-line); }
+.lk .lk-danger { background: #a80000; border-color: #a80000; }
+.lk-form { display: flex; flex-direction: column; gap: 10px; max-width: 520px; }
+.lk-form label { display: flex; flex-direction: column; gap: 2px; }
+.lk-choice label { flex-direction: row; gap: 6px; align-items: center; }
+.lk-form input, .lk-form select { font: inherit; padding: 4px 6px; border: 1px solid #aaa; }
+.lk-form button { align-self: flex-start; }
+.lk-inline { margin-top: 16px; padding: 12px; background: var(--lk-side); }
+.lk-addr { display: flex; gap: 4px; align-items: center; }
+.lk-summary { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; }
+.lk-summary dt { color: #666; }
+.lk-summary dd { margin: 0; }
+.lk-table { width: 100%; border-collapse: collapse; margin: 8px 0; }
+.lk-table th { text-align: left; font-weight: 600; border-bottom: 2px solid var(--lk-line); padding: 6px 8px; }
+.lk-table td { border-bottom: 1px solid var(--lk-line); padding: 6px 8px; vertical-align: top; }
+.lk-tools { white-space: nowrap; display: flex; gap: 6px; }
+.lk-buttons { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.lk-confirm { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.lk-error { color: #a80000; }
+.lk-ok { color: #107c10; }
+.lk-small { font-size: 12px; }
+.lk-signin { max-width: 400px; margin: 40px auto; }
+.lk-bar { display: flex; align-items: center; gap: 16px; padding: 8px 16px; background: var(--lk-bar); color: #fff; }
+.lk-bar b { margin-right: auto; font-weight: 400; font-size: 16px; }
+.lk-bar a { color: #fff; }
+.lk-body { flex: 1; display: grid; grid-template-columns: 200px 1fr; }
+.lk-side { background: var(--lk-side); border-right: 1px solid var(--lk-line); }
+.lk-side ul { list-style: none; margin: 0; padding: 8px 0; }
+.lk-side li a { display: block; padding: 6px 16px; text-decoration: none; color: var(--lk-ink); }
+.lk-side li.on a { background: var(--lk-sel); border-left: 3px solid var(--lk-accent); }
+.lk-panel { padding: 20px; min-width: 0; overflow-x: auto; }
+@media (max-width: 640px) { .lk-body { grid-template-columns: 1fr; } .lk-side ul { display: flex; flex-wrap: wrap; } }

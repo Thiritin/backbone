@@ -42,5 +42,6 @@ export function runFetch(s: GameState, rule: FetchRule): number {
 
 // Hourly: the rules whose interval has passed and that have not stopped.
 export function fetchTick(s: GameState): void {
+  if (s.mail.fetch.some((r) => r.until !== undefined && r.until <= s.hour)) s.mail = { ...s.mail, fetch: s.mail.fetch.filter((r) => r.until === undefined || r.until > s.hour) };
   for (const r of s.mail.fetch) if (!r.err && nowMinutes(s) - r.lastAt >= r.every * 60) runFetch(s, r);
 }

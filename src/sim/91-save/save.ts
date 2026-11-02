@@ -62,6 +62,11 @@ export function deserialize(raw: string): GameState {
   delete (data as { heldCustomers?: unknown }).heldCustomers;
   // ChadGPT Support left the Pear Store for the hosted desks' AI.
   delete (data as { chadUsage?: unknown }).chadUsage;
+  // The Books catalog is gone; email requests are priced in their own quote.
+  delete (data as { catalog?: unknown }).catalog;
+  const mkt = data.marketing as { published?: unknown; unmet?: unknown } | undefined;
+  delete mkt?.published;
+  delete mkt?.unmet;
   const locations: GameState["locations"] = [];
   // The basement's tower shelf is gone, and rack positions became cages.
   for (const { shelf: _, ...l } of (data.locations ?? base.locations) as (Location & { shelf?: number })[]) {

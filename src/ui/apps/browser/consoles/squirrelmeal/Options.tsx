@@ -5,7 +5,8 @@ import {
   deleteLocalFilter, removeContact, removeIdentity, saveContact, saveIdentity, saveLocalFilter, setFolderSubscribed, setWebmailPref,
 } from "../../../../../sim/90-actions/webmail";
 import { changePassword, deleteFilter, saveFilter } from "../../../../../sim/90-actions/mailbox";
-import { createMailFolder, deleteMailFolder, renameMailFolder } from "../../../../../sim/90-actions/mailmsg";
+import { createMailFolder, deleteMailFolder, renameMailFolder, setVacation } from "../../../../../sim/90-actions/mailmsg";
+import { sieveScript } from "../../../../../sim/80-business/sieve";
 import { t } from "../../../../../i18n/en";
 import { FolderSelect, Link, Title, type Ctx } from "./Mailbox";
 
@@ -136,10 +137,37 @@ function Filters({ ctx }: { ctx: Ctx }) {
   return <><Rules ctx={ctx} rules={u.localFilters as never} remove={(id) => act(deleteLocalFilter, c.id, account, id)} /><RuleForm ctx={ctx} save={(f) => act(saveLocalFilter, c.id, account, f)} /></>;
 }
 
+// Havelsieve: the rule table or the script it uploads, and the Vacation / Autoresponder rule.
 function Sieve({ ctx }: { ctx: Ctx }) {
   const { act, account } = ctx, rules = ctx.game.mail.filters.filter((x) => x.accountId === account);
+  const [source, setSource] = useState(false);
   const save = (f: { field: Field; text: string; folder: string }) => act(saveFilter, account, { name: f.text, on: true, match: "all", conds: [{ field: f.field, op: "contains", value: f.text.trim() }], acts: [{ do: "move", folder: f.folder }] });
-  return <><Rules ctx={ctx} rules={rules as never} remove={(id) => act(deleteFilter, id)} /><RuleForm ctx={ctx} save={save} /></>;
+  return (
+    <>
+      <div className="smw-tools"><Link on={() => setSource(!source)}>{t(source ? "mailserver.sm.showTable" : "mailserver.sm.showSource")}</Link></div>
+      {source ? <pre className="smw-source">{sieveScript(ctx.game, account)}</pre> : <><Rules ctx={ctx} rules={rules as never} remove={(id) => act(deleteFilter, id)} /><RuleForm ctx={ctx} save={save} /></>}
+      <Autoresponder ctx={ctx} />
+    </>
+  );
+}
+
+function Autoresponder({ ctx }: { ctx: Ctx }) {
+  const v = ctx.game.mail.accounts.find((x) => x.id === ctx.account)?.vacation;
+  const [f, setF] = useState({ on: !!v?.on, subject: v?.subject ?? "", text: v?.text ?? "" }), [note, setNote] = useState<string | null>(null);
+  const submit = () => setNote(err(ctx.act(setVacation, ctx.account, { ...f, until: v?.until ?? null }), "mailserver.sm.vacation.saved"));
+  return (
+    <Box title={t("mailserver.sm.vacation.title")}>
+      <form onSubmit={(e) => { e.preventDefault(); submit(); }}>
+        <table className="smw-head"><tbody>
+          <tr><th>{t("mailserver.sm.vacation.on")}</th><td><input type="checkbox" checked={f.on} onChange={(e) => setF({ ...f, on: e.target.checked })} /></td></tr>
+          <tr><th>{t("mailserver.sm.vacation.subject")}</th><td><input value={f.subject} onChange={(e) => setF({ ...f, subject: e.target.value })} /></td></tr>
+          <tr><th>{t("mailserver.sm.vacation.text")}</th><td><textarea rows={5} cols={50} value={f.text} onChange={(e) => setF({ ...f, text: e.target.value })} /></td></tr>
+          <tr><td colSpan={2} className="c"><button type="submit">{t("mailserver.sm.submit")}</button></td></tr>
+        </tbody></table>
+      </form>
+      <Note text={note} />
+    </Box>
+  );
 }
 
 function Password({ ctx }: { ctx: Ctx }) {
