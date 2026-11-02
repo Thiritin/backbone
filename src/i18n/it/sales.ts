@@ -10,7 +10,7 @@ const box = (p: Params) => `${p.cpu} vCPU, ${p.ram} GB di RAM e ${p.disk} GB di 
 
 const STUDY_NAME: Record<string, string> = {
   private: "Privati", gamer: "Giocatori", hobbyDev: "Sviluppatori amatoriali", soleProp: "Ditte individuali", smallBiz: "Piccole imprese",
-  agency: "Agenzie e startup", office: "Studi medici e legali", onlineShop: "Negozi online", enterprise: "Grandi aziende",
+  agency: "Agenzie e startup", webDev: "Sviluppatori web", office: "Studi medici e legali", onlineShop: "Negozi online", enterprise: "Grandi aziende",
 };
 
 export default {
@@ -20,6 +20,7 @@ export default {
   "request.use.soleProp": () => "I clienti mi trovano tramite il sito, e lo controllo ogni pochi giorni.",
   "request.use.smallBiz": () => "Il nostro team ci lavora ogni giorno durante l'orario d'ufficio.",
   "request.use.agency": () => "I nostri clienti ci stanno sopra tutto il giorno, quindi notiamo subito i problemi.",
+  "request.use.webDev": () => "I siti dei nostri clienti girano lì, quindi notiamo subito i problemi.",
   "request.use.office": () => "I pazienti prenotano i loro appuntamenti da lì ogni mattina.",
   "request.use.onlineShop": () => "Gli ordini arrivano giorno e notte, e ogni minuto offline ci costa denaro.",
   "request.use.enterprise": () => "Il nostro personale ci conta giorno e notte.",

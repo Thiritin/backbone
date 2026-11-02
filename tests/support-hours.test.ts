@@ -50,7 +50,7 @@ describe("business hours", () => {
 
 describe("customer clocks", () => {
   it("does no damage before a private customer notices the outage", () => {
-    const { s, cus, svc, c } = customerAt(at(FRI, 18), "private");
+    const { s, cus, svc, c } = customerAt(at(FRI, 18), "private", 2);
     // The first tick is the outage's first hour.
     const since = s.hour + 1;
     let seenAt = since;

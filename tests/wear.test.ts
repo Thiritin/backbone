@@ -284,7 +284,7 @@ describe("feeds and circuits", () => {
     const feeds = s.ledger.filter((l) => l.key === "ledger.feed").map((l) => [l.params.feed, l.amount]);
     expect(feeds).toEqual([["feedB", -240], ["highDensity", -360]]);
     expect(err(setFeed(s, "rack2", "b", true))).toBe("error.noFeeds");
-    const share = ok(addLocation(s, "interaction-fra", "share", 8));
+    const share = ok(addLocation(freeFloor(s), "interaction-fra", "share", 8));
     expect(err(setFeed(s, s.racks.find((r) => r.locationId === share)!.id, "b", true))).toBe("error.providedRack");
   });
   it("adds one household circuit to the basement for €400", () => {

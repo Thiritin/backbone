@@ -107,7 +107,7 @@ describe("starting company", () => {
     expect(s.services.every((v) => serviceOnline(s, v.id))).toBe(true);
   });
   it("invoices the friends in February for the hours they were up", () => {
-    const s = readyGame(1);
+    const s = readyGame(2);
     run(s, 10);
     ok(setPower(s, "dev3", false));
     run(s, 4);

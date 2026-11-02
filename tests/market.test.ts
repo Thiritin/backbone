@@ -63,7 +63,7 @@ describe("market research", () => {
   it("lists the segments each competitor sells to", () => {
     const by = (n: string) => segmentsOf(COMPETITORS.find((c) => c.name === n)!);
     expect(by("Nitradoh")).toEqual(["gamer"]);
-    expect(by("Ionose")).toHaveLength(9);
+    expect(by("Ionose")).toHaveLength(10);
     // WP Engyne's price is above what low budgets pay.
     expect(by("WP Engyne")).toEqual(["soleProp", "smallBiz", "agency", "office"]);
   });

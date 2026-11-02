@@ -16,7 +16,7 @@ import { flyerBatches, flyerTick, type FlyerRun } from "./flyers";
 import { shopBills, shopTick } from "./shop";
 import { designTick, siteBuiltEvent, siteDownEvent, siteFactor, siteHostingCost, siteStatus } from "./website";
 
-export const PROFILE_IDS: Profile[] = ["private", "gamer", "hobbyDev", "soleProp", "smallBiz", "agency", "office", "onlineShop", "enterprise"];
+export const PROFILE_IDS: Profile[] = ["private", "gamer", "hobbyDev", "soleProp", "smallBiz", "agency", "webDev", "office", "onlineShop", "enterprise"];
 
 export type OwnedChannel = "website" | "searchAds" | "aiAds";
 // Setup and monthly upkeep in euros; email is always on and free.
@@ -92,6 +92,8 @@ export interface Marketing {
 export type SiteHost = { kind: "rented" } | { kind: "own"; clusterId: string };
 
 const AWARENESS_FLOOR = 0.02;
+// Web developers start unknown to the host: a quarter of the usual awareness, until the first events and fairs reach them.
+const floorOf = (p: Profile): number => (p === "webDev" ? AWARENESS_FLOOR / 4 : AWARENESS_FLOOR);
 const AWARENESS_DECAY = 0.02;
 export const REVIEW_HOURS = 2 * 8760;
 
@@ -104,7 +106,7 @@ export function wonLeads(s: GameState, ago: 0 | 1): Partial<Record<Product, numb
 
 export const newMarketing = (): Marketing => ({
   owned: [], campaigns: [], reviews: [], platform: null, studies: [], lines: [], emailOrders: true, customRequests: true, siteReady: null, launched: false, siteHost: { kind: "rented" }, designYear: 2005, designReady: null, siteOutage: false, unmet: { month: {}, last: {} }, published: null, flyers: [],
-  awareness: Object.fromEntries(PROFILE_IDS.map((p) => [p, p === "private" || p === "gamer" ? 0.05 : AWARENESS_FLOOR])) as Record<Profile, number>,
+  awareness: Object.fromEntries(PROFILE_IDS.map((p) => [p, p === "private" || p === "gamer" ? 0.05 : floorOf(p)])) as Record<Profile, number>,
 });
 
 export const owns = (s: GameState, c: OwnedChannel): boolean => s.marketing.owned.includes(c);
@@ -205,7 +207,7 @@ function updateAwareness(s: GameState): void {
     const happy = s.customers.filter((c) => c.profile === p && c.churnedAt === null && c.happiness >= 70).length;
     const gain = 0.05 * (1 - Math.exp(-paid[p] / 100)) + site + reviews + Math.min(0.01, 0.0005 * happy) + fairGain(s, p);
     const a = next[p];
-    next[p] = Math.min(1, Math.max(AWARENESS_FLOOR, a + (1 - a) * gain - AWARENESS_DECAY * a));
+    next[p] = Math.min(1, Math.max(floorOf(p), a + (1 - a) * gain - AWARENESS_DECAY * a));
   }
   s.marketing.awareness = next;
 }

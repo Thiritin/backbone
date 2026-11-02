@@ -3,7 +3,7 @@ import type { Cycle } from "../10-catalog/cycles";
 import type { MethodId } from "../10-catalog/payments";
 import type { Address } from "./addresses";
 
-export type Profile = "private" | "gamer" | "hobbyDev" | "soleProp" | "smallBiz" | "agency" | "office" | "onlineShop" | "enterprise" | "reseller";
+export type Profile = "private" | "gamer" | "hobbyDev" | "soleProp" | "smallBiz" | "agency" | "webDev" | "office" | "onlineShop" | "enterprise" | "reseller";
 export type Product = "webHosting" | "domain" | "ssl" | "dns" | "gameServer" | "vps" | "vpn" | "dedicated" | "storage" | "cloud" | "colocation" | "gpu" | "reseller";
 // A friend always pays on time.
 export type PaymentHabit = "prompt" | "late" | "bad" | "friend";

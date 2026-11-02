@@ -20,6 +20,7 @@ export default {
   "site.blurb.soleProp": () => "Des services, des horaires d'ouverture et un formulaire de contact pour une entreprise d'une seule personne.",
   "site.blurb.smallBiz": () => "Une liste de prix, un plan et les horaires du commerce du coin.",
   "site.blurb.agency": () => "Des études de cas, un mur de logos de clients et un bouton qui dit Let's talk.",
+  "site.blurb.webDev": () => "Un portfolio de sites clients et un pied de page qui indique qui les a faits.",
   "site.blurb.office": () => "Des horaires de consultation, des demandes de rendez-vous et une politique de confidentialité.",
   "site.blurb.onlineShop": () => "Un catalogue de produits avec un panier et une page de paiement.",
   "site.blurb.enterprise": () => "Des communiqués de presse, une page investisseurs et une rubrique carrières avec une photo de banque d'images d'une poignée de main.",
