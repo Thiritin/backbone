@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- When a customer's traffic outgrows their plan, their customer page now lets you throttle the traffic, bill the overage or offer them a bigger plan.
 - Defaced customer sites now appear in the Security app, where you restore them from a backup, offer a paid clean-up billed at your hourly rate, remind the owner to clean up, or suspend the site with a notice that names the hack, and a clean site comes back online by itself.
 - Customers with a defaced site and no backup can buy a clean-up by the hour; the dearer your rate against the market, the more of them say no and some cancel.
 - Stopping a server or freezing a container now frees its memory, and OpenVeeZee containers take only the memory they actually use and are set up straight from an OS template without an install disc.
