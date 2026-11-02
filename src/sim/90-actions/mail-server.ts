@@ -47,8 +47,8 @@ export function setWebmailDefault(s: GameState, clusterId: string): ActionResult
 
 // Removing a front end drops what it kept; the mail stays on the server.
 export function dropWebmail(s: GameState, clusterId: string): void {
-  const { [clusterId]: _, ...installs } = s.webmail.installs;
-  s.webmail = { ...s.webmail, installs, default: s.webmail.default === clusterId ? null : s.webmail.default };
+  const { [clusterId]: _, ...installs } = s.webmail.installs, { [clusterId]: _u, ...users } = s.webmail.users;
+  s.webmail = { ...s.webmail, installs, users, default: s.webmail.default === clusterId ? null : s.webmail.default };
 }
 
 // A switch on the mail server's own page; Mailpig's Rspamed is always on.

@@ -234,8 +234,8 @@ Rules that hold across SquirrelMeal and Squarecube:
 s.webmail: {
   installs: Record<clusterId, {
     productName: string; smtpHost: string | null; installerOpen: boolean; plugins: string[];
-    users: Record<accountId, { identities: Identity[]; contacts: Contact[]; groups: ContactGroup[]; prefs: WebmailPrefs; localFilters: MailRule[]; filteredAt: number }>;
   }>;
+  users: Record<clusterId, Record<accountId, { identities: Identity[]; contacts: Contact[]; groups: ContactGroup[]; prefs: WebmailPrefs; localFilters: MailRule[]; filteredAt: number }>>;
   servers: Record<mailClusterId, { spamFilter: boolean }>;   // Spamsassin on a Postfixit server
   subs: Record<accountId, string[]>;                          // folder ids the account unsubscribed
   default: string | null;                                     // the cluster that answers at webmail.<domain>
@@ -244,7 +244,7 @@ s.webmail: {
 
 Milestone 1 builds `installs` and `default` only. An install holds what conf.pl sets: `productName`, `domain`, `imapHost`, `imapPort`, `smtpHost`, `smtpPort`, `plugins` and the other config.php values in `conf`; the IMAP server it names decides `Cluster.backend`. `installerOpen`, `users`, `servers` and `subs` come with the milestones that use them.
 
-`newGame` sets `webmail` to empty records and `deserialize` spreads it, so old saves load with no installs and no data. A user's entry is created on first sign-in with one identity from the account (title, address) and the defaults of the installed version. The backend id sits on the cluster (2.1). SOGoat keeps its calendar and address books under a `groupware` key per user, added in milestone 10. `Identity`, `Contact`, `ContactGroup` and `WebmailPrefs` are defined in `src/sim/80-business/webmail.ts`.
+`newGame` sets `webmail` to empty records and `deserialize` spreads it, so old saves load with no installs and no data. Users sit beside the installs, keyed by front end cluster, so saving conf.pl never touches them, and removing a front end drops its users. A user's entry is read with one identity from the account (title, address) and the defaults of the installed version until its first save. SquirrelMeal's preferences are `theme`, `perPage` and `trash` (a folder id, empty for "Do not use Trash"); `groups` come with Squarecube. The backend id sits on the cluster (2.1). SOGoat keeps its calendar and address books under a `groupware` key per user, added in milestone 10. `Identity`, `Contact`, `ContactGroup` and `WebmailPrefs` are defined in `src/sim/80-business/webmail.ts`.
 
 ## 5. Administration of the own mail server
 
@@ -427,6 +427,7 @@ Built in milestone 2, where it differs from the text above:
 - Sim: the plugin rules of 3.4: `saveLocalFilter` and `runLocalFilters` (rules applied on opening the Inbox over mail newer than `filteredAt`), the Change Password plugin on `changePassword`, the subscription list in `s.webmail.subs`.
 - UI: the frameset on the mail kit's hooks: login with KeePassive, folder tree, message list with Move and Transform, reader, compose, Options, Folders, Addresses, Search, the plugin screens, Havelsieve when Sieve is available.
 - i18n: the mailbox and Options strings.
+- As built: the message list moves but does not copy, as SquirrelMeal 1.4 has no Copy; Folder Preferences pick the Trash folder only; View Full Header and View as HTML wait for `messageSource` (milestone on mail sources); Add an attachment picks a document from the desktop. `saveIdentity`, `removeIdentity`, `saveContact`, `removeContact` and `setWebmailPref` land here in `90-actions/webmail.ts`, with `deleteWebmailMessages` (the Trash preference) and `setFolderSubscribed`; Squarecube reuses them.
 - Tests: `tests/squirrelmeal.test.ts`. Delete moves to Trash and "Do not use Trash" removes; Message Filters sort only when the Inbox is opened; Change Password needs the old password; a wrong IMAP server blocks login; a wrong password shows the real error text.
 
 ### Milestone 4: Squarecube as installable software

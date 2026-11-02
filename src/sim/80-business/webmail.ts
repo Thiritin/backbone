@@ -4,6 +4,7 @@ import { t } from "../../i18n/en";
 import { companyDomain, fqdn } from "../30-customers/domains";
 import { WEBMAIL, type WebmailId } from "../10-catalog/webmail";
 import { mailHooks, type SelfHostCaps } from "../42-mail/caps";
+import type { MailRule } from "../42-mail/types";
 import type { GameState } from "../50-state";
 import { machineAddress } from "../60-infra/addresses";
 import { controlPlaneUp, machineOf, type Cluster } from "../60-infra/cluster";
@@ -17,8 +18,20 @@ export interface WebmailInstall {
   conf: Record<string, string>;
 }
 // installs by front end cluster; default is the cluster that answers at webmail.<domain>, null for the first installed;
-// options are the mail servers' switches by cluster (section 5.1).
-export interface WebmailState { installs: Record<string, WebmailInstall>; default: string | null; options: Record<string, Partial<Record<MailOption, boolean>>> }
+// options are the mail servers' switches by cluster (section 5.1); users by front end cluster and account (section 4.4);
+// subs the folder ids each account unsubscribed.
+export interface WebmailState {
+  installs: Record<string, WebmailInstall>; default: string | null; options: Record<string, Partial<Record<MailOption, boolean>>>;
+  users: Record<string, Record<string, WebmailUser>>; subs: Record<string, string[]>;
+}
+
+export interface Identity { name: string; email: string; replyTo: string; signature: string }
+export interface Contact { nick: string; name: string; email: string; info: string }
+export type WebmailPrefs = Record<string, string | number | boolean>;
+// What a front end keeps for one account; localFilters run over Inbox mail newer than filteredAt (game minutes).
+export interface WebmailUser { identities: Identity[]; contacts: Contact[]; prefs: WebmailPrefs; localFilters: MailRule[]; filteredAt: number }
+// trash is the folder a delete moves to, "" for "Do not use Trash".
+export const PREF_DEFAULTS = { theme: "default", perPage: 15, trash: "trash" } satisfies WebmailPrefs;
 
 // SquirrelMeal's plugins (section 3.4): the bundled ones start switched on.
 export const WEBMAIL_PLUGINS = ["filters", "changepass", "havelsieve", "squirrelspelt"] as const;
@@ -134,3 +147,14 @@ export function selfHostCaps(s: GameState): SelfHostCaps {
 }
 
 Object.assign(mailHooks, { installedWebmail, selfHostCaps });
+
+// An account's entry at a front end, fresh with one identity from the mailbox until the first save.
+export function webmailUser(s: GameState, clusterId: string, accountId: string): WebmailUser {
+  const kept = s.webmail.users[clusterId]?.[accountId];
+  if (kept) return kept;
+  const a = s.mail.accounts.find((x) => x.id === accountId);
+  return { identities: [{ name: a?.title ?? "", email: a ? `${a.local}@${a.domain}` : "", replyTo: "", signature: "" }], contacts: [], prefs: {}, localFilters: [], filteredAt: 0 };
+}
+export const webmailPref = <K extends keyof typeof PREF_DEFAULTS>(u: WebmailUser, key: K): (typeof PREF_DEFAULTS)[K] =>
+  (u.prefs[key] ?? PREF_DEFAULTS[key]) as (typeof PREF_DEFAULTS)[K];
+export const subscribed = (s: GameState, accountId: string, folderId: string): boolean => !s.webmail.subs[accountId]?.includes(folderId);
