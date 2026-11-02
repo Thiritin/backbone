@@ -218,7 +218,7 @@ Installing calls `installSoftware`; the wizard's Progress page shows the bar and
 
 ### 8.1 Toolbar, start page and home
 
-The toolbar gains a **home icon** left of the address bar. Home is the site index, `www.yahoy.com/dir/`. A new browser session's first tab opens there. The bookmarks bar keeps the company site once launched and the registrar under contract; the Sponsor-Bored and console bookmarks go away, since the index lists them.
+The toolbar gains a **home icon** left of the address bar. Home is the site index, `www.yahoy.com/dir/`, until the player clicks Make Goggle Your Homepage! on `www.goggle.com/`; Yahoy's own link takes it back. The home button, a new tab and a new browser session's first tab open the current home. `www.goggle.com/` is a search page in the 2005 Google look in every year, searching the same index as Yahoy with sponsored rows in a side column; the Goggle Apps product site lives under `/a/`. The bookmarks bar keeps the company site once launched and the registrar under contract; the Sponsor-Bored and console bookmarks go away, since the index lists them.
 
 ### 8.2 The index
 

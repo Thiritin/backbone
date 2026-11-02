@@ -29,10 +29,30 @@
 .gg-pitch { font-size: 15px; max-width: 640px; }
 .gg-free { font-weight: bold; color: #188038; }
 
-.gg-search { display: flex; flex-direction: column; align-items: center; gap: 12px; padding-top: 60px; }
-.gg-word { display: flex; align-items: center; gap: 8px; font-size: 40px !important; letter-spacing: -1px; }
-.gg-word .gg-mark { width: 48px; height: 48px; }
-.gg-search input { width: min(420px, 100%); padding: 4px; font-size: 15px; }
+.gg-query { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.gg-query input { width: min(420px, 100%); padding: 4px; font-size: 15px; }
+.gg-buttons { display: flex; gap: 8px; }
+.gg-start { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+.gg-start h1 { margin: 40px 0 0; }
+.gg-top { align-self: flex-end; display: flex; gap: 12px; font-size: 13px; }
+.gg-make-home { font-weight: bold; }
+.gg-word { font: bold 64px/1 "Book Antiqua", Palatino, Georgia, serif; letter-spacing: -2px; text-shadow: 2px 2px 1px #bbb; }
+.gg-word span:nth-child(1), .gg-word span:nth-child(4) { color: #1541c9; }
+.gg-word span:nth-child(2), .gg-word span:nth-child(6) { color: #c41200; }
+.gg-word span:nth-child(3) { color: #f3c518; }
+.gg-word span:nth-child(5) { color: #30a72f; }
+.gg-serp header { display: flex; align-items: center; gap: 16px; padding-bottom: 8px; border-bottom: 1px solid #3366cc; }
+.gg-serp .gg-logo { text-decoration: none; }
+.gg-serp .gg-word { font-size: 30px; letter-spacing: -1px; }
+.gg-serp .gg-query { flex-direction: row; flex-wrap: wrap; }
+.gg-serp-body { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+.gg-hits, .gg-ads ol { list-style: none; margin: 0; padding: 0; }
+.gg-hits { flex: 1 1 320px; min-width: 0; }
+.gg-hits li, .gg-ads li { display: flex; flex-direction: column; margin: 14px 0; }
+.gg-hits a { font-size: 16px; }
+.gg-hits cite, .gg-ads cite { color: #008000; font-style: normal; }
+.gg-ads { width: 240px; flex: none; padding-left: 12px; border-left: 1px solid #c3d9ff; }
+.gg-ads h2 { margin: 14px 0 0; font-size: 12px; font-weight: normal; color: #676767; }
 
 .gg-hero { padding: 16px; background: var(--gg-box); border: 1px solid var(--gg-line); border-radius: var(--gg-radius); }
 .gg-workspace .gg-hero, .gg-swoot .gg-hero { border: 0; padding: 32px 24px; }

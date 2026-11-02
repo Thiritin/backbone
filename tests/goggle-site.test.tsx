@@ -9,11 +9,13 @@ import { mxSetAt } from "../src/sim/10-catalog/mail-providers";
 import { mxTarget } from "../src/sim/42-mail/caps";
 import type { GameState } from "../src/sim/50-state";
 import { mxHostsAt } from "../src/sim/60-infra/company-zone";
-import { defaultBookmarks, resolve } from "../src/sim/80-business/browser";
+import { defaultBookmarks, HOME_URL, resolve } from "../src/sim/80-business/browser";
 import { siteIndex } from "../src/sim/80-business/index";
 import { setCompanyRecord } from "../src/sim/90-actions/domains";
 import { setTenantLock } from "../src/sim/90-actions/mail";
 import { connectGoggleDns, signUpGoggle } from "../src/sim/90-actions/mail-provider";
+import { homeUrl } from "../src/ui/apps/browser/home";
+import { IndexSite, searchHits } from "../src/ui/apps/browser/sites/index/IndexSite";
 import { GoggleSite, goggleTitle } from "../src/ui/apps/browser/sites/mail/goggle/GoggleSite";
 import { writeSession } from "../src/ui/session";
 import { useStore } from "../src/ui/store";
@@ -41,6 +43,7 @@ afterEach(cleanup);
 describe("Goggle site", () => {
   it("answers on goggle.com and accounts.goggle.com and sits in the index", () => {
     const s = readyGame(1);
+    s.hour = at("2007-01");
     expect(resolve(s, "www.goggle.com/pricing").page).toEqual({ kind: "mailProvider", id: "goggle" });
     expect(resolve(s, "accounts.goggle.com/recovery").page).toEqual({ kind: "mailProvider", id: "goggle" });
     const row = siteIndex(s).find((c) => c.title === t("sim.index.cat.mailProviders"))!.rows.find((r) => r.title === "Goggle")!;
@@ -58,7 +61,8 @@ describe("Goggle site", () => {
     for (const [ym, brand, editions] of cases) {
       const s = readyGame(2);
       s.hour = at(ym);
-      expect(goggleTitle(s, "www.goggle.com", "/")).toBe(t(brand));
+      expect(goggleTitle(s, "www.goggle.com", "/a/")).toBe(t(brand));
+      expect(goggleTitle(s, "www.goggle.com", "/")).toBe("Goggle");
       const { container } = show(s, "www.goggle.com/pricing");
       expect([...container.querySelectorAll(".gg-editions thead th[data-plan]")].map((x) => x.textContent)).toEqual(editions.map((e) => t(`mail.goggle.edition.${e}`)));
       cleanup();
@@ -156,5 +160,34 @@ describe("Goggle site", () => {
     fireEvent.click(container.querySelector(".ga-locked button")!);
     expect(tenant(useStore.getState().game)).toMatchObject({ plan: "paid" });
     expect(tenant(useStore.getState().game).locked).toBeUndefined();
+  });
+
+  it("searches the web from its root in every era and becomes the browser's home page", () => {
+    for (const ym of ["2005-06", "2012-03"]) {
+      const s = readyGame(9);
+      s.hour = at(ym);
+      const went: string[] = [];
+      useStore.setState({ game: s });
+      render(<GoggleSite game={s} host="www.goggle.com" path="/" go={(u) => went.push(u)} />);
+      fireEvent.change(document.querySelector('input[name="q"]')!, { target: { value: "bank" } });
+      fireEvent.submit(document.querySelector("form")!);
+      expect(went.at(-1)).toBe("www.goggle.com/search?q=bank");
+      click("goggle.search.lucky");
+      expect(went.at(-1)).toBe(searchHits(s, "bank").find((h) => !h.ad)!.row.url);
+      cleanup();
+      const { container } = show(s, "www.goggle.com/search?q=bank");
+      expect(container.querySelectorAll(".gg-hits li").length).toBe(searchHits(s, "bank").filter((h) => !h.ad).length);
+      cleanup();
+    }
+    const s = readyGame(9);
+    expect(homeUrl()).toBe(HOME_URL);
+    show(s, "www.goggle.com/");
+    click("goggle.search.makeHome");
+    expect(homeUrl()).toBe("www.goggle.com/");
+    expect(screen.queryByText(t("goggle.search.makeHome"))).toBeNull();
+    cleanup();
+    render(<IndexSite game={s} path="/dir/" go={() => {}} />);
+    click("browser-sites-1.ix.makeHome");
+    expect(homeUrl()).toBe(HOME_URL);
   });
 });
