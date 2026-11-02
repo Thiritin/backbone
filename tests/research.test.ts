@@ -2,6 +2,11 @@ import { newGame } from "./fixtures";
 import { describe, expect, it } from "vitest";
 import { SKILLS, skillById, skillFor } from "../src/sim/10-catalog/research";
 import { STORE } from "../src/sim/10-catalog/store";
+import { SOFTWARE } from "../src/sim/10-catalog/platforms";
+import { PRODUCTS } from "../src/sim/10-catalog/products";
+import { SHOPS } from "../src/sim/10-catalog/shops";
+import { en } from "../src/i18n/en";
+import type { Dict } from "../src/i18n/lang";
 import { type GameState } from "../src/sim/50-state";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { install, research } from "../src/sim/90-actions/store";
@@ -20,6 +25,30 @@ describe("research", () => {
     expect(new Set(SKILLS.map((k) => k.tier)).size).toBeGreaterThanOrEqual(3);
     for (const id of ["Staff", "Marketing", "Market", "Nagiosaurus"]) expect(SKILLS.filter((k) => k.opens.includes(id))).toHaveLength(1);
     for (const k of SKILLS) for (const id of k.opens) expect(STORE.some((i) => i.id === id)).toBe(true);
+  });
+
+  it("declares unlocks whose ids all resolve and whose feature text exists in every language", () => {
+    const packs = Object.values(import.meta.glob<{ default: Dict }>("../src/i18n/*/ui-sim.ts", { eager: true })).map((m) => m.default);
+    const software = new Set([...SOFTWARE.map((x) => x.id), ...SHOPS.map((x) => x.id)]);
+    expect(packs).toHaveLength(5);
+    for (const k of SKILLS) {
+      expect(k.unlocks.length).toBeGreaterThan(0);
+      for (const u of k.unlocks) {
+        if (u.kind === "app") expect(STORE.some((i) => i.id === u.id)).toBe(true);
+        if (u.kind === "product") expect(PRODUCTS[u.id]).toBeDefined();
+        if (u.kind === "software") expect(SOFTWARE.some((x) => x.id === u.id)).toBe(true);
+        if (u.kind !== "feature") continue;
+        const key = `sim.unlock.${u.id}`;
+        expect(en[key], key).toBeDefined();
+        for (const dict of packs) expect(dict[key], key).toBeDefined();
+        for (const id of u.software ?? []) expect(software.has(id), id).toBe(true);
+      }
+    }
+    const reservation = skillById("memoryReservation")!.unlocks[0];
+    expect(reservation.kind === "feature" && reservation.software).toEqual(expect.arrayContaining(["vmwhere", "proxmocks"]));
+    expect(reservation.kind === "feature" && reservation.software).not.toContain("openstash");
+    expect(skillById("cloudOrchestration")!.opens).toEqual([]);
+    expect(skillById("automation")!.opens).toEqual(["chadGpt", "clipsy"]);
   });
 
   it("has a two to four page explainer for every skill", () => {
