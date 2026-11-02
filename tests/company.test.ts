@@ -1,13 +1,14 @@
 import { newGame } from "./fixtures";
 import { describe, expect, it } from "vitest";
 import { COMPANY_COLORS, setCompany } from "../src/sim/90-actions/company";
+import { PARKING } from "../src/sim/60-infra/company-zone";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 
 describe("company profile", () => {
   it("sets a trimmed name, a logo and a colour", () => {
     const s = newGame(7);
     expect(setCompany(s, { name: "  Pixel Pipes  ", logo: "rocket", color: COMPANY_COLORS[3] })).toEqual({ ok: true });
-    expect(s.company).toEqual({ name: "Pixel Pipes", logo: "rocket", color: COMPANY_COLORS[3], domain: null, mail: { kind: "free" }, tagline: "" });
+    expect(s.company).toEqual({ name: "Pixel Pipes", logo: "rocket", color: COMPANY_COLORS[3], domain: null, mail: { kind: "free" }, tagline: "", zone: PARKING });
   });
 
   it("accepts the animal and toaster logos", () => {

@@ -1,10 +1,10 @@
 import { registrarById, tierFor } from "../10-catalog/registrars";
 import { domainOf, heldDomains, outCode, REGISTRIES, register } from "../30-customers/registry";
 import { beginTransfer, DOMAIN_OUT, TRANSFER_MINUTES } from "../30-customers/registrar";
-import { MINUTES } from "../40-support/tickets";
+import { deliverMail, MINUTES } from "../40-support/tickets";
 import { find, queue } from "./support";
 import { taken } from "../30-customers/domains";
-import { providerDomain } from "../80-business/browser";
+import { partnerOf, providerDomain, registrarUrl } from "../80-business/browser";
 import { yearOf } from "../00-core/time";
 import { techsAt, OP_TASK, queueOp } from "../47-staff/technicians";
 import type { GameState } from "../50-state";
@@ -39,6 +39,8 @@ export function registerCompanyDomain(s: GameState, input: string): ActionResult
   if (s.company.domain) return fail("error.companyDomainOwned");
   const bad = companyDomainError(s, name);
   if (bad) return fail(bad);
+  // The partner's confirmation of the first domain opens its login, where the DNS page edits the company zone.
+  if (!s.domains.length) deliverMail(s, partnerOf(s).name, "registrarLogin", { name: partnerOf(s).name, domain: name, url: `${registrarUrl(s)}login` });
   register(s, name, null, false);
   s.company = { ...s.company, domain: name };
   return { ok: true, id: name };

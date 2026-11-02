@@ -56,6 +56,7 @@ import * as openveezee from "./openveezee";
 import * as vswitch from "./vswitch";
 import * as rates from "./rates";
 import * as registrar from "./registrar";
+import * as domains from "./domains";
 import * as remote from "./remote";
 import * as lan from "./lan";
 import * as routers from "./routers";
@@ -83,7 +84,7 @@ export type Call = [Action, ...unknown[]];
 export type { LogEntry };
 export const LOG_CAP = 50_000;
 
-const modules = [games, addresses, lan, backups, bank, billing, bookkeeping, burnin, catalog, changes, checklist, clusters, community, datastores, company, console_, cpus, customers, dev, holds, licence, licences, shoplink, vendorShop, oversell, packages, portal, firewall, horizont, quorum, replication, webpanel, docs, paperwork, tax, files, hardware, mail, maintenance, market, marketing, media, moves, netsvcDns, netsvcMail, netsvcQuota, netsvcStorage, netsvcVpn, network, openveezee, os, orders, rates, registrar, remote, routers, sales, security, shop, snapshots, software, staff, start, store, suite, switches, support, templates, travel, used, vms, vmwhere, vswitch, website];
+const modules = [games, addresses, lan, backups, bank, billing, bookkeeping, burnin, catalog, changes, checklist, clusters, community, datastores, company, console_, cpus, customers, dev, domains, holds, licence, licences, shoplink, vendorShop, oversell, packages, portal, firewall, horizont, quorum, replication, webpanel, docs, paperwork, tax, files, hardware, mail, maintenance, market, marketing, media, moves, netsvcDns, netsvcMail, netsvcQuota, netsvcStorage, netsvcVpn, network, openveezee, os, orders, rates, registrar, remote, routers, sales, security, shop, snapshots, software, staff, start, store, suite, switches, support, templates, travel, used, vms, vmwhere, vswitch, website];
 const hyperModules = [haGroups, projects];
 // Every exported function of 90-actions by its name, so a replay can call the actions a run logged.
 export const ACTIONS: Record<string, Action> = Object.fromEntries([...modules, ...hyperModules].flatMap((m) => Object.entries(m).filter(([, f]) => typeof f === "function"))) as Record<string, Action>;
