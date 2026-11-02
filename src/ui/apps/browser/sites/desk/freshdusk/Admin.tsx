@@ -16,32 +16,35 @@ import { addDepartment, addDeskChannel, addRule, removeDepartment, removeDeskCha
 import { removeDesk, verifyDesk, verifyForwarding } from "../../../../../../sim/90-actions/desk-install";
 import { Confirm } from "../../../../../desktop/Confirm";
 import { useStore } from "../../../../../store";
+import { AiSwitches, aiFeatures } from "../headless/AiPage";
 import { agentName, SCENARIOS } from "./Agent";
 import { Panel, type FdProps, type Look } from "./FreshduskSite";
 
-type Section = "helpdesk" | "portal" | "email" | "agents" | "groups" | "canned" | "scenarios" | "dispatcher" | "supervisor" | "observer" | "sla" | "account";
+type Section = "helpdesk" | "portal" | "email" | "agents" | "groups" | "canned" | "scenarios" | "dispatcher" | "supervisor" | "observer" | "sla" | "account" | "ai";
 const RULES: Section[] = ["dispatcher", "supervisor", "observer"];
 
 // The Admin page per look: Helpdesk Settings, Helpdesk Productivity and General Settings, regrouped by Mint.
-function groups(look: Look, sla: boolean): [string, Section[]][] {
+function groups(look: Look, sla: boolean, ai: Section[]): [string, Section[]][] {
   const s: Section[] = sla ? ["sla"] : [];
   if (look !== "mint") {
-    return [["fd.admin.g.settings", ["helpdesk", "email", "portal", ...s]], ["fd.admin.g.productivity", ["dispatcher", "supervisor", "observer", "scenarios", "canned"]],
+    return [["fd.admin.g.settings", ["helpdesk", "email", "portal", ...s]], ["fd.admin.g.productivity", ["dispatcher", "supervisor", "observer", "scenarios", "canned", ...ai]],
       ["fd.admin.g.general", ["agents", "groups", "account"]]];
   }
   return [["fd.admin.g.channels", ["email", "portal"]], ["fd.admin.g.workflows", ["dispatcher", "supervisor", "observer", ...s]],
-    ["fd.admin.g.agentProductivity", ["scenarios", "canned"]], ["fd.admin.g.team", ["agents", "groups"]], ["fd.admin.g.account", ["helpdesk", "account"]]];
+    ["fd.admin.g.agentProductivity", ["scenarios", "canned", ...ai]], ["fd.admin.g.team", ["agents", "groups"]], ["fd.admin.g.account", ["helpdesk", "account"]]];
 }
-const label = (look: Look, x: Section) => t(look === "mint" && RULES.includes(x) ? `fd.admin.${x}.mint` : `fd.admin.${x}`);
+// Suggested solutions from 2011, Freddie from 2018.
+const label = (look: Look, x: Section, year = 0) =>
+  x === "ai" ? t(year >= 2018 ? "ai.fd.page.freddie" : "ai.fd.suggestedArticles") : t(look === "mint" && RULES.includes(x) ? `fd.admin.${x}.mint` : `fd.admin.${x}`);
 
 export function AdminPage(p: FdProps) {
-  const all = groups(p.look, deskHas(p.game, "slaTimers")), section = p.route.args.section as Section | undefined;
+  const all = groups(p.look, deskHas(p.game, "slaTimers"), aiFeatures(p.game).length ? ["ai"] : []), section = p.route.args.section as Section | undefined;
   if (p.route.page === "admin" || !section || !all.some(([, items]) => items.includes(section))) {
     return (
       <div className="fd-admin">
         {all.map(([head, items]) => (
           <Panel key={head} title={t(head)}>
-            <div className="fd-admintiles">{items.map((x) => <a key={x} onClick={() => p.nav("adminScreen", { section: x })}>{label(p.look, x)}</a>)}</div>
+            <div className="fd-admintiles">{items.map((x) => <a key={x} onClick={() => p.nav("adminScreen", { section: x })}>{label(p.look, x, p.year)}</a>)}</div>
           </Panel>
         ))}
       </div>
@@ -49,15 +52,16 @@ export function AdminPage(p: FdProps) {
   }
   return (
     <>
-      <p className="fd-crumbs"><a onClick={() => p.nav("admin")}>{t("fd.nav.admin")}</a> / <span>{label(p.look, section)}</span></p>
+      <p className="fd-crumbs"><a onClick={() => p.nav("admin")}>{t("fd.nav.admin")}</a> / <span>{label(p.look, section, p.year)}</span></p>
       <Screen {...p} section={section} />
     </>
   );
 }
 
 function Screen(p: FdProps & { section: Section }) {
-  const { game, section } = p, title = label(p.look, section);
+  const { game, section } = p, title = label(p.look, section, p.year);
   if (section === "email") return <Email game={game} />;
+  if (section === "ai") return <Panel title={title}><AiSwitches game={game} brand="fd" /></Panel>;
   if (section === "agents") return <Agents game={game} />;
   if (section === "groups") return <Groups game={game} />;
   if (section === "canned") return <Panel title={title}><Table head={["fd.admin.title", "fd.admin.folder"]} rows={[...new Set(Object.values(TEMPLATES).flat())].map((id) => [t(`template.${id}.title`), t("fd.solutions.general")])} /></Panel>;

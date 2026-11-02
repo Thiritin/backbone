@@ -8,6 +8,7 @@ import { lookupTicket, submitWebTicket } from "../../../../../../sim/90-actions/
 import { ZenduskMark } from "../../../../../art/mailmarks";
 import { useStore } from "../../../../../store";
 import { KB_STEPS } from "../../companyCopy";
+import { Suggested, suggested } from "../headless/AiPage";
 import { useTicketPane } from "../headless/useTicketPane";
 import { when, type ZdPage, type ZdProps } from "./ZenduskSite";
 
@@ -81,7 +82,7 @@ function Article(p: ZdProps) {
 
 function NewRequest({ game, nav }: ZdProps) {
   const act = useStore((s) => s.attempt);
-  const [error, setError] = useState<string | null>(null), [done, setDone] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null), [done, setDone] = useState<string | null>(null), [subject, setSubject] = useState("");
   if (done) {
     const tk = game.tickets.find((x) => x.id === done);
     return <><h1>{t("zd.hc.sent")}</h1><p className="zd-notice">{t("zd.hc.sentText", { n: tk?.ref ?? "" })}</p><a onClick={() => nav("hc")}>{t("zd.hc.home")}</a></>;
@@ -100,7 +101,8 @@ function NewRequest({ game, nav }: ZdProps) {
         <select name="form" defaultValue=""><option value="">-</option>{FORMS.map((x) => <option key={x.id} value={x.id}>{t(`zd.hc.form.${x.id}`)}</option>)}</select>
       </label>
       <label><span>{t("zd.hc.yourEmail")}</span><input name="email" type="email" required /></label>
-      <label><span>{t("zd.hc.subject")}</span><input name="subject" /></label>
+      <label><span>{t("zd.hc.subject")}</span><input name="subject" value={subject} onChange={(e) => setSubject(e.target.value)} /></label>
+      <Suggested topics={suggested(game, subject)} brand="zd" open={(id) => nav("hcArticle", { id })} />
       <label><span>{t("zd.hc.description")}</span><textarea name="description" rows={6} /></label>
       <button type="submit" className="zd-btn primary">{t("zd.submit")}</button>
     </form>

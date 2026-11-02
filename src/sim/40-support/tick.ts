@@ -1,4 +1,5 @@
 import { importDeskTickets } from "./desk-channels";
+import { answerBot, articleDeflects, billDeskAi } from "./desk-ai";
 import { deskById, refToken } from "../10-catalog/desks";
 import { sentCopy } from "../42-mail/deliver";
 import { envelopeBox } from "../42-mail/tickets";
@@ -173,7 +174,7 @@ function spawnHourly(s: GameState): void {
       if (kind !== "howTo") { createTicket(s, c, kind); continue; }
       const ask = pickHowTo(s, c);
       if (!ask) continue;
-      if (HOW_TO[ask.topic].basic && s.installed.includes(KNOWLEDGE_BASE) && chance(s.rng, KB_DEFLECT)) s.kbReads = { ...s.kbReads, [ask.topic]: (s.kbReads[ask.topic] ?? 0) + 1 };
+      if ((HOW_TO[ask.topic].basic && s.installed.includes(KNOWLEDGE_BASE) && chance(s.rng, KB_DEFLECT)) || articleDeflects(s, ask.topic)) s.kbReads = { ...s.kbReads, [ask.topic]: (s.kbReads[ask.topic] ?? 0) + 1 };
       else createTicket(s, c, kind, ask.serviceId, ask.topic);
     }
   }
@@ -203,6 +204,7 @@ function outages(s: GameState, customer: (id: string) => Customer): void {
 // economy/happiness-and-churn.md, Happiness and churn: a cancellation left open is processed at the next monthly billing date.
 // A customer inside a paid term does not roll until the month the term ends, when one roll covers all its months.
 function monthly(s: GameState): void {
+  billDeskAi(s);
   for (const c of s.customers) if (c.churnedAt === null) c.history = [...c.history, c.happiness].slice(-HISTORY_MONTHS);
   overpricing(s);
   endDiscounts(s);
@@ -274,6 +276,9 @@ export function supportTick(s: GameState): SimEvent[] {
   readOnlySweep(s, () => webspaceTickets(s));
   if (isMonthStart(s.hour)) monthly(s);
   importDeskTickets(s);
+  const asked = new Map(s.tickets.map((t) => [t.id, t.replies.length]));
+  answerBot(s, customer, (t, c) => resolve(s, t, c));
+  sentCopies(s, asked);
 
   const fresh = s.tickets.filter((t) => !before.has(t.id) && t.kind !== "mail");
   if (fresh.length > 1) return [...events, { app: "Support", key: "event.tickets", params: { count: fresh.length } }];

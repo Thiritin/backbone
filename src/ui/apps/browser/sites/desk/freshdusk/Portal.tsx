@@ -3,6 +3,7 @@ import { t } from "../../../../../../i18n/en";
 import { companyDomain } from "../../../../../../sim/30-customers/domains";
 import type { Ticket, TicketKind } from "../../../../../../sim/40-support/tickets";
 import { kbArticles } from "../../../../../../sim/80-business/website";
+import { Suggested, suggested } from "../headless/AiPage";
 import { lookupTicket, submitWebTicket } from "../../../../../../sim/90-actions/desk";
 import { FreshduskMark } from "../../../../../art/mailmarks";
 import { useStore } from "../../../../../store";
@@ -85,7 +86,7 @@ function Article(p: FdProps) {
 
 function NewTicket({ game, nav }: FdProps) {
   const act = useStore((s) => s.attempt);
-  const [error, setError] = useState<string | null>(null), [done, setDone] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null), [done, setDone] = useState<string | null>(null), [subject, setSubject] = useState("");
   if (done) {
     const tk = game.tickets.find((x) => x.id === done);
     return <><h1>{t("fd.p.sent")}</h1><p className="fd-notice">{t("fd.p.sentText", { n: tk?.ref ?? "" })}</p><a onClick={() => nav("portal")}>{t("fd.p.home")}</a></>;
@@ -101,7 +102,8 @@ function NewTicket({ game, nav }: FdProps) {
       <h1>{t("fd.p.newTicket")}</h1>
       {error && <p className="fd-error">{error}</p>}
       <label><span>{t("fd.p.requester")}</span><input name="email" type="email" required /></label>
-      <label><span>{t("fd.col.subject")}</span><input name="subject" /></label>
+      <label><span>{t("fd.col.subject")}</span><input name="subject" value={subject} onChange={(e) => setSubject(e.target.value)} /></label>
+      <Suggested topics={suggested(game, subject)} brand="fd" open={(id) => nav("solution", { id })} />
       <label><span>{t("fd.type")}</span>
         <select name="type" defaultValue=""><option value="">-</option>{TYPES.map((x) => <option key={x.id} value={x.id}>{t(`fd.type.${x.id}`)}</option>)}</select>
       </label>

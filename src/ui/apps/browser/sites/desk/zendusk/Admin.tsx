@@ -15,14 +15,18 @@ import { addDepartment, addDeskChannel, addRule, removeDepartment, removeDeskCha
 import { removeDesk, verifyDesk, verifyForwarding } from "../../../../../../sim/90-actions/desk-install";
 import { Confirm } from "../../../../../desktop/Confirm";
 import { useStore } from "../../../../../store";
+import { AiSwitches, aiFeatures } from "../headless/AiPage";
 import { assigneeName, VIEWS, viewName } from "./Agent";
+
+// Article suggestions from 2013, Answer Bot from 2017, AI agents from 2023.
+const aiTitle = (year: number) => t(year >= 2023 ? "ai.zd.page.agents" : year >= 2017 ? "ai.zd.answerBot" : "ai.zd.suggestedArticles");
 import { MANAGE, Panel, SETTINGS, type ZdProps } from "./ZenduskSite";
 
-type Section = "overview" | "people" | "groups" | "views" | "macros" | "triggers" | "automations" | "sla" | "email" | "branding" | "subscription";
+type Section = "overview" | "people" | "groups" | "views" | "macros" | "triggers" | "automations" | "sla" | "email" | "branding" | "subscription" | "ai";
 
 // The admin menu per look: classic splits it over the Manage, Settings and Account tabs, the later looks group it in a side menu.
 function menu(p: ZdProps): [string, Section[]][] {
-  const sla: Section[] = deskHas(p.game, "slaTimers") ? ["sla"] : [];
+  const sla: Section[] = deskHas(p.game, "slaTimers") ? ["sla"] : [], ai: Section[] = aiFeatures(p.game).length ? ["ai"] : [];
   if (p.look === "classic") {
     const s = p.route.args.section ?? "";
     return MANAGE.includes(s) ? [["zd.nav.manage", ["macros", "views", "triggers", "automations", ...sla, "people", "groups"]]]
@@ -30,10 +34,11 @@ function menu(p: ZdProps): [string, Section[]][] {
   }
   if (p.look === "lotus") {
     return [["zd.admin.manage", ["overview", "people", "groups", "views", "macros"]], ["zd.admin.rules", ["triggers", "automations", ...sla]],
-      ["zd.admin.channels", ["email"]], ["zd.admin.settings", ["branding", "subscription"]]];
+      ["zd.admin.channels", ["email", ...ai]], ["zd.admin.settings", ["branding", "subscription"]]];
   }
-  return [["zd.admin.account", ["overview", "branding", "subscription"]], ["zd.admin.people", ["people", "groups"]], ["zd.admin.channels", ["email"]],
-    ["zd.admin.workspaces", ["views", "macros"]], ["zd.admin.objects", ["triggers", "automations", ...sla]]];
+  const late = p.year >= 2023;
+  return [["zd.admin.account", ["overview", "branding", "subscription"]], ...(late ? [["ai.zd.group", ai] as [string, Section[]]] : []), ["zd.admin.people", ["people", "groups"]],
+    ["zd.admin.channels", ["email", ...(late ? [] : ai)]], ["zd.admin.workspaces", ["views", "macros"]], ["zd.admin.objects", ["triggers", "automations", ...sla]]];
 }
 
 export function AdminPage(p: ZdProps) {
@@ -42,7 +47,7 @@ export function AdminPage(p: ZdProps) {
   const nav = groups.map(([head, items]) => (
     <div key={head}>
       {p.look !== "classic" && <h4>{t(head)}</h4>}
-      {items.map((x) => <a key={x} className={x === section ? "active" : ""} onClick={() => (x === "overview" ? p.nav("admin") : p.nav("adminScreen", { section: x }))}>{t(`zd.admin.${x}`)}</a>)}
+      {items.map((x) => <a key={x} className={x === section ? "active" : ""} onClick={() => (x === "overview" ? p.nav("admin") : p.nav("adminScreen", { section: x }))}>{x === "ai" ? aiTitle(p.year) : t(`zd.admin.${x}`)}</a>)}
     </div>
   ));
   return (
@@ -63,6 +68,7 @@ function Screen(p: ZdProps & { section: Section }) {
   if (section === "automations") return <Panel title={t("zd.admin.automations")}><Table head={["zd.admin.title"]} rows={[]} /></Panel>;
   if (section === "sla") return <Panel title={t("zd.admin.sla")}><Table head={["zd.admin.policy", "zd.admin.firstReply", "zd.users"]} rows={slaPlans(game).map((x) => [PROFILES.find((pr) => pr.id === x.id)!.name, t(x.clock === "business" ? "zd.businessHours" : "zd.hours", { n: x.hours }), String(x.customers)])} /></Panel>;
   if (section === "email") return <Email game={game} />;
+  if (section === "ai") return <Panel title={aiTitle(p.year)}><AiSwitches game={game} brand="zd" /></Panel>;
   if (section === "branding") return <Branding {...p} />;
   return <Subscription game={game} detail={section === "subscription"} />;
 }

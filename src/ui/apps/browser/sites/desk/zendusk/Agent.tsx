@@ -12,6 +12,7 @@ import { addNote, markSpam, setDepartment, setPriority } from "../../../../../..
 import { assignTicket } from "../../../../../../sim/90-actions/support";
 import { useStore } from "../../../../../store";
 import { ReplyPanel, type ReplyHandlers } from "../headless/ReplyPanel";
+import { Suggested, ticketArticle } from "../headless/AiPage";
 import { useDeskTickets } from "../headless/useDeskTickets";
 import { useTicketPane, type PaneItem } from "../headless/useTicketPane";
 import type { ReplyModel } from "../headless/useTicketReplies";
@@ -250,6 +251,7 @@ function TicketPage(p: ZdProps) {
         <h4>{t("zd.related")}</h4>
         <ul>{related.map((x) => <li key={x.id}><Status tk={x} /> <a onClick={() => nav("ticket", { n: x.ref ?? "" })}>#{x.ref} {subjectOf(game, x)}</a></li>)}</ul>
         {!related.length && <p className="zd-empty">{t("zd.none")}</p>}
+        <Suggested topics={[ticketArticle(game, tk)].filter((x) => x !== null)} brand="zd" open={(id) => nav("hcArticle", { id })} />
       </aside>
     </div>
   );
