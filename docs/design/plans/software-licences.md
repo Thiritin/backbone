@@ -69,6 +69,22 @@ The trial lengths follow the real products. `null` means a key is needed at inst
 - Checkout pays a one-time licence's price and a term licence's first month for one unit, as one ledger line per order. A cancelled term licence stops renewing, runs to the end of the term it paid for and then lapses.
 - The cart is one list in the game state; each vendor site shows and checks out only the lines it sells. Lexwear and the other bookkeeping vendors keep selling their modules on their own pages.
 
+## Consoles
+
+A console shows the edition it holds as a value and never sells or changes one; editions, upgrades and update terms are bought in My account on the vendor's site. Every licensed product shows its edition, status, held key with Remove, and a key field while it holds none, and opens on its licence page at the first sign-in while it runs a trial.
+
+| Console | Licensed | What changed |
+|---|---|---|
+| cPanic, Pleskit, DirectAdmen | yes | Status shows active, trial end, expired or none, with the renewal date or the version the key covers. |
+| VMwhere vSphear | yes | Licensing shows status, key, Remove and key entry; the Enterprise Plus purchase per cluster is gone, and DRS runs on the edition keys that include it, manual from Standard and automatic from Enterprise; first sign-in opens the licence page. |
+| HyperVee Manager | yes | Settings shows status, key, Remove and key entry; the SysCenter VMM purchase is gone, since HyperVee never moves VMs live and so never balanced; first sign-in opens the licence page. |
+| TCAdmen, MultiKraft, AnyConnekt, Veeham | yes | The licence page shows status and the renewal or covered version; TCAdmen and Veeham open on it at the first sign-in during their trial. |
+| Shop systems (portal admin) | yes | Remove next to the held key, key field only without one; paid upgrades and update renewals open My account on the vendor site. ModemBill has no vendor site and keeps them in its admin. |
+| Proxmocks, OpenVeeZee, Horizont, PowerDnz, OwnClod, MinnIO, Mailpig, Backula, Proxmocks Backup, Pterodaktyl, PostfixitAdmin, SquirrelMeal, OpenVeePeeN, FreePanel | no | Nothing. |
+| Softaculus, CustomBuild, UpdatesPage, vendor CLI | | Already take a typed key from My account or start the trial, like the console. |
+
+The VMwhere App Suite and the shop modules stay bought in their consoles: they are services of the product, not editions of its licence.
+
 ## Lanes
 
 | Lane | Scope | After |

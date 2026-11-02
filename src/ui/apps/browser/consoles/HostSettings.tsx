@@ -10,7 +10,8 @@ import { CHANNELS, channelOf } from "../../../../sim/60-infra/channel";
 import { setChannel } from "../../../../sim/90-actions/software";
 import { setOversell } from "../../../../sim/90-actions/oversell";
 import { tiersOf } from "../../../../sim/10-catalog/licence-tiers";
-import { accountsOn, licenceExpired, panelMachine, panelStatus, tierOf, trialOf } from "../../../../sim/60-infra/licence";
+import { accountsOn, isLicensed, licenceExpired, panelKey, panelMachine, panelStatus, tierOf, trialOf } from "../../../../sim/60-infra/licence";
+import { editionName, editionOf, isVmwhere } from "../../../../sim/60-infra/vmwhere";
 import { shopById } from "../../../../sim/10-catalog/shops";
 import { deskById, deskReady, DESKS, type DeskId } from "../../../../sim/10-catalog/desks";
 import { installDesk, removeDesk } from "../../../../sim/90-actions/desk-install";
@@ -69,20 +70,25 @@ export function ChannelPicker({ c }: { c: Cluster }) {
 export const LicenceBanner = ({ game, c }: { game: GameState; c: Cluster }) =>
   tiersOf(c.panel).length > 0 && licenceExpired(game, c) ? <p className="cx-banner bad" role="alert">{t("error.licenceExpired")}</p> : null;
 
-// Edition, accounts against the cap and expiry of the key the host holds; editions are bought on the vendor site.
+// Edition, accounts against the cap, status and term of the key the host holds; editions are bought on the vendor site.
 export function LicenceFacts({ game, c }: { game: GameState; c: Cluster }) {
-  const tier = tierOf(game, c);
-  if (!tier) return null;
-  const status = panelStatus(game, c), machine = panelMachine(c), trial = machine && c.panel ? trialOf(game, machine, c.panel) : undefined;
-  const facts: Fact[] = [
-    { label: t("host.edition"), value: tier.name },
-    { label: t("host.accounts"), value: tier.cap === null ? t("host.unlimited", { n: accountsOn(game, c) }) : t("host.of", { n: accountsOn(game, c), cap: tier.cap }), num: true },
-    { label: t("host.expires"), value: status === "lapsed" ? t("host.lapsed") : status !== "active" && trial ? t("host.trialUntil", { date: formatClock(trial.until) }) : t("host.never"), num: true },
+  const id = c.panel ?? c.platform, machine = panelMachine(c);
+  if (!id || !machine || !isLicensed(id)) return null;
+  const tier = tierOf(game, c), edition = tier?.name ?? (isVmwhere(c) ? editionName(editionOf(c)) : undefined);
+  const status = panelStatus(game, c), key = panelKey(game, c), trial = trialOf(game, machine, id);
+  const state = status === "trial" && trial ? t("host.trialUntil", { date: formatClock(trial.until) }) : status === "ended" && !trial ? t("host.none") : t(`shop-admin.licence_${status}`);
+  const facts: (Fact | false | undefined)[] = [
+    !!edition && { label: t("host.edition"), value: edition },
+    tier && { label: t("host.accounts"), value: tier.cap === null ? t("host.unlimited", { n: accountsOn(game, c) }) : t("host.of", { n: accountsOn(game, c), cap: tier.cap }), num: true },
+    { label: t("shop-admin.status"), value: state },
+    key && (key.covers.kind === "term"
+      ? { label: t(key.renewsAt !== null ? "host.renews" : "host.termEnds"), value: formatClock(key.renewsAt ?? key.covers.until), num: true }
+      : { label: t("readouts.version"), value: key.covers.major, num: true }),
   ];
   return (
     <>
       <LicenceBanner game={game} c={c} />
-      <Facts facts={facts} />
+      <Facts facts={facts.filter((x): x is Fact => !!x)} />
     </>
   );
 }

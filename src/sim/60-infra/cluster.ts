@@ -88,8 +88,6 @@ export interface Cluster {
   autoUpdate?: boolean;
   // Whether a VMwhere cluster pays for the App Suite (APP_SUITE_FEE).
   appSuite: boolean;
-  // Whether the cluster pays for its hypervisor's balancer edition (Software.balancer).
-  balancer?: boolean;
   php: string; phpUntil: number; ha: Ha; version: number; updatedAt: number;
   // Whether a panel host's PHP loads the ionCube Loader, which encoded shop systems need.
   ioncube?: boolean;
@@ -354,11 +352,8 @@ export function supports(c: Cluster, p: Product): boolean {
   if (p === "cloud" && c.platform !== "openstash") return false;
   return !PRODUCTS[p].ha || c.ha.failover;
 }
-// Whether the cluster's hypervisor balances VMs now: an included balancer, or a paid edition the cluster bought.
-export const balances = (s: GameState, c: Cluster): boolean => {
-  const b = c.platform ? balancerIn(softwareById(c.platform), yearOf(s.hour)) : null;
-  return !!b && (b.fee === 0 || !!c.balancer);
-};
+// Whether the cluster's hypervisor balances VMs this year; VMwhere's editions gate where it may.
+export const balances = (s: GameState, c: Cluster): boolean => !!c.platform && !!balancerIn(softwareById(c.platform), yearOf(s.hour));
 
 // Whether the target cluster runs backup software that reads the source cluster's software this year.
 export const backsUpCluster = (s: GameState, source: Cluster, target: Cluster): boolean =>

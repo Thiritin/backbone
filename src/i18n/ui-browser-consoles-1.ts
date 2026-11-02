@@ -295,7 +295,6 @@ export default {
   "browser-consoles-1.feePerCore": (p) => `${p.fee} per core`,
   "browser-consoles-1.feePerSocketOnce": (p) => `${p.fee} per socket once`,
   "browser-consoles-1.feePerMonth": (p) => `${p.fee} per month`,
-  "browser-consoles-1.feePerNodeMonth": (p) => `${p.fee} per node a month`,
   "browser-consoles-1.xOfY": (p) => `${p.a} of ${p.b}`,
   "browser-consoles-1.amountText": (p) => `${p.allocated} allocated of ${p.capacity}, ${p.used} used`,
   "browser-consoles-1.taskInstall": (p) => `Install ${p.software} on ${p.name}`,

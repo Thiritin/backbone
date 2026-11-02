@@ -20,7 +20,6 @@ export const SOFTWARE_EN: Record<string, (p: Params) => string> = {
   "ticket.mail.licenceEditionSwitched.subject": (p) => `${p.name} licence changed`,
   "ticket.mail.licenceEditionSwitched.text": (p) => `Your ${p.name} key ${p.key} now has the ${p.to} edition.`,
   "ledger.licenseOnce": (p) => `${p.name} license, ${p.machine}`,
-  "ledger.balancer": (p) => `${p.name}, ${p.cluster}`,
   "ledger.appSuite": (p) => `VMwhere App Suite, ${p.cluster}`,
   "software.support.updatesEnded": () => "Updates ended",
   "software.support.securityEnded": () => "Security updates ended",

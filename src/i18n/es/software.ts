@@ -18,7 +18,6 @@ export default {
   "ticket.mail.licenceEditionSwitched.subject": (p) => `Su licencia de ${p.name} ha cambiado`,
   "ticket.mail.licenceEditionSwitched.text": (p) => `Su clave de ${p.name} ${p.key} tiene ahora la edición ${p.to}.`,
   "ledger.licenseOnce": (p) => `Licencia de ${p.name}, ${p.machine}`,
-  "ledger.balancer": (p) => `${p.name}, ${p.cluster}`,
   "ledger.appSuite": (p) => `VMwhere App Suite, ${p.cluster}`,
   "software.support.updatesEnded": () => "Actualizaciones finalizadas",
   "software.support.securityEnded": () => "Actualizaciones de seguridad finalizadas",

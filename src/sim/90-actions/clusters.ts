@@ -9,7 +9,7 @@ import { marketPrice, PRODUCTS, sizeSpec, type Resources, type Sla, type Spec } 
 import type { Product } from "../30-customers/customers";
 import { vmName } from "../30-customers/hostnames";
 import type { GameState } from "../50-state";
-import { balancerIn, balloons, clustersIn, conflict, footprint, isService, phpAt, softwareById, type Software, type SoftwareKind } from "../10-catalog/platforms";
+import { balloons, clustersIn, conflict, footprint, isService, phpAt, softwareById, type Software, type SoftwareKind } from "../10-catalog/platforms";
 import { HA_SKILL } from "../10-catalog/research";
 import { serverOsAt } from "../10-catalog/server-os";
 import { versionAt } from "../10-catalog/software-versions";
@@ -393,16 +393,6 @@ export function setHa(s: GameState, clusterId: string, feature: keyof Ha, on: bo
   if (on && feature === "balance" && !editionAllows(c, "drs")) return fail("error.needsEdition");
   const ha = { ...c.ha, [feature]: on, ...(feature === "live" && !on ? { balance: false } : {}) };
   update(s, c.id, (x) => ({ ...x, ha, ...(ha.balance !== c.ha.balance && { drs: ha.balance ? "full" as const : "off" as const }) }));
-  return { ok: true };
-}
-
-// Buys or cancels the balancer edition of a hypervisor cluster; cancelling turns auto-balancing off.
-export function setBalancer(s: GameState, clusterId: string, on: boolean): ActionResult {
-  const c = s.clusters.find((x) => x.id === clusterId);
-  if (!c) return fail("error.unknownCluster");
-  const b = c.platform ? balancerIn(softwareById(c.platform), yearOf(s.hour)) : null;
-  if (!b || b.fee === 0) return fail("error.noBalancer");
-  update(s, c.id, (x) => ({ ...x, balancer: on, ...(!on && { ha: { ...x.ha, balance: false }, drs: "off" as const }) }));
   return { ok: true };
 }
 
