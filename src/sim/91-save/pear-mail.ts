@@ -6,7 +6,7 @@ import type { GameState } from "../50-state";
 // Runs after fillMail. A save from before Pear Mail gets its primary mailbox as an account, checked from the load minute on
 // so nothing floods in, and skips the welcome. Its id stays clear of the cl<nextId> ids the assistant gives.
 export function fillPearMail(s: GameState, saved: Partial<PearMailState> | undefined): void {
-  if (saved) { s.pearMail = { ...newPearMail(), ...saved }; return; }
+  if (saved) { const fresh = newPearMail(); s.pearMail = { ...fresh, ...saved, prefs: { ...fresh.prefs, ...saved.prefs } }; return; }
   const a = s.mail.accounts.find((x) => x.id === s.mail.primary), now = nowMinutes(s);
   s.pearMail = { ...newPearMail(), welcomed: true };
   if (!a) return;
