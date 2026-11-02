@@ -112,6 +112,7 @@ describe("Pear Mail check", () => {
     expect(clientError(s, client(s))).toBeNull();
     expect(s.pearMail.activity.at(-1)).toMatchObject({ clientId: "cl900", count: 0 });
     expect(s.pearMail.activity.at(-1)?.error).toBeUndefined();
+    expect(s.pearMail.activity.filter((l) => l.clientId === "cl900")).toHaveLength(1);
   });
 
   it("stops an account whose password was changed on the provider until the new one is entered", () => {
