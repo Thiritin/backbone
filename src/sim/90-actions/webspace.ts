@@ -40,6 +40,7 @@ export function deleteDatabase(s: GameState, workloadId: string, db: string): Ac
   if (isFail(ws)) return ws;
   if (!ws.databases[db]) return fail("webspace.error.noDatabase");
   put(s, workloadId, "databases", db, false);
+  for (const [k, r] of Object.entries(ws.rows)) if (r.db === db) put(s, workloadId, "rows", k, false);
   for (const u of Object.values(ws.dbUsers)) if (u.grants[db]) {
     const { [db]: _, ...grants } = u.grants;
     put(s, workloadId, "dbUsers", u.name, { ...u, grants });

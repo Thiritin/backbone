@@ -11,16 +11,17 @@ import { disk } from "../../../hw";
 import { Bar } from "../PanelBase";
 import { FileManager } from "./FileManager";
 import { LogPage } from "../Readouts";
+import { MySqlDatabases } from "./MySqlDatabases";
 import { DomainPage, domainTiles, type DomainPageId } from "./Domains";
 
 type Page = "files" | "mail" | "db" | "access" | "errors" | DomainPageId;
-const ICONS: [Page, string, LucideIcon][] = [
+const ICONS: [Page | "pma", string, LucideIcon][] = [
   ["files", "readouts.cp.files", Folder], ["mail", "readouts.cp.mail", Mail],
-  ["db", "readouts.cp.db", Database], ["access", "readouts.cp.access", ScrollText], ["errors", "readouts.cp.errors", TriangleAlert],
+  ["db", "webdb.title", Database], ["pma", "webdb.pma.app", Database], ["access", "readouts.cp.access", ScrollText], ["errors", "readouts.cp.errors", TriangleAlert],
 ];
 
 // The customer side of a cPanic account: read-only pages built from the account's own numbers.
-export function Customer({ game, c, workloadId }: { game: GameState; c: Cluster; workloadId: string }) {
+export function Customer({ game, c, workloadId, openPma }: { game: GameState; c: Cluster; workloadId: string; openPma?: () => void }) {
   const [page, setPage] = useState<Page | null>(null);
   const w = game.workloads.find((x) => x.id === workloadId), v = game.services.find((x) => x.id === w?.serviceId), ws = webspaceOf(game, workloadId);
   if (!ws) return null;
@@ -35,17 +36,12 @@ export function Customer({ game, c, workloadId }: { game: GameState; c: Cluster;
         <tbody>{Object.values(ws.mailboxes).map((m) => <tr key={m.address}><td>{m.address}</td><td><Bar use={[m.usedMb, m.quotaMb]} /></td></tr>)}</tbody>
       </table>
     );
-    if (page === "db") return (
-      <table className="cx-table">
-        <thead><tr><th>{t("readouts.cp.database")}</th><th>{t("readouts.cp.size")}</th></tr></thead>
-        <tbody>{Object.values(ws.databases).length ? Object.values(ws.databases).map((d) => <tr key={d.name}><td>{d.name}</td><td className="num">{disk(+(d.mb / 1024).toFixed(3))}</td></tr>) : <tr><td colSpan={2} className="cx-empty">{t("readouts.cp.noDatabases")}</td></tr>}</tbody>
-      </table>
-    );
+    if (page === "db") return <MySqlDatabases game={game} workloadId={workloadId} />;
     if (page === "access" || page === "errors") return <LogPage game={game} c={c} only={page === "errors" ? "error" : "access"} />;
     if (page) return <DomainPage game={game} c={c} workloadId={workloadId} page={page} />;
     return (
       <div className="cp-icons">
-        {[...ICONS, ...domainTiles(yearOf(game.hour))].map(([id, key, Icon]) => <button key={id} className="cx-tile" onClick={() => setPage(id)}><Icon size={28} aria-hidden /><span>{t(key)}</span></button>)}
+        {[...ICONS, ...domainTiles(yearOf(game.hour))].map(([id, key, Icon]) => <button key={id} className="cx-tile" onClick={() => (id === "pma" ? openPma?.() : setPage(id))}><Icon size={28} aria-hidden /><span>{t(key)}</span></button>)}
       </div>
     );
   };

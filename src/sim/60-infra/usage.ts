@@ -127,6 +127,11 @@ export function starvation(s: GameState, v: Service, w: Workload, hour: number =
 
 // What a workload uses of its booking at an hour: a customer what they need up to their limit, a panel VM what its panel
 // and web spaces use.
+// MySQL work for the databases the player created or imported on a web space; derived ones ride in the customer's load curve.
+export const MYSQL_VCPU_PER_GB = 0.5;
+export const mysqlVcpu = (s: GameState, w: Workload): number =>
+  (Object.values(s.webspaces[w.id]?.databases ?? {}).reduce((a, d) => a + (d ? d.mb : 0), 0) / 1024) * MYSQL_VCPU_PER_GB;
+
 export function workloadUse(s: GameState, w: Workload, hour: number = s.hour): Resources {
   if (isOwnVm(w)) {
     const hosts = hostsOfVm(s, w.id), u: Resources = { vcpu: 0, ramGb: 0, diskGb: 0 };
@@ -137,7 +142,7 @@ export function workloadUse(s: GameState, w: Workload, hour: number = s.hour): R
   }
   const n = need(s, s.services.find((x) => x.id === w.serviceId) ?? { id: w.serviceId, spec: w }, w, hour), disk = Math.min(w.diskGb, n.diskGb);
   if (w.frozen) return { vcpu: 0, ramGb: 0, diskGb: disk };
-  return { vcpu: Math.min(booked(s, w).vcpu, n.vcpu), ramGb: Math.min(w.ramGb, n.ramGb), diskGb: disk };
+  return { vcpu: Math.min(booked(s, w).vcpu, n.vcpu + (w.stopped || lostDisk(s, w) ? 0 : mysqlVcpu(s, w))), ramGb: Math.min(w.ramGb, n.ramGb), diskGb: disk };
 }
 
 liveRam.of = (s, w) => workloadUse(s, w).ramGb;

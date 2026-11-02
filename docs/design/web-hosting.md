@@ -76,6 +76,8 @@ A two-pane file manager in the panel's look: a folder tree on the left and a lis
 - **phpMyAdmon** opens from the panel and lists the tables of a database with their row counts and sizes. Tables come from the app that uses the database (`wp_posts`, `tblclients` and so on), and their row counts grow with the site's age and traffic.
 - A database counts towards the web space's disk and towards the host's MySQL load, which feeds the existing overload readouts.
 - Databases always run on the same host as the web space, with `localhost` as the database host, as on a standard shared hosting server. A separate database server is a later plan.
+- A customer database's tables and rows derive from its app's schema, the seed and the database's size, so they grow with the site. The overlay stores only the rows the player edits or inserts. Shop schemas name the table and columns their admin logs in with, which is how a lost shop password is reset with MD5.
+- Export writes a `.sql` or `.sql.gz` file to the player's Downloads, and Import reads one back within phpMyAdmon's upload limit (8 MB before 2010, 50 MB after). Databases the player creates or imports add MySQL load to the host; the derived ones are already in the customer's load curve.
 
 ### 4.3 Mail
 
