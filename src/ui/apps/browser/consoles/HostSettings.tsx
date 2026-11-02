@@ -114,7 +114,7 @@ export function ShopInstall({ game, c }: { game: GameState; c: Cluster }) {
   );
 }
 
-// What the software page of a panel or game host adds under its actions.
+// What the software page of a panel or game host adds under its actions; web panels set booking limits in the Locations app.
 export function HostSettings({ game, c }: { game: GameState; c: Cluster }) {
-  return oversold(c) ? <div className="cx-host-settings"><LicenceBanner game={game} c={c} />{c.kind === "panel" && <ChannelPicker c={c} />}<Oversell game={game} c={c} /><ShopInstall game={game} c={c} /></div> : null;
+  return oversold(c) ? <div className="cx-host-settings"><LicenceBanner game={game} c={c} />{c.kind === "game" && <Oversell game={game} c={c} />}<ShopInstall game={game} c={c} /></div> : null;
 }
