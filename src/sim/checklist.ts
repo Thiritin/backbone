@@ -53,13 +53,15 @@ export const CHECKS: Record<string, (s: GameState) => boolean> = {
   study: (s) => s.marketing.studies.length > 0,
   suite: (s) => s.locations.some((l) => l.space === "suite"),
   pearMail: (s) => s.pearMail.accounts.length > 0,
+  hosttoast: (s) => s.hosttoast.tier !== null,
+  flyers: (s) => s.marketing.flyers.length > 0,
 };
 
 export const tracked = (id: string): boolean => id in CHECKS;
 export const checkDone = (s: GameState, id: string): boolean => CHECKS[id]?.(s) || s.checklist.includes(id);
 
 // The Getting started tutorial: each step is a checklist goal, done in this order.
-export const TUTORIAL = ["bank", "register", "payBill", "books", "buyServer", "mountServer", "mountRouter", "internet", "setup", "findAddress", "shareWeb", "website", "domain", "launch", "email", "firstCustomer"] as const;
+export const TUTORIAL = ["bank", "register", "payBill", "books", "buyServer", "mountServer", "mountRouter", "internet", "setup", "findAddress", "shareWeb", "website", "domain", "email", "launch", "hosttoast", "flyers", "firstCustomer"] as const;
 
 // A step that belongs to an app shows once that app is installed.
 export const GUIDE = [...TUTORIAL, "pearMail", "loan", "tenCustomers", "research", "patch", "hire", "study"] as const;

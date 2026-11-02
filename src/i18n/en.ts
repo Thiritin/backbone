@@ -473,6 +473,8 @@ export const en: Record<string, (p: Params) => string> = {
   "guide.step.website": () => "Build your website",
   "guide.step.launch": () => "Launch your website",
   "guide.step.email": () => "Set up company email",
+  "guide.step.hosttoast": () => "Get listed on HOSTtoast",
+  "guide.step.flyers": () => "Print flyers",
   "guide.step.firstCustomer": () => "Win your first customer",
   "error.unknownDoc": () => "This document no longer exists.",
   "error.emptyTitle": () => "A document needs a title.",

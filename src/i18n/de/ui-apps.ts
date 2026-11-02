@@ -256,6 +256,8 @@ export default {
   "apps.guide.step.website": () => "Baue unter Marketing bei Kanäle deine erste Website.",
   "apps.guide.step.launch": () => "Wähle, wo deine Website läuft, starte sie im Marketing und biete dein erstes Produkt unter Produkte an.",
   "apps.guide.step.email": () => "Bestelle auf der Website eines E-Mail-Anbieters Postfächer für deine Firmendomain.",
+  "apps.guide.step.hosttoast": () => "Melde dich für einen kostenlosen Eintrag bei HOSTtoast an, damit dich Kunden beim Vergleichen von Hostern finden.",
+  "apps.guide.step.flyers": () => "Bestelle Flyer bei Flyerlarm und lass sie in deiner Stadt verteilen.",
   "apps.guide.step.firstCustomer": (p) => `Beantworte in ${p.app} deinen ersten Kunden.`,
 
   "apps.name.Applications": () => "Programme",

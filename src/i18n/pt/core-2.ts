@@ -181,6 +181,8 @@ export default {
   "guide.step.website": () => "Cria o teu site",
   "guide.step.launch": () => "Lança o teu site",
   "guide.step.email": () => "Configura o e-mail da empresa",
+  "guide.step.hosttoast": () => "Aparece no HOSTtoast",
+  "guide.step.flyers": () => "Imprime panfletos",
   "guide.step.firstCustomer": () => "Conquista o teu primeiro cliente",
   "error.unknownDoc": () => "Este documento já não existe.",
   "error.emptyTitle": () => "Um documento precisa de um título.",

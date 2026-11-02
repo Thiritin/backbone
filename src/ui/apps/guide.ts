@@ -5,7 +5,10 @@ import { registrarById, REGISTRARS } from "../../sim/10-catalog/registrars";
 import { supportApp } from "./support/desk";
 import { t } from "../../i18n/en";
 import { OFFICE_URL } from "../../sim/80-business/office";
-import { bankUrl, dirSlug, HOME_URL } from "../../sim/80-business/browser";
+import { bankUrl, dirSlug, displayHost, HOME_URL, registrarUrl } from "../../sim/80-business/browser";
+import { mailSiteUrl } from "../../sim/10-catalog/mail-consumer";
+import { HOSTTOAST_HOST } from "../../sim/10-catalog/hosttoast";
+import { FLYER_HOST } from "../../sim/10-catalog/flyers";
 import type { GameState } from "../../sim/50-state";
 import type { GUIDE } from "../../sim/checklist";
 
@@ -56,6 +59,7 @@ export function stepOf(s: GameState, id: StepId): Step {
         title: t("guide.step.domain"),
         text: t("apps.guide.step.domain", { partner }),
         app: "Browser",
+        focus: { kind: "url", id: s.registrar ? registrarUrl(s) : `${HOME_URL}${dirSlug(t("sim.index.cat.resellers"))}` },
       };
     }
     case "website":
@@ -63,7 +67,11 @@ export function stepOf(s: GameState, id: StepId): Step {
     case "launch":
       return { title: t("guide.step.launch"), text: t("apps.guide.step.launch"), app: "Marketing", focus: { kind: "page", id: "channels" } };
     case "email":
-      return { title: t("guide.step.email"), text: t("apps.guide.step.email"), app: "Browser", focus: { kind: "url", id: `${HOME_URL}${dirSlug(t("sim.index.cat.mailProviders"))}` } };
+      return { title: t("guide.step.email"), text: t("apps.guide.step.email"), app: "Browser", focus: { kind: "url", id: mailSiteUrl("ionose") } };
+    case "hosttoast":
+      return { title: t("guide.step.hosttoast"), text: t("apps.guide.step.hosttoast"), app: "Browser", focus: { kind: "url", id: `www.${HOSTTOAST_HOST}/` } };
+    case "flyers":
+      return { title: t("guide.step.flyers"), text: t("apps.guide.step.flyers"), app: "Browser", focus: { kind: "url", id: `${displayHost(FLYER_HOST)}/` } };
     case "firstCustomer":
       return { title: t("guide.step.firstCustomer"), text: t("apps.guide.step.firstCustomer", { app: s.desk ? mailApp : "Pear Mail" }), app: s.desk ? "Support" : "Pear Mail" };
     case "loan":
