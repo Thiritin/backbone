@@ -14,7 +14,7 @@ export interface Fair {
 
 export const FAIRS: Fair[] = [
   { id: "seebit", name: "SeeBIT", city: "Hanover", month: 3, day: 6, days: 5, level: 3, cost: 8000, leads: 15, profiles: ["soleProp", "smallBiz", "office"], bonus: 0.1, until: 2018 },
-  { id: "cloudFeast", name: "CloudFeast", city: "Rust", month: 3, day: 23, days: 3, level: 4, cost: 20000, leads: 40, profiles: ["agency", "onlineShop", "enterprise"], bonus: 0.2 },
+  { id: "cloudFeast", name: "CloudFeast", city: "Rust", month: 3, day: 23, days: 3, level: 4, cost: 20000, leads: 40, profiles: ["agency", "webDev", "onlineShop", "enterprise"], bonus: 0.2 },
   { id: "ripeish", name: "RIPE-ish Meeting", city: "Amsterdam", month: 5, day: 18, days: 5, level: 3, cost: 3000, leads: 0, profiles: [], bonus: 0.4 },
   { id: "deSix", name: "DE-SIX Summit", city: "Frankfurt", month: 10, day: 7, days: 1, level: 4, cost: 5000, leads: 5, profiles: ["enterprise"], bonus: 0.5 },
   { id: "dcWhirled", name: "Data Centre Whirled", city: "Frankfurt", month: 11, day: 12, days: 2, level: 5, cost: 35000, leads: 60, profiles: ["enterprise", "office", "onlineShop"], bonus: 0.2 },

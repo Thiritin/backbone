@@ -62,12 +62,12 @@ export interface Sales { requests: SalesRequest[]; lost: LostSale[] }
 export const newSales = (): Sales => ({ requests: [], lost: [] });
 
 // Share of a city's new customers who know you and look at your offer; 0.4 gives about 20 basement leads a month.
-export const ORGANIC_CONSIDER = 0.4;
+export const ORGANIC_CONSIDER = 0.3;
 // How strongly a host's price level moves the choice: a quarter of the balance model's price term.
 export const PRICE_WEIGHT = 0.25;
 // Website and campaign leads that come from cities without a location of yours.
 export const SPILL_SHARE = 0.1;
-export const REFERRAL_LEADS = 0.005;
+export const REFERRAL_LEADS = 0.003;
 // Forum leads raise awareness of the forum profiles by this share of the gap per lead.
 export const FORUM_AWARENESS = 0.005;
 export const FORUM_PROFILES: Profile[] = ["hobbyDev", "gamer", "smallBiz"];
@@ -84,13 +84,14 @@ export const NEEDS: Record<Profile, [Product, number][]> = {
   soleProp: [["webHosting", 0.9], ["vps", 0.1]],
   smallBiz: [["webHosting", 0.6], ["vps", 0.4]],
   agency: [["webHosting", 0.3], ["vps", 0.7], ["gpu", GPU_SHARE]],
+  webDev: [["webHosting", 0.85], ["vps", 0.15], ["gpu", GPU_SHARE]],
   office: [["webHosting", 0.9], ["vps", 0.1]],
   onlineShop: [["webHosting", 0.5], ["vps", 0.5], ["gpu", GPU_SHARE]],
   enterprise: [["vps", 0.5], ["dedicated", 0.5], ["gpu", GPU_SHARE]],
   reseller: [["reseller", 1]],
 };
 export const SLA_ASKED: Record<Profile, Sla> = {
-  private: "basic", gamer: "basic", hobbyDev: "basic", soleProp: "basic", smallBiz: "business", agency: "business",
+  private: "basic", gamer: "basic", hobbyDev: "basic", soleProp: "basic", smallBiz: "business", agency: "business", webDev: "business",
   office: "business", onlineShop: "premium", enterprise: "premium", reseller: "business",
 };
 
@@ -287,6 +288,7 @@ export function senderFor(r: Rng, profile: Profile, shady = false, us = false): 
   const company: Record<Profile, string | null> = {
     private: null, gamer: null, hobbyDev: null,
     soleProp: `${last} ${pick(r, TRADES)}`, smallBiz: `${last} ${pick(r, FIRMS)}`, agency: pick(r, AGENCY),
+    webDev: `${last} ${pick(r, ["Webdesign", "Media"])}`,
     office: `${pick(r, OFFICES)} ${last}`, onlineShop: `${pick(r, SHOPS)}-shop.${shop}`, enterprise: `${last} Industries ${corp}`, reseller: `${last} Webhosting`,
   };
   return { contact, company: company[profile] };

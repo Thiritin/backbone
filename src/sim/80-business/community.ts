@@ -17,16 +17,16 @@ export interface CommunityEvent {
 const DAY = 24;
 export const EVENTS: CommunityEvent[] = [
   { id: "lanTastic", name: "LAN-tastic", kind: "public", level: 1, product: "gameServer", size: 0, count: 2, hours: 3 * DAY, audience: ["gamer", "private"], knowHow: 0, awareness: 0.02, people: 150 },
-  { id: "chaosClub", name: "Chaos Computing Club", kind: "tech", level: 1, product: "vps", size: 1, count: 1, hours: 90 * DAY, audience: ["hobbyDev"], knowHow: 10, awareness: 0, people: 60 },
-  { id: "hackASorus", name: "Hack-a-Sorus", kind: "tech", level: 1, product: "vps", size: 1, count: 2, hours: 7 * DAY, audience: ["hobbyDev"], knowHow: 25, awareness: 0, people: 80 },
+  { id: "chaosClub", name: "Chaos Computing Club", kind: "tech", level: 1, product: "vps", size: 1, count: 1, hours: 90 * DAY, audience: ["hobbyDev", "webDev"], knowHow: 10, awareness: 0, people: 60 },
+  { id: "hackASorus", name: "Hack-a-Sorus", kind: "tech", level: 1, product: "vps", size: 1, count: 2, hours: 7 * DAY, audience: ["hobbyDev", "webDev"], knowHow: 25, awareness: 0, people: 80 },
   { id: "mirror", name: "Debonair Linux mirror", kind: "tech", level: 1, product: "storage", size: 1, count: 1, hours: 365 * DAY, audience: ["hobbyDev"], knowHow: 15, awareness: 0, people: 2000 },
   { id: "fragFest", name: "Frag-Fest", kind: "public", level: 1, product: "gameServer", size: 0, count: 4, hours: 3 * DAY, audience: ["gamer"], knowHow: 0, awareness: 0.03, people: 300 },
   { id: "userGroup", name: "Linux User Group", kind: "public", level: 1, product: "webHosting", size: 1, count: 1, hours: 365 * DAY, audience: ["smallBiz", "private"], knowHow: 0, awareness: 0.01, people: 120 },
   { id: "codeClub", name: "School Coding Club", kind: "public", level: 1, product: "webHosting", size: 0, count: 3, hours: 365 * DAY, audience: ["private"], knowHow: 0, awareness: 0.01, people: 40 },
   { id: "shelter", name: "Paws and Claws Shelter", kind: "public", level: 1, product: "webHosting", size: 0, count: 1, hours: 365 * DAY, audience: ["private", "smallBiz"], knowHow: 0, awareness: 0.01, people: 300 },
   { id: "pixelJam", name: "Pixel Jam", kind: "public", level: 2, product: "gameServer", size: 1, count: 2, hours: 3 * DAY, audience: ["gamer", "hobbyDev"], knowHow: 0, awareness: 0.02, people: 200 },
-  { id: "openData", name: "Open Data Hackday", kind: "tech", level: 2, product: "storage", size: 0, count: 1, hours: 7 * DAY, audience: ["hobbyDev", "agency"], knowHow: 20, awareness: 0, people: 100 },
-  { id: "devOops", name: "DevOops Conference", kind: "tech", level: 3, product: "vps", size: 2, count: 8, hours: 7 * DAY, audience: ["agency", "enterprise"], knowHow: 40, awareness: 0, people: 1200 },
+  { id: "openData", name: "Open Data Hackday", kind: "tech", level: 2, product: "storage", size: 0, count: 1, hours: 7 * DAY, audience: ["hobbyDev", "agency", "webDev"], knowHow: 20, awareness: 0, people: 100 },
+  { id: "devOops", name: "DevOops Conference", kind: "tech", level: 3, product: "vps", size: 2, count: 8, hours: 7 * DAY, audience: ["agency", "enterprise", "webDev"], knowHow: 40, awareness: 0, people: 1200 },
 ];
 export const eventById = (id: string): CommunityEvent | undefined => EVENTS.find((e) => e.id === id);
 

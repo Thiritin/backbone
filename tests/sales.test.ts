@@ -44,7 +44,7 @@ describe("lead generation", () => {
     const s = readyGame(1);
     s.marketing = { ...s.marketing, awareness: Object.fromEntries(Object.keys(s.marketing.awareness).map((p) => [p, 1])) as typeof s.marketing.awareness };
     const flows = leadFlows(s);
-    expect(flows.length).toBe(9);
+    expect(flows.length).toBe(10);
     for (const f of flows) expect(f.leads).toBeCloseTo(leadCapShare(1) * cityMarket("Frankfurt", s.hour) * profileStats(f.profile).mix);
     expect(leadCapShare(1)).toBeCloseTo(0.024);
     expect(leadCapShare(6)).toBeCloseTo(0.064);
