@@ -1,0 +1,35 @@
+.ps-plain { --ps-accent: #555555; font: 13px/1.5 Arial, Helvetica, sans-serif; color: #222222; background: #ffffff; }
+.ps-plain header { display: flex; align-items: center; gap: 24px; padding: 10px 24px; border-bottom: 3px solid var(--ps-accent); }
+.ps-plain .ps-wm { text-decoration: none; color: inherit; font-size: 18px; }
+.ps-plain nav { gap: 18px; }
+.ps-plain nav a { color: #333333; text-decoration: none; }
+.ps-plain nav a[aria-current] { color: var(--ps-accent); font-weight: 700; }
+.ps-plain main { padding: 16px 24px 24px; max-width: 980px; }
+.ps-plain h1 { font-size: 22px; margin: 0 0 12px; }
+.ps-plain h2 { font-size: 15px; margin: 18px 0 8px; }
+.ps-plain .ps-hero { padding: 22px 0; }
+.ps-plain .ps-table th { border-bottom: 2px solid var(--ps-accent); padding: 5px 8px; }
+.ps-plain .ps-table td { border-bottom: 1px solid #e3e3e3; padding: 5px 8px; }
+.ps-plain .ps-table a:not(.ps-btn) { color: var(--ps-accent); }
+.ps-plain .ps-facts { gap: 4px 32px; max-width: 760px; }
+.ps-plain .ps-facts div, .ps-plain .ps-kv div { border-bottom: 1px dotted #cccccc; padding: 3px 0; }
+.ps-plain .ps-kv { margin-bottom: 14px; }
+.ps-plain .ps-steps { gap: 8px; margin: 0 0 16px; }
+.ps-plain .ps-steps li { padding: 3px 10px; border: 1px solid #cccccc; border-radius: 12px; color: #888888; }
+.ps-plain .ps-steps li.done { color: #333333; }
+.ps-plain .ps-steps li.now { border-color: var(--ps-accent); color: var(--ps-accent); font-weight: 700; }
+.ps-plain .ps-field { margin-bottom: 10px; }
+.ps-plain .ps-field input, .ps-plain .ps-field select { padding: 4px 6px; border: 1px solid #aaaaaa; }
+.ps-plain .ps-btn { padding: 5px 14px; border: 1px solid #888888; background: #f2f2f2; color: #222222; }
+.ps-plain .ps-btn.pri { background: var(--ps-accent); border-color: var(--ps-accent); color: #ffffff; font-weight: 700; }
+.ps-plain .ps-pill.ok { color: #2a7a2a; }
+.ps-plain .ps-pill.bad { color: #b03a2e; }
+.ps-plain footer { padding: 12px 24px; color: #888888; font-size: 11px; border-top: 1px solid #dddddd; }
+.ps-plain.early { font: 11px/1.45 Verdana, Arial, sans-serif; }
+.ps-plain.early header { background: var(--ps-accent); border: 0; }
+.ps-plain.early header .logo-word, .ps-plain.early nav a { color: #ffffff; }
+.ps-plain.early header .logo-mark { filter: brightness(0) invert(1); }
+.ps-plain.early nav a[aria-current] { color: #ffffff; text-decoration: underline; }
+.ps-plain.early main { max-width: 760px; }
+.ps-plain.early h1 { font-size: 16px; color: var(--ps-accent); }
+.ps-plain.early .ps-table th { background: #eeeeee; border-bottom: 1px solid #999999; }

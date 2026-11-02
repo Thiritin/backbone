@@ -30,6 +30,7 @@ import { booksHost, LEXWEAR_HOST } from "./bookkeeping";
 import { SHOPS, type ShopId } from "../10-catalog/shops";
 import { shopHost } from "./shoplink";
 import { HOSTTOAST_HOST } from "../10-catalog/hosttoast";
+import { dcProvider, PROVIDERS, type Datacenter } from "../20-world/datacenters";
 
 // fast loads at once, slow shows a progress bar first, down cannot be reached.
 export type Load = "fast" | "slow" | "down";
@@ -38,6 +39,7 @@ export type Page =
   | { kind: "company" }
   | { kind: "customer"; serviceId: string }
   | { kind: "vendor"; maker: string }
+  | { kind: "provider"; id: string }
   | { kind: "registrar"; id: RegistrarId }
   | { kind: "bank"; id: BankId }
   | { kind: "supplier"; name: string }
@@ -100,13 +102,16 @@ export const resellersUrl = (): string => `${HOME_URL}${dirSlug(t("sim.index.cat
 // Domains the game's other companies hold in any year, and every name under them.
 export function providerDomain(name: string): boolean {
   const hosts = [INDEX_HOST, OFFICE_HOST, DOHLE_HOST, WIKI_HOST, LEXWEAR_HOST, HOSTTOAST_HOST, BOARD_HOST, VIDEO_HOST, ...CHANNELS.map((c) => c.host), ...SOFTWARE.map((x) => x.site.host), ...SERVER_OS.map((x) => x.site.host),
-    ...VENDORS.map((m) => vendorHost(m.id)), ...BANKS.map((b) => b.host), ...REGISTRARS.map(registrarHost)].map((h) => h.replace(/^www\./, ""));
+    ...VENDORS.map((m) => vendorHost(m.id)), ...BANKS.map((b) => b.host), ...REGISTRARS.map(registrarHost), ...PROVIDERS.map((p) => p.host)].map((h) => h.replace(/^www\./, ""));
   return hosts.some((h) => h === name || h.endsWith(`.${name}`));
 }
 // The partner's form that registers or transfers an order's domain.
 export const registrarFormUrl = (s: GameState, ticketId: string, transfer: boolean): string => `${registrarUrl(s)}${transfer ? "transfer" : "register"}?order=${ticketId}`;
 
 export const bankUrl = (id: BankId): string => `www.${bankById(id)!.host}/`;
+
+export const providerUrl = (id: string): string => `${displayHost(dcProvider(id).host)}/`;
+export const orderUrl = (dc: Datacenter, space: string, size: number): string => `${providerUrl(dc.provider)}order?dc=${dc.id}&space=${space}&size=${size}`;
 
 // Bookmarks every game has: the bank and the registrar. The company's own sites sit in its bookmark folder.
 export const defaultBookmarks = (s: GameState): { title: string; url: string }[] => [
@@ -202,6 +207,8 @@ export function resolve(s: GameState, raw: string): Resolved {
   if (os) return out({ kind: "os", id: os.id });
   const vendor = VENDORS.find((m) => named(vendorHost(m.id)) && vendorLive(m, monthIndexOf(s.hour)));
   if (vendor) return out({ kind: "vendor", maker: vendor.id });
+  const colo = PROVIDERS.find((p) => named(p.host));
+  if (colo) return out({ kind: "provider", id: colo.id });
   if (named(BOARD_HOST)) return out({ kind: "sponsorboard" });
   const bank = BANKS.find((b) => named(b.host) && b.from <= year);
   if (bank) return out({ kind: "bank", id: bank.id });

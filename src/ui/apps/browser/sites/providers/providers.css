@@ -1,0 +1,20 @@
+/* docs/design/plans/colo-portals.md, section 4: what every provider site shares; each site's own sheet sets its look. */
+.ps { min-height: 100%; }
+.ps a { cursor: pointer; }
+.ps nav { display: flex; }
+.ps-table { width: 100%; border-collapse: collapse; }
+.ps-table th, .ps-table td { text-align: left; vertical-align: top; }
+.ps .ps-num { text-align: right; font-variant-numeric: tabular-nums; }
+.ps-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; }
+.ps-facts div, .ps-kv div { display: flex; justify-content: space-between; gap: 12px; }
+.ps-facts dd, .ps-kv dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.ps-kv { margin: 0; max-width: 520px; }
+.ps-steps { display: flex; list-style: none; padding: 0; }
+.ps-field { display: grid; grid-template-columns: 140px minmax(0, 320px); align-items: center; gap: 10px; }
+.ps-field input, .ps-field select { font: inherit; }
+.ps-actions { display: flex; gap: 8px; }
+.ps-btn { display: inline-block; font: inherit; cursor: pointer; text-decoration: none; white-space: nowrap; }
+.ps-btn:disabled { cursor: default; opacity: 0.55; }
+.ps-pill { white-space: nowrap; }
+.ps dt, .ps dd { font: inherit; color: inherit; letter-spacing: normal; text-transform: none; }
+.ps-facts { column-gap: 32px; }

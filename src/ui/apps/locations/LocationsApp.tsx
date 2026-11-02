@@ -122,7 +122,7 @@ export function LocationsApp() {
           </>
         )}
       </div>
-      {adding && <AddLocation onClose={() => setAdding(false)} onAdded={(id) => { setAdding(false); go(id); }} />}
+      {adding && <AddLocation onClose={() => setAdding(false)} />}
     </div>
   );
 }

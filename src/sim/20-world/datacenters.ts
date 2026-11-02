@@ -4,7 +4,8 @@ import { hashRng, rand } from "../00-core/rng";
 import { businessPowerPrice } from "../10-catalog/economy";
 import type { RackModel, SpaceKind } from "../50-state";
 
-export interface Provider { id: string; name: string }
+// host is bare; the Browser also takes it with www.
+export interface Provider { id: string; name: string; host: string }
 export interface Datacenter {
   id: string; name: string; provider: string; city: string; carriers: number;
   exchange: { name: string; onSite: boolean } | null;
@@ -19,26 +20,26 @@ export interface Datacenter {
 }
 
 export const PROVIDERS: Provider[] = [
-  { id: "equinox", name: "Equinox" },
-  { id: "interaction", name: "Interaction" },
-  { id: "mainqubes", name: "mainqubes" },
-  { id: "hetzler", name: "Hetzler" },
-  { id: "tellyhouse", name: "Tellyhouse" },
-  { id: "globalsnitch", name: "Global Snitch" },
-  { id: "docklands", name: "Docklands Data" },
-  { id: "ironmolehill", name: "Iron Molehill" },
-  { id: "data5", name: "Data5" },
-  { id: "ntd", name: "NTD" },
-  { id: "spree", name: "Spree Colo" },
-  { id: "arubaba", name: "Arubaba" },
-  { id: "nextlair", name: "Next Lair" },
-  { id: "greenchz", name: "Green.chz" },
-  { id: "skyblink", name: "SkyBlink" },
-  { id: "borisnet", name: "Boris Network" },
-  { id: "digitalreality", name: "Digital Reality" },
-  { id: "corespite", name: "CoreSpite" },
-  { id: "telex", name: "Telex" },
-  { id: "myloch", name: "myLoch" },
+  { id: "equinox", name: "Equinox", host: "equinox.com" },
+  { id: "interaction", name: "Interaction", host: "interaction.com" },
+  { id: "mainqubes", name: "mainqubes", host: "mainqubes.de" },
+  { id: "hetzler", name: "Hetzler", host: "hetzler.de" },
+  { id: "tellyhouse", name: "Tellyhouse", host: "tellyhouse.co.uk" },
+  { id: "globalsnitch", name: "Global Snitch", host: "globalsnitch.com" },
+  { id: "docklands", name: "Docklands Data", host: "docklandsdata.co.uk" },
+  { id: "ironmolehill", name: "Iron Molehill", host: "ironmolehill.com" },
+  { id: "data5", name: "Data5", host: "data5group.com" },
+  { id: "ntd", name: "NTD", host: "ntd-global.com" },
+  { id: "spree", name: "Spree Colo", host: "spreecolo.de" },
+  { id: "arubaba", name: "Arubaba", host: "arubaba.it" },
+  { id: "nextlair", name: "Next Lair", host: "nextlair.at" },
+  { id: "greenchz", name: "Green.chz", host: "greenchz.ch" },
+  { id: "skyblink", name: "SkyBlink", host: "skyblink.nl" },
+  { id: "borisnet", name: "Boris Network", host: "boris.de" },
+  { id: "digitalreality", name: "Digital Reality", host: "digitalreality.com" },
+  { id: "corespite", name: "CoreSpite", host: "corespite.com" },
+  { id: "telex", name: "Telex", host: "telex.com" },
+  { id: "myloch", name: "myLoch", host: "myloch.de" },
 ];
 
 type Row = [id: string, name: string, provider: string, city: string, carriers: number, exchange: string | null, onSite: boolean,
@@ -104,6 +105,7 @@ export const DATACENTERS: Datacenter[] = ROWS.map(([id, name, provider, city, ca
   size: SIZE_OF[provider], visitBooking: rivals(city) && price === topPrice(city),
 }));
 
+export const dcProvider = (id: string): Provider => PROVIDERS.find((p) => p.id === id)!;
 export const datacenterById = (id: string): Datacenter => {
   const dc = DATACENTERS.find((d) => d.id === id);
   if (!dc) throw new Error(`unknown datacenter ${id}`);

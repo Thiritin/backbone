@@ -9,6 +9,7 @@ import { backupLabel, dcOf, exchangeLabel, Facts, feedsLabel, locationPower, Pow
 import { Hourglass } from "lucide-react";
 import { datacenterById, homeLineById } from "../../../sim/20-world/datacenters";
 import { addLocation, leaveWaitlist } from "../../../sim/90-actions/hardware";
+import { providerUrl } from "../../../sim/80-business/browser";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
 
@@ -54,12 +55,14 @@ export function Waitlist({ game, onOpen }: { game: GameState; onOpen: (id: strin
 function LocationCard({ game, loc, onOpen }: { game: GameState; loc: Location; onOpen: () => void }) {
   const dc = dcOf(loc), power = locationPower(game, loc.id), used = loc.positions - freePositions(game, loc.id).length;
   const arriving = game.racks.filter((r) => r.locationId === loc.id && r.arriveAt !== null);
+  const openApp = useStore((s) => s.openApp);
   return (
     <div className={`loc-card loc-site${loc.readyAt > game.hour ? " loc-pending" : ""}`} onClick={onOpen}>
       <div className="loc-card-h">
         <h3><Logo provider={providerOf(loc)} size={18} /><button className="loc-link" onClick={onOpen}>{loc.name}</button><Zone loc={loc} /></h3>
         <span className="grow" />
         {loc.readyAt > game.hour && <span className="pill warn">{t("locations-2.readyIn", { time: readyIn(loc.readyAt, game.hour) })}</span>}
+        {dc && <button className="loc-link" onClick={(e) => { e.stopPropagation(); openApp("Browser", { kind: "url", id: `${providerUrl(dc.provider)}account/contracts` }); }}>{t("locations-1.manage")}</button>}
       </div>
       <Facts rows={[
         [t("locations-2.space"), spaceLabel(loc, game)],
