@@ -92,12 +92,23 @@ describe("checklist", () => {
     const s = newGame(1);
     for (const id of TUTORIAL) expect(stepOf(s, id).text).toMatch(/\.$/);
     expect(stepOf(s, "domain").text).toBe("Buy a domain for your company at NameCheep in the Browser.");
-    expect(stepOf(s, "domain").focus).toBeUndefined();
+    expect(stepOf(s, "domain").focus?.id).toMatch(/\/dir\/[a-z-]+$/);
     expect(stepOf(s, "website")).toMatchObject({ app: "Marketing", focus: { kind: "page", id: "channels" } });
     expect(stepOf(s, "internet")).toMatchObject({ app: "Locations", focus: { kind: "line" } });
-    expect(stepOf(s, "email")).toMatchObject({ app: "Browser", focus: { kind: "url", id: expect.stringMatching(/\/dir\/email-providers$/) } });
+    expect(stepOf(s, "email").focus).toEqual({ kind: "url", id: "www.ionose.com/" });
+    expect(stepOf(s, "hosttoast").focus).toEqual({ kind: "url", id: "www.hosttoast.de/" });
+    expect(stepOf(s, "flyers").focus?.id).toMatch(/flyerlarm\.de\/$/);
     ok(signRegistrar(s, "goDuddy"));
     expect(stepOf(s, "domain").text).toBe("Buy a domain for your company at GoDuddy Reseller in the Browser.");
+    expect(stepOf(s, "domain").focus?.id).toMatch(/\/$/);
+  });
+
+  it("ticks the HOSTtoast and flyer steps from state", () => {
+    const s = newGame(1);
+    expect(checkDone(s, "hosttoast") || checkDone(s, "flyers")).toBe(false);
+    s.hosttoast = { ...s.hosttoast, tier: "registered" };
+    s.marketing = { ...s.marketing, flyers: [{ id: "f1", city: "x", size: 1000, orderedAt: 0, flyersLeft: 1000, leads: 0 }] };
+    expect(checkDone(s, "hosttoast") && checkDone(s, "flyers")).toBe(true);
   });
 
   it("points the server steps at the basement and the first server", () => {
