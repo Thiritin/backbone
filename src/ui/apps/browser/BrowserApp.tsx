@@ -42,6 +42,9 @@ import { BOOKS_SITES } from "./sites/books/sites";
 import { booksVendor } from "../../../sim/10-catalog/bookkeeping";
 import { ShopVendorSite } from "./sites/shopvendors/registry";
 import { shopById } from "../../../sim/10-catalog/shops";
+import { deskById } from "../../../sim/10-catalog/desks";
+import { HostedDeskSite } from "./sites/desks/HostedDeskSite";
+import { SelfDeskSite } from "./sites/desks/SelfDeskSite";
 import { HostToastSite } from "./sites/hosttoast/HostToastSite";
 import { HOSTTOAST } from "../../../sim/10-catalog/hosttoast";
 import { WikiSite } from "./sites/wiki/WikiSite";
@@ -111,6 +114,7 @@ function titleOf(game: GameState, r: Resolved): string {
     case "market": return channelName(p.channel);
     case "books": return booksVendor(p.id)!.program;
     case "shopVendor": return shopById(p.id).name;
+    case "deskVendor": return deskById(p.id)!.name;
     case "hosttoast": return HOSTTOAST;
     case "wiki": return WIKI_TITLE;
     case "shop": return game.company.name;
@@ -151,6 +155,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "shop") body = <PortalSite game={game} host={r.host} path={r.path} go={go} />;
   else if (p.kind === "books" && p.id !== "lexwear") { const Site = BOOKS_SITES[p.id]; body = <Site game={game} path={r.path} go={go} />; }
   else if (p.kind === "shopVendor") body = <ShopVendorSite game={game} id={p.id} path={r.path} go={go} />;
+  else if (p.kind === "deskVendor") body = deskById(p.id)!.hosting === "self" ? <SelfDeskSite game={game} id={p.id} path={r.path} go={go} /> : <HostedDeskSite game={game} id={p.id} path={r.path} go={go} />;
   else if (p.kind === "hosttoast") body = <HostToastSite game={game} path={r.path} go={go} />;
   else if (p.kind === "wiki") body = <WikiSite game={game} path={r.path} go={go} />;
   else if (p.kind === "index") body = <IndexSite game={game} path={r.path} go={go} />;

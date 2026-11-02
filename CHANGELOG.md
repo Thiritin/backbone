@@ -5,10 +5,17 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-02
 
 - Your registrar's login now has a Register page where you order further domains of your own, and every domain has a page where you set its name servers: a domain parked at the registrar shows its parking page in the browser, one on your own name servers reaches your site, and a change takes an hour to spread.
+- Interaction, mainqubes, Tellyhouse, Global Snitch, Docklands Data and Iron Molehill now have their own websites in the style of their companies, with an early look and a modern one that arrives in later years.
+- Data5, NTD, Spree Colo, Arubaba, Next Lair and Green.chz now each have their own website, with one look in the early years and a modern one later.
+- Every colocation provider's site now has a customer portal where you sign in to see your contracts, invoices and remote-hands tickets, book extra power, feed B and power contracts, and cancel a contract with its notice date, and the large providers offer a free month to stay.
 - Colocation provider sites now keep their own layout, including their facility lists and front page banner, after the Shop app has been opened.
+- Colocation provider sites now keep their own layout after the Shop app has been opened.
+- Support desks now keep the numbers for their reports: first response times, how many tickets met the response time each customer expects, and tickets per agent, kind and month.
 - Every colocation provider now has its own website in the browser, listed on Yahoy, where you compare its data centers and prices, join a waitlist and order space, and the Visit site button in Locations opens that order form with your pick.
 - Support desks can merge duplicate tickets, mark spam, keep internal notes, set priorities, sort tickets into departments with their own agents and routing rules, keep tickets for yourself that staff leave alone, and take requests through a customer portal with a status lookup.
 - SquirrelMeal webmail and Postfixit Admin can be installed beside a Postfixit mail server, which now brings Dovecoat for IMAP and POP, and the webmail answers at webmail on the company domain.
+- Help desks have left the Pear Store: Zendusk and Freshdusk are signed up for on their own websites in the Browser, and OsTickit and FreeScoot are installed into a web space of your panel host.
+- Spam tickets now show in the Support app with their own label.
 - GMix FreeMix, ProMix and TopMix now offer 1, 5 and 10 GB as the real tiers did, and Goggle sells its free edition from August 2006 until December 2012 beside the paid one, with the user limits, storage, names and MX records of each year.
 - A support desk now gives every ticket a number in its own style, and saves with a desk keep all their tickets in it.
 - GMix, Goggle Workspace, Hosted Exchange, Lookout 365 and your own mail server now each carry the storage, IMAP and POP access, attachment limits and spam filtering of their year, and your domain's MX record decides which of them receives your mail.

@@ -59,7 +59,7 @@ export default {
   "event.news.feature.title": (p) => `Atualização do ${p.name}`,
   "event.news.feature.text": (p) => `A Heize online noticia que a nova versão do ${p.name} ${FEATURE[p.feature] ?? p.feature}.`,
   "event.news.desk.title": (p) => `${p.name} já está disponível`,
-  "event.news.desk.text": (p) => `A Heize online noticia que o sistema de suporte ${p.name} já saiu e pode ser subscrito na Pear Store.`,
+  "event.news.desk.text": (p) => `A Heize online noticia que o sistema de suporte ${p.name} já saiu em ${p.host}.`,
   "event.news.training.title": (p) => `Formação em ${p.name} disponível`,
   "event.news.training.text": (p) => `A Heize online noticia que já existe uma formação em ${p.name}, que a tua equipa pode fazer em Pesquisa.`,
   "event.news.release.title": (p) => `Versões de software de ${p.year}`,

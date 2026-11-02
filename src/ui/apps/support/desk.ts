@@ -25,7 +25,7 @@ export const DESK: Record<string, { icon: ComponentType<MarkProps>; tile: string
 };
 
 // The Support app shows as Email until a support desk is installed; its id stays "Support" everywhere else.
-export function supportApp(s: Pick<GameState, "installed" | "company">): SupportApp {
+export function supportApp(s: Pick<GameState, "desk" | "company">): SupportApp {
   const desk = deskOf(s);
   if (desk) return { name: "Support", brand: desk.name, ...DESK[desk.id] };
   const m = s.company.mail;
