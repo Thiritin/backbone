@@ -1,5 +1,5 @@
 import type { Product } from "../30-customers/customers";
-import { keyframes, priceAt, vpsPlanGb, vpsRatePerGb } from "./economy";
+import { keyframes, priceAt, vmPlanGb, vmRatePerGb, vpsPlanGb, vpsRatePerGb } from "./economy";
 import { retailV4 } from "./addresses";
 import { cleanMarket, UPDATE_PRICE, type App } from "./apps";
 import { gpuRent } from "./gpu";
@@ -55,8 +55,8 @@ const grow = (year: number) => vpsPlanGb(year);
 const web = (gb: number): Size => (y) => ({ vcpu: 0.1, ramGb: 0.25, diskGb: Math.round(gb * grow(y)) });
 // vCPUs as hosts sell them: tenths of a core below one (at least 0.2), whole cores from one.
 export const cores = (x: number): number => (x < 1 ? Math.max(0.2, Math.round(x * 10) / 10) : Math.round(x));
-// A VM of a share of the year's base RAM: one vCPU per 2 GB (at least one) and 20 GB of disk per GB of RAM.
-const vm = (share: number): Size => (y) => { const ramGb = share * grow(y); return { vcpu: Math.max(1, Math.round(ramGb / 2)), ramGb, diskGb: Math.round(20 * ramGb) }; };
+// A VM of a share of the year's VM base RAM: one vCPU per 2 GB (at least one) and 20 GB of disk per GB of RAM.
+const vm = (share: number): Size => (y) => { const ramGb = share * vmPlanGb(y); return { vcpu: Math.max(1, Math.round(ramGb / 2)), ramGb, diskGb: Math.round(20 * ramGb) }; };
 // Game servers start at 2 vCPUs and 4 GB, doubling like VMs.
 const game = (share: number): Size => (y) => ({ vcpu: 0.5 * share * grow(y), ramGb: 0.5 * share * grow(y), diskGb: Math.round(5 * share * grow(y)) });
 // A GPU VM books whole cards, 4 vCPUs, 8 GB of RAM and 50 GB of disk per card; RAM and disk grow like VMs.
@@ -161,12 +161,12 @@ const scaled = (product: Product, year: number, rates: Rates): Rates => {
   return Object.fromEntries(Object.entries(rates).map(([u, x]) => [u, x * f]));
 };
 function resourceRates(product: Product, year: number): Rates {
-  const r = vpsRatePerGb(year), g = grow(year);
+  const r = vpsRatePerGb(year), v = vmRatePerGb(year), g = grow(year);
   switch (product) {
     case "webHosting": return scaled(product, year, { base: 0.9, diskGb: 2.25 / g, mailbox: 0.3 });
-    case "vps": return { vcpu: 0.2 * r, ramGb: 0.5 * r, diskGb: 0.02 * r };
+    case "vps": return { vcpu: 0.2 * v, ramGb: 0.5 * v, diskGb: 0.02 * v };
     case "gameServer": return { vcpu: 0.4 * r, ramGb: 1.35 * r, diskGb: 0.02 * r };
-    case "cloud": return { vcpu: 0.25 * r, ramGb: 0.625 * r, diskGb: 0.025 * r };
+    case "cloud": return { vcpu: 0.25 * v, ramGb: 0.625 * v, diskGb: 0.025 * v };
     case "storage": return { diskGb: priceAt(2.6, 32, year) / 1000 };
     case "dns": return { base: 0.5, zone: 0.3 };
     case "vpn": return { base: 0.5, user: 1.5 };

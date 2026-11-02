@@ -113,6 +113,19 @@ export const RESOLD_COST_SHARE = 0.4;
 // VPS: €1.50 per GB of RAM in 2026, m = 20. Plan RAM doubling every 7 years is an estimate.
 export const vpsRatePerGb = (year: number): number => priceAt(1.5, 20, year);
 export const vpsPlanGb = (year: number): number => Math.pow(2, (year - 2005) / 7);
+// VPS and cloud plans start at half a GB in 2005 and double every 5.25 years until they meet vpsPlanGb in 2026.
+export const vmPlanGb = (year: number): number => Math.min(vpsPlanGb(year), 0.5 * Math.pow(2, (year - 2005) / 5.25));
+// VPS and cloud: euros per GB of RAM, €30 in 2005 to €1.50 in 2026. The keys hold the smallest plan's price falling from
+// €12.66 to €6 without ever rising; the pair at 2023.82 is the step to 2 vCPUs.
+export const VM_RATE_KEYS: [number, number][] = [
+  [2005, 30], [2006, 25.77], [2007, 22.25], [2008, 20.01], [2009, 17.39], [2010, 14.7], [2011, 12.9], [2012, 11.07], [2013, 9.78],
+  [2014, 8.5], [2015, 7.28], [2016, 6.38], [2017, 5.55], [2018, 4.78], [2019, 4.15], [2020, 3.62], [2021, 3.16], [2022, 2.74],
+  [2023, 2.38], [2023.816, 2.15], [2023.826, 1.99], [2024, 1.95], [2025, 1.71], [2026, 1.5],
+];
+export const vmRatePerGb = (year: number): number => keyframes(VM_RATE_KEYS, year);
+// VPS demand multiplies every profile's VPS weight, and the extra VPS leads come on top of the others (market.ts, leadBoost).
+export const VPS_DEMAND_KEYS: [number, number][] = [[2005, 1.5], [2011, 2], [2013.5, 4]];
+export const vpsDemand = (year: number): number => keyframes(VPS_DEMAND_KEYS, year);
 
 // Hardware, Server generations.
 export const GENERATIONS: { year: number; cores: number; ramGb: number; diskGb: number; disk: "HDD" | "SSD" | "NVMe"; watts: number; price: number }[] = [

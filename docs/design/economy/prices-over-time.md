@@ -12,7 +12,7 @@ Here m is the multiplier in 2005. After 2026 prices stay flat.
 | --- | --- | --- |
 | IP transit, per Mbit/s | 108 | 1 Gbit/s commit: €190 per month in 2026, about €20 per Mbit/s in 2005 |
 | Internet exchange ports | 5 | AMS-IX 10G: €650 per month in 2026 |
-| Customer base rate per GB of RAM | 20 | VPS: about €1.50 per GB in 2026, €30 per GB in 2005 |
+| Customer base rate per GB of RAM | 20 | Game servers: about €1.50 per GB in 2026, €30 per GB in 2005; VPS and cloud servers follow the VPS rate keyframes (Per-resource pricing) |
 | Customer base rate per TB of storage | 32 | Object storage: €6.50 per TB in 2026, €210 in 2005 |
 | Customer base rate per TB of traffic | 46 | Overage and traffic-heavy services |
 | Fixed-price products | Keyframes | Web hosting, domains and dedicated servers follow the fixed-price keyframes below; the sizes get bigger |

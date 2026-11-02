@@ -211,7 +211,8 @@ describe("free upgrade and the move", () => {
     const o = card(s, t, "upgrade")!;
     expect(o).toBeDefined();
     expect(o.cost).toBeGreaterThan(0);
-    expect(o.spec!.ramGb).toBeCloseTo(v.spec.ramGb * UPGRADE_FACTOR, 1);
+    // RAM grows to the next quarter GB.
+    expect(o.spec!.ramGb).toBeCloseTo(Math.round(v.spec.ramGb * UPGRADE_FACTOR * 4) / 4, 2);
     expect(forced(true, () => applyRetention(s, t, "upgrade"))).toBe("retained");
     expect(svc(s, id).price).toBe(v.price);
     expect(svc(s, id).spec).toEqual(o.spec);

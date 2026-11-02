@@ -52,9 +52,9 @@ describe("product catalog", () => {
     expect(web(2005)).toBe(6);
     // economy/prices-over-time.md, Prices over time: sizes grow while the price follows the web hosting keyframes.
     expect(web(2020)).toBeCloseTo(6 * keyframes(FIXED_KEYS.webHosting!, 2020), 0);
-    // economy/README.md: 1 vCPU, 512 MB and 10 GB in 2005 come to 0.65 × the €30 GB rate, less the traffic below the middle size's.
+    // economy/README.md: 1 vCPU, 256 MB and 5 GB in 2005 come to 0.425 × the €30 GB rate, less the traffic below the middle size's.
     const vps = (y: number, sla?: "premium") => marketPrice("vps", sizeSpec("vps", 0, y), y, sla);
-    expect(vps(2005)).toBeCloseTo(19.41, 2);
+    expect(vps(2005)).toBeCloseTo(12.66, 2);
     // A small game server costs about €29 in 2005 and €12 in 2026.
     const game = (y: number) => marketPrice("gameServer", sizeSpec("gameServer", 0, y), y);
     expect(game(2005)).toBeCloseTo(29.25, 2);
@@ -69,8 +69,8 @@ describe("product catalog", () => {
     expect(PRODUCTS.dedicated.runsOn).toBe("server");
     expect(PRODUCTS.colocation.runsOn).toBe("rack");
     expect(PRODUCTS.domain).toMatchObject({ runsOn: "none", period: "year" });
-    expect(sizeSpec("vps", 0, 2005)).toMatchObject({ vcpu: 1, ramGb: 0.5, diskGb: 10 });
-    expect(sizeSpec("vps", 0, 2012).ramGb).toBeCloseTo(1);
+    expect(sizeSpec("vps", 0, 2005)).toMatchObject({ vcpu: 1, ramGb: 0.25, diskGb: 5 });
+    expect(sizeSpec("vps", 0, 2015.5).ramGb).toBeCloseTo(1);
   });
 });
 
@@ -133,19 +133,19 @@ describe("placement", () => {
   it("fills a node's installed RAM first and books past it when every node is full, recording nothing on a disk refusal", () => {
     const { s, cluster, second, cus } = twoNodes();
     expect(nodeCapacity(s.devices.find((d) => d.id === "dev3")!)).toEqual({ vcpu: 2.57, ramGb: 8, diskGb: 1000 });
-    // Nodes within their installed 8 GB win: dev3 holds 3 VPS L of 2 GB next to its control plane, the second node 4.
-    for (let i = 0; i < 7; i++) ok(provisionService(s, cus, "vps", { label: `big ${i}`, spec: sizeSpec("vps", 2, yearOf(s.hour)) }));
+    // Nodes within their installed 8 GB win: dev3 holds 3 VPS XL of 2 GB next to its control plane, the second node 4.
+    for (let i = 0; i < 7; i++) ok(provisionService(s, cus, "vps", { label: `big ${i}`, spec: sizeSpec("vps", 3, yearOf(s.hour)) }));
     expect([nodeUsed(s, "dev3").ramGb, nodeUsed(s, second).ramGb]).toEqual([6, 8]);
     // With none left, the idlest node takes the next one.
-    ok(provisionService(s, cus, "vps", { label: "one more", spec: sizeSpec("vps", 2, yearOf(s.hour)) }));
+    ok(provisionService(s, cus, "vps", { label: "one more", spec: sizeSpec("vps", 3, yearOf(s.hour)) }));
     expect(nodeUsed(s, "dev3").ramGb).toBe(8);
-    const onDev3 = (label: string) => provisionService(s, cus, "vps", { label, spec: sizeSpec("vps", 2, yearOf(s.hour)), clusterId: cluster, deviceId: "dev3" });
+    const onDev3 = (label: string) => provisionService(s, cus, "vps", { label, spec: sizeSpec("vps", 3, yearOf(s.hour)), clusterId: cluster, deviceId: "dev3" });
     ok(onDev3("chosen 1"));
     ok(onDev3("chosen 2"));
     expect(nodeUsed(s, "dev3").ramGb).toBe(12);
     // Disk is the one limit: a booking past 2 x the usable disk is refused and leaves nothing behind.
     const services = s.services.length, nextId = s.nextId;
-    expect(err(provisionService(s, cus, "vps", { label: "huge", spec: { ...sizeSpec("vps", 2, yearOf(s.hour)), diskGb: 99999 } }))).toBe("error.noCapacity");
+    expect(err(provisionService(s, cus, "vps", { label: "huge", spec: { ...sizeSpec("vps", 3, yearOf(s.hour)), diskGb: 99999 } }))).toBe("error.noCapacity");
     expect([s.services.length, s.nextId]).toEqual([services, nextId]);
   });
   it("books CPU past the cores without a limit and slows the node while the CPU in use passes them", () => {
@@ -213,10 +213,10 @@ describe("nodes", () => {
   it("drains onto a node that has no RAM left instead of leaving workloads behind", () => {
     const { s, cluster, second, cus } = twoNodes();
     ok(cordon(s, second));
-    // dev3 holds 5 VPS L next to the control plane when the player picks it.
-    for (let i = 0; i < 5; i++) ok(provisionService(s, cus, "vps", { label: `v${i}`, spec: sizeSpec("vps", 2, yearOf(s.hour)), clusterId: cluster, deviceId: "dev3" }));
+    // dev3 holds 5 VPS XL next to the control plane when the player picks it.
+    for (let i = 0; i < 5; i++) ok(provisionService(s, cus, "vps", { label: `v${i}`, spec: sizeSpec("vps", 3, yearOf(s.hour)), clusterId: cluster, deviceId: "dev3" }));
     ok(uncordon(s, second));
-    for (let i = 0; i < 2; i++) ok(provisionService(s, cus, "vps", { label: `w${i}`, spec: sizeSpec("vps", 2, yearOf(s.hour)) }));
+    for (let i = 0; i < 2; i++) ok(provisionService(s, cus, "vps", { label: `w${i}`, spec: sizeSpec("vps", 3, yearOf(s.hour)) }));
     s.clusters = s.clusters.map((c) => (c.id === cluster ? { ...c, ha: { ...c.ha, live: true } } : c));
     ok(drain(s, "dev3"));
     expect(workloadsOn(s, "dev3")).toHaveLength(0);

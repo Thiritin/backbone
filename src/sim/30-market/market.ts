@@ -6,7 +6,7 @@ import type { Address } from "../30-customers/addresses";
 import { yearOf } from "../00-core/time";
 import type { Cycle } from "../10-catalog/cycles";
 import type { MethodId } from "../10-catalog/payments";
-import { CHOICE_TAU, CITIES, COMPETITORS, generationAt, leadCapShare, MARKET_GROWTH, type Budget, type Competitor, type Profile as ProfileStats } from "../10-catalog/economy";
+import { CHOICE_TAU, CITIES, COMPETITORS, generationAt, leadCapShare, MARKET_GROWTH, vpsDemand, type Budget, type Competitor, type Profile as ProfileStats } from "../10-catalog/economy";
 import { gpuDemand, GPU_SHARE } from "../10-catalog/gpu";
 import { modelById } from "../10-catalog/hardware";
 import { rivalTrust } from "../10-catalog/hosttoast";
@@ -95,10 +95,16 @@ export const SLA_ASKED: Record<Profile, Sla> = {
   office: "business", onlineShop: "premium", enterprise: "premium", reseller: "business",
 };
 
-// A profile's needs in a year: the GPU share scaled by the year's demand, the other weights making room for it; none before GPU servers.
+// A profile's needs in a year: the GPU share scaled by the year's demand, the other weights making room for it; none before GPU
+// servers. The VPS weight is multiplied by vpsDemand; leadBoost adds those VPS leads on top, so the other lines keep theirs.
+const rawNeeds = (profile: Profile, year: number): [Product, number][] => {
+  const g = (NEEDS[profile].find(([p]) => p === "gpu")?.[1] ?? 0) * gpuDemand(year), f = vpsDemand(year);
+  return NEEDS[profile].map(([p, w]): [Product, number] => [p, p === "gpu" ? g : w * (1 - g) * (p === "vps" ? f : 1)]).filter(([, w]) => w > 0);
+};
+export const leadBoost = (profile: Profile, year: number): number => rawNeeds(profile, year).reduce((a, [, w]) => a + w, 0);
 export function needsOf(profile: Profile, year: number): [Product, number][] {
-  const g = (NEEDS[profile].find(([p]) => p === "gpu")?.[1] ?? 0) * gpuDemand(year);
-  return NEEDS[profile].map(([p, w]): [Product, number] => [p, p === "gpu" ? g : w * (1 - g)]).filter(([, w]) => w > 0);
+  const total = leadBoost(profile, year);
+  return rawNeeds(profile, year).map(([p, w]): [Product, number] => [p, w / total]);
 }
 
 const pick = <T>(r: Rng, xs: readonly T[]): T => xs[Math.floor(rand(r) * xs.length)];
@@ -200,7 +206,7 @@ export function leadFlows(s: GameState): LeadFlow[] {
       const organic = ORGANIC_CONSIDER * cityMarket(city, s.hour) * mix * awareness(s, profile) * (1 + 0.5 * (level - 1)) * rev;
       const happy = city === home ? s.customers.filter((c) => c.profile === profile && c.churnedAt === null && c.happiness >= 70).length : 0;
       const posts = city === home && FORUM_PROFILES.includes(profile) ? forum / FORUM_PROFILES.length : 0;
-      add(profile, city, Math.min(cap, organic + happy * REFERRAL_LEADS * rev + posts));
+      add(profile, city, Math.min(cap, organic + happy * REFERRAL_LEADS * rev + posts) * leadBoost(profile, yearOf(s.hour)));
     }
   }
   for (const b of leadsThisMonth(s)) {
