@@ -1,4 +1,6 @@
 import { dateOf, yearOf } from "../00-core/time";
+import { selectMailServer } from "./mail";
+import type { SelfMailSoftware } from "../80-business/mail";
 import { versionAt } from "../10-catalog/software-versions";
 import { BREAK_HOURS, CHANNELS, channelOf, type Channel, targetYear, updateBreaks } from "../60-infra/channel";
 import { buildKeys, installKeyBlock, licenceExpired, licenseBuild, licenseInstall, releaseGone } from "../60-infra/licence";
@@ -94,7 +96,7 @@ export function installSoftware(s: GameState, machineId: string, softwareId: str
   const done = !isServer(s, machineId) ? installPanelInVm(s, machineId, sw.id) : sw.kind === "cloud" ? installHypervisor(s, machineId, sw.id) : installPanel(s, machineId, sw.id);
   if (done.ok) licenseInstall(s, machineId, sw.id, version, key);
   if (done.ok && sw.kind === "mailweb") startWebmail(s, done.id!);
-  if (done.ok && sw.kind === "mail") s.company = { ...s.company, mail: { kind: "self", software: sw.id as "postfixit" | "mailpig", clusterId: done.id! } };
+  if (done.ok && sw.kind === "mail") selectMailServer(s, done.id!, sw.id as SelfMailSoftware);
   return done;
 }
 

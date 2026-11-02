@@ -9,7 +9,7 @@ import { booksOffline, booksTick, hasFeature, seated, works } from "../src/sim/8
 import { staffTick } from "../src/sim/47-staff/staff";
 import { orderLead } from "../src/sim/30-market/orders";
 import { stepsDone } from "../src/sim/30-market/manual";
-import { hire } from "../src/sim/90-actions/staff";
+import { hire } from "./fixtures";
 import { quoteOrder } from "../src/sim/90-actions/orders";
 import { resolve } from "../src/sim/80-business/browser";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";

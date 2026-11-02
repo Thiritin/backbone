@@ -13,7 +13,7 @@ import { tick } from "../src/sim/88-tick/tick";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { connect } from "../src/sim/90-actions/hardware";
-import { hire } from "../src/sim/90-actions/staff";
+import { hire } from "./fixtures";
 import { retainTicket, resolveTicket } from "../src/sim/90-actions/support";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { basement, buyDevice, hypervisor, withServer, newGame } from "./fixtures";

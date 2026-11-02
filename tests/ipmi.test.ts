@@ -10,7 +10,8 @@ import { tick } from "../src/sim/88-tick/tick";
 import { resolve } from "../src/sim/80-business/browser";
 import { atServer, powerCycle, reset, resetBmc, setPower, shutdown } from "../src/sim/90-actions/hardware";
 import { visibleCandidates } from "../src/sim/47-staff/staff";
-import { hire, queueOperation } from "../src/sim/90-actions/staff";
+import { queueOperation } from "../src/sim/90-actions/staff";
+import { hire } from "./fixtures";
 import { readyGame } from "./fixtures";
 
 const game = (model = "g2-compute", brand = "Dwell"): GameState => {

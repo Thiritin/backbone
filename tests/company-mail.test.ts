@@ -6,7 +6,7 @@ import { createVm } from "../src/sim/90-actions/clusters";
 import { bookMail, cancelMail, selectMailServer } from "../src/sim/90-actions/mail";
 import { signRegistrar, registerCompanyDomain } from "../src/sim/90-actions/registrar";
 import { installBlock, installSoftware, uninstallSoftware } from "../src/sim/90-actions/software";
-import { hire } from "../src/sim/90-actions/staff";
+import { hire } from "./fixtures";
 import { setEmailOrders } from "../src/sim/90-actions/website";
 import { CHECKS } from "../src/sim/checklist";
 import { deserialize, serialize } from "../src/sim/91-save/save";
@@ -117,7 +117,7 @@ describe("email orders", () => {
     let n = 0;
     for (const seed of [1, 2, 3]) {
       const g = readyGame(seed);
-      g.company = { ...g.company, mail: { kind: "free" } };
+      cancelMail(g);
       run(g, 24 * 60);
       n += g.sales.requests.filter((r) => r.kind === "order").length;
     }
@@ -126,7 +126,7 @@ describe("email orders", () => {
 
   it("lose half of the business email orders on free mail and none of the private ones", () => {
     const s = readyGame(6);
-    s.company = { ...s.company, mail: { kind: "free" } };
+    cancelMail(s);
     expect(mailShare(s, "private")).toBe(1);
     expect(mailShare(s, "gamer")).toBe(1);
     expect(mailShare(s, "smallBiz")).toBe(0.5);
@@ -137,7 +137,7 @@ describe("email orders", () => {
       let n = 0;
       for (const seed of [1, 2, 3, 4]) {
         const g = readyGame(seed);
-        if (free) g.company = { ...g.company, mail: { kind: "free" } };
+        if (free) cancelMail(g);
         run(g, 24 * 60);
         n += g.sales.requests.filter((r) => r.kind === "order" && r.profile !== "private" && r.profile !== "gamer" && r.profile !== "hobbyDev").length;
       }
@@ -150,7 +150,7 @@ describe("email orders", () => {
     const s = readyGame(6);
     s.marketing.owned = ["website"];
     s.shop = { ...s.shop, variant: "clientExit", readyAt: 0 };
-    s.company = { ...s.company, mail: { kind: "free" } };
+    cancelMail(s);
     expect(setEmailOrders(s, false).ok).toBe(true);
     expect(setEmailOrders(s, true).ok).toBe(true);
   });
@@ -159,7 +159,7 @@ describe("email orders", () => {
     const { siteContent } = await import("../src/sim/80-business/website");
     const s = readyGame(6);
     expect(siteContent(s).email).toBe(`sales@${s.company.domain}`);
-    s.company = { ...s.company, mail: { kind: "free" } };
+    cancelMail(s);
     expect(siteContent(s).email).toBe(salesAddress(s));
     expect(siteContent(s).email).toMatch(/@gmix\.com$/);
   });
@@ -168,7 +168,7 @@ describe("email orders", () => {
 describe("tutorial and saves", () => {
   it("checks the email step by an upgrade from free mail", () => {
     const s = readyGame(7);
-    s.company = { ...s.company, mail: { kind: "free" } };
+    cancelMail(s);
     expect(CHECKS.email(s)).toBe(false);
     bookMail(s, "hostedExchange");
     expect(CHECKS.email(s)).toBe(true);

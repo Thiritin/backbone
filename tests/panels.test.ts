@@ -14,7 +14,8 @@ import { addNode, provisionService, setPlacement } from "../src/sim/90-actions/c
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { connect, setPower } from "../src/sim/90-actions/hardware";
 import { buyDevice, bootedMachine, newGame } from "./fixtures";
-import { hire, queueMigration } from "../src/sim/90-actions/staff";
+import { queueMigration } from "../src/sim/90-actions/staff";
+import { hire } from "./fixtures";
 import { cleanUp } from "../src/sim/90-actions/security";
 import { installSoftware, joinableServers } from "../src/sim/90-actions/software";
 import { migrateWebspace, migrateWorkload, webspaceTargets } from "../src/sim/90-actions/vms";
