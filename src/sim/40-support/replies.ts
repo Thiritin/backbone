@@ -4,7 +4,8 @@ import { updatePrice } from "../10-catalog/apps";
 import { cleanupPrice } from "../60-infra/apps";
 import { companyDomain } from "../30-customers/domains";
 import { serviceFqdn } from "../30-customers/hostnames";
-import type { Customer } from "../30-customers/customers";
+import type { Customer, Product, Service } from "../30-customers/customers";
+import { accountFor } from "../60-infra/webspace";
 import { EXTENSION_DAYS } from "../45-billing/billing";
 import type { GameState } from "../50-state";
 import { senderName, TAKEDOWN_HOURS } from "./notices";
@@ -23,6 +24,18 @@ export const variant = (s: GameState, what: string, ...key: number[]): string =>
 // The company's name and domain for the signature, the mail server and the panel.
 export const companyParams = (s: GameState): Record<string, string> => ({ company: s.company.name, host: companyDomain(s) });
 
+// The access data of a service: servers log in as root over SSH, everything else at the panel with the account name.
+const ROOT: Product[] = ["vps", "dedicated", "cloud", "gpu"];
+export const accessParams = (s: GameState, v: Service | undefined): Record<string, string> => {
+  if (!v) return { user: "", password: "", address: "" };
+  const root = ROOT.includes(v.product);
+  return { user: root ? "root" : (v.username ?? accountFor(v.domain ?? v.label)), password: v.password ?? "", address: root ? serviceFqdn(s, v) : `panel.${companyDomain(s)}` };
+};
+// The customer has their access data: every service still waiting for it.
+export const sendAccess = (s: GameState, customerId: string): void => {
+  s.services = s.services.map((v) => (v.customerId === customerId && v.accessSent === false ? { ...v, accessSent: true } : v));
+};
+
 // The email for a template reply ("tpl.ftp") or an action ("credit"), with the figures as they are before the action applies.
 export function outgoing(s: GameState, t: Ticket, c: Customer | undefined, what: string): Pick<Reply, "key" | "params"> {
   const v = s.services.find((x) => x.id === t.serviceId), monthly = c ? monthlyValue(s.services, c.id) : 0;
@@ -31,7 +44,7 @@ export function outgoing(s: GameState, t: Ticket, c: Customer | undefined, what:
     params: {
       ...companyParams(s), name: c && PERSONS.includes(c.profile) ? c.name.split(" ")[0] : "", service: v?.label ?? "", hostname: serviceFqdn(s, v), domain: v?.domain ?? "",
       credit: cents(0.1 * monthly), once: updatePrice(s.rates.webHosting, "updateOnce"), managed: updatePrice(s.rates.webHosting, "updates"), refund: cents(monthly), cleanup: c ? cleanupPrice(s, c) : 0, days: EXTENSION_DAYS, hours: TAKEDOWN_HOURS,
-      url: t.notice?.url ?? "", sender: t.notice ? senderName(t.notice.sender) : "",
+      url: t.notice?.url ?? "", sender: t.notice ? senderName(t.notice.sender) : "", ...accessParams(s, v),
     },
   };
 }

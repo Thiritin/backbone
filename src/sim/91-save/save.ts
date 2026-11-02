@@ -35,6 +35,7 @@ import { fillDaemons } from "../60-infra/daemons";
 import { fillGames } from "../60-infra/games";
 import { fillMachines, fillVersions } from "./machines";
 import { legacyLeads } from "./leads";
+import { seededPassword } from "../42-mail/new";
 
 // ponytail: plain JSON in localStorage; compress once saves approach the ~5 MB limit.
 export const serialize = (state: GameState): string => JSON.stringify(state);
@@ -137,7 +138,7 @@ export function deserialize(raw: string): GameState {
     tickets: (data.tickets ?? []).map((t) => ({ ...t, assignee: t.assignee ?? null })),
     // Saves from before name servers ran every domain on the company's own.
     domains: (data.domains ?? []).map((d) => ({ ...d, ns: d.ns ?? "company" })),
-    services: (data.services ?? []).map((v) => ({ ...v, zone: v.zone ?? null, sla: v.sla ?? "basic" })),
+    services: (data.services ?? []).map((v) => ({ ...v, zone: v.zone ?? null, sla: v.sla ?? "basic", password: v.password ?? seededPassword(base.seed, Number(v.id.slice(3)) || 0) })),
     // Saves from before clusters keep their services unplaced, which leaves them online.
     sales: { ...base.sales, ...data.sales },
     // Rivals saved before small rivals, reviews and HOSTtoast.

@@ -124,6 +124,8 @@ export default {
   "support.registerDomain": () => "Registar domínio",
   "support.setup": () => "Configuração",
   "support.live": () => "Online",
+  "support.access": () => "Dados de acesso",
+  "support.sendAccess": () => "Enviar dados de acesso",
   "support.notSetUp": () => "Não configurado",
   "support.decline": () => "Recusar",
   "support.space": () => "Espaço",

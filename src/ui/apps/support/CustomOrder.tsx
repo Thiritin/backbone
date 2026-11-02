@@ -1,4 +1,4 @@
-import { ArrowRight, Check, CircleX, FilePlus, FileText, Globe, Receipt, Rocket, Send, UserPlus } from "lucide-react";
+import { ArrowRight, Check, CircleX, FilePlus, FileText, Globe, KeyRound, Receipt, Rocket, Send, UserPlus } from "lucide-react";
 import { useId, useState } from "react";
 import { t } from "../../../i18n/en";
 import { euroCents } from "../../../sim/00-core/money";
@@ -15,7 +15,7 @@ import { isFinal, type Ticket } from "../../../sim/40-support/tickets";
 import type { InvoiceStatus } from "../../../sim/45-billing/billing";
 import type { GameState } from "../../../sim/50-state";
 import { betterHost, hostQuality, routeOptions } from "../../../sim/60-infra/routes";
-import { attachQuote, createQuote, invoiceOrder, offerUpgrade, provisionOrder, quoteOrder, registerOrderDomain } from "../../../sim/90-actions/orders";
+import { attachQuote, createQuote, invoiceOrder, offerUpgrade, provisionOrder, quoteOrder, registerOrderDomain, sendOrderAccess } from "../../../sim/90-actions/orders";
 import { hasFeature } from "../../../sim/80-business/bookkeeping";
 import { hasHelpdeskLink } from "../../../sim/30-market/quotes";
 import { QUOTE_DRAG, QuotePill } from "../books/QuotesTab";
@@ -207,8 +207,8 @@ export function CustomCompose({ tk, r }: { tk: Ticket; r: SalesRequest }) {
   const accepted = game.quotes.find((q) => q.ticketId === tk.id && q.status === "accepted");
   const web = r.product === "webHosting" && !!r.domain;
   const waiting = r.replyAt !== null;
-  // Only the step the order is at: the offer until the customer accepts, then account, invoice, domain, setup.
-  const shown = [!done.quote ? (waiting ? "" : "quote") : !done.account ? "account" : !done.invoice ? "invoice" : web && !done.domain ? "domain" : !done.provision ? "provision" : ""];
+  // Only the step the order is at: the offer until the customer accepts, then account, invoice, domain, setup, access data.
+  const shown = [!done.quote ? (waiting ? "" : "quote") : !done.account ? "account" : !done.invoice ? "invoice" : web && !done.domain ? "domain" : !done.provision ? "provision" : !done.access ? "access" : ""];
   const cost = web ? (game.registrar ? wholesale(game, r.domain!) : registryCost(r.domain!, yearOf(game.hour))) : 0;
   const quoteValue = done.quote ? t("support.perMonth", { price: euroCents(r.quote ?? 0) }) : waiting ? t("support.sent") : r.status === "countered" ? t("support.counter", { price: euroCents(r.counter ?? 0) }) : r.status === "refused" ? t("support.refused") : t("support.notSent");
   const row = (id: string, label: string, value: string, body?: React.ReactNode) => (
@@ -223,7 +223,7 @@ export function CustomCompose({ tk, r }: { tk: Ticket; r: SalesRequest }) {
   );
   return (
     <div className="compose custom-steps">
-      {((!done.quote && waiting) || done.provision) && <p className="step-wait">{t("support.status.waiting")}</p>}
+      {((!done.quote && waiting) || (done.provision && done.access)) && <p className="step-wait">{t("support.status.waiting")}</p>}
       <ol className="steps">
         {!r.shop && row("quote", t("support.quote"), quoteValue, hasFeature(game, "quotes") ? <Attachments tk={tk} locked={locked} open={!waiting} /> : !waiting && <QuoteFields tk={tk} r={r} locked={locked} />)}
         {row("account", t("support.customerAccount"), done.account ? t("support.created") : t("support.none"),
@@ -241,6 +241,8 @@ export function CustomCompose({ tk, r }: { tk: Ticket; r: SalesRequest }) {
               ? <button className="btn primary" disabled={locked} onClick={() => openApp("Browser", { kind: "url", id: `http://${link}` })}><Rocket />{t("pkg.openForm")}</button>
               : <button className="btn primary" disabled={locked || !route} onClick={() => act(provisionOrder, tk.id, route!)}><Rocket />{PROVISION[r.product]}</button>}
           </div>)}
+        {row("access", t("support.access"), t("support.notSent"),
+          <button className="btn primary" disabled={locked} onClick={() => act(sendOrderAccess, tk.id)}><KeyRound />{t("support.sendAccess")}</button>)}
       </ol>
       <div className="actions-row">
         <button className="btn ghost" disabled={locked} onClick={() => act(closeTicket, tk.id)}><CircleX />{t("support.decline")}</button>

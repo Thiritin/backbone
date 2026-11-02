@@ -10,7 +10,7 @@ import { deserialize, serialize } from "../src/sim/91-save/save";
 import { orderLead } from "../src/sim/30-market/orders";
 import type { GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
-import { attachQuote, convertQuote, createAccount, createQuote, deleteQuote, editQuote, invoiceOrder, provisionOrder, quoteOrder, registerOrderDomain } from "../src/sim/90-actions/orders";
+import { attachQuote, convertQuote, createAccount, createQuote, deleteQuote, editQuote, invoiceOrder, provisionOrder, quoteOrder, registerOrderDomain, sendOrderAccess } from "../src/sim/90-actions/orders";
 import type { SalesRequest } from "../src/sim/30-market/market";
 import { owner, readyGame } from "./fixtures";
 
@@ -152,6 +152,10 @@ describe("order steps", () => {
     const tr = s.transfers.find((x) => x.forInvoice === inv.id)!;
     expect(invoiceOf(s, req())!.status).toBe("open");
     expect(matchTransfer(s, tr.id, inv.id, true).ok).toBe(true);
+    run(s, 1);
+    // Paid, but the access data is still owed: the ticket is back in the inbox.
+    expect(s.tickets.find((x) => x.id === id)!.status).toBe("open");
+    expect(sendOrderAccess(s, id).ok).toBe(true);
     run(s, 1);
     expect(s.tickets.find((x) => x.id === id)!).toMatchObject({ status: "resolved", outcome: "accepted" });
   });

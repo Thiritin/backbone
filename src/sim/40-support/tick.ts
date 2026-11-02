@@ -28,7 +28,7 @@ import { APP_ACTIONS, applyAppWork } from "../60-infra/apps";
 import { decideBreach } from "../60-infra/breach";
 import { serviceOnline } from "./status";
 import { answerTransfer, DOMAIN_OUT } from "../30-customers/registrar";
-import { outgoing, sendAction } from "./replies";
+import { outgoing, sendAccess, sendAction } from "./replies";
 import { taskDone, webspaceTickets } from "./webspace-tickets";
 import { overpricing, revertPrice } from "../30-customers/pricing";
 import { CERT_ASKED, CERT_WANT, wantCertificate } from "../30-customers/certificates";
@@ -108,6 +108,7 @@ function finishWork(s: GameState, customer: (id: string) => Customer, events: Si
       if (right && !t.replies.length && s.hour - t.createdAt <= FAST_HOURS) bump(c, FAST_ANSWER);
       t.replies = [...t.replies, { hour: s.hour, template: work.arg, right, ...outgoing(s, t, c, `tpl.${work.arg}`), ...(work.by && { by: work.by }) }];
       t.updatedAt = s.hour;
+      if (work.arg === "access") sendAccess(s, c.id);
       if (right) {
         t.status = "waiting";
         const hosting = t.kind === "howTo" && t.topic === "ssl" && s.services.find((v) => v.id === t.serviceId && v.endedAt === null);
