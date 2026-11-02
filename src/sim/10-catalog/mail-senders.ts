@@ -10,6 +10,8 @@ const SPAM_SHARE: [number, number][] = [[2005, 0.65], [2008, 0.9], [2010, 0.9], 
 // Junk a day that even a quiet mailbox gets.
 const JUNK_FLOOR: [number, number][] = [[2005, 5], [2008, 12], [2010, 12], [2026, 2]];
 export const JUNK_CAP_PER_DAY = 400;
+// Junk a day that may pass the filter even when the box gets less real mail: two a week.
+export const JUNK_PASS_FLOOR = 2 / 7;
 
 const along = (xs: [number, number][], year: number): number => {
   const i = xs.findIndex(([y]) => y > year);
