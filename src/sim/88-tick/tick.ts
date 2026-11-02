@@ -43,12 +43,12 @@ import { computeTick, pinMembers } from "../60-infra/cluster";
 import { haltTick, powerTick, pushLog, tripTick } from "../60-infra/power";
 import { loadSaved } from "../60-infra/switches";
 import { installNetTick } from "../60-infra/oob";
+import { moduleBills, panelOpsTick } from "../60-infra/panel-services";
 import { pruneAcks } from "../60-infra/alarms";
-import { beancounterTick } from "../60-infra/beancounters";
+import { beancounterTick, vmOomTick } from "../60-infra/beancounters";
 import { haTick } from "../60-infra/ha";
 import { migrationTick } from "../60-infra/migration";
 import { maintenanceTick } from "../60-infra/maintenance";
-import { freezeTick } from "../60-infra/usage";
 import { statsTick } from "../60-infra/stats";
 import { networkTick } from "../60-infra/network";
 import { leaseTick } from "../60-infra/lan";
@@ -58,7 +58,8 @@ import { resellerTick } from "../30-customers/resellers";
 import { webpanelTick } from "../60-infra/webpanel";
 import { gamesTick } from "../85-products/games-tick";
 import { securityTick } from "../60-infra/security";
-import { usageTick } from "../60-infra/usage";
+import { timeoutTick, usageTick } from "../60-infra/usage";
+import { overuseTick } from "../80-business/overuse";
 import { productsTick } from "../85-products/products";
 import { COMPONENTS, manufacturerByName, modelById, specOf } from "../10-catalog/hardware";
 import { familyById, familyFailure } from "../10-catalog/families";
@@ -69,7 +70,8 @@ import { sensorTick } from "../60-infra/sensors";
 import { THERMAL, thermalTick, throttled } from "../60-infra/thermal";
 import { FAILURE_FACTOR, unsupported } from "../10-catalog/lifecycle";
 import { skillById } from "../10-catalog/research";
-import { KNOW_HOW, storeItem, subscriptionEntry } from "../10-catalog/store";
+import { deskItem, KNOW_HOW, storeItem, subscriptionEntry } from "../10-catalog/store";
+import { deskById } from "../10-catalog/desks";
 import { capacityAt, DATACENTERS, datacenterById, flatMonthly, homeLineById, HOUSEHOLD_FACTOR } from "../20-world/datacenters";
 import type { Component, Device, GameState, LedgerEntry, Location } from "../50-state";
 import { scoreTick } from "../80-business/scores";
@@ -108,10 +110,10 @@ export function endLease(s: GameState, leaseId: string) {
 export function powerPerHour(s: GameState): number {
   const price = businessPowerPrice(yearOf(s.hour));
   const busy = busyDevices(s), flat = new Set(s.racks.filter((r) => r.flatKw).map((r) => r.id));
-  return readOnlySweep(s, () => s.devices.filter((d) => d.on && !flat.has(d.rackId ?? "") && powered(s, d.id))).reduce((sum, d) => {
+  return readOnlySweep(s, () => s.devices.filter((d) => d.on && !flat.has(d.rackId ?? "") && powered(s, d.id)).reduce((sum, d) => {
     const loc = locationOf(s, d)!;
-    return sum + (drawWatts(d, busy) / 1000) * price * (loc.dc ? datacenterById(loc.dc).powerFactor : HOUSEHOLD_FACTOR);
-  }, 0);
+    return sum + (drawWatts(s, d, busy) / 1000) * price * (loc.dc ? datacenterById(loc.dc).powerFactor : HOUSEHOLD_FACTOR);
+  }, 0));
 }
 
 export const CANCEL_CHANCE = 0.015;
@@ -249,6 +251,7 @@ export function tick(state: GameState): SimEvent[] {
   tanTick(state);
   haltTick(state);
   installNetTick(state);
+  panelOpsTick(state);
   const events: SimEvent[] = [...tripTick(state), ...thermalTick(state, minutes)];
   // The store shallow-copies the state before ticking, so arrays and their items are replaced rather than changed.
   if (state.racks.some((r) => r.arriveAt !== null && r.arriveAt <= state.hour)) {
@@ -325,7 +328,7 @@ export function tick(state: GameState): SimEvent[] {
       bills.push({ hour: state.hour, category: "rent", key: "ledger.flatPower", params: { rack: r.name, kw: r.flatKw, dc: dc.id }, amount: -flatMonthly(dc, r.flatKw, yearOf(state.hour)) });
     }
     const line = homeLineById(state.homeLine.id);
-    bills.push(...addressBills(state));
+    bills.push(...addressBills(state), ...moduleBills(state));
     if (line.monthly > 0) bills.push({ hour: state.hour, category: "rent", key: "ledger.homeLine", params: { line: line.name, isp: line.isp }, amount: -line.monthly });
     const leases = state.leases.map((l) => ({ ...l, paid: l.paid + 1 }));
     for (const l of leases) bills.push({ hour: state.hour, category: "leasing", key: "ledger.lease", params: { lessor: lessorName(l.lessor), paid: l.paid, months: l.months }, amount: -l.monthly });
@@ -335,6 +338,8 @@ export function tick(state: GameState): SimEvent[] {
       const item = storeItem(id);
       if (item && item.monthly > 0) bills.push(subscriptionEntry(state, item));
     }
+    const desk = state.desk && state.desk.hosting.kind !== "self" ? deskById(state.desk.id) : undefined;
+    if (desk && desk.monthly > 0) bills.push(subscriptionEntry(state, deskItem(desk)));
     if (power > 0) bills.unshift({ hour: state.hour, category: "power", key: "ledger.power", params: {}, amount: -power });
     const dc = state.locations.find((l) => l.dc);
     const direct = invoicing(state) ? billSuppliers(state, bills, { upstream: line.isp, datacenter: dc && datacenterById(dc.dc!).name }) : bills;
@@ -350,7 +355,8 @@ export function tick(state: GameState): SimEvent[] {
   events.push(...addressTick(state));
   events.push(...netsvcTick(state));
   events.push(...opsTick(state));
-  events.push(...freezeTick(state));
+  vmOomTick(state);
+  timeoutTick(state);
   events.push(...haTick(state));
   beancounterTick(state);
   pruneAcks(state);
@@ -361,6 +367,7 @@ export function tick(state: GameState): SimEvent[] {
   events.push(...migrationTick(state));
   events.push(...productsTick(state));
   events.push(...usageTick(state));
+  overuseTick(state);
   gamesTick(state);
   statsTick(state);
   events.push(...billingTick(state));
@@ -412,6 +419,7 @@ export function tickMinute(state: GameState): SimEvent[] {
   state.minute++;
   haltTick(state);
   installNetTick(state);
+  panelOpsTick(state);
   const tripped = tripTick(state);
   tanTick(state);
   return [...tripped, ...thermalTick(state), ...workTick(state), ...deliverLicences(state)];

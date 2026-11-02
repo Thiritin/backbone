@@ -5,9 +5,12 @@ import { addressFor, type Address } from "../../../sim/30-customers/addresses";
 import { invoiceTotal, type Invoice, type InvoiceLine, type InvoiceStatus } from "../../../sim/45-billing/billing";
 import type { GameState } from "../../../sim/50-state";
 import { sendInvoice } from "../../../sim/90-actions/billing";
+import { menuOn } from "../../desktop/ContextMenu";
+import { More } from "../More";
+import { invoiceMenu, InvoiceDialog, type Asking } from "./InvoiceMenu";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
-import { useBooks } from "./view";
+import { arrowRows, useBooks } from "./view";
 import { formatDay } from "../billing/format";
 import { monthYear } from "../support/labels";
 import { DocBar, DocButton, DocFoot } from "./DocBar";
@@ -21,17 +24,20 @@ export function InvoicesTab({ focus }: { focus: string | null }) {
   const game = useBooks(), act = useStore((s) => s.act);
   const list = [...game.invoices].reverse();
   const [selected, setSelected] = useState<string | null>(focus ?? list.find((i) => i.status === "draft")?.id ?? list[0]?.id ?? null);
+  const [asking, setAsking] = useState<Asking | null>(null);
   const inv = game.invoices.find((i) => i.id === selected);
+  const menu = (i: Invoice) => () => invoiceMenu(i, game.hour, setAsking);
   const name = (id: string) => game.customers.find((c) => c.id === id)?.name ?? id;
   return (
     <div className="books-docs">
       <DocBar>
         <DocButton icon={<Send />} label={t("books.sendPdf")} disabled={inv?.status !== "draft"} onClick={() => act(sendInvoice, inv!.id)} />
+        {inv && <More label={inv.number} entries={menu(inv)} />}
         <span className="books-docbar-sep" />
         <Locked id="monthly-run" label={t("books.monthlyRun")} />
       </DocBar>
       <div className="books-split">
-        <div className="fin-scroll">
+        <div className="fin-scroll" onKeyDown={arrowRows}>
           {list.length === 0 ? <div className="fin-empty"><Receipt />{t("books.noInvoices")}</div> : (
             <table className="table fin-table books-doclist">
               <thead>
@@ -39,7 +45,7 @@ export function InvoicesTab({ focus }: { focus: string | null }) {
               </thead>
               <tbody>
                 {list.map((i) => (
-                  <tr key={i.id} className={i.id === selected ? "sel" : ""} onClick={() => setSelected(i.id)} tabIndex={0} onKeyDown={(e) => e.key === "Enter" && setSelected(i.id)}>
+                  <tr key={i.id} className={i.id === selected ? "sel" : ""} onClick={() => setSelected(i.id)} tabIndex={0} onKeyDown={(e) => e.key === "Enter" && setSelected(i.id)} onContextMenu={menuOn(menu(i))}>
                     <td className="num">{i.number}</td>
                     <td>{name(i.customerId)}</td>
                     <td className="num">{monthYear(i.issuedAt)}</td>
@@ -58,6 +64,7 @@ export function InvoicesTab({ focus }: { focus: string | null }) {
         [t("books.status.draft"), String(list.filter((i) => i.status === "draft").length)],
         [t("books.total"), euroCents(list.reduce((n, i) => n + invoiceTotal(i), 0))],
       ]} />
+      {asking && <InvoiceDialog asking={asking} onClose={() => setAsking(null)} />}
     </div>
   );
 }

@@ -162,8 +162,6 @@ describe("hangs", () => {
     expect(hangChance(s, dev3(s))).toBeCloseTo(0.01 / year, 12);
     dev3(s).components.find((c) => c.kind === "fan")!.failedAt = s.hour;
     expect(hangChance(s, dev3(s))).toBeCloseTo(0.02 / year, 12);
-    s.frozen = ["dev3"];
-    expect(hangChance(s, dev3(s))).toBeCloseTo(0.06 / year, 12);
     expect(bmcHangChance(s, dev3(s))).toBeCloseTo(0.01 / year, 12);
     s.hour += 6 * year + 1;
     expect(bmcHangChance(s, dev3(s))).toBeCloseTo(0.03 / year, 12);

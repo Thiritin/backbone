@@ -12,7 +12,7 @@ import { owns } from "../../../../sim/80-business/marketing";
 import { packageSpec } from "../../../../sim/80-business/portal";
 import { specText } from "../../../../sim/30-market/spec";
 import { CYCLES, type Cycle } from "../../../../sim/10-catalog/cycles";
-import { kbArticles, siteContent, sitePages, visibleProducts, orderLink, SITE_LINES, listed, type SitePage } from "../../../../sim/80-business/website";
+import { customOpen, kbArticles, siteContent, sitePages, visibleProducts, orderLink, SITE_LINES, listed, type SitePage } from "../../../../sim/80-business/website";
 import { CompanyMark } from "../../company";
 import { PRODUCT } from "../../support/labels";
 import { BLURB, FEATURES, KB_STEPS, THREADS } from "./companyCopy";
@@ -110,6 +110,7 @@ function ProductCards({ game, full, go }: { game: GameState; full?: boolean; go?
                 {link && go ? <a href={`#${link}`} className="site-button" onClick={(e) => { e.preventDefault(); go(link); }}>{t("browser-sites-1.co.order")}</a> : null}
               </div>
             )}
+            {customOpen(game, p) && <p className="site-custom">{t("browser-sites-1.co.customLine")}</p>}
           </section>
         );
       })}

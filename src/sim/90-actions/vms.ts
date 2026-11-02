@@ -4,7 +4,7 @@ import type { Resources } from "../10-catalog/products";
 import { bump } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import {
-  bookable, clusterOf, controlPlaneUp, diskMovesLive, insideVm, isOwnVm, liveBetween, lostDisk, noRoomError, nodeTakes, nodeUsed, pickNode, supports, vmOf, vmRoom, type Cluster, type Workload,
+  bookable, clusterOf, controlPlaneUp, diskMovesLive, insideVm, isOwnVm, liveBetween, lostDisk, noRoomError, nodeTakes, nodeUsed, pickNode, roomToStart, supports, vmOf, vmRoom, type Cluster, type Workload,
 } from "../60-infra/cluster";
 import { backupTarget, syncBackupAt, usablePoint } from "../60-infra/backups";
 import { renumber, renumberError } from "../60-infra/addresses";
@@ -12,7 +12,6 @@ import { handJob, type How } from "../60-infra/handwork";
 import { migrationHours } from "../60-infra/migration";
 import { cutOs, RECOVER_HOURS } from "../60-infra/power";
 import { locationOf, working } from "../60-infra/status";
-import { freezeTick } from "../60-infra/usage";
 import {
   LAN_GB_PER_HOUR, LOSS_NO_BACKUP, LOSS_RESTORED, LOSS_RESTORED_MAX, lossReview, moveGbit, restoreHours, type LossItem,
 } from "../85-products/products";
@@ -40,7 +39,6 @@ export function stopWorkload(s: GameState, id: string): ActionResult {
   // An OS still installing is lost with the power, and an upgrade rolls back, as on a server.
   const os = found.w.os ? { os: cutOs(found.w.os, nowHours(s)) } : {};
   patch(s, id, { stopped: true, ...os });
-  freezeTick(s);
   return { ok: true };
 }
 
@@ -51,8 +49,8 @@ export function startWorkload(s: GameState, id: string): ActionResult {
   if (found.w.template) return fail("error.isTemplate");
   if (!controlPlaneUp(s, found.c)) return fail("error.controlPlaneDown");
   if (lostDisk(s, found.w)) return fail("error.lostDisk");
+  if (!roomToStart(s, found.w)) return fail("error.noRamToStart");
   patch(s, id, { stopped: false });
-  freezeTick(s);
   return { ok: true };
 }
 
@@ -136,7 +134,6 @@ export function migrateWorkload(s: GameState, id: string, toId: string, announce
     s.services = s.services.map((v) => (v.id === w.serviceId ? { ...v, zone: to.az } : v));
     if (fromLoc && toLoc) renumber(s, ids, fromLoc, toLoc, () => announced);
   }
-  freezeTick(s);
   return { ok: true };
 }
 
@@ -241,7 +238,6 @@ export function restoreTo(s: GameState, id: string, toId: string): ActionResult 
   patch(s, w.id, { deviceId: toId, clusterId: to.id, placedAt: s.hour, busyUntil: s.hour + target.down, stopped: !!w.template, datastore: undefined, stuck: undefined, corrupted: undefined, recoverDoneAt: undefined, recoverFailed: undefined, snapshots: undefined });
   s.services = s.services.map((v) => (v.id === w.serviceId ? { ...v, zone: to.az } : v));
   settleLoss(s, w, lostAt, w.backupAt);
-  freezeTick(s);
   return { ok: true };
 }
 
@@ -314,6 +310,5 @@ export function rescueWorkload(s: GameState, id: string, toId: string, how: How 
   const down = migrationDowntime(s, w, moveGbit(s, c.az, to.az), c.az !== to.az, toId);
   patch(s, id, { deviceId: toId, clusterId: to.id, placedAt: s.hour, busyUntil: s.hour + job.commit() + down, stuck: undefined, stopped: !!w.template, datastore: undefined });
   if (c.az !== to.az) s.services = s.services.map((v) => (v.id === w.serviceId ? { ...v, zone: to.az } : v));
-  freezeTick(s);
   return { ok: true };
 }

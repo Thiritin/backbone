@@ -1,0 +1,10 @@
+/* The stand-in domain records table; it takes the colours of the page around it. */
+.desk-records { margin: 20px 0; }
+.desk-records h2 { font-size: 1.15em; margin: 0 0 8px; }
+.desk-records table { width: 100%; border-collapse: collapse; }
+.desk-records th, .desk-records td { text-align: left; padding: 6px 8px; border-bottom: 1px solid color-mix(in srgb, currentColor 18%, transparent); vertical-align: middle; }
+.desk-records code { font: 12px/1.4 ui-monospace, Menlo, monospace; overflow-wrap: anywhere; }
+.desk-records button { font: inherit; font-size: 12px; padding: 2px 8px; cursor: pointer; }
+.desk-records-chip { display: inline-block; padding: 1px 8px; border-radius: 99px; font-size: 12px; background: #fbe3e3; color: #8a1f1f; }
+.desk-records-chip[data-ok="true"] { background: #e2f4e2; color: #1e6b1e; }
+.desk-records-actions { display: flex; align-items: center; gap: 16px; margin-top: 10px; }

@@ -46,7 +46,7 @@ export function VmSummary({ game, c, v }: { game: GameState; c: Cluster; v: Vm }
           <tr><th>{t("browser-consoles-2.cpuUsage")}</th><td className="num">{t("browser-consoles-2.cpuOfCpus", { pct: (now.cpu * 100).toFixed(2), cpus: w.vcpu })}</td></tr>
           <tr><th>{t("browser-consoles-2.memoryUsage")}</th><td className="num">{(now.ram * 100).toFixed(2)}% ({t("browser-consoles-2.of", { used: gib(now.ram * w.ramGb), total: gib(w.ramGb) })})</td></tr>
           <tr><th>{t("browser-consoles-2.bootdiskSize")}</th><td className="num">{gib(w.diskGb)}</td></tr>
-          <tr><th>{t("browser-consoles-2.ips")}</th><td className="num">{v.ip || t("browser-consoles-2.noNetworkInfo")}</td></tr>
+          <tr><th>{t("browser-consoles-2.ips")}</th><td className="num">{v.ips || t("browser-consoles-2.noNetworkInfo")}</td></tr>
         </tbody></table>
       </section>
       <div className="pmx-range">

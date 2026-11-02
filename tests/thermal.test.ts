@@ -1,11 +1,15 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { GameState } from "../src/sim/50-state";
 import { inletTemperature } from "../src/sim/60-infra/sensors";
-import { rackPower } from "../src/sim/60-infra/status";
+import { cpuLoad, rackPower } from "../src/sim/60-infra/status";
 import { THERMAL, thermalTick } from "../src/sim/60-infra/thermal";
 import { nodeUsage } from "../src/sim/60-infra/usage";
 import { failureChance, tick } from "../src/sim/88-tick/tick";
 import { BASEMENT_SERVER, readyGame, runServers } from "./fixtures";
+
+// Busy servers run at full load, so they draw their rated watts.
+beforeEach(() => { vi.spyOn(cpuLoad, "of").mockReturnValue(1); });
+afterEach(() => { vi.restoreAllMocks(); });
 
 // The basement turned into one datacenter position holding the basement server and extra copies of it.
 function hall(copies: number): GameState {

@@ -10,6 +10,8 @@ import type { GameState, LedgerEntry } from "../50-state";
 import type { CatalogProduct } from "./catalog";
 import type { SimEvent } from "../88-tick/tick";
 import { campaignBoost, hasMarketingManager, reviewBoost } from "../47-staff/staff";
+
+export const SITE_LINES: Product[] = ["webHosting", "vps", "gameServer", "dns", "vpn", "storage", "cloud", "dedicated", "colocation", "gpu", "ssl"];
 import { communityBatches } from "./community";
 import { fairBatches, fairGain } from "./fairs";
 import { shopBills, shopTick } from "./shop";
@@ -68,6 +70,8 @@ export interface Marketing {
   studies: Profile[];
   // Product lines listed on the company website.
   lines: Product[];
+  // Listed lines that also take requests for packages outside the shop plans.
+  custom: Product[];
   // Whether orders still arrive by email.
   emailOrders: boolean;
   // Whether leads write in about products you do not sell yet.
@@ -98,7 +102,7 @@ export function wonLeads(s: GameState, ago: 0 | 1): Partial<Record<Product, numb
 }
 
 export const newMarketing = (): Marketing => ({
-  owned: [], campaigns: [], reviews: [], platform: null, studies: [], lines: [], emailOrders: true, customRequests: true, siteReady: null, launched: false, siteHost: { kind: "rented" }, designYear: 2005, siteOutage: false, unmet: { month: {}, last: {} }, published: null,
+  owned: [], campaigns: [], reviews: [], platform: null, studies: [], lines: [], custom: [...SITE_LINES], emailOrders: true, customRequests: true, siteReady: null, launched: false, siteHost: { kind: "rented" }, designYear: 2005, siteOutage: false, unmet: { month: {}, last: {} }, published: null,
   awareness: Object.fromEntries(PROFILE_IDS.map((p) => [p, p === "private" || p === "gamer" ? 0.05 : AWARENESS_FLOOR])) as Record<Profile, number>,
 });
 

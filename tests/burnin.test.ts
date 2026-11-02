@@ -47,9 +47,9 @@ describe("burn-in", () => {
 
   it("makes the server busy and draws full power meanwhile", () => {
     const s = game();
-    const idle = drawWatts(dev(s), busyDevices(s));
+    const idle = drawWatts(s, dev(s), busyDevices(s));
     startBurnin(s, "dev3", true);
-    expect(drawWatts(dev(s), busyDevices(s))).toBeGreaterThan(idle);
+    expect(drawWatts(s, dev(s), busyDevices(s))).toBeGreaterThan(idle);
     expect(serverTaken(s, "dev3")).toBe(true);
     expect(startBurnin(s, "dev3", false)).toEqual({ ok: false, error: "error.burninRunning" });
     s.hour = dev(s).burnin!.until;
