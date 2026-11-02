@@ -97,7 +97,7 @@ export function serverStatus(s: GameState, accountId: string, protocol: MailProt
 export const PROVIDER_NAMES: Record<string, string> = { gmix: "GMix", goggle: "Goggle", ionose: "Ionose", lookout: "Lookout 365", self: "Postfixit" };
 // Taken on GMix whoever asks: the role names and the names everyone wants.
 const GMIX_TAKEN = ["admin", "info", "sales", "support", "abuse", "postmaster", "webmaster", "contact", "mail", "office", "service", "hosting", "test"];
-const RETIRE_HOURS = 90 * 24;
+export const RETIRE_HOURS = 90 * 24;
 // Adds a mailbox with no checks; the welcome message states its address and password.
 export function addMailbox(s: GameState, t: MailTenant, local: string, title: string, password: string, extra: Partial<MailAccount> = {}): MailAccount {
   const a: MailAccount = { ...newAccount(`mb${s.nextId++}`, t, local, title, password, s.hour), ...extra };
@@ -108,7 +108,7 @@ export function addMailbox(s: GameState, t: MailTenant, local: string, title: st
 }
 
 export const mailboxTaken = (s: GameState, t: MailTenant, local: string): boolean =>
-  openBoxes(s, t.id).some((a) => a.local === local || a.aliases.includes(local)) || (t.domain === GMIX_DOMAIN && (GMIX_TAKEN.includes(local) || !!accountByAddress(s, `${local}@${GMIX_DOMAIN}`)));
+  openBoxes(s, t.id).some((a) => a.local === local || a.aliases.includes(local)) || s.mail.groups.some((g) => g.tenant === t.id && g.local === local) || (t.domain === GMIX_DOMAIN && (GMIX_TAKEN.includes(local) || !!accountByAddress(s, `${local}@${GMIX_DOMAIN}`)));
 
 // The employee's mailbox, firstname.lastname, numbered when taken.
 export function employeeMailbox(s: GameState, t: MailTenant, employeeId: string, name: string): MailAccount {
@@ -122,7 +122,10 @@ export function employeeMailbox(s: GameState, t: MailTenant, employeeId: string,
 export function removeMailbox(s: GameState, a: MailAccount): void {
   const { [a.id]: _gone, ...msgs } = s.mail.msgs;
   const retired = a.domain === GMIX_DOMAIN ? [] : [`${a.local}@${a.domain}`, ...a.aliases.map((l) => `${l}@${a.domain}`)].map((address) => ({ address, until: s.hour + RETIRE_HOURS }));
-  s.mail = { ...s.mail, accounts: s.mail.accounts.filter((x) => x.id !== a.id), msgs, retired: [...s.mail.retired, ...retired], catchAll: s.mail.catchAll === a.id ? null : s.mail.catchAll };
+  s.mail = {
+    ...s.mail, accounts: s.mail.accounts.filter((x) => x.id !== a.id), msgs, queue: s.mail.queue.filter((q) => q.accountId !== a.id),
+    filters: s.mail.filters.filter((f) => f.accountId !== a.id), folders: s.mail.folders.filter((f) => f.accountId !== a.id),
+    groups: s.mail.groups.map((g) => ({ ...g, members: g.members.filter((m) => m !== a.id) })), retired: [...s.mail.retired, ...retired], catchAll: s.mail.catchAll === a.id ? null : s.mail.catchAll };
 }
 
 // Why a mailbox cannot go: it is the primary, the last one, a source's contact or a desk channel's input.
