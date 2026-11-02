@@ -1,0 +1,27 @@
+import type { Dict } from "../lang";
+
+export default {
+  "providers.ntd.navSites": () => "Data center",
+  "providers.ntd.navOrder": () => "Colocation",
+  "providers.ntd.navAccount": () => "Portale clienti",
+  "providers.ntd.global": () => "Sito globale",
+  "providers.ntd.sitemap": () => "Mappa del sito",
+  "providers.ntd.division": () => "Global Data Centers",
+  "providers.ntd.heroEarly": () => "Servizi di data center affidabili dal gruppo NTD",
+  "providers.ntd.heroLate": () => "Data center per un futuro connesso",
+  "providers.ntd.text": (p) => `${p.n} data center in ${p.cities} città, gestiti secondo gli standard di uno dei maggiori gruppi di telecomunicazioni al mondo.`,
+  "providers.ntd.cta": () => "Trova un data center",
+  "providers.ntd.news": () => "Novità",
+  "providers.ntd.news1": () => "Nel nostro data center di Berlino è disponibile ulteriore capacità elettrica.",
+  "providers.ntd.news2": () => "NTD rinnova la certificazione ISO 27001 per tutte le sedi tedesche.",
+  "providers.ntd.news3": () => "I cross-connect verso il punto di interscambio locale si ordinano ora online.",
+  "providers.ntd.services": () => "Servizi",
+  "providers.ntd.svc1": () => "Colocation",
+  "providers.ntd.svc1Text": () => "Spazio rack, gabbie e suite con alimentazione A e B.",
+  "providers.ntd.svc2": () => "Connettività",
+  "providers.ntd.svc2Text": () => "Le sale meet-me neutrali vi collegano a tutti gli operatori in sede.",
+  "providers.ntd.svc3": () => "Servizi gestiti",
+  "providers.ntd.svc3Text": () => "Remote hands e monitoraggio sono forniti dal nostro personale in sede.",
+  "providers.ntd.explore": () => "Scopri il campus",
+  "providers.ntd.footer": (p) => `© ${p.year} NTD Corporation`,
+} satisfies Dict;
