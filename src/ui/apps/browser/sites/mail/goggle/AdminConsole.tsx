@@ -11,6 +11,7 @@ import type { GameState } from "../../../../../../sim/50-state";
 import { providerById } from "../../../../../../sim/80-business/mail";
 import { goggleReport } from "../../../../../../sim/80-business/mail-provider";
 import { endTenant, resubscribe } from "../../../../../../sim/90-actions/mail";
+import { ImportRuns, LeftBehind } from "../switching";
 import {
   deleteGoggleUser, GOGGLE_MIGRATION_FROM, GOGGLE_POP_MIGRATION_FROM, GOGGLE_TRANSFER_FROM, makeGoggleAdmin, migrateMailbox, restoreUser, suspendUser, upgradeGoggleEdition,
 } from "../../../../../../sim/90-actions/mail-provider";
@@ -321,6 +322,7 @@ function Billing({ game, tenant }: { game: GameState; tenant: MailTenant }) {
         <dt>{t("goggle.signup.total")}</dt><dd>{euroCents(price * seats)}</dd>
         <dt>{t(tenant.endsAt === null ? "goggle.admin.billing.next" : "goggle.admin.billing.ends")}</dt><dd>{day(tenant.endsAt ?? nextMonthStart(hour))}</dd>
       </dl>
+      <LeftBehind game={game} tenantId={tenant.id} className="ga-banner" />
       <div className="ga-actions">
         {tenant.plan === "free" && onSale(paid, hour) && <button type="button" onClick={() => act(upgradeGoggleEdition, tenant.id)}>{t("goggle.admin.billing.upgrade", { edition: t(`mail.goggle.edition.${editionAt("paid", hour)}`) })}</button>}
         {tenant.endsAt === null
@@ -339,11 +341,11 @@ function Billing({ game, tenant }: { game: GameState; tenant: MailTenant }) {
 function Migration({ game, tenant }: { game: GameState; tenant: MailTenant }) {
   const act = usePageAct(), boxes = openBoxes(game, tenant.id), pop = yearOf(game.hour) >= GOGGLE_POP_MIGRATION_FROM;
   const [source, setSource] = useState(""), [password, setPassword] = useState(""), [proto, setProto] = useState<"imap" | "pop">("imap");
-  const [target, setTarget] = useState(boxes[0]?.id ?? ""), [done, setDone] = useState(false);
+  const [target, setTarget] = useState(boxes[0]?.id ?? "");
   return (
     <section>
       <h1>{t("goggle.admin.nav.migration")}</h1>
-      <form className="ga-form" onSubmit={(e) => { e.preventDefault(); setDone(act(migrateMailbox, target, { source, password, proto }).ok); }}>
+      <form className="ga-form" onSubmit={(e) => { e.preventDefault(); if (act(migrateMailbox, target, { source, password, proto }).ok) { setSource(""); setPassword(""); } }}>
         <label>{t("goggle.admin.migration.source")}<input name="source" value={source} onChange={(e) => setSource(e.target.value)} autoComplete="off" /></label>
         <label>{t("goggle.signup.password")}<input name="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="off" /></label>
         <label>{t("goggle.admin.migration.protocol")}
@@ -356,8 +358,8 @@ function Migration({ game, tenant }: { game: GameState; tenant: MailTenant }) {
           <select name="target" value={target} onChange={(e) => setTarget(e.target.value)}>{boxes.map((a) => <option key={a.id} value={a.id}>{addr(a)}</option>)}</select>
         </label>
         <button type="submit">{t("goggle.admin.migration.start")}</button>
-        {done && <p className="ga-ok">{t("goggle.admin.migration.done")}</p>}
       </form>
+      <ImportRuns game={game} into={boxes.map((a) => a.id)} className="ga-table" />
     </section>
   );
 }

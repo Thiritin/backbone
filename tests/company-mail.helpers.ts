@@ -3,6 +3,7 @@ import { isMonthStart } from "../src/sim/00-core/time";
 import { type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { createVm } from "../src/sim/90-actions/clusters";
+import { cancelMail } from "../src/sim/90-actions/mail";
 import { installSoftware } from "../src/sim/90-actions/software";
 import type { ActionResult } from "../src/sim/90-actions/hardware";
 import { bootedMachine } from "./fixtures";
@@ -15,7 +16,8 @@ export const mailLedger = (s: GameState) => s.ledger.filter((e) => e.hour === s.
 
 // A mail server in a VM on the basement hypervisor, installed and running.
 export function selfHosted(s: GameState, software = "postfixit"): string {
-  s.company = { ...s.company, mail: { kind: "free" } };
+  // The server takes the domain over from a start on GMix; beside a live provider it starts as a second tenant.
+  cancelMail(s);
   const vm = createVm(s, s.clusters.find((c) => c.kind === "cloud")!.id, { vcpu: 2, ramGb: 4, diskGb: 40 });
   expect(vm.ok).toBe(true);
   const r = installSoftware(s, bootedMachine(s, idOf(vm)), software);
