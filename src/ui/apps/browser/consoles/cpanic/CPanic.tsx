@@ -1,6 +1,6 @@
 import { Archive, ArrowRightLeft, Blocks, Circle, Code, Download, KeyRound, ListChecks, Lock, LogOut, Network, Package, RefreshCw, ScrollText, Search, Server, UserPlus, Users, type LucideIcon } from "lucide-react";
 import { useState } from "react";
-import { eraAt, looks, Facts, LoginForm, Nodes, RowsTable, Tiles, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
+import { eraAt, looks, Facts, LoginForm, Nodes, RowsTable, ServerUse, Tiles, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
 import { t } from "../../../../../i18n/en";
 import { yearOf } from "../../../../../sim/00-core/time";
 import { TRANSFER_FROM_YEAR } from "../../../../../sim/60-infra/transfers";
@@ -86,7 +86,7 @@ export function CPanic(p: PanelProps) {
         <main className="cp-main">
           <div className="cp-crumb">{group}</div>
           <h1>{title}</h1>
-          {tab === "objects" && <RowsTable rows={rows} name={t("browser-consoles-1.domain")} cols={["user", "pkg"]} extra={(r) => <button className="cx-btn" onClick={() => setAs(r.id)}>{t("readouts.cp.loginAs")}</button>} />}
+          {tab === "objects" && <><ServerUse game={p.game} c={p.c} /><RowsTable rows={rows} name={t("browser-consoles-1.domain")} cols={["user", "pkg"]} extra={(r) => <button className="cx-btn" onClick={() => setAs(r.id)}>{t("readouts.cp.loginAs")}</button>} /></>}
           {tab === "create" && (
             <ProvisionForm game={p.game} c={p.c} products={["webHosting"]} order={open?.screen === "create" ? open.order : undefined} className="cx-form cp-form"
               sections={{ order: t("pkg.order"), account: t("pkg.cpDomainInfo"), plan: t("pkg.cpSettings") }} />

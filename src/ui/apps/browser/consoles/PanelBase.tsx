@@ -1,6 +1,7 @@
 // docs/design/software.md, section 10: what every console offers, as blocks each product lays out in its own chrome.
 import { ChangePackage, planChoices } from "./PackageForms";
 import { t } from "../../../../i18n/en";
+import { LOCALE } from "../../../../i18n/lang";
 import { ArrowRightLeft, CalendarClock, Circle, Code, Gamepad2, Maximize2, Pause, Play, PowerOff, RefreshCw, RotateCcw, Square, Terminal, Trash2, X, type LucideIcon } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { yearOf } from "../../../../sim/00-core/time";
@@ -13,7 +14,7 @@ import type { Resources } from "../../../../sim/10-catalog/products";
 import type { GameState } from "../../../../sim/50-state";
 import { backupTargets, hostOfVm, isOwnVm, vmById, workloadsOn, type BackupEvery, type Cluster, type Workload } from "../../../../sim/60-infra/cluster";
 import { deviceHealth } from "../../../../sim/60-infra/status";
-import { shownWorkload } from "../../../../sim/60-infra/usage";
+import { shownNode, shownWorkload } from "../../../../sim/60-infra/usage";
 import { familyOf, openVulns } from "../../../../sim/60-infra/vulns";
 import { accountUse, evcWarning, levelOf } from "../../../../sim/80-business/readouts";
 import { consoleTitle, type ConsoleFeatures } from "../../../../sim/80-business/consoles";
@@ -85,7 +86,9 @@ export function LoginForm({ onLogin, button, className, children }: { onLogin: (
 
 const pct = (used: number, of: number) => `${Math.min(100, of > 0 ? (used / of) * 100 : 0)}%`;
 export const Bar = ({ use: [used, of] }: { use: [number, number] }) => <span className="cx-bar" data-level={levelOf(used, of)}><i style={{ width: pct(used, of) }} /></span>;
-const num = (n: number) => `${+n.toFixed(2)}`;
+const num = (n: number, digits = 2) => n.toLocaleString(LOCALE, { maximumFractionDigits: digits });
+// "3 / 10 GB": the used amount in the unit fmt gives the total, which switches to TB at step.
+const pair = (used: number, total: number, fmt: (gb: number) => string, step: number) => t("browser-consoles-2.of", { used: num(total >= step ? used / step : used, 1), total: fmt(total) });
 
 export function Resize({ game, host, done }: { game: GameState; host: Cluster; done: () => void }) {
   const act = usePageAct(), vm = vmById(game, host.vm)!;
@@ -141,7 +144,7 @@ function gameRow(game: GameState, c: Cluster, serviceId: string): GameRow | unde
 
 export interface Row {
   id: string; name: string; sub: string; pkg?: string; user?: string; node: string; state: string; tone: string;
-  cpu: [number, number]; ram: [number, number]; disk: [number, number]; lead: [number, number]; traffic: [number, number]; mail: number; usage: string;
+  cpu: [number, number]; ram: [number, number]; disk: [number, number]; lead: [number, number]; traffic: [number, number]; mail: number; usage: string; web?: boolean;
   actions: PanelAction[]; panel: ReactNode;
   // Game servers on a game panel.
   game?: GameRow;
@@ -175,7 +178,7 @@ export function useRows(game: GameState, c: Cluster, f: ConsoleFeatures, node: s
       game: gameRow(game, c, w.serviceId),
       node: d ? d.hostname ?? d.label ?? d.name : "",
       cpu: [u.vcpu, w.vcpu], ram: [u.ramGb, w.ramGb], disk: [u.diskGb, w.diskGb], lead: web ? [u.diskGb, w.diskGb] : [u.vcpu, w.vcpu], traffic: uses.get(w.id)?.traffic ?? [0, 0], mail: uses.get(w.id)?.mailboxes ?? 0,
-      usage: web ? t("browser-consoles-2.of", { used: disk(Math.round(u.diskGb)), total: disk(w.diskGb) }) : t("browser-consoles-2.usageVm", { cpu: num(u.vcpu), vcpu: w.vcpu, ram: ram(+u.ramGb.toFixed(1)), ramTotal: ram(w.ramGb) }),
+      web, usage: web ? pair(u.diskGb, w.diskGb, disk, 1000) : t("browser-consoles-2.usageVm", { cpu: num(u.vcpu), vcpu: w.vcpu, ram: ram(+u.ramGb.toFixed(1)), ramTotal: ram(w.ramGb) }),
       actions: [...actions.filter((a): a is PanelAction => !!a), ...(hold?.actions ?? [])],
       panel: o === "manage" && c.panel ? <GameDetails game={game} serviceId={w.serviceId} panel={c.panel} /> : o === "migrate" ? <Migrate game={game} w={w} c={c} done={close} /> : o === "plan" && site ? <ChangePackage game={game} c={c} serviceId={site.id} label={t(PLAN_LABEL[f.look] ?? "pkg.changePlan")} done={close} /> : o === "resize" && host ? <Resize game={game} host={host} done={close} /> : hold?.panel ?? null,
     };
@@ -202,7 +205,7 @@ export function RowsTable({ rows, name, node = false, className = "cx-table", ex
             {cols.map((k) => <td key={k}>{k === "user" ? r.user : r.pkg}</td>)}
             {node && <td>{r.node}</td>}
             <td><span className={`cx-state ${r.tone}`}>{r.state}</span></td>
-            <td><Bar use={r.lead} /><span className="cx-use num">{r.usage}</span>{r.traffic[1] > 0 && <><Bar use={r.traffic} /><span className="cx-use num">{trafficText(r)}</span></>}</td>
+            <td>{!r.web && <Bar use={r.lead} />}<span className="cx-use num">{r.usage}</span>{r.traffic[1] > 0 && <>{!r.web && <Bar use={r.traffic} />}<span className="cx-use num">{trafficText(r)}</span></>}</td>
             <td><Actions actions={r.actions} className="cx-acts" />{extra?.(r)}</td>
           </RowLines>
         ))}
@@ -244,6 +247,23 @@ export function Nodes({ game, c, className = "cx-table" }: { game: GameState; c:
 }
 
 export interface Fact { label: string; value: string; num?: boolean }
+
+// A web panel's whole server against its size: the host VM when the panel runs in one, else all its nodes together.
+export function ServerUse({ game, c }: { game: GameState; c: Cluster }) {
+  const w = c.vm ? vmById(game, c.vm) : undefined, zero: Resources = { vcpu: 0, ramGb: 0, diskGb: 0 };
+  const add = (a: Resources, b: Resources): Resources => ({ vcpu: a.vcpu + b.vcpu, ramGb: a.ramGb + b.ramGb, diskGb: a.diskGb + b.diskGb });
+  const [used, cap] = w ? [shownWorkload(game, w), w] : c.nodes.map((n) => shownNode(game, n.deviceId)).reduce<[Resources, Resources]>(([u, p], x) => [add(u, x.used), add(p, x.physical)], [zero, zero]);
+  const lines: [string, "vcpu" | "ramGb" | "diskGb", string][] = [
+    [t("browser-consoles-2.cpu"), "vcpu", t("browser-consoles-2.ofVcpu", { used: num(used.vcpu, 1), total: num(cap.vcpu) })],
+    [t("browser-consoles-2.memory"), "ramGb", pair(used.ramGb, cap.ramGb, ram, 1024)],
+    [t("browser-consoles-2.disk"), "diskGb", pair(used.diskGb, cap.diskGb, disk, 1000)],
+  ];
+  return (
+    <table className="cx-table cx-facts">
+      <tbody>{lines.map(([label, k, text]) => <tr key={k}><th>{label}</th><td><Bar use={[used[k], cap[k]]} /><span className="cx-use num">{text}</span></td></tr>)}</tbody>
+    </table>
+  );
+}
 
 export function Facts({ facts, className = "cx-table cx-facts" }: { facts: Fact[]; className?: string }) {
   return <table className={className}><tbody>{facts.map((x) => <tr key={x.label}><th>{x.label}</th><td className={x.num ? "num" : undefined}>{x.value}</td></tr>)}</tbody></table>;
