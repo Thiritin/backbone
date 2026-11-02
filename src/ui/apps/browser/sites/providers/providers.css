@@ -1,5 +1,6 @@
 /* docs/design/plans/colo-portals.md, section 4: what every provider site shares; each site's own sheet sets its look. */
-.ps { min-height: 100%; }
+/* Doubled class: outranks the Shop app's own .ps root rule. */
+.ps.ps { display: block; flex: none; min-width: 0; min-height: 100%; overflow: visible; padding: 0; gap: 0; }
 .ps a { cursor: pointer; }
 .ps nav { display: flex; }
 .ps-table { width: 100%; border-collapse: collapse; }
