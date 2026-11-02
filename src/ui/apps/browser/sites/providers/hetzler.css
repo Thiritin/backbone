@@ -53,3 +53,30 @@
 .ps-hetzler.late .ps-table th { background: none; border-bottom: 2px solid #d50c2d; padding: 8px; }
 .ps-hetzler.late .ps-table td { padding: 8px; }
 .ps-hetzler.late footer { padding: 20px 40px; background: #303030; color: #bbbbbb; font-size: 12px; border: 0; }
+
+/* Customer portal: 2005 konsoleH, a grey frame with a dark tab bar; from 2017 Robot, a light side menu with a red marker and boxed titles. */
+.ps-hetzler .ps-portal { border: 1px solid #999999; }
+.ps-hetzler .ps-portal-bar { background: #e5e5e5; border-bottom: 1px solid #999999; font-size: 11px; }
+.ps-hetzler .ps-portal-out { color: #d50c2d; }
+.ps-hetzler .ps-portal-frame { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
+.ps-hetzler .ps-portal-nav { flex-direction: row; padding: 0; background: #5a5a5a; border: 0; }
+.ps-hetzler main .ps-portal-nav a[href] { padding: 4px 14px; color: #ffffff; font-size: 11px; font-weight: 700; border-right: 1px solid #7a7a7a; box-shadow: none; }
+.ps-hetzler main .ps-portal-nav a[aria-current] { background: #d50c2d; }
+.ps-hetzler h2.ps-portal-title { margin: 0 0 10px; padding: 3px 8px; background: #e5e5e5; border-left: 4px solid #d50c2d; color: #222222; font-size: 12px; }
+.ps-hetzler .ps-portal-h { margin-top: 16px; font-size: 12px; color: #d50c2d; }
+.ps-hetzler .ps-btn.ps-danger { color: #d50c2d; }
+.ps-hetzler .ps-sheet { border: 1px solid #666666; }
+.ps-hetzler .ps-sheet-h { background: #d50c2d; color: #ffffff; font-size: 12px; }
+.ps-hetzler .ps-offer { border-color: #d50c2d; background: #fbeaec; }
+
+.ps-hetzler.late .ps-portal { border: 1px solid #e3e3e3; }
+.ps-hetzler.late .ps-portal-bar { padding: 10px 16px; background: #fafafa; border-bottom: 1px solid #e3e3e3; font-size: 12px; }
+.ps-hetzler.late .ps-portal-frame { grid-template-columns: 190px minmax(0, 1fr); grid-template-rows: none; }
+.ps-hetzler.late .ps-portal-nav { flex-direction: column; padding: 8px 0; background: #f5f5f5; border-right: 1px solid #e3e3e3; }
+.ps-hetzler.late main .ps-portal-nav a[href] { padding: 9px 16px; border: 0; color: #333333; font-size: 13px; font-weight: 400; box-shadow: inset 3px 0 transparent; }
+.ps-hetzler.late main .ps-portal-nav a[aria-current] { background: #ffffff; color: #d50c2d; font-weight: 700; box-shadow: inset 3px 0 #d50c2d; }
+.ps-hetzler.late .ps-portal-main { padding: 18px 22px 24px; }
+.ps-hetzler.late h2.ps-portal-title { padding: 0; background: none; border: 0; font-size: 20px; font-weight: 400; }
+.ps-hetzler.late .ps-portal-h { padding: 8px 10px; background: #f5f5f5; border: 1px solid #e3e3e3; border-bottom: 0; color: #333333; font-size: 13px; }
+.ps-hetzler.late .ps-portal-h + .ps-table, .ps-hetzler.late .ps-portal-h + .ps-kv { margin-top: 0; border: 1px solid #e3e3e3; }
+.ps-hetzler.late .ps-sheet-h { padding: 12px 16px; font-size: 14px; }

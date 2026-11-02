@@ -15,7 +15,7 @@ export function Plain(props: ProviderProps) {
       </header>
       <main>
         {route.page === "home" ? <>
-          <section className="ps-hero">
+          <section className="pl-hero">
             <h1>{t("providers.plainHero", { cities: citiesOf(p.id).join(", ") })}</h1>
             <A to="/order" go={go} className="ps-btn pri">{t("providers.order")}</A>
           </section>

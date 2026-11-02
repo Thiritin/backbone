@@ -69,7 +69,8 @@ export function handJob(s: GameState, device: string, loc: Location | undefined,
   };
   if (h === "hands") {
     const bill = billHours * w.hands.perHour, wait = w.hands.wait + work;
-    return { cost: bill, wait, commit: () => { book("ledger.remoteHands", bill, { device, hours: billHours }); return wait; } };
+    // dc and done let the provider's portal list the job as a ticket.
+    return { cost: bill, wait, commit: () => { book("ledger.remoteHands", bill, { device, hours: billHours, dc: loc!.dc!, done: s.hour + wait }); return wait; } };
   }
   if (h === "self") {
     if (!w.here) return { error: "error.notThere" };

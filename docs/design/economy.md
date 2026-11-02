@@ -1118,6 +1118,8 @@ Prices are for 2005 and rise 8% every January. With a 10% chance each year, Pear
 
 AI on the hosted desks starts with the real features: suggested articles from 2013 on Zendusk and 2011 on Freshdusk, the answer bot from 2017 on Zendusk (Zendesk Answer Bot, about USD 1 a resolution) and 2018 on Freshdusk (Freddy), and generative auto-answer and reply drafting from 2023 on both. A cancellation from a customer paying at least €50 a month is high priority in the desk, an outage is high and urgent for a high-budget customer, appeals and takedown deadlines are high, how-to questions are low and everything else is normal.
 
+A desk with a customer portal takes 30% of the outage, how-to and billing requests through its web form while it is reachable, and those need no mailbox; the rest arrive by email as before. While the desk is down every customer writes by email.
+
 Installing pays the first month at once and is refused without the cash for it; later months are billed on the 1st as "Pear One" in the ledger. Cancelling stops billing and keeps the skill. Saves from before the Pear Store keep every widget, billed like a new purchase. The per-device, per-customer and per-employee extras and the surprise price adjustments are not in the game yet.
 
 The monitoring and virtualization products' own licences (see the software choices) come on top of the Pear module.

@@ -1,3 +1,4 @@
+import { staffQueue } from "../40-support/desk-work";
 import { hashRng, rand, type Rng } from "../00-core/rng";
 import { dateOf, isMonthStart, yearOf } from "../00-core/time";
 import { monthlySalary, priceAt } from "../10-catalog/economy";
@@ -231,10 +232,8 @@ function answerTickets(s: GameState, agents: Employee[], r: Rng): BotTask[] {
   const churned = new Set(s.customers.filter((c) => c.churnedAt !== null).map((c) => c.id));
   const queue = s.tickets.filter((t) => t.status === "open" && !t.work && !churned.has(t.customerId)).sort((a, b) => a.dueAt - b.dueAt);
   const taken = new Map<string, Ticket["work"]>(), byBot: BotTask[] = [];
-  // A ticket assigned to a current employee waits for that employee; theirs come first in their turn.
-  const owner = (t: Ticket) => (t.assignee && s.staff.some((x) => x.id === t.assignee) ? t.assignee : null);
   for (const e of agents) {
-    for (const t of [...queue.filter((x) => owner(x) === e.id), ...queue.filter((x) => owner(x) === null)]) {
+    for (const t of staffQueue(s, e, queue)) {
       // An order that cannot be set up waits for the player, and an upgrade waits for the player's quote.
       const step = t.kind === "order" ? staffOrderStep(s, t, orderError(s, t)) : null;
       if (taken.has(t.id) || !(e.trained as string[]).includes(t.kind) || (t.kind === "order" && !step) || t.kind === "upgrade") continue;

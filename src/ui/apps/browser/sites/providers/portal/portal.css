@@ -1,0 +1,26 @@
+/* docs/design/plans/colo-portals.md, section 5: the portal's structure; each provider's sheet styles it under .ps-<id>. */
+.ps-portal { position: relative; display: flex; flex-direction: column; min-height: 420px; }
+.ps-portal-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 12px; border-bottom: 1px solid #dddddd; }
+.ps-portal-who { display: flex; gap: 10px; align-items: baseline; }
+.ps-portal-out { font: inherit; background: none; border: 0; padding: 0; color: inherit; text-decoration: underline; cursor: pointer; }
+.ps-portal-frame { display: grid; grid-template-columns: 170px minmax(0, 1fr); flex: 1; }
+.ps-portal-nav { display: flex; flex-direction: column; padding: 10px 0; border-right: 1px solid #dddddd; }
+.ps-portal-nav a { display: block; padding: 6px 14px; color: inherit; text-decoration: none; }
+.ps-portal-nav a[aria-current] { font-weight: 700; color: var(--ps-accent, inherit); box-shadow: inset 3px 0 var(--ps-accent, currentColor); }
+.ps-portal-main { min-width: 0; padding: 12px 18px 20px; }
+.ps-portal-title { margin-top: 0; }
+.ps-portal-h { margin: 18px 0 8px; }
+.ps-portal-empty { color: #777777; }
+.ps-portal .ps-actions { margin: 12px 0; }
+.ps-portal select { font: inherit; }
+.ps-pill.warn { background: #fdf0d2; color: #8a5a00; }
+.ps-offer { margin: 12px 0; padding: 10px 12px; border: 1px solid #e0c36a; background: #fff8e1; }
+.ps-offer p { margin: 4px 0 8px; }
+.ps-error { color: #b3261e; }
+.ps-sheet-veil { position: absolute; inset: 0; display: flex; align-items: flex-start; justify-content: center; padding-top: 48px; background: rgba(0, 0, 0, 0.35); z-index: 2; }
+.ps-sheet { width: min(460px, 92%); background: #ffffff; color: #222222; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3); }
+.ps-sheet-h { margin: 0; padding: 10px 14px; border-bottom: 1px solid #dddddd; }
+.ps-sheet-b { padding: 10px 14px; }
+.ps-sheet-b h4 { margin: 12px 0 4px; }
+.ps-sheet-f { justify-content: flex-end; padding: 10px 14px; margin: 0 !important; border-top: 1px solid #dddddd; }
+.ps-invoice .books-preview { height: 760px; max-width: 560px; padding: 0; border: 0; }
