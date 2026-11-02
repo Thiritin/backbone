@@ -44,6 +44,8 @@ export interface Ticket {
   // its department, the agent's priority override, internal notes, and the ticket a duplicate was merged into.
   channelId?: string | null; via?: "email" | "web"; ref?: string; deptId?: string | null; priority?: Priority;
   notes?: DeskNote[]; mergedInto?: string;
+  // A hosted desk's drafted reply, valid while the thread still has this many replies.
+  draft?: { template: string; replies: number };
   // A panel task: the web space and the part it names, which closes the ticket once it exists (40-support/webspace-tickets.ts).
   task?: WebTask;
 }

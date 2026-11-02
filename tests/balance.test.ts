@@ -17,10 +17,11 @@ describe("balance run (docs/design/economy/balancing.md, Balancing)", () => {
     expect(steady.filter((r) => r.bankrupt).map((r) => r.seed)).toEqual([]);
   });
 
-  it("lets the solo bot survive and reach level 5 but level 6 later", () => {
+  // Without staff, only a hosted desk's AI agent from 2023 takes routine tickets off the founder, after the run ends.
+  it("lets the solo bot survive and reach level 4 but stall there", () => {
     expect(solo.filter((r) => r.bankrupt).map((r) => r.seed)).toEqual([]);
-    expect(medianYear(solo, 5)).toBeLessThanOrEqual(PACING_YEAR[5] + 1);
-    expect(medianYear(solo, 6)).toBeGreaterThan(medianYear(steady, 6));
+    expect(medianYear(solo, 4)).toBeLessThanOrEqual(PACING_YEAR[4] + 1);
+    expect(medianYear(solo, 5)).toBe(Infinity);
   });
 
   it("brings the steady bot to levels 2 to 5 within a year of the pacing target", () => {

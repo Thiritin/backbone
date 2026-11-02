@@ -49,7 +49,7 @@ export default {
   "misc.cashAtMonthEnd": () => "Cash at month end",
   "misc.cashChartLabel": () => "Money in and out per month, and the cash balance at each month's end",
   "misc.cashFlow": () => "Cash flow",
-  "misc.catAi": () => "ChadGPT usage",
+  "misc.catAi": () => "AI usage",
   "misc.catFees": () => "Ransoms and fines",
   "misc.catHardware": () => "Hardware",
   "misc.catInsurance": () => "Insurance",

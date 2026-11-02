@@ -154,3 +154,6 @@
   .fd-views, .fd-ticket, .fd-cols { grid-template-columns: 1fr; }
   .fd-bar { flex-wrap: wrap; }
 }
+.fd-draft { margin: 8px 0; padding: 10px 12px; border: 1px dashed #b8c4d0; border-radius: 4px; background: #f5f8fb; }
+.fd-draft h4 { margin: 0 0 6px; }
+.fd-draft p { white-space: pre-line; margin: 0 0 8px; }

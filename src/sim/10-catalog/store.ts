@@ -32,7 +32,6 @@ export const STORE: StoreItem[] = [
   { id: "keepassive", kind: "upgrade", name: "KeePassive", monthly: 3 },
   ...WIDGETS.map(([id, name, monthly]): StoreItem => ({ id, kind: "upgrade", name, monthly })),
   // One subscription is one bot; what each bot does is in 47-staff/staff.ts.
-  { id: "chadGpt", kind: "bot", name: "ChadGPT Support", monthly: 50 },
   { id: "clipsy", kind: "bot", name: "Clipsy Reminders", monthly: 100 },
 ];
 textFields("sim.store", STORE.filter((i) => i.id.startsWith("widget") || i.id === "Knowledge base"), ["name"]);

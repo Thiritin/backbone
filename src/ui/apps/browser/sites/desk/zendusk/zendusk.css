@@ -153,3 +153,6 @@
 .zd-form button { align-self: flex-start; }
 .zd-notice { padding: 10px 12px; background: #edf8f4; border-radius: 4px; }
 .zd-meta { display: flex; gap: 10px; align-items: center; color: var(--zd-muted); }
+.zd-draft { margin: 8px 0; padding: 10px 12px; border: 1px dashed #c2c8cc; border-radius: 4px; background: #f8f9f9; }
+.zd-draft h4 { margin: 0 0 6px; }
+.zd-draft p { white-space: pre-line; margin: 0 0 8px; }

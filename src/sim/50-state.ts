@@ -39,7 +39,6 @@ import type { SponsorOffer } from "./80-business/sponsorboard";
 import type { LossReport } from "./85-products/products";
 import type { Rates } from "./10-catalog/products";
 import type { Domain } from "./30-customers/registry";
-import { newChadUsage, type ChadUsage } from "./47-staff/chad";
 import { newIps, type Ips } from "./60-infra/addresses";
 import { newNetSvc, type NetSvc } from "./60-infra/netsvc";
 import { newWebPanel, type WebPanel } from "./60-infra/webpanel";
@@ -372,8 +371,6 @@ export interface GameState {
   domains: Domain[];
   // The registrar partner under contract (30-customers/registrar.ts); null before the first contract.
   registrar: Registrar | null;
-  // ChadGPT replies this month, billed at the next month start.
-  chadUsage: ChadUsage;
   // Public addresses, the LIR membership and its blocks (60-infra/addresses.ts).
   ips: Ips;
   // Mail queues and broken DNS, certificates and storage sets of the infrastructure consoles (60-infra/netsvc.ts).
@@ -510,7 +507,6 @@ export const newGame = (seed: number): GameState => ({
   rates: {},
   domains: [],
   registrar: null,
-  chadUsage: newChadUsage(),
   ips: newIps(),
   netsvc: newNetSvc(),
   webpanel: newWebPanel(),

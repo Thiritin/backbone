@@ -26,10 +26,10 @@ import { modelById, type DeviceModel } from "../10-catalog/hardware";
 import { CORE_SCORE, eraDemand } from "../10-catalog/cpus";
 import { presetPrice } from "../10-catalog/parts";
 import { skillById } from "../10-catalog/research";
-import { KNOW_HOW, STORE, subscriptionPrice } from "../10-catalog/store";
+import { KNOW_HOW } from "../10-catalog/store";
 import { MONTHLY_RATES } from "../40-support/tickets";
 import { BOT_SPEED } from "../47-staff/staff";
-import { botOdds, BOT_RIGHT, costPerTicket, type ChadKind } from "../47-staff/chad";
+import { botOdds, BOT_RIGHT, costPerTicket, DESK_AI_FEE, type AiKind } from "../40-support/desk-ai";
 import { marketPrice, marketSetup, type Spec } from "../10-catalog/products";
 import { EMAIL_SHARE } from "../30-market/orders";
 import { rollRivals, seedRivals, sellsIn, split, TEMPLATES, withBadges, yearAwards, type Rival } from "../30-market/rivals";
@@ -91,9 +91,10 @@ const DRAW_SHARE = 0.6;
 // ponytail: capacity stays one pool; per-city clusters come with a placement-aware model.
 const CITY_ORDER = [CITIES[0], ...CITIES.slice(1).sort((a, b) => b.market - a.market)];
 const cityRent = (city: string) => Math.min(...DATACENTERS.filter((d) => d.city === city).map((d) => spacePrice(d, "share", 8)));
-// ChadGPT Support (Pear Store, Automation skill) answers how-to and billing tickets around the clock at twice a skill-50
-// person's rate. The model learns Employee management, Monitoring and Automation on the way.
-const CHAD = STORE.find((i) => i.id === "chadGpt")!;
+// A hosted desk's AI agent (Automation skill) answers how-to and billing tickets around the clock at twice a skill-50
+// person's rate from the year generative auto-answer came out. The model learns Employee management, Monitoring and
+// Automation on the way.
+const DESK_AI_FROM = 2023;
 const CHAD_KNOW_HOW = ["people", "monitoring", "automation"].reduce((a, id) => a + skillById(id)!.knowHow, 0);
 // Awareness starts at 5% for private individuals and gamers and 2% for the rest (80-business/marketing.ts).
 const AWARENESS_START = (p: Profile) => (p.id === "private" || p.id === "gamer" ? 0.05 : p.id === "webdev" ? 0.005 : 0.02);
@@ -363,10 +364,10 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     }));
     support.forEach((w) => grow(w, month));
     books.forEach((w) => grow(w, month));
-    const routineOf = (kind: ChadKind) => PROFILES.reduce((a, p, i) => a + cohorts[i].reduce((b, c) => b + c.n, 0) * MONTHLY_RATES[kind][p.budget], 0);
+    const routineOf = (kind: AiKind) => PROFILES.reduce((a, p, i) => a + cohorts[i].reduce((b, c) => b + c.n, 0) * MONTHLY_RATES[kind][p.budget], 0);
     const routine = routineOf("howTo") + routineOf("billing"), howToShare = routineOf("howTo") / Math.max(routine, 1);
-    const mix = (f: (k: ChadKind) => number) => howToShare * f("howTo") + (1 - howToShare) * f("billing");
-    // ChadGPT replies up to BOT_TRIES times per ticket, each reply billed, and leaves the unsolved rest in the queue.
+    const mix = (f: (k: AiKind) => number) => howToShare * f("howTo") + (1 - howToShare) * f("billing");
+    // The desk's AI agent replies up to BOT_TRIES times per ticket, each reply billed, and leaves the unsolved rest in the queue.
     const botTickets = chad ? Math.min(BOT_SPEED * 730 * tasksPerHour(TICKET_MINUTES, 50) / mix((k) => botOdds(k).attempts), routine * (1 + backlogT / Math.max(1, ticketLoad))) : 0;
     const botT = botTickets * mix((k) => botOdds(k).solved);
     const staffT = support.reduce((a, w) => a + STAFF_HOURS_PER_MONTH * tasksPerHour(TICKET_MINUTES, w.skill), 0);
@@ -465,7 +466,7 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     const customerDomains = PROFILES.reduce((a, _, i) => a + cohorts[i][0].n, 0) * (website ? EMAIL_SHARE : 1), domains = 1 + customerDomains;
     const domainBill = (domains * registryCost("x.de", year) * factorFor(REGISTRARS[0], "de", tierFor(domains)) - customerDomains * domainFee(year)) / 12;
     const mailBill = (1 + support.length + books.length) * providerById("hostedExchange")!.price(year);
-    const chadPrice = chad ? subscriptionPrice(CHAD, year) + botTickets * mix((k) => costPerTicket(k, year)) : 0;
+    const chadPrice = chad ? DESK_AI_FEE + botTickets * mix((k) => costPerTicket(k, year)) : 0;
     // Every VPS and game server holds an address: extra business line addresses in the basement, provider addresses (one
     // per server too) in a datacenter.
     const ownAddresses = PROFILES.reduce((a, _, i) => a + cohorts[i][1].n + cohorts[i][2].n, 0);
@@ -489,8 +490,8 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
 
     // Staff decisions: hire when the queue is more than a day old.
     knowHow += PROFILES.reduce((a, _, i) => a + PRODUCTS.reduce((b, pr, k) => b + cohorts[i][k].n * KNOW[pr], 0), 0);
-    // ChadGPT once support runs behind and cash covers three months of it.
-    if (!chad && knowHow >= CHAD_KNOW_HOW && backlogT > 0 && cash > 3 * subscriptionPrice(CHAD, year)) chad = true;
+    // The desk AI once support runs behind and cash covers three months of it.
+    if (!chad && year >= DESK_AI_FROM && knowHow >= CHAD_KNOW_HOW && backlogT > 0 && cash > 3 * DESK_AI_FEE) chad = true;
     if (bot.hires && !hireUnlocked && knowHow >= 100 && cash > 3000) { hireUnlocked = true; cash -= 1000; }
     if (bot.hires && hireUnlocked) {
       // Hire only when this month's capacity can't clear the load plus a third of the backlog.

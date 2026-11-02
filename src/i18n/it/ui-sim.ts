@@ -84,6 +84,7 @@ export default {
   "sim.unlock.failureAlerts": () => "Avvisi di guasto",
   "sim.unlock.memoryReservation": () => "Riserva di memoria per cluster",
   "sim.unlock.billingRules": () => "Regole di fatturazione automatiche",
+  "sim.unlock.deskAi": () => "Agenti IA e bozze di risposta negli help desk ospitati",
   "sim.unlock.transit": () => "Acquisto di transito",
   "sim.unlock.peering": () => "Peering con altre reti",
   "sim.unlock.liveMigration": () => "Migrazione a caldo",

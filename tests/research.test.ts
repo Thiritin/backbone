@@ -48,7 +48,7 @@ describe("research", () => {
     expect(reservation.kind === "feature" && reservation.software).toEqual(expect.arrayContaining(["vmwhere", "proxmocks"]));
     expect(reservation.kind === "feature" && reservation.software).not.toContain("openstash");
     expect(skillById("cloudOrchestration")!.opens).toEqual([]);
-    expect(skillById("automation")!.opens).toEqual(["chadGpt", "clipsy"]);
+    expect(skillById("automation")!.opens).toEqual(["clipsy"]);
   });
 
   it("has a two to four page explainer for every skill", () => {

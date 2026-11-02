@@ -9,7 +9,9 @@ import {
   type AdTier, type Assignment, type Candidate, type Employee, type Role, type Task,
 } from "../../../sim/47-staff/staff";
 import { storeItem, subscriptionPrice } from "../../../sim/10-catalog/store";
-import { pricePerMTokens } from "../../../sim/47-staff/chad";
+import { deskById, tenantHost } from "../../../sim/10-catalog/desks";
+import { DESK_AGENT, DESK_AI_FEE, pricePerMTokens } from "../../../sim/40-support/desk-ai";
+import { deskPath } from "../../../sim/80-business/deskroutes";
 import type { GameState } from "../../../sim/50-state";
 import { cancel } from "../../../sim/90-actions/store";
 import { answerRaise, assign, fire, hire, planTraining, postJobAd, setOnCall, setTeam, setTechLocation } from "../../../sim/90-actions/staff";
@@ -99,9 +101,16 @@ export function StaffApp() {
   );
 }
 
-// Team, assignment, training, raise and leaving for an employee; a bot only cancels.
+// The AI page in the admin of the hosted desk.
+function openAiPage(game: GameState): void {
+  const d = game.desk && deskById(game.desk.id);
+  if (d) useStore.getState().openApp("Browser", { kind: "url", id: tenantHost(d, game.desk!.tenant ?? "") + deskPath(d.id as "zendusk" | "freshdusk", "adminScreen", { section: "ai" }) });
+}
+
+// Team, assignment, training, raise and leaving for an employee; a bot only cancels, the desk's agent opens its AI page.
 function staffMenu(game: GameState, e: Employee, onLeave: (e: Employee) => void): MenuEntry[] {
   const act = useStore.getState().act;
+  if (e.id === DESK_AGENT) return [{ label: t("ai.openPage"), run: () => openAiPage(game) }];
   if (e.bot) return [{ label: t("misc.cancelSubscription"), run: () => onLeave(e) }];
   const open = TASKS[e.role].filter((k) => !e.trained.includes(k) && e.training?.task !== k && !e.plan.includes(k));
   const tech = e.role === "technician", onCall = game.onCall.roster.includes(e.id);
@@ -171,22 +180,24 @@ function Team({ game, sel, setSel, onMarket }: { game: GameState; sel: string | 
   );
 }
 
-const botPrice = (game: GameState, b: Employee) => subscriptionPrice(storeItem(b.id)!, yearOf(game.hour));
+const botPrice = (game: GameState, b: Employee) => (b.id === DESK_AGENT ? DESK_AI_FEE : subscriptionPrice(storeItem(b.id)!, yearOf(game.hour)));
 
-function ChadUsageFacts({ game }: { game: GameState }) {
-  const u = game.chadUsage, year = yearOf(game.hour);
+function DeskAiFacts({ game }: { game: GameState }) {
+  const u = game.desk!.ai.usage, year = yearOf(game.hour);
   return (
     <>
       <h3>{t("misc.usageThisMonth")}</h3>
       <dl className="st-facts">
         <div><dt>{t("misc.price")}</dt><dd className="num">{t("misc.perMTokens", { price: euroCents(pricePerMTokens(year)) })}</dd></div>
         <div><dt>{t("misc.replies")}</dt><dd className="num">{u.attempts.toLocaleString(LOCALE)}</dd></div>
+        <div><dt>{t("ai.drafts")}</dt><dd className="num">{u.drafts.toLocaleString(LOCALE)}</dd></div>
         <div><dt>{t("misc.tokens")}</dt><dd className="num">{(u.tokens / 1e6).toFixed(1)}M</dd></div>
         <div><dt>{t("misc.cost")}</dt><dd className="num">{euro(u.cost)}</dd></div>
         <div><dt>{t("misc.perSolvedTicket")}</dt><dd className="num">{u.solved ? euroCents(u.cost / u.solved) : t("misc.none")}</dd></div>
         <div><dt>{t("misc.rightOnHowTo")}</dt><dd className="num">{Math.round(BOT_RIGHT.howTo * 100)}%</dd></div>
         <div><dt>{t("misc.rightOnBilling")}</dt><dd className="num">{Math.round(BOT_RIGHT.billing * 100)}%</dd></div>
       </dl>
+      <button type="button" onClick={() => openAiPage(game)}>{t("ai.openPage")}</button>
     </>
   );
 }
@@ -212,7 +223,7 @@ function BotDetail({ game, b, menu }: { game: GameState; b: Employee; menu: () =
           <span className="logo big"><Bot /></span>
           <div>
             <h2>{b.name}</h2>
-            <div className="sub">{t("misc.pearOneSubscription")}</div>
+            <div className="sub">{b.id === DESK_AGENT ? t("ai.addonOf", { name: deskById(game.desk!.id)!.name }) : t("misc.pearOneSubscription")}</div>
           </div>
           <span className="grow" />
           <More label={b.name} entries={menu} />
@@ -224,7 +235,7 @@ function BotDetail({ game, b, menu }: { game: GameState; b: Employee; menu: () =
         </dl>
       </header>
       <div className="st-body">
-        {b.id === "chadGpt" && <ChadUsageFacts game={game} />}
+        {b.id === DESK_AGENT && <DeskAiFacts game={game} />}
         <h3>{t("misc.handles")}</h3>
         <div className="st-cards">
           {b.trained.map((k) => <div key={k} className="st-card done"><span className="t">{TASK[k]}</span><span className="p"><Check />{t("misc.builtIn")}</span></div>)}

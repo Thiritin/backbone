@@ -28,9 +28,12 @@ export interface DeskState {
   ai: DeskAiState;
 }
 
-// The AI switches of a hosted desk and this month's answer bot results, billed at the month start.
-export interface DeskAiState { on: Partial<Record<DeskAi, boolean>>; solved: number; tried: number }
-export const newDeskAi = (): DeskAiState => ({ on: { suggestedArticles: true }, solved: 0, tried: 0 });
+// The AI switches of a hosted desk, this month's answer bot results and the generative replies and drafts, billed at the
+// month start.
+export interface DeskAiUsage { attempts: number; tokens: number; cost: number; solved: number; drafts: number }
+export interface DeskAiState { on: Partial<Record<DeskAi, boolean>>; solved: number; tried: number; usage: DeskAiUsage }
+export const newDeskAiUsage = (): DeskAiUsage => ({ attempts: 0, tokens: 0, cost: 0, solved: 0, drafts: 0 });
+export const newDeskAi = (): DeskAiState => ({ on: { suggestedArticles: true }, solved: 0, tried: 0, usage: newDeskAiUsage() });
 
 // The machine id of a self-hosted desk on its web space.
 export const DESK_MACHINE = "desk";

@@ -9,6 +9,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Shipping stored hardware to another site now costs a courier fee per unit, never more than a rack move.
 - You can drive stored hardware to another site yourself for the fuel and arrive there with it.
 - Squarecube webmail can be installed on your mail server from March 2008, with its own website, release history, setup wizard and login page, and the Advisor warns until you disable its installer.
+- ChadGPT Support has left the Pear Store; from 2023 Zendusk and Freshdusk offer an AI agent that answers how-to and billing tickets and drafts replies for you, as a monthly add-on in the desk's AI page.
 - Newer CPUs are faster per core, so the same customers load an old server more than a new one, and old servers get busier as software grows.
 - Shops, game servers and other demanding customers now notice when their server's CPU is too slow for them, even when it is idle.
 - Goggle has an Admin console in the look of each era, where you add users, aliases and groups, route unknown addresses, migrate old mailboxes, see the bill and accept the 2022 upgrade before the free edition locks.

@@ -52,18 +52,18 @@ A raise request left unanswered for 30 days counts as refused. Salaries are bill
 
 **Marketing manager.** Review platforms with a fee need one on staff; without one, the platform falls back to the free listing at the month start before billing. The best manager trained on campaigns who works the queue and is not at a fair multiplies every campaign's leads by 1.05 + 0.1 × s/100. One trained on review platforms multiplies the invite rate by 1.5.
 
-**AI bots.** Each bot is one Pear One subscription and works every hour of the day, staff first during office hours and the bots after them.
+**AI bots.** A bot works every hour of the day, staff first during office hours and the bots after them. Clipsy is a Pear One subscription; the generative AI agent comes with a hosted desk's AI add-on from 2023 (see Desk AI usage) and answers only tickets the desk holds.
 
 | Bot | Base per month (2005) | Handles |
 | --- | --- | --- |
-| "ChadGPT Support" | €50 plus usage | How-to and billing tickets |
+| Zendusk AI agent, Freddie AI Agent | €50 add-on plus usage, from 2023 | How-to and billing tickets |
 | "Clipsy Reminders" | €100 | Payment reminders |
 
-A bot works at 2 × the base rate (a skill-50 human works at 1 ×) and never gains skill. ChadGPT picks the right reply with P = 0.6 on how-to tickets and P = 0.5 on billing tickets. Each reminder a bot sends makes the customer open a billing ticket with a 5% chance. Each bot task causes an incident with a 0.2% chance: the customer loses 15 happiness and opens a billing ticket, and the Staff app reports one of five absurd lines. A bot that handles 500 tasks a month causes about one incident a month.
+A bot works at 2 × the base rate (a skill-50 human works at 1 ×) and never gains skill. The AI agent picks the right reply with P = 0.6 on how-to tickets and P = 0.5 on billing tickets. Each reminder a bot sends makes the customer open a billing ticket with a 5% chance. Each bot task causes an incident with a 0.2% chance: the customer loses 15 happiness and opens a billing ticket, and the Staff app reports one of five absurd lines. A bot that handles 500 tasks a month causes about one incident a month.
 
-### ChadGPT usage
+### Desk AI usage
 
-ChadGPT bills every reply it sends in tokens on top of its €50 base subscription. The month's usage becomes one "ChadGPT usage" ledger line on the first of the next month, booked under its own Finance category. A reply rereads the whole thread, so a retry costs more than the first answer:
+The AI agent bills every reply it sends in tokens, and reply drafting bills every draft the same way, on top of the €50 monthly add-on. The month's usage becomes one "Desk AI" ledger line on the first of the next month, booked under the AI usage Finance category next to the add-on line. Old saves keep their "ChadGPT usage" lines. A reply rereads the whole thread, so a retry costs more than the first answer:
 
 ```math
 \text{tokens} = (6{,}000 + 3{,}000 \cdot r) \cdot 1.18^{\,y - 2005}
@@ -81,14 +81,14 @@ Here r is the number of replies already in the thread and y the year, held at 20
 | 2020 | €24.50 | 71,800 tokens |
 | 2026 | €9.20 | 194,000 tokens |
 
-**Retries.** A wrong reply brings a follow-up in the same thread, and ChadGPT answers it again. After 4 replies of its own on one ticket it leaves the ticket in the queue for staff and the player, and the customer loses 10 happiness for the runaround on top of the 10 for each wrong reply.
+**Retries.** A wrong reply brings a follow-up in the same thread, and the AI agent answers it again. After 4 replies of its own on one ticket it leaves the ticket in the queue for staff and the player, and the customer loses 10 happiness for the runaround on top of the 10 for each wrong reply.
 
-| Kind | P(right) | Replies per ticket | Solved by ChadGPT | Replies per solved ticket | Cost per solved ticket, 2008 | Share of an agent's |
+| Kind | P(right) | Replies per ticket | Solved by the agent | Replies per solved ticket | Cost per solved ticket, 2008 | Share of an agent's |
 | --- | --- | --- | --- | --- | --- | --- |
 | How-to | 0.6 | 1.62 | 97% | 1.67 | €3.62 | 42% |
 | Billing | 0.5 | 1.88 | 94% | 2.0 | €4.63 | 53% |
 
-**Against a support agent.** The reference is a full-time skill-50 support agent whose salary is spread over the tickets they solve in a month at full load: 140 hours at 3.16 tickets an hour with P(right) = 0.875, about 387 solved tickets, which is €8.05 a ticket in 2005 and €11.05 in 2018. From 2006 to 2018 a solved ticket from ChadGPT costs 34% to 44% of that on how-to tickets and 43% to 56% on billing tickets; the share falls slowly as salaries rise. One ChadGPT has room for about 5,000 replies a month, so a company with many customers, an outage or a price rise pays a five-figure monthly bill: the balance model's steady company pays about €10,600 a month from 2014 on.
+**Against a support agent.** The reference is a full-time skill-50 support agent whose salary is spread over the tickets they solve in a month at full load: 140 hours at 3.16 tickets an hour with P(right) = 0.875, about 387 solved tickets, which is €8.05 a ticket in 2005 and €11.05 in 2018. From 2006 to 2018 a solved ticket from the agent would cost 34% to 44% of that on how-to tickets and 43% to 56% on billing tickets; from 2023, when the desks offer it, 28% to 30% and 36% to 39%, since the share falls slowly as salaries rise. One agent has room for about 5,000 replies a month, so a company with many customers, an outage or a price rise pays a five-figure monthly bill.
 
 **Technicians.** A technician costs the technician role base above (€47,000 in 2026) and does one operation per office hour, so at most 40 a week, at their location. Skill sets the salary and does not change the work rate, because every operation fills its hour. Against remote hands at €120 an hour, a technician at a datacenter pays off from about 25 swaps a month; in the basement the gain is only the time the player saves.
 

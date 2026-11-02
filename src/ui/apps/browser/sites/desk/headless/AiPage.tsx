@@ -1,15 +1,17 @@
 import { t } from "../../../../../../i18n/en";
 import { euroCents } from "../../../../../../sim/00-core/money";
 import type { DeskAi } from "../../../../../../sim/10-catalog/desks";
-import { aiOffered, aiOn, ANSWER_BOT_FEE } from "../../../../../../sim/40-support/desk-ai";
+import { aiOffered, aiOn, ANSWER_BOT_FEE, DESK_AI_FEE, draftOf, GENERATIVE } from "../../../../../../sim/40-support/desk-ai";
+import { outgoing } from "../../../../../../sim/40-support/replies";
 import { HOW_TO, type Ticket } from "../../../../../../sim/40-support/tickets";
 import type { GameState } from "../../../../../../sim/50-state";
 import { kbArticles } from "../../../../../../sim/80-business/website";
 import { setDeskAi } from "../../../../../../sim/90-actions/desk";
+import { replyTicket } from "../../../../../../sim/90-actions/support";
 import { useStore } from "../../../../../store";
 
 type Brand = "zd" | "fd";
-const FEATURES: DeskAi[] = ["suggestedArticles", "answerBot"];
+const FEATURES: DeskAi[] = ["suggestedArticles", "answerBot", "autoAnswer", "drafting"];
 export const aiFeatures = (game: GameState): DeskAi[] => FEATURES.filter((a) => aiOffered(game, a));
 const title = (topic: string) => t(`ticket.howTo.${topic}.subject`, {});
 
@@ -34,6 +36,14 @@ export function AiSwitches({ game, brand }: { game: GameState; brand: Brand }) {
           <tr><th>{t("ai.fee")}</th><td>{euroCents(ANSWER_BOT_FEE)}</td></tr>
         </tbody></table>
       )}
+      {GENERATIVE.some((a) => aiOffered(game, a)) && ai && (
+        <table className={`${brand}-info`}><tbody>
+          <tr><th>{t("ai.agentReplies")}</th><td>{ai.usage.attempts}</td></tr>
+          <tr><th>{t("ai.drafts")}</th><td>{ai.usage.drafts}</td></tr>
+          <tr><th>{t("ai.tokenCost")}</th><td>{euroCents(ai.usage.cost)}</td></tr>
+          <tr><th>{t("ai.addonFee")}</th><td>{euroCents(DESK_AI_FEE)}</td></tr>
+        </tbody></table>
+      )}
     </>
   );
 }
@@ -55,6 +65,20 @@ export function Suggested({ topics, brand, open }: { topics: string[]; brand: Br
     <section className={`${brand}-suggested`}>
       <h4>{t(`ai.${brand}.suggested`)}</h4>
       <ul>{topics.map((x) => <li key={x}><a onClick={() => open(x)}>{title(x)}</a></li>)}</ul>
+    </section>
+  );
+}
+
+// The drafted reply above the composer: its text and one click to send it.
+export function DraftBox({ game, tk, brand }: { game: GameState; tk: Ticket; brand: Brand }) {
+  const act = useStore((s) => s.act), draft = draftOf(tk);
+  if (!draft || !aiOn(game, "drafting")) return null;
+  const o = outgoing(game, tk, game.customers.find((c) => c.id === tk.customerId), `tpl.${draft}`);
+  return (
+    <section className={`${brand}-draft`}>
+      <h4>{t("ai.draft")}</h4>
+      <p>{t(o.key ?? "", o.params)}</p>
+      <button type="button" className={`${brand}-btn primary`} onClick={() => act(replyTicket, tk.id, draft)}>{t("ai.sendDraft")}</button>
     </section>
   );
 }
