@@ -25,6 +25,7 @@ import { decideBreach } from "../60-infra/breach";
 import { serviceOnline } from "./status";
 import { answerTransfer, DOMAIN_OUT } from "../30-customers/registrar";
 import { outgoing, sendAction } from "./replies";
+import { taskDone, webspaceTickets } from "./webspace-tickets";
 import { overpricing, revertPrice } from "../30-customers/pricing";
 import { CERT_ASKED, CERT_WANT, wantCertificate } from "../30-customers/certificates";
 import { expansionRequest } from "../30-market/sales";
@@ -239,7 +240,8 @@ export function supportTick(s: GameState): SimEvent[] {
     if (t.work?.arg === FIX_CHECK) continue;
     // Mail and spam have no customer to wait.
     if (t.notice || t.kind === "migration" || t.kind === "sponsor" || t.kind === "pear" || t.kind === "mail" || t.kind === "spam" || (t.kind === "order" && (!t.customerId || t.status !== "open"))) continue;
-    if (t.status === "waiting" && s.hour - t.updatedAt >= WAITING_CLOSE_HOURS) resolve(s, t, c);
+    if (t.task && !isFinal(t) && taskDone(s, t.task)) resolve(s, t, c);
+    else if (t.status === "waiting" && s.hour - t.updatedAt >= WAITING_CLOSE_HOURS) resolve(s, t, c);
     else if (t.status === "escalated" && (!t.serviceId || serviceOnline(s, t.serviceId))) resolve(s, t, c);
     else if (t.status === "open" && (c.churnedAt === null || t.topic === DOMAIN_OUT) && s.hour > t.dueAt) {
       const p = profileStats(c.profile);
@@ -248,6 +250,7 @@ export function supportTick(s: GameState): SimEvent[] {
   }
   outages(s, customer);
   readOnlySweep(s, () => spawnHourly(s));
+  readOnlySweep(s, () => webspaceTickets(s));
   if (isMonthStart(s.hour)) monthly(s);
   importDeskTickets(s);
 

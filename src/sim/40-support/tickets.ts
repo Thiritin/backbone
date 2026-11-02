@@ -44,7 +44,11 @@ export interface Ticket {
   // its department, the agent's priority override, internal notes, and the ticket a duplicate was merged into.
   channelId?: string | null; via?: "email" | "web"; ref?: string; deptId?: string | null; priority?: Priority;
   notes?: DeskNote[]; mergedInto?: string;
+  // A panel task: the web space and the part it names, which closes the ticket once it exists (40-support/webspace-tickets.ts).
+  task?: WebTask;
 }
+// part "app" asks for the site's app to work again; key is then the app.
+export interface WebTask { workloadId: string; part: "app" | "databases" | "mailboxes" | "ftp"; key: string }
 // System events carry a key and params, shown in the player's language; typed notes carry text.
 export interface DeskNote { hour: number; by: string; key?: string; params?: Record<string, string | number>; text?: string }
 
@@ -118,7 +122,11 @@ const CLEAN_ACTIONS: TicketAction[] = ["clean", "cleanPaid", "noBackup"];
 export const TOPIC_ACTIONS: Record<string, TicketAction[]> = { "howTo.update": ["offerOnce", "offerManaged", "free"], "howTo.hacked": CLEAN_ACTIONS, "howTo.abuseHold": CLEAN_ACTIONS, "outage.slow": ["upgrade"] };
 // Topics with replies of their own and no actions: a suspended customer only needs the invoice to pay it. A transfer
 // request is answered with the auth code or refused (90-actions/registrar.ts).
-export const TOPIC_TEMPLATES: Record<string, string[]> = { "billing.suspended": ["resend", "askDetails"], "billing.domainOut": [] };
+// Panel tasks close by themselves once the web space matches, so they have no replies either.
+export const TOPIC_TEMPLATES: Record<string, string[]> = {
+  "billing.suspended": ["resend", "askDetails"], "billing.domainOut": [],
+  "howTo.dbCreate": [], "howTo.mailboxCreate": [], "howTo.ftpLogin": [], "howTo.dbError": [], "howTo.appSetup": [],
+};
 export const ACTION_MINUTES: Partial<Record<TicketAction, number>> = { clean: CLEAN_MINUTES, upgrade: 5 };
 export const actionsOf = (t: Pick<Ticket, "kind" | "topic">): TicketAction[] => (`${t.kind}.${t.topic}` in TOPIC_TEMPLATES ? [] : [...ACTIONS[t.kind], ...(TOPIC_ACTIONS[`${t.kind}.${t.topic}`] ?? [])]);
 // Tickets with their own actions have no reply templates.

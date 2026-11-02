@@ -9,6 +9,7 @@ import {
   type DomainKind, type WebLimits, type Webspace,
 } from "../60-infra/webspace";
 import { addSubdomainRecord, dropSubdomainRecord } from "../60-infra/webzone";
+import { siteCleaned } from "../60-infra/apps";
 import type { ActionResult } from "./hardware";
 import { fail, FILE_NAME, fixed, folderOk, isFail, join, open, put, under } from "./webspace-base";
 
@@ -243,7 +244,15 @@ export function deleteFile(s: GameState, workloadId: string, path: string): Acti
   if (isFail(ws)) return ws;
   if (!ws.files[path]) return fail("webspace.error.noFile");
   if (fixed(ws, path)) return fail("webspace.error.fixedFolder");
-  for (const k of under(ws, path)) put(s, workloadId, "files", k, false);
+  const gone = under(ws, path);
+  for (const k of gone) put(s, workloadId, "files", k, false);
+  // Deleting the last file the attacker left cleans the site.
+  const v = s.services.find((x) => x.id === s.workloads.find((w) => w.id === workloadId)?.serviceId);
+  if (v && ws.shells.some((p) => gone.includes(p)) && ws.shells.every((p) => !ws.files[p] || gone.includes(p))) {
+    siteCleaned(s, v);
+    // No longer derived, so the stored deletions can go.
+    for (const p of ws.shells) put(s, workloadId, "files", p, false);
+  }
   return { ok: true, id: path };
 }
 

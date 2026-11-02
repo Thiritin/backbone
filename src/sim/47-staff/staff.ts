@@ -234,9 +234,9 @@ function answerTickets(s: GameState, agents: Employee[], r: Rng): BotTask[] {
   const taken = new Map<string, Ticket["work"]>(), byBot: BotTask[] = [];
   for (const e of agents) {
     for (const t of staffQueue(s, e, queue)) {
-      // An order that cannot be set up waits for the player, and an upgrade waits for the player's quote.
+      // An order that cannot be set up waits for the player, an upgrade waits for the player's quote and a panel task for the player's work in the panel.
       const step = t.kind === "order" ? staffOrderStep(s, t, orderError(s, t)) : null;
-      if (taken.has(t.id) || !(e.trained as string[]).includes(t.kind) || (t.kind === "order" && !step) || t.kind === "upgrade") continue;
+      if (taken.has(t.id) || !(e.trained as string[]).includes(t.kind) || (t.kind === "order" && !step) || t.kind === "upgrade" || t.task) continue;
       const tries = e.bot ? t.replies.filter((x) => x.by === e.name).length : 0;
       if (tries >= BOT_TRIES) continue;
       const took = take(s, e, step ? orderMinutes(s, t, step, MINUTES.order) : MINUTES[t.kind]);

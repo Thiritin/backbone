@@ -6,6 +6,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - Web hosting panels show each account's disk and traffic as compact numbers and the whole server's CPU, memory and disk above the account list.
 - Web hosting accounts now use memory by their visitors, so a quiet personal page needs only a few megabytes while a busy shop needs far more.
+- The software page in the Pear Store shows its price, skill and status side by side again, with the same spacing in every macOS era.
 - The cPanic File Manager now works like the real one: upload files from your Downloads at your line's upload speed, extract and compress archives, create, move, copy, rename and delete files, and change permissions, with uploads refused once the account's disk quota is full.
 - HOSTtoast no longer has a city filter, so its list always shows every open host.
 - The browser's Back button no longer leaves the game: in the browser app it goes back one page, everywhere else it does nothing.
@@ -33,6 +34,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Vendor websites offer a Change edition choice for every licence key, which switches the key to the new edition after checkout without entering a new key.
 - The cPanic customer pages now offer Addon Domains, Subdomains, Aliases, a Zone Editor, SSL/TLS Status, MultiPHP Manager and Cron Jobs, labelled as the release of the year names them, and a new subdomain gets its DNS record automatically.
 - Every cPanic customer account now has its own files, databases, mailboxes and limits on databases, FTP accounts and domains, which its customer pages show.
+- Web hosting customers now write in asking for a database, a mailbox or an FTP login, ask for a bigger package when theirs is full, and report a site that stopped working; the ticket closes once their web space has what they asked for, and deleting the shell left on a hacked site cleans it.
 - Your own servers, mail server, webmail, help desk and shop now get their DNS records automatically, so an MX record pointing at your mail server's host name delivers mail, and the DNS page offers MX, A and CNAME values from lists instead of free text.
 - Mail to your domain now really follows its MX record: when it leads nowhere, email orders stop arriving and the Email sheet shows the mail as not delivered.
 - Your own virtual machines now take their operating system's time to boot, shut down and restart, and an open SSH session sees the shutdown broadcast before it is disconnected.
