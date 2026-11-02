@@ -15,6 +15,7 @@ import { LOG_SOURCES, logLines, panelTasks, type LogSource } from "../../../../s
 import { LicenceTiers } from "./HostSettings";
 import { assignedKey, installedVersion, isLicensed, licenceStatus, panelLocked, panelStatus, trialDaysOf, trialOf, unassignedKeys, upgradeKeyBlock } from "../../../../sim/60-infra/licence";
 import { machineOf } from "../../../../sim/60-infra/cluster";
+import { familyOf } from "../../../../sim/60-infra/vulns";
 import { upgradeOffers } from "../../../../sim/80-business/vendor-shop";
 import { softwareTarget, upgradeSoftware } from "../../../../sim/90-actions/console";
 import { activateLicence, finishPanelSetup, startLicenceTrial } from "../../../../sim/90-actions/licence";
@@ -125,12 +126,12 @@ function UpgradeEntry({ game, c }: { game: GameState; c: Cluster }) {
 // Enters a typed or owned unassigned key on the first machine of the cluster that is not licensed, or on its first machine
 // to replace the key.
 function KeyEntry({ game, c, onDone }: { game: GameState; c: Cluster; onDone?: () => void }) {
-  const act = useStore((s) => s.act), [key, setKey] = useState(""), [done, setDone] = useState(false);
+  const act = useStore((s) => s.act), [key, setKey] = useState(""), [done, setDone] = useState(false), [err, setErr] = useState("");
   const id = c.panel ?? c.platform, machines = c.vm ? [c.vm] : c.nodes.map((n) => n.deviceId);
   const m = id ? machines.find((x) => licenceStatus(game, x, id) !== "active") ?? machines[0] : undefined;
   if (!id || !m || !isLicensed(id)) return null;
   const owned = unassignedKeys(game, id);
-  const activate = (code: string) => { const r = act(activateLicence, m, id, code); setDone(r.ok); if (r.ok) { setKey(""); onDone?.(); } };
+  const activate = (code: string) => { const r = act(activateLicence, m, id, code); setDone(r.ok); setErr(r.ok ? "" : t(r.error)); if (r.ok) { setKey(""); onDone?.(); } };
   return (
     <>
       <div className="cx-inline">
@@ -139,6 +140,7 @@ function KeyEntry({ game, c, onDone }: { game: GameState; c: Cluster; onDone?: (
         </label>
         <button className="cx-btn primary" disabled={!key.trim()} onClick={() => activate(key)}>{t("host.activate")}</button>
         {done && <span role="status">{t("host.activated")}</span>}
+        {err && <span role="alert">{err}</span>}
       </div>
       {owned.length > 0 && (
         <div className="cx-tools" aria-label={t("host.ownedKeys")}>
@@ -149,23 +151,27 @@ function KeyEntry({ game, c, onDone }: { game: GameState; c: Cluster; onDone?: (
   );
 }
 
-// Stands in for a licensed panel's admin UI on its first sign-in and while its licence has run out.
+// What each panel's first-run licence page calls itself and its trial link; the other families use the generic words.
+const GATE_TITLE: Record<string, string> = { cpanic: "host.enterLicense", pleskit: "host.installKey", directadmen: "host.licenseKey" };
+
+// Stands in for a licensed panel's admin UI on its first sign-in and while its licence has run out. A key or a trial takes
+// the player straight on.
 export function LicenceGate({ game, c, host }: { game: GameState; c: Cluster; host: string }) {
-  const act = useStore((s) => s.act), m = panelMachine(c), id = c.panel;
+  const act = useStore((s) => s.act), m = panelMachine(c), id = c.panel, family = familyOf(c) ?? "";
   if (!m || !id) return null;
   const locked = panelLocked(game, c), trial = trialOf(game, m, id), status = panelStatus(game, c);
   const finish = () => { if (c.setupPending) act(finishPanelSetup, c.id); };
   const runTrial = () => { if (trial || act(startLicenceTrial, m, id).ok) finish(); };
+  const canTrial = status === "trial" || (!trial && trialDaysOf(id) !== null);
   return (
     <div className="cx cx-login">
-      <div className="cx-card">
-        <h4 className="cx-h">{t(c.setupPending ? "host.setup" : "readouts.licence")}</h4>
+      <div className="cx-card" data-family={family}>
+        <h4 className="cx-h">{t(c.setupPending ? GATE_TITLE[family] ?? "host.setup" : "readouts.licence")}</h4>
         <div className="cx-host">{host}</div>
-        {locked && <p className="cx-banner bad" role="alert">{t("error.licenceExpired")}</p>}
+        {locked && <p className="cx-banner bad" role="alert">{t(!trial && trialDaysOf(id) === null ? "error.licenceKey" : "error.licenceExpired")}</p>}
         {status === "trial" && trial && <p>{t("host.trialUntil", { date: formatClock(trial.until) })}</p>}
         <KeyEntry game={game} c={c} onDone={finish} />
-        {c.setupPending && status === "active" && <button className="cx-btn" onClick={finish}>{t("host.continue")}</button>}
-        {c.setupPending && (status === "trial" || (!trial && trialDaysOf(id) !== null)) && <button className="cx-btn" onClick={runTrial}>{t("host.useTrial")}</button>}
+        {c.setupPending && canTrial && <button className={family === "pleskit" ? "cx-btn ghost" : "cx-btn"} onClick={runTrial}>{t(family === "pleskit" ? "host.proceedTrial" : "host.useTrial")}</button>}
       </div>
     </div>
   );

@@ -3,7 +3,7 @@ import { yearOf } from "../../../../sim/00-core/time";
 import type { GameState } from "../../../../sim/50-state";
 import type { Cluster } from "../../../../sim/60-infra/cluster";
 import { familyOf } from "../../../../sim/60-infra/vulns";
-import { panelLocked } from "../../../../sim/60-infra/licence";
+import { panelLocked, panelStatus } from "../../../../sim/60-infra/licence";
 import { consoleFeatures } from "../../../../sim/80-business/consoles";
 import { t } from "../../../../i18n/en";
 import { useSessionState } from "../../../session";
@@ -56,6 +56,6 @@ export function ConsolePage({ game, hostname, host, cluster, defaced, path }: { 
   if (CLI_ONLY.has(family)) return <HostCli game={game} c={cluster} family={family} host={host} name={hostname} />;
   if (defaced) return <Defaced />;
   if (!Panel) return null;
-  if (cluster.kind !== "mailweb" && logins.includes(hostname) && (cluster.setupPending || panelLocked(game, cluster))) return <LicenceGate game={game} c={cluster} host={host} />;
+  if (cluster.kind !== "mailweb" && logins.includes(hostname) && (panelLocked(game, cluster) || (cluster.setupPending && panelStatus(game, cluster) === "trial"))) return <LicenceGate game={game} c={cluster} host={host} />;
   return <Panel key={path ?? "/"} path={path} game={game} c={cluster} f={consoleFeatures(family, yearOf(game.hour))} host={host} signedIn={logins.includes(hostname)} login={() => setLogins([...logins, hostname])} logout={() => setLogins(logins.filter((x) => x !== hostname))} />;
 }

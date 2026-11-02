@@ -79,8 +79,11 @@ export default {
   "host.activated": () => "Activée",
   "host.setup": () => "Configuration",
   "host.ownedKeys": () => "Clés non attribuées",
-  "host.continue": () => "Continuer",
-  "host.useTrial": () => "Utiliser l'essai",
+  "host.useTrial": () => "Démarrer l'essai",
+  "host.enterLicense": () => "Saisissez votre licence",
+  "host.installKey": () => "Installer la clé de licence",
+  "host.licenseKey": () => "Clé de licence",
+  "host.proceedTrial": () => "Continuer avec la licence d'essai",
   "host.shop": () => "Système de boutique",
   "host.installShop": (p) => `Installer ${p.name}`,
 } satisfies Dict;
