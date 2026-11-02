@@ -95,7 +95,7 @@ describe("checklist", () => {
     expect(stepOf(s, "domain").focus).toBeUndefined();
     expect(stepOf(s, "website")).toMatchObject({ app: "Marketing", focus: { kind: "page", id: "channels" } });
     expect(stepOf(s, "internet")).toMatchObject({ app: "Locations", focus: { kind: "line" } });
-    expect(stepOf(s, "email")).toMatchObject({ app: "Support", focus: { kind: "mailSetup", id: "" } });
+    expect(stepOf(s, "email")).toMatchObject({ app: "Browser", focus: { kind: "url", id: expect.stringMatching(/\/dir\/email-providers$/) } });
     ok(signRegistrar(s, "goDuddy"));
     expect(stepOf(s, "domain").text).toBe("Buy a domain for your company at GoDuddy Reseller in the Browser.");
   });

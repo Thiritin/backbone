@@ -202,7 +202,6 @@ export default {
   "support.type": () => "Type",
   "support.reports": () => "Reports",
   "support.lostSales": () => "Lost sales",
-  "support.settings": () => "Settings",
   "support.search": () => "Search",
   "support.noEmails": () => "No emails",
   "support.noEmailSelected": () => "No email selected",

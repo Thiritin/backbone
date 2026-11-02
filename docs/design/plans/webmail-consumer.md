@@ -315,7 +315,7 @@ After 3, GMix (4 and 5) and Goggle (6 and 7) run in parallel. Milestones 8 and 9
     - UI: the Import wizard in Gmial, the Data migration page in the console, a banner on the old provider's account page that lists what is still unmigrated (the stored message count, the rules running).
     - i18n: notice texts.
     - Test: `tests/mail-switch.test.ts`: the full walk from the GMix start box to Goggle with a seeded customer stream: mail before the MX change lands in GMix, mail after it in Goggle, a forgotten info@ follows mail-core's retired-address share, a premature cancel loses the straggler, the continuing rule saves it.
-11. **Shell swap (`shell-swap`).**
+11. **Shell swap (`shell-swap`).** Built: the email settings sheet, its Settings button in the Email window, the Change provider menu item, the `mailSetup` focus and the sheet's strings are gone, and the Getting started step opens the Browser at the Email providers category. Pear Mail's "Get a new address" link and removing the wrappers' GMix and Goggle branches are not built; the wrappers stay for tests and old helpers.
     - Sim: point the Getting started checker at mail-core's rule; remove the GMix and Goggle branches of the wrappers.
     - UI: delete `EmailSettings.tsx`, `email.css`, the menu item, the Support route and the unused strings; link Pear Mail's "Get a new address" to the provider category; update the default bookmarks.
     - i18n: remove the dead `apps.mail.*` keys from every language folder.

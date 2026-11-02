@@ -89,7 +89,6 @@ export default {
   "desktop.icon.trashApp": () => "Le raccourci est retiré du bureau.",
   "desktop.icon.trashNote": () => "La note et son texte sont supprimés.",
 
-  "desktop.menu.changeProvider": () => "Changer de fournisseur…",
   "desktop.menu.settings": () => "Réglages…",
   "desktop.menu.intro": () => "Introduction…",
   "desktop.menu.github": () => "Backbone sur GitHub",

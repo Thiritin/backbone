@@ -44,7 +44,6 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
 
   // The front window's menu: what the app offers, then the window controls.
   const appMenu = (w: Win): [string, () => void][] => [
-    ...(w.app === "Support" ? [[t("desktop.menu.changeProvider"), () => openApp("Support", { kind: "mailSetup", id: "" })]] as [string, () => void][] : []),
     ...(w.app !== "Settings" ? [[t("desktop.menu.settings"), () => openApp("Settings")]] as [string, () => void][] : []),
     [t("desktop.minimize"), () => minimize(w.id)],
     [t("desktop.close"), () => close(w.id)],

@@ -225,20 +225,6 @@ export default {
 
   "apps.note.title": () => "Título",
 
-  "apps.mail.installing": () => "Instalando",
-  "apps.mail.impaired": () => "Entrega de correo afectada",
-  "apps.mail.delivering": () => "Entregando",
-  "apps.mail.unrouted": () => "No se entrega",
-  "apps.mail.freeNote": () => "Gratis. Queda poco profesional ante clientes de empresa.",
-  "apps.mail.availableFrom": (p) => `Disponible desde ${p.year}`,
-  "apps.mail.needDomain": () => "Necesitas un dominio",
-  "apps.mail.perSeat": (p) => `${p.seat} por buzón, ${p.total} al mes`,
-  "apps.mail.selfHost": () => "Alojamiento propio",
-  "apps.mail.needServer": () => "Necesitas un servidor de correo",
-  "apps.mail.settings": () => "Ajustes de correo",
-  "apps.mail.address": () => "Dirección",
-  "apps.mail.status": () => "Estado",
-  "apps.mail.provider": () => "Proveedor de correo",
 
   "apps.kb.article": () => "Artículo",
   "apps.kb.reads": () => "Lecturas",
@@ -269,7 +255,7 @@ export default {
   "apps.guide.step.domain": (p) => `Compra un dominio para tu empresa en ${p.partner} desde el navegador.`,
   "apps.guide.step.website": () => "Crea tu primer sitio web en Marketing, en Canales.",
   "apps.guide.step.launch": () => "Elige dónde se aloja tu sitio web, lánzalo en Marketing y publica tu primer producto en Productos.",
-  "apps.guide.step.email": (p) => `Elige un proveedor de correo en ${p.app}.`,
+  "apps.guide.step.email": () => "Contrata buzones para el dominio de tu empresa en la web de un proveedor de correo.",
   "apps.guide.step.firstCustomer": (p) => `Responde a tu primer cliente en ${p.app}.`,
 
   "apps.name.Applications": () => "Aplicaciones",

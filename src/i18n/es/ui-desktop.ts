@@ -89,7 +89,6 @@ export default {
   "desktop.icon.trashApp": () => "El enlace se quita del escritorio.",
   "desktop.icon.trashNote": () => "La nota y su texto se eliminan.",
 
-  "desktop.menu.changeProvider": () => "Cambiar de proveedor…",
   "desktop.menu.settings": () => "Ajustes…",
   "desktop.menu.intro": () => "Introducción…",
   "desktop.menu.github": () => "Backbone en GitHub",
