@@ -26,7 +26,7 @@ export function setBurst(s: GameState, workloadId: string, gb: number): ActionRe
 export function freezeWorkload(s: GameState, workloadId: string): ActionResult {
   const f = found(s, workloadId);
   if (!f) return fail("error.unknownWorkload");
-  if (f.w.stopped || f.w.frozen || f.w.template || lostDisk(s, f.w) || f.w.busyUntil > s.hour) return fail("error.workloadBusy");
+  if (f.w.stopped || f.w.frozen || f.w.template || lostDisk(s, f.w) || f.w.busyUntil > s.hour || f.w.haltUntil !== undefined || (f.w.bootUntil ?? 0) > nowHours(s)) return fail("error.workloadBusy");
   patch(s, f.w.id, { frozen: true });
   return { ok: true };
 }

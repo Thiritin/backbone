@@ -28,6 +28,8 @@ import { derivedDomain } from "../src/sim/30-customers/domains";
 import { register } from "../src/sim/30-customers/registry";
 import { nodeName } from "../src/sim/30-customers/hostnames";
 import { setMachine, type Cluster } from "../src/sim/60-infra/cluster";
+import { tickMinute } from "../src/sim/88-tick/tick";
+import { stopWorkload } from "../src/sim/90-actions/vms";
 import { assignedKey, assignKey, isLicensed, issueKey, panelMachine, trialDaysOf } from "../src/sim/60-infra/licence";
 import { topTier } from "../src/sim/10-catalog/licence-tiers";
 import { UI_LOOKS, versionsOf } from "../src/sim/10-catalog/software-versions";
@@ -76,6 +78,13 @@ export function routerOnLine(s: GameState, slot = 23): GameState {
   Object.assign(s.devices.find((d) => d.id === "dev5")!, { store: null, rackId: "rack2", slot });
   s.cables.push({ id: "cab-line", a: { device: "dev6", port: 0 }, b: { device: "dev5", port: 4 }, kind: "copper", color: null });
   return s;
+}
+
+// Stops a VM and lets the minutes pass until its OS has halted.
+export function stopVm(s: GameState, id: string): ReturnType<typeof stopWorkload> {
+  const r = stopWorkload(s, id);
+  while (s.workloads.find((w) => w.id === id)?.haltUntil !== undefined) tickMinute(s);
+  return r;
 }
 
 // The machine has the OS installed and booted, as the installer leaves it; returns the machine id.

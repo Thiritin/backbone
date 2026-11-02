@@ -218,4 +218,12 @@ export default {
   "console.installFromNetwork": () => "Ein Programm aus dem Netzwerk installieren",
   "console.winProductKey": () => "Product Key",
   "console.winNoKey": () => "Ich habe keinen Product Key",
+  "console.winShuttingDown": () => "Wird heruntergefahren...",
+  "console.winRebooting": () => "Wird neu gestartet...",
+  "console.confirm.stopTitle": (p) => `${p.name} herunterfahren?`,
+  "console.confirm.stopText": (p) => `${p.name} wird sauber heruntergefahren und bleibt bis zum nächsten Start offline.`,
+  "console.confirm.rebootTitle": (p) => `${p.name} neu starten?`,
+  "console.confirm.rebootText": (p) => `${p.name} wird sauber heruntergefahren und startet dann neu. Bis der Start abgeschlossen ist, bleibt ${p.name} offline.`,
+  "console.confirm.checkpointTitle": (p) => `Checkpoint für ${p.name} erstellen?`,
+  "console.confirm.checkpointText": (p) => `Ein OpenVeeZee-Checkpoint speichert den Arbeitsspeicher von ${p.name} auf der Festplatte und hält den Container an. Er bleibt offline, bis du ihn wiederherstellst, und läuft dann ohne Neustart dort weiter, wo er angehalten wurde.`,
 } satisfies Dict;

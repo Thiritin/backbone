@@ -218,4 +218,12 @@ export default {
   "console.installFromNetwork": () => "Instalar un programa desde la red",
   "console.winProductKey": () => "Clave de producto",
   "console.winNoKey": () => "No tengo clave de producto",
+  "console.winShuttingDown": () => "Apagando...",
+  "console.winRebooting": () => "Reiniciando...",
+  "console.confirm.stopTitle": (p) => `¿Apagar ${p.name}?`,
+  "console.confirm.stopText": (p) => `${p.name} se apaga de forma ordenada y queda fuera de línea hasta que lo vuelvas a iniciar.`,
+  "console.confirm.rebootTitle": (p) => `¿Reiniciar ${p.name}?`,
+  "console.confirm.rebootText": (p) => `${p.name} se apaga de forma ordenada y vuelve a arrancar. Queda fuera de línea hasta que termina el arranque.`,
+  "console.confirm.checkpointTitle": (p) => `¿Crear un checkpoint de ${p.name}?`,
+  "console.confirm.checkpointText": (p) => `Un checkpoint de OpenVeeZee guarda la memoria de ${p.name} en el disco y suspende el contenedor. Queda fuera de línea hasta que lo restaures, y después continúa donde se quedó sin arrancar de nuevo.`,
 } satisfies Dict;
