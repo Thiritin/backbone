@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- The shop now emails its customers on its own, from the order confirmation and the welcome email with the access data to invoices, payment confirmations, overdue notices, suspensions and cancellations, and the shop admin shows every sent email, lets you resend the welcome email or an invoice and switch each template off.
 - Every service in the shop admin has its own page with billing, server, package and access data behind a reveal button, and module buttons to suspend, unsuspend, terminate, change the package or change the password, named the way each shop system names them.
 - The Product management research is gone, so Provisioning automation, Fraud screening, High availability, GPU computing, Traffic billing, Documentation and Market research now need Shop systems, and saves that learned it keep working.
 - The shop admin's Orders page lists every storefront order by status and opens each one with its items, invoice and payment, where Accept sets up all items through the shop's module and the order can be cancelled, marked as fraud or deleted.

@@ -27,7 +27,7 @@ const MENUS: [string, ScreenName[]][] = [
   ["shop-admin.menuClients", ["clients"]],
   ["shop-admin.menuOrders", ["orders"]],
   ["shop-admin.menuBilling", ["invoices", "quotes"]],
-  ["shop-admin.menuSetup", ["products", "servers", "settings"]],
+  ["shop-admin.menuSetup", ["products", "servers", "settings", "emails"]],
   ["shop-admin.menuHelp", ["licence", "updates"]],
 ];
 
@@ -41,6 +41,7 @@ const ICON: Partial<Record<ScreenName, string>> = {
   invoices: "M4 2h8v12l-2-1-2 1-2-1-2 1zM6 5h4M6 8h4",
   products: "M2 5l6-3 6 3-6 3zM2 5v6l6 3 6-3V5",
   settings: "M3 4h10M3 8h10M3 12h10M6 2v4M10 6v4M5 10v4",
+  emails: "M2 4h12v8H2zM2 4l6 5 6-5",
   servers: "M2 3h12v4H2zM2 9h12v4H2zM4 5h1M4 11h1",
   licence: "M5 9a3 3 0 113-3l5 5v2h-2v-1H9v-1",
   updates: "M13 8a5 5 0 11-2-4M13 2v3h-3",

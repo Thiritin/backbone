@@ -29,6 +29,7 @@ import { mailRequest, orderOf } from "./orders";
 import { answerAt, editRequest, habitFor, loseRequest, targetFor } from "./sales";
 import { mailDelay } from "../80-business/mail";
 import { hasModule } from "../80-business/shop";
+import { invoiceMail } from "../80-business/shop-mail";
 import { belowFloor, bookingFor, covers, packageNamed, suggestedUsername, type PackageDef } from "../80-business/packages";
 import type { Sla, Spec } from "../10-catalog/products";
 import { AUTOMATION_SKILL } from "../10-catalog/research";
@@ -140,6 +141,7 @@ export function issueInvoice(s: GameState, customerId: string, lines: InvoiceLin
   };
   if (c?.source === "shop") checkout(s, inv, c);
   s.invoices = [...s.invoices, inv];
+  invoiceMail(s, inv, "invoiceCreated");
   return inv;
 }
 

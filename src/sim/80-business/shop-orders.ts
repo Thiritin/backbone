@@ -8,6 +8,7 @@ import type { Service } from "../30-customers/customers";
 import { holdReason } from "../45-billing/billing";
 import { workloadsOf } from "../60-infra/cluster";
 import { hasModule, moduleFor } from "./shop";
+import { pruneEmails, shopMail } from "./shop-mail";
 
 export type OrderStatus = "pending" | "active" | "fraud" | "cancelled";
 // amount is the first term with the setup fee, as charged at checkout.
@@ -28,6 +29,7 @@ export function addShopOrder(s: GameState, r: SalesRequest, status: OrderStatus)
   const amount = Math.round(((r.quote ?? 0) * CYCLE_MONTHS[cycle] + (r.setup ?? setupFee(s, r.product))) * 100) / 100;
   const o: ShopOrder = { id: `ord${r.id.slice(3)}`, customerId: r.customerId, contact: requestName(r), items: [{ requestId: r.id, serviceId: null, name, cycle, amount }], invoiceId: null, status, placedAt: s.hour };
   s.shop = { ...s.shop, orders: [...s.shop.orders, o] };
+  if (status !== "fraud") shopMail(s, null, "orderConfirmation", { name: o.contact, order: orderNumber(o), total: orderTotal(o) }, o.id);
 }
 
 export function editOrder(s: GameState, id: string, fields: Partial<ShopOrder>): void {
@@ -42,11 +44,14 @@ export function syncOrder(s: GameState, r: SalesRequest): void {
   const items = o.items.map((i) => (i.requestId === r.id ? { ...i, serviceId: r.serviceId ?? i.serviceId } : i));
   const lost = (r.status === "lost" || r.status === "declined") && !items.some((i) => i.serviceId);
   const status = items.every((i) => i.serviceId) ? "active" : lost ? "cancelled" : "pending";
-  editOrder(s, o.id, { items, status, customerId: o.customerId ?? r.customerId, invoiceId: o.invoiceId ?? r.invoiceId ?? null });
+  const customerId = o.customerId ?? r.customerId;
+  editOrder(s, o.id, { items, status, customerId, invoiceId: o.invoiceId ?? r.invoiceId ?? null });
+  if (customerId && !o.customerId) s.shop = { ...s.shop, emails: s.shop.emails.map((m) => (m.orderId === o.id ? { ...m, customerId } : m)) };
 }
 
 export function pruneOrders(s: GameState): void {
   s.shop = { ...s.shop, orders: s.shop.orders.filter((o) => o.status === "pending" || s.hour - o.placedAt < KEEP_HOURS) };
+  pruneEmails(s);
 }
 
 export type ServiceStatus = "active" | "suspended" | "terminated" | "cancelled";

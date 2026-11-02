@@ -8,7 +8,7 @@ import { LINE_NAME, offerPrice, setupFee, specText } from "./spec";
 import { applyStep, AUTOMATION, canAutomate, isStep, issueInvoice, ORDER_PAY_DAYS } from "./manual";
 import { marketPrice, PRODUCTS, type Spec } from "../10-catalog/products";
 import { inUs } from "../20-world/datacenters";
-import type { Product, Profile } from "../30-customers/customers";
+import type { Product, Profile, Service } from "../30-customers/customers";
 import { authCode } from "../30-customers/registry";
 import { profileStats, type Ticket } from "../40-support/tickets";
 import type { GameState } from "../50-state";
@@ -26,6 +26,8 @@ import { companyParams, variant } from "../40-support/replies";
 import { failsScreen, reviewing, rollFraud, screening } from "../45-billing/fraud";
 import { checkoutMethod, preferredMethod } from "../45-billing/payments";
 import { addShopOrder, editOrder, orderFor } from "../80-business/shop-orders";
+import { serviceMail } from "../80-business/shop-mail";
+import { accessParams } from "../40-support/replies";
 
 // Without an order, the first one comes from a friend's recommendation within this many days of the first panel host going online.
 export const FIRST_ORDER_DAYS = 14;
@@ -142,10 +144,19 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
 export const emailRate = (s: GameState, product: Product, spec: Spec, sla: SalesRequest["sla"]): number =>
   shopActive(s) ? offerPrice(s, product, spec, sla) : marketPrice(product, spec, yearOf(s.hour), sla);
 
+// The Welcome Email carries the access data; without it the customer still waits for them.
+export function welcomeMail(s: GameState, v: Service): boolean {
+  const sent = serviceMail(s, v, "welcome", accessParams(s, v));
+  s.services = s.services.map((x) => (x.id === v.id ? { ...x, accessSent: sent || x.accessSent === true } : x));
+  return sent;
+}
+
 // The shop module's Create for an order item: the service on its server and the order's first invoice.
 export function createOrder(s: GameState, r: SalesRequest): ActionResult {
   const done = place(s, r);
-  if (done.ok) formInvoice(s, r.id);
+  if (!done.ok) return done;
+  formInvoice(s, r.id);
+  welcomeMail(s, s.services.find((v) => v.id === done.id)!);
   return done;
 }
 

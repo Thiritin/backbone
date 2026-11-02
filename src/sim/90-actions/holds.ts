@@ -4,6 +4,7 @@ import { bump, createTicket, isFinal, profileStats } from "../40-support/tickets
 import { workloadsOf } from "../60-infra/cluster";
 import { noticeEnd, type ActionResult } from "./hardware";
 import type { TerminateReason } from "../30-customers/customers";
+import { serviceMail } from "../80-business/shop-mail";
 
 const REASONS: HoldReason[] = ["payment", "abuse", "manual"];
 export const TERMINATE_REASONS: TerminateReason[] = ["payment", "abuse", "usage", "capacity"];
@@ -22,6 +23,7 @@ export function suspendService(s: GameState, serviceId: string, reason: HoldReas
   const { v, c } = f;
   const first = !isSuspended(s, c.id) && !s.services.some((x) => x.customerId === c.id && x.id !== v.id && s.heldServices[x.id]);
   s.heldServices = { ...s.heldServices, [v.id]: reason };
+  serviceMail(s, v, "suspension");
   if (reason === "abuse") {
     // Holding the account answers its open abuse notices.
     for (const t of s.tickets) if (t.kind === "notice" && t.serviceId === v.id && !isFinal(t)) Object.assign(t, { status: "resolved", updatedAt: s.hour, outcome: "takenDown" });
@@ -44,11 +46,14 @@ export function unsuspendService(s: GameState, serviceId: string): ActionResult 
   if (!s.heldServices[serviceId]) return { ok: true, id: serviceId };
   const { [serviceId]: _gone, ...rest } = s.heldServices;
   s.heldServices = rest;
+  serviceMail(s, f.v, "unsuspension");
   return { ok: true, id: serviceId };
 }
 
 // Ends one account and drops its workloads; open invoices stay open.
 export function endService(s: GameState, serviceId: string): void {
+  const v = s.services.find((x) => x.id === serviceId);
+  if (v) serviceMail(s, v, "termination");
   const gone = new Set(workloadsOf(s, serviceId).map((w) => w.id));
   s.services = s.services.map((v) => (v.id === serviceId ? { ...v, endedAt: s.hour } : v));
   s.workloads = s.workloads.filter((w) => !gone.has(w.id));
@@ -65,7 +70,10 @@ export function terminateService(s: GameState, serviceId: string, mode: "notice"
   if (mode === "notice" && f.v.endsAt !== undefined) return { ok: false, error: "error.alreadyNoticed" };
   const end = mode === "now" ? s.hour : noticeEnd(s.hour, 1);
   if (mode === "now") endService(s, serviceId);
-  else s.services = s.services.map((v) => (v.id === serviceId ? { ...v, endsAt: end } : v));
+  else {
+    s.services = s.services.map((v) => (v.id === serviceId ? { ...v, endsAt: end } : v));
+    serviceMail(s, f.v, "cancellation", { end });
+  }
   // A notice already cost the happiness.
   if (f.v.endsAt === undefined) bump(f.c, -SUSPEND_HAPPINESS[profileStats(f.c.profile).budget]);
   // Our outgoing email needs no answer, so it is filed closed.

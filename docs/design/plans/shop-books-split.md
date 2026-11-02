@@ -1,6 +1,6 @@
 # Plan: shop and books split
 
-Lane id: `shop-books-split`. Status: decisions settled in section 10; milestones 1 to 4 and 6 to 9 built.
+Lane id: `shop-books-split`. Status: decisions settled in section 10; milestones 1 to 4 and 6 to 10 built.
 
 The bookkeeping program and the shop system both write quotes, both hold a product catalog and both reach invoices. Players see two ways to do the same thing, and with a shop installed and email orders off, quote requests still arrive by email. This plan gives each program one job, makes the shop automate the customer side the way WHMCS does, and gives every program the same setup flow.
 
@@ -143,7 +143,7 @@ The shop sends emails to customers on its own, the way WHMCS does. Each email is
 | Password Changed | Change Password |
 
 - The shop admin gets an email log (WHMCS: System Logs > Email Message Log, plus the Emails tab per client): date, recipient, subject, and the full message when opened. The customer page shows the same log for that customer.
-- Each template can be turned off in the shop settings. A turned-off Welcome Email means the customer gets no access data from the shop (section 9.3).
+- Each template can be turned off. Built: on the admin's Emails page next to the log, since the settings page belongs to the cycle discounts lane. A turned-off Welcome Email means the customer gets no access data from the shop (section 9.3).
 - A service page has "Resend Welcome Email". An invoice page has "Resend".
 - The sim stores a sent email as `{ id, customerId, template, params, at }` and renders it through `t()` when opened, so logs stay small and translate. The log keeps the last 12 months.
 - Emails go out through the company's mail setup (`src/sim/90-actions/mail.ts`). Without a working mailbox the shop logs the email as failed and the wizard's sender step warns.

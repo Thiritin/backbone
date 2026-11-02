@@ -19,6 +19,7 @@ import type { Spec } from "../10-catalog/products";
 import type { SoftwareKind } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
 import type { ShopOrder } from "./shop-orders";
+import type { MailTemplate, ShopEmail } from "./shop-mail";
 
 export type Stock = number | "auto" | "off";
 // How a group places new orders: on its least full server, or on the first server in list order with room.
@@ -65,11 +66,14 @@ export interface ShopState {
   // The admin password reset mailed last: its link's token, the admin row it resets and the hour the link runs out.
   reset: { token: string; pk: number; until: number } | null;
   orders: ShopOrder[];
+  // The emails the shop sent in the last year, and the templates the player switched off.
+  emails: ShopEmail[];
+  mailOff: MailTemplate[];
 }
 // ws, folder and db name where the installer put the shop (web-hosting.md 5); a hosted shop has none.
 export interface ShopInstall { clusterId: string; version: string; at: number; ws?: string; folder?: string; db?: string }
 
-export const newShop = (): ShopState => ({ variant: null, owned: false, since: 0, modules: {}, modulesBy: {}, soldOut: {}, groups: [], optionDiscount: {}, products: [], productGroups: [], methodsOff: [], install: null, reset: null, orders: [] });
+export const newShop = (): ShopState => ({ variant: null, owned: false, since: 0, modules: {}, modulesBy: {}, soldOut: {}, groups: [], optionDiscount: {}, products: [], productGroups: [], methodsOff: [], install: null, reset: null, orders: [], emails: [], mailOff: [] });
 
 export const shopActive = (s: GameState): boolean => s.shop.variant !== null && !shopBroken(s);
 

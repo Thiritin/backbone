@@ -9,7 +9,7 @@ import type { ActionResult } from "../../../../../../sim/90-actions/hardware";
 import { suspendService, terminateService, unsuspendService } from "../../../../../../sim/90-actions/holds";
 import { packagesOf } from "../../../../../../sim/80-business/packages";
 import { changePackage } from "../../../../../../sim/90-actions/packages";
-import { changeServicePassword } from "../../../../../../sim/90-actions/shop-orders";
+import { changeServicePassword, resendWelcome } from "../../../../../../sim/90-actions/shop-orders";
 import { useStore } from "../../../../../store";
 import { formatDay } from "../../../../billing/format";
 import { PRODUCT } from "../../../../support/labels";
@@ -57,6 +57,7 @@ export function ServiceDetail({ game, go, id }: ScreenProps & { id: string }) {
       {failed && !failed.ok && <p className="pt-error" role="alert">{t(failed.error, failed.params)}</p>}
       <div className="pt-form">
         {commands.map(([c, on, fn]) => { const label = commandLabel(variant, c); return label && <button key={c} className="btn" disabled={!module || !on} onClick={() => run(fn())}>{label}</button>; })}
+        <button className="btn" disabled={!live} onClick={() => run(act(resendWelcome, v.id))}>{t("shop-mail.resendWelcome")}</button>
       </div>
       {commandLabel(variant, "changePackage") && packages.length > 0 && (
         <div className="pt-form">

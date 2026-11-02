@@ -8,6 +8,7 @@ import { PRODUCT } from "../../../../support/labels";
 import { CustomerView } from "../../../../customers/open";
 import type { ScreenProps } from "./nav";
 import { servicesLabel } from "./terms";
+import { EmailLog } from "./Emails";
 
 export function Clients({ game, go }: ScreenProps) {
   const clients = game.customers.filter((c) => c.churnedAt === null);
@@ -57,6 +58,8 @@ export function ClientSummary({ game, go, id, tab, toClient }: ScreenProps & { i
           })}
         </tbody>
       </table>
+      <h3>{t("shop-mail.emails")}</h3>
+      <EmailLog game={game} customerId={c.id} />
     </div>
   );
 }
