@@ -70,7 +70,7 @@ Here m is the multiplier in 2005. After 2026 prices stay flat.
 | --- | --- | --- |
 | IP transit, per Mbit/s | 108 | 1 Gbit/s commit: €190 per month in 2026, about €20 per Mbit/s in 2005 |
 | Internet exchange ports | 5 | AMS-IX 10G: €650 per month in 2026 |
-| Customer base rate per GB of RAM | 20 | VPS: about €1.50 per GB in 2026, €30 per GB in 2005 |
+| Customer base rate per GB of RAM | 20 | Game servers: about €1.50 per GB in 2026, €30 per GB in 2005; VPS and cloud servers follow the VPS rate keyframes (Per-resource pricing) |
 | Customer base rate per TB of storage | 32 | Object storage: €6.50 per TB in 2026, €210 in 2005 |
 | Customer base rate per TB of traffic | 46 | Overage and traffic-heavy services |
 | Fixed-price products | Keyframes | Web hosting, domains and dedicated servers follow the fixed-price keyframes below; the sizes get bigger |
@@ -545,6 +545,8 @@ How the market above turns into order emails and sales requests in the Support a
 One mail server per company, on a server or in a VM. Its address is the host's public address; on a dynamic line that address is always listed (Addresses and internet), so a basement mail server works on a business line only. While the host is down or its address is listed, delivery is impaired: order emails arrive at half the rate (`IMPAIRED_SHARE` 0.5) and invoices issued in that window get their payment day 72 hours later (`MAIL_DELAY_HOURS`, applied to the first payment day and to the day a reminder sets). Without any mail service no order email arrives (`mailShare` 0). The balance model's steady bot books Hosted Exchange for the owner and every employee from the start, signs NameCheep, and pays the wholesale of the company domain and of the domains of web customers who ordered by email, against the €15 a year those customers pay; the shift moves the medians by about 0.1 to 0.2 years.
 
 **Organic leads in the game.** Organic leads scale with the market and with awareness instead of a flat 20: 0.3 × the city's new customers × the profile's mix × its awareness × (1 + 0.5 × (level − 1)) × the review multiplier. With the starting awareness (5% for private individuals and gamers, 2% for the rest, 0.5% for web developers) Frankfurt gives about 20 leads a month in 2005, and every point of awareness a campaign buys raises organic leads too. Referrals (0.003 a month per customer with happiness 70 or more) and forum posts (2 × (0.5 + s/100) a month per employee, split over hobby developers, gamers and small businesses) come from the home city. Each forum lead also adds 0.5% of the gap to the awareness of those three profiles every month.
+
+**VPS demand.** Smaller, cheaper VPS plans make VPS a mass market. Each profile's VPS weight is multiplied by the year's VPS demand (`VPS_DEMAND_KEYS` in `economy.ts`): 1.5 in 2005, 2 in 2011 and 4 from mid 2013, in straight lines between. The extra VPS leads come on top: a profile's organic leads, referrals and forum posts, and the cap on them, grow by its extra VPS share (`leadBoost` in `market.ts`), so web hosting and the other lines keep their lead counts. Website and campaign leads keep their count and ask for VPS at the larger share. The balance model scales each profile's VPS share the same way.
 
 **Website and campaigns.** Their leads come from the Marketing app's lead batches. 10% of them arrive from cities without a location of yours, spread evenly; those requests arrive greyed out with "Needs a location in London", so you can see the demand you are missing.
 
@@ -1528,29 +1530,29 @@ The core hop applies when the two locations are in different cities: both in one
 
 **Sizes.** A web space uses 0.1 vCPU, 0.25 GB of RAM and its spec's disk. A VM uses its spec's vCPUs, RAM and disk. A game server starts at 0.5 vCPU and 0.5 GB of RAM in 2005, doubling every 7 years like VPS sizes.
 
-**Starting sizes.** The catalog in `src/sim/10-catalog/products.ts` holds the sizes each line's customers start from (`SIZES`). "Base" is the year's base RAM g (`vpsPlanGb`), 1 GB in 2005 and doubling every 7 years. Each size is priced by Per-resource pricing below; the prices in the table are for 2005 at the basic SLA.
+**Starting sizes.** The catalog in `src/sim/10-catalog/products.ts` holds the sizes each line's customers start from (`SIZES`). "Base" is the year's base RAM g (`vpsPlanGb`), 1 GB in 2005 and doubling every 7 years. VPS and cloud servers start from their own base v (`vmPlanGb`): 0.5 GB in 2005, doubling every 5.25 years to 8 GB in 2026, and equal to g after that. Hosts sold 256 MB to 512 MB vServers for €15 to €30 in 2005, and a 2 vCPU, 4 GB cloud server costs about €4.50 in 2026. Each size is priced by Per-resource pricing below; the prices in the table are for 2005 at the basic SLA.
 
 | Product | Sizes | One unit uses | Market price (2005) | Runs on |
 | --- | --- | --- | --- | --- |
 | Web hosting | 3 | 0.1 vCPU, 0.25 GB RAM, 1, 2 or 5 GB disk × growth, two mailboxes | €3.75, €6, €12.75 a month | Cluster |
-| VPS | 4 | 0.5, 1, 2 or 4 × base RAM; 1 vCPU per 2 GB (at least 1); 20 GB disk per GB of RAM | 0.65, 1.1, 2 or 4 × the VPS rate (€30 per GB); from 2012 the smallest is 1.1 × | Cluster |
+| VPS | 4 | 0.5, 1, 2 or 4 × v (0.25, 0.5, 1 or 2 GB in 2005); 1 vCPU per 2 GB (at least 1); 20 GB disk per GB of RAM | €12.66, €19.50, €33.18, €60.54 a month (€6, €12, €24, €48 in 2026) | Cluster |
 | Game server | 2 | 0.5 or 1 vCPU, 0.5 or 1 GB RAM, 5 or 10 GB disk × growth | €29.25 or €58.50 a month (€11.70 or €23.40 in 2026) | Cluster |
 | DNS hosting | 2, 5 or 15 zones | 0.05 vCPU, 0.1 GB RAM, 1 GB disk | €1.10, €2, €4.98 a month | Cluster |
 | VPN | 1, 3 or 10 users | A vCPU per three users (at least 0.5, in quarters), 0.5 GB RAM, 1 GB disk | €2.03, €5, €15.22 a month | Cluster |
 | Storage hosting | 100 GB, 500 GB, 1 TB | Disk only | About €8, €42, €83 a month | Cluster |
-| Cloud servers | 1 | Like the 1 × base RAM VPS | 1.25 × that VPS | High-availability cluster |
+| Cloud servers | 1 | Like the 1 × v VPS | 1.25 × that VPS | High-availability cluster |
 | GPU servers | 4 | 1, 2, 4 or 8 cards; per card 4 vCPUs, 8 GB RAM × growth and 50 GB disk × growth | 1, 2, 4 or 8 × the card rate of GPU cards and rental | Cluster with free cards |
 | Dedicated servers | 2 | A whole server with at least 8 or 32 GB × growth | €79, €299 a month in 2005 | A free server |
 | Colocation | 1U, quarter, half, full rack | 1, 10, 21 or 42 units and 150 W, 1, 2 or 4 kW | €60, €415, €845, €1,675 a month | Datacenter rack |
 | Domains | 1 | Nothing | €15 a year in 2005, then the fixed-price keyframes | Resold |
 | SSL certificates | DV, OV, EV | Nothing | €50, €150 and €400 a year in 2005, then the SSL keyframes | Resold |
 
-**Per-resource pricing.** Every line charges a base fee per service plus a price per unit of the spec (`marketRates` and `specPrice` in `products.ts`). The market's rates are per month at the basic SLA, per year for domains and SSL, with r the year's VPS rate per GB of RAM (`vpsRatePerGb`, €30 in 2005) and g the base RAM. An SLA multiplies the sum by its price factor, and a request's market reference is that price × the profile's offer factor (Reference and budget).
+**Per-resource pricing.** Every line charges a base fee per service plus a price per unit of the spec (`marketRates` and `specPrice` in `products.ts`). The market's rates are per month at the basic SLA, per year for domains and SSL, with r the year's rate per GB of RAM (`vpsRatePerGb`, €30 in 2005), v the year's VPS rate (`vmRatePerGb`, below) and g the base RAM. An SLA multiplies the sum by its price factor, and a request's market reference is that price × the profile's offer factor (Reference and budget).
 
 | Line | Base fee | Per unit |
 | --- | --- | --- |
 | Web hosting | €0.90 | €2.25 ÷ g per GB of disk, €0.30 per mailbox |
-| VPS | €0 | 0.2r per vCPU, 0.5r per GB of RAM, 0.02r per GB of disk |
+| VPS | €0 | 0.2v per vCPU, 0.5v per GB of RAM, 0.02v per GB of disk |
 | Game server | €0 | 0.4r per vCPU, 1.35r per GB of RAM, 0.02r per GB of disk |
 | Cloud server | €0 | 1.25 × the VPS rates |
 | Storage hosting | €0 | €2.60 per TB in 2026 with m = 32, charged per GB |
@@ -1561,6 +1563,18 @@ The core hop applies when the two locations are in different cities: both in one
 | GPU server | €0 | The year's card rate per GPU (GPU cards and rental), 1% of the 2-card price taken by traffic |
 | Dedicated server | €6 | €220 ÷ 24 ÷ g per GB of the smallest server RAM it accepts |
 | Colocation | €15 | €30 per rack unit, €100 per kW |
+
+**VPS rate.** VPS and cloud servers charge v per GB of RAM (`VM_RATE_KEYS` in `economy.ts`), €30 in 2005 and €1.50 from 2026, in straight lines between yearly keys. The keys hold the smallest plan's price between €6 and €12.66, falling every year and never rising; a pair of keys at 2023.82 takes the step from 1 to 2 vCPUs on that plan. Game servers keep r.
+
+| Year | v per GB | S | M | L | XL |
+| --- | --- | --- | --- | --- | --- |
+| 2005 | €30 | 1 vCPU, 0.25 GB, €12.66 (78%) | 1 vCPU, 0.5 GB, €19.50 (75%) | 1 vCPU, 1 GB, €33.18 (72%) | 1 vCPU, 2 GB, €60.54 (71%) |
+| 2010 | €14.70 | 1 vCPU, 0.48 GB, €9.39 (78%) | 1 vCPU, 0.97 GB, €15.64 (78%) | 1 vCPU, 1.94 GB, €28.71 (79%) | 2 vCPUs, 3.87 GB, €57.13 (80%) |
+| 2015 | €7.28 | 1 vCPU, 0.94 GB, €7.61 (80%) | 1 vCPU, 1.87 GB, €13.66 (84%) | 2 vCPUs, 3.74 GB, €27.46 (87%) | 4 vCPUs, 7.49 GB, €54.92 (88%) |
+| 2020 | €3.62 | 1 vCPU, 1.81 GB, €6.61 (78%) | 2 vCPUs, 3.62 GB, €13.22 (85%) | 4 vCPUs, 7.25 GB, €26.51 (89%) | 7 vCPUs, 14.49 GB, €52.31 (91%) |
+| 2026 | €1.50 | 2 vCPUs, 4 GB, €6 (62%) | 4 vCPUs, 8 GB, €12 (72%) | 8 vCPUs, 16 GB, €24 (77%) | 16 vCPUs, 32 GB, €48 (79%) |
+
+The share in brackets is the gross margin: the price less the plan's share of the year's Dwell compute server (RAM, or half its disk when that is larger) over 60 months, its power at the business rate (the basement rate in 2005), and 0.0975 tickets a month at a skill-50 support salary.
 
 Each line with traffic also charges it per 100 GB a month (Traffic, below). The table gives the rates before traffic takes its share. The web hosting, domain and dedicated server rates are the 2005 values; later years multiply them by the fixed-price keyframes (Prices over time).
 

@@ -134,17 +134,19 @@ describe("email orders", () => {
     bookMail(s, "hostedExchange");
     expect(mailShare(s, "smallBiz")).toBe(1);
     const orders = (free: boolean) => {
-      let n = 0;
-      for (const seed of [1, 2, 3, 4]) {
+      const seen = new Set<string>();
+      for (let seed = 1; seed <= 16; seed++) {
         const g = readyGame(seed);
         if (free) cancelMail(g);
-        run(g, 24 * 60);
-        n += g.sales.requests.filter((r) => r.kind === "order" && r.profile !== "private" && r.profile !== "gamer" && r.profile !== "hobbyDev").length;
+        for (let day = 0; day < 90; day++) {
+          run(g, 24);
+          for (const r of g.sales.requests) if (r.kind === "order" && r.profile !== "private" && r.profile !== "gamer" && r.profile !== "hobbyDev") seen.add(`${seed}/${r.id}`);
+        }
       }
-      return n;
+      return seen.size;
     };
     expect(orders(true)).toBeLessThan(orders(false));
-  }, 120_000);
+  }, 240_000);
 
   it("can be switched on with free mail", () => {
     const s = readyGame(6);

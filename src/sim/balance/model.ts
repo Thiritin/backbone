@@ -6,7 +6,7 @@ import {
   BASEMENT_SLOTS, BUDGET_SIZE, businessPowerPrice, CHOICE_TAU, CITIES, generationAt,
   leadCapShare, LEVELS, MARKET_GROWTH, monthlySalary, NEVER_PAYS, ON_TIME, PAYMENT_MINUTES, PROFILES,
   REPAIR_HOURS, SEARCH_AD_COST, SERVER_AFR, STAFF_HOURS_PER_MONTH, START_CASH,
-  TAX_RATE, TICKET_MINUTES, TICKETS_PER_CUSTOMER, UPGRADE_CHANCE, priceAt, tasksPerHour, vpsPlanGb,
+  TAX_RATE, TICKET_MINUTES, TICKETS_PER_CUSTOMER, UPGRADE_CHANCE, priceAt, tasksPerHour, vmPlanGb, vpsDemand, vpsPlanGb,
   type ProductId, type Profile,
 } from "../10-catalog/economy";
 import { DATACENTERS, HOME_LINES, homeLineById, MOVE, spacePrice } from "../20-world/datacenters";
@@ -112,7 +112,7 @@ function rackRent(watts: number): number {
 }
 
 // A customer's spec, sized like the live SIZES (10-catalog/products.ts) and scaled by the budget: a web space of 2 GB of
-// the year's disk and two mailboxes per size step in 0.25 GB of a panel VM, a VPS of the year's base RAM (one vCPU per
+// the year's disk and two mailboxes per size step in 0.25 GB of a panel VM, a VPS of the year's VM base RAM (one vCPU per
 // 2 GB, at least one, and 20 GB of disk per GB), a game server of 0.5 vCPU, 0.5 GB and 5 GB of the year's base; traffic
 // scales with the budget like the rest.
 const LIVE: Record<Product, LiveProduct> = { web: "webHosting", vps: "vps", game: "gameServer" };
@@ -120,7 +120,8 @@ function specOf(p: Profile, product: Product, year: number): Spec {
   const k = BUDGET_SIZE[p.budget], g = vpsPlanGb(year), trafficGb = monthlyGb(product, year) * k;
   if (product === "web") return { vcpu: 0.1, ramGb: 0.25, diskGb: 2 * g * k, trafficGb, mailboxes: 2 * k };
   if (product === "game") return { vcpu: 0.5 * g * k, ramGb: 0.5 * g * k, diskGb: 5 * g * k, trafficGb, mailboxes: 0 };
-  return { vcpu: Math.max(1, Math.round((g * k) / 2)), ramGb: g * k, diskGb: 20 * g * k, trafficGb, mailboxes: 0 };
+  const v = vmPlanGb(year) * k;
+  return { vcpu: Math.max(1, Math.round(v / 2)), ramGb: v, diskGb: 20 * v, trafficGb, mailboxes: 0 };
 }
 // The monthly price of that spec at the live market rates per resource.
 const priceOf = (p: Profile, product: Product, year: number): number => marketPrice(LIVE[product], specOf(p, product, year), year);
@@ -140,9 +141,11 @@ const ramOf = (p: Profile, product: Product, year: number): number => specOf(p, 
 // Mbit/s a customer sends at the evening peak; traffic grows 20% a year like the live TRAFFIC_GROWTH.
 const monthlyGb = (product: Product, year: number): number => TRAFFIC[product] * Math.pow(1.2, year - 2005);
 const peakMbit = (product: Product, year: number): number => (monthlyGb(product, year) * 8000) / (730 * 3600) * PEAK_FACTOR;
-const wants = (p: Profile, product: Product): number => {
-  const game = p.id === "gamer" ? GAME_SHARE : 0;
-  return product === "web" ? 1 - p.vpsShare : product === "game" ? game : p.vpsShare - game;
+// The VPS part grows by vpsDemand and the shares are renormalized; leadBoost adds the extra VPS leads, like the live market.
+const leadBoost = (p: Profile, year: number): number => 1 + (p.vpsShare - (p.id === "gamer" ? GAME_SHARE : 0)) * (vpsDemand(year) - 1);
+const wants = (p: Profile, product: Product, year: number): number => {
+  const game = p.id === "gamer" ? GAME_SHARE : 0, vps = (p.vpsShare - game) * vpsDemand(year);
+  return (product === "web" ? 1 - p.vpsShare : product === "game" ? game : vps) / leadBoost(p, year);
 };
 
 function supportScore(waitRatio: number): number {
@@ -254,11 +257,11 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
         const paid = perCity / PROFILES.length / (priceAt(SEARCH_AD_COST[p.budget], 0.6, year) * dearer);
         const site = website ? WEBSITE_LEADS * p.mix * penaltyFor((generationOf(year) - designYear) / 4) : 0;
         paidBy[i] += paid;
-        const leads = Math.min(organic + referrals, cap) + (paid + site) * (1 - SPILL_SHARE);
+        const leads = Math.min(organic + referrals, cap) * leadBoost(p, year) + (paid + site) * (1 - SPILL_SHARE);
         book_("organic", organic); book_("referrals", referrals); book_("paid", paid); book_("website", site); book_("leads", leads); book_("cap", cap);
         book_("city" + c, leads);
         PRODUCTS.forEach((pr, k) => {
-          const n = Math.round(leads * wants(p, pr)), won = binomial(rng, n, share(p, pr, CITY_ORDER[c].name));
+          const n = Math.round(leads * wants(p, pr, year)), won = binomial(rng, n, share(p, pr, CITY_ORDER[c].name));
           newCustomers[i][k] += won;
           book_("asked", n); book_("won", won);
         });

@@ -53,7 +53,8 @@ describe("traffic", () => {
     const s = withShop(1), year = yearOf(s.hour), spec = sizeSpec("vps", 1, year);
     const before = offerPrice(s, "vps", spec);
     expect(setRate(s, "vps", "traffic", 10).ok).toBe(true);
-    expect(offerPrice(s, "vps", spec)).toBeCloseTo(before + (10 - marketRates("vps", year).traffic!) * (spec.trafficGb / 100), 2);
+    // Both prices round to cents, so they can differ by half a cent.
+    expect(offerPrice(s, "vps", spec)).toBeCloseTo(before + (10 - marketRates("vps", year).traffic!) * (spec.trafficGb / 100), 1);
     for (const p of ["webHosting", "vps", "gameServer", "dns", "vpn"] as const) {
       const mid = sizeSpec(p, 1, 2005), total = specPrice(p, mid, 2005), traffic = (marketRates(p, 2005).traffic! * mid.trafficGb) / 100;
       expect(traffic / total).toBeGreaterThan(0.01);

@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- VPS plans now start small and cheap, from 256 MB for about €13 a month in 2005, and grow every few years until they reach 4 to 32 GB in 2026.
+- Many more customers now ask for a VPS as the years go by, on top of the web hosting customers you already get, while VPS prices per GB fall every year.
 - Flyerlarm, a print shop in the browser, sells flyer runs that are handed out in one of your cities over four weeks and bring in new leads; the Marketing app lists every running run and takes you to the shop to order more.
 - Web developers now write in as a new kind of customer: they are rare at first, mostly ask for web hosting, and often want a reseller block, and your sponsored developer events and agency fairs reach them.
 - DocuWhere in the Pear Store files every letter from the post in an archive with search, document types and a filter per type.
