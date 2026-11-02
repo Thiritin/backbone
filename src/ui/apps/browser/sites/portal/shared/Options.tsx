@@ -16,15 +16,14 @@ export function Options({ game }: ScreenProps) {
   return (
     <div className="pt-screen">
       <section>
-        <h3>{t("shop-admin.billingCycles")}</h3>
+        <h3>{t("shop-admin.cycleDiscounts")}</h3>
         <table className="pt-table">
           <tbody>
             {v.cycles.filter((c) => c !== "monthly").map((c) => (
               <tr key={c}>
                 <th scope="row">{CYCLE_LABEL[c]}</th>
                 <td>
-                  <CommitInput className="num" type="number" min={0} max={50} step={0.1} aria-label={CYCLE_LABEL[c]} placeholder={String(MARKET_DISCOUNT[c] * 100)}
-                    value={game.shop.optionDiscount[c] === undefined ? "" : String(Math.round(game.shop.optionDiscount[c]! * 1000) / 10)}
+                  <CommitInput className="num" type="number" min={0} max={50} step={0.1} aria-label={CYCLE_LABEL[c]} value={String(Math.round((game.shop.optionDiscount[c] ?? 0) * 1000) / 10)}
                     onCommit={(x) => { const n = toNumber(x); act(setOptionDiscount, c, n === null ? null : n / 100); }} /> %
                 </td>
                 <td className="num">{t("shop-admin.market")} {MARKET_DISCOUNT[c] * 100} %</td>

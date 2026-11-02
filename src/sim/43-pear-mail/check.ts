@@ -16,6 +16,8 @@ import { ACTIVITY_KEEP, localFolder, type ActivityLine, type ClientAccount, type
 export const APP = "Pear Mail";
 // The rule step, set by 90-actions/pear-rules when it loads, so this file stays below the actions in the import order.
 export const ruleStep: { run?: (s: GameState, clientId: string, ids: string[]) => void } = {};
+// The junk step, set by 90-actions/pear-junk the same way; it runs before the rules.
+export const junkStep: { run?: (s: GameState, clientId: string, ids: string[]) => void } = {};
 const DAY = 24 * 60;
 export const POP_KEEP: Record<PopRemove, number | null> = { now: 0, day: DAY, week: 7 * DAY, month: 30 * DAY, never: null };
 // Single new-mail events per check; the rest are summed up in one.
@@ -72,7 +74,9 @@ export function checkAccount(s: GameState, id: string, polled = true): SimEvent[
   const { authFailed: _a, ...rest } = c;
   s.pearMail = { ...s.pearMail, accounts: s.pearMail.accounts.map((x) => (x.id === id ? { ...rest, checkedAt: now, syncedAt: now, popDue: popDue.filter((d) => d.at > now) } : x)) };
   log(s, { at: now, clientId: id, count: fresh.length });
-  ruleStep.run?.(s, id, shown.map((m) => m.id));
+  junkStep.run?.(s, id, shown.map((m) => m.id));
+  const left = new Set(clientFolder(s, s.pearMail.accounts.find((x) => x.id === id)!, "inbox").map((m) => m.id));
+  ruleStep.run?.(s, id, shown.map((m) => m.id).filter((x) => left.has(x)));
   // What the rules left unread in the Inbox.
   const inbox = new Map(clientFolder(s, s.pearMail.accounts.find((x) => x.id === id)!, "inbox").map((m) => [m.id, m]));
   const news = shown.map((m) => inbox.get(m.id)).filter((m): m is Message => !!m && !isRead(s, m)), params = { account: c.description };

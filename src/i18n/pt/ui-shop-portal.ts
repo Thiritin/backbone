@@ -11,5 +11,6 @@ export default {
   "error.badProductPrice": () => "O preço tem de estar entre 0 e 100000.",
   "error.cycleNotSupported": () => "Este sistema de loja não vende esse ciclo de faturação.",
   "error.badDiscount": () => "O desconto tem de estar entre 0 e 50 por cento.",
+  "error.needsMonthlyPrice": () => "Os preços automáticos por ciclo precisam de um preço mensal.",
   "error.unknownServerGroup": () => "Esse grupo de servidores não existe.",
 } satisfies Dict;

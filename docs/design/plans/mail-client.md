@@ -421,6 +421,7 @@ Each milestone is one pull request, green on its own, with a seeded Vitest suite
    - UI: brown tint in training, Junk Mail pane, junk banner.
    - i18n: junk labels.
    - Tests: `tests/pear-mail-junk.test.ts` (same message same verdict, the share rises with `trained`, unmarked mail is never moved, automatic moves to Junk, moving out trains).
+   - As built: `pearMail.junk` holds `on`, `mode`, the client's own `trained` count and `clean`, the newest 500 ids marked Not Junk, which the filter stops judging. The verdict is `clientJunk` over spam that reached a mailbox, and `shownJunk` adds everything in a Junk mailbox; both draw the brown row and the banner with Not Junk. Junk and Not Junk go through `markPearJunk`, which trains the client and, for IMAP, the mailbox through `reportJunk`. The check runs the junk step through a `junkStep` hook before the rules, and the rules see only what stayed in the Inbox. Preferences became a sheet with an icon tab strip (`Preferences.tsx`) holding Junk Mail and Rules; Reset asks first and clears `trained` and `clean`. Dragging mail out of Junk does not train; only the buttons and menu items do.
 8. **Preferences, signatures and lifecycle.**
    - Sim: `setPearPref`, `saveSignature`, `removeSignature`, the lifecycle rows of section 9.
    - UI: the Preferences sheet with all tabs, the Advanced tab with port and Use SSL (last, optional), What's new.
