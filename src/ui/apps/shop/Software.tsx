@@ -42,16 +42,16 @@ export const artOf = (item: StoreItem) => (item.kind === "app" ? appByName(item.
 
 export function Tile({ item, size }: { item: StoreItem; size: number }) {
   const art = artOf(item);
-  return <span className="ps-tile" style={{ "--tile": art.tile, "--size": `${size}px` } as CSSProperties}><art.icon /></span>;
+  return <span className="pst-tile" style={{ "--tile": art.tile, "--size": `${size}px` } as CSSProperties}><art.icon /></span>;
 }
 
 function Action({ item, big }: { item: StoreItem; big?: boolean }) {
   const { game, act, openApp } = useStore();
-  const cls = `ps-get${big ? " big" : ""}`;
+  const cls = `pst-get${big ? " big" : ""}`;
   const skill = skillFor(item.id);
   if (skill && !isAvailable(item.id, game.unlocks)) return <button className={cls} onClick={(e) => { e.stopPropagation(); openApp("Research", { kind: "skill", id: skill.id }); }}>{t("shop.needs", { skill: skill.name })}</button>;
   if (!game.installed.includes(item.id)) return <button className={`${cls} primary`} onClick={(e) => { e.stopPropagation(); act(install, item.id); }}>{t("shop.get")}</button>;
-  if (item.kind !== "app") return <span className="ps-owned"><Check />{t("shop.installed")}</span>;
+  if (item.kind !== "app") return <span className="pst-owned"><Check />{t("shop.installed")}</span>;
   return <button className={cls} onClick={(e) => { e.stopPropagation(); openApp(item.id === "Nagiosaurus" ? "Security" : item.id); }}>{t("shop.open")}</button>;
 }
 
@@ -73,30 +73,30 @@ export function Software() {
 
   const featured = storeItem(featuredId(game.installed, game.unlocks))!;
   return (
-    <div className="ps">
-      <section className="ps-hero">
-        <div className="ps-hero-copy">
-          <span className="ps-brand"><PearMark />Pear Store</span>
+    <div className="pst">
+      <section className="pst-hero">
+        <div className="pst-hero-copy">
+          <span className="pst-brand"><PearMark />Pear Store</span>
           <h2>{t("shop.heroTitle")}</h2>
           <p>{t("shop.heroText")}</p>
         </div>
-        <div className="ps-feature" role="button" tabIndex={0} onClick={() => setOpen(featured.id)} onKeyDown={(e) => e.key === "Enter" && setOpen(featured.id)}>
+        <div className="pst-feature" role="button" tabIndex={0} onClick={() => setOpen(featured.id)} onKeyDown={(e) => e.key === "Enter" && setOpen(featured.id)}>
           <Tile item={featured} size={88} />
-          <span className="ps-feature-name">{featured.name}</span>
-          <span className="ps-feature-sub">{artOf(featured).about}</span>
+          <span className="pst-feature-name">{featured.name}</span>
+          <span className="pst-feature-sub">{artOf(featured).about}</span>
           <Action item={featured} />
         </div>
       </section>
       {SHELVES.map(([title, ids]) => (
-        <section key={title} className="ps-shelf">
+        <section key={title} className="pst-shelf">
           <h3>{t(`shop.shelf.${title}`)}</h3>
-          <div className="ps-rows">
+          <div className="pst-rows">
             {ids.map((id) => {
               const item = storeItem(id)!;
               return (
-                <div key={id} className="ps-row" role="button" tabIndex={0} onClick={() => setOpen(id)} onKeyDown={(e) => e.key === "Enter" && setOpen(id)}>
+                <div key={id} className="pst-row" role="button" tabIndex={0} onClick={() => setOpen(id)} onKeyDown={(e) => e.key === "Enter" && setOpen(id)}>
                   <Tile item={item} size={52} />
-                  <span className="ps-row-text">
+                  <span className="pst-row-text">
                     <strong>{item.name}</strong>
                     <span>{artOf(item).about}</span>
                     <span className="num">{price(item)}</span>
@@ -122,27 +122,27 @@ function Detail({ item, price, back }: { item: StoreItem; price: string; back: (
     ["Status", has ? t("shop.installed") : !isAvailable(item.id, game.unlocks) ? t("shop.status.notLearned") : t("shop.status.available")],
   ];
   return (
-    <div className="ps">
-      <button className="btn ghost ps-back" onClick={back}><ChevronLeft />{t("shop.software")}</button>
-      <header className="ps-detail-head">
+    <div className="pst">
+      <button className="btn ghost pst-back" onClick={back}><ChevronLeft />{t("shop.software")}</button>
+      <header className="pst-detail-head">
         <Tile item={item} size={112} />
         <div>
           <h2>{item.name}</h2>
           <p>{artOf(item).about}</p>
-          <div className="ps-detail-actions">
+          <div className="pst-detail-actions">
             <Action item={item} big />
             {has && <button className="btn" onClick={() => setCancelling(true)}>{t("shop.cancelSubscription")}</button>}
           </div>
         </div>
       </header>
-      <dl className="ps-facts">
+      <dl className="pst-facts">
         {facts.map(([k, v]) => <div key={k}><dt>{rowLabel(k)}</dt><dd className={k === "Subscription" ? "num" : undefined}>{v}</dd></div>)}
         {cancelling && <Confirm title={t("shop.cancelTitle", { name: item.name })} action={t("shop.cancelSubscription")} onCancel={() => setCancelling(false)}
           onConfirm={() => { setCancelling(false); act(cancel, item.id); }} text={t("shop.cancelText", { name: item.name })} />}
       </dl>
-      <section className="ps-shelf">
+      <section className="pst-shelf">
         <h3>{t("shop.includes")}</h3>
-        <ul className="ps-includes">{Array.from({ length: INCLUDES[item.id] }, (_, i) => t(`shop.inc.${item.id}.${i}`)).map((f) => <li key={f}><Check />{f}</li>)}</ul>
+        <ul className="pst-includes">{Array.from({ length: INCLUDES[item.id] }, (_, i) => t(`shop.inc.${item.id}.${i}`)).map((f) => <li key={f}><Check />{f}</li>)}</ul>
       </section>
     </div>
   );

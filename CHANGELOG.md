@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- The software page in the Pear Store shows its price, skill and status side by side again, with the same spacing in every macOS era.
 - The cPanic File Manager now works like the real one: upload files from your Downloads at your line's upload speed, extract and compress archives, create, move, copy, rename and delete files, and change permissions, with uploads refused once the account's disk quota is full.
 - HOSTtoast no longer has a city filter, so its list always shows every open host.
 - The browser's Back button no longer leaves the game: in the browser app it goes back one page, everywhere else it does nothing.
