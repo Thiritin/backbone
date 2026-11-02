@@ -165,6 +165,9 @@ export const clusterDefaults = (c: Partial<Cluster> & Pick<Cluster, "nodes">, ho
   controlPlane: c.controlPlane === undefined ? c.nodes[0]?.deviceId ?? null : c.controlPlane,
 }) as Cluster;
 export const oomKilled = (w: Workload, hour: number): boolean => (w.oomUntil ?? 0) > hour;
+// A cluster node that ran below TIMEOUT_PERF (usage.ts) for TIMEOUT_HOURS in a row: its workloads time out and count as down.
+export const TIMEOUT_HOURS = 2;
+export const timedOut = (s: GameState, deviceId: string): boolean => (s.lowPerf[deviceId] ?? 0) >= TIMEOUT_HOURS;
 export const workloadDefaults = (w: Partial<Workload>): Workload => ({ stopped: false, busyUntil: 0, backupAt: null, ...w }) as Workload;
 
 const ZERO: Resources = { vcpu: 0, ramGb: 0, diskGb: 0 };
@@ -555,6 +558,7 @@ export function workloadOnline(s: GameState, w: Workload): boolean {
   if (c?.switching) return false;
   if (c && (c.kind === "panel" ? sitesDown(s, c.id) : s.security.hacked.includes(c.id))) return false;
   if (c?.vm) { const vm = vmById(s, c.vm); return !!vm && workloadOnline(s, vm) && !firewallBlocks(s, c); }
+  if (c && w.deviceId && timedOut(s, w.deviceId)) return false;
   if (w.deviceId) {
     const d = s.devices.find((x) => x.id === w.deviceId);
     if (c && vswitchBlocks(s, c, w)) return false;

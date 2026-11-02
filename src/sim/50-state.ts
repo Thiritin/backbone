@@ -270,6 +270,8 @@ export interface GameState {
   // Where the player is, and until which hour the drive there or the hand work on site keeps the computer locked.
   player: { at: string; until: number; doing: "travel" | "work" };
   downSince: Record<string, number>;
+  // Hours in a row each cluster node has run below the timeout performance.
+  lowPerf: Record<string, number>;
   // The basement's internet line (HOME_LINES or MOMS_DSL id, "" for none), a switch to another line that goes live at hour at, and whether this line ran full.
   homeLine: { id: string; next: { id: string; at: number } | null; full?: boolean };
   docs: Doc[];
@@ -467,7 +469,7 @@ export const newGame = (seed: number): GameState => ({
   daemons: {},
   gameTitles: {},
   gameLost: {},
-  tickets: [], playerBusyUntil: 0, friendFavours: { year: 0, used: 0 }, player: { at: "loc1", until: 0, doing: "work" }, downSince: {},
+  tickets: [], playerBusyUntil: 0, friendFavours: { year: 0, used: 0 }, player: { at: "loc1", until: 0, doing: "work" }, downSince: {}, lowPerf: {},
   company: { name: START_NAME, logo: "server", color: "oklch(0.55 0.15 255)", domain: null, mail: { kind: "free" }, tagline: "", zone: PARKING },
   homeLine: { id: MOMS_DSL.id, next: null },
   taxLoss: 0, brokeSince: null, gameOver: null,

@@ -16,7 +16,7 @@ import { isManaged, isManagedUps, modelById } from "../10-catalog/hardware";
 import { mountedRouter } from "../60-infra/routers";
 import { isMgmtDevice, oobUp } from "../60-infra/oob";
 import { linkStatus, powered, working } from "../60-infra/status";
-import { nodeUsage } from "../60-infra/usage";
+import { nodeUsage, SLOW_PERF } from "../60-infra/usage";
 import { BOARD_HOST } from "./sponsorboard";
 import { consoleAt, consoleHost, isDefaced } from "./consoles";
 import { defaultWebmail } from "./webmail";
@@ -137,7 +137,7 @@ const slow = (hostSlow: boolean): Load => (hostSlow ? "slow" : "fast");
 
 // How a machine answers: a server that is off, failed or cut from the internet cannot be reached, a loaded one answers slowly.
 function serverLoad(s: GameState, id: string): Load {
-  return !working(s, id) || !linkStatus(s, id).online ? "down" : slow(nodeUsage(s, id).perf < 1);
+  return !working(s, id) || !linkStatus(s, id).online ? "down" : slow(nodeUsage(s, id).perf < SLOW_PERF);
 }
 
 // The player's own VM answers like its workload; a customer's workload like its service.

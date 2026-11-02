@@ -11,7 +11,7 @@ import { HOW_TO, KNOWLEDGE_BASE } from "../40-support/tickets";
 import { bookable, diskFits, lineOffered, noRoomError, nodeUsed, serverOf, vmRoom, workloadOnline, workloadsOf, type Cluster, type Workload } from "../60-infra/cluster";
 import { machineAddress } from "../60-infra/addresses";
 import { hostPerf } from "../60-infra/php";
-import { nodeUsage } from "../60-infra/usage";
+import { nodeUsage, SLOW_PERF } from "../60-infra/usage";
 import type { SimEvent } from "../88-tick/tick";
 import { owns, SITE_LINES } from "./marketing";
 import { salesAddress } from "./mail";
@@ -117,10 +117,10 @@ function siteWorkload(c: Cluster, id = "site"): Workload {
   };
 }
 
-// Whether the workload's host runs it slowly: an overloaded node or a PHP upgrade on its panel host.
+// Whether the workload's host runs it noticeably slowly: an overloaded node or a PHP upgrade on its panel host.
 export function slowHost(s: GameState, w: Workload, c: Cluster | undefined): boolean {
   const at = serverOf(s, w);
-  return Math.min(at ? nodeUsage(s, at).perf : 1, hostPerf(s, c)) < 1;
+  return Math.min(at ? nodeUsage(s, at).perf : 1, hostPerf(s, c)) < SLOW_PERF;
 }
 
 // Whether a panel host has the disk for the site next to its web spaces, and whether its RAM is over 90% booked with the site.
