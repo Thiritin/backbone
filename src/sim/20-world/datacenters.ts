@@ -240,3 +240,5 @@ export const flatMonthly = (dc: Datacenter, kw: number, year: number): number =>
   Math.round(kw * FLAT_LOAD * HOURS_PER_MONTH * businessPowerPrice(year) * dc.powerFactor);
 
 export const MOVE = { sameCity: { price: 300, hours: 24 }, otherCity: { price: 1200, hours: 72 }, overseas: { price: 4000, hours: 240 } } as const;
+// A courier for stored units, per unit; a shipment never costs more than the freight of a rack move.
+export const PARCEL = { sameCity: { price: 15, hours: 24 }, otherCity: { price: 30, hours: 48 }, overseas: { price: 150, hours: 240 } } as const;

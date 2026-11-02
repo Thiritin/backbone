@@ -7,6 +7,7 @@ import { addLocation, buyRack, closeLocation, sellDevice, shipStock, unmountDevi
 import { mountDevice, mountStack } from "./plugged";
 import { buyCart, buyDevice, freeFloor, newGame } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
+import { drive } from "../src/sim/90-actions/travel";
 import { withServer } from "./fixtures";
 
 const rich = (): GameState => ({ ...withServer(newGame(1)), cash: 100_000 });
@@ -80,7 +81,7 @@ describe("storage per zone", () => {
 });
 
 describe("shipStock", () => {
-  it("ships within a region for €300 in a day, keeps units unusable on the way and delivers them", () => {
+  it("ships within a city by courier for €15 a unit in a day, keeps units unusable on the way and delivers them", () => {
     const s = rich();
     const fr5 = ok(addLocation(freeFloor(s), "equinox-fr5", "cage", 4));
     const rack = ok(buyRack(s, fr5, "rack-42", 1));
@@ -88,8 +89,8 @@ describe("shipStock", () => {
     const ids = s.devices.filter((d) => d.store === "loc1").map((d) => d.id);
     const cash = s.cash;
     ok(shipStock(s, ids, fr5));
-    expect(s.cash).toBe(cash - 300);
-    expect(s.ledger.at(-1)).toMatchObject({ category: "moving", key: "ledger.ship", params: { count: 2, location: "Equinox FR5" }, amount: -300 });
+    expect(s.cash).toBe(cash - 30);
+    expect(s.ledger.at(-1)).toMatchObject({ category: "moving", key: "ledger.ship", params: { count: 2, location: "Equinox FR5" }, amount: -30 });
     expect(dev(s, first)).toMatchObject({ store: null, transitTo: fr5, arriveAt: 24 });
     expect([storageStacks(s, "loc1"), storageStacks(s, fr5)]).toEqual([[], []]);
     expect(err(mountDevice(s, first, rack, 1))).toBe("error.inTransit");
@@ -100,14 +101,14 @@ describe("shipStock", () => {
     expect(dev(s, first)).toMatchObject({ store: fr5, transitTo: null, arriveAt: null });
     ok(mountStack(s, "g1-compute", "Dwell", rack, 2));
   });
-  it("takes three days and €1,200 to another region", () => {
+  it("takes two days and €30 a unit to another region", () => {
     const s = rich();
     const lon = ok(addLocation(freeFloor(s), "tellyhouse-north", "cage", 4));
     const id = ok(buyDevice(s, "sw-8", "Sysko", 1, "loc1"));
     const cash = s.cash;
     ok(shipStock(s, [id], lon));
-    expect([s.cash, dev(s, id).arriveAt]).toEqual([cash - 1200, 72]);
-    run(s, 72);
+    expect([s.cash, dev(s, id).arriveAt]).toEqual([cash - 30, 48]);
+    run(s, 48);
     expect(dev(s, id).store).toBe(lon);
   });
   it("rejects empty, unknown, mounted, mixed, same-zone and unaffordable shipments", () => {
@@ -121,8 +122,31 @@ describe("shipStock", () => {
     expect(err(shipStock(s, [a, b], fr5))).toBe("error.mixedZones");
     expect(err(shipStock(s, [a], "nope"))).toBe("error.unknownLocation");
     expect(err(shipStock(s, [a], "loc1"))).toBe("error.sameZone");
-    s.cash = 299;
+    s.cash = 14;
     expect(err(shipStock(s, [a], fr5))).toBe("error.noCash");
+  });
+  it("never charges more than the freight of a rack move", () => {
+    const s = rich();
+    const fr5 = ok(addLocation(freeFloor(s), "equinox-fr5", "cage", 4));
+    ok(buyDevice(s, "sw-8", "Sysko", 30, "loc1"));
+    const ids = s.devices.filter((d) => d.store === "loc1" && d.model === "sw-8").map((d) => d.id), cash = s.cash;
+    ok(shipStock(s, ids, fr5));
+    expect(s.cash).toBe(cash - 300);
+  });
+  it("lets the player drive the units over for the fuel and arrive with them", () => {
+    const s = rich();
+    const fr5 = ok(addLocation(freeFloor(s), "equinox-fr5", "cage", 4));
+    const id = ok(buyDevice(s, "sw-8", "Sysko", 1, "loc1"));
+    const fare = drive(s, fr5)!, cash = s.cash;
+    ok(shipStock(s, [id], fr5, true));
+    expect(s.cash).toBe(cash - fare.fee);
+    expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.drive", amount: -fare.fee });
+    expect(s.player).toEqual({ at: fr5, until: fare.hours, doing: "travel" });
+    expect(dev(s, id).arriveAt).toBe(fare.hours);
+    const other = ok(buyDevice(s, "sw-8", "Sysko", 1, "loc1"));
+    expect(err(shipStock(s, [other], fr5, true))).toBe("error.notThere");
+    run(s, fare.hours);
+    expect(dev(s, id).store).toBe(fr5);
   });
 });
 
