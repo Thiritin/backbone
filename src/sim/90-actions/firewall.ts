@@ -1,4 +1,4 @@
-// economy.md, Per-VM firewall: a switch and the allowed port macros of one of the player's Proxmocks VMs.
+// economy/README.md, Per-VM firewall: a switch and the allowed port macros of one of the player's Proxmocks VMs.
 import { isOwnVm } from "../60-infra/cluster";
 import { MACROS, type Firewall } from "../60-infra/exposure";
 import { quorumBlock } from "../60-infra/quorum";

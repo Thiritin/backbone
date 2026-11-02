@@ -1,6 +1,6 @@
 # Software licences
 
-Lane ids: `catalog-terms`, `licence-state`, `install-key`, `vendor-shop`, `my-account`, `renewals`, `migrate`, `versions-catalog`, `licence-eras`, `software-upgrade`, `lifecycle`, `vendor-versions`, `vendor-news`, `console-by-version`. Version data: `docs/design/software-versions.md`. Related design: `docs/design/software.md` (install from the console, one website per software), `docs/design/economy.md` (Platforms and licenses), `docs/design/plans/panel-host-sim.md` (licence tiers), `docs/design/plans/billing-by-hand.md` (lane `vendor-sites`, Lexwear keys by email).
+Lane ids: `catalog-terms`, `licence-state`, `install-key`, `vendor-shop`, `my-account`, `renewals`, `migrate`, `versions-catalog`, `licence-eras`, `software-upgrade`, `lifecycle`, `vendor-versions`, `vendor-news`, `console-by-version`. Version data: `docs/design/software-versions.md`. Related design: `docs/design/software.md` (install from the console, one website per software), `docs/design/economy/platforms-and-licenses.md` (Platforms and licenses), `docs/design/plans/panel-host-sim.md` (licence tiers), `docs/design/plans/billing-by-hand.md` (lane `vendor-sites`, Lexwear keys by email).
 
 ## What changes
 
@@ -28,7 +28,7 @@ Today installing licensed software charges the licence on the spot: `buyLicenses
 - When a vendor ends an option in real life, the shop stops selling it on that date. A player who keeps an old perpetual licence keeps running the version it covers, and that version runs out of updates and security fixes on its real schedule. Moving on means buying into the new model.
 - A term-bound key covers every version released while it is paid. When it lapses, the software behaves like an ended trial until it is renewed.
 
-The catalog carries these eras (`licensing` in `src/sim/10-catalog/platforms.ts` and `server-os.ts`); prices are in economy.md, Platforms and licenses.
+The catalog carries these eras (`licensing` in `src/sim/10-catalog/platforms.ts` and `server-os.ts`); prices are in economy/platforms-and-licenses.md, Platforms and licenses.
 
 | Product | Eras |
 |---|---|

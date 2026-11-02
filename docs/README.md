@@ -2,8 +2,8 @@
 
 | Doc | What it covers |
 | --- | --- |
-| [Game design document](design/gdd.md) | The game's vision, systems, apps, prices, tech stack and milestones |
-| [Economy model](design/economy.md) | Formulas and starting numbers for every system, plus the balancing plan |
+| [Game design document](design/gdd/README.md) | The game's vision, systems, apps, prices, tech stack and milestones |
+| [Economy model](design/economy/README.md) | Formulas and starting numbers for every system, plus the balancing plan |
 | [First hour](design/first-hour.md) | What a new player sees and does from minute 0 to the tenth customer |
 | [Server console](design/console.md) | Plan for installing software and configuring RAID on a server's screen: remote console, VGA monitor, BIOS, USB installer |
 | [Terminal shell](design/terminal-shell.md) | The Debian-style shell in the Terminal: filesystems, commands and what they change |

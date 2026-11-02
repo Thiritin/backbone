@@ -5,7 +5,7 @@ export const START_YEAR = 2005;
 const START = Date.UTC(START_YEAR, 0, 1);
 const HOUR = 3_600_000;
 
-// Real milliseconds per game hour at 1× (docs/design/economy.md, Clock and pacing).
+// Real milliseconds per game hour at 1× (docs/design/economy/clock-and-pacing.md, Clock and pacing).
 export const MS_PER_HOUR = 60_000;
 export const SPEEDS = [0, 1, 2, 4, 720] as const;
 // Skip runs at the fastest pace, 12 game hours a second, until the next event, then drops to 1×.

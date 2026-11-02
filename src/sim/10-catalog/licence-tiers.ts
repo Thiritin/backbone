@@ -1,6 +1,6 @@
 import type { LicenseKind } from "./server-os";
 
-// economy.md, Platforms and licenses: the editions of a panel. The top tier keeps the fee the software has always cost.
+// economy/platforms-and-licenses.md, Platforms and licenses: the editions of a panel. The top tier keeps the fee the software has always cost.
 export interface LicenceTier { id: string; name: string; cap: number | null; fee: number; kind: LicenseKind }
 
 const tier = (id: string, name: string, cap: number | null, fee: number, kind: LicenseKind = "server"): LicenceTier => ({ id, name, cap, fee, kind });
@@ -23,7 +23,7 @@ export const tiersOf = (softwareId: string | null): LicenceTier[] => (softwareId
 export const topTier = (softwareId: string | null): LicenceTier | undefined => tiersOf(softwareId).at(-1);
 export const LAPSE_GRACE_DAYS = 7;
 
-// economy.md, Licence price rises: on 1 January of each year listed a vendor's list prices become this multiple of the
+// economy/README.md, Licence price rises: on 1 January of each year listed a vendor's list prices become this multiple of the
 // era's fees; the vendor announces it RISE_NOTICE_MONTHS before.
 export const LICENCE_RISES: Record<string, [number, number][]> = {
   cpanic: [[2021, 1.1], [2022, 1.21], [2023, 1.33], [2024, 1.46], [2025, 1.61]],

@@ -1,4 +1,4 @@
-// Memory sticks and drives by maker (economy.md, Prices over time, Memory and drive parts). A family is one maker's line of
+// Memory sticks and drives by maker (economy/prices-over-time.md, Prices over time, Memory and drive parts). A family is one maker's line of
 // one kind: a RAM part names its DDR type, speed and stick kind, a drive its interface and class; the sizes a family sells
 // are listed per year window. A part's sku names its family, its size stays on the part.
 import type { ComponentKind, FormFactor } from "./hardware";

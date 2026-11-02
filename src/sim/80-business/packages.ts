@@ -20,7 +20,7 @@ export interface PackageDef {
 
 export const PACKAGE_LIMIT = 12;
 export const PACKAGE_NAME = /^[A-Za-z0-9 _-]{1,24}$/;
-// The smallest share of the sold size a package may book (economy.md, Packages).
+// The smallest share of the sold size a package may book (economy/README.md, Packages).
 export const PACKAGE_FLOOR: Resources = { vcpu: 0.25, ramGb: 0.5, diskGb: 0.5 };
 const KEYS = ["vcpu", "ramGb", "diskGb"] as const;
 

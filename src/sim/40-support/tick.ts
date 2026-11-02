@@ -182,7 +182,7 @@ function outages(s: GameState, customer: (id: string) => Customer): void {
   s.downSince = since;
 }
 
-// economy.md, Happiness and churn: a cancellation left open is processed at the next monthly billing date.
+// economy/happiness-and-churn.md, Happiness and churn: a cancellation left open is processed at the next monthly billing date.
 // A customer inside a paid term does not roll until the month the term ends, when one roll covers all its months.
 function monthly(s: GameState): void {
   for (const c of s.customers) if (c.churnedAt === null) c.history = [...c.history, c.happiness].slice(-HISTORY_MONTHS);

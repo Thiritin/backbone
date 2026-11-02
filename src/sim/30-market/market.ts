@@ -1,5 +1,5 @@
 // The market: who looks for a host each month, how many of them pick you, and what they ask for.
-// Values and decisions are in docs/design/economy.md, "Market and leads", "Customer choice" and "Requests, SLAs and growth".
+// Values and decisions are in docs/design/economy/README.md, "Market and leads", "Customer choice" and "Requests, SLAs and growth".
 import { rand, type Rng } from "../00-core/rng";
 import { CITY_TLD } from "../30-customers/domains";
 import type { Address } from "../30-customers/addresses";
@@ -71,7 +71,7 @@ export const REFERRAL_LEADS = 0.003;
 // Forum leads raise awareness of the forum profiles by this share of the gap per lead.
 export const FORUM_AWARENESS = 0.005;
 export const FORUM_PROFILES: Profile[] = ["hobbyDev", "gamer", "smallBiz"];
-// economy.md, Customer choice, Offer column.
+// economy/customer-choice.md, Customer choice, Offer column.
 export const OFFER: Record<Budget, number> = { low: 0.9, medium: 1, high: 1.3 };
 export const REQUEST_HOURS = 72;
 
@@ -116,7 +116,7 @@ export function offers(s: GameState, product: Product, city: string): boolean {
   return runsOn === "none" || s.locations.some((l) => l.city === city && l.dc);
 }
 
-// Customer choice scores of your company for a product in a city (economy.md, Customer choice).
+// Customer choice scores of your company for a product in a city (economy/customer-choice.md, Customer choice).
 // ponytail: headroom is 100 and uptime comes from this month's down hours; per-link p95 and a 90-day record come with the network lane.
 export function playerScores(s: GameState, profile: Profile, city: string): { P: number; R: number; C: number } {
   const year = yearOf(s.hour), now = generationAt(year);
@@ -251,7 +251,7 @@ export function requirementsFor(s: GameState, r: Pick<SalesRequest, "city" | "pr
 
 export const missingFor = (s: GameState, r: Parameters<typeof requirementsFor>[1]): Requirement[] => requirementsFor(s, r).filter((x) => !x.ok);
 
-// economy.md, Customer choice: a quote is accepted with a logistic chance of its ratio to the reference.
+// economy/customer-choice.md, Customer choice: a quote is accepted with a logistic chance of its ratio to the reference.
 // mid is the ratio accepted half the time; width 0.06 turns 10% over mid into about a 16% chance.
 export const ACCEPT_WIDTH = 0.06;
 export function acceptMid(s: GameState, r: SalesRequest): number {

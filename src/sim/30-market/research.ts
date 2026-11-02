@@ -1,5 +1,5 @@
 // Market research: demand and shares per city, lost-sale reasons and paid profile studies.
-// Decisions are recorded in docs/design/economy.md, "Market research".
+// Decisions are recorded in docs/design/economy/README.md, "Market research".
 import { CHOICE_TAU, type Budget, type Competitor } from "../10-catalog/economy";
 import type { Product, Profile } from "../30-customers/customers";
 import { profileStats } from "../40-support/tickets";

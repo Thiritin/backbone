@@ -95,7 +95,7 @@ export interface Cluster {
   floating?: FloatingIp[]; groups?: SecurityGroup[]; volumes?: Volume[];
   // Horizont projects with quotas (projects.ts); missing is the one unlimited admin project.
   projects?: Project[];
-  // Servers attached as shared storage (economy.md, Datastores); VM disks on one stay off their node.
+  // Servers attached as shared storage (economy/README.md, Datastores); VM disks on one stay off their node.
   datastores: Datastore[];
   // Named specs this installation sells (80-business/packages.ts); absent reads as none.
   packages?: PackageDef[];
@@ -146,9 +146,9 @@ export interface Workload extends Resources, Partial<MachineState> {
   stats?: VmSample[]; upSince?: number;
   // The datastore of its cluster its disk is on; missing for a disk on its node.
   datastore?: string;
-  // Oldest first (economy.md, Snapshots); machine is an own VM's OS and software at the hour taken.
+  // Oldest first (economy/README.md, Snapshots); machine is an own VM's OS and software at the hour taken.
   snapshots?: Snapshot[];
-  // An own VM kept as a template to clone from (economy.md, Templates): stopped, it never starts and failover leaves it.
+  // An own VM kept as a template to clone from (economy/README.md, Templates): stopped, it never starts and failover leaves it.
   template?: true;
   // The hour a clone's copy from its template is done.
   cloning?: number;
@@ -270,7 +270,7 @@ export function booked(s: GameState, w: Workload): Resources {
   return product && SHARED.includes(product) ? r : { ...r, vcpu: Math.ceil(w.vcpu) };
 }
 
-// economy.md, Platforms and licenses: disk a mail server keeps for each mailbox it holds, in 2005, growing with server RAM.
+// economy/platforms-and-licenses.md, Platforms and licenses: disk a mail server keeps for each mailbox it holds, in 2005, growing with server RAM.
 export const MAILBOX_GB = 1;
 export const mailboxGb = (year: number): number => MAILBOX_GB * vpsPlanGb(year);
 // The company mailboxes a mail server holds.
@@ -376,7 +376,7 @@ export function pinMembers(s: GameState): void {
 export const clusterReachable = (s: GameState, c: Cluster): boolean =>
   c.vm ? hasPublicAddress(s, c.vm) : c.nodes.some((n) => memberUp(s, n) && linkStatus(s, n.deviceId).online && hasPublicAddress(s, n.deviceId));
 // Whether the player can deliver the product line anywhere: a reachable cluster with software that sells it, a spare
-// reachable server for dedicated servers, a rented location for colocation (gdd.md, Addresses and internet, The start).
+// reachable server for dedicated servers, a rented location for colocation (gdd/addresses-and-internet.md, Addresses and internet, The start).
 export function lineOffered(s: GameState, p: Product): boolean {
   const runsOn = PRODUCTS[p].runsOn;
   const sells = (az: string | undefined) => { const l = s.locations.find((x) => x.az === az); return !!l && sellsFrom(s, l, p); };
@@ -520,7 +520,7 @@ export const movesLive = (s: GameState, c: Cluster, w: Workload, fromId: string,
 
 // Moves every workload it can live off a draining node; an emptied node goes into maintenance. Returns the workloads left.
 export function moveOff(s: GameState, cluster: Cluster, deviceId: string): number {
-  // ponytail: migrations are instant; economy.md's migration times and two moves per node come with link bandwidth.
+  // ponytail: migrations are instant; economy/README.md's migration times and two moves per node come with link bandwidth.
   let left = 0;
   for (const w of s.workloads.filter((x) => x.deviceId === deviceId && x.clusterId === cluster.id)) {
     const to = pickNode(s, cluster, w, deviceId);

@@ -2,7 +2,7 @@ import { START_YEAR, yearOf } from "../00-core/time";
 import type { TicketKind, TicketStatus } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 
-// Values from docs/design/economy.md, section "Pear One subscriptions", and the feature years from
+// Values from docs/design/economy/pear-one-subscriptions.md, section "Pear One subscriptions", and the feature years from
 // docs/design/software-versions.md, Support desks. The desk replaces the inbox of the app whose id stays "Support".
 export type DeskFeature = "filters" | "search" | "assign" | "templates" | "slaTimers" | "customerSidebar" | "reports" | "merge" | "departments" | "rules" | "portal" | "ai";
 export type DeskAi = "suggestedArticles" | "answerBot" | "autoAnswer" | "drafting";

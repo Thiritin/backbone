@@ -8,7 +8,7 @@ import { setBlackhole } from "../90-actions/network";
 import { hourlyWage, type Employee } from "./staff";
 export { hourlyWage, MONTHLY_HOURS } from "./staff";
 
-// economy.md, On-call duty. Pay this month per employee id; name kept for the payroll line after someone leaves.
+// economy/on-call-duty.md, On-call duty. Pay this month per employee id; name kept for the payroll line after someone leaves.
 export interface OnCallPay { name: string; days: number; allowance: number; callOuts: number; hours: number; callPay: number }
 // roster: technicians in the rotation, in the order they joined; each location rotates through its own.
 // lastCall: the last hour each technician worked on call, which starts their rest.

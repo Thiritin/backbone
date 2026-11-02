@@ -20,7 +20,7 @@ Features, each tagged and traced:
 | # | Feature | Tag | Traces to |
 | --- | --- | --- | --- |
 | 1 | Hand-rolled order form as a once-bought shop variant; `orderForm` channel removed; save migration | [Sim] | shop.md 2.1 and 2.3 (row "Hand-rolled order form"); panel-features.md "Before a shop system" |
-| 2 | Billing cycles: monthly, quarterly, annual, biennial; per variant support; prepaid invoice, term commitment, cycle discount weighting | [Sim] | panel-features.md Plan (products carry a price); economy.md "Happiness and churn" (yearly contracts, never built, see tick.ts:151) |
+| 2 | Billing cycles: monthly, quarterly, annual, biennial; per variant support; prepaid invoice, term commitment, cycle discount weighting | [Sim] | panel-features.md Plan (products carry a price); economy/happiness-and-churn.md "Happiness and churn" (yearly contracts, never built, see tick.ts:151) |
 | 3 | Product groups and products: package + price per cycle + server group; stock per product | [Sim] | panel-features.md "Packages and products"; shop.md sections 3 and 4 |
 | 4 | Configurable options: the per-unit rates (today Marketing > Rates) for lines or sizes without a fixed product; cycle discounts for them | [Sim] [UI] | `src/sim/90-actions/rates.ts`, `src/ui/apps/marketing/Rates.tsx` |
 | 5 | Custom email quote default price before any shop exists | [Sim] | panel-features.md "Before a shop system"; manual.ts quote step |
@@ -55,7 +55,7 @@ Prices:
 Terms and churn:
 
 - `Service.commitMonths` is only displayed (`src/ui/apps/customers/CustomerPage.tsx:269`). `Service.prepaidUntil` makes monthly arrears billing skip hours (`src/sim/45-billing/billing.ts:294`). Domains and SSL are billed yearly in advance (`period: "year"`).
-- The monthly churn roll runs every month for every customer, with a note that yearly contracts rolling 12 times the base is not built (`src/sim/40-support/tick.ts:151`, roll at `:162-166`). economy.md "Happiness and churn" already specifies it.
+- The monthly churn roll runs every month for every customer, with a note that yearly contracts rolling 12 times the base is not built (`src/sim/40-support/tick.ts:151`, roll at `:162-166`). economy/happiness-and-churn.md "Happiness and churn" already specifies it.
 
 Website and browser:
 
@@ -82,7 +82,7 @@ Actions (`src/sim/90-actions/shop.ts`):
 
 Save migration: `deserialize` runs `fillShop(s, savedOwnedHadOrderForm)`: when the saved `marketing.owned` contains `orderForm` and `shop.variant` is null, set `shop.variant = "handRolled"`, `since = 0`, `readyAt = 0`, and drop `orderForm` from `owned`. A saved shop variant stays. Old saves carry no `handRolled` upkeep from then on.
 
-Economy: extends economy.md "Marketing and reviews" (owned channel table: remove the orderForm row and its €10 upkeep) and "Shop systems" (add the handRolled row).
+Economy: extends economy/README.md "Marketing and reviews" (owned channel table: remove the orderForm row and its €10 upkeep) and "Shop systems" (add the handRolled row).
 
 ### 3.2 Billing cycles (feature 2)
 
@@ -137,7 +137,7 @@ The discount shifts these: for each offered non-monthly cycle `c` with the playe
 
 Cycle discount and lead conversion: lead conversion today uses only `priceIndex`, which reacts after services are sold. For lines that have a product or configurable options, `share()` takes the advertised level instead: `shopPriceLevel(s, product)`, the weight-averaged effective monthly price of the line's cheapest fitting offers divided by their market price, replacing `priceIndex(s)` in `values()` for form leads (`market.ts:143-149`). `setupPremium` stays added on top. A line with no offers keeps `priceIndex`.
 
-Churn commitment (`tick.ts` `monthly`, `:150-176`): a customer with an active service whose `termEnd > s.hour` is skipped by the monthly churn roll unless `happiness < 15`. At `termEnd` the customer rolls once with `P = min(0.9, N * base) + 0.5 * max(0, (50 - H) / 50)`, where `base` is the profile churn (`p.churn`) and `N` the term months. This is the formula economy.md already states for yearly contracts. The ponytail note at `tick.ts:151` is removed. The effect: the happiness term is rolled once per term instead of every month, which is the benefit of a commitment, while the base churn per month stays the same.
+Churn commitment (`tick.ts` `monthly`, `:150-176`): a customer with an active service whose `termEnd > s.hour` is skipped by the monthly churn roll unless `happiness < 15`. At `termEnd` the customer rolls once with `P = min(0.9, N * base) + 0.5 * max(0, (50 - H) / 50)`, where `base` is the profile churn (`p.churn`) and `N` the term months. This is the formula economy/README.md already states for yearly contracts. The ponytail note at `tick.ts:151` is removed. The effect: the happiness term is rolled once per term instead of every month, which is the benefit of a commitment, while the base churn per month stays the same.
 
 A customer below happiness 15 who cancels mid-term gets the unused whole months refunded in cash as a ledger entry `ledger.refundUnused` (category "billing"). The player can see that bad service burns prepaid cash.
 
@@ -145,7 +145,7 @@ Renewal: on a month start (`billing.ts` monthly block, `:289-300`), a service wi
 
 Prepaid cash: an annual order of a €10 a month plan at the market discount pays 12 x 10 x 0.90 = €108 when the invoice is paid, instead of €10 a month. Revenue recognition stays in the invoice date, which is how the ledger works today.
 
-Numbers extend economy.md "Shop systems" with a new subsection "Billing cycles" holding the two tables above, the weight formula (steepness 8), the churn formula and the refund rule. `npm run balance` (`src/sim/balance/model.ts`) gets the annual share as a revenue and cash input in milestone 2; the model's collected share (`model.ts:398`) is the place to change.
+Numbers extend economy/shop-systems.md "Shop systems" with a new subsection "Billing cycles" holding the two tables above, the weight formula (steepness 8), the churn formula and the refund rule. `npm run balance` (`src/sim/balance/model.ts`) gets the annual share as a revenue and cash input in milestone 2; the model's collected share (`model.ts:398`) is the place to change.
 
 Domains and SSL (`period: "year"`) do not show a cycle choice; they are always annual.
 
@@ -348,7 +348,7 @@ Each milestone is one pull request, green on `npm run typecheck`, `npm test` and
 11. **Status record and site pages.** `statusDays` state and tick hook, pages network, status, legal, contact. Tests: `tests/site-pages.test.ts` (page gating by era and customers, imprint fields from `registration`, status bars from a seeded outage, announced window shows as maintenance, save round trip of `statusDays`).
 12. **Long tail** (3.12). Tests added with each item.
 
-Each milestone also edits `docs/design/shop.md` (variant table, section 7), `docs/design/economy.md` (Shop systems, Billing cycles, Marketing and reviews) and `docs/design/panel-features.md` ("Before a shop system", Build order step 5) where it changes what they say.
+Each milestone also edits `docs/design/shop.md` (variant table, section 7), `docs/design/economy/README.md` (Shop systems, Billing cycles, Marketing and reviews) and `docs/design/panel-features.md` ("Before a shop system", Build order step 5) where it changes what they say.
 
 ## 5. Files touched
 

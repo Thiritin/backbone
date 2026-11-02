@@ -1,6 +1,6 @@
 # Plan: research unlocks and reseller hosting
 
-Every skill in the Research app says exactly what it switches on, each unlock is clickable, and an unlock that only works with certain software names that software. Reseller hosting becomes a product line of its own behind a new skill. Source of truth for skill numbers is `docs/design/economy.md`, "Know-how and unlock costs"; for panel features `docs/design/panel-features.md`.
+Every skill in the Research app says exactly what it switches on, each unlock is clickable, and an unlock that only works with certain software names that software. Reseller hosting becomes a product line of its own behind a new skill. Source of truth for skill numbers is `docs/design/economy/know-how-and-unlock-costs.md`, "Know-how and unlock costs"; for panel features `docs/design/panel-features.md`.
 
 ## Today
 
@@ -72,7 +72,7 @@ The hypervisor list comes from `platforms.ts` (`kind === "cloud"`, except openst
 A reseller buys a block of web hosting capacity and sells accounts of their own inside it. In the game that is a product line, not a customer type.
 
 - New `Product` id `reseller`. `PRODUCTS.reseller = { runsOn: "cluster", period: "hour", commitMonths: 1 }`. Spec: ten times a web hosting spec of the request's size (disk, traffic, mailboxes), one booking on a panel cluster. Needs a panel cluster whose panel is cpanic, pleskit or directadmen; FreePanel cannot host it, and a request on a cluster without such a panel is lost with the reason `lost.needsResellerPanel`.
-- Rates: its own line in Marketing > Pricing like every product, default rate 0.6 of the web hosting rate per GB (a wholesale price; economy.md gets the row).
+- Rates: its own line in Marketing > Pricing like every product, default rate 0.6 of the web hosting rate per GB (a wholesale price; economy/README.md gets the row).
 - Demand: agency 0.2 (taken from vps), hobbyDev 0.1 (taken from vps), smallBiz 0.1 (taken from webHosting). The product is demanded only once the skill is learned; before that those weights go back to the old product, so the market does not shrink.
 - Skill `reseller`: track sales, tier 2, 200 know-how, 10 days, needs `products` and `shops`. Unlock: `product reseller` with software cpanic, pleskit, directadmen. Explain pages in `docs/design/research.md`.
 - Competitors: Ionose and OVHeat sell `reseller`.

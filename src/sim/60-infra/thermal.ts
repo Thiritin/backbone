@@ -1,4 +1,4 @@
-// economy.md, Cooling and overheating: a room heats up while its cooling sheds less than its racks draw, and its servers
+// economy/README.md, Cooling and overheating: a room heats up while its cooling sheds less than its racks draw, and its servers
 // slow down, shut themselves off and start again as the temperature passes the thresholds.
 import { nowMinutes } from "../00-core/time";
 import { modelById } from "../10-catalog/hardware";

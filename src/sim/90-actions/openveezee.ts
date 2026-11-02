@@ -1,4 +1,4 @@
-// economy.md, OpenVeeZee: burst memory and the live checkpoint and restore.
+// economy/README.md, OpenVeeZee: burst memory and the live checkpoint and restore.
 import { BURST_MAX, checkpointMinutes, openVeeZee } from "../60-infra/beancounters";
 import { lostDisk, roomToStart } from "../60-infra/cluster";
 import { nowHours } from "../00-core/time";

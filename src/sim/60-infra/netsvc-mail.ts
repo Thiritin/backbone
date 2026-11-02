@@ -1,4 +1,4 @@
-// GDD, Infrastructure consoles: the deferred mail queue of an address. Numbers in economy.md, Addresses and internet.
+// GDD, Infrastructure consoles: the deferred mail queue of an address. Numbers in economy/addresses-and-internet.md, Addresses and internet.
 import { hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
 import type { Service } from "../30-customers/customers";

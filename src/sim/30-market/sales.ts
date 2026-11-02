@@ -1,5 +1,5 @@
 // Requests over time: new leads through the day, expansion requests from upgrade tickets, customer replies to quotes,
-// expiry into lost sales and the monthly happiness drift. Decisions are recorded in docs/design/economy.md, "Requests, SLAs and growth".
+// expiry into lost sales and the monthly happiness drift. Decisions are recorded in docs/design/economy/requests-slas-and-growth.md, "Requests, SLAs and growth".
 import { rand, type Rng } from "../00-core/rng";
 import { DAYS_PER_MONTH, isMonthStart } from "../00-core/time";
 import { transferHost } from "../60-infra/transfers";
@@ -389,7 +389,7 @@ function expire(s: GameState): void {
   }
 }
 
-// economy.md, Happiness and churn, Drift: a fifth of the way toward 70 + half the lead over the best competitor.
+// economy/happiness-and-churn.md, Happiness and churn, Drift: a fifth of the way toward 70 + half the lead over the best competitor.
 function drift(s: GameState): void {
   const home = s.locations[0]?.city ?? "Frankfurt", memo = new Map<string, number>();
   s.customers = s.customers.map((c) => {

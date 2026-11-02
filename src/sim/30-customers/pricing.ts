@@ -6,7 +6,7 @@ import { bump, createTicket, isFinal, profileStats } from "../40-support/tickets
 import type { GameState } from "../50-state";
 import { activeServices, type Customer, type Service } from "./customers";
 
-// economy.md, Price tolerance.
+// economy/README.md, Price tolerance.
 export const TOLERANCE = [0.9, 1.2] as const;
 export const RAISE_PENALTY = 1, PAST_MAX_PENALTY = 2, CUT_BONUS = 0.2, CUT_MAX = 10;
 export const LEAVE_SPAN = 0.3;

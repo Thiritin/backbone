@@ -18,7 +18,7 @@ import { machineScreen } from "./oob";
 import { cpuLoad, installedRamGb, portPeers, raidUsable, working } from "./status";
 import { heatOf } from "./thermal";
 
-// economy.md: memory stays mostly resident, disks fill from 30% of booked at signup at the customer's growth rate up to the booked limit.
+// economy/README.md: memory stays mostly resident, disks fill from 30% of booked at signup at the customer's growth rate up to the booked limit.
 const RAM_BASE = 0.6;
 const yearsSince = (since: number, hour: number) => Math.max(0, hour - since) / 8760;
 export function diskFill(s: GameState, w: Workload, hour: number): number {
@@ -93,7 +93,7 @@ function titleInterest(s: GameState, v: Service, hour: number): number {
 // What a game server's mods multiply its resource use by.
 const modLoad = (s: GameState, serviceId: string): number => (s.gameServers.find((g) => g.serviceId === serviceId)?.mods ?? []).reduce((n, id) => n * (modById(id)?.load ?? 1), 1);
 
-// economy.md, Limits: a limit above the sold size lets peaks run up to STRETCH_MAX of it; a VM line feels its limit from
+// economy/README.md, Limits: a limit above the sold size lets peaks run up to STRETCH_MAX of it; a VM line feels its limit from
 // NOTICE of it, a web space only once it reaches it, and a full disk stalls the site to DISK_STARVE.
 export const STRETCH_MAX = 1.5;
 export const NOTICE: Partial<Record<Product, number>> = { vps: 0.9, gameServer: 0.9 };
@@ -142,7 +142,7 @@ liveRam.of = (s, w) => workloadUse(s, w).ramGb;
 
 // What a node physically has and uses at an hour, and the performance its workloads get: CPU load slows everyone along
 // cpuPerf, a disk pool over 100% stalls writes to 50%, a full-VM node past its RAM swaps.
-// economy.md, RAID: the share of its performance a node keeps while its array rebuilds, by rebuild rate.
+// economy/README.md, RAID: the share of its performance a node keeps while its array rebuilds, by rebuild rate.
 export const REBUILD_PERF = { low: 0.95, medium: 0.8, high: 0.6 } as const;
 export interface NodeUsage { used: Resources; physical: Resources; perf: number }
 
@@ -158,10 +158,10 @@ export function nodeUsage(s: GameState, deviceId: string, hour: number = s.hour)
   return { used, physical, perf: Math.min(cpu, disk, swap) * (d.rebuild ? REBUILD_PERF[d.rebuildRate] : 1) * heat };
 }
 
-// economy.md, What runs over: a full-VM node swaps up to SWAP_MAX of its RAM, losing SWAP_SLOW × the overcommit in speed;
+// economy/README.md, What runs over: a full-VM node swaps up to SWAP_MAX of its RAM, losing SWAP_SLOW × the overcommit in speed;
 // past it the host OOM-kills its largest VM (vmOomTick). OpenVeeZee hands RAM pressure to its beancounters instead.
 export const SWAP_MAX = 1.1, SWAP_SLOW = 5;
-// economy.md, What runs over: performance by CPU utilisation u, like a queue: full to 70%, 85% at 100%, then 0.85 ÷ u.
+// economy/README.md, What runs over: performance by CPU utilisation u, like a queue: full to 70%, 85% at 100%, then 0.85 ÷ u.
 export const cpuPerf = (u: number): number => (u <= 0.7 ? 1 : u <= 1 ? 1 - 0.5 * (u - 0.7) : 0.85 / u);
 // Below SLOW_PERF a site loads visibly slowly; below TIMEOUT_PERF for TIMEOUT_HOURS in a row it times out (timedOut).
 export const SLOW_PERF = 0.95, TIMEOUT_PERF = 0.25;
@@ -197,7 +197,7 @@ export function vmPerf(s: GameState, vm: Workload, hour: number = s.hour): numbe
   return Math.min(cpuPerf(r.cpu), r.ram > 1 ? 1 / (1 + SWAP_SLOW * (r.ram - 1)) : 1);
 }
 
-// economy.md, What runs over: a CPU or RAM readout wobbles by up to WOBBLE of its value each hour within 0 to its capacity,
+// economy/README.md, What runs over: a CPU or RAM readout wobbles by up to WOBBLE of its value each hour within 0 to its capacity,
 // drawn from the seed, the machine and the hour; one at or past its capacity stays full.
 export const WOBBLE = 0.08;
 const wobble = (s: GameState, id: string, k: number, used: number, cap: number, hour: number): number =>
@@ -248,7 +248,7 @@ function computeCpuUtil(s: GameState, d: Device): number {
 }
 cpuLoad.of = cpuUtil;
 
-// economy.md, Workloads: a workload is pegged when its CPU ran at 95% or more of its booking for over half of the last 24 hours.
+// economy/README.md, Workloads: a workload is pegged when its CPU ran at 95% or more of its booking for over half of the last 24 hours.
 export const PEGGED_LOAD = 0.95;
 export const peggedHours = (s: GameState, w: Workload, hour: number = s.hour): number =>
   Array.from({ length: Math.min(24, hour + 1) }, (_, i) => workloadLoad(s, w, hour - i)).filter((l) => l >= PEGGED_LOAD).length;
@@ -370,7 +370,7 @@ export function portLinks(s: GameState): Map<string, (PortLink | null)[]> {
   return out;
 }
 
-// economy.md, "Usage curves and overcommit": when customers outgrow their plan.
+// economy/usage-curves-and-overcommit.md, "Usage curves and overcommit": when customers outgrow their plan.
 export const ASK_FILL = 0.9;
 export const PEGGED = 0.9;
 export const ASK_CHANCE = 1 / 7;

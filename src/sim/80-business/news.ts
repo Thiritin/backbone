@@ -1,4 +1,4 @@
-// Things that become available are announced by the News app on the day they do (gdd.md, The desktop, News).
+// Things that become available are announced by the News app on the day they do (gdd/the-desktop.md, The desktop, News).
 import { dateOf, hourOf, START_YEAR, yearOf } from "../00-core/time";
 import { IPV6_FROM } from "../10-catalog/addresses";
 import { DESKS } from "../10-catalog/desks";
@@ -42,7 +42,7 @@ const FEATURES = (x: (typeof SOFTWARE)[number]) =>
   ([["cluster", x.cluster], ["balloon", x.balloon], ["importSame", x.migration.same], ["importOther", x.migration.other]] as [string, number | null][])
     .flatMap(([f, y]): [string, number][] => (y !== null && y > Math.max(START_YEAR, x.from) ? [[f, y]] : []));
 
-// economy.md, Price announcements: what takes effect at hour, posted months before it; the params carry the hour as at.
+// economy/README.md, Price announcements: what takes effect at hour, posted months before it; the params carry the hour as at.
 const ahead = (hour: number, months: number): number => { const d = dateOf(hour); return at(d.getUTCFullYear(), d.getUTCMonth() - months); };
 const month1 = (year: number, month = 1): number => hourOf(new Date(Date.UTC(year, month - 1, 1)));
 // A licence era after the first, and every list price rise of a vendor.

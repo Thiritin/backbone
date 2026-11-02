@@ -4,7 +4,7 @@ import { START_YEAR, yearOf } from "../00-core/time";
 import type { GameState, LedgerEntry } from "../50-state";
 import { seats, type Desk } from "./desks";
 
-// Values from docs/design/economy.md, section "Pear One subscriptions". The skill each item needs is in research.ts.
+// Values from docs/design/economy/pear-one-subscriptions.md, section "Pear One subscriptions". The skill each item needs is in research.ts.
 
 // Apps every new game has in the dock, free of charge. Getting started and Notes are desktop documents and never sit in the dock.
 // Books comes with the bookkeeping program the player buys in the Pear Store.

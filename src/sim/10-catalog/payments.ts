@@ -1,4 +1,4 @@
-// docs/design/plans/billing-by-hand.md, lane payment-methods; numbers in docs/design/economy.md, Payment methods.
+// docs/design/plans/billing-by-hand.md, lane payment-methods; numbers in docs/design/economy/payment-methods.md, Payment methods.
 // Every method but bank transfer is a shop module of the same id. pct and fixed are the fee per booking; payee is who
 // sends the weekly payout, the shop system itself where null.
 import type { Profile } from "../30-customers/customers";

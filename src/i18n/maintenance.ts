@@ -6,7 +6,7 @@ const clock = (h: unknown) => `${String(h).padStart(2, "0")}:00`;
 const when = (p: Params) => `${DAYS[Number(p.weekday)]} ${p.date} ${MONTHS[Number(p.month)]} from ${clock(p.from)} to ${clock(p.to)}`;
 const name = (p: Params) => p.hostname || p.service;
 
-// Planned maintenance: the notice emails, the customers' answers, the events and the errors (gdd.md, Support).
+// Planned maintenance: the notice emails, the customers' answers, the events and the errors (gdd/support.md, Support).
 export const MAINTENANCE_EN: Record<string, (p: Params) => string> = {
   "ticket.maintenance.notice.subject": (p) => `Planned maintenance on ${name(p)}`,
   "ticket.maintenance.notice.text": (p) => `We will carry out maintenance on ${DAYS[Number(p.weekday)]} ${p.date} ${MONTHS[Number(p.month)]}. ${name(p)} will be unavailable from ${clock(p.from)} to ${clock(p.to)} (${p.hours} hours).`,

@@ -1,4 +1,4 @@
-// economy.md, Snapshots: up to three per VM on a hypervisor with the snapshots flag, each delta booking disk on the VM's storage.
+// economy/README.md, Snapshots: up to three per VM on a hypervisor with the snapshots flag, each delta booking disk on the VM's storage.
 import { nowHours } from "../00-core/time";
 import { SNAPSHOT_GROWTH, SNAPSHOTS_MAX, softwareById } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";

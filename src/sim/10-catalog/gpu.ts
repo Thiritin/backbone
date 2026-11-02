@@ -1,4 +1,4 @@
-// GPU cards, their prices and the demand for GPU rental (economy.md, Prices over time, GPU cards and rental; Market and leads).
+// GPU cards, their prices and the demand for GPU rental (economy/README.md, Prices over time, GPU cards and rental; Market and leads).
 // line groups a maker's cards that succeed each other; maker is the part maker id (families.ts).
 export interface GpuCard { id: string; year: number; name: string; watts: number; price: number; wide: boolean; line: string; maker: string }
 

@@ -1,6 +1,6 @@
 # Backbone first hour
 
-This script follows a new player from the first second of a new game to the tenth customer after the three friends, using the numbers in the [economy model](economy.md). At 1×, one game day lasts one real minute, so those ten customers arrive after about an hour of play, between 9 February and 16 March 2005.
+This script follows a new player from the first second of a new game to the tenth customer after the three friends, using the numbers in the [economy model](economy/README.md). At 1×, one game day lasts one real minute, so those ten customers arrive after about an hour of play, between 9 February and 16 March 2005.
 
 ## Goals
 
@@ -73,4 +73,4 @@ Cash stays between about €510 and €660 until the first customers pay. By the
 
 ## After the first ten
 
-The company then grows toward level 2 at the end of 2005 with about 40 customers and €400 of monthly revenue, the targets in [Clock and pacing](economy.md#clock-and-pacing). The headless balance run checks that pacing (see [Balancing](economy.md#balancing)).
+The company then grows toward level 2 at the end of 2005 with about 40 customers and €400 of monthly revenue, the targets in [Clock and pacing](economy/clock-and-pacing.md). The headless balance run checks that pacing (see [Balancing](economy/balancing.md)).

@@ -1,4 +1,4 @@
-// Burn-in: a stress test of a racked server that finds worn parts before customers do (economy.md, Burn-in).
+// Burn-in: a stress test of a racked server that finds worn parts before customers do (economy/README.md, Burn-in).
 import { hashRng, rand } from "../00-core/rng";
 import { COMPONENTS } from "../10-catalog/hardware";
 import { FULL_FAIL_SHARE, QUICK_WORN_SHARE } from "../10-catalog/burnin";

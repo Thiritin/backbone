@@ -283,7 +283,7 @@ Patch panels and KVMs stay as they are.
 3. Parts: RAM, drive and GPU vendor tables, Parts tab split, "fits my servers" filter, spec sheets.
 4. Network: switch and firewall vendor tables, small switches every year, `ipsGbit` and `sessions` on firewalls, UPS and PDU vendors.
 5. USB port placement per face, Twin nodes included.
-6. Docs: economy.md sections Server lines, CPU vendors, Switches, Security appliances rewritten; CHANGELOG bullets per step.
+6. Docs: economy/README.md sections Server lines, CPU vendors, Switches, Security appliances rewritten; CHANGELOG bullets per step.
 
 Each step lands on its own with green tests and a CHANGELOG line. Steps 3, 4 and 5 are independent of each other once 1 is in.
 

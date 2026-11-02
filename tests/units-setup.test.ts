@@ -34,7 +34,7 @@ describe("DNS zones and VPN users", () => {
     expect(users.size).toBeGreaterThan(2);
     expect(specText("dns", { ...sizeSpec("dns", 2, 2005), zones: 12 })).toBe("DNS hosting, 12 zones");
     expect(specText("vpn", { ...sizeSpec("vpn", 0, 2005), users: 1 })).toBe("VPN, 1 user");
-    // economy.md: the middle sizes stay near the former €2 and €5 a service.
+    // economy/README.md: the middle sizes stay near the former €2 and €5 a service.
     expect(specPrice("dns", sizeSpec("dns", 1, 2005), 2005)).toBeCloseTo(2, 0);
     expect(specPrice("vpn", sizeSpec("vpn", 1, 2005), 2005)).toBeCloseTo(5, 0);
     expect(specPrice("vpn", sizeSpec("vpn", 2, 2005), 2005)).toBeGreaterThan(specPrice("vpn", sizeSpec("vpn", 0, 2005), 2005));

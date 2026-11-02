@@ -1,4 +1,4 @@
-// Values from docs/design/economy.md, "Marketing and reviews" (community events).
+// Values from docs/design/economy/marketing-and-reviews.md, "Marketing and reviews" (community events).
 import type { Product, Profile } from "../30-customers/customers";
 import { sizeSpec } from "../10-catalog/products";
 import { yearOf } from "../00-core/time";

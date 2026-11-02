@@ -26,7 +26,7 @@ import { diskFill, nodeUsage, starvation, vmPerf } from "../60-infra/usage";
 import { addAwareness, addReview, announceReview, starsFor } from "../80-business/marketing";
 import type { SimEvent } from "../88-tick/tick";
 
-// Values from docs/design/economy.md, sections "Platforms and licenses" and "Data loss and backups".
+// Values from docs/design/economy/platforms-and-licenses.md, sections "Platforms and licenses" and "Data loss and backups".
 export const LOSS_NO_BACKUP = -60;
 export const LOSS_RESTORED = -15;
 export const LOSS_RESTORED_MAX = -40;
@@ -106,7 +106,7 @@ export function restoreHours(s: GameState, w: Workload, az?: string): number {
   return Math.max(1, Math.ceil((w.diskGb * diskFill(s, w, w.backupAt ?? s.hour)) / rate));
 }
 
-// economy.md, Reviews: 10% write one, 20% when unhappy.
+// economy/README.md, Reviews: 10% write one, 20% when unhappy.
 export function lossReview(s: GameState, c: Customer): void {
   if (!chance(s.rng, c.happiness < UNHAPPY ? UNHAPPY_REVIEW_CHANCE : REVIEW_CHANCE)) return;
   addReview(s, c.id, starsFor(c.happiness, s.rng), "dataLoss");
@@ -208,7 +208,7 @@ function overload(s: GameState) {
   if (slow.size || starved.size) s.services = s.services.map((v) => (slow.has(v.id) || starved.has(v.id) ? { ...v, ...(slow.has(v.id) && { slowedAt: s.hour }), ...(starved.has(v.id) && { starvedAt: s.hour }) } : v));
 }
 
-// economy.md, Marketing and reviews: a fast game server and a smooth month.
+// economy/marketing-and-reviews.md, Marketing and reviews: a fast game server and a smooth month.
 export const FAST_CLOCK = 0.9;
 export const FAST_HAPPY = 3;
 export const FAST_REVIEW_CHANCE = 0.1;

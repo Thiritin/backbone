@@ -53,7 +53,7 @@ export function consoleLook(softwareId: string): ConsoleLook {
   return LOOK[sw.id] ?? (isService(sw.kind) ? "game" : sw.kind === "cloud" ? "proxmocks" : sw.kind === "mail" ? "mail" : "freepanel");
 }
 
-// docs/design/gdd.md, Software choices: the matrix. Panels migrate from the year their tool imports from the same or another panel;
+// docs/design/gdd/README.md, Software choices: the matrix. Panels migrate from the year their tool imports from the same or another panel;
 // a hypervisor migrates live or cold by its trait from the year it can; clusters follow the software's cluster year.
 export function consoleFeatures(softwareId: string, year: number): ConsoleFeatures {
   const look = consoleLook(softwareId), sw = softwareById(softwareId), game = look === "game", mail = look === "mail";

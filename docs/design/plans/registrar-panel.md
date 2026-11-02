@@ -2,7 +2,7 @@
 
 The registrar partner's reseller panel (the `/login` page of NameCheep, GoDuddy Reseller, InterNetY and OpenSRSly in the in-game browser, `RegistrarPanel.tsx`) already lists every domain under management with its renewal switch, status and auth code, and has a DNS page for the company domain's zone. This lane adds what a real reseller panel has on top: ordering further domains of the company's own, and name servers per domain that decide whether the domain reaches the company's sites or stays parked at the registrar.
 
-Source of truth for the registrar economics is `docs/design/gdd.md`, "Registrar partners", and `docs/design/economy.md`, Domains. Billing does not change: the partner invoices one twelfth of the yearly wholesale of every domain under management at each month start, so a further company domain costs its twelfth a month. Renewal stays the existing switch (`cancelled`); there is no second auto-renew flag.
+Source of truth for the registrar economics is `docs/design/gdd/README.md`, "Registrar partners", and `docs/design/economy/README.md`, Domains. Billing does not change: the partner invoices one twelfth of the yearly wholesale of every domain under management at each month start, so a further company domain costs its twelfth a month. Renewal stays the existing switch (`cancelled`); there is no second auto-renew flag.
 
 ## Domain model
 

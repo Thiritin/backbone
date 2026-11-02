@@ -1,4 +1,4 @@
-// VMwhere editions, DRS and maintenance mode (docs/design/plans/hypervisors-backups.md, section 3.6).
+// VMwhere editions, DRS and maintenance mode (docs/archive/hypervisors-backups.md, section 3.6).
 import type { GameState } from "../50-state";
 import type { Drs } from "../60-infra/cluster";
 import { EDITION_COST, editionAllows, editionOf, isVmwhere, maintenanceBlockers, poolRoom, upgradeCost } from "../60-infra/vmwhere";

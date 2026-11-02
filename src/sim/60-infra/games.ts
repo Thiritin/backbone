@@ -75,7 +75,7 @@ export const modCount = (g: GameServer): number => g.mods.reduce((n, id) => n + 
 export const latestVersion = (s: GameState, g: GameServer): number => Math.max(g.version, releasedAt(titleById(g.title)!, s.hour));
 export const outdated = (s: GameState, g: GameServer): boolean => g.version < latestVersion(s, g);
 
-// economy.md, Happiness and churn: a customer whose game server filled up in the last week asks for more three times as often.
+// economy/happiness-and-churn.md, Happiness and churn: a customer whose game server filled up in the last week asks for more three times as often.
 export const FULL_HOURS = 7 * 24, FULL_BOOST = 3;
 export const fullServer = (s: GameState, customerId: string): GameServer | undefined =>
   s.gameServers.find((g) => g.seenFull >= 0 && s.hour - g.seenFull <= FULL_HOURS && s.services.some((v) => v.id === g.serviceId && v.customerId === customerId && v.endedAt === null));

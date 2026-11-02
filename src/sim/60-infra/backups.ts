@@ -1,4 +1,4 @@
-// Backup jobs and restore points (economy.md, "Backup jobs and restore points").
+// Backup jobs and restore points (economy/README.md, "Backup jobs and restore points").
 import { chance, hashRng } from "../00-core/rng";
 import { dateOf } from "../00-core/time";
 import { BACKUP_CHANGED, BACKUP_HOUR, idNum } from "../10-catalog/usage";

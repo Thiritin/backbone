@@ -1,6 +1,6 @@
 // GDD, Domain registration: SSL certificates are bought from the certificate authority and resold to web hosting customers.
 // A customer who wants one books it in the shop once it sells SSL, and before that writes in for a quote (30-market/sales.ts,
-// expansions). Numbers in economy.md, Sales and quotes (SSL certificates).
+// expansions). Numbers in economy/sales-and-quotes.md, Sales and quotes (SSL certificates).
 import { hashRng, rand } from "../00-core/rng";
 import { dateOf, yearOf } from "../00-core/time";
 import { marketPrice, sizeSpec, type Spec } from "../10-catalog/products";

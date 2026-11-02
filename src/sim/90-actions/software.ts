@@ -116,7 +116,7 @@ export function createSoftwareVm(s: GameState, clusterId: string, softwareId: st
   return done;
 }
 
-// economy.md, Security advisories, Updating: minutes the customers on a cluster are down while its software updates. A
+// economy/security-advisories.md, Security advisories, Updating: minutes the customers on a cluster are down while its software updates. A
 // hypervisor takes 2 hours per node, with every node down at once unless the software moves virtual machines live.
 export const UPDATE_MINUTES: Record<SoftwareKind, number> = { panel: 30, game: 30, mail: 15, mailweb: 15, cloud: 120, dns: 15, vpn: 15, storage: 30, backup: 15 };
 

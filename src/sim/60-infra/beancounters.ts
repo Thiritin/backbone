@@ -1,4 +1,4 @@
-// economy.md, OpenVeeZee beancounters: failcnt from overselling, burst memory and the live checkpoint.
+// economy/README.md, OpenVeeZee beancounters: failcnt from overselling, burst memory and the live checkpoint.
 import type { GameState } from "../50-state";
 import { lostDisk, oomKilled, type Cluster, type Workload } from "./cluster";
 import { HOT_RAM } from "./alarms";

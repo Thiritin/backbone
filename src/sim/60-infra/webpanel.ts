@@ -1,4 +1,4 @@
-// economy.md, PHP versions: the state of the web panels' own screens lives in one object so a save and a new game each need a
+// economy/php-versions.md, PHP versions: the state of the web panels' own screens lives in one object so a save and a new game each need a
 // single line. Entries are created on first use, so an empty object behaves like a fresh game.
 import { hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
@@ -30,7 +30,7 @@ export interface WebPanel {
   restoring: Record<string, { from: number; until: number }>; // site id -> the restore from a backup point under way
 }
 
-// economy.md, SSL certificates and AutoSSL: auto lists the cPanic hosts with AutoSSL on, expires the hour each domain's
+// economy/README.md, SSL certificates and AutoSSL: auto lists the cPanic hosts with AutoSSL on, expires the hour each domain's
 // certificate runs out, expired the services serving an expired one now, and log the last renewals.
 export interface PanelStack { mail?: string; ftp?: string; web?: string; modules: string[] }
 

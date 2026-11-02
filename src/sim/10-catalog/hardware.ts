@@ -1,4 +1,4 @@
-// Values come from docs/design/economy.md (Server generations, Server lines, Manufacturers, Switches, Security appliances, Patch panels and gateways).
+// Values come from docs/design/economy/README.md (Server generations, Server lines, Manufacturers, Switches, Security appliances, Patch panels and gateways).
 import { hourOf, START_YEAR } from "../00-core/time";
 import type { RouterLan } from "../50-state";
 import { GENERATIONS } from "./economy";
@@ -38,7 +38,7 @@ export interface ServerSpec {
   // The line ships the fastest CPU of its socket, not the biggest.
   fast?: boolean;
 }
-// Values from economy.md (Components): life in years, yearly failure rates before and after it, part price, and when a swap
+// Values from economy/README.md (Components): life in years, yearly failure rates before and after it, part price, and when a swap
 // can happen with the device running: in a RAID array, with a second working power supply, always, or never.
 export type ComponentKind = "hdd" | "ssd" | "nvme" | "psu" | "fan" | "ram" | "board" | "cpu" | "nic" | "gpu";
 export const COMPONENT_KINDS: ComponentKind[] = ["hdd", "ssd", "nvme", "psu", "fan", "ram", "board", "cpu", "nic", "gpu"];
@@ -306,7 +306,7 @@ export const brandsFor = (kind: DeviceKind): string[] => MANUFACTURERS.filter((m
 // Hours from an order to the stockroom: 3 days in 2005 falling in a straight line to 1 day in 2015.
 export const deliveryHours = (year: number): number => Math.round(72 - 48 * Math.min(1, Math.max(0, (year - 2005) / 10)));
 // Supply shocks stretch delivery for the part families they hit: rising from the first date to the peak factor at the second,
-// holding until the third, back to normal at the fourth (economy.md, Buying and selling).
+// holding until the third, back to normal at the fourth (economy/README.md, Buying and selling).
 const at = (y: number, m: number) => hourOf(new Date(Date.UTC(y, m - 1)));
 export const SUPPLY_SHOCKS: { hit: string[]; peak: number; dates: [number, number, number, number] }[] = [
   { hit: ["hdd"], peak: 4, dates: [at(2011, 10), at(2011, 11), at(2012, 2), at(2012, 7)] },
@@ -492,11 +492,11 @@ const TWINS: DeviceModel[] = SERVERS.filter((m) => m.id.endsWith("-twin-node")).
 });
 
 type Extra = Partial<Pick<DeviceModel, "layer" | "managed" | "shelf" | "throughputGbit" | "ipsGbit" | "sessions" | "batteryWh" | "brand" | "fullTable" | "bgpSessions" | "outlets" | "psus" | "oob" | "atx" | "failYearly" | "until" | "supportYears">>;
-// Years on sale after launch and years of support after that (economy.md, Hardware lifecycle); other kinds never end.
+// Years on sale after launch and years of support after that (economy/README.md, Hardware lifecycle); other kinds never end.
 const LIFE: Partial<Record<DeviceKind, { sale: number; support: number }>> = {
   switch: { sale: 6, support: 5 }, firewall: { sale: 6, support: 5 }, gateway: { sale: 6, support: 5 }, ups: { sale: 8, support: 3 }, pdu: { sale: 8, support: 3 },
 };
-// The newest model of each line stays on sale until a successor row exists (economy.md, Routers, UPS and PDUs).
+// The newest model of each line stays on sale until a successor row exists (economy/README.md, Routers, UPS and PDUs).
 export const NEWEST = new Set(["sw-32e", "fw-400g", "edge-xxl", "ups-10k", "ups-10k-net", "pdu-24", "fb-5690", "isr-8300", "ccr2216", "mx304", "qfx5240", "ar-7060x6", "cat9300x-48", "mt-crs518", "ng-m4350-48", "ub-usw-ent-48", "dl-dgs1510-52x", "fg-4800f", "pa-7500", "srx4600", "nt-8200", "sp-xgs4500", "ar-7050sx3", "fg-90g", "sp-xgs87", "cat1000-8", "mt-crs310-8g", "ub-usw-lite-8", "ng-gs724tp", "hp-6100-24g"]);
 const other = (id: string, name: string, kind: DeviceKind, height: number, p: PortSpec[], watts: number, price: number, from = 2005, extra: Extra = {}): DeviceModel => {
   const life = price > 0 ? LIFE[kind] : undefined;
@@ -515,7 +515,7 @@ export const NET_LIFE: Record<string, { sale: number; support: number }> = {
   MicroTick: { sale: 6, support: 3 }, Nettgear: { sale: 5, support: 3 }, Ubiquitea: { sale: 5, support: 3 }, "D-Lunk": { sale: 4, support: 2 },
   Fortinope: { sale: 6, support: 5 }, "Pablo Alto": { sale: 6, support: 5 }, Netgoat: { sale: 5, support: 3 }, SoPhosphate: { sale: 6, support: 5 },
 };
-// A switch or firewall of one maker, in the maker's own numbering (economy.md, Switches; Security appliances).
+// A switch or firewall of one maker, in the maker's own numbering (economy/README.md, Switches; Security appliances).
 const net = (brand: string, kind: "switch" | "firewall", id: string, name: string, from: number, p: PortSpec[], watts: number, price: number, extra: Extra = {}): DeviceModel => {
   const life = NET_LIFE[brand];
   return other(id, name, kind, 1, p, watts, price, from, { brand, until: NEWEST.has(id) ? null : from + life.sale, supportYears: life.support, ...extra });
@@ -718,12 +718,12 @@ export const MODELS: DeviceModel[] = [
   other("mx80", "MX80", "gateway", 2, [...ports(4, 10), ...ports(8, 1)], 350, 25000, 2010, { brand: "Junipurr", ...router(80, 512, true) }),
   other("mx204", "MX204", "gateway", 1, [...ports(4, 100), ...ports(8, 10)], 400, 40000, 2017, { brand: "Junipurr", ...router(400, 2048, true) }),
   other("mx304", "MX304", "gateway", 2, ports(16, 100), 1000, 80000, 2022, { brand: "Junipurr", ...router(1600, 8192, true) }),
-  // economy.md, Power outages: the small UPS carries a 0.2 kW basement rack for about 3 hours.
+  // economy/README.md, Power outages: the small UPS carries a 0.2 kW basement rack for about 3 hours.
   other("ups-1500", "UPS 1500 VA", "ups", 1, [], 10, 180, 2005, { batteryWh: 600 }),
   other("ups-3000", "UPS 3000 VA", "ups", 2, [], 25, 900, 2005, { batteryWh: 1800 }),
   other("ups-5k", "UPS 5 kVA", "ups", 3, [], 50, 2500, 2005, { batteryWh: 3500 }),
   other("ups-10k", "UPS 10 kVA", "ups", 6, [], 100, 6000, 2008, { batteryWh: 8000, psus: 2 }),
-  // economy.md, UPS: the same units with a network management card.
+  // economy/README.md, UPS: the same units with a network management card.
   other("ups-1500-net", "UPS 1500 VA, network card", "ups", 1, ports(1, 1), 12, 480, 2005, { batteryWh: 600, managed: true }),
   other("ups-3000-net", "UPS 3000 VA, network card", "ups", 2, ports(1, 1), 27, 1200, 2005, { batteryWh: 1800, managed: true }),
   other("ups-5k-net", "UPS 5 kVA, network card", "ups", 3, ports(1, 1), 52, 2800, 2005, { batteryWh: 3500, managed: true }),
@@ -731,7 +731,7 @@ export const MODELS: DeviceModel[] = [
   // A switched PDU cuts or cycles any device in its rack; a 0U one hangs on the rack's side rail.
   other("pdu-8", "Switched PDU 8", "pdu", 1, [], 15, 700, 2005, { outlets: 8 }),
   other("pdu-24", "Switched PDU 24", "pdu", 0, [], 20, 1200, 2008, { outlets: 24 }),
-  // Remote access (economy.md, Hardware, power and failures): KVMs over IP, serial console servers and an OOB management switch.
+  // Remote access (economy/hardware-power-and-failures.md, Hardware, power and failures): KVMs over IP, serial console servers and an OOB management switch.
   other("pikvn", "PiKVN", "kvm", 0, [], 5, 60, 2019, { brand: "Pear Street Electronics", oob: ["net", "kvm"], atx: true, failYearly: 0.04 }),
   other("ipkvn-8", "IP-KVN 8", "kvm", 1, [], 25, 1200, 2005, { brand: "Avoscent", oob: ["net", ...oobs(8, "kvm")], failYearly: 0.04 }),
   other("ogb-8", "OpenGearbox 8", "console", 1, [], 15, 1500, 2005, { brand: "OpenGearbox", oob: ["net", ...oobs(8, "serial")] }),

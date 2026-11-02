@@ -1,4 +1,4 @@
-// GDD, Infrastructure consoles: MinnIO buckets and erasure sets, OwnClod shared links. Numbers in economy.md, Happiness and churn
+// GDD, Infrastructure consoles: MinnIO buckets and erasure sets, OwnClod shared links. Numbers in economy/happiness-and-churn.md, Happiness and churn
 // and Hardware, power and failures.
 import { hashRng, rand } from "../00-core/rng";
 import { isMonthStart } from "../00-core/time";

@@ -1,6 +1,6 @@
 // GDD, Custom orders: an order email is worked step by step. Quote a price and wait for the customer to accept, create the
 // customer account before or after, confirm the order with its invoice, register or transfer the domain and set up the
-// service; the customer hears once more when everything is done. Numbers in economy.md, Custom orders.
+// service; the customer hears once more when everything is done. Numbers in economy/README.md, Custom orders.
 import { carryForward } from "./quotes";
 import { hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";

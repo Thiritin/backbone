@@ -1,4 +1,4 @@
-// economy.md, Proxmocks cluster quorum: a QDevice is a free server that casts one extra vote.
+// economy/README.md, Proxmocks cluster quorum: a QDevice is a free server that casts one extra vote.
 import type { GameState } from "../50-state";
 import { qdeviceBlock } from "../60-infra/quorum";
 import type { ActionResult } from "./hardware";

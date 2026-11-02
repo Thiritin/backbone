@@ -1,4 +1,4 @@
-// GDD, Racks, hardware and cabling (Remote management, Hangs and pulled plugs). Numbers in economy.md, Hardware, power and failures.
+// GDD, Racks, hardware and cabling (Remote management, Hangs and pulled plugs). Numbers in economy/hardware-power-and-failures.md, Hardware, power and failures.
 import { nowHours } from "../00-core/time";
 import { hashRng, rand } from "../00-core/rng";
 import { hasBmc, modelById } from "../10-catalog/hardware";

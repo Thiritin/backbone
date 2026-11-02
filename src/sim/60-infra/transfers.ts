@@ -1,4 +1,4 @@
-// economy.md, Account transfers: new web hosting customers sometimes arrive from another host and expect their site moved.
+// economy/README.md, Account transfers: new web hosting customers sometimes arrive from another host and expect their site moved.
 import { hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
 import { bump, createTicket, isFinal } from "../40-support/tickets";

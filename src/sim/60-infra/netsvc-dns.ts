@@ -1,5 +1,5 @@
 // GDD, Infrastructure consoles: the zones of a DNS service, their records and the site outage a wrong address causes.
-// Numbers in economy.md, Tickets and work rates and Noticing outages.
+// Numbers in economy/README.md, Tickets and work rates and Noticing outages.
 import { hashRng, rand } from "../00-core/rng";
 import { isMonthStart } from "../00-core/time";
 import type { Service } from "../30-customers/customers";

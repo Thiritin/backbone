@@ -1,4 +1,4 @@
-// economy.md, Security advisories, Generated vulnerabilities: every software family ships one release a year and each
+// economy/security-advisories.md, Security advisories, Generated vulnerabilities: every software family ships one release a year and each
 // year's release has a few vulnerabilities, drawn from the game's seed so they are the same whenever they are looked up.
 import { hashRng, rand, type Rng } from "../00-core/rng";
 import { hourOf, yearOf } from "../00-core/time";

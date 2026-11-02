@@ -1,4 +1,4 @@
-// Monthly cohort model of docs/design/economy.md for the headless balance run.
+// Monthly cohort model of docs/design/economy/README.md for the headless balance run.
 // ponytail: customers are cohorts per profile and product with one average happiness; per-customer sim comes with the real tick.
 import { binomial, createRng, rand, type Rng } from "../00-core/rng";
 import { WORK_SHARE, type Patience } from "../00-core/workhours";
@@ -176,7 +176,7 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
   const loans: Loan[] = [];
   const leases: Lease[] = [];
   const profits: number[] = [];
-  // A dynamic line sells only web hosting, so the bot starts on the business DSL line (economy.md, Addresses and internet).
+  // A dynamic line sells only web hosting, so the bot starts on the business DSL line (economy/addresses-and-internet.md, Addresses and internet).
   let line = homeLineById("dsl-16-biz");
   const support: Worker[] = [];
   const books: Worker[] = [];
@@ -393,9 +393,9 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
       const tpc = TICKETS_PER_CUSTOMER[p.skill];
       c.H -= Math.min(40, tpc * p.waitPenalty * beyond(p.reply, waitHours + (p.reply.clock === "always" ? OFF_HOURS_WAIT : 0)));
       c.H += tpc * (5 * pRight - 10 * (1 - pRight));
-      // Only the hours after the customer noticed the repair count (economy.md, Noticing outages).
+      // Only the hours after the customer noticed the repair count (economy/noticing-outages.md, Noticing outages).
       if (pr !== "web") c.H -= hitShare * p.outagePenalty * noticedHours(pr === "game" ? "game" : BUSINESS_IDS.includes(p.id) ? "business" : "private", REPAIR_HOURS);
-      // Overpricing against a fair price and the cohort's average maximum (economy.md, Price tolerance).
+      // Overpricing against a fair price and the cohort's average maximum (economy/README.md, Price tolerance).
       const pct = (limit: number) => Math.max(0, 100 * (bot.priceFactor / limit - 1));
       c.H -= OVER_DRIFT * pct(Math.max(1, OFFER[p.budget])) + PAST_MAX_DRIFT * pct(p.cap * (TOLERANCE[0] + TOLERANCE[1]) / 2);
       const target = Math.min(95, Math.max(20, 70 + 0.5 * (U(p, pr, 0) - best(p, pr))));

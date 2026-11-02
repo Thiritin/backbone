@@ -1,7 +1,7 @@
 import type { GameState } from "../50-state";
 import type { TicketKind } from "./tickets";
 
-// economy.md, Tickets and work rates: hours past due after which a customer closes an unanswered ticket.
+// economy/tickets-and-work-rates.md, Tickets and work rates: hours past due after which a customer closes an unanswered ticket.
 // Cancellations close at the next billing date, and notices, legal requests and orders are not the customer's to close.
 export const ABANDON_HOURS: Partial<Record<TicketKind, number>> = {
   outage: 72, howTo: 120, upgrade: 168, appeal: 168, billing: 336, abuse: 336, refund: 336,

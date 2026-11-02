@@ -1,4 +1,4 @@
-// Traffic, exits, routing, billing, peering and DDoS per zone. Values come from docs/design/economy.md (Traffic and bandwidth).
+// Traffic, exits, routing, billing, peering and DDoS per zone. Values come from docs/design/economy/traffic-and-bandwidth.md (Traffic and bandwidth).
 import { lineFactor } from "../46-finance/payables";
 import { hashRng, rand } from "../00-core/rng";
 import { isMonthStart, yearOf } from "../00-core/time";
