@@ -69,11 +69,14 @@ export function InvoicesTab({ focus }: { focus: string | null }) {
   );
 }
 
-const lines = (a: Address) => [a.company, a.contact, a.street, `${a.zip} ${a.city}`].filter(Boolean) as string[];
+// A sole trader without a registered owner has the company as contact too, printed once.
+const lines = (a: Address) => [...new Set([a.company, a.contact, a.street, `${a.zip} ${a.city}`].filter(Boolean) as string[])];
+
+export const ownAddress = (game: GameState): Address => addressFor(game.seed, 0, game.registration?.owner ?? game.company.name, game.company.name, game.locations[0]?.city ?? "Frankfurt");
 
 // A document of the company as an A4 page, scaled to the pane: an invoice or a quote. from replaces the sender line for a supplier's invoice.
 export function Page({ game, title, from, to, items, footer }: { game: GameState; title: string; from?: string; to?: Address; items: InvoiceLine[]; footer: ReactNode }) {
-  const own = addressFor(game.seed, 0, game.registration?.owner ?? game.company.name, game.company.name, game.locations[0]?.city ?? "Frankfurt");
+  const own = ownAddress(game);
   return (
     <div className="books-a4-fit">
       <article className="books-a4" aria-label={title}>

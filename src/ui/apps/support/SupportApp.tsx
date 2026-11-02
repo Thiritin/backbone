@@ -1,4 +1,4 @@
-import { AlarmClock, BadgeCheck, ChartColumn, Check, CircleCheck, CircleX, Hourglass, Inbox, Layers, Mails, Search, Timer, TrendingDown, TriangleAlert, Wrench, X } from "lucide-react";
+import { AlarmClock, BadgeCheck, ChartColumn, Check, CircleCheck, CircleX, FileText, Hourglass, Inbox, Layers, Mails, Search, Timer, TrendingDown, TriangleAlert, Wrench, X } from "lucide-react";
 import { useState, type CSSProperties, type ReactNode } from "react";
 import { euroCents } from "../../../sim/00-core/money";
 import { deskHas, deskOf, type DeskFeature } from "../../../sim/10-catalog/desks";
@@ -301,11 +301,14 @@ function Thread({ tk, gates }: { tk: Ticket; gates: Gates }) {
   const act = useStore((s) => s.act);
   const openApp = useStore((s) => s.openApp);
   const K = kindOf(tk.kind);
+  // A supplier's invoice mail carries the invoice as a PDF.
+  const payable = tk.mail?.params.payable !== undefined ? game.payables.find((p) => p.id === tk.mail!.params.payable) : undefined;
 
   const opening = (extra: PaneExtra | null) =>
     extra === "login" ? <p><button className="btn primary" onClick={() => openApp("Browser", { kind: "url", id: String(tk.mail!.params.url) })}>{t("apps.open")}</button></p>
     : extra === "order" ? <OrderKeys game={game} order={String(tk.mail!.params.order)} />
     : extra === "licence" ? <p><button className="btn primary" onClick={() => openApp("Books", { kind: "register", id: "" })}>{t("vendor-sites.register")}</button></p>
+    : payable ? <div className="attach-strip"><button className="attach-chip" onClick={() => openApp("Preview", { kind: "payable", id: payable.id })}><FileText />{`${t("books.invoice", { number: payable.number })}.pdf`}</button></div>
     : null;
 
   const body = (
