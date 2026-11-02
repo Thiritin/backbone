@@ -147,4 +147,3 @@ The vSphere gaps are not part of this build. Each can become its own task after 
 
 ## 8. Open questions
 
-- Should "Shop systems" research stay without prerequisite, or need "Product management"?
