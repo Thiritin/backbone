@@ -11,7 +11,8 @@ import { halting } from "../src/sim/60-infra/status";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { setPower } from "../src/sim/90-actions/hardware";
 import { buyDevice, newGame } from "./fixtures";
-import { hire, queueOperation, setOnCall, setTechRules } from "../src/sim/90-actions/staff";
+import { queueOperation, setOnCall, setTechRules } from "../src/sim/90-actions/staff";
+import { hire } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { withServer } from "./fixtures";
 

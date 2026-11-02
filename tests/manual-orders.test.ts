@@ -13,7 +13,7 @@ import type { GameState } from "../src/sim/50-state";
 import { routeOptions } from "../src/sim/60-infra/routes";
 import { tick } from "../src/sim/88-tick/tick";
 import { confirmOrder, offerUpgrade, createAccount, provisionOrder, quoteOrder, registerOrderDomain, renewDomain, setAutoOrders } from "../src/sim/90-actions/orders";
-import { hire } from "../src/sim/90-actions/staff";
+import { hire } from "./fixtures";
 import { createTicket } from "../src/sim/40-support/tickets";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { closeTicket } from "../src/sim/90-actions/support";
