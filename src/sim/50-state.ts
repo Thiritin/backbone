@@ -42,6 +42,7 @@ import { newNetSvc, type NetSvc } from "./60-infra/netsvc";
 import { newWebPanel, type WebPanel } from "./60-infra/webpanel";
 import type { CompanyMail } from "./80-business/mail";
 import type { Registrar } from "./30-customers/registrar";
+import { PARKING, type CompanyRecord } from "./60-infra/company-zone";
 import type { Listing } from "./10-catalog/used";
 import { firstHostNo } from "./30-customers/hostnames";
 import { newShop, type ShopState } from "./80-business/shop";
@@ -177,8 +178,8 @@ export interface HostFiles { since: number; paths: Record<string, string | boole
 export interface Doc { id: string; kind: "guide" | "note" | "app" | "form" | "cert"; title: string; body: string; x: number; y: number; form?: DocForm }
 // from is the legal form the company held when the form was downloaded.
 export interface DocForm { form: string; from?: string; signed: number | null }
-// domain is the company's own domain once registered; mail is its email service.
-export interface Company { name: string; logo: string; color: string; domain: string | null; mail: CompanyMail; tagline: string }
+// domain is the company's own domain once registered; mail is its email service; zone is the domain's DNS zone at the registrar.
+export interface Company { name: string; logo: string; color: string; domain: string | null; mail: CompanyMail; tagline: string; zone: CompanyRecord[] }
 export interface Registration { hour: number; owner: string; form: string; number: number }
 export interface LedgerEntry { hour: number; category: string; key: string; params: Record<string, string | number>; amount: number }
 
@@ -459,7 +460,7 @@ export const newGame = (seed: number): GameState => ({
   gameTitles: {},
   gameLost: {},
   tickets: [], playerBusyUntil: 0, friendFavours: { year: 0, used: 0 }, player: { at: "loc1", until: 0, doing: "work" }, downSince: {}, frozen: [],
-  company: { name: START_NAME, logo: "server", color: "oklch(0.55 0.15 255)", domain: null, mail: { kind: "free" }, tagline: "" },
+  company: { name: START_NAME, logo: "server", color: "oklch(0.55 0.15 255)", domain: null, mail: { kind: "free" }, tagline: "", zone: PARKING },
   homeLine: { id: MOMS_DSL.id, next: null },
   taxLoss: 0, brokeSince: null, gameOver: null,
   staff: [], teams: defaultTeams(), candidates: applications(seed, 0), activity: [], techOps: [], techRules: { failed: true, worn: false, blackhole: true, updates: false, recover: true }, onCall: { roster: [], lastCall: {}, month: {} },
