@@ -11,7 +11,7 @@ import { Confirm } from "../../desktop/Confirm";
 import { PearMark } from "../../desktop/Intro";
 import { appByName } from "../registry";
 import { rowLabel } from "./filter";
-import { useStore } from "../../store";
+import { useFocus, useStore } from "../../store";
 import { t } from "../../../i18n/en";
 
 const UPGRADES: Record<string, { icon: LucideIcon; tile: string }> = {
@@ -66,6 +66,7 @@ function featuredId(installed: string[], learned: string[]): string {
 export function Software() {
   const game = useStore((s) => s.game);
   const [open, setOpen] = useSessionState<string | null>("software.sel", null);
+  useFocus("Shop", (f) => { if (f.kind === "software" && storeItem(f.id)) setOpen(f.id); });
   const price = (item: StoreItem) => (item.monthly ? `${t("shop.priceMonthly", { price: euroCents(subscriptionPrice(item, yearOf(game.hour))), seat: item.perSeat ? 1 : 0 })}${item.id === "chadGpt" ? ` + ${t("shop.priceTokens", { price: euroCents(pricePerMTokens(yearOf(game.hour))) })}` : ""}` : t("shop.free"));
   const detail = open && storeItem(open);
   if (detail) return <Detail item={detail} price={price(detail)} back={() => setOpen(null)} />;
