@@ -7,3 +7,5 @@
 .bk-web-links a[aria-current] { color: #000; font-weight: 700; text-decoration: none; }
 .bk-web .bk-body { background: #fff; }
 .bk-web .table th { background: #eee; }
+.bk-web-links .tab-count::before { content: " ("; }
+.bk-web-links .tab-count::after { content: ")"; }
