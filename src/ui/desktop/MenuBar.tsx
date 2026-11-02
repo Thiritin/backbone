@@ -3,7 +3,7 @@ import { Bell, Moon, Pause, Play, SkipForward, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { Confirm } from "./Confirm";
-import { Intro } from "./Intro";
+import { Intro, PearMark } from "./Intro";
 import { newNote } from "./DesktopIcons";
 import { restoreGuide } from "../../sim/90-actions/docs";
 import { formatClock, SKIP, SPEEDS, type Speed } from "../../sim/00-core/time";
@@ -13,7 +13,6 @@ import { sky } from "../../sim/20-world/weather";
 import { SkyIcon } from "../apps/weather/SkyIcon";
 import { degrees } from "../apps/weather/WeatherApp";
 import { DISCORD_URL, uiSound, useStore, type Win } from "../store";
-import { CompanyMark } from "../apps/company";
 import { appFor, appTitle } from "../apps/registry";
 import { EMBEDDED } from "../embedded";
 import { BUILD_ID } from "../leaderboard";
@@ -62,7 +61,7 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
 
   return (
     <header className="menubar" role="menubar">
-      {item("backbone", "Backbone", [[t("desktop.menu.intro"), () => setIntro(true)], [t("desktop.menu.github"), () => window.open("https://github.com/Thiritin/backbone", "_blank", "noopener")], [t("desktop.menu.discord"), () => window.open(DISCORD_URL, "_blank", "noopener")], [t("desktop.menu.report"), () => window.open(`https://github.com/Thiritin/backbone/issues/new?body=${encodeURIComponent(`\n\nBuild: ${BUILD_ID}`)}`, "_blank", "noopener")], [t("desktop.icon.newNote"), () => newNote()], ...(guideGone ? [[t("desktop.menu.restoreGuide"), () => act(restoreGuide)] as [string, () => void]] : []), [t("desktop.menu.whatsNew"), () => openNews(EMBEDDED)], [t("desktop.menu.export"), () => exportSave(game)], [t("desktop.menu.mainMenu"), toMenu], [t("desktop.menu.delete"), () => setConfirm(true)], ...(immersive ? [[t("desktop.menu.logout"), () => { leaveImmersive(); toMenu(); }] as [string, () => void]] : [])], <CompanyMark company={game.company} className="mb-mark" />, "mb-logo")}
+      {item("backbone", "Backbone", [[t("desktop.menu.intro"), () => setIntro(true)], [t("desktop.menu.github"), () => window.open("https://github.com/Thiritin/backbone", "_blank", "noopener")], [t("desktop.menu.discord"), () => window.open(DISCORD_URL, "_blank", "noopener")], [t("desktop.menu.report"), () => window.open(`https://github.com/Thiritin/backbone/issues/new?body=${encodeURIComponent(`\n\nBuild: ${BUILD_ID}`)}`, "_blank", "noopener")], [t("desktop.icon.newNote"), () => newNote()], ...(guideGone ? [[t("desktop.menu.restoreGuide"), () => act(restoreGuide)] as [string, () => void]] : []), [t("desktop.menu.whatsNew"), () => openNews(EMBEDDED)], [t("desktop.menu.export"), () => exportSave(game)], [t("desktop.menu.mainMenu"), toMenu], [t("desktop.menu.delete"), () => setConfirm(true)], ...(immersive ? [[t("desktop.menu.logout"), () => { leaveImmersive(); toMenu(); }] as [string, () => void]] : [])], <span className="mb-pear"><PearMark /></span>, "mb-logo")}
       {front ? item("app", appName(front), appMenu(front), appName(front), "mb-app") : <span className="mb-item mb-app">Backbone</span>}
       {item("window", t("desktop.menu.window"), windows.map((w) => (w.doc ? [docTitle(w.doc), () => openDoc(w.doc!)] : w.console ? [t("desktop.menu.console"), () => openConsole(w.console!)] : [appName(w), () => openApp(w.app)]) as [string, () => void]))}
       <span className="mb-spacer" />
