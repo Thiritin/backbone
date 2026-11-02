@@ -7,12 +7,12 @@ import type { GameState } from "../src/sim/50-state";
 import { betterHost, hostQuality, preferredRoute } from "../src/sim/60-infra/routes";
 import { sizeOf } from "../src/sim/30-market/spec";
 import { tick } from "../src/sim/88-tick/tick";
-import { confirmOrder, createAccount, provisionOrder, quoteOrder, registerOrderDomain } from "../src/sim/90-actions/orders";
+import { confirmOrder, createAccount, provisionOrder, registerOrderDomain } from "../src/sim/90-actions/orders";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { orderOf } from "../src/sim/30-market/orders";
 import { addRequest } from "../src/sim/30-market/sales";
 import { sizeSpec } from "../src/sim/10-catalog/products";
-import { mailed, owner, readyGame } from "./fixtures";
+import { mailed, owner, readyGame, quoteOrder } from "./fixtures";
 
 const run = (s: GameState, hours: number) => { for (let i = 0; i < hours; i++) tick(s); };
 const step = (s: GameState, res: { ok: boolean; error?: string }) => {

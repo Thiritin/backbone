@@ -18,11 +18,15 @@ import { arrowRows, useBooks } from "./view";
 import { formatDay } from "../billing/format";
 import { PriceField } from "../sales/PriceField";
 import { DocBar, DocButton, DocFoot } from "./DocBar";
+import { currentVendor } from "../../../sim/80-business/bookkeeping";
 import { Page } from "./InvoicesTab";
 
 // The drag type of a quote row; the order ticket's attachment strip takes it.
 export const QUOTE_DRAG = "application/x-lexwear-quote";
 const PILL: Record<QuoteStatus, string> = { draft: "", sent: "accent", accepted: "ok", countered: "warn", declined: "", invoiced: "" };
+// GnuCache follows GnuCash, which has no quotes: a quote is an unposted invoice, and posting it carries it forward.
+const unposted = (game: GameState) => currentVendor(game)?.id === "gnucache";
+export const quoteTitle = (game: GameState, number: string) => t(unposted(game) ? "orderSteps.unposted" : "orderSteps.quote", { number });
 export const QuotePill = ({ q }: { q: Quote }) => <span className={`pill ${PILL[q.status]}`}>{t(`orderSteps.status.${q.status}`)}</span>;
 
 const orderFor = (game: GameState, q: Quote) => {
@@ -63,7 +67,7 @@ export function QuotesTab({ focus }: { focus: string | null }) {
         <span className="books-docbar-sep" />
         <DocButton icon={<FilePen />} label={t("orderSteps.edit")} disabled={!draft} pressed={editing && draft} onClick={() => setEditing(!editing)} />
         <DocButton icon={<Send />} label={t("orderSteps.send")} disabled={!draft || !q?.ticketId} onClick={() => act(attachQuote, q!.id, q!.ticketId!)} />
-        <DocButton icon={<FileOutput />} label={t("orderSteps.carryForward")} disabled={q?.status !== "accepted"} onClick={carry} />
+        <DocButton icon={<FileOutput />} label={t(unposted(game) ? "orderSteps.post" : "orderSteps.carryForward")} disabled={q?.status !== "accepted"} onClick={carry} />
         <DocButton icon={<Trash2 />} label={t("orderSteps.delete")} disabled={!draft} onClick={() => { if (act(deleteQuote, q!.id).ok) pick(null); }} />
       </DocBar>
       <div className="books-split">
@@ -77,7 +81,7 @@ export function QuotesTab({ focus }: { focus: string | null }) {
                 {list.map((x) => (
                   <tr key={x.id} className={`${x.id === selected ? "sel" : ""}${x.status === "draft" ? " books-drag" : ""}`} onClick={() => pick(x.id)} tabIndex={0}
                     onKeyDown={(e) => e.key === "Enter" && pick(x.id)} draggable={x.status === "draft"}
-                    onDragStart={(e) => { e.dataTransfer.setData(QUOTE_DRAG, x.id); e.dataTransfer.setData("text/plain", t("orderSteps.quote", { number: x.number })); e.dataTransfer.effectAllowed = "copy"; }}>
+                    onDragStart={(e) => { e.dataTransfer.setData(QUOTE_DRAG, x.id); e.dataTransfer.setData("text/plain", quoteTitle(game, x.number)); e.dataTransfer.effectAllowed = "copy"; }}>
                     <td className="num">{x.number}</td>
                     <td className="num">{dated(x) === null ? "" : formatDay(dated(x)!)}</td>
                     <td>{name(x)}</td>
@@ -92,7 +96,7 @@ export function QuotesTab({ focus }: { focus: string | null }) {
         {q && <QuotePreview key={q.id} q={q} game={game} editing={editing && draft} />}
       </div>
       <DocFoot items={[
-        [t("books.tab.quotes"), String(list.length)],
+        [t(unposted(game) ? "books.tab.unposted" : "books.tab.quotes"), String(list.length)],
         [t("orderSteps.status.accepted"), String(list.filter((x) => x.status === "accepted").length)],
         [t("books.total"), euroCents(list.reduce((n, x) => n + total(x), 0))],
       ]} />
@@ -111,7 +115,7 @@ function QuotePreview({ q, game, editing }: { q: Quote; game: GameState; editing
   };
   return (
     <div className="books-preview">
-      <Page game={game} title={t("orderSteps.quote", { number: q.number })} to={c?.address ?? (r && mailedAddress(game.seed, r))} items={q.lines}
+      <Page game={game} title={quoteTitle(game, q.number)} to={c?.address ?? (r && mailedAddress(game.seed, r))} items={q.lines}
         footer={<><QuotePill q={q} /><span className="num">{inv ? t("books.invoice", { number: inv }) : formatDay(q.sentAt ?? q.createdAt ?? game.hour)}</span></>} />
       {editing && r && (
         <div className="books-quote-edit">

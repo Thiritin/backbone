@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- GnuCache now writes quotes too, as unposted invoices that you post to the first invoice, and every order ticket takes its quote from Books.
 - Mailboxes can be deleted again unless they are the main address, a provider's administrator account or still in use, and the main address can be moved first.
 - The Email card in Marketing has dropdowns for the main address and the sales, support and abuse mailboxes, and your website shows the mailboxes you choose there.
 - Pear Mail has its own junk mail filter that marks junk brown with a Not Junk banner, learns from every message you mark, and in Automatic mode moves junk to the Junk mailbox; its Preferences now open with Junk Mail and Rules tabs.

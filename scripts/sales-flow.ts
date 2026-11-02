@@ -2,7 +2,7 @@
 // sets up a website in month 3 and runs €250 of search ads from month 6. Usage: npx tsx scripts/sales-flow.ts [seed] [months]
 import { startGame } from "../src/sim/90-actions/start";
 import { tick } from "../src/sim/88-tick/tick";
-import { quoteOrder } from "../src/sim/90-actions/orders";
+import { quoteOrder } from "../tests/fixtures";
 import { orderOf } from "../src/sim/30-market/orders";
 import { missingFor } from "../src/sim/30-market/market";
 import { replyTicket } from "../src/sim/90-actions/support";

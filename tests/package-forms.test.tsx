@@ -10,11 +10,11 @@ import type { Cluster } from "../src/sim/60-infra/cluster";
 import { CONSOLES } from "../src/ui/apps/browser/consoles/ConsolePage";
 import { consoleFeatures, createFormFor, createLink } from "../src/sim/80-business/consoles";
 import { tick } from "../src/sim/88-tick/tick";
-import { confirmOrder, createAccount, provisionOrder, quoteOrder, registerOrderDomain } from "../src/sim/90-actions/orders";
+import { confirmOrder, createAccount, provisionOrder, registerOrderDomain } from "../src/sim/90-actions/orders";
 import { addPackage } from "../src/sim/90-actions/packages";
 import { ChangePackage, planChoices, ProvisionForm } from "../src/ui/apps/browser/consoles/PackageForms";
 import { accountChoices, NewCustomer } from "../src/ui/apps/books/NewCustomer";
-import { mailed, owner, panelVm, readyGame } from "./fixtures";
+import { mailed, owner, panelVm, readyGame, quoteOrder } from "./fixtures";
 
 let s0: GameState;
 const run = (s: GameState, hours: number) => { for (let i = 0; i < hours; i++) tick(s); };
