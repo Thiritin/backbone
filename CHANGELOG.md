@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- Pear Mail adds your mail accounts with an Add Account assistant that asks for the server names, sets them up automatically from Pear Mail 3, tells you what went wrong when a server refuses, and then checks each account for new mail in the background.
 - VMwhere balances with DRS once its hosts run an Enterprise key, without a separate Enterprise Plus subscription, and HyperVee no longer offers SysCenter VMM.
 - Every licensed console shows its edition, licence status, renewal date and key with Remove, opens on its licence page at the first sign-in during a trial, and sends you to the vendor's website for upgrades and update renewals.
 - Every stack in a storage room now has a Ship button that sends the units to another of your sites, such as from the basement to Frankfurt.

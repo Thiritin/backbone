@@ -1,5 +1,9 @@
 // The mail check: on each account's interval, with the window open or closed (docs/design/plans/mail-client.md, The check).
-import { nowMinutes } from "../00-core/time";
+import { nowMinutes, yearOf } from "../00-core/time";
+import { MAIL_HOSTS, mailServersOf, type MailProtocol } from "../10-catalog/mail-providers";
+import { companyDomain } from "../30-customers/domains";
+import { tenantOf } from "../42-mail/address";
+import { capsOf } from "../42-mail/caps";
 import { serverStatus, type ServerStatus } from "../42-mail/accounts";
 import { drop } from "../42-mail/deliver";
 import { boxOf, isRead } from "../42-mail/model";
@@ -18,10 +22,20 @@ const ERRORS: Record<ServerStatus, string | null> = {
   unresolved: "error.mailDns", auth: "error.mailAuth", external: "error.mailExternal", poll: "error.mailPoll",
 };
 
+// The provider whose server answers to a typed host name for the protocol, "self" for mail.<company domain>.
+export function hostOwner(s: GameState, host: string, protocol: MailProtocol): string | null {
+  const h = host.trim().toLowerCase(), d = companyDomain(s), year = yearOf(s.hour);
+  return MAIL_HOSTS.find((x) => mailServersOf(x.id, d, year)[protocol]?.host === h)?.id ?? null;
+}
+
 // The error key a check of the account answers now, null when it connects; gapMin counts the provider's poll gap.
 export function clientError(s: GameState, c: ClientAccount, gapMin?: number): string | null {
-  if (!s.mail.accounts.some((a) => a.id === c.accountId)) return "error.mailNoBox";
-  return ERRORS[serverStatus(s, c.accountId, c.protocol, c.password, gapMin)];
+  const owner = c.server && hostOwner(s, c.server.host, c.protocol);
+  if (c.server && !owner) return "error.mailServer";
+  const a = s.mail.accounts.find((x) => x.id === c.accountId);
+  if (!a || (owner && tenantOf(s, a)?.host !== owner)) return "error.mailNoBox";
+  const st = serverStatus(s, a.id, c.protocol, c.password, gapMin);
+  return st === "external" && !capsOf(s, a)[c.protocol] ? "error.mailProtocol" : ERRORS[st];
 }
 
 const patch = (s: GameState, id: string, p: Partial<ClientAccount>): void => {

@@ -17,7 +17,15 @@
 .pm-searchbar button.on { background: var(--accent); color: white; }
 
 .pm-split { flex: 1; min-height: 0; display: flex; }
-.pm-side { width: 190px; padding: 6px 6px 10px; }
+.pm-side { width: 190px; padding: 6px 6px 0; display: flex; flex-direction: column; }
+.pm-side-foot { position: sticky; bottom: 0; display: flex; gap: 2px; margin: 0 -6px; padding: 3px 6px; border-top: 0.5px solid var(--line); background: var(--win-side); }
+.pm-side-foot button { width: 26px; height: 20px; display: grid; place-items: center; border: none; border-radius: 4px; background: none; color: var(--text-2); }
+.pm-side-foot button.on { background: var(--line); }
+.pm-side-foot svg { width: 14px; height: 14px; }
+.pm-activity { display: grid; gap: 4px; padding: 6px 2px; border-top: 0.5px solid var(--line); font-size: 11px; color: var(--text-2); }
+.pm-act-line { display: grid; gap: 3px; }
+.pm-act-line.error { color: var(--bad-text); }
+.pm-act-line .btn { justify-self: start; height: 20px; font-size: 11px; }
 .pm-box { width: 100%; height: 24px; border: none; background: none; text-align: left; font-size: 12px; }
 .pm-box svg { width: 15px; height: 15px; flex: none; }
 .pm-box.active { background: var(--ar-sel, var(--accent)); color: white; }
@@ -28,7 +36,8 @@
 .pm-box.active .pm-count { background: white; color: var(--accent-text); }
 .pm-account-h { display: flex; align-items: center; gap: 6px; }
 .pm-account.off { opacity: 0.5; }
-.pm-warn { width: 13px; height: 13px; color: oklch(0.7 0.16 70); }
+.pm-warn { display: grid; padding: 0; border: none; background: none; color: oklch(0.7 0.16 70); }
+.pm-warn svg { width: 13px; height: 13px; }
 
 .pm-content { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .pm-list { flex: 0 0 42%; min-height: 80px; overflow: auto; border-bottom: 1px solid var(--line-strong); outline: none; }
@@ -77,6 +86,16 @@
 }
 .pm-sheet-icon { width: 56px; height: 56px; }
 .pm-sheet h2 { font-size: 15px; font-weight: 650; }
+.pm-assistant { width: 440px; }
+.pm-form { display: grid; gap: 8px; width: 100%; text-align: left; }
+.pm-row { display: grid; grid-template-columns: 150px 1fr; align-items: center; gap: 8px; font-size: 12.5px; }
+.pm-row > span { text-align: right; }
+.pm-check { display: flex; align-items: center; gap: 6px; justify-self: start; margin-left: 158px; font-size: 12.5px; }
+.pm-summary { display: grid; grid-template-columns: 150px 1fr; gap: 4px 8px; margin: 0; font-size: 12.5px; }
+.pm-summary dt { text-align: right; color: var(--text-2); }
+.pm-summary dd { margin: 0; overflow-wrap: anywhere; }
+.pm-error { color: var(--bad-text); font-size: 12.5px; }
+.pm-sheet-buttons { display: flex; gap: 8px; width: 100%; }
 
 /* Panthera, as Mail 2: title bar and toolbar are one grey gradient, buttons sit in glossy capsules, the mailbox list is pale blue. */
 :root[data-os="aqua"] .window:has(.pm) .titlebar { background: linear-gradient(oklch(0.9 0 0), oklch(0.83 0 0)); border-bottom: none; }

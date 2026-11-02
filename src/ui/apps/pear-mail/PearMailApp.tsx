@@ -8,9 +8,11 @@ import type { GameState } from "../../../sim/50-state";
 import { markMessages } from "../../../sim/90-actions/mailmsg";
 import { dismissPearWelcome, getMail, markPearMessages } from "../../../sim/90-actions/pear-mail";
 import { PearMailMark } from "../../art/mailmarks";
+import { VaultOffer } from "../../vault";
 import { useSessionState } from "../../session";
 import { useFocus, useStore } from "../../store";
 import { matches, useSelection, type SearchScope } from "../mail-kit/mail-kit";
+import { AccountAlert, Assistant } from "./Assistant";
 import { compose, deleteRows, junkRows, moveRows } from "./commands";
 import { MessageList } from "./List";
 import { Preview } from "./Preview";
@@ -63,6 +65,11 @@ export function PearMailApp() {
   const picked = rows.filter((r) => sel.ids.includes(r.m.id)), one = new Set(picked.map((r) => r.c.id)).size === 1 ? picked[0]?.c : undefined;
   const home = (box.c && pm.accounts.find((c) => c.id === box.c)) || pm.accounts.find((c) => c.enabled);
   const inJunk = box.f === "junk";
+  const [adding, setAdding] = useState(false);
+  const [alert, setAlert] = useState<string | null>(null);
+  // A refused password asks once per session until the player answers.
+  const [asked, setAsked] = useState<string[]>([]);
+  const prompt = pm.accounts.find((c) => c.id === alert) ?? (!adding ? pm.accounts.find((c) => c.authFailed && c.enabled && !asked.includes(c.id)) : undefined);
   // A reply to a customer request goes through the ticket pane under the message.
   const reply = (mode: "reply" | "all" | "forward") => {
     const pane = mode !== "forward" && document.querySelector<HTMLElement>(".pm-ticket");
@@ -74,6 +81,7 @@ export function PearMailApp() {
   );
 
   useFocus("Pear Mail", (f) => {
+    if (f.kind === "addAccount") return setAdding(true);
     const b = f.kind === "message" ? boxOf(useStore.getState().game, f.id) : null;
     if (b) { setBox(b); setQuery(""); sel.set([f.id]); }
   });
@@ -104,25 +112,28 @@ export function PearMailApp() {
           <input type="search" aria-label={t("pearMail.search")} placeholder={t("pearMail.search")} value={query} onChange={(e) => setQuery(e.target.value)} />
         </label>
       </div>
+      <VaultOffer />
       {query.trim() && (
         <div className="pm-searchbar" role="radiogroup">
           {[false, true].map((x) => <button key={String(x)} role="radio" aria-checked={everywhere === x} className={everywhere === x ? "on" : ""} onClick={() => setEverywhere(x)}>{t(x ? "pearMail.search.everywhere" : "pearMail.search.here")}</button>)}
         </div>
       )}
       <div className="pm-split">
-        <Sidebar game={game} box={box} onBox={(b) => { setBox(b); setQuery(""); }} />
+        <Sidebar game={game} box={box} onBox={(b) => { setBox(b); setQuery(""); }} onAdd={() => setAdding(true)} onAlert={setAlert} />
         <div className="pm-content">
           <MessageList game={game} rows={rows} box={box} sort={sort} onSort={setSort} threads={threads} onThreads={setThreads} sel={sel} />
           <Preview game={game} row={shown} />
         </div>
       </div>
-      {!pm.welcomed && !pm.accounts.length && (
+      {!pm.welcomed && !pm.accounts.length && !adding && (
         <div className="pm-sheet" role="dialog" aria-labelledby="pm-welcome">
           <PearMailMark className="pm-sheet-icon" />
           <h2 id="pm-welcome">{t("pearMail.welcome.title")}</h2>
-          <button className="btn primary" onClick={() => act(dismissPearWelcome)}>{t("pearMail.welcome.add")}</button>
+          <button className="btn primary" onClick={() => { act(dismissPearWelcome); setAdding(true); }}>{t("pearMail.welcome.add")}</button>
         </div>
       )}
+      {adding && <Assistant onClose={() => setAdding(false)} />}
+      {prompt && !adding && <AccountAlert key={prompt.id} c={prompt} onClose={() => { setAlert(null); setAsked([...asked, prompt.id]); }} />}
     </div>
   );
 }
