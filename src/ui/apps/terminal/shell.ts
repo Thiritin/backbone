@@ -1,6 +1,7 @@
 import { useEffect, useRef, type ClipboardEvent, type KeyboardEvent } from "react";
 import { splitPaste } from "../../../sim/60-infra/shell";
 import { t } from "../../../i18n/en";
+import { confLine, confPrompt, type ConfMenu } from "../../../sim/60-infra/squirrel-conf";
 import { complete, hostOf, promptOf, runLine, sessionStep, watchStep, type Editing, type Session, type Watch } from "../../../sim/60-infra/terminal";
 import { useSessionState } from "../../session";
 import { useStore } from "../../store";
@@ -24,6 +25,8 @@ export function useShell(prefix: string, start: Session | null = null) {
   const [cwd, setCwd] = useSessionState<string | null>(`${prefix}.cwd`, null);
   const [pending, setPending] = useSessionState<string | null>(`${prefix}.confirm`, null);
   const [open, setOpen] = useSessionState<Open | null>(`${prefix}.edit`, null);
+  // A menu program such as conf.pl, which takes every line until it quits.
+  const [menu, setMenu] = useSessionState<ConfMenu | null>(`${prefix}.menu`, null);
   // Pasted lines still to run, one per render so each sees the state the last one left.
   const [queue, setQueue] = useSessionState<string[]>(`${prefix}.queue`, []);
   const recall = useRef(history.length);
@@ -46,17 +49,25 @@ export function useShell(prefix: string, start: Session | null = null) {
     if (step.next === session) return;
     setLines([...lines, ...step.output.map((text) => ({ text }))].slice(-MAX_LINES));
     setSession(step.next);
-    if (!step.next) { setCwd(null); setPending(null); }
-  }, [game, session, lines, remote, setLines, setSession, setCwd, setPending]);
+    if (!step.next) { setCwd(null); setPending(null); setMenu(null); }
+  }, [game, session, lines, remote, setLines, setSession, setCwd, setPending, setMenu]);
 
   const tab = () => {
-    if (pending !== null) return;
+    if (pending !== null || menu) return;
     const r = complete(useStore.getState().game, session, draft, cwd);
     if (r.options.length) setLines([...lines, { prompt: promptOf(session, cwd), text: draft }, { text: r.options.join("  ") }].slice(-MAX_LINES));
     setDraft(r.line);
   };
 
   const submit = (line = draft, from = session) => {
+    if (menu) {
+      const r = confLine(() => useStore.getState().game, (c) => useStore.getState().act(...c), menu, line);
+      const output = r.output.map((text) => ({ text }));
+      setDraft("");
+      setLines((r.clear ? output : [...lines, { prompt: confPrompt(menu), text: line }, ...output]).slice(-MAX_LINES));
+      setMenu(r.menu);
+      return;
+    }
     const asked = pending, dir = from === session ? cwd : null;
     const shown: Line = { prompt: asked !== null ? t("term.apt.confirm") : promptOf(from, dir), text: line };
     setDraft("");
@@ -70,6 +81,7 @@ export function useShell(prefix: string, start: Session | null = null) {
     setSession(result.session);
     setCwd(result.cwd);
     setPending(result.confirm);
+    if (result.menu) setMenu(result.menu);
     if (result.dev) useStore.getState().openApp("Dev menu");
     if (result.edit) setOpen({ ...result.edit, host: hostOf(result.session), saved: result.edit.text });
     if (result.watch.length) setWatching([...watching, ...result.watch]);
@@ -112,8 +124,8 @@ export function useShell(prefix: string, start: Session | null = null) {
   };
 
   // A fresh session on the machine, as a login starts one.
-  const begin = (to: Session | null, shown: Line[]) => { setSession(to); setLines(shown); setCwd(null); setPending(null); setDraft(""); setOpen(null); };
+  const begin = (to: Session | null, shown: Line[]) => { setSession(to); setLines(shown); setCwd(null); setPending(null); setDraft(""); setOpen(null); setMenu(null); };
 
-  const prompt = pending !== null ? t("term.apt.confirm") : promptOf(session, cwd);
+  const prompt = menu ? confPrompt(menu) : pending !== null ? t("term.apt.confirm") : promptOf(session, cwd);
   return { lines, setLines, session, setSession, draft, setDraft, open, setOpen, prompt, busy, submit, onKeyDown, onPaste, begin };
 }
