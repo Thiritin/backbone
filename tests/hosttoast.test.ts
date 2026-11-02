@@ -144,7 +144,7 @@ describe("HOSTtoast", () => {
 
   it("lists rivals and you by tier, then review score", () => {
     const s = newGame(5);
-    const rows = hosttoastList(s, "webHosting", null);
+    const rows = hosttoastList(s, "webHosting");
     expect(rows[0].id).toBe("rackspice");
     expect(rows.every((r, i) => i === 0 || TIERS[rows[i - 1].tier].fee >= TIERS[r.tier].fee)).toBe(true);
     expect(rows.some((r) => r.id === "you")).toBe(false);
