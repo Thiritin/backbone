@@ -43,13 +43,13 @@ Puns, approved: **GMix** (GMX, already in the game), tiers **FreeMix, ProMix, To
 
 ### 3.1 Tiers
 
-A GMix tenant is one mailbox on `gmix.com` (mail-core), and its `plan` is the tier id `free`, `pro` or `top`. A company holds at most three GMix tenants (`error.mailLimit`). The numbers are the provider row of `src/sim/10-catalog/mail-providers.ts`, shaped like the real FreeMail, ProMail and TopMail of each time. They are starting numbers: the catalog milestone checks every figure against a dated source where one exists and the table stands where none is found. Prices are euros a month, quotas gigabytes (the free tier follows mail-core's 1 GB in 2005, 2 GB from 2009, 5 GB from 2014).
+A GMix tenant is one mailbox on `gmix.com` (mail-core), and its `plan` is the tier id `free`, `pro` or `top`. A company holds at most three GMix tenants (`error.mailLimit`). The numbers are the provider row of `src/sim/10-catalog/mail-providers.ts`, shaped like the real FreeMail, ProMail and TopMail of each time. The catalog milestone checked them against dated sources. GMX sold FreeMail with 1 GB, ProMail with 5 GB at 2.99 euros and TopMail with 10 GB at 4.99 euros from August 2004 (Macwelt, 12 August 2004), so all three tiers are on sale from 2005 and their quotas stay flat; no dated later increase was found. The later prices of 3.99 and 6.49 euros are confirmed but not dated, and stay at 2015. The other rows found no dated source and stand as planned. Prices are euros a month, quotas gigabytes.
 
 | | FreeMix | ProMix | TopMix |
 | --- | --- | --- | --- |
-| Sold | 2005 | 2005 | 2008 |
+| Sold | 2005 | 2005 | 2005 |
 | Price | 0 | 2.99, 3.99 from 2015 | 4.99, 6.49 from 2015 |
-| Mailbox | 1, 2 from 2009, 5 from 2014 | 2, 4, 10 on the same dates | 5, 10, 25 on the same dates |
+| Mailbox | 1 | 5 | 10 |
 | Attachment per mail (MB) | 5, 20 from 2012 | 20, 50 from 2012 | 50, 100 from 2012 |
 | Ads | banner, text block, signature on sent mail | none | none |
 | POP3 and SMTP | yes, one poll per 15 minutes until 2012 | yes | yes |
@@ -61,7 +61,7 @@ A GMix tenant is one mailbox on `gmix.com` (mail-core), and its `plan` is the ti
 | Support | forum | email | phone line |
 | Own domain | no | no | no |
 
-The Junk folder is called Spam on GMix and both Spam and Trash empty after 30 days (mail-core's purge). The year IMAP opened to free users is one constant, `IMAP_FREE_FROM = 2012`, in the provider row. Mail-core's era table and mail-client's text name 2008 as a default; the row of this lane replaces it, and decision 1 asks the user which year stands.
+The Junk folder is called Spam on GMix and both Spam and Trash empty after 30 days (mail-core's purge). The year IMAP opened to free users is one constant, `IMAP_FREE_FROM = 2012`, in the provider row. No dated GMX announcement was found; forum posts from 2012 report IMAP working on free accounts while it was still advertised as a paid feature, so 2012 stands.
 
 ### 3.2 Sign-up and the address
 
@@ -103,17 +103,24 @@ One component with three looks, drawn over the mail kit.
 
 ### 4.1 Names, editions and prices
 
-The product name is a function of the date, `brandAt(hour)`; the same record gives the logo variant, the sign-up headline and the admin console title. A Goggle tenant has the plan `free` or `paid`, and the display name of each follows the year.
+The product name is a function of the date, `brandAt(hour)`; the same record gives the logo variant, the sign-up headline and the admin console title. A Goggle tenant has the plan `free` or `paid`, and `editionAt(plan, hour)` gives the display name of each for the year. The dates below were checked against the press of the time.
 
 | From | Name | Editions and notes |
 | --- | --- | --- |
-| 2006-08 | Goggle Apps for Your Domain | free, 2 GB a user, up to 200 users, ads in webmail, beta badge |
-| 2007-02 | Goggle Apps | Standard Edition (free, 50 users, 10 from 2011-12, ads) and Premier Edition (catalog price per mailbox and month, no ads, 99.9 percent SLA line); named for Business from 2011 and for Work from 2014 in the plan label |
-| 2012-01 | Goggle Apps | paid quota 25 GB a user, 30 GB pooled with documents from 2014 |
+| 2006-08 | Goggle Apps for Your Domain | free, 2 GB a user, up to 200 users, ads in webmail, beta badge, POP only |
+| 2007-02 | Goggle Apps | Standard Edition (free, 100 users, ads) and Premier Edition (catalog price per mailbox and month, 10 GB, no ads, 99.9 percent SLA line) |
+| 2007 | Goggle Apps | IMAP on every edition (October 2007); Premier quota 25 GB from 2007-10 |
+| 2009-06 | Goggle Apps | Standard Edition 50 users |
+| 2010-11 | Goggle Apps | Premier Edition renamed Goggle Apps for Business |
+| 2011-05 | Goggle Apps | Standard Edition 10 users |
 | 2012-12 | Goggle Apps | Standard Edition is closed to new domains; existing free domains keep running |
-| 2016-09 | G Swoot | Basic edition at the catalog price, 30 GB |
+| 2013-05 | Goggle Apps | paid quota 30 GB pooled with documents |
+| 2014-09 | Goggle Apps | paid edition renamed Goggle Apps for Work |
+| 2016-09 | G Swoot | Basic edition at the catalog price, 30 GB; the free edition is the legacy free edition |
 | 2020-10 | Goggle Workspace | Business Starter at the catalog price, 30 GB |
 | 2022-01 to 2022-05 | Goggle Workspace | free legacy domains must accept the upgrade (4.4) |
+
+A free tenant keeps the user cap of the month it signed up, as the real free domains did after each cut (`mailboxCap(host, plan, since)`). The cut to 100 users is reported without a date and sits at the Standard Edition launch in 2007-02. The real 2022 deadline moved several times; the game keeps 2022-05-01 (`GOGGLE_CONVERSION`).
 
 Free accounts and the Standard Edition follow the growing quota counter of mail-core's table (2.8 GB in 2007-01, 6 GB in 2008-01, 7.6 GB in 2010-01, 10 GB in 2012-01, 30 GB from 2014), which `quotaMbAt` computes from the hour so the counter can tick on screen. Larger real editions (Business, Enterprise, Plus, Vault) are shown on the pricing page as "Contact sales" cards with no action, so the page looks complete and the game has one priced edition.
 
@@ -126,7 +133,7 @@ Free accounts and the Standard Edition follow the growing quota counter of mail-
 ### 4.3 Domain verification and the MX record
 
 - The wizard's second step shows the verification record for the year: before 2012 a CNAME `goggle<token>` pointing at `goggle.com`, from 2012 a TXT `goggle-site-verification=<token>`. The token is seeded from the game seed and the domain.
-- The third step shows the MX set for the year, in capitals as the real console printed them: five records `ASPMX.L.GOGGLE.COM` and `ALT1` to `ALT4` with priorities 10, 20, 20, 30, 30 until 2012, 1, 5, 5, 10, 10 from 2013, and one record `SMTP.GOGGLE.COM` priority 1 from 2023, with the line "You needed five records. You needed one."
+- The third step shows the MX set for the year (`mxSetAt`), in capitals as the real console printed them: five records `ASPMX.L.GOGGLE.COM` and `ALT1` to `ALT4` with priorities 10, 20, 20, 30, 30 until 2012, 1, 5, 5, 10, 10 from 2013, and one record `SMTP.GOGGLE.COM` priority 1 from 2023, with the line "You needed five records. You needed one."
 - Both steps end in a Verify button that reads the company zone (`recordAt`, milestone 2) and, when the record is there, calls `verifyTenant`. A record that exists but has not propagated answers with the wording of the real console ("We couldn't find the record yet. DNS changes can take up to 48 hours"). Propagation is the zone's rule: a changed or new record becomes visible after the TTL of what it replaces, the zone default of 3600 seconds for a new one.
 - The wizard has an Open registrar button that opens the registrar's DNS page in the Browser, and from 2019 on, when the registrar under contract is GoDuddy, a "Sign in to GoDuddy to add the records automatically" button that writes the records after a sign-in step (the real Domain Connect flow, in one click).
 - A verified tenant whose MX points elsewhere shows "Mail is not being delivered to Goggle" with the missing record; mail-core's `serverStatus` returns `unresolved` for it, which Pear Mail shows too.
@@ -259,7 +266,7 @@ Build order. Every milestone ships in its own pull request with a seeded test, E
 After 3, GMix (4 and 5) and Goggle (6 and 7) run in parallel. Milestones 8 and 9 follow 7, 10 needs 5 and 8, 11 comes after 10, and 12 is last.
 
 1. **Provider terms (`provider-terms`).**
-   - Sim: rows for `gmix`, `goggle` and `gmial` in `src/sim/10-catalog/mail-providers.ts` (the file mail-core creates), with the tier and edition tables of 3.1 and 4.1 as data with `from` and `until` months, the hosts, the server names and ports for Pear Mail (`imap.gmix.net`, `pop.gmix.net`, `smtp.gmix.net`, `imap.goggle.com`, `smtp.goggle.com`), and the capability fields of `MailCaps`. Helpers in `src/sim/10-catalog/mail-consumer.ts`: `termsAt(host, plan, hour)` for the extras section 10 lists on `MailCaps` (attachment limit, folder and filter limits, collector accounts, footer, poll gap, ads), `brandAt(hour)`, `mxSetAt(hour)`, `verificationAt(hour, token)`, `categoryOf(kind)`, `importantOf(message, seen)`. The Goggle quota anchors are the ones in mail-core's table.
+   - Sim (built): rows for `gmix` and `goggle` in `src/sim/10-catalog/mail-providers.ts` (the file mail-core creates), with the tier and edition tables of 3.1 and 4.1 as data: plans carry `from` and `until` months, the mailbox cap as month steps read at the tenant's sign-up (`mailboxCap`), and an `ads` flag; the hosts, the server names for Pear Mail, every MX host Goggle ever printed, and `mxSetAt(host, domain, hour)` for the records a provider tells the player to set. The extras of section 10 (attachment, folder and filter limits, collectors, footer, poll gap) come from the plan row through mail-core's `capsOf`, so there is no separate `termsAt`. Helpers in `src/sim/10-catalog/mail-consumer.ts`: `brandAt(hour)`, `editionAt(plan, hour)`, `GOGGLE_CONVERSION`, `verificationAt(hour, token)`, `categoryOf(kind, viaGroup)`, `importantOf(message, wroteTo, answered)`. The Goggle edition ids are `free` and `paid`, and saves with the earlier `standard` and `premier` load as those. The `gmial` row of personal accounts waits for milestone 12.
    - UI: none.
    - i18n: plan names, edition labels, system folder names (`ui-mail-gmix.ts`, `ui-mail-goggle.ts`).
    - Test: `tests/mail-consumer-terms.test.ts`: IMAP free from `IMAP_FREE_FROM`, Standard closes in 2012-12, mailbox cap 50 then 10, names by year, MX set by year (5, 5, 1), categories and importance for each `MailKind`.
@@ -380,8 +387,8 @@ Taken in this plan, easy to change:
 
 Open, the user decides (recommendation first):
 
-1. **The year IMAP became free for GMix FreeMix users.** This plan uses 2012, which was recalled and could not be confirmed against a dated page; mail-core's era table and mail-client's text say 2008. Recommendation: 2012, or whichever year a dated source gives, in one constant.
-2. **Are the other GMix numbers acceptable as starting numbers?** Quotas, prices and limits per tier are shaped like the real tiers but not all verifiable here. Recommendation: ship the table, and let the catalog milestone correct a figure whenever a dated source disagrees.
+1. **The year IMAP became free for GMix FreeMix users.** This plan uses 2012; the catalog milestone found no dated announcement, only 2012 forum reports of IMAP working on free accounts. Recommendation: keep 2012 in the one constant.
+2. **Are the other GMix numbers acceptable?** The catalog milestone corrected the quotas and the TopMix start to the dated 2004 terms; attachment, folder, filter and collector limits have no dated source. Recommendation: keep them.
 3. **Delete inactive GMix mailboxes after six months, as the real portal did.** Recommendation: no, because it can destroy a mailbox the player forgot about with no way to see it coming.
 4. **A personal Gmial account for the owner (milestone 12).** Recommendation: build it last and drop it if earlier milestones run long; it adds an invite wall and a second free provider that beats GMix at nearly everything, with no new mechanics.
 5. **Editable contacts in the webmails.** Recommendation: no, until Pear Mail wants a Contacts view of its own, at which point both would share one list.

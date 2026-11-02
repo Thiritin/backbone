@@ -188,9 +188,9 @@ One catalog row per host in `src/sim/10-catalog/mail-providers.ts` (`MAIL_HOSTS`
 
 | Host | From | POP3 | IMAP | Quota | Price per mailbox | Aliases | Catch-all | Server filters | Labels |
 |---|---|---|---|---|---|---|---|---|---|
-| GMix (tiers FreeMix, ProMix, TopMix, from webmail-consumer) | 2005 | every tier from 2005 | paid tiers from 2005, every tier from 2012 (`IMAP_FREE_FROM`, the mail-suite ruling) | 1 GB on the free tier in 2005, 2 GB from 2009, 5 GB from 2014; more on paid tiers | free to a few euro | none | no | rules (move, mark, forward) | no |
+| GMix (tiers FreeMix, ProMix, TopMix, from webmail-consumer) | 2005 | every tier from 2005 | paid tiers from 2005, every tier from 2012 (`IMAP_FREE_FROM`, the mail-suite ruling) | 1 GB FreeMix, 5 GB ProMix, 10 GB TopMix | 0, 2.99, 4.99 (3.99 and 6.49 from 2015) | none | no | rules (move, mark, forward) | no |
 | Hosted Exchange by Ionose | 2005 | 2005 | 2005 | 500 MB, 2 GB from 2009, 10 GB from 2013, 50 GB from 2016 | 10 falling to 6 (the existing curve) | 10 | yes | inbox rules | no |
-| Goggle Workspace | 2007 | 2007 | 2007 | the growing counter: 2.8 GB in 2007-01, 6 GB in 2008-01, 7.6 GB in 2010-01, 10 GB in 2012-01, 30 GB from 2014 | 4, 5 from 2020 (existing) | 30 | yes | filters and labels | yes |
+| Goggle (Apps for Your Domain 2006, Goggle Apps 2007, G Swoot 2016, Goggle Workspace 2020, from webmail-consumer) | 2006-08 | 2006 | 2007 | free edition: the growing counter, 2 GB in 2006-08 to 30 GB from 2014; paid: 10 GB, 25 GB from 2007-10, 30 GB from 2013-05 | free edition 0 until 2012-12; paid 4, 5 from 2020 (existing) | 30 | yes | filters and labels | yes |
 | Lookout 365 | 2011 | 2011 | 2011 | 25 GB, 50 GB from 2013, 100 GB from 2016 | 5, 6 from 2022 (existing); shared mailboxes free | 50 | yes | inbox rules | no |
 | Own server: Postfixit 2005, Mailpig 2015 | 2005 | once the server runs Dovecoat (installed with Postfixit, bundled with Mailpig) | same | the player's value, default 1 GB | the server's cost | 50 | yes | Sieve when the server offers it | no |
 
