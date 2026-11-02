@@ -1,0 +1,26 @@
+import type { Dict } from "../lang";
+
+export default {
+  "providers.digitalreality.navSites": () => "Sites",
+  "providers.digitalreality.navOrder": () => "Colocation",
+  "providers.digitalreality.navPortal": () => "Portail client",
+  "providers.digitalreality.investors": () => "Investisseurs",
+  "providers.digitalreality.careers": () => "Carrières",
+  "providers.digitalreality.ticker": () => "NYSE: DRLT",
+  "providers.digitalreality.heroEarly": () => "Des solutions Turn-Key Reality pour l'entreprise",
+  "providers.digitalreality.heroLate": () => "La plateforme où vivent les données",
+  "providers.digitalreality.text": (p) => `Des espaces de datacenter construits sur mesure dans ${p.cities} métropoles, détenus et exploités par une société d'investissement immobilier.`,
+  "providers.digitalreality.cta": () => "Découvrir les sites",
+  "providers.digitalreality.statSites": () => "Datacenters",
+  "providers.digitalreality.statMetros": () => "Métropoles",
+  "providers.digitalreality.statCarriers": () => "Connexions opérateurs",
+  "providers.digitalreality.solutions": () => "Solutions",
+  "providers.digitalreality.sol1": () => "Turn-Key Reality",
+  "providers.digitalreality.sol1Text": () => "Installez-vous dans un espace fini, alimenté et climatisé, avec un bail long.",
+  "providers.digitalreality.sol2": () => "Colocation",
+  "providers.digitalreality.sol2Text": () => "Louez des baies et des cages au mois dans une salle partagée.",
+  "providers.digitalreality.sol3": () => "Interconnexion",
+  "providers.digitalreality.sol3Text": () => "Rejoignez les opérateurs et les points d'échange du bâtiment par un cross-connect.",
+  "providers.digitalreality.markets": () => "Marchés",
+  "providers.digitalreality.footer": (p) => `© ${p.year} Digital Reality Trust, Inc.`,
+} satisfies Dict;

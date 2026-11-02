@@ -1,0 +1,69 @@
+.ps-telex { font: 12px/1.5 "Trebuchet MS", Arial, sans-serif; color: #3a3f47; background: #ffffff; }
+.ps-telex header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 24px; padding: 12px 22px; background: linear-gradient(#5c6878, #3a4452 50%, #2c3440 51%, #36404d); border-bottom: 3px solid #f7941d; }
+.ps-telex .ps-wm { display: flex; align-items: center; gap: 8px; font: 700 26px/1 Impact, "Arial Black", sans-serif; letter-spacing: 0.08em; color: #ffffff; text-decoration: none; }
+.ps-telex .ps-wm .logo-mark { background: #ffffff; border-radius: 3px; padding: 1px; }
+.ps-telex header nav { gap: 18px; }
+.ps-telex header nav a { color: #d8dde4; font-weight: 700; text-decoration: none; text-transform: uppercase; font-size: 11px; }
+.ps-telex header nav a[aria-current] { color: #f7941d; }
+.ps-telex main { min-width: 0; }
+.ps-telex .tx-hero { padding: 26px 22px 120px; color: #ffffff;
+  background: linear-gradient(transparent 92%, #1e2530 92%),
+    linear-gradient(90deg, transparent 4%, #232a35 4% 7%, transparent 7% 12%, #232a35 12% 14%, transparent 14% 31%, #232a35 31% 34%, transparent 34% 52%, #232a35 52% 53.5%, transparent 53.5% 70%, #232a35 70% 73%, transparent 73% 88%, #232a35 88% 90%, transparent 90%) 0 100% / 100% 46% no-repeat,
+    repeating-linear-gradient(90deg, #2a323e 0 46px, transparent 46px 52px, #2a323e 52px 70px, transparent 70px 78px, #2a323e 78px 120px, transparent 120px 130px) 0 100% / 100% 28% no-repeat,
+    linear-gradient(#55779e, #9fa6b6 45%, #e0a46e 80%, #f2b26b); }
+.ps-telex .tx-hero h1 { margin: 0 0 6px; font: 700 22px/1.25 "Trebuchet MS", Arial, sans-serif; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5); }
+.ps-telex .tx-hero p { max-width: 520px; margin: 0; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); }
+.ps-telex .tx-boxes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; padding: 16px 22px 0; }
+.ps-telex .tx-box { border: 1px solid #cfd4db; }
+.ps-telex .tx-box h3 { margin: 0; padding: 4px 8px; background: linear-gradient(#fbab4a, #f7941d); color: #ffffff; font-size: 12px; }
+.ps-telex .tx-box p { margin: 0; padding: 8px; }
+.ps-telex .tx-more { margin-top: 12px; padding: 0 22px; }
+.ps-telex .tx-body { padding: 16px 22px 24px; }
+.ps-telex .tx-body h1 { margin: 0 0 8px; font: 700 18px/1.3 "Trebuchet MS", Arial, sans-serif; color: #2c3440; }
+.ps-telex h2 { margin: 16px 0 8px; font-size: 13px; color: #f7941d; text-transform: uppercase; }
+.ps-telex main a:not(.ps-btn) { color: #d9790b; }
+.ps-telex .ps-table th { padding: 4px 6px; background: #3a4452; color: #ffffff; }
+.ps-telex .ps-table td { padding: 4px 6px; border-bottom: 1px solid #e1e4e8; }
+.ps-telex .ps-facts div, .ps-telex .ps-kv div { padding: 3px 0; border-bottom: 1px solid #e1e4e8; }
+.ps-telex .ps-kv { margin-bottom: 14px; }
+.ps-telex .ps-steps { gap: 4px; margin: 0 0 14px; }
+.ps-telex .ps-steps li { padding: 3px 12px; background: #e1e4e8; color: #8a919b; }
+.ps-telex .ps-steps li.done { color: #3a3f47; }
+.ps-telex .ps-steps li.now { background: #f7941d; color: #ffffff; font-weight: 700; }
+.ps-telex .ps-field { margin-bottom: 8px; }
+.ps-telex .ps-field input, .ps-telex .ps-field select { padding: 3px 5px; border: 1px solid #9aa2ad; }
+.ps-telex .ps-btn { padding: 4px 14px; border: 1px solid #5c6878; border-radius: 3px; background: linear-gradient(#ffffff, #d8dde4); color: #2c3440; font-weight: 700; }
+.ps-telex .ps-btn.pri { background: linear-gradient(#fbab4a, #f7941d); border-color: #c86f08; color: #ffffff; }
+.ps-telex .ps-pill.ok { color: #2d7a3a; }
+.ps-telex .ps-pill.bad { color: #c0392b; font-weight: 700; }
+.ps-telex footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-top: 16px; padding: 10px 22px; background: #2c3440; color: #9aa2ad; font-size: 11px; }
+
+.ps-telex.late { font: 14px/1.6 "Helvetica Neue", Arial, sans-serif; color: #3a3f47; background: #f5f6f8; }
+.ps-telex.late header { padding: 0 36px; height: 62px; background: #ffffff; border-bottom: 1px solid #e1e4e8; }
+.ps-telex.late .ps-wm { font: 300 26px/1 "Helvetica Neue", Arial, sans-serif; letter-spacing: 0.24em; color: #36404d; }
+.ps-telex.late .ps-wm .logo-mark { background: none; padding: 0; }
+.ps-telex.late header nav { gap: 30px; }
+.ps-telex.late header nav a { color: #5c6878; font-weight: 400; letter-spacing: 0.12em; font-size: 12px; }
+.ps-telex.late header nav a[aria-current] { color: #f7941d; }
+.ps-telex.late .tx-hero { padding: 64px 36px; background: #36404d; }
+.ps-telex.late .tx-hero h1 { max-width: 620px; margin: 0 0 12px; font: 300 36px/1.2 "Helvetica Neue", Arial, sans-serif; text-shadow: none; }
+.ps-telex.late .tx-hero p { margin: 0 0 24px; color: #c7ced8; text-shadow: none; }
+.ps-telex.late .tx-card { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 32px; margin: -28px 36px 0; padding: 32px; background: #ffffff; box-shadow: 0 2px 12px rgba(30, 40, 50, 0.12); }
+.ps-telex.late .tx-card small { color: #f7941d; text-transform: uppercase; letter-spacing: 0.12em; font-size: 11px; }
+.ps-telex.late .tx-card h2 { margin: 4px 0 8px; font: 300 26px/1.2 "Helvetica Neue", Arial, sans-serif; color: #36404d; text-transform: none; }
+.ps-telex.late .tx-card p { margin: 0; }
+.ps-telex.late .tx-card dl { margin: 0; display: grid; gap: 16px; }
+.ps-telex.late .tx-card dl div { display: flex; flex-direction: column-reverse; }
+.ps-telex.late .tx-card dd { margin: 0; font: 300 40px/1 "Helvetica Neue", Arial, sans-serif; color: #f7941d; }
+.ps-telex.late .tx-card dt { color: #8a919b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; }
+.ps-telex.late .tx-body { margin: 32px 36px 0; padding: 32px; background: #ffffff; }
+.ps-telex.late .tx-body h1 { font: 300 30px/1.2 "Helvetica Neue", Arial, sans-serif; color: #36404d; }
+.ps-telex.late h2 { font-weight: 400; letter-spacing: 0.1em; font-size: 13px; }
+.ps-telex.late .ps-table th { padding: 8px; background: none; color: #5c6878; border-bottom: 2px solid #f7941d; font-weight: 400; text-transform: uppercase; font-size: 11px; letter-spacing: 0.08em; }
+.ps-telex.late .ps-table td { padding: 8px; }
+.ps-telex.late .ps-steps li { background: none; border-bottom: 2px solid #e1e4e8; }
+.ps-telex.late .ps-steps li.now { background: none; color: #f7941d; border-color: #f7941d; }
+.ps-telex.late .ps-field input, .ps-telex.late .ps-field select { padding: 7px; border-color: #cfd4db; }
+.ps-telex.late .ps-btn { padding: 9px 22px; border: 1px solid #5c6878; border-radius: 0; background: #ffffff; color: #36404d; font-weight: 400; text-transform: uppercase; letter-spacing: 0.1em; font-size: 12px; }
+.ps-telex.late .ps-btn.pri { background: #f7941d; border-color: #f7941d; color: #ffffff; }
+.ps-telex.late footer { margin-top: 40px; padding: 22px 36px; background: #ffffff; border-top: 1px solid #e1e4e8; color: #8a919b; font-size: 12px; }

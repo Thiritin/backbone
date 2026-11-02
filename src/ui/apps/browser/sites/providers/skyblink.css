@@ -1,0 +1,71 @@
+.ps-skyblink { display: block; font: 12px/1.5 Tahoma, Verdana, sans-serif; color: #24364a; background: #dcebf7; }
+.ps-skyblink .sky-page { max-width: 800px; margin: 0 auto; background: #ffffff; box-shadow: 0 0 0 1px #b9d3ea; }
+.ps-skyblink header { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; padding: 22px 18px 0; color: #ffffff;
+  background: radial-gradient(ellipse 70px 22px at 78% 38%, #ffffff 60%, transparent 62%), radial-gradient(ellipse 48px 18px at 84% 30%, #ffffff 60%, transparent 62%),
+    radial-gradient(ellipse 90px 20px at 62% 18%, rgba(255, 255, 255, 0.75) 55%, transparent 60%), linear-gradient(#3d8fd6, #8cc4ee 70%, #c9e4f8); }
+.ps-skyblink .ps-wm { display: flex; align-items: center; gap: 8px; font: 700 26px/1 "Trebuchet MS", Tahoma, sans-serif; color: #ffffff; text-decoration: none; text-shadow: 0 1px 2px rgba(20, 60, 110, 0.6); }
+.ps-skyblink .ps-wm .logo-mark { filter: drop-shadow(0 1px 1px rgba(20, 60, 110, 0.5)); }
+.ps-skyblink .ps-wm b { color: #fff4b8; }
+.ps-skyblink .sky-claim { font-style: italic; color: #0d3a66; }
+.ps-skyblink header nav { flex-basis: calc(100% + 36px); margin: 18px -18px 0; padding: 5px 18px; background: #0d4f8c; }
+.ps-skyblink header nav a { color: #ffffff; font-weight: 700; text-decoration: none; }
+.ps-skyblink header nav a + a::before { content: "|"; margin: 0 10px; color: #6fa3d3; font-weight: 400; }
+.ps-skyblink header nav a[aria-current] { color: #fff4b8; }
+.ps-skyblink .sky-frame { display: grid; grid-template-columns: 200px minmax(0, 1fr); }
+.ps-skyblink aside { padding: 14px; background: #eef5fb; border-right: 1px solid #c9dcee; }
+.ps-skyblink aside h3 { margin: 0 0 8px; font-size: 12px; color: #0d4f8c; }
+.ps-skyblink .sky-side { display: block; margin-bottom: 8px; font-size: 11px; }
+.ps-skyblink .sky-side div { padding: 2px 0; border-bottom: 1px dotted #b9d3ea; }
+.ps-skyblink main { padding: 16px 20px 24px; min-width: 0; }
+.ps-skyblink h1 { margin: 0 0 8px; font: 700 18px/1.3 "Trebuchet MS", Tahoma, sans-serif; color: #0d4f8c; }
+.ps-skyblink h2 { margin: 16px 0 8px; font-size: 13px; color: #0d4f8c; border-bottom: 1px solid #c9dcee; }
+.ps-skyblink main a:not(.ps-btn), .ps-skyblink aside a { color: #1a6fbf; }
+.ps-skyblink .sky-usps { list-style: none; margin: 12px 0; padding: 0; }
+.ps-skyblink .sky-usps li { display: grid; padding: 4px 0 4px 22px; background: radial-gradient(circle at 7px 11px, #6cb33f 5px, transparent 6px); }
+.ps-skyblink .sky-usps b { color: #0d4f8c; }
+.ps-skyblink .sky-from { padding: 8px 12px; background: #fff8d6; border: 1px solid #e8d580; font-weight: 700; }
+.ps-skyblink .ps-table th { padding: 4px 6px; background: #d7e7f5; color: #0d4f8c; }
+.ps-skyblink .ps-table td { padding: 4px 6px; border-bottom: 1px solid #e1ecf6; }
+.ps-skyblink .ps-facts div, .ps-skyblink .ps-kv div { padding: 3px 0; border-bottom: 1px dotted #b9d3ea; }
+.ps-skyblink .ps-kv { margin-bottom: 14px; }
+.ps-skyblink .ps-steps { gap: 6px; margin: 0 0 14px; }
+.ps-skyblink .ps-steps li { padding: 2px 10px; background: #eef5fb; color: #7a93ab; border-radius: 10px; }
+.ps-skyblink .ps-steps li.done { color: #24364a; }
+.ps-skyblink .ps-steps li.now { background: #0d4f8c; color: #ffffff; font-weight: 700; }
+.ps-skyblink .ps-field { margin-bottom: 8px; }
+.ps-skyblink .ps-field input, .ps-skyblink .ps-field select { padding: 3px 5px; border: 1px solid #8fb2d3; }
+.ps-skyblink .ps-btn { padding: 3px 12px; border: 1px solid #7f9fbf; border-radius: 3px; background: linear-gradient(#ffffff, #dbe8f4); color: #0d4f8c; }
+.ps-skyblink .ps-btn.pri { background: linear-gradient(#7cc34d, #4f9a26); border-color: #3f7d1e; color: #ffffff; font-weight: 700; }
+.ps-skyblink .ps-pill.ok { color: #3f8a1e; }
+.ps-skyblink .ps-pill.bad { color: #c0392b; font-weight: 700; }
+.ps-skyblink footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; padding: 10px 18px; background: #0d4f8c; color: #b9d3ea; font-size: 11px; }
+
+.ps-skyblink.late { font: 14px/1.6 "Helvetica Neue", Arial, sans-serif; color: #1b2b3c; background: #ffffff; }
+.ps-skyblink.late .sky-page { max-width: none; box-shadow: none; }
+.ps-skyblink.late header { flex-wrap: nowrap; gap: 28px; height: 64px; padding: 0 32px; background: #ffffff; color: #1b2b3c; border-bottom: 1px solid #e5edf4; }
+.ps-skyblink.late .ps-wm { font: 700 20px/1 "Helvetica Neue", Arial, sans-serif; color: #0f4c81; text-shadow: none; }
+.ps-skyblink.late .ps-wm .logo-mark { filter: none; }
+.ps-skyblink.late .ps-wm b { color: #2b9be0; }
+.ps-skyblink.late header nav { flex: 1; flex-basis: auto; justify-content: flex-end; gap: 26px; margin: 0; padding: 0; background: none; }
+.ps-skyblink.late header nav a { color: #1b2b3c; font-weight: 500; }
+.ps-skyblink.late header nav a + a::before { content: none; }
+.ps-skyblink.late header nav a[aria-current] { color: #2b9be0; }
+.ps-skyblink.late .sky-frame { display: block; }
+.ps-skyblink.late main { padding: 0; }
+.ps-skyblink.late .sky-hero { padding: 72px 32px 80px; color: #ffffff;
+  background: radial-gradient(ellipse 220px 60px at 80% 70%, rgba(255, 255, 255, 0.55) 50%, transparent 70%), radial-gradient(ellipse 160px 40px at 64% 30%, rgba(255, 255, 255, 0.4) 50%, transparent 70%), linear-gradient(160deg, #0f4c81, #2b9be0 60%, #a9dbf7); }
+.ps-skyblink.late .sky-hero h1 { max-width: 620px; margin: 0 0 12px; font: 300 38px/1.15 "Helvetica Neue", Arial, sans-serif; color: #ffffff; }
+.ps-skyblink.late .sky-hero p { max-width: 560px; margin: 0 0 24px; color: #e3f2fc; }
+.ps-skyblink.late .sky-usps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; margin: 0; padding: 36px 32px; }
+.ps-skyblink.late .sky-usps li { gap: 4px; padding: 0 0 0 16px; background: none; border-left: 3px solid #7cc34d; }
+.ps-skyblink.late .sky-usps b { font-size: 16px; color: #0f4c81; }
+.ps-skyblink.late .sky-body { padding: 32px; }
+.ps-skyblink.late .sky-body h1 { font: 300 28px/1.2 "Helvetica Neue", Arial, sans-serif; color: #0f4c81; }
+.ps-skyblink.late h2 { border: 0; font-size: 18px; font-weight: 500; }
+.ps-skyblink.late .ps-table th { background: none; border-bottom: 2px solid #0f4c81; padding: 8px; }
+.ps-skyblink.late .ps-table td { padding: 8px; }
+.ps-skyblink.late .ps-btn { padding: 7px 18px; border-radius: 20px; background: #ffffff; border-color: #0f4c81; }
+.ps-skyblink.late .ps-btn.pri { background: #7cc34d; border-color: #7cc34d; }
+.ps-skyblink.late .sky-quote { margin-left: 8px; }
+.ps-skyblink.late .ps-steps li { border-radius: 20px; padding: 4px 14px; }
+.ps-skyblink.late footer { padding: 20px 32px; background: #0b2f52; color: #9fbcd6; font-size: 12px; }
