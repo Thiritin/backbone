@@ -22,7 +22,7 @@ export interface Look {
   labels?: Partial<Record<ScreenName, string>>;
 }
 
-const ALL: ScreenName[] = ["home", "clients", "orders", "invoices", "quotes", "products", "servers", "settings", "emails", "licence", "updates"];
+const ALL: ScreenName[] = ["home", "clients", "orders", "invoices", "quotes", "products", "servers", "settings", "emails", "marketplace", "licence", "updates"];
 
 // One shop system's admin, store front and client area: the shared screens inside the system's own frame.
 export function makeSkin(look: Look): Skin {

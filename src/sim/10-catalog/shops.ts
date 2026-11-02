@@ -17,6 +17,8 @@ export interface ShopVariant {
   includes: [string, number][];
   // Price of a module that is not included; null when none are sold.
   extra: number | null;
+  // Modules the system has none of, neither included nor for sale.
+  lacks?: string[];
   // Hours until a bought module works.
   extraHours?: number;
   // Whether stock can follow free capacity.
@@ -33,7 +35,7 @@ export const SHOPS: ShopVariant[] = [
   { id: "hostBull", name: "HostBull", maker: "HostBull", from: 2009, includes: [["panel", 2009], ["cloud", 2009], ["game", 2009], ["dns", 2009], ["vpn", 2009], ["storage", 2009], ["registrar", 2009], ["ssl", 2009]], extra: null, autoStock: true, cycles: ["monthly", "quarterly", "semiannual", "annual", "biennial", "triennial"] },
   { id: "ubersmyth", name: "Ubersmyth", maker: "Ubersmyth", from: 2006, includes: [["dedicated", 2006], ["colo", 2006], ["dns", 2006]], extra: 300, autoStock: true, cycles: ["monthly", "quarterly", "annual", "biennial"] },
   { id: "orderBocks", name: "OrderBocks", maker: "ResellerKlub", from: 2006, includes: [["registrar", 2006], ["ssl", 2006], ["cpanic", 2006]], extra: null, autoStock: false, cycles: ["monthly", "annual", "biennial"] },
-  { id: "boxBillin", name: "BoxBillin'", maker: "BoxBillin' community", from: 2011, includes: [["registrar", 2011]], extra: 0, extraHours: 12, autoStock: true, cycles: ["monthly", "quarterly", "semiannual", "annual", "biennial", "triennial"] },
+  { id: "boxBillin", name: "BoxBillin'", maker: "BoxBillin' community", from: 2011, includes: [["registrar", 2011]], extra: 0, lacks: ["vmwhere", "dedicated", "colo"], extraHours: 12, autoStock: true, cycles: ["monthly", "quarterly", "semiannual", "annual", "biennial", "triennial"] },
 ];
 
 export const shopById = (id: ShopId): ShopVariant => SHOPS.find((x) => x.id === id)!;
@@ -44,3 +46,7 @@ export const moduleName = (id: string): string => SOFTWARE.find((x) => x.id === 
 
 export const includes = (v: ShopVariant, module: string, year: number): boolean =>
   v.includes.some(([what, from]) => year >= from && (what === module || what === kindOf(module)));
+
+// What a shop system offers of a provisioning module: included, for sale at a price, or not at all.
+export const moduleOffer = (v: ShopVariant, module: string, year: number): "included" | "unavailable" | number =>
+  includes(v, module, year) ? "included" : v.extra === null || v.lacks?.includes(module) ? "unavailable" : v.extra;

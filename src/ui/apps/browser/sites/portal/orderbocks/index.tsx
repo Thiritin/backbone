@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { FileText, Home, KeyRound, Mail, Package, Receipt, RefreshCw, Server, ShoppingCart, SlidersHorizontal, Users, type LucideIcon } from "lucide-react";
+import { FileText, Home, KeyRound, LayoutGrid, Mail, Package, Receipt, RefreshCw, Server, ShoppingCart, SlidersHorizontal, Users, type LucideIcon } from "lucide-react";
 import { t } from "../../../../../../i18n/en";
 import { activeServices } from "../../../../../../sim/30-customers/customers";
 import { AdminScreen } from "../shared/AdminScreen";
@@ -20,10 +20,10 @@ export const Mark = () => <span className="ob-mark"><span className="ob-cube" ar
 const GROUPS: { id: string; screens: ScreenName[] }[] = [
   { id: "sales", screens: ["clients", "orders", "invoices", "quotes"] },
   { id: "catalog", screens: ["products", "servers"] },
-  { id: "settings", screens: ["settings", "emails", "licence", "updates"] },
+  { id: "settings", screens: ["settings", "emails", "marketplace", "licence", "updates"] },
 ];
 const ICON: Partial<Record<ScreenName, LucideIcon>> = {
-  home: Home, clients: Users, orders: ShoppingCart, invoices: Receipt, quotes: FileText, products: Package, settings: SlidersHorizontal, emails: Mail, servers: Server, licence: KeyRound, updates: RefreshCw,
+  home: Home, clients: Users, orders: ShoppingCart, invoices: Receipt, quotes: FileText, products: Package, settings: SlidersHorizontal, emails: Mail, marketplace: LayoutGrid, servers: Server, licence: KeyRound, updates: RefreshCw,
 };
 const label = (n: ScreenName) => t(`orderbocks.nav.${n}`);
 

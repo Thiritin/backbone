@@ -27,7 +27,7 @@ export const Wordmark = () => <span className="bl-word"><Mark />{shopById("bless
 
 type Group = "home" | "clients" | "billing" | "packages" | "settings";
 const GROUPS: [Group, ScreenName[]][] = [
-  ["home", ["home"]], ["clients", ["clients"]], ["billing", ["orders", "invoices", "quotes"]], ["packages", ["products", "servers"]], ["settings", ["settings", "emails", "licence", "updates"]],
+  ["home", ["home"]], ["clients", ["clients"]], ["billing", ["orders", "invoices", "quotes"]], ["packages", ["products", "servers"]], ["settings", ["settings", "emails", "marketplace", "licence", "updates"]],
 ];
 const labels = (): Partial<Record<ScreenName, string>> => ({
   ...SCREEN_LABEL, home: t("blessta.dashboard"), clients: t("blessta.browseClients"), products: t("shop-store.lblPkgGroups"), quotes: t("shop-admin.quoteRequests"),
@@ -40,6 +40,7 @@ const ICON: Partial<Record<ScreenName, string>> = {
   servers: "M3 3h14v5H3z M3 12h14v5H3z M6 5.5h.01 M6 14.5h.01", licence: "M7.5 12a4 4 0 1 1 3-1.5L17 17l-1.5 1-1-1-1 1-1-1 M6.5 7.5h.01",
   updates: "M16 10a6 6 0 1 1-2-4.5 M16 3v4h-4",
   emails: "M3 5h14v10H3z M3 5l7 6 7-6",
+  marketplace: "M3 3h6v6H3z M11 3h6v6h-6z M3 11h6v6H3z M11 11h6v6h-6z",
 };
 const Icon = ({ name }: { name: ScreenName }) => <svg className="bl-icon" viewBox="0 0 20 20" aria-hidden="true"><path d={ICON[name]} /></svg>;
 

@@ -28,6 +28,7 @@ const PATHS: Partial<Record<ScreenName, string>> = {
   licence: "M5.5 10.5A3 3 0 1 0 5.5 4.5A3 3 0 1 0 5.5 10.5 M8 7.5H14.5V10 M12 7.5V9.5",
   updates: "M13 8A5 5 0 1 1 11.5 4.5 M11.5 1.5V4.5H8.5",
   emails: "M2 4H14V12H2Z M2 4 8 9 14 4",
+  marketplace: "M2 2H7V7H2Z M9 2H14V7H9Z M2 9H7V14H2Z M9 9H14V14H9Z",
 };
 
 export const Icon = ({ name }: { name: ScreenName }) => (

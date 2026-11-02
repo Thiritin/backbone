@@ -115,7 +115,7 @@ export function buyModule(s: GameState, module: string): ActionResult {
   if (hasModule(s, module) || s.shop.modules[module] !== undefined) return fail("error.moduleOwned");
   const v = s.shop.variant && shopById(s.shop.variant);
   if (!v) return fail("error.needsShop");
-  if (v.extra === null) return fail("error.moduleNotSold");
+  if (v.extra === null || v.lacks?.includes(module)) return fail("error.moduleNotSold");
   const price = v.extra;
   if (price > 0 && s.cash < price) return fail("error.noCash");
   pay(s, price, "ledger.shopModule", { module });

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { FileText, Inbox, KeyRound, LayoutDashboard, Mail, Package, Receipt, RefreshCw, Server, SlidersHorizontal, Users, type LucideIcon } from "lucide-react";
+import { FileText, Inbox, KeyRound, LayoutDashboard, LayoutGrid, Mail, Package, Receipt, RefreshCw, Server, SlidersHorizontal, Users, type LucideIcon } from "lucide-react";
 import { t } from "../../../../../../i18n/en";
 import { AdminScreen } from "../shared/AdminScreen";
 import { ClientArea } from "../shared/ClientArea";
@@ -17,11 +17,11 @@ const eraOf = (major: string): Era => (["3", "4", "5"].includes(major) ? major :
 
 const GROUPS: [string, ScreenName[]][] = [
   ["overview", ["home"]], ["billing", ["clients", "orders", "invoices", "quotes"]], ["catalogue", ["products"]],
-  ["infra", ["servers"]], ["system", ["settings", "emails", "licence", "updates"]],
+  ["infra", ["servers"]], ["system", ["settings", "emails", "marketplace", "licence", "updates"]],
 ];
 const ICON: Partial<Record<ScreenName, LucideIcon>> = {
   home: LayoutDashboard, clients: Users, orders: Inbox, invoices: Receipt, quotes: FileText, products: Package,
-  settings: SlidersHorizontal, emails: Mail, servers: Server, licence: KeyRound, updates: RefreshCw,
+  settings: SlidersHorizontal, emails: Mail, marketplace: LayoutGrid, servers: Server, licence: KeyRound, updates: RefreshCw,
 };
 const label = (n: ScreenName) => t(`ubersmyth.nav.${n}`);
 
