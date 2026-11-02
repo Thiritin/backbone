@@ -57,8 +57,10 @@ export const DESKS: Desk[] = [
 ];
 
 export const deskById = (id: string): Desk | undefined => DESKS.find((d) => d.id === id);
-// The desk installed, or none: the app then runs as a plain inbox.
-export const deskOf = (s: Pick<GameState, "installed">): Desk | undefined => DESKS.find((d) => s.installed.includes(d.id));
+// The desk in use, or none: the app then runs as a plain inbox.
+export const deskOf = (s: Pick<GameState, "desk">): Desk | undefined => (s.desk ? deskById(s.desk.id) : undefined);
+// The address a hosted desk answers on from the day it signs up.
+export const tenantHost = (d: Desk, tenant: string): string => (d.hosts.tenant ?? "").replace("<tenant>", tenant);
 export const deskReady = (s: Pick<GameState, "hour">, id: string): boolean => yearOf(s.hour) >= (deskById(id)?.from ?? 0);
 
 // The year a feature starts on a desk, or null when the desk never has it.
@@ -67,10 +69,15 @@ export function featureYear(d: Desk, f: DeskFeature): number | null {
   if (at === undefined) return null;
   return typeof at === "number" ? at : d.releases?.find((r) => r.version === at)?.year ?? null;
 }
-// ponytail: a self-hosted desk counts as the latest release of the year until installs keep a version.
-export const deskHas = (s: Pick<GameState, "installed" | "hour">, f: DeskFeature): boolean => {
-  const d = deskOf(s), y = d && featureYear(d, f);
-  return y != null && yearOf(s.hour) >= y;
+// A self-hosted desk has what its installed release has; a hosted or legacy one what the year has.
+export const deskHas = (s: Pick<GameState, "desk" | "hour">, f: DeskFeature): boolean => {
+  const d = deskOf(s), at = d?.features[f], h = s.desk?.hosting;
+  if (!d || at === undefined) return false;
+  if (h?.kind === "self" && typeof at === "string") {
+    const order = d.releases!.map((r) => r.version);
+    return order.indexOf(h.version) >= order.indexOf(at);
+  }
+  return yearOf(s.hour) >= (featureYear(d, f) ?? Infinity);
 };
 export const featuresAt = (d: Desk, year: number): DeskFeature[] => (Object.keys(d.features) as DeskFeature[]).filter((f) => year >= (featureYear(d, f) ?? Infinity));
 export const deskAiReady = (d: Desk, a: DeskAi, year: number): boolean => year >= (d.aiFrom[a] ?? Infinity);

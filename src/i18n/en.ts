@@ -107,7 +107,7 @@ export const en: Record<string, (p: Params) => string> = {
   "error.missingSkill": () => "Learn the skills this training builds on first.",
   "error.noKnowHow": () => "You do not have enough know-how.",
   "error.needsResearch": () => "Learn the skill for this in Research first.",
-  "error.deskNotYet": () => "This desk is not on sale yet.",
+  "error.deskNotYet": () => "This help desk is not available yet.",
   "error.installed": () => "This is already installed.",
   "error.notInstalled": () => "This is not installed.",
   "ledger.hardware": (p) => `${Number(p.qty) > 1 ? `${p.qty} × ` : ""}${p.model}${p.device ? ` for ${p.device}` : ""}`,

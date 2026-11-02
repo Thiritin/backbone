@@ -10,6 +10,7 @@ import { addLocation, joinWaitlist } from "../../../../../sim/90-actions/hardwar
 import { formatDay } from "../../../billing/format";
 import { backupLabel, exchangeLabel, feedsLabel, shareUnits, spaceSize } from "../../../locations/ui";
 import { usePageAct } from "../../pageAct";
+import { Portal } from "./portal/Portal";
 import "./providers.css";
 
 // docs/design/plans/colo-portals.md, section 4: the pages every provider site shares; each provider lays them out in its own look.
@@ -19,7 +20,8 @@ export type Route =
   | { page: "sites" }
   | { page: "site"; dc: Datacenter }
   | { page: "order"; dc: string | null; space: string | null; size: number }
-  | { page: "account" }
+  // sub is the path below /account: ["contracts", "<id>"], ["invoices"], ...
+  | { page: "account"; sub: string[] }
   | { page: "notfound" };
 export interface ProviderProps { game: GameState; p: Provider; look: Look; route: Route; year: number; go: (path: string) => void }
 
@@ -39,7 +41,7 @@ export function routeOf(id: string, path: string): Route {
     const q = new URLSearchParams(query);
     return { page: "order", dc: q.get("dc"), space: q.get("space"), size: Number(q.get("size")) };
   }
-  if (top === "account") return { page: "account" };
+  if (top === "account") return { page: "account", sub: base.split("/").filter(Boolean).slice(1) };
   return { page: "notfound" };
 }
 
@@ -65,7 +67,7 @@ export const titleOf = (r: Route): string => (r.page === "site" ? r.dc.name : r.
 
 const yesNo = (v: boolean) => (v ? t("providers.yes") : t("providers.no"));
 const kwOf = (dc: Datacenter, space: Rented, size: number) => +(space === "share" ? dc.kwPerPosition / size : dc.kwPerPosition * size).toFixed(2);
-const spaceText = (space: Rented, size: number) => (space === "share" ? `${spaceSize(space, size)}, ${shareUnits(size)} U` : spaceSize(space, size));
+export const spaceText = (space: Rented, size: number) => (space === "share" ? `${spaceSize(space, size)}, ${shareUnits(size)} U` : spaceSize(space, size));
 const kinds = (dc: Datacenter): Rented[] => (["share", "cage", "suite"] as Rented[]).filter((k) => k !== "cage" || dc.cages);
 export const orderPath = (dc: Datacenter, space: Rented, size: number) => `/order?dc=${dc.id}&space=${space}&size=${size}`;
 
@@ -140,7 +142,7 @@ export function OrderForm({ game, p, route, className }: { game: GameState; p: P
   const [kind, setKind] = useState(route.space as Rented);
   const [size, setSize] = useState(route.size);
   const [readyAt, setReadyAt] = useState(0);
-  const own = addressFor(game.seed, 0, game.registration?.owner ?? game.company.name, game.company.name, game.locations[0]?.city ?? "Frankfurt");
+  const own = ownAddress(game);
   const [contact, setContact] = useState({ company: game.company.name, contact: own.contact, street: own.street, town: `${own.zip} ${own.city}`, email: own.email });
   const dc = sites.find((d) => d.id === dcId)!;
   const k: Rented = kinds(dc).includes(kind) ? kind : "share";
@@ -196,13 +198,16 @@ export function OrderForm({ game, p, route, className }: { game: GameState; p: P
   );
 }
 
-// Until the customer portal exists, every page under /account is its sign-in.
-export function SignIn({ className }: { className?: string }) {
+// The company's own address, as an order or a sign-in prefills it.
+export const ownAddress = (game: GameState) => addressFor(game.seed, 0, game.registration?.owner ?? game.company.name, game.company.name, game.locations[0]?.city ?? "Frankfurt");
+
+// The portal's sign-in: the company email prefilled, any password accepted.
+export function SignIn({ className, game, onSignIn }: { className?: string; game?: GameState; onSignIn?: () => void }) {
   return (
-    <form className={`ps-signin ${className ?? ""}`} onSubmit={(e) => e.preventDefault()}>
-      <label className="ps-field"><span>{t("providers.email")}</span><input type="email" /></label>
+    <form className={`ps-signin ${className ?? ""}`} onSubmit={(e) => { e.preventDefault(); onSignIn?.(); }}>
+      <label className="ps-field"><span>{t("providers.email")}</span><input type="email" defaultValue={game && ownAddress(game).email} /></label>
       <label className="ps-field"><span>{t("providers.password")}</span><input type="password" /></label>
-      <div className="ps-actions"><button className="ps-btn pri" disabled>{t("providers.signIn")}</button></div>
+      <div className="ps-actions"><button className="ps-btn pri" disabled={!onSignIn}>{t("providers.signIn")}</button></div>
     </form>
   );
 }
@@ -212,6 +217,6 @@ export function Body({ game, p, route, go, className }: ProviderProps & { classN
   if (route.page === "sites") return <SitesList p={p} go={go} className={className} />;
   if (route.page === "site") return <SiteDetail game={game} dc={route.dc} go={go} className={className} />;
   if (route.page === "order") return <OrderForm game={game} p={p} route={route} className={className} />;
-  if (route.page === "account") return <SignIn className={className} />;
+  if (route.page === "account") return <Portal game={game} p={p} route={route} go={go} className={className} />;
   return null;
 }
