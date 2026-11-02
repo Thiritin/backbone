@@ -33,7 +33,7 @@ import { eraOf } from "../sites/era";
 import { noAutofill } from "../../../no-autofill";
 import { installedVersion, lookOf, panelMachine } from "../../../../sim/60-infra/licence";
 
-export type Tab = "objects" | "nodes" | "restore" | "software" | "tasks" | "logs" | "licence" | "services" | "sysinfo" | "packages" | "create" | "easyapache" | "custombuild" | "resellers" | "autossl" | "transfer" | "fail2ban" | "toolkit" | "messages" | "wings" | "updates" | "components";
+export type Tab = "objects" | "nodes" | "restore" | "software" | "tasks" | "logs" | "licence" | "services" | "sysinfo" | "packages" | "create" | "easyapache" | "custombuild" | "resellers" | "autossl" | "transfer" | "fail2ban" | "toolkit" | "messages" | "wings" | "updates" | "components" | "backup";
 
 // What ConsolePage hands a product console; the console draws its own login while signedIn is false.
 export interface PanelProps { game: GameState; c: Cluster; f: ConsoleFeatures; host: string; signedIn: boolean; login: () => void; logout: () => void;

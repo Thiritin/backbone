@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { useState } from "react";
+import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it } from "vitest";
 import { t } from "../src/i18n/en";
 import { formatClock, hourOf } from "../src/sim/00-core/time";
@@ -11,10 +12,12 @@ import { saveJob } from "../src/sim/90-actions/backups";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { connect } from "../src/sim/90-actions/hardware";
+import { consoleFeatures } from "../src/sim/80-business/consoles";
+import { CONSOLES } from "../src/ui/apps/browser/consoles/ConsolePage";
 import { BackupManager } from "../src/ui/apps/browser/consoles/BackupManager";
 import { PageError } from "../src/ui/apps/browser/pageAct";
 import { useStore } from "../src/ui/store";
-import { buyDevice, named, panelServer, withServer } from "./fixtures";
+import { buyDevice, named, panelServer, panelVm, readyGame, skipTo, withServer } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 afterEach(cleanup);
@@ -108,5 +111,15 @@ describe("panel Backup Manager", () => {
     render(<Page id={host} />);
     fireEvent.click(screen.getByRole("button", { name: "Back Up" }));
     expect(row(formatClock(at + 1))).toBeTruthy();
+  });
+
+  it("is a tab of every web panel", () => {
+    for (const [id, label] of [["cpanic", "Backup"], ["pleskit", "Backup Manager"], ["directadmen", "Admin Backup/Transfer"], ["freepanel", "Backup and Restore"]]) {
+      const s = readyGame(1);
+      skipTo(s, 2012);
+      const host = panelVm(s, s.clusters.find((x) => x.kind === "cloud")!.id, id), c = s.clusters.find((x) => x.id === host)!, View = CONSOLES[id];
+      const html = renderToString(<View game={s} c={c} f={consoleFeatures(id, 2012)} host="panel.example.com" signedIn login={() => {}} logout={() => {}} />);
+      expect(html, id).toContain(`>${label}<`);
+    }
   });
 });

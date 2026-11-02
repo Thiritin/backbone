@@ -8,6 +8,7 @@ import { useReadoutPages } from "../Readouts";
 import { CustomBuild } from "./CustomBuild";
 import { ServicesPage } from "../ServicesPage";
 import { ComponentsPage } from "../ComponentsPage";
+import { BackupManager } from "../BackupManager";
 import { hasUpdates, UpdatesPage } from "../UpdatesPage";
 import { Messages } from "./Messages";
 import { ManageResellers } from "./ManageResellers";
@@ -39,7 +40,7 @@ export function DirectAdmen(p: PanelProps) {
     </div>
   );
   const shown = rows.filter((r) => r.name.toLowerCase().includes(q.toLowerCase()));
-  const crumb = tab === "objects" ? t("browser-consoles-2.webSpaces") : tab === "nodes" ? t("browser-consoles-2.nodes") : tab === "create" ? t("pkg.daCreate") : tab === "packages" ? t("pkg.daPackages") : tab === "custombuild" ? t("web.da.customBuild") : tab === "messages" ? t("web.msg.menu") : tab === "updates" ? t("panel-updates.updates") : tab === "services" ? t("panel-services.daServices") : pages.find((g) => g.id === tab)?.label ?? null;
+  const crumb = tab === "objects" ? t("browser-consoles-2.webSpaces") : tab === "nodes" ? t("browser-consoles-2.nodes") : tab === "create" ? t("pkg.daCreate") : tab === "packages" ? t("pkg.daPackages") : tab === "custombuild" ? t("web.da.customBuild") : tab === "messages" ? t("web.msg.menu") : tab === "updates" ? t("panel-updates.updates") : tab === "services" ? t("panel-services.daServices") : tab === "backup" ? t("panel-backup.tab.directadmen") : pages.find((g) => g.id === tab)?.label ?? null;
   return (
     <div className="cx da" data-era={era}>
       <header className="da-top">
@@ -58,6 +59,7 @@ export function DirectAdmen(p: PanelProps) {
         {level === "user" ? <UserLevel game={p.game} c={p.c} rows={rows} /> : level === "reseller" ? <ResellerLevel game={p.game} c={p.c} /> : <>
         {tab === "custombuild" && <><CustomBuild game={p.game} c={p.c} late={late} /><ComponentsPage game={p.game} c={p.c} /></>}
         {tab === "services" && <ServicesPage game={p.game} c={p.c} />}
+        {tab === "backup" && <BackupManager game={p.game} c={p.c} />}
         {tab === "resellers" && <ManageResellers game={p.game} c={p.c} />}
         {tab === "updates" && <UpdatesPage game={p.game} c={p.c} />}
         {tab === "messages" && <Messages game={p.game} c={p.c} late={late} />}
@@ -84,6 +86,7 @@ export function DirectAdmen(p: PanelProps) {
               <section>
                 <h2>{t("browser-consoles-2.serverTools")}</h2>
                 <button className="da-link" onClick={() => setTab("services")}>{t("panel-services.daServices")}</button>
+                {p.f.backups && <button className="da-link" onClick={() => setTab("backup")}>{t("panel-backup.tab.directadmen")}</button>}
                 {sw.note && <span className="cx-note">{sw.note}</span>}
                 {sw.actions.map((a) => <button key={a.id} className={`da-link ${a.tone ?? ""}`} onClick={a.run}>{a.label}</button>)}
               </section>
