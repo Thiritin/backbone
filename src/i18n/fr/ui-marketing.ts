@@ -59,6 +59,8 @@ export default {
   "marketing.requests": () => "Demandes",
   "marketing.customRequests": () => "Recevoir des demandes pour des produits que vous ne vendez pas",
   "marketing.listProduct": (p) => `Proposer ${p.product}`,
+  "marketing.customLine": () => "Offres sur mesure sur demande",
+  "marketing.customProduct": (p) => `Demandes sur mesure pour ${p.product}`,
   "marketing.hwDomains": () => "Noms de domaine",
   "marketing.hwCertificates": () => "Certificats",
   "marketing.hwDedicated": () => "Serveurs dédiés",
