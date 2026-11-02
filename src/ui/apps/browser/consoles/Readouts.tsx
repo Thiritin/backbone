@@ -13,12 +13,12 @@ import { supportOn } from "../../../../sim/60-infra/lifecycle";
 import { yearOf } from "../../../../sim/00-core/time";
 import { LOG_SOURCES, logLines, panelTasks, type LogSource } from "../../../../sim/80-business/readouts";
 import { LicenceFacts } from "./HostSettings";
-import { assignedKey, installedVersion, isLicensed, licenceStatus, panelLocked, panelStatus, trialDaysOf, trialOf, unassignedKeys, upgradeKeyBlock } from "../../../../sim/60-infra/licence";
+import { assignedKey, installedVersion, isLicensed, keyExpired, keyTiers, licenceStatus, panelKey, panelLocked, panelStatus, trialDaysOf, trialOf, upgradeKeyBlock } from "../../../../sim/60-infra/licence";
 import { machineOf } from "../../../../sim/60-infra/cluster";
 import { familyOf } from "../../../../sim/60-infra/vulns";
 import { upgradeOffers } from "../../../../sim/80-business/vendor-shop";
 import { softwareTarget, upgradeSoftware } from "../../../../sim/90-actions/console";
-import { activateLicence, finishPanelSetup, startLicenceTrial } from "../../../../sim/90-actions/licence";
+import { activateLicence, finishPanelSetup, removeLicence, startLicenceTrial } from "../../../../sim/90-actions/licence";
 import { useStore } from "../../../store";
 import type { Tab } from "./PanelBase";
 
@@ -123,31 +123,35 @@ function UpgradeEntry({ game, c }: { game: GameState; c: Cluster }) {
   );
 }
 
-// Enters a typed or owned unassigned key on the first machine of the cluster that is not licensed, or on its first machine
-// to replace the key.
+// Shows the key a machine of the cluster holds with a Remove button, or takes a typed key on the first machine that is not
+// licensed.
 function KeyEntry({ game, c, onDone }: { game: GameState; c: Cluster; onDone?: () => void }) {
   const act = useStore((s) => s.act), [key, setKey] = useState(""), [done, setDone] = useState(false), [err, setErr] = useState("");
   const id = c.panel ?? c.platform, machines = c.vm ? [c.vm] : c.nodes.map((n) => n.deviceId);
   const m = id ? machines.find((x) => licenceStatus(game, x, id) !== "active") ?? machines[0] : undefined;
   if (!id || !m || !isLicensed(id)) return null;
-  const owned = unassignedKeys(game, id);
-  const activate = (code: string) => { const r = act(activateLicence, m, id, code); setDone(r.ok); setErr(r.ok ? "" : t(r.error)); if (r.ok) { setKey(""); onDone?.(); } };
-  return (
-    <>
+  const held = assignedKey(game, m, id);
+  const activate = () => { const r = act(activateLicence, m, id, key); setDone(r.ok); setErr(r.ok ? "" : t(r.error)); if (r.ok) { setKey(""); onDone?.(); } };
+  if (held) {
+    const edition = keyTiers(id).find((x) => x.id === held.edition)?.name;
+    return (
       <div className="cx-inline">
-        <label className="cx-field">{t("vendor-sites.licenceKey")}
-          <input className="num" value={key} spellCheck={false} autoComplete="off" onChange={(e) => { setKey(e.target.value); setDone(false); }} />
-        </label>
-        <button className="cx-btn primary" disabled={!key.trim()} onClick={() => activate(key)}>{t("host.activate")}</button>
-        {done && <span role="status">{t("host.activated")}</span>}
-        {err && <span role="alert">{err}</span>}
+        <span className="num">{held.key}</span>
+        {edition && <span>{edition}</span>}
+        <span>{t(keyExpired(game, held) ? "host.lapsed" : "host.keyActive")}</span>
+        <button className="cx-btn" onClick={() => { act(removeLicence, m, id); setDone(false); }}>{t("host.removeKey")}</button>
       </div>
-      {owned.length > 0 && (
-        <div className="cx-tools" aria-label={t("host.ownedKeys")}>
-          {owned.map((k) => <button key={k.id} className="cx-chip num" onClick={() => activate(k.key)}>{k.key}</button>)}
-        </div>
-      )}
-    </>
+    );
+  }
+  return (
+    <div className="cx-inline">
+      <label className="cx-field">{t("vendor-sites.licenceKey")}
+        <input className="num" value={key} spellCheck={false} autoComplete="off" onChange={(e) => { setKey(e.target.value); setDone(false); }} />
+      </label>
+      <button className="cx-btn primary" disabled={!key.trim()} onClick={activate}>{t("host.activate")}</button>
+      {done && <span role="status">{t("host.activated")}</span>}
+      {err && <span role="alert">{err}</span>}
+    </div>
   );
 }
 
@@ -171,7 +175,7 @@ export function LicenceGate({ game, c, host }: { game: GameState; c: Cluster; ho
         {locked && <p className="cx-banner bad" role="alert">{t(!trial && trialDaysOf(id) === null ? "error.licenceKey" : "error.licenceExpired")}</p>}
         {status === "trial" && trial && <p>{t("host.trialUntil", { date: formatClock(trial.until) })}</p>}
         <KeyEntry game={game} c={c} onDone={finish} />
-        {c.setupPending && canTrial && <button className={family === "pleskit" ? "cx-btn ghost" : "cx-btn"} onClick={runTrial}>{t(family === "pleskit" ? "host.proceedTrial" : "host.useTrial")}</button>}
+        {(c.setupPending || !panelKey(game, c)) && canTrial && <button className={family === "pleskit" ? "cx-btn ghost" : "cx-btn"} onClick={runTrial}>{t(family === "pleskit" ? "host.proceedTrial" : "host.useTrial")}</button>}
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { t } from "../src/i18n/en";
 import { panelMachine, issueKey } from "../src/sim/60-infra/licence";
+import { removeLicence } from "../src/sim/90-actions/licence";
 import { ConsolePage } from "../src/ui/apps/browser/consoles/ConsolePage";
 import { useStore } from "../src/ui/store";
 import { panelVm, readyGame, skipTo } from "./fixtures";
@@ -46,11 +47,35 @@ describe("licence gate", () => {
     expect(useStore.getState().game.clusters.find((c) => c.panel === "cpanic")!.setupPending).toBe(false);
   });
 
-  it("licenses an owned key chip and leaves", () => {
-    const { key } = fresh("pleskit", true);
-    expect(screen.getByText(t("host.installKey"))).toBeTruthy();
-    fireEvent.click(screen.getByText(key));
+  it("shows the installed key with Remove, and the input again once it is removed", () => {
+    const { key, vm } = fresh("pleskit", true);
+    type(key);
+    fireEvent.click(screen.getByText(t("host.activate")));
     expect(gate()).toBeNull();
+    const held = useStore.getState().game.licenses.find((k) => k.machineId === vm)!;
+    const s = structuredClone(useStore.getState().game);
+    s.licenses = s.licenses.map((k) => (k.id === held.id ? { ...k, lapsedAt: s.hour } : k));
+    act(() => useStore.setState({ game: s }));
+    expect(screen.getByText(held.key)).toBeTruthy();
+    expect(screen.queryByLabelText(t("vendor-sites.licenceKey"))).toBeNull();
+    fireEvent.click(screen.getByText(t("host.removeKey")));
+    expect(screen.getByLabelText(t("vendor-sites.licenceKey"))).toBeTruthy();
+    expect(useStore.getState().game.licenses.find((k) => k.id === held.id)!.machineId).toBeNull();
+    expect(screen.getByText(t("host.proceedTrial"))).toBeTruthy();
+  });
+
+  it("locks a signed-in panel when its key is removed and offers the unused trial", () => {
+    const { key, id } = fresh("cpanic", true);
+    type(key);
+    fireEvent.click(screen.getByText(t("host.activate")));
+    expect(gate()).toBeNull();
+    const s = structuredClone(useStore.getState().game);
+    act(() => useStore.setState({ game: s }));
+    act(() => { useStore.getState().act(removeLicence, panelMachine(s.clusters.find((x) => x.id === id)!)!, "cpanic"); });
+    expect(screen.getByText(t("readouts.licence"))).toBeTruthy();
+    fireEvent.click(screen.getByText(t("host.useTrial")));
+    expect(screen.queryByText(t("host.useTrial"))).toBeNull();
+    expect(useStore.getState().game.trials.some((x) => x.product === "cpanic")).toBe(true);
   });
 
   it("starts the trial and leaves, and returns expired until a key is entered", () => {

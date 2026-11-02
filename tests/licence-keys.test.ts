@@ -5,6 +5,7 @@ import { SOFTWARE } from "../src/sim/10-catalog/platforms";
 import { SERVER_OS } from "../src/sim/10-catalog/server-os";
 import { newGame } from "../src/sim/50-state";
 import { assignedKey, assignKey, issueKey, monthAfter, trialOf, licenceStatus, panelMachine, releaseKey, startTrial, unassignedKeys, updateKey } from "../src/sim/60-infra/licence";
+import { removeLicence } from "../src/sim/90-actions/licence";
 import { createPanelVm } from "../src/sim/90-actions/clusters";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { panelVm, readyGame } from "./fixtures";
@@ -137,5 +138,18 @@ describe("old saves", () => {
     expect(licenceStatus(back, vm(paid), "cpanic")).toBe("lapsed");
     expect(licenceStatus(back, vm(trial), "pleskit")).toBe("trial");
     expect(deserialize(serialize(back)).licenses).toEqual(back.licenses);
+  });
+});
+
+describe("removing a key", () => {
+  it("leaves the key unassigned with its term and the product unlicensed until a trial or key", () => {
+    const s = newGame(3), k = issueKey(s, "vmwhere", null);
+    assignKey(s, k.id, "m1");
+    expect(licenceStatus(s, "m1", "vmwhere")).toBe("active");
+    expect(removeLicence(s, "m1", "vmwhere")).toEqual({ ok: true, id: k.id });
+    expect(s.licenses.find((x) => x.id === k.id)).toMatchObject({ machineId: null, covers: k.covers, renewsAt: k.renewsAt });
+    expect(licenceStatus(s, "m1", "vmwhere")).toBe("ended");
+    expect(trialOf(s, "m1", "vmwhere")).toBeUndefined();
+    expect(removeLicence(s, "m1", "vmwhere")).toEqual({ ok: false, error: "error.noSoftware" });
   });
 });

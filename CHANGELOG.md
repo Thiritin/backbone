@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- A license key that is installed in a panel or product has to be removed before another key can be entered, and the license page shows the installed key with a Remove button instead of listing your unused keys.
 - Software now installs on any virtual machine with the disk for it, but a VM too small for its software and sites sits at 100% CPU and RAM, its web console stops answering and its sites slow down until you resize it.
 - CPU and RAM readouts now move a little from hour to hour, and every software website lists the system requirements of the current year on its download page.
 - Flyerlarm, a print shop in the browser, sells flyer runs that are handed out in one of your cities over four weeks and bring in new leads; the Marketing app lists every running run and takes you to the shop to order more.

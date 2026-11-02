@@ -8,7 +8,7 @@ import { hostOf } from "../src/sim/80-business/vendor-shop";
 import { productsTick } from "../src/sim/85-products/products";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
-import { activateLicence } from "../src/sim/90-actions/licence";
+import { activateLicence, removeLicence } from "../src/sim/90-actions/licence";
 import { cancelLicence, changeEdition, checkout } from "../src/sim/90-actions/vendor-shop";
 import { updateSoftware } from "../src/sim/90-actions/software";
 import { buyKey, orderDetails, panelVm, readyGame, withCard } from "./fixtures";
@@ -131,6 +131,7 @@ describe("licence tiers", () => {
     const lapsed = key()!.id;
     s.cash = 100; s.hour++;
     expect(cancelLicence(s, lapsed).ok).toBe(true);
+    expect(removeLicence(s, vm, "cpanic").ok).toBe(true);
     expect(activateLicence(s, vm, "cpanic", buyKey(s, "cpanic", "pro").key).ok).toBe(true);
     expect(key()).toMatchObject({ lapsedAt: null, renewsAt: monthAfter(s.hour) });
     productsTick(s);
