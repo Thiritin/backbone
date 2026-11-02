@@ -126,10 +126,13 @@ export interface MailGroup { id: string; tenant: string; local: string; title: s
 // A continuing collect rule: the target mailbox pulls new Inbox mail of another own mailbox (GMix Mail Collector, Gmial Check mail from other accounts).
 export interface FetchRule {
   id: string; accountId: string; source: string; proto: "pop" | "imap";
+  password: string;            // the source's password as entered; a changed password stops the rule
   every: number;               // hours between runs, 1 to 24
   leave: boolean;              // keep the copy on the source
   folder: string | null; label: string | null;  // where the collected mail lands in the target
-  lastAt: number; err: string | null;
+  lastAt: number;              // game minute of the last run
+  upTo: number;                // message number the next run starts from
+  err: string | null;
 }
 
 // One delivery outcome, kept for Lookout 365 Message trace: the last 200 entries of the last 7 days.
@@ -231,7 +234,7 @@ All live in `src/sim/90-actions/mailbox.ts` and are registered in `ACTIONS`, so 
 ### External access and preferences
 
 - `external` is the switch behind "Allow external programs to fetch mail". While it is false, IMAP and POP logins to the mailbox fail with `error.mailExternal` and webmail still works. A new GMix mailbox starts with it off, every other mailbox with it on. `serverStatus` returns `external` while it is off. A client that asks more often than `pollGapMin` allows gets `poll` and the player sees `error.mailPoll`.
-- `prefs` holds the webmail preferences (theme, signature, undo period, stars, inbox type and the like), which core stores and does not read, with three exceptions. `prefs.spam` is `off`, `normal` or `strict`: `off` lets all junk into the Inbox, `strict` adds 0.05 to the catch rate and doubles `falseJunk`. `prefs.spamAction` is `junk` or `delete`: `delete` drops caught junk, so the Junk folder keeps no sample records. `prefs.imapDelete` is `trash`, `flag` or `expunge`: it decides what a delete from an IMAP client does (move to Trash, mark and keep, or remove at once). Allowed and blocked senders are server filters (a `notJunk` or a `junk` action), not preferences.
+- `prefs` holds the webmail preferences (theme, signature, undo period, stars, inbox type and the like), which core stores and does not read, with four exceptions. `prefs.spam` is `off`, `normal` or `strict`: `off` lets all junk into the Inbox, `strict` adds 0.05 to the catch rate and doubles `falseJunk`. `prefs.spamAction` is `junk` or `delete`: `delete` drops caught junk, so the Junk folder keeps no sample records. `prefs.imapDelete` is `trash`, `flag` or `expunge`: it decides what a delete from an IMAP client does (move to Trash, mark and keep, or remove at once). `prefs.allow` and `prefs.block` are comma lists of sender addresses: an allowed sender skips the junk check and a blocked sender lands in Junk. They are preferences rather than server filters, because the free tiers' five filters of five conditions would hold only a handful of senders.
 
 ### Passwords
 
@@ -276,8 +279,8 @@ All live in `src/sim/90-actions/mailbox.ts` and are registered in `ACTIONS`, so 
 
 ### Collecting mail from other accounts
 
-- A `FetchRule` makes a target mailbox collect the new Inbox mail of another own mailbox on a schedule: GMix Mail Collector, and Gmial's Check mail from other accounts. `saveFetchRule(s, rule)` needs the source's password (`checkMailLogin`, else `error.mailLogin`), POP offered by the source's host in the current year (else `error.mailProtocol`) and no cycle back to the target (`error.mailFetchLoop`). `deleteFetchRule` and `runFetchRule` (Check now) complete the set.
-- The hourly `mailTick` runs the rules whose `every` hours have passed. For each, the source Inbox messages with `at` after `lastAt` (at most 50 a run) are copied into the target through `deliver`, which runs the target's filters and quota check but not the junk check, because the source already filtered them. With `leave` off, the source copy is expunged. A rule stops with `err` set when its source box is closed, its tenant has ended or its password changed.
+- A `FetchRule` makes a target mailbox collect the new Inbox mail of another own mailbox on a schedule: GMix Mail Collector, and Gmial's Check mail from other accounts. `saveFetchRule(s, accountId, rule)` needs the source's password (else `error.mailLogin`), the protocol offered by the source's host in the current year and the source's external access switch on (else `error.mailExternal`, the wording Pear Mail shows), a collector left on the target's plan (`error.mailCollectors`) and no cycle back to the target (`error.mailFetchLoop`). It was built with the GMix webmail (webmail-consumer milestone 5) in `src/sim/42-mail/fetch.ts`. `deleteFetchRule` and `runFetchRule` (Check now) complete the set.
+- The hourly `mailTick` runs the rules whose `every` hours have passed. For each, the source Inbox messages numbered from `upTo` on (at most 50 a run; message ids only grow, so mail that lands in the minute of a run is not skipped) are copied into the target through `deliver`, which runs the target's filters and quota check but not the junk check, because the source already filtered them. With `leave` off, the source copy is expunged. A rule stops with `err` set when its source box is closed, its tenant has ended or its password changed.
 - The cost is one pass over at most three rules per mailbox. A collected message is a normal message in the target.
 
 ## Folders, messages and actions

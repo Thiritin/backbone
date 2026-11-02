@@ -59,6 +59,8 @@ export default {
   "error.mailFilterMax": () => "Questa casella non accetta altri filtri.",
   "error.mailFrom": () => "Questa casella non può inviare da questo indirizzo.",
   "error.mailAttach": () => "L'allegato supera la dimensione accettata da questa casella.",
+  "error.mailFetchLoop": () => "Questa casella raccoglie già da quell'account, oppure quell'account raccoglie da questa.",
+  "error.mailCollectors": (p) => `Questo piano raccoglie al massimo da ${p.n} account.`,
   "error.mailFolder": () => "Questa casella non accetta altre cartelle.",
   "error.mailNoFolder": () => "Questa cartella non esiste.",
   "error.mailFolderName": () => "Scegli un altro nome per questa cartella.",

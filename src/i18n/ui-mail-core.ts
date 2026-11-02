@@ -59,6 +59,8 @@ export default {
   "error.mailFilterMax": () => "This mailbox holds no more filters.",
   "error.mailFrom": () => "This mailbox cannot send from this address.",
   "error.mailAttach": () => "The attachment is larger than this mailbox accepts.",
+  "error.mailFetchLoop": () => "This mailbox already collects from that account, or that account collects from this one.",
+  "error.mailCollectors": (p) => `This plan collects from at most ${p.n} accounts.`,
   "error.mailFolder": () => "This mailbox holds no more folders.",
   "error.mailNoFolder": () => "This folder does not exist.",
   "error.mailFolderName": () => "Choose another name for this folder.",

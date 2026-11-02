@@ -215,6 +215,11 @@ function accept(s: GameState, a: MailAccount, m: Message, hops: number, junkChec
   if (fwd) forwards.push(fwd.to);
   // At the hop limit the forward stops and the message stays here.
   const keep = !fwd || fwd.keep || !onward;
+  // The webmail's allowed and blocked senders: comma lists of addresses in prefs.
+  const sender = m.folder === "inbox" ? view(s, m).fromAddress.toLowerCase() : "";
+  const listed = (k: string) => !!sender && String(a.prefs?.[k] ?? "").split(",").some((x) => x.trim().toLowerCase() === sender);
+  if (listed("allow")) notJunk = true;
+  else if (listed("block")) { m.folder = "junk"; result = "quarantined"; why = "junk"; }
   if (m.folder === "inbox" && !notJunk && !junkChecked && a.prefs?.spam !== "off") {
     const strict = a.prefs?.spam === "strict" ? 2 : 1;
     // Hashed draws, so mail never shifts the game's other random events.

@@ -59,6 +59,8 @@ export default {
   "error.mailFilterMax": () => "Cette boîte ne peut plus recevoir de filtres.",
   "error.mailFrom": () => "Cette boîte ne peut pas envoyer depuis cette adresse.",
   "error.mailAttach": () => "La pièce jointe dépasse la taille acceptée par cette boîte.",
+  "error.mailFetchLoop": () => "Cette boîte relève déjà ce compte, ou ce compte relève cette boîte.",
+  "error.mailCollectors": (p) => `Cette offre relève au plus ${p.n} comptes.`,
   "error.mailFolder": () => "Cette boîte ne peut plus recevoir de dossiers.",
   "error.mailNoFolder": () => "Ce dossier n'existe pas.",
   "error.mailFolderName": () => "Choisissez un autre nom pour ce dossier.",
