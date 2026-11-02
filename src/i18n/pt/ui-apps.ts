@@ -214,6 +214,7 @@ export default {
   "apps.mail.installing": () => "A instalar",
   "apps.mail.impaired": () => "Entrega de e-mail afetada",
   "apps.mail.delivering": () => "A entregar",
+  "apps.mail.unrouted": () => "Não entregue",
   "apps.mail.freeNote": () => "Grátis. Parece pouco profissional para clientes empresariais.",
   "apps.mail.availableFrom": (p) => `Disponível a partir de ${p.year}`,
   "apps.mail.needDomain": () => "Precisas de um domínio",

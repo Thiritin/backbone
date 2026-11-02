@@ -3,7 +3,7 @@ import { useRef, type ComponentType, type CSSProperties } from "react";
 import { euro } from "../../sim/00-core/money";
 import { yearOf } from "../../sim/00-core/time";
 import type { GameState } from "../../sim/50-state";
-import { FREEMAIL, mailHost, mailImpaired, MAIL_PROVIDERS, salesAddress, seatsFor } from "../../sim/80-business/mail";
+import { FREEMAIL, mailHost, mailImpaired, mailUnrouted, MAIL_PROVIDERS, salesAddress, seatsFor } from "../../sim/80-business/mail";
 import { bookMail, cancelMail, selectMailServer } from "../../sim/90-actions/mail";
 import type { MarkProps } from "../art/mailmarks";
 import { MAIL, GMIX } from "./support/desk";
@@ -14,6 +14,7 @@ import { t } from "../../i18n/en";
 
 function status(game: GameState): string {
   if (mailHost(game)?.switching) return t("apps.mail.installing");
+  if (mailUnrouted(game)) return t("apps.mail.unrouted");
   return mailImpaired(game) ? t("apps.mail.impaired") : t("apps.mail.delivering");
 }
 

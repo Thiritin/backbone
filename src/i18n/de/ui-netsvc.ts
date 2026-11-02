@@ -48,6 +48,7 @@ export default {
   "netsvc.ttl": () => "TTL",
   "netsvc.data": () => "Daten",
   "error.badRecord": () => "Dieser Eintrag ist für die Zone nicht gültig.",
+  "error.managedRecord": () => "Dieser Eintrag wird automatisch verwaltet.",
   "error.unknownZone": () => "Diese Zone gibt es nicht mehr.",
   "ticket.howTo.dnsChange.subject": () => "Bitte ändert unseren DNS-Eintrag",
   "ticket.howTo.dnsChange.text": (p) => `Unsere Website ${p.domain} muss auf ${p.ip} zeigen. Bitte setzt den www-Eintrag auf diese Adresse.`,

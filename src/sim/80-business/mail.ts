@@ -10,6 +10,7 @@ import { mailPlan } from "../10-catalog/mail-providers";
 import { roleAccount, roleAddress, seatsBilled } from "../42-mail/accounts";
 import { mxTarget } from "../42-mail/caps";
 import { tenantOf } from "../42-mail/address";
+import { GMIX_DOMAIN } from "../42-mail/new";
 
 export type MailProviderId = "hostedExchange" | "goggleWorkspace" | "lookout365";
 export type SelfMailSoftware = "postfixit" | "mailpig";
@@ -64,9 +65,16 @@ export function mailImpaired(s: GameState): boolean {
 export const FREEMAIL_BUSINESS_SHARE = 0.5;
 const PERSONS: Profile[] = ["private", "gamer", "hobbyDev"];
 
-// What reaches the company by email: half while delivery is impaired, and half of the businesses while it uses GMix.
+// Mail to a sales address on the company domain bounces while the domain's MX leads to no tenant that holds the mailbox.
+export function mailUnrouted(s: GameState): boolean {
+  const a = roleAccount(s, "sales"), t = a && tenantOf(s, a);
+  return !!t && t.domain !== GMIX_DOMAIN && mxTarget(s)?.id !== t.id;
+}
+
+// What reaches the company by email: nothing while the MX is wrong, half while delivery is impaired, and half of the
+// businesses while it uses GMix.
 export const mailShare = (s: GameState, profile: Profile = "private"): number =>
-  (mailImpaired(s) ? IMPAIRED_SHARE : 1) * (salesHost(s) === "gmix" && !PERSONS.includes(profile) ? FREEMAIL_BUSINESS_SHARE : 1);
+  mailUnrouted(s) ? 0 : (mailImpaired(s) ? IMPAIRED_SHARE : 1) * (salesHost(s) === "gmix" && !PERSONS.includes(profile) ? FREEMAIL_BUSINESS_SHARE : 1);
 
 // Hours an invoice sent now waits longer for its payment.
 export const mailDelay = (s: GameState): number => (mailImpaired(s) ? MAIL_DELAY_HOURS : 0);

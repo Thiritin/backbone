@@ -1,4 +1,5 @@
 import { bookMail } from "../src/sim/90-actions/mail";
+import { mxSetAt } from "../src/sim/10-catalog/mail-providers";
 import { hire as hireReal } from "../src/sim/90-actions/staff";
 import { mxTarget } from "../src/sim/42-mail/caps";
 import { companyDomain } from "../src/sim/30-customers/domains";
@@ -320,12 +321,13 @@ export function buyKey(s: GameState, product: string, edition: string | null): L
   if (!paid.ok) throw new Error(paid.error);
   return s.licenses.at(-1)!;
 }
-// A free own-server tenant on the company domain with its MX record live, so a hire gets a mailbox.
+// An Ionose tenant on the company domain with its MX records live, so a hire gets a mailbox. An own-server tenant would
+// need a running mail server for its MX to resolve.
 export function withDomainMail(s: GameState): GameState {
   if (mxTarget(s)) return s;
   const d = companyDomain(s);
-  s.mail = { ...s.mail, tenants: [...s.mail.tenants, { id: `tn${s.nextId++}`, host: "self", domain: d, plan: "self", since: s.hour, verified: true, endsAt: null, admin: null }] };
-  s.company = { ...s.company, zone: [...s.company.zone, { id: `z${s.nextId++}`, type: "MX", name: "@", ttl: 3600, data: `10 mail.${d}` }] };
+  s.mail = { ...s.mail, tenants: [...s.mail.tenants, { id: `tn${s.nextId++}`, host: "ionose", domain: d, plan: "exchange", since: s.hour, verified: true, endsAt: null, admin: null }] };
+  s.company = { ...s.company, zone: [...s.company.zone, ...mxSetAt("ionose", d, s.hour).map(([p, h]) => ({ id: `z${s.nextId++}`, type: "MX" as const, name: "@", ttl: 3600, data: `${p} ${h}` }))] };
   return s;
 }
 export const hire = (s: GameState, candidateId: string, team?: string) => hireReal(withDomainMail(s), candidateId, team);

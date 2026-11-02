@@ -10,6 +10,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Panel consoles no longer sell licence editions; the licence page shows the edition and its limits, and editions are changed from My account on the vendor's website.
 - Vendor websites offer a Change edition choice for every licence key, which switches the key to the new edition after checkout without entering a new key.
 - Every cPanic customer account now has its own files, databases, mailboxes and limits on databases, FTP accounts and domains, which its customer pages show.
+- Your own servers, mail server, webmail, help desk and shop now get their DNS records automatically, so an MX record pointing at your mail server's host name delivers mail, and the DNS page offers MX, A and CNAME values from lists instead of free text.
+- Mail to your domain now really follows its MX record: when it leads nowhere, email orders stop arriving and the Email sheet shows the mail as not delivered.
 - Your own virtual machines now take their operating system's time to boot, shut down and restart, and an open SSH session sees the shutdown broadcast before it is disconnected.
 - Shutting down, restarting or checkpointing a virtual machine now asks for confirmation first, and a checkpointed container keeps its last picture on the console.
 - Customer websites now have their own look: layouts, colour schemes and page blocks differ per customer and get redesigned as the years pass, so the first 30 customers never share a page.
