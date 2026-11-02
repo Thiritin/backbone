@@ -32,3 +32,54 @@
 .scw-shell nav { display: flex; gap: 14px; }
 .scw-shell nav a { color: #333333; text-decoration: none; }
 .scw-shell nav a[aria-current] { color: #3a6ea5; font-weight: 700; }
+.scw-shell { display: flex; flex-direction: column; height: 100%; }
+.scw-mail, .scw-split { display: flex; flex: 1; min-height: 0; }
+.scw-mail aside, .scw-split aside { display: flex; flex-direction: column; flex: 0 0 180px; padding: 8px; border-right: 1px solid #cccccc; background: #f9f9f9; }
+.scw-mail aside h3 { margin: 0 0 6px; font-size: 12px; color: #666666; }
+.scw-folders { flex: 1; margin: 0; padding: 0; list-style: none; }
+.scw-folders li { padding: 3px 6px; cursor: pointer; }
+.scw-folders li.on { background: #cfdcec; }
+.scw-folders li.over { outline: 1px dashed #3a6ea5; }
+.scw-quota { font-size: 11px; color: #666666; }
+.scw-quota .bar { display: inline-block; width: 60px; height: 8px; vertical-align: middle; border: 1px solid #999999; background: #ffffff; }
+.scw-quota .bar span { display: block; height: 100%; background: #6fa04b; }
+.scw-mail section { display: flex; flex-direction: column; flex: 1; min-width: 0; overflow: auto; outline: none; }
+.scw-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 6px 8px; border-bottom: 1px solid #cccccc; background: #f0f0f0; }
+.scw-toolbar button:disabled { color: #aaaaaa; }
+.scw-search { margin-left: auto; display: flex; gap: 4px; }
+.scw-search input { width: 140px; }
+.scw-select { display: flex; gap: 6px; align-items: center; padding: 4px 8px; font-size: 11px; color: #666666; }
+.scw-select a { color: #3a6ea5; }
+.scw-select .count { margin-left: auto; display: flex; gap: 4px; align-items: center; }
+.scw-select .count button { padding: 0 4px; }
+.scw-list { width: 100%; border-collapse: collapse; }
+.scw-list th { padding: 3px 6px; border-bottom: 1px solid #999999; background: #ebebeb; text-align: left; font-weight: 400; color: #666666; }
+.scw-list td { padding: 3px 6px; border-bottom: 1px solid #eeeeee; cursor: default; }
+.scw-list tr.unread td { font-weight: 700; }
+.scw-list tr.flagged td { color: #cc0000; }
+.scw-list tr.on td { background: #cfdcec; }
+.scw-list td.icon { width: 14px; }
+.scw-list .flag { display: inline-block; width: 8px; height: 10px; background: #cc0000; clip-path: polygon(0 0, 100% 25%, 0 50%); }
+.scw-list .att { display: inline-block; width: 6px; height: 11px; border: 2px solid #777777; border-radius: 4px; }
+.scw-reader { border-top: 2px solid #999999; padding: 8px; }
+.scw-reader .headers th { padding-right: 10px; text-align: right; font-weight: 400; color: #666666; }
+.scw-reader pre { white-space: pre-wrap; font: inherit; }
+.scw-ticket { padding: 6px; border: 1px solid #cccccc; background: #f9f9f9; }
+.scw-compose { flex: 1; overflow: auto; }
+.scw-form th { padding: 3px 8px; text-align: right; font-weight: 400; vertical-align: top; white-space: nowrap; }
+.scw-compose .scw-form { width: 100%; }
+.scw-compose .scw-form input { width: 100%; max-width: 520px; }
+.scw-compose textarea, .scw-html .area { display: block; width: calc(100% - 16px); height: 260px; margin: 8px; padding: 4px; border: 1px solid #999999; font: 12px/1.4 Monaco, "Courier New", monospace; overflow: auto; }
+.scw-html .area { font-family: inherit; }
+.scw-html .bar { display: flex; gap: 2px; margin: 8px 8px 0; }
+.scw-note { margin-left: 8px; color: #3a6ea5; font-weight: 700; }
+.scw-split aside input[type="search"] { width: 100%; margin: 6px 0; }
+.scw-pane { flex: 1; padding: 12px; overflow: auto; }
+.scw-pane fieldset { margin: 0 0 10px; border: 1px solid #cccccc; }
+.scw-pane legend { color: #3a6ea5; font-weight: 700; }
+.scw-pane textarea { width: 300px; height: 80px; }
+.scw-settings { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.scw-tabs { display: flex; gap: 2px; padding: 6px 8px 0; border-bottom: 1px solid #999999; background: #f0f0f0; }
+.scw-tabs a { padding: 4px 10px; color: #333333; text-decoration: none; border: 1px solid transparent; border-bottom: 0; }
+.scw-tabs a[aria-current] { background: #ffffff; border-color: #999999; font-weight: 700; }
+.scw-settings .scw-split { flex: 1; }

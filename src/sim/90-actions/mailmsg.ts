@@ -41,6 +41,15 @@ export function moveMessages(s: GameState, account: string, ids: string[], folde
   return ok;
 }
 
+// IMAP COPY: each message again in the folder, counted against the quota.
+export function copyMessages(s: GameState, account: string, ids: string[], folder: string): ActionResult {
+  if (!box(s, account)) return fail("error.mailUnknown");
+  if (!isFolder(s, account, folder) || customOf(s, account, folder)?.label) return fail("error.mailNoFolder");
+  const want = new Set(ids);
+  for (const { prev: _, ...m } of msgsOf(s, account).filter((x) => want.has(x.id) && !x.draft)) store(s, box(s, account)!, { ...m, id: `msg${s.nextId++}`, folder });
+  return ok;
+}
+
 // Outside Trash a delete moves to Trash; in Trash it removes for good. An IMAP client's delete follows prefs.imapDelete:
 // flag keeps the message where it is and marks it read, archive takes it out of the Inbox, which label hosts do by default.
 export function deleteMessages(s: GameState, account: string, ids: string[], via?: "imap"): ActionResult {

@@ -10,6 +10,9 @@ import { useSessionState } from "../../../../session";
 import { useStore } from "../../../../store";
 import { offerLogin, savedLogin } from "../../../../vault";
 import type { PanelProps } from "../PanelBase";
+import { versionOf } from "../squirrelmeal/SquirrelMeal";
+import { Compose, Mailbox, type Draft } from "./Mail";
+import { AddressBook, Settings } from "./Settings";
 import "./squarecube.css";
 
 // docs/design/plans/webmail-server.md, section 4: Squarecube in the Classic skin of 0.1 to 0.7.
@@ -20,7 +23,7 @@ export function Squarecube(p: PanelProps) {
   const [account, setAccount] = useSessionState<string | null>(`webmail.${p.c.id}`, null);
   if (/^\/installer(\/|$)/.test(sub)) return <Installer game={p.game} c={p.c} />;
   if (p.c.setupPending) return <div className="scw scw-error"><h3>{t("mailserver.sc.unavailable")}</h3><p>{t("mailserver.sc.noConfig")}</p></div>;
-  if (account && p.game.mail.accounts.some((a) => a.id === account)) return <Shell out={() => setAccount(null)} />;
+  if (account && p.game.mail.accounts.some((a) => a.id === account)) return <Shell game={p.game} c={p.c} account={account} out={() => setAccount(null)} />;
   return <Login game={p.game} c={p.c} host={p.host} signIn={setAccount} />;
 }
 
@@ -110,19 +113,28 @@ function Login({ game, c, host, signIn }: { game: GameState; c: Cluster; host: s
   );
 }
 
-// The Classic frame around the mailbox: the logo and the task bar.
-function Shell({ out }: { out: () => void }) {
+type Task = "mail" | "abook" | "settings";
+
+// The Classic frame: the logo and the task bar over the mailbox, the address book or the settings.
+function Shell({ game, c, account, out }: { game: GameState; c: Cluster; account: string; out: () => void }) {
+  const [task, setTask] = useState<Task>("mail"), [draft, setDraft] = useState<Partial<Draft> | null>(null);
+  const ctx = { game, c, account, version: versionOf(game, c) };
+  const compose = (d: Partial<Draft>) => { setDraft(d); setTask("mail"); };
+  const go = (x: Task) => { if (!draft || window.confirm(t("mailserver.sc.notSent"))) { setDraft(null); setTask(x); } };
   return (
     <div className="scw scw-shell">
       <header>
         <Logo />
         <nav>
-          <a href="#mail" aria-current="page" onClick={(e) => e.preventDefault()}>{t("mailserver.sc.mail")}</a>
-          <a href="#abook" onClick={(e) => e.preventDefault()}>{t("mailserver.sc.abook")}</a>
-          <a href="#settings" onClick={(e) => e.preventDefault()}>{t("mailserver.sc.settings")}</a>
+          {(["mail", "abook", "settings"] as const).map((x) => (
+            <a key={x} href={`#${x}`} aria-current={x === task ? "page" : undefined} onClick={(e) => { e.preventDefault(); go(x); }}>{t(`mailserver.sc.${x}`)}</a>
+          ))}
           <a href="#logout" onClick={(e) => { e.preventDefault(); out(); }}>{t("mailserver.sc.logout")}</a>
         </nav>
       </header>
+      {task === "mail" && (draft ? <Compose key={JSON.stringify(draft)} ctx={ctx} initial={draft} close={() => setDraft(null)} /> : <Mailbox ctx={ctx} compose={compose} />)}
+      {task === "abook" && <AddressBook ctx={ctx} compose={compose} />}
+      {task === "settings" && <Settings ctx={ctx} />}
     </div>
   );
 }

@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- Squarecube shows your mailbox in its Classic look, with folders, drag and drop, search, compose with an HTML editor, an address book, identities, preferences with special folders and, from version 0.4, a password change.
 - Goggle mailboxes have their own webmail, Gmial, with labels, conversations, stars, search operators, filters made from a message, and settings for labels, filters, forwarding, POP and IMAP.
 - Shop modules, Shop link and payment methods now belong to the shop system you bought them for: switching systems starts without them, and switching back brings them back.
 - Shipping stored hardware to another site now costs a courier fee per unit, never more than a rack move.
