@@ -1,6 +1,15 @@
 import { attachQuote, createQuote, editQuote, setQuoteCycle } from "../src/sim/90-actions/orders";
 import type { Cycle } from "../src/sim/10-catalog/cycles";
 import type { ActionResult } from "../src/sim/90-actions/hardware";
+import { deskArchive, sampleConfig, type SelfDeskId } from "../src/sim/10-catalog/archives";
+import { versionAt } from "../src/sim/10-catalog/software-versions";
+import { PHP } from "../src/sim/10-catalog/platforms";
+import { phpNeeded } from "../src/sim/60-infra/shop-files";
+import { webspaceOf } from "../src/sim/60-infra/webspace";
+import { downloadArchive } from "../src/sim/90-actions/media";
+import { runDeskInstaller } from "../src/sim/90-actions/desk-setup";
+import { createDatabase, createDbUser, createFolder, createOwnWebspace, createSubdomain, deleteFile, grantDb, renameFile } from "../src/sim/90-actions/webspace";
+import { chmodFile, extractFile, uploadFile } from "../src/sim/90-actions/webspace-files";
 import { bookMail } from "../src/sim/90-actions/mail";
 import { mxSetAt } from "../src/sim/10-catalog/mail-providers";
 import { hire as hireReal } from "../src/sim/90-actions/staff";
@@ -375,4 +384,35 @@ export function quoteOrder(s: GameState, ticketId: string, monthly: number, setu
     if (!cycled.ok) return cycled;
   }
   return attachQuote(s, id, ticketId);
+}
+
+// A self-hosted desk installed by hand (web-hosting.md 5.1): an own web space on the panel host, support.<domain> pointing at
+// the web root, the vendor's archive uploaded and extracted there, a database and user, OsTickit's config renamed and made
+// writable, the web installer run with this staff account, and unless clean is false the setup folder deleted and the
+// config made read-only again.
+export const DESK_ADMIN = { first: "Ada", last: "Admin", email: "ada@example.com", user: "ada", pass: "s3cret!" };
+const phpIndexOf = (v: string) => PHP.findIndex((p) => p.version === v);
+export function handDesk(s: GameState, clusterId: string, id: SelfDeskId, version = versionAt(id, s.hour).version, clean = true): { ws: string; folder: string; db: string } {
+  const c = s.clusters.find((x) => x.id === clusterId)!;
+  if (phpIndexOf(c.php ?? "") < phpIndexOf(phpNeeded(id, version))) c.php = phpNeeded(id, version);
+  const ws = s.ownWebspaces.find((x) => x.clusterId === clusterId)?.id ?? must(createOwnWebspace(s, clusterId));
+  const w = webspaceOf(s, ws)!, dir = `${w.webroot}/support`, zip = deskArchive(id, version).name;
+  const folder = `${dir}/${id === "ostickit" ? "upload" : "public"}`;
+  must(downloadArchive(s, zip));
+  if (!w.files[dir]) must(createFolder(s, ws, w.webroot, "support"));
+  must(createSubdomain(s, ws, "support", w.domain, folder));
+  must(uploadFile(s, ws, dir, zip));
+  must(extractFile(s, ws, `${dir}/${zip}`));
+  if (id === "ostickit") {
+    must(renameFile(s, ws, `${folder}/include/${sampleConfig(version)}`, "ost-config.php"));
+    must(chmodFile(s, ws, `${folder}/include/ost-config.php`, "0666"));
+  }
+  const db = must(createDatabase(s, ws, "desk")), user = must(createDbUser(s, ws, "desk", "dbpass1"));
+  must(grantDb(s, ws, user, db));
+  must(runDeskInstaller(s, ws, folder, { ...DESK_ADMIN, helpdesk: "Support", deskEmail: `support@${w.domain}`, dbHost: "localhost", dbName: db, dbUser: user, dbPass: "dbpass1" }));
+  if (id === "ostickit" && clean) {
+    must(deleteFile(s, ws, `${folder}/setup`));
+    must(chmodFile(s, ws, `${folder}/include/ost-config.php`, "0644"));
+  }
+  return { ws, folder, db };
 }

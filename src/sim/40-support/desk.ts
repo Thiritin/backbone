@@ -4,6 +4,7 @@ import { deskById, type DeskAi, type DeskId } from "../10-catalog/desks";
 import { capsOf } from "../42-mail/caps";
 import type { DeskChannel } from "../42-mail/types";
 import type { GameState } from "../50-state";
+import { deskBroken } from "../60-infra/desk-files";
 import { hostStatus, type SiteStatus } from "../80-business/website";
 import { monthlyValue, profileStats, type Ticket, type TicketKind } from "./tickets";
 
@@ -13,8 +14,9 @@ export type Priority = "low" | "normal" | "high" | "urgent";
 export interface Department { id: string; name: string; members: string[]; autoAssign: boolean; channelId: string | null }
 // Evaluated at import: OsTickit ticket filters, Zendusk triggers, Freshdusk creation rules.
 export interface DeskRule { when: TicketKind | "*"; set: { deptId?: string; assignee?: string; priority?: Priority } }
-// self: installed in a web space of a panel host, with the release it runs.
-export type DeskHosting = { kind: "legacy" } | { kind: "hosted" } | { kind: "self"; clusterId: string; version: string };
+// self: installed in a web space of a panel host, with the release it runs and the web space, web root and database its
+// installer wrote to.
+export type DeskHosting = { kind: "legacy" } | { kind: "hosted" } | { kind: "self"; clusterId: string; version: string; ws?: string; folder?: string; db?: string };
 export interface DeskState {
   id: DeskId;
   // legacy: a desk bought in the Pear Store before desks were websites, up always.
@@ -26,6 +28,8 @@ export interface DeskState {
   // The last sequential ticket number handed out.
   lastRef: number;
   ai: DeskAiState;
+  // A self-hosted desk's password reset link: its token, the staff row and the hour it expires.
+  reset?: { token: string; pk: number; until: number } | null;
 }
 
 // The AI switches of a hosted desk, this month's answer bot results and the generative replies and drafts, billed at the
@@ -55,7 +59,8 @@ export function priorityOf(s: Pick<GameState, "customers" | "services">, t: Pick
 export function deskStatus(s: GameState): SiteStatus {
   const h = s.desk?.hosting;
   if (!h) return "down";
-  return h.kind === "self" ? hostStatus(s, h.clusterId, DESK_MACHINE) : "up";
+  if (h.kind !== "self") return "up";
+  return deskBroken(s) ? "down" : hostStatus(s, h.clusterId, DESK_MACHINE);
 }
 
 // Whether a ticket can be worked: one only a mailbox holds always can, one the desk imported or its portal took only

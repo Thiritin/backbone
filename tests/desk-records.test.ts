@@ -5,10 +5,10 @@ import { deskAddress, deskHostReachable, deskRecords, senderVerified } from "../
 import type { GameState } from "../src/sim/50-state";
 import { holderOf } from "../src/sim/60-infra/addresses";
 import { panelMachine } from "../src/sim/60-infra/licence";
-import { installDesk, subscribeDesk, verifyDesk } from "../src/sim/90-actions/desk-install";
+import { subscribeDesk, verifyDesk } from "../src/sim/90-actions/desk-install";
 import { setCompanyRecord } from "../src/sim/90-actions/domains";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { readyGame } from "./fixtures";
+import { handDesk, readyGame } from "./fixtures";
 
 const game = (seed = 5): GameState => { const s = readyGame(seed); s.hour = hourOf(new Date(Date.UTC(2014, 0, 1))); s.cash = 1_000_000; return s; };
 // The panel host's own public address, as a datacenter server holds it.
@@ -36,7 +36,7 @@ describe("desk domain records", () => {
 
   it("lists the A record of a self-hosted desk at its panel host's address, set automatically, and none for a desk without a site", () => {
     const s = game(), c = s.clusters.find((x) => x.kind === "panel")!;
-    expect(installDesk(s, c.id, "ostickit").ok).toBe(true);
+    handDesk(s, c.id, "ostickit");
     expect(rows(s)).toEqual([["A", "support", "", false]]);
     panel(s);
     expect(rows(s)).toEqual([["A", "support", "203.0.113.10", true]]);
@@ -70,7 +70,7 @@ describe("desk domain records", () => {
   it("passes Verify for a self-hosted desk with a public address, as its record is set automatically", () => {
     const s = game(), c = panel(s);
     expect(verifyDesk(s)).toEqual({ ok: false, error: "error.noDesk" });
-    installDesk(s, c.id, "ostickit");
+    handDesk(s, c.id, "ostickit");
     expect(verifyDesk(s)).toEqual({ ok: true });
   });
 

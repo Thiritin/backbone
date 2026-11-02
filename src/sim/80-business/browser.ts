@@ -1,6 +1,8 @@
 // GDD, The desktop (Browser): what an address in the in-game browser leads to. Pure; the UI draws the page.
 import { PROGRAMS } from "../10-catalog/programs";
 import { filesIn, installDirIn, shopBroken, shopFolderAt } from "../60-infra/shop-files";
+import { deskBroken, deskFilesIn, setupDirIn } from "../60-infra/desk-files";
+import type { SelfDeskId } from "../10-catalog/archives";
 import { DESKS, type DeskId } from "../10-catalog/desks";
 import { supplierHost } from "../46-finance/payables";
 import { monthIndexOf, yearOf } from "../00-core/time";
@@ -63,7 +65,8 @@ export type Page =
   | { kind: "shopVendor"; id: ShopId }
   | { kind: "deskVendor"; id: DeskId }
   | { kind: "mailProvider"; id: MailSiteId }
-  | { kind: "desk"; id: DeskId }
+  | { kind: "desk"; id: DeskId; base?: string }
+  | { kind: "deskSetup"; ws: string; folder: string; base: string; id: SelfDeskId; version: string; screen: "installer" | "notInstalled" | "dbError" }
   | { kind: "hosttoast" }
   | { kind: "host"; hostname: string }
   | { kind: "console"; hostname: string; clusterId: string; defaced: boolean; path: string }
@@ -225,6 +228,19 @@ export function resolve(s: GameState, raw: string): Resolved {
   // A domain on the partner's name servers shows its parking page; on custom ones nothing the company runs answers.
   const held = s.domains.find((d) => !d.lapsed && (host === d.name || host === `www.${d.name}`));
   if (held && parked(s, held)) return out(nsActive(s, held).ns === "registrar" ? { kind: "parked", registrar: partnerOf(s).id, domain: held.name } : { kind: "notfound" });
+  // A desk's files in a folder of an own web space: its installer until it has run there (OsTickit's while setup/ exists,
+  // FreeScoot's at /install), then the desk, or its error while files and install disagree.
+  const dk = shopFolderAt(s, host, path, deskFilesIn), dFiles = dk && deskFilesIn(dk.ws, dk.folder);
+  if (dk && dFiles) {
+    const h = s.desk?.hosting, here = h?.kind === "self" && h.ws === dk.ws.workloadId && h.folder === dk.folder;
+    const setup = (screen: "installer" | "notInstalled" | "dbError") =>
+      out({ kind: "deskSetup", ws: dk.ws.workloadId, folder: dk.folder, base: dk.base, id: dFiles.id, version: dFiles.version, screen });
+    if (!here) return setup(dFiles.id === "freescoot" ? (/^\/install(\/|$)/.test(dk.rest) ? "installer" : "notInstalled") : setupDirIn(dk.ws, dk.folder) ? "installer" : "notInstalled");
+    if (dFiles.id === "ostickit" && /^\/setup(\/|$)/.test(dk.rest) && setupDirIn(dk.ws, dk.folder)) return setup("installer");
+    if (deskBroken(s)) return setup("dbError");
+    const st = deskStatus(s);
+    return out({ kind: "desk", id: dFiles.id, ...(dk.base && { base: dk.base }) }, st === "up" ? "fast" : st === "slow" ? "slow" : "down");
+  }
   // The shop's files in a folder of an own web space: the installer under /install/, the note to run it, the store once
   // installed there, or its error while its files and install disagree.
   const own = shopFolderAt(s, host, path), files = own && filesIn(own.ws, own.folder);

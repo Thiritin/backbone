@@ -88,3 +88,5 @@
 .ost-110.ost-client .ost-btn { background: #91bd09; border-color: #749a02; }
 .ost-110.ost-client .ost-btn.alt { color: #fff; background: #00AEEF; border-color: #0090c6; }
 .ost-login h1 svg { width: 34px; height: 34px; }
+.ost-warning { margin: 8px 0; padding: 6px 10px 6px 12px; background: #ffffdd; border: 1px solid #ffcc00; color: #333; }
+.ost-forgot { justify-self: end; font-size: 0.9em; cursor: pointer; }

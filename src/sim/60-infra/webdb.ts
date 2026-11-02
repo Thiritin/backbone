@@ -115,6 +115,33 @@ export const SCHEMAS: Record<string, Schema> = {
     invoice: T(300, 8, 0, "id bigint(20) id, client_id bigint(20) int, due_at varchar(35) date, status varchar(50) pick:paid|paid|unpaid|refunded"),
     setting: T(100, 0, 150, "param varchar(255) option, value text word"),
   },
+  // The self-hosted desks: a fresh install holds its admin, its settings and the sample department, topic and address.
+  ostickit: {
+    ost_api_key: T(200, 0, 0, "id int(10) id, isactive tinyint(1) =1, ipaddr varchar(64) ip, apikey varchar(255) hex"),
+    ost_config: T(100, 0, 120, "id int(11) id, namespace varchar(64) =core, key varchar(64) option, value text word"),
+    ost_department: T(300, 0, 3, "dept_id int(11) id, dept_name varchar(128) pick:Support|Billing|Sales, dept_signature text text"),
+    ost_email: T(300, 0, 1, "email_id int(11) id, email varchar(255) email, name varchar(255) title"),
+    ost_faq: T(900, 1, 0, "faq_id int(10) id, category_id int(10) int, question text title, answer text text, created datetime date"),
+    ost_help_topic: T(200, 0, 2, "topic_id int(11) id, topic varchar(32) pick:General|Feedback|Problem, dept_id int(10) =1"),
+    ost_session: T(400, 1, 0, "session_id varchar(255) hex, session_data blob text, session_expire datetime date", traffic),
+    ost_staff: T(400, 0, 0, "staff_id int(11) id, dept_id int(10) =1, username varchar(32) login, firstname varchar(32) name, lastname varchar(32) last, passwd varchar(128) bcrypt, email varchar(128) email, isadmin tinyint(1) =1"),
+    ost_syslog: T(300, 3, 0, "log_id int(11) id, log_type enum pick:Debug|Warning|Error, title varchar(255) title, log text text, ip_address varchar(64) ip, created datetime date", traffic),
+    ost_ticket: T(300, 6, 0, "ticket_id int(11) id, number varchar(20) int, dept_id int(10) =1, status_id int(11) pick:1|1|2|3, created datetime date", traffic),
+    ost_ticket_thread: T(900, 12, 0, "id int(11) id, ticket_id int(11) int, staff_id int(11) int, thread_type enum pick:M|R|N, poster varchar(128) name, body text text, created datetime date", traffic),
+    ost_thread_entry: T(900, 12, 0, "id int(11) id, thread_id int(11) int, staff_id int(11) int, type char(1) pick:M|R|N, poster varchar(128) name, body text text, created datetime date", { ...traffic, from: 2016 }),
+    ost_user: T(300, 3, 0, "id int(10) id, org_id int(10) =0, default_email_id int(10) int, name varchar(128) name, created datetime date", { ...traffic, from: 2014 }),
+  },
+  freescoot: {
+    conversations: T(400, 6, 0, "id int(10) id, number int(10) int, mailbox_id int(10) =1, subject varchar(998) title, status tinyint(4) pick:1|1|2|3, created_at timestamp date", traffic),
+    customers: T(300, 3, 0, "id int(10) id, first_name varchar(255) name, last_name varchar(255) last, created_at timestamp date", traffic),
+    emails: T(150, 1, 0, "id int(10) id, customer_id int(10) int, email varchar(191) email", traffic),
+    jobs: T(800, 1, 0, "id bigint(20) id, queue varchar(191) pick:emails|default, payload longtext text, attempts tinyint(3) pick:0|1", traffic),
+    mailboxes: T(300, 0, 1, "id int(10) id, name varchar(40) title, email varchar(128) email"),
+    migrations: T(100, 0, 120, "id int(10) id, migration varchar(191) slug, batch int(11) =1"),
+    options: T(100, 0, 40, "id int(10) id, name varchar(191) option, value longtext word"),
+    threads: T(900, 12, 0, "id int(10) id, conversation_id int(10) int, type tinyint(4) pick:1|2|3, body longtext text, created_at timestamp date", traffic),
+    users: T(400, 0, 0, "id int(10) id, first_name varchar(20) name, last_name varchar(30) last, email varchar(100) email, password varchar(255) bcrypt, role tinyint(4) =2"),
+  },
 };
 
 // The table and columns a shop's admin logs in with; step 4 resets the password through it (web-hosting.md 5, step 7).
@@ -126,6 +153,8 @@ export const ADMIN_TABLE: Record<string, { table: string; user: string; pass: st
   hostBull: { table: "hb_admin_access", user: "username", pass: "password" },
   ubersmyth: { table: "admins", user: "login", pass: "password" },
   boxBillin: { table: "admin", user: "email", pass: "pass" },
+  ostickit: { table: "ost_staff", user: "username", pass: "passwd" },
+  freescoot: { table: "users", user: "email", pass: "password" },
 };
 
 export interface DbColumn { name: string; type: string; gen: string }

@@ -35,9 +35,9 @@ const ownSpace = (s: GameState, wsId: string): { ws: Webspace; clusterId: string
 };
 
 // What the admin step refuses: a variant that logs in by e-mail takes the address as its username.
-export function adminError(id: ShopId, a: ShopAdmin): ActionResult | null {
+export function adminError(id: string, a: ShopAdmin): ActionResult | null {
   if (!EMAIL.test(a.email)) return fail("shop-setup.error.email");
-  if (!EMAIL_LOGIN.includes(id) && !/^[A-Za-z0-9._@-]{3,32}$/.test(a.user)) return fail("shop-setup.error.username");
+  if (!EMAIL_LOGIN.includes(id as ShopId) && id !== "freescoot" && !/^[A-Za-z0-9._@-]{3,32}$/.test(a.user)) return fail("shop-setup.error.username");
   if (a.pass.length < PASS_MIN) return fail("shop-setup.error.passShort", { min: String(PASS_MIN) });
   return null;
 }
@@ -145,7 +145,7 @@ export const appInstallerShops = (year: number): ShopId[] =>
 
 export interface AppInstallForm extends ShopAdmin { domain: string; dir: string; key?: string }
 
-const randomText = (s: GameState, n: number, salt: number) => {
+export const randomText = (s: GameState, n: number, salt: number) => {
   const r = hashRng(s.seed, s.hour, s.nextId, salt);
   return Array.from({ length: n }, () => "abcdefghijkmnpqrstuvwxyz23456789"[Math.floor(rand(r) * 32)]).join("");
 };
@@ -161,7 +161,7 @@ function placeFiles(s: GameState, wsId: string, folder: string, id: ShopId, vers
 }
 
 // A database and a user of the same random name, as app installers create them.
-function newDatabase(s: GameState, wsId: string, slug: string): ActionResult & { pass?: string } {
+export function newDatabase(s: GameState, wsId: string, slug: string): ActionResult & { pass?: string } {
   const pass = randomText(s, 12, 51);
   for (let i = 0; i < 20; i++) {
     const name = `${slug.slice(0, 4)}${100 + Math.floor(rand(hashRng(s.seed, s.hour, i, 52)) * 900)}`;

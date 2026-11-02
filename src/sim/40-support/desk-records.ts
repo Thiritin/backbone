@@ -1,5 +1,6 @@
 // The desk's records in the company zone (docs/design/plans/support-desk.md, Domain records): what the player adds at the
 // registrar, and whether the world sees it yet.
+import { deskBroken, deskUrl } from "../60-infra/desk-files";
 import { nowHours } from "../00-core/time";
 import { deskById, tenantHost } from "../10-catalog/desks";
 import { companyDomain } from "../30-customers/domains";
@@ -70,6 +71,8 @@ export const senderVerified = (s: GameState, hour = nowHours(s)): boolean =>
 export function deskHosts(s: GameState, hour = nowHours(s)): string[] {
   const d = s.desk && deskById(s.desk.id);
   if (!d || s.desk!.hosting.kind === "legacy") return [];
+  // A desk installed into a web space answers where its folder is reachable.
+  if (s.desk!.hosting.kind === "self" && s.desk!.hosting.ws) { const url = !deskBroken(s) && deskUrl(s); return url ? [url] : []; }
   const mapped = deskRecords(s, hour).some((r) => r.role === "host" && r.ok);
   return [...(mapped ? [`support.${companyDomain(s)}`] : []), ...(s.desk!.hosting.kind === "hosted" ? [tenantHost(d, s.desk!.tenant ?? "")] : [])];
 }

@@ -10,7 +10,7 @@ import { t } from "../../../../../../i18n/en";
 import { due, monthYear, span, stamp, statusOf } from "../../../../support/labels";
 
 // Company emails that carry a sign-in link.
-export const LOGIN_MAILS = ["registrarLogin", "shopReset", "shopCredentials"];
+export const LOGIN_MAILS = ["registrarLogin", "shopReset", "shopCredentials", "deskReset", "deskCredentials"];
 
 export interface PaneMessage { from: string; hour: number; text: string; you: boolean }
 // What a desk renders under the opening message: a sign-in link, licence keys or the register button.

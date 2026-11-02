@@ -1,4 +1,5 @@
 import { DeskSite } from "./sites/desk/DeskSite";
+import { DeskSetup } from "./sites/desk/setup/DeskSetup";
 import { ShopSetup } from "./sites/portal/setup/ShopSetup";
 import { ArrowLeft, ArrowRight, ChevronDown, CircleArrowDown, Folder, House, Plus, RotateCw, Star, X } from "lucide-react";
 import { useEffect, useRef, useState, type DragEvent } from "react";
@@ -141,6 +142,7 @@ function titleOf(game: GameState, r: Resolved): string {
     case "wiki": return WIKI_TITLE;
     case "shop": return game.company.name;
     case "shopSetup": return t("shop-setup.title", { name: shopById(p.id).name });
+    case "deskSetup": return t(`desk-setup.${p.id}.installer`);
     case "software": return softwareById(p.id).name;
     case "program": return p.id;
     case "os": return serverOsById(p.id).name;
@@ -183,7 +185,8 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "shopSetup") body = <ShopSetup game={game} page={p} host={r.host} path={r.path} go={go} />;
   else if (p.kind === "books" && p.id !== "lexwear") { const Site = BOOKS_SITES[p.id]; body = <Site game={game} path={r.path} go={go} />; }
   else if (p.kind === "shopVendor") body = <ShopVendorSite game={game} id={p.id} path={r.path} go={go} />;
-  else if (p.kind === "desk") body = <DeskSite game={game} id={p.id} host={r.host} path={r.path} go={go} />;
+  else if (p.kind === "desk") body = <DeskSite game={game} id={p.id} host={r.host + (p.base ?? "")} path={r.path.slice((p.base ?? "").length) || "/"} go={go} />;
+  else if (p.kind === "deskSetup") body = <DeskSetup game={game} page={p} host={r.host} go={go} />;
   else if (p.kind === "deskVendor") body = deskById(p.id)!.hosting === "self" ? <SelfDeskSite game={game} id={p.id} path={r.path} go={go} /> : <HostedDeskSite game={game} id={p.id} path={r.path} go={go} />;
   else if (p.kind === "mailProvider") body = p.id === "ionose" ? <IonoseSite game={game} path={r.path} go={go} />
     : p.id === "ionose-owa" ? <Owa game={game} provider="ionose" host={IONOSE_OWA} path={r.path} go={go} />

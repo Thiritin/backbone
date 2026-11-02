@@ -126,6 +126,22 @@ How the build behaves in detail:
 
 Moving the shop to another host is a real move: copy the files, export and import the database through phpMyAdmon or the panel's backup, and point the `portal` record at the new host.
 
+### 5.1 Installing a self-hosted desk by hand
+
+OsTickit and FreeScoot install the same way as the shop system, into one of the player's own web spaces. This replaces the "Install" button on the host's settings page.
+
+1. **Get the archive.** The desk's vendor site (`ostickit.com`, `freescoot.net`) offers the newest release for free: `osTickit-v1.18.zip` or `freescoot-1.8.zip`.
+2. **Prepare a domain.** Add the subdomain `support` and point it at the desk's web root, or use a folder under a domain. OsTickit's archive holds `upload/` (the web root, with `setup/`, `scp/` and `include/ost-sampleconfig.php`, named `ost-config.sample.php` before 1.7) and `scripts/`. FreeScoot is a Laravel app whose web root is `public/`, with `.env.example` beside it.
+3. **Upload and extract** with the File Manager or FTP.
+4. **Create the database** and a user with all privileges.
+5. **Run the installer.** OsTickit's opens at `setup/`: the prerequisites (PHP version and MySQLi), then "Configuration file missing!" until the player renames the sample config to `include/ost-config.php`, then "Configuration file is not writable" until it is set to 0666, then one form with the helpdesk name and default email, the admin's name, e-mail, username and password, and the database with the table prefix `ost_`. FreeScoot's opens at `/install`: welcome, server requirements, permissions, the database, the admin's e-mail, name and password, and writes `.env`.
+6. **Clean up.** OsTickit's last page asks to set `ost-config.php` back to 0644 and to delete `setup/`; the Staff Control Panel shows osTicket's own warnings until both are done.
+7. **Log in.** OsTickit's staff log in at `scp/` with the username or e-mail address and FreeScoot's at `/login` with the e-mail address. Wrong credentials fail with the product's own message ("Invalid login", "These credentials do not match our records."). The reset link is mailed to the staff member's address and valid for 24 game hours. An MD5 set through phpMyAdmon in `ost_staff.passwd` is accepted once and stored again as bcrypt from 1.7 on, as osTicket does; FreeScoot only knows bcrypt and refuses it.
+
+The desk runs while the files, the config file, its tables and an address pointing at its folder exist; otherwise its address shows the product's database error and the desk is down. The installer and the desk answer in a folder one level below a domain as well (`support.example.com/upload/`), as the shop does. Softaculus lists OsTickit from 2009 under Customer Support and installs it without the setup folder; it never carried FreeScoot. Saves from before this get an own web space on the desk's host if it has none, the subdomain `support` with the installed release, a database with its tables and a staff account with a random password, mailed once.
+
+The build leaves out upgrades (a newer archive over the installed one changes nothing until a later version adds osTicket's upgrader), a custom table prefix (the field shows `ost_`) and an era-specific look for the installers.
+
 ## 6. Visiting sites in the Browser
 
 Every domain that points at a web space opens in the Browser (`80-business/webspace-sites.ts`). The folder of the domain decides what shows:

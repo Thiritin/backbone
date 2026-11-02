@@ -11,20 +11,19 @@ import { holderOf } from "../src/sim/60-infra/addresses";
 import { panelMachine } from "../src/sim/60-infra/licence";
 import { resolve } from "../src/sim/80-business/browser";
 import { deskPages, deskPath, parseDesk } from "../src/sim/80-business/deskroutes";
-import { installDesk } from "../src/sim/90-actions/desk-install";
 import { removeDeskChannel } from "../src/sim/90-actions/desk";
 import { DeskSite, deskUrl } from "../src/ui/apps/browser/sites/desk/DeskSite";
 import { mid } from "../src/ui/apps/browser/sites/desk/freescoot/FreeScootSite";
 import { fetchLog } from "../src/ui/apps/browser/sites/desk/freescoot/Manage";
 import { useStore } from "../src/ui/store";
-import { readyGame } from "./fixtures";
+import { DESK_ADMIN, handDesk, readyGame } from "./fixtures";
 
 const panel = (s: GameState) => s.clusters.find((x) => x.kind === "panel")!;
 function game(version = "1.0", year = 2019): GameState {
   const s = readyGame(5);
   s.hour = hourOf(new Date(Date.UTC(year, 0, 1)));
   s.cash = 1_000_000;
-  expect(installDesk(s, panel(s).id, "freescoot").ok).toBe(true);
+  handDesk(s, panel(s).id, "freescoot");
   s.ips.addresses.push({ id: "ip-desk", ip: "203.0.113.10", v: 4, locationId: s.locations[0].id, holder: holderOf(s, panelMachine(panel(s))!), source: "line", blockId: null, rep: 100, listed: false, spam: 0 } as never);
   s.desk = { ...s.desk!, hosting: { ...(s.desk!.hosting as { kind: "self"; clusterId: string; version: string }), version } };
   return s;
@@ -73,7 +72,13 @@ describe("FreeScoot", () => {
       cleanup();
     }
     show(s, "/");
-    fireEvent.click(screen.getByText(t("fs.login")));
+    const form = screen.getByText(t("fs.login")).closest("form")!;
+    fireEvent.change(form.querySelector("input[name=email]")!, { target: { value: DESK_ADMIN.email } });
+    fireEvent.change(form.querySelector("input[name=password]")!, { target: { value: "wrong" } });
+    fireEvent.submit(form);
+    expect(screen.getByRole("alert").textContent).toBe(t("desk-setup.login.freescoot"));
+    fireEvent.change(form.querySelector("input[name=password]")!, { target: { value: DESK_ADMIN.pass } });
+    fireEvent.submit(form);
     expect(screen.getByText(t("fs.openMailbox"))).toBeTruthy();
   });
 
