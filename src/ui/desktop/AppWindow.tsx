@@ -1,4 +1,5 @@
 import { t } from "../../i18n/en";
+import { Compose, composeTitle } from "../apps/pear-mail/Compose";
 import { useLayoutEffect, useRef, useState } from "react";
 import type { CSSProperties, PointerEvent as RPointerEvent } from "react";
 import { appFor, appTitle } from "../apps/registry";
@@ -77,7 +78,7 @@ export function AppWindow({ win, front }: { win: Win; front: boolean }) {
   const pv = useRef<HTMLDivElement>(null), pvFrom = useRef<DOMRect | null>(null);
   const game = useStore((s) => s.game);
   const app = appFor(game, win.app);
-  const title = win.console ? consoleTitle(game, win.console) : app.title ?? appTitle(app);
+  const title = win.console ? consoleTitle(game, win.console) : win.draft ? composeTitle(game, win.draft) : app.title ?? appTitle(app);
 
   useLayoutEffect(() => { animateOpen(ref.current!); }, []);
 
@@ -149,7 +150,7 @@ export function AppWindow({ win, front }: { win: Win; front: boolean }) {
         <h1>{win.doc ? <NoteTitle id={win.doc} /> : title}</h1>
       </div>
       <div className="win-body">
-        {win.console ? <ConsoleWindow deviceId={win.console} front={front} /> : win.doc ? <NoteApp id={win.doc} /> : win.app === "Settings" ? <SettingsApp /> : win.app === "Getting started" ? <GuideApp /> : win.app === "Locations" ? <LocationsApp /> : win.app === "Shop" ? <ShopApp /> : app.body ? <app.body /> : (
+        {win.console ? <ConsoleWindow deviceId={win.console} front={front} /> : win.draft ? <Compose id={win.draft} /> : win.doc ? <NoteApp id={win.doc} /> : win.app === "Settings" ? <SettingsApp /> : win.app === "Getting started" ? <GuideApp /> : win.app === "Locations" ? <LocationsApp /> : win.app === "Shop" ? <ShopApp /> : app.body ? <app.body /> : (
           <div className="app-empty">
             <span className="app-empty-tile" style={{ "--tile": app.tile } as CSSProperties}><app.icon /></span>
             <h2>{appTitle(app)}</h2>

@@ -23,7 +23,7 @@ export const SAVE_KEY = "backbone.save";
 
 // What another app asked a window to show; n changes on every request so repeating one still applies.
 export interface Focus { kind: string; id: string; n: number }
-export interface Win { id: string; app: string; x: number; y: number; w: number; h: number; z: number; minimized: boolean; zoomed: boolean; doc?: string; console?: string; focus?: Focus }
+export interface Win { id: string; app: string; x: number; y: number; w: number; h: number; z: number; minimized: boolean; zoomed: boolean; doc?: string; console?: string; draft?: string; focus?: Focus }
 export interface Banner { id: number; app: string; title: string; text: string; hour: number; key?: string; focus?: Omit<Focus, "n"> }
 
 // What a notification opens its app on, read from the ids its event names.
@@ -88,6 +88,8 @@ export interface Store {
   openConsole: (deviceId: string) => void;
   // Opens a desktop document: the guide in Getting started, a note in its own Notes window.
   openDoc: (id: string) => void;
+  // Opens a Pear Mail draft in its own compose window, one per draft.
+  openCompose: (draftId: string) => void;
   focus: (id: string) => void;
   close: (id: string) => void;
   minimize: (id: string) => void;
@@ -303,7 +305,7 @@ export const useStore = create<Store>((set, get) => ({
     const desk = app === "Support" && deskUrl(get().game, target);
     if (desk) return get().openApp("Browser", { kind: "url", id: desk });
     const ws = get().windows;
-    const open = fresh ? undefined : ws.filter((w) => w.app === app).sort((a, b) => b.z - a.z)[0];
+    const open = fresh ? undefined : ws.filter((w) => w.app === app && !w.draft).sort((a, b) => b.z - a.z)[0];
     const focus = target ? { ...target, n: ++focusId } : open?.focus;
     if (open) return set({ windows: ws.map((w) => (w.id === open.id ? { ...w, minimized: false, z: topZ(ws) + 1, focus } : w)) });
     const n = ws.length % 8, size = WINDOW_SIZES[app] ?? { w: 760, h: 480 };
@@ -330,6 +332,13 @@ export const useStore = create<Store>((set, get) => ({
     if (open) return set({ windows: ws.map((w) => (w.id === open.id ? { ...w, minimized: false, z: topZ(ws) + 1 } : w)) });
     const n = ws.length % 8;
     set({ windows: [...ws, { id: `${doc}-${Date.now()}`, app: "Notes", doc, x: 160 + n * 32, y: 84 + n * 28, w: 560, h: 420, z: topZ(ws) + 1, minimized: false, zoomed: false }] });
+  },
+  openCompose: (draft) => {
+    const ws = get().windows, open = ws.find((w) => w.draft === draft);
+    if (open) return set({ windows: ws.map((w) => (w.id === open.id ? { ...w, minimized: false, z: topZ(ws) + 1 } : w)) });
+    const n = ws.length % 8;
+    uiSound("open");
+    set({ windows: [...ws, { id: `${draft}-${Date.now()}`, app: "Pear Mail", draft, x: 180 + n * 32, y: 90 + n * 28, w: 640, h: 520, z: topZ(ws) + 1, minimized: false, zoomed: false }] });
   },
   focus: (id) => set(({ windows }) => ({ windows: windows.map((w) => (w.id === id ? { ...w, z: topZ(windows) + 1 } : w)) })),
   close: (id) => {

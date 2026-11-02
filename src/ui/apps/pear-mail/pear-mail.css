@@ -103,3 +103,11 @@
 :root[data-os="tahoe"] .pm-toolbar { background: color-mix(in oklch, var(--win-bar), transparent 50%); backdrop-filter: blur(14px) saturate(1.6); }
 :root[data-os="tahoe"] .pm-side { margin: 8px; border: none; border-radius: 14px; }
 :root[data-os="tahoe"] .pm-search { border-radius: 14px; }
+
+.pm-move { height: 22px; max-width: 120px; font-size: 11px; }
+.pm-compose { min-height: 0; }
+.pm-fields { display: grid; gap: 4px; padding: 8px 12px; border-bottom: var(--ar-bw, 0.5px) solid var(--line); }
+.pm-field { display: grid; grid-template-columns: 90px 1fr; align-items: center; gap: 8px; font-size: 12px; }
+.pm-field > span { text-align: right; color: var(--text-3); }
+.pm-field input, .pm-field select { height: 22px; padding: 0 6px; border: var(--ar-bw, 0.5px) solid var(--line-strong); border-radius: var(--ar-field, 4px); background: var(--win); color: var(--text); font: inherit; }
+.pm-text { flex: 1; min-height: 120px; margin: 0; padding: 12px 14px; border: none; resize: none; outline: none; background: var(--win); color: var(--text); font: 13px/1.45 inherit; }
