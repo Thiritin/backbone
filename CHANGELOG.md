@@ -6,6 +6,9 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - Your own virtual machines now take their operating system's time to boot, shut down and restart, and an open SSH session sees the shutdown broadcast before it is disconnected.
 - Shutting down, restarting or checkpointing a virtual machine now asks for confirmation first, and a checkpointed container keeps its last picture on the console.
+- Customer websites now have their own look: layouts, colour schemes and page blocks differ per customer and get redesigned as the years pass, so the first 30 customers never share a page.
+- The customer page and the defaced-sites list have an Open site button that shows the customer's site in the Browser.
+
 - A server with failed fans now runs its CPU hot under load: from 85 °C it slows down, and every hour above 90 °C wears its parts.
 - You can order cross-connects to carriers and exchanges in a provider's customer portal, and once a year a provider raises its rack prices for new contracts and tells its customers by email.
 - Dragging a browser tab out of its window now opens it in a new browser window, and dragging a tab onto another browser window moves it there.
