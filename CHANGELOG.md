@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- Lookout 365 has its own website from 2011, where you sign up for Business Basic or Business Standard, and an admin center for users, free shared mailboxes, domain verification, mail flow rules, mailbox migration, billing and a password reset by post.
+- Message trace in the Lookout 365 admin center shows what happened to every message for an address, including mail held for a full mailbox, and Lookout web mail follows the look of its year.
 - Hosted Exchange by Ionose has its own website, where you order Basic or Business, manage mailboxes, addresses, forwarding and Out of Office in the Control Panel, and reset a forgotten password with a code sent by post.
 - Ionose web mail runs Lookout Web Access in the version of its year, and until 2012 your browser only gets the Basic or Light version without a reading pane, drag and drop or rules.
 - Squarecube shows your mailbox in its Classic look, with folders, drag and drop, search, compose with an HTML editor, an address book, identities, preferences with special folders and, from version 0.4, a password change.

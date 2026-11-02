@@ -176,10 +176,16 @@ export const GOGGLE_MIGRATION_FROM = 2008;
 export const GOGGLE_POP_MIGRATION_FROM = 2011;
 // Data migration: the source mailbox's Inbox copied into a user's mailbox once, over IMAP or, from 2011, POP.
 export function migrateMailbox(s: GameState, targetId: string, o: { source: string; password: string; proto: "imap" | "pop" }): ActionResult {
-  const u = userOf(s, targetId), src = s.mail.accounts.find((a) => `${a.local}@${a.domain}` === o.source.trim().toLowerCase());
-  const year = yearOf(s.hour);
+  const u = userOf(s, targetId), year = yearOf(s.hour);
   if (!u) return fail("error.mailUnknown");
   if (year < GOGGLE_MIGRATION_FROM || (o.proto === "pop" && year < GOGGLE_POP_MIGRATION_FROM)) return fail("error.mailProviderLater");
+  return importMail(s, targetId, o);
+}
+
+// Copies every message of the source mailbox into the target in one run, leaving the source as it is.
+export function importMail(s: GameState, targetId: string, o: { source: string; password: string; proto: "imap" | "pop" }): ActionResult {
+  const src = s.mail.accounts.find((a) => `${a.local}@${a.domain}` === o.source.trim().toLowerCase());
+  if (!s.mail.accounts.some((a) => a.id === targetId && a.closedAt === null)) return fail("error.mailUnknown");
   if (!src) return fail("error.mailLogin");
   // A continuing rule from the same source is set aside for the run and put back afterwards.
   const kept = s.mail.fetch.find((x) => x.accountId === targetId && x.source === src.id);
