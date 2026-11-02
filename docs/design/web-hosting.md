@@ -115,11 +115,15 @@ Moving the shop to another host is a real move: copy the files, export and impor
 
 ## 6. Visiting sites in the Browser
 
-Every domain that points at a web space opens in the Browser:
+Every domain that points at a web space opens in the Browser (`80-business/webspace-sites.ts`). The folder of the domain decides what shows:
 
-- A customer's site renders a page in the look of its app and era (a default WordPrass theme, a Joomlah template, a static page), generated from the seed. A broken site shows the real error: "Error establishing a database connection", a PHP fatal error, a 500 page, or the panel's default "account suspended" page.
-- `portal.<domain>` shows the store front once the shop is installed. Before that it shows the panel's default index page ("Index of /" or the cPanic placeholder), never a bare "Not found".
-- An unpointed domain shows the registrar's parking page.
+- A folder with no files shows the panel's default page: the cPanic "Default Web Site Page", the Pleskit "Web Server's Default Page", the DirectAdmen "Your site is ready" page or the Apache "It works!" page for FreePanel.
+- A folder with files and no `index.html`, `index.htm`, `index.php`, `default.htm` or `index.shtml` shows the web server's "Index of /" listing, without hidden files.
+- A folder with an index shows the site. A static site shows the customer's designed page. WordPrass, Joomlah and Drupel show the default theme of the year (Kubrick, Twenty Ten, Twenty Fourteen and Twenty Nineteen looks; milkyway, Protostar and Cassiopeia looks; Garland, Bartik and Olivero looks), with the customer's name as the site title.
+- A broken app shows the real error: "Error establishing a database connection" (Joomlah and Drupel have their own wording) when its database is gone, a PHP fatal error when its config file is gone, and the Apache 500 page while the account is over its disk quota.
+- A suspended or ended account shows the panel's "Account Suspended" page, and a defaced site keeps its defaced page.
+- `portal.<company domain>` shows the store front once the shop is installed. Before that it shows the default page of the web space it points at, or of the first panel host when no web space has the name.
+- A registered domain on the registrar's name servers shows the registrar's parking page.
 
 ## 7. Customer behaviour on top of it
 
