@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { squarecubeFeatures } from "../../../../../sim/10-catalog/squarecube";
 import { foldersOf } from "../../../../../sim/42-mail/model";
-import { webmailUser, type Contact, type Identity } from "../../../../../sim/80-business/webmail";
+import { selfHostCaps, webmailUser, type Contact, type Identity } from "../../../../../sim/80-business/webmail";
 import { specialFolder, type SpecialFolder } from "../../../../../sim/80-business/webmail-view";
 import { changePassword } from "../../../../../sim/90-actions/mailbox";
 import { removeContact, removeIdentity, saveContact, saveIdentity, setWebmailPref } from "../../../../../sim/90-actions/webmail";
 import { t } from "../../../../../i18n/en";
 import { useStore } from "../../../../store";
+import { Folders } from "./Folders";
 import { PAGE_SIZE, type Ctx, type Draft } from "./Mail";
+import { Filters, Vacation } from "./Sieve";
 
 const Field = ({ id, label, value, set, type = "text" }: { id: string; label: string; value: string; set: (v: string) => void; type?: string }) => (
   <tr><th><label htmlFor={id}>{label}</label></th><td><input id={id} type={type} value={value} onChange={(e) => set(e.target.value)} /></td></tr>
@@ -51,17 +53,20 @@ export function AddressBook({ ctx, compose }: { ctx: Ctx; compose: (d: Partial<D
   );
 }
 
-type Tab = "prefs" | "identities" | "password";
+type Tab = "prefs" | "folders" | "identities" | "filters" | "vacation" | "password";
 
-// Personal Settings: Preferences, Identities and, from 0.4, the Password plugin.
+// Personal Settings: Preferences, Folders, Identities and the plugins of the version; managesieve needs Sieve on the server.
 export function Settings({ ctx }: { ctx: Ctx }) {
-  const [tab, setTab] = useState<Tab>("prefs"), f = squarecubeFeatures(ctx.version);
-  const tabs: Tab[] = ["prefs", "identities", ...(f.password ? ["password" as const] : [])];
+  const [tab, setTab] = useState<Tab>("prefs"), f = squarecubeFeatures(ctx.version), sieve = selfHostCaps(ctx.game).sieve;
+  const tabs = (["prefs", "folders", "identities", ...(f.filters && sieve ? ["filters"] : []), ...(f.vacation && sieve ? ["vacation"] : []), ...(f.password ? ["password"] : [])]) as Tab[];
   return (
     <div className="scw-settings">
       <nav className="scw-tabs">{tabs.map((x) => <a key={x} href={`#${x}`} aria-current={x === tab ? "page" : undefined} onClick={(e) => { e.preventDefault(); setTab(x); }}>{t(`mailserver.sc.tab.${x}`)}</a>)}</nav>
       {tab === "prefs" && <Prefs ctx={ctx} />}
+      {tab === "folders" && <Folders ctx={ctx} />}
       {tab === "identities" && <Identities ctx={ctx} />}
+      {tab === "filters" && <Filters ctx={ctx} />}
+      {tab === "vacation" && <Vacation ctx={ctx} />}
       {tab === "password" && <Password ctx={ctx} />}
     </div>
   );
