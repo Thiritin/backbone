@@ -107,7 +107,7 @@ Each lane ships on its own with a seeded test in `tests/` and updates the matchi
 
 ### Group A: OpenVeeZee beancounters
 
-1. **CPU stops counting as memory failure.** `beancounterTick` raises level 2 only when the node is out of RAM, and numproc failcnt only when a container passes its own numproc limit. Files: `src/sim/60-infra/beancounters.ts`, economy.md beancounters section. Test: a node at 150% CPU and 70% RAM runs a week with zero failcnt, no OOM kills and no down hours.
+1. **CPU stops counting as memory failure.** `beancounterTick` raises level 2 only when the node is out of RAM, and numproc failcnt only when a container passes its own numproc limit. Files: `src/sim/60-infra/beancounters.ts`, economy.md beancounters section. Test: a node at 150% CPU and 70% RAM runs a week with zero failcnt, no OOM kills and no down hours. Done in #308.
 2. **OOM kills one container with its own label.** With the node out of RAM, kill the container furthest past its barrier, then the largest, one per hour, and record it as `oomUntil` on the workload instead of `busyUntil`. `vmState` shows "OOM killed", with the new key in every language file. `deserialize` defaults the field. Files: `beancounters.ts`, `cluster.ts` (Workload type, `workloadOnline`), `src/sim/91-save`, `src/ui/apps/products/parts.tsx`, `src/i18n/ui-misc1.ts` and its translations. Test: a node at 105% RAM kills exactly the largest over-barrier container, the others stay online, and the console state is not "migrating". Done in #308.
 
 ### Group B: node performance and memory
