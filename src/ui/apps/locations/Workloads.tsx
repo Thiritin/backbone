@@ -53,7 +53,7 @@ export function NodeWorkloads({ game, deviceId }: { game: GameState; deviceId: s
           {SORTS.map(([k, label]) => <button key={k} aria-pressed={sort === k} onClick={() => setSort(k)}>{label}</button>)}
         </div>
       </div>
-      {cpId && <ControlPlaneRow name={softwareById(cpId).name} u={controlPlaneUse(c!)} web={consoleEntry(game, c!.id)} />}
+      {cpId && <ControlPlaneRow name={softwareById(cpId).name} u={controlPlaneUse(game, c!)} web={consoleEntry(game, c!.id)} />}
       {loads.map(({ w, u }) => <WorkloadRow key={w.id} game={game} w={w} u={u} />)}
     </>
   );

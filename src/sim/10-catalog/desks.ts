@@ -13,6 +13,8 @@ export interface Desk {
   hosting: "hosted" | "self";
   // The vendor's site, and for a hosted desk the address every tenant gets on the day it signs up.
   hosts: { vendor: string; tenant?: string };
+  // Hosted desks only: the SPF include and DKIM CNAMEs that let replies go out as the company's own domain.
+  sender?: { spf: string; dkim: { name: string; target: string }[] };
   // How the desk numbers tickets and the token it puts in the subject of every outgoing mail; <n> is the number.
   ref: { kind: "random" | "sequential"; digits?: number; token: string | null };
   // Self-hosted desks only: each release and its year.
@@ -37,12 +39,14 @@ export const DESKS: Desk[] = [
   {
     id: "zendusk", name: "Zendusk", from: 2007, monthly: 49, hosting: "hosted",
     hosts: { vendor: "zendusk.com", tenant: "<tenant>.zendusk.com" }, ref: { kind: "sequential", token: "[Request #<n>]" },
+    sender: { spf: "mail.zendusk.com", dkim: [1, 2].map((n) => ({ name: `zendusk${n}._domainkey`, target: `zendusk${n}._domainkey.zendusk.com` })) },
     features: { filters: 2007, search: 2007, assign: 2007, templates: 2007, customerSidebar: 2007, departments: 2007, rules: 2007, portal: 2007, reports: 2007, merge: 2010, slaTimers: 2013, ai: 2013 },
     aiFrom: { suggestedArticles: 2013, answerBot: 2017, autoAnswer: 2023, drafting: 2023 },
   },
   {
     id: "freshdusk", name: "Freshdusk", from: 2011, monthly: 15, hosting: "hosted",
     hosts: { vendor: "freshdusk.com", tenant: "<tenant>.freshdusk.com" }, ref: { kind: "sequential", token: "[#<n>]" },
+    sender: { spf: "email.freshdusk.com", dkim: [1, 2].map((n) => ({ name: `fd${n}._domainkey`, target: `fd${n}.dkim.freshdusk.com` })) },
     features: { filters: 2011, search: 2011, assign: 2011, templates: 2011, slaTimers: 2011, customerSidebar: 2011, reports: 2011, merge: 2011, departments: 2011, rules: 2011, portal: 2011, ai: 2011 },
     aiFrom: { suggestedArticles: 2011, answerBot: 2018, autoAnswer: 2023, drafting: 2023 },
   },
@@ -57,8 +61,10 @@ export const DESKS: Desk[] = [
 ];
 
 export const deskById = (id: string): Desk | undefined => DESKS.find((d) => d.id === id);
-// The desk installed, or none: the app then runs as a plain inbox.
-export const deskOf = (s: Pick<GameState, "installed">): Desk | undefined => DESKS.find((d) => s.installed.includes(d.id));
+// The desk in use, or none: the app then runs as a plain inbox.
+export const deskOf = (s: Pick<GameState, "desk">): Desk | undefined => (s.desk ? deskById(s.desk.id) : undefined);
+// The address a hosted desk answers on from the day it signs up.
+export const tenantHost = (d: Desk, tenant: string): string => (d.hosts.tenant ?? "").replace("<tenant>", tenant);
 export const deskReady = (s: Pick<GameState, "hour">, id: string): boolean => yearOf(s.hour) >= (deskById(id)?.from ?? 0);
 
 // The year a feature starts on a desk, or null when the desk never has it.
@@ -67,10 +73,15 @@ export function featureYear(d: Desk, f: DeskFeature): number | null {
   if (at === undefined) return null;
   return typeof at === "number" ? at : d.releases?.find((r) => r.version === at)?.year ?? null;
 }
-// ponytail: a self-hosted desk counts as the latest release of the year until installs keep a version.
-export const deskHas = (s: Pick<GameState, "installed" | "hour">, f: DeskFeature): boolean => {
-  const d = deskOf(s), y = d && featureYear(d, f);
-  return y != null && yearOf(s.hour) >= y;
+// A self-hosted desk has what its installed release has; a hosted or legacy one what the year has.
+export const deskHas = (s: Pick<GameState, "desk" | "hour">, f: DeskFeature): boolean => {
+  const d = deskOf(s), at = d?.features[f], h = s.desk?.hosting;
+  if (!d || at === undefined) return false;
+  if (h?.kind === "self" && typeof at === "string") {
+    const order = d.releases!.map((r) => r.version);
+    return order.indexOf(h.version) >= order.indexOf(at);
+  }
+  return yearOf(s.hour) >= (featureYear(d, f) ?? Infinity);
 };
 export const featuresAt = (d: Desk, year: number): DeskFeature[] => (Object.keys(d.features) as DeskFeature[]).filter((f) => year >= (featureYear(d, f) ?? Infinity));
 export const deskAiReady = (d: Desk, a: DeskAi, year: number): boolean => year >= (d.aiFrom[a] ?? Infinity);

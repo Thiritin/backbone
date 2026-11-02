@@ -27,5 +27,3 @@ export function hash(seed: string): number {
   for (const ch of seed) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
   return h >>> 0;
 }
-const B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-export const wgKey = (seed: string): string => Array.from({ length: 43 }, (_, i) => B64[hash(`${seed}:${i}`) % 64]).join("") + "=";

@@ -134,7 +134,7 @@ export function AddLocation({ onClose }: { onClose: () => void }) {
           {k === "share" && <>
             <span className="loc-k">{t("locations-1.rack")}</span><strong className="num">{shareUnits(n)}U · {+(dc.kwPerPosition / n).toFixed(2)} kW</strong>
           </>}
-          <span className="loc-k">{t("locations-1.perMonth")}</span><strong className="num">{euro(spacePrice(dc, k, n))}</strong>
+          <span className="loc-k">{t("locations-1.perMonth")}</span><strong className="num">{euro(spacePrice(dc, k, n, game.providerPrices))}</strong>
           <span className="loc-k">{t("locations-1.leadTime")}</span><strong className="num">{t("locations-1.nDays", { n: LEAD_DAYS[k] })}</strong>
           <button className="btn primary" onClick={visit}><ExternalLink />{t("locations-1.visitSite")}</button>
         </> : <span className="loc-muted">{t("locations-1.noneSelected")}</span>}

@@ -16,7 +16,7 @@ import { netCommand } from "./netshell";
 import { isOwnVm, serverOf, vmOf, workloadOnline, type Workload } from "./cluster";
 import { latency } from "./network";
 import { hopDown, locationOf, pathTo, powered, working, type Hop } from "./status";
-import { mountedRouter } from "./routers";
+import { isOwnRouter, mountedRouter } from "./routers";
 import { nodeUsage, workloadUse } from "./usage";
 import { RECOVER_HOURS } from "./power";
 import { reboot, shutdown, type ActionResult } from "../90-actions/hardware";
@@ -60,14 +60,17 @@ const targetIp = (s: GameState, id: string): string => {
   return (own && !own.shared ? own.ip : machineAddress(s, id)) ?? "0.0.0.0";
 };
 
-// The name the desk's resolver knows a server by. A basement server's short name resolves only through a Fritz!Bocks that
-// registers the names its DHCP clients send, as node001 and node001.fritz.bocks; a datacenter's is resolved as before.
+// The name the desk's resolver knows a server by. A basement server's short name resolves only through a router that
+// registers the names its DHCP clients send: an own router as node001, a Fritz!Bocks as node001 and node001.fritz.bocks;
+// a datacenter's is resolved as before.
 function localName(s: GameState, d: Device, key: string): string | null {
   const h = d.hostname!, local = `${h}.${FRITZ_HOST}`;
   if (key !== h && key !== local) return null;
   if (locationOf(s, d)?.dc) return key === h ? fqdn(s, h) : null;
-  const r = s.devices.find((x) => x.id === deskRouter(s)), mac = macOf(s, d.id);
-  return r && registersNames(modelById(r.model)) && leasesOf(s, r.id).some((l) => l.mac === mac) ? local : null;
+  const mac = macOf(s, d.id), leased = (r: Device) => leasesOf(s, r.id).some((l) => l.mac === mac);
+  if (key === h && s.devices.some((r) => isOwnRouter(r) && leased(r))) return h;
+  const r = s.devices.find((x) => x.id === deskRouter(s));
+  return r && registersNames(modelById(r.model)) && leased(r) ? local : null;
 }
 
 function resolveTarget(s: GameState, raw: string): Target | null {

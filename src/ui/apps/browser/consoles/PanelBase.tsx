@@ -19,6 +19,7 @@ import { accountUse, evcWarning, levelOf } from "../../../../sim/80-business/rea
 import { consoleTitle, type ConsoleFeatures } from "../../../../sim/80-business/consoles";
 import { deleteVm, phpDue, removePanelHost, resizePanelVm, setBackup, upgradePhp } from "../../../../sim/90-actions/clusters";
 import { setSitesOffline } from "../../../../sim/90-actions/security";
+import { reboot } from "../../../../sim/90-actions/hardware";
 import { setAutoUpdate, uninstallSoftware, updateDue, updateSoftware } from "../../../../sim/90-actions/software";
 import { migrateWebspace, migrateWorkload, migrationTargets, restoreWorkload, startWorkload, stopWorkload, webspaceTargets } from "../../../../sim/90-actions/vms";
 import { useStore } from "../../../store";
@@ -32,7 +33,7 @@ import { eraOf } from "../sites/era";
 import { noAutofill } from "../../../no-autofill";
 import { installedVersion, lookOf, panelMachine } from "../../../../sim/60-infra/licence";
 
-export type Tab = "objects" | "nodes" | "restore" | "software" | "tasks" | "logs" | "licence" | "services" | "sysinfo" | "packages" | "create" | "easyapache" | "custombuild" | "resellers" | "autossl" | "transfer" | "fail2ban" | "toolkit" | "messages" | "wings";
+export type Tab = "objects" | "nodes" | "restore" | "software" | "tasks" | "logs" | "licence" | "services" | "sysinfo" | "packages" | "create" | "easyapache" | "custombuild" | "resellers" | "autossl" | "transfer" | "fail2ban" | "toolkit" | "messages" | "wings" | "updates" | "components" | "backup";
 
 // What ConsolePage hands a product console; the console draws its own login while signedIn is false.
 export interface PanelProps { game: GameState; c: Cluster; f: ConsoleFeatures; host: string; signedIn: boolean; login: () => void; logout: () => void;
@@ -57,7 +58,7 @@ export function usePanelTab(f: ConsoleFeatures, first: Tab = "objects"): [Tab, (
 export interface PanelAction { id: string; label: string; run: () => void; tone?: "primary" | "danger" }
 
 const ICON: Record<string, LucideIcon> = {
-  update: RefreshCw, auto: CalendarClock, php: Code, offline: PowerOff, resize: Maximize2, remove: Trash2, confirm: Trash2, cancel: X,
+  update: RefreshCw, auto: CalendarClock, php: Code, offline: PowerOff, restart: RotateCcw, resize: Maximize2, remove: Trash2, confirm: Trash2, cancel: X,
   manage: Gamepad2, hold: Pause, unhold: Play, terminate: Trash2, start: Play, stop: Square, restore: RotateCcw, migrate: ArrowRightLeft, console: Terminal, delete: Trash2,
 };
 export const ActionIcon = ({ id, size }: { id: string; size?: number }) => { const I = ICON[id] ?? Circle; return <I size={size} aria-hidden />; };
@@ -153,7 +154,7 @@ export function useRows(game: GameState, c: Cluster, f: ConsoleFeatures, node: s
   const web = c.kind === "panel", cloud = c.kind === "cloud", close = () => setOpen(null), holds = useHolds(game, c, f);
   return game.workloads.filter((w) => w.clusterId === c.id && (!node || w.deviceId === node)).map((w) => {
     const st = vmState(game, w), [state, tone] = VM_STATE[st], u = workloadUse(game, w), host = hostOfVm(game, w.id);
-    const on = st === "running" || st === "down" || st === "frozen", site = game.services.find((v) => v.id === w.serviceId);
+    const on = st === "running" || st === "down", site = game.services.find((v) => v.id === w.serviceId);
     const d = game.devices.find((x) => x.id === w.deviceId), movable = (on || st === "stopped") && !w.migrating, own = cloud && isOwnVm(w);
     const actions: (PanelAction | false)[] = [
       f.start && st === "stopped" && { id: "start", label: t("browser-consoles-2.start"), run: () => act(startWorkload, w.id) },
@@ -248,11 +249,13 @@ export function Facts({ facts, className = "cx-table cx-facts" }: { facts: Fact[
   return <table className={className}><tbody>{facts.map((x) => <tr key={x.label}><th>{x.label}</th><td className={x.num ? "num" : undefined}>{x.value}</td></tr>)}</tbody></table>;
 }
 
-// The software page: its facts, the actions it allows now, a note when nothing is due and the open resize form.
+// The software page: its facts, the actions it allows now, a note when nothing is due and the open resize form. A web
+// panel updates on its Updates page and restarts its machine here.
 export function useSoftware(game: GameState, c: Cluster, f: ConsoleFeatures): { facts: Fact[]; actions: PanelAction[]; note: string | null; panel: ReactNode } {
   const act = usePageAct(), [sizing, setSizing] = useState(false), [removing, setRemoving] = useState(false);
   const family = familyOf(c)!, year = yearOf(game.hour), due = updateDue(game, c);
-  const auto = f.update && autoUpdates(softwareById(family), year), on = !!c.autoUpdate;
+  const web = c.kind === "panel", update = f.update && !web, auto = update && autoUpdates(softwareById(family), year), on = !!c.autoUpdate;
+  const server = web ? (c.vm ? vmById(game, c.vm)?.deviceId : c.nodes[0]?.deviceId) : null;
   const off = game.security.offline.includes(c.id), machine = c.vm ?? c.nodes[0]?.deviceId ?? "", version = installedVersion(game, machine, family);
   const facts: (Fact | false)[] = [
     { label: t("browser-consoles-2.software"), value: consoleTitle(family) },
@@ -262,7 +265,7 @@ export function useSoftware(game: GameState, c: Cluster, f: ConsoleFeatures): { 
     c.kind === "panel" && { label: "PHP", value: String(c.php), num: true },
   ];
   const actions: (PanelAction | false)[] = [
-    f.update && due && { id: "update", label: t("browser-consoles-2.updateTo", { year }), run: () => act(updateSoftware, c.id), tone: "primary" },
+    update && due && { id: "update", label: t("browser-consoles-2.updateTo", { year }), run: () => act(updateSoftware, c.id), tone: "primary" },
     auto && { id: "auto", label: on ? t("browser-consoles-2.autoOff") : t("browser-consoles-2.autoOn"), run: () => act(setAutoUpdate, c.id, !on) },
     c.kind === "panel" && phpDue(game, c) && { id: "php", label: c.php === phpAt(year) ? t("browser-consoles-2.patchPhp") : t("browser-consoles-2.upgradePhp", { version: phpAt(year) }), run: () => act(upgradePhp, c.id) },
     f.sitesOffline && c.kind === "panel" && { id: "offline", label: off ? t("browser-consoles-2.sitesOnline") : t("browser-consoles-2.sitesOffline"), run: () => act(setSitesOffline, c.id, !off) },
@@ -270,10 +273,11 @@ export function useSoftware(game: GameState, c: Cluster, f: ConsoleFeatures): { 
     f.delete && !removing && { id: "remove", label: t("browser-consoles-2.removeHost"), run: () => setRemoving(true) },
     removing && { id: "confirm", label: t("browser-consoles-2.confirmRemove"), tone: "danger", run: () => (c.kind === "panel" ? act(removePanelHost, c.id) : act(uninstallSoftware, machine)) },
     removing && { id: "cancel", label: t("browser-consoles-2.cancel"), run: () => setRemoving(false) },
+    !!server && { id: "restart", label: t("panel-updates.restartServer"), run: () => act(reboot, server) },
   ];
   return {
     facts: facts.filter((x): x is Fact => !!x), actions: actions.filter((a): a is PanelAction => !!a),
-    note: f.update && !due ? t("browser-consoles-2.upToDate") : null, panel: <>{sizing && c.vm ? <Resize game={game} host={c} done={() => setSizing(false)} /> : null}<HostSettings game={game} c={c} /></>,
+    note: update && !due ? t("browser-consoles-2.upToDate") : null, panel: <>{sizing && c.vm ? <Resize game={game} host={c} done={() => setSizing(false)} /> : null}<HostSettings game={game} c={c} /></>,
   };
 }
 

@@ -1,6 +1,6 @@
 import { isOfficeRouter, modelById } from "../sim/10-catalog/hardware";
 import type { GameState, LedgerEntry } from "../sim/50-state";
-import { FAN_RPM, sensorsOf } from "../sim/60-infra/sensors";
+import { sensorsOf } from "../sim/60-infra/sensors";
 import { locationOf, powered } from "../sim/60-infra/status";
 import { ADVISORY_KEYS } from "../sim/60-infra/security";
 import { dateOf, hourOf } from "../sim/00-core/time";
@@ -28,7 +28,7 @@ const BY_KEY: Record<string, Sound> = {
   "event.trainingDone": "research",
   ...Object.fromEntries([
     "event.componentFailed", "event.dataLoss", "event.dataCorrupted", "event.serverHung", "event.ddos", "event.saturated", "event.failoverStuck", "event.backupFailed",
-    "event.nodeFrozen", "event.cashNegative", "event.bankrupt", "event.loanMissed", "event.loanCalled", "event.techFailed", "event.chargeback", "event.chargebackWarning", "event.chargebackFees",
+    "event.cashNegative", "event.bankrupt", "event.loanMissed", "event.loanCalled", "event.techFailed", "event.chargeback", "event.chargebackWarning", "event.chargebackFees",
     "event.orderFailed", "event.stepFailed", "event.seized", "event.quit", "event.vuln.hacked", "event.siteHacked", "event.siteLeft", ...ADVISORY_KEYS,
   ].map((k) => [k, "warn"])),
 };
@@ -234,14 +234,17 @@ export function playSound(kind: Sound | UiSound, volume: number, profit = false,
 // The fan noise of powered devices in the given racks: level grows with their count, pitch with fan speed and inlet heat.
 export interface Hum { level: number; pitch: number; hall: boolean }
 
+// Fan speed of the base hum pitch.
+const HUM_RPM = 9000;
+
 export function humOf(s: GameState, rackIds: string[]): Hum {
   // A small-office router on its shelf has no fan.
   const on = s.devices.filter((d) => d.on && d.rackId !== null && rackIds.includes(d.rackId) && powered(s, d.id) && !isOfficeRouter(modelById(d.model)));
   if (!on.length) return { level: 0, pitch: 1, hall: false };
   const sensors = on.map((d) => sensorsOf(s, d));
-  const rpm = Math.max(FAN_RPM, ...sensors.flatMap((x) => x.fans.map((f) => f.rpm)));
+  const rpm = Math.max(HUM_RPM, ...sensors.flatMap((x) => x.fans.map((f) => f.rpm)));
   const warm = Math.min(1, Math.max(0, (Math.max(...sensors.map((x) => x.inletC)) - 22) / 10));
-  return { level: Math.min(1, 0.3 + 0.1 * on.length), pitch: Math.round((rpm / FAN_RPM) * (1 + 0.15 * warm) * 100) / 100, hall: !!locationOf(s, on[0])?.dc };
+  return { level: Math.min(1, 0.3 + 0.1 * on.length), pitch: Math.round((rpm / (HUM_RPM)) * (1 + 0.15 * warm) * 100) / 100, hall: !!locationOf(s, on[0])?.dc };
 }
 
 const HUM_PEAK = 0.25, BED_GAIN = 10, BLADES = [150, 151.3, 300];

@@ -48,7 +48,7 @@ describe("how-to topics", () => {
     const svc = addService(s, id, "webHosting", "site", 5, "year"), site = s.services.find((v) => v.id === svc)!;
     site.domain = "weber.de";
     expect(topics(s, id)).toContain("dns");
-    s.domains = [...s.domains, { name: "weber.de", customerId: id, registeredAt: s.hour, expiresAt: s.hour + 8760, transfer: false, lapsed: false }];
+    s.domains = [...s.domains, { name: "weber.de", customerId: id, registeredAt: s.hour, expiresAt: s.hour + 8760, transfer: false, lapsed: false, ns: "company" }];
     expect(topics(s, id)).not.toContain("dns");
   });
 });

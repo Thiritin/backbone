@@ -340,7 +340,7 @@ describe("ballooning and resizing custom VMs", () => {
       expect(nodeCapacity(d), platform).toMatchObject({ ramGb: installedRamGb(d), vcpu: installedVcpu(d) });
       const big = { vcpu: installedCores(d) * 20, ramGb: installedRamGb(d) * 3, diskGb: 20 };
       expect(vmById(s, ok(createVm(s, cluster, big))).deviceId, platform).toBe("dev3");
-      expect(nodeUsed(s, "dev3").ramGb, platform).toBeGreaterThan(installedRamGb(d));
+      expect(nodeUsed(s, "dev3", true).ramGb, platform).toBeGreaterThan(installedRamGb(d));
     }
   });
 

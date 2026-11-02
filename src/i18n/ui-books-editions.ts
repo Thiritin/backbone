@@ -21,6 +21,7 @@ export default {
   "books-editions.feature.reports": () => "Profit and loss and cash flow",
   "books-editions.feature.helpdesk-link": () => "Helpdesk link",
   "books-editions.feature.statistics": () => "Statistics",
+  "books-editions.feature.dunning": () => "Dunning levels",
   "books-editions.noSeat": () => "No seat",
   "books-editions.offline": () => "Bookkeeping offline",
   "books-editions.offlineTitle": () => "This page cannot be displayed",

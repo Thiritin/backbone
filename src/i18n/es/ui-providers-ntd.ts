@@ -1,0 +1,27 @@
+import type { Dict } from "../lang";
+
+export default {
+  "providers.ntd.navSites": () => "Centros de datos",
+  "providers.ntd.navOrder": () => "Colocation",
+  "providers.ntd.navAccount": () => "Portal de clientes",
+  "providers.ntd.global": () => "Sitio global",
+  "providers.ntd.sitemap": () => "Mapa del sitio",
+  "providers.ntd.division": () => "Global Data Centers",
+  "providers.ntd.heroEarly": () => "Servicios fiables de centros de datos del grupo NTD",
+  "providers.ntd.heroLate": () => "Centros de datos para un futuro conectado",
+  "providers.ntd.text": (p) => `${p.n} centros de datos en ${p.cities} ciudades, operados con los estándares de uno de los mayores grupos de telecomunicaciones del mundo.`,
+  "providers.ntd.cta": () => "Buscar un centro de datos",
+  "providers.ntd.news": () => "Novedades",
+  "providers.ntd.news1": () => "Ya hay capacidad eléctrica adicional en nuestro centro de datos de Berlín.",
+  "providers.ntd.news2": () => "NTD renueva su certificación ISO 27001 para todas sus sedes alemanas.",
+  "providers.ntd.news3": () => "Las conexiones cruzadas al punto neutro local ya se pueden pedir en línea.",
+  "providers.ntd.services": () => "Servicios",
+  "providers.ntd.svc1": () => "Colocation",
+  "providers.ntd.svc1Text": () => "Espacio en rack, jaulas y salas con alimentación A y B.",
+  "providers.ntd.svc2": () => "Conectividad",
+  "providers.ntd.svc2Text": () => "Las salas meet-me neutrales le conectan con todos los operadores del sitio.",
+  "providers.ntd.svc3": () => "Servicios gestionados",
+  "providers.ntd.svc3Text": () => "Nuestro personal en el sitio presta manos remotas y monitorización.",
+  "providers.ntd.explore": () => "Conocer el campus",
+  "providers.ntd.footer": (p) => `© ${p.year} NTD Corporation`,
+} satisfies Dict;

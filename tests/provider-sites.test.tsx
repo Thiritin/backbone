@@ -7,7 +7,8 @@ import { DATACENTERS, PROVIDERS } from "../src/sim/20-world/datacenters";
 import { openAccount } from "../src/sim/46-finance/bank";
 import { displayHost, orderUrl, providerDomain, resolve } from "../src/sim/80-business/browser";
 import { siteIndex } from "../src/sim/80-business/index";
-import { Account, OrderForm, routeOf } from "../src/ui/apps/browser/sites/providers/ProviderSite";
+import { PortalShell } from "../src/ui/apps/browser/sites/providers/portal/Portal";
+import { OrderForm, routeOf } from "../src/ui/apps/browser/sites/providers/ProviderSite";
 import { useStore } from "../src/ui/store";
 import { ProviderSite } from "../src/ui/apps/browser/sites/providers/registry";
 import { freeFloor, newGame, skipTo } from "./fixtures";
@@ -35,7 +36,7 @@ describe("colocation provider sites", () => {
     expect(r.page).toEqual({ kind: "provider", id: "hetzler" });
     expect(routeOf("hetzler", r.path)).toEqual({ page: "order", dc: "hetzler-nbg", space: "share", size: 4 });
     expect(routeOf("hetzler", "/sites/equinox-fr5")).toEqual({ page: "notfound" });
-    expect(routeOf("hetzler", "/account/contracts")).toEqual({ page: "account" });
+    expect(routeOf("hetzler", "/account/contracts")).toEqual({ page: "account", sub: ["contracts"] });
   });
 
   it("renders every page of every provider in both looks", () => {
@@ -94,11 +95,11 @@ describe("colocation order and customer portal", () => {
     expect(g.bank!.mandates).toEqual([]);
   });
 
-  it("shows the portal once there is a contract and the sign-in before", () => {
-    expect(renderToString(<Account game={newGame(7)} p={EQUINOX} />)).toContain(t("providers.firstOrder"));
-    const html = renderToString(<Account game={order(t("providers.byInvoice"))} p={EQUINOX} />);
-    expect(html).toContain(t("providers.contracts"));
+  it("shows the billing address of the order and the payment method of each site in the portal profile", () => {
+    const g = order(t("providers.byInvoice"));
+    const html = renderToString(<PortalShell game={g} p={EQUINOX} route={{ page: "account", sub: ["profile"] }} go={() => {}} signOut={() => {}} />);
     expect(html).toContain("Kellerweg 1");
+    expect(html).toContain(t("providers.byInvoice"));
     expect(html).toContain(t("bank.supplier.setUp"));
   });
 });

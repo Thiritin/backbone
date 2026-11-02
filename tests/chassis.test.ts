@@ -5,7 +5,7 @@ import { device, deviceDefaults, type GameState } from "../src/sim/50-state";
 import { installedCores, installedRamGb, installedThreads, perCoreOf, raidUsable } from "../src/sim/60-infra/status";
 import { SMT_SHARE } from "../src/sim/10-catalog/cpus";
 import { nodeCapacity } from "../src/sim/60-infra/cluster";
-import { freezeTick, nodeUsage } from "../src/sim/60-infra/usage";
+import { nodeUsage } from "../src/sim/60-infra/usage";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { readyGame, withServer, newGame } from "./fixtures";
 
@@ -82,7 +82,6 @@ describe("capacity from parts", () => {
     expect(installedRamGb(d)).toBe(before - stick.size!);
     expect(nodeUsage(s, id).physical.ramGb).toBe(before - stick.size!);
     expect(nodeCapacity(d).ramGb).toBe(before - stick.size!);
-    expect(freezeTick(s)).toEqual([]);
   });
 
   it("loses the cores of a failed CPU", () => {

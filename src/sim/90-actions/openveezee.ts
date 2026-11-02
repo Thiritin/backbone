@@ -1,6 +1,10 @@
 // economy.md, OpenVeeZee: burst memory and the live checkpoint and restore.
 import { BURST_MAX, checkpointMinutes, openVeeZee } from "../60-infra/beancounters";
-import { lostDisk } from "../60-infra/cluster";
+import { lostDisk, roomToStart } from "../60-infra/cluster";
+import { nowHours } from "../00-core/time";
+import { imageParts, type OsImage } from "../10-catalog/server-os";
+import type { Resources } from "../10-catalog/products";
+import { createVm } from "./clusters";
 import { servicesIn } from "../60-infra/ha";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
@@ -31,8 +35,20 @@ export function freezeWorkload(s: GameState, workloadId: string): ActionResult {
 export function thawWorkload(s: GameState, workloadId: string): ActionResult {
   const f = found(s, workloadId);
   if (!f || !f.w.frozen) return fail("error.unknownWorkload");
+  if (!roomToStart(s, f.w)) return fail("error.noRamToStart");
   const minutes = checkpointMinutes(f.w.ramGb * 0.5);
   patch(s, f.w.id, { frozen: false });
   for (const id of servicesIn(s, f.w)) s.downHours = { ...s.downHours, [id]: (s.downHours[id] ?? 0) + minutes / 60 };
   return { ok: true };
+}
+
+// vzctl create --ostemplate: a container unpacks its OS from a template, with no installer, and runs at once.
+export function createContainer(s: GameState, clusterId: string, size: Resources, template: OsImage): ActionResult {
+  if (!openVeeZee(s.clusters.find((c) => c.id === clusterId))) return fail("error.needsPlatform");
+  if (!s.media.images.includes(template) || imageParts(template).id !== "lunix") return fail("error.unknownOs");
+  const r = createVm(s, clusterId, size);
+  if (!r.ok || !r.id) return r;
+  const { id, version } = imageParts(template);
+  patch(s, r.id, { os: { id, version, installedAt: nowHours(s) } });
+  return r;
 }

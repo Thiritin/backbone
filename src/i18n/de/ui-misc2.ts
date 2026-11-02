@@ -17,7 +17,6 @@ export default {
   "misc2.leadsTo": () => "Führt zu",
   "misc2.unlocks": () => "Schaltet frei",
   "misc2.howItWorks": () => "So funktioniert es",
-  "misc2.openApp": (p) => `${p.name} öffnen`,
   "misc2.startTraining": () => "Schulung starten",
   "misc2.knowHow": () => "Know-how",
   "misc2.perMonth": () => "Pro Monat",

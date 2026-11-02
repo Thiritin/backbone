@@ -25,13 +25,13 @@
 
 /* Shared by Panthera, Leapard, Yosemighty and Tahoo: text fields and pop-up buttons. Looks come from each release's tokens. */
 
-:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"], [data-os="tahoe"]) :is(.field:not(.web-view *), .search:not(.web-view *) input, textarea:not(.note-body, .web-view *), .update-changes) {
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"], [data-os="tahoe"]) :is(.field:not(.web-view *), .search:not(.web-view *) input, textarea:not(.note-body, .tm-edit *, .web-view *), .update-changes) {
   border: var(--bw) solid var(--ctl-line); background: var(--field); box-shadow: var(--inset);
 }
 :root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"], [data-os="tahoe"]) :is(.field:not(.web-view *, textarea), .search:not(.web-view *) input) { border-radius: var(--r-field); }
-:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"], [data-os="tahoe"]) :is(textarea:not(.note-body, .web-view *), .update-changes) { border-radius: var(--r-area, var(--r-field)); }
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"], [data-os="tahoe"]) :is(textarea:not(.note-body, .tm-edit *, .web-view *), .update-changes) { border-radius: var(--r-area, var(--r-field)); }
 :root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"], [data-os="tahoe"]) .search:not(.web-view *) input { border-radius: 999px; }
-:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"], [data-os="tahoe"]) :is(.field:not(.web-view *), .search:not(.web-view *) input, textarea:not(.note-body, .web-view *), select:not(.mb-item, .web-view *)):focus-visible {
+:root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"], [data-os="tahoe"]) :is(.field:not(.web-view *), .search:not(.web-view *) input, textarea:not(.note-body, .tm-edit *, .web-view *), select:not(.mb-item, .web-view *)):focus-visible {
   outline: 3px solid var(--glow); outline-offset: 0; box-shadow: 0 0 0 1px var(--accent);
 }
 :root:is([data-os="aqua"], [data-os="leopard"], [data-os="yosemite"], [data-os="tahoe"]) select:not(.mb-item, .web-view *) {

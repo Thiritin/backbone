@@ -1,0 +1,33 @@
+import type { Dict } from "./lang";
+
+// Web panel Services and Components pages.
+export default {
+  "panel-services.restarting": (p) => `Restarting (${p.minutes} min)`,
+  "panel-services.restart": () => "Restart",
+  "panel-services.start": () => "Start",
+  "panel-services.stop": () => "Stop",
+  "panel-services.service": () => "Service",
+  "panel-services.name": () => "Name",
+  "panel-services.actions": () => "Actions",
+  "panel-services.action": () => "Action",
+  "panel-services.atBoot": () => "Start at boot?",
+  "panel-services.running": () => "Running?",
+  "panel-services.installing": (p) => `Installing ${p.name} (${p.minutes} min)`,
+  "panel-services.component": () => "Component",
+  "panel-services.installed": () => "Installed",
+  "panel-services.available": () => "Available",
+  "panel-services.module": () => "Module",
+  "panel-services.fee": () => "Price",
+  "panel-services.perMonth": (p) => `${p.fee} per month`,
+  "panel-services.free": () => "Free",
+  "panel-services.slot.web": () => "Web server",
+  "panel-services.slot.mail": () => "Mail server",
+  "panel-services.slot.ftp": () => "FTP server",
+  "panel-services.cpMenu": () => "Install Software",
+  "panel-services.pkMenu": () => "Add/Remove Components",
+  "panel-services.pkServices": () => "Services Management",
+  "panel-services.daServices": () => "Service Monitor",
+  "panel-services.fpServices": () => "Bootup and Shutdown",
+  "panel-services.fpMenu": () => "Software Packages",
+  "panel-services.cpServiceConfig": () => "Service Configuration",
+} satisfies Dict;

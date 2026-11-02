@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
 import { isWorkHour } from "../src/sim/00-core/workhours";
 import { profileStats, createTicket, type Ticket } from "../src/sim/40-support/tickets";
-import { deskStatus } from "../src/sim/40-support/desk";
+import { deskStatus, openDesk } from "../src/sim/40-support/desk";
 import { importDeskTickets, OWNER, staffQueue, WEB_SHARE } from "../src/sim/40-support/desk-work";
 import { supportTick } from "../src/sim/40-support/tick";
 import { activityFor } from "../src/sim/47-staff/activity";
@@ -13,7 +13,6 @@ import { addCustomer } from "../src/sim/90-actions/customers";
 import { addDepartment, addNote, addRule, lookupTicket, markSpam, mergeTickets, setDepartment, setPriority, submitWebTicket, updateDepartment } from "../src/sim/90-actions/desk";
 import type { ActionResult } from "../src/sim/90-actions/hardware";
 import { hire } from "../src/sim/90-actions/staff";
-import { install } from "../src/sim/90-actions/store";
 import { assignTicket } from "../src/sim/90-actions/support";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { useDeskTickets, useDeskViews } from "../src/ui/apps/browser/sites/desk/headless/useDeskTickets";
@@ -27,7 +26,7 @@ const ticket = (s: GameState, id: string) => s.tickets.find((t) => t.id === id)!
 // A game in 2020 with OsTickit from the Pear Store, which has merge, departments, rules and the portal by then.
 function withDesk(seed = 3): GameState {
   const s = registered({ ...newGame(seed), hour: at(2020) + 24 * 6 + 9, cash: 1e6 });
-  expect(install(s, "ostickit").ok).toBe(true);
+  openDesk(s, "ostickit");
   return s;
 }
 function hireSupport(s: GameState): string {
@@ -91,7 +90,7 @@ describe("merging duplicates", () => {
     const c = customer(s, addCustomer(s, "One", "private"));
     const x = createTicket(s, c, "billing", null, "charge"), y = createTicket(s, c, "billing", null, "charge");
     expect(mergeTickets(s, x.id, [y.id])).toEqual({ ok: false, error: "error.noDesk" });
-    install(s, "ostickit");
+    openDesk(s, "ostickit");
     expect(mergeTickets(s, x.id, [y.id])).toEqual({ ok: false, error: "error.deskFeature" });
   });
 });
@@ -170,7 +169,7 @@ describe("staff queue", () => {
     const fetched = createTicket(s, c, "howTo", null, "upload");
     importDeskTickets(s);
     const mailbox = createTicket(s, c, "howTo", null, "upload");
-    s.desk = { ...s.desk!, hosting: { kind: "self", clusterId: "gone" } };
+    s.desk = { ...s.desk!, hosting: { kind: "self", clusterId: "gone", version: "1.3" } };
     expect(deskStatus(s)).toBe("down");
     expect(fetched.channelId ?? fetched.via).toBeTruthy();
     expect(staffQueue(s, e, [fetched, mailbox]).map((t) => t.id)).toEqual([mailbox.id]);
@@ -219,7 +218,7 @@ describe("web tickets", () => {
     s.mail = { ...s.mail, channels: [] };
     const c = customer(s, addCustomer(s, "One", "private"));
     const ts = Array.from({ length: 200 }, () => createTicket(s, c, "howTo", null, "upload"));
-    const down = { ...s.desk!, hosting: { kind: "self" as const, clusterId: "gone" } }, up = s.desk!;
+    const down = { ...s.desk!, hosting: { kind: "self" as const, clusterId: "gone", version: "1.3" } }, up = s.desk!;
     s.desk = down;
     importDeskTickets(s);
     expect(ts.filter((t) => t.via === "web")).toHaveLength(0);

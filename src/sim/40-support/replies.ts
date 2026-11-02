@@ -1,6 +1,7 @@
 // GDD, Replies: every answer and action on a ticket or order goes out as an email in the company's voice.
 import { hashRng, rand } from "../00-core/rng";
 import { updatePrice } from "../10-catalog/apps";
+import { cleanupPrice } from "../60-infra/apps";
 import { companyDomain } from "../30-customers/domains";
 import { serviceFqdn } from "../30-customers/hostnames";
 import type { Customer } from "../30-customers/customers";
@@ -29,7 +30,7 @@ export function outgoing(s: GameState, t: Ticket, c: Customer | undefined, what:
     key: variant(s, what, Number(t.id.slice(3)) || 0, t.replies.length),
     params: {
       ...companyParams(s), name: c && PERSONS.includes(c.profile) ? c.name.split(" ")[0] : "", service: v?.label ?? "", hostname: serviceFqdn(s, v), domain: v?.domain ?? "",
-      credit: cents(0.1 * monthly), once: updatePrice(s.rates.webHosting, "updateOnce"), managed: updatePrice(s.rates.webHosting, "updates"), refund: cents(monthly), days: EXTENSION_DAYS, hours: TAKEDOWN_HOURS,
+      credit: cents(0.1 * monthly), once: updatePrice(s.rates.webHosting, "updateOnce"), managed: updatePrice(s.rates.webHosting, "updates"), refund: cents(monthly), cleanup: c ? cleanupPrice(s, c) : 0, days: EXTENSION_DAYS, hours: TAKEDOWN_HOURS,
       url: t.notice?.url ?? "", sender: t.notice ? senderName(t.notice.sender) : "",
     },
   };
