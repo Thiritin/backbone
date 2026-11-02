@@ -4,7 +4,7 @@ import { euro, euroCents } from "../../../../../sim/00-core/money";
 import { registrarById, TIERS, type Registrar, type RegistrarId } from "../../../../../sim/10-catalog/registrars";
 import type { Look } from "../../../../../sim/10-catalog/sites";
 import { derivedDomain } from "../../../../../sim/30-customers/domains";
-import { certificateCount, monthlyDomains, spinNames, TRANSFER_MINUTES, wholesale, yearlyAt } from "../../../../../sim/30-customers/registrar";
+import { monthlyDomains, spinNames, TRANSFER_MINUTES, wholesale, yearlyAt } from "../../../../../sim/30-customers/registrar";
 import { domainOf, registering, REGISTRIES } from "../../../../../sim/30-customers/registry";
 import type { GameState } from "../../../../../sim/50-state";
 import { techsAt, OP_TASK } from "../../../../../sim/47-staff/technicians";
@@ -108,7 +108,6 @@ export function Program({ game, r, title = t("browser-sites-1.rg.program"), sign
           <div key={i}><dt>{i === 0 ? t("browser-sites-1.rg.anySize") : t("browser-sites-1.rg.nDomainsPlus", { n: TIERS[i].toLocaleString(LOCALE) })}</dt><dd className="num">{mine && tier === i ? <strong>{factor(f)}</strong> : factor(f)}</dd></div>
         ))}
         {r.tlds && Object.entries(r.tlds).map(([tld, f]) => <div key={tld}><dt>.{tld}</dt><dd className="num">{factor(f)}</dd></div>)}
-        <div><dt>{t("browser-sites-1.rg.ssl")}</dt><dd className="num">{t("browser-sites-1.rg.aYear", { price: euro(r.ssl) })}</dd></div>
       </dl>
       {mine ? <span className="rg-pill">{t("browser-sites-1.rg.underContract")}</span>
         : <button className="rg-btn" disabled={!!cur?.transfer} onClick={() => act(signRegistrar, r.id)}>{cur ? t("browser-sites-1.rg.switch") : sign}</button>}
@@ -128,9 +127,8 @@ export function Account({ game, r, title = t("browser-sites-1.rg.account") }: { 
       <dl className="rg-specs">
         <div><dt>{t("browser-sites-1.rg.tier")}</dt><dd className="num">{t("browser-sites-1.rg.tierOf", { n: tier + 1, total: TIERS.length })}</dd></div>
         <div><dt>{t("browser-sites-1.rg.domains")}</dt><dd className="num">{count}</dd></div>
-        <div><dt>{t("browser-sites-1.rg.sslCerts")}</dt><dd className="num">{certificateCount(game)}</dd></div>
         <div><dt>{t("browser-sites-1.rg.nextTier")}</dt><dd className="num">{next ? t("browser-sites-1.rg.atDomains", { n: next.toLocaleString(LOCALE) }) : t("browser-sites-1.rg.none")}</dd></div>
-        <div><dt>{t("browser-sites-1.rg.perMonth")}</dt><dd className="num">{euroCents(Math.max(r.minimum, monthlyDomains(game) + r.fee) + (certificateCount(game) * r.ssl) / 12)}</dd></div>
+        <div><dt>{t("browser-sites-1.rg.perMonth")}</dt><dd className="num">{euroCents(Math.max(r.minimum, monthlyDomains(game) + r.fee))}</dd></div>
       </dl>
       {tr && (
         <div className="rg-transfer">

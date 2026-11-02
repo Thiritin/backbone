@@ -1,11 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
 import { businessPowerPrice } from "../src/sim/10-catalog/economy";
-import { marketPrice, sizeSpec } from "../src/sim/10-catalog/products";
+import { caPrice, marketPrice, sizeSpec } from "../src/sim/10-catalog/products";
 import { licenceIndex } from "../src/sim/10-catalog/licence-tiers";
 import { certificatesTick, offerCertificate, paidShare } from "../src/sim/30-customers/certificates";
 import type { Profile } from "../src/sim/30-customers/customers";
-import { registrarBill } from "../src/sim/30-customers/registrar";
 import { domainFee, registryCost } from "../src/sim/30-customers/registry";
 import type { GameState } from "../src/sim/50-state";
 import { offers } from "../src/sim/80-business/vendor-shop";
@@ -48,18 +47,21 @@ describe("prices over time", () => {
     expect(paidShare("office", 2030)).toBe(1);
     const s = readyGame(3);
     s.marketing = { ...s.marketing, lines: [...s.marketing.lines, "ssl"] };
+    s.shop = { ...s.shop, variant: "whmCache", readyAt: 0 };
     s.hour = jan(2018);
     expect(offerCertificate(s, hosting(s, "private", "a.de"), 1)).toBeNull();
     const ovId = offerCertificate(s, hosting(s, "office", "b.de"), 1), evId = offerCertificate(s, hosting(s, "enterprise", "c.de"), 1);
     const ov = s.services.find((v) => v.id === ovId)!, ev = s.services.find((v) => v.id === evId)!;
     expect([ov.spec.cert, ev.spec.cert]).toEqual(["ov", "ev"]);
-    // NameCheep's €12 DV price, four times for OV and ten times for EV, a twelfth a month.
-    expect(registrarBill(s).find((e) => e.key === "ledger.certificates")?.amount).toBe(-14);
+    // The certificate authority keeps 85%, 90% and 94% of the market price.
+    expect([caPrice("dv", 2005), caPrice("ov", 2005), caPrice("ev", 2005)]).toEqual([42.5, 135, 376]);
+    expect([caPrice("dv", 2026), caPrice("ov", 2026), caPrice("ev", 2026)]).toEqual([12.75, 90, 188]);
   });
 
   it("end private customers' paid DV certificates on 1 January 2016", () => {
     const s = readyGame(4);
     s.marketing = { ...s.marketing, lines: [...s.marketing.lines, "ssl"] };
+    s.shop = { ...s.shop, variant: "whmCache", readyAt: 0 };
     const priv = offerCertificate(s, hosting(s, "private", "a.de"), 1)!, office = offerCertificate(s, hosting(s, "office", "b.de"), 1)!;
     s.hour = jan(2016);
     expect(certificatesTick(s)).toEqual([{ app: "Books", key: "event.certificatesFree", params: { n: 1 } }]);

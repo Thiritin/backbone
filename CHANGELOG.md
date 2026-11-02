@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- Customers no longer buy SSL certificates on their own until your shop sells them; before that, the few who want one write in and you quote an SSL upgrade to their web hosting, and offices, shops and enterprises ask far more often than small sites.
+- Every SSL certificate you sell is now bought from the certificate authority VeriSigh at close to its market price, so certificates earn a small margin.
 - The license page of cPanic, Pleskit and DirectAdmen now asks for the key the way each product does, and entering a key or starting the trial opens the panel at once.
 - The trade office registration now asks for the company address, and the online bank shows the credit card number, expiry date and security code.
 - Buying licences on vendor websites now goes through a checkout with billing details, payment and a review, and a card payment needs the card details from the online bank.

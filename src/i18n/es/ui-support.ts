@@ -132,6 +132,7 @@ export default {
   "support.disk": () => "Disco",
   "support.monthlyPrice": () => "Precio mensual",
   "support.newMonthlyPrice": () => "Nuevo precio mensual",
+  "support.yearlyPrice": () => "Precio anual",
   "support.difference": (p) => `Diferencia de ${p.amount} al mes`,
   "support.sendOffer": () => "Enviar oferta",
   "support.box.open": () => "Abiertos",
