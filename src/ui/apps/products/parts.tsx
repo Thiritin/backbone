@@ -8,7 +8,7 @@ import { licenceIndex } from "../../../sim/10-catalog/licence-tiers";
 import { t } from "../../../i18n/en";
 import { PRODUCT } from "../support/labels";
 import type { GameState } from "../../../sim/50-state";
-import { controlPlaneUp, hostOfVm, lostDisk, workloadOnline, type Cluster, type Workload } from "../../../sim/60-infra/cluster";
+import { controlPlaneUp, hostOfVm, lostDisk, oomKilled, workloadOnline, type Cluster, type Workload } from "../../../sim/60-infra/cluster";
 import { machineAddress } from "../../../sim/60-infra/addresses";
 import { familyOf } from "../../../sim/60-infra/vulns";
 import { hasWebConsole } from "../../../sim/80-business/consoles";
@@ -118,14 +118,15 @@ export function Sparkline({ values, from, w = 240, h = 44 }: { values: number[];
   );
 }
 
-export type VmState = "running" | "stopped" | "lost" | "restoring" | "migrating" | "cloning" | "down" | "frozen" | "checkpointed";
+export type VmState = "running" | "stopped" | "lost" | "restoring" | "migrating" | "cloning" | "down" | "frozen" | "checkpointed" | "oom";
 export const VM_STATE: Record<VmState, [string, string]> = {
-  running: [t("misc1.parts.running"), "ok"], frozen: [t("misc1.parts.frozen"), "bad"], checkpointed: [t("ovz.frozen"), "accent"], stopped: [t("misc1.parts.stopped"), ""], lost: [t("misc1.parts.lostDisk"), "bad"], restoring: [t("misc1.parts.restoring"), "accent"], migrating: [t("misc1.parts.migrating"), "accent"], cloning: [t("misc1.parts.cloning"), "accent"], down: [t("misc1.parts.down"), "bad"],
+  running: [t("misc1.parts.running"), "ok"], frozen: [t("misc1.parts.frozen"), "bad"], checkpointed: [t("ovz.frozen"), "accent"], stopped: [t("misc1.parts.stopped"), ""], lost: [t("misc1.parts.lostDisk"), "bad"], restoring: [t("misc1.parts.restoring"), "accent"], migrating: [t("misc1.parts.migrating"), "accent"], cloning: [t("misc1.parts.cloning"), "accent"], down: [t("misc1.parts.down"), "bad"], oom: [t("misc1.parts.oomKilled"), "bad"],
 };
 export function vmState(game: GameState, w: Workload): VmState {
   if (lostDisk(game, w)) return "lost";
   if (w.migrating) return "migrating";
   if (w.cloning && w.cloning > game.hour) return "cloning";
+  if (oomKilled(w, game.hour)) return "oom";
   if (w.busyUntil > game.hour) return game.lossReports.some((r) => r.items.some((i) => i.workloadId === w.id && i.restored)) ? "restoring" : "migrating";
   if (w.stopped) return "stopped";
   if (w.frozen) return "checkpointed";

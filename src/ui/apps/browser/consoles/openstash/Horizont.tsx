@@ -71,7 +71,7 @@ export function InstanceOverview({ game, c, v, flavor }: { game: GameState; c: C
       <h4 className="cx-h">{t("browser-consoles-1.hzSpecs")}</h4>
       <Facts facts={[{ label: t("browser-consoles-1.hzFlavorName"), value: flavor, num: true }, { label: t("browser-consoles-1.hzRam"), value: `${v.w.ramGb}GB`, num: true }, { label: t("browser-consoles-1.hzVcpus"), value: `${v.w.vcpu} VCPU`, num: true }, { label: t("browser-consoles-1.hzDisk"), value: `${v.w.diskGb}GB`, num: true }]} />
       <h4 className="cx-h">{t("browser-consoles-1.hvIpAddresses")}</h4>
-      <Facts facts={[{ label: t("browser-consoles-1.hzPrivate"), value: v.ip || "-", num: true }]} />
+      <Facts facts={[{ label: t("browser-consoles-1.hzPrivate"), value: v.ips || "-", num: true }]} />
       <h4 className="cx-h">{t("browser-consoles-1.hzSecurityGroups")}</h4>
       <InstanceGroups c={c} v={v} />
       <h4 className="cx-h">{t("browser-consoles-1.hzMetadata")}</h4>
@@ -144,7 +144,7 @@ export function Horizont(p: PanelProps) {
                   {vms.map((v) => (
                     <tr key={v.id}>
                       <td><button className="hz-a" onClick={() => setPage({ vm: v.id, tab: "Overview" })}>{v.name}</button>{v.sub && <span className="cx-sub">{v.sub}</span>}</td>
-                      <td>{v.media ? isoName(v.media) : "-"}</td><td className="num">{v.ip}</td><td className="num">{flavorOf(v.w, c)}</td>
+                      <td>{v.media ? isoName(v.media) : "-"}</td><td className="num">{v.ips}</td><td className="num">{flavorOf(v.w, c)}</td>
                       <td><span className={`cx-state ${v.tone}`}>{v.tone === "bad" ? t("browser-consoles-1.error") : t("browser-consoles-1.active")}</span></td><td>{v.st === "stopped" ? t("browser-consoles-1.hzShutdown") : v.state}</td>
                     </tr>
                   ))}
