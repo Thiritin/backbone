@@ -3,6 +3,9 @@ import { binomial, chance, hashRng, rand } from "../00-core/rng";
 import { nowMinutes, yearOf } from "../00-core/time";
 import { companyDomain } from "../30-customers/domains";
 import { mailServerDown } from "../80-business/mail";
+import { FREEMAIL_DOMAINS } from "../30-customers/addresses";
+import { NOTARY_MAIL, OFFICE_MAIL } from "../80-business/paperwork";
+import { SENDERS } from "../10-catalog/mail-senders";
 import { JUNK_CAP_PER_DAY, JUNK_TOPICS, SELF_TRAINED_CATCH, catchOf, falseJunkOf, junkFloor, spamShare } from "../10-catalog/mail-senders";
 import type { GameState } from "../50-state";
 import { roleAccount, vacationOn } from "./accounts";
@@ -13,7 +16,7 @@ import type { Attachment, MailAccount, MailCond, MailGroup, MailKind, MailParams
 
 export interface Inbound {
   to: string; from: string; kind: MailKind; topic?: string; p?: MailParams; own?: { subject: string; text: string };
-  ticket?: string; att?: Attachment[]; cc?: string[]; auto?: true; re?: string; thread?: string; kb?: number;
+  ticket?: string; att?: Attachment[]; cc?: string[]; auto?: true; re?: string; thread?: string; kb?: number; foot?: string;
   hops?: number;  // forwards and auto-replies this message has passed through
 }
 export interface Delivery { result: TraceEntry["result"]; why: string; account: string | null; id?: string }
@@ -44,6 +47,13 @@ const patchBox = (s: GameState, id: string, p: Partial<MailAccount>): void => {
 };
 const boxById = (s: GameState, id: string) => s.mail.accounts.find((a) => a.id === id);
 
+// Domains the world knows: freemail, customers', system senders' and the offices'. Mail elsewhere bounces.
+function knownDomain(s: GameState, domain: string): boolean {
+  const of = (address: string) => address.split("@")[1];
+  return FREEMAIL_DOMAINS.includes(domain) || [OFFICE_MAIL, NOTARY_MAIL, ...Object.values(SENDERS)].some((x) => of(x) === domain) ||
+    s.customers.some((c) => of(c.address.email) === domain);
+}
+
 type Resolved = { accounts: MailAccount[]; group?: MailGroup } | { why: "unknown" | "closed" | "stale" | "external" };
 
 // Which mailboxes an address reaches: a GMix box, a box, alias or group of the tenant the MX names, or the catch-all.
@@ -53,7 +63,7 @@ function resolve(s: GameState, address: string): Resolved {
   const stale = s.mail.retired.some((r) => r.address === addr && r.until > s.hour) ? "stale" : "unknown";
   const one = (a: MailAccount | undefined): Resolved => (!a ? { why: stale } : closed(s, a) ? { why: "closed" } : { accounts: [a] });
   if (domain === GMIX_DOMAIN) return one(accountByAddress(s, addr));
-  if (domain !== companyDomain(s)) return { why: "external" };
+  if (domain !== companyDomain(s)) return knownDomain(s, domain) ? { why: "external" } : { why: "unknown" };
   const t = mxTarget(s);
   if (!t || !t.verified) return { why: "unknown" };
   const a = accountByAddress(s, addr, t.id);
@@ -76,7 +86,7 @@ export function deliveryTrace(s: GameState, q: { address?: string; from?: string
 }
 
 // Adds a message to a box without checks, counts its size and folds the oldest mail past MAIL_KEEP.
-function store(s: GameState, a: MailAccount, m: Message): void {
+export function store(s: GameState, a: MailAccount, m: Message): void {
   s.mail = { ...s.mail, msgs: { ...s.mail.msgs, [a.id]: [...(s.mail.msgs[a.id] ?? []), m] } };
   patchBox(s, a.id, { usedKb: a.usedKb + m.kb });
   if ((s.mail.msgs[a.id]?.length ?? 0) > MAIL_KEEP) retain(s, a.id);
@@ -118,7 +128,7 @@ export function deliver(s: GameState, inb: Inbound, o: { junkChecked?: boolean }
   const m: Message = {
     id, thread: inb.thread ?? inb.ticket ?? id, folder: "inbox", from: inb.from, to: inb.to.trim().toLowerCase(), kind: inb.kind, topic: inb.topic ?? "",
     ...(inb.p && { p: inb.p }), ...(inb.own && { own: inb.own }), ...(inb.ticket && { ticket: inb.ticket }), ...(inb.att?.length && { att: inb.att }),
-    ...(inb.cc?.length && { cc: inb.cc }), ...(inb.auto && { auto: true as const }), ...(inb.re && { re: inb.re }),
+    ...(inb.cc?.length && { cc: inb.cc }), ...(inb.auto && { auto: true as const }), ...(inb.re && { re: inb.re }), ...(inb.foot && { foot: inb.foot }),
     at: nowMinutes(s), kb: inb.kb ?? kbOf(inb.kind, year, inb.att, !!inb.own),
   };
   const hops = inb.hops ?? 0;
@@ -322,9 +332,24 @@ function flushQueue(s: GameState): void {
   }
 }
 
-// Hourly: the queue. At 03:00: junk, purge of Trash and Junk after 30 days, retention, expired retired addresses.
+// Snoozed mail returns to the top of the Inbox as unread.
+function wake(s: GameState): void {
+  const due = s.mail.snoozed.filter((x) => x.until <= s.hour);
+  if (!due.length) return;
+  const now = nowMinutes(s);
+  s.mail = { ...s.mail, snoozed: s.mail.snoozed.filter((x) => x.until > s.hour) };
+  for (const d of due) {
+    const box = s.mail.msgs[d.account] ?? [], m = box.find((x) => x.id === d.id);
+    if (!m) continue;
+    const { snooze: _s, read: _r, ...back } = m;
+    s.mail = { ...s.mail, msgs: { ...s.mail.msgs, [d.account]: [...box.filter((x) => x.id !== d.id), { ...back, folder: "inbox", at: now }] } };
+  }
+}
+
+// Hourly: the queue and snoozed mail. At 03:00: junk, purge of Trash and Junk after 30 days, retention, expired retired addresses.
 export function mailDeliveryTick(s: GameState): void {
   flushQueue(s);
+  wake(s);
   if (s.hour % 24 !== 3) return;
   const before = nowMinutes(s) - PURGE_MIN;
   for (const a of receiving(s)) junkDay(s, a);

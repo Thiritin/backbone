@@ -11,11 +11,19 @@ export const MAILER = "Mailer-Daemon";
 export function sendMail(s: GameState, to: string, subject: string, attachment: string | null): ActionResult {
   const address = to.trim().toLowerCase();
   if (!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/.test(address)) return fail("error.mailAddress");
-  const params = { subject: subject.trim(), to: address };
-  if (address !== OFFICE_MAIL && address !== NOTARY_MAIL) {
-    deliverMail(s, MAILER, "bounce", params);
+  if (!RESPONDERS.includes(address)) {
+    deliverMail(s, MAILER, "bounce", { subject: subject.trim(), to: address });
     return { ok: true };
   }
+  return respond(s, address, subject, attachment);
+}
+
+// Addresses that answer mail: the trade office and the notary.
+export const RESPONDERS = [OFFICE_MAIL, NOTARY_MAIL];
+
+// The office's or the notary's answer to a mail with this subject and attached document.
+export function respond(s: GameState, address: string, subject: string, attachment: string | null): ActionResult {
+  const params = { subject: subject.trim(), to: address };
   const from = address === OFFICE_MAIL ? OFFICE_NAME : NOTARY_NAME;
   const form = s.docs.find((d) => d.id === attachment)?.form;
   if (!form) deliverMail(s, from, "noForm", params);

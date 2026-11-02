@@ -36,7 +36,7 @@ describe("mail delivery", () => {
     const n = boxOf(s, box.id).length;
     deliver(s, req(`nobody@${d}`, `acct:${box.id}`));
     expect(boxOf(s, box.id).slice(n).map((m) => [m.from, m.topic])).toEqual([["daemon", "bounceUser"]]);
-    expect(deliver(s, req("someone@yahoy.com", `acct:${box.id}`))).toMatchObject({ result: "accepted", account: null });
+    expect(deliver(s, req("someone@hotmeal.com", `acct:${box.id}`))).toMatchObject({ result: "accepted", account: null });
     s.mail = { ...s.mail, catchAll: box.id };
     expect(deliver(s, req(`nobody@${d}`)).account).toBe(box.id);
   });
