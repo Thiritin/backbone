@@ -526,7 +526,7 @@ How the market above turns into order emails and sales requests in the Support a
 
 **Company domain.** Registering it through the partner under contract costs its wholesale a month like any domain and needs no cash at once; it renews with the contract. A name is 3 to 40 letters, digits or hyphens (not at either end) in front of a TLD from the registry table above, and must not belong to a customer. Going online (the web design and listing a line on the website) is refused until it exists.
 
-**Company email.** Per seat and month, seats are 1 plus the employees, recomputed at each month start and booked in the ledger category "subscriptions" as `ledger.companyMail`. Anchors: hosted Exchange from German hosters about €10 a seat in 2005, Google Apps Premier Edition USD 50 a user a year from 2007 and Google Workspace USD 6 a user a month from 2020, Office 365 USD 6 a user a month from June 2011.
+**Company email.** Per mailbox and month: every open mailbox of a paid tenant is billed at the month start after sign-up (shared mailboxes are free on Lookout 365, aliases are always free), booked in the ledger category "subscriptions" as `ledger.companyMail`. Anchors: hosted Exchange from German hosters about €10 a seat in 2005, Google Apps Premier Edition USD 50 a user a year from 2007 and Google Workspace USD 6 a user a month from 2020, Office 365 USD 6 a user a month from June 2011.
 
 | Provider (pun on) | From | Price per seat and month |
 | --- | --- | --- |

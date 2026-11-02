@@ -12,7 +12,7 @@ import { tick } from "../src/sim/88-tick/tick";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { addDepartment, addNote, addRule, lookupTicket, markSpam, mergeTickets, setDepartment, setPriority, submitWebTicket, updateDepartment } from "../src/sim/90-actions/desk";
 import type { ActionResult } from "../src/sim/90-actions/hardware";
-import { hire } from "../src/sim/90-actions/staff";
+import { hire } from "./fixtures";
 import { assignTicket } from "../src/sim/90-actions/support";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { useDeskTickets, useDeskViews } from "../src/ui/apps/browser/sites/desk/headless/useDeskTickets";

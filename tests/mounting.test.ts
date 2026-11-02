@@ -6,7 +6,8 @@ import { visibleCandidates } from "../src/sim/47-staff/staff";
 import { type GameState } from "../src/sim/50-state";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { addLocation, buyRack, mountDevice, mountHours, mountStack, setPlugged, setPower, unmountDevice } from "../src/sim/90-actions/hardware";
-import { hire, queueOperation, setTechLocation } from "../src/sim/90-actions/staff";
+import { queueOperation, setTechLocation } from "../src/sim/90-actions/staff";
+import { hire } from "./fixtures";
 import { buyDevice, freeFloor, withServer, newGame } from "./fixtures";
 
 type R = ReturnType<typeof setPower>;
