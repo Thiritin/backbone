@@ -237,7 +237,7 @@ export default {
   "apps.guide.wiki": () => "Wiki",
   "apps.guide.loans": () => "Wenn der Server voll ist, leiht dir die Kreditseite auf der Website deiner Bank das Geld für den nächsten.",
   "apps.guide.time": () => "Zeit",
-  "apps.guide.timeText": () => "Die Uhr startet pausiert. Drücke <kbd>Leertaste</kbd>, um sie zu starten oder zu pausieren, <kbd>1</kbd> bis <kbd>3</kbd> für 1×, 2× und 4× Tempo und <kbd>4</kbd>, um vorzuspulen, bis etwas passiert. Die Schaltflächen in der Menüleiste tun dasselbe.",
+  "apps.guide.timeText": () => "Die Uhr startet pausiert. Drücke <kbd>Leertaste</kbd>, um sie zu starten oder zu pausieren, <kbd>1</kbd> bis <kbd>3</kbd> für 1×, 8× und 60× Tempo und <kbd>4</kbd>, um vorzuspulen, bis etwas passiert. Die Schaltflächen in der Menüleiste tun dasselbe.",
   "apps.guide.windows": () => "Apps und Fenster",
   "apps.guide.windowsText": () => "Öffne Apps über das Dock unten. Ziehe ein Fenster an der Titelleiste und ändere seine Größe an jeder Kante. Die drei Knöpfe links im Fenster schließen, minimieren und zoomen es.",
   "apps.guide.notifications": () => "Mitteilungen",

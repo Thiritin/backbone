@@ -151,11 +151,11 @@ describe("reload clock", () => {
     const local = new Map<string, string>(), session = new Map<string, string>();
     try {
       const first = await reload(local, session);
-      first.getState().setSpeed(2);
-      expect(session.get("backbone.ui.speed")).toBe("2");
+      first.getState().setSpeed(8);
+      expect(session.get("backbone.ui.speed")).toBe("8");
       expect((await reload(local, session)).getState().speed).toBe(0);
       local.set("backbone.save", serialize(readyGame(1)));
-      expect((await reload(local, session)).getState().speed).toBe(2);
+      expect((await reload(local, session)).getState().speed).toBe(8);
       session.set("backbone.ui.speed", "3");
       expect((await reload(local, session)).getState().speed).toBe(0);
     } finally {
@@ -171,23 +171,23 @@ describe("alerts", () => {
     const game = readyGame(11);
     game.cash = -1000;
     game.brokeSince = null;
-    useStore.setState({ game, speed: 4, alert: null, resume: 0 });
+    useStore.setState({ game, speed: 60, alert: null, resume: 0 });
     s().setNotifyPref("Books", { allow: false });
     const start = game.hour;
     s().advance(48);
     expect(s().alert).toMatchObject({ key: "event.cashNegative", title: expect.any(String) });
     expect(s().speed).toBe(0);
-    expect(s().resume).toBe(4);
+    expect(s().resume).toBe(60);
     expect(s().game.hour).toBeLessThan(start + 48);
     s().closeAlert(true);
     expect(s().alert).toBeNull();
-    expect(s().speed).toBe(4);
+    expect(s().speed).toBe(60);
     s().setNotifyPref("Books", { allow: true });
   });
 
   it("keeps the game paused when the sheet opens an app", () => {
     const s = useStore.getState;
-    useStore.setState({ speed: 0, resume: 4, alert: { id: 1, app: "Books", title: "a", text: "b", hour: 0, key: "event.cashNegative" } });
+    useStore.setState({ speed: 0, resume: 60, alert: { id: 1, app: "Books", title: "a", text: "b", hour: 0, key: "event.cashNegative" } });
     s().closeAlert(false);
     expect(s()).toMatchObject({ alert: null, speed: 0 });
   });

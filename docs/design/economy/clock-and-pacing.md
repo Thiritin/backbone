@@ -5,8 +5,8 @@ At 1×, the game clock runs 60 times faster than real time: one game minute last
 | Speed | Game hour | Game day | Game month | Game year |
 | --- | --- | --- | --- | --- |
 | 1× | 60 s | 24 min | 12 h | 146 h |
-| 2× | 30 s | 12 min | 6 h | 73 h |
-| 4× | 15 s | 6 min | 3 h | 36.5 h |
+| 8× | 7.5 s | 3 min | 1.5 h | 18.3 h |
+| 60× | 1 s | 24 s | 12 min | 2.4 h |
 | Skip (720×) | 0.08 s | 2 s | 1 min | 12 min |
 
 Skip runs at 12 game hours a second until the simulation produces any event, then drops back to 1×.
@@ -21,4 +21,4 @@ Skip runs at 12 game hours a second until the simulation produces any event, the
 | 5 Room Service | Years 8–9 | 2013 | ~10,000 | ~€200,000 |
 | 6 Datacenter Baron | Years 12–14 | 2017–2019 | ~40,000 | ~€1,000,000 |
 
-Level 6 lands before the cloud and GPU boom, so the late game still has new products to chase. Playing mostly at 4×, level 6 takes about 20 hours of real time.
+Level 6 lands before the cloud and GPU boom, so the late game still has new products to chase. Playing mostly at 60×, level 6 takes about 3 hours of real time.

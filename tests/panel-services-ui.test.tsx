@@ -18,7 +18,7 @@ function host(year: number, family: string) {
   const s = withServer(newGame(4));
   s.hour = hourOf(new Date(Date.UTC(year, 0, 1)));
   const id = panelServer(s, "dev3", family);
-  useStore.setState({ game: s, speed: 4, alert: null });
+  useStore.setState({ game: s, speed: 60, alert: null });
   return id;
 }
 

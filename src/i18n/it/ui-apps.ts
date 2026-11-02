@@ -237,7 +237,7 @@ export default {
   "apps.guide.wiki": () => "Wiki",
   "apps.guide.loans": () => "Quando il server è pieno, la pagina Prestiti sul sito della tua banca ti presta i soldi per il successivo.",
   "apps.guide.time": () => "Tempo",
-  "apps.guide.timeText": () => "L'orologio parte in pausa. Premi <kbd>Spazio</kbd> per avviarlo o metterlo in pausa, da <kbd>1</kbd> a <kbd>3</kbd> per passare tra le velocità 1×, 2× e 4×, e <kbd>4</kbd> per saltare avanti finché non succede qualcosa. I pulsanti nella barra dei menu fanno lo stesso.",
+  "apps.guide.timeText": () => "L'orologio parte in pausa. Premi <kbd>Spazio</kbd> per avviarlo o metterlo in pausa, da <kbd>1</kbd> a <kbd>3</kbd> per passare tra le velocità 1×, 8× e 60×, e <kbd>4</kbd> per saltare avanti finché non succede qualcosa. I pulsanti nella barra dei menu fanno lo stesso.",
   "apps.guide.windows": () => "App e finestre",
   "apps.guide.windowsText": () => "Apri le app dal Dock in basso. Trascina una finestra dalla barra del titolo e ridimensionala da qualsiasi bordo. I tre pulsanti a sinistra di una finestra la chiudono, la riducono e la ingrandiscono.",
   "apps.guide.notifications": () => "Notifiche",

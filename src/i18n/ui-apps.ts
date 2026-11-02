@@ -237,7 +237,7 @@ export default {
   "apps.guide.wiki": () => "Wiki",
   "apps.guide.loans": () => "When the server fills up, the Loans page on your bank's website lends you the money for the next one.",
   "apps.guide.time": () => "Time",
-  "apps.guide.timeText": () => "The clock starts paused. Press <kbd>Space</kbd> to start or pause it, and <kbd>1</kbd> to <kbd>3</kbd> to switch between 1×, 2× and 4× speed, and <kbd>4</kbd> to skip ahead until something happens. The buttons in the menu bar do the same.",
+  "apps.guide.timeText": () => "The clock starts paused. Press <kbd>Space</kbd> to start or pause it, and <kbd>1</kbd> to <kbd>3</kbd> to switch between 1×, 8× and 60× speed, and <kbd>4</kbd> to skip ahead until something happens. The buttons in the menu bar do the same.",
   "apps.guide.windows": () => "Apps and windows",
   "apps.guide.windowsText": () => "Open apps from the dock at the bottom. Drag a window by its title bar and resize it from any edge. The three buttons on the left of a window close, minimize and zoom it.",
   "apps.guide.notifications": () => "Notifications",
