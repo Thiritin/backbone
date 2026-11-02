@@ -9,6 +9,8 @@ import { answerDomainTransfer } from "../../../../../../sim/90-actions/registrar
 import { closeTicket, replyTicket, resolveTicket, retainTicket } from "../../../../../../sim/90-actions/support";
 import { bankUrl, HOME_URL } from "../../../../../../sim/80-business/browser";
 import { uiSound, useStore } from "../../../../../store";
+import { orderOf } from "../../../../../../sim/30-market/orders";
+import { CustomCompose } from "../../../../support/CustomOrder";
 import { useTicketReplies, type ReplyAnswer, type ReplyModel } from "./useTicketReplies";
 
 export interface ReplyHandlers {
@@ -28,6 +30,9 @@ export function ReplyPanel({ game, ticket, previews, frame, templates, offers, t
   const openApp = useStore((s) => s.openApp);
   const m = useTicketReplies(game, ticket, previews);
   if (m.final) return null;
+  // An order is worked through its steps, which carry its own quote, accept and decline.
+  const order = ticket.kind === "order" ? orderOf(game, ticket) : undefined;
+  if (order) { const steps = <CustomCompose tk={ticket} r={order} />; return <>{frame ? frame(steps) : steps}</>; }
   const id = ticket.id;
   const typed: typeof act = (fn, ...args) => {
     const r = act(fn, ...args);

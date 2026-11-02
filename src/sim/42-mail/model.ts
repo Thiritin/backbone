@@ -86,7 +86,7 @@ export function view(s: GameState, m: Message): MailView {
   const [subject, text] = m.own ? [m.own.subject, m.own.text]
     : tk && r ? [t("mail.replySubject", { subject: [m.p?.token, t(`ticket.${tk.kind}.${tk.topic}.subject`, subjectParams(s, tk))].filter(Boolean).join(" ") }),
       r.key ? t(r.key, r.params) : t(`template.${r.template}.text`, companyParams(s))]
-    : tk && order ? [t(`ticket.${tk.kind}.${tk.topic}.subject`, subjectParams(s, tk)), orderText(s, order)]
+    : tk && tk.kind === "order" ? [t(`ticket.${tk.kind}.${tk.topic}.subject`, subjectParams(s, tk)), order ? orderText(s, order) : t("ticket.order.text")]
     : tk ? (["subject", "text"] as const).map((x) => t(`ticket.${tk.kind}.${tk.topic}.${x}`, subjectParams(s, tk)))
     : (["subject", "text"] as const).map((x) => t(`ticket.mail.${m.topic}.${x}`, isLicence(m.topic) ? { ...m.p, ...vendorParams(m.p ?? {}) } : m.p));
   return { subject, text: m.foot ? `${text}\n\n${t(m.foot)}` : text, fromName, fromAddress, to: m.to, cc: m.cc ?? [], att: m.att ?? [] };

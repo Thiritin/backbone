@@ -4,6 +4,7 @@ type Params = Record<string, string | number>;
 
 // Order emails, their outcomes and events; spread into en.
 export const ORDERS_EN: Record<string, (p: Params) => string> = {
+  "ticket.order.text": () => "Hello, I would like to place an order with you.",
   "ticket.order.webHosting.subject": (p) => (p.domain ? `Order: hosting for ${p.domain}` : "Order: web hosting"),
   "ticket.order.vps.subject": () => "Order: VPS",
   "ticket.order.gameServer.subject": () => "Order: game server",
