@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- Order emails in your mailbox now show the customer's request and postal address instead of a placeholder.
 - A cancelled mail provider keeps receiving your mail until the end of the paid month, and only then does mail to it bounce.
 - Pear Mail now has a photorealistic mail icon in Panthera and Leapard, like the other apps.
 - Hosted Exchange by Ionose has its own website, where you order Basic or Business, manage mailboxes, addresses, forwarding and Out of Office in the Control Panel, and reset a forgotten password with a code sent by post.
