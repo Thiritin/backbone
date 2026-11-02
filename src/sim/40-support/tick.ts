@@ -27,6 +27,7 @@ import { answerTransfer, DOMAIN_OUT } from "../30-customers/registrar";
 import { outgoing, sendAction } from "./replies";
 import { overpricing, revertPrice } from "../30-customers/pricing";
 import { CERT_SHARE, offerCertificate } from "../30-customers/certificates";
+import { expansionRequest } from "../30-market/sales";
 import { applyRetention, cancelReason, endDiscounts, FIX_CHECK, sendOffer, settleFix, type RetentionId } from "./retention";
 import {
   bump, cancelCustomer, createTicket, credit, expandable, GAMER_ABUSE_RATE, HOURS_PER_MONTH, HOW_TO, isFinal, KB_DEFLECT, KNOWLEDGE_BASE, MONTHLY_RATES, OUTAGE_WRITE_CHANCE,
@@ -36,12 +37,14 @@ import {
 // A shady customer draws this many times the abuse reports.
 export const SHADY_ABUSE = 10;
 const RIGHT_ANSWER = 5, WRONG_ANSWER = -10, HISTORY_MONTHS = 12;
+// A slow-ticket upgrade is right only when our limit starved the service in this many hours and the host was not slow; a wrong one costs WRONG_UPGRADE happiness.
+export const STARVED_RECENT = 48, WRONG_UPGRADE = 5;
 // A right first answer within FAST_HOURS of the ticket opening adds FAST_ANSWER happiness.
 export const FAST_HOURS = 2, FAST_ANSWER = 2;
 
 function resolve(s: GameState, t: Ticket, c: Customer, outcome: Ticket["outcome"] = null): void {
   Object.assign(t, { status: "resolved", updatedAt: s.hour, outcome });
-  if (outcome !== "cancelled" && outcome !== "offerRefused" && outcome !== "fixFailed" && outcome !== "noBackup") bump(c, RIGHT_ANSWER);
+  if (outcome !== "cancelled" && outcome !== "offerRefused" && outcome !== "fixFailed" && outcome !== "noBackup" && outcome !== "upgradeDeclined") bump(c, RIGHT_ANSWER);
 }
 
 // Player work queued by the support actions takes effect once its time has passed.
@@ -102,6 +105,14 @@ function finishWork(s: GameState, customer: (id: string) => Customer, events: Si
         // The customer turns the offer down; the thread stays open for another one.
         Object.assign(t, { status: "open", unread: true, dueAt: replyDue(c, s.hour) });
         events.push({ app: "Support", key: "event.offerDeclined", params: { name: c.name } });
+      }
+    } else if (work.arg === "upgrade") {
+      const v = s.services.find((x) => x.id === t.serviceId);
+      const recent = (at?: number) => at !== undefined && s.hour - at <= STARVED_RECENT;
+      if (v && recent(v.starvedAt) && !recent(v.slowedAt) && expansionRequest(s, t)) resolve(s, t, c, "upgraded");
+      else {
+        bump(c, -WRONG_UPGRADE);
+        resolve(s, t, c, "upgradeDeclined");
       }
     } else if (work.arg === "credit") {
       credit(s, c, 0.1);

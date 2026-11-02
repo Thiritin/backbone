@@ -138,6 +138,7 @@ export default {
   "support.box.overdue": () => "En retard",
   "support.box.closed": () => "Fermées",
   "support.action.credit": () => "Créditer 10 %",
+  "support.action.upgrade": () => "Recommander une évolution",
   "support.action.cancel": () => "Traiter la résiliation",
   "support.action.unsuspend": (p) => `Lever la suspension avec ${p.days} jours de prolongation`,
   "support.action.keep": () => "Maintenir la suspension",

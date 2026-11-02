@@ -14,6 +14,7 @@ import { t } from "../../../../../../i18n/en";
 
 const ACTION_LABEL: Record<TicketAction, string> = {
   credit: t("support.action.credit"),
+  upgrade: t("support.action.upgrade"),
   cancel: t("support.action.cancel"),
   unsuspend: t("support.action.unsuspend", { days: EXTENSION_DAYS }),
   keep: t("support.action.keep"),

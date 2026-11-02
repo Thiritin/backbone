@@ -8,7 +8,7 @@ import { CHOICE_TAU, NEVER_PAYS, ON_TIME } from "../10-catalog/economy";
 import { PRODUCTS, sizeSpec, SIZES } from "../10-catalog/products";
 import { yearOf } from "../00-core/time";
 import { activeServices, type PaymentHabit, type Product, type Profile } from "../30-customers/customers";
-import { bump, expandable, isFinal, profileStats } from "../40-support/tickets";
+import { bump, expandable, isFinal, profileStats, type Ticket } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import { betterHost } from "../60-infra/routes";
 import { allocationFree } from "../60-infra/daemons";
@@ -169,21 +169,27 @@ function morningMail(s: GameState, events: SimEvent[]): void {
   if (s.hour > 2160 && lineOffered(s, "vps") && listed(s, "vps") && rand(s.rng) < SHADY_PER_MONTH / DAYS_PER_MONTH) shadyLead(s, s.locations[0]?.city ?? "Frankfurt", events);
 }
 
-// An open upgrade ticket asks what more of each resource of its service would cost; taken, the service grows in place.
+// Opens the sales request that quotes more of each resource of the ticket's service; taken, the service grows in place.
+export function expansionRequest(s: GameState, t: Ticket): boolean {
+  const c = s.customers.find((x) => x.id === t.customerId), v = s.services.find((x) => x.id === t.serviceId);
+  if (!c || c.churnedAt !== null || !v || v.endedAt !== null || !expandable(v)) return false;
+  const loc = s.locations.find((l) => l.az === v.zone);
+  const spec = grownSpec(s.seed, Number(t.id.slice(3)) || 0, v.product, v.spec), old = v.spec;
+  const r = addRequest(s, {
+    kind: "expansion", customerId: c.id, contact: c.name, company: null, profile: c.profile, city: loc?.city ?? s.locations[0].city,
+    product: v.product, spec, sla: v.sla, reference: referenceFor(s, c.profile, v.product, spec, v.sla), discount: 0, budget: budgetOf(s.rng),
+    shady: !!c.shady, serviceId: v.id, ticketId: t.id, deadline: s.hour + EXPANSION_HOURS,
+  }, "sales.msg.upgrade");
+  editRequest(s, r.id, (x) => ({ thread: x.thread.map((m, n) => (n ? m : { ...m, params: { ...m.params, product: v.product, ...specParams(old, "0"), ...specParams(spec, "1") } })) }));
+  if (t.kind === "upgrade") s.tickets = s.tickets.map((x) => (x.id === t.id ? { ...x, topic: "more" } : x));
+  return true;
+}
+
+// An open upgrade ticket asks what more of each resource of its service would cost.
 function expansions(s: GameState): void {
   for (const t of s.tickets) {
     if (t.kind !== "upgrade" || isFinal(t) || s.sales.requests.some((r) => r.ticketId === t.id)) continue;
-    const c = s.customers.find((x) => x.id === t.customerId), v = s.services.find((x) => x.id === t.serviceId);
-    if (!c || c.churnedAt !== null || !v || v.endedAt !== null || !expandable(v)) continue;
-    const loc = s.locations.find((l) => l.az === v.zone);
-    const spec = grownSpec(s.seed, Number(t.id.slice(3)) || 0, v.product, v.spec), old = v.spec;
-    const r = addRequest(s, {
-      kind: "expansion", customerId: c.id, contact: c.name, company: null, profile: c.profile, city: loc?.city ?? s.locations[0].city,
-      product: v.product, spec, sla: v.sla, reference: referenceFor(s, c.profile, v.product, spec, v.sla), discount: 0, budget: budgetOf(s.rng),
-      shady: !!c.shady, serviceId: v.id, ticketId: t.id, deadline: s.hour + EXPANSION_HOURS,
-    }, "sales.msg.upgrade");
-    editRequest(s, r.id, (x) => ({ thread: x.thread.map((m, n) => (n ? m : { ...m, params: { ...m.params, product: v.product, ...specParams(old, "0"), ...specParams(spec, "1") } })) }));
-    s.tickets = s.tickets.map((x) => (x.id === t.id ? { ...x, topic: "more" } : x));
+    expansionRequest(s, t);
   }
 }
 

@@ -138,6 +138,7 @@ export default {
   "support.box.overdue": () => "Scaduti",
   "support.box.closed": () => "Chiusi",
   "support.action.credit": () => "Accredita il 10%",
+  "support.action.upgrade": () => "Consiglia un upgrade",
   "support.action.cancel": () => "Elabora disdetta",
   "support.action.unsuspend": (p) => `Riattiva con ${p.days} giorni di proroga`,
   "support.action.keep": () => "Mantieni sospeso",

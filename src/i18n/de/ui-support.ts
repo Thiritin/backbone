@@ -138,6 +138,7 @@ export default {
   "support.box.overdue": () => "Überfällig",
   "support.box.closed": () => "Geschlossen",
   "support.action.credit": () => "10 % gutschreiben",
+  "support.action.upgrade": () => "Upgrade empfehlen",
   "support.action.cancel": () => "Kündigung bearbeiten",
   "support.action.unsuspend": (p) => `Entsperren mit ${p.days} Tagen Verlängerung`,
   "support.action.keep": () => "Gesperrt lassen",

@@ -146,6 +146,11 @@ const MAILS: Record<string, [Mail, Mail, Mail]> = {
     (p) => `Nous avons reçu des signalements d'abus concernant ${svc(p)}. Sécurise-le sous 24 heures pour éviter une suspension.`,
     (p) => `D'autres fournisseurs signalent des attaques ou du spam provenant de ${svc(p)}. Il est probablement compromis. Nettoie-le sous 24 heures, sinon nous le suspendrons.`,
   ],
+  upgrade: [
+    (p) => `Nous avons examiné ${svc(p)} et il atteint sans cesse ses limites. Une offre plus grande règle cela, nous t'envoyons une proposition.`,
+    (p) => `${svc(p)} a dépassé ses limites actuelles. Nous recommandons plus de ressources et t'envoyons les tarifs sous peu.`,
+    (p) => `La lenteur vient des limites de ton offre. Faire évoluer ${svc(p)} la corrige, tu recevras notre proposition dans un instant.`,
+  ],
   credit: [
     (p) => `Nous sommes désolés pour le désagrément. Nous avons crédité ${euroCents(Number(p.credit))} sur ton compte, ce qui sera déduit de ta prochaine facture.`,
     (p) => `Pour nous excuser, ta prochaine facture est réduite de ${euroCents(Number(p.credit))}. Merci de rester avec nous.`,
