@@ -256,6 +256,8 @@ export default {
   "apps.guide.step.website": () => "Build your first website in Marketing under Channels.",
   "apps.guide.step.launch": () => "Choose where your website runs, launch it in Marketing and list your first product under Products.",
   "apps.guide.step.email": () => "Sign up at an email provider's website for mailboxes on your company domain.",
+  "apps.guide.step.hosttoast": () => "Sign up for a free listing on HOSTtoast so customers comparing hosts can find you.",
+  "apps.guide.step.flyers": () => "Order flyers at Flyerlarm and have them handed out in your city.",
   "apps.guide.step.firstCustomer": (p) => `Answer your first customer in ${p.app}.`,
 
   "apps.name.Applications": () => "Applications",
