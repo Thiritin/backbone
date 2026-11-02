@@ -57,12 +57,12 @@ describe("shop products", () => {
     expect(deleteProductGroup(s, g).ok).toBe(true);
   });
 
-  it("take no shop orders for a line without products, whose visitors ask for a quote", () => {
+  it("take no shop orders for a line without products, whose visitors ask for a quote in the shop", () => {
     const s = shopGame();
     expect(chooseProduct(s, want(s))).toBeNull();
     for (let h = 0; h < 24 * 30; h++) tick(s);
     expect(s.sales.requests.filter((r) => r.shop)).toEqual([]);
-    expect(s.sales.requests.length).toBeGreaterThan(0);
+    expect(s.sales.requests.some((r) => r.viaShop)).toBe(true);
   });
 
   it("pick the smallest plan that covers the spec, else the largest near the market, else no fitting plan", () => {

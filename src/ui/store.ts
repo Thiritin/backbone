@@ -18,6 +18,8 @@ import { SKIP, SPEEDS, type Speed } from "../sim/00-core/time";
 import { t } from "../i18n/en";
 import type { ActionResult, CartLine } from "../sim/90-actions/hardware";
 import { readSession, writeSession } from "./session";
+import { shopAdminUrl } from "../sim/80-business/portal";
+import { shopActive } from "../sim/80-business/shop";
 
 export const DISCORD_URL = "https://discord.gg/e8nTAV8Yk7";
 
@@ -27,6 +29,9 @@ export const SAVE_KEY = "backbone.save";
 export interface Focus { kind: string; id: string; n: number }
 export interface Win { id: string; app: string; x: number; y: number; w: number; h: number; z: number; minimized: boolean; zoomed: boolean; doc?: string; console?: string; draft?: string; focus?: Focus }
 export interface Banner { id: number; app: string; title: string; text: string; hour: number; key?: string; focus?: Omit<Focus, "n"> }
+
+// An order ticket that is a quote request sent through the active shop.
+const shopAsk = (s: GameState, ticketId: string): boolean => shopActive(s) && s.sales.requests.some((r) => r.ticketId === ticketId && r.viaShop);
 
 // What a notification opens its app on, read from the ids its event names.
 export const focusOf = (p: Record<string, string | number>): Omit<Focus, "n"> | undefined =>
@@ -304,6 +309,9 @@ export const useStore = create<Store>((set, get) => ({
 
   openApp: (app, target, fresh) => {
     if (app === "Chat") return void window.open(DISCORD_URL, "_blank", "noopener");
+    // A quote request sent through the shop is answered in the shop admin.
+    const asked = app === "Support" && target?.kind === "ticket" && shopAsk(get().game, target.id);
+    if (asked) return get().openApp("Browser", { kind: "url", id: shopAdminUrl(get().game, { s: "quotes" }) });
     const desk = app === "Support" && deskUrl(get().game, target);
     if (desk) return get().openApp("Browser", { kind: "url", id: desk });
     // Without a desk holding it, a request or a company email opens in Pear Mail at its message.

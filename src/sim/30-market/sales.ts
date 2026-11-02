@@ -25,7 +25,7 @@ import { hiddenTraits } from "../45-billing/fraud";
 import { domainFor } from "../30-customers/domains";
 import { CERT_TOPIC, CERT_WANT, certificateOf, certSpec, wantCertificate } from "../30-customers/certificates";
 import { shopPriceLevel } from "./cycles";
-import { emailFor, firstOrder, isStandard, orderLead, orderQueued } from "./orders";
+import { emailDrawn, firstOrder, isStandard, orderLead, orderQueued } from "./orders";
 import { growSlots } from "../60-infra/games";
 import { gameLeadLost } from "../60-infra/titles";
 import { AGENCY_LEAD_SHARE, LEAD_SHARE, resellerLeadsOpen, WEBDEV_LEAD_SHARE } from "../30-customers/resellers";
@@ -37,7 +37,7 @@ import { acceptQuote, issueInvoice, resize, specParams } from "./manual";
 import { answerQuote } from "./quotes";
 import { logActivity } from "../47-staff/activity";
 import type { ActionResult } from "../90-actions/hardware";
-import { accountsOn, soldOutVisit, type ShopProduct } from "../80-business/shop";
+import { accountsOn, shopActive, soldOutVisit, type ShopProduct } from "../80-business/shop";
 import { chooseProduct, packageSpec } from "../80-business/portal";
 import { belowFloor, bookingFor, packageNamed } from "../80-business/packages";
 import { LIMIT_TOPICS } from "../40-support/webspace-tickets";
@@ -101,9 +101,9 @@ export const nextSpec = (s: GameState, need: Need, profile: Profile) =>
   withAddressNeeds(s.seed, s.nextId, profile, need.product, specFor(s.seed, s.nextId, need.product, need.size, yearOf(s.hour)), yearOf(s.hour));
 
 // A sales lead writes in its own words, asks for its SLA and weighs your quote against its own budget; from there on it is an order
-// ticket in Support like any other, worked step by step.
-export function newLead(s: GameState, profile: Profile, city: string, events: SimEvent[], need = needFor(s.rng, profile, yearOf(s.hour))): SalesRequest {
-  return orderLead(s, profile, city, events, need, true, undefined, { budget: budgetOf(s.rng) });
+// ticket in Support like any other, worked step by step. viaShop sends it through the active shop instead of by email.
+export function newLead(s: GameState, profile: Profile, city: string, events: SimEvent[], need = needFor(s.rng, profile, yearOf(s.hour)), viaShop = false): SalesRequest {
+  return orderLead(s, profile, city, events, need, true, undefined, { budget: budgetOf(s.rng), ...(viaShop && { viaShop }) });
 }
 
 // High volume, no questions, crypto: pays well and carries a hidden flag for abuse and legal follow-ups.
@@ -113,37 +113,39 @@ export function shadyLead(s: GameState, city: string, events: SimEvent[]): Sales
 }
 
 function newLeads(s: GameState, events: SimEvent[]): void {
-  const cache = new Map<string, number>(), site = siteFactor(s), closed = !!shopBlock(s);
+  const cache = new Map<string, number>(), site = siteFactor(s), closed = !!shopBlock(s), active = shopActive(s);
   for (const f of leadFlows(s)) {
     const n = poisson(s.rng, (f.leads / DAYS_PER_MONTH / 24) * arrivalWeight(f.profile, s.hour));
     for (let i = 0; i < n; i++) {
       // A line without custom requests sells its plans only: the visitor takes the basic plan or buys elsewhere.
       const asked = needFor(s.rng, f.profile, yearOf(s.hour)), plain = listed(s, asked.product) && !customOpen(s, asked.product);
-      // A shop order weighs the setup fee too.
-      const need = plain ? { ...asked, sla: "basic" as const } : asked, standard = plain || isStandard(f.profile, need.sla), shop = standard && !emailFor(s), k = `${f.profile}/${need.product}/${f.city}/${shop}`;
+      // With an active shop a lead uses it unless it is one of the email share; a standard one orders there, any other asks
+      // for a quote there. A shop order weighs the setup fee too.
+      const byShop = active && !emailDrawn(s);
+      const need = plain ? { ...asked, sla: "basic" as const } : asked, standard = plain || isStandard(f.profile, need.sla), shop = standard && byShop, k = `${f.profile}/${need.product}/${f.city}/${shop}`;
       if (!cache.has(k)) cache.set(k, share(s, f.profile, need.product, f.city, shop ? setupPremium(s, need.product) : 0, shop ? shopPriceLevel(s, f.profile, need.product) : undefined));
       if (rand(s.rng) >= Math.min(1, cache.get(k)! * f.conversion)) continue;
       if (blocksContact(s, { sla: need.sla, profile: f.profile })) continue;
-      // Leads order only lines on the website, which needs a control plane that sells them; some ask for the rest by email.
+      // Leads order only lines on the website, which needs a control plane that sells them; some ask for the rest.
       if (!lineOffered(s, need.product) || !listed(s, need.product)) {
-        if (s.marketing.customRequests && rand(s.rng) < CUSTOM_ASK * mailShare(s, f.profile)) newLead(s, f.profile, f.city, events, need);
+        if (s.marketing.customRequests && rand(s.rng) < CUSTOM_ASK * (byShop ? 1 : mailShare(s, f.profile))) newLead(s, f.profile, f.city, events, need, byShop);
         continue;
       }
       // A gamer wants one game; when none of your panels runs it, they go elsewhere.
       if (need.product === "gameServer" && gameLeadLost(s)) continue;
       // A few web hosting leads, and many from agencies, want a reseller block instead.
       if (need.product === "webHosting" && resellerLeadsOpen(s) && rand(s.rng) < (f.profile === "agency" ? AGENCY_LEAD_SHARE : f.profile === "webDev" ? WEBDEV_LEAD_SHARE : LEAD_SHARE)) {
-        newLead(s, f.profile === "agency" || f.profile === "webDev" ? f.profile : "reseller", f.city, events, { product: "reseller", size: Math.floor(rand(s.rng) * SIZES.reseller.length), sla: "business" });
+        newLead(s, f.profile === "agency" || f.profile === "webDev" ? f.profile : "reseller", f.city, events, { product: "reseller", size: Math.floor(rand(s.rng) * SIZES.reseller.length), sla: "business" }, byShop);
         continue;
       }
       // The shop is part of the website: a down, slow or dated site loses its orders. Website leads already carry the factor in their count.
-      if (shop && !f.site && site < 1 && rand(s.rng) >= site) continue;
+      if (byShop && !f.site && site < 1 && rand(s.rng) >= site) continue;
       // A shop that takes no orders loses its visitors, as a down site does.
-      if (shop && closed) continue;
+      if (byShop && closed) continue;
       // A request by email bounces while the domain's MX is wrong.
-      if (!shop && mailUnrouted(s)) continue;
+      if (!byShop && mailUnrouted(s)) continue;
       if (!standard) {
-        newLead(s, f.profile, f.city, events, need);
+        newLead(s, f.profile, f.city, events, need, byShop);
         continue;
       }
       // Email orders thin out while delivery is impaired, and businesses shy away from a freemail address.
@@ -157,7 +159,7 @@ function newLeads(s: GameState, events: SimEvent[]): void {
         continue;
       }
       if (shop && !plan) {
-        newLead(s, f.profile, f.city, events, need);
+        newLead(s, f.profile, f.city, events, need, true);
         continue;
       }
       if (plan) {

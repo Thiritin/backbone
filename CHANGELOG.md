@@ -5,7 +5,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-02
 
 - Server groups in the shop are now a name, a list of servers with an Active switch and an order you can rearrange, and WHMCache, HostBull and Blessta let each group spread orders evenly or fill one server first.
-- The shop's configurable options page is gone: cycle discounts moved to the shop settings, every line is priced through its products, and a visitor for a line without products asks for a quote.
+- The shop's configurable options page is gone: cycle discounts moved to the shop settings, every line is priced through its products, and a visitor for a line without products asks for a quote in the shop.
+- With an active shop, leads that need a quote now ask in the shop admin instead of by email, and with email orders off no request arrives by email at all.
 - Far less spam reaches your inbox: a quiet mailbox sees about two junk mails a week, and spam never outnumbers your real mail.
 - The email settings sheet and the Change provider menu item are gone: you choose, switch and cancel email providers on their websites in the Browser, and Getting started opens the Email providers category.
 - Pear Mail Preferences now have General, Accounts, Fonts & Colors, Viewing, Composing and Signatures tabs, so you can edit or remove accounts, pick fonts and new mail behaviour, and add signatures to your messages, and a What's new sheet lists the features each new Pear Mail version brings.
