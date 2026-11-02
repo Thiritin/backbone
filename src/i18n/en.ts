@@ -749,6 +749,7 @@ export const en: Record<string, (p: Params) => string> = {
   "error.unknownWorkload": () => "This workload no longer exists.",
   "error.alreadyStopped": () => "It is already stopped.",
   "error.alreadyRunning": () => "It is already running.",
+  "error.noRamToStart": () => "Not enough free RAM on the node to start it.",
   "error.lostDisk": () => "Its disk is lost. Restore it first.",
   "error.workloadBusy": () => "It is still being restored or moved.",
   "error.noZoneLink": () => "No link connects these zones.",

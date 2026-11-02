@@ -1,7 +1,7 @@
 // What a hypervisor console's cluster summary and alarm list show: per node and in total the physical capacity, what the
 // workloads book of it and what they use right now, and the alarms those numbers raise.
 import type { GameState } from "../50-state";
-import { booked, controlPlanesOn, KEYS, memberUp, type Cluster, type ClusterNode, type NodeState } from "./cluster";
+import { held, controlPlanesOn, KEYS, memberUp, type Cluster, type ClusterNode, type NodeState } from "./cluster";
 import { rackPower } from "./status";
 import { CONTINUOUS } from "../20-world/datacenters";
 import { nodeUsage } from "./usage";
@@ -30,13 +30,13 @@ const zero = (): Amounts => ({ vcpu: { capacity: 0, allocated: 0, used: 0 }, ram
 const round = (x: number) => Math.round(x * 10) / 10;
 const pct = (a: number, b: number) => Math.round((a / b) * 100);
 
-// Allocated counts the control plane a node runs along with what its workloads book.
+// Allocated counts the control plane a node runs along with what its workloads hold.
 function host(s: GameState, c: Cluster, n: ClusterNode): HostSummary {
   const { deviceId, state } = n;
   const d = s.devices.find((x) => x.id === deviceId);
   const u = nodeUsage(s, deviceId), use = zero(), on = s.workloads.filter((w) => w.clusterId === c.id && w.deviceId === deviceId);
   const alloc = controlPlanesOn(s, deviceId);
-  for (const w of on) { const b = booked(s, w); for (const k of KEYS) alloc[k] += b[k]; }
+  for (const w of on) { const b = held(s, w); for (const k of KEYS) alloc[k] += b[k]; }
   for (const k of KEYS) use[k] = { capacity: u.physical[k], allocated: alloc[k], used: u.used[k] };
   return { deviceId, name: d ? d.hostname ?? d.label ?? d.name : deviceId, state, up: memberUp(s, n), vms: on.length, use };
 }

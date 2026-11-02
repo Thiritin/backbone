@@ -212,6 +212,7 @@ export default {
   "error.unknownWorkload": () => "Dieser Workload existiert nicht mehr.",
   "error.alreadyStopped": () => "Sie ist bereits gestoppt.",
   "error.alreadyRunning": () => "Sie läuft bereits.",
+  "error.noRamToStart": () => "Auf dem Node ist nicht genug RAM frei, um sie zu starten.",
   "error.lostDisk": () => "Ihre Festplatte ist verloren. Stelle sie zuerst wieder her.",
   "error.workloadBusy": () => "Sie wird noch wiederhergestellt oder verschoben.",
   "error.noZoneLink": () => "Keine Verbindung verbindet diese Zonen.",
