@@ -71,3 +71,36 @@
 .ps-globalsnitch.late .ps-btn { padding: 8px 20px; font-weight: 400; text-transform: uppercase; letter-spacing: 0.06em; font-size: 13px; }
 .ps-globalsnitch.late .ps-btn.pri { background: #13294b; border-color: #13294b; }
 .ps-globalsnitch.late footer { padding: 24px 40px; background: #0a1a33; font-size: 13px; }
+
+/* Customer portal: 2005 navy tabs over a teal rule; from 2014 a quiet white portal with a navy side menu and a teal marker. */
+.ps-globalsnitch .ps-portal { border: 1px solid #9aabc2; }
+.ps-globalsnitch .ps-portal-bar { background: #0d1f3c; color: #8fa6c5; border: 0; font-size: 11px; }
+.ps-globalsnitch .ps-portal-who strong { color: #ffffff; }
+.ps-globalsnitch .ps-portal-out { color: #21b2a6; }
+.ps-globalsnitch .ps-portal-frame { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
+.ps-globalsnitch .ps-portal-nav { flex-direction: row; gap: 3px; padding: 6px 10px 0; background: #1f3b66; border: 0; border-bottom: 3px solid #21b2a6; }
+.ps-globalsnitch .ps-portal .ps-portal-nav a[href] { padding: 4px 14px; background: #2a4f86; color: #cfe0f5; font-weight: 700; border-radius: 4px 4px 0 0; box-shadow: none; }
+.ps-globalsnitch .ps-portal .ps-portal-nav a[aria-current] { background: #21b2a6; color: #ffffff; }
+.ps-globalsnitch h2.ps-portal-title { margin: 0 0 10px; font-size: 15px; color: #0d1f3c; text-transform: none; }
+.ps-globalsnitch .ps-btn.ps-danger { color: #c0392b; border-color: #c0392b; }
+.ps-globalsnitch .ps-pill.warn { background: none; color: #a35f00; font-weight: 700; }
+.ps-globalsnitch .ps-sheet { border: 1px solid #0d1f3c; }
+.ps-globalsnitch .ps-sheet-h { background: #0d1f3c; color: #ffffff; font-size: 13px; border-bottom: 3px solid #21b2a6; }
+.ps-globalsnitch .ps-offer { border-color: #21b2a6; background: #eaf7f6; }
+
+.ps-globalsnitch.late .ps-portal { border: 1px solid #e3e7ee; min-height: 520px; }
+.ps-globalsnitch.late .ps-portal-bar { padding: 14px 24px; background: #ffffff; color: #6b7487; border-bottom: 1px solid #e3e7ee; font-size: 13px; }
+.ps-globalsnitch.late .ps-portal-who strong { color: #13294b; }
+.ps-globalsnitch.late .ps-portal-out { color: #13294b; text-decoration: none; text-transform: uppercase; letter-spacing: 0.08em; font-size: 12px; }
+.ps-globalsnitch.late .ps-portal-frame { grid-template-columns: 210px minmax(0, 1fr); grid-template-rows: none; }
+.ps-globalsnitch.late .ps-portal-nav { flex-direction: column; gap: 0; padding: 16px 0; background: #13294b; border: 0; }
+.ps-globalsnitch.late .ps-portal .ps-portal-nav a[href] { padding: 11px 22px; background: none; border-radius: 0; color: #b8c6d9; font-weight: 400; font-size: 13px; letter-spacing: 0.04em; box-shadow: inset 3px 0 transparent; }
+.ps-globalsnitch.late .ps-portal .ps-portal-nav a[aria-current] { background: #0d1f3c; color: #ffffff; box-shadow: inset 3px 0 #21b2a6; }
+.ps-globalsnitch.late .ps-portal-main { padding: 24px 30px 30px; }
+.ps-globalsnitch.late h2.ps-portal-title { font-size: 28px; font-weight: 300; color: #13294b; }
+.ps-globalsnitch.late .ps-portal-h { margin-top: 26px; font-size: 18px; }
+.ps-globalsnitch.late .ps-btn.ps-danger { background: #ffffff; }
+.ps-globalsnitch.late .ps-sheet { border: 0; }
+.ps-globalsnitch.late .ps-sheet-h { padding: 16px 20px; background: #13294b; font-size: 16px; font-weight: 300; border: 0; }
+.ps-globalsnitch.late .ps-sheet-b, .ps-globalsnitch.late .ps-sheet-f { padding: 14px 20px; }
+.ps-globalsnitch.late .ps-offer { padding: 14px 16px; border: 0; border-left: 3px solid #21b2a6; background: #f2f5f9; }

@@ -15,7 +15,7 @@ function Tellyhouse(props: ProviderProps) {
   if (look === "early") return (
     <div className="ps ps-tellyhouse early">
       <header><A to="/" go={go} className="ps-wm"><Mark /></A><span className="th-tag">{t("providers.tellyhouse.tagline")}</span></header>
-      <div className="th-frame">
+      <div className={`th-frame ${route.page === "account" ? "th-wide" : ""}`}>
         <Nav route={route} go={go} className="th-side" labels={labels} />
         <main>
           {home ? <>
@@ -25,10 +25,10 @@ function Tellyhouse(props: ProviderProps) {
             <ul>{dcs.map((d) => <li key={d.id}><A to={`/sites/${d.id}`} go={go}>{d.name}</A>, {d.city}</li>)}</ul>
           </> : <><h1>{titleOf(route)}</h1><Body {...props} /></>}
         </main>
-        <aside>
+        {route.page !== "account" && <aside>
           <div className="th-box"><h3>{t("providers.tellyhouse.quick")}</h3><Nav route={route} go={go} items={["sites", "order", "account"]} labels={labels} /></div>
           <div className="th-box"><h3>{t("providers.tellyhouse.contactBox")}</h3><p>{t("providers.tellyhouse.contactText")}</p></div>
-        </aside>
+        </aside>}
       </div>
       <footer>{t("providers.tellyhouse.footer", { year })} | {t("providers.legal")} | {t("providers.privacy")}</footer>
     </div>

@@ -67,3 +67,37 @@
 .ps-interaction.late .ps-btn { padding: 7px 18px; border-radius: 18px; }
 .ps-interaction.late .ps-btn.pri { background: #e5007e; border-color: #e5007e; }
 .ps-interaction.late footer { padding: 20px 32px; background: #2a0b47; border: 0; color: #c9b8d8; font-size: 12px; }
+
+/* Customer portal: 2005 a purple tab strip with a magenta active tab; from 2012 a deep purple side menu with a magenta marker. */
+.ps-interaction .ps-portal { border: 1px solid #c9b8d8; }
+.ps-interaction .ps-portal-bar { background: #f4eff8; border-bottom: 3px solid #4b1f7a; font-size: 11px; }
+.ps-interaction .ps-portal-who strong { color: #4b1f7a; }
+.ps-interaction .ps-portal-out { color: #b0218f; }
+.ps-interaction .ps-portal-frame { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
+.ps-interaction .ps-portal-nav { flex-direction: row; padding: 0; background: #4b1f7a; border: 0; }
+.ps-interaction .ps-portal .ps-portal-nav a[href] { padding: 5px 14px; color: #ffffff; font-weight: 700; border-right: 1px solid #6c3d9e; box-shadow: none; }
+.ps-interaction .ps-portal .ps-portal-nav a[aria-current] { background: #b0218f; }
+.ps-interaction h2.ps-portal-title { margin: 0 0 10px; padding: 0; border: 0; font-size: 16px; }
+.ps-interaction .ps-portal-h { font-size: 13px; color: #b0218f; }
+.ps-interaction .ps-btn.ps-danger { color: #b3261e; border-color: #b3261e; }
+.ps-interaction .ps-pill.warn { background: none; color: #a35f00; font-weight: 700; }
+.ps-interaction .ps-sheet { border: 1px solid #4b1f7a; }
+.ps-interaction .ps-sheet-h { background: #4b1f7a; color: #ffffff; font-size: 13px; }
+.ps-interaction .ps-offer { border-color: #b0218f; background: #fbeef7; }
+
+.ps-interaction.late .ps-portal { border: 1px solid #e6e0ec; min-height: 520px; }
+.ps-interaction.late .ps-portal-bar { padding: 12px 24px; background: #ffffff; border-bottom: 1px solid #e6e0ec; font-size: 13px; }
+.ps-interaction.late .ps-portal-who strong { color: #3c1361; }
+.ps-interaction.late .ps-portal-out { color: #e5007e; text-decoration: none; font-weight: 600; }
+.ps-interaction.late .ps-portal-frame { grid-template-columns: 210px minmax(0, 1fr); grid-template-rows: none; }
+.ps-interaction.late .ps-portal-nav { flex-direction: column; padding: 16px 0; background: #2a0b47; }
+.ps-interaction.late .ps-portal .ps-portal-nav a[href] { padding: 11px 22px; border: 0; color: #d9c8e8; font-weight: 400; box-shadow: inset 4px 0 transparent; }
+.ps-interaction.late .ps-portal .ps-portal-nav a[aria-current] { background: #3c1361; color: #ffffff; font-weight: 600; box-shadow: inset 4px 0 #e5007e; }
+.ps-interaction.late .ps-portal-main { padding: 22px 28px 28px; }
+.ps-interaction.late h2.ps-portal-title { font-size: 26px; font-weight: 300; }
+.ps-interaction.late .ps-portal-h { margin-top: 26px; font-size: 16px; font-weight: 400; color: #3c1361; }
+.ps-interaction.late .ps-btn.ps-danger { background: #ffffff; }
+.ps-interaction.late .ps-sheet { border: 0; border-radius: 6px; overflow: hidden; }
+.ps-interaction.late .ps-sheet-h { padding: 14px 18px; background: #3c1361; font-size: 16px; font-weight: 400; }
+.ps-interaction.late .ps-sheet-b, .ps-interaction.late .ps-sheet-f { padding: 14px 18px; }
+.ps-interaction.late .ps-offer { padding: 14px 16px; border: 0; border-left: 4px solid #e5007e; background: #f7f2fa; }

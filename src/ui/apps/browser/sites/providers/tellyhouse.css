@@ -6,6 +6,7 @@
 .ps-tellyhouse.early header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 20px; padding: 16px 18px; background: linear-gradient(#123a7a, #0a2556); border-bottom: 3px solid #d71920; }
 .ps-tellyhouse .th-tag { color: #b9c8e4; font-style: italic; }
 .ps-tellyhouse .th-frame { display: grid; grid-template-columns: 160px minmax(0, 1fr) 190px; }
+.ps-tellyhouse .th-frame.th-wide { grid-template-columns: 160px minmax(0, 1fr); }
 .ps-tellyhouse .th-side { flex-direction: column; gap: 2px; padding: 10px 8px; background: #e6ebf4; min-height: 420px; }
 .ps-tellyhouse .th-side a { padding: 4px 8px; background: linear-gradient(#ffffff, #cfd9ea); border: 1px solid #9fb0cf; color: #0a2556; font-weight: 700; text-decoration: none; }
 .ps-tellyhouse .th-side a[aria-current] { background: linear-gradient(#2a5aa8, #0a2556); color: #ffffff; }
@@ -69,3 +70,36 @@
 .ps-tellyhouse.late .ps-btn.pri { background: #d71920; border-color: #d71920; color: #ffffff; }
 .ps-tellyhouse.late footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; padding: 24px 40px; background: #0a1c3d; color: #9fb0cf; font-size: 13px; }
 .ps-tellyhouse.late footer .th-mark span { color: #ffffff; font-size: 16px; }
+
+/* Customer portal: 2005 a navy title band and bevelled side buttons; from 2016 a white portal with a blue bar and tabs underlined in red. */
+.ps-tellyhouse .ps-portal { border: 1px solid #9fb0cf; }
+.ps-tellyhouse .ps-portal-bar { background: #0a2556; color: #b9c8e4; border: 0; font-size: 10px; }
+.ps-tellyhouse .ps-portal-who strong { color: #ffffff; }
+.ps-tellyhouse .ps-portal-out { color: #ffffff; }
+.ps-tellyhouse .ps-portal-frame { grid-template-columns: 140px minmax(0, 1fr); }
+.ps-tellyhouse .ps-portal-nav { gap: 2px; padding: 8px 6px; background: #e6ebf4; border: 0; }
+.ps-tellyhouse .ps-portal .ps-portal-nav a[href] { padding: 3px 8px; background: linear-gradient(#ffffff, #cfd9ea); border: 1px solid #9fb0cf; color: #0a2556; font-weight: 700; box-shadow: none; }
+.ps-tellyhouse .ps-portal .ps-portal-nav a[aria-current] { background: linear-gradient(#2a5aa8, #0a2556); color: #ffffff; }
+.ps-tellyhouse h2.ps-portal-title { margin: 0 0 8px; font-size: 13px; color: #0a2556; text-transform: none; }
+.ps-tellyhouse .ps-portal-h { color: #d71920; text-transform: uppercase; }
+.ps-tellyhouse .ps-btn.ps-danger { color: #d71920; }
+.ps-tellyhouse .ps-pill.warn { background: none; color: #a35f00; font-weight: 700; }
+.ps-tellyhouse .ps-sheet { border: 1px solid #0a2556; }
+.ps-tellyhouse .ps-sheet-h { background: #0a2556; color: #ffffff; font-size: 12px; border-bottom: 3px solid #d71920; }
+.ps-tellyhouse .ps-offer { border-color: #9fb0cf; background: #eef2f9; }
+
+.ps-tellyhouse.late .ps-portal { border: 1px solid #dde2ea; min-height: 520px; }
+.ps-tellyhouse.late .ps-portal-bar { padding: 12px 24px; background: #003b8e; color: #d6e1f2; font-size: 13px; }
+.ps-tellyhouse.late .ps-portal-out { text-decoration: none; font-weight: 600; }
+.ps-tellyhouse.late .ps-portal-frame { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
+.ps-tellyhouse.late .ps-portal-nav { flex-direction: row; gap: 28px; padding: 0 24px; background: #ffffff; border-bottom: 1px solid #dde2ea; }
+.ps-tellyhouse.late .ps-portal .ps-portal-nav a[href] { padding: 12px 0; background: none; border: 0; color: #2b2f38; font-weight: 600; }
+.ps-tellyhouse.late .ps-portal .ps-portal-nav a[aria-current] { background: none; color: #003b8e; box-shadow: inset 0 -3px #d71920; }
+.ps-tellyhouse.late .ps-portal-main { padding: 24px; }
+.ps-tellyhouse.late h2.ps-portal-title { font-size: 24px; color: #003b8e; }
+.ps-tellyhouse.late .ps-portal-h { font-size: 16px; color: #003b8e; text-transform: none; }
+.ps-tellyhouse.late .ps-btn.ps-danger { border-color: #d71920; color: #d71920; }
+.ps-tellyhouse.late .ps-sheet { border: 0; border-top: 4px solid #d71920; }
+.ps-tellyhouse.late .ps-sheet-h { padding: 14px 18px; background: #ffffff; color: #003b8e; font-size: 17px; border-bottom: 1px solid #dde2ea; }
+.ps-tellyhouse.late .ps-sheet-b, .ps-tellyhouse.late .ps-sheet-f { padding: 14px 18px; }
+.ps-tellyhouse.late .ps-offer { padding: 14px 16px; border: 0; border-left: 4px solid #003b8e; background: #f5f7fa; }
