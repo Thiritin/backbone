@@ -1,4 +1,4 @@
-// economy.md, Datastores: servers attached to a VMwhere cluster as shared storage for VM disks.
+// economy/README.md, Datastores: servers attached to a VMwhere cluster as shared storage for VM disks.
 import { yearOf } from "../00-core/time";
 import { modelById } from "../10-catalog/hardware";
 import { DATASTORE_ATTACH_HOURS, DATASTORE_FROM, DATASTORES_MAX, FC_HBA_PRICE, LIVE_DISK_MOVE, softwareById, type DatastoreProtocol } from "../10-catalog/platforms";

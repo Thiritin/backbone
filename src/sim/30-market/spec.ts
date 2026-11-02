@@ -1,5 +1,5 @@
 // GDD, Specs: every order, request and service names its own resources, drawn from the size its customer's profile
-// starts from. Numbers in economy.md, Custom orders and Per-resource pricing.
+// starts from. Numbers in economy/README.md, Custom orders and Per-resource pricing.
 import { t } from "../../i18n/en";
 import { textRecord } from "../00-core/text";
 import { hashRng, rand } from "../00-core/rng";

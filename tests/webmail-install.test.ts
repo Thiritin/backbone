@@ -120,7 +120,7 @@ describe("webmail install", () => {
     const { s } = withSquirrel();
     const raw = JSON.parse(serialize(s));
     delete raw.webmail;
-    expect(deserialize(JSON.stringify(raw)).webmail).toEqual({ installs: {}, default: null });
+    expect(deserialize(JSON.stringify(raw)).webmail).toEqual({ installs: {}, default: null, options: {} });
   });
 });
 

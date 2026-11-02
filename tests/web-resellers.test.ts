@@ -52,7 +52,7 @@ describe("reseller blocks", () => {
     const { s } = world();
     s.hosttoast.tier = TIER_IDS[0];
     s.rates = { reseller: { diskGb: 0.42 } };
-    const rows = hosttoastList(s, "reseller", null), market = marketRates("reseller", 2010).diskGb!;
+    const rows = hosttoastList(s, "reseller"), market = marketRates("reseller", 2010).diskGb!;
     expect(rows.find((r) => r.id === "you")?.price).toBe(0.42);
     const rival = rows.find((r) => r.id !== "you")!;
     expect(rival.price).toBeCloseTo(market * s.competitors.find((c) => c.id === rival.id)!.priceFactor, 6);

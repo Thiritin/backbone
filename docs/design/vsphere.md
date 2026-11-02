@@ -1,6 +1,6 @@
 # VMwhere: datastores, snapshots and templates
 
-Addendum to `shop.md` section 6. It covers the three top vSphere gaps for VMwhere vSphear: shared datastores, VM snapshots, and templates with cloning. The numbers move into `economy.md` once built.
+Addendum to `shop.md` section 6. It covers the three top vSphere gaps for VMwhere vSphear: shared datastores, VM snapshots, and templates with cloning. The numbers move into `economy/README.md` once built.
 
 ## 1. Shared datastores
 

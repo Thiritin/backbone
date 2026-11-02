@@ -9,7 +9,7 @@ import { slotTime } from "./TechButton";
 import type { Device, GameState } from "../../../sim/50-state";
 import { bookable, clusterOf, nodeUsed, workloadsOn, type Cluster, type NodeState } from "../../../sim/60-infra/cluster";
 import { locationOf } from "../../../sim/60-infra/status";
-import { nodeUsage } from "../../../sim/60-infra/usage";
+import { shownNode } from "../../../sim/60-infra/usage";
 import { sumOf } from "../../../sim/60-infra/routes";
 import { phpDue, setRamGuard, upgradePhp } from "../../../sim/90-actions/clusters";
 import { restoreWorkload } from "../../../sim/90-actions/vms";
@@ -34,7 +34,7 @@ export function Meter({ used, cap, text }: { used: number; cap: number; text: st
 
 // Booked against what the servers physically hold, next to live use against the hardware, row by row.
 export function BookedMeters({ game, devices }: { game: GameState; devices: Device[] }) {
-  const live = devices.map((d) => nodeUsage(game, d.id));
+  const live = devices.map((d) => shownNode(game, d.id));
   const cap = sumOf(devices.map((d) => bookable(game, d))), used = sumOf(devices.map((d) => nodeUsed(game, d.id, true)));
   const u = sumOf(live.map((l) => l.used)), p = sumOf(live.map((l) => l.physical));
   const rows: [string, ReactNode, ReactNode][] = [
@@ -51,7 +51,7 @@ export function BookedMeters({ game, devices }: { game: GameState; devices: Devi
 }
 
 function NodeMeters({ game, d }: { game: GameState; d: Device }) {
-  const live = nodeUsage(game, d.id);
+  const live = shownNode(game, d.id);
   return (
     <>
       <BookedMeters game={game} devices={[d]} />

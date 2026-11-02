@@ -1,3 +1,4 @@
+import { selectMailServer } from "../src/sim/90-actions/mail";
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { yearOf } from "../src/sim/00-core/time";
@@ -28,13 +29,14 @@ function setup(id: string, year: number) {
   const cloud = s.clusters.find((c) => c.kind === "cloud")!, host = panelVm(s, cloud.id, id, { vcpu: 2, ramGb: 4, diskGb: 60 }), c = s.clusters.find((x) => x.id === host)!;
   const kind = softwareById(id).kind as keyof typeof PRODUCT;
   if (PRODUCT[kind]) { const r = provisionService(s, addCustomer(s, "Ada Lang", "hobbyDev"), PRODUCT[kind], { label: "ada", spec: { ...sizeSpec(PRODUCT[kind], 0, year), diskGb: 10 } }); expect(r.ok ? "ok" : r.error, id).toBe("ok"); }
-  return { s, c };
+  if (softwareById(id).kind === "mail") expect(selectMailServer(s, c.id).ok).toBe(true);
+  return { s, c: s.clusters.find((x) => x.id === host)! };
 }
 
 function render(id: string, year: number, signedIn: boolean, version?: string) {
   const { s, c } = setup(id, year), View = CONSOLES[id];
   if (version) pinVersion(s, c, id, version);
-  return { year: yearOf(s.hour), html: renderToString(<View game={s} c={c} f={consoleFeatures(id, yearOf(s.hour))} host="svc.example.com" signedIn={signedIn} login={() => {}} logout={() => {}} />) };
+  return { s, year: yearOf(s.hour), html: renderToString(<View game={s} c={c} f={consoleFeatures(id, yearOf(s.hour))} host="svc.example.com" signedIn={signedIn} login={() => {}} logout={() => {}} />) };
 }
 
 describe("DNS, VPN, storage and mail consoles", () => {
@@ -65,9 +67,9 @@ describe("DNS, VPN, storage and mail consoles", () => {
 
   it("draw Mailpig in one look with its four tabs and the company mailboxes", () => {
     for (const year of [2015, 2024]) {
-      const html = render("mailpig", year, true).html;
+      const { s, html } = render("mailpig", year, true);
       for (const tab of ["Mailboxes", "Domains", "Queue", "Configuration"]) expect(html).toContain(tab);
-      expect(html).toContain("admin@");
+      expect(html).toContain(`sales@${s.company.domain}`);
       expect(html).not.toContain("data-era");
     }
   });

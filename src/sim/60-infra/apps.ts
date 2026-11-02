@@ -1,4 +1,4 @@
-// economy.md, Security advisories, Customer applications: the apps web hosting customers run, how they get hacked, updated and cleaned.
+// economy/security-advisories.md, Security advisories, Customer applications: the apps web hosting customers run, how they get hacked, updated and cleaned.
 import { hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
 import {
@@ -55,7 +55,7 @@ export function appVulns(s: GameState, v: Service, hour: number = s.hour): OpenV
   return open.sort((a, b) => rank(b.severity) - rank(a.severity) || b.days - a.days);
 }
 
-// The hour the customer updates by themselves after the patch, or null when they never would (economy.md, Customer applications).
+// The hour the customer updates by themselves after the patch, or null when they never would (economy/README.md, Customer applications).
 export function selfUpdateAt(s: GameState, v: Service, vuln: Vulnerability): number | null {
   const r = keyOf(v, vuln, 95);
   if (rand(r) >= selfUpdateShare(vuln.family as App, skillOf(s, v), vuln.year)) return null;
@@ -151,12 +151,18 @@ export function cleanSite(s: GameState, serviceId: string): ActionResult {
   if (!v || !s.sites.defaced.includes(serviceId)) return { ok: false, error: "error.notDefaced" };
   if (!hasBackup(s, serviceId)) return { ok: false, error: "error.noBackup" };
   s.playerBusyUntil = Math.max(s.playerBusyUntil, s.hour * 60) + CLEAN_MINUTES;
+  siteCleaned(s, v);
+  return { ok: true, id: serviceId };
+}
+
+// The site is clean again, by a restore or by deleting what the attacker left; the customer's ticket is resolved.
+export function siteCleaned(s: GameState, v: Service): void {
+  const serviceId = v.id;
   clearDefacement(s, serviceId);
   s.customers = s.customers.map((c) => (c.id === v.customerId ? { ...c } : c));
   const c = s.customers.find((x) => x.id === v.customerId);
   if (c && s.tickets.some((t) => t.serviceId === serviceId && t.topic === "hacked" && !isFinal(t))) bump(c, 5);
   settle(s, serviceId, "hacked", "resolve");
-  return { ok: true, id: serviceId };
 }
 
 function deface(s: GameState, v: Service, events: SimEvent[]): void {

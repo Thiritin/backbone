@@ -44,7 +44,11 @@ export interface Ticket {
   // its department, the agent's priority override, internal notes, and the ticket a duplicate was merged into.
   channelId?: string | null; via?: "email" | "web"; ref?: string; deptId?: string | null; priority?: Priority;
   notes?: DeskNote[]; mergedInto?: string;
+  // A panel task: the web space and the part it names, which closes the ticket once it exists (40-support/webspace-tickets.ts).
+  task?: WebTask;
 }
+// part "app" asks for the site's app to work again; key is then the app.
+export interface WebTask { workloadId: string; part: "app" | "databases" | "mailboxes" | "ftp"; key: string }
 // System events carry a key and params, shown in the player's language; typed notes carry text.
 export interface DeskNote { hour: number; by: string; key?: string; params?: Record<string, string | number>; text?: string }
 
@@ -52,7 +56,7 @@ export const HOURS_PER_MONTH = 730;
 // Hours a waiting ticket stays open before the customer's silence counts as solved.
 export const WAITING_CLOSE_HOURS = 48;
 
-// economy.md, Tickets and work rates.
+// economy/tickets-and-work-rates.md, Tickets and work rates.
 export const MINUTES: Record<TicketKind, number> = { outage: 10, howTo: 20, billing: 15, upgrade: 20, cancellation: 15, abuse: 30, appeal: 15, notice: 15, legal: 30, refund: 10, order: 10, extortion: 10, migration: 10, maintenance: 10, sponsor: 10, pear: 0, mail: 0, spam: 0 };
 export const MONTHLY_RATES: Record<"howTo" | "billing" | "abuse", Record<Budget, number>> = {
   howTo: { low: 0.09, medium: 0.03, high: 0.01 },
@@ -118,7 +122,11 @@ const CLEAN_ACTIONS: TicketAction[] = ["clean", "cleanPaid", "noBackup"];
 export const TOPIC_ACTIONS: Record<string, TicketAction[]> = { "howTo.update": ["offerOnce", "offerManaged", "free"], "howTo.hacked": CLEAN_ACTIONS, "howTo.abuseHold": CLEAN_ACTIONS, "outage.slow": ["upgrade"] };
 // Topics with replies of their own and no actions: a suspended customer only needs the invoice to pay it. A transfer
 // request is answered with the auth code or refused (90-actions/registrar.ts).
-export const TOPIC_TEMPLATES: Record<string, string[]> = { "billing.suspended": ["resend", "askDetails"], "billing.domainOut": [] };
+// Panel tasks close by themselves once the web space matches, so they have no replies either.
+export const TOPIC_TEMPLATES: Record<string, string[]> = {
+  "billing.suspended": ["resend", "askDetails"], "billing.domainOut": [],
+  "howTo.dbCreate": [], "howTo.mailboxCreate": [], "howTo.ftpLogin": [], "howTo.dbError": [], "howTo.appSetup": [],
+};
 export const ACTION_MINUTES: Partial<Record<TicketAction, number>> = { clean: CLEAN_MINUTES, upgrade: 5 };
 export const actionsOf = (t: Pick<Ticket, "kind" | "topic">): TicketAction[] => (`${t.kind}.${t.topic}` in TOPIC_TEMPLATES ? [] : [...ACTIONS[t.kind], ...(TOPIC_ACTIONS[`${t.kind}.${t.topic}`] ?? [])]);
 // Tickets with their own actions have no reply templates.
@@ -174,7 +182,7 @@ export const bump = (c: Customer, delta: number): void => {
   c.happiness = next;
 };
 
-// economy.md, Usage: per hour a slowed service costs SLOW_PENALTY × the share of performance lost × who is looking × how long it
+// economy/README.md, Usage: per hour a slowed service costs SLOW_PENALTY × the share of performance lost × who is looking × how long it
 // has dragged on, and some write in. Business customers at full attention pay the base rate.
 export const SLOW_PENALTY = 0.1;
 export const SLOW_TICKET_CHANCE = 0.1;
@@ -219,7 +227,7 @@ export function createTicket(s: GameState, c: Customer, kind: TicketKind, servic
 
 const cents = (v: number) => Math.round(v * 100) / 100;
 
-// A credit of share × the monthly fee; economy.md gives +3 happiness per 10%.
+// A credit of share × the monthly fee; economy/README.md gives +3 happiness per 10%.
 export function credit(s: GameState, c: Customer, share: number): void {
   const amount = cents(share * monthlyValue(s.services, c.id));
   bump(c, 30 * share);

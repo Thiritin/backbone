@@ -8,7 +8,7 @@ const steady = SEEDS.map((s) => run(STEADY, s));
 const solo = SEEDS.map((s) => run(SOLO, s));
 const medianYear = (runs: RunResult[], level: number) => median(runs.map((r) => r.levelYear[level] ?? Infinity));
 
-describe("balance run (docs/design/economy.md, Balancing)", () => {
+describe("balance run (docs/design/economy/balancing.md, Balancing)", () => {
   it("is deterministic per seed", () => {
     expect(run(STEADY, 3)).toEqual(run(STEADY, 3));
   });
@@ -24,8 +24,8 @@ describe("balance run (docs/design/economy.md, Balancing)", () => {
   });
 
   it("brings the steady bot to levels 2 to 5 within a year of the pacing target", () => {
-    // Paid internet, the business line and its addresses put level 2 up to a quarter later (economy.md, Addresses and internet);
-    // the registrar and company email take another quarter at most (economy.md, Sales and quotes, Company email).
+    // Paid internet, the business line and its addresses put level 2 up to a quarter later (economy/addresses-and-internet.md, Addresses and internet);
+    // the registrar and company email take another quarter at most (economy/sales-and-quotes.md, Sales and quotes, Company email).
     for (const level of [2, 3, 4, 5]) expect(medianYear(steady, level)).toBeLessThanOrEqual(PACING_YEAR[level] + 1 + (level === 2 ? 0.5 : 0));
   });
 

@@ -15,4 +15,7 @@ export default {
   "desk.records.verified": () => "Verificato",
   "desk.records.dns": () => "Apri le impostazioni DNS",
   "error.deskRecords": () => "Alcuni record non sono stati trovati.",
+  "desk.site.notFound": () => "Non trovato",
+  "desk.site.notFoundText": (p) => `L’URL richiesto ${p.path} non è stato trovato su questo server.`,
+  "desk.launcher.mailbox": () => "Apri casella di posta",
 } satisfies Dict;

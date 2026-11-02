@@ -8,6 +8,8 @@ import { SERVER_OS, type ServerOsId } from "../10-catalog/server-os";
 import { companyDomain } from "../30-customers/domains";
 import { nsActive, parked } from "../30-customers/registry";
 import { serviceOnline } from "../40-support/status";
+import { deskStatus } from "../40-support/desk";
+import { deskHosts } from "../40-support/desk-records";
 import type { GameState } from "../50-state";
 import { isOwnVm, workloadOnline, workloadsOf, type Workload } from "../60-infra/cluster";
 import { machineAddress } from "../60-infra/addresses";
@@ -16,7 +18,7 @@ import { isManaged, isManagedUps, modelById } from "../10-catalog/hardware";
 import { mountedRouter } from "../60-infra/routers";
 import { isMgmtDevice, oobUp } from "../60-infra/oob";
 import { linkStatus, powered, working } from "../60-infra/status";
-import { nodeUsage, SLOW_PERF } from "../60-infra/usage";
+import { nodeUsage, SLOW_PERF, vmFrozen } from "../60-infra/usage";
 import { BOARD_HOST } from "./sponsorboard";
 import { FLYER_HOST } from "../10-catalog/flyers";
 import { consoleAt, consoleHost, isDefaced } from "./consoles";
@@ -24,6 +26,7 @@ import { defaultWebmail } from "./webmail";
 import { customerSite, shopStatus, siteHost, siteStatus, slowHost } from "./website";
 import { vendorHost, vendorLive, VENDORS } from "./vendors";
 import { shopActive } from "./shop";
+import { placeholderSite, webspaceSite, type SiteBody, type WebsiteHit } from "./webspace-sites";
 import { OFFICE_HOST, OFFICE_URL } from "./office";
 import { DOHLE_HOST } from "./tax";
 import { t } from "../../i18n/en";
@@ -42,6 +45,7 @@ export type Load = "fast" | "slow" | "down";
 export type Page =
   | { kind: "company" }
   | { kind: "customer"; serviceId: string }
+  | { kind: "webspace"; body: SiteBody }
   | { kind: "vendor"; maker: string }
   | { kind: "provider"; id: string }
   | { kind: "registrar"; id: RegistrarId }
@@ -53,6 +57,7 @@ export type Page =
   | { kind: "books"; id: BooksVendorId }
   | { kind: "shopVendor"; id: ShopId }
   | { kind: "deskVendor"; id: DeskId }
+  | { kind: "desk"; id: DeskId }
   | { kind: "hosttoast" }
   | { kind: "host"; hostname: string }
   | { kind: "console"; hostname: string; clusterId: string; defaced: boolean; path: string }
@@ -147,9 +152,9 @@ function serverLoad(s: GameState, id: string): Load {
   return !working(s, id) || !linkStatus(s, id).online ? "down" : slow(nodeUsage(s, id).perf < SLOW_PERF);
 }
 
-// The player's own VM answers like its workload; a customer's workload like its service.
+// The player's own VM answers like its workload, never while frozen; a customer's workload like its service.
 function vmLoad(s: GameState, w: Workload): Load {
-  if (!workloadOnline(s, w)) return "down";
+  if (!workloadOnline(s, w) || vmFrozen(s, w)) return "down";
   return slow(slowHost(s, w, s.clusters.find((c) => c.id === w.clusterId)));
 }
 
@@ -206,14 +211,25 @@ export function resolve(s: GameState, raw: string): Resolved {
     const st = siteStatus(s);
     return out({ kind: "company" }, st === "up" ? "fast" : st === "slow" ? "slow" : "down");
   }
-  // No page answers on the desk address until the desk site exists.
+  if (s.desk && deskHosts(s).includes(host)) {
+    const st = deskStatus(s);
+    return out({ kind: "desk", id: s.desk.id }, st === "up" ? "fast" : st === "slow" ? "slow" : "down");
+  }
   if (host === `support.${domain}`) return out({ kind: "notfound" });
   // The default webmail front end answers at webmail.<domain> like on its machine.
   if (s.company.domain && host === `webmail.${domain}`) {
     const c = defaultWebmail(s), h = c && consoleHost(s, c), m = h && machineOf(s, h, false);
     return c && m ? { url, host, path, page: { kind: "console", hostname: m.hostname, clusterId: c.id, defaced: isDefaced(s, c), path }, load: m.load } : out({ kind: "notfound" });
   }
-  if (host === `portal.${domain}`) return shopActive(s) && s.shop.install ? out({ kind: "shop" }, shopLoad()) : out({ kind: "notfound" });
+  // A site on a web space answers as its folder says; the shop's address shows the panel's default page until the shop is installed.
+  const pageOf = (hit: WebsiteHit): Resolved => out(hit.body.kind === "customer" ? { kind: "customer", serviceId: hit.body.serviceId } : { kind: "webspace", body: hit.body }, hit.load);
+  if (host === `portal.${domain}`) {
+    if (shopActive(s) && s.shop.install) return out({ kind: "shop" }, shopLoad());
+    const hit = webspaceSite(s, host) ?? placeholderSite(s, host);
+    return hit ? pageOf(hit) : out({ kind: "notfound" });
+  }
+  const space = webspaceSite(s, host);
+  if (space) return pageOf(space);
   const site = siteAt(s, host);
   if (site) return out({ kind: "customer", serviceId: site.serviceId }, site.load);
   const named = (bare: string) => host === bare || host === `www.${bare}`;

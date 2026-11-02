@@ -1,4 +1,4 @@
-// Values from docs/design/economy.md; section names are noted per block.
+// Values from docs/design/economy/README.md; section names are noted per block.
 import { textFields } from "../00-core/text";
 import type { Product } from "../30-customers/customers";
 import type { Patience } from "../00-core/workhours";
@@ -61,7 +61,7 @@ export interface Competitor {
 
 const EVERYTHING: Product[] = ["webHosting", "domain", "ssl", "dns", "gameServer", "vps", "vpn", "dedicated", "storage", "cloud", "colocation", "gpu", "reseller"];
 
-// Customer choice, Competitors: the four archetypes plus two specialists (decision, recorded in economy.md).
+// Customer choice, Competitors: the four archetypes plus two specialists (decision, recorded in economy/customer-choice.md).
 export const COMPETITORS: Competitor[] = [
   { name: "Ionose", template: "budget", priceFactor: 0.8, P: 55, R: 60, C: 70, sells: ["webHosting", "domain", "ssl", "dns", "vps"] },
   { name: "OVHeat", template: "wholesale", priceFactor: 0.75, P: 70, R: 65, C: 50, sells: EVERYTHING },
@@ -96,7 +96,7 @@ export const CITIES = [
 ];
 export const MARKET_GROWTH = 0.08;
 // Organic leads and referrals per city and profile are capped at a share of the city's new customers that grows with
-// the company's level: 2.4% for a basement hoster, 6.4% at level 6 (economy.md, Market and leads).
+// the company's level: 2.4% for a basement hoster, 6.4% at level 6 (economy/market-and-leads.md, Market and leads).
 export const LEAD_CAP_SHARE = 0.016;
 export const leadCapShare = (level: number): number => LEAD_CAP_SHARE * (1 + 0.5 * level);
 

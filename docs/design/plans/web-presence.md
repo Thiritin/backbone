@@ -32,7 +32,7 @@ The Pear Store sells Pear's own apps and nothing else. Third-party software is b
 ## Lane `strateaux-account`
 
 1. A Strateaux website in the Browser (`www.strateaux.de` style, era looks like the other provider sites) with a customer login and a dashboard.
-2. Packages: the rented site package of today (`SITE_RENT`) becomes a Strateaux contract in state (`strateaux: { package, since, mail } | null`). A larger package from the era allows the app catalogue for the shop and costs more. Prices go into `economy.md`.
+2. Packages: the rented site package of today (`SITE_RENT`) becomes a Strateaux contract in state (`strateaux: { package, since, mail } | null`). A larger package from the era allows the app catalogue for the shop and costs more. Prices go into `economy/README.md`.
 3. Mail: every package includes mailboxes under the company domain. Company mail gets a fourth kind, `strateaux`, so the existing free, external and self choices stay and the Strateaux mailboxes are one more.
 4. The dashboard has wide action tiles at about 3:1, icon on the left, title and one line of text on the right: Website, Shop, Email, App catalogue, Move to own server.
 5. Strateaux never goes down and never loses data: its site and shop status are always up.

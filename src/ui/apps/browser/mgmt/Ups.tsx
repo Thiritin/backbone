@@ -1,4 +1,4 @@
-// economy.md, UPS: a managed UPS's web interface in the switch pages' frame, with its battery and the servers it shuts down.
+// economy/README.md, UPS: a managed UPS's web interface in the switch pages' frame, with its battery and the servers it shuts down.
 import { useState } from "react";
 import { t } from "../../../../i18n/en";
 import { LOCALE } from "../../../../i18n/lang";

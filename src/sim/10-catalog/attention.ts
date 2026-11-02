@@ -1,4 +1,4 @@
-// economy.md, Noticing outages: who is looking at a service at each hour of the week, and how fast a customer notices it is
+// economy/noticing-outages.md, Noticing outages: who is looking at a service at each hour of the week, and how fast a customer notices it is
 // down. An outage nobody notices costs nothing.
 import { hashRng, rand } from "../00-core/rng";
 import { dateOf } from "../00-core/time";

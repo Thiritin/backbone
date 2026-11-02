@@ -7,7 +7,7 @@ import { contention } from "./oversell";
 import { customerWorkloads, liveServices } from "./status";
 import { phpOldestInUse, phpRunning } from "./webpanel";
 
-// economy.md, PHP versions.
+// economy/php-versions.md, PHP versions.
 export const PHP_TICKETS = 0.05;
 export const PHP_TICKETS_CAP = 6;
 export const PHP_EOL = 3;

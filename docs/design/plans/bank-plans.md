@@ -74,7 +74,7 @@ The Bank app's loan form shows the rate of the company's own bank.
 - `src/sim/80-business/paperwork.ts`: `error.bankPlan` and `error.shareCapital` in `applyError`.
 - `src/sim/45-billing/billing.ts`: the bank margin in `loanRate`.
 - UI: the plan table on every bank site's opening form and account page, the switch on the opening form when an account exists, the rate on the loan form.
-- `docs/design/economy.md`: the plan table and the margins.
+- `docs/design/economy/README.md`: the plan table and the margins.
 - Tests: plan fees and free bookings over a month, the plan change on the first, `applyError` for plan and capital, switching with and without a loan, a payment to the old account in month two and month four, the margin in `loanRate`, an old save without `plan`.
 
 ## Open

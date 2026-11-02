@@ -1,4 +1,4 @@
-// economy.md, HyperVee virtual switches: the Virtual Switch Manager and the adapter's switch.
+// economy/README.md, HyperVee virtual switches: the Virtual Switch Manager and the adapter's switch.
 import type { GameState } from "../50-state";
 import { modelById } from "../10-catalog/hardware";
 import { DEFAULT_SWITCH, MAX_SWITCHES, switchesOf, type VSwitch, type VSwitchType } from "../60-infra/vswitch";

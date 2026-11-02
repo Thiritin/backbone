@@ -1,4 +1,4 @@
-// Hardware lifecycle (economy.md, Hardware lifecycle): list prices erode while a model is on sale, and a model past its end
+// Hardware lifecycle (economy/README.md, Hardware lifecycle): list prices erode while a model is on sale, and a model past its end
 // of support is slower and dearer to work on and fails more often.
 import { yearOf } from "../00-core/time";
 import { modelById, type DeviceModel } from "./hardware";

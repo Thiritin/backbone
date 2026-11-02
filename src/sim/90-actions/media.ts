@@ -1,10 +1,11 @@
 // Installation media (docs/design/software.md, section 4.1): the ISO images downloaded from the OS sites and the one USB
 // stick, written with one of them and plugged into one server at a time.
-import { nowHours } from "../00-core/time";
+import { MS_PER_HOUR, nowHours } from "../00-core/time";
+import { archiveNamed } from "../10-catalog/archives";
 import { modelById } from "../10-catalog/hardware";
 import { DC_BANDWIDTH } from "../10-catalog/network";
 import { homeLineById } from "../20-world/datacenters";
-import { imageExists, type OsImage, type ServerOsId } from "../10-catalog/server-os";
+import { imageExists, imageParts, isoName, type OsImage, type ServerOsId } from "../10-catalog/server-os";
 import type { GameState } from "../50-state";
 import { handJob, playerAt, present, type How } from "../60-infra/handwork";
 import { consoleVia } from "../60-infra/oob";
@@ -23,6 +24,25 @@ export function downloadMbps(s: GameState): number {
   return loc.dc ? DC_BANDWIDTH.mbps : homeLineById(s.homeLine.id).down;
 }
 
+// The player's own upload speed in Mbit/s, the same way.
+export function uploadMbps(s: GameState): number {
+  const loc = playerAt(s);
+  if (!present(s, loc.id)) return 0;
+  return loc.dc ? DC_BANDWIDTH.mbps : homeLineById(s.homeLine.id).up;
+}
+
+// A transfer runs in game hours equal to the real time it takes at the line speed.
+export const transferHours = (mb: number, mbps: number): number => ((mb * 8) / mbps) * 1000 / MS_PER_HOUR;
+
+// The player's Downloads folder: every image, archive and database dump by its id, file name and size.
+export interface DownloadedFile { id: string; name: string; mb: number }
+export function downloadedFiles(s: GameState): DownloadedFile[] {
+  return [
+    ...s.media.images.map((img) => ({ id: img, name: isoName(img), mb: IMAGE_MB[imageParts(img).id] })),
+    ...s.media.files.map((name) => ({ id: name, name, mb: archiveNamed(name)?.mb ?? s.media.dumps[name]?.mb ?? 0 })),
+  ];
+}
+
 const fail = (error: string): ActionResult => ({ ok: false, error });
 
 // The images a VM's Media menu offers.
@@ -31,6 +51,12 @@ export const mountableImages = (s: GameState): OsImage[] => s.media.images;
 export function downloadImage(s: GameState, image: OsImage): ActionResult {
   if (!imageExists(image)) return fail("error.unknownOs");
   if (!s.media.images.includes(image)) s.media.images = [...s.media.images, image];
+  return { ok: true };
+}
+
+export function downloadArchive(s: GameState, name: string): ActionResult {
+  if (!archiveNamed(name)) return fail("webspace.error.noArchive");
+  if (!s.media.files.includes(name)) s.media.files = [...s.media.files, name];
   return { ok: true };
 }
 

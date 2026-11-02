@@ -6,9 +6,26 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - VPS plans now start small and cheap, from 256 MB for about €13 a month in 2005, and grow every few years until they reach 4 to 32 GB in 2026.
 - Many more customers now ask for a VPS as the years go by, on top of the web hosting customers you already get, while VPS prices per GB fall every year.
+- Web hosting panels show each account's disk and traffic as compact numbers and the whole server's CPU, memory and disk above the account list.
+- Web hosting accounts now use memory by their visitors, so a quiet personal page needs only a few megabytes while a busy shop needs far more.
+- The software page in the Pear Store shows its price, skill and status side by side again, with the same spacing in every macOS era.
+- Single files in the cPanic File Manager now show realistic sizes in KB, and the disk bar of a cPanic account follows its uploads.
+- The cPanic File Manager now works like the real one: upload files from your Downloads at your line's upload speed, extract and compress archives, create, move, copy, rename and delete files, and change permissions, with uploads refused once the account's disk quota is full.
+- HOSTtoast no longer has a city filter, so its list always shows every open host.
+- Mail in company mailboxes can now be moved, flagged, labelled, snoozed, filed in nested folders, deleted to Trash and restored, and drafts and sent mail keep their copies in Drafts and Sent.
+- The browser's Back button no longer leaves the game: in the browser app it goes back one page, everywhere else it does nothing.
+- OsTickit now runs at your support address in the browser, with its own customer portal, Staff Control Panel and Admin Panel in the 1.6 look and, from version 1.10, the newer one, and the Support tile opens it once it is installed.
+- Web hosting panels can now create an account for your own company domain, which starts empty, counts against the panel licence and is where your website and shop will live.
+- Postfixit Admin now walks you through its setup page and then manages the mailboxes, aliases, forwarders, catch-all, quotas and passwords of your own mail server, and Mailpig shows your real mailboxes and aliases in its own tabs.
+- A bare Postfixit server can be managed from the terminal with mailbox, alias, catchall and spam commands, and uninstalling the mail server deletes every mailbox and message on it.
+- A license key that is installed in a panel or product has to be removed before another key can be entered, and the license page shows the installed key with a Remove button instead of listing your unused keys.
+- Software now installs on any virtual machine with the disk for it, but a VM too small for its software and sites sits at 100% CPU and RAM, its web console stops answering and its sites slow down until you resize it.
+- CPU and RAM readouts now move a little from hour to hour, and every software website lists the system requirements of the current year on its download page.
 - Flyerlarm, a print shop in the browser, sells flyer runs that are handed out in one of your cities over four weeks and bring in new leads; the Marketing app lists every running run and takes you to the shop to order more.
 - Web developers now write in as a new kind of customer: they are rare at first, mostly ask for web hosting, and often want a reseller block, and your sponsored developer events and agency fairs reach them.
 - DocuWhere in the Pear Store files every letter from the post in an archive with search, document types and a filter per type.
+- Your company's support address now reaches your help desk once its DNS record is in place, and shows the server's error while the desk's web space is down.
+- Company mailboxes now receive mail the way real ones do: full boxes hold mail for a few days before it bounces, deleted addresses bounce, groups copy mail to every member, server filters sort new mail, out-of-office replies can loop between two mailboxes, and junk arrives in the amounts of its year.
 - You now set how much CPU, memory and disk each customer's service may use, on the customer's page and in the hypervisor consoles, and a customer uses what they bought: give them more and their peaks may go above it, give them less and their own service slows down while your host stays fine.
 - A customer who writes in about a slow server can be told to upgrade: if their own limit was too tight, they get a quote for more, and if your host was the problem, they take it badly.
 - Supplier invoices in Preview are addressed to the company address you registered.
@@ -19,7 +36,11 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Buying licences on vendor websites now goes through a checkout with billing details, payment and a review, and a card payment needs the card details from the online bank.
 - Panel consoles no longer sell licence editions; the licence page shows the edition and its limits, and editions are changed from My account on the vendor's website.
 - Vendor websites offer a Change edition choice for every licence key, which switches the key to the new edition after checkout without entering a new key.
+- The cPanic customer pages now offer Addon Domains, Subdomains, Aliases, a Zone Editor, SSL/TLS Status, MultiPHP Manager and Cron Jobs, labelled as the release of the year names them, and a new subdomain gets its DNS record automatically.
+- Every domain pointing at a web space now opens in the Browser: customer sites show their app's default theme of the year, broken sites show the real database, PHP, server or suspended-account error, and an empty folder shows the panel's default page or a folder listing.
+- cPanic customer accounts have a MySQL Databases page to create databases and users and grant privileges, and phpMyAdmon opens their tables to browse, edit rows, run SQL and export or import .sql files through Downloads.
 - Every cPanic customer account now has its own files, databases, mailboxes and limits on databases, FTP accounts and domains, which its customer pages show.
+- Web hosting customers now write in asking for a database, a mailbox or an FTP login, ask for a bigger package when theirs is full, and report a site that stopped working; the ticket closes once their web space has what they asked for, and deleting the shell left on a hacked site cleans it.
 - Your own servers, mail server, webmail, help desk and shop now get their DNS records automatically, so an MX record pointing at your mail server's host name delivers mail, and the DNS page offers MX, A and CNAME values from lists instead of free text.
 - Mail to your domain now really follows its MX record: when it leads nowhere, email orders stop arriving and the Email sheet shows the mail as not delivered.
 - Your own virtual machines now take their operating system's time to boot, shut down and restart, and an open SSH session sees the shutdown broadcast before it is disconnected.

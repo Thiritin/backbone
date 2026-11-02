@@ -1,4 +1,4 @@
-// economy.md, Horizont projects: a quota per project on instances, vCPU, RAM, volume space and floating IPs.
+// economy/README.md, Horizont projects: a quota per project on instances, vCPU, RAM, volume space and floating IPs.
 import type { GameState } from "../50-state";
 import type { Resources } from "../10-catalog/products";
 import type { Cluster } from "./cluster";

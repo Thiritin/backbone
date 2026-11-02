@@ -89,7 +89,7 @@ const LAST = ["Fischer", "Wagner", "Becker", "Hoffmann", "Schulz", "Koch", "Rich
 
 const pick = <T>(r: Rng, xs: readonly T[]): T => xs[Math.floor(rand(r) * xs.length)];
 
-// economy.md, Hiring: 60% juniors (10 to 35), 30% mid-level (35 to 65), 10% seniors (65 to 90); talent between 60 and 100.
+// economy/README.md, Hiring: 60% juniors (10 to 35), 30% mid-level (35 to 65), 10% seniors (65 to 90); talent between 60 and 100.
 export function candidate(r: Rng, id: string, role: Role, arriveAt: number): Candidate {
   const x = rand(r);
   const [lo, hi] = x < 0.6 ? [10, 35] : x < 0.9 ? [35, 65] : [65, 90];
@@ -151,7 +151,7 @@ export function startTraining(s: GameState, e: Employee): void {
 // Customers' business hours, which the default Office team works.
 export { isWorkHour };
 
-// economy.md, AI bots. A bot works around the clock at a fixed rate and never learns.
+// economy/README.md, AI bots. A bot works around the clock at a fixed rate and never learns.
 export const BOTS: Record<string, { role: Role; tasks: Task[] }> = {
   chadGpt: { role: "support", tasks: ["howTo", "billing"] },
   clipsy: { role: "bookkeeper", tasks: ["reminder"] },
@@ -234,9 +234,9 @@ function answerTickets(s: GameState, agents: Employee[], r: Rng): BotTask[] {
   const taken = new Map<string, Ticket["work"]>(), byBot: BotTask[] = [];
   for (const e of agents) {
     for (const t of staffQueue(s, e, queue)) {
-      // An order that cannot be set up waits for the player, and an upgrade waits for the player's quote.
+      // An order that cannot be set up waits for the player, an upgrade waits for the player's quote and a panel task for the player's work in the panel.
       const step = t.kind === "order" ? staffOrderStep(s, t, orderError(s, t)) : null;
-      if (taken.has(t.id) || !(e.trained as string[]).includes(t.kind) || (t.kind === "order" && !step) || t.kind === "upgrade") continue;
+      if (taken.has(t.id) || !(e.trained as string[]).includes(t.kind) || (t.kind === "order" && !step) || t.kind === "upgrade" || t.task) continue;
       const tries = e.bot ? t.replies.filter((x) => x.by === e.name).length : 0;
       if (tries >= BOT_TRIES) continue;
       const took = take(s, e, step ? orderMinutes(s, t, step, MINUTES.order) : MINUTES[t.kind]);
@@ -352,7 +352,7 @@ export function growth(e: Employee, hour: number): number {
   return (years < 2 ? 12 : years < 5 ? 6 : 2) / 12;
 }
 
-// economy.md, Raises and quitting.
+// economy/README.md, Raises and quitting.
 export function quitChance(e: Employee, hour: number): number {
   let p = 0.005;
   if (e.salary < 0.85 * marketSalary(e, hour)) p += 0.03;

@@ -70,7 +70,7 @@ Ticket text stays `ticket.outage.slow.*`. `TOPIC_ACTIONS["outage.slow"] = ["upgr
 
 | M | Content | Test |
 | --- | --- | --- |
-| M1 | 3.1 to 3.3: `setLimits`, `need`, capped `workloadUse`, `starvation`, `starvedAt`, `overload` change, economy.md section | `tests/limits.test.ts`: rebook up and down, errors, use capped at limit, stretch above sold, a starved vps slows and marks `starvedAt` without slowing its neighbour, a web space at 95 % does not, at 110 % does, raising the limit ends it |
+| M1 | 3.1 to 3.3: `setLimits`, `need`, capped `workloadUse`, `starvation`, `starvedAt`, `overload` change, economy/README.md section | `tests/limits.test.ts`: rebook up and down, errors, use capped at limit, stretch above sold, a starved vps slows and marks `starvedAt` without slowing its neighbour, a web space at 95 % does not, at 110 % does, raising the limit ends it |
 | M2 | 3.4: ticket action, `expansionRequest`, decline reply, i18n in every language | `tests/limits-ticket.test.ts`: starved service gets a request on `upgrade`; host-slow service gets the penalty and no request |
 | M3 | 3.5: customer page limits, console resize for customer VMs, `SizeFields` steps, HyperVee MB, i18n in every language | `tests/i18n.test.ts` |
 
@@ -78,4 +78,4 @@ M1 first; M2 and M3 can run in parallel with M1 against the signatures above.
 
 ## 5. Files touched
 
-`src/sim/90-actions/limits.ts` (new), `90-actions/index.ts`, `60-infra/usage.ts`, `85-products/products.ts`, `30-customers/customers.ts` (`starvedAt`), `40-support/tickets.ts`, `30-market/sales.ts`, `90-actions/support.ts`, `47-staff/activity.ts`, `src/ui/apps/customers/CustomerPage.tsx`, `src/ui/apps/browser/consoles/HypervisorBase.tsx`, `hypervee/HyperVee.tsx`, `src/i18n/ui-*.ts` and every `src/i18n/<lang>/`, `docs/design/economy.md`, `CHANGELOG.md`.
+`src/sim/90-actions/limits.ts` (new), `90-actions/index.ts`, `60-infra/usage.ts`, `85-products/products.ts`, `30-customers/customers.ts` (`starvedAt`), `40-support/tickets.ts`, `30-market/sales.ts`, `90-actions/support.ts`, `47-staff/activity.ts`, `src/ui/apps/customers/CustomerPage.tsx`, `src/ui/apps/browser/consoles/HypervisorBase.tsx`, `hypervee/HyperVee.tsx`, `src/i18n/ui-*.ts` and every `src/i18n/<lang>/`, `docs/design/economy/README.md`, `CHANGELOG.md`.

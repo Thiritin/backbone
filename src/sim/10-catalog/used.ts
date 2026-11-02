@@ -1,4 +1,4 @@
-// Used hardware market (economy.md, Hardware, power and failures, Used hardware): channels, price bands and the yearly events.
+// Used hardware market (economy/hardware-power-and-failures.md, Hardware, power and failures, Used hardware): channels, price bands and the yearly events.
 import { hashRng, rand } from "../00-core/rng";
 import { hourOf, START_YEAR } from "../00-core/time";
 import type { Device, GameState } from "../50-state";

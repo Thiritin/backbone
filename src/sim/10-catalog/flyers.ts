@@ -1,4 +1,4 @@
-// Flyerlarm, the print shop that sells flyer runs (economy.md, Marketing and reviews, Flyers).
+// Flyerlarm, the print shop that sells flyer runs (economy/marketing-and-reviews.md, Marketing and reviews, Flyers).
 import type { Profile } from "../30-customers/customers";
 import { priceAt } from "./economy";
 

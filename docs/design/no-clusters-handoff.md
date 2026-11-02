@@ -66,7 +66,7 @@ Other leftovers:
 
 - `src/ui/apps/products/parts.tsx` and `products.css` stay in the old folder, because consoles, Locations, Customers and Network import from them.
 - The `Product management` skill keeps its id `products`; Provisioning automation and High availability still need it.
-- `docs/design/gdd.md`, `economy.md` and `research.md` still describe the Products and Virtual machines apps.
+- `docs/design/gdd/README.md`, `economy/README.md` and `research.md` still describe the Products and Virtual machines apps.
 
 ## Next: hypervisor clustering
 

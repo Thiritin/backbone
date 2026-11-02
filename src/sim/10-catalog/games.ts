@@ -57,7 +57,7 @@ export const GAME_UNIT: Record<string, "slots" | "ram" | "ramCpu"> = { tcadmen: 
 export const weightAt = (g: GameTitle, year: number): number =>
   year < g.from ? 0 : g.weight * (year <= g.fade ? 1 : Math.max(0.1, 0.75 ** (year - g.fade)));
 
-// economy.md, Happiness and churn: after a title fades, its players online fall 30 percent a year down to 15 percent.
+// economy/happiness-and-churn.md, Happiness and churn: after a title fades, its players online fall 30 percent a year down to 15 percent.
 export const interestAt = (g: GameTitle, year: number): number => (year <= g.fade ? 1 : Math.max(0.15, 0.7 ** (year - g.fade)));
 
 // The current title of the same genre with the most new orders, which a drifting customer asks to move to.

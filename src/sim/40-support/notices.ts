@@ -1,4 +1,4 @@
-// GDD, Support: abuse and copyright notices, legal requests, refunds after outages; numbers in economy.md, Notices and legal requests.
+// GDD, Support: abuse and copyright notices, legal requests, refunds after outages; numbers in economy/notices-and-legal-requests.md, Notices and legal requests.
 import { CRYPTO_ABUSE } from "../10-catalog/payments";
 import { SHOP_LICENCE, vendorParams } from "../80-business/licences";
 import { hashRng, rand, type Rng } from "../00-core/rng";
@@ -149,7 +149,7 @@ export function applyNoticeWork(s: GameState, t: Ticket, c: Customer | undefined
         s.ledger = [...s.ledger, { hour: s.hour, category: "credit", key: "ledger.refund", params: { customer: c.name }, amount: -amount }];
       }
       done("refunded");
-      // economy.md, Reviews: a customer refunded after a data loss gives 3 stars 60% of the time.
+      // economy/README.md, Reviews: a customer refunded after a data loss gives 3 stars 60% of the time.
       if (t.topic === "dataLoss") maybeReview(s, c, "dataLoss", r, [], rand(r) < 0.6 ? 3 : undefined);
     } else if (action === "credit") {
       credit(s, c, 0.1);
@@ -240,6 +240,7 @@ export const subjectParams = (s: GameState, t: Ticket): Record<string, string | 
   ...(t.kind === "sponsor" && sponsorParams(s, t)),
   ...(t.topic === "switchTitle" && switchParams(s, t)),
   ...(t.term && termParams(t.term)),
+  ...(t.task && { task: t.task.key }),
   ...t.mail?.params,
   ...(t.kind === "mail" && t.topic === SHOP_LICENCE && vendorParams(t.mail!.params)),
 });

@@ -1,5 +1,5 @@
 // GDD, Where requests come from: standard orders arrive as order emails in Support until a shop system takes them in directly.
-// Numbers in economy.md, Orders by email.
+// Numbers in economy/README.md, Orders by email.
 import { hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
 import { CYCLE_MONTHS } from "../10-catalog/cycles";

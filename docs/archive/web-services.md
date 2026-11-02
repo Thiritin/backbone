@@ -31,10 +31,10 @@ Checked and not built:
 - `PanelBase.tsx` (258 lines) exports `PanelProps` (line 28), `usePanelTab` (33), `LoginForm` (55), `Migrate` (88), `Row` (111) and `useRows` (118). `Tab` is the closed union `"objects" | "nodes" | "software"` (line 25), so every new screen needs a tab id or a console-local state.
 - `ConsolePage.tsx:49-55` keeps the login as a bare boolean per hostname (`signedIn={logins.includes(hostname)}`, `login={() => ...}`), so the login level has to live in the console until the shared login changes.
 - `src/sim/80-business/consoles.ts` maps software to a look (`LOOK` at line 25) and computes `consoleFeatures` (line 45), which has no flags for the new screens. The new screens are gated by the console family and year, not by a feature flag.
-- PHP: `src/sim/60-infra/php.ts` holds the economy.md "PHP versions" numbers (`PHP_TICKETS`, `PHP_EOL = 3`, `PHP_ABUSE`, `PHP_SLOW = 0.7`, `PHP_UPGRADE_HOURS = 1`, lines 8-14), `phpLag` (line 20, from `c.php`), `phpTickets`, `phpAbuse` (line 27) and `phpNeeded` (the sales refusal). A panel host has exactly one version, `Cluster.php`, and `Cluster.phpUntil` for the slowdown after an upgrade (`src/sim/60-infra/cluster.ts`, comment at line 30). `upgradePhp` and `phpDue` are in `src/sim/90-actions/clusters.ts:262-279`; they only move the whole host to the current version. The UI offers it as the "php" tile in `PanelBase.tsx` (`ICON`, line 40; imports at line 15).
-- Customer apps: `src/sim/60-infra/apps.ts` implements economy.md "Customer applications": `cmsOf` (line 38), `appVulns` (47), `selfUpdateAt` (58), `hasBackup` (28), `cleanSite` (88), `appsTick` (119), `notifyCustomers` (158) and `appMonitoring` (175). The release update for a set of services is written at line 74 (`appVersion: yearOf(s.hour), appUpdatedAt: s.hour`). `spec.managedUpdates` already exists for sites the player keeps current. Vulnerabilities come from `vulnsFor(family, year, seed)` in `src/sim/60-infra/vulns.ts` (`openVulns` line 69).
+- PHP: `src/sim/60-infra/php.ts` holds the economy/php-versions.md "PHP versions" numbers (`PHP_TICKETS`, `PHP_EOL = 3`, `PHP_ABUSE`, `PHP_SLOW = 0.7`, `PHP_UPGRADE_HOURS = 1`, lines 8-14), `phpLag` (line 20, from `c.php`), `phpTickets`, `phpAbuse` (line 27) and `phpNeeded` (the sales refusal). A panel host has exactly one version, `Cluster.php`, and `Cluster.phpUntil` for the slowdown after an upgrade (`src/sim/60-infra/cluster.ts`, comment at line 30). `upgradePhp` and `phpDue` are in `src/sim/90-actions/clusters.ts:262-279`; they only move the whole host to the current version. The UI offers it as the "php" tile in `PanelBase.tsx` (`ICON`, line 40; imports at line 15).
+- Customer apps: `src/sim/60-infra/apps.ts` implements economy/README.md "Customer applications": `cmsOf` (line 38), `appVulns` (47), `selfUpdateAt` (58), `hasBackup` (28), `cleanSite` (88), `appsTick` (119), `notifyCustomers` (158) and `appMonitoring` (175). The release update for a set of services is written at line 74 (`appVersion: yearOf(s.hour), appUpdatedAt: s.hour`). `spec.managedUpdates` already exists for sites the player keeps current. Vulnerabilities come from `vulnsFor(family, year, seed)` in `src/sim/60-infra/vulns.ts` (`openVulns` line 69).
 - Security: `src/sim/60-infra/security.ts` holds the scripted PHP advisories, `POC_RISK = 0.01` and `WARNING_RISK = 0.04` (lines 29-30), the compromise function (line 64) and the hourly exposure roll (line 103). State is `Security` (line 39).
-- Certificates: `src/sim/30-customers/certificates.ts` sells the `ssl` product through the registrar, with `certificateOf` (line 16) and `offerCertificate` (line 21). economy.md says certificates are free from 2016, nobody buys one then, and the sim has no expiry at all.
+- Certificates: `src/sim/30-customers/certificates.ts` sells the `ssl` product through the registrar, with `certificateOf` (line 16) and `offerCertificate` (line 21). economy/README.md says certificates are free from 2016, nobody buys one then, and the sim has no expiry at all.
 - Tickets: `src/sim/40-support/tickets.ts` has `TicketKind` (line 10, includes `migration`), `Move` (24), `TOPICS` (86) and `MINUTES` (42). `Ticket.move` already exists for host moves.
 - Sales and orders: `src/sim/30-market/manual.ts` runs the manual order steps (quote, account, invoice, domain, provision). `Spec` is in `src/sim/10-catalog/products.ts`. The web hosting migration between panels is `migrateWebspace` and `webspaceTargets` in `src/sim/90-actions/vms.ts`; it moves between hosts the player owns and is not an import.
 - Customers: `Profile` is a closed union (`src/sim/30-customers/customers.ts:3`) and `Product` too (line 4); there is no reseller of either kind.
@@ -73,7 +73,7 @@ Both screens drive the same sim: the set of PHP versions a panel host has instal
 
 **Rule.** `Cluster.php` stays the host's newest version and keeps driving the sales refusal (`phpNeeded`) and the upgrade. `webpanel.phpPool[hostId]` lists legacy versions kept besides it, at most 2. An account runs `phpOf[serviceId]`, defaulting to the host's newest.
 
-**Compatibility.** A CMS site (`cmsOf`) needs a PHP no newer than `phpAt(appVersion + 2)` (the release year of the app plus two years of PHP releases, from the PHP table in economy.md). Static sites run on anything. When a host's newest version passes that limit for a site and the site has no legacy version it can run on, the site breaks: it counts as slowed (`slowedAt = hour`) and 35% of such sites open a how-to ticket, topic `phpBroken`, within a day (hash-drawn per site and version, so it is seeded). The fix is the player moving the account to a legacy version in the pool, the customer updating the app (`selfUpdateAt` still applies and clears the limit), or the player updating the site in Pleskit's toolkit. This extends economy.md "PHP versions" with a "Compatibility" table.
+**Compatibility.** A CMS site (`cmsOf`) needs a PHP no newer than `phpAt(appVersion + 2)` (the release year of the app plus two years of PHP releases, from the PHP table in economy/php-versions.md). Static sites run on anything. When a host's newest version passes that limit for a site and the site has no legacy version it can run on, the site breaks: it counts as slowed (`slowedAt = hour`) and 35% of such sites open a how-to ticket, topic `phpBroken`, within a day (hash-drawn per site and version, so it is seeded). The fix is the player moving the account to a legacy version in the pool, the customer updating the app (`selfUpdateAt` still applies and clears the limit), or the player updating the site in Pleskit's toolkit. This extends economy/php-versions.md "PHP versions" with a "Compatibility" table.
 
 **Cost.**
 
@@ -85,7 +85,7 @@ Both screens drive the same sim: the set of PHP versions a panel host has instal
 | Sales refusal (`phpNeeded`) | Unchanged, uses `Cluster.php` |
 | Legacy version past `PHP_EOL` | Its accounts draw the existing unsupported effects (abuse ×1.5) and the compromise roll of the PHP advisories still applies to them (an advisory is open on a host if any installed version is affected) |
 
-Keeping a legacy version therefore saves the sites and the tickets, and costs RAM, abuse and breach exposure. This is the decision. It extends the "PHP versions" section of economy.md and the "Security advisories" affected-versions rule.
+Keeping a legacy version therefore saves the sites and the tickets, and costs RAM, abuse and breach exposure. This is the decision. It extends the "PHP versions" section of economy/README.md and the "Security advisories" affected-versions rule.
 
 **State and actions** (new file `src/sim/90-actions/webpanel.ts`):
 
@@ -119,11 +119,11 @@ Keeping a legacy version therefore saves the sites and the tickets, and costs RA
 
 ### 3.4 cPanic AutoSSL
 
-The sim has no certificate expiry; sold certificates (`ssl` product) are renewed by the registrar and bill monthly. From 2016 certificates are free (economy.md, "SSL certificates"), which is also the year AutoSSL arrives in cPanic. So the mechanic starts in 2016 and leaves pre-2016 play unchanged.
+The sim has no certificate expiry; sold certificates (`ssl` product) are renewed by the registrar and bill monthly. From 2016 certificates are free (economy/README.md, "SSL certificates"), which is also the year AutoSSL arrives in cPanic. So the mechanic starts in 2016 and leaves pre-2016 play unchanged.
 
 **State.** `webpanel.ssl.expires[serviceId]` is the hour the domain's certificate expires. `ssl.auto` is the list of cPanic hosts with AutoSSL on. `ssl.expired` lists the services currently serving an expired certificate. From 2016 `webpanelTick` lazily creates the entry for every web hosting service with a domain on a panel host, at `startHour + hash(0..90 days)` so renewals are spread. A domain with a purchased certificate (`certificateOf`) is exempt, since the registrar renews it.
 
-**Numbers** (new subsection "SSL certificates and AutoSSL" in economy.md under "Platforms and licenses"):
+**Numbers** (new subsection "SSL certificates and AutoSSL" in economy/platforms-and-licenses.md under "Platforms and licenses"):
 
 | Effect | Value |
 | --- | --- |
@@ -134,7 +134,7 @@ The sim has no certificate expiry; sold certificates (`ssl` product) are renewed
 | Player fix | `renewCertificate(serviceId)`: 5 minutes of the player's time, clears the incident within the hour and gives +5 happiness if a ticket is open |
 | AutoSSL on a host | `setAutoSsl(hostId, on)`: no extra cost. Available on cPanic hosts only; hosts of the other panels always renew by hand (Pleskit and DirectAdmen get the renew button, not the automatic mode) |
 
-AutoSSL is the reason the per-web-space cPanic licence (economy.md, Platforms and licenses, €0.40 per web space) is worth paying: on 200 web spaces and 90-day certificates, a host without it generates about 200 × 4 renewals a year, of which the unskilled majority lapse. The seeded test asserts the expected order of magnitude.
+AutoSSL is the reason the per-web-space cPanic licence (economy/platforms-and-licenses.md, Platforms and licenses, €0.40 per web space) is worth paying: on 200 web spaces and 90-day certificates, a host without it generates about 200 × 4 renewals a year, of which the unskilled majority lapse. The seeded test asserts the expected order of magnitude.
 
 **Actions.** `setAutoSsl`, `renewCertificate`, and `runAutoSslCheck(hostId)` (the WHM button, which renews every certificate due within 30 days now and costs 5 minutes). The ticket topic `certExpired` is added to `TOPICS.outage` in `40-support/tickets.ts` with replies in `web-services.ts`.
 
@@ -149,7 +149,7 @@ Plesk added Fail2ban in 2014, so the screen exists from 2014 and the effect star
 **Tick.** Daily per panel host:
 
 - Scanner IPs: 3 a day (a hash-drawn IPv4 per host and day, so seeded), each banned after 3 failed probes for 7 days. Without the jail the same probes are counted in a "Failed logins" total only.
-- Compromise: while the jail is on, the hourly compromise chances `POC_RISK` and `WARNING_RISK` in `60-infra/security.ts:29-30` are multiplied by 0.75 for that host (mass scanning is partly blocked). This extends the "Security advisories" section of economy.md.
+- Compromise: while the jail is on, the hourly compromise chances `POC_RISK` and `WARNING_RISK` in `60-infra/security.ts:29-30` are multiplied by 0.75 for that host (mass scanning is partly blocked). This extends the "Security advisories" section of economy/security-advisories.md.
 - False positives: with the jail on, the daily chance that a customer is banned is 0.5% per 10 accounts on the host, at most 8%. The banned customer's service opens a how-to ticket, topic `lockedOut`, within a day unless the customer's address is in `trusted`. A customer ban lasts 24 hours.
 
 **Actions.** `setJail(hostId, on)`, `unbanIp(hostId, ip)` (closes the open `lockedOut` ticket with +5 happiness), `trustIp(hostId, ip)`, `untrustIp`. Time: 5 minutes each. The decision is risk reduction against lockout tickets; trusting a customer's IP removes their future lockouts.
@@ -162,7 +162,7 @@ The WordPress Toolkit exists from Plesk Onyx (2015 on in this game). Before it, 
 
 **Per-site flag.** For each CMS site on the host the row shows: the app and its `appVersion`, `appVulns(s, v)` worst severity and days exposed (the same open vulnerabilities as Monitoring), whether the customer was notified (`notifiedPair`), whether a backup exists (`hasBackup`), and managed updates. Rows with an open vulnerability get the red flag; the others a green tick.
 
-**Mass update.** `massUpdateSites(s, hostId, serviceIds)` updates the picked sites to this year's release (`appVersion`, `appUpdatedAt`, which closes every open vulnerability, as in economy.md "Updating by themselves") in one action. Extract the update lines at `60-infra/apps.ts:74` into an exported `updateSite(s, v)` and reuse it from `applyAppWork`.
+**Mass update.** `massUpdateSites(s, hostId, serviceIds)` updates the picked sites to this year's release (`appVersion`, `appUpdatedAt`, which closes every open vulnerability, as in economy/README.md "Updating by themselves") in one action. Extract the update lines at `60-infra/apps.ts:74` into an exported `updateSite(s, v)` and reuse it from `applyAppWork`.
 
 | Effect | Value |
 | --- | --- |
@@ -172,7 +172,7 @@ The WordPress Toolkit exists from Plesk Onyx (2015 on in this game). Before it, 
 | Player fix | `rollbackSite(s, serviceId)`: with a backup (`hasBackup`) it restores the pre-update state (the vulnerabilities are open again) for 30 minutes of the player's time and +5 happiness; without a backup the player repairs it for 30 minutes and the customer loses 10 happiness |
 | Updating a site the customer did not ask for | No happiness change when it works |
 
-The choice is one click against the breach risk (economy.md daily defacement chances of 0.05% to 1% a day, ×2 at 30 days and ×4 at 90 days exposed) versus about a 5% breakage chance per site. Breakage rolls use `hashRng(seed, serviceIdNumber, hour, 311)`.
+The choice is one click against the breach risk (economy/README.md daily defacement chances of 0.05% to 1% a day, ×2 at 30 days and ×4 at 90 days exposed) versus about a 5% breakage chance per site. Breakage rolls use `hashRng(seed, serviceIdNumber, hour, 311)`.
 
 **UI.** Pleskit late era: "WordPrass Toolkit" page with the real layout: a table of installations, columns Site (domain), Version, Status (the vulnerability flag), a checkbox per row, and the buttons "Update" (selected), "Update all" and "Check security". A summary bar above reads "n vulnerable, m up to date". Early era: "Applications" page, one row per site with an "Update" link that calls `massUpdateSites` with one site.
 
@@ -184,7 +184,7 @@ In real WHM the Transfer Tool copies accounts from a remote server by hostname a
 - When the order thread shows a transfer flag the account step is a transfer, not a plain create. `packages-provisioning` owns the create form and the `createAccount` action; this lane adds the Transfer Tool next to it and calls the same action, then starts a `Transfer` record: `webpanel.transfers[serviceId] = { from, startedAt, doneAt }`.
 - Duration: `ceil(diskGb / 20)` hours, at least 1, with the account busy until `doneAt` (the service is not live and counts as an outage hour on the customer's SLA only if it goes beyond 24 h). The transfer is the player's own task of 15 minutes plus 5 minutes per 10 GB, so it needs no technician and no new `OpKind` (see open question 2).
 - Outcomes: finishing within 24 hours of the order gives +3 happiness. The transfer breaks (the site is down and a ticket `transferFailed` opens) with 5% chance, 15% when the target host's PHP is behind the app's needed version (the compatibility rule of 3.1). Rollback is the player re-running the transfer (another 15 minutes).
-- Marketing hook: a "Free migration" line the player can add to the site's text raises conversion of transfer-flagged leads by 15%, extending economy.md "Sales and quotes". Not built unless the user wants it (open question 5).
+- Marketing hook: a "Free migration" line the player can add to the site's text raises conversion of transfer-flagged leads by 15%, extending economy/sales-and-quotes.md "Sales and quotes". Not built unless the user wants it (open question 5).
 
 **UI.** WHM > Transfers > "Transfer Tool": the real three steps. Step 1 "Remote server" (hostname field, filled from the order, and a username/password pair of the real tool kept as non-editable defaults), step 2 "Select accounts" (a checklist with the order's account), step 3 "Transfer" (a progress bar in game hours from `doneAt`). Early era (EasyApache 3 / x3) uses the old "Copy an account from another server" form.
 
@@ -205,7 +205,7 @@ A reseller is a new customer type who buys a block of the player's capacity and 
 
 - New `Profile` value `"reseller"` and new `Product` value `"reseller"` (both closed unions in `customers.ts:3-4`; every `Record<Profile, ...>` and `Record<Product, ...>` in the sim must get an entry, found by the typechecker). A reseller is a `Customer` with one `reseller` service whose `spec` is a block, plus a `webpanel.resellers[customerId] = { accounts: number; fillRate: number; startedAt: number }` record.
 - Blocks: Small 20 accounts, 50 GB disk, 500 GB traffic. Medium 50 accounts, 150 GB, 1,500 GB. Large 100 accounts, 350 GB, 4,000 GB.
-- Price: the block's monthly price is 0.5 times the market web hosting price (`marketPrice("webHosting", ...)`) times the account count of the block, billed in full whether it is filled or not. This extends economy.md "Sales and quotes" with a reseller row; the factor 0.5 makes a full block worth it to the reseller at twice the wholesale price they charge their own end customers.
+- Price: the block's monthly price is 0.5 times the market web hosting price (`marketPrice("webHosting", ...)`) times the account count of the block, billed in full whether it is filled or not. This extends economy/sales-and-quotes.md "Sales and quotes" with a reseller row; the factor 0.5 makes a full block worth it to the reseller at twice the wholesale price they charge their own end customers.
 - Fill: the reseller's own end customers arrive linearly over 6 months to 70% of the block (fill 0.7), faster with a cheaper block. Booked and used resources are the block times the fill, which is the overselling by design: the block books its full size in `spec` but `workloadUse` (`60-infra/usage.ts`) uses the filled share, so the host sells capacity it does not fully carry.
 - Abuse and support: abuse reports at the rate of the filled accounts, but arrive at the reseller, who handles half of them. The remaining half come to the player as `abuse` tickets with the reseller as the customer. A shady end customer is represented as a flat 2% chance per month that the reseller's block has a shady account; the player's fix is the existing suspend (from `panel-host-sim`) on the reseller.
 - Churn and happiness follow the existing profile model; profile `reseller` gets the `agency` skill and budget entries.
@@ -216,7 +216,7 @@ A reseller is a new customer type who buys a block of the player's capacity and 
 
 ### 3.10 Economy.md sections to extend
 
-| This feature | economy.md section |
+| This feature | economy/README.md section |
 | --- | --- |
 | PHP profiles and compatibility | "PHP versions" (new Compatibility table and pool costs) |
 | AutoSSL, expiry | "Platforms and licenses" (new subsection "SSL certificates and AutoSSL"), with a cross-reference from "Sales and quotes, SSL certificates" |
@@ -225,7 +225,7 @@ A reseller is a new customer type who buys a block of the player's capacity and 
 | Transfer | "Sales and quotes" (transfer-flagged orders) and "Tickets and work rates" (player minutes) |
 | Resellers | "Sales and quotes" and "Platforms and licenses" |
 
-Every milestone updates its economy.md section in the same pull request.
+Every milestone updates its economy/README.md section in the same pull request.
 
 ### 3.11 Tick and tests plumbing
 
@@ -234,7 +234,7 @@ Every milestone updates its economy.md section in the same pull request.
 
 ## 4. Milestones
 
-Each milestone is one pull request, green on its own (`npm run typecheck`, `npm test`, and `tests/i18n.test.ts` for the new keys), and starts with its economy.md paragraph.
+Each milestone is one pull request, green on its own (`npm run typecheck`, `npm test`, and `tests/i18n.test.ts` for the new keys), and starts with its economy/README.md paragraph.
 
 1. **Web panel state and PHP profiles.** The `webpanel` key (only `phpPool`, `phpOf` filled in for now; the other sub-records exist and are empty), the topic file `src/i18n/ui-web-services.ts` and its five mirrors, `setPhpPool`, `setAccountPhp`, `upgradePhp(keep)`, `phpOldestInUse`, the compatibility check in `webpanelTick`, and the cPanic EasyApachy screen. Tests: `tests/web-php-profiles.test.ts` (pool limits and errors; a site that needs an older PHP breaks when the newest passes its limit and not when a legacy version is kept; `phpTickets`/`phpAbuse` use the oldest in use; same seed gives the same broken sites; `upgradePhp` without `keep` is unchanged), `tests/save-webpanel.test.ts` (an old save without `webpanel` loads with defaults; round trip), `tests/i18n.test.ts` (existing, new keys).
 2. **DirectAdmen CustomBuild and login levels.** The CustomBuild page (early shell text, late table, rebuild and update through `setPhpPool` and `updateSoftware`), the Admin and User levels with the login-level selector, and the user-level account page. Tests: `tests/web-custombuild.test.ts` (rebuild sets the `phpUntil` slowdown, update goes through `updateSoftware`), `tests/web-services-consoles.test.tsx` (login level selector shows two levels and the user page lists the host's customers).
@@ -252,7 +252,7 @@ Hotspots are marked **(H)**.
 
 **Milestone 1**
 - Creates: `src/sim/60-infra/webpanel.ts`, `src/sim/90-actions/webpanel.ts`, `src/i18n/ui-web-services.ts`, `src/i18n/{de,es,fr,it,pt}/ui-web-services.ts`, `tests/web-php-profiles.test.ts`, `tests/save-webpanel.test.ts`, `src/ui/apps/browser/consoles/cpanic/EasyApache.tsx`.
-- Edits: `src/sim/50-state.ts` **(H)** (field and `newGame`), `src/sim/91-save/save.ts` **(H)** (`deserialize` merge near line 87), `src/i18n/en.ts` **(H)** (one import and registration line) and `src/i18n/lang.ts` for the mirrored topic files (registration line), `src/sim/88-tick/tick.ts` **(H)** (one line after `appsTick`), `src/sim/60-infra/php.ts` (`phpOldestInUse`, `phpTickets`, `phpAbuse`), `src/sim/90-actions/clusters.ts` (`upgradePhp(keep)`), `src/sim/90-actions/index.ts` (export), `src/ui/apps/browser/consoles/cpanic/CPanic.tsx` (menu entry), `docs/design/economy.md` ("PHP versions").
+- Edits: `src/sim/50-state.ts` **(H)** (field and `newGame`), `src/sim/91-save/save.ts` **(H)** (`deserialize` merge near line 87), `src/i18n/en.ts` **(H)** (one import and registration line) and `src/i18n/lang.ts` for the mirrored topic files (registration line), `src/sim/88-tick/tick.ts` **(H)** (one line after `appsTick`), `src/sim/60-infra/php.ts` (`phpOldestInUse`, `phpTickets`, `phpAbuse`), `src/sim/90-actions/clusters.ts` (`upgradePhp(keep)`), `src/sim/90-actions/index.ts` (export), `src/ui/apps/browser/consoles/cpanic/CPanic.tsx` (menu entry), `docs/design/economy/php-versions.md` ("PHP versions").
 
 **Milestone 2**
 - Creates: `src/ui/apps/browser/consoles/directadmen/CustomBuild.tsx`, `directadmen/UserLevel.tsx`, `tests/web-custombuild.test.ts`, `tests/web-services-consoles.test.tsx`.
@@ -260,11 +260,11 @@ Hotspots are marked **(H)**.
 
 **Milestone 3**
 - Creates: `src/ui/apps/browser/consoles/cpanic/AutoSsl.tsx`, `tests/web-autossl.test.ts`.
-- Edits: `src/sim/60-infra/webpanel.ts`, `src/sim/90-actions/webpanel.ts`, `src/sim/40-support/tickets.ts` **(H)** (`TOPICS`, `certExpired`), `src/ui/apps/browser/consoles/cpanic/CPanic.tsx`, `src/i18n/ui-web-services.ts` and mirrors, `docs/design/economy.md` ("Platforms and licenses").
+- Edits: `src/sim/60-infra/webpanel.ts`, `src/sim/90-actions/webpanel.ts`, `src/sim/40-support/tickets.ts` **(H)** (`TOPICS`, `certExpired`), `src/ui/apps/browser/consoles/cpanic/CPanic.tsx`, `src/i18n/ui-web-services.ts` and mirrors, `docs/design/economy/platforms-and-licenses.md` ("Platforms and licenses").
 
 **Milestone 4**
 - Creates: `src/ui/apps/browser/consoles/pleskit/Fail2Ban.tsx`, `tests/web-bans.test.ts`.
-- Edits: `src/sim/60-infra/security.ts` (factor on `POC_RISK`/`WARNING_RISK` rolls near line 103), `src/sim/60-infra/webpanel.ts`, `src/sim/90-actions/webpanel.ts`, `src/sim/40-support/tickets.ts` **(H)** (`lockedOut`), `src/ui/apps/browser/consoles/pleskit/Pleskit.tsx`, `src/i18n/ui-web-services.ts` and mirrors, `docs/design/economy.md` ("Security advisories").
+- Edits: `src/sim/60-infra/security.ts` (factor on `POC_RISK`/`WARNING_RISK` rolls near line 103), `src/sim/60-infra/webpanel.ts`, `src/sim/90-actions/webpanel.ts`, `src/sim/40-support/tickets.ts` **(H)** (`lockedOut`), `src/ui/apps/browser/consoles/pleskit/Pleskit.tsx`, `src/i18n/ui-web-services.ts` and mirrors, `docs/design/economy/security-advisories.md` ("Security advisories").
 
 **Milestone 5**
 - Creates: `src/ui/apps/browser/consoles/pleskit/subscriptions.ts`, `pleskit/Subscriptions.tsx`, `tests/web-subscriptions.test.ts`.
@@ -272,11 +272,11 @@ Hotspots are marked **(H)**.
 
 **Milestone 6**
 - Creates: `src/ui/apps/browser/consoles/pleskit/Toolkit.tsx`, `tests/web-toolkit.test.ts`.
-- Edits: `src/sim/60-infra/apps.ts` (export `updateSite`), `src/sim/90-actions/webpanel.ts`, `src/sim/40-support/tickets.ts` **(H)** (`updateBroke`), `pleskit/Pleskit.tsx`, `src/i18n/ui-web-services.ts` and mirrors, `docs/design/economy.md` ("Customer applications").
+- Edits: `src/sim/60-infra/apps.ts` (export `updateSite`), `src/sim/90-actions/webpanel.ts`, `src/sim/40-support/tickets.ts` **(H)** (`updateBroke`), `pleskit/Pleskit.tsx`, `src/i18n/ui-web-services.ts` and mirrors, `docs/design/economy/README.md` ("Customer applications").
 
 **Milestone 7**
 - Creates: `src/ui/apps/browser/consoles/cpanic/TransferTool.tsx`, `tests/web-transfer.test.ts`.
-- Edits: `src/sim/10-catalog/products.ts` **(H)** (`Spec.transferFrom?`), `src/sim/30-market/sales.ts` and `src/sim/30-market/manual.ts` (the flag on generated web hosting orders and the account step), `src/sim/60-infra/webpanel.ts`, `src/sim/90-actions/webpanel.ts`, `src/sim/90-actions/clusters.ts` (the create call from `packages-provisioning`), `src/sim/40-support/tickets.ts` **(H)** (`transferFailed`), `cpanic/CPanic.tsx`, `src/i18n/ui-web-services.ts` and mirrors, `docs/design/economy.md`.
+- Edits: `src/sim/10-catalog/products.ts` **(H)** (`Spec.transferFrom?`), `src/sim/30-market/sales.ts` and `src/sim/30-market/manual.ts` (the flag on generated web hosting orders and the account step), `src/sim/60-infra/webpanel.ts`, `src/sim/90-actions/webpanel.ts`, `src/sim/90-actions/clusters.ts` (the create call from `packages-provisioning`), `src/sim/40-support/tickets.ts` **(H)** (`transferFailed`), `cpanic/CPanic.tsx`, `src/i18n/ui-web-services.ts` and mirrors, `docs/design/economy/README.md`.
 
 **Milestone 8**
 - Creates: `src/ui/apps/browser/consoles/directadmen/Messages.tsx`, `tests/web-messages.test.tsx`.
@@ -284,7 +284,7 @@ Hotspots are marked **(H)**.
 
 **Milestone 9 (deferred)**
 - Creates: `src/sim/30-customers/resellers.ts`, `src/ui/apps/browser/consoles/directadmen/ResellerLevel.tsx`, `directadmen/ManageResellers.tsx`, `tests/web-resellers.test.ts`.
-- Edits: `src/sim/30-customers/customers.ts` **(H)** (`Profile` and `Product` unions), `src/sim/10-catalog/products.ts` **(H)** (product tables, `marketPrice`), `src/sim/30-market/spec.ts` and `sales.ts` (labels, lead share), `src/sim/60-infra/usage.ts` (filled share), `src/sim/60-infra/webpanel.ts`, `src/sim/90-actions/webpanel.ts`, `src/sim/50-state.ts` **(H)** only if the reseller record is not already in `webpanel`, every `Record<Profile, ...>`/`Record<Product, ...>` the typechecker flags, `src/i18n/ui-web-services.ts` and mirrors, `docs/design/economy.md`.
+- Edits: `src/sim/30-customers/customers.ts` **(H)** (`Profile` and `Product` unions), `src/sim/10-catalog/products.ts` **(H)** (product tables, `marketPrice`), `src/sim/30-market/spec.ts` and `sales.ts` (labels, lead share), `src/sim/60-infra/usage.ts` (filled share), `src/sim/60-infra/webpanel.ts`, `src/sim/90-actions/webpanel.ts`, `src/sim/50-state.ts` **(H)** only if the reseller record is not already in `webpanel`, every `Record<Profile, ...>`/`Record<Product, ...>` the typechecker flags, `src/i18n/ui-web-services.ts` and mirrors, `docs/design/economy/README.md`.
 
 Shared hotspots this lane touches, in one list: `PanelBase.tsx` (unlikely, only if the DirectAdmen login selector cannot be built from `LoginForm`'s `children`), `50-state.ts`, `91-save/save.ts`, `i18n/en.ts` registration, `88-tick/tick.ts` (one line), `40-support/tickets.ts`, `10-catalog/products.ts`, `30-customers/customers.ts` (milestone 9). This lane does not edit `HypervisorBase.tsx`, `consoles.ts` or `shop.ts`.
 

@@ -129,7 +129,7 @@ What follows from that:
 | Message | links Message List, Delete, Previous, Next, Forward, Forward as Attachment, Reply, Reply All; the headers; View Full Header; attachments as links; HTML mail shown as text with a View as HTML link | `view`, `markMessages`, `messageSource` |
 | Compose | To, Cc, Bcc, Subject, a plain text body, Add an attachment, signature, Send, Save Draft | `sendMessage`, `saveDraft` |
 | Options | Personal Information (name, address, reply-to, signature, multiple identities), Display Preferences (theme, language, messages per page), Folder Preferences (Trash, Sent, Drafts, and "Do not use Trash"), Message Filters, Change Password | `setWebmailPref`, `saveIdentity` |
-| Folders | create a folder as a subfolder of another, rename, delete, subscribe and unsubscribe | `createFolder`, `renameFolder`, `moveFolder`, `deleteFolder`, the subscription list |
+| Folders | create a folder as a subfolder of another, rename, delete, subscribe and unsubscribe | `createMailFolder`, `renameMailFolder`, `moveMailFolder`, `deleteMailFolder`, the subscription list |
 | Addresses | nickname, name, e-mail, info; a popup in Compose | `saveContact`, `removeContact` |
 | Search | text in From, To, Subject or Body, in the current folder | selectors over `listFolder` and `view` |
 
@@ -211,7 +211,7 @@ A skin is a CSS file, a logo and a layout component, chosen with `eraAtHour`-sty
 | Compose | From (identity), To, Cc, Bcc with completion from the address book, Subject, plain text or the HTML editor toggle, attachments, signature, priority, return receipt, Save, a leave warning for unsaved text | `saveDraft`, `discardDraft`, `sendMessage` |
 | Quota bar | under the folder list, a percentage in Classic and "Storage 12 MB of 100 MB" in Barry and Plastic | `quotaMbOf`, the account's `usedKb` |
 | Settings, Preferences | User Interface (skin, layout, list mode from 0.4, dark theme), Mailbox View, Displaying Messages, Composing Messages, Special Folders (Drafts, Sent, Junk, Trash) | `setWebmailPref` |
-| Settings, Folders | a list with a subscription checkbox (a switch in Plastic), Create with name and parent, rename and move, Delete with confirmation, properties with message count and size | `createFolder`, `renameFolder`, `moveFolder`, `deleteFolder`, the subscription list |
+| Settings, Folders | a list with a subscription checkbox (a switch in Plastic), Create with name and parent, rename and move, Delete with confirmation, properties with message count and size | `createMailFolder`, `renameMailFolder`, `moveMailFolder`, `deleteMailFolder`, the subscription list |
 | Settings, Filters (from 0.4) | the filter list, a form with rules and actions, and Edit filter set for the raw Sieve script | `saveFilter`, `deleteFilter`, `moveFilter`, `setFilterOn`, `saveSieveScript` |
 | Settings, Vacation (from 1.0) | the managesieve vacation responder: On, Subject, Message, an until date, and on a host with loop protection a reply interval of 7 days; the raw script view shows it as a `vacation` command at the top of the script | `setVacation` |
 | Settings, Identities | the list; display name, email, organization, reply-to, bcc, signature, Set default | `saveIdentity`, `removeIdentity` |
@@ -413,6 +413,15 @@ Each milestone is one pull request with its seeded tests and one or two changelo
 - i18n: admin and Mailpig strings and the `error.*` keys for refusals.
 - Tests: `tests/mail-admin.test.ts`. Creating `info@` through Postfixit Admin routes a licence order mail to `info@` and not to `support@`; the catch-all catches an unknown local part; a password reset keeps the mail; deleting a mailbox removes its messages and starts the stale window; a spam filter raises the catch rate; each capability refuses where the matrix says it does.
 
+Built in milestone 2, where it differs from the text above:
+
+- The Edit form has no vacation field yet: `setVacation` comes with `mail-core` milestone 5, and the field calls it once it lands. Filters, Sync jobs and Quarantine in Mailpig wait for the same milestone and for `importMail`.
+- The tests check the sales role with `roleAccount` and the catch-all with a message through `deliver`. Licence orders follow the sales role until `Licence.mailTo` arrives with `mail-core` milestone 7.
+- Receives on the admin forms gives each role to one mailbox: ticking it takes the role from the tenant's other mailboxes (`assignMailRoles`), and owner mail moves the primary.
+- `setAccountQuota` stores the value without the disk booking; the disk check comes with the quota work of `mail-core`.
+- Spamsassin is stored per mail server in `s.webmail.options`. Uninstalling the mail server (`dropMailServer`) removes its tenant's mailboxes and messages at once and moves the company to GMix; the uninstall action and `apt-get remove` name the mailboxes and messages first.
+- The setup page keeps no superadmin account of its own; signing in uses the console login every web admin shares.
+
 ### Milestone 3: SquirrelMeal mailbox view and plugins
 
 - Sim: the plugin rules of 3.4: `saveLocalFilter` and `runLocalFilters` (rules applied on opening the Inbox over mail newer than `filteredAt`), the Change Password plugin on `changePassword`, the subscription list in `s.webmail.subs`.
@@ -443,7 +452,7 @@ Each milestone is one pull request with its seeded tests and one or two changelo
 
 ### Milestone 7: Ionose
 
-- Sim: the `ionose` host row (plans, caps, quota by year, price curve, aliases 10, catch-all) in `mail-providers.ts`; the page ids and hosts; the generation table for Lookout Web Access by year; the actions in `90-actions/mail-hosted.ts`: Ionose sign-up through `createTenant` and plan change. The reset pages call `requestPasswordReset` and `resetPassword` of `mail-core`, which owns the letter. `economy.md` gains the plan and quota table.
+- Sim: the `ionose` host row (plans, caps, quota by year, price curve, aliases 10, catch-all) in `mail-providers.ts`; the page ids and hosts; the generation table for Lookout Web Access by year; the actions in `90-actions/mail-hosted.ts`: Ionose sign-up through `createTenant` and plan change. The reset pages call `requestPasswordReset` and `resetPassword` of `mail-core`, which owns the letter. `economy/README.md` gains the plan and quota table.
 - UI: `ionose.com`, the Control area, and `owa.ionose.com` with the 2003, 2007, 2010, 2013 and modern looks on the mail kit, the Premium and Light login choice, the Basic and Light limits, KeePassive on every login.
 - i18n: site, control, web mail and letter strings.
 - Tests: `tests/providers-ionose.test.ts`. Ordering creates a tenant; adding a mailbox raises the monthly bill by the seat price and an alias does not; a full plan refuses another mailbox with `error.mailLimit` and a hire with `error.hireNoMailbox`; the reset page sends the letter that arrives in 2 or 3 working days and the old password works until `resetPassword` succeeds; a wrong code fails with `error.mailCode`; a vacation loop starts between two Ionose mailboxes and ends at the hop limit; the generation follows the year; Basic cannot drag.

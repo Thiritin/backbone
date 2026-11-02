@@ -1,4 +1,4 @@
-// Values come from docs/design/economy.md (Traffic and bandwidth) and docs/design/gdd.md (Network and DDoS).
+// Values come from docs/design/economy/traffic-and-bandwidth.md (Traffic and bandwidth) and docs/design/gdd/network-and-ddos.md (Network and DDoS).
 import { priceAt } from "./economy";
 import type { Datacenter } from "../20-world/datacenters";
 
@@ -110,7 +110,7 @@ export const REQUEST_DAILY: Record<Exclude<PeerPolicy, "routeServer">, number> =
 export const REQUEST_DAYS = 30;
 export const DECLINE_COOLDOWN_HOURS = 90 * 24;
 
-// economy.md, DDoS attacks.
+// economy/README.md, DDoS attacks.
 export const DDOS = { gamerMonthly: 0.02, otherMonthly: 0.002, mbps2005: 500, growth: 1.25, minHours: 1, maxHours: 6, detectShare: 10 / 60, burst: 0.5 } as const;
 export type Protection = "none" | "onDemand" | "alwaysOn";
 export const PROTECTIONS: Record<Exclude<Protection, "none">, { name: string; monthly: number; perIncident: number }> = {
@@ -122,7 +122,7 @@ export const SATURATION_PENALTY = 0.25;
 // The dropped share of a zone's traffic from which its customers notice.
 export const SATURATION_FLOOR = 0.02;
 
-// economy.md, Traffic and bandwidth (Latency): milliseconds a hop adds to a round trip. The home line gets its fast figure from 2015.
+// economy/traffic-and-bandwidth.md, Traffic and bandwidth (Latency): milliseconds a hop adds to a round trip. The home line gets its fast figure from 2015.
 export const LATENCY_MS = { switch: 0.2, firewall: 1, gateway: 1, host: 0, line: 18, uplink: 3, domestic: 8, european: 25, overseas: 90 } as const;
 export const FAST_LINE = { from: 2015, ms: 8 } as const;
 // Above this share of capacity a link queues: each point adds delayMs per unit and lossPerUnit of the packets are lost.

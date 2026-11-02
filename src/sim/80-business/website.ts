@@ -1,5 +1,5 @@
 // The company website: every company has one, and it lists the product lines the player switched on. Leads only write
-// about listed lines; gdd.md, "Where requests come from".
+// about listed lines; gdd/README.md, "Where requests come from".
 import { yearOf } from "../00-core/time";
 import { sizeSpec } from "../10-catalog/products";
 import { offerPrice } from "../30-market/spec";
@@ -8,10 +8,10 @@ import type { GameState } from "../50-state";
 import { serviceOnline } from "../40-support/status";
 import { serviceHeld } from "../45-billing/billing";
 import { HOW_TO, KNOWLEDGE_BASE } from "../40-support/tickets";
-import { bookable, diskFits, lineOffered, noRoomError, nodeUsed, serverOf, vmRoom, workloadOnline, workloadsOf, type Cluster, type Workload } from "../60-infra/cluster";
+import { bookable, diskFits, lineOffered, noRoomError, nodeUsed, serverOf, vmOf, vmRoom, workloadOnline, workloadsOf, type Cluster, type Workload } from "../60-infra/cluster";
 import { machineAddress } from "../60-infra/addresses";
 import { hostPerf } from "../60-infra/php";
-import { nodeUsage, SLOW_PERF } from "../60-infra/usage";
+import { nodeUsage, SLOW_PERF, vmPerf } from "../60-infra/usage";
 import type { SimEvent } from "../88-tick/tick";
 import { owns, SITE_LINES } from "./marketing";
 import { salesAddress } from "./mail";
@@ -101,7 +101,7 @@ export function sitePages(s: GameState): SitePage[] {
 export const kbArticles = (s: GameState): { topic: string; reads: number }[] =>
   Object.keys(HOW_TO).filter((t) => HOW_TO[t].basic).map((topic) => ({ topic, reads: s.kbReads[topic] ?? 0 }));
 
-// The company site is rented from Strateaux at a flat price (economy.md, "Market and leads") or runs on an own panel host.
+// The company site is rented from Strateaux at a flat price (economy/market-and-leads.md, "Market and leads") or runs on an own panel host.
 export const SITE_RENT = 9.9;
 // What the site takes on an own host, like a small web space.
 export const SITE_LOAD = { vcpu: 0.25, ramGb: 0.5, diskGb: 2 };
@@ -119,10 +119,10 @@ function siteWorkload(c: Cluster, id = "site"): Workload {
   };
 }
 
-// Whether the workload's host runs it noticeably slowly: an overloaded node or a PHP upgrade on its panel host.
+// Whether the workload's host runs it noticeably slowly: an overloaded node or VM or a PHP upgrade on its panel host.
 export function slowHost(s: GameState, w: Workload, c: Cluster | undefined): boolean {
-  const at = serverOf(s, w);
-  return Math.min(at ? nodeUsage(s, at).perf : 1, hostPerf(s, c)) < SLOW_PERF;
+  const at = serverOf(s, w), vm = vmOf(s, w);
+  return Math.min(at ? nodeUsage(s, at).perf : 1, vm ? vmPerf(s, vm) : 1, hostPerf(s, c)) < SLOW_PERF;
 }
 
 // Whether a panel host has the disk for the site next to its web spaces, and whether its RAM is over 90% booked with the site.
@@ -170,7 +170,7 @@ export function shopBlock(s: GameState): string | null {
 }
 
 // Design generations are 4 years apart; a site is fine one generation behind and loses 20% of its requests for each
-// further one, down to 40% (economy.md, "Marketing and reviews").
+// further one, down to 40% (economy/marketing-and-reviews.md, "Marketing and reviews").
 export const generationOf = (year: number): number => 2005 + 4 * Math.max(0, Math.floor((year - 2005) / 4));
 export const generationsBehind = (s: GameState): number => (generationOf(yearOf(s.hour)) - s.marketing.designYear) / 4;
 export const penaltyFor = (behind: number): number => Math.max(0.4, 1 - 0.2 * Math.max(0, behind - 1));
@@ -181,7 +181,7 @@ export const STATUS_FACTOR: Record<SiteStatus, number> = { up: 1, slow: 0.5, dow
 export const siteFactor = (s: GameState): number => STATUS_FACTOR[siteStatus(s)] * agePenalty(s);
 
 // What the agency charges for a design: a base per generation, interpolated by year and flat from 2025, plus half the
-// base for each company level above the first (economy.md, "Design generations").
+// base for each company level above the first (economy/README.md, "Design generations").
 export const DESIGN_DAYS = 14;
 const DESIGN_BASE: [number, number][] = [[2005, 400], [2009, 650], [2013, 1000], [2017, 1500], [2021, 2200], [2025, 3500]];
 export function designPrice(year: number, level: number): number {

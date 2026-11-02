@@ -1,6 +1,6 @@
 type Params = Record<string, string | number>;
 
-// Customer applications: tickets, events, outcomes and errors (economy.md, Security advisories, Customer applications).
+// Customer applications: tickets, events, outcomes and errors (economy/security-advisories.md, Security advisories, Customer applications).
 export const APPS_EN: Record<string, (p: Params) => string> = {
   "ticket.howTo.hacked.subject": () => "My website shows someone else's slogan",
   "ticket.howTo.hacked.text": (p) => `${p.domain || "My website"} shows a skull and a message in broken English where my homepage used to be. Can you fix it?`,

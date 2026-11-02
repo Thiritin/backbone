@@ -41,7 +41,7 @@ import { addressOf } from "../60-infra/lan";
 const fail = (error: string): ActionResult => ({ ok: false, error });
 // A node joins at the address it holds now, or pins the first one it gets (cluster.ts, pinMembers).
 const joined = (s: GameState, deviceId: string): ClusterNode => { const ip = addressOf(s, deviceId); return ip ? { deviceId, state: "active", ip } : { deviceId, state: "active" }; };
-// economy.md, Panel VMs: the size the setup and the Products app suggest, and the smallest the player can book.
+// economy/README.md, Panel VMs: the size the setup and the Products app suggest, and the smallest the player can book.
 export const PANEL_VM_SIZE: Resources = { vcpu: 2, ramGb: 2, diskGb: 50 };
 export const PANEL_VM_MIN: Resources = { vcpu: 1, ramGb: 1, diskGb: 10 };
 
@@ -114,7 +114,7 @@ export function createVm(s: GameState, clusterId: string, size: Resources, poolI
   if (c.platform && !controlPlaneUp(s, c)) return fail("error.controlPlaneDown");
   if (licenceExpired(s, c)) return fail("error.licenceExpired");
   { const q = quorumBlock(s, c); if (q) return fail(q); }
-  if (KEYS.some((k) => !Number.isFinite(size[k]) || size[k] < PANEL_VM_MIN[k])) return fail("error.vmSize");
+  { const bad = sizeError(size); if (bad) return fail(bad); }
   if (c.platform === "openstash") { const b = quotaBlock(s, c, projectId, sizeAdd(size)); if (b) return fail(b); }
   if (cephOn(c) && cephUsed(s, c) + size.diskGb > cephCapacity(s, c)) return fail("error.cephFull");
   if (poolId !== null && !poolRoom(s, c, poolId, size)) return fail(c.pools.some((p) => p.id === poolId) ? "error.poolFull" : "error.unknownPool");
@@ -152,7 +152,7 @@ export function installPanelInVm(s: GameState, vmId: string, panelId: string): A
   const c = s.clusters.find((x) => x.id === vm.clusterId);
   if (!c) return fail("error.unknownCluster");
   if (c.platform && !controlPlaneUp(s, c)) return fail("error.controlPlaneDown");
-  if (sizeError(vm, footprint(sw, yearOf(s.hour)))) return fail("error.vmSize");
+  { const bad = sizeError(vm, footprint(sw, yearOf(s.hour))); if (bad) return fail(bad); }
   const after = Math.max(s.hour, c.switching?.doneAt ?? s.hour);
   return { ok: true, id: hostInVm(s, vm.id, c.az, sw, after + sw.installHours) };
 }
@@ -182,8 +182,9 @@ export function createPanelVm(s: GameState, clusterId: string, panelId: string, 
   return done;
 }
 
-const sizeError = (r: Resources, panel: Resources): string | null =>
-  KEYS.some((k) => !Number.isFinite(r[k]) || r[k] < PANEL_VM_MIN[k] || vmCap(r, panel)[k] < 0) ? "error.vmSize" : null;
+// A VM takes software bigger than its CPU and RAM and then sits frozen at 100% (usage.ts, vmFrozen); only its disk must hold it.
+const sizeError = (r: Resources, panel: Resources = { vcpu: 0, ramGb: 0, diskGb: 0 }): string | null =>
+  KEYS.some((k) => !Number.isFinite(r[k]) || r[k] < PANEL_VM_MIN[k]) ? "error.vmSize" : r.diskGb < panel.diskGb ? "error.vmDisk" : null;
 
 // Books a panel VM bigger or smaller: its disk must still hold its web spaces and fit on its node.
 export function resizePanelVm(s: GameState, hostId: string, size: Resources): ActionResult {
@@ -209,7 +210,7 @@ export function resizeVm(s: GameState, vmId: string, size: Resources): ActionRes
   const vm = vmById(s, vmId);
   if (!vm || !isOwnVm(vm)) return fail("error.notOwnVm");
   if (hostOfVm(s, vm.id)) return fail("error.softwareInUse");
-  const bad = sizeError(size, { vcpu: 0, ramGb: 0, diskGb: 0 });
+  const bad = sizeError(size);
   if (bad) return fail(bad);
   { const pc = s.clusters.find((x) => x.id === vm.clusterId); if (pc && vm.poolId && !poolRoom(s, pc, vm.poolId, size, vm.id)) return fail("error.poolFull"); }
   { const pc = s.clusters.find((x) => x.id === vm.clusterId); if (pc?.platform === "openstash") { const b = quotaBlock(s, pc, vm.projectId ?? ADMIN, sizeAdd(size, vm)); if (b) return fail(b); } }
@@ -448,7 +449,7 @@ export function placeService(s: GameState, serviceId: string, clusterId: string 
     }
     const target = clusterId ? s.clusters.find((x) => x.id === clusterId) : undefined;
     if (!w && blocked) return fail(blocked);
-    // An enterprise customer's VMs need a private network (gdd.md, Network and DDoS).
+    // An enterprise customer's VMs need a private network (gdd/network-and-ddos.md, Network and DDoS).
     const customer = s.customers.find((x) => x.id === v.customerId);
     if (w && customer?.profile === "enterprise" && isVmCluster(s, w.clusterId) && !privateNetOf(s, customer.id)) {
       const vlan = nextPrivateVlan(s);

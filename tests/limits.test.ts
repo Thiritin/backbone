@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { sizeSpec, type Resources } from "../src/sim/10-catalog/products";
+import { curveFor } from "../src/sim/10-catalog/usage";
 import { workloadsOf } from "../src/sim/60-infra/cluster";
 import { need, starvation, STRETCH_MAX, workloadUse } from "../src/sim/60-infra/usage";
 import { productsTick, workloadPerf } from "../src/sim/85-products/products";
@@ -126,6 +127,16 @@ describe("use and starvation", () => {
     expect(svc(id).starvedAt).toBe(s.hour);
     must(setLimits(s, id, sold(id)));
     expect(starvation(s, svc(id), wl(id))).toBe(0);
+  });
+
+  it("lets a personal web space's memory follow its few visitors while a VPS keeps its resident floor", () => {
+    const { s, host, ada, vps, svc, wl, sold } = setup();
+    const owner = Array.from({ length: 8 }, (_, i) => addCustomer(s, `Pia Privat ${i}`, "private")).find((id) => curveFor("webHosting", "private", s.seed, id) === "personal")!;
+    const page = must(provisionService(s, owner, "webHosting", { label: "pia.example", clusterId: host })), box = vps(ada, "a.example");
+    const day = Array.from({ length: 24 }, (_, h) => s.hour + h);
+    const ram = (id: string, h: number) => need(s, svc(id), wl(id), h).ramGb;
+    expect(Math.min(...day.map((h) => ram(page, h)))).toBeLessThan(0.25 * sold(page).ramGb);
+    expect(Math.min(...day.map((h) => ram(box, h)))).toBeGreaterThanOrEqual(0.6 * sold(box).ramGb - 1e-9);
   });
 
   it("loads an old save without starvedAt", () => {

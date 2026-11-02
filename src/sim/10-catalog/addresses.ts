@@ -1,10 +1,10 @@
-// economy.md, Addresses and internet: the numbers behind addresses, home line reconnects and mail reputation.
+// economy/addresses-and-internet.md, Addresses and internet: the numbers behind addresses, home line reconnects and mail reputation.
 import { hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
 import type { Product, Profile } from "../30-customers/customers";
 import type { Spec } from "./products";
 
-// economy.md, Addresses and internet.
+// economy/addresses-and-internet.md, Addresses and internet.
 export const RECONNECT_HOUR = 3;
 export const RECONNECT_MINUTES = 3;
 // Customers who run a business notice the nightly reconnect at once and lose patience with it.
@@ -29,7 +29,7 @@ export const OWN_ADDRESS: Product[] = ["vps", "gameServer", "cloud", "vpn", "col
 // Reputation points an address loses for each abuse report about content on it.
 export const ABUSE_HIT: Record<string, number> = { "abuse.spam": 10, "abuse.attack": 5, "notice.phishing": 15, "notice.spam": 10, "notice.movie": 3, "notice.music": 3, "notice.youtuber": 3 };
 
-// economy.md: a provider's IPv4 per month, flat until RIPE's last /8 (2012), rising to run-out (2019) and the 2020s market.
+// economy/README.md: a provider's IPv4 per month, flat until RIPE's last /8 (2012), rising to run-out (2019) and the 2020s market.
 const V4_CURVE: [number, number][] = [[2011, 1], [2019, 2], [2021, 3], [2024, 3.5]];
 const curve = (points: [number, number][], year: number): number => {
   if (year <= points[0][0]) return points[0][1];

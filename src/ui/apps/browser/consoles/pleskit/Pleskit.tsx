@@ -1,9 +1,10 @@
 import { t } from "../../../../../i18n/en";
 import { Archive, Blocks, Boxes, Cog, Globe, RefreshCw, ListChecks, LogOut, Network, Package, ShieldBan, UserPlus, Wrench, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
-import { Actions, eraAt, looks, Facts, LoginForm, Nodes, Tiles, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
+import { Actions, eraAt, looks, Facts, LoginForm, Nodes, ServerUse, Tiles, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
 import { parseCreate } from "../../../../../sim/80-business/consoles";
 import { PackagesScreen, ProvisionForm } from "../PackageForms";
+import { OwnAccountForm, OwnAccountRows } from "../OwnAccounts";
 import { useReadoutPages } from "../Readouts";
 import { Advisor } from "./Advisor";
 import { hasUpdates, UpdatesPage } from "../UpdatesPage";
@@ -57,8 +58,9 @@ export function Pleskit(p: PanelProps) {
         <main className="pk-main">
           <h1>{nav.find(([id]) => id === tab)?.[1]}</h1>
           {tab === "objects" && late && <Advisor game={p.game} c={p.c} onFix={() => setTab("software")} />}
-          {tab === "objects" && card(t("web.sub.title"), <SubscriptionList game={p.game} c={p.c} rows={rows} late={late} />)}
+          {tab === "objects" && card(t("web.sub.title"), <><ServerUse game={p.game} c={p.c} /><SubscriptionList game={p.game} c={p.c} rows={rows} late={late} /><OwnAccountRows game={p.game} c={p.c} /></>)}
           {tab === "create" && card(t("pkg.pkAdd"), <ProvisionForm game={p.game} c={p.c} products={["webHosting"]} order={open?.screen === "create" ? open.order : undefined} sections={{ order: t("pkg.order"), account: t("pkg.account"), plan: t("pkg.settings") }} />)}
+          {tab === "create" && <OwnAccountForm game={p.game} c={p.c} />}
           {tab === "packages" && card(t("pkg.pkPlans"), <PackagesScreen game={p.game} c={p.c} />)}
           {tab === "nodes" && card(t("browser-consoles-2.nodes"), <Nodes game={p.game} c={p.c} />)}
           {tab === "toolkit" && card(late ? t("web.tk.menu") : t("web.tk.apps"), <Toolkit game={p.game} c={p.c} late={late} />)}

@@ -45,16 +45,16 @@ Backups today:
 - `Cluster.backup: { targetId, every }` with `BackupEvery = "off" | "daily" | "weekly"` (`src/sim/60-infra/cluster.ts:21`, `:33-40`). One schedule per source cluster, one target cluster. Default set in `clusterDefaults` (`cluster.ts:89`), and `src/sim/91-save/compute.ts:70` clears a target that no longer exists.
 - `Workload.backupAt: number | null` is the hour of the single newest copy (`cluster.ts:56-62`, `workloadDefaults` at `:95`). There are no restore points, no retention and no verification.
 - The job itself is two readers: `backupFlows` in `src/sim/60-infra/usage.ts:40-55` (network traffic at `BACKUP_HOUR = 2`, weekly on Sundays, `BACKUP_CHANGED = 0.1`, from `src/sim/10-catalog/usage.ts:75-76`) and the stamping code in `src/sim/85-products/products.ts:232-250` that sets `backupAt`. `backupPool(s, targetId)` (`products.ts:152`) sizes the repository with the flat `BACKUP_POOL = 1.3` (`products.ts:30`), so retention has no real cost today.
-- Restore reads the single copy: `restoreHours` (`products.ts:166-168`), `restore` in `src/sim/90-actions/vms.ts:183-200`, and data-loss settlement in `src/sim/60-infra/incidents.ts:34-35,165-182` through `hasBackupElsewhere`. Happiness for a restored workload is the table in economy.md under "Data loss and backups" (line 1156).
+- Restore reads the single copy: `restoreHours` (`products.ts:166-168`), `restore` in `src/sim/90-actions/vms.ts:183-200`, and data-loss settlement in `src/sim/60-infra/incidents.ts:34-35,165-182` through `hasBackupElsewhere`. Happiness for a restored workload is the table in economy/README.md under "Data loss and backups" (line 1156).
 - UI: the shared `Backups` block (`src/ui/apps/browser/consoles/PanelBase.tsx:239-254`, schedule chips and target chips calling `setBackup`), the `restore` row action (`PanelBase.tsx:128`), the Proxmocks `Backup` tab (`proxmocks/Proxmocks.tsx:51,65`), and `BackupConsole.tsx` (58 lines: job table from `game.clusters.filter(c => c.backup.targetId === p.c.id)`, repository from `backupPool`, software tab). `consoleFeatures().backups` (`src/sim/80-business/consoles.ts:55`) turns the block on for every console that is not mail or a backup product.
 
 Hypervisor state that exists:
 
 - `NodeState = "active" | "cordoned" | "draining" | "maintenance"` (`cluster.ts:18`). `setNodeState` (`cluster.ts:406`), `moveOff` and the draining loop (`cluster.ts:382-446`) already evacuate a draining node and move it to maintenance; the actions are in `src/sim/90-actions/clusters.ts:301-320`. VMwhere maintenance mode is therefore a rename plus a rule, not a new evacuation engine.
 - `Ha { live, balance, failover }` (`cluster.ts:23`); `haTick` runs failover and balance hourly (`src/sim/60-infra/ha.ts`, `FAILOVER_MINUTES = 5`, `HOT_RAM = 0.9`). Balancing is on or off per cluster, which is where DRS levels slot in. Clustered panel hosts fail over without research (`ha.ts:75-76`).
-- `Datastore { deviceId, protocol, readyAt }`, `attachDatastore`/`detachDatastore` (`src/sim/90-actions/datastores.ts`), `Snapshot` with deltas (`cluster.ts:83-85`, `src/sim/90-actions/snapshots.ts`). economy.md "Datastores" and "Snapshots" (lines 1706 and 1727) hold the numbers.
+- `Datastore { deviceId, protocol, readyAt }`, `attachDatastore`/`detachDatastore` (`src/sim/90-actions/datastores.ts`), `Snapshot` with deltas (`cluster.ts:83-85`, `src/sim/90-actions/snapshots.ts`). economy/README.md "Datastores" and "Snapshots" (lines 1706 and 1727) hold the numbers.
 - `summarize` and alarms (`src/sim/60-infra/alarms.ts`): `CPU_RATIO = 2`, `DISK_FULL = 0.9`, `HOT_RAM`; `Alarm { severity, on, key, params }`, listed by `AlarmList` in both Proxmocks (`Proxmocks.tsx:125`) and VMwhere (`VmWhere.tsx:114`). Thresholds are constants, not editable.
-- Overcommit and usage curves: `nodeUsage` and `nodeUsed` (`src/sim/60-infra/usage.ts`, `cluster.ts:118`), economy.md "Usage curves and overcommit" (line 1419) and "Workloads and migration" (line 1309).
+- Overcommit and usage curves: `nodeUsage` and `nodeUsed` (`src/sim/60-infra/usage.ts`, `cluster.ts:118`), economy/README.md "Usage curves and overcommit" (line 1419) and "Workloads and migration" (line 1309).
 - Consoles: `HypervisorBase.tsx` (434 lines, `GLYPH`, `Vm`, `nodeName`, `osText`, node and VM lists), `Proxmocks.tsx` (170), `VmWhere.tsx` (365), `HyperVee.tsx` (219), `OpenVeeZee.tsx` (240), `Horizont.tsx` (225). Each console has its own folder and CSS. `consoleFeatures` decides create, migrate mode (`MigrateMode`) and cluster capability by year (`consoles.ts:34-58`).
 - Licensing: `Software.licensing` rows `{ from, kind, fee }` (`src/sim/10-catalog/platforms.ts:104`, VMwhere `once` fee 600 from 2005). There is no edition concept.
 - IPMI: `Device.log: { hour, key }[]` with `pushLog` (`src/sim/60-infra/power.ts:34`, capped by `LOG_MAX`) is the event log today. Callers: lockout (`oob.ts:89,226`), failed components (`88-tick/tick.ts:143`), unclean stops (`power.ts:53`). The page lists it newest first in `LogTab` (`src/ui/apps/browser/ipmi/IpmiPage.tsx:99-109`). Sensors exist (`src/sim/60-infra/sensors.ts`).
@@ -64,7 +64,7 @@ Hypervisor state that exists:
 
 ## 3. Design
 
-All numbers extend economy.md section "Panel VMs and high availability" (line 1687) and its sub-sections Datastores and Snapshots, unless another section is named. Each shipped milestone adds its values to economy.md in the same pull request. Constants live in `src/sim/10-catalog/platforms.ts` or `src/sim/10-catalog/usage.ts`, next to their neighbours.
+All numbers extend economy/panel-vms-and-high-availability.md section "Panel VMs and high availability" (line 1687) and its sub-sections Datastores and Snapshots, unless another section is named. Each shipped milestone adds its values to economy/panel-vms-and-high-availability.md in the same pull request. Constants live in `src/sim/10-catalog/platforms.ts` or `src/sim/10-catalog/usage.ts`, next to their neighbours.
 
 ### 3.1 Backup jobs, retention and restore points (Proxmocks, Backup console)
 
@@ -89,7 +89,7 @@ Economy numbers:
 | Repository use | sum of `points[].gb` for all workloads of all jobs writing to the target; replaces `BACKUP_POOL = 1.3` in `backupPool` |
 | Full repository | the job skips its remaining workloads and is marked failed with reason `full` |
 | Target down | job marked failed with reason `unreachable` |
-| Restore age | uses the newest good point, so the existing age penalty (economy.md line 1156) is unchanged |
+| Restore age | uses the newest good point, so the existing age penalty (economy/README.md line 1156) is unchanged |
 
 Backup flows for traffic (`usage.ts:40-55`) read jobs instead of `cluster.backup`.
 
@@ -116,7 +116,7 @@ Backup console UI: a Test restore button on each restore point, an Offsite copy 
 
 State: none stored; quorum is derived. A Proxmocks cluster (kind "cloud" with platform `proxmocks`, two or more nodes) has quorum when the working nodes are a strict majority of `nodes`. `working` comes from `src/sim/60-infra/status.ts`.
 
-Rules: without quorum the cluster is read-only. `createVm`, `deleteVm`, migrate, snapshot, restore, `setNodeState`, `saveJob` and `attachDatastore` refuse with `error.noQuorum`. Running VMs keep running. Failover (`ha.ts`) is suspended without quorum, as in real Proxmox (HA needs quorum). Two-node clusters lose quorum when either node dies, which is the classic Proxmox pitfall and the lesson of the feature; a third node (or the existing mini-server as a "QDevice", cost: any server with no software, free, the same eligibility as a datastore server in economy.md Datastores) restores a majority. The QDevice is a new `Cluster.qdevice: string | null` (default `null`, filled by deserialize) and counts as one vote.
+Rules: without quorum the cluster is read-only. `createVm`, `deleteVm`, migrate, snapshot, restore, `setNodeState`, `saveJob` and `attachDatastore` refuse with `error.noQuorum`. Running VMs keep running. Failover (`ha.ts`) is suspended without quorum, as in real Proxmox (HA needs quorum). Two-node clusters lose quorum when either node dies, which is the classic Proxmox pitfall and the lesson of the feature; a third node (or the existing mini-server as a "QDevice", cost: any server with no software, free, the same eligibility as a datastore server in economy/README.md Datastores) restores a majority. The QDevice is a new `Cluster.qdevice: string | null` (default `null`, filled by deserialize) and counts as one vote.
 
 Proxmocks UI: Datacenter > Cluster, the Cluster Information box with Quorate: Yes/No, Expected votes, Total votes, and the node list with Online/Offline; a red banner "Cluster not ready - no quorum?" on the tree when read-only; QDevice add/remove button.
 
@@ -127,7 +127,7 @@ Storage replication (Proxmox "Replication" under Datacenter and per VM):
 - `Workload.replica: { toNode: string; every: "15min" | "hourly" | "daily"; lastAt: number | null } | null`, default `null`.
 - Action `setReplication(workloadId, toNode | null, every)`. Needs a Proxmocks cluster with local disks (no datastore for that workload), another working node with room for the disk, and a year gate from the Proxmocks `cluster` year in `platforms.ts`.
 - Tick: each interval copies the changed share (`BACKUP_CHANGED` of fill) over the LAN, adds that disk to the target node's booked `diskGb` (replicas book space, like a snapshot delta does), and sets `lastAt`.
-- Effect: when the source node fails, `failover` in `ha.ts` can restart a VM whose disk lives on the dead node if it has a replica on a working node (today only a VM on a working datastore restarts, economy.md Datastores "Failover"). Data written since `lastAt` is lost: the workload gets the existing data-loss settlement (`settleLoss`, `vms.ts:199`) with `lostAt = lastAt`.
+- Effect: when the source node fails, `failover` in `ha.ts` can restart a VM whose disk lives on the dead node if it has a replica on a working node (today only a VM on a working datastore restarts, economy/README.md Datastores "Failover"). Data written since `lastAt` is lost: the workload gets the existing data-loss settlement (`settleLoss`, `vms.ts:199`) with `lostAt = lastAt`.
 - Numbers: intervals 15 minutes, hourly, daily; bandwidth cost is the same `BACKUP_CHANGED * fill * diskGb` per run; booked space equals the VM disk.
 
 Shared storage panel (Ceph look): derived read-only plus one action.
@@ -225,7 +225,7 @@ Security groups:
 Volumes:
 
 - `Cluster.volumes: { id: string; name: string; gb: number; attachedTo: string | null }[]`, default `[]`. Volumes are block storage separate from the instance: creating one books `gb` on the cluster's first working datastore (or node disk, as for VM disks, `datastoreOn`), attaching it adds it to the instance's data disk (no change to `Workload.diskGb`, tracked as `volumeGb` on the workload for lost-data accounting).
-- Effect: a volume survives deleting its instance (the Horizont rule, and the player's reason for using it): `deleteVm` keeps attached volumes as detached. A customer's data on a volume is not lost when the instance's node dies if the volume's datastore is up, matching economy.md Datastores "Failure". Detaching a volume from a running instance needs a stopped instance before the year Horizont allows hot detach (`platforms.ts` hypervisor traits; use the datastore live year).
+- Effect: a volume survives deleting its instance (the Horizont rule, and the player's reason for using it): `deleteVm` keeps attached volumes as detached. A customer's data on a volume is not lost when the instance's node dies if the volume's datastore is up, matching economy/README.md Datastores "Failure". Detaching a volume from a running instance needs a stopped instance before the year Horizont allows hot detach (`platforms.ts` hypervisor traits; use the datastore live year).
 - Numbers: volumes cost nothing extra; they count toward datastore capacity and the 4-datastore limit; a volume is 1 to 1000 GB.
 - UI: Project > Volumes > Volumes, the real table (Name, Description, Size, Status, Group, Type, Attached To, Bootable) with Create Volume, Manage Attachments.
 
@@ -251,7 +251,7 @@ Projects with quotas (OpenStack Horizon Identity > Projects):
 
 ## 4. Milestones
 
-Each milestone is one pull request, green on its own (`npm run typecheck`, `npm test`, `npm run build`), with its seeded tests in `tests/`, its English keys in `src/i18n/ui-hypervisors-backups.ts` plus the five mirrored language files, and economy.md updated. Test files are named after the feature, one seeded suite per feature (repo rule).
+Each milestone is one pull request, green on its own (`npm run typecheck`, `npm test`, `npm run build`), with its seeded tests in `tests/`, its English keys in `src/i18n/ui-hypervisors-backups.ts` plus the five mirrored language files, and economy/README.md updated. Test files are named after the feature, one seeded suite per feature (repo rule).
 
 1. **Backup jobs and restore points, sim only.** `BackupJob`, `RestorePoint`, retention, repository space, readers migrated from `cluster.backup`/`backupAt`, deserialize conversion, the old `Backups` block kept working through `setBackup`. Tests: `tests/backup-jobs.test.ts` (schedule hits the hour, weekly on Sunday only, retention keeps N points and the base, repository space equals the point sum, full repository fails the job, an old save with `backup: { every: "daily" }` loads as one job, `restoreHours` and data-loss settlement unchanged on a one-point history).
 2. **Proxmocks Backup tab and Backup console jobs UI.** Datacenter > Backup screen, per-VM Backup panel, Backup console job table with the three skins, restore point calendar. Tests: `tests/backup-jobs.test.ts` extended with `saveJob`/`deleteJob`/`runJobNow` actions; `tests/i18n.test.ts` passes.
@@ -284,7 +284,7 @@ New files (no collisions):
 
 Per milestone edits:
 
-1. `src/sim/60-infra/cluster.ts` [HOT] (Cluster fields, `clusterDefaults`, `workloadDefaults`), `src/sim/85-products/products.ts` [HOT] (stamping loop, `backupPool`), `src/sim/60-infra/usage.ts` [HOT] (`backupFlows`), `src/sim/90-actions/vms.ts`, `src/sim/60-infra/incidents.ts`, `src/sim/90-actions/clusters.ts` (`setBackup`), `src/sim/91-save/compute.ts` [HOT save], `src/sim/91-save/save.ts` [HOT save] (deserialize conversion), `src/sim/50-state.ts` [HOT] only if a top-level field is needed (not expected), `src/i18n/en.ts` [HOT registration, one line], `docs/design/economy.md`.
+1. `src/sim/60-infra/cluster.ts` [HOT] (Cluster fields, `clusterDefaults`, `workloadDefaults`), `src/sim/85-products/products.ts` [HOT] (stamping loop, `backupPool`), `src/sim/60-infra/usage.ts` [HOT] (`backupFlows`), `src/sim/90-actions/vms.ts`, `src/sim/60-infra/incidents.ts`, `src/sim/90-actions/clusters.ts` (`setBackup`), `src/sim/91-save/compute.ts` [HOT save], `src/sim/91-save/save.ts` [HOT save] (deserialize conversion), `src/sim/50-state.ts` [HOT] only if a top-level field is needed (not expected), `src/i18n/en.ts` [HOT registration, one line], `docs/design/economy/README.md`.
 2. `src/ui/apps/browser/consoles/PanelBase.tsx` [HOT] (the `Backups` block replaced, `restore` row action), `proxmocks/Proxmocks.tsx`, `backup/BackupConsole.tsx`, `backup/backup.css`, `proxmocks/proxmocks.css`, `src/sim/80-business/consoles.ts` [HOT] (feature flags if a console gets a distinct job screen).
 3. `src/sim/60-infra/backups.ts`, `src/sim/60-infra/incidents.ts`, `src/sim/alerts.ts` (no change expected; the event is not a stop), `src/sim/88-tick/tick.ts` [HOT tick] (call site only), `backup/BackupConsole.tsx`.
 4. `src/sim/60-infra/ha.ts`, `src/sim/60-infra/cluster.ts` [HOT], `src/sim/90-actions/clusters.ts`, `src/sim/90-actions/snapshots.ts`, `src/sim/90-actions/datastores.ts`, `proxmocks/Proxmocks.tsx`.
@@ -319,6 +319,6 @@ Lanes to coordinate with on the shared type `Cluster` in `cluster.ts`: panel-hos
 
 1. **Does a Proxmocks cluster of two nodes losing one node go read-only?** This is real Proxmox behaviour and creates a strong hardware decision (buy a third node or a QDevice), but it can look unfair to a player who never saw a warning. Recommendation: yes, with a cluster-creation warning in the Cluster tab and a yellow alarm for any cluster of two nodes without a QDevice.
 2. **Should bad backup points exist at all?** They make the restore test worth pressing, but add a chance of silent data loss. Recommendation: keep it, at the 1% per point rate, since the alternative is a button without a decision.
-3. **VMwhere editions price multipliers (1, 2, 4).** This is a pricing decision against economy.md "Platforms and licenses". Recommendation: ×1, ×2, ×4 of the existing 600 fee per node, to be tuned in `npm run balance`.
+3. **VMwhere editions price multipliers (1, 2, 4).** This is a pricing decision against economy/platforms-and-licenses.md "Platforms and licenses". Recommendation: ×1, ×2, ×4 of the existing 600 fee per node, to be tuned in `npm run balance`.
 4. **Firewall and security group effect size (breach risk ×0.5).** Recommendation: ×0.5, with the self-inflicted outage as the counterweight; revisit after a balance run.
 5. **Whether the deferred milestones 14 and 15 stay deferred** once quorum (m4) and the sim's multi-tenant pieces exist. Recommendation: lift the HA groups deferral after milestone 4 ships, keep projects with quotas deferred until a customer-owned project type exists.

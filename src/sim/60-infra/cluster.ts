@@ -95,7 +95,7 @@ export interface Cluster {
   floating?: FloatingIp[]; groups?: SecurityGroup[]; volumes?: Volume[];
   // Horizont projects with quotas (projects.ts); missing is the one unlimited admin project.
   projects?: Project[];
-  // Servers attached as shared storage (economy.md, Datastores); VM disks on one stay off their node.
+  // Servers attached as shared storage (economy/README.md, Datastores); VM disks on one stay off their node.
   datastores: Datastore[];
   // Named specs this installation sells (80-business/packages.ts); absent reads as none.
   packages?: PackageDef[];
@@ -146,9 +146,9 @@ export interface Workload extends Resources, Partial<MachineState> {
   stats?: VmSample[]; upSince?: number;
   // The datastore of its cluster its disk is on; missing for a disk on its node.
   datastore?: string;
-  // Oldest first (economy.md, Snapshots); machine is an own VM's OS and software at the hour taken.
+  // Oldest first (economy/README.md, Snapshots); machine is an own VM's OS and software at the hour taken.
   snapshots?: Snapshot[];
-  // An own VM kept as a template to clone from (economy.md, Templates): stopped, it never starts and failover leaves it.
+  // An own VM kept as a template to clone from (economy/README.md, Templates): stopped, it never starts and failover leaves it.
   template?: true;
   // The hour a clone's copy from its template is done.
   cloning?: number;
@@ -167,9 +167,10 @@ export const clusterDefaults = (c: Partial<Cluster> & Pick<Cluster, "nodes">, ho
   controlPlane: c.controlPlane === undefined ? c.nodes[0]?.deviceId ?? null : c.controlPlane,
 }) as Cluster;
 export const oomKilled = (w: Workload, hour: number): boolean => (w.oomUntil ?? 0) > hour;
-// A cluster node that ran below TIMEOUT_PERF (usage.ts) for TIMEOUT_HOURS in a row: its workloads time out and count as down.
+// A cluster node or a VM with software that ran below TIMEOUT_PERF (usage.ts) for TIMEOUT_HOURS in a row: its workloads
+// time out and count as down.
 export const TIMEOUT_HOURS = 2;
-export const timedOut = (s: GameState, deviceId: string): boolean => (s.lowPerf[deviceId] ?? 0) >= TIMEOUT_HOURS;
+export const timedOut = (s: GameState, id: string): boolean => (s.lowPerf[id] ?? 0) >= TIMEOUT_HOURS;
 export const workloadDefaults = (w: Partial<Workload>): Workload => ({ stopped: false, busyUntil: 0, backupAt: null, ...w }) as Workload;
 
 const ZERO: Resources = { vcpu: 0, ramGb: 0, diskGb: 0 };
@@ -269,8 +270,9 @@ export function booked(s: GameState, w: Workload): Resources {
   return product && SHARED.includes(product) ? r : { ...r, vcpu: Math.ceil(w.vcpu) };
 }
 
-// economy.md, Platforms and licenses: disk a mail server keeps for each mailbox it holds, in 2005, growing with server RAM.
+// economy/platforms-and-licenses.md, Platforms and licenses: disk a mail server keeps for each mailbox it holds, in 2005, growing with server RAM.
 export const MAILBOX_GB = 1;
+export const mailboxGb = (year: number): number => MAILBOX_GB * vpsPlanGb(year);
 // The company mailboxes a mail server holds.
 export const mailboxesOn = (s: GameState, clusterId: string): number => {
   const tenants = new Set(s.mail.tenants.filter((x) => x.host === "self" && x.clusterId === clusterId).map((x) => x.id));
@@ -281,7 +283,7 @@ export function controlPlaneUse(s: GameState, c: Pick<Cluster, "id" | "panel" | 
   const id = c.panel ?? c.platform;
   if (!id) return ZERO;
   const sw = softwareById(id), year = yearOf(s.hour), r = footprint(sw, year);
-  return sw.kind === "mail" ? { ...r, diskGb: r.diskGb + mailboxesOn(s, c.id) * MAILBOX_GB * vpsPlanGb(year) } : r;
+  return sw.kind === "mail" ? { ...r, diskGb: r.diskGb + mailboxesOn(s, c.id) * mailboxGb(year) } : r;
 }
 // What a node holds for workloads: its capacity less the control plane it runs. Bars show booked against it.
 export function bookable(s: GameState, d: Device): Resources {
@@ -374,7 +376,7 @@ export function pinMembers(s: GameState): void {
 export const clusterReachable = (s: GameState, c: Cluster): boolean =>
   c.vm ? hasPublicAddress(s, c.vm) : c.nodes.some((n) => memberUp(s, n) && linkStatus(s, n.deviceId).online && hasPublicAddress(s, n.deviceId));
 // Whether the player can deliver the product line anywhere: a reachable cluster with software that sells it, a spare
-// reachable server for dedicated servers, a rented location for colocation (gdd.md, Addresses and internet, The start).
+// reachable server for dedicated servers, a rented location for colocation (gdd/addresses-and-internet.md, Addresses and internet, The start).
 export function lineOffered(s: GameState, p: Product): boolean {
   const runsOn = PRODUCTS[p].runsOn;
   const sells = (az: string | undefined) => { const l = s.locations.find((x) => x.az === az); return !!l && sellsFrom(s, l, p); };
@@ -471,6 +473,8 @@ export function dropCluster(s: GameState, id: string) {
     return { ...w, points, backupAt: points.filter((p) => !(p.verified && p.bad)).reduce<number | null>((n, p) => (n === null || p.at > n ? p.at : n), null) };
   });
   const drop = (ids: string[]) => ids.filter((x) => x !== id);
+  for (const o of s.ownWebspaces.filter((x) => x.clusterId === id)) delete s.webspaces[o.id];
+  s.ownWebspaces = s.ownWebspaces.filter((x) => x.clusterId !== id);
   if (s.company.mail.kind === "self" && s.company.mail.clusterId === id) s.company = { ...s.company, mail: { kind: "free" } };
   s.security = { ...s.security, offline: drop(s.security.offline), hacked: drop(s.security.hacked), patched: drop(s.security.patched) };
 }
@@ -518,7 +522,7 @@ export const movesLive = (s: GameState, c: Cluster, w: Workload, fromId: string,
 
 // Moves every workload it can live off a draining node; an emptied node goes into maintenance. Returns the workloads left.
 export function moveOff(s: GameState, cluster: Cluster, deviceId: string): number {
-  // ponytail: migrations are instant; economy.md's migration times and two moves per node come with link bandwidth.
+  // ponytail: migrations are instant; economy/README.md's migration times and two moves per node come with link bandwidth.
   let left = 0;
   for (const w of s.workloads.filter((x) => x.deviceId === deviceId && x.clusterId === cluster.id)) {
     const to = pickNode(s, cluster, w, deviceId);
@@ -552,14 +556,14 @@ export const sitesDown = (s: GameState, hostId: string): boolean => s.security.o
 
 // A workload on a server is up while the server reaches the internet and still holds the data written since it was placed;
 // a VM also needs an address on its host's network and, for a customer with a private network, that network (private.ts).
-// A web space in a panel VM is up while the VM is. Colocation is up while its rack has power.
+// A web space in a panel VM is up while the VM is and has not timed out. Colocation is up while its rack has power.
 // ponytail: colocation ignores the customer's uplinks until colocation cabling lands.
 export function workloadOnline(s: GameState, w: Workload): boolean {
   if (w.stopped || w.frozen || w.busyUntil > s.hour || oomKilled(w, s.hour) || (w.serviceId && s.webpanel.restoring[w.serviceId]) || w.haltUntil !== undefined || (w.bootUntil ?? 0) > nowHours(s)) return false;
   const c = w.clusterId ? s.clusters.find((x) => x.id === w.clusterId) : undefined;
   if (c?.switching) return false;
   if (c && (c.kind === "panel" ? sitesDown(s, c.id) : s.security.hacked.includes(c.id))) return false;
-  if (c?.vm) { const vm = vmById(s, c.vm); return !!vm && workloadOnline(s, vm) && !firewallBlocks(s, c); }
+  if (c?.vm) { const vm = vmById(s, c.vm); return !!vm && workloadOnline(s, vm) && !timedOut(s, vm.id) && !firewallBlocks(s, c); }
   if (c && w.deviceId && timedOut(s, w.deviceId)) return false;
   if (w.deviceId) {
     const d = s.devices.find((x) => x.id === w.deviceId);

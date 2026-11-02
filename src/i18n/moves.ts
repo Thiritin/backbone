@@ -3,7 +3,7 @@ type Params = Record<string, string | number>;
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const clock = (h: unknown) => `${String(h).padStart(2, "0")}:00`;
 
-// Migration offers: the ticket, the customer's answers, the events and the errors (gdd.md, Support).
+// Migration offers: the ticket, the customer's answers, the events and the errors (gdd/support.md, Support).
 export const MOVES_EN: Record<string, (p: Params) => string> = {
   "ticket.migration.offer.subject": (p) => `Moving ${p.hostname || p.service} to ${p.target}`,
   "ticket.migration.offer.text": (p) => `We would like to move ${p.hostname || p.service} to ${p.target}. Please let us know whether you agree.`,

@@ -1,4 +1,4 @@
-// economy.md, Security advisories, Breaches and ransom: a critical vulnerability left open for a month lets attackers steal
+// economy/security-advisories.md, Security advisories, Breaches and ransom: a critical vulnerability left open for a month lets attackers steal
 // the customer data on a host. They demand a ransom; unpaid, or paid to a liar, the data is sold and the press and the data
 // protection authority follow.
 import { chance, hashRng, rand, type Rng } from "../00-core/rng";

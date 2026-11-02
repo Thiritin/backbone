@@ -4,7 +4,7 @@ import { marketPrice } from "../10-catalog/products";
 import type { GameState } from "../50-state";
 import type { Service } from "./customers";
 
-// economy.md, Resellers: a reseller books a block of accounts in full and fills it over months with their own customers.
+// economy/resellers.md, Resellers: a reseller books a block of accounts in full and fills it over months with their own customers.
 export interface Reseller { accounts: number; fillRate: number; startedAt: number }
 
 export const FILL_MAX = 0.7;

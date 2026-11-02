@@ -1,20 +1,29 @@
 import type { GameState } from "../50-state";
-import { assignKey, installedVersion, isLicensed, keyFor, nameOf, panelLocked, startTrial, trialDaysOf, trialOf } from "../60-infra/licence";
+import { assignedKey, assignKey, installedVersion, isLicensed, keyFor, nameOf, panelLocked, releaseKey, startTrial, trialDaysOf, trialOf } from "../60-infra/licence";
 import { machineOf } from "../60-infra/cluster";
 import type { ActionResult } from "./hardware";
 
 // A build short of a key, naming the product.
 export const keysShort = (product: string): ActionResult => ({ ok: false, error: "error.licenceKeysShort", params: { name: nameOf(product) } });
 
-// Enters a key into an installed product: it licenses a trial, an ended trial or a lapse, and replaces the key it held,
-// which goes back unassigned.
+// Enters a key into an installed product: it licenses a trial, an ended trial or a lapse. A held key has to be removed first.
 export function activateLicence(s: GameState, machineId: string, product: string, key: string): ActionResult {
   const version = installedVersion(s, machineId, product);
   if (version === null) return { ok: false, error: "error.noSoftware" };
+  const held = assignedKey(s, machineId, product);
+  if (held && held.key !== key.trim().toUpperCase()) return { ok: false, error: "error.licenceHeld" };
   const k = keyFor(s, machineId, product, key, version);
   if (!k) return { ok: false, error: "error.licenceKey" };
   assignKey(s, k.id, machineId);
   return { ok: true, id: k.id };
+}
+
+// Takes the held key out of the product; it goes back to the player's keys unassigned.
+export function removeLicence(s: GameState, machineId: string, product: string): ActionResult {
+  const held = assignedKey(s, machineId, product);
+  if (!held) return { ok: false, error: "error.noSoftware" };
+  releaseKey(s, held.id);
+  return { ok: true, id: held.id };
 }
 
 const installedOn = (s: GameState, machineId: string, product: string): boolean => !!machineOf(s, machineId)?.software?.some((x) => x.id === product);

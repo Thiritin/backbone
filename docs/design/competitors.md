@@ -1,6 +1,6 @@
 # Competitors and HOSTtoast
 
-The market already scores six fixed competitors in every lead roll (`COMPETITORS` in `10-catalog/economy.ts`, Customer choice in economy.md). This plan turns them into a living market: rivals that refresh hardware, have outages, collect reviews, gain and lose customers, open and go bust, and list themselves on a comparison portal where a paid tier buys a better spot.
+The market already scores six fixed competitors in every lead roll (`COMPETITORS` in `10-catalog/economy.ts`, Customer choice in economy/customer-choice.md). This plan turns them into a living market: rivals that refresh hardware, have outages, collect reviews, gain and lose customers, open and go bust, and list themselves on a comparison portal where a paid tier buys a better spot.
 
 Anchor for the portal: hosttest.de lists hosts in four tiers (Registriert, Geprüft, Premium, Diamant). The three upper tiers are paid memberships with minimum requirements (at least a year on the market, an SLA of at least 99% or 99.5%, support tested regularly and answering within two working days or 24 hours), and paid tiers sort above lower ones in every comparison, ahead of the star rating.
 

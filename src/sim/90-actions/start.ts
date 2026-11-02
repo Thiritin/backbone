@@ -10,7 +10,7 @@ import { capacityAt, DATACENTERS } from "../20-world/datacenters";
 import { EARLY_HOURS } from "../10-catalog/used";
 import { monthListings } from "../80-business/used";
 
-// economy.md, Starting state: an empty basement rack. The player buys the first server and sets it up as a panel server or
+// economy/starting-state.md, Starting state: an empty basement rack. The player buys the first server and sets it up as a panel server or
 // a hypervisor with a panel VM. Three friends wait for web hosting at €6 a month and move their sites over once the first
 // panel host is ready.
 export const FRIENDS: [string, string][] = [["Jonas Weber", "jonasweber.de"], ["Mira Schulz", "mira-schulz.de"], ["Tobi Kraus", "tobikraus.de"]];

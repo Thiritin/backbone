@@ -1,4 +1,4 @@
-// economy.md, Proxmocks cluster quorum: a cluster of two or more nodes is read-only unless a strict majority of its votes is up.
+// economy/README.md, Proxmocks cluster quorum: a cluster of two or more nodes is read-only unless a strict majority of its votes is up.
 import type { GameState } from "../50-state";
 import { modelById } from "../10-catalog/hardware";
 import { serverTaken, type Cluster } from "./cluster";

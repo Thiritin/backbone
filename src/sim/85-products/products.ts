@@ -22,11 +22,11 @@ import { bootHours, customerWorkloads, liveServices } from "../60-infra/status";
 import { hostPerf, phpTickets } from "../60-infra/php";
 import { welcomeFriends } from "../90-actions/start";
 import { deviceVendor, installedCores, perCoreOf } from "../60-infra/status";
-import { diskFill, nodeUsage, starvation } from "../60-infra/usage";
+import { diskFill, nodeUsage, starvation, vmPerf } from "../60-infra/usage";
 import { addAwareness, addReview, announceReview, starsFor } from "../80-business/marketing";
 import type { SimEvent } from "../88-tick/tick";
 
-// Values from docs/design/economy.md, sections "Platforms and licenses" and "Data loss and backups".
+// Values from docs/design/economy/platforms-and-licenses.md, sections "Platforms and licenses" and "Data loss and backups".
 export const LOSS_NO_BACKUP = -60;
 export const LOSS_RESTORED = -15;
 export const LOSS_RESTORED_MAX = -40;
@@ -106,7 +106,7 @@ export function restoreHours(s: GameState, w: Workload, az?: string): number {
   return Math.max(1, Math.ceil((w.diskGb * diskFill(s, w, w.backupAt ?? s.hour)) / rate));
 }
 
-// economy.md, Reviews: 10% write one, 20% when unhappy.
+// economy/README.md, Reviews: 10% write one, 20% when unhappy.
 export function lossReview(s: GameState, c: Customer): void {
   if (!chance(s.rng, c.happiness < UNHAPPY ? UNHAPPY_REVIEW_CHANCE : REVIEW_CHANCE)) return;
   addReview(s, c.id, starsFor(c.happiness, s.rng), "dataLoss");
@@ -174,14 +174,14 @@ export function reportLoss(s: GameState, d: Device, lost: Workload[], hour: numb
   events.push({ app: "Locations", key: "event.dataLoss", params: { device: d.label ?? d.name, count: items.length } });
 }
 
-// The speed a customer workload runs at, 1 when nothing slows it: the slowest of its node, its panel host and, for a game
+// The speed a customer workload runs at, 1 when nothing slows it: the slowest of its node, its panel host, its VM and, for a game
 // server, one core.
 export function workloadPerf(s: GameState, w: Workload, product: Product | undefined, nodePerf: (deviceId: string) => number = (id) => nodeUsage(s, id).perf): number {
   if (!w.clusterId || w.stopped || isOwnVm(w)) return 1;
   const vm = vmOf(s, w), at = w.deviceId ?? vm?.deviceId;
   if (!at || vm?.stopped) return 1;
   const c = s.clusters.find((x) => x.id === w.clusterId), node = product === "gameServer" ? s.devices.find((d) => d.id === at) : undefined;
-  const base = Math.min(nodePerf(at), hostPerf(s, c), node ? perCoreOf(node) : 1), shares = sharesOf(c, w);
+  const base = Math.min(nodePerf(at), hostPerf(s, c), vm ? vmPerf(s, vm) : 1, node ? perCoreOf(node) : 1), shares = sharesOf(c, w);
   if (shares === "normal" || !runsHot(s, at)) return base;
   // Under contention a high pool keeps its performance and a low pool gives some up.
   return shares === "high" ? 1 : base * POOL_LOW_PERF;
@@ -208,7 +208,7 @@ function overload(s: GameState) {
   if (slow.size || starved.size) s.services = s.services.map((v) => (slow.has(v.id) || starved.has(v.id) ? { ...v, ...(slow.has(v.id) && { slowedAt: s.hour }), ...(starved.has(v.id) && { starvedAt: s.hour }) } : v));
 }
 
-// economy.md, Marketing and reviews: a fast game server and a smooth month.
+// economy/marketing-and-reviews.md, Marketing and reviews: a fast game server and a smooth month.
 export const FAST_CLOCK = 0.9;
 export const FAST_HAPPY = 3;
 export const FAST_REVIEW_CHANCE = 0.1;

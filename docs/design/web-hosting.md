@@ -38,6 +38,7 @@ A player can run thousands of customer web spaces. Storing every file and mailbo
 - A customer web space's contents are generated from its workload, app, seed and age every time they are shown, as `Customer.tsx` already does for its file list. Nothing is stored for it.
 - A web space stores only what the player changed: files they uploaded or deleted, databases, users, mailboxes and FTP accounts they created, and settings they edited. Each change is an entry in an overlay on top of the derived contents.
 - The player's own web spaces (company website, shop, webmail) are ordinary web spaces that start empty and are filled entirely by the player's actions.
+- The player creates an own web space on a panel host the way an admin makes an account for their own domain (WHM's Create a New Account). It has no paying service and no package limits, counts against the panel licence and starts with the panel's skeleton only: the web root, `logs`, `tmp`, `mail` and a default index page. The one on the company domain is where the website and the shop live. Saves from before this get one on the host their shop is installed on.
 
 New state: `s.webspaces: Record<workloadId, WebspaceOverlay>`, default `{}` in `newGame` and filled by `deserialize`. A web space with no overlay entry is pure derivation.
 
@@ -75,6 +76,8 @@ A two-pane file manager in the panel's look: a folder tree on the left and a lis
 - **phpMyAdmon** opens from the panel and lists the tables of a database with their row counts and sizes. Tables come from the app that uses the database (`wp_posts`, `tblclients` and so on), and their row counts grow with the site's age and traffic.
 - A database counts towards the web space's disk and towards the host's MySQL load, which feeds the existing overload readouts.
 - Databases always run on the same host as the web space, with `localhost` as the database host, as on a standard shared hosting server. A separate database server is a later plan.
+- A customer database's tables and rows derive from its app's schema, the seed and the database's size, so they grow with the site. The overlay stores only the rows the player edits or inserts. Shop schemas name the table and columns their admin logs in with, which is how a lost shop password is reset with MD5.
+- Export writes a `.sql` or `.sql.gz` file to the player's Downloads, and Import reads one back within phpMyAdmon's upload limit (8 MB before 2010, 50 MB after). Databases the player creates or imports add MySQL load to the host; the derived ones are already in the customer's load curve.
 
 ### 4.3 Mail
 
@@ -87,6 +90,8 @@ FTP accounts with a home folder and a quota. A desktop FTP program, FileGorilla 
 ### 4.5 Domains, DNS, SSL, PHP and cron
 
 These screens edit the parts listed in section 2. The zone editor writes to the same DNS model that PowerDNZ shows. SSL uses `certificates.ts` and AutoSSL from `web-services.md`. Cron jobs run hourly at most and appear as host load.
+
+In cPanic the customer pages carry the real names of their era. Parked Domains became Aliases in 2018, the Simple DNS Zone Editor (A and CNAME records only) became the Zone Editor in 2012, SSL/TLS Manager became SSL/TLS Status with AutoSSL in 2016, and PHP Configuration (one version for the host) became the MultiPHP Manager with a version per domain in 2015. A parked domain serves the main folder. A new subdomain adds its address record to its parent's zone, and an addon domain gets a zone of its own. Cron Jobs offers the Common Settings list and the five crontab fields; a job that would run more often than hourly counts as hourly, and each job shows the share of a core it keeps busy (20 seconds of one core per run).
 
 ### 4.6 App installer
 
@@ -112,11 +117,15 @@ Moving the shop to another host is a real move: copy the files, export and impor
 
 ## 6. Visiting sites in the Browser
 
-Every domain that points at a web space opens in the Browser:
+Every domain that points at a web space opens in the Browser (`80-business/webspace-sites.ts`). The folder of the domain decides what shows:
 
-- A customer's site renders a page in the look of its app and era (a default WordPrass theme, a Joomlah template, a static page), generated from the seed. A broken site shows the real error: "Error establishing a database connection", a PHP fatal error, a 500 page, or the panel's default "account suspended" page.
-- `portal.<domain>` shows the store front once the shop is installed. Before that it shows the panel's default index page ("Index of /" or the cPanic placeholder), never a bare "Not found".
-- An unpointed domain shows the registrar's parking page.
+- A folder with no files shows the panel's default page: the cPanic "Default Web Site Page", the Pleskit "Web Server's Default Page", the DirectAdmen "Your site is ready" page or the Apache "It works!" page for FreePanel.
+- A folder with files and no `index.html`, `index.htm`, `index.php`, `default.htm` or `index.shtml` shows the web server's "Index of /" listing, without hidden files.
+- A folder with an index shows the site. A static site shows the customer's designed page. WordPrass, Joomlah and Drupel show the default theme of the year (Kubrick, Twenty Ten, Twenty Fourteen and Twenty Nineteen looks; milkyway, Protostar and Cassiopeia looks; Garland, Bartik and Olivero looks), with the customer's name as the site title.
+- A broken app shows the real error: "Error establishing a database connection" (Joomlah and Drupel have their own wording) when its database is gone, a PHP fatal error when its config file is gone, and the Apache 500 page while the account is over its disk quota.
+- A suspended or ended account shows the panel's "Account Suspended" page, and a defaced site keeps its defaced page.
+- `portal.<company domain>` shows the store front once the shop is installed. Before that it shows the default page of the web space it points at, or of the first panel host when no web space has the name.
+- A registered domain on the registrar's name servers shows the registrar's parking page.
 
 ## 7. Customer behaviour on top of it
 

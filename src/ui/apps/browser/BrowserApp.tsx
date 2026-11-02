@@ -1,3 +1,4 @@
+import { DeskSite } from "./sites/desk/DeskSite";
 import { ArrowLeft, ArrowRight, ChevronDown, CircleArrowDown, Folder, House, Plus, RotateCw, Star, X } from "lucide-react";
 import { useEffect, useRef, useState, type DragEvent } from "react";
 import { AGENCY_TITLE, BOARD_TITLE, defaultBookmarks, HOME_URL, resolve, split, VIDEO_TITLE, WIKI_TITLE, type Resolved } from "../../../sim/80-business/browser";
@@ -19,6 +20,7 @@ import type { OsImage } from "../../../sim/10-catalog/server-os";
 import { useSessionState, writeSession } from "../../session";
 import { t } from "../../../i18n/en";
 import { useFocus, useStore, useWin } from "../../store";
+import { useBack } from "../../desktop/back";
 import { VaultOffer } from "../../vault";
 import { Favicon } from "./Favicon";
 import { ConsolePage } from "./consoles/ConsolePage";
@@ -57,6 +59,7 @@ import { ParkedPage } from "./sites/registrars/Parked";
 import { SupplierSite } from "./sites/bank/SupplierSite";
 import { BankSite } from "./sites/bank/BankSite";
 import { bankById } from "../../../sim/10-catalog/banks";
+import { siteTitle, WebspaceSite } from "./sites/webspace/WebspaceSite";
 import { CannotReach, CustomerSite, HostPage, NoticePage, noticeTitle, NotFound, VideoPage } from "./sites/Pages";
 import { PortalSite } from "./sites/portal/PortalSite";
 import { VendorSite } from "./sites/vendors/registry";
@@ -78,6 +81,7 @@ function titleOf(game: GameState, r: Resolved): string {
   switch (p.kind) {
     case "company": return game.company.name;
     case "customer": return customerSite(game, p.serviceId)?.title ?? r.host;
+    case "webspace": return siteTitle(p.body) || r.host;
     case "vendor": return MANUFACTURERS.find((m) => m.id === p.maker)?.name ?? r.host;
     case "provider": return dcProvider(p.id).name;
     case "registrar": return registrarById(p.id)?.name ?? r.host;
@@ -120,7 +124,7 @@ function titleOf(game: GameState, r: Resolved): string {
     case "market": return channelName(p.channel);
     case "books": return booksVendor(p.id)!.program;
     case "shopVendor": return shopById(p.id).name;
-    case "deskVendor": return deskById(p.id)!.name;
+    case "deskVendor": case "desk": return deskById(p.id)!.name;
     case "hosttoast": return HOSTTOAST;
     case "wiki": return WIKI_TITLE;
     case "shop": return game.company.name;
@@ -145,6 +149,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (r.load === "down") body = <CannotReach host={r.host} />;
   else if (p.kind === "company") body = <CompanySite game={game} path={r.path} go={go} />;
   else if (p.kind === "customer") body = <CustomerSite game={game} serviceId={p.serviceId} />;
+  else if (p.kind === "webspace") body = <WebspaceSite game={game} body={p.body} />;
   else if (p.kind === "vendor") body = <VendorSite game={game} maker={p.maker} path={r.path} go={go} />;
   else if (p.kind === "provider") body = <ProviderSite game={game} id={p.id} path={r.path} go={go} />;
   else if (p.kind === "registrar") body = <RegistrarSite game={game} id={p.id} path={r.path} go={go} />;
@@ -163,6 +168,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "shop") body = <PortalSite game={game} host={r.host} path={r.path} go={go} />;
   else if (p.kind === "books" && p.id !== "lexwear") { const Site = BOOKS_SITES[p.id]; body = <Site game={game} path={r.path} go={go} />; }
   else if (p.kind === "shopVendor") body = <ShopVendorSite game={game} id={p.id} path={r.path} go={go} />;
+  else if (p.kind === "desk") body = <DeskSite game={game} id={p.id} host={r.host} path={r.path} go={go} />;
   else if (p.kind === "deskVendor") body = deskById(p.id)!.hosting === "self" ? <SelfDeskSite game={game} id={p.id} path={r.path} go={go} /> : <HostedDeskSite game={game} id={p.id} path={r.path} go={go} />;
   else if (p.kind === "hosttoast") body = <HostToastSite game={game} path={r.path} go={go} />;
   else if (p.kind === "wiki") body = <WikiSite game={game} path={r.path} go={go} />;
@@ -179,7 +185,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "ups") body = <UpsPage game={game} deviceId={p.deviceId} host={r.host} />;
   else if (p.kind === "host") body = <HostPage host={r.host} />;
   else body = <NotFound host={r.host} />;
-  const paper = !waiting && r.load !== "down" && ["company", "customer", "vendor", "provider", "sponsorboard", "flyers", "agency", "registrar", "parked", "bank", "supplier", "index", "office", "shop", "software", "os"].includes(p.kind);
+  const paper = !waiting && r.load !== "down" && ["company", "customer", "webspace", "vendor", "provider", "sponsorboard", "flyers", "agency", "registrar", "parked", "bank", "supplier", "index", "office", "shop", "software", "os"].includes(p.kind);
   return (
     <>
       {waiting && <div className="web-load" aria-hidden />}
@@ -229,6 +235,7 @@ export function BrowserApp() {
     patch(tab.id, (x) => ({ ...x, history: [...x.history.slice(0, x.at + 1), next], at: x.at + 1, nav: x.nav + 1 }));
   };
   const step = (d: number) => patch(tab.id, (x) => ({ ...x, at: x.at + d, nav: x.nav + 1 }));
+  useBack(win.id, () => tab.at > 0 && step(-1));
   const reload = () => patch(tab.id, (x) => ({ ...x, nav: x.nav + 1 }));
   const open = (to: string) => {
     const id = Math.max(...tabs.map((x) => x.id)) + 1;

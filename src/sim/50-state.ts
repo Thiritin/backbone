@@ -1,5 +1,6 @@
 import type { OveruseChoice } from "./80-business/overuse";
-import type { WebspaceOverlay } from "./60-infra/webspace";
+import type { OwnWebspace, WebspaceOverlay } from "./60-infra/webspace";
+import type { SqlDump } from "./60-infra/webdb";
 import { createRng, type Rng } from "./00-core/rng";
 import { componentParts, hasFirmware, homeLan, isManaged, isOfficeRouter, modelById, type ComponentKind, type FormFactor, type PartSpec } from "./10-catalog/hardware";
 import type { BooksDownload, BooksVendorId } from "./10-catalog/bookkeeping";
@@ -179,6 +180,8 @@ export type RaidLevel = "none" | "1" | "5" | "6" | "10";
 export type RebuildRate = "low" | "medium" | "high";
 // since is the hour of the first change; a data loss after it wipes the changes. A path maps to a file's text, true for a
 // directory, or false for a base entry that was deleted.
+// A .sql file phpMyAdmon exported into the player's Downloads.
+export interface DumpFile { mb: number; at: number; dump: SqlDump }
 export interface HostFiles { since: number; paths: Record<string, string | boolean> }
 
 // A desktop document; x and y are its icon position on the desktop in pixels.
@@ -222,9 +225,10 @@ export interface GameState {
   // The vendor sites' shared shopping cart; each site checks out the lines it sells. A line with from upgrades a key for that
   // major to the next; a line with replaces changes the edition of that key.
   cart: { product: string; edition: string | null; qty: number; from?: string; replaces?: string }[];
-  // Operating system images downloaded from their sites, one per version, and the one USB stick: the image written on it,
-  // the server it is in.
-  media: { images: OsImage[]; stick: { os: OsImage | null; in: string | null } };
+  // Operating system images downloaded from their sites, one per version, the archives and database dumps downloaded by
+  // file name (10-catalog/archives.ts, dumps holds a dump's content), and the one USB stick: the image written on it, the
+  // server it is in.
+  media: { images: OsImage[]; files: string[]; dumps: Record<string, DumpFile>; stick: { os: OsImage | null; in: string | null } };
   leases: Lease[];
   // Power drawn since the last monthly bill, in euros.
   powerDue: number;
@@ -352,6 +356,8 @@ export interface GameState {
   files: Record<string, HostFiles>;
   // What the player changed in each web space, by workload id; the rest is derived (60-infra/webspace.ts).
   webspaces: Record<string, WebspaceOverlay>;
+  // The company's own accounts on panel hosts, by id; their contents are in webspaces like a customer's.
+  ownWebspaces: OwnWebspace[];
   // Customer data stolen from a host, the ransom decision and the fine that follows a sale (60-infra/breach.ts).
   breaches: Breach[];
   // Customer sites defaced, their hacks and the customers written to (60-infra/apps.ts).
@@ -467,8 +473,8 @@ export const newGame = (seed: number): GameState => ({
   racks: [{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null, overSince: { a: null, b: null } }],
   devices: [{ ...device("dev5", "home-router", "AVN", null, 0, null, "fra1-gw-01", 0), store: "loc1" }, device("dev6", "line-jack", "", null, 0, "loc1", "fra1-line-01", 0)],
   cables: [],
-  ledger: [], licenses: [], trials: [], cart: [], media: { images: [], stick: { os: null, in: null } }, leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], contracts: [], crossConnects: [], providerPrices: {}, unlocks: [], training: null, knowHow: 0, installed: ["Browser", "Chat"], kbReads: {}, statusDays: [], checklist: [], seenChanges: [], undocked: [], os: "aqua",
-  customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], files: {}, webspaces: {},
+  ledger: [], licenses: [], trials: [], cart: [], media: { images: [], files: [], dumps: {}, stick: { os: null, in: null } }, leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], contracts: [], crossConnects: [], providerPrices: {}, unlocks: [], training: null, knowHow: 0, installed: ["Browser", "Chat"], kbReads: {}, statusDays: [], checklist: [], seenChanges: [], undocked: [], os: "aqua",
+  customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], files: {}, webspaces: {}, ownWebspaces: [],
   invoices: [], transfers: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   quotes: [],
   catalog: [],
@@ -517,7 +523,7 @@ export const newGame = (seed: number): GameState => ({
   logins: {},
   mail: newMail(seed, START_NAME),
   desk: null,
-  webmail: { installs: {}, default: null },
+  webmail: { installs: {}, default: null, options: {} },
 });
 
 export const guideDoc = (): Doc => ({ id: "guide", kind: "guide", title: t("doc.guide"), body: "", x: 16, y: 46 });

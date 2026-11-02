@@ -22,14 +22,14 @@ export type RunsOn = "cluster" | "server" | "rack" | "none";
 export interface ProductSpec { runsOn: RunsOn; period: "hour" | "year"; commitMonths: number; ha?: boolean }
 
 export type Sla = "basic" | "business" | "premium";
-// economy.md, Requests, SLAs and growth: monthly uptime, first response, price factor and the share of the month's bill credited when missed.
+// economy/requests-slas-and-growth.md, Requests, SLAs and growth: monthly uptime, first response, price factor and the share of the month's bill credited when missed.
 export const SLAS: Record<Sla, { uptime: number; responseHours: number; factor: number; credit: number }> = {
   basic: { uptime: 0.995, responseHours: 48, factor: 1, credit: 0 },
   business: { uptime: 0.999, responseHours: 8, factor: 1.2, credit: 0.1 },
   premium: { uptime: 0.9999, responseHours: 1, factor: 1.5, credit: 0.25 },
 };
 
-// economy.md, Usage curves and overcommit: the most a cluster books per GB of usable disk. CPU and RAM have no limit.
+// economy/usage-curves-and-overcommit.md, Usage curves and overcommit: the most a cluster books per GB of usable disk. CPU and RAM have no limit.
 export const OVERCOMMIT = { disk: 2 } as const;
 
 export const PRODUCTS: Record<Product, ProductSpec> = {
@@ -86,11 +86,11 @@ export const SIZES: Record<Product, Size[]> = {
   gpu: [cards(1), cards(2), cards(4), cards(8)],
   domain: [fixed(NONE)],
   ssl: [fixed(NONE), () => ({ ...NONE, cert: "ov" }), () => ({ ...NONE, cert: "ev" })],
-  // economy.md, Resellers: the Small, Medium and Large block.
+  // economy/resellers.md, Resellers: the Small, Medium and Large block.
   reseller: [block(20, 50, 500), block(50, 150, 1500), block(100, 350, 4000)],
 };
 
-// economy.md, Traffic and bandwidth: an average customer's GB per month in 2005, growing 20% a year.
+// economy/traffic-and-bandwidth.md, Traffic and bandwidth: an average customer's GB per month in 2005, growing 20% a year.
 export const TRAFFIC_GB: Record<Product, number> = {
   webHosting: 2, domain: 0, ssl: 0, dns: 1, gameServer: 60, vps: 20, vpn: 300, dedicated: 150, storage: 100, cloud: 20, colocation: 500, reseller: 0, gpu: 20,
 };
@@ -118,18 +118,18 @@ export const UNITS: Record<Product, Unit[]> = {
 // A line's rates in euros per unit, and its one-time setup fee; a unit without one charges the market rate.
 export type Rates = Partial<Record<Unit | "setup", number>>;
 
-// economy.md, Traffic: the share of the middle size's price that is its traffic at the market rates; the other rates give
+// economy/README.md, Traffic: the share of the middle size's price that is its traffic at the market rates; the other rates give
 // up that share, so the middle size keeps its price.
 export const TRAFFIC_SHARE: Partial<Record<Product, number>> = {
   webHosting: 0.02, dns: 0.02, gpu: 0.01, vps: 0.03, cloud: 0.03, storage: 0.03, dedicated: 0.04, vpn: 0.05, colocation: 0.05, gameServer: 0.06,
 };
-// economy.md, Setup fees: the market's one-time fee per order in 2005, falling to a third by 2026.
+// economy/README.md, Setup fees: the market's one-time fee per order in 2005, falling to a third by 2026.
 const SETUP_2005: Partial<Record<Product, number>> = {
   webHosting: 10, vps: 15, gameServer: 15, dns: 5, vpn: 10, storage: 10, cloud: 0, dedicated: 75, colocation: 150, gpu: 15,
 };
 export const marketSetup = (product: Product, year: number): number => Math.round(priceAt((SETUP_2005[product] ?? 0) / 3, 3, year));
 
-// economy.md, Per-resource pricing: the market's rates in a year at the basic SLA, per month for hourly lines and per
+// economy/README.md, Per-resource pricing: the market's rates in a year at the basic SLA, per month for hourly lines and per
 // year for yearly ones. They keep the sizes above near their former package prices.
 export function marketRates(product: Product, year: number): Rates {
   const rates = { ...resourceRates(product, year), ...(UNITS[product].includes("ip") && { ip: retailV4(year) }), ...(product === "webHosting" && { ...UPDATE_PRICE, cleanHour: cleanMarket(year) }) }, share = TRAFFIC_SHARE[product];
@@ -139,7 +139,7 @@ export function marketRates(product: Product, year: number): Rates {
   const scaled = Object.fromEntries(Object.entries(rates).map(([u, x]) => [u, u === "ip" || u === "cleanHour" || u in UPDATE_PRICE ? x : x * (1 - share)]));
   return { ...scaled, traffic: (share * rest) / unitAmount(mid, "traffic") };
 }
-// economy.md, Prices over time: the share of the 2005 rates a fixed-price line charges in a year, and the yearly SSL
+// economy/prices-over-time.md, Prices over time: the share of the 2005 rates a fixed-price line charges in a year, and the yearly SSL
 // prices by validation, which the OV and EV rates add to the DV base.
 export const FIXED_KEYS: Partial<Record<Product, [number, number][]>> = {
   webHosting: [[2005, 1], [2010, 0.95], [2015, 0.85], [2022, 0.8], [2023, 0.88]],
@@ -151,7 +151,7 @@ export const SSL_KEYS: Record<"dv" | "ov" | "ev", [number, number][]> = {
   ov: [[2005, 150], [2015, 120], [2026, 100]],
   ev: [[2005, 400], [2015, 300], [2020, 250], [2026, 200]],
 };
-// economy.md, SSL certificates: the certificate authority every certificate is bought from, at this share of the year's
+// economy/README.md, SSL certificates: the certificate authority every certificate is bought from, at this share of the year's
 // market price, so the player keeps 15% on a DV, 10% on an OV and 6% on an EV certificate.
 export const CA_NAME = "VeriSigh";
 export const CA_SHARE: Record<"dv" | "ov" | "ev", number> = { dv: 0.85, ov: 0.9, ev: 0.94 };
@@ -175,7 +175,7 @@ function resourceRates(product: Product, year: number): Rates {
     case "dedicated": return scaled(product, year, { base: 6, ramGb: 220 / 24 / g });
     case "colocation": return { base: 15, unit: 30, kw: 100 };
     case "gpu": return { gpu: gpuRent(year) };
-    // economy.md, Resellers: half the market price of an average web space per account, spread over a medium block's disk.
+    // economy/resellers.md, Resellers: half the market price of an average web space per account, spread over a medium block's disk.
     case "reseller": { const m = sizeSpec("reseller", 1, year); return { diskGb: (0.5 * marketPrice("webHosting", sizeSpec("webHosting", 1, year), year) * (m.accounts ?? 0)) / m.diskGb }; }
   }
 }

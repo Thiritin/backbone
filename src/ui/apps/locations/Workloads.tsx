@@ -5,7 +5,7 @@ import type { Resources } from "../../../sim/10-catalog/products";
 import type { GameState } from "../../../sim/50-state";
 import { softwareById } from "../../../sim/10-catalog/platforms";
 import { clusterOf, controlPlaneUse, workloadsOn, type Workload } from "../../../sim/60-infra/cluster";
-import { pegged, workloadUse } from "../../../sim/60-infra/usage";
+import { pegged, shownWorkload } from "../../../sim/60-infra/usage";
 import { siteHost } from "../../../sim/80-business/website";
 import { migrateWorkload, migrationTargets, startWorkload, stopWorkload } from "../../../sim/90-actions/vms";
 import { announceEntries, askPower, migrateEntries, offerEntries, rescueEntries } from "../workload-menu";
@@ -38,7 +38,7 @@ const share = (u: Resources, w: Workload, k: Sort) => (w[k] ? u[k] / w[k] : 0);
 // The workloads of a cluster node, busiest first, each with a menu to move, stop or start it or open its web console.
 export function NodeWorkloads({ game, deviceId }: { game: GameState; deviceId: string }) {
   const [sort, setSort] = useState<Sort>("vcpu");
-  const loads = workloadsOn(game, deviceId).filter((w) => w.clusterId).map((w) => ({ w, u: workloadUse(game, w) }));
+  const loads = workloadsOn(game, deviceId).filter((w) => w.clusterId).map((w) => ({ w, u: shownWorkload(game, w) }));
   const c = clusterOf(game, deviceId), cpId = c?.controlPlane === deviceId ? c.panel ?? c.platform : null;
   if (!loads.length && !cpId) return null;
   loads.sort((a, b) => share(b.u, b.w, sort) - share(a.u, a.w, sort) || b.u[sort] - a.u[sort]);

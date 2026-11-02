@@ -1,5 +1,5 @@
 import { t } from "../../i18n/en";
-// Values from docs/design/economy.md, "Marketing and reviews"; numbers marked as decisions are recorded there.
+// Values from docs/design/economy/marketing-and-reviews.md, "Marketing and reviews"; numbers marked as decisions are recorded there.
 import { hashRng, rand, type Rng } from "../00-core/rng";
 import { isMonthStart, monthIndexOf, yearOf } from "../00-core/time";
 import { priceAt, SEARCH_AD_COST } from "../10-catalog/economy";

@@ -10,7 +10,7 @@ import { licenseCost } from "../src/sim/85-products/products";
 import { tick } from "../src/sim/88-tick/tick";
 import { bootFromUsb, installFromSite, installOs } from "../src/sim/90-actions/console";
 import { assignedKey, issueKey, licenceStatus, trialOf, unassignedKeys } from "../src/sim/60-infra/licence";
-import { activateLicence } from "../src/sim/90-actions/licence";
+import { activateLicence, removeLicence } from "../src/sim/90-actions/licence";
 import { createPanelVm, createVm, PANEL_VM_SIZE } from "../src/sim/90-actions/clusters";
 import type { ServerOsId } from "../src/sim/10-catalog/server-os";
 import { createSoftwareVm, installSoftware, uninstallSoftware } from "../src/sim/90-actions/software";
@@ -157,12 +157,19 @@ describe("VMwhere", () => {
     expect(err(createVm(s, c.id, PANEL_VM_SIZE))).not.toBe("error.licenceExpired");
   });
 
-  it("replaces the key it held with an entered one, and removing it releases the key", () => {
+  it("refuses another key while one is installed, and a removed key leaves room for it", () => {
     const s = readyGame(7), id = atInstaller(s);
     ok(install(s, id, "lunix"));
     for (let h = 0; h < 2; h++) tick(s);
     const [a, b] = [issueKey(s, "vmwhere", null), issueKey(s, "vmwhere", null)];
     ok(installSoftware(s, id, "vmwhere", a.key));
+    expect(err(activateLicence(s, id, "vmwhere", b.key))).toBe("error.licenceHeld");
+    ok(activateLicence(s, id, "vmwhere", a.key));
+    expect(assignedKey(s, id, "vmwhere")!.id).toBe(a.id);
+    expect(err(removeLicence(s, "nope", "vmwhere"))).toBe("error.noSoftware");
+    ok(removeLicence(s, id, "vmwhere"));
+    expect(assignedKey(s, id, "vmwhere")).toBeUndefined();
+    expect(unassignedKeys(s, "vmwhere").map((x) => x.id)).toEqual([a.id, b.id]);
     ok(activateLicence(s, id, "vmwhere", b.key));
     expect(unassignedKeys(s, "vmwhere").map((x) => x.id)).toEqual([a.id]);
     for (let h = 0; h < 6; h++) tick(s);

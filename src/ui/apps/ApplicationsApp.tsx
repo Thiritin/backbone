@@ -1,3 +1,4 @@
+import { deskUrl } from "./browser/sites/desk/DeskSite";
 import { BookOpen, CircleArrowDown, CircleX, Disc3, FileText, LayoutGrid, Monitor, Usb } from "lucide-react";
 import { useEffect, useState, type CSSProperties, type DragEvent, type ReactNode } from "react";
 import { imageParts, type OsImage } from "../../sim/10-catalog/server-os";
@@ -21,6 +22,7 @@ export function appMenu(app: string) {
   return [
     { label: t("apps.finder.open"), run: () => openApp(app) },
     app === "Browser" && { label: t("apps.finder.newWindow"), run: () => openApp(app, undefined, true) },
+    app === "Support" && !!deskUrl(game) && { label: t("desk.launcher.mailbox"), run: () => openApp(app, { kind: "mailbox", id: "" }) },
     null,
     { label: docked ? t("apps.finder.removeFromDock") : t("apps.finder.keepInDock"), run: () => act(setDocked, app, !docked) },
     { label: t("apps.finder.addToDesktop"), run: () => act(addAppLink, app) },
@@ -84,6 +86,9 @@ export function ApplicationsApp() {
             drag={(e) => { e.dataTransfer.setData(ISO, id); e.dataTransfer.effectAllowed = "copy"; }}>
             <span className="di-page"><Disc3 /></span>
           </Item>
+        ))}
+        {at === "downloads" && game.media.files.map((name) => (
+          <Item key={name} label={name}><span className="di-page"><FileText /></span></Item>
         ))}
         {at === "usb" && game.media.stick.os && (
           <Item label={isoFile(game.media.stick.os)}><span className="di-page"><Disc3 /></span></Item>

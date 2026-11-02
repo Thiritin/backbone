@@ -1,0 +1,24 @@
+/* cPanic's MySQL Databases page; colours come from the era's .cp variables. */
+.cp-db { width: 100%; }
+.cp .cp-db h1 { margin: 0 0 10px; font-size: 18px; }
+.cp .cp-db h2 { margin: 18px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--line); font-size: 15px; }
+.cp .cp-db h3 { margin: 14px 0 6px; font-size: 13px; }
+.cp-db .cx-table { margin-bottom: 10px; }
+.cp-db-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; margin-bottom: 12px; }
+.cp-db-form label { display: flex; flex-direction: column; gap: 3px; font-weight: 600; }
+.cp-db-grid { display: grid; grid-template-columns: minmax(0, 340px); align-items: stretch; }
+.cp-db-grid .cx-btn.primary { justify-self: start; }
+.cp-db-prefix { display: inline-flex; align-items: center; gap: 2px; font-weight: 400; }
+.cp-db-prefix input { min-width: 0; flex: 1; }
+.cp-db-strength { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.cp-db-strength meter { width: 120px; }
+.cp-db-grant { display: inline-flex; gap: 4px; margin-right: 8px; }
+.cp-db-done { padding: 6px 10px; border: 1px solid #8bc34a; background: #eef8e4; border-radius: var(--r); }
+.cp-db-confirm { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 10px; margin-bottom: 10px; border: 1px solid var(--bad, #c62828); border-radius: var(--r); }
+.cp-db-confirm p { flex-basis: 100%; margin: 0; }
+.cp-db-facts { display: grid; grid-template-columns: max-content 1fr; gap: 2px 10px; }
+.cp-db-facts dt { font-weight: 600; }
+.cp-db-facts dd { margin: 0; }
+.cp-db-all { display: block; margin: 10px 0 6px; font-weight: 700; }
+.cp-db-privs { display: grid; grid-template-columns: repeat(2, minmax(0, 240px)); gap: 4px 12px; margin-bottom: 10px; }
+@media (max-width: 560px) { .cp-db-privs { grid-template-columns: 1fr; } }

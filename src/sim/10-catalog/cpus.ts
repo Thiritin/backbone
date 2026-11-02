@@ -1,4 +1,4 @@
-// CPU makers per generation (economy.md, Prices over time, CPU vendors): two x86 makers that swap the lead and an ARM maker
+// CPU makers per generation (economy/prices-over-time.md, Prices over time, CPU vendors): two x86 makers that swap the lead and an ARM maker
 // from 2020. Anchors: Opteron 2005, Xeon 5500 2009, EPYC 2017, Ampere Altra 2020.
 import { GENERATIONS, generationAt } from "./economy";
 

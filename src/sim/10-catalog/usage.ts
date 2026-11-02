@@ -2,7 +2,7 @@ import { hashRng, rand } from "../00-core/rng";
 import { dateOf } from "../00-core/time";
 import type { Product, Profile } from "../30-customers/customers";
 
-// Values from docs/design/economy.md, section "Usage curves and overcommit": hour of day and the share of booked capacity in use.
+// Values from docs/design/economy/usage-curves-and-overcommit.md, section "Usage curves and overcommit": hour of day and the share of booked capacity in use.
 type Keys = [number, number][];
 export type CurveId = "game" | "shop" | "blog" | "personal" | "news" | "business" | "backup" | "vpn" | "dev" | "enterprise";
 
@@ -63,7 +63,7 @@ export function curveLoad(id: CurveId, hour: number): number {
   return at(CURVES[id][weekend ? "weekend" : "weekday"], h) * DAYS[id][day];
 }
 
-// economy.md, "Usage curves and overcommit": traffic, night jobs and growth.
+// economy/usage-curves-and-overcommit.md, "Usage curves and overcommit": traffic, night jobs and growth.
 // Share of a service's traffic that flows whatever its load; game servers send ticks to every connected player all night.
 export const TRAFFIC_FLOOR: Partial<Record<Product, number>> = { gameServer: 0.5, vpn: 0.2, dedicated: 0.2, colocation: 0.3 };
 // How much a service's 5-minute traffic swings around its hourly average (coefficient of variation).
@@ -99,7 +99,7 @@ export function nightJob(seed: number, customerId: string, hour: number): number
   return Math.max(0, Math.min(h + 1, start + 1) - Math.max(h, start));
 }
 
-// economy.md, "How the first build plays": share of performance a service can lose before its customer notices, by what it
+// economy/README.md, "How the first build plays": share of performance a service can lose before its customer notices, by what it
 // runs. Each customer's own expectation scales it by 0.5 to 1.5.
 export const SLOW_TOLERANCE: Record<CurveId, number> = { game: 0.05, shop: 0.1, enterprise: 0.1, news: 0.15, vpn: 0.15, business: 0.2, blog: 0.25, personal: 0.4, dev: 0.35, backup: 0.6 };
 const TOLERANCE_SALT = -4;

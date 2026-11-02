@@ -1,4 +1,4 @@
-// gdd.md, Network and DDoS, Private networks: a customer's private network is a VLAN on the player's switches. The
+// gdd/network-and-ddos.md, Network and DDoS, Private networks: a customer's private network is a VLAN on the player's switches. The
 // customer's VMs reach each other while every server they run on reaches the others with frames tagged in that VLAN.
 import { isManaged, isOobPort, jacksOf, modelById } from "../10-catalog/hardware";
 import type { End, GameState, PrivateNet } from "../50-state";

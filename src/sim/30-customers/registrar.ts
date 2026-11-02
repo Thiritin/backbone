@@ -1,5 +1,5 @@
 // GDD, Domain registration: the registrar partner under contract bills the registry cost of every domain under management
-// monthly, at a factor that falls with the number of domains. Numbers in economy.md, Sales and quotes (Domains).
+// monthly, at a factor that falls with the number of domains. Numbers in economy/sales-and-quotes.md, Sales and quotes (Domains).
 import { effectOf, invoice, invoicing } from "../46-finance/payables";
 import { hashRng, rand } from "../00-core/rng";
 import { dateOf, isMonthStart } from "../00-core/time";
@@ -106,7 +106,7 @@ export function registrarTick(s: GameState): SimEvent[] {
   return events;
 }
 
-// economy.md, Domains: the share of leaving customers who ask for the auth code of each domain, the days they wait for it,
+// economy/README.md, Domains: the share of leaving customers who ask for the auth code of each domain, the days they wait for it,
 // what a refusal costs and the chance it ends in a complaint to the partner, who then releases the domain anyway.
 export const DOMAIN_OUT = "domainOut";
 export const TRANSFER_ASK = 0.5, TRANSFER_WAIT_DAYS = 3, TRANSFER_OUT_DAYS = 2, REFUSE_PENALTY = 15, COMPLAINT_CHANCE = 0.5;

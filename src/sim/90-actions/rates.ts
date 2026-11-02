@@ -1,5 +1,5 @@
 // The player's price per resource unit of a line and its setup fee (Products app). The shop charges a spec at these
-// rates; services already sold keep their price (gdd.md, Per-resource pricing).
+// rates; services already sold keep their price (gdd/README.md, Per-resource pricing).
 import { UNITS, type Unit } from "../10-catalog/products";
 import { SITE_LINES } from "../80-business/website";
 import type { Product } from "../30-customers/customers";

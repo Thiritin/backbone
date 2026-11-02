@@ -1,5 +1,4 @@
 // What the DNS, VPN, storage and mail software holds, read from the customers' services on a cluster.
-import { ascii, companyDomain } from "../../../../sim/30-customers/domains";
 import type { GameState } from "../../../../sim/50-state";
 import { dnsZones } from "../../../../sim/60-infra/netsvc-dns";
 import type { Cluster } from "../../../../sim/60-infra/cluster";
@@ -13,12 +12,6 @@ export function tenants(game: GameState, c: Cluster): Tenant[] {
     const zones = dnsZones(game, v);
     return { id: w.id, hostname: w.hostname ?? w.id, customer: cu?.name ?? "", zones, users: v?.spec.users ?? 0, diskGb: w.diskGb, running: vmState(game, w) === "running" };
   });
-}
-
-// The company's own mailboxes: one per employee plus the shared ones.
-export function mailboxes(game: GameState): string[] {
-  const domain = companyDomain(game);
-  return ["admin", "support", "billing", ...game.staff.map((e) => ascii(e.name.split(" ")[0]))].map((x) => `${x}@${domain}`);
 }
 
 // A stable fake key or serial from an id, so the same machine always prints the same values.

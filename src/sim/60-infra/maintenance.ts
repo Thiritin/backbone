@@ -1,4 +1,4 @@
-// economy.md, Happiness and churn: planned maintenance windows. Customers told a day ahead lose nothing to downtime inside
+// economy/happiness-and-churn.md, Happiness and churn: planned maintenance windows. Customers told a day ahead lose nothing to downtime inside
 // the window; a late announcement halves what it costs them.
 import { dateOf } from "../00-core/time";
 import type { Customer, Service } from "../30-customers/customers";

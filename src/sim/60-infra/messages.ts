@@ -1,4 +1,4 @@
-// economy.md, DirectAdmin Message System: a window onto tickets and system state that already exist; nothing is stored.
+// economy/README.md, DirectAdmin Message System: a window onto tickets and system state that already exist; nothing is stored.
 import { isFinal, type Ticket } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import { vulnerable } from "./security";

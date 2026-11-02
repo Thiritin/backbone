@@ -2,7 +2,7 @@
 
 Status: building. Lane ids: `webdev-segment`, `flyers`, `design-agency`.
 
-Related design: `docs/design/economy.md` (Market and leads, Marketing and reviews, Resellers), [web-presence](web-presence.md), [shop-portal](shop-portal.md).
+Related design: `docs/design/economy/README.md` (Market and leads, Marketing and reviews, Resellers), [web-presence](web-presence.md), [shop-portal](shop-portal.md).
 
 ## What changes
 
@@ -22,7 +22,7 @@ Sim only, plus one seeded test and the economy doc.
 - Word of mouth: `REFERRAL_LEADS` 0.005 to 0.003 and `ORGANIC_CONSIDER` 0.4 to 0.3 in `src/sim/30-market/market.ts`. Run `npm run balance` before and after and keep the bot solvent; if the first-year run starves, raise `ORGANIC_CONSIDER` to 0.35 instead and say so.
 - Marketing app: the awareness table, campaign reach and lost-demand views pick up the new profile through `PROFILE_IDS`; add the profile label key `marketing.profile.webDev` (and any `profile.webDev` key the UI already uses per profile) in English and every language.
 - Test `tests/webdev.test.ts`: over a seeded 2005 year fewer than 5% of leads are web developers; with a cPanic host in 2009 the majority of web developer leads ask for a reseller block; referral leads at a fixed happy customer count are 40% lower than the old constant would give.
-- Doc: the profile mix table and the Resellers paragraph in `docs/design/economy.md`.
+- Doc: the profile mix table and the Resellers paragraph in `docs/design/economy/resellers.md`.
 
 ## Lane `flyers`
 
@@ -34,7 +34,7 @@ Sim only, plus one seeded test and the economy doc.
 - Marketing app, Campaigns tab: a Flyers card above the campaign cards that lists every running run (city, flyers left, leads so far) and an Order button that opens the browser at the print shop; look at how the Website card's Manage button and the Community tab open a site for the pattern.
 - Strings: new `ui-flyers.ts` in English and every language folder, including `sim.index.flyers`.
 - Test `tests/flyers.test.ts`: ordering without a location fails; a 5,000 run in the home city books the ledger line, hands out all flyers within 31 days, and the month's lead batches contain a flyer batch whose count matches the response rate; a saved game before this change still loads.
-- Doc: a Flyers paragraph under Marketing and reviews in `docs/design/economy.md`, the channel added to the cost per lead table.
+- Doc: a Flyers paragraph under Marketing and reviews in `docs/design/economy/marketing-and-reviews.md`, the channel added to the cost per lead table.
 
 ## Lane `design-agency`
 
@@ -44,7 +44,7 @@ Sim only, plus one seeded test and the economy doc.
 - Company site `CompanySite.tsx`: the self-built look (no `website` channel) becomes a frameset-style page with a left frame menu, a marquee line, a visitor counter and a "best viewed in 800x600" footer; the agency generations keep their looks and the 2005 agency look is clean but dated (table layout, no marquee).
 - Strings: new `ui-agency.ts` in English and every language, `sim.index.agency`.
 - Test `tests/design-agency.test.ts`: `designPrice(2005, 1)` is 400, `designPrice(2025, 1)` is 3,500, `designPrice(2025, 6)` is 12,250; a redesign with a current design is accepted, books the price under `marketing` and flips `designYear` only after 14 days; an old save without `designReady` loads.
-- Doc: the Owned channels table and the Design generations paragraph in `docs/design/economy.md`.
+- Doc: the Owned channels table and the Design generations paragraph in `docs/design/economy/README.md`.
 
 ## Order
 

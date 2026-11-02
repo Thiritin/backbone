@@ -1,6 +1,6 @@
 # Plan: product catalog
 
-Lane id: `product-catalog`. Related design: `docs/design/plans/billing-by-hand.md` (Books, quotes), `docs/design/plans/shop-portal.md` (3.3 Product groups and products, which this plan reshapes), `docs/design/shop.md` (shop variants), `docs/design/gdd.md` (Custom orders).
+Lane id: `product-catalog`. Related design: `docs/design/plans/billing-by-hand.md` (Books, quotes), `docs/design/plans/shop-portal.md` (3.3 Product groups and products, which this plan reshapes), `docs/design/shop.md` (shop variants), `docs/design/gdd/README.md` (Custom orders).
 
 ## 1. Decisions
 

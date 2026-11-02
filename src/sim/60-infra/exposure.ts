@@ -1,4 +1,4 @@
-// economy.md, Per-VM firewall: which ports a host's software listens on, which of them it must serve, and what a firewall on its VM changes.
+// economy/README.md, Per-VM firewall: which ports a host's software listens on, which of them it must serve, and what a firewall on its VM changes.
 import { softwareById } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
 import { vmById, type Cluster } from "./cluster";

@@ -15,7 +15,7 @@ const ask = (p: Params) => `${what(p)} for ${term(p)}, ${Number(p.free) ? "free 
 const reach = (p: Params) => `${p.audience} ${PEOPLE[String(p.profile)]}`;
 const plural = (n: unknown, one: string, many: string) => (Number(n) === 1 ? one : many);
 
-// Sponsoring requests: the emails, the events and the outcomes (gdd.md, Marketing and reviews).
+// Sponsoring requests: the emails, the events and the outcomes (gdd/marketing-and-reviews.md, Marketing and reviews).
 export const COMMUNITY_EN: Record<string, (p: Params) => string> = {
   "ticket.sponsor.lanTastic.subject": (p) => `${p.event} needs servers`,
   "ticket.sponsor.lanTastic.text": (p) => `Hi, we run ${p.event}, the biggest LAN party in the county, and last year the servers lagged harder than our players. Could you sponsor ${what(p)} for ${span(p)}? Your logo goes on the big screen between the pizza breaks.`,

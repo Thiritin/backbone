@@ -1,4 +1,4 @@
-// GDD, Racks, hardware and cabling (Remote access) and Network and DDoS (Out-of-band management). Numbers in economy.md,
+// GDD, Racks, hardware and cabling (Remote access) and Network and DDoS (Out-of-band management). Numbers in economy/README.md,
 // Hardware, power and failures.
 import { hashRng, rand } from "../00-core/rng";
 import { nowHours, yearOf } from "../00-core/time";

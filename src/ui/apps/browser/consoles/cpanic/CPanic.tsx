@@ -1,15 +1,17 @@
 import { Archive, ArrowRightLeft, Blocks, Circle, Code, Download, KeyRound, ListChecks, Lock, LogOut, Network, Package, RefreshCw, ScrollText, Search, Server, UserPlus, Users, type LucideIcon } from "lucide-react";
 import { useState } from "react";
-import { eraAt, looks, Facts, LoginForm, Nodes, RowsTable, Tiles, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
+import { eraAt, looks, Facts, LoginForm, Nodes, RowsTable, ServerUse, Tiles, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
 import { t } from "../../../../../i18n/en";
 import { yearOf } from "../../../../../sim/00-core/time";
 import { TRANSFER_FROM_YEAR } from "../../../../../sim/60-infra/transfers";
 import { AUTOSSL_FROM } from "../../../../../sim/60-infra/webpanel";
 import { parseCreate } from "../../../../../sim/80-business/consoles";
 import { PackagesScreen, ProvisionForm } from "../PackageForms";
+import { OwnAccountForm, OwnAccountRows } from "../OwnAccounts";
 import { useReadoutPages } from "../Readouts";
 import { useSessionState } from "../../../../session";
 import { Customer } from "./Customer";
+import { PhpMyAdmon } from "./PhpMyAdmon";
 import { AutoSsl } from "./AutoSsl";
 import { PhpProfiles } from "./EasyApache";
 import { TransferTool } from "./TransferTool";
@@ -29,6 +31,7 @@ const TabIcon = ({ id }: { id: Tab }) => { const I = ICON[id] ?? Circle; return 
 
 export function CPanic(p: PanelProps) {
   const era = eraAt(LOOKS, p), x3 = era === "x3", open = parseCreate("cpanic", p.path), [tab, setTab] = usePanelTab(p.f, open?.screen ?? "objects"), [q, setQ] = useState(""), [as, setAs] = useSessionState<string | null>(`browser.cpanic.as.${p.c.id}`, null);
+  const [pma, setPma] = useSessionState<string | null>(`browser.cpanic.pma.${p.c.id}`, null);
   const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f);
   if (!p.signedIn) return (
     <div className="cx cp cp-login" data-era={era}>
@@ -38,6 +41,7 @@ export function CPanic(p: PanelProps) {
       </LoginForm>
     </div>
   );
+  if (as && pma === as) return <PhpMyAdmon game={p.game} workloadId={as} close={() => setPma(null)} />;
   if (as) return (
     <div className="cx cp" data-era={era}>
       <header className="cp-top">
@@ -45,7 +49,7 @@ export function CPanic(p: PanelProps) {
         <span className="cx-host">{p.host}</span>
         <button className="cp-out" onClick={() => setAs(null)}>{t("readouts.cp.backToWhm")}</button>
       </header>
-      <Customer game={p.game} c={p.c} workloadId={as} />
+      <Customer game={p.game} c={p.c} workloadId={as} openPma={() => setPma(as)} />
     </div>
   );
   const menu: [string, [Tab, string][]][] = [
@@ -86,11 +90,14 @@ export function CPanic(p: PanelProps) {
         <main className="cp-main">
           <div className="cp-crumb">{group}</div>
           <h1>{title}</h1>
+          {tab === "objects" && <ServerUse game={p.game} c={p.c} />}
           {tab === "objects" && <RowsTable rows={rows} name={t("browser-consoles-1.domain")} cols={["user", "pkg"]} extra={(r) => <button className="cx-btn" onClick={() => setAs(r.id)}>{t("readouts.cp.loginAs")}</button>} />}
+          {tab === "objects" && <OwnAccountRows game={p.game} c={p.c} onLogin={setAs} />}
           {tab === "create" && (
             <ProvisionForm game={p.game} c={p.c} products={["webHosting"]} order={open?.screen === "create" ? open.order : undefined} className="cx-form cp-form"
               sections={{ order: t("pkg.order"), account: t("pkg.cpDomainInfo"), plan: t("pkg.cpSettings") }} />
           )}
+          {tab === "create" && <OwnAccountForm game={p.game} c={p.c} className="cx-form cp-form" />}
           {tab === "packages" && <PackagesScreen game={p.game} c={p.c} />}
           {tab === "nodes" && <Nodes game={p.game} c={p.c} />}
           {tab === "transfer" && <TransferTool game={p.game} c={p.c} x3={x3} />}

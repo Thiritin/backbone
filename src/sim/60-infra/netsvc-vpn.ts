@@ -1,4 +1,4 @@
-// GDD, Infrastructure consoles: the user certificates of a VPN service and the lost-laptop incident. Numbers in economy.md, Happiness and churn.
+// GDD, Infrastructure consoles: the user certificates of a VPN service and the lost-laptop incident. Numbers in economy/happiness-and-churn.md, Happiness and churn.
 import { hashRng, rand } from "../00-core/rng";
 import { isMonthStart } from "../00-core/time";
 import type { Service } from "../30-customers/customers";

@@ -50,7 +50,7 @@ Tick effects:
 - `workloadLoad` returns `HELD_LOAD = 0.02` for a held service (a parked page). This frees used CPU and RAM and relieves slowdown on the host; booking and disk stay, so the host is not freed until the account is deleted. This is the "frees capacity and stops losses" in panel-features.md, bounded by what the sim can honestly say.
 - A held shady customer draws no new abuse notices on held services: in `src/sim/40-support/tick.ts:118` the abuse rate multiplies by 0 when every service of the customer is held. This is the abuse relief the plan promises.
 - Churn: reuse `SUSPEND_CHURN_DAYS` and `SUSPEND_CHURN_CHANCE` (`billing.ts:72-73`) for "manual" and "abuse" holds longer than 14 days on a non-shady customer.
-- Economy: no new numbers beyond `HELD_LOAD = 0.02`; extends economy.md "Billing" (suspension) and "Usage curves and overcommit".
+- Economy: no new numbers beyond `HELD_LOAD = 0.02`; extends economy/usage-curves-and-overcommit.md "Billing" (suspension) and "Usage curves and overcommit".
 
 UI, one screen per console, label from `consoles.ts` `holdLabels(look)`:
 
@@ -84,7 +84,7 @@ Placement (`src/sim/60-infra/oversell.ts`, new): `withinOversell(s, c, add: Reso
 
 Tick effect (so overselling has a price beyond the existing CPU math):
 - Contention when ratio is high. In `nodeUsage` (`usage.ts:88`) the cpu term already slows at peak use. Add `contention(ratio)` for panel clusters only: `perf *= max(0.85, 1 - 0.04 * max(0, ratio - 4))`. Rationale: past 4 booked vCPU per physical vCPU the disk and network of shared hosting degrade even when averages look fine. This slows at all hours, `overload` (`products.ts:262`) then sets `slowedAt` and unhappiness, and the month-without-`slowedAt` review (`products.ts:322`) is lost.
-- No new threshold for the CPU case: average panel loads of 0.25 to 0.45 (economy.md "Usage curves") mean ratios up to about 2.5 are safe at the daily peak of 0.7 to 0.9 on a quiet host, and a game panel (curve peaks 1.0 at weekend evening) is safe only to about 1.2. The panel shows peak use against the ratio so the player learns this; no tutorial text.
+- No new threshold for the CPU case: average panel loads of 0.25 to 0.45 (economy/README.md "Usage curves") mean ratios up to about 2.5 are safe at the daily peak of 0.7 to 0.9 on a quiet host, and a game panel (curve peaks 1.0 at weekend evening) is safe only to about 1.2. The panel shows peak use against the ratio so the player learns this; no tutorial text.
 - Gain: more accounts per host. Cost: slowdown, reviews, and a shady neighbour's spike reaching everyone (already true through `nodeUsage`).
 
 Economy: extends "Usage curves and overcommit". Numbers: `OVERSELL_KNEE = 4`, `OVERSELL_SLOPE = 0.04`, `OVERSELL_FLOOR = 0.85`.
@@ -103,7 +103,7 @@ Each shows booked and used vCPU, RAM and disk, the ratio, the cap field, the hou
 
 ### 3.3 Licence tiers (feature 4)
 
-Catalog (`src/sim/10-catalog/licence-tiers.ts`, new; extends economy.md "Platforms and licenses"): per panel software a list of tiers `{ id, name, cap: number | null, fee, kind }`. The top tier keeps today's fee so existing economics do not move. Real editions imitated: cPanel Solo/Admin/Pro/Premier, Plesk Web Admin/Web Pro/Web Host, DirectAdmin Personal/Lite/Standard.
+Catalog (`src/sim/10-catalog/licence-tiers.ts`, new; extends economy/platforms-and-licenses.md "Platforms and licenses"): per panel software a list of tiers `{ id, name, cap: number | null, fee, kind }`. The top tier keeps today's fee so existing economics do not move. Real editions imitated: cPanel Solo/Admin/Pro/Premier, Plesk Web Admin/Web Pro/Web Host, DirectAdmin Personal/Lite/Standard.
 
 | Software | Tier | Account cap | Fee per month |
 | --- | --- | --- | --- |

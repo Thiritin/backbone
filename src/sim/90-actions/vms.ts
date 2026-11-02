@@ -76,7 +76,7 @@ export function rebootWorkload(s: GameState, id: string): ActionResult {
   return stopped.ok ? startWorkload(s, id) : stopped;
 }
 
-// Hours a workload is offline while it moves over a link. economy.md, Workloads and migration: virtual machines move live
+// Hours a workload is offline while it moves over a link. economy/workloads-and-migration.md, Workloads and migration: virtual machines move live
 // when their cluster has live migration on and the hypervisor can do it (between zones only over 10 Gbit/s or more, never
 // off a failed node, to a node toId of another CPU vendor only in compatibility mode, and on VMwhere before 2012 only with
 // the disk on a datastore of the cluster toId is in); web spaces are back within a minute inside a zone.

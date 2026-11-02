@@ -161,9 +161,9 @@ A feature is built when it gives the player a decision or makes an existing sim 
 
 What the sim has today:
 
-- Game servers are sold by vCPU, RAM and disk with a game server usage curve (economy.md, Usage curves and overcommit). There are no game titles.
+- Game servers are sold by vCPU, RAM and disk with a game server usage curve (economy/usage-curves-and-overcommit.md, Usage curves and overcommit). There are no game titles.
 - Overcommit exists for clusters (`src/sim/60-infra/usage.ts`), not for panel hosts.
-- Panel licences are priced (economy.md, Platforms and licenses).
+- Panel licences are priced (economy/platforms-and-licenses.md, Platforms and licenses).
 - Payment habits and shady customers exist (`habit`, `shady` in `src/sim/30-customers/customers.ts`).
 - A custom order runs the steps quote, account, invoice, domain and provision (`src/sim/30-market/manual.ts`). Each step is one button in Support > Custom order.
 - Shop systems, modules and provisioning automation are built (`shop.md`). The styled shop console in the Browser is still open.

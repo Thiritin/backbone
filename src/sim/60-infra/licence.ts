@@ -192,9 +192,13 @@ export function startTrial(s: GameState, machineId: string, product: string): vo
   s.trials = [...s.trials, { machineId, product, until: s.hour + days * 24 }];
 }
 
-// Web spaces on the panel host, the installed shop system's and a self-hosted desk's included.
-export const accountsOn = (s: GameState, c: Cluster): number => s.workloads.filter((w) => w.clusterId === c.id).length + (s.shop.install?.clusterId === c.id ? 1 : 0)
-  + (s.desk?.hosting.kind === "self" && s.desk.hosting.clusterId === c.id ? 1 : 0);
+// Web spaces on the panel host, the company's own, the installed shop system's and a self-hosted desk's included. The shop
+// counts on its own only on a host without an own web space, since that is where it lives.
+export const accountsOn = (s: GameState, c: Cluster): number => {
+  const own = s.ownWebspaces.filter((x) => x.clusterId === c.id).length;
+  return s.workloads.filter((w) => w.clusterId === c.id).length + own + (!own && s.shop.install?.clusterId === c.id ? 1 : 0)
+    + (s.desk?.hosting.kind === "self" && s.desk.hosting.clusterId === c.id ? 1 : 0);
+};
 
 // The machine a panel host runs on: its VM or its one server.
 export const panelMachine = (c: Cluster): string | null => c.vm ?? c.nodes[0]?.deviceId ?? null;

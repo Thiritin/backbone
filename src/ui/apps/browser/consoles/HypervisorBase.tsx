@@ -5,7 +5,7 @@ import { formatClock, yearOf } from "../../../../sim/00-core/time";
 import { balancerIn, SOFTWARE, softwareById } from "../../../../sim/10-catalog/platforms";
 import type { Resources } from "../../../../sim/10-catalog/products";
 import { HA_SKILL } from "../../../../sim/10-catalog/research";
-import { APP_SUITE_FEE, imageParts, licensingAt, serverOsById, type OsImage } from "../../../../sim/10-catalog/server-os";
+import { APP_SUITE_FEE, imageParts, isoName, licensingAt, serverOsById, type OsImage } from "../../../../sim/10-catalog/server-os";
 import type { GameState } from "../../../../sim/50-state";
 import { t } from "../../../../i18n/en";
 import { clusterSummary, type Alarm, type Amount, type Amounts, type Severity } from "../../../../sim/60-infra/alarms";
@@ -13,7 +13,7 @@ import { addressesOf, machineAddress } from "../../../../sim/60-infra/addresses"
 import { balances, datastoreFits, datastoreUp, deltaGb, hostOfVm, insideVm, isOwnVm, KEYS, nodeTakes, withDatastore, workloadsOn, type Cluster, type ClusterNode, type Ha, type Workload } from "../../../../sim/60-infra/cluster";
 import { machineScreen } from "../../../../sim/60-infra/oob";
 import { deviceHealth, working } from "../../../../sim/60-infra/status";
-import { nodeUsage, workloadUse } from "../../../../sim/60-infra/usage";
+import { shownNode, shownWorkload } from "../../../../sim/60-infra/usage";
 import { consoleTitle, type ConsoleFeatures } from "../../../../sim/80-business/consoles";
 import { setMedia } from "../../../../sim/90-actions/console";
 import { setLimits } from "../../../../sim/90-actions/limits";
@@ -55,7 +55,7 @@ export interface Vm {
 const num = (n: number) => `${+n.toFixed(2)}`;
 export const nodeName = (game: GameState, id: string | null) => { const d = game.devices.find((x) => x.id === id); return d ? d.hostname ?? d.label ?? d.name : ""; };
 export const osText = (w: Workload) => (w.os ? `${serverOsById(w.os.id).name} ${w.os.version}` : t("browser-consoles-1.none"));
-export const isoName = (img: OsImage) => `${img.replace("@", "-")}.iso`.replace(/\s+/g, "-").toLowerCase();
+export { isoName };
 
 // A VM's size: an own VM is resized, a customer VM gets its limits booked.
 function SizeForm({ w, done }: { w: Workload; done: () => void }) {
@@ -131,7 +131,7 @@ export function useVms(game: GameState, c: Cluster, f: ConsoleFeatures): { vms: 
     return {
       w, id: w.id, st, state: hold?.state?.[0] ?? state, tone: hold?.state?.[1] ?? tone, own, name: host?.name ?? label.name, sub: own ? (host ? consoleTitle(host.panel ?? host.platform ?? "") : "") : label.service,
       node: nodeName(game, w.deviceId), ip, publicIp: pub[0] ?? "", ips: [ip, ...pub].filter(Boolean).join(", "), os: own ? osText(w) : "", media: w.media ?? null,
-      use: workloadUse(game, w), actions: [...actions.filter((a): a is PanelAction => !!a), ...(hold?.actions ?? [])], panel, storage: w.datastore ? nodeName(game, w.datastore) : t("browser-consoles-1.local"),
+      use: shownWorkload(game, w), actions: [...actions.filter((a): a is PanelAction => !!a), ...(hold?.actions ?? [])], panel, storage: w.datastore ? nodeName(game, w.datastore) : t("browser-consoles-1.local"),
     };
   });
   return { vms, dialog: hand.dialog };
@@ -314,7 +314,7 @@ export function NodeList({ game, c, f, className = "cx-table" }: { game: GameSta
         <thead><tr><th>{t("browser-consoles-1.node")}</th><th>{t("browser-consoles-1.status")}</th><th>{t("browser-consoles-1.cpu")}</th><th>{t("browser-consoles-1.memory")}</th><th>{t("browser-consoles-1.vms")}</th><th /></tr></thead>
         <tbody>
           {c.nodes.map((n) => {
-            const u = nodeUsage(game, n.deviceId), vms = workloadsOn(game, n.deviceId).length;
+            const u = shownNode(game, n.deviceId), vms = workloadsOn(game, n.deviceId).length;
             return (
               <tr key={n.deviceId}>
                 <td><b>{nodeName(game, n.deviceId)}</b></td>

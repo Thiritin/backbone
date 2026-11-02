@@ -18,8 +18,9 @@ import { machineScreen } from "./oob";
 import { cpuLoad, installedRamGb, portPeers, raidUsable, working } from "./status";
 import { heatOf } from "./thermal";
 
-// economy.md: memory stays mostly resident, disks fill from 30% of booked at signup at the customer's growth rate up to the booked limit.
-const RAM_BASE = 0.6;
+// economy/usage-curves-and-overcommit.md: VM memory stays mostly resident, a web space's PHP memory follows its visitors, and disks fill
+// from 30% of booked at signup at the customer's growth rate up to the booked limit.
+const RAM_BASE = 0.6, WEB_RAM_BASE = 0.1;
 const yearsSince = (since: number, hour: number) => Math.max(0, hour - since) / 8760;
 export function diskFill(s: GameState, w: Workload, hour: number): number {
   const v = s.services.find((x) => x.id === w.serviceId);
@@ -93,19 +94,20 @@ function titleInterest(s: GameState, v: Service, hour: number): number {
 // What a game server's mods multiply its resource use by.
 const modLoad = (s: GameState, serviceId: string): number => (s.gameServers.find((g) => g.serviceId === serviceId)?.mods ?? []).reduce((n, id) => n * (modById(id)?.load ?? 1), 1);
 
-// economy.md, Limits: a limit above the sold size lets peaks run up to STRETCH_MAX of it; a VM line feels its limit from
+// economy/README.md, Limits: a limit above the sold size lets peaks run up to STRETCH_MAX of it; a VM line feels its limit from
 // NOTICE of it, a web space only once it reaches it, and a full disk stalls the site to DISK_STARVE.
 export const STRETCH_MAX = 1.5;
 export const NOTICE: Partial<Record<Product, number>> = { vps: 0.9, gameServer: 0.9 };
 export const DISK_STARVE = 0.3;
 
 // What a customer workload would use at an hour without its limit: the sold size times its load.
-export function need(s: GameState, v: { id: string; spec: Resources }, w: Workload, hour: number = s.hour): Resources {
+export function need(s: GameState, v: { id: string; spec: Resources; product?: Product }, w: Workload, hour: number = s.hour): Resources {
   const load = workloadLoad(s, w, hour), lost = lostDisk(s, w), mods = modLoad(s, v.id), busy = Math.min(1, load * mods), fill = fillOf(s, v.id);
+  const base = v.product === "webHosting" || v.product === "reseller" ? WEB_RAM_BASE : RAM_BASE;
   const stretch = (k: "vcpu" | "ramGb") => (v.spec[k] > 0 ? Math.min(STRETCH_MAX, Math.max(1, w[k] / v.spec[k])) : 1);
   return {
     vcpu: v.spec.vcpu * fill * load * mods * stretch("vcpu"),
-    ramGb: w.stopped || lost || oomKilled(w, hour) ? 0 : v.spec.ramGb * fill * (RAM_BASE + (1 - RAM_BASE) * busy) * stretch("ramGb"),
+    ramGb: w.stopped || lost || oomKilled(w, hour) ? 0 : v.spec.ramGb * fill * (base + (1 - base) * busy) * stretch("ramGb"),
     diskGb: lost ? 0 : v.spec.diskGb * fill * diskFill(s, w, hour),
   };
 }
@@ -125,6 +127,11 @@ export function starvation(s: GameState, v: Service, w: Workload, hour: number =
 
 // What a workload uses of its booking at an hour: a customer what they need up to their limit, a panel VM what its panel
 // and web spaces use.
+// MySQL work for the databases the player created or imported on a web space; derived ones ride in the customer's load curve.
+export const MYSQL_VCPU_PER_GB = 0.5;
+export const mysqlVcpu = (s: GameState, w: Workload): number =>
+  (Object.values(s.webspaces[w.id]?.databases ?? {}).reduce((a, d) => a + (d ? d.mb : 0), 0) / 1024) * MYSQL_VCPU_PER_GB;
+
 export function workloadUse(s: GameState, w: Workload, hour: number = s.hour): Resources {
   if (isOwnVm(w)) {
     const hosts = hostsOfVm(s, w.id), u: Resources = { vcpu: 0, ramGb: 0, diskGb: 0 };
@@ -135,14 +142,14 @@ export function workloadUse(s: GameState, w: Workload, hour: number = s.hour): R
   }
   const n = need(s, s.services.find((x) => x.id === w.serviceId) ?? { id: w.serviceId, spec: w }, w, hour), disk = Math.min(w.diskGb, n.diskGb);
   if (w.frozen) return { vcpu: 0, ramGb: 0, diskGb: disk };
-  return { vcpu: Math.min(booked(s, w).vcpu, n.vcpu), ramGb: Math.min(w.ramGb, n.ramGb), diskGb: disk };
+  return { vcpu: Math.min(booked(s, w).vcpu, n.vcpu + (w.stopped || lostDisk(s, w) ? 0 : mysqlVcpu(s, w))), ramGb: Math.min(w.ramGb, n.ramGb), diskGb: disk };
 }
 
 liveRam.of = (s, w) => workloadUse(s, w).ramGb;
 
 // What a node physically has and uses at an hour, and the performance its workloads get: CPU load slows everyone along
 // cpuPerf, a disk pool over 100% stalls writes to 50%, a full-VM node past its RAM swaps.
-// economy.md, RAID: the share of its performance a node keeps while its array rebuilds, by rebuild rate.
+// economy/README.md, RAID: the share of its performance a node keeps while its array rebuilds, by rebuild rate.
 export const REBUILD_PERF = { low: 0.95, medium: 0.8, high: 0.6 } as const;
 export interface NodeUsage { used: Resources; physical: Resources; perf: number }
 
@@ -158,18 +165,61 @@ export function nodeUsage(s: GameState, deviceId: string, hour: number = s.hour)
   return { used, physical, perf: Math.min(cpu, disk, swap) * (d.rebuild ? REBUILD_PERF[d.rebuildRate] : 1) * heat };
 }
 
-// economy.md, What runs over: a full-VM node swaps up to SWAP_MAX of its RAM, losing SWAP_SLOW × the overcommit in speed;
+// economy/README.md, What runs over: a full-VM node swaps up to SWAP_MAX of its RAM, losing SWAP_SLOW × the overcommit in speed;
 // past it the host OOM-kills its largest VM (vmOomTick). OpenVeeZee hands RAM pressure to its beancounters instead.
 export const SWAP_MAX = 1.1, SWAP_SLOW = 5;
-// economy.md, What runs over: performance by CPU utilisation u, like a queue: full to 70%, 85% at 100%, then 0.85 ÷ u.
+// economy/README.md, What runs over: performance by CPU utilisation u, like a queue: full to 70%, 85% at 100%, then 0.85 ÷ u.
 export const cpuPerf = (u: number): number => (u <= 0.7 ? 1 : u <= 1 ? 1 - 0.5 * (u - 0.7) : 0.85 / u);
 // Below SLOW_PERF a site loads visibly slowly; below TIMEOUT_PERF for TIMEOUT_HOURS in a row it times out (timedOut).
 export const SLOW_PERF = 0.95, TIMEOUT_PERF = 0.25;
-// Hourly: counts the hours each cluster node has run below TIMEOUT_PERF.
+// Hourly: counts the hours each cluster node and each VM with software has run below TIMEOUT_PERF.
 export function timeoutTick(s: GameState): void {
   const low: Record<string, number> = {};
   for (const id of new Set(s.clusters.flatMap((c) => c.nodes.map((n) => n.deviceId)))) if (working(s, id) && nodeUsage(s, id).perf < TIMEOUT_PERF) low[id] = (s.lowPerf[id] ?? 0) + 1;
+  for (const id of new Set(s.clusters.flatMap((c) => (c.vm ? [c.vm] : [])))) {
+    const vm = s.workloads.find((w) => w.id === id);
+    if (vm && vmPerf(s, vm) < TIMEOUT_PERF) low[id] = (s.lowPerf[id] ?? 0) + 1;
+  }
   s.lowPerf = low;
+}
+
+// What a running VM's software and what it hosts ask of its CPU and RAM, as shares of its size.
+// ponytail: cached per hour, workloads and clusters array like cpuUtil, since every web space asks for its VM's.
+const strainCache = new WeakMap<GameState, { hour: number; workloads: Workload[]; clusters: GameState["clusters"]; by: Map<string, { cpu: number; ram: number }> }>();
+export function vmStrain(s: GameState, vm: Workload, hour: number = s.hour): { cpu: number; ram: number } {
+  if (!isOwnVm(vm) || vm.stopped) return { cpu: 0, ram: 0 };
+  let c = strainCache.get(s);
+  if (hour === s.hour && (!c || c.hour !== s.hour || c.workloads !== s.workloads || c.clusters !== s.clusters)) strainCache.set(s, (c = { hour: s.hour, workloads: s.workloads, clusters: s.clusters, by: new Map() }));
+  const hit = hour === s.hour ? c!.by.get(vm.id) : undefined;
+  if (hit) return hit;
+  const u = workloadUse(s, vm, hour), r = { cpu: u.vcpu / Math.max(1e-9, vm.vcpu), ram: u.ramGb / Math.max(1e-9, vm.ramGb) };
+  if (hour === s.hour) c!.by.set(vm.id, r);
+  return r;
+}
+// A VM asked for more CPU or RAM than it has is frozen: its readouts sit at 100% and its consoles stop answering.
+export const vmFrozen = (s: GameState, vm: Workload, hour: number = s.hour): boolean => { const r = vmStrain(s, vm, hour); return r.cpu > 1 || r.ram > 1; };
+// The speed a VM gives what runs in it, like a node's: CPU along cpuPerf, RAM past its size swapping.
+export function vmPerf(s: GameState, vm: Workload, hour: number = s.hour): number {
+  const r = vmStrain(s, vm, hour);
+  return Math.min(cpuPerf(r.cpu), r.ram > 1 ? 1 / (1 + SWAP_SLOW * (r.ram - 1)) : 1);
+}
+
+// economy/README.md, What runs over: a CPU or RAM readout wobbles by up to WOBBLE of its value each hour within 0 to its capacity,
+// drawn from the seed, the machine and the hour; one at or past its capacity stays full.
+export const WOBBLE = 0.08;
+const wobble = (s: GameState, id: string, k: number, used: number, cap: number, hour: number): number =>
+  cap <= 0 ? 0 : used >= cap ? cap : Math.max(0, Math.min(cap, used * (1 + WOBBLE * (2 * rand(hashRng(s.seed, idNum(id), k, Math.floor(hour))) - 1))));
+export const shown = (s: GameState, id: string, used: Resources, cap: Resources, hour: number = s.hour): Resources =>
+  ({ vcpu: wobble(s, id, 1, used.vcpu, cap.vcpu, hour), ramGb: wobble(s, id, 2, used.ramGb, cap.ramGb, hour), diskGb: used.diskGb });
+// A node's use as its readouts show it.
+export function shownNode(s: GameState, deviceId: string, hour: number = s.hour): NodeUsage {
+  const u = nodeUsage(s, deviceId, hour);
+  return { ...u, used: shown(s, deviceId, u.used, u.physical, hour) };
+}
+// A workload's use as its readouts show it, against its booking; a frozen VM reads full.
+export function shownWorkload(s: GameState, w: Workload, hour: number = s.hour): Resources {
+  const u = workloadUse(s, w, hour);
+  return vmFrozen(s, w, hour) ? { vcpu: w.vcpu, ramGb: w.ramGb, diskGb: u.diskGb } : shown(s, w.id, u, w, hour);
 }
 export const ramShare = (u: NodeUsage) => u.used.ramGb / Math.max(1e-9, u.physical.ramGb);
 
@@ -205,7 +255,7 @@ function computeCpuUtil(s: GameState, d: Device): number {
 }
 cpuLoad.of = cpuUtil;
 
-// economy.md, Workloads: a workload is pegged when its CPU ran at 95% or more of its booking for over half of the last 24 hours.
+// economy/README.md, Workloads: a workload is pegged when its CPU ran at 95% or more of its booking for over half of the last 24 hours.
 export const PEGGED_LOAD = 0.95;
 export const peggedHours = (s: GameState, w: Workload, hour: number = s.hour): number =>
   Array.from({ length: Math.min(24, hour + 1) }, (_, i) => workloadLoad(s, w, hour - i)).filter((l) => l >= PEGGED_LOAD).length;
@@ -235,7 +285,7 @@ const workloadMbps = (s: GameState, w: Workload): number => {
 const serverMbps = (s: GameState, d: Device) => workloadsOn(s, d.id).reduce((n, w) => n + workloadMbps(s, w), 0);
 
 function serverSums(s: GameState, d: Device, out: Sums) {
-  const u = nodeUsage(s, d.id);
+  const u = shownNode(s, d.id);
   for (const k of ["vcpu", "ramGb", "diskGb"] as const) out.physical[k] += u.physical[k];
   out.gbit += linkedGbit(s, d);
   if (!working(s, d.id)) return;
@@ -327,7 +377,7 @@ export function portLinks(s: GameState): Map<string, (PortLink | null)[]> {
   return out;
 }
 
-// economy.md, "Usage curves and overcommit": when customers outgrow their plan.
+// economy/usage-curves-and-overcommit.md, "Usage curves and overcommit": when customers outgrow their plan.
 export const ASK_FILL = 0.9;
 export const PEGGED = 0.9;
 export const ASK_CHANCE = 1 / 7;

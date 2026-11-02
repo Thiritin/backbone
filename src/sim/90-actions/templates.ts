@@ -1,4 +1,4 @@
-// economy.md, Templates: stopped own VMs on a hypervisor with datastores, kept to clone ready VMs from.
+// economy/README.md, Templates: stopped own VMs on a hypervisor with datastores, kept to clone ready VMs from.
 import { versionAt } from "../10-catalog/software-versions";
 import { nowHours } from "../00-core/time";
 import { softwareById } from "../10-catalog/platforms";

@@ -8,7 +8,7 @@ web
 
 ## Stack
 
-TypeScript, Vite and React, with the simulation in plain TypeScript, as set in [docs/design/gdd.md](docs/design/gdd.md). Hosted as a static site on GitHub Pages.
+TypeScript, Vite and React, with the simulation in plain TypeScript, as set in [docs/design/gdd/README.md](docs/design/gdd/README.md). Hosted as a static site on GitHub Pages.
 
 ## Users
 

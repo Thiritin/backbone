@@ -13,7 +13,7 @@ import { declineTitleSwitch, switchTicket } from "../90-actions/games";
 import { workloadPerf } from "./products";
 
 export const CRASH_BASE = 0.0008, LEAK_TITLE = 0.01, AUTO_PENALTY = 0.2, PEAK_PENALTY = 0.5;
-// economy.md, Happiness and churn: a quarter of a faded title's customers stay for good; the rest ask to move, more often every year.
+// economy/happiness-and-churn.md, Happiness and churn: a quarter of a faded title's customers stay for good; the rest ask to move, more often every year.
 export const FAN_SHARE = 0.25, SWITCH_MONTHLY = 0.04, SWITCH_HOURS = 7 * 24;
 // Release waves: a customer left on an old version loses 0.15 happiness an hour-day after a month, up to 12 per release.
 export const OUTDATED_GRACE = 30, OUTDATED_DRAIN = 0.15, OUTDATED_CAP = 12, WAVE_DAYS = 14, WAVE_CHANCE = 0.25;
