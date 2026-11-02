@@ -1,4 +1,5 @@
 import type { OveruseChoice } from "./80-business/overuse";
+import type { WebspaceOverlay } from "./60-infra/webspace";
 import { createRng, type Rng } from "./00-core/rng";
 import { componentParts, hasFirmware, homeLan, isManaged, isOfficeRouter, modelById, type ComponentKind, type FormFactor, type PartSpec } from "./10-catalog/hardware";
 import type { BooksDownload, BooksVendorId } from "./10-catalog/bookkeeping";
@@ -161,7 +162,9 @@ export interface Lease { id: string; lessor: string; monthly: number; months: nu
 // A waitlist entry gets heldUntil once its space is free; the space is then reserved until that hour.
 // A rented space's contract with its provider. monthly is the rent agreed at order time; endsAt is set once the player
 // gives notice and the location closes at that hour. retainedAt is when the player took the retention offer; the next month is free.
-export interface Contract { id: string; provider: string; dc: string; locationId: string; space: "share" | "cage" | "suite"; positions: number; since: number; monthly: number; endsAt: number | null; retainedAt: number | null }
+// billing is the contact given with the order; contracts from before the order form have none.
+export interface Contract { id: string; provider: string; dc: string; locationId: string; space: "share" | "cage" | "suite"; positions: number; since: number; monthly: number; endsAt: number | null; retainedAt: number | null; billing?: Billing }
+export interface Billing { company: string; name: string; address: PostalAddress }
 // A cross-connect from the contract's space to a carrier or exchange on site (to is its id); monthly is fixed at order time.
 export interface CrossConnect { id: string; contractId: string; to: string; monthly: number; since: number }
 export interface WaitlistEntry { id: string; dc: string; space: "share" | "cage" | "suite"; size: number; since: number; heldUntil: number | null }
@@ -184,7 +187,9 @@ export interface Doc { id: string; kind: "guide" | "note" | "app" | "form" | "ce
 // from is the legal form the company held when the form was downloaded.
 export interface DocForm { form: string; from?: string; signed: number | null }
 // domain is the company's own domain once registered; mail is its email service; zone is the domain's DNS zone at the registrar.
-export interface Company { name: string; logo: string; color: string; domain: string | null; mail: CompanyMail; tagline: string; zone: CompanyRecord[] }
+// The postal address the trade office registered; null before the registration.
+export interface PostalAddress { street: string; zip: string; city: string }
+export interface Company { name: string; logo: string; color: string; domain: string | null; mail: CompanyMail; tagline: string; zone: CompanyRecord[]; address: PostalAddress | null }
 export interface Registration { hour: number; owner: string; form: string; number: number }
 export interface LedgerEntry { hour: number; category: string; key: string; params: Record<string, string | number>; amount: number }
 
@@ -215,8 +220,8 @@ export interface GameState {
   // One entry per machine and product whose trial started; it never starts again there. until is the hour it ends.
   trials: { machineId: string; product: string; until: number }[];
   // The vendor sites' shared shopping cart; each site checks out the lines it sells. A line with from upgrades a key for that
-  // major to the next.
-  cart: { product: string; edition: string | null; qty: number; from?: string }[];
+  // major to the next; a line with replaces changes the edition of that key.
+  cart: { product: string; edition: string | null; qty: number; from?: string; replaces?: string }[];
   // Operating system images downloaded from their sites, one per version, and the one USB stick: the image written on it,
   // the server it is in.
   media: { images: OsImage[]; stick: { os: OsImage | null; in: string | null } };
@@ -345,6 +350,8 @@ export interface GameState {
   security: Security;
   // Terminal files the player changed, per machine ("desk" or a device id) (60-infra/fs.ts).
   files: Record<string, HostFiles>;
+  // What the player changed in each web space, by workload id; the rest is derived (60-infra/webspace.ts).
+  webspaces: Record<string, WebspaceOverlay>;
   // Customer data stolen from a host, the ransom decision and the fine that follows a sale (60-infra/breach.ts).
   breaches: Breach[];
   // Customer sites defaced, their hacks and the customers written to (60-infra/apps.ts).
@@ -461,7 +468,7 @@ export const newGame = (seed: number): GameState => ({
   devices: [{ ...device("dev5", "home-router", "AVN", null, 0, null, "fra1-gw-01", 0), store: "loc1" }, device("dev6", "line-jack", "", null, 0, "loc1", "fra1-line-01", 0)],
   cables: [],
   ledger: [], licenses: [], trials: [], cart: [], media: { images: [], stick: { os: null, in: null } }, leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], contracts: [], crossConnects: [], providerPrices: {}, unlocks: [], training: null, knowHow: 0, installed: ["Browser", "Chat"], kbReads: {}, statusDays: [], checklist: [], seenChanges: [], undocked: [], os: "aqua",
-  customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], files: {},
+  customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], files: {}, webspaces: {},
   invoices: [], transfers: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   quotes: [],
   catalog: [],
@@ -475,7 +482,7 @@ export const newGame = (seed: number): GameState => ({
   gameTitles: {},
   gameLost: {},
   tickets: [], playerBusyUntil: 0, friendFavours: { year: 0, used: 0 }, player: { at: "loc1", until: 0, doing: "work" }, downSince: {}, lowPerf: {},
-  company: { name: START_NAME, logo: "server", color: "oklch(0.55 0.15 255)", domain: null, mail: { kind: "free" }, tagline: "", zone: PARKING },
+  company: { name: START_NAME, logo: "server", color: "oklch(0.55 0.15 255)", domain: null, mail: { kind: "free" }, tagline: "", zone: PARKING, address: null },
   homeLine: { id: MOMS_DSL.id, next: null },
   taxLoss: 0, brokeSince: null, gameOver: null,
   staff: [], teams: defaultTeams(), candidates: applications(seed, 0), activity: [], techOps: [], techRules: { failed: true, worn: false, blackhole: true, updates: false, recover: true }, onCall: { roster: [], lastCall: {}, month: {} },

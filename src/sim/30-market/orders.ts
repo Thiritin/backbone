@@ -15,6 +15,7 @@ import type { GameState } from "../50-state";
 import { fromShop, type InvoiceLine } from "../45-billing/billing";
 import { phpNeeded } from "../60-infra/php";
 import { discountFor } from "../80-business/marketing";
+import { mailUnrouted } from "../80-business/mail";
 import type { SimEvent } from "../88-tick/tick";
 import type { ActionResult } from "../90-actions/hardware";
 import { missingFor, needFor, referenceFor, REQUEST_HOURS, requestName, senderFor, type SalesRequest } from "./market";
@@ -158,7 +159,8 @@ function formInvoice(s: GameState, id: string): void {
 
 export function firstOrder(s: GameState, events: SimEvent[]): void {
   const friend = s.customers.find((c) => c.habit === "friend"), day = friend ? Math.floor((s.hour - friend.since) / 24) : 0;
-  if (!friend || day >= FIRST_ORDER_DAYS || s.sales.requests.some((r) => r.kind === "order")) return;
+  // The friend writes by email, so the order waits while the domain's MX is wrong.
+  if (!friend || day >= FIRST_ORDER_DAYS || s.sales.requests.some((r) => r.kind === "order") || mailUnrouted(s)) return;
   if (rand(s.rng) < 1 / (FIRST_ORDER_DAYS - day)) orderLead(s, "private", s.locations[0]?.city ?? "Frankfurt", events);
 }
 

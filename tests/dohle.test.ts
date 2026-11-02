@@ -21,7 +21,7 @@ function company(): GameState {
   const s = newGame(7);
   s.hour = at(2005, 1, 3, 8);
   expect(openBankAccount(s, "sparklasse").ok).toBe(true);
-  expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "sole").ok).toBe(true);
+  expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "sole", { street: "Kellerweg 1", zip: "60311", city: "Frankfurt" }).ok).toBe(true);
   run(s, 1);
   s.tax = { ...s.tax, answered: s.hour, number: taxNumberOf(7), numberAt: s.hour };
   return s;

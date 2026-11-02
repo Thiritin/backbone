@@ -14,10 +14,10 @@
 .ps-plain .ps-facts { gap: 4px 32px; max-width: 760px; }
 .ps-plain .ps-facts div, .ps-plain .ps-kv div { border-bottom: 1px dotted #cccccc; padding: 3px 0; }
 .ps-plain .ps-kv { margin-bottom: 14px; }
-.ps-plain .ps-steps { gap: 8px; margin: 0 0 16px; }
-.ps-plain .ps-steps li { padding: 3px 10px; border: 1px solid #cccccc; border-radius: 12px; color: #888888; }
-.ps-plain .ps-steps li.done { color: #333333; }
-.ps-plain .ps-steps li.now { border-color: var(--ps-accent); color: var(--ps-accent); font-weight: 700; }
+.ps-plain .co-steps { gap: 8px; margin: 0 0 16px; }
+.ps-plain .co-steps li { padding: 3px 10px; border: 1px solid #cccccc; border-radius: 12px; color: #888888; }
+.ps-plain .co-steps li.done { color: #333333; }
+.ps-plain .co-steps li.on { border-color: var(--ps-accent); color: var(--ps-accent); font-weight: 700; }
 .ps-plain .ps-field { margin-bottom: 10px; }
 .ps-plain .ps-field input, .ps-plain .ps-field select { padding: 4px 6px; border: 1px solid #aaaaaa; }
 .ps-plain .ps-btn { padding: 5px 14px; border: 1px solid #888888; background: #f2f2f2; color: #222222; }

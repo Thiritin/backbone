@@ -246,6 +246,18 @@ export const limitFor = (s: GameState, factor: number, floor: number): number =>
 export const cardReady = (s: GameState): boolean => !!s.bank?.card && s.hour >= s.bank.card.readyAt && !cardBlocked(s);
 export const cardSpent = (s: GameState): number => -(s.bank?.card?.spent ?? []).reduce((n, e) => n + e.amount, 0);
 
+export interface CardDetails { number: string; expires: string; cvc: string; holder: string }
+// What is printed on the card, fixed by the seed and the day it was applied for: a number that passes Luhn, MM/YY three years on.
+export function cardDetails(s: GameState): CardDetails | null {
+  const card = s.bank?.card;
+  if (!card) return null;
+  const r = hashRng(s.seed, card.appliedAt, 4242), digits = [4, ...Array.from({ length: 14 }, () => Math.floor(rand(r) * 10))];
+  const sum = digits.reduce((n, d, i) => n + (i % 2 === 0 ? (d * 2 > 9 ? d * 2 - 9 : d * 2) : d), 0);
+  const number = [...digits, (10 - (sum % 10)) % 10].join("").replace(/(\d{4})(?=\d)/g, "$1 ");
+  const d = dateOf(card.readyAt), expires = `${String(d.getUTCMonth() + 1).padStart(2, "0")}/${String((d.getUTCFullYear() + 3) % 100).padStart(2, "0")}`;
+  return { number, expires, cvc: String(100 + Math.floor(rand(r) * 900)), holder: s.registration?.owner || s.company.name };
+}
+
 // Every ledger line of the month since the account opened moved the account, except the bank's own fees.
 function bookingsIn(s: GameState, month: number, since: number): number {
   let n = 0;
@@ -276,7 +288,7 @@ export function bankTick(s: GameState): SimEvent[] {
   const rate = depositRate(yearOf(s.hour)), base = rate < 0 ? s.cash - CUSTODY_ALLOWANCE : s.cash;
   if (base > 0 && rate !== 0) next.credit = (next.credit ?? 0) + (base * rate) / HOURS_PER_YEAR;
   const card = next.card;
-  if (card && s.hour === card.readyAt) deliverMail(s, bank.name, "bankCard", { bank: bank.name, limit: card.limit });
+  if (card && s.hour === card.readyAt) deliverMail(s, bank.name, "bankCard", { bank: bank.name, limit: card.limit, last4: cardDetails(s)!.number.slice(-4) });
   if (card && s.hour >= card.feeAt) {
     const free = bank.card.freeFirstYear && card.feeAt === card.readyAt;
     if (bank.card.yearly > 0 && !free && !planById(bank, b.plan)?.card) book("fees", "ledger.cardFee", { bank: bank.name }, -bank.card.yearly);
