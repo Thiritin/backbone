@@ -69,6 +69,7 @@ export function BrandMark({ brand, x, y, size }: { brand: string; x: number; y: 
   return m ? <g transform={`translate(${x} ${y}) scale(${size / 16})`} aria-hidden="true">{m.draw(m.color)}</g> : null;
 }
 
+export const hasMark = (provider: string): boolean => Object.hasOwn(MARKS, provider);
 export const brandColor = (brand: string) => MARKS[brandId(brand)]?.color ?? "oklch(0.5 0.01 255)";
 
 export const BrandLogo = ({ brand, size = 16, word = false }: { brand: string; size?: number; word?: boolean }) => <Logo provider={brandId(brand)} size={size} word={word} />;

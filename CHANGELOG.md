@@ -5,6 +5,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-02
 
 - Typed text in the Gmix login fields is now readable.
+- Supplier invoices in Preview now carry each supplier's logo and colours, laid out in one of three letterheads depending on the company, with bank details in the footer.
 - A browser bookkeeping program now stays reachable while the internet line is only throttled for an overdue bill and goes offline once the line is cut.
 - Counts in the Collmix menu now show in brackets after the entry name.
 - The shop system is now installed by hand: download its archive from the vendor, upload and extract it into your web space, create a database and run its web installer, then log in to the admin area with the account you chose there.
