@@ -67,6 +67,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- Books product forms now show proper names for the semiannual and triennial billing periods.
 - A transfer to an account that does not exist now comes back within a few days, and a payment without an invoice number goes to the sender's oldest open invoice, at your suppliers and, when matching by reference is on, in your books.
 - The bank in your books lists money in and out with a suggested invoice to accept, and supplier invoices count as paid there once a payment is assigned to them, which you can undo and assign again.
 - Play immersive in the main menu runs the game in full screen with keyboard shortcuts such as Cmd+Tab and Alt+Tab kept inside the game, where they switch between windows, and Log out in the top left menu leaves it.
