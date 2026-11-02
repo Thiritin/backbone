@@ -54,7 +54,7 @@ export function useTicketPane(s: GameState, tk: Ticket): PaneModel {
   const items: PaneItem[] = [{
     type: "opening",
     msg: { from: tk.notice ? senderName(tk.notice.sender) : sent ? t("support.you") : tk.kind === "sponsor" ? String(p.event) : tk.mail ? tk.mail.from : tk.kind === "pear" ? t("walk.from") : name, hour: tk.createdAt, text: t(`ticket.${tk.kind}.${tk.topic}.text`, p), you: sent },
-    extra: tk.mail && tk.topic === "registrarLogin" ? "login" : tk.topic === ORDER ? "order" : isLicence(tk.topic) ? "licence" : null,
+    extra: tk.mail && ["registrarLogin", "shopReset", "shopCredentials"].includes(tk.topic) ? "login" : tk.topic === ORDER ? "order" : isLicence(tk.topic) ? "licence" : null,
   }];
   for (const r of tk.replies) items.push({
     type: "reply",

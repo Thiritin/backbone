@@ -1,9 +1,10 @@
 // Installing a shop system, buying its modules and setting stock (docs/design/shop.md).
-import { MODULE_IDS, SHOP_SETUP_HOURS, shopById, SHOPS, type ShopId } from "../10-catalog/shops";
+import { MODULE_IDS, shopById, SHOPS, type ShopId } from "../10-catalog/shops";
 import { shopOnSale } from "../10-catalog/shop-licences";
 import { nextMajor, versionAt } from "../10-catalog/software-versions";
 import { assignedKey, assignKey, covers, installKeyBlock, issueKey, licenceBlock, licenseInstall, SHOP_MACHINE, updateKey, yearAfter } from "../60-infra/licence";
 import { upgradeOffer } from "../80-business/vendor-shop";
+import { shopBroken } from "../60-infra/shop-files";
 import { PRODUCTS } from "../10-catalog/products";
 import type { Product } from "../30-customers/customers";
 import type { GameState } from "../50-state";
@@ -21,31 +22,39 @@ function pay(s: GameState, amount: number, key: string, params: Record<string, s
   s.ledger = [...s.ledger, { hour: s.hour, category: "marketing", key, params, amount: -amount }];
 }
 
-// docs/design/plans/shop-software.md: installs a shop system into a web space of a panel host, which counts against the
-// panel's licence. It takes the newest release its key may install; a typed key licenses it, else it keeps the key it
-// holds, runs its trial or needs a key. Installing it on another host moves it; installing another system replaces it, and
-// the new one takes orders after its setup days.
-export function installShop(s: GameState, clusterId: string, id: ShopId, key?: string): ActionResult {
-  if (!SHOPS.some((x) => x.id === id)) return fail("error.unknownShop");
-  if (!s.unlocks.includes("shops")) return fail("error.needsShopSkill");
-  if (!owns(s, "website")) return fail("error.needsWebsite");
+// docs/design/plans/shop-software.md: why the shop system cannot go into a web space of the panel host, which counts against
+// the panel's licence. version is the release whose files the installer runs, else the newest the key may install; a typed
+// key licenses it, else it keeps the key it holds, runs its trial or needs a key.
+export function shopClaimBlock(s: GameState, clusterId: string, id: ShopId, key?: string, version?: string): string | null {
+  if (!SHOPS.some((x) => x.id === id)) return "error.unknownShop";
+  if (!s.unlocks.includes("shops")) return "error.needsShopSkill";
+  if (!owns(s, "website")) return "error.needsWebsite";
   const c = s.clusters.find((x) => x.id === clusterId);
-  if (!c) return fail("error.unknownCluster");
-  if (c.kind !== "panel" || !c.panel) return fail("error.shopHostPanel");
-  const same = s.shop.variant === id, here = s.shop.install?.clusterId === clusterId;
-  if (same && here) return fail("error.shopInUse");
-  const full = here ? null : licenceBlock(s, c);
-  if (full) return fail(full);
+  if (!c) return "error.unknownCluster";
+  if (c.kind !== "panel" || !c.panel) return "error.shopHostPanel";
+  if (s.shop.variant === id && s.shop.install?.clusterId === clusterId && !shopBroken(s)) return "error.shopInUse";
+  const full = s.shop.install?.clusterId === clusterId ? null : licenceBlock(s, c);
+  if (full) return full;
   const code = key?.trim().toUpperCase(), held = assignedKey(s, SHOP_MACHINE, id);
   const typed = code ? s.licenses.find((k) => k.product === id && k.key === code && (k.machineId === null || k.machineId === SHOP_MACHINE)) : undefined;
-  if (!held && !typed && !shopOnSale(id, s.hour)) return fail("error.shopNotSold");
-  const version = (installable(s, id, code ? typed : held) ?? versionAt(id, s.hour)).version;
-  const blocked = held && !code ? null : installKeyBlock(s, SHOP_MACHINE, id, version, code);
+  if (!held && !typed && !shopOnSale(id, s.hour)) return "error.shopNotSold";
+  const v = version ?? (installable(s, id, code ? typed : held) ?? versionAt(id, s.hour)).version;
+  if (held && !code) return covers(held, v) ? null : "error.licenceKey";
+  return installKeyBlock(s, SHOP_MACHINE, id, v, code);
+}
+
+// Puts the shop system into a web space of the panel host. Installing it on another host moves it; installing another
+// system replaces it.
+export function installShop(s: GameState, clusterId: string, id: ShopId, key?: string, version?: string): ActionResult {
+  const blocked = shopClaimBlock(s, clusterId, id, key, version);
   if (blocked) return fail(blocked);
-  if (!same) s.shop = { ...newShop(), variant: id, since: s.hour, readyAt: s.hour + SHOP_SETUP_HOURS, groups: s.shop.groups.length ? s.shop.groups : firstGroups(s), products: s.shop.products, productGroups: s.shop.productGroups };
-  s.shop = { ...s.shop, install: { clusterId, version, at: s.hour } };
-  if (!held || code) licenseInstall(s, SHOP_MACHINE, id, version, code);
-  return { ok: true, id: version };
+  const code = key?.trim().toUpperCase(), held = assignedKey(s, SHOP_MACHINE, id);
+  const typed = code ? s.licenses.find((k) => k.product === id && k.key === code) : undefined;
+  const v = version ?? (installable(s, id, code ? typed : held) ?? versionAt(id, s.hour)).version;
+  if (s.shop.variant !== id) s.shop = { ...newShop(), variant: id, since: s.hour, groups: s.shop.groups.length ? s.shop.groups : firstGroups(s), products: s.shop.products, productGroups: s.shop.productGroups };
+  s.shop = { ...s.shop, install: { clusterId, version: v, at: s.hour } };
+  if (!held || code) licenseInstall(s, SHOP_MACHINE, id, v, code);
+  return { ok: true, id: v };
 }
 
 const setVersion = (s: GameState, version: string) => { s.shop = { ...s.shop, install: { ...s.shop.install!, version } }; };

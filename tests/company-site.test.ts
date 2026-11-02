@@ -40,7 +40,6 @@ describe("shop order links and pricing page", () => {
     s.marketing.owned = ["website"];
     s.marketing.lines = ["webHosting", "vps"];
     s.shop.variant = "whmCache";
-    s.shop.readyAt = 0;
     s.shop.productGroups = [{ id: "g1", name: "Hosting", hidden: false }];
     const spec = sizeSpec("webHosting", 0, 2005);
     s.shop.products = [

@@ -27,6 +27,6 @@ describe("orders before a shop system", () => {
     expect(buyModule(s, "cpanic")).toEqual({ ok: false, error: "error.needsShop" });
     s.unlocks = [...s.unlocks, "shops"];
     installWithKey(s, "clientExit");
-    expect(s.shop.readyAt).toBeGreaterThan(s.hour);
+    expect(s.shop.variant).toBe("clientExit");
   });
 });

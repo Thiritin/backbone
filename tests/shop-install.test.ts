@@ -1,3 +1,15 @@
+import { shopArchive } from "../src/sim/10-catalog/archives";
+import { installDirLeft, shopSpace, adminFirstName } from "../src/sim/60-infra/shop-files";
+import { webspaceOf } from "../src/sim/60-infra/webspace";
+import { shopActive } from "../src/sim/80-business/shop";
+import { upgradePhp } from "../src/sim/90-actions/clusters";
+import { downloadArchive } from "../src/sim/90-actions/media";
+import { installShopApp, requestShopReset, resetShopPassword, runShopInstaller, runShopUpgrade, shopLogin, type InstallForm } from "../src/sim/90-actions/shop-setup";
+import { createDatabase, createDbUser, createOwnWebspace, createSubdomain, deleteFile, grantDb } from "../src/sim/90-actions/webspace";
+import { extractFile, uploadFile } from "../src/sim/90-actions/webspace-files";
+import { editRow } from "../src/sim/90-actions/webdb";
+import { setIonCube } from "../src/sim/90-actions/webpanel";
+import { PHP_UPGRADE_HOURS } from "../src/sim/60-infra/php";
 import type { ShopId } from "../src/sim/10-catalog/shops";
 import { describe, expect, it } from "vitest";
 import { hourOfMonth } from "../src/sim/00-core/time";
@@ -29,12 +41,12 @@ const game = (ym: string, seed = 5): GameState => {
   s.unlocks = [...s.unlocks, "shops"];
   return s;
 };
+const idOf = (r: ActionResult): string => (r.ok ? r.id! : "");
 const err = (r: ActionResult): string | null => (r.ok ? null : r.error);
 const ok = (r: ActionResult) => expect(err(r)).toBeNull();
 const chosen = (ym: string, id: ShopId, own = false) => {
   const s = game(ym);
   installWithKey(s, id, own);
-  s.shop.readyAt = s.hour;
   return s;
 };
 const key = (s: GameState) => assignedKey(s, SHOP_MACHINE, s.shop.variant!)!;
@@ -63,7 +75,6 @@ describe("installing a shop system", () => {
     const s = game("2009-05"), portal = `portal.${companyDomain(s)}/`;
     s.clusters = s.clusters.filter((c) => c.kind !== "panel");
     installWithKey(s, "clientExit", true);
-    s.shop.readyAt = s.hour;
     expect(shopBlock(s)).toBe("error.shopNotInstalled");
     expect(resolve(s, portal).page.kind).toBe("notfound");
     const t = chosen("2009-05", "clientExit", true);
@@ -170,5 +181,138 @@ describe("old saves", () => {
     const back = deserialize(JSON.stringify(data));
     expect(back.shop).toMatchObject({ variant: "blessta", install: null });
     expect(shopBlock(back)).toBe("error.shopNotInstalled");
+  });
+});
+
+// web-hosting.md 5: the shop installed by hand into the company's web space.
+describe("installing the shop by hand", () => {
+  const admin = { first: "Ada", last: "Admin", email: "ada@example.com", user: "ada", pass: "s3cret!" };
+  // A cPanic-style own web space with the archive extracted under portal.<domain> and a database with a user.
+  const prepared = (ym: string, id: ShopId, version = versionAt(id, hourOfMonth(ym)).version) => {
+    const s = game(ym), c = panelHost(s), domain = companyDomain(s);
+    upgradePhp(s, c.id);
+    const ws = idOf(createOwnWebspace(s, c.id)), folder = "public_html/portal", zip = shopArchive(id, version)!.name;
+    ok(downloadArchive(s, zip));
+    ok(createSubdomain(s, ws, "portal", domain));
+    ok(uploadFile(s, ws, folder, zip));
+    ok(extractFile(s, ws, `${folder}/${zip}`));
+    const db = idOf(createDatabase(s, ws, "shop")), user = idOf(createDbUser(s, ws, "shop", "dbpass1"));
+    ok(grantDb(s, ws, user, db));
+    const form: InstallForm = { ...admin, dbHost: "localhost", dbName: db, dbUser: user, dbPass: "dbpass1" };
+    return { s, c, ws, folder, form, domain, zip };
+  };
+
+  it("runs the installer, keeps the admin out while the install folder exists and logs in with the chosen account", () => {
+    const { s, c, ws, folder, form, domain } = prepared("2016-05", "whmCache");
+    const k = issueKey(s, "whmCache", null);
+    expect(resolve(s, `portal.${domain}/install/`).page).toMatchObject({ kind: "shopSetup", screen: "installer", id: "whmCache" });
+    expect(resolve(s, `portal.${domain}/`).page).toMatchObject({ kind: "shopSetup", screen: "notInstalled" });
+    expect(err(runShopInstaller(s, ws, folder, { ...form, key: k.key }))).toBe("shop-setup.req.ioncube.fail");
+    ok(setIonCube(s, c.id, true));
+    expect(err(runShopInstaller(s, ws, folder, { ...form, key: k.key }))).toBe("shop-setup.req.ioncube.fail");
+    s.hour += PHP_UPGRADE_HOURS;
+    expect(err(runShopInstaller(s, ws, folder, form))).toBe("error.licenceKey");
+    expect(runShopInstaller(s, ws, folder, { ...form, key: k.key, dbPass: "wrong" })).toEqual({ ok: false, error: "shop-setup.db.denied", params: { user: form.dbUser, yes: "YES" } });
+    expect(err(runShopInstaller(s, ws, folder, { ...form, key: k.key, pass: "abc" }))).toBe("shop-setup.error.passShort");
+    ok(runShopInstaller(s, ws, folder, { ...form, key: k.key }));
+    expect(adminFirstName(s)).toBe(form.first);
+    expect(s.shop.install).toMatchObject({ clusterId: c.id, ws, folder, db: form.dbName, version: "6.0" });
+    expect(shopActive(s)).toBe(true);
+    expect(installDirLeft(s, c.id)).toBe(true);
+    expect(resolve(s, `portal.${domain}/`).page).toEqual({ kind: "shop" });
+    expect(err(runShopInstaller(s, ws, folder, { ...form, key: k.key }))).toBe("shop-setup.error.installed");
+    ok(deleteFile(s, ws, `${folder}/install`));
+    expect(installDirLeft(s)).toBe(false);
+    expect(err(shopLogin(s, "ada", "wrong"))).toBe("shop-setup.login.whmCache");
+    expect(err(shopLogin(s, "admin", "password"))).toBe("shop-setup.login.whmCache");
+    ok(shopLogin(s, "ada", "s3cret!"));
+  });
+
+  it("refuses an old PHP and a missing database, and goes down when its files go", () => {
+    const { s, ws, folder, form } = prepared("2013-08", "blessta"), c = panelHost(s);
+    const php = c.php;
+    c.php = "5.1";
+    expect(runShopInstaller(s, ws, folder, form)).toMatchObject({ ok: false, error: "shop-setup.req.php.fail", params: { have: "5.1" } });
+    c.php = php;
+    expect(err(runShopInstaller(s, ws, folder, { ...form, dbName: "nope" }))).toBe("shop-setup.db.dbDenied");
+    expect(err(runShopInstaller(s, ws, folder, { ...form, dbHost: "db.example.com" }))).toBe("shop-setup.db.host");
+    ok(runShopInstaller(s, ws, folder, form));
+    expect(shopActive(s)).toBe(true);
+    ok(deleteFile(s, ws, `${folder}/index.php`));
+    expect(shopActive(s)).toBe(false);
+  });
+
+  it("mails a reset link and takes the new password from it", () => {
+    const { s, ws, folder, form } = prepared("2016-05", "blessta");
+    ok(runShopInstaller(s, ws, folder, form));
+    ok(requestShopReset(s, "nobody@example.com"));
+    expect(s.tickets.some((t) => t.topic === "shopReset")).toBe(false);
+    ok(requestShopReset(s, admin.email));
+    const mail = s.tickets.find((t) => t.topic === "shopReset")!;
+    const token = new URLSearchParams(String(mail.mail!.params.url).split("?")[1]).get("reset")!;
+    expect(err(resetShopPassword(s, "bad", "newpass1"))).toBe("shop-setup.reset.expired");
+    ok(resetShopPassword(s, token, "newpass1"));
+    expect(err(shopLogin(s, "ada", admin.pass))).toBe("shop-setup.login.blessta");
+    ok(shopLogin(s, "ada", "newpass1"));
+    expect(err(resetShopPassword(s, token, "again123"))).toBe("shop-setup.reset.expired");
+    ok(requestShopReset(s, admin.email));
+    const late = new URLSearchParams(String(s.tickets.filter((t) => t.topic === "shopReset").pop()!.mail!.params.url).split("?")[1]).get("reset")!;
+    s.hour += 25;
+    expect(err(resetShopPassword(s, late, "again123"))).toBe("shop-setup.reset.expired");
+  });
+
+  it("upgrades through the upload and the upgrade script, then accepts an MD5 password and stores it as bcrypt", () => {
+    const { s, c, ws, folder, form, domain } = prepared("2016-11", "whmCache", "6.0");
+    ok(setIonCube(s, c.id, true));
+    s.hour += PHP_UPGRADE_HOURS;
+    const k6 = issueKey(s, "whmCache", null, undefined, "6");
+    ok(runShopInstaller(s, ws, folder, { ...form, key: k6.key }));
+    const zip = shopArchive("whmCache", "7.0")!.name;
+    ok(downloadArchive(s, zip));
+    ok(uploadFile(s, ws, folder, zip));
+    ok(extractFile(s, ws, `${folder}/${zip}`));
+    expect(resolve(s, `portal.${domain}/`).page).toMatchObject({ kind: "shopSetup", screen: "maintenance" });
+    expect(shopActive(s)).toBe(false);
+    expect(err(runShopUpgrade(s))).toBe("error.licenceKey");
+    const k7 = issueKey(s, "whmCache", null, undefined, "7");
+    ok(runShopUpgrade(s, k7.key));
+    expect(s.shop.install!.version).toBe("7.0");
+    expect(shopActive(s)).toBe(true);
+    const at = shopSpace(s)!;
+    ok(editRow(s, ws, at.db, "tbladmins", 1, { password: "fromphpmyadmon" }, { password: "MD5" }));
+    ok(shopLogin(s, "ada", "fromphpmyadmon"));
+    const stored = () => webspaceOf(s, ws)!.rows[`${at.db}.tbladmins.1`].values.password;
+    expect(stored()).toMatch(/^\$2y\$10\$/);
+    ok(shopLogin(s, "ada", "fromphpmyadmon"));
+  });
+
+  it("installs in one step through Softaculus in the years it lists the shop", () => {
+    const s = game("2014-05"), c = panelHost(s), domain = companyDomain(s);
+    upgradePhp(s, c.id);
+    const ws = idOf(createOwnWebspace(s, c.id)), f = { ...admin, domain, dir: "billing" };
+    expect(err(installShopApp(s, ws, "whmCache", f))).toBe("shop-setup.app.notListed");
+    ok(installShopApp(s, ws, "blessta", f));
+    const at = shopSpace(s)!;
+    expect(at.folder).toBe("public_html/billing");
+    expect(installDirLeft(s)).toBe(false);
+    expect(Object.keys(at.ws.dbUsers)).toContain(at.db);
+    expect(shopActive(s)).toBe(true);
+    expect(resolve(s, `${domain}/billing/admin/`).page).toEqual({ kind: "shop", base: "/billing" });
+    ok(shopLogin(s, "ada", admin.pass));
+    expect(err(installShopApp(s, ws, "blessta", f))).toBe("shop-setup.app.notEmpty");
+  });
+
+  it("gives a save with an installed shop its files, database and a mailed admin account", () => {
+    const s = game("2012-05"), c = panelHost(s);
+    installWithKey(s, "clientExit", true);
+    createOwnWebspace(s, c.id);
+    const t = deserialize(serialize(s));
+    const at = shopSpace(t)!;
+    expect(at.folder).toBe("public_html/portal");
+    expect(installDirLeft(t)).toBe(false);
+    expect(shopActive(t)).toBe(true);
+    const mail = t.tickets.find((x) => x.topic === "shopCredentials")!;
+    ok(shopLogin(t, String(mail.mail!.params.user), String(mail.mail!.params.pass)));
+    expect(deserialize(serialize(t)).tickets.filter((x) => x.topic === "shopCredentials")).toHaveLength(1);
   });
 });

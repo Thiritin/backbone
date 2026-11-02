@@ -40,12 +40,16 @@ export function shopArchive(id: ShopId, version: string): Archive | null {
 }
 export const appArchive = (app: App): Archive | null => APP_ARCHIVES[app] ?? null;
 
-export function archiveNamed(name: string): Archive | null {
-  const app = Object.values(APP_ARCHIVES).find((a) => a.name === name);
-  if (app) return app;
+// The shop system and release a vendor archive holds.
+export function shopOfArchive(name: string): { id: ShopId; version: string } | null {
   for (const id of Object.keys(SHOP_ARCHIVES) as ShopId[]) {
     const v = versionsOf(id).find((x) => shopArchive(id, x.version)!.name === name);
-    if (v) return shopArchive(id, v.version);
+    if (v) return { id, version: v.version };
   }
   return null;
+}
+
+export function archiveNamed(name: string): Archive | null {
+  const app = Object.values(APP_ARCHIVES).find((a) => a.name === name), shop = app ? null : shopOfArchive(name);
+  return app ?? (shop && shopArchive(shop.id, shop.version));
 }

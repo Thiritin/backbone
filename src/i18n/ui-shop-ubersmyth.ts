@@ -47,8 +47,6 @@ export default {
   "ubersmyth.site.anyServers": () => "Any number of servers",
   "ubersmyth.site.noneOnSale": () => "No editions are on sale.",
   "ubersmyth.site.install1": () => "Buy a licence key on the Pricing page.",
-  "ubersmyth.site.install2": () => "Open Software and Updates on one of your panel hosts.",
-  "ubersmyth.site.install3": (p) => `Under Shop system, choose ${p.name}, enter the key and click Install ${p.name}.`,
   "ubersmyth.site.install4": (p) => `Sign in to the admin at ${p.url}.`,
   "ubersmyth.site.version": () => "Version",
   "ubersmyth.site.updatesUntil": () => "Updates until",

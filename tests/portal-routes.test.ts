@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SHOPS, SHOP_SETUP_HOURS } from "../src/sim/10-catalog/shops";
+import { SHOPS } from "../src/sim/10-catalog/shops";
 import { companyDomain } from "../src/sim/30-customers/domains";
 import { resolve } from "../src/sim/80-business/browser";
 import { parsePortal, portalPath, type PortalArea } from "../src/sim/80-business/portal";
@@ -21,9 +21,6 @@ describe("portal host", () => {
   it("resolves only with an active shop and follows the site status", () => {
     const s = withShop();
     const url = `portal.${companyDomain(s)}/admin`;
-    s.shop.readyAt = s.hour + SHOP_SETUP_HOURS;
-    expect(resolve(s, url).page).toMatchObject({ kind: "webspace", body: { kind: "index", listing: null } });
-    s.hour = s.shop.readyAt;
     expect(resolve(s, url)).toMatchObject({ page: { kind: "shop" }, load: "fast" });
     s.shop = { ...s.shop, variant: null };
     expect(resolve(s, url).page).toMatchObject({ kind: "webspace", body: { kind: "index", listing: null } });
@@ -31,7 +28,6 @@ describe("portal host", () => {
 
   it("shows the portal as down while the website is down", () => {
     const s = withShop();
-    s.hour = s.shop.readyAt;
     const www = resolve(s, companyDomain(s)).load;
     expect(resolve(s, `portal.${companyDomain(s)}/`).load).toBe(www);
   });

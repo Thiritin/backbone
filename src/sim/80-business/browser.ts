@@ -1,5 +1,6 @@
 // GDD, The desktop (Browser): what an address in the in-game browser leads to. Pure; the UI draws the page.
 import { PROGRAMS } from "../10-catalog/programs";
+import { filesIn, installDirIn, shopBroken, shopFolderAt } from "../60-infra/shop-files";
 import { DESKS, type DeskId } from "../10-catalog/desks";
 import { supplierHost } from "../46-finance/payables";
 import { monthIndexOf, yearOf } from "../00-core/time";
@@ -79,7 +80,10 @@ export type Page =
   | { kind: "office" }
   | { kind: "dohle" }
   | { kind: "wiki" }
-  | { kind: "shop" }
+  // base is the folder in the path a shop under a domain's folder answers at, such as "/billing".
+  | { kind: "shop"; base?: string }
+  // A shop's files outside a running install: its installer under /install/, the note to run it, or its error page.
+  | { kind: "shopSetup"; ws: string; folder: string; base: string; id: ShopId; version: string; screen: "installer" | "notInstalled" | "maintenance" | "dbError" }
   | { kind: "software"; id: string }
   | { kind: "program"; id: string }
   | { kind: "os"; id: ServerOsId }
@@ -218,6 +222,17 @@ export function resolve(s: GameState, raw: string): Resolved {
   // A domain on the partner's name servers shows its parking page; on custom ones nothing the company runs answers.
   const held = s.domains.find((d) => !d.lapsed && (host === d.name || host === `www.${d.name}`));
   if (held && parked(s, held)) return out(nsActive(s, held).ns === "registrar" ? { kind: "parked", registrar: partnerOf(s).id, domain: held.name } : { kind: "notfound" });
+  // The shop's files in a folder of an own web space: the installer under /install/, the note to run it, the store once
+  // installed there, or its error while its files and install disagree.
+  const own = shopFolderAt(s, host, path), files = own && filesIn(own.ws, own.folder);
+  if (own && files) {
+    const i = s.shop.install, setup = (screen: "installer" | "notInstalled" | "maintenance" | "dbError") =>
+      out({ kind: "shopSetup", ws: own.ws.workloadId, folder: own.folder, base: own.base, id: files.id, version: files.version, screen });
+    if (/^\/install(\/|$)/.test(own.rest) && installDirIn(own.ws, own.folder)) return setup("installer");
+    if (i?.ws !== own.ws.workloadId || i.folder !== own.folder) return setup("notInstalled");
+    if (files.version !== i.version) return setup("maintenance");
+    return shopBroken(s) ? setup("dbError") : out({ kind: "shop", ...(own.base && { base: own.base }) }, shopLoad());
+  }
   if (host === domain || host === `www.${domain}`) {
     if (!s.marketing.launched) return out({ kind: "notfound" });
     const st = siteStatus(s);
@@ -236,7 +251,7 @@ export function resolve(s: GameState, raw: string): Resolved {
   // A site on a web space answers as its folder says; the shop's address shows the panel's default page until the shop is installed.
   const pageOf = (hit: WebsiteHit): Resolved => out(hit.body.kind === "customer" ? { kind: "customer", serviceId: hit.body.serviceId } : { kind: "webspace", body: hit.body }, hit.load);
   if (host === `portal.${domain}`) {
-    if (shopActive(s) && s.shop.install) return out({ kind: "shop" }, shopLoad());
+    if (shopActive(s) && s.shop.install && !s.shop.install.ws) return out({ kind: "shop" }, shopLoad());
     const hit = webspaceSite(s, host) ?? placeholderSite(s, host);
     return hit ? pageOf(hit) : out({ kind: "notfound" });
   }

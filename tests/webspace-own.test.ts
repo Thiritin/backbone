@@ -93,7 +93,9 @@ describe("own web spaces", () => {
     const back = deserialize(JSON.stringify(raw));
     const ws = companyWebspace(back)!;
     expect(back.ownWebspaces).toEqual([expect.objectContaining({ clusterId: at, domain: companyDomain(back) })]);
-    expect(Object.keys(ws.files)).toHaveLength(5);
+    // The skeleton, plus the shop's files under the portal subdomain (shop-install.test.ts).
+    expect(ws.files["public_html/index.html"]).toBeDefined();
+    expect(ws.files["public_html/portal/index.php"]?.from).toBe(`clientexit_${s.shop.install!.version}.zip`);
     expect(accountsOn(back, back.clusters.find((x) => x.id === at)!)).toBe(before);
     // A save that has the field keeps what the player left.
     back.ownWebspaces = [];
