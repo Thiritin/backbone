@@ -12,7 +12,7 @@ import { seededPassword } from "../../../../../../sim/42-mail/new";
 import type { MailAccount, MailTenant } from "../../../../../../sim/42-mail/types";
 import type { GameState } from "../../../../../../sim/50-state";
 import { mxHostsAt } from "../../../../../../sim/60-infra/company-zone";
-import { HOME_URL, registrarUrl } from "../../../../../../sim/80-business/browser";
+import { registrarUrl } from "../../../../../../sim/80-business/browser";
 import { connectGoggleDns, signUpGoggle, verifyDomain } from "../../../../../../sim/90-actions/mail-provider";
 import { createMailAccount, requestPasswordReset, resetPassword } from "../../../../../../sim/90-actions/mailbox";
 import { euroCents } from "../../../../../../sim/00-core/money";
@@ -20,6 +20,8 @@ import { GoggleMark } from "../../../../../art/mailmarks";
 import { useSessionState, writeSession } from "../../../../../session";
 import { offerLogin, savedLogin } from "../../../../../vault";
 import { usePageAct } from "../../../pageAct";
+import { useHome } from "../../../home";
+import { searchHits } from "../../index/IndexSite";
 import { AdminConsole } from "./AdminConsole";
 import "./goggle.css";
 
@@ -41,6 +43,9 @@ const gb = (mb: number) => (mb / 1024).toLocaleString(LOCALE, { maximumFractionD
 const onSaleNow = (hour: number) => PLANS.filter((p) => onSale(mailPlan("goggle", p)!, hour));
 const tenantOf = (game: GameState, a: MailAccount): MailTenant | undefined => game.mail.tenants.find((x) => x.id === a.tenant && x.host === "goggle");
 const launched = (hour: number) => hour >= hourOfMonth(LAUNCH);
+// The root and its results are the search engine in every era; the product site lives under /a/.
+const searchPage = (route: string, hour: number) => route === "" || route === "search" || !launched(hour);
+const SEARCH_HOME = mailSiteUrl("goggle");
 
 // The Admin console's page: the route on its own host, or the part after /a/<domain>/ on goggle.com.
 const consolePage = (host: string, route: string): string | null =>
@@ -48,7 +53,7 @@ const consolePage = (host: string, route: string): string | null =>
 
 export const goggleTitle = (game: GameState, host: string, path: string): string =>
   host === GOGGLE_ACCOUNTS ? t("goggle.signin.tab") : consolePage(host, path.replace(/^\/+/, "").split("?")[0]) !== null ? t("goggle.admin.title")
-    : launched(game.hour) ? brandName(game.hour) : "Goggle";
+    : searchPage(path.replace(/^\/+/, "").split("?")[0], game.hour) ? "Goggle" : brandName(game.hour);
 
 interface SiteProps { game: GameState; host: string; path: string; go: (url: string) => void }
 type To = (path: string) => void;
@@ -69,7 +74,7 @@ export function GoggleSite({ game, host, path, go }: SiteProps) {
   const tenant = account ? tenantOf(game, account) : undefined;
   const admin = tenant && tenant.admin === account?.id ? account : null;
   const out = () => { setSignedIn(null); to(""); };
-  const panel = consolePage(host, route);
+  const panel = consolePage(host, route), search = host !== GOGGLE_ACCOUNTS && panel === null && searchPage(route, game.hour);
   if (panel !== null && admin && tenant) return <AdminConsole game={game} tenant={tenant} admin={admin} page={panel} go={go} signOut={out} />;
   const page = (() => {
     if (host === GOGGLE_ACCOUNTS) {
@@ -77,7 +82,7 @@ export function GoggleSite({ game, host, path, go }: SiteProps) {
       return <SignIn game={game} accounts={accounts} signIn={setSignedIn} next={params.get("continue") ?? ""} go={go} />;
     }
     if (panel !== null) return <SignIn game={game} accounts={accounts} signIn={setSignedIn} next={`${host}/${path.replace(/^\/+/, "")}`} go={go} />;
-    if (!launched(game.hour)) return <Search go={go} />;
+    if (search) return <Search game={game} query={route === "search" ? params.get("q") ?? "" : ""} go={go} accounts={accounts} signedIn={!!account} />;
     if (route === "pricing") return <Pricing game={game} to={to} />;
     if (route === "signup") return <SignUp game={game} to={to} signIn={setSignedIn} wanted={params.get("plan")} />;
     if (route === "setup") {
@@ -87,12 +92,12 @@ export function GoggleSite({ game, host, path, go }: SiteProps) {
     return <Home game={game} to={to} look={look} />;
   })();
   return (
-    <div className={`gg gg-${launched(game.hour) ? look : "search"}`}>
-      {host !== GOGGLE_ACCOUNTS && panel === null && launched(game.hour) && (
+    <div className={`gg gg-${search ? "search" : look}`}>
+      {host !== GOGGLE_ACCOUNTS && panel === null && !search && (
         <header className="gg-head">
-          <Link to={to} path="" className="gg-logo"><GoggleMark className="gg-mark" /><b>{brandName(game.hour)}</b>{look === "appsDomain" && <sup className="gg-beta">BETA</sup>}</Link>
+          <Link to={to} path="a/" className="gg-logo"><GoggleMark className="gg-mark" /><b>{brandName(game.hour)}</b>{look === "appsDomain" && <sup className="gg-beta">BETA</sup>}</Link>
           <nav className="gg-nav">
-            <Link to={to} path="">{t("goggle.nav.product")}</Link>
+            <Link to={to} path="a/">{t("goggle.nav.product")}</Link>
             <Link to={to} path="pricing">{t("goggle.nav.pricing")}</Link>
             {account && tenant && <a href="#mail" onClick={(e) => { e.preventDefault(); go(gmialUrl(tenant.domain)); }}>Gmial</a>}
             {admin && tenant && <a href="#console" onClick={(e) => { e.preventDefault(); go(consoleUrl(game.hour, tenant.domain)); }}>{t("goggle.nav.console")}</a>}
@@ -108,15 +113,54 @@ export function GoggleSite({ game, host, path, go }: SiteProps) {
   );
 }
 
-// Before Goggle sold anything for a domain, the address is the search page.
-function Search({ go }: { go: (url: string) => void }) {
-  const [q, setQ] = useState("");
-  return (
-    <form className="gg-search" onSubmit={(e) => { e.preventDefault(); go(HOME_URL); }}>
-      <h1 className="gg-word"><GoggleMark className="gg-mark" />Goggle</h1>
-      <input name="q" value={q} onChange={(e) => setQ(e.target.value)} autoComplete="off" aria-label={t("goggle.search.button")} />
-      <button type="submit">{t("goggle.search.button")}</button>
+// The search engine: the directory's search, with the sponsored rows in a column beside the results.
+function Search({ game, query, go, accounts, signedIn }: { game: GameState; query: string; go: (url: string) => void; accounts: To; signedIn: boolean }) {
+  const [q, setQ] = useState(query), [home, setHome] = useHome();
+  const hits = searchHits(game, query), web = hits.filter((h) => !h.ad), ads = hits.filter((h) => h.ad);
+  const find = (lucky: boolean) => {
+    const v = q.trim();
+    if (!v) return;
+    const top = lucky ? searchHits(game, v).find((h) => !h.ad) : undefined;
+    go(top ? top.row.url : mailSiteUrl("goggle", `search?q=${encodeURIComponent(v)}`));
+  };
+  const link = (url: string, text: ReactNode, className?: string) => <a href={`#${url}`} className={className} onClick={(e) => { e.preventDefault(); go(url); }}>{text}</a>;
+  const logo = <span className="gg-word">{[..."Goggle"].map((c, i) => <span key={i}>{c}</span>)}</span>;
+  const form = (
+    <form className="gg-query" role="search" onSubmit={(e) => { e.preventDefault(); find(false); }}>
+      <input name="q" value={q} onChange={(e) => setQ(e.target.value)} autoComplete="off" spellCheck={false} aria-label={t("goggle.search.button")} />
+      <div className="gg-buttons">
+        <button type="submit">{t("goggle.search.button")}</button>
+        <button type="button" onClick={() => find(true)}>{t("goggle.search.lucky")}</button>
+      </div>
     </form>
+  );
+  if (query) return (
+    <section className="gg-serp">
+      <header>{link(SEARCH_HOME, logo, "gg-logo")}{form}</header>
+      <div className="gg-serp-body">
+        {web.length ? <ol className="gg-hits">{web.map((h) => <li key={h.row.url}>{link(h.row.url, h.row.title)}<span>{h.row.desc}</span><cite>{h.row.url}</cite></li>)}</ol>
+          : <p>{t("goggle.search.noMatch", { q: query })}</p>}
+        {ads.length > 0 && (
+          <aside className="gg-ads">
+            <h2>{t("goggle.search.sponsored")}</h2>
+            <ol>{ads.map((h) => <li key={h.row.url}>{link(h.row.url, h.row.title)}<span>{h.row.desc}</span><cite>{h.row.url}</cite></li>)}</ol>
+          </aside>
+        )}
+      </div>
+    </section>
+  );
+  return (
+    <section className="gg-start">
+      {launched(game.hour) && (
+        <nav className="gg-top">
+          {link(mailSiteUrl("goggle", "a/"), brandName(game.hour))}
+          {!signedIn && <a href="#signin" onClick={(e) => { e.preventDefault(); accounts(""); }}>{t("goggle.nav.signIn")}</a>}
+        </nav>
+      )}
+      <h1>{logo}</h1>
+      {form}
+      {home !== SEARCH_HOME && <a href="#home" className="gg-make-home" onClick={(e) => { e.preventDefault(); setHome(SEARCH_HOME); }}>{t("goggle.search.makeHome")}</a>}
+    </section>
   );
 }
 

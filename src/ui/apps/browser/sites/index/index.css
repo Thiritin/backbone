@@ -3,6 +3,7 @@
 .yx a { color: inherit; }
 .yx header { display: flex; align-items: center; gap: 24px; }
 .yx-search { display: flex; gap: 6px; }
+.yx-home { margin-left: auto; font-size: 12px; }
 .yx-search input { width: 320px; height: 26px; padding: 0 6px; border: 1px solid #8a8a8a; font: inherit; color: #1a1a1a; background: #ffffff; }
 .yx ul { list-style: none; padding: 0; margin: 0; }
 .yx li.down a, .yx li.down .yx-desc { color: #9a9a9a; }

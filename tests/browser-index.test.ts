@@ -85,4 +85,13 @@ describe("browser index", () => {
     expect(titles(s, "Hardware")).toContain("Lenovoid");
     expect(resolve(s, "lenovoid.com").page).toEqual({ kind: "vendor", maker: "lenovoid" });
   });
+
+  it("lists a mail provider from the year its mail product starts", () => {
+    const s = newGame(4);
+    expect(titles(s, "Email providers")).toEqual(["GMix", "Ionose"]);
+    skipTo(s, 2006);
+    expect(titles(s, "Email providers")).toEqual(["GMix", "Goggle", "Ionose"]);
+    skipTo(s, 2011);
+    expect(titles(s, "Email providers")).toEqual(["GMix", "Goggle", "Ionose", "Lookout 365"]);
+  });
 });

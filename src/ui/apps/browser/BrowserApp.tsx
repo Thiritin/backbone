@@ -3,7 +3,7 @@ import { DeskSetup } from "./sites/desk/setup/DeskSetup";
 import { ShopSetup } from "./sites/portal/setup/ShopSetup";
 import { ArrowLeft, ArrowRight, ChevronDown, CircleArrowDown, Folder, House, Plus, RotateCw, Star, X } from "lucide-react";
 import { useEffect, useRef, useState, type DragEvent } from "react";
-import { AGENCY_TITLE, BOARD_TITLE, defaultBookmarks, HOME_URL, resolve, split, VIDEO_TITLE, WIKI_TITLE, type Resolved } from "../../../sim/80-business/browser";
+import { AGENCY_TITLE, BOARD_TITLE, defaultBookmarks, resolve, split, VIDEO_TITLE, WIKI_TITLE, type Resolved } from "../../../sim/80-business/browser";
 import { customerSite } from "../../../sim/80-business/website";
 import { familyOf } from "../../../sim/60-infra/vulns";
 import { consoleTitle } from "../../../sim/80-business/consoles";
@@ -20,6 +20,7 @@ import { isoFile } from "./sites/software/SoftwareSite";
 import { useDownloads } from "../../downloads";
 import type { OsImage } from "../../../sim/10-catalog/server-os";
 import { readSession, useSessionState, writeSession } from "../../session";
+import { homeUrl } from "./home";
 import { t } from "../../../i18n/en";
 import { useFocus, useStore, useWin } from "../../store";
 import { useBack } from "../../desktop/back";
@@ -245,7 +246,7 @@ function DownloadsButton({ game }: { game: GameState }) {
 export function BrowserApp() {
   const game = useStore((s) => s.game);
   const win = useWin();
-  const [tabs, setTabs] = useSessionState<Tab[]>(`browser.tabs.${win.id}`, [{ id: 1, history: [HOME_URL], at: 0, nav: 0 }]);
+  const [tabs, setTabs] = useSessionState<Tab[]>(`browser.tabs.${win.id}`, [{ id: 1, history: [homeUrl()], at: 0, nav: 0 }]);
   const [active, setActive] = useSessionState<number>(`browser.active.${win.id}`, tabs[0]?.id ?? 1);
   const [marks, setMarks] = useSessionState<Mark[]>("browser.marks", []);
   const tab = tabs.find((x) => x.id === active) ?? tabs[0];
@@ -352,13 +353,13 @@ export function BrowserApp() {
             </div>
           );
         })}
-        <button className="br-new" aria-label={t("misc1.browser.newTab")} onClick={() => open(HOME_URL)}><Plus aria-hidden /></button>
+        <button className="br-new" aria-label={t("misc1.browser.newTab")} onClick={() => open(homeUrl())}><Plus aria-hidden /></button>
       </div>
       <div className="br-bar">
         <button className="btn icon ghost" aria-label={t("misc1.browser.back")} disabled={tab.at === 0} onClick={() => step(-1)}><ArrowLeft aria-hidden /></button>
         <button className="btn icon ghost" aria-label={t("misc1.browser.forward")} disabled={tab.at >= tab.history.length - 1} onClick={() => step(1)}><ArrowRight aria-hidden /></button>
         <button className="btn icon ghost" aria-label={t("misc1.browser.reload")} onClick={reload}><RotateCw aria-hidden /></button>
-        <button className="btn icon ghost" aria-label={t("misc1.browser.home")} onClick={() => go(HOME_URL)}><House aria-hidden /></button>
+        <button className="btn icon ghost" aria-label={t("misc1.browser.home")} onClick={() => go(homeUrl())}><House aria-hidden /></button>
         <form className="br-addr" onSubmit={(e) => { e.preventDefault(); if (addr.trim()) go(addr); }}>
           <Favicon game={game} r={r} />
           <input aria-label={t("misc1.browser.address")} value={addr} spellCheck={false} autoCapitalize="off" onChange={(e) => setAddr(e.target.value)} onFocus={(e) => e.currentTarget.select()} />

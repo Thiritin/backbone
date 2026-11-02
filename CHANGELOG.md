@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- Goggle's address now opens a search engine in every year that searches the web like Yahoy, with Goggle Search, I'm Feeling Lucky and a link that makes it your browser's home page, while the Goggle Apps product site moved to goggle.com/a/ and Yahoy can win the home page back with its own link.
+- The Yahoy directory lists Goggle and Lookout 365 under Email providers only from the year their mail products start.
 - The shop's setup wizard and settings can take over your existing customers, so the shop bills and emails them from their next invoice on while open invoices stay in Books.
 - Books programs and shop systems now open a setup wizard after installation that walks through company details, invoice numbering and the program's main settings, and it can be reopened at any time.
 - Pear Mail's activity pane shows one line per account with its latest check instead of repeating every check, and drops lines of removed accounts.

@@ -149,6 +149,7 @@ export default {
   "browser-sites-1.ix.search": () => "Pesquisar",
   "browser-sites-1.ix.ad": () => "Patrocinado",
   "browser-sites-1.ix.home": () => "Início",
+  "browser-sites-1.ix.makeHome": () => "Torne o Yahoy! sua página inicial",
   "browser-sites-1.ix.noMatch": () => "Nenhum site corresponde.",
   "browser-sites-1.ix.copyright": (p) => `Copyright ${p.year} Yahoy! Inc. Todos os direitos reservados.`,
   "browser-sites-1.pg.hacked": () => "Hackeado por xX_Pwn3r_Xx",

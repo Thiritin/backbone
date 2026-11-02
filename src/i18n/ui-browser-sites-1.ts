@@ -149,6 +149,7 @@ export default {
   "browser-sites-1.ix.search": () => "Search",
   "browser-sites-1.ix.ad": () => "Sponsored",
   "browser-sites-1.ix.home": () => "Home",
+  "browser-sites-1.ix.makeHome": () => "Make Yahoy! your home page",
   "browser-sites-1.ix.noMatch": () => "No sites match.",
   "browser-sites-1.ix.copyright": (p) => `Copyright ${p.year} Yahoy! Inc. All rights reserved.`,
   "browser-sites-1.pg.hacked": () => "Hacked by xX_Pwn3r_Xx",
