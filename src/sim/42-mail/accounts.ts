@@ -73,6 +73,7 @@ export function checkMailLogin(s: GameState, address: string, password: string):
   if (!a || !t || a.closedAt !== null) return { ok: false, error: "error.mailLogin" };
   if (a.shared) return { ok: false, error: "error.mailShared" };
   if (t.locked) return { ok: false, error: "error.mailLocked" };
+  if (a.suspended) return { ok: false, error: "error.mailSuspended" };
   if (a.password !== password) return { ok: false, error: "error.mailLogin" };
   return { ok: true, account: a };
 }
@@ -84,7 +85,7 @@ export type ServerStatus = "ok" | "down" | "listed" | "installing" | "closed" | 
 export function serverStatus(s: GameState, accountId: string, protocol: MailProtocol, password?: string, gapMin?: number): ServerStatus {
   const a = s.mail.accounts.find((x) => x.id === accountId), t = a && tenantOf(s, a);
   if (!a || !t || a.closedAt !== null || !live(s, t)) return "closed";
-  if (t.locked) return "locked";
+  if (t.locked || a.suspended) return "locked";
   if (t.domain !== GMIX_DOMAIN && mxTarget(s)?.id !== t.id) return "unresolved";
   if (password !== undefined && password !== a.password) return "auth";
   const caps = capsOf(s, a);

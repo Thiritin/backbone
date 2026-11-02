@@ -11,6 +11,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Web hosting accounts now use memory by their visitors, so a quiet personal page needs only a few megabytes while a busy shop needs far more.
 - The software page in the Pear Store shows its price, skill and status side by side again, with the same spacing in every macOS era.
 - Single files in the cPanic File Manager now show realistic sizes in KB, and the disk bar of a cPanic account follows its uploads.
+- GMix and Goggle now bill each mailbox from the next month start, so cancelling before then costs nothing; a cancelled Goggle domain keeps its mailboxes for 20 days, and the free Goggle edition sends its 2022 notices and locks on May 1, 2022 until you choose a paid edition.
 - The cPanic File Manager now works like the real one: upload files from your Downloads at your line's upload speed, extract and compress archives, create, move, copy, rename and delete files, and change permissions, with uploads refused once the account's disk quota is full.
 - HOSTtoast no longer has a city filter, so its list always shows every open host.
 - Mail in company mailboxes can now be moved, flagged, labelled, snoozed, filed in nested folders, deleted to Trash and restored, and drafts and sent mail keep their copies in Drafts and Sent.

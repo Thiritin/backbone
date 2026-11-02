@@ -18,4 +18,12 @@ export default {
   "mail.gmial.folder.junk": () => "Spam",
   "mail.gmial.folder.trash": () => "Corbeille",
   "mail.gmial.folder.archive": () => "Tous les messages",
+  "error.mailSuspended": () => "Cet utilisateur est suspendu.",
+  "error.goggleVerify": () => "Nous n'avons pas encore trouvé l'enregistrement. Les modifications DNS peuvent prendre jusqu'à 48 heures. Ou quatre minutes. Personne ne sait.",
+  "ticket.mail.goggleClosing.subject": () => "Modifications de Goggle Apps Standard Edition",
+  "ticket.mail.goggleClosing.text": () => "Les nouveaux clients ne peuvent plus s'inscrire à la Standard Edition gratuite. Votre domaine conserve son édition gratuite et ses utilisateurs.",
+  "ticket.mail.goggleConversion.subject": () => "Action requise : passez de l'ancienne édition gratuite à une édition payante",
+  "ticket.mail.goggleConversion.text": () => "L'ancienne édition gratuite de Goggle Workspace prend fin. Choisissez une édition payante dans la console d'administration avant le 1er mai 2022. Sinon, plus aucun utilisateur ne pourra se connecter et les e-mails entrants seront rejetés jusqu'à ce que vous le fassiez.",
+  "ticket.mail.goggleReminder.subject": () => "Rappel : votre édition gratuite prend fin le 1er mai 2022",
+  "ticket.mail.goggleReminder.text": () => "Choisissez une édition payante dans la console d'administration avant le 1er mai 2022 pour que vos utilisateurs restent connectés et que vos e-mails continuent d'arriver.",
 } satisfies Dict;

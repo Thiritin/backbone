@@ -1,4 +1,4 @@
-import { yearOf } from "../00-core/time";
+import { nextMonthStart, yearOf } from "../00-core/time";
 import { companyDomain } from "../30-customers/domains";
 import { mailboxCap, mailHost, mailPlan, mxSetAt, onSale } from "../10-catalog/mail-providers";
 import { addMailbox, canAddMailbox, employeeMailbox, openBoxes, seatsBilled } from "../42-mail/accounts";
@@ -46,6 +46,25 @@ export function setTenantPlan(s: GameState, id: string, plan: string): ActionRes
   const next = { ...t, plan, since: s.hour }, cap = mailboxCap(t.host, plan, s.hour);
   if (cap !== null && openBoxes(s, id).length > cap) return fail("error.mailQuotaPlan");
   s.mail = { ...s.mail, tenants: s.mail.tenants.map((x) => (x.id === id ? next : x)) };
+  return { ok: true, id };
+}
+
+// Cancels at the end of the billing month; the daily pass closes the boxes then and deletes them after the host's grace.
+export function endTenant(s: GameState, id: string): ActionResult {
+  const t = s.mail.tenants.find((x) => x.id === id);
+  if (!t || (t.endsAt !== null && t.endsAt <= s.hour)) return fail("error.mailNoService");
+  if (openBoxes(s, id).some((a) => a.id === s.mail.primary || a.roles.length)) return fail("error.mailRoleInUse");
+  s.mail = { ...s.mail, tenants: s.mail.tenants.map((x) => (x.id === id ? { ...x, endsAt: nextMonthStart(s.hour) } : x)) };
+  return { ok: true, id };
+}
+
+// Takes a cancellation back while the boxes still exist, closed or not.
+export function resubscribe(s: GameState, id: string): ActionResult {
+  const t = s.mail.tenants.find((x) => x.id === id);
+  if (!t || t.endsAt === null || !s.mail.accounts.some((a) => a.tenant === id)) return fail("error.mailNoService");
+  if (liveOn(s, t.domain).some((x) => x.host === t.host && x.id !== id)) return fail("error.mailHasTenant");
+  s.mail = { ...s.mail, tenants: s.mail.tenants.map((x) => (x.id === id ? { ...x, endsAt: null } : x)),
+    accounts: s.mail.accounts.map((a) => (a.tenant === id ? { ...a, closedAt: null } : a)) };
   return { ok: true, id };
 }
 
