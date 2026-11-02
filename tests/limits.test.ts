@@ -95,6 +95,23 @@ describe("use and starvation", () => {
     expect(starvation(s, svc(a), wl(a))).toBe(0);
   });
 
+  it("never starves a VPS at the size it bought, and starves it at 70% of that", () => {
+    const { s, ada, vps, svc, wl, sold } = setup();
+    const id = vps(ada, "a.example"), start = s.hour;
+    const hours = Array.from({ length: 168 }, (_, h) => start + h);
+    const peak = hours.reduce((a, h) => (need(s, svc(id), wl(id), h).ramGb > need(s, svc(id), wl(id), a).ramGb ? h : a));
+    expect(need(s, svc(id), wl(id), peak).ramGb).toBeGreaterThan(0.9 * sold(id).ramGb);
+    for (const h of hours) expect(starvation(s, svc(id), wl(id), h)).toBe(0);
+    s.hour = peak;
+    productsTick(s);
+    expect(svc(id).starvedAt).toBeUndefined();
+    const s70 = { vcpu: sold(id).vcpu * 0.7, ramGb: sold(id).ramGb * 0.7, diskGb: sold(id).diskGb };
+    must(setLimits(s, id, s70));
+    expect(starvation(s, svc(id), wl(id))).toBeGreaterThan(0);
+    productsTick(s);
+    expect(svc(id).starvedAt).toBe(peak);
+  });
+
   it("leaves a web space at 95% of its limit alone and slows it at 110% until the limit goes up", () => {
     const { s, web, svc, wl, sold } = setup();
     const id = web("c.example");

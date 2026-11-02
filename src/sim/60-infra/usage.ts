@@ -110,11 +110,13 @@ export function need(s: GameState, v: { id: string; spec: Resources }, w: Worklo
   };
 }
 
-// The share of performance a customer loses to their own limit at an hour.
+// The share of performance a customer loses to their own limit at an hour; a limit at or above the size they bought never
+// starves them.
 export function starvation(s: GameState, v: Service, w: Workload, hour: number = s.hour): number {
   if (!w.clusterId || w.stopped || w.frozen || isOwnVm(w)) return 0;
-  const n = need(s, v, w, hour), cap = booked(s, w), notice = NOTICE[v.product] ?? 1;
-  const short = (k: "vcpu" | "ramGb") => (cap[k] > 0 && n[k] > 0 ? Math.max(0, 1 - (notice * cap[k]) / n[k]) : 0);
+  const n = need(s, v, w, hour), cap = booked(s, w), notice = NOTICE[v.product] ?? 1, fill = fillOf(s, v.id);
+  const sold = { vcpu: v.spec.vcpu * fill * modLoad(s, v.id), ramGb: v.spec.ramGb * fill };
+  const short = (k: "vcpu" | "ramGb") => (cap[k] > 0 && n[k] > 0 && cap[k] < sold[k] - 1e-9 ? Math.max(0, 1 - (notice * cap[k]) / n[k]) : 0);
   return Math.max(short("vcpu"), short("ramGb"), w.diskGb > 0 && n.diskGb > w.diskGb + 1e-9 ? DISK_STARVE : 0);
 }
 
