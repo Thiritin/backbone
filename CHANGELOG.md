@@ -24,6 +24,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Ticket replies, retention offers and ticket actions are now built so the coming mail client can show them too.
 - Every company now holds a real mailbox on its mail service, with its own password and a welcome message from the provider.
 - Your registrar's login now has a DNS page for your company domain, where you add, edit and delete records such as MX and TXT, and each change reaches the world once the TTL of the record it replaces has run out.
+- Your first website is built by hand and looks like a 2005 home page, and every design after that is ordered from the web design agency Young von Mutt, whose price grows with the year and the size of your company and which delivers the new design after two weeks.
 
 ## 2026-11-01
 

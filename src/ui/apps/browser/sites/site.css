@@ -222,3 +222,16 @@ a.site-product { color: inherit; text-decoration: none; }
 .site-bars i.slow, .site-bars i.maint { background: #e0a526; }
 .site-bars i.down { background: #c0392b; }
 .site-legal h3 { margin: 16px 0 4px; }
+
+/* The self-built page before the agency: a left frame menu, a marquee line and a visitor counter. */
+.site.frames { max-width: 760px; background: #c0c0c0; border: 2px outset #ffffff; }
+.site-marquee { overflow: hidden; margin-top: 8px; padding: 2px 0; background: #000080; color: #ffff00; font: 700 13px Arial, sans-serif; white-space: nowrap; }
+.site-marquee span { display: inline-block; padding-left: 100%; animation: site-scroll 14s linear infinite; }
+@keyframes site-scroll { to { transform: translateX(-100%); } }
+@media (prefers-reduced-motion: reduce) { .site-marquee span { padding-left: 8px; animation: none; } }
+.site-frameset { display: grid; grid-template-columns: 140px 1fr; gap: 0; margin-top: 8px; border: 2px inset #ffffff; background: #ffffff; }
+.site-frame-menu { display: flex; flex-direction: column; gap: 6px; padding: 10px; background: #ffffcc; border-right: 2px groove #808080; font: 13px Arial, sans-serif; }
+.site-frame-menu a { color: #0000ee; text-decoration: underline; }
+.site-frame-menu a.on { color: #cc0000; font-weight: 700; }
+.site-frame-main { min-width: 0; padding: 8px 14px; }
+.site.frames .site-foot { flex-wrap: wrap; }

@@ -1,16 +1,15 @@
 import { useEffect, useState } from "react";
 import { t } from "../../../i18n/en";
 import { euro, euroCents } from "../../../sim/00-core/money";
-import { yearOf } from "../../../sim/00-core/time";
 import { registrarById, REGISTRARS } from "../../../sim/10-catalog/registrars";
 import { shopById } from "../../../sim/10-catalog/shops";
 import type { Product } from "../../../sim/30-customers/customers";
+import { AGENCY_URL } from "../../../sim/80-business/browser";
 import { OWNED, owns, type SiteHost } from "../../../sim/80-business/marketing";
 import { shopActive } from "../../../sim/80-business/shop";
-import { generationOf, lineBlocker, listed, SITE_LINES, SITE_RENT, siteBuilt, siteRoom, siteStatus, type SiteStatus } from "../../../sim/80-business/website";
+import { designQuote, lineBlocker, listed, SITE_LINES, SITE_RENT, siteBuilt, siteRoom, siteStatus, type SiteStatus } from "../../../sim/80-business/website";
 import { setCompany, TAGLINE_MAX } from "../../../sim/90-actions/company";
-import { setUpChannel } from "../../../sim/90-actions/marketing";
-import { buildSite, launchSite, redesign, setCustomRequests, setEmailOrders, setLine, setSiteHost } from "../../../sim/90-actions/website";
+import { buildSite, launchSite, setCustomRequests, setEmailOrders, setLine, setSiteHost } from "../../../sim/90-actions/website";
 import { useStore } from "../../store";
 import { formatDay } from "../billing/format";
 import { PRODUCT } from "../support/labels";
@@ -102,22 +101,23 @@ export function SiteCard() {
   );
 }
 
-// Web design, its redesigns, the shop and email orders, once the site is online.
+// Web design, its redesigns, the shop and email orders, once the site is online. Designs are ordered at the agency.
 function Upgrades() {
   const game = useStore((s) => s.game);
   const act = useStore((s) => s.act);
-  const current = game.marketing.designYear >= generationOf(yearOf(game.hour));
-  const offer = (id: "website") => (
-    <button className="btn" disabled={game.cash < OWNED[id].setup} onClick={() => act(setUpChannel, id)}>{t("marketing.setUp")} <span className="num">{euro(OWNED[id].setup)}</span></button>
+  const openApp = useStore((s) => s.openApp);
+  const ready = game.marketing.designReady;
+  const upkeep = <span className="mkt-sub">{t("marketing.priceMonth", { price: euro(OWNED.website.upkeep) })}</span>;
+  const order = (label: string) => (
+    <button className="btn" onClick={() => openApp("Browser", { kind: "url", id: AGENCY_URL })}>{label} <span className="num">{euro(designQuote(game))}</span></button>
   );
-  const upkeep = (id: "website") => <span className="mkt-sub">{t("marketing.priceMonth", { price: euro(OWNED[id].upkeep) })}</span>;
   return <>
     <div className="mkt-row">
       <span className="mkt-label">{t("marketing.design")}</span>
       {owns(game, "website") ? <>
-        <span className="mkt-grow num">{game.marketing.designYear}</span>
-        <button className="btn" disabled={current || game.cash < OWNED.website.setup} onClick={() => act(redesign)}>{t("marketing.redesign")} <span className="num">{euro(OWNED.website.setup)}</span></button>
-      </> : <><span className="mkt-grow">{t("marketing.webDesign")}{upkeep("website")}</span>{offer("website")}</>}
+        <span className="mkt-grow num">{game.marketing.designYear}{ready && <span className="pill">{t("agency.app.delivery", { date: formatDay(ready.hour) })}</span>}</span>
+        {order(t("marketing.redesign"))}
+      </> : <><span className="mkt-grow">{t("marketing.webDesign")}{upkeep}</span>{order(t("marketing.setUp"))}</>}
     </div>
     {owns(game, "website") && game.shop.variant && (
       <div className="mkt-row">

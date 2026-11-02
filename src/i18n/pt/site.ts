@@ -3,7 +3,6 @@ import type { Dict } from "../lang";
 export default {
   "ledger.siteHosting": () => "Hospedagem do site: Strateaux",
   "ledger.redesign": () => "Redesign do site",
-  "error.designCurrent": () => "O site já tem o design atual.",
   "error.siteHostPanel": () => "Só um host com painel de hospedagem web pode correr o site.",
   "error.siteHostNoRoom": () => "Este host não tem espaço para o site.",
   "error.siteStarted": () => "O site já está a ser construído.",

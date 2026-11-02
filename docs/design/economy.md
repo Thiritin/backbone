@@ -2332,11 +2332,11 @@ Platform fees are flat: the free listing costs nothing, ProvenExpat €49 and Tr
 | Step | Setup | Upkeep per month | Needs |
 | --- | --- | --- | --- |
 | Email | Free | Free | Always on |
-| Web design | €400 | €15 | None |
+| Web design | €400 in 2005 (the agency price below) | €15 | None |
 | Goggle Ads | €50 | None | Web design |
 | AI ads | €1,500 | None | Web design, from 2023 |
 
-Web design is set up on the website card in the Marketing app's Channels once the site is launched. The Marketing app waits for 450 know-how of research (Marketing basics, Employee management, Marketing campaigns), so a first-year company could not otherwise buy them before December.
+Web design is ordered at the design agency Young von Mutt (youngvonmutt.de, Marketing category of the site index), which the website card in the Marketing app opens, once the site is launched. The Marketing app waits for 450 know-how of research (Marketing basics, Employee management, Marketing campaigns), so a first-year company could not otherwise buy them before December.
 
 The basic website every company starts with is free and brings no leads of its own. The web design brings 4 leads a month per location city, split by the profile mix. Every lead only writes when its product is listed on the website.
 
@@ -2348,7 +2348,7 @@ The basic website every company starts with is free and brings no leads of its o
 | --- | --- | --- | --- | --- |
 | 2005 | 100% | 80% | 60% | 40% |
 
-A redesign costs the web design setup (€400, ledger line "Website redesign") and sets the design to the current generation. Anchor: a small-business site cost $2,000 to $7,500 in 2005 to 2009 (WebpageFX, 2013); the game keeps all channel prices far below real agency prices on purpose, so the age penalty is the lever and not the price. The balance bot redesigns when it is two generations behind with more than €5,000 cash and keeps its site on the rented host.
+**Design agency.** The web design and every redesign cost designPrice(year, level) = base × (1 + 0.5 × (level − 1)), where the base is €400 in 2005, €650 in 2009, €1,000 in 2013, €1,500 in 2017, €2,200 in 2021 and €3,500 in 2025, interpolated linearly per year and flat from 2025, and level is the company level. A level 1 company pays €400 in 2005 and €3,500 in 2025; a level 6 company pays €12,250 in 2025. The first web design is live at once. A redesign can be ordered at any time, even for a current design, books the price under marketing (ledger line "Website redesign") and is delivered 14 days later; the old design stays live until then, and only one redesign can be on order at a time. Delivery sets the design to the generation of the order date and the Marketing app notes it. The company level stands in for company size because no headcount metric exists. Anchor: a small-business site cost $2,000 to $7,500 in 2005 to 2009 (WebpageFX, 2013). The balance bot redesigns when it is two generations behind with more than the price plus €5,000 in cash, pays the same price, takes the design as live at once and keeps its site on the rented host.
 
 **Trade fairs.** Costs are 2026 euros, scaled back with m = 0.6 like campaigns. Each fair needs one attendee of any role, who is away for the fair's days.
 
