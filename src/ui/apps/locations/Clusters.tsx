@@ -51,13 +51,10 @@ export function BookedMeters({ game, devices }: { game: GameState; devices: Devi
 }
 
 function NodeMeters({ game, d }: { game: GameState; d: Device }) {
-  const live = nodeUsage(game, d.id), { used: u, physical: p } = live;
+  const live = nodeUsage(game, d.id);
   return (
     <>
       <BookedMeters game={game} devices={[d]} />
-      {game.frozen.includes(d.id) && (
-        <div className="loc-row"><span className="loc-k">{t("locations-1.frozen")}</span><span className="pill bad">{t("locations-1.ramInUse", { used: ram(+u.ramGb.toFixed(1)), total: ram(p.ramGb) })}</span></div>
-      )}
       {live.perf < 1 && <div className="loc-row"><span className="loc-k">{t("locations-1.performance")}</span><span className="pill warn">{Math.round(live.perf * 100)}%</span></div>}
     </>
   );
@@ -102,7 +99,6 @@ export function NodeCard({ game, device }: { game: GameState; device: Device }) 
       <div className="loc-card-h">
         <h3><Boxes />{softwareName(cluster.switching?.to ?? cluster.panel ?? cluster.platform)}</h3>
         <span className={`pill ${tone}`}>{label}</span>
-        {game.frozen.includes(device.id) && <span className="pill bad">{t("locations-1.frozen")}</span>}
         <span className="grow" />
         {cluster.controlPlane === device.id && <ControlPlanePill game={game} cluster={cluster} />}
       </div>

@@ -5,7 +5,8 @@ import { softwareById } from "../src/sim/10-catalog/platforms";
 import { serviceOnline } from "../src/sim/40-support/status";
 import { offers } from "../src/sim/30-market/market";
 import { type GameState } from "../src/sim/50-state";
-import { controlPlaneUp, lineOffered, nodeCapacity, nodeUsed, vmById, vmOf, workloadsOf } from "../src/sim/60-infra/cluster";
+import { controlPlaneUp, lineOffered, nodeCapacity, nodeUsed, oomKilled, vmById, vmOf, workloadsOf } from "../src/sim/60-infra/cluster";
+import { nodeUsage } from "../src/sim/60-infra/usage";
 import { installedRamGb } from "../src/sim/60-infra/status";
 import { FAILOVER_MINUTES } from "../src/sim/60-infra/ha";
 import { tick } from "../src/sim/88-tick/tick";
@@ -104,15 +105,16 @@ describe("compute", () => {
     expect(err(removePanelHost(s, host))).toBe("error.nodeNotEmpty");
   });
 
-  it("books web hosting on a panel server until its disk is full and freezes it once the RAM in use passes the installed RAM", () => {
+  it("books web hosting on a panel server until its disk is full and slows it once the RAM in use passes the installed RAM", () => {
     const s = withServer(startGame(1)), cus = addCustomer(s, "Ada Lang", "hobbyDev");
     panelServer(s, "dev3");
     const d = s.devices.find((x) => x.id === "dev3")!, spec = sizeSpec("webHosting", 1, yearOf(s.hour));
     const n = fill(s, cus);
     expect(n).toBe(Math.floor((nodeCapacity(d).diskGb - 2 + 1e-9) / spec.diskGb));
     expect(nodeUsed(s, "dev3").ramGb).toBeGreaterThan(installedRamGb(d));
-    expect(run(s, 1).map((e) => e.key)).toContain("event.nodeFrozen");
-    expect(s.frozen).toContain("dev3");
+    run(s, 1);
+    expect(nodeUsage(s, "dev3").perf).toBeLessThan(1);
+    expect(s.workloads.filter((w) => w.deviceId === "dev3" && oomKilled(w, s.hour)).length).toBeLessThanOrEqual(1);
   });
 
   it("sends web hosting to the panel VM with the RAM first and past a full one only when none is left", () => {

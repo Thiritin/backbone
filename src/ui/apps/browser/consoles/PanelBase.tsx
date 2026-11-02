@@ -154,7 +154,7 @@ export function useRows(game: GameState, c: Cluster, f: ConsoleFeatures, node: s
   const web = c.kind === "panel", cloud = c.kind === "cloud", close = () => setOpen(null), holds = useHolds(game, c, f);
   return game.workloads.filter((w) => w.clusterId === c.id && (!node || w.deviceId === node)).map((w) => {
     const st = vmState(game, w), [state, tone] = VM_STATE[st], u = workloadUse(game, w), host = hostOfVm(game, w.id);
-    const on = st === "running" || st === "down" || st === "frozen", site = game.services.find((v) => v.id === w.serviceId);
+    const on = st === "running" || st === "down", site = game.services.find((v) => v.id === w.serviceId);
     const d = game.devices.find((x) => x.id === w.deviceId), movable = (on || st === "stopped") && !w.migrating, own = cloud && isOwnVm(w);
     const actions: (PanelAction | false)[] = [
       f.start && st === "stopped" && { id: "start", label: t("browser-consoles-2.start"), run: () => act(startWorkload, w.id) },

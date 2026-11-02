@@ -1,7 +1,6 @@
 // economy.md, OpenVeeZee: burst memory and the live checkpoint and restore.
 import { BURST_MAX, checkpointMinutes, openVeeZee } from "../60-infra/beancounters";
 import { lostDisk, roomToStart } from "../60-infra/cluster";
-import { freezeTick } from "../60-infra/usage";
 import { nowHours } from "../00-core/time";
 import { imageParts, type OsImage } from "../10-catalog/server-os";
 import type { Resources } from "../10-catalog/products";
@@ -29,7 +28,6 @@ export function freezeWorkload(s: GameState, workloadId: string): ActionResult {
   if (!f) return fail("error.unknownWorkload");
   if (f.w.stopped || f.w.frozen || f.w.template || lostDisk(s, f.w) || f.w.busyUntil > s.hour) return fail("error.workloadBusy");
   patch(s, f.w.id, { frozen: true });
-  freezeTick(s);
   return { ok: true };
 }
 
@@ -40,7 +38,6 @@ export function thawWorkload(s: GameState, workloadId: string): ActionResult {
   if (!roomToStart(s, f.w)) return fail("error.noRamToStart");
   const minutes = checkpointMinutes(f.w.ramGb * 0.5);
   patch(s, f.w.id, { frozen: false });
-  freezeTick(s);
   for (const id of servicesIn(s, f.w)) s.downHours = { ...s.downHours, [id]: (s.downHours[id] ?? 0) + minutes / 60 };
   return { ok: true };
 }
