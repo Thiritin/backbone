@@ -29,7 +29,7 @@ function setup(id: string, year: number) {
   const cloud = s.clusters.find((c) => c.kind === "cloud")!, host = panelVm(s, cloud.id, id, { vcpu: 2, ramGb: 4, diskGb: 60 }), c = s.clusters.find((x) => x.id === host)!;
   const kind = softwareById(id).kind as keyof typeof PRODUCT;
   if (PRODUCT[kind]) { const r = provisionService(s, addCustomer(s, "Ada Lang", "hobbyDev"), PRODUCT[kind], { label: "ada", spec: { ...sizeSpec(PRODUCT[kind], 0, year), diskGb: 10 } }); expect(r.ok ? "ok" : r.error, id).toBe("ok"); }
-  if (kind === "mail") expect(selectMailServer(s, c.id).ok).toBe(true);
+  if (softwareById(id).kind === "mail") expect(selectMailServer(s, c.id).ok).toBe(true);
   return { s, c: s.clusters.find((x) => x.id === host)! };
 }
 
