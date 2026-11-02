@@ -5,6 +5,7 @@ import { yearOf } from "../00-core/time";
 import type { App } from "../10-catalog/apps";
 import { packageNamed, type PackageDef } from "../80-business/packages";
 import { accountUse } from "../80-business/readouts";
+import { companyDomain } from "../30-customers/domains";
 import type { GameState } from "../50-state";
 import type { Cluster, Workload } from "./cluster";
 
@@ -43,8 +44,14 @@ export interface Webspace extends WebParts {
   app: WebApp | null; limits: WebLimits; usage: WebUsage;
 }
 
+// A web space the player made for the company on a panel host, as an admin does in WHM's Create a New Account. It has no
+// service and starts with the panel's skeleton only; at is the hour it was created.
+export interface OwnWebspace { id: string; clusterId: string; account: string; domain: string; at: number }
+
 // Defaults for packages saved before these counts and for accounts sold without a package.
 export const WEB_LIMITS: Omit<WebLimits, "mailboxes"> = { databases: 5, ftpAccounts: 5, addonDomains: 1, subdomains: 10 };
+// The company's own accounts run without a package, so nothing caps them.
+const UNLIMITED: WebLimits = { databases: Infinity, mailboxes: Infinity, ftpAccounts: Infinity, addonDomains: Infinity, subdomains: Infinity };
 export const ALL_PRIVILEGES = ["ALL PRIVILEGES"];
 // cPanel's MultiPHP Manager; before it every domain runs the host's PHP.
 export const MULTI_PHP_YEAR = 2015;
@@ -77,26 +84,40 @@ export function limitsOf(pkg: PackageDef | undefined, mailboxes: number): WebLim
   };
 }
 
-function panelOf(s: GameState, workloadId: string): { w: Workload; c: Cluster } | null {
-  const w = s.workloads.find((x) => x.id === workloadId), c = w && s.clusters.find((x) => x.id === w.clusterId);
-  return w && c?.kind === "panel" && c.panel ? { w, c } : null;
+// The username a panel suggests for a domain: its first label, letters and digits only, eight characters.
+export const accountFor = (domain: string): string =>
+  (domain.split(".")[0].toLowerCase().replace(/[^a-z0-9]/g, "").replace(/^[0-9]+/, "") || "user").slice(0, 8);
+
+// The panel host of a web space: a customer workload's cluster or an own web space's.
+export function hostOf(s: GameState, id: string): { c: Cluster; w?: Workload; own?: OwnWebspace } | null {
+  const own = s.ownWebspaces.find((x) => x.id === id), w = own ? undefined : s.workloads.find((x) => x.id === id);
+  const c = (own || w) && s.clusters.find((x) => x.id === (own?.clusterId ?? w?.clusterId));
+  return c && c.kind === "panel" && c.panel ? { c, w, own } : null;
+}
+
+export const ownWebspacesOn = (s: GameState, clusterId: string): OwnWebspace[] => s.ownWebspaces.filter((x) => x.clusterId === clusterId);
+// The company domain's main web space, where the company website and the shop live.
+export function companyWebspace(s: GameState): Webspace | null {
+  const own = s.ownWebspaces.find((x) => x.domain === companyDomain(s));
+  return own ? webspaceOf(s, own.id) : null;
 }
 
 // The contents a customer web space has without any change by the player.
 export function deriveWebspace(s: GameState, workloadId: string): Webspace | null {
-  const at = panelOf(s, workloadId);
+  const at = hostOf(s, workloadId);
   if (!at) return null;
-  const { w, c } = at, v = s.services.find((x) => x.id === w.serviceId);
-  const domain = v?.domain ?? v?.label ?? w.hostname ?? w.id;
-  const account = v?.username ?? (domain.split(".")[0].toLowerCase().replace(/[^a-z0-9]/g, "").replace(/^[0-9]+/, "") || "user").slice(0, 8);
-  const panel = c.panel!, webroot = webrootOf(panel), prefix = prefixOf(account), since = v?.startedAt ?? w.placedAt, year = yearOf(s.hour);
+  const { c, own } = at, w = at.w!, v = own ? undefined : s.services.find((x) => x.id === w.serviceId);
+  const domain = own?.domain ?? v?.domain ?? v?.label ?? w.hostname ?? w.id;
+  const account = own?.account ?? v?.username ?? accountFor(domain);
+  const panel = c.panel!, webroot = webrootOf(panel), prefix = prefixOf(account), since = own?.at ?? v?.startedAt ?? w.placedAt, year = yearOf(s.hour);
   const ws: Webspace = {
     workloadId, panel, account, prefix, webroot, domain, app: null, files: {}, domains: {}, databases: {}, dbUsers: {}, mailboxes: {}, forwarders: {}, ftp: {}, cron: {},
-    limits: limitsOf(v?.pkg ? packageNamed(c, v.pkg) : undefined, v?.spec.mailboxes ?? 0), usage: undefined!,
+    limits: own ? UNLIMITED : limitsOf(v?.pkg ? packageNamed(c, v.pkg) : undefined, v?.spec.mailboxes ?? 0), usage: undefined!,
   };
   for (const p of [webroot, "logs", "tmp", "mail"]) ws.files[p] = { dir: true, mb: 0, at: since };
   ws.domains[domain] = { name: domain, kind: "main", folder: webroot, php: c.php };
-  // The player's own web spaces have no customer service and start empty.
+  // The default page a new account serves until the player uploads a site.
+  if (own) ws.files[`${webroot}/index.html`] = { mb: 0.004, at: since };
   if (v) {
     const app = v.spec.app ?? "static", def = APP_FILES[app], usedMb = accountUse(s, w).disk[0] * 1024;
     const nMail = Math.min(v.spec.mailboxes, 8), mailMb = nMail ? usedMb * MAIL_SHARE : 0, dbMb = def.db ? usedMb * DB_SHARE : 0, filesMb = usedMb - mailMb - dbMb;
@@ -139,11 +160,11 @@ export function webspaceOf(s: GameState, workloadId: string): Webspace | null {
 }
 
 function usageOf(s: GameState, ws: Webspace): WebUsage {
-  const w = s.workloads.find((x) => x.id === ws.workloadId)!, files = Object.values(ws.files), domains = Object.values(ws.domains);
+  const w = s.workloads.find((x) => x.id === ws.workloadId), files = Object.values(ws.files), domains = Object.values(ws.domains);
   const filesMb = files.reduce((a, f) => a + f.mb, 0), kind = (k: DomainKind) => domains.filter((d) => d.kind === k).length;
   const diskMb = filesMb + Object.values(ws.databases).reduce((a, d) => a + d.mb, 0) + Object.values(ws.mailboxes).reduce((a, m) => a + m.usedMb, 0);
   return {
-    diskMb: +diskMb.toFixed(3), quotaMb: w.diskGb * 1024,
+    diskMb: +diskMb.toFixed(3), quotaMb: w ? w.diskGb * 1024 : Infinity,
     // ponytail: a derived folder stands for its whole subtree, so inodes are guessed at 30 per MB; count real entries once uploads extract archives.
     inodes: files.length + Math.round(filesMb * 30),
     databases: Object.keys(ws.databases).length, dbUsers: Object.keys(ws.dbUsers).length, mailboxes: Object.keys(ws.mailboxes).length,

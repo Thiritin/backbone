@@ -1,9 +1,11 @@
 // docs/design/web-hosting.md, The web space: the player's changes to a web space, stored in its overlay.
 import { yearOf } from "../00-core/time";
 import { PHP } from "../10-catalog/platforms";
+import { companyDomain } from "../30-customers/domains";
 import type { GameState } from "../50-state";
+import { licenceBlock } from "../60-infra/licence";
 import {
-  ALL_PRIVILEGES, deriveWebspace, dbUserMax, MULTI_PHP_YEAR, webspaceOf,
+  accountFor, ALL_PRIVILEGES, deriveWebspace, hostOf, dbUserMax, MULTI_PHP_YEAR, webspaceOf,
   type DomainKind, type PartName, type WebLimits, type WebParts, type Webspace,
 } from "../60-infra/webspace";
 import { addSubdomainRecord, dropSubdomainRecord } from "../60-infra/webzone";
@@ -29,8 +31,7 @@ function put<K extends PartName>(s: GameState, id: string, part: K, key: string,
 function open(s: GameState, id: string): Webspace | ActionResult {
   const ws = webspaceOf(s, id);
   if (!ws) return fail("error.unknownWorkload");
-  const w = s.workloads.find((x) => x.id === id)!;
-  return s.security.offline.includes(w.clusterId ?? "") ? fail("webspace.error.offline") : ws;
+  return s.security.offline.includes(hostOf(s, id)!.c.id) ? fail("webspace.error.offline") : ws;
 }
 const isFail = (x: Webspace | ActionResult): x is ActionResult => "ok" in x;
 const full = (ws: Webspace, k: keyof WebLimits, used: number): ActionResult | null =>
@@ -281,4 +282,36 @@ export function renameFile(s: GameState, workloadId: string, path: string, name:
     put(s, workloadId, "files", k, false);
   }
   return { ok: true, id: to };
+}
+
+// cPanel usernames: a letter first, then lowercase letters and digits, 16 characters at most.
+const ACCOUNT = /^[a-z][a-z0-9]{0,15}$/;
+
+// An account for the company itself on a panel host, as an admin makes one in WHM for their own domain. It counts against
+// the panel licence like any account and holds only the panel's skeleton until the player fills it.
+export function createOwnWebspace(s: GameState, clusterId: string, domain = companyDomain(s), account = accountFor(domain)): ActionResult {
+  const c = s.clusters.find((x) => x.id === clusterId);
+  if (!c) return fail("error.unknownCluster");
+  if (c.kind !== "panel" || !c.panel) return fail("webspace.error.notPanel");
+  if (s.security.offline.includes(c.id)) return fail("webspace.error.offline");
+  domain = domain.trim().toLowerCase();
+  if (!DOMAIN.test(domain)) return fail("webspace.error.domainName");
+  if (!ACCOUNT.test(account)) return fail("webspace.error.account");
+  const here = [...s.workloads.filter((w) => w.clusterId === c.id).map((w) => w.id), ...s.ownWebspaces.filter((x) => x.clusterId === c.id).map((x) => x.id)]
+    .map((id) => webspaceOf(s, id)).filter((ws): ws is Webspace => !!ws);
+  if (s.ownWebspaces.some((x) => x.domain === domain) || here.some((ws) => ws.domains[domain])) return fail("webspace.error.domainTaken");
+  if (here.some((ws) => ws.account === account)) return fail("webspace.error.accountTaken");
+  const block = licenceBlock(s, c);
+  if (block) return fail(block);
+  const id = `ws${s.nextId++}`;
+  s.ownWebspaces = [...s.ownWebspaces, { id, clusterId: c.id, account, domain, at: s.hour }];
+  return { ok: true, id };
+}
+
+// Terminates an own account with everything the player put in it.
+export function removeOwnWebspace(s: GameState, id: string): ActionResult {
+  if (!s.ownWebspaces.some((x) => x.id === id)) return fail("error.unknownWorkload");
+  s.ownWebspaces = s.ownWebspaces.filter((x) => x.id !== id);
+  delete s.webspaces[id];
+  return { ok: true };
 }

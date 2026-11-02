@@ -37,4 +37,9 @@ export default {
   "webspace.error.noCron": () => "Questo cron job non esiste.",
   "webspace.error.fixedFolder": () => "Questa cartella appartiene all'account e non può essere modificata.",
   "webspace.error.noFile": () => "Questo file o cartella non esiste.",
+  "webspace.error.notPanel": () => "Solo un host con pannello di web hosting può ospitare account.",
+  "webspace.error.account": () => "I nomi utente iniziano con una lettera e hanno fino a 16 lettere minuscole e cifre.",
+  "webspace.error.accountTaken": () => "Questo nome utente è già in uso sul server.",
+  "webspace.own.title": () => "Account proprio",
+  "webspace.own.list": () => "Account propri",
 } satisfies Dict;

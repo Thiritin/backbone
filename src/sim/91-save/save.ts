@@ -1,7 +1,7 @@
 import { fillDesk } from "./desk";
 import { fillMail } from "./mail";
 import { migrateBooks } from "./books";
-import { fillShop, installSavedShop } from "./shop";
+import { fillShop, installSavedShop, ownShopWebspace } from "./shop";
 import { brandsOf, fillCpus, isOfficeRouter, MODELS, modelById, RENAMED_MODELS, wanPort } from "../10-catalog/hardware";
 import { freeSlots } from "../60-infra/status";
 import { legacyLicences } from "../60-infra/licence";
@@ -181,6 +181,7 @@ export function deserialize(raw: string): GameState {
   migrateBooks(s);
   s.tax = data.tax ? { ...base.tax, ...data.tax } : s.registration ? legacyTax(s) : base.tax;
   if (data.shop && data.shop.install === undefined) installSavedShop(s);
+  if (!data.ownWebspaces) ownShopWebspace(s);
   fillMail(s, data.mail, !!data.company?.zone);
   fillDesk(s, data.desk !== undefined);
   s.webmail = { ...base.webmail, ...data.webmail };

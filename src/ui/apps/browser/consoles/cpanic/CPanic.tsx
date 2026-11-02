@@ -7,6 +7,7 @@ import { TRANSFER_FROM_YEAR } from "../../../../../sim/60-infra/transfers";
 import { AUTOSSL_FROM } from "../../../../../sim/60-infra/webpanel";
 import { parseCreate } from "../../../../../sim/80-business/consoles";
 import { PackagesScreen, ProvisionForm } from "../PackageForms";
+import { OwnAccountForm, OwnAccountRows } from "../OwnAccounts";
 import { useReadoutPages } from "../Readouts";
 import { useSessionState } from "../../../../session";
 import { Customer } from "./Customer";
@@ -87,10 +88,12 @@ export function CPanic(p: PanelProps) {
           <div className="cp-crumb">{group}</div>
           <h1>{title}</h1>
           {tab === "objects" && <RowsTable rows={rows} name={t("browser-consoles-1.domain")} cols={["user", "pkg"]} extra={(r) => <button className="cx-btn" onClick={() => setAs(r.id)}>{t("readouts.cp.loginAs")}</button>} />}
+          {tab === "objects" && <OwnAccountRows game={p.game} c={p.c} onLogin={setAs} />}
           {tab === "create" && (
             <ProvisionForm game={p.game} c={p.c} products={["webHosting"]} order={open?.screen === "create" ? open.order : undefined} className="cx-form cp-form"
               sections={{ order: t("pkg.order"), account: t("pkg.cpDomainInfo"), plan: t("pkg.cpSettings") }} />
           )}
+          {tab === "create" && <OwnAccountForm game={p.game} c={p.c} className="cx-form cp-form" />}
           {tab === "packages" && <PackagesScreen game={p.game} c={p.c} />}
           {tab === "nodes" && <Nodes game={p.game} c={p.c} />}
           {tab === "transfer" && <TransferTool game={p.game} c={p.c} x3={x3} />}
