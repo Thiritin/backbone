@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- Pear Mail shows every added account in one window with unified mailboxes, sortable columns, threads, search and a reader that answers customer requests from the message.
 - Customers now come from a much larger pool of real first and last names, with more trades, shops, agencies and offices, so names repeat far less often.
 - The Terminal installs zsh only the first time you ever open it, not again in every new game.
 - The menu bar now shows the Pear logo in the style of each system release, and the Panthera and Leapard icons for Locations, Post and Security now show a house, a fax machine and a shield.
