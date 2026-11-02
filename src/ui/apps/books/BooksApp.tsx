@@ -21,6 +21,7 @@ import { RemindersTab } from "./RemindersTab";
 import { OverviewTab, StatementTab, StatisticsTab } from "./Reports";
 import { TaxTab } from "./TaxTab";
 import { Register } from "./Register";
+import { BooksSetup } from "./BooksSetup";
 import { useBooks } from "./view";
 import { LAYOUTS } from "./layouts";
 import type { Entry, Group } from "./layouts/types";
@@ -54,6 +55,7 @@ export function BooksApp() {
   const [tab, setTab] = useSessionState("books.tab", "overview");
   const [focus, setFocus] = useSessionState<string | null>("books.focus", null);
   const [register, setRegister] = useSessionState("books.register", false);
+  const [setup, setSetup] = useSessionState("books.setup", false);
   useFocus("Books", (f) => {
     if (f.kind === "register") return setRegister(true);
     const to = f.kind === "invoice" ? (hasFeature(game, "dunning") && game.invoices.find((i) => i.id === f.id && isUnpaid(i) && i.status === "overdue") ? "reminders" : "invoices")
@@ -80,15 +82,16 @@ export function BooksApp() {
   return (
     <div className="books" style={skin && { "--accent": skin.accent, "--bk-bar": skin.bar, "--bk-ink": skin.ink } as CSSProperties}>
       <Layout v={v!} entries={entries} active={current.id} pick={pick}>
-        {(importing || keys) && (
-          <div className="books-top">
+        <div className="books-top">
+            <button className="btn" onClick={() => setSetup(true)}>{t("setup.title")}</button>
             {importing && <button className="btn books-import" onClick={() => act(importFromShop)}>{t("shop-link.import")}{waiting ? <span className="tab-count num">{waiting}</span> : null}</button>}
             {keys && <button className="btn books-register-open" aria-expanded={register} onClick={() => setRegister(!register)}>{t("vendor-sites.register")}</button>}
-          </div>
-        )}
+        </div>
         {register && keys && <Register onClose={() => setRegister(false)} />}
         <div className="books-body">
-          {v && booksOffline(game) ? <Offline v={v} /> : <Body key={`${current.id}:${focus}`} focus={focus} />}
+          {v && booksOffline(game) ? <Offline v={v} />
+            : v && (setup || game.books.setupDone === false) ? <BooksSetup v={v} game={game} close={(to) => { setSetup(false); if (shown.some((x) => x.id === to)) pick(to!); }} />
+            : <Body key={`${current.id}:${focus}`} focus={focus} />}
         </div>
       </Layout>
     </div>

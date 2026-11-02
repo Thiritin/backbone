@@ -1,0 +1,25 @@
+.setup { display: flex; flex-direction: column; flex: 1; min-height: 0; margin: 16px; border: 1px solid var(--line); background: var(--panel, transparent); }
+.setup-head { padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--bk-bar, var(--accent-soft)); }
+.setup-head h2 { margin: 0; font-size: 15px; }
+.setup-main { display: flex; flex: 1; min-height: 0; }
+.setup-steps { margin: 0; padding: 12px 16px 12px 32px; width: 180px; flex: none; border-right: 1px solid var(--line); overflow: auto; }
+.setup-steps li { padding: 3px 0; color: var(--text-3); }
+.setup-steps li.done { color: var(--text-2); }
+.setup-steps li[aria-current] { color: var(--text); font-weight: 600; }
+.setup-body { flex: 1; min-width: 0; padding: 12px 16px; overflow: auto; }
+.setup-body h3 { margin: 0 0 12px; font-size: 14px; }
+.setup-fields { display: grid; gap: 6px; margin: 0; }
+.setup-fields div { display: grid; grid-template-columns: 180px 1fr; gap: 12px; }
+.setup-fields dt { color: var(--text-2); }
+.setup-fields dd { margin: 0; }
+.setup-choice { border: 0; padding: 0; margin: 0; display: grid; gap: 6px; }
+.setup-choice legend { padding: 0; margin-bottom: 6px; color: var(--text-2); }
+.setup-links { padding-left: 18px; }
+.setup-foot { display: flex; gap: 8px; padding: 10px 16px; border-top: 1px solid var(--line); }
+.setup-foot span { flex: 1; }
+@media (max-width: 560px) {
+  .setup-main { flex-direction: column; }
+  .setup-steps { width: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+  .setup-fields div { grid-template-columns: 1fr; gap: 2px; }
+}
+.setup-fields + .setup-choice { margin-top: 16px; }

@@ -1,6 +1,6 @@
 # Plan: shop and books split
 
-Lane id: `shop-books-split`. Status: decisions settled in section 10; milestones 1 to 4 and 6 to 11 built.
+Lane id: `shop-books-split`. Status: decisions settled in section 10; milestones 1 to 4 and 6 to 12 built.
 
 The bookkeeping program and the shop system both write quotes, both hold a product catalog and both reach invoices. Players see two ways to do the same thing, and with a shop installed and email orders off, quote requests still arrive by email. This plan gives each program one job, makes the shop automate the customer side the way WHMCS does, and gives every program the same setup flow.
 
@@ -112,6 +112,8 @@ Every Books program and every shop variant goes through the same four steps, sty
 4. Done screen with links to the main pages.
 
 The wizard can be closed and reopened from the program's settings page; closing it keeps what was entered.
+
+As built (milestone 12): steps 1 and 2 stay as they were, since the shop is installed through the web installer or Softaculus at once and has no setup hours. The wizard (`src/ui/apps/setup/SetupWizard.tsx`) opens in Books after a program is installed and on the shop admin's start page after a shop system is installed or switched; old saves skip it. Company, tax and bank steps show the values from the trade office, the tax office and the bank, since those are registered there. The invoice number format (2026-0001, 2026-11-0001 or 10001) is the one real Books setting and is shared with the shop. The shop steps reuse the cycle discounts, products, server groups and payment methods screens; the email step shows the sales address shop emails go from and whether the mail server delivers. Books reopens it from a toolbar button, the shop from Settings.
 
 ### 8.3 Go-live of the shop
 

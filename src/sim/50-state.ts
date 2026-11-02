@@ -409,7 +409,7 @@ export interface GameState {
   modules: string[];
   // The bookkeeping program the Books app runs (10-catalog/bookkeeping.ts); null until one is installed.
   // The bookkeeping program, its edition and the seats bought beyond the edition's users.
-  books: { vendor: BooksVendorId | null; installedAt: number; edition: string | null; seats: number; download: BooksDownload | null };
+  books: { vendor: BooksVendorId | null; installedAt: number; edition: string | null; seats: number; download: BooksDownload | null; setupDone?: boolean };
   // The tax office's file on the company (80-business/tax.ts).
   tax: TaxState;
   // Logins KeePassive saved, by site ("fritz:<router id>", "bank:<bank id>"): the form's values in field order.
@@ -477,7 +477,7 @@ export const newGame = (seed: number): GameState => ({
   customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], webOpenedAt: null, files: {}, webspaces: {}, ownWebspaces: [], installers: {},
   invoices: [], transfers: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   quotes: [],
-  billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0 }, autoOrders: false, reviewOrders: false, screenOrders: false, screenChecks: 0, chargebackStrikes: 0,
+  billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0, numbering: "year" }, autoOrders: false, reviewOrders: false, screenOrders: false, screenChecks: 0, chargebackStrikes: 0,
   shop: newShop(),
   privateNets: [],
   heldServices: {},

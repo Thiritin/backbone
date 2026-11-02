@@ -69,6 +69,8 @@ export interface ShopState {
   // The emails the shop sent in the last year, and the templates the player switched off.
   emails: ShopEmail[];
   mailOff: MailTemplate[];
+  // False from install until the setup wizard is finished or closed; saves from before the wizard skip it.
+  setupDone?: boolean;
 }
 // ws, folder and db name where the installer put the shop (web-hosting.md 5); a hosted shop has none.
 export interface ShopInstall { clusterId: string; version: string; at: number; ws?: string; folder?: string; db?: string }

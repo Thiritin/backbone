@@ -6,15 +6,25 @@ import { useStore } from "../../../../../store";
 import { CommitInput, toNumber } from "./CommitInput";
 import { CYCLE_LABEL } from "./ProductEdit";
 import type { ScreenProps } from "./nav";
+import type { GameState } from "../../../../../../sim/50-state";
 
-// Shop settings: the discount per billing cycle that prices products with automatic cycle prices.
-export function Settings({ game }: ScreenProps) {
+// Shop settings: the setup wizard and the discount per billing cycle that prices products with automatic cycle prices.
+export function Settings({ game, go }: ScreenProps) {
+  return (
+    <div className="pt-screen">
+      <p><button className="btn" onClick={() => go({ name: "setup" })}>{t("setup.title")}</button></p>
+      <section>
+        <h3>{t("shop-admin.cycleDiscounts")}</h3>
+        <CycleDiscounts game={game} />
+      </section>
+    </div>
+  );
+}
+
+export function CycleDiscounts({ game }: { game: GameState }) {
   const act = useStore((s) => s.act);
   const v = shopById(game.shop.variant!);
   return (
-    <div className="pt-screen">
-      <section>
-        <h3>{t("shop-admin.cycleDiscounts")}</h3>
         <table className="pt-table">
           <tbody>
             {v.cycles.filter((c) => c !== "monthly").map((c) => (
@@ -30,7 +40,5 @@ export function Settings({ game }: ScreenProps) {
             ))}
           </tbody>
         </table>
-      </section>
-    </div>
   );
 }
