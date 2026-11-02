@@ -185,6 +185,7 @@ svg.lucide { width: 16px; height: 16px; stroke-width: 1.75; flex: none; }
 .dock-app .dot { width: 4px; height: 4px; border-radius: 50%; background: color-mix(in oklch, var(--text) 70%, transparent); opacity: 0; }
 .dock-app.running .dot { opacity: 1; }
 .dock-app .warn { position: absolute; top: -3px; left: -3px; width: 11px; height: 11px; border-radius: 50%; background: var(--warn); box-shadow: 0 0 0 2px var(--banner); }
+.dock-app .notice { position: absolute; top: -2px; right: -2px; width: 11px; height: 11px; border-radius: 50%; background: var(--bad); box-shadow: 0 0 0 2px var(--banner); }
 .dock-app .count { position: absolute; top: -4px; right: -3px; min-width: 19px; height: 19px; padding: 0 5px; border-radius: 10px; background: var(--bad); color: white; font: 600 11px/19px var(--font-num); text-align: center; box-shadow: 0 1px 3px oklch(0 0 0 / 0.35); }
 .dock-app .tip { position: absolute; bottom: 64px; padding: 3px 9px; border-radius: 6px; background: var(--banner); color: var(--text); font-size: 12px; white-space: nowrap; box-shadow: var(--shadow-pop); opacity: 0; pointer-events: none; transition: opacity 120ms; }
 .dock-app:hover .tip { opacity: 1; }

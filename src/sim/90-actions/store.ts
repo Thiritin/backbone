@@ -1,20 +1,30 @@
 import { yearOf } from "../00-core/time";
-import { isAvailable, skillById } from "../10-catalog/research";
+import { isAvailable, SKILLS, skillById } from "../10-catalog/research";
 import { monthlyCharge, storeItem, subscriptionEntry } from "../10-catalog/store";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 
+// Why a training cannot start now, or null.
+export function researchBlocker(s: GameState, id: string): string | null {
+  const skill = skillById(id);
+  if (!skill) return "error.unknownSkill";
+  if (s.unlocks.includes(id)) return "error.researched";
+  if (skill.from && yearOf(s.hour) < skill.from) return "error.notYet";
+  if (s.training) return "error.trainingBusy";
+  if (!skill.needs.every((n) => s.unlocks.includes(n))) return "error.missingSkill";
+  if (s.knowHow < skill.knowHow) return "error.noKnowHow";
+  return null;
+}
+
+export const canResearchAny = (s: GameState): boolean => SKILLS.some((k) => !researchBlocker(s, k.id));
+
 // Starts a training: know-how is paid up front and the skill is learned when the training ends.
 export function research(s: GameState, id: string): ActionResult {
-  const skill = skillById(id);
-  if (!skill) return fail("error.unknownSkill");
-  if (s.unlocks.includes(id)) return fail("error.researched");
-  if (skill.from && yearOf(s.hour) < skill.from) return fail("error.notYet");
-  if (s.training) return fail("error.trainingBusy");
-  if (!skill.needs.every((n) => s.unlocks.includes(n))) return fail("error.missingSkill");
-  if (s.knowHow < skill.knowHow) return fail("error.noKnowHow");
+  const blocked = researchBlocker(s, id);
+  if (blocked) return fail(blocked);
+  const skill = skillById(id)!;
   s.knowHow -= skill.knowHow;
   s.training = { id, doneAt: s.hour + skill.days * 24 };
   return { ok: true };
