@@ -39,7 +39,7 @@ function VsTable({ vms, open }: { vms: Vm[]; open: (id: string) => void }) {
         {vms.map((v) => (
           <tr key={v.id}>
             <td className="num"><button className="ovz-a" onClick={() => open(v.id)}>{ctid(v)}</button></td>
-            <td>{v.name}</td><td className="num">{v.ip}</td><td>{template(v)}</td><td>{v.node}</td><td><Badge v={v} /></td>
+            <td>{v.name}</td><td className="num">{v.ips}</td><td>{template(v)}</td><td>{v.node}</td><td><Badge v={v} /></td>
             <td className="num">{v.w.ramGb} GB</td><td className="num">{v.w.diskGb} GB</td>
           </tr>
         ))}
@@ -108,7 +108,7 @@ export function CtPage({ game, v, host }: { game: GameState; v: Vm; host: string
   const [reinstall, setReinstall] = useState(false), st = vmStats(game, v.id)!, now = st.now, w = v.w;
   const domain = /^[\d.]+$/.test(host) ? "localdomain" : host.split(".").slice(1).join(".") || host, ns = v.ip ? v.ip.replace(/\.\d+$/, ".1") : "";
   const props: [string, string][] = [
-    ["ID", String(ctid(v))], [t("browser-consoles-2.hostname"), w.hostname ?? v.name], [t("browser-consoles-2.ipAddress"), v.ip], [t("browser-consoles-2.osTemplate"), template(v)], [t("browser-consoles-2.server"), v.node],
+    ["ID", String(ctid(v))], [t("browser-consoles-2.hostname"), w.hostname ?? v.name], [t("browser-consoles-2.ipAddress"), v.ips], [t("browser-consoles-2.osTemplate"), template(v)], [t("browser-consoles-2.server"), v.node],
     [t("browser-consoles-2.status"), v.state], [t("browser-consoles-2.startOnBoot"), t("browser-consoles-2.yes")], [t("browser-consoles-2.nameserver"), ns], [t("browser-consoles-2.searchDomain"), domain], ["User", "admin"],
   ];
   const half = Math.ceil(props.length / 2), pairs = props.slice(0, half).map((a, i) => [a, props[half + i]] as const);
@@ -270,8 +270,8 @@ export function OpenVeeZee(p: PanelProps) {
               <table className="cx-table ovz-table">
                 <thead><tr><th>{t("browser-consoles-2.ipAddress")}</th><th>{t("browser-consoles-2.virtualServer")}</th><th>{t("browser-consoles-2.server")}</th></tr></thead>
                 <tbody>
-                  {vms.filter((v) => v.ip).length === 0 && <tr><td colSpan={3} className="cx-empty">{t("browser-consoles-2.noIpAddresses")}</td></tr>}
-                  {vms.filter((v) => v.ip).map((v) => <tr key={v.id}><td className="num">{v.ip}</td><td><button className="ovz-a" onClick={() => open(v.id)}>{ctid(v)} ({v.name})</button></td><td>{v.node}</td></tr>)}
+                  {vms.filter((v) => v.ips).length === 0 && <tr><td colSpan={3} className="cx-empty">{t("browser-consoles-2.noIpAddresses")}</td></tr>}
+                  {vms.filter((v) => v.ips).map((v) => <tr key={v.id}><td className="num">{v.ips}</td><td><button className="ovz-a" onClick={() => open(v.id)}>{ctid(v)} ({v.name})</button></td><td>{v.node}</td></tr>)}
                 </tbody>
               </table>
             </>

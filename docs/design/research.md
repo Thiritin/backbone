@@ -157,6 +157,18 @@ MaxMined scores each order the moment it arrives, by email, form or shop. It dec
 
 Every check costs a few cents, billed on the first of the month. With Review server orders by hand on as well, your staff only review the server orders MaxMined let through.
 
+## Traffic billing
+
+### Now available
+
+- **Traffic over plan** in the Books billing rules answers every service that moves more traffic than its plan includes.
+
+### One answer for everyone
+
+Each day at noon the books look for services over their plan that you have not answered this month. Pick one answer and it goes out to all of them: throttle the service to its booked traffic, bill the overage at your traffic rate, or offer the customer a bigger plan. Off leaves every case to you on the customer page.
+
+A bill or an offer covers a service for a month, so nobody gets two in a row. An upgrade offer still waits in Sales until you quote it.
+
 ## High availability
 
 ### Now available

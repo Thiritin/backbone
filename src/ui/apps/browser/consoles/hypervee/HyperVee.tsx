@@ -97,7 +97,7 @@ export function VmDetails({ game, v, generations, c }: { game: GameState; v: Vm;
             {row(t("browser-consoles-1.hvAssignedMemory"), on ? mb(w.ramGb) : "")}
             {row(t("browser-consoles-1.hvMemoryDemand"), on ? mb(st.now.ram * w.ramGb) : "")}
             {row(t("browser-consoles-1.status"), v.tone === "bad" ? v.state : t("browser-consoles-1.hvOperatingNormally"))}
-            {row(t("browser-consoles-1.hvIpAddresses"), v.ip)}
+            {row(t("browser-consoles-1.hvIpAddresses"), v.ips)}
           </tbody></table>
           <Chart className="hv-chart" kind="line" title={t("browser-consoles-1.hvCpuUsage")} now={`${Math.round(st.now.cpu * 100)} %`} values={st.ring.map((x) => x.cpu)} end={game.hour} />
         </div>
@@ -113,7 +113,7 @@ export function VmDetails({ game, v, generations, c }: { game: GameState; v: Vm;
       )}
       {tab === "Networking" && (
         <table className="cx-table"><thead><tr><th>{t("browser-consoles-1.hvAdapter")}</th><th>{t("browser-consoles-1.hvConnectedTo")}</th><th>{t("browser-consoles-1.hvIpAddresses")}</th><th>{t("browser-consoles-1.status")}</th></tr></thead>
-          <tbody><tr><td>{t("browser-consoles-1.hvNetworkAdapter")}</td><td>{c ? switchOf(c, w).name : t("browser-consoles-1.hvExternalNetwork")}</td><td className="num">{v.ip}</td><td>{on ? t("browser-consoles-1.ok") : ""}</td></tr></tbody></table>
+          <tbody><tr><td>{t("browser-consoles-1.hvNetworkAdapter")}</td><td>{c ? switchOf(c, w).name : t("browser-consoles-1.hvExternalNetwork")}</td><td className="num">{v.ips}</td><td>{on ? t("browser-consoles-1.ok") : ""}</td></tr></tbody></table>
       )}
       {tab === "Replication" && (c && w.deviceId ? <Replica game={game} c={c} w={w} /> : <table className="hv-kv"><tbody>{row(t("browser-consoles-1.hvReplicationState"), t("browser-consoles-1.hvNotEnabled"))}</tbody></table>)}
       <nav className="hv-dtabs">{TABS.map((x) => <button key={x} aria-pressed={x === tab} onClick={() => setTab(x)}>{TAB_LABELS[x]}</button>)}</nav>
