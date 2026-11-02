@@ -225,20 +225,6 @@ export default {
 
   "apps.note.title": () => "Título",
 
-  "apps.mail.installing": () => "A instalar",
-  "apps.mail.impaired": () => "Entrega de e-mail afetada",
-  "apps.mail.delivering": () => "A entregar",
-  "apps.mail.unrouted": () => "Não entregue",
-  "apps.mail.freeNote": () => "Grátis. Parece pouco profissional para clientes empresariais.",
-  "apps.mail.availableFrom": (p) => `Disponível a partir de ${p.year}`,
-  "apps.mail.needDomain": () => "Precisas de um domínio",
-  "apps.mail.perSeat": (p) => `${p.seat} por caixa, ${p.total} por mês`,
-  "apps.mail.selfHost": () => "Alojamento próprio",
-  "apps.mail.needServer": () => "Precisas de um servidor de e-mail",
-  "apps.mail.settings": () => "Definições de e-mail",
-  "apps.mail.address": () => "Endereço",
-  "apps.mail.status": () => "Estado",
-  "apps.mail.provider": () => "Fornecedor de e-mail",
 
   "apps.kb.article": () => "Artigo",
   "apps.kb.reads": () => "Leituras",
@@ -269,7 +255,7 @@ export default {
   "apps.guide.step.domain": (p) => `Compra um domínio para a tua empresa em ${p.partner} no navegador.`,
   "apps.guide.step.website": () => "Cria o teu primeiro site em Marketing, em Canais.",
   "apps.guide.step.launch": () => "Escolhe onde o teu site corre, lança-o em Marketing e põe o teu primeiro produto à venda em Produtos.",
-  "apps.guide.step.email": (p) => `Escolhe um fornecedor de e-mail em ${p.app}.`,
+  "apps.guide.step.email": () => "Contrata caixas de correio para o domínio da tua empresa no site de um fornecedor de e-mail.",
   "apps.guide.step.firstCustomer": (p) => `Responde ao teu primeiro cliente em ${p.app}.`,
 
   "apps.name.Applications": () => "Aplicações",

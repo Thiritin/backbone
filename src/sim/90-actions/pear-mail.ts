@@ -52,17 +52,19 @@ export function setupClientAccount(s: GameState, i: AccountInput & { online?: bo
   return { ok: true, id };
 }
 
-type AccountEdit = Partial<Pick<ClientAccount, "description" | "fullName" | "password" | "protocol" | "smtp" | "checkEvery" | "popRemove">> & { host?: string | null };
+type AccountEdit = Partial<Pick<ClientAccount, "description" | "fullName" | "password" | "protocol" | "smtp" | "checkEvery" | "popRemove" | "storeSent" | "signature">> & { host?: string | null };
 
 // Account Information in Preferences: a changed password or server clears a refused password and checks again.
 export function editClientAccount(s: GameState, clientId: string, e: AccountEdit): ActionResult {
   const c = client(s, clientId);
   if (!c) return fail("error.mailUnknown");
   if (e.checkEvery !== undefined && e.checkEvery !== 0 && !CHECK_EVERY.includes(e.checkEvery)) return fail("error.mailUnknown");
-  const { host, ...rest } = e, { authFailed: _a, ...kept } = c;
+  if (e.signature && !s.pearMail.signatures.some((x) => x.id === e.signature)) return fail("error.mailUnknown");
+  const { host, ...rest } = e, recheck = ["password", "protocol", "smtp", "host"].some((k) => k in e);
+  const { authFailed: _a, ...kept } = c;
   const server = host === undefined ? c.server : host?.trim() ? { host: host.trim().toLowerCase(), port: (e.protocol ?? c.protocol) === "imap" ? 993 : 995, tls: true } : null;
-  s.pearMail = { ...s.pearMail, accounts: s.pearMail.accounts.map((x) => (x.id === clientId ? { ...kept, ...rest, server } : x)) };
-  checkAccount(s, clientId, false);
+  s.pearMail = { ...s.pearMail, accounts: s.pearMail.accounts.map((x) => (x.id === clientId ? { ...(recheck ? kept : c), ...rest, server } : x)) };
+  if (recheck) checkAccount(s, clientId, false);
   return { ok: true };
 }
 
@@ -87,13 +89,14 @@ export function removeClientAccount(s: GameState, clientId: string, keepCopy: bo
   } else messages = messages.filter((m) => !own(m));
   s.pearMail = {
     ...s.pearMail, accounts: s.pearMail.accounts.filter((x) => x.id !== clientId), rules: s.pearMail.rules.filter((r) => r.clientId !== clientId),
-    local: { folders, messages },
+    local: { folders, messages }, prefs: { ...s.pearMail.prefs, defaultFrom: s.pearMail.prefs.defaultFrom === clientId ? null : s.pearMail.prefs.defaultFrom },
   };
   return { ok: true };
 }
 
+// The welcome also counts as having seen the current build, so What's new waits for the next one.
 export function dismissPearWelcome(s: GameState): ActionResult {
-  s.pearMail = { ...s.pearMail, welcomed: true };
+  s.pearMail = { ...s.pearMail, welcomed: true, seenBuild: mailBuild(s.os, s.hour).version };
   return { ok: true };
 }
 

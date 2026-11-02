@@ -14,7 +14,6 @@ import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { useFocus, useStore } from "../../store";
 import { useSessionState } from "../../session";
 import { More } from "../More";
-import { EmailSettings } from "../EmailSettings";
 import { CustomerLink, openCustomer } from "../customers/open";
 import { Incidents } from "./Incidents";
 import { CustomerCard } from "./CustomerCard";
@@ -107,7 +106,6 @@ export function SupportApp() {
   const [sel, setSel] = useSessionState<string | null>("support.sel", null);
   const [query, setQuery] = useSessionState("support.query", "");
   // The email settings: the Settings button and the app menu open them.
-  const [setup, setSetup] = useSessionState("support.setup", false);
   const [composing, setComposing] = useSessionState("support.compose", false);
   const desk = deskOf(game);
   const { style, brand, icon: Logo, tile } = supportApp(game);
@@ -132,7 +130,6 @@ export function SupportApp() {
     if (tk.unread) act(readTicket, tk.id);
   };
   useFocus("Support", (f) => {
-    if (f.kind === "mailSetup") return setSetup(true);
     // An upgrade request opens on its ticket.
     const r = game.sales.requests.find((x) => x.id === f.id), tk = game.tickets.find((x) => x.id === (r?.kind === "expansion" ? r.ticketId : f.id));
     setKind(null);
@@ -160,9 +157,7 @@ export function SupportApp() {
         <span className="sup-logo" style={{ "--tile": tile } as CSSProperties}><Logo /></span>
         <strong>{brand}</strong>
         <button className="btn ghost sup-settings" onClick={() => setComposing(true)}>{t("paperwork.mail.new")}</button>
-        <button className="btn ghost sup-settings sup-settings-2" onClick={() => setSetup(true)}>{t("support.settings")}</button>
       </header>
-      {setup && <EmailSettings onClose={() => setSetup(false)} />}
       {desk && <aside className="sidebar sup-side">
         <div className="side-h">{t("support.inbox")}</div>
         {side("all", t("support.all"), Mails, itemsIn(game, "all").length)}

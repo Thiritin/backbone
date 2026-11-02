@@ -1,5 +1,5 @@
 // The delivery pipeline: the only way a message enters a mailbox (docs/design/plans/mail-core.md, Routing, Filters, Junk).
-import { binomial, chance, hashRng, rand } from "../00-core/rng";
+import { chance, hashRng, rand } from "../00-core/rng";
 import { nowMinutes, yearOf } from "../00-core/time";
 import { companyDomain } from "../30-customers/domains";
 import { mailServerDown } from "../80-business/mail";
@@ -7,7 +7,7 @@ import { FREEMAIL_DOMAINS } from "../30-customers/addresses";
 import { NOTARY_MAIL, OFFICE_MAIL } from "../80-business/paperwork";
 import { deskOf, tenantHost } from "../10-catalog/desks";
 import { SENDERS } from "../10-catalog/mail-senders";
-import { JUNK_CAP_PER_DAY, JUNK_TOPICS, SELF_TRAINED_CATCH, catchOf, falseJunkOf, junkFloor, spamShare } from "../10-catalog/mail-senders";
+import { JUNK_CAP_PER_DAY, JUNK_PASS_FLOOR, JUNK_TOPICS, SELF_TRAINED_CATCH, catchOf, falseJunkOf, junkFloor, spamShare } from "../10-catalog/mail-senders";
 import type { GameState } from "../50-state";
 import { roleAccount, roleAddress, vacationOn } from "./accounts";
 import { CONTACTS, mailSend, SOURCE_KIND, type MailFrom } from "./sources";
@@ -309,23 +309,32 @@ const receiving = (s: GameState): MailAccount[] => {
 const published = (s: GameState, a: MailAccount): boolean =>
   a.id === s.mail.primary || (["sales", "support", "abuse"] as const).some((r) => roleAccount(s, r)?.id === a.id);
 
+// Real mail a day the box received over the last week.
+const legitPerDay = (s: GameState, a: MailAccount): number => {
+  const since = nowMinutes(s) - 7 * 24 * 60;
+  return (s.mail.msgs[a.id] ?? []).filter((m) => m.at > since && m.kind !== "spam" && m.folder !== "sent" && m.folder !== "drafts").length / 7;
+};
+
 // Expected junk a day: the year's spam share of the box's real traffic, never below the year's floor, times exposure.
 export function junkPerDay(s: GameState, a: MailAccount): number {
-  const year = yearOf(s.hour), share = spamShare(year), since = nowMinutes(s) - 7 * 24 * 60;
-  const legit = (s.mail.msgs[a.id] ?? []).filter((m) => m.at > since && m.kind !== "spam" && m.folder !== "sent" && m.folder !== "drafts").length / 7;
+  const year = yearOf(s.hour), share = spamShare(year);
   const exposure = ((published(s, a) ? 1 : 0.3) + (s.mail.catchAll === a.id ? 4 : 0)) * (a.domain === GMIX_DOMAIN ? 1.2 : 1);
-  return Math.min(JUNK_CAP_PER_DAY, Math.max(junkFloor(year), (legit * share) / (1 - share)) * exposure);
+  return Math.min(JUNK_CAP_PER_DAY, Math.max(junkFloor(year), (legitPerDay(s, a) * share) / (1 - share)) * exposure);
 }
+
+// Expected junk a day that passes the filter: misses beyond the box's real traffic are caught, so spam never outnumbers it.
+const passPerDay = (s: GameState, a: MailAccount): number =>
+  Math.min(junkPerDay(s, a) * (1 - catchRate(s, a)), Math.max(legitPerDay(s, a), JUNK_PASS_FLOOR));
 
 // Expected junk a day that gets past the host's filter into the Inbox; a desk reads it for its junk tickets.
 export const junkPassPerDay = (s: GameState, accountId: string): number => {
   const a = boxById(s, accountId);
-  return a && receiving(s).some((x) => x.id === a.id) ? junkPerDay(s, a) * (1 - catchRate(s, a)) : 0;
+  return a && receiving(s).some((x) => x.id === a.id) ? passPerDay(s, a) : 0;
 };
 
 function junkDay(s: GameState, a: MailAccount): void {
-  const r = hashRng(s.seed, s.hour, num(a.id), 9151), e = junkPerDay(s, a), n = Math.floor(e) + (chance(r, e % 1) ? 1 : 0);
-  const caught = binomial(r, n, catchRate(s, a)), year = yearOf(s.hour);
+  const r = hashRng(s.seed, s.hour, num(a.id), 9151), draw = (e: number) => Math.floor(e) + (chance(r, e % 1) ? 1 : 0);
+  const n = draw(junkPerDay(s, a)), caught = Math.max(0, n - draw(passPerDay(s, a))), year = yearOf(s.hour);
   const topics = JUNK_TOPICS.filter((x) => x.since <= year);
   const junk = (): Inbound => { const j = topics[Math.floor(rand(r) * topics.length)]; return { to: `${a.local}@${a.domain}`, from: `n:${j.from}`, kind: "spam", topic: `junk.${j.id}` }; };
   patchBox(s, a.id, { junkCaught: Math.round((a.junkCaught * 29) / 30) + caught });

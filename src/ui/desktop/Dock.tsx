@@ -22,7 +22,7 @@ export function Dock() {
     if (mail > seen.current) {
       const tile = document.querySelector('.dock-app[data-app="Pear Mail"] .dock-tile');
       if (tile) bounce(tile);
-      uiSound("post");
+      if (game.pearMail.prefs.sound) uiSound("post");
     }
     seen.current = mail;
   }, [mail]);

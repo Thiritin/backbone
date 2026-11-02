@@ -8,6 +8,7 @@ import type { GameState } from "../../../sim/50-state";
 import { discardPearDraft, savePearDraft, sendPearMessage } from "../../../sim/90-actions/pear-mail";
 import { useStore, useWin } from "../../store";
 import { useDraft, type DraftFields } from "../mail-kit/mail-kit";
+import { signatureOf, swapSignature } from "./commands";
 import "./pear-mail.css";
 
 // The client account that holds a draft: its local copy for POP, the server's Drafts for IMAP.
@@ -39,6 +40,8 @@ function ComposeForm({ game, c, m }: { game: GameState; c: ClientAccount; m: Mes
   const { close } = useWin();
   const v = view(game, m);
   const [from, setFrom] = useState(`${c.id}|${c.address}`);
+  const sigs = game.pearMail.signatures;
+  const [sig, setSig] = useState(() => sigs.find((x) => x.id === c.signature && x.text && v.text.includes(x.text))?.id ?? "");
   const [attach, setAttach] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [extra, setExtra] = useState(!!(m.cc?.length || m.bcc?.length));
@@ -56,6 +59,8 @@ function ComposeForm({ game, c, m }: { game: GameState; c: ClientAccount; m: Mes
     return (box ? addressesOf(box) : [x.address]).map((address) => ({ value: `${x.id}|${address}`, label: `${x.description} <${address}>` }));
   });
   const forms = game.docs.filter((d) => d.kind === "form" && !draft.att.some((a) => a.k === "doc" && a.id === d.id));
+  const pickSig = (id: string) => { set({ text: swapSignature(draft.text, signatureOf(game, sig), signatureOf(game, id)) }); setSig(id); };
+  const pickFrom = (value: string) => { setFrom(value); pickSig(game.pearMail.accounts.find((x) => x.id === value.split("|")[0])?.signature ?? ""); };
   const row = (label: string, key: "to" | "cc" | "bcc" | "subject") => (
     <label className="pm-field">
       <span>{t(label)}</span>
@@ -77,7 +82,14 @@ function ComposeForm({ game, c, m }: { game: GameState; c: ClientAccount; m: Mes
         {row("pearMail.field.subject", "subject")}
         <label className="pm-field">
           <span>{t("pearMail.field.from")}</span>
-          <select value={from} onChange={(e) => setFrom(e.target.value)}>{senders.map((x) => <option key={x.value} value={x.value}>{x.label}</option>)}</select>
+          <select value={from} onChange={(e) => pickFrom(e.target.value)}>{senders.map((x) => <option key={x.value} value={x.value}>{x.label}</option>)}</select>
+        </label>
+        <label className="pm-field">
+          <span>{t("pearMail.sig.field")}</span>
+          <select value={sig} onChange={(e) => pickSig(e.target.value)}>
+            <option value="">{t("pearMail.sig.none")}</option>
+            {sigs.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+          </select>
         </label>
       </div>
       <textarea className="pm-text" aria-label={t("pearMail.message")} value={draft.text} onChange={(e) => set({ text: e.target.value })} />

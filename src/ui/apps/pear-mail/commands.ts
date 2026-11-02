@@ -66,8 +66,21 @@ export function mailboxOps(s: GameState, run: Act, c: string) {
 const prefixed = (key: string, subject: string, tag: RegExp) => (tag.test(subject) ? subject : t(key, { subject }));
 
 // Opens a compose window on a new draft: empty, or a reply or forward of one message.
+// Moves the signature block: it sits before the quoted or forwarded text, or at the end.
+export function swapSignature(text: string, old: string | undefined, next: string | undefined): string {
+  const body = old && text.includes(`\n\n${old}`) ? text.replace(`\n\n${old}`, "") : text;
+  if (!next) return body;
+  const at = [body.indexOf(`\n\n${t("pearMail.forwarded")}`), body.search(/\n\n[^\n]*\n>/)].filter((i) => i >= 0);
+  const i = at.length ? Math.min(...at) : body.length;
+  return `${body.slice(0, i)}\n\n${next}${body.slice(i)}`;
+}
+export const signatureOf = (s: GameState, id: string | null | undefined): string | undefined => s.pearMail.signatures.find((x) => x.id === id)?.text || undefined;
+
 export function compose(s: GameState, act: Act, clientId: string, row?: Row, mode?: "reply" | "all" | "forward"): void {
-  let d = { to: [] as string[], cc: [] as string[], subject: "", text: "", att: row?.m.att, re: undefined as string | undefined };
+  const prefs = s.pearMail.prefs;
+  if (!row) clientId = s.pearMail.accounts.find((c) => c.id === prefs.defaultFrom && c.enabled)?.id ?? clientId;
+  const from = s.pearMail.accounts.find((c) => c.id === clientId);
+  let d = { to: [] as string[], cc: [] as string[], bcc: [] as string[], subject: "", text: "", att: row?.m.att, re: undefined as string | undefined };
   if (row && mode) {
     const v = view(s, row.m), box = s.mail.accounts.find((a) => a.id === row.c.accountId), own = new Set(box ? addressesOf(box) : []);
     if (mode === "forward") {
@@ -76,9 +89,11 @@ export function compose(s: GameState, act: Act, clientId: string, row?: Row, mod
     } else {
       const others = mode === "all" ? [v.to, ...v.cc].flatMap((x) => x.split(",")).map((x) => x.trim().toLowerCase()).filter((x) => x && !own.has(x) && x !== v.fromAddress) : [];
       const quote = v.text.split("\n").map((l) => `> ${l}`).join("\n");
-      d = { ...d, to: [v.fromAddress], cc: others, att: undefined, re: row.m.id, subject: prefixed("pearMail.reSubject", v.subject, /^re:/i), text: `\n\n${t("pearMail.quote", { date: mailDate(row.m.at), name: v.fromName })}\n${quote}` };
+      d = { ...d, to: [v.fromAddress], cc: others, att: undefined, re: row.m.id, subject: prefixed("pearMail.reSubject", v.subject, /^re:/i), text: prefs.quote ? `\n\n${t("pearMail.quote", { date: mailDate(row.m.at), name: v.fromName })}\n${quote}` : "" };
     }
   }
+  if (from && prefs.ccSelf !== "off") d[prefs.ccSelf] = [...d[prefs.ccSelf], from.address];
+  d.text = swapSignature(d.text, undefined, signatureOf(s, from?.signature));
   const r = act(savePearDraft, clientId, d);
   if (r.ok && r.id) useStore.getState().openCompose(r.id);
 }

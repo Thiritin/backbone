@@ -89,7 +89,6 @@ export default {
   "desktop.icon.trashApp": () => "A ligação é removida do ambiente de trabalho.",
   "desktop.icon.trashNote": () => "A nota e o seu texto são eliminados.",
 
-  "desktop.menu.changeProvider": () => "Mudar de fornecedor…",
   "desktop.menu.settings": () => "Definições…",
   "desktop.menu.intro": () => "Introdução…",
   "desktop.menu.github": () => "Backbone no GitHub",

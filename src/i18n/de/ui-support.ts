@@ -182,7 +182,6 @@ export default {
   "support.left": () => "übrig",
   "support.inbox": () => "Posteingang",
   "support.all": () => "Alle",
-  "support.settings": () => "Einstellungen",
   "support.lostSales": () => "Entgangene Verkäufe",
   "support.type": () => "Typ",
   "support.allTypes": () => "Alle Typen",
