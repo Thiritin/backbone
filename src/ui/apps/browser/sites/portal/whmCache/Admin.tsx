@@ -1,10 +1,11 @@
+import { pendingOrders } from "../../../../../../sim/80-business/shop-orders";
 import type { ReactNode } from "react";
 import { t } from "../../../../../../i18n/en";
 import { yearOf } from "../../../../../../sim/00-core/time";
 import { licenceStatus, SHOP_MACHINE } from "../../../../../../sim/60-infra/licence";
 import { adminFirstName } from "../../../../../../sim/60-infra/shop-files";
 import { AdminScreen, SCREEN_LABEL } from "../shared/AdminScreen";
-import { screenArgs, screenOf, type Screen, type ScreenName } from "../shared/nav";
+import { navOf, screenArgs, screenOf, type Screen, type ScreenName } from "../shared/nav";
 import type { LoginProps, SkinProps } from "../skins";
 import { LoginNote } from "../Login";
 import { VersionFooter } from "../shared/Licence";
@@ -47,7 +48,7 @@ const ICON: Partial<Record<ScreenName, string>> = {
 const Icon = ({ n }: { n: ScreenName }) => <svg className="whc-ico" viewBox="0 0 16 16" aria-hidden="true"><path d={ICON[n]} /></svg>;
 
 const link = (on: () => void) => (e: { preventDefault: () => void }) => { e.preventDefault(); on(); };
-const current = (s: Screen): ScreenName => (s.name === "product" ? "products" : s.name === "client" ? "clients" : s.name);
+const current = (s: Screen): ScreenName => navOf(s.name);
 
 export function Wordmark({ go }: { go?: () => void }) {
   const mark = <><b>WHM</b><span>Cache</span></>;
@@ -122,7 +123,7 @@ function SideNav({ nav, on }: { nav: Nav; on: ScreenName }) {
 
 // The left column of the bevelled admin: shortcuts and the system box.
 function Sidebar({ game, variant, nav }: Pick<SkinProps, "game" | "variant"> & { nav: Nav }) {
-  const pending = game.tickets.filter((x) => x.kind === "order" && x.status === "open").length;
+  const pending = pendingOrders(game);
   const status = licenceStatus(game, SHOP_MACHINE, variant);
   return (
     <aside className="whc-sidebar">

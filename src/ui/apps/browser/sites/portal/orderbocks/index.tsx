@@ -5,7 +5,7 @@ import { activeServices } from "../../../../../../sim/30-customers/customers";
 import { AdminScreen } from "../shared/AdminScreen";
 import { ClientArea } from "../shared/ClientArea";
 import { VersionFooter } from "../shared/Licence";
-import { screenArgs, screenOf, type ScreenName } from "../shared/nav";
+import { navOf, screenArgs, screenOf, type ScreenName } from "../shared/nav";
 import { StoreFront } from "../shared/StoreFront";
 import type { LoginProps, Skin, SkinProps } from "../skins";
 import "../portal.css";
@@ -84,7 +84,7 @@ function Frame({ game, variant, major, kind, title, nav, top, children }: SkinPr
 function Admin(props: SkinProps) {
   const { game, route, open, major } = props, era = eraOfMajor(major), screen = screenOf(route.query);
   const go = (s: Parameters<typeof screenArgs>[0]) => open("admin", {}, screenArgs(s));
-  const current: ScreenName = screen.name === "product" ? "products" : screen.name === "client" ? "clients" : screen.name;
+  const current: ScreenName = navOf(screen.name);
   const group = GROUPS.find((g) => g.screens.includes(current));
   return (
     <Frame {...props} kind="admin" title={<Mark />} top={<span className="ob-who"><span>{game.company.name}</span><i aria-hidden>{game.company.name.slice(0, 1)}</i></span>}

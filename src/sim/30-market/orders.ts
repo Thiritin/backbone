@@ -25,6 +25,7 @@ import { productCycles, takeProductStock } from "../80-business/portal";
 import { companyParams, variant } from "../40-support/replies";
 import { failsScreen, reviewing, rollFraud, screening } from "../45-billing/fraud";
 import { checkoutMethod, preferredMethod } from "../45-billing/payments";
+import { addShopOrder, editOrder, orderFor } from "../80-business/shop-orders";
 
 // Without an order, the first one comes from a friend's recommendation within this many days of the first panel host going online.
 export const FIRST_ORDER_DAYS = 14;
@@ -41,6 +42,15 @@ export function orderError(s: GameState, t: Ticket): string | null {
   if (!r || r.status !== "open") return "error.unknownRequest";
   if (missingFor(s, r).length) return "error.orderNotOffered";
   return targetFor(s, r) ? null : PRODUCTS[r.product].runsOn === "server" ? "error.noFreeServer" : "error.noCapacity";
+}
+
+// Why the shop's module cannot set up an order item now, or null.
+export function createError(s: GameState, r: SalesRequest): string | null {
+  if (missingFor(s, r).length) return "error.orderNotOffered";
+  const target = targetFor(s, r);
+  if (!target) return PRODUCTS[r.product].runsOn === "server" ? "error.noFreeServer" : "error.noCapacity";
+  if (!hasModule(s, moduleFor(s, r.product, target.clusterId))) return "error.noShopModule";
+  return deployable(s, target.clusterId, r.productId) ? null : "error.manualProduct";
 }
 
 // Creates the customer and sets up the service at the order's price; a too old PHP or a full cluster loses the order.
@@ -88,6 +98,7 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
     ...(method && method !== "transfer" && { method }),
     ...(email && { owned, thread: x.thread.map((m, i) => (i ? m : { ...m, params: { ...m.params, owned: owned ? 1 : 0, ...(owned && { auth: authCode(s.seed, x.id) }) } })) }),
   }));
+  if (shop && method) addShopOrder(s, r, declined ? "fraud" : "pending");
   if (declined) {
     loseRequest(s, r, "declined", "lost.declined");
     return r;
@@ -100,9 +111,8 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
   // The shop places an order itself only through the module for the software it lands on.
   const auto = !email && s.autoOrders && pick?.setupMode !== "accept" && pick?.setupMode !== "off" && canAutomate(s) && !reviewing(s, need.product), target = auto && !missingFor(s, r).length ? targetFor(s, r) : null;
   if (auto && (!target || (hasModule(s, moduleFor(s, r.product, target.clusterId)) && deployable(s, target.clusterId, r.productId)))) {
-    const done = target ? place(s, r) : null;
+    const done = target ? createOrder(s, r) : null;
     if (done?.ok) {
-      formInvoice(s, r.id);
       events.push({ app: "Books", key: "event.orderPlaced", params: { ...params, price: r.quote! } });
       return r;
     }
@@ -132,6 +142,13 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
 export const emailRate = (s: GameState, product: Product, spec: Spec, sla: SalesRequest["sla"]): number =>
   shopActive(s) ? offerPrice(s, product, spec, sla) : marketPrice(product, spec, yearOf(s.hour), sla);
 
+// The shop module's Create for an order item: the service on its server and the order's first invoice.
+export function createOrder(s: GameState, r: SalesRequest): ActionResult {
+  const done = place(s, r);
+  if (done.ok) formInvoice(s, r.id);
+  return done;
+}
+
 // A shop order bills at once: the line's setup fee and the first term, which the monthly run then skips.
 function formInvoice(s: GameState, id: string): void {
   const r = s.sales.requests.find((x) => x.id === id)!, label = s.services.find((v) => v.id === r.serviceId)?.label ?? requestName(r), fee = r.setup ?? setupFee(s, r.product);
@@ -142,7 +159,8 @@ function formInvoice(s: GameState, id: string): void {
   // A shop places the order itself: its customer and invoice, paid by the method chosen at checkout.
   // An order the player takes by hand from Support is Books' own.
   if (r.shop) s.customers = s.customers.map((c) => (c.id === r.customerId && !c.source ? { ...c, ...fromShop(s), ...(r.method && { method: r.method }) } : c));
-  issueInvoice(s, r.customerId!, lines, ORDER_PAY_DAYS - 1);
+  const inv = issueInvoice(s, r.customerId!, lines, ORDER_PAY_DAYS - 1), o = orderFor(s, r.id);
+  if (o) editOrder(s, o.id, { invoiceId: inv.id });
   s.services = s.services.map((v) => (v.id === r.serviceId ? startTerm(s, v, r.cycle) : v));
 }
 

@@ -1,36 +1,91 @@
+import { useState } from "react";
 import { t } from "../../../../../../i18n/en";
-import { orderError, orderOf } from "../../../../../../sim/30-market/orders";
-import { resolveTicket } from "../../../../../../sim/90-actions/support";
+import { euroCents } from "../../../../../../sim/00-core/money";
+import { orderNumber, orderTotal, type OrderStatus, type ShopOrder } from "../../../../../../sim/80-business/shop-orders";
+import type { GameState } from "../../../../../../sim/50-state";
+import { acceptError, acceptOrder, cancelOrder, deleteOrder, fraudOrder } from "../../../../../../sim/90-actions/shop-orders";
 import { useStore } from "../../../../../store";
 import { formatDay } from "../../../../billing/format";
-import { PRODUCT } from "../../../../support/labels";
+import { statusLabel } from "../../../../books/InvoicesTab";
 import type { ScreenProps } from "./nav";
+import { CYCLE_LABEL } from "./ProductEdit";
 
-// Orders waiting for the admin; they are the order tickets of Support.
-export function Orders({ game }: ScreenProps) {
-  const act = useStore((s) => s.act);
-  const pending = game.tickets.filter((x) => x.kind === "order" && x.status === "open");
+const STATUSES: OrderStatus[] = ["pending", "active", "fraud", "cancelled"];
+const clientOf = (game: GameState, o: ShopOrder) => game.customers.find((c) => c.id === o.customerId)?.name ?? o.contact;
+const invoiceOf = (game: GameState, o: ShopOrder) => game.invoices.find((i) => i.id === o.invoiceId);
+
+// Orders > List Orders, filtered by status; the newest first.
+export function Orders({ game, go }: ScreenProps) {
+  const [filter, setFilter] = useState<OrderStatus | "">("pending");
+  const list = game.shop.orders.filter((o) => !filter || o.status === filter).reverse();
   return (
     <div className="pt-screen">
+      <div className="pt-form">
+        <select className="field" aria-label={t("shop-admin.status")} value={filter} onChange={(e) => setFilter(e.target.value as OrderStatus | "")}>
+          <option value="">{t("shop-orders.any")}</option>
+          {STATUSES.map((x) => <option key={x} value={x}>{t(`shop-orders.status.${x}`)}</option>)}
+        </select>
+      </div>
       <table className="pt-table">
-        <thead><tr><th>{t("shop-admin.date")}</th><th>{t("shop-admin.client")}</th><th>{t("shop-admin.product")}</th><th /></tr></thead>
+        <thead><tr><th>{t("shop-orders.number")}</th><th>{t("shop-admin.date")}</th><th>{t("shop-admin.client")}</th><th>{t("shop-admin.total")}</th><th>{t("shop-orders.payment")}</th><th>{t("shop-admin.status")}</th></tr></thead>
         <tbody>
-          {pending.map((x) => {
-            const r = orderOf(game, x), prod = r?.productId ? game.shop.products.find((p) => p.id === r.productId) : undefined;
+          {list.map((o) => {
+            const inv = invoiceOf(game, o);
             return (
-              <tr key={x.id}>
-                <td className="num">{formatDay(x.createdAt)}</td>
-                <td>{r?.company ?? r?.contact ?? game.customers.find((c) => c.id === x.customerId)?.name}</td>
-                <td>{prod?.name ?? (r ? PRODUCT[r.product] : "")}</td>
-                <td>
-                  <button className="btn" disabled={!!orderError(game, x)} onClick={() => act(resolveTicket, x.id, "accept")}>{t("shop-admin.acceptOrder")}</button>
-                  <button className="btn" onClick={() => act(resolveTicket, x.id, "reject")}>{t("shop-admin.cancelOrder")}</button>
-                </td>
+              <tr key={o.id}>
+                <td className="num"><a href="#" onClick={(e) => { e.preventDefault(); go({ name: "order", id: o.id }); }}>{orderNumber(o)}</a></td>
+                <td className="num">{formatDay(o.placedAt)}</td>
+                <td>{clientOf(game, o)}</td>
+                <td className="num">{euroCents(orderTotal(o))}</td>
+                <td>{inv ? statusLabel(inv) : ""}</td>
+                <td>{t(`shop-orders.status.${o.status}`)}</td>
               </tr>
             );
           })}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+// One order: its client, items, invoice and the buttons Accept, Cancel, Mark as fraud and Delete.
+export function OrderDetail({ game, go, id }: ScreenProps & { id: string }) {
+  const act = useStore((s) => s.act);
+  const o = game.shop.orders.find((x) => x.id === id);
+  if (!o) return null;
+  const inv = invoiceOf(game, o), pending = o.status === "pending", error = pending ? acceptError(game, o) : null;
+  const service = (sid: string | null) => game.services.find((v) => v.id === sid);
+  return (
+    <div className="pt-screen">
+      <dl className="pt-fields">
+        <div><dt>{t("shop-orders.number")}</dt><dd className="num">{orderNumber(o)}</dd></div>
+        <div><dt>{t("shop-admin.date")}</dt><dd className="num">{formatDay(o.placedAt)}</dd></div>
+        <div><dt>{t("shop-admin.client")}</dt><dd>{o.customerId ? <a href="#" onClick={(e) => { e.preventDefault(); go({ name: "client", id: o.customerId! }); }}>{clientOf(game, o)}</a> : clientOf(game, o)}</dd></div>
+        <div><dt>{t("shop-orders.invoice")}</dt><dd className="num">{inv?.number ?? ""}</dd></div>
+        <div><dt>{t("shop-orders.payment")}</dt><dd>{inv ? statusLabel(inv) : ""}</dd></div>
+        <div><dt>{t("shop-admin.status")}</dt><dd>{t(`shop-orders.status.${o.status}`)}</dd></div>
+      </dl>
+      <table className="pt-table">
+        <thead><tr><th>{t("shop-admin.product")}</th><th>{t("shop-store.cycle")}</th><th>{t("shop-admin.total")}</th><th>{t("shop-admin.status")}</th></tr></thead>
+        <tbody>
+          {o.items.map((i) => (
+            <tr key={i.requestId}>
+              <td>{service(i.serviceId)?.label || i.name}</td>
+              <td>{CYCLE_LABEL[i.cycle]}</td>
+              <td className="num">{euroCents(i.amount)}</td>
+              <td>{t(`shop-orders.status.${i.serviceId ? "active" : o.status}`)}</td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot><tr><td colSpan={2} /><td className="num">{euroCents(orderTotal(o))}</td><td /></tr></tfoot>
+      </table>
+      {error && <p className="pt-error" role="alert">{t(error)}</p>}
+      <div className="pt-form">
+        <button className="btn primary" disabled={!!error || !pending} onClick={() => act(acceptOrder, o.id)}>{t("shop-admin.acceptOrder")}</button>
+        <button className="btn" disabled={!pending} onClick={() => act(cancelOrder, o.id)}>{t("shop-admin.cancelOrder")}</button>
+        <button className="btn" disabled={!pending} onClick={() => act(fraudOrder, o.id)}>{t("shop-orders.fraud")}</button>
+        <button className="btn" onClick={() => { if (act(deleteOrder, o.id).ok) go({ name: "orders" }); }}>{t("orderSteps.delete")}</button>
+      </div>
     </div>
   );
 }

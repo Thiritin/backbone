@@ -4,7 +4,7 @@ import { t } from "../../../../../../i18n/en";
 import { AdminScreen } from "../shared/AdminScreen";
 import { ClientArea } from "../shared/ClientArea";
 import { VersionFooter } from "../shared/Licence";
-import { screenArgs, screenOf, type ScreenName } from "../shared/nav";
+import { navOf, screenArgs, screenOf, type ScreenName } from "../shared/nav";
 import { StoreFront } from "../shared/StoreFront";
 import type { LoginProps, Skin, SkinProps } from "../skins";
 import { LoginNote } from "../Login";
@@ -111,7 +111,7 @@ function StoreFrame({ props, at, children }: { props: SkinProps; at?: "store" | 
 
 function Admin(props: SkinProps) {
   const { game, route, open, browse } = props, screen = screenOf(route.query);
-  const at: ScreenName = screen.name === "product" ? "products" : screen.name === "client" ? "clients" : screen.name;
+  const at: ScreenName = navOf(screen.name);
   const go = (s: Parameters<typeof screenArgs>[0]) => open("admin", {}, screenArgs(s));
   return (
     <AdminFrame props={props} at={at} title={label(at)}>

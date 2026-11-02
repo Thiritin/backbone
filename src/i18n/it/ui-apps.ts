@@ -256,6 +256,8 @@ export default {
   "apps.guide.step.website": () => "Costruisci il tuo primo sito web in Marketing, sotto Canali.",
   "apps.guide.step.launch": () => "Scegli dove gira il tuo sito web, lancialo in Marketing e metti in vendita il tuo primo prodotto sotto Prodotti.",
   "apps.guide.step.email": () => "Attiva le caselle per il dominio della tua azienda sul sito di un provider e-mail.",
+  "apps.guide.step.hosttoast": () => "Iscriviti gratis a HOSTtoast così i clienti che confrontano gli hosting ti trovano.",
+  "apps.guide.step.flyers": () => "Ordina volantini su Flyerlarm e falli distribuire nella tua città.",
   "apps.guide.step.firstCustomer": (p) => `Rispondi al tuo primo cliente in ${p.app}.`,
 
   "apps.name.Applications": () => "Applicazioni",

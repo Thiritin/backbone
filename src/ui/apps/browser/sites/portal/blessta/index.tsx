@@ -4,7 +4,7 @@ import { shopById } from "../../../../../../sim/10-catalog/shops";
 import { AdminScreen, SCREEN_LABEL } from "../shared/AdminScreen";
 import { ClientArea } from "../shared/ClientArea";
 import { VersionFooter } from "../shared/Licence";
-import { screenArgs, screenOf, type ScreenName } from "../shared/nav";
+import { navOf, screenArgs, screenOf, type ScreenName } from "../shared/nav";
 import { StoreFront } from "../shared/StoreFront";
 import type { LoginProps, Skin, SkinProps } from "../skins";
 import { LoginNote } from "../Login";
@@ -45,7 +45,7 @@ const Icon = ({ name }: { name: ScreenName }) => <svg className="bl-icon" viewBo
 function Admin(props: SkinProps) {
   const { game, route, open, major, variant } = props, screen = screenOf(route.query), era = eraOf(major), label = labels();
   const go = (s: Parameters<typeof screenArgs>[0]) => open("admin", {}, screenArgs(s));
-  const current: ScreenName = screen.name === "product" ? "products" : screen.name === "client" ? "clients" : screen.name;
+  const current: ScreenName = navOf(screen.name);
   const [group, screens] = GROUPS.find(([, s]) => s.includes(current)) ?? GROUPS[0];
   const link = (s: ScreenName, icon = false) => (
     <a key={s} href="#" className={current === s ? "on" : ""} onClick={(e) => { e.preventDefault(); go({ name: s }); }}>{icon && <Icon name={s} />}{label[s]}</a>

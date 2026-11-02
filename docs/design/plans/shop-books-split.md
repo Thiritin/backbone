@@ -1,6 +1,6 @@
 # Plan: shop and books split
 
-Lane id: `shop-books-split`. Status: decisions settled in section 10; milestones 1 to 4 built.
+Lane id: `shop-books-split`. Status: decisions settled in section 10; milestones 1 to 4, 6, 7 and 8 built.
 
 The bookkeeping program and the shop system both write quotes, both hold a product catalog and both reach invoices. Players see two ways to do the same thing, and with a shop installed and email orders off, quote requests still arrive by email. This plan gives each program one job, makes the shop automate the customer side the way WHMCS does, and gives every program the same setup flow.
 
@@ -55,7 +55,7 @@ Before the first shop, the company works by email: a request arrives, the player
 
 Orders become their own entity in the shop and services get a detail page, following WHMCS:
 
-- `ShopOrder { id, customerId, items: serviceId[], invoiceId, status: pending | active | fraud | cancelled, placedAt }`. A storefront purchase creates one order with one or more pending services.
+- `ShopOrder { id, customerId, contact, items, invoiceId, status: pending | active | fraud | cancelled, placedAt }`. A storefront purchase creates one order. An item is `{ requestId, serviceId, name, cycle, amount }`: the sales request until Create sets it up, then its service, since a pending service does not exist in the sim. The order follows its requests (`syncOrder` in `editRequest`).
 - Shop admin > Orders: list with status filter, detail page with items, invoice, payment state and buttons Accept, Cancel, Mark as fraud, Delete.
 - Accept runs the module command Create for every item in the order, then sets the order active. A product's `setupMode` decides when this runs on its own: on first payment, on accept, or never (by hand).
 - Shop admin > Services (WHMCS: Products/Services, per client): detail page with product, cycle, next due date, server, package, username, status `pending | active | suspended | terminated | cancelled`, and module buttons Create, Suspend, Unsuspend, Terminate, Change package, Change password. Each button calls the existing actions in `src/sim/90-actions/orders.ts`, `holds.ts` and `packages.ts`; a failed command shows the error from `stepError`.
