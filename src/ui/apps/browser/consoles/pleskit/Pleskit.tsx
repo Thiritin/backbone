@@ -14,6 +14,9 @@ import { BackupManager } from "../BackupManager";
 import { Fail2Ban } from "./Fail2Ban";
 import { Toolkit } from "./Toolkit";
 import { SubscriptionList } from "./SubscriptionList";
+import { Customer } from "./Customer";
+import { PhpMyAdmon } from "../cpanic/PhpMyAdmon";
+import { useSessionState } from "../../../../session";
 import { yearOf } from "../../../../../sim/00-core/time";
 import { FAIL2BAN_FROM } from "../../../../../sim/60-infra/bans";
 import "./pleskit.css";
@@ -24,6 +27,7 @@ const LOOKS = looks({ reload: 2005, parallax: 2010, twelve: 2014, onyx: 2016, ob
 export function Pleskit(p: PanelProps) {
   const era = eraAt(LOOKS, p), late = era === "onyx" || era === "obsidian", open = parseCreate("pleskit", p.path), [tab, setTab] = usePanelTab(p.f, open?.screen ?? "objects");
   const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f);
+  const [as, setAs] = useSessionState<string | null>(`browser.pleskit.as.${p.c.id}`, null), [pma, setPma] = useSessionState<string | null>(`browser.pleskit.pma.${p.c.id}`, null);
   const logo = <div className="pk-logo">{era === "parallax" && <small>Parallax</small>}pleskit{era === "parallax" && <small>Panel</small>}</div>;
   if (!p.signedIn) return (
     <div className="cx pk pk-login" data-era={era}>
@@ -31,6 +35,17 @@ export function Pleskit(p: PanelProps) {
         {logo}
         <div className="cx-host">{p.host}</div>
       </LoginForm>
+    </div>
+  );
+  if (as && pma === as) return <PhpMyAdmon game={p.game} workloadId={as} close={() => setPma(null)} />;
+  if (as) return (
+    <div className="cx pk" data-era={era}>
+      <header className="pk-top">
+        {logo}
+        <span className="cx-host">{p.host}</span>
+        <button className="pk-out" onClick={() => setAs(null)}>{t("pkc.backAdmin")}</button>
+      </header>
+      <Customer game={p.game} c={p.c} workloadId={as} era={era} openPma={() => setPma(as)} />
     </div>
   );
   const nav: [Tab, string, LucideIcon][] = [
@@ -58,7 +73,7 @@ export function Pleskit(p: PanelProps) {
         <main className="pk-main">
           <h1>{nav.find(([id]) => id === tab)?.[1]}</h1>
           {tab === "objects" && late && <Advisor game={p.game} c={p.c} onFix={() => setTab("software")} />}
-          {tab === "objects" && card(t("web.sub.title"), <><ServerUse game={p.game} c={p.c} /><SubscriptionList game={p.game} c={p.c} rows={rows} late={late} /><OwnAccountRows game={p.game} c={p.c} /></>)}
+          {tab === "objects" && card(t("web.sub.title"), <><ServerUse game={p.game} c={p.c} /><SubscriptionList game={p.game} c={p.c} rows={rows} late={late} onLogin={setAs} /><OwnAccountRows game={p.game} c={p.c} onLogin={setAs} /></>)}
           {tab === "create" && card(t("pkg.pkAdd"), <ProvisionForm game={p.game} c={p.c} products={["webHosting"]} order={open?.screen === "create" ? open.order : undefined} sections={{ order: t("pkg.order"), account: t("pkg.account"), plan: t("pkg.settings") }} />)}
           {tab === "create" && <OwnAccountForm game={p.game} c={p.c} />}
           {tab === "packages" && card(t("pkg.pkPlans"), <PackagesScreen game={p.game} c={p.c} />)}
