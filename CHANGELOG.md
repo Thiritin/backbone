@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- Pear Mail's activity pane shows one line per account with its latest check instead of repeating every check, and drops lines of removed accounts.
 - The shop admin has an Apps & Integrations page that shows which provisioning modules, payment gateways and the Books link your shop system includes, sells or lacks, and a product can only use a server group your shop has the module for, otherwise its orders wait for you.
 - The shop now emails its customers on its own, from the order confirmation and the welcome email with the access data to invoices, payment confirmations, overdue notices, suspensions and cancellations, and the shop admin shows every sent email, lets you resend the welcome email or an invoice and switch each template off.
 - Every service in the shop admin has its own page with billing, server, package and access data behind a reveal button, and module buttons to suspend, unsuspend, terminate, change the package or change the password, named the way each shop system names them.
