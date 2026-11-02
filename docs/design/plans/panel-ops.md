@@ -25,7 +25,7 @@ Every web panel host runs a service list by family, held in `src/sim/60-infra/pa
 - DirectAdmen: directadmin, httpd, php-fpm, mysql, exim, dovecot, proftpd, named, sshd.
 - FreePanel: webmin, apache, php-fpm, mysql, postfix, dovecot, proftpd, bind, sshd.
 
-Service ids that a component slot owns (mail, ftp, web) show the installed component's name. State: `webpanel.restarts: Record<hostId, Record<serviceId, hour>>` holds the hour a restart finishes. `restartService(s, hostId, serviceId)` sets it to now plus `RESTART_MINUTES` (2); while it runs the service shows Restarting and the sites on the host count as down for the web and php services (`hostPerf` and the status of the host's sites read it). Restarting web or php clears `appBroken` and `phpBroken` entries of the host's sites. Restarting a service that is already restarting fails with `error.restarting`.
+Service ids that a component slot owns (mail, ftp, web) show the installed component's name. State: `webpanel.restarts: Record<hostId, Record<serviceId, minute>>` holds the game minute a restart finishes. `restartService(s, hostId, serviceId)` sets it to now plus `RESTART_MINUTES` (2); while it runs the service shows Restarting and the sites on the host count as down for the web and php services (`hostPerf` and the status of the host's sites read it). Restarting web or php clears `appBroken` and `phpBroken` entries of the host's sites. Restarting a service that is already restarting fails with `error.restarting`.
 
 ### Components [Sim + UI]
 
@@ -36,7 +36,7 @@ A component slot is one part of the stack the panel installs for the player, in 
 - `web`: Apache, nginx in front of Apache (Pleskit from 2012, cPanic from 2017), LiteSpeed (DirectAdmen from 2010).
 - `module` (several at once, each with a monthly fee per host): WordPress Toolkit (Pleskit from 2016, cPanic from 2018), ImunifyAV (every panel from 2018), SpamAssassin (every panel), Site Builder (Pleskit, cPanic from 2008).
 
-All company and product names are puns. Each entry has `id`, `slot`, `name`, `from` (first year), `panels` (families), `fee` (euro per month, 0 for free), `installMinutes`. State: `webpanel.components: Record<hostId, { mail?: string; ftp?: string; web?: string; modules: string[] }>`; a missing host or slot means the family default. `installComponent(s, hostId, componentId)` swaps the slot (or adds the module) after `installMinutes`, held in `webpanel.installing: Record<hostId, { id: string; until: number }>`; one install at a time per host, else `error.installing`. `removeModule(s, hostId, componentId)` drops a module. Module fees are booked monthly with the panel licence costs. Modules carry no customer-facing price yet; that comes with products.
+All company and product names are puns. Each entry has `id`, `slot`, `name`, `panels` (family to first year), `until` (first year it is gone), `fee` (euro per month, 0 for free), `installMinutes`. State: `webpanel.components: Record<hostId, { mail?: string; ftp?: string; web?: string; modules: string[] }>`; a missing host or slot means the family default. `installComponent(s, hostId, componentId)` swaps the slot (or adds the module) after `installMinutes`, held in `webpanel.installing: Record<hostId, { id: string; until: number }>` (until is a game minute); one install at a time per host, else `error.installing`. `removeModule(s, hostId, componentId)` drops a module. Module fees are booked monthly with the panel licence costs. Modules carry no customer-facing price yet; that comes with products.
 
 ### Backup Manager [Sim + UI]
 

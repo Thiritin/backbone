@@ -43,6 +43,7 @@ import { computeTick, pinMembers } from "../60-infra/cluster";
 import { haltTick, powerTick, pushLog, tripTick } from "../60-infra/power";
 import { loadSaved } from "../60-infra/switches";
 import { installNetTick } from "../60-infra/oob";
+import { moduleBills, panelOpsTick } from "../60-infra/panel-services";
 import { pruneAcks } from "../60-infra/alarms";
 import { beancounterTick } from "../60-infra/beancounters";
 import { haTick } from "../60-infra/ha";
@@ -249,6 +250,7 @@ export function tick(state: GameState): SimEvent[] {
   tanTick(state);
   haltTick(state);
   installNetTick(state);
+  panelOpsTick(state);
   const events: SimEvent[] = [...tripTick(state), ...thermalTick(state, minutes)];
   // The store shallow-copies the state before ticking, so arrays and their items are replaced rather than changed.
   if (state.racks.some((r) => r.arriveAt !== null && r.arriveAt <= state.hour)) {
@@ -323,7 +325,7 @@ export function tick(state: GameState): SimEvent[] {
       bills.push({ hour: state.hour, category: "rent", key: "ledger.flatPower", params: { rack: r.name, kw: r.flatKw }, amount: -flatMonthly(dc, r.flatKw, yearOf(state.hour)) });
     }
     const line = homeLineById(state.homeLine.id);
-    bills.push(...addressBills(state));
+    bills.push(...addressBills(state), ...moduleBills(state));
     if (line.monthly > 0) bills.push({ hour: state.hour, category: "rent", key: "ledger.homeLine", params: { line: line.name, isp: line.isp }, amount: -line.monthly });
     const leases = state.leases.map((l) => ({ ...l, paid: l.paid + 1 }));
     for (const l of leases) bills.push({ hour: state.hour, category: "leasing", key: "ledger.lease", params: { lessor: lessorName(l.lessor), paid: l.paid, months: l.months }, amount: -l.monthly });
@@ -410,6 +412,7 @@ export function tickMinute(state: GameState): SimEvent[] {
   state.minute++;
   haltTick(state);
   installNetTick(state);
+  panelOpsTick(state);
   const tripped = tripTick(state);
   tanTick(state);
   return [...tripped, ...thermalTick(state), ...workTick(state), ...deliverLicences(state)];

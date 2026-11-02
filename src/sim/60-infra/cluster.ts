@@ -23,6 +23,7 @@ import type { BackupJob, RestorePoint } from "./backups";
 import type { Ceph, Replica } from "./replica";
 import { vswitchBlocks, type VSwitch } from "./vswitch";
 import { firewallBlocks, type Firewall } from "./exposure";
+import { restartDown } from "./panel-services";
 import { pushLog } from "./syslog";
 import type { FloatingIp, SecurityGroup, Volume } from "./horizont";
 import type { Project } from "./projects";
@@ -514,8 +515,8 @@ export function setNodeState(s: GameState, deviceId: string, state: NodeState, c
   if (d && before && before !== state) pushLog(d, s.hour, `ipmi.log.node.${state}`);
 }
 
-// The web sites of a panel host the player took offline or that were compromised.
-export const sitesDown = (s: GameState, hostId: string): boolean => s.security.offline.includes(hostId) || s.security.hacked.includes(hostId);
+// The web sites of a panel host the player took offline, that were compromised or whose web server restarts.
+export const sitesDown = (s: GameState, hostId: string): boolean => s.security.offline.includes(hostId) || s.security.hacked.includes(hostId) || restartDown(s, hostId);
 
 // A workload on a server is up while the server reaches the internet and still holds the data written since it was placed;
 // a VM also needs an address on its host's network and, for a customer with a private network, that network (private.ts).

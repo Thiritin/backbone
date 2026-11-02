@@ -24,21 +24,27 @@ export interface WebPanel {
   transfers: Record<string, Transfer>; // web hosting service id -> the move of its site from another host
   resellers: Record<string, Reseller>; // customer id -> the reseller block they fill
   appBroken: Record<string, number>; // site id -> the hour the site a Toolkit update broke runs normally again
+  restarts: Record<string, Record<string, number>>; // panel host id -> service id -> the game minute its restart finishes
+  components: Record<string, PanelStack>; // panel host id -> its installed stack; a missing host or slot is the family default
+  installing: Record<string, { id: string; until: number }>; // panel host id -> the component being installed, until a game minute
 }
 
 // economy.md, SSL certificates and AutoSSL: auto lists the cPanic hosts with AutoSSL on, expires the hour each domain's
 // certificate runs out, expired the services serving an expired one now, and log the last renewals.
+export interface PanelStack { mail?: string; ftp?: string; web?: string; modules: string[] }
+
 export interface SslLog { hour: number; serviceId: string; ok: boolean }
 export interface Ssl { auto: string[]; expires: Record<string, number>; expired: string[]; log: SslLog[] }
 export const newSsl = (): Ssl => ({ auto: [], expires: {}, expired: [], log: [] });
 
-export const newWebPanel = (): WebPanel => ({ phpPool: {}, phpOf: {}, phpBroken: {}, ssl: newSsl(), bans: {}, appBack: {}, appBroken: {}, transfers: {}, resellers: {} });
+export const newWebPanel = (): WebPanel => ({ phpPool: {}, phpOf: {}, phpBroken: {}, ssl: newSsl(), bans: {}, appBack: {}, appBroken: {}, transfers: {}, resellers: {}, restarts: {}, components: {}, installing: {} });
 
 // A save keeps what it has per sub-record, so a save from an earlier milestone still gets the later sub-fields.
 export const mergeWebPanel = (base: WebPanel, data: Partial<WebPanel> | undefined): WebPanel => ({
   phpPool: { ...base.phpPool, ...data?.phpPool }, phpOf: { ...base.phpOf, ...data?.phpOf }, phpBroken: { ...base.phpBroken, ...data?.phpBroken },
   ssl: { ...base.ssl, ...data?.ssl }, bans: { ...base.bans, ...data?.bans },
   appBack: { ...base.appBack, ...data?.appBack }, appBroken: { ...base.appBroken, ...data?.appBroken }, transfers: { ...base.transfers, ...data?.transfers }, resellers: { ...base.resellers, ...data?.resellers },
+  restarts: { ...base.restarts, ...data?.restarts }, components: { ...base.components, ...data?.components }, installing: { ...base.installing, ...data?.installing },
 });
 
 export const POOL_MAX = 2;
