@@ -9,14 +9,16 @@ import { machineAddress } from "../60-infra/addresses";
 import { controlPlaneUp, machineOf, type Cluster } from "../60-infra/cluster";
 import { panelMachine as machineIdOf } from "../60-infra/licence";
 import { familyOf } from "../60-infra/vulns";
+import { MAIL_SOFTWARE, spamOn, type MailOption } from "./mail-software";
 
 // What the configuration of a front end holds (section 3.5); conf keeps SquirrelMeal's other config.php values by variable.
 export interface WebmailInstall {
   productName: string; domain: string; imapHost: string; imapPort: number; smtpHost: string; smtpPort: number; plugins: string[];
   conf: Record<string, string>;
 }
-// installs by front end cluster; default is the cluster that answers at webmail.<domain>, null for the first installed.
-export interface WebmailState { installs: Record<string, WebmailInstall>; default: string | null }
+// installs by front end cluster; default is the cluster that answers at webmail.<domain>, null for the first installed;
+// options are the mail servers' switches by cluster (section 5.1).
+export interface WebmailState { installs: Record<string, WebmailInstall>; default: string | null; options: Record<string, Partial<Record<MailOption, boolean>>> }
 
 // SquirrelMeal's plugins (section 3.4): the bundled ones start switched on.
 export const WEBMAIL_PLUGINS = ["filters", "changepass", "havelsieve", "squirrelspelt"] as const;
@@ -123,11 +125,12 @@ export const installedWebmail = (s: GameState): WebmailId | null => {
   const c = defaultWebmail(s);
   return c ? (frontOf(c) as WebmailId) : null;
 };
-// Dovecoat comes with Postfixit and serves Sieve from its 2010 release; Mailpig always filters with Rspamed.
+// Dovecoat comes with Postfixit and gives IMAP and POP; Sieve and the spam filter follow MAIL_SOFTWARE.
 export function selfHostCaps(s: GameState): SelfHostCaps {
   const m = s.company.mail, c = m.kind === "self" ? s.clusters.find((x) => x.id === m.clusterId) : undefined;
   if (!c || m.kind !== "self") return { imap: true, pop: true, sieve: false, junkBonus: 0 };
-  return m.software === "mailpig" ? { imap: true, pop: true, sieve: true, junkBonus: 0.4 } : { imap: true, pop: true, sieve: c.version >= 2010, junkBonus: 0 };
+  const row = MAIL_SOFTWARE[m.software];
+  return { imap: true, pop: true, sieve: c.version >= row.sieveFrom, junkBonus: spamOn(s, c, m.software) ? row.spam.bonus : 0 };
 }
 
 Object.assign(mailHooks, { installedWebmail, selfHostCaps });

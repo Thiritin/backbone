@@ -4,12 +4,15 @@ import type { CSSProperties } from "react";
 import { APPS, appFor, appTitle } from "../apps/registry";
 import { appMenu } from "../apps/ApplicationsApp";
 import { useStore } from "../store";
+import { deskUrl } from "../apps/browser/sites/desk/DeskSite";
+import { deskStatus } from "../../sim/40-support/desk";
 import { menuOn } from "./ContextMenu";
 import { bounce, rememberSlot } from "./motion";
 
 export function Dock() {
   const { windows, openApp, openDoc, game } = useStore();
   const minimized = windows.filter((w) => w.minimized);
+  const deskDown = !!deskUrl(game) && deskStatus(game) === "down";
 
   return (
     <nav className="dock" aria-label={t("desktop.dock.apps")}>
@@ -33,6 +36,7 @@ export function Dock() {
               <span className="tip">{appTitle(shown)}</span>
               <span className="dock-tile" style={{ "--tile": shown.tile } as CSSProperties}><shown.icon /></span>
               <span className="dot" />
+              {a.name === "Support" && deskDown && <span className="warn" />}
               {badge > 0 && <span className="count">{badge > 99 ? "99+" : badge}</span>}
             </button>
           </Fragment>

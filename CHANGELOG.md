@@ -6,12 +6,21 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - Web hosting panels show each account's disk and traffic as compact numbers and the whole server's CPU, memory and disk above the account list.
 - Web hosting accounts now use memory by their visitors, so a quiet personal page needs only a few megabytes while a busy shop needs far more.
+- The cPanic File Manager now works like the real one: upload files from your Downloads at your line's upload speed, extract and compress archives, create, move, copy, rename and delete files, and change permissions, with uploads refused once the account's disk quota is full.
+- HOSTtoast no longer has a city filter, so its list always shows every open host.
+- The browser's Back button no longer leaves the game: in the browser app it goes back one page, everywhere else it does nothing.
+- OsTickit now runs at your support address in the browser, with its own customer portal, Staff Control Panel and Admin Panel in the 1.6 look and, from version 1.10, the newer one, and the Support tile opens it once it is installed.
+- Web hosting panels can now create an account for your own company domain, which starts empty, counts against the panel licence and is where your website and shop will live.
+- Postfixit Admin now walks you through its setup page and then manages the mailboxes, aliases, forwarders, catch-all, quotas and passwords of your own mail server, and Mailpig shows your real mailboxes and aliases in its own tabs.
+- A bare Postfixit server can be managed from the terminal with mailbox, alias, catchall and spam commands, and uninstalling the mail server deletes every mailbox and message on it.
 - A license key that is installed in a panel or product has to be removed before another key can be entered, and the license page shows the installed key with a Remove button instead of listing your unused keys.
 - Software now installs on any virtual machine with the disk for it, but a VM too small for its software and sites sits at 100% CPU and RAM, its web console stops answering and its sites slow down until you resize it.
 - CPU and RAM readouts now move a little from hour to hour, and every software website lists the system requirements of the current year on its download page.
 - Flyerlarm, a print shop in the browser, sells flyer runs that are handed out in one of your cities over four weeks and bring in new leads; the Marketing app lists every running run and takes you to the shop to order more.
 - Web developers now write in as a new kind of customer: they are rare at first, mostly ask for web hosting, and often want a reseller block, and your sponsored developer events and agency fairs reach them.
 - DocuWhere in the Pear Store files every letter from the post in an archive with search, document types and a filter per type.
+- Your company's support address now reaches your help desk once its DNS record is in place, and shows the server's error while the desk's web space is down.
+- Company mailboxes now receive mail the way real ones do: full boxes hold mail for a few days before it bounces, deleted addresses bounce, groups copy mail to every member, server filters sort new mail, out-of-office replies can loop between two mailboxes, and junk arrives in the amounts of its year.
 - You now set how much CPU, memory and disk each customer's service may use, on the customer's page and in the hypervisor consoles, and a customer uses what they bought: give them more and their peaks may go above it, give them less and their own service slows down while your host stays fine.
 - A customer who writes in about a slow server can be told to upgrade: if their own limit was too tight, they get a quote for more, and if your host was the problem, they take it badly.
 - Supplier invoices in Preview are addressed to the company address you registered.

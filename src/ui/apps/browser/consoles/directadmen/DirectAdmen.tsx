@@ -4,6 +4,7 @@ import { eraAt, looks, LoginForm, Nodes, RowsTable, ServerUse, usePanelTab, useR
 import { t } from "../../../../../i18n/en";
 import { parseCreate } from "../../../../../sim/80-business/consoles";
 import { PackagesScreen, ProvisionForm } from "../PackageForms";
+import { OwnAccountForm, OwnAccountRows } from "../OwnAccounts";
 import { useReadoutPages } from "../Readouts";
 import { CustomBuild } from "./CustomBuild";
 import { ServicesPage } from "../ServicesPage";
@@ -63,9 +64,10 @@ export function DirectAdmen(p: PanelProps) {
         {tab === "resellers" && <ManageResellers game={p.game} c={p.c} />}
         {tab === "updates" && <UpdatesPage game={p.game} c={p.c} />}
         {tab === "messages" && <Messages game={p.game} c={p.c} late={late} />}
-        {tab === "objects" && <><ServerUse game={p.game} c={p.c} /><RowsTable rows={shown} name={t("browser-consoles-2.domain")} /></>}
+        {tab === "objects" && <><ServerUse game={p.game} c={p.c} /><RowsTable rows={shown} name={t("browser-consoles-2.domain")} /><OwnAccountRows game={p.game} c={p.c} /></>}
         {tab === "nodes" && <Nodes game={p.game} c={p.c} />}
         {tab === "create" && <ProvisionForm game={p.game} c={p.c} products={["webHosting"]} order={open?.screen === "create" ? open.order : undefined} className="cx-form da-form" />}
+        {tab === "create" && <OwnAccountForm game={p.game} c={p.c} className="cx-form da-form" />}
         {tab === "packages" && <PackagesScreen game={p.game} c={p.c} />}
         {pages.find((g) => g.id === tab)?.body}
         {tab === "software" && (

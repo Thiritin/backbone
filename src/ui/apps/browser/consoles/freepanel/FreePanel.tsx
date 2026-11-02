@@ -3,6 +3,7 @@ import { Actions, eraAt, looks, Facts, LoginForm, Nodes, RowsTable, ServerUse, u
 import { t } from "../../../../../i18n/en";
 import { parseCreate } from "../../../../../sim/80-business/consoles";
 import { PackagesScreen, ProvisionForm } from "../PackageForms";
+import { OwnAccountForm, OwnAccountRows } from "../OwnAccounts";
 import { useReadoutPages } from "../Readouts";
 import { SystemInfo } from "./SystemInfo";
 import { ServicesPage } from "../ServicesPage";
@@ -51,8 +52,8 @@ export function FreePanel(p: PanelProps) {
         {tab === "components" && <ComponentsPage game={p.game} c={p.c} />}
         {tab === "backup" && <BackupManager game={p.game} c={p.c} />}
         {tab === "sysinfo" && <SystemInfo game={p.game} c={p.c} host={p.host} />}
-        {tab === "objects" && <><ServerUse game={p.game} c={p.c} /><RowsTable rows={rows} name={t("browser-consoles-1.domain")} /></>}
-        {tab === "create" && <ProvisionForm game={p.game} c={p.c} products={["webHosting"]} order={open?.screen === "create" ? open.order : undefined} />}
+        {tab === "objects" && <><ServerUse game={p.game} c={p.c} /><RowsTable rows={rows} name={t("browser-consoles-1.domain")} /><OwnAccountRows game={p.game} c={p.c} /></>}
+        {tab === "create" && <><ProvisionForm game={p.game} c={p.c} products={["webHosting"]} order={open?.screen === "create" ? open.order : undefined} /><OwnAccountForm game={p.game} c={p.c} /></>}
         {tab === "packages" && <PackagesScreen game={p.game} c={p.c} />}
         {tab === "nodes" && <Nodes game={p.game} c={p.c} />}
         {pages.find((g) => g.id === tab)?.body}

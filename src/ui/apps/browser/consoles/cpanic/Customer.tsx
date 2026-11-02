@@ -1,4 +1,4 @@
-import { Database, FileText, Folder, Mail, ScrollText, TriangleAlert, type LucideIcon } from "lucide-react";
+import { Database, Folder, Mail, ScrollText, TriangleAlert, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { t } from "../../../../../i18n/en";
 import { APP_NAME } from "../../../../../sim/10-catalog/apps";
@@ -9,6 +9,7 @@ import { accountUse } from "../../../../../sim/80-business/readouts";
 import { webspaceOf } from "../../../../../sim/60-infra/webspace";
 import { disk } from "../../../hw";
 import { Bar } from "../PanelBase";
+import { FileManager } from "./FileManager";
 import { LogPage } from "../Readouts";
 import { DomainPage, domainTiles, type DomainPageId } from "./Domains";
 
@@ -22,17 +23,12 @@ const ICONS: [Page, string, LucideIcon][] = [
 export function Customer({ game, c, workloadId }: { game: GameState; c: Cluster; workloadId: string }) {
   const [page, setPage] = useState<Page | null>(null);
   const w = game.workloads.find((x) => x.id === workloadId), v = game.services.find((x) => x.id === w?.serviceId), ws = webspaceOf(game, workloadId);
-  if (!w || !v || !ws) return null;
-  const u = accountUse(game, w), domain = v.domain ?? v.label, app = v.spec.app ?? "static", offline = game.security.offline.includes(c.id);
-  const top = Object.entries(ws.files).filter(([p]) => p.startsWith(`${ws.webroot}/`) && !p.slice(ws.webroot.length + 1).includes("/"));
+  if (!ws) return null;
+  // The company's own accounts have no service and no package, so only their disk use shows.
+  const u = w && accountUse(game, w), domain = ws.domain, app = v?.spec.app, offline = game.security.offline.includes(c.id);
   const body = () => {
     if (offline) return <p className="cx-empty">{t("readouts.cp.offline")}</p>;
-    if (page === "files") return (
-      <table className="cx-table">
-        <thead><tr><th>{t("readouts.cp.name")}</th><th>{t("readouts.cp.size")}</th></tr></thead>
-        <tbody>{top.map(([p, f]) => <tr key={p}><td><FileText size={13} aria-hidden /> {p.slice(ws.webroot.length + 1)}</td><td className="num">{disk(+(f.mb / 1024).toFixed(3))}</td></tr>)}</tbody>
-      </table>
-    );
+    if (page === "files") return <FileManager game={game} c={c} workloadId={workloadId} />;
     if (page === "mail") return (
       <table className="cx-table">
         <thead><tr><th>{t("readouts.cp.address")}</th><th>{t("readouts.cp.quota")}</th></tr></thead>
@@ -57,10 +53,10 @@ export function Customer({ game, c, workloadId }: { game: GameState; c: Cluster;
     <div className="cp-customer">
       <aside className="cp-stats">
         <h2>{t("readouts.cp.stats")}</h2>
-        <div><span>{t("readouts.cp.disk")}</span><Bar use={u.disk} /></div>
-        {u.traffic[1] > 0 && <div><span>{t("readouts.cp.bandwidth")}</span><Bar use={u.traffic} /></div>}
-        <div><span>{t("readouts.cp.mail")}</span><b className="num">{u.mailboxes}</b></div>
-        <div><span>{APP_NAME[app]}</span><b>{domain}</b></div>
+        <div><span>{t("readouts.cp.disk")}</span>{u ? <Bar use={u.disk} /> : <b className="num">{disk(+(ws.usage.diskMb / 1024).toFixed(3))}</b>}</div>
+        {u && u.traffic[1] > 0 && <div><span>{t("readouts.cp.bandwidth")}</span><Bar use={u.traffic} /></div>}
+        <div><span>{t("readouts.cp.mail")}</span><b className="num">{u?.mailboxes ?? ws.usage.mailboxes}</b></div>
+        <div><span>{v ? APP_NAME[app ?? "static"] : t("pkg.domain")}</span><b>{domain}</b></div>
       </aside>
       <section className="cp-cust-main">
         {page && !offline && <button className="cx-btn" onClick={() => setPage(null)}>{t("readouts.cp.back")}</button>}

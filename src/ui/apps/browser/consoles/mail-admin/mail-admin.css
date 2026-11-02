@@ -1,0 +1,13 @@
+/* The mailbox and alias forms of Postfixit Admin and Mailpig; each product's sheet sets its colours. */
+.adm-form { margin: 10px 0; }
+.adm-form table { border-collapse: collapse; }
+.adm-form th { padding: 6px 8px; text-align: left; }
+.adm-form td { padding: 4px 8px; vertical-align: top; }
+.adm-form td:first-child { white-space: nowrap; }
+.adm-form input:not([type="checkbox"]), .adm-form select { min-width: 180px; }
+.adm-roles { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.adm-roles label, .adm-form td label { display: inline-flex; align-items: center; gap: 4px; }
+.adm-error { margin: 6px 0; color: #c00000; font-weight: bold; }
+.adm-confirm { margin: 10px 0; padding: 10px; border: 1px solid currentColor; }
+.adm-confirm p { margin: 0 0 6px; }
+.adm-confirm button { margin-right: 8px; }

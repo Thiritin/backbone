@@ -5,7 +5,7 @@ import { formatClock, yearOf } from "../../../../sim/00-core/time";
 import { balancerIn, SOFTWARE, softwareById } from "../../../../sim/10-catalog/platforms";
 import type { Resources } from "../../../../sim/10-catalog/products";
 import { HA_SKILL } from "../../../../sim/10-catalog/research";
-import { APP_SUITE_FEE, imageParts, licensingAt, serverOsById, type OsImage } from "../../../../sim/10-catalog/server-os";
+import { APP_SUITE_FEE, imageParts, isoName, licensingAt, serverOsById, type OsImage } from "../../../../sim/10-catalog/server-os";
 import type { GameState } from "../../../../sim/50-state";
 import { t } from "../../../../i18n/en";
 import { clusterSummary, type Alarm, type Amount, type Amounts, type Severity } from "../../../../sim/60-infra/alarms";
@@ -55,7 +55,7 @@ export interface Vm {
 const num = (n: number) => `${+n.toFixed(2)}`;
 export const nodeName = (game: GameState, id: string | null) => { const d = game.devices.find((x) => x.id === id); return d ? d.hostname ?? d.label ?? d.name : ""; };
 export const osText = (w: Workload) => (w.os ? `${serverOsById(w.os.id).name} ${w.os.version}` : t("browser-consoles-1.none"));
-export const isoName = (img: OsImage) => `${img.replace("@", "-")}.iso`.replace(/\s+/g, "-").toLowerCase();
+export { isoName };
 
 // A VM's size: an own VM is resized, a customer VM gets its limits booked.
 function SizeForm({ w, done }: { w: Workload; done: () => void }) {

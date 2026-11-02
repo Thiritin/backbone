@@ -37,4 +37,9 @@ export default {
   "webspace.error.noCron": () => "Esta tarea cron no existe.",
   "webspace.error.fixedFolder": () => "Esta carpeta pertenece a la cuenta y no se puede cambiar.",
   "webspace.error.noFile": () => "Este archivo o carpeta no existe.",
+  "webspace.error.notPanel": () => "Solo un host con panel de alojamiento web puede tener cuentas.",
+  "webspace.error.account": () => "Los nombres de usuario empiezan por una letra y tienen hasta 16 letras minúsculas y dígitos.",
+  "webspace.error.accountTaken": () => "Este nombre de usuario ya está en uso en el servidor.",
+  "webspace.own.title": () => "Cuenta propia",
+  "webspace.own.list": () => "Cuentas propias",
 } satisfies Dict;

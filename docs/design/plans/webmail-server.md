@@ -413,6 +413,15 @@ Each milestone is one pull request with its seeded tests and one or two changelo
 - i18n: admin and Mailpig strings and the `error.*` keys for refusals.
 - Tests: `tests/mail-admin.test.ts`. Creating `info@` through Postfixit Admin routes a licence order mail to `info@` and not to `support@`; the catch-all catches an unknown local part; a password reset keeps the mail; deleting a mailbox removes its messages and starts the stale window; a spam filter raises the catch rate; each capability refuses where the matrix says it does.
 
+Built in milestone 2, where it differs from the text above:
+
+- The Edit form has no vacation field yet: `setVacation` comes with `mail-core` milestone 5, and the field calls it once it lands. Filters, Sync jobs and Quarantine in Mailpig wait for the same milestone and for `importMail`.
+- The tests check the sales role with `roleAccount` and the catch-all with a message through `deliver`. Licence orders follow the sales role until `Licence.mailTo` arrives with `mail-core` milestone 7.
+- Receives on the admin forms gives each role to one mailbox: ticking it takes the role from the tenant's other mailboxes (`assignMailRoles`), and owner mail moves the primary.
+- `setAccountQuota` stores the value without the disk booking; the disk check comes with the quota work of `mail-core`.
+- Spamsassin is stored per mail server in `s.webmail.options`. Uninstalling the mail server (`dropMailServer`) removes its tenant's mailboxes and messages at once and moves the company to GMix; the uninstall action and `apt-get remove` name the mailboxes and messages first.
+- The setup page keeps no superadmin account of its own; signing in uses the console login every web admin shares.
+
 ### Milestone 3: SquirrelMeal mailbox view and plugins
 
 - Sim: the plugin rules of 3.4: `saveLocalFilter` and `runLocalFilters` (rules applied on opening the Inbox over mail newer than `filteredAt`), the Change Password plugin on `changePassword`, the subscription list in `s.webmail.subs`.

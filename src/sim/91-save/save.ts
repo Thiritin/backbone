@@ -1,7 +1,7 @@
 import { fillDesk } from "./desk";
 import { fillMail } from "./mail";
 import { migrateBooks } from "./books";
-import { fillShop, installSavedShop } from "./shop";
+import { fillShop, installSavedShop, ownShopWebspace } from "./shop";
 import { brandsOf, fillCpus, isOfficeRouter, MODELS, modelById, RENAMED_MODELS, wanPort } from "../10-catalog/hardware";
 import { freeSlots } from "../60-infra/status";
 import { legacyLicences } from "../60-infra/licence";
@@ -173,7 +173,7 @@ export function deserialize(raw: string): GameState {
   // Saves from before licence keys; machines from before one-time licenses hold theirs for free, since the fee was never charged.
   if (!data.trials) legacyLicences(s, (data.licenses ?? []) as unknown as Parameters<typeof legacyLicences>[1]);
   const media = data.media ?? base.media;
-  s.media = { images: [...new Set(media.images.map((x) => asImage(x, year)))], stick: { ...media.stick, os: media.stick.os && asImage(media.stick.os, year) } };
+  s.media = { images: [...new Set(media.images.map((x) => asImage(x, year)))], files: media.files ?? [], stick: { ...media.stick, os: media.stick.os && asImage(media.stick.os, year) } };
   s.arrived = data.arrived ?? [];
   // Saves from before the Bookkeeping category run Lexwear Office when they have Books.
   if (!data.books) s.books = { vendor: data.installed?.some((id: string) => id === "Books" || id === "Billing") ? "lexwear" : null, installedAt: 0, edition: null, seats: 0, download: null };
@@ -181,6 +181,7 @@ export function deserialize(raw: string): GameState {
   migrateBooks(s);
   s.tax = data.tax ? { ...base.tax, ...data.tax } : s.registration ? legacyTax(s) : base.tax;
   if (data.shop && data.shop.install === undefined) installSavedShop(s);
+  if (!data.ownWebspaces) ownShopWebspace(s);
   fillMail(s, data.mail, !!data.company?.zone);
   fillDesk(s, data.desk !== undefined);
   s.webmail = { ...base.webmail, ...data.webmail };

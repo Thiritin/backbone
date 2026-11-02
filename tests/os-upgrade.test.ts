@@ -62,7 +62,7 @@ describe("versioned OS images", () => {
     data.workloads.find((w: { id: string }) => w.id === vm).media = "lunix";
     const back = deserialize(JSON.stringify(data)), y = yearOf(back.hour);
     const lunix = `lunix@${serverOsAt("lunix", y).version}`, windoors = `windoors@${serverOsAt("windoors", y).version}`;
-    expect(back.media).toEqual({ images: [lunix, windoors], stick: { os: windoors, in: null } });
+    expect(back.media).toEqual({ images: [lunix, windoors], files: [], stick: { os: windoors, in: null } });
     expect(vmById(back, vm)!.media).toBe(lunix);
   });
 });

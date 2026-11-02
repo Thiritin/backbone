@@ -3,7 +3,6 @@ import { t } from "../../../../../i18n/en";
 import { LOCALE } from "../../../../../i18n/lang";
 import { euro, euroCents } from "../../../../../sim/00-core/money";
 import { yearOf } from "../../../../../sim/00-core/time";
-import { CITIES } from "../../../../../sim/10-catalog/economy";
 import { HOSTTOAST_HOST, LISTED_PRODUCTS, TIER_IDS, TIERS, type ListedProduct, type TierId } from "../../../../../sim/10-catalog/hosttoast";
 import type { GameState } from "../../../../../sim/50-state";
 import { hosttoastList, tierName, uptime90 } from "../../../../../sim/80-business/hosttoast";
@@ -59,8 +58,7 @@ function ForHosts({ game }: { game: GameState }) {
 
 function List({ game }: { game: GameState }) {
   const [product, setProduct] = useState<ListedProduct>("webHosting");
-  const [city, setCity] = useState<string>("");
-  const rows = hosttoastList(game, product, city || null), last = yearOf(game.hour) - 1;
+  const rows = hosttoastList(game, product), last = yearOf(game.hour) - 1;
   const hosts = game.hosttoast.awards.filter((a) => a.kind === "host" && a.year === last);
   const nameOf = (id: string) => (id === "you" ? game.company.name : game.competitors.find((r) => r.id === id)?.name ?? "");
   const badges = (id: string) => game.hosttoast.awards.filter((a) => a.year === last && a.id === id);
@@ -76,12 +74,6 @@ function List({ game }: { game: GameState }) {
         <label>{t("hosttoast.product")}
           <select value={product} onChange={(e) => setProduct(e.target.value as ListedProduct)}>
             {LISTED_PRODUCTS.map((p) => <option key={p} value={p}>{t(`sim.line.${p}`)}</option>)}
-          </select>
-        </label>
-        <label>{t("hosttoast.city")}
-          <select value={city} onChange={(e) => setCity(e.target.value)}>
-            <option value="">{t("hosttoast.allCities")}</option>
-            {CITIES.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
           </select>
         </label>
       </div>
