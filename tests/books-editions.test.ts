@@ -207,10 +207,12 @@ describe("seats", () => {
 });
 
 describe("browser programs", () => {
-  it("stop working while the line is cut or throttled, and desktop programs keep going", () => {
+  it("stop working while the line is cut, and desktop programs keep going", () => {
     const { s, B } = ledger();
     run(s, "collmix", "plus");
     s.payables.push({ id: "pay1", supplier: "upstream", name: "Upstream", number: "1", amount: 30, issuedAt: s.hour - 30 * 24, dueAt: s.hour - 8 * 24, paidAt: null, lines: [] } as never);
+    expect(booksOffline(s)).toBe(false);
+    s.hour += 7 * 24;
     expect(booksOffline(s)).toBe(true);
     expect(works(s, "match-by-reference")).toBe(false);
     booksTick(s);
