@@ -5,7 +5,7 @@ import { BACKUP_CHANGED, BACKUP_HOUR, idNum } from "../10-catalog/usage";
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { licenceExpired } from "./licence";
-import { backsUpCluster, controlPlaneUp, lostDisk, vmRoom, type Cluster, type Workload } from "./cluster";
+import { backsUpCluster, controlPlaneUp, lostDisk, vmOf, vmRoom, type Cluster, type Workload } from "./cluster";
 import { nodeUsage, diskFill } from "./usage";
 import { raidUsable } from "./status";
 import { LAN_GB_PER_HOUR, WAN_GB_PER_HOUR } from "../85-products/products";
@@ -83,6 +83,17 @@ export function repoRoom(s: GameState, target: Cluster): number {
 }
 
 export const inJob = (j: BackupJob, w: Workload): boolean => !j.workloadIds || j.workloadIds.includes(w.id);
+
+// The jobs that write to a backup server and have run, oldest first.
+export const finishedJobs = (s: GameState, targetId: string) =>
+  s.clusters.flatMap((x) => x.jobs.filter((j) => j.targetId === targetId && j.lastRun !== null).map((j) => ({ name: `${x.name} ${j.name}`, last: j.lastRun!, ok: j.lastOk !== false })))
+    .sort((a, b) => a.last - b.last);
+
+// The lost machines of the clusters that back up to server c and have a backup there.
+export function lostOn(s: GameState, c: Cluster): Workload[] {
+  const sources = new Set(s.clusters.filter((x) => x.jobs.some((j) => j.targetId === c.id)).map((x) => x.id));
+  return s.workloads.filter((w) => !!w.clusterId && sources.has(w.clusterId) && w.backupAt !== null && !vmOf(s, w) && lostDisk(s, w));
+}
 
 // Keeps the newest keep.last points and one per week for keep.weekly weeks, for the primary copies and the offsite ones apart;
 // the oldest kept point of each becomes the full copy.

@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- Bound, Knut DNS, WireGuarded, vsFTPeed, Postfixit and Backula no longer show a web page in the browser, and Backula's finished jobs and restores of lost machines now run from its command line tool in the terminal.
+- The command line tools of free software no longer list license commands or a license key option.
 - The Terminal editor shows light text on a dark background again instead of white on white.
 - Cancelling an invoice draft in the bookkeeping program now asks before it deletes the draft, and the Up and Down keys move through the invoices, quotes, bank bookings and customers.
 - The Mark as paid dialog now lists the open transfers in a list to pick from, and long names in the bank list no longer push the Accept button out of view.

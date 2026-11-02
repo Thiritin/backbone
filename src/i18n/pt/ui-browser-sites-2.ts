@@ -466,5 +466,10 @@ export default {
   "browser-sites-2.cli.relay": () => "Envia o correio de um host de painel por este servidor, e off volta a enviá-lo diretamente.",
   "browser-sites-2.cli.serverList": () => "Lista os servidores de jogo nesta máquina e se estão em execução.",
   "browser-sites-2.cli.shareList": () => "Lista os links compartilhados neste servidor de armazenamento e quando expiram.",
+  "browser-sites-2.cli.statusFree": () => "Mostra se o software está em execução.",
+  "browser-sites-2.cli.upgradeFree": () => "Atualiza o software para a versão principal seguinte.",
+  "browser-sites-2.cli.jobList": () => "Lista as tarefas de backup terminadas que escrevem neste servidor, com a hora de fim e o resultado.",
+  "browser-sites-2.cli.restoreList": () => "Lista as máquinas perdidas com backup neste servidor e os nós em que podem ser restauradas.",
+  "browser-sites-2.cli.restore": () => "Restaura uma máquina perdida a partir do backup no nó indicado, ou no primeiro livre.",
   "browser-sites-2.keyFlag": () => "Acrescenta --key seguido da tua chave de licença ao comando para instalar com licença.",
 } satisfies Dict;

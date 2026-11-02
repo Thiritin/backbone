@@ -57,7 +57,6 @@ export default {
   "term.vendor.version": (p) => `${p.name} ${p.version}, canale ${p.channel}`,
   "term.vendor.up": (p) => `${p.name} è in esecuzione.`,
   "term.vendor.updating": (p) => `${p.name} si sta aggiornando.`,
-  "term.vendor.licence.free": () => `Licenza: software libero`,
   "term.vendor.licence.trial": (p) => `Licenza: prova fino al ${p.until}`,
   "term.vendor.licence.active": () => `Licenza: attiva`,
   "term.vendor.licence.ended": () => `Licenza: prova terminata`,
@@ -71,4 +70,7 @@ export default {
   "term.vendor.secondary": () => `secondario`,
   "term.vendor.noExpiry": () => `nessuna scadenza`,
   "term.vendor.none": () => `Nessuna voce.`,
+  "term.vendor.jobOk": () => `OK`,
+  "term.vendor.jobError": () => `Errore`,
+  "term.vendor.noNode": () => `nessun nodo libero`,
 } satisfies Dict;
