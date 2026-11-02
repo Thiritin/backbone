@@ -1,4 +1,5 @@
 // GDD, The desktop (Browser): what an address in the in-game browser leads to. Pure; the UI draws the page.
+import { PROGRAMS } from "../10-catalog/programs";
 import { DESKS, type DeskId } from "../10-catalog/desks";
 import { supplierHost } from "../46-finance/payables";
 import { monthIndexOf, yearOf } from "../00-core/time";
@@ -77,6 +78,7 @@ export type Page =
   | { kind: "wiki" }
   | { kind: "shop" }
   | { kind: "software"; id: string }
+  | { kind: "program"; id: string }
   | { kind: "os"; id: ServerOsId }
   | { kind: "notfound" };
 
@@ -216,8 +218,8 @@ export function resolve(s: GameState, raw: string): Resolved {
     return out({ kind: "desk", id: s.desk.id }, st === "up" ? "fast" : st === "slow" ? "slow" : "down");
   }
   if (host === `support.${domain}`) return out({ kind: "notfound" });
-  // The default webmail front end answers at webmail.<domain> like on its machine.
-  if (s.company.domain && host === `webmail.${domain}`) {
+  // The default webmail front end answers at webmail.<domain> like on its machine, also for the domains of customer sites.
+  if ((s.company.domain && host === `webmail.${domain}`) || (host.startsWith("webmail.") && siteAt(s, host.slice(8)))) {
     const c = defaultWebmail(s), h = c && consoleHost(s, c), m = h && machineOf(s, h, false);
     return c && m ? { url, host, path, page: { kind: "console", hostname: m.hostname, clusterId: c.id, defaced: isDefaced(s, c), path }, load: m.load } : out({ kind: "notfound" });
   }
@@ -249,6 +251,8 @@ export function resolve(s: GameState, raw: string): Resolved {
   // A software's site exists from the year the software does; an operating system's always.
   const year = yearOf(s.hour), sw = SOFTWARE.find((x) => named(x.site.host) && x.from <= year);
   if (sw) return out({ kind: "software", id: sw.id });
+  const program = PROGRAMS.find((p) => named(p.host) && p.from <= year);
+  if (program) return out({ kind: "program", id: program.id });
   const books = BOOKS_VENDORS.find((v) => v.id !== "lexwear" && named(booksHost(v)) && v.from <= year);
   if (books) return out({ kind: "books", id: books.id });
   const os = SERVER_OS.find((x) => named(x.site.host));

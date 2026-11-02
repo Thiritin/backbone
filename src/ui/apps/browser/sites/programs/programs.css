@@ -1,0 +1,17 @@
+.pg { --pg-red: #bf0000; min-height: 100%; background: #fff; color: #222; font: 13px/1.5 Verdana, Geneva, sans-serif; }
+.pg[data-era="new"] { font-family: Arial, Helvetica, sans-serif; }
+.pg header { display: flex; align-items: baseline; gap: 14px; padding: 14px 20px; background: var(--pg-red); color: #fff; }
+.pg header b { font-size: 26px; letter-spacing: -0.02em; }
+.pg[data-era="old"] header { background: linear-gradient(#fff, #e8e8e8); color: var(--pg-red); border-bottom: 2px solid var(--pg-red); }
+.pg-body { display: flex; gap: 20px; padding: 16px 20px; }
+.pg nav { display: flex; flex-direction: column; gap: 4px; width: 140px; flex: none; }
+.pg nav a { color: var(--pg-red); text-decoration: none; }
+.pg nav a.on { font-weight: 700; }
+.pg main { flex: 1; min-width: 0; }
+.pg h1 { margin: 0 0 10px; font-size: 18px; color: var(--pg-red); }
+.pg h2 { margin: 16px 0 6px; font-size: 14px; }
+.pg table { border-collapse: collapse; }
+.pg td { padding: 4px 12px 4px 0; border-bottom: 1px solid #ddd; }
+.pg-btn { padding: 8px 18px; border: 0; border-radius: 3px; background: #3a9b2e; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+.pg-state { font-weight: 700; color: #3a9b2e; }
+.pg footer { padding: 10px 20px; color: #777; font-size: 11px; border-top: 1px solid #ddd; }
