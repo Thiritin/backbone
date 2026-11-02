@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- Books no longer has a Products tab: before your first shop every email request is priced in its own quote, and fixed products live only in the shop.
 - Lookout 365 has its own website from 2011, where you sign up for Business Basic or Business Standard, and an admin center for users, free shared mailboxes, domain verification, mail flow rules, mailbox migration, billing and a password reset by post.
 - Message trace in the Lookout 365 admin center shows what happened to every message for an address, including mail held for a full mailbox, and Lookout web mail follows the look of its year.
 - Order emails in your mailbox now show the customer's request and postal address instead of a placeholder.
