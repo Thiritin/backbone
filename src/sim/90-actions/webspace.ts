@@ -6,6 +6,7 @@ import {
   ALL_PRIVILEGES, deriveWebspace, dbUserMax, MULTI_PHP_YEAR, webspaceOf,
   type DomainKind, type PartName, type WebLimits, type WebParts, type Webspace,
 } from "../60-infra/webspace";
+import { addSubdomainRecord, dropSubdomainRecord } from "../60-infra/webzone";
 import type { ActionResult } from "./hardware";
 
 const fail = (error: string, params?: Record<string, string>): ActionResult => ({ ok: false, error, ...(params && { params }) });
@@ -162,13 +163,24 @@ export function deleteFtpAccount(s: GameState, workloadId: string, user: string)
 // Adds the domain and creates its folder when missing, as real panels do.
 function addDomain(s: GameState, ws: Webspace, name: string, kind: DomainKind, folder: string): ActionResult {
   if (ws.domains[name] || s.services.some((v) => !v.endedAt && v.domain === name)) return fail("webspace.error.domainTaken");
-  if (!FILE_NAME.test(folder.split("/").pop() ?? "") || !folder.startsWith(`${ws.webroot}/`) || folder.includes("..")) return fail("webspace.error.fileName");
-  const parent = folder.slice(0, folder.lastIndexOf("/"));
-  if (!folderOk(ws, parent)) return fail("webspace.error.noFolder");
-  if (ws.files[folder] && !ws.files[folder].dir) return fail("webspace.error.fileTaken");
-  if (!ws.files[folder]) put(s, ws.workloadId, "files", folder, { dir: true, mb: 0, at: s.hour });
+  if (kind !== "parked") {
+    if (!FILE_NAME.test(folder.split("/").pop() ?? "") || !folder.startsWith(`${ws.webroot}/`) || folder.includes("..")) return fail("webspace.error.fileName");
+    const parent = folder.slice(0, folder.lastIndexOf("/"));
+    if (!folderOk(ws, parent)) return fail("webspace.error.noFolder");
+    if (ws.files[folder] && !ws.files[folder].dir) return fail("webspace.error.fileTaken");
+    if (!ws.files[folder]) put(s, ws.workloadId, "files", folder, { dir: true, mb: 0, at: s.hour });
+  }
   put(s, ws.workloadId, "domains", name, { name, kind, folder, php: ws.domains[ws.domain].php });
+  if (kind === "sub") addSubdomainRecord(s, ws, name);
   return { ok: true, id: name };
+}
+
+// An alias serves the main domain's folder.
+export function createParkedDomain(s: GameState, workloadId: string, domain: string): ActionResult {
+  const ws = open(s, workloadId);
+  if (isFail(ws)) return ws;
+  if (!DOMAIN.test(domain)) return fail("webspace.error.domainName");
+  return addDomain(s, ws, domain, "parked", ws.domains[ws.domain].folder);
 }
 
 export function createAddonDomain(s: GameState, workloadId: string, domain: string, folder?: string): ActionResult {
@@ -195,6 +207,7 @@ export function deleteDomain(s: GameState, workloadId: string, name: string): Ac
   if (!d) return fail("webspace.error.noDomain");
   if (d.kind === "main") return fail("webspace.error.mainDomain");
   put(s, workloadId, "domains", name, false);
+  if (d.kind === "sub") dropSubdomainRecord(s, ws, name);
   return { ok: true, id: name };
 }
 
@@ -209,7 +222,7 @@ export function setDomainPhp(s: GameState, workloadId: string, name: string, ver
   return { ok: true, id: name };
 }
 
-export function createCron(s: GameState, workloadId: string, command: string, everyHours: number): ActionResult {
+export function createCron(s: GameState, workloadId: string, command: string, everyHours: number, schedule?: string): ActionResult {
   const ws = open(s, workloadId);
   if (isFail(ws)) return ws;
   if (!command.trim() || command.length > 1024) return fail("webspace.error.cronCommand");
@@ -217,7 +230,7 @@ export function createCron(s: GameState, workloadId: string, command: string, ev
   let n = 1;
   while (ws.cron[`cron${n}`]) n++;
   const id = `cron${n}`;
-  put(s, workloadId, "cron", id, { id, command: command.trim(), everyHours });
+  put(s, workloadId, "cron", id, { id, command: command.trim(), everyHours, ...(schedule && { schedule }) });
   return { ok: true, id };
 }
 

@@ -1,19 +1,20 @@
-import { Database, FileText, Folder, Globe, Mail, ScrollText, TriangleAlert, type LucideIcon } from "lucide-react";
+import { Database, FileText, Folder, Mail, ScrollText, TriangleAlert, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { t } from "../../../../../i18n/en";
 import { APP_NAME } from "../../../../../sim/10-catalog/apps";
 import type { GameState } from "../../../../../sim/50-state";
 import type { Cluster } from "../../../../../sim/60-infra/cluster";
+import { yearOf } from "../../../../../sim/00-core/time";
 import { accountUse } from "../../../../../sim/80-business/readouts";
 import { webspaceOf } from "../../../../../sim/60-infra/webspace";
 import { disk } from "../../../hw";
 import { Bar } from "../PanelBase";
-import { hash } from "../services";
 import { LogPage } from "../Readouts";
+import { DomainPage, domainTiles, type DomainPageId } from "./Domains";
 
-type Page = "files" | "mail" | "zone" | "db" | "access" | "errors";
+type Page = "files" | "mail" | "db" | "access" | "errors" | DomainPageId;
 const ICONS: [Page, string, LucideIcon][] = [
-  ["files", "readouts.cp.files", Folder], ["mail", "readouts.cp.mail", Mail], ["zone", "readouts.cp.zone", Globe],
+  ["files", "readouts.cp.files", Folder], ["mail", "readouts.cp.mail", Mail],
   ["db", "readouts.cp.db", Database], ["access", "readouts.cp.access", ScrollText], ["errors", "readouts.cp.errors", TriangleAlert],
 ];
 
@@ -38,17 +39,6 @@ export function Customer({ game, c, workloadId }: { game: GameState; c: Cluster;
         <tbody>{Object.values(ws.mailboxes).map((m) => <tr key={m.address}><td>{m.address}</td><td><Bar use={[m.usedMb, m.quotaMb]} /></td></tr>)}</tbody>
       </table>
     );
-    if (page === "zone") return (
-      <table className="cx-table">
-        <thead><tr><th>{t("readouts.cp.name")}</th><th>{t("readouts.cp.type")}</th><th>{t("readouts.cp.value")}</th></tr></thead>
-        <tbody>
-          <tr><td>{domain}.</td><td>A</td><td>{`192.0.2.${(hash(w.id) % 250) + 1}`}</td></tr>
-          <tr><td>www.{domain}.</td><td>CNAME</td><td>{domain}.</td></tr>
-          <tr><td>{domain}.</td><td>MX</td><td>10 mail.{domain}.</td></tr>
-          <tr><td>{domain}.</td><td>TXT</td><td>v=spf1 a mx ~all</td></tr>
-        </tbody>
-      </table>
-    );
     if (page === "db") return (
       <table className="cx-table">
         <thead><tr><th>{t("readouts.cp.database")}</th><th>{t("readouts.cp.size")}</th></tr></thead>
@@ -56,9 +46,10 @@ export function Customer({ game, c, workloadId }: { game: GameState; c: Cluster;
       </table>
     );
     if (page === "access" || page === "errors") return <LogPage game={game} c={c} only={page === "errors" ? "error" : "access"} />;
+    if (page) return <DomainPage game={game} c={c} workloadId={workloadId} page={page} />;
     return (
       <div className="cp-icons">
-        {ICONS.map(([id, key, Icon]) => <button key={id} className="cx-tile" onClick={() => setPage(id)}><Icon size={28} aria-hidden /><span>{t(key)}</span></button>)}
+        {[...ICONS, ...domainTiles(yearOf(game.hour))].map(([id, key, Icon]) => <button key={id} className="cx-tile" onClick={() => setPage(id)}><Icon size={28} aria-hidden /><span>{t(key)}</span></button>)}
       </div>
     );
   };

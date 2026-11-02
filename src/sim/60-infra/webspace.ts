@@ -18,7 +18,8 @@ export interface DbUser { name: string; password: string; grants: Record<string,
 export interface Mailbox { address: string; password: string; quotaMb: number; usedMb: number }
 export interface Forwarder { from: string; to: string }
 export interface FtpAccount { user: string; password: string; folder: string; quotaMb: number }
-export interface CronJob { id: string; command: string; everyHours: number }
+// schedule is the five crontab fields the player entered; everyHours is how often it runs in effect, at most hourly.
+export interface CronJob { id: string; command: string; everyHours: number; schedule?: string }
 export interface WebLimits { databases: number; mailboxes: number; ftpAccounts: number; addonDomains: number; subdomains: number }
 export interface WebUsage {
   diskMb: number; quotaMb: number; inodes: number;
