@@ -9,6 +9,9 @@ import { registryCost, registryOf } from "../../../sim/30-customers/registry";
 import { wholesale } from "../../../sim/30-customers/registrar";
 import { sizeOf } from "../../../sim/30-market/spec";
 import { canAutomate, hostFor, invoiceOf, shopRegisters, stepsDone } from "../../../sim/30-market/manual";
+import { shopActive } from "../../../sim/80-business/shop";
+import { portalPath } from "../../../sim/80-business/portal";
+import { companyDomain } from "../../../sim/30-customers/domains";
 import { registrarFormUrl } from "../../../sim/80-business/browser";
 import type { SalesMessage, SalesRequest } from "../../../sim/30-market/market";
 import { isFinal, type Ticket } from "../../../sim/40-support/tickets";
@@ -126,12 +129,13 @@ function HostCards({ r, value, onChange, disabled }: { r: SalesRequest; value: s
 }
 
 // The attachments of the offer: a quote row dragged here from Books is sent to the customer; with the Helpdesk link the strip
-// has Create quote, which opens the quote in Books.
+// has Create quote, which opens the quote in Books, and with an active shop it opens the quote in the shop admin.
 function Attachments({ tk, locked, open }: { tk: Ticket; locked: boolean; open: boolean }) {
   const game = useStore((s) => s.game);
   const act = useStore((s) => s.act);
   const openApp = useStore((s) => s.openApp);
   const [over, setOver] = useState(false);
+  const shop = shopActive(game);
   const takes = (e: React.DragEvent) => open && !locked && e.dataTransfer.types.includes(QUOTE_DRAG);
   return (
     <div className={`attach-strip${over ? " over" : ""}`} aria-label={t("orderSteps.attachments")}
@@ -139,8 +143,12 @@ function Attachments({ tk, locked, open }: { tk: Ticket; locked: boolean; open: 
       onDragLeave={() => setOver(false)}
       onDrop={(e) => { setOver(false); const id = e.dataTransfer.getData(QUOTE_DRAG); if (takes(e) && id) { e.preventDefault(); act(attachQuote, id, tk.id); } }}>
       <span className="attach-k">{t("orderSteps.attachments")}</span>
-      {open && hasHelpdeskLink(game) && (
-        <button className="btn primary" disabled={locked} onClick={() => { const r = act(createQuote, tk.id); if (r.ok) openApp("Books", { kind: "quote", id: r.id! }); }}><FilePlus />{t("orderSteps.createQuote")}</button>
+      {open && (shop || hasHelpdeskLink(game)) && (
+        <button className="btn primary" disabled={locked} onClick={() => {
+          const r = act(createQuote, tk.id);
+          if (r.ok && shop) openApp("Browser", { kind: "url", id: `portal.${companyDomain(game)}${portalPath(game.shop.variant!, "admin", {}, { s: "quotes", id: r.id! })}` });
+          else if (r.ok) openApp("Books", { kind: "quote", id: r.id! });
+        }}><FilePlus />{t("orderSteps.createQuote")}</button>
       )}
     </div>
   );

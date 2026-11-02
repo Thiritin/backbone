@@ -19,6 +19,7 @@ import { formatDay } from "../billing/format";
 import { PriceField } from "../sales/PriceField";
 import { DocBar, DocButton, DocFoot } from "./DocBar";
 import { currentVendor } from "../../../sim/80-business/bookkeeping";
+import { shopActive } from "../../../sim/80-business/shop";
 import { Page } from "./InvoicesTab";
 
 // The drag type of a quote row; the order ticket's attachment strip takes it.
@@ -34,19 +35,22 @@ const orderFor = (game: GameState, q: Quote) => {
   return tk && orderOf(game, tk);
 };
 const dated = (q: Quote) => q.createdAt ?? q.sentAt;
+// A draft written in Books, which can be dragged onto its order ticket.
+const movable = (q: Quote) => q.status === "draft" && q.origin === "books";
 const total = (q: Quote) => q.lines.reduce((n, l) => n + l.amount, 0);
 const invoiceNumber = (game: GameState, q: Quote) => game.invoices.find((i) => i.id === q.invoiceId)?.number;
 
 // The order tickets that wait for a quote.
 const quotable = (game: GameState) => game.tickets.filter((tk) => orderOf(game, tk) && !stepError(game, tk, "quote"));
 
-// Quotes as a document list: toolbar, list, A4 preview and a footer line.
+// Quotes as a document list: toolbar, list, A4 preview and a footer line. With an active shop new quotes are written
+// there, and the shop's quotes are listed here read-only.
 export function QuotesTab({ focus }: { focus: string | null }) {
   const game = useBooks(), act = useStore((s) => s.act), openApp = useStore((s) => s.openApp);
   const list = [...game.quotes].reverse(), open = quotable(game);
   const [selected, setSelected] = useState<string | null>(focus ?? list[0]?.id ?? null);
   const [ticket, setTicket] = useState(""), [editing, setEditing] = useState(false);
-  const q = game.quotes.find((x) => x.id === selected), draft = q?.status === "draft";
+  const q = game.quotes.find((x) => x.id === selected), draft = q?.status === "draft" && q.origin === "books", shop = shopActive(game);
   const name = (x: Quote) => game.customers.find((c) => c.id === x.customerId)?.name ?? (orderFor(game, x) ? requestName(orderFor(game, x)!) : "");
   const pick = (id: string | null) => { setSelected(id); setEditing(false); };
   const create = () => {
@@ -60,14 +64,16 @@ export function QuotesTab({ focus }: { focus: string | null }) {
   return (
     <div className="books-docs">
       <DocBar>
-        <DocButton icon={<FilePlus />} label={t("orderSteps.new")} disabled={!open.length} onClick={create} />
-        <select className="field books-docbar-pick" aria-label={t("pkg.order")} value={ticket || open[0]?.id || ""} onChange={(e) => setTicket(e.target.value)} disabled={!open.length}>
-          {open.map((tk) => { const r = orderOf(game, tk)!; return <option key={tk.id} value={tk.id}>{[requestName(r), r.domain].filter(Boolean).join(" · ")}</option>; })}
-        </select>
-        <span className="books-docbar-sep" />
+        {!shop && <>
+          <DocButton icon={<FilePlus />} label={t("orderSteps.new")} disabled={!open.length} onClick={create} />
+          <select className="field books-docbar-pick" aria-label={t("pkg.order")} value={ticket || open[0]?.id || ""} onChange={(e) => setTicket(e.target.value)} disabled={!open.length}>
+            {open.map((tk) => { const r = orderOf(game, tk)!; return <option key={tk.id} value={tk.id}>{[requestName(r), r.domain].filter(Boolean).join(" · ")}</option>; })}
+          </select>
+          <span className="books-docbar-sep" />
+        </>}
         <DocButton icon={<FilePen />} label={t("orderSteps.edit")} disabled={!draft} pressed={editing && draft} onClick={() => setEditing(!editing)} />
         <DocButton icon={<Send />} label={t("orderSteps.send")} disabled={!draft || !q?.ticketId} onClick={() => act(attachQuote, q!.id, q!.ticketId!)} />
-        <DocButton icon={<FileOutput />} label={t(unposted(game) ? "orderSteps.post" : "orderSteps.carryForward")} disabled={q?.status !== "accepted"} onClick={carry} />
+        <DocButton icon={<FileOutput />} label={t(unposted(game) ? "orderSteps.post" : "orderSteps.carryForward")} disabled={q?.status !== "accepted" || q.origin !== "books"} onClick={carry} />
         <DocButton icon={<Trash2 />} label={t("orderSteps.delete")} disabled={!draft} onClick={() => { if (act(deleteQuote, q!.id).ok) pick(null); }} />
       </DocBar>
       <div className="books-split">
@@ -79,8 +85,8 @@ export function QuotesTab({ focus }: { focus: string | null }) {
               </thead>
               <tbody>
                 {list.map((x) => (
-                  <tr key={x.id} className={`${x.id === selected ? "sel" : ""}${x.status === "draft" ? " books-drag" : ""}`} onClick={() => pick(x.id)} tabIndex={0}
-                    onKeyDown={(e) => e.key === "Enter" && pick(x.id)} draggable={x.status === "draft"}
+                  <tr key={x.id} className={`${x.id === selected ? "sel" : ""}${movable(x) ? " books-drag" : ""}`} onClick={() => pick(x.id)} tabIndex={0}
+                    onKeyDown={(e) => e.key === "Enter" && pick(x.id)} draggable={movable(x)}
                     onDragStart={(e) => { e.dataTransfer.setData(QUOTE_DRAG, x.id); e.dataTransfer.setData("text/plain", quoteTitle(game, x.number)); e.dataTransfer.effectAllowed = "copy"; }}>
                     <td className="num">{x.number}</td>
                     <td className="num">{dated(x) === null ? "" : formatDay(dated(x)!)}</td>
