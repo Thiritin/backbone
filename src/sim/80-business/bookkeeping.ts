@@ -2,7 +2,7 @@
 import { dateOf, isMonthStart } from "../00-core/time";
 import { booksVendor, editionById, type BooksVendor, type Edition, type Feature } from "../10-catalog/bookkeeping";
 import { bookTransfer, cents, isUnpaid, issue, owed, payerOf, synced, type Invoice, type Transfer } from "../45-billing/billing";
-import { effectOf, invoice, invoicing } from "../46-finance/payables";
+import { invoice, invoicing, lineCut } from "../46-finance/payables";
 import { logActivity } from "../47-staff/activity";
 import type { Employee } from "../47-staff/staff";
 import type { GameState, LedgerEntry } from "../50-state";
@@ -22,7 +22,7 @@ export const booksHost = (v: BooksVendor): string => (v.id === "gnucache" ? "gnu
 export const booksUrl = (v: BooksVendor, edition?: string): string => `www.${booksHost(v)}/${edition ? `edition/${edition}` : ""}`;
 
 // A browser program is unusable while the internet line is missing, throttled or cut.
-export const booksOffline = (s: GameState): boolean => currentVendor(s)?.deployment === "browser" && (!s.homeLine.id || effectOf(s, "upstream") !== null);
+export const booksOffline = (s: GameState): boolean => currentVendor(s)?.deployment === "browser" && (!s.homeLine.id || lineCut(s));
 // The edition has the feature; works says whether it runs right now.
 export const hasFeature = (s: GameState, f: Feature): boolean => !!currentEdition(s)?.features.includes(f);
 export const works = (s: GameState, f: Feature): boolean => hasFeature(s, f) && !booksOffline(s);
