@@ -5,6 +5,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-02
 
 - Every service in the shop admin has its own page with billing, server, package and access data behind a reveal button, and module buttons to suspend, unsuspend, terminate, change the package or change the password, named the way each shop system names them.
+- The Product management research is gone, so Provisioning automation, Fraud screening, High availability, GPU computing, Traffic billing, Documentation and Market research now need Shop systems, and saves that learned it keep working.
 - The shop admin's Orders page lists every storefront order by status and opens each one with its items, invoice and payment, where Accept sets up all items through the shop's module and the order can be cancelled, marked as fraud or deleted.
 - Getting started now walks you through setting up your first company mailbox right after buying a domain, getting listed on HOSTtoast and printing flyers, and each step opens the website you need.
 - OsTickit and FreeScoot are now installed by hand like the shop: download the archive from the vendor's site, upload and extract it into your web space, create the database and run the real installer, then log in to the staff panel with the account you chose.

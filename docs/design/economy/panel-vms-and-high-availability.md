@@ -12,7 +12,7 @@ A panel VM is one of the player's own VMs on a hypervisor cluster with a panel i
 | Hot node | 90% of installed RAM in use, more busy vCPUs than physical cores, or booked beyond what it can book |
 | Auto-balancing | One VM per hot node an hour, the smallest running one, to the idlest node that is not hot |
 
-- **High availability** is the tier 3 research of 400 know-how and 14 days after Product management and Monitoring. Each hypervisor cluster then has three switches, all off by default: live migration, auto-balancing (needs live migration) and automatic failover.
+- **High availability** is the tier 3 research of 400 know-how and 14 days after Shop systems and Monitoring. Each hypervisor cluster then has three switches, all off by default: live migration, auto-balancing (needs live migration) and automatic failover.
 - **Live migration** needs the switch on and a hypervisor that supports it; otherwise a VM migration is cold and takes the VM offline for (disk + RAM) ÷ (link Gbit/s × 450 GB per hour), at least one hour. Moving web spaces between panel hosts in a zone stays instant.
 - **Cloud servers** need a hypervisor cluster with failover on.
 - **The Virtual machines and Network apps** cost nothing in the Pear Store. Virtual machines installs once a hypervisor is installed or installing; Network is available from the start, and buying transit and peering in it needs Network operations.

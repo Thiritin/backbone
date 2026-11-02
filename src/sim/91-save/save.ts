@@ -43,7 +43,9 @@ export const serialize = (state: GameState): string => JSON.stringify(state);
 
 const REPAIR_FLOOR = 0.8;
 
+// Product management is gone; its dependents need Shop systems, which they pull in below.
 const learned = (id: string): string[] => {
+  if (id === "products") return [];
   const skill = skillById(id) ?? skillFor(id);
   return skill ? [...skill.needs.flatMap(learned), skill.id] : [id];
 };
@@ -142,6 +144,7 @@ export function deserialize(raw: string): GameState {
     installed: data.installed ? [...new Set([...data.installed.map((id) => (id === "Unlocks" ? "Research" : id === "Billing" || id === "Finance" ? "Books" : id)).filter((id) => id !== "Sales" && id !== "Customers" && id !== "chadGpt" && id !== "Checklist" && id !== "Bank" && id !== "dockBadges" && id !== "Products" && id !== "Virtual machines" && id !== "Website"), "Browser", "Chat", ...(data.registration !== null ? STARTER_APPS : [])])] : [...STARTER_APPS, "Chat", ...WIDGETS.map(([id]) => id)],
     // Older saves researched Pear Store items directly; each becomes its skill and that skill's prerequisites.
     unlocks: [...new Set((data.unlocks ?? []).flatMap(learned))],
+    training: data.training?.id === "products" ? null : data.training ?? null,
     customers: (data.customers ?? []).map((c) => ({ ...c, history: c.history ?? [], credit: c.credit ?? 0, address: c.address ?? homeAddress({ seed: base.seed, locations }, Number(c.id.slice(3)) || 0, c.name, c.profile) })),
     tickets: (data.tickets ?? []).map((t) => ({ ...t, assignee: t.assignee ?? null })),
     // Saves from before name servers ran every domain on the company's own.

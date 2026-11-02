@@ -199,7 +199,7 @@ export const panelServer = (s: GameState, deviceId: string, panel = "freepanel")
 
 // The company has learned Provisioning automation and switched on Place orders automatically.
 export const automate = (s: GameState): GameState => {
-  s.unlocks = [...new Set([...s.unlocks, "products", "provisioning"])];
+  s.unlocks = [...new Set([...s.unlocks, "shops", "provisioning"])];
   s.autoOrders = true;
   s.shop = { ...s.shop, modules: Object.fromEntries(MODULE_IDS.map((m) => [m, 0])) };
   return s;

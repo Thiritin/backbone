@@ -100,20 +100,6 @@ The **Network** app shows all your sites on a map, switches DDoS protection for 
 
 A network with two upstreams survives one carrier having a bad day. A network with one upstream finds out how much its customers like you.
 
-## Product management
-
-### What it unlocks
-
-- **Rates** per product line are set in euros per unit on the Options page of the shop admin.
-
-### From services to products
-
-Your company learns to sell plans instead of improvising a price for every customer. Every product line is priced per unit, such as per GB of disk, per vCPU or per mailbox, plus a setup fee.
-
-### Prices
-
-Every unit costs the market's rate. The player sets prices per shop product instead (`shop.md`, section 4b), and services already sold keep their price. A price above the market brings fewer leads, and customers who find a service too expensive complain and leave.
-
 ## Shop systems
 
 ### What it unlocks

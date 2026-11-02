@@ -23,24 +23,21 @@ A first-year company earns about 300 know-how; a company with 10,000 customers e
 | Marketing basics | 1 | 50 | 5 days | | Customer reviews, event sponsoring |
 | Employee management | 1 | 100 | 10 days | | Staff |
 | Company law | 1 | 100 | 10 days | | Founding a limited company |
-| Product management | 1 | 100 | 7 days | | Rates per product line |
 | Shop systems | 1 | 60 | 4 days | | Shop systems (ModemBill, ClientExit, WHMCache, Blessta, HostBull, Ubersmyth, OrderBocks, BoxBillin') |
 | Memory reservation | 2 | 100 | 5 days | Monitoring | Memory reservation per cluster (OpenVeeZee, VMwhere, Proxmocks or HyperVee) |
 | Network operations | 2 | 300 | 14 days | Monitoring | Network, buying transit, peering with other networks |
-| Provisioning automation | 2 | 150 | 10 days | Product management | Automatic host for a setup, order automation for quotes, accounts, invoices and setups |
-| Fraud screening | 2 | 200 | 7 days, from 2008 | Product management | Order screening by MaxMined |
-| Traffic billing | 2 | 250 | 10 days | Product management | Automatic answer to traffic over the plan |
-| Documentation | 2 | 200 | 10 days | Product management | Knowledge base |
+| Provisioning automation | 2 | 150 | 10 days | Shop systems | Automatic host for a setup, order automation for quotes, accounts, invoices and setups |
+| Fraud screening | 2 | 200 | 7 days, from 2008 | Shop systems | Order screening by MaxMined |
+| Traffic billing | 2 | 250 | 10 days | Shop systems | Automatic answer to traffic over the plan |
+| Documentation | 2 | 200 | 10 days | Shop systems | Knowledge base |
 | Marketing campaigns | 2 | 300 | 14 days | Marketing basics, Employee management | Marketing |
-| Market research | 3 | 800 | 21 days | Product management, Marketing campaigns | Market |
-| High availability | 3 | 400 | 14 days | Product management, Monitoring | Live migration, automatic failover and auto-balancing (OpenVeeZee, VMwhere, Proxmocks or HyperVee), product lines that need failover |
-| GPU computing | 3 | 400 | 14 days, from 2011 | Product management, Monitoring | GPU virtual machines (OpenVeeZee, VMwhere, Proxmocks or HyperVee) |
+| Market research | 3 | 800 | 21 days | Shop systems, Marketing campaigns | Market |
+| High availability | 3 | 400 | 14 days | Shop systems, Monitoring | Live migration, automatic failover and auto-balancing (OpenVeeZee, VMwhere, Proxmocks or HyperVee), product lines that need failover |
+| GPU computing | 3 | 400 | 14 days, from 2011 | Shop systems, Monitoring | GPU virtual machines (OpenVeeZee, VMwhere, Proxmocks or HyperVee) |
 | Automation | 3 | 1,500 | 21 days | Employee management, Monitoring | Clipsy Reminders, automated billing rules, AI agents and reply drafts on hosted desks |
 | Cloud orchestration | 4 | 3,000 | 45 days, from 2010 | High availability, Network operations, Provisioning automation | OpenStash, the Cloud server product line, Watchman auto-balancing (OpenStash) |
 
-The whole tree costs 8,060 know-how and 226 days of training.
-
-Product management was tier 2 at 200 know-how and 14 days after Marketing basics. The happiness run showed a careful first-year company earns 15 to 40 know-how a month, so the 250 know-how path landed in September to November. As a tier 1 skill at 100 know-how and 7 days, the same company learns it between early May and early July (median early June).
+The whole tree costs 7,960 know-how and 219 days of training.
 
 **Unlocks.** Launch costs are fixed and do not follow the price multipliers.
 
