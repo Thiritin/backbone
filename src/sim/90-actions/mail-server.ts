@@ -7,10 +7,7 @@ import type { MailRole } from "../42-mail/types";
 import { MAIL_OPTIONS, MAIL_SOFTWARE, type MailOption } from "../80-business/mail-software";
 import type { SelfMailSoftware } from "../80-business/mail";
 import { familyOf } from "../60-infra/vulns";
-import { addAlias, createMailAccount, saveFilter, setAccountQuota, setAccountRoles, setPrimary } from "./mailbox";
-import { setVacation } from "./mailmsg";
-import { capsOf } from "../42-mail/caps";
-import { folderByPath, parseSieve } from "../80-business/sieve";
+import { addAlias, createMailAccount, setAccountQuota, setAccountRoles, setPrimary } from "./mailbox";
 import { mailboxTaken } from "../42-mail/accounts";
 import { cancelMail } from "./mail";
 
@@ -123,20 +120,4 @@ export function dropMailServer(s: GameState, clusterId: string): void {
     catchAll: s.mail.catchAll && gone.has(s.mail.catchAll) ? null : s.mail.catchAll };
   const { [clusterId]: _, ...options } = s.webmail.options;
   s.webmail = { ...s.webmail, options };
-}
-
-// ManageSieve PUTSCRIPT: the script replaces the mailbox's filters and its vacation, or nothing changes.
-export function saveSieveScript(s: GameState, accountId: string, text: string): ActionResult {
-  const a = s.mail.accounts.find((x) => x.id === accountId);
-  if (!a) return fail("error.mailUnknown");
-  if (capsOf(s, a).serverFilters === "none") return fail("error.mailNoFilters");
-  const p = parseSieve(text, (name) => folderByPath(s, accountId, name));
-  if (!p.ok) return { ok: false, error: `mailserver.sieve.${p.error.key}`, params: { ...p.error.p, line: String(p.error.line) } };
-  const before = s.mail;
-  s.mail = { ...s.mail, filters: s.mail.filters.filter((f) => f.accountId !== accountId) };
-  for (const r of [...p.rules.map((r) => () => saveFilter(s, accountId, r)), () => setVacation(s, accountId, p.vacation)]) {
-    const res = r();
-    if (!res.ok) { s.mail = before; return res; }
-  }
-  return { ok: true };
 }

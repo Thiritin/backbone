@@ -5,9 +5,8 @@ import { listFolder } from "../src/sim/42-mail/model";
 import { startMail } from "../src/sim/42-mail/new";
 import type { GameState } from "../src/sim/50-state";
 import { parseSieve, sieveScript } from "../src/sim/80-business/sieve";
-import { saveSieveScript } from "../src/sim/90-actions/mail-server";
 import { saveFilter } from "../src/sim/90-actions/mailbox";
-import { createMailFolder, setVacation } from "../src/sim/90-actions/mailmsg";
+import { createMailFolder, saveSieveScript, setVacation } from "../src/sim/90-actions/mailmsg";
 import { err, idOf, selfHosted } from "./company-mail.helpers";
 import { readyGame } from "./fixtures";
 
