@@ -1,4 +1,5 @@
 // Pear Mail's Junk Mail preferences, Junk and Not Junk, and the junk step of the check (docs/design/plans/mail-client.md, Junk).
+import { junkStep } from "../43-pear-mail/check";
 import { clientJunk } from "../43-pear-mail/junk";
 import { MY_PEAR, type ClientAccount, type JunkPrefs } from "../43-pear-mail/state";
 import { clientFolder, ON_MY_PEAR } from "../43-pear-mail/view";
@@ -11,7 +12,7 @@ const CLEAN_KEEP = 500;
 const clientOf = (s: GameState, id: string): ClientAccount | undefined => (id === MY_PEAR ? ON_MY_PEAR : s.pearMail.accounts.find((c) => c.id === id));
 const setJunk = (s: GameState, p: Partial<JunkPrefs>): void => { s.pearMail = { ...s.pearMail, junk: { ...s.pearMail.junk, ...p } }; };
 
-export function setPearJunk(s: GameState, p: Partial<Pick<JunkPrefs, "on" | "mode" | "first">>): ActionResult {
+export function setPearJunk(s: GameState, p: Partial<Pick<JunkPrefs, "on" | "mode">>): ActionResult {
   setJunk(s, p);
   return { ok: true };
 }
@@ -34,9 +35,10 @@ export function markPearJunk(s: GameState, clientId: string, ids: string[], junk
 }
 
 // In Automatic mode the check moves the new Inbox messages the filter judges junk to Junk.
-export function junkStep(s: GameState, clientId: string, ids: string[]): void {
+function runJunk(s: GameState, clientId: string, ids: string[]): void {
   const { on, mode } = s.pearMail.junk, c = clientOf(s, clientId);
   if (!on || mode !== "automatic" || !c) return;
   const want = new Set(ids), hit = clientFolder(s, c, "inbox").filter((m) => want.has(m.id) && clientJunk(s, m)).map((m) => m.id);
   if (hit.length) transferMessages(s, c.id, hit, c.id, "junk");
 }
+junkStep.run = runJunk;

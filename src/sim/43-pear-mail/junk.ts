@@ -11,3 +11,7 @@ export function clientJunk(s: GameState, m: Message): boolean {
   const j = s.pearMail.junk;
   return j.on && m.kind === "spam" && !j.clean.includes(m.id) && rand(hashRng(s.seed, num(m.id), 4127)) < junkShare(j.trained);
 }
+
+// What Pear Mail shows as junk: mail in a Junk mailbox, and elsewhere what the filter judges junk.
+export const shownJunk = (s: GameState, m: Message): boolean =>
+  s.pearMail.junk.on && !s.pearMail.junk.clean.includes(m.id) && (m.folder === "junk" || m.folder.endsWith(":junk") || clientJunk(s, m));

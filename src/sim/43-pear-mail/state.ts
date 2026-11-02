@@ -37,7 +37,7 @@ export interface SmartMailbox { id: string; name: string; match: "all" | "any"; 
 export interface ActivityLine { at: number; clientId: string; count: number; error?: string }
 
 // The client's junk filter: clean holds the ids marked Not Junk, newest last, which the filter no longer judges.
-export interface JunkPrefs { on: boolean; mode: "training" | "automatic"; first: boolean; trained: number; clean: string[] }
+export interface JunkPrefs { on: boolean; mode: "training" | "automatic"; trained: number; clean: string[] }
 
 export interface PearMailState {
   accounts: ClientAccount[];   // sidebar order
@@ -60,7 +60,7 @@ export const localFolder = (clientId: string, folder: string): string => `${PEAR
 export const MY_PEAR = "my";
 
 export const newPearMail = (): PearMailState => ({ accounts: [], rules: [], local: { folders: [], messages: [] }, activity: [], smart: [], replied: {}, colors: {}, chimes: 0,
-  junk: { on: true, mode: "training", first: true, trained: 0, clean: [] }, welcomed: false, seenBuild: "" });
+  junk: { on: true, mode: "training", trained: 0, clean: [] }, welcomed: false, seenBuild: "" });
 
 export const clientAccount = (id: string, o: { accountId: string; address: string; description: string; fullName: string; password: string; protocol: "imap" | "pop" }, at: number): ClientAccount => ({
   ...o, id, server: null, smtp: null, enabled: true, checkEvery: 5, checkedAt: at, syncedAt: at, popRemove: "now", popDue: [], signature: null, storeSent: true, addedAt: at,

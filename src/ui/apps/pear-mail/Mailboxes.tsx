@@ -110,7 +110,7 @@ function AccountInfo({ clientId, onClose }: { clientId: string; onClose: () => v
   );
 }
 
-export type BoxSheet = Exclude<Sheet, { k: "rules" | "rule" | "smart" }>;
+export type BoxSheet = Exclude<Sheet, { k: "prefs" | "rule" | "smart" }>;
 export function MailboxSheet({ sheet, box, onClose, onGone }: { sheet: BoxSheet; box: Box; onClose: () => void; onGone: (b: Box) => void }) {
   const game = useStore((s) => s.game), act = useStore((s) => s.act);
   if (sheet.k === "new") return <NewMailbox box={box} onClose={onClose} />;

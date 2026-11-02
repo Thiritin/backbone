@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- Pear Mail has its own junk mail filter that marks junk brown with a Not Junk banner, learns from every message you mark, and in Automatic mode moves junk to the Junk mailbox; its Preferences now open with Junk Mail and Rules tabs.
 - Pear Mail now has a photorealistic mail icon in Panthera and Leapard, like the other apps.
 - Hosted Exchange by Ionose has its own website, where you order Basic or Business, manage mailboxes, addresses, forwarding and Out of Office in the Control Panel, and reset a forgotten password with a code sent by post.
 - Ionose web mail runs Lookout Web Access in the version of its year, and until 2012 your browser only gets the Basic or Light version without a reading pane, drag and drop or rules.
