@@ -39,3 +39,4 @@ Read only the section you need.
 - [Bank and tax](bank-and-tax.md)
 - [Balancing](balancing.md)
 - [Shop systems](shop-systems.md)
+- [Hosted mail](hosted-mail.md)

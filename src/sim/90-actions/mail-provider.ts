@@ -26,7 +26,7 @@ const withTenant = (s: GameState, id: string, f: (t: MailTenant) => MailTenant):
 const withoutNext = ({ next: _n, ...t }: MailTenant): MailTenant => t;
 
 // A new tenant and its first mailbox, which becomes the admin; nothing stays when the mailbox is refused.
-function signUp(s: GameState, tenant: { host: string; plan: string }, box: { local: string; title: string; password: string }): ActionResult {
+export function signUpTenant(s: GameState, tenant: { host: string; plan: string }, box: { local: string; title: string; password: string }): ActionResult {
   const before = s.mail, r = createTenant(s, tenant);
   if (!r.ok) return r;
   const a = createMailAccount(s, { tenant: r.id!, ...box });
@@ -39,7 +39,7 @@ function signUp(s: GameState, tenant: { host: string; plan: string }, box: { loc
 }
 
 export const signUpGmix = (s: GameState, o: { local: string; title: string; password: string; plan: string }): ActionResult =>
-  signUp(s, { host: "gmix", plan: o.plan }, o);
+  signUpTenant(s, { host: "gmix", plan: o.plan }, o);
 
 // An upgrade applies at once and bills from the next month start; a cheaper tier waits for the end of the paid month.
 export function setGmixTier(s: GameState, tenantId: string, plan: string): ActionResult {
@@ -71,7 +71,7 @@ export function deleteGmixMailbox(s: GameState, id: string, password: string): A
 // The wizard: the company domain, the edition and the administrator; every employee gets a mailbox with the tenant.
 export function signUpGoggle(s: GameState, o: { domain: string; plan: string; local: string; title: string; password: string }): ActionResult {
   if (!s.company.domain || o.domain.trim().toLowerCase() !== companyDomain(s)) return fail("error.needsDomain");
-  return signUp(s, { host: "goggle", plan: o.plan }, o);
+  return signUpTenant(s, { host: "goggle", plan: o.plan }, o);
 }
 
 const bare = (v: string): string => v.trim().toLowerCase().replace(/^"|"$/g, "").replace(/\.$/, "");
