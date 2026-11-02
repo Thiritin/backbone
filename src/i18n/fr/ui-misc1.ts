@@ -226,6 +226,7 @@ export default {
   "misc1.parts.lostDisk": () => "Disque perdu",
   "misc1.parts.restoring": () => "Restauration",
   "misc1.parts.migrating": () => "Migration",
+  "misc1.parts.oomKilled": () => "Arrêté par OOM",
   "misc1.parts.cloning": () => "Clonage",
   "misc1.parts.down": () => "En panne",
   "misc1.parts.none": () => "Aucun",
