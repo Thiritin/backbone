@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- The Terminal installs zsh only the first time you ever open it, not again in every new game.
 - The menu bar now shows the Pear logo in the style of each system release, and the Panthera and Leapard icons for Locations, Post and Security now show a house, a fax machine and a shield.
 - The Research icon in the dock shows a dot whenever a new research can be started.
 - A Zendusk account now has its own agent site with views, macros, triggers and a Help Center, in the look of each era, and its support address is verified once your mailbox forwards to it.

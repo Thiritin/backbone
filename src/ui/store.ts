@@ -160,10 +160,12 @@ function savePrefs(notify: Record<string, Partial<NotifyPref>>, sound: SoundPref
   }
 }
 
-// A new game starts from nothing stored but the sound settings.
+// A new game starts from nothing stored but the sound settings and the one-time zsh setup.
 function wipeLocal(sound: SoundPref) {
   try {
+    const shell = localStorage.getItem("backbone.shell");
     localStorage.clear();
+    if (shell) localStorage.setItem("backbone.shell", shell);
     sessionStorage.clear();
   } catch {
     // Storage blocked; nothing was kept.
