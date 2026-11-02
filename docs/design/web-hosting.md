@@ -85,7 +85,7 @@ Mailboxes, forwarders, autoresponders and a spam filter per web space. Webmail (
 
 ### 4.4 FTP
 
-FTP accounts with a home folder and a quota. A desktop FTP program, FileGorilla (the FileZilla pun), is a free download from its own site in the Browser and installs like any other desktop program. It connects with host, user and password and shows local files (Downloads) on the left and the web space on the right. Uploading through FTP and through the File Manager do the same thing. In the 2005 era FTP is the normal way to upload, since early File Managers are slow and cap uploads at a few MB. SFTP arrives as a checkbox once the era has it.
+FTP accounts with a home folder and a quota. A desktop FTP program, FileGorilla (the FileZilla pun), is a free download from its own site in the Browser and installs like any other desktop program (`desktop-software.md`). It connects with host, user and password and shows local files (Downloads) on the left and the web space on the right. Uploading through FTP and through the File Manager do the same thing. In the 2005 era FTP is the normal way to upload, since early File Managers are slow and cap uploads at a few MB. SFTP arrives as a checkbox once the era has it.
 
 ### 4.5 Domains, DNS, SSL, PHP and cron
 
