@@ -18,8 +18,9 @@ import { machineScreen } from "./oob";
 import { cpuLoad, installedRamGb, portPeers, raidUsable, working } from "./status";
 import { heatOf } from "./thermal";
 
-// economy/README.md: memory stays mostly resident, disks fill from 30% of booked at signup at the customer's growth rate up to the booked limit.
-const RAM_BASE = 0.6;
+// economy/usage-curves-and-overcommit.md: VM memory stays mostly resident, a web space's PHP memory follows its visitors, and disks fill
+// from 30% of booked at signup at the customer's growth rate up to the booked limit.
+const RAM_BASE = 0.6, WEB_RAM_BASE = 0.1;
 const yearsSince = (since: number, hour: number) => Math.max(0, hour - since) / 8760;
 export function diskFill(s: GameState, w: Workload, hour: number): number {
   const v = s.services.find((x) => x.id === w.serviceId);
@@ -100,12 +101,13 @@ export const NOTICE: Partial<Record<Product, number>> = { vps: 0.9, gameServer: 
 export const DISK_STARVE = 0.3;
 
 // What a customer workload would use at an hour without its limit: the sold size times its load.
-export function need(s: GameState, v: { id: string; spec: Resources }, w: Workload, hour: number = s.hour): Resources {
+export function need(s: GameState, v: { id: string; spec: Resources; product?: Product }, w: Workload, hour: number = s.hour): Resources {
   const load = workloadLoad(s, w, hour), lost = lostDisk(s, w), mods = modLoad(s, v.id), busy = Math.min(1, load * mods), fill = fillOf(s, v.id);
+  const base = v.product === "webHosting" || v.product === "reseller" ? WEB_RAM_BASE : RAM_BASE;
   const stretch = (k: "vcpu" | "ramGb") => (v.spec[k] > 0 ? Math.min(STRETCH_MAX, Math.max(1, w[k] / v.spec[k])) : 1);
   return {
     vcpu: v.spec.vcpu * fill * load * mods * stretch("vcpu"),
-    ramGb: w.stopped || lost || oomKilled(w, hour) ? 0 : v.spec.ramGb * fill * (RAM_BASE + (1 - RAM_BASE) * busy) * stretch("ramGb"),
+    ramGb: w.stopped || lost || oomKilled(w, hour) ? 0 : v.spec.ramGb * fill * (base + (1 - base) * busy) * stretch("ramGb"),
     diskGb: lost ? 0 : v.spec.diskGb * fill * diskFill(s, w, hour),
   };
 }

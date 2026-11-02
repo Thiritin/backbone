@@ -1,6 +1,6 @@
 import { Search } from "lucide-react";
 import { useState } from "react";
-import { eraAt, looks, LoginForm, Nodes, RowsTable, usePanelTab, useRows, useSoftware, type PanelProps } from "../PanelBase";
+import { eraAt, looks, LoginForm, Nodes, RowsTable, ServerUse, usePanelTab, useRows, useSoftware, type PanelProps } from "../PanelBase";
 import { t } from "../../../../../i18n/en";
 import { parseCreate } from "../../../../../sim/80-business/consoles";
 import { PackagesScreen, ProvisionForm } from "../PackageForms";
@@ -64,7 +64,7 @@ export function DirectAdmen(p: PanelProps) {
         {tab === "resellers" && <ManageResellers game={p.game} c={p.c} />}
         {tab === "updates" && <UpdatesPage game={p.game} c={p.c} />}
         {tab === "messages" && <Messages game={p.game} c={p.c} late={late} />}
-        {tab === "objects" && <><RowsTable rows={shown} name={t("browser-consoles-2.domain")} /><OwnAccountRows game={p.game} c={p.c} /></>}
+        {tab === "objects" && <><ServerUse game={p.game} c={p.c} /><RowsTable rows={shown} name={t("browser-consoles-2.domain")} /><OwnAccountRows game={p.game} c={p.c} /></>}
         {tab === "nodes" && <Nodes game={p.game} c={p.c} />}
         {tab === "create" && <ProvisionForm game={p.game} c={p.c} products={["webHosting"]} order={open?.screen === "create" ? open.order : undefined} className="cx-form da-form" />}
         {tab === "create" && <OwnAccountForm game={p.game} c={p.c} className="cx-form da-form" />}

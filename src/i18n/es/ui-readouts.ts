@@ -21,7 +21,7 @@ export default {
   "readouts.task.backup": (p) => `Copia de seguridad de ${p.name}`,
   "readouts.task.lostDisks": (p) => `${p.name} perdió sus discos`,
   "readouts.serverStatus": () => "Estado del servidor",
-  "readouts.trafficOf": (p) => `${p.used} de ${p.total} GB de tráfico`,
+  "readouts.trafficOf": (p) => `${p.used} / ${p.total} GB de tráfico`,
   "readouts.logs": () => "Registros",
   "readouts.log.access": () => "Acceso",
   "readouts.log.error": () => "Errores",

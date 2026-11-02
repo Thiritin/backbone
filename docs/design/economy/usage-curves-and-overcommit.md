@@ -16,7 +16,7 @@
 | Developer VPS | Hobby developers, agencies | 0 → 0.1, 10 → 0.3, 18 → 0.3, 21 → 0.2 | 0.15 all day | about 0.2 |
 | Enterprise | Enterprises, dedicated servers | 0 → 0.3, 8 → 0.6, 18 → 0.6, 22 → 0.35 | 0.3 all day | about 0.45 |
 
-A personal page (the other three quarters of private individuals, unless they book a game server or VPN) runs 0 → 0.02, 18 → 0.05, 22 → 0.03 on weekdays and 0 → 0.03, 12 → 0.06, 22 → 0.03 on weekends, so it holds its resident memory and little else, and it sends a tenth of its booked traffic.
+A personal page (the other three quarters of private individuals, unless they book a game server or VPN) runs 0 → 0.02, 18 → 0.05, 22 → 0.03 on weekdays and 0 → 0.03, 12 → 0.06, 22 → 0.03 on weekends, so it uses about a tenth of its booked memory and little CPU, and it sends a tenth of its booked traffic.
 
 **Weekday factors** (Sunday to Saturday): game servers 1.05, 0.85, 0.85, 0.9, 0.95, 1.05, 1.1; online shops 1.15, 1.1, 1, 0.95, 0.95, 0.9, 0.9; blogs 1.1, 0.95, 1, 1, 1, 0.9, 0.95; news 0.85, 1.15, 1.05, 1, 1, 0.95, 0.85; business sites 1, 1.1, 1.05, 1, 1, 0.85, 1; VPNs and enterprise 1, 1.05, 1, 1, 1, 0.95, 1; developer VPS 1.3, 0.9, 0.95, 1, 1, 0.95, 1.3; backups and personal pages 1 every day.
 
@@ -27,7 +27,7 @@ A personal page (the other three quarters of private individuals, unless they bo
 | Resource | Booking limit | In use | When the node runs over |
 | --- | --- | --- | --- |
 | CPU | None | Booked vCPUs × load | Performance of everyone on the node falls from 100% at 70% load to 85% at 100%, then to 0.85 ÷ load; below 25% for 2 hours its workloads time out |
-| RAM | None, except installed RAM with Memory reservation on | Booked RAM × (0.6 + 0.4 × load), since memory stays mostly resident | A full-VM node swaps up to 110% and slows, then OOM-kills its largest VM each hour; an OpenVeeZee node OOM-kills one container each hour |
+| RAM | None, except installed RAM with Memory reservation on | Booked RAM × (0.6 + 0.4 × load), since memory stays mostly resident; a web space or reseller account uses booked RAM × (0.1 + 0.9 × load), since PHP takes memory per visitor and an idle site holds almost none | A full-VM node swaps up to 110% and slows, then OOM-kills its largest VM each hour; an OpenVeeZee node OOM-kills one container each hour |
 | Disk | 2:1 of the usable RAID disk | Grows from 30% of booked at signup at the customer's growth rate, up to 100% | The pool stops writes at 100%: an outage for every workload on it |
 | Traffic | No limit | Monthly traffic × traffic shape (below) | Saturation, see Traffic and bandwidth |
 

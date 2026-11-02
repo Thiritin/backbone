@@ -1,5 +1,5 @@
 import { ChevronRight, Folder, LogOut } from "lucide-react";
-import { Actions, eraAt, looks, Facts, LoginForm, Nodes, RowsTable, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
+import { Actions, eraAt, looks, Facts, LoginForm, Nodes, RowsTable, ServerUse, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
 import { t } from "../../../../../i18n/en";
 import { parseCreate } from "../../../../../sim/80-business/consoles";
 import { PackagesScreen, ProvisionForm } from "../PackageForms";
@@ -52,7 +52,7 @@ export function FreePanel(p: PanelProps) {
         {tab === "components" && <ComponentsPage game={p.game} c={p.c} />}
         {tab === "backup" && <BackupManager game={p.game} c={p.c} />}
         {tab === "sysinfo" && <SystemInfo game={p.game} c={p.c} host={p.host} />}
-        {tab === "objects" && <><RowsTable rows={rows} name={t("browser-consoles-1.domain")} /><OwnAccountRows game={p.game} c={p.c} /></>}
+        {tab === "objects" && <><ServerUse game={p.game} c={p.c} /><RowsTable rows={rows} name={t("browser-consoles-1.domain")} /><OwnAccountRows game={p.game} c={p.c} /></>}
         {tab === "create" && <><ProvisionForm game={p.game} c={p.c} products={["webHosting"]} order={open?.screen === "create" ? open.order : undefined} /><OwnAccountForm game={p.game} c={p.c} /></>}
         {tab === "packages" && <PackagesScreen game={p.game} c={p.c} />}
         {tab === "nodes" && <Nodes game={p.game} c={p.c} />}
