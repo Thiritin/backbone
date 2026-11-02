@@ -13,7 +13,8 @@ import { PackagesScreen } from "../PackageForms";
 import "./openveezee.css";
 import { t } from "../../../../../i18n/en";
 import { BURST_MAX, beancounters } from "../../../../../sim/60-infra/beancounters";
-import { setBurst } from "../../../../../sim/90-actions/openveezee";
+import { createContainer, setBurst } from "../../../../../sim/90-actions/openveezee";
+import { imageParts, type OsImage } from "../../../../../sim/10-catalog/server-os";
 import { usePageAct } from "../../pageAct";
 
 // docs/design/software.md, section 9: the green-banded PHP admin from 2005, the same pages under a dark top bar from 2016.
@@ -150,6 +151,7 @@ export function CtPage({ game, v, host }: { game: GameState; v: Vm; host: string
 export function OpenVeeZee(p: PanelProps) {
   const era = eraAt(ERAS, p), { game, c, f } = p, link = parseCreate("openveezee", p.path), [page, setPage] = useState<Page>(link?.screen === "create" ? "create" : link?.screen === "packages" ? "plans" : "dashboard");
   const { vms, dialog } = useVms(game, c, f), sw = useSoftware(game, c, f), nv = useNewVm(game, c, link?.screen === "create" ? link.order : undefined), health = summaryOf(game, c, null);
+  const act = usePageAct(), templates = mountableImages(game).filter((o) => imageParts(o).id === "lunix"), [tpl, setTpl] = useState<OsImage | "">("");
   if (!p.signedIn) return (
     <div className="cx ovz ovz-login" data-era={era}>
       <LoginForm className="ovz-card" onLogin={p.login} button={t("browser-consoles-2.logIn")}>
@@ -161,7 +163,7 @@ export function OpenVeeZee(p: PanelProps) {
   const ct = typeof page === "object" && "ct" in page ? vms.find((v) => v.id === page.ct) : undefined;
   const node = typeof page === "object" && "node" in page ? page.node : null;
   const open = (id: string) => setPage({ ct: id }), toCreate = f.create ? () => setPage("create") : undefined;
-  const create = () => { if (nv.ordered) { if (nv.submit()) setPage("vservers"); return; } const id = nv.create(); if (id) setPage({ ct: id }); };
+  const create = () => { if (nv.ordered) { if (nv.submit()) setPage("vservers"); return; } const r = act(createContainer, c.id, nv.size, tpl || templates[0]); if (r.ok && r.id) setPage({ ct: r.id }); };
   const nodes = c.nodes.map((n) => game.devices.find((d) => d.id === n.deviceId)!).filter(Boolean);
   const is = (x: Page) => page === x || (x === "vservers" && (!!ct || page === "create")) || (x === "servers" && !!node);
   const menu: [Page, string, string][] = [["dashboard", "⌂", t("browser-consoles-2.dashboard")], ["servers", "▦", t("browser-consoles-2.physicalServers")], ["templates", "▤", t("browser-consoles-2.osTemplates")], ["vservers", "▣", t("browser-consoles-2.virtualServers")], ["plans", "▤", t("pkg.ovzPlans")], ["users", "☺", t("browser-consoles-2.users")], ["requests", "✉", t("browser-consoles-2.requests")], ["ips", "⌖", t("browser-consoles-2.ipAddresses")]];
@@ -233,7 +235,13 @@ export function OpenVeeZee(p: PanelProps) {
               <h2>{t("browser-consoles-2.createVirtualServer")}</h2>
               <div className="ovz-order">{nv.orderFields}</div>
               <Facts className="cx-table cx-facts ovz-table" facts={[{ label: "ID", value: "auto", num: true }, { label: t("browser-consoles-2.server"), value: c.name }]} />
-              {nv.isoPick(t("browser-consoles-2.osTemplate"), t("browser-consoles-2.none"))}
+              {!nv.ordered && (
+                <label className="cx-field">{t("browser-consoles-2.osTemplate")}
+                  <select value={tpl || templates[0] || ""} onChange={(e) => setTpl(e.target.value as OsImage)}>
+                    {templates.map((o) => <option key={o} value={o}>{isoName(o).replace(/\.iso$/, "")}</option>)}
+                  </select>
+                </label>
+              )}
               <SizeFields size={nv.size} set={nv.setSize} labels={[t("browser-consoles-2.cpuLimit"), t("browser-consoles-2.ramGb"), t("browser-consoles-2.diskQuotaGb")]} />
               <div className="cx-tools"><button className="ovz-btn" type="submit">{t("browser-consoles-2.create")}</button></div>
             </form>

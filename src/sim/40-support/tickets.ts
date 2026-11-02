@@ -12,7 +12,7 @@ export type TicketKind = "outage" | "howTo" | "billing" | "upgrade" | "cancellat
 // open: waits for the player. waiting: answered, waits on the customer. escalated: waits for a technician.
 export type TicketStatus = "open" | "waiting" | "escalated" | "resolved" | "closed";
 export type TicketAction = "credit" | "cancel" | "unsuspend" | "keep" | "forward" | "takedown" | "reject" | "comply" | "object" | "refund" | "accept" | "revert"
-  | "offerOnce" | "offerManaged" | "free" | "clean" | "noBackup" | "pay" | "refuse";
+  | "offerOnce" | "offerManaged" | "free" | "clean" | "cleanPaid" | "noBackup" | "pay" | "refuse";
 // by names the employee who answered; the player otherwise. key and params give the email as sent (replies.ts); older replies show the template.
 export interface Reply { hour: number; template: string; right: boolean; by?: string; key?: string; params?: Record<string, string | number> }
 // doneAt is in game minutes; the reply or action takes effect on the first tick at or after it.
@@ -27,7 +27,7 @@ export interface Ticket {
   id: string; customerId: string; serviceId: string | null; kind: TicketKind; topic: string; status: TicketStatus;
   createdAt: number; dueAt: number; updatedAt: number; unread: boolean; replies: Reply[];
   outcome: "credit" | "retained" | "cancelled" | "unsuspended" | "kept" | "forwarded" | "takenDown" | "rejected" | "ignored" | "withdrawn" | "complied" | "objected"
-    | "seized" | "refunded" | "refused" | "accepted" | "declined" | "failed" | "offerRefused" | "fixFailed" | "reverted" | "cleaned" | "noBackup" | "updated" | "updateSold" | "managedSold" | "ransomPaid" | "ransomRefused" | "moved" | "moveDeclined" | "sponsored" | "sponsorDeclined" | "domainKept" | "merged" | "spam" | null;
+    | "seized" | "refunded" | "refused" | "accepted" | "declined" | "failed" | "offerRefused" | "fixFailed" | "reverted" | "cleaned" | "cleanSold" | "noBackup" | "updated" | "updateSold" | "managedSold" | "ransomPaid" | "ransomRefused" | "moved" | "moveDeclined" | "sponsored" | "sponsorDeclined" | "domainKept" | "merged" | "spam" | null;
   work: Work | null; notice?: Notice; move?: Move;
   // The domain a leaving customer asks to transfer away.
   domain?: string;
@@ -111,8 +111,10 @@ export const ACTIONS: Record<TicketKind, TicketAction[]> = {
   outage: ["credit"], howTo: [], billing: ["credit", "revert"], upgrade: [], cancellation: ["cancel"], abuse: [], appeal: ["unsuspend", "keep"],
   notice: ["forward", "takedown", "reject"], legal: ["comply", "object"], refund: ["refund", "credit", "reject"], order: ["accept", "reject"], extortion: ["pay", "refuse"], migration: [], maintenance: [], sponsor: [], pear: [], mail: [], spam: [],
 };
-// Actions only tickets of one topic offer: the customer asks for help with an outdated site, or a defaced site waits for clean-up.
-export const TOPIC_ACTIONS: Record<string, TicketAction[]> = { "howTo.update": ["offerOnce", "offerManaged", "free"], "howTo.hacked": ["clean", "noBackup"] };
+// Actions only tickets of one topic offer: the customer asks for help with an outdated site, or a defaced site waits for
+// clean-up, found by the customer or held by the player for its spam.
+const CLEAN_ACTIONS: TicketAction[] = ["clean", "cleanPaid", "noBackup"];
+export const TOPIC_ACTIONS: Record<string, TicketAction[]> = { "howTo.update": ["offerOnce", "offerManaged", "free"], "howTo.hacked": CLEAN_ACTIONS, "howTo.abuseHold": CLEAN_ACTIONS };
 // Topics with replies of their own and no actions: a suspended customer only needs the invoice to pay it. A transfer
 // request is answered with the auth code or refused (90-actions/registrar.ts).
 export const TOPIC_TEMPLATES: Record<string, string[]> = { "billing.suspended": ["resend", "askDetails"], "billing.domainOut": [] };

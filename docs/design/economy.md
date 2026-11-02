@@ -1663,6 +1663,8 @@ A cluster of nothing but game servers peaks at about 1.0 on Saturday evenings, w
 
 **Memory reservation.** A tier 2 training after Monitoring, 100 know-how and 5 days. It adds a Memory reservation switch to every cluster, off by default. With it on, a placement or a move that would book RAM beyond a node's installed RAM less its control plane is refused, so the node cannot freeze; it is the only way RAM refuses a booking.
 
+**Stopped workloads and starting.** A stopped VM keeps its disk on its node but holds none of its CPU or RAM, so it counts toward neither the booked RAM of the node, placement, Memory reservation nor the overallocation alarm. A VM takes its whole booked RAM when it starts: starting is refused while the RAM the node's running VMs book plus its own exceeds what the node can book. On OpenVeeZee RAM is not reserved: a running container holds the RAM it uses, a stopped or frozen one none, and a container starts or is restored only while the RAM in use on its node plus what it will use fits the node. The booked RAM of containers is shown next to the RAM in use and never refuses anything.
+
 **Pegged workloads.** A workload is pegged when its CPU ran at 95% or more of its booked vCPUs in more than 12 of the last 24 hours. The node's workload list marks it.
 
 **Traffic shape.** A service's Mbit/s each hour is its monthly average × (floor + (1 − floor) × activity + 2 × night job) ÷ the week's average of that sum, where activity is the curve with the service's own ±20% jitter. A month's traffic therefore stays at the table in Traffic and bandwidth.
@@ -2008,7 +2010,7 @@ Each hour a node with more than 90% of its RAM in use takes burst memory back fi
 
 Burst memory ranges from 0 to twice the container's RAM, in steps of a quarter GB. It is not booked and costs nothing.
 
-Checkpoint freezes a container: it stays booked on its node, uses no CPU or RAM and is offline. Restore resumes it within a minute plus two seconds per GB of RAM in use, which counts as downtime. A cold move of a container on OpenVeeZee is a checkpoint, a copy and a restore, so it is down only for the copy of its disk over the link (at least 1 minute) instead of a full boot.
+Checkpoint freezes a container: it stays on its node, holds no CPU or RAM and is offline. A container is created from an OS template the player has downloaded and runs its OS at once, without an installer or ISO. Restore resumes it within a minute plus two seconds per GB of RAM in use, which counts as downtime. A cold move of a container on OpenVeeZee is a checkpoint, a copy and a restore, so it is down only for the copy of its disk over the link (at least 1 minute) instead of a full boot.
 
 ### Snapshots
 
@@ -2284,6 +2286,17 @@ Each service records `appVersion` (the release year it runs) and `appUpdatedAt` 
 | Clean-up by the player | `cleanSite`, 30 minutes of the player's time, from Monitoring or the ticket; resolves the ticket for +5 happiness |
 | Clean-up by the customer | Medium and high skill: 50% clean it up themselves 1 to 3 days after the hit; low skill never |
 | Third hack within 365 days | The customer cancels all services |
+
+**Site clean-up.** Defaced sites are listed in the Security app under Advisories, and the notification opens it on the site. Each offers four actions; any clean-up ends an abuse hold on the site, so it comes back online and stops sending spam.
+
+| Action | Effect |
+| --- | --- |
+| Restore backup | `cleanSite` above; needs a backup |
+| Offer clean-up | The customer answers at once: accepts with 60% ÷ (player rate ÷ market rate), which books the price as a sales ledger line, takes the player that many hours and cleans the site; of those who decline, 25% × (player rate ÷ market rate) cancel all services. Offered once per hack |
+| Remind | 3 minutes of the player's time. The customer cleans the site 1 to 3 days after the hit with 90%, 60% or 30% by high, medium or low skill, low skill included. Once per hack |
+| Suspend for abuse | An abuse hold. The customer's ticket asks about the hack (how-to, topic abuseHold, the same actions as hacked) instead of an invoice |
+
+The price is the web hosting `cleanHour` rate times the hours the site takes: 1, 2 or 4 by the customer's budget, like their order sizes. The market's hourly rate is €85 in 2026 with multiplier 0.6 (€51 in 2005), shown in Pricing beside the player's. Anchor: German web agencies bill €60 to €100 an hour for WordPress clean-up. The hacked and abuseHold tickets also offer paid clean-up as an action, decided the same way; a decline keeps the thread open.
 
 **Notifying.** Notify customers, per app and vulnerability from Monitoring, writes to every site open to it that has not been written to yet: 30 minutes of the player's time per 10 customers. Of the customers who would not update by themselves, 50% answer with a how-to ticket, topic update. Each customer who asks has a fixed wish, drawn by their profile's budget:
 

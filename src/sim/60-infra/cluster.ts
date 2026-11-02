@@ -103,7 +103,7 @@ export interface Datastore { deviceId: string; protocol: DatastoreProtocol; read
 // One workload runs one service: on a hypervisor node or bare-metal panel server (clusterId and deviceId), inside a panel
 // VM (clusterId of the panel host, no deviceId), on a whole server (deviceId only), or in rack units for colocation (rackId,
 // slot, units, watts). The player's own panel VMs have no service. Resources are booked at placement; placedAt is the hour
-// it last moved. A stopped workload keeps its booking; busyUntil is the hour a restore or cold migration finishes; backupAt
+// it last moved. A stopped workload keeps its booking but holds no CPU or RAM (held); busyUntil is the hour a restore or cold migration finishes; backupAt
 // the last backup; stuck marks a VM that failover found no room for; migrating is a web space on its way to a panel host,
 // moved at the hour doneAt.
 // The player's own VMs carry MachineState; customer workloads do not.
@@ -192,14 +192,30 @@ export const cardsOn = (d: Device): number => d.components.filter((c) => c.kind 
 export const cardsFree = (s: GameState, d: Device): number =>
   cardsOn(d) - s.workloads.reduce((n, w) => n + (w.deviceId === d.id && w.clusterId ? w.gpus ?? 0 : 0), 0);
 
-// What the workloads on a server book; web spaces inside a panel VM count in the VM's booking, a disk on a datastore on the datastore.
-export function nodeUsed(s: GameState, deviceId: string): Resources {
+// The RAM a workload uses, set by usage.ts: importing it here would load the modules in an order that breaks.
+export const liveRam = { of: (_s: GameState, w: Workload): number => w.ramGb };
+// What a workload holds of its node: a stopped or frozen one only its disk, a running container on OpenVeeZee the RAM it
+// uses rather than its booking unless booking asks for that.
+export function held(s: GameState, w: Workload, booking = false): Resources {
+  const b = booked(s, w);
+  if (w.stopped || w.frozen) return { ...b, vcpu: 0, ramGb: 0 };
+  if (booking || s.clusters.find((c) => c.id === w.clusterId)?.platform !== "openveezee") return b;
+  return { ...b, ramGb: liveRam.of(s, w) };
+}
+
+// What the workloads on a server hold; web spaces inside a panel VM count in the VM's booking, a disk on a datastore on the datastore.
+export function nodeUsed(s: GameState, deviceId: string, booking = false): Resources {
   const used = { ...ZERO };
   for (const w of s.workloads) {
     if (w.replica?.toNode === deviceId) used.diskGb += w.diskGb;
-    if (w.deviceId === deviceId && w.clusterId) { const b = booked(s, w); for (const k of KEYS) used[k] += w.datastore && k === "diskGb" ? 0 : b[k]; }
+    if (w.deviceId === deviceId && w.clusterId) { const b = held(s, w, booking); for (const k of KEYS) used[k] += w.datastore && k === "diskGb" ? 0 : b[k]; }
   }
   return used;
+}
+// Whether the node of a stopped or frozen workload has the RAM to start it: a VM needs its booking, a container what it uses.
+export function roomToStart(s: GameState, w: Workload): boolean {
+  const d = s.devices.find((x) => x.id === w.deviceId);
+  return !d || nodeUsed(s, d.id).ramGb + held(s, { ...w, stopped: false, frozen: false }).ramGb <= bookable(s, d).ramGb + 1e-9;
 }
 
 type Disk = Resources & { datastore?: string };
