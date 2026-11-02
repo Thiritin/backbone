@@ -416,7 +416,7 @@ Each milestone is one pull request with its seeded tests and one or two changelo
 Built in milestone 2, where it differs from the text above:
 
 - The Edit form has no vacation field yet: `setVacation` comes with `mail-core` milestone 5, and the field calls it once it lands. Filters, Sync jobs and Quarantine in Mailpig wait for the same milestone and for `importMail`.
-- Routing by the new mailboxes is `roleAccount` and `s.mail.catchAll`; delivery into them comes with `mail-core` milestone 4, so the tests check the role resolution and the catch-all target, not a delivered message. Licence orders follow the sales role until `Licence.mailTo` (milestone 7).
+- The tests check the sales role with `roleAccount` and the catch-all with a message through `deliver`. Licence orders follow the sales role until `Licence.mailTo` arrives with `mail-core` milestone 7.
 - Receives on the admin forms gives each role to one mailbox: ticking it takes the role from the tenant's other mailboxes (`assignMailRoles`), and owner mail moves the primary.
 - `setAccountQuota` stores the value without the disk booking; the disk check comes with the quota work of `mail-core`.
 - Spamsassin is stored per mail server in `s.webmail.options`. Uninstalling the mail server (`dropMailServer`) removes its tenant's mailboxes and messages at once and moves the company to GMix; the uninstall action and `apt-get remove` name the mailboxes and messages first.

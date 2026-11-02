@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { hourOfMonth } from "../src/sim/00-core/time";
 import { checkMailLogin, RETIRE_HOURS, roleAddress } from "../src/sim/42-mail/accounts";
+import { deliver } from "../src/sim/42-mail/deliver";
 import { boxOf, unread } from "../src/sim/42-mail/model";
 import type { GameState } from "../src/sim/50-state";
 import { vendorCli } from "../src/sim/60-infra/vendor-cli";
@@ -57,6 +58,7 @@ describe("own mail server administration", () => {
     const info = idOf(createAdminMailbox(s, { tenant, local: "info", title: "Info", password: "secret12" }));
     expect(err(setCatchAll(s, info))).toBe("ok");
     expect(s.mail.catchAll).toBe(info);
+    expect(deliver(s, { to: `nobody@${s.company.domain}`, from: "n:Rolecks", kind: "order", own: { subject: "Order", text: "Hello" } }).account).toBe(info);
     expect(err(setForward(s, info, "Owner@Example.org", true))).toBe("ok");
     expect(box(s, "info").forward).toEqual({ to: "owner@example.org", keep: true });
     expect(err(setForward(s, info, "nobody", false))).toBe("error.mailForward");
