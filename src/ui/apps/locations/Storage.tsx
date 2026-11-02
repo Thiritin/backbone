@@ -3,10 +3,12 @@ import { useState } from "react";
 import { isOfficeRouter, modelById } from "../../../sim/10-catalog/hardware";
 import type { Device, GameState, Location } from "../../../sim/50-state";
 import { euro } from "../../../sim/00-core/money";
-import { deviceValue, freeSlots, mountFrom, mountMax, storageStacks, travelCost } from "../../../sim/60-infra/status";
+import { deviceValue, freeSlots, mountFrom, mountMax, parcelCost, storageStacks } from "../../../sim/60-infra/status";
 import { sellDevice, shipStock } from "../../../sim/90-actions/hardware";
 import { installRouter } from "../../../sim/90-actions/routers";
 import { mountedRouter } from "../../../sim/60-infra/routers";
+import { present } from "../../../sim/60-infra/handwork";
+import { drive } from "../../../sim/90-actions/travel";
 import { Isometric } from "../../art/Isometric";
 import { RackFront } from "../../art/RackFront";
 import { t } from "../../../i18n/en";
@@ -30,22 +32,24 @@ function Ship({ game, ids, onDone }: { game: GameState; ids: string[]; onDone: (
   const from = game.devices.find((d) => d.id === ids[0])!.store!;
   const targets = game.locations.filter((l) => l.id !== from);
   const [to, setTo] = useState(targets[0].id), [n, setN] = useState(ids.length);
-  const dest = targets.find((l) => l.id === to)!, trip = travelCost(game, from, to);
-  const ship = () => {
-    if (!act(shipStock, ids.slice(0, n), to).ok) return;
+  const count = Math.min(n, ids.length), dest = targets.find((l) => l.id === to)!, trip = parcelCost(game, from, to, count);
+  const fare = present(game, from) && game.player.until <= game.hour ? drive(game, to) : null;
+  const ship = (self = false) => {
+    if (!act(shipStock, ids.slice(0, count), to, self).ok) return;
     notify("Locations", t("locations-2.shippingTo", { az: dest.az }), t("locations-2.nUnits", { n }));
     onDone();
   };
   return (
     <div className="loc-row loc-ship">
-      <Stepper value={Math.min(n, ids.length)} min={1} onChange={(v) => setN(Math.min(v, ids.length))} />
+      <Stepper value={count} min={1} onChange={(v) => setN(Math.min(v, ids.length))} />
       <div className="seg wrap" role="group" aria-label={t("locations-2.zone")}>
         {targets.map((l) => <button key={l.id} className="num" title={l.name} aria-pressed={l.id === to} onClick={() => setTo(l.id)}>{l.az}</button>)}
       </div>
       <span className="grow" />
       <span className="num">{euro(trip.price)}</span>
       <span className="num loc-muted">{t("locations-2.arrives", { day: day(game.hour + trip.hours) })}</span>
-      <button className="btn primary" onClick={ship}>{t("locations-2.ship")}</button>
+      {fare && <button className="btn" onClick={() => ship(true)}>{t("locations-1.driveYourself", { hours: fare.hours, fee: euro(fare.fee) })}</button>}
+      <button className="btn primary" onClick={() => ship()}>{t("locations-2.ship")}</button>
     </div>
   );
 }

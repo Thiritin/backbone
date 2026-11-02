@@ -4,7 +4,7 @@ import { wanPort, wattsFactorOf, boardVendor, COMPONENTS, cpuWattsShift, genOf, 
 import { CORE_SCORE, cpuModel, eraDemand, skuOf, SMT_SHARE, type Vendor } from "../10-catalog/cpus";
 import { cardWatts } from "../10-catalog/gpu";
 import { partPrice } from "../10-catalog/parts";
-import { BASEMENT, capacityAt, datacenterById, EXTRA_STEP_KW, extraStepPrice, homeLineById, inUs, MOVE, rackUnits, regionOf, SHARE_RACKS, spacePrice, type Datacenter } from "../20-world/datacenters";
+import { BASEMENT, capacityAt, datacenterById, EXTRA_STEP_KW, extraStepPrice, homeLineById, inUs, MOVE, PARCEL, rackUnits, regionOf, SHARE_RACKS, spacePrice, type Datacenter } from "../20-world/datacenters";
 import { CITY_TLD } from "../30-customers/domains";
 import { activeServices, type Service } from "../30-customers/customers";
 import { serverOsById } from "../10-catalog/server-os";
@@ -539,11 +539,19 @@ export function moveCost(s: GameState, rackId: string, toLocationId: string): { 
   return travelCost(s, s.racks.find((r) => r.id === rackId)?.locationId, toLocationId);
 }
 
-// Price and hours of shipping between two zones: within a region, to another region, or across the Atlantic.
-export function travelCost(s: GameState, fromId: string | undefined, toId: string): { price: number; hours: number } {
+// The distance between two zones: the same city, another city, or across the Atlantic.
+function tripKind(s: GameState, fromId: string | undefined, toId: string): keyof typeof MOVE {
   const from = s.locations.find((l) => l.id === fromId), to = s.locations.find((l) => l.id === toId);
-  if (from && to && from.city === to.city) return MOVE.sameCity;
-  return from && to && inUs(from.city) !== inUs(to.city) ? MOVE.overseas : MOVE.otherCity;
+  if (from && to && from.city === to.city) return "sameCity";
+  return from && to && inUs(from.city) !== inUs(to.city) ? "overseas" : "otherCity";
+}
+// Price and hours of a rack move between two zones.
+export const travelCost = (s: GameState, fromId: string | undefined, toId: string): { price: number; hours: number } => MOVE[tripKind(s, fromId, toId)];
+
+// The courier for n stored units from one zone to another.
+export function parcelCost(s: GameState, fromId: string, toId: string, n: number): { price: number; hours: number } {
+  const kind = tripKind(s, fromId, toId);
+  return { price: Math.min(MOVE[kind].price, PARCEL[kind].price * n), hours: PARCEL[kind].hours };
 }
 
 // Why a cable between a and b can't be plugged in, or null when it can.
