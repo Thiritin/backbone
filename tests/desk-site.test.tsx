@@ -21,7 +21,9 @@ const selfHosted = () => { const s = game(); expect(installDesk(s, panel(s).id, 
 const fake = { Site: () => <p>osticket staff</p>, staff: "/scp/", ticket: (t: { ref?: string }) => `/scp/tickets.php?id=${t.ref}` };
 const render = (s: GameState, path: string) => renderToString(<DeskSite game={s} id={s.desk!.id} host="support.x" path={path} go={() => {}} />);
 
-afterEach(() => { delete DESK_APPS.ostickit; });
+// OsTickit is the only desk app so far; each test that needs a desk without one takes it out.
+const real = DESK_APPS.ostickit;
+afterEach(() => { DESK_APPS.ostickit = real; });
 
 describe("desk dispatcher", () => {
   it("answers support.<domain> with the desk once its record resolves, and nothing without a desk", () => {
@@ -48,6 +50,7 @@ describe("desk dispatcher", () => {
 
   it("draws the desk's app on its pages and not found elsewhere or without an app", () => {
     const s = selfHosted();
+    delete DESK_APPS.ostickit;
     expect(render(s, "/scp/")).toContain("Not Found");
     DESK_APPS.ostickit = fake;
     expect(render(s, "/scp/")).toContain("osticket staff");
@@ -58,6 +61,7 @@ describe("desk dispatcher", () => {
 describe("Support launcher", () => {
   it("keeps the Support window without a desk app, a legacy desk or a desk address", () => {
     const s = selfHosted();
+    delete DESK_APPS.ostickit;
     expect(deskUrl(s)).toBeNull();
     DESK_APPS.ostickit = fake;
     const legacy = game();

@@ -5,13 +5,16 @@ import { deskHosts } from "../../../../../sim/40-support/desk-records";
 import { held, inDesk } from "../../../../../sim/40-support/desk-work";
 import type { Ticket } from "../../../../../sim/40-support/tickets";
 import type { GameState } from "../../../../../sim/50-state";
-import { parseDesk, type DeskRoute } from "../../../../../sim/80-business/deskroutes";
+import { deskPath, parseDesk, type DeskRoute } from "../../../../../sim/80-business/deskroutes";
+import { OsTickitSite } from "./ostickit/OsTickitSite";
 
 export interface DeskSiteProps { game: GameState; host: string; route: DeskRoute; go: (url: string) => void }
 // A desk's own web software: its pages, the path of its staff home and of a ticket's staff page.
 export interface DeskApp { Site: ComponentType<DeskSiteProps>; staff: string; ticket: (t: Ticket) => string }
 
-export const DESK_APPS: Partial<Record<DeskId, DeskApp>> = {};
+export const DESK_APPS: Partial<Record<DeskId, DeskApp>> = {
+  ostickit: { Site: OsTickitSite, staff: deskPath("ostickit", "scp"), ticket: (tk) => deskPath("ostickit", "staffTicket", { n: tk.ref ?? "" }) },
+};
 
 // support.<domain> or a tenant address: the installed desk's app on that path, or the server's not-found page.
 export function DeskSite({ game, id, host, path, go }: { game: GameState; id: DeskId; host: string; path: string; go: (url: string) => void }) {

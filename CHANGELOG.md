@@ -7,6 +7,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - The cPanic File Manager now works like the real one: upload files from your Downloads at your line's upload speed, extract and compress archives, create, move, copy, rename and delete files, and change permissions, with uploads refused once the account's disk quota is full.
 - HOSTtoast no longer has a city filter, so its list always shows every open host.
 - The browser's Back button no longer leaves the game: in the browser app it goes back one page, everywhere else it does nothing.
+- OsTickit now runs at your support address in the browser, with its own customer portal, Staff Control Panel and Admin Panel in the 1.6 look and, from version 1.10, the newer one, and the Support tile opens it once it is installed.
 - Web hosting panels can now create an account for your own company domain, which starts empty, counts against the panel licence and is where your website and shop will live.
 - Postfixit Admin now walks you through its setup page and then manages the mailboxes, aliases, forwarders, catch-all, quotas and passwords of your own mail server, and Mailpig shows your real mailboxes and aliases in its own tabs.
 - A bare Postfixit server can be managed from the terminal with mailbox, alias, catchall and spam commands, and uninstalling the mail server deletes every mailbox and message on it.
