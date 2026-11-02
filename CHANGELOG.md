@@ -6,10 +6,10 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - The CPU overcommit warning on hypervisor hosts now fires at 8 vCPUs per core instead of 2.
 - Upgrade requests no longer mark the current server as full.
-
 - Storage in Locations shows stored hardware as a grid of cards and sells several units of a model at once.
 - The Flyerlarm order table no longer runs past the right edge of its box, and the Locations storage tab is called Lager in German.
 - VMwhere editions are now bought as licence keys on vmwhere.com and take effect once every host runs a key of that edition, and the shop only sells an edition once your team has learned its features.
+- Every customer request, order, abuse report and notice now also arrives as an email in the mailbox of its role, such as support@ or abuse@, and your replies appear in that mailbox's Sent folder.
 - Pear Mail can reply, reply to all, forward, delete, junk and move mail, and writes new messages in their own window with forms from the desktop attached.
 - Goggle now has its own website in the Browser, where you sign up for the edition of the year, verify your domain with a DNS record and see whether your MX records point at Goggle.
 - Incident reports in Security can now be archived, which takes them off the incident list and out of the open count.

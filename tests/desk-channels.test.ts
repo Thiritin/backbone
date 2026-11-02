@@ -147,8 +147,10 @@ describe("desk channels", () => {
     expect(t.channelId).toBeFalsy();
     expect(channel(s).error).toBe("error.deskNoForward");
     s.mail = { ...s.mail, accounts: s.mail.accounts.map((x) => (x.id === s.mail.primary ? { ...x, forward: { to: hostedDeskAddress(s)!, keep: false } } : x)) };
+    const later = ticketFor(s);
     importDeskTickets(s);
-    expect(t.channelId).toBe(channel(s).id);
+    expect(t.channelId).toBeFalsy();
+    expect(later.channelId).toBe(channel(s).id);
     own(s, "Forwarded question");
     expect(s.tickets.filter((x) => x.mail?.msg).length).toBe(1);
     expect(channel(s).verified).toBe(true);
