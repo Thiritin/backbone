@@ -129,7 +129,7 @@ What follows from that:
 | Message | links Message List, Delete, Previous, Next, Forward, Forward as Attachment, Reply, Reply All; the headers; View Full Header; attachments as links; HTML mail shown as text with a View as HTML link | `view`, `markMessages`, `messageSource` |
 | Compose | To, Cc, Bcc, Subject, a plain text body, Add an attachment, signature, Send, Save Draft | `sendMessage`, `saveDraft` |
 | Options | Personal Information (name, address, reply-to, signature, multiple identities), Display Preferences (theme, language, messages per page), Folder Preferences (Trash, Sent, Drafts, and "Do not use Trash"), Message Filters, Change Password | `setWebmailPref`, `saveIdentity` |
-| Folders | create a folder as a subfolder of another, rename, delete, subscribe and unsubscribe | `createFolder`, `renameFolder`, `moveFolder`, `deleteFolder`, the subscription list |
+| Folders | create a folder as a subfolder of another, rename, delete, subscribe and unsubscribe | `createMailFolder`, `renameMailFolder`, `moveMailFolder`, `deleteMailFolder`, the subscription list |
 | Addresses | nickname, name, e-mail, info; a popup in Compose | `saveContact`, `removeContact` |
 | Search | text in From, To, Subject or Body, in the current folder | selectors over `listFolder` and `view` |
 
@@ -211,7 +211,7 @@ A skin is a CSS file, a logo and a layout component, chosen with `eraAtHour`-sty
 | Compose | From (identity), To, Cc, Bcc with completion from the address book, Subject, plain text or the HTML editor toggle, attachments, signature, priority, return receipt, Save, a leave warning for unsaved text | `saveDraft`, `discardDraft`, `sendMessage` |
 | Quota bar | under the folder list, a percentage in Classic and "Storage 12 MB of 100 MB" in Barry and Plastic | `quotaMbOf`, the account's `usedKb` |
 | Settings, Preferences | User Interface (skin, layout, list mode from 0.4, dark theme), Mailbox View, Displaying Messages, Composing Messages, Special Folders (Drafts, Sent, Junk, Trash) | `setWebmailPref` |
-| Settings, Folders | a list with a subscription checkbox (a switch in Plastic), Create with name and parent, rename and move, Delete with confirmation, properties with message count and size | `createFolder`, `renameFolder`, `moveFolder`, `deleteFolder`, the subscription list |
+| Settings, Folders | a list with a subscription checkbox (a switch in Plastic), Create with name and parent, rename and move, Delete with confirmation, properties with message count and size | `createMailFolder`, `renameMailFolder`, `moveMailFolder`, `deleteMailFolder`, the subscription list |
 | Settings, Filters (from 0.4) | the filter list, a form with rules and actions, and Edit filter set for the raw Sieve script | `saveFilter`, `deleteFilter`, `moveFilter`, `setFilterOn`, `saveSieveScript` |
 | Settings, Vacation (from 1.0) | the managesieve vacation responder: On, Subject, Message, an until date, and on a host with loop protection a reply interval of 7 days; the raw script view shows it as a `vacation` command at the top of the script | `setVacation` |
 | Settings, Identities | the list; display name, email, organization, reply-to, bcc, signature, Set default | `saveIdentity`, `removeIdentity` |

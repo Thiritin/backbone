@@ -79,7 +79,7 @@ const membersOk = (s: GameState, tenant: string, members: string[]): boolean =>
   members.length <= GROUP_MAX && members.every((m) => s.mail.accounts.some((a) => a.id === m && a.tenant === tenant && a.closedAt === null));
 
 // A group address copies each message to its members, which are mailboxes of the same domain tenant.
-export function createGroup(s: GameState, o: { tenant: string; local: string; title: string; members: string[] }): ActionResult {
+export function createMailGroup(s: GameState, o: { tenant: string; local: string; title: string; members: string[] }): ActionResult {
   const t = s.mail.tenants.find((x) => x.id === o.tenant);
   if (!t || t.domain === GMIX_DOMAIN || (t.endsAt !== null && t.endsAt <= s.hour)) return fail("error.mailNoService");
   const local = o.local.trim().toLowerCase(), members = [...new Set(o.members)];
@@ -93,7 +93,7 @@ export function createGroup(s: GameState, o: { tenant: string; local: string; ti
   return { ok: true, id: g.id };
 }
 
-export function setGroupMembers(s: GameState, id: string, members: string[]): ActionResult {
+export function setMailGroupMembers(s: GameState, id: string, members: string[]): ActionResult {
   const g = s.mail.groups.find((x) => x.id === id), t = g && s.mail.tenants.find((x) => x.id === g.tenant);
   if (!g || !t) return fail("error.mailUnknown");
   const list = [...new Set(members)];
@@ -103,7 +103,7 @@ export function setGroupMembers(s: GameState, id: string, members: string[]): Ac
   return { ok: true, id };
 }
 
-export function deleteGroup(s: GameState, id: string): ActionResult {
+export function deleteMailGroup(s: GameState, id: string): ActionResult {
   const g = s.mail.groups.find((x) => x.id === id), t = g && s.mail.tenants.find((x) => x.id === g.tenant);
   if (!g || !t) return fail("error.mailUnknown");
   s.mail = { ...s.mail, groups: s.mail.groups.filter((x) => x.id !== id), retired: [...s.mail.retired, { address: `${g.local}@${t.domain}`, until: s.hour + RETIRE_HOURS }] };

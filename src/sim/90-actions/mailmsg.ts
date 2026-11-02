@@ -146,7 +146,7 @@ const nameTaken = (s: GameState, account: string, parent: string | null, name: s
   s.mail.folders.some((f) => f.accountId === account && f.parent === parent && f.id !== except && f.name.toLowerCase() === name.toLowerCase());
 
 // Custom folders nest three deep; on a label host they are labels.
-export function createFolder(s: GameState, account: string, name: string, parent: string | null = null): ActionResult {
+export function createMailFolder(s: GameState, account: string, name: string, parent: string | null = null): ActionResult {
   const a = box(s, account), n = name.trim();
   if (!a) return fail("error.mailUnknown");
   if (parent !== null && !customOf(s, account, parent)) return fail("error.mailNoFolder");
@@ -159,7 +159,7 @@ export function createFolder(s: GameState, account: string, name: string, parent
   return { ok: true, id: f.id };
 }
 
-export function renameFolder(s: GameState, account: string, id: string, name: string): ActionResult {
+export function renameMailFolder(s: GameState, account: string, id: string, name: string): ActionResult {
   const f = customOf(s, account, id), n = name.trim();
   if (!f) return fail("error.mailNoFolder");
   if (!n || n.length > 40 || nameTaken(s, account, f.parent, n, id)) return fail("error.mailFolderName");
@@ -167,7 +167,7 @@ export function renameFolder(s: GameState, account: string, id: string, name: st
   return ok;
 }
 
-export function moveFolder(s: GameState, account: string, id: string, parent: string | null): ActionResult {
+export function moveMailFolder(s: GameState, account: string, id: string, parent: string | null): ActionResult {
   const f = customOf(s, account, id);
   if (!f || (parent !== null && !customOf(s, account, parent)) || (parent && subtree(s, id).includes(parent))) return fail("error.mailNoFolder");
   if (nameTaken(s, account, parent, f.name, id)) return fail("error.mailFolderName");
@@ -177,7 +177,7 @@ export function moveFolder(s: GameState, account: string, id: string, parent: st
 }
 
 // On a folder host the folder's mail goes to Trash; on a label host only the label goes.
-export function deleteFolder(s: GameState, account: string, id: string): ActionResult {
+export function deleteMailFolder(s: GameState, account: string, id: string): ActionResult {
   if (!customOf(s, account, id)) return fail("error.mailNoFolder");
   const gone = new Set(subtree(s, id));
   setBox(s, account, msgsOf(s, account).map((m) => {

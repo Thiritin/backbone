@@ -8,7 +8,7 @@ import { NOTARY_MAIL } from "../src/sim/80-business/paperwork";
 import { createTenant, verifyTenant } from "../src/sim/90-actions/mail";
 import { createMailAccount } from "../src/sim/90-actions/mailbox";
 import {
-  createFolder, deleteFolder, deleteMessages, discardDraft, emptyFolder, markMessages, moveFolder, moveMessages, purgeOlder,
+  createMailFolder, deleteMailFolder, deleteMessages, discardDraft, emptyFolder, markMessages, moveMailFolder, moveMessages, purgeOlder,
   reportJunk, restoreMessages, saveDraft, sendMessage, setVacation, snoozeMessages,
 } from "../src/sim/90-actions/mailmsg";
 import { idOf } from "./company-mail.helpers";
@@ -85,7 +85,7 @@ describe("mail messages", () => {
 
   it("moves to Trash, restores, deletes for good and empties Trash", () => {
     const s = readyGame(6), a = sales(s).id, d = s.company.domain!;
-    const f = idOf(createFolder(s, a, "Clients"));
+    const f = idOf(createMailFolder(s, a, "Clients"));
     const ids = [req(s, `sales@${d}`).id!, req(s, `sales@${d}`).id!];
     moveMessages(s, a, ids, f);
     deleteMessages(s, a, ids);
@@ -114,26 +114,26 @@ describe("mail messages", () => {
 
   it("nests folders three deep and moves a folder host's mail to Trash when its folder goes", () => {
     const s = readyGame(8), a = sales(s).id;
-    const f1 = idOf(createFolder(s, a, "A")), f2 = idOf(createFolder(s, a, "B", f1)), f3 = idOf(createFolder(s, a, "C", f2));
-    expect(createFolder(s, a, "D", f3)).toEqual({ ok: false, error: "error.mailFolderDepth" });
-    expect(createFolder(s, a, "b", f1)).toEqual({ ok: false, error: "error.mailFolderName" });
-    expect(moveFolder(s, a, f1, f3)).toEqual({ ok: false, error: "error.mailNoFolder" });
+    const f1 = idOf(createMailFolder(s, a, "A")), f2 = idOf(createMailFolder(s, a, "B", f1)), f3 = idOf(createMailFolder(s, a, "C", f2));
+    expect(createMailFolder(s, a, "D", f3)).toEqual({ ok: false, error: "error.mailFolderDepth" });
+    expect(createMailFolder(s, a, "b", f1)).toEqual({ ok: false, error: "error.mailFolderName" });
+    expect(moveMailFolder(s, a, f1, f3)).toEqual({ ok: false, error: "error.mailNoFolder" });
     const id = req(s, `sales@${s.company.domain}`).id!;
     moveMessages(s, a, [id], f3);
-    deleteFolder(s, a, f1);
+    deleteMailFolder(s, a, f1);
     expect(s.mail.folders.filter((f) => f.accountId === a)).toHaveLength(0);
     expect(boxOf(s, a).find((m) => m.id === id)!.folder).toBe("trash");
   });
 
   it("treats folders as labels on a label host", () => {
     const s = readyGame(9), g = goggle(s), a = add(s, "ann", g);
-    const l = idOf(createFolder(s, a, "Clients"));
+    const l = idOf(createMailFolder(s, a, "Clients"));
     expect(s.mail.folders.find((f) => f.id === l)!.label).toBe(true);
     const id = req(s, `ann@${s.company.domain}`).id!;
     moveMessages(s, a, [id], l);
     expect(boxOf(s, a).find((m) => m.id === id)).toMatchObject({ folder: "archive", labels: [l] });
     expect(listFolder(s, a, l).map((m) => m.id)).toEqual([id]);
-    deleteFolder(s, a, l);
+    deleteMailFolder(s, a, l);
     expect(boxOf(s, a).find((m) => m.id === id)).toMatchObject({ folder: "archive" });
     expect(boxOf(s, a).find((m) => m.id === id)!.labels).toBeUndefined();
   });
@@ -169,5 +169,13 @@ describe("mail messages", () => {
     const used = s.mail.accounts.find((x) => x.id === a)!.usedKb;
     purgeOlder(s, a);
     expect(s.mail.accounts.find((x) => x.id === a)!).toMatchObject({ older: { n: 0, kb: 0 }, usedKb: used - 90 });
+  });
+});
+
+describe("mail action names", () => {
+  it("are unique in the action registry, so replays call the mail actions", async () => {
+    const { ACTIONS } = await import("../src/sim/90-actions/index");
+    const mm = await import("../src/sim/90-actions/mailmsg"), mb = await import("../src/sim/90-actions/mailbox");
+    for (const [name, fn] of [...Object.entries(mm), ...Object.entries(mb)]) if (typeof fn === "function") expect(ACTIONS[name], name).toBe(fn);
   });
 });
