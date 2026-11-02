@@ -295,12 +295,12 @@ export function openShop(s: GameState, id: ShopId = "clientExit"): GameState {
   s.cash = Math.max(s.cash, 1e4);
   setUpChannel(s, "website");
   if (!s.unlocks.includes("shops")) s.unlocks = [...s.unlocks, "shops"];
-  const modules = s.shop.modules;
+  const modules = s.shop.modules, licences = s.modules;
   installWithKey(s, id);
   // Keeps the modules automate() bought.
   s.shop = { ...s.shop, modules: { ...modules, ...s.shop.modules } };
   // Every payment method, so no checkout is lost for a missing one.
-  s.modules = [...new Set([...s.modules, ...PAYMENT_METHODS.map((m) => m.id)])];
+  s.modules = [...new Set([...licences, ...s.modules, ...PAYMENT_METHODS.map((m) => m.id)])];
   return s;
 }
 

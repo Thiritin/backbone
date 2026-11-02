@@ -51,7 +51,13 @@ export function installShop(s: GameState, clusterId: string, id: ShopId, key?: s
   const code = key?.trim().toUpperCase(), held = assignedKey(s, SHOP_MACHINE, id);
   const typed = code ? s.licenses.find((k) => k.product === id && k.key === code) : undefined;
   const v = version ?? (installable(s, id, code ? typed : held) ?? versionAt(id, s.hour)).version;
-  if (s.shop.variant !== id) s.shop = { ...newShop(), variant: id, since: s.hour, groups: s.shop.groups.length ? s.shop.groups : firstGroups(s), products: s.shop.products, productGroups: s.shop.productGroups };
+  if (s.shop.variant !== id) {
+    // Modules belong to the system they were bought for: the old one's stay with it, the new one starts with its own.
+    const was = s.shop.variant, modulesBy = { ...s.shop.modulesBy, ...(was && { [was]: { modules: s.shop.modules, licences: s.modules } }) };
+    const back = modulesBy[id];
+    s.shop = { ...newShop(), variant: id, since: s.hour, groups: s.shop.groups.length ? s.shop.groups : firstGroups(s), products: s.shop.products, productGroups: s.shop.productGroups, modulesBy, modules: back?.modules ?? {} };
+    s.modules = back?.licences ?? [];
+  }
   s.shop = { ...s.shop, install: { clusterId, version: v, at: s.hour } };
   if (!held || code) licenseInstall(s, SHOP_MACHINE, id, v, code);
   return { ok: true, id: v };
