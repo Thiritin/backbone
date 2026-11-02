@@ -4,9 +4,10 @@ const pad = (v: string | number, n: number) => String(v).padEnd(n);
 const left = (v: string | number, n: number) => String(v).padStart(n);
 
 // What apt prints while it fetches, unpacks and sets up a package and its libraries.
-const DEPS: [string, string, string][] = [["libssl3", "3.0.11-1", "2,026 kB"], ["libpq5", "15.4-1", "189 kB"], ["libxml2", "2.9.14+dfsg-1.3", "687 kB"], ["libjson-c5", "0.16-2", "44.0 kB"], ["libpcre2-8-0", "10.42-1", "261 kB"], ["libsystemd-shared", "252.17-1", "1,693 kB"], ["ssl-cert", "1.1.2", "21.1 kB"]];
+const LIBS: [string, string, string][] = [["libssl3", "3.0.11-1", "2,026 kB"], ["libpq5", "15.4-1", "189 kB"], ["libxml2", "2.9.14+dfsg-1.3", "687 kB"], ["libjson-c5", "0.16-2", "44.0 kB"], ["libpcre2-8-0", "10.42-1", "261 kB"], ["libsystemd-shared", "252.17-1", "1,693 kB"], ["ssl-cert", "1.1.2", "21.1 kB"]];
 const MIRROR_LINE = "http://deb.debiant.org/debiant stable/main amd64";
-const APT_LOG = (pkg: string) => [
+// with lists the packages the software pulls in beside the libraries, as "name version" joined by "|".
+const APT_LOG = (pkg: string, withPkgs: string, DEPS = [...withPkgs.split("|").filter(Boolean).map((x): [string, string, string] => [...x.split(" ") as [string, string], "1,024 kB"]), ...LIBS]) => [
   ...DEPS.map(([d, v, size], i) => `Get:${i + 1} ${MIRROR_LINE} ${d} amd64 ${v} [${size}]`),
   `Get:${DEPS.length + 1} ${MIRROR_LINE} ${pkg} amd64 [48.2 MB]`,
   "Fetched 53.1 MB in 41s (1,295 kB/s)",
@@ -194,7 +195,7 @@ export const TERMINAL_EN: Record<string, (p: Params) => string> = {
   "term.apt.installs": (p) => `0 upgraded, ${p.n} newly installed, 0 to remove and 0 not upgraded.`,
   "term.apt.notInstalled": (p) => `Package '${p.pkg}' is not installed, so not removed`,
   "term.apt.removing": (p) => `Removing ${p.pkg} ...`,
-  "term.install.apt": (p) => APT_LOG(String(p.pkg)).join("\n"),
+  "term.install.apt": (p) => APT_LOG(String(p.pkg), String(p.with ?? "")).join("\n"),
   "term.install.script": (p) => `Starting the ${p.name} installer ...`,
   "term.vendor.upgrading": (p) => `Upgrading ${p.name} to ${p.version}, ${p.hours} h ...`,
   "term.install.scriptLog": (p) => SCRIPT_LOG(String(p.name), String(p.ports)).join("\n"),

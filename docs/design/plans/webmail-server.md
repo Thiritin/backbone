@@ -102,8 +102,10 @@ Dates are from the project's file index and its news page (verified) unless mark
 | 1.4.22 | 2011-07 | stable | the last numbered release |
 | 1.4.23 | 2013-05 | snapshot | runs on PHP 5.4 and 5.5 |
 | 1.4.23 (2021) | 2021-10 | snapshot | runs on PHP 8 |
-| 1.5.1 | 2005-01 | `devel` | the development line; snapshots from 2004 to 2006 (unverified) |
-| 1.5.2 | 2021-10 | `devel` | development snapshot |
+| 1.5.1 | 2005-02 | `devel` | the development line; snapshots from 2004 to 2006 (unverified; one month after 1.4.4, since a version list is in strict release order) |
+| 1.5.2 | 2021-11 | `devel` | development snapshot (one month after the 2021 snapshot, for the same reason) |
+
+Edge takes the newest `devel` row once one is out and steps to the next one as a major upgrade; before the first one is out, and on Stable and Release, the `devel` rows are skipped. The install itself takes the newest stable row, since a cluster gets its channel after it is installed.
 
 End dates are a game rule, because the project never published any: updates end with the next stable release, and security fixes a year later; 1.4.22 gets security fixes until 2014-07, the snapshots until a year after the next one. The version a player installs in 2015 is therefore out of security support, which is true to life, and a vulnerable SquirrelMeal on the web is an easy way to lose a mailbox (milestone 11). A PHP range per row (from `phpAt`) makes a host whose PHP moved past the row show the PHP error page until the player moves to a snapshot.
 
@@ -231,6 +233,8 @@ s.webmail: {
 }
 ```
 
+Milestone 1 builds `installs` and `default` only. An install holds what the setup menu sets: `productName`, `domain`, `imapHost`, `imapPort`, `smtpHost`, `smtpPort` and `plugins`; the IMAP server it names decides `Cluster.backend`. `installerOpen`, `users`, `servers` and `subs` come with the milestones that use them.
+
 `newGame` sets `webmail` to empty records and `deserialize` spreads it, so old saves load with no installs and no data. A user's entry is created on first sign-in with one identity from the account (title, address) and the defaults of the installed version. The backend id sits on the cluster (2.1). SOGoat keeps its calendar and address books under a `groupware` key per user, added in milestone 10. `Identity`, `Contact`, `ContactGroup` and `WebmailPrefs` are defined in `src/sim/80-business/webmail.ts`.
 
 ## 5. Administration of the own mail server
@@ -266,6 +270,8 @@ The real counterpart is a PHP page of plain tables. It has two looks, `early` fo
 - Aliases and forwarders: Create alias takes the address and a mailbox it goes to (`addAlias`); a mailbox form has a Forward to field for an outside address (`setForward`); the alias `*` is the catch-all (`setCatchAll`). "Add default mail aliases" creates `postmaster@`, `abuse@`, `hostmaster@` and `webmaster@` on the admin mailbox; `abuse@` is the role address that receives abuse reports.
 - The welcome mail is a real message in the new mailbox, so the first sign-in finds one unread mail.
 - The server page has the Spamsassin switch (`setMailSoftwareOption`), the Dovecoat version and a Backup line that shows the last successful backup of the mail server's machine, or "none".
+
+Versions (all unverified as to the month): 2.1 (2005-01), 2.2 (2008-01), 2.3 (2009-07), 3.0 (2016-08), 3.2 (2018-05), 3.3 (2020-11). Updates end with the next release and security fixes a year later, like SquirrelMeal. Milestone 1 ships its site and a sign-in to its software page; the setup page and `setupPending` on its cluster come with milestone 2.
 
 ### 5.3 The Mailpig console
 
@@ -388,7 +394,7 @@ Each milestone is one pull request with its seeded tests and one or two changelo
 
 - Sim: the `mailweb` kind and the files in 2.1; the `conflict` exemption; catalog entries `squirrelmeal` and `postfixitadmin`; Postfixit's new ports and the Dovecoat package lines; `Cluster.backend`; the SquirrelMeal version line with its `devel` rows and the Edge rule; `WEBMAIL` rows; `installedWebmail` and `selfHostCaps`; `site()` entries; the routing of 2.3 (`webmail.<domain>`, the path table, `providerDomain`); `s.webmail` default and fill in `deserialize`; `configureWebmail` and `setWebmailDefault` in `90-actions/mail-server.ts`; `setupPending` on the new cluster.
 - UI: the SquirrelMeal and Postfixit Admin software sites on the `SoftwareSite` frame (home, download with the install lines, versions, news with the 2007 break-in); the console entries showing the setup menu and the configuration test, and the SquirrelMeal login page.
-- i18n: site copy `sim.site.squirrelmeal.*` and `sim.site.postfixitadmin.*`, `swnews.squirrelmeal.<version>` for every version, setup and login strings.
+- i18n: site copy `sim.site.squirrelmeal.*` and `sim.site.postfixitadmin.*`, setup and login strings in `ui-mail-server.ts`; `swnews.squirrelmeal.<version>` and `swnews.postfixitadmin.<version>` for every version in `ui-releases-mail.ts`, next to the other release news.
 - Tests: `tests/webmail-install.test.ts`. A seeded game installs SquirrelMeal on a Postfixit machine; it is refused beside Mailpig and a panel; the newest stable version for a given month is installed and Edge takes `devel`; `webmail.<domain>` resolves; `installedWebmail` returns it; an old save loads with an empty `webmail`.
 
 ### Milestone 2: administration of the own server

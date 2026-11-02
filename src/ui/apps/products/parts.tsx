@@ -32,6 +32,8 @@ export const BRAND: Record<string, { icon: LucideIcon; color: string }> = {
   pterodaktyl: { icon: Bird, color: "oklch(0.55 0.15 235)" },
   postfixit: { icon: Mail, color: "oklch(0.55 0.13 20)" },
   mailpig: { icon: PiggyBank, color: "oklch(0.68 0.13 355)" },
+  squirrelmeal: { icon: Mail, color: "oklch(0.5 0.1 250)" },
+  postfixitadmin: { icon: Mail, color: "oklch(0.5 0.02 250)" },
 };
 
 export function Mark({ id, size = 28 }: { id: string | null; size?: number }) {
@@ -48,11 +50,11 @@ export const licenseText = (sw: Software, year: number) => {
 const cp = (sw: Software) => `${+sw.controlPlane.vcpu.toFixed(2)} vCPU · ${+sw.controlPlane.ramGb.toFixed(2)} GB`;
 
 export const KIND_NAME: Record<SoftwareKind, string> = {
-  panel: t("misc1.parts.kindPanel"), cloud: t("misc1.parts.hypervisor"), game: t("misc1.parts.kindGame"), mail: t("misc1.parts.mailServer"), dns: t("misc1.parts.dnsServer"), vpn: t("misc1.parts.vpnServer"), storage: t("misc1.parts.storageServer"), backup: t("misc1.parts.backupServer"),
+  panel: t("misc1.parts.kindPanel"), cloud: t("misc1.parts.hypervisor"), game: t("misc1.parts.kindGame"), mail: t("misc1.parts.mailServer"), mailweb: t("mailserver.kind"), dns: t("misc1.parts.dnsServer"), vpn: t("misc1.parts.vpnServer"), storage: t("misc1.parts.storageServer"), backup: t("misc1.parts.backupServer"),
 };
 // What a server or VM running the kind of software is called.
 export const HOST_NAME: Record<SoftwareKind, string> = {
-  panel: t("misc1.parts.panelHost"), cloud: t("misc1.parts.hypervisor"), game: t("misc1.parts.gamePanelHost"), mail: t("misc1.parts.mailServer"), dns: t("misc1.parts.dnsServer"), vpn: t("misc1.parts.vpnServer"), storage: t("misc1.parts.storageServer"), backup: t("misc1.parts.backupServer"),
+  panel: t("misc1.parts.panelHost"), cloud: t("misc1.parts.hypervisor"), game: t("misc1.parts.gamePanelHost"), mail: t("misc1.parts.mailServer"), mailweb: t("mailserver.kind"), dns: t("misc1.parts.dnsServer"), vpn: t("misc1.parts.vpnServer"), storage: t("misc1.parts.storageServer"), backup: t("misc1.parts.backupServer"),
 };
 export const servesText = (kind: SoftwareKind) => SERVES[kind].filter((p) => !PRODUCTS[p].ha).map((p) => PRODUCT[p]).join(", ");
 

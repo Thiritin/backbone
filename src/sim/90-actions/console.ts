@@ -219,7 +219,8 @@ export function upgradeOs(s: GameState, machineId: string, key?: string): Action
 // the next major once it is out; null while it installs or upgrades.
 export const softwareTarget = (s: GameState, machineId: string, product: string): SoftwareVersion | null => {
   const x = machineOf(s, machineId)?.software?.find((y) => y.id === product);
-  return x && (x.doneAt === null || x.doneAt <= s.hour) ? nextMajor(product, x.version, s.hour) : null;
+  const edge = clustersOn(s, machineId).some((c) => [c.panel, c.platform].includes(product) && c.channel === "edge");
+  return x && (x.doneAt === null || x.doneAt <= s.hour) ? nextMajor(product, x.version, s.hour, edge) : null;
 };
 
 // Why the software cannot step up one major now: nothing newer, no network, or a key for an older major and no upgrade key.

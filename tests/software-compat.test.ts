@@ -23,7 +23,8 @@ describe("software compatibility", () => {
     for (const a of SOFTWARE) for (const b of SOFTWARE) {
       const why = conflict(a, b);
       expect(why, `${a.id} ${b.id}`).toBe(conflict(b, a));
-      const expected = a.kind === "cloud" && b.kind === "cloud" ? "error.oneHypervisor" : a.ports.some((p) => b.ports.includes(p)) ? "error.portTaken" : null;
+      const shareWeb = a.kind === "mailweb" && b.kind === "mailweb" && a.id !== b.id;
+      const expected = a.kind === "cloud" && b.kind === "cloud" ? "error.oneHypervisor" : !shareWeb && a.ports.some((p) => b.ports.includes(p)) ? "error.portTaken" : null;
       expect(why, `${a.id} ${b.id}`).toBe(expected);
     }
     expect(SOFTWARE.every((a) => conflict(a, a) !== null)).toBe(true);

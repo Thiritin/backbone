@@ -82,19 +82,21 @@ export function consoleClusters(s: GameState, hostname: string): Cluster[] {
   return (d ? clustersOf(s, d.id) : vm ? hostsOfVm(s, vm.id) : []).filter((c) => familyOf(c));
 }
 
-// docs/design/software.md, 8.2: the port each console also answers on, next to the host's own address; Mailpig answers
-// on a path.
+// docs/design/software.md, 8.2: the port each console also answers on, next to the host's own address; Mailpig and the
+// mail front ends answer on a path (docs/design/plans/webmail-server.md, 2.3).
 const CONSOLE_AT: Record<string, string> = {
   proxmocks: ":8006", cpanic: ":2087", pleskit: ":8443", directadmen: ":2222", freepanel: ":10000", tcadmen: ":8880", multikraft: ":8080",
   pterodaktyl: ":8080", powerdnz: ":8081", openveepeen: ":943", minnio: ":9001", anyconnekt: ":443", mailpig: "/admin",
+  squirrelmeal: "/squirrelmeal", postfixitadmin: "/postfixadmin",
 };
 const atOf = (c: Cluster): string => CONSOLE_AT[familyOf(c) ?? ""] ?? "";
 
-// The console at a host's address: the one on the port when one is given, Mailpig on /admin, otherwise the first.
+// The console at a host's address: the one on the port when one is given, the one under the path, otherwise the first.
 export function consoleAt(s: GameState, hostname: string, port = "", path = "/"): Cluster | null {
   const all = consoleClusters(s, hostname);
   if (port) return all.find((c) => atOf(c) === port) ?? null;
-  return (/^\/admin(\/|$)/.test(path) ? all.find((c) => atOf(c) === "/admin") : undefined) ?? all[0] ?? null;
+  const under = (at: string) => at.startsWith("/") && (path === at || path.startsWith(`${at}/`) || path.startsWith(`${at}?`));
+  return all.find((c) => under(atOf(c))) ?? all[0] ?? null;
 }
 
 // What follows the host in a console's address (its port, its path, or nothing), or null when another console holds it.

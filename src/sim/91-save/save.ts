@@ -181,6 +181,7 @@ export function deserialize(raw: string): GameState {
   if (data.shop && data.shop.install === undefined) installSavedShop(s);
   fillMail(s, data.mail, !!data.company?.zone);
   fillDesk(s, data.desk !== undefined);
+  s.webmail = { ...base.webmail, ...data.webmail };
   return s;
 }
 
