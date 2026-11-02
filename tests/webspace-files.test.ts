@@ -84,8 +84,7 @@ describe("upload and extract", () => {
 
   it("refuses writes past the disk quota", () => {
     const { s, id } = account(), w = s.workloads.find((x) => x.id === id)!;
-    // The derived contents grow with the quota, so the free space is a share of it.
-    const quotaFor = (freeMb: number) => { w.diskGb = 1; const u = ws(s, id).usage; return freeMb / (u.quotaMb - u.diskMb); };
+    const quotaFor = (freeMb: number) => (ws(s, id).usage.diskMb + freeMb) / 1024;
     w.diskGb = quotaFor(1);
     expect(err(fm.checkUpload(s, id, "public_html", WHMCACHE))).toBe("webspace.error.diskQuota");
     expect(err(fm.uploadFile(s, id, "public_html", WHMCACHE))).toBe("webspace.error.diskQuota");
