@@ -46,8 +46,6 @@ export default {
   "shop-boxBillin.site.apache": () => "Apache 2.0",
   "shop-boxBillin.site.updates": () => "Updates",
   "shop-boxBillin.site.updatesFree": () => "Kostenlos für jede Version",
-  "shop-boxBillin.site.step0": () => "Öffnen Sie die Seite Software und Updates eines Ihrer Panel-Hosts.",
-  "shop-boxBillin.site.step1": (p) => `Wählen Sie unter ${p.section} die Option ${p.button}.`,
   "shop-boxBillin.site.step2": () => "Melden Sie sich in Ihrer Verwaltung an unter",
   "shop-boxBillin.site.version": () => "Version",
   "shop-boxBillin.site.securityUntil": () => "Sicherheitsupdates bis",

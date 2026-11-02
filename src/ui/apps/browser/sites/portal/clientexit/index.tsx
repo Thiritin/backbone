@@ -6,7 +6,8 @@ import { ClientArea } from "../shared/ClientArea";
 import { VersionFooter } from "../shared/Licence";
 import { screenArgs, screenOf, type Screen, type ScreenName, type ScreenProps } from "../shared/nav";
 import { StoreFront } from "../shared/StoreFront";
-import type { Skin, SkinProps } from "../skins";
+import type { LoginProps, Skin, SkinProps } from "../skins";
+import { LoginNote } from "../Login";
 import "../portal.css";
 import "./skin.css";
 
@@ -129,14 +130,15 @@ const Store = (props: SkinProps) => {
 
 const Client = (props: SkinProps) => <StoreFrame {...props}><ClientArea game={props.game} customerId={props.route.query.get("c")} /></StoreFrame>;
 
-function Login({ game, variant, major, onLogin }: SkinProps & { onLogin: () => void }) {
+function Login({ game, variant, major, onLogin, error, onForgot }: SkinProps & LoginProps) {
   return (
     <div className={`portal cxe cxe-${lookOf(major, game.hour)} cxe-login`}>
-      <form className="cxe-loginbox" onSubmit={(e) => pick(e, onLogin)}>
+      <form className="cxe-loginbox" onSubmit={(e) => { e.preventDefault(); onLogin(e.currentTarget); }}>
         <div className="cxe-loginhead"><Mark /><span className="cxe-area">{t("cexit.admin")}</span></div>
-        <label>{t("shop-admin.username")}<input name="username" defaultValue="admin" autoComplete="off" /></label>
-        <label>{t("shop-admin.password")}<input name="password" type="password" defaultValue="password" autoComplete="off" /></label>
+        <label>{t("shop-setup.email")}<input name="username" type="email" autoComplete="off" /></label>
+        <label>{t("shop-admin.password")}<input name="password" type="password" autoComplete="off" /></label>
         <button type="submit" className="btn primary">{t("shop-admin.login")}</button>
+        <LoginNote error={error} onForgot={onForgot} />
       </form>
       <VersionFooter game={game} variant={variant} />
     </div>

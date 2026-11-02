@@ -46,8 +46,6 @@ export default {
   "ubersmyth.site.anyServers": () => "Servidores ilimitados",
   "ubersmyth.site.noneOnSale": () => "No hay ediciones a la venta.",
   "ubersmyth.site.install1": () => "Compre una clave de licencia en la página de precios.",
-  "ubersmyth.site.install2": () => "Abra Software y actualizaciones en uno de sus hosts con panel.",
-  "ubersmyth.site.install3": (p) => `En Sistema de tienda, elija ${p.name}, introduzca la clave y pulse Instalar ${p.name}.`,
   "ubersmyth.site.install4": (p) => `Inicie sesión en la administración en ${p.url}.`,
   "ubersmyth.site.version": () => "Versión",
   "ubersmyth.site.updatesUntil": () => "Actualizaciones hasta",

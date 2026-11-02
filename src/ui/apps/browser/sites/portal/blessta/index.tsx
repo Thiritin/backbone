@@ -6,7 +6,8 @@ import { ClientArea } from "../shared/ClientArea";
 import { VersionFooter } from "../shared/Licence";
 import { screenArgs, screenOf, type ScreenName } from "../shared/nav";
 import { StoreFront } from "../shared/StoreFront";
-import type { Skin, SkinProps } from "../skins";
+import type { LoginProps, Skin, SkinProps } from "../skins";
+import { LoginNote } from "../Login";
 import "../portal.css";
 import "./skin.css";
 
@@ -118,20 +119,21 @@ function ClientLogin({ game, open }: SkinProps) {
     <form className="bl-login" onSubmit={(e) => { e.preventDefault(); if (pick) open("client", {}, { c: pick }); }}>
       <h2>{t("blessta.signIn")}</h2>
       <label>{t("shop-admin.client")}<select value={pick} onChange={(e) => setPick(e.target.value)}>{active.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
-      <label>{t("shop-admin.password")}<input type="password" defaultValue="password" autoComplete="off" /></label>
+      <label>{t("shop-admin.password")}<input type="password" autoComplete="off" /></label>
       <button type="submit" className="btn primary" disabled={!pick}>{t("shop-admin.login")}</button>
     </form>
   );
 }
 
-function Login({ game, variant, major, onLogin }: SkinProps & { onLogin: () => void }) {
+function Login({ game, variant, major, onLogin, error, onForgot }: SkinProps & LoginProps) {
   return (
     <div className={`${cls(major)} bl-gate`}>
-      <form className="bl-login" onSubmit={(e) => { e.preventDefault(); onLogin(); }}>
+      <form className="bl-login" onSubmit={(e) => { e.preventDefault(); onLogin(e.currentTarget); }}>
         <div className="bl-loginhead"><Wordmark /></div>
-        <label>{t("shop-admin.username")}<input name="username" defaultValue="admin" autoComplete="off" /></label>
-        <label>{t("shop-admin.password")}<input name="password" type="password" defaultValue="password" autoComplete="off" /></label>
+        <label>{t("shop-admin.username")}<input name="username" autoComplete="off" /></label>
+        <label>{t("shop-admin.password")}<input name="password" type="password" autoComplete="off" /></label>
         <button type="submit" className="btn primary">{t("shop-admin.login")}</button>
+        <LoginNote error={error} onForgot={onForgot} />
       </form>
       <VersionFooter game={game} variant={variant} />
     </div>

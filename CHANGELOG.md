@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- The shop system is now installed by hand: download its archive from the vendor, upload and extract it into your web space, create a database and run its web installer, then log in to the admin area with the account you chose there.
+- Softaculus can install BoxBillin', ClientExit and Blessta in one step in the years it listed them, a forgotten shop admin password can be reset by mail, and existing shops get their files, database and a new admin password sent by mail.
 - The device picture in the inspector now matches the one in the rack, so a server shows the same drive bays, vent and control panel in both places.
 - Downloaded programs now arrive in Downloads as disk images and install by dragging them into Applications; a Trash at the end of the dock uninstalls them, and installing a second bookkeeping program asks before it replaces the current one.
 - Pleskit, DirectAdmen and FreePanel now open each web space in their own customer screens, where you manage files, databases, mailboxes, FTP accounts, domains and cron jobs as in cPanic.

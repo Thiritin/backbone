@@ -11,6 +11,7 @@ import { HOW_TO, KNOWLEDGE_BASE } from "../40-support/tickets";
 import { bookable, diskFits, lineOffered, noRoomError, nodeUsed, serverOf, vmOf, vmRoom, workloadOnline, workloadsOf, type Cluster, type Workload } from "../60-infra/cluster";
 import { machineAddress } from "../60-infra/addresses";
 import { hostPerf } from "../60-infra/php";
+import { shopBroken } from "../60-infra/shop-files";
 import { nodeUsage, SLOW_PERF, vmPerf } from "../60-infra/usage";
 import type { SimEvent } from "../88-tick/tick";
 import { owns, SITE_LINES } from "./marketing";
@@ -162,7 +163,7 @@ export function shopTier(s: GameState): LicenceTier | undefined {
 // Why the shop takes no orders: not installed, its host down, its licence ended or its edition full; null while it takes them.
 export function shopBlock(s: GameState): string | null {
   const id = s.shop.variant;
-  if (!id || !s.shop.install) return "error.shopNotInstalled";
+  if (!id || !s.shop.install || shopBroken(s)) return "error.shopNotInstalled";
   if (shopStatus(s) === "down") return "error.shopDown";
   if (["ended", "lapsed", "unlicensed"].includes(licenceStatus(s, SHOP_MACHINE, id) ?? "")) return "error.licenceExpired";
   const cap = shopTier(s)?.cap;

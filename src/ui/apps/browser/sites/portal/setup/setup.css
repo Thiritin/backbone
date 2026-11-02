@@ -1,0 +1,43 @@
+/* Shop installers: a plain wizard in each vendor's colours */
+.ss { --ss-bar: #1f3b5c; --ss-on: #fff; --ss-btn: #2a6db0; font: 13px/1.45 Tahoma, Verdana, sans-serif; color: #222; background: #eef1f4; min-height: 100%; }
+.ss-whmCache { --ss-bar: #13406e; --ss-btn: #3c8dbc; }
+.ss-modemBill { --ss-bar: #8c1d1d; --ss-btn: #b03030; }
+.ss-clientExit { --ss-bar: #3d4a57; --ss-btn: #e07b1a; }
+.ss-blessta { --ss-bar: #0f5f9e; --ss-btn: #1b87d1; font-family: Arial, sans-serif; }
+.ss-hostBull { --ss-bar: #2b2b2b; --ss-btn: #d9541e; font-family: "Trebuchet MS", sans-serif; }
+.ss-ubersmyth { --ss-bar: #4a4f55; --ss-btn: #5d8a2e; }
+.ss-boxBillin { --ss-bar: #155e63; --ss-btn: #1f8a91; font-family: Arial, sans-serif; }
+.ss-head { padding: 12px 20px; background: var(--ss-bar); color: var(--ss-on); }
+.ss-mark { font-size: 1.5em; font-weight: 700; letter-spacing: 0.01em; }
+.ss-body { display: flex; gap: 20px; max-width: 760px; margin: 20px auto; padding: 0 16px; align-items: flex-start; }
+.ss-steps { margin: 0; padding: 12px 12px 12px 30px; min-width: 170px; background: #fff; border: 1px solid #ccd3da; }
+.ss-steps li { padding: 3px 0; color: #888; }
+.ss-steps li.past { color: #2d7a2d; }
+.ss-steps li.on { color: #222; font-weight: 700; }
+.ss-main { flex: 1; min-width: 0; display: grid; gap: 10px; padding: 16px 20px; background: #fff; border: 1px solid #ccd3da; }
+.ss-main h1 { margin: 0 0 4px; font-size: 1.3em; }
+.ss-main p { margin: 0; }
+.ss-eula { max-height: 140px; overflow: auto; padding: 8px; border: 1px solid #ccd3da; background: #fafbfc; }
+.ss-check { display: flex; gap: 6px; align-items: center; }
+.ss-field { display: grid; grid-template-columns: 170px 1fr; gap: 8px; align-items: center; }
+.ss-field input { padding: 3px 5px; border: 1px solid #aab4be; font: inherit; }
+.ss-btn { justify-self: start; padding: 5px 16px; border: 0; border-radius: 3px; background: var(--ss-btn); color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+.ss-btn:disabled { opacity: 0.5; cursor: default; }
+.ss-table { border-collapse: collapse; }
+.ss-table th, .ss-table td { padding: 4px 12px 4px 0; text-align: left; border-bottom: 1px solid #e3e7eb; }
+.ss-ok { color: #2d7a2d; font-weight: 700; }
+.ss-bad { color: #b02020; font-weight: 700; }
+.ss-error { padding: 8px 10px; border: 1px solid #e0b4b4; background: #fbeaea; color: #8a1f1f; }
+.ss-warn { padding: 8px 10px; border: 1px solid #e6d29a; background: #fcf6e1; color: #6b5310; }
+.ss-gate { display: grid; gap: 10px; max-width: 340px; margin: 32px auto; padding: 20px; border: 1px solid #ccc; background: #f7f7f7; color: #222; }
+.ss-gate h2 { margin: 0; font-size: 1.2em; }
+.ss-gate label { display: grid; gap: 4px; }
+.portal-login-error { margin: 0; padding: 6px 8px; border: 1px solid #e0b4b4; background: #fbeaea; color: #8a1f1f; font-size: 0.95em; }
+.portal-forgot { font-size: 0.9em; }
+.portal-warn { margin: 0; padding: 8px 16px; background: #fcf6e1; color: #6b5310; border-bottom: 1px solid #e6d29a; }
+@media (max-width: 560px) {
+  .ss-body { flex-direction: column; }
+  .ss-steps { align-self: stretch; }
+  .ss-field { grid-template-columns: 1fr; }
+}
+.portal-plain .pt-version { padding: 8px 16px; color: #777; font-size: 0.85em; text-align: center; }

@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { dateOf } from "../src/sim/00-core/time";
-import { SHOP_SETUP_HOURS } from "../src/sim/10-catalog/shops";
 import { PREFERENCE } from "../src/sim/10-catalog/payments";
 import { issueInvoice } from "../src/sim/30-market/manual";
 import { orderLead } from "../src/sim/30-market/orders";
@@ -32,7 +31,6 @@ function shopGame(seed = 8, link = false): GameState {
   setUpChannel(s, "website");
   s.unlocks = [...s.unlocks, "shops"];
   installWithKey(s, "modemBill");
-  s.hour += SHOP_SETUP_HOURS;
   s.modules = [...s.modules, "paypail"];
   prefer({ transfer: 1 });
   if (link) s.modules = [...s.modules, "shop-link"];

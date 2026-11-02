@@ -85,5 +85,4 @@ export default {
   "host.licenseKey": () => "Chiave di licenza",
   "host.proceedTrial": () => "Procedi con la licenza di prova",
   "host.shop": () => "Sistema shop",
-  "host.installShop": (p) => `Installa ${p.name}`,
 } satisfies Dict;
