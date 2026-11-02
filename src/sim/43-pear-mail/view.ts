@@ -2,7 +2,7 @@
 import { foldersOf, isRead, listFolder, SYS_FOLDERS, view } from "../42-mail/model";
 import type { Folder, Message, SysFolder } from "../42-mail/types";
 import type { GameState } from "../50-state";
-import { localFolder, type ClientAccount } from "./state";
+import { clientAccount, localFolder, MY_PEAR, PEAR, type ClientAccount } from "./state";
 
 // Server mail reaches the client at its next check; the account's own drafts and sent copies are there at once.
 export const visibleTo = (c: ClientAccount, m: Message): boolean => m.at <= c.syncedAt || m.from === `acct:${c.accountId}`;
@@ -22,9 +22,14 @@ export const unreadBadge = (s: GameState): number =>
 export interface Row { c: ClientAccount; m: Message }
 export const UNIFIED = ["inbox", "drafts", "sent", "junk", "trash"] as const;
 
+// On My Pear reads like a POP account whose local folders are the ones the player made; its Trash joins the unified one.
+export const ON_MY_PEAR: ClientAccount = clientAccount(MY_PEAR, { accountId: PEAR, address: "", description: "", fullName: "", password: "", protocol: "pop" }, 0);
+export const myFolders = (s: GameState): Folder[] => s.pearMail.local.folders;
+
 // clientId null is the unified mailbox over every enabled account.
 export const mailboxRows = (s: GameState, clientId: string | null, folder: string): Row[] =>
-  s.pearMail.accounts.filter((c) => (clientId ? c.id === clientId : c.enabled)).flatMap((c) => clientFolder(s, c, folder).map((m) => ({ c, m })));
+  (clientId === MY_PEAR ? [ON_MY_PEAR] : [...s.pearMail.accounts.filter((c) => (clientId ? c.id === clientId : c.enabled)), ...(clientId ? [] : [ON_MY_PEAR])])
+    .flatMap((c) => clientFolder(s, c, folder).map((m) => ({ c, m })));
 
 export const clientUnread = (s: GameState, c: ClientAccount, folder: string): number => clientFolder(s, c, folder).filter((m) => !isRead(s, m)).length;
 

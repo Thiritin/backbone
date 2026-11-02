@@ -1,27 +1,28 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type DragEvent, type MouseEvent } from "react";
 import { Forward, Mail, MailX, Reply, ReplyAll, Search, SquarePen, Trash2 } from "lucide-react";
 import { t } from "../../../i18n/en";
 import { mailBuild } from "../../../sim/10-catalog/pear-mail";
 import { isRead } from "../../../sim/42-mail/model";
-import { clientFolders, mailboxRows, sortMessages, type Row, type SortKey } from "../../../sim/43-pear-mail/view";
+import { MY_PEAR } from "../../../sim/43-pear-mail/state";
+import { clientFolders, mailboxRows, sortMessages, type Row } from "../../../sim/43-pear-mail/view";
 import type { GameState } from "../../../sim/50-state";
 import { markMessages } from "../../../sim/90-actions/mailmsg";
 import { dismissPearWelcome, getMail, markPearMessages } from "../../../sim/90-actions/pear-mail";
 import { PearMailMark } from "../../art/mailmarks";
 import { VaultOffer } from "../../vault";
 import { useSessionState } from "../../session";
-import { useFocus, useStore } from "../../store";
+import { openMenu } from "../../desktop/ContextMenu";
+import { useFocus, useStore, useWin } from "../../store";
 import { matches, useSelection, type SearchScope } from "../mail-kit/mail-kit";
 import { AccountAlert, Assistant } from "./Assistant";
-import { compose, deleteRows, junkRows, moveRows } from "./commands";
+import { compose, deleteRows, junkRows, targets, transferRows, type Box } from "./commands";
 import { MessageList } from "./List";
+import { MailboxSheet } from "./Mailboxes";
+import { messageMenu, runShortcut, setPearCtx, type PearCtx, type Sheet, type Sort } from "./menus";
 import { Preview } from "./Preview";
-import { Sidebar } from "./Sidebar";
+import { dragRows, Sidebar } from "./Sidebar";
 import "./pear-mail.css";
 
-// A mailbox in the sidebar: c null is the unified mailbox over every enabled account.
-export interface Box { c: string | null; f: string }
-export interface Sort { key: SortKey; asc: boolean }
 const SCOPES: SearchScope[] = ["all", "from", "to", "subject"];
 
 function rowsOf(s: GameState, box: Box, query: string, scope: SearchScope, everywhere: boolean, sort: Sort): Row[] {
@@ -67,14 +68,41 @@ export function PearMailApp() {
   const inJunk = box.f === "junk";
   const [adding, setAdding] = useState(false);
   const [alert, setAlert] = useState<string | null>(null);
+  const [sheet, setSheet] = useState<Sheet | null>(null);
+  const [activity, setActivity] = useSessionState("pm.activity", false);
+  const win = useWin(), search = useRef<HTMLInputElement>(null);
   // A refused password asks once per session until the player answers.
   const [asked, setAsked] = useState<string[]>([]);
   const prompt = pm.accounts.find((c) => c.id === alert) ?? (!adding ? pm.accounts.find((c) => c.authFailed && c.enabled && !asked.includes(c.id)) : undefined);
   // A reply to a customer request goes through the ticket pane under the message.
-  const reply = (mode: "reply" | "all" | "forward") => {
-    const pane = mode !== "forward" && document.querySelector<HTMLElement>(".pm-ticket");
+  const reply = (mode: "reply" | "all" | "forward", row = shown ?? undefined) => {
+    const pane = mode !== "forward" && row === shown && document.querySelector<HTMLElement>(".pm-ticket");
     if (pane) { pane.scrollIntoView({ block: "nearest" }); pane.querySelector<HTMLElement>("button, input")?.focus(); return; }
-    if (shown) compose(game, act, shown.c.id, shown, mode);
+    // On My Pear mail is answered from the first account.
+    const from = row?.c.id === MY_PEAR ? home : row?.c;
+    if (row && from) compose(game, act, from.id, row, mode);
+  };
+  const ctx: PearCtx = {
+    game, act, box, picked, home, sort, setSort, threads, setThreads, reply, newMessage: () => home && compose(game, act, home.id), addAccount: () => setAdding(true),
+    sheet: setSheet, activity, setActivity, search: () => search.current?.focus(), close: () => win.close(),
+  };
+  setPearCtx(ctx);
+  // The shortcuts of the front Pear Mail window.
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => {
+      const front = [...useStore.getState().windows].filter((w) => !w.minimized).sort((a, b) => b.z - a.z)[0];
+      if (front?.id === win.id) runShortcut(e);
+    };
+    window.addEventListener("keydown", key);
+    return () => { window.removeEventListener("keydown", key); setPearCtx(null); };
+  }, [win.id]);
+  // A drag or a right-click on an unselected row takes that row alone.
+  const rowsFor = (r: Row) => (sel.ids.includes(r.m.id) ? picked.filter((x) => x.c.id === r.c.id) : [r]);
+  const onDrag = (e: DragEvent, r: Row) => dragRows(e, rowsFor(r));
+  const onMenu = (e: MouseEvent, r: Row) => {
+    e.preventDefault();
+    if (!sel.ids.includes(r.m.id)) sel.set([r.m.id]);
+    openMenu(e.clientX, e.clientY, messageMenu(ctx, rowsFor(r)));
   };
   const tool = (label: string, Icon: typeof Mail, run: () => void, disabled = false) => (
     <button className="pm-tool" disabled={disabled} onClick={run}><span className="pm-tool-face"><Icon /></span>{t(label)}</button>
@@ -99,9 +127,13 @@ export function PearMailApp() {
         {tool("pearMail.replyAll", ReplyAll, () => reply("all"), !shown)}
         {tool("pearMail.forward", Forward, () => reply("forward"), !shown)}
         {tool("pearMail.new", SquarePen, () => home && compose(game, act, home.id), !home)}
-        <select className="pm-move" aria-label={t("pearMail.moveTo")} value="" disabled={!one} onChange={(e) => moveRows(act, picked, e.target.value)}>
+        <select className="pm-move" aria-label={t("pearMail.moveTo")} value="" disabled={!one} onChange={(e) => { const [c, f] = e.target.value.split(":"); transferRows(act, picked, { c, f }); }}>
           <option value="" disabled>{t("pearMail.moveTo")}</option>
-          {one && clientFolders(game, one).filter((f) => f.id !== box.f).map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+          {one && targets(game, one).map((g) => (
+            <optgroup key={g.c} label={g.label}>
+              {g.folders.filter((f) => !(g.c === one.id && f.id === box.f)).map((f) => <option key={f.id} value={`${g.c}:${f.id}`}>{f.name}</option>)}
+            </optgroup>
+          ))}
         </select>
         <span className="pm-grow" />
         <label className="pm-search">
@@ -109,7 +141,7 @@ export function PearMailApp() {
             {SCOPES.map((x) => <option key={x} value={x}>{t(`pearMail.scope.${x}`)}</option>)}
           </select>
           <Search />
-          <input type="search" aria-label={t("pearMail.search")} placeholder={t("pearMail.search")} value={query} onChange={(e) => setQuery(e.target.value)} />
+          <input ref={search} type="search" aria-label={t("pearMail.search")} placeholder={t("pearMail.search")} value={query} onChange={(e) => setQuery(e.target.value)} />
         </label>
       </div>
       <VaultOffer />
@@ -119,9 +151,9 @@ export function PearMailApp() {
         </div>
       )}
       <div className="pm-split">
-        <Sidebar game={game} box={box} onBox={(b) => { setBox(b); setQuery(""); }} onAdd={() => setAdding(true)} onAlert={setAlert} />
+        <Sidebar game={game} box={box} onBox={(b) => { setBox(b); setQuery(""); }} onAdd={() => setAdding(true)} onAlert={setAlert} activity={activity} onActivity={setActivity} ctx={ctx} />
         <div className="pm-content">
-          <MessageList game={game} rows={rows} box={box} sort={sort} onSort={setSort} threads={threads} onThreads={setThreads} sel={sel} />
+          <MessageList game={game} rows={rows} box={box} sort={sort} onSort={setSort} threads={threads} onThreads={setThreads} sel={sel} onDrag={onDrag} onMenu={onMenu} />
           <Preview game={game} row={shown} />
         </div>
       </div>
@@ -133,6 +165,7 @@ export function PearMailApp() {
         </div>
       )}
       {adding && <Assistant onClose={() => setAdding(false)} />}
+      {sheet && !adding && <MailboxSheet sheet={sheet} box={box} onClose={() => setSheet(null)} onGone={(b) => { if (b.c === box.c && b.f === box.f) setBox({ c: null, f: "inbox" }); }} />}
       {prompt && !adding && <AccountAlert key={prompt.id} c={prompt} onClose={() => { setAlert(null); setAsked([...asked, prompt.id]); }} />}
     </div>
   );

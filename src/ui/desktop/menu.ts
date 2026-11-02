@@ -1,6 +1,8 @@
-// A context menu entry; null draws a separator. An item with items opens a submenu.
-export interface MenuItem { label: string; run?: () => void; disabled?: boolean; checked?: boolean; items?: MenuEntry[] }
+// A context menu entry; null draws a separator. An item with items opens a submenu; key is the shortcut it shows.
+export interface MenuItem { label: string; run?: () => void; disabled?: boolean; checked?: boolean; items?: MenuEntry[]; key?: string }
 export type MenuEntry = MenuItem | null | false | undefined;
+// A menu an app adds to the menu bar while its window is in front; the one with id "window" heads the Window menu.
+export interface AppMenu { id: string; title: string; items: MenuEntry[] }
 
 // Drops falsy entries and the separators that would sit at either end or next to each other.
 export function tidy(entries: MenuEntry[]): (MenuItem | null)[] {

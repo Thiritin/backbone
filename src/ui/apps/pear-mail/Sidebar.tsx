@@ -1,14 +1,19 @@
+import { useState, type DragEvent, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 import { Activity, Archive, FileText, Folder, Inbox, MailX, Plus, Send, Trash2, TriangleAlert, type LucideIcon } from "lucide-react";
 import { t } from "../../../i18n/en";
 import { LOCALE } from "../../../i18n/lang";
+import { isRead } from "../../../sim/42-mail/model";
 import type { Folder as MailFolder } from "../../../sim/42-mail/types";
 import { clientError } from "../../../sim/43-pear-mail/check";
-import { clientFolders, clientUnread, UNIFIED } from "../../../sim/43-pear-mail/view";
+import { MY_PEAR } from "../../../sim/43-pear-mail/state";
+import { clientFolders, clientUnread, mailboxRows, myFolders, ON_MY_PEAR, UNIFIED, type Row } from "../../../sim/43-pear-mail/view";
 import type { GameState } from "../../../sim/50-state";
-import { getMail } from "../../../sim/90-actions/pear-mail";
-import { useSessionState } from "../../session";
+import { getMail, transferMessages } from "../../../sim/90-actions/pear-mail";
+import { menuOn } from "../../desktop/ContextMenu";
 import { useStore } from "../../store";
-import type { Box } from "./PearMailApp";
+import { dragPayload, MAIL_DRAG, readDrag } from "../mail-kit/mail-kit";
+import { customBox, mailboxOps, type Box } from "./commands";
+import { mailboxMenu, type PearCtx } from "./menus";
 
 const ICONS: Record<string, LucideIcon> = { inbox: Inbox, drafts: FileText, sent: Send, junk: MailX, trash: Trash2, archive: Archive };
 const GREY = new Set(["junk", "trash"]);
@@ -19,15 +24,66 @@ const depth = (f: MailFolder, all: MailFolder[]): number => {
   return n;
 };
 
-function Item({ label, folder, count, active, level = 0, onClick }: { label: string; folder: string; count: number; active: boolean; level?: number; onClick: () => void }) {
+const FROM = "application/x-pear-from-", BOX = "application/x-pear-box", BOX_FROM = "application/x-pear-box-";
+// The client id a drag came from, read from its type list, since dragover cannot read the data itself.
+const sourceOf = (e: DragEvent, prefix: string) => e.dataTransfer.types.find((x) => x.startsWith(prefix))?.slice(prefix.length) ?? null;
+// Mail goes within its account or to and from On My Pear; the unified Inbox, Junk and Trash take each message to its own account's.
+const takes = (src: string | null, b: Box) => !!src && (b.c === null ? ["inbox", "junk", "trash"].includes(b.f) : src === b.c || src === MY_PEAR || b.c === MY_PEAR);
+
+export function dragRows(e: DragEvent, rows: Row[]): void {
+  const c = rows[0].c.id;
+  e.dataTransfer.setData(MAIL_DRAG, dragPayload(c, rows.map((r) => r.m.id)));
+  e.dataTransfer.setData(FROM + c, "");
+  e.dataTransfer.effectAllowed = "copyMove";
+}
+
+interface Drops { drop?: Box; nest?: { c: string; f: string | null }; drag?: { c: string; f: string } }
+// Drop handling shared by mailbox rows and headers: messages move or copy (Option), mailboxes nest.
+function useDrops({ drop, nest, drag }: Drops) {
+  const act = useStore((s) => s.act);
+  const [hot, setHot] = useState(false);
+  const accepts = (e: DragEvent) => (drop && e.dataTransfer.types.includes(MAIL_DRAG) && takes(sourceOf(e, FROM), drop))
+    || (nest && e.dataTransfer.types.includes(BOX) && sourceOf(e, BOX_FROM) === nest.c);
+  return {
+    hot,
+    draggable: !!drag || undefined,
+    onDragStart: drag && ((e: DragEvent) => { e.dataTransfer.setData(BOX, JSON.stringify(drag)); e.dataTransfer.setData(BOX_FROM + drag.c, ""); e.dataTransfer.effectAllowed = "move"; }),
+    onDragOver: (e: DragEvent) => {
+      if (!accepts(e)) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = e.dataTransfer.types.includes(BOX) || !e.altKey ? "move" : "copy";
+      setHot(true);
+    },
+    onDragLeave: () => setHot(false),
+    onDrop: (e: DragEvent) => {
+      setHot(false);
+      if (!accepts(e)) return;
+      e.preventDefault();
+      const d = readDrag(e), game = useStore.getState().game;
+      if (d && drop) act(transferMessages, d.accountId, d.ids, drop.c ?? d.accountId, drop.f, e.altKey);
+      else if (nest) {
+        const b = JSON.parse(e.dataTransfer.getData(BOX)) as { c: string; f: string };
+        if (b.f !== nest.f) mailboxOps(game, act, nest.c).nest(b.f, nest.f);
+      }
+    },
+  };
+}
+
+function Item({ label, folder, count, active, level = 0, onClick, onMenu, ...drops }: Drops & { label: string; folder: string; count: number; active: boolean; level?: number; onClick: () => void; onMenu: (e: ReactMouseEvent) => void }) {
   const Icon = ICONS[folder] ?? Folder;
+  const { hot, ...dnd } = useDrops(drops);
   return (
-    <button className={`side-item pm-box${active ? " active" : ""}`} style={{ paddingLeft: 8 + level * 14 }} aria-current={active || undefined} onClick={onClick}>
+    <button className={`side-item pm-box${active ? " active" : ""}${hot ? " drop" : ""}`} style={{ paddingLeft: 8 + level * 14 }} aria-current={active || undefined} onClick={onClick} onContextMenu={onMenu} {...dnd}>
       <Icon />
       <span className="pm-box-name">{label}</span>
       {count > 0 && <span className={`pm-count${GREY.has(folder) ? " grey" : ""}`}>{count.toLocaleString(LOCALE)}</span>}
     </button>
   );
+}
+
+function Header({ children, nest, onMenu }: { children: ReactNode; nest?: { c: string; f: null }; onMenu?: (e: ReactMouseEvent) => void }) {
+  const { hot, ...dnd } = useDrops({ nest });
+  return <div className={`side-h pm-account-h${hot ? " drop" : ""}`} onContextMenu={onMenu} {...dnd}>{children}</div>;
 }
 
 const ACTIVITY_SHOWN = 6;
@@ -51,34 +107,48 @@ function ActivityPane({ game }: { game: GameState }) {
   );
 }
 
-export function Sidebar({ game, box, onBox, onAdd, onAlert }: { game: GameState; box: Box; onBox: (b: Box) => void; onAdd: () => void; onAlert: (clientId: string) => void }) {
-  const on = game.pearMail.accounts.filter((c) => c.enabled);
-  const [activity, setActivity] = useSessionState("pm.activity", false);
+interface Props { game: GameState; box: Box; onBox: (b: Box) => void; onAdd: () => void; onAlert: (clientId: string) => void; activity: boolean; onActivity: (on: boolean) => void; ctx: PearCtx }
+
+export function Sidebar({ game, box, onBox, onAdd, onAlert, activity, onActivity, ctx }: Props) {
+  const unreadIn = (f: string) => mailboxRows(game, null, f).filter((r) => !isRead(game, r.m)).length;
+  const menu = (c: string | null, f: string | null) => menuOn(() => mailboxMenu(ctx, c, f));
+  const tree = (c: string, folders: MailFolder[], count: (f: string) => number) => folders.map((f) => {
+    const mine = !!customBox(game, { c, f: f.id });
+    return (
+      <Item key={f.id} label={f.name} folder={f.id} level={depth(f, folders)} count={count(f.id)} active={box.c === c && box.f === f.id} onClick={() => onBox({ c, f: f.id })} onMenu={menu(c, f.id)}
+        drop={{ c, f: f.id }} nest={mine ? { c, f: f.id } : undefined} drag={mine ? { c, f: f.id } : undefined} />
+    );
+  });
+  const mine = myFolders(game);
   return (
     <aside className="sidebar pm-side">
       <div className="side-h">{t("pearMail.mailboxes")}</div>
       {UNIFIED.map((f) => (
-        <Item key={f} label={t(`mail.folder.${f}`)} folder={f} count={on.reduce((n, c) => n + clientUnread(game, c, f), 0)} active={box.c === null && box.f === f} onClick={() => onBox({ c: null, f })} />
+        <Item key={f} label={t(`mail.folder.${f}`)} folder={f} count={unreadIn(f)} active={box.c === null && box.f === f} onClick={() => onBox({ c: null, f })} onMenu={menu(null, f)} drop={{ c: null, f }} />
       ))}
       {game.pearMail.accounts.map((c) => {
-        const error = clientError(game, c), folders = clientFolders(game, c);
+        const error = clientError(game, c);
         return (
           <div key={c.id} className={c.enabled ? "pm-account" : "pm-account off"}>
-            <div className="side-h pm-account-h">
+            <Header nest={c.protocol === "imap" ? { c: c.id, f: null } : undefined} onMenu={menu(c.id, null)}>
               <span>{c.description}</span>
               {error && <button className="pm-warn" title={t(error)} aria-label={t(error)} onClick={() => onAlert(c.id)}><TriangleAlert /></button>}
-            </div>
-            {folders.map((f) => (
-              <Item key={f.id} label={f.name} folder={f.id} level={depth(f, folders)} count={c.enabled ? clientUnread(game, c, f.id) : 0} active={box.c === c.id && box.f === f.id} onClick={() => onBox({ c: c.id, f: f.id })} />
-            ))}
+            </Header>
+            {tree(c.id, clientFolders(game, c), (f) => (c.enabled ? clientUnread(game, c, f) : 0))}
           </div>
         );
       })}
+      {mine.length > 0 && (
+        <div className="pm-account">
+          <Header nest={{ c: MY_PEAR, f: null }} onMenu={menu(MY_PEAR, null)}><span>{t("pearMail.onMyPear")}</span></Header>
+          {tree(MY_PEAR, mine, (f) => clientUnread(game, ON_MY_PEAR, f))}
+        </div>
+      )}
       <span className="pm-grow" />
       {activity && <ActivityPane game={game} />}
       <div className="pm-side-foot">
         <button aria-label={t("pearMail.add.title")} title={t("pearMail.add.title")} onClick={onAdd}><Plus /></button>
-        <button aria-label={t("pearMail.activity")} title={t("pearMail.activity")} aria-pressed={activity} className={activity ? "on" : ""} onClick={() => setActivity(!activity)}><Activity /></button>
+        <button aria-label={t("pearMail.activity")} title={t("pearMail.activity")} aria-pressed={activity} className={activity ? "on" : ""} onClick={() => onActivity(!activity)}><Activity /></button>
       </div>
     </aside>
   );

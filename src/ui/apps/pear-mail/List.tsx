@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type DragEvent, type MouseEvent } from "react";
 import { ChevronDown, ChevronRight, Flag, Paperclip } from "lucide-react";
 import { t } from "../../../i18n/en";
 import { LOCALE } from "../../../i18n/lang";
@@ -8,7 +8,8 @@ import { threadsOf, type Row, type SortKey } from "../../../sim/43-pear-mail/vie
 import type { GameState } from "../../../sim/50-state";
 import { menuOn } from "../../desktop/ContextMenu";
 import type { useSelection } from "../mail-kit/mail-kit";
-import type { Box, Sort } from "./PearMailApp";
+import type { Box } from "./commands";
+import type { Sort } from "./menus";
 
 export const mailDate = (at: number): string => new Intl.DateTimeFormat(LOCALE, { dateStyle: "short", timeStyle: "short", timeZone: "UTC" }).format(dateOf(at / 60));
 const SORTS: SortKey[] = ["from", "subject", "date"];
@@ -16,9 +17,10 @@ const SORTS: SortKey[] = ["from", "subject", "date"];
 interface Props {
   game: GameState; rows: Row[]; box: Box; sort: Sort; onSort: (s: Sort) => void; threads: boolean; onThreads: (on: boolean) => void;
   sel: ReturnType<typeof useSelection>;
+  onDrag: (e: DragEvent, r: Row) => void; onMenu: (e: MouseEvent, r: Row) => void;
 }
 
-export function MessageList({ game, rows, box, sort, onSort, threads, onThreads, sel }: Props) {
+export function MessageList({ game, rows, box, sort, onSort, threads, onThreads, sel, onDrag, onMenu }: Props) {
   const [open, setOpen] = useState<string[]>([]);
   const outgoing = box.f === "sent" || box.f === "drafts";
   const groups = threads ? threadsOf(rows, (r) => r.m) : rows.map((r) => [r]);
@@ -31,7 +33,8 @@ export function MessageList({ game, rows, box, sort, onSort, threads, onThreads,
   const line = (r: Row, lead: Row[] | null) => {
     const v = view(game, r.m), unread = !isRead(game, r.m), id = r.m.id, expanded = lead && open.includes(r.m.thread);
     return (
-      <tr key={id} className={`${sel.ids.includes(id) ? "sel" : ""}${unread ? " unread" : ""}`} aria-selected={sel.ids.includes(id)} onClick={(e) => sel.click(id, e)}>
+      <tr key={id} className={`${sel.ids.includes(id) ? "sel" : ""}${unread ? " unread" : ""}`} aria-selected={sel.ids.includes(id)} onClick={(e) => sel.click(id, e)}
+        draggable onDragStart={(e) => onDrag(e, r)} onContextMenu={(e) => onMenu(e, r)}>
         <td className="pm-c-mark">
           {lead && lead.length > 1
             ? <button className="pm-disclose" aria-expanded={!!expanded} onClick={(e) => { e.stopPropagation(); setOpen(expanded ? open.filter((x) => x !== r.m.thread) : [...open, r.m.thread]); }}>{expanded ? <ChevronDown /> : <ChevronRight />}</button>
