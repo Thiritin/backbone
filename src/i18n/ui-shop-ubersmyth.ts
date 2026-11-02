@@ -6,6 +6,7 @@ export default {
   "ubersmyth.nav.clients": () => "Client Manager",
   "ubersmyth.nav.orders": () => "Order Queue",
   "ubersmyth.nav.invoices": () => "Invoices",
+  "ubersmyth.nav.quotes": () => "Quotes",
   "ubersmyth.nav.products": () => "Service Plans",
   "ubersmyth.nav.options": () => "Plan Options",
   "ubersmyth.nav.servers": () => "Device Manager",
