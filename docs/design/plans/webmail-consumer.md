@@ -95,7 +95,7 @@ One component with three looks, drawn over the mail kit.
 ### 3.5 Account and leaving
 
 - Account page: tier, next charge, address, password change, Receives, access and collector summary.
-- Downgrading to FreeMix is a multi-page cancellation in the `frames` look (confirm, reason, a retention offer of three months at €0.99, final confirm). It takes effect at the end of the paid month. The real portal's cancellation was famously hard, and the copy says so with a straight face.
+- Downgrading to FreeMix is a multi-page cancellation in the `frames` look (confirm, reason, a retention offer of three months at €0.99 that is shown once per tenant and bills that price for three month starts when taken, final confirm). It takes effect at the end of the paid month. The real portal's cancellation was famously hard, and the copy says so with a straight face.
 - Delete mailbox asks for the password and the address typed again, then calls `deleteMailAccount` and `endTenant`. It is refused for the primary mailbox, the last mailbox and a mailbox that is a source's contact or a desk channel's input (mail-core's errors name them). A deleted GMix address is free to take again (mail-core), so old vendor mail can reach a stranger.
 - Cancelling or deleting a mailbox never touches mail already copied into another account.
 
@@ -281,7 +281,7 @@ After 3, GMix (4 and 5) and Goggle (6 and 7) run in parallel. Milestones 8 and 9
    - i18n: errors, the provider emails (`mailWelcome`, the era notices) and the reset page text. The `letter.mailReset.*` keys are mail-core's.
    - Test: `tests/mail-provider-actions.test.ts`: sign-up charges from the next month start, the mailbox cap, cancel ends at month end and removes after 20 days, a Goggle sign-up creates a mailbox for every employee, a free Goggle tenant locks on 2022-05-01 and a chosen paid edition unlocks it.
 4. **GMix site (`gmix-site`).**
-   - Sim: the `mailProvider` page kind and `resolve` lines in `browser.ts`, `providerDomain`, the index category, the default bookmark.
+   - Sim: the `mailProvider` page kind and `resolve` lines in `browser.ts`, `providerDomain`, the index category, the default bookmark. The hosts sit in `MAIL_SITES` in `mail-consumer.ts` (the catalog rows carry no site hosts), where the webmail-server lane adds its ids. `gmixSuggestions` in `80-business/mail-provider.ts` builds the free names for a taken one, and `acceptGmixOffer` with the tenant's `offerUntil` makes the retention offer real: three month starts at `GMIX_OFFER`, once per tenant.
    - UI: `src/ui/apps/browser/sites/mail/gmix/GmixSite.tsx` with the three looks, the portal home with the news and weather boxes, the tier pages and compare table, sign-up with the strength bar, login with KeePassive, Forgot password and the reset page, the account page (tier, password, Receives, delete mailbox, the multi-page cancellation). Browser tab title and favicon from the existing mark.
    - i18n: `ui-mail-gmix.ts`.
    - Test: `tests/gmix-site.test.tsx` renders the portal in 2005, 2012 and 2019 and asserts the look class, the tier table rows by year and the 2018 interstitial; a wrong password shows `error.mailLogin`, the saved login fills the form, and the Forgot password page requests a letter and accepts its code once it has arrived.

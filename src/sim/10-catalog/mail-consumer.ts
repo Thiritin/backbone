@@ -46,3 +46,8 @@ const IMPORTANT_KINDS: MailKind[] = ["support", "order", "staff"];
 // Gmial's Priority rule: an important kind, a sender the mailbox has written to, or a message it answered.
 export const importantOf = (m: Message, wroteTo: Set<string>, answered: Set<string>): boolean =>
   IMPORTANT_KINDS.includes(m.kind) || wroteTo.has(m.from) || answered.has(m.id);
+
+// The hosts each provider site answers on; the first is its home.
+export const MAIL_SITES = { gmix: ["gmix.net", "gmix.com"] } as const;
+export type MailSiteId = keyof typeof MAIL_SITES;
+export const mailSiteUrl = (id: MailSiteId, path = ""): string => `www.${MAIL_SITES[id][0]}/${path}`;
