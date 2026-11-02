@@ -20,6 +20,7 @@ export default {
   "books-editions.feature.reports": () => `Conto economico e flusso di cassa`,
   "books-editions.feature.helpdesk-link": () => `Collegamento helpdesk`,
   "books-editions.feature.statistics": () => `Statistiche`,
+  "books-editions.feature.dunning": () => "Livelli di sollecito",
   "ledger.booksSeat": (p) => `Postazione ${p.program} ${p.edition}`,
   "error.unknownEdition": () => `Questa edizione non è in vendita.`,
   "books-editions.noSeat": () => `Nessuna postazione`,

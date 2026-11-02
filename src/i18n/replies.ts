@@ -107,6 +107,11 @@ const MAILS: Record<string, [Mail, Mail, Mail]> = {
     (p) => `Unfortunately there is no backup of ${site(p)} on our side. You will need to restore it from your own files and change your passwords.`,
     (p) => `We cannot restore ${site(p)} because no backup exists. Please rebuild it from your own copy and keep the software up to date.`,
   ],
+  cleanPaid: [
+    (p) => `We can clean ${site(p)} by hand and remove the intruder's files. The work costs ${euroCents(Number(p.cleanup))} at our hourly rate.`,
+    (p) => `There is no backup of ${site(p)}, but we can clean it up manually for ${euroCents(Number(p.cleanup))}. Please choose new passwords afterwards.`,
+    (p) => `We are happy to remove the hack from ${site(p)} by hand. Billed by the hour, the clean-up comes to ${euroCents(Number(p.cleanup))}.`,
+  ],
   "tpl.explain": [
     () => "The second payment covers last month's usage, which we invoice in arrears. You have not been charged twice.",
     () => "There are two invoices because usage is billed at the end of each month for the month before. Both are correct, and nothing was charged twice.",

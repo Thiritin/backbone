@@ -17,7 +17,8 @@ import { InstanceOverview, Overview } from "../src/ui/apps/browser/consoles/open
 import { CtPage, HostPage, TemplatesPage } from "../src/ui/apps/browser/consoles/openveezee/OpenVeeZee";
 import { VmSummary as PmxSummary } from "../src/ui/apps/browser/consoles/proxmocks/Proxmocks";
 import { VmMonitor, VmSummary as VswSummary } from "../src/ui/apps/browser/consoles/vmwhere/VmWhere";
-import type { Cluster } from "../src/sim/60-infra/cluster";
+import { hostOfVm, type Cluster } from "../src/sim/60-infra/cluster";
+import { buyProvider } from "../src/sim/60-infra/addresses";
 import { buyDevice, hypervisor, lateVersions, panelVm, pinVersion, skipTo, withServer, newGame } from "./fixtures";
 import { mountDevice } from "./plugged";
 
@@ -137,6 +138,25 @@ describe("hypervisor consoles", () => {
       const out = renderToString(<View />);
       for (const m of marks) expect(out, `${id} ${m}`).toContain(m);
       expect(out, id).toMatch(/<(polyline|rect) class="cx-chart-(line|bar)"/);
+    }
+  });
+
+  it("shows a VM's public address on its page in every console", () => {
+    const pages: Record<string, (g: GameState, c: Cluster, v: Vm) => ReactElement> = {
+      proxmocks: (g, c, v) => <PmxSummary game={g} c={c} v={v} />,
+      vmwhere: (g, _, v) => <VswSummary game={g} v={v} era="clearity" />,
+      hypervee: (g, _, v) => <VmDetails game={g} v={v} generations />,
+      openveezee: (g, _, v) => <CtPage game={g} v={v} host="hv.example.com" />,
+      openstash: (g, c, v) => <InstanceOverview game={g} c={c} v={v} flavor="m1.small" />,
+    };
+    for (const [id, page] of Object.entries(pages)) {
+      const s = withServer(newGame(3));
+      skipTo(s, 2016);
+      s.cash = 1_000_000;
+      const c = hypervisor(s, ["dev3"], "Cloud 1", id), host = panelVm(s, c), vm = s.workloads.find((w) => hostOfVm(s, w.id)?.id === host)!.id;
+      const { ip } = buyProvider(s, s.locations[0], 4, vm);
+      const View = () => { const cl = s.clusters.find((x) => x.id === c)!, v = useVms(s, cl, consoleFeatures(id, yearOf(s.hour))).vms.find((x) => x.id === vm)!; return page(s, cl, v); };
+      expect(renderToString(<View />), id).toContain(ip);
     }
   });
 });

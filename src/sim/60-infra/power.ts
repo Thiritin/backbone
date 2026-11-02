@@ -9,7 +9,7 @@ import { dropCluster, insideVm, installingOn, isOwnVm, type Workload } from "./c
 import { rebuildHours, type SimEvent } from "../88-tick/tick";
 import { reportLoss } from "../85-products/products";
 import { loadSaved } from "./switches";
-import { bootHours, booting, haltHours, deviceHealth, drivesOf, dualFed, HOURS_PER_YEAR, locationOf, powered, pluggedIn, psusOf, rackPower, takesShutdown } from "./status";
+import { bootHours, booting, haltHours, osBootHours, deviceHealth, drivesOf, dualFed, HOURS_PER_YEAR, locationOf, powered, pluggedIn, psusOf, rackPower, takesShutdown } from "./status";
 
 // An unclean stop corrupts the data of the workloads that ran with this chance.
 export const CORRUPT_CHANCE = 0.15;
@@ -17,7 +17,7 @@ export const CORRUPT_CHANCE = 0.15;
 export const RECOVER_FINE = 0.7;
 export const RECOVER_HOURS = 0.5;
 export const BMC_RESET_HOURS = 0.25;
-// Yearly hang rates: the operating system doubles while degraded or hot and triples while frozen from RAM overcommit; the BMC triples after six years.
+// Yearly hang rates: the operating system doubles while degraded or hot; the BMC triples after six years.
 export const HANG_YEARLY = 0.01;
 export const BMC_HANG_YEARLY = 0.01;
 export const BMC_OLD_YEARS = 6;
@@ -36,7 +36,7 @@ export { LOG_MAX, pushLog, sevOf } from "./syslog";
 
 export function hangChance(s: GameState, d: Device): number {
   const state = deviceHealth(s, d.id).state;
-  const factor = (state === "degraded" || state === "hot" ? 2 : 1) * (s.frozen.includes(d.id) ? 3 : 1);
+  const factor = (state === "degraded" || state === "hot" ? 2 : 1);
   return (HANG_YEARLY * factor) / HOURS_PER_YEAR;
 }
 
@@ -112,10 +112,13 @@ export function halt(s: GameState, d: Device): void {
   pushLog(d, s.hour, "ipmi.log.shutdown");
 }
 
-// Every minute: devices whose OS has halted switch off.
+// Every minute: devices whose OS has halted switch off, and own VMs stop or, on a reboot, boot again.
 export function haltTick(s: GameState): void {
-  if (!s.devices.some((d) => d.haltUntil !== undefined && d.haltUntil <= nowHours(s))) return;
-  s.devices = s.devices.map((d) => (d.haltUntil !== undefined && d.haltUntil <= nowHours(s) ? { ...d, on: false, haltUntil: undefined } : d));
+  const now = nowHours(s), due = (x: { haltUntil?: number }) => x.haltUntil !== undefined && x.haltUntil <= now;
+  if (s.devices.some(due)) s.devices = s.devices.map((d) => (due(d) ? { ...d, on: false, haltUntil: undefined } : d));
+  if (!s.workloads.some(due)) return;
+  s.workloads = s.workloads.map((w): Workload => !due(w) ? w
+    : { ...w, haltUntil: undefined, reboot: undefined, ...(w.reboot ? { bootUntil: now + osBootHours(s, w) } : { stopped: true }) });
 }
 
 // Every minute: a feed above its limit trips at once, one above its continuous load after CONTINUOUS.hours. Servers on the

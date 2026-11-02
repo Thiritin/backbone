@@ -27,7 +27,8 @@ export interface Banner { id: number; app: string; title: string; text: string; 
 // What a notification opens its app on, read from the ids its event names.
 export const focusOf = (p: Record<string, string | number>): Omit<Focus, "n"> | undefined =>
   p.ticketId !== undefined ? { kind: "ticket", id: String(p.ticketId) } :
-  p.deviceId !== undefined ? { kind: "device", id: String(p.deviceId) } : undefined;
+  p.deviceId !== undefined ? { kind: "device", id: String(p.deviceId) } :
+  p.serviceId !== undefined ? { kind: "site", id: String(p.serviceId) } : undefined;
 // Older prefs also carry a banners flag, which is ignored: an allowed app shows banners and fills the notification centre.
 // types holds the notification types switched off or on by id (notify-types.ts); a missing id is on.
 export interface NotifyPref { allow: boolean; sound: boolean; types?: Record<string, boolean> }

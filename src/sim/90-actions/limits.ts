@@ -3,7 +3,7 @@ import type { Resources } from "../10-catalog/products";
 import { sizeOf } from "../30-market/spec";
 import { datastoreFits, deltaGb, KEYS, nodeTakes, vmOf, vmRoom, workloadsOf } from "../60-infra/cluster";
 import { withinOversell } from "../60-infra/oversell";
-import { freezeTick, need } from "../60-infra/usage";
+import { need } from "../60-infra/usage";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
 
@@ -26,7 +26,6 @@ export function setLimits(s: GameState, serviceId: string, size: Resources): Act
   if (r.vcpu > w.vcpu && !withinOversell(s, c, { vcpu: r.vcpu - w.vcpu })) return fail("error.oversellCap");
   const promised = KEYS.some((k) => r[k] < v.spec[k]) ? sizeOf(v.spec) : undefined;
   s.workloads = s.workloads.map((x) => (x.id === w.id ? { ...x, ...r, promised } : x));
-  freezeTick(s);
   logActivity(s, { customerId: v.customerId, serviceId: v.id, by: null, key: "activity.limits", params: { vcpu: r.vcpu, ram: r.ramGb, disk: r.diskGb }, minutes: ACTION_MINUTES.limits });
   return { ok: true };
 }

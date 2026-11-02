@@ -1,11 +1,15 @@
 import { Search } from "lucide-react";
 import { useState } from "react";
-import { Backups, eraAt, looks, LoginForm, Nodes, RowsTable, usePanelTab, useRows, useSoftware, type PanelProps } from "../PanelBase";
+import { eraAt, looks, LoginForm, Nodes, RowsTable, usePanelTab, useRows, useSoftware, type PanelProps } from "../PanelBase";
 import { t } from "../../../../../i18n/en";
 import { parseCreate } from "../../../../../sim/80-business/consoles";
 import { PackagesScreen, ProvisionForm } from "../PackageForms";
 import { useReadoutPages } from "../Readouts";
 import { CustomBuild } from "./CustomBuild";
+import { ServicesPage } from "../ServicesPage";
+import { ComponentsPage } from "../ComponentsPage";
+import { BackupManager } from "../BackupManager";
+import { hasUpdates, UpdatesPage } from "../UpdatesPage";
 import { Messages } from "./Messages";
 import { ManageResellers } from "./ManageResellers";
 import { ResellerLevel } from "./ResellerLevel";
@@ -36,7 +40,7 @@ export function DirectAdmen(p: PanelProps) {
     </div>
   );
   const shown = rows.filter((r) => r.name.toLowerCase().includes(q.toLowerCase()));
-  const crumb = tab === "objects" ? t("browser-consoles-2.webSpaces") : tab === "nodes" ? t("browser-consoles-2.nodes") : tab === "create" ? t("pkg.daCreate") : tab === "packages" ? t("pkg.daPackages") : tab === "custombuild" ? t("web.da.customBuild") : tab === "messages" ? t("web.msg.menu") : pages.find((g) => g.id === tab)?.label ?? null;
+  const crumb = tab === "objects" ? t("browser-consoles-2.webSpaces") : tab === "nodes" ? t("browser-consoles-2.nodes") : tab === "create" ? t("pkg.daCreate") : tab === "packages" ? t("pkg.daPackages") : tab === "custombuild" ? t("web.da.customBuild") : tab === "messages" ? t("web.msg.menu") : tab === "updates" ? t("panel-updates.updates") : tab === "services" ? t("panel-services.daServices") : tab === "backup" ? t("panel-backup.tab.directadmen") : pages.find((g) => g.id === tab)?.label ?? null;
   return (
     <div className="cx da" data-era={era}>
       <header className="da-top">
@@ -53,8 +57,11 @@ export function DirectAdmen(p: PanelProps) {
       <main className="da-main">
         <nav className="da-crumb"><button className="da-link" onClick={() => setTab("software")}>{t("browser-consoles-2.home")}</button>{crumb && <> » {crumb}</>}</nav>
         {level === "user" ? <UserLevel game={p.game} c={p.c} rows={rows} /> : level === "reseller" ? <ResellerLevel game={p.game} c={p.c} /> : <>
-        {tab === "custombuild" && <CustomBuild game={p.game} c={p.c} late={late} />}
+        {tab === "custombuild" && <><CustomBuild game={p.game} c={p.c} late={late} /><ComponentsPage game={p.game} c={p.c} /></>}
+        {tab === "services" && <ServicesPage game={p.game} c={p.c} />}
+        {tab === "backup" && <BackupManager game={p.game} c={p.c} />}
         {tab === "resellers" && <ManageResellers game={p.game} c={p.c} />}
+        {tab === "updates" && <UpdatesPage game={p.game} c={p.c} />}
         {tab === "messages" && <Messages game={p.game} c={p.c} late={late} />}
         {tab === "objects" && <RowsTable rows={shown} name={t("browser-consoles-2.domain")} />}
         {tab === "nodes" && <Nodes game={p.game} c={p.c} />}
@@ -72,11 +79,14 @@ export function DirectAdmen(p: PanelProps) {
                 <button className="da-link" onClick={() => setTab("custombuild")}>{t("web.da.customBuild")}</button>
                 <button className="da-link" onClick={() => setTab("messages")}>{t("web.msg.menu")}</button>
                 <button className="da-link" onClick={() => setTab("resellers")}>{t("web.rs.manage")}</button>
+                {hasUpdates(p.game, p.c) && <button className="da-link" onClick={() => setTab("updates")}>{t("panel-updates.updates")}</button>}
                 {p.f.cluster && <button className="da-link" onClick={() => setTab("nodes")}>{t("browser-consoles-2.nodes")}</button>}
                 {pages.map((g) => <button key={g.id} className="da-link" onClick={() => setTab(g.id)}>{g.label}</button>)}
               </section>
               <section>
                 <h2>{t("browser-consoles-2.serverTools")}</h2>
+                <button className="da-link" onClick={() => setTab("services")}>{t("panel-services.daServices")}</button>
+                {p.f.backups && <button className="da-link" onClick={() => setTab("backup")}>{t("panel-backup.tab.directadmen")}</button>}
                 {sw.note && <span className="cx-note">{sw.note}</span>}
                 {sw.actions.map((a) => <button key={a.id} className={`da-link ${a.tone ?? ""}`} onClick={a.run}>{a.label}</button>)}
               </section>
@@ -85,7 +95,7 @@ export function DirectAdmen(p: PanelProps) {
                 <dl>{sw.facts.map((x) => <div key={x.label}><dt>{x.label}</dt><dd className={x.num ? "num" : undefined}>{x.value}</dd></div>)}</dl>
               </section>
             </div>
-            {sw.panel}{p.f.backups && <Backups game={p.game} c={p.c} />}
+            {sw.panel}
           </>
         )}
         </>}

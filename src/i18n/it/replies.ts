@@ -108,6 +108,11 @@ const MAILS: Record<string, [Mail, Mail, Mail]> = {
     (p) => `Purtroppo da noi non esiste un backup di ${site(p)}. Dovrai ripristinarlo dai tuoi file e cambiare le password.`,
     (p) => `Non possiamo ripristinare ${site(p)} perché non esiste alcun backup. Ricostruiscilo dalla tua copia e tieni il software aggiornato.`,
   ],
+  cleanPaid: [
+    (p) => `Possiamo ripulire ${site(p)} a mano e rimuovere i file dell'intruso. Il lavoro costa ${euroCents(Number(p.cleanup))} alla nostra tariffa oraria.`,
+    (p) => `Non esiste un backup di ${site(p)}, ma possiamo ripulirlo manualmente per ${euroCents(Number(p.cleanup))}. Dopo scegli nuove password.`,
+    (p) => `Rimuoviamo volentieri l'attacco da ${site(p)} a mano. Fatturata a ore, la pulizia costa ${euroCents(Number(p.cleanup))}.`,
+  ],
   "tpl.explain": [
     () => "Il secondo pagamento copre i consumi del mese scorso, che fatturiamo in via posticipata. Non ti è stato addebitato due volte nulla.",
     () => "Ci sono due fatture perché i consumi vengono fatturati a fine mese per il mese precedente. Sono entrambe corrette, e nulla è stato addebitato due volte.",

@@ -1,3 +1,4 @@
+import type { OveruseChoice } from "./80-business/overuse";
 import { createRng, type Rng } from "./00-core/rng";
 import { componentParts, hasFirmware, homeLan, isManaged, isOfficeRouter, modelById, type ComponentKind, type FormFactor, type PartSpec } from "./10-catalog/hardware";
 import type { BooksDownload, BooksVendorId } from "./10-catalog/bookkeeping";
@@ -107,7 +108,7 @@ export interface Device extends MachineState { id: string; model: string; brand:
   // The UPS shutdown agent runs on the server's OS (ups.ts).
   upsAgent?: boolean;
   // The operating system froze (hung) or the management controller did (bmcHung); log is the device's last 20 events.
-  hung: boolean; bmcHung: boolean; log: DeviceLog[]; inletSev?: LogSev;
+  hung: boolean; bmcHung: boolean; log: DeviceLog[]; inletSev?: LogSev; cpuThrottled?: true;
   // The chassis a multi-node server's node sits in; it mounts, moves and gets power with it.
   chassisId: string | null;
   // A hand task waiting for someone on site: pulling the plug or resetting the management controller.
@@ -161,6 +162,8 @@ export interface Lease { id: string; lessor: string; monthly: number; months: nu
 // A rented space's contract with its provider. monthly is the rent agreed at order time; endsAt is set once the player
 // gives notice and the location closes at that hour. retainedAt is when the player took the retention offer; the next month is free.
 export interface Contract { id: string; provider: string; dc: string; locationId: string; space: "share" | "cage" | "suite"; positions: number; since: number; monthly: number; endsAt: number | null; retainedAt: number | null }
+// A cross-connect from the contract's space to a carrier or exchange on site (to is its id); monthly is fixed at order time.
+export interface CrossConnect { id: string; contractId: string; to: string; monthly: number; since: number }
 export interface WaitlistEntry { id: string; dc: string; space: "share" | "cage" | "suite"; size: number; since: number; heldUntil: number | null }
 export interface End { device: string; port: number }
 export interface Cable { id: string; a: End; b: End; kind: CableKind; color: string | null }
@@ -251,6 +254,8 @@ export interface GameState {
   privateNets: PrivateNet[];
   // Panel hosts: services the player holds offline one by one, with the reason shown in the consoles.
   heldServices: Record<string, HoldReason>;
+  // What the tick does on its own with a service over its plan's traffic; null leaves it to the player.
+  overusePolicy: OveruseChoice | null;
   // Game servers: the title, slots and state of each game server service on a game panel.
   gameServers: GameServer[];
   // Pterodaktyl: the node daemons by node.
@@ -267,8 +272,8 @@ export interface GameState {
   // Where the player is, and until which hour the drive there or the hand work on site keeps the computer locked.
   player: { at: string; until: number; doing: "travel" | "work" };
   downSince: Record<string, number>;
-  // Cluster nodes frozen because their RAM in use exceeds the installed RAM.
-  frozen: string[];
+  // Hours in a row each cluster node has run below the timeout performance.
+  lowPerf: Record<string, number>;
   // The basement's internet line (HOME_LINES or MOMS_DSL id, "" for none), a switch to another line that goes live at hour at, and whether this line ran full.
   homeLine: { id: string; next: { id: string; at: number } | null; full?: boolean };
   docs: Doc[];
@@ -276,6 +281,9 @@ export interface GameState {
   dcs: Record<string, { others: number }>;
   waitlist: WaitlistEntry[];
   contracts: Contract[];
+  crossConnects: CrossConnect[];
+  // Each provider's position price as a factor of its list price, raised once a game year; new contracts pay it.
+  providerPrices: Record<string, number>;
   // Learned research skills (SKILLS ids).
   unlocks: string[];
   // The skill in training and the hour it is learned.
@@ -452,7 +460,7 @@ export const newGame = (seed: number): GameState => ({
   racks: [{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null, overSince: { a: null, b: null } }],
   devices: [{ ...device("dev5", "home-router", "AVN", null, 0, null, "fra1-gw-01", 0), store: "loc1" }, device("dev6", "line-jack", "", null, 0, "loc1", "fra1-line-01", 0)],
   cables: [],
-  ledger: [], licenses: [], trials: [], cart: [], media: { images: [], stick: { os: null, in: null } }, leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], contracts: [], unlocks: [], training: null, knowHow: 0, installed: ["Browser", "Chat"], kbReads: {}, statusDays: [], checklist: [], seenChanges: [], undocked: [], os: "aqua",
+  ledger: [], licenses: [], trials: [], cart: [], media: { images: [], stick: { os: null, in: null } }, leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], contracts: [], crossConnects: [], providerPrices: {}, unlocks: [], training: null, knowHow: 0, installed: ["Browser", "Chat"], kbReads: {}, statusDays: [], checklist: [], seenChanges: [], undocked: [], os: "aqua",
   customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], files: {},
   invoices: [], transfers: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   quotes: [],
@@ -461,11 +469,12 @@ export const newGame = (seed: number): GameState => ({
   shop: newShop(),
   privateNets: [],
   heldServices: {},
+  overusePolicy: null,
   gameServers: [],
   daemons: {},
   gameTitles: {},
   gameLost: {},
-  tickets: [], playerBusyUntil: 0, friendFavours: { year: 0, used: 0 }, player: { at: "loc1", until: 0, doing: "work" }, downSince: {}, frozen: [],
+  tickets: [], playerBusyUntil: 0, friendFavours: { year: 0, used: 0 }, player: { at: "loc1", until: 0, doing: "work" }, downSince: {}, lowPerf: {},
   company: { name: START_NAME, logo: "server", color: "oklch(0.55 0.15 255)", domain: null, mail: { kind: "free" }, tagline: "", zone: PARKING },
   homeLine: { id: MOMS_DSL.id, next: null },
   taxLoss: 0, brokeSince: null, gameOver: null,

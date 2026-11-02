@@ -1,0 +1,96 @@
+.ps-corespite { font: 12px/1.5 "Lucida Grande", "Lucida Sans Unicode", Arial, sans-serif; color: #333333; background: #f4f4f4; }
+.ps-corespite header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 24px; max-width: 920px; margin: 0 auto; padding: 16px 20px; background: #ffffff; }
+.ps-corespite .ps-wm { display: flex; align-items: center; gap: 8px; font: 700 24px/1 Arial, sans-serif; color: #1d3c5a; text-decoration: none; }
+.ps-corespite .ps-wm b { color: #3aa35a; }
+.ps-corespite header nav { gap: 0; border: 1px solid #b8b8b8; border-radius: 4px; overflow: hidden; background: linear-gradient(#fafafa, #dcdcdc); }
+.ps-corespite header nav a { padding: 5px 14px; color: #444444; font-weight: 700; text-decoration: none; text-shadow: 0 1px #ffffff; }
+.ps-corespite header nav a + a { border-left: 1px solid #c4c4c4; }
+.ps-corespite header nav a[aria-current] { background: linear-gradient(#5cbf74, #3aa35a); color: #ffffff; text-shadow: 0 -1px rgba(0, 0, 0, 0.25); }
+.ps-corespite main { max-width: 920px; margin: 0 auto; padding: 0 20px 20px; background: #ffffff; min-width: 0; }
+.ps-corespite .csp-hero { padding: 22px 24px; background: linear-gradient(#eef7f0, #d7ecdc); border: 1px solid #b9dcc2; border-radius: 6px; }
+.ps-corespite .csp-hero h1 { margin: 0 0 6px; font: 700 20px/1.25 Arial, sans-serif; color: #1d3c5a; }
+.ps-corespite .csp-hero p { max-width: 600px; margin: 0 0 12px; }
+.ps-corespite h2 { margin: 18px 0 8px; padding: 3px 8px; font: 700 12px/1.4 Arial, sans-serif; color: #ffffff; background: #3aa35a; border-radius: 3px; }
+.ps-corespite .csp-markets { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.ps-corespite .csp-market { display: grid; gap: 2px; padding: 10px 12px; border: 1px solid #d6d6d6; border-top: 3px solid #3aa35a; text-decoration: none; color: #333333; }
+.ps-corespite .csp-market strong { color: #1d3c5a; font-size: 14px; }
+.ps-corespite .csp-market small { color: #888888; }
+.ps-corespite .csp-band { margin-top: 18px; }
+.ps-corespite .csp-band p { margin: 0; max-width: 680px; }
+.ps-corespite .csp-body { padding-top: 6px; }
+.ps-corespite .csp-body h1 { margin: 0 0 8px; font: 700 18px/1.3 Arial, sans-serif; color: #1d3c5a; }
+.ps-corespite main a:not(.ps-btn):not(.csp-market) { color: #2a7d43; }
+.ps-corespite .ps-table th { padding: 4px 6px; background: linear-gradient(#fafafa, #e4e4e4); border-bottom: 1px solid #b8b8b8; }
+.ps-corespite .ps-table td { padding: 4px 6px; border-bottom: 1px solid #e6e6e6; }
+.ps-corespite .ps-facts div, .ps-corespite .ps-kv div { padding: 3px 0; border-bottom: 1px solid #ececec; }
+.ps-corespite .ps-kv { margin-bottom: 14px; }
+.ps-corespite .ps-steps { gap: 6px; margin: 0 0 14px; }
+.ps-corespite .ps-steps li { padding: 3px 12px; border: 1px solid #d6d6d6; border-radius: 4px; color: #999999; }
+.ps-corespite .ps-steps li.done { color: #2a7d43; }
+.ps-corespite .ps-steps li.now { background: #3aa35a; border-color: #3aa35a; color: #ffffff; font-weight: 700; }
+.ps-corespite .ps-field { margin-bottom: 8px; }
+.ps-corespite .ps-field input, .ps-corespite .ps-field select { padding: 4px 6px; border: 1px solid #b8b8b8; border-radius: 3px; }
+.ps-corespite .ps-btn { padding: 5px 14px; border: 1px solid #a8a8a8; border-radius: 4px; background: linear-gradient(#fafafa, #dcdcdc); color: #333333; font-weight: 700; }
+.ps-corespite .ps-btn.pri { background: linear-gradient(#5cbf74, #3aa35a); border-color: #2a7d43; color: #ffffff; }
+.ps-corespite .ps-pill.ok { color: #2a7d43; }
+.ps-corespite .ps-pill.bad { color: #c0392b; font-weight: 700; }
+.ps-corespite footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; max-width: 920px; margin: 0 auto; padding: 10px 20px; color: #888888; font-size: 11px; }
+
+.ps-corespite.late { font: 15px/1.6 "Open Sans", "Helvetica Neue", Arial, sans-serif; color: #2b3a48; background: #ffffff; }
+.ps-corespite.late header { max-width: none; padding: 0 36px; height: 68px; flex-wrap: nowrap; }
+.ps-corespite.late .ps-wm { font: 700 22px/1 "Helvetica Neue", Arial, sans-serif; letter-spacing: -0.01em; }
+.ps-corespite.late header nav { gap: 30px; border: 0; border-radius: 0; background: none; overflow: visible; }
+.ps-corespite.late header nav a { padding: 0; border: 0; color: #2b3a48; font-weight: 600; font-size: 14px; text-shadow: none; }
+.ps-corespite.late header nav a[aria-current] { background: none; color: #3aa35a; text-shadow: none; }
+.ps-corespite.late main { max-width: none; padding: 0 0 40px; }
+.ps-corespite.late .csp-hero { padding: 72px 36px; border: 0; border-radius: 0; background: linear-gradient(100deg, #0f2b46 40%, #1d4a6e); color: #ffffff; }
+.ps-corespite.late .csp-hero h1 { max-width: 640px; margin: 0 0 12px; font: 700 38px/1.15 "Helvetica Neue", Arial, sans-serif; color: #ffffff; }
+.ps-corespite.late .csp-hero p { margin: 0 0 26px; color: #c2d3e2; }
+.ps-corespite.late h2 { margin: 40px 36px 16px; padding: 0; background: none; color: #0f2b46; font: 700 24px/1.2 "Helvetica Neue", Arial, sans-serif; border-radius: 0; }
+.ps-corespite.late .csp-markets { gap: 20px; padding: 0 36px; }
+.ps-corespite.late .csp-market { padding: 24px; border: 0; border-radius: 4px; background: #f2f6f9; box-shadow: inset 0 4px #3aa35a; }
+.ps-corespite.late .csp-market strong { font-size: 20px; color: #0f2b46; }
+.ps-corespite.late .csp-band { margin: 40px 36px 0; padding: 32px; background: #3aa35a; color: #ffffff; border-radius: 4px; }
+.ps-corespite.late .csp-band h2 { margin: 0 0 6px; color: #ffffff; font-size: 22px; }
+.ps-corespite.late .csp-body { padding: 36px; }
+.ps-corespite.late .csp-body h1 { font: 700 30px/1.2 "Helvetica Neue", Arial, sans-serif; color: #0f2b46; }
+.ps-corespite.late .csp-body h2 { margin: 24px 0 12px; font-size: 20px; }
+.ps-corespite.late .ps-table th { padding: 10px 8px; background: none; border-bottom: 2px solid #0f2b46; }
+.ps-corespite.late .ps-table td { padding: 10px 8px; }
+.ps-corespite.late .ps-steps li { border-radius: 20px; padding: 4px 16px; }
+.ps-corespite.late .ps-field input, .ps-corespite.late .ps-field select { padding: 8px; border-radius: 4px; }
+.ps-corespite.late .ps-btn { padding: 10px 22px; border: 2px solid #0f2b46; border-radius: 4px; background: #ffffff; color: #0f2b46; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; }
+.ps-corespite.late .ps-btn.pri { background: #3aa35a; border-color: #3aa35a; color: #ffffff; }
+.ps-corespite.late footer { max-width: none; padding: 24px 36px; background: #0f2b46; color: #8fa6bb; font-size: 13px; }
+
+/* Customer portal: 2005 the glossy grey tab strip with a green active tab; from 2014 a white portal with a green bar and a filled green menu item. */
+.ps-corespite .ps-portal { border: 1px solid #d6d6d6; border-radius: 6px; overflow: hidden; }
+.ps-corespite .ps-portal-bar { background: linear-gradient(#eef7f0, #d7ecdc); border-color: #b9dcc2; }
+.ps-corespite .ps-portal-who strong { color: #1d3c5a; }
+.ps-corespite .ps-portal-out { color: #2a7d43; }
+.ps-corespite .ps-portal-frame { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
+.ps-corespite .ps-portal-nav { flex-direction: row; margin: 10px 12px 0; padding: 0; width: max-content; border: 1px solid #b8b8b8; border-radius: 4px; overflow: hidden; background: linear-gradient(#fafafa, #dcdcdc); }
+.ps-corespite main .ps-portal .ps-portal-nav a { padding: 4px 12px; color: #444444; font-weight: 700; text-shadow: 0 1px #ffffff; box-shadow: none; }
+.ps-corespite main .ps-portal .ps-portal-nav a + a { border-left: 1px solid #c4c4c4; }
+.ps-corespite main .ps-portal .ps-portal-nav a[aria-current] { background: linear-gradient(#5cbf74, #3aa35a); color: #ffffff; text-shadow: none; }
+.ps-corespite .ps-portal-title { font: 700 16px/1.3 Arial, sans-serif; color: #1d3c5a; }
+.ps-corespite .ps-portal-h { padding: 3px 8px; background: #3aa35a; color: #ffffff; font: 700 12px/1.4 Arial, sans-serif; border-radius: 3px; }
+.ps-corespite .ps-sheet { border-radius: 6px; overflow: hidden; }
+.ps-corespite .ps-sheet-h { background: linear-gradient(#5cbf74, #3aa35a); color: #ffffff; font-size: 13px; }
+.ps-corespite .ps-btn.ps-danger { color: #c0392b; }
+.ps-corespite .ps-offer { border-color: #b9dcc2; background: #eef7f0; }
+.ps-corespite.late .ps-portal { border: 0; border-radius: 0; min-height: 540px; box-shadow: inset 0 4px #3aa35a; }
+.ps-corespite.late .ps-portal-bar { padding: 16px 24px 12px; background: #ffffff; border-bottom: 1px solid #e2e8ee; font-size: 13px; }
+.ps-corespite.late .ps-portal-out { color: #3aa35a; font-weight: 600; text-decoration: none; }
+.ps-corespite.late .ps-portal-frame { grid-template-columns: 220px minmax(0, 1fr); grid-template-rows: none; }
+.ps-corespite.late .ps-portal-nav { flex-direction: column; width: auto; margin: 0; padding: 16px 12px; background: #f2f6f9; border: 0; border-radius: 0; }
+.ps-corespite.late main .ps-portal .ps-portal-nav a { padding: 9px 14px; border: 0; border-radius: 4px; color: #2b3a48; font-weight: 600; font-size: 14px; text-shadow: none; }
+.ps-corespite.late main .ps-portal .ps-portal-nav a + a { border: 0; }
+.ps-corespite.late main .ps-portal .ps-portal-nav a[aria-current] { background: #3aa35a; color: #ffffff; }
+.ps-corespite.late .ps-portal-main { padding: 24px 32px; }
+.ps-corespite.late .ps-portal-title { font: 700 26px/1.2 "Helvetica Neue", Arial, sans-serif; color: #0f2b46; }
+.ps-corespite.late .ps-portal-h { padding: 0; background: none; color: #0f2b46; font: 700 17px/1.3 "Helvetica Neue", Arial, sans-serif; border-radius: 0; }
+.ps-corespite.late .ps-sheet { border-radius: 4px; box-shadow: 0 10px 40px rgba(15, 43, 70, 0.35); }
+.ps-corespite.late .ps-sheet-h { padding: 14px 18px; background: #0f2b46; font-size: 16px; }
+.ps-corespite.late .ps-btn.ps-danger { border-color: #c0392b; color: #c0392b; }
+.ps-corespite.late .ps-offer { padding: 14px 16px; border: 0; border-left: 4px solid #3aa35a; background: #f2f6f9; }

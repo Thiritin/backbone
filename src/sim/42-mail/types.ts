@@ -26,7 +26,7 @@ export interface MailAccount {
   domain: string;              // copied from the tenant
   title: string;              // sender name shown on outgoing mail, "Support"
   password: string;            // set at creation, plain text like the vault's saved logins
-  reset: { code: string; letter: string } | null;  // an open Forgot password request: the code and the id of the letter that carries it
+  reset: { code: string; letter: string; tries?: number } | null;  // an open Forgot password request: the code, the id of the letter that carries it, wrong codes so far
   employee: string | null;     // the Employee.id whose mailbox this is, when hiring made it
   shared?: true;               // a shared mailbox: no password and no direct sign-in, opened from the other mailboxes of its tenant
   external?: boolean;          // "Allow external programs to fetch mail": IMAP and POP logins fail while it is false; new GMix boxes start false

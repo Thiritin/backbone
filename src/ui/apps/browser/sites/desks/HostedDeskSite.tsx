@@ -13,6 +13,7 @@ import { Confirm } from "../../../../desktop/Confirm";
 import { DESK } from "../../../support/desk";
 import { usePageAct } from "../../pageAct";
 import { eraOf } from "../era";
+import { DomainRecords } from "./DomainRecords";
 import "./hosted.css";
 
 // zendusk.com and freshdusk.com: the marketing page, pricing per agent, sign-up and the account. Each vendor restyles its
@@ -82,7 +83,7 @@ function SignUp({ game, id, to }: Props) {
   );
 }
 
-function Account({ game, id, to }: Props) {
+function Account({ game, id, to, go }: Props & { go: (url: string) => void }) {
   const act = usePageAct(), d = deskById(id)!, [cancelling, setCancelling] = useState(false);
   const mine = game.desk?.id === id && game.desk.tenant ? game.desk.tenant : null;
   if (!mine) return <><h1>{t("desk-sites.nav.account")}</h1><p>{t("desk-sites.noAccount")}</p><button type="button" className="dv-btn" onClick={() => to("signup")}>{t("desk-sites.nav.signup")}</button></>;
@@ -96,6 +97,7 @@ function Account({ game, id, to }: Props) {
           <tr><th>{t("desk-sites.monthly")}</th><td className="num">{euroCents(monthlyCharge(game, deskItem(d)))}</td></tr>
         </tbody>
       </table>
+      <DomainRecords game={game} go={go} />
       <button type="button" className="dv-btn ghost" onClick={() => setCancelling(true)}>{t("desk-sites.cancel")}</button>
       {cancelling && <Confirm title={t("desk-sites.cancelTitle", { name: d.name })} text={t("desk-sites.cancelText", { name: d.name })} action={t("desk-sites.cancel")}
         onCancel={() => setCancelling(false)} onConfirm={() => { setCancelling(false); act(removeDesk); }} />}
@@ -115,8 +117,8 @@ export function HostedDeskSite({ game, id, path, go }: { game: GameState; id: De
         <nav>{PAGES.map((p) => <a key={p} href="#" className={p === page ? "on" : ""} onClick={(e) => { e.preventDefault(); to(p); }}>{t(`desk-sites.nav.${p}`)}</a>)}</nav>
       </header>
       <main className={`dv-main dv-${page}`}>
-        {page === "pricing" ? <Pricing {...props} /> : page === "signup" ? (game.desk?.id === id ? <Account {...props} /> : <SignUp {...props} />)
-          : page === "account" ? <Account {...props} /> : <Home {...props} />}
+        {page === "pricing" ? <Pricing {...props} /> : page === "signup" ? (game.desk?.id === id ? <Account {...props} go={go} /> : <SignUp {...props} />)
+          : page === "account" ? <Account {...props} go={go} /> : <Home {...props} />}
       </main>
       <footer className="dv-foot">{t(`desk-sites.${id}.footer`, { year })}</footer>
     </div>

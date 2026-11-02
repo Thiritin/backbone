@@ -58,6 +58,8 @@ Milestones:
 2. **Portal page.** Cross-connects on the contract detail and on Services, with the setup fee shown before confirm.
 3. **Price changes.** Once a game year, a provider raises `positionPrice` by a few percent and emails existing customers that the new price applies to new contracts only. Cheap flavour, uses the lane 1 contract price. Test: seeded raise, existing `monthly` unchanged.
 
+Built: `s.crossConnects` with `contractId`; setup fee `crossConnectSetup` is two months of `dc.crossConnect` (kept a number, so no `{ setup, monthly }` object). Targets are `carriersAt(dc)` plus the exchange when on site. The network hook is billing only: an ordered cross-connect to an uplink's partner in that zone covers one of its links in `crossConnects()`, so nothing is billed twice; ordering an uplink does not require one. The raise is `s.providerPrices[provider]`, passed to `spacePrice` by `addLocation` and the order pages.
+
 ## 7. Shared files
 
 - `src/sim/50-state.ts`: `Contract`, `s.contracts`, `CrossConnect`. Lanes 1 and 4.

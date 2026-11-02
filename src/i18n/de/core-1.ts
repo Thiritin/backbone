@@ -231,6 +231,7 @@ export default {
   "ledger.loanCalled": (p) => `Der Kredit über ${euro(Number(p.amount))} wurde gekündigt`,
   "error.invoiceSettled": () => "Diese Rechnung ist bereits beglichen.",
   "error.invoiceSent": () => "Diese Rechnung wurde bereits versendet.",
+  "error.invoiceOrdered": () => "Diese Rechnung gehört zu einer noch offenen Bestellung.",
   "error.transferMatched": () => "Diese Überweisung ist bereits gebucht.",
   "error.transferChanged": () => "Die Rechnung hat sich seit der Buchung geändert.",
   "error.stepNotDue": () => "Es ist noch keine Mahnstufe fällig.",
