@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- Server groups in the shop are now a name, a list of servers with an Active switch and an order you can rearrange, and WHMCache, HostBull and Blessta let each group spread orders evenly or fill one server first.
+- The shop's configurable options page is gone: cycle discounts moved to the shop settings, every line is priced through its products, and a visitor for a line without products asks for a quote in the shop.
 - An order email in Pear Mail and the other mail and helpdesk apps now shows only the order's steps, so you can quote, set up and finish the order from there.
 - Old order emails show a short order text instead of a placeholder once the order is long finished.
 - With an active shop, leads that need a quote now ask in the shop admin instead of by email, and with email orders off no request arrives by email at all.

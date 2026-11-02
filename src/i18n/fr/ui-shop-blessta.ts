@@ -3,7 +3,6 @@ import type { Dict } from "../lang";
 export default {
   "blessta.dashboard": () => "Tableau de bord",
   "blessta.browseClients": () => "Parcourir les clients",
-  "blessta.packageOptions": () => "Options de forfait",
   "blessta.order": () => "Commander",
   "blessta.signIn": () => "Connexion client",
   "blessta.group.home": () => "Accueil",

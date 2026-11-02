@@ -1,4 +1,4 @@
-# Shop systems, stock limits and server groups
+# Shop systems, stock and server groups
 
 Status: approved 2026-10-30. Milestones 1 to 3, 5 and the Marketing part of 4 are built. Milestone 6 is built as shop breaches (WHMCache in May 2012, a 2% monthly risk for ModemBill from 2011, BoxBillin' from 2015 to 2021 and any shop running a version past its end of security updates), each lowering every customer's happiness by 15. The power-off prompt from section 5 and a styled shop console in the Browser are open.
 
@@ -6,7 +6,7 @@ The website stays the marketing presentation of product lines (Marketing > Produ
 
 ## 1. What exists today
 
-- Orders arrive by email until a shop system is active. Every shop system needs the research "Shop systems". Orders that are not email orders are shop orders: they take the spec at the player's rates and bill the setup fee plus the first term at once. With a shop and email orders on, 25% of order leads still write an email; email orders can only be switched off with an active shop. Leads that need a quote (a higher SLA, a high budget, a reseller block or a line the shop does not sell) arrive as quote requests in the shop admin instead of by email, with the same 25% email share while email orders are on; with email orders off nothing arrives by email. A shop quote request has no envelope in the mailbox, and its notification opens the shop admin's Quotes page.
+- Orders arrive by email until a shop system is active. Every shop system needs the research "Shop systems". Orders that are not email orders are shop orders: they buy a shop product at its price and bill the setup fee plus the first term at once. With a shop and email orders on, 25% of order leads still write an email; email orders can only be switched off with an active shop. Leads that need a quote (a higher SLA, a high budget, a reseller block or a line the shop does not sell) arrive as quote requests in the shop admin instead of by email, with the same 25% email share while email orders are on; with email orders off nothing arrives by email. A shop quote request has no envelope in the mailbox, and its notification opens the shop admin's Quotes page.
 - `s.autoOrders` places shop orders through the shop's module, otherwise they wait in Support as accepted orders, and it runs accepted quotes without the player, gated by `canAutomate` (research "Provisioning automation", 150 know-how, needs "Product management").
 - A shop order that cannot be placed is cancelled (`lost.noCapacity`). Lost sales carry no reputation hit, but they fill the lost-sales list and the market research reasons, which reads as a penalty, and the player has no way to say "sold out".
 - `targetFor` (`src/sim/30-market/sales.ts`) picks any fitting software installation in any zone. There is no way to keep a server out of sales.
@@ -48,17 +48,11 @@ Notes:
 - The WHMCache breach (May 2012) and BoxBillin' risk use the existing breach system (`src/sim/60-infra/breach.ts`) as a security incident with customer data lost. They come last in the build order.
 - Licences are billed on the 1st with the other software licences.
 
-## 3. Stock limits and auto-allocation
+## 3. Stock and capacity
 
-Each product line in the shop has a stock setting:
+Stock is set per product (section 4b): off, a number of units the player tops up, or free capacity on variants with auto stock. A product sells while its stock lasts and its server group has room.
 
-- **Off**: the shop does not sell the line. Leads for it do not become shop orders, and no lost sale is recorded.
-- **A number**: the shop sells that many units. Every shop order takes one; the player tops it up.
-- **Free capacity** (variants with auto stock): the shop sells while a new order fits into a for-sale server group (section 4). A reserve is left out for now; a group that is not for sale keeps headroom instead.
-
-What the shop shows as available is the smaller of the stock number and what fits. When nothing is available the line is "Sold out":
-
-- Leads for a sold-out line are counted as sold-out visitors for the month, shown in the shop console. They are not lost sales, they do not appear in lost-sales reasons, and they never become email orders.
+- A visitor who finds no fitting plan in stock counts as a sold-out visitor for the month, shown in the shop console. Sold-out visits are not lost sales and never become email orders.
 - A shop order is taken only while a target has room. Capacity is not reserved: a shop order that cannot be set up later, or is not set up within 72 hours, is cancelled and refunded, counts as a sold-out visit and never as a lost sale.
 - Cordoned, draining and maintenance installations count as no capacity.
 
@@ -66,20 +60,21 @@ Customers ordering on their own is the base of every shop. Orders wait in the or
 
 ## 4. Server groups
 
-Server groups are a software-level concept and live in the shop console ("Servers > Server groups", as in the real products).
+Server groups live in the shop console ("Servers", as in WHMCS). A group is a name, a list of servers and a fill mode.
 
 - A member is one software installation: a panel, a hypervisor, a game panel or another software on one server, or a whole multi-node hypervisor cluster. A cluster only joins its own location's servers, because it exists for live migration within one location; a group can span locations.
-- All members of a group run software of one kind (panel, hypervisor, game, DNS, VPN or storage), so the group serves the product lines that kind serves (`SERVES` in `platforms.ts`).
-- An installation is in at most one group. Installations in no group are never sold by the shop; the player can still provision onto them by hand.
-- Per group: name, members, **for sale** (which of its product lines the shop sells from it), **auto-deploy** (whether automatic provisioning may use it), and fill mode pack or spread across members (the existing placement modes).
-- `targetFor` filters to members of for-sale groups when a shop is installed, and to auto-deploy groups when provisioning automatically. Without a shop, placement works as today.
-- Locations and hardware never carry group, sale or stock settings. Dedicated servers and colocation are sold from hardware stock (free servers, free rack units), which only Ubersmyth automates.
+- The group's kind is its first member's (panel, hypervisor, game, DNS, VPN or storage); the add list offers only installations of that kind, and the group serves the lines that kind serves (`SERVES` in `platforms.ts`). An installation is in at most one group.
+- Each member row shows its accounts, its booked RAM and an "Active" switch. An inactive member takes no new shop orders; its services keep running and the player can still provision onto it by hand. The arrows set the member order.
+- "Distribution" chooses "Spread evenly" (the active member with the fewest accounts) or "Fill one server first" (the first active member in list order with room). Only WHMCache, HostBull and Blessta show the choice; the other systems always spread. Placement inside a cluster (pack or spread) is unchanged.
+- A product chooses its group in the product editor and places only on that group's active members. A product without a group is manual: its orders wait for the player.
+- A new shop creates one group per installed software kind with every installation active, and a new product takes the first group that serves its line.
+- Locations and hardware never carry group or stock settings. Dedicated servers and colocation are sold from hardware stock (free servers, free rack units), which only Ubersmyth automates.
 
 ## 4b. Products and product groups
 
-A shop with a variant sells plans. A product belongs to a product group and has a line, a spec, a price for each billing cycle the variant supports, a setup fee, stock, a server group, an optional package name and a setup mode (on payment, on accept, by hand). With automatic cycle prices, the default for a new product, the monthly price is the only input and every other offered cycle costs N times the monthly price less that cycle's discount from the shop settings ("Laufzeitrabatte", 0% until the player sets one); changing a discount reprices every such product. "Manage prices manually" makes every cycle's price editable, and a product without a monthly price is always manual. A form visit buys the smallest plan whose spec covers what the visitor wanted. When none covers it, the largest plan is sold if its monthly price is at most 1.35 times what the visitor expected, otherwise the visit counts as sold out and not as a lost sale. A line without plans sells through its configurable options, priced per unit, with the same discount per billing cycle.
+A shop with a variant sells plans. A product belongs to a product group and has a line, a spec, a price for each billing cycle the variant supports, a setup fee, stock, a server group, an optional package name and a setup mode (on payment, on accept, by hand). With automatic cycle prices, the default for a new product, the monthly price is the only input and every other offered cycle costs N times the monthly price less that cycle's discount from the shop settings ("Laufzeitrabatte", 0% until the player sets one); changing a discount reprices every such product. "Manage prices manually" makes every cycle's price editable, and a product without a monthly price is always manual. A form visit buys the smallest plan whose spec covers what the visitor wanted. When none covers it, the largest plan is sold if its monthly price is at most 1.35 times what the visitor expected, otherwise the visit counts as sold out and not as a lost sale. A visitor for a line without plans asks for a quote instead of ordering. Every price is the market's unless a product sets its own; the player has no per-unit rates. The cycle discounts sit in the shop's Settings screen.
 
-Before a shop exists, email quotes start at the market rate. Once a shop is active they start at the configurable option rates.
+Email quotes start at the market rate.
 
 Once a shop is active, quotes are written in the shop admin (Billing > Quotes, named after the variant's wording) and Books lists them read-only. A quote carries its origin, `books` or `shop`; a Books draft from before the shop stays editable in Books.
 

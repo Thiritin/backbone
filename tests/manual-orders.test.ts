@@ -20,7 +20,6 @@ import { closeTicket } from "../src/sim/90-actions/support";
 import { setDomainRenewal } from "../src/sim/90-actions/registrar";
 import { SKILLS } from "../src/sim/10-catalog/research";
 import { research } from "../src/sim/90-actions/store";
-import { setRate } from "../src/sim/90-actions/rates";
 import { mailed, owner, panelVm, readyGame, openShop } from "./fixtures";
 
 const MONDAY_9 = 48 + 9;
@@ -181,15 +180,14 @@ describe("custom orders", () => {
     expect(invoiceOf(s, req())!.status).toBe("writtenOff");
   });
 
-  it("bills the setup fee on the confirmation invoice, the rate's by default and the quote's when given", () => {
+  it("bills the setup fee on the confirmation invoice, the market's by default and the quote's when given", () => {
     const s = readyGame(2);
     s.cash = 1e6;
-    expect(setRate(s, "webHosting", "setup", 25).ok).toBe(true);
-    const a = accepted(s, web, 12);
+    const fee = setupFee(s, "webHosting"), a = accepted(s, web, 12);
     done(s, createAccount(s, a.id, mailed(s, a.id)));
     done(s, confirmOrder(s, a.id));
     const first = invoiceOf(s, a.req())!.lines.filter((l) => l.key !== "invoice.line.domain" && l.key !== "invoice.line.domainTransfer");
-    expect(first.map((l) => [l.key, l.amount])).toEqual([["invoice.line.setupFee", 25], ["invoice.line.firstMonth", 12]]);
+    expect(first.map((l) => [l.key, l.amount])).toEqual([["invoice.line.setupFee", fee], ["invoice.line.firstMonth", 12]]);
     expect(quoteOrder(s, order(s).id, 12, -1)).toEqual({ ok: false, error: "error.quotePrice" });
     const b = accepted(s, web, 12, 40);
     done(s, createAccount(s, b.id, mailed(s, b.id)));

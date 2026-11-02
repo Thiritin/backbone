@@ -37,10 +37,12 @@ function withApp(v: Service, seed: number, hour: number): Service {
 }
 
 // Saves from before per-resource pricing: services, requests and lost sales get specs, and the packages list is dropped.
-export function fillSpecs(s: GameState): GameState {
+// The player's per-unit rates are gone; everything charges the market's.
+export function fillSpecs(old: GameState): GameState {
+  const { rates: _r, ...s } = old as GameState & { rates?: unknown };
   const { packages: _, ...marketing } = s.marketing as GameState["marketing"] & { packages?: unknown };
   return {
-    ...s, marketing, rates: s.rates ?? {},
+    ...s, marketing,
     services: s.services.map((v) => withApp(counted(v, v.startedAt, v.price * 730, v.sla, s.hour), s.seed, s.hour)),
     sales: {
       requests: s.sales.requests.map((r) => counted(r, r.createdAt, r.reference, r.sla, s.hour)),

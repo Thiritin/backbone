@@ -23,8 +23,8 @@ The real-world-style marketing site of the vendor, in the Browser, at the vendor
 ## Admin (`portal.<company domain>/admin`)
 
 - Sign-in page.
-- Navigation that reaches every screen: Home, Products, Configurable options, Servers, Pending orders, Clients, Invoices, Licence, Updates.
-- Every existing admin screen and every button it has today (product create and edit, stock, option edit, server groups, accept and cancel order, client view, invoice view and mark paid) stays reachable and works.
+- Navigation that reaches every screen: Home, Products, Servers, Settings, Pending orders, Clients, Invoices, Licence, Updates.
+- Every existing admin screen and every button it has today (product create and edit, stock, cycle discounts, server groups, accept and cancel order, client view, invoice view and mark paid) stays reachable and works.
 - Licence page: edition, key, client or server count against the cap, updates until, and a field to enter a key with a Save button. When the trial ended or the key lapsed, sign-in leads only to this page.
 - Updates page: installed version, the newest version the key may install with an Install update button, the next major version with an Upgrade button that links to the vendor's My account, and a notice when the installed version no longer receives security updates.
 - Version number in the footer.

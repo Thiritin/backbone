@@ -46,7 +46,7 @@ export const certificateOf = (s: GameState, domain: string): Service | undefined
 // The module check is 80-business/shop.ts hasModule, which this file cannot import without a cycle.
 export function shopSellsSsl(s: GameState): boolean {
   const v = s.shop.variant && shopById(s.shop.variant);
-  if (!v || shopBroken(s) || s.shop.stock.ssl === "off" || !listed(s, "ssl")) return false;
+  if (!v || shopBroken(s) || !listed(s, "ssl")) return false;
   return includes(v, "ssl", yearOf(s.hour)) || (s.shop.modules.ssl ?? Infinity) <= s.hour;
 }
 // The certificate a profile would buy now.

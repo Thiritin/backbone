@@ -56,8 +56,6 @@ export default {
   "error.unknownReport": () => "Diesen Störungsbericht gibt es nicht mehr.",
   "error.unknownBrand": () => "Diese Marke verkauft keine Server.",
   "error.unknownSiteLine": () => "Dieses Produkt kann nicht auf die Website.",
-  "error.unknownLineRate": () => "Dieses Produkt hat keinen solchen Tarif.",
-  "error.badRate": () => "Gib einen Tarif von null oder mehr ein.",
   "error.notInShop": () => "Der Shop verkauft dieses Modell nicht.",
   "error.outOfBounds": () => "Das Gerät passt in dieser Höhe nicht hinein.",
   "error.slotTaken": () => "Ein anderes Gerät steht im Weg.",

@@ -19,10 +19,10 @@ export interface ListRow { id: string; name: string; tier: TierId; score: number
 const SHOWN_FOR: Record<ListedProduct, Profile> = { webHosting: "smallBiz", vps: "hobbyDev", gameServer: "gamer", reseller: "agency" };
 
 // HOSTtoast's list for a product, open rivals and you once listed, by tier and then review score.
-// Reseller rows show the price per GB, yours from your rates.
+// Reseller rows show the price per GB.
 export function hosttoastList(s: GameState, product: ListedProduct): ListRow[] {
   const year = yearOf(s.hour), perGb = product === "reseller", from = perGb ? marketRates(product, year).diskGb ?? 0 : marketPrice(product, sizeSpec(product, 0, year), year);
-  const yours = perGb ? s.rates.reseller?.diskGb ?? from : from * priceIndex(s);
+  const yours = perGb ? from : from * priceIndex(s);
   const rows: ListRow[] = openRivals(s).filter((r) => r.sells.includes(product)).map((r) => ({
     id: r.id, name: r.name, tier: r.tier, score: rivalScore(r), reviews: reviewCount(r), price: from * r.priceFactor, P: r.P, R: r.R, C: r.C,
   }));

@@ -1,4 +1,5 @@
 import type { GameState } from "../50-state";
+import type { ServerGroup } from "../80-business/shop";
 import { versionAt } from "../10-catalog/software-versions";
 import { isLicensed, issueKey, SHOP_MACHINE, updateKey, yearAfter } from "../60-infra/licence";
 import { companyDomain } from "../30-customers/domains";
@@ -10,8 +11,15 @@ export function fillShop(s: GameState, saved: readonly string[] = []): void {
   // Module purchases from before modules belonged to a shop system count for the one in use.
   const shop = s.shop.variant;
   if (shop) s.ledger = s.ledger.map((e) => (e.key.startsWith("ledger.module.") && e.params.shop === undefined ? { ...e, params: { ...e.params, shop } } : e));
-  // Products from before automatic cycle prices keep the prices they were given.
-  s.shop = { ...s.shop, products: s.shop.products.map((p) => ({ ...p, autoCycles: p.autoCycles ?? false })) };
+  // Products from before automatic cycle prices keep the prices they were given. Groups from before the fill order lose
+  // their kind and sell switches, and a group that did not deploy gets every member inactive. Stock per line is gone.
+  type OldGroup = ServerGroup & { deploy?: boolean };
+  const { stock: _, ...shopState } = s.shop as typeof s.shop & { stock?: unknown };
+  s.shop = {
+    ...shopState,
+    products: s.shop.products.map((p) => ({ ...p, autoCycles: p.autoCycles ?? false })),
+    groups: s.shop.groups.map((g: OldGroup) => ({ id: g.id, name: g.name, members: g.members, inactive: g.inactive ?? (g.deploy === false ? [...g.members] : []), fill: g.fill ?? "spread" })),
+  };
   if ((s.shop.variant as string) !== "handRolled") return;
   s.shop = { ...s.shop, variant: null, modules: {} };
   s.marketing = { ...s.marketing, emailOrders: true };

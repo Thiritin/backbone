@@ -1,14 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { t } from "../src/i18n/en";
 import { yearOf } from "../src/sim/00-core/time";
-import { marketRates, sizeSpec, specPrice } from "../src/sim/10-catalog/products";
+import { CYCLE_MONTHS } from "../src/sim/10-catalog/cycles";
+import { sizeSpec, specPrice } from "../src/sim/10-catalog/products";
 import { orderLead } from "../src/sim/30-market/orders";
-import { loseRequest } from "../src/sim/30-market/sales";
+import { loseRequest, nextSpec } from "../src/sim/30-market/sales";
 import { sizeOf, specText } from "../src/sim/30-market/spec";
 import type { GameState } from "../src/sim/50-state";
 import { siteContent } from "../src/sim/80-business/website";
+import { createProduct, createProductGroup } from "../src/sim/90-actions/portal";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
-import { setRate } from "../src/sim/90-actions/rates";
 import { setEmailOrders } from "../src/sim/90-actions/website";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { automate, readyGame, openShop } from "./fixtures";
@@ -23,14 +24,20 @@ const withShop = (seed: number) => {
   const s = readyGame(seed);
   s.cash = 1e6;
   openShop(s);
-  return automate(s);
+  automate(s);
+  // The shop sells only plans, so each line has one to place orders against.
+  const g = (createProductGroup(s, "Plans") as { id: string }).id;
+  createProduct(s, g, "Web", "webHosting");
+  createProduct(s, g, "VPS", "vps");
+  return s;
 };
+const planOf = (s: GameState, line: "webHosting" | "vps") => s.shop.products.find((p) => p.line === line)!;
 const orders = (s: GameState, from = 0) => s.sales.requests.filter((r) => r.kind === "order" && r.createdAt >= from);
 const web = { product: "webHosting" as const, size: 1, sla: "basic" as const };
 const vps = { product: "vps" as const, size: 1, sla: "basic" as const };
 // Places one order through the shop and returns the request and its service.
 const shopOrder = (s: GameState, need: typeof web | typeof vps = web) => {
-  const r = orderLead(s, "private", "Frankfurt", [], need, false);
+  const r = orderLead(s, "private", "Frankfurt", [], need, false, nextSpec(s, need, "private"), undefined, planOf(s, need.product));
   const won = s.sales.requests.find((x) => x.id === r.id)!;
   expect(won.status).toBe("won");
   return { r: won, v: s.services.find((x) => x.id === won.serviceId)! };
@@ -52,27 +59,22 @@ describe("specs on requests and services", () => {
     expect(back.services.find((v) => v.id === placed[0].v.id)!.spec).toMatchObject(placed[0].r.spec);
   });
 
-  it("are priced in the shop by the line's rates less the discount", () => {
+  it("are priced in the shop by the plan's market price less the discount", () => {
     const s = withShop(2);
-    expect(setRate(s, "webHosting", "diskGb", 4).ok).toBe(true);
-    expect(setRate(s, "webHosting", "base", 1).ok).toBe(true);
-    const { r, v } = shopOrder(s);
-    const list = specPrice("webHosting", r.spec, yearOf(s.hour), "basic", s.rates.webHosting);
-    const m = marketRates("webHosting", yearOf(s.hour));
-    expect(list).toBeCloseTo(1 + 4 * r.spec.diskGb + m.mailbox! * r.spec.mailboxes + (m.traffic! * r.spec.trafficGb) / 100, 2);
-    expect(v.price * 730).toBeCloseTo(Math.round(list * (1 - r.discount) * 100) / 100, 6);
-    expect(siteContent(s).lines.find((l) => l.product === "webHosting")!.from).toBe(specPrice("webHosting", sizeSpec("webHosting", 0, yearOf(s.hour)), yearOf(s.hour), "basic", s.rates.webHosting));
+    const { r, v } = shopOrder(s), plan = planOf(s, "webHosting");
+    expect(plan.prices.monthly).toBeCloseTo(specPrice("webHosting", plan.spec, yearOf(s.hour), "basic"), 2);
+    const cycle = r.cycle ?? "monthly";
+    expect(r.quote).toBeCloseTo(Math.round(((plan.prices[cycle]! * (1 - r.discount)) / CYCLE_MONTHS[cycle]) * 100) / 100, 2);
+    expect(v.price * 730).toBeCloseTo(r.quote!, 1);
+    expect(siteContent(s).lines.find((l) => l.product === "webHosting")!.from).toBeGreaterThan(0);
   });
 
-  it("leaves the prices of services already sold alone when a rate changes", () => {
+  it("leaves the prices of services already sold alone as time passes", () => {
     const s = withShop(3);
-    const { v } = shopOrder(s);
+    shopOrder(s);
     const before = s.services.map((x) => [x.id, x.price]);
-    expect(setRate(s, "webHosting", "diskGb", 9).ok).toBe(true);
     run(s, 2);
     expect(s.services.filter((x) => before.some(([id]) => id === x.id)).map((x) => [x.id, x.price])).toEqual(before);
-    const next = shopOrder(s);
-    expect(next.v.price).toBeGreaterThan(v.price * (next.r.spec.diskGb / v.spec.diskGb));
   });
 
   it("are provisioned by the shop with their own resources", () => {
@@ -89,12 +91,13 @@ describe("email orders", () => {
   it("route every order lead through the shop when switched off", () => {
     const on = withShop(5), off = withShop(5);
     expect(setEmailOrders(off, false).ok).toBe(true);
-    for (const s of [on, off]) for (let i = 0; i < 40; i++) orderLead(s, "private", "Frankfurt", []);
+    for (let i = 0; i < 40; i++) orderLead(on, "private", "Frankfurt", []);
+    for (let i = 0; i < 40; i++) orderLead(off, "private", "Frankfurt", [], web, undefined, nextSpec(off, web, "private"), undefined, planOf(off, "webHosting"));
     expect(orders(on).some((r) => r.ticketId !== null)).toBe(true);
     expect(orders(off).every((r) => r.ticketId === null)).toBe(true);
     expect(off.tickets.some((x) => x.kind === "order")).toBe(false);
     // A lead the shop cannot place goes elsewhere instead of writing an email.
-    const away = orderLead(off, "private", "London", [], web);
+    const away = orderLead(off, "private", "London", [], web, undefined, nextSpec(off, web, "private"), undefined, planOf(off, "webHosting"));
     expect(off.sales.requests.find((x) => x.id === away.id)).toMatchObject({ status: "lost", ticketId: null });
   });
 });
@@ -109,7 +112,7 @@ describe("sim text", () => {
 });
 
 describe("saves from before specs", () => {
-  it("fill specs from the old plan ids, drop the plans and the packages, and start with market rates", () => {
+  it("fill specs from the old plan ids, drop the plans and the packages, and drop the rates", () => {
     const s = withShop(6);
     shopOrder(s, vps);
     loseRequest(s, orderLead(s, "private", "London", [], web), "lost", "lost.noCapacity");
@@ -117,9 +120,9 @@ describe("saves from before specs", () => {
     const plans: Record<string, string> = { webHosting: "web-l", vps: "vps-m" };
     for (const x of [...old.services, ...old.sales.requests, ...old.sales.lost]) { delete x.spec; x.plan = plans[x.product] ?? null; x.packaged = true; }
     old.marketing.packages = ["webHosting"];
-    delete old.rates;
+    old.rates = { webHosting: { base: 5 } };
     const back = deserialize(JSON.stringify(old));
-    expect(back.rates).toEqual({});
+    expect("rates" in back).toBe(false);
     expect("packages" in back.marketing).toBe(false);
     const all = [...back.services, ...back.sales.requests, ...back.sales.lost];
     expect(back.sales.lost.length).toBeGreaterThan(0);

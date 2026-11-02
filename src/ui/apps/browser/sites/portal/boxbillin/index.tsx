@@ -18,7 +18,7 @@ type Era = "cube" | "slate" | "foss";
 export const eraOf = (major: string): Era => (major.startsWith("0.") ? "foss" : Number(major) >= 3 ? "slate" : "cube");
 
 const GROUPS: [string, ScreenName[]][] = [
-  ["shop", ["home", "products", "options", "servers"]],
+  ["shop", ["home", "products", "servers", "settings"]],
   ["billing", ["orders", "clients", "invoices", "quotes"]],
   ["system", ["licence", "updates"]],
 ];

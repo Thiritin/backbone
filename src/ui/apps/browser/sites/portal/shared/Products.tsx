@@ -2,7 +2,7 @@ import { useState } from "react";
 import { t } from "../../../../../../i18n/en";
 import { SITE_LINES } from "../../../../../../sim/80-business/website";
 import type { Product } from "../../../../../../sim/30-customers/customers";
-import { stockOf } from "../../../../../../sim/80-business/shop";
+import type { Stock } from "../../../../../../sim/80-business/shop";
 import type { ShopProduct } from "../../../../../../sim/80-business/shop";
 import { createProduct, createProductGroup, deleteProduct, deleteProductGroup } from "../../../../../../sim/90-actions/portal";
 import { useStore } from "../../../../../store";
@@ -12,7 +12,7 @@ import type { ScreenProps } from "./nav";
 export const payType = (p: ShopProduct): string =>
   t(Object.values(p.prices).every((x) => x === 0) && p.setup === 0 ? "shop-admin.payFree" : "shop-admin.payRecurring");
 
-export const stockText = (stock: ReturnType<typeof stockOf>): string => (stock === "off" ? t("marketing.off") : stock === "auto" ? t("marketing.freeCapacity") : String(stock));
+export const stockText = (stock: Stock): string => (stock === "off" ? t("marketing.off") : stock === "auto" ? t("marketing.freeCapacity") : String(stock));
 
 // Product groups as headed tables, with the buttons that create groups and products.
 export function Products({ game, go }: ScreenProps) {

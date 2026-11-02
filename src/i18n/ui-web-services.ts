@@ -194,7 +194,6 @@ export default {
   "web.reseller.feature.1": () => "Your own customers and packages",
   "web.reseller.feature.2": () => "Billed per block",
   "web.reseller.audience": () => "Resellers",
-  "web.reseller.unitAccount": () => "Account",
   "web.reseller.product": () => "Reseller block",
   "web.rs.level": () => "Reseller Level",
   "web.rs.manage": () => "Manage Resellers",

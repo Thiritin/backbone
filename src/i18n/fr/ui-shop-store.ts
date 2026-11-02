@@ -7,8 +7,6 @@ export default {
   "shop-store.configure": () => "Configurer",
   "shop-store.cycle": () => "Cycle de facturation",
   "shop-store.domain": () => "Domaine",
-  "shop-store.customConfig": () => "Configuration sur mesure",
-  "shop-store.size": () => "Taille",
   "shop-store.addToCart": () => "Ajouter au panier",
   "shop-store.cart": () => "Panier",
   "shop-store.checkout": () => "Paiement",

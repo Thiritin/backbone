@@ -56,8 +56,6 @@ export default {
   "error.unknownReport": () => "Este relatório de incidente já não existe.",
   "error.unknownBrand": () => "Esta marca não vende servidores.",
   "error.unknownSiteLine": () => "Este produto não pode ir para o site.",
-  "error.unknownLineRate": () => "Este produto não tem essa tarifa.",
-  "error.badRate": () => "Introduz uma tarifa de zero ou mais.",
   "error.notInShop": () => "A loja não vende este modelo.",
   "error.outOfBounds": () => "O dispositivo não cabe a esta altura.",
   "error.slotTaken": () => "Outro dispositivo está no caminho.",

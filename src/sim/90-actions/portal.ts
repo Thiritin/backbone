@@ -7,7 +7,8 @@ import type { Product } from "../30-customers/customers";
 import { termPrice } from "../30-market/cycles";
 import type { GameState } from "../50-state";
 import { SITE_LINES } from "../80-business/website";
-import type { ProductGroup, ShopProduct } from "../80-business/shop";
+import { groupKind, type ProductGroup, type ShopProduct } from "../80-business/shop";
+import { SERVES } from "../10-catalog/platforms";
 import type { ActionResult } from "./hardware";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -60,7 +61,8 @@ export function deleteProductGroup(s: GameState, id: string): ActionResult {
   return { ok: true };
 }
 
-// A new product: the line's smallest size at the market's monthly price for every cycle the shop sells, and the market's setup fee.
+// A new product: the line's smallest size at the market's monthly price for every cycle the shop sells, the market's setup
+// fee, and the first server group whose software serves the line.
 export function createProduct(s: GameState, groupId: string, name: string, line: Product): ActionResult {
   const v = variantOf(s);
   if (!v) return fail("error.needsShop");
@@ -71,8 +73,8 @@ export function createProduct(s: GameState, groupId: string, name: string, line:
   const year = yearOf(s.hour), spec = sizeSpec(line, 0, year), monthly = marketPrice(line, spec, year);
   const cycles = line === "ssl" ? (["monthly"] as Cycle[]) : v.cycles;
   const prices = Object.fromEntries(cycles.map((c) => [c, termPrice(s, monthly, c)]));
-  const id = `prod${s.nextId++}`;
-  setProducts(s, [...s.shop.products, { id, groupId, name: n, line, serverGroupId: null, packageName: null, spec, prices, autoCycles: true, setup: marketSetup(line, year), stock: v.autoStock ? "auto" : 10, hidden: false, setupMode: "payment" }]);
+  const id = `prod${s.nextId++}`, serverGroupId = s.shop.groups.find((g) => { const k = groupKind(s, g); return !!k && SERVES[k].includes(line); })?.id ?? null;
+  setProducts(s, [...s.shop.products, { id, groupId, name: n, line, serverGroupId, packageName: null, spec, prices, autoCycles: true, setup: marketSetup(line, year), stock: v.autoStock ? "auto" : 10, hidden: false, setupMode: "payment" }]);
   return { ok: true, id };
 }
 

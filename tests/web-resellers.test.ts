@@ -48,12 +48,11 @@ describe("reseller blocks", () => {
     expect(line.amount).toBeLessThan(hours * v.price * FILL_MAX);
   });
 
-  it("lists reseller blocks on HOSTtoast per GB, yours at your rate", () => {
+  it("lists reseller blocks on HOSTtoast per GB, yours at the market rate", () => {
     const { s } = world();
     s.hosttoast.tier = TIER_IDS[0];
-    s.rates = { reseller: { diskGb: 0.42 } };
     const rows = hosttoastList(s, "reseller"), market = marketRates("reseller", 2010).diskGb!;
-    expect(rows.find((r) => r.id === "you")?.price).toBe(0.42);
+    expect(rows.find((r) => r.id === "you")?.price).toBe(market);
     const rival = rows.find((r) => r.id !== "you")!;
     expect(rival.price).toBeCloseTo(market * s.competitors.find((c) => c.id === rival.id)!.priceFactor, 6);
   });

@@ -52,19 +52,19 @@ describe("WHMCache admin", () => {
     expect(page(s, { s: "product", id: p, tab: "module" })).toMatch(/checked[^>]*>[^<]*<\/label>|checked=""/);
   });
 
-  it("moves the rates and the cycle discounts into the options", () => {
+  it("keeps the cycle discounts in the settings", () => {
     const s = shopGame();
     expect(setOptionDiscount(s, "annual", 0.12).ok).toBe(true);
-    const html = page(s, { s: "options" });
+    const html = page(s, { s: "settings" });
     expect(html).toContain("Cycle discounts");
     expect(html).toContain('value="12"');
-    expect(html).toContain("vCPU");
   });
 
   it("holds the server group editor and lists orders, clients and invoices", () => {
     const s = shopGame();
-    createGroup(s, "panel", "Web servers");
-    expect(page(s, { s: "servers" })).toContain("Web servers");
+    createGroup(s, "Web servers");
+    const servers = page(s, { s: "servers" });
+    for (const label of ["Web servers", "Distribution", "Spread evenly", "Fill one server first", "Accounts: ", "Active", "Move up"]) expect(servers).toContain(label);
     expect(page(s, { s: "orders" })).toContain("Date");
     expect(page(s, { s: "clients" })).toContain("Client");
     expect(page(s, { s: "invoices" })).toContain("Invoice");

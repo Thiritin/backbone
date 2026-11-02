@@ -1,48 +1,62 @@
 import { useState } from "react";
 import { t } from "../../../../../../i18n/en";
-import { SERVES, type SoftwareKind } from "../../../../../../sim/10-catalog/platforms";
-import type { NodeState } from "../../../../../../sim/60-infra/cluster";
+import { LOCALE } from "../../../../../../i18n/lang";
+import { SERVES } from "../../../../../../sim/10-catalog/platforms";
+import type { ShopId } from "../../../../../../sim/10-catalog/shops";
+import { nodeCapacity, nodeUsed, type Cluster } from "../../../../../../sim/60-infra/cluster";
 import type { GameState } from "../../../../../../sim/50-state";
-import { groupOf } from "../../../../../../sim/80-business/shop";
-import { addToGroup, createGroup, deleteGroup, removeFromGroup, setGroupDeploy, setGroupSale } from "../../../../../../sim/90-actions/shop";
+import { accountsOn, groupKind, groupOf, type Fill } from "../../../../../../sim/80-business/shop";
+import { addToGroup, createGroup, deleteGroup, moveMember, removeFromGroup, setGroupFill, setMemberActive } from "../../../../../../sim/90-actions/shop";
 import { useStore } from "../../../../../store";
-import { NodeActions } from "../../../consoles/HypervisorBase";
-import { PRODUCT } from "../../../../support/labels";
 import "../../../../marketing/marketing.css";
 
-const NODE_STATE: Record<NodeState, string> = { active: t("marketing.nodeActive"), cordoned: t("marketing.nodeCordoned"), draining: t("marketing.nodeDraining"), maintenance: t("marketing.nodeMaintenance") };
-const KIND: Partial<Record<SoftwareKind, string>> = { panel: t("marketing.kindPanel"), cloud: t("marketing.kindCloud"), game: t("marketing.kindGame"), dns: t("marketing.kindDns"), vpn: t("marketing.kindVpn"), storage: t("marketing.kindStorage") };
+// Shop systems whose real counterpart lets a server group choose how it fills its servers.
+const FILL_CHOICE: ShopId[] = ["whmCache", "hostBull", "blessta"];
+const FILL: [Fill, string][] = [["spread", t("shop-admin.fillSpread")], ["fill", t("shop-admin.fillFirst")]];
 
-// Server groups: which software installations the shop sells from and deploys to.
+// The share of its nodes' RAM an installation has booked.
+function load(s: GameState, c: Cluster): string {
+  const devices = c.nodes.map((n) => s.devices.find((d) => d.id === n.deviceId)).filter((d) => !!d);
+  const cap = devices.reduce((n, d) => n + nodeCapacity(d, s).ramGb, 0), used = devices.reduce((n, d) => n + nodeUsed(s, d.id, true).ramGb, 0);
+  return cap > 0 ? (used / cap).toLocaleString(LOCALE, { style: "percent" }) : "";
+}
+
+// Server groups: the installations each group's products are placed on, which take new orders, and in what order.
 export function Servers({ game }: { game: GameState }) {
   const act = useStore((s) => s.act);
-  const [kind, setKind] = useState<SoftwareKind>("panel");
   const [name, setName] = useState("");
+  const choice = !!game.shop.variant && FILL_CHOICE.includes(game.shop.variant);
   return (
     <div className="mkt-list">
       <div className="side-h">{t("marketing.serverGroups")}</div>
       {game.shop.groups.map((g) => {
-        const free = game.clusters.filter((c) => c.kind === g.kind && !groupOf(game, c.id));
+        const kind = groupKind(game, g);
+        const free = game.clusters.filter((c) => SERVES[c.kind].length && (!kind || c.kind === kind) && !groupOf(game, c.id));
+        const members = g.members.map((id) => game.clusters.find((c) => c.id === id)).filter((c) => !!c);
         return (
           <div key={g.id} className="mkt-list">
             <div className="mkt-row">
               <strong className="mkt-grow">{g.name}</strong>
-              <span className="mkt-sub">{KIND[g.kind]}</span>
               <button className="btn" onClick={() => act(deleteGroup, g.id)}>{t("marketing.delete")}</button>
             </div>
-            {g.members.map((id) => game.clusters.find((c) => c.id === id)).filter((c) => !!c).map((c) => (
-              <div key={c.id} className="mkt-list">
-                <div className="mkt-row">
-                  <span className="mkt-grow">{c.name}</span>
-                  <button className="btn" onClick={() => act(removeFromGroup, g.id, c.id)}>{t("marketing.remove")}</button>
-                </div>
-                {c.nodes.map((n) => (
-                  <div key={n.deviceId} className="mkt-row">
-                    <span className="mkt-grow mkt-sub">{game.devices.find((d) => d.id === n.deviceId)?.label ?? game.devices.find((d) => d.id === n.deviceId)?.name}</span>
-                    <span className="pill">{NODE_STATE[n.state]}</span>
-                    <NodeActions c={c} n={n} className="btn" />
-                  </div>
-                ))}
+            {choice && (
+              <div className="mkt-row" role="radiogroup" aria-label={t("shop-admin.fill")}>
+                <span className="mkt-grow">{t("shop-admin.fill")}</span>
+                {FILL.map(([k, label]) => <label key={k}><input type="radio" name={`fill-${g.id}`} checked={g.fill === k} onChange={() => act(setGroupFill, g.id, k)} /> {label}</label>)}
+              </div>
+            )}
+            {members.map((c, i) => (
+              <div key={c.id} className="mkt-row">
+                <span className="mkt-grow">{c.name}</span>
+                <span className="mkt-sub">{t("shop-admin.accounts", { n: accountsOn(game, c.id) })}</span>
+                <span className="mkt-sub num">{load(game, c)}</span>
+                <label>
+                  {t("shop-admin.active")}{" "}
+                  <input type="checkbox" role="switch" className="switch" checked={!g.inactive.includes(c.id)} onChange={(e) => act(setMemberActive, g.id, c.id, e.target.checked)} />
+                </label>
+                <button className="btn" aria-label={t("shop-admin.moveUp")} disabled={i === 0} onClick={() => act(moveMember, g.id, c.id, -1)}>↑</button>
+                <button className="btn" aria-label={t("shop-admin.moveDown")} disabled={i === members.length - 1} onClick={() => act(moveMember, g.id, c.id, 1)}>↓</button>
+                <button className="btn" onClick={() => act(removeFromGroup, g.id, c.id)}>{t("marketing.remove")}</button>
               </div>
             ))}
             {free.length > 0 && (
@@ -53,25 +67,12 @@ export function Servers({ game }: { game: GameState }) {
                 </select>
               </div>
             )}
-            {SERVES[g.kind].map((p) => (
-              <label key={p} className="mkt-row">
-                <span className="mkt-grow">{t("marketing.sell", { product: PRODUCT[p] })}</span>
-                <input type="checkbox" role="switch" className="switch" aria-label={t("marketing.sellFrom", { product: PRODUCT[p], group: g.name })} checked={g.sale.includes(p)} onChange={(e) => act(setGroupSale, g.id, p, e.target.checked)} />
-              </label>
-            ))}
-            <label className="mkt-row">
-              <span className="mkt-grow">{t("marketing.deployOrders")}</span>
-              <input type="checkbox" role="switch" className="switch" aria-label={t("marketing.deployOrdersTo", { group: g.name })} checked={g.deploy} onChange={(e) => act(setGroupDeploy, g.id, e.target.checked)} />
-            </label>
           </div>
         );
       })}
       <div className="mkt-row">
-        <select aria-label={t("marketing.softwareKind")} value={kind} onChange={(e) => setKind(e.target.value as SoftwareKind)}>
-          {Object.entries(KIND).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
-        </select>
         <input className="mkt-grow" aria-label={t("marketing.groupName")} value={name} onChange={(e) => setName(e.target.value)} />
-        <button className="btn" disabled={!name.trim()} onClick={() => { act(createGroup, kind, name); setName(""); }}>{t("marketing.newGroup")}</button>
+        <button className="btn" disabled={!name.trim()} onClick={() => { act(createGroup, name); setName(""); }}>{t("marketing.newGroup")}</button>
       </div>
     </div>
   );

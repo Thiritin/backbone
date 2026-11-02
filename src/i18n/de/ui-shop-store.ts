@@ -7,8 +7,6 @@ export default {
   "shop-store.configure": () => "Konfigurieren",
   "shop-store.cycle": () => "Abrechnungszeitraum",
   "shop-store.domain": () => "Domain",
-  "shop-store.customConfig": () => "Individuelle Konfiguration",
-  "shop-store.size": () => "Größe",
   "shop-store.addToCart": () => "In den Warenkorb",
   "shop-store.cart": () => "Warenkorb",
   "shop-store.checkout": () => "Kasse",

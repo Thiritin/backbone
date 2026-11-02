@@ -12,7 +12,7 @@ import { bump, expandable, isFinal, profileStats, type Ticket } from "../40-supp
 import type { GameState } from "../50-state";
 import { betterHost } from "../60-infra/routes";
 import { allocationFree } from "../60-infra/daemons";
-import { gameFirst, lineOffered, noRoomError, pickNode, serverTaken, supports, withDatastore, workloadsOf } from "../60-infra/cluster";
+import { gameFirst, lineOffered, type Cluster, noRoomError, pickNode, serverTaken, supports, withDatastore, workloadsOf } from "../60-infra/cluster";
 import { phpNeeded } from "../60-infra/php";
 import { installedRamGb, locationOf } from "../60-infra/status";
 import { addAwareness } from "../80-business/marketing";
@@ -37,7 +37,7 @@ import { acceptQuote, issueInvoice, resize, specParams } from "./manual";
 import { answerQuote } from "./quotes";
 import { logActivity } from "../47-staff/activity";
 import type { ActionResult } from "../90-actions/hardware";
-import { forSale, inStock, shopActive, soldOutVisit, type ShopProduct } from "../80-business/shop";
+import { accountsOn, shopActive, soldOutVisit, type ShopProduct } from "../80-business/shop";
 import { chooseProduct, packageSpec } from "../80-business/portal";
 import { belowFloor, bookingFor, packageNamed } from "../80-business/packages";
 import { LIMIT_TOPICS } from "../40-support/webspace-tickets";
@@ -152,18 +152,19 @@ function newLeads(s: GameState, events: SimEvent[]): void {
       if (!shop && mailShare(s, f.profile) < 1 && rand(s.rng) >= mailShare(s, f.profile)) continue;
       // A shop sells only what is in stock; a sold-out visitor leaves no request.
       let spec = shop ? nextSpec(s, need, f.profile) : undefined, pick: ShopProduct | undefined;
-      // A line with plans sells the plan that fits the visitor; without plans it sells configurable options.
+      // A line with plans sells the plan that fits the visitor; a line without plans gets a request for a quote.
       const plan = spec ? chooseProduct(s, { city: f.city, product: need.product, spec, reference: referenceFor(s, f.profile, need.product, spec, need.sla) }) : null;
       if (plan === "soldOut") {
         soldOutVisit(s, need.product);
         continue;
       }
+      if (shop && !plan) {
+        newLead(s, f.profile, f.city, events, need, true);
+        continue;
+      }
       if (plan) {
         pick = plan;
         spec = { ...spec!, ...packageSpec(s, plan) };
-      } else if (spec && !inStock(s, { city: f.city, product: need.product, spec })) {
-        soldOutVisit(s, need.product);
-        continue;
       }
       orderLead(s, f.profile, f.city, events, need, !shop, spec, undefined, pick);
     }
@@ -220,8 +221,10 @@ export function targetFor(s: GameState, r: Pick<SalesRequest, "city" | "product"
     // A product sells from its own server group, and only from installations that have its package.
     const prod = r.productId ? s.shop.products.find((p) => p.id === r.productId) : undefined;
     const pg = prod?.serverGroupId ? s.shop.groups.find((g) => g.id === prod.serverGroupId) : undefined;
-    const sold = pg ? new Set(pg.members) : r.shop ? forSale(s, r.product) : null;
-    const fit = [...s.clusters].sort((x, y) => gameFirst(x, y) || betterHost(s)(x, y)).filter((x) => zones.includes(x.az) && supports(x, r.product) && (!sold || sold.has(x.id)) && (!prod?.packageName || packageNamed(x, prod.packageName)) && (r.product !== "gameServer" || allocationFree(s, x)));
+    // A group places on its least full active member, or on the first in its order with room.
+    const sold = pg ? new Set(pg.members.filter((m) => !pg.inactive.includes(m))) : null;
+    const rank = (x: Cluster, y: Cluster) => !pg ? 0 : pg.fill === "fill" ? pg.members.indexOf(x.id) - pg.members.indexOf(y.id) : accountsOn(s, x.id) - accountsOn(s, y.id);
+    const fit = [...s.clusters].sort((x, y) => rank(x, y) || gameFirst(x, y) || betterHost(s)(x, y)).filter((x) => zones.includes(x.az) && supports(x, r.product) && (!sold || sold.has(x.id)) && (!prod?.packageName || packageNamed(x, prod.packageName)) && (r.product !== "gameServer" || allocationFree(s, x)));
     const c = fit.find((x) => pickNode(s, x, withDatastore(s, x, size), null, x.placement, true)) ?? fit.find((x) => pickNode(s, x, withDatastore(s, x, size)));
     return c ? { clusterId: c.id, zone: c.az } : null;
   }

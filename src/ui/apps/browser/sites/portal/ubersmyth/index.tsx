@@ -16,12 +16,12 @@ type Era = "2" | "3" | "4" | "5";
 const eraOf = (major: string): Era => (["3", "4", "5"].includes(major) ? major : "2") as Era;
 
 const GROUPS: [string, ScreenName[]][] = [
-  ["overview", ["home"]], ["billing", ["clients", "orders", "invoices", "quotes"]], ["catalogue", ["products", "options"]],
-  ["infra", ["servers"]], ["system", ["licence", "updates"]],
+  ["overview", ["home"]], ["billing", ["clients", "orders", "invoices", "quotes"]], ["catalogue", ["products"]],
+  ["infra", ["servers"]], ["system", ["settings", "licence", "updates"]],
 ];
 const ICON: Partial<Record<ScreenName, LucideIcon>> = {
   home: LayoutDashboard, clients: Users, orders: Inbox, invoices: Receipt, quotes: FileText, products: Package,
-  options: SlidersHorizontal, servers: Server, licence: KeyRound, updates: RefreshCw,
+  settings: SlidersHorizontal, servers: Server, licence: KeyRound, updates: RefreshCw,
 };
 const label = (n: ScreenName) => t(`ubersmyth.nav.${n}`);
 

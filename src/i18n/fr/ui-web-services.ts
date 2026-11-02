@@ -194,7 +194,6 @@ export default {
   "web.reseller.feature.1": () => "Vos propres clients et offres",
   "web.reseller.feature.2": () => "Facturation par pack",
   "web.reseller.audience": () => "Revendeurs",
-  "web.reseller.unitAccount": () => "Compte",
   "web.reseller.product": () => "Pack revendeur",
   "web.rs.level": () => "Niveau revendeur",
   "web.rs.manage": () => "Gerer les revendeurs",

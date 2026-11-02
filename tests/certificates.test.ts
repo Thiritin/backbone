@@ -52,14 +52,6 @@ describe("SSL certificates", () => {
     expect(offerCertificate(later, w, 1)).toBeNull();
   });
 
-  it("are a share the player's rate lowers", () => {
-    const s = readyGame(1);
-    sellSsl(s);
-    expect(offerCertificate(s, customer(s), 0)).toBeNull();
-    s.rates = { ...s.rates, ssl: { base: 1e6 } };
-    expect(offerCertificate(s, customer(s), 1)).toBeNull();
-  });
-
   it("are bought from the certificate authority each time the customer is billed for one", () => {
     const s = readyGame(1);
     sellSsl(s);

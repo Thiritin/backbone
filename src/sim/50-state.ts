@@ -9,7 +9,7 @@ import type { LicenseKind, OsImage, ServerOsId } from "./10-catalog/server-os";
 import { yearOf } from "./00-core/time";
 import { MOMS_DSL, seedDcs } from "./20-world/datacenters";
 import { t } from "../i18n/en";
-import type { Customer, Product, Service } from "./30-customers/customers";
+import type { Customer, Service } from "./30-customers/customers";
 import type { Quote } from "./30-market/quotes";
 import type { BillingRules, HoldReason, Invoice, Loan, Transfer } from "./45-billing/billing";
 import type { Ticket } from "./40-support/tickets";
@@ -36,7 +36,6 @@ import type { FairBooking } from "./80-business/fairs";
 import type { Sponsorship } from "./80-business/community";
 import type { SponsorOffer } from "./80-business/sponsorboard";
 import type { LossReport } from "./85-products/products";
-import type { Rates } from "./10-catalog/products";
 import type { Domain } from "./30-customers/registry";
 import { newIps, type Ips } from "./60-infra/addresses";
 import { newNetSvc, type NetSvc } from "./60-infra/netsvc";
@@ -338,7 +337,6 @@ export interface GameState {
   // Sales requests and lost sales (30-market).
   sales: Sales;
   // The player's price per resource unit by line (Products app); unset units charge the market rate.
-  rates: Partial<Record<Product, Rates>>;
   // Hours each service has been down since the last monthly invoice.
   downHours: Record<string, number>;
   // Planned maintenance windows that have not ended yet.
@@ -500,7 +498,6 @@ export const newGame = (seed: number): GameState => ({
   breaches: [],
   sites: newSites(),
   sales: newSales(),
-  rates: {},
   domains: [],
   registrar: null,
   ips: newIps(),

@@ -19,11 +19,11 @@ export const Mark = () => <span className="ob-mark"><span className="ob-cube" ar
 
 const GROUPS: { id: string; screens: ScreenName[] }[] = [
   { id: "sales", screens: ["clients", "orders", "invoices", "quotes"] },
-  { id: "catalog", screens: ["products", "options", "servers"] },
-  { id: "settings", screens: ["licence", "updates"] },
+  { id: "catalog", screens: ["products", "servers"] },
+  { id: "settings", screens: ["settings", "licence", "updates"] },
 ];
 const ICON: Partial<Record<ScreenName, LucideIcon>> = {
-  home: Home, clients: Users, orders: ShoppingCart, invoices: Receipt, quotes: FileText, products: Package, options: SlidersHorizontal, servers: Server, licence: KeyRound, updates: RefreshCw,
+  home: Home, clients: Users, orders: ShoppingCart, invoices: Receipt, quotes: FileText, products: Package, settings: SlidersHorizontal, servers: Server, licence: KeyRound, updates: RefreshCw,
 };
 const label = (n: ScreenName) => t(`orderbocks.nav.${n}`);
 
