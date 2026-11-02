@@ -73,6 +73,8 @@ const plan = (p: Partial<MailPlan> & Pick<MailPlan, "id" | "from" | "price" | "q
 });
 const one: Steps<number | null> = [["2005-01", 1]];
 const ionosePrice = (y: number) => Math.max(6, 10 - 0.4 * (y - 2005));
+const lookoutPrice = from(2022, 5, 6);
+const lookoutQuota: QuotaAnchor[] = [["2011-01", 25 * GB], ["2013-01", 50 * GB], ["2016-01", 100 * GB]];
 const ionoseQuota: QuotaAnchor[] = [["2005-01", 500], ["2009-01", 2 * GB], ["2013-01", 10 * GB], ["2016-01", 50 * GB]];
 
 export const MAIL_HOSTS: MailHost[] = [
@@ -111,7 +113,11 @@ export const MAIL_HOSTS: MailHost[] = [
   {
     id: "lookout", from: 2011, webmail: "lookout", labels: false, serverFilters: "rules", aliasMax: 50, catchAll: true, autoconfig: true, sharedFree: true,
     servers: { imap: "imap.lookout365.com", pop: "pop.lookout365.com", smtp: "smtp.lookout365.com" }, mx: ["mail.protection.lookout365.com"],
-    plans: [plan({ id: "business", from: "2011-01", price: from(2022, 5, 6), quota: [["2011-01", 25 * GB], ["2013-01", 50 * GB], ["2016-01", 100 * GB]] })],
+    // Basic keeps the id "business" that older saves carry; Standard adds a euro per mailbox. One collector carries Migration.
+    plans: [
+      plan({ id: "business", from: "2011-01", price: lookoutPrice, mailboxes: [["2011-01", 10]], quota: lookoutQuota, collectors: 1 }),
+      plan({ id: "standard", from: "2011-01", price: (y) => lookoutPrice(y) + 1, mailboxes: [["2011-01", 100]], quota: lookoutQuota, collectors: 1 }),
+    ],
   },
   {
     id: "self", from: 2005, webmail: null, labels: false, serverFilters: "none", aliasMax: 50, catchAll: true, autoconfig: false, sharedFree: true, servers: null, mx: [],

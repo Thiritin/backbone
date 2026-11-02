@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { shopById } from "../../../sim/10-catalog/shops";
 import { DESK } from "../support/desk";
-import { GMixMark, GoggleMark, IonoseMark } from "../../art/mailmarks";
+import { GMixMark, GoggleMark, IonoseMark, LookoutMark } from "../../art/mailmarks";
 import type { CSSProperties } from "react";
 import type { Resolved } from "../../../sim/80-business/browser";
 import type { GameState } from "../../../sim/50-state";
@@ -52,7 +52,8 @@ export function Favicon({ game, r }: { game: GameState; r: Resolved }) {
       const v = booksVendor(p.id)!;
       return <Tile fill={v.skin.accent}><text x="8" y="11.8" textAnchor="middle" fontSize="10" fontWeight="800" fill="white" fontFamily="Verdana, sans-serif">{v.name[0].toUpperCase()}</text></Tile>;
     }
-    case "mailProvider": return p.id === "ionose" || p.id === "ionose-owa" ? <span className="fav fav-mark" style={{ "--tile": "#003d8f" } as CSSProperties}><IonoseMark /></span>
+    case "mailProvider": return p.id.startsWith("lookout") ? <span className="fav fav-mark" style={{ "--tile": "#dc3c00" } as CSSProperties}><LookoutMark /></span>
+      : p.id === "ionose" || p.id === "ionose-owa" ? <span className="fav fav-mark" style={{ "--tile": "#003d8f" } as CSSProperties}><IonoseMark /></span>
       : p.id === "goggle" ? <span className="fav fav-mark" style={{ "--tile": "#fff" } as CSSProperties}><GoggleMark /></span>
       : p.id === "gmial" ? <Tile fill="#c00"><text x="8" y="11.8" textAnchor="middle" fontSize="10" fontWeight="800" fill="white" fontFamily="Arial, sans-serif">M</text></Tile>
       : <span className="fav fav-mark" style={{ "--tile": "#1c449b" } as CSSProperties}><GMixMark /></span>;
