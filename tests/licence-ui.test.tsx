@@ -1,7 +1,7 @@
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { panelMachine } from "../src/sim/60-infra/licence";
-import { activateLicence } from "../src/sim/90-actions/licence";
+import { activateLicence, removeLicence } from "../src/sim/90-actions/licence";
 import { LicencePage } from "../src/ui/apps/browser/consoles/Readouts";
 import { buyKey, panelVm, readyGame, skipTo } from "./fixtures";
 
@@ -36,7 +36,9 @@ describe("licence page tiers", () => {
 
   it("shows accounts against the cap after a downgrade", () => {
     const { s, id, view } = setup("pleskit");
-    expect(activateLicence(s, panelMachine(s.clusters.find((x) => x.id === id)!)!, "pleskit", buyKey(s, "pleskit", "webAdmin").key).ok).toBe(true);
+    const m = panelMachine(s.clusters.find((x) => x.id === id)!)!;
+    removeLicence(s, m, "pleskit");
+    expect(activateLicence(s, m, "pleskit", buyKey(s, "pleskit", "webAdmin").key).ok).toBe(true);
     const html = view();
     expect(html).toContain("0 of 10");
     expect(html).toContain("Never");

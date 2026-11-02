@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- A license key that is installed in a panel or product has to be removed before another key can be entered, and the license page shows the installed key with a Remove button instead of listing your unused keys.
 - You now set how much CPU, memory and disk each customer's service may use, on the customer's page and in the hypervisor consoles, and a customer uses what they bought: give them more and their peaks may go above it, give them less and their own service slows down while your host stays fine.
 - A customer who writes in about a slow server can be told to upgrade: if their own limit was too tight, they get a quote for more, and if your host was the problem, they take it badly.
 - Supplier invoices in Preview are addressed to the company address you registered.
