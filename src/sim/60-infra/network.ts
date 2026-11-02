@@ -212,9 +212,12 @@ export function transitBill(s: GameState, u: Uplink): { mbps: number; amount: nu
   return { mbps: round2(mbps), amount: cents(mbps * price) };
 }
 
+// Each link runs over a cross-connect to its partner; ones the player ordered in the provider's portal are billed there instead.
 export const crossConnects = (s: GameState, u: Uplink): number => {
   const loc = s.locations.find((l) => l.id === u.locationId);
-  return loc?.dc ? u.links.length * datacenterById(loc.dc).crossConnect : 0;
+  if (!loc?.dc) return 0;
+  const ordered = s.crossConnects.filter((x) => x.to === u.partner && s.contracts.some((c) => c.id === x.contractId && c.locationId === loc.id)).length;
+  return Math.max(0, u.links.length - ordered) * datacenterById(loc.dc).crossConnect;
 };
 
 export function zoneLinkMonthly(s: GameState, zl: ZoneLink): number {
@@ -238,7 +241,8 @@ export function networkBills(s: GameState): LedgerEntry[] {
       line("ledger.exchangePorts", { exchange: exchangeById(u.partner)!.name, location: name(u.locationId), count: u.links.length },
         u.links.reduce((sum, l) => sum + exchangePortPrice(l.gbit, year), 0));
     }
-    line("ledger.crossConnects", { location: name(u.locationId), count: u.links.length }, crossConnects(s, u));
+    const xc = crossConnects(s, u), dc = s.locations.find((l) => l.id === u.locationId)?.dc;
+    if (dc) line("ledger.crossConnects", { location: name(u.locationId), count: Math.round(xc / datacenterById(dc).crossConnect) }, xc);
   }
   for (const x of n.memberships) line("ledger.exchangeMember", { exchange: exchangeById(x)!.name }, EXCHANGE_FEES.yearly / 12);
   for (const [id, tb] of Object.entries(n.dcTb)) line("ledger.dcBandwidth", { location: name(id), tb: round2(tb) }, tb * dcPerTb(year));
