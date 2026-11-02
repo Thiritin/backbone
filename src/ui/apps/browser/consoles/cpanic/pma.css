@@ -1,0 +1,70 @@
+/* phpMyAdmon: the original theme until 2013 (gray-blue frames), then the 4.x theme (light gray navigation, rounded tabs). */
+.pma {
+  --nav: #d0dce0; --bg: #f5f5f5; --fg: #000; --link: #0000ff; --th: #d3dce3; --row1: #e5e5e5; --row2: #d5d5d5; --line: #000;
+  --tab: #e5e5e5; --tab-on: #fff; --ok: #ebf8a4; --ok-line: #a2d246; --bad: #ffebe8; --bad-line: #c00; --font: Verdana, Arial, Helvetica, sans-serif;
+  display: grid; grid-template-columns: minmax(150px, 220px) 1fr; min-height: 100%; background: var(--bg); color: var(--fg); font: 12px/1.4 var(--font);
+}
+.pma[data-look="theme"] {
+  --nav: #f3f3f3; --bg: #fff; --fg: #444; --link: #235a81; --th: linear-gradient(#fff, #ccc); --row1: #fff; --row2: #dfdfdf; --line: #aaa;
+  --tab: linear-gradient(#fff, #dfdfdf); --tab-on: #fff; --ok: #ebf8a4; --ok-line: #a2d246; --bad: #fce4e4; --bad-line: #d22; --font: sans-serif;
+}
+.pma button { font: inherit; }
+.pma-link { background: none; border: 0; padding: 0; color: var(--link); text-decoration: none; cursor: pointer; }
+.pma-link:hover { text-decoration: underline; color: #ff0000; }
+.pma[data-look="theme"] .pma-link:hover { color: #235a81; }
+
+.pma-nav { background: var(--nav); border-right: 1px solid #999; padding: 8px; overflow: auto; }
+.pma-logo { font: bold 20px/1 Georgia, serif; color: #f89c0e; letter-spacing: -0.5px; margin-bottom: 6px; }
+.pma-logo span { color: #6c78af; }
+.pma-icons { display: flex; gap: 4px; margin-bottom: 8px; }
+.pma-icons button { display: inline-grid; place-items: center; width: 22px; height: 20px; border: 1px solid #999; background: #fff; color: #333; cursor: pointer; }
+.pma-tree, .pma-tree ul { list-style: none; margin: 0; padding: 0; }
+.pma-tree ul { padding-left: 14px; }
+.pma-tree button { display: flex; align-items: center; gap: 4px; width: 100%; padding: 2px 3px; border: 0; background: none; color: var(--link); text-align: left; cursor: pointer; overflow-wrap: anywhere; }
+.pma-tree button[aria-current="true"] { background: #fff; color: #000; font-weight: bold; }
+.pma[data-look="theme"] .pma-tree button[aria-current="true"] { background: #ccc; border-radius: 3px; }
+
+.pma-main { padding: 0 10px 10px; overflow: auto; min-width: 0; }
+.pma-crumb { padding: 6px 0; font-weight: bold; }
+.pma[data-look="theme"] .pma-crumb { margin: 0 -10px; padding: 6px 10px; background: linear-gradient(#fff, #ccc); border-bottom: 1px solid #aaa; }
+.pma-tabs { display: flex; flex-wrap: wrap; gap: 2px; margin: 6px 0 10px; border-bottom: 1px solid var(--line); }
+.pma-tabs button { margin-bottom: -1px; padding: 3px 12px; border: 1px solid var(--line); border-bottom: 0; background: var(--tab); color: var(--link); cursor: pointer; }
+.pma[data-look="theme"] .pma-tabs button { border-radius: 4px 4px 0 0; color: #235a81; }
+.pma-tabs button[aria-selected="true"] { background: var(--tab-on); color: #000; font-weight: bold; }
+
+.pma-data { border-collapse: collapse; margin: 6px 0; }
+.pma-data th, .pma-data td { padding: 2px 6px; border: 1px solid #fff; vertical-align: top; text-align: left; }
+.pma[data-look="theme"] .pma-data th, .pma[data-look="theme"] .pma-data td { border-color: #aaa; }
+.pma-data thead th, .pma-data tfoot th { background: var(--th); }
+.pma-data tbody tr:nth-child(odd) td { background: var(--row1); }
+.pma-data tbody tr:nth-child(even) td { background: var(--row2); }
+.pma-data tbody tr:hover td { background: #ccffcc; }
+.pma-data .num { text-align: right; white-space: nowrap; }
+.pma-edit th[scope="row"] { background: var(--th); }
+.pma-edit input, .pma-edit textarea { width: min(360px, 50vw); font: inherit; }
+.pma-acts { white-space: nowrap; }
+.pma-scroll { overflow-x: auto; }
+
+.pma-box { margin: 6px 0; padding: 8px 10px; border: 1px solid var(--line); background: #fff; }
+.pma-box h3 { margin: 4px 0; font-size: 12px; }
+.pma-box ul { margin: 4px 0; padding-left: 18px; }
+.pma-box label { display: block; margin: 2px 0; }
+.pma-box textarea { display: block; width: 100%; box-sizing: border-box; font: 12px/1.3 monospace; }
+.pma-go { margin: 8px 0 0; text-align: right; }
+.pma-go button { padding: 1px 12px; }
+.pma-home { display: grid; gap: 8px; max-width: 520px; }
+
+.pma-ok, .pma-error, .pma-notice { margin: 6px 0; padding: 6px 10px; border: 1px solid; }
+.pma-ok { background: var(--ok); border-color: var(--ok-line); }
+.pma-error { background: var(--bad); border-color: var(--bad-line); color: #000; }
+.pma-error h4 { margin: 0 0 4px; color: var(--bad-line); }
+.pma-notice { background: #ffd; border-color: #fc0; }
+.pma-ok p, .pma-error p { margin: 2px 0; }
+.pma-sql { display: block; margin: 4px 0; padding: 4px 6px; background: #fff; border: 1px dashed #999; font: 12px/1.3 monospace; color: #000; white-space: pre-wrap; overflow-wrap: anywhere; }
+.pma-pager { display: flex; gap: 4px; align-items: center; margin: 4px 0; }
+.pma-foot { margin-top: 16px; color: #888; font-size: 11px; }
+
+@media (max-width: 560px) {
+  .pma { grid-template-columns: 1fr; }
+  .pma-nav { border-right: 0; border-bottom: 1px solid #999; }
+}

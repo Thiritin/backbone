@@ -87,6 +87,9 @@ export function ApplicationsApp() {
             <span className="di-page"><Disc3 /></span>
           </Item>
         ))}
+        {at === "downloads" && game.media.files.map((name) => (
+          <Item key={name} label={name}><span className="di-page"><FileText /></span></Item>
+        ))}
         {at === "usb" && game.media.stick.os && (
           <Item label={isoFile(game.media.stick.os)}><span className="di-page"><Disc3 /></span></Item>
         )}

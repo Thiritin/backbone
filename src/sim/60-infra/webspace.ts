@@ -17,7 +17,11 @@ export interface WebFile { dir?: true; mb: number; at: number; mode?: string; ar
 export const modeOf = (path: string, f: WebFile): string => f.mode ?? (path === "public_html" ? "0750" : f.dir ? "0755" : "0644");
 export type DomainKind = "main" | "addon" | "sub" | "parked";
 export interface WebDomain { name: string; kind: DomainKind; folder: string; php: string }
-export interface WebDatabase { name: string; mb: number }
+// schema and tables hold the tables of an imported or installed database (webdb.ts); without them the tables derive from the app.
+// src is the database the generated rows come from, kept through an export and import.
+export interface WebDatabase { name: string; mb: number; schema?: string; tables?: Record<string, number>; src?: string }
+// A row the player edited or inserted in phpMyAdmon, keyed "db.table.pk"; values holds the changed columns only.
+export interface DbRow { db: string; table: string; pk: number; values: Record<string, string> }
 // grants maps a database name to its privileges, such as ["ALL PRIVILEGES"]. The host is always localhost.
 export interface DbUser { name: string; password: string; grants: Record<string, string[]> }
 export interface Mailbox { address: string; password: string; quotaMb: number; usedMb: number }
@@ -37,9 +41,10 @@ export interface WebApp { id: App; folder: string; config: string; db: string }
 export interface WebParts {
   files: Record<string, WebFile>; domains: Record<string, WebDomain>; databases: Record<string, WebDatabase>; dbUsers: Record<string, DbUser>;
   mailboxes: Record<string, Mailbox>; forwarders: Record<string, Forwarder>; ftp: Record<string, FtpAccount>; cron: Record<string, CronJob>;
+  rows: Record<string, DbRow>;
 }
 export type PartName = keyof WebParts;
-export const PARTS: PartName[] = ["files", "domains", "databases", "dbUsers", "mailboxes", "forwarders", "ftp", "cron"];
+export const PARTS: PartName[] = ["files", "domains", "databases", "dbUsers", "mailboxes", "forwarders", "ftp", "cron", "rows"];
 // What the player changed: a value adds or replaces an entry, false removes a derived one.
 export type WebspaceOverlay = { [K in PartName]?: Record<string, WebParts[K][string] | false> };
 
@@ -125,7 +130,7 @@ export function deriveWebspace(s: GameState, workloadId: string): Webspace | nul
   const account = own?.account ?? v?.username ?? accountFor(domain);
   const panel = c.panel!, webroot = webrootOf(panel), prefix = prefixOf(account), since = own?.at ?? v?.startedAt ?? w.placedAt, year = yearOf(s.hour);
   const ws: Webspace = {
-    workloadId, panel, account, prefix, webroot, domain, app: null, shells: [], files: {}, domains: {}, databases: {}, dbUsers: {}, mailboxes: {}, forwarders: {}, ftp: {}, cron: {},
+    workloadId, panel, account, prefix, webroot, domain, app: null, shells: [], files: {}, domains: {}, databases: {}, dbUsers: {}, mailboxes: {}, forwarders: {}, ftp: {}, cron: {}, rows: {},
     limits: own ? UNLIMITED : limitsOf(v?.pkg ? packageNamed(c, v.pkg) : undefined, v?.spec.mailboxes ?? 0), usage: undefined!,
   };
   for (const p of [webroot, "logs", "tmp", "mail"]) ws.files[p] = { dir: true, mb: 0, at: since };

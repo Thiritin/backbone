@@ -11,6 +11,7 @@ import { OwnAccountForm, OwnAccountRows } from "../OwnAccounts";
 import { useReadoutPages } from "../Readouts";
 import { useSessionState } from "../../../../session";
 import { Customer } from "./Customer";
+import { PhpMyAdmon } from "./PhpMyAdmon";
 import { AutoSsl } from "./AutoSsl";
 import { PhpProfiles } from "./EasyApache";
 import { TransferTool } from "./TransferTool";
@@ -30,6 +31,7 @@ const TabIcon = ({ id }: { id: Tab }) => { const I = ICON[id] ?? Circle; return 
 
 export function CPanic(p: PanelProps) {
   const era = eraAt(LOOKS, p), x3 = era === "x3", open = parseCreate("cpanic", p.path), [tab, setTab] = usePanelTab(p.f, open?.screen ?? "objects"), [q, setQ] = useState(""), [as, setAs] = useSessionState<string | null>(`browser.cpanic.as.${p.c.id}`, null);
+  const [pma, setPma] = useSessionState<string | null>(`browser.cpanic.pma.${p.c.id}`, null);
   const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f);
   if (!p.signedIn) return (
     <div className="cx cp cp-login" data-era={era}>
@@ -39,6 +41,7 @@ export function CPanic(p: PanelProps) {
       </LoginForm>
     </div>
   );
+  if (as && pma === as) return <PhpMyAdmon game={p.game} workloadId={as} close={() => setPma(null)} />;
   if (as) return (
     <div className="cx cp" data-era={era}>
       <header className="cp-top">
@@ -46,7 +49,7 @@ export function CPanic(p: PanelProps) {
         <span className="cx-host">{p.host}</span>
         <button className="cp-out" onClick={() => setAs(null)}>{t("readouts.cp.backToWhm")}</button>
       </header>
-      <Customer game={p.game} c={p.c} workloadId={as} />
+      <Customer game={p.game} c={p.c} workloadId={as} openPma={() => setPma(as)} />
     </div>
   );
   const menu: [string, [Tab, string][]][] = [
