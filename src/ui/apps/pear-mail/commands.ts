@@ -6,10 +6,11 @@ import { MY_PEAR, type ClientAccount } from "../../../sim/43-pear-mail/state";
 import { clientFolders, myFolders, type Row } from "../../../sim/43-pear-mail/view";
 import type { GameState } from "../../../sim/50-state";
 import type { ActionResult } from "../../../sim/90-actions/hardware";
-import { createMailFolder, deleteMailFolder, deleteMessages, markMessages, moveMailFolder, renameMailFolder, reportJunk } from "../../../sim/90-actions/mailmsg";
+import { createMailFolder, deleteMailFolder, deleteMessages, markMessages, moveMailFolder, renameMailFolder } from "../../../sim/90-actions/mailmsg";
 import {
-  createPearFolder, deletePearFolder, deletePearMessages, markPearMessages, movePearFolder, movePearMessages, renamePearFolder, savePearDraft, transferMessages,
+  createPearFolder, deletePearFolder, deletePearMessages, markPearMessages, movePearFolder, renamePearFolder, savePearDraft, transferMessages,
 } from "../../../sim/90-actions/pear-mail";
+import { markPearJunk } from "../../../sim/90-actions/pear-junk";
 import { useStore } from "../../store";
 import { mailDate } from "./List";
 
@@ -22,8 +23,9 @@ function each(rows: Row[], pop: (ids: string[]) => void, imap: (accountId: strin
 }
 
 export const deleteRows = (act: Act, rows: Row[]) => each(rows, (ids) => act(deletePearMessages, ids), (a, ids) => act(deleteMessages, a, ids, "imap"));
-export const junkRows = (act: Act, rows: Row[], junk: boolean) =>
-  each(rows, (ids) => act(movePearMessages, ids, junk ? "junk" : "inbox"), (a, ids) => act(reportJunk, a, ids, junk));
+export const junkRows = (act: Act, rows: Row[], junk: boolean) => {
+  for (const c of new Set(rows.map((r) => r.c.id))) act(markPearJunk, c, rows.filter((r) => r.c.id === c).map((r) => r.m.id), junk);
+};
 export const markRows = (act: Act, rows: Row[], f: { read?: boolean; star?: boolean }) => each(rows, (ids) => act(markPearMessages, ids, f), (a, ids) => act(markMessages, a, ids, f));
 
 // The sidebar's Smart Mailboxes: Box c for a Smart Mailbox, whose f is its id.
