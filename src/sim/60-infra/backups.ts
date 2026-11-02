@@ -20,8 +20,8 @@ export interface BackupJob {
   lastAlert?: number;
 }
 // bad is decided when the point is written and shows once a restore test verified it; an offsite copy is its own point,
-// readyAt the hour its transfer is done; testDoneAt the hour a running restore test ends.
-export interface RestorePoint { at: number; gb: number; jobId: string; verified: boolean; bad: boolean; offsite: boolean; readyAt?: number; testDoneAt?: number }
+// readyAt the hour its transfer is done; testDoneAt the hour a running restore test ends; appVersion the site's web app release.
+export interface RestorePoint { at: number; gb: number; jobId: string; verified: boolean; bad: boolean; offsite: boolean; readyAt?: number; testDoneAt?: number; appVersion?: number }
 export const BAD_POINT = 0.01, BAD_OFFSITE = 0.03;
 
 export const KEEP_DEFAULT: Keep = { last: 3, weekly: 0 };
@@ -127,7 +127,7 @@ export function runJob(s: GameState, c: Cluster, j: BackupJob, events: SimEvent[
       if (used + gb > room) { why = "full"; return w; }
       used += gb;
       const bad = chance(hashRng(s.seed, idNum(w.id), s.hour), BAD_POINT);
-      return pruneJob(s, { ...w, points: [...pointsOf(w), { at: s.hour, gb, jobId: j.id, verified: false, bad, offsite: false }] }, j);
+      return pruneJob(s, { ...w, points: [...pointsOf(w), { at: s.hour, gb, jobId: j.id, verified: false, bad, offsite: false, appVersion: s.services.find((v) => v.id === w.serviceId)?.spec.appVersion }] }, j);
     });
   }
   settle(s, c, j, why, events);
