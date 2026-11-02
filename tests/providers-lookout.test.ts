@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { hourOfMonth } from "../src/sim/00-core/time";
 import { lookoutToken, owaAt } from "../src/sim/10-catalog/mail-hosted";
 import { GRACE_DAYS, mailboxCap, mailPlan } from "../src/sim/10-catalog/mail-providers";
-import { seatsBilled } from "../src/sim/42-mail/accounts";
+import { checkMailLogin, seatsBilled } from "../src/sim/42-mail/accounts";
 import { capsOf, mxTarget } from "../src/sim/42-mail/caps";
 import { deliver, deliveryTrace } from "../src/sim/42-mail/deliver";
 import type { GameState } from "../src/sim/50-state";
@@ -11,7 +11,7 @@ import { removeCompanyRecord, setCompanyRecord } from "../src/sim/90-actions/dom
 import { cancelMail, endTenant } from "../src/sim/90-actions/mail";
 import { addOrgRule, signUpLookout, verifyLookout } from "../src/sim/90-actions/mail-hosted";
 import { importMail } from "../src/sim/90-actions/mail-provider";
-import { createMailAccount, setExternalAccess } from "../src/sim/90-actions/mailbox";
+import { createMailAccount, requestPasswordReset, resetPassword, setExternalAccess } from "../src/sim/90-actions/mailbox";
 import { err, idOf, run } from "./company-mail.helpers";
 import { readyGame } from "./fixtures";
 
@@ -107,6 +107,18 @@ describe("Lookout 365", () => {
 
   it("runs the web mail generation of the year", () => {
     expect(["2011-08", "2014-01", "2017-01"].map((m) => owaAt("lookout", at(m)))).toEqual(["2010", "2013", "web"]);
+  });
+
+  it("sends the admin's reset code by a letter from Lookout 365 and refuses a user's reset", () => {
+    const s = signedUp(8, "2012-03");
+    user(s, "anna");
+    expect(err(requestPasswordReset(s, addr(s, "anna")))).toBe("error.mailAdmin");
+    expect(err(requestPasswordReset(s, addr(s, "admin")))).toBe("ok");
+    const a = s.mail.accounts.find((x) => x.id === lookout(s).admin)!, letter = s.letters.find((l) => l.id === a.reset!.letter)!;
+    expect([letter.from, letter.link]).toEqual(["Lookout 365", "admin.lookout365.macrosoft.com/reset"]);
+    run(s, letter.at - s.hour + 1);
+    expect(err(resetPassword(s, addr(s, "admin"), a.reset!.code, "fresh-pw"))).toBe("ok");
+    expect(checkMailLogin(s, addr(s, "admin"), "fresh-pw").ok).toBe(true);
   });
 
   it("keeps a Lookout tenant through a save", () => {
