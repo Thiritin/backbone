@@ -35,9 +35,24 @@ const TRADE: Record<string, Record<Lang, string[]>> = {
   "Physiotherapy": { de: ["physio", "physiotherapie"], en: ["physio", "physiotherapy"], fr: ["kiné", "kinésithérapie"], nl: ["fysio", "fysiotherapie"], it: ["fisioterapia", "fisio"] },
   "Notary": { de: ["notar", "notariat"], en: ["notary", "notaries"], fr: ["notaire"], nl: ["notaris"], it: ["notaio"] },
   "Veterinary Clinic": { de: ["tierarzt", "tierklinik"], en: ["vets", "vet"], fr: ["vétérinaire", "clinique-véto"], nl: ["dierenarts", "dierenkliniek"], it: ["veterinario", "clinica-veterinaria"] },
+  "Hair Salon": { de: ["friseur", "haarstudio"], en: ["hair", "salon"], fr: ["coiffure", "coiffeur"], nl: ["kapper", "kapsalon"], it: ["parrucchiere", "acconciature"] },
+  "Butcher": { de: ["metzgerei", "fleischerei"], en: ["butcher", "butchers"], fr: ["boucherie"], nl: ["slagerij", "slager"], it: ["macelleria"] },
+  "Locksmith": { de: ["schluesseldienst", "schlosserei"], en: ["locksmith", "locks"], fr: ["serrurier", "serrurerie"], nl: ["slotenmaker"], it: ["fabbro", "serrature"] },
+  "Photo Studio": { de: ["fotostudio", "foto"], en: ["photo", "photography"], fr: ["photo", "studio-photo"], nl: ["fotostudio", "fotografie"], it: ["foto", "fotografia"] },
+  "Painting": { de: ["malerbetrieb", "maler"], en: ["painters", "decorating"], fr: ["peinture", "peintre"], nl: ["schildersbedrijf", "schilder"], it: ["imbianchino", "pitture"] },
+  "Café": { de: ["cafe", "kaffeehaus"], en: ["cafe", "coffee"], fr: ["cafe", "salon-de-the"], nl: ["koffiehuis", "cafe"], it: ["bar", "caffe"] },
+  "Pet Grooming": { de: ["hundesalon", "tierpflege"], en: ["grooming", "petgrooming"], fr: ["toilettage"], nl: ["trimsalon"], it: ["toelettatura"] },
+  "Yoga Studio": { de: ["yoga", "yogastudio"], en: ["yoga", "yogastudio"], fr: ["yoga"], nl: ["yoga", "yogaschool"], it: ["yoga"] },
+  "Architekten": { de: ["architekten", "architektur"], en: ["architects", "architecture"], fr: ["architectes", "architecture"], nl: ["architecten"], it: ["architetti", "architettura"] },
+  "Gebäudereinigung": { de: ["gebaeudereinigung", "reinigung"], en: ["cleaning", "cleaners"], fr: ["nettoyage", "proprete"], nl: ["schoonmaak", "reiniging"], it: ["pulizie", "impresa-pulizie"] },
+  "Catering": { de: ["catering", "partyservice"], en: ["catering", "caterers"], fr: ["traiteur"], nl: ["catering"], it: ["catering", "ristorazione"] },
+  "Sicherheitsdienst": { de: ["sicherheit", "security"], en: ["security", "guarding"], fr: ["securite", "gardiennage"], nl: ["beveiliging"], it: ["vigilanza", "sicurezza"] },
+  "Pharmacy": { de: ["apotheke"], en: ["pharmacy", "chemist"], fr: ["pharmacie"], nl: ["apotheek"], it: ["farmacia"] },
+  "Optician": { de: ["optik", "augenoptik"], en: ["optician", "opticians"], fr: ["opticien", "optique"], nl: ["opticien", "optiek"], it: ["ottica", "ottico"] },
+  "Speech Therapy": { de: ["logopaedie", "logopaede"], en: ["speechtherapy", "speech"], fr: ["orthophonie", "orthophoniste"], nl: ["logopedie"], it: ["logopedia"] },
 };
 // American trade words where they differ from British ones.
-const US_TRADE: Record<string, string[]> = { "Law Office": ["law", "attorneys", "legal"], "Physiotherapy": ["physicaltherapy", "pt"], "Tailoring": ["tailor", "alterations"] };
+const US_TRADE: Record<string, string[]> = { "Law Office": ["law", "attorneys", "legal"], "Physiotherapy": ["physicaltherapy", "pt"], "Tailoring": ["tailor", "alterations"], "Painting": ["painters", "painting"], "Pharmacy": ["pharmacy", "drugstore"], "Optician": ["optometry", "eyecare"] };
 const AGENCY: Record<Lang, string> = { de: "agentur", en: "agency", fr: "agence", nl: "bureau", it: "agenzia" };
 const CORP: Record<Lang, string[]> = { de: ["industries", "ag", "gruppe"], en: ["industries", "group"], fr: ["industries", "groupe"], nl: ["industries", "groep"], it: ["industries", "gruppo"] };
 const HANDLE_PRE = ["dark", "frost", "pixel", "shadow", "turbo", "neon", "captain", "xx", "lord", "sir"];
