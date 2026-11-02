@@ -26,6 +26,8 @@ export const junkRows = (act: Act, rows: Row[], junk: boolean) =>
   each(rows, (ids) => act(movePearMessages, ids, junk ? "junk" : "inbox"), (a, ids) => act(reportJunk, a, ids, junk));
 export const markRows = (act: Act, rows: Row[], f: { read?: boolean; star?: boolean }) => each(rows, (ids) => act(markPearMessages, ids, f), (a, ids) => act(markMessages, a, ids, f));
 
+// The sidebar's Smart Mailboxes: Box c for a Smart Mailbox, whose f is its id.
+export const SMART = "smart";
 // A mailbox in the sidebar: c null is the unified mailbox over every enabled account.
 export interface Box { c: string | null; f: string }
 // Moves or copies each account's rows into a mailbox; a unified target means the same mailbox of each row's own account.
