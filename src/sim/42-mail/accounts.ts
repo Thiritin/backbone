@@ -43,14 +43,20 @@ export function roleAccount(s: GameState, role: MailRole): MailAccount | undefin
   return roleSeen.by[role];
 }
 
-// A flagged mailbox, then one with the conventional local part on the receiving domain tenant, then the primary.
-function findRoleAccount(s: GameState, role: MailRole): MailAccount | undefined {
-  const target = mxTarget(s), primary = s.mail.accounts.find((a) => a.id === s.mail.primary);
-  if (role === "owner") return primary;
-  const usable = s.mail.accounts.filter((a) => {
+// The mailboxes a role can point at: open ones on GMix or on the domain tenant that receives mail.
+export function roleBoxes(s: GameState): MailAccount[] {
+  const target = mxTarget(s);
+  return s.mail.accounts.filter((a) => {
     const t = tenantOf(s, a);
     return a.closedAt === null && live(s, t) && (t.domain === GMIX_DOMAIN || t.id === target?.id);
   });
+}
+
+// A flagged mailbox, then one with the conventional local part on the receiving domain tenant, then the primary.
+function findRoleAccount(s: GameState, role: MailRole): MailAccount | undefined {
+  const primary = s.mail.accounts.find((a) => a.id === s.mail.primary);
+  if (role === "owner") return primary;
+  const usable = roleBoxes(s);
   return usable.find((a) => a.roles.includes(role))
     ?? CONVENTION[role].map((l) => usable.find((a) => a.domain !== GMIX_DOMAIN && a.local === l)).find(Boolean)
     ?? primary;
@@ -133,7 +139,7 @@ export function removeMailbox(s: GameState, a: MailAccount): void {
     groups: s.mail.groups.map((g) => ({ ...g, members: g.members.filter((m) => m !== a.id) })), retired: [...s.mail.retired, ...retired], catchAll: s.mail.catchAll === a.id ? null : s.mail.catchAll };
 }
 
-// Why a mailbox cannot go: it is the primary, the last one, a source's contact or a desk channel's input.
+// Why a mailbox cannot go: it is the primary, a source's contact or a desk channel's input.
 export function mailboxInUse(s: GameState, a: MailAccount): string | null {
   if (a.id === s.mail.primary) return "error.mailRoleInUse";
   const sources = Object.entries(s.mail.contacts).filter(([, id]) => id === a.id).map(([k]) => k);

@@ -18,6 +18,9 @@ import { PRODUCT } from "../support/labels";
 import { t } from "../../../i18n/en";
 import { useFocus, useStore } from "../../store";
 import { resellersUrl } from "../../../sim/80-business/browser";
+import { roleAccount, roleBoxes } from "../../../sim/42-mail/accounts";
+import type { MailRole } from "../../../sim/42-mail/types";
+import { setRoleMailbox } from "../../../sim/90-actions/mailbox";
 import { formatDay } from "../billing/format";
 import "../shop/shop.css";
 import "../billing/billing.css";
@@ -129,10 +132,10 @@ function Channels() {
         return (
           <div key={id} className="shop-card">
             <div className="shop-name"><strong>{name}</strong><span>{text}</span></div>
-            <dl className="shop-specs">
-              <div><dt>{t("marketing.setup")}</dt><dd className="num">{euro(def?.setup ?? 0)}</dd></div>
-              <div><dt>{t("marketing.upkeep")}</dt><dd className="num">{t("marketing.slashMonth", { price: euro(def?.upkeep ?? 0) })}</dd></div>
-            </dl>
+            {def ? <dl className="shop-specs">
+              <div><dt>{t("marketing.setup")}</dt><dd className="num">{euro(def.setup)}</dd></div>
+              <div><dt>{t("marketing.upkeep")}</dt><dd className="num">{t("marketing.slashMonth", { price: euro(def.upkeep) })}</dd></div>
+            </dl> : <MailRoles />}
             <div className="shop-buy"><span className="grow" />{state}</div>
           </div>
         );
@@ -140,6 +143,28 @@ function Channels() {
     </div>
     <LostDemand />
   </>;
+}
+
+const MAIL_ROLES: MailRole[] = ["owner", "sales", "support", "abuse"];
+
+function MailRoles() {
+  const game = useStore((s) => s.game);
+  const act = useStore((s) => s.act);
+  const boxes = roleBoxes(game).filter((a) => !a.shared);
+  return (
+    <dl className="shop-specs mkt-roles">
+      {MAIL_ROLES.map((r) => {
+        const label = t(r === "owner" ? "marketing.mainAddress" : `mailserver.role.${r}`);
+        return (
+          <div key={r}><dt>{label}</dt><dd>
+            <select aria-label={label} value={roleAccount(game, r)?.id ?? ""} onChange={(e) => act(setRoleMailbox, r, e.target.value)}>
+              {boxes.map((a) => <option key={a.id} value={a.id}>{`${a.local}@${a.domain}`}</option>)}
+            </select>
+          </dd></div>
+        );
+      })}
+    </dl>
+  );
 }
 
 function LostDemand() {

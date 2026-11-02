@@ -1,7 +1,7 @@
 // Mailbox actions (docs/design/plans/mail-core.md, Account actions and Passwords). Provider sites and server panels call these.
 import { hashRng, rand } from "../00-core/rng";
 import { post } from "../40-support/letters";
-import { addMailbox, canAddMailbox, mailboxInUse, mailboxTaken, openBoxes, PROVIDER_NAMES, RETIRE_HOURS, removeMailbox } from "../42-mail/accounts";
+import { addMailbox, canAddMailbox, mailboxInUse, mailboxTaken, openBoxes, PROVIDER_NAMES, RETIRE_HOURS, removeMailbox, roleBoxes } from "../42-mail/accounts";
 import { capsOf } from "../42-mail/caps";
 import { GMIX_DOMAIN } from "../42-mail/new";
 import { mailHost } from "../10-catalog/mail-providers";
@@ -39,9 +39,10 @@ export function deleteMailAccount(s: GameState, id: string): ActionResult {
   const a = box(s, id);
   if (!a) return fail("error.mailUnknown");
   if (a.employee) return fail("error.mailInUse", { sources: s.staff.find((e) => e.id === a.employee)?.name ?? "" });
-  if (openBoxes(s, a.tenant).length <= 1) return fail("error.mailRoleInUse");
   const busy = mailboxInUse(s, a);
   if (busy) return fail(busy);
+  const t = tenantOf(s, a);
+  if (t?.admin === a.id && t.host !== "self" && t.host !== "gmix") return fail("error.mailAdminDelete");
   removeMailbox(s, a);
   return { ok: true };
 }
@@ -68,6 +69,14 @@ export function setPrimary(s: GameState, id: string): ActionResult {
   const a = box(s, id);
   if (!a || a.closedAt !== null || a.shared) return fail("error.mailUnknown");
   s.mail = { ...s.mail, primary: id };
+  return { ok: true, id };
+}
+
+// Marketing, Email: one mailbox per role, and the main address is the primary.
+export function setRoleMailbox(s: GameState, role: MailRole, id: string): ActionResult {
+  if (!roleBoxes(s).some((a) => a.id === id && !a.shared)) return fail("error.mailUnknown");
+  if (role === "owner") return setPrimary(s, id);
+  s.mail = { ...s.mail, accounts: s.mail.accounts.map((a) => (a.id === id ? { ...a, roles: [...new Set([...a.roles, role])] } : { ...a, roles: a.roles.filter((r) => r !== role) })) };
   return { ok: true, id };
 }
 

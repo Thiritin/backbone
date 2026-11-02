@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- Mailboxes can be deleted again unless they are the main address, a provider's administrator account or still in use, and the main address can be moved first.
+- The Email card in Marketing has dropdowns for the main address and the sales, support and abuse mailboxes, and your website shows the mailboxes you choose there.
 - A cancelled mail provider keeps receiving your mail until the end of the paid month, and only then does mail to it bounce.
 - Pear Mail now has a photorealistic mail icon in Panthera and Leapard, like the other apps.
 - Hosted Exchange by Ionose has its own website, where you order Basic or Business, manage mailboxes, addresses, forwarding and Out of Office in the Control Panel, and reset a forgotten password with a code sent by post.

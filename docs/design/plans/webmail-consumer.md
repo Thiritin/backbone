@@ -96,7 +96,7 @@ One component with three looks, drawn over the mail kit.
 
 - Account page: tier, next charge, address, password change, Receives, access and collector summary.
 - Downgrading to FreeMix is a multi-page cancellation in the `frames` look (confirm, reason, a retention offer of three months at €0.99 that is shown once per tenant and bills that price for three month starts when taken, final confirm). It takes effect at the end of the paid month. The real portal's cancellation was famously hard, and the copy says so with a straight face.
-- Delete mailbox asks for the password and the address typed again, then calls `deleteMailAccount` and `endTenant`. It is refused for the primary mailbox, the last mailbox and a mailbox that is a source's contact or a desk channel's input (mail-core's errors name them). A deleted GMix address is free to take again (mail-core), so old vendor mail can reach a stranger.
+- Delete mailbox asks for the password and the address typed again, then calls `deleteMailAccount` and `endTenant`. It is refused for the primary mailbox and a mailbox that is a source's contact or a desk channel's input (mail-core's errors name them). A deleted GMix address is free to take again (mail-core), so old vendor mail can reach a stranger.
 - Cancelling or deleting a mailbox never touches mail already copied into another account.
 
 ## 4. Goggle
