@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- Right-clicking an invoice in the bookkeeping program now offers what its status allows: sending or cancelling a draft, marking it paid against a transfer or without one, sending the next dunning step, suspending, writing off and reopening.
+- The dunning levels overview is now part of the top editions only; every other edition handles reminders from the invoice list.
 - Help desks now list the domain records to add at your registrar for your support address and mail sending, show which of them already resolve, and check them all with a Verify button.
 - Each product listed on the company website now has its own switch for custom requests; with it off, visitors order the shop plans only, and the website says when custom packages are available.
 - The Research app now lists exactly what each training switches on, every entry takes you to where it is used, and an entry that depends on software names that software.

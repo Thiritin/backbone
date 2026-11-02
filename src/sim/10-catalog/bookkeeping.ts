@@ -1,7 +1,7 @@
 // docs/design/plans/billing-by-hand.md, 9c and 9d: the bookkeeping programs sold on their makers' sites, each in editions whose
 // features decide what the program does. Prices are game euros: once for a desktop licence, a month for a browser plan.
 export type BooksVendorId = "lexwear" | "wizo" | "saga" | "orgamin" | "collmix" | "sevdeck" | "lexoffize" | "gnucache";
-export type Feature = "quotes" | "monthly-run" | "match-by-reference" | "hbci" | "tax" | "reports" | "helpdesk-link" | "statistics";
+export type Feature = "quotes" | "monthly-run" | "match-by-reference" | "hbci" | "tax" | "reports" | "helpdesk-link" | "statistics" | "dunning";
 // The layout family the Books window draws the program in.
 export type Layout = "tree" | "icons" | "menus" | "tabs" | "web" | "flat" | "gtk";
 
@@ -33,7 +33,7 @@ export interface BooksDownload { vendor: BooksVendorId; edition: string; started
 
 export const SMALL: Feature[] = ["quotes"];
 export const MEDIUM: Feature[] = [...SMALL, "monthly-run", "match-by-reference", "hbci", "tax", "reports"];
-export const LARGE: Feature[] = [...MEDIUM, "helpdesk-link", "statistics"];
+export const LARGE: Feature[] = [...MEDIUM, "helpdesk-link", "statistics", "dunning"];
 const NETWORK = Infinity;
 const ed = (id: string, name: string, price: number, features: Feature[], more: Partial<Edition> = {}): Edition =>
   ({ id, name, price, update: 0, features, users: 1, seat: 0, ...more });
