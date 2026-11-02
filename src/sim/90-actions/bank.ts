@@ -5,6 +5,7 @@ import { bankById, banksOpen, defaultPlan, planById, tanMethods, type BankId, ty
 import { APPROVAL_HOURS, assign, bankOf, ibanValid, openWithSavings, openAccount, hbci, payAll, ibanEra, limitFor, LOCK_HOURS, MIN_CARD_LIMIT, nextTanIndex, placeTanList, send, spendable, useTan, WRONG_LIMIT, type Draft, type Payee } from "../46-finance/bank";
 import { invoice } from "../46-finance/payables";
 import type { GameState } from "../50-state";
+import { datacenterById } from "../20-world/datacenters";
 import type { ActionResult } from "./hardware";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -129,7 +130,8 @@ export function applyOverdraft(s: GameState): ActionResult {
 // A direct debit mandate for one supplier, set up or cancelled on the supplier's portal; its next invoices debit themselves.
 export function setMandate(s: GameState, name: string, on: boolean): ActionResult {
   if (!s.bank) return fail("error.noBank");
-  if (!s.payables.some((p) => p.name === name)) return fail("error.unknownSupplier");
+  // A site under contract takes a mandate before its first invoice.
+  if (!s.payables.some((p) => p.name === name) && !s.contracts.some((c) => datacenterById(c.dc).name === name)) return fail("error.unknownSupplier");
   const rest = s.bank.mandates.filter((x) => x !== name);
   s.bank = { ...s.bank, mandates: on ? [...rest, name] : rest };
   return { ok: true };

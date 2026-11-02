@@ -160,7 +160,9 @@ export interface Lease { id: string; lessor: string; monthly: number; months: nu
 // A waitlist entry gets heldUntil once its space is free; the space is then reserved until that hour.
 // A rented space's contract with its provider. monthly is the rent agreed at order time; endsAt is set once the player
 // gives notice and the location closes at that hour.
-export interface Contract { id: string; provider: string; dc: string; locationId: string; space: "share" | "cage" | "suite"; positions: number; since: number; monthly: number; endsAt: number | null }
+// billing is the contact given with the order; contracts from before the order form have none.
+export interface Contract { id: string; provider: string; dc: string; locationId: string; space: "share" | "cage" | "suite"; positions: number; since: number; monthly: number; endsAt: number | null; billing?: Billing }
+export interface Billing { company: string; name: string; address: PostalAddress }
 export interface WaitlistEntry { id: string; dc: string; space: "share" | "cage" | "suite"; size: number; since: number; heldUntil: number | null }
 export interface End { device: string; port: number }
 export interface Cable { id: string; a: End; b: End; kind: CableKind; color: string | null }

@@ -10,7 +10,7 @@ import { leaseOffers, lessorName } from "../10-catalog/leasing";
 import { greySurcharge, workFactor } from "../10-catalog/lifecycle";
 import { chassisPrice, partPrice, partsPrice, presetPrice } from "../10-catalog/parts";
 import { BASEMENT, DATACENTERS, datacenterById, EXTRA_POWER_LEAD_DAYS, EXTRA_STEP_KW, FLAT_CONTRACTS, HOME_LINES, maxExtraKw, LEAD_DAYS, nextAz, NOTICE_MONTHS, RACK_MODELS, rackUnits, SHARE_RACKS, SPACE_SIZES, spacePrice } from "../20-world/datacenters";
-import { deviceDefaults, type BondMode, type Component, type Device, type End, type GameState, type LedgerEntry, type RackModel, type RaidLevel, type RebuildRate } from "../50-state";
+import { deviceDefaults, type Billing, type BondMode, type Component, type Device, type End, type GameState, type LedgerEntry, type RackModel, type RaidLevel, type RebuildRate } from "../50-state";
 import { arrayLost, bootHours, connectError, drivesOf, energized, fits, flatOffer, freePositions, holdsData, nodesOf, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, isPlugged, locationOf, moveCost, psusOf, deviceValue, resaleValue, spotOf, travelCost, osInstalling, takesShutdown } from "../60-infra/status";
 import { atFront, BMC_RESET_HOURS, bootUp, halt, hardReboot, plugCords, pullPlug, pushLog, rollStuck, type FrontOp } from "../60-infra/power";
 import { hasPdu, pduOf } from "../60-infra/pdu";
@@ -24,6 +24,7 @@ import { plannedFor } from "../60-infra/maintenance";
 import { announceNow } from "./maintenance";
 import { freeName } from "./clusters";
 import { nodeName } from "../30-customers/hostnames";
+import { orderError } from "./company";
 
 // error is an i18n key.
 export type ActionResult = { ok: true; id?: string } | { ok: false; error: string; params?: Record<string, string> };
@@ -53,8 +54,11 @@ const unplug = (s: GameState, deviceIds: Set<string>, keep = (_: string) => fals
 // A rack at a site that only bills flat starts on the smaller contract.
 const flatDefault = (s: GameState, locationId: string): number => (flatOffer(s, locationId) === "flat" ? FLAT_CONTRACTS[0].kw : 0);
 
+// What the provider's order form sends. A direct debit gives the site a mandate, so its rent invoices are debited at once.
+export interface ColoOrder extends Billing { payment: { kind: "debit"; iban: string; holder: string } | { kind: "transfer" } }
+
 // For a share, size is n for 1/n of a rack; the location then has one position, taken by the provider's rack.
-export function addLocation(s: GameState, dcId: string, space: "share" | "cage" | "suite", size: number): ActionResult {
+export function addLocation(s: GameState, dcId: string, space: "share" | "cage" | "suite", size: number, order?: ColoOrder): ActionResult {
   const dc = DATACENTERS.find((d) => d.id === dcId);
   if (!dc) return fail("error.unknownDatacenter");
   if (!SPACE_SIZES[space]?.includes(size)) return fail("error.unknownSize");
@@ -63,11 +67,15 @@ export function addLocation(s: GameState, dcId: string, space: "share" | "cage" 
   const hold = s.waitlist.find((w) => w.dc === dcId && w.space === space && w.size === size && w.heldUntil !== null);
   if (!hold && !fits(s, dcId, space, size)) return fail("error.noSpace");
   if (s.cash < spacePrice(dc, space, size)) return fail("error.noCash");
+  const bad = order && orderError(order);
+  if (bad) return fail(bad);
+  if (order?.payment.kind === "debit" && !s.bank) return fail("error.noBank");
   if (hold) s.waitlist = s.waitlist.filter((w) => w.id !== hold.id);
   const positions = space === "share" ? 1 : size;
   const loc = { id: newId(s, "loc"), dc: dc.id, city: dc.city, az: nextAz(s.locations, dc.city), name: dc.name, space, positions, readyAt: s.hour + 24 * LEAD_DAYS[space], extraCircuit: false };
   s.locations.push(loc);
-  s.contracts.push({ id: newId(s, "contract"), provider: dc.provider, dc: dc.id, locationId: loc.id, space, positions: size, since: s.hour, monthly: spacePrice(dc, space, size), endsAt: null });
+  s.contracts.push({ id: newId(s, "contract"), provider: dc.provider, dc: dc.id, locationId: loc.id, space, positions: size, since: s.hour, monthly: spacePrice(dc, space, size), endsAt: null, ...(order && { billing: { company: order.company, name: order.name, address: order.address } }) });
+  if (order?.payment.kind === "debit") s.bank = { ...s.bank!, mandates: [...s.bank!.mandates.filter((x) => x !== dc.name), dc.name] };
   const name = nextName(`${prefix(s, loc.id)}-gw`, s.devices.map((d) => d.name));
   s.devices.push({ id: newId(s, "dev"), model: "handoff", brand: SWITCH_BRAND, rackId: null, slot: 0, panel: loc.id, name, bond: "none", groups: [], price: 0, boughtAt: s.hour, lease: null, store: null, transitTo: null, arriveAt: null, ...deviceDefaults("handoff", s.hour) });
   const shareRack = space === "share" && SHARE_RACKS.find((m) => m.size === size)!;
