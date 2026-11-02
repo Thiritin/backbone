@@ -1,4 +1,5 @@
 import type { OveruseChoice } from "./80-business/overuse";
+import type { WebspaceOverlay } from "./60-infra/webspace";
 import { createRng, type Rng } from "./00-core/rng";
 import { componentParts, hasFirmware, homeLan, isManaged, isOfficeRouter, modelById, type ComponentKind, type FormFactor, type PartSpec } from "./10-catalog/hardware";
 import type { BooksDownload, BooksVendorId } from "./10-catalog/bookkeeping";
@@ -349,6 +350,8 @@ export interface GameState {
   security: Security;
   // Terminal files the player changed, per machine ("desk" or a device id) (60-infra/fs.ts).
   files: Record<string, HostFiles>;
+  // What the player changed in each web space, by workload id; the rest is derived (60-infra/webspace.ts).
+  webspaces: Record<string, WebspaceOverlay>;
   // Customer data stolen from a host, the ransom decision and the fine that follows a sale (60-infra/breach.ts).
   breaches: Breach[];
   // Customer sites defaced, their hacks and the customers written to (60-infra/apps.ts).
@@ -465,7 +468,7 @@ export const newGame = (seed: number): GameState => ({
   devices: [{ ...device("dev5", "home-router", "AVN", null, 0, null, "fra1-gw-01", 0), store: "loc1" }, device("dev6", "line-jack", "", null, 0, "loc1", "fra1-line-01", 0)],
   cables: [],
   ledger: [], licenses: [], trials: [], cart: [], media: { images: [], stick: { os: null, in: null } }, leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], contracts: [], crossConnects: [], providerPrices: {}, unlocks: [], training: null, knowHow: 0, installed: ["Browser", "Chat"], kbReads: {}, statusDays: [], checklist: [], seenChanges: [], undocked: [], os: "aqua",
-  customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], files: {},
+  customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], files: {}, webspaces: {},
   invoices: [], transfers: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   quotes: [],
   catalog: [],

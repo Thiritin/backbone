@@ -9,6 +9,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Buying licences on vendor websites now goes through a checkout with billing details, payment and a review, and a card payment needs the card details from the online bank.
 - Panel consoles no longer sell licence editions; the licence page shows the edition and its limits, and editions are changed from My account on the vendor's website.
 - Vendor websites offer a Change edition choice for every licence key, which switches the key to the new edition after checkout without entering a new key.
+- Every cPanic customer account now has its own files, databases, mailboxes and limits on databases, FTP accounts and domains, which its customer pages show.
 - Your own virtual machines now take their operating system's time to boot, shut down and restart, and an open SSH session sees the shutdown broadcast before it is disconnected.
 - Shutting down, restarting or checkpointing a virtual machine now asks for confirmation first, and a checkpointed container keeps its last picture on the console.
 - Customer websites now have their own look: layouts, colour schemes and page blocks differ per customer and get redesigned as the years pass, so the first 30 customers never share a page.
@@ -72,6 +73,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-01
 
+- Books product forms now show proper names for the semiannual and triennial billing periods.
 - A transfer to an account that does not exist now comes back within a few days, and a payment without an invoice number goes to the sender's oldest open invoice, at your suppliers and, when matching by reference is on, in your books.
 - The bank in your books lists money in and out with a suggested invoice to accept, and supplier invoices count as paid there once a payment is assigned to them, which you can undo and assign again.
 - Play immersive in the main menu runs the game in full screen with keyboard shortcuts such as Cmd+Tab and Alt+Tab kept inside the game, where they switch between windows, and Log out in the top left menu leaves it.

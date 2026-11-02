@@ -92,6 +92,7 @@ export default {
   "books.cycle.semiannual": () => "Semiannual",
   "books.cycle.annual": () => "Annual",
   "books.cycle.biennial": () => "Biennial",
+  "books.cycle.triennial": () => "Triennial",
   "error.productName": () => "Product names have 1 to 24 characters.",
   "error.productTaken": () => "This line already has a product with this name.",
   "error.productPrice": () => "Enter prices above zero and a setup fee of zero or more.",
