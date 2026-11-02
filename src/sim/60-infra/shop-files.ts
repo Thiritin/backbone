@@ -22,8 +22,8 @@ export const CONFIG_FILE: Partial<Record<ShopId, string>> = {
 export const IONCUBE: ShopId[] = ["whmCache", "clientExit", "hostBull"];
 // Variants whose admin area refuses to load while the install folder exists; the others show a warning.
 export const INSTALL_DIR_BLOCKS: ShopId[] = ["whmCache", "hostBull", "boxBillin"];
-// The release year each shop moved its admin passwords from MD5 to bcrypt; ModemBill never did.
-const BCRYPT_FROM: Partial<Record<ShopId, number>> = { whmCache: 2015, clientExit: 2015, blessta: 2012, hostBull: 2016, ubersmyth: 2014, boxBillin: 2011 };
+// The release year each shop or desk moved its admin passwords from MD5 to bcrypt; ModemBill never did.
+const BCRYPT_FROM: Record<string, number> = { whmCache: 2015, clientExit: 2015, blessta: 2012, hostBull: 2016, ubersmyth: 2014, boxBillin: 2011, ostickit: 2013, freescoot: 2018 };
 // Variants that log their admins in with the e-mail address instead of a username.
 export const EMAIL_LOGIN: ShopId[] = ["clientExit", "boxBillin"];
 // Where each shop keeps its admin's e-mail address, for the password reset mail.
@@ -43,7 +43,7 @@ export const installDirIn = (ws: Webspace, folder: string): boolean => !!ws.file
 
 const phpIndex = (v: string) => PHP.findIndex((p) => p.version === v);
 // A release needs the PHP that was current three years before it came out.
-export const phpNeeded = (id: ShopId, version: string): string => phpAt(yearOf(versionInfo(id, version)?.release ?? 0) - 3);
+export const phpNeeded = (id: string, version: string): string => phpAt(yearOf(versionInfo(id, version)?.release ?? 0) - 3);
 // The release that comes later in the shop's version line.
 export const newerRelease = (id: ShopId, a: string, b: string): boolean => {
   const vs = versionsOf(id);
@@ -52,14 +52,14 @@ export const newerRelease = (id: ShopId, a: string, b: string): boolean => {
 
 export interface Requirement { key: "php" | "ioncube"; ok: boolean; params: Record<string, string> }
 // The installer's requirements check against the PHP of the folder's domain and the host's loaders.
-export function requirementsOf(s: GameState, ws: Webspace, folder: string, id: ShopId, version: string): Requirement[] {
+export function requirementsOf(s: GameState, ws: Webspace, folder: string, id: string, version: string): Requirement[] {
   const own = s.ownWebspaces.find((x) => x.id === ws.workloadId), c = s.clusters.find((x) => x.id === own?.clusterId);
   // Before the MultiPHP Manager every domain runs the host's PHP.
   const d = yearOf(s.hour) >= MULTI_PHP_YEAR ? Object.values(ws.domains).find((x) => x.folder === folder) : undefined;
   const php = d?.php ?? c?.php ?? phpAt(yearOf(s.hour)), need = phpNeeded(id, version);
   const out: Requirement[] = [{ key: "php", ok: phpIndex(php) >= phpIndex(need), params: { have: php, need } }];
   // The loader is there once the EasyApache build that adds it has finished.
-  if (IONCUBE.includes(id)) out.push({ key: "ioncube", ok: !!c?.ioncube && c.phpUntil <= s.hour, params: { have: php } });
+  if (IONCUBE.includes(id as ShopId)) out.push({ key: "ioncube", ok: !!c?.ioncube && c.phpUntil <= s.hour, params: { have: php } });
   return out;
 }
 
@@ -77,8 +77,8 @@ export function dbAccessError(ws: Webspace, host: string, db: string, user: stri
 const SALT = "./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 const bcrypt = (pass: string, salt: string) => `$2y$10$${salt}${md5(salt + pass).slice(0, 31)}`;
 export const isMd5 = (v: string): boolean => /^[0-9a-f]{32}$/.test(v);
-export const usesBcrypt = (id: ShopId, version: string): boolean => yearOf(versionInfo(id, version)?.release ?? 0) >= (BCRYPT_FROM[id] ?? Infinity);
-export function hashFor(s: GameState, id: ShopId, version: string, pass: string): string {
+export const usesBcrypt = (id: string, version: string): boolean => yearOf(versionInfo(id, version)?.release ?? 0) >= (BCRYPT_FROM[id] ?? Infinity);
+export function hashFor(s: GameState, id: string, version: string, pass: string): string {
   if (!usesBcrypt(id, version)) return md5(pass);
   const r = hashRng(s.seed, s.hour, s.nextId, pass.length);
   return bcrypt(pass, Array.from({ length: 22 }, () => SALT[Math.floor(rand(r) * SALT.length)]).join(""));
@@ -142,7 +142,7 @@ export function adminRow(s: GameState, by: "login" | "email", value: string): { 
 }
 
 // The address a folder answers at: a domain pointing at it, or one level below a domain's folder.
-function urlOf(ws: Webspace, folder: string): string | null {
+export function urlOf(ws: Webspace, folder: string): string | null {
   const ds = Object.values(ws.domains), d = ds.find((x) => x.folder === folder);
   if (d) return d.name;
   const up = ds.find((x) => folder.startsWith(`${x.folder}/`) && !folder.slice(x.folder.length + 1).includes("/"));
@@ -155,16 +155,16 @@ export function shopUrl(s: GameState): string | null {
   return at && urlOf(at.ws, at.folder);
 }
 
-// The shop files a request reaches in the player's own web spaces: in the folder the host points at, or in the folder
-// below it named by the path's first segment. base is that segment, rest the path inside the shop.
-export function shopFolderAt(s: GameState, host: string, path: string): { ws: Webspace; folder: string; base: string; rest: string } | null {
+// The shop files (or what has says) a request reaches in the player's own web spaces: in the folder the host points at,
+// or in the folder below it named by the path's first segment. base is that segment, rest the path inside the shop.
+export function shopFolderAt(s: GameState, host: string, path: string, has: (ws: Webspace, folder: string) => unknown = filesIn): { ws: Webspace; folder: string; base: string; rest: string } | null {
   const name = host.startsWith("www.") ? host.slice(4) : host;
   for (const o of s.ownWebspaces) {
     const ws = webspaceOf(s, o.id), d = ws?.domains[name];
     if (!ws || !d) continue;
-    if (filesIn(ws, d.folder)) return { ws, folder: d.folder, base: "", rest: path };
+    if (has(ws, d.folder)) return { ws, folder: d.folder, base: "", rest: path };
     const seg = path.split(/[/?#]/)[1];
-    if (seg && filesIn(ws, `${d.folder}/${seg}`)) return { ws, folder: `${d.folder}/${seg}`, base: `/${seg}`, rest: path.slice(seg.length + 1) || "/" };
+    if (seg && has(ws, `${d.folder}/${seg}`)) return { ws, folder: `${d.folder}/${seg}`, base: `/${seg}`, rest: path.slice(seg.length + 1) || "/" };
     return null;
   }
   return null;

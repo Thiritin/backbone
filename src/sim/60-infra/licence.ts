@@ -198,7 +198,7 @@ export function startTrial(s: GameState, machineId: string, product: string): vo
 export const accountsOn = (s: GameState, c: Cluster): number => {
   const own = s.ownWebspaces.filter((x) => x.clusterId === c.id).length;
   return s.workloads.filter((w) => w.clusterId === c.id).length + own + (!own && s.shop.install?.clusterId === c.id ? 1 : 0)
-    + (s.desk?.hosting.kind === "self" && s.desk.hosting.clusterId === c.id ? 1 : 0);
+    + (s.desk?.hosting.kind === "self" && s.desk.hosting.clusterId === c.id && !s.desk.hosting.ws ? 1 : 0);
 };
 
 // The machine a panel host runs on: its VM or its one server; a hypervisor's first node. Key and status are those of the

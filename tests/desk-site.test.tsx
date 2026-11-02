@@ -1,3 +1,4 @@
+import { deleteFile } from "../src/sim/90-actions/webspace";
 import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
@@ -7,9 +8,9 @@ import type { GameState } from "../src/sim/50-state";
 import { holderOf } from "../src/sim/60-infra/addresses";
 import { panelMachine } from "../src/sim/60-infra/licence";
 import { resolve } from "../src/sim/80-business/browser";
-import { installDesk, subscribeDesk } from "../src/sim/90-actions/desk-install";
+import { subscribeDesk } from "../src/sim/90-actions/desk-install";
 import { DESK_APPS, DeskSite, deskUrl } from "../src/ui/apps/browser/sites/desk/DeskSite";
-import { readyGame } from "./fixtures";
+import { handDesk, readyGame } from "./fixtures";
 
 const game = (): GameState => { const s = readyGame(5); s.hour = hourOf(new Date(Date.UTC(2014, 0, 1))); s.cash = 1_000_000; return s; };
 const panel = (s: GameState) => s.clusters.find((x) => x.kind === "panel")!;
@@ -17,7 +18,7 @@ const panel = (s: GameState) => s.clusters.find((x) => x.kind === "panel")!;
 const address = (s: GameState) => {
   s.ips.addresses.push({ id: "ip-desk", ip: "203.0.113.10", v: 4, locationId: s.locations[0].id, holder: holderOf(s, panelMachine(panel(s))!), source: "line", blockId: null, rep: 100, listed: false, spam: 0 } as never);
 };
-const selfHosted = () => { const s = game(); expect(installDesk(s, panel(s).id, "ostickit").ok).toBe(true); address(s); return s; };
+const selfHosted = () => { const s = game(); handDesk(s, panel(s).id, "ostickit"); address(s); return s; };
 const fake = { Site: () => <p>osticket staff</p>, staff: "/scp/", ticket: (t: { ref?: string }) => `/scp/tickets.php?id=${t.ref}` };
 const render = (s: GameState, path: string) => renderToString(<DeskSite game={s} id={s.desk!.id} host="support.x" path={path} go={() => {}} />);
 
@@ -29,8 +30,7 @@ describe("desk dispatcher", () => {
   it("answers support.<domain> with the desk once its record resolves, and nothing without a desk", () => {
     const s = game(), host = `support.${s.company.domain}`;
     expect(resolve(s, `${host}/`).page.kind).toBe("notfound");
-    installDesk(s, panel(s).id, "ostickit");
-    expect(resolve(s, `${host}/`).page.kind).toBe("notfound");
+    handDesk(s, panel(s).id, "ostickit");
     address(s);
     expect(resolve(s, `${host}/scp/`)).toMatchObject({ page: { kind: "desk", id: "ostickit" }, load: "fast" });
   });
@@ -67,9 +67,10 @@ describe("Support launcher", () => {
     const legacy = game();
     openDesk(legacy, "ostickit");
     expect(deskUrl(legacy)).toBeNull();
-    const unmapped = game();
-    installDesk(unmapped, panel(unmapped).id, "ostickit");
-    expect(deskUrl(unmapped)).toBeNull();
+    // A desk installed into a web space answers at its folder; once its files are gone it has no address.
+    const gone = game(), at = handDesk(gone, panel(gone).id, "ostickit");
+    deleteFile(gone, at.ws, `${at.folder}/index.php`);
+    expect(deskUrl(gone)).toBeNull();
   });
 
   it("opens the staff home, a desk ticket at its page, and other mail in the Support window", () => {

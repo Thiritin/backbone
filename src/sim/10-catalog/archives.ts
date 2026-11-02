@@ -1,5 +1,6 @@
 // docs/design/web-hosting.md 4.1: the archives the player downloads, uploads and extracts, and the tree each one unpacks to.
 import type { App } from "./apps";
+import type { DeskId } from "./desks";
 import type { ShopId } from "./shops";
 import { versionsOf } from "./software-versions";
 
@@ -49,7 +50,36 @@ export function shopOfArchive(name: string): { id: ShopId; version: string } | n
   return null;
 }
 
+// The self-hosted desks as their projects ship them. OsTickit puts the web root under upload/ and its sample config under
+// include/ (named ost-config.sample.php before 1.7); FreeScoot is a Laravel app whose web root is public/.
+export type SelfDeskId = Extract<DeskId, "ostickit" | "freescoot">;
+export const sampleConfig = (version: string): string => (Number(version.split(".")[1]) < 7 ? "ost-config.sample.php" : "ost-sampleconfig.php");
+const DESK_ARCHIVES: Record<SelfDeskId, (v: string) => Archive> = {
+  ostickit: (v) => pack(`osTickit-v${v}.zip`, "zip", [
+    ["upload/", 0], ["upload/api/", 0.2], ["upload/assets/", 2], ["upload/css/", 0.6], ["upload/images/", 1.5], ["upload/include/", 14],
+    [`upload/include/${sampleConfig(v)}`, 0.003], ["upload/js/", 3], ["upload/kb/", 0.05], ["upload/pages/", 0.01], ["upload/scp/", 2.5],
+    ["upload/setup/", 1.2], ["upload/index.php", 0.002], ["upload/open.php", 0.003], ["upload/view.php", 0.002], ["upload/tickets.php", 0.004],
+    ["scripts/", 0.1],
+  ]),
+  freescoot: (v) => pack(`freescoot-${v}.zip`, "zip", [
+    ["app/", 4], ["bootstrap/", 0.05], ["bootstrap/cache/", 0], ["config/", 0.2], ["database/", 0.6], ["Modules/", 0], ["overrides/", 1],
+    ["public/", 0], ["public/css/", 1.5], ["public/js/", 4], ["public/img/", 1], ["public/.htaccess", 0.001], ["public/index.php", 0.002],
+    ["resources/", 6], ["routes/", 0.05], ["storage/", 0], ["vendor/", 48], [".env.example", 0.001], ["artisan", 0.002],
+  ]),
+};
+export const deskArchive = (id: SelfDeskId, version: string): Archive => DESK_ARCHIVES[id](version);
+export const isSelfDesk = (id: string): id is SelfDeskId => id in DESK_ARCHIVES;
+
+// The desk and release a vendor archive holds.
+export function deskOfArchive(name: string): { id: SelfDeskId; version: string } | null {
+  for (const id of Object.keys(DESK_ARCHIVES) as SelfDeskId[]) {
+    const v = versionsOf(id).find((x) => deskArchive(id, x.version).name === name);
+    if (v) return { id, version: v.version };
+  }
+  return null;
+}
+
 export function archiveNamed(name: string): Archive | null {
-  const app = Object.values(APP_ARCHIVES).find((a) => a.name === name), shop = app ? null : shopOfArchive(name);
-  return app ?? (shop && shopArchive(shop.id, shop.version));
+  const app = Object.values(APP_ARCHIVES).find((a) => a.name === name), shop = app ? null : shopOfArchive(name), desk = app || shop ? null : deskOfArchive(name);
+  return app ?? (shop && shopArchive(shop.id, shop.version)) ?? (desk && deskArchive(desk.id, desk.version));
 }

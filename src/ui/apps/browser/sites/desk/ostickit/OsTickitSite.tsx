@@ -1,10 +1,14 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { t } from "../../../../../../i18n/en";
 import { LOCALE } from "../../../../../../i18n/lang";
 import { dateOf } from "../../../../../../sim/00-core/time";
 import { deskPath, type DeskArgs, type DeskPage } from "../../../../../../sim/80-business/deskroutes";
 import { OsTickitMark } from "../../../../../art/mailmarks";
+import { deskSpace, deskWarnings } from "../../../../../../sim/60-infra/desk-files";
+import { deskLogin } from "../../../../../../sim/90-actions/desk-setup";
 import { useSessionState } from "../../../../../session";
+import { useStore } from "../../../../../store";
+import { DeskForgot, DeskReset } from "../setup/DeskReset";
 import type { DeskSiteProps } from "../DeskSite";
 import { AdminPage } from "./Admin";
 import { ClientPage } from "./Client";
@@ -32,6 +36,9 @@ export function OsTickitSite(p: DeskSiteProps) {
   const props: OstProps = { ...p, version, modern: minor(version) >= 10, nav: (page, args) => p.go(p.host + deskPath("ostickit", page, args)) };
   const page = p.route.page as OstPage;
   const look = `ost ${props.modern ? "ost-110" : "ost-16"}`;
+  const back = () => props.nav("login");
+  if (page === "pwreset") return <div className={`${look} ost-scp`}><DeskForgot id="ostickit" onBack={back} /></div>;
+  if (page === "pwresetToken") return <div className={`${look} ost-scp`}><DeskReset id="ostickit" token={p.route.args.id ?? ""} onBack={back} /></div>;
   if (page === "login" || ((STAFF.includes(page) || ADMIN.includes(page)) && !agent)) {
     return <div className={`${look} ost-scp`}><Login {...props} onLogin={() => { setAgent(true); if (page === "login") props.nav("scp"); }} /></div>;
   }
@@ -40,6 +47,7 @@ export function OsTickitSite(p: DeskSiteProps) {
     return (
       <div className={`${look} ost-scp`}>
         <ScpHeader {...props} admin={admin} onLogout={() => { setAgent(false); props.nav("login"); }} />
+        {deskWarnings(p.game).map((w) => <p key={w} className="ost-warning" role="alert">{t(`desk-setup.ost.warn.${w}`)}</p>)}
         {admin ? <AdminPage {...props} /> : <StaffPage {...props} />}
         <footer className="ost-foot">{t("ost.copyright", { version })}</footer>
       </div>
@@ -48,14 +56,22 @@ export function OsTickitSite(p: DeskSiteProps) {
   return <div className={`${look} ost-client`}><ClientPage {...props} /></div>;
 }
 
+// A desk installed into a web space checks the staff account its installer created; one from before keeps the filled-in form.
 function Login({ game, nav, onLogin }: OstProps & { onLogin: () => void }) {
+  const attempt = useStore((s) => s.attempt), [error, setError] = useState<string | null>(null), own = !!deskSpace(game);
+  const submit = (form: HTMLFormElement) => {
+    const d = new FormData(form), r = attempt(deskLogin, String(d.get("userid") ?? ""), String(d.get("passwd") ?? ""));
+    setError(r.ok ? null : t(r.error, r.params));
+    if (r.ok) onLogin();
+  };
   return (
-    <form className="ost-login" onSubmit={(e) => { e.preventDefault(); onLogin(); }}>
+    <form className="ost-login" onSubmit={(e) => { e.preventDefault(); submit(e.currentTarget); }}>
       <h1><a onClick={() => nav("home")}><OsTickitMark /> {game.company.name}</a></h1>
-      <h3>{t("ost.login.title")}</h3>
-      <input name="userid" aria-label={t("ost.login.username")} placeholder={t("ost.login.username")} defaultValue="admin" autoComplete="off" />
-      <input name="passwd" type="password" aria-label={t("ost.login.password")} placeholder={t("ost.login.password")} defaultValue="password" autoComplete="off" />
+      <h3>{error ?? t("ost.login.title")}</h3>
+      <input name="userid" aria-label={t("ost.login.username")} placeholder={t("ost.login.username")} defaultValue={own ? "" : "admin"} autoComplete="off" />
+      <input name="passwd" type="password" aria-label={t("ost.login.password")} placeholder={t("ost.login.password")} defaultValue={own ? "" : "password"} autoComplete="off" />
       <button type="submit" className="ost-btn">{t("ost.login.submit")}</button>
+      {own && <a className="ost-forgot" onClick={() => nav("pwreset")}>{t("desk-setup.ostickit.forgotLink")}</a>}
     </form>
   );
 }

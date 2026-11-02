@@ -29,7 +29,7 @@ describe("desk vendor sites", () => {
 
   it("lists the release to download on the self-hosted desks' sites", () => {
     const html = (y: number, id: "ostickit" | "freescoot", path: string) => renderToString(<SelfDeskSite game={year(y)} id={id} path={path} go={go} />);
-    expect(html(2014, "ostickit", "/download")).toContain("ostickit-v1.9.zip");
+    expect(html(2014, "ostickit", "/download")).toContain("osTickit-v1.9.zip");
     expect(html(2016, "ostickit", "/")).toContain("dsw-late");
     expect(html(2026, "ostickit", "/versions")).toContain("1.18");
     expect(html(2019, "freescoot", "/news")).toContain("FreeScoot 1.0");

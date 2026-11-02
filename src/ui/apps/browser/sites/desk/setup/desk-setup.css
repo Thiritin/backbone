@@ -1,0 +1,6 @@
+/* The self-hosted desks' installers in the shop installers' frame */
+.ss-ostickit { --ss-bar: #0e4c7a; --ss-btn: #3a87c8; font-family: "Lucida Grande", Verdana, Arial, sans-serif; }
+.ss-freescoot { --ss-bar: #2c3e50; --ss-btn: #1f8fe5; font-family: "Helvetica Neue", Arial, sans-serif; }
+.ss-main-form { display: grid; gap: 8px; }
+.ss-main h3 { margin: 6px 0 0; font-size: 1em; }
+.ss-main code { padding: 1px 4px; background: #f1f3f5; }

@@ -97,3 +97,5 @@
 .fs-signin { display: flex; flex-direction: column; gap: 10px; width: 300px; margin: 60px auto; padding: 24px; background: var(--fs-panel); border: 1px solid var(--fs-line); border-radius: 4px; }
 .fs-signin svg { width: 44px; height: 44px; align-self: center; }
 .fs-signin label { display: flex; flex-direction: column; gap: 4px; }
+.fs-error { margin: 0; color: #c0392b; font-size: 0.9em; }
+.fs-forgot { font-size: 0.9em; cursor: pointer; }

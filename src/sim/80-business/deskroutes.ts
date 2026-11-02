@@ -6,7 +6,7 @@ import type { DeskId } from "../10-catalog/desks";
 const PAGES = {
   ostickit: {
     home: "/", open: "/open.php", status: "/view.php", ticket: "/tickets.php?id=<n>", kb: "/kb/", kbCategory: "/kb/faq.php?cid=<id>", kbFaq: "/kb/faq.php?id=<id>",
-    setup: "/setup/", login: "/scp/login.php", scp: "/scp/", dashboard: "/scp/dashboard.php", queue: "/scp/tickets.php?status=<view>",
+    setup: "/setup/", login: "/scp/login.php", pwreset: "/scp/pwreset.php", pwresetToken: "/scp/pwreset.php?token=<id>", scp: "/scp/", dashboard: "/scp/dashboard.php", queue: "/scp/tickets.php?status=<view>",
     staffTicket: "/scp/tickets.php?id=<n>", newTicket: "/scp/tickets.php?a=open", tasks: "/scp/tasks.php", users: "/scp/users.php",
     staffKb: "/scp/kb.php", directory: "/scp/directory.php", profile: "/scp/profile.php",
     admin: "/scp/admin.php", settings: "/scp/settings.php?t=<section>", helpTopics: "/scp/helptopics.php", filters: "/scp/filters.php",
@@ -28,7 +28,7 @@ const PAGES = {
     agentSolutions: "/solution/categories", reports: "/reports", admin: "/admin", adminScreen: "/admin/<section>",
   },
   freescoot: {
-    dashboard: "/", login: "/login", mailbox: "/mailbox/<id>", folder: "/mailbox/<id>/<folder>", conversation: "/conversation/<n>",
+    dashboard: "/", login: "/login", passwordEmail: "/password/reset", passwordReset: "/password/reset/<id>", mailbox: "/mailbox/<id>", folder: "/mailbox/<id>/<folder>", conversation: "/conversation/<n>",
     customers: "/customers", search: "/search", reports: "/reports", settings: "/app-settings/<section>", mailboxes: "/mailboxes",
     mailboxSettings: "/mailbox/settings/<id>", connection: "/mailbox/connection-settings/<id>/<section>", autoReply: "/mailbox/auto-reply/<id>", permissions: "/mailbox/permissions/<id>",
     users: "/users", modules: "/modules", logs: "/logs/<log>", system: "/system",
