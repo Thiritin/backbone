@@ -1,4 +1,5 @@
 import { euroPrice } from "../../../../../../sim/00-core/money";
+import { OWNER } from "../../../../../../sim/40-support/desk-work";
 import { isFinal, monthlyValue, type Ticket } from "../../../../../../sim/40-support/tickets";
 import { senderName, subjectParams } from "../../../../../../sim/40-support/notices";
 import { companyParams } from "../../../../../../sim/40-support/replies";
@@ -15,7 +16,9 @@ export type PaneItem =
   | { type: "opening"; msg: PaneMessage; extra: PaneExtra | null }
   | { type: "reply"; msg: PaneMessage; followUp: PaneMessage | null }
   | { type: "msg"; msg: PaneMessage }
-  | { type: "event"; text: string; hour: number | null };
+  | { type: "event"; text: string; hour: number | null }
+  // An internal note: typed by the player or an employee, or an event the desk logged.
+  | { type: "note"; by: string; text: string; hour: number };
 
 export interface PaneModel {
   subject: string;
@@ -58,6 +61,7 @@ export function useTicketPane(s: GameState, tk: Ticket): PaneModel {
     msg: { from: r.by ?? t("support.you"), hour: r.hour, text: r.key ? t(r.key, r.params) : t(`template.${r.template}.text`, companyParams(s)), you: true },
     followUp: r.right ? null : { from: name, hour: r.hour, text: t("ticket.followUp.text"), you: false },
   });
+  for (const n of tk.notes ?? []) items.push({ type: "note", by: s.staff.find((e) => e.id === n.by)?.name ?? (n.by === OWNER ? t("support.you") : n.by), text: n.key ? t(n.key, n.params) : n.text ?? "", hour: n.hour });
   for (const m of tk.move?.log ?? []) items.push({ type: "msg", msg: { from: name, hour: m.hour, text: t(m.key, m.params), you: false } });
   if (tk.move?.windowAt != null && tk.status === "waiting") items.push({ type: "event", text: t("support.moveAt", { time: stamp(tk.move.windowAt) }), hour: null });
   if (tk.outcome === "withdrawn") items.push({ type: "msg", msg: { from: name, hour: tk.updatedAt, text: t("ticket.withdrawn.text"), you: false } });
@@ -72,7 +76,7 @@ export function useTicketPane(s: GameState, tk: Ticket): PaneModel {
       ? { text: tk.notice || left < 0 ? t(left < 0 ? "support.overdueBy" : "support.toRespondIn", { span: span(left) }) : t("support.due", { time: due(tk.dueAt, s.hour) }), tone: left < 0 ? "bad" : left <= (tk.dueAt - tk.createdAt) / 4 ? "warn" : "" }
       : null,
     status: statusOf(tk),
-    assignees: agents.length ? [{ id: null, name: t("support.nobody"), active: tk.assignee === null }, ...agents.map((a) => ({ id: a.id, name: a.name, active: tk.assignee === a.id }))] : [],
+    assignees: agents.length ? [{ id: null, name: t("support.nobody"), active: tk.assignee === null }, { id: OWNER, name: t("support.you"), active: tk.assignee === OWNER }, ...agents.map((a) => ({ id: a.id, name: a.name, active: tk.assignee === a.id }))] : [],
     sender: tk.notice ? { id: tk.notice.sender, from: tk.notice.from, url: tk.topic === "phishing" ? tk.notice.url : null } : null,
     customer: customer || null,
     items,
