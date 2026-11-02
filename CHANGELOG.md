@@ -6,6 +6,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - Hosted Exchange by Ionose has its own website, where you order Basic or Business, manage mailboxes, addresses, forwarding and Out of Office in the Control Panel, and reset a forgotten password with a code sent by post.
 - Ionose web mail runs Lookout Web Access in the version of its year, and until 2012 your browser only gets the Basic or Light version without a reading pane, drag and drop or rules.
+- Pear Mail has Rules in its preferences that move, copy, colour, mark, forward, answer or junk mail as it arrives, and Smart Mailboxes that collect matching mail from every account.
 - Squarecube shows your mailbox in its Classic look, with folders, drag and drop, search, compose with an HTML editor, an address book, identities, preferences with special folders and, from version 0.4, a password change.
 - Pear Mail can create, rename, nest and delete mailboxes on the server and On My Pear, moves mail by drag and drop with Option to copy, erases deleted and junk mail, shows account info, and has File, View, Mailbox and Message menus with keyboard shortcuts.
 - Gmial changes its look with the years, from the 2011 redesign and the 2013 Inbox tabs to the 2018 and 2022 looks, and gains Priority Inbox, Snooze, Smart Reply and themes along the way.

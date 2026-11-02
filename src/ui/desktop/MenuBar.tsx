@@ -62,23 +62,30 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
   );
 
   // Menus with submenus, checkmarks and shortcuts open in the shared menu panel under their title.
-  const panel = (id: string, label: string, entries: () => MenuEntry[]) => (
+  const panel = (id: string, label: string, entries: () => MenuEntry[], cls = "") => (
     <div key={id} className="mb-menu" onPointerDown={(e) => e.stopPropagation()}>
-      <button className="mb-item" aria-label={label} aria-haspopup="menu" onClick={(e) => { setMenu(null); const r = e.currentTarget.getBoundingClientRect(); openMenu(r.left, r.bottom, entries()); }}>{label}</button>
+      <button className={`mb-item ${cls}`} aria-label={label} aria-haspopup="menu" onClick={(e) => { setMenu(null); const r = e.currentTarget.getBoundingClientRect(); openMenu(r.left, r.bottom, entries()); }}>{label}</button>
     </div>
   );
   const frontApp = front && !front.console ? appFor(game, front.app) : undefined;
   const extra = frontApp?.menus?.() ?? [];
+  // Read when a menu opens, so the entries follow the window's latest state.
+  const fresh = (id: string): MenuEntry[] => frontApp?.menus?.().find((m) => m.id === id)?.items ?? [];
+  const appList = (): MenuEntry[] => [
+    ...fresh("app"), null,
+    // An app with its own Preferences drops the shortcut to the game's Settings.
+    ...(front ? appMenu(front).filter(([label]) => label !== t("desktop.menu.settings")).map(([label, run]) => ({ label, run })) : []),
+  ];
   const windowList = (): MenuEntry[] => [
-    ...(extra.find((m) => m.id === "window")?.items ?? []), null,
+    ...fresh("window"), null,
     ...windows.map((w) => ({ label: w.doc ? docTitle(w.doc) : w.console ? t("desktop.menu.console") : appName(w), run: () => (w.doc ? openDoc(w.doc) : w.console ? openConsole(w.console) : openApp(w.app)) })),
   ];
 
   return (
     <header className="menubar" role="menubar">
       {item("backbone", "Backbone", [[t("desktop.menu.intro"), () => setIntro(true)], [t("desktop.menu.github"), () => window.open("https://github.com/Thiritin/backbone", "_blank", "noopener")], [t("desktop.menu.discord"), () => window.open(DISCORD_URL, "_blank", "noopener")], [t("desktop.menu.report"), () => window.open(`https://github.com/Thiritin/backbone/issues/new?body=${encodeURIComponent(`\n\nBuild: ${BUILD_ID}`)}`, "_blank", "noopener")], [t("desktop.icon.newNote"), () => newNote()], ...(guideGone ? [[t("desktop.menu.restoreGuide"), () => act(restoreGuide)] as [string, () => void]] : []), [t("desktop.menu.whatsNew"), () => openNews(EMBEDDED)], [t("desktop.menu.export"), () => exportSave(game)], [t("desktop.menu.mainMenu"), toMenu], [t("desktop.menu.delete"), () => setConfirm(true)], ...(immersive ? [[t("desktop.menu.logout"), () => { leaveImmersive(); toMenu(); }] as [string, () => void]] : [])], <span className="mb-pear"><PearMark /></span>, "mb-logo")}
-      {front ? item("app", appName(front), appMenu(front), appName(front), "mb-app") : <span className="mb-item mb-app">Backbone</span>}
-      {extra.filter((m) => m.id !== "window").map((m) => panel(m.id, m.title, () => frontApp?.menus?.().find((x) => x.id === m.id)?.items ?? []))}
+      {front ? (extra.some((m) => m.id === "app") ? panel("app", appName(front), appList, "mb-app") : item("app", appName(front), appMenu(front), appName(front), "mb-app")) : <span className="mb-item mb-app">Backbone</span>}
+      {extra.filter((m) => m.id !== "window" && m.id !== "app").map((m) => panel(m.id, m.title, () => fresh(m.id)))}
       {panel("window", t("desktop.menu.window"), windowList)}
       <span className="mb-spacer" />
       <button className="mb-item mb-place" onClick={() => openApp("Weather")}>
