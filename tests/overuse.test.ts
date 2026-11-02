@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { BILL_HAPPINESS, overageAmount, overuseOf, overuseTick, THROTTLE_HAPPINESS } from "../src/sim/80-business/overuse";
 import type { GameState } from "../src/sim/50-state";
-import { addCustomer, addService, answerTraffic, liftThrottle } from "../src/sim/90-actions/customers";
+import { addCustomer, addService, answerTraffic, liftThrottle, setOverusePolicy } from "../src/sim/90-actions/customers";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { newGame } from "./fixtures";
 
@@ -75,6 +75,18 @@ describe("traffic overuse", () => {
     expect(svc(s, sid).overuseAt).toBe(s.hour);
     overuseTick(s);
     expect(s.invoices.length).toBe(n + 1);
+  });
+
+  it("sets the policy only after the Traffic billing training, and the tick applies it", () => {
+    const { s, sid } = overSpent();
+    expect(err(setOverusePolicy(s, "throttle"))).toBe("error.missingSkill");
+    expect(s.overusePolicy).toBeNull();
+    s.unlocks.push("trafficBilling");
+    expect(setOverusePolicy(s, "throttle").ok).toBe(true);
+    overuseTick(s);
+    expect(svc(s, sid).throttled).toBe(true);
+    expect(setOverusePolicy(s, null).ok).toBe(true);
+    expect(s.overusePolicy).toBeNull();
   });
 
   it("loads an old save without a policy", () => {
