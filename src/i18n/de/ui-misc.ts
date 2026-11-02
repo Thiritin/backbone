@@ -50,7 +50,7 @@ export default {
   "misc.cashAtMonthEnd": () => "Kontostand am Monatsende",
   "misc.cashChartLabel": () => "Einnahmen und Ausgaben pro Monat sowie der Kontostand am Monatsende",
   "misc.cashFlow": () => "Cashflow",
-  "misc.catAi": () => "ChadGPT-Nutzung",
+  "misc.catAi": () => "KI-Nutzung",
   "misc.catFees": () => "Lösegelder und Strafen",
   "misc.catHardware": () => "Hardware",
   "misc.catInsurance": () => "Versicherung",

@@ -13,7 +13,8 @@ import { isWorkHour } from "../00-core/workhours";
 import { orderError } from "../30-market/orders";
 import { cheapestOption } from "../40-support/retention";
 import { orderMinutes, staffOrderStep } from "../30-market/manual";
-import { billAttempt, billChadUsage, BOT_RIGHT, BOT_RUNAROUND, BOT_TRIES, type ChadKind } from "./chad";
+import { agentName, billAttempt, BOT_RIGHT, BOT_RUNAROUND, BOT_TRIES, DESK_AGENT, type AiKind } from "../40-support/desk-ai";
+import { held } from "../40-support/desk-work";
 
 export type Role = "support" | "bookkeeper" | "accountant" | "marketing" | "technician";
 export type Task = Exclude<TicketKind, "pear"> | "invoices" | "transfers" | "reminder" | "dunning" | "final" | "suspend" | "campaigns" | "reviews" | "fairs" | "hardware" | "servers" | "panels";
@@ -153,9 +154,10 @@ export { isWorkHour };
 
 // economy/README.md, AI bots. A bot works around the clock at a fixed rate and never learns.
 export const BOTS: Record<string, { role: Role; tasks: Task[] }> = {
-  chadGpt: { role: "support", tasks: ["howTo", "billing"] },
   clipsy: { role: "bookkeeper", tasks: ["reminder"] },
 };
+// A hosted desk's generative agent, while auto-answer is on.
+const DESK_BOT: { role: Role; tasks: Task[] } = { role: "support", tasks: ["howTo", "billing"] };
 export const BOT_SPEED = 2;
 export { BOT_RIGHT };
 // Chance per reminder that the customer writes in about it, and per task of something memorable.
@@ -164,10 +166,15 @@ export const BOT_INCIDENT = 0.002;
 export const BOT_INCIDENT_HAPPINESS = -15;
 export const BOT_INCIDENTS = 5;
 
-export const activeBots = (s: GameState): Employee[] => Object.entries(BOTS).filter(([id]) => s.installed.includes(id)).map(([id, b]) => ({
-  id, name: storeItem(id)!.name, role: b.role, skill: 0, talent: 0, salary: 0, hiredAt: 0, assignment: "queue", location: null,
+const botEmployee = (id: string, name: string, b: { role: Role; tasks: Task[] }): Employee => ({
+  id, name, role: b.role, skill: 0, talent: 0, salary: 0, hiredAt: 0, assignment: "queue", location: null,
   trained: b.tasks, plan: [], training: null, busyUntil: 0, raise: null, nextRaiseAt: 0, refusedAt: null, team: "", worked: 0, bot: true,
-}));
+});
+export const activeBots = (s: GameState): Employee[] => {
+  const agent = agentName(s);
+  return [...Object.entries(BOTS).filter(([id]) => s.installed.includes(id)).map(([id, b]) => botEmployee(id, storeItem(id)!.name, b)),
+    ...(agent ? [botEmployee(DESK_AGENT, agent, DESK_BOT)] : [])];
+};
 
 // An employee works their team's shifts; a bot works around the clock.
 const endOf = (s: GameState, e: Employee, hour: number): number | null => {
@@ -200,7 +207,7 @@ export const REVIEW_INVITE_BOOST = 1.5;
 export const reviewBoost = (s: GameState): number => 1 + (REVIEW_INVITE_BOOST - 1) * dayShare(s, manager(s, "reviews"), "reviews");
 
 const speed = (e: Employee) => (e.bot ? BOT_SPEED : 0.5 + e.skill / 100);
-const rightChance = (e: Employee, kind: TicketKind) => (e.bot ? BOT_RIGHT[kind as ChadKind] ?? 0.6 : 0.75 + 0.25 * (e.skill / 100));
+const rightChance = (e: Employee, kind: TicketKind) => (e.bot ? BOT_RIGHT[kind as AiKind] ?? 0.6 : 0.75 + 0.25 * (e.skill / 100));
 
 // A support agent queues a reply or action on the ticket the same way the player does; finishWork in the support tick applies it.
 function choose(s: GameState, e: Employee, t: Ticket, r: Rng): { op: "reply" | "resolve"; arg: string } {
@@ -237,6 +244,7 @@ function answerTickets(s: GameState, agents: Employee[], r: Rng): BotTask[] {
       // An order that cannot be set up waits for the player, an upgrade waits for the player's quote and a panel task for the player's work in the panel.
       const step = t.kind === "order" ? staffOrderStep(s, t, orderError(s, t)) : null;
       if (taken.has(t.id) || !(e.trained as string[]).includes(t.kind) || (t.kind === "order" && !step) || t.kind === "upgrade" || t.task) continue;
+      if (e.id === DESK_AGENT && !held(t)) continue;
       const tries = e.bot ? t.replies.filter((x) => x.by === e.name).length : 0;
       if (tries >= BOT_TRIES) continue;
       const took = take(s, e, step ? orderMinutes(s, t, step, MINUTES.order) : MINUTES[t.kind]);
@@ -387,7 +395,6 @@ export const forumAwareness = (s: GameState): number =>
 
 export function staffTick(s: GameState): SimEvent[] {
   const bots = activeBots(s);
-  if (isMonthStart(s.hour)) billChadUsage(s);
   if (!s.staff.length && !bots.length) {
     if (isMonthStart(s.hour)) refreshMarket(s);
     return [];

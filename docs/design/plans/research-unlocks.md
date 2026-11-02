@@ -10,7 +10,7 @@ Every skill in the Research app says exactly what it switches on, each unlock is
 | --- | --- | --- |
 | Monitoring | Nagiosaurus; failure notifications (`88-tick/tick.ts`) | Nagiosaurus only |
 | Memory reservation | reservation per cluster (`90-actions/clusters.ts`, Clusters tab) | yes |
-| Automation | ChadGPT, Clipsy; automated billing rules (`45-billing/billing.ts`, `rulesAutomated`) | bots only |
+| Automation | Clipsy, desk AI agents and drafts (hosted desks, from 2023); automated billing rules (`45-billing/billing.ts`, `rulesAutomated`) | bots only |
 | Network operations | Network app; transit, peering and DDoS actions (`90-actions/network.ts`) | app only |
 | High availability | live migration, failover, auto-balancing, HA product lines; needs a hypervisor cluster | yes, software not named |
 | GPU computing | GPU virtual machines; needs a hypervisor cluster with GPU cards | software not named |
@@ -48,7 +48,7 @@ type Unlock =
 | --- | --- |
 | Monitoring | app Nagiosaurus; feature failureAlerts |
 | Memory reservation | feature memoryReservation, software: hypervisors |
-| Automation | app chadGpt, clipsy; feature billingRules |
+| Automation | app clipsy; feature billingRules; feature deskAi |
 | Network operations | app Network; feature transit; feature peering |
 | High availability | feature liveMigration, failover, autoBalance (software: hypervisors); feature haProducts |
 | GPU computing | feature gpuVms (software: hypervisors) |

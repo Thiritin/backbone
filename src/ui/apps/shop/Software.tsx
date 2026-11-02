@@ -1,10 +1,9 @@
-import { Bot, KeyRound, Search, CalendarDays, Paperclip, ChartLine, Check, ChevronLeft, LifeBuoy, Trophy, Users, Wallet } from "lucide-react";
+import { KeyRound, Search, CalendarDays, Paperclip, ChartLine, Check, ChevronLeft, LifeBuoy, Trophy, Users, Wallet } from "lucide-react";
 import { useState, type ComponentType, type CSSProperties } from "react";
 import { era } from "../../art/era-icon";
 import type { MarkProps } from "../../art/mailmarks";
 import { useSessionState } from "../../session";
 import { euroCents } from "../../../sim/00-core/money";
-import { pricePerMTokens } from "../../../sim/47-staff/chad";
 import { yearOf } from "../../../sim/00-core/time";
 import { isAvailable, skillFor } from "../../../sim/10-catalog/research";
 import { storeItem, subscriptionPrice, type StoreItem } from "../../../sim/10-catalog/store";
@@ -25,18 +24,17 @@ const UPGRADES: Record<string, { icon: ComponentType<MarkProps>; tile: string }>
   widgetRevenue: { icon: era(ChartLine, "market"), tile: "oklch(0.55 0.13 175)" },
   widgetCustomers: { icon: era(Users, "customers"), tile: "oklch(0.52 0.17 268)" },
   widgetLevel: { icon: era(Trophy, "level"), tile: "oklch(0.72 0.15 95)" },
-  chadGpt: { icon: Bot, tile: "oklch(0.55 0.16 300)" },
   clipsy: { icon: era(Paperclip, "clipsy"), tile: "oklch(0.6 0.14 220)" },
 };
 
 const INCLUDES: Record<string, number> = {
-  Network: 3, Staff: 3, Marketing: 3, Nagiosaurus: 3, "Knowledge base": 3, DocuWhere: 3, Market: 3, searchlight: 3, keepassive: 3, widgetCalendar: 1, widgetTickets: 2, widgetCash: 2, widgetRevenue: 2, widgetCustomers: 2, widgetLevel: 3, chadGpt: 3, clipsy: 2,
+  Network: 3, Staff: 3, Marketing: 3, Nagiosaurus: 3, "Knowledge base": 3, DocuWhere: 3, Market: 3, searchlight: 3, keepassive: 3, widgetCalendar: 1, widgetTickets: 2, widgetCash: 2, widgetRevenue: 2, widgetCustomers: 2, widgetLevel: 3, clipsy: 2,
 };
 
 const SHELVES: [string, string[]][] = [
   ["Essentials", ["Network", "Nagiosaurus", "Knowledge base", "DocuWhere"]],
   ["Growth", ["Staff", "Marketing", "Market"]],
-  ["Bots", ["chadGpt", "clipsy"]],
+  ["Bots", ["clipsy"]],
   ["Upgrades", ["searchlight", "keepassive", "widgetCalendar", "widgetTickets", "widgetCash", "widgetRevenue", "widgetCustomers", "widgetLevel"]],
 ];
 
@@ -69,7 +67,7 @@ export function Software() {
   const game = useStore((s) => s.game);
   const [open, setOpen] = useSessionState<string | null>("software.sel", null);
   useFocus("Shop", (f) => { if (f.kind === "software" && storeItem(f.id)) setOpen(f.id); });
-  const price = (item: StoreItem) => (item.monthly ? `${t("shop.priceMonthly", { price: euroCents(subscriptionPrice(item, yearOf(game.hour))), seat: item.perSeat ? 1 : 0 })}${item.id === "chadGpt" ? ` + ${t("shop.priceTokens", { price: euroCents(pricePerMTokens(yearOf(game.hour))) })}` : ""}` : t("shop.free"));
+  const price = (item: StoreItem) => (item.monthly ? `${t("shop.priceMonthly", { price: euroCents(subscriptionPrice(item, yearOf(game.hour))), seat: item.perSeat ? 1 : 0 })}` : t("shop.free"));
   const detail = open && storeItem(open);
   if (detail) return <Detail item={detail} price={price(detail)} back={() => setOpen(null)} />;
 

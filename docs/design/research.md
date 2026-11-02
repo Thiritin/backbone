@@ -282,7 +282,8 @@ Your team writes down the answers it gives every week: how to upload a site, whi
 
 ### What it unlocks
 
-- **ChadGPT Support** and **Clipsy Reminders** are in the Pear Store and work your queue as bots.
+- **Clipsy Reminders** is in the Pear Store and sends payment reminders as a bot.
+- **AI agents and reply drafts** can be switched on in a hosted help desk from 2023.
 - **Billing rules** on the Dunning levels tab of Books run by themselves instead of waiting for your staff.
 
 ### Bots and rules
@@ -291,8 +292,8 @@ Somebody once suggested replacing everyone with AI and hoping the bot fixes it. 
 
 A bot works day and night, never asks for a raise and never gets any better. It answers fast and is wrong often enough that someone has to clean up after it.
 
-### ChadGPT Support and Clipsy Reminders
+### Clipsy Reminders and the desk's AI
 
-**ChadGPT Support** and **Clipsy Reminders** are in the Pear Store. ChadGPT Support answers how-to and billing tickets, and Clipsy Reminders sends payment reminders. Each bot is its own monthly subscription and shows in the Staff app next to your team.
+**Clipsy Reminders** is in the Pear Store and sends payment reminders. From 2023 a hosted help desk offers an AI agent that answers how-to and billing tickets and drafts replies for you, as an add-on in the desk's AI page. Both show in the Staff app next to your team.
 
 Your staff take the queue first during office hours, and the bots take whatever is left. Watch the follow-up tickets: a bot apologises beautifully and understands very little.

@@ -12,7 +12,7 @@ import { addNote, markSpam, setDepartment, setPriority } from "../../../../../..
 import { assignTicket } from "../../../../../../sim/90-actions/support";
 import { useStore } from "../../../../../store";
 import { ReplyPanel, type ReplyHandlers } from "../headless/ReplyPanel";
-import { Suggested, ticketArticle } from "../headless/AiPage";
+import { DraftBox, Suggested, ticketArticle } from "../headless/AiPage";
 import { useDeskTickets } from "../headless/useDeskTickets";
 import { useTicketPane, type PaneItem } from "../headless/useTicketPane";
 import type { ReplyModel } from "../headless/useTicketReplies";
@@ -241,9 +241,9 @@ function TicketPage(p: ZdProps) {
           </p>
         </header>
         {look === "classic" && props}
-        {look !== "workspace" && open && <Composer {...p} tk={tk} />}
+        {look !== "workspace" && open && <><DraftBox game={game} tk={tk} brand="zd" /><Composer {...p} tk={tk} /></>}
         <div className="zd-thread">{items.map((it, i) => <Item key={i} it={it} />)}</div>
-        {look === "workspace" && open && <Composer {...p} tk={tk} />}
+        {look === "workspace" && open && <><DraftBox game={game} tk={tk} brand="zd" /><Composer {...p} tk={tk} /></>}
       </article>
       <aside className="zd-requester">
         <h3>{t(look === "workspace" ? "zd.context" : "zd.user")}</h3>

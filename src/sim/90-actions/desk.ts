@@ -1,5 +1,5 @@
 import { deskById, deskHas, type DeskAi, type DeskFeature, type DeskId } from "../10-catalog/desks";
-import { aiOffered } from "../40-support/desk-ai";
+import { aiOffered, GENERATIVE } from "../40-support/desk-ai";
 import { deskStatus, newChannel, type Department, type DeskRule, type Priority } from "../40-support/desk";
 import { channelError, fetchChannel } from "../40-support/desk-channels";
 import { serverStatus } from "../42-mail/accounts";
@@ -241,6 +241,8 @@ export function setDeskAi(s: GameState, feature: DeskAi, on: boolean): ActionRes
   const g = gate(s);
   if (g) return g;
   if (!aiOffered(s, feature)) return fail("error.deskFeature");
+  // The generative add-on needs the Automation skill, like the bots it replaced.
+  if (GENERATIVE.includes(feature) && !s.unlocks.includes("automation")) return fail("error.needsResearch");
   s.desk = { ...s.desk!, ai: { ...s.desk!.ai, on: { ...s.desk!.ai.on, [feature]: on } } };
   return { ok: true };
 }

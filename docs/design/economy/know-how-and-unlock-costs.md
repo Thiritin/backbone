@@ -35,7 +35,7 @@ A first-year company earns about 300 know-how; a company with 10,000 customers e
 | Market research | 3 | 800 | 21 days | Product management, Marketing campaigns | Market |
 | High availability | 3 | 400 | 14 days | Product management, Monitoring | Live migration, automatic failover and auto-balancing (OpenVeeZee, VMwhere, Proxmocks or HyperVee), product lines that need failover |
 | GPU computing | 3 | 400 | 14 days, from 2011 | Product management, Monitoring | GPU virtual machines (OpenVeeZee, VMwhere, Proxmocks or HyperVee) |
-| Automation | 3 | 1,500 | 21 days | Employee management, Monitoring | ChadGPT Support, Clipsy Reminders, automated billing rules |
+| Automation | 3 | 1,500 | 21 days | Employee management, Monitoring | Clipsy Reminders, automated billing rules, AI agents and reply drafts on hosted desks |
 | Cloud orchestration | 4 | 3,000 | 45 days, from 2010 | High availability, Network operations, Provisioning automation | OpenStash, the Cloud server product line, Watchman auto-balancing (OpenStash) |
 
 The whole tree costs 8,060 know-how and 226 days of training.

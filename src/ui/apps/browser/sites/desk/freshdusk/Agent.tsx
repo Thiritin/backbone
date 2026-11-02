@@ -8,7 +8,7 @@ import { held, inDesk, OWNER, PRIORITIES } from "../../../../../../sim/40-suppor
 import { isFinal, type Ticket, type TicketKind } from "../../../../../../sim/40-support/tickets";
 import type { GameState } from "../../../../../../sim/50-state";
 import { kbArticles } from "../../../../../../sim/80-business/website";
-import { Suggested, ticketArticle } from "../headless/AiPage";
+import { DraftBox, Suggested, ticketArticle } from "../headless/AiPage";
 import { addNote, markSpam, mergeTickets, setDepartment, setPriority } from "../../../../../../sim/90-actions/desk";
 import { assignTicket, closeTicket, resolveTicket } from "../../../../../../sim/90-actions/support";
 import { useStore } from "../../../../../store";
@@ -296,6 +296,7 @@ function TicketPage(p: FdProps) {
         {toolbar}
         {look === "classic" && <Properties key={tk.id} {...p} tk={tk} r={r} open={open} />}
         <div className="fd-thread">{m.items.map((it, i) => <Item key={i} it={it} />)}</div>
+        {open && <DraftBox game={game} tk={tk} brand="fd" />}
         {open && mode === "reply" && <Composer {...p} tk={tk} />}
         {open && mode === "note" && <NoteBox tk={tk} done={() => setMode(null)} />}
       </article>

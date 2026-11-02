@@ -49,7 +49,7 @@ export default {
   "misc.cashAtMonthEnd": () => "Trésorerie en fin de mois",
   "misc.cashChartLabel": () => "Entrées et sorties d'argent par mois, et trésorerie à la fin de chaque mois",
   "misc.cashFlow": () => "Flux de trésorerie",
-  "misc.catAi": () => "Utilisation de ChadGPT",
+  "misc.catAi": () => "Utilisation de l’IA",
   "misc.catFees": () => "Rançons et amendes",
   "misc.catHardware": () => "Matériel",
   "misc.catInsurance": () => "Assurance",

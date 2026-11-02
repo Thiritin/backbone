@@ -1,5 +1,5 @@
 import { importDeskTickets } from "./desk-channels";
-import { answerBot, articleDeflects, billDeskAi } from "./desk-ai";
+import { answerBot, articleDeflects, billDeskAi, draftReplies } from "./desk-ai";
 import { deskById, refToken } from "../10-catalog/desks";
 import { sentCopy } from "../42-mail/deliver";
 import { envelopeBox } from "../42-mail/tickets";
@@ -279,6 +279,7 @@ export function supportTick(s: GameState): SimEvent[] {
   const asked = new Map(s.tickets.map((t) => [t.id, t.replies.length]));
   answerBot(s, customer, (t, c) => resolve(s, t, c));
   sentCopies(s, asked);
+  draftReplies(s);
 
   const fresh = s.tickets.filter((t) => !before.has(t.id) && t.kind !== "mail");
   if (fresh.length > 1) return [...events, { app: "Support", key: "event.tickets", params: { count: fresh.length } }];

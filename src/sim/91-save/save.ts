@@ -60,6 +60,8 @@ export function deserialize(raw: string): GameState {
   delete (data as { insurance?: unknown }).insurance;
   // Customer-wide holds are gone; services are held one by one.
   delete (data as { heldCustomers?: unknown }).heldCustomers;
+  // ChadGPT Support left the Pear Store for the hosted desks' AI.
+  delete (data as { chadUsage?: unknown }).chadUsage;
   const locations: GameState["locations"] = [];
   // The basement's tower shelf is gone, and rack positions became cages.
   for (const { shelf: _, ...l } of (data.locations ?? base.locations) as (Location & { shelf?: number })[]) {
@@ -128,7 +130,7 @@ export function deserialize(raw: string): GameState {
     // The Research app was called Unlocks.
     // The Sales app moved into Support and the Checklist into Getting started, so their ids are dropped; saves from before the Website app get it in the dock. Customers moved into Books and the shop admin, and registered saves get every starter app.
     // Billing became Books.
-    installed: data.installed ? [...new Set([...data.installed.map((id) => (id === "Unlocks" ? "Research" : id === "Billing" || id === "Finance" ? "Books" : id)).filter((id) => id !== "Sales" && id !== "Customers" && id !== "Checklist" && id !== "Bank" && id !== "dockBadges" && id !== "Products" && id !== "Virtual machines" && id !== "Website"), "Browser", "Chat", ...(data.registration !== null ? STARTER_APPS : [])])] : [...STARTER_APPS, "Chat", ...WIDGETS.map(([id]) => id)],
+    installed: data.installed ? [...new Set([...data.installed.map((id) => (id === "Unlocks" ? "Research" : id === "Billing" || id === "Finance" ? "Books" : id)).filter((id) => id !== "Sales" && id !== "Customers" && id !== "chadGpt" && id !== "Checklist" && id !== "Bank" && id !== "dockBadges" && id !== "Products" && id !== "Virtual machines" && id !== "Website"), "Browser", "Chat", ...(data.registration !== null ? STARTER_APPS : [])])] : [...STARTER_APPS, "Chat", ...WIDGETS.map(([id]) => id)],
     // Older saves researched Pear Store items directly; each becomes its skill and that skill's prerequisites.
     unlocks: [...new Set((data.unlocks ?? []).flatMap(learned))],
     customers: (data.customers ?? []).map((c) => ({ ...c, history: c.history ?? [], credit: c.credit ?? 0, address: c.address ?? homeAddress({ seed: base.seed, locations }, Number(c.id.slice(3)) || 0, c.name, c.profile) })),

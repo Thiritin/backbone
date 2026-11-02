@@ -2,12 +2,17 @@ import { newGame } from "./fixtures";
 import { describe, expect, it } from "vitest";
 import { skillFor } from "../src/sim/10-catalog/research";
 import { storeItem, subscriptionPrice } from "../src/sim/10-catalog/store";
-import { createTicket } from "../src/sim/40-support/tickets";
+import { hourOf } from "../src/sim/00-core/time";
+import { openDesk } from "../src/sim/40-support/desk";
+import { AGENT_NAME } from "../src/sim/40-support/desk-ai";
+import { importTicket } from "../src/sim/40-support/desk-work";
+import { createTicket, type TicketKind } from "../src/sim/40-support/tickets";
 import type { Invoice } from "../src/sim/45-billing/billing";
 import { activeBots, BOT_RIGHT, isWorkHour } from "../src/sim/47-staff/staff";
 import { type GameState } from "../src/sim/50-state";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { addCustomer } from "../src/sim/90-actions/customers";
+import { setDeskAi } from "../src/sim/90-actions/desk";
 import { cancel, install } from "../src/sim/90-actions/store";
 
 const FEB_1 = 744;
@@ -16,6 +21,21 @@ const runTo = (s: GameState, hour: number, events: SimEvent[] = []) => { while (
 const customer = (s: GameState, name: string) => {
   const id = addCustomer(s, name, "private");
   return s.customers.find((x) => x.id === id)!;
+};
+
+// A hosted Zendusk in 2024 whose AI agent answers the desk's tickets.
+const AGENT = AGENT_NAME.zendusk, Y2024 = hourOf(new Date(Date.UTC(2024, 0, 3, 0)));
+function withAgent(seed: number): GameState {
+  const s = { ...newGame(seed), hour: Y2024, cash: 100_000 };
+  s.unlocks = ["people", "monitoring", "automation"];
+  openDesk(s, "zendusk", { kind: "hosted" }, "pxl");
+  if (!setDeskAi(s, "autoAnswer", true).ok) throw new Error("switch");
+  return s;
+}
+const deskTicket = (s: GameState, c: Parameters<typeof createTicket>[1], kind: TicketKind) => {
+  const t = createTicket(s, c, kind);
+  importTicket(s, t, true);
+  return t;
 };
 
 function withBot(seed: number, id: string): GameState {
@@ -29,29 +49,28 @@ function withBot(seed: number, id: string): GameState {
 
 describe("AI bots", () => {
   it("come with the Automation skill and bill per bot every month with the Pear price rise", () => {
-    expect(skillFor("chadGpt")!.id).toBe("automation");
     expect(skillFor("clipsy")!.id).toBe("automation");
+    expect(storeItem("chadGpt")).toBeUndefined();
     const s = newGame(1);
     s.cash = 10_000;
-    expect(install(s, "chadGpt")).toEqual({ ok: false, error: "error.needsResearch" });
+    expect(install(s, "clipsy")).toEqual({ ok: false, error: "error.needsResearch" });
     s.unlocks = ["people", "monitoring", "automation"];
-    expect(install(s, "chadGpt").ok).toBe(true);
     expect(install(s, "clipsy").ok).toBe(true);
-    expect(activeBots(s).map((b) => b.name)).toEqual(["ChadGPT Support", "Clipsy Reminders"]);
+    expect(activeBots(s).map((b) => b.name)).toEqual(["Clipsy Reminders"]);
     runTo(s, FEB_1 + 1);
     const bills = s.ledger.filter((l) => l.key === "ledger.subscription" && l.hour === FEB_1).map((l) => l.params.name);
-    expect(bills).toEqual(expect.arrayContaining(["ChadGPT Support", "Clipsy Reminders"]));
-    expect(subscriptionPrice(storeItem("chadGpt")!, 2010)).toBeCloseTo(50 * 1.08 ** 5, 2);
-    expect(cancel(s, "chadGpt").ok).toBe(true);
-    expect(activeBots(s).map((b) => b.id)).toEqual(["clipsy"]);
+    expect(bills).toEqual(expect.arrayContaining(["Clipsy Reminders"]));
+    expect(subscriptionPrice(storeItem("clipsy")!, 2010)).toBeCloseTo(100 * 1.08 ** 5, 2);
+    expect(cancel(s, "clipsy").ok).toBe(true);
+    expect(activeBots(s)).toEqual([]);
   });
 
   it("answers routine tickets around the clock and leaves the rest", () => {
-    const s = withBot(2, "chadGpt");
-    const night = 2;
+    const s = withAgent(2);
+    const night = Y2024 + 2;
     expect(isWorkHour(night)).toBe(false);
     const c = customer(s, "Night Owl");
-    const howTo = createTicket(s, c, "howTo"), outage = createTicket(s, c, "outage");
+    const howTo = deskTicket(s, c, "howTo"), outage = deskTicket(s, c, "outage");
     runTo(s, night);
     tick(s);
     const t = s.tickets.find((x) => x.id === howTo.id)!;
@@ -61,14 +80,14 @@ describe("AI bots", () => {
   });
 
   it("answers fast with a fixed mediocre hit rate and never learns", () => {
-    const s = withBot(3, "chadGpt");
+    const s = withAgent(3);
     for (let i = 0; i < 300; i++) {
       const c = customer(s, `Customer ${i}`);
-      createTicket(s, c, i % 2 ? "howTo" : "billing");
+      deskTicket(s, c, i % 2 ? "howTo" : "billing");
     }
-    runTo(s, 24 * 7);
-    const firsts = (kind: "howTo" | "billing") => s.tickets.filter((t) => t.kind === kind).map((t) => t.replies[0]).filter((r) => r?.by === "ChadGPT Support");
-    expect(s.tickets.flatMap((t) => t.replies).filter((r) => r.by === "ChadGPT Support").length).toBeGreaterThan(300);
+    runTo(s, Y2024 + 24 * 7);
+    const firsts = (kind: "howTo" | "billing") => s.tickets.filter((t) => t.kind === kind).map((t) => t.replies[0]).filter((r) => r?.by === AGENT);
+    expect(s.tickets.flatMap((t) => t.replies).filter((r) => r.by === AGENT).length).toBeGreaterThan(300);
     for (const kind of ["howTo", "billing"] as const) {
       const right = firsts(kind).filter((r) => r.right).length / firsts(kind).length;
       expect(right).toBeGreaterThan(BOT_RIGHT[kind] - 0.1);
@@ -90,16 +109,16 @@ describe("AI bots", () => {
   });
 
   it("now and then does something memorable that angers a customer", () => {
-    const s = withBot(5, "chadGpt");
+    const s = withAgent(5);
     for (let i = 0; i < 1500; i++) {
       const c = customer(s, `Customer ${i}`);
-      createTicket(s, c, "howTo");
+      deskTicket(s, c, "howTo");
     }
     const events: SimEvent[] = [];
-    runTo(s, 24 * 20, events);
+    runTo(s, Y2024 + 24 * 20, events);
     const incident = events.find((e) => e.key.startsWith("event.botIncident"));
     expect(incident).toBeDefined();
-    expect(incident!.params.bot).toBe("ChadGPT Support");
+    expect(incident!.params.bot).toBe(AGENT);
     const c = s.customers.find((x) => x.name === incident!.params.customer)!;
     expect(s.tickets.some((t) => t.customerId === c.id && t.kind === "billing")).toBe(true);
   });

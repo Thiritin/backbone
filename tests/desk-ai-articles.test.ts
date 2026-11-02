@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
 import type { DeskId } from "../src/sim/10-catalog/desks";
-import { openDesk } from "../src/sim/40-support/desk";
+import { newDeskAi, openDesk } from "../src/sim/40-support/desk";
 import { aiOffered, ANSWER_BOT_FEE, articleDeflects, billDeskAi, BOT_NAME } from "../src/sim/40-support/desk-ai";
 import { importTicket } from "../src/sim/40-support/desk-work";
 import { createTicket } from "../src/sim/40-support/tickets";
@@ -114,6 +114,6 @@ describe("AI on the hosted desks", () => {
     const data = JSON.parse(serialize(s));
     delete data.desk.ai;
     const back = deserialize(JSON.stringify(data));
-    expect(back.desk!.ai).toEqual({ on: { suggestedArticles: true }, solved: 0, tried: 0 });
+    expect(back.desk!.ai).toEqual(newDeskAi());
   });
 });
