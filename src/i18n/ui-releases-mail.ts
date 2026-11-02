@@ -1,6 +1,6 @@
 import type { Dict } from "./lang";
 
-// Headline features of each SquirrelMeal and Postfixit Admin release, joined by "|".
+// Headline features of each SquirrelMeal, Squarecube and Postfixit Admin release, joined by "|".
 export default {
   "swnews.squirrelmeal.1.4.4": () => "Security fixes for the compose page|Better handling of broken MIME mail|Translation updates",
   "swnews.squirrelmeal.1.5.1": () => "Development snapshot of the 1.5 line|New icons in the folder list|Templates for the page layout",
@@ -24,4 +24,21 @@ export default {
   "swnews.postfixitadmin.3.0": () => "New Bootstrap-based look|PHP 7 support|Safer setup password",
   "swnews.postfixitadmin.3.2": () => "Two-step setup|Better quota display|PHP 7.2 support",
   "swnews.postfixitadmin.3.3": () => "PHP 8 support|Password expiry|Security fixes",
+  "swnews.squarecube.0.1": () => "First stable release|Address book and identities|Drag and drop of messages",
+  "swnews.squarecube.0.2": () => "vCard import and export|New spell checker|Faster message list",
+  "swnews.squarecube.0.3": () => "Plugin interface|Collapsible folder list|Better HTML mail display",
+  "swnews.squarecube.0.4": () => "Threaded message list|Contact groups|Filters, Mark as junk and Change password plugins",
+  "swnews.squarecube.0.5": () => "Faster folder handling|Bug fixes|Translation updates",
+  "swnews.squarecube.0.6": () => "Undo for deleted contacts|Bug fixes|Translation updates",
+  "swnews.squarecube.0.7": () => "Security fixes|Bug fixes",
+  "swnews.squarecube.0.8": () => "New default skin Barry|Classic stays bundled|Widescreen layout",
+  "swnews.squarecube.0.9": () => "Thumbnails for image attachments|CSV contact import|Security fixes",
+  "swnews.squarecube.1.0": () => "Vacation responder|Classic is no longer bundled|Faster startup",
+  "swnews.squarecube.1.1": () => "Search in several folders|Better composer|Security fixes",
+  "swnews.squarecube.1.2": () => "PHP 7 support|Drag and drop upload of attachments|Security fixes",
+  "swnews.squarecube.1.3": () => "Flat look for Barry|PHP 7.1 support|Security fixes",
+  "swnews.squarecube.1.4": () => "New default skin Plastic|Layout for small screens|Barry stays bundled",
+  "swnews.squarecube.1.5": () => "Long-term support release|Collected recipients address book|Dark theme for Plastic",
+  "swnews.squarecube.1.6": () => "Barry is deprecated|Faster search|PHP 8.1 support",
+  "swnews.squarecube.1.7": () => "Barry is no longer bundled|PHP 8.4 support|Security fixes",
 } satisfies Dict;

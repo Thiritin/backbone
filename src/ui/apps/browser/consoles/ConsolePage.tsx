@@ -29,13 +29,14 @@ import { OwnClod } from "./ownclod/OwnClod";
 import { PowerDnz } from "./powerdnz/PowerDnz";
 import { PostfixitAdmin } from "./postfixitadmin/PostfixitAdmin";
 import { SquirrelMeal } from "./squirrelmeal/SquirrelMeal";
+import { Squarecube } from "./squarecube/Squarecube";
 import { LicenceGate } from "./Readouts";
 import "./consoles.css";
 
 export const CONSOLES: Record<string, ComponentType<PanelProps>> = {
   cpanic: CPanic, pleskit: Pleskit, directadmen: DirectAdmen, freepanel: FreePanel, tcadmen: TCAdmen, multikraft: MultiKraft, pterodaktyl: Pterodaktyl,
   proxmocks: Proxmocks, vmwhere: VmWhere, hypervee: HyperVee, openveezee: OpenVeeZee, openstash: Horizont,
-  powerdnz: PowerDnz, openveepeen: OpenVeePeeN, anyconnekt: AnyConnekt, ownclod: OwnClod, minnio: MinnIO, mailpig: Mailpig, squirrelmeal: SquirrelMeal, postfixitadmin: PostfixitAdmin,
+  powerdnz: PowerDnz, openveepeen: OpenVeePeeN, anyconnekt: AnyConnekt, ownclod: OwnClod, minnio: MinnIO, mailpig: Mailpig, squirrelmeal: SquirrelMeal, squarecube: Squarecube, postfixitadmin: PostfixitAdmin,
   veeham: BackupConsole, proxmocksBackup: BackupConsole,
 };
 

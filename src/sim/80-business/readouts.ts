@@ -1,5 +1,6 @@
 // docs/design/plans/readouts.md: read-only screens derived from the state the sim already holds.
 import { installDirLeft } from "../60-infra/shop-files";
+import { installerLeft } from "./webmail";
 import { softwareById } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
 import type { Cluster, Workload } from "../60-infra/cluster";
@@ -116,7 +117,7 @@ export function logLines(s: GameState, c: Cluster, source: LogSource, limit: num
 }
 const idNumber = (id: string) => Number(id.replace(/\D/g, "")) || 0;
 
-export type AdvisorKind = "vulnCritical" | "vulnHigh" | "vulnLow" | "update" | "php" | "backup" | "auto" | "offline" | "installDir";
+export type AdvisorKind = "vulnCritical" | "vulnHigh" | "vulnLow" | "update" | "php" | "backup" | "auto" | "offline" | "installDir" | "installer";
 export interface AdvisorCheck { kind: AdvisorKind; penalty: number; count: number }
 export const VULN_PENALTY = { critical: 15, high: 8, low: 3 } as const, VULN_PENALTY_MAX = 40;
 
@@ -136,6 +137,7 @@ export function advisorChecks(s: GameState, c: Cluster): { score: number; checks
   if (s.security.offline.includes(c.id)) checks.push({ kind: "offline", penalty: 5, count: 1 });
   // web-hosting.md 2.2: a shop's leftover install folder weighs like a critical hole.
   if (installDirLeft(s, c.id)) checks.push({ kind: "installDir", penalty: VULN_PENALTY.critical, count: 1 });
+  if (installerLeft(s, c.id)) checks.push({ kind: "installer", penalty: VULN_PENALTY.critical, count: 1 });
   return { score: Math.max(0, Math.min(100, 100 - checks.reduce((n, x) => n + x.penalty, 0))), checks };
 }
 

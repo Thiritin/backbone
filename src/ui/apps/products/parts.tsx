@@ -35,6 +35,7 @@ export const BRAND: Record<string, { icon: LucideIcon; color: string }> = {
   postfixit: { icon: Mail, color: "oklch(0.55 0.13 20)" },
   mailpig: { icon: PiggyBank, color: "oklch(0.68 0.13 355)" },
   squirrelmeal: { icon: Mail, color: "oklch(0.5 0.1 250)" },
+  squarecube: { icon: Mail, color: "oklch(0.55 0.11 245)" },
   postfixitadmin: { icon: Mail, color: "oklch(0.5 0.02 250)" },
 };
 

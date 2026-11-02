@@ -93,6 +93,7 @@ const ON_MACHINE: Record<string, Omit<Pick<Software, MachineFields>, "site">> = 
   mailpig: { os: L, ports: [25, ...WEB, 587, 143, 993], install: apt("mailpig", repo("http://repo.mailpig.io/debiant stable main", "mailpig"), "apt-get update") },
   squirrelmeal: { os: L, ports: WEB, install: apt("squirrelmeal") },
   postfixitadmin: { os: L, ports: WEB, install: apt("postfixitadmin") },
+  squarecube: { os: L, ports: WEB, install: apt("squarecube") },
   backula: { os: LW, ports: [9101, 9102, 9103], install: apt("backula-director", "apt-get update") },
   veeham: { os: W, ports: [9392, 10001], install: GUI },
   proxmocksBackup: { os: L, ports: [8007], install: apt("proxmocks-backup-server", repo("http://download.proxmocks.com/debiant bookworm pbs-no-subscription", "pbs"), "apt-get update") },
@@ -131,6 +132,7 @@ const CATALOG: Omit<Software, MachineFields>[] = [
   // Webmail and mail admin front ends of the own mail server (docs/design/plans/webmail-server.md, 2.1).
   { id: "squirrelmeal", kind: "mailweb", name: "SquirrelMeal", console: "SquirrelMeal", licensing: [{ from: 2005, kind: "free", fee: 0 }], tickets: 0, live: false, split: true, balloon: null, controlPlane: { vcpu: 0.05, ramGb: 0.1, diskGb: 0.1 }, installHours: 1, from: 2005, migration: { same: null, other: null }, cluster: null, autoUpdate: null },
   { id: "postfixitadmin", kind: "mailweb", name: "Postfixit Admin", console: "Postfixit Admin", licensing: [{ from: 2005, kind: "free", fee: 0 }], tickets: 0, live: false, split: true, balloon: null, controlPlane: { vcpu: 0.05, ramGb: 0.1, diskGb: 0.5 }, installHours: 1, from: 2005, migration: { same: null, other: null }, cluster: null, autoUpdate: null },
+  { id: "squarecube", kind: "mailweb", name: "Squarecube", console: "Squarecube", licensing: [{ from: 2008, kind: "free", fee: 0 }], tickets: 0, live: false, split: true, balloon: null, controlPlane: { vcpu: 0.05, ramGb: 0.15, diskGb: 0.2 }, installHours: 1, from: 2008, migration: { same: null, other: null }, cluster: null, autoUpdate: null },
   // Backup software: a repository other clusters back up to; backs lists what it reads.
   { id: "backula", kind: "backup", name: "Backula", console: "Backula", licensing: [{ from: 2005, kind: "free", fee: 0 }], tickets: 0, live: false, split: true, balloon: null, controlPlane: { vcpu: 0.5, ramGb: 1, diskGb: 10 }, installHours: 3, from: 2005, migration: { same: null, other: null }, cluster: null, autoUpdate: null, backs: { ...Object.fromEntries(FILES.map((id) => [id, 2005])), proxmocks: 2005, openstash: 2012 } },
   { id: "veeham", kind: "backup", name: "Veeham Backup", console: "Veeham Backup and Replication", licensing: [{ from: 2008, kind: "once", fee: 600, upgrade: 300 }, { from: 2018, kind: "server", fee: 480, period: "year" }], trialDays: 30, tickets: 0, live: false, split: true, balloon: null, controlPlane: { vcpu: 2, ramGb: 4, diskGb: 60 }, installHours: 2, from: 2008, migration: { same: null, other: null }, cluster: null, autoUpdate: 2016, backs: { vmwhere: 2008, hypervee: 2011, proxmocks: 2024 } },
@@ -169,7 +171,7 @@ export const BINARIES: Record<string, string> = {
   cpanic: "cpanic", pleskit: "pleskit", directadmen: "da", freepanel: "freepanel", openveezee: "vzctl", openstash: "stash", vmwhere: "esxwhere",
   proxmocks: "pvm", hypervee: "hypervee", tcadmen: "tcadmen", multikraft: "multikraft", pterodaktyl: "ptero", bound: "boundc", powerdnz: "pdnzutil",
   knut: "knutc", openveepeen: "ovpn", anyconnekt: "anyconnekt", wireguarded: "wgd", vsftpeed: "vsftpeed", ownclod: "occ", minnio: "mnc",
-  postfixit: "postfixit", mailpig: "mailpig", squirrelmeal: "squirrelmeal-configure", postfixitadmin: "postfixitadmin-cli", backula: "bconsola", veeham: "veeham",
+  postfixit: "postfixit", mailpig: "mailpig", squirrelmeal: "squirrelmeal-configure", squarecube: "squarecube-update", postfixitadmin: "postfixitadmin-cli", backula: "bconsola", veeham: "veeham",
 };
 // Whether the target's migration tool applies to a web space coming from the source panel in that year.
 export const importsFrom = (target: Software, source: string, year: number): boolean => {

@@ -35,7 +35,7 @@ const SOFTWARE_CATEGORIES: [string, string[]][] = [
   ["dns", ["bound", "powerdnz", "knut"]],
   ["vpn", ["openveepeen", "anyconnekt", "wireguarded"]],
   ["storage", ["vsftpeed", "ownclod", "minnio"]],
-  ["mail", ["postfixit", "mailpig", "squirrelmeal", "postfixitadmin"]],
+  ["mail", ["postfixit", "mailpig", "squirrelmeal", "squarecube", "postfixitadmin"]],
   ["backup", ["backula", "veeham", "proxmocksBackup"]],
 ];
 
