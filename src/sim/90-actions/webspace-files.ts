@@ -54,7 +54,7 @@ export function createFile(s: GameState, workloadId: string, folder: string, nam
 function contents(f: WebFile): Record<string, WebFile> | null {
   if (f.pack) return f.pack;
   const a = f.archive ? archiveNamed(f.archive) : null;
-  return a && Object.fromEntries(a.entries.map(([p, mb]) => [p.replace(/\/$/, ""), { ...(p.endsWith("/") && { dir: true as const }), mb, at: 0 }]));
+  return a && Object.fromEntries(a.entries.map(([p, mb]) => [p.replace(/\/$/, ""), { ...(p.endsWith("/") && { dir: true as const }), mb, at: 0, from: a.name }]));
 }
 
 // Unpacks into the folder, overwriting what is there, as cPanel's Extract does; missing parent folders are created.

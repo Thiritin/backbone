@@ -45,7 +45,5 @@ export default {
   "cexit.v.copied": () => "Copiada",
   "cexit.v.step1": () => "Compra una clave de licencia en la página de precios.",
   "cexit.v.step1Trial": (p) => `Compra una clave de licencia en la página de precios o empieza con la prueba de ${p.days} días.`,
-  "cexit.v.step2": () => "Abre la consola de uno de tus hosts con panel y ve a Software y actualizaciones.",
-  "cexit.v.step3": () => "Instala ClientExit en uno de sus espacios web.",
   "cexit.v.step4": () => "Introduce tu clave en el admin de ClientExit, en Licencia.",
 } satisfies Dict;

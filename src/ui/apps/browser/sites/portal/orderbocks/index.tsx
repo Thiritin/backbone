@@ -7,7 +7,7 @@ import { ClientArea } from "../shared/ClientArea";
 import { VersionFooter } from "../shared/Licence";
 import { screenArgs, screenOf, type ScreenName } from "../shared/nav";
 import { StoreFront } from "../shared/StoreFront";
-import type { Skin, SkinProps } from "../skins";
+import type { LoginProps, Skin, SkinProps } from "../skins";
 import "../portal.css";
 import "./skin.css";
 
@@ -121,7 +121,7 @@ function SignIn({ title, user, onSubmit }: { title: string; user: ReactNode; onS
     <form className="ob-login" onSubmit={(e) => { e.preventDefault(); onSubmit(); }}>
       <h1>{title}</h1>
       {user}
-      <label>{t("shop-admin.password")}<input name="password" type="password" defaultValue="password" autoComplete="off" /></label>
+      <label>{t("shop-admin.password")}<input name="password" type="password" autoComplete="off" /></label>
       <button type="submit" className="btn primary">{t("shop-admin.login")}</button>
     </form>
   );
@@ -140,11 +140,11 @@ function Client(props: SkinProps) {
   );
 }
 
-function Login(props: SkinProps & { onLogin: () => void }) {
+function Login(props: SkinProps & LoginProps) {
   return (
     <Frame {...props} kind="admin" title={<Mark />}>
-      <SignIn title={t("orderbocks.adminTitle")} onSubmit={props.onLogin}
-        user={<label>{t("shop-admin.username")}<input name="username" defaultValue="admin" autoComplete="off" /></label>} />
+      <SignIn title={t("orderbocks.adminTitle")} onSubmit={() => props.onLogin(null)}
+        user={<label>{t("shop-admin.username")}<input name="username" autoComplete="off" /></label>} />
     </Frame>
   );
 }

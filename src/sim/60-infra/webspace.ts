@@ -12,8 +12,9 @@ import { mailboxHook } from "./netsvc-mail";
 
 // Paths are relative to the account's home, such as "public_html/wp-config.php". Sizes are MB, at is the hour last modified.
 // mode is the octal permission set by the player; archive names the catalog archive an uploaded file is, and pack holds
-// what an archive compressed in the panel contains, by path relative to the archive's folder.
-export interface WebFile { dir?: true; mb: number; at: number; mode?: string; archive?: string; pack?: Record<string, WebFile> }
+// what an archive compressed in the panel contains, by path relative to the archive's folder; from names the catalog archive
+// a file was extracted from, which is how a shop's files tell their release.
+export interface WebFile { dir?: true; mb: number; at: number; mode?: string; archive?: string; pack?: Record<string, WebFile>; from?: string }
 // cPanel creates public_html as 0750 so only the web server's group reads it; everything else gets the umask defaults.
 export const modeOf = (path: string, f: WebFile): string => f.mode ?? (path === "public_html" ? "0750" : f.dir ? "0755" : "0644");
 export type DomainKind = "main" | "addon" | "sub" | "parked";

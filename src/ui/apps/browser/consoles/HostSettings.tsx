@@ -10,10 +10,8 @@ import { CHANNELS, channelOf } from "../../../../sim/60-infra/channel";
 import { setChannel } from "../../../../sim/90-actions/software";
 import { setOversell } from "../../../../sim/90-actions/oversell";
 import { tiersOf } from "../../../../sim/10-catalog/licence-tiers";
-import { accountsOn, isLicensed, licenceExpired, panelMachine, panelStatus, tierOf, trialOf } from "../../../../sim/60-infra/licence";
-import { installShop } from "../../../../sim/90-actions/shop";
-import { shopById, SHOPS, type ShopId } from "../../../../sim/10-catalog/shops";
-import { shopOnSale } from "../../../../sim/10-catalog/shop-licences";
+import { accountsOn, licenceExpired, panelMachine, panelStatus, tierOf, trialOf } from "../../../../sim/60-infra/licence";
+import { shopById } from "../../../../sim/10-catalog/shops";
 import { deskById, deskReady, DESKS, type DeskId } from "../../../../sim/10-catalog/desks";
 import { installDesk, removeDesk } from "../../../../sim/90-actions/desk-install";
 import { DomainRecords } from "../sites/desks/DomainRecords";
@@ -89,24 +87,14 @@ export function LicenceFacts({ game, c }: { game: GameState; c: Cluster }) {
   );
 }
 
-// The shop system in a web space of a panel host: the release it runs here, and any shop on sale or keyed to install, with a key or on its trial.
+// The shop system's release when it runs in a web space of this panel host.
 export function ShopInstall({ game, c }: { game: GameState; c: Cluster }) {
-  const act = usePageAct(), [code, setCode] = useState("");
-  const shops = SHOPS.filter((v) => shopOnSale(v.id, game.hour) || game.licenses.some((k) => k.product === v.id));
-  const [pick, setPick] = useState<ShopId | null>(null), id = pick ?? game.shop.variant ?? shops[0]?.id;
-  if (c.kind !== "panel" || !game.unlocks.includes("shops") || !id) return null;
   const here = game.shop.install?.clusterId === c.id ? game.shop.install : null;
+  if (!here || !game.shop.variant) return null;
   return (
     <>
       <h4 className="cx-h">{t("host.shop")}</h4>
-      {here && game.shop.variant && <Facts facts={[{ label: shopById(game.shop.variant).name, value: here.version, num: true }]} />}
-      <div className="cx-inline">
-        <select aria-label={t("host.shop")} value={id} onChange={(e) => setPick(e.target.value as ShopId)}>
-          {shops.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
-        </select>
-        {isLicensed(id) && <label className="cx-field">{t("shop-admin.key")}<input value={code} autoComplete="off" onChange={(e) => setCode(e.target.value)} /></label>}
-        <button className="cx-btn primary" onClick={() => act(installShop, c.id, id, code.trim() || undefined).ok && setCode("")}>{t("host.installShop", { name: shopById(id).name })}</button>
-      </div>
+      <Facts facts={[{ label: shopById(game.shop.variant).name, value: here.version, num: true }]} />
     </>
   );
 }

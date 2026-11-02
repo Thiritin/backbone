@@ -22,7 +22,7 @@
 .gx a.gx-button { color: #fff; }
 .gx .gx-quiet, .gx a.gx-quiet { background: #fff; color: #888; border-color: #d1d1d1; }
 .gx .gx-danger { background: #c00; border-color: #800; }
-.gx input:not([type]), .gx input[type="password"] { display: block; width: 100%; box-sizing: border-box; font: 11px Verdana, sans-serif; padding: 2px 3px; border: 1px solid #a5abb9; }
+.gx input:not([type]), .gx input[type="password"] { display: block; width: 100%; box-sizing: border-box; font: 11px Verdana, sans-serif; padding: 2px 3px; border: 1px solid #a5abb9; background: #fff; color: #000; }
 
 .gx-login { background: #568ed8; border: 1px solid #1c449b; color: #fff; padding: 8px; width: 180px; }
 .gx-login h3 { color: #fff; }

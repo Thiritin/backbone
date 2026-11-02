@@ -9,6 +9,7 @@ import { shopById, type ShopId } from "../../../../../sim/10-catalog/shops";
 import type { GameState } from "../../../../../sim/50-state";
 import { bought } from "../../../../../sim/80-business/licences";
 import { buyShopLink } from "../../../../../sim/90-actions/shoplink";
+import { ShopDownload } from "./ShopDownload";
 import "./shopvendors.css";
 import { usePageAct } from "../../pageAct";
 
@@ -28,6 +29,10 @@ export function VendorPage({ game, id, className, mark }: VendorProps & { id: Sh
       <div className="sv-page">
         <header className="sv-head"><span className="sv-logo">{mark}</span><span className="sv-tag">{t(`shop-link.tagline.${id}`)}</span></header>
         <main className="sv-main">
+          <section className="sv-item">
+            <h2>{t("shop-downloads.download")}</h2>
+            <ShopDownload game={game} id={id} />
+          </section>
           {modules.map((m) => (
             <section key={m.id} className="sv-item">
               <h2>{t(`vendor-sites.module.${m.id}`)}</h2>

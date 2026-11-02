@@ -30,7 +30,7 @@ export const CONSEQUENCES: Record<SupplierId, { days: number; effect: Effect }[]
 export const PAY_DAYS = 14;
 export const THROTTLE = 0.25;
 // The bank code every supplier banks at; each supplier's account comes from its id.
-const SUPPLIER_CODE = "60050101";
+export const SUPPLIER_CODE = "60050101";
 
 // held keeps what a consequence took away (Pear apps, domain expiry dates) so payment gives it back.
 export interface Payable {

@@ -47,7 +47,7 @@ describe("prices over time", () => {
     expect(paidShare("office", 2030)).toBe(1);
     const s = readyGame(3);
     s.marketing = { ...s.marketing, lines: [...s.marketing.lines, "ssl"] };
-    s.shop = { ...s.shop, variant: "whmCache", readyAt: 0 };
+    s.shop = { ...s.shop, variant: "whmCache" };
     s.hour = jan(2018);
     expect(offerCertificate(s, hosting(s, "private", "a.de"), 1)).toBeNull();
     const ovId = offerCertificate(s, hosting(s, "office", "b.de"), 1), evId = offerCertificate(s, hosting(s, "enterprise", "c.de"), 1);
@@ -61,7 +61,7 @@ describe("prices over time", () => {
   it("end private customers' paid DV certificates on 1 January 2016", () => {
     const s = readyGame(4);
     s.marketing = { ...s.marketing, lines: [...s.marketing.lines, "ssl"] };
-    s.shop = { ...s.shop, variant: "whmCache", readyAt: 0 };
+    s.shop = { ...s.shop, variant: "whmCache" };
     const priv = offerCertificate(s, hosting(s, "private", "a.de"), 1)!, office = offerCertificate(s, hosting(s, "office", "b.de"), 1)!;
     s.hour = jan(2016);
     expect(certificatesTick(s)).toEqual([{ app: "Books", key: "event.certificatesFree", params: { n: 1 } }]);
