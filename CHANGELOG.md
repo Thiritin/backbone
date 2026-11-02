@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- VMwhere editions are now bought as licence keys on vmwhere.com and take effect once every host runs a key of that edition, and the shop only sells an edition once your team has learned its features.
 - Pear Mail can reply, reply to all, forward, delete, junk and move mail, and writes new messages in their own window with forms from the desktop attached.
 - Incident reports in Security can now be archived, which takes them off the incident list and out of the open count.
 - A new game no longer starts with three friends waiting for web hosting; the first order email now arrives within two weeks of your first web host going online.

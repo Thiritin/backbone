@@ -14,8 +14,8 @@ const game = (hour: number) => Object.assign(newGame(41), { hour, cash: 50_000 }
 
 describe("licence eras", () => {
   it("stops selling a perpetual licence on the day the vendor ends it", () => {
-    expect(offers("vmwhere", at(2023, 11))).toEqual([{ edition: null, fee: 600, kind: "once", period: undefined }]);
-    expect(offers("vmwhere", at(2023, 12))).toEqual([{ edition: null, fee: 96, kind: "core", period: "year" }]);
+    expect(offers("vmwhere", at(2023, 11)).map((o) => [o.edition, o.fee, o.kind])).toEqual([["essentials", 600, "once"], ["standard", 1200, "once"], ["enterprise", 2400, "once"]]);
+    expect(offers("vmwhere", at(2023, 12))[0]).toEqual({ edition: "essentials", fee: 96, kind: "core", period: "year" });
     expect(offers("windoors", at(2016, 9))[0].kind).toBe("once");
     expect(offers("windoors", at(2016, 10))[0].kind).toBe("core");
     expect(offers("directadmen", at(2019, 8)).map((o) => o.edition)).toEqual(["standard", null]);
@@ -43,7 +43,7 @@ describe("licence eras", () => {
 
   it("renews a yearly key a year on and bills a server at least the minimum cores", () => {
     const s = game(at(2024, 3, 15));
-    addToCart(s, "vmwhere", null);
+    addToCart(s, "vmwhere", "essentials");
     withCard(s);
     expect(checkout(s, "vmwhere.com", orderDetails(s, "card")).ok).toBe(true);
     const k = s.licenses[0];

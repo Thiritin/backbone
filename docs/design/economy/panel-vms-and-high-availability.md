@@ -141,7 +141,7 @@ A template is a stopped own VM on a VMwhere cluster kept to clone ready VMs from
 
 ### VMwhere editions, DRS and pools
 
-A new VMwhere cluster starts on Essentials; a cluster from an older save is on Enterprise. Moving up an edition costs the VMwhere licence fee per node times the step in levels (Essentials 1, Standard 2, Enterprise 4), paid once.
+A new VMwhere cluster starts on Essentials; a cluster from an older save is on Enterprise. The vSphear console sells nothing: vmwhere.com sells a key per host in each edition at the VMwhere licence fee times its level (Essentials 1, Standard 2, Enterprise 4), and a one-time key changes edition there for the price difference. The cluster runs the lowest edition among its hosts' keys, a host on its trial counting as Essentials. The shop refuses an edition until the team has learned the skills its features need: Monitoring for alarm thresholds and High availability for failover and DRS.
 
 | Edition | Adds |
 | --- | --- |

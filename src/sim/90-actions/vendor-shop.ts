@@ -6,7 +6,7 @@ import { cardDetails, cardReady, cardSpent } from "../46-finance/bank";
 import { orderError } from "./company";
 import { invoice } from "../46-finance/payables";
 import { updateKey } from "../60-infra/licence";
-import { cartOf, editionBlock, editionChange, lineMajor, lineOffer, sendKeys, vendorName, type CartLine, type KeyLine } from "../80-business/vendor-shop";
+import { cartOf, editionChange, lineBlock, lineMajor, lineOffer, sendKeys, vendorName, type CartLine, type KeyLine } from "../80-business/vendor-shop";
 import type { ActionResult } from "./hardware";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -17,6 +17,8 @@ const same = (a: LineId) => (b: CartLine) => a.product === b.product && a.editio
 export function addToCart(s: GameState, product: string, edition: string | null, from?: string): ActionResult {
   const id = { product, edition, from };
   if (!lineOffer(s, id)) return fail("error.notForSale");
+  const blocked = lineBlock(s, id);
+  if (blocked) return fail(blocked);
   const line = s.cart.find(same(id));
   s.cart = line ? s.cart.map((l) => (l === line ? { ...l, qty: l.qty + 1 } : l)) : [...s.cart, { product, edition, qty: 1, ...(from ? { from } : {}) }];
   return { ok: true };
@@ -27,7 +29,7 @@ export function changeEdition(s: GameState, keyId: string, edition: string): Act
   const k = s.licenses.find((x) => x.id === keyId);
   if (!k) return fail("error.unknownLicence");
   if (!editionChange(s, keyId, edition)) return fail("error.notForSale");
-  const blocked = editionBlock(s, keyId, edition);
+  const blocked = lineBlock(s, { product: k.product, edition, replaces: keyId });
   if (blocked) return fail(blocked);
   s.cart = [...s.cart.filter((l) => l.replaces !== keyId), { product: k.product, edition, qty: 1, replaces: keyId }];
   return { ok: true };
@@ -63,7 +65,8 @@ export function checkout(s: GameState, host: string, details: OrderDetails): Act
   if (!s.bank && total > 0) return fail("error.noBank");
   const bad = orderError(details);
   if (bad) return fail(bad);
-  if (lines.some((l) => l.replaces && editionBlock(s, l.replaces, l.edition))) return fail("error.licenceCap");
+  const blocked = lines.map((l) => lineBlock(s, l)).find(Boolean);
+  if (blocked) return fail(blocked);
   if (total > 0 && payment.kind === "card" && !cardReady(s)) return fail("error.noCard");
   if (total > 0 && payment.kind === "card" && !cardMatches(s, payment)) return fail("error.cardDeclined");
   if (total > 0 && payment.kind === "card" && cardSpent(s) + total > s.bank!.card!.limit) return fail("error.cardLimit");

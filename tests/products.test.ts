@@ -60,11 +60,11 @@ const clusterById = (s: GameState, id: string) => s.clusters.find((c) => c.id ==
 describe("platforms and licenses", () => {
   it("bills each cluster's subscription keys by their pricing model and keeps once keys free", () => {
     const { s, cluster } = setup("vmwhere");
-    // VMwhere is bought once until December 2023; then a yearly subscription bills each two-socket G1 node 32 cores at 96 euros.
+    // VMwhere is bought once until December 2023; then a yearly Essentials subscription bills each two-socket G1 node 32 cores at 96 euros.
     expect(licenseCost(s, clusterById(s, cluster))).toEqual({ panel: 0, platform: 0 });
     skipTo(s, 2024);
     expect(licenseCost(s, clusterById(s, cluster))).toEqual({ panel: 0, platform: 0 });
-    for (const k of s.licenses.filter((x) => x.product === "vmwhere")) updateKey(s, k.id, { kind: "core", covers: { kind: "term", until: s.hour + 1 }, renewsAt: s.hour + 1 });
+    for (const k of s.licenses.filter((x) => x.product === "vmwhere")) updateKey(s, k.id, { kind: "core", edition: "essentials", covers: { kind: "term", until: s.hour + 1 }, renewsAt: s.hour + 1 });
     expect(licenseCost(s, clusterById(s, cluster))).toEqual({ panel: 0, platform: 512 });
     tick(s);
     expect(s.ledger.filter((l) => l.key === "ledger.licenceRenewal").map((l) => [l.params.name, l.amount])).toEqual([["VMwhere", -3072], ["VMwhere", -3072]]);
