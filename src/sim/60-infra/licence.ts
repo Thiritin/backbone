@@ -201,15 +201,16 @@ export const accountsOn = (s: GameState, c: Cluster): number => {
     + (s.desk?.hosting.kind === "self" && s.desk.hosting.clusterId === c.id ? 1 : 0);
 };
 
-// The machine a panel host runs on: its VM or its one server.
+// The machine a panel host runs on: its VM or its one server; a hypervisor's first node. Key and status are those of the
+// cluster's panel or, without one, its hypervisor.
 export const panelMachine = (c: Cluster): string | null => c.vm ?? c.nodes[0]?.deviceId ?? null;
 export const panelKey = (s: GameState, c: Cluster): Licence | undefined => {
-  const m = panelMachine(c);
-  return m && c.panel ? assignedKey(s, m, c.panel) : undefined;
+  const m = panelMachine(c), id = c.panel ?? c.platform;
+  return m && id ? assignedKey(s, m, id) : undefined;
 };
 export const panelStatus = (s: GameState, c: Cluster): LicenceStatus | null => {
-  const m = panelMachine(c);
-  return m && c.panel ? licenceStatus(s, m, c.panel) : null;
+  const m = panelMachine(c), id = c.panel ?? c.platform;
+  return m && id ? licenceStatus(s, m, id) : null;
 };
 
 // The edition on the panel's key; a trial or an ended trial runs the top tier on sale.
@@ -225,8 +226,8 @@ export const licenceExpired = (s: GameState, c: Cluster): boolean => {
   return !!id && isLicensed(id) && (c.vm ? [c.vm] : c.nodes.map((n) => n.deviceId)).some((m) => ["ended", "lapsed", "unlicensed"].includes(licenceStatus(s, m, id) ?? ""));
 };
 
-// A licensed panel whose licence ran out shows only its licence page; its sites keep serving.
-export const panelLocked = (s: GameState, c: Cluster): boolean => !!c.panel && isLicensed(c.panel) && licenceExpired(s, c);
+// Licensed software whose licence ran out shows only its licence page in its console; what it serves keeps running.
+export const panelLocked = (s: GameState, c: Cluster): boolean => licenceExpired(s, c);
 
 // The error that refuses one more account, VM or service on the cluster, or null.
 export function licenceBlock(s: GameState, c: Cluster): string | null {

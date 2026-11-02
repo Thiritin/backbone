@@ -41,7 +41,8 @@ describe("licence page tiers", () => {
     expect(activateLicence(s, m, "pleskit", buyKey(s, "pleskit", "webAdmin").key).ok).toBe(true);
     const html = view();
     expect(html).toContain("0 of 10");
-    expect(html).toContain("Never");
+    expect(html).toContain("Active");
+    expect(html).toContain("Renews");
   });
 
   it("shows the red notice once the trial is over", () => {

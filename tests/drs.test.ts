@@ -7,7 +7,7 @@ import { tick } from "../src/sim/88-tick/tick";
 import { yearOf } from "../src/sim/00-core/time";
 import { sizeSpec } from "../src/sim/10-catalog/products";
 import { addCustomer } from "../src/sim/90-actions/customers";
-import { createVm, provisionService, setBalancer, setHa } from "../src/sim/90-actions/clusters";
+import { createVm, provisionService, setHa } from "../src/sim/90-actions/clusters";
 import { connect } from "../src/sim/90-actions/hardware";
 import { applyRec, enterMaintenance, exitMaintenance, setDrs } from "../src/sim/90-actions/vmwhere";
 import { buyDevice, hypervisor, skipTo, vmwhereKeys, withServer } from "./fixtures";
@@ -17,7 +17,7 @@ const err = (r: { ok: boolean; error?: string }) => (r.ok ? undefined : r.error)
 const cl = (s: GameState, id: string) => s.clusters.find((c) => c.id === id)!;
 const SMALL = { vcpu: 1, ramGb: 1, diskGb: 20 };
 
-// A two-node VMwhere cluster with live migration and the balancer, on the given edition.
+// A two-node VMwhere cluster with live migration, on the given edition.
 function setup(edition = "enterprise") {
   const s = { ...withServer(newGame(3)), cash: 1e6 };
   skipTo(s, 2010);
@@ -31,7 +31,6 @@ function setup(edition = "enterprise") {
   s.clusters = s.clusters.map((c) => (c.id === id ? { ...c, licence: { tier: "essentials", trialUntil: null, lapsedAt: null } } : c));
   if (edition !== "essentials") vmwhereKeys(s, id, edition);
   setHa(s, id, "live", true);
-  setBalancer(s, id, true);
   return { s, id, second: r.id! };
 }
 // Books customer VPSs on the first node until it runs hot.

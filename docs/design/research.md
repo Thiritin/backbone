@@ -198,7 +198,7 @@ Auto-balancing needs live migration, and live migration needs a hypervisor that 
 
 ### Balancing is an edition
 
-Auto-balancing also needs a hypervisor that balances. VMwhere does it with its Enterprise Plus edition and HyperVee with SysCenter VMM, each billed per server a month. Proxmocks and OpenVeeZee never balance. OpenStash balances with Watchman for free, once your team has learned cloud orchestration.
+Auto-balancing also needs a hypervisor that balances. VMwhere balances with DRS, which its Enterprise edition runs; the edition is bought as a key on vmwhere.com. Proxmocks, OpenVeeZee and HyperVee never balance. OpenStash balances with Watchman for free, once your team has learned cloud orchestration.
 
 ## Cloud orchestration
 

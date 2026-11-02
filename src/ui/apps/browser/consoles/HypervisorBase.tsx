@@ -1,8 +1,8 @@
 // docs/design/software.md, section 9: what every hypervisor console offers, as blocks each product lays out its own way.
 import { Fragment, useState, type ReactNode } from "react";
 import { euroCents } from "../../../../sim/00-core/money";
-import { formatClock, yearOf } from "../../../../sim/00-core/time";
-import { balancerIn, SOFTWARE, softwareById } from "../../../../sim/10-catalog/platforms";
+import { formatClock } from "../../../../sim/00-core/time";
+import { SOFTWARE, softwareById } from "../../../../sim/10-catalog/platforms";
 import type { Resources } from "../../../../sim/10-catalog/products";
 import { HA_SKILL } from "../../../../sim/10-catalog/research";
 import { APP_SUITE_FEE, imageParts, isoName, licensingAt, serverOsById, type OsImage } from "../../../../sim/10-catalog/server-os";
@@ -17,7 +17,7 @@ import { shownNode, shownWorkload } from "../../../../sim/60-infra/usage";
 import { consoleTitle, type ConsoleFeatures } from "../../../../sim/80-business/consoles";
 import { setMedia } from "../../../../sim/90-actions/console";
 import { setLimits } from "../../../../sim/90-actions/limits";
-import { addNode, cordon, createVm, deleteVm, drain, evacuate, uncordon, PANEL_VM_SIZE, removeNode, resizeVm, setBalancer, setHa } from "../../../../sim/90-actions/clusters";
+import { addNode, cordon, createVm, deleteVm, drain, evacuate, uncordon, PANEL_VM_SIZE, removeNode, resizeVm, setHa } from "../../../../sim/90-actions/clusters";
 import { mountableImages } from "../../../../sim/90-actions/media";
 import { joinableServers } from "../../../../sim/90-actions/software";
 import { buyAppSuite, cancelAppSuite, deployFromSuite } from "../../../../sim/90-actions/suite";
@@ -277,20 +277,6 @@ export function AppSuiteTile({ c, className = "cx-suite" }: { c: Cluster; classN
   );
 }
 
-// The paid balancer edition of the cluster's hypervisor: bought and cancelled per cluster, billed per node.
-export function BalancerTile({ game, c, className = "cx-suite" }: { game: GameState; c: Cluster; className?: string }) {
-  const act = usePageAct(), b = c.platform ? balancerIn(softwareById(c.platform), yearOf(game.hour)) : null;
-  if (!b || b.fee === 0) return null;
-  return (
-    <div className={className}>
-      <b>{b.name}</b>
-      <span className="num">{t("browser-consoles-1.feePerNodeMonth", { fee: euroCents(b.fee) })}</span>
-      <span>{c.balancer ? t("browser-consoles-1.active") : t("browser-consoles-1.notPurchased")}</span>
-      <button className={c.balancer ? "cx-btn" : "cx-btn primary"} onClick={() => act(setBalancer, c.id, !c.balancer)}>{c.balancer ? t("browser-consoles-1.cancelSubscription") : t("browser-consoles-1.buy")}</button>
-    </div>
-  );
-}
-
 // Cordon, drain, evacuate and uncordon one node of this software installation; other software on the server is untouched.
 export function NodeActions({ c, n, className }: { c: Cluster; n: ClusterNode; className: string }) {
   const act = usePageAct();
@@ -345,7 +331,6 @@ export function NodeList({ game, c, f, className = "cx-table" }: { game: GameSta
           ))}
         </div>
       )}
-      {ha && <BalancerTile game={game} c={c} />}
     </>
   );
 }

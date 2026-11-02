@@ -5,13 +5,15 @@ import { goggleToken, verificationAt } from "../10-catalog/mail-consumer";
 import { mailPlan, mxSetAt } from "../10-catalog/mail-providers";
 import { companyDomain } from "../30-customers/domains";
 import { checkMailLogin, mailboxInUse, removeMailbox } from "../42-mail/accounts";
-import type { MailAccount, MailTenant } from "../42-mail/types";
+import { FETCH_BATCH, runFetch } from "../42-mail/fetch";
+import type { MailAccount, MailTenant, Message } from "../42-mail/types";
 import type { GameState } from "../50-state";
 import { recordAt } from "../60-infra/company-zone";
 import type { ActionResult } from "./hardware";
 import { createTenant, setTenantLock, setTenantPlan, verifyTenant } from "./mail";
 import { removeCompanyRecord, setCompanyRecord } from "./domains";
-import { createMailAccount } from "./mailbox";
+import { addAlias, createMailAccount, deleteFetchRule, deleteMailAccount, saveFetchRule } from "./mailbox";
+import { createMailFolder } from "./mailmsg";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 const tenantOn = (s: GameState, id: string, host: string): MailTenant | undefined => s.mail.tenants.find((t) => t.id === id && t.host === host);
@@ -123,4 +125,67 @@ export function acceptGmixOffer(s: GameState, tenantId: string): ActionResult {
   const until = nextMonthStart(nextMonthStart(nextMonthStart(s.hour)));
   withTenant(s, tenantId, (x) => ({ ...withoutNext(x), offerUntil: until }));
   return { ok: true, id: tenantId };
+}
+
+const userOf = (s: GameState, id: string): { a: MailAccount; t: MailTenant } | null => {
+  const a = s.mail.accounts.find((x) => x.id === id && x.closedAt === null), t = a && tenantOn(s, a.tenant, "goggle");
+  return a && t ? { a, t } : null;
+};
+
+// The tenant's administrator moves to another user, who signs in to the Admin console from then on.
+export function makeGoggleAdmin(s: GameState, id: string): ActionResult {
+  const u = userOf(s, id);
+  if (!u) return fail("error.mailUnknown");
+  if (u.a.suspended) return fail("error.mailSuspended");
+  withTenant(s, u.t.id, (x) => ({ ...x, admin: id }));
+  return { ok: true, id };
+}
+
+export const GOGGLE_TRANSFER_FROM = 2010;
+// Deletes a user. With a receiver, the address can live on as the receiver's alias, and from 2010 the mail moves to the
+// receiver under a label named after the old address; without a transfer the mail goes with the mailbox.
+export function deleteGoggleUser(s: GameState, id: string, o: { to: string | null; alias: boolean; transfer: boolean }): ActionResult {
+  const u = userOf(s, id), to = o.to ? userOf(s, o.to) : null;
+  if (!u) return fail("error.mailUnknown");
+  if (u.a.id === u.t.admin) return fail("error.mailAdmin");
+  if ((o.alias || o.transfer) && (!to || to.t.id !== u.t.id || to.a.id === id)) return fail("error.mailUnknown");
+  if (o.transfer && yearOf(s.hour) < GOGGLE_TRANSFER_FROM) return fail("error.mailProviderLater");
+  const before = s.mail, address = `${u.a.local}@${u.a.domain}`;
+  const kept = (s.mail.msgs[id] ?? []).filter((m) => m.folder !== "trash" && m.folder !== "junk" && !m.draft);
+  const r = deleteMailAccount(s, id);
+  if (!r.ok) return r;
+  if (o.transfer && to) {
+    const label = createMailFolder(s, to.a.id, address);
+    const moved: Message[] = kept.map(({ labels: _l, prev: _p, ...m }) => ({ ...m, folder: "archive", ...(label.ok && { labels: [label.id!] }) }));
+    s.mail = { ...s.mail, msgs: { ...s.mail.msgs, [to.a.id]: [...(s.mail.msgs[to.a.id] ?? []), ...moved] } };
+  }
+  if (o.alias && to) {
+    const a = addAlias(s, to.a.id, u.a.local);
+    if (!a.ok) {
+      s.mail = before;
+      return a;
+    }
+  }
+  return { ok: true };
+}
+
+export const GOGGLE_MIGRATION_FROM = 2008;
+export const GOGGLE_POP_MIGRATION_FROM = 2011;
+// Data migration: the source mailbox's Inbox copied into a user's mailbox once, over IMAP or, from 2011, POP.
+export function migrateMailbox(s: GameState, targetId: string, o: { source: string; password: string; proto: "imap" | "pop" }): ActionResult {
+  const u = userOf(s, targetId), src = s.mail.accounts.find((a) => `${a.local}@${a.domain}` === o.source.trim().toLowerCase());
+  const year = yearOf(s.hour);
+  if (!u) return fail("error.mailUnknown");
+  if (year < GOGGLE_MIGRATION_FROM || (o.proto === "pop" && year < GOGGLE_POP_MIGRATION_FROM)) return fail("error.mailProviderLater");
+  if (!src) return fail("error.mailLogin");
+  // A continuing rule from the same source is set aside for the run and put back afterwards.
+  const kept = s.mail.fetch.find((x) => x.accountId === targetId && x.source === src.id);
+  if (kept) s.mail = { ...s.mail, fetch: s.mail.fetch.filter((x) => x !== kept) };
+  const r = saveFetchRule(s, targetId, { source: src.id, proto: o.proto, password: o.password, leave: true });
+  if (r.ok) while (runFetch(s, s.mail.fetch.find((x) => x.id === r.id)!) === FETCH_BATCH);
+  const err = r.ok ? s.mail.fetch.find((x) => x.id === r.id)!.err : null;
+  if (r.ok) deleteFetchRule(s, r.id!);
+  if (kept) s.mail = { ...s.mail, fetch: [...s.mail.fetch, kept] };
+  if (!r.ok) return r;
+  return err ? fail(err) : { ok: true, id: targetId };
 }

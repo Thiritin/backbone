@@ -78,5 +78,7 @@ export function stepOf(s: GameState, id: StepId): Step {
       return { title: t("guide.step.hire"), text: t("apps.guide.step.hire"), app: "Staff" };
     case "study":
       return { title: t("guide.step.study"), text: t("apps.guide.step.study"), app: "Market" };
+    case "pearMail":
+      return { title: t("guide.step.pearMail"), text: t("apps.guide.step.pearMail"), app: "Pear Mail", focus: { kind: "addAccount", id: "" } };
   }
 }

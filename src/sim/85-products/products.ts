@@ -4,11 +4,11 @@ import { editionFactor, POOL_LOW_PERF, sharesOf, syncEdition } from "../60-infra
 import { hourOf, isMonthStart, monthIndexOf, nowHours, yearOf } from "../00-core/time";
 import { cpuModel, isFresh, skuOf, topBoost } from "../10-catalog/cpus";
 import { genOf, modelById } from "../10-catalog/hardware";
-import { balancerIn, isService, softwareById } from "../10-catalog/platforms";
+import { isService, softwareById } from "../10-catalog/platforms";
 import { serviceFloor, slowTolerance } from "../10-catalog/usage";
 import { channelOf, EDGE_HOWTO } from "../60-infra/channel";
-import { accountsOn, keyTiers, shopMachine, assignedKey, extendKey, productOf, panelMachine, startTrial, tiersOnSale, updateKey, yearly } from "../60-infra/licence";
-import { LAPSE_GRACE_DAYS, licenceIndex, topTier, type LicenceTier } from "../10-catalog/licence-tiers";
+import { accountsOn, keyTiers, shopMachine, assignedKey, extendKey, isLicensed, productOf, panelMachine, startTrial, tiersOnSale, updateKey, yearly } from "../60-infra/licence";
+import { LAPSE_GRACE_DAYS, licenceIndex, type LicenceTier } from "../10-catalog/licence-tiers";
 import { APP_SUITE_FEE, eraAt } from "../10-catalog/server-os";
 import { homeLineById } from "../20-world/datacenters";
 import type { Customer, Product } from "../30-customers/customers";
@@ -67,17 +67,14 @@ export const tierFee = (s: GameState, c: Cluster, tier: LicenceTier): number =>
 const isServer = (m: Device | Workload): m is Device => "components" in m;
 const machinesOf = (s: GameState, c: Cluster) => (c.vm ? s.workloads.filter((w) => w.id === c.vm) : s.devices.filter((d) => c.nodes.some((n) => n.deviceId === d.id)));
 
-// The monthly license bill of a cluster: the renewing keys on its machines, the panel's apart; the other keys, the App
-// Suite and the balancer count under platform.
-// A bought balancer edition is billed per node.
-export const balancerFee = (s: GameState, c: Cluster): number =>
-  (c.balancer && c.platform ? balancerIn(softwareById(c.platform), yearOf(s.hour))?.fee ?? 0 : 0) * c.nodes.length;
+// The monthly license bill of a cluster: the renewing keys on its machines, the panel's apart; the other keys and the App
+// Suite count under platform.
 
 export function licenseCost(s: GameState, c: Cluster): { panel: number; platform: number } {
   const machines = new Set(machinesOf(s, c).map((m) => m.id));
   const keys = s.licenses.filter((k) => k.machineId !== null && machines.has(k.machineId) && k.renewsAt !== null);
   const sum = (ks: Licence[]) => Math.round(ks.reduce((n, k) => n + keyFee(s, k) / (yearly(k.product, k.edition, s.hour) ? 12 : 1), 0) * 100) / 100;
-  const extra = (c.appSuite ? APP_SUITE_FEE : 0) + balancerFee(s, c);
+  const extra = c.appSuite ? APP_SUITE_FEE : 0;
   return { panel: sum(keys.filter((k) => k.product === c.panel)), platform: sum(keys.filter((k) => k.product !== c.panel)) + extra };
 }
 
@@ -125,8 +122,8 @@ function finishSwitches(s: GameState, events: SimEvent[]) {
   for (const c of s.clusters) {
     if (!c.switching || c.switching.doneAt > s.hour) continue;
     const { kind, to } = c.switching, fresh = !(kind === "cloud" ? c.platform : c.panel);
-    // A licensed panel installed without a key runs its trial, once per machine.
-    const host = kind === "panel" && topTier(to) ? panelMachine(c) : null;
+    // Licensed software installed without a key runs its trial, once per machine, and opens on its licence page.
+    const host = isLicensed(to) ? panelMachine(c) : null;
     if (host && !assignedKey(s, host, to)) startTrial(s, host, to);
     const licence = kind === "cloud" && to === "vmwhere" && fresh ? { tier: "essentials", trialUntil: null, lapsedAt: null } : undefined;
     s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, switching: null, version: yearOf(s.hour), updatedAt: s.hour, ...(kind === "cloud" ? { platform: to, ...(licence && { licence }) } : { panel: to }), ...(fresh && host && { setupPending: true }), ...(fresh ? { channel: "stable" as const } : {}) } : x));
@@ -264,7 +261,6 @@ function billLicenses(s: GameState) {
   const line = (key: string, params: Record<string, string | number>, amount: number) => ({ hour: s.hour, category: "licenses", key, params, amount: -amount });
   const lines = s.clusters.flatMap((c) => [
     ...(c.appSuite ? [line("ledger.appSuite", { cluster: c.name }, APP_SUITE_FEE)] : []),
-    ...(balancerFee(s, c) > 0 ? [line("ledger.balancer", { cluster: c.name, name: balancerIn(softwareById(c.platform!), yearOf(s.hour))!.name }, balancerFee(s, c))] : []),
   ]);
   // ponytail: sold, scrapped and deleted machines release their keys here, at the month's bill.
   const held = new Set([...s.devices, ...s.workloads, ...s.ops.seized.map((x) => x.device), ...(shopMachine(s) ? [shopMachine(s)!] : [])].map((m) => m.id));

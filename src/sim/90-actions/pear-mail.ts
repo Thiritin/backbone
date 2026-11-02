@@ -3,8 +3,10 @@ import { checkAccount, clientError } from "../43-pear-mail/check";
 import { nowMinutes } from "../00-core/time";
 import { drop } from "../42-mail/deliver";
 import { SYS_FOLDERS } from "../42-mail/model";
-import type { Message } from "../42-mail/types";
-import { localFolder } from "../43-pear-mail/state";
+import { mailBuild, mailHas } from "../10-catalog/pear-mail";
+import type { Folder, Message } from "../42-mail/types";
+import { autoServers, CHECK_EVERY, draftClient, type AccountInput } from "../43-pear-mail/setup";
+import { localFolder, MY_PEAR, PEAR, type ClientAccount } from "../43-pear-mail/state";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
 import { discardDraft, saveDraft, sendMessage, type Draft } from "./mailmsg";
@@ -26,8 +28,67 @@ export function setClientPassword(s: GameState, clientId: string, password: stri
   const { authFailed: _a, ...rest } = c, next = { ...rest, password };
   s.pearMail = { ...s.pearMail, accounts: s.pearMail.accounts.map((x) => (x.id === clientId ? next : x)) };
   const error = clientError(s, next);
-  checkAccount(s, clientId);
+  checkAccount(s, clientId, false);
   return error ? fail(error) : { ok: true };
+}
+
+// The assistant's last step: stores the account and runs its first check. An account whose check fails is kept with its
+// error, as Continue does in the real assistant.
+export function setupClientAccount(s: GameState, i: AccountInput & { online?: boolean }): ActionResult {
+  const address = i.address.trim().toLowerCase();
+  if (!address.includes("@")) return fail("error.mailNoBox");
+  if (s.pearMail.accounts.some((c) => c.address === address)) return fail("error.mailDuplicate");
+  let input: AccountInput = i;
+  if (!i.host?.trim()) {
+    if (!mailHas(mailBuild(s.os, s.hour), "autoSetup")) return fail("error.mailFeature");
+    const found = autoServers(s, address);
+    if (!found) return fail("error.mailServer");
+    input = { ...i, protocol: found.protocol, host: undefined, smtp: undefined };
+  }
+  const id = `cl${s.nextId++}`;
+  s.pearMail = { ...s.pearMail, accounts: [...s.pearMail.accounts, { ...draftClient(s, id, input), enabled: i.online ?? true }] };
+  checkAccount(s, id);
+  return { ok: true, id };
+}
+
+type AccountEdit = Partial<Pick<ClientAccount, "description" | "fullName" | "password" | "protocol" | "smtp" | "checkEvery" | "popRemove">> & { host?: string | null };
+
+// Account Information in Preferences: a changed password or server clears a refused password and checks again.
+export function editClientAccount(s: GameState, clientId: string, e: AccountEdit): ActionResult {
+  const c = client(s, clientId);
+  if (!c) return fail("error.mailUnknown");
+  if (e.checkEvery !== undefined && e.checkEvery !== 0 && !CHECK_EVERY.includes(e.checkEvery)) return fail("error.mailUnknown");
+  const { host, ...rest } = e, { authFailed: _a, ...kept } = c;
+  const server = host === undefined ? c.server : host?.trim() ? { host: host.trim().toLowerCase(), port: (e.protocol ?? c.protocol) === "imap" ? 993 : 995, tls: true } : null;
+  s.pearMail = { ...s.pearMail, accounts: s.pearMail.accounts.map((x) => (x.id === clientId ? { ...kept, ...rest, server } : x)) };
+  checkAccount(s, clientId, false);
+  return { ok: true };
+}
+
+// A disabled account is not checked and leaves the unified mailboxes.
+export function setAccountEnabled(s: GameState, clientId: string, on: boolean): ActionResult {
+  if (!client(s, clientId)) return fail("error.mailUnknown");
+  s.pearMail = { ...s.pearMail, accounts: s.pearMail.accounts.map((x) => (x.id === clientId ? { ...x, enabled: on } : x)) };
+  return { ok: true };
+}
+
+// The server is untouched. A POP account's downloads go with it unless keepCopy files them in an On My Pear mailbox
+// named after it.
+export function removeClientAccount(s: GameState, clientId: string, keepCopy: boolean): ActionResult {
+  const c = client(s, clientId);
+  if (!c) return fail("error.mailUnknown");
+  const own = (m: Message) => m.folder.startsWith(localFolder(clientId, ""));
+  let { folders, messages } = s.pearMail.local;
+  if (keepCopy && messages.some(own)) {
+    const f: Folder = { id: `pf${s.nextId++}`, accountId: PEAR, name: c.description, parent: null };
+    folders = [...folders, f];
+    messages = messages.map((m) => (own(m) ? { ...m, folder: localFolder(MY_PEAR, f.id) } : m));
+  } else messages = messages.filter((m) => !own(m));
+  s.pearMail = {
+    ...s.pearMail, accounts: s.pearMail.accounts.filter((x) => x.id !== clientId), rules: s.pearMail.rules.filter((r) => r.clientId !== clientId),
+    local: { folders, messages },
+  };
+  return { ok: true };
 }
 
 export function dismissPearWelcome(s: GameState): ActionResult {

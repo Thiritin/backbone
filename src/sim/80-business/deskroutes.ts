@@ -30,7 +30,7 @@ const PAGES = {
   freescoot: {
     dashboard: "/", login: "/login", mailbox: "/mailbox/<id>", folder: "/mailbox/<id>/<folder>", conversation: "/conversation/<n>",
     customers: "/customers", search: "/search", reports: "/reports", settings: "/app-settings/<section>", mailboxes: "/mailboxes",
-    mailboxSettings: "/mailbox/settings/<id>", connection: "/mailbox/connection-settings/<id>/<section>", autoReply: "/mailbox/auto-reply/<id>",
+    mailboxSettings: "/mailbox/settings/<id>", connection: "/mailbox/connection-settings/<id>/<section>", autoReply: "/mailbox/auto-reply/<id>", permissions: "/mailbox/permissions/<id>",
     users: "/users", modules: "/modules", logs: "/logs/<log>", system: "/system",
   },
 } as const satisfies Record<DeskId, Record<string, string>>;

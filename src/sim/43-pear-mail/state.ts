@@ -43,6 +43,8 @@ export interface PearMailState {
 export const ACTIVITY_KEEP = 30;
 export const PEAR = "pear";
 export const localFolder = (clientId: string, folder: string): string => `${PEAR}:${clientId}:${folder}`;
+// The client id of On My Pear mailboxes: their mail sits in localFolder(MY_PEAR, folder id).
+export const MY_PEAR = "my";
 
 export const newPearMail = (): PearMailState => ({ accounts: [], rules: [], local: { folders: [], messages: [] }, activity: [], welcomed: false, seenBuild: "" });
 

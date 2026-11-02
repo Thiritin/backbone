@@ -15,6 +15,8 @@ import { AlarmList, ConsoleThumb, MediaMenu, NodeList, ResourceBars, SizeFields,
 import { Actions, Backups, eraAt, Facts, LoginForm, looks, useSoftware, type PanelAction, type PanelProps } from "../PanelBase";
 import { parseCreate } from "../../../../../sim/80-business/consoles";
 import { PackagesScreen } from "../PackageForms";
+import { LicenceFacts } from "../HostSettings";
+import { KeyEntry } from "../Readouts";
 import { Replica } from "./Replica";
 import { Switches } from "./Switches";
 import { setVmSwitch } from "../../../../../sim/90-actions/vswitch";
@@ -205,6 +207,8 @@ export function HyperVee(p: PanelProps) {
                 <Facts facts={sw.facts} />
                 <Actions actions={sw.actions}>{sw.note && <span className="cx-note">{sw.note}</span>}</Actions>
                 {sw.panel}
+                <LicenceFacts game={game} c={c} />
+                <KeyEntry game={game} c={c} />
                 {f.backups && <Backups game={game} c={c} />}
               </div>
             </>

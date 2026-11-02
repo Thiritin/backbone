@@ -10,7 +10,7 @@ import { supportOn } from "../../../../../../sim/60-infra/lifecycle";
 import { shopCount, shopUpdate, shopUpdatesFee } from "../../../../../../sim/80-business/shop";
 import { hostOf, upgradeOffer } from "../../../../../../sim/80-business/vendor-shop";
 import { shopBlock, shopTier } from "../../../../../../sim/80-business/website";
-import { activateLicence } from "../../../../../../sim/90-actions/licence";
+import { activateLicence, removeLicence } from "../../../../../../sim/90-actions/licence";
 import { renewShopUpdates, updateShop, upgradeShop } from "../../../../../../sim/90-actions/shop";
 import { formatDay } from "../../../../billing/format";
 import { useFieldAct, usePageAct } from "../../../pageAct";
@@ -35,12 +35,12 @@ export function LicenceScreen({ game }: Props) {
       <dl className="pt-fields">
         <dt>{t("host.edition")}</dt><dd>{edition}</dd>
         <dt>{t("shop-admin.status")}</dt><dd>{state}</dd>
-        {k && <><dt>{t("shop-admin.key")}</dt><dd className="num">{k.key}</dd></>}
+        {k && <><dt>{t("shop-admin.key")}</dt><dd><span className="num">{k.key}</span> <button type="button" className="btn" onClick={() => act(removeLicence, SHOP_MACHINE, id)}>{t("host.removeKey")}</button></dd></>}
         {caps && <><dt>{t(caps === "servers" ? "shop-admin.capServers" : "shop-admin.capClients")}</dt>
           <dd className="num">{tier?.cap == null ? t("host.unlimited", { n: shopCount(game) }) : t("host.of", { n: shopCount(game), cap: tier.cap })}</dd></>}
         {k?.updatesUntil !== undefined && <><dt>{t("shop-admin.updatesUntil")}</dt><dd className="num">{formatDay(k.updatesUntil)}</dd></>}
       </dl>
-      {status !== null && (
+      {status !== null && !k && (
         <form className="pt-key" onSubmit={(e) => { e.preventDefault(); save(); }}>
           <label>{t("shop-admin.key")}<input name="key" value={code} autoComplete="off" onChange={(e) => setCode(e.target.value)} /></label>
           <button type="submit" className="btn primary">{t("shop-admin.saveKey")}</button>
@@ -56,7 +56,9 @@ export function UpdatesScreen({ game, browse }: Props) {
   const k = assignedKey(game, SHOP_MACHINE, id), update = shopUpdate(game), next = nextMajor(id, version, game.hour);
   const fee = k?.updatesUntil !== undefined ? shopUpdatesFee(game, k) : undefined, host = hostOf(id);
   const price = next && k && !covers(k, next.version) && k.covers.kind === "version" ? upgradeOffer(game, id, k.covers.major)?.fee : undefined;
-  const upgrade = () => (host && browse ? browse(`${host}/account`) : act(upgradeShop));
+  // Keys and updates are bought in My account on the vendor's site; a vendor without a site sells them here. An upgrade the
+  // held key covers runs here.
+  const account = host ? () => browse?.(`${host}/account`) : undefined;
   return (
     <div className="pt-screen pt-updates">
       {supportOn(game, SHOP_MACHINE, id) === "securityEnded" && <p className="pt-error" role="alert">{t("shop-admin.securityEnded")}</p>}
@@ -65,9 +67,15 @@ export function UpdatesScreen({ game, browse }: Props) {
         <dt>{t("shop-admin.available")}</dt>
         <dd><span className="num">{update?.version ?? t("shop-admin.none")}</span> <button type="button" className="btn" disabled={!update} onClick={() => act(updateShop)}>{t("shop-admin.installUpdate")}</button></dd>
         {k?.updatesUntil !== undefined && <><dt>{t("shop-admin.updatesUntil")}</dt>
-          <dd><span className="num">{formatDay(k.updatesUntil)}</span> {fee !== undefined && <button type="button" className="btn" onClick={() => act(renewShopUpdates)}>{t("shop-admin.renewUpdates", { fee: euroPrice(fee) })}</button>}</dd></>}
+          <dd><span className="num">{formatDay(k.updatesUntil)}</span> {fee !== undefined && (account
+            ? <button type="button" className="btn" onClick={account}>{t("vendor-shop.myAccount")}</button>
+            : <button type="button" className="btn" onClick={() => act(renewShopUpdates)}>{t("shop-admin.renewUpdates", { fee: euroPrice(fee) })}</button>)}</dd></>}
         {next && <><dt>{t("shop-admin.nextMajor")}</dt>
-          <dd><span className="num">{next.version}</span> <button type="button" className="btn" onClick={upgrade}>{price === undefined || host ? t("shop-admin.upgrade") : t("shop-admin.upgradeFor", { fee: euroPrice(price) })}</button></dd></>}
+          <dd><span className="num">{next.version}</span> {price === undefined
+            ? <button type="button" className="btn" onClick={() => act(upgradeShop)}>{t("shop-admin.upgrade")}</button>
+            : account
+              ? <button type="button" className="btn" onClick={account}>{t("vendor-shop.myAccount")}</button>
+              : <button type="button" className="btn" onClick={() => act(upgradeShop)}>{t("shop-admin.upgradeFor", { fee: euroPrice(price) })}</button>}</dd></>}
       </dl>
     </div>
   );

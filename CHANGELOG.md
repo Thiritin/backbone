@@ -6,9 +6,14 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - Newer CPUs are faster per core, so the same customers load an old server more than a new one, and old servers get busier as software grows.
 - Shops, game servers and other demanding customers now notice when their server's CPU is too slow for them, even when it is idle.
+- Goggle has an Admin console in the look of each era, where you add users, aliases and groups, route unknown addresses, migrate old mailboxes, see the bill and accept the 2022 upgrade before the free edition locks.
+- Pear Mail adds your mail accounts with an Add Account assistant that asks for the server names, sets them up automatically from Pear Mail 3, tells you what went wrong when a server refuses, and then checks each account for new mail in the background.
+- VMwhere balances with DRS once its hosts run an Enterprise key, without a separate Enterprise Plus subscription, and HyperVee no longer offers SysCenter VMM.
+- Every licensed console shows its edition, licence status, renewal date and key with Remove, opens on its licence page at the first sign-in during a trial, and sends you to the vendor's website for upgrades and update renewals.
 - Every stack in a storage room now has a Ship button that sends the units to another of your sites, such as from the basement to Frankfurt.
 - Customers no longer send requests that need a company older than a year or better reviews than you have.
 - The CPU overcommit warning on hypervisor hosts now fires at 8 vCPUs per core instead of 2.
+- FreeScoot now runs at your help desk address with shared mailboxes and their folders, conversations you can assign, note, merge and close, mailbox connection, auto reply and permission settings, users, a fetch log, system status and a list of paid modules.
 - Upgrade requests no longer mark the current server as full.
 - Storage in Locations shows stored hardware as a grid of cards and sells several units of a model at once.
 - The Flyerlarm order table no longer runs past the right edge of its box, and the Locations storage tab is called Lager in German.
