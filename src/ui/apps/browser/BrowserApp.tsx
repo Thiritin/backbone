@@ -130,7 +130,7 @@ function titleOf(game: GameState, r: Resolved): string {
     case "books": return booksVendor(p.id)!.program;
     case "shopVendor": return shopById(p.id).name;
     case "deskVendor": case "desk": return deskById(p.id)!.name;
-    case "mailProvider": return p.id === "goggle" ? goggleTitle(game, r.host) : gmixTitle(game, readSession<string | null>("gmix.account", null));
+    case "mailProvider": return p.id === "goggle" ? goggleTitle(game, r.host, r.path) : gmixTitle(game, readSession<string | null>("gmix.account", null));
     case "hosttoast": return HOSTTOAST;
     case "wiki": return WIKI_TITLE;
     case "shop": return game.company.name;

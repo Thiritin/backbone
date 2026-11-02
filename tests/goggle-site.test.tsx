@@ -12,6 +12,7 @@ import { mxHostsAt } from "../src/sim/60-infra/company-zone";
 import { defaultBookmarks, resolve } from "../src/sim/80-business/browser";
 import { siteIndex } from "../src/sim/80-business/index";
 import { setCompanyRecord } from "../src/sim/90-actions/domains";
+import { setTenantLock } from "../src/sim/90-actions/mail";
 import { connectGoggleDns, signUpGoggle } from "../src/sim/90-actions/mail-provider";
 import { GoggleSite, goggleTitle } from "../src/ui/apps/browser/sites/mail/goggle/GoggleSite";
 import { writeSession } from "../src/ui/session";
@@ -57,7 +58,7 @@ describe("Goggle site", () => {
     for (const [ym, brand, editions] of cases) {
       const s = readyGame(2);
       s.hour = at(ym);
-      expect(goggleTitle(s, "www.goggle.com")).toBe(t(brand));
+      expect(goggleTitle(s, "www.goggle.com", "/")).toBe(t(brand));
       const { container } = show(s, "www.goggle.com/pricing");
       expect([...container.querySelectorAll(".gg-editions thead th[data-plan]")].map((x) => x.textContent)).toEqual(editions.map((e) => t(`mail.goggle.edition.${e}`)));
       cleanup();
@@ -124,5 +125,36 @@ describe("Goggle site", () => {
     s.hour += 2;
     expect(mxHostsAt(s, s.hour)).toEqual(mxSetAt("goggle", tn.domain, s.hour).map(([, h]) => h));
     expect(mxTarget(s)?.id).toBe(tn.id);
+  });
+
+  it("opens the Admin console in the look of its year and adds a user", () => {
+    for (const [ym, url, look] of [["2009-03", "www.goggle.com/a/DOMAIN/", "control"], ["2014-03", "admin.goggle.com/", "console"]] as const) {
+      const s = readyGame(6);
+      s.hour = at(ym);
+      writeSession("goggle.account", idOf(signUpGoggle(s, { domain: s.company.domain!, plan: "paid", local: "admin", title: "Admin", password: "admin-pw" })));
+      const { container } = show(s, url.replace("DOMAIN", s.company.domain!));
+      expect(container.querySelector(".ga")!.className).toBe(`ga ga-${look}`);
+      fireEvent.click(screen.getAllByText(t("goggle.admin.nav.users"))[0]);
+      fireEvent.click(screen.getByText(t("goggle.admin.users.add")));
+      type("first", "Ada");
+      type("local", "ada");
+      type("password", "ada-pw-1");
+      click("goggle.admin.users.create");
+      expect(useStore.getState().game.mail.accounts.some((a) => a.local === "ada" && a.tenant === tenant(s).id)).toBe(true);
+      cleanup();
+    }
+  });
+
+  it("shows only the lock page to a locked tenant and unlocks with a paid edition", () => {
+    const s = readyGame(7);
+    s.hour = at("2011-03");
+    writeSession("goggle.account", idOf(signUpGoggle(s, { domain: s.company.domain!, plan: "free", local: "admin", title: "Admin", password: "admin-pw" })));
+    s.hour = at("2022-06");
+    setTenantLock(s, tenant(s).id, true);
+    const { container } = show(s, "admin.goggle.com/users");
+    expect(container.querySelector(".ga-nav")).toBeNull();
+    fireEvent.click(container.querySelector(".ga-locked button")!);
+    expect(tenant(useStore.getState().game)).toMatchObject({ plan: "paid" });
+    expect(tenant(useStore.getState().game).locked).toBeUndefined();
   });
 });

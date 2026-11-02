@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { hourOfMonth } from "../src/sim/00-core/time";
 import { mailPlan } from "../src/sim/10-catalog/mail-providers";
-import { seatsBilled } from "../src/sim/42-mail/accounts";
+import { checkMailLogin, seatsBilled } from "../src/sim/42-mail/accounts";
 import { mxTarget } from "../src/sim/42-mail/caps";
 import { deliver } from "../src/sim/42-mail/deliver";
 import type { GameState } from "../src/sim/50-state";
 import { goggleReport } from "../src/sim/80-business/mail-provider";
 import { removeCompanyRecord, setCompanyRecord } from "../src/sim/90-actions/domains";
-import { verifyTenant } from "../src/sim/90-actions/mail";
+import { setTenantLock, verifyTenant } from "../src/sim/90-actions/mail";
 import { deleteGoggleUser, makeGoggleAdmin, migrateMailbox, signUpGmix, signUpGoggle, suspendUser, upgradeGoggleEdition } from "../src/sim/90-actions/mail-provider";
 import { addAlias, createMailAccount, createMailGroup, setCatchAll, setExternalAccess } from "../src/sim/90-actions/mailbox";
 import { hire } from "../src/sim/90-actions/staff";
@@ -122,5 +122,15 @@ describe("Goggle Admin console", () => {
     expect(r.rows.find((x) => x.id === ada)).toMatchObject({ sent: 0, received: (s.mail.msgs[ada] ?? []).length });
     expect(inbox(s, ada).length).toBe(1);
     expect(r.sent).toBe(0);
+  });
+
+  it("lets only the administrator of a locked tenant through the console sign-in", () => {
+    const s = live(8, "2009-03");
+    const d = s.company.domain!;
+    user(s, "ada");
+    setTenantLock(s, goggle(s).id, true);
+    expect(err(checkMailLogin(s, `admin@${d}`, "admin-pw"))).toBe("error.mailLocked");
+    expect(err(checkMailLogin(s, `admin@${d}`, "admin-pw", true))).toBe("ok");
+    expect(err(checkMailLogin(s, `ada@${d}`, "user-pw", true))).toBe("error.mailLocked");
   });
 });

@@ -71,3 +71,65 @@
 .gg-signin { display: flex; flex-direction: column; align-items: center; gap: 16px; padding-top: 30px; }
 .gg-signin-box .gg-form { padding: 14px; background: var(--gg-box); border: 1px solid var(--gg-line); }
 .gg-signin-card .gg-form { padding: 28px; border: 1px solid #dadce0; border-radius: 8px; width: min(380px, 100%); box-sizing: border-box; }
+
+/* Admin console: the grey and blue tabbed control panel until 2012, the card console on a left rail from 2013, Workspace colours from 2020. */
+.ga { --ga-ink: #000; --ga-link: #00c; --ga-bar: #c3d9ff; --ga-box: #e8eef7; --ga-line: #c3d9ff; --ga-cta: #3366cc; --ga-radius: 0;
+  min-height: 100%; background: #fff; color: var(--ga-ink); font: 13px/1.45 Arial, Helvetica, sans-serif; }
+.ga-console { --ga-ink: #212121; --ga-link: #4285f4; --ga-bar: #fff; --ga-box: #f5f5f5; --ga-line: #e0e0e0; --ga-cta: #4285f4; --ga-radius: 2px; font-family: Roboto, Arial, sans-serif;
+  display: grid; grid-template-columns: 200px 1fr; grid-template-rows: auto auto 1fr; }
+.ga-ws { --ga-ink: #202124; --ga-link: #1a73e8; --ga-cta: #1a73e8; --ga-line: #dadce0; --ga-radius: 8px; }
+.ga a { color: var(--ga-link); }
+.ga h1 { font-size: 20px; font-weight: normal; margin: 0 0 12px; }
+.ga h2 { font-size: 14px; margin: 18px 0 6px; }
+.ga code { font: 12px "Courier New", monospace; }
+.ga-head { display: flex; align-items: center; gap: 14px; padding: 8px 14px; border-bottom: 1px solid var(--ga-line); flex-wrap: wrap; }
+.ga-console .ga-head { grid-column: 1 / -1; background: #455a64; color: #fff; }
+.ga-ws .ga-head { background: #fff; color: var(--ga-ink); }
+.ga-console:not(.ga-ws) .ga-head a { color: #fff; }
+.ga-logo { display: flex; align-items: center; gap: 6px; text-decoration: none; color: inherit !important; }
+.ga-logo b { font-size: 17px; font-weight: normal; }
+.ga-mark { width: 26px; height: 26px; background: #fff; border-radius: 4px; }
+.ga-domain { font-weight: bold; }
+.ga-user { margin-left: auto; opacity: 0.8; }
+.ga-nav { display: flex; flex-wrap: wrap; gap: 2px; padding: 6px 14px 0; background: var(--ga-box); border-bottom: 3px solid var(--ga-bar); }
+.ga-nav a { padding: 5px 10px; text-decoration: none; background: var(--ga-bar); border-radius: 4px 4px 0 0; }
+.ga-nav a.on { background: #fff; font-weight: bold; color: var(--ga-ink); }
+.ga-console .ga-nav { grid-row: 2 / 4; flex-direction: column; flex-wrap: nowrap; padding: 10px 0; border: 0; border-right: 1px solid var(--ga-line); background: #fff; }
+.ga-console .ga-nav a { background: none; border-radius: 0 16px 16px 0; padding: 8px 16px; color: var(--ga-ink); }
+.ga-console .ga-nav a.on { background: #e8f0fe; color: var(--ga-link); }
+.ga-main { padding: 16px; min-width: 0; }
+.ga-banner { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 8px 14px; background: #fef7e0; border-bottom: 1px solid #f9ab00; }
+.ga button, .ga-button { display: inline-block; padding: 4px 12px; border: 1px solid var(--ga-cta); border-radius: var(--ga-radius); background: var(--ga-cta); color: #fff !important;
+  font: bold 13px inherit; text-decoration: none; cursor: pointer; }
+.ga-control button { background: linear-gradient(#fff, #ddd); color: #000 !important; border-color: #999; font-weight: normal; }
+.ga .ga-quiet { background: #fff; color: var(--ga-ink) !important; border-color: var(--ga-line); }
+.ga .ga-danger { background: #d93025; border-color: #a50e0e; color: #fff !important; }
+.ga-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 12px; }
+.ga-table { border-collapse: collapse; width: 100%; }
+.ga-table th, .ga-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--ga-line); }
+.ga-table thead th { background: var(--ga-box); }
+.ga-facts { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 0 0 12px; }
+.ga-facts dt { font-weight: bold; }
+.ga-facts dd { margin: 0; }
+.ga-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+.ga-card { padding: 18px 14px; border: 1px solid var(--ga-line); border-radius: var(--ga-radius); box-shadow: 0 1px 2px rgba(0,0,0,0.12); text-decoration: none; }
+.ga-form { display: flex; flex-direction: column; gap: 10px; max-width: 440px; }
+.ga-form label, .ga-field { display: flex; flex-direction: column; gap: 3px; font-weight: bold; }
+.ga-form input:not([type="checkbox"]), .ga select, .ga-inline input { padding: 4px; font: 13px inherit; border: 1px solid #999; }
+.ga-inline { display: flex; align-items: flex-end; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+.ga-inline label { display: flex; flex-direction: column; font-weight: bold; }
+.ga-addr { display: flex; align-items: center; gap: 4px; font-weight: normal; }
+.ga-addr input { flex: 1; min-width: 0; }
+.ga-checks { display: flex; flex-wrap: wrap; gap: 6px 16px; border: 0; padding: 0; }
+.ga-checks label, .ga-form .ga-check { flex-direction: row; align-items: center; gap: 4px; font-weight: normal; }
+.ga-list { padding-left: 18px; }
+.ga-warn { color: #a50e0e; }
+.ga-ok { color: #188038; }
+.ga-price { color: #5f6368; }
+.ga-headline { font-size: 18px; }
+.ga-status { list-style: none; padding: 0; }
+.ga-status li { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--ga-line); }
+.ga-status span { margin-left: auto; color: #188038; }
+.ga-dot { width: 10px; height: 10px; border-radius: 50%; background: #34a853; }
+.ga-locked { max-width: 520px; margin: 40px auto; text-align: center; }
+@media (max-width: 640px) { .ga-console { display: block; } .ga-console .ga-nav { flex-direction: row; flex-wrap: wrap; } }

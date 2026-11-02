@@ -3,7 +3,7 @@ import { t } from "../../../../../../i18n/en";
 import { LOCALE } from "../../../../../../i18n/lang";
 import { dateOf, hourOfMonth, nextMonthStart, yearOf } from "../../../../../../sim/00-core/time";
 import { COMPETITORS } from "../../../../../../sim/10-catalog/economy";
-import { brandAt, editionAt, GOGGLE_ACCOUNTS, goggleToken, mailSiteUrl, verificationAt, type GoggleBrand } from "../../../../../../sim/10-catalog/mail-consumer";
+import { brandAt, consoleUrl, editionAt, GOGGLE_ACCOUNTS, GOGGLE_ADMIN, goggleToken, mailSiteUrl, verificationAt, type GoggleBrand } from "../../../../../../sim/10-catalog/mail-consumer";
 import { mailboxCap, mailPlan, mxSetAt, onSale, quotaMbAt } from "../../../../../../sim/10-catalog/mail-providers";
 import { companyDomain } from "../../../../../../sim/30-customers/domains";
 import { checkMailLogin, mailboxTaken, openBoxes } from "../../../../../../sim/42-mail/accounts";
@@ -20,6 +20,7 @@ import { GoggleMark } from "../../../../../art/mailmarks";
 import { useSessionState, writeSession } from "../../../../../session";
 import { offerLogin, savedLogin } from "../../../../../vault";
 import { usePageAct } from "../../../pageAct";
+import { AdminConsole } from "./AdminConsole";
 import "./goggle.css";
 
 // docs/design/plans/webmail-consumer.md, sections 4.1 to 4.3 and 5: the product site, the sign-up wizard and the sign-in.
@@ -39,8 +40,13 @@ const onSaleNow = (hour: number) => PLANS.filter((p) => onSale(mailPlan("goggle"
 const tenantOf = (game: GameState, a: MailAccount): MailTenant | undefined => game.mail.tenants.find((x) => x.id === a.tenant && x.host === "goggle");
 const launched = (hour: number) => hour >= hourOfMonth(LAUNCH);
 
-export const goggleTitle = (game: GameState, host: string): string =>
-  host === GOGGLE_ACCOUNTS ? t("goggle.signin.tab") : launched(game.hour) ? brandName(game.hour) : "Goggle";
+// The Admin console's page: the route on its own host, or the part after /a/<domain>/ on goggle.com.
+const consolePage = (host: string, route: string): string | null =>
+  host === GOGGLE_ADMIN ? route : /^a\/[^/]+(\/|$)/.test(route) ? route.split("/").slice(2).join("/") : null;
+
+export const goggleTitle = (game: GameState, host: string, path: string): string =>
+  host === GOGGLE_ACCOUNTS ? t("goggle.signin.tab") : consolePage(host, path.replace(/^\/+/, "").split("?")[0]) !== null ? t("goggle.admin.title")
+    : launched(game.hour) ? brandName(game.hour) : "Goggle";
 
 interface SiteProps { game: GameState; host: string; path: string; go: (url: string) => void }
 type To = (path: string) => void;
@@ -60,11 +66,15 @@ export function GoggleSite({ game, host, path, go }: SiteProps) {
   const account = game.mail.accounts.find((a) => a.id === signedIn && a.closedAt === null) ?? null;
   const tenant = account ? tenantOf(game, account) : undefined;
   const admin = tenant && tenant.admin === account?.id ? account : null;
+  const out = () => { setSignedIn(null); to(""); };
+  const panel = consolePage(host, route);
+  if (panel !== null && admin && tenant) return <AdminConsole game={game} tenant={tenant} admin={admin} page={panel} go={go} signOut={out} />;
   const page = (() => {
     if (host === GOGGLE_ACCOUNTS) {
       if (route === "recovery") return <Recovery game={game} accounts={accounts} />;
       return <SignIn game={game} accounts={accounts} signIn={setSignedIn} next={params.get("continue") ?? ""} go={go} />;
     }
+    if (panel !== null) return <SignIn game={game} accounts={accounts} signIn={setSignedIn} next={`${host}/${path.replace(/^\/+/, "")}`} go={go} />;
     if (!launched(game.hour)) return <Search go={go} />;
     if (route === "pricing") return <Pricing game={game} to={to} />;
     if (route === "signup") return <SignUp game={game} to={to} signIn={setSignedIn} wanted={params.get("plan")} />;
@@ -74,16 +84,15 @@ export function GoggleSite({ game, host, path, go }: SiteProps) {
     }
     return <Home game={game} to={to} look={look} />;
   })();
-  const out = () => { setSignedIn(null); to(""); };
   return (
     <div className={`gg gg-${launched(game.hour) ? look : "search"}`}>
-      {host !== GOGGLE_ACCOUNTS && launched(game.hour) && (
+      {host !== GOGGLE_ACCOUNTS && panel === null && launched(game.hour) && (
         <header className="gg-head">
           <Link to={to} path="" className="gg-logo"><GoggleMark className="gg-mark" /><b>{brandName(game.hour)}</b>{look === "appsDomain" && <sup className="gg-beta">BETA</sup>}</Link>
           <nav className="gg-nav">
             <Link to={to} path="">{t("goggle.nav.product")}</Link>
             <Link to={to} path="pricing">{t("goggle.nav.pricing")}</Link>
-            {admin && <Link to={to} path="setup">{t("goggle.nav.setup")}</Link>}
+            {admin && tenant && <a href="#console" onClick={(e) => { e.preventDefault(); go(consoleUrl(game.hour, tenant.domain)); }}>{t("goggle.nav.console")}</a>}
             {account ? <a href="#signout" onClick={(e) => { e.preventDefault(); out(); }}>{t("goggle.nav.signOut")}</a>
               : <a href="#signin" onClick={(e) => { e.preventDefault(); accounts(""); }}>{t("goggle.nav.signIn")}</a>}
             {!tenant && <Link to={to} path="signup" className="gg-cta">{t(`goggle.nav.start.${look}`)}</Link>}
@@ -249,61 +258,70 @@ function SignUp({ game, to, signIn, wanted }: { game: GameState; to: To; signIn:
 
 const SETUP = ["verify", "mx", "users"] as const;
 
-function Setup({ game, to, go, tenant, step }: { game: GameState; to: To; go: (url: string) => void; tenant: MailTenant; step: string }) {
-  const act = usePageAct(), hour = game.hour, [connect, setConnect] = useState(false);
-  const v = verificationAt(tenant.since, goggleToken(game.seed, tenant.domain)), mx = mxSetAt("goggle", tenant.domain, hour);
-  const live = mxHostsAt(game, hour), delivering = mxTarget(game)?.id === tenant.id;
-  const automatic = game.registrar?.id === "goDuddy" && yearOf(hour) >= 2019;
-  const registrar = (
-    <div className="gg-buttons">
-      <button type="button" className="gg-quiet" onClick={() => go(`${registrarUrl(game)}login/dns`)}>{t("goggle.setup.openRegistrar")}</button>
-      {automatic && <button type="button" onClick={() => setConnect(true)}>{t("goggle.setup.connect")}</button>}
-    </div>
-  );
-  const panel = connect && (
-    <div className="gg-connect" role="dialog">
-      <h3>GoDuddy</h3>
-      <p>{t("goggle.setup.connectAs", { name: game.company.name, domain: tenant.domain })}</p>
-      <ul>{[`${v.type} ${v.name} ${v.data}`, ...mx.map(([p, h]) => `MX @ ${p} ${h}`)].map((r) => <li key={r}><code>{r}</code></li>)}</ul>
+// The registrar's DNS page and, from 2019 at GoDuddy, Domain Connect, which writes the records after a sign-in step.
+function DnsButtons({ game, tenant, go }: { game: GameState; tenant: MailTenant; go: (url: string) => void }) {
+  const act = usePageAct(), [connect, setConnect] = useState(false);
+  const v = verificationAt(tenant.since, goggleToken(game.seed, tenant.domain)), mx = mxSetAt("goggle", tenant.domain, game.hour);
+  return (
+    <>
       <div className="gg-buttons">
-        <button type="button" className="gg-quiet" onClick={() => setConnect(false)}>{t("goggle.setup.cancel")}</button>
-        <button type="button" onClick={() => { if (act(connectGoggleDns, tenant.id).ok) setConnect(false); }}>{t("goggle.setup.allow")}</button>
+        <button type="button" className="gg-quiet" onClick={() => go(`${registrarUrl(game)}login/dns`)}>{t("goggle.setup.openRegistrar")}</button>
+        {game.registrar?.id === "goDuddy" && yearOf(game.hour) >= 2019 && <button type="button" onClick={() => setConnect(true)}>{t("goggle.setup.connect")}</button>}
       </div>
-    </div>
+      {connect && (
+        <div className="gg-connect" role="dialog">
+          <h3>GoDuddy</h3>
+          <p>{t("goggle.setup.connectAs", { name: game.company.name, domain: tenant.domain })}</p>
+          <ul>{[`${v.type} ${v.name} ${v.data}`, ...mx.map(([p, h]) => `MX @ ${p} ${h}`)].map((r) => <li key={r}><code>{r}</code></li>)}</ul>
+          <div className="gg-buttons">
+            <button type="button" className="gg-quiet" onClick={() => setConnect(false)}>{t("goggle.setup.cancel")}</button>
+            <button type="button" onClick={() => { if (act(connectGoggleDns, tenant.id).ok) setConnect(false); }}>{t("goggle.setup.allow")}</button>
+          </div>
+        </div>
+      )}
+    </>
   );
-  const body = (() => {
-    if (step === "mx") return (
-      <>
-        <h2>{t("goggle.setup.mxTitle")}</h2>
-        <table className="gg-table" data-table="mx">
-          <thead><tr><th>{t("goggle.setup.priority")}</th><th>{t("goggle.setup.server")}</th><th>{t("goggle.setup.status")}</th></tr></thead>
-          <tbody>{mx.map(([p, h]) => <tr key={h}><td>{p}</td><td><code>{h.toUpperCase()}</code></td><td>{t(live.includes(h) ? "goggle.setup.found" : "goggle.setup.missing")}</td></tr>)}</tbody>
-        </table>
-        <p className="gg-joke">{t(mx.length === 1 ? "goggle.setup.mxOne" : "goggle.setup.mxShout")}</p>
-        <p className={delivering ? "gg-ok" : "gg-error"} data-delivery>{t(delivering ? "goggle.setup.delivering" : "goggle.setup.notDelivering")}</p>
-        {registrar}
-      </>
-    );
-    if (step === "users") return <Users game={game} tenant={tenant} />;
-    return (
-      <>
-        <h2>{t("goggle.setup.verifyTitle")}</h2>
-        <p className={tenant.verified ? "gg-ok" : "gg-error"} data-verified={tenant.verified}>{t(tenant.verified ? "goggle.setup.verified" : "goggle.setup.unverified")}</p>
-        <table className="gg-table" data-table="verify">
-          <thead><tr><th>{t("goggle.setup.type")}</th><th>{t("goggle.setup.host")}</th><th>{t("goggle.setup.value")}</th></tr></thead>
-          <tbody><tr><td>{v.type}</td><td><code>{v.name}</code></td><td><code>{v.data}</code></td></tr></tbody>
-        </table>
-        {!tenant.verified && <div className="gg-buttons"><button type="button" onClick={() => act(verifyDomain, tenant.id)}>{t("goggle.setup.verify")}</button></div>}
-        {registrar}
-      </>
-    );
-  })();
+}
+
+export function VerifyStep({ game, tenant, go }: { game: GameState; tenant: MailTenant; go: (url: string) => void }) {
+  const act = usePageAct(), v = verificationAt(tenant.since, goggleToken(game.seed, tenant.domain));
+  return (
+    <>
+      <h2>{t("goggle.setup.verifyTitle")}</h2>
+      <p className={tenant.verified ? "gg-ok" : "gg-error"} data-verified={tenant.verified}>{t(tenant.verified ? "goggle.setup.verified" : "goggle.setup.unverified")}</p>
+      <table className="gg-table" data-table="verify">
+        <thead><tr><th>{t("goggle.setup.type")}</th><th>{t("goggle.setup.host")}</th><th>{t("goggle.setup.value")}</th></tr></thead>
+        <tbody><tr><td>{v.type}</td><td><code>{v.name}</code></td><td><code>{v.data}</code></td></tr></tbody>
+      </table>
+      {!tenant.verified && <div className="gg-buttons"><button type="button" onClick={() => act(verifyDomain, tenant.id)}>{t("goggle.setup.verify")}</button></div>}
+      <DnsButtons game={game} tenant={tenant} go={go} />
+    </>
+  );
+}
+
+export function MxStep({ game, tenant, go }: { game: GameState; tenant: MailTenant; go: (url: string) => void }) {
+  const mx = mxSetAt("goggle", tenant.domain, game.hour), live = mxHostsAt(game, game.hour), delivering = mxTarget(game)?.id === tenant.id;
+  return (
+    <>
+      <h2>{t("goggle.setup.mxTitle")}</h2>
+      <table className="gg-table" data-table="mx">
+        <thead><tr><th>{t("goggle.setup.priority")}</th><th>{t("goggle.setup.server")}</th><th>{t("goggle.setup.status")}</th></tr></thead>
+        <tbody>{mx.map(([p, h]) => <tr key={h}><td>{p}</td><td><code>{h.toUpperCase()}</code></td><td>{t(live.includes(h) ? "goggle.setup.found" : "goggle.setup.missing")}</td></tr>)}</tbody>
+      </table>
+      <p className="gg-joke">{t(mx.length === 1 ? "goggle.setup.mxOne" : "goggle.setup.mxShout")}</p>
+      <p className={delivering ? "gg-ok" : "gg-error"} data-delivery>{t(delivering ? "goggle.setup.delivering" : "goggle.setup.notDelivering")}</p>
+      <DnsButtons game={game} tenant={tenant} go={go} />
+    </>
+  );
+}
+
+function Setup({ game, to, go, tenant, step }: { game: GameState; to: To; go: (url: string) => void; tenant: MailTenant; step: string }) {
   return (
     <section className="gg-page gg-setup">
       <h1>{t("goggle.setup.title", { domain: tenant.domain })}</h1>
       <ol className="gg-steps">{SETUP.map((id) => <li key={id} className={id === step ? "on" : ""}><Link to={to} path={`setup?step=${id}`}>{t(`goggle.setup.step.${id}`)}</Link></li>)}</ol>
-      {body}
-      {panel}
+      {step === "mx" ? <MxStep game={game} tenant={tenant} go={go} /> : step === "users" ? <Users game={game} tenant={tenant} /> : <VerifyStep game={game} tenant={tenant} go={go} />}
+      <div className="gg-buttons"><button type="button" onClick={() => go(consoleUrl(game.hour, tenant.domain))}>{t("goggle.nav.console")}</button></div>
     </section>
   );
 }
@@ -335,12 +353,13 @@ function SignIn({ game, accounts, signIn, next, go }: { game: GameState; account
   const [address, setAddress] = useState(saved[0]), [password, setPassword] = useState(saved[1]), [error, setError] = useState<string | null>(null);
   const card = game.hour >= hourOfMonth("2013-01");
   const submit = () => {
-    const r = checkMailLogin(game, address, password);
+    const r = checkMailLogin(game, address, password, true);
     if (!r.ok || !tenantOf(game, r.account)) return setError(t(r.ok ? "error.mailLogin" : r.error));
     offerLogin(game, `mail:${r.account.local}@${r.account.domain}`, GOGGLE_ACCOUNTS, [address, password]);
     signIn(r.account.id);
-    const admin = tenantOf(game, r.account)!.admin === r.account.id;
-    go(next || mailSiteUrl("goggle", admin ? "setup" : ""));
+    const tn = tenantOf(game, r.account)!, admin = tn.admin === r.account.id;
+    if (tn.locked && !admin) return setError(t("error.mailLocked"));
+    go(next || (admin ? consoleUrl(game.hour, r.account.domain) : mailSiteUrl("goggle")));
   };
   return (
     <section className={`gg-signin ${card ? "gg-signin-card" : "gg-signin-box"}`}>
