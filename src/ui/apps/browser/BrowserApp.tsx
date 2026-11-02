@@ -1,3 +1,4 @@
+import { DeskSite } from "./sites/desk/DeskSite";
 import { ArrowLeft, ArrowRight, ChevronDown, CircleArrowDown, Folder, House, Plus, RotateCw, Star, X } from "lucide-react";
 import { useEffect, useRef, useState, type DragEvent } from "react";
 import { AGENCY_TITLE, BOARD_TITLE, defaultBookmarks, HOME_URL, resolve, split, VIDEO_TITLE, WIKI_TITLE, type Resolved } from "../../../sim/80-business/browser";
@@ -120,7 +121,7 @@ function titleOf(game: GameState, r: Resolved): string {
     case "market": return channelName(p.channel);
     case "books": return booksVendor(p.id)!.program;
     case "shopVendor": return shopById(p.id).name;
-    case "deskVendor": return deskById(p.id)!.name;
+    case "deskVendor": case "desk": return deskById(p.id)!.name;
     case "hosttoast": return HOSTTOAST;
     case "wiki": return WIKI_TITLE;
     case "shop": return game.company.name;
@@ -163,6 +164,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "shop") body = <PortalSite game={game} host={r.host} path={r.path} go={go} />;
   else if (p.kind === "books" && p.id !== "lexwear") { const Site = BOOKS_SITES[p.id]; body = <Site game={game} path={r.path} go={go} />; }
   else if (p.kind === "shopVendor") body = <ShopVendorSite game={game} id={p.id} path={r.path} go={go} />;
+  else if (p.kind === "desk") body = <DeskSite game={game} id={p.id} host={r.host} path={r.path} go={go} />;
   else if (p.kind === "deskVendor") body = deskById(p.id)!.hosting === "self" ? <SelfDeskSite game={game} id={p.id} path={r.path} go={go} /> : <HostedDeskSite game={game} id={p.id} path={r.path} go={go} />;
   else if (p.kind === "hosttoast") body = <HostToastSite game={game} path={r.path} go={go} />;
   else if (p.kind === "wiki") body = <WikiSite game={game} path={r.path} go={go} />;

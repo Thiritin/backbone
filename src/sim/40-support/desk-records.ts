@@ -64,3 +64,12 @@ export function deskHostReachable(s: GameState, host: string, hour = nowHours(s)
 // vendor. A self-hosted desk sends through the company's own mailbox.
 export const senderVerified = (s: GameState, hour = nowHours(s)): boolean =>
   s.desk?.hosting.kind !== "hosted" || deskRecords(s, hour).filter((r) => r.role !== "host").every((r) => r.ok);
+
+// The names the desk's site answers on, up or down: support.<domain> once its record resolves, then a hosted desk's
+// tenant address.
+export function deskHosts(s: GameState, hour = nowHours(s)): string[] {
+  const d = s.desk && deskById(s.desk.id);
+  if (!d || s.desk!.hosting.kind === "legacy") return [];
+  const mapped = deskRecords(s, hour).some((r) => r.role === "host" && r.ok);
+  return [...(mapped ? [`support.${companyDomain(s)}`] : []), ...(s.desk!.hosting.kind === "hosted" ? [tenantHost(d, s.desk!.tenant ?? "")] : [])];
+}
