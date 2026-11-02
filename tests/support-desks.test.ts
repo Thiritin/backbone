@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
-import { DESKS, deskHas, deskOf, seats } from "../src/sim/10-catalog/desks";
+import { DESK_ROUTE, DESKS, deskHas, deskOf, seats } from "../src/sim/10-catalog/desks";
+import { kindOf } from "../src/ui/apps/support/labels";
 import { monthlyCharge, storeItem, subscriptionPrice } from "../src/sim/10-catalog/store";
 import { type GameState } from "../src/sim/50-state";
 import type { Employee } from "../src/sim/47-staff/staff";
@@ -22,6 +23,10 @@ const agent = (n: number, role: Employee["role"] = "support"): Employee => ({
 });
 
 describe("support desks", () => {
+  it("labels every ticket kind in the Support app", () => {
+    for (const k of Object.keys(DESK_ROUTE) as (keyof typeof DESK_ROUTE)[]) expect(kindOf(k)?.label).toBeTruthy();
+  });
+
   it("lists the four desks with the Pear Store prices and per-seat billing", () => {
     expect(DESKS.map((d) => [d.id, d.from, d.monthly])).toEqual([["ostickit", 2005, 0], ["zendusk", 2007, 49], ["freshdusk", 2011, 15], ["freescoot", 2018, 0]]);
     for (const d of DESKS) expect(storeItem(d.id)).toMatchObject({ kind: "desk", perSeat: true });
