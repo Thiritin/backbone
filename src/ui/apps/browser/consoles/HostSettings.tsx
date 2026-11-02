@@ -16,6 +16,9 @@ import { setLicenceTier } from "../../../../sim/90-actions/licence";
 import { installShop } from "../../../../sim/90-actions/shop";
 import { shopById, SHOPS, type ShopId } from "../../../../sim/10-catalog/shops";
 import { shopOnSale } from "../../../../sim/10-catalog/shop-licences";
+import { deskById, deskReady, DESKS, type DeskId } from "../../../../sim/10-catalog/desks";
+import { installDesk, removeDesk } from "../../../../sim/90-actions/desk-install";
+import { DomainRecords } from "../sites/desks/DomainRecords";
 import { ram } from "../../hw";
 import { Facts, type Fact } from "./PanelBase";
 import { usePageAct } from "../pageAct";
@@ -114,7 +117,29 @@ export function ShopInstall({ game, c }: { game: GameState; c: Cluster }) {
   );
 }
 
+// A self-hosted desk in a web space of a panel host, until the host's app catalogue installs it.
+export function DeskInstall({ game, c }: { game: GameState; c: Cluster }) {
+  const act = usePageAct(), desks = DESKS.filter((d) => d.hosting === "self" && deskReady(game, d.id));
+  const [pick, setPick] = useState<DeskId | null>(null), id = pick ?? desks.at(-1)?.id;
+  if (c.kind !== "panel" || !id) return null;
+  const h = game.desk?.hosting, here = h?.kind === "self" && h.clusterId === c.id ? h : null;
+  return (
+    <>
+      <h4 className="cx-h">{t("desk-sites.host.title")}</h4>
+      {here && <Facts facts={[{ label: deskById(game.desk!.id)!.name, value: here.version, num: true }]} />}
+      <div className="cx-inline">
+        <select aria-label={t("desk-sites.host.title")} value={id} onChange={(e) => setPick(e.target.value as DeskId)}>
+          {desks.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+        </select>
+        <button className="cx-btn primary" onClick={() => act(installDesk, c.id, id)}>{t("desk-sites.host.install", { name: deskById(id)!.name })}</button>
+        {here && <button className="cx-btn" onClick={() => act(removeDesk)}>{t("desk-sites.host.remove")}</button>}
+      </div>
+      {here && <DomainRecords game={game} />}
+    </>
+  );
+}
+
 // What the software page of a panel or game host adds under its actions; web panels set booking limits in the Locations app.
 export function HostSettings({ game, c }: { game: GameState; c: Cluster }) {
-  return oversold(c) ? <div className="cx-host-settings"><LicenceBanner game={game} c={c} />{c.kind === "game" && <Oversell game={game} c={c} />}<ShopInstall game={game} c={c} /></div> : null;
+  return oversold(c) ? <div className="cx-host-settings"><LicenceBanner game={game} c={c} />{c.kind === "game" && <Oversell game={game} c={c} />}<ShopInstall game={game} c={c} /><DeskInstall game={game} c={c} /></div> : null;
 }

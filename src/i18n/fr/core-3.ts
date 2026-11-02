@@ -213,6 +213,7 @@ export default {
   "error.unknownWorkload": () => "Cette charge de travail n'existe plus.",
   "error.alreadyStopped": () => "Elle est déjà arrêtée.",
   "error.alreadyRunning": () => "Elle tourne déjà.",
+  "error.noRamToStart": () => "Le nœud n'a pas assez de RAM libre pour la démarrer.",
   "error.lostDisk": () => "Son disque est perdu. Restaure-le d'abord.",
   "error.workloadBusy": () => "Elle est encore en cours de restauration ou de déplacement.",
   "error.noZoneLink": () => "Aucun lien ne relie ces zones.",

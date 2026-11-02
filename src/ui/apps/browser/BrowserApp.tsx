@@ -42,16 +42,19 @@ import { BOOKS_SITES } from "./sites/books/sites";
 import { booksVendor } from "../../../sim/10-catalog/bookkeeping";
 import { ShopVendorSite } from "./sites/shopvendors/registry";
 import { shopById } from "../../../sim/10-catalog/shops";
+import { deskById } from "../../../sim/10-catalog/desks";
+import { HostedDeskSite } from "./sites/desks/HostedDeskSite";
+import { SelfDeskSite } from "./sites/desks/SelfDeskSite";
 import { HostToastSite } from "./sites/hosttoast/HostToastSite";
 import { HOSTTOAST } from "../../../sim/10-catalog/hosttoast";
 import { WikiSite } from "./sites/wiki/WikiSite";
 import { SoftwarePage } from "./sites/software/registry";
 import { RegistrarSite } from "./sites/registrars";
+import { ParkedPage } from "./sites/registrars/Parked";
 import { SupplierSite } from "./sites/bank/SupplierSite";
 import { BankSite } from "./sites/bank/BankSite";
 import { bankById } from "../../../sim/10-catalog/banks";
-import { CannotReach, CustomerSite, HostPage, NotFound, PhishingPage, VideoPage } from "./sites/Pages";
-import { senderById } from "../../../sim/40-support/notices";
+import { CannotReach, CustomerSite, HostPage, NoticePage, noticeTitle, NotFound, VideoPage } from "./sites/Pages";
 import { PortalSite } from "./sites/portal/PortalSite";
 import { VendorSite } from "./sites/vendors/registry";
 import { ProviderSite } from "./sites/providers/registry";
@@ -73,6 +76,7 @@ function titleOf(game: GameState, r: Resolved): string {
     case "vendor": return MANUFACTURERS.find((m) => m.id === p.maker)?.name ?? r.host;
     case "provider": return dcProvider(p.id).name;
     case "registrar": return registrarById(p.id)?.name ?? r.host;
+    case "parked": return p.domain;
     case "bank": return t("misc1.browser.onlineBanking", { name: bankById(p.id)!.name });
     case "supplier": return p.name;
     case "host": return r.host;
@@ -101,7 +105,7 @@ function titleOf(game: GameState, r: Resolved): string {
       return d ? upsTitle(d) : r.host;
     }
     case "video": return VIDEO_TITLE;
-    case "phishing": return t("misc1.browser.onlineBanking", { name: senderById(p.sender).name });
+    case "notice": return noticeTitle(game, p.ticketId);
     case "sponsorboard": return BOARD_TITLE;
     case "index": return t("browser-sites-1.ix.title");
     case "office": return t("browser-sites-1.of.title");
@@ -109,6 +113,7 @@ function titleOf(game: GameState, r: Resolved): string {
     case "market": return channelName(p.channel);
     case "books": return booksVendor(p.id)!.program;
     case "shopVendor": return shopById(p.id).name;
+    case "deskVendor": return deskById(p.id)!.name;
     case "hosttoast": return HOSTTOAST;
     case "wiki": return WIKI_TITLE;
     case "shop": return game.company.name;
@@ -136,10 +141,11 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "vendor") body = <VendorSite game={game} maker={p.maker} path={r.path} go={go} />;
   else if (p.kind === "provider") body = <ProviderSite game={game} id={p.id} path={r.path} go={go} />;
   else if (p.kind === "registrar") body = <RegistrarSite game={game} id={p.id} path={r.path} go={go} />;
+  else if (p.kind === "parked") body = <ParkedPage game={game} registrar={p.registrar} domain={p.domain} />;
   else if (p.kind === "supplier") body = <SupplierSite game={game} name={p.name} />;
   else if (p.kind === "bank") body = <BankSite game={game} id={p.id} path={r.path} go={go} />;
   else if (p.kind === "video") body = <VideoPage />;
-  else if (p.kind === "phishing") body = <PhishingPage sender={p.sender} />;
+  else if (p.kind === "notice") body = <NoticePage game={game} ticketId={p.ticketId} />;
   else if (p.kind === "sponsorboard") body = <SponsorBoard game={game} />;
   else if (p.kind === "office") body = <OfficeSite game={game} path={r.path} go={go} />;
   else if (p.kind === "dohle") body = <DohleSite game={game} path={r.path} go={go} />;
@@ -148,6 +154,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "shop") body = <PortalSite game={game} host={r.host} path={r.path} go={go} />;
   else if (p.kind === "books" && p.id !== "lexwear") { const Site = BOOKS_SITES[p.id]; body = <Site game={game} path={r.path} go={go} />; }
   else if (p.kind === "shopVendor") body = <ShopVendorSite game={game} id={p.id} path={r.path} go={go} />;
+  else if (p.kind === "deskVendor") body = deskById(p.id)!.hosting === "self" ? <SelfDeskSite game={game} id={p.id} path={r.path} go={go} /> : <HostedDeskSite game={game} id={p.id} path={r.path} go={go} />;
   else if (p.kind === "hosttoast") body = <HostToastSite game={game} path={r.path} go={go} />;
   else if (p.kind === "wiki") body = <WikiSite game={game} path={r.path} go={go} />;
   else if (p.kind === "index") body = <IndexSite game={game} path={r.path} go={go} />;
@@ -163,7 +170,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "ups") body = <UpsPage game={game} deviceId={p.deviceId} host={r.host} />;
   else if (p.kind === "host") body = <HostPage host={r.host} />;
   else body = <NotFound host={r.host} />;
-  const paper = !waiting && r.load !== "down" && ["company", "customer", "vendor", "provider", "sponsorboard", "registrar", "bank", "supplier", "index", "office", "shop", "software", "os"].includes(p.kind);
+  const paper = !waiting && r.load !== "down" && ["company", "customer", "vendor", "provider", "sponsorboard", "registrar", "parked", "bank", "supplier", "index", "office", "shop", "software", "os"].includes(p.kind);
   return (
     <>
       {waiting && <div className="web-load" aria-hidden />}

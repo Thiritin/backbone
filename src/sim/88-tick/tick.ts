@@ -60,6 +60,7 @@ import { webpanelTick } from "../60-infra/webpanel";
 import { gamesTick } from "../85-products/games-tick";
 import { securityTick } from "../60-infra/security";
 import { usageTick } from "../60-infra/usage";
+import { overuseTick } from "../80-business/overuse";
 import { productsTick } from "../85-products/products";
 import { COMPONENTS, manufacturerByName, modelById, specOf } from "../10-catalog/hardware";
 import { familyById, familyFailure } from "../10-catalog/families";
@@ -70,9 +71,10 @@ import { sensorTick } from "../60-infra/sensors";
 import { THERMAL, thermalTick, throttled } from "../60-infra/thermal";
 import { FAILURE_FACTOR, unsupported } from "../10-catalog/lifecycle";
 import { skillById } from "../10-catalog/research";
-import { KNOW_HOW, storeItem, subscriptionEntry } from "../10-catalog/store";
+import { deskItem, KNOW_HOW, storeItem, subscriptionEntry } from "../10-catalog/store";
+import { deskById } from "../10-catalog/desks";
 import { capacityAt, DATACENTERS, datacenterById, flatMonthly, homeLineById, HOUSEHOLD_FACTOR } from "../20-world/datacenters";
-import type { Component, Device, GameState, LedgerEntry } from "../50-state";
+import type { Component, Device, GameState, LedgerEntry, Location } from "../50-state";
 import { scoreTick } from "../80-business/scores";
 import { trendTick } from "../80-business/trend";
 import { arrayLost, busyDevices, dcAvailability, drawWatts, driveGb, drivesOf, fits, isDrive, HOURS_PER_YEAR, locationOf, locationRent, powered, readOnlySweep } from "../60-infra/status";
@@ -109,10 +111,10 @@ export function endLease(s: GameState, leaseId: string) {
 export function powerPerHour(s: GameState): number {
   const price = businessPowerPrice(yearOf(s.hour));
   const busy = busyDevices(s), flat = new Set(s.racks.filter((r) => r.flatKw).map((r) => r.id));
-  return readOnlySweep(s, () => s.devices.filter((d) => d.on && !flat.has(d.rackId ?? "") && powered(s, d.id))).reduce((sum, d) => {
+  return readOnlySweep(s, () => s.devices.filter((d) => d.on && !flat.has(d.rackId ?? "") && powered(s, d.id)).reduce((sum, d) => {
     const loc = locationOf(s, d)!;
-    return sum + (drawWatts(d, busy) / 1000) * price * (loc.dc ? datacenterById(loc.dc).powerFactor : HOUSEHOLD_FACTOR);
-  }, 0);
+    return sum + (drawWatts(s, d, busy) / 1000) * price * (loc.dc ? datacenterById(loc.dc).powerFactor : HOUSEHOLD_FACTOR);
+  }, 0));
 }
 
 export const CANCEL_CHANCE = 0.015;
@@ -311,18 +313,20 @@ export function tick(state: GameState): SimEvent[] {
     const d = dateOf(state.hour);
     events.push({ app: "Books", key: "event.monthStart", params: { month: d.getUTCMonth(), year: d.getUTCFullYear() } });
     const power = cents(state.powerDue);
+    // A retained contract's first month after the offer is free; dc names whose invoice a line is on in the provider's portal.
+    const free = (l: Location) => { const c = state.contracts.find((x) => x.locationId === l.id); return c?.retainedAt != null && noticeEnd(c.retainedAt, 0) === state.hour ? c.monthly : 0; };
     const bills: LedgerEntry[] = state.locations.filter((l) => l.dc)
-      .map((l) => ({ hour: state.hour, category: "rent", key: "ledger.space", params: { location: l.name }, amount: -locationRent(state, l) }));
+      .map((l) => ({ hour: state.hour, category: "rent", key: "ledger.space", params: { location: l.name, dc: l.dc! }, amount: free(l) - locationRent(state, l) }));
     for (const r of state.racks) {
       const loc = state.locations.find((l) => l.id === r.locationId)!;
       if (!loc.dc) continue;
       for (const feed of ["feedB", "highDensity"] as const) {
-        if (r[feed]) bills.push({ hour: state.hour, category: "rent", key: "ledger.feed", params: { rack: r.name, feed }, amount: -Math.round(FEED_PRICE[feed] * datacenterById(loc.dc).positionPrice) });
+        if (r[feed]) bills.push({ hour: state.hour, category: "rent", key: "ledger.feed", params: { rack: r.name, feed, dc: loc.dc }, amount: -Math.round(FEED_PRICE[feed] * datacenterById(loc.dc).positionPrice) });
       }
     }
     for (const r of state.racks.filter((x) => x.flatKw)) {
       const dc = datacenterById(state.locations.find((l) => l.id === r.locationId)!.dc!);
-      bills.push({ hour: state.hour, category: "rent", key: "ledger.flatPower", params: { rack: r.name, kw: r.flatKw }, amount: -flatMonthly(dc, r.flatKw, yearOf(state.hour)) });
+      bills.push({ hour: state.hour, category: "rent", key: "ledger.flatPower", params: { rack: r.name, kw: r.flatKw, dc: dc.id }, amount: -flatMonthly(dc, r.flatKw, yearOf(state.hour)) });
     }
     const line = homeLineById(state.homeLine.id);
     bills.push(...addressBills(state), ...moduleBills(state));
@@ -335,6 +339,8 @@ export function tick(state: GameState): SimEvent[] {
       const item = storeItem(id);
       if (item && item.monthly > 0) bills.push(subscriptionEntry(state, item));
     }
+    const desk = state.desk && state.desk.hosting.kind !== "self" ? deskById(state.desk.id) : undefined;
+    if (desk && desk.monthly > 0) bills.push(subscriptionEntry(state, deskItem(desk)));
     if (power > 0) bills.unshift({ hour: state.hour, category: "power", key: "ledger.power", params: {}, amount: -power });
     const dc = state.locations.find((l) => l.dc);
     const direct = invoicing(state) ? billSuppliers(state, bills, { upstream: line.isp, datacenter: dc && datacenterById(dc.dc!).name }) : bills;
@@ -361,6 +367,7 @@ export function tick(state: GameState): SimEvent[] {
   events.push(...migrationTick(state));
   events.push(...productsTick(state));
   events.push(...usageTick(state));
+  overuseTick(state);
   gamesTick(state);
   statsTick(state);
   events.push(...billingTick(state));

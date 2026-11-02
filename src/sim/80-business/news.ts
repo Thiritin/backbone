@@ -91,7 +91,7 @@ export const NEWS: NewsDef[] = [
   ...byYear(MODELS.filter((m) => !m.server && m.kind !== "chassis"), (m) => m.from, (m) => m.name).map(([y, names]) => ({ id: `models.${y}`, key: "event.news.models", at: at(y), params: { names } })),
   ...SERVER_LINES.filter((v) => v.from > START_YEAR).map((v) => ({ id: `shape.${v.id}`, key: "event.news.shape", at: at(v.from), params: { name: v.name } })),
   ...SOFTWARE.flatMap((x) => FEATURES(x).map(([f, y]) => ({ id: `feature.${x.id}.${f}`, key: "event.news.feature", at: at(y), params: { name: x.name, feature: f } }))),
-  ...DESKS.filter((d) => d.from > START_YEAR).map((d) => ({ id: `desk.${d.id}`, key: "event.news.desk", at: at(d.from), params: { name: d.name } })),
+  ...DESKS.filter((d) => d.from > START_YEAR).map((d) => ({ id: `desk.${d.id}`, key: "event.news.desk", at: at(d.from), params: { name: d.name, host: d.hosts.vendor } })),
   ...SKILLS.filter((k) => (k.from ?? START_YEAR) > START_YEAR).map((k) => ({ id: `training.${k.id}`, key: "event.news.training", at: at(k.from!), params: { name: k.name } })),
   ...byYear(HOME_LINES, (l) => l.from, (l) => `${l.name} (${l.isp})`).map(([y, names]) => ({ id: `homeLines.${y}`, key: "event.news.homeLines", at: at(y), params: { names } })),
   ...PORT_SPEEDS.filter((p) => p.from > START_YEAR).map((p) => ({ id: `ports.${p.gbit}`, key: "event.news.ports", at: at(p.from), params: { gbit: p.gbit } })),

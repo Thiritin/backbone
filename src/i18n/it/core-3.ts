@@ -213,6 +213,7 @@ export default {
   "error.unknownWorkload": () => "Questo carico di lavoro non esiste più.",
   "error.alreadyStopped": () => "È già fermo.",
   "error.alreadyRunning": () => "È già in esecuzione.",
+  "error.noRamToStart": () => "Sul nodo non c'è abbastanza RAM libera per avviarla.",
   "error.lostDisk": () => "Il suo disco è perso. Ripristinalo prima.",
   "error.workloadBusy": () => "È ancora in fase di ripristino o spostamento.",
   "error.noZoneLink": () => "Nessun collegamento unisce queste zone.",

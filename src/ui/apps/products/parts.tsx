@@ -1,15 +1,17 @@
 import { AppWindow, Bird, Boxes, Container, Feather, Gamepad2, Gauge, Layers, Mail, PanelsTopLeft, Pickaxe, PiggyBank, Server, SquareTerminal, TriangleAlert, type LucideIcon } from "lucide-react";
 import { euroCents } from "../../../sim/00-core/money";
 import { formatClock, START_YEAR, yearOf } from "../../../sim/00-core/time";
-import { SERVES, softwareById, softwareOf, type Software, type SoftwareKind } from "../../../sim/10-catalog/platforms";
+import { footprint, SERVES, softwareById, softwareOf, type Software, type SoftwareKind } from "../../../sim/10-catalog/platforms";
 import { PRODUCTS } from "../../../sim/10-catalog/products";
 import { licensingAt, type LicenseKind } from "../../../sim/10-catalog/server-os";
 import { licenceIndex } from "../../../sim/10-catalog/licence-tiers";
 import { t } from "../../../i18n/en";
 import { PRODUCT } from "../support/labels";
 import type { GameState } from "../../../sim/50-state";
-import { controlPlaneUp, hostOfVm, lostDisk, workloadOnline, type Cluster, type Workload } from "../../../sim/60-infra/cluster";
+import { controlPlaneUp, hostOfVm, lostDisk, oomKilled, workloadOnline, type Cluster, type Workload } from "../../../sim/60-infra/cluster";
 import { machineAddress } from "../../../sim/60-infra/addresses";
+import { familyOf } from "../../../sim/60-infra/vulns";
+import { hasWebConsole } from "../../../sim/80-business/consoles";
 import { restoreWorkload } from "../../../sim/90-actions/vms";
 import type { MenuEntry } from "../../desktop/menu";
 import { useStore } from "../../store";
@@ -47,7 +49,7 @@ export const licenseText = (sw: Software, year: number) => {
   const era = licensingAt(sw, year);
   return era.kind === "free" ? t("misc1.parts.free") : t("misc1.parts.fee", { fee: euroCents(era.fee * licenceIndex(sw.id, year)), unit: UNIT[era.kind] });
 };
-const cp = (sw: Software) => `${+sw.controlPlane.vcpu.toFixed(2)} vCPU · ${+sw.controlPlane.ramGb.toFixed(2)} GB`;
+const cp = (sw: Software, year: number) => { const r = footprint(sw, year); return `${+r.vcpu.toFixed(2)} vCPU · ${+r.ramGb.toFixed(2)} GB`; };
 
 export const KIND_NAME: Record<SoftwareKind, string> = {
   panel: t("misc1.parts.kindPanel"), cloud: t("misc1.parts.hypervisor"), game: t("misc1.parts.kindGame"), mail: t("misc1.parts.mailServer"), mailweb: t("mailserver.kind"), dns: t("misc1.parts.dnsServer"), vpn: t("misc1.parts.vpnServer"), storage: t("misc1.parts.storageServer"), backup: t("misc1.parts.backupServer"),
@@ -83,13 +85,13 @@ export function SoftwareCards({ kind, value, onPick, compact, blocked }: { kind:
           <dl>
             <div><dt>{t("misc1.parts.license")}</dt><dd className="num">{licenseText(sw, year)}</dd></div>
             <div><dt>{t("misc1.parts.install")}</dt><dd className="num">{sw.installHours} h</dd></div>
-            {kind === "mail" ? <div><dt>{t("misc1.parts.needs")}</dt><dd className="num">{cp(sw)} · {sw.controlPlane.diskGb} GB</dd></div>
+            {kind === "mail" ? <div><dt>{t("misc1.parts.needs")}</dt><dd className="num">{cp(sw, year)} · {footprint(sw, year).diskGb} GB</dd></div>
             : kind === "cloud" && <div><dt>{t("misc1.parts.ballooning")}</dt><dd className="num">{sw.balloon === null ? t("misc1.parts.no") : sw.balloon <= sw.from ? t("misc1.parts.yes") : t("misc1.parts.from", { year: sw.balloon })}</dd></div>}
             {compact || kind === "mail" ? null : <>
             <div><dt>{t("misc1.parts.tickets")}</dt><dd className="num">×{sw.tickets}</dd></div>
             {kind === "cloud" && <div><dt>{t("misc1.parts.liveMigration")}</dt><dd>{sw.live ? t("misc1.parts.yes") : t("misc1.parts.no")}</dd></div>}
             {kind === "cloud" && <div><dt>{t("misc1.parts.splitCores")}</dt><dd>{sw.split ? t("misc1.parts.yes") : t("misc1.parts.no")}</dd></div>}
-            <div><dt>{t("misc1.parts.controlPlane")}</dt><dd className="num">{cp(sw)}</dd></div>
+            <div><dt>{t("misc1.parts.controlPlane")}</dt><dd className="num">{cp(sw, year)}</dd></div>
             </>}
           </dl>
           <span className="prd-traits">{traits(sw, compact).map((x) => <span key={x} className="pill">{x}</span>)}</span>
@@ -116,14 +118,15 @@ export function Sparkline({ values, from, w = 240, h = 44 }: { values: number[];
   );
 }
 
-export type VmState = "running" | "stopped" | "lost" | "restoring" | "migrating" | "cloning" | "down" | "frozen" | "checkpointed";
+export type VmState = "running" | "stopped" | "lost" | "restoring" | "migrating" | "cloning" | "down" | "frozen" | "checkpointed" | "oom";
 export const VM_STATE: Record<VmState, [string, string]> = {
-  running: [t("misc1.parts.running"), "ok"], frozen: [t("misc1.parts.frozen"), "bad"], checkpointed: [t("ovz.frozen"), "accent"], stopped: [t("misc1.parts.stopped"), ""], lost: [t("misc1.parts.lostDisk"), "bad"], restoring: [t("misc1.parts.restoring"), "accent"], migrating: [t("misc1.parts.migrating"), "accent"], cloning: [t("misc1.parts.cloning"), "accent"], down: [t("misc1.parts.down"), "bad"],
+  running: [t("misc1.parts.running"), "ok"], frozen: [t("misc1.parts.frozen"), "bad"], checkpointed: [t("ovz.frozen"), "accent"], stopped: [t("misc1.parts.stopped"), ""], lost: [t("misc1.parts.lostDisk"), "bad"], restoring: [t("misc1.parts.restoring"), "accent"], migrating: [t("misc1.parts.migrating"), "accent"], cloning: [t("misc1.parts.cloning"), "accent"], down: [t("misc1.parts.down"), "bad"], oom: [t("misc1.parts.oomKilled"), "bad"],
 };
 export function vmState(game: GameState, w: Workload): VmState {
   if (lostDisk(game, w)) return "lost";
   if (w.migrating) return "migrating";
   if (w.cloning && w.cloning > game.hour) return "cloning";
+  if (oomKilled(w, game.hour)) return "oom";
   if (w.busyUntil > game.hour) return game.lossReports.some((r) => r.items.some((i) => i.workloadId === w.id && i.restored)) ? "restoring" : "migrating";
   if (w.stopped) return "stopped";
   if (w.frozen) return "checkpointed";
@@ -199,6 +202,6 @@ export const softwareName =(id: string | null) => (id ? softwareById(id).name : 
 
 // Opens the web console of a cluster's software in the Browser, at the private address of its VM or control plane.
 export function consoleEntry(game: GameState, clusterId: string | null): MenuEntry | false {
-  const c = game.clusters.find((x) => x.id === clusterId), id = c && (c.vm ?? c.controlPlane ?? c.nodes[0]?.deviceId), ip = id && machineAddress(game, id);
+  const c = game.clusters.find((x) => x.id === clusterId), id = c && hasWebConsole(familyOf(c)) && (c.vm ?? c.controlPlane ?? c.nodes[0]?.deviceId), ip = id && machineAddress(game, id);
   return !!ip && { label: t("misc1.parts.openConsole"), run: () => useStore.getState().openApp("Browser", { kind: "url", id: `http://${ip}/` }) };
 }

@@ -3,8 +3,9 @@ import { recordStatus } from "../80-business/status";
 import { topTier } from "../10-catalog/licence-tiers";
 import { START_YEAR, yearOf } from "../00-core/time";
 import { GPU_SKILL } from "../10-catalog/research";
-import { backsUp, balancerIn, fcGbit, IN_VM, isService, kindsServing, kindServing, phpAt, softwareById, type DatastoreProtocol, type SoftwareKind } from "../10-catalog/platforms";
+import { backsUp, balancerIn, fcGbit, footprint, IN_VM, isService, kindsServing, kindServing, phpAt, softwareById, type DatastoreProtocol, type SoftwareKind } from "../10-catalog/platforms";
 import { OVERCOMMIT, PRODUCTS, type Resources } from "../10-catalog/products";
+import { vpsPlanGb } from "../10-catalog/economy";
 import type { Product } from "../30-customers/customers";
 import { serviceHeld } from "../45-billing/billing";
 import type { Device, GameState, MachineState } from "../50-state";
@@ -104,7 +105,7 @@ export interface Datastore { deviceId: string; protocol: DatastoreProtocol; read
 // One workload runs one service: on a hypervisor node or bare-metal panel server (clusterId and deviceId), inside a panel
 // VM (clusterId of the panel host, no deviceId), on a whole server (deviceId only), or in rack units for colocation (rackId,
 // slot, units, watts). The player's own panel VMs have no service. Resources are booked at placement; placedAt is the hour
-// it last moved. A stopped workload keeps its booking; busyUntil is the hour a restore or cold migration finishes; backupAt
+// it last moved. A stopped workload keeps its booking but holds no CPU or RAM (held); busyUntil is the hour a restore or cold migration finishes; backupAt
 // the last backup; stuck marks a VM that failover found no room for; migrating is a web space on its way to a panel host,
 // moved at the hour doneAt.
 // The player's own VMs carry MachineState; customer workloads do not.
@@ -122,8 +123,8 @@ export interface Workload extends Resources, Partial<MachineState> {
   // HyperVee: the virtual switch the adapter is plugged into; missing or null is the cluster's default switch (vswitch.ts).
   switchId?: string | null;
   // OpenVeeZee: failcnt per beancounter, the most RAM held, the extra RAM allowed while the node has room, hours of failing
-  // in a row, failcounts today, and a live checkpoint (beancounters.ts).
-  failcnt?: Record<string, number>; maxheld?: number; burstGb?: number; failStreak?: number; failDay?: number; frozen?: boolean;
+  // in a row, a live checkpoint and the hour the OOM killer lets the container start again (beancounters.ts).
+  failcnt?: Record<string, number>; maxheld?: number; burstGb?: number; failStreak?: number; frozen?: boolean; oomUntil?: number;
   // Own VMs only: the port macros the VM lets through (exposure.ts); missing or null is no firewall.
   firewall?: Firewall | null;
   // Horizont: the security groups of the instance (horizont.ts); missing is none.
@@ -163,6 +164,7 @@ export const clusterDefaults = (c: Partial<Cluster> & Pick<Cluster, "nodes">, ho
   ...(c.licence || c.panel || !topTier(c.platform ?? null) ? {} : { licence: { tier: topTier(c.platform ?? null)!.id, trialUntil: null, lapsedAt: null } }),
   controlPlane: c.controlPlane === undefined ? c.nodes[0]?.deviceId ?? null : c.controlPlane,
 }) as Cluster;
+export const oomKilled = (w: Workload, hour: number): boolean => (w.oomUntil ?? 0) > hour;
 export const workloadDefaults = (w: Partial<Workload>): Workload => ({ stopped: false, busyUntil: 0, backupAt: null, ...w }) as Workload;
 
 const ZERO: Resources = { vcpu: 0, ramGb: 0, diskGb: 0 };
@@ -193,14 +195,30 @@ export const cardsOn = (d: Device): number => d.components.filter((c) => c.kind 
 export const cardsFree = (s: GameState, d: Device): number =>
   cardsOn(d) - s.workloads.reduce((n, w) => n + (w.deviceId === d.id && w.clusterId ? w.gpus ?? 0 : 0), 0);
 
-// What the workloads on a server book; web spaces inside a panel VM count in the VM's booking, a disk on a datastore on the datastore.
-export function nodeUsed(s: GameState, deviceId: string): Resources {
+// The RAM a workload uses, set by usage.ts: importing it here would load the modules in an order that breaks.
+export const liveRam = { of: (_s: GameState, w: Workload): number => w.ramGb };
+// What a workload holds of its node: a stopped or frozen one only its disk, a running container on OpenVeeZee the RAM it
+// uses rather than its booking unless booking asks for that.
+export function held(s: GameState, w: Workload, booking = false): Resources {
+  const b = booked(s, w);
+  if (w.stopped || w.frozen) return { ...b, vcpu: 0, ramGb: 0 };
+  if (booking || s.clusters.find((c) => c.id === w.clusterId)?.platform !== "openveezee") return b;
+  return { ...b, ramGb: liveRam.of(s, w) };
+}
+
+// What the workloads on a server hold; web spaces inside a panel VM count in the VM's booking, a disk on a datastore on the datastore.
+export function nodeUsed(s: GameState, deviceId: string, booking = false): Resources {
   const used = { ...ZERO };
   for (const w of s.workloads) {
     if (w.replica?.toNode === deviceId) used.diskGb += w.diskGb;
-    if (w.deviceId === deviceId && w.clusterId) { const b = booked(s, w); for (const k of KEYS) used[k] += w.datastore && k === "diskGb" ? 0 : b[k]; }
+    if (w.deviceId === deviceId && w.clusterId) { const b = held(s, w, booking); for (const k of KEYS) used[k] += w.datastore && k === "diskGb" ? 0 : b[k]; }
   }
   return used;
+}
+// Whether the node of a stopped or frozen workload has the RAM to start it: a VM needs its booking, a container what it uses.
+export function roomToStart(s: GameState, w: Workload): boolean {
+  const d = s.devices.find((x) => x.id === w.deviceId);
+  return !d || nodeUsed(s, d.id).ramGb + held(s, { ...w, stopped: false, frozen: false }).ramGb <= bookable(s, d).ramGb + 1e-9;
 }
 
 type Disk = Resources & { datastore?: string };
@@ -246,10 +264,19 @@ export function booked(s: GameState, w: Workload): Resources {
   return product && SHARED.includes(product) ? r : { ...r, vcpu: Math.ceil(w.vcpu) };
 }
 
-// What the management services of a cluster's software take.
-export function controlPlaneUse(c: Pick<Cluster, "panel" | "platform">): Resources {
+// economy.md, Platforms and licenses: disk a mail server keeps for each mailbox it holds, in 2005, growing with server RAM.
+export const MAILBOX_GB = 1;
+// The company mailboxes a mail server holds.
+export const mailboxesOn = (s: GameState, clusterId: string): number => {
+  const tenants = new Set(s.mail.tenants.filter((x) => x.host === "self" && x.clusterId === clusterId).map((x) => x.id));
+  return s.mail.accounts.filter((a) => tenants.has(a.tenant)).length;
+};
+// What the management services of a cluster's software take this year, with a mail server's mailboxes.
+export function controlPlaneUse(s: GameState, c: Pick<Cluster, "id" | "panel" | "platform">): Resources {
   const id = c.panel ?? c.platform;
-  return id ? softwareById(id).controlPlane : ZERO;
+  if (!id) return ZERO;
+  const sw = softwareById(id), year = yearOf(s.hour), r = footprint(sw, year);
+  return sw.kind === "mail" ? { ...r, diskGb: r.diskGb + mailboxesOn(s, c.id) * MAILBOX_GB * vpsPlanGb(year) } : r;
 }
 // What a node holds for workloads: its capacity less the control plane it runs. Bars show booked against it.
 export function bookable(s: GameState, d: Device): Resources {
@@ -258,7 +285,7 @@ export function bookable(s: GameState, d: Device): Resources {
 // What the control planes of every cluster run on a server take together.
 export function controlPlanesOn(s: GameState, deviceId: string): Resources {
   const sum = { ...ZERO };
-  for (const c of s.clusters) if (!c.vm && c.controlPlane === deviceId) { const u = controlPlaneUse(c); for (const k of KEYS) sum[k] += u[k]; }
+  for (const c of s.clusters) if (!c.vm && c.controlPlane === deviceId) { const u = controlPlaneUse(s, c); for (const k of KEYS) sum[k] += u[k]; }
   return sum;
 }
 // Whether the resources fit the disk of a pool; CPU and RAM never refuse a booking.
@@ -298,7 +325,7 @@ export function vmRoom(s: GameState, c: Cluster): { cap: Resources; used: Resour
   const vm = vmById(s, c.vm), used = { ...ZERO }, panels = { ...ZERO };
   if (!vm) return { cap: ZERO, used };
   for (const w of insideVm(s, vm.id)) for (const k of KEYS) used[k] += w[k];
-  for (const h of hostsOfVm(s, vm.id)) { const u = controlPlaneUse(h); for (const k of KEYS) panels[k] += u[k]; }
+  for (const h of hostsOfVm(s, vm.id)) { const u = controlPlaneUse(s, h); for (const k of KEYS) panels[k] += u[k]; }
   return { cap: vmCap(vm, panels), used };
 }
 
@@ -306,7 +333,7 @@ export function vmRoom(s: GameState, c: Cluster): { cap: Resources; used: Resour
 export function fitsControlPlane(s: GameState, c: Cluster, deviceId: string): boolean {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d || !working(s, deviceId)) return false;
-  return diskFits(nodeUsed(s, deviceId), bookable(s, d), controlPlaneUse(c));
+  return diskFits(nodeUsed(s, deviceId), bookable(s, d), controlPlaneUse(s, c));
 }
 
 // Whether the cluster sells the product line: web hosting on a panel host, virtual machines on a hypervisor cluster, game
@@ -523,7 +550,7 @@ export const sitesDown = (s: GameState, hostId: string): boolean => s.security.o
 // A web space in a panel VM is up while the VM is. Colocation is up while its rack has power.
 // ponytail: colocation ignores the customer's uplinks until colocation cabling lands.
 export function workloadOnline(s: GameState, w: Workload): boolean {
-  if (w.stopped || w.frozen || w.busyUntil > s.hour || (w.serviceId && s.webpanel.restoring[w.serviceId])) return false;
+  if (w.stopped || w.frozen || w.busyUntil > s.hour || oomKilled(w, s.hour) || (w.serviceId && s.webpanel.restoring[w.serviceId])) return false;
   const c = w.clusterId ? s.clusters.find((x) => x.id === w.clusterId) : undefined;
   if (c?.switching) return false;
   if (c && (c.kind === "panel" ? sitesDown(s, c.id) : s.security.hacked.includes(c.id))) return false;
