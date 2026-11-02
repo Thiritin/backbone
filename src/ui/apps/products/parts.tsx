@@ -12,7 +12,7 @@ import { controlPlaneUp, hostOfVm, lostDisk, oomKilled, workloadOnline, type Clu
 import { machineAddress } from "../../../sim/60-infra/addresses";
 import { familyOf } from "../../../sim/60-infra/vulns";
 import { hasWebConsole } from "../../../sim/80-business/consoles";
-import { restoreWorkload } from "../../../sim/90-actions/vms";
+import { archiveReport, restoreWorkload } from "../../../sim/90-actions/vms";
 import type { MenuEntry } from "../../desktop/menu";
 import { useStore } from "../../store";
 import { CustomerLink } from "../customers/open";
@@ -138,10 +138,10 @@ export function vmState(game: GameState, w: Workload): VmState {
 
 const age = (at: number | null, lostAt: number) => (at === null ? t("misc1.parts.none") : t("misc1.parts.hOld", { n: lostAt - at }));
 
-// Every incident report with its lost disks, their customers and the age of each last backup.
+// Every incident report not archived, with its lost disks, their customers and the age of each last backup.
 export function IncidentReports({ game }: { game: GameState }) {
   const act = useStore((s) => s.act);
-  const reports = [...game.lossReports].reverse();
+  const reports = game.lossReports.filter((r) => !r.archived).reverse();
   if (!reports.length) return <div className="fin-empty"><TriangleAlert />{t("misc1.parts.noIncidents")}</div>;
   return (
     <div className="prd-pad">
@@ -149,7 +149,7 @@ export function IncidentReports({ game }: { game: GameState }) {
         const d = game.devices.find((x) => x.id === r.deviceId);
         return (
           <section key={r.id} className="fin-card">
-            <div className="fin-card-h"><TriangleAlert />{t("misc1.parts.lostDisks", { name: d ? devName(d) : r.deviceId })}<span className="grow" /><span className="num">{formatClock(r.hour)}</span></div>
+            <div className="fin-card-h"><TriangleAlert />{t("misc1.parts.lostDisks", { name: d ? devName(d) : r.deviceId })}<span className="grow" /><span className="num">{formatClock(r.hour)}</span><button className="btn" onClick={() => act(archiveReport, r.id)}>{t("misc1.parts.archive")}</button></div>
             <table className="table">
               <thead><tr><th>{t("misc1.parts.customer")}</th><th>{t("misc1.parts.service")}</th><th className="r">{t("misc1.parts.disk")}</th><th>{t("misc1.parts.lastBackup")}</th><th>{t("misc1.parts.status")}</th><th /></tr></thead>
               <tbody>

@@ -19,7 +19,7 @@ export function GuideApp() {
       <h2>{t("apps.guide.title")}</h2>
       <p>{t("apps.guide.intro")}</p>
       <h3>{t("apps.guide.firstServer")}</h3>
-      <p>{t("apps.guide.friends")}</p>
+      <p>{t("apps.guide.setup")}</p>
       <ol className="guide-steps">
         {guideSteps(game).map((id) => {
           const done = checkDone(game, id);

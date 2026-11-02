@@ -1,6 +1,6 @@
 # Happiness and churn
 
-Every customer has a happiness value H from 0 to 100. Events move it up and down, it slowly drifts toward how good your offer is compared with the best competitor, and it sets the chance of cancelling at each renewal. New customers start at 70; the three starting friends start at 85.
+Every customer has a happiness value H from 0 to 100. Events move it up and down, it slowly drifts toward how good your offer is compared with the best competitor, and it sets the chance of cancelling at each renewal. New customers start at 70.
 
 **Events.**
 

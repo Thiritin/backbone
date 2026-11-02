@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- Incident reports in Security can now be archived, which takes them off the incident list and out of the open count.
+- A new game no longer starts with three friends waiting for web hosting; the first order email now arrives within two weeks of your first web host going online.
 - The Terminal installs zsh only the first time you ever open it, not again in every new game.
 - The menu bar now shows the Pear logo in the style of each system release, and the Panthera and Leapard icons for Locations, Post and Security now show a house, a fax machine and a shield.
 - The Research icon in the dock shows a dot whenever a new research can be started.

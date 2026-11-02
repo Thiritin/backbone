@@ -27,7 +27,7 @@ import { companyParams, variant } from "../40-support/replies";
 import { failsScreen, reviewing, rollFraud, screening } from "../45-billing/fraud";
 import { checkoutMethod, preferredMethod } from "../45-billing/payments";
 
-// Without an order, the first one comes from a friend's recommendation within this many days of the friends joining.
+// Without an order, the first one comes from a friend's recommendation within this many days of the first panel host going online.
 export const FIRST_ORDER_DAYS = 14;
 
 // A basic SLA from a profile without a big budget: a standard product off the shelf. Everything else is a sales request.
@@ -158,9 +158,10 @@ function formInvoice(s: GameState, id: string): void {
 }
 
 export function firstOrder(s: GameState, events: SimEvent[]): void {
-  const friend = s.customers.find((c) => c.habit === "friend"), day = friend ? Math.floor((s.hour - friend.since) / 24) : 0;
-  // The friend writes by email, so the order waits while the domain's MX is wrong.
-  if (!friend || day >= FIRST_ORDER_DAYS || s.sales.requests.some((r) => r.kind === "order") || mailUnrouted(s)) return;
+  if (s.webOpenedAt === null) return;
+  const day = Math.floor((s.hour - s.webOpenedAt) / 24);
+  // The customer writes by email, so the order waits while the domain's MX is wrong.
+  if (day >= FIRST_ORDER_DAYS || s.sales.requests.some((r) => r.kind === "order") || mailUnrouted(s)) return;
   if (rand(s.rng) < 1 / (FIRST_ORDER_DAYS - day)) orderLead(s, "private", s.locations[0]?.city ?? "Frankfurt", events);
 }
 

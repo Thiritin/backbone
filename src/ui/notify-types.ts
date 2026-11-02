@@ -43,7 +43,7 @@ const GROUPS: Record<string, NotifyType[]> = {
     type("Training", "trained", "trainerDone"),
     type("On call and tech", "onCallAbuse", "onCallBlackhole", "phpUpgraded", "techFailed", "techReplaced", "techInstalled", "techRemoved", "techUpdated", "botIncident*"),
   ],
-  Books: [type("Orders and sign-ups", "orderPlaced", "certificateSold", "certificatesFree", "friendsJoined"), type("Bills and tax", "bills", "monthStart", "tax", "taxLoss", "networkBills"), type("Cash and loans", "cashNegative", "bankrupt", "loanMissed", "loanCalled"), type("Payments and dunning", "collected", "invoices", "suspended", "suspendedLeft", "chargeback", "chargebackWarning", "chargebackFees"), type("Domains", "domainExpired", "domainExpiring")],
+  Books: [type("Orders and sign-ups", "orderPlaced", "certificateSold", "certificatesFree"), type("Bills and tax", "bills", "monthStart", "tax", "taxLoss", "networkBills"), type("Cash and loans", "cashNegative", "bankrupt", "loanMissed", "loanCalled"), type("Payments and dunning", "collected", "invoices", "suspended", "suspendedLeft", "chargeback", "chargebackWarning", "chargebackFees"), type("Domains", "domainExpired", "domainExpiring")],
   Research: [type("Unlocks", "trainingDone")],
   "Pear Mail": [type("New mail", "newMail", "newMailMore")],
   Shop: [type("Used market", "used*")],

@@ -28,8 +28,11 @@ const funded = (s: GameState): GameState => { s.cash = START_CASH; return s; };
 export const newGame = (seed: number): GameState => funded(blankGame(seed));
 export const startGame = (seed: number): GameState => funded(startBlank(seed));
 import { buyCart as buyCartReal, buyDevice as buyDeviceReal, type CartLine } from "../src/sim/90-actions/hardware";
-import { addNode, createPanelVm, installHypervisor, installPanel, workload } from "../src/sim/90-actions/clusters";
-import { startGame as startBlank, welcomeFriends } from "../src/sim/90-actions/start";
+import { addNode, createPanelVm, installHypervisor, installPanel, provisionService, workload } from "../src/sim/90-actions/clusters";
+import { addCustomer } from "../src/sim/90-actions/customers";
+import { sizeSpec } from "../src/sim/10-catalog/products";
+import { WEB_BASE } from "../src/sim/10-catalog/economy";
+import { startGame as startBlank } from "../src/sim/90-actions/start";
 import { fillLines } from "../src/sim/80-business/website";
 import { derivedDomain } from "../src/sim/30-customers/domains";
 import { register } from "../src/sim/30-customers/registry";
@@ -197,11 +200,21 @@ export function registered(s: GameState): GameState {
   return s;
 }
 
-// A new company after the setup: Proxmocks on the starting basement server with a FreePanel VM, the friends moved in and every
+// Three private customers on 2 GB web hosting on the given panel host, happy ones who always pay, as the suites written
+// before the empty start expect.
+export function firstCustomers(s: GameState, hostId: string): void {
+  for (const [name, label] of [["Jonas Weber", "jonasweber.de"], ["Mira Schulz", "mira-schulz.de"], ["Tobi Kraus", "tobikraus.de"]]) {
+    const id = addCustomer(s, name, "private", "friend");
+    s.customers.find((c) => c.id === id)!.happiness = 85;
+    must(provisionService(s, id, "webHosting", { label, spec: sizeSpec("webHosting", 1, yearOf(s.hour)), price: WEB_BASE / 730, clusterId: hostId }));
+  }
+}
+
+// A new company after the setup: Proxmocks on the starting basement server with a FreePanel VM, three customers on it and every
 // line they sell on the website.
 export function readyGame(seed: number): GameState {
   const s = withServer(startGame(seed));
-  welcomeFriends(s, panelVm(s, basement(s)));
+  firstCustomers(s, panelVm(s, basement(s)));
   return withCompany(fillLines(s, undefined));
 }
 
