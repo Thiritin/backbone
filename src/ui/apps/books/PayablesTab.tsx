@@ -39,13 +39,13 @@ export function PayablesTab() {
         <thead><tr><th>{t("bank.pay.supplier")}</th><th>{t("bank.pay.number")}</th><th>{t("bank.pay.due")}</th><th className="r">{t("misc.amount")}</th><th>{t("bank.pay.status")}</th><th /></tr></thead>
         <tbody>
           {rows.map((p) => (
-            <tr key={p.id}>
+            <tr key={p.id} onClick={() => openApp("Preview", { kind: "payable", id: p.id })} tabIndex={0} onKeyDown={(e) => e.key === "Enter" && e.target === e.currentTarget && openApp("Preview", { kind: "payable", id: p.id })}>
               <td>{p.name}</td>
               <td className="num">{p.number}</td>
               <td className="num">{day(p.dueAt)}</td>
               <td className="r num">{euroCents(p.amount)}</td>
               <td className={lateInBooks(game, p) ? "neg" : undefined}>{status(p)}</td>
-              <td className="r">{unbooked(p) && left(p) > 0 && game.bank &&<button className="btn" onClick={() => openApp("Browser", { kind: "url", id: payUrl(game, p) })}>{t("bank.pay.pay")}</button>}</td>
+              <td className="r">{unbooked(p) && left(p) > 0 && game.bank &&<button className="btn" onClick={(e) => { e.stopPropagation(); openApp("Browser", { kind: "url", id: payUrl(game, p) }); }}>{t("bank.pay.pay")}</button>}</td>
             </tr>
           ))}
           {!rows.length && <tr><td colSpan={6}>{t("bank.pay.none")}</td></tr>}

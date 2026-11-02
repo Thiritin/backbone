@@ -149,7 +149,7 @@ The three options for the current Support app are the desk itself, a launcher an
 
 1. The vendor's own site (`ostickit.com`, `freescoot.net`, in the software site pattern with Versions and News) lists the release. The install itself is a tile in the web host's app catalogue (Fantastiko from 2005, Softaculus from 2009 in `web-presence`'s `app-catalogue` lane) and in Strateaux's dashboard when the package allows apps: pick the web space, install. One desk at a time; installing another replaces the first and drops its channels, departments, rules and canned text. Tickets and mail stay.
 2. The first visit to `support.<company domain>/setup` (OsTickit) shows the installer: helpdesk name, default email (a MailAccount), admin user. FreeScoot shows its installer with the same fields. Leaving the setup directory in place is a security hint the admin screen shows in red until the player removes it.
-3. A record `A support <host address>` is needed in the company zone.
+3. The record `A support <host address>` is needed in the company zone. The game sets it automatically from the panel host's public address (mail-core.md, Company zone).
 4. Mail comes in by fetching IMAP or POP3 on a schedule. Piping through an alias on a mail server the player runs (Postfixit, Mailpig) is a later option.
 
 ### Domain records

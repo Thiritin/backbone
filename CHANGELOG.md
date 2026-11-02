@@ -6,7 +6,14 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - Software now installs on any virtual machine with the disk for it, but a VM too small for its software and sites sits at 100% CPU and RAM, its web console stops answering and its sites slow down until you resize it.
 - CPU and RAM readouts now move a little from hour to hour, and every software website lists the system requirements of the current year on its download page.
+- The license page of cPanic, Pleskit and DirectAdmen now asks for the key the way each product does, and entering a key or starting the trial opens the panel at once.
+- The trade office registration now asks for the company address, and the online bank shows the credit card number, expiry date and security code.
+- Buying licences on vendor websites now goes through a checkout with billing details, payment and a review, and a card payment needs the card details from the online bank.
+- Panel consoles no longer sell licence editions; the licence page shows the edition and its limits, and editions are changed from My account on the vendor's website.
+- Vendor websites offer a Change edition choice for every licence key, which switches the key to the new edition after checkout without entering a new key.
 - Every cPanic customer account now has its own files, databases, mailboxes and limits on databases, FTP accounts and domains, which its customer pages show.
+- Your own servers, mail server, webmail, help desk and shop now get their DNS records automatically, so an MX record pointing at your mail server's host name delivers mail, and the DNS page offers MX, A and CNAME values from lists instead of free text.
+- Mail to your domain now really follows its MX record: when it leads nowhere, email orders stop arriving and the Email sheet shows the mail as not delivered.
 - Your own virtual machines now take their operating system's time to boot, shut down and restart, and an open SSH session sees the shutdown broadcast before it is disconnected.
 - Shutting down, restarting or checkpointing a virtual machine now asks for confirmation first, and a checkpointed container keeps its last picture on the console.
 - Customer websites now have their own look: layouts, colour schemes and page blocks differ per customer and get redesigned as the years pass, so the first 30 customers never share a page.
@@ -16,6 +23,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - You can order cross-connects to carriers and exchanges in a provider's customer portal, and once a year a provider raises its rack prices for new contracts and tells its customers by email.
 - Dragging a browser tab out of its window now opens it in a new browser window, and dragging a tab onto another browser window moves it there.
 - SkyBlink, Boris Network, Digital Reality, CoreSpite, Telex and myLoch now each have a website in their own style, which changes from an early look to a modern one over the years.
+- SquirrelMeal is now configured over SSH with its real menu-driven configure script, which saves config.php on the server; until then the webmail shows its missing configuration error, and the configuration test reports what the saved configuration holds.
 - Busy servers now slow down gradually from 70% CPU instead of all at once at 100%, and only a server that stays badly overloaded for two hours lets its sites time out.
 - A server that runs out of memory no longer freezes with every workload on it: it slows down while it swaps, and past that only its largest VM is killed for an hour.
 - The web hosting panels no longer resize, remove or take the whole host offline and no longer set booking limits; the host's software page now restarts the server, and updates, the release channel and auto updates sit on their own Updates page where the panel supports them.
@@ -40,6 +48,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - The dunning levels overview is now part of the top editions only; every other edition handles reminders from the invoice list.
 - Help desks now list the domain records to add at your registrar for your support address and mail sending, show which of them already resolve, and check them all with a Verify button.
 - Each product listed on the company website now has its own switch for custom requests; with it off, visitors order the shop plans only, and the website says when custom packages are available.
+- Every supplier invoice email now carries the invoice as a PDF, and opening it or an incoming invoice in Books shows the full page in the new Preview app with each charged item, the VAT and the total.
 - The Research app now lists exactly what each training switches on, every entry takes you to where it is used, and an entry that depends on software names that software.
 - Your registrar's login now has a Register page where you order further domains of your own, and every domain has a page where you set its name servers: a domain parked at the registrar shows its parking page in the browser, one on your own name servers reaches your site, and a change takes an hour to spread.
 - Interaction, mainqubes, Tellyhouse, Global Snitch, Docklands Data and Iron Molehill now have their own websites in the style of their companies, with an early look and a modern one that arrives in later years.
@@ -50,6 +59,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Colocation provider sites now keep their own layout, including their facility lists and front page banner, after the Shop app has been opened.
 - Custom orders no longer offer to create the customer account before the customer has accepted the quote.
 - Colocation provider sites now keep their own layout after the Shop app has been opened.
+- Ordering colocation space now asks for the billing address and a payment method by direct debit or invoice, and the customer portal profile shows both and lets you switch direct debit on or off.
 - Support desks now keep the numbers for their reports: first response times, how many tickets met the response time each customer expects, and tickets per agent, kind and month.
 - Every colocation provider now has its own website in the browser, listed on Yahoy, where you compare its data centers and prices, join a waitlist and order space, and the Visit site button in Locations opens that order form with your pick.
 - Support desks can merge duplicate tickets, mark spam, keep internal notes, set priorities, sort tickets into departments with their own agents and routing rules, keep tickets for yourself that staff leave alone, and take requests through a customer portal with a status lookup.

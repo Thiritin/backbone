@@ -79,7 +79,7 @@ export default {
   "error.cardLimit": () => "Die Bestellung liegt über dem Kartenlimit.",
   "error.cardOnly": () => "Dieser Shop akzeptiert nur Kreditkarten.",
   "ticket.mail.bankCard.subject": () => "Ihre Kreditkarte",
-  "ticket.mail.bankCard.text": (p) => `${p.bank} hat Ihre Kreditkarte mit einem Limit von ${euro(Number(p.limit))} genehmigt. Die Kartenabrechnung erhalten Sie jeweils zu Monatsbeginn.`,
+  "ticket.mail.bankCard.text": (p) => `${p.bank} hat Ihre Kreditkarte${p.last4 ? ` (Endziffern ${p.last4})` : ""} mit einem Limit von ${euro(Number(p.limit))} genehmigt. Die Kartenabrechnung erhalten Sie jeweils zu Monatsbeginn.`,
   "ticket.mail.bankOverdraft.subject": () => "Ihr Dispo",
   "ticket.mail.bankOverdraft.text": (p) => `${p.bank} hat Ihren Dispositionskredit auf ${euro(Number(p.limit))} bei ${p.rate} % Zinsen pro Jahr festgelegt.`,
   "ticket.mail.bankWelcome.subject": (p) => `Ihr Konto bei ${p.bank}`,

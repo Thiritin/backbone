@@ -24,6 +24,8 @@ export function cleanRecord(zone: string, rec: RecordDraft): Omit<DnsRecord, "id
   if (rec.type === "AAAA" && !/^[0-9a-f:]*:[0-9a-f:]*$/i.test(data)) return null;
   if (rec.type === "CNAME" && name === "@") return null;
   if (rec.type === "MX" && !/^\d{1,5} [a-z0-9._-]+$/i.test(data)) return null;
+  // An MX names a host; an address in its place resolves to nothing, so the registrar refuses it.
+  if (rec.type === "MX" && isIpv4(data.split(" ")[1].replace(/\.$/, ""))) return null;
   return { type: rec.type, name, ttl: rec.ttl, data };
 }
 

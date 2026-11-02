@@ -39,7 +39,7 @@ export interface Payable {
   // What Books counts as paid: the payments out assigned to it there. sent is what the supplier received.
   booked: number;
   // A licence order paid by transfer, whose keys the vendor sends once the money arrives.
-  keys?: { order: string; lines: { product: string; edition: string | null; qty: number; to?: string }[] };
+  keys?: { order: string; lines: { product: string; edition: string | null; qty: number; to?: string; replaces?: string }[] };
 }
 
 export const supplierAccount = (supplier: SupplierId): string => {
@@ -84,7 +84,8 @@ const book = (s: GameState, lines: LedgerEntry[]) => {
   s.ledger = [...s.ledger, ...lines.map((e) => ({ ...e, hour: s.hour }))];
 };
 
-// A supplier's invoice by email, or on paper when a letter brings it; a supplier with a mandate debits it at once.
+// A supplier's invoice by email with the invoice attached, or on paper when a letter brings it; a supplier with a mandate
+// debits it at once.
 export function invoice(s: GameState, supplier: SupplierId, name: string, lines: LedgerEntry[], days = PAY_DAYS, paper = false): Payable {
   const amount = cents(-lines.reduce((n, e) => n + e.amount, 0));
   const id = `pay${s.nextId++}`;
@@ -94,8 +95,8 @@ export function invoice(s: GameState, supplier: SupplierId, name: string, lines:
     Object.assign(p, { sent: amount, paidAt: s.hour, booked: amount });
     const debit = { id: `out${s.nextId++}`, hour: s.hour, arriveAt: s.hour, name, account: ibanEra(s) ? supplierIban(supplier) : supplierAccount(supplier), amount, reference: p.number, payableId: id, matched: id, arrived: true as const, debit: true as const };
     s.bank = { ...s.bank, outgoing: [...s.bank.outgoing, debit] };
-    deliverMail(s, name, "debit", { name, number: p.number, amount });
-  } else if (!paper) deliverMail(s, name, "invoice", { name, number: p.number, amount, due: p.dueAt, iban: ibanEra(s) ? groupIban(supplierIban(supplier)) : "", account: supplierAccount(supplier), code: SUPPLIER_CODE, url: supplierUrl(name) });
+    deliverMail(s, name, "debit", { name, number: p.number, amount, payable: id });
+  } else if (!paper) deliverMail(s, name, "invoice", { name, number: p.number, amount, payable: id, due: p.dueAt, iban: ibanEra(s) ? groupIban(supplierIban(supplier)) : "", account: supplierAccount(supplier), code: SUPPLIER_CODE, url: supplierUrl(name) });
   s.payables = [...s.payables, p];
   return p;
 }

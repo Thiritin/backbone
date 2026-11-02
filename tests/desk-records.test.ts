@@ -34,12 +34,12 @@ describe("desk domain records", () => {
     expect(rows(s).map((r) => r[2])).toEqual(["acme.freshdusk.com", "v=spf1 include:email.freshdusk.com ~all", "fd1.dkim.freshdusk.com", "fd2.dkim.freshdusk.com"]);
   });
 
-  it("lists the A record of a self-hosted desk at its panel host's address, and none for a desk without a site", () => {
+  it("lists the A record of a self-hosted desk at its panel host's address, set automatically, and none for a desk without a site", () => {
     const s = game(), c = s.clusters.find((x) => x.kind === "panel")!;
     expect(installDesk(s, c.id, "ostickit").ok).toBe(true);
     expect(rows(s)).toEqual([["A", "support", "", false]]);
     panel(s);
-    expect(rows(s)).toEqual([["A", "support", "203.0.113.10", false]]);
+    expect(rows(s)).toEqual([["A", "support", "203.0.113.10", true]]);
     openDesk(s, "zendusk");
     expect(deskRecords(s)).toEqual([]);
   });
@@ -67,14 +67,10 @@ describe("desk domain records", () => {
     expect(senderVerified(s, h)).toBe(true);
   });
 
-  it("passes Verify only when every record resolves", () => {
+  it("passes Verify for a self-hosted desk with a public address, as its record is set automatically", () => {
     const s = game(), c = panel(s);
     expect(verifyDesk(s)).toEqual({ ok: false, error: "error.noDesk" });
     installDesk(s, c.id, "ostickit");
-    expect(verifyDesk(s)).toEqual({ ok: false, error: "error.deskRecords" });
-    add(s, "A", "support", deskRecords(s)[0].data);
-    expect(verifyDesk(s)).toEqual({ ok: false, error: "error.deskRecords" });
-    s.hour += 1;
     expect(verifyDesk(s)).toEqual({ ok: true });
   });
 

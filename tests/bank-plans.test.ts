@@ -19,7 +19,7 @@ const account = (bank = "sparklasse", plan?: string, form = "sole"): GameState =
   const s = newGame(3);
   s.hour = MONDAY_8;
   expect(openBankAccount(s, bank as never, plan).ok).toBe(true);
-  expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "sole").ok).toBe(true);
+  expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "sole", { street: "Kellerweg 1", zip: "60311", city: "Frankfurt" }).ok).toBe(true);
   s.registration!.form = form;
   tick(s);
   return s;

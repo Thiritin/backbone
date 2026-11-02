@@ -1,5 +1,6 @@
 // docs/design/plans/webmail-server.md: the webmail front ends of the own mail server, what each install is set up with,
 // and the hooks mail-core reads to learn what the own server offers.
+import { t } from "../../i18n/en";
 import { companyDomain, fqdn } from "../30-customers/domains";
 import { WEBMAIL, type WebmailId } from "../10-catalog/webmail";
 import { mailHooks, type SelfHostCaps } from "../42-mail/caps";
@@ -9,9 +10,10 @@ import { controlPlaneUp, machineOf, type Cluster } from "../60-infra/cluster";
 import { panelMachine as machineIdOf } from "../60-infra/licence";
 import { familyOf } from "../60-infra/vulns";
 
-// What the setup menu of a front end holds (section 3.5).
+// What the configuration of a front end holds (section 3.5); conf keeps SquirrelMeal's other config.php values by variable.
 export interface WebmailInstall {
   productName: string; domain: string; imapHost: string; imapPort: number; smtpHost: string; smtpPort: number; plugins: string[];
+  conf: Record<string, string>;
 }
 // installs by front end cluster; default is the cluster that answers at webmail.<domain>, null for the first installed.
 export interface WebmailState { installs: Record<string, WebmailInstall>; default: string | null }
@@ -46,10 +48,53 @@ export function webmailDefaults(s: GameState, front: Cluster): WebmailInstall {
   const other = local ? null : s.clusters.find((c) => c.kind === "mail"), id = other && machineIdOf(other);
   const host = local || !id ? "localhost" : namesOf(s, id)[1] ?? namesOf(s, id)[0] ?? "localhost";
   const name = WEBMAIL.find((w) => w.id === frontOf(front))?.name ?? "";
-  return { productName: name, domain: companyDomain(s), imapHost: host, imapPort: 143, smtpHost: host, smtpPort: 25, plugins: [...BUNDLED] };
+  return { productName: name, domain: companyDomain(s), imapHost: host, imapPort: 143, smtpHost: host, smtpPort: 25, plugins: [...BUNDLED], conf: {} };
 }
 
 export const webmailOf = (s: GameState, front: Cluster): WebmailInstall => s.webmail.installs[front.id] ?? webmailDefaults(s, front);
+
+export const CONFIG_PHP = "/etc/squirrelmeal/config.php";
+// The config.php variables of each conf.pl menu with their config_default.php values; the variables in CORE live in
+// WebmailInstall's own fields.
+export const CONF_ITEMS: Record<string, [string, string][]> = {
+  org: [["org_name", ""], ["org_logo", "../images/sm_logo.png"], ["org_title", "SquirrelMeal $version"], ["signout_page", ""], ["frame_top", "_top"], ["provider_uri", "http://squirrelmeal.org/"], ["provider_name", "SquirrelMeal"]],
+  server: [["domain", ""], ["invert_time", "false"]],
+  imap: [["imapServerAddress", ""], ["imapPort", ""], ["imap_auth_mech", "login"], ["use_imap_tls", "false"], ["imap_server_type", "other"], ["optional_delimiter", "detect"]],
+  smtp: [["smtpServerAddress", ""], ["smtpPort", ""], ["pop_before_smtp", "false"], ["smtp_auth_mech", "none"], ["use_smtp_tls", "false"], ["encode_header_key", ""]],
+  folders: [
+    ["default_folder_prefix", ""], ["show_prefix_option", "false"], ["trash_folder", "INBOX.Trash"], ["sent_folder", "INBOX.Sent"], ["draft_folder", "INBOX.Drafts"],
+    ["default_move_to_trash", "true"], ["default_move_to_sent", "true"], ["default_save_as_draft", "true"], ["list_special_folders_first", "true"], ["auto_create_special", "true"],
+  ],
+  general: [
+    ["data_dir", "/var/lib/squirrelmeal/data/"], ["attachment_dir", "/var/spool/squirrelmeal/attach/"], ["dir_hash_level", "0"], ["default_left_size", "150"],
+    ["force_username_lowercase", "false"], ["default_use_priority", "true"], ["hide_sm_attributions", "false"], ["default_use_mdn", "true"], ["edit_identity", "true"], ["session_name", "SQMSESSID"],
+  ],
+  themes: [["theme_default", "0"], ["theme_css", ""]],
+  abook: [["default_use_javascript_addr_book", "false"], ["abook_global_file", ""], ["abook_global_file_writeable", "false"]],
+  motd: [["motd", ""]],
+  db: [["addrbook_dsn", ""], ["addrbook_table", "address"], ["prefs_dsn", ""], ["prefs_table", "userprefs"], ["prefs_user_field", "user"], ["prefs_key_field", "prefkey"], ["prefs_val_field", "prefval"]],
+  lang: [["squirrelmail_default_language", "en_US"], ["default_charset", "iso-8859-1"], ["lossy_encoding", "false"]],
+};
+const CORE: Record<string, "productName" | "domain" | "imapHost" | "imapPort" | "smtpHost" | "smtpPort"> = {
+  org_name: "productName", domain: "domain", imapServerAddress: "imapHost", imapPort: "imapPort", smtpServerAddress: "smtpHost", smtpPort: "smtpPort",
+};
+const DEFAULTS: Record<string, string> = Object.fromEntries(Object.values(CONF_ITEMS).flat());
+
+export const confValue = (cfg: WebmailInstall, key: string): string => (key in CORE ? String(cfg[CORE[key]]) : cfg.conf[key] ?? DEFAULTS[key] ?? "");
+export function setConfValue(cfg: WebmailInstall, key: string, value: string): WebmailInstall {
+  const f = CORE[key];
+  return f ? { ...cfg, [f]: f.endsWith("Port") ? Number(value) : value } : { ...cfg, conf: { ...cfg.conf, [key]: value } };
+}
+
+const php = (v: string) => (/^(true|false|\d+)$/.test(v) ? v : `'${v.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'`);
+// The config.php conf.pl writes.
+export function configPhp(cfg: WebmailInstall): string {
+  const vars = Object.values(CONF_ITEMS).flat().map(([k]) => `$${k.padEnd(32)} = ${php(confValue(cfg, k))};`);
+  return [
+    "<?php", "", "/**", " * SquirrelMeal Configuration File", " * Created using the configure script, conf.pl", " */", "", "global $version;", "$config_version = '1.4.0';", "",
+    ...vars, "", ...cfg.plugins.map((p, i) => `$plugins[${i}] = '${t(`mailserver.plugin.${p}`)}';`), "", "?>", "",
+  ].join("\n");
+}
 
 // Whether the front end reaches an IMAP server: its backend runs and is asked on an IMAP port.
 export function imapUp(s: GameState, front: Cluster): boolean {

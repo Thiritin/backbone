@@ -24,16 +24,18 @@ import { apt, dpkg, installScript, installStep } from "./apt";
 import { DESK, homeOf, shortPath } from "./fs";
 import { binariesOn, cliWords, vendorCli } from "./vendor-cli";
 import { completePath, FILE_COMMANDS, fileCommand, parseLine, redirect, type Segment } from "./shell";
+import { confCommand, type ConfMenu } from "./squirrel-conf";
 
 // An open ssh session on a server; null at the desk. warned marks one that has shown the shutdown broadcast.
 export interface Session { host: string; deviceId: string; warned?: boolean }
 // A recovery the screen reports on once it is done, or an install whose progress lines it prints as they come due; step
 // is how many it printed.
 export interface Watch { workloadId?: string; host: string; install?: { machineId: string; softwareId: string; step: number } }
-// cwd is the new working directory; failed stops a && chain; confirm asks [Y/n] before the command runs again with -y.
+// cwd is the new working directory; failed stops a && chain; confirm asks [Y/n] before the command runs again with -y;
+// menu opens a menu program that takes the lines after it.
 export interface CommandResult {
   output: string[]; session?: Session | null; action?: Call; clear?: boolean; watch?: Watch;
-  cwd?: string; failed?: boolean; confirm?: boolean; edit?: Editing; dev?: boolean;
+  cwd?: string; failed?: boolean; confirm?: boolean; edit?: Editing; dev?: boolean; menu?: ConfMenu;
 }
 // A file open in the editor: its absolute path, the name as typed and its text.
 export interface Editing { path: string; name: string; text: string }
@@ -388,7 +390,7 @@ function runWords(s: GameState, session: Session | null, cwd: string, words: str
     if (!osUp(s, session.deviceId) || (server && !working(s, session.deviceId))) return { output: lines("term.ssh.lost", { host: session.host }), session: null };
     if (cmd === "exit" || (server && ["uptime", "df", "free", "top", "shutdown", "reboot", "recover"].includes(cmd))) return remote(s, session, cmd, args);
     if (cmd === "dpkg") return dpkg(s, session.deviceId, args);
-    const net = netCommand(s, session.deviceId, cmd, args) ?? vendorCli(s, session.deviceId, cmd, args, root);
+    const net = netCommand(s, session.deviceId, cmd, args) ?? confCommand(s, session.deviceId, cmd, args) ?? vendorCli(s, session.deviceId, cmd, args, root);
     if (net) return net;
     if (cmd === "curl" || cmd === "wget") return { output: lines(`term.${cmd}.resolve`, { host: urlHost(args) }), failed: true };
     if (cmd === "sh") return { output: lines("term.sh.open", { file: args[0] ?? "" }), failed: true };
@@ -408,12 +410,12 @@ export function runCommand(s: GameState, session: Session | null, line: string, 
   return seg ? runSegment(s, session, cwd ?? homeOf(hostOf(session)), seg, nonce) : { output: [] };
 }
 
-export interface LineResult { output: string[]; session: Session | null; cwd: string | null; watch: Watch[]; clear: boolean; confirm: string | null; edit: Editing | null; dev: boolean }
+export interface LineResult { output: string[]; session: Session | null; cwd: string | null; watch: Watch[]; clear: boolean; confirm: string | null; edit: Editing | null; dev: boolean; menu: ConfMenu | null }
 
 // Runs every command of a line in turn, each on the state the one before left: act applies a command's action. A
 // command that asks to confirm ends the run, and confirm holds the rest of the line to run once the player agrees.
 export function runLine(get: () => GameState, act: (a: Call) => ActionResult, session: Session | null, cwd: string | null, line: string, nonce = 0): LineResult {
-  const res: LineResult = { output: [], session, cwd, watch: [], clear: false, confirm: null, edit: null, dev: false };
+  const res: LineResult = { output: [], session, cwd, watch: [], clear: false, confirm: null, edit: null, dev: false, menu: null };
   // A software's install line is matched whole before the shell splits it at its && and ;.
   const whole = session ? installScript(get(), session.deviceId, line) : undefined;
   for (const seg of whole ? [null] : parseLine(line)) {
@@ -430,6 +432,7 @@ export function runLine(get: () => GameState, act: (a: Call) => ActionResult, se
     if (r.watch) res.watch.push(r.watch);
     if (r.edit) { res.edit = r.edit; break; }
     if (r.dev) { res.dev = true; break; }
+    if (r.menu) { res.menu = r.menu; break; }
     if (r.confirm && seg) { res.confirm = `${line.slice(seg.start, seg.end).trim()} -y${line.slice(seg.end)}`; break; }
     if (failed && seg?.then === "&&") break;
   }
