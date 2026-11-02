@@ -6,6 +6,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - Squarecube shows your mailbox in its Classic look, with folders, drag and drop, search, compose with an HTML editor, an address book, identities, preferences with special folders and, from version 0.4, a password change.
 - Pear Mail can create, rename, nest and delete mailboxes on the server and On My Pear, moves mail by drag and drop with Option to copy, erases deleted and junk mail, shows account info, and has File, View, Mailbox and Message menus with keyboard shortcuts.
+- Gmial changes its look with the years, from the 2011 redesign and the 2013 Inbox tabs to the 2018 and 2022 looks, and gains Priority Inbox, Snooze, Smart Reply and themes along the way.
+- Gmial Labs lets you try Superstars, Preview Pane, Canned Responses, Mail Goggles, Undo Send and Old Snakey, and keyboard shortcuts can be switched on in General settings.
 - Goggle mailboxes have their own webmail, Gmial, with labels, conversations, stars, search operators, filters made from a message, and settings for labels, filters, forwarding, POP and IMAP.
 - Shop modules, Shop link and payment methods now belong to the shop system you bought them for: switching systems starts without them, and switching back brings them back.
 - Shipping stored hardware to another site now costs a courier fee per unit, never more than a rack move.

@@ -16,6 +16,8 @@ export const mailHooks = {
   installedWebmail: (_s: GameState): string | null => null,
   // A hosted desk takes the mail forwarded to its own address; support-desk sets this.
   deskInbound: (_s: GameState, _m: Message): void => {},
+  // The host's own marks on a message about to be stored, after filters and junk; webmail-consumer sets Gmial's Important.
+  arrive: (_s: GameState, _a: MailAccount, _m: Message): void => {},
   // Postfixit installs Dovecoat and Mailpig bundles it.
   selfHostCaps: (_s: GameState): SelfHostCaps => ({ imap: true, pop: true, sieve: false, junkBonus: 0 }),
   // The tenant that receives the company domain's mail: the live tenant behind the best MX host that resolves. A name in

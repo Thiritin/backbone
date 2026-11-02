@@ -11,6 +11,7 @@ import type { MailAccount, MailTenant, Message } from "../42-mail/types";
 import type { GameState } from "../50-state";
 import { recordAt } from "../60-infra/company-zone";
 import { IMPORTANT, importantLabel } from "../80-business/mail-search";
+import "../80-business/gmial";
 import type { ActionResult } from "./hardware";
 import { createTenant, setTenantLock, setTenantPlan, verifyTenant } from "./mail";
 import { removeCompanyRecord, setCompanyRecord } from "./domains";

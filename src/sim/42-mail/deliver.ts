@@ -231,6 +231,7 @@ function accept(s: GameState, a: MailAccount, m: Message, hops: number, junkChec
     if (caught) { m.folder = "junk"; result = "quarantined"; why = "junk"; }
   }
   if (keep && !(m.folder === "junk" && m.kind === "spam" && a.prefs?.spamAction === "delete")) {
+    mailHooks.arrive(s, a, m);
     store(s, a, m);
   }
   trace(s, m, result, why, a.id);
