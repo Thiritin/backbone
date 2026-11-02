@@ -12,7 +12,7 @@ import { backupLabel, exchangeLabel, feedsLabel, shareUnits, spaceSize } from ".
 import { useStore } from "../../../../store";
 import { usePageAct } from "../../pageAct";
 import { Checkout, type CheckoutDetails } from "../shared/Checkout";
-import { Portal } from "./portal/Portal";
+import { contractNo, Portal } from "./portal/Portal";
 import "./providers.css";
 
 // docs/design/plans/colo-portals.md, section 4: the pages every provider site shares; each provider lays them out in its own look.
@@ -157,7 +157,8 @@ export function OrderForm({ game, p, route, className }: { game: GameState; p: P
     const ready = formatDay(game.hour + 24 * LEAD_DAYS[k]);
     const place = (d: CheckoutDetails): ActionResult => {
       const r = attempt(addLocation, dc.id, k, n, { company: d.company, name: d.name, address: d.address, payment: d.payment.kind === "debit" ? d.payment : { kind: "transfer" } });
-      return r.ok ? { ok: true, id: `${p.name.replace(/\W/g, "").slice(0, 2).toUpperCase()}-${r.id!.replace(/\D/g, "")}` } : r;
+      const c = r.ok && useStore.getState().game.contracts.find((x) => x.locationId === r.id);
+      return c ? { ok: true, id: contractNo(c) } : r;
     };
     return wrap(
       <Checkout game={game} btn="ps-btn pri" facts={[...summary, [t("providers.ready"), ready]]} onBack={() => setStep("space")}

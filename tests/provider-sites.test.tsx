@@ -7,7 +7,7 @@ import { DATACENTERS, PROVIDERS } from "../src/sim/20-world/datacenters";
 import { openAccount } from "../src/sim/46-finance/bank";
 import { displayHost, orderUrl, providerDomain, resolve } from "../src/sim/80-business/browser";
 import { siteIndex } from "../src/sim/80-business/index";
-import { PortalShell } from "../src/ui/apps/browser/sites/providers/portal/Portal";
+import { contractNo, PortalShell } from "../src/ui/apps/browser/sites/providers/portal/Portal";
 import { OrderForm, routeOf } from "../src/ui/apps/browser/sites/providers/ProviderSite";
 import { useStore } from "../src/ui/store";
 import { ProviderSite } from "../src/ui/apps/browser/sites/providers/registry";
@@ -78,7 +78,9 @@ function order(pay: string) {
   expect(screen.getByText(FR5.name)).toBeTruthy();
   fireEvent.click(screen.getByText(t("checkout.placeOrder")));
   expect(screen.getByText(t("checkout.thanks"))).toBeTruthy();
-  return useStore.getState().game;
+  const g = useStore.getState().game;
+  expect(screen.getByText(t("checkout.number", { order: contractNo(g.contracts[0]) }))).toBeTruthy();
+  return g;
 }
 
 describe("colocation order and customer portal", () => {
