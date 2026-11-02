@@ -18,7 +18,7 @@ describe("contracts", () => {
   it("opens one per rented location and drops it with the location", () => {
     const s = rich();
     const id = ok(addLocation(s, FR5.id, "share", 2));
-    expect(s.contracts).toEqual([{ id: expect.any(String), provider: "equinox", dc: FR5.id, locationId: id, space: "share", positions: 2, since: 0, monthly: spacePrice(FR5, "share", 2), endsAt: null }]);
+    expect(s.contracts).toEqual([{ id: expect.any(String), provider: "equinox", dc: FR5.id, locationId: id, space: "share", positions: 2, since: 0, monthly: spacePrice(FR5, "share", 2), endsAt: null, retainedAt: null }]);
     ok(closeLocation(s, id));
     expect(s.contracts).toEqual([]);
   });
