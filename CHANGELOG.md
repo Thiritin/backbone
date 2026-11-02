@@ -6,6 +6,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - Every colocation provider's site now has a customer portal where you sign in to see your contracts, invoices and remote-hands tickets, book extra power, feed B and power contracts, and cancel a contract with its notice date, and the large providers offer a free month to stay.
 - Colocation provider sites now keep their own layout, including their facility lists and front page banner, after the Shop app has been opened.
+- Custom orders no longer offer to create the customer account before the customer has accepted the quote.
 - Colocation provider sites now keep their own layout after the Shop app has been opened.
 - Support desks now keep the numbers for their reports: first response times, how many tickets met the response time each customer expects, and tickets per agent, kind and month.
 - Every colocation provider now has its own website in the browser, listed on Yahoy, where you compare its data centers and prices, join a waitlist and order space, and the Visit site button in Locations opens that order form with your pick.
