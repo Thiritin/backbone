@@ -1,13 +1,12 @@
 import { t } from "../../i18n/en";
 // Values from docs/design/economy/marketing-and-reviews.md, "Marketing and reviews"; numbers marked as decisions are recorded there.
 import { hashRng, rand, type Rng } from "../00-core/rng";
-import { isMonthStart, monthIndexOf, yearOf } from "../00-core/time";
+import { isMonthStart, yearOf } from "../00-core/time";
 import { priceAt, SEARCH_AD_COST } from "../10-catalog/economy";
 import { BADGE_TRUST, TIERS, TRUST_CAP } from "../10-catalog/hosttoast";
 import type { Product, Profile } from "../30-customers/customers";
 import { profileStats } from "../40-support/tickets";
 import type { GameState, LedgerEntry } from "../50-state";
-import type { CatalogProduct } from "./catalog";
 import type { SimEvent } from "../88-tick/tick";
 import { campaignBoost, hasMarketingManager, reviewBoost } from "../47-staff/staff";
 
@@ -86,10 +85,6 @@ export interface Marketing {
   // The redesign on order: the hour it is delivered and the generation it brings. Null when none is on order.
   designReady: { hour: number; year: number } | null;
   siteOutage: boolean;
-  // Leads per line lost because no catalog product fitted, this month and last month.
-  unmet: { month: Partial<Record<Product, number>>; last: Partial<Record<Product, number>> };
-  // The catalog as last published to the website; leads decide on it. Null until the first publish.
-  published: CatalogProduct[] | null;
   // Flyer runs from the print shop, newest last; finished runs stay for the order history.
   flyers: FlyerRun[];
 }
@@ -101,15 +96,8 @@ const floorOf = (p: Profile): number => (p === "webDev" ? AWARENESS_FLOOR / 4 : 
 const AWARENESS_DECAY = 0.02;
 export const REVIEW_HOURS = 2 * 8760;
 
-// Won orders per line among the leads that arrived this month (ago 0) or last month (ago 1).
-export function wonLeads(s: GameState, ago: 0 | 1): Partial<Record<Product, number>> {
-  const month = monthIndexOf(s.hour) - ago, won: Partial<Record<Product, number>> = {};
-  for (const r of s.sales.requests) if (r.kind === "order" && r.status === "won" && monthIndexOf(r.createdAt) === month) won[r.product] = (won[r.product] ?? 0) + 1;
-  return won;
-}
-
 export const newMarketing = (): Marketing => ({
-  owned: [], campaigns: [], reviews: [], platform: null, studies: [], lines: [], custom: [...SITE_LINES], emailOrders: true, customRequests: true, siteReady: null, launched: false, siteHost: { kind: "rented" }, designYear: 2005, designReady: null, siteOutage: false, unmet: { month: {}, last: {} }, published: null, flyers: [],
+  owned: [], campaigns: [], reviews: [], platform: null, studies: [], lines: [], custom: [...SITE_LINES], emailOrders: true, customRequests: true, siteReady: null, launched: false, siteHost: { kind: "rented" }, designYear: 2005, designReady: null, siteOutage: false, flyers: [],
   awareness: Object.fromEntries(PROFILE_IDS.map((p) => [p, p === "private" || p === "gamer" ? 0.05 : floorOf(p)])) as Record<Profile, number>,
 });
 
@@ -258,7 +246,6 @@ export function marketingTick(s: GameState): SimEvent[] {
   }
   const total = bill(s);
   s.shop = { ...s.shop, soldOut: {} };
-  s.marketing = { ...s.marketing, unmet: { month: {}, last: s.marketing.unmet.month } };
   if (total > 0) events.push({ app: "Marketing", key: "event.marketingBills", params: { total } });
   invite(s, events);
   updateAwareness(s);

@@ -36,6 +36,9 @@ export interface SmartMailbox { id: string; name: string; match: "all" | "any"; 
 // error is an i18n key; a line without one is a good check.
 export interface ActivityLine { at: number; clientId: string; count: number; error?: string }
 
+// The client's junk filter: clean holds the ids marked Not Junk, newest last, which the filter no longer judges.
+export interface JunkPrefs { on: boolean; mode: "training" | "automatic"; trained: number; clean: string[] }
+
 export interface PearMailState {
   accounts: ClientAccount[];   // sidebar order
   rules: ClientRule[];
@@ -45,6 +48,7 @@ export interface PearMailState {
   replied: Record<string, number>;  // "<rule id>:<sender address>" to the minute a rule's auto reply answered that sender
   colors: Record<string, string>;   // message id to the colour a rule gave it
   chimes: number;              // sounds rules asked for; the window plays one each time it rises
+  junk: JunkPrefs;
   welcomed: boolean;           // the first-launch welcome was dismissed
   seenBuild: string;           // version of the last build whose What's new sheet was shown
 }
@@ -55,7 +59,8 @@ export const localFolder = (clientId: string, folder: string): string => `${PEAR
 // The client id of On My Pear mailboxes: their mail sits in localFolder(MY_PEAR, folder id).
 export const MY_PEAR = "my";
 
-export const newPearMail = (): PearMailState => ({ accounts: [], rules: [], local: { folders: [], messages: [] }, activity: [], smart: [], replied: {}, colors: {}, chimes: 0, welcomed: false, seenBuild: "" });
+export const newPearMail = (): PearMailState => ({ accounts: [], rules: [], local: { folders: [], messages: [] }, activity: [], smart: [], replied: {}, colors: {}, chimes: 0,
+  junk: { on: true, mode: "training", trained: 0, clean: [] }, welcomed: false, seenBuild: "" });
 
 export const clientAccount = (id: string, o: { accountId: string; address: string; description: string; fullName: string; password: string; protocol: "imap" | "pop" }, at: number): ClientAccount => ({
   ...o, id, server: null, smtp: null, enabled: true, checkEvery: 5, checkedAt: at, syncedAt: at, popRemove: "now", popDue: [], signature: null, storeSent: true, addedAt: at,

@@ -168,36 +168,32 @@ export function SmartSheet({ smart, onClose }: { smart?: SmartMailbox; onClose: 
 }
 
 // Preferences > Rules: the list in the order rules run, with an enable checkbox each; rows drag to reorder.
-export function RulesPane({ onEdit, onClose }: { onEdit: (r?: ClientRule) => void; onClose: () => void }) {
+export function RulesPane({ onEdit }: { onEdit: (r?: ClientRule) => void }) {
   const game = useStore((s) => s.game), act = useStore((s) => s.act);
   const rules = game.pearMail.rules;
   const [sel, setSel] = useState<string | null>(null);
   const picked = rules.find((r) => r.id === sel);
   return (
-    <div className="pm-sheet pm-prefs" role="dialog" aria-labelledby="pm-prefs-title">
-      <h2 id="pm-prefs-title">{t("pearMail.rules")}</h2>
-      <div className="pm-rules-row">
-        <table className="table pm-rules">
-          <thead><tr><th>{t("pearMail.rule.active")}</th><th>{t("pearMail.rule.name")}</th></tr></thead>
-          <tbody>
-            {rules.map((r, i) => (
-              <tr key={r.id} className={sel === r.id ? "sel" : ""} onClick={() => setSel(r.id)} onDoubleClick={() => onEdit(r)}
-                draggable onDragStart={(e) => e.dataTransfer.setData("application/x-pear-rule", r.id)} onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => { const id = e.dataTransfer.getData("application/x-pear-rule"); if (id) act(moveClientRule, id, i); }}>
-                <td><input type="checkbox" aria-label={r.name} checked={r.on} onChange={(e) => act(saveClientRule, { ...r, on: e.target.checked })} onClick={(e) => e.stopPropagation()} /></td>
-                <td>{r.name}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <div className="pm-rules-buttons">
-          <button className="btn" onClick={() => onEdit()}>{t("pearMail.rule.add")}</button>
-          <button className="btn" disabled={!picked} onClick={() => picked && onEdit(picked)}>{t("pearMail.rule.edit")}</button>
-          <button className="btn" disabled={!picked} onClick={() => { if (picked) { const { id: _i, ...copy } = picked; act(saveClientRule, { ...copy, name: t("pearMail.rule.copyName", { name: picked.name }) }); } }}>{t("pearMail.rule.duplicate")}</button>
-          <button className="btn" disabled={!picked} onClick={() => { if (picked) { act(deleteClientRule, picked.id); setSel(null); } }}>{t("pearMail.remove")}</button>
-        </div>
+    <div className="pm-rules-row">
+      <table className="table pm-rules">
+        <thead><tr><th>{t("pearMail.rule.active")}</th><th>{t("pearMail.rule.name")}</th></tr></thead>
+        <tbody>
+          {rules.map((r, i) => (
+            <tr key={r.id} className={sel === r.id ? "sel" : ""} onClick={() => setSel(r.id)} onDoubleClick={() => onEdit(r)}
+              draggable onDragStart={(e) => e.dataTransfer.setData("application/x-pear-rule", r.id)} onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => { const id = e.dataTransfer.getData("application/x-pear-rule"); if (id) act(moveClientRule, id, i); }}>
+              <td><input type="checkbox" aria-label={r.name} checked={r.on} onChange={(e) => act(saveClientRule, { ...r, on: e.target.checked })} onClick={(e) => e.stopPropagation()} /></td>
+              <td>{r.name}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="pm-rules-buttons">
+        <button className="btn" onClick={() => onEdit()}>{t("pearMail.rule.add")}</button>
+        <button className="btn" disabled={!picked} onClick={() => picked && onEdit(picked)}>{t("pearMail.rule.edit")}</button>
+        <button className="btn" disabled={!picked} onClick={() => { if (picked) { const { id: _i, ...copy } = picked; act(saveClientRule, { ...copy, name: t("pearMail.rule.copyName", { name: picked.name }) }); } }}>{t("pearMail.rule.duplicate")}</button>
+        <button className="btn" disabled={!picked} onClick={() => { if (picked) { act(deleteClientRule, picked.id); setSel(null); } }}>{t("pearMail.remove")}</button>
       </div>
-      <div className="pm-sheet-buttons"><span className="pm-grow" /><button className="btn primary" onClick={onClose}>{t("pearMail.ok")}</button></div>
     </div>
   );
 }

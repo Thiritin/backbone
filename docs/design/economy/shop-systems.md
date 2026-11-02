@@ -13,7 +13,7 @@ A shop sells its products for a month, a quarter, a year or two years. A longer 
 | Annual | 12 | 10% |
 | Biennial | 24 | 15% |
 
-A shop order draws its cycle from the profile's base shares (`CYCLE_SHARE` in `cycles.ts`: a private customer takes monthly 78%, quarterly 10%, annual 11%, biennial 1%; an enterprise 20, 10, 50, 20). Each offered non-monthly cycle's weight is its base share times `exp(8 * (d - m))`, where `d` is the discount the player sets and `m` the market discount; the weights are normalised over the offered cycles. Ten points above the market's discount multiplies a share by 2.2, ten below by 0.45. Cycles the player has not priced use the market discount.
+A shop order draws its cycle from the profile's base shares (`CYCLE_SHARE` in `cycles.ts`: a private customer takes monthly 78%, quarterly 10%, annual 11%, biennial 1%; an enterprise 20, 10, 50, 20). Each offered non-monthly cycle's weight is its base share times `exp(8 * (d - m))`, where `d` is the discount the player sets and `m` the market discount; the weights are normalised over the offered cycles. Ten points above the market's discount multiplies a share by 2.2, ten below by 0.45. A cycle without a discount set in the shop settings has a discount of 0%.
 
 Lead conversion for shop orders reads the advertised price level: the line's rate against the market for its middle size, times the weighted cycle price against the same weighting at market discounts. A changed rate or discount reaches new leads at once, where the sold-services index follows only after sales.
 

@@ -11,5 +11,6 @@ export default {
   "error.badProductPrice": () => "The price must be between 0 and 100000.",
   "error.cycleNotSupported": () => "This shop system does not sell that billing cycle.",
   "error.badDiscount": () => "The discount must be between 0 and 50 percent.",
+  "error.needsMonthlyPrice": () => "Automatic cycle prices need a monthly price.",
   "error.unknownServerGroup": () => "There is no such server group.",
 } satisfies Dict;

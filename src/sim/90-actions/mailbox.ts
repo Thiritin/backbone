@@ -17,7 +17,7 @@ const box = (s: GameState, id: string) => s.mail.accounts.find((a) => a.id === i
 
 // The provider's Forgot password page, which the reset letter links to.
 const RESET_PAGES: Record<string, string> = {
-  gmix: "www.gmix.net/reset", goggle: "accounts.goggle.com/recovery", ionose: "www.ionose.com/control/reset", lookout: "login.lookout365.com/reset",
+  gmix: "www.gmix.net/reset", goggle: "accounts.goggle.com/recovery", ionose: "www.ionose.com/control/reset", lookout: "admin.lookout365.macrosoft.com/reset",
 };
 const RESET_TRIES = 3;
 

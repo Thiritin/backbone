@@ -44,6 +44,8 @@ describe("WHMCache admin", () => {
     const p = idOf(createProduct(s, g, "Starter", "webHosting"));
     const html = page(s, { s: "product", id: p, tab: "pricing" });
     for (const label of ["Monthly", "Quarterly", "Annually", "Biennially"]) expect(html).toContain(label);
+    expect(page(s, { s: "product", id: p, tab: "pricing" })).toContain("Manage prices manually");
+    expect(updateProduct(s, p, { autoCycles: false }).ok).toBe(true);
     expect(setProductPrice(s, p, "annual", 77).ok).toBe(true);
     expect(page(s, { s: "product", id: p, tab: "pricing" })).toContain('value="77"');
     expect(updateProduct(s, p, { setupMode: "accept" }).ok).toBe(true);
@@ -54,7 +56,7 @@ describe("WHMCache admin", () => {
     const s = shopGame();
     expect(setOptionDiscount(s, "annual", 0.12).ok).toBe(true);
     const html = page(s, { s: "options" });
-    expect(html).toContain("Billing cycles");
+    expect(html).toContain("Cycle discounts");
     expect(html).toContain('value="12"');
     expect(html).toContain("vCPU");
   });
