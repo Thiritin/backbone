@@ -12,8 +12,10 @@ import { MODULE_IDS } from "../src/sim/10-catalog/shops";
 import { hourOf } from "../src/sim/00-core/time";
 import { brandFrom, componentParts, fits, genOf, modelById, type FormFactor, type PartSpec } from "../src/sim/10-catalog/hardware";
 import type { Resources } from "../src/sim/10-catalog/products";
-import { device, deviceDefaults, newGame as blankGame, type GameState } from "../src/sim/50-state";
+import { device, deviceDefaults, newGame as blankGame, type GameState, type Licence } from "../src/sim/50-state";
 import { openAccount } from "../src/sim/46-finance/bank";
+import { hostOf } from "../src/sim/80-business/vendor-shop";
+import { addToCart, checkout } from "../src/sim/90-actions/vendor-shop";
 import { START_CASH } from "../src/sim/10-catalog/economy";
 
 // Games with the savings already in hand and no bank account, the way every game started before the account came first.
@@ -284,4 +286,12 @@ export const pinVersion = (s: GameState, c: Cluster, product: string, version: s
 export function withCard<S extends GameState>(s: S, limit = 100_000): S {
   s.bank = { ...openAccount(s, "sparklasse"), card: { appliedAt: s.hour, readyAt: s.hour, limit, spent: [], feeAt: s.hour } };
   return s;
+}
+
+// Buys one key of an edition on the vendor's site with the card and returns it, unassigned; the key is typed into a panel by activateLicence.
+export function buyKey(s: GameState, product: string, edition: string | null): Licence {
+  if (!s.bank?.card) withCard(s);
+  const bought = addToCart(s, product, edition), paid = bought.ok ? checkout(s, hostOf(product)!, "card") : bought;
+  if (!paid.ok) throw new Error(paid.error);
+  return s.licenses.at(-1)!;
 }

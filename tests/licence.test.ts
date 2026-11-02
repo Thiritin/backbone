@@ -4,12 +4,14 @@ import { installSoftware, uninstallSoftware } from "../src/sim/90-actions/softwa
 import { hourOf } from "../src/sim/00-core/time";
 import { LAPSE_GRACE_DAYS } from "../src/sim/10-catalog/licence-tiers";
 import { assignKey, issueKey, monthAfter, panelKey, panelMachine, updateKey } from "../src/sim/60-infra/licence";
+import { hostOf } from "../src/sim/80-business/vendor-shop";
 import { productsTick } from "../src/sim/85-products/products";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
-import { setLicenceTier } from "../src/sim/90-actions/licence";
+import { activateLicence } from "../src/sim/90-actions/licence";
+import { cancelLicence, changeEdition, checkout } from "../src/sim/90-actions/vendor-shop";
 import { updateSoftware } from "../src/sim/90-actions/software";
-import { panelVm, readyGame } from "./fixtures";
+import { buyKey, panelVm, readyGame, withCard } from "./fixtures";
 
 const MONTH = hourOf(new Date(Date.UTC(2020, 0, 1)));
 
@@ -74,21 +76,24 @@ describe("licence tiers", () => {
     expect(add("b.com")).toEqual({ ok: false, error: "error.licenceCap" });
   });
 
-  it("refuses a tier below the account count", () => {
-    const { s, id, add } = setup("pro");
+  it("refuses an edition below the account count on the vendor site", () => {
+    const { s, add, key, host } = setup("pro");
+    withCard(s);
     add("a.com"); add("b.com");
-    expect(setLicenceTier(s, id, "solo")).toEqual({ ok: false, error: "error.licenceCap" });
-    expect(setLicenceTier(s, id, "admin").ok).toBe(true);
+    expect(changeEdition(s, key()!.id, "solo")).toEqual({ ok: false, error: "error.licenceCap" });
+    expect(changeEdition(s, key()!.id, "admin").ok).toBe(true);
+    expect(checkout(s, hostOf("cpanic")!, "card").ok).toBe(true);
+    expect(key()).toMatchObject({ edition: "admin", machineId: panelMachine(host()) });
   });
 
-  it("blocks new accounts and updates once the trial ends, until a tier is bought", () => {
-    const { s, id, host, add } = setup("premier", MONTH + 10);
+  it("blocks new accounts and updates once the trial ends, until a key is entered", () => {
+    const { s, id, vm, host, add } = setup("premier", MONTH + 10);
     expect(add("a.com").ok).toBe(true);
     s.hour += 11;
     expect(add("b.com")).toEqual({ ok: false, error: "error.licenceExpired" });
     host().version = 2000;
     expect(updateSoftware(s, id)).toEqual({ ok: false, error: "error.licenceExpired" });
-    expect(setLicenceTier(s, id, "pro").ok).toBe(true);
+    expect(activateLicence(s, vm, "cpanic", buyKey(s, "cpanic", "pro").key).ok).toBe(true);
     expect(add("b.com").ok).toBe(true);
   });
 
@@ -119,15 +124,17 @@ describe("licence tiers", () => {
     expect(add("a.com").ok).toBe(true);
   });
 
-  it("buying a tier after a lapse pays a month from that day", () => {
-    const { s, id, key } = setup("pro");
+  it("entering a bought key after a lapse runs a month from that day", () => {
+    const { s, vm, key } = setup("pro");
     s.cash = 0; s.hour = monthAfter(MONTH) + LAPSE_GRACE_DAYS * 24;
     productsTick(s);
+    const lapsed = key()!.id;
     s.cash = 100; s.hour++;
-    expect(setLicenceTier(s, id, "pro").ok).toBe(true);
+    expect(cancelLicence(s, lapsed).ok).toBe(true);
+    expect(activateLicence(s, vm, "cpanic", buyKey(s, "cpanic", "pro").key).ok).toBe(true);
     expect(key()).toMatchObject({ lapsedAt: null, renewsAt: monthAfter(s.hour) });
     productsTick(s);
-    expect(s.cash).toBe(90);
+    expect(s.cash).toBe(100);
   });
 
   it("starts a new install on a 15 day trial once per machine", () => {

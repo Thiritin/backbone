@@ -1,9 +1,9 @@
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { panelMachine } from "../src/sim/60-infra/licence";
-import { setLicenceTier } from "../src/sim/90-actions/licence";
+import { activateLicence } from "../src/sim/90-actions/licence";
 import { LicencePage } from "../src/ui/apps/browser/consoles/Readouts";
-import { panelVm, readyGame, skipTo } from "./fixtures";
+import { buyKey, panelVm, readyGame, skipTo } from "./fixtures";
 
 function setup(panel: string) {
   const s = readyGame(1);
@@ -22,12 +22,13 @@ function setup(panel: string) {
 }
 
 describe("licence page tiers", () => {
-  it("lists the editions of cPanic with their fees and the trial", () => {
+  it("shows the edition on trial without a way to switch it", () => {
     const { s, view, trial } = setup("cpanic");
     trial(s.hour + 720);
     const html = view();
-    for (const name of ["Solo", "Admin", "Pro", "Premier"]) expect(html).toContain(name);
-    expect(html).toContain("per account");
+    expect(html).toContain("Premier");
+    for (const name of ["Solo", "Admin", "Pro"]) expect(html).not.toContain(name);
+    expect(html).not.toContain("aria-pressed");
     expect(html).toContain("Trial ends");
     expect(html).toContain("unlimited");
     expect(html).not.toContain("Your license has expired.");
@@ -35,7 +36,7 @@ describe("licence page tiers", () => {
 
   it("shows accounts against the cap after a downgrade", () => {
     const { s, id, view } = setup("pleskit");
-    expect(setLicenceTier(s, id, "webAdmin").ok).toBe(true);
+    expect(activateLicence(s, panelMachine(s.clusters.find((x) => x.id === id)!)!, "pleskit", buyKey(s, "pleskit", "webAdmin").key).ok).toBe(true);
     const html = view();
     expect(html).toContain("0 of 10");
     expect(html).toContain("Never");

@@ -35,6 +35,8 @@ export default {
   "vendor-shop.endsOn": (p) => `Prend fin le ${p.date}`,
   "vendor-shop.expired": () => "Expirée",
   "vendor-shop.cancel": () => "Résilier",
+  "vendor-shop.editionChange": () => "(changement d'édition)",
+  "vendor-shop.changeEdition": () => "Changer d'édition",
   "error.notForSale": () => "Cette licence n'est pas en vente.",
   "error.notInCart": () => "Cet article n'est pas dans votre panier.",
   "error.cartEmpty": () => "Votre panier est vide.",

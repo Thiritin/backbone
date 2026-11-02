@@ -67,8 +67,6 @@ export default {
   "host.never": () => "Nie",
   "host.lapsed": () => "Abgelaufen",
   "host.trialUntil": (p) => `Testphase endet ${p.date}`,
-  "host.perMonth": (p) => `${p.fee} pro Monat`,
-  "host.perAccount": (p) => `${p.fee} pro Konto`,
   "host.channel": () => "Update-Kanal",
   "host.channel.stable": () => "Stabil",
   "host.channel.release": () => "Release",
