@@ -6,6 +6,7 @@ import { subjectParams } from "../40-support/notices";
 import { ascii } from "../30-customers/domains";
 import type { Attachment, Folder, MailAccount, MailTenant, Message, SysFolder } from "./types";
 import { GMIX_DOMAIN, gmixLocal } from "./new";
+import { SENDERS } from "../10-catalog/mail-senders";
 
 export const SYS_FOLDERS: SysFolder[] = ["inbox", "sent", "drafts", "junk", "trash", "archive"];
 // Live messages a mailbox keeps before the retention pass folds the oldest into `older`.
@@ -55,7 +56,7 @@ export interface MailView { subject: string; text: string; fromName: string; fro
 // The sender behind a ref: a display name, a customer, one of the company's mailboxes, a written address or the mail daemon.
 function sender(s: GameState, m: Message): [string, string] {
   const [kind, ...rest] = m.from.split(":"), ref = rest.join(":");
-  if (kind === "n") return [ref, `no-reply@${ascii(ref).replace(/-/g, "") || "mail"}.com`];
+  if (kind === "n") return [ref, SENDERS[ref] ?? `no-reply@${ascii(ref).replace(/-/g, "") || "mail"}.com`];
   if (kind === "cust") {
     const c = s.customers.find((x) => x.id === ref);
     return [c?.name ?? ref, c?.address.email ?? ""];
