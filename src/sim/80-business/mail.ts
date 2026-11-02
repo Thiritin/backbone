@@ -55,10 +55,14 @@ export const mailHost = (s: GameState): Cluster | undefined => {
 // A self-hosted mail server delivers while it runs, has a public address and that address is not listed.
 export function mailImpaired(s: GameState): boolean {
   if (s.company.mail.kind !== "self" || salesHost(s) !== "self") return false;
-  const c = mailHost(s), at = c && anchorOf(s, c);
-  if (!c || !at || !controlPlaneUp(s, c) || !linkStatus(s, at).online) return true;
-  const a = mailAddress(s, c.id);
-  return !a || a.listed;
+  const c = mailHost(s);
+  return mailServerDown(s, c?.id) || !!mailAddress(s, c!.id)?.listed;
+}
+
+// The mail server on that cluster takes no mail while it is off, offline or without a public address.
+export function mailServerDown(s: GameState, clusterId: string | undefined): boolean {
+  const c = s.clusters.find((x) => x.id === clusterId), at = c && anchorOf(s, c);
+  return !c || !at || !controlPlaneUp(s, c) || !linkStatus(s, at).online || !mailAddress(s, c.id);
 }
 
 // The share of businesses that still write to a freemail sales address.

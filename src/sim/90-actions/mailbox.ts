@@ -1,9 +1,12 @@
 // Mailbox actions (docs/design/plans/mail-core.md, Account actions and Passwords). Provider sites and server panels call these.
 import { hashRng, rand } from "../00-core/rng";
 import { post } from "../40-support/letters";
-import { addMailbox, canAddMailbox, mailboxInUse, mailboxTaken, openBoxes, PROVIDER_NAMES, removeMailbox } from "../42-mail/accounts";
+import { addMailbox, canAddMailbox, mailboxInUse, mailboxTaken, openBoxes, PROVIDER_NAMES, RETIRE_HOURS, removeMailbox } from "../42-mail/accounts";
+import { capsOf } from "../42-mail/caps";
+import { GMIX_DOMAIN } from "../42-mail/new";
+import { mailHost } from "../10-catalog/mail-providers";
 import { accountByAddress, tenantOf } from "../42-mail/model";
-import type { MailAccount, MailRole } from "../42-mail/types";
+import type { Folder, MailAccount, MailGroup, MailRole, MailTenant, ServerFilter } from "../42-mail/types";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
 
@@ -47,7 +50,9 @@ const patch = (s: GameState, id: string, p: Partial<MailAccount>): ActionResult 
   return { ok: true, id };
 };
 
-export const setAccountRoles = (s: GameState, id: string, roles: MailRole[]): ActionResult => patch(s, id, { roles: [...new Set(roles)] });
+// A group holds no mail, so a role, which routes requests to one mailbox, cannot point at it.
+export const setAccountRoles = (s: GameState, id: string, roles: MailRole[]): ActionResult =>
+  s.mail.groups.some((g) => g.id === id) ? fail("error.mailGroupRole") : patch(s, id, { roles: [...new Set(roles)] });
 export const setAccountTitle = (s: GameState, id: string, title: string): ActionResult => patch(s, id, { title: title.trim() });
 export const setExternalAccess = (s: GameState, id: string, on: boolean): ActionResult => patch(s, id, { external: on });
 
@@ -61,6 +66,84 @@ export function setPrimary(s: GameState, id: string): ActionResult {
   const a = box(s, id);
   if (!a || a.closedAt !== null || a.shared) return fail("error.mailUnknown");
   s.mail = { ...s.mail, primary: id };
+  return { ok: true, id };
+}
+
+const GROUP_MAX = 30;
+const groupLabel = (s: GameState, tenant: MailTenant, name: string, members: string[]): void => {
+  if (!mailHost(tenant.host)?.labels) return;
+  const add = members.filter((m) => !s.mail.folders.some((f) => f.accountId === m && f.label && f.name === name));
+  s.mail = { ...s.mail, folders: [...s.mail.folders, ...add.map((accountId): Folder => ({ id: `fd${s.nextId++}`, accountId, name, parent: null, label: true }))] };
+};
+const membersOk = (s: GameState, tenant: string, members: string[]): boolean =>
+  members.length <= GROUP_MAX && members.every((m) => s.mail.accounts.some((a) => a.id === m && a.tenant === tenant && a.closedAt === null));
+
+// A group address copies each message to its members, which are mailboxes of the same domain tenant.
+export function createGroup(s: GameState, o: { tenant: string; local: string; title: string; members: string[] }): ActionResult {
+  const t = s.mail.tenants.find((x) => x.id === o.tenant);
+  if (!t || t.domain === GMIX_DOMAIN || (t.endsAt !== null && t.endsAt <= s.hour)) return fail("error.mailNoService");
+  const local = o.local.trim().toLowerCase(), members = [...new Set(o.members)];
+  if (!LOCAL.test(local)) return fail("error.mailLocal");
+  if (mailboxTaken(s, t, local)) return fail("error.mailTaken");
+  if (!membersOk(s, t.id, members)) return fail("error.mailGroupMembers");
+  const title = o.title.trim() || local, label = mailHost(t.host)?.labels ? title : null;
+  const g: MailGroup = { id: `grp${s.nextId++}`, tenant: t.id, local, title, members, label };
+  s.mail = { ...s.mail, groups: [...s.mail.groups, g] };
+  if (label) groupLabel(s, t, label, members);
+  return { ok: true, id: g.id };
+}
+
+export function setGroupMembers(s: GameState, id: string, members: string[]): ActionResult {
+  const g = s.mail.groups.find((x) => x.id === id), t = g && s.mail.tenants.find((x) => x.id === g.tenant);
+  if (!g || !t) return fail("error.mailUnknown");
+  const list = [...new Set(members)];
+  if (!membersOk(s, g.tenant, list)) return fail("error.mailGroupMembers");
+  s.mail = { ...s.mail, groups: s.mail.groups.map((x) => (x.id === id ? { ...x, members: list } : x)) };
+  if (g.label) groupLabel(s, t, g.label, list);
+  return { ok: true, id };
+}
+
+export function deleteGroup(s: GameState, id: string): ActionResult {
+  const g = s.mail.groups.find((x) => x.id === id), t = g && s.mail.tenants.find((x) => x.id === g.tenant);
+  if (!g || !t) return fail("error.mailUnknown");
+  s.mail = { ...s.mail, groups: s.mail.groups.filter((x) => x.id !== id), retired: [...s.mail.retired, { address: `${g.local}@${t.domain}`, until: s.hour + RETIRE_HOURS }] };
+  return { ok: true };
+}
+
+const RULE_PARTS = 5;
+// Server filters run on delivery in their order; the host decides which actions take effect.
+export function saveFilter(s: GameState, accountId: string, f: Omit<ServerFilter, "accountId" | "id"> & { id?: string }): ActionResult {
+  const a = box(s, accountId);
+  if (!a) return fail("error.mailUnknown");
+  const caps = capsOf(s, a), mine = s.mail.filters.filter((x) => x.accountId === accountId);
+  if (caps.serverFilters === "none") return fail("error.mailNoFilters");
+  if (!f.conds.length || !f.acts.length || f.conds.length > RULE_PARTS || f.acts.length > RULE_PARTS) return fail("error.mailFilterRule");
+  const old = f.id ? mine.find((x) => x.id === f.id) : undefined;
+  if (!old && mine.length >= caps.filterMax) return fail("error.mailFilterMax");
+  const next: ServerFilter = { ...f, id: old?.id ?? `flt${s.nextId++}`, accountId, name: f.name.trim() };
+  s.mail = { ...s.mail, filters: old ? s.mail.filters.map((x) => (x.id === old.id ? next : x)) : [...s.mail.filters, next] };
+  return { ok: true, id: next.id };
+}
+
+export function deleteFilter(s: GameState, id: string): ActionResult {
+  if (!s.mail.filters.some((x) => x.id === id)) return fail("error.mailUnknown");
+  s.mail = { ...s.mail, filters: s.mail.filters.filter((x) => x.id !== id) };
+  return { ok: true };
+}
+
+export function setFilterOn(s: GameState, id: string, on: boolean): ActionResult {
+  if (!s.mail.filters.some((x) => x.id === id)) return fail("error.mailUnknown");
+  s.mail = { ...s.mail, filters: s.mail.filters.map((x) => (x.id === id ? { ...x, on } : x)) };
+  return { ok: true, id };
+}
+
+// Moves a filter to position `to` among the filters of its mailbox.
+export function moveFilter(s: GameState, id: string, to: number): ActionResult {
+  const f = s.mail.filters.find((x) => x.id === id);
+  if (!f) return fail("error.mailUnknown");
+  const mine = s.mail.filters.filter((x) => x.accountId === f.accountId && x.id !== id);
+  mine.splice(Math.max(0, Math.min(mine.length, to)), 0, f);
+  s.mail = { ...s.mail, filters: [...s.mail.filters.filter((x) => x.accountId !== f.accountId), ...mine] };
   return { ok: true, id };
 }
 

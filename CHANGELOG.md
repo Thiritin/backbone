@@ -13,6 +13,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Web developers now write in as a new kind of customer: they are rare at first, mostly ask for web hosting, and often want a reseller block, and your sponsored developer events and agency fairs reach them.
 - DocuWhere in the Pear Store files every letter from the post in an archive with search, document types and a filter per type.
 - Your company's support address now reaches your help desk once its DNS record is in place, and shows the server's error while the desk's web space is down.
+- Company mailboxes now receive mail the way real ones do: full boxes hold mail for a few days before it bounces, deleted addresses bounce, groups copy mail to every member, server filters sort new mail, out-of-office replies can loop between two mailboxes, and junk arrives in the amounts of its year.
 - You now set how much CPU, memory and disk each customer's service may use, on the customer's page and in the hypervisor consoles, and a customer uses what they bought: give them more and their peaks may go above it, give them less and their own service slows down while your host stays fine.
 - A customer who writes in about a slow server can be told to upgrade: if their own limit was too tight, they get a quote for more, and if your host was the problem, they take it badly.
 - Supplier invoices in Preview are addressed to the company address you registered.
