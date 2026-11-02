@@ -300,3 +300,11 @@ export function importMailPair(s: GameState, from: string, to: string): ActionRe
   if (from === to) return fail("error.mailFetchLoop");
   return { ok: true, id: queueImport(s, from, to).id };
 }
+
+// A provider's import page: signs in to the other mailbox over POP or IMAP, as that host allows, and queues the pair.
+export function importMail(s: GameState, to: string, o: { source: string; password: string; proto: "pop" | "imap" }): ActionResult {
+  const src = accountByAddress(s, o.source.trim().toLowerCase());
+  if (!src) return fail("error.mailLogin");
+  const err = fetchError(s, { source: src.id, proto: o.proto, password: o.password }, true);
+  return err ? fail(err) : importMailPair(s, src.id, to);
+}

@@ -5,13 +5,13 @@ import { GRACE_DAYS, mailboxCap, mailPlan } from "../src/sim/10-catalog/mail-pro
 import { checkMailLogin, seatsBilled } from "../src/sim/42-mail/accounts";
 import { capsOf, mxTarget } from "../src/sim/42-mail/caps";
 import { deliver, deliveryTrace } from "../src/sim/42-mail/deliver";
+import { importTick } from "../src/sim/42-mail/imports";
 import type { GameState } from "../src/sim/50-state";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { removeCompanyRecord, setCompanyRecord } from "../src/sim/90-actions/domains";
 import { cancelMail, endTenant } from "../src/sim/90-actions/mail";
 import { addOrgRule, signUpLookout, verifyLookout } from "../src/sim/90-actions/mail-hosted";
-import { importMail } from "../src/sim/90-actions/mail-provider";
-import { createMailAccount, requestPasswordReset, resetPassword, setExternalAccess } from "../src/sim/90-actions/mailbox";
+import { createMailAccount, importMail, requestPasswordReset, resetPassword, setAccountRoles, setExternalAccess, setPrimary } from "../src/sim/90-actions/mailbox";
 import { err, idOf, run } from "./company-mail.helpers";
 import { readyGame } from "./fixtures";
 
@@ -94,9 +94,17 @@ describe("Lookout 365", () => {
     expect(err(importMail(s, ada, { source: `${gmix.local}@${gmix.domain}`, password: gmix.password, proto: "imap" }))).toBe("error.mailExternal");
     setExternalAccess(s, gmix.id, true);
     expect(err(importMail(s, ada, { source: `${gmix.local}@${gmix.domain}`, password: gmix.password, proto: "imap" }))).toBe("ok");
+    s.hour = s.mail.imports[s.mail.imports.length - 1].doneAt;
+    importTick(s);
     expect((s.mail.msgs[ada] ?? []).length).toBeGreaterThanOrEqual(n);
 
     deliver(s, { to: addr(s, "ada"), from: "n:Supplier", kind: "notice", topic: "x" });
+    // The import moved the primary and the roles to ada; giving them back lets the tenant go.
+    expect(err(endTenant(s, lookout(s).id))).toBe("error.mailRoleInUse");
+    const roles = s.mail.accounts.find((a) => a.id === ada)!.roles;
+    expect(err(setPrimary(s, gmix.id))).toBe("ok");
+    expect(err(setAccountRoles(s, gmix.id, roles))).toBe("ok");
+    expect(err(setAccountRoles(s, ada, []))).toBe("ok");
     expect(err(endTenant(s, lookout(s).id))).toBe("ok");
     const ends = s.mail.tenants.find((t) => t.host === "lookout")!.endsAt!;
     s.hour = ends + GRACE_DAYS.lookout * 24 + 1;

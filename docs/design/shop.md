@@ -81,6 +81,8 @@ A shop with a variant sells plans. A product belongs to a product group and has 
 
 Before a shop exists, email quotes start at the market rate. Once a shop is active they start at the configurable option rates.
 
+Once a shop is active, quotes are written in the shop admin (Billing > Quotes, named after the variant's wording) and Books lists them read-only. A quote carries its origin, `books` or `shop`; a Books draft from before the shop stays editable in Books.
+
 ## 5. Cordon, drain and evacuate at software level
 
 Cordon, drain and evacuate act on one software installation on one server (a node of a cluster), not on the server:

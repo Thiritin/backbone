@@ -19,7 +19,7 @@ export const eraOf = (major: string): Era => (major.startsWith("0.") ? "foss" : 
 
 const GROUPS: [string, ScreenName[]][] = [
   ["shop", ["home", "products", "options", "servers"]],
-  ["billing", ["orders", "clients", "invoices"]],
+  ["billing", ["orders", "clients", "invoices", "quotes"]],
   ["system", ["licence", "updates"]],
 ];
 const TILES: ScreenName[] = ["orders", "clients", "invoices", "products", "servers", "updates"];

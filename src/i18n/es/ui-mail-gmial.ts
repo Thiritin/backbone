@@ -159,6 +159,7 @@ export default {
   "gmial.acc.new": () => "Contraseña nueva",
   "gmial.acc.sendAs": () => "Enviar como:",
   "gmial.acc.fetch": () => "Consultar el correo de otras cuentas:",
+  "gmial.acc.import": () => "Importar correo y contactos:",
   "gmial.acc.addFetch": () => "Añadir una cuenta de correo tuya",
   "gmial.acc.account": () => "Cuenta:",
   "gmial.acc.password": () => "Contraseña:",

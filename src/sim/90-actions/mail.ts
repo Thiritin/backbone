@@ -90,6 +90,14 @@ function switchDomainMail(s: GameState, host: string, plan: string, clusterId?: 
   return { ok: true, id: t.id };
 }
 
+function serverBeside(s: GameState, clusterId: string): ActionResult {
+  const r = createTenant(s, { host: "self", plan: "self", clusterId });
+  if (!r.ok) return r;
+  const box = addMailbox(s, tenant(s, r.id!), "sales", s.company.name, seededPassword(s.seed, s.nextId), { roles: [] });
+  s.mail = { ...s.mail, tenants: s.mail.tenants.map((x) => (x.id === r.id ? { ...x, admin: box.id } : x)) };
+  return r;
+}
+
 function endDomainTenants(s: GameState): void {
   const ids = new Set(liveOn(s, companyDomain(s)).map((t) => t.id));
   s.mail = { ...s.mail, tenants: s.mail.tenants.map((t) => (ids.has(t.id) ? { ...t, endsAt: s.hour } : t)),
@@ -121,7 +129,8 @@ export function selectMailServer(s: GameState, clusterId?: string, software?: Se
   if (!c || !software) return fail("error.noMailServer");
   // Without a domain the server holds no mailboxes yet; the company mail still names it.
   if (s.company.domain) {
-    const r = switchDomainMail(s, "self", "self", c.id);
+    // Beside a provider that already receives the domain, the server starts as a second tenant; the MX record moves the mail.
+    const r = liveOn(s, companyDomain(s)).some((t) => t.host !== "self") ? serverBeside(s, c.id) : switchDomainMail(s, "self", "self", c.id);
     if (!r.ok) return r;
   }
   s.company = { ...s.company, mail: { kind: "self", software: software as SelfMailSoftware, clusterId: c.id } };

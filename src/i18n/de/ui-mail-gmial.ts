@@ -159,6 +159,7 @@ export default {
   "gmial.acc.new": () => "Neues Passwort",
   "gmial.acc.sendAs": () => "E-Mail senden als:",
   "gmial.acc.fetch": () => "E-Mails von anderen Konten abrufen:",
+  "gmial.acc.import": () => "E-Mails und Kontakte importieren:",
   "gmial.acc.addFetch": () => "Eigenes E-Mail-Konto hinzufügen",
   "gmial.acc.account": () => "Konto:",
   "gmial.acc.password": () => "Passwort:",

@@ -6,6 +6,7 @@ export default {
   "orderbocks.nav.clients": () => "Customers",
   "orderbocks.nav.orders": () => "Pending orders",
   "orderbocks.nav.invoices": () => "Invoices",
+  "orderbocks.nav.quotes": () => "Quote Requests",
   "orderbocks.nav.products": () => "Products",
   "orderbocks.nav.options": () => "Product options",
   "orderbocks.nav.servers": () => "Servers",

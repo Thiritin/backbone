@@ -1,4 +1,5 @@
 // The steps of a custom order, domain renewals and upgrades of custom services (30-market/manual.ts).
+import { shopActive } from "../80-business/shop";
 import { authCode, domainFee, domainOf, extend } from "../30-customers/registry";
 import type { SalesRequest } from "../30-market/market";
 import type { Address } from "../30-customers/addresses";
@@ -104,8 +105,8 @@ function sendQuote(s: GameState, ticketId: string, monthly: number, setup: numbe
   return done;
 }
 
-// A quote in Books for an order that waits for one, priced at the player's rates or the customer's counter-offer. An
-// unsent quote of the order is reused.
+// A quote for an order that waits for one, priced at the player's rates or the customer's counter-offer: in the shop while
+// one is active, else in Books. An unsent quote of the order is reused.
 export function createQuote(s: GameState, ticketId: string): ActionResult {
   const t = s.tickets.find((x) => x.id === ticketId), r = t && orderOf(s, t);
   if (!t || !r) return fail("error.unknownRequest");
@@ -117,7 +118,7 @@ export function createQuote(s: GameState, ticketId: string): ActionResult {
   const setup = r.setup ?? setupFee(s, r.product);
   const q: Quote = {
     id: `quo${s.nextId++}`, number: `${yearOf(s.hour)}-${String(s.quotes.length + 1).padStart(4, "0")}`, customerId: r.customerId, ticketId,
-    lines: firstLines(s, r, monthly, setup, null), monthly, setup, status: "draft", sentAt: null, createdAt: s.hour,
+    lines: firstLines(s, r, monthly, setup, null), monthly, setup, status: "draft", sentAt: null, createdAt: s.hour, origin: shopActive(s) ? "shop" : "books",
   };
   s.quotes = [...s.quotes, q];
   return { ok: true, id: q.id };

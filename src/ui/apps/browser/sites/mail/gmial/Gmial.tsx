@@ -26,6 +26,7 @@ import { useSessionState, writeSession } from "../../../../../session";
 import { usePageAct } from "../../../pageAct";
 import { seenAddresses } from "../gmix/GmixMail";
 import { GOGGLE_SESSION, SignIn } from "../goggle/GoggleSite";
+import { ImportForm, ImportRuns } from "../switching";
 import "./gmial.css";
 import {
   BlackBar, CheatSheet, flushSend, GogglesQuiz, holdSend, InboxSettings, LabsSettings, LaterGeneral, laterOf, laterPrefs, Side, Snakey, StarIcon, ThemeSettings, undoSend, useHeld, useSaved, WebClip,
@@ -772,6 +773,10 @@ function AccountSettings({ game, account }: P) {
           </form>
         )}
       </td></tr>
+      {since(game, "2010-01") && <tr><th>{t("gmial.acc.import")}</th><td>
+        <ImportForm targets={[account]} proto="pop" className="gml-import" />
+        <ImportRuns game={game} into={[account.id]} className="gml-imports" />
+      </td></tr>}
     </tbody></table>
   );
 }
