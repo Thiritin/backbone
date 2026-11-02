@@ -2,13 +2,18 @@
 // service's password (shop-books-split.md 5).
 import type { GameState } from "../50-state";
 import { isFinal } from "../40-support/tickets";
-import { createError, createOrder } from "../30-market/orders";
+import { createError, createOrder, welcomeMail } from "../30-market/orders";
 import { cancelShopOrder, loseRequest } from "../30-market/sales";
 import { editOrder, type ShopOrder } from "../80-business/shop-orders";
 import type { ActionResult } from "./hardware";
 import { seededPassword } from "../42-mail/new";
+import { accessParams } from "../40-support/replies";
+import { invoiceMail, serviceMail, TEMPLATES, type MailTemplate } from "../80-business/shop-mail";
+import { mailImpaired } from "../80-business/mail";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
+// Why a template did not go out: switched off, or the mail server cannot deliver.
+const sendError = (s: GameState, template: MailTemplate): string => (s.shop.mailOff.includes(template) ? "error.templateOff" : mailImpaired(s) ? "error.mailFailed" : "error.notShopCustomer");
 
 function pendingOrder(s: GameState, id: string): ShopOrder | ActionResult {
   const o = s.shop.orders.find((x) => x.id === id);
@@ -76,5 +81,26 @@ export function changeServicePassword(s: GameState, id: string): ActionResult {
   if (!v) return fail("error.unknownService");
   const password = seededPassword(s.seed, Number(v.id.slice(3)) || 0, s.hour, s.minute);
   s.services = s.services.map((x) => (x.id === id ? { ...x, password } : x));
+  serviceMail(s, v, "passwordChanged", { ...accessParams(s, { ...v, password }) });
   return { ok: true, id };
+}
+
+// Resend Welcome Email: the access data again, which counts as sent once it reaches the customer.
+export function resendWelcome(s: GameState, id: string): ActionResult {
+  const v = s.services.find((x) => x.id === id && x.endedAt === null);
+  if (!v) return fail("error.unknownService");
+  return welcomeMail(s, v) ? { ok: true, id } : fail(sendError(s, "welcome"));
+}
+
+// Resend on an invoice: Invoice Created again.
+export function resendInvoice(s: GameState, id: string): ActionResult {
+  const inv = s.invoices.find((x) => x.id === id);
+  if (!inv) return fail("error.unknownInvoice");
+  return invoiceMail(s, inv, "invoiceCreated") ? { ok: true, id } : fail(sendError(s, "invoiceCreated"));
+}
+
+export function setMailTemplate(s: GameState, template: MailTemplate, on: boolean): ActionResult {
+  if (!TEMPLATES.includes(template)) return fail("error.unknownTemplate");
+  s.shop = { ...s.shop, mailOff: on ? s.shop.mailOff.filter((x) => x !== template) : [...new Set([...s.shop.mailOff, template])] };
+  return { ok: true };
 }

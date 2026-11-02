@@ -4,6 +4,7 @@ import {
 import { bankById } from "../10-catalog/banks";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
+import { invoiceMail } from "../80-business/shop-mail";
 import { ACTION_MINUTES, logActivity } from "../47-staff/activity";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -58,6 +59,7 @@ export function markPaid(s: GameState, invoiceId: string, transferId: string | n
   const inv = unpaidInvoice(s, invoiceId);
   if (!inv) return fail("error.invoiceSettled");
   Object.assign(inv, { status: "paid", paidAt: s.hour, suspended: false, payAt: null });
+  invoiceMail(s, inv, "paymentConfirmation");
   return { ok: true };
 }
 

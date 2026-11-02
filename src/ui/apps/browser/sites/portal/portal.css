@@ -17,6 +17,8 @@
 .pt-fields { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0; align-items: center; }
 .pt-fields dd { margin: 0; display: flex; gap: 8px; align-items: center; }
 .pt-fields > div { display: contents; }
+.pt-checks { display: grid; gap: 4px; }
+.pt-mail { white-space: pre-line; margin: 0; }
 /* Shared frame of the skins that wrap the common screens */
 :where(.portal) .shop-head { display: flex; align-items: center; padding: 10px 16px; }
 :where(.portal) .shop-logo { font-size: 1.3em; font-weight: 700; }

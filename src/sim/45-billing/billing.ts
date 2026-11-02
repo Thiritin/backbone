@@ -17,6 +17,7 @@ import { logActivity } from "../47-staff/activity";
 import { mailDelay } from "../80-business/mail";
 import { sweepGroups } from "../60-infra/status";
 import { checkout, payeeOf, reopen } from "./payments";
+import { DUNNING, invoiceMail, shopMail } from "../80-business/shop-mail";
 
 // A draft waits in Books until it is sent; it is not due and never pays.
 export type InvoiceStatus = "draft" | "open" | "overdue" | "paid" | "writtenOff";
@@ -186,6 +187,7 @@ export function bookTransfer(s: GameState, tr: Transfer, inv: Invoice, settle: b
   else {
     Object.assign(inv, { status: "paid", paidAt: s.hour, suspended: false, payAt: null });
     renewTerms(s, inv);
+    invoiceMail(s, inv, "paymentConfirmation");
     if (inv.source === "shop" && hasModule(s, "shop-link")) inv.shopPaid = true;
   }
   if (rest < 0) s.customers = s.customers.map((c) => (c.id === inv.customerId ? { ...c, credit: cents(c.credit - rest) } : c));
@@ -255,6 +257,7 @@ export function suspend(s: GameState, inv: Invoice): boolean {
   Object.assign(inv, { suspended: true, suspendedAt: s.hour });
   const c = ownCustomer(s, inv.customerId);
   if (!first || !c) return false;
+  shopMail(s, c.id, "suspension", { service: s.services.filter((v) => v.customerId === c.id && v.endedAt === null).map((v) => v.label).join(", ") });
   const { budget } = profileStats(c.profile);
   bump(c, -SUSPEND_HAPPINESS[budget]);
   if (budget === "high" && !appealed && chance(s.rng, APPEAL_CHANCE)) createTicket(s, c, "appeal");
@@ -283,6 +286,7 @@ function toCollections(s: GameState, inv: Invoice): void {
 export function sendStep(s: GameState, inv: Invoice, i: number): void {
   const step = STEPS[i];
   inv.reminders = [...inv.reminders, s.hour];
+  invoiceMail(s, inv, DUNNING[i]);
   if (step.fee) inv.lines = [...inv.lines, { serviceId: null, key: `invoice.line.${step.key}Fee`, params: {}, amount: step.fee }];
   const paid = step.key !== "collections" && pendingTransfer(s, inv);
   if (paid) {
@@ -432,7 +436,9 @@ export function billingTick(s: GameState): SimEvent[] {
       if (setup !== 0) book("setup", "ledger.setup", params, setup);
       book("payments", collected ? "ledger.collections" : "ledger.payment", params, cents(total - setup));
       if (!collected) renewTerms(s, inv);
-      return { ...inv, payAt: null, status: collected ? inv.status : "paid", suspended: false, paidAt: s.hour } satisfies Invoice;
+      const done = { ...inv, payAt: null, status: collected ? inv.status : "paid", suspended: false, paidAt: s.hour } satisfies Invoice;
+      if (!collected) invoiceMail(s, done, "paymentConfirmation");
+      return done;
     }
     const due = inv.status === "open" && s.hour >= inv.dueAt;
     if (!due && !needsChase(s, inv)) return inv;
@@ -519,6 +525,7 @@ export function billingTick(s: GameState): SimEvent[] {
       Object.assign(issued[issued.length - 1], fromShop(s));
       issue(s, issued[issued.length - 1]);
       checkout(s, issued[issued.length - 1], owner);
+      invoiceMail(s, issued[issued.length - 1], "invoiceCreated");
     }
   }
   if (changed || issued.length) s.invoices = [...invoices, ...issued];

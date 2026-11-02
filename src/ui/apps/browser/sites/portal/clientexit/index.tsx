@@ -29,13 +29,14 @@ const ICON: Record<Nav, string> = {
   quotes: "M3 1h10v14H3zM6 5h4M6 8h4M6 11h4",
   products: "M8 1l7 3.5v7L8 15l-7-3.5v-7zM1 4.5 8 8l7-3.5M8 8v7",
   settings: "M2 4h12M2 8h12M2 12h12M5 2v4M11 6v4M7 10v4",
+  emails: "M2 4h12v8H2zM2 4l6 5 6-5",
   servers: "M2 2h12v5H2zM2 9h12v5H2zM4 4.5h2M4 11.5h2",
   licence: "M2 8a3 3 0 1 0 6 0 3 3 0 0 0-6 0zM8 8h7M13 8v3M11 8v2",
   updates: "M14 8a6 6 0 1 1-2-4.5M14 2v4h-4",
 };
 const Icon = ({ n }: { n: Nav }) => <svg className="cxe-ico" viewBox="0 0 16 16" aria-hidden="true"><path d={ICON[n]} /></svg>;
 
-const GROUPS: [string, Nav[]][] = [["", ["home"]], ["sales", ["orders", "clients", "invoices", "quotes"]], ["catalog", ["products", "servers"]], ["system", ["settings", "licence", "updates"]]];
+const GROUPS: [string, Nav[]][] = [["", ["home"]], ["sales", ["orders", "clients", "invoices", "quotes"]], ["catalog", ["products", "servers"]], ["system", ["settings", "emails", "licence", "updates"]]];
 const label = (n: Nav): string => (n === "products" ? t("shop-store.lblGroups") : n === "quotes" ? t("shop-admin.quoteRequests") : SCREEN_LABEL[n]!);
 
 // The wordmark: the second word sits on an exit sign.

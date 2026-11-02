@@ -18,6 +18,8 @@ import type { ActionResult } from "./hardware";
 import { routeTarget } from "../60-infra/routes";
 import { yearOf } from "../00-core/time";
 import { belowFloor, packageNamed, usernameError } from "../80-business/packages";
+import { shopMail } from "../80-business/shop-mail";
+import { requestName } from "../30-market/market";
 import { find, queue } from "./support";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -151,7 +153,10 @@ export function attachQuote(s: GameState, quoteId: string, ticketId: string): Ac
   if (!q) return fail("error.quoteSentAlready");
   if (q.ticketId !== ticketId) return fail("error.quoteOtherOrder");
   const done = sendQuote(s, ticketId, q.monthly, q.setup, q.cycle);
-  if (done.ok) s.quotes = s.quotes.map((x) => (x.id === q.id ? { ...x, status: "sent", sentAt: s.hour } : x));
+  if (!done.ok) return done;
+  s.quotes = s.quotes.map((x) => (x.id === q.id ? { ...x, status: "sent", sentAt: s.hour } : x));
+  const t = s.tickets.find((x) => x.id === ticketId), r = t && orderOf(s, t);
+  if (q.origin === "shop") shopMail(s, q.customerId, "quote", { name: r ? requestName(r) : "", quote: q.number, total: q.lines.reduce((n, l) => n + l.amount, 0) });
   return done;
 }
 
