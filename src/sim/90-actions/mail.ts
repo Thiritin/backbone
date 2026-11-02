@@ -114,7 +114,7 @@ export function bookMail(s: GameState, provider: MailProviderId): ActionResult {
   return { ok: true, id: provider };
 }
 
-// Takes the mail server the company runs (Email app, Change provider) back into use after another service.
+// Takes the mail server into use when its mail software is installed.
 export function selectMailServer(s: GameState, clusterId?: string, software?: SelfMailSoftware): ActionResult {
   const c = s.clusters.find((x) => x.kind === "mail" && (!clusterId || x.id === clusterId));
   software ??= (c && (c.panel ?? c.switching?.to)) as SelfMailSoftware | undefined;

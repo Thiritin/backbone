@@ -225,20 +225,6 @@ export default {
 
   "apps.note.title": () => "Titre",
 
-  "apps.mail.installing": () => "Installation",
-  "apps.mail.impaired": () => "Distribution des e-mails perturbée",
-  "apps.mail.delivering": () => "Distribution en cours",
-  "apps.mail.unrouted": () => "Non distribué",
-  "apps.mail.freeNote": () => "Gratuit. Fait peu professionnel auprès des clients professionnels.",
-  "apps.mail.availableFrom": (p) => `Disponible à partir de ${p.year}`,
-  "apps.mail.needDomain": () => "Il te faut un nom de domaine",
-  "apps.mail.perSeat": (p) => `${p.seat} par boîte, ${p.total} par mois`,
-  "apps.mail.selfHost": () => "Auto-hébergement",
-  "apps.mail.needServer": () => "Il te faut un serveur de messagerie",
-  "apps.mail.settings": () => "Paramètres e-mail",
-  "apps.mail.address": () => "Adresse",
-  "apps.mail.status": () => "Statut",
-  "apps.mail.provider": () => "Fournisseur d'e-mail",
 
   "apps.kb.article": () => "Article",
   "apps.kb.reads": () => "Lectures",
@@ -269,7 +255,7 @@ export default {
   "apps.guide.step.domain": (p) => `Achète un nom de domaine pour ton entreprise chez ${p.partner} dans le navigateur.`,
   "apps.guide.step.website": () => "Construis ton premier site web dans Marketing, sous Canaux.",
   "apps.guide.step.launch": () => "Choisis où ton site tourne, lance-le dans Marketing et propose ton premier produit sous Produits.",
-  "apps.guide.step.email": (p) => `Choisis un fournisseur d'e-mail dans ${p.app}.`,
+  "apps.guide.step.email": () => "Souscris des boîtes mail pour le domaine de ton entreprise sur le site d'un fournisseur d'e-mail.",
   "apps.guide.step.firstCustomer": (p) => `Réponds à ton premier client dans ${p.app}.`,
 
   "apps.name.Applications": () => "Applications",
