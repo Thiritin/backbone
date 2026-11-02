@@ -82,7 +82,7 @@ Mailboxes, forwarders, autoresponders and a spam filter per web space. Webmail (
 
 ### 4.4 FTP
 
-FTP accounts with a home folder and a quota. A desktop FTP program (a pun on FileZilla, for example "FileZiller") connects with host, user and password and shows local files (Downloads) on the left and the web space on the right. Uploading through FTP and through the File Manager do the same thing. In the 2005 era FTP is the normal way to upload, since early File Managers are slow and cap uploads at a few MB. SFTP arrives as a checkbox once the era has it.
+FTP accounts with a home folder and a quota. A desktop FTP program, FileGorilla (the FileZilla pun), is a free download from its own site in the Browser and installs like any other desktop program. It connects with host, user and password and shows local files (Downloads) on the left and the web space on the right. Uploading through FTP and through the File Manager do the same thing. In the 2005 era FTP is the normal way to upload, since early File Managers are slow and cap uploads at a few MB. SFTP arrives as a checkbox once the era has it.
 
 ### 4.5 Domains, DNS, SSL, PHP and cron
 
@@ -102,7 +102,7 @@ This replaces the "Install" button and the 72-hour setup timer.
 4. **Create the database.** In MySQL Databases, create a database and a user and grant all privileges.
 5. **Run the installer.** Open `portal.<domain>/install/` in the Browser. The installer copies the real one for each variant: licence agreement, requirements check (PHP version, ionCube Loader for WHMCache, writable folders), licence key, database host, name, user and password, then the first admin's name, e-mail, username and password.
 6. **Clean up.** The installer finishes by asking to delete the `install` folder. The admin refuses to load while it exists, in variants that really did that.
-7. **Log in.** `portal.<domain>/admin/` asks for the username and password chosen in step 5. Wrong credentials fail with the variant's own message. A "Forgot password?" link sends a reset mail to the admin's mailbox.
+7. **Log in.** `portal.<domain>/admin/` asks for the username and password chosen in step 5. Wrong credentials fail with the variant's own message. A lost password has two ways back. The "Forgot password?" link sends a reset mail to the admin's mailbox. Or the player opens the shop's admin table in phpMyAdmon (`tbladmins` in WHMCache, the variant's own table elsewhere), edits the admin row and sets the password field with the MD5 function; the shop accepts it at the next login and stores it in its current hash format, as real shop systems do with legacy hashes.
 
 Failures are real and tell the player what is wrong in the variant's own words: a wrong database password gives "Access denied for user", a PHP version below the requirement fails the requirements check, a missing ionCube Loader stops WHMCache until it is enabled in the panel's PHP settings.
 
@@ -144,8 +144,5 @@ The model in section 2 lets customers ask for things the player does in the pane
 - Fantastiko and Softaculus may install the player's own shop once a real installer carried that shop system. Installing by hand stays possible in every era.
 - Databases always live on the same host as the web server.
 - Realism comes first: every screen, message and step copies the real product of its era.
-
-## 10. Open questions
-
-1. Should the FTP program be a desktop app bought from a vendor site (FileZiller, a CuteFTP pun) or always installed?
-2. Should a lost shop admin password be recoverable only through the reset mail, or also through phpMyAdmon by editing the admin table, as real admins do?
+- The FTP program is FileGorilla, a free download.
+- A lost shop admin password is recovered through the reset mail or by editing the admin table in phpMyAdmon.
