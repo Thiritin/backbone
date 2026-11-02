@@ -188,8 +188,8 @@ export function Inspector({ game, device, port, side = "front", onSelect, onHot,
         {menus.dialog}
       </>}
       {!monitor && <>
-      <div className={`loc-face${model.kind === "server" ? " wide" : ""}`} onContextMenu={menuOn(menu)}>
-        <DeviceSvg model={model} brand={device.brand} name={name} {...deviceLamps(game, device.id, model)} groups={device.groups} w={440} u={40} back={side === "back"}
+      <div className="loc-face" onContextMenu={menuOn(menu)}>
+        <DeviceSvg model={model} brand={device.brand} name={name} {...deviceLamps(game, device.id, model)} groups={device.groups} w={420} u={22} back={side === "back"}
           onPower={server && (device.rackId || device.panel) ? togglePower : undefined}
           plugs={psus.map(isPlugged)} stick={stickIn} onInlet={device.rackId || device.panel ? (k) => menus.plug(device, psus[k].id) : undefined} onConsole={device.rackId ? onConsole : undefined} />
         {model.kind !== "server" && <PortGrid model={model} peers={peers} groups={device.groups} sel={sel} onPick={pick} onHover={setHover} />}

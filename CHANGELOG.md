@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- The device picture in the inspector now matches the one in the rack, so a server shows the same drive bays, vent and control panel in both places.
 - Downloaded programs now arrive in Downloads as disk images and install by dragging them into Applications; a Trash at the end of the dock uninstalls them, and installing a second bookkeeping program asks before it replaces the current one.
 - The second and third game speeds now run at 8× and 60× instead of 2× and 4×, so playing fast moves much quicker while skipping to the next event stays the fastest.
 - Pear Mail shows every added account in one window with unified mailboxes, sortable columns, threads, search and a reader that answers customer requests from the message.
