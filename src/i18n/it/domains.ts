@@ -15,6 +15,7 @@ export default {
   "error.needsRegistrar": () => "Firma prima un contratto con un registrar.",
   "error.registrarOther": () => "I tuoi domini sono registrati presso un altro partner.",
   "error.domainInvalid": () => "Usa da 3 a 40 lettere, cifre o trattini davanti a un TLD venduto dai registri.",
+  "error.nsInvalid": () => "Inserisci due nomi host diversi, come ns1.example.de.",
   "error.companyDomainOwned": () => "L'azienda ha già un dominio.",
   "error.noTransfer": () => "Nessun dominio è in attesa di trasferimento.",
   "error.unknownMailProvider": () => "Questo provider di posta non esiste.",
