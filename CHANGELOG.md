@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- GMix FreeMix, ProMix and TopMix now offer 1, 5 and 10 GB as the real tiers did, and Goggle sells its free edition from August 2006 until December 2012 beside the paid one, with the user limits, storage, names and MX records of each year.
 - GMix, Goggle Workspace, Hosted Exchange, Lookout 365 and your own mail server now each carry the storage, IMAP and POP access, attachment limits and spam filtering of their year, and your domain's MX record decides which of them receives your mail.
 - Support desks now gain features in the years their real counterparts did, so OsTickit grows from simple queues to timers, reports and merging over the years, Freshdusk goes on sale in 2011 and FreeScoot leaves reply templates and reports to paid modules.
 - Ticket replies, retention offers and ticket actions are now built so the coming mail client can show them too.
