@@ -12,7 +12,7 @@ import type { SalesRequest } from "../src/sim/30-market/market";
 import type { GameState } from "../src/sim/50-state";
 import { routeOptions } from "../src/sim/60-infra/routes";
 import { tick } from "../src/sim/88-tick/tick";
-import { confirmOrder, offerUpgrade, createAccount, provisionOrder, registerOrderDomain, renewDomain, setAutoOrders } from "../src/sim/90-actions/orders";
+import { confirmOrder, offerUpgrade, createAccount, provisionOrder, registerOrderDomain, renewDomain, sendOrderAccess, setAutoOrders } from "../src/sim/90-actions/orders";
 import { hire, quoteOrder } from "./fixtures";
 import { createTicket } from "../src/sim/40-support/tickets";
 import { deserialize, serialize } from "../src/sim/91-save/save";
@@ -128,6 +128,8 @@ describe("custom orders", () => {
     expect(invoiceOf(s, req())!.status).toBe("open");
     expect(tk().status).toBe("waiting");
     expect(req().thread.filter((m) => m.from === "you").map((m) => m.key.replace(/\.\d$/, ""))).toEqual(["reply.order.quote", "reply.order.done"]);
+    done(s, sendOrderAccess(s, id));
+    expect(req().thread.at(-1)!.key).toMatch(/^reply\.order\.access\./);
     payNow(s, inv.id);
     run(s, 1);
     expect(req().status).toBe("won");

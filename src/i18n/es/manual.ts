@@ -76,6 +76,7 @@ export default {
   "error.quoteInvoiced": () => "Este presupuesto ya se traspasó a factura.",
   "error.needsInvoice": () => "Confirma primero el pedido y envía la factura.",
   "error.needsDomain": () => "Registra primero el dominio.",
+  "error.needsSetup": () => "Configura primero el servicio.",
   "error.stepDone": () => "Este paso ya está hecho.",
   "error.domainTaken": () => "Este dominio pertenece a otro cliente.",
   "error.unknownDomain": () => "Este dominio no está registrado para ningún cliente activo.",

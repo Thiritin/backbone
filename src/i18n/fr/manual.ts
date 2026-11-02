@@ -76,6 +76,7 @@ export default {
   "error.quoteInvoiced": () => "Ce devis a déjà été transféré en facture.",
   "error.needsInvoice": () => "Confirme d'abord la commande et envoie la facture.",
   "error.needsDomain": () => "Enregistre d'abord le domaine.",
+  "error.needsSetup": () => "Mets d'abord le service en place.",
   "error.stepDone": () => "Cette étape est terminée.",
   "error.domainTaken": () => "Ce domaine appartient à un autre client.",
   "error.unknownDomain": () => "Ce domaine n'est enregistré pour aucun client actif.",

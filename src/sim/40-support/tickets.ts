@@ -110,7 +110,7 @@ export const TOPICS: Record<TicketKind, string[]> = {
   notice: ["movie", "music", "youtuber", "phishing", "spam"], legal: ["data", "takedown"], refund: ["outage", "dataLoss"], order: [], extortion: ["data"], migration: ["offer"], maintenance: ["notice", "moved", "move", "declined"], sponsor: [], pear: [], mail: [], spam: [],
 };
 export const TEMPLATES: Record<TicketKind, string[]> = {
-  outage: ["ack", "back", "askDetails"], howTo: ["ftp", "mail", "dns", "ssl", "ssh", "panel", "addon", "php", "askDetails"],
+  outage: ["ack", "back", "askDetails"], howTo: ["ftp", "mail", "dns", "ssl", "ssh", "panel", "addon", "php", "access", "askDetails"],
   billing: ["explain", "resend", "extension", "newPrice", "foundPayment", "askDetails"], upgrade: [], cancellation: [], abuse: ["warn", "askDetails"],
   appeal: ["awaitPayment", "askDetails"], notice: [], legal: [], refund: [], order: [], extortion: [], migration: [], maintenance: [], sponsor: [], pear: [], mail: [], spam: [],
 };
@@ -148,7 +148,7 @@ export function shownTemplates(s: GameState, t: Ticket, all: boolean): string[] 
 // A customer who cannot pay yet (boss, access) has no right reply: only unsuspending or keeping the suspension settles it.
 const RIGHT: Record<string, string> = {
   gameVersion: "panel", suspended: "resend", upload: "ftp", email: "mail", phone: "mail", dns: "dns", ssl: "ssl", ssh: "ssh", panel: "panel", addon: "addon", php: "php", charge: "explain", alreadyPaid: "foundPayment", copy: "resend", delay: "extension", price: "newPrice", grow: "offer", disk: "offer", cpu: "offer", full: "offer", more: "offer", cert: "offer",
-  spam: "warn", attack: "warn", forgot: "awaitPayment", onWay: "awaitPayment", bounce: "mail", mailFull: "offer", quotaFull: "offer", dnsChange: "dns", certLost: "offer", bucketPublic: "offer", linkExpired: "offer", phpBroken: "php", licence: "panel", certExpired: "ssl", lockedOut: "panel", updateBroke: "php", transferFailed: "php",
+  spam: "warn", attack: "warn", forgot: "awaitPayment", onWay: "awaitPayment", bounce: "mail", mailFull: "offer", quotaFull: "offer", dnsChange: "dns", certLost: "offer", bucketPublic: "offer", linkExpired: "offer", phpBroken: "php", licence: "panel", certExpired: "ssl", lockedOut: "panel", updateBroke: "php", transferFailed: "php", login: "access",
 };
 
 export function rightTemplate(s: GameState, t: Ticket): string {

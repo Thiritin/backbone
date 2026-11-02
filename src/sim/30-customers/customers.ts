@@ -35,6 +35,9 @@ export interface Service { id: string; customerId: string; product: Product; lab
   pkgBook?: Resources;
   // Web hosting only: the account's login name.
   username?: string;
+  // The login's password; accessSent is false while a hand-worked order still owes the customer the access data.
+  password?: string;
+  accessSent?: boolean;
   // Traffic over the plan (80-business/overuse.ts): held at the booked traffic, and the hour the last overage bill or upgrade offer went out.
   throttled?: true;
   overuseAt?: number;

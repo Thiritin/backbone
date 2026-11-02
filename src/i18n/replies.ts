@@ -72,6 +72,11 @@ const MAILS: Record<string, [Mail, Mail, Mail]> = {
     (p) => `You log in over SSH: connect to ${p.hostname || "your server"} with the user root and the password from your setup email.`,
     (p) => `Use any SSH client and connect to ${p.hostname || "your server"} as root. If you lost the setup email with the password, reply here and we send a new one.`,
   ],
+  "tpl.access": [
+    (p) => `Here are the access details for ${svc(p)}. Log in at ${p.address} with the user name ${p.user} and the password ${p.password}.`,
+    (p) => `Your login for ${svc(p)}: address ${p.address}, user name ${p.user}, password ${p.password}. Please change the password after you log in.`,
+    (p) => `We have looked up your access details. ${svc(p)} is reached at ${p.address}; the user name is ${p.user} and the password is ${p.password}.`,
+  ],
   "tpl.addon": [
     (p) => `Yes, it can share the package. Add the new domain in the control panel at panel.${p.host} under Domains and pick a folder for it.`,
     (p) => `No second package needed. In the control panel at panel.${p.host}, add the domain under Domains and point it to its own folder.`,
@@ -304,7 +309,12 @@ const DONE: [Mail, Mail, Mail] = [
   (p) => `Thank you, the order stands: ${hosting(p)} costs ${euroCents(Number(p.price))} a month, and the first invoice, ${p.invoice}, comes to ${euroCents(Number(p.total))}. Your customer account is set up.`,
 ];
 MAILS["order.done"] = [0, 1, 2].map((i): Mail => (p) => `${DONE[i](p)} ${MAILS["order.live"][i](p)}`) as [Mail, Mail, Mail];
-const LEAD = ["decline.notOffered", "decline.noCapacity", "decline.busy", "accept", "failed", "order.quote", "order.invoice", "order.live", "order.done"];
+MAILS["order.access"] = [
+  (p) => `Here are the access details for ${hosting(p)}. Log in at ${p.address} with the user name ${p.user} and the password ${p.password}.`,
+  (p) => `As promised, your login for ${hosting(p)}: address ${p.address}, user name ${p.user}, password ${p.password}. Please change the password after your first login.`,
+  (p) => `${hosting(p)} is ready for you: log in at ${p.address} as ${p.user} with the password ${p.password}.`,
+];
+const LEAD = ["decline.notOffered", "decline.noCapacity", "decline.busy", "accept", "failed", "order.quote", "order.invoice", "order.live", "order.done", "order.access"];
 const SENDER = ["forward", "takedown", "notOurs", "reject", "comply", "object"];
 
 // Outgoing emails; spread into en.
