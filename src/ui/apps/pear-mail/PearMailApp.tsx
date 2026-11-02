@@ -12,10 +12,12 @@ import { PearMailMark } from "../../art/mailmarks";
 import { VaultOffer } from "../../vault";
 import { useSessionState } from "../../session";
 import { openMenu } from "../../desktop/ContextMenu";
-import { useFocus, useStore, useWin } from "../../store";
+import { uiSound, useFocus, useStore, useWin } from "../../store";
 import { matches, useSelection, type SearchScope } from "../mail-kit/mail-kit";
 import { AccountAlert, Assistant } from "./Assistant";
-import { compose, deleteRows, junkRows, targets, transferRows, type Box } from "./commands";
+import { compose, deleteRows, junkRows, SMART, targets, transferRows, type Box } from "./commands";
+import { RuleSheet, RulesPane, SmartSheet } from "./Rules";
+import { smartRows } from "../../../sim/43-pear-mail/smart";
 import { MessageList } from "./List";
 import { MailboxSheet } from "./Mailboxes";
 import { messageMenu, runShortcut, setPearCtx, type PearCtx, type Sheet, type Sort } from "./menus";
@@ -26,9 +28,10 @@ import "./pear-mail.css";
 const SCOPES: SearchScope[] = ["all", "from", "to", "subject"];
 
 function rowsOf(s: GameState, box: Box, query: string, scope: SearchScope, everywhere: boolean, sort: Sort): Row[] {
+  const smart = box.c === SMART ? s.pearMail.smart.find((x) => x.id === box.f) : undefined;
   const all = everywhere && query.trim()
     ? s.pearMail.accounts.filter((c) => c.enabled).flatMap((c) => clientFolders(s, c).flatMap((f) => mailboxRows(s, c.id, f.id)))
-    : mailboxRows(s, box.c, box.f);
+    : smart ? smartRows(s, smart) : mailboxRows(s, box.c, box.f);
   return sortMessages(s, all.filter((r) => matches(s, r.m, query, scope)), (r) => r.m, sort.key, sort.asc);
 }
 
@@ -116,6 +119,9 @@ export function PearMailApp() {
   useEffect(() => {
     if (shown && !isRead(game, shown.m)) markRead(act, [shown], true);
   }, [shown?.m.id]);
+  // A rule's Play Sound.
+  const chimes = useRef(pm.chimes);
+  useEffect(() => { if (pm.chimes > chimes.current) uiSound("post"); chimes.current = pm.chimes; }, [pm.chimes]);
 
   return (
     <div className="pm" data-build={build.version}>
@@ -165,7 +171,10 @@ export function PearMailApp() {
         </div>
       )}
       {adding && <Assistant onClose={() => setAdding(false)} />}
-      {sheet && !adding && <MailboxSheet sheet={sheet} box={box} onClose={() => setSheet(null)} onGone={(b) => { if (b.c === box.c && b.f === box.f) setBox({ c: null, f: "inbox" }); }} />}
+      {sheet?.k === "rules" && <RulesPane onEdit={(rule) => setSheet({ k: "rule", rule })} onClose={() => setSheet(null)} />}
+      {sheet?.k === "rule" && <RuleSheet rule={sheet.rule} from={sheet.from} onClose={() => setSheet(sheet.from ? null : { k: "rules" })} />}
+      {sheet?.k === "smart" && <SmartSheet smart={pm.smart.find((x) => x.id === sheet.id)} onClose={() => setSheet(null)} />}
+      {sheet && sheet.k !== "rules" && sheet.k !== "rule" && sheet.k !== "smart" && !adding && <MailboxSheet sheet={sheet} box={box} onClose={() => setSheet(null)} onGone={(b) => { if (b.c === box.c && b.f === box.f) setBox({ c: null, f: "inbox" }); }} />}
       {prompt && !adding && <AccountAlert key={prompt.id} c={prompt} onClose={() => { setAlert(null); setAsked([...asked, prompt.id]); }} />}
     </div>
   );

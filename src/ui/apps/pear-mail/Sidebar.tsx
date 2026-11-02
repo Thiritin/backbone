@@ -1,5 +1,5 @@
 import { useState, type DragEvent, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
-import { Activity, Archive, FileText, Folder, Inbox, MailX, Plus, Send, Trash2, TriangleAlert, type LucideIcon } from "lucide-react";
+import { Activity, Archive, FolderCog, FileText, Folder, Inbox, MailX, Plus, Send, Trash2, TriangleAlert, type LucideIcon } from "lucide-react";
 import { t } from "../../../i18n/en";
 import { LOCALE } from "../../../i18n/lang";
 import { isRead } from "../../../sim/42-mail/model";
@@ -12,10 +12,11 @@ import { getMail, transferMessages } from "../../../sim/90-actions/pear-mail";
 import { menuOn } from "../../desktop/ContextMenu";
 import { useStore } from "../../store";
 import { dragPayload, MAIL_DRAG, readDrag } from "../mail-kit/mail-kit";
-import { customBox, mailboxOps, type Box } from "./commands";
+import { customBox, mailboxOps, SMART, type Box } from "./commands";
+import { smartRows } from "../../../sim/43-pear-mail/smart";
 import { mailboxMenu, type PearCtx } from "./menus";
 
-const ICONS: Record<string, LucideIcon> = { inbox: Inbox, drafts: FileText, sent: Send, junk: MailX, trash: Trash2, archive: Archive };
+const ICONS: Record<string, LucideIcon> = { smart: FolderCog, inbox: Inbox, drafts: FileText, sent: Send, junk: MailX, trash: Trash2, archive: Archive };
 const GREY = new Set(["junk", "trash"]);
 
 const depth = (f: MailFolder, all: MailFolder[]): number => {
@@ -138,6 +139,13 @@ export function Sidebar({ game, box, onBox, onAdd, onAlert, activity, onActivity
           </div>
         );
       })}
+      <div className="pm-account">
+        <Header onMenu={menu(SMART, null)}><span>{t("pearMail.smart.section")}</span></Header>
+        {game.pearMail.smart.map((sm) => (
+          <Item key={sm.id} label={sm.name} folder="smart" count={smartRows(game, sm).filter((r) => !isRead(game, r.m)).length} active={box.c === SMART && box.f === sm.id}
+            onClick={() => onBox({ c: SMART, f: sm.id })} onMenu={menu(SMART, sm.id)} />
+        ))}
+      </div>
       {mine.length > 0 && (
         <div className="pm-account">
           <Header nest={{ c: MY_PEAR, f: null }} onMenu={menu(MY_PEAR, null)}><span>{t("pearMail.onMyPear")}</span></Header>
