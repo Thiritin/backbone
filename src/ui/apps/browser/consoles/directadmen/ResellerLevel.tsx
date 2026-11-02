@@ -3,15 +3,16 @@ import { t } from "../../../../../i18n/en";
 import { endUsers, resellersOn } from "../../../../../sim/30-customers/resellers";
 import type { GameState } from "../../../../../sim/50-state";
 import type { Cluster } from "../../../../../sim/60-infra/cluster";
+import { webspaceOf } from "../../../../../sim/60-infra/webspace";
 
 type Page = "users" | "packages" | "messages";
 
 // Reseller level: the block's end users, the block itself and the users' messages.
-export function ResellerLevel({ game, c }: { game: GameState; c: Cluster }) {
+export function ResellerLevel({ game, c, onUserLevel }: { game: GameState; c: Cluster; onUserLevel?: (workloadId: string) => void }) {
   const blocks = resellersOn(game, c.id), [id, setId] = useState(blocks[0]?.id), [page, setPage] = useState<Page>("users");
   const v = blocks.find((x) => x.id === id) ?? blocks[0];
   if (!v) return null;
-  const users = endUsers(game, v), r = game.webpanel.resellers[v.customerId];
+  const users = endUsers(game, v), r = game.webpanel.resellers[v.customerId], own = game.workloads.find((w) => w.serviceId === v.id);
   return (
     <>
       <nav className="da-crumb">
@@ -21,6 +22,7 @@ export function ResellerLevel({ game, c }: { game: GameState; c: Cluster }) {
           </select>
         )}
         {(["users", "packages", "messages"] as Page[]).map((p) => <button key={p} className="da-link" onClick={() => setPage(p)}>{t(`web.rs.${p}`)}</button>)}
+        {own && webspaceOf(game, own.id) && <button className="da-link" onClick={() => onUserLevel?.(own.id)}>{t("web.da.userLevel")}</button>}
       </nav>
       {page === "users" && (
         <table className="cx-readout">

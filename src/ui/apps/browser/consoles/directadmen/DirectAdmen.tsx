@@ -14,7 +14,9 @@ import { hasUpdates, UpdatesPage } from "../UpdatesPage";
 import { Messages } from "./Messages";
 import { ManageResellers } from "./ManageResellers";
 import { ResellerLevel } from "./ResellerLevel";
-import { UserLevel } from "./UserLevel";
+import { UserHome, UserLevel } from "./UserLevel";
+import { PhpMyAdmon } from "../cpanic/PhpMyAdmon";
+import { useSessionState } from "../../../../session";
 import { resellersOn } from "../../../../../sim/30-customers/resellers";
 import "./directadmen.css";
 
@@ -24,6 +26,7 @@ const LOOKS = looks({ classic: 2005, enhanced: 2008, evolution: 2019 });
 // The software tab is the home page: server manager links, tools and server facts side by side.
 export function DirectAdmen(p: PanelProps) {
   const era = eraAt(LOOKS, p), late = era === "evolution", open = parseCreate("directadmen", p.path), [tab, setTab] = usePanelTab(p.f, open?.screen ?? "software"), [q, setQ] = useState(""), [level, setLevel] = useState<"admin" | "reseller" | "user">("admin");
+  const [as, setAs] = useSessionState<string | null>(`browser.directadmen.as.${p.c.id}`, null), [pma, setPma] = useSessionState<string | null>(`browser.directadmen.pma.${p.c.id}`, null);
   const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f);
   if (!p.signedIn) return (
     <div className="cx da da-login" data-era={era}>
@@ -40,13 +43,14 @@ export function DirectAdmen(p: PanelProps) {
       </LoginForm>
     </div>
   );
+  if (as && pma === as) return <PhpMyAdmon game={p.game} workloadId={as} close={() => setPma(null)} />;
   const shown = rows.filter((r) => r.name.toLowerCase().includes(q.toLowerCase()));
   const crumb = tab === "objects" ? t("browser-consoles-2.webSpaces") : tab === "nodes" ? t("browser-consoles-2.nodes") : tab === "create" ? t("pkg.daCreate") : tab === "packages" ? t("pkg.daPackages") : tab === "custombuild" ? t("web.da.customBuild") : tab === "messages" ? t("web.msg.menu") : tab === "updates" ? t("panel-updates.updates") : tab === "services" ? t("panel-services.daServices") : tab === "backup" ? t("panel-backup.tab.directadmen") : pages.find((g) => g.id === tab)?.label ?? null;
   return (
     <div className="cx da" data-era={era}>
       <header className="da-top">
         <span className="da-logo">DirectAdmen</span>
-        <span className="da-level">{level === "user" ? t("web.da.userLevel") : level === "reseller" ? t("web.rs.level") : t("browser-consoles-2.adminLevel")}</span>
+        <span className="da-level">{as || level === "user" ? t("web.da.userLevel") : level === "reseller" ? t("web.rs.level") : t("browser-consoles-2.adminLevel")}</span>
         {late && (
           <label className="da-search"><Search size={14} aria-hidden />
             <input placeholder={t("browser-consoles-2.search")} value={q} onChange={(e) => { setQ(e.target.value); setTab("objects"); }} />
@@ -56,15 +60,18 @@ export function DirectAdmen(p: PanelProps) {
         <button className="da-link" onClick={p.logout}>{t("browser-consoles-2.logout")}</button>
       </header>
       <main className="da-main">
+        {as ? <>
+          <p><button className="da-link" onClick={() => setAs(null)}>{level === "user" ? t("web.da.back") : level === "reseller" ? t("web.rs.level") : t("browser-consoles-2.adminLevel")}</button></p>
+          <UserHome game={p.game} c={p.c} workloadId={as} rows={rows} openPma={() => setPma(as)} />
+        </> : level === "user" ? <UserLevel game={p.game} c={p.c} rows={rows} onPick={setAs} /> : level === "reseller" ? <ResellerLevel game={p.game} c={p.c} onUserLevel={setAs} /> : <>
         <nav className="da-crumb"><button className="da-link" onClick={() => setTab("software")}>{t("browser-consoles-2.home")}</button>{crumb && <> » {crumb}</>}</nav>
-        {level === "user" ? <UserLevel game={p.game} c={p.c} rows={rows} /> : level === "reseller" ? <ResellerLevel game={p.game} c={p.c} /> : <>
         {tab === "custombuild" && <><CustomBuild game={p.game} c={p.c} late={late} /><ComponentsPage game={p.game} c={p.c} /></>}
         {tab === "services" && <ServicesPage game={p.game} c={p.c} />}
         {tab === "backup" && <BackupManager game={p.game} c={p.c} />}
         {tab === "resellers" && <ManageResellers game={p.game} c={p.c} />}
         {tab === "updates" && <UpdatesPage game={p.game} c={p.c} />}
         {tab === "messages" && <Messages game={p.game} c={p.c} late={late} />}
-        {tab === "objects" && <><ServerUse game={p.game} c={p.c} /><RowsTable rows={shown} name={t("browser-consoles-2.domain")} /><OwnAccountRows game={p.game} c={p.c} /></>}
+        {tab === "objects" && <><ServerUse game={p.game} c={p.c} /><RowsTable rows={shown} name={t("browser-consoles-2.domain")} extra={(r) => <button className="da-link" onClick={() => setAs(r.id)}>{t("dacust.loginAs")}</button>} /><OwnAccountRows game={p.game} c={p.c} onLogin={setAs} /></>}
         {tab === "nodes" && <Nodes game={p.game} c={p.c} />}
         {tab === "create" && <ProvisionForm game={p.game} c={p.c} products={["webHosting"]} order={open?.screen === "create" ? open.order : undefined} className="cx-form da-form" />}
         {tab === "create" && <OwnAccountForm game={p.game} c={p.c} className="cx-form da-form" />}
