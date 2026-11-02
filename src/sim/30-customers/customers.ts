@@ -37,6 +37,8 @@ export interface Service { id: string; customerId: string; product: Product; lab
   username?: string;
   // The last hour the service ran slowed; a month without one earns a review.
   slowedAt?: number;
+  // The current run of hours a customer felt the service slow: first and last hour.
+  slowRun?: { since: number; last: number };
   // Hourly price from before the first of a run of raises; unset once the price is back at or below it.
   before?: number;
   // Hourly price invoiced until the next month start: a raise takes effect from the month after it is made.
