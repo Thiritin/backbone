@@ -12,7 +12,7 @@ import { hypervisor, newGame, withServer } from "./fixtures";
 const ok = <T>(r: { ok: boolean; id?: T }) => { expect(r.ok).toBe(true); return r.id as T; };
 const SPEC = { ...sizeSpec("gameServer", 0, 2005), vcpu: 1, ramGb: 2, diskGb: 10 };
 
-// A VMwhere node with three VMs, the first booked twice as large, scaled so the node uses `share` of its RAM.
+// A VMwhere node with three VMs, the first sold twice as large, scaled so the node uses `share` of its RAM.
 function node(share: number): GameState {
   const s = { ...withServer(newGame(3)), cash: 100_000 };
   const c = hypervisor(s, ["dev3"], "VW", "vmwhere"), cus = addCustomer(s, "Kai Frag", "gamer");
@@ -20,6 +20,8 @@ function node(share: number): GameState {
   const u = nodeUsage(s, "dev3"), wl = s.workloads.filter((w) => w.deviceId === "dev3").reduce((n, w) => n + workloadUse(s, w).ramGb, 0);
   const f = (share * u.physical.ramGb - (u.used.ramGb - wl)) / wl;
   s.workloads = s.workloads.map((w) => (w.deviceId === "dev3" ? { ...w, ramGb: w.ramGb * f } : w));
+  const sold = new Set(s.workloads.filter((w) => w.deviceId === "dev3").map((w) => w.serviceId));
+  s.services = s.services.map((v) => (sold.has(v.id) ? { ...v, spec: { ...v.spec, ramGb: v.spec.ramGb * f } } : v));
   expect(ramShare(nodeUsage(s, "dev3"))).toBeCloseTo(share, 6);
   return s;
 }

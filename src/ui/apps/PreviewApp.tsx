@@ -7,8 +7,8 @@ import { supplierHost, type Payable } from "../../sim/46-finance/payables";
 import { INPUT_CATEGORIES, vatRate } from "../../sim/80-business/tax";
 import { useFocus, useStore, type Focus } from "../store";
 import { formatDay } from "./billing/format";
-import { Page } from "./books/InvoicesTab";
 import { ownAddress } from "../../sim/30-customers/addresses";
+import { Page } from "./books/InvoicesTab";
 import "./books/books.css";
 
 // The document viewer: opens the document a Focus names; kind "payable" is a supplier's invoice.

@@ -28,11 +28,11 @@ const UPGRADES: Record<string, { icon: LucideIcon; tile: string }> = {
 };
 
 const INCLUDES: Record<string, number> = {
-  Network: 3, Staff: 3, Marketing: 3, Nagiosaurus: 3, "Knowledge base": 3, Market: 3, searchlight: 3, keepassive: 3, widgetCalendar: 1, widgetTickets: 2, widgetCash: 2, widgetRevenue: 2, widgetCustomers: 2, widgetLevel: 3, chadGpt: 3, clipsy: 2,
+  Network: 3, Staff: 3, Marketing: 3, Nagiosaurus: 3, "Knowledge base": 3, DocuWhere: 3, Market: 3, searchlight: 3, keepassive: 3, widgetCalendar: 1, widgetTickets: 2, widgetCash: 2, widgetRevenue: 2, widgetCustomers: 2, widgetLevel: 3, chadGpt: 3, clipsy: 2,
 };
 
 const SHELVES: [string, string[]][] = [
-  ["Essentials", ["Network", "Nagiosaurus", "Knowledge base"]],
+  ["Essentials", ["Network", "Nagiosaurus", "Knowledge base", "DocuWhere"]],
   ["Growth", ["Staff", "Marketing", "Market"]],
   ["Bots", ["chadGpt", "clipsy"]],
   ["Upgrades", ["searchlight", "keepassive", "widgetCalendar", "widgetTickets", "widgetCash", "widgetRevenue", "widgetCustomers", "widgetLevel"]],

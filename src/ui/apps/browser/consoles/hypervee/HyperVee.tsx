@@ -275,7 +275,7 @@ export function HyperVee(p: PanelProps) {
                 {[1, 2].map((g) => <label key={g} className="cx-check"><input type="radio" name="hv-gen" checked={gen === g} onChange={() => setGen(g)} />{t("browser-consoles-1.hvGenerationN", { n: g })}</label>)}
               </div>
             ) }] : []),
-            { id: "memory", label: t("browser-consoles-1.hvAssignMemory"), body: <SizeFields size={nv.size} set={nv.setSize} only="ramGb" labels={["", t("browser-consoles-1.hvStartupMemoryGb"), ""]} /> },
+            { id: "memory", label: t("browser-consoles-1.hvAssignMemory"), body: <SizeFields size={nv.size} set={nv.setSize} only="ramGb" ramScale={1024} labels={["", t("browser-consoles-1.hvStartupMemoryMb"), ""]} /> },
             { id: "net", label: t("browser-consoles-1.hvConfigureNetworking"), body: <Facts facts={[{ label: t("browser-consoles-1.hvConnection"), value: t("browser-consoles-1.hvExternalNetwork") }]} /> },
             { id: "vhd", label: t("browser-consoles-1.hvConnectVhd"), body: <SizeFields size={nv.size} set={nv.setSize} only="diskGb" labels={["", "", t("browser-consoles-1.hvSizeGb")]} /> },
             { id: "install", label: t("browser-consoles-1.hvInstallOptions"), body: nv.isoPick(t("browser-consoles-1.hvInstallNow"), t("browser-consoles-1.hvInstallLater")) },

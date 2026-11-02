@@ -1,6 +1,7 @@
 import { euroCents } from "../../sim/00-core/money";
-import type { Dict, Params } from "../lang";
+import { LOCALE, type Dict, type Params } from "../lang";
 
+const num = (x: string | number) => Number(x).toLocaleString(LOCALE);
 const KIND: Record<string, string> = {
   howTo: "ticket d'aide", billing: "ticket de facturation", outage: "ticket de panne", upgrade: "ticket de mise à niveau", cancellation: "ticket de résiliation", abuse: "ticket d'abus",
   appeal: "ticket de contestation", notice: "ticket d'avis", legal: "ticket juridique", refund: "ticket de remboursement", order: "ticket de commande",
@@ -31,4 +32,5 @@ export default {
   "activity.unsuspend": (p) => `Services rétablis pour la facture ${p.invoice}`,
   "activity.writeOff": (p) => `Facture ${p.invoice} passée en perte`,
   "activity.price": (p) => `Prix changé à ${euroCents(Number(p.price))} par mois`,
+  "activity.limits": (p) => `Limites fixées à ${num(p.vcpu)} vCPU, ${num(p.ram)} Go de RAM et ${num(p.disk)} Go de disque`,
 } satisfies Dict;

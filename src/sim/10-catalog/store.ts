@@ -27,6 +27,7 @@ export const STORE: StoreItem[] = [
   { id: "Market", kind: "app", name: "Market", monthly: 15 },
   { id: "Nagiosaurus", kind: "app", name: "Nagiosaurus", monthly: 15 },
   { id: "Knowledge base", kind: "app", name: "Knowledge base", monthly: 10 },
+  { id: "DocuWhere", kind: "app", name: "DocuWhere", monthly: 5 },
   { id: "searchlight", kind: "upgrade", name: "Searchlight", monthly: 2 },
   { id: "keepassive", kind: "upgrade", name: "KeePassive", monthly: 3 },
   ...WIDGETS.map(([id, name, monthly]): StoreItem => ({ id, kind: "upgrade", name, monthly })),
