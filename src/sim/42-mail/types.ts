@@ -112,6 +112,7 @@ export interface DeskChannel {
   id: string; accountId: string; desk: string;
   after: "keep" | "read" | "move" | "delete"; folder: string | null;  // what the desk does with an imported message
   since: number;
+  verified: boolean;  // a hosted desk has seen its forwarding test arrive
   // support-desk adds its own fields (department, mode, fetch interval) beside these.
 }
 
