@@ -36,6 +36,8 @@
 .pm-count.grey { background: var(--text-3); }
 .pm-box.active .pm-count { background: white; color: var(--accent-text); }
 .pm-account-h { display: flex; align-items: center; gap: 6px; }
+.pm-box.drop, .pm-account-h.drop { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 4px; }
+.pm-info { width: 100%; font-size: 12px; }
 .pm-account.off { opacity: 0.5; }
 .pm-warn { display: grid; padding: 0; border: none; background: none; color: oklch(0.7 0.16 70); }
 .pm-warn svg { width: 13px; height: 13px; }

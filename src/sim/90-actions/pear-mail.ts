@@ -1,15 +1,16 @@
 // Pear Mail actions (docs/design/plans/mail-client.md).
 import { checkAccount, clientError } from "../43-pear-mail/check";
 import { nowMinutes } from "../00-core/time";
-import { drop } from "../42-mail/deliver";
-import { SYS_FOLDERS } from "../42-mail/model";
+import { drop, store } from "../42-mail/deliver";
+import { foldersOf, SYS_FOLDERS } from "../42-mail/model";
 import { mailBuild, mailHas } from "../10-catalog/pear-mail";
 import type { Folder, Message } from "../42-mail/types";
 import { autoServers, CHECK_EVERY, draftClient, type AccountInput } from "../43-pear-mail/setup";
 import { localFolder, MY_PEAR, PEAR, type ClientAccount } from "../43-pear-mail/state";
+import { visibleTo } from "../43-pear-mail/view";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
-import { discardDraft, saveDraft, sendMessage, type Draft } from "./mailmsg";
+import { discardDraft, emptyFolder, moveMessages, saveDraft, sendMessage, type Draft } from "./mailmsg";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 
@@ -179,4 +180,96 @@ export function sendPearMessage(s: GameState, clientId: string, d: Draft & { fro
   drop(s, c.accountId, new Set([sent.id]));
   setLocal(s, [...local(s), { ...sent, folder: localFolder(c.id, "sent"), origin: c.id }]);
   return r;
+}
+
+// On My Pear mailboxes: local.folders, nested three deep like a server's, their mail in localFolder(MY_PEAR, id).
+const PEAR_DEPTH = 3;
+const mine = (s: GameState) => s.pearMail.local.folders;
+const myFolder = (s: GameState, id: string | null) => (id === null ? undefined : mine(s).find((f) => f.id === id));
+const mySubtree = (s: GameState, id: string): string[] => [id, ...mine(s).filter((f) => f.parent === id).flatMap((f) => mySubtree(s, f.id))];
+const myDepth = (s: GameState, id: string | null): number => (id === null ? 0 : 1 + myDepth(s, myFolder(s, id)?.parent ?? null));
+const myHeight = (s: GameState, id: string): number => 1 + Math.max(0, ...mine(s).filter((f) => f.parent === id).map((f) => myHeight(s, f.id)));
+const myTaken = (s: GameState, parent: string | null, name: string, except?: string) =>
+  mine(s).some((f) => f.parent === parent && f.id !== except && f.name.toLowerCase() === name.toLowerCase());
+const setMine = (s: GameState, folders: Folder[]): void => { s.pearMail = { ...s.pearMail, local: { ...s.pearMail.local, folders } }; };
+
+export function createPearFolder(s: GameState, name: string, parent: string | null = null): ActionResult {
+  const n = name.trim();
+  if (parent !== null && !myFolder(s, parent)) return fail("error.mailNoFolder");
+  if (!n || n.length > 40 || myTaken(s, parent, n)) return fail("error.mailFolderName");
+  if (myDepth(s, parent) + 1 > PEAR_DEPTH) return fail("error.mailFolderDepth");
+  const f: Folder = { id: `pf${s.nextId++}`, accountId: PEAR, name: n, parent };
+  setMine(s, [...mine(s), f]);
+  return { ok: true, id: f.id };
+}
+
+export function renamePearFolder(s: GameState, id: string, name: string): ActionResult {
+  const f = myFolder(s, id), n = name.trim();
+  if (!f) return fail("error.mailNoFolder");
+  if (!n || n.length > 40 || myTaken(s, f.parent, n, id)) return fail("error.mailFolderName");
+  setMine(s, mine(s).map((x) => (x.id === id ? { ...x, name: n } : x)));
+  return { ok: true };
+}
+
+export function movePearFolder(s: GameState, id: string, parent: string | null): ActionResult {
+  const f = myFolder(s, id);
+  if (!f || (parent !== null && (!myFolder(s, parent) || mySubtree(s, id).includes(parent)))) return fail("error.mailNoFolder");
+  if (myTaken(s, parent, f.name, id)) return fail("error.mailFolderName");
+  if (myDepth(s, parent) + myHeight(s, id) > PEAR_DEPTH) return fail("error.mailFolderDepth");
+  setMine(s, mine(s).map((x) => (x.id === id ? { ...x, parent } : x)));
+  return { ok: true };
+}
+
+// The mailbox and the ones inside it go; their mail moves to the On My Pear Trash.
+export function deletePearFolder(s: GameState, id: string): ActionResult {
+  if (!myFolder(s, id)) return fail("error.mailNoFolder");
+  const gone = new Set(mySubtree(s, id).map((f) => localFolder(MY_PEAR, f)));
+  setLocal(s, local(s).map((m) => (gone.has(m.folder) ? { ...m, folder: localFolder(MY_PEAR, "trash") } : m)));
+  setMine(s, mine(s).filter((f) => !gone.has(localFolder(MY_PEAR, f.id))));
+  return { ok: true };
+}
+
+// Move to and drag and drop: within one account, or between an account and On My Pear. A move into On My Pear takes the
+// server copy away; a copy (Option held) leaves the original and files a new message.
+export function transferMessages(s: GameState, from: string, ids: string[], to: string, folder: string, copy = false): ActionResult {
+  const src = from === MY_PEAR ? null : client(s, from), dst = to === MY_PEAR ? null : client(s, to);
+  if ((from !== MY_PEAR && !src) || (to !== MY_PEAR && !dst)) return fail("error.mailUnknown");
+  if (src && dst && src.id !== dst.id) return fail("error.mailCrossAccount");
+  const sys = (SYS_FOLDERS as string[]).includes(folder);
+  if (!dst ? !sys && !myFolder(s, folder) : dst.protocol === "pop" && !sys) return fail("error.mailNoFolder");
+  const want = new Set(ids);
+  const picked = src?.protocol === "imap" ? (s.mail.msgs[src.accountId] ?? []).filter((m) => want.has(m.id) && visibleTo(src, m)) : local(s).filter((m) => want.has(m.id));
+  if (!picked.length) return fail("error.mailUnknown");
+  const fresh = (m: Message): Message => (copy ? { ...m, id: `msg${s.nextId++}` } : m);
+  const filed = (m: Message, at: string): Message => {
+    const { prev: _p, ...rest } = m;
+    return folder === "trash" && m.folder !== at ? { ...rest, folder: at, prev: m.folder.split(":").pop()! } : { ...rest, folder: at };
+  };
+  if (dst?.protocol === "imap") {
+    if (src && !copy) return moveMessages(s, dst.accountId, ids, folder);
+    const box = () => s.mail.accounts.find((a) => a.id === dst.accountId && a.closedAt === null);
+    if (!box()) return fail("error.mailUnknown");
+    if (!foldersOf(s, dst.accountId).some((f) => f.id === folder)) return fail("error.mailNoFolder");
+    // A copy on the server, or an upload from On My Pear.
+    for (const m of picked) { const { origin: _o, ...up } = fresh(m); store(s, box()!, filed(up, folder)); }
+    if (!src && !copy) setLocal(s, local(s).filter((m) => !want.has(m.id)));
+    return { ok: true };
+  }
+  const at = localFolder(dst ? dst.id : MY_PEAR, folder);
+  const moved = picked.map((m) => filed(fresh(m), at));
+  if (src?.protocol === "imap") {
+    if (!copy) drop(s, src.accountId, want);
+    setLocal(s, [...local(s), ...moved]);
+  } else setLocal(s, copy ? [...local(s), ...moved] : local(s).map((m) => moved.find((x) => x.id === m.id) ?? m));
+  return { ok: true };
+}
+
+// Erase Deleted Messages and Erase Junk Mail, for one account, On My Pear, or every account and On My Pear.
+export function erasePearMailbox(s: GameState, folder: "trash" | "junk", clientId?: string): ActionResult {
+  const cs = s.pearMail.accounts.filter((c) => !clientId || c.id === clientId);
+  if (clientId && clientId !== MY_PEAR && !cs.length) return fail("error.mailUnknown");
+  for (const c of cs.filter((x) => x.protocol === "imap")) emptyFolder(s, c.accountId, folder);
+  const ids = new Set([...cs.filter((c) => c.protocol === "pop").map((c) => c.id), ...(!clientId || clientId === MY_PEAR ? [MY_PEAR] : [])]);
+  setLocal(s, local(s).filter((m) => { const [c, f] = partsOf(m); return !(ids.has(c) && f === folder); }));
+  return { ok: true };
 }

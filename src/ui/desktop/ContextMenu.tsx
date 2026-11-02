@@ -98,6 +98,7 @@ function Panel({ items, x, y, flipX, onBack, root }: { items: (MenuItem | null)[
             onClick={() => choose(i)}>
             <span className="ctx-check">{it.checked && <Check />}</span>
             <span className="ctx-label">{it.label}</span>
+            {it.key && <kbd className="ctx-key">{it.key}</kbd>}
             {it.items && <ChevronRight className="ctx-more" />}
           </button>
         ))}

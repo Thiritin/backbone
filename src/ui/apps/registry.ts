@@ -28,6 +28,8 @@ import { StaffApp } from "./staff/StaffApp";
 import { WeatherApp } from "./weather/WeatherApp";
 import { PostApp } from "./PostApp";
 import { PearMailApp } from "./pear-mail/PearMailApp";
+import { pearMenus } from "./pear-mail/menus";
+import type { AppMenu } from "../desktop/menu";
 import { unreadBadge } from "../../sim/43-pear-mail/view";
 import { DocuWhereApp } from "./DocuWhereApp";
 import { PreviewApp } from "./PreviewApp";
@@ -51,6 +53,8 @@ export interface AppDef {
   badge?: (s: GameState) => number;
   // The plain dot on the dock tile.
   dot?: (s: GameState) => boolean;
+  // Menu bar menus after the app-name menu, read when one opens.
+  menus?: () => AppMenu[];
 }
 
 // Dock order; a divider follows every 4th app.
@@ -68,7 +72,7 @@ export const APPS: AppDef[] = [
     badge: (s) => drafts(s) + unmatched(s) + late(s) },
   { name: "Post", icon: era(Mailbox, "post"), tile: "oklch(0.72 0.15 85)", about: t("apps.about.Post"), body: PostApp,
     badge: (s) => inbox(s).filter((l) => !l.read).length },
-  { name: "Pear Mail", icon: PearMailMark, tile: "oklch(0.62 0.15 245)", about: t("apps.about.Pear Mail"), body: PearMailApp, badge: unreadBadge },
+  { name: "Pear Mail", icon: PearMailMark, tile: "oklch(0.62 0.15 245)", about: t("apps.about.Pear Mail"), body: PearMailApp, badge: unreadBadge, menus: pearMenus },
   { name: "DocuWhere", icon: era(Archive, "docuwhere"), tile: "oklch(0.55 0.13 265)", about: t("apps.about.DocuWhere"), body: DocuWhereApp },
   { name: "DohleFormular", icon: era(Landmark, "dohleformular"), tile: "oklch(0.36 0.09 255)", about: t("apps.about.DohleFormular"), body: DohleFormularApp },
   { name: "Staff", icon: era(Contact, "staff"), tile: "oklch(0.7 0.15 70)", about: t("apps.about.Staff"), body: StaffApp },
