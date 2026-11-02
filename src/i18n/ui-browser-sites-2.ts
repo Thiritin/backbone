@@ -474,4 +474,10 @@ export default {
   "browser-sites-2.cli.restoreList": () => "Lists the lost machines that have a backup on this server and the nodes they can be restored to.",
   "browser-sites-2.cli.restore": () => "Restores a lost machine from its backup onto the given node, or onto the first free one.",
   "browser-sites-2.keyFlag": () => "Add --key followed by your license key to the command to install with a license.",
+  "browser-sites-2.requirements": () => "System requirements",
+  "browser-sites-2.reqCpu": () => "Processor",
+  "browser-sites-2.reqRam": () => "Memory",
+  "browser-sites-2.reqDisk": () => "Disk space",
+  "browser-sites-2.reqMailbox": () => "Disk per mailbox",
+  "browser-sites-2.reqOs": () => "Operating system",
 } satisfies Dict;

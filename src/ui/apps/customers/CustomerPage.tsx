@@ -9,7 +9,7 @@ import { isFinal, profileStats, serviceMonthly } from "../../../sim/40-support/t
 import { invoiceTotal, isUnpaid, type Invoice, type InvoiceStatus } from "../../../sim/45-billing/billing";
 import type { GameState } from "../../../sim/50-state";
 import { workloadsOf, type Workload } from "../../../sim/60-infra/cluster";
-import { workloadUse } from "../../../sim/60-infra/usage";
+import { shownWorkload } from "../../../sim/60-infra/usage";
 import { zoneOf } from "../../../sim/60-infra/network";
 import { setLimits } from "../../../sim/90-actions/limits";
 import { answerTraffic, creditCustomer, liftThrottle } from "../../../sim/90-actions/customers";
@@ -381,7 +381,7 @@ function LimitRows({ s, v }: { s: GameState; v: Service }) {
 }
 
 function LimitForm({ s, v, w }: { s: GameState; v: Service; w: Workload }) {
-  const act = useStore((x) => x.act), [size, setSize] = useState({ vcpu: w.vcpu, ramGb: w.ramGb, diskGb: w.diskGb }), use = workloadUse(s, w);
+  const act = useStore((x) => x.act), [size, setSize] = useState({ vcpu: w.vcpu, ramGb: w.ramGb, diskGb: w.diskGb }), use = shownWorkload(s, w);
   return (
     <>
       <div>

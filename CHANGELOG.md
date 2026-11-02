@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- Software now installs on any virtual machine with the disk for it, but a VM too small for its software and sites sits at 100% CPU and RAM, its web console stops answering and its sites slow down until you resize it.
+- CPU and RAM readouts now move a little from hour to hour, and every software website lists the system requirements of the current year on its download page.
 - Flyerlarm, a print shop in the browser, sells flyer runs that are handed out in one of your cities over four weeks and bring in new leads; the Marketing app lists every running run and takes you to the shop to order more.
 - Web developers now write in as a new kind of customer: they are rare at first, mostly ask for web hosting, and often want a reseller block, and your sponsored developer events and agency fairs reach them.
 - DocuWhere in the Pear Store files every letter from the post in an archive with search, document types and a filter per type.

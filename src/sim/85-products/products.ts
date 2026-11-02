@@ -22,7 +22,7 @@ import { bootHours, customerWorkloads, liveServices } from "../60-infra/status";
 import { hostPerf, phpTickets } from "../60-infra/php";
 import { welcomeFriends } from "../90-actions/start";
 import { deviceVendor, installedCores, perCoreOf } from "../60-infra/status";
-import { diskFill, nodeUsage, starvation } from "../60-infra/usage";
+import { diskFill, nodeUsage, starvation, vmPerf } from "../60-infra/usage";
 import { addAwareness, addReview, announceReview, starsFor } from "../80-business/marketing";
 import type { SimEvent } from "../88-tick/tick";
 
@@ -174,14 +174,14 @@ export function reportLoss(s: GameState, d: Device, lost: Workload[], hour: numb
   events.push({ app: "Locations", key: "event.dataLoss", params: { device: d.label ?? d.name, count: items.length } });
 }
 
-// The speed a customer workload runs at, 1 when nothing slows it: the slowest of its node, its panel host and, for a game
+// The speed a customer workload runs at, 1 when nothing slows it: the slowest of its node, its panel host, its VM and, for a game
 // server, one core.
 export function workloadPerf(s: GameState, w: Workload, product: Product | undefined, nodePerf: (deviceId: string) => number = (id) => nodeUsage(s, id).perf): number {
   if (!w.clusterId || w.stopped || isOwnVm(w)) return 1;
   const vm = vmOf(s, w), at = w.deviceId ?? vm?.deviceId;
   if (!at || vm?.stopped) return 1;
   const c = s.clusters.find((x) => x.id === w.clusterId), node = product === "gameServer" ? s.devices.find((d) => d.id === at) : undefined;
-  const base = Math.min(nodePerf(at), hostPerf(s, c), node ? perCoreOf(node) : 1), shares = sharesOf(c, w);
+  const base = Math.min(nodePerf(at), hostPerf(s, c), vm ? vmPerf(s, vm) : 1, node ? perCoreOf(node) : 1), shares = sharesOf(c, w);
   if (shares === "normal" || !runsHot(s, at)) return base;
   // Under contention a high pool keeps its performance and a low pool gives some up.
   return shares === "high" ? 1 : base * POOL_LOW_PERF;
