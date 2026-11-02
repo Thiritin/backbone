@@ -223,21 +223,22 @@ export function renewDomain(s: GameState, name: string): ActionResult {
 const live = (s: GameState, r: SalesRequest) => s.services.find((v) => v.id === r.serviceId && v.endedAt === null);
 
 // Offers the new monthly price for an upgrade of a custom service; the customer answers within their reply time and,
-// taking it, the service grows to the requested resources (in place, or by route when its node lacks room).
+// taking it, the service grows to the requested resources (in place, or by route when its node lacks room). A
+// certificate request takes a yearly price and adds the certificate to the web hosting.
 export function offerUpgrade(s: GameState, requestId: string, monthly: number, route = "auto"): ActionResult {
   const r = s.sales.requests.find((x) => x.id === requestId);
   if (!r || r.kind !== "expansion" || !r.spec || !["open", "countered", "refused"].includes(r.status)) return fail("error.unknownRequest");
   const v = live(s, r);
   if (!v) return fail("error.unknownService");
   if (!validPrice(monthly, r.reference)) return fail("error.quotePrice");
-  const price = Math.round(monthly * 100) / 100;
-  // Checked on a copy first, so a refused route leaves nothing changed.
+  const price = Math.round(monthly * 100) / 100, cert = r.product === "ssl";
+  // Checked on a copy first, so a refused route leaves nothing changed. A certificate is an add-on and needs no room.
   const trial = { ...s, workloads: [...s.workloads], services: [...s.services] };
-  const fits = resize(trial, v, r.spec, route, r.city);
+  const fits: ActionResult = cert ? { ok: true } : resize(trial, v, r.spec, route, r.city);
   if (!fits.ok) return fits;
   const at = answerAt(s, r, price);
   editRequest(s, r.id, (x) => ({ status: "quoted", quote: price, route, attempts: x.attempts + 1, replyAt: at, deadline: Math.max(x.deadline, at + 1) }));
-  say(s, r.id, "you", "sales.you.upgrade", { price });
+  say(s, r.id, "you", cert ? "sales.you.cert" : "sales.you.upgrade", { price });
   s.tickets = s.tickets.map((t) => (t.id === r.ticketId && !isFinal(t) ? { ...t, status: "waiting", updatedAt: s.hour } : t));
   return { ok: true };
 }

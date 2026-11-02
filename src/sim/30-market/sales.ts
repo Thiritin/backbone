@@ -23,7 +23,7 @@ import type { SimEvent } from "../88-tick/tick";
 import { addCustomer } from "../90-actions/customers";
 import { hiddenTraits } from "../45-billing/fraud";
 import { domainFor } from "../30-customers/domains";
-import { CERT_SHARE, offerCertificate } from "../30-customers/certificates";
+import { CERT_TOPIC, CERT_WANT, certificateOf, certSpec, wantCertificate } from "../30-customers/certificates";
 import { shopPriceLevel } from "./cycles";
 import { emailFor, firstOrder, isStandard, orderLead, orderQueued } from "./orders";
 import { growSlots } from "../60-infra/games";
@@ -176,16 +176,20 @@ function morningMail(s: GameState, events: SimEvent[]): void {
 // Opens the sales request that quotes more of each resource of the ticket's service; taken, the service grows in place.
 export function expansionRequest(s: GameState, t: Ticket): boolean {
   const c = s.customers.find((x) => x.id === t.customerId), v = s.services.find((x) => x.id === t.serviceId);
-  if (!c || c.churnedAt !== null || !v || v.endedAt !== null || !expandable(v)) return false;
+  // A certificate request asks for an SSL add-on to the web hosting; its quote is a yearly price.
+  const cert = t.topic === CERT_TOPIC;
+  if (!c || c.churnedAt !== null || !v || v.endedAt !== null || !(cert || expandable(v))) return false;
   const loc = s.locations.find((l) => l.az === v.zone);
-  const spec = grownSpec(s.seed, Number(t.id.slice(3)) || 0, v.product, v.spec), old = v.spec;
+  const product = cert ? "ssl" : v.product, sla = cert ? "basic" : v.sla, old = v.spec;
+  const spec = cert ? certSpec(c.profile, yearOf(s.hour)) : grownSpec(s.seed, Number(t.id.slice(3)) || 0, v.product, v.spec);
   const r = addRequest(s, {
     kind: "expansion", customerId: c.id, contact: c.name, company: null, profile: c.profile, city: loc?.city ?? s.locations[0].city,
-    product: v.product, spec, sla: v.sla, reference: referenceFor(s, c.profile, v.product, spec, v.sla), discount: 0, budget: budgetOf(s.rng),
+    product, spec, sla, reference: referenceFor(s, c.profile, product, spec, sla), discount: 0, budget: budgetOf(s.rng),
     shady: !!c.shady, serviceId: v.id, ticketId: t.id, deadline: s.hour + EXPANSION_HOURS,
-  }, "sales.msg.upgrade");
-  editRequest(s, r.id, (x) => ({ thread: x.thread.map((m, n) => (n ? m : { ...m, params: { ...m.params, product: v.product, ...specParams(old, "0"), ...specParams(spec, "1") } })) }));
-  if (t.kind === "upgrade") s.tickets = s.tickets.map((x) => (x.id === t.id ? { ...x, topic: "more" } : x));
+  }, cert ? "sales.msg.cert" : "sales.msg.upgrade");
+  const params: Record<string, string | number> = cert ? { domain: v.domain ?? v.label } : { product: v.product, ...specParams(old, "0"), ...specParams(spec, "1") };
+  editRequest(s, r.id, (x) => ({ thread: x.thread.map((m, n) => (n ? m : { ...m, params: { ...m.params, ...params } })) }));
+  if (!cert && t.kind === "upgrade") s.tickets = s.tickets.map((x) => (x.id === t.id ? { ...x, topic: "more" } : x));
   return true;
 }
 
@@ -259,7 +263,7 @@ export function fulfil(s: GameState, r: SalesRequest): ActionResult {
   else if (r.kind !== "expansion") {
     editRequest(s, r.id, () => ({ customerId }));
     const v = r.product === "webHosting" && s.services.find((x) => x.id === placed.id);
-    if (v) offerCertificate(s, v, CERT_SHARE.order);
+    if (v) wantCertificate(s, v, CERT_WANT[r.profile]);
   }
   return placed;
 }
@@ -297,6 +301,16 @@ function replyUpgrade(s: GameState, r: SalesRequest, events: SimEvent[]): void {
   const name = requestName(r), price = r.quote!, v = s.services.find((x) => x.id === r.serviceId && x.endedAt === null);
   if (!v) return loseRequest(s, r, "lost", "lost.declined");
   const accepts = (r.counter !== null && price <= r.counter) || rand(s.rng) < acceptChance(s, r, price);
+  if (accepts && r.product === "ssl") {
+    say(s, r.id, "customer", "sales.reply.accept", { name: r.contact });
+    const domain = v.domain ?? v.label;
+    if (certificateOf(s, domain) || !provisionService(s, v.customerId, "ssl", { label: domain, price, spec: r.spec! }).ok) return loseRequest(s, r, "lost", "lost.declined");
+    say(s, r.id, "you", "sales.you.certDone", { price, domain });
+    editRequest(s, r.id, () => ({ status: "won", replyAt: null }));
+    closeTicket(s, r);
+    events.push({ app: "Books", key: "event.certificateSold", params: { name, domain } });
+    return;
+  }
   if (accepts) {
     say(s, r.id, "customer", "sales.reply.accept", { name: r.contact });
     if (!resize(s, v, r.spec!, r.route ?? "auto", r.city).ok) return loseRequest(s, r, "lost", "lost.noCapacity", { city: r.city });
