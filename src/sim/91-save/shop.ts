@@ -1,6 +1,8 @@
 import type { GameState } from "../50-state";
 import { versionAt } from "../10-catalog/software-versions";
 import { isLicensed, issueKey, SHOP_MACHINE, updateKey, yearAfter } from "../60-infra/licence";
+import { companyDomain } from "../30-customers/domains";
+import { accountFor } from "../60-infra/webspace";
 
 // The order form was first a marketing channel, then the "handRolled" shop variant; both load as email orders only.
 export function fillShop(s: GameState, saved: readonly string[] = []): void {
@@ -21,4 +23,13 @@ export function installSavedShop(s: GameState): void {
     updateKey(s, k.id, { kind: "once", covers: { kind: "version", major: v.major }, renewsAt: null, updatesUntil: yearAfter(s.hour), machineId: SHOP_MACHINE });
   }
   s.shop = { ...s.shop, install: { clusterId: c.id, version: v.version, at: s.hour } };
+}
+
+// Saves from before own web spaces: the host the shop is installed on gets the company domain's web space, holding only the
+// panel's skeleton.
+export function ownShopWebspace(s: GameState): void {
+  const at = s.shop.install, c = at && s.clusters.find((x) => x.id === at.clusterId && x.kind === "panel" && x.panel);
+  if (!at || !c) return;
+  const domain = companyDomain(s);
+  s.ownWebspaces = [{ id: `ws${s.nextId++}`, clusterId: c.id, account: accountFor(domain), domain, at: at.at }];
 }

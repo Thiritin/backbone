@@ -38,6 +38,7 @@ A player can run thousands of customer web spaces. Storing every file and mailbo
 - A customer web space's contents are generated from its workload, app, seed and age every time they are shown, as `Customer.tsx` already does for its file list. Nothing is stored for it.
 - A web space stores only what the player changed: files they uploaded or deleted, databases, users, mailboxes and FTP accounts they created, and settings they edited. Each change is an entry in an overlay on top of the derived contents.
 - The player's own web spaces (company website, shop, webmail) are ordinary web spaces that start empty and are filled entirely by the player's actions.
+- The player creates an own web space on a panel host the way an admin makes an account for their own domain (WHM's Create a New Account). It has no paying service and no package limits, counts against the panel licence and starts with the panel's skeleton only: the web root, `logs`, `tmp`, `mail` and a default index page. The one on the company domain is where the website and the shop live. Saves from before this get one on the host their shop is installed on.
 
 New state: `s.webspaces: Record<workloadId, WebspaceOverlay>`, default `{}` in `newGame` and filled by `deserialize`. A web space with no overlay entry is pure derivation.
 

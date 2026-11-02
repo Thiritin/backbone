@@ -473,6 +473,8 @@ export function dropCluster(s: GameState, id: string) {
     return { ...w, points, backupAt: points.filter((p) => !(p.verified && p.bad)).reduce<number | null>((n, p) => (n === null || p.at > n ? p.at : n), null) };
   });
   const drop = (ids: string[]) => ids.filter((x) => x !== id);
+  for (const o of s.ownWebspaces.filter((x) => x.clusterId === id)) delete s.webspaces[o.id];
+  s.ownWebspaces = s.ownWebspaces.filter((x) => x.clusterId !== id);
   if (s.company.mail.kind === "self" && s.company.mail.clusterId === id) s.company = { ...s.company, mail: { kind: "free" } };
   s.security = { ...s.security, offline: drop(s.security.offline), hacked: drop(s.security.hacked), patched: drop(s.security.patched) };
 }

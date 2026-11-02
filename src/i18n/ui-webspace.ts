@@ -37,4 +37,9 @@ export default {
   "webspace.error.noCron": () => "This cron job does not exist.",
   "webspace.error.fixedFolder": () => "This folder belongs to the account and cannot be changed.",
   "webspace.error.noFile": () => "This file or folder does not exist.",
+  "webspace.error.notPanel": () => "Only a web hosting panel host can hold accounts.",
+  "webspace.error.account": () => "Usernames start with a letter and have up to 16 lowercase letters and digits.",
+  "webspace.error.accountTaken": () => "This username is already in use on the server.",
+  "webspace.own.title": () => "Own account",
+  "webspace.own.list": () => "Own accounts",
 } satisfies Dict;

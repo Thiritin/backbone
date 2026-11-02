@@ -22,8 +22,9 @@ const ICONS: [Page, string, LucideIcon][] = [
 export function Customer({ game, c, workloadId }: { game: GameState; c: Cluster; workloadId: string }) {
   const [page, setPage] = useState<Page | null>(null);
   const w = game.workloads.find((x) => x.id === workloadId), v = game.services.find((x) => x.id === w?.serviceId), ws = webspaceOf(game, workloadId);
-  if (!w || !v || !ws) return null;
-  const u = accountUse(game, w), domain = v.domain ?? v.label, app = v.spec.app ?? "static", offline = game.security.offline.includes(c.id);
+  if (!ws) return null;
+  // The company's own accounts have no service and no package, so only their disk use shows.
+  const u = w && accountUse(game, w), domain = ws.domain, app = v?.spec.app, offline = game.security.offline.includes(c.id);
   const top = Object.entries(ws.files).filter(([p]) => p.startsWith(`${ws.webroot}/`) && !p.slice(ws.webroot.length + 1).includes("/"));
   const body = () => {
     if (offline) return <p className="cx-empty">{t("readouts.cp.offline")}</p>;
@@ -57,10 +58,10 @@ export function Customer({ game, c, workloadId }: { game: GameState; c: Cluster;
     <div className="cp-customer">
       <aside className="cp-stats">
         <h2>{t("readouts.cp.stats")}</h2>
-        <div><span>{t("readouts.cp.disk")}</span><Bar use={u.disk} /></div>
-        {u.traffic[1] > 0 && <div><span>{t("readouts.cp.bandwidth")}</span><Bar use={u.traffic} /></div>}
-        <div><span>{t("readouts.cp.mail")}</span><b className="num">{u.mailboxes}</b></div>
-        <div><span>{APP_NAME[app]}</span><b>{domain}</b></div>
+        <div><span>{t("readouts.cp.disk")}</span>{u ? <Bar use={u.disk} /> : <b className="num">{disk(+(ws.usage.diskMb / 1024).toFixed(3))}</b>}</div>
+        {u && u.traffic[1] > 0 && <div><span>{t("readouts.cp.bandwidth")}</span><Bar use={u.traffic} /></div>}
+        <div><span>{t("readouts.cp.mail")}</span><b className="num">{u?.mailboxes ?? ws.usage.mailboxes}</b></div>
+        <div><span>{v ? APP_NAME[app ?? "static"] : t("pkg.domain")}</span><b>{domain}</b></div>
       </aside>
       <section className="cp-cust-main">
         {page && !offline && <button className="cx-btn" onClick={() => setPage(null)}>{t("readouts.cp.back")}</button>}

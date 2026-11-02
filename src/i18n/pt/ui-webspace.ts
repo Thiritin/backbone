@@ -37,4 +37,9 @@ export default {
   "webspace.error.noCron": () => "Esta tarefa cron não existe.",
   "webspace.error.fixedFolder": () => "Esta pasta pertence à conta e não pode ser alterada.",
   "webspace.error.noFile": () => "Este arquivo ou pasta não existe.",
+  "webspace.error.notPanel": () => "Apenas um host com painel de alojamento web pode ter contas.",
+  "webspace.error.account": () => "Os nomes de utilizador começam por uma letra e têm até 16 letras minúsculas e dígitos.",
+  "webspace.error.accountTaken": () => "Este nome de utilizador já está em uso no servidor.",
+  "webspace.own.title": () => "Conta própria",
+  "webspace.own.list": () => "Contas próprias",
 } satisfies Dict;

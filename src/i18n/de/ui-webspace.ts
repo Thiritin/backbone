@@ -37,4 +37,9 @@ export default {
   "webspace.error.noCron": () => "Dieser Cronjob existiert nicht.",
   "webspace.error.fixedFolder": () => "Dieser Ordner gehört zum Konto und kann nicht geändert werden.",
   "webspace.error.noFile": () => "Diese Datei oder dieser Ordner existiert nicht.",
+  "webspace.error.notPanel": () => "Nur ein Webhosting-Panel-Host kann Konten führen.",
+  "webspace.error.account": () => "Benutzernamen beginnen mit einem Buchstaben und haben bis zu 16 Kleinbuchstaben und Ziffern.",
+  "webspace.error.accountTaken": () => "Dieser Benutzername wird auf dem Server bereits verwendet.",
+  "webspace.own.title": () => "Eigenes Konto",
+  "webspace.own.list": () => "Eigene Konten",
 } satisfies Dict;
