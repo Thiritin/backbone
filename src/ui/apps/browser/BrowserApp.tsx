@@ -59,6 +59,7 @@ import { ParkedPage } from "./sites/registrars/Parked";
 import { SupplierSite } from "./sites/bank/SupplierSite";
 import { BankSite } from "./sites/bank/BankSite";
 import { bankById } from "../../../sim/10-catalog/banks";
+import { siteTitle, WebspaceSite } from "./sites/webspace/WebspaceSite";
 import { CannotReach, CustomerSite, HostPage, NoticePage, noticeTitle, NotFound, VideoPage } from "./sites/Pages";
 import { PortalSite } from "./sites/portal/PortalSite";
 import { VendorSite } from "./sites/vendors/registry";
@@ -80,6 +81,7 @@ function titleOf(game: GameState, r: Resolved): string {
   switch (p.kind) {
     case "company": return game.company.name;
     case "customer": return customerSite(game, p.serviceId)?.title ?? r.host;
+    case "webspace": return siteTitle(p.body) || r.host;
     case "vendor": return MANUFACTURERS.find((m) => m.id === p.maker)?.name ?? r.host;
     case "provider": return dcProvider(p.id).name;
     case "registrar": return registrarById(p.id)?.name ?? r.host;
@@ -147,6 +149,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (r.load === "down") body = <CannotReach host={r.host} />;
   else if (p.kind === "company") body = <CompanySite game={game} path={r.path} go={go} />;
   else if (p.kind === "customer") body = <CustomerSite game={game} serviceId={p.serviceId} />;
+  else if (p.kind === "webspace") body = <WebspaceSite game={game} body={p.body} />;
   else if (p.kind === "vendor") body = <VendorSite game={game} maker={p.maker} path={r.path} go={go} />;
   else if (p.kind === "provider") body = <ProviderSite game={game} id={p.id} path={r.path} go={go} />;
   else if (p.kind === "registrar") body = <RegistrarSite game={game} id={p.id} path={r.path} go={go} />;
@@ -182,7 +185,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "ups") body = <UpsPage game={game} deviceId={p.deviceId} host={r.host} />;
   else if (p.kind === "host") body = <HostPage host={r.host} />;
   else body = <NotFound host={r.host} />;
-  const paper = !waiting && r.load !== "down" && ["company", "customer", "vendor", "provider", "sponsorboard", "flyers", "agency", "registrar", "parked", "bank", "supplier", "index", "office", "shop", "software", "os"].includes(p.kind);
+  const paper = !waiting && r.load !== "down" && ["company", "customer", "webspace", "vendor", "provider", "sponsorboard", "flyers", "agency", "registrar", "parked", "bank", "supplier", "index", "office", "shop", "software", "os"].includes(p.kind);
   return (
     <>
       {waiting && <div className="web-load" aria-hidden />}

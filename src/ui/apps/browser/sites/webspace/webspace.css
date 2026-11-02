@@ -1,0 +1,144 @@
+/* Sites on web spaces: the default themes of the apps and the error pages of the web server. They keep their own colours in both desktop themes. */
+.wsx { min-height: 100%; background: #fff; color: #333; font: 14px/1.5 Arial, Helvetica, sans-serif; }
+.wsx a { color: #0b5cad; cursor: pointer; text-decoration: none; }
+.wsx input { max-width: 100%; }
+.wsx-plain { padding: 16px 24px; font-family: "Times New Roman", serif; color: #000; }
+.wsx-plain h1 { font-size: 32px; font-weight: 700; }
+
+/* Web server and PHP errors. */
+.wsx-apache, .wsx-php { padding: 8px 12px; color: #000; font: 16px/1.4 "Times New Roman", Times, serif; }
+.wsx-apache h1 { margin: 21px 0; font-size: 32px; }
+.wsx-apache p { margin: 16px 0; }
+.wsx-apache th { text-align: left; padding-right: 24px; }
+.wsx-apache td { padding-right: 24px; }
+.wsx-apache hr { margin: 8px 0; border: 0; border-top: 1px solid #808080; }
+.wsx-apache address { font-style: italic; }
+.wsx-php p { margin: 16px 0; }
+.wsx-susp { display: flex; flex-direction: column; align-items: center; padding: 80px 24px; text-align: center; background: #f3f3f3; }
+.wsx-susp h1 { margin-bottom: 12px; font-size: 28px; color: #c7391a; }
+.wsx-wperr { box-sizing: border-box; max-width: 700px; margin: 32px auto; padding: 8px 32px 16px; background: #fff; color: #444; border: 1px solid #dfdfdf; font: 14px/1.6 "Open Sans", Arial, sans-serif; }
+.wsx-wperr h1 { margin: 24px 0 16px; padding-bottom: 7px; border-bottom: 1px solid #dadada; color: #666; font-size: 24px; font-weight: 400; }
+.wsx-wperr ul { margin: 12px 0 12px 24px; list-style: disc; }
+.wsx-drerr { padding: 16px 24px; }
+.wsx-drerr h2 { margin-bottom: 8px; font-size: 22px; }
+
+/* The panels' default pages. */
+.wsx-ph { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 48px 24px; text-align: center; }
+.wsx-ph h1 { font-size: 30px; font-weight: 600; }
+.wsx-ph p { max-width: 520px; }
+.wsx-ph-cpanic { background: linear-gradient(#f4f4f4, #e0e0e0); color: #333; }
+.wsx-ph-cpanic h1 { color: #ff6c2c; }
+.wsx-ph-pleskit { background: #fff; color: #444; }
+.wsx-ph-pleskit h1 { color: #2c8ec3; font-weight: 300; }
+.wsx-ph-directadmen { background: #fff; color: #333; }
+.wsx-ph-directadmen h1 { color: #1a5aa6; }
+.wsx-ph-freepanel { background: #fff; color: #000; font-family: "Times New Roman", serif; justify-content: flex-start; align-items: flex-start; text-align: left; }
+.wsx-ph-freepanel h1 { font-size: 32px; font-weight: 700; }
+
+/* WordPrass: Kubrick (to 2009), Twenty Ten (to 2012), Twenty Fourteen (to 2018), Twenty Nineteen. */
+.wp { display: flex; flex-direction: column; font: 14px/1.6 "Lucida Grande", Verdana, Arial, sans-serif; }
+.wp h1, .wp h2, .wp h3 { margin: 0; }
+.wp-head nav { display: flex; gap: 16px; }
+.wp-cols { display: flex; gap: 32px; }
+.wp-cols main { flex: 1; min-width: 0; }
+.wp article { margin-bottom: 32px; }
+.wp article small { display: block; margin-bottom: 8px; color: #777; }
+.wp article footer { margin-top: 8px; font-size: 12px; color: #777; }
+.wp aside { width: 200px; flex: none; font-size: 13px; }
+.wp aside h3 { margin: 16px 0 6px; font-size: 14px; }
+.wp aside ul { margin: 0; padding-left: 18px; list-style: disc; }
+.wp aside input { width: 100%; box-sizing: border-box; }
+.wp-foot { margin-top: auto; padding: 16px; text-align: center; font-size: 12px; }
+
+.wp-k { background: #d5d6d7; padding: 20px 0; }
+.wp-k > * { width: 760px; max-width: calc(100% - 24px); box-sizing: border-box; margin: 0 auto; background: #fff; }
+.wp-k .wp-head { margin-top: 0; padding: 60px 20px 40px; background: linear-gradient(#5e8fb8, #73a0c5); border: 1px solid #959596; border-bottom: 0; text-align: center; color: #fff; }
+.wp-k .wp-head h1 { font: 700 36px "Trebuchet MS", Arial, sans-serif; }
+.wp-k .wp-head p { color: #fff; }
+.wp-k .wp-head nav { justify-content: center; margin-top: 12px; }
+.wp-k .wp-head a { color: #fff; }
+.wp-k .wp-cols { padding: 20px; border: 1px solid #959596; border-top: 0; border-bottom: 0; }
+.wp-k article h2 { font: 700 22px "Trebuchet MS", Arial, sans-serif; color: #06c; }
+.wp-k .wp-foot { border: 1px solid #959596; border-top: 0; }
+
+.wp-t10 { background: #f1f1f1; padding: 0 20px; font-family: Georgia, "Bitstream Charter", serif; }
+.wp-t10 > * { width: 900px; max-width: 100%; box-sizing: border-box; margin: 0 auto; background: #fff; padding-left: 20px; padding-right: 20px; }
+.wp-t10 .wp-head { padding-top: 24px; background: #fff; }
+.wp-t10 .wp-head h1 { font: 700 30px Georgia, serif; color: #000; }
+.wp-t10 .wp-head p { color: #666; font-style: italic; }
+.wp-t10 .wp-head nav { margin: 16px -20px 0; padding: 8px 20px; background: #000; }
+.wp-t10 .wp-head nav a { color: #aaa; }
+.wp-t10 .wp-cols { padding-top: 24px; }
+.wp-t10 article h2 { font: 700 21px Georgia, serif; color: #000; }
+
+.wp-t14 { background: #f2f2f2; }
+.wp-t14 .wp-head { padding: 16px 32px; background: #000; color: #fff; display: flex; align-items: center; gap: 32px; flex-wrap: wrap; }
+.wp-t14 .wp-head h1 { font: 700 16px Lato, Arial, sans-serif; text-transform: uppercase; }
+.wp-t14 .wp-head p { display: none; }
+.wp-t14 .wp-head a { color: #fff; text-transform: uppercase; font-size: 12px; }
+.wp-t14 .wp-cols { padding: 32px; max-width: 980px; box-sizing: border-box; margin: 0 auto; width: 100%; }
+.wp-t14 article { padding: 24px; background: #fff; }
+.wp-t14 article h2 { font: 300 28px Lato, Arial, sans-serif; }
+.wp-t14 article h2:hover { color: #24890d; }
+.wp-t14 aside a { color: #24890d; }
+.wp-t14 .wp-foot { background: #000; color: #fff; }
+
+.wp-t19 { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; }
+.wp-t19 .wp-head { padding: 32px 10%; }
+.wp-t19 .wp-head h1 { font-size: 22px; font-weight: 700; }
+.wp-t19 .wp-head p { color: #767676; }
+.wp-t19 .wp-head a { color: #0073aa; font-weight: 700; }
+.wp-t19 .wp-cols { padding: 0 10% 32px; }
+.wp-t19 article h2 { margin-bottom: 8px; font: 700 36px/1.2 Georgia, serif; }
+.wp-t19 article h2::before { content: ""; display: block; width: 64px; border-top: 2px solid #0073aa; margin-bottom: 16px; }
+.wp-t19 blockquote { margin: 16px 0 0; padding: 12px 16px; background: #f5f5f5; }
+.wp-t19 .wp-foot { background: #0073aa; color: #fff; }
+
+/* Joomlah: milkyway (to 2011), Protostar (to 2020), Cassiopeia. */
+.jo { display: flex; flex-direction: column; font: 13px/1.5 Helvetica, Arial, sans-serif; }
+.jo header nav { display: flex; gap: 16px; }
+.jo-cols { display: flex; flex: 1; gap: 24px; padding: 16px 24px; }
+.jo-cols main { flex: 1; min-width: 0; }
+.jo-cols aside { width: 200px; flex: none; display: flex; flex-direction: column; gap: 6px; }
+.jo-cols aside h3 { margin-top: 6px; }
+.jo-cols aside ul { padding-left: 18px; list-style: disc; }
+.jo-rem { display: flex; align-items: center; gap: 4px; }
+.jo button { align-self: flex-start; padding: 3px 12px; }
+.jo footer { padding: 12px 24px; text-align: center; font-size: 12px; color: #666; }
+.jo main h2 { margin-bottom: 8px; font-size: 20px; }
+.jo-m header { padding: 28px 24px; background: linear-gradient(#0a3a6e, #3f7bbd); color: #fff; }
+.jo-m header h1 { font-size: 26px; }
+.jo-m header a { color: #fff; }
+.jo-m main h2 { color: #0b55a0; }
+.jo-p header { padding: 16px 24px; background: #f4f4f4; border-bottom: 1px solid #ddd; }
+.jo-p header h1 { font-size: 22px; color: #08c; }
+.jo-p main h2 { border-bottom: 1px solid #eee; padding-bottom: 4px; }
+.jo-c header { padding: 20px 24px; background: #112855; color: #fff; }
+.jo-c header a { color: #fff; }
+.jo-c header h1 { font-size: 24px; font-weight: 400; }
+.jo-c .jo-cols aside { padding: 12px; background: #f0f4fb; border-radius: 4px; }
+
+/* Drupel: Garland (to 2010), Bartik (to 2020), Olivero. */
+.dr { display: flex; flex-direction: column; font: 14px/1.5 "Lucida Grande", Verdana, sans-serif; }
+.dr header nav { display: flex; gap: 16px; }
+.dr-cols { display: flex; flex: 1; gap: 24px; padding: 16px 24px; }
+.dr-cols main { flex: 1; min-width: 0; }
+.dr-cols aside { width: 190px; flex: none; display: flex; flex-direction: column; gap: 6px; }
+.dr-cols aside ul { padding-left: 18px; list-style: disc; }
+.dr-cols aside label { display: flex; flex-direction: column; font-size: 12px; }
+.dr button { align-self: flex-start; padding: 3px 12px; }
+.dr main h2 { margin-bottom: 8px; font-size: 24px; }
+.dr main ol { padding-left: 20px; list-style: decimal; }
+.dr footer { padding: 12px 24px; text-align: center; font-size: 12px; color: #666; }
+.dr-g header { padding: 24px; background: linear-gradient(#0073ba, #4aa1d8); color: #fff; }
+.dr-g header a { color: #fff; }
+.dr-g main h2 { color: #0073ba; }
+.dr-b { background: #e8e8e8; }
+.dr-b header { padding: 16px 24px; background: linear-gradient(#0779bf, #055a8e); color: #fff; }
+.dr-b header a { color: #fff; }
+.dr-b .dr-cols { margin: 0 auto; width: 100%; max-width: 960px; box-sizing: border-box; background: #fff; }
+.dr-o header { padding: 24px 10%; border-bottom: 1px solid #e5e5e5; }
+.dr-o header a { color: #003cc5; font-weight: 600; }
+.dr-o .dr-cols { padding: 32px 10%; }
+.dr-o button { padding: 8px 20px; border: 0; border-radius: 32px; background: #003cc5; color: #fff; }
+.dr-o main h2 { font: 700 36px/1.2 Metropolis, Arial, sans-serif; }

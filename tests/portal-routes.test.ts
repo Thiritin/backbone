@@ -22,11 +22,11 @@ describe("portal host", () => {
     const s = withShop();
     const url = `portal.${companyDomain(s)}/admin`;
     s.shop.readyAt = s.hour + SHOP_SETUP_HOURS;
-    expect(resolve(s, url).page.kind).toBe("notfound");
+    expect(resolve(s, url).page).toMatchObject({ kind: "webspace", body: { kind: "index", listing: null } });
     s.hour = s.shop.readyAt;
     expect(resolve(s, url)).toMatchObject({ page: { kind: "shop" }, load: "fast" });
     s.shop = { ...s.shop, variant: null };
-    expect(resolve(s, url).page.kind).toBe("notfound");
+    expect(resolve(s, url).page).toMatchObject({ kind: "webspace", body: { kind: "index", listing: null } });
   });
 
   it("shows the portal as down while the website is down", () => {

@@ -26,6 +26,7 @@ import { defaultWebmail } from "./webmail";
 import { customerSite, shopStatus, siteHost, siteStatus, slowHost } from "./website";
 import { vendorHost, vendorLive, VENDORS } from "./vendors";
 import { shopActive } from "./shop";
+import { placeholderSite, webspaceSite, type SiteBody, type WebsiteHit } from "./webspace-sites";
 import { OFFICE_HOST, OFFICE_URL } from "./office";
 import { DOHLE_HOST } from "./tax";
 import { t } from "../../i18n/en";
@@ -44,6 +45,7 @@ export type Load = "fast" | "slow" | "down";
 export type Page =
   | { kind: "company" }
   | { kind: "customer"; serviceId: string }
+  | { kind: "webspace"; body: SiteBody }
   | { kind: "vendor"; maker: string }
   | { kind: "provider"; id: string }
   | { kind: "registrar"; id: RegistrarId }
@@ -219,7 +221,15 @@ export function resolve(s: GameState, raw: string): Resolved {
     const c = defaultWebmail(s), h = c && consoleHost(s, c), m = h && machineOf(s, h, false);
     return c && m ? { url, host, path, page: { kind: "console", hostname: m.hostname, clusterId: c.id, defaced: isDefaced(s, c), path }, load: m.load } : out({ kind: "notfound" });
   }
-  if (host === `portal.${domain}`) return shopActive(s) && s.shop.install ? out({ kind: "shop" }, shopLoad()) : out({ kind: "notfound" });
+  // A site on a web space answers as its folder says; the shop's address shows the panel's default page until the shop is installed.
+  const pageOf = (hit: WebsiteHit): Resolved => out(hit.body.kind === "customer" ? { kind: "customer", serviceId: hit.body.serviceId } : { kind: "webspace", body: hit.body }, hit.load);
+  if (host === `portal.${domain}`) {
+    if (shopActive(s) && s.shop.install) return out({ kind: "shop" }, shopLoad());
+    const hit = webspaceSite(s, host) ?? placeholderSite(s, host);
+    return hit ? pageOf(hit) : out({ kind: "notfound" });
+  }
+  const space = webspaceSite(s, host);
+  if (space) return pageOf(space);
   const site = siteAt(s, host);
   if (site) return out({ kind: "customer", serviceId: site.serviceId }, site.load);
   const named = (bare: string) => host === bare || host === `www.${bare}`;
