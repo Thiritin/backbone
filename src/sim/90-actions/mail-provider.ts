@@ -1,6 +1,6 @@
 // Player actions of the GMix and Goggle sites (docs/design/plans/webmail-consumer.md, milestone 3). Pages call mail-core's
 // mailbox, group, alias, password and tenant actions directly; these add what a provider's own flow decides.
-import { yearOf } from "../00-core/time";
+import { nextMonthStart, yearOf } from "../00-core/time";
 import { goggleToken, verificationAt } from "../10-catalog/mail-consumer";
 import { mailPlan } from "../10-catalog/mail-providers";
 import { companyDomain } from "../30-customers/domains";
@@ -96,4 +96,13 @@ export function upgradeGoggleEdition(s: GameState, tenantId: string): ActionResu
   if (!t || t.plan === "paid") return fail("error.mailNoService");
   const r = setTenantPlan(s, tenantId, "paid");
   return r.ok && t.locked ? setTenantLock(s, tenantId, false) : r;
+}
+
+// The retention offer of the cancellation pages: three months at the offer price, once per tenant, and the tier stays.
+export function acceptGmixOffer(s: GameState, tenantId: string): ActionResult {
+  const t = tenantOn(s, tenantId, "gmix");
+  if (!t || t.plan === "free" || t.offerUntil !== undefined || (t.endsAt !== null && t.endsAt <= s.hour)) return fail("error.mailNoService");
+  const until = nextMonthStart(nextMonthStart(nextMonthStart(s.hour)));
+  withTenant(s, tenantId, (x) => ({ ...withoutNext(x), offerUntil: until }));
+  return { ok: true, id: tenantId };
 }

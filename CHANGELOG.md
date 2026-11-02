@@ -11,6 +11,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - The Research icon in the dock shows a dot whenever a new research can be started.
 - A Zendusk account now has its own agent site with views, macros, triggers and a Help Center, in the look of each era, and its support address is verified once your mailbox forwards to it.
 - Pear Mail now checks each mail account on its own interval in the background, downloading POP mail to the computer and showing IMAP mail at the next check.
+- GMix now has its own website at gmix.net in the look of each era, where you can compare FreeMix, ProMix and TopMix, sign up for a new address, log in with KeePassive, change your plan or password, cancel or delete a mailbox, and order a password reset code by post.
 - App and file icons now follow the system release: Panthera shows the Crystal Clear icons, Leapard shows the Oxygen icons, and later releases keep their flat tiles.
 - VPS plans now start small and cheap, from 256 MB for about €13 a month in 2005, and grow every few years until they reach 4 to 32 GB in 2026.
 - Many more customers now ask for a VPS as the years go by, on top of the web hosting customers you already get, while VPS prices per GB fall every year.

@@ -1,13 +1,24 @@
 // The daily pass of the provider sites (docs/design/plans/webmail-consumer.md, milestone 3): ended tenants close and go
 // after their grace, cheaper tiers take over at the month start, and Goggle's free edition meets its two deadlines.
-import { hourOfMonth, isMonthStart } from "../00-core/time";
+import { hourOfMonth, isMonthStart, yearOf } from "../00-core/time";
 import { GOGGLE_CONVERSION } from "../10-catalog/mail-consumer";
 import { GRACE_DAYS } from "../10-catalog/mail-providers";
-import { removeMailbox } from "../42-mail/accounts";
+import { mailboxTaken, removeMailbox } from "../42-mail/accounts";
+import { GMIX_DOMAIN } from "../42-mail/new";
 import type { MailTenant, Message } from "../42-mail/types";
 import type { GameState } from "../50-state";
 
 const GOGGLE_CLOSING = "2012-12";
+
+const gmixTaken = (s: GameState, local: string): boolean =>
+  mailboxTaken(s, { id: "", host: "gmix", domain: GMIX_DOMAIN, plan: "free", since: 0, verified: true, endsAt: null, admin: null }, local);
+
+// Free names in the shapes the real portal offers for a taken one: a birth year, this year, the trade.
+export function gmixSuggestions(s: GameState, local: string): string[] {
+  const name = local.trim().toLowerCase();
+  if (!name || !gmixTaken(s, name)) return [];
+  return [`${name}.${1970 + (s.seed % 25)}`, `${name}${yearOf(s.hour)}`, `${name}-hosting`].filter((x) => !gmixTaken(s, x));
+}
 
 function closeEnded(s: GameState): void {
   for (const t of s.mail.tenants) {
