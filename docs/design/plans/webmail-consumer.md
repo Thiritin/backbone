@@ -290,8 +290,8 @@ After 3, GMix (4 and 5) and Goggle (6 and 7) run in parallel. Milestones 8 and 9
    - UI: folders, list, reader, composer with the attachment limit, address book, spam settings, filters, folders, signature, POP and IMAP access, Mail Collector, forwarding, storage meter, Free up space, ads and upsell, in the `frames` look first and the `navigator` and `flat` looks afterwards.
    - i18n: the rest of `ui-mail-gmix.ts`, including the ad list.
    - Test: `tests/gmix-webmail.test.tsx` and a sim suite: delete moves to Trash and Empty Trash removes it, a 21 MB attachment is refused on FreeMix before 2012, IMAP login is refused with the switch off, Mail Collector fetches once and leaves a copy, Strict catches more than Normal in a seeded run, the footer is on FreeMix mail only.
-6. **Goggle site and sign-up (`goggle-site`).**
-   - Sim: host entries for `goggle.com` and `accounts.goggle.com`; the wizard's state stays in the page and the actions of milestone 3 are the only writers.
+6. **Goggle site and sign-up (`goggle-site`).** Built.
+   - Sim: host entries for `goggle.com` and `accounts.goggle.com`; the wizard's state stays in the page. The actions of milestone 3 are the writers, plus `connectGoggleDns` for the GoDuddy button, which writes the verification record and the MX set and removes the MX records already there. The Webmail bookmark skips Goggle until Gmial has its site (milestone 8). The Admin console link waits for milestone 7; until then a signed-in admin lands on the setup page (`/setup`, steps verify, MX and users), and other users on the product page.
    - UI: `src/ui/apps/browser/sites/mail/goggle/GoggleSite.tsx` with the four product looks, the pricing page, the wizard with domain, admin, edition and mailboxes, the verification and MX steps with the Verify and Open registrar buttons, the shared Goggle sign-in page with Forgot password.
    - i18n: `ui-mail-goggle.ts`.
    - Test: `tests/goggle-site.test.tsx`: the page title and edition table in 2006, 2008, 2017 and 2021; the wizard refuses a domain that is not the company's; Verify fails before the record and passes after it and its propagation.
