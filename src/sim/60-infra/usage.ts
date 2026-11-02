@@ -16,7 +16,7 @@ import { interestAt, modById, titleById } from "../10-catalog/games";
 import { fillOf } from "../30-customers/resellers";
 import { machineScreen } from "./oob";
 import { cpuLoad, installedRamGb, portPeers, raidUsable, working } from "./status";
-import { THERMAL, throttled } from "./thermal";
+import { heatOf } from "./thermal";
 
 // economy.md: memory stays mostly resident, disks fill from 30% of booked at signup at the customer's growth rate up to the booked limit.
 const RAM_BASE = 0.6;
@@ -123,7 +123,7 @@ export function nodeUsage(s: GameState, deviceId: string, hour: number = s.hour)
   const { used, physical } = nodeLoad(s, d, hour);
   const cpu = cpuPerf(physical.vcpu ? used.vcpu / physical.vcpu : 0);
   const disk = used.diskGb > physical.diskGb ? 0.5 : 1;
-  const heat = throttled(s, d) ? THERMAL.throttlePerf : 1;
+  const heat = heatOf(s, d).perf;
   const over = used.ramGb / physical.ramGb - 1, ovz = clustersOn(s, deviceId).some((c) => c.kind === "cloud" && c.platform === "openveezee");
   const swap = over > 0 && !ovz ? 1 / (1 + SWAP_SLOW * over) : 1;
   return { used, physical, perf: Math.min(cpu, disk, swap) * (d.rebuild ? REBUILD_PERF[d.rebuildRate] : 1) * heat };

@@ -7,7 +7,7 @@ import type { Device, GameState, Location } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { heatIncident } from "./incidents";
 import { losePower, pushLog } from "./power";
-import { inletTemperature } from "./sensors";
+import { cpuTemperature, inletTemperature } from "./sensors";
 import { bootHours, locationOf, rackPower, readOnlySweep } from "./status";
 
 export const THERMAL = {
@@ -23,15 +23,20 @@ export const THERMAL = {
   basementMass: 4, basementShed: 0.2,
   // A hall's cooling handles this much more than the power it sells.
   headroom: 1.2,
-  // Every this many hours a server ran throttling hot adds its components' base failure rate once more.
+  // Every this many hours a server ran hot adds its components' base failure rate once more.
   wearHours: 100,
+  // The CPU throttles from cpuThrottleC down to cpuFloorPerf at cpuFloorC, and every hour from cpuHotC is a hot hour.
+  cpuThrottleC: 85, cpuFloorC: 95, cpuFloorPerf: 0.5, cpuHotC: 90,
 };
 
-// Without built-up heat or a failed fan no room reaches the throttle threshold, so the sensor is read only then.
-export function throttled(s: GameState, d: Device): boolean {
+// The share of its performance a server keeps for heat, the worse of its inlet and its CPU, and whether this hour wears it.
+// Without built-up heat or a failed fan neither threshold is reachable (30 + 20 °C at most), so the sensors are read only then.
+export function heatOf(s: GameState, d: Device): { perf: number; hot: boolean } {
   const loc = locationOf(s, d);
-  if (!loc || (!s.ops.heat[loc.id] && !d.components.some((c) => c.kind === "fan" && c.failedAt !== null))) return false;
-  return inletTemperature(s, d) >= THERMAL.throttleC;
+  if (!loc || (!s.ops.heat[loc.id] && !d.components.some((c) => c.kind === "fan" && c.failedAt !== null))) return { perf: 1, hot: false };
+  const inlet = inletTemperature(s, d) >= THERMAL.throttleC, cpu = cpuTemperature(s, d);
+  const over = Math.min(1, Math.max(0, (cpu - THERMAL.cpuThrottleC) / (THERMAL.cpuFloorC - THERMAL.cpuThrottleC)));
+  return { perf: Math.min(inlet ? THERMAL.throttlePerf : 1, 1 - (1 - THERMAL.cpuFloorPerf) * over), hot: inlet || cpu >= THERMAL.cpuHotC };
 }
 
 // minutes: game minutes since the last call, 60 when the hourly tick runs on its own.

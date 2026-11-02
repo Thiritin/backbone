@@ -67,7 +67,7 @@ import { lessorName } from "../10-catalog/leasing";
 import { BURNIN_BONUS_HOURS, BURNIN_FACTOR } from "../10-catalog/burnin";
 import { burninTick } from "../60-infra/burnin";
 import { sensorTick } from "../60-infra/sensors";
-import { THERMAL, thermalTick, throttled } from "../60-infra/thermal";
+import { heatOf, THERMAL, thermalTick } from "../60-infra/thermal";
 import { FAILURE_FACTOR, unsupported } from "../10-catalog/lifecycle";
 import { skillById } from "../10-catalog/research";
 import { deskItem, KNOW_HOW, storeItem, subscriptionEntry } from "../10-catalog/store";
@@ -201,7 +201,7 @@ function wear(s: GameState, events: SimEvent[]) {
   // powered() reads the devices from before this sweep, so its rack power can be memoised.
   s.devices = readOnlySweep(s, () => s.devices.map((d) => {
     if (!d.components.length || !d.on || !powered(s, d.id)) return d;
-    if (throttled(s, d)) d = { ...d, hotHours: (d.hotHours ?? 0) + 1 };
+    if (heatOf(s, d).hot) d = { ...d, hotHours: (d.hotHours ?? 0) + 1 };
     const broke = d.components.filter((c) => c.failedAt === null && rand(s.rng) < failureChance(s, d, c));
     return broke.length ? failComponents(s, d, broke.map((c) => c.id), events) : d;
   }));

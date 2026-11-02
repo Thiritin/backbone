@@ -3,6 +3,7 @@ import { dateOf } from "../00-core/time";
 import { modelById } from "../10-catalog/hardware";
 import type { Device, GameState, Location, LogSev } from "../50-state";
 import { pushLog } from "./syslog";
+import { heatOf, THERMAL } from "./thermal";
 import { busyDevices, isPlugged, locationOf, rackPower, readOnlySweep, utilOf } from "./status";
 
 // Fans run at 30% of their maximum up to 50 degrees CPU and reach full speed at 80.
@@ -33,11 +34,11 @@ export function inletTemperature(s: GameState, d: Device): number {
   return Math.round((room + load + fans) * 10) / 10;
 }
 
-// The inlet plus up to 20 degrees at full load, half as much again per failed fan.
+// The inlet plus up to 20 degrees at full load, as much again per failed fan.
 export function cpuTemperature(s: GameState, d: Device): number {
   const failed = d.components.filter((c) => c.kind === "fan" && c.failedAt !== null).length;
   const u = d.on ? utilOf(s, d, busyDevices(s)) : 0;
-  return Math.round((inletTemperature(s, d) + 20 * u * (1 + 0.5 * failed)) * 10) / 10;
+  return Math.round((inletTemperature(s, d) + 20 * u * (1 + failed)) * 10) / 10;
 }
 
 export const fanDutyAt = (cpuC: number): number => FAN_MIN + (1 - FAN_MIN) * Math.min(1, Math.max(0, (cpuC - FAN_LOW_C) / (FAN_HIGH_C - FAN_LOW_C)));
@@ -56,10 +57,15 @@ export function sensorsOf(s: GameState, d: Device): Sensors {
 // Inlet temperature thresholds of the event log: a warning from 35 degrees and a critical event from 40.
 export const INLET_WARN = 35, INLET_CRIT = 40;
 
-// Hourly: logs the hour a running server's inlet crosses a threshold, once per crossing.
+// Hourly: logs the hour a running server's inlet crosses a threshold or its CPU starts or stops throttling, once per crossing.
 export function sensorTick(s: GameState): void {
   readOnlySweep(s, () => { for (const d of s.devices) {
     if (!d.on || modelById(d.model).kind !== "server") continue;
+    const slow = heatOf(s, d).perf < 1 && cpuTemperature(s, d) >= THERMAL.cpuThrottleC;
+    if (slow !== !!d.cpuThrottled) {
+      pushLog(d, s.hour, slow ? "ipmi.log.cpu.throttle" : "ipmi.log.cpu.normal");
+      d.cpuThrottled = slow || undefined;
+    }
     const t = inletTemperature(s, d), sev: LogSev = t >= INLET_CRIT ? "crit" : t >= INLET_WARN ? "warn" : "info";
     if (sev === (d.inletSev ?? "info")) continue;
     pushLog(d, s.hour, sev === "info" ? "ipmi.log.inlet.normal" : `ipmi.log.inlet.${sev}`);
