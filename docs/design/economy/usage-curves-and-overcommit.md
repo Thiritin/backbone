@@ -85,3 +85,17 @@ A service's traffic grows 20% a year from the day it started while its plan stay
 | Offer upgrade | The customer answers with an upgrade request for the next bigger plan, which the player quotes in Sales and the customer accepts or counters like any other upgrade. |
 
 A bill or an upgrade offer covers 730 hours, so the same service can be billed or offered an upgrade once a month. The state holds a company-wide `overusePolicy` (null by default): when it is set, the daily noon check applies that answer to every service over its traffic that is not yet throttled or handled this month. The player sets it in the Books app's billing rules after the Traffic billing training (250 know-how, 10 days, after Product management); the choices are off, throttle, bill or offer upgrade. An upgrade offer still waits for the player to quote it in Sales.
+
+### Core speed
+
+A sold vCPU is a unit of work in this year's terms, and a core does more or less of it depending on how fast it is. Every generation's core has a single-thread score (`CORE_SCORE` in `cpus.ts`, a 2005 Indel core is 1): 1, 1.7, 2.3, 2.8, 3.3, 3.9 and 4.6 from 2005 to 2023. AMB, Ampear and the faster or slower parts of a line scale it by their `perCore` against Indel's of the same generation. Software catches up with hardware: what one sold vCPU asks of a core (`eraDemand`) reaches a generation's score two years after its launch, 1 until 2007, then 1.7 in 2010, 2.3 in 2013 and so on, and keeps growing after 2025. A core's speed is its score over that demand. A new server runs at 1 to 1.2, except the 2008 generation at about 1.4, since its core was the biggest leap. A 2005 core runs at 0.74 in 2008, 0.56 in 2010 and 0.42 in 2013.
+
+Booking does not change: a node still books its cores and threads, and a customer still buys whole vCPUs. What changes is the work. A customer's CPU use on a node is their need divided by the core's speed, up to their own limit, so the same customers make an old node busier than a new one, and the same node busier every year. Everything that reads node or VM load sees this: the performance curve, the contention alarm, high availability's hot nodes, VM freezes, power draw and heat. A panel host's oversell knee counts each physical vCPU at its core's speed too.
+
+Each kind of service also has a slowest core it runs well on (`SERVICE_FLOOR`), as a share of this year's core, scaled by each customer's own expectation from 0.5 to 1.5 times:
+
+| Game | Shop | Enterprise | News | Business | VPN | Blog | Dev | Personal | Backup |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 0.65 | 0.5 | 0.5 | 0.45 | 0.4 | 0.35 | 0.3 | 0.25 | 0.2 | 0.1 |
+
+A customer whose core delivers less than their floor, its speed times the node's performance, loses performance by the gap, even on an idle node, and notices it past their slow tolerance like any other slowdown. On an idle 2005 Indel box, game customers start to notice in 2008 and most do by 2013; shop customers start in 2009 and more than half notice by 2013; business customers start around 2011; backup customers never do. A CPU of a later generation in the same socket, or a new server, fixes it.

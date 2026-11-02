@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- Newer CPUs are faster per core, so the same customers load an old server more than a new one, and old servers get busier as software grows.
+- Shops, game servers and other demanding customers now notice when their server's CPU is too slow for them, even when it is idle.
 - Goggle has an Admin console in the look of each era, where you add users, aliases and groups, route unknown addresses, migrate old mailboxes, see the bill and accept the 2022 upgrade before the free edition locks.
 - Pear Mail adds your mail accounts with an Add Account assistant that asks for the server names, sets them up automatically from Pear Mail 3, tells you what went wrong when a server refuses, and then checks each account for new mail in the background.
 - VMwhere balances with DRS once its hosts run an Enterprise key, without a separate Enterprise Plus subscription, and HyperVee no longer offers SysCenter VMM.

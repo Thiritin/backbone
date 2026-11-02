@@ -199,15 +199,15 @@ describe("installing from the UI", () => {
 });
 
 describe("speed, watts and demand", () => {
-  it("counts vCPU as cores times the speed of one core", () => {
+  it("counts vCPU as cores whatever the speed of one core", () => {
     const m = modelById("g2-compute");
     const indel = device("a", "g2-compute", "Dwell", null, 0, null, "a", 0);
     const amb = { ...indel, ...deviceDefaults(m.id, 0, componentParts(m, "amb")) };
     // Two Xenon E5420 at 1.09 per core, two Opteroni 2356 at 0.97.
-    expect(installedVcpu(indel)).toBe(8.72);
-    expect(installedVcpu(amb)).toBe(7.76);
+    expect(installedVcpu(indel)).toBe(8);
+    expect(installedVcpu(amb)).toBe(8);
     expect(perCoreOf(amb)).toBe(0.97);
-    expect(nodeCapacity(amb).vcpu).toBe(7.76);
+    expect(nodeCapacity(amb).vcpu).toBe(8);
   });
 
   it("draws watts per socket: Ampear at half Indel's per core, presets as before", () => {

@@ -6,6 +6,8 @@ import { webspaceOf } from "../src/sim/60-infra/webspace";
 import { mysqlVcpu, workloadUse } from "../src/sim/60-infra/usage";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
+import { serverOf } from "../src/sim/60-infra/cluster";
+import { coreSpeed } from "../src/sim/60-infra/status";
 import * as db from "../src/sim/90-actions/webdb";
 import * as web from "../src/sim/90-actions/webspace";
 import { deserialize, serialize } from "../src/sim/91-save/save";
@@ -145,7 +147,9 @@ describe("export and import", () => {
     const copy = ok(web.createDatabase(s, id, "copy"));
     ok(db.importDatabase(s, id, copy, `${wp}.sql.gz`));
     expect(mysqlVcpu(s, w)).toBeGreaterThan(0);
-    expect(workloadUse(s, w).vcpu).toBeCloseTo(before + mysqlVcpu(s, w), 6);
+    // The 2005 basement server is slow by 2010, so MySQL takes more of its time than its own vCPU share.
+    const node = s.devices.find((d) => d.id === serverOf(s, w))!;
+    expect(workloadUse(s, w).vcpu).toBeCloseTo(Math.min(w.vcpu, before + mysqlVcpu(s, w) / coreSpeed(node, s.hour)), 6);
   });
 
   it("old saves without database dumps load with none", () => {

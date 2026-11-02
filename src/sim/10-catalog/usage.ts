@@ -106,6 +106,13 @@ const TOLERANCE_SALT = -4;
 export const slowTolerance = (seed: number, product: Product, profile: Profile, customerId: string): number =>
   SLOW_TOLERANCE[curveFor(product, profile, seed, customerId)] * (0.5 + rand(hashRng(seed, idNum(customerId), TOLERANCE_SALT)));
 
+// economy/usage-curves-and-overcommit.md, Core speed: the slowest core a service runs well on, as a share of this year's core,
+// by what it runs. Each customer's own expectation scales it by 0.5 to 1.5.
+export const SERVICE_FLOOR: Record<CurveId, number> = { game: 0.65, shop: 0.5, enterprise: 0.5, news: 0.45, business: 0.4, vpn: 0.35, blog: 0.3, dev: 0.25, personal: 0.2, backup: 0.1 };
+const FLOOR_SALT = -7;
+export const serviceFloor = (seed: number, product: Product, profile: Profile, customerId: string): number =>
+  SERVICE_FLOOR[curveFor(product, profile, seed, customerId)] * (0.5 + rand(hashRng(seed, idNum(customerId), FLOOR_SALT)));
+
 // Disk and CPU grow at rates drawn separately: a big database and a busy shop are different customers.
 export function growthRate(seed: number, customerId: string, kind: "disk" | "cpu"): number {
   let r = rand(hashRng(seed, idNum(customerId), kind === "disk" ? DISK_SALT : CPU_SALT));

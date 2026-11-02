@@ -5,7 +5,7 @@ import { hourOf, isMonthStart, monthIndexOf, nowHours, yearOf } from "../00-core
 import { cpuModel, isFresh, skuOf, topBoost } from "../10-catalog/cpus";
 import { genOf, modelById } from "../10-catalog/hardware";
 import { isService, softwareById } from "../10-catalog/platforms";
-import { slowTolerance } from "../10-catalog/usage";
+import { serviceFloor, slowTolerance } from "../10-catalog/usage";
 import { channelOf, EDGE_HOWTO } from "../60-infra/channel";
 import { accountsOn, keyTiers, shopMachine, assignedKey, extendKey, isLicensed, productOf, panelMachine, startTrial, tiersOnSale, updateKey, yearly } from "../60-infra/licence";
 import { LAPSE_GRACE_DAYS, licenceIndex, type LicenceTier } from "../10-catalog/licence-tiers";
@@ -20,7 +20,7 @@ import { exitsOf } from "../60-infra/network";
 import { backupTarget, repoRoom, repoUsed, runBackups } from "../60-infra/backups";
 import { bootHours, customerWorkloads, liveServices } from "../60-infra/status";
 import { hostPerf, phpTickets } from "../60-infra/php";
-import { deviceVendor, installedCores, perCoreOf } from "../60-infra/status";
+import { coreSpeed, deviceVendor, installedCores } from "../60-infra/status";
 import { diskFill, nodeUsage, starvation, vmPerf } from "../60-infra/usage";
 import { addAwareness, addReview, announceReview, starsFor } from "../80-business/marketing";
 import type { SimEvent } from "../88-tick/tick";
@@ -169,17 +169,19 @@ export function reportLoss(s: GameState, d: Device, lost: Workload[], hour: numb
   events.push({ app: "Locations", key: "event.dataLoss", params: { device: d.label ?? d.name, count: items.length } });
 }
 
-// The speed a customer workload runs at, 1 when nothing slows it: the slowest of its node, its panel host, its VM and, for a game
-// server, one core.
+// The speed a customer workload runs at, 1 when nothing slows it: the slowest of its node, its panel host and its VM, times the
+// share of its customer's service floor its core still delivers.
 export function workloadPerf(s: GameState, w: Workload, product: Product | undefined, nodePerf: (deviceId: string) => number = (id) => nodeUsage(s, id).perf): number {
   if (!w.clusterId || w.stopped || isOwnVm(w)) return 1;
   const vm = vmOf(s, w), at = w.deviceId ?? vm?.deviceId;
   if (!at || vm?.stopped) return 1;
-  const c = s.clusters.find((x) => x.id === w.clusterId), node = product === "gameServer" ? s.devices.find((d) => d.id === at) : undefined;
-  const base = Math.min(nodePerf(at), hostPerf(s, c), vm ? vmPerf(s, vm) : 1, node ? perCoreOf(node) : 1), shares = sharesOf(c, w);
-  if (shares === "normal" || !runsHot(s, at)) return base;
+  const c = s.clusters.find((x) => x.id === w.clusterId);
+  const base = Math.min(nodePerf(at), hostPerf(s, c), vm ? vmPerf(s, vm) : 1), shares = sharesOf(c, w);
   // Under contention a high pool keeps its performance and a low pool gives some up.
-  return shares === "high" ? 1 : base * POOL_LOW_PERF;
+  const perf = shares === "normal" || !runsHot(s, at) ? base : shares === "high" ? 1 : base * POOL_LOW_PERF;
+  const v = s.services.find((x) => x.id === w.serviceId), cus = v && s.customers.find((x) => x.id === v.customerId), node = s.devices.find((d) => d.id === at);
+  if (!v || !cus || !node) return perf;
+  return Math.min(perf, (coreSpeed(node, s.hour) * perf) / serviceFloor(s.seed, product ?? v.product, cus.profile, cus.id));
 }
 
 // Overloaded nodes slow every customer on them, web spaces in a panel VM included, and a PHP upgrade or a compromise slows
