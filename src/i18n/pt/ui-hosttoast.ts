@@ -6,8 +6,6 @@ export default {
   "hosttoast.nav.list": () => "Fornecedores",
   "hosttoast.nav.forHosts": () => "Para fornecedores",
   "hosttoast.product": () => "Produto",
-  "hosttoast.city": () => "Cidade",
-  "hosttoast.allCities": () => "Todas as cidades",
   "hosttoast.col.tier": () => "Nível",
   "hosttoast.col.host": () => "Fornecedor",
   "hosttoast.col.reviews": () => "Avaliações",

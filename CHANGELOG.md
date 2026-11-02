@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- HOSTtoast no longer has a city filter, so its list always shows every open host.
 - The browser's Back button no longer leaves the game: in the browser app it goes back one page, everywhere else it does nothing.
 - Web hosting panels can now create an account for your own company domain, which starts empty, counts against the panel licence and is where your website and shop will live.
 - A license key that is installed in a panel or product has to be removed before another key can be entered, and the license page shows the installed key with a Remove button instead of listing your unused keys.
