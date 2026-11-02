@@ -519,7 +519,7 @@ export const newGame = (seed: number): GameState => ({
   logins: {},
   mail: newMail(seed, START_NAME),
   desk: null,
-  webmail: { installs: {}, default: null },
+  webmail: { installs: {}, default: null, options: {} },
 });
 
 export const guideDoc = (): Doc => ({ id: "guide", kind: "guide", title: t("doc.guide"), body: "", x: 16, y: 46 });

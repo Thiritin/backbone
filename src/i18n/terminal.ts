@@ -281,4 +281,5 @@ export const TERMINAL_EN: Record<string, (p: Params) => string> = {
   "term.vendor.jobOk": () => "OK",
   "term.vendor.jobError": () => "Error",
   "term.vendor.noNode": () => "no free node",
+  "term.vendor.mailboxRow": (p) => `${p.quota} MB  ${p.n} messages`,
 };

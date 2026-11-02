@@ -16,6 +16,12 @@ import { takeSnapshot } from "../90-actions/snapshots";
 import { setAutoUpdate, setChannel, softwareOn, updateSoftware } from "../90-actions/software";
 import { restoreTargets, restoreTo } from "../90-actions/vms";
 import { renewCertificate, setAutoSsl, unbanIp } from "../90-actions/webpanel";
+import { createAdminMailbox, setMailSoftwareOption } from "../90-actions/mail-server";
+import { addAlias, deleteMailAccount, removeAlias, setAccountPassword, setAccountQuota, setCatchAll } from "../90-actions/mailbox";
+import { boxOf } from "../42-mail/model";
+import { capsOf } from "../42-mail/caps";
+import type { SelfMailSoftware } from "../80-business/mail";
+import { MAIL_SOFTWARE } from "../80-business/mail-software";
 import { mailAddress } from "./addresses";
 import { finishedJobs, lostOn } from "./backups";
 import { CHANNELS, channelOf, type Channel } from "./channel";
@@ -44,7 +50,11 @@ const EXTRAS: Record<SoftwareKind, (sw: Software) => CliCommand[]> = {
     cmd("certRenew", "cert renew <service>"), cmd("certRevoke", "cert revoke <service> <user>"),
     ...(sw.id === "anyconnekt" ? [cmd("autoenroll", "autoenroll <service> on|off")] : []),
   ],
-  mail: () => [cmd("queueFlush", "queue flush"), cmd("queueDelete", "queue delete"), cmd("relay", "relay <host> [off]")],
+  mail: (sw) => [cmd("queueFlush", "queue flush"), cmd("queueDelete", "queue delete"), cmd("relay", "relay <host> [off]"),
+    cmd("mailboxList", "mailbox list", false), cmd("mailboxAdd", "mailbox add <name> <password> [quota MB]"), cmd("mailboxDel", "mailbox del <name>"),
+    cmd("mailboxQuota", "mailbox quota <name> <MB>"), cmd("mailboxPasswd", "mailbox passwd <name> <password>"),
+    cmd("aliasList", "alias list", false), cmd("aliasAdd", "alias add <alias> <name>"), cmd("aliasDel", "alias del <alias>"), cmd("catchall", "catchall <name>|off"),
+    ...(MAIL_SOFTWARE[sw.id as SelfMailSoftware]?.spam.always === false ? [cmd("spam", "spam on|off")] : [])],
   mailweb: () => [],
   game: () => [cmd("serverList", "server list", false)],
   storage: () => [cmd("shareList", "share list", false)],
@@ -67,6 +77,7 @@ export function cliCommands(sw: Software): CliCommand[] {
 const TWO: Record<string, Record<string, string>> = {
   license: { set: "licenseSet", show: "licenseShow" }, php: { upgrade: "php" }, ssl: { renew: "sslRenew" }, vm: { list: "vmList" },
   node: { drain: "nodeDrain" }, zone: { list: "zoneList" }, cert: { renew: "certRenew", revoke: "certRevoke" }, queue: { flush: "queueFlush", delete: "queueDelete" },
+  mailbox: { list: "mailboxList", add: "mailboxAdd", del: "mailboxDel", quota: "mailboxQuota", passwd: "mailboxPasswd" }, alias: { list: "aliasList", add: "aliasAdd", del: "aliasDel" },
   server: { list: "serverList" }, share: { list: "shareList" }, job: { list: "jobList" }, restore: { list: "restoreList", "*": "restore" },
 };
 // The command the words name and the arguments after it; "*" names the command a first word is on its own.
@@ -97,6 +108,10 @@ export function vendorCli(s: GameState, machineId: string, bin: string, args: st
 }
 
 const act = (...action: Call): CommandResult => ({ output: [], action });
+// The own-server tenant a mail server holds, its open mailboxes, and one of them by local part or address.
+const selfTenant = (s: GameState, c: Cluster) => s.mail.tenants.find((x) => x.host === "self" && x.clusterId === c.id && (x.endsAt === null || x.endsAt > s.hour))?.id;
+const boxesOn = (s: GameState, c: Cluster) => { const tn = selfTenant(s, c); return s.mail.accounts.filter((x) => x.tenant === tn && x.closedAt === null); };
+const boxNamed = (s: GameState, c: Cluster, name: string) => boxesOn(s, c).find((x) => same(x.local, name) || same(`${x.local}@${x.domain}`, name));
 const onOff = (w: string | undefined): boolean | undefined => (w === "on" ? true : w === "off" ? false : undefined);
 const same = (a: string | undefined, b: string | undefined) => !!a && !!b && a.toLowerCase() === b.toLowerCase();
 const table = (rows: [string, string][]): string[] => (rows.length ? rows.map(([a, b]) => `${a.padEnd(28)} ${b}`) : lines("term.vendor.none"));
@@ -190,6 +205,38 @@ function run(s: GameState, m: string, sw: Software, c: Cluster, id: string, rest
       const p = panelNamed(s, a);
       return p ? act(setMailRelay, p.id, b === "off" ? null : c.id) : missing(a);
     }
+    case "mailboxList": return { output: table(boxesOn(s, c).map((x) => [`${x.local}@${x.domain}`, t("term.vendor.mailboxRow", { quota: capsOf(s, x).quotaMb, n: boxOf(s, x.id).length })])) };
+    case "aliasList": return { output: table(boxesOn(s, c).flatMap((x) => [...x.aliases.map((l): [string, string] => [`${l}@${x.domain}`, `${x.local}@${x.domain}`]),
+      ...(s.mail.catchAll === x.id ? [[`*@${x.domain}`, `${x.local}@${x.domain}`] as [string, string]] : [])])) };
+    case "mailboxAdd": {
+      const tn = selfTenant(s, c);
+      if (!a || !b) return undefined;
+      if (!tn) return fail("error.mailNoService");
+      return act(createAdminMailbox, { tenant: tn, local: a, title: a, password: b, ...(rest[2] !== undefined && { quotaMb: Number(rest[2]) }) });
+    }
+    case "mailboxDel": case "mailboxQuota": case "mailboxPasswd": {
+      if (!a || (id !== "mailboxDel" && !b)) return undefined;
+      const x = boxNamed(s, c, a);
+      if (!x) return missing(a);
+      return id === "mailboxDel" ? act(deleteMailAccount, x.id) : id === "mailboxQuota" ? act(setAccountQuota, x.id, Number(b)) : act(setAccountPassword, null, x.id, b);
+    }
+    case "aliasAdd": {
+      if (!a || !b) return undefined;
+      const x = boxNamed(s, c, b);
+      return x ? act(addAlias, x.id, a.split("@")[0]) : missing(b);
+    }
+    case "aliasDel": {
+      if (!a) return undefined;
+      const l = a.split("@")[0].toLowerCase(), x = boxesOn(s, c).find((y) => y.aliases.includes(l));
+      return x ? act(removeAlias, x.id, l) : missing(a);
+    }
+    case "catchall": {
+      if (!a) return undefined;
+      if (a === "off") return act(setCatchAll, null);
+      const x = boxNamed(s, c, a);
+      return x ? act(setCatchAll, x.id) : missing(a);
+    }
+    case "spam": { const on = onOff(a); return on === undefined ? undefined : act(setMailSoftwareOption, c.id, "spam", on); }
     case "jobList":
       return { output: table(finishedJobs(s, c.id).map((j) => [j.name, `${formatClock(j.last)}  ${t(j.ok ? "term.vendor.jobOk" : "term.vendor.jobError")}`])) };
     case "restoreList":
