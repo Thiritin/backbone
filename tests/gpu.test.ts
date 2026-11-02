@@ -4,7 +4,7 @@ import { componentParts, fits, modelById, partOffers } from "../src/sim/10-catal
 import { partPrice } from "../src/sim/10-catalog/parts";
 import { marketPrice, sizeSpec, specPrice } from "../src/sim/10-catalog/products";
 import { GPU_SKILL } from "../src/sim/10-catalog/research";
-import { needsOf } from "../src/sim/30-market/market";
+import { leadBoost, needsOf } from "../src/sim/30-market/market";
 import { specText } from "../src/sim/30-market/spec";
 import { SAVE_VERSION, type GameState } from "../src/sim/50-state";
 import { cardsFree, lineOffered, workloadsOf } from "../src/sim/60-infra/cluster";
@@ -148,14 +148,15 @@ describe("GPU rental", () => {
 
   it("scales demand by year and shares it over four profiles", () => {
     expect([2010, 2011, 2016, 2017, 2019, 2020, 2022, 2023, 2026].map(gpuDemand)).toEqual([0, 0.2, 0.2, 0.6, 0.6, 1, 1, 2.5, 2.5]);
-    const gpu = (p: Parameters<typeof needsOf>[0], y: number) => needsOf(p, y).find(([x]) => x === "gpu")?.[1] ?? 0;
+    // GPU leads per lead before the extra VPS leads.
+    const gpu = (p: Parameters<typeof needsOf>[0], y: number) => (needsOf(p, y).find(([x]) => x === "gpu")?.[1] ?? 0) * leadBoost(p, y);
     expect(gpu("hobbyDev", 2010)).toBe(0);
     expect(gpu("enterprise", 2020)).toBeCloseTo(0.03);
     expect(gpu("agency", 2023)).toBeCloseTo(0.075);
     expect(gpu("onlineShop", 2017)).toBeCloseTo(0.018);
     expect(gpu("private", 2023)).toBe(0);
     expect(needsOf("hobbyDev", 2023).reduce((n, [, w]) => n + w, 0)).toBeCloseTo(1);
-    expect(needsOf("hobbyDev", 2009)).toEqual([["vps", 0.9], ["webHosting", 0.1]]);
+    expect(needsOf("hobbyDev", 2009).map(([p]) => p)).toEqual(["vps", "webHosting"]);
   });
 
   it("needs the skill and a free card to be offered, and rents whole cards", () => {

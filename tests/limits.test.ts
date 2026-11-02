@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Resources } from "../src/sim/10-catalog/products";
+import { sizeSpec, type Resources } from "../src/sim/10-catalog/products";
 import { curveFor } from "../src/sim/10-catalog/usage";
 import { workloadsOf } from "../src/sim/60-infra/cluster";
 import { need, starvation, STRETCH_MAX, workloadUse } from "../src/sim/60-infra/usage";
@@ -20,7 +20,8 @@ function setup() {
   const s = readyGame(1);
   const cloud = s.clusters.find((c) => c.kind === "cloud")!.id, host = panelVm(s, cloud);
   const ada = addCustomer(s, "Ada Lang", "gamer"), bob = addCustomer(s, "Bob Ries", "gamer");
-  const vps = (cus: string, label: string) => must(provisionService(s, cus, "vps", { label, clusterId: cloud }));
+  // The 512 MB plan, so 70% of it stays above the smallest limit.
+  const vps = (cus: string, label: string) => must(provisionService(s, cus, "vps", { label, clusterId: cloud, spec: sizeSpec("vps", 1, 2005) }));
   const web = (label: string) => must(provisionService(s, ada, "webHosting", { label, clusterId: host }));
   const svc = (id: string) => s.services.find((v) => v.id === id)!;
   const wl = (id: string) => workloadsOf(s, id)[0];

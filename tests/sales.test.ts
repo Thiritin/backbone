@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { sizeSpec } from "../src/sim/10-catalog/products";
 import { isMonthStart, yearOf } from "../src/sim/00-core/time";
-import { acceptChance, acceptMid, cityMarket, leadFlows, missingFor, priceIndex, rivals, share, type SalesRequest } from "../src/sim/30-market/market";
+import { acceptChance, acceptMid, cityMarket, leadBoost, leadFlows, missingFor, priceIndex, rivals, share, type SalesRequest } from "../src/sim/30-market/market";
 import { addRequest, newLead } from "../src/sim/30-market/sales";
 import { createTicket, profileStats } from "../src/sim/40-support/tickets";
 import { leadCapShare } from "../src/sim/10-catalog/economy";
@@ -46,7 +46,8 @@ describe("lead generation", () => {
     s.marketing = { ...s.marketing, awareness: Object.fromEntries(Object.keys(s.marketing.awareness).map((p) => [p, 1])) as typeof s.marketing.awareness };
     const flows = leadFlows(s);
     expect(flows.length).toBe(10);
-    for (const f of flows) expect(f.leads).toBeCloseTo(leadCapShare(1) * cityMarket("Frankfurt", s.hour) * profileStats(f.profile).mix);
+    // The cap grows by the extra VPS leads.
+    for (const f of flows) expect(f.leads).toBeCloseTo(leadCapShare(1) * cityMarket("Frankfurt", s.hour) * profileStats(f.profile).mix * leadBoost(f.profile, yearOf(s.hour)));
     expect(leadCapShare(1)).toBeCloseTo(0.024);
     expect(leadCapShare(6)).toBeCloseTo(0.064);
   });
