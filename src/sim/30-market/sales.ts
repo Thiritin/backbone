@@ -16,7 +16,7 @@ import { gameFirst, lineOffered, noRoomError, pickNode, serverTaken, supports, w
 import { phpNeeded } from "../60-infra/php";
 import { installedRamGb, locationOf } from "../60-infra/status";
 import { addAwareness } from "../80-business/marketing";
-import { mailShare } from "../80-business/mail";
+import { mailShare, mailUnrouted } from "../80-business/mail";
 import { customOpen, listed, shopBlock, siteFactor } from "../80-business/website";
 import { forumAwareness } from "../47-staff/staff";
 import type { SimEvent } from "../88-tick/tick";
@@ -140,6 +140,8 @@ function newLeads(s: GameState, events: SimEvent[]): void {
       if (shop && !f.site && site < 1 && rand(s.rng) >= site) continue;
       // A shop that takes no orders loses its visitors, as a down site does.
       if (shop && closed) continue;
+      // A request by email bounces while the domain's MX is wrong.
+      if (!shop && mailUnrouted(s)) continue;
       if (!standard) {
         newLead(s, f.profile, f.city, events, need);
         continue;

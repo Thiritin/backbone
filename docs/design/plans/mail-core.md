@@ -375,7 +375,7 @@ Mail and host names under the company domain resolve through the company zone (`
 
 The DNS page offers the values of routing records from lists (`src/sim/60-infra/zone-choices.ts`), as the registrar editors of the time offered presets: MX from `mail.<domain>` and the mail servers' host names while the own server runs and from the MX hosts of booked providers with their printed priorities, A and AAAA from the own hosts' addresses, unassigned own addresses and the parking address, CNAME from the zone's own names and the desk's vendor targets. TXT stays free text. Every zone refuses an address as MX data (`cleanRecord`), because an MX names a host.
 
-What breaks delivery: no MX at all, an MX that names a host without an address, an MX at a host that holds no tenant for the domain (another provider, a machine that runs no mail server), or an MX at the own server's name while that name's address is not the mail server's. While delivery is broken, mail to the company domain reaches no mailbox.
+What breaks delivery: no MX at all, an MX that names a host without an address, an MX at a host that holds no tenant for the domain (another provider, a machine that runs no mail server), or an MX at the own server's name while that name's address is not the mail server's. While delivery is broken, mail to the company domain reaches no mailbox: `mailUnrouted(s)` in `src/sim/80-business/mail.ts` is true when the sales mailbox is on the company domain and `mxTarget` names another tenant or none. Email orders and requests then bounce (`mailShare` is 0, the friend's first order waits), the mailbox reports `unresolved` to mail clients, and the Email sheet shows Not delivered. Orders through the website shop still arrive.
 
 ### Events
 
