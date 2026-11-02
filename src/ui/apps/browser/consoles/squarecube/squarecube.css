@@ -21,7 +21,7 @@
 .scw-installer .steps li { color: #999999; }
 .scw-installer .steps li.on { color: #333333; font-weight: 700; }
 .scw-installer h3 { margin: 14px 0 4px; font-size: 13px; }
-.scw-installer ul { margin: 0; padding-left: 18px; }
+.scw-installer ul { margin: 0 0 12px; padding-left: 18px; }
 .scw-installer fieldset { margin: 10px 0; border: 1px solid #cccccc; }
 .scw-installer legend { color: #3a6ea5; font-weight: 700; }
 .scw-installer th { padding: 3px 10px 3px 0; text-align: left; font: 11px Monaco, "Courier New", monospace; }
