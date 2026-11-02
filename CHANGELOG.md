@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- Switching email provider now happens on the provider sites: Ionose has a Mail migration page, Gmial imports mail and contacts, Goggle's Data migration runs for a few hours, and every old provider lists the mail and addresses still waiting to move before you cancel.
+- Installing your own mail server while a provider receives your mail adds the server beside it, so your mail moves once you point the MX record at the server.
 - A cancelled mail provider keeps receiving your mail until the end of the paid month, and only then does mail to it bounce.
 - Pear Mail now has a photorealistic mail icon in Panthera and Leapard, like the other apps.
 - Hosted Exchange by Ionose has its own website, where you order Basic or Business, manage mailboxes, addresses, forwarding and Out of Office in the Control Panel, and reset a forgotten password with a code sent by post.

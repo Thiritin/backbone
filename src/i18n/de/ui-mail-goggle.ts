@@ -223,7 +223,6 @@ export default {
   "goggle.admin.migration.protocol": () => "Protokoll",
   "goggle.admin.migration.target": () => "Zielnutzer",
   "goggle.admin.migration.start": () => "Migration starten",
-  "goggle.admin.migration.done": () => "Migration abgeschlossen",
   "goggle.admin.reports.sent": () => "Gesendet",
   "goggle.admin.reports.received": () => "Empfangen",
   "goggle.admin.reports.self": (p) => `Ihre Nutzer haben ${p.n} Nachrichten gesendet. Alle an sich selbst.`,

@@ -60,6 +60,7 @@ export default {
   "ionose.tab.vacation": () => "Mensagem de ausência",
   "ionose.tab.plan": () => "Contrato",
   "ionose.tab.domain": () => "Configuração do domínio",
+  "ionose.tab.import": () => "Migração de correio",
   "ionose.tab.switch": () => "Mudança de fornecedor",
   "ionose.box.name": () => "Nome",
   "ionose.box.address": () => "Endereço de e-mail",

@@ -84,12 +84,13 @@ export type ServerStatus = "ok" | "down" | "listed" | "installing" | "closed" | 
 
 // What a client connecting to the mailbox sees; gapMin is the minutes since its last check. The own server's listed and
 // installing come from webmail-server.
-export function serverStatus(s: GameState, accountId: string, protocol: MailProtocol, password?: string, gapMin?: number): ServerStatus {
+// byHost: a sign-in at the provider's own server name, as an import does, which answers whatever the domain's MX names.
+export function serverStatus(s: GameState, accountId: string, protocol: MailProtocol, password?: string, gapMin?: number, byHost = false): ServerStatus {
   const a = s.mail.accounts.find((x) => x.id === accountId), t = a && tenantOf(s, a);
   if (!a || !t || a.closedAt !== null || !live(s, t)) return "closed";
   if (t.locked || a.suspended) return "locked";
   if (t.host === "self" && mailServerDown(s, t.clusterId)) return "down";
-  if (t.domain !== GMIX_DOMAIN && mxTarget(s)?.id !== t.id) return "unresolved";
+  if (!byHost && t.domain !== GMIX_DOMAIN && mxTarget(s)?.id !== t.id) return "unresolved";
   if (password !== undefined && password !== a.password) return "auth";
   const caps = capsOf(s, a);
   // A protocol the plan does not offer is refused with the wording of the access switch, as GMix does.

@@ -6,7 +6,6 @@ import { mailPlan, mxSetAt } from "../10-catalog/mail-providers";
 import { companyDomain } from "../30-customers/domains";
 import { checkMailLogin, mailboxInUse, removeMailbox } from "../42-mail/accounts";
 import { matchesConditions } from "../42-mail/deliver";
-import { FETCH_BATCH, runFetch } from "../42-mail/fetch";
 import type { MailAccount, MailTenant, Message } from "../42-mail/types";
 import type { GameState } from "../50-state";
 import { recordAt } from "../60-infra/company-zone";
@@ -15,7 +14,7 @@ import "../80-business/gmial";
 import type { ActionResult } from "./hardware";
 import { createTenant, setTenantLock, setTenantPlan, verifyTenant } from "./mail";
 import { removeCompanyRecord, setCompanyRecord } from "./domains";
-import { addAlias, createMailAccount, deleteFetchRule, deleteMailAccount, saveFetchRule } from "./mailbox";
+import { addAlias, createMailAccount, deleteMailAccount, importMail } from "./mailbox";
 import { createMailFolder, deleteMessages, labelMessages, markMessages, moveMessages } from "./mailmsg";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -174,23 +173,12 @@ export function deleteGoggleUser(s: GameState, id: string, o: { to: string | nul
 
 export const GOGGLE_MIGRATION_FROM = 2008;
 export const GOGGLE_POP_MIGRATION_FROM = 2011;
-// Data migration: the source mailbox's Inbox copied into a user's mailbox once, over IMAP or, from 2011, POP.
+// Data migration: the source mailbox's mail copied into a user's mailbox over IMAP or, from 2011, POP, landing when the run is done.
 export function migrateMailbox(s: GameState, targetId: string, o: { source: string; password: string; proto: "imap" | "pop" }): ActionResult {
-  const u = userOf(s, targetId), src = s.mail.accounts.find((a) => `${a.local}@${a.domain}` === o.source.trim().toLowerCase());
   const year = yearOf(s.hour);
-  if (!u) return fail("error.mailUnknown");
+  if (!userOf(s, targetId)) return fail("error.mailUnknown");
   if (year < GOGGLE_MIGRATION_FROM || (o.proto === "pop" && year < GOGGLE_POP_MIGRATION_FROM)) return fail("error.mailProviderLater");
-  if (!src) return fail("error.mailLogin");
-  // A continuing rule from the same source is set aside for the run and put back afterwards.
-  const kept = s.mail.fetch.find((x) => x.accountId === targetId && x.source === src.id);
-  if (kept) s.mail = { ...s.mail, fetch: s.mail.fetch.filter((x) => x !== kept) };
-  const r = saveFetchRule(s, targetId, { source: src.id, proto: o.proto, password: o.password, leave: true });
-  if (r.ok) while (runFetch(s, s.mail.fetch.find((x) => x.id === r.id)!) === FETCH_BATCH);
-  const err = r.ok ? s.mail.fetch.find((x) => x.id === r.id)!.err : null;
-  if (r.ok) deleteFetchRule(s, r.id!);
-  if (kept) s.mail = { ...s.mail, fetch: [...s.mail.fetch, kept] };
-  if (!r.ok) return r;
-  return err ? fail(err) : { ok: true, id: targetId };
+  return importMail(s, targetId, o);
 }
 
 // Gmial's "Also apply to matching conversations": a saved filter runs over the stored mail outside Spam and Trash.
