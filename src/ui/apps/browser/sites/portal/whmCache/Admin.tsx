@@ -2,9 +2,11 @@ import type { ReactNode } from "react";
 import { t } from "../../../../../../i18n/en";
 import { yearOf } from "../../../../../../sim/00-core/time";
 import { licenceStatus, SHOP_MACHINE } from "../../../../../../sim/60-infra/licence";
+import { adminFirstName } from "../../../../../../sim/60-infra/shop-files";
 import { AdminScreen, SCREEN_LABEL } from "../shared/AdminScreen";
 import { screenArgs, screenOf, type Screen, type ScreenName } from "../shared/nav";
-import type { SkinProps } from "../skins";
+import type { LoginProps, SkinProps } from "../skins";
+import { LoginNote } from "../Login";
 import { VersionFooter } from "../shared/Licence";
 import "../portal.css";
 import "./skin.css";
@@ -65,7 +67,7 @@ export function AdminFrame({ game, variant, major, nav, on, children }: SkinProp
           {nav && <SideNav nav={nav} on={on} />}
         </aside>
         <div className="whc-col">
-          <header className="whc-top"><h1>{title}</h1><span className="whc-avatar" title={t("shop-admin.welcome", { name: "admin" })}>A</span></header>
+          <header className="whc-top"><h1>{title}</h1><span className="whc-avatar" title={t("shop-admin.welcome", { name: adminFirstName(game) ?? "admin" })}>A</span></header>
           <main className="whc-main">{children}</main>
           <VersionFooter game={game} variant={variant} />
         </div>
@@ -76,7 +78,7 @@ export function AdminFrame({ game, variant, major, nav, on, children }: SkinProp
     <div className={`portal whc whc-admin whc-${look}`}>
       <header className="whc-head">
         <Wordmark go={home} />
-        <span className="whc-user">{t("shop-admin.welcome", { name: "admin" })}</span>
+        <span className="whc-user">{t("shop-admin.welcome", { name: adminFirstName(game) ?? "admin" })}</span>
       </header>
       {nav && <MenuBar nav={nav} on={on} />}
       <div className="whc-body">
@@ -155,18 +157,19 @@ export function WhmCacheAdmin(props: SkinProps) {
 }
 
 // The sign-in page of each look.
-export function WhmCacheLogin({ game, major, onLogin }: SkinProps & { onLogin: () => void }) {
+export function WhmCacheLogin({ game, major, onLogin, error, onForgot }: SkinProps & LoginProps) {
   const look = lookOf(major);
   return (
     <div className={`portal whc whc-login whc-${look}`}>
       {look === "flat" && <div className="whc-login-art"><Wordmark /></div>}
-      <form className="whc-login-box" onSubmit={(e) => { e.preventDefault(); onLogin(); }}>
+      <form className="whc-login-box" onSubmit={(e) => { e.preventDefault(); onLogin(e.currentTarget); }}>
         {look === "flat" ? <h1>{t("shop-whmCache.adminLogin")}</h1> : <div className="whc-login-head"><Wordmark /></div>}
         {look === "classic" && <h2>{t("shop-whmCache.adminLogin")}</h2>}
-        <label>{t("shop-admin.username")}<input name="username" defaultValue="admin" autoComplete="off" /></label>
-        <label>{t("shop-admin.password")}<input name="password" type="password" defaultValue="password" autoComplete="off" /></label>
+        <label>{t("shop-admin.username")}<input name="username" autoComplete="off" /></label>
+        <label>{t("shop-admin.password")}<input name="password" type="password" autoComplete="off" /></label>
         <button type="submit" className="btn primary">{t("shop-admin.login")}</button>
         <small className="num">{t("shop-admin.footer", { name: "WHMCache", version: game.shop.install?.version ?? "" })}</small>
+        <LoginNote error={error} onForgot={onForgot} />
       </form>
     </div>
   );

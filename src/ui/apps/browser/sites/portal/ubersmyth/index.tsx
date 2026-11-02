@@ -6,7 +6,8 @@ import { ClientArea } from "../shared/ClientArea";
 import { VersionFooter } from "../shared/Licence";
 import { screenArgs, screenOf, type ScreenName } from "../shared/nav";
 import { StoreFront } from "../shared/StoreFront";
-import type { Skin, SkinProps } from "../skins";
+import type { LoginProps, Skin, SkinProps } from "../skins";
+import { LoginNote } from "../Login";
 import "../portal.css";
 import "./skin.css";
 
@@ -139,7 +140,7 @@ function Client(props: SkinProps) {
           <label>{t("ubersmyth.store.client")}
             <select value={pick} onChange={(e) => setPick(e.target.value)}>{clients.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select>
           </label>
-          <label>{t("shop-admin.password")}<input type="password" defaultValue="password" autoComplete="off" /></label>
+          <label>{t("shop-admin.password")}<input type="password" autoComplete="off" /></label>
           <button type="submit" className="btn primary" disabled={!pick}>{t("ubersmyth.store.signIn")}</button>
         </form>
       )}
@@ -147,15 +148,16 @@ function Client(props: SkinProps) {
   );
 }
 
-function Login({ major, onLogin }: SkinProps & { onLogin: () => void }) {
+function Login({ major, onLogin, error, onForgot }: SkinProps & LoginProps) {
   return (
     <div className={`portal ubs ubs-login ubs-${eraOf(major)}`}>
       <div className="ubs-login-art"><Mark /></div>
-      <form onSubmit={(e) => { e.preventDefault(); onLogin(); }}>
+      <form onSubmit={(e) => { e.preventDefault(); onLogin(e.currentTarget); }}>
         <h1><Mark /><span>{t("ubersmyth.login.title")}</span></h1>
-        <label>{t("shop-admin.username")}<input name="username" defaultValue="admin" autoComplete="off" /></label>
-        <label>{t("shop-admin.password")}<input name="password" type="password" defaultValue="password" autoComplete="off" /></label>
+        <label>{t("shop-admin.username")}<input name="username" autoComplete="off" /></label>
+        <label>{t("shop-admin.password")}<input name="password" type="password" autoComplete="off" /></label>
         <button type="submit" className="btn primary">{t("shop-admin.login")}</button>
+        <LoginNote error={error} onForgot={onForgot} />
       </form>
     </div>
   );

@@ -8,7 +8,7 @@ import { cmsOf } from "../../../../../sim/60-infra/apps";
 import type { Cluster } from "../../../../../sim/60-infra/cluster";
 import { accountsOf, phpInstalled, phpOlder, phpRunning, POOL_MAX, poolOf, siteBroken } from "../../../../../sim/60-infra/webpanel";
 import { phpDue, upgradePhp } from "../../../../../sim/90-actions/clusters";
-import { setAccountPhp, setPhpPool } from "../../../../../sim/90-actions/webpanel";
+import { setAccountPhp, setIonCube, setPhpPool } from "../../../../../sim/90-actions/webpanel";
 import { usePageAct } from "../../pageAct";
 
 // The legacy versions a host can still install: released, and older than its newest.
@@ -48,6 +48,7 @@ export function PhpProfiles({ game, c, x3 }: { game: GameState; c: Cluster; x3: 
         </tbody>
       </table>
       {x3 && <p className="cx-acts"><button className="cx-btn primary" disabled={building} onClick={() => { act(setPhpPool, c.id, chosen); setPick(null); }}>{building ? t("web.ea.building") : t("web.ea.build")}</button></p>}
+      <p className="cx-acts"><label><input type="checkbox" checked={!!c.ioncube} disabled={building} onChange={(e) => act(setIonCube, c.id, e.target.checked)} /> {t("shop-setup.ioncube")}</label></p>
       <h2>{t("web.ea.multiphp")}</h2>
       <table className="cx-readout">
         <thead><tr><th>{t("web.ea.domain")}</th><th>{t("web.ea.software")}</th><th>{t("web.ea.phpVersion")}</th><th>{t("web.ea.status")}</th></tr></thead>

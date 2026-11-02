@@ -1,6 +1,5 @@
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { SHOP_SETUP_HOURS } from "../src/sim/10-catalog/shops";
 import type { GameState } from "../src/sim/50-state";
 import { parsePortal, portalPath } from "../src/sim/80-business/portal";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
@@ -16,7 +15,6 @@ const shopGame = (): GameState => {
   setUpChannel(s, "website");
   s.unlocks = [...s.unlocks, "shops"];
   installWithKey(s, "whmCache");
-  s.hour += SHOP_SETUP_HOURS;
   setLine(s, "webHosting", true);
   return s;
 };

@@ -1,0 +1,6 @@
+.sd-table { border-collapse: collapse; margin: 0.8em 0; }
+.sd-table th, .sd-table td { padding: 0.35em 0.9em 0.35em 0; text-align: left; }
+.sd-table th { font-weight: 600; border-bottom: 1px solid currentColor; }
+.sd-btn { font: inherit; padding: 0.25em 0.9em; cursor: pointer; }
+.sd-btn:disabled { cursor: default; }
+.sd-locked { font-weight: 600; }

@@ -18,7 +18,7 @@ function customer(s: GameState, profile: Profile = "smallBiz", domain = "kunde.d
 }
 const listSsl = (s: GameState) => { s.marketing = { ...s.marketing, lines: [...s.marketing.lines, "ssl"] }; };
 // A running shop whose variant sells SSL, with the line on the website.
-const sellSsl = (s: GameState) => { listSsl(s); s.shop = { ...s.shop, variant: "whmCache", readyAt: 0 }; };
+const sellSsl = (s: GameState) => { listSsl(s); s.shop = { ...s.shop, variant: "whmCache" }; };
 // What the certificate authority charged: on its invoices, or straight from the cash before suppliers invoice.
 const caCost = (s: GameState) =>
   s.payables.filter((p) => p.name === CA_NAME).reduce((n, p) => n + p.amount, 0) -

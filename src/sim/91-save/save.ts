@@ -1,4 +1,5 @@
 import { fillDesk } from "./desk";
+import { fillShopWebspace } from "../90-actions/shop-setup";
 import { fillMail } from "./mail";
 import { fillPearMail } from "./pear-mail";
 import { migrateBooks } from "./books";
@@ -183,6 +184,7 @@ export function deserialize(raw: string): GameState {
   s.tax = data.tax ? { ...base.tax, ...data.tax } : s.registration ? legacyTax(s) : base.tax;
   if (data.shop && data.shop.install === undefined) installSavedShop(s);
   if (!data.ownWebspaces) ownShopWebspace(s);
+  if (data.shop?.install && !data.shop.install.ws) fillShopWebspace(s);
   fillMail(s, data.mail, !!data.company?.zone);
   fillPearMail(s, data.pearMail);
   fillDesk(s, data.desk !== undefined);

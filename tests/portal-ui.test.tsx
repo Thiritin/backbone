@@ -1,7 +1,6 @@
 import type { ShopId } from "../src/sim/10-catalog/shops";
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { SHOP_SETUP_HOURS } from "../src/sim/10-catalog/shops";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { Login } from "../src/ui/apps/browser/sites/portal/Login";
 import { skinOf } from "../src/ui/apps/browser/sites/portal/skins";
@@ -15,7 +14,6 @@ const shopGame = (id: ShopId = "whmCache") => {
   setUpChannel(s, "website");
   s.unlocks = [...s.unlocks, "shops"];
   installWithKey(s, id);
-  s.hour += SHOP_SETUP_HOURS;
   return s;
 };
 
@@ -23,7 +21,8 @@ describe("portal shell", () => {
   it("shows the login first", () => {
     const html = renderToString(<PortalSite game={shopGame()} host="portal.x.test" path="/admin/" go={() => {}} />);
     expect(html).toContain("Username");
-    expect(html).toContain("admin");
+    // The fields start empty: the installer's admin account logs in.
+    expect(html).not.toContain('value="admin"');
     expect(html).toContain('type="password"');
     expect(html).toContain("Login");
   });

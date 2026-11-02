@@ -97,6 +97,8 @@ In cPanic the customer pages carry the real names of their era. Parked Domains b
 
 Fantastiko (from 2005) and Softaculus (from 2009) stay as the shortcut planned in `web-presence.md`: pick an app, a domain and a folder, and the installer creates the files, the database and the admin account in one step. This is how customers install their own apps. Shop systems are listed there only in the eras when the real installers carried them, and the player may install their own shop through it too: the installer still asks for the licence key and the admin account, and creates the folder, the database and the user that section 5 sets up by hand.
 
+Fantastiko never carried one of the shop systems, so the shortcut for the player's shop is Softaculus only. It appears as a tile in the customer side of the player's own cPanic web spaces from 2009 and lists BoxBillin' from 2012 to 2018, ClientExit from 2013 and Blessta from 2014. It installs the newest release, runs the same requirements and licence checks as the web installer, names the database and its user after the script with a random number and password, and removes the install folder itself.
+
 ## 5. Installing the shop system by hand
 
 This replaces the "Install" button and the 72-hour setup timer.
@@ -112,6 +114,15 @@ This replaces the "Install" button and the 72-hour setup timer.
 Failures are real and tell the player what is wrong in the variant's own words: a wrong database password gives "Access denied for user", a PHP version below the requirement fails the requirements check, a missing ionCube Loader stops WHMCache until it is enabled in the panel's PHP settings.
 
 Updates follow the same path: download the new archive, upload it over the old files and open the upgrade script. The sim's version of the shop changes when the upgrade script has run.
+
+How the build behaves in detail:
+
+- The release of a folder's shop files is read from the archive they were extracted from. The installer opens at `/install/` of any domain whose folder holds the files, or of the folder one level below a domain's folder (`example.com/billing/install/`), and the store and admin answer at the same address.
+- The requirements check compares the PHP of the folder's domain (the host's PHP before the MultiPHP Manager) with the PHP that was current three years before the release came out. WHMCache, ClientExit and HostBull are ionCube-encoded and need "IonCube Loader for PHP", a checkbox on cPanic's EasyApache page. Writable folders are not checked.
+- WHMCache, HostBull and BoxBillin' refuse their admin area while the install folder exists; the others show a warning above it. A leftover install folder is an Advisor finding weighted like a critical hole and doubles the host's chance of a compromise in the security roll.
+- Admin passwords are stored as MD5 until the variant's move to bcrypt (WHMCache and ClientExit 2015, Blessta 2012, HostBull 2016, Ubersmyth 2014, BoxBillin' always, ModemBill never), by the release year. ClientExit and BoxBillin' log in with the e-mail address. The reset link is valid for 24 game hours, since game time runs fast.
+- The shop takes orders only while its files of the installed release, its config file, its tables and a domain pointing at its folder all exist. Between uploading a new release and running the upgrade script the store shows "Down for Maintenance". A new major needs a key that covers it, typed into the upgrade script.
+- OrderBocks is hosted and is activated on its vendor's site instead.
 
 Moving the shop to another host is a real move: copy the files, export and import the database through phpMyAdmon or the panel's backup, and point the `portal` record at the new host.
 

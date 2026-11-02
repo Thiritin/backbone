@@ -35,8 +35,6 @@ export default {
   "blessta.v.free": () => "Kostenlos",
   "blessta.v.current": () => "Aktuelle Version",
   "blessta.v.step0": () => "Kaufe einen Schlüssel auf der Preisseite.",
-  "blessta.v.step1": () => "Öffne Software und Updates im Panel eines deiner Hosts.",
-  "blessta.v.step2": (p) => `Wähle ${p.name} unter ${p.section}, trage deinen Schlüssel ein und klicke auf ${p.button}.`,
   "blessta.v.step3": (p) => `Ohne Schlüssel läuft ${p.name} ${p.days} Tage zur Probe; trage den Schlüssel später auf der Lizenzseite im Admin ein.`,
   "blessta.v.copy": () => "Schlüssel kopieren",
   "blessta.v.copied": () => "Kopiert",

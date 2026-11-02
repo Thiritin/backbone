@@ -14,11 +14,13 @@ import { whmCacheSkin } from "./whmCache";
 
 export type Open = (area: PortalArea, ids?: PortalIds, screen?: string | Record<string, string>) => void;
 // version and major are the installed release, which picks the look; browse opens a full address in the Browser.
+// form is the submitted login form; a hosted shop signs in without one.
+export interface LoginProps { onLogin: (form: HTMLFormElement | null) => void; error?: string; onForgot?: () => void }
 export interface SkinProps { game: GameState; variant: ShopId; route: PortalRoute; open: Open; version: string; major: string; browse: (url: string) => void }
 // Login and Bare (the frame around the licence-locked admin and the closed store) fall back to the shared ones.
 export interface Skin {
   Admin: FC<SkinProps>; Store: FC<SkinProps>; Client: FC<SkinProps>;
-  Login?: FC<SkinProps & { onLogin: () => void }>; Bare?: FC<SkinProps & { children: ReactNode }>;
+  Login?: FC<SkinProps & LoginProps>; Bare?: FC<SkinProps & { children: ReactNode }>;
 }
 
 // A shop system without a skin of its own looks plain.

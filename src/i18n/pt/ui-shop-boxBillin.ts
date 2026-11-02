@@ -46,8 +46,6 @@ export default {
   "shop-boxBillin.site.apache": () => "Apache 2.0",
   "shop-boxBillin.site.updates": () => "Atualizações",
   "shop-boxBillin.site.updatesFree": () => "Grátis para todas as versões",
-  "shop-boxBillin.site.step0": () => "Abra a página Software e atualizações de um dos seus hosts com painel.",
-  "shop-boxBillin.site.step1": (p) => `Em ${p.section}, escolha ${p.button}.`,
   "shop-boxBillin.site.step2": () => "Entre na sua administração em",
   "shop-boxBillin.site.version": () => "Versão",
   "shop-boxBillin.site.securityUntil": () => "Correções de segurança até",

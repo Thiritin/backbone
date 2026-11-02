@@ -1,7 +1,6 @@
 import type { ShopId } from "../src/sim/10-catalog/shops";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { PREFERENCE } from "../src/sim/10-catalog/payments";
-import { SHOP_SETUP_HOURS } from "../src/sim/10-catalog/shops";
 import { sizeSpec } from "../src/sim/10-catalog/products";
 import { orderLead } from "../src/sim/30-market/orders";
 import { referenceFor } from "../src/sim/30-market/market";
@@ -26,7 +25,6 @@ const shopGame = (seed = 5, id: ShopId = "modemBill"): GameState => {
   setUpChannel(s, "website");
   s.unlocks = [...s.unlocks, "shops"];
   installWithKey(s, id);
-  s.hour += SHOP_SETUP_HOURS;
   return automate(s);
 };
 const idOf = (r: { ok: boolean; id?: string }) => { expect(r.ok).toBe(true); return r.id!; };

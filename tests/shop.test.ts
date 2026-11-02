@@ -1,7 +1,6 @@
 import type { ShopId } from "../src/sim/10-catalog/shops";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
-import { SHOP_SETUP_HOURS } from "../src/sim/10-catalog/shops";
 import { PREFERENCE } from "../src/sim/10-catalog/payments";
 import { orderLead } from "../src/sim/30-market/orders";
 import type { GameState } from "../src/sim/50-state";
@@ -26,13 +25,12 @@ const withShop = (seed: number, id: ShopId = "whmCache") => {
   setUpChannel(s, "website");
   s.unlocks = [...s.unlocks, "shops"];
   installWithKey(s, id);
-  s.hour += SHOP_SETUP_HOURS;
   return s;
 };
 const at = (s: GameState, year: number) => { s.hour = hourOf(new Date(Date.UTC(year, 0, 1))); return s; };
 
 describe("shop systems", () => {
-  it("need the research and the website, and take orders after their setup days", () => {
+  it("need the research and the website, and take orders once installed", () => {
     const s = readyGame(1);
     s.cash = 1e6;
     const host = s.clusters.find((c) => c.kind === "panel")!.id;
@@ -42,8 +40,6 @@ describe("shop systems", () => {
     setUpChannel(s, "website");
     installWithKey(s, "clientExit", true);
     expect(s.shop.variant).toBe("clientExit");
-    expect(shopActive(s)).toBe(false);
-    s.hour += SHOP_SETUP_HOURS;
     expect(shopActive(s)).toBe(true);
     expect(installShop(s, host, "hostBull")).toMatchObject({ ok: false, error: "error.shopNotSold" });
   });

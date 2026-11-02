@@ -1,7 +1,6 @@
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { hourOfMonth } from "../src/sim/00-core/time";
-import { SHOP_SETUP_HOURS } from "../src/sim/10-catalog/shops";
 import { companyDomain } from "../src/sim/30-customers/domains";
 import { licenceStatus, SHOP_MACHINE } from "../src/sim/60-infra/licence";
 import { resolve } from "../src/sim/80-business/browser";
@@ -24,23 +23,24 @@ const game = () => {
 };
 
 describe("installing a shop from a panel host", () => {
-  it("runs a new shop on its trial and takes orders after its setup days", () => {
+  it("runs a new shop on its trial and takes orders at once", () => {
     const s = game(), host = s.clusters.find((c) => c.kind === "panel")!;
     expect(s.shop.variant).toBeNull();
     expect(installShop(s, host.id, "clientExit").ok).toBe(true);
     expect(s.shop).toMatchObject({ variant: "clientExit", install: { clusterId: host.id } });
     expect(licenceStatus(s, SHOP_MACHINE, "clientExit")).toBe("trial");
-    s.hour += SHOP_SETUP_HOURS;
     expect(shopActive(s)).toBe(true);
     expect(shopBlock(s)).toBeNull();
     expect(resolve(s, `portal.${companyDomain(s)}/`).page.kind).toBe("shop");
   });
 
-  it("offers the shops on sale on the panel host's software page", () => {
+  it("shows the release the shop runs on its panel host's software page, without an install button", () => {
     const s = game(), host = s.clusters.find((c) => c.kind === "panel")!;
+    expect(renderToString(<ShopInstall game={s} c={host} />)).toBe("");
+    installShop(s, host.id, "clientExit");
     const html = renderToString(<ShopInstall game={s} c={host} />);
     expect(html).toContain("ClientExit");
-    expect(html).toContain("Install ModemBill");
+    expect(html).not.toContain("<button");
   });
 
   it("leaves the Marketing app without a shop section", () => {
