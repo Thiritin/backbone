@@ -1094,14 +1094,29 @@ Prices are for 2005 and rise 8% every January. With a 10% chance each year, Pear
 | AI bots | ChadGPT Support €50, Clipsy Reminders €100, per bot | ChadGPT: every reply in tokens, see [ChadGPT usage](#chadgpt-usage) | | Automation skill |
 | Storefront | The customer shop in Sales | €40 | 0.5% of shop revenue | Shop unlock |
 
-**Support desks.** Each desk is a per-seat Pear Store item: the monthly price is charged once for the owner plus once for every employee with the support role (bots do not count), with the yearly rise of 8%, at install and at every month start. The desk is on sale from its year. Anchors: osTicket has been free and open source since 2005, Zendesk was founded in 2007 at about USD 49 a seat, Freshdesk in 2010 at about USD 15 a seat, FreeScout in 2018 and is free.
+**Support desks.** Each desk is a per-seat Pear Store item: the monthly price is charged once for the owner plus once for every employee with the support role (bots do not count), with the yearly rise of 8%, at install and at every month start. The desk is on sale from its year. Anchors: osTicket has been free and open source since before 2005, Zendesk launched in 2007 at about USD 49 a seat, Freshdesk launched in June 2011 at about USD 15 a seat, FreeScout came out in November 2018 and is free. Every feature starts on a desk when the real product got it: in a calendar year for the hosted desks, which the vendor upgrades for every tenant at once, and with the release that introduced it for the self-hosted ones. The dates and their sources are in software-versions.md, Support desks.
 
-| Desk | Pun on | On sale from | Monthly per seat, base price | Features |
+| Desk | Pun on | Hosting | On sale from | Monthly per seat, base price |
 | --- | --- | --- | --- | --- |
-| OsTickit | osTicket | 2005 | €0 | kind filters |
-| Zendusk | Zendesk | 2007 | €49 | filters, search, assignment, reply templates, response timers, customer card, reports |
-| Freshdusk | Freshdesk | 2010 | €15 | filters, search, assignment, reply templates, response timers |
-| FreeScoot | FreeScout | 2018 | €0 | filters, search, assignment |
+| OsTickit | osTicket | self-hosted | 2005 | €0 |
+| Zendusk | Zendesk | hosted | 2007 | €49 |
+| Freshdusk | Freshdesk | hosted | 2011 | €15 |
+| FreeScoot | FreeScout | self-hosted | 2018 | €0 |
+
+| Feature | OsTickit | Zendusk | Freshdusk | FreeScoot |
+| --- | --- | --- | --- | --- |
+| kind filters, search, assignment | 1.3 (2005) | 2007 | 2011 | 1.0 (2018) |
+| reply templates (canned responses, macros) | 1.3 (2005) | 2007 | 2011 | none, a paid module |
+| departments (groups) | 1.3 (2005) | 2007 | 2011 | none, mailboxes serve |
+| customer portal | 1.3 (2005) | 2007, Help Center 2013 | 2011 | none, a paid module |
+| response timers (SLA) | 1.7 (2013) | 2013 | 2011 | none |
+| reports | 1.7 (2013) | 2007 | 2011 | none, a paid module |
+| rules (ticket filters, triggers) | 1.7 (2013) | 2007 | 2011 | none, a paid module |
+| customer card | 1.9 (2014) | 2007 | 2011 | 1.0 (2018) |
+| merge | 1.14 (2019) | 2010 | 2011 | 1.6 (2020) |
+| AI | none | 2013 | 2011 | none |
+
+AI on the hosted desks starts with the real features: suggested articles from 2013 on Zendusk and 2011 on Freshdusk, the answer bot from 2017 on Zendusk (Zendesk Answer Bot, about USD 1 a resolution) and 2018 on Freshdusk (Freddy), and generative auto-answer and reply drafting from 2023 on both. A cancellation from a customer paying at least €50 a month is high priority in the desk, an outage is high and urgent for a high-budget customer, appeals and takedown deadlines are high, how-to questions are low and everything else is normal.
 
 Installing pays the first month at once and is refused without the cash for it; later months are billed on the 1st as "Pear One" in the ledger. Cancelling stops billing and keeps the skill. Saves from before the Pear Store keep every widget, billed like a new purchase. The per-device, per-customer and per-employee extras and the surprise price adjustments are not in the game yet.
 

@@ -66,7 +66,7 @@ The roles are the ones `mail-core` routes by (`owner`, `sales`, `support`, `abus
 
 ### Threading and the number token
 
-Each desk numbers tickets in its own style and puts the number in the subject of every outgoing mail, so a customer's reply joins the ticket. The formats are data in the catalog and are checked against the real products in M2.
+Each desk numbers tickets in its own style and puts the number in the subject of every outgoing mail, so a customer's reply joins the ticket. The formats are data in the catalog (`ref` and `refToken` in `desks.ts`), checked against the real products in M2: osTicket and Freshdesk use the tokens below, FreeScout threads by headers, and the Zendusk token is the game's choice (Open decision 12).
 
 | Desk | Number | Subject token |
 |---|---|---|
@@ -104,7 +104,7 @@ This is the minimum that keeps the loop playable and the only part of this plan 
 5. There are no kind filters, search, assignment, timers or customer card. A player who wants them sets up a desk.
 6. While a desk imports the mailbox the client shows "Handled in the support desk" with an Open button (`deskImports`). When the desk is down, or the ticket has not been fetched yet (`deskHandles(s, ticket)` is false), the Response list is back, because the ticket and the Message are one thing under two views. Answering from the mailbox is the fallback the player is taught.
 
-When a desk becomes worth it follows the game's own curve. A 2005 company answers a handful of requests a week in Pear Mail on its free GMix box. The first pressure is volume and the lack of search and assignment, which a free OsTickit on a web space of the company's own panel host (or a Strateaux package that allows apps) relieves. Zendusk arrives in 2007 and is the expensive, polished choice at the per-seat price of `economy.md`, Freshdusk in 2010 is the cheaper hosted one, and FreeScoot in 2018 is the free, modern self-hosted one. A player who never sets up a desk keeps playing the mailbox loop.
+When a desk becomes worth it follows the game's own curve. A 2005 company answers a handful of requests a week in Pear Mail on its free GMix box. The first pressure is volume and the lack of search and assignment, which a free OsTickit on a web space of the company's own panel host (or a Strateaux package that allows apps) relieves. Zendusk arrives in 2007 and is the expensive, polished choice at the per-seat price of `economy.md`, Freshdusk in 2011 is the cheaper hosted one, and FreeScoot in 2018 is the free, modern self-hosted one. A player who never sets up a desk keeps playing the mailbox loop.
 
 ### The Support app
 
@@ -128,7 +128,7 @@ The three options for the current Support app are the desk itself, a launcher an
 | OsTickit | `/`, `/open.php`, `/view.php`, `/kb/` | `/scp/`, `/scp/tickets.php?id=<n>` | `/scp/admin.php`, `/scp/settings.php`, `/scp/emails.php` |
 | Zendusk | `/hc`, `/hc/requests/new`, `/hc/requests` | `/agent`, `/agent/tickets/<n>`, `/agent/filters/<view>` | `/agent/admin` |
 | Freshdusk | `/support/home`, `/support/tickets/new`, `/support/solutions` | `/helpdesk`, later `/a/tickets/<n>` | `/admin` |
-| FreeScoot | none; `/` is the staff login | `/mailbox/<id>`, `/conversation/<n>` | `/manage` |
+| FreeScoot | none; `/` is the staff dashboard, `/login` the login | `/mailbox/<id>`, `/conversation/<n>` | the Manage menu: `/app-settings/<section>`, `/mailboxes`, `/users`, `/modules`, `/logs/<log>`, `/system` |
 
 - `resolve()` in `src/sim/80-business/browser.ts` gets one line for `support.<company domain>` returning `{ kind: "desk" }`, one for the tenant host of a hosted desk, and one each for the vendor sites. The Browser's `Page` union and the favicon get a `desk` case that uses the existing marks.
 - The staff login is the same prefilled form the shop admin uses, kept in `useSessionState("desk.agent")`.
@@ -248,7 +248,7 @@ SLA is read from `dueAt`, which is the customer's own expectation by profile. Th
 |---|---|---|---|---|
 | OsTickit | osTicket | self-hosted, free | 2005 | classic 1.6 tables and tabs (to 2015), 1.10 flat blue (2016), current (2022), by installed version |
 | Zendusk | Zendesk | hosted, per seat | 2007 | 2007 classic, Lotus tabbed agent UI (2012), current workspace (2019), by calendar year |
-| Freshdusk | Freshdesk | hosted, per seat | 2010 | 2010 first look, flat blue with properties sidebar (2014), new UI (2019), by calendar year |
+| Freshdusk | Freshdesk | hosted, per seat | 2011 | 2011 first look, flat blue with properties sidebar (2014), Mint (2019), by calendar year |
 | FreeScoot | FreeScout | self-hosted, free | 2018 | clean light shared inboxes (2018), refreshed (2026), by installed version |
 
 The real version and release data go into `docs/design/software-versions.md` before M10 to M13, the way the panels were done. The page sets below are the plan's starting point; the research pass corrects them against the products.
@@ -275,28 +275,31 @@ Features follow the real products. The vocabulary stays `DeskFeature` (`filters`
 
 | Flag | OsTickit | Zendusk | Freshdusk | FreeScoot |
 |---|---|---|---|---|
-| filters, search, assign, templates | from its first release | from launch | from launch | from launch |
-| slaTimers | from the release with SLA plans (1.6) | from SLA policies | from launch | none |
-| customerSidebar | from the release with a users directory (1.8) | from launch | from launch | from launch |
-| reports | dashboard statistics | from launch | from launch | from launch |
-| merge | from the release that adds it | from launch | from launch | from launch |
-| departments | yes | groups | groups | no (mailboxes) |
-| rules | ticket filters | triggers and automations | creation, time and update rules | none |
-| portal | yes | Help Center | yes | none |
-| ai | none | by the AI table | by the AI table | none |
+| filters, search, assign | 1.3 (2005) | 2007 | 2011 | 1.0 (2018) |
+| templates | 1.3 (2005) | 2007 | 2011 | none (saved replies are a paid module) |
+| slaTimers | 1.7 (2013) | 2013 | 2011 | none |
+| customerSidebar | 1.9 (2014, user directory) | 2007 | 2011 | 1.0 (2018) |
+| reports | 1.7 (2013, dashboard) | 2007 | 2011 | none (a paid module) |
+| merge | 1.14 (2019) | 2010 | 2011 | 1.6 (2020) |
+| departments | 1.3 (2005) | 2007, groups | 2011, groups | none (mailboxes) |
+| rules | 1.7 (2013, ticket filters) | 2007, triggers and automations | 2011, creation, time and update rules | none (Workflows is a paid module) |
+| portal | 1.3 (2005) | 2007, web portal; Help Center 2013 | 2011 | none (a paid module) |
+| ai | none | 2013 | 2011 | none |
+
+Built in M2: `featureYear(desk, flag)` resolves a release to its year through the desk's `releases`, and `deskHas` compares it with the calendar. Until installs keep a version (M4), a self-hosted desk counts as the latest release of the current year. A FreeScoot desk without templates shows the three reply titles a mail client shows, as the real core has no saved replies.
 
 M2 settles every date in research, rewrites the Support desks table and text in `economy.md` and the Support desks paragraph in `gdd.md`, and updates `tests/support-desks.test.ts`. What the hosted desks sell afterwards is uptime, the AI add-ons and the later channels (chat, phone). What the self-hosted desks cost is a web space, an install, upgrades, the risk of losing the host and the data, and the time to run them.
 
 ## AI on the hosted desks
 
-Zendusk and Freshdusk offer AI in the years their real counterparts did. The years below are placeholders; M2 replaces them with researched ones.
+Zendusk and Freshdusk offer AI in the years their real counterparts did. The years are researched (M2) and live in `aiFrom` of the desk catalog.
 
 | Feature | Real analogue | Year | What it does |
 |---|---|---|---|
-| Suggested articles | article suggestions in the help center form and in the agent sidebar | 2014 | A customer who fills in the ticket form sees articles for the topic and some read one instead of writing in, on top of the Knowledge base item's deflection. The agent sidebar shows the article behind the ticket's topic. |
-| Answer bot | Zendesk Answer Bot, Freshdesk's Freddy bot | 2018 | Answers basic how-to tickets with an article reply before an agent sees them. A solved ticket costs a per-resolution fee; an unsolved one continues with its original due time and no runaround penalty. |
-| Generative auto-answer | AI agents | 2023 | The behaviour of ChadGPT Support moves here: how-to and billing tickets, right with P = 0.6 and 0.5, up to four replies of its own, a runaround penalty of -10 when it gives up, around the clock at twice the base rate, billed in tokens as one monthly ledger line, plus a monthly add-on fee. It replaces the answer bot while it is on. |
-| Reply drafting | AI reply suggestions, copilot | 2023 | The ticket pane shows a draft for how-to and billing tickets: the right template with the same probabilities, otherwise a plausible wrong one. Sending the draft is one click, choosing another reply is the usual picker, and each draft costs tokens. |
+| Suggested articles | article suggestions in the help center form and in the agent sidebar | Zendusk 2013, Freshdusk 2011 | A customer who fills in the ticket form sees articles for the topic and some read one instead of writing in, on top of the Knowledge base item's deflection. The agent sidebar shows the article behind the ticket's topic. |
+| Answer bot | Zendesk Answer Bot (May 2017), Freshdesk's Freddy (2018) | Zendusk 2017, Freshdusk 2018 | Answers basic how-to tickets with an article reply before an agent sees them. A solved ticket costs a per-resolution fee; an unsolved one continues with its original due time and no runaround penalty. |
+| Generative auto-answer | Zendesk AI (May 2023), named AI agents from 2024; Freddy Self Service (June 2023) | 2023 | The behaviour of ChadGPT Support moves here: how-to and billing tickets, right with P = 0.6 and 0.5, up to four replies of its own, a runaround penalty of -10 when it gives up, around the clock at twice the base rate, billed in tokens as one monthly ledger line, plus a monthly add-on fee. It replaces the answer bot while it is on. |
+| Reply drafting | Zendesk AI reply suggestions, Freddy Copilot (2023) | 2023 | The ticket pane shows a draft for how-to and billing tickets: the right template with the same probabilities, otherwise a plausible wrong one. Sending the draft is one click, choosing another reply is the usual picker, and each draft costs tokens. |
 
 - All of it sits behind an AI page in the admin of the desk (Zendusk AI agents, Freshdusk Freddie) with a switch per feature and the month's usage. The token and price model of `src/sim/47-staff/chad.ts` is reused unchanged; `economy.md` gets the answer bot's price per resolution and the add-on fees.
 - The generative auto-answer appears as a bot agent, assignable and listed in the Staff app with its usage facts. It works only while the hosted desk is up, which a hosted desk always is.
@@ -380,6 +383,7 @@ Each milestone is one pull request, green on `npm run typecheck`, `npm test` and
 - Tests: `tests/support-reply-model.test.ts` for the hooks' output per kind (howTo, billing, cancellation, refund, domain transfer), and the existing support suites unchanged.
 
 **M2. Desk catalog, routes, tokens and features.**
+- Built: `desks.ts` holds `hosting`, `hosts`, `ref`, `releases`, `features`, `aiFrom`, `DESK_ROUTE` and `STATUS_LABELS` (label ids for the later `desk.status.*` keys); `priorityOf` sits in `40-support/desk.ts` because it reads customers and services; the page tables are in `deskroutes.ts`.
 - Sim: `desks.ts` gains `hosting`, `hosts`, `refFormat`, per-desk page tables, `DESK_ROUTE`, and features with a start per desk (year or release); `80-business/deskroutes.ts` with a `DeskPage` union per desk, `deskPath` and `parseDesk`; `refToken`, `priorityOf` and the status label tables as data; the AI years as data; research rows for the four products in `docs/design/software-versions.md`.
 - Docs: `economy.md` Support desks table and text rewritten to the per-desk, per-era feature sets of The four desks, and the Support desks paragraph in `gdd.md`.
 - UI: none.
@@ -536,3 +540,4 @@ Each recommendation is the planner's; the decision is the user's.
 9. Balance. From 2005 to 2022 the game has no auto-answer once ChadGPT leaves, which lowers the solo bot's curve until M16 retunes it. Recommended: accept this and retune in M16.
 10. Names. Add-ons (Zendusk Guide, Zendusk Talk, Zendusk Chat), the AI names (Zendusk Answer Bot, Zendusk AI agents, Freddie), and the pun for the Help Scout ancestor of FreeScoot.
 11. The AI add-on and the generative bot need the Automation skill, like the bots they replace. Recommended: keep the requirement.
+12. Research gaps. These dates and formats could not be confirmed from a source, so the game uses the value in brackets: the first OsTickit release in the game (1.3 in 2005) and the year of 1.6 (2010); which osTicket release introduced canned responses, departments, help topics, the client portal and the ban list (the first release); a full visual redesign in osTicket 1.10 and a later one in 1.16 (the plan's three looks); the Zendesk launch price (USD 49 a seat), the year of its merge (2010) and SLA policies (2013), and whether reports, triggers and the web portal existed at launch (yes); article suggestions on the Zendesk request form (2013) and on the Freshdesk portal form (2011); the Freshdesk launch price (USD 15) and the launch year of Dispatch'r, Observer, scenario automations and SLA policies (2011); the Zendusk subject token (`[Request #1234]`, while the real default subject carries the account name and the title); a FreeScout redesign (none, so the 2026 look of FreeScoot is the 1.8 split view). Recommended: keep these values until a source says otherwise.

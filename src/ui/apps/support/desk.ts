@@ -4,8 +4,6 @@ import type { GameState } from "../../../sim/50-state";
 import { FREEMAIL, providerById } from "../../../sim/80-business/mail";
 import { FreeScootMark, FreshduskMark, GoggleMark, IonoseMark, LookoutMark, GMixMark, OsTickitMark, PearMailMark, ZenduskMark, type MarkProps } from "../../art/mailmarks";
 
-export { DESK_FEATURES } from "../../../sim/10-catalog/desks";
-
 export type SupportStyle = "goggle" | "lookout" | "ionose" | "gmix" | "pear" | "ostickit" | "zendusk" | "freshdusk" | "freescoot";
 // brand names the provider or desk the app is drawn as.
 export interface SupportApp { name: "Email" | "Support"; brand: string; icon: ComponentType<MarkProps>; tile: string; style: SupportStyle }

@@ -5,7 +5,7 @@ import { euroCents } from "../../../sim/00-core/money";
 import { pricePerMTokens } from "../../../sim/47-staff/chad";
 import { yearOf } from "../../../sim/00-core/time";
 import { isAvailable, skillFor } from "../../../sim/10-catalog/research";
-import { deskById, deskReady, seats } from "../../../sim/10-catalog/desks";
+import { deskById, deskReady, featuresAt, seats, type DeskFeature } from "../../../sim/10-catalog/desks";
 import { storeItem, subscriptionPrice, type StoreItem } from "../../../sim/10-catalog/store";
 import { cancel, install } from "../../../sim/90-actions/store";
 import { Confirm } from "../../desktop/Confirm";
@@ -115,6 +115,13 @@ export function Software() {
   );
 }
 
+// The features the shelf names: those of the desk in the current year, or in its first year before it is on sale.
+const SHELF: DeskFeature[] = ["filters", "search", "assign", "templates", "slaTimers", "customerSidebar", "reports"];
+const deskShelf = (id: string, year: number): DeskFeature[] => {
+  const d = deskById(id)!, have = featuresAt(d, Math.max(year, d.from));
+  return SHELF.filter((f) => have.includes(f));
+};
+
 function Detail({ item, price, back }: { item: StoreItem; price: string; back: () => void }) {
   const { game, act } = useStore();
   const has = game.installed.includes(item.id);
@@ -146,7 +153,7 @@ function Detail({ item, price, back }: { item: StoreItem; price: string; back: (
       </dl>
       <section className="ps-shelf">
         <h3>{t("shop.includes")}</h3>
-        <ul className="ps-includes">{(item.kind === "desk" ? deskById(item.id)!.features.map((f) => t(`shop.feature.${f}`)) : Array.from({ length: INCLUDES[item.id] }, (_, i) => t(`shop.inc.${item.id}.${i}`))).map((f) => <li key={f}><Check />{f}</li>)}</ul>
+        <ul className="ps-includes">{(item.kind === "desk" ? deskShelf(item.id, yearOf(game.hour)).map((f) => t(`shop.feature.${f}`)) : Array.from({ length: INCLUDES[item.id] }, (_, i) => t(`shop.inc.${item.id}.${i}`))).map((f) => <li key={f}><Check />{f}</li>)}</ul>
       </section>
     </div>
   );

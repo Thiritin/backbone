@@ -8,7 +8,7 @@ import { tick } from "../src/sim/88-tick/tick";
 import { cancel, install } from "../src/sim/90-actions/store";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { stepOf } from "../src/ui/apps/guide";
-import { DESK_FEATURES, supportApp } from "../src/ui/apps/support/desk";
+import { supportApp } from "../src/ui/apps/support/desk";
 import { FreeScootMark, FreshduskMark, GoggleMark, IonoseMark, LookoutMark, GMixMark, OsTickitMark, PearMailMark, ZenduskMark } from "../src/ui/art/mailmarks";
 import { registered, newGame } from "./fixtures";
 
@@ -23,7 +23,7 @@ const agent = (n: number, role: Employee["role"] = "support"): Employee => ({
 
 describe("support desks", () => {
   it("lists the four desks with the Pear Store prices and per-seat billing", () => {
-    expect(DESKS.map((d) => [d.id, d.from, d.monthly])).toEqual([["ostickit", 2005, 0], ["zendusk", 2007, 49], ["freshdusk", 2010, 15], ["freescoot", 2018, 0]]);
+    expect(DESKS.map((d) => [d.id, d.from, d.monthly])).toEqual([["ostickit", 2005, 0], ["zendusk", 2007, 49], ["freshdusk", 2011, 15], ["freescoot", 2018, 0]]);
     for (const d of DESKS) expect(storeItem(d.id)).toMatchObject({ kind: "desk", perSeat: true });
   });
 
@@ -60,15 +60,15 @@ describe("support desks", () => {
     expect(install(s, "zendusk")).toEqual({ ok: false, error: "error.deskNotYet" });
     s.hour = at(2007, 1);
     expect(install(s, "zendusk")).toEqual({ ok: true });
-    s.hour = at(2009, 1);
-    expect(install(s, "freshdusk")).toEqual({ ok: false, error: "error.deskNotYet" });
     s.hour = at(2010, 1);
+    expect(install(s, "freshdusk")).toEqual({ ok: false, error: "error.deskNotYet" });
+    s.hour = at(2011, 1);
     expect(install(s, "freshdusk")).toEqual({ ok: true });
     expect(install(s, "freescoot")).toEqual({ ok: false, error: "error.deskNotYet" });
   });
 
   it("keeps one desk at a time", () => {
-    const s = year(2010);
+    const s = year(2011);
     expect(install(s, "zendusk")).toEqual({ ok: true });
     expect(deskOf(s)?.id).toBe("zendusk");
     expect(install(s, "freshdusk")).toEqual({ ok: true });
@@ -82,20 +82,32 @@ describe("support desks", () => {
     expect(s.installed).toContain("Support");
   });
 
-  it("gates the interface by desk", () => {
-    expect(DESK_FEATURES).toEqual({
-      ostickit: ["filters"],
-      zendusk: ["filters", "search", "assign", "templates", "slaTimers", "customerSidebar", "reports"],
-      freshdusk: ["filters", "search", "assign", "templates", "slaTimers"],
-      freescoot: ["filters", "search", "assign"],
-    });
+  it("gates the interface by desk and year", () => {
     const s = year(2018);
     for (const f of ["filters", "search", "assign", "templates", "slaTimers", "customerSidebar", "reports"] as const) expect(deskHas(s, f)).toBe(false);
     install(s, "freescoot");
     expect(deskHas(s, "search")).toBe(true);
-    expect(deskHas(s, "templates")).toBe(false);
+    expect(deskHas(s, "customerSidebar")).toBe(true);
+    for (const f of ["templates", "reports", "slaTimers", "merge"] as const) expect(deskHas(s, f)).toBe(false);
+    s.hour = at(2020, 1);
+    expect(deskHas(s, "merge")).toBe(true);
     install(s, "zendusk");
     expect(deskHas(s, "reports")).toBe(true);
+
+    const os = year(2005);
+    install(os, "ostickit");
+    for (const f of ["filters", "search", "assign", "templates", "departments", "portal"] as const) expect(deskHas(os, f)).toBe(true);
+    for (const f of ["slaTimers", "reports", "rules", "customerSidebar", "merge"] as const) expect(deskHas(os, f)).toBe(false);
+    os.hour = at(2013, 1);
+    expect([deskHas(os, "slaTimers"), deskHas(os, "customerSidebar")]).toEqual([true, false]);
+    os.hour = at(2019, 1);
+    expect([deskHas(os, "customerSidebar"), deskHas(os, "merge")]).toEqual([true, true]);
+
+    const zd = year(2007);
+    install(zd, "zendusk");
+    expect([deskHas(zd, "templates"), deskHas(zd, "slaTimers"), deskHas(zd, "merge")]).toEqual([true, false, false]);
+    zd.hour = at(2013, 1);
+    expect([deskHas(zd, "slaTimers"), deskHas(zd, "merge")]).toEqual([true, true]);
   });
 
   it("shows the app as Email with the provider's mark until a desk is installed", () => {
