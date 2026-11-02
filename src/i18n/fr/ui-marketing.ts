@@ -27,6 +27,7 @@ export default {
   "marketing.unitGpu": () => "Par GPU",
   "marketing.unitUpdates": () => "Mises à jour gérées",
   "marketing.unitUpdateOnce": () => "Mise à jour ponctuelle",
+  "marketing.unitCleanHour": () => "Nettoyage par heure",
   "marketing.unitSetup": () => "Frais de mise en service",
 
   "marketing.statusUp": () => "En ligne",

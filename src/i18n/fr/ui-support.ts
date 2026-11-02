@@ -156,6 +156,7 @@ export default {
   "support.action.free": () => "Mettre à jour gratuitement",
   "support.action.clean": () => "Nettoyer le site",
   "support.action.noBackup": () => "Pas de sauvegarde",
+  "support.action.cleanPaid": () => "Nettoyage payant",
   "support.offer.half": () => "50 % de remise le mois prochain",
   "support.offer.free": () => "Un mois offert",
   "support.offer.d3": () => "20 % de remise pendant 3 mois",

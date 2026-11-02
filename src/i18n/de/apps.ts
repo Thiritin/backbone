@@ -21,4 +21,10 @@ export default {
   "error.noBackup": () => "Für diese Website gibt es kein Backup zum Wiederherstellen.",
   "error.unknownVulnerability": () => "Diese Schwachstelle ist nicht bekannt.",
   "error.nobodyToNotify": () => "Es gibt keine Kunden zu benachrichtigen.",
+  "ticket.howTo.abuseHold.subject": () => "Warum ist meine Website gesperrt?",
+  "ticket.howTo.abuseHold.text": (p) => `Du hast geschrieben, dass ${p.domain || "meine Website"} gehackt wurde und Spam verschickt, und hast sie gesperrt. Was muss ich tun, damit sie wieder online geht?`,
+  "outcome.cleanSold": () => "Bereinigung verkauft",
+  "ledger.siteCleanup": (p) => `Bereinigung von ${p.site}, ${p.hours} Std.`,
+  "error.alreadyOffered": () => "Der Kunde hat dieses Angebot schon abgelehnt.",
+  "error.alreadyReminded": () => "Der Kunde wurde schon erinnert.",
 } satisfies Dict;
