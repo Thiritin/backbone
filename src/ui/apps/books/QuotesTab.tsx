@@ -14,7 +14,7 @@ import { CYCLE_LABEL } from "../browser/sites/portal/shared/ProductEdit";
 import { attachQuote, convertQuote, createQuote, deleteQuote, editQuote, setQuoteCycle } from "../../../sim/90-actions/orders";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
-import { useBooks } from "./view";
+import { arrowRows, useBooks } from "./view";
 import { formatDay } from "../billing/format";
 import { PriceField } from "../sales/PriceField";
 import { DocBar, DocButton, DocFoot } from "./DocBar";
@@ -67,7 +67,7 @@ export function QuotesTab({ focus }: { focus: string | null }) {
         <DocButton icon={<Trash2 />} label={t("orderSteps.delete")} disabled={!draft} onClick={() => { if (act(deleteQuote, q!.id).ok) pick(null); }} />
       </DocBar>
       <div className="books-split">
-        <div className="fin-scroll">
+        <div className="fin-scroll" onKeyDown={arrowRows}>
           {list.length === 0 ? <div className="fin-empty"><FileText />{t("orderSteps.noQuotes")}</div> : (
             <table className="table fin-table books-doclist">
               <thead>

@@ -3,6 +3,8 @@ import { useState } from "react";
 import { euroCents } from "../../../sim/00-core/money";
 import { AUTO_COLLECT_DAYS, AUTO_SUSPEND_DAYS, dueStep, owed, rulesAutomated, STEPS, type BillingRules } from "../../../sim/45-billing/billing";
 import { sendReminder, setBillingRules } from "../../../sim/90-actions/billing";
+import { setOverusePolicy } from "../../../sim/90-actions/customers";
+import type { OveruseChoice } from "../../../sim/80-business/overuse";
 import { t } from "../../../i18n/en";
 import { menuOn } from "../../desktop/ContextMenu";
 import { useSessionState } from "../../session";
@@ -68,6 +70,22 @@ function DaysRule<D extends number>({ label, days, value, onChange }: { label: s
   );
 }
 
+const POLICIES: [OveruseChoice | null, string][] = [[null, "misc1.billing.off"], ["throttle", "misc.throttleTraffic"], ["bill", "misc.billOverage"], ["upgrade", "misc.offerUpgrade"]];
+
+function OverusePolicy() {
+  const policy = useBooks().overusePolicy, act = useStore((s) => s.act), label = t("misc1.billing.overTraffic");
+  return (
+    <div className="settings-group">
+      <div className="settings-line">
+        <span>{label}</span>
+        <div className="seg" role="group" aria-label={label}>
+          {POLICIES.map(([p, key]) => <button key={key} aria-pressed={policy === p} onClick={() => act(setOverusePolicy, p)}>{t(key)}</button>)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // The billing rules bookkeepers and accountants carry out in their work hours, or that run by themselves after the Automation research.
 function Rules() {
   const game = useBooks(), act = useStore((s) => s.act), openApp = useStore((s) => s.openApp);
@@ -98,6 +116,7 @@ function Rules() {
         <DaysRule label={t("misc1.billing.suspendAfter")} days={AUTO_SUSPEND_DAYS} value={rules.autoSuspendDays} onChange={(d) => set({ autoSuspendDays: d })} />
         <DaysRule label={t("misc1.billing.collectAfter")} days={AUTO_COLLECT_DAYS} value={rules.autoCollectDays} onChange={(d) => set({ autoCollectDays: d })} />
       </div>
+      {game.unlocks.includes("trafficBilling") && <OverusePolicy />}
     </div>
   );
 }

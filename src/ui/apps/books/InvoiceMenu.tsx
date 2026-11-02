@@ -13,7 +13,7 @@ import { useBooks } from "./view";
 
 export const reminder = (step: number) => STEPS[step].key === "collections" ? t("misc1.billing.toCollections") : t("misc1.billing.sendStep", { step: t(`invoice.step.${STEPS[step].key}`) });
 
-export interface Asking { inv: Invoice; what: "writeOff" | "markPaid" }
+export interface Asking { inv: Invoice; what: "writeOff" | "markPaid" | "cancel" }
 
 // Everything a status allows: send or drop a draft, settle, remind, suspend or write off an open one, reopen a closed one.
 export function invoiceMenu(inv: Invoice, hour: number, ask: (a: Asking) => void): MenuEntry[] {
@@ -21,7 +21,7 @@ export function invoiceMenu(inv: Invoice, hour: number, ask: (a: Asking) => void
   const step = dueStep(inv, hour), unpaid = isUnpaid(inv), draft = inv.status === "draft";
   return [
     draft && { label: t("books.sendPdf"), run: () => act(sendInvoice, inv.id) },
-    draft && { label: t("books.menu.cancel"), run: () => act(cancelDraft, inv.id) },
+    draft && { label: t("books.menu.cancel"), run: () => ask({ inv, what: "cancel" }) },
     unpaid && { label: t("books.menu.markPaid"), run: () => ask({ inv, what: "markPaid" }) },
     unpaid && step !== null && { label: reminder(step), run: () => act(sendReminder, inv.id) },
     inv.status === "overdue" && { label: inv.suspended ? t("misc1.billing.resume") : t("misc1.billing.suspend"), run: () => act(suspendServices, inv.id, !inv.suspended) },
@@ -42,6 +42,12 @@ export function InvoiceDialog({ asking, onClose }: { asking: Asking; onClose: ()
         action={t("misc1.billing.writeOff")} onCancel={onClose} onConfirm={() => { act(writeOff, inv.id); onClose(); }} />
     );
   }
+  if (asking.what === "cancel") {
+    return (
+      <Confirm title={t("books.cancelDraft.title", { number: inv.number })} text={t("books.cancelDraft.text", { customer, amount: euroCents(owed(inv)) })}
+        action={t("books.cancelDraft.action")} onCancel={onClose} onConfirm={() => { act(cancelDraft, inv.id); onClose(); }} />
+    );
+  }
   return <MarkPaid inv={inv} onClose={onClose} />;
 }
 
@@ -55,12 +61,13 @@ function MarkPaid({ inv, onClose }: { inv: Invoice; onClose: () => void }) {
     <div className="alert-backdrop" onPointerDown={(e) => e.stopPropagation()}>
       <div className="alert books-markpaid" role="dialog" aria-modal="true" aria-labelledby="markpaid-title">
         <h2 id="markpaid-title">{t("books.markPaid.title", { number: inv.number, amount: euroCents(owed(inv)) })}</h2>
-        <div className="seg books-markpaid-pick" role="group" aria-label={t("books.markPaid.title", { number: inv.number, amount: euroCents(owed(inv)) })}>
-          <button aria-pressed={transfer === null} onClick={() => setTransfer(null)}>{t("books.markPaid.privately")}</button>
+        <div className="books-markpaid-pick" role="radiogroup" aria-labelledby="markpaid-title">
+          <label><input type="radio" name="markpaid" checked={transfer === null} onChange={() => setTransfer(null)} /><span className="books-markpaid-wide">{t("books.markPaid.privately")}</span></label>
           {open.map((x) => (
-            <button key={x.id} aria-pressed={transfer === x.id} onClick={() => setTransfer(x.id)}>
-              <span className="num">{formatDay(x.hour)}</span> {x.from} <span className="num">{euroCents(x.amount)}</span>
-            </button>
+            <label key={x.id}>
+              <input type="radio" name="markpaid" checked={transfer === x.id} onChange={() => setTransfer(x.id)} />
+              <span className="num">{formatDay(x.hour)}</span><span className="books-markpaid-from">{x.from}</span><span className="num">{euroCents(x.amount)}</span>
+            </label>
           ))}
         </div>
         <div className="alert-actions">

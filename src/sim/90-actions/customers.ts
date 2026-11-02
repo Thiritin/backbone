@@ -49,6 +49,14 @@ export function answerTraffic(s: GameState, serviceId: string, choice: OveruseCh
   return error ? { ok: false, error } : { ok: true, id: v.id };
 }
 
+// The answer the daily noon check gives every service over its traffic; null leaves them to the player.
+export function setOverusePolicy(s: GameState, policy: OveruseChoice | null): ActionResult {
+  if (!s.unlocks.includes("trafficBilling")) return { ok: false, error: "error.missingSkill" };
+  if (policy !== null && !["throttle", "bill", "upgrade"].includes(policy)) return { ok: false, error: "error.unknownService" };
+  s.overusePolicy = policy;
+  return { ok: true };
+}
+
 export function liftThrottle(s: GameState, serviceId: string): ActionResult {
   const v = s.services.find((x) => x.id === serviceId && x.throttled);
   if (!v) return { ok: false, error: "error.unknownService" };
