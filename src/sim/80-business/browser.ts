@@ -18,6 +18,7 @@ import { isMgmtDevice, oobUp } from "../60-infra/oob";
 import { linkStatus, powered, working } from "../60-infra/status";
 import { nodeUsage } from "../60-infra/usage";
 import { BOARD_HOST } from "./sponsorboard";
+import { FLYER_HOST } from "../10-catalog/flyers";
 import { consoleAt, consoleHost, isDefaced } from "./consoles";
 import { defaultWebmail } from "./webmail";
 import { customerSite, shopStatus, siteHost, siteStatus, slowHost } from "./website";
@@ -63,6 +64,7 @@ export type Page =
   | { kind: "video" }
   | { kind: "phishing"; sender: string }
   | { kind: "sponsorboard" }
+  | { kind: "flyers" }
   | { kind: "index" }
   | { kind: "office" }
   | { kind: "dohle" }
@@ -106,7 +108,7 @@ export const dirSlug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]
 export const resellersUrl = (): string => `${HOME_URL}${dirSlug(t("sim.index.cat.resellers"))}`;
 // Domains the game's other companies hold in any year, and every name under them.
 export function providerDomain(name: string): boolean {
-  const hosts = [INDEX_HOST, OFFICE_HOST, DOHLE_HOST, WIKI_HOST, LEXWEAR_HOST, HOSTTOAST_HOST, BOARD_HOST, VIDEO_HOST, ...CHANNELS.map((c) => c.host), ...SOFTWARE.map((x) => x.site.host), ...SERVER_OS.map((x) => x.site.host), ...DESKS.map((d) => d.hosts.vendor),
+  const hosts = [INDEX_HOST, OFFICE_HOST, DOHLE_HOST, WIKI_HOST, LEXWEAR_HOST, HOSTTOAST_HOST, BOARD_HOST, FLYER_HOST, VIDEO_HOST, ...CHANNELS.map((c) => c.host), ...SOFTWARE.map((x) => x.site.host), ...SERVER_OS.map((x) => x.site.host), ...DESKS.map((d) => d.hosts.vendor),
     ...VENDORS.map((m) => vendorHost(m.id)), ...BANKS.map((b) => b.host), ...REGISTRARS.map(registrarHost), ...PROVIDERS.map((p) => p.host)].map((h) => h.replace(/^www\./, ""));
   return hosts.some((h) => h === name || h.endsWith(`.${name}`));
 }
@@ -227,6 +229,7 @@ export function resolve(s: GameState, raw: string): Resolved {
   const colo = PROVIDERS.find((p) => named(p.host));
   if (colo) return out({ kind: "provider", id: colo.id });
   if (named(BOARD_HOST)) return out({ kind: "sponsorboard" });
+  if (named(FLYER_HOST)) return out({ kind: "flyers" });
   const bank = BANKS.find((b) => named(b.host) && b.from <= year);
   if (bank) return out({ kind: "bank", id: bank.id });
   const registrar = REGISTRARS.find((r) => named(registrarHost(r)));

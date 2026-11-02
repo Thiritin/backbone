@@ -23,6 +23,7 @@ import "../shop/shop.css";
 import "../billing/billing.css";
 import "./marketing.css";
 import { Products, SiteCard } from "./Website";
+import { FlyerCard } from "./FlyerCard";
 
 type Section = "channels" | "products" | "campaigns" | "awareness" | "reviews" | "fairs" | "community";
 
@@ -169,6 +170,7 @@ function LostDemand() {
 function Campaigns() {
   return (
     <div className="mkt-list">
+      <FlyerCard />
       {(Object.keys(CAMPAIGNS) as CampaignChannel[]).map((c) => <CampaignCard key={c} channel={c} />)}
     </div>
   );
