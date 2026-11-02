@@ -5,9 +5,10 @@ import { listFolder } from "../src/sim/42-mail/model";
 import { startMail } from "../src/sim/42-mail/new";
 import type { GameState } from "../src/sim/50-state";
 import { subscribed, webmailPref, webmailSignIn, webmailUser } from "../src/sim/80-business/webmail";
+import { configureWebmail } from "../src/sim/90-actions/mail-server";
 import {
-  configureWebmail, deleteWebmailMessages, removeContact, runLocalFilters, saveContact, saveIdentity, saveLocalFilter, setFolderSubscribed, setWebmailPref,
-} from "../src/sim/90-actions/mail-server";
+  deleteWebmailMessages, removeContact, runLocalFilters, saveContact, saveIdentity, saveLocalFilter, setFolderSubscribed, setWebmailPref,
+} from "../src/sim/90-actions/webmail";
 import { changePassword } from "../src/sim/90-actions/mailbox";
 import { createMailFolder } from "../src/sim/90-actions/mailmsg";
 import { installSoftware } from "../src/sim/90-actions/software";

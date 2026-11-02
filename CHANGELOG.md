@@ -10,6 +10,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Every licensed console shows its edition, licence status, renewal date and key with Remove, opens on its licence page at the first sign-in during a trial, and sends you to the vendor's website for upgrades and update renewals.
 - Every stack in a storage room now has a Ship button that sends the units to another of your sites, such as from the basement to Frankfurt.
 - Customers no longer send requests that need a company older than a year or better reviews than you have.
+- SquirrelMeal webmail now lets you read, reply, forward, search, move and delete mail, manage folders and an address book, and set identities, a theme, the Trash folder, message filters and a new password in Options.
 - The CPU overcommit warning on hypervisor hosts now fires at 8 vCPUs per core instead of 2.
 - FreeScoot now runs at your help desk address with shared mailboxes and their folders, conversations you can assign, note, merge and close, mailbox connection, auto reply and permission settings, users, a fetch log, system status and a list of paid modules.
 - Upgrade requests no longer mark the current server as full.

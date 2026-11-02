@@ -1,17 +1,21 @@
-import { useState } from "react";
-import { dateOf, yearOf } from "../../../../../sim/00-core/time";
+import { useEffect, useState, type ReactNode } from "react";
+import { yearOf } from "../../../../../sim/00-core/time";
 import { phpAt } from "../../../../../sim/10-catalog/platforms";
-import { foldersOf, listFolder, unread, view } from "../../../../../sim/42-mail/model";
+import { foldersOf, listFolder, unread } from "../../../../../sim/42-mail/model";
 import type { GameState } from "../../../../../sim/50-state";
 import { controlPlaneUp, type Cluster } from "../../../../../sim/60-infra/cluster";
 import { installedVersion, panelMachine } from "../../../../../sim/60-infra/licence";
 import { familyOf } from "../../../../../sim/60-infra/vulns";
-import { confValue, imapUp, mailClusterAt, webmailOf, webmailSignIn } from "../../../../../sim/80-business/webmail";
+import { confValue, imapUp, mailClusterAt, subscribed, webmailOf, webmailPref, webmailSignIn, webmailUser } from "../../../../../sim/80-business/webmail";
+import { runLocalFilters } from "../../../../../sim/90-actions/webmail";
+import { emptyFolder } from "../../../../../sim/90-actions/mailmsg";
 import { t } from "../../../../../i18n/en";
-import { LOCALE } from "../../../../../i18n/lang";
 import { useSessionState } from "../../../../session";
+import { useStore } from "../../../../store";
 import { offerLogin, savedLogin } from "../../../../vault";
 import type { PanelProps } from "../PanelBase";
+import { Compose, Link, List, Read, Search, when, type Ctx, type Screen } from "./Mailbox";
+import { Addresses, Folders, Options } from "./Options";
 import "./squirrelmeal.css";
 
 // docs/design/plans/webmail-server.md, section 3: plain HTML in two frames, no scripts.
@@ -24,7 +28,7 @@ export function SquirrelMeal(p: PanelProps) {
   const [account, setAccount] = useSessionState<string | null>(`webmail.${p.c.id}`, null);
   if (p.c.setupPending) return <ErrorBox text={t("mailserver.noConfig")} />;
   if (sub.includes("configtest.php")) return <ConfigTest game={p.game} c={p.c} host={p.host} />;
-  if (account && p.game.mail.accounts.some((a) => a.id === account)) return <Frames game={p.game} account={account} out={() => setAccount(null)} />;
+  if (account && p.game.mail.accounts.some((a) => a.id === account)) return <Frames game={p.game} c={p.c} account={account} out={() => setAccount(null)} />;
   return <Login game={p.game} c={p.c} host={p.host} signIn={setAccount} />;
 }
 
@@ -68,26 +72,47 @@ function Login({ game, c, host, signIn }: { game: GameState; c: Cluster; host: s
   );
 }
 
-function Frames({ game, account, out }: { game: GameState; account: string; out: () => void }) {
-  const [folder, setFolder] = useState("inbox");
-  const folders = foldersOf(game, account), msgs = listFolder(game, account, folder), name = folders.find((f) => f.id === folder)?.name ?? "";
-  const time = (min: number) => dateOf(Math.floor(min / 60)).toLocaleString(LOCALE, { dateStyle: "short", timeStyle: "short", timeZone: "UTC" });
+// The frameset: the folder tree on the left, everything else on the right.
+function Frames({ game, c, account, out }: { game: GameState; c: Cluster; account: string; out: () => void }) {
+  const act = useStore((x) => x.act);
+  const [folder, setFolder] = useState("inbox"), [screen, go] = useState<Screen>({ k: "list" }), [shut, setShut] = useState<string[]>([]);
+  const filters = webmailOf(game, c).plugins.includes("filters");
+  const check = () => { if (filters) act(runLocalFilters, c.id, account); };
+  useEffect(() => { if (folder === "inbox" && screen.k === "list") check(); }, [folder, screen.k]);
+  const folders = foldersOf(game, account).filter((f) => subscribed(game, account, f.id)), name = folders.find((f) => f.id === folder)?.name ?? "";
+  const open = (id: string) => { setFolder(id); go({ k: "list" }); };
+  const ctx: Ctx = { game, c, account, folder, act, go, open };
   const a = game.mail.accounts.find((x) => x.id === account)!;
+  const tree = (parent: string | null, depth: number): ReactNode[] => folders.filter((f) => f.parent === parent).flatMap((f) => {
+    const n = unread(game, account, f.id), kids = folders.some((x) => x.parent === f.id), closed = shut.includes(f.id);
+    return [
+      <li key={f.id} style={{ paddingLeft: depth * 12 }}>
+        {kids && <Link on={() => setShut(closed ? shut.filter((x) => x !== f.id) : [...shut, f.id])}>{closed ? "+" : "-"}</Link>}{kids && " "}
+        <Link on={() => open(f.id)}>{n ? <b>{`${f.name} (${n})`}</b> : f.name}</Link>
+        {f.id === "trash" && listFolder(game, account, "trash").length > 0 && <> <small>(<Link on={() => act(emptyFolder, account, "trash")}>{t("mailserver.sm.purge")}</Link>)</small></>}
+      </li>,
+      ...(closed ? [] : tree(f.id, depth + 1)),
+    ];
+  });
+  const menu = ([["compose", { k: "compose", seed: {} }], ["addresses", { k: "addresses" }], ["folders", { k: "folders" }], ["options", { k: "options", page: "" }], ["search", { k: "search" }]] as const);
   return (
-    <div className="smw smw-frames">
+    <div className={`smw smw-frames smw-theme-${webmailPref(webmailUser(game, c.id, account), "theme")}`}>
       <nav className="smw-left">
         <b>{t("mailserver.frame.folders")}</b>
-        <small>{t("mailserver.frame.refreshed", { time: time(game.hour * 60) })}</small>
-        <ul>{folders.map((f) => { const n = unread(game, account, f.id); return <li key={f.id}><a href={`#${f.id}`} onClick={(e) => { e.preventDefault(); setFolder(f.id); }}>{n ? <b>{`${f.name} (${n})`}</b> : f.name}</a></li>; })}</ul>
+        <small>{t("mailserver.frame.refreshed", { time: when(game.hour * 60 + game.minute) })}</small>
+        <small>(<Link on={check}>{t("mailserver.sm.checkMail")}</Link>)</small>
+        <ul>{tree(null, 0)}</ul>
       </nav>
       <main className="smw-right">
-        <div className="smw-bar"><span>{t("mailserver.frame.current", { folder: name })}</span><a href="#out" onClick={(e) => { e.preventDefault(); out(); }}>{t("mailserver.frame.signOut")}</a></div>
-        <div className="smw-who">{`${a.local}@${a.domain}`}</div>
-        <div className="smw-bar">{t("mailserver.frame.viewing", { from: msgs.length ? 1 : 0, to: Math.min(15, msgs.length), total: msgs.length })}</div>
-        <table className="smw-list">
-          <thead><tr><th>{t("mailserver.frame.from")}</th><th>{t("mailserver.frame.date")}</th><th>{t("mailserver.frame.subject")}</th></tr></thead>
-          <tbody>{msgs.slice(0, 15).map((m) => { const v = view(game, m); return <tr key={m.id} className={m.read ? "" : "unseen"}><td>{v.fromName || v.fromAddress}</td><td>{time(m.at)}</td><td>{v.subject}</td></tr>; })}</tbody>
-        </table>
+        <div className="smw-bar"><span>{t("mailserver.frame.current", { folder: name })}</span><Link on={out}>{t("mailserver.frame.signOut")}</Link></div>
+        <div className="smw-bar smw-menu"><span>{menu.map(([k, s]) => <Link key={k} on={() => go(s)}>{t(`mailserver.sm.${k}`)}</Link>)}</span><span className="smw-who">{`${a.local}@${a.domain}`}</span></div>
+        {screen.k === "read" ? <Read ctx={ctx} id={screen.id} />
+          : screen.k === "compose" ? <Compose key={JSON.stringify(screen.seed)} ctx={ctx} seed={screen.seed} />
+          : screen.k === "options" ? <Options key={screen.page} ctx={ctx} page={screen.page} />
+          : screen.k === "folders" ? <Folders ctx={ctx} />
+          : screen.k === "addresses" ? <Addresses ctx={ctx} />
+          : screen.k === "search" ? <Search ctx={ctx} />
+          : <List key={folder} ctx={ctx} />}
       </main>
     </div>
   );
