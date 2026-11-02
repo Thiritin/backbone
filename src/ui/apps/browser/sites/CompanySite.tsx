@@ -42,22 +42,11 @@ export function CompanySite({ game, path, go }: { game: GameState; path: string;
   const [first, second] = path.split(/[?#]/)[0].split("/").filter(Boolean);
   const page = pages.find((p) => p === first) ?? "home";
   const to: Go = (p) => go(`www.${domain}${p}`);
-  const look = owns(game, "website") ? ` designed g${Math.min(2025, game.marketing.designYear)}${game.marketing.designYear >= 2021 ? " pro" : ""}` : "";
-  return (
-    <div className={`site${look}`} style={{ "--brand": game.company.color } as CSSProperties}>
-      <header className="site-head">
-        <CompanyMark company={game.company} className="co-mark site-logo" />
-        <div className="site-name">
-          <h1>{game.company.name}</h1>
-          {game.company.tagline && <p className="site-tagline">{game.company.tagline}</p>}
-        </div>
-        {pages.length > 1 && (
-          <nav className="site-nav">
-            {pages.filter((p) => p !== "home" && p !== "support" && p !== "legal" && p !== "contact").map((p) => <A key={p} to={`/${p}`} go={to} className={p === page ? "on" : undefined}>{LABEL[p]}</A>)}
-            <A to="/support" go={to} className="site-button">{LABEL.support}</A>
-          </nav>
-        )}
-      </header>
+  const built = owns(game, "website");
+  const look = built ? ` designed g${Math.min(2025, game.marketing.designYear)}${game.marketing.designYear >= 2021 ? " pro" : ""}` : " frames";
+  const links = pages.filter((p) => p !== "home" && p !== "support" && p !== "legal" && p !== "contact");
+  const body = (
+    <>
       {page === "home" && <Home game={game} go={to} open={go} />}
       {page === "products" && <Products game={game} go={go} />}
       {page === "pricing" && <Pricing game={game} go={go} />}
@@ -69,13 +58,41 @@ export function CompanySite({ game, path, go }: { game: GameState; path: string;
       {page === "legal" && <Legal game={game} title={LABEL.legal} />}
       {page === "about" && <About game={game} />}
       {page === "support" && <Support game={game} pages={pages} go={to} />}
+    </>
+  );
+  return (
+    <div className={`site${look}`} style={{ "--brand": game.company.color } as CSSProperties}>
+      <header className="site-head">
+        <CompanyMark company={game.company} className="co-mark site-logo" />
+        <div className="site-name">
+          <h1>{game.company.name}</h1>
+          {game.company.tagline && <p className="site-tagline">{game.company.tagline}</p>}
+        </div>
+        {built && pages.length > 1 && (
+          <nav className="site-nav">
+            {links.map((p) => <A key={p} to={`/${p}`} go={to} className={p === page ? "on" : undefined}>{LABEL[p]}</A>)}
+            <A to="/support" go={to} className="site-button">{LABEL.support}</A>
+          </nav>
+        )}
+      </header>
+      {built ? body : (
+        <>
+          <p className="site-marquee"><span>{t("agency.frame.marquee")}</span></p>
+          <div className="site-frameset">
+            <nav className="site-frame-menu">
+              {pages.filter((p) => p !== "legal" && p !== "contact").map((p) => <A key={p} to={p === "home" ? "/" : `/${p}`} go={to} className={p === page ? "on" : undefined}>{LABEL[p]}</A>)}
+            </nav>
+            <div className="site-frame-main">{body}</div>
+          </div>
+        </>
+      )}
       <footer className="site-foot">
         {pages.length > 1 && <nav>{pages.map((p) => <A key={p} to={p === "home" ? "/" : `/${p}`} go={to}>{LABEL[p]}</A>)}</nav>}
         <span>{t("browser-sites-1.co.contact")} <span className="site-link">{salesAddress(game)}</span></span>
         <span>&copy; {yearOf(game.hour)} {game.company.name}</span>
-        {owns(game, "website") && game.marketing.designYear === 2005 && <span className="site-counter">{String(1000 + Math.floor(game.hour / 24) * 3).padStart(6, "0")}</span>}
+        {!built && <><span>{t("agency.frame.best")}</span><span className="site-counter" aria-label={t("agency.frame.visitors")}>{String(1000 + Math.floor(game.hour / 24) * 3).padStart(6, "0")}</span></>}
       </footer>
-      {owns(game, "website") && game.marketing.designYear >= 2025 && <span className="site-chat" aria-hidden><i /><i /><i /></span>}
+      {built && game.marketing.designYear >= 2025 && <span className="site-chat" aria-hidden><i /><i /><i /></span>}
     </div>
   );
 }

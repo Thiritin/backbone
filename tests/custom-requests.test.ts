@@ -30,12 +30,12 @@ describe("custom requests", () => {
   it("per line: a line without custom requests sells its plans only", () => {
     const leads = (on: boolean) => {
       let custom = 0, orders = 0;
-      for (const seed of [1, 2]) {
+      for (const seed of [1, 2, 3]) {
         const s = readyGame(seed);
-        s.marketing = { ...s.marketing, lines: [], customRequests: false, awareness: { ...s.marketing.awareness, smallBiz: 0.3 } };
+        s.marketing = { ...s.marketing, lines: [], customRequests: false, awareness: { ...s.marketing.awareness, smallBiz: 1 } };
         setLine(s, "webHosting", true);
         setCustom(s, "webHosting", on);
-        for (let h = 0; h < 24 * 30; h++) tick(s);
+        for (let h = 0; h < 24 * 60; h++) tick(s);
         for (const r of s.sales.requests.filter((r) => r.customerId === null)) r.sla === "basic" ? orders++ : custom++;
       }
       return { custom, orders };
@@ -43,7 +43,7 @@ describe("custom requests", () => {
     expect(leads(true).custom).toBeGreaterThan(0);
     expect(leads(false)).toMatchObject({ custom: 0 });
     expect(leads(false).orders).toBeGreaterThan(0);
-  }, 90_000);
+  }, 240_000);
 
   it("per line: saves from before the switch take custom requests on every line", () => {
     const s = newGame(1), data = JSON.parse(serialize(s));

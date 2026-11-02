@@ -370,9 +370,11 @@ Customers belong to their city's country and prefer datacenters there (see the l
 
 | Budget \ Skill | Low skill | Medium skill | High skill |
 | --- | --- | --- | --- |
-| Low budget | Private individual 25% | Gamer 15% | Hobby developer 10% |
+| Low budget | Private individual 22% | Gamer 15% | Hobby developer 10% |
 | Medium budget | Sole proprietor 15% | Small business 15% | Agency or startup 8% |
 | High budget | Doctor's or law office 5% | Online shop 5% | Enterprise 2% |
+
+Web developers (medium budget, 3%) take their share from private individuals. They are rare at the start, with a quarter of the usual awareness, and the dev meetups and conferences you sponsor and the fairs that reach agencies are the early way to them.
 
 **Leads.** Leads per month for each profile and city come from organic reach and referrals, which are capped at a share of that city's new customers that grows with your level, plus website and campaign leads on top:
 
@@ -382,8 +384,8 @@ Customers belong to their city's country and prefer datacenters there (see the l
 
 The cap is 2.4% of a city's new customers at level 1, 4% at level 3 and 6.4% at level 6.
 
-- **Organic:** 0.4 × the city's new customers × the profile's mix × its awareness × (1 + 0.5 × (level − 1)) × review multiplier per month (see Organic leads in the game below). Organic leads only come from cities where you have a location.
-- **Referrals:** every customer with happiness 70 or more brings 0.005 leads per month × review multiplier, of their own profile, in your home city.
+- **Organic:** 0.3 × the city's new customers × the profile's mix × its awareness × (1 + 0.5 × (level − 1)) × review multiplier per month (see Organic leads in the game below). Organic leads only come from cities where you have a location.
+- **Referrals:** every customer with happiness 70 or more brings 0.003 leads per month × review multiplier, of their own profile, in your home city.
 - **Website:** 4 a month per location city once you own a website, split by the profile mix, times the site factor below.
 - **Paid:** campaign budget ÷ cost per lead (see [Marketing and reviews](#marketing-and-reviews)).
 
@@ -439,6 +441,7 @@ P(j) = \frac{e^{U_j/\tau}}{\sum_k e^{U_k/\tau}}
 | Sole proprietor | 0.15 | 0.35 | 0.50 | 1.0× | Basic | 1.5× |
 | Small business | 0.30 | 0.40 | 0.30 | 1.0× | Business | 3× |
 | Agency or startup | 0.50 | 0.35 | 0.15 | 1.0× | Business | 10×; startups up to 50× |
+| Web developer | 0.15 | 0.60 | 0.25 | 1.0× | Business | 1.6× |
 | Doctor's or law office | 0.10 | 0.60 | 0.30 | 1.3× | Business | 1.5× |
 | Online shop | 0.30 | 0.55 | 0.15 | 1.3× | Premium | 5× |
 | Enterprise | 0.35 | 0.55 | 0.10 | 1.3× | Premium | 4× |
@@ -541,7 +544,7 @@ How the market above turns into order emails and sales requests in the Support a
 
 One mail server per company, on a server or in a VM. Its address is the host's public address; on a dynamic line that address is always listed (Addresses and internet), so a basement mail server works on a business line only. While the host is down or its address is listed, delivery is impaired: order emails arrive at half the rate (`IMPAIRED_SHARE` 0.5) and invoices issued in that window get their payment day 72 hours later (`MAIL_DELAY_HOURS`, applied to the first payment day and to the day a reminder sets). Without any mail service no order email arrives (`mailShare` 0). The balance model's steady bot books Hosted Exchange for the owner and every employee from the start, signs NameCheep, and pays the wholesale of the company domain and of the domains of web customers who ordered by email, against the €15 a year those customers pay; the shift moves the medians by about 0.1 to 0.2 years.
 
-**Organic leads in the game.** Organic leads scale with the market and with awareness instead of a flat 20: 0.4 × the city's new customers × the profile's mix × its awareness × (1 + 0.5 × (level − 1)) × the review multiplier. With the starting awareness (5% for private individuals and gamers, 2% for the rest) Frankfurt gives about 20 leads a month in 2005, and every point of awareness a campaign buys raises organic leads too. Referrals (0.005 a month per customer with happiness 70 or more) and forum posts (2 × (0.5 + s/100) a month per employee, split over hobby developers, gamers and small businesses) come from the home city. Each forum lead also adds 0.5% of the gap to the awareness of those three profiles every month.
+**Organic leads in the game.** Organic leads scale with the market and with awareness instead of a flat 20: 0.3 × the city's new customers × the profile's mix × its awareness × (1 + 0.5 × (level − 1)) × the review multiplier. With the starting awareness (5% for private individuals and gamers, 2% for the rest, 0.5% for web developers) Frankfurt gives about 20 leads a month in 2005, and every point of awareness a campaign buys raises organic leads too. Referrals (0.003 a month per customer with happiness 70 or more) and forum posts (2 × (0.5 + s/100) a month per employee, split over hobby developers, gamers and small businesses) come from the home city. Each forum lead also adds 0.5% of the gap to the awareness of those three profiles every month.
 
 **Website and campaigns.** Their leads come from the Marketing app's lead batches. 10% of them arrive from cities without a location of yours, spread evenly; those requests arrive greyed out with "Needs a location in London", so you can see the demand you are missing.
 
@@ -570,6 +573,7 @@ The balance model keeps the four archetypes in every segment and leaves the spec
 | Sole proprietor | Web hosting 90%, VPS 10% |
 | Small business | Web hosting 60%, VPS 40% |
 | Agency or startup | Web hosting 30%, VPS 70%, GPU server (GPU demand) |
+| Web developer | Web hosting 85%, VPS 15%, GPU server (GPU demand) |
 | Doctor's or law office | Web hosting 90%, VPS 10% |
 | Online shop | Web hosting 50%, VPS 50%, GPU server (GPU demand) |
 | Enterprise | VPS 50%, dedicated 50%, GPU server (GPU demand) |
@@ -697,6 +701,7 @@ An outage goes unnoticed for the tolerance, counted on the same clock from the h
 | Sole proprietor | 1.2% | 2 | 0.6 | 1 business day | 3 business hours |
 | Small business | 1.0% | 3 | 0.6 | 1 business day | 2 business hours |
 | Agency or startup | 1.5% | 4 | 0.6 | 1 business day | 2 business hours |
+| Web developer | 0.8% | 4 | 0.6 | 1 business day | 2 business hours |
 | Doctor's or law office | 0.6% | 8 | 1.5 | 4 business hours | 1 business hour |
 | Online shop | 0.8% | 10 | 1.5 | 4 hours, around the clock | none |
 | Enterprise | 0.4% | 15 | 1.5 | 4 hours, around the clock | none |
@@ -1091,6 +1096,7 @@ Prices are for 2005 and rise 8% every January. With a 10% chance each year, Pear
 | Staff | Staff | €20 | €5 per employee | Employee management skill |
 | Marketing | Marketing | €20 | | Marketing campaigns skill |
 | Market | Market | €15 | | Market research skill |
+| DocuWhere | DocuWhere (archive of the paper post) | €5 | | Start |
 | Searchlight | Upgrade: global search on Ctrl+K and Cmd+K | €2 | | Start |
 | Widgets | Upgrade: one desktop widget each | €1 (calendar, open tickets, cash, customers), €2 (monthly revenue, level) | | Start |
 | AI bots | ChadGPT Support €50, Clipsy Reminders €100, per bot | ChadGPT: every reply in tokens, see [ChadGPT usage](#chadgpt-usage) | | Automation skill |
@@ -1722,7 +1728,7 @@ A reseller buys a block of accounts on a DirectAdmen or cPanic host and sells we
 
 The block books its full compute and disk from the day it starts. The reseller's own customers arrive linearly over 6 months up to a fill of 70%, and a cheaper block than the market price fills faster (down to 3 months at half the price per account). Resource use follows the fill, so the host carries less than it has sold.
 
-Abuse reports arrive at the rate of the filled accounts, and the reseller handles half of them; the other half come to the player as abuse tickets with the reseller as the customer. Each month there is a 2% chance that the block holds a shady account, which draws the abuse and legal follow-ups of a shady customer until the player suspends the reseller. Reseller leads are 3% of web hosting leads, and 25% of an agency's, from 2008, once a DirectAdmen or cPanic host exists.
+Abuse reports arrive at the rate of the filled accounts, and the reseller handles half of them; the other half come to the player as abuse tickets with the reseller as the customer. Each month there is a 2% chance that the block holds a shady account, which draws the abuse and legal follow-ups of a shady customer until the player suspends the reseller. Reseller leads are 3% of web hosting leads, 25% of an agency's and 60% of a web developer's, from 2008, once a DirectAdmen or cPanic host exists.
 
 ## Platforms and licenses
 
@@ -2341,6 +2347,7 @@ In 2005 a low-budget lead from search ads costs about €9, so a new private cus
 | Gaming communities | Gamers | €8 per lead | None |
 | Trade fair | Business profiles | See Trade fairs below | Company level 3 to 5 |
 | Partner program | Sole proprietors, small businesses | Commission of the first 2 months' revenue | Each agency customer brings 0.5 leads a month |
+| Flyers | Private, sole proprietors, small businesses | €22.50 / €17.50 / €15 per lead by run size in 2026 (see Flyers below) | Your own location in the city |
 
 Spending more in one channel and city gets dearer: the cost per lead is multiplied by 1 + monthly spend ÷ €5,000.
 
@@ -2369,16 +2376,18 @@ Spending more in one channel and city gets dearer: the cost per lead is multipli
 
 Platform fees are flat: the free listing costs nothing, ProvenExpat €49 and TrustPylon €199 a month. The free listing's +2 now comes from the HOSTtoast listing (competitors.md, HOSTtoast), whose T adds to the platform's, capped at 10.
 
+**Flyers.** The print shop "Flyerlarm" (flyerlarm.de) sells runs of 1,000, 5,000 and 10,000 flyers at 0.09, 0.07 and 0.06 euros each in 2026, scaled back with m = 0.6 like search ads, and books the price at the order (ledger line "Flyers"). A run is delivered after 3 days and handed out evenly over the next 28 days in one city where you have a location, so a run is done 31 days after the order. Every flyer handed out brings 0.004 leads, split over private, sole proprietor and small business customers by their mix, with a conversion multiplier of 0.8. A lead therefore costs the flyer price ÷ 0.004: €22.50, €17.50 and €15 for the three runs in 2026, and 0.6 times that in 2005. Flyers need neither a website nor research, the Marketing app lists the running runs and the print shop keeps the order history. Decision: flyers reach only the three consumer and small business profiles because they read a flyer in the letterbox.
+
 **Owned channels.** Each step is a one-off setup plus monthly upkeep, flat over the years:
 
 | Step | Setup | Upkeep per month | Needs |
 | --- | --- | --- | --- |
 | Email | Free | Free | Always on |
-| Web design | €400 | €15 | None |
+| Web design | €400 in 2005 (the agency price below) | €15 | None |
 | Goggle Ads | €50 | None | Web design |
 | AI ads | €1,500 | None | Web design, from 2023 |
 
-Web design is set up on the website card in the Marketing app's Channels once the site is launched. The Marketing app waits for 450 know-how of research (Marketing basics, Employee management, Marketing campaigns), so a first-year company could not otherwise buy them before December.
+Web design is ordered at the design agency Young von Mutt (youngvonmutt.de, Marketing category of the site index), which the website card in the Marketing app opens, once the site is launched. The Marketing app waits for 450 know-how of research (Marketing basics, Employee management, Marketing campaigns), so a first-year company could not otherwise buy them before December.
 
 The basic website every company starts with is free and brings no leads of its own. The web design brings 4 leads a month per location city, split by the profile mix. Every lead only writes when its product is listed on the website.
 
@@ -2390,7 +2399,7 @@ The basic website every company starts with is free and brings no leads of its o
 | --- | --- | --- | --- | --- |
 | 2005 | 100% | 80% | 60% | 40% |
 
-A redesign costs the web design setup (€400, ledger line "Website redesign") and sets the design to the current generation. Anchor: a small-business site cost $2,000 to $7,500 in 2005 to 2009 (WebpageFX, 2013); the game keeps all channel prices far below real agency prices on purpose, so the age penalty is the lever and not the price. The balance bot redesigns when it is two generations behind with more than €5,000 cash and keeps its site on the rented host.
+**Design agency.** The web design and every redesign cost designPrice(year, level) = base × (1 + 0.5 × (level − 1)), where the base is €400 in 2005, €650 in 2009, €1,000 in 2013, €1,500 in 2017, €2,200 in 2021 and €3,500 in 2025, interpolated linearly per year and flat from 2025, and level is the company level. A level 1 company pays €400 in 2005 and €3,500 in 2025; a level 6 company pays €12,250 in 2025. The first web design is live at once. A redesign can be ordered at any time, even for a current design, books the price under marketing (ledger line "Website redesign") and is delivered 14 days later; the old design stays live until then, and only one redesign can be on order at a time. Delivery sets the design to the generation of the order date and the Marketing app notes it. The company level stands in for company size because no headcount metric exists. Anchor: a small-business site cost $2,000 to $7,500 in 2005 to 2009 (WebpageFX, 2013). The balance bot redesigns when it is two generations behind with more than the price plus €5,000 in cash, pays the same price, takes the design as live at once and keeps its site on the rented host.
 
 **Trade fairs.** Costs are 2026 euros, scaled back with m = 0.6 like campaigns. Each fair needs one attendee of any role, who is away for the fair's days.
 

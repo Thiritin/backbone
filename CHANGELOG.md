@@ -6,8 +6,12 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - Software now installs on any virtual machine with the disk for it, but a VM too small for its software and sites sits at 100% CPU and RAM, its web console stops answering and its sites slow down until you resize it.
 - CPU and RAM readouts now move a little from hour to hour, and every software website lists the system requirements of the current year on its download page.
+- Flyerlarm, a print shop in the browser, sells flyer runs that are handed out in one of your cities over four weeks and bring in new leads; the Marketing app lists every running run and takes you to the shop to order more.
+- Web developers now write in as a new kind of customer: they are rare at first, mostly ask for web hosting, and often want a reseller block, and your sponsored developer events and agency fairs reach them.
+- DocuWhere in the Pear Store files every letter from the post in an archive with search, document types and a filter per type.
 - You now set how much CPU, memory and disk each customer's service may use, on the customer's page and in the hypervisor consoles, and a customer uses what they bought: give them more and their peaks may go above it, give them less and their own service slows down while your host stays fine.
 - A customer who writes in about a slow server can be told to upgrade: if their own limit was too tight, they get a quote for more, and if your host was the problem, they take it badly.
+- Supplier invoices in Preview are addressed to the company address you registered.
 - Customers no longer buy SSL certificates on their own until your shop sells them; before that, the few who want one write in and you quote an SSL upgrade to their web hosting, and offices, shops and enterprises ask far more often than small sites.
 - Every SSL certificate you sell is now bought from the certificate authority VeriSigh at close to its market price, so certificates earn a small margin.
 - The license page of cPanic, Pleskit and DirectAdmen now asks for the key the way each product does, and entering a key or starting the trial opens the panel at once.
@@ -77,6 +81,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Ticket replies, retention offers and ticket actions are now built so the coming mail client can show them too.
 - Every company now holds a real mailbox on its mail service, with its own password and a welcome message from the provider.
 - Your registrar's login now has a DNS page for your company domain, where you add, edit and delete records such as MX and TXT, and each change reaches the world once the TTL of the record it replaces has run out.
+- Your first website is built by hand and looks like a 2005 home page, and every design after that is ordered from the web design agency Young von Mutt, whose price grows with the year and the size of your company and which delivers the new design after two weeks.
 - Every abuse notice links to the reported address, and the Browser shows whether the file, mailer or page is really there before you decide.
 - Hosting panels, hypervisors and backup servers now take realistic CPU, RAM and disk, and panels and hypervisors need more RAM and disk each year.
 - Your own mail server now needs disk for every company mailbox it holds, while the webmail and mail admin tools take only a sliver of a server.

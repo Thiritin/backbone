@@ -17,6 +17,8 @@ export const FIRST_LEAD_YEAR = 2008;
 export const LEAD_SHARE = 0.03;
 // Agencies host their clients' sites, so a quarter of their web hosting leads ask for a reseller block.
 export const AGENCY_LEAD_SHARE = 0.25;
+// Web developers build sites for clients and prefer a reseller block even more.
+export const WEBDEV_LEAD_SHARE = 0.6;
 
 const RESELLER_PANELS = ["directadmen", "cpanic"];
 
