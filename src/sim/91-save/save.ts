@@ -184,6 +184,7 @@ export function deserialize(raw: string): GameState {
   fillMail(s, data.mail, !!data.company?.zone);
   fillDesk(s, data.desk !== undefined);
   s.webmail = { ...base.webmail, ...data.webmail };
+  s.webmail.installs = Object.fromEntries(Object.entries(s.webmail.installs).map(([id, cfg]) => [id, { ...cfg, conf: cfg.conf ?? {} }]));
   return s;
 }
 

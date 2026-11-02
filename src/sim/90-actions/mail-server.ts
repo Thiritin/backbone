@@ -13,13 +13,13 @@ function save(s: GameState, c: Cluster, cfg: WebmailInstall, setupPending: boole
   s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, backend, setupPending } : x));
 }
 
-// A fresh front end takes the mail server on its machine; SquirrelMeal opens its setup menu first.
+// A fresh front end takes the mail server on its machine; SquirrelMeal waits for conf.pl to save its config.php.
 export function startWebmail(s: GameState, clusterId: string): void {
   const c = s.clusters.find((x) => x.id === clusterId);
   if (c) save(s, c, webmailDefaults(s, c), frontOf(c) === "squirrelmeal");
 }
 
-// Saves the setup menu of a front end; the IMAP server it names becomes its backend.
+// Saves a front end's configuration, as conf.pl does; the IMAP server it names becomes its backend.
 export function configureWebmail(s: GameState, clusterId: string, cfg: Partial<WebmailInstall>): ActionResult {
   const c = s.clusters.find((x) => x.id === clusterId);
   if (!c || c.kind !== "mailweb") return fail("error.unknownCluster");

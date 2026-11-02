@@ -1,8 +1,4 @@
-/* SquirrelMeal 1.4: the default theme in plain HTML tables; the setup menu as the terminal tool. */
-.smc { min-height: 100%; padding: 12px 16px; background: #000000; color: #c0c0c0; font: 13px/1.35 "Courier New", Courier, monospace; }
-.smc pre { margin: 0; white-space: pre-wrap; font: inherit; }
-.smc label { display: flex; white-space: pre; }
-.smc input { flex: 1; border: 0; outline: 0; background: transparent; color: #ffffff; font: inherit; }
+/* SquirrelMeal 1.4: the default theme in plain HTML tables. */
 .smw { min-height: 100%; background: #ffffff; color: #000000; font: 13px/1.4 Verdana, Arial, Helvetica, sans-serif; }
 .smw a { color: #0000cc; }
 .smw-logo { font: bold 34px Georgia, "Times New Roman", serif; color: #335577; }
