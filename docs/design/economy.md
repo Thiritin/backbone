@@ -164,7 +164,7 @@ Backup and archive servers use HDDs whatever the generation's disk type. Archive
 | Large HDD (backup) | 500 GB | 1 TB | 3 TB | 6 TB | 10 TB | 16 TB | 22 TB |
 | Densest HDD (archive) | 750 GB | 2 TB | 4 TB | 8 TB | 14 TB | 20 TB | 28 TB |
 
-- **Power draw.** A server draws 40% of its full power when idle, rising in a straight line with CPU load. The game applies the two ends: a server with no running workload draws the idle 40%, one with a running workload draws its full power, in the power bill and in the rack's fuse limit.
+- **Power draw.** A server draws 40% of its full power when idle, rising in a straight line with CPU load. A server with no running workload draws its idle power; one with a running workload draws from idle to full power by its CPU utilisation (the vCPUs its OS, control plane and workloads use over its cores, at most 1), in the power bill, the rack's fuse limit and the IPMI power reading. A server under burn-in draws full power.
 - **Port speed.** Server ports run at 1G until 2011, then 10G, 25G from 2017 and 100G from 2023.
 - **Ports.** 1G ports are copper (RJ45); 10G and faster ports are SFP cages.
 - **Shop window.** A generation stays in the shop until the generation two steps newer arrives, so G1 is sold until the end of 2010 and G2 until the end of 2013. G6 and G7 stay in the shop.
@@ -1205,6 +1205,8 @@ A server has 4 fans; a switch or router 2 fans, 1 or 2 power supplies and a boar
 ```
 
 P is the kW the location's racks draw and m the room's mass: its positions in a hall, 4 in the basement. A hall's cooling C is 1.2 × the kW limits of its racks, so it never falls short while it works, and it sheds s = 0.02 kW per position and degree through the building. The basement has no cooling unit: it sheds C = 3 kW at its normal temperature and s = 0.2 kW more per degree, so a basement drawing 4.5 kW on its extra circuit settles 7.5 °C warmer. A hall's cooling fails 0.3 times a year per location for a log-normal duration (median 40 minutes, σ 1, 5 minutes to 8 hours); C is then 0. A full 3.3 kW position climbs 1.6 °C a minute and reaches 45 °C after about 14 minutes, a 0.3 kW position 0.15 °C a minute.
+
+**CPU temperature and fans.** A server's CPU runs at inlet + 20 °C × utilisation × (1 + 0.5 per failed fan); it equals the inlet when the server is off. Its fans spin at 30% of their 12,500 rpm maximum up to 50 °C CPU and rise in a straight line to full speed at 80 °C; a failed fan reads 0 rpm. The IPMI sensor page shows the CPU temperature (warning from 85 °C, critical from 95 °C), each fan's rpm (warning below 2,000) and the fan speed in percent. The CPU temperature has no effect on performance or wear yet.
 
 | Inlet | Effect |
 | --- | --- |

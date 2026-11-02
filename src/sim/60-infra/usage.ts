@@ -15,7 +15,7 @@ import { serviceMbps } from "./network";
 import { interestAt, modById, titleById } from "../10-catalog/games";
 import { fillOf } from "../30-customers/resellers";
 import { machineScreen } from "./oob";
-import { installedRamGb, portPeers, raidUsable, working } from "./status";
+import { cpuLoad, installedRamGb, portPeers, raidUsable, working } from "./status";
 import { THERMAL, throttled } from "./thermal";
 
 // economy.md: memory stays mostly resident, disks fill from 30% of booked at signup at the customer's growth rate up to the booked limit.
@@ -119,8 +119,17 @@ export interface NodeUsage { used: Resources; physical: Resources; perf: number 
 
 export function nodeUsage(s: GameState, deviceId: string, hour: number = s.hour): NodeUsage {
   const d = s.devices.find((x) => x.id === deviceId), v = d && modelById(d.model).server;
-  const used: Resources = { vcpu: 0, ramGb: 0, diskGb: 0 };
-  if (!d || !v) return { used, physical: { ...used }, perf: 1 };
+  if (!d || !v) { const used = { vcpu: 0, ramGb: 0, diskGb: 0 }; return { used, physical: { ...used }, perf: 1 }; }
+  const { used, physical } = nodeLoad(s, d, hour);
+  const cpu = used.vcpu > physical.vcpu ? physical.vcpu / used.vcpu : 1;
+  const disk = used.diskGb > physical.diskGb ? 0.5 : 1;
+  const heat = throttled(s, d) ? THERMAL.throttlePerf : 1;
+  return { used, physical, perf: Math.min(cpu, disk) * (d.rebuild ? REBUILD_PERF[d.rebuildRate] : 1) * heat };
+}
+
+// What a node uses and physically has, before performance; heat reads this through power draw, so it cannot ask for perf.
+function nodeLoad(s: GameState, d: Device, hour: number): { used: Resources; physical: Resources } {
+  const deviceId = d.id, used: Resources = { vcpu: 0, ramGb: 0, diskGb: 0 };
   for (const cp of [controlPlanesOn(s, deviceId), osUse(s, deviceId, nodeVcpu(s, d), installedRamGb(d), hour)]) {
     used.vcpu += cp.vcpu; used.ramGb += cp.ramGb; used.diskGb += cp.diskGb;
   }
@@ -129,12 +138,26 @@ export function nodeUsage(s: GameState, deviceId: string, hour: number = s.hour)
     const u = workloadUse(s, w, hour);
     used.vcpu += u.vcpu; used.ramGb += u.ramGb; used.diskGb += u.diskGb;
   }
-  const physical = { vcpu: nodeVcpu(s, d), ramGb: installedRamGb(d), diskGb: raidUsable(d) };
-  const cpu = used.vcpu > physical.vcpu ? physical.vcpu / used.vcpu : 1;
-  const disk = used.diskGb > physical.diskGb ? 0.5 : 1;
-  const heat = throttled(s, d) ? THERMAL.throttlePerf : 1;
-  return { used, physical, perf: Math.min(cpu, disk) * (d.rebuild ? REBUILD_PERF[d.rebuildRate] : 1) * heat };
+  return { used, physical: { vcpu: nodeVcpu(s, d), ramGb: installedRamGb(d), diskGb: raidUsable(d) } };
 }
+
+// A server's CPU utilisation from 0 to 1: its cluster share plus any whole-server rental on it.
+// ponytail: cached per hour and workloads array, so a workload edited in place changes the draw from the next hour.
+const utilCache = new WeakMap<GameState, { hour: number; workloads: Workload[]; by: Map<string, number> }>();
+export function cpuUtil(s: GameState, d: Device): number {
+  let c = utilCache.get(s);
+  if (!c || c.hour !== s.hour || c.workloads !== s.workloads) utilCache.set(s, (c = { hour: s.hour, workloads: s.workloads, by: new Map() }));
+  let u = c.by.get(d.id);
+  if (u === undefined) c.by.set(d.id, (u = computeCpuUtil(s, d)));
+  return u;
+}
+function computeCpuUtil(s: GameState, d: Device): number {
+  if (!modelById(d.model).server) return 1;
+  const u = nodeLoad(s, d, s.hour);
+  const v = s.workloads.reduce((n, w) => (w.deviceId === d.id && !w.clusterId && !w.stopped ? n + workloadUse(s, w).vcpu : n), u.used.vcpu);
+  return u.physical.vcpu ? Math.min(1, v / u.physical.vcpu) : 1;
+}
+cpuLoad.of = cpuUtil;
 
 // A working cluster node whose RAM in use exceeds its installed RAM freezes: every workload on it is down until it fits again.
 export const ramOver = (u: NodeUsage) => u.used.ramGb > u.physical.ramGb + 1e-9;

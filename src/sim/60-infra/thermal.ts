@@ -8,7 +8,7 @@ import type { SimEvent } from "../88-tick/tick";
 import { heatIncident } from "./incidents";
 import { losePower, pushLog } from "./power";
 import { inletTemperature } from "./sensors";
-import { bootHours, locationOf, rackPower } from "./status";
+import { bootHours, locationOf, rackPower, readOnlySweep } from "./status";
 
 export const THERMAL = {
   throttleC: 35, shutdownC: 45, resumeC: 30,
@@ -49,7 +49,7 @@ function step(s: GameState, loc: Location, at: number, events: SimEvent[]): bool
   const out = (s.ops.cooling[loc.id] ?? 0) > at / 60;
   const waiting = s.devices.some((d) => d.overheatedAt !== undefined && locationOf(s, d)?.id === loc.id);
   if (loc.dc && !heat && !out && !waiting) return false;
-  const racks = s.racks.filter((r) => r.locationId === loc.id).map((r) => rackPower(s, r.id));
+  const racks = readOnlySweep(s, () => s.racks.filter((r) => r.locationId === loc.id).map((r) => rackPower(s, r.id)));
   const kw = racks.reduce((n, p) => n + p.watts, 0) / 1000;
   const cooling = !loc.dc ? BASEMENT.kw : out ? 0 : (THERMAL.headroom * racks.reduce((n, p) => n + p.limitWatts, 0)) / 1000;
   const mass = loc.dc ? Math.max(1, loc.positions) : THERMAL.basementMass;
