@@ -1,10 +1,12 @@
-// Shop admin > Orders: accept, cancel, mark as fraud and delete a storefront order (shop-books-split.md 5).
+// Shop admin > Orders and a service's module commands: accept, cancel, mark as fraud and delete a storefront order, change a
+// service's password (shop-books-split.md 5).
 import type { GameState } from "../50-state";
 import { isFinal } from "../40-support/tickets";
 import { createError, createOrder } from "../30-market/orders";
 import { cancelShopOrder, loseRequest } from "../30-market/sales";
 import { editOrder, type ShopOrder } from "../80-business/shop-orders";
 import type { ActionResult } from "./hardware";
+import { seededPassword } from "../42-mail/new";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 
@@ -66,4 +68,13 @@ export function deleteOrder(s: GameState, id: string): ActionResult {
   if (o.status === "pending") cancelOrder(s, id);
   s.shop = { ...s.shop, orders: s.shop.orders.filter((x) => x.id !== id) };
   return { ok: true };
+}
+
+// Change Password: a new login password for a running service.
+export function changeServicePassword(s: GameState, id: string): ActionResult {
+  const v = s.services.find((x) => x.id === id && x.endedAt === null);
+  if (!v) return fail("error.unknownService");
+  const password = seededPassword(s.seed, Number(v.id.slice(3)) || 0, s.hour, s.minute);
+  s.services = s.services.map((x) => (x.id === id ? { ...x, password } : x));
+  return { ok: true, id };
 }

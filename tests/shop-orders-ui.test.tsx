@@ -18,9 +18,25 @@ describe("shop admin orders", () => {
       const Admin = skinOf(id).Admin;
       const html = (screen: Record<string, string>) => renderToString(<Admin game={s} variant={id} route={parsePortal(id, portalPath(id, "admin", {}, screen))!} open={() => {}} version="" major="" browse={() => {}} />);
       expect(html({ s: "orders" })).toContain(o.id.slice(3));
-      expect(html({ s: "order", id: o.id })).toContain("Accept");
+      expect(html({ s: "order", id: o.id })).toMatch(/Accept|Activate|Approve/);
       shown++;
     }
     expect(shown).toBeGreaterThan(4);
+  });
+
+  it("show a service with its access data and the commands each shop system names", () => {
+    const s = shopGame("whmCache", 2016), v = s.services.find((x) => x.endedAt === null && x.product === "webHosting")!;
+    const page = (id: "whmCache" | "modemBill") => {
+      s.shop = { ...s.shop, variant: id };
+      const Admin = skinOf(id).Admin;
+      return renderToString(<Admin game={s} variant={id} route={parsePortal(id, portalPath(id, "admin", {}, { s: "service", id: v.id }))!} open={() => {}} version="" major="" browse={() => {}} />);
+    };
+    const whm = page("whmCache");
+    expect(whm).toContain("Change Password");
+    expect(whm).toContain("Terminate");
+    expect(whm).toContain(v.username ?? "");
+    const modem = page("modemBill");
+    expect(modem).toContain("Cancel");
+    expect(modem).not.toContain("Change Password");
   });
 });

@@ -1,6 +1,6 @@
 # Plan: shop and books split
 
-Lane id: `shop-books-split`. Status: decisions settled in section 10; milestones 1 to 4, 6, 7 and 8 built.
+Lane id: `shop-books-split`. Status: decisions settled in section 10; milestones 1 to 4 and 6 to 9 built.
 
 The bookkeeping program and the shop system both write quotes, both hold a product catalog and both reach invoices. Players see two ways to do the same thing, and with a shop installed and email orders off, quote requests still arrive by email. This plan gives each program one job, makes the shop automate the customer side the way WHMCS does, and gives every program the same setup flow.
 
@@ -60,7 +60,7 @@ Orders become their own entity in the shop and services get a detail page, follo
 - Accept runs the module command Create for every item in the order, then sets the order active. A product's `setupMode` decides when this runs on its own: on first payment, on accept, or never (by hand).
 - Shop admin > Services (WHMCS: Products/Services, per client): detail page with product, cycle, next due date, server, package, username, status `pending | active | suspended | terminated | cancelled`, and module buttons Create, Suspend, Unsuspend, Terminate, Change package, Change password. Each button calls the existing actions in `src/sim/90-actions/orders.ts`, `holds.ts` and `packages.ts`; a failed command shows the error from `stepError`.
 - Button labels and status words follow the active shop variant (section 8 table). The sim stores the English ids above.
-- Without the provisioning module for a service's panel, Create, Suspend and Terminate are disabled and the player provisions on the panel by hand, then sets the service active.
+- Without the provisioning module for a service's panel, Create, Suspend and Terminate are disabled and the player provisions on the panel by hand, then sets the service active. Built: the service page has no Create, since a service exists only once created; Accept on the order runs Create. Every module command is disabled without the module, and Terminate is the termination with notice.
 
 ## 6. Server groups and placement
 

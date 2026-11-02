@@ -1,10 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { PREFERENCE } from "../src/sim/10-catalog/payments";
 import { orderLead } from "../src/sim/30-market/orders";
-import { orderFor } from "../src/sim/80-business/shop-orders";
+import { moduleRuns, orderFor, serviceStatus } from "../src/sim/80-business/shop-orders";
+import { suspendService, terminateService } from "../src/sim/90-actions/holds";
 import { createProduct, createProductGroup, updateProduct } from "../src/sim/90-actions/portal";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
-import { acceptOrder, cancelOrder, deleteOrder, fraudOrder } from "../src/sim/90-actions/shop-orders";
+import { acceptOrder, cancelOrder, changeServicePassword, deleteOrder, fraudOrder } from "../src/sim/90-actions/shop-orders";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { automate, installWithKey, readyGame } from "./fixtures";
 
@@ -74,5 +75,23 @@ describe("shop orders", () => {
     const old = JSON.parse(serialize(s));
     delete old.shop.orders;
     expect(deserialize(JSON.stringify(old)).shop.orders).toEqual([]);
+  });
+
+  it("give services a status, the module check and a new password on Change Password", () => {
+    const s = automate(withShop(46));
+    const r = orderLead(s, "private", "Frankfurt", [], web, false), id = orderFor(s, r.id)!.items[0].serviceId!;
+    const v = () => s.services.find((x) => x.id === id)!;
+    expect(serviceStatus(s, v())).toBe("active");
+    expect(moduleRuns(s, v())).toBe(true);
+    const before = v().password;
+    expect(changeServicePassword(s, id).ok).toBe(true);
+    expect(v().password).toMatch(/^[a-z0-9]{8}$/);
+    expect(v().password).not.toBe(before);
+    suspendService(s, id);
+    expect(serviceStatus(s, v())).toBe("suspended");
+    terminateService(s, id, "notice", null);
+    expect(serviceStatus(s, v())).toBe("cancelled");
+    s.shop = { ...s.shop, modules: {}, variant: "modemBill" };
+    expect(moduleRuns(s, v())).toBe(false);
   });
 });

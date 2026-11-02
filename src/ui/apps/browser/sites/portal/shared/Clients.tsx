@@ -7,6 +7,7 @@ import { formatDay } from "../../../../billing/format";
 import { PRODUCT } from "../../../../support/labels";
 import { CustomerView } from "../../../../customers/open";
 import type { ScreenProps } from "./nav";
+import { servicesLabel } from "./terms";
 
 export function Clients({ game, go }: ScreenProps) {
   const clients = game.customers.filter((c) => c.churnedAt === null);
@@ -37,6 +38,7 @@ export function ClientSummary({ game, go, id, tab, toClient }: ScreenProps & { i
     <div className="pt-screen">
       <CustomerView game={game} id={c.id} tab={tab} onBack={() => go({ name: "clients" })} />
       {toClient && <button className="btn" onClick={() => toClient(c.id)}>{t("shop-admin.loginAsClient")}</button>}
+      <h3>{servicesLabel(game.shop.variant)}</h3>
       <table className="pt-table">
         <thead><tr><th>{t("shop-admin.product")}</th><th>{t("shop-admin.price")}</th><th /></tr></thead>
         <tbody>
@@ -44,7 +46,7 @@ export function ClientSummary({ game, go, id, tab, toClient }: ScreenProps & { i
             const held = !!holdReason(game, v);
             return (
               <tr key={v.id}>
-                <td>{v.label || PRODUCT[v.product]}</td>
+                <td><a href="#" onClick={(e) => { e.preventDefault(); go({ name: "service", id: v.id }); }}>{v.label || PRODUCT[v.product]}</a></td>
                 <td className="num">{euroCents(v.price)}</td>
                 <td>
                   <button className="btn" onClick={() => act(held ? unsuspendService : suspendService, v.id)}>{t(held ? "shop-admin.unsuspend" : "shop-admin.suspend")}</button>
