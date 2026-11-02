@@ -74,7 +74,7 @@ export function addLocation(s: GameState, dcId: string, space: "share" | "cage" 
   const positions = space === "share" ? 1 : size;
   const loc = { id: newId(s, "loc"), dc: dc.id, city: dc.city, az: nextAz(s.locations, dc.city), name: dc.name, space, positions, readyAt: s.hour + 24 * LEAD_DAYS[space], extraCircuit: false };
   s.locations.push(loc);
-  s.contracts.push({ id: newId(s, "contract"), provider: dc.provider, dc: dc.id, locationId: loc.id, space, positions: size, since: s.hour, monthly: spacePrice(dc, space, size), endsAt: null, ...(order && { billing: { company: order.company, name: order.name, address: order.address } }) });
+  s.contracts.push({ id: newId(s, "contract"), provider: dc.provider, dc: dc.id, locationId: loc.id, space, positions: size, since: s.hour, monthly: spacePrice(dc, space, size), endsAt: null, ...(order && { billing: { company: order.company, name: order.name, address: { street: order.address.street, zip: order.address.zip, city: order.address.city } } }) });
   if (order?.payment.kind === "debit") s.bank = { ...s.bank!, mandates: [...s.bank!.mandates.filter((x) => x !== dc.name), dc.name] };
   const name = nextName(`${prefix(s, loc.id)}-gw`, s.devices.map((d) => d.name));
   s.devices.push({ id: newId(s, "dev"), model: "handoff", brand: SWITCH_BRAND, rackId: null, slot: 0, panel: loc.id, name, bond: "none", groups: [], price: 0, boughtAt: s.hour, lease: null, store: null, transitTo: null, arriveAt: null, ...deviceDefaults("handoff", s.hour) });

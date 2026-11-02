@@ -62,8 +62,9 @@ const STEPS = ["checkout.billing", "checkout.payment", "checkout.review"];
 const STEP_OF: Record<string, number> = { "error.orderName": 0, "error.orderAddress": 0, "error.cardDeclined": 1, "error.noCard": 1, "error.cardLimit": 1 };
 
 // A web shop's order form in three steps and its confirmation; the site puts it in its own page and passes its button class.
-export function Checkout({ game, btn, lines, total, methods, place, confirm }: {
-  game: GameState; btn: string; lines: CheckoutLine[]; total: string;
+// The review lists the cart lines, or facts for an order of one thing; onBack leaves the first step.
+export function Checkout({ game, btn, lines, total, facts, methods, place, confirm, onBack }: {
+  game: GameState; btn: string; lines?: CheckoutLine[]; total?: string; facts?: [string, string][]; onBack?: () => void;
   methods: { kind: PaymentKind; label: string }[];
   place: (d: CheckoutDetails) => ActionResult;
   confirm: (order: string, kind: PaymentKind) => Confirmation;
@@ -107,7 +108,7 @@ export function Checkout({ game, btn, lines, total, methods, place, confirm }: {
       <td><input id={`co-${id}`} value={value} required {...noAutofill} {...extra} onChange={(e) => set(e.target.value)} /></td>
     </tr>
   );
-  const back = step > 0 && <button type="button" className={btn} onClick={() => { setError(null); setStep(step - 1); }}>{t("checkout.back")}</button>;
+  const back = (step > 0 || onBack) && <button type="button" className={btn} onClick={() => { setError(null); if (step > 0) setStep(step - 1); else onBack?.(); }}>{t("checkout.back")}</button>;
   const alert = error && <p className="co-error" role="alert">{error}</p>;
   const method = methods.find((m) => m.kind === kind)?.label ?? "";
 
@@ -128,7 +129,7 @@ export function Checkout({ game, btn, lines, total, methods, place, confirm }: {
             {input("email", t("checkout.email"), email, setEmail, { type: "email" })}
           </tbody></table>
           {alert}
-          <p className="co-buttons"><button type="submit" className={btn}>{t("checkout.continue")}</button></p>
+          <p className="co-buttons">{back}<button type="submit" className={btn}>{t("checkout.continue")}</button></p>
         </form>
       )}
       {step === 1 && (
@@ -152,11 +153,12 @@ export function Checkout({ game, btn, lines, total, methods, place, confirm }: {
         </form>
       )}
       {step === 2 && <>
-        <table className="co-table">
+        {facts && <table className="co-table"><tbody>{facts.map(([k, v]) => <tr key={k}><td>{k}</td><td>{v}</td></tr>)}</tbody></table>}
+        {lines && <table className="co-table">
           <thead><tr><th>{t("checkout.item")}</th><th className="num">{t("checkout.qty")}</th><th className="num">{t("checkout.price")}</th></tr></thead>
           <tbody>{lines.map((l, i) => <tr key={i}><td>{l.label}</td><td className="num">{l.qty}</td><td className="num">{l.price}</td></tr>)}</tbody>
           <tfoot><tr><th>{t("checkout.total")}</th><td /><td className="num"><b>{total}</b></td></tr></tfoot>
-        </table>
+        </table>}
         <div className="co-summary">
           <section>
             <h3>{t("checkout.billingAddress")}</h3>

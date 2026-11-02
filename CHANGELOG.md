@@ -9,6 +9,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Buying licences on vendor websites now goes through a checkout with billing details, payment and a review, and a card payment needs the card details from the online bank.
 - Colocation provider sites now keep their own layout, including their facility lists and front page banner, after the Shop app has been opened.
 - Colocation provider sites now keep their own layout after the Shop app has been opened.
+- Ordering colocation space now asks for the billing address and a payment method by direct debit or invoice, and the provider site then has a customer portal with your contracts, invoices and direct debit.
 - Support desks now keep the numbers for their reports: first response times, how many tickets met the response time each customer expects, and tickets per agent, kind and month.
 - Every colocation provider now has its own website in the browser, listed on Yahoy, where you compare its data centers and prices, join a waitlist and order space, and the Visit site button in Locations opens that order form with your pick.
 - Support desks can merge duplicate tickets, mark spam, keep internal notes, set priorities, sort tickets into departments with their own agents and routing rules, keep tickets for yourself that staff leave alone, and take requests through a customer portal with a status lookup.

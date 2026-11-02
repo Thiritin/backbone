@@ -2,14 +2,16 @@ import { useState, type ReactNode } from "react";
 import { t } from "../../../../../i18n/en";
 import { euro } from "../../../../../sim/00-core/money";
 import type { Look } from "../../../../../sim/10-catalog/sites";
-import { DATACENTERS, LEAD_DAYS, NOTICE_MONTHS, SPACE_SIZES, spacePrice, type Datacenter, type Provider } from "../../../../../sim/20-world/datacenters";
-import { ownAddress } from "../../../../../sim/30-customers/addresses";
+import { DATACENTERS, datacenterById, LEAD_DAYS, NOTICE_MONTHS, SPACE_SIZES, spacePrice, type Datacenter, type Provider } from "../../../../../sim/20-world/datacenters";
 import type { GameState, SpaceKind } from "../../../../../sim/50-state";
 import { fits } from "../../../../../sim/60-infra/status";
-import { addLocation, joinWaitlist } from "../../../../../sim/90-actions/hardware";
+import { addLocation, joinWaitlist, type ActionResult } from "../../../../../sim/90-actions/hardware";
 import { formatDay } from "../../../billing/format";
 import { backupLabel, exchangeLabel, feedsLabel, shareUnits, spaceSize } from "../../../locations/ui";
+import { useStore } from "../../../../store";
+import { InvoiceTable, MandateButton } from "../bank/SupplierSite";
 import { usePageAct } from "../../pageAct";
+import { Checkout, type CheckoutDetails } from "../shared/Checkout";
 import "./providers.css";
 
 // docs/design/plans/colo-portals.md, section 4: the pages every provider site shares; each provider lays them out in its own look.
@@ -130,80 +132,100 @@ export function SiteDetail({ game, dc, go, className }: { game: GameState; dc: D
   );
 }
 
-type Step = 1 | 2 | 3 | "ordered" | "waiting";
-
-// Three steps: space, contact details prefilled from the company, summary. Confirming rents the space or joins the waitlist.
+// The space first, then the shared checkout: billing details, payment and review. A full space joins the waitlist instead.
 export function OrderForm({ game, p, route, className }: { game: GameState; p: Provider; route: Extract<Route, { page: "order" }>; className?: string }) {
-  const act = usePageAct(), sites = dcsOf(p.id);
-  const [step, setStep] = useState<Step>(1);
+  const act = usePageAct(), attempt = useStore((x) => x.attempt), sites = dcsOf(p.id);
+  const [step, setStep] = useState<"space" | "checkout" | "waitlist" | "waiting">("space");
   const [dcId, setDc] = useState(sites.some((d) => d.id === route.dc) ? route.dc! : sites[0].id);
   const [kind, setKind] = useState(route.space as Rented);
   const [size, setSize] = useState(route.size);
-  const [readyAt, setReadyAt] = useState(0);
-  const own = ownAddress(game);
-  const [contact, setContact] = useState({ company: game.company.name, contact: own.contact, street: own.street, town: `${own.zip} ${own.city}`, email: own.email });
   const dc = sites.find((d) => d.id === dcId)!;
   const k: Rented = kinds(dc).includes(kind) ? kind : "share";
   const n = SPACE_SIZES[k].includes(size) ? size : SPACE_SIZES[k][0];
   const open = fits(game, dc.id, k, n) || game.waitlist.some((w) => w.dc === dc.id && w.space === k && w.size === n && w.heldUntil !== null);
-  const place = () => {
-    if (!open) { if (act(joinWaitlist, dc.id, k, n).ok) setStep("waiting"); return; }
-    if (act(addLocation, dc.id, k, n).ok) { setReadyAt(game.hour + 24 * LEAD_DAYS[k]); setStep("ordered"); }
-  };
-  const summary: [string, ReactNode][] = [
+  const summary: [string, string][] = [
     [t("providers.site"), dc.name], [t("providers.space"), spaceText(k, n)], [t("providers.power"), `${kwOf(dc, k, n)} kW`],
     [t("providers.perMonth"), euro(spacePrice(dc, k, n))], [t("providers.term"), t("providers.termValue")], [t("providers.notice"), t("providers.noticeValue", { n: NOTICE_MONTHS[k] })],
   ];
   const Kv = ({ rows }: { rows: [string, ReactNode][] }) => <dl className="ps-kv">{rows.map(([a, b]) => <div key={a}><dt>{a}</dt><dd>{b}</dd></div>)}</dl>;
+  const wrap = (body: ReactNode) => <div className={`ps-order ${className ?? ""}`}>{body}</div>;
 
-  if (step === "ordered" || step === "waiting") {
-    return (
-      <div className={`ps-order ${className ?? ""}`}>
-        <h2>{step === "ordered" ? t("providers.confirmed") : t("providers.waitlisted")}</h2>
-        <Kv rows={[...summary.slice(0, 2), ...(step === "ordered" ? [[t("providers.ready"), formatDay(readyAt)] as [string, ReactNode]] : [])]} />
-      </div>
+  if (step === "waiting") return wrap(<><h2>{t("providers.waitlisted")}</h2><Kv rows={summary.slice(0, 2)} /></>);
+  if (step === "checkout") {
+    const ready = formatDay(game.hour + 24 * LEAD_DAYS[k]);
+    const place = (d: CheckoutDetails): ActionResult => {
+      const r = attempt(addLocation, dc.id, k, n, { company: d.company, name: d.name, address: d.address, payment: d.payment.kind === "debit" ? d.payment : { kind: "transfer" } });
+      return r.ok ? { ok: true, id: `${p.name.replace(/\W/g, "").slice(0, 2).toUpperCase()}-${r.id!.replace(/\D/g, "")}` } : r;
+    };
+    return wrap(
+      <Checkout game={game} btn="ps-btn pri" facts={[...summary, [t("providers.ready"), ready]]} onBack={() => setStep("space")}
+        methods={[...(game.bank ? [{ kind: "debit" as const, label: t("bank.supplier.mandate") }] : []), { kind: "transfer", label: t("providers.byInvoice") }]}
+        place={place} confirm={() => ({ bank: null, next: t("providers.orderNext", { day: ready }) })} />,
     );
   }
-  const field = (key: keyof typeof contact, label: string) => (
-    <label className="ps-field" key={key}><span>{label}</span><input value={contact[key]} onChange={(e) => setContact({ ...contact, [key]: e.target.value })} /></label>
-  );
-  return (
-    <div className={`ps-order ${className ?? ""}`}>
-      <ol className="ps-steps">
-        {[t("providers.step1"), t("providers.step2"), t("providers.step3")].map((s, i) => <li key={s} className={i + 1 === step ? "now" : i + 1 < step ? "done" : ""}>{s}</li>)}
-      </ol>
-      {step === 1 && <>
-        <label className="ps-field"><span>{t("providers.site")}</span>
-          <select value={dc.id} onChange={(e) => setDc(e.target.value)}>{sites.map((d) => <option key={d.id} value={d.id}>{d.name}, {d.city}</option>)}</select>
-        </label>
-        <label className="ps-field"><span>{t("providers.space")}</span>
-          <select value={`${k}-${n}`} onChange={(e) => { const [a, b] = e.target.value.split("-"); setKind(a as Rented); setSize(Number(b)); }}>
-            {kinds(dc).flatMap((x) => SPACE_SIZES[x].map((s) => <option key={`${x}-${s}`} value={`${x}-${s}`}>{spaceText(x, s)}, {euro(spacePrice(dc, x, s))}</option>))}
-          </select>
-        </label>
-        <Kv rows={[[t("providers.power"), `${kwOf(dc, k, n)} kW`], [t("providers.readyIn"), t("providers.days", { n: LEAD_DAYS[k] })], [t("providers.availability"), open ? t("providers.available") : t("providers.full")]]} />
-        <div className="ps-actions"><button className="ps-btn pri" onClick={() => setStep(2)}>{t("providers.next")}</button></div>
-      </>}
-      {step === 2 && <>
-        {field("company", t("providers.company"))}{field("contact", t("providers.contact"))}{field("street", t("providers.street"))}{field("town", t("providers.city"))}{field("email", t("providers.email"))}
-        <div className="ps-actions"><button className="ps-btn" onClick={() => setStep(1)}>{t("providers.back")}</button><button className="ps-btn pri" onClick={() => setStep(3)}>{t("providers.next")}</button></div>
-      </>}
-      {step === 3 && <>
-        <Kv rows={[...summary, [t("providers.ready"), open ? formatDay(game.hour + 24 * LEAD_DAYS[k]) : t("providers.full")], [t("providers.contact"), `${contact.company}, ${contact.contact}, ${contact.email}`]]} />
-        <div className="ps-actions"><button className="ps-btn" onClick={() => setStep(2)}>{t("providers.back")}</button><button className="ps-btn pri" onClick={place}>{open ? t("providers.placeOrder") : t("providers.joinWaitlist")}</button></div>
-      </>}
-    </div>
-  );
+  if (step === "waitlist") return wrap(<>
+    <Kv rows={[...summary, [t("providers.availability"), t("providers.full")]]} />
+    <div className="ps-actions"><button className="ps-btn" onClick={() => setStep("space")}>{t("providers.back")}</button><button className="ps-btn pri" onClick={() => { if (act(joinWaitlist, dc.id, k, n).ok) setStep("waiting"); }}>{t("providers.joinWaitlist")}</button></div>
+  </>);
+  return wrap(<>
+    <label className="ps-field"><span>{t("providers.site")}</span>
+      <select value={dc.id} onChange={(e) => setDc(e.target.value)}>{sites.map((d) => <option key={d.id} value={d.id}>{d.name}, {d.city}</option>)}</select>
+    </label>
+    <label className="ps-field"><span>{t("providers.space")}</span>
+      <select value={`${k}-${n}`} onChange={(e) => { const [a, b] = e.target.value.split("-"); setKind(a as Rented); setSize(Number(b)); }}>
+        {kinds(dc).flatMap((x) => SPACE_SIZES[x].map((s) => <option key={`${x}-${s}`} value={`${x}-${s}`}>{spaceText(x, s)}, {euro(spacePrice(dc, x, s))}</option>))}
+      </select>
+    </label>
+    <Kv rows={[[t("providers.power"), `${kwOf(dc, k, n)} kW`], [t("providers.readyIn"), t("providers.days", { n: LEAD_DAYS[k] })], [t("providers.availability"), open ? t("providers.available") : t("providers.full")]]} />
+    <div className="ps-actions"><button className="ps-btn pri" onClick={() => setStep(open ? "checkout" : "waitlist")}>{t("providers.next")}</button></div>
+  </>);
 }
 
-// Until the customer portal exists, every page under /account is its sign-in.
+// The sign-in form of a provider the company has no account with yet.
 export function SignIn({ className }: { className?: string }) {
   return (
     <form className={`ps-signin ${className ?? ""}`} onSubmit={(e) => e.preventDefault()}>
+      <p>{t("providers.firstOrder")}</p>
       <label className="ps-field"><span>{t("providers.email")}</span><input type="email" /></label>
       <label className="ps-field"><span>{t("providers.password")}</span><input type="password" /></label>
       <div className="ps-actions"><button className="ps-btn pri" disabled>{t("providers.signIn")}</button></div>
     </form>
+  );
+}
+
+// The customer portal once the company has ordered or waits for space here: billing address, payment per site, contracts
+// and the invoices of the provider's sites.
+export function Account({ game, p, className }: { game: GameState; p: Provider; className?: string }) {
+  const dcs = dcsOf(p.id), contracts = game.contracts.filter((c) => c.provider === p.id);
+  if (!contracts.length && !game.waitlist.some((w) => dcs.some((d) => d.id === w.dc))) return <SignIn className={className} />;
+  const own = game.company.address;
+  const billing = [...contracts].reverse().find((c) => c.billing)?.billing ?? { company: game.company.name, name: game.registration?.owner ?? "", address: own ?? { street: "", zip: "", city: "" } };
+  const names = [...new Set(contracts.map((c) => datacenterById(c.dc).name))], all = new Set(dcs.map((d) => d.name));
+  return (
+    <div className={`ps-portal ${className ?? ""}`}>
+      <h2>{t("checkout.billingAddress")}</h2>
+      <p>{[billing.company, billing.name, billing.address.street, `${billing.address.zip} ${billing.address.city}`].filter((x) => x.trim()).map((x, i) => <span key={i}>{x}<br /></span>)}</p>
+      {names.length > 0 && <>
+        <h2>{t("checkout.paymentMethod")}</h2>
+        <table className="ps-table"><tbody>
+          {names.map((name) => (
+            <tr key={name}><td>{name}</td><td>{game.bank?.mandates.includes(name) ? t("bank.supplier.mandate") : t("providers.byInvoice")}</td><td><MandateButton game={game} name={name} className="ps-btn" /></td></tr>
+          ))}
+        </tbody></table>
+        <h2>{t("providers.contracts")}</h2>
+        <table className="ps-table">
+          <thead><tr><th>{t("providers.site")}</th><th>{t("providers.space")}</th><th className="ps-num">{t("providers.perMonth")}</th><th>{t("providers.since")}</th><th>{t("providers.notice")}</th></tr></thead>
+          <tbody>
+            {contracts.map((c) => (
+              <tr key={c.id}><td>{datacenterById(c.dc).name}</td><td>{spaceText(c.space, c.positions)}</td><td className="ps-num">{euro(c.monthly)}</td><td>{formatDay(c.since)}</td>
+                <td>{c.endsAt !== null ? t("providers.endsOn", { day: formatDay(c.endsAt) }) : t("providers.noticeValue", { n: NOTICE_MONTHS[c.space] })}</td></tr>
+            ))}
+          </tbody>
+        </table>
+        <h2>{t("providers.invoices")}</h2>
+        <InvoiceTable game={game} bills={game.payables.filter((x) => all.has(x.name))} className="ps-table" />
+      </>}
+    </div>
   );
 }
 
@@ -212,6 +234,6 @@ export function Body({ game, p, route, go, className }: ProviderProps & { classN
   if (route.page === "sites") return <SitesList p={p} go={go} className={className} />;
   if (route.page === "site") return <SiteDetail game={game} dc={route.dc} go={go} className={className} />;
   if (route.page === "order") return <OrderForm game={game} p={p} route={route} className={className} />;
-  if (route.page === "account") return <SignIn className={className} />;
+  if (route.page === "account") return <Account game={game} p={p} className={className} />;
   return null;
 }
