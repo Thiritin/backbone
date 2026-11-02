@@ -10,9 +10,9 @@ import { deserialize, serialize } from "../src/sim/91-save/save";
 import { orderLead } from "../src/sim/30-market/orders";
 import type { GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
-import { attachQuote, convertQuote, createAccount, createQuote, deleteQuote, editQuote, invoiceOrder, provisionOrder, quoteOrder, registerOrderDomain } from "../src/sim/90-actions/orders";
+import { attachQuote, convertQuote, createAccount, createQuote, deleteQuote, editQuote, invoiceOrder, provisionOrder, registerOrderDomain } from "../src/sim/90-actions/orders";
 import type { SalesRequest } from "../src/sim/30-market/market";
-import { owner, readyGame } from "./fixtures";
+import { owner, readyGame, quoteOrder } from "./fixtures";
 
 const web = { product: "webHosting" as const, size: 0, sla: "basic" as const };
 const idOf = (r: { ok: boolean; error?: string; id?: string }) => { if (!r.ok || !r.id) throw new Error(r.error); return r.id; };

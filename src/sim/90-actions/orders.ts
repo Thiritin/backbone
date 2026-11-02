@@ -83,7 +83,6 @@ export function provisionOrder(s: GameState, ticketId: string, route: string, op
   return step(s, ticketId, "provision", route, extra);
 }
 
-// Sends the customer a monthly price and a setup fee (the line's rate where omitted); they answer within their reply time.
 // A cycle other than monthly offers a prepaid term at the shop's discount; the customer weighs the discounted monthly price.
 export const effectiveMonthly = (s: GameState, monthly: number, cycle?: Cycle): number =>
   Math.round(monthly * (cycle ? 1 - discountOf(s, cycle) : 1) * 100) / 100;
@@ -91,14 +90,15 @@ export const effectiveMonthly = (s: GameState, monthly: number, cycle?: Cycle): 
 // A prepaid term the shop sells for the line.
 const cycleOffered = (s: GameState, r: SalesRequest, cycle: Cycle): boolean => cycle !== "monthly" && cyclesFor(s, r.product).includes(cycle);
 
-export function quoteOrder(s: GameState, ticketId: string, monthly: number, setup?: number, cycle?: Cycle): ActionResult {
+// Sends the customer a monthly price and a setup fee; they answer within their reply time.
+function sendQuote(s: GameState, ticketId: string, monthly: number, setup: number, cycle?: Cycle): ActionResult {
   const t = s.tickets.find((x) => x.id === ticketId), r = t && orderOf(s, t);
   if (!r) return fail("error.unknownRequest");
   if (!validPrice(monthly, r.reference)) return fail("error.quotePrice");
-  if (setup !== undefined && !validPrice(setup + 1, r.reference)) return fail("error.quotePrice");
+  if (!validPrice(setup + 1, r.reference)) return fail("error.quotePrice");
   if (cycle && !cycleOffered(s, r, cycle)) return fail("error.cycleNotSupported");
   const before = { quote: r.quote, setup: r.setup, cycle: r.cycle };
-  editRequest(s, r.id, () => ({ quote: effectiveMonthly(s, monthly, cycle), cycle, setup: setup === undefined ? undefined : Math.round(setup * 100) / 100 }));
+  editRequest(s, r.id, () => ({ quote: effectiveMonthly(s, monthly, cycle), cycle, setup: Math.round(setup * 100) / 100 }));
   const done = step(s, ticketId, "quote");
   if (!done.ok) editRequest(s, r.id, () => before);
   return done;
@@ -149,7 +149,7 @@ export function attachQuote(s: GameState, quoteId: string, ticketId: string): Ac
   const q = draftQuote(s, quoteId);
   if (!q) return fail("error.quoteSentAlready");
   if (q.ticketId !== ticketId) return fail("error.quoteOtherOrder");
-  const done = quoteOrder(s, ticketId, q.monthly, q.setup, q.cycle);
+  const done = sendQuote(s, ticketId, q.monthly, q.setup, q.cycle);
   if (done.ok) s.quotes = s.quotes.map((x) => (x.id === q.id ? { ...x, status: "sent", sentAt: s.hour } : x));
   return done;
 }
