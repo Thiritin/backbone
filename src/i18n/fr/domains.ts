@@ -15,6 +15,7 @@ export default {
   "error.needsRegistrar": () => "Signe d'abord un contrat avec un registrar.",
   "error.registrarOther": () => "Tes noms de domaine sont enregistrés chez un autre partenaire.",
   "error.domainInvalid": () => "Utilise de 3 à 40 lettres, chiffres ou traits d'union devant une extension que les registres vendent.",
+  "error.nsInvalid": () => "Saisis deux noms d'hôte différents, comme ns1.example.de.",
   "error.companyDomainOwned": () => "L'entreprise a déjà un nom de domaine.",
   "error.noTransfer": () => "Aucun nom de domaine n'attend de transfert.",
   "error.unknownMailProvider": () => "Ce fournisseur de messagerie n'existe pas.",
