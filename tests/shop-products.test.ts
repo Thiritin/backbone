@@ -8,7 +8,7 @@ import type { GameState } from "../src/sim/50-state";
 import { chooseProduct, packageSpec, productCycles } from "../src/sim/80-business/portal";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { createGroup, setGroupSale } from "../src/sim/90-actions/shop";
-import { createProduct, createProductGroup, deleteProduct, deleteProductGroup, renameProductGroup, setProductGroupHidden, setProductPrice, updateProduct } from "../src/sim/90-actions/portal";
+import { createProduct, createProductGroup, deleteProduct, deleteProductGroup, renameProductGroup, setOptionDiscount, setProductGroupHidden, setProductPrice, updateProduct } from "../src/sim/90-actions/portal";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { automate, readyGame, installWithKey } from "./fixtures";
 
@@ -45,6 +45,7 @@ describe("shop products", () => {
     expect(Object.keys(prod().prices)).toEqual(["monthly", "quarterly", "annual"]);
     expect(setProductPrice(s, p, "biennial", 5)).toMatchObject({ ok: false, error: "error.cycleNotSupported" });
     expect(setProductPrice(s, p, "annual", -1)).toMatchObject({ ok: false, error: "error.badProductPrice" });
+    expect(updateProduct(s, p, { autoCycles: false }).ok).toBe(true);
     expect(setProductPrice(s, p, "annual", 40).ok).toBe(true);
     expect(prod().prices.annual).toBe(40);
     expect(setProductPrice(s, p, "quarterly", null).ok).toBe(true);
@@ -128,6 +129,35 @@ describe("shop products", () => {
     updateProduct(s, p, { packageName: "Gold" });
     expect(chooseProduct(s, want(s))).toBe("soldOut");
     expect(packageSpec(s, s.shop.products[0])).toEqual(s.shop.products[0].spec);
+  });
+
+  it("price the longer cycles from the monthly price and the cycle discounts until set to manual", () => {
+    const s = shopGame();
+    const p = idOf(createProduct(s, idOf(createProductGroup(s, "Web")), "Mini", "webHosting"));
+    const prices = () => s.shop.products.find((x) => x.id === p)!.prices;
+    expect(s.shop.products[0].autoCycles).toBe(true);
+    setProductPrice(s, p, "monthly", 10);
+    expect(prices()).toEqual({ monthly: 10, quarterly: 30, annual: 120 });
+    expect(setOptionDiscount(s, "annual", 0.2).ok).toBe(true);
+    expect(prices().annual).toBe(96);
+    setProductPrice(s, p, "annual", 50);
+    expect(prices().annual).toBe(96);
+    setProductPrice(s, p, "quarterly", null);
+    expect(prices()).toEqual({ monthly: 10, annual: 96 });
+    setProductPrice(s, p, "quarterly", 0);
+    expect(prices().quarterly).toBe(30);
+    expect(updateProduct(s, p, { autoCycles: false }).ok).toBe(true);
+    setProductPrice(s, p, "annual", 100);
+    setOptionDiscount(s, "annual", 0.1);
+    expect(prices().annual).toBe(100);
+    expect(updateProduct(s, p, { autoCycles: true }).ok).toBe(true);
+    expect(prices().annual).toBe(108);
+    setProductPrice(s, p, "monthly", null);
+    expect(s.shop.products[0].autoCycles).toBe(false);
+    expect(updateProduct(s, p, { autoCycles: true })).toMatchObject({ ok: false, error: "error.needsMonthlyPrice" });
+    const old = JSON.parse(serialize(s));
+    delete old.shop.products[0].autoCycles;
+    expect(deserialize(JSON.stringify(old)).shop.products[0].autoCycles).toBe(false);
   });
 
   it("round trip through a save and load into old saves as empty", () => {

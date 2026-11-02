@@ -2,7 +2,7 @@ import { useState } from "react";
 import { t } from "../../../../../../i18n/en";
 import { euroCents } from "../../../../../../sim/00-core/money";
 import { yearOf } from "../../../../../../sim/00-core/time";
-import { CYCLE_MONTHS, CYCLES, MARKET_DISCOUNT, type Cycle } from "../../../../../../sim/10-catalog/cycles";
+import { CYCLE_MONTHS, CYCLES, type Cycle } from "../../../../../../sim/10-catalog/cycles";
 import { SIZES, sizeSpec } from "../../../../../../sim/10-catalog/products";
 import { shopById } from "../../../../../../sim/10-catalog/shops";
 import type { Product } from "../../../../../../sim/30-customers/customers";
@@ -35,7 +35,7 @@ export function itemOf(g: GameState, key: string): Item | null {
     const monthly = (size: number) => offerPrice(g, line, sizeSpec(line, size, yearOf(g.hour)));
     return {
       key, name: PRODUCT[line], line, cycles: v.cycles, sellable: true, sized: true,
-      price: (c, size) => monthly(size) * CYCLE_MONTHS[c] * (1 - (g.shop.optionDiscount[c] ?? MARKET_DISCOUNT[c])),
+      price: (c, size) => monthly(size) * CYCLE_MONTHS[c] * (1 - (g.shop.optionDiscount[c] ?? 0)),
       setup: () => setupFee(g, line),
     };
   }
