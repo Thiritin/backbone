@@ -58,7 +58,8 @@ import { GOGGLE_SESSION, GoggleSite, goggleTitle } from "./sites/mail/goggle/Gog
 import { Gmial, gmialTitle } from "./sites/mail/gmial/Gmial";
 import { IonoseSite, ionoseTitle } from "./sites/mail/ionose/IonoseSite";
 import { Owa, owaTitle } from "./sites/mail/owa/Owa";
-import { IONOSE_OWA } from "../../../sim/10-catalog/mail-hosted";
+import { IONOSE_OWA, LOOKOUT_OWA } from "../../../sim/10-catalog/mail-hosted";
+import { LookoutSite, lookoutTitle } from "./sites/mail/lookout/LookoutSite";
 import { HostToastSite } from "./sites/hosttoast/HostToastSite";
 import { HOSTTOAST } from "../../../sim/10-catalog/hosttoast";
 import { WikiSite } from "./sites/wiki/WikiSite";
@@ -134,7 +135,7 @@ function titleOf(game: GameState, r: Resolved): string {
     case "books": return booksVendor(p.id)!.program;
     case "shopVendor": return shopById(p.id).name;
     case "deskVendor": case "desk": return deskById(p.id)!.name;
-    case "mailProvider": return p.id === "ionose" ? ionoseTitle(r.path) : p.id === "ionose-owa" ? owaTitle(game, "ionose") : p.id === "goggle" ? goggleTitle(game, r.host, r.path) : p.id === "gmial" ? gmialTitle(game, readSession<string | null>(GOGGLE_SESSION, null))
+    case "mailProvider": return p.id === "ionose" ? ionoseTitle(r.path) : p.id === "ionose-owa" ? owaTitle(game, "ionose") : p.id === "lookout-owa" ? owaTitle(game, "lookout") : p.id === "lookout" || p.id === "lookout-admin" ? lookoutTitle(r.host) : p.id === "goggle" ? goggleTitle(game, r.host, r.path) : p.id === "gmial" ? gmialTitle(game, readSession<string | null>(GOGGLE_SESSION, null))
       : gmixTitle(game, readSession<string | null>("gmix.account", null));
     case "hosttoast": return HOSTTOAST;
     case "wiki": return WIKI_TITLE;
@@ -186,6 +187,8 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "deskVendor") body = deskById(p.id)!.hosting === "self" ? <SelfDeskSite game={game} id={p.id} path={r.path} go={go} /> : <HostedDeskSite game={game} id={p.id} path={r.path} go={go} />;
   else if (p.kind === "mailProvider") body = p.id === "ionose" ? <IonoseSite game={game} path={r.path} go={go} />
     : p.id === "ionose-owa" ? <Owa game={game} provider="ionose" host={IONOSE_OWA} path={r.path} go={go} />
+    : p.id === "lookout-owa" ? <Owa game={game} provider="lookout" host={LOOKOUT_OWA} path={r.path} go={go} />
+    : p.id === "lookout" || p.id === "lookout-admin" ? <LookoutSite game={game} host={r.host} path={r.path} go={go} />
     : p.id === "goggle" ? <GoggleSite game={game} host={r.host} path={r.path} go={go} />
     : p.id === "gmial" ? <Gmial game={game} path={r.path} go={go} /> : <GmixSite game={game} path={r.path} go={go} />;
   else if (p.kind === "hosttoast") body = <HostToastSite game={game} path={r.path} go={go} />;
