@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- Pear Mail can reply, reply to all, forward, delete, junk and move mail, and writes new messages in their own window with forms from the desktop attached.
 - Incident reports in Security can now be archived, which takes them off the incident list and out of the open count.
 - A new game no longer starts with three friends waiting for web hosting; the first order email now arrives within two weeks of your first web host going online.
 - Support desks now fetch the mailboxes you add as channels by IMAP, POP3 or forwarding, number new requests, answer them from that address and keep every reply in its Sent folder.

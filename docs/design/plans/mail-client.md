@@ -255,7 +255,7 @@ Control stands in for Command off macOS. M12 checks the table in a browser.
 
 ## 7. Compose
 
-Compose is a separate window, as in Apple Mail. The store gets one optional `Win.draft` (a draft message id, persisted with the window like `doc` and `console`), `openCompose(draftId)`, and a branch in `AppWindow` that renders the compose view for that window. The view is built on the kit's `useDraft`. Opening Compose creates an empty draft at once, so a reload keeps the window and its text; edits are saved on a debounce. Closing with no content discards the draft; closing with content asks Save, Don't Save or Cancel.
+Compose is a separate window, as in Apple Mail. The store gets one optional `Win.draft` (a draft message id, persisted with the window like `doc` and `console`), `openCompose(draftId)`, and a branch in `AppWindow` that renders the compose view for that window. The view is built on the kit's `useDraft`. Opening Compose creates an empty draft at once, so a reload keeps the window and its text; edits are saved on a debounce. Closing with no content discards the draft; closing with content keeps it in Drafts.
 
 - **From.** A popup of the enabled accounts by Description and address, plus the aliases of each mailbox (`addressesOf`). A reply defaults to the address the original was sent to; a new message to the account of the selected mailbox, or the default From preference.
 - **Header.** To, Cc and Bcc (the latter two behind View > Cc Header), Subject, Signature popup. The To field completes from Previous Recipients, the addresses seen in any message. Contacts are not part of this plan.
@@ -263,10 +263,10 @@ Compose is a separate window, as in Apple Mail. The store gets one optional `Win
 - **Signature.** Per account default from the `ClientAccount`; Preferences > Signatures edits them.
 - **Attachments.** Attach opens a sheet listing the Desktop documents of kind `form` (as `Compose.tsx` does today), sent as `{ k: "doc", id }`. Forward keeps the original attachments.
 - **Drafts.** For an IMAP account `saveDraft` and `discardDraft` act on the server Drafts folder. For a POP account the draft lives in the local Drafts folder and this lane's own save and discard actions handle it.
-- **Send.** `sendMessage(s, account, { from, to, cc, subject, text, att, re, draftId })`. `mail-core` delivers to own addresses and staff, answers the trade office and notary through its responders, and returns a Mailer-Daemon message for an unknown address. The Sent copy is core's for an IMAP account; for a POP account this lane moves it into the local Sent folder and expunges the server copy. A failure such as `error.mailDown` keeps the compose window open with the sentence in a sheet and Try Again.
+- **Send.** `sendMessage(s, account, { from, to, cc, subject, text, att, re, draftId })`. `mail-core` delivers to own addresses and staff, answers the trade office and notary through its responders, and returns a Mailer-Daemon message for an unknown address. The Sent copy is core's for an IMAP account; for a POP account this lane moves it into the local Sent folder and expunges the server copy. A failure such as `error.mailDown` keeps the compose window open with the sentence in a sheet.
 - **Undo Send (Pear Mail 16).** The window waits the preference's delay in real time, with an Undo banner, before it calls `sendMessage`.
 
-The old `src/ui/apps/support/Compose.tsx` and its `paperwork.mail.*` keys are retired in M3.
+The old `src/ui/apps/support/Compose.tsx` and its `paperwork.mail.*` keys stay until the `mail-core` cutover moves the Support app's mail onto Pear Mail.
 
 ## 8. Rules, Smart Mailboxes and Junk
 
@@ -395,7 +395,7 @@ Each milestone is one pull request, green on its own, with a seeded Vitest suite
    - Tests: `tests/pear-mail-view.test.ts` (unified Inbox merges accounts, sort orders, thread grouping, counts follow reads, a POP account lists its local store), `tests/mail-kit.test.tsx` (selection, drag payload, folder rows from `listFolder`) and one render case per release in `tests/pear-mail-ui.test.tsx` (classes and column set).
 3. **Message actions and compose.** Needs `mail-core` M5.
    - Sim: local variants for the `pear` account (move, delete, mark, save and discard drafts); everything else calls `deleteMessages`, `moveMessages`, `reportJunk`, `saveDraft`, `discardDraft` and `sendMessage`.
-   - UI: toolbar with Delete, Junk, Reply, Reply All, Forward, New Message and Move to; compose window with `Win.draft` and `useDraft`, From popup, signature popup, attach sheet, Cc and Bcc, quoting; `Compose.tsx` retired.
+   - UI: toolbar with Delete, Junk, Reply, Reply All, Forward, New Message and Move to; compose window with `Win.draft` and `useDraft`, From popup, attach sheet, Cc and Bcc, quoting. The signature popup comes with the Signatures preference in M8. Reply on a customer request focuses the ticket pane under the message instead of opening a compose window.
    - i18n: compose and toolbar labels, quoting line.
    - Tests: `tests/pear-mail-compose.test.ts` (a signed form to the trade office files and the answer lands in the sending account; an unknown address bounces into that Inbox; a draft survives `serialize`; a POP account keeps its Sent copy locally; delete moves to Trash and a second delete removes; Junk calls `reportJunk`). This milestone and M2 unlock the `mail-core` cutover.
 4. **Accounts and the assistant.**

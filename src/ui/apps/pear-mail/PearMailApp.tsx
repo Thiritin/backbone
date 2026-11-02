@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Mail, Search } from "lucide-react";
+import { Forward, Mail, MailX, Reply, ReplyAll, Search, SquarePen, Trash2 } from "lucide-react";
 import { t } from "../../../i18n/en";
 import { mailBuild } from "../../../sim/10-catalog/pear-mail";
 import { isRead } from "../../../sim/42-mail/model";
@@ -11,6 +11,7 @@ import { PearMailMark } from "../../art/mailmarks";
 import { useSessionState } from "../../session";
 import { useFocus, useStore } from "../../store";
 import { matches, useSelection, type SearchScope } from "../mail-kit/mail-kit";
+import { compose, deleteRows, junkRows, moveRows } from "./commands";
 import { MessageList } from "./List";
 import { Preview } from "./Preview";
 import { Sidebar } from "./Sidebar";
@@ -59,6 +60,18 @@ export function PearMailApp() {
   const rows = rowsOf(game, box, query, scope, everywhere, sort);
   const sel = useSelection(rows.map((r) => r.m.id));
   const shown = sel.ids.length === 1 ? rows.find((r) => r.m.id === sel.ids[0]) ?? null : null;
+  const picked = rows.filter((r) => sel.ids.includes(r.m.id)), one = new Set(picked.map((r) => r.c.id)).size === 1 ? picked[0]?.c : undefined;
+  const home = (box.c && pm.accounts.find((c) => c.id === box.c)) || pm.accounts.find((c) => c.enabled);
+  const inJunk = box.f === "junk";
+  // A reply to a customer request goes through the ticket pane under the message.
+  const reply = (mode: "reply" | "all" | "forward") => {
+    const pane = mode !== "forward" && document.querySelector<HTMLElement>(".pm-ticket");
+    if (pane) { pane.scrollIntoView({ block: "nearest" }); pane.querySelector<HTMLElement>("button, input")?.focus(); return; }
+    if (shown) compose(game, act, shown.c.id, shown, mode);
+  };
+  const tool = (label: string, Icon: typeof Mail, run: () => void, disabled = false) => (
+    <button className="pm-tool" disabled={disabled} onClick={run}><span className="pm-tool-face"><Icon /></span>{t(label)}</button>
+  );
 
   useFocus("Pear Mail", (f) => {
     const b = f.kind === "message" ? boxOf(useStore.getState().game, f.id) : null;
@@ -71,7 +84,17 @@ export function PearMailApp() {
   return (
     <div className="pm" data-build={build.version}>
       <div className="pm-toolbar">
-        <button className="pm-tool" disabled={!pm.accounts.length} onClick={() => act(getMail)}><span className="pm-tool-face"><Mail /></span>{t("pearMail.getMail")}</button>
+        {tool("pearMail.getMail", Mail, () => act(getMail), !pm.accounts.length)}
+        {tool("pearMail.delete", Trash2, () => deleteRows(act, picked), !picked.length)}
+        {tool(inJunk ? "pearMail.notJunk" : "pearMail.junk", MailX, () => junkRows(act, picked, !inJunk), !picked.length)}
+        {tool("pearMail.reply", Reply, () => reply("reply"), !shown)}
+        {tool("pearMail.replyAll", ReplyAll, () => reply("all"), !shown)}
+        {tool("pearMail.forward", Forward, () => reply("forward"), !shown)}
+        {tool("pearMail.new", SquarePen, () => home && compose(game, act, home.id), !home)}
+        <select className="pm-move" aria-label={t("pearMail.moveTo")} value="" disabled={!one} onChange={(e) => moveRows(act, picked, e.target.value)}>
+          <option value="" disabled>{t("pearMail.moveTo")}</option>
+          {one && clientFolders(game, one).filter((f) => f.id !== box.f).map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+        </select>
         <span className="pm-grow" />
         <label className="pm-search">
           <select aria-label={t("pearMail.search.scope")} value={scope} onChange={(e) => setScope(e.target.value as SearchScope)}>
