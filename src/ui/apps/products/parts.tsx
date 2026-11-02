@@ -118,9 +118,9 @@ export function Sparkline({ values, from, w = 240, h = 44 }: { values: number[];
   );
 }
 
-export type VmState = "running" | "stopped" | "lost" | "restoring" | "migrating" | "cloning" | "down" | "frozen" | "checkpointed" | "oom";
+export type VmState = "running" | "stopped" | "lost" | "restoring" | "migrating" | "cloning" | "down" | "checkpointed" | "oom";
 export const VM_STATE: Record<VmState, [string, string]> = {
-  running: [t("misc1.parts.running"), "ok"], frozen: [t("misc1.parts.frozen"), "bad"], checkpointed: [t("ovz.frozen"), "accent"], stopped: [t("misc1.parts.stopped"), ""], lost: [t("misc1.parts.lostDisk"), "bad"], restoring: [t("misc1.parts.restoring"), "accent"], migrating: [t("misc1.parts.migrating"), "accent"], cloning: [t("misc1.parts.cloning"), "accent"], down: [t("misc1.parts.down"), "bad"], oom: [t("misc1.parts.oomKilled"), "bad"],
+  running: [t("misc1.parts.running"), "ok"], checkpointed: [t("ovz.frozen"), "accent"], stopped: [t("misc1.parts.stopped"), ""], lost: [t("misc1.parts.lostDisk"), "bad"], restoring: [t("misc1.parts.restoring"), "accent"], migrating: [t("misc1.parts.migrating"), "accent"], cloning: [t("misc1.parts.cloning"), "accent"], down: [t("misc1.parts.down"), "bad"], oom: [t("misc1.parts.oomKilled"), "bad"],
 };
 export function vmState(game: GameState, w: Workload): VmState {
   if (lostDisk(game, w)) return "lost";
@@ -130,7 +130,6 @@ export function vmState(game: GameState, w: Workload): VmState {
   if (w.busyUntil > game.hour) return game.lossReports.some((r) => r.items.some((i) => i.workloadId === w.id && i.restored)) ? "restoring" : "migrating";
   if (w.stopped) return "stopped";
   if (w.frozen) return "checkpointed";
-  if (w.clusterId && w.deviceId && game.frozen.includes(w.deviceId)) return "frozen";
   return workloadOnline(game, w) ? "running" : "down";
 }
 

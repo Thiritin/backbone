@@ -57,8 +57,6 @@ export default {
   "locations-1.disk": () => "Disk",
   "locations-1.booked": () => "Booked",
   "locations-1.inUse": () => "In use",
-  "locations-1.frozen": () => "Frozen",
-  "locations-1.ramInUse": (p) => `RAM in use ${p.used} of ${p.total}`,
   "locations-1.performance": () => "Performance",
   "locations-1.unsupported": () => "Unsupported",
   "locations-1.outdated": () => "Outdated",

@@ -80,7 +80,7 @@ export function useVms(game: GameState, c: Cluster, f: ConsoleFeatures): { vms: 
   const [open, setOpen] = useState<{ id: string; kind: string } | null>(null), close = () => setOpen(null);
   const vms = game.workloads.filter((w) => w.clusterId === c.id).map((w): Vm => {
     const st = vmState(game, w), [state, tone] = VM_STATE[st], host = hostOfVm(game, w.id), own = isOwnVm(w), label = vmLabel(game, w);
-    const on = st === "running" || st === "down" || st === "frozen", rescue = rescueTargets(game, w.id), tpl = !!w.template;
+    const on = st === "running" || st === "down", rescue = rescueTargets(game, w.id), tpl = !!w.template;
     const templating = own && !!c.platform && !!softwareById(c.platform).datastores;
     const toggle = (kind: string) => () => setOpen(open?.id === w.id && open.kind === kind ? null : { id: w.id, kind });
     const actions: (PanelAction | false)[] = [

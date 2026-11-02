@@ -18,7 +18,7 @@ export function VmConsole({ game, vm: w, front }: { game: GameState; vm: Workloa
   const box = useRef<HTMLDivElement>(null);
   const os = useOsScreen(game, w, front, w.media ?? null);
   useEffect(() => { if (front) focusIn(box.current); }, [front, w.id, os.screen.kind]);
-  const st = vmState(game, w), on = st === "running" || st === "down" || st === "frozen";
+  const st = vmState(game, w), on = st === "running" || st === "down";
   const dark = !on || os.screen.kind === "dark";
   const media = () => [
     ...mountableImages(game).map((o) => ({ label: imageName(o), checked: w.media === o, run: () => act(setMedia, w.id, o) })),

@@ -222,7 +222,6 @@ export default {
   "misc1.parts.controlPlane": () => "Plano de control",
   "misc1.parts.loadDay": () => "Carga a lo largo del día",
   "misc1.parts.running": () => "En marcha",
-  "misc1.parts.frozen": () => "Congelada",
   "misc1.parts.stopped": () => "Detenida",
   "misc1.parts.lostDisk": () => "Disco perdido",
   "misc1.parts.restoring": () => "Restaurando",

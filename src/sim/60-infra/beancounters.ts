@@ -3,7 +3,8 @@ import type { GameState } from "../50-state";
 import { lostDisk, oomKilled, type Cluster, type Workload } from "./cluster";
 import { HOT_RAM } from "./alarms";
 import { servicesIn } from "./ha";
-import { workloadUse, nodeUsage } from "./usage";
+import { workloadUse, nodeUsage, ramShare, SWAP_MAX } from "./usage";
+import { working } from "./status";
 
 export const BURST_MAX = 2;
 export const FAIL_SLOW_HOURS = 6;
@@ -66,4 +67,21 @@ export function beancounterTick(s: GameState): void {
   });
   if (slow.size) s.services = s.services.map((v) => (slow.has(v.id) ? { ...v, slowedAt: s.hour } : v));
   for (const w of s.workloads) if (killed.has(w.id)) for (const id of servicesIn(s, w)) s.downHours = { ...s.downHours, [id]: (s.downHours[id] ?? 0) + 1 };
+}
+
+// Hourly: a full-VM cluster node past SWAP_MAX of its RAM has the host OOM-kill its largest running VM for an hour.
+export function vmOomTick(s: GameState): void {
+  const killed = new Set<string>();
+  for (const c of s.clusters) {
+    if (c.kind === "cloud" && c.platform === "openveezee") continue;
+    for (const { deviceId } of c.nodes) {
+      if (!working(s, deviceId) || ramShare(nodeUsage(s, deviceId)) <= SWAP_MAX) continue;
+      const vms = s.workloads.filter((w) => w.clusterId === c.id && w.deviceId === deviceId && !w.stopped && !w.frozen && !lostDisk(s, w) && w.busyUntil <= s.hour && !oomKilled(w, s.hour));
+      const big = vms.reduce<Workload | undefined>((a, w) => (!a || workloadUse(s, w).ramGb > workloadUse(s, a).ramGb ? w : a), undefined);
+      if (big) killed.add(big.id);
+    }
+  }
+  if (!killed.size) return;
+  s.workloads = s.workloads.map((w) => (killed.has(w.id) ? { ...w, oomUntil: s.hour + 1 } : w));
+  for (const id of killed) for (const sv of servicesIn(s, s.workloads.find((w) => w.id === id)!)) s.downHours = { ...s.downHours, [sv]: (s.downHours[sv] ?? 0) + 1 };
 }

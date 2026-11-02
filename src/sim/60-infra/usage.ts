@@ -112,7 +112,7 @@ export function workloadUse(s: GameState, w: Workload, hour: number = s.hour): R
 liveRam.of = (s, w) => workloadUse(s, w).ramGb;
 
 // What a node physically has and uses at an hour, and the performance its workloads get: CPU contention slows everyone by
-// cores ÷ busy vCPUs, a disk pool over 100% stalls writes to 50%. RAM over 100% freezes the node instead (freezeTick).
+// cores ÷ busy vCPUs, a disk pool over 100% stalls writes to 50%, a full-VM node past its RAM swaps.
 // economy.md, RAID: the share of its performance a node keeps while its array rebuilds, by rebuild rate.
 export const REBUILD_PERF = { low: 0.95, medium: 0.8, high: 0.6 } as const;
 export interface NodeUsage { used: Resources; physical: Resources; perf: number }
@@ -124,8 +124,15 @@ export function nodeUsage(s: GameState, deviceId: string, hour: number = s.hour)
   const cpu = used.vcpu > physical.vcpu ? physical.vcpu / used.vcpu : 1;
   const disk = used.diskGb > physical.diskGb ? 0.5 : 1;
   const heat = throttled(s, d) ? THERMAL.throttlePerf : 1;
-  return { used, physical, perf: Math.min(cpu, disk) * (d.rebuild ? REBUILD_PERF[d.rebuildRate] : 1) * heat };
+  const over = used.ramGb / physical.ramGb - 1, ovz = clustersOn(s, deviceId).some((c) => c.kind === "cloud" && c.platform === "openveezee");
+  const swap = over > 0 && !ovz ? 1 / (1 + SWAP_SLOW * over) : 1;
+  return { used, physical, perf: Math.min(cpu, disk, swap) * (d.rebuild ? REBUILD_PERF[d.rebuildRate] : 1) * heat };
 }
+
+// economy.md, What runs over: a full-VM node swaps up to SWAP_MAX of its RAM, losing SWAP_SLOW × the overcommit in speed;
+// past it the host OOM-kills its largest VM (vmOomTick). OpenVeeZee hands RAM pressure to its beancounters instead.
+export const SWAP_MAX = 1.1, SWAP_SLOW = 5;
+export const ramShare = (u: NodeUsage) => u.used.ramGb / Math.max(1e-9, u.physical.ramGb);
 
 // What a node uses and physically has, before performance; heat reads this through power draw, so it cannot ask for perf.
 function nodeLoad(s: GameState, d: Device, hour: number): { used: Resources; physical: Resources } {
@@ -158,21 +165,6 @@ function computeCpuUtil(s: GameState, d: Device): number {
   return u.physical.vcpu ? Math.min(1, v / u.physical.vcpu) : 1;
 }
 cpuLoad.of = cpuUtil;
-
-// A working cluster node whose RAM in use exceeds its installed RAM freezes: every workload on it is down until it fits again.
-export const ramOver = (u: NodeUsage) => u.used.ramGb > u.physical.ramGb + 1e-9;
-
-// Hourly and after a stop or a move: recomputes the frozen nodes and reports each freeze and thaw.
-export function freezeTick(s: GameState): SimEvent[] {
-  const name = (id: string) => { const d = s.devices.find((x) => x.id === id)!; return d.label ?? d.name; };
-  const frozen = s.clusters.flatMap((c) => c.nodes.map((n) => n.deviceId)).filter((id) => working(s, id) && ramOver(nodeUsage(s, id)));
-  const events: SimEvent[] = [
-    ...frozen.filter((id) => !s.frozen.includes(id)).map((id) => ({ app: "Locations", key: "event.nodeFrozen", params: { device: name(id) } })),
-    ...s.frozen.filter((id) => !frozen.includes(id) && s.devices.some((d) => d.id === id)).map((id) => ({ app: "Locations", key: "event.nodeThawed", params: { device: name(id) } })),
-  ];
-  s.frozen = frozen;
-  return events;
-}
 
 // economy.md, Workloads: a workload is pegged when its CPU ran at 95% or more of its booking for over half of the last 24 hours.
 export const PEGGED_LOAD = 0.95;
