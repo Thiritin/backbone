@@ -105,6 +105,8 @@ export const MAIL_HOSTS: MailHost[] = [
 
 export const mailHost = (id: string): MailHost | undefined => MAIL_HOSTS.find((h) => h.id === id);
 export const mailPlan = (host: string, plan: string): MailPlan | undefined => mailHost(host)?.plans.find((p) => p.id === plan);
+// The MX hosts a domain on this host points at.
+export const mxOf = (host: string, domain: string): string[] => (host === "self" ? [`mail.${domain}`] : mailHost(host)?.mx ?? []);
 export const onSale = (p: MailPlan, year: number): boolean => year >= p.from && (p.until === null || year <= p.until);
 
 // A pure function of the hour, so the Goggle storage counter can tick on screen with no stored state.

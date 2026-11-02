@@ -6,6 +6,9 @@ import { catchOf, falseJunkOf, junkFloor, SENDERS, spamShare } from "../src/sim/
 import { capsOf, mailHooks, mxTarget } from "../src/sim/42-mail/caps";
 import { boxOf, view } from "../src/sim/42-mail/model";
 import type { GameState } from "../src/sim/50-state";
+import { mxHostsAt } from "../src/sim/60-infra/company-zone";
+import { setCompanyRecord } from "../src/sim/90-actions/domains";
+import { deserialize, serialize } from "../src/sim/91-save/save";
 import { newGame } from "./fixtures";
 
 const at = (ym: string) => hourOfMonth(ym);
@@ -67,9 +70,9 @@ describe("mail providers", () => {
     s.company = { ...s.company, mail: { kind: "self", software: "mailpig", clusterId: "cl1" } };
     expect(capsOf(s, box(s))).toMatchObject({ webmail: null, serverFilters: "none", autoconfig: true, quotaMb: 1024 });
     mailHooks.installedWebmail = () => "squarecube";
-    mailHooks.selfHostCaps = () => ({ imap: false, pop: true, filters: "sieve", autoconfig: false, catchBoost: 0.2 });
+    mailHooks.selfHostCaps = () => ({ imap: false, pop: true, sieve: true, junkBonus: 0.2 });
     s.mail = { ...s.mail, accounts: [{ ...box(s), quotaMb: 4096 }] };
-    expect(capsOf(s, box(s))).toMatchObject({ imap: false, webmail: "squarecube", serverFilters: "sieve", autoconfig: false, quotaMb: 4096 });
+    expect(capsOf(s, box(s))).toMatchObject({ imap: false, webmail: "squarecube", serverFilters: "sieve", autoconfig: true, quotaMb: 4096 });
   });
 
   it("name the client servers a host offers in a year", () => {
@@ -80,11 +83,31 @@ describe("mail providers", () => {
     expect(mailServersOf("self", "kellerhost.de", 2010).imap?.host).toBe("mail.kellerhost.de");
   });
 
-  it("route the company domain to its one live tenant by default", () => {
+  it("route the company domain to the tenant its MX record names, once the record propagates", () => {
     const s = newGame(1);
     expect(mxTarget(s)).toBeNull();
     onHost(s, "ionose", "exchange");
+    expect(mxTarget(s)).toBeNull();
+    expect(setCompanyRecord(s, { type: "MX", name: "@", ttl: 3600, data: "10 mx00.ionose.de" }).ok).toBe(true);
+    expect(mxTarget(s)).toBeNull();
+    s.hour += 2;
     expect(mxTarget(s)?.id).toBe("tn1");
+    setCompanyRecord(s, { type: "MX", name: "@", ttl: 3600, data: "5 aspmx.l.goggle.com" });
+    s.hour += 2;
+    expect(mxTarget(s)).toBeNull();
+  });
+
+  it("point the MX of a save from before the zone at its mail tenant", () => {
+    const s = newGame(1);
+    s.company = { ...s.company, domain: "kellerhost.de", mail: { kind: "external", provider: "lookout365", seats: 2 } };
+    const raw = JSON.parse(serialize(s));
+    delete raw.mail;
+    delete raw.company.zone;
+    const old = deserialize(JSON.stringify(raw));
+    expect(mxHostsAt(old, old.hour)).toEqual(["mail.protection.lookout365.com"]);
+    expect(mxTarget(old)?.host).toBe("lookout");
+    const again = deserialize(serialize(old));
+    expect(again.company.zone.filter((r) => r.type === "MX")).toHaveLength(1);
   });
 
   it("follow the junk history and the hosts' filters", () => {

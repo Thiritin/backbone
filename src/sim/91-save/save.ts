@@ -178,7 +178,7 @@ export function deserialize(raw: string): GameState {
   migrateBooks(s);
   s.tax = data.tax ? { ...base.tax, ...data.tax } : s.registration ? legacyTax(s) : base.tax;
   if (data.shop && data.shop.install === undefined) installSavedShop(s);
-  fillMail(s, data.mail);
+  fillMail(s, data.mail, !!data.company?.zone);
   return s;
 }
 
