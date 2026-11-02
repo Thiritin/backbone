@@ -38,4 +38,5 @@ export default {
   "error.notFromUsb": () => "Arranca o servidor pela pen USB para instalar um sistema operacional.",
   "error.confirmHostname": () => "Escreve o nome de anfitrião do servidor para confirmar.",
   "error.noMedia": () => "Carrega primeiro a ISO do instalador na máquina virtual.",
+  "term.console.halting": () => "A encerrar...",
 } satisfies Dict;

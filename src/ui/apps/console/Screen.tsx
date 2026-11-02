@@ -12,8 +12,8 @@ import { useSessionState } from "../../session";
 import { useStore } from "../../store";
 import { useBios } from "./bios";
 import { isDevice, NetFailed, OsInstalling, useInstaller, winEra, type Machine } from "./installer";
-import { LunixBoot, LunixLogin, useLunix } from "./lunix";
-import { useWindoors, WindoorsBoot } from "./windoors";
+import { LunixBoot, LunixHalt, LunixLogin, useLunix } from "./lunix";
+import { useWindoors, WindoorsBoot, WindoorsHalt } from "./windoors";
 import "./console.css";
 
 // How the screen is reached: the controller's remote console, a KVM on the console end, or a monitor plugged in at the rack.
@@ -50,7 +50,7 @@ const UP = new Set<MachineScreen["kind"]>(["login", "desktop", "installing"]);
 // What a machine shows once its firmware is through: the installer on the media, the install, the OS booting, the Lunix
 // login and shell or the Windoors logon and desktop, or nothing to boot. Login lasts until the machine boots again.
 export function useOsScreen(game: GameState, m: Machine, active: boolean, stick: OsImage | null): { screen: MachineScreen; look: string; view: ReactNode; onKey: (k: string) => void; keys: string[] } {
-  const token = isDevice(m) ? m.bootUntil ?? 0 : 0;
+  const token = m.bootUntil ?? 0;
   const [login, setLogin] = useSessionState<number | null>(`console.${m.id}.login`, null);
   const bare = machineScreen(game, m.id), loggedIn = login === token && UP.has(bare.kind);
   const screen = machineScreen(game, m.id, loggedIn);
@@ -70,8 +70,12 @@ export function useOsScreen(game: GameState, m: Machine, active: boolean, stick:
     case "osInstallFailed": return { screen, look: "deb", view: <NetFailed reason={screen.reason} />, onKey: () => act(dismissInstallFail, m.id), keys: ["Enter"] };
     case "osInstall": return { screen, look: screen.os === "lunix" ? "deb" : screen.progress < 0.45 && winEra(version) === 0 ? "wt" : "win", view: <OsInstalling m={m} os={screen.os} progress={screen.progress} />, ...none };
     case "booting": {
-      const left = isDevice(m) ? (m.bootUntil ?? 0) - nowHours(game) : 0, share = 1 - left / (serverOsById(screen.os).bootMinutes / 60);
+      const left = (m.bootUntil ?? 0) - nowHours(game), share = 1 - left / (serverOsById(screen.os).bootMinutes / 60);
       return { screen, look: screen.os === "lunix" ? "lunix" : "win", view: screen.os === "lunix" ? <LunixBoot game={game} m={m} version={version} share={share} /> : <WindoorsBoot version={version} />, ...none };
+    }
+    case "halting": {
+      const reboot = !isDevice(m) && !!m.reboot, share = 1 - ((m.haltUntil ?? 0) - nowHours(game)) / (serverOsById(screen.os).haltMinutes / 60);
+      return { screen, look: screen.os === "lunix" ? "lunix" : "win", view: screen.os === "lunix" ? <LunixHalt version={version} reboot={reboot} share={share} /> : <WindoorsHalt version={version} reboot={reboot} />, ...none };
     }
     case "login": case "desktop": case "installing":
       if (os === "windoors") return { screen, look: "win", ...windoors };

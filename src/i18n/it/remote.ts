@@ -38,4 +38,5 @@ export default {
   "error.notFromUsb": () => "Avvia il server dalla chiavetta USB per installare un sistema operativo.",
   "error.confirmHostname": () => "Digita l'hostname del server per confermare.",
   "error.noMedia": () => "Carica prima l'ISO dell'installer nella macchina virtuale.",
+  "term.console.halting": () => "Arresto in corso...",
 } satisfies Dict;

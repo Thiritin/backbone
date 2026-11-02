@@ -20,7 +20,8 @@ import { addNode, cordon, createVm, deleteVm, drain, evacuate, uncordon, PANEL_V
 import { mountableImages } from "../../../../sim/90-actions/media";
 import { joinableServers } from "../../../../sim/90-actions/software";
 import { buyAppSuite, cancelAppSuite, deployFromSuite } from "../../../../sim/90-actions/suite";
-import { rescueTargets, rescueWorkload, restoreWorkload, startWorkload, stopWorkload } from "../../../../sim/90-actions/vms";
+import { rebootWorkload, rescueTargets, rescueWorkload, restoreWorkload, startWorkload, stopWorkload } from "../../../../sim/90-actions/vms";
+import { askPower } from "../../workload-menu";
 import { freezeWorkload, thawWorkload } from "../../../../sim/90-actions/openveezee";
 import { diskMoveDowntime, moveDisk } from "../../../../sim/90-actions/datastores";
 import { cloneHours, cloneTemplate, makeTemplate, makeVm } from "../../../../sim/90-actions/templates";
@@ -79,15 +80,15 @@ export function useVms(game: GameState, c: Cluster, f: ConsoleFeatures): { vms: 
   const [open, setOpen] = useState<{ id: string; kind: string } | null>(null), close = () => setOpen(null);
   const vms = game.workloads.filter((w) => w.clusterId === c.id).map((w): Vm => {
     const st = vmState(game, w), [state, tone] = VM_STATE[st], host = hostOfVm(game, w.id), own = isOwnVm(w), label = vmLabel(game, w);
-    const on = st === "running" || st === "down" || st === "frozen", rescue = rescueTargets(game, w.id), tpl = !!w.template;
+    const on = st === "running" || st === "down" || st === "frozen" || st === "booting" || st === "halting", rescue = rescueTargets(game, w.id), tpl = !!w.template;
     const templating = own && !!c.platform && !!softwareById(c.platform).datastores;
     const toggle = (kind: string) => () => setOpen(open?.id === w.id && open.kind === kind ? null : { id: w.id, kind });
     const actions: (PanelAction | false)[] = [
       f.start && st === "stopped" && !tpl && { id: "start", label: t("browser-consoles-1.hvStart"), run: () => act(startWorkload, w.id) },
-      c.platform === "openveezee" && st === "running" && !tpl && { id: "checkpoint", label: t("ovz.checkpoint"), run: () => act(freezeWorkload, w.id) },
+      c.platform === "openveezee" && st === "running" && !tpl && { id: "checkpoint", label: t("ovz.checkpoint"), run: () => askPower("checkpoint", host?.name ?? label.name, t("ovz.checkpoint"), () => act(freezeWorkload, w.id)) },
       st === "checkpointed" && { id: "thaw", label: t("ovz.restore"), run: () => act(thawWorkload, w.id) },
-      f.stop && on && { id: "stop", label: t("browser-consoles-1.vmShutdown"), run: () => act(stopWorkload, w.id) },
-      f.stop && on && own && { id: "reset", label: t("browser-consoles-1.hvReset"), run: () => { if (act(stopWorkload, w.id).ok) act(startWorkload, w.id); } },
+      f.stop && on && { id: "stop", label: t("browser-consoles-1.vmShutdown"), run: () => askPower("stop", host?.name ?? label.name, t("browser-consoles-1.vmShutdown"), () => act(stopWorkload, w.id)) },
+      f.stop && on && own && st !== "halting" && { id: "reset", label: t("browser-consoles-1.hvReset"), run: () => askPower("reboot", host?.name ?? label.name, t("browser-consoles-1.hvReset"), () => act(rebootWorkload, w.id)) },
       st === "lost" && { id: "restore", label: w.backupAt === null ? t("browser-consoles-1.startEmpty") : t("browser-consoles-1.hvRestore"), run: () => act(restoreWorkload, w.id) },
       rescue.length > 0 && { id: "recover", label: t("browser-consoles-1.hvRecover"), run: toggle("recover") },
       !!f.migrate && (on || st === "stopped") && !w.migrating && !tpl && { id: "migrate", label: t("browser-consoles-1.migrate"), run: toggle("migrate") },

@@ -1,7 +1,7 @@
 import { modelById } from "../10-catalog/hardware";
 import { recordStatus } from "../80-business/status";
 import { topTier } from "../10-catalog/licence-tiers";
-import { START_YEAR, yearOf } from "../00-core/time";
+import { nowHours, START_YEAR, yearOf } from "../00-core/time";
 import { GPU_SKILL } from "../10-catalog/research";
 import { backsUp, balancerIn, fcGbit, IN_VM, isService, kindsServing, kindServing, phpAt, softwareById, type DatastoreProtocol, type SoftwareKind } from "../10-catalog/platforms";
 import { OVERCOMMIT, PRODUCTS, type Resources } from "../10-catalog/products";
@@ -123,6 +123,8 @@ export interface Workload extends Resources, Partial<MachineState> {
   // OpenVeeZee: failcnt per beancounter, the most RAM held, the extra RAM allowed while the node has room, hours of failing
   // in a row, failcounts today, and a live checkpoint (beancounters.ts).
   failcnt?: Record<string, number>; maxheld?: number; burstGb?: number; failStreak?: number; failDay?: number; frozen?: boolean;
+  // The fractional hour an own VM's OS finishes booting, and the hour its clean shutdown ends; reboot boots it again then.
+  bootUntil?: number; haltUntil?: number; reboot?: boolean;
   // Own VMs only: the port macros the VM lets through (exposure.ts); missing or null is no firewall.
   firewall?: Firewall | null;
   // Horizont: the security groups of the instance (horizont.ts); missing is none.
@@ -522,7 +524,7 @@ export const sitesDown = (s: GameState, hostId: string): boolean => s.security.o
 // A web space in a panel VM is up while the VM is. Colocation is up while its rack has power.
 // ponytail: colocation ignores the customer's uplinks until colocation cabling lands.
 export function workloadOnline(s: GameState, w: Workload): boolean {
-  if (w.stopped || w.frozen || w.busyUntil > s.hour) return false;
+  if (w.stopped || w.frozen || w.busyUntil > s.hour || w.haltUntil !== undefined || (w.bootUntil ?? 0) > nowHours(s)) return false;
   const c = w.clusterId ? s.clusters.find((x) => x.id === w.clusterId) : undefined;
   if (c?.switching) return false;
   if (c && (c.kind === "panel" ? sitesDown(s, c.id) : s.security.hacked.includes(c.id))) return false;

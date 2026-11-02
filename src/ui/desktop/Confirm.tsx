@@ -1,6 +1,7 @@
 import { t } from "../../i18n/en";
 import { TriangleAlert } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
+import { create } from "zustand";
 import { createPortal } from "react-dom";
 import { uiSound } from "../store";
 
@@ -29,4 +30,14 @@ export function Confirm({ title, text, action, onCancel, onConfirm }: Props) {
     </div>,
     document.querySelector(".desktop")!,
   );
+}
+
+// A confirmation asked from outside a component, such as a context menu entry; ConfirmHost on the desktop shows it.
+export interface Ask { title: string; text: string; action: string; run: () => void }
+export const useAsk = create<{ ask: Ask | null }>(() => ({ ask: null }));
+export const ask = (a: Ask) => useAsk.setState({ ask: a });
+
+export function ConfirmHost() {
+  const a = useAsk((s) => s.ask), close = useCallback(() => useAsk.setState({ ask: null }), []);
+  return a && <Confirm title={a.title} text={a.text} action={a.action} onCancel={close} onConfirm={() => { close(); a.run(); }} />;
 }

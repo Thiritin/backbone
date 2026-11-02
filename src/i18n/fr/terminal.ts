@@ -71,4 +71,7 @@ export default {
   "term.vendor.secondary": () => `secondaire`,
   "term.vendor.noExpiry": () => `sans expiration`,
   "term.vendor.none": () => `Aucune entrée.`,
+  "term.ssh.broadcast": (p) => `Message de diffusion de root@${p.host}`,
+  "term.ssh.goingDown": () => "Le système s'arrête MAINTENANT !",
+  "term.ssh.goingReboot": () => "Le système redémarre MAINTENANT !",
 } satisfies Dict;

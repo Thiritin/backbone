@@ -11,7 +11,8 @@ import { renumber, renumberError } from "../60-infra/addresses";
 import { handJob, type How } from "../60-infra/handwork";
 import { migrationHours } from "../60-infra/migration";
 import { cutOs, RECOVER_HOURS } from "../60-infra/power";
-import { locationOf, working } from "../60-infra/status";
+import { locationOf, osBootHours, osHaltHours, working } from "../60-infra/status";
+import { osUp } from "../60-infra/oob";
 import { freezeTick } from "../60-infra/usage";
 import {
   LAN_GB_PER_HOUR, LOSS_NO_BACKUP, LOSS_RESTORED, LOSS_RESTORED_MAX, lossReview, moveGbit, restoreHours, type LossItem,
@@ -33,27 +34,48 @@ function clusterWorkload(s: GameState, id: string) {
   return w && c ? { w, c } : null;
 }
 
+// A booted OS shuts down cleanly for its halt minutes before the VM stops; anything else stops at once. A shutdown during
+// a reboot cancels the boot.
 export function stopWorkload(s: GameState, id: string): ActionResult {
   const found = clusterWorkload(s, id);
   if (!found) return fail("error.unknownWorkload");
   if (found.w.stopped) return fail("error.alreadyStopped");
+  if (found.w.haltUntil !== undefined) { patch(s, id, { reboot: undefined }); return { ok: true }; }
+  if (halts(s, found.w)) { patch(s, id, { haltUntil: nowHours(s) + osHaltHours(s, found.w) }); return { ok: true }; }
   // An OS still installing is lost with the power, and an upgrade rolls back, as on a server.
   const os = found.w.os ? { os: cutOs(found.w.os, nowHours(s)) } : {};
-  patch(s, id, { stopped: true, ...os });
+  patch(s, id, { stopped: true, bootUntil: undefined, ...os });
   freezeTick(s);
   return { ok: true };
 }
 
+// A checkpointed VM or one on a frozen node cannot run its shutdown, so only a VM at its login or installing software halts.
+const halts = (s: GameState, w: Workload) => !!osUp(s, w.id) && !w.frozen && !s.frozen.includes(w.deviceId ?? "");
+
+// The VM's installed OS boots for its boot minutes; an installer ISO or an empty disk shows at once.
 export function startWorkload(s: GameState, id: string): ActionResult {
   const found = clusterWorkload(s, id);
   if (!found) return fail("error.unknownWorkload");
+  if (found.w.haltUntil !== undefined) return fail("error.workloadBusy");
   if (!found.w.stopped) return fail("error.alreadyRunning");
   if (found.w.template) return fail("error.isTemplate");
   if (!controlPlaneUp(s, found.c)) return fail("error.controlPlaneDown");
   if (lostDisk(s, found.w)) return fail("error.lostDisk");
-  patch(s, id, { stopped: false });
+  const boot = found.w.media ? 0 : osBootHours(s, found.w);
+  patch(s, id, { stopped: false, haltUntil: undefined, reboot: undefined, bootUntil: boot ? nowHours(s) + boot : undefined });
   freezeTick(s);
   return { ok: true };
+}
+
+// A clean restart: the OS halts, then boots again. A VM with nothing booted is reset at once.
+export function rebootWorkload(s: GameState, id: string): ActionResult {
+  const found = clusterWorkload(s, id);
+  if (!found) return fail("error.unknownWorkload");
+  if (found.w.stopped) return fail("error.alreadyStopped");
+  if (found.w.haltUntil !== undefined) return fail("error.workloadBusy");
+  if (halts(s, found.w)) { patch(s, id, { haltUntil: nowHours(s) + osHaltHours(s, found.w), reboot: true }); return { ok: true }; }
+  const stopped = stopWorkload(s, id);
+  return stopped.ok ? startWorkload(s, id) : stopped;
 }
 
 // Hours a workload is offline while it moves over a link. economy.md, Workloads and migration: virtual machines move live

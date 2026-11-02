@@ -276,4 +276,7 @@ export const TERMINAL_EN: Record<string, (p: Params) => string> = {
   "term.vendor.secondary": () => "secondary",
   "term.vendor.noExpiry": () => "no expiry",
   "term.vendor.none": () => "No entries.",
+  "term.ssh.broadcast": (p) => `Broadcast message from root@${p.host}`,
+  "term.ssh.goingDown": () => "The system is going down for system halt NOW!",
+  "term.ssh.goingReboot": () => "The system is going down for reboot NOW!",
 };

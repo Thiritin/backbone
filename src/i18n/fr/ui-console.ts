@@ -218,4 +218,12 @@ export default {
   "console.installFromNetwork": () => "Installer un programme depuis le réseau",
   "console.winProductKey": () => "Clé de produit",
   "console.winNoKey": () => "Je n'ai pas de clé de produit",
+  "console.winShuttingDown": () => "Arrêt en cours...",
+  "console.winRebooting": () => "Redémarrage en cours...",
+  "console.confirm.stopTitle": (p) => `Arrêter ${p.name} ?`,
+  "console.confirm.stopText": (p) => `${p.name} s'arrête proprement et reste hors ligne jusqu'à ce que vous le redémarriez.`,
+  "console.confirm.rebootTitle": (p) => `Redémarrer ${p.name} ?`,
+  "console.confirm.rebootText": (p) => `${p.name} s'arrête proprement puis redémarre. Il reste hors ligne jusqu'à la fin du démarrage.`,
+  "console.confirm.checkpointTitle": (p) => `Créer un checkpoint de ${p.name} ?`,
+  "console.confirm.checkpointText": (p) => `Un checkpoint OpenVeeZee enregistre la mémoire de ${p.name} sur le disque et suspend le conteneur. Il reste hors ligne jusqu'à ce que vous le restauriez, puis il reprend là où il s'était arrêté, sans redémarrer.`,
 } satisfies Dict;

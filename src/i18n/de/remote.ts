@@ -38,4 +38,5 @@ export default {
   "error.notFromUsb": () => "Starte den Server vom USB-Stick, um ein Betriebssystem zu installieren.",
   "error.confirmHostname": () => "Gib zur Bestätigung den Hostnamen des Servers ein.",
   "error.noMedia": () => "Lade zuerst das Installer-ISO in die virtuelle Maschine.",
+  "term.console.halting": () => "Fährt herunter...",
 } satisfies Dict;

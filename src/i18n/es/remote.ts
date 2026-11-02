@@ -38,4 +38,5 @@ export default {
   "error.notFromUsb": () => "Arranca el servidor desde el USB para instalar un sistema operativo.",
   "error.confirmHostname": () => "Escribe el nombre de host del servidor para confirmar.",
   "error.noMedia": () => "Carga primero la ISO del instalador en la máquina virtual.",
+  "term.console.halting": () => "Apagando...",
 } satisfies Dict;

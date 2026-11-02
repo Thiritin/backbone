@@ -71,4 +71,7 @@ export default {
   "term.vendor.secondary": () => `sekundär`,
   "term.vendor.noExpiry": () => `kein Ablauf`,
   "term.vendor.none": () => `Keine Einträge.`,
+  "term.ssh.broadcast": (p) => `Rundsendenachricht von root@${p.host}`,
+  "term.ssh.goingDown": () => "Das System wird JETZT angehalten!",
+  "term.ssh.goingReboot": () => "Das System wird JETZT neu gestartet!",
 } satisfies Dict;

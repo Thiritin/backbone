@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- Your own virtual machines now take their operating system's time to boot, shut down and restart, and an open SSH session sees the shutdown broadcast before it is disconnected.
+- Shutting down, restarting or checkpointing a virtual machine now asks for confirmation first, and a checkpointed container keeps its last picture on the console.
 - Colocation provider sites now keep their own layout, including their facility lists and front page banner, after the Shop app has been opened.
 - Colocation provider sites now keep their own layout after the Shop app has been opened.
 - Support desks now keep the numbers for their reports: first response times, how many tickets met the response time each customer expects, and tickets per agent, kind and month.

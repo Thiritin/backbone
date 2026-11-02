@@ -9,7 +9,7 @@ import { dropCluster, insideVm, installingOn, isOwnVm, type Workload } from "./c
 import { rebuildHours, type SimEvent } from "../88-tick/tick";
 import { reportLoss } from "../85-products/products";
 import { loadSaved } from "./switches";
-import { bootHours, booting, haltHours, deviceHealth, drivesOf, dualFed, HOURS_PER_YEAR, locationOf, powered, pluggedIn, psusOf, rackPower, takesShutdown } from "./status";
+import { bootHours, booting, haltHours, osBootHours, deviceHealth, drivesOf, dualFed, HOURS_PER_YEAR, locationOf, powered, pluggedIn, psusOf, rackPower, takesShutdown } from "./status";
 
 // An unclean stop corrupts the data of the workloads that ran with this chance.
 export const CORRUPT_CHANCE = 0.15;
@@ -112,10 +112,13 @@ export function halt(s: GameState, d: Device): void {
   pushLog(d, s.hour, "ipmi.log.shutdown");
 }
 
-// Every minute: devices whose OS has halted switch off.
+// Every minute: devices whose OS has halted switch off, and own VMs stop or, on a reboot, boot again.
 export function haltTick(s: GameState): void {
-  if (!s.devices.some((d) => d.haltUntil !== undefined && d.haltUntil <= nowHours(s))) return;
-  s.devices = s.devices.map((d) => (d.haltUntil !== undefined && d.haltUntil <= nowHours(s) ? { ...d, on: false, haltUntil: undefined } : d));
+  const now = nowHours(s), due = (x: { haltUntil?: number }) => x.haltUntil !== undefined && x.haltUntil <= now;
+  if (s.devices.some(due)) s.devices = s.devices.map((d) => (due(d) ? { ...d, on: false, haltUntil: undefined } : d));
+  if (!s.workloads.some(due)) return;
+  s.workloads = s.workloads.map((w): Workload => !due(w) ? w
+    : { ...w, haltUntil: undefined, reboot: undefined, ...(w.reboot ? { bootUntil: now + osBootHours(s, w) } : { stopped: true }) });
 }
 
 // Every minute: a feed above its limit trips at once, one above its continuous load after CONTINUOUS.hours. Servers on the

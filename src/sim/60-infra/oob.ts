@@ -9,7 +9,7 @@ import type { Device, End, GameState, MachineState, NetFail } from "../50-state"
 import type { SimEvent } from "../88-tick/tick";
 import { pullPlug, pushLog } from "./power";
 import { machineOf, vmById } from "./cluster";
-import { booting, cabledOut, deviceHealth, osBootHours, peerOf, powered, routeOut, working } from "./status";
+import { booting, cabledOut, deviceHealth, halting, osBootHours, peerOf, powered, routeOut, working } from "./status";
 import { affects, exposureDays, instanceRisk, rank, vulnsFor, type OpenVuln } from "./vulns";
 
 export const CONTINUE_HOURS = 2 / 60;
@@ -100,7 +100,7 @@ export type MachineScreen =
   | { kind: "bootMenu"; media: OsImage[] }
   | { kind: "osInstall"; os: ServerOsId; progress: number }
   | { kind: "osInstallFailed"; reason: NetFail }
-  | { kind: "booting" | "login"; os: ServerOsId }
+  | { kind: "booting" | "halting" | "login"; os: ServerOsId }
   | { kind: "installing"; software: string; progress: number };
 
 const share = (doneAt: number, hours: number, now: number) => Math.max(0, Math.min(1, 1 - (doneAt - now) / hours));
@@ -123,9 +123,11 @@ export function machineScreen(s: GameState, machineId: string, loggedIn = false)
   if (vm) {
     const os = vm.os ?? null;
     if (vm.stopped || !vm.deviceId || !working(s, vm.deviceId)) return { kind: "dark" };
+    if (os && vm.haltUntil !== undefined) return { kind: "halting", os: os.id };
     if (vm.installFailed) return { kind: "osInstallFailed", reason: vm.installFailed };
     if (os && os.installedAt > now) return { kind: "osInstall", os: os.id, progress: share(os.installedAt, serverOsById(os.id).installHours, now) };
     if (vm.media) return { kind: "bootMenu", media: [vm.media] };
+    if (os && (vm.bootUntil ?? 0) > now) return { kind: "booting", os: os.id };
     return upScreen(s, { os, software: vm.software ?? [] }, loggedIn);
   }
   const d = byId(s, machineId);
@@ -137,6 +139,7 @@ export function machineScreen(s: GameState, machineId: string, loggedIn = false)
   if (d.os && d.os.installedAt > now) return { kind: "osInstall", os: d.os.id, progress: share(d.os.installedAt, serverOsById(d.os.id).installHours, now) };
   if (d.stuck && state !== "booting") return { kind: "stuck" };
   if (state === "hung") return { kind: "hung" };
+  if (d.os && halting(d)) return { kind: "halting", os: d.os.id };
   if (booting(s, d)) return d.os && d.bootFrom === "disk" && (d.bootUntil ?? 0) - now <= osBootHours(s, d) ? { kind: "booting", os: d.os.id } : { kind: "post" };
   if (d.bootFrom === "usb") { const os = stickOs(s, d.id); return os ? { kind: "bootMenu", media: [os] } : { kind: "notFound" }; }
   return upScreen(s, d, loggedIn);
@@ -168,7 +171,7 @@ export const osUp = (s: GameState, machineId: string): ServerOsId | null => {
 
 const SCREEN_KEY: Record<MachineScreen["kind"], string> = {
   dark: "term.console.dark", post: "term.console.booting", stuck: "term.console.stuck", setup: "term.console.setup", bootMenu: "term.console.installer",
-  notFound: "term.console.notFound", osInstall: "term.console.osInstall", osInstallFailed: "term.console.osInstallFailed", booting: "term.console.booting", login: "term.console.login",
+  notFound: "term.console.notFound", osInstall: "term.console.osInstall", osInstallFailed: "term.console.osInstallFailed", booting: "term.console.booting", halting: "term.console.halting", login: "term.console.login",
   desktop: "term.console.login", installing: "term.console.login", hung: "term.console.hung",
 };
 

@@ -10,7 +10,7 @@ import { activeServices, type Service } from "../30-customers/customers";
 import { serverOsById } from "../10-catalog/server-os";
 import { egress, ingress, MGMT_VLAN, routesTo } from "./switches";
 import { isOwnRouter, uplinkPort } from "./routers";
-import type { Component, Device, End, GameState, Location, NetFail, Rack, SpaceKind } from "../50-state";
+import type { Component, Device, End, GameState, Location, MachineState, NetFail, Rack, SpaceKind } from "../50-state";
 import { gatewayOf } from "./lan";
 import type { Workload } from "./cluster";
 
@@ -464,11 +464,12 @@ export const BOOT_HOURS = BOOT_MINUTES / 60;
 // A server in its BIOS setup never finishes booting.
 export const booting = (s: GameState, d: Device) => d.on && (d.setup || (d.bootUntil ?? 0) > nowHours(s));
 // An installed OS adds its own boot to POST; an OS still installing (installedAt ahead) has nothing to boot yet.
-export const osBootHours = (s: GameState, d: Device): number => (d.os && d.os.installedAt <= nowHours(s) ? serverOsById(d.os.id).bootMinutes / 60 : 0);
+export const osBootHours = (s: GameState, d: Partial<MachineState>): number => (d.os && d.os.installedAt <= nowHours(s) ? serverOsById(d.os.id).bootMinutes / 60 : 0);
 export const bootHours = (s: GameState, d: Device): number => BOOT_HOURS + osBootHours(s, d);
 export const HALT_MINUTES = 1;
 export const halting = (d: Device) => d.on && d.haltUntil !== undefined;
 export const haltHours = (s: GameState, d: Device): number => (HALT_MINUTES + (d.os && d.os.installedAt <= nowHours(s) ? serverOsById(d.os.id).haltMinutes : 0)) / 60;
+export const osHaltHours = (s: GameState, m: Partial<MachineState>): number => (m.os && m.os.installedAt <= nowHours(s) ? serverOsById(m.os.id).haltMinutes / 60 : 0);
 
 // A device works when it has power, is switched on, and no failure or power-off swap has taken it down.
 export function working(s: GameState, deviceId: string): boolean {

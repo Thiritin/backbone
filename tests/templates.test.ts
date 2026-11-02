@@ -6,9 +6,9 @@ import { createVm, setHa } from "../src/sim/90-actions/clusters";
 import { attachDatastore } from "../src/sim/90-actions/datastores";
 import { connect, setPower } from "../src/sim/90-actions/hardware";
 import { cloneTemplate, makeTemplate, makeVm } from "../src/sim/90-actions/templates";
-import { migrateWorkload, startWorkload, stopWorkload } from "../src/sim/90-actions/vms";
+import { migrateWorkload, startWorkload } from "../src/sim/90-actions/vms";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { buyDevice, hypervisor, join, panelVm, withServer, newGame } from "./fixtures";
+import { buyDevice, hypervisor, join, panelVm, withServer, newGame, stopVm } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 const ok = (r: { ok: boolean; id?: string; error?: string }) => { expect(r.error).toBeUndefined(); return r.id!; };
@@ -31,7 +31,7 @@ function setup(platform = "vmwhere"): { s: GameState; c: string; second: string;
 }
 const template = (s: GameState, c: string, size = SMALL): string => {
   const id = ok(createVm(s, c, size));
-  ok(stopWorkload(s, id));
+  ok(stopVm(s, id));
   ok(makeTemplate(s, id));
   return id;
 };
@@ -41,13 +41,13 @@ describe("templates", () => {
     const { s, c } = setup();
     const vm = ok(createVm(s, c, SMALL));
     expect(err(makeTemplate(s, vm))).toBe("error.notStopped");
-    ok(stopWorkload(s, vm));
+    ok(stopVm(s, vm));
     ok(makeTemplate(s, vm));
     expect(vmById(s, vm)!.template).toBe(true);
     expect(err(makeTemplate(s, vm))).toBe("error.isTemplate");
     const other = setup("proxmocks");
     const pvm = ok(createVm(other.s, other.c, SMALL));
-    ok(stopWorkload(other.s, pvm));
+    ok(stopVm(other.s, pvm));
     expect(err(makeTemplate(other.s, pvm))).toBe("error.noTemplates");
   });
 
@@ -56,7 +56,7 @@ describe("templates", () => {
     const host = panelVm(s, c);
     const vm = s.clusters.find((x) => x.id === host)!.vm!;
     s.workloads = [...s.workloads, { ...vmById(s, vm)!, id: "inside", serviceId: "svc", clusterId: host, deviceId: null }];
-    ok(stopWorkload(s, vm));
+    ok(stopVm(s, vm));
     expect(err(makeTemplate(s, vm))).toBe("error.softwareInUse");
   });
 
@@ -76,7 +76,7 @@ describe("templates", () => {
     const host = panelVm(s, c);
     const vm = s.clusters.find((x) => x.id === host)!.vm!;
     s.hour += 24;
-    ok(stopWorkload(s, vm));
+    ok(stopVm(s, vm));
     ok(makeTemplate(s, vm));
     const t = vmById(s, vm)!, count = s.workloads.length;
     const id = ok(cloneTemplate(s, vm));
@@ -134,7 +134,7 @@ describe("templates", () => {
     const t = ok(createVm(s, c, SMALL)), vm = ok(createVm(s, c, SMALL));
     for (const id of [t, vm]) if (vmById(s, id)!.deviceId !== "dev3") ok(migrateWorkload(s, id, "dev3"));
     s.hour += 2;
-    ok(stopWorkload(s, t));
+    ok(stopVm(s, t));
     ok(makeTemplate(s, t));
     s.hour += 2;
     ok(setPower(s, "dev3", false));
@@ -146,7 +146,7 @@ describe("templates", () => {
   it("loads a save from before templates and keeps a template across a round trip", () => {
     const { s, c } = setup();
     const vm = ok(createVm(s, c, SMALL));
-    ok(stopWorkload(s, vm));
+    ok(stopVm(s, vm));
     const raw = JSON.parse(serialize(s));
     for (const w of raw.workloads) delete w.template;
     const back = deserialize(JSON.stringify(raw));

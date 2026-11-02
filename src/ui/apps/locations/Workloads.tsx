@@ -8,7 +8,7 @@ import { clusterOf, controlPlaneUse, workloadsOn, type Workload } from "../../..
 import { pegged, workloadUse } from "../../../sim/60-infra/usage";
 import { siteHost } from "../../../sim/80-business/website";
 import { migrateWorkload, migrationTargets, startWorkload, stopWorkload } from "../../../sim/90-actions/vms";
-import { announceEntries, migrateEntries, offerEntries, rescueEntries } from "../workload-menu";
+import { announceEntries, askPower, migrateEntries, offerEntries, rescueEntries } from "../workload-menu";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
@@ -116,7 +116,7 @@ export function workloadMenu(game: GameState, w: Workload, start: (game: GameSta
     ...rescue,
     ...(web ? migrateEntries(game, w) : rescue.length ? [] : [{ label: t("locations-2.migrateTo"), disabled: !targets.length, items: targets.map((x) => ({ label: x.down ? t("locations-2.targetOffline", { name: x.name, h: x.down }) : x.name, run: () => act(migrateWorkload, w.id, x.to) })) }]),
     ...offerEntries(game, w),
-    w.stopped ? { label: t("locations-2.start"), run: () => act(startWorkload, w.id) } : { label: t("locations-2.stop"), run: () => act(stopWorkload, w.id) },
+    w.stopped ? { label: t("locations-2.start"), run: () => act(startWorkload, w.id) } : { label: t("locations-2.stop"), run: () => askPower("stop", vmLabel(game, w).name, t("locations-2.stop"), () => act(stopWorkload, w.id)) },
     null,
     consoleEntry(game, w.clusterId),
     !!customer && { label: t("locations-2.openCustomer"), run: () => openCustomer(customer) },

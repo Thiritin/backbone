@@ -71,4 +71,7 @@ export default {
   "term.vendor.secondary": () => `secondario`,
   "term.vendor.noExpiry": () => `nessuna scadenza`,
   "term.vendor.none": () => `Nessuna voce.`,
+  "term.ssh.broadcast": (p) => `Messaggio broadcast da root@${p.host}`,
+  "term.ssh.goingDown": () => "Il sistema si arresta ORA!",
+  "term.ssh.goingReboot": () => "Il sistema si riavvia ORA!",
 } satisfies Dict;

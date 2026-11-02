@@ -1,5 +1,6 @@
 // economy.md, OpenVeeZee: burst memory and the live checkpoint and restore.
 import { BURST_MAX, checkpointMinutes, openVeeZee } from "../60-infra/beancounters";
+import { nowHours } from "../00-core/time";
 import { lostDisk } from "../60-infra/cluster";
 import { servicesIn } from "../60-infra/ha";
 import type { GameState } from "../50-state";
@@ -22,7 +23,7 @@ export function setBurst(s: GameState, workloadId: string, gb: number): ActionRe
 export function freezeWorkload(s: GameState, workloadId: string): ActionResult {
   const f = found(s, workloadId);
   if (!f) return fail("error.unknownWorkload");
-  if (f.w.stopped || f.w.frozen || f.w.template || lostDisk(s, f.w) || f.w.busyUntil > s.hour) return fail("error.workloadBusy");
+  if (f.w.stopped || f.w.frozen || f.w.template || lostDisk(s, f.w) || f.w.busyUntil > s.hour || f.w.haltUntil !== undefined || (f.w.bootUntil ?? 0) > nowHours(s)) return fail("error.workloadBusy");
   patch(s, f.w.id, { frozen: true });
   return { ok: true };
 }

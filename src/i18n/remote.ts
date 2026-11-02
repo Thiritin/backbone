@@ -50,4 +50,5 @@ export const REMOTE_EN: Record<string, (p: Params) => string> = {
   "error.notFromUsb": () => "Boot the server from the USB stick to install an operating system.",
   "error.confirmHostname": () => "Type the server's hostname to confirm.",
   "error.noMedia": () => "Load the installer ISO in the virtual machine first.",
+  "term.console.halting": () => "Shutting down...",
 };

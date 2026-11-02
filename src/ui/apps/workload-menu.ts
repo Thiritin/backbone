@@ -5,11 +5,16 @@ import { locationOf } from "../../sim/60-infra/status";
 import { queueMigration } from "../../sim/90-actions/staff";
 import { announceMigration, moveTargets, offerMigration, type MoveTarget } from "../../sim/90-actions/moves";
 import { migrateWebspace, migrateWorkload, migrationTargets, rescueTargets, rescueWorkload, restoreWorkload, startWorkload, stopWorkload, webspaceTargets } from "../../sim/90-actions/vms";
+import { ask } from "../desktop/Confirm";
 import type { MenuEntry } from "../desktop/menu";
 import { useStore } from "../store";
 import type { HandTask } from "./locations/HandSheet";
 import { vmLabel, vmState } from "./products/parts";
 import { t } from "../../i18n/en";
+
+// Asks before a VM or web space shuts down, restarts or is checkpointed; action is the label of the control that asked.
+export const askPower = (kind: "stop" | "reboot" | "checkpoint", name: string, action: string, run: () => void) =>
+  ask({ title: t(`console.confirm.${kind}Title`, { name }), text: t(`console.confirm.${kind}Text`, { name }), action, run });
 
 // Quarter hours as "2 h 30 min".
 export function hoursText(hours: number): string {
@@ -72,14 +77,14 @@ export function rescueEntries(game: GameState, w: Workload, start: (game: GameSt
 export function workloadActions(game: GameState, w: Workload, start?: (game: GameState, t: HandTask) => void): MenuEntry[] {
   const act = useStore.getState().act;
   const st = vmState(game, w);
-  const on = st === "running" || st === "down" || st === "frozen";
+  const on = st === "running" || st === "down" || st === "frozen" || st === "booting";
   const web = game.clusters.find((c) => c.id === w.clusterId)?.kind === "panel";
   const targets = !web && (on || st === "stopped") ? migrationTargets(game, w.id) : [];
   const where = (id: string) => game.clusters.find((c) => c.id === id)?.name;
   return [
     st === "lost" && { label: w.backupAt === null ? t("misc2.startEmpty") : t("misc2.restore"), run: () => act(restoreWorkload, w.id) },
     st === "stopped" && { label: t("misc2.start"), run: () => act(startWorkload, w.id) },
-    on && { label: t("misc2.stop"), run: () => act(stopWorkload, w.id) },
+    on && { label: t("misc2.stop"), run: () => askPower("stop", vmLabel(game, w).name, t("misc2.stop"), () => act(stopWorkload, w.id)) },
     ...(start ? rescueEntries(game, w, start) : []),
     ...(web && (on || st === "stopped" || st === "migrating") ? migrateEntries(game, w) : []),
     targets.length > 0 && {

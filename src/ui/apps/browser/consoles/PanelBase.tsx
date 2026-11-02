@@ -25,7 +25,7 @@ import { useStore } from "../../../store";
 import { usePageAct } from "../pageAct";
 import { disk, ram } from "../../hw";
 import { VM_STATE, vmLabel, vmState } from "../../products/parts";
-import { hoursText } from "../../workload-menu";
+import { askPower, hoursText } from "../../workload-menu";
 import { useHolds } from "./Holds";
 import { HostSettings } from "./HostSettings";
 import { eraOf } from "../sites/era";
@@ -153,11 +153,12 @@ export function useRows(game: GameState, c: Cluster, f: ConsoleFeatures, node: s
   const web = c.kind === "panel", cloud = c.kind === "cloud", close = () => setOpen(null), holds = useHolds(game, c, f);
   return game.workloads.filter((w) => w.clusterId === c.id && (!node || w.deviceId === node)).map((w) => {
     const st = vmState(game, w), [state, tone] = VM_STATE[st], u = workloadUse(game, w), host = hostOfVm(game, w.id);
-    const on = st === "running" || st === "down" || st === "frozen", site = game.services.find((v) => v.id === w.serviceId);
+    const on = st === "running" || st === "down" || st === "frozen" || st === "booting", site = game.services.find((v) => v.id === w.serviceId);
+    const name = web ? site?.domain ?? w.hostname ?? "" : host?.name ?? w.hostname ?? vmLabel(game, w).name;
     const d = game.devices.find((x) => x.id === w.deviceId), movable = (on || st === "stopped") && !w.migrating, own = cloud && isOwnVm(w);
     const actions: (PanelAction | false)[] = [
       f.start && st === "stopped" && { id: "start", label: t("browser-consoles-2.start"), run: () => act(startWorkload, w.id) },
-      f.stop && on && { id: "stop", label: t("browser-consoles-2.stop"), run: () => act(stopWorkload, w.id) },
+      f.stop && on && { id: "stop", label: t("browser-consoles-2.stop"), run: () => askPower("stop", name, t("browser-consoles-2.stop"), () => act(stopWorkload, w.id)) },
       st === "lost" && f.backups && { id: "restore", label: w.backupAt === null ? t("browser-consoles-2.startEmpty") : t("browser-consoles-2.restore"), run: () => act(restoreWorkload, w.id) },
       !!f.migrate && movable && { id: "migrate", label: t("browser-consoles-2.migrate"), run: () => setOpen({ id: w.id, kind: "migrate" }) },
       f.resize && !!host && cloud && { id: "resize", label: t("browser-consoles-2.resize"), run: () => setOpen({ id: w.id, kind: "resize" }) },
@@ -168,8 +169,7 @@ export function useRows(game: GameState, c: Cluster, f: ConsoleFeatures, node: s
     ];
     const o = open?.id === w.id ? open.kind : null, hold = holds(w);
     return {
-      id: w.id, state: hold?.state?.[0] ?? state, tone: hold?.state?.[1] ?? tone, pkg: site?.pkg, user: site?.username,
-      name: web ? site?.domain ?? w.hostname ?? "" : host?.name ?? w.hostname ?? vmLabel(game, w).name,
+      id: w.id, name, state: hold?.state?.[0] ?? state, tone: hold?.state?.[1] ?? tone, pkg: site?.pkg, user: site?.username,
       sub: [host?.panel ? consoleTitle(host.panel) : "", !web && site?.pkg].filter(Boolean).join(" · "),
       game: gameRow(game, c, w.serviceId),
       node: d ? d.hostname ?? d.label ?? d.name : "",

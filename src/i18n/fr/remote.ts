@@ -38,4 +38,5 @@ export default {
   "error.notFromUsb": () => "Démarre le serveur depuis la clé USB pour installer un système d'exploitation.",
   "error.confirmHostname": () => "Saisis le nom d'hôte du serveur pour confirmer.",
   "error.noMedia": () => "Charge d'abord l'ISO d'installation dans la machine virtuelle.",
+  "term.console.halting": () => "Arrêt en cours...",
 } satisfies Dict;

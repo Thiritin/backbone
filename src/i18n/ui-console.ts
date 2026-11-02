@@ -218,4 +218,12 @@ export default {
   "console.installFromNetwork": () => "Install a program from the network",
   "console.winProductKey": () => "Product key",
   "console.winNoKey": () => "I don't have a product key",
+  "console.winShuttingDown": () => "Shutting down...",
+  "console.winRebooting": () => "Restarting...",
+  "console.confirm.stopTitle": (p) => `Shut down ${p.name}?`,
+  "console.confirm.stopText": (p) => `${p.name} shuts down cleanly and stays offline until you start it again.`,
+  "console.confirm.rebootTitle": (p) => `Restart ${p.name}?`,
+  "console.confirm.rebootText": (p) => `${p.name} shuts down cleanly and boots again. It is offline until the boot has finished.`,
+  "console.confirm.checkpointTitle": (p) => `Checkpoint ${p.name}?`,
+  "console.confirm.checkpointText": (p) => `An OpenVeeZee checkpoint saves the memory of ${p.name} to disk and suspends the container. It stays offline until you restore it, and then it continues where it left off without booting.`,
 } satisfies Dict;
