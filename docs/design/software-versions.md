@@ -1389,3 +1389,99 @@ No trial needed, the free edition has no time limit. Trial days: none.
 | 2014 to 2022 | Huraga theme (estimate) | 3.0 |
 | 2022 to 2023 | Huraga on FOSSBilling | 0.1 |
 | 2023 to now | Huraga on Bootstrap 5, dark mode toggle in 0.8.3 | 0.6 |
+
+# Support desks
+
+Sources: osTicket GitHub releases and WHATSNEW.md (github.com/osTicket/osTicket), the FreeScout GitHub releases and module pages (freescout.net/modules), Zendesk newsroom, blog and help center (zendesk.com, support.zendesk.com), the SEC S-1 of Zendesk, Freshworks press releases and Freshdesk support articles (support.freshdesk.com), TechCrunch, YourStory, MediaNama. The game reads these into `src/sim/10-catalog/desks.ts`. Values marked (unverified) are the game's choice where no source was found.
+
+## OsTickit
+Real product: osTicket
+
+### Versions
+| Version | Released | Headline features |
+|---|---|---|
+| 1.3 | 2005 (unverified) | Departments, help topics, canned responses, assignment, client portal with Open a New Ticket and Check Ticket Status, POP and IMAP fetch, ban list |
+| 1.6 | 2010 (unverified) | The long-lived classic staff panel |
+| 1.7 | 2013-04 | Ticket filters, SLA plans, client knowledge base, dashboard reports, CSV export, API, teams, nested help topics |
+| 1.8 | 2013-12 | Rich-text thread, custom forms and fields |
+| 1.9 | 2014-05 | Client sign-in, user directory, organizations; 1.9.4 adds custom ticket number formats and the resolved and archived states |
+| 1.10 | 2016-11 | Tasks, new advanced search, roles, nested departments |
+| 1.11 | 2019-02 | Release assignment, nested knowledge base categories |
+| 1.12 | 2019-04 | System ban list, queue columns |
+| 1.14 | 2019-11 | Ticket merge and link, SLA schedules, fetch from a mail folder |
+| 1.15 | 2020-11 | Agent and department visibility, two-factor backends |
+| 1.16 | 2022-02 | PHP 8 |
+| 1.17 | 2022-09 | OAuth2 mail sign-in |
+| 1.18 | 2023-06 | Mail library update; still maintained in 2026 |
+
+### Desk features
+| Feature in the game | Release |
+|---|---|
+| kind filters, search, assignment, canned responses, departments, customer portal | 1.3 (unverified) |
+| SLA timers, reports, ticket filters | 1.7 |
+| customer card (user directory) | 1.9 |
+| merge | 1.14 |
+
+Ticket numbers are six random digits, and outgoing mail carries `[#123456]` in the subject (the autoresponse template is `Support Ticket Opened [#%{ticket.number}]`). Sequential formats exist from 1.9.4. Statuses are Open, Resolved, Closed, Archived and Deleted; Answered and Overdue are flags shown as queue tabs.
+
+### UI generations
+| Years | UI | Introduced with |
+|---|---|---|
+| 2005 to 2015 | Classic staff panel with tables and tabs | 1.x |
+| 2016 to 2021 | Refreshed lists and action icons (a full redesign is unverified) | 1.10 |
+| 2022 to now | Current | 1.16 (unverified) |
+
+## Zendusk
+Real product: Zendesk
+
+| Item | Date |
+|---|---|
+| Launch, per-agent pricing | 2007 (USD 49 a seat at launch is unverified) |
+| Views, macros, triggers, automations, groups, web portal, requester profile | 2007 (unverified) |
+| Ticket merge | 2010 (unverified) |
+| GoodData reporting, Plus plans | 2010-07 |
+| Zendusk Voice | 2011-09 |
+| Tabbed agent desktop (Lotus) | 2012-09 |
+| Help Center, with article suggestions on the request form | 2013-08 (suggestions unverified) |
+| SLA policies | 2013 (unverified) |
+| Zopim live chat | 2014-04 |
+| Insights reporting | 2014-06 |
+| Automatic Answers, renamed Answer Bot | 2016-07, 2017-05 |
+| Agent Workspace | 2019 (unverified) |
+| Zendusk AI with generative replies | 2023-05 |
+| "AI agents" replaces bots | 2024-04 |
+
+Answer Bot resolutions cost about USD 1.00, falling to 0.80 in bundles; AI agents bill per automated resolution at about USD 1.50 to 2.00 (third-party). Ticket ids are sequential. The subject token `[Request #1234]` is the game's choice (unverified; the real default subject carries the account name and the title). Statuses are New, Open, Pending, On-hold (optional), Solved and Closed, and a reply to a closed ticket opens a follow-up ticket.
+
+## Freshdusk
+Real product: Freshdesk
+
+| Item | Date |
+|---|---|
+| Company founded | 2010-10 |
+| Public launch, per-agent pricing | 2011-06 (launch price unverified; USD 16 a seat in 2013) |
+| Merge, split, canned responses | 2011-07 |
+| Supervisor (time rules) | 2011-08 |
+| Dispatch'r, Observer, scenario automations, SLA policies, support portal with Solutions, article suggestions on the portal form | 2011 (unverified) |
+| Redesign | 2014 (unverified) |
+| Freshchat | 2017-09 |
+| Mint interface, the classic one retired | 2017-11, 2019-01 |
+| Freddy, with the answer bot | 2018 |
+| Freddy Self Service and Copilot (generative) | 2023-06 |
+| Dew interface | 2025-12 |
+
+Freddy Copilot costs about USD 29 an agent a month (third-party). Ticket ids are sequential and requester notifications carry `[#1234]`. Statuses are Open, Pending, Resolved and Closed, with Waiting on Customer and Waiting on Third Party.
+
+## FreeScoot
+Real product: FreeScout
+
+| Version | Released | Headline features |
+|---|---|---|
+| 1.0 | 2018-11 | Shared mailboxes, assignment, search, customer profile with earlier conversations, modules support |
+| 1.1 | 2018-12 | Autoresponder detection |
+| 1.2 | 2019-06 | Forwarding, search filters |
+| 1.6 | 2020-09 | Merge conversations |
+| 1.7 | 2021 | Many modules |
+| 1.8 | 2022-02 | Still the current line in 2026 |
+
+Saved replies, reports, workflows, the end-user portal, the knowledge base, satisfaction ratings and live chat are paid modules; the core has no SLA. The conversation number is the conversation id, sequential, and mail threads by its In-Reply-To and References headers with no subject token. Statuses are Active, Pending, Closed and Spam. The interface had no redesign through 2026.

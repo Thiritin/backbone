@@ -5,6 +5,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-02
 
 - GMix, Goggle Workspace, Hosted Exchange, Lookout 365 and your own mail server now each carry the storage, IMAP and POP access, attachment limits and spam filtering of their year, and your domain's MX record decides which of them receives your mail.
+- Support desks now gain features in the years their real counterparts did, so OsTickit grows from simple queues to timers, reports and merging over the years, Freshdusk goes on sale in 2011 and FreeScoot leaves reply templates and reports to paid modules.
 - Ticket replies, retention offers and ticket actions are now built so the coming mail client can show them too.
 - Every company now holds a real mailbox on its mail service, with its own password and a welcome message from the provider.
 - Your registrar's login now has a DNS page for your company domain, where you add, edit and delete records such as MX and TXT, and each change reaches the world once the TTL of the record it replaces has run out.
