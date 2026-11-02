@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
 import { sizeSpec } from "../src/sim/10-catalog/products";
 import type { GameState } from "../src/sim/50-state";
-import { appState, deriveWebspace, webspaceOf, WEB_LIMITS } from "../src/sim/60-infra/webspace";
+import { appState, deriveWebspace, homeOf, webspaceOf, WEB_LIMITS } from "../src/sim/60-infra/webspace";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { addPackage } from "../src/sim/90-actions/packages";
@@ -30,12 +30,18 @@ function account(seed = 1, app: "wordpass" | "static" = "wordpass") {
 const ws = (s: GameState, id: string) => webspaceOf(s, id)!;
 
 describe("web space derivation", () => {
+  it("keeps Plesk subscriptions under the vhosts folder", () => {
+    expect(homeOf("pleskit", "shopde", "shop.de")).toBe("/var/www/vhosts/shop.de");
+    expect(homeOf("directadmen", "shopde", "shop.de")).toBe("/home/shopde");
+  });
+
   it("derives the same contents from the same game and stores nothing", () => {
     const a = account(), b = account();
     expect(ws(a.s, a.id)).toEqual(ws(b.s, b.id));
     expect(a.s.webspaces).toEqual({});
     const x = ws(a.s, a.id);
     expect(x.panel).toBe("cpanic");
+    expect(x.home).toBe(`/home/${x.account}`);
     expect(x.files["public_html/wp-config.php"]).toBeDefined();
     expect(Object.keys(x.mailboxes)).toHaveLength(3);
     expect(x.app?.db).toBe(`${x.prefix}wp`);

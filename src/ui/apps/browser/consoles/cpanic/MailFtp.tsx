@@ -185,7 +185,7 @@ function Ftp({ ws }: { ws: Webspace }) {
         <Field label={t("cpmail.password")}><input type="password" value={pass} onChange={(e) => setPass(e.target.value)} autoComplete="new-password" /></Field>
         <Field label={t("cpmail.password2")}><input type="password" value={again} onChange={(e) => setAgain(e.target.value)} autoComplete="new-password" /></Field>
         {mismatch && <p className="cx-note bad">{t("cpmail.mismatch")}</p>}
-        <Field label={t("cpmail.directory")}><span className="cx-inline"><span className="cx-note">/home/{ws.account}/</span><input value={folder} onChange={(e) => setDir(e.target.value)} /></span></Field>
+        <Field label={t("cpmail.directory")}><span className="cx-inline"><span className="cx-note">{ws.home}/</span><input value={folder} onChange={(e) => setDir(e.target.value)} /></span></Field>
         <Field label={t("cpmail.quotaMb")}><input type="number" min={0} value={quota} onChange={(e) => setQuota(e.target.value)} /></Field>
         <p><button className="cx-btn primary" type="submit">{t("cpmail.createFtp")}</button></p>
       </form>
@@ -194,7 +194,7 @@ function Ftp({ ws }: { ws: Webspace }) {
         <tbody>
           {Object.values(ws.ftp).map((a) => (
             <tr key={a.user}>
-              <td>{a.user}</td><td>/home/{ws.account}/{a.folder}</td>
+              <td>{a.user}</td><td>{ws.home}/{a.folder}</td>
               <td className="num">{a.quotaMb ? t("cpmail.ftpUsageOf", { used: mb(usedIn(a.folder)), quota: mb(a.quotaMb) }) : t("cpmail.ftpUsageUnlimited", { used: mb(usedIn(a.folder)) })}</td>
               <td className="cx-acts"><button className="cx-btn" onClick={() => act(deleteFtpAccount, ws.workloadId, a.user)}>{t("cpmail.delete")}</button></td>
             </tr>

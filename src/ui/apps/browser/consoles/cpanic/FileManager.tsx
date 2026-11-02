@@ -36,8 +36,8 @@ const KINDS: CompressKind[] = ["zip", "tar", "gz", "bz2"];
 const parentOf = (p: string) => p.slice(0, Math.max(0, p.lastIndexOf("/")));
 const base = (p: string) => p.slice(p.lastIndexOf("/") + 1);
 const shown = (p: string) => `/${p}`;
-// Accepts "/public_html/", "public_html" or the full "/home/<account>/public_html".
-const parse = (ws: Webspace, text: string) => text.trim().replace(new RegExp(`^/home/${ws.account}(?=/|$)`), "").replace(/^\/+|\/+$/g, "");
+// Accepts "/public_html/", "public_html" or the full path under the home folder.
+const parse = (ws: Webspace, text: string) => text.trim().replace(new RegExp(`^${ws.home}(?=/|$)`), "").replace(/^\/+|\/+$/g, "");
 const kids = (ws: Webspace, dir: string) => Object.keys(ws.files).filter((p) => parentOf(p) === dir)
   .sort((a, b) => Number(!!ws.files[b].dir) - Number(!!ws.files[a].dir) || a.localeCompare(b));
 // cPanel's mime type column.
@@ -84,7 +84,7 @@ export function FileManager({ game, c, workloadId }: { game: GameState; c: Clust
           <button type="button" className="fm-collapse" onClick={() => setOpened([])}>{t("filemanager.collapseAll")}</button>
           <ul>
             <li>
-              <button type="button" className="fm-node" aria-current={dir === "" || undefined} onClick={() => go("")}><Home size={13} aria-hidden />{`/home/${ws.account}`}</button>
+              <button type="button" className="fm-node" aria-current={dir === "" || undefined} onClick={() => go("")}><Home size={13} aria-hidden />{ws.home}</button>
               <Tree ws={ws} dir="" at={dir} opened={opened} go={go} toggle={(p) => setOpened(opened.includes(p) ? opened.filter((x) => x !== p) : [...opened, p])} />
             </li>
           </ul>
@@ -222,7 +222,7 @@ function UploadPage({ game, ws, dir, back }: { game: GameState; ws: Webspace; di
   return (
     <div className="fm fm-upload">
       <h1 className="fm-title">{t("filemanager.upload")}</h1>
-      <p>{t("filemanager.uploadTo", { path: `/home/${ws.account}${dir ? `/${dir}` : ""}` })}</p>
+      <p>{t("filemanager.uploadTo", { path: `${ws.home}${dir ? `/${dir}` : ""}` })}</p>
       <label className="fm-check"><input type="checkbox" checked={overwrite} onChange={(e) => setOverwrite(e.target.checked)} />{t("filemanager.overwrite")}</label>
       <table className="fm-list">
         <thead><tr><th>{t("filemanager.downloads")}</th><th>{t("filemanager.size")}</th><th /></tr></thead>

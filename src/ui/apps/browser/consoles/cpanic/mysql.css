@@ -1,8 +1,8 @@
-/* cPanic's MySQL Databases page; colours come from the era's .cp variables. */
+/* cPanic's MySQL Databases page; colours come from the panel and era variables. */
 .cp-db { width: 100%; }
-.cp .cp-db h1 { margin: 0 0 10px; font-size: 18px; }
-.cp .cp-db h2 { margin: 18px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--line); font-size: 15px; }
-.cp .cp-db h3 { margin: 14px 0 6px; font-size: 13px; }
+.cx .cp-db h1 { margin: 0 0 10px; font-size: 18px; }
+.cx .cp-db h2 { margin: 18px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--line); font-size: 15px; }
+.cx .cp-db h3 { margin: 14px 0 6px; font-size: 13px; }
 .cp-db .cx-table { margin-bottom: 10px; }
 .cp-db-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; margin-bottom: 12px; }
 .cp-db-form label { display: flex; flex-direction: column; gap: 3px; font-weight: 600; }

@@ -33,7 +33,7 @@ export function Customer({ game, c, workloadId, openPma, era, back, initial = "s
   const tool = (id: ToolId) => <WebTool game={game} c={c} workloadId={workloadId} page={id} />;
   const u = ws.usage, gb = (mb: number) => disk(+(mb / 1024).toFixed(3)), n = (x: number) => x.toLocaleString(LOCALE);
   const rows: [string, ReactNode][] = [
-    [t("cust-fp.domain"), ws.domain], [t("cust-fp.home"), `/home/${ws.account}`], [t("cust-fp.user"), ws.account],
+    [t("cust-fp.domain"), ws.domain], [t("cust-fp.home"), ws.home], [t("cust-fp.user"), ws.account],
     [t("cust-fp.disk"), Number.isFinite(u.quotaMb) ? <><Bar use={[u.diskMb / 1024, u.quotaMb / 1024]} /> {gb(u.diskMb)} / {gb(u.quotaMb)}</> : gb(u.diskMb)],
     [t("cust-fp.users"), n(u.mailboxes)], [t("cust-fp.aliases"), n(u.forwarders)], [t("cust-fp.databases"), n(u.databases)],
     [t("cust-fp.subServers"), n(u.addonDomains + u.subdomains)],
