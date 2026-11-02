@@ -54,6 +54,8 @@ import { CannotReach, CustomerSite, HostPage, NotFound, PhishingPage, VideoPage 
 import { senderById } from "../../../sim/40-support/notices";
 import { PortalSite } from "./sites/portal/PortalSite";
 import { VendorSite } from "./sites/vendors/registry";
+import { ProviderSite } from "./sites/providers/registry";
+import { dcProvider } from "../../../sim/20-world/datacenters";
 import "./browser.css";
 
 // Each navigation or reload bumps nav, which restarts the page load.
@@ -69,6 +71,7 @@ function titleOf(game: GameState, r: Resolved): string {
     case "company": return game.company.name;
     case "customer": return customerSite(game, p.serviceId)?.title ?? r.host;
     case "vendor": return MANUFACTURERS.find((m) => m.id === p.maker)?.name ?? r.host;
+    case "provider": return dcProvider(p.id).name;
     case "registrar": return registrarById(p.id)?.name ?? r.host;
     case "bank": return t("misc1.browser.onlineBanking", { name: bankById(p.id)!.name });
     case "supplier": return p.name;
@@ -131,6 +134,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "company") body = <CompanySite game={game} path={r.path} go={go} />;
   else if (p.kind === "customer") body = <CustomerSite game={game} serviceId={p.serviceId} />;
   else if (p.kind === "vendor") body = <VendorSite game={game} maker={p.maker} path={r.path} go={go} />;
+  else if (p.kind === "provider") body = <ProviderSite game={game} id={p.id} path={r.path} go={go} />;
   else if (p.kind === "registrar") body = <RegistrarSite game={game} id={p.id} path={r.path} go={go} />;
   else if (p.kind === "supplier") body = <SupplierSite game={game} name={p.name} />;
   else if (p.kind === "bank") body = <BankSite game={game} id={p.id} path={r.path} go={go} />;
@@ -159,7 +163,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "ups") body = <UpsPage game={game} deviceId={p.deviceId} host={r.host} />;
   else if (p.kind === "host") body = <HostPage host={r.host} />;
   else body = <NotFound host={r.host} />;
-  const paper = !waiting && r.load !== "down" && ["company", "customer", "vendor", "sponsorboard", "registrar", "bank", "supplier", "index", "office", "shop", "software", "os"].includes(p.kind);
+  const paper = !waiting && r.load !== "down" && ["company", "customer", "vendor", "provider", "sponsorboard", "registrar", "bank", "supplier", "index", "office", "shop", "software", "os"].includes(p.kind);
   return (
     <>
       {waiting && <div className="web-load" aria-hidden />}

@@ -14,7 +14,6 @@ export default {
   "locations-1.fUps": () => "SAI",
   "locations-1.fExchange": () => "Exchange en el sitio",
   "locations-1.fCages": () => "Jaulas",
-  "locations-1.joinedWaitlist": () => "En lista de espera",
   "locations-1.addLocation": () => "Añadir ubicación",
   "locations-1.area": () => "Zona",
   "locations-1.city": () => "Ciudad",
@@ -37,7 +36,6 @@ export default {
   "locations-1.perMonth": () => "Al mes",
   "locations-1.leadTime": () => "Plazo de entrega",
   "locations-1.nDays": (p) => `${p.n} ${one(p.n) ? "día" : "días"}`,
-  "locations-1.joinWaitlist": () => "Unirse a la lista de espera",
   "locations-1.noneSelected": () => "Ningún centro de datos seleccionado",
   "locations-1.nFree": (p) => `${p.n} ${one(p.n) ? "libre" : "libres"}`,
   "locations-1.eighthsFree": (p) => `${p.n}/8 de rack libre`,
@@ -245,4 +243,6 @@ export default {
   "locations-1.emptyBay": () => "Bahía vacía",
   "locations-1.add": () => "Añadir",
   "locations-1.colour": () => "Color",
+  "locations-1.visitSite": () => "Visitar el sitio",
+  "locations-1.manage": () => "Gestionar",
 } satisfies Dict;

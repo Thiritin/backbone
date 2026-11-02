@@ -9,13 +9,14 @@ import { SERVER_OS } from "../10-catalog/server-os";
 import { CHANNELS, marketUrl } from "../10-catalog/used";
 import { companyDomain, fqdn } from "../30-customers/domains";
 import type { GameState } from "../50-state";
-import { BOARD_TITLE, BOARD_URL, companyUrl, WIKI_TITLE, WIKI_URL, displayHost, resolve, vendorHost, vendorLive, VENDORS, VIDEO_TITLE, VIDEO_URL } from "./browser";
+import { BOARD_TITLE, BOARD_URL, companyUrl, providerUrl, WIKI_TITLE, WIKI_URL, displayHost, resolve, vendorHost, vendorLive, VENDORS, VIDEO_TITLE, VIDEO_URL } from "./browser";
 import { machineAddress } from "../60-infra/addresses";
 import { familyOf } from "../60-infra/vulns";
 import { consoleHost, consoleSuffix, consoleTitle } from "./consoles";
 import { OFFICE_HOST } from "./office";
 import { DOHLE_URL } from "./tax";
 import { vendorsIn } from "../10-catalog/bookkeeping";
+import { DATACENTERS, PROVIDERS } from "../20-world/datacenters";
 import { booksHost } from "./bookkeeping";
 import { SHOPS } from "../10-catalog/shops";
 import { shopVendorUrl } from "./shoplink";
@@ -67,6 +68,7 @@ export function siteIndex(s: GameState): Category[] {
     { title: t("sim.index.cat.bookkeeping"), rows: vendorsIn(year).map((v) => row(v.program, `${displayHost(booksHost(v))}/`, t(`books-vendors.about.${v.id}`))) },
     { title: t("sim.index.cat.community"), rows: [row(BOARD_TITLE, BOARD_URL, t("sim.index.board")), row(HOSTTOAST, `www.${HOSTTOAST_HOST}/`, t("sim.index.hosttoast"))] },
     { title: t("sim.index.cat.hardware"), rows: VENDORS.filter((m) => vendorLive(m, monthIndexOf(s.hour))).map((m) => row(m.name, `${displayHost(vendorHost(m.id))}/`, m.kinds.map((k) => t(`sim.index.kind.${k}`)).join(", "))) },
+    { title: t("sim.index.cat.colocation"), rows: PROVIDERS.map((p) => row(p.name, providerUrl(p.id), [...new Set(DATACENTERS.filter((d) => d.provider === p.id).map((d) => d.city))].join(", "))) },
     { title: t("sim.index.cat.used"), rows: CHANNELS.map((c) => row(c.name, marketUrl(c.id), t(`sim.index.market.${c.id}`))) },
     { title: t("sim.index.cat.video"), rows: [row("YouTub", VIDEO_URL, VIDEO_TITLE)] },
   ].filter((c) => c.rows.length > 0);

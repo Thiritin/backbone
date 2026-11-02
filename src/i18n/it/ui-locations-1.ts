@@ -14,7 +14,6 @@ export default {
   "locations-1.fUps": () => "UPS",
   "locations-1.fExchange": () => "Exchange in sede",
   "locations-1.fCages": () => "Gabbie",
-  "locations-1.joinedWaitlist": () => "In lista d'attesa",
   "locations-1.addLocation": () => "Aggiungi sede",
   "locations-1.area": () => "Area",
   "locations-1.city": () => "Città",
@@ -37,7 +36,6 @@ export default {
   "locations-1.perMonth": () => "Al mese",
   "locations-1.leadTime": () => "Tempi di consegna",
   "locations-1.nDays": (p) => `${p.n} ${one(p.n) ? "giorno" : "giorni"}`,
-  "locations-1.joinWaitlist": () => "Iscriviti alla lista d'attesa",
   "locations-1.noneSelected": () => "Nessun data center selezionato",
   "locations-1.nFree": (p) => `${p.n} ${one(p.n) ? "libero" : "liberi"}`,
   "locations-1.eighthsFree": (p) => `${p.n}/8 di rack libero`,
@@ -245,4 +243,6 @@ export default {
   "locations-1.emptyBay": () => "Alloggiamento vuoto",
   "locations-1.add": () => "Aggiungi",
   "locations-1.colour": () => "Colore",
+  "locations-1.visitSite": () => "Visita il sito",
+  "locations-1.manage": () => "Gestisci",
 } satisfies Dict;

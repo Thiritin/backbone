@@ -1,15 +1,15 @@
-import { ArrowDown, ArrowUp, Check, Leaf, ShieldCheck } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, ExternalLink, Leaf, ShieldCheck } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { DATACENTERS, inUs, LEAD_DAYS, SPACE_SIZES, spacePrice, type Datacenter } from "../../../sim/20-world/datacenters";
 import type { GameState, SpaceKind } from "../../../sim/50-state";
 import { dcAvailability, fits } from "../../../sim/60-infra/status";
-import { addLocation, joinWaitlist } from "../../../sim/90-actions/hardware";
+import { orderUrl } from "../../../sim/80-business/browser";
 import { Logo } from "../../art/logos";
 import { cityNamed, WorldMap, type Bounds, type Marker } from "../../map/WorldMap";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
-import { positionsLabel, shareLabel, shareUnits, Sheet, spaceSize } from "./ui";
+import { positionsLabel, shareLabel, shareUnits, Sheet } from "./ui";
 
 type Rented = Exclude<SpaceKind, "basement">;
 const CITIES = [...new Set(DATACENTERS.map((d) => d.city))];
@@ -42,8 +42,8 @@ const SORTS: Record<SortKey, { first: Dir; value: (game: GameState, d: Datacente
 const B = ({ children, off }: { children: ReactNode; off?: boolean }) => <span className={`loc-badge${off ? " off" : ""}`}>{children}</span>;
 const Icon = ({ label, children }: { label: string; children: ReactNode }) => <span className="loc-icon" role="img" title={label} aria-label={label}>{children}</span>;
 
-export function AddLocation({ onClose, onAdded }: { onClose: () => void; onAdded: (id: string) => void }) {
-  const act = useStore((s) => s.act), game = useStore((s) => s.game), notify = useStore((s) => s.notify);
+export function AddLocation({ onClose }: { onClose: () => void }) {
+  const game = useStore((s) => s.game), openApp = useStore((s) => s.openApp);
   const [hideFull, setHideFull] = useState(false);
   const [filters, setFilters] = useState<Filter[]>([]);
   const [sort, setSort] = useState<{ key: SortKey; dir: Dir } | null>(null);
@@ -72,15 +72,8 @@ export function AddLocation({ onClose, onAdded }: { onClose: () => void; onAdded
   const n = SPACE_SIZES[k].includes(size) ? size : SPACE_SIZES[k][0];
   // A size is open when it is free now or the waitlist holds it for the player.
   const open = (s: number) => !!dc && (fits(game, dc.id, k, s) || game.waitlist.some((w) => w.dc === dc.id && w.space === k && w.size === s && w.heldUntil !== null));
-  const add = () => {
-    if (!dc) return;
-    if (!open(n)) {
-      if (act(joinWaitlist, dc.id, k, n).ok) { notify("Locations", t("locations-1.joinedWaitlist"), `${dc.name}, ${spaceSize(k, n)}`); onClose(); }
-      return;
-    }
-    const r = act(addLocation, dc.id, k, n);
-    if (r.ok && r.id) onAdded(r.id);
-  };
+  // Ordering happens on the provider's site, opened at its order form with this pick.
+  const visit = () => { if (dc) { openApp("Browser", { kind: "url", id: orderUrl(dc, k, n) }); onClose(); } };
 
   return (
     <Sheet title={t("locations-1.addLocation")} onClose={onClose} wide>
@@ -143,7 +136,7 @@ export function AddLocation({ onClose, onAdded }: { onClose: () => void; onAdded
           </>}
           <span className="loc-k">{t("locations-1.perMonth")}</span><strong className="num">{euro(spacePrice(dc, k, n))}</strong>
           <span className="loc-k">{t("locations-1.leadTime")}</span><strong className="num">{t("locations-1.nDays", { n: LEAD_DAYS[k] })}</strong>
-          <button className="btn primary" onClick={add}>{open(n) ? t("locations-1.addLocation") : t("locations-1.joinWaitlist")}</button>
+          <button className="btn primary" onClick={visit}><ExternalLink />{t("locations-1.visitSite")}</button>
         </> : <span className="loc-muted">{t("locations-1.noneSelected")}</span>}
       </div>
     </Sheet>
