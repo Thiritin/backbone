@@ -66,6 +66,7 @@ export function siteIndex(s: GameState): Category[] {
     { title: t("sim.index.cat.resellers"), rows: REGISTRARS.filter((r) => r.from <= year).map((r) => row(r.name, `${displayHost(registrarHost(r))}/`, t("sim.index.resellers"))) },
     { title: t("sim.index.cat.government"), rows: [row(t("browser-sites-1.of.title"), `www.${OFFICE_HOST}/`, t("sim.index.office")), row("DOHLE", DOHLE_URL, t("sim.index.dohle"))] },
     { title: t("sim.index.cat.bookkeeping"), rows: vendorsIn(year).map((v) => row(v.program, `${displayHost(booksHost(v))}/`, t(`books-vendors.about.${v.id}`))) },
+    { title: t("sim.index.cat.marketing"), rows: [] },
     { title: t("sim.index.cat.community"), rows: [row(BOARD_TITLE, BOARD_URL, t("sim.index.board")), row(HOSTTOAST, `www.${HOSTTOAST_HOST}/`, t("sim.index.hosttoast"))] },
     { title: t("sim.index.cat.hardware"), rows: VENDORS.filter((m) => vendorLive(m, monthIndexOf(s.hour))).map((m) => row(m.name, `${displayHost(vendorHost(m.id))}/`, m.kinds.map((k) => t(`sim.index.kind.${k}`)).join(", "))) },
     { title: t("sim.index.cat.colocation"), rows: PROVIDERS.map((p) => row(p.name, providerUrl(p.id), [...new Set(DATACENTERS.filter((d) => d.provider === p.id).map((d) => d.city))].join(", "))) },

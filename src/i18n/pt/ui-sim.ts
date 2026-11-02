@@ -20,6 +20,7 @@ export default {
   "sim.index.cat.mail": () => "E-mail",
   "sim.index.cat.backup": () => "Backup",
   "sim.index.cat.resellers": () => "Revendedores de domínios",
+  "sim.index.cat.marketing": () => "Marketing",
   "sim.index.cat.community": () => "Comunidade",
   "sim.index.cat.hardware": () => "Hardware",
   "sim.index.cat.video": () => "Vídeo",
