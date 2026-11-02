@@ -1,6 +1,6 @@
 import { t } from "../../../../i18n/en";
 import type { Product } from "../../../../sim/30-customers/customers";
-import { addressFor } from "../../../../sim/30-customers/addresses";
+import { ownAddress } from "../../../../sim/30-customers/addresses";
 import { companyDomain } from "../../../../sim/30-customers/domains";
 import { datacenterById } from "../../../../sim/20-world/datacenters";
 import type { GameState } from "../../../../sim/50-state";
@@ -76,8 +76,8 @@ export function Status({ game, title }: { game: GameState; title: string }) {
 }
 
 export function Legal({ game, title }: { game: GameState; title: string }) {
-  const r = game.registration, city = game.locations[0]?.city ?? "Frankfurt";
-  const own = addressFor(game.seed, 0, r?.owner ?? game.company.name, game.company.name, city);
+  const r = game.registration;
+  const own = ownAddress(game);
   return (
     <>
       <Head title={title} lead={t("browser-sites-1.co.legalLead")} />
@@ -96,7 +96,7 @@ export function Legal({ game, title }: { game: GameState; title: string }) {
 
 export function Contact({ game, title }: { game: GameState; title: string }) {
   const support = game.company.mail.kind === "free" ? salesAddress(game) : `support@${companyDomain(game)}`;
-  const own = addressFor(game.seed, 0, game.registration?.owner ?? game.company.name, game.company.name, game.locations[0]?.city ?? "Frankfurt");
+  const own = ownAddress(game);
   return (
     <>
       <Head title={title} lead={t("browser-sites-1.co.contactLead")} />

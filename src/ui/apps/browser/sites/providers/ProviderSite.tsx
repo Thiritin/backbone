@@ -3,7 +3,7 @@ import { t } from "../../../../../i18n/en";
 import { euro } from "../../../../../sim/00-core/money";
 import type { Look } from "../../../../../sim/10-catalog/sites";
 import { DATACENTERS, LEAD_DAYS, NOTICE_MONTHS, SPACE_SIZES, spacePrice, type Datacenter, type Provider } from "../../../../../sim/20-world/datacenters";
-import { addressFor } from "../../../../../sim/30-customers/addresses";
+import { ownAddress } from "../../../../../sim/30-customers/addresses";
 import type { GameState, SpaceKind } from "../../../../../sim/50-state";
 import { fits } from "../../../../../sim/60-infra/status";
 import { addLocation, joinWaitlist } from "../../../../../sim/90-actions/hardware";
@@ -140,7 +140,7 @@ export function OrderForm({ game, p, route, className }: { game: GameState; p: P
   const [kind, setKind] = useState(route.space as Rented);
   const [size, setSize] = useState(route.size);
   const [readyAt, setReadyAt] = useState(0);
-  const own = addressFor(game.seed, 0, game.registration?.owner ?? game.company.name, game.company.name, game.locations[0]?.city ?? "Frankfurt");
+  const own = ownAddress(game);
   const [contact, setContact] = useState({ company: game.company.name, contact: own.contact, street: own.street, town: `${own.zip} ${own.city}`, email: own.email });
   const dc = sites.find((d) => d.id === dcId)!;
   const k: Rented = kinds(dc).includes(kind) ? kind : "share";

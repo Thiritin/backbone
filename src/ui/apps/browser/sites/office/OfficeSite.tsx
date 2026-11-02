@@ -10,6 +10,7 @@ import { applyError, FEES, FILED_WITH, FORM_RANK, SHARE_CAPITAL } from "../../..
 import { downloadForm } from "../../../../../sim/90-actions/docs";
 import "./office.css";
 import { useFieldAct, usePageAct } from "../../pageAct";
+import { AddressFields, type AddressValue } from "../shared/Checkout";
 
 const DAYS = [t("browser-sites-1.of.day0"), t("browser-sites-1.of.day1"), t("browser-sites-1.of.day2"), t("browser-sites-1.of.day3"), t("browser-sites-1.of.day4"), t("browser-sites-1.of.day5"), t("browser-sites-1.of.day6")];
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -40,15 +41,17 @@ function Hours() {
 }
 
 // Shown next to the field the office turned down, or under the form.
-const FIELD: Record<string, string> = { "error.companyName": "name", "error.ownerName": "owner" };
+const FIELD: Record<string, string> = { "error.companyName": "name", "error.ownerName": "owner", "error.companyAddress": "address" };
 
 function Register({ game }: { game: GameState }) {
   const [act, error] = useFieldAct();
   const at = error ? FIELD[error] ?? "form" : null, note = (field: string) => at === field && <span className="to-error" role="alert">{t(error!)}</span>;
   const [name, setName] = useState(game.company.name);
   const [owner, setOwner] = useState("");
+  const blank = { street: "", zip: "", city: game.locations[0]?.city ?? "" };
+  const [address, setAddress] = useState<AddressValue>(blank);
   return (
-    <form className="to-form" onSubmit={(e) => { e.preventDefault(); act(registerCompany, name, owner, "sole"); }}>
+    <form className="to-form" onSubmit={(e) => { e.preventDefault(); act(registerCompany, name, owner, "sole", address); }}>
       <fieldset>
         <legend>{t("browser-sites-1.of.application")}</legend>
         <table>
@@ -61,6 +64,7 @@ function Register({ game }: { game: GameState }) {
               <td><label htmlFor="to-owner">{t("browser-sites-1.of.ownerField")} <b>*</b></label></td>
               <td><input id="to-owner" value={owner} required onChange={(e) => setOwner(e.target.value)} />{note("owner")}</td>
             </tr>
+            <AddressFields id="to" value={address} set={setAddress} error={note("address")} />
             <tr>
               <td>{t("browser-sites-1.of.legalForm")}</td>
               <td>{LEGAL_FORMS.sole}</td>
@@ -84,7 +88,7 @@ function Register({ game }: { game: GameState }) {
         {note("form")}
         <div className="to-buttons">
           <button type="submit">{t("browser-sites-1.of.submit")}</button>
-          <button type="reset" onClick={() => { setName(""); setOwner(""); }}>{t("browser-sites-1.of.reset")}</button>
+          <button type="reset" onClick={() => { setName(""); setOwner(""); setAddress(blank); }}>{t("browser-sites-1.of.reset")}</button>
         </div>
       </fieldset>
     </form>
@@ -101,6 +105,7 @@ function Extract({ game }: { game: GameState }) {
           <tr><td>{t("browser-sites-1.of.regNumber")}</td><td>GA {r.number}</td></tr>
           <tr><td>{t("browser-sites-1.of.businessName")}</td><td>{game.company.name}</td></tr>
           {r.owner && <tr><td>{t("browser-sites-1.of.owner")}</td><td>{r.owner}</td></tr>}
+          {game.company.address && <tr><td>{t("checkout.address")}</td><td>{game.company.address.street}, {game.company.address.zip} {game.company.address.city}</td></tr>}
           <tr><td>{t("browser-sites-1.of.legalForm")}</td><td>{LEGAL_FORMS[r.form]}</td></tr>
           <tr><td>{t("browser-sites-1.of.registeredOn")}</td><td>{stamp(r.hour)}</td></tr>
         </tbody>

@@ -26,7 +26,7 @@ export const opened = (seed = 1, bank: BankId = "sparklasse", form = "sole"): Ga
   const s = blankGame(seed);
   s.hour = MONDAY_8;
   expect(openBankAccount(s, bank).ok).toBe(true);
-  expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "sole").ok).toBe(true);
+  expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "sole", { street: "Kellerweg 1", zip: "60311", city: "Frankfurt" }).ok).toBe(true);
   s.registration!.form = form;
   s.bank!.plan = defaultPlan(bankById(bank)!, form);
   tick(s);
@@ -380,7 +380,7 @@ describe("game start", () => {
   it("refuses to register without an account", () => {
     const s = blankGame(4);
     s.hour = MONDAY_8;
-    expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "sole")).toEqual({ ok: false, error: "error.noBank" });
+    expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "sole", { street: "Kellerweg 1", zip: "60311", city: "Frankfurt" })).toEqual({ ok: false, error: "error.noBank" });
     expect(s.registration).toBeNull();
   });
 
@@ -388,7 +388,7 @@ describe("game start", () => {
     const s = blankGame(4);
     s.hour = MONDAY_8;
     openBankAccount(s, "sparklasse");
-    expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "sole").ok).toBe(true);
+    expect(registerCompany(s, "Basement Hosting", "Becker, Tin", "sole", { street: "Kellerweg 1", zip: "60311", city: "Frankfurt" }).ok).toBe(true);
     expect(s.registration).toMatchObject({ owner: "Becker, Tin", form: "sole" });
     expect(s.company.name).toBe("Basement Hosting");
     expect(s.cash).toBe(START_CASH);

@@ -181,7 +181,9 @@ export interface Doc { id: string; kind: "guide" | "note" | "app" | "form" | "ce
 // from is the legal form the company held when the form was downloaded.
 export interface DocForm { form: string; from?: string; signed: number | null }
 // domain is the company's own domain once registered; mail is its email service; zone is the domain's DNS zone at the registrar.
-export interface Company { name: string; logo: string; color: string; domain: string | null; mail: CompanyMail; tagline: string; zone: CompanyRecord[] }
+// The postal address the trade office registered; null before the registration.
+export interface PostalAddress { street: string; zip: string; city: string }
+export interface Company { name: string; logo: string; color: string; domain: string | null; mail: CompanyMail; tagline: string; zone: CompanyRecord[]; address: PostalAddress | null }
 export interface Registration { hour: number; owner: string; form: string; number: number }
 export interface LedgerEntry { hour: number; category: string; key: string; params: Record<string, string | number>; amount: number }
 
@@ -466,7 +468,7 @@ export const newGame = (seed: number): GameState => ({
   gameTitles: {},
   gameLost: {},
   tickets: [], playerBusyUntil: 0, friendFavours: { year: 0, used: 0 }, player: { at: "loc1", until: 0, doing: "work" }, downSince: {}, frozen: [],
-  company: { name: START_NAME, logo: "server", color: "oklch(0.55 0.15 255)", domain: null, mail: { kind: "free" }, tagline: "", zone: PARKING },
+  company: { name: START_NAME, logo: "server", color: "oklch(0.55 0.15 255)", domain: null, mail: { kind: "free" }, tagline: "", zone: PARKING, address: null },
   homeLine: { id: MOMS_DSL.id, next: null },
   taxLoss: 0, brokeSince: null, gameOver: null,
   staff: [], teams: defaultTeams(), candidates: applications(seed, 0), activity: [], techOps: [], techRules: { failed: true, worn: false, blackhole: true, updates: false, recover: true }, onCall: { roster: [], lastCall: {}, month: {} },
