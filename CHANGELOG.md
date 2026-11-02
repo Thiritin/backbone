@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- The CPU overcommit warning on hypervisor hosts now fires at 8 vCPUs per core instead of 2.
 - Upgrade requests no longer mark the current server as full.
 
 - Storage in Locations shows stored hardware as a grid of cards and sells several units of a model at once.
