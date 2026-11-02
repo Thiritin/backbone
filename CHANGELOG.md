@@ -6,10 +6,13 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - Lookout 365 has its own website from 2011, where you sign up for Business Basic or Business Standard, and an admin center for users, free shared mailboxes, domain verification, mail flow rules, mailbox migration, billing and a password reset by post.
 - Message trace in the Lookout 365 admin center shows what happened to every message for an address, including mail held for a full mailbox, and Lookout web mail follows the look of its year.
+- Order emails in your mailbox now show the customer's request and postal address instead of a placeholder.
+- A cancelled mail provider keeps receiving your mail until the end of the paid month, and only then does mail to it bounce.
 - Pear Mail now has a photorealistic mail icon in Panthera and Leapard, like the other apps.
 - Hosted Exchange by Ionose has its own website, where you order Basic or Business, manage mailboxes, addresses, forwarding and Out of Office in the Control Panel, and reset a forgotten password with a code sent by post.
 - Ionose web mail runs Lookout Web Access in the version of its year, and until 2012 your browser only gets the Basic or Light version without a reading pane, drag and drop or rules.
 - Pear Mail has Rules in its preferences that move, copy, colour, mark, forward, answer or junk mail as it arrives, and Smart Mailboxes that collect matching mail from every account.
+- Squarecube gains folder management, server-side filters with an editable Sieve script, and an Out of Office reply, and SquirrelMeal's Havelsieve page shows the script and sets an autoresponder.
 - Squarecube shows your mailbox in its Classic look, with folders, drag and drop, search, compose with an HTML editor, an address book, identities, preferences with special folders and, from version 0.4, a password change.
 - Pear Mail can create, rename, nest and delete mailboxes on the server and On My Pear, moves mail by drag and drop with Option to copy, erases deleted and junk mail, shows account info, and has File, View, Mailbox and Message menus with keyboard shortcuts.
 - Gmial changes its look with the years, from the 2011 redesign and the 2013 Inbox tabs to the 2018 and 2022 looks, and gains Priority Inbox, Snooze, Smart Reply and themes along the way.

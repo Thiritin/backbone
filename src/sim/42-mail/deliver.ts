@@ -190,7 +190,7 @@ export function catchRate(s: GameState, a: MailAccount): number {
   return Math.min(0.999, c + (pref === "strict" ? 0.05 : 0));
 }
 
-const protectedHost = (s: GameState, t: MailTenant): boolean =>
+export const protectedHost = (s: GameState, t: MailTenant): boolean =>
   t.host === "goggle" || t.host === "lookout" || (t.host === "self" && s.company.mail.kind === "self" && s.company.mail.software === "mailpig");
 
 // Filters, forwarder, junk, desk channel and vacation reply for a message the box has room for.

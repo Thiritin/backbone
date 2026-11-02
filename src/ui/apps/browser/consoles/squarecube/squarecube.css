@@ -83,3 +83,9 @@
 .scw-tabs a { padding: 4px 10px; color: #333333; text-decoration: none; border: 1px solid transparent; border-bottom: 0; }
 .scw-tabs a[aria-current] { background: #ffffff; border-color: #999999; font-weight: 700; }
 .scw-settings .scw-split { flex: 1; }
+.scw-list tr.off td { color: #999999; }
+.scw-list tr.over td, .scw-list tr.over th { background: #ffffcc; }
+.scw-pane textarea.scw-raw { width: 100%; height: 320px; font-family: monospace; font-size: 12px; white-space: pre; }
+.scw-radio { display: block; margin: 2px 0; }
+.scw-error-line { color: #cc0000; font-weight: 700; white-space: pre-wrap; }
+.scw input[type="checkbox"], .scw input[type="radio"] { width: auto; }
