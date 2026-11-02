@@ -193,7 +193,7 @@ export function MailAttachments({ tk, r, m }: { tk: Ticket; r: SalesRequest; m: 
   );
 }
 
-// The step a custom order is at, with its button; the account can be created before the quote. Shop orders start accepted.
+// The step a custom order is at, with its button; the account waits for the accepted quote. Shop orders start accepted.
 export function CustomCompose({ tk, r }: { tk: Ticket; r: SalesRequest }) {
   const game = useStore((s) => s.game);
   const act = useStore((s) => s.act);
@@ -207,9 +207,8 @@ export function CustomCompose({ tk, r }: { tk: Ticket; r: SalesRequest }) {
   const accepted = game.quotes.find((q) => q.ticketId === tk.id && q.status === "accepted");
   const web = r.product === "webHosting" && !!r.domain;
   const waiting = r.replyAt !== null;
-  // Before the customer accepts, the offer and the account are both open; after, only the next step shows.
-  const shown = !done.quote ? [...(waiting ? [] : ["quote"]), ...(done.account ? [] : ["account"])]
-    : [!done.account ? "account" : !done.invoice ? "invoice" : web && !done.domain ? "domain" : !done.provision ? "provision" : ""];
+  // Only the step the order is at: the offer until the customer accepts, then account, invoice, domain, setup.
+  const shown = [!done.quote ? (waiting ? "" : "quote") : !done.account ? "account" : !done.invoice ? "invoice" : web && !done.domain ? "domain" : !done.provision ? "provision" : ""];
   const cost = web ? (game.registrar ? wholesale(game, r.domain!) : registryCost(r.domain!, yearOf(game.hour))) : 0;
   const quoteValue = done.quote ? t("support.perMonth", { price: euroCents(r.quote ?? 0) }) : waiting ? t("support.sent") : r.status === "countered" ? t("support.counter", { price: euroCents(r.counter ?? 0) }) : r.status === "refused" ? t("support.refused") : t("support.notSent");
   const row = (id: string, label: string, value: string, body?: React.ReactNode) => (

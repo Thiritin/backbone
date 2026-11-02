@@ -50,6 +50,7 @@ import { HOSTTOAST } from "../../../sim/10-catalog/hosttoast";
 import { WikiSite } from "./sites/wiki/WikiSite";
 import { SoftwarePage } from "./sites/software/registry";
 import { RegistrarSite } from "./sites/registrars";
+import { ParkedPage } from "./sites/registrars/Parked";
 import { SupplierSite } from "./sites/bank/SupplierSite";
 import { BankSite } from "./sites/bank/BankSite";
 import { bankById } from "../../../sim/10-catalog/banks";
@@ -75,6 +76,7 @@ function titleOf(game: GameState, r: Resolved): string {
     case "vendor": return MANUFACTURERS.find((m) => m.id === p.maker)?.name ?? r.host;
     case "provider": return dcProvider(p.id).name;
     case "registrar": return registrarById(p.id)?.name ?? r.host;
+    case "parked": return p.domain;
     case "bank": return t("misc1.browser.onlineBanking", { name: bankById(p.id)!.name });
     case "supplier": return p.name;
     case "host": return r.host;
@@ -139,6 +141,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "vendor") body = <VendorSite game={game} maker={p.maker} path={r.path} go={go} />;
   else if (p.kind === "provider") body = <ProviderSite game={game} id={p.id} path={r.path} go={go} />;
   else if (p.kind === "registrar") body = <RegistrarSite game={game} id={p.id} path={r.path} go={go} />;
+  else if (p.kind === "parked") body = <ParkedPage game={game} registrar={p.registrar} domain={p.domain} />;
   else if (p.kind === "supplier") body = <SupplierSite game={game} name={p.name} />;
   else if (p.kind === "bank") body = <BankSite game={game} id={p.id} path={r.path} go={go} />;
   else if (p.kind === "video") body = <VideoPage />;
@@ -167,7 +170,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "ups") body = <UpsPage game={game} deviceId={p.deviceId} host={r.host} />;
   else if (p.kind === "host") body = <HostPage host={r.host} />;
   else body = <NotFound host={r.host} />;
-  const paper = !waiting && r.load !== "down" && ["company", "customer", "vendor", "provider", "sponsorboard", "registrar", "bank", "supplier", "index", "office", "shop", "software", "os"].includes(p.kind);
+  const paper = !waiting && r.load !== "down" && ["company", "customer", "vendor", "provider", "sponsorboard", "registrar", "parked", "bank", "supplier", "index", "office", "shop", "software", "os"].includes(p.kind);
   return (
     <>
       {waiting && <div className="web-load" aria-hidden />}

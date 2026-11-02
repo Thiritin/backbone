@@ -4,9 +4,17 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- Right-clicking an invoice in the bookkeeping program now offers what its status allows: sending or cancelling a draft, marking it paid against a transfer or without one, sending the next dunning step, suspending, writing off and reopening.
+- The dunning levels overview is now part of the top editions only; every other edition handles reminders from the invoice list.
+- Help desks now list the domain records to add at your registrar for your support address and mail sending, show which of them already resolve, and check them all with a Verify button.
+- Each product listed on the company website now has its own switch for custom requests; with it off, visitors order the shop plans only, and the website says when custom packages are available.
+- The Research app now lists exactly what each training switches on, every entry takes you to where it is used, and an entry that depends on software names that software.
+- Your registrar's login now has a Register page where you order further domains of your own, and every domain has a page where you set its name servers: a domain parked at the registrar shows its parking page in the browser, one on your own name servers reaches your site, and a change takes an hour to spread.
+- Interaction, mainqubes, Tellyhouse, Global Snitch, Docklands Data and Iron Molehill now have their own websites in the style of their companies, with an early look and a modern one that arrives in later years.
 - Data5, NTD, Spree Colo, Arubaba, Next Lair and Green.chz now each have their own website, with one look in the early years and a modern one later.
 - Every colocation provider's site now has a customer portal where you sign in to see your contracts, invoices and remote-hands tickets, book extra power, feed B and power contracts, and cancel a contract with its notice date, and the large providers offer a free month to stay.
 - Colocation provider sites now keep their own layout, including their facility lists and front page banner, after the Shop app has been opened.
+- Custom orders no longer offer to create the customer account before the customer has accepted the quote.
 - Colocation provider sites now keep their own layout after the Shop app has been opened.
 - Support desks now keep the numbers for their reports: first response times, how many tickets met the response time each customer expects, and tickets per agent, kind and month.
 - Every colocation provider now has its own website in the browser, listed on Yahoy, where you compare its data centers and prices, join a waitlist and order space, and the Visit site button in Locations opens that order form with your pick.

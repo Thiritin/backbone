@@ -18,6 +18,14 @@ export function setLine(s: GameState, p: Product, on: boolean): ActionResult {
   return { ok: true, id: p };
 }
 
+// Switches custom requests for a listed line on or off.
+export function setCustom(s: GameState, p: Product, on: boolean): ActionResult {
+  if (!SITE_LINES.includes(p)) return { ok: false, error: "error.unknownSiteLine" };
+  const custom = s.marketing.custom.filter((x) => x !== p);
+  s.marketing = { ...s.marketing, custom: on ? [...custom, p] : custom };
+  return { ok: true, id: p };
+}
+
 // Starts writing the first site by hand; it costs nothing and is ready after three days.
 export function buildSite(s: GameState): ActionResult {
   if (s.marketing.siteReady !== null) return { ok: false, error: "error.siteStarted" };

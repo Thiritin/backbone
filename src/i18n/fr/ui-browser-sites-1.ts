@@ -113,6 +113,7 @@ export default {
   "browser-sites-1.co.fromYear": (p) => `à partir de ${p.price} par an`,
   "browser-sites-1.co.fromMonth": (p) => `à partir de ${p.price} par mois`,
   "browser-sites-1.co.order": () => "Commander",
+  "browser-sites-1.co.customLine": () => "Nous composons aussi des offres sur mesure sur demande.",
   "browser-sites-1.co.pitch": (p) => `Hébergement web et serveurs depuis ${p.city}.`,
   "browser-sites-1.co.sub": () => "Nos machines tournent jour et nuit, et nous aussi.",
   "browser-sites-1.co.seeProducts": () => "Voir les produits",

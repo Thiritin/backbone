@@ -20,6 +20,7 @@ export default {
   "books-editions.feature.reports": () => `Lucros e perdas e fluxo de caixa`,
   "books-editions.feature.helpdesk-link": () => `Ligação ao helpdesk`,
   "books-editions.feature.statistics": () => `Estatísticas`,
+  "books-editions.feature.dunning": () => "Níveis de cobrança",
   "ledger.booksSeat": (p) => `Lugar ${p.program} ${p.edition}`,
   "error.unknownEdition": () => `Esta edição não está à venda.`,
   "books-editions.noSeat": () => `Sem lugar`,
