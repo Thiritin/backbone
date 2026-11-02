@@ -75,6 +75,8 @@ export const imageParts = (img: OsImage): { id: ServerOsId; version: string } =>
   return { id: img.slice(0, at) as ServerOsId, version: img.slice(at + 1) };
 };
 export const imageName = (img: OsImage): string => { const { id, version } = imageParts(img); return `${serverOsById(id).name} ${version}`; };
+// The file name the image is saved under, as "lunix-12.iso".
+export const isoName = (img: OsImage): string => `${img.replace("@", "-")}.iso`.replace(/\s+/g, "-").toLowerCase();
 export const imageExists = (img: string): img is OsImage => {
   const { id, version } = imageParts(img as OsImage);
   return SERVER_OS.some((o) => o.id === id && o.versions.some((x) => x.version === version));
