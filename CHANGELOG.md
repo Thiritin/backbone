@@ -5,6 +5,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-02
 
 - A server with failed fans now runs its CPU hot under load: from 85 °C it slows down, and every hour above 90 °C wears its parts.
+- Dragging a browser tab out of its window now opens it in a new browser window, and dragging a tab onto another browser window moves it there.
+- SkyBlink, Boris Network, Digital Reality, CoreSpite, Telex and myLoch now each have a website in their own style, which changes from an early look to a modern one over the years.
 - Busy servers now slow down gradually from 70% CPU instead of all at once at 100%, and only a server that stays badly overloaded for two hours lets its sites time out.
 - A server that runs out of memory no longer freezes with every workload on it: it slows down while it swaps, and past that only its largest VM is killed for an hour.
 - The web hosting panels no longer resize, remove or take the whole host offline and no longer set booking limits; the host's software page now restarts the server, and updates, the release channel and auto updates sit on their own Updates page where the panel supports them.
