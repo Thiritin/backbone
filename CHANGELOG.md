@@ -20,6 +20,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Buying licences on vendor websites now goes through a checkout with billing details, payment and a review, and a card payment needs the card details from the online bank.
 - Panel consoles no longer sell licence editions; the licence page shows the edition and its limits, and editions are changed from My account on the vendor's website.
 - Vendor websites offer a Change edition choice for every licence key, which switches the key to the new edition after checkout without entering a new key.
+- The cPanic customer pages now offer Addon Domains, Subdomains, Aliases, a Zone Editor, SSL/TLS Status, MultiPHP Manager and Cron Jobs, labelled as the release of the year names them, and a new subdomain gets its DNS record automatically.
 - Every cPanic customer account now has its own files, databases, mailboxes and limits on databases, FTP accounts and domains, which its customer pages show.
 - Your own servers, mail server, webmail, help desk and shop now get their DNS records automatically, so an MX record pointing at your mail server's host name delivers mail, and the DNS page offers MX, A and CNAME values from lists instead of free text.
 - Mail to your domain now really follows its MX record: when it leads nowhere, email orders stop arriving and the Email sheet shows the mail as not delivered.

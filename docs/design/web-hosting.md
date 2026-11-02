@@ -88,6 +88,8 @@ FTP accounts with a home folder and a quota. A desktop FTP program, FileGorilla 
 
 These screens edit the parts listed in section 2. The zone editor writes to the same DNS model that PowerDNZ shows. SSL uses `certificates.ts` and AutoSSL from `web-services.md`. Cron jobs run hourly at most and appear as host load.
 
+In cPanic the customer pages carry the real names of their era. Parked Domains became Aliases in 2018, the Simple DNS Zone Editor (A and CNAME records only) became the Zone Editor in 2012, SSL/TLS Manager became SSL/TLS Status with AutoSSL in 2016, and PHP Configuration (one version for the host) became the MultiPHP Manager with a version per domain in 2015. A parked domain serves the main folder. A new subdomain adds its address record to its parent's zone, and an addon domain gets a zone of its own. Cron Jobs offers the Common Settings list and the five crontab fields; a job that would run more often than hourly counts as hourly, and each job shows the share of a core it keeps busy (20 seconds of one core per run).
+
 ### 4.6 App installer
 
 Fantastiko (from 2005) and Softaculus (from 2009) stay as the shortcut planned in `web-presence.md`: pick an app, a domain and a folder, and the installer creates the files, the database and the admin account in one step. This is how customers install their own apps. Shop systems are listed there only in the eras when the real installers carried them, and the player may install their own shop through it too: the installer still asks for the licence key and the admin account, and creates the folder, the database and the user that section 5 sets up by hand.
