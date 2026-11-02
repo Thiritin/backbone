@@ -146,7 +146,7 @@ const iso = (hour: number) => dateOf(hour).toISOString().slice(0, 10);
 export function Vacation({ ctx }: { ctx: Ctx }) {
   const { game, account } = ctx, act = useStore((x) => x.attempt), a = game.mail.accounts.find((x) => x.id === account)!, v = a.vacation;
   const t0 = tenantOf(game, a), weekly = !!t0 && protectedHost(game, t0);
-  const [f, setF] = useState({ subject: v?.subject ?? "", text: v?.text ?? "", end: v?.until ? iso(v.until - 1) : "", on: !!v?.on });
+  const [f, setF] = useState({ subject: v?.subject ?? "", text: v?.text ?? "", end: v?.until ? iso(v.until - 1) : "", on: v ? v.on : true });
   const [note, setNote] = useState<string | null>(null), [error, setError] = useState<string | null>(null);
   const save = () => {
     const until = f.end ? hourOf(new Date(`${f.end}T00:00:00Z`)) + 24 : null;
