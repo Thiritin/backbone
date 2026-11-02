@@ -2,7 +2,8 @@ import type { ComponentType } from "react";
 import { deskOf } from "../../../sim/10-catalog/desks";
 import type { GameState } from "../../../sim/50-state";
 import { FREEMAIL, providerById } from "../../../sim/80-business/mail";
-import { FreeScootMark, FreshduskMark, GoggleMark, IonoseMark, LookoutMark, GMixMark, OsTickitMark, PearMailMark, ZenduskMark, type MarkProps } from "../../art/mailmarks";
+import { FreeScootMark, FreshduskMark, GoggleMark, IonoseMark, LookoutMark, GMixMark, OsTickitMark, ZenduskMark, type MarkProps } from "../../art/mailmarks";
+import { PearMailIcon } from "../../art/era-icon";
 
 export type SupportStyle = "goggle" | "lookout" | "ionose" | "gmix" | "pear" | "ostickit" | "zendusk" | "freshdusk" | "freescoot";
 // brand names the provider or desk the app is drawn as.
@@ -15,7 +16,7 @@ export const MAIL: Record<string, { icon: ComponentType<MarkProps>; tile: string
   hostedExchange: { icon: IonoseMark, tile: "oklch(0.33 0.13 262)", style: "ionose" },
 };
 export const GMIX = { brand: FREEMAIL, icon: GMixMark, tile: "oklch(0.52 0.15 250)", style: "gmix" as const };
-const PEAR = { brand: "Pear Mail", icon: PearMailMark, tile: "oklch(0.62 0.15 245)", style: "pear" as const };
+const PEAR = { brand: "Pear Mail", icon: PearMailIcon, tile: "oklch(0.62 0.15 245)", style: "pear" as const };
 
 export const DESK: Record<string, { icon: ComponentType<MarkProps>; tile: string; style: SupportStyle }> = {
   ostickit: { icon: OsTickitMark, tile: "oklch(0.4 0.012 255)", style: "ostickit" },
