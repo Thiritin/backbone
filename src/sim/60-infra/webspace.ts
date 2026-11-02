@@ -61,7 +61,7 @@ const UNLIMITED: WebLimits = { databases: Infinity, mailboxes: Infinity, ftpAcco
 export const ALL_PRIVILEGES = ["ALL PRIVILEGES"];
 // cPanel's MultiPHP Manager; before it every domain runs the host's PHP.
 export const MULTI_PHP_YEAR = 2015;
-const MAIL_SHARE = 0.1, DB_SHARE = 0.2;
+const MAIL_SHARE = 0.1, DB_SHARE = 0.2, SMALL_FILE_MB = 0.004;
 
 // The files an app ships with, in share of the disk the files use; the config file is the one the app reads its database from.
 const APP_FILES: Record<App, { files: [string, number][]; config?: string; db?: string }> = {
@@ -135,7 +135,10 @@ export function deriveWebspace(s: GameState, workloadId: string): Webspace | nul
   if (v) {
     const app = v.spec.app ?? "static", def = APP_FILES[app], usedMb = accountUse(s, w).disk[0] * 1024;
     const nMail = Math.min(v.spec.mailboxes, 8), mailMb = nMail ? usedMb * MAIL_SHARE : 0, dbMb = def.db ? usedMb * DB_SHARE : 0, filesMb = usedMb - mailMb - dbMb;
-    for (const [n, share] of def.files) ws.files[`${webroot}/${n}`] = { ...(n.includes(".") ? {} : { dir: true as const }), mb: +(filesMb * share / 100).toFixed(3), at: since };
+    // A single file weighs a few KB; the folders take the rest of the disk the files use.
+    const isFile = (n: string) => n.includes("."), fileMb = (share: number) => Math.min(SMALL_FILE_MB, filesMb * share / 100);
+    const dirMb = filesMb - def.files.filter(([n]) => isFile(n)).reduce((a, [, share]) => a + fileMb(share), 0), dirShare = def.files.filter(([n]) => !isFile(n)).reduce((a, [, share]) => a + share, 0);
+    for (const [n, share] of def.files) ws.files[`${webroot}/${n}`] = { ...(isFile(n) ? {} : { dir: true as const }), mb: +(isFile(n) ? fileMb(share) : dirMb * share / dirShare).toFixed(3), at: since };
     if (!def.files.some(([n]) => n === ".htaccess")) ws.files[`${webroot}/.htaccess`] = { mb: 0.001, at: since };
     if (def.config && def.db) {
       const db = `${prefix}${def.db}`;
