@@ -7,10 +7,10 @@ import { orderLead } from "../src/sim/30-market/orders";
 import type { GameState } from "../src/sim/50-state";
 import { registrarFormUrl, resolve } from "../src/sim/80-business/browser";
 import { tick } from "../src/sim/88-tick/tick";
-import { confirmOrder, createAccount, quoteOrder, registerOrderDomain } from "../src/sim/90-actions/orders";
+import { confirmOrder, createAccount, registerOrderDomain } from "../src/sim/90-actions/orders";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { RegistrarSite } from "../src/ui/apps/browser/sites/registrars";
-import { mailed, owner, readyGame } from "./fixtures";
+import { mailed, owner, readyGame, quoteOrder } from "./fixtures";
 
 const web = { product: "webHosting" as const, size: 0, sla: "basic" as const };
 const req = (s: GameState, id: string) => s.sales.requests.find((x) => x.ticketId === id)!;

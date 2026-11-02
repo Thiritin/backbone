@@ -1,11 +1,11 @@
 import { Eye, HeartHandshake, Megaphone, Package, Presentation, Star, Waypoints } from "lucide-react";
-import { Fragment, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
-import type { Product, Profile } from "../../../sim/30-customers/customers";
+import type { Profile } from "../../../sim/30-customers/customers";
 import { isAvailable } from "../../../sim/10-catalog/research";
 import {
-  BUDGETS, CAMPAIGNS, costPerLead, DISCOUNTS, leadsThisMonth, monthlyMarketingCost, OWNED, owns, PLATFORMS, PROFILE_IDS, reach, reviewScore, wonLeads,
+  BUDGETS, CAMPAIGNS, costPerLead, DISCOUNTS, leadsThisMonth, monthlyMarketingCost, OWNED, owns, PLATFORMS, PROFILE_IDS, reach, reviewScore,
   type CampaignChannel, type OwnedChannel, type PlatformId, type Review,
 } from "../../../sim/80-business/marketing";
 import { bookFair, setCampaign, setReviewPlatform, setUpChannel, stopCampaign } from "../../../sim/90-actions/marketing";
@@ -18,6 +18,9 @@ import { PRODUCT } from "../support/labels";
 import { t } from "../../../i18n/en";
 import { useFocus, useStore } from "../../store";
 import { resellersUrl } from "../../../sim/80-business/browser";
+import { roleAccount, roleBoxes } from "../../../sim/42-mail/accounts";
+import type { MailRole } from "../../../sim/42-mail/types";
+import { setRoleMailbox } from "../../../sim/90-actions/mailbox";
 import { formatDay } from "../billing/format";
 import "../shop/shop.css";
 import "../billing/billing.css";
@@ -129,41 +132,37 @@ function Channels() {
         return (
           <div key={id} className="shop-card">
             <div className="shop-name"><strong>{name}</strong><span>{text}</span></div>
-            <dl className="shop-specs">
-              <div><dt>{t("marketing.setup")}</dt><dd className="num">{euro(def?.setup ?? 0)}</dd></div>
-              <div><dt>{t("marketing.upkeep")}</dt><dd className="num">{t("marketing.slashMonth", { price: euro(def?.upkeep ?? 0) })}</dd></div>
-            </dl>
+            {def ? <dl className="shop-specs">
+              <div><dt>{t("marketing.setup")}</dt><dd className="num">{euro(def.setup)}</dd></div>
+              <div><dt>{t("marketing.upkeep")}</dt><dd className="num">{t("marketing.slashMonth", { price: euro(def.upkeep) })}</dd></div>
+            </dl> : <MailRoles />}
             <div className="shop-buy"><span className="grow" />{state}</div>
           </div>
         );
       })}
     </div>
-    <LostDemand />
   </>;
 }
 
-function LostDemand() {
+const MAIL_ROLES: MailRole[] = ["owner", "sales", "support", "abuse"];
+
+function MailRoles() {
   const game = useStore((s) => s.game);
-  const { month, last } = game.marketing.unmet;
-  const lines = (Object.keys(PRODUCT) as Product[]).filter((p) => month[p] || last[p]);
-  if (!lines.length) return null;
-  const won = wonLeads(game, 0), wonLast = wonLeads(game, 1);
+  const act = useStore((s) => s.act);
+  const boxes = roleBoxes(game).filter((a) => !a.shared);
   return (
-    <table className="mkt-aware">
-      <thead>
-        <tr><th rowSpan={2}>{t("marketing.line")}</th><th colSpan={2} className="mkt-right">{t("marketing.thisMonth")}</th><th colSpan={2} className="mkt-right">{t("marketing.lastMonth")}</th></tr>
-        <tr>{[0, 1].map((i) => <Fragment key={i}><th className="mkt-right">{t("marketing.won")}</th><th className="mkt-right">{t("lost.noFittingProduct")}</th></Fragment>)}</tr>
-      </thead>
-      <tbody>
-        {lines.map((p) => (
-          <tr key={p}>
-            <td>{PRODUCT[p]}</td>
-            <td className="num">{won[p] ?? 0}</td><td className="num">{month[p] ?? 0}</td>
-            <td className="num">{wonLast[p] ?? 0}</td><td className="num">{last[p] ?? 0}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <dl className="shop-specs mkt-roles">
+      {MAIL_ROLES.map((r) => {
+        const label = t(r === "owner" ? "marketing.mainAddress" : `mailserver.role.${r}`);
+        return (
+          <div key={r}><dt>{label}</dt><dd>
+            <select aria-label={label} value={roleAccount(game, r)?.id ?? ""} onChange={(e) => act(setRoleMailbox, r, e.target.value)}>
+              {boxes.map((a) => <option key={a.id} value={a.id}>{`${a.local}@${a.domain}`}</option>)}
+            </select>
+          </dd></div>
+        );
+      })}
+    </dl>
   );
 }
 

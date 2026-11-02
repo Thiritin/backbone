@@ -2,6 +2,7 @@ import type { Dict } from "../lang";
 
 export default {
   "books.tab.quotes": () => "Angebote",
+  "books.tab.unposted": () => "Nicht gebuchte Rechnungen",
   "orderSteps.orderEmail": () => "Bestell-E-Mail",
   "orderSteps.from": (p) => `Von: ${p.name}`,
   "orderSteps.field.contact": () => "Kontakt",
@@ -14,6 +15,8 @@ export default {
   "orderSteps.createQuote": () => "Angebot erstellen",
   "orderSteps.noQuotes": () => "Noch keine Angebote.",
   "orderSteps.quote": (p) => `Angebot ${p.number}`,
+  "orderSteps.unposted": (p) => `Rechnung ${p.number} (nicht gebucht)`,
+  "orderSteps.post": () => "Buchen",
   "orderSteps.status.draft": () => "Entwurf",
   "orderSteps.status.sent": () => "Gesendet",
   "orderSteps.status.accepted": () => "Angenommen",

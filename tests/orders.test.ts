@@ -6,13 +6,15 @@ import { visibleCandidates } from "../src/sim/47-staff/staff";
 import type { GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { provisionService } from "../src/sim/90-actions/clusters";
-import { quoteOrder, setAutoOrders } from "../src/sim/90-actions/orders";
+import { setAutoOrders } from "../src/sim/90-actions/orders";
 import { buyModule } from "../src/sim/90-actions/shop";
 import { moduleFor } from "../src/sim/80-business/shop";
-import { hire } from "./fixtures";
+import { hire, quoteOrder } from "./fixtures";
 import { openShop, readyGame } from "./fixtures";
 import { closeTicket, resolveTicket } from "../src/sim/90-actions/support";
 import { deserialize, serialize } from "../src/sim/91-save/save";
+import { view } from "../src/sim/42-mail/model";
+import { syncTicketMail } from "../src/sim/42-mail/tickets";
 
 const MONDAY_9 = 48 + 9;
 const run = (s: GameState, hours: number) => { for (let i = 0; i < hours; i++) tick(s); };
@@ -140,5 +142,15 @@ describe("orders by email", () => {
     run(back, 1);
     const old = JSON.parse(serialize(readyGame(2)));
     expect(() => run(deserialize(JSON.stringify(old)), 24)).not.toThrow();
+  });
+
+  it("renders the order email body from the request", () => {
+    const s = readyGame(3);
+    const { t } = order(s);
+    syncTicketMail(s);
+    const m = Object.values(s.mail.msgs).flat().find((x) => x.ticket === t.id)!;
+    const text = view(s, m).text;
+    expect(text).not.toContain("ticket.order");
+    expect(text.length).toBeGreaterThan(40);
   });
 });

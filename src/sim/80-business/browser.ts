@@ -41,7 +41,7 @@ import { shopHost } from "./shoplink";
 import { HOSTTOAST_HOST } from "../10-catalog/hosttoast";
 import { dcProvider, PROVIDERS, type Datacenter } from "../20-world/datacenters";
 import { gmialUrl, MAIL_SITES, mailSiteUrl, type MailSiteId } from "../10-catalog/mail-consumer";
-import { IONOSE_OWA } from "../10-catalog/mail-hosted";
+import { IONOSE_OWA, LOOKOUT_OWA } from "../10-catalog/mail-hosted";
 import { roleAccount } from "../42-mail/accounts";
 
 // fast loads at once, slow shows a progress bar first, down cannot be reached.
@@ -152,7 +152,7 @@ export const defaultBookmarks = (s: GameState): { title: string; url: string }[]
 function webmailMark(s: GameState): { title: string; url: string }[] {
   const a = roleAccount(s, "sales"), tn = a && s.mail.tenants.find((x) => x.id === a.tenant), host = tn?.host;
   if (host === "goggle") return [{ title: t("sim.index.webmail"), url: gmialUrl(tn!.domain) }];
-  if (host === "ionose") return [{ title: t("sim.index.webmail"), url: `${IONOSE_OWA}/` }];
+  if (host === "ionose" || host === "lookout") return [{ title: t("sim.index.webmail"), url: `${host === "ionose" ? IONOSE_OWA : LOOKOUT_OWA}/` }];
   return host && host in MAIL_SITES ? [{ title: t("sim.index.webmail"), url: mailSiteUrl(host as MailSiteId) }] : [];
 }
 

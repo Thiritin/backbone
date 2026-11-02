@@ -4,6 +4,7 @@ import { t } from "../../../i18n/en";
 import { LOCALE } from "../../../i18n/lang";
 import { dateOf } from "../../../sim/00-core/time";
 import { isRead, view } from "../../../sim/42-mail/model";
+import { shownJunk } from "../../../sim/43-pear-mail/junk";
 import { threadsOf, type Row, type SortKey } from "../../../sim/43-pear-mail/view";
 import type { GameState } from "../../../sim/50-state";
 import { menuOn } from "../../desktop/ContextMenu";
@@ -33,7 +34,7 @@ export function MessageList({ game, rows, box, sort, onSort, threads, onThreads,
   const line = (r: Row, lead: Row[] | null) => {
     const v = view(game, r.m), unread = !isRead(game, r.m), id = r.m.id, expanded = lead && open.includes(r.m.thread);
     return (
-      <tr key={id} className={`${sel.ids.includes(id) ? "sel" : ""}${unread ? " unread" : ""}`} data-color={game.pearMail.colors[id]} aria-selected={sel.ids.includes(id)} onClick={(e) => sel.click(id, e)}
+      <tr key={id} className={`${sel.ids.includes(id) ? "sel" : ""}${unread ? " unread" : ""}${shownJunk(game, r.m) ? " junk" : ""}`} data-color={game.pearMail.colors[id]} aria-selected={sel.ids.includes(id)} onClick={(e) => sel.click(id, e)}
         draggable onDragStart={(e) => onDrag(e, r)} onContextMenu={(e) => onMenu(e, r)}>
         <td className="pm-c-mark">
           {lead && lead.length > 1

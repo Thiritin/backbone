@@ -4,8 +4,17 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
-- Switching email provider now happens on the provider sites: Ionose has a Mail migration page, Gmial imports mail and contacts, Goggle's Data migration runs for a few hours, and every old provider lists the mail and addresses still waiting to move before you cancel.
+- Switching email provider now happens on the provider sites: Ionose has a Mail migration page, Gmial imports mail and contacts, the Data migration at Goggle and the Migration page at Lookout 365 run for a few hours, and every old provider lists the mail and addresses still waiting to move before you cancel.
 - Installing your own mail server while a provider receives your mail adds the server beside it, so your mail moves once you point the MX record at the server.
+- GnuCache now writes quotes too, as unposted invoices that you post to the first invoice, and every order ticket takes its quote from Books.
+- Mailboxes can be deleted again unless they are the main address, a provider's administrator account or still in use, and the main address can be moved first.
+- The Email card in Marketing has dropdowns for the main address and the sales, support and abuse mailboxes, and your website shows the mailboxes you choose there.
+- Pear Mail has its own junk mail filter that marks junk brown with a Not Junk banner, learns from every message you mark, and in Automatic mode moves junk to the Junk mailbox; its Preferences now open with Junk Mail and Rules tabs.
+- Shop products now price their longer billing cycles from the monthly price and the cycle discounts you set once for the whole shop, which start at 0%, and "Manage prices manually" lets you enter each price yourself.
+- Books no longer has a Products tab: before your first shop every email request is priced in its own quote, and fixed products live only in the shop.
+- Lookout 365 has its own website from 2011, where you sign up for Business Basic or Business Standard, and an admin center for users, free shared mailboxes, domain verification, mail flow rules, mailbox migration, billing and a password reset by post.
+- Message trace in the Lookout 365 admin center shows what happened to every message for an address, including mail held for a full mailbox, and Lookout web mail follows the look of its year.
+- Order emails in your mailbox now show the customer's request and postal address instead of a placeholder.
 - A cancelled mail provider keeps receiving your mail until the end of the paid month, and only then does mail to it bounce.
 - Pear Mail now has a photorealistic mail icon in Panthera and Leapard, like the other apps.
 - Hosted Exchange by Ionose has its own website, where you order Basic or Business, manage mailboxes, addresses, forwarding and Out of Office in the Control Panel, and reset a forgotten password with a code sent by post.
