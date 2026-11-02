@@ -61,8 +61,7 @@ const EXTRAS: Record<SoftwareKind, (sw: Software) => CliCommand[]> = {
   backup: () => [cmd("jobList", "job list", false), cmd("restoreList", "restore list", false), cmd("restore", "restore <host> [<node>]")],
 };
 
-// Every command of the software's tool; licence commands only on licensed software, trial only where the product has one,
-// tier only on licensed panels.
+// Every command of the software's tool; licence commands only on licensed software, trial only where the product has one.
 export function cliCommands(sw: Software): CliCommand[] {
   const licensed = isLicensed(sw.id), free = licensed ? "" : "Free";
   return [

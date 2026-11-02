@@ -18,10 +18,14 @@ const shop = () => {
 describe("shared shop admin screens", () => {
   it("show the key, the updates window, the installed version and the closed store", () => {
     const s = shop(), key = s.licenses.find((k) => k.product === "whmCache")!.key;
-    expect(renderToString(<LicenceScreen game={s} />)).toContain(key);
+    const licence = renderToString(<LicenceScreen game={s} />);
+    expect(licence).toContain(key);
+    expect(licence).toContain("Remove");
+    expect(licence).not.toContain('name="key"');
     const updates = renderToString(<UpdatesScreen game={s} />);
     expect(updates).toContain("3.0");
-    expect(updates).toContain("Renew updates for 45");
+    expect(updates).toContain("My account");
+    expect(updates).not.toContain("Renew updates for");
     expect(renderToString(<VersionFooter game={s} variant="whmCache" />)).toContain("WHMCache 3.0");
     s.shop = { ...s.shop, install: null };
     expect(renderToString(<NotTakingOrders game={s} />)).toContain("The shop system is not installed.");

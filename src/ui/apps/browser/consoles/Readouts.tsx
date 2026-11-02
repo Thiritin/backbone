@@ -126,7 +126,7 @@ function UpgradeEntry({ game, c }: { game: GameState; c: Cluster }) {
 
 // Shows the key a machine of the cluster holds with a Remove button, or takes a typed key on the first machine that is not
 // licensed.
-function KeyEntry({ game, c, onDone }: { game: GameState; c: Cluster; onDone?: () => void }) {
+export function KeyEntry({ game, c, onDone }: { game: GameState; c: Cluster; onDone?: () => void }) {
   const act = useStore((s) => s.act), [key, setKey] = useState(""), [done, setDone] = useState(false), [err, setErr] = useState("");
   const id = c.panel ?? c.platform, machines = c.vm ? [c.vm] : c.nodes.map((n) => n.deviceId);
   const m = id ? machines.find((x) => licenceStatus(game, x, id) !== "active") ?? machines[0] : undefined;
@@ -159,10 +159,10 @@ function KeyEntry({ game, c, onDone }: { game: GameState; c: Cluster; onDone?: (
 // What each panel's first-run licence page calls itself and its trial link; the other families use the generic words.
 const GATE_TITLE: Record<string, string> = { cpanic: "host.enterLicense", pleskit: "host.installKey", directadmen: "host.licenseKey" };
 
-// Stands in for a licensed panel's admin UI on its first sign-in and while its licence has run out. A key or a trial takes
+// Stands in for a licensed product's console on its first sign-in and while its licence has run out. A key or a trial takes
 // the player straight on.
 export function LicenceGate({ game, c, host }: { game: GameState; c: Cluster; host: string }) {
-  const act = useStore((s) => s.act), m = panelMachine(c), id = c.panel, family = familyOf(c) ?? "";
+  const act = useStore((s) => s.act), m = panelMachine(c), id = c.panel ?? c.platform, family = familyOf(c) ?? "";
   if (!m || !id) return null;
   const locked = panelLocked(game, c), trial = trialOf(game, m, id), status = panelStatus(game, c);
   const finish = () => { if (c.setupPending) act(finishPanelSetup, c.id); };

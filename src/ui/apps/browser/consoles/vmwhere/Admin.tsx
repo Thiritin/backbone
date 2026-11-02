@@ -8,20 +8,19 @@ import { acknowledgeAlarm, applyRec, deletePool, resetAlarms, savePool, setAlarm
 import { t } from "../../../../../i18n/en";
 import { nodeName } from "../HypervisorBase";
 import { usePageAct } from "../../pageAct";
+import { LicenceFacts } from "../HostSettings";
+import { KeyEntry } from "../Readouts";
 
 const FEATURES: Feature[] = ["failover", "alarms", "drs", "pools"];
 
-// Administration > Licensing: the edition of the cluster and what each edition unlocks.
-export function Licensing({ c }: { game: GameState; c: Cluster }) {
+// Administration > Licensing: the edition, status and key of the cluster and what each edition unlocks; editions are bought
+// on the vendor site.
+export function Licensing({ game, c }: { game: GameState; c: Cluster }) {
   const now = editionOf(c);
   return (
     <>
-      <table className="cx-table">
-        <tbody>
-          <tr><th>{t("vw.edition")}</th><td>{tiersOf("vmwhere").find((x) => x.id === now)?.name}</td></tr>
-          <tr><th>{t("vw.expiration")}</th><td>{t("vw.never")}</td></tr>
-        </tbody>
-      </table>
+      <LicenceFacts game={game} c={c} />
+      <KeyEntry game={game} c={c} />
       <table className="cx-table">
         <thead><tr><th>{t("vw.edition")}</th>{FEATURES.map((f) => <th key={f}>{t(`vw.feature.${f}`)}</th>)}<th /></tr></thead>
         <tbody>

@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { type GameState } from "../src/sim/50-state";
 import { licenseCost } from "../src/sim/85-products/products";
-import { setBackup, setBalancer, setHa } from "../src/sim/90-actions/clusters";
+import { setBackup, setHa } from "../src/sim/90-actions/clusters";
 import { installBlock } from "../src/sim/90-actions/software";
-import { backupTargets } from "../src/sim/60-infra/cluster";
+import { backupTargets, balances } from "../src/sim/60-infra/cluster";
 import { connect } from "../src/sim/90-actions/hardware";
-import { buyDevice, hypervisor, panelServer, skipTo, withServer, newGame } from "./fixtures";
+import { buyDevice, hypervisor, panelServer, skipTo, vmwhereKeys, withServer, newGame } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 const err = (r: { ok: boolean; error?: string }) => (r.ok ? undefined : r.error);
@@ -31,19 +31,24 @@ describe("hypervisor editions", () => {
     const { s, id } = setup("proxmocks", 2010);
     expect(setHa(s, id, "live", true).ok).toBe(true);
     expect(err(setHa(s, id, "balance", true))).toBe("error.needsBalancer");
-    expect(err(setBalancer(s, id, true))).toBe("error.noBalancer");
   });
 
-  it("balances on VMwhere with Enterprise Plus, billed per node, and stops when it is cancelled", () => {
+  it("balances on VMwhere with the edition that runs DRS, at no fee of its own", () => {
     const { s, id } = setup("vmwhere", 2010);
+    s.unlocks = [...s.unlocks, "monitoring"];
     setHa(s, id, "live", true);
-    expect(err(setHa(s, id, "balance", true))).toBe("error.needsBalancer");
     const before = licenseCost(s, cluster(s, id)).platform;
-    expect(setBalancer(s, id, true).ok).toBe(true);
+    vmwhereKeys(s, id, "standard");
+    expect(err(setHa(s, id, "balance", true))).toBe("error.needsEdition");
+    vmwhereKeys(s, id, "enterprise");
     expect(setHa(s, id, "balance", true).ok).toBe(true);
-    expect(licenseCost(s, cluster(s, id)).platform - before).toBe(90);
-    expect(setBalancer(s, id, false).ok).toBe(true);
-    expect(cluster(s, id).ha.balance).toBe(false);
+    expect(licenseCost(s, cluster(s, id)).platform).toBe(before);
+  });
+
+  it("never balances on HyperVee", () => {
+    const { s, id } = setup("hypervee", 2010);
+    expect(err(setHa(s, id, "balance", true))).toBe("error.needsLiveMigration");
+    expect(balances(s, cluster(s, id))).toBe(false);
   });
 
   it("installs OpenStash only after cloud orchestration", () => {

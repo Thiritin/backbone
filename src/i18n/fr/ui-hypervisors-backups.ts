@@ -109,8 +109,6 @@ export default {
   "vw.licensing": () => "Licences",
   "vw.edition": () => "Édition",
   "vw.current": () => "Actuelle",
-  "vw.expiration": () => "Expiration",
-  "vw.never": () => "Jamais",
   "vw.feature.failover": () => "Basculement haute disponibilité",
   "vw.feature.alarms": () => "Seuils d'alarme",
   "vw.feature.drs": () => "Distributed Resource Scheduler",
