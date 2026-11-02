@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- The shop admin's Orders page lists every storefront order by status and opens each one with its items, invoice and payment, where Accept sets up all items through the shop's module and the order can be cancelled, marked as fraud or deleted.
 - Getting started now walks you through setting up your first company mailbox right after buying a domain, getting listed on HOSTtoast and printing flyers, and each step opens the website you need.
 - OsTickit and FreeScoot are now installed by hand like the shop: download the archive from the vendor's site, upload and extract it into your web space, create the database and run the real installer, then log in to the staff panel with the account you chose.
 - Softaculus offers OsTickit under Customer Support from 2009, and a help desk from an older save gets its files, database and a mailed staff login.

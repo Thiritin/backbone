@@ -1,10 +1,11 @@
+import { pendingOrders } from "../../../../../../sim/80-business/shop-orders";
 import type { ReactNode } from "react";
 import { t } from "../../../../../../i18n/en";
 import { versionAt } from "../../../../../../sim/10-catalog/software-versions";
 import { AdminScreen, SCREEN_LABEL } from "../shared/AdminScreen";
 import { ClientArea } from "../shared/ClientArea";
 import { VersionFooter } from "../shared/Licence";
-import { screenArgs, screenOf, type Screen, type ScreenName, type ScreenProps } from "../shared/nav";
+import { navOf, screenArgs, screenOf, type NavName, type Screen, type ScreenProps } from "../shared/nav";
 import { StoreFront } from "../shared/StoreFront";
 import type { LoginProps, Skin, SkinProps } from "../skins";
 import { LoginNote } from "../Login";
@@ -19,7 +20,7 @@ export const lookOf = (major: string, hour: number): Look => {
   return m >= 7 ? "seven" : m >= 5 ? "flat" : m === 4 ? "desk" : "classic";
 };
 
-type Nav = Exclude<ScreenName, "product" | "client">;
+type Nav = NavName;
 const ICON: Record<Nav, string> = {
   home: "M2 8 8 2l6 6M4 7v7h8V7",
   clients: "M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM2 15c0-3 3-5 6-5s6 2 6 5",
@@ -60,7 +61,7 @@ function AdminFrame({ game, variant, major, nav, title, children }: SkinProps & 
 
 function Home({ game, go }: ScreenProps) {
   const tiles: [Nav, number][] = [
-    ["orders", game.tickets.filter((x) => x.kind === "order" && x.status === "open").length],
+    ["orders", pendingOrders(game)],
     ["clients", game.customers.filter((c) => c.churnedAt === null).length],
     ["invoices", game.invoices.filter((i) => i.status === "open" || i.status === "overdue").length],
     ["products", game.shop.products.length],
@@ -79,7 +80,7 @@ function Home({ game, go }: ScreenProps) {
 function Admin(props: SkinProps) {
   const { game, route, open, major } = props, look = lookOf(major, game.hour), screen = screenOf(route.query);
   const go = (s: Screen) => open("admin", {}, screenArgs(s));
-  const current: Nav = screen.name === "product" ? "products" : screen.name === "client" ? "clients" : screen.name;
+  const current: Nav = navOf(screen.name);
   const link = (n: Nav) => (
     <a key={n} href="#" className={current === n ? "on" : ""} onClick={(e) => pick(e, () => go({ name: n }))}>{look !== "classic" && <Icon n={n} />}{label(n)}</a>
   );

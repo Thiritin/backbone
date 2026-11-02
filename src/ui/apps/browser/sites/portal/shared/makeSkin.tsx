@@ -3,7 +3,7 @@ import { yearOf } from "../../../../../../sim/00-core/time";
 import { shopById } from "../../../../../../sim/10-catalog/shops";
 import { AdminScreen, SCREEN_LABEL } from "./AdminScreen";
 import { ClientArea } from "./ClientArea";
-import { screenArgs, screenOf, type ScreenName } from "./nav";
+import { navOf, screenArgs, screenOf, type ScreenName } from "./nav";
 import { StoreFront } from "./StoreFront";
 import { VersionFooter } from "./Licence";
 import { eraOf } from "../whmCache/Admin";
@@ -36,7 +36,7 @@ export function makeSkin(look: Look): Skin {
   const Admin = (props: SkinProps) => {
     const { game, route, open } = props, screen = screenOf(route.query);
     const go = (s: Parameters<typeof screenArgs>[0]) => open("admin", {}, screenArgs(s));
-    const current = screen.name === "product" ? "products" : screen.name === "client" ? "clients" : screen.name;
+    const current = navOf(screen.name);
     const nav = (
       <nav className="shop-nav">
         {(look.screens ?? ALL).map((n) => <a key={n} href="#" className={current === n ? "on" : ""} onClick={(e) => { e.preventDefault(); go({ name: n }); }}>{look.labels?.[n] ?? SCREEN_LABEL[n]}</a>)}

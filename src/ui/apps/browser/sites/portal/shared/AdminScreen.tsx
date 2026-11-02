@@ -1,10 +1,11 @@
+import { pendingOrders } from "../../../../../../sim/80-business/shop-orders";
 import { t } from "../../../../../../i18n/en";
 import type { Screen, ScreenName, ScreenProps } from "./nav";
 import { Clients, ClientSummary } from "./Clients";
 import { Invoices } from "./Invoices";
 import { Quotes } from "./Quotes";
 import { Settings } from "./Settings";
-import { Orders } from "./Orders";
+import { OrderDetail, Orders } from "./Orders";
 import { ProductEdit } from "./ProductEdit";
 import { Products } from "./Products";
 import { Servers } from "./Servers";
@@ -19,7 +20,7 @@ export const SCREEN_LABEL: Partial<Record<ScreenName, string>> = {
 };
 
 function Home({ game, go }: ScreenProps) {
-  const pending = game.tickets.filter((x) => x.kind === "order" && x.status === "open").length;
+  const pending = pendingOrders(game);
   const rows: [ScreenName, number][] = [["orders", pending], ["clients", game.customers.filter((c) => c.churnedAt === null).length], ["products", game.shop.products.length]];
   return (
     <dl className="pt-fields">
@@ -36,6 +37,7 @@ export function AdminScreen({ screen, ...props }: ScreenProps & { screen: Screen
     case "settings": return <Settings {...props} />;
     case "servers": return <><Servers game={props.game} /><Modules game={props.game} /></>;
     case "orders": return <Orders {...props} />;
+    case "order": return <OrderDetail {...props} id={screen.id ?? ""} />;
     case "clients": return <Clients {...props} />;
     case "client": return <ClientSummary {...props} id={screen.id ?? ""} tab={screen.tab} />;
     case "invoices": return <><Invoices {...props} /><PaymentMethods game={props.game} /></>;
