@@ -6,6 +6,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - Switching email provider now happens on the provider sites: Ionose has a Mail migration page, Gmial imports mail and contacts, the Data migration at Goggle and the Migration page at Lookout 365 run for a few hours, and every old provider lists the mail and addresses still waiting to move before you cancel.
 - Installing your own mail server while a provider receives your mail adds the server beside it, so your mail moves once you point the MX record at the server.
+- Hand-worked orders end with a Send access data step that mails the customer their user name, password and address, and a customer still waiting for them a day after the setup writes in and is less happy.
+- How-to tickets have a Send the access data reply that mails a customer their login again.
 - GnuCache now writes quotes too, as unposted invoices that you post to the first invoice, and every order ticket takes its quote from Books.
 - Mailboxes can be deleted again unless they are the main address, a provider's administrator account or still in use, and the main address can be moved first.
 - The Email card in Marketing has dropdowns for the main address and the sales, support and abuse mailboxes, and your website shows the mailboxes you choose there.

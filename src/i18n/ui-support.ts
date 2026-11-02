@@ -123,6 +123,8 @@ export default {
   "support.registerDomain": () => "Register domain",
   "support.setup": () => "Setup",
   "support.live": () => "Live",
+  "support.access": () => "Access data",
+  "support.sendAccess": () => "Send access data",
   "support.notSetUp": () => "Not set up",
   "support.decline": () => "Decline",
   "support.space": () => "Space",

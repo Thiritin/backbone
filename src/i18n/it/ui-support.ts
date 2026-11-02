@@ -123,6 +123,8 @@ export default {
   "support.registerDomain": () => "Registra dominio",
   "support.setup": () => "Configurazione",
   "support.live": () => "Online",
+  "support.access": () => "Dati di accesso",
+  "support.sendAccess": () => "Invia dati di accesso",
   "support.notSetUp": () => "Non configurato",
   "support.decline": () => "Rifiuta",
   "support.space": () => "Spazio",

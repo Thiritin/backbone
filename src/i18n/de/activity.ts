@@ -13,7 +13,7 @@ const RESOLVED: Record<string, string> = {
   unsuspend: "Dienste mit Zahlungsfrist wieder freigeschaltet", keep: "Dienste gesperrt gelassen", forward: "Abuse-Meldung weitergeleitet",
   takedown: "Inhalt entfernt", reject: "Anfrage abgelehnt", comply: "Anfrage erfüllt", object: "Der Anfrage widersprochen",
   refund: "Zahlung erstattet", accept: "Bestellung angenommen", quote: "Angebot gesendet", account: "Kundenkonto angelegt",
-  invoice: "Bestellung bestätigt und Rechnung gesendet", domain: "Domain registriert", provision: "Dienst eingerichtet",
+  invoice: "Bestellung bestätigt und Rechnung gesendet", domain: "Domain registriert", provision: "Dienst eingerichtet", access: "Zugangsdaten gesendet",
 };
 const ticket = (p: Params) => KIND[p.kind] ?? "Ticket";
 

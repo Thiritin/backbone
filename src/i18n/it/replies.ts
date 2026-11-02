@@ -73,6 +73,11 @@ const MAILS: Record<string, [Mail, Mail, Mail]> = {
     (p) => `Si accede via SSH: collegati a ${p.hostname || "il tuo server"} con l'utente root e la password della tua e-mail di configurazione.`,
     (p) => `Usa un qualsiasi client SSH e collegati a ${p.hostname || "il tuo server"} come root. Se hai perso l'e-mail di configurazione con la password, rispondi qui e te ne mandiamo una nuova.`,
   ],
+  "tpl.access": [
+    (p) => `Ecco i dati di accesso di ${svc(p)}. Accedi su ${p.address} con il nome utente ${p.user} e la password ${p.password}.`,
+    (p) => `I tuoi dati di accesso per ${svc(p)}: indirizzo ${p.address}, nome utente ${p.user}, password ${p.password}. Cambia la password dopo l'accesso.`,
+    (p) => `Abbiamo recuperato i tuoi dati di accesso. ${svc(p)} si trova su ${p.address}; il nome utente è ${p.user} e la password ${p.password}.`,
+  ],
   "tpl.addon": [
     (p) => `Sì, può condividere il pacchetto. Aggiungi il nuovo dominio nel pannello di controllo su panel.${p.host}, sotto Domini, e scegli una cartella per lui.`,
     (p) => `Non serve un secondo pacchetto. Nel pannello di controllo su panel.${p.host}, aggiungi il dominio sotto Domini e puntalo a una cartella tutta sua.`,
@@ -305,7 +310,12 @@ const DONE: [Mail, Mail, Mail] = [
   (p) => `Grazie, l'ordine è confermato: ${hosting(p)} costa ${euroCents(Number(p.price))} al mese e la prima fattura, ${p.invoice}, ammonta a ${euroCents(Number(p.total))}. Il tuo account cliente è attivo.`,
 ];
 MAILS["order.done"] = [0, 1, 2].map((i): Mail => (p) => `${DONE[i](p)} ${MAILS["order.live"][i](p)}`) as [Mail, Mail, Mail];
-const LEAD = ["decline.notOffered", "decline.noCapacity", "decline.busy", "accept", "failed", "order.quote", "order.invoice", "order.live", "order.done"];
+MAILS["order.access"] = [
+  (p) => `Ecco i dati di accesso di ${hosting(p)}. Accedi su ${p.address} con il nome utente ${p.user} e la password ${p.password}.`,
+  (p) => `Come promesso, i tuoi dati di accesso per ${hosting(p)}: indirizzo ${p.address}, nome utente ${p.user}, password ${p.password}. Cambia la password dopo il primo accesso.`,
+  (p) => `${hosting(p)} è pronto: accedi su ${p.address} come ${p.user} con la password ${p.password}.`,
+];
+const LEAD = ["decline.notOffered", "decline.noCapacity", "decline.busy", "accept", "failed", "order.quote", "order.invoice", "order.live", "order.done", "order.access"];
 const SENDER = ["forward", "takedown", "notOurs", "reject", "comply", "object"];
 
 export default Object.fromEntries(Object.entries(MAILS).flatMap(([what, bodies]) =>

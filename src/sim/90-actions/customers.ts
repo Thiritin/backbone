@@ -7,6 +7,7 @@ import { webDomain } from "../30-customers/domains";
 import { addressFor, homeAddress, requestAddress } from "../30-customers/addresses";
 import type { SalesRequest } from "../30-market/market";
 import { serviceHostname } from "../30-customers/hostnames";
+import { seededPassword } from "../42-mail/new";
 import type { ActionResult } from "./hardware";
 import { answerOveruse, type OveruseChoice } from "../80-business/overuse";
 
@@ -26,7 +27,7 @@ export function addService(s: GameState, customerId: string, product: Product, l
   if (product === "webHosting" && !spec.app) spec = { ...spec, app: drawApp(s.seed, Number(id.slice(3)), yearOf(s.hour)), appVersion: yearOf(s.hour), appUpdatedAt: s.hour };
   const domain = product === "webHosting" ? webDomain(s, customerId, label, zone, id) : undefined;
   const hostname = serviceHostname(s, product);
-  s.services.push({ id, customerId, product, label: domain ?? label, price, period, commitMonths, startedAt: s.hour, endedAt: null, zone, spec, sla, ...(domain && { domain }), ...(hostname && { hostname }) });
+  s.services.push({ id, customerId, product, label: domain ?? label, price, period, commitMonths, startedAt: s.hour, endedAt: null, zone, spec, sla, password: seededPassword(s.seed, Number(id.slice(3))), ...(domain && { domain }), ...(hostname && { hostname }) });
   return id;
 }
 
