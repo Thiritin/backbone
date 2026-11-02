@@ -84,7 +84,7 @@ A service's traffic grows 20% a year from the day it started while its plan stay
 | Bill overage | An invoice for the GB over the plan, at the line's traffic rate per 100 GB (the player's rate in Products, else the market's). The customer loses 5 happiness. |
 | Offer upgrade | The customer answers with an upgrade request for the next bigger plan, which the player quotes in Sales and the customer accepts or counters like any other upgrade. |
 
-A bill or an upgrade offer covers 730 hours, so the same service can be billed or offered an upgrade once a month. The state holds a company-wide `overusePolicy` (null by default): when it is set, the daily noon check applies that answer to every service over its traffic that is not yet throttled or handled this month. The player sets it in the Books app's billing rules after the Traffic billing training (250 know-how, 10 days, after Product management); the choices are off, throttle, bill or offer upgrade. An upgrade offer still waits for the player to quote it in Sales.
+A bill or an upgrade offer covers 730 hours, so the same service can be billed or offered an upgrade once a month. The state holds a company-wide `overusePolicy` (null by default): when it is set, the daily noon check applies that answer to every service over its traffic that is not yet throttled or handled this month. The player sets it in the Books app's billing rules after the Traffic billing training (250 know-how, 10 days, after Shop systems); the choices are off, throttle, bill or offer upgrade. An upgrade offer still waits for the player to quote it in Sales.
 
 ### Core speed
 

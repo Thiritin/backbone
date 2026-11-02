@@ -113,7 +113,22 @@ describe("research", () => {
     const old = deserialize(JSON.stringify(raw));
     expect(old.training).toBeNull();
     expect(old.installed).toEqual(["Locations", "Research", "Browser", "Chat", "Applications", "Shop", "Terminal", "Pear Mail", "Settings", "Marketing", "Security"]);
-    expect([...old.unlocks].sort()).toEqual(["market", "marketing", "marketingBasics", "monitoring", "people", "products"]);
+    expect([...old.unlocks].sort()).toEqual(["market", "marketing", "marketingBasics", "monitoring", "people", "shops"]);
     expect(skillFor("Market")!.id).toBe("market");
+  });
+
+  it("drops the removed Product management skill from old saves", () => {
+    const raw = JSON.parse(serialize(newGame(15)));
+    raw.unlocks = ["products", "provisioning"];
+    const old = deserialize(JSON.stringify(raw));
+    expect([...old.unlocks].sort()).toEqual(["provisioning", "shops"]);
+    raw.unlocks = ["products"];
+    raw.training = { id: "products", doneAt: 500 };
+    const training = deserialize(JSON.stringify(raw));
+    expect(training.unlocks).toEqual([]);
+    expect(training.training).toBeNull();
+    expect(skillById("products")).toBeUndefined();
+    for (const id of ["provisioning", "fraudScreening", "virtualization", "gpuCompute"]) expect(skillById(id)!.needs).toContain("shops");
+    expect(SKILLS.flatMap((k) => k.needs)).not.toContain("products");
   });
 });

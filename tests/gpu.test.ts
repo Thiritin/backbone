@@ -184,7 +184,7 @@ describe("GPU rental", () => {
     expect(err(research(s, GPU_SKILL))).toBe("error.notYet");
     const later = rich(2012);
     later.knowHow = 10_000;
-    later.unlocks = [...later.unlocks, "products", "monitoring"];
+    later.unlocks = [...later.unlocks, "shops", "monitoring"];
     expect(err(research(later, GPU_SKILL))).toBe("ok");
   });
 });
