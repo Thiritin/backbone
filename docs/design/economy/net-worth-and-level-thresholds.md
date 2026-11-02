@@ -6,7 +6,7 @@ Net worth values the customer base at two years of recurring revenue, plus cash 
 \text{net worth} = \text{cash} - \text{debt} + \text{hardware book value} + 24 \cdot \text{MRR}
 ```
 
-Hardware book value is the resale value of every owned device and rack: 100% to 80% over the first month, then down to 20% over the next 24 months. Leased devices count for the lessor, not for you. MRR is every running contract's monthly price: hourly prices × 730 and yearly prices ÷ 12. The start counts €1,000 cash, €2,910 of hardware and 24 × €18 of the friends' revenue, about €4,340.
+Hardware book value is the resale value of every owned device and rack: 100% to 80% over the first month, then down to 20% over the next 24 months. Leased devices count for the lessor, not for you. MRR is every running contract's monthly price: hourly prices × 730 and yearly prices ÷ 12. The start counts €1,000 cash and €2,910 of hardware, about €3,910.
 
 The GDD counts years in operation inside net worth. Here they are a separate minimum per level instead, which keeps the formula simple and stops a lucky first year from skipping ahead.
 

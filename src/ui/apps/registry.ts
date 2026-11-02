@@ -23,6 +23,7 @@ import { supportApp } from "./support/desk";
 import { PearMailMark, type MarkProps } from "../art/mailmarks";
 import { ResearchApp } from "./research/ResearchApp";
 import { canResearchAny } from "../../sim/90-actions/store";
+import { openReports } from "../../sim/85-products/products";
 import { StaffApp } from "./staff/StaffApp";
 import { WeatherApp } from "./weather/WeatherApp";
 import { PostApp } from "./PostApp";
@@ -78,7 +79,7 @@ export const APPS: AppDef[] = [
   { name: "Research", icon: era(GraduationCap, "research"), tile: "oklch(0.72 0.15 95)", about: t("apps.about.Research"), body: ResearchApp, dot: canResearchAny },
   { name: "Getting started", icon: era(BookOpen, "getting-started"), tile: "oklch(0.55 0.15 255)", about: t("apps.about.Getting started"), hidden: true },
   { name: "Security", icon: era(ShieldAlert, "security"), tile: "oklch(0.58 0.17 25)", about: t("apps.about.Security"), body: SecurityApp,
-    badge: (s) => s.lossReports.filter((r) => r.items.some((i) => !i.restored)).length },
+    badge: (s) => openReports(s).length },
   { name: "Notes", icon: era(FileText, "notes"), tile: "oklch(0.7 0.13 85)", about: t("apps.about.Notes"), hidden: true },
   { name: "Calendar", icon: era(CalendarDays, "calendar"), tile: "oklch(0.6 0.17 25)", about: t("apps.about.Calendar"), hidden: true, body: CalendarApp },
   { name: "News", icon: era(Newspaper, "news"), tile: "oklch(0.55 0.12 30)", about: t("apps.about.News"), hidden: true, body: NewsApp },

@@ -16,8 +16,7 @@ import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { addLocation, buyRack, connect, sellDevice, setPower, unmountDevice } from "../src/sim/90-actions/hardware";
 import { buyDevice, freeFloor, newGame } from "./fixtures";
 import { mountDevice } from "./plugged";
-import { FRIEND_HAPPINESS } from "../src/sim/90-actions/start";
-import { hypervisor, readyGame, skipTo, withServer } from "./fixtures";
+import { hypervisor, readyGame, skipTo, startGame, withServer } from "./fixtures";
 import { installSoftware } from "../src/sim/90-actions/software";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { mrr } from "../src/sim/metrics";
@@ -75,11 +74,9 @@ describe("product catalog", () => {
 });
 
 describe("starting company", () => {
-  it("starts with three friends on web hosting in the basement cluster, online and paying €18 a month", () => {
+  it("starts without customers; three on web hosting in the basement cluster run online and pay €18 a month", () => {
+    expect(startGame(1).customers).toEqual([]);
     const s = readyGame(1);
-    expect(s.customers.map((c) => [c.name, c.happiness, c.habit])).toEqual([
-      ["Jonas Weber", FRIEND_HAPPINESS, "friend"], ["Mira Schulz", FRIEND_HAPPINESS, "friend"], ["Tobi Kraus", FRIEND_HAPPINESS, "friend"],
-    ]);
     expect(s.clusters).toMatchObject([
       { name: "Basement 1", kind: "cloud", az: "fra1", nodes: [{ deviceId: "dev3", state: "active" }] }, { name: "Web 1", kind: "panel", nodes: [] },
     ]);
@@ -88,8 +85,8 @@ describe("starting company", () => {
     expect(mrr(s)).toBeCloseTo(18);
     expect(s.cash).toBe(withServer(newGame(1)).cash);
   });
-  it("takes the friends offline and opens outage tickets when the switch loses power", () => {
-    // A seed where a friend writes in once the outage is noticed.
+  it("takes the customers offline and opens outage tickets when the switch loses power", () => {
+    // A seed where a customer writes in once the outage is noticed.
     const s = readyGame(2);
     run(s, 2);
     ok(setPower(s, "dev4", false));
@@ -106,7 +103,7 @@ describe("starting company", () => {
     expect(deviceHealth(s, "dev4").state).toBe("ok");
     expect(s.services.every((v) => serviceOnline(s, v.id))).toBe(true);
   });
-  it("invoices the friends in February for the hours they were up", () => {
+  it("invoices the customers in February for the hours they were up", () => {
     const s = readyGame(2);
     run(s, 10);
     ok(setPower(s, "dev3", false));

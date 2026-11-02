@@ -1,6 +1,6 @@
 # Starting state
 
-A new game opens paused on 1 January 2005 at 00:00 with no cash and €3,500 of savings that arrive when the player opens the bank account, an empty 24U rack in the basement next to the home router, and three friends waiting for web hosting. The savings buy the first server, a Dwell Balanced 1U G1 at €2,500, and leave the same €1,000 the company used to start with next to a free server, so year 1 pacing is unchanged. The Bank comes in for the second server, which the panel VM and the friends make due within the first month or two. The home router has 4 ports, one per basement server, so the basement needs no switch.
+A new game opens paused on 1 January 2005 at 00:00 with no cash and €3,500 of savings that arrive when the player opens the bank account and an empty 24U rack in the basement next to the home router. The savings buy the first server, a Dwell Balanced 1U G1 at €2,500, and leave the same €1,000 the company used to start with next to a free server, so year 1 pacing is unchanged. The Bank comes in for the second server, which the panel VM and the first customers make due within the first months. The home router has 4 ports, one per basement server, so the basement needs no switch.
 
 | Item | Starting value |
 | --- | --- |
@@ -12,7 +12,7 @@ A new game opens paused on 1 January 2005 at 00:00 with no cash and €3,500 of 
 | Reseller accounts | None. The first registrar contract is signed in the first month (NameCheep needs no signup), and every domain costs the partner's wholesale a month (Sales and quotes, Domains) |
 | Company domain and email | None. A domain and a mail service are needed before the website and the first email order (Sales and quotes, Domains and Company email) |
 | Product lines | None offered; each line unlocks once the player can deliver it (Addresses and internet, The start) |
-| Customers | None until the first hosting panel runs on a server the internet reaches. Then 3 friends (Jonas Weber, Mira Schulz and Tobi Kraus, private individuals) sign up for the 2 GB web hosting size at €6 a month on that cluster; happiness 85, and they always pay |
+| Customers | None. The first order email arrives within 14 days of the first hosting panel running on a server the internet reaches (see Sales and quotes) |
 
 
 ### Weekly challenges

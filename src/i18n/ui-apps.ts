@@ -246,7 +246,7 @@ export default {
   "apps.guide.title": () => "Getting started",
   "apps.guide.intro": () => "It is January 2005. You run a small hosting company from a basement with an empty rack and 3,500 € of savings. Your goal is to grow it into your own datacenter by automating your own jobs.",
   "apps.guide.firstServer": () => "Your first server",
-  "apps.guide.friends": () => "Your friends Jonas, Mira and Tobi are waiting for web hosting. Each step is checked off once it is done.",
+  "apps.guide.setup": () => "Set up your first web host so customers can order web hosting. Each step is checked off once it is done.",
   "apps.guide.wiki": () => "Wiki",
   "apps.guide.loans": () => "When the server fills up, the Loans page on your bank's website lends you the money for the next one.",
   "apps.guide.time": () => "Time",

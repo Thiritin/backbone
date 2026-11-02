@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- Incident reports in Security can now be archived, which takes them off the incident list and out of the open count.
+- A new game no longer starts with three friends waiting for web hosting; the first order email now arrives within two weeks of your first web host going online.
 - Support desks now fetch the mailboxes you add as channels by IMAP, POP3 or forwarding, number new requests, answer them from that address and keep every reply in its Sent folder.
 - The OsTickit Emails page and the Zendusk support addresses page let you add and remove mailboxes, and OsTickit sets the protocol, schedule, auto-response and what happens to fetched mail, with a test email.
 - Five new ultrawide desktop pictures (Annapurna, Milky Way, Hong Kong, Sossusvlei and Matterhorn) join the wallpaper choices in Settings, and every built-in wallpaper is now sharper at full screen.

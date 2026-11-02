@@ -246,7 +246,7 @@ export default {
   "apps.guide.title": () => "Premiers pas",
   "apps.guide.intro": () => "Nous sommes en janvier 2005. Tu diriges une petite entreprise d'hébergement depuis un sous-sol, avec une baie vide et 3 500 € d'économies. Ton objectif est d'en faire ton propre centre de données en automatisant ton propre travail.",
   "apps.guide.firstServer": () => "Ton premier serveur",
-  "apps.guide.friends": () => "Tes amis Jonas, Mira et Tobi attendent un hébergement web. Chaque étape est cochée dès qu'elle est terminée.",
+  "apps.guide.setup": () => "Installe ton premier hébergeur web pour que les clients puissent commander un hébergement web. Chaque étape est cochée dès qu'elle est terminée.",
   "apps.guide.wiki": () => "Wiki",
   "apps.guide.loans": () => "Quand le serveur est plein, la page Prêts sur le site de ta banque t'avance l'argent pour le suivant.",
   "apps.guide.time": () => "Temps",

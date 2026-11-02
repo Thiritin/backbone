@@ -18,7 +18,6 @@ const ok = (r: { ok: boolean; id?: string; error?: string }) => {
   if (!r.ok) throw new Error(r.error);
   return r.id!;
 };
-const friends = (s: GameState) => s.customers.filter((c) => c.habit === "friend");
 const run = (s: GameState, hours: number) => { for (let h = 0; h < hours; h++) tick(s); };
 
 // The first server from the Shop to the home router: bought from the savings, mounted, plugged in and cabled, online at
@@ -51,27 +50,26 @@ describe("first server", () => {
     expect(s.customers).toEqual([]);
   });
 
-  it("brings a bought server online and moves the friends onto a panel server", () => {
+  it("brings a bought server online and opens a panel server with no friends moving in", () => {
     const s = startGame(2);
     const srv = firstServer(s);
     expect(checkDone(s, "firstServer")).toBe(true);
     run(s, 24 * 7);
-    expect(friends(s)).toEqual([]);
     ok(installPanel(s, srv, "freepanel"));
     run(s, 24 * 7);
-    expect(friends(s)).toHaveLength(3);
-    expect(s.services.filter((v) => v.product === "webHosting")).toHaveLength(3);
+    expect(s.customers.filter((c) => c.habit === "friend")).toEqual([]);
+    expect(s.webOpenedAt).not.toBeNull();
     expect(checkDone(s, "setup")).toBe(true);
   });
 
-  it("moves the friends onto the panel VM of a hypervisor", () => {
+  it("opens the panel VM of a hypervisor with no friends moving in", () => {
     const s = startGame(3);
     skipTo(s, 2010);
     const srv = firstServer(s);
     const c = ok(installSoftware(s, bootedMachine(s, srv), "proxmocks"));
     ok(createPanelVm(s, c, "freepanel"));
     run(s, 24 * 7);
-    expect(friends(s)).toHaveLength(3);
+    expect(s.customers.filter((c) => c.habit === "friend")).toEqual([]);
     expect(s.clusters.find((x) => x.vm)!.panel).toBe("freepanel");
   });
 });

@@ -9,7 +9,7 @@ import type { Call } from "../src/sim/90-actions/index";
 import { softwareOn } from "../src/sim/90-actions/software";
 import { installLog } from "../src/sim/60-infra/apt";
 import { machineAddress } from "../src/sim/60-infra/addresses";
-import { bootedMachine, hypervisor, newGame, skipTo, withNames, withServer } from "./fixtures";
+import { bootedMachine, firstCustomers, hypervisor, newGame, skipTo, withNames, withServer } from "./fixtures";
 
 // withServer: dev3 is a free server cabled to the desk's router; booted here with an OS.
 const act = (s: GameState) => ([fn, ...args]: Call) => fn(s, ...args);
@@ -97,6 +97,7 @@ describe("installing software from the shell", () => {
     expect(softwareOn(s, "dev3")).toHaveLength(0);
     run(s, "apt-get install -y freepanel", at);
     for (let h = 0; h < 4; h++) tick(s);
+    firstCustomers(s, s.clusters.find((c) => c.panel === "freepanel")!.id);
     expect(text(s, "apt-get remove freepanel", at)).toContain("Workloads still run on this software.");
     expect(text(s, "apt-get remove bound9", at)).toContain("Package 'bound9' is not installed, so not removed");
   });

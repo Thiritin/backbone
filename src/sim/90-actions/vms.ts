@@ -263,6 +263,13 @@ export function restoreTo(s: GameState, id: string, toId: string): ActionResult 
   return { ok: true };
 }
 
+// Takes an incident report off the incident list; its lost disks stay restorable from the VM.
+export function archiveReport(s: GameState, id: string): ActionResult {
+  if (!s.lossReports.some((r) => r.id === id)) return fail("error.unknownReport");
+  s.lossReports = s.lossReports.map((r) => (r.id === id ? { ...r, archived: true } : r));
+  return { ok: true };
+}
+
 // Closes the open loss items of a workload and the web spaces in it; data saved at savedAt wins back some customer trust.
 export function settleLoss(s: GameState, w: Workload, lostAt: number, savedAt: number | null): void {
   const back = [w.id, ...(isOwnVm(w) ? insideVm(s, w.id).map((x) => x.id) : [])];

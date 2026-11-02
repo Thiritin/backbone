@@ -96,7 +96,7 @@ describe("action log", () => {
 describe("replay", () => {
   it("replays a short game from its log to the same state", () => {
     const s = shortGame();
-    expect(s.customers.length).toBeGreaterThan(0);
+    expect(s.webOpenedAt).not.toBeNull();
     const again = replay(runFile(s, "test"), undefined, s.hour);
     expect(serialize(again)).toEqual(serialize({ ...s, log: s.log.filter((e) => e.hour < SCORE_END) }));
     // A reload in between changes nothing either.

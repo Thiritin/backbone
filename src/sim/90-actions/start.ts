@@ -1,20 +1,11 @@
 import { newGame, type GameState } from "../50-state";
-import { provisionService } from "./clusters";
-import { clusterReachable } from "../60-infra/cluster";
-import { addCustomer } from "./customers";
-import { yearOf } from "../00-core/time";
-import { WEB_BASE } from "../10-catalog/economy";
-import { sizeSpec } from "../10-catalog/products";
 import { challengeById } from "../10-catalog/challenges";
 import { capacityAt, DATACENTERS } from "../20-world/datacenters";
 import { EARLY_HOURS } from "../10-catalog/used";
 import { monthListings } from "../80-business/used";
 
 // economy/starting-state.md, Starting state: an empty basement rack. The player buys the first server and sets it up as a panel server or
-// a hypervisor with a panel VM. Three friends wait for web hosting at €6 a month and move their sites over once the first
-// panel host is ready.
-export const FRIENDS: [string, string][] = [["Jonas Weber", "jonasweber.de"], ["Mira Schulz", "mira-schulz.de"], ["Tobi Kraus", "tobikraus.de"]];
-export const FRIEND_HAPPINESS = 85;
+// a hypervisor with a panel VM; the first order email arrives within two weeks of that panel host going online.
 
 // The tick fills the used market at each month start after the first, so January's listings come with the new game,
 // all of them up from the first hour.
@@ -36,20 +27,4 @@ export function startChallenge(id: string): GameState {
   if (t.kind === "line") s.homeLine = { id: t.line, next: null };
   if (t.kind === "dc") s.dcs = Object.fromEntries(DATACENTERS.map((dc) => [dc.id, dc.id === t.dc ? s.dcs[dc.id] : { others: capacityAt(dc, 2005) }]));
   return s;
-}
-
-// The friends sign up on the panel host once, when it is the first ready; false when they already have.
-export function welcomeFriends(s: GameState, hostId: string): boolean {
-  const host = s.clusters.find((c) => c.id === hostId);
-  if (s.customers.some((c) => c.habit === "friend") || !host?.panel || !clusterReachable(s, host)) return false;
-  const before = { customers: [...s.customers], services: [...s.services], workloads: [...s.workloads], nextId: s.nextId };
-  for (const [name, label] of FRIENDS) {
-    const id = addCustomer(s, name, "private", "friend");
-    s.customers.find((c) => c.id === id)!.happiness = FRIEND_HAPPINESS;
-    if (!provisionService(s, id, "webHosting", { label, spec: sizeSpec("webHosting", 1, yearOf(s.hour)), price: WEB_BASE / 730, clusterId: hostId }).ok) {
-      Object.assign(s, before);
-      return false;
-    }
-  }
-  return true;
 }
