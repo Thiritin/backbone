@@ -11,7 +11,7 @@ import { JUNK_CAP_PER_DAY, JUNK_TOPICS, SELF_TRAINED_CATCH, catchOf, falseJunkOf
 import type { GameState } from "../50-state";
 import { roleAccount, vacationOn } from "./accounts";
 import { capsOf, mailHooks, mxTarget, selfHostCaps } from "./caps";
-import { accountByAddress, isRead, MAIL_KEEP, SYS_FOLDERS, tenantOf, view } from "./model";
+import { accountByAddress, MAIL_KEEP, SYS_FOLDERS, tenantOf, view } from "./model";
 import { GMIX_DOMAIN } from "./new";
 import type { Ticket } from "../40-support/tickets";
 import type { Attachment, DeskChannel, MailAccount, MailCond, MailGroup, MailKind, MailParams, MailTenant, Message, Queued, TraceEntry } from "./types";
@@ -105,12 +105,14 @@ export function store(s: GameState, a: MailAccount, m: Message): void {
 export function retain(s: GameState, accountId: string): void {
   const box = s.mail.msgs[accountId] ?? [], a = boxById(s, accountId);
   if (!a || box.length <= MAIL_KEEP) return;
+  const tickets = new Map(s.tickets.map((t) => [t.id, t]));
   const folds = (m: Message) => !m.flag && !m.star && !m.draft && (SYS_FOLDERS as string[]).includes(m.folder) &&
-    !(m.ticket && OPEN_TICKET.includes(s.tickets.find((x) => x.id === m.ticket)?.status ?? ""));
+    !(m.ticket && OPEN_TICKET.includes(tickets.get(m.ticket)?.status ?? ""));
+  const read = (m: Message) => { const t = m.ticket ? tickets.get(m.ticket) : undefined; return t ? !t.unread : !!m.read; };
   const gone = new Set<string>();
   for (const pass of [true, false]) for (const m of box) {
     if (box.length - gone.size <= MAIL_KEEP) break;
-    if (folds(m) && isRead(s, m) === pass) gone.add(m.id);
+    if (folds(m) && read(m) === pass) gone.add(m.id);
   }
   const kb = box.reduce((n, m) => n + (gone.has(m.id) ? m.kb : 0), 0);
   s.mail = { ...s.mail, msgs: { ...s.mail.msgs, [accountId]: box.filter((m) => !gone.has(m.id)) } };
