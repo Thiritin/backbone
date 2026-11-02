@@ -41,7 +41,7 @@ const TABS: { id: string; group: Group; count: (s: GameState) => number; body: C
   { id: "quotes", group: "sales", count: (s) => s.quotes.filter((q) => q.status === "accepted").length, body: QuotesTab, features: ["quotes"] },
   { id: "invoices", group: "sales", count: drafts, body: InvoicesTab },
   { id: "bank", group: "payments", count: unmatched, body: BankTab },
-  { id: "reminders", group: "payments", count: late, body: RemindersTab },
+  { id: "reminders", group: "payments", count: late, body: RemindersTab, features: ["dunning"] },
   { id: "products", group: "sales", count: unpublished, body: ProductsTab },
   { id: "payables", group: "payments", count: (s) => s.payables.filter((p) => lateInBooks(s, p)).length, body: PayablesTab },
   { id: "statistics", group: "reports", count: () => 0, body: StatisticsTab, features: ["reports", "statistics"] },
@@ -59,7 +59,7 @@ export function BooksApp() {
   const [register, setRegister] = useSessionState("books.register", false);
   useFocus("Books", (f) => {
     if (f.kind === "register") return setRegister(true);
-    const to = f.kind === "invoice" ? (game.invoices.find((i) => i.id === f.id && isUnpaid(i) && i.status === "overdue") ? "reminders" : "invoices")
+    const to = f.kind === "invoice" ? (hasFeature(game, "dunning") && game.invoices.find((i) => i.id === f.id && isUnpaid(i) && i.status === "overdue") ? "reminders" : "invoices")
       : f.kind === "customer" || f.kind === "newCustomer" ? "customers" : f.kind === "quote" ? "quotes" : null;
     if (!to) return;
     setTab(to);

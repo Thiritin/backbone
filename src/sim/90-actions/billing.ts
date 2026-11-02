@@ -43,6 +43,33 @@ export function unmatchTransfer(s: GameState, transferId: string): ActionResult 
   return { ok: true };
 }
 
+// Drops a draft that was never sent; an order's first invoice stays, the ticket needs it.
+export function cancelDraft(s: GameState, invoiceId: string): ActionResult {
+  const inv = s.invoices.find((x) => x.id === invoiceId && x.status === "draft");
+  if (!inv) return fail("error.invoiceSent");
+  if (s.sales.requests.some((r) => r.invoiceId === invoiceId)) return fail("error.invoiceOrdered");
+  s.invoices = s.invoices.filter((x) => x !== inv);
+  return { ok: true };
+}
+
+// Settles an invoice by hand: against a transfer still unmatched, or with no money at all when the customer paid some other way.
+export function markPaid(s: GameState, invoiceId: string, transferId: string | null = null): ActionResult {
+  if (transferId !== null) return matchTransfer(s, transferId, invoiceId, true);
+  const inv = unpaidInvoice(s, invoiceId);
+  if (!inv) return fail("error.invoiceSettled");
+  Object.assign(inv, { status: "paid", paidAt: s.hour, suspended: false, payAt: null });
+  return { ok: true };
+}
+
+// Puts a paid or written-off invoice back among the open ones, unless a transfer is booked against it or collections still owe for it.
+export function reopenInvoice(s: GameState, invoiceId: string): ActionResult {
+  const inv = s.invoices.find((x) => x.id === invoiceId && (x.status === "paid" || x.status === "writtenOff") && synced(x));
+  if (!inv) return fail("error.invoiceSettled");
+  if (inv.payAt !== null || s.transfers.some((x) => x.invoiceId === inv.id && x.matchedAt !== null)) return fail("error.transferChanged");
+  Object.assign(inv, { status: s.hour > inv.dueAt ? "overdue" : "open", paidAt: null });
+  return { ok: true };
+}
+
 // Sends whichever dunning step is due; the last one hands the debt to collections and the customer leaves.
 export function sendReminder(s: GameState, invoiceId: string): ActionResult {
   const inv = unpaidInvoice(s, invoiceId);

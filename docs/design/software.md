@@ -161,7 +161,7 @@ Action `upgradeOs(machineId, key?)` in `90-actions/console.ts`. Tests: `tests/os
 
 ### 4.5 Software upgrade
 
-Installed software steps up one major at a time once the next major is out (`softwareTarget`, from `nextMajor`), with `upgradeSoftware(machineId, product, key?)` in `90-actions/console.ts`. It runs from the Upgrade row on the console's Licence page, or from the software's own tool in the shell, `<tool> upgrade [--key <key>]`, which the vendor site's Docs page lists.
+Installed software steps up one major at a time once the next major is out (`softwareTarget`, from `nextMajor`), with `upgradeSoftware(machineId, product, key?)` in `90-actions/console.ts`. It runs from the Upgrade row on the console's Licence page, or from the software's own tool in the shell, `<tool> upgrade [--key <key>]`, which the vendor site's Docs page lists. Free software has no licence, so its tool takes a plain `<tool> upgrade`, refuses `--key`, prints no licence line under `status`, and its Docs page describes both commands without licence wording.
 
 - **Downtime.** The upgrade takes the software's install hours; the machine's console shows it installing, and everything on the machine is down for that time as for an OS upgrade. The software runs, and its console looks like, the version it came from until the upgrade is done.
 - **Licenses.** The same rule as the OS: a key for an older major needs an upgrade key for the target major, which replaces it. While the vendor sells keys per major, its site sells "Upgrade from N" for every major the player holds a key for, at the upgrade price when that key was bought in the last 12 months and the full price otherwise (`upgradeOffers`). Once the vendor sells only subscriptions, no upgrades are on sale.
@@ -240,7 +240,7 @@ Categories, in this order, each site from the year it exists:
 9. **Domain resellers**: NameCheep, GoDuddy Reseller, InterNetY, OpenSRSly.
 10. **Community**: Sponsor-Bored.
 11. **Hardware**: every manufacturer site.
-12. **<Company name>**: the company site, and one row per console the company runs ("Proxmocks VE node001:8006", "cPanic vm001:2087", named by the machine's hostname and the console's port), each a live link to the machine's fqdn, or to its private address while the company has no domain, with the port; the row is grey with "down" when the host cannot be reached. This category replaces the console bookmarks.
+12. **<Company name>**: the company site, and one row per web console the company runs ("Proxmocks VE node001:8006", "cPanic vm001:2087", named by the machine's hostname and the console's port), each a live link to the machine's fqdn, or to its private address while the company has no domain, with the port; the row is grey with "down" when the host cannot be reached. This category replaces the console bookmarks.
 13. **Video**: youtub.com.
 
 A software before its `from` year is absent and its address resolves to Not found. In the 2005 look a category opens at `/dir/<category>`, for example `/dir/virtualization`; the 2013 look shows every category at once. Every other path on the host shows the index.
@@ -395,6 +395,8 @@ As built (`consoles/HypervisorBase.tsx` holds the shared blocks, each product la
 
 Each software with a web console gets its own component and stylesheet, modelled on the product. The actions stay what `ConsoleBody` has today (objects, nodes, update, auto-update, backups, migrate, clean up); only the chrome changes. Software without a web console (Bound, Knut DNS, WireGuarded, vsFTPeed, Postfixit) shows the host page with a plain text status listing in the style of the product's CLI (`named-checkconf`, `wg show`, `mailq`).
 
+The web panels (cPanic, Pleskit, DirectAdmen, FreePanel) never resize, remove or take their own host offline; the Locations and Security apps do that. Their software page keeps the facts, the PHP actions and Restart server, which reboots the host machine (the VM's host for a panel in a VM). From the year the product updates itself (`autoUpdate` in the catalog) the panel has an Updates page with the installed version, the release channel, automatic updates and the update button; before that year the player updates it from the shell (docs/design/plans/panel-ops.md).
+
 Each console shows the look of the version installed on its machine, from the UI generations in `software-versions.md` (`UI_LOOKS`); the year in the table applies only when the installed version is unknown.
 
 A console declares its looks in one place, `const LOOKS = looks({ x3: 2005, paperLamp: 2014, jupitar: 2021 })` with the year each starts, and picks one with `eraAt(LOOKS, p)`, which its root element carries as `data-era` for the stylesheet. The ids match the console's `UI_LOOKS` entry, so a console drawn per generation names its own ids there, while the rest still draw `erasFrom(early, late)` and map every generation to "early" or "late". A version whose look the console does not draw falls back to the year.
@@ -434,7 +436,7 @@ Built so far: the seven hosting and game panels (cPanic to Pterodaktyl) and the 
 | MinnIO Console | Buckets, Settings | dark sidebar; early: a bucket list; late: bucket cards |
 | Mailpig | Mailboxes, Domains, Queue, Configuration | tabs over one pane; mailboxes are admin, support, billing and one per employee at the company domain |
 
-The CLI host pages print, under "This host serves no web page", a root prompt on the machine's hostname and: Bound `named-checkconf -z` and `rndc status` (zones and count), Knut DNS `knotc status` and `knotc zone-status`, WireGuarded `wg show` (one peer per VPN user, a handshake while the gateway runs), vsFTPeed the last ten lines of its log (a login and an upload per running volume), Postfixit `postconf myhostname mydomain` and `mailq`.
+Bound, Knut DNS, WireGuarded, vsFTPeed, Postfixit and Backula have no web console, as the real products have none (`hasWebConsole` in `80-business/consoles.ts`). Their host shows the plain host page, and no bookmark, directory row or install line points at a console. They are run from the machine's terminal with their own tool, which the vendor site's Docs page lists: Postfixit `queue flush`, `queue delete` and `relay <host> [off]`, Bound and Knut DNS `zone list` and `secondary <zone> on|off`, and every backup server (Backula included) `job list` for the finished jobs that write to it, `restore list` for the lost machines with a backup there and the nodes they fit on, and, as root, `restore <host> [<node>]`, which restores onto the named node or the first that fits.
 
 ## 11. Economy
 

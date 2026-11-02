@@ -1,0 +1,19 @@
+/* ostickit.com in its classic and flat looks, freescoot.net in one light look. */
+.dsw { --dsw-accent: #4b7f3a; --dsw-head: #e9eee5; --dsw-line: #c6cfc0; min-height: 100%; background: #fff; color: #222; font: 13px/1.5 Verdana, Arial, sans-serif; }
+.dsw-head { display: flex; align-items: baseline; gap: 14px; padding: 14px 24px; background: var(--dsw-head); border-bottom: 3px solid var(--dsw-accent); }
+.dsw-head strong { font-size: 24px; color: var(--dsw-accent); }
+.dsw-nav { display: flex; gap: 2px; padding: 0 24px; background: var(--dsw-head); border-bottom: 1px solid var(--dsw-line); }
+.dsw-nav a { padding: 6px 12px; color: #333; text-decoration: none; }
+.dsw-nav a.on { background: #fff; border: 1px solid var(--dsw-line); border-bottom-color: #fff; margin-bottom: -1px; }
+.dsw-main { padding: 18px 24px; max-width: 860px; }
+.dsw-main h1 { font-size: 20px; }
+.dsw-main h2 { font-size: 16px; color: var(--dsw-accent); }
+.dsw-table { border-collapse: collapse; }
+.dsw-table th, .dsw-table td { text-align: left; padding: 5px 12px 5px 0; border-bottom: 1px solid var(--dsw-line); }
+.dsw-table .num { font-variant-numeric: tabular-nums; }
+.dsw-foot { padding: 12px 24px; font-size: 11px; color: #777; border-top: 1px solid var(--dsw-line); }
+
+.dsw-ostickit.dsw-late { --dsw-accent: #1f6fb2; --dsw-head: #f4f7fa; --dsw-line: #dbe3ea; font-family: "Helvetica Neue", Arial, sans-serif; }
+.dsw-ostickit.dsw-late .dsw-nav a.on { border: 0; border-bottom: 2px solid var(--dsw-accent); background: none; }
+.dsw-freescoot { --dsw-accent: #3c8dbc; --dsw-head: #fff; --dsw-line: #e3e8ec; font-family: "Helvetica Neue", Arial, sans-serif; }
+.dsw-freescoot .dsw-nav a.on { border: 0; border-bottom: 2px solid var(--dsw-accent); background: none; }

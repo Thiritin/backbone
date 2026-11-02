@@ -2,7 +2,7 @@
 // becomes a hypervisor cluster, and its web spaces move into one panel VM sized to hold them; a cluster with only a panel
 // becomes one bare-metal panel host per server; an empty cluster with nothing installed is dropped, freeing its servers.
 import { yearOf } from "../00-core/time";
-import { oldestPhp, phpAt, softwareById } from "../10-catalog/platforms";
+import { footprint, oldestPhp, phpAt, softwareById } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
 import { clusterDefaults, HA_OFF, KEYS, type Cluster, type Workload } from "../60-infra/cluster";
 
@@ -46,7 +46,7 @@ export function upgradeCompute(s: GameState): GameState {
     const sites = web(c);
     if (!panel) continue;
     // The VM books what the web spaces book plus the panel, on the node that held most of them.
-    const size = { vcpu: 0, ramGb: 0, diskGb: 0 }, cp = softwareById(panel).controlPlane;
+    const size = { vcpu: 0, ramGb: 0, diskGb: 0 }, cp = footprint(softwareById(panel), yearOf(s.hour));
     for (const k of KEYS) size[k] = Math.max(1, Math.ceil(sites.reduce((n, w) => n + w[k], 0) + cp[k]));
     const count = (id: string) => sites.filter((w) => w.deviceId === id).length;
     const node = [...c.nodes].sort((a, b) => count(b.deviceId) - count(a.deviceId))[0]?.deviceId ?? null;

@@ -17,7 +17,7 @@ import { phpNeeded } from "../60-infra/php";
 import { installedRamGb, locationOf } from "../60-infra/status";
 import { addAwareness } from "../80-business/marketing";
 import { mailShare } from "../80-business/mail";
-import { listed, shopBlock, siteFactor } from "../80-business/website";
+import { customOpen, listed, shopBlock, siteFactor } from "../80-business/website";
 import { forumAwareness } from "../47-staff/staff";
 import type { SimEvent } from "../88-tick/tick";
 import { addCustomer } from "../90-actions/customers";
@@ -118,8 +118,10 @@ function newLeads(s: GameState, events: SimEvent[]): void {
   for (const f of leadFlows(s)) {
     const n = poisson(s.rng, (f.leads / DAYS_PER_MONTH / 24) * arrivalWeight(f.profile, s.hour));
     for (let i = 0; i < n; i++) {
+      // A line without custom requests sells its plans only: the visitor takes the basic plan or buys elsewhere.
+      const asked = needFor(s.rng, f.profile, yearOf(s.hour)), plain = listed(s, asked.product) && !customOpen(s, asked.product);
       // A shop order weighs the setup fee too.
-      const need = needFor(s.rng, f.profile, yearOf(s.hour)), shop = isStandard(f.profile, need.sla) && !emailFor(s), k = `${f.profile}/${need.product}/${f.city}/${shop}`;
+      const need = plain ? { ...asked, sla: "basic" as const } : asked, standard = plain || isStandard(f.profile, need.sla), shop = standard && !emailFor(s), k = `${f.profile}/${need.product}/${f.city}/${shop}`;
       if (!cache.has(k)) cache.set(k, share(s, f.profile, need.product, f.city, shop ? setupPremium(s, need.product) : 0, shop ? shopPriceLevel(s, f.profile, need.product) : undefined));
       if (rand(s.rng) >= Math.min(1, cache.get(k)! * f.conversion)) continue;
       // Leads order only lines on the website, which needs a control plane that sells them; some ask for the rest by email.
@@ -138,7 +140,7 @@ function newLeads(s: GameState, events: SimEvent[]): void {
       if (shop && !f.site && site < 1 && rand(s.rng) >= site) continue;
       // A shop that takes no orders loses its visitors, as a down site does.
       if (shop && closed) continue;
-      if (!isStandard(f.profile, need.sla)) {
+      if (!standard) {
         newLead(s, f.profile, f.city, events, need);
         continue;
       }

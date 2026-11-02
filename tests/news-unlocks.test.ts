@@ -28,6 +28,7 @@ describe("news of unlocks", () => {
     const years = new Map([2007, 2008, 2011, 2012, 2016].map((y) => [y, on(s, at(y))]));
     const of = (year: number, key: string) => years.get(year)!.filter((e) => e.key === key).map((e) => t(`${e.key}.text`, e.params));
     expect(of(2007, "event.news.desk")).toEqual([expect.stringContaining("Zendusk")]);
+    expect(of(2007, "event.news.desk")[0]).toContain("zendusk.com");
     expect(of(2007, "event.news.homeLines")).toEqual([expect.stringContaining("VDSL 50 (Deutsche Telekomm)")]);
     const y2008 = years.get(2008)!.map((e) => t(`${e.key}.text`, e.params)).join("\n");
     expect(y2008).toContain("Catalust 2960S-48TD, Catalust 3750X-48");

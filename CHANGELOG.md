@@ -5,13 +5,44 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-02
 
 - You can order cross-connects to carriers and exchanges in a provider's customer portal, and once a year a provider raises its rack prices for new contracts and tells its customers by email.
+- Busy servers now slow down gradually from 70% CPU instead of all at once at 100%, and only a server that stays badly overloaded for two hours lets its sites time out.
+- A server that runs out of memory no longer freezes with every workload on it: it slows down while it swaps, and past that only its largest VM is killed for an hour.
+- The web hosting panels no longer resize, remove or take the whole host offline and no longer set booking limits; the host's software page now restarts the server, and updates, the release channel and auto updates sit on their own Updates page where the panel supports them.
+- Web hosting panels gain a Services page to restart single services, a Components page to pick the mail, FTP and web server and install paid modules, and a Backup Manager that lists backups and restores single sites, which takes time and needs the backup server online.
+- Servers now draw power and heat up by how busy their CPUs are, and the server management page shows the CPU temperature and fans that speed up with it.
+- Bound, Knut DNS, WireGuarded, vsFTPeed, Postfixit and Backula no longer show a web page in the browser, and Backula's finished jobs and restores of lost machines now run from its command line tool in the terminal.
+- The command line tools of free software no longer list license commands or a license key option.
+- The Terminal editor shows light text on a dark background again instead of white on white.
+- Cancelling an invoice draft in the bookkeeping program now asks before it deletes the draft, and the Up and Down keys move through the invoices, quotes, bank bookings and customers.
+- The Mark as paid dialog now lists the open transfers in a list to pick from, and long names in the bank list no longer push the Accept button out of view.
+- The Terminal now finds a basement server by its name when it sits behind your own router, the same way it finds your VMs.
+- Every training in Research now has a How it works guide you can open before you start it, and each guide lists what the training unlocks and where to find it.
+- Every virtualization console now shows a VM's or container's public IP address next to its local one, and the VMwhere VM list has an IP address column.
+- A busy OpenVeeZee node no longer racks up memory failures from CPU load alone, and when it runs out of memory the OOM killer now stops only the largest container for an hour, shown as "OOM killed".
+- Slow sites now bother business customers most during business hours and more the longer the slowdown lasts, while private customers barely notice.
+- The new Traffic billing training lets you set one standing answer for customers who go over their traffic, and your books then throttle, bill or offer an upgrade every day on their own.
+- When a customer's traffic outgrows their plan, their customer page now lets you throttle the traffic, bill the overage or offer them a bigger plan.
+- Defaced customer sites now appear in the Security app, where you restore them from a backup, offer a paid clean-up billed at your hourly rate, remind the owner to clean up, or suspend the site with a notice that names the hack, and a clean site comes back online by itself.
+- Customers with a defaced site and no backup can buy a clean-up by the hour; the dearer your rate against the market, the more of them say no and some cancel.
+- Stopping a server or freezing a container now frees its memory, and OpenVeeZee containers take only the memory they actually use and are set up straight from an OS template without an install disc.
+- Right-clicking an invoice in the bookkeeping program now offers what its status allows: sending or cancelling a draft, marking it paid against a transfer or without one, sending the next dunning step, suspending, writing off and reopening.
+- The dunning levels overview is now part of the top editions only; every other edition handles reminders from the invoice list.
+- Help desks now list the domain records to add at your registrar for your support address and mail sending, show which of them already resolve, and check them all with a Verify button.
+- Each product listed on the company website now has its own switch for custom requests; with it off, visitors order the shop plans only, and the website says when custom packages are available.
+- The Research app now lists exactly what each training switches on, every entry takes you to where it is used, and an entry that depends on software names that software.
+- Your registrar's login now has a Register page where you order further domains of your own, and every domain has a page where you set its name servers: a domain parked at the registrar shows its parking page in the browser, one on your own name servers reaches your site, and a change takes an hour to spread.
+- Interaction, mainqubes, Tellyhouse, Global Snitch, Docklands Data and Iron Molehill now have their own websites in the style of their companies, with an early look and a modern one that arrives in later years.
+- Data5, NTD, Spree Colo, Arubaba, Next Lair and Green.chz now each have their own website, with one look in the early years and a modern one later.
 - Every colocation provider's site now has a customer portal where you sign in to see your contracts, invoices and remote-hands tickets, book extra power, feed B and power contracts, and cancel a contract with its notice date, and the large providers offer a free month to stay.
 - Colocation provider sites now keep their own layout, including their facility lists and front page banner, after the Shop app has been opened.
+- Custom orders no longer offer to create the customer account before the customer has accepted the quote.
 - Colocation provider sites now keep their own layout after the Shop app has been opened.
 - Support desks now keep the numbers for their reports: first response times, how many tickets met the response time each customer expects, and tickets per agent, kind and month.
 - Every colocation provider now has its own website in the browser, listed on Yahoy, where you compare its data centers and prices, join a waitlist and order space, and the Visit site button in Locations opens that order form with your pick.
 - Support desks can merge duplicate tickets, mark spam, keep internal notes, set priorities, sort tickets into departments with their own agents and routing rules, keep tickets for yourself that staff leave alone, and take requests through a customer portal with a status lookup.
 - SquirrelMeal webmail and Postfixit Admin can be installed beside a Postfixit mail server, which now brings Dovecoat for IMAP and POP, and the webmail answers at webmail on the company domain.
+- Help desks have left the Pear Store: Zendusk and Freshdusk are signed up for on their own websites in the Browser, and OsTickit and FreeScoot are installed into a web space of your panel host.
+- Spam tickets now show in the Support app with their own label.
 - GMix FreeMix, ProMix and TopMix now offer 1, 5 and 10 GB as the real tiers did, and Goggle sells its free edition from August 2006 until December 2012 beside the paid one, with the user limits, storage, names and MX records of each year.
 - A support desk now gives every ticket a number in its own style, and saves with a desk keep all their tickets in it.
 - GMix, Goggle Workspace, Hosted Exchange, Lookout 365 and your own mail server now each carry the storage, IMAP and POP access, attachment limits and spam filtering of their year, and your domain's MX record decides which of them receives your mail.
@@ -19,6 +50,9 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Ticket replies, retention offers and ticket actions are now built so the coming mail client can show them too.
 - Every company now holds a real mailbox on its mail service, with its own password and a welcome message from the provider.
 - Your registrar's login now has a DNS page for your company domain, where you add, edit and delete records such as MX and TXT, and each change reaches the world once the TTL of the record it replaces has run out.
+- Every abuse notice links to the reported address, and the Browser shows whether the file, mailer or page is really there before you decide.
+- Hosting panels, hypervisors and backup servers now take realistic CPU, RAM and disk, and panels and hypervisors need more RAM and disk each year.
+- Your own mail server now needs disk for every company mailbox it holds, while the webmail and mail admin tools take only a sliver of a server.
 
 ## 2026-11-01
 

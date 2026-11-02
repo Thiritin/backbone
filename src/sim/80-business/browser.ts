@@ -1,10 +1,12 @@
 // GDD, The desktop (Browser): what an address in the in-game browser leads to. Pure; the UI draws the page.
+import { DESKS, type DeskId } from "../10-catalog/desks";
 import { supplierHost } from "../46-finance/payables";
 import { monthIndexOf, yearOf } from "../00-core/time";
 import { SOFTWARE } from "../10-catalog/platforms";
 import { registrarById, registrarHost, REGISTRARS, type RegistrarId } from "../10-catalog/registrars";
 import { SERVER_OS, type ServerOsId } from "../10-catalog/server-os";
 import { companyDomain } from "../30-customers/domains";
+import { nsActive, parked } from "../30-customers/registry";
 import { serviceOnline } from "../40-support/status";
 import type { GameState } from "../50-state";
 import { isOwnVm, workloadOnline, workloadsOf, type Workload } from "../60-infra/cluster";
@@ -14,7 +16,7 @@ import { isManaged, isManagedUps, modelById } from "../10-catalog/hardware";
 import { mountedRouter } from "../60-infra/routers";
 import { isMgmtDevice, oobUp } from "../60-infra/oob";
 import { linkStatus, powered, working } from "../60-infra/status";
-import { nodeUsage } from "../60-infra/usage";
+import { nodeUsage, SLOW_PERF } from "../60-infra/usage";
 import { BOARD_HOST } from "./sponsorboard";
 import { consoleAt, consoleHost, isDefaced } from "./consoles";
 import { defaultWebmail } from "./webmail";
@@ -42,12 +44,14 @@ export type Page =
   | { kind: "vendor"; maker: string }
   | { kind: "provider"; id: string }
   | { kind: "registrar"; id: RegistrarId }
+  | { kind: "parked"; registrar: RegistrarId; domain: string }
   | { kind: "bank"; id: BankId }
   | { kind: "supplier"; name: string }
   | { kind: "lexwear" }
   | { kind: "market"; channel: Channel }
   | { kind: "books"; id: BooksVendorId }
   | { kind: "shopVendor"; id: ShopId }
+  | { kind: "deskVendor"; id: DeskId }
   | { kind: "hosttoast" }
   | { kind: "host"; hostname: string }
   | { kind: "console"; hostname: string; clusterId: string; defaced: boolean; path: string }
@@ -57,7 +61,7 @@ export type Page =
   | { kind: "switch"; deviceId: string }
   | { kind: "ups"; deviceId: string }
   | { kind: "video" }
-  | { kind: "phishing"; sender: string }
+  | { kind: "notice"; ticketId: string }
   | { kind: "sponsorboard" }
   | { kind: "index" }
   | { kind: "office" }
@@ -102,7 +106,7 @@ export const dirSlug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]
 export const resellersUrl = (): string => `${HOME_URL}${dirSlug(t("sim.index.cat.resellers"))}`;
 // Domains the game's other companies hold in any year, and every name under them.
 export function providerDomain(name: string): boolean {
-  const hosts = [INDEX_HOST, OFFICE_HOST, DOHLE_HOST, WIKI_HOST, LEXWEAR_HOST, HOSTTOAST_HOST, BOARD_HOST, VIDEO_HOST, ...CHANNELS.map((c) => c.host), ...SOFTWARE.map((x) => x.site.host), ...SERVER_OS.map((x) => x.site.host),
+  const hosts = [INDEX_HOST, OFFICE_HOST, DOHLE_HOST, WIKI_HOST, LEXWEAR_HOST, HOSTTOAST_HOST, BOARD_HOST, VIDEO_HOST, ...CHANNELS.map((c) => c.host), ...SOFTWARE.map((x) => x.site.host), ...SERVER_OS.map((x) => x.site.host), ...DESKS.map((d) => d.hosts.vendor),
     ...VENDORS.map((m) => vendorHost(m.id)), ...BANKS.map((b) => b.host), ...REGISTRARS.map(registrarHost), ...PROVIDERS.map((p) => p.host)].map((h) => h.replace(/^www\./, ""));
   return hosts.some((h) => h === name || h.endsWith(`.${name}`));
 }
@@ -133,7 +137,7 @@ const slow = (hostSlow: boolean): Load => (hostSlow ? "slow" : "fast");
 
 // How a machine answers: a server that is off, failed or cut from the internet cannot be reached, a loaded one answers slowly.
 function serverLoad(s: GameState, id: string): Load {
-  return !working(s, id) || !linkStatus(s, id).online ? "down" : slow(nodeUsage(s, id).perf < 1);
+  return !working(s, id) || !linkStatus(s, id).online ? "down" : slow(nodeUsage(s, id).perf < SLOW_PERF);
 }
 
 // The player's own VM answers like its workload; a customer's workload like its service.
@@ -167,14 +171,29 @@ function machinePage(s: GameState, m: { hostname: string; load: Load }, port: st
   return { page: c ? { kind: "console", hostname: m.hostname, clusterId: c.id, defaced: isDefaced(s, c), path } : { kind: "host", hostname: m.hostname }, load: m.load };
 }
 
+// The customer site a host serves and how fast it loads.
+function siteAt(s: GameState, host: string): { serviceId: string; load: Load } | null {
+  const v = s.services.find((x) => !!x.domain && (x.domain === host || `www.${x.domain}` === host))
+    ?? s.services.find((x) => !x.domain && x.product === "webHosting" && siteHost(s, x.id) === host);
+  const c = v && customerSite(s, v.id);
+  return v && c ? { serviceId: v.id, load: c.status === "down" ? "down" : c.status === "slow" ? "slow" : "fast" } : null;
+}
+
 export function resolve(s: GameState, raw: string): Resolved {
   const { host, path } = split(raw), url = `${host}${path}`;
   const out = (page: Page, load: Load = "fast"): Resolved => ({ url, host, path, page, load });
   const domain = companyDomain(s);
   const shopLoad = (): Load => { const st = shopStatus(s); return st === "up" ? "fast" : st === "slow" ? "slow" : "down"; };
-  // A phishing page a notice reports stays up until the player takes it down.
-  const phish = s.tickets.filter((t) => t.topic === "phishing" && t.notice && split(t.notice.url).host === host && split(t.notice.url).path === path);
-  if (phish.length && !phish.some((t) => t.outcome === "takenDown" || t.outcome === "seized")) return out({ kind: "phishing", sender: phish[0].notice!.sender });
+  // What a notice reports stays up until the player takes it down; a fake download claim points at nothing.
+  const reported = s.tickets.filter((t) => t.kind === "notice" && t.notice && split(t.notice.url).host === host && split(t.notice.url).path === path);
+  if (reported.length && !reported.some((t) => t.outcome === "takenDown" || t.outcome === "seized")) {
+    const shown = reported.find((t) => t.notice!.real || t.topic === "youtuber");
+    if (shown) return out({ kind: "notice", ticketId: shown.id });
+    return out({ kind: "notfound" }, siteAt(s, host)?.load);
+  }
+  // A domain on the partner's name servers shows its parking page; on custom ones nothing the company runs answers.
+  const held = s.domains.find((d) => !d.lapsed && (host === d.name || host === `www.${d.name}`));
+  if (held && parked(s, held)) return out(nsActive(s, held).ns === "registrar" ? { kind: "parked", registrar: partnerOf(s).id, domain: held.name } : { kind: "notfound" });
   if (host === domain || host === `www.${domain}`) {
     if (!s.marketing.launched) return out({ kind: "notfound" });
     const st = siteStatus(s);
@@ -188,12 +207,8 @@ export function resolve(s: GameState, raw: string): Resolved {
     return c && m ? { url, host, path, page: { kind: "console", hostname: m.hostname, clusterId: c.id, defaced: isDefaced(s, c), path }, load: m.load } : out({ kind: "notfound" });
   }
   if (host === `portal.${domain}`) return shopActive(s) && s.shop.install ? out({ kind: "shop" }, shopLoad()) : out({ kind: "notfound" });
-  const site = s.services.find((v) => !!v.domain && (v.domain === host || `www.${v.domain}` === host))
-    ?? s.services.find((v) => !v.domain && v.product === "webHosting" && siteHost(s, v.id) === host);
-  if (site) {
-    const c = customerSite(s, site.id);
-    if (c) return out({ kind: "customer", serviceId: site.id }, c.status === "down" ? "down" : c.status === "slow" ? "slow" : "fast");
-  }
+  const site = siteAt(s, host);
+  if (site) return out({ kind: "customer", serviceId: site.serviceId }, site.load);
   const named = (bare: string) => host === bare || host === `www.${bare}`;
   if (named(INDEX_HOST)) return out({ kind: "index" });
   if (named(OFFICE_HOST)) return out({ kind: "office" });
@@ -205,6 +220,8 @@ export function resolve(s: GameState, raw: string): Resolved {
   // Every shop system has its vendor's site, from the year it is sold.
   const shopSite = SHOPS.find((v) => v.from <= yearOf(s.hour) && named(shopHost(v.id)));
   if (shopSite) return out({ kind: "shopVendor", id: shopSite.id });
+  const deskSite = DESKS.find((d) => d.from <= yearOf(s.hour) && named(d.hosts.vendor));
+  if (deskSite) return out({ kind: "deskVendor", id: deskSite.id });
   if (named(HOSTTOAST_HOST)) return out({ kind: "hosttoast" });
   // A software's site exists from the year the software does; an operating system's always.
   const year = yearOf(s.hour), sw = SOFTWARE.find((x) => named(x.site.host) && x.from <= year);
