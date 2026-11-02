@@ -1,6 +1,7 @@
 // economy.md, "Backup jobs and restore points": scheduled copies of a cluster's workloads to a backup cluster.
 import { jobById, linkHours, KEEP_MAX, MAX_JOBS, newJob, pruneJob, runJob, syncBackupAt, type BackupJob } from "../60-infra/backups";
-import { diskFill } from "../60-infra/usage";
+import { diskFill, workloadUse } from "../60-infra/usage";
+import { RESTORE_MINUTES_PER_GB } from "../60-infra/webpanel";
 import { backsUpCluster, controlPlaneUp } from "../60-infra/cluster";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
@@ -101,5 +102,22 @@ export function testRestore(s: GameState, workloadId: string, pointAt: number, o
   if (!repo || !controlPlaneUp(s, repo)) return fail("error.backupUnavailable");
   const done = s.hour + linkHours(c, repo, w.diskGb * diskFill(s, w, p.at));
   s.workloads = s.workloads.map((x) => (x.id === w.id ? { ...x, points: x.points!.map((y) => (y === p ? { ...y, testDoneAt: done } : y)) } : x));
+  return { ok: true };
+}
+
+// Restores one site of a panel host from the point written at pointAt, the primary copy before an offsite one.
+// The site is down until the restore is done (webpanelTick finishes it); one restore runs per host at a time.
+export function restoreSite(s: GameState, hostId: string, serviceId: string, pointAt: number): ActionResult {
+  const w = s.workloads.find((x) => x.serviceId === serviceId && x.clusterId === hostId);
+  if (!w) return fail("error.unknownService");
+  const pts = (w.points ?? []).filter((p) => p.at === pointAt && !(p.verified && p.bad) && (p.readyAt ?? 0) <= s.hour).sort((a, b) => Number(a.offsite) - Number(b.offsite));
+  if (!pts.length) return fail("error.noPoint");
+  const repo = (p: (typeof pts)[number]) => { const j = jobById(s, p.jobId); return s.clusters.find((x) => x.id === (p.offsite ? j?.offsiteId : j?.targetId)); };
+  const p = pts.find((x) => { const r = repo(x); return !!r && controlPlaneUp(s, r); });
+  if (!p) return fail("error.backupStoreOffline");
+  if (s.workloads.some((x) => x.clusterId === hostId && x.serviceId && s.webpanel.restoring[x.serviceId])) return fail("error.restoring");
+  const until = s.hour + Math.max(1, Math.ceil((workloadUse(s, w).diskGb * RESTORE_MINUTES_PER_GB) / 60));
+  s.webpanel = { ...s.webpanel, restoring: { ...s.webpanel.restoring, [serviceId]: { from: s.hour, until } } };
+  if (p.appVersion !== undefined) s.services = s.services.map((v) => (v.id === serviceId ? { ...v, spec: { ...v.spec, appVersion: p.appVersion } } : v));
   return { ok: true };
 }

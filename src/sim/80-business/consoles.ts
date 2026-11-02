@@ -62,13 +62,14 @@ export function consoleFeatures(softwareId: string, year: number): ConsoleFeatur
     : cloud ? (year >= (sw.migration.same ?? sw.from) ? (sw.live ? "live" : "cold") : null) : null;
   return {
     look,
-    create: !mail, delete: !mail, stop: !mail, start: !mail,
+    // A web panel manages sites, never the host it runs on.
+    create: !mail, delete: !mail && !panel, stop: !mail, start: !mail,
     migrate,
-    resize: (panel && softwareId !== "freepanel") || cloud,
+    resize: cloud,
     // Every console with a backup server that reads it schedules its jobs there.
     backups: !mail && sw.kind !== "backup",
     update: true,
-    sitesOffline: panel || game,
+    sitesOffline: game,
     cleanUp: panel || game,
     cluster: !game && !mail && sw.cluster !== null && year >= sw.cluster,
   };

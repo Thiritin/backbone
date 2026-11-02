@@ -5,6 +5,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-02
 
 - A server that runs out of memory no longer freezes with every workload on it: it slows down while it swaps, and past that only its largest VM is killed for an hour.
+- The web hosting panels no longer resize, remove or take the whole host offline and no longer set booking limits; the host's software page now restarts the server, and updates, the release channel and auto updates sit on their own Updates page where the panel supports them.
+- Web hosting panels gain a Services page to restart single services, a Components page to pick the mail, FTP and web server and install paid modules, and a Backup Manager that lists backups and restores single sites, which takes time and needs the backup server online.
 - Servers now draw power and heat up by how busy their CPUs are, and the server management page shows the CPU temperature and fans that speed up with it.
 - Bound, Knut DNS, WireGuarded, vsFTPeed, Postfixit and Backula no longer show a web page in the browser, and Backula's finished jobs and restores of lost machines now run from its command line tool in the terminal.
 - The command line tools of free software no longer list license commands or a license key option.
