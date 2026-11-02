@@ -3,7 +3,7 @@ import type { Dict } from "../lang";
 export default {
   "shop-admin.acceptOrder": () => "Aceitar pedido",
   "shop-admin.autoSetup": () => "Configurar automaticamente",
-  "shop-admin.billingCycles": () => "Ciclos de faturação",
+  "shop-admin.cycleDiscounts": () => "Descontos por ciclo",
   "shop-admin.cancelOrder": () => "Cancelar pedido",
   "shop-admin.client": () => "Cliente",
   "shop-admin.clientArea": () => "Área de cliente",
@@ -21,6 +21,7 @@ export default {
   "shop-admin.group": () => "Grupo",
   "shop-admin.groupName": () => "Nome do grupo",
   "shop-admin.hidden": () => "Oculto",
+  "shop-admin.manualPrices": () => "Gerir preços manualmente",
   "shop-admin.home": () => "Início",
   "shop-admin.invoice": () => "Fatura",
   "shop-admin.invoices": () => "Faturas",

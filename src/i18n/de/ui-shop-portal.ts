@@ -11,5 +11,6 @@ export default {
   "error.badProductPrice": () => "Der Preis muss zwischen 0 und 100000 liegen.",
   "error.cycleNotSupported": () => "Dieses Shopsystem bietet den Abrechnungszeitraum nicht an.",
   "error.badDiscount": () => "Der Rabatt muss zwischen 0 und 50 Prozent liegen.",
+  "error.needsMonthlyPrice": () => "Automatische Laufzeitpreise brauchen einen Monatspreis.",
   "error.unknownServerGroup": () => "Diese Servergruppe gibt es nicht.",
 } satisfies Dict;

@@ -10,6 +10,8 @@ export function fillShop(s: GameState, saved: readonly string[] = []): void {
   // Module purchases from before modules belonged to a shop system count for the one in use.
   const shop = s.shop.variant;
   if (shop) s.ledger = s.ledger.map((e) => (e.key.startsWith("ledger.module.") && e.params.shop === undefined ? { ...e, params: { ...e.params, shop } } : e));
+  // Products from before automatic cycle prices keep the prices they were given.
+  s.shop = { ...s.shop, products: s.shop.products.map((p) => ({ ...p, autoCycles: p.autoCycles ?? false })) };
   if ((s.shop.variant as string) !== "handRolled") return;
   s.shop = { ...s.shop, variant: null, modules: {} };
   s.marketing = { ...s.marketing, emailOrders: true };

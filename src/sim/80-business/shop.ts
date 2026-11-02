@@ -27,7 +27,8 @@ export interface ServerGroup { id: string; name: string; kind: SoftwareKind; mem
 // When a product's order is set up: on the first payment, after the admin accepts it, or by hand.
 export type SetupMode = "payment" | "accept" | "off";
 export interface ProductGroup { id: string; name: string; hidden: boolean }
-// A sellable plan. prices hold the total of one term per cycle; an absent cycle is not offered.
+// A sellable plan. prices hold the total of one term per cycle; an absent cycle is not offered. With autoCycles every
+// offered cycle but the monthly one is priced from the monthly price and the shop's cycle discounts.
 export interface ShopProduct {
   id: string; groupId: string; name: string; line: Product;
   serverGroupId: string | null; packageName: string | null;
@@ -35,6 +36,7 @@ export interface ShopProduct {
   spec: Spec;
   title?: string; slots?: number;
   prices: Partial<Record<Cycle, number>>;
+  autoCycles: boolean;
   setup: number;
   stock: Stock; hidden: boolean; setupMode: SetupMode;
 }
@@ -51,7 +53,7 @@ export interface ShopState {
   // Visitors this month who found the line (or, with products, no fitting plan) sold out.
   soldOut: Record<string, number>;
   groups: ServerGroup[];
-  // Discount off N times the monthly price per cycle for lines sold through configurable options; the market's where unset.
+  // Discount off N times the monthly price per cycle; 0 where unset.
   optionDiscount: Partial<Record<Cycle, number>>;
   products: ShopProduct[];
   productGroups: ProductGroup[];
