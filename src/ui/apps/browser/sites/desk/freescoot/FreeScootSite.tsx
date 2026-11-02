@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { t } from "../../../../../../i18n/en";
 import { LOCALE } from "../../../../../../i18n/lang";
 import { dateOf } from "../../../../../../sim/00-core/time";
@@ -9,7 +9,11 @@ import type { DeskChannel } from "../../../../../../sim/42-mail/types";
 import type { GameState } from "../../../../../../sim/50-state";
 import { deskPath, type DeskArgs, type DeskPage } from "../../../../../../sim/80-business/deskroutes";
 import { FreeScootMark } from "../../../../../art/mailmarks";
+import { deskSpace } from "../../../../../../sim/60-infra/desk-files";
+import { deskLogin } from "../../../../../../sim/90-actions/desk-setup";
 import { useSessionState } from "../../../../../session";
+import { useStore } from "../../../../../store";
+import { DeskForgot, DeskReset } from "../setup/DeskReset";
 import type { DeskSiteProps } from "../DeskSite";
 import { MailboxPage } from "./Mailbox";
 import { ManagePage } from "./Manage";
@@ -52,6 +56,9 @@ export function FreeScootSite(p: DeskSiteProps) {
   const h = p.game.desk?.hosting, version = h?.kind === "self" ? h.version : "1.8";
   const props: FsProps = { ...p, version, nav: (page, args) => p.go(p.host + deskPath("freescoot", page, args)) };
   const page = p.route.page as FsPage, cls = `fs ${Number(version.split(".")[1] ?? 0) >= 8 ? "fs-current" : "fs-classic"}`;
+  const back = () => props.nav("login");
+  if (page === "passwordEmail") return <div className={`${cls} fs-login`}><DeskForgot id="freescoot" onBack={back} /></div>;
+  if (page === "passwordReset") return <div className={`${cls} fs-login`}><DeskReset id="freescoot" token={p.route.args.id ?? ""} onBack={back} /></div>;
   if (page === "login" || !agent) {
     return <div className={`${cls} fs-login`}><Login {...props} onLogin={() => { setAgent(true); if (page === "login") props.nav("dashboard"); }} /></div>;
   }
@@ -64,13 +71,22 @@ export function FreeScootSite(p: DeskSiteProps) {
   );
 }
 
-function Login({ game, onLogin }: FsProps & { onLogin: () => void }) {
+// A desk installed into a web space checks the account its installer created; one from before keeps the filled-in form.
+function Login({ game, nav, onLogin }: FsProps & { onLogin: () => void }) {
+  const attempt = useStore((s) => s.attempt), [error, setError] = useState<string | null>(null), own = !!deskSpace(game);
+  const submit = (form: HTMLFormElement) => {
+    const d = new FormData(form), r = attempt(deskLogin, String(d.get("email") ?? ""), String(d.get("password") ?? ""));
+    setError(r.ok ? null : t(r.error, r.params));
+    if (r.ok) onLogin();
+  };
   return (
-    <form className="fs-signin" onSubmit={(e) => { e.preventDefault(); onLogin(); }}>
+    <form className="fs-signin" onSubmit={(e) => { e.preventDefault(); submit(e.currentTarget); }}>
       <FreeScootMark />
-      <label><span>{t("fs.email")}</span><input name="email" type="email" defaultValue={`admin@${game.company.domain}`} autoComplete="off" /></label>
-      <label><span>{t("fs.password")}</span><input name="password" type="password" defaultValue="password" autoComplete="off" /></label>
+      <label><span>{t("fs.email")}</span><input name="email" type="email" defaultValue={own ? "" : `admin@${game.company.domain}`} autoComplete="off" /></label>
+      {error && <p className="fs-error" role="alert">{error}</p>}
+      <label><span>{t("fs.password")}</span><input name="password" type="password" defaultValue={own ? "" : "password"} autoComplete="off" /></label>
       <button type="submit" className="fs-btn primary">{t("fs.login")}</button>
+      {own && <a className="fs-forgot" onClick={() => nav("passwordEmail")}>{t("desk-setup.freescoot.forgotLink")}</a>}
     </form>
   );
 }

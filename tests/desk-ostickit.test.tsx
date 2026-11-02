@@ -10,18 +10,17 @@ import { holderOf } from "../src/sim/60-infra/addresses";
 import { panelMachine } from "../src/sim/60-infra/licence";
 import { resolve } from "../src/sim/80-business/browser";
 import { deskPages, deskPath } from "../src/sim/80-business/deskroutes";
-import { installDesk } from "../src/sim/90-actions/desk-install";
 import { replyTicket } from "../src/sim/90-actions/support";
 import { DeskSite, deskUrl } from "../src/ui/apps/browser/sites/desk/DeskSite";
 import { useStore } from "../src/ui/store";
-import { readyGame } from "./fixtures";
+import { DESK_ADMIN, handDesk, readyGame } from "./fixtures";
 
 const panel = (s: GameState) => s.clusters.find((x) => x.kind === "panel")!;
 function game(version: string): GameState {
   const s = readyGame(5);
   s.hour = hourOf(new Date(Date.UTC(2014, 0, 1)));
   s.cash = 1_000_000;
-  expect(installDesk(s, panel(s).id, "ostickit").ok).toBe(true);
+  handDesk(s, panel(s).id, "ostickit");
   s.ips.addresses.push({ id: "ip-desk", ip: "203.0.113.10", v: 4, locationId: s.locations[0].id, holder: holderOf(s, panelMachine(panel(s))!), source: "line", blockId: null, rep: 100, listed: false, spam: 0 } as never);
   s.desk = { ...s.desk!, hosting: { ...(s.desk!.hosting as { kind: "self"; clusterId: string; version: string }), version } };
   return s;
@@ -65,7 +64,13 @@ describe("OsTickit", () => {
   it("asks staff to log in first", () => {
     const s = game("1.6");
     show(s, "/scp/");
-    fireEvent.click(screen.getByText(t("ost.login.submit")));
+    const form = screen.getByText(t("ost.login.submit")).closest("form")!;
+    fireEvent.change(form.querySelector("input[name=userid]")!, { target: { value: DESK_ADMIN.user } });
+    fireEvent.change(form.querySelector("input[name=passwd]")!, { target: { value: "wrong" } });
+    fireEvent.submit(form);
+    expect(screen.getByText(t("desk-setup.login.ostickit"))).toBeTruthy();
+    fireEvent.change(form.querySelector("input[name=passwd]")!, { target: { value: DESK_ADMIN.pass } });
+    fireEvent.submit(form);
     expect(screen.getByText(t("ost.queue.count", { name: t("ost.queue.open"), n: 0 }))).toBeTruthy();
   });
 

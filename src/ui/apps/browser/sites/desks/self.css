@@ -17,3 +17,5 @@
 .dsw-ostickit.dsw-late .dsw-nav a.on { border: 0; border-bottom: 2px solid var(--dsw-accent); background: none; }
 .dsw-freescoot { --dsw-accent: #3c8dbc; --dsw-head: #fff; --dsw-line: #e3e8ec; font-family: "Helvetica Neue", Arial, sans-serif; }
 .dsw-freescoot .dsw-nav a.on { border: 0; border-bottom: 2px solid var(--dsw-accent); background: none; }
+.dsw-btn { padding: 4px 12px; border: 0; border-radius: 3px; background: var(--dsw-accent); color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+.dsw-btn:disabled { opacity: 0.55; cursor: default; }
