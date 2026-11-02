@@ -2,6 +2,7 @@ import { euroCents } from "../../sim/00-core/money";
 import type { Dict } from "../lang";
 
 export default {
+  "ticket.order.text": () => "Buongiorno, vorrei fare un ordine da voi.",
   "ticket.order.webHosting.subject": (p) => (p.domain ? `Ordine: hosting per ${p.domain}` : "Ordine: web hosting"),
   "ticket.order.vps.subject": () => "Ordine: VPS",
   "ticket.order.gameServer.subject": () => "Ordine: server di gioco",

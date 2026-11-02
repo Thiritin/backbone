@@ -3,10 +3,7 @@ import { FileText, KeyRound, Paperclip, Receipt } from "lucide-react";
 import { t } from "../../../i18n/en";
 import { LOCALE } from "../../../i18n/lang";
 import type { Attachment } from "../../../sim/42-mail/types";
-import { ticketOf, view } from "../../../sim/42-mail/model";
-import { orderOf } from "../../../sim/30-market/orders";
-import { CustomCompose } from "../support/CustomOrder";
-import { deskUrl } from "../browser/sites/desk/DeskSite";
+import { view } from "../../../sim/42-mail/model";
 import type { Row } from "../../../sim/43-pear-mail/view";
 import type { GameState } from "../../../sim/50-state";
 import { saveAttachment } from "../../../sim/90-actions/mailmsg";
@@ -58,7 +55,7 @@ function Transfer({ locked, onAnswer }: { locked: boolean; onAnswer: (code: stri
 export function Preview({ game, row }: { game: GameState; row: Row | null }) {
   const openApp = useStore((s) => s.openApp), act = useStore((s) => s.act);
   if (!row) return <div className="pm-preview empty">{t("pearMail.noMessage")}</div>;
-  const v = view(game, row.m), tk = ticketOf(game, row.m), order = tk?.kind === "order" ? orderOf(game, tk) : undefined;
+  const v = view(game, row.m);
   return (
     <article className="pm-preview">
       {shownJunk(game, row.m) && (
@@ -111,7 +108,6 @@ export function Preview({ game, row }: { game: GameState; row: Row | null }) {
           </div>
         )}
       />
-      {tk && order?.spec && !deskUrl(game, { kind: "ticket", id: tk.id }) && <CustomCompose tk={tk} r={order} />}
     </article>
   );
 }

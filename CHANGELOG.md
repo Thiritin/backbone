@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- An order email in Pear Mail and the other mail and helpdesk apps now shows only the order's steps, so you can quote, set up and finish the order from there.
+- Old order emails show a short order text instead of a placeholder once the order is long finished.
 - With an active shop, leads that need a quote now ask in the shop admin instead of by email, and with email orders off no request arrives by email at all.
 - Far less spam reaches your inbox: a quiet mailbox sees about two junk mails a week, and spam never outnumbers your real mail.
 - The email settings sheet and the Change provider menu item are gone: you choose, switch and cancel email providers on their websites in the Browser, and Getting started opens the Email providers category.
