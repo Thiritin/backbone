@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- Defaced customer sites now appear in the Security app, where you restore them from a backup, offer a paid clean-up billed at your hourly rate, remind the owner to clean up, or suspend the site with a notice that names the hack, and a clean site comes back online by itself.
+- Customers with a defaced site and no backup can buy a clean-up by the hour; the dearer your rate against the market, the more of them say no and some cancel.
 - Stopping a server or freezing a container now frees its memory, and OpenVeeZee containers take only the memory they actually use and are set up straight from an OS template without an install disc.
 - Right-clicking an invoice in the bookkeeping program now offers what its status allows: sending or cancelling a draft, marking it paid against a transfer or without one, sending the next dunning step, suspending, writing off and reopening.
 - The dunning levels overview is now part of the top editions only; every other edition handles reminders from the invoice list.

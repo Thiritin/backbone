@@ -173,6 +173,7 @@ export default {
   "support.action.free": () => "Update for free",
   "support.action.clean": () => "Clean up site",
   "support.action.noBackup": () => "No backup",
+  "support.action.cleanPaid": () => "Paid clean-up",
   "support.offer.half": () => "50% off the next month",
   "support.offer.free": () => "One month free",
   "support.offer.d3": () => "20% off for 3 months",
