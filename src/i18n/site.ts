@@ -22,6 +22,7 @@ export const SITE_EN: Record<string, (p: Params) => string> = {
   "site.blurb.soleProp": () => "Services, opening hours and a contact form for a one-person business.",
   "site.blurb.smallBiz": () => "A price list, a map and the opening hours of the shop around the corner.",
   "site.blurb.agency": () => "Case studies, a wall of client logos and a button that says Let's talk.",
+  "site.blurb.webDev": () => "A portfolio of client websites and a footer that says who built them.",
   "site.blurb.office": () => "Consulting hours, appointment requests and a privacy notice.",
   "site.blurb.onlineShop": () => "A product catalogue with a shopping cart and a checkout.",
   "site.blurb.enterprise": () => "Press releases, an investor page and a careers section with a stock photo of a handshake.",

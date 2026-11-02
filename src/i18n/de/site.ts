@@ -21,6 +21,7 @@ export default {
   "site.blurb.soleProp": () => "Leistungen, Öffnungszeiten und ein Kontaktformular für den Ein-Personen-Betrieb.",
   "site.blurb.smallBiz": () => "Eine Preisliste, eine Karte und die Öffnungszeiten des Ladens um die Ecke.",
   "site.blurb.agency": () => "Fallstudien, eine Wand voller Kundenlogos und ein Button mit der Aufschrift Let's talk.",
+  "site.blurb.webDev": () => "Ein Portfolio voller Kundenwebsites und ein Footer, der sagt, wer sie gebaut hat.",
   "site.blurb.office": () => "Sprechzeiten, Terminanfragen und eine Datenschutzerklärung.",
   "site.blurb.onlineShop": () => "Ein Produktkatalog mit Warenkorb und Kasse.",
   "site.blurb.enterprise": () => "Pressemitteilungen, eine Investorenseite und ein Karrierebereich mit einem Stockfoto von einem Handschlag.",

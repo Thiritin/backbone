@@ -85,6 +85,7 @@ export default {
   "sim.profile.sole.name": () => "Entrepreneur individuel",
   "sim.profile.small.name": () => "Petite entreprise",
   "sim.profile.agency.name": () => "Agence ou startup",
+  "sim.profile.webdev.name": () => "Développeur web",
   "sim.profile.office.name": () => "Cabinet médical ou juridique",
   "sim.profile.shop.name": () => "Boutique en ligne",
   "sim.profile.enterprise.name": () => "Grande entreprise",
