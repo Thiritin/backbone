@@ -1,0 +1,69 @@
+// The mail check: on each account's interval, with the window open or closed (docs/design/plans/mail-client.md, The check).
+import { nowMinutes } from "../00-core/time";
+import { serverStatus, type ServerStatus } from "../42-mail/accounts";
+import { drop } from "../42-mail/deliver";
+import { boxOf, isRead } from "../42-mail/model";
+import type { GameState } from "../50-state";
+import type { SimEvent } from "../88-tick/tick";
+import { ACTIVITY_KEEP, localFolder, type ActivityLine, type ClientAccount, type PopRemove } from "./state";
+
+export const APP = "Pear Mail";
+const DAY = 24 * 60;
+export const POP_KEEP: Record<PopRemove, number | null> = { now: 0, day: DAY, week: 7 * DAY, month: 30 * DAY, never: null };
+// Single new-mail events per check; the rest are summed up in one.
+const EVENTS_EACH = 3;
+
+const ERRORS: Record<ServerStatus, string | null> = {
+  ok: null, listed: null, down: "error.mailDown", installing: "error.mailDown", closed: "error.mailClosed", locked: "error.mailLocked",
+  unresolved: "error.mailDns", auth: "error.mailAuth", external: "error.mailExternal", poll: "error.mailPoll",
+};
+
+// The error key a check of the account answers now, null when it connects; gapMin counts the provider's poll gap.
+export function clientError(s: GameState, c: ClientAccount, gapMin?: number): string | null {
+  if (!s.mail.accounts.some((a) => a.id === c.accountId)) return "error.mailNoBox";
+  return ERRORS[serverStatus(s, c.accountId, c.protocol, c.password, gapMin)];
+}
+
+const patch = (s: GameState, id: string, p: Partial<ClientAccount>): void => {
+  s.pearMail = { ...s.pearMail, accounts: s.pearMail.accounts.map((c) => (c.id === id ? { ...c, ...p } : c)) };
+};
+const log = (s: GameState, line: ActivityLine): void => { s.pearMail = { ...s.pearMail, activity: [...s.pearMail.activity, line].slice(-ACTIVITY_KEEP) }; };
+
+// One check of one account; returns its new-mail events.
+export function checkAccount(s: GameState, id: string): SimEvent[] {
+  const c = s.pearMail.accounts.find((x) => x.id === id);
+  if (!c) return [];
+  const now = nowMinutes(s), error = clientError(s, c, now - c.checkedAt);
+  if (error) {
+    patch(s, id, { checkedAt: now, ...(error === "error.mailAuth" && { authFailed: true }) });
+    log(s, { at: now, clientId: id, count: 0, error });
+    return [];
+  }
+  const fresh = boxOf(s, c.accountId).filter((m) => m.folder === "inbox" && !m.snooze && m.at > c.syncedAt && m.at <= now);
+  let shown = fresh, popDue = c.popDue;
+  if (c.protocol === "pop") {
+    shown = fresh.map((m) => ({ ...m, id: `msg${s.nextId++}`, folder: localFolder(id, "inbox"), origin: id }));
+    s.pearMail = { ...s.pearMail, local: { ...s.pearMail.local, messages: [...s.pearMail.local.messages, ...shown] } };
+    const keep = POP_KEEP[c.popRemove];
+    if (keep === 0) drop(s, c.accountId, new Set(fresh.map((m) => m.id)));
+    else if (keep !== null) popDue = [...popDue, ...fresh.map((m) => ({ id: m.id, at: now + keep }))];
+  }
+  const due = popDue.filter((d) => d.at <= now);
+  if (due.length) drop(s, c.accountId, new Set(due.map((d) => d.id)));
+  const { authFailed: _a, ...rest } = c;
+  s.pearMail = { ...s.pearMail, accounts: s.pearMail.accounts.map((x) => (x.id === id ? { ...rest, checkedAt: now, syncedAt: now, popDue: popDue.filter((d) => d.at > now) } : x)) };
+  log(s, { at: now, clientId: id, count: fresh.length });
+  const news = shown.filter((m) => !isRead(s, m)), params = { account: c.description };
+  return [
+    ...news.slice(0, EVENTS_EACH).map((m) => ({ app: "Pear Mail", key: "event.newMail", params: { ...params, count: 1, messageId: m.id } })),
+    ...(news.length > EVENTS_EACH ? [{ app: "Pear Mail", key: "event.newMailMore", params: { ...params, count: news.length - EVENTS_EACH } }] : []),
+  ];
+}
+
+// Every game minute. A manual account and one whose password was refused wait for Get Mail.
+export function pearMailTick(s: GameState): SimEvent[] {
+  if (!s.pearMail.accounts.length || !s.installed.includes(APP)) return [];
+  const now = nowMinutes(s);
+  return s.pearMail.accounts.filter((c) => c.enabled && !c.authFailed && c.checkEvery > 0 && now - c.checkedAt >= c.checkEvery)
+    .flatMap((c) => checkAccount(s, c.id));
+}

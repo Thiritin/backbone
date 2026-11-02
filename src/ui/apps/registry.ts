@@ -20,11 +20,13 @@ import { ApplicationsApp } from "./ApplicationsApp";
 import type { GameState } from "../../sim/50-state";
 import { SupportApp } from "./support/SupportApp";
 import { supportApp } from "./support/desk";
-import type { MarkProps } from "../art/mailmarks";
+import { PearMailMark, type MarkProps } from "../art/mailmarks";
 import { ResearchApp } from "./research/ResearchApp";
 import { StaffApp } from "./staff/StaffApp";
 import { WeatherApp } from "./weather/WeatherApp";
 import { PostApp } from "./PostApp";
+import { PearMailApp } from "./pear-mail/PearMailApp";
+import { unreadBadge } from "../../sim/43-pear-mail/view";
 import { DocuWhereApp } from "./DocuWhereApp";
 import { PreviewApp } from "./PreviewApp";
 import { inbox } from "../../sim/40-support/letters";
@@ -62,6 +64,7 @@ export const APPS: AppDef[] = [
     badge: (s) => drafts(s) + unmatched(s) + late(s) },
   { name: "Post", icon: era(Mailbox, "post"), tile: "oklch(0.72 0.15 85)", about: t("apps.about.Post"), body: PostApp,
     badge: (s) => inbox(s).filter((l) => !l.read).length },
+  { name: "Pear Mail", icon: PearMailMark, tile: "oklch(0.62 0.15 245)", about: t("apps.about.Pear Mail"), hidden: true, body: PearMailApp, badge: unreadBadge },
   { name: "DocuWhere", icon: era(Archive, "docuwhere"), tile: "oklch(0.55 0.13 265)", about: t("apps.about.DocuWhere"), body: DocuWhereApp },
   { name: "DohleFormular", icon: era(Landmark, "dohleformular"), tile: "oklch(0.36 0.09 255)", about: t("apps.about.DohleFormular"), body: DohleFormularApp },
   { name: "Staff", icon: era(Contact, "staff"), tile: "oklch(0.7 0.15 70)", about: t("apps.about.Staff"), body: StaffApp },

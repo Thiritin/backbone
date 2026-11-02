@@ -91,7 +91,7 @@ pearMail: {
   notes: PearNote[]              // Notes and To Dos (Pear Mail 3)
   junk: { on: boolean; mode: "training" | "automatic" }
   prefs: PearMailPrefs           // new mail sound, Dock count, sort, organise, preview lines, default From, undo delay
-  activity: ActivityLine[]       // newest 30 lines of the Mail Activity window
+  activity: ActivityLine[]       // newest 30 lines of the Mail Activity window: { at, clientId, count, error? }
   replied: Record<string, number>   // "<rule id>:<sender>" to the minute an auto reply went out, so each sender is answered once
   welcomed: boolean              // the first-launch welcome has been dismissed
   seenBuild: string
@@ -108,7 +108,9 @@ interface ClientAccount {
   smtp: string | null
   enabled: boolean
   checkEvery: number             // game minutes: 0 manual, 1 automatic, then 5, 15, 30, 60
-  syncedAt: number               // game minutes of the last check
+  checkedAt: number              // game minute of the last check, failed or not: the schedule and the poll gap count from it
+  syncedAt: number               // game minute of the last good check: server mail that arrived later is not visible yet
+  authFailed?: true              // the password was refused; scheduled checks stop until a new one is entered
   popRemove: "now" | "day" | "week" | "month" | "never"
   popDue: { id: string; at: number }[]   // server copies whose removal is scheduled
   signature: string | null
@@ -132,7 +134,7 @@ Local messages are the same `Message` type as core's, with `Folder.accountId` se
 
 ### 4.3 The check
 
-`pearMailTick(s)` runs once per game minute from `tick` and `tickMinute` (one line in each, beside core's `mailTick`) and compares the clock with each enabled account's `syncedAt` plus `checkEvery`. It runs whenever Pear Mail has accounts, with the window open or closed, so POP downloads, rules and the Dock badge keep working. The intervals are Every minute (from Pear Mail 3 the "Automatically" setting), Every 5, 15, 30 or 60 minutes, and Manually. `getMail` (the Get Mail button and Mailbox > Get All New Mail) runs the same function at once. A check, per account:
+`pearMailTick(s)` runs once per game minute from `tick` and `tickMinute` (one line in each, beside core's `mailDeliveryTick`) and compares the clock with each enabled account's `checkedAt` plus `checkEvery`. It runs whenever Pear Mail is installed and has accounts, with the window open or closed, so POP downloads, rules and the Dock badge keep working. The intervals are Every minute (from Pear Mail 3 the "Automatically" setting), Every 5, 15, 30 or 60 minutes, and Manually. `getMail` (the Get Mail button and Mailbox > Get All New Mail) runs the same function at once. A check, per account:
 
 1. Fails with the account's error (section 5.3) when `serverStatus` does not answer ok or the stored password no longer matches the mailbox's, and writes an Activity line. A later success clears the warning, which is derived from `serverStatus`, `capsOf` and the password check and not stored. An account whose password failed stops checking until the player enters a new one, so the prompt does not repeat every minute.
 2. Collects the Inbox messages newer than `syncedAt`, downloads them for POP, runs the Junk step (section 8.3) and the client rules in list order, and moves `syncedAt`.
@@ -157,7 +159,7 @@ A client rule that moves a message of an IMAP account is a server move through `
 
 The assistant is a sheet on the Pear Mail window. On the first launch of a new game a welcome sheet explains the window and has one step, "Add your first account", which opens the assistant; `pearMail.welcomed` records that it was dismissed. Afterwards the assistant opens from File > Add Account, from the plus button in Preferences > Accounts and from the Getting started step.
 
-Every build asks for a password. The field autofills from KeePassive (`savedLogin(game, "mail:<account id>", 1)` from `src/ui/vault.tsx`, the same site key the webmail sign-in uses, so a password saved in webmail fills here and the other way round) once the typed address resolves to a mailbox. When the account passes its check, `offerLogin` offers to save the password in KeePassive. Without the `keepassive` upgrade the player types it; the start mailbox's password is the one the Getting started guide shows until the player changes it. A wrong password fails the check with `error.mailPassword`, and the sheet keeps the field so the player can retry.
+Every build asks for a password. The field autofills from KeePassive (`savedLogin(game, "mail:<account id>", 1)` from `src/ui/vault.tsx`, the same site key the webmail sign-in uses, so a password saved in webmail fills here and the other way round) once the typed address resolves to a mailbox. When the account passes its check, `offerLogin` offers to save the password in KeePassive. Without the `keepassive` upgrade the player types it; the start mailbox's password is the one the Getting started guide shows until the player changes it. A wrong password fails the check with `error.mailAuth`, and the sheet keeps the field so the player can retry.
 
 - **Pear Mail 2 (manual).** Welcome (Full Name, Email Address, Password), Incoming Mail Server (Account Type popup: POP or IMAP, Description, Incoming Mail Server), Outgoing Mail Server (Description, Outgoing Mail Server), Account Summary with "Take account online". A verification runs before the summary and reports a failure from the table in 5.3. Go Back edits the entries. Continue keeps the account with its error, so the player can fix it in Preferences.
 - **Pear Mail 3 (automatic).** The Welcome page gets "Automatically set up account". For a host whose `capsOf` row has `autoconfig`, the server pages are skipped and the summary shows the found settings. Other hosts fall back to the manual pages.
@@ -178,7 +180,7 @@ The same check runs in the assistant and in every scheduled check, so both show 
 | --- | --- | --- |
 | Host name no provider owns, or the wrong provider's host | `error.mailServer` | Correct the host name |
 | The address is not a mailbox on that host (never created, deleted, moved to another provider) | `error.mailNoBox` | Correct the address or host, create the mailbox on the provider website, or edit the server to the new provider's host |
-| The password is wrong, or was changed on the provider site after the account was added | `error.mailPassword`; the account shows a password prompt sheet with a field, OK and Cancel | Enter the current password. A forgotten password is reset on the provider site (a code arrives by post after 2 to 3 days), not in Pear Mail |
+| The password is wrong, or was changed on the provider site after the account was added | `error.mailAuth` (core's `error.mailPassword` is the minimum length); the account shows a password prompt sheet with a field, OK and Cancel | Enter the current password. A forgotten password is reset on the provider site (a code arrives by post after 2 to 3 days), not in Pear Mail |
 | Protocol not offered (`capsOf`: IMAP on GMix FreeMix before 2012) | `error.mailProtocol`, with a Try POP button | Switch the account type |
 | The provider's "Allow external programs to fetch mail" switch is off (`webmail-consumer`) | `error.mailExternal` | Turn it on in webmail settings |
 | Own mail server `down` or `installing` | `error.mailDown` | Start the server or wait |
@@ -308,7 +310,7 @@ What happens when things change under the account:
 | The player removes an IMAP account | A confirm sheet; `removeClientAccount` runs and the server is untouched, so the mailbox is still in webmail |
 | The player removes a POP account | A confirm sheet with "Keep a copy of its mail in On My Pear", ticked by default; unticked, the downloaded mail goes with the account |
 | The provider is switched (`migrateMail`) | Mailbox ids stay, so the account keeps working in builds with automatic setup. In Pear Mail 2 the typed host name no longer matches `mailServersOf`, the warning triangle appears with `error.mailServer`, and editing the host to the new provider's name fixes it |
-| The password is changed on the provider website | The next check fails with `error.mailPassword`, the sidebar shows the warning triangle and the account stops checking. Opening the account shows the password prompt; the right password clears the triangle, resumes checks and offers to update KeePassive |
+| The password is changed on the provider website | The next check fails with `error.mailAuth`, the sidebar shows the warning triangle and the account stops checking. Opening the account shows the password prompt; the right password clears the triangle, resumes checks and offers to update KeePassive |
 | The mailbox is deleted on the provider website | `error.mailNoBox` at the next check, the warning triangle, and the Activity line. Downloaded POP mail stays |
 | The provider is cancelled | The mailbox stays readable for 30 days with `error.mailClosed`; the sidebar shows a closed marker, and dragging mail to On My Pear keeps it |
 | The provider or the own mail server is down | The same triangle with `error.mailDown`, cleared by the next successful check |
@@ -383,7 +385,7 @@ Each milestone is one pull request, green on its own, with a seeded Vitest suite
 
 1. **State, builds and the check.** Needs `mail-core` M1 and M2 (types, accessors, `capsOf`, `serverStatus`).
    - Sim: `10-catalog/pear-mail.ts` (builds, features, `mailBuild`, `mailHas`), `pearMail` state with `ClientAccount` and `ClientRule`, `newPearMail`, `fillPearMail`, `pearMailTick`, `getMail`, IMAP visibility by `at` and `syncedAt`, POP download with `popRemove` and `popDue`, the event list, Activity lines, `unreadBadge`.
-   - UI: a hidden `Pear Mail` registry entry and an empty window frame in the five looks that shows the build name.
+   - UI: a hidden `Pear Mail` registry entry and an empty window frame in the five looks that shows the build name, with the welcome sheet; its "Add your first account" button dismisses it (`dismissPearWelcome`) until M4 opens the assistant from it. `setClientPassword` is the sim side of the password prompt.
    - i18n: app, build, event and activity labels.
    - Tests: `tests/pear-mail-builds.test.ts` (Panthera in 2012 stays on Pear Mail 2, Leapard in 2011-07 gets Pear Mail 5, Yosemighty in 2014-10 gets 8; feature gates reject on an old build; `serialize` and `deserialize` round trip; a new game has no account and `welcomed` false; an old save gets an account for its primary mailbox with its password and `welcomed` true, and does not re-seed after the player removes the account; 2,000 local messages stay under the size budget) and `tests/pear-mail-check.test.ts` (an IMAP message is hidden until the next check; a POP account downloads at its interval and not before, `now` removes the server copy and webmail loses it, `never` keeps it unread on the server, a scheduled removal happens at its time, no message downloads twice; a manual account checks only on Get Mail; the check runs with no window; a down server sets and clears the warning; a password changed on the provider fails the next check, stops the account and is cleared by entering the new one; one event per message up to three, then a summary).
 2. **Mail kit, the window and the reader.** Needs `mail-core` M5.

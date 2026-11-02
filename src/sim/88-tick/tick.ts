@@ -43,6 +43,7 @@ import { registrarTick } from "../30-customers/registrar";
 import { mailTick } from "../80-business/mail";
 import { mailProviderTick } from "../80-business/mail-provider";
 import { mailDeliveryTick } from "../42-mail/deliver";
+import { pearMailTick } from "../43-pear-mail/check";
 import { computeTick, pinMembers } from "../60-infra/cluster";
 import { haltTick, powerTick, pushLog, tripTick } from "../60-infra/power";
 import { loadSaved } from "../60-infra/switches";
@@ -402,6 +403,7 @@ export function tick(state: GameState): SimEvent[] {
   mailProviderTick(state);
   mailTick(state);
   mailDeliveryTick(state);
+  events.push(...pearMailTick(state));
   leaseTick(state);
   pinMembers(state);
   events.push(...networkTick(state));
@@ -443,5 +445,5 @@ export function tickMinute(state: GameState): SimEvent[] {
   panelOpsTick(state);
   const tripped = tripTick(state);
   tanTick(state);
-  return [...tripped, ...thermalTick(state), ...workTick(state), ...deliverLicences(state)];
+  return [...tripped, ...thermalTick(state), ...workTick(state), ...deliverLicences(state), ...pearMailTick(state)];
 }

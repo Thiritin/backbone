@@ -1,0 +1,35 @@
+/* Pear Mail follows the installed Pear OS release: brushed metal on Panthera, unified on Leapard, flat on Yosemighty,
+   rounded on Big Sir, glass on Tahoo. */
+.pm { position: relative; flex: 1; min-width: 0; display: flex; flex-direction: column; background: var(--win); }
+.pm-toolbar { height: 52px; flex: none; display: flex; align-items: center; gap: 6px; padding: 0 10px; border-bottom: var(--ar-bw, 0.5px) solid var(--line); background: var(--win-bar); }
+.pm-split { flex: 1; min-height: 0; display: flex; }
+.pm-side { width: 190px; }
+.pm-main { flex: 1; min-width: 0; display: grid; place-items: center; }
+.pm-build { color: var(--text-3); font-size: 13px; }
+
+.pm-sheet {
+  position: absolute; top: 52px; left: 50%; transform: translateX(-50%); width: 380px; padding: 22px 24px 20px;
+  display: grid; justify-items: center; gap: 12px; text-align: center;
+  background: var(--win); border: var(--ar-bw, 0.5px) solid var(--line-strong); border-top: none;
+  border-radius: 0 0 var(--ar-sheet, 12px) var(--ar-sheet, 12px); box-shadow: 0 10px 28px oklch(0 0 0 / 0.28);
+}
+.pm-sheet-icon { width: 56px; height: 56px; }
+.pm-sheet h2 { font-size: 15px; font-weight: 650; }
+
+/* Brushed metal: the title bar, toolbar and window frame are one textured surface. */
+:root[data-os="aqua"] .window:has(.pm) { --metal: repeating-linear-gradient(90deg, oklch(1 0 0 / 0.05) 0 1px, oklch(0 0 0 / 0.03) 1px 2px, oklch(1 0 0 / 0.04) 2px 3px), linear-gradient(oklch(0.9 0 0), oklch(0.76 0 0)); }
+:root[data-os="aqua"][data-theme="dark"] .window:has(.pm) { --metal: repeating-linear-gradient(90deg, oklch(1 0 0 / 0.03) 0 1px, oklch(0 0 0 / 0.05) 1px 2px, oklch(1 0 0 / 0.02) 2px 3px), linear-gradient(oklch(0.4 0 0), oklch(0.28 0 0)); }
+:root[data-os="aqua"] .window:has(.pm) .titlebar { background: var(--metal); background-size: auto, 100% 600px; border-bottom: none; }
+:root[data-os="aqua"] .pm { background: var(--metal); background-size: auto, 100% 600px; background-position: 0 -44px; padding: 0 8px 8px; }
+:root[data-os="aqua"] .pm-toolbar { background: none; border-bottom: none; height: 58px; }
+:root[data-os="aqua"] .pm-split { border: 1px solid var(--line-strong); background: var(--win); }
+
+:root[data-os="leopard"] .window:has(.pm) .titlebar { border-bottom: none; }
+:root[data-os="leopard"] .pm-toolbar { background: linear-gradient(var(--bar-top), var(--bar-bottom)); border-bottom-color: oklch(0.45 0 0); }
+
+:root[data-os="yosemite"] .pm-toolbar { background: color-mix(in oklch, var(--win-bar), transparent 14%); }
+
+:root[data-os="bigsur"] .pm-toolbar { height: 56px; }
+
+:root[data-os="tahoe"] .pm-toolbar { background: color-mix(in oklch, var(--win-bar), transparent 50%); backdrop-filter: blur(14px) saturate(1.6); }
+:root[data-os="tahoe"] .pm-side { margin: 8px; border: none; border-radius: 14px; }
