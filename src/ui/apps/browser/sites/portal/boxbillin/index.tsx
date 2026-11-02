@@ -5,7 +5,7 @@ import { versionInfo } from "../../../../../../sim/10-catalog/software-versions"
 import { shopById } from "../../../../../../sim/10-catalog/shops";
 import { AdminScreen } from "../shared/AdminScreen";
 import { ClientArea } from "../shared/ClientArea";
-import { screenArgs, screenOf, type Screen, type ScreenName } from "../shared/nav";
+import { navOf, screenArgs, screenOf, type Screen, type ScreenName } from "../shared/nav";
 import { StoreFront } from "../shared/StoreFront";
 import type { LoginProps, Skin, SkinProps } from "../skins";
 import { LoginNote } from "../Login";
@@ -48,7 +48,7 @@ function AdminFrame(props: SkinProps & { children: ReactNode }) {
 function Admin(props: SkinProps) {
   const { game, route, open, major, browse } = props, era = eraOf(major), screen = screenOf(route.query);
   const go = (s: Screen) => open("admin", {}, screenArgs(s));
-  const current = screen.name === "product" ? "products" : screen.name === "client" ? "clients" : screen.name;
+  const current = navOf(screen.name);
   const link = (n: ScreenName) => (
     <a key={n} href="#" className={current === n ? "on" : ""} onClick={(e) => { e.preventDefault(); go({ name: n }); }}><Icon name={n} />{label(n)}</a>
   );

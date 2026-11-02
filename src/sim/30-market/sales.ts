@@ -10,6 +10,7 @@ import { yearOf } from "../00-core/time";
 import { activeServices, type PaymentHabit, type Product, type Profile } from "../30-customers/customers";
 import { bump, expandable, isFinal, profileStats, type Ticket } from "../40-support/tickets";
 import type { GameState } from "../50-state";
+import { pruneOrders, syncOrder } from "../80-business/shop-orders";
 import { betterHost } from "../60-infra/routes";
 import { allocationFree } from "../60-infra/daemons";
 import { gameFirst, lineOffered, type Cluster, noRoomError, pickNode, serverTaken, supports, withDatastore, workloadsOf } from "../60-infra/cluster";
@@ -71,7 +72,10 @@ const msg = (s: GameState, from: SalesMessage["from"], key: string, params: Sale
 export function editRequest(s: GameState, id: string, fn: (r: SalesRequest) => Partial<SalesRequest>): SalesRequest {
   let out: SalesRequest | undefined;
   s.sales = { ...s.sales, requests: s.sales.requests.map((r) => (r.id === id ? (out = { ...r, ...fn(r) }) : r)) };
-  return out!;
+  // Every change to a storefront request passes here, so its shop order follows it.
+  const r = out as SalesRequest | undefined;
+  if (r?.shop) syncOrder(s, r);
+  return r!;
 }
 
 export function say(s: GameState, id: string, from: SalesMessage["from"], key: string, params: SalesMessage["params"] = {}, by?: string): void {
@@ -417,6 +421,7 @@ function monthly(s: GameState): void {
   const keep = (r: SalesRequest) =>
     !["won", "lost", "declined"].includes(r.status) || s.hour - r.createdAt < KEEP_HOURS || s.tickets.some((t) => t.id === r.ticketId && !isFinal(t));
   s.sales = { ...s.sales, requests: s.sales.requests.filter(keep) };
+  pruneOrders(s);
 }
 
 export function salesTick(s: GameState): SimEvent[] {

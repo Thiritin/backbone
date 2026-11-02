@@ -1,11 +1,11 @@
 import type { GameState } from "../../../../../../sim/50-state";
 
-export type ScreenName = "home" | "products" | "product" | "settings" | "servers" | "orders" | "clients" | "client" | "invoices" | "quotes" | "licence" | "updates";
+export type ScreenName = "home" | "products" | "product" | "settings" | "servers" | "orders" | "clients" | "client" | "order" | "invoices" | "quotes" | "licence" | "updates";
 export interface Screen { name: ScreenName; id?: string; tab?: string }
 // browse opens a full address in the Browser, such as the vendor's My account.
 export interface ScreenProps { game: GameState; go: (s: Screen) => void; toClient?: (customerId: string) => void; browse?: (url: string) => void }
 
-const NAMES: ScreenName[] = ["home", "products", "product", "settings", "servers", "orders", "clients", "client", "invoices", "quotes", "licence", "updates"];
+const NAMES: ScreenName[] = ["home", "products", "product", "settings", "servers", "orders", "order", "clients", "client", "invoices", "quotes", "licence", "updates"];
 
 export const screenOf = (q: URLSearchParams): Screen => {
   const name = q.get("s") as ScreenName;
@@ -13,3 +13,8 @@ export const screenOf = (q: URLSearchParams): Screen => {
 };
 
 export const screenArgs = ({ name, id, tab }: Screen): Record<string, string> => ({ s: name, ...(id && { id }), ...(tab && { tab }) });
+
+// The menu entry a detail screen sits under.
+const PARENT = { product: "products", client: "clients", order: "orders" } as const;
+export type NavName = Exclude<ScreenName, keyof typeof PARENT>;
+export const navOf = (name: ScreenName): NavName => (name in PARENT ? PARENT[name as keyof typeof PARENT] : (name as NavName));
