@@ -4,6 +4,7 @@ import { dateOf } from "../00-core/time";
 import { invoice, supplierAccount, supplierCode, supplierIban, type SupplierId } from "../46-finance/payables";
 import { groupIban, ibanEra } from "../46-finance/bank";
 import type { GameState, LedgerEntry } from "../50-state";
+import { t } from "../../i18n/en";
 
 export interface Letter {
   id: string; from: string; topic: string; params: Record<string, string | number>;
@@ -15,6 +16,24 @@ export interface Letter {
   form?: string;
   // A web address the letter points to, opened from the Post app.
   link?: string;
+  // The document type the player filed it under in DocuWhere; unset, docType derives it.
+  type?: DocType;
+}
+
+export const DMS_APP = "DocuWhere";
+export const DOC_TYPES = ["contract", "invoice", "official", "registration", "other"] as const;
+export type DocType = (typeof DOC_TYPES)[number];
+
+// A bill files as an invoice, the trade office and register as registration, the other authorities as official mail.
+export const docType = (l: Letter): DocType => l.type ?? (l.bill ? "invoice"
+  : /^(office|register)/.test(l.topic) ? "registration"
+  : /^(tax|vat|dohle|chamber|notary)/.test(l.topic) ? "official" : "other");
+
+// The arrived letters of one type (or all) whose sender, subject or text contains the query, oldest first.
+export function archive(s: GameState, query: string, type: DocType | null = null): Letter[] {
+  const q = query.trim().toLowerCase();
+  return inbox(s).filter((l) => (!type || docType(l) === type)
+    && (!q || [l.from, t(`letter.${l.topic}.subject`, l.params), t(`letter.${l.topic}.body`, l.params)].some((x) => x.toLowerCase().includes(q))));
 }
 
 export const POST_APP = "Post";

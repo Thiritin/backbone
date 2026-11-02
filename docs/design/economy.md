@@ -1091,6 +1091,7 @@ Prices are for 2005 and rise 8% every January. With a 10% chance each year, Pear
 | Staff | Staff | €20 | €5 per employee | Employee management skill |
 | Marketing | Marketing | €20 | | Marketing campaigns skill |
 | Market | Market | €15 | | Market research skill |
+| DocuWhere | DocuWhere (archive of the paper post) | €5 | | Start |
 | Searchlight | Upgrade: global search on Ctrl+K and Cmd+K | €2 | | Start |
 | Widgets | Upgrade: one desktop widget each | €1 (calendar, open tickets, cash, customers), €2 (monthly revenue, level) | | Start |
 | AI bots | ChadGPT Support €50, Clipsy Reminders €100, per bot | ChadGPT: every reply in tokens, see [ChadGPT usage](#chadgpt-usage) | | Automation skill |
