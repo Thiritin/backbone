@@ -51,7 +51,7 @@ export function Favicon({ game, r }: { game: GameState; r: Resolved }) {
       const v = booksVendor(p.id)!;
       return <Tile fill={v.skin.accent}><text x="8" y="11.8" textAnchor="middle" fontSize="10" fontWeight="800" fill="white" fontFamily="Verdana, sans-serif">{v.name[0].toUpperCase()}</text></Tile>;
     }
-    case "deskVendor": { const M = DESK[p.id].icon; return <span className="fav fav-mark" style={{ "--tile": DESK[p.id].tile } as CSSProperties}><M /></span>; }
+    case "deskVendor": case "desk": { const M = DESK[p.id].icon; return <span className="fav fav-mark" style={{ "--tile": DESK[p.id].tile } as CSSProperties}><M /></span>; }
     case "shopVendor": {
       const name = shopById(p.id).name;
       return <Tile fill={`oklch(0.5 0.12 ${hueOf(name)})`}><text x="8" y="11.6" textAnchor="middle" fontSize="9.5" fontWeight="700" fill="white" fontFamily="Verdana, sans-serif">{name[0]}</text></Tile>;

@@ -8,6 +8,8 @@ import { SERVER_OS, type ServerOsId } from "../10-catalog/server-os";
 import { companyDomain } from "../30-customers/domains";
 import { nsActive, parked } from "../30-customers/registry";
 import { serviceOnline } from "../40-support/status";
+import { deskStatus } from "../40-support/desk";
+import { deskHosts } from "../40-support/desk-records";
 import type { GameState } from "../50-state";
 import { isOwnVm, workloadOnline, workloadsOf, type Workload } from "../60-infra/cluster";
 import { machineAddress } from "../60-infra/addresses";
@@ -53,6 +55,7 @@ export type Page =
   | { kind: "books"; id: BooksVendorId }
   | { kind: "shopVendor"; id: ShopId }
   | { kind: "deskVendor"; id: DeskId }
+  | { kind: "desk"; id: DeskId }
   | { kind: "hosttoast" }
   | { kind: "host"; hostname: string }
   | { kind: "console"; hostname: string; clusterId: string; defaced: boolean; path: string }
@@ -206,7 +209,10 @@ export function resolve(s: GameState, raw: string): Resolved {
     const st = siteStatus(s);
     return out({ kind: "company" }, st === "up" ? "fast" : st === "slow" ? "slow" : "down");
   }
-  // No page answers on the desk address until the desk site exists.
+  if (s.desk && deskHosts(s).includes(host)) {
+    const st = deskStatus(s);
+    return out({ kind: "desk", id: s.desk.id }, st === "up" ? "fast" : st === "slow" ? "slow" : "down");
+  }
   if (host === `support.${domain}`) return out({ kind: "notfound" });
   // The default webmail front end answers at webmail.<domain> like on its machine.
   if (s.company.domain && host === `webmail.${domain}`) {

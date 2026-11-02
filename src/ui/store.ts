@@ -1,3 +1,4 @@
+import { deskUrl } from "./apps/browser/sites/desk/DeskSite";
 import { booted, monthNet, pickSound, playSound, soundFor, WINDOW_MS, type Sound, type UiSound } from "./sounds";
 import { createContext, useContext, useEffect } from "react";
 import { create } from "zustand";
@@ -293,6 +294,8 @@ export const useStore = create<Store>((set, get) => ({
 
   openApp: (app, target, fresh) => {
     if (app === "Chat") return void window.open(DISCORD_URL, "_blank", "noopener");
+    const desk = app === "Support" && deskUrl(get().game, target);
+    if (desk) return get().openApp("Browser", { kind: "url", id: desk });
     const ws = get().windows;
     const open = fresh ? undefined : ws.filter((w) => w.app === app).sort((a, b) => b.z - a.z)[0];
     const focus = target ? { ...target, n: ++focusId } : open?.focus;
