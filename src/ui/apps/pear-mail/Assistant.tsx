@@ -27,7 +27,7 @@ const Field = ({ label, children }: { label: string; children: ReactNode }) => <
 
 // The Add Account assistant: manual pages in Pear Mail 2, automatic setup first from Pear Mail 3.
 export function Assistant({ onClose }: { onClose: () => void }) {
-  const game = useStore((s) => s.game), act = useStore((s) => s.act);
+  const game = useStore((s) => s.game), attempt = useStore((s) => s.attempt);
   const canAuto = mailHas(mailBuild(game.os, game.hour), "autoSetup");
   const [page, setPage] = useState<Page>("welcome");
   const [f, setF] = useState<Form>(EMPTY);
@@ -36,7 +36,12 @@ export function Assistant({ onClose }: { onClose: () => void }) {
   const [error, setError] = useState<string | null>(null);
   const found = canAuto && auto ? autoServers(game, f.address) : null;
   const inputOf = (x: Form): AccountInput => (found ? { ...x, protocol: found.protocol, host: "", smtp: "" } : x);
-  const verify = (x: Form) => { setF(x); setError(clientError(game, draftClient(game, "", inputOf(x)))); setPage("summary"); };
+  const verify = (x: Form) => {
+    const taken = game.pearMail.accounts.some((c) => c.address === x.address.trim().toLowerCase());
+    setF(x);
+    setError(taken ? "error.mailDuplicate" : clientError(game, draftClient(game, "", inputOf(x))));
+    setPage("summary");
+  };
   const text = (k: keyof Form, type = "text") => (
     <input className="field" type={type} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} />
   );
@@ -49,7 +54,7 @@ export function Assistant({ onClose }: { onClose: () => void }) {
     verify({ ...f, protocol: "pop", host });
   };
   const create = () => {
-    const r = act(setupClientAccount, { ...inputOf(f), online });
+    const r = attempt(setupClientAccount, { ...inputOf(f), online });
     if (!r.ok) return setError(r.error);
     const g = useStore.getState().game, c = g.pearMail.accounts.find((x) => x.id === r.id);
     if (c && !clientError(g, c)) offerLogin(g, MAIL_LOGIN(c.address), c.server?.host ?? found?.host ?? c.address, [c.address, f.password]);
@@ -58,7 +63,7 @@ export function Assistant({ onClose }: { onClose: () => void }) {
   const ready = page === "welcome" ? f.fullName.trim() !== "" && f.address.includes("@") : page === "incoming" ? f.host.trim() !== "" : true;
   const next = () => (page === "welcome" ? (found ? verify(f) : setPage("incoming")) : page === "incoming" ? setPage("outgoing") : page === "outgoing" ? verify(f) : create());
   const back = () => setPage(page === "summary" ? (found ? "welcome" : "outgoing") : page === "outgoing" ? "incoming" : "welcome");
-  const title = { welcome: "pearMail.add.title", incoming: "pearMail.add.incoming", outgoing: "pearMail.add.outgoing", summary: "pearMail.add.summary" }[page];
+  const title = { welcome: "pearMail.add.title", incoming: "pearMail.add.incomingTitle", outgoing: "pearMail.add.outgoingTitle", summary: "pearMail.add.summary" }[page];
 
   return (
     <form className="pm-sheet pm-assistant" role="dialog" aria-labelledby="pm-add" onSubmit={(e) => { e.preventDefault(); if (ready) next(); }}>
@@ -106,14 +111,14 @@ export function Assistant({ onClose }: { onClose: () => void }) {
 
 // The sheet behind an account's warning triangle; a refused password asks for the current one.
 export function AccountAlert({ c, onClose }: { c: ClientAccount; onClose: () => void }) {
-  const game = useStore((s) => s.game), act = useStore((s) => s.act);
+  const game = useStore((s) => s.game), act = useStore((s) => s.act), attempt = useStore((s) => s.attempt);
   const error = clientError(game, c) ?? (c.authFailed ? "error.mailAuth" : null);
   const [password, setPassword] = useState(() => savedPassword(game, c.address));
   const [wrong, setWrong] = useState(false);
   const auth = error === "error.mailAuth";
   const submit = () => {
     if (!auth) { act(getMail, c.id); return onClose(); }
-    const r = act(setClientPassword, c.id, password);
+    const r = attempt(setClientPassword, c.id, password);
     if (!r.ok) return setWrong(true);
     offerLogin(useStore.getState().game, MAIL_LOGIN(c.address), c.server?.host ?? c.address, [c.address, password]);
     onClose();

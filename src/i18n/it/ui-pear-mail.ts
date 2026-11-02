@@ -33,6 +33,8 @@ export default {
   "pearMail.add.description": () => "Descrizione:",
   "pearMail.add.incoming": () => "Server posta in arrivo:",
   "pearMail.add.outgoing": () => "Server posta in uscita:",
+  "pearMail.add.incomingTitle": () => "Server posta in arrivo",
+  "pearMail.add.outgoingTitle": () => "Server posta in uscita",
   "pearMail.add.summary": () => "Riepilogo account",
   "pearMail.add.online": () => "Metti online l’account",
   "pearMail.add.continue": () => "Continua",

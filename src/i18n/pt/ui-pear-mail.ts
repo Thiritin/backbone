@@ -33,6 +33,8 @@ export default {
   "pearMail.add.description": () => "Descrição:",
   "pearMail.add.incoming": () => "Servidor de entrada:",
   "pearMail.add.outgoing": () => "Servidor de saída:",
+  "pearMail.add.incomingTitle": () => "Servidor de entrada",
+  "pearMail.add.outgoingTitle": () => "Servidor de saída",
   "pearMail.add.summary": () => "Resumo da conta",
   "pearMail.add.online": () => "Colocar a conta online",
   "pearMail.add.continue": () => "Continuar",

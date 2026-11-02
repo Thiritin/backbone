@@ -33,6 +33,8 @@ export default {
   "pearMail.add.description": () => "Beschreibung:",
   "pearMail.add.incoming": () => "Server für eintreffende E-Mails:",
   "pearMail.add.outgoing": () => "Server für ausgehende E-Mails:",
+  "pearMail.add.incomingTitle": () => "Server für eintreffende E-Mails",
+  "pearMail.add.outgoingTitle": () => "Server für ausgehende E-Mails",
   "pearMail.add.summary": () => "Account-Übersicht",
   "pearMail.add.online": () => "Account aktivieren",
   "pearMail.add.continue": () => "Fortfahren",

@@ -43,11 +43,12 @@ const patch = (s: GameState, id: string, p: Partial<ClientAccount>): void => {
 };
 const log = (s: GameState, line: ActivityLine): void => { s.pearMail = { ...s.pearMail, activity: [...s.pearMail.activity, line].slice(-ACTIVITY_KEEP) }; };
 
-// One check of one account; returns its new-mail events.
-export function checkAccount(s: GameState, id: string): SimEvent[] {
+// One check of one account; returns its new-mail events. A check right after new settings skips the poll gap, which
+// counts from the last check that got in.
+export function checkAccount(s: GameState, id: string, polled = true): SimEvent[] {
   const c = s.pearMail.accounts.find((x) => x.id === id);
   if (!c) return [];
-  const now = nowMinutes(s), error = clientError(s, c, now - c.checkedAt);
+  const now = nowMinutes(s), error = clientError(s, c, polled ? now - c.checkedAt : undefined);
   if (error) {
     patch(s, id, { checkedAt: now, ...(error === "error.mailAuth" && { authFailed: true }) });
     log(s, { at: now, clientId: id, count: 0, error });

@@ -13,7 +13,7 @@ import { MY_PEAR, localFolder } from "../src/sim/43-pear-mail/state";
 import { clientFolder } from "../src/sim/43-pear-mail/view";
 import type { GameState } from "../src/sim/50-state";
 import { checkDone } from "../src/sim/checklist";
-import { editClientAccount, removeClientAccount, setAccountEnabled, setupClientAccount } from "../src/sim/90-actions/pear-mail";
+import { editClientAccount, removeClientAccount, setAccountEnabled, setClientPassword, setupClientAccount } from "../src/sim/90-actions/pear-mail";
 import { savedPassword } from "../src/ui/apps/pear-mail/Assistant";
 import { newGame, readyGame } from "./fixtures";
 
@@ -86,7 +86,7 @@ describe("Pear Mail Add Account", () => {
   it("stores the account, downloads the Inbox and keeps checking on its interval", () => {
     const { s, a } = gmix();
     const r = setupClientAccount(s, input(s, a, "pop"));
-    expect(r.ok).toBe(true);
+    if (!r.ok) throw new Error(r.error);
     const c = s.pearMail.accounts[0];
     expect(c).toMatchObject({ id: r.id, address: addressOf(a), protocol: "pop", server: { host: "pop.gmix.net" }, enabled: true });
     expect(c.checkEvery).toBeGreaterThanOrEqual(15);
@@ -100,6 +100,21 @@ describe("Pear Mail Add Account", () => {
     expect(s.pearMail.local.messages.some((m) => m.origin === c.id && m.topic === "x")).toBe(true);
     expect(listFolder(s, a.id, "inbox").map((m) => m.id)).not.toContain(id);
     expect(s.pearMail.activity.at(-1)).toMatchObject({ clientId: c.id, count: 1 });
+  });
+
+  it("asks for the new password after it changed on the provider and checks again at once", () => {
+    const { s, a } = gmix();
+    setupClientAccount(s, input(s, a, "pop"));
+    const id = s.pearMail.accounts[0].id;
+    s.mail.accounts[0].password = "changed1";
+    s.hour += 1;
+    pearMailTick(s);
+    expect(s.pearMail.accounts[0].authFailed).toBe(true);
+    s.minute += 1;
+    expect(err(setClientPassword(s, id, "wrong"))).toBe("error.mailAuth");
+    expect(setClientPassword(s, id, "changed1").ok).toBe(true);
+    expect(s.pearMail.activity.at(-1)).toMatchObject({ clientId: id, count: 0 });
+    expect(s.pearMail.activity.at(-1)?.error).toBeUndefined();
   });
 
   it("refuses a duplicate and keeps an account added in error", () => {

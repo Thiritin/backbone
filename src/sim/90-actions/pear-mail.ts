@@ -28,7 +28,7 @@ export function setClientPassword(s: GameState, clientId: string, password: stri
   const { authFailed: _a, ...rest } = c, next = { ...rest, password };
   s.pearMail = { ...s.pearMail, accounts: s.pearMail.accounts.map((x) => (x.id === clientId ? next : x)) };
   const error = clientError(s, next);
-  checkAccount(s, clientId);
+  checkAccount(s, clientId, false);
   return error ? fail(error) : { ok: true };
 }
 
@@ -61,7 +61,7 @@ export function editClientAccount(s: GameState, clientId: string, e: AccountEdit
   const { host, ...rest } = e, { authFailed: _a, ...kept } = c;
   const server = host === undefined ? c.server : host?.trim() ? { host: host.trim().toLowerCase(), port: (e.protocol ?? c.protocol) === "imap" ? 993 : 995, tls: true } : null;
   s.pearMail = { ...s.pearMail, accounts: s.pearMail.accounts.map((x) => (x.id === clientId ? { ...kept, ...rest, server } : x)) };
-  checkAccount(s, clientId);
+  checkAccount(s, clientId, false);
   return { ok: true };
 }
 

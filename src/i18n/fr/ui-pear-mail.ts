@@ -33,6 +33,8 @@ export default {
   "pearMail.add.description": () => "Description :",
   "pearMail.add.incoming": () => "Serveur de réception :",
   "pearMail.add.outgoing": () => "Serveur d’envoi :",
+  "pearMail.add.incomingTitle": () => "Serveur de réception",
+  "pearMail.add.outgoingTitle": () => "Serveur d’envoi",
   "pearMail.add.summary": () => "Résumé du compte",
   "pearMail.add.online": () => "Mettre le compte en ligne",
   "pearMail.add.continue": () => "Continuer",

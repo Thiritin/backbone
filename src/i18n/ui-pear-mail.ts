@@ -33,6 +33,8 @@ export default {
   "pearMail.add.description": () => "Description:",
   "pearMail.add.incoming": () => "Incoming Mail Server:",
   "pearMail.add.outgoing": () => "Outgoing Mail Server:",
+  "pearMail.add.incomingTitle": () => "Incoming Mail Server",
+  "pearMail.add.outgoingTitle": () => "Outgoing Mail Server",
   "pearMail.add.summary": () => "Account Summary",
   "pearMail.add.online": () => "Take account online",
   "pearMail.add.continue": () => "Continue",
