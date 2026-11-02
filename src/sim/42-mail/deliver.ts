@@ -5,6 +5,7 @@ import { companyDomain } from "../30-customers/domains";
 import { mailServerDown } from "../80-business/mail";
 import { FREEMAIL_DOMAINS } from "../30-customers/addresses";
 import { NOTARY_MAIL, OFFICE_MAIL } from "../80-business/paperwork";
+import { deskOf, tenantHost } from "../10-catalog/desks";
 import { SENDERS } from "../10-catalog/mail-senders";
 import { JUNK_CAP_PER_DAY, JUNK_TOPICS, SELF_TRAINED_CATCH, catchOf, falseJunkOf, junkFloor, spamShare } from "../10-catalog/mail-senders";
 import type { GameState } from "../50-state";
@@ -51,7 +52,13 @@ const boxById = (s: GameState, id: string) => s.mail.accounts.find((a) => a.id =
 function knownDomain(s: GameState, domain: string): boolean {
   const of = (address: string) => address.split("@")[1];
   return FREEMAIL_DOMAINS.includes(domain) || [OFFICE_MAIL, NOTARY_MAIL, ...Object.values(SENDERS)].some((x) => of(x) === domain) ||
-    s.customers.some((c) => of(c.address.email) === domain);
+    s.customers.some((c) => of(c.address.email) === domain) || hostedDesk(s) === domain;
+}
+
+// The address a hosted desk takes mail on, so a forward rule can reach it.
+function hostedDesk(s: GameState): string | null {
+  const d = deskOf(s);
+  return d?.hosting === "hosted" && s.desk!.tenant ? tenantHost(d, s.desk!.tenant) : null;
 }
 
 type Resolved = { accounts: MailAccount[]; group?: MailGroup } | { why: "unknown" | "closed" | "stale" | "external" };
