@@ -88,7 +88,7 @@ export function LocationsApp() {
       </nav>
       <div className="loc-main">
         {view === "waitlist" ? (
-          <div className="loc-scroll"><Waitlist game={game} onOpen={(id) => go(id)} /></div>
+          <div className="loc-scroll"><Waitlist game={game} /></div>
         ) : !loc ? (
           <Overview game={game} onOpen={(id) => go(id)} />
         ) : (

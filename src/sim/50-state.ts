@@ -159,8 +159,8 @@ export interface PortShare { ip: string; kind: "web" | "exposed" }
 export interface Lease { id: string; lessor: string; monthly: number; months: number; startedAt: number; paid: number; devices: string[] }
 // A waitlist entry gets heldUntil once its space is free; the space is then reserved until that hour.
 // A rented space's contract with its provider. monthly is the rent agreed at order time; endsAt is set once the player
-// gives notice and the location closes at that hour.
-export interface Contract { id: string; provider: string; dc: string; locationId: string; space: "share" | "cage" | "suite"; positions: number; since: number; monthly: number; endsAt: number | null }
+// gives notice and the location closes at that hour. retainedAt is when the player took the retention offer; the next month is free.
+export interface Contract { id: string; provider: string; dc: string; locationId: string; space: "share" | "cage" | "suite"; positions: number; since: number; monthly: number; endsAt: number | null; retainedAt: number | null }
 export interface WaitlistEntry { id: string; dc: string; space: "share" | "cage" | "suite"; size: number; since: number; heldUntil: number | null }
 export interface End { device: string; port: number }
 export interface Cable { id: string; a: End; b: End; kind: CableKind; color: string | null }

@@ -424,6 +424,7 @@ Each milestone is one pull request, green on `npm run typecheck`, `npm test` and
 - Tests: `tests/desk-work.test.ts` (merge of three outage tickets, one wait penalty, merged outcome, spam, owner queue skipped by staff, department membership, desk down blocks channel tickets but not mailbox ones, a web ticket needs no mailbox, none while the desk is down, lookup needs the right email). `npm run balance` must show no change in the curves.
 
 **M8. Report data and SLA.**
+- Built: `40-support/desk-reports.ts` reports on the tickets the desk holds, without spam and merged duplicates. `deskReport(s, from, to)` gives tickets opened, solved, the average hours to the first reply, the SLA hit rate, counts per kind, replies per agent (the player as `owner`) and the same row per month. The SLA counts from the opening: the deadline is the customer's response time from `createdAt`, since a wrong answer moves `dueAt`; a ticket closed unanswered after the deadline, as when the customer gives up, is a breach, and one still inside its deadline or closed unanswered before it counts neither way. `slaPlans(s)` lists every profile's response hours and clock with its number of current customers. It does not wait for M6.
 - Sim: first response time, SLA hit rate against `dueAt`, counts per agent, kind and month, `slaPlans(s)` from the profile table, all derived from tickets and replies.
 - UI: none; each desk draws its own report screens.
 - i18n: none.

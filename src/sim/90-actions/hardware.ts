@@ -9,7 +9,7 @@ import type { Vendor } from "../10-catalog/cpus";
 import { leaseOffers, lessorName } from "../10-catalog/leasing";
 import { greySurcharge, workFactor } from "../10-catalog/lifecycle";
 import { chassisPrice, partPrice, partsPrice, presetPrice } from "../10-catalog/parts";
-import { BASEMENT, DATACENTERS, datacenterById, EXTRA_POWER_LEAD_DAYS, EXTRA_STEP_KW, FLAT_CONTRACTS, HOME_LINES, maxExtraKw, LEAD_DAYS, nextAz, NOTICE_MONTHS, RACK_MODELS, rackUnits, SHARE_RACKS, SPACE_SIZES, spacePrice } from "../20-world/datacenters";
+import { BASEMENT, DATACENTERS, datacenterById, EXTRA_POWER_LEAD_DAYS, EXTRA_STEP_KW, FLAT_CONTRACTS, HOME_LINES, maxExtraKw, LEAD_DAYS, nextAz, NOTICE_MONTHS, RACK_MODELS, rackUnits, RETENTION_PROVIDERS, SHARE_RACKS, SPACE_SIZES, spacePrice } from "../20-world/datacenters";
 import { deviceDefaults, type BondMode, type Component, type Device, type End, type GameState, type LedgerEntry, type RackModel, type RaidLevel, type RebuildRate } from "../50-state";
 import { arrayLost, bootHours, connectError, drivesOf, energized, fits, flatOffer, freePositions, holdsData, nodesOf, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, isPlugged, locationOf, moveCost, psusOf, deviceValue, resaleValue, spotOf, travelCost, osInstalling, takesShutdown } from "../60-infra/status";
 import { atFront, BMC_RESET_HOURS, bootUp, halt, hardReboot, plugCords, pullPlug, pushLog, rollStuck, type FrontOp } from "../60-infra/power";
@@ -67,7 +67,7 @@ export function addLocation(s: GameState, dcId: string, space: "share" | "cage" 
   const positions = space === "share" ? 1 : size;
   const loc = { id: newId(s, "loc"), dc: dc.id, city: dc.city, az: nextAz(s.locations, dc.city), name: dc.name, space, positions, readyAt: s.hour + 24 * LEAD_DAYS[space], extraCircuit: false };
   s.locations.push(loc);
-  s.contracts.push({ id: newId(s, "contract"), provider: dc.provider, dc: dc.id, locationId: loc.id, space, positions: size, since: s.hour, monthly: spacePrice(dc, space, size), endsAt: null });
+  s.contracts.push({ id: newId(s, "contract"), provider: dc.provider, dc: dc.id, locationId: loc.id, space, positions: size, since: s.hour, monthly: spacePrice(dc, space, size), endsAt: null, retainedAt: null });
   const name = nextName(`${prefix(s, loc.id)}-gw`, s.devices.map((d) => d.name));
   s.devices.push({ id: newId(s, "dev"), model: "handoff", brand: SWITCH_BRAND, rackId: null, slot: 0, panel: loc.id, name, bond: "none", groups: [], price: 0, boughtAt: s.hour, lease: null, store: null, transitTo: null, arriveAt: null, ...deviceDefaults("handoff", s.hour) });
   const shareRack = space === "share" && SHARE_RACKS.find((m) => m.size === size)!;
@@ -123,11 +123,14 @@ export function cancelContract(s: GameState, contractId: string): ActionResult {
   return { ok: true };
 }
 
-export function revokeCancel(s: GameState, contractId: string): ActionResult {
+// retain takes the provider's retention offer along with the revoke.
+export function revokeCancel(s: GameState, contractId: string, retain = false): ActionResult {
   const c = s.contracts.find((x) => x.id === contractId);
   if (!c) return fail("error.unknownContract");
   if (c.endsAt === null) return fail("error.notCancelled");
+  if (retain && (!RETENTION_PROVIDERS.includes(c.provider) || c.retainedAt !== null)) return fail("error.noRetentionOffer");
   c.endsAt = null;
+  if (retain) c.retainedAt = s.hour;
   return { ok: true };
 }
 

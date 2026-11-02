@@ -64,15 +64,15 @@ export function InvoicesTab({ focus }: { focus: string | null }) {
 
 const lines = (a: Address) => [a.company, a.contact, a.street, `${a.zip} ${a.city}`].filter(Boolean) as string[];
 
-// A document of the company as an A4 page, scaled to the pane: an invoice or a quote.
-export function Page({ game, title, to, items, footer }: { game: GameState; title: string; to?: Address; items: InvoiceLine[]; footer: ReactNode }) {
+// A document of the company as an A4 page, scaled to the pane: an invoice or a quote. from replaces the sender line for a supplier's invoice.
+export function Page({ game, title, from, to, items, footer }: { game: GameState; title: string; from?: string; to?: Address; items: InvoiceLine[]; footer: ReactNode }) {
   const own = addressFor(game.seed, 0, game.registration?.owner ?? game.company.name, game.company.name, game.locations[0]?.city ?? "Frankfurt");
   return (
     <div className="books-a4-fit">
       <article className="books-a4" aria-label={title}>
         <header>
           <h2>{title}</h2>
-          <p className="books-from">{[game.company.name, own.street, `${own.zip} ${own.city}`].join(" · ")}</p>
+          <p className="books-from">{from ?? [game.company.name, own.street, `${own.zip} ${own.city}`].join(" · ")}</p>
         </header>
         {to && <address>{lines(to).map((l) => <div key={l}>{l}</div>)}</address>}
         <table>
