@@ -51,7 +51,7 @@ export function siteBody(s: GameState, w: Workload, name: string): WebsiteHit | 
   if (!ws || !d) return null;
   const v = s.services.find((x) => x.id === w.serviceId), site = v && customerSite(s, v.id);
   const hit = (body: SiteBody, load: WebsiteHit["load"] = "fast"): WebsiteHit => ({ workloadId: w.id, body, load });
-  const home = `/home/${ws.account}/${d.folder}`;
+  const home = `${ws.home}/${d.folder}`;
   // detail is the config file of a fatal error and the missing database of a connection error.
   const err = (error: SiteError, app: App | null, detail = ""): SiteBody => ({ kind: "error", error, app, panel: ws.panel, domain: name, home, detail });
   if (v && (v.endedAt !== null || serviceHeld(s, v))) return hit(err("suspended", null));
@@ -63,7 +63,7 @@ export function siteBody(s: GameState, w: Workload, name: string): WebsiteHit | 
   if (!files.some((f) => !f.dir && INDEX_FILES.includes(f.name))) return hit({ kind: "index", panel: ws.panel, domain: name, listing: files.length ? files : null }, load);
   const app = ws.app?.folder === d.folder ? ws.app : null;
   if (!app) return hit(v && site ? { kind: "customer", serviceId: v.id } : { kind: "static", domain: name }, load);
-  if (appState(ws) === "broken") return hit(ws.files[app.config] ? err("db", app.id, app.db) : err("fatal", app.id, `/home/${ws.account}/${app.config}`), load);
+  if (appState(ws) === "broken") return hit(ws.files[app.config] ? err("db", app.id, app.db) : err("fatal", app.id, `${ws.home}/${app.config}`), load);
   // A site over its disk quota cannot write its sessions and cache.
   if (ws.usage.diskMb > ws.usage.quotaMb) return hit(err("http500", app.id), load);
   return hit({ kind: "app", app: app.id as Exclude<App, "static">, domain: name, title: site?.title ?? name, since: v?.startedAt ?? w.placedAt }, load);
