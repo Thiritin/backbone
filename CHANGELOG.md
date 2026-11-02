@@ -10,6 +10,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - The Flyerlarm order table no longer runs past the right edge of its box, and the Locations storage tab is called Lager in German.
 - VMwhere editions are now bought as licence keys on vmwhere.com and take effect once every host runs a key of that edition, and the shop only sells an edition once your team has learned its features.
 - Pear Mail can reply, reply to all, forward, delete, junk and move mail, and writes new messages in their own window with forms from the desktop attached.
+- Goggle now has its own website in the Browser, where you sign up for the edition of the year, verify your domain with a DNS record and see whether your MX records point at Goggle.
 - Incident reports in Security can now be archived, which takes them off the incident list and out of the open count.
 - A new game no longer starts with three friends waiting for web hosting; the first order email now arrives within two weeks of your first web host going online.
 - Freshdusk now runs at your help desk address with its support portal, a helpdesk with ticket views, a Ticket properties sidebar, canned responses and scenarios, and an Admin for support emails, groups, Dispatch'r rules and SLA policies, in the look of each year from 2011 to Mint.

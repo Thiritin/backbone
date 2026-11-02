@@ -48,6 +48,7 @@ export const importantOf = (m: Message, wroteTo: Set<string>, answered: Set<stri
   IMPORTANT_KINDS.includes(m.kind) || wroteTo.has(m.from) || answered.has(m.id);
 
 // The hosts each provider site answers on; the first is its home.
-export const MAIL_SITES = { gmix: ["gmix.net", "gmix.com"] } as const;
+export const MAIL_SITES = { gmix: ["gmix.net", "gmix.com"], goggle: ["goggle.com", "accounts.goggle.com"] } as const;
 export type MailSiteId = keyof typeof MAIL_SITES;
 export const mailSiteUrl = (id: MailSiteId, path = ""): string => `www.${MAIL_SITES[id][0]}/${path}`;
+export const GOGGLE_ACCOUNTS = "accounts.goggle.com";
