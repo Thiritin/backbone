@@ -20,11 +20,11 @@ function save(s: GameState, c: Cluster, cfg: WebmailInstall, setupPending: boole
   s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, backend, setupPending } : x));
 }
 
-// A fresh front end takes the mail server on its machine; SquirrelMeal waits for conf.pl to save its config.php and
-// Postfixit Admin for its setup page (finishPanelSetup).
+// A fresh front end takes the mail server on its machine; SquirrelMeal waits for conf.pl to save its config.php,
+// Squarecube for its installer and Postfixit Admin for its setup page (finishPanelSetup).
 export function startWebmail(s: GameState, clusterId: string): void {
   const c = s.clusters.find((x) => x.id === clusterId);
-  if (c) save(s, c, webmailDefaults(s, c), frontOf(c) === "squirrelmeal" || frontOf(c) === "postfixitadmin");
+  if (c) save(s, c, webmailDefaults(s, c), ["squirrelmeal", "squarecube", "postfixitadmin"].includes(frontOf(c) ?? ""));
 }
 
 // Saves a front end's configuration, as conf.pl does; the IMAP server it names becomes its backend.
@@ -36,6 +36,14 @@ export function configureWebmail(s: GameState, clusterId: string, cfg: Partial<W
   if (next.plugins.some((p) => !(WEBMAIL_PLUGINS as readonly string[]).includes(p))) return fail("error.webmailConfig");
   save(s, c, { ...next, imapHost: next.imapHost.trim(), smtpHost: next.smtpHost.trim() }, false);
   return { ok: true, id: c.id };
+}
+
+// The last step of Squarecube's installer, as setting enable_installer to false.
+export function disableWebmailInstaller(s: GameState, clusterId: string): ActionResult {
+  const cfg = s.webmail.installs[clusterId];
+  if (!cfg?.installerOpen) return fail("error.unknownCluster");
+  s.webmail = { ...s.webmail, installs: { ...s.webmail.installs, [clusterId]: { ...cfg, installerOpen: false } } };
+  return { ok: true, id: clusterId };
 }
 
 // Picks the front end that answers at webmail.<domain>.

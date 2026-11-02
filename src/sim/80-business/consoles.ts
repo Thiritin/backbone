@@ -92,7 +92,7 @@ export function consoleClusters(s: GameState, hostname: string): Cluster[] {
 const CONSOLE_AT: Record<string, string> = {
   proxmocks: ":8006", cpanic: ":2087", pleskit: ":8443", directadmen: ":2222", freepanel: ":10000", tcadmen: ":8880", multikraft: ":8080",
   pterodaktyl: ":8080", powerdnz: ":8081", openveepeen: ":943", minnio: ":9001", anyconnekt: ":443", mailpig: "/admin",
-  squirrelmeal: "/squirrelmeal", postfixitadmin: "/postfixadmin",
+  squirrelmeal: "/squirrelmeal", squarecube: "/squarecube", postfixitadmin: "/postfixadmin",
 };
 const atOf = (c: Cluster): string => CONSOLE_AT[familyOf(c) ?? ""] ?? "";
 

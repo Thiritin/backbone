@@ -8,7 +8,7 @@ import { licensingAt } from "../src/sim/10-catalog/server-os";
 import { BINARIES } from "../src/sim/10-catalog/platforms";
 
 const PAGES: SitePage[] = ["home", "features", "pricing", "download"];
-const ONE_LOOK = new Set(["wireguarded", "vsftpeed", "postfixit", "mailpig", "squirrelmeal"]);
+const ONE_LOOK = new Set(["wireguarded", "vsftpeed", "postfixit", "mailpig", "squirrelmeal", "squarecube"]);
 
 describe("software sites", () => {
   it("mounts every site in both eras on every page", () => {

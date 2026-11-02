@@ -1,0 +1,12 @@
+.sw-squarecube { font: 13px/1.5 "Lucida Grande", Verdana, Arial, sans-serif; color: #333333; background: #ffffff; }
+.sw-squarecube header { display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-bottom: 3px solid #e0e0e0; }
+.sw-squarecube .mark { width: 28px; height: 28px; background: linear-gradient(135deg, #8fb4dd 0 50%, #3a6ea5 50% 100%); border: 1px solid #2c5582; transform: rotate(45deg) scale(0.8); }
+.sw-squarecube .logo { font: 26px "Trebuchet MS", Arial, sans-serif; color: #3a6ea5; }
+.sw-squarecube .logo b { color: #555555; font-weight: 400; }
+.sw-squarecube .slogan { margin-left: 8px; color: #888888; }
+.sw-squarecube nav { display: flex; flex-wrap: wrap; gap: 2px; padding: 0 20px; background: #f0f0f0; border-bottom: 1px solid #d0d0d0; }
+.sw-squarecube nav a { padding: 6px 10px; color: #3a6ea5; text-decoration: none; }
+.sw-squarecube nav a[aria-current] { background: #ffffff; color: #333333; font-weight: 700; }
+.sw-squarecube main { padding: 14px 20px; max-width: 760px; }
+.sw-squarecube h2 { font-size: 16px; color: #3a6ea5; }
+.sw-squarecube footer { padding: 8px 20px; border-top: 1px solid #e0e0e0; color: #888888; font-size: 11px; }

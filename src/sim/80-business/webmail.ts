@@ -12,10 +12,11 @@ import { panelMachine as machineIdOf } from "../60-infra/licence";
 import { familyOf } from "../60-infra/vulns";
 import { MAIL_SOFTWARE, spamOn, type MailOption } from "./mail-software";
 
-// What the configuration of a front end holds (section 3.5); conf keeps SquirrelMeal's other config.php values by variable.
+// What the configuration of a front end holds (section 3.5); conf keeps SquirrelMeal's other config.php values by variable
+// and Squarecube's database; installerOpen is Squarecube's installer, enabled until the player disables it.
 export interface WebmailInstall {
   productName: string; domain: string; imapHost: string; imapPort: number; smtpHost: string; smtpPort: number; plugins: string[];
-  conf: Record<string, string>;
+  conf: Record<string, string>; installerOpen?: boolean;
 }
 // installs by front end cluster; default is the cluster that answers at webmail.<domain>, null for the first installed;
 // options are the mail servers' switches by cluster (section 5.1); users by front end cluster and account (section 4.4);
@@ -62,9 +63,12 @@ export function webmailDefaults(s: GameState, front: Cluster): WebmailInstall {
   const self = machineIdOf(front), local = s.clusters.find((c) => c.kind === "mail" && machineIdOf(c) === self);
   const other = local ? null : s.clusters.find((c) => c.kind === "mail"), id = other && machineIdOf(other);
   const host = local || !id ? "localhost" : namesOf(s, id)[1] ?? namesOf(s, id)[0] ?? "localhost";
-  const name = WEBMAIL.find((w) => w.id === frontOf(front))?.name ?? "";
-  return { productName: name, domain: companyDomain(s), imapHost: host, imapPort: 143, smtpHost: host, smtpPort: 25, plugins: [...BUNDLED], conf: {} };
+  const sw = frontOf(front), name = WEBMAIL.find((w) => w.id === sw)?.name ?? "";
+  const base = { productName: name, domain: companyDomain(s), imapHost: host, imapPort: 143, smtpHost: host, smtpPort: 25, plugins: [...BUNDLED], conf: {} };
+  return sw === "squarecube" ? { ...base, productName: `${name} Webmail`, plugins: [], conf: { db_dsnw: SQUARECUBE_DSN }, installerOpen: true } : base;
 }
+export const SQUARECUBE_DSN = "mysql://squarecube:pass@localhost/squarecubemail";
+export const installerLeft = (s: GameState, clusterId: string): boolean => !!s.webmail.installs[clusterId]?.installerOpen;
 
 export const webmailOf = (s: GameState, front: Cluster): WebmailInstall => s.webmail.installs[front.id] ?? webmailDefaults(s, front);
 

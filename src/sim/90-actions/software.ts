@@ -1,7 +1,7 @@
 import { dateOf, yearOf } from "../00-core/time";
 import { selectMailServer } from "./mail";
 import type { SelfMailSoftware } from "../80-business/mail";
-import { versionAt } from "../10-catalog/software-versions";
+import { versionAt, versionsOf } from "../10-catalog/software-versions";
 import { BREAK_HOURS, CHANNELS, channelOf, type Channel, targetYear, updateBreaks } from "../60-infra/channel";
 import { buildKeys, installKeyBlock, licenceExpired, licenseBuild, licenseInstall, releaseGone } from "../60-infra/licence";
 import { serverOsAt } from "../10-catalog/server-os";
@@ -61,6 +61,8 @@ export function joinableClusters(s: GameState, deviceId: string): Cluster[] {
 export function installBlock(s: GameState, machineId: string, softwareId: string, replacing = false): string | null {
   const sw = softwareById(softwareId), vm = !isServer(s, machineId);
   if (yearOf(s.hour) < sw.from) return "error.softwareNotYet";
+  // A mail front end waits for its first release month (docs/design/plans/webmail-server.md, 4.1).
+  if (sw.kind === "mailweb" && (versionsOf(sw.id)[0]?.release ?? 0) > s.hour) return "error.softwareNotYet";
   if (sw.skill && !s.unlocks.includes(sw.skill)) return "error.missingSkill";
   if (vm && sw.kind === "cloud") return "error.nestedHypervisor";
   if (sw.kind === "mail") {
