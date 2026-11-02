@@ -111,7 +111,10 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
   const customerMenu = (): MenuEntry[] => [
     { label: t("misc.creditEllipsis"), run: () => setCrediting(true) },
   ];
+  const openSite = (domain: string) => openApp("Browser", { kind: "url", id: `${domain}/` });
+  const isSite = (name: string) => services.some((v) => v.product === "webHosting" && v.domain === name);
   const domainMenu = (name: string) => (): MenuEntry[] => [
+    isSite(name) && { label: t("misc.openSite"), run: () => openSite(name) },
     c.churnedAt === null && { label: t("misc.renew"), run: () => act(renewDomain, name) },
     { label: t("misc.openInBooks"), run: () => openApp("Books", { kind: "customer", id: c.id }) },
   ];
@@ -259,7 +262,7 @@ export function CustomerPage({ r, onBack, tab: first = "summary" }: { r: Row; on
                     <dl className="fin-rows">
                       <div><dt>{t("misc.product")}</dt><dd>{PRODUCT[v.product]}</dd></div>
                       {v.hostname && <div><dt>{t("misc.hostname")}</dt><dd className="num">{fqdn(game, v.hostname)}</dd></div>}
-                      {v.domain && <div><dt>{t("misc.domain")}</dt><dd>{v.domain}</dd></div>}
+                      {v.domain && <div><dt>{t("misc.domain")}</dt><dd>{v.domain}{v.product === "webHosting" && <> <button className="btn" onClick={() => openSite(v.domain!)}>{t("misc.openSite")}</button></>}</dd></div>}
                       <div><dt>{t("misc.resources")}</dt><dd className="num">{specText(v.product, v.spec)}</dd></div>
                       <div><dt>{t("misc.price")}</dt><dd className="num">{price(v)}</dd></div>
                       <div><dt>{t("misc.billing")}</dt><dd>{v.period === "hour" ? t("misc.monthly") : t("misc.yearly")}</dd></div>

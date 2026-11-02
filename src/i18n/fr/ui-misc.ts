@@ -106,6 +106,7 @@ export default {
   "misc.delist": () => "Retirer",
   "misc.delisting": () => "Retrait en cours",
   "misc.domain": () => "Nom de domaine",
+  "misc.openSite": () => "Ouvrir le site",
   "misc.domains": () => "Noms de domaine",
   "misc.droppedNow": () => "Parti à l'instant",
   "misc.due": () => "Échéance",

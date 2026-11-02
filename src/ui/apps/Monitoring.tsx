@@ -75,7 +75,7 @@ function AppRowView({ r }: { r: AppRow }) {
 }
 
 function DefacedRow({ game, id }: { game: GameState; id: string }) {
-  const act = useStore((s) => s.act), v = game.services.find((x) => x.id === id), c = v && game.customers.find((x) => x.id === v.customerId);
+  const act = useStore((s) => s.act), openApp = useStore((s) => s.openApp), v = game.services.find((x) => x.id === id), c = v && game.customers.find((x) => x.id === v.customerId);
   if (!v || !c) return null;
   return (
     <tr onContextMenu={menuOn(() => [{ label: t("apps.cleanUp"), run: () => act(cleanSite, id) }])}>
@@ -83,7 +83,7 @@ function DefacedRow({ game, id }: { game: GameState; id: string }) {
       <td>{c.name}</td>
       <td>{APP_NAME[v.spec.app!]}</td>
       <td><span className="pill bad">{t("apps.defaced")}</span></td>
-      <td className="r"><button className="btn" disabled={!hasBackup(game, id)} onClick={() => act(cleanSite, id)}>{t("apps.cleanUp")}</button></td>
+      <td className="r">{v.domain && <button className="btn" onClick={() => openApp("Browser", { kind: "url", id: `${v.domain}/` })}>{t("misc.openSite")}</button>} <button className="btn" disabled={!hasBackup(game, id)} onClick={() => act(cleanSite, id)}>{t("apps.cleanUp")}</button></td>
     </tr>
   );
 }

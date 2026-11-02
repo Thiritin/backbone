@@ -106,6 +106,7 @@ export default {
   "misc.delist": () => "Rimuovi",
   "misc.delisting": () => "Rimozione in corso",
   "misc.domain": () => "Dominio",
+  "misc.openSite": () => "Apri sito",
   "misc.domains": () => "Domini",
   "misc.droppedNow": () => "Perso adesso",
   "misc.due": () => "Scadenza",

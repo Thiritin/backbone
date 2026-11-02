@@ -3,20 +3,22 @@ import { useState, type CSSProperties, type ReactNode } from "react";
 import { t } from "../../../../i18n/en";
 import { VIDEO_ARTIST, VIDEO_REAL, VIDEO_TITLE } from "../../../../sim/80-business/browser";
 import type { GameState } from "../../../../sim/50-state";
-import { customerSite } from "../../../../sim/80-business/website";
+import { customerSite, siteHost } from "../../../../sim/80-business/website";
+import { yearOf } from "../../../../sim/00-core/time";
+import { CustomerBlock, type BlockCtx } from "./CustomerBlocks";
 import { senderById } from "../../../../sim/40-support/notices";
 import { CompanyMark } from "../../company";
 import "./pages.css";
+import "./customer.css";
 import { LOCALE } from "../../../../i18n/lang";
 import { noAutofill } from "../../../no-autofill";
 
-const hueOf = (name: string): number => [...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7);
-
-// A web hosting customer's own page, in the colour its name picks.
+// A web hosting customer's own page, laid out from the design its period and position pick.
 export function CustomerSite({ game, serviceId }: { game: GameState; serviceId: string }) {
   const site = customerSite(game, serviceId);
+  const [dark, setDark] = useState(false);
+  const [cart, setCart] = useState(0);
   if (!site) return null;
-  const hue = hueOf(site.title);
   if (site.status === "defaced") {
     return (
       <div className="cs cs-defaced">
@@ -25,10 +27,17 @@ export function CustomerSite({ game, serviceId }: { game: GameState; serviceId: 
       </div>
     );
   }
+  const { layout, scheme, blocks, period } = site.design;
+  const v = game.services.find((x) => x.id === serviceId);
+  const ctx: BlockCtx = {
+    name: site.title, domain: v?.domain ?? siteHost(game, serviceId) ?? "", year: yearOf(game.hour), blurb: site.blurb,
+    seed: [...site.title].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, period + 7), dark, setDark, cart, addToCart: () => setCart((n) => n + 1),
+  };
+  const variant = dark ? "dark" : scheme.variant;
   return (
-    <div className="cs" style={{ "--hue": hue } as CSSProperties}>
-      <header className="cs-head"><h1>{site.title}</h1></header>
-      <p className="cs-blurb">{t(site.blurb)}</p>
+    <div className={`csx cs-${layout} cs-scheme-${variant} cs-p${period}`} style={{ "--hue": scheme.hue } as CSSProperties}>
+      <header className="csx-head"><h1>{site.title}</h1></header>
+      <main className="cs-body">{blocks.map((b) => <CustomerBlock key={b} id={b} c={ctx} />)}</main>
       {site.sponsored && <footer className="cs-sponsor">{t("browser-sites-1.pg.sponsored")} <CompanyMark company={game.company} className="co-mark cs-sponsor-mark" />{game.company.name}</footer>}
     </div>
   );

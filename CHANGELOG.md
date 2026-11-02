@@ -4,6 +4,9 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- Customer websites now have their own look: layouts, colour schemes and page blocks differ per customer and get redesigned as the years pass, so the first 30 customers never share a page.
+- The customer page and the defaced-sites list in Monitoring have an Open site button that shows the customer's site in the Browser.
+
 - Every colocation provider's site now has a customer portal where you sign in to see your contracts, invoices and remote-hands tickets, book extra power, feed B and power contracts, and cancel a contract with its notice date, and the large providers offer a free month to stay.
 - Colocation provider sites now keep their own layout, including their facility lists and front page banner, after the Shop app has been opened.
 - Colocation provider sites now keep their own layout after the Shop app has been opened.
