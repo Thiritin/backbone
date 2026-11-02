@@ -185,10 +185,10 @@ describe("design ages", () => {
     ok(setUpChannel(s, "website"));
     inYear(s, 2017);
     expect(agePenalty(s)).toBe(0.6);
-    const cash = s.cash;
+    const cash = s.cash, price = designQuote(s);
     ok(redesign(s));
-    expect(s.cash).toBe(cash - designQuote(s));
-    expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.redesign", category: "marketing", amount: -designQuote(s) });
+    expect(s.cash).toBe(cash - price);
+    expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.redesign", category: "marketing", amount: -price });
     expect(en["ledger.redesign"]({})).toBe("Website redesign");
     run(s, 14 * 24);
     expect(s.marketing.designYear).toBe(2017);
