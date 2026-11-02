@@ -2,7 +2,8 @@
 import { CYCLE_MONTHS, CYCLES, type Cycle } from "../10-catalog/cycles";
 import { shopById, type ShopId } from "../10-catalog/shops";
 import type { Spec } from "../10-catalog/products";
-import type { Product } from "../30-customers/customers";
+import type { Customer, Product, Service } from "../30-customers/customers";
+import { isUnpaid } from "../45-billing/billing";
 import { targetFor } from "../30-market/sales";
 import { companyDomain } from "../30-customers/domains";
 import type { GameState } from "../50-state";
@@ -125,3 +126,15 @@ export function parsePortal(variant: ShopId, path: string): PortalRoute | null {
 
 // /admin leads to the admin of every shop system.
 export const isAdminAlias = (path: string): boolean => /^\/admin(\/|\?|$)/.test(path);
+
+// The shop product a running service matches by line and package, or by line and size when it has no package.
+export const matchProduct = (s: GameState, v: Service): ShopProduct | undefined =>
+  productsOf(s, v.product).find((p) => (v.pkg ? p.packageName === v.pkg : covers(packageSpec(s, p), v.spec, v.product) && covers(v.spec, packageSpec(s, p), v.product)));
+
+// What "Bestandskunden übernehmen" moves into the shop: running customers billed in Books and their running services.
+// Their open Books invoices stay in Books.
+export function goLivePlan(s: GameState): { customers: Customer[]; services: Service[]; matched: number; open: number } {
+  const customers = s.customers.filter((c) => c.churnedAt === null && c.source !== "shop"), ids = new Set(customers.map((c) => c.id));
+  const services = s.services.filter((v) => v.endedAt === null && ids.has(v.customerId));
+  return { customers, services, matched: services.filter((v) => matchProduct(s, v)).length, open: s.invoices.filter((i) => ids.has(i.customerId) && isUnpaid(i)).length };
+}

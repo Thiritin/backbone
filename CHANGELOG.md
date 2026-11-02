@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- The shop's setup wizard and settings can take over your existing customers, so the shop bills and emails them from their next invoice on while open invoices stay in Books.
 - Books programs and shop systems now open a setup wizard after installation that walks through company details, invoice numbering and the program's main settings, and it can be reopened at any time.
 - Pear Mail's activity pane shows one line per account with its latest check instead of repeating every check, and drops lines of removed accounts.
 - The shop admin has an Apps & Integrations page that shows which provisioning modules, payment gateways and the Books link your shop system includes, sells or lacks, and a product can only use a server group your shop has the module for, otherwise its orders wait for you.

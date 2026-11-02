@@ -1,6 +1,6 @@
 # Plan: shop and books split
 
-Lane id: `shop-books-split`. Status: decisions settled in section 10; milestones 1 to 4 and 6 to 12 built.
+Lane id: `shop-books-split`. Status: decisions settled in section 10; milestones 1 to 4 and 6 to 13 built.
 
 The bookkeeping program and the shop system both write quotes, both hold a product catalog and both reach invoices. Players see two ways to do the same thing, and with a shop installed and email orders off, quote requests still arrive by email. This plan gives each program one job, makes the shop automate the customer side the way WHMCS does, and gives every program the same setup flow.
 
@@ -125,6 +125,8 @@ The last wizard step moves running business into the shop. It shows what will ha
 - Shop-link, when bought, syncs from go-live on; without it, the Books Invoices tab offers the manual import as today.
 
 Skipping go-live keeps billing for existing customers in Books; the step stays available in the shop settings as "Bestandskunden übernehmen".
+
+As built (milestone 13): the step counts the running customers billed in Books, their services linked to a product and those with a custom price, and the open invoices that stay in Books, then imports on one button (`importExisting`). An imported customer becomes a shop customer and stays visible in Books, so its next monthly invoice is issued and sent by the shop and it gets the shop's emails; its prices are kept. A service is linked to the product with its line and package, or its line and exact size, and the shop's service page shows that product. Imported services are not counted as ordered through the shop, so OrderBocks takes no cut from them. Email orders and Shop link need no change: both already follow the active shop.
 
 ## 9. Customer communication and access data
 
