@@ -295,7 +295,7 @@ After 3, GMix (4 and 5) and Goggle (6 and 7) run in parallel. Milestones 8 and 9
    - UI: `src/ui/apps/browser/sites/mail/goggle/GoggleSite.tsx` with the four product looks, the pricing page, the wizard with domain, admin, edition and mailboxes, the verification and MX steps with the Verify and Open registrar buttons, the shared Goggle sign-in page with Forgot password.
    - i18n: `ui-mail-goggle.ts`.
    - Test: `tests/goggle-site.test.tsx`: the page title and edition table in 2006, 2008, 2017 and 2021; the wizard refuses a domain that is not the company's; Verify fails before the record and passes after it and its propagation.
-7. **Goggle Admin console (`goggle-admin`).**
+7. **Goggle Admin console (`goggle-admin`).** Built. The console answers on `www.goggle.com/a/<domain>/` until 2012 and on `admin.goggle.com` from 2013 (`consoleUrl`). The sim actions are `makeGoggleAdmin`, `deleteGoggleUser` (receiver, alias and, from 2010, the transfer under a label named after the old address), `migrateMailbox` and the pure `goggleReport`. Data migration copies the source Inbox at once through a temporary fetch rule rather than over hours, since mail-core has no `importMail`; milestone 10 can add the duration. `checkMailLogin` takes a console flag so a locked tenant's administrator reaches the lock page. "Change password at next sign-in" is not built.
    - Sim: group delivery and the group account of section 10, the catch-all and Receives settings, the data transfer on delete, reports from the message store, the hire cap on the free edition.
    - UI: `control` and `console` looks with Users, Groups, Email settings, Domains, Billing, Data migration, Reports, Status, Support, and the lock page of 2022.
    - i18n: the rest of `ui-mail-goggle.ts`.

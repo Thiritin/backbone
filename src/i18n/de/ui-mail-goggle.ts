@@ -162,7 +162,7 @@ export default {
   "goggle.admin.save": () => "Speichern",
   "goggle.admin.conversion": () => "Ihre kostenlose Legacy-Version endet am 1. Mai 2022.",
   "goggle.admin.upgradeNow": () => "Jetzt upgraden",
-  "goggle.admin.locked.title": () => "Ihre kostenlose Version ist abgelaufen.",
+  "goggle.admin.locked.title": () => "Kostenpflichtige Version auswählen",
   "goggle.admin.locked.text": () => "Ihre kostenlose Version ist abgelaufen. Ihre E-Mails nicht. Sie warten höflich vor der Tür.",
   "goggle.admin.locked.choose": (p) => `${p.edition} auswählen`,
   "goggle.admin.nav.dashboard": () => "Dashboard",

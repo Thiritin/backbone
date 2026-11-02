@@ -162,7 +162,7 @@ export default {
   "goggle.admin.save": () => "Save",
   "goggle.admin.conversion": () => "Your legacy free edition ends on May 1, 2022.",
   "goggle.admin.upgradeNow": () => "Upgrade now",
-  "goggle.admin.locked.title": () => "Your free edition ended.",
+  "goggle.admin.locked.title": () => "Choose a paid edition",
   "goggle.admin.locked.text": () => "Your free edition ended. Your mail did not. It is waiting politely outside.",
   "goggle.admin.locked.choose": (p) => `Choose ${p.edition}`,
   "goggle.admin.nav.dashboard": () => "Dashboard",

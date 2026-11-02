@@ -162,7 +162,7 @@ export default {
   "goggle.admin.save": () => "Enregistrer",
   "goggle.admin.conversion": () => "Votre ancienne édition gratuite prend fin le 1er mai 2022.",
   "goggle.admin.upgradeNow": () => "Mettre à niveau",
-  "goggle.admin.locked.title": () => "Votre édition gratuite a pris fin.",
+  "goggle.admin.locked.title": () => "Choisissez une édition payante",
   "goggle.admin.locked.text": () => "Votre édition gratuite a pris fin. Vos e-mails, non. Ils attendent poliment dehors.",
   "goggle.admin.locked.choose": (p) => `Choisir ${p.edition}`,
   "goggle.admin.nav.dashboard": () => "Tableau de bord",
