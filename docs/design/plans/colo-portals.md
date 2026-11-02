@@ -5,7 +5,7 @@ Every datacenter provider in `src/sim/20-world/datacenters.ts` gets a website in
 ## 1. Decisions
 
 - The map stays the place to compare. The add-location sheet loses its order buttons and shows "Visit site" per datacenter, which opens the browser at the provider's order page with the datacenter preselected. Comparing 19 sites one by one is the failure mode this avoids.
-- One shared site component, four skins. `premium` (Equinox, Digital Reality, Interaction, NTD, Telex, CoreSpite), `budget` (Hetzler, mainqubes, Spree Colo, Arubaba), `telco` (Tellyhouse, Global Snitch, SkyBlink, Boris Network, Data5) and `local` (Docklands Data, Iron Molehill, Next Lair, Green.chz). A skin is a CSS file, a logo and a copy set; the page structure is the same. The existing `early` and `late` era looks from `src/ui/apps/browser/sites/era.ts` apply on top.
+- Every provider has its own site, one component and stylesheet per provider under `src/ui/apps/browser/sites/providers/<id>.tsx` and `.css`, the way the hardware vendors have theirs. Each copies the look of the real company it puns (layout, nav, colours, logo, tone). Shared pieces live in `ProviderSite.tsx`: routing, the sites list and detail data, the order form logic, the account area. A provider's component chooses how they are laid out. The `early` and `late` era looks from `src/ui/apps/browser/sites/era.ts` apply on top.
 - Contracts are new state. Today a location is created directly by `addLocation`; the portal needs a `Contract` with term, notice and status so cancelling can take effect at the end of the notice period instead of at once.
 - Cancelling has a notice period: one month for a share, three for a cage, six for a suite. The portal shows the end date before the player confirms. `closeLocation` keeps its checks (storage empty, provided racks empty) and runs at the end date, not on click.
 - Services live in the portal, each one a line on the contract: remote hands (already priced in `handwork.ts`), cross-connects, extra power (already on `Rack.extraKw`), feed B (already on `Rack.feedB`). Existing actions are called from the portal pages; no second sim path.
@@ -13,12 +13,12 @@ Every datacenter provider in `src/sim/20-world/datacenters.ts` gets a website in
 
 ## 2. Lanes and order
 
-1. `contracts` (sim): contract state, notice periods, cancel at term end. No UI.
-2. `provider-site` (UI): the shared site, four skins, order flow, map hand-off.
+1. `contracts` (sim): contract state, notice periods, cancel at term end. No UI. Done in #101.
+2. `provider-site` (UI): first the shared core (hosts, routing, shared pages, order flow, map hand-off) with two providers, then the remaining providers in parallel batches.
 3. `portal` (UI): sign-in, contracts, cancel, invoices, services.
 4. `services` (sim and UI): cross-connects as a new service; everything else wires existing actions.
 
-Lanes 2 and 3 can run in parallel once 1 is merged. Lane 4 is last.
+Lane 2's core comes first. After it is merged the portal and the provider batches run in parallel. Lane 4 is last.
 
 ## 3. Lane `contracts`
 
@@ -33,8 +33,8 @@ Milestones:
 
 Milestones:
 
-1. **Hosts and routing.** Every `Provider` gets `host` (`equinox.com`, `hetzler.de`, `tellyhouse.co.uk`, ...) and `skin`. `src/sim/10-catalog/sites.ts` lists them so `resolve` in `src/sim/80-business/browser.ts` reaches `ProviderSite` in `src/ui/apps/browser/sites/providers/`. Pages: `/`, `/sites`, `/sites/<dcId>`, `/order?dc=<id>&space=<kind>&size=<n>`, `/account/*` (lane `portal`). Routes under `/account` show the sign-in page until lane 3 lands.
-2. **Shared site.** `ProviderSite.tsx` renders header, nav, footer and the page body from a `Copy` set (`providers/copy.ts`: tagline, blurb, three selling points, support line per skin, provider name interpolated). Four CSS files `premium.css`, `budget.css`, `telco.css`, `local.css`. Favicons through the existing `Favicon.tsx`. `early` look drops the hero image and uses the table layout like the registrar sites do.
+1. **Hosts and routing.** Every `Provider` gets `host` (`equinox.com`, `hetzler.de`, `tellyhouse.co.uk`, ...). `src/sim/10-catalog/sites.ts` lists them so `resolve` in `src/sim/80-business/browser.ts` reaches `ProviderSite` in `src/ui/apps/browser/sites/providers/`. Pages: `/`, `/sites`, `/sites/<dcId>`, `/order?dc=<id>&space=<kind>&size=<n>`, `/account/*` (lane `portal`). Routes under `/account` show the sign-in page until lane 3 lands.
+2. **Provider sites.** `ProviderSite.tsx` supplies the shared pages as building blocks; each `providers/<id>.tsx` with its own `.css` lays out header, nav, home, footer in the style of the real company. Copy per provider in `src/i18n/ui-providers.ts`. Favicons through the existing `Favicon.tsx`. The `early` look follows the registrar sites. The core lane ships Equinox and Hetzler; the other 18 follow in batches.
 3. **Sites page.** `/sites` lists the provider's datacenters with city, carriers, exchange, feeds, backup, green and certified, from `DATACENTERS`. `/sites/<dcId>` shows the detail and a price table from `spacePrice` and `SPACE_SIZES`, with lead time from `LEAD_DAYS` and availability from `dcAvailability`. Full rows show "Join waitlist" and call `joinWaitlist`.
 4. **Order flow.** `/order` is a three-step form: space and size, contact details (prefilled from the company), summary with monthly price, setup fee and ready date. Confirm calls `addLocation`. Success page says the welcome email is on its way; the existing ready email covers the rest. Prefilled from query parameters so the map can deep-link.
 5. **Map hand-off.** `AddLocation.tsx` drops its order and waitlist buttons for a "Visit site" link that opens the browser at `/sites/<dcId>` on the provider's host. The filters, sorting and availability column stay. `Overview.tsx` location cards get a "Manage" link to `/account/contracts` on the provider's host. The Visit site link is the only new string in `ui-locations`.
@@ -45,7 +45,7 @@ Milestones:
 
 1. **Sign-in and account shell.** `/account` shows a sign-in page with the company email prefilled and a password field that accepts anything; the session lasts while the tab is open. Inside: left nav Contracts, Invoices, Services, Tickets, Account. Tabs are the portal's own look per skin, not the public site's.
 2. **Contracts.** One row per contract at this provider: datacenter, space, since, monthly, next invoice, status (`active`, `ends <date>`, `provisioning` while `readyAt` is ahead). Detail page lists the racks and their feeds, power contract and extra kW, cross-connects from lane 4.
-3. **Cancel.** The detail page's Cancel button opens a confirm sheet with the end date from `NOTICE_MONTHS`, what must be empty by then, and a retention offer on `premium` skins (one free month if the player keeps the space, accepted by `revokeCancel`). Confirm calls `cancelContract`. A cancelled contract shows Revoke until `endsAt`.
+3. **Cancel.** The detail page's Cancel button opens a confirm sheet with the end date from `NOTICE_MONTHS`, what must be empty by then, and a retention offer on the large carrier-neutral providers (Equinox, Digital Reality, Interaction, NTD, Telex, CoreSpite) (one free month if the player keeps the space, accepted by `revokeCancel`). Confirm calls `cancelContract`. A cancelled contract shows Revoke until `endsAt`.
 4. **Invoices.** List of the provider's monthly charges from the ledger, filtered by provider, with a view page per invoice using the same PDF frame as customer invoices. Read-only.
 5. **Services.** Per contract: extra power (`setExtraKw`), feed B (`setFeedB`), flat-rate power (`setFlatKw`), remote hands job list from `handwork.ts`. Each one shows price and the month it starts billing. Existing actions only.
 6. **Tickets.** Remote-hands requests the player already books appear as tickets with the provider's response time and status. Read-only in this lane; booking stays in the Locations app.
@@ -61,7 +61,7 @@ Milestones:
 ## 7. Shared files
 
 - `src/sim/50-state.ts`: `Contract`, `s.contracts`, `CrossConnect`. Lanes 1 and 4.
-- `src/sim/20-world/datacenters.ts`: `Provider.host`, `Provider.skin`, `NOTICE_MONTHS`, `crossConnect` prices. Lanes 1, 2, 4.
+- `src/sim/20-world/datacenters.ts`: `Provider.host`, `NOTICE_MONTHS`, `crossConnect` prices. Lanes 1, 2, 4.
 - `src/sim/90-actions/hardware.ts`: `addLocation` creates the contract; `cancelContract`, `revokeCancel`. Lane 1.
 - `src/sim/88-tick/tick.ts`: term end, rent from contract. Lane 1.
 - `src/sim/10-catalog/sites.ts` and `src/sim/80-business/browser.ts`: provider hosts. Lane 2.
@@ -73,4 +73,4 @@ Milestones:
 - Should the basement get a fake "provider" so the portal pattern is uniform? No. The basement has no contract and nothing to cancel.
 - Should the Locations app keep a fallback order button for players who never open the browser? No. The browser is already required for domains and software; the Visit site link is one click.
 - Should cancelling be allowed with hardware still inside, closing only when empty? Yes, that is what the roll in lane 1 milestone 3 does: cancel first, move out during the notice period.
-- Should the skins be 19 individual sites later? Only if a provider gets its own mechanics. Four skins with per-provider logos, colors and copy are enough to tell them apart.
+- Should every provider get its own site? Yes, decided 2026-11-02: one component and stylesheet per provider, like the hardware vendors.
