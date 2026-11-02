@@ -45,6 +45,9 @@ const COUNTRIES: Record<string, Country> = {
   },
 };
 
+// The freemail domains customers write from.
+export const FREEMAIL_DOMAINS: string[] = [...new Set(Object.values(COUNTRIES).flatMap((c) => c.mail))];
+
 const pick = <T>(r: Rng, xs: readonly T[]): T => xs[Math.floor(rand(r) * xs.length)];
 const PERSONAL: Profile[] = ["private", "gamer", "hobbyDev"];
 

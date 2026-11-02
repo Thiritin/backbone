@@ -1,4 +1,4 @@
-import { BookOpen, Disc3, FileText, type LucideIcon } from "lucide-react";
+import { BookOpen, Disc3, FileArchive, FileText, Package, type LucideIcon } from "lucide-react";
 import type { ComponentType } from "react";
 import type { MarkProps } from "./mailmarks";
 
@@ -12,14 +12,22 @@ export const era = (Icon: LucideIcon, name: string, packs: Pack[] = ["crystal", 
   </>
 );
 
-// Desktop and Finder files by Doc kind, plus downloaded disc images.
+// Desktop and Finder files by Doc kind, plus downloads.
 export const FILE_ICON: Record<string, ComponentType<MarkProps>> = {
   guide: era(BookOpen, "guide"),
   note: era(FileText, "note"),
   form: era(FileText, "form"),
   cert: era(FileText, "cert"),
   iso: era(Disc3, "iso"),
+  archive: era(FileArchive, "archive"),
+  pdf: era(FileText, "pdf"),
+  installer: era(Package, "installer"),
 };
+
+export function fileIcon(name: string) {
+  const Icon = /\.(zip|tar|t?gz|bz2|xz|7z|rar)$/i.test(name) ? FILE_ICON.archive : /\.pdf$/i.test(name) ? FILE_ICON.pdf : FILE_ICON.note;
+  return <Icon />;
+}
 
 export const ICON_CREDITS = [
   { text: "Crystal Clear, Everaldo Coelho, LGPL 2.1", url: "https://commons.wikimedia.org/wiki/Category:Crystal_Clear_icons" },

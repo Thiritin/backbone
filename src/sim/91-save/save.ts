@@ -173,7 +173,7 @@ export function deserialize(raw: string): GameState {
   // Saves from before licence keys; machines from before one-time licenses hold theirs for free, since the fee was never charged.
   if (!data.trials) legacyLicences(s, (data.licenses ?? []) as unknown as Parameters<typeof legacyLicences>[1]);
   const media = data.media ?? base.media;
-  s.media = { images: [...new Set(media.images.map((x) => asImage(x, year)))], files: media.files ?? [], stick: { ...media.stick, os: media.stick.os && asImage(media.stick.os, year) } };
+  s.media = { images: [...new Set(media.images.map((x) => asImage(x, year)))], files: media.files ?? [], dumps: media.dumps ?? {}, stick: { ...media.stick, os: media.stick.os && asImage(media.stick.os, year) } };
   s.arrived = data.arrived ?? [];
   // Saves from before the Bookkeeping category run Lexwear Office when they have Books.
   if (!data.books) s.books = { vendor: data.installed?.some((id: string) => id === "Books" || id === "Billing") ? "lexwear" : null, installedAt: 0, edition: null, seats: 0, download: null };

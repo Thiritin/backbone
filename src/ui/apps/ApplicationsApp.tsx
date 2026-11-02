@@ -1,6 +1,9 @@
 import { deskUrl } from "./browser/sites/desk/DeskSite";
 import { CircleArrowDown, CircleX, Disc3, LayoutGrid, Monitor, Usb } from "lucide-react";
-import { FILE_ICON } from "../art/era-icon";
+import { FILE_ICON, fileIcon } from "../art/era-icon";
+import { yearOf } from "../../sim/00-core/time";
+import { installerFile, PROGRAMS } from "../../sim/10-catalog/programs";
+import { installProgram } from "../../sim/90-actions/programs";
 import { useEffect, useState, type CSSProperties, type DragEvent, type ReactNode } from "react";
 import { imageParts, type OsImage } from "../../sim/10-catalog/server-os";
 import { addAppLink, setDocked } from "../../sim/90-actions/docs";
@@ -86,6 +89,14 @@ export function ApplicationsApp() {
           <Item key={id} label={isoFile(id)} menu={() => [{ label: t("apps.finder.writeToUsb"), disabled: !home, run: () => write(id) }]}
             drag={(e) => { e.dataTransfer.setData(ISO, id); e.dataTransfer.effectAllowed = "copy"; }}>
             <span className="di-page"><FILE_ICON.iso /></span>
+          </Item>
+        ))}
+        {at === "downloads" && game.media.files.map((name) => (
+          <Item key={name} label={name}><span className="di-page">{fileIcon(name)}</span></Item>
+        ))}
+        {at === "downloads" && PROGRAMS.filter((p) => game.installers[p.id] && game.hour >= game.installers[p.id].readyAt).map((p) => (
+          <Item key={p.id} label={installerFile(p, yearOf(game.hour))} open={() => act(installProgram, p.id)} menu={() => [{ label: t("apps.finder.open"), run: () => act(installProgram, p.id) }]}>
+            <span className="di-page"><FILE_ICON.installer /></span>
           </Item>
         ))}
         {at === "usb" && game.media.stick.os && (

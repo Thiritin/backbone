@@ -30,7 +30,7 @@ describe("cPanic customer side", () => {
 
   it("draws the account's icons, domain and statistics", () => {
     const { s, c } = host(2008), html = renderToString(<Customer game={s} c={c} workloadId="w-x" />);
-    for (const label of ["File Manager", "Email Accounts", "Zone Editor", "phpMyAdmin", "Raw Access", "Errors", "shop.example.com"]) expect(html).toContain(label);
+    for (const label of ["File Manager", "Email Accounts", "Zone Editor", "MySQL® Databases", "phpMyAdmon", "Raw Access", "Errors", "shop.example.com"]) expect(html).toContain(label);
   });
 
   it("shows the unavailable page when the host's sites are offline", () => {

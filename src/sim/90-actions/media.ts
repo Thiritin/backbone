@@ -34,12 +34,12 @@ export function uploadMbps(s: GameState): number {
 // A transfer runs in game hours equal to the real time it takes at the line speed.
 export const transferHours = (mb: number, mbps: number): number => ((mb * 8) / mbps) * 1000 / MS_PER_HOUR;
 
-// The player's Downloads folder: every image and archive by its id, file name and size.
+// The player's Downloads folder: every image, archive and database dump by its id, file name and size.
 export interface DownloadedFile { id: string; name: string; mb: number }
 export function downloadedFiles(s: GameState): DownloadedFile[] {
   return [
     ...s.media.images.map((img) => ({ id: img, name: isoName(img), mb: IMAGE_MB[imageParts(img).id] })),
-    ...s.media.files.map((name) => ({ id: name, name, mb: archiveNamed(name)?.mb ?? 0 })),
+    ...s.media.files.map((name) => ({ id: name, name, mb: archiveNamed(name)?.mb ?? s.media.dumps[name]?.mb ?? 0 })),
   ];
 }
 

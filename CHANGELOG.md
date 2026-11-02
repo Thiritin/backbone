@@ -8,8 +8,10 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Web hosting panels show each account's disk and traffic as compact numbers and the whole server's CPU, memory and disk above the account list.
 - Web hosting accounts now use memory by their visitors, so a quiet personal page needs only a few megabytes while a busy shop needs far more.
 - The software page in the Pear Store shows its price, skill and status side by side again, with the same spacing in every macOS era.
+- Single files in the cPanic File Manager now show realistic sizes in KB, and the disk bar of a cPanic account follows its uploads.
 - The cPanic File Manager now works like the real one: upload files from your Downloads at your line's upload speed, extract and compress archives, create, move, copy, rename and delete files, and change permissions, with uploads refused once the account's disk quota is full.
 - HOSTtoast no longer has a city filter, so its list always shows every open host.
+- Mail in company mailboxes can now be moved, flagged, labelled, snoozed, filed in nested folders, deleted to Trash and restored, and drafts and sent mail keep their copies in Drafts and Sent.
 - The browser's Back button no longer leaves the game: in the browser app it goes back one page, everywhere else it does nothing.
 - OsTickit now runs at your support address in the browser, with its own customer portal, Staff Control Panel and Admin Panel in the 1.6 look and, from version 1.10, the newer one, and the Support tile opens it once it is installed.
 - Web hosting panels can now create an account for your own company domain, which starts empty, counts against the panel licence and is where your website and shop will live.
@@ -35,6 +37,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Vendor websites offer a Change edition choice for every licence key, which switches the key to the new edition after checkout without entering a new key.
 - The cPanic customer pages now offer Addon Domains, Subdomains, Aliases, a Zone Editor, SSL/TLS Status, MultiPHP Manager and Cron Jobs, labelled as the release of the year names them, and a new subdomain gets its DNS record automatically.
 - Every domain pointing at a web space now opens in the Browser: customer sites show their app's default theme of the year, broken sites show the real database, PHP, server or suspended-account error, and an empty folder shows the panel's default page or a folder listing.
+- cPanic customer accounts have a MySQL Databases page to create databases and users and grant privileges, and phpMyAdmon opens their tables to browse, edit rows, run SQL and export or import .sql files through Downloads.
+- cPanic accounts now have working Email Accounts, Forwarders, Autoresponders, Spam filter and FTP Accounts pages, and the free FTP program FileGorilla downloads from its own site and uploads files to a web space.
 - Every cPanic customer account now has its own files, databases, mailboxes and limits on databases, FTP accounts and domains, which its customer pages show.
 - Web hosting customers now write in asking for a database, a mailbox or an FTP login, ask for a bigger package when theirs is full, and report a site that stopped working; the ticket closes once their web space has what they asked for, and deleting the shell left on a hacked site cleans it.
 - Your own servers, mail server, webmail, help desk and shop now get their DNS records automatically, so an MX record pointing at your mail server's host name delivers mail, and the DNS page offers MX, A and CNAME values from lists instead of free text.

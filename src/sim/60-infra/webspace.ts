@@ -8,6 +8,7 @@ import { accountUse } from "../80-business/readouts";
 import { companyDomain } from "../30-customers/domains";
 import type { GameState } from "../50-state";
 import type { Cluster, Workload } from "./cluster";
+import { mailboxHook } from "./netsvc-mail";
 
 // Paths are relative to the account's home, such as "public_html/wp-config.php". Sizes are MB, at is the hour last modified.
 // mode is the octal permission set by the player; archive names the catalog archive an uploaded file is, and pack holds
@@ -17,12 +18,20 @@ export interface WebFile { dir?: true; mb: number; at: number; mode?: string; ar
 export const modeOf = (path: string, f: WebFile): string => f.mode ?? (path === "public_html" ? "0750" : f.dir ? "0755" : "0644");
 export type DomainKind = "main" | "addon" | "sub" | "parked";
 export interface WebDomain { name: string; kind: DomainKind; folder: string; php: string }
-export interface WebDatabase { name: string; mb: number }
+// schema and tables hold the tables of an imported or installed database (webdb.ts); without them the tables derive from the app.
+// src is the database the generated rows come from, kept through an export and import.
+export interface WebDatabase { name: string; mb: number; schema?: string; tables?: Record<string, number>; src?: string }
+// A row the player edited or inserted in phpMyAdmon, keyed "db.table.pk"; values holds the changed columns only.
+export interface DbRow { db: string; table: string; pk: number; values: Record<string, string> }
 // grants maps a database name to its privileges, such as ["ALL PRIVILEGES"]. The host is always localhost.
 export interface DbUser { name: string; password: string; grants: Record<string, string[]> }
 export interface Mailbox { address: string; password: string; quotaMb: number; usedMb: number }
 export interface Forwarder { from: string; to: string }
 export interface FtpAccount { user: string; password: string; folder: string; quotaMb: number }
+// interval is the hours before the same sender gets the reply again.
+export interface Autoresponder { address: string; from: string; subject: string; body: string; intervalHours: number }
+// SpamAssassin per account: score is the threshold a message needs to count as spam.
+export interface SpamFilter { on: boolean; spamBox: boolean; autoDelete: boolean; score: number }
 // schedule is the five crontab fields the player entered; everyHours is how often it runs in effect, at most hourly.
 export interface CronJob { id: string; command: string; everyHours: number; schedule?: string }
 export interface WebLimits { databases: number; mailboxes: number; ftpAccounts: number; addonDomains: number; subdomains: number }
@@ -37,15 +46,17 @@ export interface WebApp { id: App; folder: string; config: string; db: string }
 export interface WebParts {
   files: Record<string, WebFile>; domains: Record<string, WebDomain>; databases: Record<string, WebDatabase>; dbUsers: Record<string, DbUser>;
   mailboxes: Record<string, Mailbox>; forwarders: Record<string, Forwarder>; ftp: Record<string, FtpAccount>; cron: Record<string, CronJob>;
+  rows: Record<string, DbRow>;
+  autoresponders: Record<string, Autoresponder>;
 }
 export type PartName = keyof WebParts;
-export const PARTS: PartName[] = ["files", "domains", "databases", "dbUsers", "mailboxes", "forwarders", "ftp", "cron"];
+export const PARTS: PartName[] = ["files", "domains", "databases", "dbUsers", "mailboxes", "forwarders", "ftp", "cron", "rows", "autoresponders"];
 // What the player changed: a value adds or replaces an entry, false removes a derived one.
-export type WebspaceOverlay = { [K in PartName]?: Record<string, WebParts[K][string] | false> };
+export type WebspaceOverlay = { [K in PartName]?: Record<string, WebParts[K][string] | false> } & { spam?: SpamFilter };
 
 export interface Webspace extends WebParts {
   workloadId: string; panel: string; account: string; prefix: string; webroot: string; domain: string;
-  app: WebApp | null; limits: WebLimits; usage: WebUsage;
+  app: WebApp | null; limits: WebLimits; usage: WebUsage; spam: SpamFilter;
   // The files an attacker left on a defaced site, before the overlay; deleting all of them cleans it.
   shells: string[];
 }
@@ -59,9 +70,10 @@ export const WEB_LIMITS: Omit<WebLimits, "mailboxes"> = { databases: 5, ftpAccou
 // The company's own accounts run without a package, so nothing caps them.
 const UNLIMITED: WebLimits = { databases: Infinity, mailboxes: Infinity, ftpAccounts: Infinity, addonDomains: Infinity, subdomains: Infinity };
 export const ALL_PRIVILEGES = ["ALL PRIVILEGES"];
+export const SPAM_OFF: SpamFilter = { on: false, spamBox: false, autoDelete: false, score: 5 };
 // cPanel's MultiPHP Manager; before it every domain runs the host's PHP.
 export const MULTI_PHP_YEAR = 2015;
-const MAIL_SHARE = 0.1, DB_SHARE = 0.2;
+const MAIL_SHARE = 0.1, DB_SHARE = 0.2, SMALL_FILE_MB = 0.004;
 
 // The files an app ships with, in share of the disk the files use; the config file is the one the app reads its database from.
 const APP_FILES: Record<App, { files: [string, number][]; config?: string; db?: string }> = {
@@ -125,8 +137,8 @@ export function deriveWebspace(s: GameState, workloadId: string): Webspace | nul
   const account = own?.account ?? v?.username ?? accountFor(domain);
   const panel = c.panel!, webroot = webrootOf(panel), prefix = prefixOf(account), since = own?.at ?? v?.startedAt ?? w.placedAt, year = yearOf(s.hour);
   const ws: Webspace = {
-    workloadId, panel, account, prefix, webroot, domain, app: null, shells: [], files: {}, domains: {}, databases: {}, dbUsers: {}, mailboxes: {}, forwarders: {}, ftp: {}, cron: {},
-    limits: own ? UNLIMITED : limitsOf(v?.pkg ? packageNamed(c, v.pkg) : undefined, v?.spec.mailboxes ?? 0), usage: undefined!,
+    workloadId, panel, account, prefix, webroot, domain, app: null, shells: [], files: {}, domains: {}, databases: {}, dbUsers: {}, mailboxes: {}, forwarders: {}, ftp: {}, cron: {}, rows: {}, autoresponders: {},
+    limits: own ? UNLIMITED : limitsOf(v?.pkg ? packageNamed(c, v.pkg) : undefined, v?.spec.mailboxes ?? 0), usage: undefined!, spam: SPAM_OFF,
   };
   for (const p of [webroot, "logs", "tmp", "mail"]) ws.files[p] = { dir: true, mb: 0, at: since };
   ws.domains[domain] = { name: domain, kind: "main", folder: webroot, php: c.php };
@@ -135,7 +147,10 @@ export function deriveWebspace(s: GameState, workloadId: string): Webspace | nul
   if (v) {
     const app = v.spec.app ?? "static", def = APP_FILES[app], usedMb = accountUse(s, w).disk[0] * 1024;
     const nMail = Math.min(v.spec.mailboxes, 8), mailMb = nMail ? usedMb * MAIL_SHARE : 0, dbMb = def.db ? usedMb * DB_SHARE : 0, filesMb = usedMb - mailMb - dbMb;
-    for (const [n, share] of def.files) ws.files[`${webroot}/${n}`] = { ...(n.includes(".") ? {} : { dir: true as const }), mb: +(filesMb * share / 100).toFixed(3), at: since };
+    // A single file weighs a few KB; the folders take the rest of the disk the files use.
+    const isFile = (n: string) => n.includes("."), fileMb = (share: number) => Math.min(SMALL_FILE_MB, filesMb * share / 100);
+    const dirMb = filesMb - def.files.filter(([n]) => isFile(n)).reduce((a, [, share]) => a + fileMb(share), 0), dirShare = def.files.filter(([n]) => !isFile(n)).reduce((a, [, share]) => a + share, 0);
+    for (const [n, share] of def.files) ws.files[`${webroot}/${n}`] = { ...(isFile(n) ? {} : { dir: true as const }), mb: +(isFile(n) ? fileMb(share) : dirMb * share / dirShare).toFixed(3), at: since };
     if (!def.files.some(([n]) => n === ".htaccess")) ws.files[`${webroot}/.htaccess`] = { mb: 0.001, at: since };
     if (def.config && def.db) {
       const db = `${prefix}${def.db}`;
@@ -175,8 +190,18 @@ export function webspaceOf(s: GameState, workloadId: string): Webspace | null {
       else into[k] = v;
     }
   }
+  if (o.spam) ws.spam = o.spam;
   ws.usage = usageOf(s, ws);
   return ws;
+}
+
+// The mailboxes a hosting service sends mail for: its plan's count, less the derived ones the player deleted.
+export function mailboxesOf(s: GameState, workloadId: string, planned: number): number {
+  const o = s.webspaces[workloadId]?.mailboxes;
+  if (!o) return planned;
+  const derived = deriveWebspace(s, workloadId)?.mailboxes ?? {};
+  const delta = Object.entries(o).reduce((n, [k, v]) => n + (v === false ? -1 : k in derived ? 0 : 1), 0);
+  return Math.max(0, Math.min(planned, planned + delta));
 }
 
 function usageOf(s: GameState, ws: Webspace): WebUsage {
@@ -200,3 +225,5 @@ export function appState(ws: Webspace): AppState {
   const { folder, config, db } = ws.app;
   return ws.files[folder]?.dir && ws.files[config] && !ws.files[config].dir && ws.databases[db] ? "installed" : "broken";
 }
+
+mailboxHook.of = mailboxesOf;

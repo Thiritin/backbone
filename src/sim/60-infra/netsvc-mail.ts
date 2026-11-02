@@ -15,6 +15,9 @@ export const QUEUE_CAP = 20_000;
 export const QUEUE_LIST = 30;
 const idNo = (id: string) => Number(id.replace(/\D/g, ""));
 
+// The mailboxes a service sends mail for; webspace.ts fills it in, since importing it here would close an import cycle.
+export const mailboxHook = { of: (_s: GameState, _workloadId: string, planned: number): number => planned };
+
 export const mailsPerBox = (year: number): number => Math.round(25 + 1.75 * (year - 2005));
 
 export const mailStateOf = (s: GameState, addressId: string): MailState => s.netsvc.mail[addressId] ?? { deferred: 0, hit: 0, listings: [] };
@@ -36,7 +39,8 @@ export function mailQueueTick(s: GameState): void {
   for (const id of ids) {
     const svcs = mailServices(s, id), cur = mailStateOf(s, id);
     const blocked = s.ips.addresses.find((a) => a.id === id)?.listed || svcs.some((v) => !workloadsUp(s, v.id));
-    const perDay = svcs.reduce((n, v) => n + v.spec.mailboxes * perBox, 0);
+    const boxes = (id: string, n: number) => mailboxHook.of(s, s.workloads.find((w) => w.serviceId === id)?.id ?? "", n);
+    const perDay = svcs.reduce((n, v) => n + boxes(v.id, v.spec.mailboxes) * perBox, 0);
     const deferred = blocked ? Math.min(QUEUE_CAP, cur.deferred + perDay) : Math.floor(cur.deferred / 2);
     if (deferred !== cur.deferred) mail[id] = { ...cur, deferred };
   }

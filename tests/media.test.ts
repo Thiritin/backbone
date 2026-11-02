@@ -15,7 +15,7 @@ const err = (r: { ok: boolean; error?: string }) => (r.ok ? "ok" : r.error);
 
 describe("installation media", () => {
   it("starts with no images and an empty stick that is out", () => {
-    expect(newGame(1).media).toEqual({ images: [], files: [], stick: { os: null, in: null } });
+    expect(newGame(1).media).toEqual({ images: [], files: [], dumps: {}, stick: { os: null, in: null } });
   });
 
   it("downloads an image once", () => {
@@ -122,7 +122,7 @@ describe("installation media", () => {
     const data = JSON.parse(serialize(s));
     delete data.media;
     const back = deserialize(JSON.stringify(data));
-    expect(back.media).toEqual({ images: [], files: [], stick: { os: null, in: null } });
+    expect(back.media).toEqual({ images: [], files: [], dumps: {}, stick: { os: null, in: null } });
     expect(dev(back).os?.id).toBe("lunix");
   });
 
