@@ -7,7 +7,7 @@ import { boxOf } from "../src/sim/42-mail/model";
 import type { MailAccount } from "../src/sim/42-mail/types";
 import type { GameState } from "../src/sim/50-state";
 import { createTenant, setTenantLock, verifyTenant } from "../src/sim/90-actions/mail";
-import { createGroup, createMailAccount, deleteMailAccount, saveFilter, setAccountRoles, setFilterOn } from "../src/sim/90-actions/mailbox";
+import { createMailGroup, createMailAccount, deleteMailAccount, saveFilter, setAccountRoles, setFilterOn } from "../src/sim/90-actions/mailbox";
 import { idOf } from "./company-mail.helpers";
 import { readyGame } from "./fixtures";
 
@@ -36,7 +36,7 @@ describe("mail delivery", () => {
     const n = boxOf(s, box.id).length;
     deliver(s, req(`nobody@${d}`, `acct:${box.id}`));
     expect(boxOf(s, box.id).slice(n).map((m) => [m.from, m.topic])).toEqual([["daemon", "bounceUser"]]);
-    expect(deliver(s, req("someone@yahoy.com", `acct:${box.id}`))).toMatchObject({ result: "accepted", account: null });
+    expect(deliver(s, req("someone@hotmeal.com", `acct:${box.id}`))).toMatchObject({ result: "accepted", account: null });
     s.mail = { ...s.mail, catchAll: box.id };
     expect(deliver(s, req(`nobody@${d}`)).account).toBe(box.id);
   });
@@ -123,7 +123,7 @@ describe("mail delivery", () => {
     mailHooks.mxTarget = () => s.mail.tenants.find((x) => x.id === g)!;
     const m1 = idOf(createMailAccount(s, { tenant: g, local: "ann", title: "Ann", password: "secret1" }));
     const m2 = idOf(createMailAccount(s, { tenant: g, local: "bob", title: "Bob", password: "secret1" }));
-    const grp = idOf(createGroup(s, { tenant: t.id, local: "team", title: "Team", members: [m1, m2] }));
+    const grp = idOf(createMailGroup(s, { tenant: t.id, local: "team", title: "Team", members: [m1, m2] }));
     expect(deliver(s, req(`team@${d}`)).result).toBe("accepted");
     for (const id of [m1, m2]) {
       const label = s.mail.folders.find((f) => f.accountId === id && f.label && f.name === "Team")!;
