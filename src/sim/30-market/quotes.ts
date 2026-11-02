@@ -1,4 +1,5 @@
-// Quotes: A4 documents in Books with an order's price, sent onto its ticket (90-actions/orders.ts, attachQuote).
+// Quotes: documents with an order's price, sent onto its ticket (90-actions/orders.ts, attachQuote). Written in Books
+// before a shop and in the shop admin while one is active; Books shows the shop's read-only.
 import type { InvoiceLine } from "../45-billing/billing";
 import type { Cycle } from "../10-catalog/cycles";
 import { reviewing } from "../45-billing/fraud";
@@ -8,11 +9,12 @@ import { applyStep, AUTOMATION, quoteAccepted, stepsDone } from "./manual";
 import { orderOf } from "./orders";
 import { works } from "../80-business/bookkeeping";
 
+export type QuoteOrigin = "books" | "shop";
 export type QuoteStatus = "draft" | "sent" | "accepted" | "countered" | "declined" | "invoiced";
 // customerId stays null until the order's account exists; ticketId is the order ticket it answers.
 export interface Quote {
   id: string; number: string; customerId: string | null; ticketId: string | null; lines: InvoiceLine[]; monthly: number; setup: number;
-  status: QuoteStatus; sentAt: number | null;
+  status: QuoteStatus; sentAt: number | null; origin: QuoteOrigin;
   // When it was written, and the first invoice it was carried forward to.
   createdAt?: number; invoiceId?: string;
   // The prepaid term offered at the cycle discount; absent for month-to-month. monthly stays the list price.

@@ -14,7 +14,7 @@ const RESOLVED: Record<string, string> = {
   unsuspend: "Unsuspended the services with a payment extension", keep: "Kept the services suspended", forward: "Forwarded the abuse report",
   takedown: "Took the content down", reject: "Rejected the request", comply: "Complied with the request", object: "Objected to the request",
   refund: "Refunded the payment", accept: "Accepted the order", quote: "Sent the quote", account: "Created the customer account",
-  invoice: "Confirmed the order and sent the invoice", domain: "Registered the domain", provision: "Set up the service",
+  invoice: "Confirmed the order and sent the invoice", domain: "Registered the domain", provision: "Set up the service", access: "Sent the access data",
 };
 const num = (x: string | number) => Number(x).toLocaleString(LOCALE);
 const ticket = (p: Params) => `${KIND[p.kind] ?? "a"} ticket`;

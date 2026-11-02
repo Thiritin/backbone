@@ -7,7 +7,7 @@ import type { GameState } from "../src/sim/50-state";
 import { mxHostsAt } from "../src/sim/60-infra/company-zone";
 import { salesAddress } from "../src/sim/80-business/mail";
 import { bookMail, cancelMail, createTenant, setTenantPlan } from "../src/sim/90-actions/mail";
-import { createMailAccount, deleteMailAccount, setExternalAccess } from "../src/sim/90-actions/mailbox";
+import { createMailAccount, deleteMailAccount, setExternalAccess, setRoleMailbox } from "../src/sim/90-actions/mailbox";
 import { fire, hire } from "../src/sim/90-actions/staff";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { idOf, mailLedger, toMonthStart } from "./company-mail.helpers";
@@ -125,5 +125,23 @@ describe("mail accounts", () => {
     raw.mail.accounts = raw.mail.accounts.filter((a: { employee: string | null }) => !a.employee);
     const old = deserialize(JSON.stringify(raw));
     expect(old.mail.accounts.find((a) => a.employee === s.staff[0].id)?.domain).toBe(s.company.domain);
+  });
+
+  it("delete any mailbox but the primary and the provider admin, and move each role to a chosen mailbox", () => {
+    const s = readyGame(4), domain = s.company.domain, sales = s.mail.primary;
+    const gmix = s.mail.accounts.find((a) => a.domain === "gmix.com")!;
+    expect(deleteMailAccount(s, gmix.id)).toEqual({ ok: true });
+    expect(deleteMailAccount(s, sales)).toEqual({ ok: false, error: "error.mailRoleInUse" });
+    const own = idOf(createMailAccount(s, { tenant: live(s, "ionose").id, local: "martin", title: "Martin", password: "martin-pw" }));
+    expect(setRoleMailbox(s, "owner", own)).toEqual({ ok: true, id: own });
+    expect(setRoleMailbox(s, "sales", own).ok).toBe(true);
+    expect(s.mail.primary).toBe(own);
+    expect(salesAddress(s)).toBe(`martin@${domain}`);
+    expect(roleAddress(s, "support")).toBe(`sales@${domain}`);
+    expect(s.mail.accounts.filter((a) => a.roles.includes("sales")).map((a) => a.id)).toEqual([own]);
+    expect(setRoleMailbox(s, "support", "nobody").ok).toBe(false);
+    expect(deleteMailAccount(s, sales)).toEqual({ ok: false, error: "error.mailAdminDelete" });
+    const other = idOf(createMailAccount(s, { tenant: live(s, "ionose").id, local: "info", title: "Info", password: "info-pw1" }));
+    expect(deleteMailAccount(s, other)).toEqual({ ok: true });
   });
 });

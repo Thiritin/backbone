@@ -5,6 +5,7 @@ export default {
   "ubersmyth.nav.clients": () => "Gestor de clientes",
   "ubersmyth.nav.orders": () => "Cola de pedidos",
   "ubersmyth.nav.invoices": () => "Facturas",
+  "ubersmyth.nav.quotes": () => "Presupuestos",
   "ubersmyth.nav.products": () => "Planes de servicio",
   "ubersmyth.nav.options": () => "Opciones de plan",
   "ubersmyth.nav.servers": () => "Gestor de dispositivos",

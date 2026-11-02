@@ -295,7 +295,7 @@ A Smart Mailbox is a saved search over the messages the client can see (visible 
 
 ## 9. Preferences and the account lifecycle
 
-Preferences opens as a large sheet with an icon tab strip, in the order General, Accounts, Junk Mail, Viewing, Composing, Signatures, Rules, as the real window does (Cmd+,).
+Preferences opens as a large sheet with an icon tab strip, in the order General, Accounts, Junk Mail, Fonts & Colors, Viewing, Composing, Signatures, Rules, as the real window does (Cmd+,).
 
 - **General.** Check for new mail (the interval list), New mail sound, Dock count.
 - **Accounts.** A list on the left with plus, minus and enable checkboxes. Tabs: Account Information (Description, address, full name, password, incoming type, incoming and outgoing host, Enable this account), Mailbox Behaviors (store Sent on the server) and Advanced (for POP the "Remove copy from server after retrieving a message" list with right away, after a day, after a week, after a month and never; port and Use SSL).
@@ -309,7 +309,7 @@ What happens when things change under the account:
 | The player disables the account | It stays in the sidebar greyed, is not checked, and its messages leave the unified mailboxes |
 | The player removes an IMAP account | A confirm sheet; `removeClientAccount` runs and the server is untouched, so the mailbox is still in webmail |
 | The player removes a POP account | A confirm sheet with "Keep a copy of its mail in On My Pear", ticked by default; unticked, the downloaded mail goes with the account |
-| The provider is switched (`migrateMail`) | Mailbox ids stay, so the account keeps working in builds with automatic setup. In Pear Mail 2 the typed host name no longer matches `mailServersOf`, the warning triangle appears with `error.mailServer`, and editing the host to the new provider's name fixes it |
+| The provider is switched (`migrateMail`) | Mailbox ids stay, so the account keeps working in builds with automatic setup. In Pear Mail 2 the typed host name no longer matches `mailServersOf`, the warning triangle appears with `error.mailNoBox` (the host answers for another provider), and editing the host to the new provider's name fixes it |
 | The password is changed on the provider website | The next check fails with `error.mailAuth`, the sidebar shows the warning triangle and the account stops checking. Opening the account shows the password prompt; the right password clears the triangle, resumes checks and offers to update KeePassive |
 | The mailbox is deleted on the provider website | `error.mailNoBox` at the next check, the warning triangle, and the Activity line. Downloaded POP mail stays |
 | The provider is cancelled | The mailbox stays readable for 30 days with `error.mailClosed`; the sidebar shows a closed marker, and dragging mail to On My Pear keeps it |
@@ -421,11 +421,13 @@ Each milestone is one pull request, green on its own, with a seeded Vitest suite
    - UI: brown tint in training, Junk Mail pane, junk banner.
    - i18n: junk labels.
    - Tests: `tests/pear-mail-junk.test.ts` (same message same verdict, the share rises with `trained`, unmarked mail is never moved, automatic moves to Junk, moving out trains).
+   - As built: `pearMail.junk` holds `on`, `mode`, the client's own `trained` count and `clean`, the newest 500 ids marked Not Junk, which the filter stops judging. The verdict is `clientJunk` over spam that reached a mailbox, and `shownJunk` adds everything in a Junk mailbox; both draw the brown row and the banner with Not Junk. Junk and Not Junk go through `markPearJunk`, which trains the client and, for IMAP, the mailbox through `reportJunk`. The check runs the junk step through a `junkStep` hook before the rules, and the rules see only what stayed in the Inbox. Preferences became a sheet with an icon tab strip (`Preferences.tsx`) holding Junk Mail and Rules; Reset asks first and clears `trained` and `clean`. Dragging mail out of Junk does not train; only the buttons and menu items do.
 8. **Preferences, signatures and lifecycle.**
    - Sim: `setPearPref`, `saveSignature`, `removeSignature`, the lifecycle rows of section 9.
    - UI: the Preferences sheet with all tabs, the Advanced tab with port and Use SSL (last, optional), What's new.
    - i18n: preference and lifecycle sentences.
    - Tests: `tests/pear-mail-lifecycle.test.ts` (a provider switch keeps an automatic account working and breaks a manual one until the host is edited, a deleted mailbox keeps POP mail, a cancelled provider leaves the account readable and a dragged message survives, removal with and without keep-copy).
+   - As built: `pearMail` gains `prefs` (new mail sound, Dock count, list and message font size, fixed-width font, quote colour, bold unread, related highlight, Cc or Bcc myself, default From, quoting) and `signatures`; `fillPearMail` merges saved `prefs` over the defaults. `ClientAccount.signature` is the id of the account's default signature, and `removeSignature` clears it. Preferences has every tab in the order of section 9 plus Fonts & Colors, and Command+, opens General. General sets every account's interval through `editClientAccount`, which now checks again only when the password, protocol or a host changes. Accounts has the enable checkboxes, plus (the assistant), minus (a confirm sheet, with keep-copy for POP) and the Account Information, Mailbox Behaviors and Advanced tabs; an automatic account shows the host automatic setup found. Compose applies the default From to new messages, adds the sender as Cc or Bcc, drops the quote when quoting is off and has a Signature popup that inserts the signature before the quoted text and swaps it with the popup or the From account. What's new (`seePearBuild`) lists the features of every build since `seenBuild`, which `dismissPearWelcome` sets. A closed mailbox shows a closed marker in place of the triangle. Port and Use SSL are left out, and "Store sent messages on the server" is stored but sending still files Sent as before.
 9. **Leopard features (Pear Mail 3).**
    - Sim: `saveNote`, `removeNote`, `setTodoDone`, a To Do due event, detector parsing, the "Automatically" interval (automatic setup in the assistant landed with M4).
    - UI: Notes and To Dos under Reminders, detector popups, Quick Peek, Stationery picker.

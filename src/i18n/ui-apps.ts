@@ -225,20 +225,6 @@ export default {
 
   "apps.note.title": () => "Title",
 
-  "apps.mail.installing": () => "Installing",
-  "apps.mail.impaired": () => "Mail delivery impaired",
-  "apps.mail.delivering": () => "Delivering",
-  "apps.mail.unrouted": () => "Not delivered",
-  "apps.mail.freeNote": () => "Free. Looks unprofessional to business customers.",
-  "apps.mail.availableFrom": (p) => `Available from ${p.year}`,
-  "apps.mail.needDomain": () => "You need a domain",
-  "apps.mail.perSeat": (p) => `${p.seat} per seat, ${p.total} per month`,
-  "apps.mail.selfHost": () => "Self-host",
-  "apps.mail.needServer": () => "You need a mail server",
-  "apps.mail.settings": () => "Email settings",
-  "apps.mail.address": () => "Address",
-  "apps.mail.status": () => "Status",
-  "apps.mail.provider": () => "Email provider",
 
   "apps.kb.article": () => "Article",
   "apps.kb.reads": () => "Reads",
@@ -269,7 +255,7 @@ export default {
   "apps.guide.step.domain": (p) => `Buy a domain for your company at ${p.partner} in the Browser.`,
   "apps.guide.step.website": () => "Build your first website in Marketing under Channels.",
   "apps.guide.step.launch": () => "Choose where your website runs, launch it in Marketing and list your first product under Products.",
-  "apps.guide.step.email": (p) => `Choose an email provider in ${p.app}.`,
+  "apps.guide.step.email": () => "Sign up at an email provider's website for mailboxes on your company domain.",
   "apps.guide.step.firstCustomer": (p) => `Answer your first customer in ${p.app}.`,
 
   "apps.name.Applications": () => "Applications",

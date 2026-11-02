@@ -2,6 +2,7 @@ import type { Dict } from "../lang";
 
 export default {
   "books.tab.quotes": () => "Devis",
+  "books.tab.unposted": () => "Factures non comptabilisées",
   "orderSteps.orderEmail": () => "E-mail de commande",
   "orderSteps.from": (p) => `De : ${p.name}`,
   "orderSteps.field.contact": () => "Contact",
@@ -14,6 +15,8 @@ export default {
   "orderSteps.createQuote": () => "Créer un devis",
   "orderSteps.noQuotes": () => "Aucun devis pour l'instant.",
   "orderSteps.quote": (p) => `Devis ${p.number}`,
+  "orderSteps.unposted": (p) => `Facture ${p.number} (non comptabilisée)`,
+  "orderSteps.post": () => "Comptabiliser",
   "orderSteps.status.draft": () => "Brouillon",
   "orderSteps.status.sent": () => "Envoyé",
   "orderSteps.status.accepted": () => "Accepté",

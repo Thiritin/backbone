@@ -10,6 +10,8 @@ import { deskUrl } from "../browser/sites/desk/DeskSite";
 import type { Row } from "../../../sim/43-pear-mail/view";
 import type { GameState } from "../../../sim/50-state";
 import { saveAttachment } from "../../../sim/90-actions/mailmsg";
+import { markPearJunk } from "../../../sim/90-actions/pear-junk";
+import { shownJunk } from "../../../sim/43-pear-mail/junk";
 import { useStore } from "../../store";
 import { TicketSlot } from "../mail-kit/TicketSlot";
 import { mailDate } from "./List";
@@ -54,11 +56,17 @@ function Transfer({ locked, onAnswer }: { locked: boolean; onAnswer: (code: stri
 }
 
 export function Preview({ game, row }: { game: GameState; row: Row | null }) {
-  const openApp = useStore((s) => s.openApp);
+  const openApp = useStore((s) => s.openApp), act = useStore((s) => s.act);
   if (!row) return <div className="pm-preview empty">{t("pearMail.noMessage")}</div>;
   const v = view(game, row.m), tk = ticketOf(game, row.m), order = tk?.kind === "order" ? orderOf(game, tk) : undefined;
   return (
     <article className="pm-preview">
+      {shownJunk(game, row.m) && (
+        <div className="pm-banner pm-junk-banner">
+          <span>{t("pearMail.junkBanner")}</span>
+          <button className="btn sm" onClick={() => act(markPearJunk, row.c.id, [row.m.id], false)}>{t("pearMail.notJunk")}</button>
+        </div>
+      )}
       <header className="pm-head">
         <dl>
           <dt>{t("pearMail.field.from")}</dt><dd><strong>{v.fromName}</strong>{v.fromAddress && v.fromAddress !== v.fromName && <span className="pm-addr"> &lt;{v.fromAddress}&gt;</span>}</dd>
@@ -68,7 +76,7 @@ export function Preview({ game, row }: { game: GameState; row: Row | null }) {
           {v.cc.length > 0 && <><dt>{t("pearMail.field.cc")}</dt><dd>{v.cc.join(", ")}</dd></>}
         </dl>
       </header>
-      <div className="pm-body">{v.text}</div>
+      <div className="pm-body">{game.pearMail.prefs.quoteColor ? v.text.split("\n").map((l, i) => <span key={i} className={l.startsWith(">") ? "pm-quoted" : undefined}>{l}{"\n"}</span>) : v.text}</div>
       {LOGIN_MAILS.includes(row.m.topic) && row.m.p?.url && <p><button className="btn primary" onClick={() => openApp("Browser", { kind: "url", id: String(row.m.p!.url) })}>{t("apps.open")}</button></p>}
       {isLicence(row.m.topic) && <p><button className="btn primary" onClick={() => openApp("Books", { kind: "register", id: "" })}>{t("vendor-sites.register")}</button></p>}
       {v.att.length > 0 && <ul className="pm-atts">{v.att.map((a, i) => <Att key={i} game={game} row={row} att={a} i={i} />)}</ul>}

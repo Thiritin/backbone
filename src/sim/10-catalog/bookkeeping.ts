@@ -63,7 +63,7 @@ export const BOOKS_VENDORS: BooksVendor[] = [
     editions: [ed("s", "S", 7, SMALL, { seat: 6 }), ed("m", "M", 12, MEDIUM, { seat: 6 }), ed("l", "L", 19, LARGE, { seat: 6 })],
     skin: { bar: "#43a047", ink: "#ffffff", accent: "#2e7d32" } },
   { id: "gnucache", name: "GnuCache", program: "GnuCache", from: 2005, deployment: "desktop", setupMb: 25, layout: "gtk",
-    editions: [ed("free", "GnuCache", 0, ["hbci", "reports"])],
+    editions: [ed("free", "GnuCache", 0, ["quotes", "hbci", "reports"])],
     skin: { bar: "#dcdad5", ink: "#2e3436", accent: "#4a90d9" } },
 ];
 

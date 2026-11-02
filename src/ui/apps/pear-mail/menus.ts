@@ -10,9 +10,10 @@ import { applyClientRules, removeSmartMailbox } from "../../../sim/90-actions/pe
 import type { AppMenu, MenuEntry, MenuItem } from "../../desktop/menu";
 import type { useStore } from "../../store";
 import { customBox, deleteRows, SMART, junkRows, markRows, targets, transferRows, type Box } from "./commands";
+import type { PrefTab } from "./Preferences";
 
 type Act = ReturnType<typeof useStore.getState>["act"];
-export type Sheet = { k: "rules" } | { k: "rule"; rule?: ClientRule; from?: Row } | { k: "smart"; id?: string } | { k: "new" } | { k: "rename"; b: Box } | { k: "delete"; b: Box } | { k: "info"; c: string } | { k: "erase"; folder: "trash" | "junk"; c?: string };
+export type Sheet = { k: "prefs"; tab: PrefTab } | { k: "rule"; rule?: ClientRule; from?: Row } | { k: "smart"; id?: string } | { k: "new" } | { k: "rename"; b: Box } | { k: "delete"; b: Box } | { k: "info"; c: string } | { k: "erase"; folder: "trash" | "junk"; c?: string };
 export interface Sort { key: SortKey; asc: boolean }
 
 // What the front Pear Mail window offers the menu bar and the shortcuts, refreshed on every render of the window.
@@ -82,7 +83,7 @@ function appCmds(x: PearCtx) {
     info: { label: t("pearMail.info"), run: () => info && x.sheet({ k: "info", c: info.id }), disabled: !info },
     search: { label: t("pearMail.search"), key: "cmd+alt+f", run: x.search },
     activity: { label: t("pearMail.activity"), key: "cmd+alt+0", run: () => x.setActivity(!x.activity), checked: x.activity },
-    prefs: { label: t("pearMail.prefs"), key: "cmd+,", run: () => x.sheet({ k: "rules" }) },
+    prefs: { label: t("pearMail.prefs"), key: "cmd+,", run: () => x.sheet({ k: "prefs", tab: "general" }) },
     newSmart: { label: t("pearMail.smart.new"), run: () => x.sheet({ k: "smart" }) },
     editSmart: { label: t("pearMail.smart.edit"), run: () => x.sheet({ k: "smart", id: box.f }), disabled: box.c !== SMART },
   } satisfies Record<string, Cmd>;

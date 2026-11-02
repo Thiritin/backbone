@@ -27,15 +27,15 @@ export const Wordmark = () => <span className="bl-word"><Mark />{shopById("bless
 
 type Group = "home" | "clients" | "billing" | "packages" | "settings";
 const GROUPS: [Group, ScreenName[]][] = [
-  ["home", ["home"]], ["clients", ["clients"]], ["billing", ["orders", "invoices"]], ["packages", ["products", "servers"]], ["settings", ["settings", "licence", "updates"]],
+  ["home", ["home"]], ["clients", ["clients"]], ["billing", ["orders", "invoices", "quotes"]], ["packages", ["products", "servers"]], ["settings", ["settings", "licence", "updates"]],
 ];
 const labels = (): Partial<Record<ScreenName, string>> => ({
-  ...SCREEN_LABEL, home: t("blessta.dashboard"), clients: t("blessta.browseClients"), products: t("shop-store.lblPkgGroups"),
+  ...SCREEN_LABEL, home: t("blessta.dashboard"), clients: t("blessta.browseClients"), products: t("shop-store.lblPkgGroups"), quotes: t("shop-admin.quoteRequests"),
 });
 
 const ICON: Partial<Record<ScreenName, string>> = {
   home: "M3 9.5 10 4l7 5.5V17H3z M8 17v-5h4v5", clients: "M7 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M2 17c0-3 2.2-5 5-5s5 2 5 5 M13 4.5a2.5 2.5 0 0 1 0 5 M14 12c2 .4 4 2 4 5",
-  orders: "M2 3h2.5l2 10h9.5l2-7H5.5 M8 17h.01 M15 17h.01", invoices: "M5 2h10v16l-2.5-1.5L10 18l-2.5-1.5L5 18z M8 7h4 M8 11h4",
+  orders: "M2 3h2.5l2 10h9.5l2-7H5.5 M8 17h.01 M15 17h.01", invoices: "M5 2h10v16l-2.5-1.5L10 18l-2.5-1.5L5 18z M8 7h4 M8 11h4", quotes: "M5 2h7l3 3v13H5z M8 9h4 M8 13h4",
   products: "M10 2 3 6v8l7 4 7-4V6z M3 6l7 4 7-4 M10 10v8", settings: "M4 5h12 M4 10h12 M4 15h12 M7 3v4 M13 8v4 M9 13v4",
   servers: "M3 3h14v5H3z M3 12h14v5H3z M6 5.5h.01 M6 14.5h.01", licence: "M7.5 12a4 4 0 1 1 3-1.5L17 17l-1.5 1-1-1-1 1-1-1 M6.5 7.5h.01",
   updates: "M16 10a6 6 0 1 1-2-4.5 M16 3v4h-4",

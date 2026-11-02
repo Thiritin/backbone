@@ -9,7 +9,7 @@ import type { Skin, SkinProps } from "../skins";
 import { VersionFooter } from "../shared/Licence";
 import "../portal.css";
 
-const NAV: ScreenName[] = ["home", "products", "servers", "settings", "orders", "clients", "invoices", "licence", "updates"];
+const NAV: ScreenName[] = ["home", "products", "servers", "settings", "orders", "clients", "invoices", "quotes", "licence", "updates"];
 
 function Admin({ game, variant, route, open, browse }: SkinProps) {
   const screen = screenOf(route.query);

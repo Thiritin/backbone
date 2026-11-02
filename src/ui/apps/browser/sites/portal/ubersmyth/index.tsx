@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Inbox, KeyRound, LayoutDashboard, Package, Receipt, RefreshCw, Server, SlidersHorizontal, Users, type LucideIcon } from "lucide-react";
+import { FileText, Inbox, KeyRound, LayoutDashboard, Package, Receipt, RefreshCw, Server, SlidersHorizontal, Users, type LucideIcon } from "lucide-react";
 import { t } from "../../../../../../i18n/en";
 import { AdminScreen } from "../shared/AdminScreen";
 import { ClientArea } from "../shared/ClientArea";
@@ -16,11 +16,11 @@ type Era = "2" | "3" | "4" | "5";
 const eraOf = (major: string): Era => (["3", "4", "5"].includes(major) ? major : "2") as Era;
 
 const GROUPS: [string, ScreenName[]][] = [
-  ["overview", ["home"]], ["billing", ["clients", "orders", "invoices"]], ["catalogue", ["products", "settings"]],
-  ["infra", ["servers"]], ["system", ["licence", "updates"]],
+  ["overview", ["home"]], ["billing", ["clients", "orders", "invoices", "quotes"]], ["catalogue", ["products"]],
+  ["infra", ["servers"]], ["system", ["settings", "licence", "updates"]],
 ];
 const ICON: Partial<Record<ScreenName, LucideIcon>> = {
-  home: LayoutDashboard, clients: Users, orders: Inbox, invoices: Receipt, products: Package,
+  home: LayoutDashboard, clients: Users, orders: Inbox, invoices: Receipt, quotes: FileText, products: Package,
   settings: SlidersHorizontal, servers: Server, licence: KeyRound, updates: RefreshCw,
 };
 const label = (n: ScreenName) => t(`ubersmyth.nav.${n}`);

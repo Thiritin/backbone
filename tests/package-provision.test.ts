@@ -6,9 +6,9 @@ import type { GameState } from "../src/sim/50-state";
 import { workloadUse } from "../src/sim/60-infra/usage";
 import { tick } from "../src/sim/88-tick/tick";
 import { suggestedUsername, type PackageDef } from "../src/sim/80-business/packages";
-import { confirmOrder, createAccount, provisionOrder, quoteOrder, registerOrderDomain } from "../src/sim/90-actions/orders";
+import { confirmOrder, createAccount, provisionOrder, registerOrderDomain } from "../src/sim/90-actions/orders";
 import { addPackage, changePackage } from "../src/sim/90-actions/packages";
-import { mailed, owner, readyGame } from "./fixtures";
+import { mailed, owner, readyGame, quoteOrder } from "./fixtures";
 
 const run = (s: GameState, hours: number) => { for (let i = 0; i < hours; i++) tick(s); };
 const must = (r: { ok: boolean; error?: string }) => { if (!r.ok) throw new Error(r.error); run(s0, 1); };

@@ -1,13 +1,14 @@
 // GDD, Custom orders: an order email is worked step by step. Quote a price and wait for the customer to accept, create the
 // customer account before or after, confirm the order with its invoice, register or transfer the domain and set up the
-// service; the customer hears once more when everything is done. Numbers in economy/README.md, Custom orders.
+// service; the customer hears once more when everything is done, and last gets the login in its own email. Numbers in economy/README.md, Custom orders.
 import { carryForward } from "./quotes";
 import { hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
 import type { Product, Service } from "../30-customers/customers";
 import { domainFee, domainOf, register, TRANSFER_FEE } from "../30-customers/registry";
 import { CERT_WANT, wantCertificate } from "../30-customers/certificates";
-import { cancelCustomer, isFinal, replyDue, type Ticket } from "../40-support/tickets";
+import { bump, cancelCustomer, createTicket, isFinal, replyDue, type Ticket } from "../40-support/tickets";
+import { accessParams, sendAccess } from "../40-support/replies";
 import { deliverMail } from "../42-mail/sources";
 import { partnerOf, registrarUrl } from "../80-business/browser";
 import { DUE_DAYS, fromShop, issue, rollPayStep, type Invoice, type InvoiceLine } from "../45-billing/billing";
@@ -33,11 +34,11 @@ import type { Sla, Spec } from "../10-catalog/products";
 import { AUTOMATION_SKILL } from "../10-catalog/research";
 import { failsReview, hiddenTraits, REVIEW_MINUTES, reviewing } from "../45-billing/fraud";
 
-export type OrderStep = "quote" | "account" | "invoice" | "domain" | "provision";
-export const ORDER_STEPS: OrderStep[] = ["quote", "account", "invoice", "domain", "provision"];
+export type OrderStep = "quote" | "account" | "invoice" | "domain" | "provision" | "access";
+export const ORDER_STEPS: OrderStep[] = ["quote", "account", "invoice", "domain", "provision", "access"];
 export const isStep = (x: string): x is OrderStep => (ORDER_STEPS as string[]).includes(x);
 const STEP_MINUTES: Record<OrderStep, number> = {
-  quote: ACTION_MINUTES.orderQuote, account: ACTION_MINUTES.orderAccount, invoice: ACTION_MINUTES.orderInvoice, domain: ACTION_MINUTES.orderDomain, provision: ACTION_MINUTES.orderProvision,
+  quote: ACTION_MINUTES.orderQuote, account: ACTION_MINUTES.orderAccount, invoice: ACTION_MINUTES.orderInvoice, domain: ACTION_MINUTES.orderDomain, provision: ACTION_MINUTES.orderProvision, access: ACTION_MINUTES.orderAccess,
 };
 // The package an order provisions from on the host it goes to, or undefined for a custom spec, an automatic route or a missing package.
 export function packageFor(s: GameState, r: SalesRequest, route?: string): PackageDef | undefined {
@@ -78,7 +79,9 @@ export const hostFor = (s: GameState, r: SalesRequest): string | null => preferr
 
 // Which steps the order has behind it.
 export function stepsDone(s: GameState, r: SalesRequest): Record<OrderStep, boolean> {
-  return { quote: quoteAccepted(r), account: !!r.customerId, invoice: !!r.invoiceId, domain: !!r.customerId && domainDone(s, r), provision: !!r.serviceId };
+  // A shop order's access data is the shop's; a service from before the step counts as sent.
+  const access = !!r.shop || (!!r.serviceId && s.services.find((v) => v.id === r.serviceId)?.accessSent !== false);
+  return { quote: quoteAccepted(r), account: !!r.customerId, invoice: !!r.invoiceId, domain: !!r.customerId && domainDone(s, r), provision: !!r.serviceId, access };
 }
 
 // Why a step of a custom order cannot run now, or null. The account runs any time, the rest once the quote is accepted and
@@ -102,6 +105,7 @@ export function stepError(s: GameState, t: Ticket, step: OrderStep, route?: stri
   }
   if (!done.domain) return "error.needsDomain";
   if (!done.invoice) return "error.needsInvoice";
+  if (step === "access") return done.provision ? null : "error.needsSetup";
   const to = route ?? r.route ?? hostFor(s, r);
   if (to === "auto") return !canAutomate(s) ? "error.needsAutomation" : targetFor(s, r) ? null : "error.noCapacity";
   return to ? routeError(s, r.product, r.city, sizeOf(r.spec), to) : "error.noCapacity";
@@ -204,7 +208,7 @@ export function applyStep(s: GameState, t: Ticket, step: OrderStep, by?: string)
     // The partner's confirmation of the first customer domain opens its reseller login.
     if (!s.domains.some((d) => d.customerId !== null)) deliverMail(s, partnerOf(s).name, "registrarLogin", { name: partnerOf(s).name, domain: r.domain!, url: `${registrarUrl(s)}login` }, { source: "registrar" });
     register(s, r.domain!, customerId, !!r.owned);
-  } else {
+  } else if (step === "provision") {
     const to = r.route ?? hostFor(s, r) ?? "";
     const target = to === "auto" ? null : routeTarget(s, to, r.product), auto = to === "auto" ? targetFor(s, r) : null;
     const pkg = packageFor(s, r), booking = pkg && !belowFloor(pkg, r.spec) ? bookingFor(pkg, r.spec) : null;
@@ -214,7 +218,7 @@ export function applyStep(s: GameState, t: Ticket, step: OrderStep, by?: string)
       clusterId: target?.clusterId ?? auto?.clusterId ?? null, deviceId: target?.deviceId ?? null, zone: auto?.zone ?? null,
     });
     if (!done.ok) return { app: "Support", key: "event.stepFailed", params: { name: requestName(r), error: done.error ?? "error.noCapacity" } };
-    s.services = s.services.map((v) => (v.id === done.id ? startTerm(s, v, r.cycle) : v));
+    s.services = s.services.map((v) => (v.id === done.id ? { ...startTerm(s, v, r.cycle), ...(!r.shop && { accessSent: false }) } : v));
     if (r.product === "webHosting") wantCertificate(s, s.services.find((v) => v.id === done.id)!, CERT_WANT[r.profile]);
     editRequest(s, r.id, () => ({ serviceId: done.id!, status: "quoted", replyAt: null }));
     // One email for the account, the confirmation with its invoice, the domain and the setup; the customer pays it by bank transfer.
@@ -222,16 +226,20 @@ export function applyStep(s: GameState, t: Ticket, step: OrderStep, by?: string)
     if (inv.status === "draft") issue(s, inv, ORDER_PAY_DAYS - 1);
     mailRequest(s, r.id, "order.done", by, { owned: r.owned ? 1 : 0, invoice: inv.number, total: cents(inv.lines.reduce((n, l) => n + l.amount, 0)) });
     setTicket(s, t.id, { serviceId: done.id!, status: inv.status === "paid" ? t.status : "waiting", updatedAt: s.hour });
+  } else {
+    const v = s.services.find((x) => x.id === r.serviceId);
+    sendAccess(s, customerId);
+    mailRequest(s, r.id, "order.access", by, accessParams(s, v));
   }
   settle(s, orderOf(s, t)!);
   return null;
 }
 
-// A paid order with its service is done; a paid order without one goes back to the inbox, due within the customer's reply time.
+// A paid order with its service and access data is done; a paid order short of them goes back to the inbox, due within the customer's reply time.
 function settle(s: GameState, r: SalesRequest): SimEvent | null {
   const t = s.tickets.find((x) => x.id === r.ticketId);
   if (!t || isFinal(t) || invoiceOf(s, r)?.status !== "paid") return null;
-  if (r.serviceId) {
+  if (r.serviceId && stepsDone(s, r).access) {
     editRequest(s, r.id, () => ({ status: "won" }));
     setTicket(s, t.id, { status: "resolved", outcome: "accepted", updatedAt: s.hour });
     return null;
@@ -260,9 +268,24 @@ export function acceptQuote(s: GameState, r: SalesRequest, events: SimEvent[]): 
   }
 }
 
+// A customer without access data a day after the setup writes in, already less happy.
+export const ACCESS_FOLLOW_HOURS = 24, ACCESS_LATE = 10, ACCESS_TOPIC = "login";
+function accessFollowUps(s: GameState): void {
+  for (const v of s.services) {
+    if (v.accessSent !== false || v.endedAt !== null || s.hour - v.startedAt < ACCESS_FOLLOW_HOURS || s.tickets.some((t) => t.serviceId === v.id && t.topic === ACCESS_TOPIC)) continue;
+    const c = s.customers.find((x) => x.id === v.customerId);
+    if (!c || c.churnedAt !== null) continue;
+    createTicket(s, c, "howTo", v.id, ACCESS_TOPIC);
+    // The tick shares customers with the last state, so the one it changes is copied first.
+    s.customers = s.customers.map((x) => (x === c ? { ...x } : x));
+    bump(s.customers.find((x) => x.id === c.id)!, -ACCESS_LATE);
+  }
+}
+
 // Hourly: paid orders move on; an order that lapsed, was declined or never paid closes its account and its open invoice.
 export function ordersTick(s: GameState): SimEvent[] {
   const events: SimEvent[] = [];
+  accessFollowUps(s);
   for (const { id } of s.sales.requests) {
     let r = s.sales.requests.find((x) => x.id === id)!;
     if (r.kind !== "order") continue;

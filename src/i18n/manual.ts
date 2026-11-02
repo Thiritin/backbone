@@ -78,6 +78,7 @@ export const MANUAL_EN: Record<string, (p: Params) => string> = {
   "error.quoteInvoiced": () => "This quote was carried forward already.",
   "error.needsInvoice": () => "Confirm the order and send the invoice first.",
   "error.needsDomain": () => "Register the domain first.",
+  "error.needsSetup": () => "Set up the service first.",
   "error.stepDone": () => "This step is done.",
   "error.domainTaken": () => "This domain belongs to another customer.",
   "error.unknownDomain": () => "This domain is not registered for an active customer.",

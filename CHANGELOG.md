@@ -6,6 +6,18 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - Server groups in the shop are now a name, a list of servers with an Active switch and an order you can rearrange, and WHMCache, HostBull and Blessta let each group spread orders evenly or fill one server first.
 - The shop's configurable options page is gone: cycle discounts moved to the shop settings, every line is priced through its products, and a visitor for a line without products asks for a quote.
+- Far less spam reaches your inbox: a quiet mailbox sees about two junk mails a week, and spam never outnumbers your real mail.
+- The email settings sheet and the Change provider menu item are gone: you choose, switch and cancel email providers on their websites in the Browser, and Getting started opens the Email providers category.
+- Pear Mail Preferences now have General, Accounts, Fonts & Colors, Viewing, Composing and Signatures tabs, so you can edit or remove accounts, pick fonts and new mail behaviour, and add signatures to your messages, and a What's new sheet lists the features each new Pear Mail version brings.
+- With an active shop you now write quotes in the shop admin under Billing, and Books lists them read-only.
+- Switching email provider now happens on the provider sites: Ionose has a Mail migration page, Gmial imports mail and contacts, the Data migration at Goggle and the Migration page at Lookout 365 run for a few hours, and every old provider lists the mail and addresses still waiting to move before you cancel.
+- Installing your own mail server while a provider receives your mail adds the server beside it, so your mail moves once you point the MX record at the server.
+- Hand-worked orders end with a Send access data step that mails the customer their user name, password and address, and a customer still waiting for them a day after the setup writes in and is less happy.
+- How-to tickets have a Send the access data reply that mails a customer their login again.
+- GnuCache now writes quotes too, as unposted invoices that you post to the first invoice, and every order ticket takes its quote from Books.
+- Mailboxes can be deleted again unless they are the main address, a provider's administrator account or still in use, and the main address can be moved first.
+- The Email card in Marketing has dropdowns for the main address and the sales, support and abuse mailboxes, and your website shows the mailboxes you choose there.
+- Pear Mail has its own junk mail filter that marks junk brown with a Not Junk banner, learns from every message you mark, and in Automatic mode moves junk to the Junk mailbox; its Preferences now open with Junk Mail and Rules tabs.
 - Shop products now price their longer billing cycles from the monthly price and the cycle discounts you set once for the whole shop, which start at 0%, and "Manage prices manually" lets you enter each price yourself.
 - Books no longer has a Products tab: before your first shop every email request is priced in its own quote, and fixed products live only in the shop.
 - Lookout 365 has its own website from 2011, where you sign up for Business Basic or Business Standard, and an admin center for users, free shared mailboxes, domain verification, mail flow rules, mailbox migration, billing and a password reset by post.

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type DragEvent, type MouseEvent } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type DragEvent, type MouseEvent } from "react";
 import { Forward, Mail, MailX, Reply, ReplyAll, Search, SquarePen, Trash2 } from "lucide-react";
 import { t } from "../../../i18n/en";
 import { mailBuild } from "../../../sim/10-catalog/pear-mail";
@@ -16,7 +16,8 @@ import { uiSound, useFocus, useStore, useWin } from "../../store";
 import { matches, useSelection, type SearchScope } from "../mail-kit/mail-kit";
 import { AccountAlert, Assistant } from "./Assistant";
 import { compose, deleteRows, junkRows, SMART, targets, transferRows, type Box } from "./commands";
-import { RuleSheet, RulesPane, SmartSheet } from "./Rules";
+import { RuleSheet, SmartSheet } from "./Rules";
+import { Preferences, WhatsNew } from "./Preferences";
 import { smartRows } from "../../../sim/43-pear-mail/smart";
 import { MessageList } from "./List";
 import { MailboxSheet } from "./Mailboxes";
@@ -121,10 +122,11 @@ export function PearMailApp() {
   }, [shown?.m.id]);
   // A rule's Play Sound.
   const chimes = useRef(pm.chimes);
-  useEffect(() => { if (pm.chimes > chimes.current) uiSound("post"); chimes.current = pm.chimes; }, [pm.chimes]);
+  useEffect(() => { if (pm.chimes > chimes.current && pm.prefs.sound) uiSound("post"); chimes.current = pm.chimes; }, [pm.chimes]);
 
   return (
-    <div className="pm" data-build={build.version}>
+    <div className={`pm${pm.prefs.fixedWidth ? " mono" : ""}${pm.prefs.boldUnread ? " bold-unread" : ""}`} data-build={build.version}
+      style={{ "--pm-list": `${pm.prefs.listSize}px`, "--pm-msg": `${pm.prefs.msgSize}px` } as CSSProperties}>
       <div className="pm-toolbar">
         {tool("pearMail.getMail", Mail, () => act(getMail), !pm.accounts.length)}
         {tool("pearMail.delete", Trash2, () => deleteRows(act, picked), !picked.length)}
@@ -171,10 +173,11 @@ export function PearMailApp() {
         </div>
       )}
       {adding && <Assistant onClose={() => setAdding(false)} />}
-      {sheet?.k === "rules" && <RulesPane onEdit={(rule) => setSheet({ k: "rule", rule })} onClose={() => setSheet(null)} />}
-      {sheet?.k === "rule" && <RuleSheet rule={sheet.rule} from={sheet.from} onClose={() => setSheet(sheet.from ? null : { k: "rules" })} />}
+      {!adding && !sheet && <WhatsNew />}
+      {sheet?.k === "prefs" && <Preferences tab={sheet.tab} onTab={(tab) => setSheet({ k: "prefs", tab })} onEditRule={(rule) => setSheet({ k: "rule", rule })} onAdd={() => { setSheet(null); setAdding(true); }} onClose={() => setSheet(null)} />}
+      {sheet?.k === "rule" && <RuleSheet rule={sheet.rule} from={sheet.from} onClose={() => setSheet(sheet.from ? null : { k: "prefs", tab: "rules" })} />}
       {sheet?.k === "smart" && <SmartSheet smart={pm.smart.find((x) => x.id === sheet.id)} onClose={() => setSheet(null)} />}
-      {sheet && sheet.k !== "rules" && sheet.k !== "rule" && sheet.k !== "smart" && !adding && <MailboxSheet sheet={sheet} box={box} onClose={() => setSheet(null)} onGone={(b) => { if (b.c === box.c && b.f === box.f) setBox({ c: null, f: "inbox" }); }} />}
+      {sheet && sheet.k !== "prefs" && sheet.k !== "rule" && sheet.k !== "smart" && !adding && <MailboxSheet sheet={sheet} box={box} onClose={() => setSheet(null)} onGone={(b) => { if (b.c === box.c && b.f === box.f) setBox({ c: null, f: "inbox" }); }} />}
       {prompt && !adding && <AccountAlert key={prompt.id} c={prompt} onClose={() => { setAlert(null); setAsked([...asked, prompt.id]); }} />}
     </div>
   );

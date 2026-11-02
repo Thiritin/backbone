@@ -225,20 +225,6 @@ export default {
 
   "apps.note.title": () => "Titel",
 
-  "apps.mail.installing": () => "Wird installiert",
-  "apps.mail.impaired": () => "E-Mail-Zustellung gestört",
-  "apps.mail.delivering": () => "Wird zugestellt",
-  "apps.mail.unrouted": () => "Wird nicht zugestellt",
-  "apps.mail.freeNote": () => "Kostenlos. Wirkt auf Geschäftskunden unprofessionell.",
-  "apps.mail.availableFrom": (p) => `Verfügbar ab ${p.year}`,
-  "apps.mail.needDomain": () => "Du brauchst eine Domain",
-  "apps.mail.perSeat": (p) => `${p.seat} pro Postfach, ${p.total} pro Monat`,
-  "apps.mail.selfHost": () => "Selbst hosten",
-  "apps.mail.needServer": () => "Du brauchst einen Mailserver",
-  "apps.mail.settings": () => "E-Mail-Einstellungen",
-  "apps.mail.address": () => "Adresse",
-  "apps.mail.status": () => "Status",
-  "apps.mail.provider": () => "E-Mail-Anbieter",
 
   "apps.kb.article": () => "Artikel",
   "apps.kb.reads": () => "Aufrufe",
@@ -269,7 +255,7 @@ export default {
   "apps.guide.step.domain": (p) => `Kaufe im Browser bei ${p.partner} eine Domain für deine Firma.`,
   "apps.guide.step.website": () => "Baue unter Marketing bei Kanäle deine erste Website.",
   "apps.guide.step.launch": () => "Wähle, wo deine Website läuft, starte sie im Marketing und biete dein erstes Produkt unter Produkte an.",
-  "apps.guide.step.email": (p) => `Wähle in ${p.app} einen E-Mail-Anbieter.`,
+  "apps.guide.step.email": () => "Bestelle auf der Website eines E-Mail-Anbieters Postfächer für deine Firmendomain.",
   "apps.guide.step.firstCustomer": (p) => `Beantworte in ${p.app} deinen ersten Kunden.`,
 
   "apps.name.Applications": () => "Programme",

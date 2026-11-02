@@ -2,6 +2,7 @@ import { t } from "../../../../../../i18n/en";
 import type { Screen, ScreenName, ScreenProps } from "./nav";
 import { Clients, ClientSummary } from "./Clients";
 import { Invoices } from "./Invoices";
+import { Quotes } from "./Quotes";
 import { Settings } from "./Settings";
 import { Orders } from "./Orders";
 import { ProductEdit } from "./ProductEdit";
@@ -13,7 +14,7 @@ import { LicenceScreen, UpdatesScreen } from "./Licence";
 
 export const SCREEN_LABEL: Partial<Record<ScreenName, string>> = {
   home: t("shop-admin.home"), products: t("shop-admin.products"), settings: t("shop-admin.settings"), servers: t("shop-admin.servers"),
-  orders: t("shop-admin.pendingOrders"), clients: t("shop-admin.clients"), invoices: t("shop-admin.invoices"),
+  orders: t("shop-admin.pendingOrders"), clients: t("shop-admin.clients"), invoices: t("shop-admin.invoices"), quotes: t("shop-admin.quotes"),
   licence: t("shop-admin.licence"), updates: t("shop-admin.updates"),
 };
 
@@ -38,6 +39,7 @@ export function AdminScreen({ screen, ...props }: ScreenProps & { screen: Screen
     case "clients": return <Clients {...props} />;
     case "client": return <ClientSummary {...props} id={screen.id ?? ""} tab={screen.tab} />;
     case "invoices": return <><Invoices {...props} /><PaymentMethods game={props.game} /></>;
+    case "quotes": return <Quotes {...props} id={screen.id} />;
     case "licence": return <LicenceScreen {...props} />;
     case "updates": return <UpdatesScreen {...props} />;
     default: return <Home {...props} />;

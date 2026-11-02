@@ -71,6 +71,11 @@ const MAILS: Record<string, [Mail, Mail, Mail]> = {
     (p) => `Tu te connectes en SSH : rends-toi sur ${p.hostname || "ton serveur"} avec l'utilisateur root et le mot de passe de ton e-mail d'installation.`,
     (p) => `Utilise n'importe quel client SSH et connecte-toi à ${p.hostname || "ton serveur"} en tant que root. Si tu as perdu l'e-mail d'installation avec le mot de passe, réponds ici et nous t'en envoyons un nouveau.`,
   ],
+  "tpl.access": [
+    (p) => `Voici les accès de ${svc(p)}. Connecte-toi sur ${p.address} avec l'identifiant ${p.user} et le mot de passe ${p.password}.`,
+    (p) => `Tes accès pour ${svc(p)} : adresse ${p.address}, identifiant ${p.user}, mot de passe ${p.password}. Change le mot de passe après ta connexion.`,
+    (p) => `Nous avons retrouvé tes accès. ${svc(p)} se trouve sur ${p.address} ; l'identifiant est ${p.user} et le mot de passe ${p.password}.`,
+  ],
   "tpl.addon": [
     (p) => `Oui, il peut partager l'offre. Ajoute le nouveau domaine dans le panneau de contrôle sur panel.${p.host}, sous Domaines, et choisis un dossier pour lui.`,
     (p) => `Pas besoin d'une deuxième offre. Dans le panneau de contrôle sur panel.${p.host}, ajoute le domaine sous Domaines et dirige-le vers son propre dossier.`,
@@ -303,7 +308,12 @@ const DONE: [Mail, Mail, Mail] = [
   (p) => `Merci, la commande est validée : ${hosting(p)} coûte ${euroCents(Number(p.price))} par mois, et la première facture, ${p.invoice}, s'élève à ${euroCents(Number(p.total))}. Ton compte client est créé.`,
 ];
 MAILS["order.done"] = [0, 1, 2].map((i): Mail => (p) => `${DONE[i](p)} ${MAILS["order.live"][i](p)}`) as [Mail, Mail, Mail];
-const LEAD = ["decline.notOffered", "decline.noCapacity", "decline.busy", "accept", "failed", "order.quote", "order.invoice", "order.live", "order.done"];
+MAILS["order.access"] = [
+  (p) => `Voici les accès de ${hosting(p)}. Connecte-toi sur ${p.address} avec l'identifiant ${p.user} et le mot de passe ${p.password}.`,
+  (p) => `Comme promis, tes accès pour ${hosting(p)} : adresse ${p.address}, identifiant ${p.user}, mot de passe ${p.password}. Change le mot de passe après ta première connexion.`,
+  (p) => `${hosting(p)} est prêt : connecte-toi sur ${p.address} en tant que ${p.user} avec le mot de passe ${p.password}.`,
+];
+const LEAD = ["decline.notOffered", "decline.noCapacity", "decline.busy", "accept", "failed", "order.quote", "order.invoice", "order.live", "order.done", "order.access"];
 const SENDER = ["forward", "takedown", "notOurs", "reject", "comply", "object"];
 
 export default Object.fromEntries(Object.entries(MAILS).flatMap(([what, bodies]) =>
