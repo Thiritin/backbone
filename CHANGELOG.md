@@ -21,6 +21,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Ticket replies, retention offers and ticket actions are now built so the coming mail client can show them too.
 - Every company now holds a real mailbox on its mail service, with its own password and a welcome message from the provider.
 - Your registrar's login now has a DNS page for your company domain, where you add, edit and delete records such as MX and TXT, and each change reaches the world once the TTL of the record it replaces has run out.
+- Every abuse notice links to the reported address, and the Browser shows whether the file, mailer or page is really there before you decide.
 
 ## 2026-11-01
 

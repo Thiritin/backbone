@@ -53,8 +53,7 @@ import { RegistrarSite } from "./sites/registrars";
 import { SupplierSite } from "./sites/bank/SupplierSite";
 import { BankSite } from "./sites/bank/BankSite";
 import { bankById } from "../../../sim/10-catalog/banks";
-import { CannotReach, CustomerSite, HostPage, NotFound, PhishingPage, VideoPage } from "./sites/Pages";
-import { senderById } from "../../../sim/40-support/notices";
+import { CannotReach, CustomerSite, HostPage, NoticePage, noticeTitle, NotFound, VideoPage } from "./sites/Pages";
 import { PortalSite } from "./sites/portal/PortalSite";
 import { VendorSite } from "./sites/vendors/registry";
 import { ProviderSite } from "./sites/providers/registry";
@@ -104,7 +103,7 @@ function titleOf(game: GameState, r: Resolved): string {
       return d ? upsTitle(d) : r.host;
     }
     case "video": return VIDEO_TITLE;
-    case "phishing": return t("misc1.browser.onlineBanking", { name: senderById(p.sender).name });
+    case "notice": return noticeTitle(game, p.ticketId);
     case "sponsorboard": return BOARD_TITLE;
     case "index": return t("browser-sites-1.ix.title");
     case "office": return t("browser-sites-1.of.title");
@@ -143,7 +142,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "supplier") body = <SupplierSite game={game} name={p.name} />;
   else if (p.kind === "bank") body = <BankSite game={game} id={p.id} path={r.path} go={go} />;
   else if (p.kind === "video") body = <VideoPage />;
-  else if (p.kind === "phishing") body = <PhishingPage sender={p.sender} />;
+  else if (p.kind === "notice") body = <NoticePage game={game} ticketId={p.ticketId} />;
   else if (p.kind === "sponsorboard") body = <SponsorBoard game={game} />;
   else if (p.kind === "office") body = <OfficeSite game={game} path={r.path} go={go} />;
   else if (p.kind === "dohle") body = <DohleSite game={game} path={r.path} go={go} />;
