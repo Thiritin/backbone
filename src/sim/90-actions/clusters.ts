@@ -9,7 +9,7 @@ import { marketPrice, PRODUCTS, sizeSpec, type Resources, type Sla, type Spec } 
 import type { Product } from "../30-customers/customers";
 import { vmName } from "../30-customers/hostnames";
 import type { GameState } from "../50-state";
-import { balancerIn, balloons, clustersIn, conflict, isService, phpAt, softwareById, type Software, type SoftwareKind } from "../10-catalog/platforms";
+import { balancerIn, balloons, clustersIn, conflict, footprint, isService, phpAt, softwareById, type Software, type SoftwareKind } from "../10-catalog/platforms";
 import { HA_SKILL } from "../10-catalog/research";
 import { serverOsAt } from "../10-catalog/server-os";
 import { versionAt } from "../10-catalog/software-versions";
@@ -153,7 +153,7 @@ export function installPanelInVm(s: GameState, vmId: string, panelId: string): A
   const c = s.clusters.find((x) => x.id === vm.clusterId);
   if (!c) return fail("error.unknownCluster");
   if (c.platform && !controlPlaneUp(s, c)) return fail("error.controlPlaneDown");
-  if (sizeError(vm, sw.controlPlane)) return fail("error.vmSize");
+  if (sizeError(vm, footprint(sw, yearOf(s.hour)))) return fail("error.vmSize");
   const after = Math.max(s.hour, c.switching?.doneAt ?? s.hour);
   return { ok: true, id: hostInVm(s, vm.id, c.az, sw, after + sw.installHours) };
 }
@@ -170,7 +170,7 @@ export function hostInVm(s: GameState, vmId: string, az: string, sw: Software, d
 export function createPanelVm(s: GameState, clusterId: string, panelId: string, size: Resources = PANEL_VM_SIZE): ActionResult {
   const sw = softwareById(panelId);
   if (sw.id !== panelId || sw.kind === "cloud") return fail("error.unknownSoftware");
-  const bad = sizeError(size, sw.controlPlane);
+  const bad = sizeError(size, footprint(sw, yearOf(s.hour)));
   if (bad) return fail(bad);
   const items = [{ product: sw.os[0], version: serverOsAt(sw.os[0], yearOf(s.hour)).version }, { product: sw.id, version: versionAt(sw.id, s.hour).version }];
   const keys = buildKeys(s, items);
@@ -190,7 +190,7 @@ const sizeError = (r: Resources, panel: Resources): string | null =>
 export function resizePanelVm(s: GameState, hostId: string, size: Resources): ActionResult {
   const c = s.clusters.find((x) => x.id === hostId), vm = c && vmById(s, c.vm);
   if (!c || !vm) return fail("error.notPanelVm");
-  const panel = controlPlaneUse({ panel: c.panel ?? c.switching?.to ?? null, platform: null });
+  const panel = controlPlaneUse(s, { id: c.id, panel: c.panel ?? c.switching?.to ?? null, platform: null });
   const bad = sizeError(size, panel);
   if (bad) return fail(bad);
   const inside = vmRoom(s, c).used, cap = vmCap(size, panel);

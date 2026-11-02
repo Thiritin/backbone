@@ -16,7 +16,7 @@ const MONTH = hourOf(new Date(Date.UTC(2020, 0, 1)));
 // A cPanic VM on the given tier's key, or on a trial until trialUntil without one.
 function setup(tier: string, trialUntil?: number) {
   const s = readyGame(1);
-  const id = panelVm(s, s.clusters.find((c) => c.kind === "cloud")!.id, "cpanic");
+  const id = panelVm(s, s.clusters.find((c) => c.kind === "cloud")!.id, "cpanic", { vcpu: 2, ramGb: 4, diskGb: 50 });
   const vm = panelMachine(s.clusters.find((c) => c.id === id)!)!;
   s.licenses = s.licenses.filter((k) => k.machineId !== vm);
   s.hour = MONTH;

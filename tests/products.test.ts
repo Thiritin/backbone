@@ -107,7 +107,7 @@ describe("control planes", () => {
     const { s, cluster, second, cus } = setup();
     const c = clusterById(s, cluster);
     expect(c.controlPlane).toBe("dev3");
-    expect(bookable(s, s.devices.find((d) => d.id === "dev3")!).ramGb).toBeCloseTo(8 - 0.25);
+    expect(bookable(s, s.devices.find((d) => d.id === "dev3")!).ramGb).toBeCloseTo(8 - 1);
     ok(setPower(s, "dev3", false));
     expect(err(provisionService(s, cus, "vps", { label: "Box", clusterId: cluster }))).toBe("error.controlPlaneDown");
     ok(moveControlPlane(s, cluster, second));

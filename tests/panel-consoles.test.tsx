@@ -16,7 +16,7 @@ function render(id: string, year: number, signedIn: boolean, path?: string, vers
   skipTo(s, year);
   s.cash = 1_000_000;
   const basement = s.clusters.find((c) => c.kind === "cloud")!;
-  const host = panelVm(s, basement.id, id), c = s.clusters.find((x) => x.id === host)!;
+  const host = panelVm(s, basement.id, id, { vcpu: 2, ramGb: 4, diskGb: 50 }), c = s.clusters.find((x) => x.id === host)!;
   if (version) pinVersion(s, c, id, version);
   const View = CONSOLES[id];
   return { year: yearOf(s.hour), html: renderToString(<View game={s} c={c} f={consoleFeatures(id, yearOf(s.hour))} host="panel.example.com" path={path} signedIn={signedIn} login={() => {}} logout={() => {}} />) };
@@ -77,7 +77,7 @@ describe("hosting and game panel consoles", () => {
       expect(empty.html).toContain("Package Name");
       const s = readyGame(1);
       skipTo(s, year);
-      const host = panelVm(s, s.clusters.find((c) => c.kind === "cloud")!.id, "cpanic"), c = s.clusters.find((x) => x.id === host)!;
+      const host = panelVm(s, s.clusters.find((c) => c.kind === "cloud")!.id, "cpanic", { vcpu: 2, ramGb: 4, diskGb: 50 }), c = s.clusters.find((x) => x.id === host)!;
       addPackage(s, host, { name: "Starter", product: "webHosting", spec: { vcpu: 1, ramGb: 1, diskGb: 10, trafficGb: 100, mailboxes: 5 } });
       const View = CONSOLES.cpanic;
       const html = renderToString(<View game={s} c={c} f={consoleFeatures("cpanic", yearOf(s.hour))} host="panel.example.com" path="/scripts/addpkg" signedIn login={() => {}} logout={() => {}} />);

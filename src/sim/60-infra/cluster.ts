@@ -3,8 +3,9 @@ import { recordStatus } from "../80-business/status";
 import { topTier } from "../10-catalog/licence-tiers";
 import { START_YEAR, yearOf } from "../00-core/time";
 import { GPU_SKILL } from "../10-catalog/research";
-import { backsUp, balancerIn, fcGbit, IN_VM, isService, kindsServing, kindServing, phpAt, softwareById, type DatastoreProtocol, type SoftwareKind } from "../10-catalog/platforms";
+import { backsUp, balancerIn, fcGbit, footprint, IN_VM, isService, kindsServing, kindServing, phpAt, softwareById, type DatastoreProtocol, type SoftwareKind } from "../10-catalog/platforms";
 import { OVERCOMMIT, PRODUCTS, type Resources } from "../10-catalog/products";
+import { vpsPlanGb } from "../10-catalog/economy";
 import type { Product } from "../30-customers/customers";
 import { serviceHeld } from "../45-billing/billing";
 import type { Device, GameState, MachineState } from "../50-state";
@@ -262,10 +263,19 @@ export function booked(s: GameState, w: Workload): Resources {
   return product && SHARED.includes(product) ? r : { ...r, vcpu: Math.ceil(w.vcpu) };
 }
 
-// What the management services of a cluster's software take.
-export function controlPlaneUse(c: Pick<Cluster, "panel" | "platform">): Resources {
+// economy.md, Platforms and licenses: disk a mail server keeps for each mailbox it holds, in 2005, growing with server RAM.
+export const MAILBOX_GB = 1;
+// The company mailboxes a mail server holds.
+export const mailboxesOn = (s: GameState, clusterId: string): number => {
+  const tenants = new Set(s.mail.tenants.filter((x) => x.host === "self" && x.clusterId === clusterId).map((x) => x.id));
+  return s.mail.accounts.filter((a) => tenants.has(a.tenant)).length;
+};
+// What the management services of a cluster's software take this year, with a mail server's mailboxes.
+export function controlPlaneUse(s: GameState, c: Pick<Cluster, "id" | "panel" | "platform">): Resources {
   const id = c.panel ?? c.platform;
-  return id ? softwareById(id).controlPlane : ZERO;
+  if (!id) return ZERO;
+  const sw = softwareById(id), year = yearOf(s.hour), r = footprint(sw, year);
+  return sw.kind === "mail" ? { ...r, diskGb: r.diskGb + mailboxesOn(s, c.id) * MAILBOX_GB * vpsPlanGb(year) } : r;
 }
 // What a node holds for workloads: its capacity less the control plane it runs. Bars show booked against it.
 export function bookable(s: GameState, d: Device): Resources {
@@ -274,7 +284,7 @@ export function bookable(s: GameState, d: Device): Resources {
 // What the control planes of every cluster run on a server take together.
 export function controlPlanesOn(s: GameState, deviceId: string): Resources {
   const sum = { ...ZERO };
-  for (const c of s.clusters) if (!c.vm && c.controlPlane === deviceId) { const u = controlPlaneUse(c); for (const k of KEYS) sum[k] += u[k]; }
+  for (const c of s.clusters) if (!c.vm && c.controlPlane === deviceId) { const u = controlPlaneUse(s, c); for (const k of KEYS) sum[k] += u[k]; }
   return sum;
 }
 // Whether the resources fit the disk of a pool; CPU and RAM never refuse a booking.
@@ -314,7 +324,7 @@ export function vmRoom(s: GameState, c: Cluster): { cap: Resources; used: Resour
   const vm = vmById(s, c.vm), used = { ...ZERO }, panels = { ...ZERO };
   if (!vm) return { cap: ZERO, used };
   for (const w of insideVm(s, vm.id)) for (const k of KEYS) used[k] += w[k];
-  for (const h of hostsOfVm(s, vm.id)) { const u = controlPlaneUse(h); for (const k of KEYS) panels[k] += u[k]; }
+  for (const h of hostsOfVm(s, vm.id)) { const u = controlPlaneUse(s, h); for (const k of KEYS) panels[k] += u[k]; }
   return { cap: vmCap(vm, panels), used };
 }
 
@@ -322,7 +332,7 @@ export function vmRoom(s: GameState, c: Cluster): { cap: Resources; used: Resour
 export function fitsControlPlane(s: GameState, c: Cluster, deviceId: string): boolean {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d || !working(s, deviceId)) return false;
-  return diskFits(nodeUsed(s, deviceId), bookable(s, d), controlPlaneUse(c));
+  return diskFits(nodeUsed(s, deviceId), bookable(s, d), controlPlaneUse(s, c));
 }
 
 // Whether the cluster sells the product line: web hosting on a panel host, virtual machines on a hypervisor cluster, game
