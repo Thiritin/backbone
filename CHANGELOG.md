@@ -5,6 +5,9 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-02
 
 - Supplier invoices in Preview now carry each supplier's logo and colours, laid out in one of three letterheads depending on the company, with bank details in the footer.
+- The shop system is now installed by hand: download its archive from the vendor, upload and extract it into your web space, create a database and run its web installer, then log in to the admin area with the account you chose there.
+- Softaculus can install BoxBillin', ClientExit and Blessta in one step in the years it listed them, a forgotten shop admin password can be reset by mail, and existing shops get their files, database and a new admin password sent by mail.
+- The device picture in the inspector now matches the one in the rack, so a server shows the same drive bays, vent and control panel in both places.
 - Downloaded programs now arrive in Downloads as disk images and install by dragging them into Applications; a Trash at the end of the dock uninstalls them, and installing a second bookkeeping program asks before it replaces the current one.
 - Pleskit, DirectAdmen and FreePanel now open each web space in their own customer screens, where you manage files, databases, mailboxes, FTP accounts, domains and cron jobs as in cPanic.
 - The second and third game speeds now run at 8× and 60× instead of 2× and 4×, so playing fast moves much quicker while skipping to the next event stays the fastest.

@@ -1,4 +1,5 @@
 // economy/security-advisories.md, Security advisories: scripted PHP vulnerabilities, their stages and the exploitation risk.
+import { installDirLeft } from "./shop-files";
 import { chance, hashRng, rand } from "../00-core/rng";
 import { softwareById } from "../10-catalog/platforms";
 import { formatClock, hourOf } from "../00-core/time";
@@ -83,6 +84,9 @@ function compromise(s: GameState, host: Cluster, events: SimEvent[]): void {
 
 // Hourly: a vulnerability fires on its date for players running affected panel hosts, its stages follow on schedule and
 // exposed hosts risk a compromise from the proof of concept on.
+// A shop's install folder left on the host lets anyone rerun its installer (web-hosting.md 2.2).
+export const INSTALL_DIR_RISK = 2;
+
 export function securityTick(s: GameState): SimEvent[] {
   const events: SimEvent[] = [];
   for (const v of VULNS) {
@@ -104,7 +108,7 @@ export function securityTick(s: GameState): SimEvent[] {
   }
   if (s.security.stage < 1) return events;
   const risk = s.security.stage >= 2 ? WARNING_RISK : POC_RISK;
-  for (const c of hosts(s)) if (exposed(s, c) && chance(s.rng, risk * exposureFactor(s, c) * jailFactor(s, c.id))) compromise(s, c, events);
+  for (const c of hosts(s)) if (exposed(s, c) && chance(s.rng, risk * exposureFactor(s, c) * jailFactor(s, c.id) * (installDirLeft(s, c.id) ? INSTALL_DIR_RISK : 1))) compromise(s, c, events);
   return events;
 }
 

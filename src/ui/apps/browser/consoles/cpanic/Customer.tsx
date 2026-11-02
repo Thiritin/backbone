@@ -1,4 +1,4 @@
-import { Database, Folder, ScrollText, TriangleAlert, type LucideIcon } from "lucide-react";
+import { Database, Folder, Package, ScrollText, TriangleAlert, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { t } from "../../../../../i18n/en";
 import { APP_NAME } from "../../../../../sim/10-catalog/apps";
@@ -12,6 +12,9 @@ import { Bar } from "../PanelBase";
 import { domainTiles } from "./Domains";
 import { mailFtpIcons } from "./MailFtp";
 import { WebTool, type ToolId as Page } from "../WebTool";
+
+// Softaculus arrived in cPanic in 2009.
+const SOFTACULUS_YEAR = 2009;
 
 const ICONS: [Page | "pma", string, LucideIcon][] = [
   ["files", "readouts.cp.files", Folder],
@@ -30,7 +33,7 @@ export function Customer({ game, c, workloadId, openPma }: { game: GameState; c:
     if (page) return <WebTool game={game} c={c} workloadId={workloadId} page={page} />;
     return (
       <div className="cp-icons">
-        {[...ICONS, ...domainTiles(yearOf(game.hour)), ...mailFtpIcons(yearOf(game.hour))].map(([id, key, Icon]) => <button key={id} className="cx-tile" onClick={() => (id === "pma" ? openPma?.() : setPage(id))}><Icon size={28} aria-hidden /><span>{t(key)}</span></button>)}
+        {[...ICONS, ...domainTiles(yearOf(game.hour)), ...mailFtpIcons(yearOf(game.hour)), ...(!w && yearOf(game.hour) >= SOFTACULUS_YEAR ? [["apps", "shop-setup.app.title", Package] as const] : [])].map(([id, key, Icon]) => <button key={id} className="cx-tile" onClick={() => (id === "pma" ? openPma?.() : setPage(id))}><Icon size={28} aria-hidden /><span>{t(key)}</span></button>)}
       </div>
     );
   };

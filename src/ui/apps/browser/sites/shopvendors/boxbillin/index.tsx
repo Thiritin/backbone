@@ -21,6 +21,7 @@ import { formatDay } from "../../../../billing/format";
 import { feeText } from "../../../../marketing/payments";
 import { usePageAct } from "../../../pageAct";
 import { Cube, OpenBox } from "../../portal/boxbillin/marks";
+import { InstallSteps, ShopDownload } from "../ShopDownload";
 import type { VendorProps } from "../ShopVendorSite";
 import "./site.css";
 
@@ -112,6 +113,7 @@ function Download({ game, brand, install }: { game: GameState; brand: string; in
         <dt>{t("shop-boxBillin.site.licence")}</dt><dd>{t("shop-boxBillin.site.apache")}</dd>
         <dt>{t("shop-boxBillin.site.updates")}</dt><dd>{t("shop-boxBillin.site.updatesFree")}</dd>
       </dl>
+      <ShopDownload game={game} id={ID} />
       <a href="#install" className="bxs-btn" onClick={install}>{t("shop-boxBillin.site.nav.install")}</a>
     </div>
   );
@@ -121,8 +123,7 @@ function Install({ game }: { game: GameState }) {
   const admin = `portal.${companyDomain(game)}${portalPath(ID, "admin")}`;
   return (
     <ol className="bxs-card bxs-steps">
-      <li>{t("shop-boxBillin.site.step0")}</li>
-      <li>{t("shop-boxBillin.site.step1", { section: t("host.shop"), button: t("host.installShop", { name: shopById(ID).name }) })}</li>
+      <InstallSteps game={game} />
       <li>{t("shop-boxBillin.site.step2")} <code>{admin}</code></li>
     </ol>
   );

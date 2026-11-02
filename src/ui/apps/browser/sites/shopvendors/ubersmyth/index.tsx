@@ -24,6 +24,7 @@ import { useStore } from "../../../../../store";
 import { usePageAct } from "../../../pageAct";
 import { Releases } from "../../software/Releases";
 import { Cart, cartCount } from "../../shop/VendorShop";
+import { InstallSteps, ShopDownload } from "../ShopDownload";
 import type { VendorProps } from "../ShopVendorSite";
 import "./site.css";
 
@@ -138,12 +139,14 @@ const portalAdmin = (game: GameState) => game.company.domain ? `portal.${game.co
 function Install({ game }: { game: GameState }) {
   const url = portalAdmin(game);
   return (
-    <ol className="ubv-steps">
-      <li>{t("ubersmyth.site.install1")}</li>
-      <li>{t("ubersmyth.site.install2")}</li>
-      <li>{t("ubersmyth.site.install3", { name: NAME })}</li>
-      {url && <li>{t("ubersmyth.site.install4", { url })}</li>}
-    </ol>
+    <>
+      <ShopDownload game={game} id={ID} />
+      <ol className="ubv-steps">
+        <li>{t("ubersmyth.site.install1")}</li>
+        <InstallSteps game={game} />
+        {url && <li>{t("ubersmyth.site.install4", { url })}</li>}
+      </ol>
+    </>
   );
 }
 

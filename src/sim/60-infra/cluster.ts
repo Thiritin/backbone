@@ -91,6 +91,8 @@ export interface Cluster {
   // Whether the cluster pays for its hypervisor's balancer edition (Software.balancer).
   balancer?: boolean;
   php: string; phpUntil: number; ha: Ha; version: number; updatedAt: number;
+  // Whether a panel host's PHP loads the ionCube Loader, which encoded shop systems need.
+  ioncube?: boolean;
   // OpenStash Horizont (horizont.ts); missing is none, and the one default group.
   floating?: FloatingIp[]; groups?: SecurityGroup[]; volumes?: Volume[];
   // Horizont projects with quotas (projects.ts); missing is the one unlimited admin project.

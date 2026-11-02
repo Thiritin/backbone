@@ -17,6 +17,14 @@ const panelHost = (s: GameState, hostId: string) => {
   return !c ? fail("error.unknownCluster") : c.kind !== "panel" ? fail("error.notPanelHost") : c;
 };
 
+// Turns the ionCube Loader on or off in the host's PHP; it rebuilds like a PHP change.
+export function setIonCube(s: GameState, hostId: string, on: boolean): ActionResult {
+  const c = panelHost(s, hostId);
+  if ("ok" in c) return c;
+  s.clusters = s.clusters.map((x) => (x.id === hostId ? { ...x, ioncube: on, phpUntil: s.hour + PHP_UPGRADE_HOURS } : x));
+  return { ok: true };
+}
+
 // Installs or drops the legacy PHP versions a panel host keeps besides its newest; it rebuilds, so its sites run slower for an hour.
 export function setPhpPool(s: GameState, hostId: string, versions: string[]): ActionResult {
   const c = panelHost(s, hostId);

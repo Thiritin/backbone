@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { dateOf, hourOf } from "../src/sim/00-core/time";
 import { DEBIT_RETURN_FEE, DISPUTE_DAYS, methodById, methodFee, PAYMENT_METHODS, PREFERENCE, type MethodId } from "../src/sim/10-catalog/payments";
-import { SHOP_SETUP_HOURS } from "../src/sim/10-catalog/shops";
 import { orderLead } from "../src/sim/30-market/orders";
 import { issueInvoice } from "../src/sim/30-market/manual";
 import { lostReasons } from "../src/sim/30-market/research";
@@ -35,7 +34,6 @@ function shopGame(methods: MethodId[] = [], seed = 5): GameState {
   setUpChannel(s, "website");
   s.unlocks = [...s.unlocks, "shops"];
   installWithKey(s, "modemBill");
-  s.hour += SHOP_SETUP_HOURS;
   s.modules = [...s.modules, "shop-link", ...methods];
   return automate(s);
 }

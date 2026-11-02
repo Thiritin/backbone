@@ -133,8 +133,7 @@ svg.logo-mark { flex: none; }
 .loc .grow, .loc-sheet .grow { flex: 1; }
 
 .loc-face { padding: 12px; border-radius: var(--ar-card); background: var(--rack); display: grid; gap: 12px; justify-items: center; }
-.loc-face > svg { max-width: 100%; height: auto; }
-.loc-face.wide > svg { width: 100%; }
+.loc-face > svg { width: 100%; height: auto; }
 
 .loc-ports { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 .loc-port-block { display: grid; grid-auto-flow: column; gap: 3px; }

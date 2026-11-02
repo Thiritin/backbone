@@ -23,6 +23,7 @@ import { feeText } from "../../../../marketing/payments";
 import { usePageAct } from "../../../pageAct";
 import { Cart, cartCount } from "../../shop/VendorShop";
 import { Releases } from "../../software/Releases";
+import { InstallSteps, ShopDownload } from "../ShopDownload";
 import type { VendorProps } from "../ShopVendorSite";
 import "./site.css";
 
@@ -166,10 +167,10 @@ export function ClientExit({ game, path = "/", go }: VendorProps) {
   else if (page === "download") body = (
     <>
       <h1>{label.download}</h1>
+      <ShopDownload game={game} id={ID} />
       <ol className="cxv-steps">
         <li>{trial ? t("cexit.v.step1Trial", { days: trial }) : t("cexit.v.step1")}</li>
-        <li>{t("cexit.v.step2")}</li>
-        <li>{t("cexit.v.step3")}</li>
+        <InstallSteps game={game} />
         <li>{t("cexit.v.step4")}</li>
       </ol>
     </>

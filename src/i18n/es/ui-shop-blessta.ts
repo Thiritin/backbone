@@ -35,8 +35,6 @@ export default {
   "blessta.v.free": () => "Gratis",
   "blessta.v.current": () => "Versión actual",
   "blessta.v.step0": () => "Compra una clave en la página de precios.",
-  "blessta.v.step1": () => "Abre Software y actualizaciones en el panel de uno de tus hosts.",
-  "blessta.v.step2": (p) => `Elige ${p.name} en ${p.section}, introduce tu clave y pulsa ${p.button}.`,
   "blessta.v.step3": (p) => `Sin clave, ${p.name} funciona como prueba durante ${p.days} días; introduce la clave más tarde en la página de licencia de su admin.`,
   "blessta.v.copy": () => "Copiar clave",
   "blessta.v.copied": () => "Copiada",
