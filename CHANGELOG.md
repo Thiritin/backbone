@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- Mailboxes can be deleted again unless they are the main address, a provider's administrator account or still in use, and the main address can be moved first.
+- The Email card in Marketing has dropdowns for the main address and the sales, support and abuse mailboxes, and your website shows the mailboxes you choose there.
 - Pear Mail has its own junk mail filter that marks junk brown with a Not Junk banner, learns from every message you mark, and in Automatic mode moves junk to the Junk mailbox; its Preferences now open with Junk Mail and Rules tabs.
 - Shop products now price their longer billing cycles from the monthly price and the cycle discounts you set once for the whole shop, which start at 0%, and "Manage prices manually" lets you enter each price yourself.
 - Books no longer has a Products tab: before your first shop every email request is priced in its own quote, and fixed products live only in the shop.
