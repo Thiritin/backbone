@@ -9,8 +9,8 @@ import { sizeSpec } from "../src/sim/10-catalog/products";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { createVm, provisionService, setBalancer, setHa } from "../src/sim/90-actions/clusters";
 import { connect } from "../src/sim/90-actions/hardware";
-import { applyRec, enterMaintenance, exitMaintenance, setDrs, upgradeEdition } from "../src/sim/90-actions/vmwhere";
-import { buyDevice, hypervisor, skipTo, withServer } from "./fixtures";
+import { applyRec, enterMaintenance, exitMaintenance, setDrs } from "../src/sim/90-actions/vmwhere";
+import { buyDevice, hypervisor, skipTo, vmwhereKeys, withServer } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 const err = (r: { ok: boolean; error?: string }) => (r.ok ? undefined : r.error);
@@ -21,7 +21,7 @@ const SMALL = { vcpu: 1, ramGb: 1, diskGb: 20 };
 function setup(edition = "enterprise") {
   const s = { ...withServer(newGame(3)), cash: 1e6 };
   skipTo(s, 2010);
-  s.unlocks = [...s.unlocks, "virtualization"];
+  s.unlocks = [...s.unlocks, "monitoring", "virtualization"];
   const r = buyDevice(s, "g1-compute", "Dwell", 1, "loc1");
   if (!r.ok) throw new Error(r.error);
   mountDevice(s, r.id!, "rack2", 2);
@@ -29,7 +29,7 @@ function setup(edition = "enterprise") {
   skipTo(s, 2013);
   const id = hypervisor(s, ["dev3", r.id!], "Cloud 1", "vmwhere");
   s.clusters = s.clusters.map((c) => (c.id === id ? { ...c, licence: { tier: "essentials", trialUntil: null, lapsedAt: null } } : c));
-  if (edition !== "essentials") upgradeEdition(s, id, edition);
+  if (edition !== "essentials") vmwhereKeys(s, id, edition);
   setHa(s, id, "live", true);
   setBalancer(s, id, true);
   return { s, id, second: r.id! };

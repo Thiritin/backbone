@@ -5,7 +5,7 @@ import { tiersOf } from "../../../../../sim/10-catalog/licence-tiers";
 import type { LicenseKind } from "../../../../../sim/10-catalog/server-os";
 import type { GameState, Licence } from "../../../../../sim/50-state";
 import { keyExpired, productOf } from "../../../../../sim/60-infra/licence";
-import { cartOf, editionBlock, editionChange, keysOf, lineMajor, lineOffer, offers, orderKeys, upgradeOffers, type CartLine, type Offer } from "../../../../../sim/80-business/vendor-shop";
+import { cartOf, editionChange, lineBlock, keysOf, lineMajor, lineOffer, offers, orderKeys, upgradeOffers, type CartLine, type Offer } from "../../../../../sim/80-business/vendor-shop";
 import { addToCart, cancelLicence, changeEdition, checkout, removeFromCart } from "../../../../../sim/90-actions/vendor-shop";
 import { groupIban, ibanEra } from "../../../../../sim/46-finance/bank";
 import { supplierAccount, supplierCode, supplierIban } from "../../../../../sim/46-finance/payables";
@@ -120,7 +120,7 @@ function status(s: GameState, k: Licence): string {
 // The other editions on sale for a key, each with the price of the change; picking one puts it in the cart.
 function EditionChange({ k }: { k: Licence }) {
   const game = useStore((s) => s.game), act = useStore((s) => s.act);
-  const options = offers(k.product, game.hour).flatMap((o) => { const c = editionChange(game, k.id, o.edition); return c && !editionBlock(game, k.id, o.edition) ? [{ edition: o.edition!, price: k.covers.kind === "term" ? o : c }] : []; });
+  const options = offers(k.product, game.hour).flatMap((o) => { const c = editionChange(game, k.id, o.edition); return c && !lineBlock(game, { product: k.product, edition: o.edition, replaces: k.id }) ? [{ edition: o.edition!, price: k.covers.kind === "term" ? o : c }] : []; });
   if (!options.length || keyExpired(game, k)) return null;
   return (
     <select value="" aria-label={t("vendor-shop.changeEdition")} onChange={(e) => e.target.value && act(changeEdition, k.id, e.target.value)}>

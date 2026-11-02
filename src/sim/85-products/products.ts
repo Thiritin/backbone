@@ -1,6 +1,6 @@
 import { chance, hashRng } from "../00-core/rng";
 import { runsHot } from "../60-infra/ha";
-import { POOL_LOW_PERF, sharesOf } from "../60-infra/vmwhere";
+import { editionFactor, POOL_LOW_PERF, sharesOf, syncEdition } from "../60-infra/vmwhere";
 import { hourOf, isMonthStart, monthIndexOf, nowHours, yearOf } from "../00-core/time";
 import { cpuModel, isFresh, skuOf, topBoost } from "../10-catalog/cpus";
 import { genOf, modelById } from "../10-catalog/hardware";
@@ -130,6 +130,7 @@ function finishSwitches(s: GameState, events: SimEvent[]) {
     if (host && !assignedKey(s, host, to)) startTrial(s, host, to);
     const licence = kind === "cloud" && to === "vmwhere" && fresh ? { tier: "essentials", trialUntil: null, lapsedAt: null } : undefined;
     s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, switching: null, version: yearOf(s.hour), updatedAt: s.hour, ...(kind === "cloud" ? { platform: to, ...(licence && { licence }) } : { panel: to }), ...(fresh && host && { setupPending: true }), ...(fresh ? { channel: "stable" as const } : {}) } : x));
+    if (licence) syncEdition(s, c.nodes[0]?.deviceId ?? null);
     events.push({ app: "Locations", key: fresh ? "event.installed" : "event.switched", params: { cluster: c.name, name: softwareById(to).name } });
     const d = fresh ? s.devices.find((x) => x.id === c.controlPlane) : undefined;
     if (d?.bootFrom === "usb") Object.assign(d, { bootFrom: "disk", bootUntil: nowHours(s) + bootHours(s, d) });
@@ -286,7 +287,7 @@ function listFee(s: GameState, k: Licence): number {
   const units = !m ? 1
     : era.kind === "core" ? (isServer(m) ? Math.max(installedCores(m), era.minCores ?? 0, (era.minCoresPerCpu ?? 0) * sockets) : m.vcpu)
     : era.kind === "gameserver" ? Math.max(0, (c ? accountsOn(s, c) : 0) - (era.free ?? 0)) : 1;
-  return Math.round(era.fee * units * 100) / 100;
+  return Math.round(era.fee * editionFactor(k.product, k.edition) * units * 100) / 100;
 }
 
 const keyCluster = (s: GameState, k: Licence): Cluster | undefined => s.clusters.find((x) => x.panel === k.product && panelMachine(x) === k.machineId);
@@ -336,13 +337,6 @@ export function renewKeys(s: GameState): void {
     }
   }
   for (const [name, r] of receipts) deliverMail(s, name, "licenceRenewed", { name, ...r });
-}
-
-// Charges a licence fee at once, as the monthly line does.
-export function payLicence(s: GameState, c: Cluster, fee: number): void {
-  if (fee <= 0) return;
-  s.cash = Math.round((s.cash - fee) * 100) / 100;
-  s.ledger = [...s.ledger, { hour: s.hour, category: "licenses", key: "ledger.license", params: { cluster: c.name, name: softwareById((c.panel ?? c.platform)!).name }, amount: -fee }];
 }
 
 // Hourly: finishes software switches, opens incident reports for lost disks, runs backups, slows overloaded nodes, bills licenses.

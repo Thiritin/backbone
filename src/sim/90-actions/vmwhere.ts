@@ -1,8 +1,7 @@
-// VMwhere editions, DRS and maintenance mode (docs/archive/hypervisors-backups.md, section 3.6).
+// VMwhere DRS, alarms, pools and maintenance mode (docs/archive/hypervisors-backups.md, section 3.6).
 import type { GameState } from "../50-state";
 import type { Drs } from "../60-infra/cluster";
-import { EDITION_COST, editionAllows, editionOf, isVmwhere, maintenanceBlockers, poolRoom, upgradeCost } from "../60-infra/vmwhere";
-import { payLicence } from "../85-products/products";
+import { editionAllows, isVmwhere, maintenanceBlockers, poolRoom } from "../60-infra/vmwhere";
 import { alarmKey, clusterSummary, type AlarmRules } from "../60-infra/alarms";
 import { booked, balances, type Pool } from "../60-infra/cluster";
 import { quorumBlock } from "../60-infra/quorum";
@@ -11,18 +10,6 @@ import type { ActionResult } from "./hardware";
 import { migrateWorkload } from "./vms";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
-
-export function upgradeEdition(s: GameState, clusterId: string, tierId: string): ActionResult {
-  const c = s.clusters.find((x) => x.id === clusterId);
-  if (!c) return fail("error.unknownCluster");
-  if (!isVmwhere(c)) return fail("error.notVmwhere");
-  if (!(tierId in EDITION_COST) || EDITION_COST[tierId] <= EDITION_COST[editionOf(c)]) return fail("error.editionNotHigher");
-  const due = upgradeCost(c, tierId);
-  if (s.cash < due) return fail("error.noCash");
-  s.clusters = s.clusters.map((x) => (x.id === clusterId ? { ...x, licence: { tier: tierId, trialUntil: null, lapsedAt: null } } : x));
-  payLicence(s, c, due);
-  return { ok: true, id: clusterId };
-}
 
 const vmwhereCluster = (s: GameState, id: string) => s.clusters.find((x) => x.id === id && isVmwhere(x));
 

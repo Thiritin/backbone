@@ -1,6 +1,7 @@
 import { tiersOf } from "../10-catalog/licence-tiers";
-import { softwareById } from "../10-catalog/platforms";
+import { HA_SKILL, MONITORING_SKILL } from "../10-catalog/research";
 import type { GameState } from "../50-state";
+import { assignedKey } from "./licence";
 import type { Resources } from "../10-catalog/products";
 import { booked, movesLive, pickNode, type Cluster } from "./cluster";
 
@@ -16,9 +17,24 @@ export const editionAllows = (c: Cluster, f: Feature): boolean =>
   !isVmwhere(c) || EDITION_COST[editionOf(c)] >= EDITION_COST[NEEDS[f]];
 export const editionName = (id: string): string => tiersOf("vmwhere").find((x) => x.id === id)?.name ?? id;
 
-// The one-off price of moving a cluster to a higher edition: the licence fee per node times the step in edition levels.
-export function upgradeCost(c: Cluster, tierId: string): number {
-  return softwareById("vmwhere").licensing[0].fee * c.nodes.length * (EDITION_COST[tierId] - EDITION_COST[editionOf(c)]);
+// The vendor sells VMwhere keys per edition at the licence fee times the edition's level; other products have one price.
+export const editionFactor = (product: string, edition: string | null): number =>
+  (product === "vmwhere" ? EDITION_COST[edition ?? "essentials"] ?? 1 : 1);
+
+// The research skill a feature needs before an edition with it can be bought; pools need none.
+const SKILL: Partial<Record<Feature, string>> = { failover: HA_SKILL, drsManual: HA_SKILL, drs: HA_SKILL, alarms: MONITORING_SKILL };
+export const editionKnown = (s: GameState, product: string, edition: string | null): boolean =>
+  product !== "vmwhere" || !edition || (Object.keys(NEEDS) as Feature[])
+    .every((f) => EDITION_COST[edition] < EDITION_COST[NEEDS[f]] || !SKILL[f] || s.unlocks.includes(SKILL[f]!));
+
+// Sets the edition of the VMwhere cluster the machine is a host of from its hosts' keys: the lowest one, a host without a
+// key counting as Essentials and a key from before keys carried an edition as the cluster's edition so far.
+export function syncEdition(s: GameState, machineId: string | null): void {
+  const c = s.clusters.find((x) => isVmwhere(x) && x.nodes.some((n) => n.deviceId === machineId));
+  if (!c) return;
+  const tier = c.nodes.map((n) => { const k = assignedKey(s, n.deviceId, "vmwhere"); return k ? k.edition ?? editionOf(c) : "essentials"; })
+    .reduce((a, b) => (EDITION_COST[b] < EDITION_COST[a] ? b : a), "enterprise");
+  s.clusters = s.clusters.map((x) => (x === c ? { ...x, licence: { tier, trialUntil: null, lapsedAt: null } } : x));
 }
 
 
