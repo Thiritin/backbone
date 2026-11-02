@@ -45,6 +45,8 @@ export interface ShopState {
   since: number;
   // Bought modules and the hour each starts working.
   modules: Record<string, number>;
+  // What the systems in use before had: their modules and registered licences (s.modules), back on switching back.
+  modulesBy: Partial<Record<ShopId, { modules: Record<string, number>; licences: string[] }>>;
   stock: Partial<Record<Product, Stock>>;
   // Visitors this month who found the line (or, with products, no fitting plan) sold out.
   soldOut: Record<string, number>;
@@ -63,7 +65,7 @@ export interface ShopState {
 // ws, folder and db name where the installer put the shop (web-hosting.md 5); a hosted shop has none.
 export interface ShopInstall { clusterId: string; version: string; at: number; ws?: string; folder?: string; db?: string }
 
-export const newShop = (): ShopState => ({ variant: null, owned: false, since: 0, modules: {}, stock: {}, soldOut: {}, groups: [], optionDiscount: {}, products: [], productGroups: [], methodsOff: [], install: null, reset: null });
+export const newShop = (): ShopState => ({ variant: null, owned: false, since: 0, modules: {}, modulesBy: {}, stock: {}, soldOut: {}, groups: [], optionDiscount: {}, products: [], productGroups: [], methodsOff: [], install: null, reset: null });
 
 export const shopActive = (s: GameState): boolean => s.shop.variant !== null && !shopBroken(s);
 

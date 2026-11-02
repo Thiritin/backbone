@@ -22,7 +22,7 @@ export function VendorPage({ game, id, className, mark }: VendorProps & { id: Sh
   const v = shopById(id), year = yearOf(game.hour);
   const modules = MODULES.filter((m) => m.vendor === "shop" && m.year <= year);
   const state = (m: Module) => hasModule(game, m.id) && game.shop.variant === id ? <span className="sv-state">{t("vendor-sites.registered")}</span>
-    : bought(game, m.id) ? <span className="sv-state">{t("vendor-sites.bought")}</span>
+    : bought(game, m.id, id) ? <span className="sv-state">{t("vendor-sites.bought")}</span>
     : <button type="button" className="sv-buy" onClick={() => act(buyShopLink, id, m.id)}>{t("vendor-sites.buy")}</button>;
   return (
     <div className={`sv ${className}`}>

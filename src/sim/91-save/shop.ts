@@ -7,6 +7,9 @@ import { accountFor } from "../60-infra/webspace";
 // The order form was first a marketing channel, then the "handRolled" shop variant; both load as email orders only.
 export function fillShop(s: GameState, saved: readonly string[] = []): void {
   if (saved.includes("orderForm")) s.marketing = { ...s.marketing, owned: s.marketing.owned.filter((c) => (c as string) !== "orderForm") };
+  // Module purchases from before modules belonged to a shop system count for the one in use.
+  const shop = s.shop.variant;
+  if (shop) s.ledger = s.ledger.map((e) => (e.key.startsWith("ledger.module.") && e.params.shop === undefined ? { ...e, params: { ...e.params, shop } } : e));
   if ((s.shop.variant as string) !== "handRolled") return;
   s.shop = { ...s.shop, variant: null, modules: {} };
   s.marketing = { ...s.marketing, emailOrders: true };

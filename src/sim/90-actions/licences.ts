@@ -16,7 +16,7 @@ export function buyLicence(s: GameState, id: string): ActionResult {
   if (!s.shop.variant) return fail("error.noShopSystem");
   if (s.cash < m.price) return fail("error.noCash");
   s.cash = cents(s.cash - m.price);
-  s.ledger = [...s.ledger, { hour: s.hour, category: "licenses", key: `ledger.module.${id}`, params: {}, amount: -m.price }];
+  s.ledger = [...s.ledger, { hour: s.hour, category: "licenses", key: `ledger.module.${id}`, params: { shop: s.shop.variant }, amount: -m.price }];
   return { ok: true };
 }
 

@@ -25,6 +25,8 @@ The website stays the marketing presentation of product lines (Marketing > Produ
 
 A module connects the shop to one software (a panel, hypervisor, game panel, DNS, VPN or storage software) or to the registrar and certificate side. Without the module for a group's software, an order for that group waits in the order queue for the player to provision by hand. With the module and "Provisioning automation", the shop provisions it.
 
+Modules, Shop link and payment method licences belong to the variant they were bought for, on its vendor's site or in its admin. A switch to another variant starts without them, and switching back brings them back.
+
 ### 2.3 Variants
 
 Prices are game euros at the start of each variant; the licensing eras, editions and caps over time are in `docs/design/software-versions.md`, section Shop systems. "Modules" lists what is included; "Extra" is what a missing module costs.

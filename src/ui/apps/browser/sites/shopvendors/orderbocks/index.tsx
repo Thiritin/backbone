@@ -47,7 +47,7 @@ function Pricing({ game }: VendorProps) {
   const act = usePageAct(), era = shopEra(ID, game.hour), year = yearOf(game.hour);
   const modules = MODULES.filter((m) => m.vendor === "shop" && m.year <= year);
   const state = (m: Module) => hasModule(game, m.id) && game.shop.variant === ID ? <span className="obv-state">{t("vendor-sites.registered")}</span>
-    : bought(game, m.id) ? <span className="obv-state">{t("vendor-sites.bought")}</span>
+    : bought(game, m.id, ID) ? <span className="obv-state">{t("vendor-sites.bought")}</span>
     : <button type="button" className="obv-btn" onClick={() => act(buyShopLink, ID, m.id)}>{t("vendor-sites.buy")}</button>;
   return (
     <>

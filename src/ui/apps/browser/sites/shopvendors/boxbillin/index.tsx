@@ -159,7 +159,7 @@ function Extensions({ game }: { game: GameState }) {
             {m.id !== "shop-link" && <><dt>{t("payment-methods.fee")}</dt><dd className="num">{feeText(methodById(m.id as MethodId))}</dd></>}
           </dl>
           {hasModule(game, m.id) && game.shop.variant === ID ? <span className="bxs-state">{t("vendor-sites.registered")}</span>
-            : bought(game, m.id) ? <span className="bxs-state">{t("vendor-sites.bought")}</span>
+            : bought(game, m.id, ID) ? <span className="bxs-state">{t("vendor-sites.bought")}</span>
             : <button type="button" className="bxs-btn" onClick={() => act(buyShopLink, ID, m.id)}>{t("vendor-sites.buy")}</button>}
         </article>
       ))}
