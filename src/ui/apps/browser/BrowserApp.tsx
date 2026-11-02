@@ -1,5 +1,5 @@
-import { ArrowLeft, ArrowRight, CircleArrowDown, House, Plus, RotateCw, Star, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ArrowLeft, ArrowRight, ChevronDown, CircleArrowDown, Folder, House, Plus, RotateCw, Star, X } from "lucide-react";
+import { useEffect, useRef, useState, type DragEvent } from "react";
 import { BOARD_TITLE, defaultBookmarks, HOME_URL, resolve, split, VIDEO_TITLE, WIKI_TITLE, type Resolved } from "../../../sim/80-business/browser";
 import { customerSite } from "../../../sim/80-business/website";
 import { familyOf } from "../../../sim/60-infra/vulns";
@@ -10,14 +10,16 @@ import { softwareById } from "../../../sim/10-catalog/platforms";
 import { serverOsById } from "../../../sim/10-catalog/server-os";
 import { registrarById } from "../../../sim/10-catalog/registrars";
 import { reduced } from "../../desktop/motion";
-import { menuOn } from "../../desktop/ContextMenu";
+import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
+import { companyFolder, type IndexRow } from "../../../sim/80-business/index";
 import { nowHours } from "../../../sim/00-core/time";
 import { isoFile } from "./sites/software/SoftwareSite";
 import { useDownloads } from "../../downloads";
 import type { OsImage } from "../../../sim/10-catalog/server-os";
-import { useSessionState } from "../../session";
+import { useSessionState, writeSession } from "../../session";
 import { t } from "../../../i18n/en";
 import { useFocus, useStore, useWin } from "../../store";
+import { VaultOffer } from "../../vault";
 import { Favicon } from "./Favicon";
 import { ConsolePage } from "./consoles/ConsolePage";
 import { PageError } from "./pageAct";
@@ -26,6 +28,7 @@ import { FritzOz } from "./mgmt/FritzOz";
 import { KvmPage, kvmTitle } from "./ipmi/KvmPage";
 import { SwitchPage, switchTitle } from "./mgmt/Switch";
 import { RouterPage, routerTitle } from "./mgmt/Router";
+import { UpsPage, upsTitle } from "./mgmt/Ups";
 import { isOwnRouter } from "../../../sim/60-infra/routers";
 import { CompanySite } from "./sites/CompanySite";
 import { SponsorBoard } from "./sites/SponsorBoard";
@@ -39,23 +42,29 @@ import { BOOKS_SITES } from "./sites/books/sites";
 import { booksVendor } from "../../../sim/10-catalog/bookkeeping";
 import { ShopVendorSite } from "./sites/shopvendors/registry";
 import { shopById } from "../../../sim/10-catalog/shops";
+import { deskById } from "../../../sim/10-catalog/desks";
+import { HostedDeskSite } from "./sites/desks/HostedDeskSite";
+import { SelfDeskSite } from "./sites/desks/SelfDeskSite";
 import { HostToastSite } from "./sites/hosttoast/HostToastSite";
 import { HOSTTOAST } from "../../../sim/10-catalog/hosttoast";
 import { WikiSite } from "./sites/wiki/WikiSite";
-import { LEXWEAR } from "../../../sim/80-business/lexwear";
 import { SoftwarePage } from "./sites/software/registry";
 import { RegistrarSite } from "./sites/registrars";
+import { ParkedPage } from "./sites/registrars/Parked";
 import { SupplierSite } from "./sites/bank/SupplierSite";
 import { BankSite } from "./sites/bank/BankSite";
 import { bankById } from "../../../sim/10-catalog/banks";
-import { CannotReach, CustomerSite, HostPage, NotFound, PhishingPage, VideoPage } from "./sites/Pages";
-import { senderById } from "../../../sim/40-support/notices";
+import { CannotReach, CustomerSite, HostPage, NoticePage, noticeTitle, NotFound, VideoPage } from "./sites/Pages";
 import { PortalSite } from "./sites/portal/PortalSite";
 import { VendorSite } from "./sites/vendors/registry";
+import { ProviderSite } from "./sites/providers/registry";
+import { dcProvider } from "../../../sim/20-world/datacenters";
 import "./browser.css";
 
 // Each navigation or reload bumps nav, which restarts the page load.
 interface Tab { id: number; history: string[]; at: number; nav: number }
+// The tab being dragged, so another browser window can take it.
+let carried: { win: string; tab: Tab; taken: boolean } | null = null;
 interface Mark { title: string; url: string }
 
 const LOAD_MS = 2000;
@@ -67,7 +76,9 @@ function titleOf(game: GameState, r: Resolved): string {
     case "company": return game.company.name;
     case "customer": return customerSite(game, p.serviceId)?.title ?? r.host;
     case "vendor": return MANUFACTURERS.find((m) => m.id === p.maker)?.name ?? r.host;
+    case "provider": return dcProvider(p.id).name;
     case "registrar": return registrarById(p.id)?.name ?? r.host;
+    case "parked": return p.domain;
     case "bank": return t("misc1.browser.onlineBanking", { name: bankById(p.id)!.name });
     case "supplier": return p.name;
     case "host": return r.host;
@@ -91,15 +102,20 @@ function titleOf(game: GameState, r: Resolved): string {
       const d = game.devices.find((x) => x.id === p.deviceId);
       return d ? switchTitle(d) : r.host;
     }
+    case "ups": {
+      const d = game.devices.find((x) => x.id === p.deviceId);
+      return d ? upsTitle(d) : r.host;
+    }
     case "video": return VIDEO_TITLE;
-    case "phishing": return t("misc1.browser.onlineBanking", { name: senderById(p.sender).name });
+    case "notice": return noticeTitle(game, p.ticketId);
     case "sponsorboard": return BOARD_TITLE;
     case "index": return t("browser-sites-1.ix.title");
     case "office": return t("browser-sites-1.of.title");
-    case "lexwear": return LEXWEAR;
+    case "lexwear": return booksVendor("lexwear")!.name;
     case "market": return channelName(p.channel);
     case "books": return booksVendor(p.id)!.program;
     case "shopVendor": return shopById(p.id).name;
+    case "deskVendor": return deskById(p.id)!.name;
     case "hosttoast": return HOSTTOAST;
     case "wiki": return WIKI_TITLE;
     case "shop": return game.company.name;
@@ -125,11 +141,13 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "company") body = <CompanySite game={game} path={r.path} go={go} />;
   else if (p.kind === "customer") body = <CustomerSite game={game} serviceId={p.serviceId} />;
   else if (p.kind === "vendor") body = <VendorSite game={game} maker={p.maker} path={r.path} go={go} />;
-  else if (p.kind === "registrar") body = <RegistrarSite game={game} id={p.id} path={r.path} />;
+  else if (p.kind === "provider") body = <ProviderSite game={game} id={p.id} path={r.path} go={go} />;
+  else if (p.kind === "registrar") body = <RegistrarSite game={game} id={p.id} path={r.path} go={go} />;
+  else if (p.kind === "parked") body = <ParkedPage game={game} registrar={p.registrar} domain={p.domain} />;
   else if (p.kind === "supplier") body = <SupplierSite game={game} name={p.name} />;
   else if (p.kind === "bank") body = <BankSite game={game} id={p.id} path={r.path} go={go} />;
   else if (p.kind === "video") body = <VideoPage />;
-  else if (p.kind === "phishing") body = <PhishingPage sender={p.sender} />;
+  else if (p.kind === "notice") body = <NoticePage game={game} ticketId={p.ticketId} />;
   else if (p.kind === "sponsorboard") body = <SponsorBoard game={game} />;
   else if (p.kind === "office") body = <OfficeSite game={game} path={r.path} go={go} />;
   else if (p.kind === "dohle") body = <DohleSite game={game} path={r.path} go={go} />;
@@ -137,7 +155,8 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "market") body = <MarketSite game={game} channel={p.channel} path={r.path} go={go} />;
   else if (p.kind === "shop") body = <PortalSite game={game} host={r.host} path={r.path} go={go} />;
   else if (p.kind === "books" && p.id !== "lexwear") { const Site = BOOKS_SITES[p.id]; body = <Site game={game} path={r.path} go={go} />; }
-  else if (p.kind === "shopVendor") body = <ShopVendorSite game={game} id={p.id} />;
+  else if (p.kind === "shopVendor") body = <ShopVendorSite game={game} id={p.id} path={r.path} go={go} />;
+  else if (p.kind === "deskVendor") body = deskById(p.id)!.hosting === "self" ? <SelfDeskSite game={game} id={p.id} path={r.path} go={go} /> : <HostedDeskSite game={game} id={p.id} path={r.path} go={go} />;
   else if (p.kind === "hosttoast") body = <HostToastSite game={game} path={r.path} go={go} />;
   else if (p.kind === "wiki") body = <WikiSite game={game} path={r.path} go={go} />;
   else if (p.kind === "index") body = <IndexSite game={game} path={r.path} go={go} />;
@@ -150,9 +169,10 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
     body = d && isOwnRouter(d) ? <RouterPage game={game} deviceId={p.deviceId} host={r.host} /> : <FritzOz game={game} deviceId={p.deviceId} host={r.host} />;
   }
   else if (p.kind === "switch") body = <SwitchPage game={game} deviceId={p.deviceId} host={r.host} />;
+  else if (p.kind === "ups") body = <UpsPage game={game} deviceId={p.deviceId} host={r.host} />;
   else if (p.kind === "host") body = <HostPage host={r.host} />;
   else body = <NotFound host={r.host} />;
-  const paper = !waiting && r.load !== "down" && ["company", "customer", "vendor", "sponsorboard", "registrar", "bank", "supplier", "index", "office", "shop", "software", "os"].includes(p.kind);
+  const paper = !waiting && r.load !== "down" && ["company", "customer", "vendor", "provider", "sponsorboard", "registrar", "parked", "bank", "supplier", "index", "office", "shop", "software", "os"].includes(p.kind);
   return (
     <>
       {waiting && <div className="web-load" aria-hidden />}
@@ -226,6 +246,32 @@ export function BrowserApp() {
     }
   };
   const close = (id: number) => keep(tabs.filter((x) => x.id !== id));
+  const root = useRef<HTMLDivElement>(null);
+  const dragEnd = (x: Tab, e: DragEvent) => {
+    setDrag(null);
+    const c = carried;
+    carried = null;
+    if (c?.taken) return close(x.id);
+    const box = root.current?.closest(".window")?.getBoundingClientRect();
+    const { clientX: cx, clientY: cy } = e;
+    if (!box || tabs.length < 2 || (!cx && !cy) || (cx >= box.left && cx <= box.right && cy >= box.top && cy <= box.bottom)) return;
+    const { openApp, place } = useStore.getState();
+    openApp("Browser", undefined, true);
+    const { id, w, h } = useStore.getState().windows.at(-1)!;
+    writeSession(`browser.tabs.${id}`, [{ ...x, id: 1 }]);
+    writeSession(`browser.active.${id}`, 1);
+    // Under the pointer, kept clear of the menu bar and dock.
+    place(id, { x: Math.max(0, Math.min(cx - 120, innerWidth - w)), y: Math.max(30, Math.min(cy - 16, innerHeight - 80 - h)) });
+    close(x.id);
+  };
+  const take = (e: DragEvent) => {
+    if (!carried || carried.win === win.id) return;
+    e.preventDefault();
+    carried.taken = true;
+    const id = Math.max(...tabs.map((x) => x.id)) + 1;
+    setTabs([...tabs, { ...carried.tab, id }]);
+    setActive(id);
+  };
   const tabMenu = (i: number) => [
     { label: t("misc1.browser.closeTab"), run: () => close(tabs[i].id), disabled: tabs.length < 2 },
     { label: t("misc1.browser.closeOthers"), run: () => keep([tabs[i]]), disabled: tabs.length < 2 },
@@ -244,19 +290,22 @@ export function BrowserApp() {
   const bookmarks = [...defaultBookmarks(game), ...marks];
   const marked = bookmarks.some((m) => m.url === url);
   const isDefault = defaultBookmarks(game).some((m) => m.url === url);
+  const folder = companyFolder(game);
+  const folderItem = (r: IndexRow): MenuEntry => ({ label: r.title, run: () => go(r.url) });
+  const folderMenu = (): MenuEntry[] => [...folder.rows.map(folderItem), null, ...folder.groups.map((g) => ({ label: g.title, items: g.rows.map(folderItem) }))];
   const toggleMark = () => setMarks(marked ? marks.filter((m) => m.url !== url) : [...marks, { title: titleOf(game, r), url }]);
 
   return (
-    <div className="br">
+    <div className="br" ref={root} onDragOver={(e) => carried && carried.win !== win.id && e.preventDefault()} onDrop={take}>
       <div className="br-tabs" role="tablist">
         {tabs.map((x, i) => {
           const rx = resolve(game, x.history[x.at]);
           return (
             <div key={x.id} role="tab" aria-selected={x.id === tab.id} className={`br-tab${drag && drag.over === x.id && drag.id !== x.id ? " drop" : ""}`} tabIndex={0} onClick={() => setActive(x.id)} onContextMenu={menuOn(() => tabMenu(i))}
-              draggable onDragStart={(e) => { e.dataTransfer.effectAllowed = "move"; setDrag({ id: x.id, over: x.id }); }}
+              draggable onDragStart={(e) => { e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", x.history[x.at]); carried = { win: win.id, tab: x, taken: false }; setDrag({ id: x.id, over: x.id }); }}
               onDragOver={(e) => { if (!drag) return; e.preventDefault(); if (drag.over !== x.id) setDrag({ ...drag, over: x.id }); }}
               onDrop={(e) => { e.preventDefault(); if (drag) moveTab(drag.id, x.id); setDrag(null); }}
-              onDragEnd={() => setDrag(null)}
+              onDragEnd={(e) => dragEnd(x, e)}
               onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setActive(x.id)}>
               <Favicon game={game} r={rx} />
               <span className="br-tab-title">{titleOf(game, rx)}</span>
@@ -279,6 +328,13 @@ export function BrowserApp() {
         <DownloadsButton game={game} />
       </div>
       <div className="br-marks">
+        {(folder.rows.length > 0 || folder.groups.length > 0) && (
+          <button className="br-mark br-folder" aria-haspopup="menu" onClick={menuOn(folderMenu)}>
+            <Folder aria-hidden />
+            <span>{folder.title}</span>
+            <ChevronDown aria-hidden />
+          </button>
+        )}
         {bookmarks.map((m) => (
           <button key={m.url} className="br-mark" onClick={() => go(m.url)}>
             <Favicon game={game} r={resolve(game, m.url)} />
@@ -286,6 +342,7 @@ export function BrowserApp() {
           </button>
         ))}
       </div>
+      <VaultOffer />
       <Viewport key={`${tab.id}:${tab.nav}`} game={game} r={r} go={go} />
     </div>
   );

@@ -17,7 +17,7 @@ describe("tick", () => {
     const events = [];
     for (let h = 0; h < 24 * 31; h++) events.push(...tick(s));
     expect(events.filter((e) => e.app !== "News").map((e) => e.key)).toEqual(["event.monthStart"]);
-    expect(events.find((e) => e.app === "Finance")).toEqual({ app: "Finance", key: "event.monthStart", params: { month: 1, year: 2005 } });
+    expect(events.find((e) => e.app === "Books")).toEqual({ app: "Books", key: "event.monthStart", params: { month: 1, year: 2005 } });
   });
 });
 
@@ -66,6 +66,8 @@ describe("save", () => {
       // The company domain and the NameCheep contract come with the load.
       registrar: { id: "nameCheep", since: 5000, tier: 0, billed: true, transfer: null }, company: { ...fresh.company, domain: "basement-hosting.de" },
       domains: [expect.objectContaining({ name: "basement-hosting.de", customerId: null })],
+      // Saves from before mailboxes get the starting box, made at the hour of the load.
+      mail: expect.objectContaining({ primary: "mb1", tenants: [expect.objectContaining({ host: "gmix", since: 5000 })] }),
       // Saves from before banks hold their account at Sparklasse.
       bank: expect.objectContaining({ id: "sparklasse", welcomed: false }),
       // Registered saves from before the tax office hold a tax number.

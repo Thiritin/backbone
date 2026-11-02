@@ -1,14 +1,14 @@
-import { EyeOff, Package, Plus, Save, Trash2 } from "lucide-react";
+import { EyeOff, Globe, Package, Plus, Save, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { euroPrice } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
-import { CYCLES, type Cycle } from "../../../sim/10-catalog/cycles";
-import { SIZES, sizeSpec, type Sla } from "../../../sim/10-catalog/products";
+import { CYCLE_MONTHS, CYCLES, MARKET_DISCOUNT, type Cycle } from "../../../sim/10-catalog/cycles";
+import { marketPrice, marketSetup, SIZES, sizeSpec, type Sla } from "../../../sim/10-catalog/products";
 import type { Product } from "../../../sim/30-customers/customers";
 import { specText } from "../../../sim/30-market/spec";
-import { PRODUCT_NAME_MAX, type CatalogProduct } from "../../../sim/80-business/catalog";
+import { PRODUCT_NAME_MAX, unpublished, type CatalogProduct } from "../../../sim/80-business/catalog";
 import type { GameState } from "../../../sim/50-state";
-import { addProduct, removeProduct, updateProduct } from "../../../sim/90-actions/catalog";
+import { addProduct, publishCatalog, removeProduct, updateProduct } from "../../../sim/90-actions/catalog";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
 
@@ -27,6 +27,7 @@ export function ProductsTab({ focus }: { focus: string | null }) {
         {LINES.map((l) => <option key={l} value={l}>{t(`sim.line.${l}`)}</option>)}
       </select>
       <button className="btn" onClick={() => { const r = act(addProduct, line); if (r.ok) setEditing(r.id!); }}><Plus />{t("books.newProduct")}</button>
+      <button className="btn" disabled={!unpublished(game)} onClick={() => act(publishCatalog)}><Globe />{t("books.publish")}</button>
     </div>
   );
   if (game.catalog.length === 0) return <div className="fin-empty"><Package />{t("books.noProducts")}{add}</div>;
@@ -68,6 +69,7 @@ function ProductForm({ game, p, onDone }: { game: GameState; p: CatalogProduct; 
   const [prices, setPrices] = useState<Record<Cycle, string>>(() => Object.fromEntries(CYCLES.map((c) => [c, p.prices[c]?.toString() ?? ""])) as Record<Cycle, string>);
   const [setup, setSetup] = useState(String(p.setup)), [hidden, setHidden] = useState(p.hidden);
   const sizes = SIZES[p.line].map((_, i) => sizeSpec(p.line, i, year));
+  const market = marketPrice(p.line, spec, year, sla);
   const size = sizes.findIndex((x) => JSON.stringify(x) === JSON.stringify(spec));
   const save = () => {
     const priced = Object.fromEntries(CYCLES.filter((c) => prices[c].trim() !== "").map((c) => [c, Number(prices[c])]));
@@ -94,11 +96,14 @@ function ProductForm({ game, p, onDone }: { game: GameState; p: CatalogProduct; 
             {CYCLES.map((c) => (
               <label key={c} className="books-f">{t(`books.cycle.${c}`)}
                 <input className="field num" type="number" min={0} step="any" value={prices[c]} onChange={(e) => setPrices({ ...prices, [c]: e.target.value })} />
+                <span className="books-market">{t("books.market", { price: euroPrice(Math.round(market * CYCLE_MONTHS[c] * (1 - MARKET_DISCOUNT[c]) * 100) / 100) })}</span>
               </label>
             ))}
           </div>
         </div>
-        <label className="books-f">{t("books.col.setup")}<input className="field num" type="number" min={0} step="any" value={setup} onChange={(e) => setSetup(e.target.value)} /></label>
+        <label className="books-f">{t("books.col.setup")}<input className="field num" type="number" min={0} step="any" value={setup} onChange={(e) => setSetup(e.target.value)} />
+          <span className="books-market">{t("books.market", { price: euroPrice(marketSetup(p.line, year)) })}</span>
+        </label>
         <label><input type="checkbox" checked={hidden} onChange={(e) => setHidden(e.target.checked)} /> {t("books.col.hidden")}</label>
         <div className="actions-row">
           <button className="btn primary" type="submit"><Save />{t("pkg.save")}</button>

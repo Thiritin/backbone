@@ -187,8 +187,8 @@ export default {
   "web.msg.open": () => "Ouvrir",
   "sim.line.reseller": () => "Pack revendeur",
   "sim.spec.accounts": (p) => `${p.n} comptes`,
-  "sales.msg.reseller.0": (p) => `Nous revendons de l'hebergement a nos propres clients et il nous faut un pack de ${p.spec} a ${p.city}. Quel est le prix mensuel du pack entier ?`,
-  "sales.msg.reseller.1": (p) => `Notre agence deplace ses clients vers un compte revendeur : ${p.spec}. Merci de nous indiquer un prix mensuel pour le pack.`,
+  "sales.msg.reseller.0": (p) => `Nous revendons de l'hebergement a nos propres clients et il nous faut un pack de ${p.spec} a ${p.city}. Quel est le prix mensuel du pack entier ? Nous payons l'espace utilisé.`,
+  "sales.msg.reseller.1": (p) => `Notre agence deplace ses clients vers un compte revendeur : ${p.spec}. Merci de nous indiquer un prix mensuel pour le pack. Nous payons l'espace utilisé.`,
   "web.reseller.blurb": () => "Packs revendeur avec de la place pour vos propres clients.",
   "web.reseller.feature.0": () => "Packs de 20 a 100 comptes",
   "web.reseller.feature.1": () => "Vos propres clients et offres",
@@ -209,4 +209,6 @@ export default {
   "web.rs.question": (p) => `Question sur ${p.domain}`,
   "web.rs.suspend": () => "Suspendre",
   "web.rs.resume": () => "Reactiver",
+  "ticket.howTo.licence.subject": () => "Le panneau de contrôle indique une licence expirée",
+  "ticket.howTo.licence.text": (p) => `Quand je me connecte au panneau de contrôle de ${p.domain || "mon site"}, je ne vois qu'une page indiquant que la licence a expiré. Le site fonctionne toujours, mais je ne peux rien gérer. Pouvez-vous régler ça ?`,
 } satisfies Dict;

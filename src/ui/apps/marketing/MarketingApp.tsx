@@ -1,17 +1,18 @@
-import { Eye, HeartHandshake, Megaphone, Package, Presentation, ShoppingCart, Star, Waypoints } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { Eye, HeartHandshake, Megaphone, Package, Presentation, Star, Waypoints } from "lucide-react";
+import { Fragment, useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
-import type { Profile } from "../../../sim/30-customers/customers";
+import type { Product, Profile } from "../../../sim/30-customers/customers";
 import { isAvailable } from "../../../sim/10-catalog/research";
 import {
-  BUDGETS, CAMPAIGNS, costPerLead, DISCOUNTS, leadsThisMonth, monthlyMarketingCost, OWNED, owns, PLATFORMS, PROFILE_IDS, reach, reviewScore,
+  BUDGETS, CAMPAIGNS, costPerLead, DISCOUNTS, leadsThisMonth, monthlyMarketingCost, OWNED, owns, PLATFORMS, PROFILE_IDS, reach, reviewScore, wonLeads,
   type CampaignChannel, type OwnedChannel, type PlatformId, type Review,
 } from "../../../sim/80-business/marketing";
 import { bookFair, setCampaign, setReviewPlatform, setUpChannel, stopCampaign } from "../../../sim/90-actions/marketing";
 import { hasMarketingManager } from "../../../sim/47-staff/staff";
 import { fairCost, tradeFairBonus, upcomingFairs, type FairDate } from "../../../sim/80-business/fairs";
 import { eventOf, FAIL_AWARENESS, FAIL_REVIEWS, type Sponsorship } from "../../../sim/80-business/community";
+import { blockSponsor, cancelSponsor } from "../../../sim/90-actions/community";
 import { metrics } from "../../../sim/metrics";
 import { PRODUCT } from "../support/labels";
 import { t } from "../../../i18n/en";
@@ -22,9 +23,8 @@ import "../shop/shop.css";
 import "../billing/billing.css";
 import "./marketing.css";
 import { Products, SiteCard } from "./Website";
-import { Shop } from "./Shop";
 
-type Section = "channels" | "products" | "shop" | "campaigns" | "awareness" | "reviews" | "fairs" | "community";
+type Section = "channels" | "products" | "campaigns" | "awareness" | "reviews" | "fairs" | "community";
 
 export const AUDIENCE: Record<Profile, string> = {
   reseller: t("web.reseller.audience"),
@@ -50,7 +50,7 @@ export function MarketingApp() {
   // Channels is always open, Products once the site is online, Reviews and Community with
   // Marketing basics, the rest with Marketing campaigns.
   const full = isAvailable("Marketing", game.unlocks), basics = game.unlocks.includes("marketingBasics");
-  const open = (id: Section) => id === "channels" || (id === "shop" ? owns(game, "website") : id === "products" ? game.marketing.launched : full || (basics && (id === "reviews" || id === "community")));
+  const open = (id: Section) => id === "channels" || (id === "products" ? game.marketing.launched : full || (basics && (id === "reviews" || id === "community")));
   const [picked, setSection] = useState<Section | null>(null);
   const section = picked && open(picked) ? picked : "channels";
   useFocus("Marketing", (f) => { if (f.kind === "page") setSection(f.id as Section); });
@@ -58,7 +58,6 @@ export function MarketingApp() {
   const items: [Section, string, ReactNode, number | null][] = [
     ["channels", t("marketing.secChannels"), <Waypoints />, null],
     ["products", t("marketing.secProducts"), <Package />, game.marketing.lines.length || null],
-    ["shop", t("marketing.secShop"), <ShoppingCart />, null],
     ["campaigns", t("marketing.secCampaigns"), <Megaphone />, game.marketing.campaigns.length || null],
     ["awareness", t("marketing.secAwareness"), <Eye />, null],
     ["reviews", t("marketing.secReviews"), <Star />, game.marketing.reviews.length || null],
@@ -85,7 +84,6 @@ export function MarketingApp() {
         <div className="fin-scroll">
           {section === "channels" && <Channels />}
           {section === "products" && <Products />}
-          {section === "shop" && <Shop game={game} />}
           {section === "campaigns" && <Campaigns />}
           {section === "awareness" && <Awareness />}
           {section === "reviews" && <Reviews />}
@@ -110,8 +108,8 @@ function Channels() {
   return <>
     <div className="shop-grid mkt-flat">
       <div className="shop-card">
-        <div className="shop-name"><strong>Website</strong><span>Your company site where visitors browse products and order.</span></div>
-        <div className="shop-buy"><span className="grow" />{game.marketing.launched && <span className="pill ok">Active</span>}<button className="btn" onClick={() => setManaging(true)}>Manage</button></div>
+        <div className="shop-name"><strong>{t("marketing.website")}</strong><span>{t("marketing.websiteText")}</span></div>
+        <div className="shop-buy"><span className="grow" />{game.marketing.launched && <span className="pill ok">{t("misc.active")}</span>}<button className="btn" onClick={() => setManaging(true)}>{t("marketing.manage")}</button></div>
       </div>
       <div className="shop-card">
         <div className="shop-name"><strong>{t("marketing.domain")}</strong><span>{t("marketing.domainText")}</span></div>
@@ -139,7 +137,33 @@ function Channels() {
         );
       })}
     </div>
+    <LostDemand />
   </>;
+}
+
+function LostDemand() {
+  const game = useStore((s) => s.game);
+  const { month, last } = game.marketing.unmet;
+  const lines = (Object.keys(PRODUCT) as Product[]).filter((p) => month[p] || last[p]);
+  if (!lines.length) return null;
+  const won = wonLeads(game, 0), wonLast = wonLeads(game, 1);
+  return (
+    <table className="mkt-aware">
+      <thead>
+        <tr><th rowSpan={2}>{t("marketing.line")}</th><th colSpan={2} className="mkt-right">{t("marketing.thisMonth")}</th><th colSpan={2} className="mkt-right">{t("marketing.lastMonth")}</th></tr>
+        <tr>{[0, 1].map((i) => <Fragment key={i}><th className="mkt-right">{t("marketing.won")}</th><th className="mkt-right">{t("lost.noFittingProduct")}</th></Fragment>)}</tr>
+      </thead>
+      <tbody>
+        {lines.map((p) => (
+          <tr key={p}>
+            <td>{PRODUCT[p]}</td>
+            <td className="num">{won[p] ?? 0}</td><td className="num">{month[p] ?? 0}</td>
+            <td className="num">{wonLast[p] ?? 0}</td><td className="num">{last[p] ?? 0}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
 }
 
 function Campaigns() {
@@ -366,7 +390,8 @@ function Community() {
 }
 
 function SponsorCard({ sp }: { sp: Sponsorship }) {
-  const ev = eventOf(sp), r = sp.reward;
+  const act = useStore((s) => s.act);
+  const ev = eventOf(sp), r = sp.reward, cut = sp.status === "running" && sp.board?.dropped;
   const down = Math.ceil(Math.max(0, ...Object.values(sp.down)));
   const state = sp.status === "running" ? <span className="pill accent">{t("marketing.running")}</span> : r ? <span className="pill ok">{t("marketing.rewarded")}</span> : <span className="pill bad">{t("marketing.failed")}</span>;
   return (
@@ -377,6 +402,7 @@ function SponsorCard({ sp }: { sp: Sponsorship }) {
         <div><dt>{t("marketing.audience")}</dt><dd>{ev.audience.map((p) => AUDIENCE[p]).join(", ")}</dd></div>
         {sp.board && <div><dt>{t("marketing.awareness")}</dt><dd className="num">+{(sp.board.granted * 100).toFixed(1)}%</dd></div>}
         {sp.board?.dropped && <div><dt>{t("marketing.banner")}</dt><dd>{t("marketing.dropped")}</dd></div>}
+        {cut && sp.board!.heldTicket && <div><dt>{t("marketing.services")}</dt><dd>{t("marketing.blocked")}</dd></div>}
         <div><dt>{t("marketing.hoursDown")}</dt><dd className="num">{down}</dd></div>
         {r && r.knowHow > 0 && <div><dt>{t("marketing.knowHow")}</dt><dd className="num">+{r.knowHow}</dd></div>}
         {r && r.awareness > 0 && <div><dt>{t("marketing.awareness")}</dt><dd className="num">+{pct(r.awareness)}</dd></div>}
@@ -386,7 +412,11 @@ function SponsorCard({ sp }: { sp: Sponsorship }) {
         {sp.status === "done" && !r && <div><dt>{t("marketing.reviews")}</dt><dd className="num">{t("marketing.failReviews", { n: FAIL_REVIEWS })}</dd></div>}
         {sp.status === "done" && !r && <div><dt>{t("marketing.awareness")}</dt><dd className="num">-{pct(1 - FAIL_AWARENESS)}</dd></div>}
       </dl>
-      <div className="shop-buy"><span className="grow" />{state}</div>
+      <div className="shop-buy">
+        {cut && !sp.board!.heldTicket && <button className="btn" onClick={() => act(blockSponsor, sp.id)}>{t("marketing.block")}</button>}
+        {cut && <button className="btn" onClick={() => act(cancelSponsor, sp.id)}>{t("marketing.cancelSponsor")}</button>}
+        <span className="grow" />{state}
+      </div>
     </div>
   );
 }

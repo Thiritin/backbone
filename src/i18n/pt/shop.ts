@@ -5,7 +5,6 @@ export default {
   "error.needsShopSkill": () => "Pesquisa primeiro os sistemas de loja.",
   "error.shopInUse": () => "Este sistema de loja já gere os teus pedidos.",
   "error.shopNotSold": () => "Este sistema de loja não é vendido este ano.",
-  "error.shopNoOwn": () => "Este sistema de loja só existe em aluguer.",
   "error.unknownModule": () => "Esse módulo não existe.",
   "error.moduleOwned": () => "Já tens este módulo.",
   "error.moduleNotSold": () => "O teu sistema de loja não vende módulos extra.",
@@ -30,4 +29,10 @@ export default {
   "ledger.shopUpdates": (p) => `Atualizações de loja: ${p.name}`,
   "ledger.shopCut": (p) => `Partilha de receita da loja: ${p.name}`,
   "ledger.shopModule": (p) => `Módulo de loja: ${p.module}`,
+  "error.shopNotInstalled": () => "O sistema de loja não está instalado.",
+  "error.shopDown": () => "O host do sistema de loja está em baixo.",
+  "error.shopHostPanel": () => "Só um host de painel de alojamento web pode correr o sistema de loja.",
+  "error.noUpdate": () => "Não há nenhuma atualização disponível.",
+  "error.noUpdates": () => "Esta licença não inclui atualizações.",
+  "ledger.shopUpgrade": (p) => `Upgrade da loja: ${p.name} ${p.major}`,
 } satisfies Dict;

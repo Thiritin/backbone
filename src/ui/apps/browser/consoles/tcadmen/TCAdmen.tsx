@@ -1,17 +1,18 @@
 import { t } from "../../../../../i18n/en";
-import { Folder, FolderOpen, Gamepad2 } from "lucide-react";
+import { Boxes, Folder, FolderOpen, Gamepad2, LogOut, Network, PlusCircle, Server, Settings, ScrollText, type LucideIcon } from "lucide-react";
 import { useState } from "react";
-import { Actions, Backups, erasFrom, eraAt, Facts, LoginForm, Nodes, RowsTable, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
+import { Actions, Backups, eraAt, looks, Facts, LoginForm, Nodes, RowsTable, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
 import { parseCreate } from "../../../../../sim/80-business/consoles";
 import { PackagesScreen, ProvisionForm } from "../PackageForms";
 import { useReadoutPages } from "../Readouts";
 import "./tcadmen.css";
 
-// docs/design/software.md, section 10: grey and black with a tree of game servers until 2016, then dark grey and green.
-const ERAS = erasFrom(2005, 2016);
+// docs/design/software.md, section 10: one look per TCAdmen generation, ids as in UI_LOOKS.
+const LOOKS = looks({ early: 2005, late: 2016, v3: 2022 });
+const ICON: Partial<Record<Tab, LucideIcon>> = { objects: Server, nodes: Network, create: PlusCircle, packages: Boxes, software: Settings };
 
 export function TCAdmen(p: PanelProps) {
-  const era = eraAt(ERAS, p), form = parseCreate("tcadmen", p.path), [tab, setTab] = usePanelTab(p.f, form?.screen ?? "objects"), [pick, setPick] = useState<string | null>(null);
+  const era = eraAt(LOOKS, p), form = parseCreate("tcadmen", p.path), [tab, setTab] = usePanelTab(p.f, form?.screen ?? "objects"), [pick, setPick] = useState<string | null>(null);
   const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f);
   if (!p.signedIn) return (
     <div className="cx tc tc-login" data-era={era}>
@@ -31,8 +32,8 @@ export function TCAdmen(p: PanelProps) {
         <span className="cx-host">{p.host}</span>
       </header>
       <nav className="tc-menu">
-        {menu.map(([id, label]) => <button key={id} aria-pressed={tab === id} onClick={() => (id === "objects" ? open(null) : setTab(id))}>{label}</button>)}
-        <button onClick={p.logout}>{t("browser-consoles-2.logout")}</button>
+        {menu.map(([id, label]) => { const I = ICON[id] ?? ScrollText; return <button key={id} aria-pressed={tab === id} onClick={() => (id === "objects" ? open(null) : setTab(id))}>{era === "v3" && <I size={16} aria-hidden />}{label}</button>; })}
+        <button onClick={p.logout}>{era === "v3" && <LogOut size={16} aria-hidden />}{t("browser-consoles-2.logout")}</button>
       </nav>
       <div className="tc-body">
         <aside className="tc-tree">

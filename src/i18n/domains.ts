@@ -14,6 +14,7 @@ export const DOMAINS_EN: Record<string, (p: Params) => string> = {
   "error.needsRegistrar": () => "Sign a registrar contract first.",
   "error.registrarOther": () => "Your domains are registered with another partner.",
   "error.domainInvalid": () => "Use 3 to 40 letters, digits or hyphens in front of a TLD the registries sell.",
+  "error.nsInvalid": () => "Enter two different host names such as ns1.example.de.",
   "error.companyDomainOwned": () => "The company already has a domain.",
   "error.noTransfer": () => "No domains are waiting to move.",
   "error.unknownMailProvider": () => "This mail provider does not exist.",

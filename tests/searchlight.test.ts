@@ -57,7 +57,7 @@ describe("search", () => {
     const vm = search(s, "vm001").find((h) => h.group === "Machines")!;
     expect(vm).toMatchObject({ app: "Locations", target: { kind: "device" } });
     expect(search(s, "node001").find((h) => h.group === "Machines")).toMatchObject({ app: "Locations", target: { kind: "device" } });
-    expect(search(s, "zelda")[0]).toMatchObject({ group: "Customers", app: "Customers", target: { kind: "customer", id: cus } });
+    expect(search(s, "zelda")[0]).toMatchObject({ group: "Customers", app: "Books", target: { kind: "customer", id: cus } });
     expect(search(s, fqdn(s, "vm001")).find((h) => h.group === "Sites and consoles")).toMatchObject({ app: "Browser", target: { kind: "url", id: fqdn(s, "vm001") } });
     expect(search(s, "notif")[0]).toMatchObject({ group: "Settings", app: "Settings" });
     expect(search(s, t(`ticket.${tk.kind}.${tk.topic}.subject`, subjectParams(s, tk))).find((h) => h.group === "Tickets")).toMatchObject({ app: "Support", target: { kind: "ticket", id: tk.id } });

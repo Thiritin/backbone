@@ -8,6 +8,7 @@ import { bump, createTicket, isFinal, profileStats } from "../40-support/tickets
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { cmsOf } from "./apps";
+import { panelLocked } from "./licence";
 import type { Cluster } from "./cluster";
 import type { HostBans } from "./bans";
 import { transferTick, type Transfer } from "./transfers";
@@ -23,24 +24,34 @@ export interface WebPanel {
   transfers: Record<string, Transfer>; // web hosting service id -> the move of its site from another host
   resellers: Record<string, Reseller>; // customer id -> the reseller block they fill
   appBroken: Record<string, number>; // site id -> the hour the site a Toolkit update broke runs normally again
+  restarts: Record<string, Record<string, number>>; // panel host id -> service id -> the game minute its restart finishes
+  components: Record<string, PanelStack>; // panel host id -> its installed stack; a missing host or slot is the family default
+  installing: Record<string, { id: string; until: number }>; // panel host id -> the component being installed, until a game minute
+  restoring: Record<string, { from: number; until: number }>; // site id -> the restore from a backup point under way
 }
 
 // economy.md, SSL certificates and AutoSSL: auto lists the cPanic hosts with AutoSSL on, expires the hour each domain's
 // certificate runs out, expired the services serving an expired one now, and log the last renewals.
+export interface PanelStack { mail?: string; ftp?: string; web?: string; modules: string[] }
+
 export interface SslLog { hour: number; serviceId: string; ok: boolean }
 export interface Ssl { auto: string[]; expires: Record<string, number>; expired: string[]; log: SslLog[] }
 export const newSsl = (): Ssl => ({ auto: [], expires: {}, expired: [], log: [] });
 
-export const newWebPanel = (): WebPanel => ({ phpPool: {}, phpOf: {}, phpBroken: {}, ssl: newSsl(), bans: {}, appBack: {}, appBroken: {}, transfers: {}, resellers: {} });
+export const newWebPanel = (): WebPanel => ({ phpPool: {}, phpOf: {}, phpBroken: {}, ssl: newSsl(), bans: {}, appBack: {}, appBroken: {}, transfers: {}, resellers: {}, restarts: {}, components: {}, installing: {}, restoring: {} });
 
 // A save keeps what it has per sub-record, so a save from an earlier milestone still gets the later sub-fields.
 export const mergeWebPanel = (base: WebPanel, data: Partial<WebPanel> | undefined): WebPanel => ({
   phpPool: { ...base.phpPool, ...data?.phpPool }, phpOf: { ...base.phpOf, ...data?.phpOf }, phpBroken: { ...base.phpBroken, ...data?.phpBroken },
   ssl: { ...base.ssl, ...data?.ssl }, bans: { ...base.bans, ...data?.bans },
   appBack: { ...base.appBack, ...data?.appBack }, appBroken: { ...base.appBroken, ...data?.appBroken }, transfers: { ...base.transfers, ...data?.transfers }, resellers: { ...base.resellers, ...data?.resellers },
+  restarts: { ...base.restarts, ...data?.restarts }, components: { ...base.components, ...data?.components }, installing: { ...base.installing, ...data?.installing },
+  restoring: { ...base.restoring, ...data?.restoring },
 });
 
 export const POOL_MAX = 2;
+// A site restore from a backup point takes this long per GB of the site's disk use.
+export const RESTORE_MINUTES_PER_GB = 3;
 // A broken site writes in with this chance, drawn per site and version.
 export const PHP_BROKEN_TICKET = 0.35;
 // How many release years of PHP a CMS release keeps running on.
@@ -116,6 +127,26 @@ export function phpCompat(s: GameState): void {
         s.webpanel = { ...s.webpanel, phpBroken: rest };
         s.tickets = s.tickets.map((t) => (t.serviceId === v.id && t.topic === "phpBroken" && !isFinal(t) ? { ...t, status: "resolved", updatedAt: s.hour } : t));
       }
+    }
+  }
+}
+
+// Share of a locked panel's customers who write in each day about the licence page at their panel login.
+export const LICENCE_TICKET = 0.2;
+
+// Daily: customers of a panel whose licence ran out find the licence page and some write in; a licensed panel withdraws the tickets.
+export function licenceComplaints(s: GameState): void {
+  for (const c of s.clusters) {
+    if (c.kind !== "panel") continue;
+    const locked = panelLocked(s, c), day = Math.floor(s.hour / 24);
+    for (const v of accountsOf(s, c.id)) {
+      const open = s.tickets.some((t) => t.serviceId === v.id && t.topic === "licence" && !isFinal(t));
+      if (!locked) {
+        if (open) s.tickets = s.tickets.map((t) => (t.serviceId === v.id && t.topic === "licence" && !isFinal(t) ? { ...t, status: "resolved", updatedAt: s.hour } : t));
+        continue;
+      }
+      const cust = s.customers.find((x) => x.id === v.customerId);
+      if (cust && !open && rand(hashRng(s.seed, idNum(v.id), day, 311)) < LICENCE_TICKET) createTicket(s, cust, "howTo", v.id, "licence");
     }
   }
 }
@@ -206,13 +237,29 @@ function updateBrokenTick(s: GameState): void {
   if (slow.size) s.services = s.services.map((v) => (slow.has(v.id) ? { ...v, slowedAt: s.hour } : v));
 }
 
+// A finished restore leaves the site healthy; a hacked host is clean again when the site was its only one.
+function restoreTick(s: GameState): void {
+  const done = Object.keys(s.webpanel.restoring).filter((id) => s.webpanel.restoring[id].until <= s.hour);
+  if (!done.length) return;
+  const drop = <T>(r: Record<string, T>) => Object.fromEntries(Object.entries(r).filter(([id]) => !done.includes(id)));
+  const w = s.webpanel;
+  s.webpanel = { ...w, restoring: drop(w.restoring), appBroken: drop(w.appBroken), appBack: drop(w.appBack), phpBroken: drop(w.phpBroken) };
+  for (const id of done) {
+    const host = s.workloads.find((x) => x.serviceId === id)?.clusterId;
+    if (host && s.workloads.every((x) => x.clusterId !== host || !x.serviceId || x.serviceId === id))
+      s.security = { ...s.security, hacked: s.security.hacked.filter((h) => h !== host) };
+  }
+}
+
 export function webpanelTick(s: GameState): SimEvent[] {
   transferTick(s);
+  restoreTick(s);
   if (s.hour % 24 !== 0) return [];
   const hosts = new Set(s.clusters.filter((c) => c.kind === "panel").map((c) => c.id));
   const stale = Object.keys(s.webpanel.phpPool).filter((id) => !hosts.has(id));
   if (stale.length) s.webpanel = { ...s.webpanel, phpPool: Object.fromEntries(Object.entries(s.webpanel.phpPool).filter(([id]) => hosts.has(id))) };
   phpCompat(s);
+  licenceComplaints(s);
   sslTick(s);
   updateBrokenTick(s);
   return [];

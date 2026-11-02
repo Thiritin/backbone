@@ -9,6 +9,7 @@ export default {
   "ipmi.log.powerOn": () => "Mise sous tension",
   "ipmi.log.shutdown": () => "Arrêt propre",
   "ipmi.log.pulled": () => "Alimentation perdue",
+  "ipmi.log.upsShutdown": () => "Arrêté sur signal de l'onduleur",
   "ipmi.log.overheat": () => "Arrêt pour surchauffe",
   "ipmi.log.reset": () => "Réinitialisation forcée",
   "ipmi.log.cycle": () => "Cycle d'alimentation",

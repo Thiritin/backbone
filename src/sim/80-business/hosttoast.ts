@@ -3,8 +3,8 @@
 import { t } from "../../i18n/en";
 import { hashRng, rand } from "../00-core/rng";
 import { dateOf, yearOf } from "../00-core/time";
-import { AWARD_PRODUCTS, HOSTTOAST, lower, TIER_IDS, TIERS, type AwardProduct, type TierId } from "../10-catalog/hosttoast";
-import { marketPrice, sizeSpec } from "../10-catalog/products";
+import { AWARD_PRODUCTS, HOSTTOAST, lower, TIER_IDS, TIERS, type ListedProduct, type TierId } from "../10-catalog/hosttoast";
+import { marketPrice, marketRates, sizeSpec } from "../10-catalog/products";
 import type { Profile } from "../30-customers/customers";
 import { locationCities, offers, openRivals, playerScores, priceIndex } from "../30-market/market";
 import { monthOf, reviewCount, rivalScore, sellsIn, withBadges, yearAwards } from "../30-market/rivals";
@@ -15,11 +15,13 @@ import { REVIEW_HOURS, reviewScore } from "./marketing";
 
 export interface ListRow { id: string; name: string; tier: TierId; score: number; reviews: number; price: number; P: number; R: number; C: number }
 // The buyer a product's scores are shown for.
-const SHOWN_FOR: Record<AwardProduct, Profile> = { webHosting: "smallBiz", vps: "hobbyDev", gameServer: "gamer" };
+const SHOWN_FOR: Record<ListedProduct, Profile> = { webHosting: "smallBiz", vps: "hobbyDev", gameServer: "gamer", reseller: "agency" };
 
 // HOSTtoast's list for a product, in one city or all: open rivals and you once listed, by tier and then review score.
-export function hosttoastList(s: GameState, product: AwardProduct, city: string | null): ListRow[] {
-  const year = yearOf(s.hour), from = marketPrice(product, sizeSpec(product, 0, year), year);
+// Reseller rows show the price per GB, yours from your rates.
+export function hosttoastList(s: GameState, product: ListedProduct, city: string | null): ListRow[] {
+  const year = yearOf(s.hour), perGb = product === "reseller", from = perGb ? marketRates(product, year).diskGb ?? 0 : marketPrice(product, sizeSpec(product, 0, year), year);
+  const yours = perGb ? s.rates.reseller?.diskGb ?? from : from * priceIndex(s);
   const rows: ListRow[] = openRivals(s).filter((r) => r.sells.includes(product) && (city === null || sellsIn(r, city))).map((r) => ({
     id: r.id, name: r.name, tier: r.tier, score: rivalScore(r), reviews: reviewCount(r), price: from * r.priceFactor, P: r.P, R: r.R, C: r.C,
   }));
@@ -27,7 +29,7 @@ export function hosttoastList(s: GameState, product: AwardProduct, city: string 
   const at = cities.find((c) => offers(s, product, c));
   if (s.hosttoast.tier && at) {
     const sc = playerScores(s, SHOWN_FOR[product], at);
-    rows.push({ id: "you", name: s.company.name, tier: s.hosttoast.tier, score: reviewScore(s), reviews: s.marketing.reviews.filter((r) => s.hour - r.hour < REVIEW_HOURS).length, price: from * priceIndex(s), ...sc });
+    rows.push({ id: "you", name: s.company.name, tier: s.hosttoast.tier, score: reviewScore(s), reviews: s.marketing.reviews.filter((r) => s.hour - r.hour < REVIEW_HOURS).length, price: yours, ...sc });
   }
   return rows.sort((a, b) => TIER_IDS.indexOf(b.tier) - TIER_IDS.indexOf(a.tier) || b.score - a.score);
 }

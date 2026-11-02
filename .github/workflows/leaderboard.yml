@@ -1,37 +1,14 @@
 name: Leaderboard
 
-# A pull request that adds run files to leaderboard/ passes only when every run replays to the scores it claims.
-# A push to main replays every run again and publishes public/leaderboard.json with the site.
+# A push to main replays every run, leaves out those that do not match their scores, and publishes
+# public/leaderboard.json with the site.
 on:
-  pull_request:
-    paths: ["leaderboard/**"]
   push:
     branches: [main]
     paths: ["leaderboard/**"]
 
 jobs:
-  verify:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Replay the submitted runs
-        env:
-          BASE: origin/${{ github.base_ref }}
-        run: |
-          files=$(git diff --name-only --diff-filter=AM "$BASE...HEAD" -- 'leaderboard/*.run.json')
-          if [ -z "$files" ]; then echo "No run files changed."; exit 0; fi
-          scripts/replay-runs.sh "$RUNNER_TEMP/verified" $files
-
   publish:
-    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: write

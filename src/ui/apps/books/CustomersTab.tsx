@@ -8,25 +8,32 @@ import { renewDomain } from "../../../sim/90-actions/orders";
 import { t } from "../../../i18n/en";
 import { menuOn } from "../../desktop/ContextMenu";
 import { useStore } from "../../store";
-import { useBooks } from "./view";
+import { arrowRows, useBooks } from "./view";
 import { formatDay } from "../billing/format";
 import { monthYear } from "../support/labels";
 import { NEW, NewCustomer } from "./NewCustomer";
+import { ChangePrice, CreditSheet } from "../customers/CustomerPage";
+import "../customers/customers.css";
 
 export function CustomersTab({ focus }: { focus: string | null }) {
   const game = useBooks(), act = useStore((s) => s.act);
-  const list = game.customers.filter((c) => !c.sponsor).sort((a, b) => Number(a.churnedAt !== null) - Number(b.churnedAt !== null) || b.since - a.since);
+  const all = game.customers.filter((c) => !c.sponsor).sort((a, b) => b.since - a.since);
+  const archived = all.filter((c) => activeServices(game.services, c.id).length === 0);
+  const [archive, setArchive] = useState(() => !!focus && archived.some((c) => c.id === focus));
+  const current = all.filter((c) => !archived.includes(c)), list = archive ? archived : current;
   const [selected, setSelected] = useState<string | null>(focus?.startsWith(NEW) ? null : focus ?? list[0]?.id ?? null);
   const [adding, setAdding] = useState<string | null>(focus?.startsWith(NEW) ? focus.slice(NEW.length) : null);
+  const [crediting, setCrediting] = useState(false), [pricing, setPricing] = useState<string | null>(null);
   const c = list.find((x) => x.id === selected);
   if (adding !== null) return <NewCustomer game={game} initial={adding} onDone={() => setAdding(null)} />;
   const add = <button className="btn" onClick={() => setAdding("")}><UserPlus />{t("pkg.newCustomer")}</button>;
-  if (list.length === 0) return <div className="fin-empty"><Users />{t("books.noCustomers")}{add}</div>;
+  const toggle = archived.length > 0 && <button className="btn books-archive" aria-pressed={archive} onClick={() => { setArchive(!archive); setSelected((archive ? current : archived)[0]?.id ?? null); }}>{archive ? t("books.tab.customers") : t("books.archive", { n: archived.length })}</button>;
+  if (list.length === 0) return <div className="fin-empty"><Users />{t("books.noCustomers")}{add}{toggle}</div>;
   const services = c ? activeServices(game.services, c.id) : [];
   const domains = c ? game.domains.filter((d) => d.customerId === c.id) : [];
   return (
     <div className="books-customers">
-      <nav className="sidebar books-list" aria-label={t("books.tab.customers")}>
+      <nav className="sidebar books-list" aria-label={t("books.tab.customers")} onKeyDown={arrowRows}>
         {add}
         {list.map((x) => {
           const first = activeServices(game.services, x.id)[0];
@@ -40,6 +47,7 @@ export function CustomersTab({ focus }: { focus: string | null }) {
             </button>
           );
         })}
+        {toggle}
       </nav>
       {c && (
         <section className="books-customer">
@@ -51,10 +59,21 @@ export function CustomersTab({ focus }: { focus: string | null }) {
             <div><dt>{t("books.since")}</dt><dd className="num">{monthYear(c.since)}</dd></div>
             <div><dt>{t("books.openInvoices")}</dt><dd className="num">{game.invoices.filter((i) => i.customerId === c.id && isUnpaid(i)).length}</dd></div>
           </dl>
+          {c.churnedAt === null && (
+            <div className="fin-actions">
+              <button className="btn" onClick={() => setCrediting(true)}>{t("misc.creditEllipsis")}</button>
+            </div>
+          )}
+          {crediting && <CreditSheet customerId={c.id} onClose={() => setCrediting(false)} />}
           {services.length > 0 && (
             <table className="table">
               <thead><tr><th>{t("books.services")}</th><th className="r">{t("books.col.monthly")}</th></tr></thead>
-              <tbody>{services.map((v) => <tr key={v.id}><td>{v.label}</td><td className="r num">{euroPrice(serviceMonthly(v))}</td></tr>)}</tbody>
+              <tbody>{services.map((v) => (
+                <tr key={v.id} onContextMenu={v.period === "hour" ? menuOn(() => [{ label: t("misc.changePrice"), run: () => setPricing(v.id) }]) : undefined}>
+                  <td>{v.label}{pricing === v.id && <ChangePrice v={v} profile={c.profile} onClose={() => setPricing(null)} />}</td>
+                  <td className="r num">{euroPrice(serviceMonthly(v))}</td>
+                </tr>
+              ))}</tbody>
             </table>
           )}
           {domains.length > 0 && (

@@ -9,6 +9,7 @@ export default {
   "ipmi.log.powerOn": () => "Acceso",
   "ipmi.log.shutdown": () => "Spegnimento regolare",
   "ipmi.log.pulled": () => "Corrente persa",
+  "ipmi.log.upsShutdown": () => "Spento su segnale dell'UPS",
   "ipmi.log.overheat": () => "Spento per calore",
   "ipmi.log.reset": () => "Reset forzato",
   "ipmi.log.cycle": () => "Ciclo di alimentazione",

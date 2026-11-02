@@ -4,8 +4,6 @@ import type { GameState } from "../../../sim/50-state";
 import { FREEMAIL, providerById } from "../../../sim/80-business/mail";
 import { FreeScootMark, FreshduskMark, GoggleMark, IonoseMark, LookoutMark, GMixMark, OsTickitMark, PearMailMark, ZenduskMark, type MarkProps } from "../../art/mailmarks";
 
-export { DESK_FEATURES } from "../../../sim/10-catalog/desks";
-
 export type SupportStyle = "goggle" | "lookout" | "ionose" | "gmix" | "pear" | "ostickit" | "zendusk" | "freshdusk" | "freescoot";
 // brand names the provider or desk the app is drawn as.
 export interface SupportApp { name: "Email" | "Support"; brand: string; icon: ComponentType<MarkProps>; tile: string; style: SupportStyle }
@@ -27,7 +25,7 @@ export const DESK: Record<string, { icon: ComponentType<MarkProps>; tile: string
 };
 
 // The Support app shows as Email until a support desk is installed; its id stays "Support" everywhere else.
-export function supportApp(s: Pick<GameState, "installed" | "company">): SupportApp {
+export function supportApp(s: Pick<GameState, "desk" | "company">): SupportApp {
   const desk = deskOf(s);
   if (desk) return { name: "Support", brand: desk.name, ...DESK[desk.id] };
   const m = s.company.mail;

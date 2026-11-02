@@ -1,0 +1,25 @@
+import type { Dict } from "../lang";
+
+export default {
+  "providers.borisnet.navHome": () => "Accueil",
+  "providers.borisnet.navSites": () => "Datacenter",
+  "providers.borisnet.navOrder": () => "Colocation",
+  "providers.borisnet.navPortal": () => "Espace client",
+  "providers.borisnet.claim": () => "Infrastructure informatique depuis Nuremberg",
+  "providers.borisnet.here": () => "Vous êtes ici :",
+  "providers.borisnet.quick": () => "Accès rapide",
+  "providers.borisnet.box": (p) => `${p.city}, ${p.carriers} opérateurs, ${p.exchange}.`,
+  "providers.borisnet.heroEarly": () => "Hébergement et colocation dans notre propre datacenter",
+  "providers.borisnet.heroLate": () => "Votre partenaire pour une infrastructure informatique sûre",
+  "providers.borisnet.text": (p) => `Nous exploitons ${p.name} à ${p.city} nous-mêmes, avec notre propre réseau et notre propre personnel sur place.`,
+  "providers.borisnet.cta": () => "Demander une colocation",
+  "providers.borisnet.services": () => "Nos services",
+  "providers.borisnet.tile1": () => "Hébergement",
+  "providers.borisnet.tile1Text": () => "Unités de baie, baies complètes et cages avec électricité au compteur.",
+  "providers.borisnet.tile2": () => "Réseau",
+  "providers.borisnet.tile2Text": () => "Liens de transit redondants et accès direct au point d'échange local.",
+  "providers.borisnet.tile3": () => "Exploitation",
+  "providers.borisnet.tile3Text": () => "Nos techniciens installent, remplacent et contrôlent votre matériel sur demande.",
+  "providers.borisnet.certs": () => "Certifié ISO 27001 et audité chaque année.",
+  "providers.borisnet.footer": (p) => `© ${p.year} Boris Network AG`,
+} satisfies Dict;

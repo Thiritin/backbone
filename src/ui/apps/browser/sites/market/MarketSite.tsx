@@ -4,11 +4,11 @@ import { CHANNELS, type Channel } from "../../../../../sim/10-catalog/used";
 import type { GameState } from "../../../../../sim/50-state";
 import { displayHost } from "../../../../../sim/80-business/browser";
 import { Ebuy } from "./ebuy";
-import { Telegrump } from "./telegrump";
+import { Craigslost } from "./craigslost";
 import { WebHostingTalc } from "./webhostingtalc";
 import type { MarketProps } from "./shared";
 
-const SITES: Record<Channel, ComponentType<MarketProps>> = { ebuy: Ebuy, board: WebHostingTalc, chat: Telegrump };
+const SITES: Record<Channel, ComponentType<MarketProps>> = { ebuy: Ebuy, board: WebHostingTalc, chat: Craigslost };
 
 // A used market's site; each picks its own look by year.
 export function MarketSite({ game, channel, path, go }: { game: GameState; channel: Channel; path: string; go: (url: string) => void }) {

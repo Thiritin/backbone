@@ -1,7 +1,9 @@
 // docs/design/plans/tax-office.md: what the player files with the tax office through DOHLE.
 import { yearOf } from "../00-core/time";
 import type { GameState } from "../50-state";
-import { answer, fileVat, smallLimit, taxNumber } from "../80-business/tax";
+import { answer, booksLinked, portalOpen, booksMissing, CERT_FILE, certOk, taxView, fileVat, fileYear, yearOpen, FORMULAR_APP, normalCode, registerDohle, smallLimit, taxNumber } from "../80-business/tax";
+import { salesAddress } from "../80-business/mail";
+import { freeSpot } from "./docs";
 import type { ActionResult } from "./hardware";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -17,13 +19,16 @@ export function answerQuestionnaire(s: GameState, expected: number, small: boole
   return { ok: true };
 }
 
-// An advance VAT return filed with the tax office.
-export function fileVatReturn(s: GameState, id: string): ActionResult {
+// A return filed with the tax office: an advance VAT return, or the yearly return until the end of the following year.
+export function fileReturn(s: GameState, id: string): ActionResult {
   if (!taxNumber(s)) return fail("error.taxNumber");
-  const r = s.tax.returns.find((x) => x.id === id && x.kind === "vat");
+  if (!certOk(s)) return fail("error.dohleCert");
+  const r = s.tax.returns.find((x) => x.id === id);
   if (!r) return fail("error.taxReturn");
   if (r.filedAt !== null) return fail("error.taxReturnFiled");
-  fileVat(s, r);
+  if (r.kind === "vat") fileVat(s, r);
+  else if (!yearOpen(s, r)) return fail("error.taxYearClosed");
+  else fileYear(s, r);
   return { ok: true };
 }
 
@@ -31,5 +36,57 @@ export function fileVatReturn(s: GameState, id: string): ActionResult {
 export function leaveSmallRule(s: GameState): ActionResult {
   if (!s.tax.small) return fail("error.taxNotSmall");
   s.tax = { ...s.tax, small: false };
+  return { ok: true };
+}
+
+// Registering on DOHLE with the tax number and the company's email address; a new registration revokes the old certificate.
+export function registerForDohle(s: GameState, taxNo: string, email: string): ActionResult {
+  const number = taxNumber(s);
+  if (!number) return fail("error.taxNumber");
+  if (normalCode(taxNo) !== normalCode(number)) return fail("error.dohleTaxNumber");
+  if (email.trim().toLowerCase() !== salesAddress(s).toLowerCase()) return fail("error.dohleMail");
+  registerDohle(s);
+  return { ok: true };
+}
+
+// The activation ID from the email and the code from the letter put the certificate file on the desktop.
+export function activateDohle(s: GameState, id: string, code: string): ActionResult {
+  const t = s.tax;
+  if (!t.dohleCode || t.codeAt === null || s.hour < t.codeAt) return fail("error.dohleNoCode");
+  if (normalCode(id) !== normalCode(t.dohleId) || normalCode(code) !== normalCode(t.dohleCode)) return fail("error.dohleCode");
+  const doc = `doc${s.nextId++}`;
+  s.docs = [...s.docs, { id: doc, kind: "cert", title: CERT_FILE, body: "", ...freeSpot(s) }];
+  s.tax = { ...t, dohleId: "", dohleCode: "", codeAt: null, cert: doc };
+  return { ok: true, id: doc };
+}
+
+// DohleFormular from the download page, installed on the dock.
+export function installDohleFormular(s: GameState): ActionResult {
+  if (s.installed.includes(FORMULAR_APP)) return fail("error.installed");
+  s.installed = [...s.installed, FORMULAR_APP];
+  return { ok: true };
+}
+
+// Connecting DOHLE in Books with the certificate file picked from the desktop.
+export function connectDohle(s: GameState, doc: string): ActionResult {
+  if (!taxView(s)) return fail("error.booksTaxView");
+  if (!certOk(s) || doc !== s.tax.cert) return fail("error.dohleCert");
+  s.tax = { ...s.tax, booksCert: doc };
+  return { ok: true };
+}
+
+// Submit tax return in Books: the yearly return, once Books has every invoice of the year and a matched statement.
+export function submitTaxReturn(s: GameState, id: string): ActionResult {
+  if (!booksLinked(s)) return fail("error.booksNotLinked");
+  const r = s.tax.returns.find((x) => x.id === id && x.kind === "year");
+  if (!r) return fail("error.taxReturn");
+  const missing = booksMissing(s, r);
+  return missing ? fail(missing) : fileReturn(s, id);
+}
+
+// Logging in to Mein DOHLE with the certificate file picked from the desktop.
+export function loginMeinDohle(s: GameState, doc: string): ActionResult {
+  if (!portalOpen(s)) return fail("error.dohlePortal");
+  if (!certOk(s) || doc !== s.tax.cert) return fail("error.dohleCert");
   return { ok: true };
 }

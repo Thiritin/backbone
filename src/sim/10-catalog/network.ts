@@ -37,6 +37,12 @@ export const EXCHANGES: Exchange[] = [
 ];
 export const exchangeById = (id: string) => EXCHANGES.find((x) => x.id === id);
 export const exchangeAt = (dc: Datacenter): Exchange | undefined => EXCHANGES.find((x) => x.name === dc.exchange?.name);
+// What a cross-connect can reach from a space at dc: the carriers on sale there, and the exchange when it is on site.
+export const crossConnectTargets = (dc: Datacenter): { id: string; name: string }[] => {
+  const x = dc.exchange?.onSite ? exchangeAt(dc) : undefined;
+  return [...carriersAt(dc), ...(x ? [x] : [])].map(({ id, name }) => ({ id, name }));
+};
+export const targetName = (id: string): string => (carrierById(id) ?? exchangeById(id))?.name ?? id;
 
 // Port speeds in Gbit/s and the year carriers and exchanges start selling them.
 export const PORT_SPEEDS: { gbit: number; from: number }[] = [{ gbit: 1, from: 2005 }, { gbit: 10, from: 2008 }, { gbit: 100, from: 2014 }, { gbit: 400, from: 2021 }];

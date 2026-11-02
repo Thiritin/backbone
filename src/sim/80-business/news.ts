@@ -2,7 +2,11 @@
 import { dateOf, hourOf, START_YEAR, yearOf } from "../00-core/time";
 import { IPV6_FROM } from "../10-catalog/addresses";
 import { DESKS } from "../10-catalog/desks";
-import { GENERATIONS } from "../10-catalog/economy";
+import { GENERATIONS, keyframes } from "../10-catalog/economy";
+import { FIXED_KEYS } from "../10-catalog/products";
+import { LICENCE_RISES, RISE_NOTICE_MONTHS } from "../10-catalog/licence-tiers";
+import { SHOP_LICENCES } from "../10-catalog/shop-licences";
+import { REGISTRIES, REGISTRY_NOTICE_MONTHS, stepAt } from "../30-customers/registry";
 import { MODELS, SERVER_LINES } from "../10-catalog/hardware";
 import { supportEnd } from "../10-catalog/lifecycle";
 import { GPU_CARDS } from "../10-catalog/gpu";
@@ -15,7 +19,6 @@ import { SKILLS } from "../10-catalog/research";
 import { HOME_LINES } from "../20-world/datacenters";
 import { LINE_NAME } from "../30-market/spec";
 import type { GameState } from "../50-state";
-import { t } from "../../i18n/en";
 import { familyOf } from "../60-infra/vulns";
 import type { SimEvent } from "../88-tick/tick";
 import { MAIL_PROVIDERS } from "./mail";
@@ -38,6 +41,31 @@ function byYear<T>(xs: T[], year: (x: T) => number, name: (x: T) => string): [nu
 const FEATURES = (x: (typeof SOFTWARE)[number]) =>
   ([["cluster", x.cluster], ["balloon", x.balloon], ["importSame", x.migration.same], ["importOther", x.migration.other]] as [string, number | null][])
     .flatMap(([f, y]): [string, number][] => (y !== null && y > Math.max(START_YEAR, x.from) ? [[f, y]] : []));
+
+// economy.md, Price announcements: what takes effect at hour, posted months before it; the params carry the hour as at.
+const ahead = (hour: number, months: number): number => { const d = dateOf(hour); return at(d.getUTCFullYear(), d.getUTCMonth() - months); };
+const month1 = (year: number, month = 1): number => hourOf(new Date(Date.UTC(year, month - 1, 1)));
+// A licence era after the first, and every list price rise of a vendor.
+const LICENSED = [...SOFTWARE, ...SERVER_OS, ...SHOP_LICENCES];
+const PRICE_NEWS: NewsDef[] = [
+  ...LICENSED.flatMap((x) => x.licensing.slice(1).filter((e) => e.from > START_YEAR).map((e) => {
+    const when = month1(e.from, e.month);
+    return { id: `licence.${x.id}.${e.from}.${e.month ?? 1}`, key: "event.news.licenceModel", at: ahead(when, RISE_NOTICE_MONTHS), params: { name: x.name, at: when } };
+  })),
+  ...Object.entries(LICENCE_RISES).flatMap(([id, rises]) => rises.map(([y, f], i) => {
+    const name = LICENSED.find((x) => x.id === id)!.name, pct = Math.round((f / (i ? rises[i - 1][1] : 1) - 1) * 100), when = month1(y);
+    return { id: `licenceRise.${id}.${y}`, key: "event.news.licenceRise", at: ahead(when, RISE_NOTICE_MONTHS), params: { name, pct, at: when } };
+  })),
+  ...Object.values(REGISTRIES).flatMap((r) => (r.steps ?? []).filter(([y]) => y > START_YEAR).map((step) => {
+    const when = stepAt(step);
+    return { id: `registry.${r.name}.${step[0]}`, key: "event.news.registryPrice", at: ahead(when, REGISTRY_NOTICE_MONTHS), params: { name: r.name, price: step[2], at: when } };
+  })),
+  // The market's rises of 5% or more from one year to the next, posted in October before.
+  ...Object.entries(FIXED_KEYS).flatMap(([line, keys]) => Array.from({ length: 30 }, (_, i) => START_YEAR + 1 + i).flatMap((y) => {
+    const pct = Math.round((keyframes(keys, y) / keyframes(keys, y - 1) - 1) * 100);
+    return pct >= 5 ? [{ id: `marketPrice.${line}.${y}`, key: "event.news.marketPrice", at: at(y - 1, 9), params: { line: LINE_NAME[line as keyof typeof LINE_NAME], pct, at: month1(y) } }] : [];
+  })),
+];
 
 // Fixed announcements; a later lane adds its own by pushing a NewsDef with its date. What exists when a game starts is not news.
 export const NEWS: NewsDef[] = [
@@ -63,12 +91,13 @@ export const NEWS: NewsDef[] = [
   ...byYear(MODELS.filter((m) => !m.server && m.kind !== "chassis"), (m) => m.from, (m) => m.name).map(([y, names]) => ({ id: `models.${y}`, key: "event.news.models", at: at(y), params: { names } })),
   ...SERVER_LINES.filter((v) => v.from > START_YEAR).map((v) => ({ id: `shape.${v.id}`, key: "event.news.shape", at: at(v.from), params: { name: v.name } })),
   ...SOFTWARE.flatMap((x) => FEATURES(x).map(([f, y]) => ({ id: `feature.${x.id}.${f}`, key: "event.news.feature", at: at(y), params: { name: x.name, feature: f } }))),
-  ...DESKS.filter((d) => d.from > START_YEAR).map((d) => ({ id: `desk.${d.id}`, key: "event.news.desk", at: at(d.from), params: { name: d.name } })),
+  ...DESKS.filter((d) => d.from > START_YEAR).map((d) => ({ id: `desk.${d.id}`, key: "event.news.desk", at: at(d.from), params: { name: d.name, host: d.hosts.vendor } })),
   ...SKILLS.filter((k) => (k.from ?? START_YEAR) > START_YEAR).map((k) => ({ id: `training.${k.id}`, key: "event.news.training", at: at(k.from!), params: { name: k.name } })),
   ...byYear(HOME_LINES, (l) => l.from, (l) => `${l.name} (${l.isp})`).map(([y, names]) => ({ id: `homeLines.${y}`, key: "event.news.homeLines", at: at(y), params: { names } })),
   ...PORT_SPEEDS.filter((p) => p.from > START_YEAR).map((p) => ({ id: `ports.${p.gbit}`, key: "event.news.ports", at: at(p.from), params: { gbit: p.gbit } })),
   // SSL certificates turn free (products.ts, marketRates).
   { id: "freeSsl", key: "event.news.freeSsl", at: at(2016), params: {} },
+  ...PRICE_NEWS,
   // A new major of a software or OS after its first, at ten on its release day, linking to the News page of its site.
   ...[...SOFTWARE, ...SERVER_OS].flatMap((x) => versionsOf(x.id).flatMap((v, i, vs) => (i > 0 && v.major !== vs[i - 1].major && v.release > 0 ? [{
     id: `swVersion.${x.id}.${v.version}`, key: "event.news.swVersion", at: v.release + 10,
@@ -104,13 +133,11 @@ function releaseDef(id: string): NewsDef {
   return { id, key: "event.news.release", at: -1, params: { year: y, names: names.join("|") } };
 }
 
-export const appParams = (app: string): Params => ({ app: t(`apps.name.${app}`) });
-
 // What GameState.news holds: each entry's hour of publication and the announcement it stands for, newest first.
 export function feed(s: GameState): { hour: number; key: string; params: Params }[] {
   return s.news.flatMap((e) => {
     const [id, hour] = e.split("@"), d = id.startsWith("line.") ? lineDef(id.slice(5)) : id.startsWith("release.") ? releaseDef(id)
-      : id.startsWith("rival.") ? rivalNews(s, id) : id.startsWith("app.") ? { id, key: "event.news.app", at: -1, params: appParams(id.slice(4)) } : NEWS.find((x) => x.id === id);
+      : id.startsWith("rival.") ? rivalNews(s, id) : NEWS.find((x) => x.id === id);
     return d ? [{ hour: Number(hour), key: d.key, params: d.params }] : [];
   }).sort((a, b) => b.hour - a.hour);
 }

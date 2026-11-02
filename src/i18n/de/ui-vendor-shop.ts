@@ -42,5 +42,5 @@ export default {
   "error.notCancellable": () => "Diese Lizenz kann nicht gekündigt werden.",
   "ledger.order": (p) => `Bestellung ${p.order} bei ${p.vendor}`,
   "ticket.mail.vendor.order.subject": (p) => `Ihre Bestellung ${p.order}`,
-  "ticket.mail.vendor.order.text": (p) => `Vielen Dank für Ihre Bestellung ${p.order}. Wir haben ${euroPrice(Number(p.total))} von Ihrem Bankkonto abgebucht. Ihre Lizenzschlüssel stehen unter Mein Konto auf unserer Website.`,
+  "ticket.mail.vendor.order.text": (p) => `Vielen Dank für Ihre Bestellung ${p.order}. ${Number(p.card) ? `Wir haben ${euroPrice(Number(p.total))} Ihrer Kreditkarte belastet.` : `Ihre Überweisung über ${euroPrice(Number(p.total))} ist bei uns eingegangen.`} Ihre Lizenzschlüssel stehen unter Mein Konto auf unserer Website.`,
 } satisfies Dict;

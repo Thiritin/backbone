@@ -1,5 +1,5 @@
 /* Backup consoles: a plain light admin page with a green accent. */
-.bk { --bg: #f6f7f5; --panel: #ffffff; --fg: #1d2420; --muted: #66706a; --line: #dde2de; --accent: #2f8f4e; --info: #2f8f4e; --font: "Inter", "Helvetica Neue", Arial, sans-serif; --r: 4px; }
+.bkp { --bg: #f6f7f5; --panel: #ffffff; --fg: #1d2420; --muted: #66706a; --line: #dde2de; --accent: #2f8f4e; --info: #2f8f4e; --font: "Inter", "Helvetica Neue", Arial, sans-serif; --r: 4px; }
 .bk-logo { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; color: var(--accent); }
 .bk-top { display: flex; align-items: center; gap: 16px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
 .bk-top .cx-host { flex: 1; }
@@ -10,9 +10,9 @@
 .bk-login { display: grid; place-items: center; }
 .bk-card { display: grid; gap: 12px; padding: 24px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); min-width: 280px; }
 
-.bk[data-skin="veeham"] { --accent: #00a05a; --info: #00a05a; }
-.bk[data-skin="backula"] { --accent: #b3541e; --info: #b3541e; --bg: #f4f1ec; }
-.bk[data-skin="pbs"] { --accent: #e57000; --info: #e57000; --bg: #f3f4f6; }
+.bkp[data-skin="veeham"] { --accent: #00a05a; --info: #00a05a; }
+.bkp[data-skin="backula"] { --accent: #b3541e; --info: #b3541e; --bg: #f4f1ec; }
+.bkp[data-skin="pbs"] { --accent: #e57000; --info: #e57000; --bg: #f3f4f6; }
 .bk-edit { display: grid; gap: 8px; max-width: 360px; margin-top: 12px; padding: 12px; border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); }
 .bk-pick { display: grid; gap: 4px; }
 .bk-jobs td.cx-tools { white-space: nowrap; }
@@ -23,3 +23,45 @@
 .bk-day[data-has="true"] { background: color-mix(in oklch, var(--accent) 22%, transparent); color: var(--fg); font-weight: 600; }
 .bk-day[aria-pressed="true"] { outline: 2px solid var(--accent); }
 .bk-side { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+
+/* Veeham until v10: the Windows console with a green title band and a ribbon of large icons. */
+.bkp[data-era="ribbon"] { --bg: #ffffff; --panel: #ffffff; --fg: #1e1e1e; --muted: #555; --line: #c5ccd6; --accent: #00b336; --info: #007a25; --font: "Segoe UI", Tahoma, sans-serif; --r: 2px; font-size: 12px; }
+.bkp[data-era="ribbon"] .bk-top { padding: 4px 12px; background: #00b336; color: #fff; border: 0; }
+.bkp[data-era="ribbon"] .bk-logo { color: #fff; font-size: 13px; }
+.bkp[data-era="ribbon"] .bk-top .cx-host { color: rgb(255 255 255 / 0.8); }
+.bkp[data-era="ribbon"] .bk-top .cx-btn { padding: 2px 8px; background: rgb(255 255 255 / 0.15); border-color: rgb(255 255 255 / 0.4); color: #fff; }
+.bkp[data-era="ribbon"] .bk-nav { gap: 2px; padding: 4px 8px; background: linear-gradient(#fbfcfd, #dfe6ee); border-bottom: 1px solid #a7b4c4; }
+.bkp[data-era="ribbon"] .bk-nav button { flex-direction: column; gap: 3px; min-width: 70px; padding: 4px 8px; border: 1px solid transparent; color: var(--fg); font-size: 11px; }
+.bkp[data-era="ribbon"] .bk-nav button:hover { background: linear-gradient(#fff8dc, #ffe39a); border-color: #e5c365; }
+.bkp[data-era="ribbon"] .bk-nav button[aria-pressed="true"] { background: linear-gradient(#ffe8a6, #ffd36b); border-color: #c29b3a; color: var(--fg); }
+.bkp[data-era="ribbon"] .bk-nav svg { color: #1f6f3a; }
+.bkp[data-era="ribbon"] .bk-main { background: #f3f5f8; }
+.bkp[data-era="ribbon"] .cx-table th { background: linear-gradient(#fff, #e9edf2); color: #1e1e1e; }
+.bk-login[data-era="ribbon"] { background: linear-gradient(#e7ecf2, #c9d3df); }
+.bk-login[data-era="ribbon"] .bk-card { border-radius: 0; border-top: 6px solid #00b336; }
+
+/* Veeham v10 to v12: the flat refreshed console with the navigation pane down the left. */
+.bkp[data-era="refresh"] { --bg: #f4f4f4; --panel: #ffffff; --fg: #2b2b2b; --muted: #6d6d6d; --line: #dcdcdc; --accent: #00b336; --info: #00b336; --font: "Segoe UI", "Helvetica Neue", Arial, sans-serif; --r: 0; }
+.bkp[data-era="refresh"]:not(.bk-login) { display: grid; grid-template: auto 1fr / 220px 1fr; }
+.bkp[data-era="refresh"] .bk-top { grid-column: 1 / 3; background: #fff; }
+.bkp[data-era="refresh"] .bk-logo { color: var(--fg); font-weight: 600; }
+.bkp[data-era="refresh"] .bk-logo svg { color: var(--accent); }
+.bkp[data-era="refresh"] .bk-nav { flex-direction: column; justify-content: flex-end; gap: 0; padding: 0; border: 0; border-right: 1px solid var(--line); }
+.bkp[data-era="refresh"] .bk-nav button { gap: 10px; padding: 11px 16px; border-top: 1px solid var(--line); border-radius: 0; color: var(--fg); font-weight: 600; }
+.bkp[data-era="refresh"] .bk-nav button[aria-pressed="true"] { background: #e8f7ee; color: var(--fg); box-shadow: inset 4px 0 0 var(--accent); }
+.bkp[data-era="refresh"] .cx-table th { text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.05em; }
+.bk-login[data-era="refresh"] { background: #2b2b2b; }
+
+/* Veeham v13: the dark web UI with an icon rail. */
+.bkp[data-era="web"] { --bg: #10171d; --panel: #18222b; --fg: #e4e9ee; --muted: #8b99a6; --line: #26333e; --accent: #00d15f; --info: #3ee483; --hover: rgb(255 255 255 / 0.06); --font: "Inter", "Helvetica Neue", Arial, sans-serif; --r: 8px; }
+.bkp[data-era="web"]:not(.bk-login) { display: grid; grid-template: auto 1fr / 104px 1fr; }
+.bkp[data-era="web"] .bk-top { grid-column: 2; background: var(--bg); border-color: var(--line); }
+.bkp[data-era="web"] .bk-logo { color: var(--fg); }
+.bkp[data-era="web"] .bk-logo svg { color: var(--accent); }
+.bkp[data-era="web"] .bk-nav { grid-area: 1 / 1 / 3; flex-direction: column; gap: 4px; padding: 10px 6px; background: #0a0f13; border: 0; border-right: 1px solid var(--line); }
+.bkp[data-era="web"] .bk-nav button { flex-direction: column; gap: 4px; padding: 8px 4px; font-size: 10.5px; hyphens: auto; overflow-wrap: anywhere; text-align: center; color: var(--muted); }
+.bkp[data-era="web"] .bk-nav button[aria-pressed="true"] { color: var(--accent); background: rgb(0 209 95 / 0.1); }
+.bkp[data-era="web"] .bk-main { grid-column: 2; }
+.bkp[data-era="web"] .cx-table { border-radius: var(--r); overflow: hidden; }
+.bkp[data-era="web"] .cx-table th { background: #1d2833; }
+.bk-login[data-era="web"] { background: radial-gradient(circle at 70% 30%, #12352a, #10171d 60%); }

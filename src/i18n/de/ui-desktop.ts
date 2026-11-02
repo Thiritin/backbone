@@ -127,4 +127,12 @@ export default {
   "desktop.menu.deleteTitle": () => "Gesamten Fortschritt löschen?",
   "desktop.menu.deleteText": () => "Dein Unternehmen und sein Spielstand werden aus diesem Browser entfernt. Exportiere vorher einen Spielstand, um eine Kopie zu behalten.",
   "desktop.menu.deleteAction": () => "Löschen",
+  "desktop.start.immersive": () => "Immersiv spielen",
+  "desktop.immersive.title": () => "Immersiver Modus",
+  "desktop.immersive.text": () => "Der immersive Modus füllt den ganzen Bildschirm und gibt Tastenkürzel wie Cmd+Tab, Alt+Tab und F11 an das Spiel weiter, sodass Cmd+Tab und Alt+Tab zwischen den Fenstern im Spiel wechseln.",
+  "desktop.immersive.browsers": () => "Öffne das Spiel auf einem Computer in Chrome, Edge, Opera oder Brave, um den immersiven Modus zu nutzen.",
+  "desktop.immersive.leave": () => "Um den immersiven Modus zu verlassen, wähle Abmelden im Menü oben links oder halte Esc gedrückt.",
+  "desktop.immersive.start": () => "Immersiven Modus starten",
+  "desktop.menu.logout": () => "Abmelden",
+  "desktop.switcher": () => "Fenster wechseln",
 } satisfies Dict;

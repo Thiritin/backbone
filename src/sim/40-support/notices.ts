@@ -1,11 +1,13 @@
 // GDD, Support: abuse and copyright notices, legal requests, refunds after outages; numbers in economy.md, Notices and legal requests.
 import { CRYPTO_ABUSE } from "../10-catalog/payments";
-import { BOOKS_LICENCE, SHOP_LICENCE, vendorParams } from "../80-business/lexwear";
+import { SHOP_LICENCE, vendorParams } from "../80-business/licences";
 import { hashRng, rand, type Rng } from "../00-core/rng";
 import { activeServices, type Customer } from "../30-customers/customers";
 import { serviceFqdn } from "../30-customers/hostnames";
 import type { GameState } from "../50-state";
 import { t } from "../../i18n/en";
+import { LOCALE } from "../../i18n/lang";
+import { dateOf } from "../00-core/time";
 import { serverOf, type Workload } from "../60-infra/cluster";
 import { breachOf, decideBreach } from "../60-infra/breach";
 import { gridTick, maybeReview, returnSeized, seize } from "../60-infra/incidents";
@@ -13,6 +15,7 @@ import type { SimEvent } from "../88-tick/tick";
 import { maintParams } from "../60-infra/maintenance";
 import { askedIp } from "../60-infra/netsvc-dns";
 import { sponsorParams } from "../80-business/community";
+import { holdReason } from "../45-billing/billing";
 import { bump, cancelCustomer, credit, HOURS_PER_MONTH, monthlyValue, type Notice, type Ticket } from "./tickets";
 
 export interface Sender { id: string; name: string; domain: string; topics: string[]; agency: boolean }
@@ -56,9 +59,15 @@ const pick = <T>(r: Rng, xs: readonly T[]): T => xs[Math.floor(rand(r) * xs.leng
 const between = (r: Rng, [lo, hi]: readonly [number, number]) => lo + rand(r) * (hi - lo);
 const slug = (name: string) => name.toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
+// A suspended or ended account serves no content, so notices about it stop.
+const offline = (s: GameState, serviceId: string | null): boolean => {
+  const v = s.services.find((x) => x.id === serviceId);
+  return !!v && (v.endedAt !== null || !!holdReason(s, v));
+};
+
 // The domain a notice names: a service labelled with a domain, otherwise one made from the customer's name.
 export function domainOf(s: GameState, c: Customer): { domain: string; serviceId: string } | null {
-  const services = activeServices(s.services, c.id);
+  const services = activeServices(s.services, c.id).filter((v) => !offline(s, v.id));
   if (!services.length) return null;
   const v = services.find((x) => x.domain) ?? services.find((x) => x.label.includes(".") && !x.label.includes(" ")) ?? services[0];
   return { domain: v.domain ?? (v.label.includes(".") && !v.label.includes(" ") ? v.label : `${slug(c.name)}.de`), serviceId: v.id };
@@ -161,7 +170,10 @@ function deadlines(s: GameState, r: Rng, events: SimEvent[]): void {
   for (const t of s.tickets) {
     if (!t.notice || s.hour < t.dueAt || answeredInTime(t)) continue;
     if (t.kind === "extortion") { if (t.status === "open") decideBreach(s, t, "refuse", events); continue; }
-    if (t.kind === "notice" && t.status === "open") ignoreNotice(s, t, r);
+    if (t.kind === "notice" && t.status === "open") {
+      if (offline(s, t.serviceId)) Object.assign(t, { status: "resolved", outcome: "takenDown", updatedAt: s.hour, work: null });
+      else ignoreNotice(s, t, r);
+    }
     else if (t.kind === "legal" && (t.outcome === null || t.outcome === "ignored")) {
       Object.assign(t, { status: "closed", outcome: "seized", updatedAt: s.hour, work: null });
       const at = (w: Workload) => { const id = serverOf(s, w); return id && s.devices.some((d) => d.id === id) ? id : null; };
@@ -179,7 +191,7 @@ function followUps(s: GameState, r: Rng): Ticket[] {
     const { round, url } = t.notice;
     setNotice(t, { followAt: null });
     const c = s.customers.find((x) => x.id === t.customerId);
-    if (!c || c.churnedAt !== null) continue;
+    if (!c || c.churnedAt !== null || offline(s, t.serviceId)) continue;
     const next = t.kind === "notice" && round === 1
       ? spawnNotice(s, c, true, r, t.topic, 2)
       : spawnLegal(s, c, r, t.kind === "legal" ? 2 : 1, url);
@@ -211,14 +223,25 @@ const breachParams = (s: GameState, t: Ticket) => {
   return { host: s.clusters.find((c) => c.id === b?.hostId)?.name ?? "", ransom: b?.ransom ?? 0 };
 };
 
+// A switch request names the title the customer plays and the one they want.
+const switchParams = (s: GameState, tk: Ticket) => {
+  const g = s.gameServers.find((x) => x.serviceId === tk.serviceId);
+  return { title: g ? t(`games.title.${g.title}`) : "", next: g?.switchTo ? t(`games.title.${g.switchTo}`) : "" };
+};
+
+// The hoster's termination notice: the end hour, whether it ended at once and the reason as shown.
+const termParams = (term: NonNullable<Ticket["term"]>) => ({ end: dateOf(term.end).toLocaleDateString(LOCALE, { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }), now: term.now ? 1 : 0, why: term.reason ? t(`host.reason.${term.reason}`) : "" });
+
 export const subjectParams = (s: GameState, t: Ticket): Record<string, string | number> => ({
-  service: s.services.find((v) => v.id === t.serviceId)?.label ?? "", hostname: serviceFqdn(s, s.services.find((v) => v.id === t.serviceId)), domain: s.services.find((v) => v.id === t.serviceId)?.domain ?? s.sales.requests.find((r) => r.ticketId === t.id)?.domain ?? "", url: t.notice?.url ?? "", ip: t.topic === "dnsChange" ? askedIp(s, t.id) : "", video: t.notice?.video ?? "",
+  service: s.services.find((v) => v.id === t.serviceId)?.label ?? "", hostname: serviceFqdn(s, s.services.find((v) => v.id === t.serviceId)), domain: t.domain ?? s.services.find((v) => v.id === t.serviceId)?.domain ?? s.sales.requests.find((r) => r.ticketId === t.id)?.domain ?? "", url: t.notice?.url ?? "", ip: t.topic === "dnsChange" ? askedIp(s, t.id) : "", video: t.notice?.video ?? "",
   target: t.move?.name ?? "", round: t.notice?.round ?? 1, sender: t.notice ? senderName(t.notice.sender) : "",
   ...(t.kind === "extortion" && breachParams(s, t)),
   ...(t.maint && maintParams(t.maint)),
   ...(t.kind === "sponsor" && sponsorParams(s, t)),
+  ...(t.topic === "switchTitle" && switchParams(s, t)),
+  ...(t.term && termParams(t.term)),
   ...t.mail?.params,
-  ...(t.kind === "mail" && (t.topic.startsWith("lexwear.") || t.topic === BOOKS_LICENCE || t.topic === SHOP_LICENCE) && vendorParams(t.mail!.params)),
+  ...(t.kind === "mail" && t.topic === SHOP_LICENCE && vendorParams(t.mail!.params)),
 });
 
 // Hourly, before the infrastructure and support ticks: grid outages, returned servers, notices, deadlines and seizures.

@@ -1,4 +1,4 @@
-/* TCAdmen: grey and black forms with a server tree until 2016, then dark grey with a green accent. */
+/* TCAdmen: grey and black forms with a server tree until 2016, dark grey with a green accent until 2022, then the light v3 panel with a navy icon rail. */
 .tc[data-era="early"] { --bg: #d6d6d6; --panel: #f4f4f4; --line: #8c8c8c; --accent: #3a3a3a; --info: #2a4f8a; --font: Tahoma, Verdana, sans-serif; --r: 0; font-size: 11.5px; }
 .tc[data-era="late"] { --bg: #23272b; --panel: #2d3237; --fg: #e3e6e8; --muted: #9aa3ab; --line: #3b4148; --accent: #4caf50; --accent-fg: #0d2410; --info: #6fb3ff; --ok: #4caf50; --bad: #ef5350; --hover: rgb(255 255 255 / 0.06); --font: "Segoe UI", Roboto, Arial, sans-serif; --r: 3px; }
 
@@ -43,3 +43,26 @@
 .tc-card .cx-btn { justify-content: center; }
 .tc-card .tc-logo small { display: block; margin: 2px 0 0; }
 .tc-login[data-era="early"] { background: #000; }
+
+.tc[data-era="v3"] { --bg: #f2f4f8; --panel: #ffffff; --fg: #1c2333; --muted: #6b7489; --line: #e1e5ee; --accent: #3a6df0; --accent-fg: #fff; --info: #3a6df0; --ok: #1f9d6b; --bad: #e0454f; --hover: #eef2fb; --side: #172036; --side-fg: #aeb8d0; --font: "Inter", "Segoe UI", Roboto, Arial, sans-serif; --r: 8px; }
+.tc[data-era="v3"]:not(.tc-login) { display: grid; grid-template: auto 1fr / 210px 1fr; }
+.tc[data-era="v3"] .tc-top { grid-column: 2; background: var(--panel); color: var(--fg); border-bottom: 1px solid var(--line); padding: 12px 20px; }
+.tc[data-era="v3"] .tc-logo { color: var(--fg); letter-spacing: -0.01em; }
+.tc[data-era="v3"] .tc-logo small { color: var(--muted); opacity: 1; }
+.tc[data-era="v3"] .tc-menu { grid-column: 1; grid-row: 1 / 3; flex-direction: column; gap: 2px; padding: 64px 10px 12px; background: var(--side); color: var(--side-fg); }
+.tc[data-era="v3"] .tc-menu button { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 6px; text-align: left; }
+.tc[data-era="v3"] .tc-menu button:hover { background: rgb(255 255 255 / 0.06); color: #fff; }
+.tc[data-era="v3"] .tc-menu button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+.tc[data-era="v3"] .tc-menu button:last-child { margin: auto 0 0; }
+.tc[data-era="v3"] .tc-body { grid-column: 2; gap: 16px; padding: 16px 20px; }
+.tc[data-era="v3"] .tc-tree { width: 200px; padding: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); align-self: flex-start; }
+.tc[data-era="v3"] .tc-tree button { padding: 6px 8px; border-radius: 6px; }
+.tc[data-era="v3"] .tc-tree button:hover { text-decoration: none; background: var(--hover); }
+.tc[data-era="v3"] .tc-tree button[aria-pressed="true"] { background: var(--hover); color: var(--accent); font-weight: 600; }
+.tc[data-era="v3"] .tc-main { padding: 0; }
+.tc[data-era="v3"] .cx-table { border-radius: var(--r); overflow: hidden; }
+.tc[data-era="v3"] .cx-table th { background: #f7f8fb; text-transform: uppercase; letter-spacing: 0.04em; font-size: 10.5px; }
+.tc[data-era="v3"] .cx-btn { border-radius: 6px; }
+.tc[data-era="v3"] .cx-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.tc-login[data-era="v3"] { background: linear-gradient(135deg, #172036, #2b3a66); }
+.tc-login[data-era="v3"] .tc-card { border: 0; box-shadow: 0 12px 32px rgb(0 0 0 / 0.25); }

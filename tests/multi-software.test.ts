@@ -7,7 +7,7 @@ import { routeTarget } from "../src/sim/60-infra/routes";
 import { nodeUsage } from "../src/sim/60-infra/usage";
 import { resolve } from "../src/sim/80-business/browser";
 import { consoleTitle } from "../src/sim/80-business/consoles";
-import { siteIndex } from "../src/sim/80-business/index";
+import { companyFolder } from "../src/sim/80-business/index";
 import { tick } from "../src/sim/88-tick/tick";
 import { createVm, PANEL_VM_SIZE, provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
@@ -73,7 +73,7 @@ describe("several software on one machine", () => {
     expect(resolve(s, `${url}:8006`).page).toMatchObject({ kind: "console", clusterId: cloud });
     expect(resolve(s, `${url}:10000/`).page).toMatchObject({ kind: "console", clusterId: panel });
     expect(resolve(s, `${url}:2087`).page.kind).toBe("notfound");
-    const rows = siteIndex(s).find((c) => c.title === s.company.name)!.rows;
+    const rows = companyFolder(s).rows;
     expect(rows.map((r) => r.title)).toEqual(expect.arrayContaining([`${consoleTitle("proxmocks")} ${host}:8006`, `${consoleTitle("freepanel")} ${host}:10000`]));
     expect(rows.find((r) => r.title.endsWith(`${host}:10000`))?.url).toBe(`${url}:10000`);
   });

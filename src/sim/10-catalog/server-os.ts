@@ -13,6 +13,9 @@ export type LicenseKind = "once" | "core" | "server" | "account" | "gameserver" 
 export interface LicenseEra {
   from: number; month?: number; kind: LicenseKind; fee: number; period?: "year"; upgrade?: number;
   minCores?: number; minCoresPerCpu?: number; free?: number; editions?: string[];
+  // Shop systems (docs/design/plans/shop-software.md): months of updates a once key includes and their yearly renewal, a
+  // fee due when a term starts, the share of revenue taken from orders, and closed once no new keys are sold.
+  updates?: number; updatesFee?: number; setup?: number; cut?: number; closed?: boolean;
 }
 export const licensingAt = (x: { licensing: LicenseEra[] }, year: number, month = 1): LicenseEra =>
   [...x.licensing].reverse().find((e) => e.from < year || (e.from === year && (e.month ?? 1) <= month)) ?? x.licensing[0];

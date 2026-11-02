@@ -11,7 +11,7 @@ import { shopById } from "../10-catalog/shops";
 import { inUs } from "../20-world/datacenters";
 import type { Customer, Profile } from "../30-customers/customers";
 import type { GameState, LedgerEntry } from "../50-state";
-import { cents, DUE_DAYS, invoiceTotal, PAY_ODDS, payDelay, type BackKind, type Invoice, type Transfer } from "./billing";
+import { cents, DUE_DAYS, invoiceTotal, PAY_ODDS, payDelay, renewTerms, type BackKind, type Invoice, type Transfer } from "./billing";
 import { CHARGEBACK_FEE, WATCHED_FEE } from "./fraud";
 
 const DAY = 24;
@@ -106,6 +106,7 @@ export function paymentsTick(s: GameState): void {
 export function reopen(s: GameState, tr: Transfer, inv: Invoice): void {
   s.transfers = s.transfers.map((x) => (x === tr ? { ...x, invoiceId: inv.id, matchedAt: s.hour } : x));
   Object.assign(inv, { status: "open", paidAt: null, dueAt: s.hour + DUE_DAYS * DAY, reminders: [], suspended: false, suspendedAt: null, extendedUntil: null });
+  renewTerms(s, inv, -1);
   delete inv.shopPaid;
   delete inv.received;
   if (tr.back === "dispute") return;

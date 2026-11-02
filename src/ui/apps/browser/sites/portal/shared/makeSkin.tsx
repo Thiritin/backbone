@@ -5,6 +5,7 @@ import { AdminScreen, SCREEN_LABEL } from "./AdminScreen";
 import { ClientArea } from "./ClientArea";
 import { screenArgs, screenOf, type ScreenName } from "./nav";
 import { StoreFront } from "./StoreFront";
+import { VersionFooter } from "./Licence";
 import { eraOf } from "../whmCache/Admin";
 import type { Skin, SkinProps } from "../skins";
 import "../portal.css";
@@ -21,7 +22,7 @@ export interface Look {
   labels?: Partial<Record<ScreenName, string>>;
 }
 
-const ALL: ScreenName[] = ["home", "clients", "orders", "invoices", "products", "options", "servers"];
+const ALL: ScreenName[] = ["home", "clients", "orders", "invoices", "products", "options", "servers", "licence", "updates"];
 
 // One shop system's admin, store front and client area: the shared screens inside the system's own frame.
 export function makeSkin(look: Look): Skin {
@@ -29,6 +30,7 @@ export function makeSkin(look: Look): Skin {
     <div className={`portal shop ${look.cls} ${look.cls}-${eraOf(game.hour)} nav-${look.nav}`}>
       <header className="shop-head"><span className="shop-logo">{shopById(variant).name}</span></header>
       <div className="shop-body">{nav}<main className="shop-main">{children}</main></div>
+      <VersionFooter game={game} variant={variant} />
     </div>
   );
   const Admin = (props: SkinProps) => {
@@ -40,7 +42,7 @@ export function makeSkin(look: Look): Skin {
         {(look.screens ?? ALL).map((n) => <a key={n} href="#" className={current === n ? "on" : ""} onClick={(e) => { e.preventDefault(); go({ name: n }); }}>{look.labels?.[n] ?? SCREEN_LABEL[n]}</a>)}
       </nav>
     );
-    return <Frame {...props} nav={nav}><AdminScreen game={game} screen={screen} go={go} toClient={(c) => open("client", {}, { c })} /></Frame>;
+    return <Frame {...props} nav={nav}><AdminScreen game={game} screen={screen} go={go} toClient={(c) => open("client", {}, { c })} browse={props.browse} /></Frame>;
   };
   const Store = (props: SkinProps) => <Frame {...props}><StoreFront {...props} flat={look.flat} steps={look.stepsFrom !== undefined && yearOf(props.game.hour) >= look.stepsFrom} /></Frame>;
   const Client = (props: SkinProps) => <Frame {...props}><ClientArea game={props.game} customerId={props.route.query.get("c")} /></Frame>;

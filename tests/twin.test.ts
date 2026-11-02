@@ -10,7 +10,7 @@ import { provisionService } from "../src/sim/90-actions/clusters";
 import { workloadsOf } from "../src/sim/60-infra/cluster";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { buyDevice, hypervisor, skipTo, withServer, newGame } from "./fixtures";
+import { buyDevice, hypervisor, onSaleAt, skipTo, withServer, newGame } from "./fixtures";
 import type { Listing } from "../src/sim/10-catalog/used";
 
 const ok = (r: { ok: boolean; id?: string; error?: string }) => {
@@ -21,7 +21,7 @@ const err = (r: { ok: boolean; error?: string }) => (r.ok ? "ok" : r.error);
 
 function game(): GameState {
   const s = { ...withServer(newGame(1)), cash: 100_000 };
-  skipTo(s, 2008);
+  s.hour = onSaleAt(["g2-twin", "SuperMacro"]);
   return s;
 }
 // A Twin 2U bought into the basement and mounted at U3 with both power supplies plugged in.

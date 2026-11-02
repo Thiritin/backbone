@@ -6,7 +6,7 @@ export type Look = "early" | "late";
 export interface Site { host: string; tagline: string; blurb: string; features: string[]; eras: { from: number; look: Look }[] }
 
 // Text is looked up when read, so it follows the active language.
-const site = (id: string, host: string, n: number, early: number, late?: number): Site => ({
+export const site = (id: string, host: string, n: number, early: number, late?: number): Site => ({
   host,
   get tagline() { return t(`sim.site.${id}.tagline`); },
   get blurb() { return t(`sim.site.${id}.blurb`); },
@@ -39,8 +39,13 @@ export const SITES: Record<string, Site> = {
   ownclod: site("ownclod", "ownclod.org", 6, 2010, 2016),
   minnio: site("minnio", "minn.io", 6, 2016, 2021),
   postfixit: site("postfixit", "postfixit.org", 6, 2005),
+  // The self-hosted desks' sites; the hosted desks sell from their own pages.
+  ostickit: site("ostickit", "ostickit.com", 5, 2005, 2016),
+  freescoot: site("freescoot", "freescoot.net", 5, 2018),
   backula: site("backula", "backula.org", 6, 2005),
   veeham: site("veeham", "veeham.com", 5, 2008),
   proxmocksBackup: site("proxmocksBackup", "backup.proxmocks.com", 5, 2020),
   mailpig: site("mailpig", "mailpig.io", 6, 2015),
+  squirrelmeal: site("squirrelmeal", "squirrelmeal.org", 5, 2005),
+  postfixitadmin: site("postfixitadmin", "postfixitadmin.org", 5, 2005, 2016),
 };

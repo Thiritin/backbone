@@ -3,6 +3,7 @@ import type { Dict } from "../lang";
 export default {
   "invoice.line.firstTerm": (p) => `${p.label}, ${p.months} premiers mois`,
   "invoice.line.renewal": (p) => `${p.label}, renouvellement pour ${p.months} mois`,
+  "invoice.line.upgradeTerm": (p) => `${p.label}, supplément pour les ${p.months} mois restants`,
   "ledger.refundUnused": (p) => `Remboursement des mois inutilisés : ${p.customer}, ${p.months} mois`,
   "error.unknownProductGroup": () => "Ce groupe de produits n'existe pas.",
   "error.groupHasProducts": () => "Déplacez ou supprimez d'abord les produits de ce groupe.",

@@ -1,0 +1,8 @@
+/* Postfixit Admin 2.x: grey tables on white with a blue menu row. */
+.pfa { min-height: 100%; padding: 16px; background: #ffffff; color: #000000; font: 12px/1.4 Verdana, Arial, sans-serif; }
+.pfa a { color: #0000cc; }
+.pfa-logo { margin: 0 0 10px; font: bold 20px Verdana, Arial, sans-serif; color: #3c5a7d; }
+.pfa-card { display: flex; flex-direction: column; gap: 8px; max-width: 320px; margin: 40px auto 0; padding: 14px; border: 1px solid #bbbbbb; background: #efefef; }
+.pfa-menu { display: flex; justify-content: flex-end; gap: 12px; margin-bottom: 10px; padding: 4px 8px; background: #3c5a7d; }
+.pfa-menu a { color: #ffffff; }
+.pfa footer { margin-top: 16px; padding-top: 6px; border-top: 1px solid #bbbbbb; color: #555555; font-size: 11px; }

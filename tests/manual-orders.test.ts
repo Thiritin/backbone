@@ -1,8 +1,10 @@
+import { yearOf } from "../src/sim/00-core/time";
 import { describe, expect, it } from "vitest";
 import { orderLead } from "../src/sim/30-market/orders";
 import { setupFee, specText } from "../src/sim/30-market/spec";
 import { hostFor, invoiceOf, nextStep, stepsDone } from "../src/sim/30-market/manual";
-import { domainOf, DOMAIN_FEE, registryCost, REGISTRIES } from "../src/sim/30-customers/registry";
+import { domainOf, domainFee, registryCost, REGISTRIES } from "../src/sim/30-customers/registry";
+const DOMAIN_FEE = domainFee(2005);
 import { serviceOnline } from "../src/sim/40-support/status";
 import { sendStep, STEPS } from "../src/sim/45-billing/billing";
 import { visibleCandidates } from "../src/sim/47-staff/staff";
@@ -11,10 +13,11 @@ import type { GameState } from "../src/sim/50-state";
 import { routeOptions } from "../src/sim/60-infra/routes";
 import { tick } from "../src/sim/88-tick/tick";
 import { confirmOrder, offerUpgrade, createAccount, provisionOrder, quoteOrder, registerOrderDomain, renewDomain, setAutoOrders } from "../src/sim/90-actions/orders";
-import { hire } from "../src/sim/90-actions/staff";
+import { hire } from "./fixtures";
 import { createTicket } from "../src/sim/40-support/tickets";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { closeTicket } from "../src/sim/90-actions/support";
+import { setDomainRenewal } from "../src/sim/90-actions/registrar";
 import { SKILLS } from "../src/sim/10-catalog/research";
 import { research } from "../src/sim/90-actions/store";
 import { setRate } from "../src/sim/90-actions/rates";
@@ -80,12 +83,12 @@ describe("custom orders", () => {
     expect(s.customers.map((c) => c.id)).toEqual([req().customerId]);
   });
 
-  it("opens the account any time and the other steps once the quote is accepted", () => {
+  it("opens the account and the other steps only once the quote is accepted", () => {
     const s = readyGame(1);
     const { id } = order(s);
     const a = accepted(s);
     const hostId = host(s, a);
-    done(s, createAccount(s, id, mailed(s, id)));
+    expect(createAccount(s, id, mailed(s, id))).toEqual({ ok: false, error: "error.needsQuote" });
     expect(confirmOrder(s, id)).toEqual({ ok: false, error: "error.needsQuote" });
     expect(provisionOrder(s, id, hostId)).toEqual({ ok: false, error: "error.needsQuote" });
     expect(quoteOrder(s, id, 0)).toEqual({ ok: false, error: "error.quotePrice" });
@@ -215,10 +218,11 @@ describe("domains", () => {
     expect(registryCost("x.de", 2005)).toBeGreaterThan(registryCost("x.de", 2026));
   });
 
-  it("warns before expiry, takes the site down when it lapses and comes back on renewal", () => {
+  it("warns before expiry, takes the site down when a cancelled domain lapses and comes back on renewal", () => {
     const { s, req } = live(16);
     const name = req().domain!, v = req().serviceId!, d = domainOf(s, name)!;
     expect(serviceOnline(s, v)).toBe(true);
+    expect(setDomainRenewal(s, name, false).ok).toBe(true);
     s.hour = d.expiresAt - 30 * 24 - (d.expiresAt % 24) - 1;
     const events = [] as string[];
     while (s.hour < d.expiresAt + 24) events.push(...tick(s).map((e) => e.key));
@@ -230,7 +234,7 @@ describe("domains", () => {
     expect(serviceOnline(s, v)).toBe(true);
     expect(domainOf(s, name)!.expiresAt).toBeGreaterThan(s.hour + 8000);
     expect(s.invoices.length).toBe(invoices + 1);
-    expect(s.invoices.at(-1)!.lines[0]).toMatchObject({ key: "invoice.line.domainRenewal", amount: DOMAIN_FEE });
+    expect(s.invoices.at(-1)!.lines[0]).toMatchObject({ key: "invoice.line.domainRenewal", amount: domainFee(yearOf(s.hour)) });
   });
 
   it("loads saves from before domains", () => {

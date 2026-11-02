@@ -7,8 +7,8 @@ import { genOf, modelById } from "../10-catalog/hardware";
 import { balancerIn, isService, softwareById } from "../10-catalog/platforms";
 import { slowTolerance } from "../10-catalog/usage";
 import { channelOf, EDGE_HOWTO } from "../60-infra/channel";
-import { accountsOn, keyTiers, assignedKey, extendKey, productOf, panelMachine, startTrial, tiersOnSale, updateKey, yearly } from "../60-infra/licence";
-import { LAPSE_GRACE_DAYS, topTier, type LicenceTier } from "../10-catalog/licence-tiers";
+import { accountsOn, keyTiers, shopMachine, assignedKey, extendKey, productOf, panelMachine, startTrial, tiersOnSale, updateKey, yearly } from "../60-infra/licence";
+import { LAPSE_GRACE_DAYS, licenceIndex, topTier, type LicenceTier } from "../10-catalog/licence-tiers";
 import { APP_SUITE_FEE, eraAt } from "../10-catalog/server-os";
 import { homeLineById } from "../20-world/datacenters";
 import type { Customer, Product } from "../30-customers/customers";
@@ -128,12 +128,12 @@ function finishSwitches(s: GameState, events: SimEvent[]) {
     const host = kind === "panel" && topTier(to) ? panelMachine(c) : null;
     if (host && !assignedKey(s, host, to)) startTrial(s, host, to);
     const licence = kind === "cloud" && to === "vmwhere" && fresh ? { tier: "essentials", trialUntil: null, lapsedAt: null } : undefined;
-    s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, switching: null, version: yearOf(s.hour), updatedAt: s.hour, ...(kind === "cloud" ? { platform: to, ...(licence && { licence }) } : { panel: to }), ...(fresh ? { channel: "stable" as const } : {}) } : x));
+    s.clusters = s.clusters.map((x) => (x.id === c.id ? { ...x, switching: null, version: yearOf(s.hour), updatedAt: s.hour, ...(kind === "cloud" ? { platform: to, ...(licence && { licence }) } : { panel: to }), ...(fresh && host && { setupPending: true }), ...(fresh ? { channel: "stable" as const } : {}) } : x));
     events.push({ app: "Locations", key: fresh ? "event.installed" : "event.switched", params: { cluster: c.name, name: softwareById(to).name } });
     const d = fresh ? s.devices.find((x) => x.id === c.controlPlane) : undefined;
     if (d?.bootFrom === "usb") Object.assign(d, { bootFrom: "disk", bootUntil: nowHours(s) + bootHours(s, d) });
     if (fresh && c.vm) s.workloads = s.workloads.map((w) => (w.id === c.vm && w.media ? { ...w, media: undefined } : w));
-    if (kind === "panel" && welcomeFriends(s, c.id)) events.push({ app: "Customers", key: "event.friendsJoined", params: { cluster: c.name } });
+    if (kind === "panel" && welcomeFriends(s, c.id)) events.push({ app: "Books", key: "event.friendsJoined", params: { cluster: c.name } });
   }
 }
 
@@ -142,7 +142,7 @@ function finishSwitches(s: GameState, events: SimEvent[]) {
 function friendsArrive(s: GameState, events: SimEvent[]) {
   if (s.customers.length) return;
   const c = s.clusters.find((x) => x.kind === "panel" && x.panel && !x.switching);
-  if (c && welcomeFriends(s, c.id)) events.push({ app: "Customers", key: "event.friendsJoined", params: { cluster: c.name } });
+  if (c && welcomeFriends(s, c.id)) events.push({ app: "Books", key: "event.friendsJoined", params: { cluster: c.name } });
 }
 
 function reportLosses(s: GameState, events: SimEvent[]) {
@@ -179,12 +179,12 @@ export function reportLoss(s: GameState, d: Device, lost: Workload[], hour: numb
 export function workloadPerf(s: GameState, w: Workload, product: Product | undefined, nodePerf: (deviceId: string) => number = (id) => nodeUsage(s, id).perf): number {
   if (!w.clusterId || w.stopped || isOwnVm(w)) return 1;
   const vm = vmOf(s, w), at = w.deviceId ?? vm?.deviceId;
-  if (!at || s.frozen.includes(at) || vm?.stopped) return 1;
+  if (!at || vm?.stopped) return 1;
   const c = s.clusters.find((x) => x.id === w.clusterId), node = product === "gameServer" ? s.devices.find((d) => d.id === at) : undefined;
   const base = Math.min(nodePerf(at), hostPerf(s, c), node ? perCoreOf(node) : 1), shares = sharesOf(c, w);
   if (shares === "normal" || !runsHot(s, at)) return base;
   // Under contention a high pool keeps its performance and a low pool gives some up.
-  return shares === "high" ? 1 : Math.min(base, POOL_LOW_PERF);
+  return shares === "high" ? 1 : base * POOL_LOW_PERF;
 }
 
 // Overloaded nodes slow every customer on them, web spaces in a panel VM included, and a PHP upgrade or a compromise slows
@@ -265,7 +265,7 @@ function billLicenses(s: GameState) {
     ...(balancerFee(s, c) > 0 ? [line("ledger.balancer", { cluster: c.name, name: balancerIn(softwareById(c.platform!), yearOf(s.hour))!.name }, balancerFee(s, c))] : []),
   ]);
   // ponytail: sold, scrapped and deleted machines release their keys here, at the month's bill.
-  const held = new Set([...s.devices, ...s.workloads, ...s.ops.seized.map((x) => x.device)].map((m) => m.id));
+  const held = new Set([...s.devices, ...s.workloads, ...s.ops.seized.map((x) => x.device), ...(shopMachine(s) ? [shopMachine(s)!] : [])].map((m) => m.id));
   s.licenses = s.licenses.map((k) => (k.machineId !== null && !held.has(k.machineId) ? { ...k, machineId: null } : k));
   if (!lines.length) return;
   s.cash = Math.round((s.cash + lines.reduce((n, l) => n + l.amount, 0)) * 100) / 100;
@@ -273,8 +273,10 @@ function billLicenses(s: GameState) {
 }
 
 // The fee per term of a subscription key: its edition's or its product's price per account, server, game server beyond the
-// free ones, or core of its machine, a server counting at least the era's minimum cores. An unassigned key pays for one unit.
-export function keyFee(s: GameState, k: Licence): number {
+// free ones, or core of its machine, a server counting at least the era's minimum cores, at the year's price rises. An
+// unassigned key pays for one unit.
+export const keyFee = (s: GameState, k: Licence): number => Math.round(listFee(s, k) * licenceIndex(k.product, yearOf(s.hour)) * 100) / 100;
+function listFee(s: GameState, k: Licence): number {
   const tier = keyTiers(k.product).find((x) => x.id === k.edition);
   const c = s.clusters.find((x) => x.panel === k.product && panelMachine(x) === k.machineId);
   if (tier) return c ? tierFee(s, c, tier) : tier.fee;
@@ -312,7 +314,7 @@ export function renewKeys(s: GameState): void {
       const next = renewalTier(s, k, k.renewsAt), c = keyCluster(s, k);
       if (next && next.id !== k.edition) {
         const name = productOf(k.product)!.name, from = keyTiers(k.product).find((x) => x.id === k.edition)!.name;
-        deliverMail(s, name, "licenceEditionChange", { name, key: k.key, from, to: next.name, amount: c ? tierFee(s, c, next) : next.fee });
+        deliverMail(s, name, "licenceEditionChange", { name, key: k.key, from, to: next.name, amount: Math.round((c ? tierFee(s, c, next) : next.fee) * licenceIndex(k.product, yearOf(k.renewsAt)) * 100) / 100 });
       }
     }
     if (s.hour < k.renewsAt) continue;

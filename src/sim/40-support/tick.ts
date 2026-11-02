@@ -1,3 +1,4 @@
+import { importDeskTickets } from "./desk-work";
 import { chance, rand } from "../00-core/rng";
 import { CRYPTO_ABUSE, PAYSAFE_CHURN } from "../10-catalog/payments";
 import { refundUnused, termRoll } from "./terms";
@@ -22,6 +23,7 @@ import { phpAbuse } from "../60-infra/php";
 import { APP_ACTIONS, applyAppWork } from "../60-infra/apps";
 import { decideBreach } from "../60-infra/breach";
 import { serviceOnline } from "./status";
+import { answerTransfer, DOMAIN_OUT } from "../30-customers/registrar";
 import { outgoing, sendAction } from "./replies";
 import { overpricing, revertPrice } from "../30-customers/pricing";
 import { CERT_SHARE, offerCertificate } from "../30-customers/certificates";
@@ -34,6 +36,8 @@ import {
 // A shady customer draws this many times the abuse reports.
 export const SHADY_ABUSE = 10;
 const RIGHT_ANSWER = 5, WRONG_ANSWER = -10, HISTORY_MONTHS = 12;
+// A right first answer within FAST_HOURS of the ticket opening adds FAST_ANSWER happiness.
+export const FAST_HOURS = 2, FAST_ANSWER = 2;
 
 function resolve(s: GameState, t: Ticket, c: Customer, outcome: Ticket["outcome"] = null): void {
   Object.assign(t, { status: "resolved", updatedAt: s.hour, outcome });
@@ -50,6 +54,10 @@ function finishWork(s: GameState, customer: (id: string) => Customer, events: Si
     t.work = null;
     if (t.kind === "extortion") {
       decideBreach(s, t, work.arg === "pay" ? "pay" : "refuse", events);
+      continue;
+    }
+    if (t.topic === DOMAIN_OUT) {
+      answerTransfer(s, t, c, work.arg, work.by);
       continue;
     }
     if (t.kind === "order") {
@@ -75,12 +83,13 @@ function finishWork(s: GameState, customer: (id: string) => Customer, events: Si
     else if (work.op === "escalate") Object.assign(t, { status: "escalated", updatedAt: s.hour });
     else if (work.op === "reply") {
       const right = work.arg === rightTemplate(s, t);
+      if (right && !t.replies.length && s.hour - t.createdAt <= FAST_HOURS) bump(c, FAST_ANSWER);
       t.replies = [...t.replies, { hour: s.hour, template: work.arg, right, ...outgoing(s, t, c, `tpl.${work.arg}`), ...(work.by && { by: work.by }) }];
       t.updatedAt = s.hour;
       if (right) {
         t.status = "waiting";
         const hosting = t.kind === "howTo" && t.topic === "ssl" && s.services.find((v) => v.id === t.serviceId && v.endedAt === null);
-        if (hosting && offerCertificate(s, hosting, CERT_SHARE.asked)) events.push({ app: "Customers", key: "event.certificateSold", params: { name: c.name, domain: hosting.domain ?? hosting.label } });
+        if (hosting && offerCertificate(s, hosting, CERT_SHARE.asked)) events.push({ app: "Books", key: "event.certificateSold", params: { name: c.name, domain: hosting.domain ?? hosting.label } });
       } else {
         // A wrong answer brings a follow-up in the same thread with a fresh response time.
         bump(c, WRONG_ANSWER);
@@ -217,10 +226,11 @@ export function supportTick(s: GameState): SimEvent[] {
     // The customer does not wait on a notice or legal request about them, nor on an order before their account exists.
     // An order waiting on payment stays open until paid.
     if (t.work?.arg === FIX_CHECK) continue;
-    if (t.notice || t.kind === "migration" || t.kind === "sponsor" || t.kind === "pear" || (t.kind === "order" && (!t.customerId || t.status !== "open"))) continue;
+    // Mail and spam have no customer to wait.
+    if (t.notice || t.kind === "migration" || t.kind === "sponsor" || t.kind === "pear" || t.kind === "mail" || t.kind === "spam" || (t.kind === "order" && (!t.customerId || t.status !== "open"))) continue;
     if (t.status === "waiting" && s.hour - t.updatedAt >= WAITING_CLOSE_HOURS) resolve(s, t, c);
     else if (t.status === "escalated" && (!t.serviceId || serviceOnline(s, t.serviceId))) resolve(s, t, c);
-    else if (t.status === "open" && c.churnedAt === null && s.hour > t.dueAt) {
+    else if (t.status === "open" && (c.churnedAt === null || t.topic === DOMAIN_OUT) && s.hour > t.dueAt) {
       const p = profileStats(c.profile);
       if (counts(p.reply.clock, s.hour)) bump(c, -p.waitPenalty);
     }
@@ -228,8 +238,9 @@ export function supportTick(s: GameState): SimEvent[] {
   outages(s, customer);
   readOnlySweep(s, () => spawnHourly(s));
   if (isMonthStart(s.hour)) monthly(s);
+  importDeskTickets(s);
 
-  const fresh = s.tickets.filter((t) => !before.has(t.id));
+  const fresh = s.tickets.filter((t) => !before.has(t.id) && t.kind !== "mail");
   if (fresh.length > 1) return [...events, { app: "Support", key: "event.tickets", params: { count: fresh.length } }];
   if (!fresh.length) return events;
   const t = fresh[0], service = s.services.find((v) => v.id === t.serviceId);

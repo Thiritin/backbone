@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { SLOW_PENALTY } from "../src/sim/40-support/tickets";
+import { segmentOf } from "../src/sim/10-catalog/attention";
+import { SLOW_PENALTY, slowWeight } from "../src/sim/40-support/tickets";
 import type { GameState } from "../src/sim/50-state";
 import { bookable } from "../src/sim/60-infra/cluster";
 import { homePeak, networkTick, zoneDemand } from "../src/sim/60-infra/network";
@@ -37,9 +38,12 @@ describe("early capacity (docs/design/economy.md, Home line)", () => {
     const events = networkTick(s);
     const sites = s.services.filter((v) => v.zone).length;
     expect(sites).toBeGreaterThan(0);
-    // 1.5 Mbit/s on a 1 Mbit/s upload drops a third: each site costs SLOW_PENALTY x 1/3 this hour.
+    // 1.5 Mbit/s on a 1 Mbit/s upload drops a third: each site costs SLOW_PENALTY x 1/3, weighted by who is looking, this hour.
     const lost = before.map((h, i) => h - happiness(s)[i]);
-    expect(lost.reduce((a, b) => a + b, 0)).toBeCloseTo(sites * SLOW_PENALTY * (1 / 3), 6);
+    const seg = (v: (typeof s.services)[number]) => segmentOf(s.customers.find((c) => c.id === v.customerId)!.profile, v.product);
+    const want = s.services.filter((v) => v.zone).reduce((a, v) => a + SLOW_PENALTY * (1 / 3) * slowWeight(seg(v), s.hour, 0), 0);
+    expect(want).toBeGreaterThan(0);
+    expect(lost.reduce((a, b) => a + b, 0)).toBeCloseTo(want, 6);
     expect(events.filter((e) => e.key === "event.lineFull")).toHaveLength(1);
     expect(events.some((e) => e.key === "event.saturated")).toBe(false);
     expect(s.homeLine.full).toBe(true);

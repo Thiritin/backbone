@@ -3,6 +3,8 @@ import { yearOf } from "../../../../../sim/00-core/time";
 import { phpAt } from "../../../../../sim/10-catalog/platforms";
 import type { GameState } from "../../../../../sim/50-state";
 import type { Cluster } from "../../../../../sim/60-infra/cluster";
+import { installedVersion, panelMachine } from "../../../../../sim/60-infra/licence";
+import { releasedAt } from "../../../../../sim/10-catalog/software-versions";
 import { poolOf } from "../../../../../sim/60-infra/webpanel";
 import { phpDue, upgradePhp } from "../../../../../sim/90-actions/clusters";
 import { updateDue, updateSoftware } from "../../../../../sim/90-actions/software";
@@ -10,7 +12,7 @@ import { rebuildHost, setPhpPool } from "../../../../../sim/90-actions/webpanel"
 import { legacyVersions } from "../cpanic/EasyApache";
 import { usePageAct } from "../../pageAct";
 
-// Admin Level > Custom Build. Until 2018 it is the build script's option list; later a table of software with Update and Rebuild.
+// Admin Level > Custom Build. Before Evolution it is the build script's option list; later a table of software with Update and Rebuild.
 export function CustomBuild({ game, c, late }: { game: GameState; c: Cluster; late: boolean }) {
   const act = usePageAct(), year = yearOf(game.hour), pool = poolOf(game, c.id), php2 = pool[0] ?? "";
   const building = game.hour <= c.phpUntil, legacy = legacyVersions(game, c);
@@ -40,7 +42,7 @@ export function CustomBuild({ game, c, late }: { game: GameState; c: Cluster; la
         <tbody>
           <tr><td>{t("web.da.php1")}</td><td className="num">{c.php}</td><td className="num">{phpAt(year)}</td><td>{phpDue(game, c) && <button className="cx-btn" onClick={() => act(upgradePhp, c.id)}>{t("web.da.update")}</button>}</td></tr>
           <tr><td>{t("web.da.php2")}</td><td className="num">{php2 || t("web.da.noPhp2")}</td><td>{select}</td><td /></tr>
-          <tr><td>{t("web.da.panel")}</td><td className="num">{c.version}</td><td className="num">{year}</td><td>{updateDue(game, c) && <button className="cx-btn" onClick={() => act(updateSoftware, c.id)}>{t("web.da.update")}</button>}</td></tr>
+          <tr><td>{t("web.da.panel")}</td><td className="num">{installedVersion(game, panelMachine(c) ?? "", "directadmen")}</td><td className="num">{releasedAt("directadmen", game.hour).at(-1)?.version}</td><td>{updateDue(game, c) && <button className="cx-btn" onClick={() => act(updateSoftware, c.id)}>{t("web.da.update")}</button>}</td></tr>
         </tbody>
       </table>
       <p className="cx-acts">{rebuild}</p>

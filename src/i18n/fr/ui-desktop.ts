@@ -127,4 +127,12 @@ export default {
   "desktop.menu.deleteTitle": () => "Supprimer toute la progression ?",
   "desktop.menu.deleteText": () => "Ton entreprise et sa sauvegarde sont supprimées de ce navigateur. Exporte d'abord une sauvegarde pour en garder une copie.",
   "desktop.menu.deleteAction": () => "Supprimer",
+  "desktop.start.immersive": () => "Jouer en mode immersif",
+  "desktop.immersive.title": () => "Mode immersif",
+  "desktop.immersive.text": () => "Le mode immersif occupe tout l'écran et transmet au jeu les raccourcis clavier comme Cmd+Tab, Alt+Tab et F11, pour que Cmd+Tab et Alt+Tab passent d'une fenêtre du jeu à l'autre.",
+  "desktop.immersive.browsers": () => "Ouvre le jeu dans Chrome, Edge, Opera ou Brave sur un ordinateur pour utiliser le mode immersif.",
+  "desktop.immersive.leave": () => "Pour quitter le mode immersif, choisis Se déconnecter dans le menu en haut à gauche ou maintiens Échap enfoncée.",
+  "desktop.immersive.start": () => "Lancer le mode immersif",
+  "desktop.menu.logout": () => "Se déconnecter",
+  "desktop.switcher": () => "Changer de fenêtre",
 } satisfies Dict;

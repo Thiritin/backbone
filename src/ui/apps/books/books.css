@@ -1,13 +1,14 @@
 .books { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--win); }
-.books-bar { padding: 0 16px; flex: none; }
+.bk-body { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
 .books-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .books-none { padding: 12px 16px; color: var(--text-3); }
 
 .books-split { flex: 1; min-height: 0; display: flex; }
 .books-split > .fin-scroll { flex: 1 1 55%; }
 .books-preview { flex: 1 1 45%; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 14px; border-left: var(--ar-bw) solid var(--line); container-type: size; }
-/* A4, 210 by 297, filling the height the pane leaves; type is sized from the page's own width. */
-.books-a4 { flex: 1 1 0; min-height: 0; max-width: 100%; aspect-ratio: 210 / 297; background: #fff; color: #222; box-shadow: 0 1px 4px rgb(0 0 0 / 0.25); padding: 9% 10%;
+/* A4, 210 by 297, the largest that fits the space the pane leaves; type is sized from the page's own width. */
+.books-a4-fit { flex: 1 1 0; min-height: 0; align-self: stretch; display: grid; place-items: center; container-type: size; }
+.books-a4 { --page: min(100cqw, 100cqh * 210 / 297); width: var(--page); aspect-ratio: 210 / 297; background: #fff; color: #222; box-shadow: 0 1px 4px rgb(0 0 0 / 0.25); padding: calc(var(--page) * 0.09) calc(var(--page) * 0.1);
   display: flex; flex-direction: column; gap: 3%; container-type: inline-size; overflow: hidden; }
 .books-a4 > * { font-size: 2.4cqw; }
 .books-a4 h2 { font-size: 1.6em; font-weight: 700; margin: 0; }
@@ -21,8 +22,19 @@
 .books-a4 footer { margin-top: auto; display: flex; align-items: center; gap: 0.6em; }
 .books-a4 footer .pill { font-size: 1em; height: auto; min-height: 0; line-height: 1.4; padding: 0 0.6em; }
 
-.books-bank { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 12px 16px; overflow: auto; }
-.books-bank h3 { font-size: 13px; font-weight: 650; margin: 0 0 6px; }
+/* Bank: the bookings on top, what the selected one can pay or pays below. */
+.books-bank { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.books .books-bank td:last-child .pill { margin-left: 0; }
+.books-bankbar .seg button { display: inline-flex; align-items: center; gap: 6px; }
+.books-suggest { display: inline-flex; align-items: center; gap: 6px; }
+.books-bank tr.sel .btn { color: var(--text); }
+/* The name and the reference share the room the other columns leave and cut off the rest. */
+.books-ref, .books-name { max-width: 0; width: 35%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.books-assigned { display: inline-flex; align-items: center; gap: 4px; }
+.books-assigned svg { width: 13px; height: 13px; color: var(--ok); }
+.books-muted { color: var(--text-3); }
+.books-assign { flex: 0 1 auto; max-height: 45%; overflow: auto; border-top: var(--ar-bw) solid var(--line-strong); }
+.books-assign h3 { font-size: 13px; font-weight: 650; margin: 0; padding: 8px 16px 4px; }
 .books-differs { display: flex; align-items: center; gap: 10px; margin: 0 16px 14px; padding: 8px 12px; border: var(--ar-bw) solid var(--bad, #c33); border-radius: 6px; color: var(--bad-text, var(--bad, #c33)); flex: none; }
 .books-differs span { margin-right: auto; }
 
@@ -32,6 +44,7 @@
 .books-customers { flex: 1; min-height: 0; display: flex; }
 .books-list { width: 260px; flex: none; overflow: auto; display: flex; flex-direction: column; gap: 1px; }
 .books-item { width: 100%; padding: 6px 8px; border: 0; border-radius: 6px; background: none; font: inherit; color: var(--text); text-align: left; display: flex; align-items: flex-start; gap: 8px; }
+.books-archive { margin-top: auto; }
 .books-item:hover { background: var(--hover); }
 .books-item.active { background: var(--ar-sel, var(--accent)); color: var(--ar-sel-ink, var(--accent-ink)); }
 .books-li { flex: 1; min-width: 0; display: grid; }
@@ -58,10 +71,7 @@
 .books-drag { cursor: grab; }
 .books-quote-edit { display: grid; gap: 10px; flex: none; }
 
-.books-top { display: flex; align-items: center; flex: none; }
-.books-top .books-bar { flex: 1; min-width: 0; }
-.books-register-open { margin-right: 16px; }
-.books-import { margin-right: 8px; }
+.books-top { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 6px 16px 0; flex: none; }
 .books-register { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 16px; border-bottom: var(--ar-bw) solid var(--line); flex: none; }
 .books-register input { width: 24ch; letter-spacing: 0.04em; }
 .books-registered { color: var(--good-text, var(--good, #2a7)); }
@@ -87,8 +97,22 @@
 .books-product .books-new-form { max-width: 520px; }
 .books-prices { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 .books-prices .field { width: 100%; min-width: 0; }
+.books-market { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
 .books-settings { margin-left: auto; }
 
 /* The vendor's skin: a strip in its colour above the toolbar, or for a web program the address bar it runs under. */
 .books { border-top: 4px solid var(--bk-bar, transparent); }
-.books-web { margin-top: -4px; padding: 4px 16px; font-size: 11px; background: var(--bk-bar); color: var(--bk-ink); flex: none; }
+.books [aria-disabled="true"] { opacity: 0.45; }
+.books-offline { flex: 1; padding: 40px 32px; background: #fff; color: #222; font: 13px Arial, Helvetica, sans-serif; }
+.books-offline h2 { font-size: 18px; margin: 0 0 10px; }
+.books-offline p { color: #555; }
+
+.alert.books-markpaid { width: 360px; }
+.books-markpaid-pick { width: 100%; box-sizing: border-box; max-height: 240px; overflow: auto; display: grid; gap: 1px; margin: 4px 0 2px; padding: 4px; text-align: left; border: 0.5px solid var(--line-strong); border-radius: 8px; background: var(--field); }
+.books-markpaid-pick label { display: grid; grid-template-columns: auto auto 1fr auto; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 5px; font-size: 11.5px; }
+.books-markpaid-pick label:has(:checked) { background: var(--accent-soft); }
+.books-markpaid-pick input { margin: 0; accent-color: var(--accent); }
+.books-markpaid-wide { grid-column: 2 / -1; }
+.books-markpaid-from { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* A row reached with the arrow keys scrolls clear of the sticky header. */
+.books tbody tr { scroll-margin-top: 32px; }

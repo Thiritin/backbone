@@ -6,18 +6,20 @@ import { PRODUCT } from "../../../../support/labels";
 import { AdminScreen, SCREEN_LABEL } from "../shared/AdminScreen";
 import { screenArgs, screenOf, type ScreenName } from "../shared/nav";
 import type { Skin, SkinProps } from "../skins";
+import { VersionFooter } from "../shared/Licence";
 import "../portal.css";
 
-const NAV: ScreenName[] = ["home", "products", "options", "servers", "orders", "clients", "invoices"];
+const NAV: ScreenName[] = ["home", "products", "options", "servers", "orders", "clients", "invoices", "licence", "updates"];
 
-function Admin({ game, variant, route, open }: SkinProps) {
+function Admin({ game, variant, route, open, browse }: SkinProps) {
   const screen = screenOf(route.query);
   const go = (s: Parameters<typeof screenArgs>[0]) => open("admin", {}, screenArgs(s));
   return (
     <div className="portal portal-plain">
       <header><h1>{shopById(variant).name}</h1></header>
       <nav>{NAV.map((n) => <button key={n} className={screen.name === n ? "on" : ""} onClick={() => go({ name: n })}>{SCREEN_LABEL[n]}</button>)}</nav>
-      <main><AdminScreen game={game} screen={screen} go={go} toClient={(c) => open("client", {}, { c })} /></main>
+      <main><AdminScreen game={game} screen={screen} go={go} toClient={(c) => open("client", {}, { c })} browse={browse} /></main>
+      <VersionFooter game={game} variant={variant} />
     </div>
   );
 }
@@ -34,6 +36,7 @@ function Store({ game, variant }: SkinProps) {
           </section>
         ))}
       </main>
+      <VersionFooter game={game} variant={variant} />
     </div>
   );
 }
@@ -47,6 +50,7 @@ function Client({ game, variant, route }: SkinProps) {
         {c && <><h2>{c.name}</h2><ul>{game.services.filter((v) => v.customerId === c.id && v.endedAt === null).map((v) => <li key={v.id}>{v.label || PRODUCT[v.product]}</li>)}</ul></>}
         {!c && <h2>{t("shop-admin.clientArea")}</h2>}
       </main>
+      <VersionFooter game={game} variant={variant} />
     </div>
   );
 }

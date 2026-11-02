@@ -17,7 +17,8 @@ import { Confirm } from "../../desktop/Confirm";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { More } from "../More";
 import { useFocus, useStore } from "../../store";
-import { runwayLabel } from "../finance/FinanceApp";
+import { runwayLabel } from "../books/Reports";
+import { booksOffline, seated } from "../../../sim/80-business/bookkeeping";
 import { Facts, Sheet } from "../locations/ui";
 import { TechPanel } from "./TechPanel";
 import { Shifts } from "./Shifts";
@@ -37,7 +38,7 @@ const ROLE: Record<Role, { one: string; many: string }> = {
 };
 const TASK: Record<Task, string> = {
   howTo: t("misc.taskHowTo"), billing: t("misc.taskBilling"), outage: t("misc.taskOutage"), upgrade: t("misc.taskUpgrade"), cancellation: t("misc.taskCancellation"), abuse: t("misc.taskAbuse"), appeal: t("misc.taskAppeal"), order: t("misc.taskOrder"), notice: t("misc.taskNotice"), legal: t("misc.taskLegal"), refund: t("misc.taskRefund"), extortion: t("misc.taskExtortion"), migration: t("misc.taskMigration"), maintenance: t("misc.taskMaintenance"),
-  sponsor: t("misc.taskSponsor"), mail: "", reminder: t("misc.taskReminder"), invoices: t("vendor-sites.taskInvoices"), transfers: t("vendor-sites.taskTransfers"), dunning: t("misc.taskDunning"), final: t("misc.taskFinal"), suspend: t("misc.taskSuspend"),
+  sponsor: t("misc.taskSponsor"), mail: "", spam: "", reminder: t("misc.taskReminder"), invoices: t("vendor-sites.taskInvoices"), transfers: t("vendor-sites.taskTransfers"), dunning: t("misc.taskDunning"), final: t("misc.taskFinal"), suspend: t("misc.taskSuspend"),
   campaigns: t("misc.taskCampaigns"), reviews: t("misc.taskReviews"), fairs: t("misc.taskFairs"),
   hardware: t("misc.taskHardware"), servers: t("misc.taskServers"), panels: t("misc.taskPanels"),
 };
@@ -50,6 +51,8 @@ function status(game: GameState, e: Employee): { label: string; cls: string } {
   if (e.training) return { label: t("misc.training"), cls: "accent" };
   if (e.assignment === "trainer") return { label: t("misc.trainingOthers"), cls: "accent" };
   if (e.assignment === "forum") return { label: t("misc.forums"), cls: "" };
+  if (!seated(game, e)) return { label: t("books-editions.noSeat"), cls: "warn" };
+  if ((e.role === "bookkeeper" || e.role === "accountant") && booksOffline(game)) return { label: t("books-editions.offline"), cls: "warn" };
   return e.trained.length ? { label: t("misc.working"), cls: "" } : { label: t("misc.untrained"), cls: "" };
 }
 

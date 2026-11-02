@@ -27,15 +27,16 @@ export interface Banner { id: number; app: string; title: string; text: string; 
 // What a notification opens its app on, read from the ids its event names.
 export const focusOf = (p: Record<string, string | number>): Omit<Focus, "n"> | undefined =>
   p.ticketId !== undefined ? { kind: "ticket", id: String(p.ticketId) } :
-  p.deviceId !== undefined ? { kind: "device", id: String(p.deviceId) } : undefined;
+  p.deviceId !== undefined ? { kind: "device", id: String(p.deviceId) } :
+  p.serviceId !== undefined ? { kind: "site", id: String(p.serviceId) } : undefined;
 // Older prefs also carry a banners flag, which is ignored: an allowed app shows banners and fills the notification centre.
 // types holds the notification types switched off or on by id (notify-types.ts); a missing id is on.
 export interface NotifyPref { allow: boolean; sound: boolean; types?: Record<string, boolean> }
 const WIDE = { w: 1240, h: 680 };
 const WINDOW_SIZES: Record<string, { w: number; h: number }> = {
   Security: { w: 900, h: 560 }, Browser: { w: 1100, h: 720 }, News: { w: 520, h: 640 },
-  Locations: { w: 1440, h: 860 }, Shop: { w: 1180, h: 700 }, Books: { w: 900, h: 560 }, Customers: WIDE, Marketing: WIDE, Market: WIDE, Network: WIDE,
-  Support: { w: 1400, h: 840 }, Research: { w: 1140, h: 600 }, Staff: { w: 1240, h: 640 }, Post: { w: 1000, h: 820 },
+  Locations: { w: 1440, h: 860 }, Shop: { w: 1180, h: 700 }, Books: { w: 900, h: 560 }, Marketing: WIDE, Market: WIDE, Network: WIDE,
+  Support: { w: 1400, h: 840 }, Research: { w: 1140, h: 600 }, Staff: { w: 1240, h: 640 }, Post: { w: 1000, h: 820 }, DohleFormular: { w: 760, h: 420 },
 };
 
 export const prefOf = (prefs: Record<string, Partial<NotifyPref>>, app: string): NotifyPref => ({ allow: true, sound: true, ...prefs[app] });
@@ -136,7 +137,7 @@ function loadGame(): { game: GameState; loaded: boolean } {
 
 const initial = loadGame();
 // A reload (the dev server's after a code change, or the player's) reopens the windows of the saved game and keeps its clock running.
-const restored = initial.loaded ? readSession<Win[]>("windows", []).map((w) => (w.app === "Billing" ? { ...w, app: "Books" } : w)) : [];
+const restored = initial.loaded ? readSession<Win[]>("windows", []).map((w) => (w.app === "Billing" || w.app === "Finance" ? { ...w, app: "Books", focus: undefined } : w)) : [];
 const savedSpeed = readSession<Speed>("speed", 0);
 const restoredSpeed: Speed = initial.loaded && SPEEDS.includes(savedSpeed) ? savedSpeed : 0;
 
@@ -315,6 +316,7 @@ export const useStore = create<Store>((set, get) => ({
     if (!d) return;
     if (d.kind === "guide") return get().openApp("Getting started");
     if (d.kind === "app") return get().openApp(d.title);
+    if (d.kind === "cert") return;
     const open = ws.find((w) => w.doc === doc);
     if (open) return set({ windows: ws.map((w) => (w.id === open.id ? { ...w, minimized: false, z: topZ(ws) + 1 } : w)) });
     const n = ws.length % 8;

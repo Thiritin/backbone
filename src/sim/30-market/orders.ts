@@ -90,7 +90,7 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
     ...(months > 1 && { cycle }),
     ...(shop && { shop: true }),
     ...(method && method !== "transfer" && { method }),
-    ...(email && { owned, thread: x.thread.map((m, i) => (i ? m : { ...m, params: { ...m.params, owned: owned ? 1 : 0, ...(owned && { auth: authCode(s.seed, x.id) }) } })) }),
+    ...(email && { owned, thread: x.thread.map((m, i) => (i ? m : { ...m, params: { ...m.params, owned: owned ? 1 : 0, ...(owned && { auth: authCode(s.seed, x.id) }), ...(item && { item: item.name }) } })) }),
   }));
   if (unmet) {
     loseRequest(s, r, "lost", "lost.noFittingProduct");
@@ -113,7 +113,7 @@ export function orderLead(s: GameState, profile: Profile, city: string, events: 
     const done = target ? place(s, r) : null;
     if (done?.ok) {
       formInvoice(s, r.id);
-      events.push({ app: "Customers", key: "event.orderPlaced", params: { ...params, price: r.quote! } });
+      events.push({ app: "Books", key: "event.orderPlaced", params: { ...params, price: r.quote! } });
       return r;
     }
     cancelShopOrder(s, r);

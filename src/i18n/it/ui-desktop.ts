@@ -127,4 +127,12 @@ export default {
   "desktop.menu.deleteTitle": () => "Eliminare tutti i progressi?",
   "desktop.menu.deleteText": () => "La tua azienda e il suo salvataggio vengono rimossi da questo browser. Esporta prima un salvataggio per conservarne una copia.",
   "desktop.menu.deleteAction": () => "Elimina",
+  "desktop.start.immersive": () => "Gioca in modalità immersiva",
+  "desktop.immersive.title": () => "Modalità immersiva",
+  "desktop.immersive.text": () => "La modalità immersiva riempie tutto lo schermo e invia al gioco le scorciatoie da tastiera come Cmd+Tab, Alt+Tab e F11, così Cmd+Tab e Alt+Tab passano da una finestra all'altra del gioco.",
+  "desktop.immersive.browsers": () => "Apri il gioco in Chrome, Edge, Opera o Brave su un computer per usare la modalità immersiva.",
+  "desktop.immersive.leave": () => "Per uscire dalla modalità immersiva, scegli Esci nel menu in alto a sinistra o tieni premuto Esc.",
+  "desktop.immersive.start": () => "Avvia la modalità immersiva",
+  "desktop.menu.logout": () => "Esci",
+  "desktop.switcher": () => "Cambia finestra",
 } satisfies Dict;

@@ -1,3 +1,4 @@
+import type { ShopId } from "../src/sim/10-catalog/shops";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { PREFERENCE } from "../src/sim/10-catalog/payments";
 import { SHOP_SETUP_HOURS } from "../src/sim/10-catalog/shops";
@@ -7,10 +8,10 @@ import { referenceFor } from "../src/sim/30-market/market";
 import type { GameState } from "../src/sim/50-state";
 import { chooseProduct, packageSpec, productCycles } from "../src/sim/80-business/portal";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
-import { chooseShop, createGroup, setGroupSale } from "../src/sim/90-actions/shop";
+import { createGroup, setGroupSale } from "../src/sim/90-actions/shop";
 import { createProduct, createProductGroup, deleteProduct, deleteProductGroup, renameProductGroup, setProductGroupHidden, setProductPrice, updateProduct } from "../src/sim/90-actions/portal";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { automate, readyGame } from "./fixtures";
+import { automate, readyGame, installWithKey } from "./fixtures";
 
 // Every customer pays by bank transfer here, so no shop order is lost for its payment method.
 const saved = { ...PREFERENCE };
@@ -19,12 +20,12 @@ afterEach(() => { Object.assign(PREFERENCE, saved); });
 
 const web = { product: "webHosting" as const, size: 1, sla: "basic" as const };
 
-const shopGame = (seed = 5, id: Parameters<typeof chooseShop>[1] = "modemBill"): GameState => {
+const shopGame = (seed = 5, id: ShopId = "modemBill"): GameState => {
   const s = readyGame(seed);
   s.cash = 1e6;
   setUpChannel(s, "website");
   s.unlocks = [...s.unlocks, "shops"];
-  expect(chooseShop(s, id).ok).toBe(true);
+  installWithKey(s, id);
   s.hour += SHOP_SETUP_HOURS;
   return automate(s);
 };

@@ -10,7 +10,6 @@ import { gameCrashed, gameOf, playersOf } from "../../../../sim/60-infra/games";
 import { GameDetails, GameLine, TitlesSummary, type GameRow } from "./GamePanel";
 import { autoUpdates, phpAt, softwareById } from "../../../../sim/10-catalog/platforms";
 import type { Resources } from "../../../../sim/10-catalog/products";
-import type { Look } from "../../../../sim/10-catalog/sites";
 import type { GameState } from "../../../../sim/50-state";
 import { backupTargets, hostOfVm, isOwnVm, vmById, workloadsOn, type BackupEvery, type Cluster, type Workload } from "../../../../sim/60-infra/cluster";
 import { deviceHealth } from "../../../../sim/60-infra/status";
@@ -20,31 +19,35 @@ import { accountUse, evcWarning, levelOf } from "../../../../sim/80-business/rea
 import { consoleTitle, type ConsoleFeatures } from "../../../../sim/80-business/consoles";
 import { deleteVm, phpDue, removePanelHost, resizePanelVm, setBackup, upgradePhp } from "../../../../sim/90-actions/clusters";
 import { setSitesOffline } from "../../../../sim/90-actions/security";
+import { reboot } from "../../../../sim/90-actions/hardware";
 import { setAutoUpdate, uninstallSoftware, updateDue, updateSoftware } from "../../../../sim/90-actions/software";
 import { migrateWebspace, migrateWorkload, migrationTargets, restoreWorkload, startWorkload, stopWorkload, webspaceTargets } from "../../../../sim/90-actions/vms";
 import { useStore } from "../../../store";
 import { usePageAct } from "../pageAct";
 import { disk, ram } from "../../hw";
 import { VM_STATE, vmLabel, vmState } from "../../products/parts";
-import { hoursText } from "../../workload-menu";
+import { askPower, hoursText } from "../../workload-menu";
 import { useHolds } from "./Holds";
 import { HostSettings } from "./HostSettings";
 import { eraOf } from "../sites/era";
 import { noAutofill } from "../../../no-autofill";
-import { lookOf, panelMachine } from "../../../../sim/60-infra/licence";
+import { installedVersion, lookOf, panelMachine } from "../../../../sim/60-infra/licence";
 
-export type Tab = "objects" | "nodes" | "restore" | "software" | "tasks" | "logs" | "licence" | "services" | "sysinfo" | "packages" | "create" | "easyapache" | "custombuild" | "resellers" | "autossl" | "transfer" | "fail2ban" | "toolkit" | "messages" | "wings";
+export type Tab = "objects" | "nodes" | "restore" | "software" | "tasks" | "logs" | "licence" | "services" | "sysinfo" | "packages" | "create" | "easyapache" | "custombuild" | "resellers" | "autossl" | "transfer" | "fail2ban" | "toolkit" | "messages" | "wings" | "updates" | "components" | "backup";
 
 // What ConsolePage hands a product console; the console draws its own login while signedIn is false.
 export interface PanelProps { game: GameState; c: Cluster; f: ConsoleFeatures; host: string; signedIn: boolean; login: () => void; logout: () => void;
   // The address inside the console, which opens the create form or the packages screen.
   path?: string }
 
-export const erasFrom = (early: number, late: number): { from: number; look: Look }[] => [{ from: early, look: "early" }, { from: late, look: "late" }];
-// The look of the installed version, or the game year's when the version is unknown.
-export function eraAt(eras: { from: number; look: Look }[], { game, c }: { game: GameState; c: Cluster }): Look {
-  const m = panelMachine(c), product = familyOf(c);
-  return (m && product && lookOf(game, m, product)) || eraOf(eras, yearOf(game.hour));
+// A console's looks with the year each starts, ids as in UI_LOOKS: looks({ x3: 2005, paperLamp: 2014, jupitar: 2021 }).
+export const looks = <L extends string>(from: Record<L, number>): { from: number; look: L }[] =>
+  (Object.entries(from) as [L, number][]).map(([look, year]) => ({ from: year, look }));
+export const erasFrom = (early: number, late: number) => looks({ early, late });
+// The look of the installed version, or the game year's when the version is unknown or not one the console draws.
+export function eraAt<L extends string>(eras: { from: number; look: L }[], { game, c }: { game: GameState; c: Cluster }): L {
+  const m = panelMachine(c), product = familyOf(c), v = m && product ? lookOf(game, m, product) : null;
+  return eras.find((e) => e.look === v)?.look ?? eraOf(eras, yearOf(game.hour));
 }
 
 export function usePanelTab(f: ConsoleFeatures, first: Tab = "objects"): [Tab, (t: Tab) => void] {
@@ -55,7 +58,7 @@ export function usePanelTab(f: ConsoleFeatures, first: Tab = "objects"): [Tab, (
 export interface PanelAction { id: string; label: string; run: () => void; tone?: "primary" | "danger" }
 
 const ICON: Record<string, LucideIcon> = {
-  update: RefreshCw, auto: CalendarClock, php: Code, offline: PowerOff, resize: Maximize2, remove: Trash2, confirm: Trash2, cancel: X,
+  update: RefreshCw, auto: CalendarClock, php: Code, offline: PowerOff, restart: RotateCcw, resize: Maximize2, remove: Trash2, confirm: Trash2, cancel: X,
   manage: Gamepad2, hold: Pause, unhold: Play, terminate: Trash2, start: Play, stop: Square, restore: RotateCcw, migrate: ArrowRightLeft, console: Terminal, delete: Trash2,
 };
 export const ActionIcon = ({ id, size }: { id: string; size?: number }) => { const I = ICON[id] ?? Circle; return <I size={size} aria-hidden />; };
@@ -151,11 +154,12 @@ export function useRows(game: GameState, c: Cluster, f: ConsoleFeatures, node: s
   const web = c.kind === "panel", cloud = c.kind === "cloud", close = () => setOpen(null), holds = useHolds(game, c, f);
   return game.workloads.filter((w) => w.clusterId === c.id && (!node || w.deviceId === node)).map((w) => {
     const st = vmState(game, w), [state, tone] = VM_STATE[st], u = workloadUse(game, w), host = hostOfVm(game, w.id);
-    const on = st === "running" || st === "down" || st === "frozen", site = game.services.find((v) => v.id === w.serviceId);
+    const on = st === "running" || st === "down" || st === "booting", site = game.services.find((v) => v.id === w.serviceId);
+    const name = web ? site?.domain ?? w.hostname ?? "" : host?.name ?? w.hostname ?? vmLabel(game, w).name;
     const d = game.devices.find((x) => x.id === w.deviceId), movable = (on || st === "stopped") && !w.migrating, own = cloud && isOwnVm(w);
     const actions: (PanelAction | false)[] = [
       f.start && st === "stopped" && { id: "start", label: t("browser-consoles-2.start"), run: () => act(startWorkload, w.id) },
-      f.stop && on && { id: "stop", label: t("browser-consoles-2.stop"), run: () => act(stopWorkload, w.id) },
+      f.stop && on && { id: "stop", label: t("browser-consoles-2.stop"), run: () => askPower("stop", name, t("browser-consoles-2.stop"), () => act(stopWorkload, w.id)) },
       st === "lost" && f.backups && { id: "restore", label: w.backupAt === null ? t("browser-consoles-2.startEmpty") : t("browser-consoles-2.restore"), run: () => act(restoreWorkload, w.id) },
       !!f.migrate && movable && { id: "migrate", label: t("browser-consoles-2.migrate"), run: () => setOpen({ id: w.id, kind: "migrate" }) },
       f.resize && !!host && cloud && { id: "resize", label: t("browser-consoles-2.resize"), run: () => setOpen({ id: w.id, kind: "resize" }) },
@@ -166,8 +170,7 @@ export function useRows(game: GameState, c: Cluster, f: ConsoleFeatures, node: s
     ];
     const o = open?.id === w.id ? open.kind : null, hold = holds(w);
     return {
-      id: w.id, state: hold?.state?.[0] ?? state, tone: hold?.state?.[1] ?? tone, pkg: site?.pkg, user: site?.username,
-      name: web ? site?.domain ?? w.hostname ?? "" : host?.name ?? w.hostname ?? vmLabel(game, w).name,
+      id: w.id, name, state: hold?.state?.[0] ?? state, tone: hold?.state?.[1] ?? tone, pkg: site?.pkg, user: site?.username,
       sub: [host?.panel ? consoleTitle(host.panel) : "", !web && site?.pkg].filter(Boolean).join(" · "),
       game: gameRow(game, c, w.serviceId),
       node: d ? d.hostname ?? d.label ?? d.name : "",
@@ -246,21 +249,23 @@ export function Facts({ facts, className = "cx-table cx-facts" }: { facts: Fact[
   return <table className={className}><tbody>{facts.map((x) => <tr key={x.label}><th>{x.label}</th><td className={x.num ? "num" : undefined}>{x.value}</td></tr>)}</tbody></table>;
 }
 
-// The software page: its facts, the actions it allows now, a note when nothing is due and the open resize form.
+// The software page: its facts, the actions it allows now, a note when nothing is due and the open resize form. A web
+// panel updates on its Updates page and restarts its machine here.
 export function useSoftware(game: GameState, c: Cluster, f: ConsoleFeatures): { facts: Fact[]; actions: PanelAction[]; note: string | null; panel: ReactNode } {
   const act = usePageAct(), [sizing, setSizing] = useState(false), [removing, setRemoving] = useState(false);
   const family = familyOf(c)!, year = yearOf(game.hour), due = updateDue(game, c);
-  const auto = f.update && autoUpdates(softwareById(family), year), on = !!c.autoUpdate;
-  const off = game.security.offline.includes(c.id), machine = c.vm ?? c.nodes[0]?.deviceId ?? "";
+  const web = c.kind === "panel", update = f.update && !web, auto = update && autoUpdates(softwareById(family), year), on = !!c.autoUpdate;
+  const server = web ? (c.vm ? vmById(game, c.vm)?.deviceId : c.nodes[0]?.deviceId) : null;
+  const off = game.security.offline.includes(c.id), machine = c.vm ?? c.nodes[0]?.deviceId ?? "", version = installedVersion(game, machine, family);
   const facts: (Fact | false)[] = [
     { label: t("browser-consoles-2.software"), value: consoleTitle(family) },
-    { label: t("browser-consoles-2.version"), value: String(c.version), num: true },
+    version !== null && { label: t("browser-consoles-2.version"), value: version, num: true },
     auto && { label: t("browser-consoles-2.autoUpdates"), value: on ? t("browser-consoles-2.on") : t("browser-consoles-2.off") },
     { label: t("browser-consoles-2.openVulns"), value: String(openVulns(game, c.id).length), num: true },
     c.kind === "panel" && { label: "PHP", value: String(c.php), num: true },
   ];
   const actions: (PanelAction | false)[] = [
-    f.update && due && { id: "update", label: t("browser-consoles-2.updateTo", { year }), run: () => act(updateSoftware, c.id), tone: "primary" },
+    update && due && { id: "update", label: t("browser-consoles-2.updateTo", { year }), run: () => act(updateSoftware, c.id), tone: "primary" },
     auto && { id: "auto", label: on ? t("browser-consoles-2.autoOff") : t("browser-consoles-2.autoOn"), run: () => act(setAutoUpdate, c.id, !on) },
     c.kind === "panel" && phpDue(game, c) && { id: "php", label: c.php === phpAt(year) ? t("browser-consoles-2.patchPhp") : t("browser-consoles-2.upgradePhp", { version: phpAt(year) }), run: () => act(upgradePhp, c.id) },
     f.sitesOffline && c.kind === "panel" && { id: "offline", label: off ? t("browser-consoles-2.sitesOnline") : t("browser-consoles-2.sitesOffline"), run: () => act(setSitesOffline, c.id, !off) },
@@ -268,10 +273,11 @@ export function useSoftware(game: GameState, c: Cluster, f: ConsoleFeatures): { 
     f.delete && !removing && { id: "remove", label: t("browser-consoles-2.removeHost"), run: () => setRemoving(true) },
     removing && { id: "confirm", label: t("browser-consoles-2.confirmRemove"), tone: "danger", run: () => (c.kind === "panel" ? act(removePanelHost, c.id) : act(uninstallSoftware, machine)) },
     removing && { id: "cancel", label: t("browser-consoles-2.cancel"), run: () => setRemoving(false) },
+    !!server && { id: "restart", label: t("panel-updates.restartServer"), run: () => act(reboot, server) },
   ];
   return {
     facts: facts.filter((x): x is Fact => !!x), actions: actions.filter((a): a is PanelAction => !!a),
-    note: f.update && !due ? t("browser-consoles-2.upToDate") : null, panel: <>{sizing && c.vm ? <Resize game={game} host={c} done={() => setSizing(false)} /> : null}<HostSettings game={game} c={c} /></>,
+    note: update && !due ? t("browser-consoles-2.upToDate") : null, panel: <>{sizing && c.vm ? <Resize game={game} host={c} done={() => setSizing(false)} /> : null}<HostSettings game={game} c={c} /></>,
   };
 }
 

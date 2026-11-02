@@ -1,6 +1,6 @@
 import type { Dict } from "../lang";
 import { t } from "../en";
-import { euro, euroCents } from "../../sim/00-core/money";
+import { euro } from "../../sim/00-core/money";
 
 // bare, definite, indefinite
 const PARTS: Record<string, [string, string, string]> = {
@@ -19,10 +19,6 @@ const who = (p: Record<string, string | number>, d: string) => String(p.hostname
 const s = (n: unknown, one: string, many: string) => (Number(n) === 1 ? one : many);
 
 export default {
-  "event.tax.title": () => "Imposta societaria pagata",
-  "event.tax.text": (p) => `Hai pagato ${euroCents(Number(p.tax))} di imposte su un utile di ${euroCents(Number(p.profit))} nel ${p.year}.`,
-  "event.taxLoss.title": () => "Nessuna imposta societaria",
-  "event.taxLoss.text": (p) => `Il ${p.year} si è chiuso in perdita, e ${euroCents(Number(p.carry))} di perdite vengono riportati all'anno successivo.`,
   "event.cashNegative.title": () => "Liquidità sotto zero",
   "event.cashNegative.text": (p) => `Il tuo conto è scoperto. Se resta sotto zero per ${p.days} giorni e la banca non presta più, l'azienda fallisce.`,
   "event.bankrupt.title": () => "Fallimento",
@@ -30,8 +26,6 @@ export default {
   "ledger.tax": (p) => `Imposta societaria ${p.year}`,
   "ledger.insurancePremium": () => "Premio dell'assicurazione hardware",
   "ledger.insuranceClaim": (p) => `Sinistro assicurazione hardware: ${part(p.component, 0)} in ${p.device}`,
-  "error.insured": () => "Hai già questa polizza.",
-  "error.notInsured": () => "Non hai questa polizza.",
   "error.unknownLoan": () => "Questo prestito non esiste più.",
   "event.ticket.title": (p) => `${p.name}`,
   "event.ticket.text": (p) => t(String(p.subject), p),
@@ -105,6 +99,8 @@ export default {
   "ticket.cancellation.outage.text": () => "I miei servizi sono stati offline troppo spesso. Passo a un altro provider, quindi per favore disdite tutto a fine mese.",
   "ticket.cancellation.slow.subject": () => "Per favore, disdite il mio contratto",
   "ticket.cancellation.slow.text": () => "I miei servizi sono lentissimi da settimane. Passo a un provider più veloce, quindi per favore disdite tutto a fine mese.",
+  "ticket.cancellation.byHost.subject": () => "Disdetta del tuo contratto",
+  "ticket.cancellation.byHost.text": (p) => (Number(p.now) ? `Abbiamo disdetto il tuo contratto per ${p.service} con effetto immediato. Motivo: ${p.why}.` : `Disdiciamo il tuo contratto per ${p.service}. Termina il ${p.end}.${p.why ? ` Motivo: ${p.why}.` : ""}`),
   "ticket.abuse.spam.subject": (p) => `Spam inviato ${p.hostname || p.service ? `da ${p.hostname || p.service}` : "dalla tua rete"}`,
   "ticket.abuse.spam.text": () => "Un provider di posta segnala migliaia di e-mail di spam dal server di questo cliente.",
   "ticket.abuse.attack.subject": (p) => `Traffico di attacco ${p.hostname || p.service ? `da ${p.hostname || p.service}` : "dalla tua rete"}`,

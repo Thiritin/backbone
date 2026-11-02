@@ -46,6 +46,9 @@ The company pays VAT and income tax by filing returns itself. Today `46-finance/
 - Filing sends the profit from `taxFor`. Ten working days later the assessment (Steuerbescheid) arrives with a bill due in 30 days. A loss carries forward as today.
 - Late filing costs 0.25% of the assessed tax for each month started, at least €25 a month, billed with the assessment.
 - Two months after the due date the office estimates 1.3 times the real tax and bills it. Filing before the year ends replaces the estimate with the real assessment and books the difference.
+- The estimate is at least €100, like the VAT estimate, so a loss year is estimated too. "Before the year ends" is read as the end of the calendar year after the tax year; after that the estimate stands and filing is refused with `error.taxYearClosed`.
+- A yearly return opens on 1 January for every year the company was registered in. Filing it files the year's open advance returns and books the rest of the year's VAT, so the yearly VAT return always matches. The assessment lists the tax, the late fee and the credit for a paid estimate; when the credit is larger, the refund books at once.
+- The Books Tax tab (editions with the tax view) shows the open returns in place of the April tax card. The Finance app moved into Books before this phase landed.
 
 ## 5. Filing routes
 
@@ -55,6 +58,12 @@ The company pays VAT and income tax by filing returns itself. Today `46-finance/
 | Mein DOHLE | from 2013 | The same forms on `www.dohle.de`, logged in with the certificate file. DohleFormular refuses to start from 2013 and points to the portal. |
 | Bookkeeping program | when its edition has the tax view | Connect DOHLE once in Books by picking the certificate file. From then on Books files the advance return in its monthly run and offers Submit tax return, which needs every invoice of the year present and a matched statement (billing-by-hand 9e). |
 
+- The Tax tab and Connect DOHLE come with the editions that have the tax view (billing-by-hand 9d).
+- On the first of the month at nine, when the monthly run sends the drafts, Books files every advance return whose period has ended.
+- Submit tax return sits on the yearly return's row in the Books Tax tab. "Every invoice of the year present" means no invoice issued in the year is still waiting for an import from the shop, and "a matched statement" means no transfer of the year is unmatched. Submitting then files like DohleFormular, with the same tax number, certificate and closing checks.
+
+- From 1 January 2013 the site's Downloads tab becomes Mein DOHLE at `www.dohle.de/mein/`, and the download page is gone. Logging in picks the certificate file from the desktop and lasts while the page stays open. An installed DohleFormular stays on the dock and opens to a notice with a button to the portal.
+
 ## 6. Certificate
 
 1. Registering on `www.dohle.de/registrieren/` needs the tax number and the company's email address.
@@ -62,6 +71,7 @@ The company pays VAT and income tax by filing returns itself. Today `46-finance/
 3. Entering both on the site puts `dohle-zertifikat.pfx` on the desktop as a document.
 4. Every filing route reads that file from the desktop. A route that finds no file refuses with `error.dohleCert`.
 5. A deleted certificate cannot be recovered. The site's Lost certificate link starts a new registration, which revokes the old one, breaks the Books connection and sends a new code by letter.
+6. The company's email address is the address customers write to (the free mailbox, or sales@ on the own domain). Every registration revokes the certificate before it, so the Lost certificate link opens the same form.
 
 ## 7. Phases
 

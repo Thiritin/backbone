@@ -99,3 +99,14 @@ describe("cluster quorum", () => {
     expect(back.clusters.find((x) => x.id === c)!.qdevice ?? null).toBeNull();
   });
 });
+
+describe("migration into a read-only cluster", () => {
+  it("is refused for the target cluster too", () => {
+    const { s, c, ids, spare } = setup(2);
+    const a = hypervisor(s, [spare], "PVE 2", "proxmocks");
+    const vm = ok(createVm(s, a, SMALL));
+    ok(setPower(s, ids[1], false));
+    expect(err(migrateWorkload(s, vm, ids[0]))).toBe("error.noQuorum");
+    expect(cl(s, c).nodes.length).toBe(2);
+  });
+});

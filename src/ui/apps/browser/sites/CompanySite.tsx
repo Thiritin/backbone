@@ -1,4 +1,5 @@
 import { useState, type CSSProperties, type ReactNode } from "react";
+import { roleAddress } from "../../../../sim/42-mail/accounts";
 import { BookOpen, Building2, Check, CircleCheck, Cloud, Cpu, Gamepad2, Globe, HardDrive, LifeBuoy, Lock, Mail, MessagesSquare, Network, Server, ShieldCheck, Zap, type LucideIcon } from "lucide-react";
 import { t } from "../../../../i18n/en";
 import { START_YEAR, yearOf } from "../../../../sim/00-core/time";
@@ -10,8 +11,9 @@ import type { GameState } from "../../../../sim/50-state";
 import { salesAddress } from "../../../../sim/80-business/mail";
 import { owns } from "../../../../sim/80-business/marketing";
 import { packageSpec } from "../../../../sim/80-business/portal";
+import { specText } from "../../../../sim/30-market/spec";
 import { CYCLES, type Cycle } from "../../../../sim/10-catalog/cycles";
-import { kbArticles, siteContent, sitePages, visibleProducts, orderLink, SITE_LINES, listed, type SitePage } from "../../../../sim/80-business/website";
+import { customOpen, kbArticles, siteContent, sitePages, visibleProducts, orderLink, SITE_LINES, listed, type SitePage } from "../../../../sim/80-business/website";
 import { CompanyMark } from "../../company";
 import { PRODUCT } from "../../support/labels";
 import { BLURB, FEATURES, KB_STEPS, THREADS } from "./companyCopy";
@@ -84,7 +86,7 @@ function ProductCards({ game, full, go }: { game: GameState; full?: boolean; go?
   const designed = owns(game, "website");
   return (
     <div className={`site-products${full ? " full" : ""}`}>
-      {lines.map(({ product: p, from, link }) => {
+      {lines.map(({ product: p, from, link, items }) => {
         const Icon = ICON[p];
         return (
           <section key={p} className="site-product">
@@ -92,12 +94,24 @@ function ProductCards({ game, full, go }: { game: GameState; full?: boolean; go?
             <h3>{PRODUCT[p]}</h3>
             <p>{BLURB[p]}</p>
             {full && <ul className="site-checks">{FEATURES[p].map((f) => <li key={f}><Check size={14} />{f}</li>)}</ul>}
+            {items.length > 0 && (
+              <ul className="site-items">
+                {items.map((x) => (
+                  <li key={x.id}>
+                    <strong>{x.name}</strong>
+                    <span>{specText(x.line, x.spec)}</span>
+                    {CYCLES.filter((c) => x.prices[c] !== undefined).map((c) => <span key={c} className="num">{CYCLE_LABEL[c]} {euroCents(x.prices[c]!)}</span>)}
+                  </li>
+                ))}
+              </ul>
+            )}
             {from !== null && (
               <div className="site-order">
                 <span>{t(PRODUCTS[p].period === "year" ? "browser-sites-1.co.fromYear" : "browser-sites-1.co.fromMonth", { price: euroCents(from) })}</span>
                 {link && go ? <a href={`#${link}`} className="site-button" onClick={(e) => { e.preventDefault(); go(link); }}>{t("browser-sites-1.co.order")}</a> : null}
               </div>
             )}
+            {customOpen(game, p) && <p className="site-custom">{t("browser-sites-1.co.customLine")}</p>}
           </section>
         );
       })}
@@ -274,7 +288,7 @@ function About({ game }: { game: GameState }) {
 }
 
 function Support({ game, pages, go }: { game: GameState; pages: SitePage[]; go: Go }) {
-  const address = game.company.mail.kind === "free" ? salesAddress(game) : `support@${companyDomain(game)}`;
+  const address = roleAddress(game, "support");
   return (
     <>
       <PageHead title={LABEL.support} lead={t("browser-sites-1.co.supportLead")} />

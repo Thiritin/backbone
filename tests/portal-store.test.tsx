@@ -48,12 +48,11 @@ describe("WHMCache store front", () => {
     expect(html).toMatch(/<button(?![^>]*disabled)[^>]*>Complete Order/);
   });
 
-  it("shows the stepper from 2013 only", () => {
+  it("shows the stepper from major 5 on", () => {
     const s = shopGame();
     withProduct(s);
-    expect(render(s, "whmCache", "store")).not.toContain("shop-steps");
-    s.hour += 9 * 365 * 24;
-    expect(render(s, "whmCache", "store")).toContain("shop-steps");
+    expect(render(s, "whmCache", "store", {}, undefined, "Store", "4.0")).not.toContain("shop-steps");
+    expect(render(s, "whmCache", "store", {}, undefined, "Store", "5.0")).toContain("shop-steps");
   });
 });
 

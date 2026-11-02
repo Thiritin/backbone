@@ -1,3 +1,4 @@
+import type { ShopId } from "../src/sim/10-catalog/shops";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
 import { SHOP_SETUP_HOURS } from "../src/sim/10-catalog/shops";
@@ -6,10 +7,11 @@ import { orderLead } from "../src/sim/30-market/orders";
 import type { GameState } from "../src/sim/50-state";
 import { hasModule, inStock, shopActive, shopBills, shopTick, stockOf, WHM_BREACH_AT } from "../src/sim/80-business/shop";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
-import { addToGroup, buyModule, chooseShop, createGroup, removeFromGroup, setGroupDeploy, setGroupSale, setStock } from "../src/sim/90-actions/shop";
+import { addToGroup, buyModule, createGroup, installShop, removeFromGroup, setGroupDeploy, setGroupSale, setStock } from "../src/sim/90-actions/shop";
 import { cordon, uncordon } from "../src/sim/90-actions/clusters";
+import { keyFee } from "../src/sim/85-products/products";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { automate, readyGame } from "./fixtures";
+import { automate, readyGame, installWithKey } from "./fixtures";
 
 // Private customers pay by bank transfer here, so no shop order is lost for its payment method.
 const saved = PREFERENCE.private;
@@ -18,12 +20,12 @@ afterEach(() => { PREFERENCE.private = saved; });
 
 const web = { product: "webHosting" as const, size: 1, sla: "basic" as const };
 
-const withShop = (seed: number, id: Parameters<typeof chooseShop>[1] = "whmCache") => {
+const withShop = (seed: number, id: ShopId = "whmCache") => {
   const s = readyGame(seed);
   s.cash = 1e6;
   setUpChannel(s, "website");
   s.unlocks = [...s.unlocks, "shops"];
-  expect(chooseShop(s, id).ok).toBe(true);
+  installWithKey(s, id);
   s.hour += SHOP_SETUP_HOURS;
   return s;
 };
@@ -33,18 +35,17 @@ describe("shop systems", () => {
   it("need the research and the website, and take orders after their setup days", () => {
     const s = readyGame(1);
     s.cash = 1e6;
-    expect(chooseShop(s, "whmCache")).toMatchObject({ ok: false, error: "error.needsShopSkill" });
+    const host = s.clusters.find((c) => c.kind === "panel")!.id;
+    expect(installShop(s, host, "whmCache")).toMatchObject({ ok: false, error: "error.needsShopSkill" });
     s.unlocks = [...s.unlocks, "shops"];
-    expect(chooseShop(s, "whmCache")).toMatchObject({ ok: false, error: "error.needsWebsite" });
+    expect(installShop(s, host, "whmCache")).toMatchObject({ ok: false, error: "error.needsWebsite" });
     setUpChannel(s, "website");
-    const cash = s.cash;
-    expect(chooseShop(s, "clientExit").ok).toBe(true);
-    expect(s.cash).toBe(cash - 250);
+    installWithKey(s, "clientExit", true);
     expect(s.shop.variant).toBe("clientExit");
     expect(shopActive(s)).toBe(false);
     s.hour += SHOP_SETUP_HOURS;
     expect(shopActive(s)).toBe(true);
-    expect(chooseShop(s, "hostBull")).toMatchObject({ ok: false, error: "error.shopNotSold" });
+    expect(installShop(s, host, "hostBull")).toMatchObject({ ok: false, error: "error.shopNotSold" });
   });
 
   it("include modules by variant and year, and sell the others at their price", () => {
@@ -65,11 +66,22 @@ describe("shop systems", () => {
     box.cash = 1e6;
     setUpChannel(box, "website");
     box.unlocks = [...box.unlocks, "shops"];
-    expect(chooseShop(box, "boxBillin").ok).toBe(true);
+    installWithKey(box, "boxBillin");
     expect(buyModule(box, "proxmocks").ok).toBe(true);
     expect(hasModule(box, "proxmocks")).toBe(false);
     box.hour += 12;
     expect(hasModule(box, "proxmocks")).toBe(true);
+  });
+
+  it("start a free shop system and a free module while the account is overdrawn", () => {
+    const s = at(readyGame(6), 2012);
+    setUpChannel(s, "website");
+    s.unlocks = [...s.unlocks, "shops"];
+    s.cash = -500;
+    installWithKey(s, "orderBocks");
+    installWithKey(s, "boxBillin");
+    expect(buyModule(s, "proxmocks").ok).toBe(true);
+    expect(s.cash).toBe(-500);
   });
 
   it("sell from stock, and cancel an order they cannot set up without a lost sale", () => {
@@ -89,14 +101,11 @@ describe("shop systems", () => {
     expect(s.shop.soldOut.webHosting).toBe(1);
   });
 
-  it("bill leases, per-server minimums and revenue shares", () => {
-    const whm = withShop(6);
-    expect(shopBills(whm)).toMatchObject([{ key: "ledger.shopLicence", amount: 15 }]);
-    at(whm, 2020);
-    expect(shopBills(whm)[0].amount).toBe(18);
-    const uber = at(withShop(7, "modemBill"), 2007);
-    uber.shop = { ...uber.shop, variant: "ubersmyth" };
-    expect(shopBills(uber)).toMatchObject([{ key: "ledger.shopLicence", amount: 100 }]);
+  it("lease as licence keys and bill only revenue shares", () => {
+    const whm = withShop(6), key = whm.licenses.find((k) => k.product === "whmCache")!;
+    expect(shopBills(whm)).toEqual([]);
+    expect(key).toMatchObject({ edition: "leased", kind: "server", covers: { kind: "term" } });
+    expect(keyFee(whm, key)).toBe(15);
     const box = at(withShop(8, "modemBill"), 2007);
     box.shop = { ...box.shop, variant: "orderBocks" };
     box.services = [{ ...box.services[0], viaShop: true, endedAt: null, price: 10 / 730 }];

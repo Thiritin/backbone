@@ -19,8 +19,10 @@ import { AlertSheet } from "./AlertSheet";
 import { WhatsNew } from "./WhatsNew";
 import { ContextMenuHost } from "./ContextMenu";
 import { Searchlight } from "../search/Searchlight";
+import { Switcher } from "./Switcher";
 import { UpdateSheet } from "./UpdateSheet";
 import { OsUpdateSheet } from "./OsUpdateSheet";
+import { ConfirmHost } from "./Confirm";
 import { watchUpdates } from "../update";
 import type { ChangelogDay } from "../changelog";
 
@@ -118,6 +120,7 @@ function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
   return (
     <>
       <MenuBar theme={theme} onTheme={onTheme} onBell={toggleCenter} />
+      <ConfirmHost />
       <div className="live-only" inert={speed === 0}>
         <DesktopIcons />
         <Widgets />
@@ -134,6 +137,7 @@ function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
       {explain && <SkillSheet key={explain} id={explain} onClose={() => setExplain(null)} />}
       <ContextMenuHost />
       <Searchlight />
+      <Switcher />
       <AwayLock />
     </>
   );

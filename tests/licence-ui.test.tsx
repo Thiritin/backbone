@@ -9,7 +9,7 @@ function setup(panel: string) {
   const s = readyGame(1);
   skipTo(s, 2020);
   s.cash = 1_000_000;
-  const id = panelVm(s, s.clusters.find((y) => y.kind === "cloud")!.id, panel);
+  const id = panelVm(s, s.clusters.find((y) => y.kind === "cloud")!.id, panel, { vcpu: 2, ramGb: 4, diskGb: 50 });
   const host = () => s.clusters.find((x) => x.id === id)!;
   const view = () => renderToString(<LicencePage game={s} c={host()} />);
   // Puts the panel on a trial until the hour, without its key.

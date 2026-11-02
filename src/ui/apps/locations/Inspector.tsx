@@ -147,7 +147,7 @@ export function Inspector({ game, device, port, side = "front", onSelect, onHot,
       {device.rackId && (stickIn
         ? <ActionTile icon={Usb} label={t("locations-1.unplugStick")} disabled={handsAway(game, device)} onClick={() => act(unplugStick)} />
         : <ActionTile icon={Usb} label={t("locations-1.plugStick")} disabled={!!device.hands} onClick={() => hand.start(game, { title: t("locations-1.plugStickOn", { name }), deviceId: device.id, action: plugStick, args: [device.id] })} />)}
-      {device.rackId && <ActionTile icon={SquareTerminal} label={t("locations-1.terminal")} disabled={!device.on || !device.hostname} onClick={() => openApp("Terminal", { kind: "ssh", id: device.hostname! })} />}
+      {device.rackId && <ActionTile icon={SquareTerminal} label={t("locations-1.terminal")} disabled={!device.on || !device.hostname} onClick={() => openApp("Terminal", { kind: "ssh", id: addressOf(game, device.id) ?? device.hostname! })} />}
     </>
   );
   const tabs = server ? ([

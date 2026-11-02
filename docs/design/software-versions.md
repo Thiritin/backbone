@@ -996,3 +996,492 @@ Yes. Microsoft Evaluation Center offers a 180-day evaluation of Windows Server 2
 ---
 
 Sources fetched: debian.org/releases, Wikipedia Debian version history, learn.microsoft.com lifecycle pages for 2022 and 2025, microsoft.com evalcenter 2025, search results for prices (HPE Q1 2017 guide, TechTarget, microsoft.com pricing).
+
+# Shop systems (2005 to 2026)
+
+Real release and licensing history of the eight shop variants, for `software-versions.ts` and `shop-licences.ts` (plan `docs/design/plans/shop-software.md`). Sources were vendor docs and pricing pages where reachable (WHMCS 8.x EOL table, Blesta EOL table and pricing posts, ClientExec 2025 pricing post, HostBill pricing page, Ubersmith release notes, BoxBilling and FOSSBilling GitHub tags) and forum or trade press posts otherwise. Values marked "(estimate)" are picked to fit the known record; values marked "(unverified)" come from weak sources. ModemBill, OrderBocks and the pre-2016 HostBull and Ubersmyth record are mostly estimates.
+
+## Game values
+
+The game takes euro prices at the real dollar figures, rounded. Where a column holds several values, each era in the catalog takes one.
+
+| Variant | Eras in the game | Editions and caps | Trial |
+|---|---|---|---|
+| ModemBill | 2005: key €250 with 12 months of updates, then €100 a year, upgrade €125, or lease by edition; 2008-03: lease only (Parallax era); 2011: no longer sold | Lite 50 active clients €15 a month, Unlimited €22 a month | 14 days (estimate) |
+| ClientExit | 2005: key €250 with 12 months of updates, then €50 a year, or lease; 2025-12: lease only | Branded €13, Unbranded €15 a month, no cap | 14 days (estimate) |
+| WHMCache | 2005: key €250, 2007-07: key €325, each with 12 months of updates, then €45 a year, or the €15 lease; 2020-08: lease by active clients only | Leased (no cap) €15; from 2020-08 Plus 250 €18, Professional 500 €30, Business 1,000 €45, Business 5000 €285, Unlimited €2,000 a month | none, a key is needed |
+| Blessta | 2007: lease €13 a month; 2010-06: key €100 (version 2); 2013-08: key €250 with 12 months of updates, then €39 a year, or lease; 2025-11: key €350, then €62 a year | Branded €13, Unbranded €15 a month, no cap | 30 days |
+| HostBull | 2009-09: lease €16 a month; 2013-06: key €600 with 12 months of updates, then €125 a year | no cap (the real editions differ in support cases) | 14 days (estimate) |
+| Ubersmyth | 2006: setup €1,000 and a lease by edition; 2016-04: setup €2,500, Starter no longer sold | Starter 100 managed servers €100, Standard 500 €400, Pro 2,000 €700, Enterprise €1,500 a month (estimate) | none, a key is needed |
+| OrderBocks | 2006: no licence, 6% of the revenue of orders taken through it (estimate) | none | no key |
+| BoxBillin' | 2011: free | none | no key |
+
+The game simplifies three things. BoxBillin' is free from its first year, although the real BoxBilling sold a key until about 2013. An edition keeps one price across eras, so the 2025 and 2026 price rises of the Blesta, ClientExec and WHMCS leases are left out. HostBull 4.0 runs until the 2019 release and Ubersmyth 4.2 until 4.6 (estimate), so no year falls between two majors.
+
+## ModemBill
+Real product: ModernBill
+
+### Versions
+| Version | Released | Updates until | Security until | Headline features |
+|---|---|---|---|---|
+| 4.0 | 2003-06 (estimate) | 2007-01 (estimate) | 2009-12 (estimate) | Hosting order forms, invoicing, support desk, Zend/IonCube-encoded PHP, TCAdmin and control panel provisioning |
+| 4.3 | 2005-06 (estimate) | 2007-12 (estimate) | 2009-12 (estimate) | Lite (50 client) and Unlimited editions, TCAdmin integration (an update shipped Oct 2005) |
+| 4.4 | 2007-03 (estimate) | 2008-06 (estimate) | 2009-12 (estimate) | Last 4.x line; still sold and trialled in 2008 |
+| 5.0 | 2008-01 (estimate) | 2009-06 (estimate) | 2010-12 (estimate) | Rewrite, widely reported as buggy; 5.0.3 and 5.6.0 builds exist under Parallels |
+
+Parallels (formerly SWSoft) bought ModernGigabyte, the maker, in 2008-03 and planned to rename it Parallels Plesk Billing. Owned licences for 4.x were no longer sold afterwards. Discontinued around 2010 (estimate).
+
+### Licensing eras
+| Period | Model | Price | Upgrade discount |
+|---|---|---|---|
+| 2003 to 2005 | Owned key (estimate) | $249 one time (estimate), updates included 12 months (estimate) | none known |
+| 2005 to 2008 | Lease Lite | $15/mo, up to 50 clients (via TCAdmin resale) | not applicable |
+| 2005 to 2008 | Lease Unlimited | $22/mo, unlimited clients (via TCAdmin resale); direct full lease about $25/mo (unverified) | not applicable |
+| 2005 to 2008 | Owned key renewal | updates/support $99 per year (estimate) | 4.x to 5.0 upgrade 50 percent (estimate) |
+| 2008 to 2010 | Lease only under Parallels | about $25/mo (unverified), owned sales dropped | forced move from 4.x to 5.x licence |
+
+### Editions
+| Edition | Cap | Price |
+|---|---|---|
+| Lite | 50 clients | $15/mo lease |
+| Unlimited | unlimited clients | $22/mo lease |
+| Owned full | unlimited clients | $249 one time (estimate) |
+
+Cap unit is clients (active vs total is not documented).
+
+### Trial
+A trial of 4.4 was still obtainable in 2008. Length not documented, 14 days (estimate).
+
+### UI generations
+| Years | UI name | Introduced with |
+|---|---|---|
+| 2003 to 2007 | Classic admin (dense tables, blue chrome) (estimate) | 4.0 |
+| 2008 to 2010 | Redesigned admin, later Plesk Billing skin (unverified) | 5.0 |
+
+## WHMCache
+Real product: WHMCS
+
+### Versions
+| Version | Released | Updates until | Security until | Headline features |
+|---|---|---|---|---|
+| 2.x | 2005-09 (estimate) | 2007-06 (estimate) | 2008-12 (estimate) | First public releases, 2005 launch |
+| 3.0 | 2007-06 (estimate) | 2009-03 (estimate) | 2010-12 (estimate) | Domain registrar modules, support tickets, many gateways |
+| 4.0 | 2009-06 | 2011-09 (estimate) | 2012-12 (estimate) | Redesigned admin area, "v4" template, much wider module set (release inferred from mid-2009 newsletter) |
+| 5.0 | 2011-12 (estimate) | 2014-03 (estimate) | 2015-12 (estimate) | Admin and client redesign, 5.2.x and 5.3 long-lived LTS |
+| 6.0 | 2014-12 (estimate) | 2016-03 (estimate) | 2017-12 (estimate) | "Six" responsive client theme, Bootstrap, new default templates |
+| 7.0 | 2016-10 | 2020-01 (estimate) | 2021-12 (estimate) | Automatic updater, PHP 7 support, Composer based tooling (RC 2016-09-16, beta 2016-07-22) |
+| 8.0 | 2020-08-04 | 2025-04-07 (8.13 release) | 2026-05-31 (8.13 LTS) | Per-minor EOL schedule: 8.0 EOL 2021-09-30, 8.1 2021-12-31, 8.2 2022-06-30, 8.3 2022-10-31, 8.4 2023-01-31, 8.5 2023-05-31, 8.6 2023-10-31, 8.7 2024-02-29, 8.8 2024-08-31, 8.9 2025-01-03, 8.10 2025-04-30, 8.11 2025-09-30, 8.12 2026-01-31; "Twenty-One" client theme from 8.1 (2020-11-20) |
+| 9.0 | 2025-12-16 | null (current) | 2026-12-31 (LTS eligible) | "Nexus" client theme and cart, AI features; 9.1 adds invoice immutability, credit and debit notes, unattended updates |
+
+### Licensing eras
+| Period | Model | Price | Upgrade discount |
+|---|---|---|---|
+| 2005 to 2007-07 | Owned, unbranded | $250 (estimate), updates and support renewal $44.95 per year, 12 months included (estimate) | none |
+| 2007-07 to 2020 | Owned, unbranded | $325 one time; updates/support $44.95 per year | upgrades within the update period free; lapsed keys pay renewal |
+| 2007 to 2016 | Lease | about $19/mo (estimate, derived from a 17 month break-even), branded cheaper | not applicable |
+| 2016-10 | Lease by size | $15.95/mo branded and $18.95/mo unbranded up to 250 clients, $24.95 up to 1,000, $39.95 over 1,000 | not applicable |
+| 2020 | Lease tiers by active clients (Starter, Plus, Professional, Business) | Starter $15.95, Plus $18.95 (250), Professional $24.95 to $29.95 (500), Business $39.95 to $44.95 (1,000+) | not applicable |
+| 2021-04 | Owned support and updates discontinued; Starter folded into Plus on 2021-07-01 | existing owned keys still run but get no updates | move to monthly tier |
+| 2023-08 | Business client bands added | 1,000 clients $44.95, later $59.95 (2024), $69.95 (2025-10), $84.95 (2026) | not applicable |
+| 2025 to 2026 | Price rises | Plus $34.95, Professional $54.95, Business 5,000 clients $284.95, up to 100,000 clients $1,249.95 to $1,999.95 per month | not applicable |
+
+### Editions
+| Edition | Cap | Price |
+|---|---|---|
+| Starter (to 2021) | about 100 active clients (estimate) | $15.95/mo |
+| Plus | 250 active clients | $18.95/mo (2020), $34.95/mo (2026) |
+| Professional | 500 active clients | $29.95/mo (2021), $54.95/mo (2026) |
+| Business | 1,000 active clients | $44.95/mo (2021), $84.95/mo (2026) |
+| Business large | 5,000 active clients | $284.95/mo (2026) |
+| Business unlimited | unlimited active clients | up to $1,999.95/mo (2026) |
+
+Cap unit is active clients.
+
+### Trial
+No free trial documented in current sources. A 15 day trial existed in earlier years (unverified).
+
+### UI generations
+| Years | UI name | Introduced with |
+|---|---|---|
+| 2005 to 2009 | Original admin (grey table UI) | 2.x |
+| 2009 to 2011 | "v4" admin template | 4.0 |
+| 2011 to 2014 | Blend admin theme (unverified version) | 5.0 (estimate) |
+| 2015 to 2020 | "Six" client theme, Blend admin retained | 6.0 |
+| 2020 to 2025 | "Twenty-One" client theme | 8.1 |
+| 2025 on | "Nexus" client theme and cart | 9.0 |
+
+## Blessta
+Real product: Blesta
+
+### Versions
+| Version | Released | Updates until | Security until | Headline features |
+|---|---|---|---|---|
+| 1.0 | 2008-01 (estimate) | 2010-01 (estimate) | 2011-12 (estimate) | First release from Phoenix Software, monthly licence launched 2007 at $12.95 |
+| 2.0 | 2010-06 (estimate) | 2013-08 | 2014-08 | Sold at $99, free upgrade to 3.0 |
+| 3.0 | 2013-08-14 | 2015-10-14 (3.6.0) | 2016-10-14 | Full rewrite on the Minphp framework, plugin and module system, multi-company add-on |
+| 4.0 | 2017-03-16 | 2020-09-28 (4.12.0) | 2021-09-28 | PHP 7 support, 4.4 to 4.12 minors every few months |
+| 5.0 | 2021-01-13 | 2025-11-25 (5.13.0) | 2026-11-25 | Refreshed UI, 5.1 to 5.13 minors |
+| 6.0 | 2026-08-04 | null (active) | 2028-08-04 | Current major |
+
+Policy: Active Development until a newer major.minor ships (bugs and security), then Supported Development with critical security fixes for one year from the original release, then End of Life.
+
+### Licensing eras
+| Period | Model | Price | Upgrade discount |
+|---|---|---|---|
+| 2007 to 2013 | Monthly lease | $12.95/mo | not applicable |
+| 2013 pre-release | Blesta 2 owned | $99 (promotion) | free upgrade to 3.0 |
+| 2013-08 to 2025-10 | Owned branded | $250, 12 months support and updates included, then $39 per year from 2014-08 | free from v2 |
+| 2013-08 to 2025-10 | Owned unbranded | $300, same terms | none |
+| 2013-08 to 2025-10 | Owned lifetime | $500, no further fees | none |
+| 2013-08 to 2025-10 | Monthly lease | $12.95 branded, $14.95 unbranded | not applicable |
+| 2025-11 on | Owned branded | $350, 12 months included, then $62 per year | none |
+| 2025-11 on | Owned unbranded | $425, same terms | none |
+| 2025-11 on | Owned flex | $500, same terms, not locked to one IP | none |
+| 2025-11 on | Owned lifetime | $1,295; flex $1,495; support 3 years, updates forever | none |
+| 2025-11 on | Monthly | $17.95 branded, $20.95 unbranded, $23.95 flex | not applicable |
+
+Multi-company add-on: $95 each or $350 for five (2013).
+
+### Editions
+| Edition | Cap | Price |
+|---|---|---|
+| Branded | unlimited clients | $350 owned, $17.95/mo |
+| Unbranded | unlimited clients | $425 owned, $20.95/mo |
+| Flex | unlimited clients | $500 owned, $23.95/mo |
+| Lifetime | unlimited clients | $1,295 |
+
+There is no client cap on any licence.
+
+### Trial
+30 days, full product, no credit card required (current). Earlier trial length 30 days (estimate).
+
+### UI generations
+| Years | UI name | Introduced with |
+|---|---|---|
+| 2008 to 2013 | v1/v2 classic admin (estimate) | 1.0 |
+| 2013 to 2017 | v3 admin and client UI | 3.0 |
+| 2017 to 2021 | v4 refreshed admin with new default theme (unverified) | 4.0 |
+| 2021 to 2026 | v5 admin refresh (unverified) | 5.0 |
+| 2026 on | v6 | 6.0 |
+
+## ClientExit
+Real product: ClientExec
+
+### Versions
+| Version | Released | Updates until | Security until | Headline features |
+|---|---|---|---|---|
+| 2.0 | 2004-01 (estimate) | 2007-12 (estimate) | 2009-12 (estimate) | Vendor founded 2002, early hosting billing and support |
+| 3.0 | 2008-03 (estimate) | 2011-12 (estimate) | 2013-12 (estimate) | Module system for registrars and panels |
+| 4.0 | 2011-03 (estimate) | 2014-03 (estimate) | 2015-12 (estimate) | Redesigned admin (estimate) |
+| 5.0 | 2014-03 (estimate) | 2019-06 (estimate) | 2020-12 (estimate) | 5.0.1 2014-05, 5.0.2 security release 2014-05-23, 5.1 new settings view, 5.5.1 stable 2017-01, 5.7 |
+| 6.0 | 2019-06 (estimate) | 2025-08-22 (6.8.1 maintenance) | 2026-12 (estimate) | 6.1.0 2020-04-08, 6.2.0 2020-08 (billing cycle management, email history), 6.3 stable 2021, 6.8 PHP 8.2 |
+| 7.0 | 2026-02 (beta, alpha 2025-12-19) | null (current) | null (current) | Bootstrap based refreshed admin and client area, new affiliate system; 7.2 stable 2026-08-06, 7.2.1 2026-08-26, 7.2.2 2026-09-17, 7.3 beta 2026-10-22 |
+
+### Licensing eras
+| Period | Model | Price | Upgrade discount |
+|---|---|---|---|
+| 2004 to 2012 | Owned lifetime | $499 (unverified), later promoted at $175 (unverified) | none |
+| 2004 to 2025-12 | Owned with paid updates | updates/support $50 per year; without paying you keep the version you bought | none |
+| 2004 to 2026-01 | Lease branded | $12.95/mo | not applicable |
+| 2004 to 2026-01 | Lease unbranded | $14.95/mo | not applicable |
+| 2025-12 | Owned sales discontinued | existing owned and lifetime keys stay valid | not applicable |
+| 2026-02 on | Lease branded | $16.95/mo, $15.95/mo annual | not applicable |
+| 2026-02 on | Lease unbranded | $19.95/mo, $18.95/mo annual | not applicable |
+
+Included update period with an owned key: 12 months (estimate).
+
+### Editions
+| Edition | Cap | Price |
+|---|---|---|
+| Branded | no client cap known (unverified) | $12.95/mo, now $16.95/mo |
+| Unbranded | no client cap known (unverified) | $14.95/mo, now $19.95/mo |
+| Owned | no client cap known (unverified) | $499 lifetime (unverified), no longer sold |
+
+### Trial
+The vendor offered a free trial, length not documented, 14 days (estimate).
+
+### UI generations
+| Years | UI name | Introduced with |
+|---|---|---|
+| 2004 to 2013 | Classic table admin (estimate) | 2.0 |
+| 2014 to 2025 | v5 admin with grouped settings view | 5.0 and 5.1 |
+| 2020 to 2025 | Refined 6.x admin | 6.0 (estimate) |
+| 2026 on | Responsive Bootstrap admin and client area overhaul | 7.0 |
+
+## HostBull
+Real product: HostBill
+
+### Versions
+| Version | Released | Updates until | Security until | Headline features |
+|---|---|---|---|---|
+| 1.0 | 2009-09 | 2011-09 (estimate) | 2011-09 (estimate) | First public release, billing, support tickets, monthly leased licence only |
+| 3.0 | 2011-09 | 2013-06 (estimate) | 2013-06 (estimate) | PowerDNS and OnApp metered billing (3.1), invoice templates (3.1.3), five new order pages |
+| 3.4 | 2012-06 (estimate) | 2014-06 (estimate) | 2014-06 (estimate) | New client area theme |
+| 3.9 | 2013-09 (estimate) | 2015-06 (estimate) | 2015-06 (estimate) | Auto-update plugin that checks for new versions |
+| 4.0 | 2013-12 (estimate) | 2016-06 (estimate) | 2016-06 (estimate) | Client groups (4.2), cloud order page (4.1), security patches shipped as point releases |
+| 2019 Theme | 2019-03 (estimate) | rolling | rolling | New client area theme, order pages, weekly releases from here on |
+| Frontier | 2026-10 | rolling | rolling | New admin panel on Bootstrap 5 with dark mode, AI support agents, email OTP login |
+
+HostBill releases weekly since about 2009, so "updates until" is the end of the licence's update year (estimate). Weekly releases come with security advisories for the current version only.
+
+### Licensing eras
+| Period | Model | Price | Upgrade discount |
+|---|---|---|---|
+| 2009-09 to 2013 | Monthly lease, branded (unverified) | $12.95 per month, unbranded $15.95 per month | none |
+| 2012 to 2013 | Owned licence, branded (unverified) | $249.95 once, unbranded $499.95 once, 12 months of updates, renewal about $99 to $999 per year (unverified, forum reports conflict) | none (estimate) |
+| 2013 | Monthly lease withdrawn for new orders (unverified) | n/a | n/a |
+| 2013 to now | Owned licence in editions, 12 months of updates and support included | $599 to $5,999 once | none (estimate) |
+| 2013 to now | Updates renewal | $125 per year | n/a |
+
+Extras: one support ticket $89, 50 tickets $999, SDK access $999 once. A 30-day money-back guarantee applies to every licence.
+
+### Editions
+| Edition | Cap | Price |
+|---|---|---|
+| Startup | 10 support cases, unlimited clients | $599 |
+| Enterprise | 15 support cases, unlimited clients | $999 |
+| Data Center | 20 support cases, unlimited clients | $1,599 |
+| All-Inclusive | 100 support cases, unlimited clients, testing licence | $5,999 |
+
+The cap unit is support cases (tickets with the vendor); clients and staff are unlimited.
+
+### Trial
+No free trial today, only a 30-day money-back guarantee. Early posts linked an order or free trial page (14 days, estimate).
+
+### UI generations
+| Years | UI name | Introduced with |
+|---|---|---|
+| 2009 to 2018 | Classic admin | 1.0 |
+| 2012 to 2018 | Client area theme refresh (unverified) | 3.4 |
+| 2019 to 2026 | 2019 Theme client area (estimate) | 2019 Theme |
+| 2026 to now | Frontier admin panel | Frontier |
+
+## Ubersmyth
+Real product: Ubersmith
+
+### Versions
+| Version | Released | Updates until | Security until | Headline features |
+|---|---|---|---|---|
+| 3.0 | 2012-01 (estimate) | 2014-12 | 2015-12 (estimate) | Device, client and billing suite for data centers, free upgrade for 2.x customers (estimate) |
+| 3.2 | 2014-12 | 2016-04 | 2017-04 (estimate) | Automated proration, customizable rate plans |
+| 4.0 | 2016-04 | 2017-05 | 2018-05 (estimate) | Complete UI redesign, interactive graphs, 130 admin event alerts, price scheduling |
+| 4.2 | 2018-04 | 2018-12 | 2019-12 (estimate) | Plugin framework, custom usage collectors, background tasks, customizable invoices |
+| 4.6 | 2021-04 | 2023-12 | 2024-12 (estimate) | MySQL 5.7, Salesforce integration, mobile views |
+| 5.0 | 2024-02 | 2024-10 | 2025-10 (estimate) | PHP 8.2, MySQL 8.0, PayPal API update, credit notes |
+| 5.1 | 2025-06 | 2026-01 | 2027-01 (estimate) | Redesigned UI with sidebar, card data encryption, PHP 8.4, Entra ID SAML |
+
+Between these, the 4.1 (2017-06, frameless UI, usage billing), 4.3 (2018-11, AWS billing), 4.4 (2019-06, QuickBooks Online) and 4.5 (2019-10, 3D Secure 2.0) releases shipped as minors. Later versions: 5.2 (2026-02), 5.3 (2026-10).
+
+### Licensing eras
+| Period | Model | Price | Upgrade discount |
+|---|---|---|---|
+| 2005 to 2011 | Monthly subscription by managed devices, setup fee | $149 to $699 per month, setup about $1,000 (estimate) | none |
+| 2012 to 2015 | Monthly plus extra per client and per device (unverified) | $149 to $699 per month entry range | free update for current customers |
+| 2016 to 2021 | Pay-as-you-grow subscription | from $500 per month, setup about $2,500 (estimate) | free update for customers on 3.0 or later |
+| 2021 to now | Subscription, quote based (unverified) | from $200 per month, third-party listings say $1,000 per month | free for current customers |
+
+Updates and support are included while the subscription runs. Implementation by the vendor costs $5,000 to $25,000 (third-party estimate, unverified).
+
+### Editions
+| Edition | Cap | Price |
+|---|---|---|
+| Starter (estimate) | 100 managed devices | $149 per month |
+| Standard (estimate) | 500 managed devices | $399 per month |
+| Pro | 2,000 managed devices (estimate) | $699 per month |
+| Enterprise (estimate) | unlimited managed devices, quote | $1,500 per month (estimate) |
+
+The cap unit is managed devices (servers and network gear); clients and users also raise the fee.
+
+### Trial
+No self-serve trial. A guided demo is available on request (estimate), so the game offers no trial days.
+
+### UI generations
+| Years | UI name | Introduced with |
+|---|---|---|
+| 2005 to 2016 | Frame-based classic UI (estimate) | 2.x |
+| 2016 to 2025 | Redesigned graphs UI | 4.0 |
+| 2017 to 2025 | Frameless UI | 4.1 |
+| 2025 to now | Sidebar UI | 5.1 |
+
+## OrderBocks
+Real product: Orderbox (ResellerClub / LogicBoxes)
+
+### Versions
+| Version | Released | Updates until | Security until | Headline features |
+|---|---|---|---|---|
+| 5.2 | 2005-06 | rolling | rolling | .COOP and more TLDs, payment gateway options |
+| 6.3 | 2007-06 (estimate) | rolling | rolling | .EU support, updated SuperSite storefront |
+| 7 | 2011-06 (estimate) | rolling | rolling | .DE and .ES, revamped order details, daily pro-rata upgrade logic, API IP whitelisting |
+| 8 | 2014-06 (estimate) | rolling | rolling | Bigger hosting catalogue, WHMCS module, new storefront and control panel |
+| 9 | 2019-06 (estimate) | rolling | rolling | Platform API for 100+ registrars, new TLDs, Elite Reseller Program (2016) |
+
+Hosted service, always the latest version. Version labels after 6.3 are an estimate; the vendor ships a release every 2 to 3 months. LogicBoxes launched 2003 inside Directi, Endurance bought the web business 2013 to 2014.
+
+### Licensing eras
+| Period | Model | Price | Upgrade discount |
+|---|---|---|---|
+| 2003 to now | Revenue cut, no licence fee | about 10 percent of reseller order revenue (estimate) | n/a |
+| 2003 to now | Wholesale margin | reseller buys at wholesale and sets own retail price | n/a |
+
+Registrars running their own OrderBox pay a platform fee (estimate, unverified).
+
+### Editions
+| Edition | Cap | Price |
+|---|---|---|
+| Reseller | 200 orders per month (estimate) | free sign-up, 12 percent cut (estimate) |
+| Elite Reseller | 2,000 orders per month (estimate) | free sign-up, 8 percent cut (estimate) |
+| Registrar platform | unlimited orders | 5 percent cut (estimate) |
+
+The cap unit is orders per month.
+
+### Trial
+No trial days. Sign-up is free and a demo account lets resellers test orders (estimate).
+
+### UI generations
+| Years | UI name | Introduced with |
+|---|---|---|
+| 2003 to 2010 | Classic control panel | 5.2 |
+| 2011 to 2015 | Revamped order details | 7 |
+| 2016 to now | Control panel with hosted SuperSite storefront | 8 |
+
+## BoxBillin
+Real product: BoxBilling (later FOSSBilling)
+
+### Versions
+| Version | Released | Updates until | Security until | Headline features |
+|---|---|---|---|---|
+| 1.0 | 2011-03 (estimate) | 2012-03 (estimate) | 2012-03 (estimate) | First commercial release, Pro features sold separately |
+| 2.0 | 2012-03 (estimate) | 2013-06 (estimate) | 2013-06 (estimate) | Product types, ticket system, themes |
+| 3.0 | 2012-11 (estimate) | 2014-06 (estimate) | 2014-06 (estimate) | Open source on GitHub under Apache 2.0, API |
+| 4.0 | 2013-06 (estimate) | 2022-04 | 2022-04 | Long 4.x series up to 4.22, PHP 7 support, licensing removed in 4.22 (2021-11) |
+| 4.22 | 2021-11 | 2022-04 | 2022-04 | Completely free, Pro features unlocked, last release 4.22.1.5 (2022-04) |
+| FOSSBilling 0.1 | 2022-12 | 2023-04 | 2023-04 (estimate) | Fork of BoxBilling, bug fixes and security |
+| FOSSBilling 0.5 | 2023-06 | 2023-09 | 2023-12 (estimate) | API key product, security fixes |
+| FOSSBilling 0.6 | 2023-12 | 2024-12 (estimate) | 2025-06 (estimate) | New staff permissions, PHP 8.0 dropped, Bootstrap 5 theme |
+| FOSSBilling 0.8 | 2026-05 | rolling | rolling | PHP 8.3, antispam module, group based admin permissions, dark mode |
+
+The 0.7 release landed about 2025 (estimate). The original repository was archived 2026-02. FOSSBilling releases only support the latest version, older ones are told to upgrade.
+
+### Licensing eras
+| Period | Model | Price | Upgrade discount |
+|---|---|---|---|
+| 2011 to 2013 | Owned licence (commercial, estimate) | $99 once, 12 months of updates (estimate) | none |
+| 2013 to 2021 | Free core under Apache 2.0, Pro licence optional | free, Pro about $5.95 per month billed per 6 months, $71.40 per year (unverified) | none |
+| 2021-11 to 2022 | Free, licensing system removed | $0 | n/a |
+| 2022-12 to now | Free, FOSSBilling | $0 | n/a |
+
+### Editions
+| Edition | Cap | Price |
+|---|---|---|
+| Free | 1 staff member, 2 currencies, 5 products (unverified) | $0 |
+| Pro | unlimited | $71.40 per year (unverified) |
+| FOSSBilling | unlimited | $0 |
+
+The cap unit is products (staff and currencies are also capped on Free).
+
+### Trial
+No trial needed, the free edition has no time limit. Trial days: none.
+
+### UI generations
+| Years | UI name | Introduced with |
+|---|---|---|
+| 2011 to 2014 | Original admin | 1.0 |
+| 2014 to 2022 | Huraga theme (estimate) | 3.0 |
+| 2022 to 2023 | Huraga on FOSSBilling | 0.1 |
+| 2023 to now | Huraga on Bootstrap 5, dark mode toggle in 0.8.3 | 0.6 |
+
+# Support desks
+
+Sources: osTicket GitHub releases and WHATSNEW.md (github.com/osTicket/osTicket), the FreeScout GitHub releases and module pages (freescout.net/modules), Zendesk newsroom, blog and help center (zendesk.com, support.zendesk.com), the SEC S-1 of Zendesk, Freshworks press releases and Freshdesk support articles (support.freshdesk.com), TechCrunch, YourStory, MediaNama. The game reads these into `src/sim/10-catalog/desks.ts`. Values marked (unverified) are the game's choice where no source was found.
+
+## OsTickit
+Real product: osTicket
+
+### Versions
+| Version | Released | Headline features |
+|---|---|---|
+| 1.3 | 2005 (unverified) | Departments, help topics, canned responses, assignment, client portal with Open a New Ticket and Check Ticket Status, POP and IMAP fetch, ban list |
+| 1.6 | 2010 (unverified) | The long-lived classic staff panel |
+| 1.7 | 2013-04 | Ticket filters, SLA plans, client knowledge base, dashboard reports, CSV export, API, teams, nested help topics |
+| 1.8 | 2013-12 | Rich-text thread, custom forms and fields |
+| 1.9 | 2014-05 | Client sign-in, user directory, organizations; 1.9.4 adds custom ticket number formats and the resolved and archived states |
+| 1.10 | 2016-11 | Tasks, new advanced search, roles, nested departments |
+| 1.11 | 2019-02 | Release assignment, nested knowledge base categories |
+| 1.12 | 2019-04 | System ban list, queue columns |
+| 1.14 | 2019-11 | Ticket merge and link, SLA schedules, fetch from a mail folder |
+| 1.15 | 2020-11 | Agent and department visibility, two-factor backends |
+| 1.16 | 2022-02 | PHP 8 |
+| 1.17 | 2022-09 | OAuth2 mail sign-in |
+| 1.18 | 2023-06 | Mail library update; still maintained in 2026 |
+
+### Desk features
+| Feature in the game | Release |
+|---|---|
+| kind filters, search, assignment, canned responses, departments, customer portal | 1.3 (unverified) |
+| SLA timers, reports, ticket filters | 1.7 |
+| customer card (user directory) | 1.9 |
+| merge | 1.14 |
+
+Ticket numbers are six random digits, and outgoing mail carries `[#123456]` in the subject (the autoresponse template is `Support Ticket Opened [#%{ticket.number}]`). Sequential formats exist from 1.9.4. Statuses are Open, Resolved, Closed, Archived and Deleted; Answered and Overdue are flags shown as queue tabs.
+
+### UI generations
+| Years | UI | Introduced with |
+|---|---|---|
+| 2005 to 2015 | Classic staff panel with tables and tabs | 1.x |
+| 2016 to 2021 | Refreshed lists and action icons (a full redesign is unverified) | 1.10 |
+| 2022 to now | Current | 1.16 (unverified) |
+
+## Zendusk
+Real product: Zendesk
+
+| Item | Date |
+|---|---|
+| Launch, per-agent pricing | 2007 (USD 49 a seat at launch is unverified) |
+| Views, macros, triggers, automations, groups, web portal, requester profile | 2007 (unverified) |
+| Ticket merge | 2010 (unverified) |
+| GoodData reporting, Plus plans | 2010-07 |
+| Zendusk Voice | 2011-09 |
+| Tabbed agent desktop (Lotus) | 2012-09 |
+| Help Center, with article suggestions on the request form | 2013-08 (suggestions unverified) |
+| SLA policies | 2013 (unverified) |
+| Zopim live chat | 2014-04 |
+| Insights reporting | 2014-06 |
+| Automatic Answers, renamed Answer Bot | 2016-07, 2017-05 |
+| Agent Workspace | 2019 (unverified) |
+| Zendusk AI with generative replies | 2023-05 |
+| "AI agents" replaces bots | 2024-04 |
+
+Answer Bot resolutions cost about USD 1.00, falling to 0.80 in bundles; AI agents bill per automated resolution at about USD 1.50 to 2.00 (third-party). Ticket ids are sequential. The subject token `[Request #1234]` is the game's choice (unverified; the real default subject carries the account name and the title). Statuses are New, Open, Pending, On-hold (optional), Solved and Closed, and a reply to a closed ticket opens a follow-up ticket.
+
+## Freshdusk
+Real product: Freshdesk
+
+| Item | Date |
+|---|---|
+| Company founded | 2010-10 |
+| Public launch, per-agent pricing | 2011-06 (launch price unverified; USD 16 a seat in 2013) |
+| Merge, split, canned responses | 2011-07 |
+| Supervisor (time rules) | 2011-08 |
+| Dispatch'r, Observer, scenario automations, SLA policies, support portal with Solutions, article suggestions on the portal form | 2011 (unverified) |
+| Redesign | 2014 (unverified) |
+| Freshchat | 2017-09 |
+| Mint interface, the classic one retired | 2017-11, 2019-01 |
+| Freddy, with the answer bot | 2018 |
+| Freddy Self Service and Copilot (generative) | 2023-06 |
+| Dew interface | 2025-12 |
+
+Freddy Copilot costs about USD 29 an agent a month (third-party). Ticket ids are sequential and requester notifications carry `[#1234]`. Statuses are Open, Pending, Resolved and Closed, with Waiting on Customer and Waiting on Third Party.
+
+## FreeScoot
+Real product: FreeScout
+
+| Version | Released | Headline features |
+|---|---|---|
+| 1.0 | 2018-11 | Shared mailboxes, assignment, search, customer profile with earlier conversations, modules support |
+| 1.1 | 2018-12 | Autoresponder detection |
+| 1.2 | 2019-06 | Forwarding, search filters |
+| 1.6 | 2020-09 | Merge conversations |
+| 1.7 | 2021 | Many modules |
+| 1.8 | 2022-02 | Still the current line in 2026 |
+
+Saved replies, reports, workflows, the end-user portal, the knowledge base, satisfaction ratings and live chat are paid modules; the core has no SLA. The conversation number is the conversation id, sequential, and mail threads by its In-Reply-To and References headers with no subject token. Statuses are Active, Pending, Closed and Spam. The interface had no redesign through 2026.

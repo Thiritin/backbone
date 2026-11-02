@@ -11,8 +11,6 @@ export default {
   "error.nothingToImport": () => "No hay nada que importar.",
   "error.noShopSystem": () => "Necesitas el sistema de tienda de este fabricante para este módulo.",
   "shop-link.import": () => "Importar de la tienda",
-  "shop-link.customers": () => "Clientes de la tienda",
-  "shop-link.invoices": () => "Facturas de la tienda",
   "shop-link.footer": (p) => `© ${p.year} ${p.maker}`,
   "shop-link.tagline.modemBill": () => "Facturación y aprovisionamiento para proveedores web",
   "shop-link.tagline.clientExit": () => "Gestión de clientes y facturación para empresas de hosting",

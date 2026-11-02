@@ -6,7 +6,6 @@ import { presetPrice } from "../src/sim/10-catalog/parts";
 import { bidHistory, CLEARANCE_SIZE, EBUY_FEE, leading, LOT_SIZE, onMarket, rivalBids, rivalNow, REP_EARLY, REP_LEAD, shipHours, USED_EVENTS, type Listing } from "../src/sim/10-catalog/used";
 import type { GameState } from "../src/sim/50-state";
 import { deviceValue, HOURS_PER_YEAR } from "../src/sim/60-infra/status";
-import { hardwarePremium } from "../src/sim/46-finance/finance";
 import { monthListings, usedTick } from "../src/sim/80-business/used";
 import { newsTick } from "../src/sim/80-business/news";
 import { tick } from "../src/sim/88-tick/tick";
@@ -113,12 +112,6 @@ describe("used listings", () => {
     while (s.hour < d.arriveAt!) tick(s);
     expect(s.devices.find((x) => x.id === d.id)!.store).toBe("loc1");
     expect(s.used.some((x) => x.id === l.id)).toBe(false);
-  });
-
-  it("leaves used gear out of the hardware insurance", () => {
-    const s = game(), before = hardwarePremium(s), l = market(s, "board", (x) => !!modelById(x.model).server);
-    buyListing(s, l.id, "loc1");
-    expect(hardwarePremium(s)).toBe(before);
   });
 
   it("loses the money to a chat scam and says so", () => {

@@ -1,0 +1,11 @@
+/* Saga: menus over a dense grey screen, a green path line under them. */
+.bk-menus { flex: 1; min-height: 0; display: flex; flex-direction: column; background: #ececec; font: 11px Arial, Helvetica, sans-serif; }
+.bk-menus-bar { display: flex; padding: 1px 2px; background: #f4f4f4; border-bottom: 1px solid #a0a0a0; flex: none; position: relative; z-index: 2; }
+.bk-menus-menu { position: relative; }
+.bk-menus-menu > button { padding: 3px 9px; border: 0; background: none; font: inherit; color: #000; }
+.bk-menus-menu > button[aria-expanded="true"], .bk-menus-menu > button:hover { background: #00704a; color: #fff; }
+.bk-menus-drop { position: absolute; top: 100%; left: 0; min-width: 180px; display: grid; padding: 2px; background: #fff; border: 1px solid #707070; box-shadow: 2px 2px 0 rgb(0 0 0 / 0.25); }
+.bk-menus-drop button { display: flex; align-items: center; gap: 6px; padding: 4px 18px; border: 0; background: none; font: inherit; color: #000; text-align: left; }
+.bk-menus-drop button:hover, .bk-menus-drop button[aria-current] { background: #00704a; color: #fff; }
+.bk-menus-path { padding: 3px 8px; background: #00704a; color: #fff; font-weight: 700; flex: none; }
+.bk-menus .bk-body { background: var(--win); border-top: 1px solid #a0a0a0; font-size: 12px; }

@@ -187,8 +187,8 @@ export default {
   "web.msg.open": () => "Abrir",
   "sim.line.reseller": () => "Paquete de reventa",
   "sim.spec.accounts": (p) => `${p.n} cuentas`,
-  "sales.msg.reseller.0": (p) => `Revendemos alojamiento a nuestros propios clientes y necesitamos un paquete de ${p.spec} en ${p.city}. Cuanto cuesta el paquete completo al mes?`,
-  "sales.msg.reseller.1": (p) => `Nuestra agencia traslada a sus clientes a una cuenta de reventa: ${p.spec}. Envienos un precio mensual por el paquete.`,
+  "sales.msg.reseller.0": (p) => `Revendemos alojamiento a nuestros propios clientes y necesitamos un paquete de ${p.spec} en ${p.city}. Cuanto cuesta el paquete completo al mes? Pagamos el espacio que usamos.`,
+  "sales.msg.reseller.1": (p) => `Nuestra agencia traslada a sus clientes a una cuenta de reventa: ${p.spec}. Envienos un precio mensual por el paquete. Pagamos el espacio que usamos.`,
   "web.reseller.blurb": () => "Paquetes de reventa con espacio para sus propios clientes.",
   "web.reseller.feature.0": () => "Paquetes de 20 a 100 cuentas",
   "web.reseller.feature.1": () => "Sus propios clientes y planes",
@@ -209,4 +209,6 @@ export default {
   "web.rs.question": (p) => `Pregunta sobre ${p.domain}`,
   "web.rs.suspend": () => "Suspender",
   "web.rs.resume": () => "Reactivar",
+  "ticket.howTo.licence.subject": () => "El panel de control dice que la licencia ha caducado",
+  "ticket.howTo.licence.text": (p) => `Cuando entro en el panel de control de ${p.domain || "mi sitio"} solo veo una página que dice que la licencia ha caducado. El sitio sigue funcionando, pero no puedo gestionar nada. ¿Puedes arreglarlo?`,
 } satisfies Dict;

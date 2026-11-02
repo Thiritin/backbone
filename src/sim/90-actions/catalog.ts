@@ -3,7 +3,7 @@ import { yearOf } from "../00-core/time";
 import { CYCLES } from "../10-catalog/cycles";
 import type { Product } from "../30-customers/customers";
 import { offerPrice, setupFee } from "../30-market/spec";
-import { PRODUCT_NAME_MAX, productNamed, type CatalogProduct } from "../80-business/catalog";
+import { catalogOffered, PRODUCT_NAME_MAX, productNamed, type CatalogProduct } from "../80-business/catalog";
 import { defaultSpecFor } from "../80-business/packages";
 import type { GameState } from "../50-state";
 import { t } from "../../i18n/en";
@@ -51,4 +51,10 @@ export function removeProduct(s: GameState, id: string): ActionResult {
   if (!s.catalog.some((x) => x.id === id)) return fail("error.productMissing");
   s.catalog = s.catalog.filter((x) => x.id !== id);
   return { ok: true, id };
+}
+
+// Books > Products > Publish to website: the site and leads show this copy until the next publish.
+export function publishCatalog(s: GameState): ActionResult {
+  s.marketing = { ...s.marketing, published: structuredClone(catalogOffered(s)) };
+  return { ok: true };
 }

@@ -1,0 +1,35 @@
+/* SquirrelMeal 1.4: the default theme in plain HTML tables; the setup menu as the terminal tool. */
+.smc { min-height: 100%; padding: 12px 16px; background: #000000; color: #c0c0c0; font: 13px/1.35 "Courier New", Courier, monospace; }
+.smc pre { margin: 0; white-space: pre-wrap; font: inherit; }
+.smc label { display: flex; white-space: pre; }
+.smc input { flex: 1; border: 0; outline: 0; background: transparent; color: #ffffff; font: inherit; }
+.smw { min-height: 100%; background: #ffffff; color: #000000; font: 13px/1.4 Verdana, Arial, Helvetica, sans-serif; }
+.smw a { color: #0000cc; }
+.smw-logo { font: bold 34px Georgia, "Times New Roman", serif; color: #335577; }
+.smw-logo span { color: #993300; }
+.smw-login { display: flex; flex-direction: column; align-items: center; padding-top: 40px; text-align: center; }
+.smw-ver { margin: 6px 0 14px; font-size: 11px; }
+.smw-login table, .smw-error table { border-collapse: collapse; min-width: 340px; background: #ffffff; border: 1px solid #dcdcdc; }
+.smw-login th, .smw-error th { padding: 4px; background: #dcdcdc; font-weight: 700; text-align: center; }
+.smw-login td { padding: 4px 6px; }
+.smw-login td.r { text-align: right; width: 35%; }
+.smw-login td.c { text-align: center; }
+.smw-login input { width: 180px; font: inherit; }
+.smw-login button { font: inherit; }
+.smw-error { display: flex; justify-content: center; padding-top: 60px; text-align: center; }
+.smw-error td { padding: 10px; }
+.smw-error p { margin: 0 0 6px; color: #cc0000; font-weight: 700; }
+.smw-frames { display: flex; }
+.smw-left { flex: 0 0 150px; min-height: 100%; padding: 8px; background: #a0b8c8; display: flex; flex-direction: column; gap: 4px; text-align: center; }
+.smw-left small { font-size: 10px; }
+.smw-left ul { margin: 8px 0 0; padding: 0; list-style: none; text-align: left; }
+.smw-right { flex: 1; min-width: 0; }
+.smw-bar { display: flex; justify-content: space-between; padding: 3px 6px; background: #dcdcdc; }
+.smw-who { padding: 3px 6px; text-align: right; font-size: 11px; }
+.smw-list { width: 100%; border-collapse: collapse; }
+.smw-list th { padding: 2px 6px; background: #a0b8c8; text-align: left; }
+.smw-list td { padding: 2px 6px; border-bottom: 1px solid #ebebeb; }
+.smw-list tr.unseen td { font-weight: 700; }
+.smw-test { padding: 12px 16px; }
+.smw-test h1 { font-size: 18px; }
+.smw-test li.fail { color: #cc0000; font-weight: 700; }

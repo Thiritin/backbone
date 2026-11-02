@@ -3,7 +3,7 @@ import type { Incident, IncidentCause } from "../../../sim/60-infra/ops";
 import { t } from "../../../i18n/en";
 import { duration } from "../../../i18n/en-ops";
 import { useStore } from "../../store";
-import { CustomerLink } from "../customers/CustomersApp";
+import { CustomerLink } from "../customers/open";
 import { day } from "../hw";
 import { stamp } from "./labels";
 

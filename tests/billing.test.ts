@@ -2,11 +2,11 @@ import { START_CASH } from "../src/sim/10-catalog/economy";
 import { describe, expect, it } from "vitest";
 import { createRng } from "../src/sim/00-core/rng";
 import { hourOf } from "../src/sim/00-core/time";
-import { annuity, baseRate, billingTick, invoiceTotal, isSuspended, loanAvailable, PAY_ODDS, rollPayStep, YEAR_HOURS } from "../src/sim/45-billing/billing";
+import { annuity, baseRate, billingTick, dueStep, invoiceTotal, isSuspended, loanAvailable, PAY_ODDS, rollPayStep, YEAR_HOURS } from "../src/sim/45-billing/billing";
 import { type GameState } from "../src/sim/50-state";
 import { metrics } from "../src/sim/metrics";
 import { tick } from "../src/sim/88-tick/tick";
-import { repayLoan, sendReminder, suspendServices, takeLoan, writeOff } from "../src/sim/90-actions/billing";
+import { repayLoan, sendInvoice, sendReminder, suspendServices, takeLoan, writeOff } from "../src/sim/90-actions/billing";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { sendDrafts, withServer, newGame } from "./fixtures";
@@ -88,6 +88,19 @@ describe("payment habits", () => {
     expect(s.invoices[0].status).toBe("paid");
     expect(s.cash).toBe(cash + 12);
     expect(s.ledger.at(-1)).toMatchObject({ category: "payments", key: "ledger.payment", params: { customer: "Eve" }, amount: 12 });
+  });
+
+  it("writes the invoice number on at least four in five transfers", () => {
+    const refs: string[] = [];
+    for (let seed = 1; seed <= 200; seed++) {
+      const s = withServer(newGame(seed));
+      addService(s, addCustomer(s, "Ada", seed % 2 ? "private" : "gamer"), "domain", "ada.com", 12, "year");
+      tick(s);
+      for (const i of s.invoices) { sendInvoice(s, i.id); Object.assign(i, { payStep: 0, payAt: s.hour }); }
+      billingTick(s);
+      refs.push(...s.transfers.map((x) => x.reference));
+    }
+    expect(refs.filter((r) => r === "books.ref.invoice").length / refs.length).toBeGreaterThan(0.75);
   });
 });
 
@@ -257,5 +270,17 @@ describe("billing saves", () => {
     expect(s).toMatchObject({ customers: [], services: [], invoices: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0 });
     runTo(s, at(2005, 2, 1));
     expect(s.invoices).toEqual([]);
+  });
+});
+
+describe("dunning spacing", () => {
+  it("waits a week after a late reminder before the dunning letter", () => {
+    const { s, inv: get } = withInvoice(99);
+    const inv = get();
+    s.hour = inv.dueAt + 20 * 24;
+    expect(dueStep(inv, s.hour)).toBe(0);
+    sendReminder(s, inv.id);
+    expect(dueStep(s.invoices[0], s.hour)).toBe(null);
+    expect(dueStep(s.invoices[0], s.hour + 7 * 24)).toBe(1);
   });
 });

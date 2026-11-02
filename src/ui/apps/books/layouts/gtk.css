@@ -1,0 +1,15 @@
+/* GnuCache: GTK2 Clearlooks grey, rounded toolbar buttons, a tree view with a column header. */
+.bk-gtk { flex: 1; min-height: 0; display: flex; flex-direction: column; background: #edeceb; color: #2e3436; font: 12px "DejaVu Sans", Verdana, sans-serif; }
+.bk-gtk-tools { display: flex; gap: 2px; padding: 3px 4px; border-bottom: 1px solid #b6b3ad; background: linear-gradient(#f6f5f4, #e3e1de); flex: none; }
+.bk-gtk-tools button { display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 58px; padding: 3px 6px; border: 1px solid transparent; border-radius: 3px; background: none; font: inherit; font-size: 11px; color: inherit; }
+.bk-gtk-tools button:hover, .bk-gtk-tools button[aria-current] { border-color: #a9a69f; background: linear-gradient(#fff, #e8e6e3); }
+.bk-gtk-tools svg { width: 20px; height: 20px; color: #3465a4; }
+.bk-gtk-split { flex: 1; min-height: 0; display: flex; gap: 4px; padding: 4px; }
+.bk-gtk-tree { width: 170px; flex: none; overflow: auto; background: #fff; border: 1px solid #a9a69f; }
+.bk-gtk-head { padding: 3px 6px; border-bottom: 1px solid #c7c4bf; background: linear-gradient(#fcfcfb, #e9e7e4); font-weight: 600; }
+.bk-gtk-node { padding: 2px 6px; }
+.bk-gtk-node::before { content: "\25BE"; margin-right: 5px; color: #555753; }
+.bk-gtk-leaf { display: flex; align-items: center; gap: 4px; width: 100%; padding: 2px 6px 2px 24px; border: 0; background: none; font: inherit; color: inherit; text-align: left; }
+.bk-gtk-leaf:nth-child(odd) { background: #f5f5f4; }
+.bk-gtk-leaf[aria-current] { background: #86abd9; color: #fff; }
+.bk-gtk .bk-body { background: #fff; border: 1px solid #a9a69f; }

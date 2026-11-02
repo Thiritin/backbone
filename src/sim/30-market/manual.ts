@@ -5,9 +5,10 @@ import { carryForward } from "./quotes";
 import { hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
 import type { Product, Service } from "../30-customers/customers";
-import { DOMAIN_FEE, domainOf, register, TRANSFER_FEE } from "../30-customers/registry";
+import { domainFee, domainOf, register, TRANSFER_FEE } from "../30-customers/registry";
 import { CERT_SHARE, offerCertificate } from "../30-customers/certificates";
-import { cancelCustomer, isFinal, replyDue, type Ticket } from "../40-support/tickets";
+import { cancelCustomer, deliverMail, isFinal, replyDue, type Ticket } from "../40-support/tickets";
+import { partnerOf, registrarUrl } from "../80-business/browser";
 import { DUE_DAYS, fromShop, issue, rollPayStep, type Invoice, type InvoiceLine } from "../45-billing/billing";
 import { checkout } from "../45-billing/payments";
 import { ACTION_MINUTES, logActivity } from "../47-staff/activity";
@@ -90,8 +91,8 @@ export function stepError(s: GameState, t: Ticket, step: OrderStep, route?: stri
   const done = stepsDone(s, r);
   if (done[step]) return "error.stepDone";
   if (step === "quote") return r.replyAt !== null ? "error.quoteSent" : null;
-  if (step === "account") return null;
   if (!done.quote) return "error.needsQuote";
+  if (step === "account") return null;
   if (!done.account) return "error.needsAccount";
   if (step === "invoice") return r.quote && r.quote > 0 ? null : "error.quotePrice";
   if (step === "domain") {
@@ -154,7 +155,7 @@ export function firstLines(s: GameState, r: SalesRequest, monthly = r.quote ?? 0
     ...(setup > 0 ? [{ serviceId: null, key: "invoice.line.setupFee", params: { label }, amount: setup }] : []),
     termLine({ cycle: cycle ?? undefined, quote: monthly }, label),
   ];
-  if (needsDomain(r)) lines.push({ serviceId: null, key: r.owned ? "invoice.line.domainTransfer" : "invoice.line.domain", params: { domain: r.domain! }, amount: r.owned ? TRANSFER_FEE : DOMAIN_FEE });
+  if (needsDomain(r)) lines.push({ serviceId: null, key: r.owned ? "invoice.line.domainTransfer" : "invoice.line.domain", params: { domain: r.domain! }, amount: r.owned ? TRANSFER_FEE : domainFee(yearOf(s.hour)) });
   return lines;
 }
 
@@ -199,6 +200,8 @@ export function applyStep(s: GameState, t: Ticket, step: OrderStep, by?: string)
     editRequest(s, r.id, () => ({ invoiceId: inv.id, status: "quoted", replyAt: null }));
     carryForward(s, t.id, inv.id);
   } else if (step === "domain") {
+    // The partner's confirmation of the first customer domain opens its reseller login.
+    if (!s.domains.some((d) => d.customerId !== null)) deliverMail(s, partnerOf(s).name, "registrarLogin", { name: partnerOf(s).name, domain: r.domain!, url: `${registrarUrl(s)}login` });
     register(s, r.domain!, customerId, !!r.owned);
   } else {
     const to = r.route ?? hostFor(s, r) ?? "";

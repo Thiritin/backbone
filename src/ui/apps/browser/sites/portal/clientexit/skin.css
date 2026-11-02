@@ -1,9 +1,251 @@
-/* ClientExec: Ext JS grey panels with tabbed grids */
-.sk-cexit { font-family: Tahoma, Arial, sans-serif; font-size: 12px; background: #dfe8f6; }
-.sk-cexit .shop-head { background: linear-gradient(#f9f9f9, #c9c9c9); border-bottom: 1px solid #99bbe8; }
-.sk-cexit .shop-nav a { border: 1px solid #99bbe8; border-bottom: 0; background: #eef3fa; }
-.sk-cexit .shop-nav a.on { background: #fff; }
-.sk-cexit .shop-main { background: #fff; margin: 0 8px 8px; border: 1px solid #99bbe8; }
-.sk-cexit-mid { background: #f4f6f9; }
-.sk-cexit-late { background: #fff; font-family: system-ui, sans-serif; }
-.sk-cexit-late .shop-head { background: #fff; border-bottom: 1px solid #ddd; }
+/* ClientExit: an exit-sign wordmark over four admin and store looks, picked by the installed major. */
+.cxe { display: flex; flex-direction: column; min-height: 100%; }
+.cxe .cxe-body { flex: 1; display: flex; align-items: stretch; }
+.cxe .cxe-main { flex: 1; min-width: 0; padding: 0; }
+.cxe .cxe-top { display: flex; align-items: center; gap: 12px; }
+.cxe .cxe-co, .cxe .cxe-links { margin-left: auto; }
+.cxe .cxe-links { display: flex; gap: 4px; }
+.cxe .cxe-nav a, .cxe .cxe-links a, .cxe .cxe-cats a { display: flex; align-items: center; gap: 8px; color: inherit; text-decoration: none; white-space: nowrap; }
+.cxe .cxe-ico { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.cxe .cxe-title { margin: 0; }
+.cxe .cxe-mark { font-weight: 700; white-space: nowrap; }
+.cxe .cxe-exit { display: inline-flex; align-items: center; gap: 2px; margin-left: 2px; padding: 0 4px; color: #fff; background: #17944a; }
+.cxe .cxe-exit svg { width: 0.7em; height: 0.7em; fill: none; stroke: currentColor; stroke-width: 2; }
+.cxe .cxe-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
+.cxe .cxe-tile { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 2px 10px; padding: 12px; color: inherit; text-decoration: none; }
+.cxe .cxe-tile .cxe-ico { grid-row: span 2; width: 22px; height: 22px; }
+.cxe .cxe-tile .num { font-size: 1.8em; font-weight: 700; line-height: 1.1; }
+.cxe .cxe-hero h1 { margin: 0; }
+.cxe .cxe-cats { display: flex; flex-wrap: wrap; gap: 6px; }
+.cxe .shop-list { gap: 10px; }
+.cxe .pt-version { text-align: center; }
+.cxe-login { justify-content: center; align-items: center; }
+.cxe-login .cxe-loginbox { display: grid; gap: 12px; width: 300px; }
+.cxe-login .cxe-loginbox label { display: grid; gap: 4px; }
+.cxe-login .cxe-loginhead { display: flex; align-items: center; justify-content: space-between; }
+.cxe-login .pt-version { margin-top: 12px; }
+
+/* 2.x and 3.x, 2005 to 2010: navy band, bevelled grey tabs, framed boxes with title bars */
+.cxe-classic { font: 11px/1.45 Verdana, Geneva, sans-serif; color: #000; background: #dfe3e8; }
+.cxe-classic .cxe-top { padding: 8px 12px; color: #fff; background: #23395b; border-bottom: 3px solid #17944a; }
+.cxe-classic .cxe-mark { font: bold 18px Georgia, "Times New Roman", serif; }
+.cxe-classic .cxe-exit { font: bold 12px Verdana, sans-serif; padding: 1px 5px; border: 1px solid #0c5f2d; letter-spacing: 1px; text-transform: uppercase; }
+.cxe-classic .cxe-area { font-size: 11px; color: #c9d6ea; }
+.cxe-classic.cxe-admin .cxe-body { flex-direction: column; }
+.cxe-classic .cxe-nav { display: flex; flex-wrap: wrap; gap: 2px; padding: 8px 10px 0; background: #eef0f3; border-bottom: 1px solid #808080; }
+.cxe-classic .cxe-nav a { padding: 3px 10px; margin-bottom: -1px; background: #d4d0c8; border: 1px solid; border-color: #fff #808080 #808080 #fff; border-bottom: 0; }
+.cxe-classic .cxe-nav a.on { background: #fff; font-weight: bold; border-color: #808080; border-bottom: 1px solid #fff; }
+.cxe-classic.cxe-admin .cxe-main { margin: 10px; background: #fff; border: 1px solid #808080; }
+.cxe-classic .cxe-title { padding: 3px 8px; font-size: 12px; background: linear-gradient(#f2f2f2, #cfcfcf); border-bottom: 1px solid #808080; }
+.cxe-classic .cxe-panel { padding: 10px; }
+.cxe-classic .pt-table { border: 1px solid #a0a0a0; }
+.cxe-classic .pt-table th { background: #d4d0c8; border: 1px solid #a0a0a0; padding: 2px 6px; }
+.cxe-classic .pt-table td { border: 1px solid #d0d0d0; padding: 2px 6px; }
+.cxe-classic .pt-table tbody tr:nth-child(even) td { background: #f4f6f9; }
+.cxe-classic .pt-group h3, .cxe-classic .pt-screen h3, .cxe-classic h2, .cxe-classic h3 { font-size: 12px; color: #23395b; }
+.cxe-classic .pt-tabs { border-bottom-color: #808080; }
+.cxe-classic .pt-tabs button { background: #d4d0c8; border-color: #808080; }
+.cxe-classic input, .cxe-classic select { font: 11px Verdana, sans-serif; border: 2px inset #d4d0c8; padding: 1px 3px; background: #fff; color: #000; }
+.cxe.cxe-classic .btn { font: 11px Verdana, sans-serif; padding: 2px 10px; color: #000; background: #d4d0c8; border: 2px outset #f0f0f0; border-radius: 0; box-shadow: none; }
+.cxe.cxe-classic .btn.primary { font-weight: bold; }
+.cxe.cxe-classic .btn:active { border-style: inset; }
+.cxe-classic .cxe-tiles { grid-template-columns: repeat(2, minmax(160px, 260px)); gap: 0; border: 1px solid #a0a0a0; width: max-content; }
+.cxe-classic .cxe-tile { padding: 6px 10px; border: 1px solid #d0d0d0; color: #23395b; text-decoration: underline; }
+.cxe-classic .cxe-tile .num { font-size: 16px; color: #000; text-decoration: none; }
+.cxe-classic .pt-version { padding: 8px; color: #555; font-size: 10px; }
+.cxe-classic.cxe-store .cxe-top, .cxe-classic.cxe-store .cxe-body, .cxe-classic.cxe-store .pt-version { width: 780px; max-width: 100%; margin: 0 auto; box-sizing: border-box; }
+.cxe-classic.cxe-store .cxe-top { margin-top: 12px; }
+.cxe-classic .cxe-brand { font: bold 20px Georgia, "Times New Roman", serif; }
+.cxe-classic .cxe-links a { padding: 2px 8px; color: #c9d6ea; text-decoration: underline; }
+.cxe-classic .cxe-links a.on { color: #fff; font-weight: bold; text-decoration: none; }
+.cxe-classic.cxe-store .cxe-body { gap: 10px; padding: 10px; background: #fff; border: 1px solid #808080; border-top: 0; align-items: flex-start; }
+.cxe-classic .cxe-cats { flex-direction: column; flex-wrap: nowrap; gap: 0; width: 170px; flex: none; border: 1px solid #808080; }
+.cxe-classic .cxe-cats a { padding: 3px 8px; color: #23395b; text-decoration: underline; border-bottom: 1px dotted #a0a0a0; }
+.cxe-classic .cxe-cats a.on { font-weight: bold; text-decoration: none; background: #eef0f3; }
+.cxe-classic .cxe-store h2, .cxe-classic .shop-store h2 { padding: 2px 6px; color: #fff; background: #23395b; }
+.cxe-classic .shop-list { gap: 0; border: 1px solid #a0a0a0; }
+.cxe-classic .shop-item { border-bottom: 1px solid #d0d0d0; }
+.cxe-classic .shop-item:nth-child(even) { background: #f4f6f9; }
+.cxe-classic .shop-banner { background: #ffffcc; border-color: #c0c000; }
+.cxe-classic.cxe-login .cxe-loginbox { padding: 0 0 12px; background: #fff; border: 1px solid #808080; }
+.cxe-classic.cxe-login .cxe-loginbox > label, .cxe-classic.cxe-login .cxe-loginbox > button { margin: 0 12px; }
+.cxe-classic.cxe-login .cxe-loginhead { padding: 8px 12px; color: #fff; background: #23395b; border-bottom: 3px solid #17944a; }
+.cxe-classic.cxe-login .cxe-loginbox > button { justify-self: start; }
+
+/* 4.x, 2011 to 2013: Ext-style desktop with glossy toolbars and blue panels */
+.cxe-desk { font: 12px/1.45 Tahoma, "Segoe UI", Arial, sans-serif; color: #15233a; background: #dfe8f6; }
+.cxe-desk .cxe-top { padding: 8px 14px; background: linear-gradient(#ffffff, #d6e2f3 55%, #c3d4ec); border-bottom: 1px solid #99bbe8; }
+.cxe-desk .cxe-mark { font: bold 20px "Trebuchet MS", Tahoma, sans-serif; color: #15428b; text-shadow: 0 1px 0 #fff; }
+.cxe-desk .cxe-exit { padding: 1px 6px; border-radius: 4px; background: linear-gradient(#5fd28a, #17944a 55%, #0f7c3c); text-shadow: 0 -1px 0 #0b5a2b; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5); }
+.cxe-desk .cxe-area { color: #46659a; font-weight: bold; }
+.cxe-desk.cxe-admin .cxe-body { flex-direction: column; }
+.cxe-desk .cxe-nav { display: flex; flex-wrap: wrap; gap: 3px; padding: 4px 8px; background: linear-gradient(#f5f8fc, #d9e4f3); border-bottom: 1px solid #99bbe8; }
+.cxe-desk .cxe-nav a { padding: 4px 9px; border: 1px solid transparent; border-radius: 3px; color: #15428b; }
+.cxe-desk .cxe-nav a:hover { border-color: #99bbe8; background: linear-gradient(#ffffff, #e3ecf8); }
+.cxe-desk .cxe-nav a.on { border-color: #7fa4d6; background: linear-gradient(#c5d7ef, #dae6f6); box-shadow: inset 0 1px 2px rgba(21, 66, 139, 0.25); font-weight: bold; }
+.cxe-desk.cxe-admin .cxe-main { margin: 10px; border: 1px solid #99bbe8; border-radius: 4px 4px 0 0; background: #fff; box-shadow: 0 2px 6px rgba(21, 66, 139, 0.2); }
+.cxe-desk .cxe-title { padding: 5px 10px; font-size: 11px; color: #15428b; background: linear-gradient(#e4eefa, #c7d9f0); border-bottom: 1px solid #99bbe8; border-radius: 3px 3px 0 0; }
+.cxe-desk .cxe-panel { padding: 12px; }
+.cxe-desk .pt-table { border: 1px solid #d0d0d0; }
+.cxe-desk .pt-table th { padding: 4px 8px; font-weight: normal; color: #222; background: linear-gradient(#f9f9f9, #e3e4e6); border: 1px solid #d0d0d0; }
+.cxe-desk .pt-table td { border-bottom: 1px solid #ededed; }
+.cxe-desk .pt-table tbody tr:hover td { background: #dfe8f6; }
+.cxe-desk h2, .cxe-desk h3 { color: #15428b; font-size: 13px; }
+.cxe-desk .pt-tabs { border-bottom-color: #99bbe8; }
+.cxe-desk .pt-tabs button { border-color: #99bbe8; border-radius: 3px 3px 0 0; background: linear-gradient(#f5f8fc, #d9e4f3); color: #15428b; }
+.cxe-desk .pt-tabs button.on { background: #fff; }
+.cxe-desk input, .cxe-desk select { font: 12px Tahoma, sans-serif; padding: 2px 4px; border: 1px solid #b5b8c8; background: #fff linear-gradient(#f0f0f0, #fff 4px); color: #000; }
+.cxe.cxe-desk .btn { font: 12px Tahoma, sans-serif; padding: 3px 12px; color: #15233a; border: 1px solid #8eaee0; border-radius: 3px; background: linear-gradient(#ffffff, #dbe6f5 50%, #c9daf1 51%, #e0eaf8); box-shadow: none; }
+.cxe.cxe-desk .btn.primary { color: #fff; border-color: #0e6a35; background: linear-gradient(#6fd898, #22a556 50%, #17944a 51%, #2bb062); text-shadow: 0 -1px 0 #0b5a2b; }
+.cxe-desk .cxe-tile { border: 1px solid #99bbe8; border-radius: 5px; color: #15428b; background: linear-gradient(#ffffff, #e8f0fb); box-shadow: inset 0 1px 0 #fff; }
+.cxe-desk .pt-version { padding: 6px; color: #46659a; font-size: 11px; }
+.cxe-desk .cxe-brand { font: bold 22px "Trebuchet MS", sans-serif; color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4); }
+.cxe-desk.cxe-store .cxe-top { padding: 12px 24px; background: linear-gradient(#3d78b5, #24578f 50%, #1b4775 51%, #1f4f82); border-bottom: 1px solid #12345a; }
+.cxe-desk .cxe-links a { padding: 4px 12px; color: #dce8f7; border-radius: 12px; }
+.cxe-desk .cxe-links a.on { color: #fff; background: linear-gradient(rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.1)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4); }
+.cxe-desk .cxe-hero { padding: 26px 24px; background: linear-gradient(#7db8ea, #4b8fd0 60%, #3a7dc0); border-bottom: 1px solid #2d6aa6; }
+.cxe-desk .cxe-hero h1 { font: bold 26px "Trebuchet MS", sans-serif; color: #fff; text-shadow: 0 2px 3px rgba(0, 0, 0, 0.3); }
+.cxe-desk.cxe-store .cxe-body { flex-direction: column; padding: 16px 24px; }
+.cxe-desk .cxe-cats { margin-bottom: 12px; }
+.cxe-desk .cxe-cats a { padding: 3px 12px; border: 1px solid #99bbe8; border-radius: 12px; background: linear-gradient(#fff, #e3ecf8); color: #15428b; }
+.cxe-desk .cxe-cats a.on { color: #fff; border-color: #24578f; background: linear-gradient(#4b8fd0, #24578f); }
+.cxe-desk.cxe-store .cxe-main { padding: 14px; background: #fff; border: 1px solid #99bbe8; border-radius: 8px; box-shadow: 0 2px 8px rgba(21, 66, 139, 0.15); }
+.cxe-desk .shop-item { padding: 10px 12px; border: 1px solid #c5d6ee; border-radius: 6px; background: linear-gradient(#ffffff, #eef4fb); }
+.cxe-desk .shop-item .shop-name { font-weight: bold; color: #15428b; }
+.cxe-desk.cxe-login .cxe-loginbox { padding: 0 0 14px; background: #fff; border: 1px solid #99bbe8; border-radius: 5px; box-shadow: 0 4px 14px rgba(21, 66, 139, 0.3); }
+.cxe-desk.cxe-login .cxe-loginbox > label, .cxe-desk.cxe-login .cxe-loginbox > button { margin: 0 14px; }
+.cxe-desk.cxe-login .cxe-loginhead { padding: 8px 14px; background: linear-gradient(#e4eefa, #c7d9f0); border-bottom: 1px solid #99bbe8; border-radius: 4px 4px 0 0; }
+.cxe-desk.cxe-login .cxe-loginbox > button { justify-self: end; }
+
+/* 5.x and 6.x, 2014 to 2025: flat, a dark sidebar and white cards */
+.cxe-flat { font: 13px/1.5 "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif; color: #2b3640; background: #f1f3f5; }
+.cxe-flat .cxe-top { height: 52px; padding: 0 20px; background: #fff; border-bottom: 1px solid #e1e5e9; }
+.cxe-flat .cxe-mark { font-size: 18px; font-weight: 600; color: #20262e; letter-spacing: -0.2px; }
+.cxe-flat .cxe-exit { padding: 0 6px; border-radius: 2px; font-weight: 700; }
+.cxe-flat .cxe-area { color: #8995a1; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; }
+.cxe-flat .cxe-nav { display: flex; flex-direction: column; width: 210px; flex: none; padding: 12px 0; background: #20262e; }
+.cxe-flat .cxe-nav a { padding: 10px 20px; color: #a9b3bd; border-left: 3px solid transparent; }
+.cxe-flat .cxe-nav a:hover { color: #fff; background: #262d36; }
+.cxe-flat .cxe-nav a.on { color: #fff; background: #2b333d; border-left-color: #2ecc71; }
+.cxe-flat.cxe-admin .cxe-main { padding: 22px 24px; }
+.cxe-flat .cxe-title { margin-bottom: 14px; font-size: 20px; font-weight: 600; color: #20262e; }
+.cxe-flat .cxe-panel { padding: 18px; background: #fff; border: 1px solid #e1e5e9; border-radius: 2px; }
+.cxe-flat .pt-table th { padding: 8px; font-size: 11px; font-weight: 600; color: #7b8794; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #e1e5e9; }
+.cxe-flat .pt-table td { padding: 9px 8px; border-bottom: 1px solid #eef1f4; }
+.cxe-flat h2, .cxe-flat h3 { font-weight: 600; color: #20262e; }
+.cxe-flat .pt-tabs { gap: 18px; border-bottom: 1px solid #e1e5e9; }
+.cxe-flat .pt-tabs button { padding: 8px 0; border: 0; border-bottom: 2px solid transparent; background: none; color: #7b8794; }
+.cxe-flat .pt-tabs button.on { color: #20262e; border-bottom-color: #2ecc71; font-weight: 600; }
+.cxe-flat input, .cxe-flat select { font: inherit; padding: 6px 8px; border: 1px solid #cfd6dd; border-radius: 2px; background: #fff; color: #2b3640; }
+.cxe.cxe-flat .btn { font: 600 12px/1.4 "Open Sans", Helvetica, sans-serif; padding: 6px 14px; color: #2b3640; background: #fff; border: 1px solid #cfd6dd; border-radius: 2px; box-shadow: none; }
+.cxe.cxe-flat .btn.primary { color: #fff; background: #27ae60; border-color: #27ae60; }
+.cxe.cxe-flat .btn.primary:hover { background: #229954; }
+.cxe-flat .cxe-tile { background: #fff; border: 1px solid #e1e5e9; border-top: 3px solid #27ae60; }
+.cxe-flat .cxe-tile .cxe-ico { color: #27ae60; }
+.cxe-flat .pt-version { padding: 10px; color: #8995a1; font-size: 12px; }
+.cxe-flat .cxe-brand { font-size: 20px; font-weight: 700; color: #20262e; }
+.cxe-flat .cxe-links a { padding: 6px 12px; color: #5d6b78; }
+.cxe-flat .cxe-links a.on { color: #20262e; box-shadow: inset 0 -2px 0 #27ae60; }
+.cxe-flat .cxe-hero { padding: 36px 32px; background: #20262e; }
+.cxe-flat .cxe-hero h1 { font-size: 28px; font-weight: 300; color: #fff; }
+.cxe-flat.cxe-store .cxe-body { flex-direction: column; padding: 20px 32px; }
+.cxe-flat .cxe-cats { gap: 0; margin-bottom: 16px; border-bottom: 1px solid #e1e5e9; }
+.cxe-flat .cxe-cats a { padding: 8px 14px; color: #5d6b78; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.cxe-flat .cxe-cats a.on { color: #20262e; border-bottom-color: #27ae60; font-weight: 600; }
+.cxe-flat .shop-store .shop-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+.cxe-flat .shop-store .shop-item { flex-direction: column; align-items: flex-start; gap: 6px; padding: 18px; background: #fff; border: 1px solid #e1e5e9; }
+.cxe-flat .shop-store .shop-item .shop-name { font-size: 16px; font-weight: 600; }
+.cxe-flat .shop-steps { gap: 0; counter-reset: cxe; }
+.cxe-flat .shop-steps li { counter-increment: cxe; padding: 6px 16px; color: #8995a1; background: #e6e9ec; }
+.cxe-flat .shop-steps li::before { content: counter(cxe) ". "; }
+.cxe-flat .shop-steps li.on { color: #fff; background: #27ae60; }
+.cxe-flat.cxe-store .shop-configure, .cxe-flat.cxe-store .shop-client { padding: 18px; background: #fff; border: 1px solid #e1e5e9; }
+.cxe-flat.cxe-login { background: #20262e; }
+.cxe-flat.cxe-login .cxe-loginbox { padding: 24px; background: #fff; border-radius: 2px; border-top: 4px solid #27ae60; }
+.cxe-flat.cxe-login .pt-version { color: #8995a1; }
+
+/* 7.x, 2026 on: refreshed light console with grouped navigation and rounded cards */
+.cxe-seven { font: 14px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; color: #1d2420; background: #f6f7f5; }
+.cxe-seven .cxe-top { height: 56px; padding: 0 20px; background: #fff; border-bottom: 1px solid #e7e8e4; }
+.cxe-seven .cxe-mark { font-size: 17px; font-weight: 650; letter-spacing: -0.3px; }
+.cxe-seven .cxe-exit { padding: 1px 7px; border-radius: 6px; background: #0f7a45; font-weight: 600; }
+.cxe-seven .cxe-area { padding: 2px 8px; font-size: 12px; color: #4d544f; background: #eff0ed; border-radius: 999px; }
+.cxe-seven .cxe-co { font-size: 13px; color: #4d544f; }
+.cxe-seven .cxe-nav { display: flex; flex-direction: column; gap: 14px; width: 220px; flex: none; padding: 16px 12px; background: #fbfbfa; border-right: 1px solid #e7e8e4; }
+.cxe-seven .cxe-group { display: grid; gap: 2px; }
+.cxe-seven .cxe-group h4 { margin: 0 0 4px 10px; font-size: 11px; font-weight: 600; color: #8a8f87; text-transform: uppercase; letter-spacing: 0.6px; }
+.cxe-seven .cxe-nav a { padding: 7px 10px; border-radius: 8px; color: #3a423d; }
+.cxe-seven .cxe-nav a:hover { background: #f0f1ee; }
+.cxe-seven .cxe-nav a.on { color: #0b6b3a; background: #e3f3e9; font-weight: 600; }
+.cxe-seven.cxe-admin .cxe-main { padding: 24px 28px; }
+.cxe-seven .cxe-title { margin-bottom: 16px; font-size: 22px; font-weight: 650; letter-spacing: -0.4px; }
+.cxe-seven .cxe-panel { padding: 20px; background: #fff; border: 1px solid #e7e8e4; border-radius: 12px; box-shadow: 0 1px 2px rgba(20, 30, 25, 0.04); }
+.cxe-seven .pt-table th { padding: 8px 10px; font-size: 12px; font-weight: 500; color: #6b7068; border-bottom: 1px solid #e7e8e4; }
+.cxe-seven .pt-table td { padding: 10px; border-bottom: 1px solid #f0f1ee; }
+.cxe-seven .pt-table tbody tr:hover td { background: #fafbf9; }
+.cxe-seven h2, .cxe-seven h3 { font-weight: 600; letter-spacing: -0.2px; }
+.cxe-seven .pt-tabs { gap: 4px; padding: 3px; border: 0; background: #eff0ed; border-radius: 9px; width: max-content; }
+.cxe-seven .pt-tabs button { padding: 5px 12px; border: 0; border-radius: 7px; background: none; color: #4d544f; }
+.cxe-seven .pt-tabs button.on { background: #fff; color: #1d2420; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08); }
+.cxe-seven input, .cxe-seven select { font: inherit; padding: 7px 10px; border: 1px solid #d9dbd6; border-radius: 8px; background: #fff; color: #1d2420; }
+.cxe.cxe-seven .btn { font: 500 13px/1.4 Inter, system-ui, sans-serif; padding: 7px 14px; color: #1d2420; background: #fff; border: 1px solid #d9dbd6; border-radius: 8px; box-shadow: 0 1px 1px rgba(0, 0, 0, 0.03); }
+.cxe.cxe-seven .btn.primary { color: #fff; background: #0f7a45; border-color: #0f7a45; }
+.cxe.cxe-seven .btn.primary:hover { background: #0b6b3a; }
+.cxe-seven .cxe-tiles { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
+.cxe-seven .cxe-tile { padding: 16px; gap: 4px 12px; border: 1px solid #e7e8e4; border-radius: 12px; background: #fff; color: #4d544f; }
+.cxe-seven .cxe-tile .cxe-ico { box-sizing: border-box; width: 36px; height: 36px; padding: 8px; color: #0f7a45; background: #e3f3e9; border-radius: 10px; }
+.cxe-seven .cxe-tile .num { color: #1d2420; font-size: 26px; font-weight: 650; }
+.cxe-seven .cxe-tile:hover { border-color: #b9dcc7; }
+.cxe-seven .pt-version { padding: 12px; color: #8a8f87; font-size: 12px; }
+.cxe-seven .cxe-brand { font-size: 18px; font-weight: 650; letter-spacing: -0.3px; }
+.cxe-seven .cxe-links a { padding: 6px 12px; border-radius: 8px; color: #4d544f; }
+.cxe-seven .cxe-links a.on { color: #1d2420; background: #eff0ed; }
+.cxe-seven .cxe-hero { padding: 48px 32px; background: radial-gradient(ellipse at 20% 0%, #1f5c3d 0%, #0e1511 60%); }
+.cxe-seven .cxe-hero h1 { font-size: 34px; font-weight: 650; letter-spacing: -0.8px; color: #fff; }
+.cxe-seven.cxe-store .cxe-body { flex-direction: column; padding: 24px 32px; }
+.cxe-seven .cxe-cats { margin-bottom: 18px; }
+.cxe-seven .cxe-cats a { padding: 6px 14px; border: 1px solid #d9dbd6; border-radius: 999px; background: #fff; color: #3a423d; }
+.cxe-seven .cxe-cats a.on { color: #fff; background: #1d2420; border-color: #1d2420; }
+.cxe-seven .shop-store .shop-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
+.cxe-seven .shop-store .shop-item { flex-direction: column; align-items: stretch; gap: 8px; padding: 20px; background: #fff; border: 1px solid #e7e8e4; border-radius: 14px; }
+.cxe-seven .shop-store .shop-item .shop-name { font-size: 17px; font-weight: 600; }
+.cxe-seven .shop-steps { gap: 4px; padding: 3px; background: #eff0ed; border-radius: 10px; width: max-content; }
+.cxe-seven .shop-steps li { padding: 5px 14px; border-radius: 8px; color: #6b7068; }
+.cxe-seven .shop-steps li.on { color: #1d2420; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08); }
+.cxe-seven.cxe-store .shop-configure, .cxe-seven.cxe-store .shop-client { padding: 22px; background: #fff; border: 1px solid #e7e8e4; border-radius: 14px; }
+.cxe-seven .shop-banner { border-radius: 8px; }
+.cxe-seven.cxe-login .cxe-loginbox { width: 340px; padding: 28px; background: #fff; border: 1px solid #e7e8e4; border-radius: 16px; box-shadow: 0 8px 30px rgba(20, 30, 25, 0.08); }
+.cxe-seven.cxe-login .cxe-loginhead { margin-bottom: 6px; }
+
+/* Modules and payment methods under Servers and Invoices */
+.cxe .mkt-list { display: grid; gap: 0; padding: 0; margin-top: 18px; }
+.cxe .side-h { margin: 0 0 6px; font-weight: 700; }
+.cxe .mkt-row { display: flex; align-items: center; gap: 12px; padding: 6px 8px; border-top: 0; border-bottom: 1px solid #e3e5e8; }
+.cxe .mkt-grow { flex: 1; }
+.cxe .pill { padding: 1px 8px; font-size: 0.9em; color: #4a525a; background: #eceef0; border-radius: 10px; }
+.cxe .pill.ok { color: #0d6b35; background: #dcf2e4; }
+.cxe-classic .side-h { padding: 2px 6px; font-size: 12px; color: #fff; background: #23395b; }
+.cxe-classic .mkt-row { border: 1px solid #d0d0d0; border-top: 0; }
+.cxe-classic .mkt-row:nth-child(odd) { background: #f4f6f9; }
+.cxe-classic .pill { border-radius: 0; border: 1px solid #a0a0a0; background: #fff; }
+.cxe-classic .pill.ok { color: #0c5f2d; border-color: #17944a; background: #fff; }
+.cxe-classic .cxe-tile .cxe-ico { display: none; }
+.cxe-classic .cxe-tile .num { display: inline-block; }
+.cxe-desk .side-h { padding: 4px 8px; font-size: 11px; color: #15428b; background: linear-gradient(#e4eefa, #c7d9f0); border: 1px solid #99bbe8; border-radius: 3px 3px 0 0; margin: 0; }
+.cxe-desk .mkt-row { border: 1px solid #d0d0d0; border-top: 0; }
+.cxe-desk .pill { border-radius: 3px; background: linear-gradient(#fff, #e3ecf8); border: 1px solid #c5d6ee; color: #15428b; }
+.cxe-flat .side-h { font-size: 11px; font-weight: 600; color: #7b8794; text-transform: uppercase; letter-spacing: 0.5px; }
+.cxe-flat .mkt-row { padding: 10px 8px; border-bottom-color: #eef1f4; }
+.cxe-flat .pill { border-radius: 2px; }
+.cxe-seven .side-h { font-size: 15px; font-weight: 600; }
+.cxe-seven .mkt-row { padding: 10px; border-bottom-color: #f0f1ee; }
+.cxe-seven .pill { border-radius: 999px; }
+.cxe-seven .switch { accent-color: #0f7a45; }
+.cxe .shop-cart { width: auto; min-width: 360px; }
+.cxe .shop-checkout .btn { justify-self: start; }
+.cxe .shop-item .shop-name { display: block; padding: 0; }
+.cxe-desk .num, .cxe-flat .num, .cxe-seven .num { font-family: inherit; font-variant-numeric: tabular-nums; }
+.cxe-flat .shop-store h2, .cxe-seven .shop-store h2 { margin: 22px 0 12px; font-size: 18px; }
+.cxe-flat .shop-store section:first-child h2, .cxe-seven .shop-store section:first-child h2 { margin-top: 0; }
+.cxe.cxe-seven .shop-item .btn { color: #fff; background: #1d2420; border-color: #1d2420; }
+.cxe-flat .shop-client h3, .cxe-seven .shop-client h3 { margin: 20px 0 8px; }

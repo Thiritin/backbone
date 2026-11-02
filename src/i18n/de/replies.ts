@@ -106,6 +106,11 @@ const MAILS: Record<string, [Mail, Mail, Mail]> = {
     (p) => `Leider gibt es bei uns kein Backup von ${site(p)}. Du musst die Seite aus deinen eigenen Dateien wiederherstellen und deine Passwörter ändern.`,
     (p) => `Wir können ${site(p)} nicht wiederherstellen, weil es kein Backup gibt. Bitte baue die Seite aus deiner eigenen Kopie neu auf und halte die Software aktuell.`,
   ],
+  cleanPaid: [
+    (p) => `Wir können ${site(p)} von Hand bereinigen und die Dateien des Eindringlings entfernen. Zu unserem Stundensatz kostet das ${euroCents(Number(p.cleanup))}.`,
+    (p) => `Von ${site(p)} gibt es kein Backup, aber wir können die Seite für ${euroCents(Number(p.cleanup))} manuell bereinigen. Vergib danach bitte neue Passwörter.`,
+    (p) => `Wir entfernen den Hack von ${site(p)} gern von Hand. Nach Stunden abgerechnet kostet die Bereinigung ${euroCents(Number(p.cleanup))}.`,
+  ],
   "tpl.explain": [
     () => "Die zweite Zahlung deckt die Nutzung des letzten Monats ab, die wir nachträglich abrechnen. Du wurdest nicht doppelt belastet.",
     () => "Es gibt zwei Rechnungen, weil die Nutzung jeweils am Monatsende für den Vormonat abgerechnet wird. Beide stimmen, und nichts wurde doppelt abgebucht.",

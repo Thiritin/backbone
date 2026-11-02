@@ -1,0 +1,49 @@
+/* WIZO Mein Büro: a framed blue retail page with a box shot until 2010, a wide comparison table from 2011. */
+.wz { min-height: 100%; color: #222; font: 11px/1.45 Verdana, Tahoma, sans-serif; }
+.wz a { color: #1f5fa8; }
+.wz h1 { margin: 0 0 10px; color: #1f5fa8; }
+.wz-logo { color: #fff; font: italic 22px/1 Arial, Helvetica, sans-serif; letter-spacing: -0.5px; }
+.wz-logo b { font-weight: 900; margin-right: 4px; }
+.wz-nav a { text-decoration: none; font-weight: bold; }
+.wz .bv-buy { font: bold 11px Verdana, Tahoma, sans-serif; color: #fff; background: linear-gradient(#fbb03b, #e47a00); border: 1px solid #b35f00; border-radius: 3px; padding: 3px 10px; cursor: pointer; }
+.wz .bv-buy:hover { background: linear-gradient(#ffbf55, #f08600); }
+.wz .bv-state { color: #2f7d1a; }
+
+.wz-classic { background: #dbe5f1; padding: 12px 0; }
+.wz-classic .wz-page { width: 760px; max-width: 100%; margin: 0 auto; background: #fff; border: 1px solid #9fb6d3; }
+.wz-classic .wz-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding: 18px 16px 10px; background: linear-gradient(#3a7bc8, #1a4f93); border-bottom: 3px solid #f39200; }
+.wz-classic .wz-logo { text-shadow: 1px 1px 0 rgb(0 0 0 / 0.3); }
+.wz-classic .wz-tag { color: #d6e4f5; font-size: 10px; }
+.wz-classic .wz-nav { display: flex; gap: 2px; padding: 4px 12px 0; background: #c6d8ee; border-bottom: 1px solid #9fb6d3; }
+.wz-classic .wz-nav a { padding: 3px 12px; color: #1a4f93; background: #e4edf8; border: 1px solid #9fb6d3; border-bottom: none; }
+.wz-classic .wz-nav a[aria-current] { background: #fff; margin-bottom: -1px; }
+.wz-classic .wz-main { padding: 14px 18px 18px; overflow: hidden; }
+.wz-classic h1 { font: bold 18px Arial, Helvetica, sans-serif; }
+.wz-classic h2 { margin: 12px 0 2px; font-size: 13px; color: #1a4f93; border-bottom: 1px dotted #9fb6d3; }
+.wz-classic .bv-edition p { margin: 2px 0; }
+.wz-box { float: right; display: flex; flex-direction: column; justify-content: space-between; width: 92px; height: 124px; margin: 0 4px 12px 18px; padding: 10px 8px; box-sizing: border-box; color: #fff; background: linear-gradient(160deg, #4b8ad6, #1a4f93 70%); border-right: 8px solid #123a6e; box-shadow: 3px 4px 6px rgb(0 0 0 / 0.35); font-family: Arial, Helvetica, sans-serif; }
+.wz-box b { font: italic 900 20px/1 Arial, Helvetica, sans-serif; }
+.wz-box span { font-size: 11px; font-weight: bold; color: #ffd54a; }
+.wz-classic .wz-foot { padding: 6px 16px; border-top: 1px solid #c6d8ee; background: #f1f5fa; color: #6a7c92; font-size: 10px; }
+
+.wz-modern { background: #eef2f7; font: 13px/1.5 Arial, Helvetica, sans-serif; }
+.wz-modern .wz-page { max-width: 940px; margin: 0 auto; background: #fff; }
+.wz-modern .wz-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 22px 24px 18px; }
+.wz-modern .wz-logo { color: #1f5fa8; font-size: 26px; }
+.wz-modern .wz-tag { color: #6a7c92; }
+.wz-modern .wz-nav { display: flex; gap: 4px; padding: 0 16px; background: linear-gradient(#2b6cb8, #1f5fa8); }
+.wz-modern .wz-nav a { padding: 9px 12px; color: #fff; }
+.wz-modern .wz-nav a[aria-current] { background: rgb(255 255 255 / 0.18); }
+.wz-modern .wz-main { padding: 24px; }
+.wz-modern h1 { font-size: 24px; font-weight: normal; }
+.wz-modern .bv-table { border-collapse: separate; border-spacing: 6px 0; margin: 0 -6px; }
+.wz-modern .bv-table th, .wz-modern .bv-table td { padding: 8px 10px; border-bottom: 1px solid #e1e8f0; }
+.wz-modern .bv-table thead th { padding: 12px 10px; color: #fff; background: #1f5fa8; border-radius: 4px 4px 0 0; font-size: 16px; }
+.wz-modern .bv-table thead th:first-child { background: none; }
+.wz-modern .bv-table td { background: #f6f9fc; }
+.wz-modern .bv-table thead th:nth-child(3) { background: #f39200; }
+.wz-modern .bv-table td:nth-child(3) { background: #fff6e8; }
+.wz-modern .bv-price td { color: #1f5fa8; font-size: 20px; }
+.wz-modern .bv-price small { color: #6a7c92; font-size: 11px; }
+.wz-modern .bv-buy { font-size: 13px; padding: 6px 16px; border-radius: 4px; }
+.wz-modern .wz-foot { padding: 12px 24px; background: #2a3442; color: #b9c4d2; font-size: 11px; }

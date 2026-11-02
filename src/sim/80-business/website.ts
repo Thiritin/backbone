@@ -6,23 +6,31 @@ import { offerPrice } from "../30-market/spec";
 import type { Product } from "../30-customers/customers";
 import type { GameState } from "../50-state";
 import { serviceOnline } from "../40-support/status";
+import { serviceHeld } from "../45-billing/billing";
 import { HOW_TO, KNOWLEDGE_BASE } from "../40-support/tickets";
 import { bookable, diskFits, lineOffered, noRoomError, nodeUsed, serverOf, vmRoom, workloadOnline, workloadsOf, type Cluster, type Workload } from "../60-infra/cluster";
 import { machineAddress } from "../60-infra/addresses";
 import { hostPerf } from "../60-infra/php";
-import { nodeUsage } from "../60-infra/usage";
+import { nodeUsage, SLOW_PERF } from "../60-infra/usage";
 import type { SimEvent } from "../88-tick/tick";
-import { owns } from "./marketing";
+import { owns, SITE_LINES } from "./marketing";
 import { salesAddress } from "./mail";
 import { CYCLE_MONTHS, CYCLES } from "../10-catalog/cycles";
 import { companyDomain } from "../30-customers/domains";
+import { domainOf, parked } from "../30-customers/registry";
 import { lineHasProducts, portalPath, productsOf } from "./portal";
 import { STATUS_FROM_YEAR, STATUS_MIN_CUSTOMERS } from "./status";
-import { shopActive, type ShopProduct } from "./shop";
+import { shopActive, shopCount, type ShopProduct } from "./shop";
+import { assignedKey, licenceStatus, SHOP_MACHINE, tiersOnSale } from "../60-infra/licence";
+import { tiersOf, type LicenceTier } from "../10-catalog/licence-tiers";
+import { offeredProducts, type CatalogProduct } from "./catalog";
+import { siteDesign, type SiteDesign } from "./site-design";
 
-export const SITE_LINES: Product[] = ["webHosting", "vps", "gameServer", "dns", "vpn", "storage", "cloud", "dedicated", "colocation", "gpu", "ssl"];
+export { SITE_LINES };
 
 export const listed = (s: GameState, p: Product): boolean => s.marketing.lines.includes(p);
+// Whether a listed line takes custom requests; otherwise its visitors order the shop plans or leave.
+export const customOpen = (s: GameState, p: Product): boolean => listed(s, p) && s.marketing.custom.includes(p);
 
 // The error key for why a line cannot go on the website, or null when it can. SSL is an add-on for web hosting customers.
 export function lineBlocker(s: GameState, p: Product): string | null {
@@ -60,14 +68,17 @@ export function orderLink(s: GameState, product?: ShopProduct): string | null {
   return `portal.${companyDomain(s)}${path}`;
 }
 
-// What the website shows: each listed line, with the price from its cheapest visible product, or from the line's smallest
-// size at the player's rates for lines sold through configurable options, and the order address while orders still come
-// by email.
-export const siteContent = (s: GameState): { lines: { product: Product; from: number | null; link: string | null }[]; email: string | null } => ({
+// What the website shows: each listed line, with its published products before a shop, else the price from its cheapest
+// visible shop product, or from the line's smallest size at the player's rates for lines sold through configurable options,
+// and the order address while orders still come by email.
+export interface SiteLine { product: Product; from: number | null; link: string | null; items: CatalogProduct[] }
+export const siteContent = (s: GameState): { lines: SiteLine[]; email: string | null } => ({
   lines: SITE_LINES.filter((p) => listed(s, p)).map((p) => {
+    const items = shopActive(s) ? [] : offeredProducts(s, p);
+    if (items.length) return { product: p, from: null, link: null, items };
     const best = visibleProducts(s, p).filter((x) => Number.isFinite(fromMonthly(x))).sort((x, y) => fromMonthly(x) - fromMonthly(y))[0];
-    if (best) return { product: p, from: fromMonthly(best), link: orderLink(s, best) };
-    return { product: p, from: shopActive(s) ? offerPrice(s, p, sizeSpec(p, 0, yearOf(s.hour))) : null, link: orderLink(s) };
+    if (best) return { product: p, from: fromMonthly(best), link: orderLink(s, best), items };
+    return { product: p, from: shopActive(s) ? offerPrice(s, p, sizeSpec(p, 0, yearOf(s.hour))) : null, link: orderLink(s), items };
   }),
   email: s.marketing.emailOrders ? salesAddress(s) : null,
 });
@@ -97,19 +108,20 @@ const SLOW_RAM = 0.9;
 
 export const siteHostingCost = (s: GameState): number => (s.marketing.launched && s.marketing.siteHost.kind === "rented" ? SITE_RENT : 0);
 
-// The site is a virtual workload on its host: it books nothing in the node, so workloadsOf and billing stay as they are.
-function siteWorkload(c: Cluster): Workload {
+// The site and the shop system are virtual workloads on their host: they book nothing in the node, so workloadsOf and
+// billing stay as they are.
+function siteWorkload(c: Cluster, id = "site"): Workload {
   return {
-    id: "site", serviceId: "site", clusterId: c.id, deviceId: c.vm ? null : c.nodes[0]?.deviceId ?? null, rackId: null, slot: 0, units: 0, watts: 0,
+    id, serviceId: id, clusterId: c.id, deviceId: c.vm ? null : c.nodes[0]?.deviceId ?? null, rackId: null, slot: 0, units: 0, watts: 0,
     // Never placed before a disk loss, so a static site survives one.
     placedAt: Number.MAX_SAFE_INTEGER, stopped: false, busyUntil: 0, backupAt: null, ...SITE_LOAD,
   };
 }
 
-// Whether the workload's host runs it slowly: an overloaded node or a PHP upgrade on its panel host.
+// Whether the workload's host runs it noticeably slowly: an overloaded node or a PHP upgrade on its panel host.
 export function slowHost(s: GameState, w: Workload, c: Cluster | undefined): boolean {
   const at = serverOf(s, w);
-  return Math.min(at ? nodeUsage(s, at).perf : 1, hostPerf(s, c)) < 1;
+  return Math.min(at ? nodeUsage(s, at).perf : 1, hostPerf(s, c)) < SLOW_PERF;
 }
 
 // Whether a panel host has the disk for the site next to its web spaces, and whether its RAM is over 90% booked with the site.
@@ -123,15 +135,37 @@ export function siteRoom(s: GameState, c: Cluster): { fits: boolean; crowded: bo
 export type SiteStatus = "up" | "slow" | "down";
 
 // A rented site is always up. On an own host it is down while the site's workload is offline and slow while the host
-// performs below 1 or has over 90% of its RAM booked.
+// performs below 1 or has over 90% of its RAM booked. It is down while the company domain is off the company's name servers.
 export function siteStatus(s: GameState): SiteStatus {
-  const host = s.marketing.siteHost;
-  if (host.kind === "rented") return "up";
-  const c = s.clusters.find((x) => x.id === host.clusterId);
+  const host = s.marketing.siteHost, d = s.company.domain ? domainOf(s, s.company.domain) : undefined;
+  if (d && parked(s, d)) return "down";
+  return host.kind === "rented" ? "up" : hostStatus(s, host.clusterId, "site");
+}
+export function hostStatus(s: GameState, clusterId: string, id: string): SiteStatus {
+  const c = s.clusters.find((x) => x.id === clusterId);
   if (!c) return "down";
-  const w = siteWorkload(c);
+  const w = siteWorkload(c, id);
   if (!workloadOnline(s, w)) return "down";
   return slowHost(s, w, c) || siteRoom(s, c).crowded ? "slow" : "up";
+}
+
+// The installed shop system follows its panel host like the site; down while it is not installed.
+export const shopStatus = (s: GameState): SiteStatus => (s.shop.install ? hostStatus(s, s.shop.install.clusterId, SHOP_MACHINE) : "down");
+
+// The edition of the shop's key; a trial runs the top edition on sale, and a key without an edition has no cap.
+export function shopTier(s: GameState): LicenceTier | undefined {
+  const id = s.shop.variant, k = id ? assignedKey(s, SHOP_MACHINE, id) : undefined;
+  return k ? tiersOf(id).find((x) => x.id === k.edition) : tiersOnSale(id, s.hour).at(-1);
+}
+
+// Why the shop takes no orders: not installed, its host down, its licence ended or its edition full; null while it takes them.
+export function shopBlock(s: GameState): string | null {
+  const id = s.shop.variant;
+  if (!id || !s.shop.install) return "error.shopNotInstalled";
+  if (shopStatus(s) === "down") return "error.shopDown";
+  if (["ended", "lapsed", "unlicensed"].includes(licenceStatus(s, SHOP_MACHINE, id) ?? "")) return "error.licenceExpired";
+  const cap = shopTier(s)?.cap;
+  return cap != null && shopCount(s) >= cap ? "error.licenceCap" : null;
 }
 
 // Design generations are 4 years apart; a site is fine one generation behind and loses 20% of its requests for each
@@ -168,16 +202,17 @@ export type CustomerSiteStatus = "up" | "slow" | "defaced" | "down";
 
 // A web hosting customer's own site, from the customer's name and the profile; blurb is an i18n key.
 // sponsored: a running sponsorship covers the site and its banner still hangs, so the company's logo shows on it.
-export function customerSite(s: GameState, serviceId: string): { title: string; blurb: string; status: CustomerSiteStatus; sponsored: boolean } | null {
+export function customerSite(s: GameState, serviceId: string): { title: string; blurb: string; status: CustomerSiteStatus; sponsored: boolean; design: SiteDesign } | null {
   const v = s.services.find((x) => x.id === serviceId), cus = v && s.customers.find((c) => c.id === v.customerId);
   if (!v || !cus || v.product !== "webHosting") return null;
   const ws = workloadsOf(s, serviceId);
   const hacked = ws.some((w) => w.clusterId && s.security.hacked.includes(w.clusterId));
-  const status: CustomerSiteStatus = hacked || s.sites.defaced.includes(serviceId) ? "defaced"
-    : v.endedAt !== null || !serviceOnline(s, serviceId) ? "down"
+  const status: CustomerSiteStatus = v.endedAt !== null || serviceHeld(s, v) ? "down"
+    : hacked || s.sites.defaced.includes(serviceId) ? "defaced"
+    : !serviceOnline(s, serviceId) ? "down"
     : ws.some((w) => slowHost(s, w, s.clusters.find((c) => c.id === w.clusterId))) ? "slow" : "up";
   const sponsored = s.sponsorships.some((x) => x.status === "running" && x.serviceIds.includes(serviceId) && !x.board?.dropped);
-  return { title: cus.name, blurb: `site.blurb.${cus.profile}`, status, sponsored };
+  return { title: cus.name, blurb: `site.blurb.${cus.profile}`, status, sponsored, design: siteDesign(s, cus.id) };
 }
 
 // Where a customer's site answers: its domain, or the private address of its account until it has one.

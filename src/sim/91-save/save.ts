@@ -1,4 +1,7 @@
-import { fillShop } from "./shop";
+import { fillDesk } from "./desk";
+import { fillMail } from "./mail";
+import { migrateBooks } from "./books";
+import { fillShop, installSavedShop } from "./shop";
 import { brandsOf, fillCpus, isOfficeRouter, MODELS, modelById, RENAMED_MODELS, wanPort } from "../10-catalog/hardware";
 import { freeSlots } from "../60-infra/status";
 import { legacyLicences } from "../60-infra/licence";
@@ -11,13 +14,12 @@ import { mergeWebPanel } from "../60-infra/webpanel";
 import { fillBackups } from "../60-infra/backups";
 import { skillById, skillFor } from "../10-catalog/research";
 import { STARTER_APPS, WIDGETS } from "../10-catalog/store";
-import { WALK } from "../80-business/walk";
 import { legacyRegistration } from "../80-business/office";
 import { legacyTax } from "../80-business/tax";
 import { legacyBank, savingsOf } from "../46-finance/bank";
 import { bankById, defaultPlan } from "../10-catalog/banks";
 import type { Employee } from "../47-staff/staff";
-import { device, deviceDefaults, fillCards, fillSizes, newGame, SAVE_VERSION, type Device, type GameState, type Location } from "../50-state";
+import { device, deviceDefaults, fillCards, fillSizes, newGame, SAVE_VERSION, type Contract, type Device, type GameState, type Location } from "../50-state";
 import { dropCluster, workloadDefaults } from "../60-infra/cluster";
 import { upgradeCompute } from "./compute";
 import { fillDomains } from "../30-customers/domains";
@@ -52,6 +54,10 @@ export function deserialize(raw: string): GameState {
   const bare = new Set([...(data.devices ?? []), ...(data.workloads ?? [])].filter((m) => m.os === undefined).map((m) => m.id));
   const base = newGame(data.seed);
   if ((data.version ?? 1) < 2) for (const k of INFRA) delete data[k];
+  // Hardware insurance is gone; repairs cost what they cost.
+  delete (data as { insurance?: unknown }).insurance;
+  // Customer-wide holds are gone; services are held one by one.
+  delete (data as { heldCustomers?: unknown }).heldCustomers;
   const locations: GameState["locations"] = [];
   // The basement's tower shelf is gone, and rack positions became cages.
   for (const { shelf: _, ...l } of (data.locations ?? base.locations) as (Location & { shelf?: number })[]) {
@@ -67,7 +73,9 @@ export function deserialize(raw: string): GameState {
   const devices = (data.devices ?? base.devices).filter(known).map((d) => {
     const model = RENAMED_MODELS[d.model] ?? d.model;
     const defaults = deviceDefaults(model, d.boughtAt ?? 0);
-    const sized = fillCpus(modelById(model), fillSizes(model, d.components ?? defaults.components));
+    // UPS units, PDUs and console gear saved before they had power supplies get their model's.
+    const parts = d.components && !d.components.some((c) => c.kind === "psu") ? [...d.components, ...defaults.components.filter((c) => c.kind === "psu")] : d.components;
+    const sized = fillCpus(modelById(model), fillSizes(model, parts ?? defaults.components));
     return {
       ...defaults, ...d, log: (d.log ?? []).map((e, i) => ({ ...e, sev: e.sev ?? "info", id: e.id ?? i })), model, brand: model === "home-router" ? "AVN" : maker(model, d.brand), components: (data.version ?? 1) < 3 ? fillCards(model, sized) : sized, lease: d.lease ?? null, store: stored(d), transitTo: d.transitTo ?? null, arriveAt: d.arriveAt ?? null,
       // A managed switch saved before configurations were saved boots into what it runs.
@@ -91,11 +99,11 @@ export function deserialize(raw: string): GameState {
     billingRules: { ...base.billingRules, ...data.billingRules },
     waitlist: (data.waitlist ?? []).filter((w: { space: string }) => w.space !== "positions"),
     // Saves from before contracts get one per rented location at today's price.
-    contracts: data.contracts ?? locations.filter((l) => l.dc).map((l, i) => {
+    contracts: data.contracts?.map((c: Contract) => ({ ...c, retainedAt: c.retainedAt ?? null })) ?? locations.filter((l) => l.dc).map((l, i) => {
       const dc = DATACENTERS.find((d) => d.id === l.dc)!;
       const space = l.space as "share" | "cage" | "suite";
       const size = space === "share" ? SHARE_RACKS.find((m) => m.id === racks.find((r) => r.locationId === l.id && r.provided)?.model)?.size ?? 1 : l.positions;
-      return { id: `contract-old-${i}`, provider: dc.provider, dc: dc.id, locationId: l.id, space, positions: size, since: l.readyAt - 24 * LEAD_DAYS[space], monthly: spacePrice(dc, space, size), endsAt: null };
+      return { id: `contract-old-${i}`, provider: dc.provider, dc: dc.id, locationId: l.id, space, positions: size, since: l.readyAt - 24 * LEAD_DAYS[space], monthly: spacePrice(dc, space, size), endsAt: null, retainedAt: null };
     }),
     // Saves from before free mail had no mail service at all.
     company: { ...base.company, ...data.company, ...((data.company?.mail as { kind: string } | undefined)?.kind === "none" && { mail: base.company.mail }) },
@@ -116,13 +124,15 @@ export function deserialize(raw: string): GameState {
     marketing: { ...base.marketing, ...data.marketing, awareness: { ...base.marketing.awareness, ...data.marketing?.awareness } },
     // Saves from before the Pear Store keep every widget they showed.
     // The Research app was called Unlocks.
-    // The Sales app moved into Support and the Checklist into Getting started, so their ids are dropped; saves from before the Website app get it in the dock.
+    // The Sales app moved into Support and the Checklist into Getting started, so their ids are dropped; saves from before the Website app get it in the dock. Customers moved into Books and the shop admin, and registered saves get every starter app.
     // Billing became Books.
-    installed: data.installed ? [...new Set([...data.installed.map((id) => (id === "Unlocks" ? "Research" : id === "Billing" ? "Books" : id)).filter((id) => id !== "Sales" && id !== "Checklist" && id !== "Bank" && id !== "dockBadges" && id !== "Products" && id !== "Virtual machines" && id !== "Website"), "Browser", "Chat", ...(data.registration === null || data.arrived ? [] : ["Marketing", "Security", "Applications"])])] : [...STARTER_APPS, "Chat", ...WIDGETS.map(([id]) => id)],
+    installed: data.installed ? [...new Set([...data.installed.map((id) => (id === "Unlocks" ? "Research" : id === "Billing" || id === "Finance" ? "Books" : id)).filter((id) => id !== "Sales" && id !== "Customers" && id !== "Checklist" && id !== "Bank" && id !== "dockBadges" && id !== "Products" && id !== "Virtual machines" && id !== "Website"), "Browser", "Chat", ...(data.registration !== null ? STARTER_APPS : [])])] : [...STARTER_APPS, "Chat", ...WIDGETS.map(([id]) => id)],
     // Older saves researched Pear Store items directly; each becomes its skill and that skill's prerequisites.
     unlocks: [...new Set((data.unlocks ?? []).flatMap(learned))],
     customers: (data.customers ?? []).map((c) => ({ ...c, history: c.history ?? [], credit: c.credit ?? 0, address: c.address ?? homeAddress({ seed: base.seed, locations }, Number(c.id.slice(3)) || 0, c.name, c.profile) })),
     tickets: (data.tickets ?? []).map((t) => ({ ...t, assignee: t.assignee ?? null })),
+    // Saves from before name servers ran every domain on the company's own.
+    domains: (data.domains ?? []).map((d) => ({ ...d, ns: d.ns ?? "company" })),
     services: (data.services ?? []).map((v) => ({ ...v, zone: v.zone ?? null, sla: v.sla ?? "basic" })),
     // Saves from before clusters keep their services unplaced, which leaves them online.
     sales: { ...base.sales, ...data.sales },
@@ -149,6 +159,9 @@ export function deserialize(raw: string): GameState {
   if (data.bank === undefined) s.bank = legacyBank(s);
   // Accounts from before plans get their bank's cheapest plan for the form.
   if (s.bank && !s.bank.plan) s.bank = { ...s.bank, plan: defaultPlan(bankById(s.bank.id)!, s.registration?.form ?? "sole") };
+  // Saves from before Books assigned payments out count each one toward the invoice the supplier booked it to.
+  if (s.bank) s.bank = { ...s.bank, outgoing: s.bank.outgoing.map((o) => (o.matched === undefined ? { ...o, matched: o.payableId ?? null } : o)) };
+  s.payables = s.payables.map((p) => (p.booked === undefined ? { ...p, booked: p.paidAt !== null ? p.amount : p.sent } : p));
   fillGames(s);
   fillDaemons(s);
   // A save from before accounts opened on the bank's site holds the savings as cash; they come back with the account.
@@ -161,11 +174,16 @@ export function deserialize(raw: string): GameState {
   if (!data.trials) legacyLicences(s, (data.licenses ?? []) as unknown as Parameters<typeof legacyLicences>[1]);
   const media = data.media ?? base.media;
   s.media = { images: [...new Set(media.images.map((x) => asImage(x, year)))], stick: { ...media.stick, os: media.stick.os && asImage(media.stick.os, year) } };
-  // Apps a save already has count as arrived, so they never send their email.
-  s.arrived = data.arrived ?? WALK.filter((id) => s.installed.includes(id));
+  s.arrived = data.arrived ?? [];
   // Saves from before the Bookkeeping category run Lexwear Office when they have Books.
-  if (!data.books) s.books = { vendor: s.installed.includes("Books") ? "lexwear" : null, installedAt: 0 };
+  if (!data.books) s.books = { vendor: data.installed?.some((id: string) => id === "Books" || id === "Billing") ? "lexwear" : null, installedAt: 0, edition: null, seats: 0, download: null };
+  s.books = { ...s.books, download: s.books.download ?? null };
+  migrateBooks(s);
   s.tax = data.tax ? { ...base.tax, ...data.tax } : s.registration ? legacyTax(s) : base.tax;
+  if (data.shop && data.shop.install === undefined) installSavedShop(s);
+  fillMail(s, data.mail, !!data.company?.zone);
+  fillDesk(s, data.desk !== undefined);
+  s.webmail = { ...base.webmail, ...data.webmail };
   return s;
 }
 

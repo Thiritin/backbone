@@ -127,4 +127,12 @@ export default {
   "desktop.menu.deleteTitle": () => "Delete all progress?",
   "desktop.menu.deleteText": () => "Your company and its save are removed from this browser. Export a save first to keep a copy.",
   "desktop.menu.deleteAction": () => "Delete",
+  "desktop.start.immersive": () => "Play immersive",
+  "desktop.immersive.title": () => "Immersive mode",
+  "desktop.immersive.text": () => "Immersive mode fills the whole screen and sends keyboard shortcuts such as Cmd+Tab, Alt+Tab and F11 to the game, so Cmd+Tab and Alt+Tab switch between the game's windows.",
+  "desktop.immersive.browsers": () => "Open the game in Chrome, Edge, Opera or Brave on a computer to use immersive mode.",
+  "desktop.immersive.leave": () => "To leave immersive mode, choose Log out in the menu at the top left or hold Esc.",
+  "desktop.immersive.start": () => "Start immersive mode",
+  "desktop.menu.logout": () => "Log out",
+  "desktop.switcher": () => "Switch windows",
 } satisfies Dict;

@@ -1,10 +1,11 @@
 // docs/design/plans/software-licences.md, lanes vendor-shop and my-account: buying licence keys on a vendor site and cancelling
 // a term licence from My account.
-import { deliverMail } from "../40-support/tickets";
 import { cents } from "../45-billing/billing";
 import type { GameState } from "../50-state";
-import { issueKey, updateKey } from "../60-infra/licence";
-import { cartOf, lineOffer, ORDER, upgradeOffers, vendorName, type CartLine } from "../80-business/vendor-shop";
+import { cardReady, cardSpent } from "../46-finance/bank";
+import { invoice } from "../46-finance/payables";
+import { updateKey } from "../60-infra/licence";
+import { cartOf, lineMajor, lineOffer, sendKeys, vendorName, type CartLine, type KeyLine } from "../80-business/vendor-shop";
 import type { ActionResult } from "./hardware";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -27,22 +28,33 @@ export function removeFromCart(s: GameState, product: string, edition: string | 
   return { ok: true };
 }
 
-// Pays the site's cart lines from the bank as one order: a ledger line, an unassigned key per licence and the order email.
-// A one-time licence costs its price; a term licence pays its first term for one unit; an upgrade is a key for the next major.
-export function checkout(s: GameState, host: string): ActionResult {
+export type LicencePayment = "card" | "transfer";
+
+// Places the site's cart lines as one order. A card pays at once and the keys come with the order email; a transfer gets an
+// invoice, and the keys come once the money arrives. A one-time licence costs its price; a term licence pays its first term
+// for one unit; an upgrade is a key for the next major.
+export function checkout(s: GameState, host: string, payment: LicencePayment): ActionResult {
   const lines = cartOf(s, host);
   if (!lines.length) return fail("error.cartEmpty");
   const fees = lines.map((l) => lineOffer(s, l)?.fee);
   if (fees.some((f) => f === undefined)) return fail("error.notForSale");
+  if (!s.bank) return fail("error.noBank");
   const total = cents(lines.reduce((n, l, i) => n + fees[i]! * l.qty, 0));
-  if (s.cash < total) return fail("error.noCash");
+  if (payment === "card" && !cardReady(s)) return fail("error.noCard");
+  if (payment === "card" && cardSpent(s) + total > s.bank.card!.limit) return fail("error.cardLimit");
   const order = `ORD-${s.nextId++}`, vendor = vendorName(lines[0].product);
-  const to = lines.map((l) => (l.from ? upgradeOffers(s, l.product).find((o) => o.from === l.from)!.to : undefined));
-  s.cash = cents(s.cash - total);
-  s.ledger = [...s.ledger, { hour: s.hour, category: "licenses", key: "ledger.order", params: { vendor, order }, amount: -total }];
-  lines.forEach((l, n) => { for (let i = 0; i < l.qty; i++) issueKey(s, l.product, l.edition, order, to[n]); });
+  const keys: KeyLine[] = lines.map((l) => { const to = lineMajor(s, l); return { product: l.product, edition: l.edition, qty: l.qty, ...(to && { to }) }; });
+  const entry = { hour: s.hour, category: "licenses", key: "ledger.order", params: { vendor, order }, amount: -total };
   s.cart = s.cart.filter((l) => !lines.includes(l));
-  deliverMail(s, vendor, ORDER, { order, total });
+  if (payment === "card") {
+    s.bank = { ...s.bank, card: { ...s.bank.card!, spent: [...s.bank.card!.spent, entry] } };
+    sendKeys(s, vendor, order, keys, total, true);
+    return { ok: true, id: order };
+  }
+  const p = invoice(s, "software", vendor, [entry]);
+  // A direct debit mandate pays the invoice as it is issued.
+  if (p.paidAt !== null) sendKeys(s, vendor, order, keys, total, false);
+  else s.payables = s.payables.map((x) => (x.id === p.id ? { ...x, keys: { order, lines: keys } } : x));
   return { ok: true, id: order };
 }
 

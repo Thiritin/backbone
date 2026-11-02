@@ -10,16 +10,15 @@ import { CHARGEBACK_FEE, fraudTick } from "../src/sim/45-billing/fraud";
 import { offers, paymentsTick, preferredMethod } from "../src/sim/45-billing/payments";
 import type { GameState } from "../src/sim/50-state";
 import { monthlyRate } from "../src/sim/40-support/tick";
-import { matchByReference } from "../src/sim/80-business/lexwear";
+import { matchByReference } from "../src/sim/80-business/bookkeeping";
 import { payoutTick, PAYOUT_DAY, PAYOUT_HOUR } from "../src/sim/80-business/shoplink";
 import { matchTransfer } from "../src/sim/90-actions/billing";
 import { addCustomer } from "../src/sim/90-actions/customers";
-import { buyLicence } from "../src/sim/90-actions/lexwear";
+import { buyLicence } from "../src/sim/90-actions/licences";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
-import { chooseShop } from "../src/sim/90-actions/shop";
 import { importFromShop, setPaymentMethod } from "../src/sim/90-actions/shoplink";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { automate, readyGame } from "./fixtures";
+import { automate, readyGame, installWithKey } from "./fixtures";
 
 const web = { product: "webHosting" as const, size: 1, sla: "basic" as const };
 const DAY = 24;
@@ -35,7 +34,7 @@ function shopGame(methods: MethodId[] = [], seed = 5): GameState {
   s.cash = 1e6;
   setUpChannel(s, "website");
   s.unlocks = [...s.unlocks, "shops"];
-  expect(chooseShop(s, "modemBill").ok).toBe(true);
+  installWithKey(s, "modemBill");
   s.hour += SHOP_SETUP_HOURS;
   s.modules = [...s.modules, "shop-link", ...methods];
   return automate(s);

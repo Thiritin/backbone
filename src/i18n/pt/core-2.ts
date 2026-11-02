@@ -1,6 +1,6 @@
 import type { Dict } from "../lang";
 import { t } from "../en";
-import { euro, euroCents } from "../../sim/00-core/money";
+import { euro } from "../../sim/00-core/money";
 
 // bare, definite, indefinite
 const PARTS: Record<string, [string, string, string]> = {
@@ -19,10 +19,6 @@ const who = (p: Record<string, string | number>, d: string) => String(p.hostname
 const s = (n: unknown, one: string, many: string) => (Number(n) === 1 ? one : many);
 
 export default {
-  "event.tax.title": () => "Imposto sobre o rendimento pago",
-  "event.tax.text": (p) => `Pagaste ${euroCents(Number(p.tax))} de imposto sobre um lucro de ${euroCents(Number(p.profit))} em ${p.year}.`,
-  "event.taxLoss.title": () => "Sem imposto sobre o rendimento",
-  "event.taxLoss.text": (p) => `${p.year} fechou com prejuízo, e ${euroCents(Number(p.carry))} de prejuízos transitam para o ano seguinte.`,
   "event.cashNegative.title": () => "Caixa abaixo de zero",
   "event.cashNegative.text": (p) => `A tua conta está a descoberto. Se ficar abaixo de zero durante ${p.days} dias e o banco deixar de emprestar, a empresa vai à falência.`,
   "event.bankrupt.title": () => "Falência",
@@ -30,8 +26,6 @@ export default {
   "ledger.tax": (p) => `Imposto sobre o rendimento de ${p.year}`,
   "ledger.insurancePremium": () => "Prémio do seguro de hardware",
   "ledger.insuranceClaim": (p) => `Sinistro do seguro de hardware: ${part(p.component, 0)} em ${p.device}`,
-  "error.insured": () => "Já tens esta apólice.",
-  "error.notInsured": () => "Não tens esta apólice.",
   "error.unknownLoan": () => "Este empréstimo já não existe.",
   "event.ticket.title": (p) => `${p.name}`,
   "event.ticket.text": (p) => t(String(p.subject), p),
@@ -105,6 +99,8 @@ export default {
   "ticket.cancellation.outage.text": () => "Os meus serviços estiveram demasiadas vezes em baixo. Vou mudar para outro fornecedor, por isso cancelem tudo no fim do mês.",
   "ticket.cancellation.slow.subject": () => "Por favor, cancelem o meu contrato",
   "ticket.cancellation.slow.text": () => "Os meus serviços estão lentíssimos há semanas. Vou mudar para um fornecedor mais rápido, por isso cancelem tudo no fim do mês.",
+  "ticket.cancellation.byHost.subject": () => "Rescisão do teu contrato",
+  "ticket.cancellation.byHost.text": (p) => (Number(p.now) ? `Rescindimos o teu contrato de ${p.service} com efeito imediato. Motivo: ${p.why}.` : `Vamos rescindir o teu contrato de ${p.service}. Termina a ${p.end}.${p.why ? ` Motivo: ${p.why}.` : ""}`),
   "ticket.abuse.spam.subject": (p) => `Spam enviado ${p.hostname || p.service ? `a partir de ${p.hostname || p.service}` : "a partir da tua rede"}`,
   "ticket.abuse.spam.text": () => "Um fornecedor de correio denuncia milhares de e-mails de spam vindos do servidor deste cliente.",
   "ticket.abuse.attack.subject": (p) => `Tráfego de ataque ${p.hostname || p.service ? `a partir de ${p.hostname || p.service}` : "a partir da tua rede"}`,

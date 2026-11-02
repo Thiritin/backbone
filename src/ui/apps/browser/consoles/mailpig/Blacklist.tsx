@@ -2,7 +2,7 @@ import type { GameState } from "../../../../../sim/50-state";
 import { mailAddress } from "../../../../../sim/60-infra/addresses";
 import { spamSenders } from "../../../../../sim/60-infra/netsvc-mail";
 import { requestDelist } from "../../../../../sim/90-actions/addresses";
-import { suspendCustomer } from "../../../../../sim/90-actions/customers";
+import { suspendService } from "../../../../../sim/90-actions/holds";
 import { setMailRelay } from "../../../../../sim/90-actions/netsvc-mail";
 import { t } from "../../../../../i18n/en";
 import { usePageAct } from "../../pageAct";
@@ -26,7 +26,7 @@ export function Blacklist({ game, clusterId }: { game: GameState; clusterId: str
       {senders.length === 0 ? <p className="cx-empty">{t("netsvc.noSenders")}</p> : (
         <table className="cx-table">
           <thead><tr><th>{t("netsvc.customer")}</th><th>{t("netsvc.spamPerDay")}</th><th /></tr></thead>
-          <tbody>{senders.map((x) => <tr key={x.service.id}><td>{game.customers.find((c) => c.id === x.customerId)?.name}</td><td className="num">{x.thousands}k</td><td><button className="cx-btn danger" onClick={() => act(suspendCustomer, x.customerId, true)}>{t("netsvc.suspend")}</button></td></tr>)}</tbody>
+          <tbody>{senders.map((x) => <tr key={x.service.id}><td>{game.customers.find((c) => c.id === x.customerId)?.name}</td><td className="num">{x.thousands}k</td><td><button className="cx-btn danger" onClick={() => act(suspendService, x.service.id, "abuse")}>{t("netsvc.suspend")}</button></td></tr>)}</tbody>
         </table>
       )}
     </>

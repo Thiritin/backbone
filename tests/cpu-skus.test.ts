@@ -7,7 +7,7 @@ import { partPrice, presetPrice } from "../src/sim/10-catalog/parts";
 import { device, deviceDefaults, type GameState } from "../src/sim/50-state";
 import { installedCores, perCoreOf } from "../src/sim/60-infra/status";
 import { unitPrice } from "../src/sim/90-actions/hardware";
-import { buyCart, buyDevice, withServer, newGame } from "./fixtures";
+import { buyCart, buyDevice, onSaleAt, withServer, newGame } from "./fixtures";
 
 const ok = (r: { ok: boolean; id?: string; error?: string }) => {
   if (!r.ok) throw new Error(r.error);
@@ -128,7 +128,7 @@ describe("maker lineups", () => {
     expect(modelById("g5-gpu-8").server!.gpus).toBe(8);
     expect(MODELS.some((m) => m.id === "g4-gpu-8")).toBe(false);
     expect(modelById("g5-micro").server!.fast).toBe(true);
-    const s = rich(2017);
+    const s = { ...rich(2017), hour: onSaleAt(["g5-micro", "Hewlett-Packet"]) };
     const id = ok(buyDevice(s, "g5-micro", "Hewlett-Packet", 1, "loc1"));
     expect(dev(s, id).components.find((c) => c.kind === "cpu")!.sku).toBe("indel-xenon-gold-6144");
     expect(err(buyDevice(s, "g5-micro", "Dwell", 1, "loc1"))).toBe("error.unknownBrand");

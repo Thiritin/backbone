@@ -8,7 +8,8 @@ import { day, readyIn } from "../hw";
 import { backupLabel, dcOf, exchangeLabel, Facts, feedsLabel, locationPower, PowerMeter, providerOf, RoomTemp, spaceLabel, spaceSize, Zone } from "./ui";
 import { Hourglass } from "lucide-react";
 import { datacenterById, homeLineById } from "../../../sim/20-world/datacenters";
-import { addLocation, leaveWaitlist } from "../../../sim/90-actions/hardware";
+import { leaveWaitlist } from "../../../sim/90-actions/hardware";
+import { orderUrl, providerUrl } from "../../../sim/80-business/browser";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
 
@@ -26,8 +27,8 @@ export function Overview({ game, onOpen }: { game: GameState; onOpen: (id: strin
   );
 }
 
-export function Waitlist({ game, onOpen }: { game: GameState; onOpen: (id: string) => void }) {
-  const act = useStore((s) => s.act);
+export function Waitlist({ game }: { game: GameState }) {
+  const act = useStore((s) => s.act), openApp = useStore((s) => s.openApp);
   return (
     <div className="loc-card loc-wait">
       <div className="loc-card-h"><h3><Hourglass />{t("locations-2.waitlist")}</h3><span className="grow" /><span className="num loc-muted">{game.waitlist.length}</span></div>
@@ -42,7 +43,7 @@ export function Waitlist({ game, onOpen }: { game: GameState; onOpen: (id: strin
             {w.heldUntil !== null
               ? <span className="loc-held">{t("locations-2.heldUntil", { day: day(w.heldUntil) })}</span>
               : <span className="loc-muted">{t("locations-2.waitingSince", { day: day(w.since) })}</span>}
-            {w.heldUntil !== null && <button className="btn primary" onClick={() => { const r = act(addLocation, w.dc, w.space, w.size); if (r.ok && r.id) onOpen(r.id); }}>{t("locations-2.rent")}</button>}
+            {w.heldUntil !== null && <button className="btn primary" onClick={() => openApp("Browser", { kind: "url", id: orderUrl(dc, w.space, w.size) })}>{t("locations-2.rent")}</button>}
             <button className="btn" onClick={() => act(leaveWaitlist, w.id)}>{t("locations-2.leave")}</button>
           </div>
         );
@@ -54,12 +55,14 @@ export function Waitlist({ game, onOpen }: { game: GameState; onOpen: (id: strin
 function LocationCard({ game, loc, onOpen }: { game: GameState; loc: Location; onOpen: () => void }) {
   const dc = dcOf(loc), power = locationPower(game, loc.id), used = loc.positions - freePositions(game, loc.id).length;
   const arriving = game.racks.filter((r) => r.locationId === loc.id && r.arriveAt !== null);
+  const openApp = useStore((s) => s.openApp);
   return (
     <div className={`loc-card loc-site${loc.readyAt > game.hour ? " loc-pending" : ""}`} onClick={onOpen}>
       <div className="loc-card-h">
         <h3><Logo provider={providerOf(loc)} size={18} /><button className="loc-link" onClick={onOpen}>{loc.name}</button><Zone loc={loc} /></h3>
         <span className="grow" />
         {loc.readyAt > game.hour && <span className="pill warn">{t("locations-2.readyIn", { time: readyIn(loc.readyAt, game.hour) })}</span>}
+        {dc && <button className="loc-link" onClick={(e) => { e.stopPropagation(); openApp("Browser", { kind: "url", id: `${providerUrl(dc.provider)}account/contracts` }); }}>{t("locations-1.manage")}</button>}
       </div>
       <Facts rows={[
         [t("locations-2.space"), spaceLabel(loc, game)],

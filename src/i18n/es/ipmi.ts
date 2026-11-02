@@ -9,6 +9,7 @@ export default {
   "ipmi.log.powerOn": () => "Encendido",
   "ipmi.log.shutdown": () => "Apagado ordenado",
   "ipmi.log.pulled": () => "Corriente perdida",
+  "ipmi.log.upsShutdown": () => "Apagado por señal del SAI",
   "ipmi.log.overheat": () => "Apagado por calor",
   "ipmi.log.reset": () => "Reinicio forzado",
   "ipmi.log.cycle": () => "Ciclo de energía",

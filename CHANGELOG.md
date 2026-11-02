@@ -2,10 +2,159 @@
 
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
+## 2026-11-02
+
+- Every cPanic customer account now has its own files, databases, mailboxes and limits on databases, FTP accounts and domains, which its customer pages show.
+- Your own virtual machines now take their operating system's time to boot, shut down and restart, and an open SSH session sees the shutdown broadcast before it is disconnected.
+- Shutting down, restarting or checkpointing a virtual machine now asks for confirmation first, and a checkpointed container keeps its last picture on the console.
+- Customer websites now have their own look: layouts, colour schemes and page blocks differ per customer and get redesigned as the years pass, so the first 30 customers never share a page.
+- The customer page and the defaced-sites list have an Open site button that shows the customer's site in the Browser.
+
+- A server with failed fans now runs its CPU hot under load: from 85 °C it slows down, and every hour above 90 °C wears its parts.
+- You can order cross-connects to carriers and exchanges in a provider's customer portal, and once a year a provider raises its rack prices for new contracts and tells its customers by email.
+- Dragging a browser tab out of its window now opens it in a new browser window, and dragging a tab onto another browser window moves it there.
+- SkyBlink, Boris Network, Digital Reality, CoreSpite, Telex and myLoch now each have a website in their own style, which changes from an early look to a modern one over the years.
+- Busy servers now slow down gradually from 70% CPU instead of all at once at 100%, and only a server that stays badly overloaded for two hours lets its sites time out.
+- A server that runs out of memory no longer freezes with every workload on it: it slows down while it swaps, and past that only its largest VM is killed for an hour.
+- The web hosting panels no longer resize, remove or take the whole host offline and no longer set booking limits; the host's software page now restarts the server, and updates, the release channel and auto updates sit on their own Updates page where the panel supports them.
+- Web hosting panels gain a Services page to restart single services, a Components page to pick the mail, FTP and web server and install paid modules, and a Backup Manager that lists backups and restores single sites, which takes time and needs the backup server online.
+- Servers now draw power and heat up by how busy their CPUs are, and the server management page shows the CPU temperature and fans that speed up with it.
+- Bound, Knut DNS, WireGuarded, vsFTPeed, Postfixit and Backula no longer show a web page in the browser, and Backula's finished jobs and restores of lost machines now run from its command line tool in the terminal.
+- The command line tools of free software no longer list license commands or a license key option.
+- The Terminal editor shows light text on a dark background again instead of white on white.
+- Cancelling an invoice draft in the bookkeeping program now asks before it deletes the draft, and the Up and Down keys move through the invoices, quotes, bank bookings and customers.
+- The Mark as paid dialog now lists the open transfers in a list to pick from, and long names in the bank list no longer push the Accept button out of view.
+- The Terminal now finds a basement server by its name when it sits behind your own router, the same way it finds your VMs.
+- Every training in Research now has a How it works guide you can open before you start it, and each guide lists what the training unlocks and where to find it.
+- Every virtualization console now shows a VM's or container's public IP address next to its local one, and the VMwhere VM list has an IP address column.
+- A busy OpenVeeZee node no longer racks up memory failures from CPU load alone, and when it runs out of memory the OOM killer now stops only the largest container for an hour, shown as "OOM killed".
+- Slow sites now bother business customers most during business hours and more the longer the slowdown lasts, while private customers barely notice.
+- The new Traffic billing training lets you set one standing answer for customers who go over their traffic, and your books then throttle, bill or offer an upgrade every day on their own.
+- When a customer's traffic outgrows their plan, their customer page now lets you throttle the traffic, bill the overage or offer them a bigger plan.
+- Defaced customer sites now appear in the Security app, where you restore them from a backup, offer a paid clean-up billed at your hourly rate, remind the owner to clean up, or suspend the site with a notice that names the hack, and a clean site comes back online by itself.
+- Customers with a defaced site and no backup can buy a clean-up by the hour; the dearer your rate against the market, the more of them say no and some cancel.
+- Stopping a server or freezing a container now frees its memory, and OpenVeeZee containers take only the memory they actually use and are set up straight from an OS template without an install disc.
+- Right-clicking an invoice in the bookkeeping program now offers what its status allows: sending or cancelling a draft, marking it paid against a transfer or without one, sending the next dunning step, suspending, writing off and reopening.
+- The dunning levels overview is now part of the top editions only; every other edition handles reminders from the invoice list.
+- Help desks now list the domain records to add at your registrar for your support address and mail sending, show which of them already resolve, and check them all with a Verify button.
+- Each product listed on the company website now has its own switch for custom requests; with it off, visitors order the shop plans only, and the website says when custom packages are available.
+- The Research app now lists exactly what each training switches on, every entry takes you to where it is used, and an entry that depends on software names that software.
+- Your registrar's login now has a Register page where you order further domains of your own, and every domain has a page where you set its name servers: a domain parked at the registrar shows its parking page in the browser, one on your own name servers reaches your site, and a change takes an hour to spread.
+- Interaction, mainqubes, Tellyhouse, Global Snitch, Docklands Data and Iron Molehill now have their own websites in the style of their companies, with an early look and a modern one that arrives in later years.
+- Data5, NTD, Spree Colo, Arubaba, Next Lair and Green.chz now each have their own website, with one look in the early years and a modern one later.
+- Every hire now gets a mailbox under your company domain, so you can only hire once your domain mail has a free mailbox, and providers bill each mailbox.
+- Mail passwords can now be changed, and a forgotten one is reset with a code that arrives by post after two or three working days.
+- Every colocation provider's site now has a customer portal where you sign in to see your contracts, invoices and remote-hands tickets, book extra power, feed B and power contracts, and cancel a contract with its notice date, and the large providers offer a free month to stay.
+- Colocation provider sites now keep their own layout, including their facility lists and front page banner, after the Shop app has been opened.
+- Custom orders no longer offer to create the customer account before the customer has accepted the quote.
+- Colocation provider sites now keep their own layout after the Shop app has been opened.
+- Support desks now keep the numbers for their reports: first response times, how many tickets met the response time each customer expects, and tickets per agent, kind and month.
+- Every colocation provider now has its own website in the browser, listed on Yahoy, where you compare its data centers and prices, join a waitlist and order space, and the Visit site button in Locations opens that order form with your pick.
+- Support desks can merge duplicate tickets, mark spam, keep internal notes, set priorities, sort tickets into departments with their own agents and routing rules, keep tickets for yourself that staff leave alone, and take requests through a customer portal with a status lookup.
+- SquirrelMeal webmail and Postfixit Admin can be installed beside a Postfixit mail server, which now brings Dovecoat for IMAP and POP, and the webmail answers at webmail on the company domain.
+- Help desks have left the Pear Store: Zendusk and Freshdusk are signed up for on their own websites in the Browser, and OsTickit and FreeScoot are installed into a web space of your panel host.
+- Spam tickets now show in the Support app with their own label.
+- GMix FreeMix, ProMix and TopMix now offer 1, 5 and 10 GB as the real tiers did, and Goggle sells its free edition from August 2006 until December 2012 beside the paid one, with the user limits, storage, names and MX records of each year.
+- A support desk now gives every ticket a number in its own style, and saves with a desk keep all their tickets in it.
+- GMix, Goggle Workspace, Hosted Exchange, Lookout 365 and your own mail server now each carry the storage, IMAP and POP access, attachment limits and spam filtering of their year, and your domain's MX record decides which of them receives your mail.
+- Support desks now gain features in the years their real counterparts did, so OsTickit grows from simple queues to timers, reports and merging over the years, Freshdusk goes on sale in 2011 and FreeScoot leaves reply templates and reports to paid modules.
+- Ticket replies, retention offers and ticket actions are now built so the coming mail client can show them too.
+- Every company now holds a real mailbox on its mail service, with its own password and a welcome message from the provider.
+- Your registrar's login now has a DNS page for your company domain, where you add, edit and delete records such as MX and TXT, and each change reaches the world once the TTL of the record it replaces has run out.
+- Every abuse notice links to the reported address, and the Browser shows whether the file, mailer or page is really there before you decide.
+- Hosting panels, hypervisors and backup servers now take realistic CPU, RAM and disk, and panels and hypervisors need more RAM and disk each year.
+- Your own mail server now needs disk for every company mailbox it holds, while the webmail and mail admin tools take only a sliver of a server.
+
 ## 2026-11-01
 
 - Books product forms now show proper names for the semiannual and triennial billing periods.
+- A transfer to an account that does not exist now comes back within a few days, and a payment without an invoice number goes to the sender's oldest open invoice, at your suppliers and, when matching by reference is on, in your books.
+- The bank in your books lists money in and out with a suggested invoice to accept, and supplier invoices count as paid there once a payment is assigned to them, which you can undo and assign again.
+- Play immersive in the main menu runs the game in full screen with keyboard shortcuts such as Cmd+Tab and Alt+Tab kept inside the game, where they switch between windows, and Log out in the top left menu leaves it.
+- You can terminate a customer contract with notice or immediately, with a reason such as non-payment, abuse, excessive usage or capacity limits, and the customer receives an email with the end date.
+- Suspending now applies to single services, so the customer-wide suspend in the books and the customer page is gone.
+- A dunning letter now waits a week after a late payment reminder, and the reminder buttons in German show the step names capitalized.
+- Your registrar partner now has a reseller login that lists every domain with its owner, expiry, renewal and status, where you can cancel a domain or generate the auth code a leaving customer asks for in a transfer ticket.
+- The registrar renews every domain at its expiry and keeps billing you even after the customer left, and moving to a new partner books a year of each domain on arrival.
+- Customers without an active contract move to an archive at the bottom of the contracts list in your books, so the list shows only the customers you still serve.
+- The semiannual billing cycle now shows a proper name in every language.
+- Agencies now book reseller blocks on your DirectAdmen and cPanic hosts and pay each month for the GB their clients use, at the price per GB you set in your rates.
+- HOSTtoast compares reseller blocks by price per GB, so you can see your rate next to the rivals that sell them.
+- Bookkeeping programs are no longer in the Pear Store: buy them on their maker's website, where desktop programs download over your internet line and install from the same page.
+- Web hosting, domains, dedicated servers and SSL certificates now change price over the years like the real market, with rises from cPanic, Pleskit, Windoors and the .com registry announced in the News months before they apply.
+- Free certificates from 2016 move private customers away from paid SSL, while businesses keep buying DV for a few years and offices, shops and enterprises keep paying for OV and EV certificates.
+- Every bookkeeping vendor's website now has its own look for its era: plain feature lists on the early pages and pricing tables with the editions side by side on the later ones.
+- The Yahoy! start page now searches the web, shows sponsored listings between the results, leads with Wikipedio as documentation and lists shop systems and web hosting panels.
+- Your company's own sites and consoles sit in a bookmark folder at the start of the bookmarks bar, grouped by category once there are more than twenty.
+- Customers only rarely transfer a few cents too little or a rounded-down amount.
+- ClientExit has its own look in every era, from a 2005 table admin to the refreshed 7.0 console, and sells its keys, renewals and upgrades at clientexit.com.
+- Ubersmyth has its own website at ubersmyth.com with pricing, releases, add-ons and your keys, and its admin, store and client portal change their look with each major version, from the 2006 tabbed ironworks to the 2024 sectioned workspace.
+- WHMCache has its own website at whmcache.com with pricing, releases and My account, and its admin, store and client area change their look with each major version.
+- OrderBocks has its own look in its admin, storefront and client area, changing with versions 7, 8 and 9, and its own site at orderbocks.com with pricing, releases, install steps and a free upgrade from My account.
+- Blessta has its own website with pricing, releases, extensions and your keys, and its admin, store and client area change their look with each major version from the 2008 tabs to the dark 2026 dashboard.
+- BoxBillin' has its own look: a glossy charcoal admin and store for versions 1 and 2, a flat slate one for 3 and 4, a light FOSSBillin' one after the rename, and a free download site at boxbillin.com that shows your installation and upgrades it.
+- The Shop section of the Marketing app is gone: you install a shop system from the software page of a panel host, and you manage its modules and payment methods in its admin.
+- Shop vendor websites can now have more than one page, and each shop system can style its own sign-in page.
+- Your shop system now runs in a web space on one of your panel hosts, with a licence key, a trial, an updates window and paid upgrades, and it takes no orders while its host is down or its licence has run out.
+- The Customers app is gone: customer records now live in the admin of your shop system, and before you run a shop, Books keeps them as contracts where you can credit, suspend and reprice them.
+- Marketing, Security and Research are in the dock from the day you register the company, so no Pear email or news line announces them anymore.
+- Shop systems now follow their real licence history: keys with a year of updates, leases sized by your active clients or managed servers, and options that come and go over the years.
+- Every shop system now has its real release history, from its first version to the one sold today.
+- Craigslost now lives at craigslost.org and looks like a classifieds board: a plain list of postings with date, photo and price, filters on the side and a page per posting.
+- A support ticket from a customer suspended over an unpaid invoice now offers the replies that fit it: resending the invoice or asking for details.
+- A suspended customer site that was defaced now shows as offline and stops sending spam from your mail address.
+- New hardware now comes out over the whole year, each model in its own month, instead of every release landing in January.
+- Suspending an account now stops abuse notices about its site, and an open notice counts as taken down once the account is suspended.
+- Customers write half as many support tickets, a right answer within two hours of a ticket opening makes them a little happier, and customers whose domain you registered no longer ask how to point it to their site.
+- A Sponsor-Bored sponsor who takes your banner down can now be blocked or cancelled from the Marketing app, and when a blocked sponsor writes in you can say tough luck or have them put the banner back up.
+- Free shop systems such as OrderBocks and free shop modules can now be started while your account is in the red.
+- The Website card in the Marketing app now shows in your language, and its buttons sit at the bottom of the card.
+- Customers on a game title past its prime no longer get unhappy; their servers empty out and shrink, and some ask to move to a newer game, staying if your panel runs it and leaving if it does not.
+- The delete user button in DirectAdmen is readable again.
+- TCAdmen and Pterodaktyl list every game on their Packages screen, where you can import community configs or pay to write your own, and see how many requests went to other hosts for games you do not offer.
+- Licence keys bought on a vendor website are paid by credit card or by bank transfer, and keys paid by transfer arrive once the money reaches the vendor.
+- From 2013 DOHLE replaces DohleFormular with the Mein DOHLE portal, where you log in with your certificate file and send the same returns.
+- Product prices in the books now show the market price for each term and the setup fee, so you can see what customers expect to pay.
+- Bookkeeping editions with the tax view connect to DOHLE with your certificate file, send the advance VAT returns in the monthly run and submit the yearly return once every invoice and transfer of the year is in the books.
+- Income tax is no longer taken every April: you file a yearly return through DohleFormular, the assessment follows by post, and a late return costs a fee or brings an estimate that is always too high.
+- You can register on DOHLE for a certificate file, with the activation ID by email and the code by post, and download DohleFormular to send your advance VAT returns.
+- UPS units, PDUs and console switches can now be plugged in and unplugged at the back of the rack, and a UPS only carries the location through an outage while it is plugged in.
+- New UPS models with a network card have their own web interface and shut down servers cleanly in a long outage when the servers run the nuts-client agent or are VMwhere or HyperVee nodes.
+- Bookkeeping programs no longer send reminders, dunning notices and final notices by themselves; they go out when you or your staff send them, or after the Automation research.
+- Private customers and gamers now write the invoice number on four out of five transfers.
+- The DirectAdmen 1.30 release notes list the Enhanced skin once.
+- Consoles, the command line and the monitoring list show the installed software version instead of the year, and the DirectAdmen 1.24 release notes no longer mention the Enhanced skin.
+- Leads now write in about products you do not sell yet, and a switch on the website settings stops those requests.
+- HyperVee lists the HyperVee release of each guest's integration services instead of a year, the Proxmocks header shows the installed version, and the vSphear DRS and VMwhere EVC labels use the right names.
+- A newly installed cPanic, Pleskit or DirectAdmen asks for its license on a setup page at first sign-in, where you can type a key, pick one you already own or continue on the trial.
+- When a panel's trial or license runs out, its admin pages show only the license page until a key is entered, and its customers write in that their control panel login shows a license error while their sites stay online.
+- Quote and invoice previews in Books keep their margins and text size in proportion to the page at any window size.
+- An upgrade request now shows each resource going from old to new with the price field in the same list, and asks for a server only when the current one has no room.
+- The Bank tab in Books lists your booked transfers, and Undo takes back a payment you matched to the wrong invoice so you can book it again.
+- The savings from your private account no longer wait among the incoming transfers to be matched.
+- The Terminal button on a server now connects by its address, and Tab in the terminal completes server addresses as well as names.
+- TCAdmen 3, the Sysko Sekure Client, the newer MinnIO object browser, every Veeham console generation and the early OpenStash dashboards each get their own look, matching the version you run.
+- VMwhere, Proxmocks and HyperVee consoles now look like the installed version: vSphear moves from the fat client to the Flecks web client in 5.0 and the Clearity client in 6.5, Proxmocks from its first web interface to the ExtJS manager in 2.0 and the flat one in 4.0, which turns dark with your desktop, and HyperVee from the glossy manager to the flat one in 2012 and Windoors Admin Center in 2019.
+- Pleskit now has its own look for every generation from Reload to Obsidian, DirectAdmen draws the classic, Enhanced and Evolution skins, and FreePanel switches from the Gray theme to Authentic, each following the version installed.
+- The software page of every console shows the installed version instead of a year.
+- Removing an offsite backup server now discards its copies, a Proxmocks VM can no longer be moved into a cluster without quorum, and the Backula status lists only the jobs that write to that server with their real result.
+- Books has a Publish to website button: your website lists the published products of each line with their prices, and email orders and leads decide on those prices until you publish again.
+- An order email for one of your products now names that product.
+- Bookkeeping programs now come in editions with their own prices, features, seats and look, GnuCache joins as a free program, and each bookkeeper needs a seat to work.
+- Books now holds the overview, statistics, tax and account statement, Finance is gone, loans live on your bank's website, and low cash brings an email about your bank's overdraft.
+- Hardware insurance is gone, so repairs cost what they cost.
+- A charged-back renewal no longer extends a prepaid term twice, upgrades on a prepaid term are billed for the rest of the term, and customers leaving after a written-off term get no refund.
+- The Pear Store sells KeePassive, a password manager that offers to save your router and bank logins after you type them once and fills them in on every later visit.
+- Pulling the power cords, a power outage or overheating now aborts a running OS install, and a server can be shut down from the installer.
+- The RAID level can no longer be changed while an OS installs.
+- The Pleskit website now says its license is a monthly fee per server that grows with the domains it hosts.
+- The OpenVeeZee, OpenStash, OwnClod, vsFTPeed and Postfixit websites and the plain project pages now look like the web of their time, and download buttons on 2005 pages are grey and bevelled.
+- Vendor shop carts, product pages and order emails now name the major version a one-time licence key covers.
+- OpenVeeZee lists its first release on its Versions page from the start of the game.
+- The Shop scrolls again, so every server and part in the catalog is reachable, and the add to cart button no longer spills out of narrow cards.
+- The BIOS setup can save changes without leaving, and its Boot Override starts the server from the hard disk or the attached USB stick right away.
 - A site you fixed after a broken WordPrass Toolkit update no longer keeps its old release around for a rollback.
+- The cPanic manager now has three looks that follow the installed version: x3, the flat Paper Lamp from 11.38 and the dark Jupitar sidebar from 98.
 - The Debiant website now looks like a plain 2005 project page until its 2015 redesign.
 - Proxmocks clusters now have HA groups that decide where a failed guest restarts, and Horizont has projects that group your instances.
 - Email orders and leads now pick the cheapest of your Books products that fits their needs and budget, accept any quote up to that product's price, and go elsewhere when none of your products fits.
@@ -119,6 +268,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Switches now come managed or unmanaged, and managed switches have VLANs, a saved configuration and their own web page at the address the router gives them.
 - HOSTtoast at hosttoast.de lists every host by tier and reviews: sign up for free, buy a higher tier for more trust and awareness, keep it by answering its monthly test ticket in time and keeping your uptime, and win host of the year or the uptime seal each January.
 - Browser tabs can be dragged left or right to reorder them.
+- The Marketing channels page lists, per product, the orders won and the email leads lost for lack of a fitting package this month and last month.
 
 ## 2026-10-31
 

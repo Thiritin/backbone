@@ -59,7 +59,7 @@ describe("service holds", () => {
   it("terminates an account and frees its booking", () => {
     const { s, a, b, svc } = setup();
     suspendService(s, a, "manual");
-    expect(terminateService(s, a).ok).toBe(true);
+    expect(terminateService(s, a, "now", "abuse").ok).toBe(true);
     expect(svc(a).endedAt).toBe(s.hour);
     expect(workloadsOf(s, a)).toHaveLength(0);
     expect(workloadsOf(s, b)).toHaveLength(1);

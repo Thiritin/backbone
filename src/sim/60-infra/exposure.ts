@@ -14,7 +14,7 @@ export const FIREWALL_RISK = 0.5;
 const PORT_MACRO: Record<number, Macro> = { 80: "web", 443: "web", 22: "ssh", 25: "mail", 465: "mail", 587: "mail", 3306: "db", 5432: "db", 3389: "rdp" };
 
 // The ports the host's software serves: a panel its web sites, a mail host its mail.
-export const needs = (c: Cluster): Macro[] => (c.kind === "panel" ? ["web"] : c.kind === "mail" ? ["mail"] : []);
+export const needs = (c: Cluster): Macro[] => (c.kind === "panel" || c.kind === "mailweb" ? ["web"] : c.kind === "mail" ? ["mail"] : []);
 // Everything it answers on: what it serves, the ports its software opens and SSH.
 export function listens(c: Cluster): Macro[] {
   const id = c.panel ?? c.platform, ports = id ? softwareById(id).ports : [];

@@ -1,0 +1,45 @@
+/* Saga: a corporate business-software group's site, green on white. */
+.sg { min-height: 100%; background: #dde3df; color: #333; font: 11px/1.5 Verdana, Arial, sans-serif; padding: 10px 0 24px; }
+.sg a { color: #00704a; }
+.sg-page { background: #fff; margin: 0 auto; }
+.sg-head { display: flex; align-items: flex-end; gap: 14px; }
+.sg-logo { color: #00704a; font: bold 30px/1 Arial, Helvetica, sans-serif; letter-spacing: -1px; }
+.sg-tag { color: #666; }
+.sg-nav a { text-decoration: none; }
+.sg-main h1 { color: #00704a; margin: 0 0 10px; }
+.sg-main h2 { font-size: 12px; margin: 0 0 2px; }
+.sg-main p { margin: 0 0 6px; }
+.sg-foot { color: #888; font-size: 10px; }
+
+/* 2005 to 2009: a fixed 760px page with a solid green nav bar and plain bullet lists. */
+.sg-classic .sg-page { width: 760px; max-width: 100%; border: 1px solid #b9c4bd; }
+.sg-classic .sg-head { padding: 14px 16px 10px; }
+.sg-classic .sg-nav { background: #00704a; border-bottom: 3px solid #8dc63f; padding: 0 16px; }
+.sg-classic .sg-nav a { display: inline-block; color: #fff; font-weight: bold; padding: 5px 12px 5px 0; }
+.sg-classic .sg-nav a[aria-current="page"] { text-decoration: underline; }
+.sg-classic .sg-main { padding: 14px 16px 6px; }
+.sg-classic .sg-main h1 { font: bold 16px Arial, Helvetica, sans-serif; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
+.sg-classic .bv-edition { margin: 0 0 16px; }
+.sg-classic .bv-edition ul { margin: 2px 0 6px; padding-left: 22px; }
+.sg-classic .bv-buy { background: #00704a; color: #fff; border: 1px outset #4a9b78; border-radius: 0; padding: 2px 12px; font: bold 11px Verdana, Arial, sans-serif; }
+.sg-classic .sg-foot { border-top: 1px solid #ccc; margin: 0 16px; padding: 8px 0 12px; }
+
+/* From 2010: a wide flat page, white header, green band nav and the editions compared side by side. */
+.sg-modern { background: #f2f4f3; font: 13px/1.5 Arial, Helvetica, sans-serif; padding-top: 0; }
+.sg-modern .sg-page { max-width: 940px; }
+.sg-modern .sg-head { padding: 22px 24px 14px; }
+.sg-modern .sg-logo { font-size: 36px; }
+.sg-modern .sg-nav { background: linear-gradient(#0a8a5c, #00704a); padding: 0 24px; }
+.sg-modern .sg-nav a { display: inline-block; color: #fff; padding: 9px 16px 9px 0; }
+.sg-modern .sg-nav a[aria-current="page"] { font-weight: bold; }
+.sg-modern .sg-main { padding: 20px 24px 10px; }
+.sg-modern .sg-main h1 { font-size: 24px; font-weight: normal; }
+.sg-modern .bv-table { border-collapse: collapse; width: 100%; border: 1px solid #d5ddd8; }
+.sg-modern .bv-table th, .sg-modern .bv-table td { padding: 8px 12px; border-bottom: 1px solid #e3e8e5; text-align: center; }
+.sg-modern .bv-table thead th { background: #00704a; color: #fff; font-size: 14px; }
+.sg-modern .bv-table th[scope="row"] { text-align: left; font-weight: normal; }
+.sg-modern .bv-table tbody tr:nth-child(even) { background: #f6f8f7; }
+.sg-modern .bv-table .bv-price td { font-size: 18px; font-weight: bold; color: #00704a; }
+.sg-modern .bv-table .bv-price small { display: block; font-size: 11px; font-weight: normal; color: #666; }
+.sg-modern .bv-buy { background: #8dc63f; color: #fff; border: 0; border-radius: 3px; padding: 6px 18px; font: bold 13px Arial, Helvetica, sans-serif; }
+.sg-modern .sg-foot { background: #333; color: #bbb; padding: 12px 24px; }

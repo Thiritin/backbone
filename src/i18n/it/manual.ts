@@ -16,6 +16,7 @@ const more = (p: Params) => (p.product === "webHosting"
 const and = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(", ")} e ${xs.at(-1)}` : xs[0] ?? "più spazio");
 
 export default {
+  "order.msg.item": (p) => `Vorrei il pacchetto ${p.item} del tuo sito.`,
   "order.msg.webHosting.0": (p) => `Salve, mi serve un hosting web per ${p.domain}: circa ${web(p)}. ${domain(p)}`,
   "order.msg.webHosting.1": (p) => `Un amico ti ha consigliato. Il mio sito ${p.domain} ha bisogno di ${web(p)}. ${domain(p)} Quanto costerebbe?`,
   "order.msg.vps.0": (p) => `Vorrei un VPS a ${p.city} con ${box(p)}. Accesso root, per favore. So quello che faccio.`,
@@ -40,6 +41,14 @@ export default {
   "activity.renewDomain": (p) => `${p.domain} rinnovato per un anno`,
   "activity.changePackage": (p) => `Passato al pacchetto ${p.pkg}`,
   "activity.upgrade": (p) => `Servizio potenziato a ${euroCents(Number(p.price))} al mese`,
+  "activity.throttled": () => "Traffico limitato al piano",
+  "activity.overageBilled": (p) => `Traffico in eccesso fatturato per ${euroCents(Number(p.price))}`,
+  "invoice.line.trafficOverage": (p) => `${p.label}, traffico oltre il piano: ${gb(p.gb)}`,
+  "ticket.upgrade.traffic.subject": (p) => `Traffico di ${p.hostname || p.service || "il nostro sito"}`,
+  "ticket.upgrade.traffic.text": () => "La vostra mail dice che usiamo più traffico di quanto includa il nostro piano. Quanto costerebbe un piano più grande?",
+  "error.noOveruse": () => "Questo servizio rientra nel suo traffico.",
+  "error.overuseHandled": () => "Il traffico di questo servizio è già stato gestito questo mese.",
+  "error.notExpandable": () => "Questo servizio non ha un piano più grande.",
   "event.orderAccepted.title": () => "Preventivo accettato",
   "event.orderAccepted.text": (p) => `${p.name} ha accettato il preventivo.`,
   "event.orderPaid.title": () => "Ordine pagato",

@@ -80,6 +80,8 @@ export const BANKS: Bank[] = [
 // Payments to an account the company left still arrive for three months.
 export const PREVIOUS_HOURS = 3 * 730;
 export const TRANSFER_HOURS: Record<TransferSpeed, number> = { nextDay: 24, sameDay: 4, instant: 0 };
+// The receiving bank returns a transfer to an account that does not exist within three banking days of arrival, without a fee.
+export const RETURN_DAYS: [number, number] = [1, 3];
 // The bank saves from before banks keep their account at.
 export const DEFAULT_BANK: BankId = "sparklasse";
 

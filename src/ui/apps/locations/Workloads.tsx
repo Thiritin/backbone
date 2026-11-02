@@ -1,4 +1,5 @@
 import { Cpu, Globe, HardDrive, MemoryStick } from "lucide-react";
+import { openCustomer } from "../customers/open";
 import { useState, type ReactNode } from "react";
 import type { Resources } from "../../../sim/10-catalog/products";
 import type { GameState } from "../../../sim/50-state";
@@ -7,7 +8,7 @@ import { clusterOf, controlPlaneUse, workloadsOn, type Workload } from "../../..
 import { pegged, workloadUse } from "../../../sim/60-infra/usage";
 import { siteHost } from "../../../sim/80-business/website";
 import { migrateWorkload, migrationTargets, startWorkload, stopWorkload } from "../../../sim/90-actions/vms";
-import { announceEntries, migrateEntries, offerEntries, rescueEntries } from "../workload-menu";
+import { announceEntries, askPower, migrateEntries, offerEntries, rescueEntries } from "../workload-menu";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
@@ -52,7 +53,7 @@ export function NodeWorkloads({ game, deviceId }: { game: GameState; deviceId: s
           {SORTS.map(([k, label]) => <button key={k} aria-pressed={sort === k} onClick={() => setSort(k)}>{label}</button>)}
         </div>
       </div>
-      {cpId && <ControlPlaneRow name={softwareById(cpId).name} u={controlPlaneUse(c!)} web={consoleEntry(game, c!.id)} />}
+      {cpId && <ControlPlaneRow name={softwareById(cpId).name} u={controlPlaneUse(game, c!)} web={consoleEntry(game, c!.id)} />}
       {loads.map(({ w, u }) => <WorkloadRow key={w.id} game={game} w={w} u={u} />)}
     </>
   );
@@ -107,7 +108,7 @@ function WorkloadRow({ game, w, u }: { game: GameState; w: Workload; u: Resource
 
 // A workload's actions: move it to a node with room or recover it by hand, stop or start it, or open it elsewhere.
 export function workloadMenu(game: GameState, w: Workload, start: (game: GameState, t: HandTask) => void): MenuEntry[] {
-  const { act, openApp } = useStore.getState();
+  const { act } = useStore.getState();
   const web = game.clusters.find((c) => c.id === w.clusterId)?.kind === "panel";
   const targets = web ? [] : migrationTargets(game, w.id), rescue = rescueEntries(game, w, start);
   const customer = game.services.find((v) => v.id === w.serviceId)?.customerId;
@@ -115,10 +116,10 @@ export function workloadMenu(game: GameState, w: Workload, start: (game: GameSta
     ...rescue,
     ...(web ? migrateEntries(game, w) : rescue.length ? [] : [{ label: t("locations-2.migrateTo"), disabled: !targets.length, items: targets.map((x) => ({ label: x.down ? t("locations-2.targetOffline", { name: x.name, h: x.down }) : x.name, run: () => act(migrateWorkload, w.id, x.to) })) }]),
     ...offerEntries(game, w),
-    w.stopped ? { label: t("locations-2.start"), run: () => act(startWorkload, w.id) } : { label: t("locations-2.stop"), run: () => act(stopWorkload, w.id) },
+    w.stopped ? { label: t("locations-2.start"), run: () => act(startWorkload, w.id) } : { label: t("locations-2.stop"), run: () => askPower("stop", vmLabel(game, w).name, t("locations-2.stop"), () => act(stopWorkload, w.id)) },
     null,
     consoleEntry(game, w.clusterId),
-    !!customer && { label: t("locations-2.openCustomer"), run: () => openApp("Customers", { kind: "customer", id: customer }) },
+    !!customer && { label: t("locations-2.openCustomer"), run: () => openCustomer(customer) },
   ];
 }
 

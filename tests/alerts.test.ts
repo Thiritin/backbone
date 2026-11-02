@@ -4,7 +4,7 @@ import { ADVISORY_KEYS } from "../src/sim/60-infra/security";
 import { t } from "../src/i18n/en";
 
 const APP: Record<string, string> = {
-  "event.cashNegative": "Finance", "event.loanMissed": "Finance", "event.loanCalled": "Finance",
+  "event.cashNegative": "Books", "event.loanMissed": "Books", "event.loanCalled": "Books",
   "event.vuln.announced": "Security", "event.vuln.poc": "Security", "event.vuln.warning": "Security", "event.vuln.patch": "Security", "event.vuln.hacked": "Security",
   "event.dataLoss": "Locations", "event.dataCorrupted": "Locations", "event.seized": "Support", "event.ddos": "Locations", "event.gridDark": "Locations", "event.feedDark": "Locations", "event.feedCascade": "Locations", "event.overheated": "Locations", "event.vulnCritical": "Security",
   "event.breach": "Support",

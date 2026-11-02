@@ -9,7 +9,6 @@ const key = (label: string) => `core.notify.${label.replace(/[^A-Za-z]+/g, " ").
 const type = (label: string, ...names: string[]): NotifyType => ({ id: label.toLowerCase().replace(/[^a-z]+/g, "-"), label: t(key(label)), match: is(...names) });
 
 const GROUPS: Record<string, NotifyType[]> = {
-  Finance: [type("Bills and tax", "bills", "monthStart", "tax", "taxLoss", "networkBills"), type("Cash and loans", "cashNegative", "bankrupt", "loanMissed", "loanCalled")],
   Support: [
     type("Tickets", "ticket", "tickets", "stepFailed", "offerDeclined"),
     type("Migration offers", "moveAccepted", "moveDeclined", "moveWindow", "moveDone", "moveMissed"),
@@ -25,7 +24,7 @@ const GROUPS: Record<string, NotifyType[]> = {
   ],
   Locations: [
     type("Planned maintenance", "maintenanceStart", "maintenanceEnd"),
-    type("Hardware failures", "componentFailed", "dataLoss", "dataCorrupted", "recovered", "serverHung", "serverStuck", "breakerTripped", "feedTripped", "bmcHung", "nodeFrozen", "nodeThawed"),
+    type("Hardware failures", "componentFailed", "dataLoss", "dataCorrupted", "recovered", "serverHung", "serverStuck", "breakerTripped", "feedTripped", "bmcHung"),
     type("Deliveries and moves", "rackArrived", "stockArrived", "drained", "spaceHeld", "holdExpired", "seizedBack", "contractEnded", "contractRolled"),
     type("Internet line", "lineReady", "lineFull"),
     type("Burn-in and refunds", "burninQuick", "burninFull", "burninAborted", "usedRefund"),
@@ -44,11 +43,10 @@ const GROUPS: Record<string, NotifyType[]> = {
     type("Training", "trained", "trainerDone"),
     type("On call and tech", "onCallAbuse", "onCallBlackhole", "phpUpgraded", "techFailed", "techReplaced", "techInstalled", "techRemoved", "techUpdated", "botIncident*"),
   ],
-  Customers: [type("Orders and sign-ups", "orderPlaced", "certificateSold", "friendsJoined")],
-  Books: [type("Payments and dunning", "collected", "invoices", "suspended", "suspendedLeft", "chargeback", "chargebackWarning", "chargebackFees"), type("Domains", "domainExpired", "domainExpiring")],
+  Books: [type("Orders and sign-ups", "orderPlaced", "certificateSold", "certificatesFree", "friendsJoined"), type("Bills and tax", "bills", "monthStart", "tax", "taxLoss", "networkBills"), type("Cash and loans", "cashNegative", "bankrupt", "loanMissed", "loanCalled"), type("Payments and dunning", "collected", "invoices", "suspended", "suspendedLeft", "chargeback", "chargebackWarning", "chargebackFees"), type("Domains", "domainExpired", "domainExpiring")],
   Research: [type("Unlocks", "trainingDone")],
   Shop: [type("Used market", "used*")],
-  News: [type("Hardware", "news.generation", "news.endOfSale", "news.gpu", "news.models", "news.shape", "news.vendor"), type("Software", "news.software", "news.swVersion", "news.autoUpdate", "news.feature", "news.desk", "news.training", "news.release", "news.app"), type("Internet", "news.ipv6*", "news.ripe*", "news.homeLines", "news.ports"), type("Market", "news.design", "news.line", "news.mail", "news.gpuDemand", "news.used*", "news.freeSsl", "news.rival*", "news.toast*")],
+  News: [type("Hardware", "news.generation", "news.endOfSale", "news.gpu", "news.models", "news.shape", "news.vendor"), type("Software", "news.software", "news.swVersion", "news.autoUpdate", "news.feature", "news.desk", "news.training", "news.release", "news.licence*"), type("Internet", "news.ipv6*", "news.ripe*", "news.homeLines", "news.ports", "news.registryPrice"), type("Market", "news.design", "news.line", "news.mail", "news.gpuDemand", "news.used*", "news.freeSsl", "news.marketPrice", "news.rival*", "news.toast*")],
 };
 
 const OTHER: NotifyType = { id: "other", label: t("core.notify.other"), match: () => true };

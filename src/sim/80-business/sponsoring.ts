@@ -94,6 +94,7 @@ function running(s: GameState, events: SimEvent[]): void {
     const alive = s.services.some((v) => sp.serviceIds.includes(v.id) && v.endedAt === null);
     if (s.hour < sp.endsAt && alive) continue;
     s.services = s.services.map((v) => (sp.serviceIds.includes(v.id) && v.endedAt === null ? { ...v, endedAt: s.hour } : v));
+    s.heldServices = Object.fromEntries(Object.entries(s.heldServices).filter(([id]) => !sp.serviceIds.includes(id)));
     // A half-price customer leaves with the term.
     s.customers = s.customers.map((c) => (c.id === sp.customerId && c.churnedAt === null ? { ...c, churnedAt: s.hour } : c));
     s.tickets = s.tickets.map((t) => (t.customerId === sp.customerId && !isFinal(t) ? { ...t, status: "closed", updatedAt: s.hour, unread: false, work: null } : t));

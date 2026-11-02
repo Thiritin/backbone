@@ -260,6 +260,9 @@ describe("standing orders", () => {
     expect(s.bank!.standingOrders).toEqual([expect.objectContaining({ day: 5, amount: 100 })]);
     run(s, hourOf(new Date(Date.UTC(2005, 1, 5, 1))) - s.hour);
     expect(s.ledger.filter((e) => e.key === "ledger.standingOrder").map((e) => [new Date(Date.UTC(2005, 0, 1) + e.hour * 3600e3).getUTCDate(), e.amount])).toEqual([[5, -100], [5, -100]]);
+    // Hans Wurst's account does not exist, so each order comes back a few days later.
+    run(s, 7 * 24);
+    expect(s.ledger.filter((e) => e.key === "ledger.transferReturned")).toHaveLength(2);
     s.cash = 50;
     run(s, hourOf(new Date(Date.UTC(2005, 2, 5, 1))) - s.hour);
     expect(s.tickets.some((t) => t.topic === "bankOrderFailed")).toBe(true);
@@ -346,7 +349,7 @@ describe("mandates and HBCI", () => {
     const s = banked();
     run(s, FEB - s.hour);
     expect(payAllDue(s)).toEqual({ ok: false, error: "error.noHbci" });
-    s.modules = ["hbci"];
+    s.books = { vendor: "lexwear", installedAt: s.hour, edition: "financial-office", seats: 0, download: null };
     const due = s.payables.filter((p) => p.paidAt === null).length;
     expect(due).toBeGreaterThan(1);
     expect(payAllDue(s).ok).toBe(true);

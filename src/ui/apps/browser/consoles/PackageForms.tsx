@@ -11,6 +11,8 @@ import { belowFloor, covers, defaultSpecFor, packageNamed, packageProducts, pack
 import { provisionOrder } from "../../../../sim/90-actions/orders";
 import { addPackage, changePackage, copyPackages, deletePackage, editPackage } from "../../../../sim/90-actions/packages";
 import { usePageAct } from "../pageAct";
+import { IMPORT_LAG } from "../../../../sim/10-catalog/games";
+import { TitleCatalogue } from "./GamePanel";
 import { noAutofill } from "../../../no-autofill";
 
 const num = (n: number) => `${+n.toFixed(2)}`;
@@ -96,6 +98,7 @@ export function PackagesScreen({ game, c }: { game: GameState; c: Cluster }) {
   const [editing, setEditing] = useState<PackageDef | null>(null);
   return (
     <>
+      {c.panel && c.panel in IMPORT_LAG && <TitleCatalogue game={game} panel={c.panel} />}
       <PackageTable game={game} c={c} onEdit={setEditing} />
       <h2>{editing ? t("pkg.editPackage") : t("pkg.addPackage")}</h2>
       <PackageFields key={editing?.name ?? ""} game={game} c={c} editing={editing ?? undefined} done={() => setEditing(null)} />

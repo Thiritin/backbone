@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import { hourOfMonth } from "../src/sim/00-core/time";
 import { UI_LOOKS, versionsOf } from "../src/sim/10-catalog/software-versions";
 import { lookOf } from "../src/sim/60-infra/licence";
-import { eraAt, erasFrom } from "../src/ui/apps/browser/consoles/PanelBase";
+import { eraAt, looks } from "../src/ui/apps/browser/consoles/PanelBase";
 import { BASEMENT_SERVER, newGame, panelServer, skipTo, withServer } from "./fixtures";
 
-const CPANIC = erasFrom(2005, 2014);
+const CPANIC = looks({ x3: 2005, paperLamp: 2014, jupitar: 2021 });
 const cpanicHost = (year: number) => {
   const s = withServer(newGame(1));
   skipTo(s, year);
@@ -22,26 +22,43 @@ describe("console look by installed version", () => {
     }
   });
 
+  it("picks each cPanic generation's look from its first version", () => {
+    const { s, c } = cpanicHost(2006);
+    const sw = s.devices.find((d) => d.id === BASEMENT_SERVER)!.software.find((x) => x.id === "cpanic")!;
+    for (const [version, look] of [["10", "x3"], ["11.36", "x3"], ["11.38", "paperLamp"], ["11.92", "paperLamp"], ["98", "jupitar"], ["138", "jupitar"]]) {
+      sw.version = version;
+      expect(lookOf(s, BASEMENT_SERVER, "cpanic"), version).toBe(look);
+      expect(eraAt(CPANIC, { game: s, c }), version).toBe(look);
+    }
+  });
+
+  it("falls back to the year for a look the console does not draw", () => {
+    const { s, c } = cpanicHost(2006);
+    expect(eraAt(looks({ early: 2005, late: 2014 }), { game: s, c })).toBe("early");
+  });
+
   it("keeps the old look for an old version in a late year", () => {
     const { s, c } = cpanicHost(2006);
     expect(s.devices.find((d) => d.id === BASEMENT_SERVER)!.software.find((x) => x.id === "cpanic")!.version).toBe("10");
     s.hour = hourOfMonth("2020-01");
-    expect(lookOf(s, BASEMENT_SERVER, "cpanic")).toBe("early");
-    expect(eraAt(CPANIC, { game: s, c })).toBe("early");
+    expect(lookOf(s, BASEMENT_SERVER, "cpanic")).toBe("x3");
+    expect(eraAt(CPANIC, { game: s, c })).toBe("x3");
   });
 
   it("shows the late look for a version from its generation", () => {
     const { s, c } = cpanicHost(2016);
-    expect(lookOf(s, BASEMENT_SERVER, "cpanic")).toBe("late");
-    expect(eraAt(CPANIC, { game: s, c })).toBe("late");
+    expect(lookOf(s, BASEMENT_SERVER, "cpanic")).toBe("paperLamp");
+    expect(eraAt(CPANIC, { game: s, c })).toBe("paperLamp");
   });
 
   it("falls back to the game year when the version is unknown", () => {
     const { s, c } = cpanicHost(2006);
     s.devices.find((d) => d.id === BASEMENT_SERVER)!.software.find((x) => x.id === "cpanic")!.version = "unknown";
     expect(lookOf(s, BASEMENT_SERVER, "cpanic")).toBeNull();
-    expect(eraAt(CPANIC, { game: s, c })).toBe("early");
+    expect(eraAt(CPANIC, { game: s, c })).toBe("x3");
     s.hour = hourOfMonth("2020-01");
-    expect(eraAt(CPANIC, { game: s, c })).toBe("late");
+    expect(eraAt(CPANIC, { game: s, c })).toBe("paperLamp");
+    s.hour = hourOfMonth("2022-01");
+    expect(eraAt(CPANIC, { game: s, c })).toBe("jupitar");
   });
 });

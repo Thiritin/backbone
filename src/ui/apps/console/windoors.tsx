@@ -31,6 +31,18 @@ export function WindoorsBoot({ version }: { version: string }) {
   );
 }
 
+// The shutdown or restart screen, with the spinner from 2012 on.
+export function WindoorsHalt({ version, reboot }: { version: string; reboot: boolean }) {
+  const era = winEra(version);
+  return (
+    <div className="wb" data-era={era}>
+      <div className="wb-logo">{`Windoors Server ${version}`}</div>
+      {era === 2 && <div className="wb-spin" />}
+      <div>{reboot ? t("console.winRebooting") : t("console.winShuttingDown")}</div>
+    </div>
+  );
+}
+
 // The logon until someone presses Ctrl+Alt+Delete and types any Administrator password, then the desktop with Server
 // Manager open; pass is null until the password box is up.
 export function useWindoors(game: GameState, m: Machine, version: string, loggedIn: boolean, logIn: () => void, logOut: () => void): Keyed {

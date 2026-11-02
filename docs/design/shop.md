@@ -1,6 +1,6 @@
 # Shop systems, stock limits and server groups
 
-Status: approved 2026-10-30. Milestones 1 to 3, 5 and the Marketing part of 4 are built. Milestone 6 is built as shop breaches (WHMCache in May 2012, a 2% monthly risk for ModemBill from 2011 and BoxBillin' from 2015 to 2021), each lowering every customer's happiness by 15. The power-off prompt from section 5 and a styled shop console in the Browser are open.
+Status: approved 2026-10-30. Milestones 1 to 3, 5 and the Marketing part of 4 are built. Milestone 6 is built as shop breaches (WHMCache in May 2012, a 2% monthly risk for ModemBill from 2011, BoxBillin' from 2015 to 2021 and any shop running a version past its end of security updates), each lowering every customer's happiness by 15. The power-off prompt from section 5 and a styled shop console in the Browser are open.
 
 The website stays the marketing presentation of product lines (Marketing > Products, `src/sim/80-business/website.ts`). Selling moves into a separate channel: a shop system the player picks from pun-named variants of the order and provisioning software hosters used from 2005 on. The game already bills customers itself, so a shop system here is the order form, the stock and the provisioning modules. Its billing side is not modelled.
 
@@ -18,7 +18,7 @@ The website stays the marketing presentation of product lines (Marketing > Produ
 
 - New research "Shop systems", tier 1, 60 know-how, 4 days, no prerequisite. A first year yields about 300 know-how, so it is reachable in the first months.
 - The shop runs on the website's host (`setSiteHost`). While the site is down the shop takes no orders and leads behave as if there were no shop.
-- Choosing a shop replaces the current one. Switching takes 3 days of setup, during which only email orders arrive. A switch pays the new variant's setup again; owned licences of the old one are lost.
+- A shop key is bought on the vendor's website in the Browser. The shop is installed from the software page of a panel host in its console, by picking the variant and entering a key, or without one on the vendor's trial. Installing another variant replaces the current one. Switching takes 3 days of setup, during which only email orders arrive; keys of the old variant stay in My account.
 - Old saves with the hand-rolled order form load with no shop, its custom scripts dropped and email orders on.
 
 ### 2.2 Modules
@@ -27,16 +27,16 @@ A module connects the shop to one software (a panel, hypervisor, game panel, DNS
 
 ### 2.3 Variants
 
-Prices are game euros. "Modules" lists what is included; "Extra" is what a missing module costs.
+Prices are game euros at the start of each variant; the licensing eras, editions and caps over time are in `docs/design/software-versions.md`, section Shop systems. "Modules" lists what is included; "Extra" is what a missing module costs.
 
 | Variant (real product) | Available | Licence | Included modules | Extra modules | Stock | Upside | Downside |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| ModemBill (ModernBill) | 2005, sold until 2010 | €300 once | cPanic, Pleskit, registrars | none sold | manual | cheapest real shop | Parallax buys it in 2008; no updates and no new modules after 2011 |
-| ClientExit (ClientExec) | 2005 on | €250 once, €60 a year for updates | cPanic, DirectAdmen, registrars | €150 once (third party) | manual and auto | cheap to own | few modules; no game panel modules before 2010 |
-| WHMCache (WHMCS) | 2005 on | €15 a month leased, or €450 once and €90 a year | every panel, registrars, certificates, game panels from 2008 | hypervisor modules from ModulesGardn, €200 once per hypervisor | manual and auto | widest panel coverage, the default choice | 2012 breach event; from 2020 the lease scales with active customers (€18 up to 250, €30 up to 500, €50 up to 1,000, then €15 per further 1,000) |
-| Blessta (Blesta) | 2007 on | €300 once, updates included | cPanic, Pleskit, DirectAdmen, registrars, Proxmocks from 2010 | €100 once | manual and auto | no breach events, source included | few hypervisor and game modules |
-| HostBull (HostBill) | 2009 on | €60 a month | every panel, hypervisor, game panel, DNS, VPN and storage software, registrars, certificates | none | manual and auto | everything included | highest monthly cost |
-| Ubersmyth (Ubersmith) | 2006 on | €1,500 setup, €3 a month per managed server (at least €100) | dedicated servers (OOB power and install), colocation (rack units, PDU ports), DNS | €300 once per panel or hypervisor | manual and auto | the only one that auto-provisions dedicated servers and colocation | expensive for small hosters |
+| ModemBill (ModernBill) | 2005, sold until 2010 | €250 key or lease from €15 a month | cPanic, Pleskit, registrars | none sold | manual | cheapest real shop | Parallax buys it in 2008; no updates and no new modules after 2011 |
+| ClientExit (ClientExec) | 2005 on | €250 key and €50 a year for updates, or lease from €13 a month | cPanic, DirectAdmen, registrars | €150 once (third party) | manual and auto | cheap to own | few modules; no game panel modules before 2010 |
+| WHMCache (WHMCS) | 2005 on | €15 a month leased, or a €250 key (€325 from 2007) and €45 a year; from 2020 a lease by active clients | every panel, registrars, certificates, game panels from 2008 | hypervisor modules from ModulesGardn, €200 once per hypervisor | manual and auto | widest panel coverage, the default choice | 2012 breach event; from 2020 the lease scales with active customers (€18 up to 250, €30 up to 500, €50 up to 1,000, then €15 per further 1,000) |
+| Blessta (Blesta) | 2007 on | €13 a month leased, keys from 2010 | cPanic, Pleskit, DirectAdmen, registrars, Proxmocks from 2010 | €100 once | manual and auto | no breach events, source included | few hypervisor and game modules |
+| HostBull (HostBill) | 2009 on | €16 a month leased, a €600 key from 2013 | every panel, hypervisor, game panel, DNS, VPN and storage software, registrars, certificates | none | manual and auto | everything included | the €600 key from 2013 costs the most up front |
+| Ubersmyth (Ubersmith) | 2006 on | €1,000 setup and a lease by managed servers from €100 a month | dedicated servers (OOB power and install), colocation (rack units, PDU ports), DNS | €300 once per panel or hypervisor | manual and auto | the only one that auto-provisions dedicated servers and colocation | expensive for small hosters |
 | OrderBocks by ResellerKlub (OrderBox) | 2006 on | free | registrars, certificates, cPanic | none sold | manual | no upfront cost | takes 6% of the monthly revenue of customers who ordered through it |
 | BoxBillin' (BoxBilling, later FOSSBilling) | 2011 on | free | registrars | free community modules, each costs 12 staff hours to integrate | manual and auto | no licence | abandoned 2015, rising breach risk until the FossBillin' revival in 2022 |
 
@@ -136,10 +136,10 @@ Missing, with the year it appeared and its value to the game:
 
 Each milestone lands on main with seeded tests, `newGame` defaults, `deserialize` fills and a CHANGELOG bullet.
 
-1. **Shop catalog and choice.** Catalog of variants and modules in `src/sim/10-catalog/shops.ts`; research "Shop systems"; state `s.shop` (variant, owned modules, switch timer); actions `chooseShop`, `buyModule` in `src/sim/90-actions/shop.ts`; licence billing. The first variants are the pun-named systems of section 2.3.
+1. **Shop catalog and choice.** Catalog of variants and modules in `src/sim/10-catalog/shops.ts`; research "Shop systems"; state `s.shop` (variant, owned modules, switch timer); actions `installShop`, `buyModule` in `src/sim/90-actions/shop.ts`; licence billing. The first variants are the pun-named systems of section 2.3.
 2. **Stock limits.** Stock setting per line, reservation on order, sold-out visitors instead of lost sales, `autoOrders` routed through modules.
 3. **Server groups.** Group state and actions (`createGroup`, `addToGroup`, `removeFromGroup`, `setGroupSale`, `setGroupDeploy`); `targetFor` filtering; auto stock from group capacity and reserve.
-4. **Shop UI.** Marketing, Shop holds the variant choice, modules and stock (built). Server groups join it with milestone 3. A styled admin console per variant in the Browser can follow.
+4. **Shop UI.** The shop is installed from a panel host's software page and run from its admin at `portal.<company domain>/admin`: stock per line under Options, server groups and modules under Servers, payment methods under Invoices (built). The Marketing app has no shop section.
 5. **Software-level cordon, drain, evacuate.** Per-installation `setNodeState`, evacuate action, console buttons, removal from the Locations device menu, technician task moved to an admin task.
 6. **Era events.** ModemBill sunset, WHMCache 2012 breach and 2020 pricing, BoxBillin' abandonment and revival.
 

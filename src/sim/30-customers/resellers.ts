@@ -1,6 +1,6 @@
 import { yearOf } from "../00-core/time";
 import { chance } from "../00-core/rng";
-import { marketRates } from "../10-catalog/products";
+import { marketPrice } from "../10-catalog/products";
 import type { GameState } from "../50-state";
 import type { Service } from "./customers";
 
@@ -15,14 +15,16 @@ export const RESELLER_HANDLES = 0.5;
 export const SHADY_PER_MONTH = 0.02;
 export const FIRST_LEAD_YEAR = 2008;
 export const LEAD_SHARE = 0.03;
+// Agencies host their clients' sites, so a quarter of their web hosting leads ask for a reseller block.
+export const AGENCY_LEAD_SHARE = 0.25;
 
 const RESELLER_PANELS = ["directadmen", "cpanic"];
 
-// A cheaper block fills faster: the months scale with the price per account against the market's, between half and all.
+// A cheaper block fills faster: the months scale with the price per GB against the market's, between half and all.
 export function fillMonths(v: Service): number {
-  const accounts = v.spec.accounts || 1, month = v.period === "hour" ? v.price * HOURS_PER_MONTH : v.price / 12;
-  const market = marketRates("reseller", yearOf(v.startedAt)).account ?? 0;
-  return FILL_MONTHS * (market > 0 ? Math.min(1, Math.max(0.5, month / accounts / market)) : 1);
+  const month = v.period === "hour" ? v.price * HOURS_PER_MONTH : v.price / 12;
+  const market = marketPrice("reseller", v.spec, yearOf(v.startedAt), v.sla);
+  return FILL_MONTHS * (market > 0 ? Math.min(1, Math.max(0.5, month / market)) : 1);
 }
 
 export const fillAt = (v: Service, hour: number): number =>

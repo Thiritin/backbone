@@ -9,6 +9,7 @@ export default {
   "ipmi.log.powerOn": () => "Ligado",
   "ipmi.log.shutdown": () => "Encerramento ordenado",
   "ipmi.log.pulled": () => "Corrente perdida",
+  "ipmi.log.upsShutdown": () => "Desligado por sinal do UPS",
   "ipmi.log.overheat": () => "Desligado por calor",
   "ipmi.log.reset": () => "Reinício forçado",
   "ipmi.log.cycle": () => "Ciclo de energia",

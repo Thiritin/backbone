@@ -24,6 +24,7 @@ import { MinnIO } from "./minnio";
 import { OpenVeePeeN } from "./openveepeen";
 import { OwnClod } from "./ownclod";
 import { Postfixit } from "./postfixit";
+import { PostfixitAdminSite, SquirrelMealSite } from "./squirrelmeal";
 import { PowerDNZ } from "./powerdnz";
 import { VsFTPeed } from "./vsftpeed";
 import { WireGuarded } from "./wireguarded";
@@ -36,7 +37,7 @@ export const SITE_VIEWS: Record<string, SiteComponent> = {
   cpanic: Cpanic, pleskit: Pleskit, directadmen: DirectAdmen, freepanel: FreePanel,
   tcadmen: TCAdmen, multikraft: MultiKraft, pterodaktyl: Pterodaktyl,
   bound: Bound, powerdnz: PowerDNZ, knut: KnutDns, openveepeen: OpenVeePeeN, anyconnekt: AnyConnekt, wireguarded: WireGuarded,
-  vsftpeed: VsFTPeed, ownclod: OwnClod, minnio: MinnIO, postfixit: Postfixit, mailpig: Mailpig,
+  vsftpeed: VsFTPeed, ownclod: OwnClod, minnio: MinnIO, postfixit: Postfixit, mailpig: Mailpig, squirrelmeal: SquirrelMealSite, postfixitadmin: PostfixitAdminSite,
 };
 
 export function SoftwarePage({ game, kind, id, path, go }: { game: GameState; kind: "software" | "os"; id: string; path: string; go: (url: string) => void }) {

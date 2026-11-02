@@ -150,11 +150,11 @@ Console screens: TCAdmin "Mods" and "Plugins" tab in the server details (the rea
 
 Shipped in milestone 7 as a happiness drain plus a player-driven `changeTitle`. That model blamed the host for a game dying and let the player move a community to a game it never chose. Milestone 11 reworks it as below.
 
-**Fade lowers players online.** Each title has an interest factor: 1 until `fade`, then `max(0.15, 0.7 ^ (year - fade))`. `gameLoad` multiplies players online by it, so a faded server sits emptier every year. Faded customers stop losing happiness; the drain from milestone 7 goes away.
+**Fade lowers players online.** Each title has an interest factor: 1 until `fade`, then `max(0.15, 0.7 ^ (year - fade))`. `workloadLoad` multiplies a game server's load by it, so a faded server sits emptier every year and uses less. Faded customers stop losing happiness; the drain from milestone 7 goes away.
 
-**Fans and drifters.** When a customer's title passes `fade`, the customer is rolled once, seeded by service id: 25 percent become fans, the rest drifters. Fans stay on the title for good. At each renewal they drop to the smallest slot count that covers their 30-day peak, clamped to the title's range, so an old title keeps a tail of small, cheap servers. Drifters do the same downsizing and also have a monthly chance of `0.04 * (year - fade)` to open a switch request.
+**Fans and drifters.** When a customer's title passes `fade`, the customer is rolled once, seeded by service id: 25 percent become fans, the rest drifters. Fans stay on the title for good. Once a month, on an hour seeded by service id, they drop to the smallest slot count that covers their busiest hour of the past week, never below the title's range, with the price scaled down alike, so an old title keeps a tail of small, cheap servers. Drifters do the same downsizing and also have a monthly chance of `0.04 * (year - fade)` to open a switch request.
 
-**Switch request.** A new ticket kind `switchTitle` names the successor: the current title with the highest `pickTitle` weight in the same `genre` (a new `GameTitle` field: `shooter`, `sandbox`, `survival`, `racing`, `voice`). The ticket stays open 7 days.
+**Switch request.** An `upgrade` ticket with the topic `switchTitle` names the successor, kept on the server as `switchTo`: the current title with the highest `pickTitle` weight in the same `genre` (a new `GameTitle` field: `shooter`, `strategy`, `sandbox`, `survival`, `roleplay`). Staff leave it to the player. The ticket stays open 7 days.
 - The successor is offered on the server's panel: accepting runs the existing conversion (`newSlots = floor(oldSlots * oldPerSlot.ramGb / newPerSlot.ramGb)`, clamped, mods cleared, latest version), sets `happy +3` and clears the fan or drifter roll. The customer now plays a current title.
 - The successor is not offered, the player declines, or the ticket expires: the customer cancels with the reason "Moved to a host offering {title}".
 - `changeTitle` stays as the action that accepts the ticket and is refused without an open `switchTitle` ticket for that service. The player never moves a customer unasked.
@@ -165,14 +165,14 @@ Shipped in milestone 7 as a happiness drain plus a player-driven `changeTitle`. 
 |---|---|---|
 | Bundled | TCAdmin's config library, Pterodactyl's default nests | `GameTitle.bundled: PanelId[]`; offered from `from` with no action |
 | Community import | TCAdmin config repository, community Pterodactyl eggs | Action `importTitle(panelId, titleId)`, free and instant, allowed from `from + lag` (TCAdmen 0.5 years, Pterodaktyl 0.25 years) |
-| Write it yourself | A host writing its own config or egg for a game nobody has covered yet | Action `writeTitleConfig(panelId, titleId)`, allowed from `from`; one-off cost (TCAdmen 400, Pterodaktyl 200, scaled by the era price index) and `readyAt` after 5 days (TCAdmen) or 3 days (Pterodaktyl) |
+| Write it yourself | A host writing its own config or egg for a game nobody has covered yet | Action `writeTitleConfig(panelId, titleId)`, allowed from `from`; one-off cost (TCAdmen 400, Pterodaktyl 200) and `readyAt` after 5 days (TCAdmen) or 3 days (Pterodaktyl) |
 
 Per panel:
 - **TCAdmen** bundles most titles from before 2012 and receives new ones late. It has the widest catalogue in the slot era.
 - **MultiKraft** is Minecraft only, so title fade and switch requests do not apply. Its catalogue is server types and modpacks, already covered by versions and mods (3.3, 3.4).
 - **Pterodaktyl** bundles few titles but has the shortest community lag and the cheapest write-your-own, which makes it the panel for launch waves.
 
-**Lost sales.** A new order whose `pickTitle` result has no panel offering it is lost and counted per title for 90 days. The Game servers list shows the count next to the title in the Titles card ("Requests for {title} declined: {count}"). The Titles card also gains the catalogue table per panel with a status per title: Offered, Import, Write, Writing until {date}.
+**Lost sales.** A game server lead draws a title with `pickTitle`; when none of the player's game panels offers it, the lead is lost and counted per title for 90 days. A lead that goes through draws its title again at provisioning, among the titles the panel offers. The Packages screen of TCAdmen and Pterodaktyl opens with the catalogue table: each title out by now with its status (Offered, Config ready on {date}, Import config, Write config for {price}) and "Requests declined: {count}" under its name.
 
 Economy extension: "Happiness and churn" in economy.md drops the faded drain and gets the fan share and drifter switch chance; the write-it-yourself costs go under "Game titles".
 ### 3.6 Crashes, auto-restart and scheduled restarts (features 9, 10)

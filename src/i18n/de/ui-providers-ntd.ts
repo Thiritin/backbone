@@ -1,0 +1,27 @@
+import type { Dict } from "../lang";
+
+export default {
+  "providers.ntd.navSites": () => "Rechenzentren",
+  "providers.ntd.navOrder": () => "Colocation",
+  "providers.ntd.navAccount": () => "Kundenportal",
+  "providers.ntd.global": () => "Globale Website",
+  "providers.ntd.sitemap": () => "Sitemap",
+  "providers.ntd.division": () => "Global Data Centers",
+  "providers.ntd.heroEarly": () => "Zuverlässige Rechenzentrumsdienste der NTD-Gruppe",
+  "providers.ntd.heroLate": () => "Rechenzentren für eine vernetzte Zukunft",
+  "providers.ntd.text": (p) => `${p.n} Rechenzentren in ${p.cities} Städten, betrieben nach den Standards einer der größten Telekommunikationsgruppen der Welt.`,
+  "providers.ntd.cta": () => "Rechenzentrum finden",
+  "providers.ntd.news": () => "Aktuelles",
+  "providers.ntd.news1": () => "In unserem Berliner Rechenzentrum steht zusätzliche Stromkapazität bereit.",
+  "providers.ntd.news2": () => "NTD erneuert die ISO-27001-Zertifizierung für alle deutschen Standorte.",
+  "providers.ntd.news3": () => "Cross-Connects zum lokalen Internetknoten lassen sich jetzt online bestellen.",
+  "providers.ntd.services": () => "Leistungen",
+  "providers.ntd.svc1": () => "Colocation",
+  "providers.ntd.svc1Text": () => "Rackfläche, Cages und Suites mit A- und B-Stromversorgung.",
+  "providers.ntd.svc2": () => "Konnektivität",
+  "providers.ntd.svc2Text": () => "Carrier-neutrale Meet-me-Räume verbinden Sie mit jedem Carrier vor Ort.",
+  "providers.ntd.svc3": () => "Managed Services",
+  "providers.ntd.svc3Text": () => "Remote Hands und Monitoring übernimmt unser Personal vor Ort.",
+  "providers.ntd.explore": () => "Campus entdecken",
+  "providers.ntd.footer": (p) => `© ${p.year} NTD Corporation`,
+} satisfies Dict;

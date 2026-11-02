@@ -3,6 +3,7 @@ import type { ActionResult } from "./hardware";
 import { STARTER_APPS } from "../10-catalog/store";
 import { LEGAL_FORMS, officeOpen, registerNumber } from "../80-business/office";
 import { bankById, planById } from "../10-catalog/banks";
+import { renameStartBox } from "../42-mail/model";
 
 // Logo marks by id; the UI draws each one as an icon on a tile in the chosen colour.
 export const COMPANY_LOGOS = ["server", "cloud", "zap", "globe", "rocket", "database", "cpu", "shield", "leaf", "mountain", "waves", "flame", "wolf", "fox", "cat", "toaster"];
@@ -20,7 +21,9 @@ export function setCompany(s: GameState, patch: Partial<Company>): ActionResult 
   if (tagline !== undefined && tagline.length > TAGLINE_MAX) return { ok: false, error: "error.companyTagline" };
   if (patch.logo !== undefined && !COMPANY_LOGOS.includes(patch.logo)) return { ok: false, error: "error.companyLogo" };
   if (patch.color !== undefined && !COMPANY_COLORS.includes(patch.color)) return { ok: false, error: "error.companyColor" };
+  const old = s.company.name;
   s.company = { ...s.company, ...patch, ...(name !== undefined && { name }), ...(tagline !== undefined && { tagline }) };
+  if (name !== undefined) renameStartBox(s, old);
   return { ok: true };
 }
 

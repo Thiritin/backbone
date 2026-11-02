@@ -22,7 +22,7 @@ The game opens paused on Saturday 1 January 2005 at 00:00. The Welcome sheet ask
 **On screen.**
 
 - **Menu bar:** paused, the date and €0 cash. The player's €3,500 of savings wait on a personal account until the company has a bank account.
-- **Dock:** only the Browser. The [tutorial](tutorial.md) has the player open a business account on a bank's site, which brings in the €3,500 savings as its first booking, then register the company at the trade office, which opens at 08:00 on Monday 3 January and charges €40 by bank transfer. The registration fills the dock with the starter apps. Finance, Customers, Marketing and the rest arrive later, each when its problem does, as the tutorial lists.
+- **Dock:** only the Browser. The [tutorial](tutorial.md) has the player open a business account on a bank's site, which brings in the €3,500 savings as its first booking, then register the company at the trade office, which opens at 08:00 on Monday 3 January and charges €40 by bank transfer. The registration fills the dock with the starter apps. Customers, Marketing and the rest arrive later, each when its problem does, as the tutorial lists.
 - **Locations window, open on the basement:** an empty 24U rack, a line jack on the carrier panel and the flat's Fritz!Bocks 5050 in storage. The router has four LAN ports and a DSL port. There is no server and no internet line.
 - **Desktop:** the "Getting started" document.
 
@@ -66,7 +66,7 @@ The player buys and sets up everything on the first day, then waits for the line
 | 0:16 | 17 Jan | The business line goes live and the friends move onto the panel host | Opens Customers | Customers arrive once the host is reachable |
 | 0:17 to 0:20 | 18 to 21 Jan | The first customer after the friends writes in, and the last step of Getting started ticks | Answers in Support | Tickets, sales |
 | 0:19 to 0:22 | 20 to 23 Jan | The first invoice is paid | Opens Billing | Invoices pay themselves |
-| 0:31 | 1 Feb | The monthly tick books the fixed bills, the registrar and the first report | Opens Finance | Monthly rhythm |
+| 0:31 | 1 Feb | The monthly tick books the fixed bills, the registrar and the first report | Opens Books | Monthly rhythm |
 | 0:39 to 1:14 | 9 Feb to 16 Mar | The tenth customer after the friends signs up, typically on day 56 (26 February) | Answers tickets, reminds late payers | Sales arrive on their own |
 
 Cash stays between about €510 and €660 until the first customers pay. By the end of February the seeded runs have earned 15 to 30 know-how and taken a bank loan for the second server. The Bank lends up to €10,000 from the first day.

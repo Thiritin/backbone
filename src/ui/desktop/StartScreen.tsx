@@ -9,6 +9,7 @@ import { twistLabel } from "../leaderboard";
 import { isNew, loadSeen, markRead, saveSeen } from "../news-seen";
 import { uiSound, useStore, type Theme } from "../store";
 import { Intro } from "./Intro";
+import { canImmerse, immerse, useImmersive } from "./immersive";
 import { MenuBackdrop } from "./MenuBackdrop";
 import "./menu.css";
 
@@ -70,21 +71,37 @@ function SettingsPage({ onBack }: { onBack: () => void }) {
   );
 }
 
+function ImmersivePage({ onBack, onPlay }: { onBack: () => void; onPlay: () => void }) {
+  return (
+    <section className="menu-page">
+      <button className="btn ghost" {...hear} onClick={choose(onBack, "back")}><ChevronLeft />{t("desktop.start.back")}</button>
+      <h2>{t("desktop.immersive.title")}</h2>
+      <p>{t("desktop.immersive.text")}</p>
+      <p>{t("desktop.immersive.browsers")}</p>
+      <p>{t("desktop.immersive.leave")}</p>
+      <button className="btn primary" disabled={!canImmerse()} {...hear} onClick={choose(onPlay)}>{t("desktop.immersive.start")}</button>
+    </section>
+  );
+}
+
 export function StartScreen() {
   const { startGame, startChallenge, importSave, canContinue, continueGame } = useStore();
   const file = useRef<HTMLInputElement>(null);
   const [intro, setIntro] = useState(false);
-  const [page, setPage] = useState<"main" | "settings">("main");
+  const [page, setPage] = useState<"main" | "settings" | "immersive">("main");
+  const immersive = useImmersive();
   const week = weeklyChallenge(new Date());
   return (
     <main className="menu">
       <MenuBackdrop />
       <h1 className="menu-title"><img className="menu-logo" src="favicon.svg" alt="" width={56} height={56} />Backbone</h1>
       {page === "settings" ? <SettingsPage onBack={() => setPage("main")} /> :
+        page === "immersive" ? <ImmersivePage onBack={() => setPage("main")} onPlay={() => immerse().catch(() => {}).then(canContinue ? continueGame : startGame)} /> :
         <nav className="menu-bars">
           {canContinue && <button className="btn primary" autoFocus {...hear} onClick={choose(continueGame)}>{t("desktop.start.continue")}</button>}
           <button className={`btn${canContinue ? "" : " primary"}`} autoFocus={!canContinue} {...hear} onClick={choose(startGame)}>{t("desktop.newGame")}</button>
           <button className="btn" {...hear} onClick={choose(startChallenge)}><span>{t("desktop.start.weekly")}<small>{week.id} · {twistLabel(week.twist)}</small></span></button>
+          {!immersive && <button className="btn" {...hear} onClick={choose(() => setPage("immersive"))}>{t("desktop.start.immersive")}</button>}
           <button className="btn" {...hear} onClick={choose(() => file.current?.click())}>{t("desktop.start.import")}</button>
           <button className="btn" {...hear} onClick={choose(() => setIntro(true))}>{t("desktop.start.intro")}</button>
           <button className="btn" {...hear} onClick={choose(() => setPage("settings"))}>{t("desktop.start.settings")}</button>

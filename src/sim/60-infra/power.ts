@@ -9,7 +9,7 @@ import { dropCluster, insideVm, installingOn, isOwnVm, type Workload } from "./c
 import { rebuildHours, type SimEvent } from "../88-tick/tick";
 import { reportLoss } from "../85-products/products";
 import { loadSaved } from "./switches";
-import { bootHours, booting, haltHours, deviceHealth, drivesOf, dualFed, HOURS_PER_YEAR, locationOf, powered, pluggedIn, psusOf, rackPower, working } from "./status";
+import { bootHours, booting, haltHours, osBootHours, deviceHealth, drivesOf, dualFed, HOURS_PER_YEAR, locationOf, powered, pluggedIn, psusOf, rackPower, takesShutdown } from "./status";
 
 // An unclean stop corrupts the data of the workloads that ran with this chance.
 export const CORRUPT_CHANCE = 0.15;
@@ -17,7 +17,7 @@ export const CORRUPT_CHANCE = 0.15;
 export const RECOVER_FINE = 0.7;
 export const RECOVER_HOURS = 0.5;
 export const BMC_RESET_HOURS = 0.25;
-// Yearly hang rates: the operating system doubles while degraded or hot and triples while frozen from RAM overcommit; the BMC triples after six years.
+// Yearly hang rates: the operating system doubles while degraded or hot; the BMC triples after six years.
 export const HANG_YEARLY = 0.01;
 export const BMC_HANG_YEARLY = 0.01;
 export const BMC_OLD_YEARS = 6;
@@ -36,7 +36,7 @@ export { LOG_MAX, pushLog, sevOf } from "./syslog";
 
 export function hangChance(s: GameState, d: Device): number {
   const state = deviceHealth(s, d.id).state;
-  const factor = (state === "degraded" || state === "hot" ? 2 : 1) * (s.frozen.includes(d.id) ? 3 : 1);
+  const factor = (state === "degraded" || state === "hot" ? 2 : 1);
   return (HANG_YEARLY * factor) / HOURS_PER_YEAR;
 }
 
@@ -69,6 +69,14 @@ export function losePower(s: GameState, d: Device, key = "ipmi.log.pulled"): voi
   rollStuck(s, d);
   pushLog(d, s.hour, key);
   if (outcome) pushLog(d, s.hour, outcome);
+  leaveUsb(s, d);
+}
+
+// A managed UPS's shutdown signal (ups.ts): the OS halts before the battery runs out, so no data is corrupted.
+export function upsShutdown(s: GameState, d: Device): void {
+  leaveUsb(s, d);
+  loadSaved(d);
+  pushLog(d, s.hour, "ipmi.log.upsShutdown");
 }
 
 // What a power cut leaves of an OS still installing: an empty disk, or after an in-place upgrade the release it came from.
@@ -91,7 +99,6 @@ export function leaveUsb(s: GameState, d: Device): void {
 // Cuts the power: the server is off and its OS no longer hung.
 export function pullPlug(s: GameState, d: Device): void {
   losePower(s, d);
-  leaveUsb(s, d);
   d.on = false;
   d.setup = false;
   d.haltUntil = undefined;
@@ -105,10 +112,13 @@ export function halt(s: GameState, d: Device): void {
   pushLog(d, s.hour, "ipmi.log.shutdown");
 }
 
-// Every minute: devices whose OS has halted switch off.
+// Every minute: devices whose OS has halted switch off, and own VMs stop or, on a reboot, boot again.
 export function haltTick(s: GameState): void {
-  if (!s.devices.some((d) => d.haltUntil !== undefined && d.haltUntil <= nowHours(s))) return;
-  s.devices = s.devices.map((d) => (d.haltUntil !== undefined && d.haltUntil <= nowHours(s) ? { ...d, on: false, haltUntil: undefined } : d));
+  const now = nowHours(s), due = (x: { haltUntil?: number }) => x.haltUntil !== undefined && x.haltUntil <= now;
+  if (s.devices.some(due)) s.devices = s.devices.map((d) => (due(d) ? { ...d, on: false, haltUntil: undefined } : d));
+  if (!s.workloads.some(due)) return;
+  s.workloads = s.workloads.map((w): Workload => !due(w) ? w
+    : { ...w, haltUntil: undefined, reboot: undefined, ...(w.reboot ? { bootUntil: now + osBootHours(s, w) } : { stopped: true }) });
 }
 
 // Every minute: a feed above its limit trips at once, one above its continuous load after CONTINUOUS.hours. Servers on the
@@ -171,7 +181,7 @@ export type FrontOp = "power" | "hold" | "reset" | "pull" | "plug";
 // holding the button cuts the power, the reset button reboots it hard, and the cords leave or join the power strip.
 export function atFront(s: GameState, d: Device, op: FrontOp): void {
   if (op === "power" && !d.on) bootUp(s, d);
-  else if (op === "power") { if (working(s, d.id)) halt(s, d); }
+  else if (op === "power") { if (takesShutdown(s, d)) halt(s, d); }
   else if (op === "hold") { if (d.on) pullPlug(s, d); }
   else if (op === "reset") { if (d.on) hardReboot(s, d, "ipmi.log.reset"); }
   else plugCords(s, d, op === "plug");

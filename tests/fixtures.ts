@@ -1,15 +1,23 @@
+import { bookMail } from "../src/sim/90-actions/mail";
+import { hire as hireReal } from "../src/sim/90-actions/staff";
+import { mxTarget } from "../src/sim/42-mail/caps";
+import { companyDomain } from "../src/sim/30-customers/domains";
 import { PAYMENT_METHODS } from "../src/sim/10-catalog/payments";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
-import { chooseShop } from "../src/sim/90-actions/shop";
+import { installShop } from "../src/sim/90-actions/shop";
+import { shopEditionFor, shopLease } from "../src/sim/10-catalog/shop-licences";
+import { newShop, shopCount } from "../src/sim/80-business/shop";
+import type { ShopId } from "../src/sim/10-catalog/shops";
 import { authCode } from "../src/sim/30-customers/registry";
 import type { Address } from "../src/sim/30-customers/addresses";
 import { mailedAddress } from "../src/sim/30-customers/addresses";
 import { sendInvoice } from "../src/sim/90-actions/billing";
 import { MODULE_IDS } from "../src/sim/10-catalog/shops";
 import { hourOf } from "../src/sim/00-core/time";
-import { componentParts, fits, genOf, modelById, type FormFactor, type PartSpec } from "../src/sim/10-catalog/hardware";
+import { brandFrom, componentParts, fits, genOf, modelById, type FormFactor, type PartSpec } from "../src/sim/10-catalog/hardware";
 import type { Resources } from "../src/sim/10-catalog/products";
 import { device, deviceDefaults, newGame as blankGame, type GameState } from "../src/sim/50-state";
+import { openAccount } from "../src/sim/46-finance/bank";
 import { START_CASH } from "../src/sim/10-catalog/economy";
 
 // Games with the savings already in hand and no bank account, the way every game started before the account came first.
@@ -24,6 +32,8 @@ import { derivedDomain } from "../src/sim/30-customers/domains";
 import { register } from "../src/sim/30-customers/registry";
 import { nodeName } from "../src/sim/30-customers/hostnames";
 import { setMachine, type Cluster } from "../src/sim/60-infra/cluster";
+import { tickMinute } from "../src/sim/88-tick/tick";
+import { stopWorkload } from "../src/sim/90-actions/vms";
 import { assignedKey, assignKey, isLicensed, issueKey, panelMachine, trialDaysOf } from "../src/sim/60-infra/licence";
 import { topTier } from "../src/sim/10-catalog/licence-tiers";
 import { UI_LOOKS, versionsOf } from "../src/sim/10-catalog/software-versions";
@@ -62,6 +72,9 @@ const must = (r: { ok: boolean; id?: string; error?: string }): string => {
 
 // Moves a game that started in 2005 on to the first day of the year, for software that is not on the market at the start.
 export const skipTo = (s: GameState, year: number): void => { s.hour += hourOf(new Date(Date.UTC(year, 0, 1))); };
+// The first hour at which every given brand sells its model.
+export const onSaleAt = (...items: [model: string, brand: string][]): number =>
+  Math.max(...items.map(([id, brand]) => { const m = brandFrom(modelById(id), brand); return hourOf(new Date(Date.UTC(Math.floor(m / 12), m % 12, 1))); }));
 
 export const BASEMENT_SERVER = "dev3";
 // The flat's router (dev5) on the basement rack's top shelf with its DSL port on the line jack (dev6).
@@ -69,6 +82,13 @@ export function routerOnLine(s: GameState, slot = 23): GameState {
   Object.assign(s.devices.find((d) => d.id === "dev5")!, { store: null, rackId: "rack2", slot });
   s.cables.push({ id: "cab-line", a: { device: "dev6", port: 0 }, b: { device: "dev5", port: 4 }, kind: "copper", color: null });
   return s;
+}
+
+// Stops a VM and lets the minutes pass until its OS has halted.
+export function stopVm(s: GameState, id: string): ReturnType<typeof stopWorkload> {
+  const r = stopWorkload(s, id);
+  while (s.workloads.find((w) => w.id === id)?.haltUntil !== undefined) tickMinute(s);
+  return r;
 }
 
 // The machine has the OS installed and booted, as the installer leaves it; returns the machine id.
@@ -185,8 +205,9 @@ export function readyGame(seed: number): GameState {
 export function withCompany(s: GameState): GameState {
   s.registrar = { id: "nameCheep", since: 0, tier: 0, billed: true, transfer: null };
   const name = derivedDomain(s);
-  s.company = { ...s.company, domain: name, mail: { kind: "external", provider: "hostedExchange", seats: 1 } };
+  s.company = { ...s.company, domain: name };
   register(s, name, null, false);
+  must(bookMail(s, "hostedExchange"));
   s.marketing = { ...s.marketing, siteReady: 0, launched: true };
   return s;
 }
@@ -237,13 +258,26 @@ export const owner = (s: GameState, ticketId: string): [Address | undefined, str
   return [s.customers.find((c) => c.id === r?.customerId)?.address, r?.owned ? authCode(s.seed, r.id) : undefined];
 };
 
+// A key for the shop, the lease edition where it is leased unless own, installed on the first panel host; without one the shop is
+// chosen but not installed.
+export function installWithKey(s: GameState, id: ShopId, own = false): void {
+  const host = s.clusters.find((c) => c.kind === "panel" && c.panel);
+  if (!host) {
+    s.shop = { ...newShop(), variant: id, groups: s.shop.groups, products: s.shop.products, productGroups: s.shop.productGroups };
+    return;
+  }
+  const k = isLicensed(id) ? issueKey(s, id, own || shopLease(id, s.hour) === null ? null : shopEditionFor(id, s.hour, shopCount(s))?.id ?? null) : undefined;
+  const r = installShop(s, host.id, id, k?.key);
+  if (!r.ok) throw new Error(r.error);
+}
+
 // A shop system that takes orders at once, for tests of shop orders rather than of choosing a shop.
-export function openShop(s: GameState, id: Parameters<typeof chooseShop>[1] = "clientExit"): GameState {
+export function openShop(s: GameState, id: ShopId = "clientExit"): GameState {
   s.cash = Math.max(s.cash, 1e4);
   setUpChannel(s, "website");
   if (!s.unlocks.includes("shops")) s.unlocks = [...s.unlocks, "shops"];
-  const modules = s.shop.modules, r = chooseShop(s, id);
-  if (!r.ok) throw new Error(r.error);
+  const modules = s.shop.modules;
+  installWithKey(s, id);
   // Keeps the modules automate() bought.
   s.shop = { ...s.shop, readyAt: s.hour, modules: { ...modules, ...s.shop.modules } };
   // Every payment method, so no checkout is lost for a missing one.
@@ -259,3 +293,19 @@ export function lateVersions(product: string): [string, string] {
 // Sets the version the software runs on a cluster's machine.
 export const pinVersion = (s: GameState, c: Cluster, product: string, version: string): void =>
   setMachine(s, panelMachine(c)!, (m) => ({ software: m.software.map((x) => (x.id === product ? { ...x, version } : x)) }));
+
+// A bank account with a credit card ready to pay at the given limit.
+export function withCard<S extends GameState>(s: S, limit = 100_000): S {
+  s.bank = { ...openAccount(s, "sparklasse"), card: { appliedAt: s.hour, readyAt: s.hour, limit, spent: [], feeAt: s.hour } };
+  return s;
+}
+
+// A free own-server tenant on the company domain with its MX record live, so a hire gets a mailbox.
+export function withDomainMail(s: GameState): GameState {
+  if (mxTarget(s)) return s;
+  const d = companyDomain(s);
+  s.mail = { ...s.mail, tenants: [...s.mail.tenants, { id: `tn${s.nextId++}`, host: "self", domain: d, plan: "self", since: s.hour, verified: true, endsAt: null, admin: null }] };
+  s.company = { ...s.company, zone: [...s.company.zone, { id: `z${s.nextId++}`, type: "MX", name: "@", ttl: 3600, data: `10 mail.${d}` }] };
+  return s;
+}
+export const hire = (s: GameState, candidateId: string, team?: string) => hireReal(withDomainMail(s), candidateId, team);

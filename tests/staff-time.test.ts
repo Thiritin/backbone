@@ -9,7 +9,8 @@ import { tick } from "../src/sim/88-tick/tick";
 import { sendReminder, setBillingRules, suspendServices } from "../src/sim/90-actions/billing";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { changePrice } from "../src/sim/90-actions/sales";
-import { addTeam, assign, hire, removeTeam, setShift, setTeam } from "../src/sim/90-actions/staff";
+import { addTeam, assign, removeTeam, setShift, setTeam } from "../src/sim/90-actions/staff";
+import { hire } from "./fixtures";
 import { replyTicket } from "../src/sim/90-actions/support";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 
@@ -142,6 +143,7 @@ describe("billing rules", () => {
     tick(s);
     expect(s.invoices[0].reminders).toHaveLength(0);
     const book = hireOne(s, "bookkeeper"), acc = hireOne(s, "accountant");
+    s.books = { vendor: "sevdeck", installedAt: 0, edition: "rechnung", seats: 2, download: null };
     tick(s);
     expect(s.invoices[0].reminders).toHaveLength(1);
     // One action per invoice and hour: the suspension follows an hour later.
@@ -172,6 +174,7 @@ describe("billing rules", () => {
     s.hour = MONDAY + 8;
     for (let i = 0; i < 10; i++) overdueInvoice(s, c, 8 + i);
     const book = hireOne(s, "bookkeeper");
+    s.books = { vendor: "sevdeck", installedAt: 0, edition: "rechnung", seats: 2, download: null };
     setTeam(s, book, "parttime");
     runTo(s, MONDAY + 24);
     // A reminder with its check takes 21 minutes, so five fit in two hours.

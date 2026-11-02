@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { t } from "../../../i18n/en";
-import { registerLicence } from "../../../sim/90-actions/lexwear";
+import { registerLicence } from "../../../sim/90-actions/licences";
 import { useStore } from "../../store";
 
 // Lexwear Office's Register dialog: a licence key from Lexwear's email turns its module on.

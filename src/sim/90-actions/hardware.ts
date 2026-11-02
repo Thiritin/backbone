@@ -9,10 +9,10 @@ import type { Vendor } from "../10-catalog/cpus";
 import { leaseOffers, lessorName } from "../10-catalog/leasing";
 import { greySurcharge, workFactor } from "../10-catalog/lifecycle";
 import { chassisPrice, partPrice, partsPrice, presetPrice } from "../10-catalog/parts";
-import { BASEMENT, DATACENTERS, datacenterById, EXTRA_POWER_LEAD_DAYS, EXTRA_STEP_KW, FLAT_CONTRACTS, HOME_LINES, maxExtraKw, LEAD_DAYS, nextAz, NOTICE_MONTHS, RACK_MODELS, rackUnits, SHARE_RACKS, SPACE_SIZES, spacePrice } from "../20-world/datacenters";
+import { BASEMENT, DATACENTERS, datacenterById, EXTRA_POWER_LEAD_DAYS, EXTRA_STEP_KW, FLAT_CONTRACTS, HOME_LINES, maxExtraKw, LEAD_DAYS, nextAz, NOTICE_MONTHS, RACK_MODELS, rackUnits, RETENTION_PROVIDERS, SHARE_RACKS, SPACE_SIZES, spacePrice, crossConnectSetup } from "../20-world/datacenters";
+import { crossConnectTargets, targetName } from "../10-catalog/network";
 import { deviceDefaults, type BondMode, type Component, type Device, type End, type GameState, type LedgerEntry, type RackModel, type RaidLevel, type RebuildRate } from "../50-state";
-import { arrayLost, bootHours, connectError, drivesOf, energized, fits, flatOffer, freePositions, holdsData, nodesOf, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, isPlugged, locationOf, moveCost, psusOf, deviceValue, resaleValue, spotOf, travelCost, working } from "../60-infra/status";
-import { claimRepair } from "../46-finance/finance";
+import { arrayLost, bootHours, connectError, drivesOf, energized, fits, flatOffer, freePositions, holdsData, nodesOf, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, isPlugged, locationOf, moveCost, psusOf, deviceValue, resaleValue, spotOf, travelCost, osInstalling, takesShutdown } from "../60-infra/status";
 import { atFront, BMC_RESET_HOURS, bootUp, halt, hardReboot, plugCords, pullPlug, pushLog, rollStuck, type FrontOp } from "../60-infra/power";
 import { hasPdu, pduOf } from "../60-infra/pdu";
 import { kvmPower, lockoutRoll } from "../60-infra/oob";
@@ -63,12 +63,13 @@ export function addLocation(s: GameState, dcId: string, space: "share" | "cage" 
   // A waitlist hold for exactly this space reserves it; otherwise the space must be free now.
   const hold = s.waitlist.find((w) => w.dc === dcId && w.space === space && w.size === size && w.heldUntil !== null);
   if (!hold && !fits(s, dcId, space, size)) return fail("error.noSpace");
-  if (s.cash < spacePrice(dc, space, size)) return fail("error.noCash");
+  const monthly = spacePrice(dc, space, size, s.providerPrices);
+  if (s.cash < monthly) return fail("error.noCash");
   if (hold) s.waitlist = s.waitlist.filter((w) => w.id !== hold.id);
   const positions = space === "share" ? 1 : size;
   const loc = { id: newId(s, "loc"), dc: dc.id, city: dc.city, az: nextAz(s.locations, dc.city), name: dc.name, space, positions, readyAt: s.hour + 24 * LEAD_DAYS[space], extraCircuit: false };
   s.locations.push(loc);
-  s.contracts.push({ id: newId(s, "contract"), provider: dc.provider, dc: dc.id, locationId: loc.id, space, positions: size, since: s.hour, monthly: spacePrice(dc, space, size), endsAt: null });
+  s.contracts.push({ id: newId(s, "contract"), provider: dc.provider, dc: dc.id, locationId: loc.id, space, positions: size, since: s.hour, monthly, endsAt: null, retainedAt: null });
   const name = nextName(`${prefix(s, loc.id)}-gw`, s.devices.map((d) => d.name));
   s.devices.push({ id: newId(s, "dev"), model: "handoff", brand: SWITCH_BRAND, rackId: null, slot: 0, panel: loc.id, name, bond: "none", groups: [], price: 0, boughtAt: s.hour, lease: null, store: null, transitTo: null, arriveAt: null, ...deviceDefaults("handoff", s.hour) });
   const shareRack = space === "share" && SHARE_RACKS.find((m) => m.size === size)!;
@@ -124,11 +125,14 @@ export function cancelContract(s: GameState, contractId: string): ActionResult {
   return { ok: true };
 }
 
-export function revokeCancel(s: GameState, contractId: string): ActionResult {
+// retain takes the provider's retention offer along with the revoke.
+export function revokeCancel(s: GameState, contractId: string, retain = false): ActionResult {
   const c = s.contracts.find((x) => x.id === contractId);
   if (!c) return fail("error.unknownContract");
   if (c.endsAt === null) return fail("error.notCancelled");
+  if (retain && (!RETENTION_PROVIDERS.includes(c.provider) || c.retainedAt !== null)) return fail("error.noRetentionOffer");
   c.endsAt = null;
+  if (retain) c.retainedAt = s.hour;
   return { ok: true };
 }
 
@@ -140,7 +144,30 @@ export function closeLocation(s: GameState, locationId: string): ActionResult {
   unplug(s, panel);
   s.devices = s.devices.filter((d) => !panel.has(d.id));
   s.locations = s.locations.filter((l) => l.id !== locationId);
-  s.contracts = s.contracts.filter((c) => c.locationId !== locationId);
+  const gone = new Set(s.contracts.filter((c) => c.locationId === locationId).map((c) => c.id));
+  s.contracts = s.contracts.filter((c) => !gone.has(c.id));
+  s.crossConnects = s.crossConnects.filter((x) => !gone.has(x.contractId));
+  return { ok: true };
+}
+
+// Pays the setup fee now; the monthly price is billed with the rent from the next month start.
+export function orderCrossConnect(s: GameState, contractId: string, to: string): ActionResult {
+  const c = s.contracts.find((x) => x.id === contractId);
+  if (!c) return fail("error.unknownContract");
+  if (c.endsAt !== null) return fail("error.alreadyCancelled");
+  const dc = datacenterById(c.dc);
+  if (!crossConnectTargets(dc).some((x) => x.id === to)) return fail("error.noCrossConnectTarget");
+  const setup = crossConnectSetup(dc);
+  if (s.cash < setup) return fail("error.noCash");
+  const x = { id: newId(s, "xc"), contractId, to, monthly: dc.crossConnect, since: s.hour };
+  s.crossConnects = [...s.crossConnects, x];
+  book(s, "rent", "ledger.crossConnectSetup", { to: targetName(to), dc: dc.id }, -setup);
+  return { ok: true, id: x.id };
+}
+
+export function cancelCrossConnect(s: GameState, id: string): ActionResult {
+  if (!s.crossConnects.some((x) => x.id === id)) return fail("error.unknownCrossConnect");
+  s.crossConnects = s.crossConnects.filter((x) => x.id !== id);
   return { ok: true };
 }
 
@@ -553,7 +580,7 @@ export function moveServer(s: GameState, deviceIds: string | string[], locationI
     if (s.player.until > s.hour) return fail("error.away");
     const fare = driveTo(s, to.id);
     if (!fare) return fail("error.tooFar");
-    job = { cost: fare.fee, bill: 0, wait: fare.hours + work, commit: () => {
+    job = { cost: fare.fee, wait: fare.hours + work, commit: () => {
       book(s, "maintenance", "ledger.drive", { place: to.name }, -fare.fee);
       s.player = { at: to.id, until: s.hour + fare.hours + work, doing: "travel" };
       return fare.hours + work;
@@ -686,7 +713,7 @@ export function shutdown(s: GameState, deviceId: string): ActionResult {
   if (!d.rackId && !d.panel) return fail("error.notMounted");
   if (!d.on) return fail("error.alreadyOff");
   if (d.haltUntil !== undefined) return { ok: true };
-  if (!working(s, deviceId)) return fail("error.unresponsive");
+  if (!takesShutdown(s, d)) return fail("error.unresponsive");
   halt(s, d);
   return { ok: true };
 }
@@ -762,7 +789,7 @@ export function atServer(s: GameState, deviceId: string, op: FrontOp, how: How |
   if (d.hands) return fail("error.handsBusy");
   const cords = psusOf(d);
   if ((op === "hold" || op === "reset") && !d.on) return fail("error.alreadyOff");
-  if (op === "power" && d.on && !working(s, deviceId)) return fail("error.unresponsive");
+  if (op === "power" && d.on && !takesShutdown(s, d)) return fail("error.unresponsive");
   if (op === "pull" && !cords.some(isPlugged)) return fail("error.unplugged");
   if (op === "plug" && cords.every(isPlugged)) return fail("error.plugged");
   const job = handJob(s, d.label ?? d.name, locationOf(s, d), how, 0);
@@ -799,6 +826,14 @@ export function setPlugged(s: GameState, deviceId: string, componentId: string, 
   return { ok: true };
 }
 
+// Installs or removes the UPS shutdown agent on a server's OS (ups.ts), from its shell.
+export function setUpsAgent(s: GameState, deviceId: string, on: boolean): ActionResult {
+  const d = s.devices.find((x) => x.id === deviceId);
+  if (!d) return fail("error.unknownDevice");
+  d.upsAgent = on;
+  return { ok: true };
+}
+
 export const LABEL_MAX = 40;
 // An empty label clears it.
 export function setLabel(s: GameState, deviceId: string, label: string | null): ActionResult {
@@ -828,6 +863,7 @@ export function setRaid(s: GameState, deviceId: string, level: RaidLevel): Actio
   if (!d) return fail("error.unknownDevice");
   if (modelById(d.model).kind !== "server") return fail("error.notServer");
   if (!(level in { none: 1, "1": 1, "5": 1, "6": 1, "10": 1 }) || !raidFits(level, drivesOf(d).length)) return fail("error.raidLevel");
+  if (osInstalling(s, d)) return fail("error.installing");
   if (d.on && (d.rackId || d.panel) && !d.setup) return fail("error.raidInSetup");
   if (d.raid === level) return { ok: true };
   Object.assign(d, { raid: level, rebuild: null, dataLost: holdsData(s, d) ? s.hour : d.dataLost });
@@ -871,7 +907,6 @@ export function replaceComponent(s: GameState, deviceId: string, componentId: st
   if (s.cash < job.cost + grey) return fail("error.noCash");
   const wait = job.commit();
   if (grey) book(s, "maintenance", "ledger.greyMarket", { device: d.label ?? d.name, component: c.kind }, -grey);
-  if (!d.used) claimRepair(s, d.label ?? d.name, c, spares.reduce((n, x) => n + x.price, 0), job.bill);
   s.devices = s.devices.filter((x) => !spares.includes(x));
   const others = spares.length > 1 ? d.components.filter((x) => x.kind === "cpu" && x !== c).map((x) => x.id) : [];
   d.maintenance = { componentId, partId: part.id, doneAt: s.hour + wait, ...(part.part ? { spec: part.part } : {}), ...(others.length ? { others } : {}) };
@@ -981,7 +1016,7 @@ const sameSlots = (a: ComponentKind, b: ComponentKind) => a === b || (isDriveKin
 // the hand work's wait at a datacenter (remote hands bill at least an hour), plus 30 minutes for a part that needs the server off.
 function handsOn(s: GameState, d: Device, hot: boolean, how: How | boolean): { error: string } | HandJob {
   if (d.maintenance) return { error: "error.busy" };
-  if (!d.rackId) return d.store ? { cost: 0, bill: 0, wait: 0, commit: () => 0 } : { error: "error.inTransit" };
+  if (!d.rackId) return d.store ? { cost: 0, wait: 0, commit: () => 0 } : { error: "error.inTransit" };
   const rack = spotOf(s, d.rackId)!;
   if (rack.moving) return { error: "error.rackMoving" };
   if (energized(d) && !hot) return { error: "error.powerOffFirst" };

@@ -11,9 +11,8 @@ import { discountFor } from "../src/sim/80-business/marketing";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { setRate } from "../src/sim/90-actions/rates";
 import { setOptionDiscount } from "../src/sim/90-actions/portal";
-import { chooseShop } from "../src/sim/90-actions/shop";
 import type { GameState } from "../src/sim/50-state";
-import { automate, readyGame } from "./fixtures";
+import { automate, readyGame, installWithKey } from "./fixtures";
 
 const web = { product: "webHosting" as const, size: 1, sla: "basic" as const };
 const quoted = (s: GameState) => {
@@ -36,7 +35,7 @@ describe("email quotes and option discounts", () => {
     s.cash = 1e6;
     setUpChannel(s, "website");
     s.unlocks = [...s.unlocks, "shops"];
-    chooseShop(s, "modemBill");
+    installWithKey(s, "modemBill");
     s.hour += SHOP_SETUP_HOURS;
     setRate(s, "webHosting", "base", 99);
     const { r, discount } = quoted(s);
@@ -50,7 +49,7 @@ describe("email quotes and option discounts", () => {
     s.cash = 1e6;
     setUpChannel(s, "website");
     s.unlocks = [...s.unlocks, "shops"];
-    chooseShop(s, "modemBill");
+    installWithKey(s, "modemBill");
     expect(termPrice(s, 10, "annual")).toBe(108);
     expect(setOptionDiscount(s, "annual", 0.2).ok).toBe(true);
     expect(termPrice(s, 10, "annual")).toBe(96);
@@ -67,7 +66,7 @@ describe("email quote with a billing cycle", () => {
     s.cash = 1e6;
     setUpChannel(s, "website");
     s.unlocks = [...s.unlocks, "shops"];
-    chooseShop(s, "whmCache");
+    installWithKey(s, "whmCache");
     s.shop.variant = "whmCache";
     const { r } = quoted(s);
     const t = s.tickets.find((x) => x.id === r.ticketId)!;
@@ -88,7 +87,7 @@ describe("email quote with a billing cycle", () => {
     s.cash = 1e6;
     setUpChannel(s, "website");
     s.unlocks = [...s.unlocks, "shops"];
-    chooseShop(s, "modemBill");
+    installWithKey(s, "modemBill");
     const { r } = quoted(s);
     const qid = (createQuote(s, r.ticketId!) as { id: string }).id;
     expect(setQuoteCycle(s, qid, "triennial")).toMatchObject({ ok: false, error: "error.cycleNotSupported" });

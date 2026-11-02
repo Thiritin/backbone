@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { addressLines, mailedAddress } from "../src/sim/30-customers/addresses";
 import { hostFor, invoiceOf, stepsDone } from "../src/sim/30-market/manual";
 import { offerPrice, setupFee } from "../src/sim/30-market/spec";
-import { DOMAIN_FEE } from "../src/sim/30-customers/registry";
+import { domainFee } from "../src/sim/30-customers/registry";
+const DOMAIN_FEE = domainFee(2005);
 import { invoiceTotal } from "../src/sim/45-billing/billing";
 import { matchTransfer } from "../src/sim/90-actions/billing";
 import { deserialize, serialize } from "../src/sim/91-save/save";
@@ -40,19 +41,21 @@ function finish(s: GameState, id: string, req: () => SalesRequest) {
 const sent = (r: SalesRequest) => r.thread.filter((m) => m.from === "you").map((m) => m.key.replace(/\.\d$/, ""));
 
 describe("free order of steps", () => {
-  it("opens the account first and assigns the quote made after to it", () => {
+  it("opens the account only after the accepted quote and assigns the quote to it", () => {
     const s = readyGame(9);
     const { id, req } = order(s);
     const customers = s.customers.length;
+    expect(createAccount(s, id, mailedAddress(s.seed, req()))).toEqual({ ok: false, error: "error.needsQuote" });
+    const q = idOf(createQuote(s, id));
+    expect(s.quotes.find((x) => x.id === q)!.customerId).toBeNull();
+    expect(attachQuote(s, q, id).ok).toBe(true);
+    for (let i = 0; i < 60 && !stepsDone(s, req()).quote; i++) tick(s);
     expect(createAccount(s, id, mailedAddress(s.seed, req())).ok).toBe(true);
     run(s, 1);
     const c = req().customerId!;
     expect(c).not.toBeNull();
-    expect(stepsDone(s, req())).toMatchObject({ quote: false, account: true });
-    const q = idOf(createQuote(s, id));
+    expect(stepsDone(s, req())).toMatchObject({ quote: true, account: true });
     expect(s.quotes.find((x) => x.id === q)!.customerId).toBe(c);
-    expect(attachQuote(s, q, id).ok).toBe(true);
-    for (let i = 0; i < 60 && !stepsDone(s, req()).quote; i++) tick(s);
     idOf(convertQuote(s, q));
     finish(s, id, req);
     expect(s.customers).toHaveLength(customers + 1);
@@ -195,7 +198,7 @@ describe("order steps", () => {
 
   it("with the Helpdesk link runs the account and the first invoice from one Send", () => {
     const s = readyGame(9);
-    s.modules.push("helpdesk-link");
+    s.books = { vendor: "lexwear", installedAt: s.hour, edition: "financial-office-pro", seats: 0, download: null };
     const { id, req } = order(s);
     const q = idOf(createQuote(s, id));
     expect(attachQuote(s, q, id).ok).toBe(true);

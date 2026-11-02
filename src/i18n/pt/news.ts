@@ -1,5 +1,9 @@
+import { euroCents } from "../../sim/00-core/money";
+import { dateOf } from "../../sim/00-core/time";
+import { LOCALE } from "../lang";
 import type { Dict, Params } from "../lang";
 
+const day = (hour: string | number) => dateOf(Number(hour)).toLocaleDateString(LOCALE, { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
 const list = (v: string | number) => { const a = String(v).split("|"); return a.length < 2 ? a[0] : `${a.slice(0, -1).join(", ")} e ${a[a.length - 1]}`; };
 const FEATURE: Record<string, string> = {
   cluster: "funciona como um único cluster em vários servidores",
@@ -55,7 +59,7 @@ export default {
   "event.news.feature.title": (p) => `Atualização do ${p.name}`,
   "event.news.feature.text": (p) => `A Heize online noticia que a nova versão do ${p.name} ${FEATURE[p.feature] ?? p.feature}.`,
   "event.news.desk.title": (p) => `${p.name} já está disponível`,
-  "event.news.desk.text": (p) => `A Heize online noticia que o sistema de suporte ${p.name} já saiu e pode ser subscrito na Pear Store.`,
+  "event.news.desk.text": (p) => `A Heize online noticia que o sistema de suporte ${p.name} já saiu em ${p.host}.`,
   "event.news.training.title": (p) => `Formação em ${p.name} disponível`,
   "event.news.training.text": (p) => `A Heize online noticia que já existe uma formação em ${p.name}, que a tua equipa pode fazer em Pesquisa.`,
   "event.news.release.title": (p) => `Versões de software de ${p.year}`,
@@ -65,5 +69,13 @@ export default {
   "event.news.ports.title": (p) => `Portas de ${p.gbit} Gbit/s`,
   "event.news.ports.text": (p) => `O Golem.dy noticia que operadores e pontos de troca de tráfego já vendem portas de ${p.gbit} Gbit/s.`,
   "event.news.freeSsl.title": () => "Certificados SSL grátis",
-  "event.news.freeSsl.text": () => "O Handelsblah noticia que a Let's Encryptly já emite certificados SSL grátis e os clientes já não esperam pagar por um.",
+  "event.news.freeSsl.text": () => "O Handelsblah noticia que a Let's Encryptly já emite certificados SSL grátis e os clientes particulares já não esperam pagar por um.",
+  "event.news.licenceModel.title": (p) => `${p.name} muda as suas licenças`,
+  "event.news.licenceModel.text": (p) => `O Heize online noticia que a ${p.name} vende as suas licenças em novas condições a partir de ${day(p.at)}.`,
+  "event.news.licenceRise.title": (p) => `${p.name} sobe os preços`,
+  "event.news.licenceRise.text": (p) => `O Heize online noticia que a ${p.name} sobe ${p.pct}% os preços das licenças a ${day(p.at)}.`,
+  "event.news.registryPrice.title": (p) => `${p.name} sobe a tarifa`,
+  "event.news.registryPrice.text": (p) => `O Golem.dy noticia que a ${p.name} cobra aos registradores ${euroCents(Number(p.price))} por ano e domínio a partir de ${day(p.at)}.`,
+  "event.news.marketPrice.title": (p) => `Preços em alta: ${p.line}`,
+  "event.news.marketPrice.text": (p) => `O Handelsblah noticia que os grandes fornecedores sobem ${p.pct}% os preços (${p.line}) a ${day(p.at)}.`,
 } satisfies Dict;

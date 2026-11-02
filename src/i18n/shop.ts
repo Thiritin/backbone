@@ -6,7 +6,6 @@ export const SHOP_EN: Record<string, (p: Params) => string> = {
   "error.needsShopSkill": () => "Research Shop systems first.",
   "error.shopInUse": () => "This shop system already runs your orders.",
   "error.shopNotSold": () => "This shop system is not sold this year.",
-  "error.shopNoOwn": () => "This shop system is only leased.",
   "error.unknownModule": () => "There is no such module.",
   "error.moduleOwned": () => "You already have this module.",
   "error.moduleNotSold": () => "Your shop system sells no extra modules.",
@@ -31,4 +30,10 @@ export const SHOP_EN: Record<string, (p: Params) => string> = {
   "ledger.shopUpdates": (p) => `Shop updates: ${p.name}`,
   "ledger.shopCut": (p) => `Shop revenue share: ${p.name}`,
   "ledger.shopModule": (p) => `Shop module: ${p.module}`,
+  "error.shopNotInstalled": () => "The shop system is not installed.",
+  "error.shopDown": () => "The shop system's host is down.",
+  "error.shopHostPanel": () => "Only a web hosting panel host can run the shop system.",
+  "error.noUpdate": () => "No update is available.",
+  "error.noUpdates": () => "This licence includes no updates.",
+  "ledger.shopUpgrade": (p) => `Shop upgrade: ${p.name} ${p.major}`,
 };

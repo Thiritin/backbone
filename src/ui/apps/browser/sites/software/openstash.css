@@ -25,3 +25,18 @@
 .sw-openstash .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin: -36px 40px 40px; padding: 0; list-style: none; }
 .sw-openstash .cards li { padding: 20px; border-radius: 8px; background: #ffffff; border-top: 3px solid #da1a32; }
 .sw-openstash.late main { background: #ffffff; margin: 24px 40px; border-radius: 8px; }
+.sw-openstash.early { font: 13px/1.5 "Lucida Grande", "Lucida Sans Unicode", Arial, sans-serif; }
+.sw-openstash.early header { gap: 20px; padding: 10px 24px; background: linear-gradient(#ffffff, #e9e9e9); border-bottom: 1px solid #c8c8c8; }
+.sw-openstash.early .sw-wm { letter-spacing: 0; }
+.sw-openstash.early nav { gap: 16px; }
+.sw-openstash.early nav a { color: #333333; }
+.sw-openstash.early nav a[aria-current] { color: #da1a32; font-weight: 700; }
+.sw-openstash.early .hero { padding: 28px 24px 24px; background: linear-gradient(#ffffff, #f1f1f1); border-bottom: 1px solid #dddddd; }
+.sw-openstash.early .hero h1 { font-size: 28px; font-weight: 700; letter-spacing: 0; }
+.sw-openstash.early .hero p { margin: 10px auto 18px; }
+.sw-openstash.early .go { padding: 10px 32px; border: 1px solid #a8001a; border-radius: 6px; background: linear-gradient(#f0485c, #da1a32 50%, #c4122a 50%, #b30f24); box-shadow: inset 0 1px 0 rgba(255,255,255,0.4); text-shadow: 0 -1px 0 rgba(0,0,0,0.3); font-size: 17px; }
+.sw-openstash.early .list { margin: 18px auto 24px; }
+.sw-openstash.early main { padding: 18px 24px; }
+.sw-openstash.early main h2 { margin-bottom: 10px; font-size: 20px; font-weight: 700; }
+.sw-openstash.early section > * + * { margin-top: 10px; }
+.sw-openstash.early footer { padding: 10px 24px; font-size: 11px; border-top-color: #dddddd; }

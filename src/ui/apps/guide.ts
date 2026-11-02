@@ -5,7 +5,7 @@ import { registrarById, REGISTRARS } from "../../sim/10-catalog/registrars";
 import { supportApp } from "./support/desk";
 import { t } from "../../i18n/en";
 import { OFFICE_URL } from "../../sim/80-business/office";
-import { HOME_URL } from "../../sim/80-business/browser";
+import { bankUrl, dirSlug, HOME_URL } from "../../sim/80-business/browser";
 import type { GameState } from "../../sim/50-state";
 import type { GUIDE } from "../../sim/checklist";
 
@@ -32,8 +32,8 @@ export function stepOf(s: GameState, id: StepId): Step {
       return { title: t("guide.step.register"), text: t("apps.guide.step.register"), app: "Browser", focus: { kind: "url", id: OFFICE_URL } };
     case "payBill":
       return { title: t("guide.step.payBill"), text: t("apps.guide.step.payBill"), app: "Post" };
-      return { title: t("guide.step.books"), text: t("apps.guide.step.books"), app: "Shop", focus: { kind: "software", id: "Bookkeeping" } };
     case "books":
+      return { title: t("guide.step.books"), text: t("apps.guide.step.books"), app: "Browser", focus: { kind: "url", id: `${HOME_URL}${dirSlug(t("sim.index.cat.bookkeeping"))}` } };
     case "buyServer":
       return { title: t("guide.step.buyServer"), text: t("apps.guide.step.buyServer"), app: "Shop" };
     case "mountServer":
@@ -67,9 +67,9 @@ export function stepOf(s: GameState, id: StepId): Step {
     case "firstCustomer":
       return { title: t("guide.step.firstCustomer"), text: t("apps.guide.step.firstCustomer", { app: mailApp }), app: "Support" };
     case "loan":
-      return { title: t("guide.step.loan"), text: t("apps.guide.step.loan"), app: "Finance" };
+      return { title: t("guide.step.loan"), text: t("apps.guide.step.loan"), app: "Browser", focus: { kind: "url", id: s.bank ? `${bankUrl(s.bank.id)}banking/loans` : HOME_URL } };
     case "tenCustomers":
-      return { title: t("guide.step.tenCustomers"), text: t("apps.guide.step.tenCustomers"), app: "Customers" };
+      return { title: t("guide.step.tenCustomers"), text: t("apps.guide.step.tenCustomers"), app: "Support" };
     case "research":
       return { title: t("guide.step.research"), text: t("apps.guide.step.research"), app: "Research" };
     case "patch":

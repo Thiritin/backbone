@@ -4,8 +4,7 @@ import { companyDomain } from "../src/sim/30-customers/domains";
 import { resolve } from "../src/sim/80-business/browser";
 import { parsePortal, portalPath, type PortalArea } from "../src/sim/80-business/portal";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
-import { chooseShop } from "../src/sim/90-actions/shop";
-import { readyGame } from "./fixtures";
+import { readyGame, installWithKey } from "./fixtures";
 
 const AREAS: PortalArea[] = ["store", "configure", "cart", "client", "admin"];
 const withShop = () => {
@@ -14,7 +13,7 @@ const withShop = () => {
   setUpChannel(s, "website");
   s.marketing.launched = true;
   s.unlocks = [...s.unlocks, "shops"];
-  expect(chooseShop(s, "modemBill").ok).toBe(true);
+  installWithKey(s, "modemBill");
   return s;
 };
 

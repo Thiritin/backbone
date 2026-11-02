@@ -1,7 +1,7 @@
 import { FileText } from "lucide-react";
 import { Database, LogOut, Settings, type LucideIcon } from "lucide-react";
 import { disk } from "../../../hw";
-import { Actions, Bar, erasFrom, eraAt, Facts, LoginForm, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
+import { Actions, Bar, eraAt, looks, Facts, LoginForm, usePanelTab, useRows, useSoftware, type PanelProps, type Tab } from "../PanelBase";
 import { useReadoutPages } from "../Readouts";
 import { t } from "../../../../../i18n/en";
 import { hash } from "../services";
@@ -10,11 +10,11 @@ import { BucketPage } from "./BucketPage";
 import { Drives } from "./Drives";
 import "./minnio.css";
 
-// docs/design/software.md, section 10: dark with red and a bucket list until 2021, then white with red and bucket cards.
-const ERAS = erasFrom(2016, 2021);
+// docs/design/software.md, section 10: one look per MinnIO generation, ids as in UI_LOOKS.
+const LOOKS = looks({ early: 2016, late: 2021, browser: 2025 });
 
 export function MinnIO(p: PanelProps) {
-  const era = eraAt(ERAS, p), [tab, setTab] = usePanelTab(p.f);
+  const era = eraAt(LOOKS, p), [tab, setTab] = usePanelTab(p.f);
   const rows = useRows(p.game, p.c, p.f), sw = useSoftware(p.game, p.c, p.f), pages = useReadoutPages(p.game, p.c, p.f);
   const logo = <span className="mn-logo">MINN<b>IO</b></span>;
   if (!p.signedIn) return (
@@ -32,15 +32,15 @@ export function MinnIO(p: PanelProps) {
       </aside>
       <main className="mn-main">
         <div className="mn-head"><h1>{nav.find(([id]) => id === tab)?.[1]}</h1><span className="cx-host">{p.host}</span></div>
-        {tab === "objects" && <div className={era === "early" ? "mn-list" : "mn-cards"}>
+        {tab === "objects" && <div className={era === "late" ? "mn-cards" : "mn-list"}>
           {rows.length === 0 && <p className="cx-empty">{t("browser-consoles-1.nothingYet")}</p>}
           {rows.map((r) => (
             <section key={r.id} className="mn-bucket">
-              <Database size={era === "early" ? 16 : 22} aria-hidden className="mn-icon" />
+              <Database size={era === "late" ? 22 : 16} aria-hidden className="mn-icon" />
               <b>{r.name}</b>
               <span className="mn-meta num">{t("browser-consoles-1.mnObjects", { n: (hash(r.id) % 90_000) + 120 })}</span>
               <span className="mn-meta num">{disk(Math.round(r.disk[0]))}</span>
-              {era === "late" && <Bar use={r.disk} />}
+              {era !== "early" && <Bar use={r.disk} />}
               <span className={`cx-state ${r.tone}`}>{r.state}</span>
               <Actions actions={r.actions} className="cx-acts" />
               {r.panel}

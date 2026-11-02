@@ -10,7 +10,7 @@ import { useStore } from "../../../../store";
 import { bootLines } from "../../../console/lunix";
 import { Chart, Donut, niceMax } from "../Chart";
 import { AlarmList, ConsoleThumb, isoName, MediaMenu, NodeList, ResourceBars, summaryOf, TaskLog, tasks, Toolbar, useNewVm, useVms, vmFacts, Wizard, type Vm } from "../HypervisorBase";
-import { Actions, Backups, erasFrom, eraAt, Facts, LoginForm, useSoftware, type PanelProps } from "../PanelBase";
+import { Actions, Backups, eraAt, looks, Facts, LoginForm, useSoftware, type PanelProps } from "../PanelBase";
 import { parseCreate } from "../../../../../sim/80-business/consoles";
 import { packagesOf } from "../../../../../sim/80-business/packages";
 import { PackagesScreen } from "../PackageForms";
@@ -21,8 +21,8 @@ import { volumesOf } from "../../../../../sim/60-infra/horizont";
 import "./horizont.css";
 import { noAutofill } from "../../../../no-autofill";
 
-// docs/design/software.md, section 9: the purple dashboard from 2010, the dark-sidebar one with the red mark from 2016.
-const ERAS = erasFrom(2010, 2016);
+// docs/design/software.md, section 9: one look per Horizont generation, ids as in UI_LOOKS.
+const LOOKS = looks({ dashboard: 2010, early: 2012, heat: 2013, late: 2016 });
 const flavorOf = (r: Resources, c: Cluster) => FLAVORS.find(([, x]) => same(x, r))?.[0] ?? packagesOf(c).find((q) => same(q.spec, r))?.name ?? baseFlavorOf(r);
 const QUOTA_INSTANCES = 10;
 
@@ -71,7 +71,7 @@ export function InstanceOverview({ game, c, v, flavor }: { game: GameState; c: C
       <h4 className="cx-h">{t("browser-consoles-1.hzSpecs")}</h4>
       <Facts facts={[{ label: t("browser-consoles-1.hzFlavorName"), value: flavor, num: true }, { label: t("browser-consoles-1.hzRam"), value: `${v.w.ramGb}GB`, num: true }, { label: t("browser-consoles-1.hzVcpus"), value: `${v.w.vcpu} VCPU`, num: true }, { label: t("browser-consoles-1.hzDisk"), value: `${v.w.diskGb}GB`, num: true }]} />
       <h4 className="cx-h">{t("browser-consoles-1.hvIpAddresses")}</h4>
-      <Facts facts={[{ label: t("browser-consoles-1.hzPrivate"), value: v.ip || "-", num: true }]} />
+      <Facts facts={[{ label: t("browser-consoles-1.hzPrivate"), value: v.ips || "-", num: true }]} />
       <h4 className="cx-h">{t("browser-consoles-1.hzSecurityGroups")}</h4>
       <InstanceGroups c={c} v={v} />
       <h4 className="cx-h">{t("browser-consoles-1.hzMetadata")}</h4>
@@ -93,7 +93,7 @@ type Page = "overview" | "instances" | "floating" | "groups" | "volumes" | "imag
 const TAB_LABELS = { Overview: () => t("browser-consoles-1.hzOverview"), Log: () => t("browser-consoles-1.hzLog"), Console: () => t("browser-consoles-1.console") };
 
 export function Horizont(p: PanelProps) {
-  const era = eraAt(ERAS, p), { game, c, f } = p, openConsole = useStore((s) => s.openConsole);
+  const era = eraAt(LOOKS, p), { game, c, f } = p, openConsole = useStore((s) => s.openConsole);
   const link = parseCreate("openstash", p.path), [page, setPage] = useState<Page>(link?.screen === "packages" ? "flavors" : "instances"), [launching, setLaunching] = useState(link?.screen === "create");
   const { vms, dialog } = useVms(game, c, f), sw = useSoftware(game, c, f), nv = useNewVm(game, c, link?.screen === "create" ? link.order : undefined), health = summaryOf(game, c, null);
   if (!p.signedIn) return (
@@ -144,7 +144,7 @@ export function Horizont(p: PanelProps) {
                   {vms.map((v) => (
                     <tr key={v.id}>
                       <td><button className="hz-a" onClick={() => setPage({ vm: v.id, tab: "Overview" })}>{v.name}</button>{v.sub && <span className="cx-sub">{v.sub}</span>}</td>
-                      <td>{v.media ? isoName(v.media) : "-"}</td><td className="num">{v.ip}</td><td className="num">{flavorOf(v.w, c)}</td>
+                      <td>{v.media ? isoName(v.media) : "-"}</td><td className="num">{v.ips}</td><td className="num">{flavorOf(v.w, c)}</td>
                       <td><span className={`cx-state ${v.tone}`}>{v.tone === "bad" ? t("browser-consoles-1.error") : t("browser-consoles-1.active")}</span></td><td>{v.st === "stopped" ? t("browser-consoles-1.hzShutdown") : v.state}</td>
                     </tr>
                   ))}

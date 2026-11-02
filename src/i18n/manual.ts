@@ -18,6 +18,7 @@ const and = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(", ")} an
 
 // Custom orders, domains and upgrades of custom services; spread into en.
 export const MANUAL_EN: Record<string, (p: Params) => string> = {
+  "order.msg.item": (p) => `I would like the ${p.item} package from your website.`,
   "order.msg.webHosting.0": (p) => `Hello, I need web hosting for ${p.domain}: about ${web(p)}. ${domain(p)}`,
   "order.msg.webHosting.1": (p) => `A friend recommended you. My website ${p.domain} needs ${web(p)}. ${domain(p)} What would that cost?`,
   "order.msg.vps.0": (p) => `I would like a VPS in ${p.city} with ${box(p)}. Root access, please. I know what I am doing.`,
@@ -42,6 +43,14 @@ export const MANUAL_EN: Record<string, (p: Params) => string> = {
   "activity.renewDomain": (p) => `Renewed ${p.domain} for a year`,
   "activity.changePackage": (p) => `Moved to package ${p.pkg}`,
   "activity.upgrade": (p) => `Upgraded the service at ${euroCents(Number(p.price))} a month`,
+  "activity.throttled": () => "Throttled traffic to the plan",
+  "activity.overageBilled": (p) => `Billed traffic overage of ${euroCents(Number(p.price))}`,
+  "invoice.line.trafficOverage": (p) => `${p.label}, traffic over the plan: ${gb(p.gb)}`,
+  "ticket.upgrade.traffic.subject": (p) => `Traffic for ${p.hostname || p.service || "our site"}`,
+  "ticket.upgrade.traffic.text": () => "Your mail says we use more traffic than our plan includes. What would a bigger plan cost?",
+  "error.noOveruse": () => "This service is within its traffic.",
+  "error.overuseHandled": () => "This service's traffic was already handled this month.",
+  "error.notExpandable": () => "This service has no bigger plan.",
   "event.orderAccepted.title": () => "Quote accepted",
   "event.orderAccepted.text": (p) => `${p.name} accepted the quote.`,
   "event.orderPaid.title": () => "Order paid",

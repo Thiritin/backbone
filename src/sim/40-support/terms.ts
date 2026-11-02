@@ -21,9 +21,14 @@ export function termRoll(s: GameState, customerId: string): { committed: boolean
   return { committed: active.length > 0 && active.every((v) => v.termEnd !== undefined && v.termEnd > s.hour), months: 1 };
 }
 
-// A customer who leaves inside a paid term gets the unused whole months back, unless an invoice of theirs is still open.
+// A customer who leaves inside a paid term gets the unused whole months back, unless an invoice of theirs is still open
+// or their latest term invoice was written off.
 export function refundUnused(s: GameState, c: Customer): void {
-  if (s.invoices.some((i) => i.customerId === c.id && i.status !== "paid" && i.status !== "writtenOff")) return;
+  const mine = s.invoices.filter((i) => i.customerId === c.id);
+  if (mine.some((i) => i.status !== "paid" && i.status !== "writtenOff")) return;
+  // A term that was written off was never paid, so nothing of it is given back.
+  const terms = mine.filter((i) => i.lines.some((l) => l.key === "invoice.line.firstTerm" || l.key === "invoice.line.renewal"));
+  if (terms.length && terms.reduce((a, b) => (b.issuedAt >= a.issuedAt ? b : a)).status === "writtenOff") return;
   let months = 0, amount = 0;
   for (const v of s.services) {
     if (v.customerId !== c.id || v.endedAt !== null || !v.cycle || v.termEnd === undefined || v.termEnd <= s.hour) continue;

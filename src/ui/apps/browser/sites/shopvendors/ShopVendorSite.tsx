@@ -7,12 +7,12 @@ import { methodById, type MethodId } from "../../../../../sim/10-catalog/payment
 import { feeText } from "../../../marketing/payments";
 import { shopById, type ShopId } from "../../../../../sim/10-catalog/shops";
 import type { GameState } from "../../../../../sim/50-state";
-import { bought } from "../../../../../sim/80-business/lexwear";
+import { bought } from "../../../../../sim/80-business/licences";
 import { buyShopLink } from "../../../../../sim/90-actions/shoplink";
 import "./shopvendors.css";
 import { usePageAct } from "../../pageAct";
 
-export interface VendorProps { game: GameState }
+export interface VendorProps { game: GameState; path?: string; go?: (url: string) => void }
 
 // The page every shop vendor sells its modules on, Shop link and the payment methods of the year; each vendor's file
 // gives it its colours and wordmark.

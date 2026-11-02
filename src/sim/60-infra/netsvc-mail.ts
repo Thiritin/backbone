@@ -6,7 +6,7 @@ import type { GameState } from "../50-state";
 import { t } from "../../i18n/en";
 import { DELIST_HOURS, SPAM } from "../10-catalog/addresses";
 import { bump } from "../40-support/tickets";
-import { isSuspended } from "../45-billing/billing";
+import { serviceHeld } from "../45-billing/billing";
 import { mailAddress, serviceAddress } from "./addresses";
 import { workloadsUp } from "./cluster";
 import type { MailState } from "./netsvc";
@@ -68,7 +68,7 @@ const REPEAT_DAYS = 30;
 export function spamSenders(s: GameState, addressId: string): { service: Service; customerId: string; thousands: number }[] {
   return s.services
     .filter((v) => v.endedAt === null && serviceAddress(s, v.id)?.id === addressId)
-    .filter((v) => { const c = s.customers.find((x) => x.id === v.customerId); return c?.shady && c.churnedAt === null && !isSuspended(s, c.id); })
+    .filter((v) => { const c = s.customers.find((x) => x.id === v.customerId); return c?.shady && c.churnedAt === null && !serviceHeld(s, v); })
     .map((v) => ({ service: v, customerId: v.customerId, thousands: SPAM.shady }))
     .sort((a, b) => idNo(a.service.id) - idNo(b.service.id));
 }

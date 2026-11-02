@@ -1,0 +1,47 @@
+/* lexoffize: a 2014 SaaS page, white top bar, blue hero band, a pricing table with the middle plan raised. */
+.lo {
+  --bv-brand: #2b7de9; --bv-ink: #fff; --bv-font: "Open Sans", "Helvetica Neue", Arial, sans-serif;
+  --lo-red: #d62d42; --lo-hero: #eaf3fd; --lo-hero-ink: #1d3557; --lo-line: #dfe7f1;
+  min-height: 100%; background: #fff; color: #3a4552; font: 14px/1.5 var(--bv-font);
+}
+.lo a { color: var(--bv-brand); }
+.lo-head { display: flex; align-items: center; gap: 32px; padding: 14px 40px; border-bottom: 1px solid var(--lo-line); }
+.lo-logo { font: 26px/1 "Helvetica Neue", Arial, sans-serif; letter-spacing: -0.8px; text-decoration: none; }
+.lo .lo-logo { color: #4a5563; }
+.lo-logo b { color: var(--bv-brand); font-weight: 700; }
+.lo-logo i { color: var(--lo-red); font-style: normal; font-weight: 700; }
+.lo-nav { display: flex; gap: 24px; margin-left: auto; }
+.lo .lo-nav a { color: #4a5563; text-decoration: none; font-weight: 600; padding: 4px 0; border-bottom: 2px solid transparent; }
+.lo .lo-nav a[aria-current] { color: var(--bv-brand); border-bottom-color: var(--bv-brand); }
+.lo-hero { background: var(--lo-hero); color: var(--lo-hero-ink); text-align: center; padding: 40px 40px 36px; }
+.lo-hero h1 { margin: 0 0 6px; font-size: 30px; font-weight: 300; letter-spacing: -0.5px; }
+.lo-hero p { margin: 0; font-size: 16px; opacity: 0.8; }
+.lo-main { max-width: 760px; margin: 0 auto; padding: 32px 40px 40px; }
+.lo .bv-table { border-collapse: separate; border-spacing: 0; width: 100%; }
+.lo .bv-table th, .lo .bv-table td { padding: 10px 14px; border-bottom: 1px solid var(--lo-line); text-align: center; }
+.lo .bv-table th[scope="row"] { text-align: left; font-weight: normal; color: #5b6673; }
+.lo .bv-table thead th { font-size: 20px; font-weight: 300; color: var(--lo-hero-ink); border-bottom: 3px solid var(--bv-brand); padding-top: 16px; }
+.lo .bv-table :is(th, td):nth-child(3) { background: #f5f9fe; }
+.lo .bv-table thead th:nth-child(3) { background: var(--bv-brand); color: #fff; border-radius: 4px 4px 0 0; }
+.lo .bv-price td { font-size: 22px; font-weight: 600; color: var(--lo-hero-ink); }
+.lo .bv-price small { display: block; font-size: 11px; font-weight: normal; color: #7a8592; }
+.lo .bv-buy { font: 600 14px var(--bv-font); color: #fff; background: var(--bv-brand); border: 0; border-radius: 3px; padding: 8px 22px; cursor: pointer; }
+.lo .bv-buy:hover { background: #1f6acc; }
+.lo .bv-state { font-weight: 600; color: #2e8540; }
+.lo .bv-row { display: flex; align-items: center; gap: 12px; margin-top: 18px; }
+.lo-foot { background: #f4f6f8; border-top: 1px solid var(--lo-line); color: #7a8592; font-size: 12px; padding: 20px 40px; }
+
+/* The 2020 refresh: navy hero with white type, bolder headings, rounded table and pill buttons. */
+.lo-refresh { --bv-brand: #1e6fd9; --lo-hero: #0c2340; --lo-hero-ink: #0c2340; --lo-line: #e6ebf1; color: #2b3542; }
+.lo-refresh .lo-head { background: var(--lo-hero); border-bottom: 0; }
+.lo-refresh .lo-logo, .lo-refresh .lo-nav a { color: #fff; }
+.lo-refresh .lo-logo b { color: #7fb5ff; }
+.lo-refresh .lo-nav a[aria-current] { color: #fff; border-bottom-color: #7fb5ff; }
+.lo-refresh .lo-hero { color: #fff; text-align: left; padding: 48px 40px 56px; }
+.lo-refresh .lo-hero h1 { font-size: 36px; font-weight: 700; letter-spacing: -1px; }
+.lo-refresh .lo-main { margin-top: -28px; background: #fff; border-radius: 12px; box-shadow: 0 8px 28px rgb(12 35 64 / 0.12); padding: 28px 32px 32px; }
+.lo-refresh .bv-table thead th { font-weight: 700; border-bottom-width: 2px; }
+.lo-refresh .bv-table thead th:nth-child(3) { border-radius: 8px 8px 0 0; }
+.lo-refresh .bv-price td { font-weight: 700; }
+.lo-refresh .bv-buy { border-radius: 999px; }
+.lo-refresh .lo-foot { margin-top: 40px; background: var(--lo-hero); color: #a9b8ca; border-top: 0; }

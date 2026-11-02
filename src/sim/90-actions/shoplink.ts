@@ -5,7 +5,7 @@ import type { ShopId } from "../10-catalog/shops";
 import { hasModule } from "../10-catalog/modules";
 import type { MethodId } from "../10-catalog/payments";
 import type { GameState } from "../50-state";
-import { buyLicence } from "./lexwear";
+import { buyLicence } from "./licences";
 import type { ActionResult } from "./hardware";
 
 export function importFromShop(s: GameState): ActionResult {

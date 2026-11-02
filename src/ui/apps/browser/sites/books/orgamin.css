@@ -1,0 +1,48 @@
+/* orgaMIN: a developer-made homepage with a left menu until 2010, a relaunched site with a price table from 2011. */
+.om { min-height: 100%; background: #fff; color: #333; }
+.om a { color: #d2640f; }
+.om h1, .om h2, .om p { margin: 0; }
+.om .bv-state { font-weight: bold; color: #3a8a1e; }
+.om .bv-row { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+
+/* 2005: full-width page, logo on white over an orange rule, light orange menu column, Tahoma 12 px. */
+.om-home { font: 12px/1.5 Tahoma, Verdana, Geneva, sans-serif; }
+.om-home .om-head { display: flex; align-items: baseline; gap: 16px; padding: 14px 18px 8px; border-bottom: 4px solid #e8731c; }
+.om-home .om-logo { font: 28px/1 Arial, Helvetica, sans-serif; color: #666; letter-spacing: -1px; }
+.om-home .om-logo b { color: #e8731c; }
+.om-home .om-tag { color: #888; font-size: 11px; }
+.om-home .om-body { display: flex; }
+.om-home .om-nav { flex: none; width: 150px; min-height: 260px; padding: 10px 0; background: #fbe6d4; border-right: 1px solid #f0c9a6; }
+.om-home .om-nav a { display: block; padding: 3px 14px; color: #333; text-decoration: none; }
+.om-home .om-nav a::before { content: "\203A  "; color: #e8731c; font-weight: bold; }
+.om-home .om-nav a[aria-current] { font-weight: bold; color: #d2640f; }
+.om-home .om-main { flex: 1; padding: 12px 20px 20px; }
+.om-home h1 { font: bold 16px Arial, Helvetica, sans-serif; color: #e8731c; margin-bottom: 10px; }
+.om-home h2 { font-size: 12px; color: #444; margin-top: 12px; }
+.om-home ul { margin: 2px 0 4px; padding-left: 24px; }
+.om-home .bv-buy { font: 11px Tahoma, Verdana, sans-serif; padding: 1px 10px; cursor: pointer; }
+.om-home .om-foot { padding: 6px 18px; border-top: 1px solid #ddd; color: #999; font-size: 10px; }
+
+/* 2011: centred 960 px site, grey header bar with orange nav tabs, a price table, Arial 13 px. */
+.om-relaunch { background: #eeeeee; font: 13px/1.5 Arial, Helvetica, sans-serif; padding-bottom: 24px; }
+.om-relaunch .om-head, .om-relaunch .om-body, .om-relaunch .om-foot { max-width: 960px; margin: 0 auto; }
+.om-relaunch .om-head { display: flex; align-items: baseline; gap: 18px; padding: 22px 24px 14px; background: #fff; }
+.om-relaunch .om-logo { font: 32px/1 Arial, Helvetica, sans-serif; color: #555; letter-spacing: -1px; }
+.om-relaunch .om-logo b { color: #e8731c; }
+.om-relaunch .om-tag { color: #777; }
+.om-relaunch .om-body { background: #fff; }
+.om-relaunch .om-nav { display: flex; padding: 0 24px; background: #4a4a4a; }
+.om-relaunch .om-nav a { padding: 9px 18px; color: #fff; text-decoration: none; font-weight: bold; }
+.om-relaunch .om-nav a[aria-current] { background: #e8731c; }
+.om-relaunch .om-main { padding: 24px; }
+.om-relaunch h1 { font-size: 22px; font-weight: normal; color: #444; margin-bottom: 18px; }
+.om-relaunch .bv-table { border-collapse: collapse; width: 100%; }
+.om-relaunch .bv-table th, .om-relaunch .bv-table td { padding: 8px 12px; border-bottom: 1px solid #e2e2e2; text-align: center; }
+.om-relaunch .bv-table th[scope="row"] { text-align: left; font-weight: normal; color: #555; }
+.om-relaunch .bv-table thead th { background: #e8731c; color: #fff; font-size: 15px; border-left: 2px solid #fff; }
+.om-relaunch .bv-table thead th:first-child { background: none; }
+.om-relaunch .bv-table td:nth-child(odd) { background: #fdf3ea; }
+.om-relaunch .bv-price td { font-size: 20px; font-weight: bold; color: #d2640f; }
+.om-relaunch .bv-price small { display: block; font-size: 11px; font-weight: normal; color: #777; }
+.om-relaunch .bv-buy { font: bold 13px Arial, Helvetica, sans-serif; color: #fff; background: linear-gradient(#f28a35, #d2640f); border: 0; border-radius: 4px; padding: 6px 20px; cursor: pointer; }
+.om-relaunch .om-foot { padding: 12px 24px; background: #4a4a4a; color: #bbb; font-size: 11px; }

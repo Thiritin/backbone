@@ -1,8 +1,8 @@
 // Events that stop the clock and open a sheet, mapped to the app the sheet's primary button opens.
 export const ALERT_KEYS: Record<string, string> = {
-  "event.cashNegative": "Finance",
-  "event.loanMissed": "Finance",
-  "event.loanCalled": "Finance",
+  "event.cashNegative": "Books",
+  "event.loanMissed": "Books",
+  "event.loanCalled": "Books",
   "event.vuln.announced": "Security",
   "event.vuln.poc": "Security",
   "event.vuln.warning": "Security",

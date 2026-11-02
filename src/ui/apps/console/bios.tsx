@@ -10,6 +10,7 @@ import { rebuildHours } from "../../../sim/88-tick/tick";
 import { setRaid, setRebuildRate } from "../../../sim/90-actions/hardware";
 import { exitSetup } from "../../../sim/90-actions/console";
 import { useStore } from "../../store";
+import { stickName } from "./Screen";
 import { cores, disk, ram } from "../hw";
 
 const PAGES = ["Main", "Storage", "Exit"] as const;
@@ -26,6 +27,8 @@ export function useBios(game: GameState, d: Device): { view: ReactNode; onKey: (
   const [page, setPage] = useState(0);
   const [row, setRow] = useState(0);
   const [confirm, setConfirm] = useState<RaidLevel | null>(null);
+  const [saved, setSaved] = useState(false);
+  const usb = stickOs(game, d.id);
   const model = modelById(d.model), sv = model.server, drives = drivesOf(d), tol = raidTolerance(d);
   const levels = LEVELS.filter(([v]) => FITS[v](drives.length)).map(([v]) => v);
   const pickLevel = () => {
@@ -43,7 +46,7 @@ export function useBios(game: GameState, d: Device): { view: ReactNode; onKey: (
         { label: "Memory", value: ram(sv.ramGb) },
       ] : []),
       { label: "Drives", value: `${drives.length}` },
-      { label: "USB Device", value: stickOs(game, d.id) ? "USB Flash Disk" : "Not Present" },
+      { label: "USB Device", value: usb ? "USB Flash Disk" : "Not Present" },
     ],
     [
       { label: "RAID Level", value: LEVELS.find(([v]) => v === d.raid)?.[1] ?? d.raid, help: t("console.biosHelpRaid"), run: pickLevel },
@@ -56,10 +59,15 @@ export function useBios(game: GameState, d: Device): { view: ReactNode; onKey: (
     [
       { label: "Save Changes and Exit", help: t("console.biosHelpSave"), run: () => act(exitSetup, d.id) },
       { label: "Discard Changes and Exit", help: t("console.biosHelpDiscard"), run: () => act(exitSetup, d.id) },
+      { label: "Save Changes", help: t("console.biosHelpSaveStay"), run: () => setSaved(true) },
+      { label: "Boot Override" },
+      { label: "Hard Disk", help: t("console.biosHelpOverride"), run: () => act(exitSetup, d.id, "disk") },
+      ...(usb ? [{ label: `USB: ${stickName(usb)}`, help: t("console.biosHelpOverride"), run: () => act(exitSetup, d.id, "usb") }] : []),
     ],
   ];
   const cur = rows[page], at = Math.min(row, cur.length - 1);
   const onKey = (key: string) => {
+    if (saved) { setSaved(false); return; }
     if (confirm !== null) {
       if (key === "Enter" || key === "y" || key === "Y") { act(setRaid, d.id, confirm); setConfirm(null); }
       else if (key === "Escape" || key === "n" || key === "N") setConfirm(null);
@@ -89,6 +97,7 @@ export function useBios(game: GameState, d: Device): { view: ReactNode; onKey: (
       <div className="bios-f">
         <span>&larr;&rarr; Select Screen</span><span>&uarr;&darr; Select Item</span><span>Enter Change</span><span>F10 Save and Exit</span><span>Esc Exit</span>
       </div>
+      {saved && <div className="bios-dlg"><div>{t("console.biosSaved")}</div></div>}
       {confirm !== null && (
         <div className="bios-dlg">
           <div>{t("console.biosDelete")}</div>

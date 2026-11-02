@@ -38,7 +38,7 @@ describe("notification types", () => {
   });
 
   it("sends a key no group claims to Other", () => {
-    expect(typeOf("Finance", "event.somethingNew")).toBe("other");
+    expect(typeOf("Books", "event.somethingNew")).toBe("other");
     expect(typeOf("Shop", "event.tax")).toBe("other");
   });
 });
@@ -57,23 +57,23 @@ describe("notification types in the store", () => {
   });
 
   it("shows nothing of an app that is off, whatever its types say", () => {
-    s().setNotifyPref("Finance", { allow: false, types: {} });
-    s().notify("Finance", "tax", "x", "event.tax");
+    s().setNotifyPref("Books", { allow: false, types: {} });
+    s().notify("Books", "tax", "x", "event.tax");
     expect(s().history).toHaveLength(0);
   });
 
   it("always shows alert keys", () => {
-    s().setNotifyPref("Finance", { allow: false, types: { [typeOf("Finance", "event.loanMissed")]: false } });
+    s().setNotifyPref("Books", { allow: false, types: { [typeOf("Books", "event.loanMissed")]: false } });
     expect(Object.keys(ALERT_KEYS)).toContain("event.loanMissed");
-    s().notify("Finance", "missed", "x", "event.loanMissed");
+    s().notify("Books", "missed", "x", "event.loanMissed");
     expect(s().history.map((b) => b.title)).toEqual(["missed"]);
   });
 
   it("loads preferences from before types with every type on", () => {
-    const old = { Finance: { allow: true, sound: false } };
-    expect(prefOf(old, "Finance").types).toBeUndefined();
+    const old = { Books: { allow: true, sound: false } };
+    expect(prefOf(old, "Books").types).toBeUndefined();
     useStore.setState({ notifyPrefs: old });
-    s().notify("Finance", "tax", "x", "event.tax");
+    s().notify("Books", "tax", "x", "event.tax");
     expect(s().history).toHaveLength(1);
   });
 });

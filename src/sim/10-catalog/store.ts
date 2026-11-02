@@ -2,13 +2,13 @@ import type { Product } from "../30-customers/customers";
 import { textFields } from "../00-core/text";
 import { START_YEAR, yearOf } from "../00-core/time";
 import type { GameState, LedgerEntry } from "../50-state";
-import { DESKS, seats } from "./desks";
+import { seats, type Desk } from "./desks";
 
 // Values from docs/design/economy.md, section "Pear One subscriptions". The skill each item needs is in research.ts.
 
 // Apps every new game has in the dock, free of charge. Getting started and Notes are desktop documents and never sit in the dock.
 // Books comes with the bookkeeping program the player buys in the Pear Store.
-export const STARTER_APPS = ["Applications", "Locations", "Shop", "Browser", "Terminal", "Support", "Settings"];
+export const STARTER_APPS = ["Applications", "Locations", "Shop", "Browser", "Terminal", "Support", "Settings", "Marketing", "Security", "Research"];
 
 // id is the app name for apps; monthly is the 2005 price, charged once per seat when perSeat is set.
 export interface StoreItem { id: string; kind: "app" | "upgrade" | "bot" | "desk"; name: string; monthly: number; perSeat?: boolean }
@@ -28,15 +28,17 @@ export const STORE: StoreItem[] = [
   { id: "Nagiosaurus", kind: "app", name: "Nagiosaurus", monthly: 15 },
   { id: "Knowledge base", kind: "app", name: "Knowledge base", monthly: 10 },
   { id: "searchlight", kind: "upgrade", name: "Searchlight", monthly: 2 },
+  { id: "keepassive", kind: "upgrade", name: "KeePassive", monthly: 3 },
   ...WIDGETS.map(([id, name, monthly]): StoreItem => ({ id, kind: "upgrade", name, monthly })),
   // One subscription is one bot; what each bot does is in 47-staff/staff.ts.
   { id: "chadGpt", kind: "bot", name: "ChadGPT Support", monthly: 50 },
   { id: "clipsy", kind: "bot", name: "Clipsy Reminders", monthly: 100 },
-  ...DESKS.map((d): StoreItem => ({ id: d.id, kind: "desk", name: d.name, monthly: d.monthly, perSeat: true })),
 ];
 textFields("sim.store", STORE.filter((i) => i.id.startsWith("widget") || i.id === "Knowledge base"), ["name"]);
 
 export const storeItem = (id: string): StoreItem | undefined => STORE.find((i) => i.id === id);
+// A desk billed per seat: a hosted subscription from its vendor's site, or a legacy desk from the Pear Store.
+export const deskItem = (d: Desk): StoreItem => ({ id: d.id, kind: "desk", name: d.name, monthly: d.monthly, perSeat: true });
 
 export const PRICE_RISE = 0.08;
 // ponytail: base price only; the per-device or per-customer extras and Pear's surprise price adjustments come with the modules that need them.

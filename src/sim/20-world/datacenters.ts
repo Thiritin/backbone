@@ -4,7 +4,8 @@ import { hashRng, rand } from "../00-core/rng";
 import { businessPowerPrice } from "../10-catalog/economy";
 import type { RackModel, SpaceKind } from "../50-state";
 
-export interface Provider { id: string; name: string }
+// host is bare; the Browser also takes it with www.
+export interface Provider { id: string; name: string; host: string }
 export interface Datacenter {
   id: string; name: string; provider: string; city: string; carriers: number;
   exchange: { name: string; onSite: boolean } | null;
@@ -19,26 +20,26 @@ export interface Datacenter {
 }
 
 export const PROVIDERS: Provider[] = [
-  { id: "equinox", name: "Equinox" },
-  { id: "interaction", name: "Interaction" },
-  { id: "mainqubes", name: "mainqubes" },
-  { id: "hetzler", name: "Hetzler" },
-  { id: "tellyhouse", name: "Tellyhouse" },
-  { id: "globalsnitch", name: "Global Snitch" },
-  { id: "docklands", name: "Docklands Data" },
-  { id: "ironmolehill", name: "Iron Molehill" },
-  { id: "data5", name: "Data5" },
-  { id: "ntd", name: "NTD" },
-  { id: "spree", name: "Spree Colo" },
-  { id: "arubaba", name: "Arubaba" },
-  { id: "nextlair", name: "Next Lair" },
-  { id: "greenchz", name: "Green.chz" },
-  { id: "skyblink", name: "SkyBlink" },
-  { id: "borisnet", name: "Boris Network" },
-  { id: "digitalreality", name: "Digital Reality" },
-  { id: "corespite", name: "CoreSpite" },
-  { id: "telex", name: "Telex" },
-  { id: "myloch", name: "myLoch" },
+  { id: "equinox", name: "Equinox", host: "equinox.com" },
+  { id: "interaction", name: "Interaction", host: "interaction.com" },
+  { id: "mainqubes", name: "mainqubes", host: "mainqubes.de" },
+  { id: "hetzler", name: "Hetzler", host: "hetzler.de" },
+  { id: "tellyhouse", name: "Tellyhouse", host: "tellyhouse.co.uk" },
+  { id: "globalsnitch", name: "Global Snitch", host: "globalsnitch.com" },
+  { id: "docklands", name: "Docklands Data", host: "docklandsdata.co.uk" },
+  { id: "ironmolehill", name: "Iron Molehill", host: "ironmolehill.com" },
+  { id: "data5", name: "Data5", host: "data5group.com" },
+  { id: "ntd", name: "NTD", host: "ntd-global.com" },
+  { id: "spree", name: "Spree Colo", host: "spreecolo.de" },
+  { id: "arubaba", name: "Arubaba", host: "arubaba.it" },
+  { id: "nextlair", name: "Next Lair", host: "nextlair.at" },
+  { id: "greenchz", name: "Green.chz", host: "greenchz.ch" },
+  { id: "skyblink", name: "SkyBlink", host: "skyblink.nl" },
+  { id: "borisnet", name: "Boris Network", host: "boris.de" },
+  { id: "digitalreality", name: "Digital Reality", host: "digitalreality.com" },
+  { id: "corespite", name: "CoreSpite", host: "corespite.com" },
+  { id: "telex", name: "Telex", host: "telex.com" },
+  { id: "myloch", name: "myLoch", host: "myloch.de" },
 ];
 
 type Row = [id: string, name: string, provider: string, city: string, carriers: number, exchange: string | null, onSite: boolean,
@@ -104,6 +105,7 @@ export const DATACENTERS: Datacenter[] = ROWS.map(([id, name, provider, city, ca
   size: SIZE_OF[provider], visitBooking: rivals(city) && price === topPrice(city),
 }));
 
+export const dcProvider = (id: string): Provider => PROVIDERS.find((p) => p.id === id)!;
 export const datacenterById = (id: string): Datacenter => {
   const dc = DATACENTERS.find((d) => d.id === id);
   if (!dc) throw new Error(`unknown datacenter ${id}`);
@@ -210,12 +212,17 @@ export const SPACE_SIZES: Record<RentedSpace, number[]> = { share: [8, 4, 2, 1],
 export const LEAD_DAYS: Record<RentedSpace, number> = { share: 2, cage: 30, suite: 90 };
 // Months of notice to the end of a month before a rented space is handed back.
 export const NOTICE_MONTHS: Record<RentedSpace, number> = { share: 1, cage: 3, suite: 6 };
+// The large carrier-neutral providers offer a cancelled contract one free month for staying, once per contract.
+export const RETENTION_PROVIDERS = ["equinox", "digitalreality", "interaction", "ntd", "telex", "corespite"];
 // Shares, cages and suites cost a multiple of one position, by size; a share of size n is 1/n of a rack.
 const MULTIPLIERS: Record<RentedSpace, Record<number, number>> = { share: { 8: 0.2, 4: 0.35, 2: 0.6, 1: 1.1 }, cage: { 4: 3.4, 8: 6.4, 16: 12 }, suite: { 20: 15, 40: 28 } };
 
-export function spacePrice(dc: Datacenter, space: RentedSpace, positions: number): number {
-  return Math.round(dc.positionPrice * (MULTIPLIERS[space][positions] ?? positions));
+// prices is GameState.providerPrices; without it the list price applies.
+export function spacePrice(dc: Datacenter, space: RentedSpace, positions: number, prices?: Record<string, number>): number {
+  return Math.round(dc.positionPrice * (prices?.[dc.provider] ?? 1) * (MULTIPLIERS[space][positions] ?? positions));
 }
+// A cross-connect's one-off setup fee, two months of its monthly price.
+export const crossConnectSetup = (dc: Datacenter): number => 2 * dc.crossConnect;
 
 // Extra power on a provided share: steps of 0.25 kW up to the share's base limit again, billed monthly with the rent.
 export const EXTRA_STEP_KW = 0.25;

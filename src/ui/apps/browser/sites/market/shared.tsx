@@ -60,8 +60,8 @@ export function listingRows(game: GameState, l: Listing, to: string, long: boole
   const short: [string, string][] = m.server
     ? [["CPU", `${get("Cores")} ${get("CPU")}, ${get("Clock")}`], ["RAM", get("RAM")], ["Storage", get("Storage")]]
     : tech.filter(([k]) => ["Ports", "Battery", "Outlets", "Throughput"].includes(k));
-  return [
-    ...(long ? [...tech, ...(m.server ? memoryDriveRows(componentParts(m, vendor)) : [])] : short),
+  const rows: [string, string][] = [
+    ...(long ? tech : short),
     ["Age", years(l.age)],
     ...(long ? [["Seller", l.city]] as [string, string][] : []),
     ...(long ? [[auction ? "Ends" : "Listed for", days(l.expiresAt - game.hour)]] as [string, string][] : []),
@@ -69,6 +69,9 @@ export function listingRows(game: GameState, l: Listing, to: string, long: boole
     ...(l.defect ? [["Defect", t(`shop.defect.${l.defect}`)]] as [string, string][] : []),
     ...(l.bid ? [["Your maximum", euro(l.bid)]] as [string, string][] : []),
   ].map(([k, v]) => [rowLabel(k), v]);
+  // Memory and drive rows come labelled already.
+  if (long && m.server) rows.splice(tech.length, 0, ...memoryDriveRows(componentParts(m, vendor)));
+  return rows;
 }
 
 export const Facts = ({ rows, className }: { rows: [string, string][]; className?: string }) => (

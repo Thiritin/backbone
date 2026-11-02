@@ -10,7 +10,8 @@ import { type GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { orderCompanyDomain, queueTransfer, registerCompanyDomain, signRegistrar, transferDomains } from "../src/sim/90-actions/registrar";
-import { hire, setTechLocation } from "../src/sim/90-actions/staff";
+import { setTechLocation } from "../src/sim/90-actions/staff";
+import { hire } from "./fixtures";
 import { launchSite, setLine } from "../src/sim/90-actions/website";
 import { CHECKS, TUTORIAL } from "../src/sim/checklist";
 import { deserialize, serialize } from "../src/sim/91-save/save";
@@ -225,9 +226,9 @@ describe("tutorial", () => {
     expect(TUTORIAL).toEqual(["bank", "register", "payBill", "books", "buyServer", "mountServer", "mountRouter", "internet", "setup", "findAddress", "shareWeb", "website", "domain", "launch", "email", "firstCustomer"]);
   });
 
-  it("starts without Marketing and gives it to old registered saves", () => {
+  it("starts with Marketing and gives it to old registered saves", () => {
     const s = registered(newGame(1));
-    expect(s.installed).not.toContain("Marketing");
+    expect(s.installed).toContain("Marketing");
     const raw = JSON.parse(serialize(s));
     delete raw.registration;
     delete raw.arrived;

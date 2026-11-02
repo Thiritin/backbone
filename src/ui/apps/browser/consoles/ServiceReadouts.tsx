@@ -29,7 +29,7 @@ export function VpnReadout({ game, c }: { game: GameState; c: Cluster }) {
   return (
     <div className="cx-readout">
       <Chart kind="area" values={mbit} max={niceMax(mbit, 1)} unit="Mbit/s" title={t("readouts.vpn.throughput")} now={`${+mbit[mbit.length - 1].toFixed(1)} Mbit/s`} end={game.hour} slots={SERIES_HOURS} />
-      <table>
+      <table className="cx-table">
         <thead><tr><th>{t("readouts.vpn.user")}</th><th>{t("readouts.vpn.real")}</th><th>{t("readouts.vpn.address")}</th><th>{t("readouts.vpn.received")}</th><th>{t("readouts.vpn.sent")}</th><th>{t("readouts.vpn.since")}</th></tr></thead>
         <tbody>
           {list.length === 0 && <tr><td colSpan={6} className="cx-empty">{t("readouts.vpn.none")}</td></tr>}

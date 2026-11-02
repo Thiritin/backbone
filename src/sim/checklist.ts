@@ -25,7 +25,7 @@ export const CHECKS: Record<string, (s: GameState) => boolean> = {
   domain: (s) => !!s.registrar && !!s.company.domain,
   website: siteBuilt,
   launch: (s) => s.marketing.launched && s.marketing.lines.length > 0,
-  email: (s) => s.company.mail.kind !== "free",
+  email: (s) => !!s.company.domain && s.mail.accounts.some((a) => a.domain === s.company.domain && a.closedAt === null),
   loan: (s) => booked(s, "ledger.loanTaken"),
   firstServer: (s) => onlineServers(s).length >= 1,
   setup: (s) => s.clusters.some((c) => c.platform || c.panel),
@@ -60,9 +60,9 @@ export const checkDone = (s: GameState, id: string): boolean => CHECKS[id]?.(s) 
 // The Getting started tutorial: each step is a checklist goal, done in this order.
 export const TUTORIAL = ["bank", "register", "payBill", "books", "buyServer", "mountServer", "mountRouter", "internet", "setup", "findAddress", "shareWeb", "website", "domain", "launch", "email", "firstCustomer"] as const;
 
-// The steps after the tutorial belong to apps that arrive later (80-business/walk.ts); each shows once its app is installed.
+// A step that belongs to an app shows once that app is installed.
 export const GUIDE = [...TUTORIAL, "loan", "tenCustomers", "research", "patch", "hire", "study"] as const;
 const AFTER: Partial<Record<(typeof GUIDE)[number], string>> = {
-  website: "Marketing", launch: "Marketing", loan: "Finance", tenCustomers: "Customers", research: "Research", patch: "Security", hire: "Staff", study: "Market",
+  website: "Marketing", launch: "Marketing", research: "Research", patch: "Security", hire: "Staff", study: "Market",
 };
 export const guideSteps = (s: GameState) => GUIDE.filter((id) => !AFTER[id] || s.installed.includes(AFTER[id]!));

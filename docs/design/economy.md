@@ -73,18 +73,55 @@ Here m is the multiplier in 2005. After 2026 prices stay flat.
 | Customer base rate per GB of RAM | 20 | VPS: about €1.50 per GB in 2026, €30 per GB in 2005 |
 | Customer base rate per TB of storage | 32 | Object storage: €6.50 per TB in 2026, €210 in 2005 |
 | Customer base rate per TB of traffic | 46 | Overage and traffic-heavy services |
-| Fixed-price products | 1 | Web hosting, domains and dedicated servers keep their price per size; the sizes get bigger |
+| Fixed-price products | Keyframes | Web hosting, domains and dedicated servers follow the fixed-price keyframes below; the sizes get bigger |
 | Rented space, rack or cage | 1 | Power is billed separately |
 | Server purchase price | Parts | Resources per server come from the generations table below; the price in later years follows the parts (Part prices by year) |
 | Salaries | 0.6 | Support agent, junior: €38,700 in 2026, about €23,000 in 2005 |
 | Search ads, per click | 0.6 | |
-| SSL certificate (DV) | Special | €50 per year until 2015, then free (the Let's Encrypt stand-in) |
+| SSL certificates | Keyframes | DV, OV and EV follow the SSL keyframes below; from 2016 a free certificate exists (the Let's Encrypt stand-in) |
 
 **Electricity.** Business prices follow these keyframes, with straight lines between them. The basement pays the household price, which is the business price × 1.6.
 
 | Year | | 2010 | 2014 | 2020 | 2022 | 2023 | 2026 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Business price (ct/kWh) | | 12 | 15 | 18 | 35 | 25 | 17 |
+
+**Fixed-price lines.** Web hosting, domains and dedicated servers multiply their 2005 rates (Per-resource pricing) by a factor that follows these keyframes, with straight lines between them and the last value after it. The sizes keep growing, so a gigabyte of web space gets much cheaper while the entry price only falls a little. German list prices are the reference: an entry web space cost about €5 a month in 2005 and €3 to €4 in the early 2020s, until energy costs pushed the large hosts to raise prices in 2023. A .de or .com domain has cost €12 to €15 a year at German hosts for the whole period, and a small dedicated server fell from about €79 to about €40 a month before rising again from 2022.
+
+| Line | 2005 | 2010 | 2012 | 2015 | 2021 | 2022 | 2023 | 2026 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Web hosting | 1 | 0.95 | | 0.85 | | 0.8 | 0.88 | 0.88 |
+| Domains | 1 | | 0.93 | | 0.93 | | | 1 |
+| Dedicated servers | 1 | | 0.8 | | 0.65 | | 0.75 | 0.8 |
+
+The yearly domain price the customer pays for a registration or renewal is the domain line's market rate of the year: €15 in 2005, €13.95 from 2012 to 2021 and €15 again in 2026. Values live in `FIXED_KEYS` in `src/sim/10-catalog/products.ts`.
+
+**SSL certificates.** The SSL line has three sizes: a DV, an OV and an EV certificate. Their yearly market prices follow these keyframes; the OV and EV rates are the difference to the DV price, so the player sets a base fee and an OV and EV validation on top. Values live in `SSL_KEYS` in `src/sim/10-catalog/products.ts`.
+
+| Certificate | 2005 | 2010 | 2015 | 2020 | 2026 |
+| --- | --- | --- | --- | --- | --- |
+| DV | €50 | €40 | €30 | €20 | €15 |
+| OV | €150 | | €120 | | €100 |
+| EV | €400 | | €300 | €250 | €200 |
+
+**Licence price rises.** On 1 January of each year below a vendor's list prices for new keys, renewals and editions become this multiple of its licence era's fees. cPanic follows cPanel's yearly rises after its 2019 switch to per-account pricing, Pleskit follows Plesk's rises, and Windoors Server follows the dearer core licences of Windows Server 2025. The jumps between licence models stay in the licence eras (Platforms and licenses): cPanic in June 2019, DirectAdmen in September 2019, Windoors in October 2016 and VMwhere's switch to per-core subscriptions in December 2023. Values live in `LICENCE_RISES` in `src/sim/10-catalog/licence-tiers.ts`.
+
+| Software | 2021 | 2022 | 2023 | 2024 | 2025 |
+| --- | --- | --- | --- | --- | --- |
+| cPanic | ×1.10 | ×1.21 | ×1.33 | ×1.46 | ×1.61 |
+| Pleskit | ×1.10 | | ×1.20 | | ×1.30 |
+| Windoors Server | | | | | ×1.10 |
+
+**Price announcements.** Every price change the player pays for, or that moves the market, is announced in the News app before it takes effect, at nine in the morning on the 1st of the month:
+
+| Change | Announced | News key |
+| --- | --- | --- |
+| A licence era after the first (software, operating systems, shop systems) | 3 months before | `event.news.licenceModel` |
+| A licence price rise | 3 months before, on 1 October | `event.news.licenceRise` |
+| A registry price step | 6 months before | `event.news.registryPrice` |
+| A fixed-price line rising 5% or more from one year to the next | 1 October before | `event.news.marketPrice` |
+
+Competitors price at the market times their price factor (Customer choice), so a market rise raises every rival's price on the same day; the 2023 web hosting rise of 10% and the dedicated server rises of 2022 and 2023 are announced this way.
 
 **Server generations.** A new 1U compute server generation arrives every three years. Each one costs a bit more but packs far more resources per watt, which is what makes replacing old servers pay off.
 
@@ -127,7 +164,7 @@ Backup and archive servers use HDDs whatever the generation's disk type. Archive
 | Large HDD (backup) | 500 GB | 1 TB | 3 TB | 6 TB | 10 TB | 16 TB | 22 TB |
 | Densest HDD (archive) | 750 GB | 2 TB | 4 TB | 8 TB | 14 TB | 20 TB | 28 TB |
 
-- **Power draw.** A server draws 40% of its full power when idle, rising in a straight line with CPU load. The game applies the two ends: a server with no running workload draws the idle 40%, one with a running workload draws its full power, in the power bill and in the rack's fuse limit.
+- **Power draw.** A server draws 40% of its full power when idle, rising in a straight line with CPU load. A server with no running workload draws its idle power; one with a running workload draws from idle to full power by its CPU utilisation (the vCPUs its OS, control plane and workloads use over its cores, at most 1), in the power bill, the rack's fuse limit and the IPMI power reading. A server under burn-in draws full power.
 - **Port speed.** Server ports run at 1G until 2011, then 10G, 25G from 2017 and 100G from 2023.
 - **Ports.** 1G ports are copper (RJ45); 10G and faster ports are SFP cages.
 - **Shop window.** A generation stays in the shop until the generation two steps newer arrives, so G1 is sold until the end of 2010 and G2 until the end of 2013. G6 and G7 stay in the shop.
@@ -293,8 +330,14 @@ Anchors: the AVM Fritz!Box 7050, 7390, 7590 and 5690 at their launch prices, the
 | UPS 3000 VA | 2U | 1,800 Wh | 2005 | €900 | 25 W |
 | UPS 5 kVA | 3U | 3,500 Wh | 2005 | €2,500 | 50 W |
 | UPS 10 kVA (two feeds) | 6U | 8,000 Wh | 2008 | €6,000 | 100 W |
+| UPS 1500 VA, network card | 1U | 600 Wh | 2005 | €480 | 12 W |
+| UPS 3000 VA, network card | 2U | 1,800 Wh | 2005 | €1,200 | 27 W |
+| UPS 5 kVA, network card | 3U | 3,500 Wh | 2005 | €2,800 | 52 W |
+| UPS 10 kVA, network card (two feeds) | 6U | 8,000 Wh | 2008 | €6,300 | 102 W |
 
-Anchors: an APC Smart-UPS 1500 cost about USD 600 in 2005, a 3000 about USD 1,200, and the Smart-UPS RT and Symmetra units of 5 to 10 kVA USD 3,000 to 7,000. A UPS carries a location through a grid outage for its battery in Wh divided by the draw of the location's racks.
+Anchors: an APC Smart-UPS 1500 cost about USD 600 in 2005, a 3000 about USD 1,200, and the Smart-UPS RT and Symmetra units of 5 to 10 kVA USD 3,000 to 7,000. A UPS carries a location through a grid outage for its battery in Wh divided by the draw of the location's racks. Only a UPS whose power cord is plugged in counts.
+
+A UPS with a network card (anchor: an APC Network Management Card at about USD 300 to 400) takes an address on the LAN and has a web interface with its battery, load, runtime and the servers it protects. When an outage outlasts the batteries, it signals the servers at its location to shut down cleanly instead of losing power, so no data is corrupted. A server hears the signal when both it and the UPS are online and either runs the `nuts-client` agent, installed with apt from its shell, or is a VMwhere or HyperVee node, whose hypervisor API the UPS drives. Reinstalling the OS removes the agent.
 
 | Switched PDU | Height | Outlets | Sold from | Price | Full power |
 | --- | --- | --- | --- | --- | --- |
@@ -350,7 +393,7 @@ Website and campaign leads send 10% to cities without a location of yours, where
 
 **GPU demand.** Hobby developers, agencies, online shops and enterprises ask for GPU servers in 3% of their orders at a demand factor of 1 (`gpuDemand` in `gpu.ts`). The factor is 0 before 2011, 0.2 from 2011 to 2016, 0.6 from 2017 (deep learning), 1 from 2020 and 2.5 from 2023 (generative AI), so those profiles ask for a GPU server in 0.6%, 1.8%, 3% and 7.5% of their orders, and their other products give way proportionally. News announces the two jumps. A GPU order that finds no free card is lost as no capacity, like any other line. The portfolio score ignores the GPU line.
 
-**Site state.** The company site is rented from "Strateaux" (always up) or runs as a small workload (0.25 vCPU, 0.5 GB RAM, 2 GB disk) on one of your panel hosts. On an own host the site is down while the host is off, failed, frozen, taken offline or compromised, and slow while the host performs below 1 (overload, a PHP upgrade) or has over 90% of its RAM booked. Website leads and shop orders are multiplied by 0 while the site is down and by 0.5 while it is slow, at the daily roll; search ads, campaigns, fairs, referrals and email orders are untouched. The site adds no awareness (the 0.004 a month under Marketing and reviews) while it is down.
+**Site state.** The company site is rented from "Strateaux" (always up) or runs as a small workload (0.25 vCPU, 0.5 GB RAM, 2 GB disk) on one of your panel hosts. On an own host the site is down while the host is off, failed, taken offline or compromised, and slow while the host performs below 1 (overload, a PHP upgrade) or has over 90% of its RAM booked. Website leads and shop orders are multiplied by 0 while the site is down and by 0.5 while it is slow, at the daily roll; search ads, campaigns, fairs, referrals and email orders are untouched. The site adds no awareness (the 0.004 a month under Marketing and reviews) while it is down.
 
 The review multiplier is 0.4 + 0.25 × (stars − 1), so 1 star gives 0.4, 3 stars 0.9 and 5 stars 1.4.
 
@@ -466,11 +509,13 @@ How the market above turns into order emails and sales requests in the Support a
 
 **Custom orders.** Every order names its own resources, by email or through the shop (`spec.ts`, `manual.ts`). It starts from the size its profile's budget picks (What a lead asks for). Web hosting, VPS and game server orders scale that size by one of 0.5, 0.75, 1, 1, 1.25 or 1.5, which average to 1: web disk in half GB steps, traffic in whole GB, 1 + up to 5 × factor mailboxes, with 0.1 vCPU and 0.25 GB RAM; VPS and game server RAM in quarter GB steps, vCPUs scaled (plus one, three times in ten), disk ±25% in 5 GB steps. DNS and VPN orders scale their zones or users and their traffic the same way (DNS zones and VPN users). Other lines take the size as it is. A spec's monthly market price comes from Per-resource pricing, and the SLA factor and the profile's offer factor apply on top. Step times: quote 5, account 5, confirmation and invoice 10, domain 5, setup 15 minutes. **Quoting an email order.** The first step is the quote, at the monthly price and setup fee the player enters (the market reference and the line's setup fee are prefilled). An email order draws its budget between 1.10 and 1.25 times the reference (`ORDER_BUDGET`, the upper half of a sales lead's range, because a standard order is a shelf product), which makes a quote at the reference taken about nine times in ten, and the customer answers like a sales lead: 4 to 24 hours after the quote, 2 hours after a quote that meets their counter, taking it with the logistic chance of Customer choice, countering once at 0.97 times their accepted price when within 0.12 of it and half the time, otherwise refusing; a second refusal ends the order as a lost sale. An accepted quote has 72 hours (`REQUEST_HOURS`) for the steps. A shop order is accepted at arrival at the website's price and setup fee and has the same 72 hours. **Setup.** The setup lists the cluster and panel hosts of the order's city that sell the product, with the RAM and disk booked against what each holds; disk is the only limit (Usage curves and overcommit). Automatic (`targetFor`) and the Place orders automatically switch need the Provisioning automation skill (Know-how and unlock costs). Staff set an order up on the first host with disk room, one with the RAM for it first. The balance model counts an order as placed on acceptance, as a company with the switch on would. An order invoice is due in 14 days; an on-time payer pays it within 1 to 3 days. Upgrades ask for 1.5 or 2 times every resource.
 
-**Domains.** Registry cost per year, 2005 to 2026, linear in between: .de €12 to €6, .at €25 to €12, .ch €15 to €9, .co.uk €8 to €7, .fr €20 to €9, .nl €10 to €6, .it €15 to €8, .com €6 to €9 (VeriSigh raised its price over the years). The customer pays €15 a year for a registration or renewal and €5 for a transfer, which includes its first year. The reminder comes 30 days before expiry.
+**Domains.** Registry cost per year, 2005 to 2026, linear in between: .de €12 to €6, .at €25 to €12, .ch €15 to €9, .co.uk €8 to €7, .fr €20 to €9, .nl €10 to €6, .it €15 to €8. VeriSigh raises the .com price in steps that follow VeriSign's, each announced six months ahead: €6 in 2005, €6.42 from October 2007, €6.86 from October 2008, €7.34 from July 2010, €7.85 from January 2012, €8.39 from September 2021, €8.97 from September 2022, €9.59 from September 2023 and €10.26 from September 2024. The customer pays the year's domain price (Prices over time, Fixed-price lines) for a registration or renewal and €5 for a transfer, which includes its first year. The reminder comes 30 days before expiry.
 
 **Registrar partners.** One contract at a time (`10-catalog/registrars.ts`, `30-customers/registrar.ts`). A domain's wholesale a year is the registry cost of the year above times the partner's factor for the tier, plus the ICANN fee on a .com (€0.18, €0.20 from July 2025). The tier is the number of domains under management (the company's and the customers') at the month start: 0, 100, 500 and 5,000. At a month start the partner invoices the signup once (first month under the contract), the fee, or for a minimum the part the domains did not use, and one twelfth of every domain's wholesale; the ledger books `ledger.registrarSignup`, `ledger.registrar` and `ledger.domains` in the category "domains". Registering and renewing book nothing; the customer pays €15 a year or €5 for a transfer, as above. Moving every domain to a new partner is a hand task of 5 minutes per domain (the Network row of the gdd By hand table). The factors follow the real reseller schemes: GoDaddy's Basic Reseller plan at USD 107.88 a year, Enom's USD 50 enrollment and the OpenSRS and Enom tiers (Essential none, Advanced USD 2,000 and 100 registrations, Premium USD 50,000 and 500, Enterprise USD 100,000 and 1,000), Name.com's Bronze, Silver and Gold at 100, 250 and 1,000 registrations, German resellers such as InterNetX with no setup fee but a monthly minimum, and Verisign's .com fee (USD 6.00 to 2007, 6.42 from October 2007, 7.85 from 2012, 8.39 in 2021, 8.97 in 2022, 9.59 in 2023, 10.26 in 2024, 10.97 from November 2026, which the .com curve above follows). The game uses the count of domains only.
 
-**SSL certificates.** The registrar partner resells them and bills each running certificate monthly at a twelfth of its yearly price: NameCheep €12, GoDuddy Reseller €10, InterNetY €9, OpenSRSly €8 (`30-customers/certificates.ts`). Once the website lists SSL certificates, a quarter of new web hosting customers take one with their order, and four in five who ask how to get the padlock take one after the SSL reply; a rate above the market's lowers both shares by market / rate. Nobody buys one once certificates turn free in 2016.
+**Reseller panel.** The partner's site has a reseller login once it has registered a customer domain (`30-customers/registry.ts`, `90-actions/registrar.ts`). The partner renews every domain it holds on its last day, whether or not the customer still pays, and keeps billing it monthly; a domain cancelled in the panel does not renew and is gone at expiry, and only held domains count for the bill and the tier. Moving every domain to a new partner books a year of each domain's new wholesale on arrival (`ledger.domainsMoved`) and moves each expiry a year later. A customer who leaves asks for the auth code of each domain still renewing with a chance of 0.5 the next day and waits 3 days before the wait penalty runs, even though they left. The auth code sent in the reply lets the domain go 2 days later. A refusal costs 15 happiness, and with a chance of 0.5 the customer complains to the partner, who releases the domain 2 days later anyway.
+
+**SSL certificates.** The registrar partner resells them and bills each running certificate monthly at a twelfth of its yearly price: NameCheep €12, GoDuddy Reseller €10, InterNetY €9, OpenSRSly €8 (`30-customers/certificates.ts`). Once the website lists SSL certificates, a quarter of new web hosting customers take one with their order, and four in five who ask how to get the padlock take one after the SSL reply; a rate above the market's lowers both shares by market / rate. Doctor's and law offices take an OV certificate, enterprises an EV one, and online shops an EV one until browsers drop the EV address bar in 2020 and an OV one after; everyone else takes a DV one. An OV certificate costs the player four times the partner's DV price and an EV one ten times. From 2016, when certificates turn free, low-budget customers never pay for a DV certificate, and the share of medium-budget customers who still do falls by an eighth a year, from 7/8 in 2016 to none in 2023; OV and EV buyers keep paying. On 1 January of each year from 2016, each paid DV certificate stays with the share of this year's paid buyers among last year's, and the others end, so every private customer's DV certificate ends on 1 January 2016 (`30-customers/certificates.ts`).
 
 | Partner (pun on) | Signup | Per month | Factor at 0+ / 100+ / 500+ / 5,000+ | Notes |
 | --- | --- | --- | --- | --- |
@@ -481,7 +526,7 @@ How the market above turns into order emails and sales requests in the Support a
 
 **Company domain.** Registering it through the partner under contract costs its wholesale a month like any domain and needs no cash at once; it renews with the contract. A name is 3 to 40 letters, digits or hyphens (not at either end) in front of a TLD from the registry table above, and must not belong to a customer. Going online (the web design and listing a line on the website) is refused until it exists.
 
-**Company email.** Per seat and month, seats are 1 plus the employees, recomputed at each month start and booked in the ledger category "subscriptions" as `ledger.companyMail`. Anchors: hosted Exchange from German hosters about €10 a seat in 2005, Google Apps Premier Edition USD 50 a user a year from 2007 and Google Workspace USD 6 a user a month from 2020, Office 365 USD 6 a user a month from June 2011.
+**Company email.** Per mailbox and month: every open mailbox of a paid tenant is billed at the month start after sign-up (shared mailboxes are free on Lookout 365, aliases are always free), booked in the ledger category "subscriptions" as `ledger.companyMail`. Anchors: hosted Exchange from German hosters about €10 a seat in 2005, Google Apps Premier Edition USD 50 a user a year from 2007 and Google Workspace USD 6 a user a month from 2020, Office 365 USD 6 a user a month from June 2011.
 
 | Provider (pun on) | From | Price per seat and month |
 | --- | --- | --- |
@@ -491,7 +536,7 @@ How the market above turns into order emails and sales requests in the Support a
 
 | Mail server | From | License | Install | Needs |
 | --- | --- | --- | --- | --- |
-| Postfixit (Postfix) | 2005 | Free | 4 h | 0.5 vCPU, 1 GB, 20 GB |
+| Postfixit (Postfix) | 2005 | Free | 4 h | 0.1 vCPU, 0.25 GB, 2 GB |
 | Mailpig (mailcow) | 2015 | Free | 2 h | 1 vCPU, 2 GB, 20 GB |
 
 One mail server per company, on a server or in a VM. Its address is the host's public address; on a dynamic line that address is always listed (Addresses and internet), so a basement mail server works on a business line only. While the host is down or its address is listed, delivery is impaired: order emails arrive at half the rate (`IMPAIRED_SHARE` 0.5) and invoices issued in that window get their payment day 72 hours later (`MAIL_DELAY_HOURS`, applied to the first payment day and to the day a reminder sets). Without any mail service no order email arrives (`mailShare` 0). The balance model's steady bot books Hosted Exchange for the owner and every employee from the start, signs NameCheep, and pays the wholesale of the company domain and of the domains of web customers who ordered by email, against the €15 a year those customers pay; the shift moves the medians by about 0.1 to 0.2 years.
@@ -567,6 +612,7 @@ Every customer has a happiness value H from 0 to 100. Events move it up and down
 | --- | --- |
 | Ticket still open past the expected reply time | − wait penalty per hour that counts on the customer's clock (profile table) |
 | Ticket closed with the right answer | +5 |
+| Right first answer within 2 hours of the ticket opening | +2 |
 | Ticket closed with a wrong answer | −10, plus a follow-up ticket |
 | An hour of outage on one of their services, once the outage has outlasted their tolerance | − outage penalty per hour that counts on the customer's clock (profile table) |
 | Credit issued | +3 per 10% of the monthly fee |
@@ -664,24 +710,26 @@ Private customers and hobbyists use their sites in the evening and forgive a wee
 
 Shared links without an expiry that are older than 90 days leak with a monthly chance of 0.015 (0.003 with a password) and cost the customer 20 happiness. The expiry policy of 7, 30 or 90 days trades these leaks for extension tickets.
 
+**Game titles.** A faded title costs no happiness. Its players online fall to `max(0.15, 0.7 ^ (year - fade))` of normal, and once a month its servers shrink to the slots their busiest hour of the week needs, at a price scaled down alike. A quarter of its customers, picked by seed, stay for good. The rest ask to move to the current title of the same genre with a monthly chance of `0.04 * (year - fade)`; declining, or leaving the request a week, ends that game server, and the customer leaves when it was their last service. Writing a game config costs 400 on TCAdmen and 200 on Pterodaktyl.
+
 ## Tickets and work rates
 
-A low-skill customer creates about 0.3 tickets a month, so one average support agent keeps about 1,400 of them answered. Every job in the game, from tickets to cabling, is a task with a handling time, and staff work through tasks at a rate set by their skill.
+A low-skill customer creates about 0.15 tickets a month, so one average support agent keeps about 2,800 of them answered. Every job in the game, from tickets to cabling, is a task with a handling time, and staff work through tasks at a rate set by their skill.
 
 **Ticket rates** per customer per month, by technical skill:
 
 | Ticket type | Low skill | Medium skill | High skill | Handling time |
 | --- | --- | --- | --- | --- |
-| How-to question | 0.18 | 0.06 | 0.02 | 20 min |
-| Billing question | 0.04 | 0.04 | 0.02 | 15 min |
-| Abuse report | 0.005 | 0.005 | 0.02 | 30 min |
+| How-to question | 0.09 | 0.03 | 0.01 | 20 min |
+| Billing question | 0.02 | 0.02 | 0.01 | 15 min |
+| Abuse report | 0.0025 | 0.0025 | 0.01 | 30 min |
 | Upgrade request | From upgrades ([Happiness and churn](#happiness-and-churn)) | | | 20 min |
 | Cancellation | One per cancellation | | | 15 min |
 | Suspension appeal | From suspensions ([Billing and payment habits](#billing-and-payment-habits)) | | | 15 min |
 | Outage report | Per outage (below) | | | 10 min |
 | Colocation install | One per hardware delivery | | | 2 h (technician) |
 
-Gamers create abuse reports at 0.02, like high-skill customers. Each payment reminder also has a 10% chance to create a billing question.
+Gamers create abuse reports at 0.01, like high-skill customers. Each payment reminder also has a 10% chance to create a billing question.
 
 **Outage tickets.** When an outage hits a customer, they write in with a 30% chance at low budget, 60% at medium and 90% at high budget. High-budget customers write 3 tickets, everyone else 1. A public status page halves the chance.
 
@@ -759,10 +807,9 @@ Resolving the ticket adds the usual +5 happiness on top. Handling an appeal take
 | Helpdesk link | €149 | Create quote button on order tickets | 3 domains registered for customers |
 | Monthly run | €99 | Sends every draft invoice on the 1st at 09:00 | 10 customers |
 | Match by reference | €129 | Books each transfer whose reference names an open invoice and whose amount is exact | 10 transfers matched |
-| Automatic reminders | €99 | Sends the reminder, dunning and final notices on their due day under the billing rules | First suspension |
 | HBCI online banking | €79 | Pulls the bank statement and pays payables | Never |
 
-The billing rules say what is sent; bookkeepers and accountants carry them out in their work hours, the Automation research runs all of them, and Automatic reminders runs the notices up to the final one while suspensions and collections stay with staff or the research. Bookkeepers also send drafts and match transfers, writing off a shortfall below €1, before any reminder in the same hour; a second bookkeeper doubles the rate.
+The billing rules say what is sent; bookkeepers and accountants carry them out in their work hours, and the Automation research runs all of them. Bookkeepers also send drafts and match transfers, writing off a shortfall below €1, before any reminder in the same hour; a second bookkeeper doubles the rate.
 
 **Time per action.** Every employee action takes time from their workday, so one employee can't carry the whole company. Staff divide these times by their speed (0.5 plus skill/100, so skill 50 takes the times as listed); bots work at twice the speed. The code keeps them in `ACTION_MINUTES` (src/sim/47-staff/activity.ts), and ticket times in `MINUTES` (the ticket table above).
 
@@ -964,6 +1011,8 @@ How the newer locations are priced:
 | CoreSpite One Wilshire | Los Angeles | 60 | Any3 on site | A+B | UPS, generator | No | 6 | €750 | 1.45 | €230 | €150/h, 1 h | Yes | Yes |
 | Equinox LA1 | Los Angeles | 30 | Any3 by cross-connect | A+B | UPS, generator | No | 8 | €650 | 1.4 | €210 | €140/h, 2 h | Yes | Yes |
 
+**Cross-connects and price changes.** A cross-connect ordered in a provider's portal reaches a carrier on sale at the datacenter or its exchange when that is on site. It costs the Cross-connect column a month, fixed at order time and billed with the rent, plus a setup fee of two months. An uplink link to the same partner in that zone runs over it and pays no second cross-connect. Each January one provider, preferring one the player rents from, raises its position price by 2 to 5% for new contracts and emails its customers; existing contracts keep their monthly price.
+
 **Basement.** One position, a 24U rack at most, 3 kW at most (a household circuit), no backup, the household power price (business × 1.6) and the home line as its only uplink.
 
 **Home line.** The basement can switch to another line in the Locations app. The old line stays up until the new one is installed, and ordering the current line again cancels a pending switch. Every line is billed as rent on the first of each month, from the month after it goes live. New games start on Mom's DSL: the family's private line, 6 Mbit/s down, 0.5 Mbit/s up, one dynamic address. Mom pays for it, so it never appears on the ledger. It is not on offer, so it cannot be ordered back after a switch. Lines with a static IP are business lines: they cost more and bring a /29 of addresses (Addresses and internet). Lines stay on offer once they appear. The basement's traffic leaves through the line's upload (Traffic and bandwidth). When the evening peak is over it, the sites served from the basement slow down: each hour a basement service costs its customer the slow-node penalty, 0.1 × the share of traffic the line drops, and writes a slow-site ticket with 0.1 × that share (Usage curves and overcommit). The Locations app shows the line's peak upload over the last 7 days next to its speed, the Network app shows it on the home line's card, and the first hour a line runs full sends one notification per line.
@@ -1047,14 +1096,31 @@ Prices are for 2005 and rise 8% every January. With a 10% chance each year, Pear
 | AI bots | ChadGPT Support €50, Clipsy Reminders €100, per bot | ChadGPT: every reply in tokens, see [ChadGPT usage](#chadgpt-usage) | | Automation skill |
 | Storefront | The customer shop in Sales | €40 | 0.5% of shop revenue | Shop unlock |
 
-**Support desks.** Each desk is a per-seat Pear Store item: the monthly price is charged once for the owner plus once for every employee with the support role (bots do not count), with the yearly rise of 8%, at install and at every month start. The desk is on sale from its year. Anchors: osTicket has been free and open source since 2005, Zendesk was founded in 2007 at about USD 49 a seat, Freshdesk in 2010 at about USD 15 a seat, FreeScout in 2018 and is free.
+**Support desks.** A hosted desk is subscribed to on its vendor's site at a per-seat price: the monthly price is charged once for the owner plus once for every employee with the support role (bots do not count), with the yearly rise of 8%, at sign-up and at every month start. A legacy desk from a save that bought it in the Pear Store is billed the same way. The self-hosted desks cost nothing. Each desk is available from its year. Anchors: osTicket has been free and open source since before 2005, Zendesk launched in 2007 at about USD 49 a seat, Freshdesk launched in June 2011 at about USD 15 a seat, FreeScout came out in November 2018 and is free. Every feature starts on a desk when the real product got it: in a calendar year for the hosted desks, which the vendor upgrades for every tenant at once, and with the release that introduced it for the self-hosted ones. The dates and their sources are in software-versions.md, Support desks.
 
-| Desk | Pun on | On sale from | Monthly per seat, base price | Features |
+| Desk | Pun on | Hosting | On sale from | Monthly per seat, base price |
 | --- | --- | --- | --- | --- |
-| OsTickit | osTicket | 2005 | €0 | kind filters |
-| Zendusk | Zendesk | 2007 | €49 | filters, search, assignment, reply templates, response timers, customer card, reports |
-| Freshdusk | Freshdesk | 2010 | €15 | filters, search, assignment, reply templates, response timers |
-| FreeScoot | FreeScout | 2018 | €0 | filters, search, assignment |
+| OsTickit | osTicket | self-hosted | 2005 | €0 |
+| Zendusk | Zendesk | hosted | 2007 | €49 |
+| Freshdusk | Freshdesk | hosted | 2011 | €15 |
+| FreeScoot | FreeScout | self-hosted | 2018 | €0 |
+
+| Feature | OsTickit | Zendusk | Freshdusk | FreeScoot |
+| --- | --- | --- | --- | --- |
+| kind filters, search, assignment | 1.3 (2005) | 2007 | 2011 | 1.0 (2018) |
+| reply templates (canned responses, macros) | 1.3 (2005) | 2007 | 2011 | none, a paid module |
+| departments (groups) | 1.3 (2005) | 2007 | 2011 | none, mailboxes serve |
+| customer portal | 1.3 (2005) | 2007, Help Center 2013 | 2011 | none, a paid module |
+| response timers (SLA) | 1.7 (2013) | 2013 | 2011 | none |
+| reports | 1.7 (2013) | 2007 | 2011 | none, a paid module |
+| rules (ticket filters, triggers) | 1.7 (2013) | 2007 | 2011 | none, a paid module |
+| customer card | 1.9 (2014) | 2007 | 2011 | 1.0 (2018) |
+| merge | 1.14 (2019) | 2010 | 2011 | 1.6 (2020) |
+| AI | none | 2013 | 2011 | none |
+
+AI on the hosted desks starts with the real features: suggested articles from 2013 on Zendusk and 2011 on Freshdusk, the answer bot from 2017 on Zendusk (Zendesk Answer Bot, about USD 1 a resolution) and 2018 on Freshdusk (Freddy), and generative auto-answer and reply drafting from 2023 on both. A cancellation from a customer paying at least €50 a month is high priority in the desk, an outage is high and urgent for a high-budget customer, appeals and takedown deadlines are high, how-to questions are low and everything else is normal.
+
+A desk with a customer portal takes 30% of the outage, how-to and billing requests through its web form while it is reachable, and those need no mailbox; the rest arrive by email as before. While the desk is down every customer writes by email.
 
 Installing pays the first month at once and is refused without the cash for it; later months are billed on the 1st as "Pear One" in the ledger. Cancelling stops billing and keeps the skill. Saves from before the Pear Store keep every widget, billed like a new purchase. The per-device, per-customer and per-employee extras and the surprise price adjustments are not in the game yet.
 
@@ -1132,7 +1198,7 @@ Without a spare kit in stock, a repair waits for a delivery first.
 | CPU | 7 years | 0.05% | 0.2% | €400 | No |
 | Network card | 10 years | 0.3% | 1% | €80 | No |
 
-A server has 4 fans; a switch or router 2 fans, 1 or 2 power supplies and a board that fails like a mainboard. The part price column is the reference price of an unsized spare and sets the insurance premium; the shop sells parts at the prices of Part prices by year.
+A server has 4 fans; a switch or router 2 fans, 1 or 2 power supplies and a board that fails like a mainboard. The part price column is the reference price of an unsized spare; the shop sells parts at the prices of Part prices by year.
 
 **Cooling and overheating.** Each location keeps a room temperature: 22 °C in a datacenter hall, and in the basement 22 + 5 · cos((month − 6.5) · π / 6), from 17 in January to 27 in July. A server's inlet adds up to 3 °C as its rack nears its power limit and 6 °C behind a failed fan. On top of that the room carries heat H, which the sim steps every game minute (60 steps when an hour is ticked at once):
 
@@ -1142,9 +1208,11 @@ A server has 4 fans; a switch or router 2 fans, 1 or 2 power supplies and a boar
 
 P is the kW the location's racks draw and m the room's mass: its positions in a hall, 4 in the basement. A hall's cooling C is 1.2 × the kW limits of its racks, so it never falls short while it works, and it sheds s = 0.02 kW per position and degree through the building. The basement has no cooling unit: it sheds C = 3 kW at its normal temperature and s = 0.2 kW more per degree, so a basement drawing 4.5 kW on its extra circuit settles 7.5 °C warmer. A hall's cooling fails 0.3 times a year per location for a log-normal duration (median 40 minutes, σ 1, 5 minutes to 8 hours); C is then 0. A full 3.3 kW position climbs 1.6 °C a minute and reaches 45 °C after about 14 minutes, a 0.3 kW position 0.15 °C a minute.
 
+**CPU temperature and fans.** A server's CPU runs at inlet + 20 °C × utilisation × (1 + 1 per failed fan); it equals the inlet when the server is off. Its fans spin at 30% of their 12,500 rpm maximum up to 50 °C CPU and rise in a straight line to full speed at 80 °C; a failed fan reads 0 rpm. The IPMI sensor page shows the CPU temperature (warning from 85 °C, critical from 95 °C), each fan's rpm (warning below 2,000) and the fan speed in percent. From 85 °C CPU the server throttles: its performance falls in a straight line to 50% at 95 °C and stays there, and its event log records a warning when it starts and a line when it stops. Every hour at 90 °C CPU or more counts as a hot hour. A server keeps the worse of its inlet throttle and its CPU throttle, never both. Healthy fans keep a server under 50 °C CPU at full load in any room under 30 °C, so only failed fans or a hot room bring it there: two failed fans at full load reach about 91 °C in a hall and 96 °C in a basement in July.
+
 | Inlet | Effect |
 | --- | --- |
-| 35 °C or more | The server throttles to 60% of its performance, which slows the customer apps on it (see Usage curves), and every hour counts as a hot hour |
+| 35 °C or more | The server throttles to 60% of its performance, or its CPU throttle if that is lower, which slows the customer apps on it (see Usage curves), and every hour counts as a hot hour |
 | 45 °C or more | The server shuts itself off with the same corruption roll as a pulled plug |
 | Below 30 °C after a shutdown | The server switches itself on and boots; the minutes it was off are recorded as an Overheating incident with the usual refund requests and reviews |
 
@@ -1187,13 +1255,13 @@ A rebuild takes the used data on the drive ÷ the rebuild speed, so a 4 TB HDD t
 
 **Maintenance.** A swap takes 15 minutes once someone is there. In the basement you are there at once. At a datacenter remote hands arrive after their response time and bill their hourly rate for at least one hour.
 
-**Hand work yourself.** At a datacenter the same swap can be done by you or by a friend, after the drive from the home city (the basement's city). Same city: 1 hour and EUR 20 (anchor: a regional train ticket). Same country: 4 hours and EUR 90 (an ICE return). Another European country: 9 hours and EUR 250 (a short-haul flight). Overseas is not offered. A datacenter that is the highest position price of a city with a rival (`visitBooking`) adds 24 hours for the booked visit. Doing it yourself keeps `playerBusyUntil` set through the drive there, the work and the drive back, and waits behind replies already queued. A friend charges EUR 35 (pizza and beer), at most 3 times per calendar year (`friendFavours`), takes the same drive time and leaves the player free; the game's random sequence rolls a 10% chance per favour that the work takes twice as long. Neither option bills remote hands, so hardware insurance pays no hand-work bill for them. A player already at the datacenter presses the front panel buttons and plugs the power cords at once, with no drive and no fee.
+**Hand work yourself.** At a datacenter the same swap can be done by you or by a friend, after the drive from the home city (the basement's city). Same city: 1 hour and EUR 20 (anchor: a regional train ticket). Same country: 4 hours and EUR 90 (an ICE return). Another European country: 9 hours and EUR 250 (a short-haul flight). Overseas is not offered. A datacenter that is the highest position price of a city with a rival (`visitBooking`) adds 24 hours for the booked visit. Doing it yourself keeps `playerBusyUntil` set through the drive there, the work and the drive back, and waits behind replies already queued. A friend charges EUR 35 (pizza and beer), at most 3 times per calendar year (`friendFavours`), takes the same drive time and leaves the player free; the game's random sequence rolls a 10% chance per favour that the work takes twice as long. Neither option bills remote hands. A player already at the datacenter presses the front panel buttons and plugs the power cords at once, with no drive and no fee.
 
 **Remote management, hangs and pulled plugs.** A baseboard management controller is part of the server board: it needs no extra part and costs nothing. Anchors for when it appears: Dell DRAC 5 on PowerEdge 9G in 2006 as an add-in card and iDRAC standard from 11G in 2009; HP iLO 2 on ProLiant G5 in 2006; Supermicro onboard IPMI on X8 boards in 2009; Lenovo IMM on System x from 2008. The game maps them to the generations: Dwell and Hewlett-Packet from generation 2 (2008), SuperMacro and Lenovoid from generation 3 (2011), the ARM line always, generation 1 (2005) never. The management address follows the private address rule: 192.168.3.x in the basement, 10.n.2.x in datacenter n, with the same host octet. Hang rates have no public source and are game choices.
 
 | Event | Rate | Raised by |
 | --- | --- | --- |
-| Operating system hang | 1% a year | × 2 while a part has failed (degraded or hot), × 3 while the node is frozen from RAM overcommit |
+| Operating system hang | 1% a year | × 2 while a part has failed (degraded or hot) |
 | Management controller hang | 1% a year | × 3 once the server is 6 years old |
 | Corruption after a hard stop with running workloads | 15% | Pulled power, reset and power cycle; never after a graceful shutdown |
 | Recovered workload comes back fine | 70% | The other 30% need a restore from backup |
@@ -1257,7 +1325,7 @@ Stuck boots, hangs and lockouts are rolled per device and hour and do not draw f
 | Bust hoster's lot | Once a year: 20 servers of one model as one board listing at 35% of their preset price, from the player's first city, for 14 days |
 | Clearance weekend | Once a year: 10 eBuy auctions ending on the second evening |
 
-Used devices are never insured, cannot be leased and resell from the price paid like any other device. Anchors: eBay server lots sold at 30% to 50% of list in the 2000s, and WebHostingTalk marketplace asks sit around half of the new price.
+Used devices cannot be leased and resell from the price paid like any other device. Anchors: eBay server lots sold at 30% to 50% of list in the 2000s, and WebHostingTalk marketplace asks sit around half of the new price.
 
 **Burn-in.** A racked server that is on, has power and sits in no cluster and runs no workload can be burned in. The server counts as busy for the whole test: it draws its full rated power at the location's rate, and in a datacenter the rack position and power limit are used as usual. The test ends early if the server loses power.
 
@@ -1466,10 +1534,10 @@ The core hop applies when the two locations are in different cities: both in one
 | Storage hosting | 100 GB, 500 GB, 1 TB | Disk only | About €8, €42, €83 a month | Cluster |
 | Cloud servers | 1 | Like the 1 × base RAM VPS | 1.25 × that VPS | High-availability cluster |
 | GPU servers | 4 | 1, 2, 4 or 8 cards; per card 4 vCPUs, 8 GB RAM × growth and 50 GB disk × growth | 1, 2, 4 or 8 × the card rate of GPU cards and rental | Cluster with free cards |
-| Dedicated servers | 2 | A whole server with at least 8 or 32 GB × growth | €79, €299 a month | A free server |
+| Dedicated servers | 2 | A whole server with at least 8 or 32 GB × growth | €79, €299 a month in 2005 | A free server |
 | Colocation | 1U, quarter, half, full rack | 1, 10, 21 or 42 units and 150 W, 1, 2 or 4 kW | €60, €415, €845, €1,675 a month | Datacenter rack |
-| Domains | 1 | Nothing | €15 a year | Resold |
-| SSL certificates | 1 | Nothing | €50 a year until 2015, then free | Resold |
+| Domains | 1 | Nothing | €15 a year in 2005, then the fixed-price keyframes | Resold |
+| SSL certificates | DV, OV, EV | Nothing | €50, €150 and €400 a year in 2005, then the SSL keyframes | Resold |
 
 **Per-resource pricing.** Every line charges a base fee per service plus a price per unit of the spec (`marketRates` and `specPrice` in `products.ts`). The market's rates are per month at the basic SLA, per year for domains and SSL, with r the year's VPS rate per GB of RAM (`vpsRatePerGb`, €30 in 2005) and g the base RAM. An SLA multiplies the sum by its price factor, and a request's market reference is that price × the profile's offer factor (Reference and budget).
 
@@ -1483,12 +1551,12 @@ The core hop applies when the two locations are in different cities: both in one
 | DNS hosting | €0.50 | €0.30 per zone |
 | VPN | €0.50 | €1.50 per user |
 | Domain | €15 a year | |
-| SSL certificate | €50 a year until 2015, then €0 | |
+| SSL certificate | The DV price a year (SSL keyframes) | OV and EV validation: the OV and EV prices less the DV price |
 | GPU server | €0 | The year's card rate per GPU (GPU cards and rental), 1% of the 2-card price taken by traffic |
 | Dedicated server | €6 | €220 ÷ 24 ÷ g per GB of the smallest server RAM it accepts |
 | Colocation | €15 | €30 per rack unit, €100 per kW |
 
-Each line with traffic also charges it per 100 GB a month (Traffic, below). The table gives the rates before traffic takes its share.
+Each line with traffic also charges it per 100 GB a month (Traffic, below). The table gives the rates before traffic takes its share. The web hosting, domain and dedicated server rates are the 2005 values; later years multiply them by the fixed-price keyframes (Prices over time).
 
 **Update service.** Web hosting has two more units, both with multiplier 1 (flat over the years, and not scaled by the traffic share). `updateOnce` is the one-off price of updating a site, €49, and is not part of a service's monthly price. `updates` is the monthly price of managed updates, €5 per site, charged on a service with `spec.managedUpdates`. Anchors: managed WordPress hosting costs a premium of USD 5 to 15 a month at Bluehost and GoDaddy, and one-off maintenance plans start at USD 49. A sold one-off books a sales ledger line at the player's rate; managed updates add the player's rate to the service's price.
 
@@ -1588,16 +1656,18 @@ A personal page (the other three quarters of private individuals, unless they bo
 
 | Resource | Booking limit | In use | When the node runs over |
 | --- | --- | --- | --- |
-| CPU | None | Booked vCPUs × load | Performance of everyone on the node × cores ÷ busy vCPUs |
-| RAM | None, except installed RAM with Memory reservation on | Booked RAM × (0.6 + 0.4 × load), since memory stays mostly resident | Above 100% the node freezes: every workload on it is down until RAM in use fits again |
+| CPU | None | Booked vCPUs × load | Performance of everyone on the node falls from 100% at 70% load to 85% at 100%, then to 0.85 ÷ load; below 25% for 2 hours its workloads time out |
+| RAM | None, except installed RAM with Memory reservation on | Booked RAM × (0.6 + 0.4 × load), since memory stays mostly resident | A full-VM node swaps up to 110% and slows, then OOM-kills its largest VM each hour; an OpenVeeZee node OOM-kills one container each hour |
 | Disk | 2:1 of the usable RAID disk | Grows from 30% of booked at signup at the customer's growth rate, up to 100% | The pool stops writes at 100%: an outage for every workload on it |
 | Traffic | No limit | Monthly traffic × traffic shape (below) | Saturation, see Traffic and bandwidth |
 
 A cluster of nothing but game servers peaks at about 1.0 on Saturday evenings, while a mixed cluster stays near 0.5, so mixing customer types roughly doubles safe overcommit. The cluster view shows booked capacity, this week's forecast peak and last week's actual peak.
 
-**How the first build plays.** Usage follows the curves with ±20% jitter per workload and hour, without surges yet. A node's use is the sum of its workloads plus its control plane at full load; a stopped, restoring or lost workload uses nothing. Instead of killing workloads, an overloaded node slows them: performance is cores ÷ busy vCPUs, and 50% when the disk pool runs over. A node whose RAM in use exceeds its installed RAM freezes instead of slowing: every workload on it is down, an outage for each customer on it, until the player stops or moves enough workloads or the hourly load drops. The freeze is checked every hour and again right after a stop, start or move. Customers notice only the performance lost past their tolerance, which depends on what the service runs (its usage curve): game 5%, shop and enterprise 10%, news and VPN 15%, business 20%, blog 25%, dev 35%, backup 60%, scaled by 0.5 to 1.5 per customer from the seed and never shown to the player. Every hour each customer on a slowed node loses 0.1 × the noticed loss in happiness, and each of their services opens a "really slow" outage ticket with a chance of 10% × the noticed loss unless one is already open. **Overprovisioning is always allowed.** Players may book more vCPU and RAM than a node, a cluster or a panel VM has, whatever the software; it only costs performance. The owner's rule (bug report): no cluster may report no room when room is there, webhosting packages need minimal resources, overprovisioning should always be allowed and only hurts performance when customers use it, and limits per software make no sense because overprovisioning is not a per software thing. So the one hard limit is disk, at twice the usable RAID disk for a node and at the VM's disk inside a panel VM, because data has to sit somewhere. The scheduler still prefers a node whose installed RAM the booking fits (pack takes the busiest of them, spread the idlest) and falls back to the idlest node when none is left. The consequences are the ones above: slowdowns while the CPU in use passes the cores, the freeze while the RAM in use passes the installed RAM. The capacity bars show booked against physical and run past 100% in the warning colour.
+**How the first build plays.** Usage follows the curves with ±20% jitter per workload and hour, without surges yet. A node's use is the sum of its workloads plus its control plane at full load; a stopped, restoring or lost workload uses nothing. Instead of killing workloads, a loaded node slows them like a queue. With u = busy vCPUs ÷ cores, performance is 100% up to u = 0.7, falls linearly to 85% at u = 1 and is 0.85 ÷ u beyond, so twice the cores runs at 42.5%; it is 50% when the disk pool runs over. A site counts as slow in the browser below 95%. A node that stays below 25% for 2 hours in a row times out: every workload on it counts as down, an outage for its customers, until its performance recovers. A full-VM node (VMwhere, Proxmocks, a panel host) whose RAM in use exceeds its installed RAM swaps: up to 110% its performance falls to 1 ÷ (1 + 5 × the overcommit), so 105% runs at 80% and 110% at 67%. Past 110% the host OOM-kills its largest running VM for an hour, one per hour until RAM fits; the kill is an outage hour for that VM's customers, and the console shows it as OOM killed. An OpenVeeZee node hands RAM pressure to its beancounters instead (OpenVeeZee section). Customers notice only the performance lost past their tolerance, which depends on what the service runs (its usage curve): game 5%, shop and enterprise 10%, news and VPN 15%, business 20%, blog 25%, dev 35%, backup 60%, scaled by 0.5 to 1.5 per customer from the seed and never shown to the player. Every hour each customer on a slowed node loses 0.1 × the felt loss in happiness, and each of their services opens a "really slow" outage ticket with a chance of 10% × the felt loss unless one is already open. The felt loss is the noticed loss × the share of the customer's segment looking at that hour (Noticing outages) × the segment's sensitivity relative to business customers, capped at 1 (private customers 0.0075) × a duration factor that grows from 1 to 3 over the first 24 hours of an unbroken slowdown. A slow evening barely registers with a private customer, and a slowdown dragging through business hours costs an office the most. **Overprovisioning is always allowed.** Players may book more vCPU and RAM than a node, a cluster or a panel VM has, whatever the software; it only costs performance. The owner's rule (bug report): no cluster may report no room when room is there, webhosting packages need minimal resources, overprovisioning should always be allowed and only hurts performance when customers use it, and limits per software make no sense because overprovisioning is not a per software thing. So the one hard limit is disk, at twice the usable RAID disk for a node and at the VM's disk inside a panel VM, because data has to sit somewhere. The scheduler still prefers a node whose installed RAM the booking fits (pack takes the busiest of them, spread the idlest) and falls back to the idlest node when none is left. The consequences are the ones above: slowdowns as the CPU in use nears and passes the cores, swapping and OOM kills while the RAM in use passes the installed RAM. The capacity bars show booked against physical and run past 100% in the warning colour.
 
-**Memory reservation.** A tier 2 training after Monitoring, 100 know-how and 5 days. It adds a Memory reservation switch to every cluster, off by default. With it on, a placement or a move that would book RAM beyond a node's installed RAM less its control plane is refused, so the node cannot freeze; it is the only way RAM refuses a booking.
+**Memory reservation.** A tier 2 training after Monitoring, 100 know-how and 5 days. It adds a Memory reservation switch to every cluster, off by default. With it on, a placement or a move that would book RAM beyond a node's installed RAM less its control plane is refused, so the node cannot run out of RAM; it is the only way RAM refuses a booking.
+
+**Stopped workloads and starting.** A stopped VM keeps its disk on its node but holds none of its CPU or RAM, so it counts toward neither the booked RAM of the node, placement, Memory reservation nor the overallocation alarm. A VM takes its whole booked RAM when it starts: starting is refused while the RAM the node's running VMs book plus its own exceeds what the node can book. On OpenVeeZee RAM is not reserved: a running container holds the RAM it uses, a stopped or frozen one none, and a container starts or is restored only while the RAM in use on its node plus what it will use fits the node. The booked RAM of containers is shown next to the RAM in use and never refuses anything.
 
 **Pegged workloads.** A workload is pegged when its CPU ran at 95% or more of its booked vCPUs in more than 12 of the last 24 hours. The node's workload list marks it.
 
@@ -1628,41 +1698,63 @@ Disk use starts at 30% of booked and stops at 100%; the average customer reaches
 
 **Before and after.** Measured over 30 days with a mixed set of customers (web hosting, VPS, game servers, VPN, storage, dedicated): early game in 2005 with 13 services moves 0.59 TB before and after, with a 95th percentile of 3.4 Mbit/s before and 3.8 after (night jobs add short peaks to a small base); mid game in 2012 with 200 services moves 17.9 TB before and 17.8 after, with a 95th percentile of 103 Mbit/s before and 88 after, so transit bills drop about 15% (€311 to €264 a month at Cogentle's price), because the floors and staggered peaks flatten the sum.
 
+### Traffic overuse
+
+A service's traffic grows 20% a year from the day it started while its plan stays the same, so a service that keeps its plan for a few years moves more traffic in a month than the plan includes. The customer page shows the last month's traffic against the plan for every service with included traffic, and a service over its plan offers three answers.
+
+| Answer | Effect |
+| --- | --- |
+| Throttle traffic | The service stays at its booked traffic from then on, so the transit it costs stops growing. The customer loses 10 happiness. Lifting the throttle lets the traffic grow again. |
+| Bill overage | An invoice for the GB over the plan, at the line's traffic rate per 100 GB (the player's rate in Products, else the market's). The customer loses 5 happiness. |
+| Offer upgrade | The customer answers with an upgrade request for the next bigger plan, which the player quotes in Sales and the customer accepts or counters like any other upgrade. |
+
+A bill or an upgrade offer covers 730 hours, so the same service can be billed or offered an upgrade once a month. The state holds a company-wide `overusePolicy` (null by default): when it is set, the daily noon check applies that answer to every service over its traffic that is not yet throttled or handled this month. The player sets it in the Books app's billing rules after the Traffic billing training (250 know-how, 10 days, after Product management); the choices are off, throttle, bill or offer upgrade. An upgrade offer still waits for the player to quote it in Sales.
+
 ## Resellers
 
-A reseller buys a block of accounts on a DirectAdmen or cPanic host and sells web space to their own customers. The three blocks are Small (20 accounts, 50 GB, 500 GB traffic), Medium (50 accounts, 150 GB, 1,500 GB) and Large (100 accounts, 350 GB, 4,000 GB). The monthly price of a block is 0.5 times the market price of an average web space times its account count, billed in full whether the block is filled or not.
+A reseller buys a block of accounts on a DirectAdmen or cPanic host and sells web space to their own customers. The three blocks are Small (20 accounts, 50 GB, 500 GB traffic), Medium (50 accounts, 150 GB, 1,500 GB) and Large (100 accounts, 350 GB, 4,000 GB). The player sets a price per GB of block disk; the market rate makes a Medium block cost 0.5 times the market price of an average web space times its 50 accounts. Each month the reseller pays for the share of the block in use, the block price times the mean fill of that month. HOSTtoast lists reseller blocks with the price per GB next to the rivals that sell them.
 
 The block books its full compute and disk from the day it starts. The reseller's own customers arrive linearly over 6 months up to a fill of 70%, and a cheaper block than the market price fills faster (down to 3 months at half the price per account). Resource use follows the fill, so the host carries less than it has sold.
 
-Abuse reports arrive at the rate of the filled accounts, and the reseller handles half of them; the other half come to the player as abuse tickets with the reseller as the customer. Each month there is a 2% chance that the block holds a shady account, which draws the abuse and legal follow-ups of a shady customer until the player suspends the reseller. Reseller leads are 3% of web hosting leads from 2008, once a DirectAdmen or cPanic host exists.
+Abuse reports arrive at the rate of the filled accounts, and the reseller handles half of them; the other half come to the player as abuse tickets with the reseller as the customer. Each month there is a 2% chance that the block holds a shady account, which draws the abuse and legal follow-ups of a shady customer until the player suspends the reseller. Reseller leads are 3% of web hosting leads, and 25% of an agency's, from 2008, once a DirectAdmen or cPanic host exists.
 
 ## Platforms and licenses
 
-Every server and every one of the player's own VMs runs an operating system, and software on it must run on that system and share no TCP port with the software already there; at most one hypervisor runs on a machine. A hypervisor ("Cloud" below) runs on every node of a hypervisor cluster and sells VPS, game servers and, with failover on, cloud servers. A panel runs on a panel host, a bare-metal server or one of the player's own VMs, and sells web hosting. Service software runs the same way as a panel, on one bare-metal server or one of the player's VMs, and sells one line each: a game panel sells game servers, a DNS server DNS, a VPN server VPN and a storage server storage. Game servers also run on a hypervisor; DNS, VPN and storage need their own software. A DNS, VPN or storage service already on a hypervisor keeps running there. Dedicated servers, colocation, domains and certificates need neither. Values live in `src/sim/10-catalog/platforms.ts`; fees are monthly, in euros, and fixed over the years, except where a license lists a one-time price first.
+Every server and every one of the player's own VMs runs an operating system, and software on it must run on that system and share no TCP port with the software already there; at most one hypervisor runs on a machine. A hypervisor ("Cloud" below) runs on every node of a hypervisor cluster and sells VPS, game servers and, with failover on, cloud servers. A panel runs on a panel host, a bare-metal server or one of the player's own VMs, and sells web hosting. Service software runs the same way as a panel, on one bare-metal server or one of the player's VMs, and sells one line each: a game panel sells game servers, a DNS server DNS, a VPN server VPN and a storage server storage. Game servers also run on a hypervisor; DNS, VPN and storage need their own software. A DNS, VPN or storage service already on a hypervisor keeps running there. Dedicated servers, colocation, domains and certificates need neither. Values live in `src/sim/10-catalog/platforms.ts`; fees are monthly, in euros, and change only with the licence eras and the licence price rises (Prices over time), except where a license lists a one-time price first.
 
 | Software | Kind | OS | License | Install | How-to tickets | Live migration | Control plane |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| cPanic | Panel | Lunix | €12 per server (Dedicated), from June 2019 the editions Solo to Premier (€0.40 per web space) | 3 h | ×0.8 |  | 0.25 vCPU, 0.25 GB, 5 GB |
-| Pleskit | Panel | Lunix, Windoors | €12 per panel host | 3 h | ×0.9 |  | 0.25 vCPU, 0.25 GB, 5 GB |
+| cPanic | Panel | Lunix | €12 per server (Dedicated), from June 2019 the editions Solo to Premier (€0.40 per web space) | 3 h | ×0.8 |  | 0.5 vCPU, 1 GB, 10 GB |
+| Pleskit | Panel | Lunix, Windoors | €12 per panel host | 3 h | ×0.9 |  | 0.5 vCPU, 0.5 GB, 10 GB |
 | DirectAdmen | Panel | Lunix | €100 lifetime per major or Standard at €4 per panel host, from September 2019 the editions Personal to Standard | 2 h | ×1.2 |  | 0.1 vCPU, 0.1 GB, 2 GB |
 | FreePanel | Panel | Lunix | Free | 2 h | ×1.5 |  | 0.1 vCPU, 0.1 GB, 2 GB |
 | OpenVeeZee | Cloud | Lunix | Free | 3 h | ×1.4 | No | 0.1 vCPU, 0.1 GB, 2 GB |
-| OpenStash | Cloud | Lunix | Free | 8 h | ×1.3 | Yes | 2 vCPU, 2 GB, 20 GB |
+| OpenStash | Cloud | Lunix | Free | 8 h | ×1.3 | Yes | 4 vCPU, 8 GB, 50 GB |
 | VMwhere | Cloud | Lunix | €600 once per CPU socket, from December 2023 €96 a year per physical core with 16 cores per CPU at least | 5 h | ×0.7 | Yes | 1 vCPU, 2 GB, 10 GB |
-| Proxmocks | Cloud | Lunix | Free | 3 h | ×1.0 | Yes | 0.25 vCPU, 0.25 GB, 5 GB |
-| HyperVee | Cloud | Windoors | €20 per node | 4 h | ×0.9 | No | 1 vCPU, 1 GB, 10 GB |
+| Proxmocks | Cloud | Lunix | Free | 3 h | ×1.0 | Yes | 0.25 vCPU, 1 GB, 10 GB |
+| HyperVee | Cloud | Windoors | €20 per node | 4 h | ×0.9 | No | 1 vCPU, 2 GB, 32 GB |
 | TCAdmen | Game | Windoors | €25 per server | 2 h | ×0.9 | No | 0.25 vCPU, 0.5 GB, 5 GB |
-| MultiKraft | Game | Lunix, Windoors | €20 per server, from 2020 €1.20 per game server beyond 25 | 2 h | ×1.0 | No | 0.25 vCPU, 0.5 GB, 5 GB |
+| MultiKraft | Game | Lunix, Windoors | €20 per server, from 2020 €1.20 per game server beyond 25 | 2 h | ×1.0 | No | 0.1 vCPU, 0.25 GB, 1 GB |
 | Pterodaktyl | Game | Lunix | Free | 3 h | ×1.2 | No | 0.25 vCPU, 0.5 GB, 5 GB |
 | Bound | DNS | Lunix, Windoors | Free | 2 h | ×1.3 | No | 0.1 vCPU, 0.25 GB, 2 GB |
 | PowerDNZ | DNS | Lunix | Free | 2 h | ×1.0 | No | 0.25 vCPU, 0.5 GB, 5 GB |
 | Knut DNS | DNS | Lunix | Free | 1 h | ×1.1 | No | 0.1 vCPU, 0.25 GB, 2 GB |
-| OpenVeePeeN | VPN | Lunix, Windoors | Free | 2 h | ×1.3 | No | 0.25 vCPU, 0.25 GB, 2 GB |
+| OpenVeePeeN | VPN | Lunix, Windoors | Free | 2 h | ×1.3 | No | 0.25 vCPU, 1 GB, 2 GB |
 | Sysko AnyConnekt | VPN | Lunix | €30 per server | 3 h | ×0.7 | No | 0.5 vCPU, 1 GB, 5 GB |
 | WireGuarded | VPN | Lunix | Free | 1 h | ×0.9 | No | 0.1 vCPU, 0.1 GB, 1 GB |
-| vsFTPeed | Storage | Lunix | Free | 1 h | ×1.4 | No | 0.1 vCPU, 0.25 GB, 2 GB |
+| vsFTPeed | Storage | Lunix | Free | 1 h | ×1.4 | No | 0.05 vCPU, 0.05 GB, 0.1 GB |
 | OwnClod | Storage | Lunix | Free | 2 h | ×1.2 | No | 0.5 vCPU, 1 GB, 10 GB |
 | MinnIO | Storage | Lunix, Windoors | Free | 2 h | ×1.0 | No | 0.5 vCPU, 1 GB, 10 GB |
+
+| Software | Kind | Control plane |
+| --- | --- | --- |
+| SquirrelMeal | Webmail | 0.05 vCPU, 0.1 GB, 0.1 GB |
+| Postfixit Admin | Webmail | 0.05 vCPU, 0.1 GB, 0.5 GB |
+| Backula | Backup | 0.5 vCPU, 1 GB, 10 GB |
+| Veeham Backup | Backup | 2 vCPU, 4 GB, 60 GB |
+| Proxmocks Backup Server | Backup | 1 vCPU, 2 GB, 32 GB |
+
+**Control plane growth.** The control plane column is what the software takes in its first year (the From column of the table below, 2010 for OpenStash, 2005 or 2008 for the rest). Panels and hypervisors grow RAM and disk with the square root of the server RAM growth (`vpsPlanGb`) since that year, half as fast as server RAM: cPanic takes 1 GB and 10 GB in 2005 and 2.83 GB and 28 GB in 2026. RAM rounds to 0.01 GB and disk to whole GB, and the vCPU stays flat. Game panels, DNS, VPN, storage, mail, webmail and backup software stay at their first-year size. A panel VM sized in an earlier year keeps running as the panel grows: the growth comes out of the room the VM holds for web spaces, RAM can run over as on any overbooked VM, only disk refuses new web spaces, and installing or resizing needs a VM that holds this year's panel. A mail server also books 1 GB × `vpsPlanGb` of disk for every company mailbox it holds (8 GB a mailbox in 2026); customers' mailboxes live in their web space disk and are not booked again.
 
 | Operating system | License | Install | Boot |
 | --- | --- | --- | --- |
@@ -1928,11 +2020,11 @@ A HyperVee cluster has virtual switches, up to 8, starting with one external Def
 
 A container shows its beancounters: kmemsize, privvmpages, oomguarpages, numproc and numtcpsock with held, maxheld, barrier, limit and failcnt. Memory is in 4 KB pages. Failcnt is stored on the container for privvmpages and numproc; the rest is derived from its use.
 
-Each hour a node with more than 90% of its RAM in use takes burst memory back first: only containers with a burst allowance collect privvmpages failcnt. A node out of RAM, or with more busy vCPUs than cores, makes every container fail privvmpages and numproc. The increment is 40 times the container's share of the node RAM, at least 1, per hour. Six hours in a row slow the site like any other slowdown. Past 24 failcounts in a day the OOM killer stops the container for an hour and the hour counts as downtime. The player fixes it by raising the container's size, moving it or selling less of the node.
+Each hour a node with more than 90% of its RAM in use takes burst memory back first: only containers with a burst allowance collect privvmpages failcnt. A node out of RAM makes every container fail privvmpages; busy vCPUs past the cores slow the node but never touch the beancounters. The increment is 40 times the container's share of the node RAM, at least 1, per hour. Six hours in a row slow the site like any other slowdown. Each hour a node out of RAM has the OOM killer stop one container for an hour, the one furthest past its barrier, else the largest. It frees its RAM, shows "OOM killed" in the console, and the hour counts as downtime. The player fixes it by raising the container's size, moving it or selling less of the node.
 
 Burst memory ranges from 0 to twice the container's RAM, in steps of a quarter GB. It is not booked and costs nothing.
 
-Checkpoint freezes a container: it stays booked on its node, uses no CPU or RAM and is offline. Restore resumes it within a minute plus two seconds per GB of RAM in use, which counts as downtime. A cold move of a container on OpenVeeZee is a checkpoint, a copy and a restore, so it is down only for the copy of its disk over the link (at least 1 minute) instead of a full boot.
+Checkpoint freezes a container: it stays on its node, holds no CPU or RAM and is offline. A container is created from an OS template the player has downloaded and runs its OS at once, without an installer or ISO. Restore resumes it within a minute plus two seconds per GB of RAM in use, which counts as downtime. A cold move of a container on OpenVeeZee is a checkpoint, a copy and a restore, so it is down only for the copy of its disk over the link (at least 1 minute) instead of a full boot.
 
 ### Snapshots
 
@@ -2005,7 +2097,7 @@ A new VMwhere cluster starts on Essentials; a cluster from an older save is on E
 | Standard | High availability failover, alarm thresholds, manual DRS |
 | Enterprise | Partially and fully automated DRS, resource pools |
 
-DRS Manual and Partial keep up to five recommended moves for the player to apply, Full applies them. A host enters maintenance mode only when every running VM can move live. A pool caps the booked vCPUs and RAM of its members. On a hot node a high pool keeps its performance and a low pool keeps at most 90%.
+DRS Manual and Partial keep up to five recommended moves for the player to apply, Full applies them. A host enters maintenance mode only when every running VM can move live. A pool caps the booked vCPUs and RAM of its members. On a hot node a high pool keeps its performance and a low pool keeps 90% of the node's performance.
 
 
 ### Horizont floating IPs, security groups and volumes
@@ -2209,6 +2301,17 @@ Each service records `appVersion` (the release year it runs) and `appUpdatedAt` 
 | Clean-up by the customer | Medium and high skill: 50% clean it up themselves 1 to 3 days after the hit; low skill never |
 | Third hack within 365 days | The customer cancels all services |
 
+**Site clean-up.** Defaced sites are listed in the Security app under Advisories, and the notification opens it on the site. Each offers four actions; any clean-up ends an abuse hold on the site, so it comes back online and stops sending spam.
+
+| Action | Effect |
+| --- | --- |
+| Restore backup | `cleanSite` above; needs a backup |
+| Offer clean-up | The customer answers at once: accepts with 60% ÷ (player rate ÷ market rate), which books the price as a sales ledger line, takes the player that many hours and cleans the site; of those who decline, 25% × (player rate ÷ market rate) cancel all services. Offered once per hack |
+| Remind | 3 minutes of the player's time. The customer cleans the site 1 to 3 days after the hit with 90%, 60% or 30% by high, medium or low skill, low skill included. Once per hack |
+| Suspend for abuse | An abuse hold. The customer's ticket asks about the hack (how-to, topic abuseHold, the same actions as hacked) instead of an invoice |
+
+The price is the web hosting `cleanHour` rate times the hours the site takes: 1, 2 or 4 by the customer's budget, like their order sizes. The market's hourly rate is €85 in 2026 with multiplier 0.6 (€51 in 2005), shown in Pricing beside the player's. Anchor: German web agencies bill €60 to €100 an hour for WordPress clean-up. The hacked and abuseHold tickets also offer paid clean-up as an action, decided the same way; a decline keeps the thread open.
+
 **Notifying.** Notify customers, per app and vulnerability from Monitoring, writes to every site open to it that has not been written to yet: 30 minutes of the player's time per 10 customers. Of the customers who would not update by themselves, 50% answer with a how-to ticket, topic update. Each customer who asks has a fixed wish, drawn by their profile's budget:
 
 | Budget | One-off update | Managed updates | Refuses |
@@ -2360,24 +2463,30 @@ A first-year company earns about 300 know-how; a company with 10,000 customers e
 | Dedicated server, CDN | 5 |
 | Colocation | 6 |
 
-**Skills.** Trainings in the Research app make Pear Store items available. Know-how is paid when a training starts, one training runs at a time, and the skill is learned after its duration.
+**Skills.** Trainings in the Research app make Pear Store items, product lines, software and features available. Know-how is paid when a training starts, one training runs at a time, and the skill is learned after its duration. The last column lists what the Research app shows under Unlocks; a feature that needs software names it.
 
 | Skill | Tier | Know-how | Training | Needs | Makes available |
 | --- | --- | --- | --- | --- | --- |
 | Monitoring | 1 | 50 | 5 days | | Nagiosaurus, failure notifications |
-| Marketing basics | 1 | 50 | 5 days | | Leads to Marketing campaigns |
+| Marketing basics | 1 | 50 | 5 days | | Customer reviews, event sponsoring |
 | Employee management | 1 | 100 | 10 days | | Staff |
 | Company law | 1 | 100 | 10 days | | Founding a limited company |
-| Network operations | 2 | 300 | 14 days | Monitoring | Network |
-| Product management | 1 | 100 | 7 days | | Products |
-| Provisioning automation | 2 | 150 | 10 days | Product management | Automatic setup of orders, the Place orders automatically switch |
-| Fraud screening | 2 | 200 | 7 days, from 2008 | Product management | The Screen orders with MaxMined switch |
+| Product management | 1 | 100 | 7 days | | Rates per product line |
+| Shop systems | 1 | 60 | 4 days | | Shop systems (ModemBill, ClientExit, WHMCache, Blessta, HostBull, Ubersmyth, OrderBocks, BoxBillin') |
+| Memory reservation | 2 | 100 | 5 days | Monitoring | Memory reservation per cluster (OpenVeeZee, VMwhere, Proxmocks or HyperVee) |
+| Network operations | 2 | 300 | 14 days | Monitoring | Network, buying transit, peering with other networks |
+| Provisioning automation | 2 | 150 | 10 days | Product management | Automatic host for a setup, order automation for quotes, accounts, invoices and setups |
+| Fraud screening | 2 | 200 | 7 days, from 2008 | Product management | Order screening by MaxMined |
+| Traffic billing | 2 | 250 | 10 days | Product management | Automatic answer to traffic over the plan |
+| Documentation | 2 | 200 | 10 days | Product management | Knowledge base |
 | Marketing campaigns | 2 | 300 | 14 days | Marketing basics, Employee management | Marketing |
 | Market research | 3 | 800 | 21 days | Product management, Marketing campaigns | Market |
-| Virtualization | 3 | 400 | 14 days | Product management, Monitoring | Virtual machines |
-| Automation | 3 | 1,500 | 21 days | Employee management, Monitoring | ChadGPT Support, Clipsy Reminders |
+| High availability | 3 | 400 | 14 days | Product management, Monitoring | Live migration, automatic failover and auto-balancing (OpenVeeZee, VMwhere, Proxmocks or HyperVee), product lines that need failover |
+| GPU computing | 3 | 400 | 14 days, from 2011 | Product management, Monitoring | GPU virtual machines (OpenVeeZee, VMwhere, Proxmocks or HyperVee) |
+| Automation | 3 | 1,500 | 21 days | Employee management, Monitoring | ChadGPT Support, Clipsy Reminders, automated billing rules |
+| Cloud orchestration | 4 | 3,000 | 45 days, from 2010 | High availability, Network operations, Provisioning automation | OpenStash, the Cloud server product line, Watchman auto-balancing (OpenStash) |
 
-The whole tree costs 4,050 know-how and 138 days of training.
+The whole tree costs 8,060 know-how and 226 days of training.
 
 Product management was tier 2 at 200 know-how and 14 days after Marketing basics. The happiness run showed a careful first-year company earns 15 to 40 know-how a month, so the 250 know-how path landed in September to November. As a tier 1 skill at 100 know-how and 7 days, the same company learns it between early May and early July (median early June).
 
@@ -2411,7 +2520,6 @@ Product management was tier 2 at 200 know-how and 14 days after Marketing basics
 | Managed databases | Products | 9,000 | €40,000 | Level 4 |
 | Own network number (ASN) | Network | 8,000 | €20,000 | Level 4 |
 | VPN | Products | 8,000 | €30,000 | Level 4 |
-| SLA insurance | Business | 10,000 | €10,000 | Level 4 |
 | Overlay networks | Network | 10,000 | €40,000 | Level 4 |
 | Always-on DDoS protection | Network | 12,000 | €100,000 | Level 4 |
 | Private suite | Infrastructure | 20,000 | €250,000 | Level 5 |
@@ -2447,9 +2555,9 @@ The GDD counts years in operation inside net worth. Here they are a separate min
 
 A company whose net worth stays below 80% of its level's threshold for 6 months drops one level, and customers who require the old level stop renewing.
 
-## Bank, insurance and tax
+## Bank and tax
 
-A level-1 company borrows at about 10% interest and a level-6 company at about 4.5%. Profit is taxed at 30% each April, and a company that stays out of cash for 30 days goes bankrupt.
+A level-1 company borrows at about 10% interest and a level-6 company at about 4.5%. Profit is taxed at 30% once the yearly return is filed, and a company that stays out of cash for 30 days goes bankrupt.
 
 **Loan interest** is the year's base rate plus a risk premium for the company level. Base rates follow these keyframes, with straight lines between them:
 
@@ -2495,9 +2603,7 @@ The loan margin in points is added to the base rate and the risk premium, and th
 
 **Switching banks.** Opening an account at another bank moves the whole balance. The old account pays its last fee at the next month start and closes. Switching is refused while a loan is open or the account is overdrawn. Standing orders, mandates and the card stay behind, and the card's open spending is billed at once. Customers who pay an invoice issued before the switch still reach the company for three months; after that the transfer bounces and the invoice stays unpaid.
 
-**SLA insurance.** The monthly premium is 2% of the recurring revenue from customers with an SLA, times an uptime factor: 1.0 at 99.95% or better over 90 days, 1.5 at 99.9% or better, and 2.5 below that. A missed SLA owes the customer 10% of their monthly fee per 0.1% of uptime below the promise, up to the full fee. The insurer pays those credits for three claims, then blocks the company for a year.
-
-**VAT.** Prices are gross, as for private customers: a sale of a holds a × r / (1 + r) of VAT. The rate r is 16% to 2006, 19% from 1 January 2007, and 16% from 1 July to 31 December 2020. Output VAT comes from customer payments, setup fees and sales; input VAT comes back on hardware, rent, power, transit, licenses, subscriptions, marketing, maintenance, domains, leasing, moving and AI. Salaries, insurance, loans, capital, fees and taxes carry none. VAT payments book in the category `vat`, which counts against profit, so a small business that charges no VAT keeps more of the same price.
+**VAT.** Prices are gross, as for private customers: a sale of a holds a × r / (1 + r) of VAT. The rate r is 16% to 2006, 19% from 1 January 2007, and 16% from 1 July to 31 December 2020. Output VAT comes from customer payments, setup fees and sales; input VAT comes back on hardware, rent, power, transit, licenses, subscriptions, marketing, maintenance, domains, leasing, moving and AI. Salaries, loans, capital, fees and taxes carry none. VAT payments book in the category `vat`, which counts against profit, so a small business that charges no VAT keeps more of the same price.
 
 | Item | Rule |
 |---|---|
@@ -2509,9 +2615,15 @@ The loan margin in points is added to the base rate and the risk premium, and th
 
 A small business files no advance returns, charges no VAT and reclaims none. On 1 January a small business whose revenue last year was above the year's limit loses the rule by letter.
 
-**Tax.** Corporate tax takes 30% of each year's profit in April of the following year, and losses carry forward to later years. Taxable profit is the year's ledger without loan principal; instalments count only their interest, and hardware is a cost in the year it is bought.
+**Tax.** Income tax (corporate tax for a limited company) takes 30% of each year's profit once the yearly return is filed, and losses carry forward to later years. Taxable profit is the year's ledger without loan principal and taxes; instalments count only their interest, VAT payments count as a cost, and hardware is a cost in the year it is bought.
 
-**Hardware insurance.** The monthly premium is 1.5 × the expected yearly cost of spare parts for every working component still within its life expectancy (part price × its current yearly failure rate, with the manufacturer and overheating factors) / 12, at least €1. A claim pays the spare part's price and the remote hands bill for a component that failed while insured and before the end of its life expectancy; wear-out failures after that are not covered, so parts past their lifetimes add nothing to the premium. The starting basement server costs about €1.40 a month to insure.
+| Item | Rule |
+|---|---|
+| Yearly return due | 31 May of the next year, 31 July for the years from 2018; the tax office reminds in March |
+| Assessment | 10 working days after filing, by letter with a bill due in 30 days; a refund books at once |
+| Late fee | 0.25% of the assessed tax for each month started after the due date, at least €25 a month, billed with the assessment |
+| Estimate | Two months after the due date, 1.3 × the real tax, at least €100; filing before the end of the following year replaces it and settles the difference |
+
 
 ## Balancing
 

@@ -10,7 +10,7 @@ import { setPower } from "../src/sim/90-actions/hardware";
 import { setSiteHost } from "../src/sim/90-actions/website";
 import { readyGame, registered, skipTo, newGame } from "./fixtures";
 import { createRng } from "../src/sim/00-core/rng";
-import { spawnNotice } from "../src/sim/40-support/notices";
+import { applyNoticeWork, spawnNotice } from "../src/sim/40-support/notices";
 import { customerSite, siteHost } from "../src/sim/80-business/website";
 
 const web = (s: ReturnType<typeof readyGame>) => s.services.find((v) => v.product === "webHosting" && v.domain)!;
@@ -28,7 +28,7 @@ describe("browser resolver", () => {
     const s = newGame(1);
     expect(resolve(s, WIKI_URL)).toMatchObject({ page: { kind: "wiki" }, path: "/wiki/Main_Page", load: "fast" });
     expect(resolve(s, "wikipedio.org/wiki/Uplink").page.kind).toBe("wiki");
-    expect(siteIndex(s).find((c) => c.title === "Community")!.rows.map((r) => r.url)).toContain(WIKI_URL);
+    expect(siteIndex(s).find((c) => c.title === "Documentation")!.rows.map((r) => r.url)).toEqual([WIKI_URL]);
   });
 
   it("serves each used market as a site and lists them in the index", () => {
@@ -37,6 +37,7 @@ describe("browser resolver", () => {
       expect(resolve(s, marketUrl(c.id))).toMatchObject({ page: { kind: "market", channel: c.id }, load: "fast" });
       expect(resolve(s, `${c.host}/itm/x?cat=Servers`).page).toEqual({ kind: "market", channel: c.id });
     }
+    expect(resolve(s, "www.craigslost.org/").page).toEqual({ kind: "market", channel: "chat" });
     expect(siteIndex(s).find((c) => c.title === "Used hardware")!.rows.map((r) => r.url)).toEqual(CHANNELS.map((c) => marketUrl(c.id)));
   });
 
@@ -50,7 +51,7 @@ describe("browser resolver", () => {
     expect(resolve(s, d).page).toEqual({ kind: "company" });
     expect(resolve(s, `https://www.${d}/`)).toMatchObject({ page: { kind: "company" }, load: "fast" });
     expect(resolve(s, `${d}/admin`).page).toEqual({ kind: "company" });
-    expect(defaultBookmarks(s).map((m) => resolve(s, m.url).page.kind)).toEqual(["company", "registrar"]);
+    expect(defaultBookmarks(s).map((m) => resolve(s, m.url).page.kind)).toEqual(["registrar"]);
     s.marketing.launched = false;
     expect(resolve(s, d).page).toEqual({ kind: "notfound" });
     expect(defaultBookmarks(s).map((m) => m.title)).not.toContain(s.company.name);
@@ -100,10 +101,22 @@ describe("browser resolver", () => {
   it("serves a reported phishing page until it is taken down", () => {
     const s = readyGame(1);
     const t = spawnNotice(s, null, true, createRng(3), "phishing");
-    expect(resolve(s, t.notice!.url).page).toEqual({ kind: "phishing", sender: "baenk" });
-    expect(resolve(s, `${t.notice!.url}x`).page.kind).not.toBe("phishing");
+    expect(resolve(s, t.notice!.url).page).toEqual({ kind: "notice", ticketId: t.id });
+    expect(resolve(s, `${t.notice!.url}x`).page.kind).not.toBe("notice");
     t.outcome = "takenDown";
-    expect(resolve(s, t.notice!.url).page.kind).not.toBe("phishing");
+    expect(resolve(s, t.notice!.url).page.kind).not.toBe("notice");
+  });
+
+  it("serves what a real notice or a YouTuber reports and nothing at a fake download claim", () => {
+    const s = readyGame(1), c = s.customers.find((x) => x.id === web(s).customerId)!;
+    const real = spawnNotice(s, c, true, createRng(4), "music");
+    const fake = spawnNotice(s, c, false, createRng(5), "movie");
+    const blog = spawnNotice(s, c, false, createRng(6), "youtuber");
+    expect(resolve(s, real.notice!.url).page).toEqual({ kind: "notice", ticketId: real.id });
+    expect(resolve(s, fake.notice!.url).page).toEqual({ kind: "notfound" });
+    expect(resolve(s, blog.notice!.url).page).toEqual({ kind: "notice", ticketId: blog.id });
+    applyNoticeWork(s, real, c, "takedown");
+    expect(resolve(s, real.notice!.url).page.kind).not.toBe("notice");
   });
 
   it("shows the company's logo on a sponsored site while the sponsorship runs and its banner hangs", () => {

@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
 import { marketPrice, marketRates, sizeSpec } from "../src/sim/10-catalog/products";
 import { CYCLE_SHARE } from "../src/sim/10-catalog/cycles";
-import { BARE_REFERENCE } from "../src/sim/45-billing/billing";
+import { BARE_REFERENCE, billingTick } from "../src/sim/45-billing/billing";
+import { TIER_IDS } from "../src/sim/10-catalog/hosttoast";
+import { hosttoastList } from "../src/sim/80-business/hosttoast";
 import { NEEDS } from "../src/sim/30-market/market";
-import { fillOf, FILL_MAX, resellerAbuse, resellersOn, resellerTick, resellerLeadsOpen } from "../src/sim/30-customers/resellers";
+import { fillAt, fillOf, FILL_MAX, resellerAbuse, resellersOn, resellerTick, resellerLeadsOpen } from "../src/sim/30-customers/resellers";
 import { newLead } from "../src/sim/30-market/sales";
 import { newGame } from "../src/sim/50-state";
 import { workloadUse } from "../src/sim/60-infra/usage";
@@ -29,14 +31,31 @@ function world(size = 1, panel = "directadmen") {
 }
 
 describe("reseller blocks", () => {
-  it("sizes the three blocks and prices them at half the web space price per account", () => {
+  it("sizes the three blocks and prices them per GB, a medium block at half the web space price per account", () => {
     expect([0, 1, 2].map((i) => sizeSpec("reseller", i, 2010)).map((x) => [x.accounts, x.trafficGb])).toEqual([[20, 500], [50, 1500], [100, 4000]]);
-    const web = marketPrice("webHosting", sizeSpec("webHosting", 1, 2010), 2010);
-    for (let i = 0; i < 3; i++) {
-      const spec = sizeSpec("reseller", i, 2010);
-      expect(marketPrice("reseller", spec, 2010)).toBeCloseTo(0.5 * web * spec.accounts!, 0);
-    }
-    expect(marketRates("reseller", 2010).account).toBeCloseTo(0.5 * web, 2);
+    const web = marketPrice("webHosting", sizeSpec("webHosting", 1, 2010), 2010), medium = sizeSpec("reseller", 1, 2010);
+    expect(marketPrice("reseller", medium, 2010)).toBeCloseTo(0.5 * web * medium.accounts!, 0);
+    expect(marketRates("reseller", 2010).diskGb).toBeCloseTo((0.5 * web * medium.accounts!) / medium.diskGb, 4);
+  });
+
+  it("bills the share of the block in use", () => {
+    const { s, v, cust } = world();
+    s.hour = hourOf(new Date(Date.UTC(2010, 3, 1)));
+    billingTick(s);
+    const from = hourOf(new Date(Date.UTC(2010, 2, 1))), hours = s.hour - from;
+    const line = s.invoices.filter((i) => i.customerId === cust).flatMap((i) => i.lines).find((l) => l.key === "invoice.line.hours")!;
+    expect(line.amount).toBeCloseTo(hours * v.price * fillAt(v, from + hours / 2), 1);
+    expect(line.amount).toBeLessThan(hours * v.price * FILL_MAX);
+  });
+
+  it("lists reseller blocks on HOSTtoast per GB, yours at your rate", () => {
+    const { s } = world();
+    s.hosttoast.tier = TIER_IDS[0];
+    s.rates = { reseller: { diskGb: 0.42 } };
+    const rows = hosttoastList(s, "reseller", null), market = marketRates("reseller", 2010).diskGb!;
+    expect(rows.find((r) => r.id === "you")?.price).toBe(0.42);
+    const rival = rows.find((r) => r.id !== "you")!;
+    expect(rival.price).toBeCloseTo(market * s.competitors.find((c) => c.id === rival.id)!.priceFactor, 6);
   });
 
   it("fills linearly to 70% in six months and books the whole block while using the filled share", () => {

@@ -7,7 +7,7 @@ import { keyFee, licenseCost, renewKeys } from "../src/sim/85-products/products"
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { addToCart, checkout } from "../src/sim/90-actions/vendor-shop";
-import { BASEMENT_SERVER, newGame, panelVm, readyGame, startGame, withServer } from "./fixtures";
+import { BASEMENT_SERVER, newGame, panelVm, readyGame, startGame, withCard, withServer } from "./fixtures";
 
 const at = (y: number, m: number, d = 1) => hourOf(new Date(Date.UTC(y, m - 1, d)));
 const game = (hour: number) => Object.assign(newGame(41), { hour, cash: 50_000 });
@@ -26,7 +26,7 @@ describe("licence eras", () => {
     const s = game(at(2019, 8, 20));
     expect(addToCart(s, "directadmen", null)).toEqual({ ok: true });
     s.hour = at(2019, 9);
-    expect(checkout(s, "directadmen.com")).toEqual({ ok: false, error: "error.notForSale" });
+    expect(checkout(s, "directadmen.com", "card")).toEqual({ ok: false, error: "error.notForSale" });
   });
 
   it("keeps an old perpetual key covering its major without billing", () => {
@@ -44,7 +44,8 @@ describe("licence eras", () => {
   it("renews a yearly key a year on and bills a server at least the minimum cores", () => {
     const s = game(at(2024, 3, 15));
     addToCart(s, "vmwhere", null);
-    expect(checkout(s, "vmwhere.com").ok).toBe(true);
+    withCard(s);
+    expect(checkout(s, "vmwhere.com", "card").ok).toBe(true);
     const k = s.licenses[0];
     expect(k.covers).toEqual({ kind: "term", until: at(2025, 3, 15) });
     assignKey(s, k.id, "srv1");

@@ -41,6 +41,7 @@
 .menu-page h3 { font-size: 12px; font-weight: 600; color: var(--text-2); margin: 8px 0 0; }
 .menu-page .pick { padding: 7px 8px; font-size: 12.5px; }
 .menu-page .btn.ghost { justify-self: start; padding-left: 0; }
+.menu-page p { margin: 0; font-size: 12.5px; line-height: 1.45; color: var(--text-2); }
 .menu-page .picks { grid-template-columns: repeat(2, 1fr); }
 .menu-page .picks.three { grid-template-columns: repeat(3, 1fr); }
 .start-swatch { width: 10px; height: 10px; border-radius: 3px; flex: none; }

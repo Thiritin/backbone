@@ -1,8 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CITIES, START_CASH } from "../src/sim/10-catalog/economy";
 import { BASEMENT, DATACENTERS, datacenterById, LEAD_DAYS, PROVIDERS, RACK_MODELS, SPACE_SIZES, spacePrice } from "../src/sim/20-world/datacenters";
 import { type GameState } from "../src/sim/50-state";
-import { freeSlots } from "../src/sim/60-infra/status";
+import { cpuLoad, freeSlots } from "../src/sim/60-infra/status";
 import { freePositions, linkStatus, moveCost, rackPower, resaleValue } from "../src/sim/60-infra/status";
 import { powerPerHour, tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { deserialize } from "../src/sim/91-save/save";
@@ -10,6 +10,10 @@ import { addLocation, buyRack, closeLocation, connect, moveRack, sellDevice, sel
 import { buyDevice, freeFloor, newGame } from "./fixtures";
 import { mountDevice, mountStack } from "./plugged";
 import { runServers, withServer } from "./fixtures";
+
+// Busy servers run at full load, so they draw their rated watts.
+beforeEach(() => { vi.spyOn(cpuLoad, "of").mockReturnValue(1); });
+afterEach(() => { vi.restoreAllMocks(); });
 
 const rich = (cash = 1_000_000): GameState => ({ ...withServer(newGame(1)), cash });
 const ok = (r: ReturnType<typeof addLocation>) => {
@@ -253,7 +257,7 @@ describe("monthly bills", () => {
     expect(s.cash).toBe(START_CASH - 2500 - 198 - 59 - power);
     expect(s.powerDue).toBe(0);
     expect(s.ledger.map((l) => [l.category, l.key, l.amount])).toEqual([["power", "ledger.power", -power], ["rent", "ledger.space", -198], ["rent", "ledger.homeLine", -59]]);
-    expect(events).toContainEqual({ app: "Finance", key: "event.bills", params: { power, rent: 257, leasing: 0, subscriptions: 0, total: 257 + power } });
+    expect(events).toContainEqual({ app: "Books", key: "event.bills", params: { power, rent: 257, leasing: 0, subscriptions: 0, total: 257 + power } });
   });
 });
 

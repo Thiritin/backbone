@@ -12,6 +12,7 @@ export default {
   "hosttoast.col.host": () => "Fornecedor",
   "hosttoast.col.reviews": () => "Avaliações",
   "hosttoast.col.from": () => "Desde",
+  "hosttoast.col.perGb": () => "Por GB",
   "hosttoast.col.p": () => "Desempenho",
   "hosttoast.col.r": () => "Fiabilidade",
   "hosttoast.col.c": () => "Comodidade",

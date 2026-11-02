@@ -1,6 +1,5 @@
 import { hourOfMonth } from "../00-core/time";
 import { SERVER_OS } from "./server-os";
-import type { Look } from "./sites";
 
 // docs/design/software-versions.md: the releases of every operating system and software, oldest first. release,
 // updatesUntil and securityUntil are game hours; an end is null while the vendor has not set one. major is the line a
@@ -13,6 +12,8 @@ const line = (rows: Row[], majorOf: (version: string) => string = (x) => x): Sof
   rows.map(([version, release, updates, security, name = ""]) =>
     ({ version, name, major: majorOf(version), release: hourOfMonth(release), updatesUntil: at(updates), securityUntil: at(security) }));
 const whole = (version: string): string => version.split(".")[0];
+// The name that marks a development release.
+export const DEVEL = "devel";
 
 // Release months marked unverified in the doc take January of the year given; their ends follow each product's pattern.
 const SOFTWARE_LINES: Record<string, SoftwareVersion[]> = {
@@ -47,7 +48,7 @@ const SOFTWARE_LINES: Record<string, SoftwareVersion[]> = {
   ]),
   // OpenVZ kernels by the RHEL kernel they patch, then OpenVZ 7.
   openveezee: line([
-    ["2.6.9", "2005-10", "2009-08", "2010-12"], ["2.6.18", "2007-08", "2013-06", "2015-12"], ["2.6.32", "2011-06", "2018-12", "2020-11"],
+    ["2.6.9", "2005-01", "2009-08", "2010-12"], ["2.6.18", "2007-08", "2013-06", "2015-12"], ["2.6.32", "2011-06", "2018-12", "2020-11"],
     ["7", "2016-07", null, null],
   ]),
   // Maintained for 18 months, with no security-only phase after; the releases still maintained have no end set.
@@ -134,6 +135,20 @@ const SOFTWARE_LINES: Record<string, SoftwareVersion[]> = {
     ["RELEASE.2016-06-03", "2016-06", "2021-05", "2021-05"], ["RELEASE.2021-05-11", "2021-05", "2025-05", "2025-05"],
     ["RELEASE.2025-05-24", "2025-05", "2025-10", "2025-10"], ["RELEASE.2025-10-15", "2025-10", "2025-12", "2026-02"],
   ]),
+  // docs/design/plans/webmail-server.md, 3.1: updates end with the next stable release, security fixes a year later.
+  // Rows named devel are the development line, which only the Edge channel takes.
+  squirrelmeal: line([
+    ["1.4.4", "2005-01", "2005-07", "2006-07"], ["1.5.1", "2005-02", "2006-12", "2007-12", DEVEL], ["1.4.5", "2005-07", "2006-02", "2007-02"],
+    ["1.4.6", "2006-02", "2007-05", "2008-05"], ["1.4.10", "2007-05", "2007-12", "2008-12"], ["1.4.13", "2007-12", "2008-05", "2009-05"],
+    ["1.4.15", "2008-05", "2008-09", "2009-09"], ["1.4.16", "2008-09", "2008-12", "2009-12"], ["1.4.17", "2008-12", "2009-05", "2010-05"],
+    ["1.4.19", "2009-05", "2010-03", "2011-03"], ["1.4.20", "2010-03", "2010-07", "2011-07"], ["1.4.21", "2010-07", "2011-07", "2012-07"],
+    ["1.4.22", "2011-07", "2013-05", "2014-07"], ["1.4.23", "2013-05", "2021-10", "2022-10"], ["1.4.23 (2021)", "2021-10", null, null],
+    ["1.5.2", "2021-11", null, null, DEVEL],
+  ]),
+  postfixitadmin: line([
+    ["2.1", "2005-01", "2008-01", "2009-01"], ["2.2", "2008-01", "2009-07", "2010-07"], ["2.3", "2009-07", "2016-08", "2017-08"],
+    ["3.0", "2016-08", "2018-05", "2019-05"], ["3.2", "2018-05", "2020-11", "2021-11"], ["3.3", "2020-11", null, null],
+  ]),
   // The last four stable releases are maintained.
   postfixit: line([
     ["2.2", "2005-03", "2009-05", "2009-05"], ["2.3", "2006-07", "2010-02", "2010-02"], ["2.4", "2007-03", "2011-01", "2011-01"],
@@ -164,6 +179,48 @@ const SOFTWARE_LINES: Record<string, SoftwareVersion[]> = {
     ["9.5", "2016-11", "2018-11", "2019-11"], ["10.0", "2020-02", "2022-02", "2023-02"], ["11.0", "2021-02", "2024-02", "2024-02"],
     ["12.0", "2023-02", "2025-09", "2027-02"], ["13.0", "2025-11", "2028-11", "2028-11"],
   ], whole),
+  // Shop systems (docs/design/software-versions.md, shop systems); FOSSBillin' counts each 0.x as a major.
+  modemBill: line([["4.0", "2003-06", "2007-01", "2009-12"], ["4.3", "2005-06", "2007-12", "2009-12"], ["4.4", "2007-03", "2008-06", "2009-12"], ["5.0", "2008-01", "2009-06", "2010-12"]], whole),
+  clientExit: line([
+    ["2.0", "2004-01", "2007-12", "2009-12"], ["3.0", "2008-03", "2011-12", "2013-12"], ["4.0", "2011-03", "2014-03", "2015-12"],
+    ["5.0", "2014-03", "2019-06", "2020-12"], ["6.0", "2019-06", "2025-08", "2026-12"], ["7.0", "2026-02", null, null],
+  ], whole),
+  whmCache: line([
+    ["2.0", "2005-09", "2007-06", "2008-12"], ["3.0", "2007-06", "2009-03", "2010-12"], ["4.0", "2009-06", "2011-09", "2012-12"],
+    ["5.0", "2011-12", "2014-03", "2015-12"], ["6.0", "2014-12", "2016-03", "2017-12"], ["7.0", "2016-10", "2020-01", "2021-12"],
+    ["8.0", "2020-08", "2025-04", "2026-05"], ["9.0", "2025-12", null, null],
+  ], whole),
+  blessta: line([
+    ["1.0", "2008-01", "2010-01", "2011-12"], ["2.0", "2010-06", "2013-08", "2014-08"], ["3.0", "2013-08", "2015-10", "2016-10"],
+    ["4.0", "2017-03", "2020-09", "2021-09"], ["5.0", "2021-01", "2025-11", "2026-11"], ["6.0", "2026-08", null, null],
+  ], whole),
+  hostBull: line([
+    ["1.0", "2009-09", "2011-09", "2011-09"], ["3.0", "2011-09", "2013-06", "2013-06"], ["3.4", "2012-06", "2014-06", "2014-06"],
+    ["4.0", "2013-12", "2019-03", "2019-03"], ["2019", "2019-03", "2026-10", "2026-10"], ["Frontier", "2026-10", null, null],
+  ], whole),
+  ubersmyth: line([
+    ["2.0", "2006-01", "2012-12", "2013-12"], ["3.0", "2012-01", "2014-12", "2015-12"], ["3.2", "2014-12", "2016-04", "2017-04"],
+    ["4.0", "2016-04", "2017-05", "2018-05"], ["4.2", "2018-04", "2021-04", "2022-04"], ["4.6", "2021-04", "2023-12", "2024-12"],
+    ["5.0", "2024-02", "2024-10", "2025-10"], ["5.1", "2025-06", null, null],
+  ], whole),
+  // Hosted: each release replaces the last for everyone.
+  orderBocks: line([
+    ["5.2", "2005-06", "2007-06", "2007-06"], ["6.3", "2007-06", "2011-06", "2011-06"], ["7", "2011-06", "2014-06", "2014-06"],
+    ["8", "2014-06", "2019-06", "2019-06"], ["9", "2019-06", null, null],
+  ]),
+  boxBillin: line([
+    ["1.0", "2011-03", "2012-03", "2012-03"], ["2.0", "2012-03", "2013-06", "2013-06"], ["3.0", "2012-11", "2014-06", "2014-06"],
+    ["4.0", "2013-06", "2022-04", "2022-04"], ["4.22", "2021-11", "2022-04", "2022-04"], ["0.1", "2022-12", "2023-04", "2023-04", "FOSSBillin'"],
+    ["0.6", "2023-12", "2024-12", "2025-06", "FOSSBillin'"], ["0.8", "2026-05", null, null, "FOSSBillin'"],
+  ], (v) => (v.startsWith("0.") ? v : whole(v))),
+  // Desks: each release maintained until the next, and fixed for security until the one after.
+  ostickit: line([
+    ["1.3", "2005-01", "2010-01", "2013-04"], ["1.6", "2010-01", "2013-04", "2014-05"], ["1.7", "2013-04", "2014-05", "2016-11"],
+    ["1.9", "2014-05", "2016-11", "2019-04"], ["1.10", "2016-11", "2019-04", "2019-11"], ["1.12", "2019-04", "2019-11", "2020-11"],
+    ["1.14", "2019-11", "2020-11", "2022-02"], ["1.15", "2020-11", "2022-02", "2022-09"], ["1.16", "2022-02", "2022-09", "2023-06"],
+    ["1.17", "2022-09", "2023-06", null], ["1.18", "2023-06", null, null],
+  ]),
+  freescoot: line([["1.0", "2018-11", "2020-09", "2022-02"], ["1.6", "2020-09", "2022-02", null], ["1.8", "2022-02", null, null]]),
   proxmocksBackup: line([
     ["1.0", "2020-11", "2022-07", "2022-07"], ["2.0", "2021-07", "2024-07", "2024-07"], ["3.0", "2023-06", "2026-08", "2026-08"],
     ["4.0", "2025-08", null, null],
@@ -179,38 +236,58 @@ const LINES: Record<string, SoftwareVersion[]> = { ...SOFTWARE_LINES, ...OS_LINE
 export const versionsOf = (product: string): SoftwareVersion[] => LINES[product] ?? [];
 export const versionInfo = (product: string, version: string): SoftwareVersion | undefined => versionsOf(product).find((x) => x.version === version);
 // The newest release out at the hour; the first one before any is out.
-export const versionAt = (product: string, hour: number): SoftwareVersion => {
-  const vs = versionsOf(product);
+// The releases a channel takes: Edge the development line once one is out, every other channel the rest.
+const pool = (product: string, edge: boolean, hour: number): SoftwareVersion[] => {
+  const vs = versionsOf(product), devel = edge && vs.some((x) => x.name === DEVEL && x.release <= hour);
+  return vs.filter((x) => (x.name === DEVEL) === devel);
+};
+export const versionAt = (product: string, hour: number, edge = false): SoftwareVersion => {
+  const vs = pool(product, edge, hour);
   return [...vs].reverse().find((x) => x.release <= hour) ?? vs[0];
 };
-// The newest release out at the hour of the major after the installed version's, or null while there is none.
-export const nextMajor = (product: string, version: string, hour: number): SoftwareVersion | null => {
-  const vs = versionsOf(product), i = vs.findIndex((x) => x.version === version);
+// The newest release out at the hour of the major after the installed version's, or null while there is none. On Edge a
+// development line moves to its newest release.
+export const nextMajor = (product: string, version: string, hour: number, edge = false): SoftwareVersion | null => {
+  if (edge && pool(product, true, hour).some((x) => x.name === DEVEL)) {
+    const v = versionAt(product, hour, true);
+    return v.version !== version && v.release <= hour ? v : null;
+  }
+  const vs = pool(product, false, hour), i = vs.findIndex((x) => x.version === version);
   const major = i < 0 ? undefined : vs.slice(i + 1).find((x) => x.major !== vs[i].major)?.major;
   return vs.filter((x) => x.major === major && x.release <= hour).at(-1) ?? null;
 };
 
 // docs/design/software-versions.md, UI generations: the first version of each generation and the console look it shows.
-// The consoles draw two looks, so each generation takes the nearer one; Horizont, HyperVee and OpenVeePeeN change look
-// inside a generation, at the version of the game year the look was drawn for.
-export const UI_LOOKS: Record<string, [version: string, look: Look][]> = {
-  cpanic: [["10", "early"], ["11", "early"], ["11.38", "late"], ["98", "late"]],
-  pleskit: [["7.5", "early"], ["10.0", "early"], ["12.0", "early"], ["17.0", "late"], ["18.0", "late"]],
-  directadmen: [["1.24", "early"], ["1.60", "late"]],
-  freepanel: [["1.200", "early"], ["1.700", "late"]],
-  tcadmen: [["1.0", "early"], ["2.0", "late"], ["3.0", "late"]],
+// A console drawn per generation names its own look ids (docs/design/software.md, section 10); the others draw "early"
+// and "late", so each generation takes the nearer one. Horizont and OpenVeePeeN change look inside a generation, at the
+// version of the game year the look was drawn for; HyperVee draws the flat 2012 manager as a look of its own.
+export const UI_LOOKS: Record<string, [version: string, look: string][]> = {
+  cpanic: [["10", "x3"], ["11", "x3"], ["11.38", "paperLamp"], ["98", "jupitar"]],
+  pleskit: [["7.5", "reload"], ["10.0", "parallax"], ["12.0", "twelve"], ["17.0", "onyx"], ["18.0", "obsidian"]],
+  directadmen: [["1.24", "classic"], ["1.30", "enhanced"], ["1.60", "evolution"]],
+  freepanel: [["1.200", "gray"], ["1.700", "authentic"]],
+  tcadmen: [["1.0", "early"], ["2.0", "late"], ["3.0", "v3"]],
   multikraft: [["1.0", "early"], ["2.0", "late"]],
   pterodaktyl: [["0.5", "early"], ["1.0", "late"]],
-  proxmocks: [["0.9", "early"], ["2.0", "early"], ["4.0", "late"]],
-  vmwhere: [["2.5", "early"], ["5.0", "early"], ["6.5", "late"]],
-  hypervee: [["2008", "early"], ["2012", "late"], ["2019", "late"]],
+  proxmocks: [["0.9", "legacy"], ["2.0", "extGrey"], ["4.0", "flatline"]],
+  vmwhere: [["2.5", "thickClient"], ["5.0", "flecks"], ["6.5", "clearity"]],
+  hypervee: [["2008", "glossy"], ["2012", "flat"], ["2019", "honoloo"]],
   openveezee: [["2.6.9", "early"], ["7", "late"]],
-  openstash: [["Austin", "early"], ["Diablo", "early"], ["Essex", "early"], ["Havana", "early"], ["Mitaka", "late"]],
+  openstash: [["Austin", "dashboard"], ["Diablo", "dashboard"], ["Essex", "early"], ["Havana", "heat"], ["Mitaka", "late"]],
   powerdnz: [["2.9", "early"], ["4.0", "late"]],
   openveepeen: [["2.0", "early"], ["2.4", "late"]],
-  anyconnekt: [["2.0", "early"], ["4.0", "late"], ["5.0", "late"]],
+  anyconnekt: [["2.0", "early"], ["4.0", "late"], ["5.0", "secure"]],
   ownclod: [["1.0", "early"], ["10.0", "late"]],
-  minnio: [["RELEASE.2016-06-03", "early"], ["RELEASE.2021-05-11", "late"]],
+  minnio: [["RELEASE.2016-06-03", "early"], ["RELEASE.2021-05-11", "late"], ["RELEASE.2025-05-24", "browser"]],
+  veeham: [["1.0", "ribbon"], ["10.0", "refresh"], ["13.0", "web"]],
+  modemBill: [["4.0", "early"], ["5.0", "late"]],
+  clientExit: [["2.0", "early"], ["5.0", "late"]],
+  whmCache: [["2.0", "early"], ["6.0", "late"]],
+  blessta: [["1.0", "early"], ["3.0", "late"]],
+  hostBull: [["1.0", "early"], ["2019", "late"]],
+  ubersmyth: [["2.0", "early"], ["4.0", "late"]],
+  orderBocks: [["5.2", "early"], ["8", "late"]],
+  boxBillin: [["1.0", "early"], ["3.0", "late"]],
 };
 
 // What the vendor has released by the hour, oldest first.

@@ -5,7 +5,7 @@ import { requestName, requirementsFor, type SalesRequest } from "../../../sim/30
 import { profileStats } from "../../../sim/40-support/tickets";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
-import { CustomerLink } from "../customers/CustomersApp";
+import { CustomerLink } from "../customers/open";
 import { initials, patience, PRODUCT, stamp } from "../support/labels";
 import { UpgradeCompose } from "../support/CustomOrder";
 import { specText } from "../../../sim/30-market/spec";
@@ -58,7 +58,7 @@ export function Card({ r }: { r: SalesRequest }) {
         {r.thread.map((m, i) => (
           <div key={i} className={`msg${m.from === "you" ? " you" : ""}`}>
             <div className="from">{m.from === "you" ? m.by ?? t("misc2.you") : r.contact} · <span className="num">{stamp(m.hour)}</span></div>
-            <p>{t(m.key, m.params)}{i === 0 && r.kind !== "expansion" && ` ${t(`request.use.${r.profile}`)}`}</p>
+            <p>{t(m.key, m.params)}{i === 0 && r.kind !== "expansion" && ` ${t(`request.use.${r.profile}`)}`}{i === 0 && m.params.item && ` ${t("order.msg.item", m.params)}`}</p>
           </div>
         ))}
         {r.status === "quoted" && <div className="event"><span>{t("misc2.awaitingReply")}</span></div>}

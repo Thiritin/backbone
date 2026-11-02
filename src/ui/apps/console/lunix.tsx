@@ -28,10 +28,23 @@ export function bootLines(game: GameState, m: Machine, version: string): BootLin
   return [...kernel, ...rc.map((text) => ({ text }))];
 }
 
+const Scroll = ({ lines }: { lines: BootLine[] }) => <pre>{lines.map((l, i) => <div key={i}>{l.ok ? <><span className="ok">[  OK  ]</span> {l.text}</> : l.text}</div>)}</pre>;
+
 // The boot scrolling past for the OS's boot minutes; share is how far it is.
 export function LunixBoot({ game, m, version, share }: { game: GameState; m: Machine; version: string; share: number }) {
   const all = bootLines(game, m, version), shown = all.slice(0, Math.max(1, Math.ceil(share * all.length)));
-  return <pre>{shown.map((l, i) => <div key={i}>{l.ok ? <><span className="ok">[  OK  ]</span> {l.text}</> : l.text}</div>)}</pre>;
+  return <Scroll lines={shown} />;
+}
+
+// The shutdown scrolling past for the OS's halt minutes: systemd's units from Debiant 8, the init scripts before.
+export function LunixHalt({ version, reboot, share }: { version: string; reboot: boolean; share: number }) {
+  const all: BootLine[] = Number(version) >= 8
+    ? [...["Stopped target Multi-User System.", "Stopped OpenBSD Secure Shell server.", "Stopped System Logging Service.", "Stopped Raise network interfaces.", "Unmounted /boot.", "Reached target Shutdown."].map((text) => ({ text, ok: true })),
+      { text: reboot ? "reboot: Restarting system" : "reboot: System halted" }]
+    : [`INIT: Switching to runlevel: ${reboot ? 6 : 0}`, "INIT: Sending processes the TERM signal", "Stopping OpenBSD Secure Shell server: sshd.", "Stopping system log daemon: syslogd.",
+      "Deconfiguring network interfaces...done.", "Unmounting local filesystems...done.", reboot ? "Will now restart." : "Will now halt.", ...(reboot ? [] : ["Power down."])].map((text) => ({ text }));
+  const shown = all.slice(0, Math.max(1, Math.ceil(share * all.length)));
+  return <Scroll lines={shown} />;
 }
 
 // pass is null until the username is in; nothing of the password echoes.

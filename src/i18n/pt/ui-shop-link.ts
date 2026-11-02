@@ -11,8 +11,6 @@ export default {
   "error.nothingToImport": () => "Não há nada para importar.",
   "error.noShopSystem": () => "Este módulo precisa do sistema de loja deste fabricante.",
   "shop-link.import": () => "Importar da loja",
-  "shop-link.customers": () => "Clientes da loja",
-  "shop-link.invoices": () => "Faturas da loja",
   "shop-link.footer": (p) => `© ${p.year} ${p.maker}`,
   "shop-link.tagline.modemBill": () => "Faturação e provisionamento para alojamento web",
   "shop-link.tagline.clientExit": () => "Gestão de clientes e faturação para empresas de alojamento",

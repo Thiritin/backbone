@@ -1,5 +1,5 @@
 import {
-  annuity, AUTO_COLLECT_DAYS, bookTransfer, issue, AUTO_SUSPEND_DAYS, cents, dueStep, isUnpaid, synced, LOAN_AMOUNTS, LOAN_YEARS, loanAvailable, loanRate, sendStep, STEPS, suspend, type BillingRules, type Invoice,
+  annuity, AUTO_COLLECT_DAYS, bookTransfer, unbookTransfer, issue, AUTO_SUSPEND_DAYS, cents, dueStep, isUnpaid, synced, LOAN_AMOUNTS, LOAN_YEARS, loanAvailable, loanRate, sendStep, STEPS, suspend, type BillingRules, type Invoice,
 } from "../45-billing/billing";
 import { bankById } from "../10-catalog/banks";
 import type { GameState } from "../50-state";
@@ -30,6 +30,43 @@ export function matchTransfer(s: GameState, transferId: string, invoiceId: strin
   if (!inv) return fail("error.invoiceSettled");
   bookTransfer(s, tr, inv, settle);
   log(s, inv, "matchTransfer");
+  return { ok: true };
+}
+
+// Takes back a manual booking that went to the wrong invoice.
+export function unmatchTransfer(s: GameState, transferId: string): ActionResult {
+  const tr = s.transfers.find((x) => x.id === transferId);
+  const inv = tr?.booked && s.invoices.find((i) => i.id === tr.invoiceId);
+  // A later booking or write-off changed the invoice since; undoing this one would no longer add up.
+  if (!tr?.booked || !inv || (tr.booked.paid ? inv.status !== "paid" : !isUnpaid(inv))) return fail("error.transferChanged");
+  unbookTransfer(s, tr, inv);
+  return { ok: true };
+}
+
+// Drops a draft that was never sent; an order's first invoice stays, the ticket needs it.
+export function cancelDraft(s: GameState, invoiceId: string): ActionResult {
+  const inv = s.invoices.find((x) => x.id === invoiceId && x.status === "draft");
+  if (!inv) return fail("error.invoiceSent");
+  if (s.sales.requests.some((r) => r.invoiceId === invoiceId)) return fail("error.invoiceOrdered");
+  s.invoices = s.invoices.filter((x) => x !== inv);
+  return { ok: true };
+}
+
+// Settles an invoice by hand: against a transfer still unmatched, or with no money at all when the customer paid some other way.
+export function markPaid(s: GameState, invoiceId: string, transferId: string | null = null): ActionResult {
+  if (transferId !== null) return matchTransfer(s, transferId, invoiceId, true);
+  const inv = unpaidInvoice(s, invoiceId);
+  if (!inv) return fail("error.invoiceSettled");
+  Object.assign(inv, { status: "paid", paidAt: s.hour, suspended: false, payAt: null });
+  return { ok: true };
+}
+
+// Puts a paid or written-off invoice back among the open ones, unless a transfer is booked against it or collections still owe for it.
+export function reopenInvoice(s: GameState, invoiceId: string): ActionResult {
+  const inv = s.invoices.find((x) => x.id === invoiceId && (x.status === "paid" || x.status === "writtenOff") && synced(x));
+  if (!inv) return fail("error.invoiceSettled");
+  if (inv.payAt !== null || s.transfers.some((x) => x.invoiceId === inv.id && x.matchedAt !== null)) return fail("error.transferChanged");
+  Object.assign(inv, { status: s.hour > inv.dueAt ? "overdue" : "open", paidAt: null });
   return { ok: true };
 }
 

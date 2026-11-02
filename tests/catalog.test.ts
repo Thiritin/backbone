@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { hourOf, monthIndexOf } from "../src/sim/00-core/time";
+import { hourOf, monthIndexOf, START_YEAR } from "../src/sim/00-core/time";
 import { GENERATIONS } from "../src/sim/10-catalog/economy";
 import { brandFrom, brandOnSale, brandUntil, brandWatts, brandsFor, MANUFACTURERS, MODELS, modelById, priceOf, shopModels, type DeviceModel } from "../src/sim/10-catalog/hardware";
 import { device, type GameState } from "../src/sim/50-state";
 import { deviceWatts, linkStatus } from "../src/sim/60-infra/status";
 import { addLocation, buyRack, connect, disconnect } from "../src/sim/90-actions/hardware";
-import { buyDevice, newGame } from "./fixtures";
+import { buyDevice, newGame, onSaleAt } from "./fixtures";
 import { mountDevice } from "./plugged";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { withServer } from "./fixtures";
@@ -111,7 +111,7 @@ describe("manufacturers", () => {
 describe("firewall links", () => {
   // A 10G server behind an L2 switch whose 1G copper uplink runs through a 1G firewall to the handoff.
   function setup(): { s: GameState; srv: string; sw: string; fw: string; handoff: string } {
-    const s = { ...withServer(newGame(1)), hour: hourOf(new Date(Date.UTC(2011, 0, 1))), cash: 1_000_000 };
+    const s = { ...withServer(newGame(1)), hour: onSaleAt(["g3-compute", "Dwell"], ["sw-48", "Sysko"]), cash: 1_000_000 };
     const loc = ok(addLocation(s, "interaction-fra", "cage", 4));
     s.locations.find((l) => l.id === loc)!.readyAt = s.hour;
     const rack = ok(buyRack(s, loc, "rack-47", 1));
@@ -149,18 +149,29 @@ describe("old model ids", () => {
   });
 });
 
+describe("release months", () => {
+  // Dwell shifts no release, so this is the model's own release month.
+  const months = (year: number) => new Set(MODELS.filter((m) => m.from === year).map((m) => brandFrom(m, "Dwell") - year * 12));
+  it("spreads a year's releases over its months and keeps the start year's models in January", () => {
+    expect(months(START_YEAR)).toEqual(new Set([0]));
+    expect(months(2010).size).toBeGreaterThan(1);
+    expect([...months(2010)].every((mo) => mo >= 0 && mo < 12)).toBe(true);
+  });
+});
+
 describe("manufacturer variation", () => {
   const m = modelById("g2-compute");
   const month = (year: number, mo: number) => year * 12 + mo;
+  const dwell = brandFrom(m, "Dwell");
   it("shifts the release in months", () => {
-    expect(["SuperMacro", "Dwell", "Hewlett-Packet", "Lenovoid"].map((b) => brandFrom(m, b) - m.from * 12)).toEqual([-4, 0, 3, 6]);
+    expect(["SuperMacro", "Dwell", "Hewlett-Packet", "Lenovoid"].map((b) => brandFrom(m, b) - dwell)).toEqual([-4, 0, 3, 6]);
   });
   it("a SuperMacro model is on sale before Dwell's and leaves later", () => {
-    expect(brandOnSale(m, "SuperMacro", month(2007, 8))).toBe(true);
-    expect(brandOnSale(m, "Dwell", month(2007, 8))).toBe(false);
-    expect(brandOnSale(m, "Dwell", month(2008, 0))).toBe(true);
-    expect(brandOnSale(m, "Hewlett-Packet", month(2008, 2))).toBe(false);
-    expect(brandOnSale(m, "Hewlett-Packet", month(2008, 3))).toBe(true);
+    expect(brandOnSale(m, "SuperMacro", dwell - 1)).toBe(true);
+    expect(brandOnSale(m, "Dwell", dwell - 1)).toBe(false);
+    expect(brandOnSale(m, "Dwell", dwell)).toBe(true);
+    expect(brandOnSale(m, "Hewlett-Packet", dwell + 2)).toBe(false);
+    expect(brandOnSale(m, "Hewlett-Packet", dwell + 3)).toBe(true);
     expect(brandUntil(m, "SuperMacro")).toBe(m.until! + 1);
     expect(brandUntil(m, "Hewlett-Packet")).toBe(m.until! - 1);
     expect(brandOnSale(m, "Dwell", month(m.until! + 1, 0))).toBe(false);

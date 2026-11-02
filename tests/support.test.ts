@@ -70,7 +70,7 @@ describe("support actions", () => {
     expect(get(s, ids[3])).toMatchObject({ status: "waiting", work: null });
   });
 
-  it("resolves a right answer with +5", () => {
+  it("resolves a fast right answer with +5 and +2", () => {
     const { s, cus, svc, c } = one();
     const t = ticketOf(s, "billing", "copy", cus, svc);
     replyTicket(s, t.id, "resend");
@@ -78,6 +78,16 @@ describe("support actions", () => {
     expect(get(s, t.id).replies[0]).toMatchObject({ template: "resend", right: true });
     expect(resolveTicket(s, t.id).ok).toBe(true);
     expect(get(s, t.id).status).toBe("resolved");
+    expect(c().happiness).toBe(77);
+  });
+
+  it("adds nothing for speed to an answer sent after two hours", () => {
+    const { s, cus, svc, c } = one();
+    const t = ticketOf(s, "billing", "copy", cus, svc);
+    runTo(s, s.hour + 3);
+    replyTicket(s, t.id, "resend");
+    tick(s);
+    expect(resolveTicket(s, t.id).ok).toBe(true);
     expect(c().happiness).toBe(75);
   });
 
@@ -87,7 +97,7 @@ describe("support actions", () => {
     replyTicket(s, t.id, "dns");
     runTo(s, 1 + 48);
     expect(get(s, t.id).status).toBe("resolved");
-    expect(c().happiness).toBe(75);
+    expect(c().happiness).toBe(77);
   });
 
   it("reopens the thread with -10 after a wrong answer", () => {

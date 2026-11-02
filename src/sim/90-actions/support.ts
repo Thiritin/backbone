@@ -1,3 +1,4 @@
+import { declineTitleSwitch } from "./games";
 import type { GameState } from "../50-state";
 import { ACTION_MINUTES, actionsOf, bump, cancelCustomer, canEscalate, isFinal, MINUTES, templatesOf, type Ticket, type TicketAction, type Work } from "../40-support/tickets";
 import { hashRng } from "../00-core/rng";
@@ -8,7 +9,9 @@ import { logActivity } from "../47-staff/activity";
 import { sendAction } from "../40-support/replies";
 import { breachOf } from "../60-infra/breach";
 import { hasBackup } from "../60-infra/apps";
-import { declineSponsorship } from "./community";
+import { answerSponsor, declineSponsorship } from "./community";
+import { HELD_TOPIC } from "../80-business/community";
+import { deskNote, validAssignee } from "../40-support/desk-work";
 import { retentionOptions, type RetentionId } from "../40-support/retention";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -40,13 +43,16 @@ export function readTicket(s: GameState, id: string): ActionResult {
   return { ok: true, id };
 }
 
-// Reserves a ticket for one support agent, who answers it before the rest of the queue; null hands it back.
+// Reserves a ticket for one support agent, who answers it before the rest of the queue, or for the player, whose tickets
+// staff skip; null hands it back.
 export function assignTicket(s: GameState, id: string, employeeId: string | null): ActionResult {
   const t = s.tickets.find((x) => x.id === id);
   if (!t) return fail("error.unknownTicket");
   if (isFinal(t)) return fail("error.ticketDone");
-  if (employeeId !== null && !s.staff.some((e) => e.id === employeeId && e.role === "support")) return fail("error.unknownEmployee");
+  if (employeeId !== null && !validAssignee(s, employeeId)) return fail("error.unknownEmployee");
   t.assignee = employeeId;
+  const name = s.staff.find((e) => e.id === employeeId)?.name;
+  if (s.desk) deskNote(s, t, name ? "desk.note.assigned" : employeeId ? "desk.note.assignedOwner" : "desk.note.unassigned", name ? { name } : {});
   return { ok: true, id };
 }
 
@@ -102,16 +108,17 @@ export function closeTicket(s: GameState, id: string): ActionResult {
   if ("error" in f) return f.error;
   // Closing a notice or legal request ignores it.
   if (f.t.kind === "extortion") return queue(s, f.t, "resolve", "refuse");
-  if (f.t.kind === "sponsor") return declineSponsorship(s, id);
+  if (f.t.kind === "sponsor") return f.t.topic === HELD_TOPIC ? answerSponsor(s, id, false) : declineSponsorship(s, id);
   if (f.t.notice) {
     if (f.t.kind === "notice") ignoreNotice(s, f.t, hashRng(s.seed, s.hour, Number(f.t.id.slice(3)) || 0, 94));
     else Object.assign(f.t, { status: "closed", outcome: "ignored", updatedAt: s.hour, unread: false });
     return { ok: true, id };
   }
-  if (f.t.kind === "migration" || f.t.kind === "maintenance" || f.t.kind === "pear") {
+  if (f.t.kind === "migration" || f.t.kind === "maintenance" || f.t.kind === "pear" || f.t.kind === "mail" || f.t.kind === "spam") {
     Object.assign(f.t, { status: "closed", updatedAt: s.hour, unread: false });
     return { ok: true, id };
   }
+  if (f.t.kind === "upgrade" && f.t.topic === "switchTitle") return declineTitleSwitch(s, id);
   if (f.t.kind === "order") {
     declineOrder(s, f.t);
     return { ok: true, id };

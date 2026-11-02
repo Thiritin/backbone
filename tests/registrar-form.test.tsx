@@ -67,7 +67,7 @@ describe("registrar form", () => {
   });
 
   it("lets a shop with the registrar module register its own orders without the form", () => {
-    const s = readyGame(6);
+    const s = readyGame(8);
     s.shop = { ...s.shop, variant: "whmCache", since: 0, readyAt: 0 };
     const r = orderLead(s, "private", "Frankfurt", [], web, false);
     const id = r.ticketId!;

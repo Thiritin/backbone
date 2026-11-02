@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { emailFor } from "../src/sim/30-market/orders";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
-import { buyModule, chooseShop } from "../src/sim/90-actions/shop";
+import { buyModule, installShop } from "../src/sim/90-actions/shop";
 import { setEmailOrders } from "../src/sim/90-actions/website";
-import { readyGame } from "./fixtures";
+import { readyGame, installWithKey } from "./fixtures";
 
 const game = () => {
   const s = readyGame(3);
@@ -22,11 +22,11 @@ describe("orders before a shop system", () => {
 
   it("need the shops research for every variant and a variant for modules", () => {
     const s = game();
-    expect(chooseShop(s, "handRolled" as never)).toEqual({ ok: false, error: "error.unknownShop" });
-    expect(chooseShop(s, "clientExit")).toEqual({ ok: false, error: "error.needsShopSkill" });
+    expect(installShop(s, "c1", "handRolled" as never)).toEqual({ ok: false, error: "error.unknownShop" });
+    expect(installShop(s, "c1", "clientExit")).toEqual({ ok: false, error: "error.needsShopSkill" });
     expect(buyModule(s, "cpanic")).toEqual({ ok: false, error: "error.needsShop" });
     s.unlocks = [...s.unlocks, "shops"];
-    expect(chooseShop(s, "clientExit").ok).toBe(true);
+    installWithKey(s, "clientExit");
     expect(s.shop.readyAt).toBeGreaterThan(s.hour);
   });
 });

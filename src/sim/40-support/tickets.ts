@@ -1,17 +1,19 @@
 import { chance, rand } from "../00-core/rng";
 import { addHoursOn } from "../00-core/workhours";
 import { CLEAN_MINUTES } from "../10-catalog/apps";
+import { attention, segmentOf, SENSITIVITY, type Segment } from "../10-catalog/attention";
 import { PRODUCTS } from "../10-catalog/products";
 import { PROFILES, type Budget, type Profile as ProfileStats } from "../10-catalog/economy";
-import { activeServices, type Customer, type Product, type Profile, type Service } from "../30-customers/customers";
+import { activeServices, type Customer, type Product, type Profile, type Service, type TerminateReason } from "../30-customers/customers";
 import type { GameState } from "../50-state";
 import { serviceOnline } from "./status";
+import type { Priority } from "./desk";
 
-export type TicketKind = "outage" | "howTo" | "billing" | "upgrade" | "cancellation" | "abuse" | "appeal" | "notice" | "legal" | "refund" | "order" | "extortion" | "migration" | "maintenance" | "sponsor" | "pear" | "mail";
+export type TicketKind = "outage" | "howTo" | "billing" | "upgrade" | "cancellation" | "abuse" | "appeal" | "notice" | "legal" | "refund" | "order" | "extortion" | "migration" | "maintenance" | "sponsor" | "pear" | "mail" | "spam";
 // open: waits for the player. waiting: answered, waits on the customer. escalated: waits for a technician.
 export type TicketStatus = "open" | "waiting" | "escalated" | "resolved" | "closed";
 export type TicketAction = "credit" | "cancel" | "unsuspend" | "keep" | "forward" | "takedown" | "reject" | "comply" | "object" | "refund" | "accept" | "revert"
-  | "offerOnce" | "offerManaged" | "free" | "clean" | "noBackup" | "pay" | "refuse";
+  | "offerOnce" | "offerManaged" | "free" | "clean" | "cleanPaid" | "noBackup" | "pay" | "refuse";
 // by names the employee who answered; the player otherwise. key and params give the email as sent (replies.ts); older replies show the template.
 export interface Reply { hour: number; template: string; right: boolean; by?: string; key?: string; params?: Record<string, string | number> }
 // doneAt is in game minutes; the reply or action takes effect on the first tick at or after it.
@@ -26,41 +28,52 @@ export interface Ticket {
   id: string; customerId: string; serviceId: string | null; kind: TicketKind; topic: string; status: TicketStatus;
   createdAt: number; dueAt: number; updatedAt: number; unread: boolean; replies: Reply[];
   outcome: "credit" | "retained" | "cancelled" | "unsuspended" | "kept" | "forwarded" | "takenDown" | "rejected" | "ignored" | "withdrawn" | "complied" | "objected"
-    | "seized" | "refunded" | "refused" | "accepted" | "declined" | "failed" | "offerRefused" | "fixFailed" | "reverted" | "cleaned" | "noBackup" | "updated" | "updateSold" | "managedSold" | "ransomPaid" | "ransomRefused" | "moved" | "moveDeclined" | "sponsored" | "sponsorDeclined" | null;
+    | "seized" | "refunded" | "refused" | "accepted" | "declined" | "failed" | "offerRefused" | "fixFailed" | "reverted" | "cleaned" | "cleanSold" | "noBackup" | "updated" | "updateSold" | "managedSold" | "ransomPaid" | "ransomRefused" | "moved" | "moveDeclined" | "sponsored" | "sponsorDeclined" | "domainKept" | "merged" | "spam" | null;
   work: Work | null; notice?: Notice; move?: Move;
+  // The domain a leaving customer asks to transfer away.
+  domain?: string;
   // The maintenance window a maintenance email is about.
   maint?: { windowId: string; from: number; hours: number };
   // The support agent (an employee id) who takes the ticket before anyone else.
   assignee: string | null;
   // An email from a company (bank, supplier) that asks for no reply: who sent it and what fills its text.
   mail?: { from: string; params: Record<string, string | number> };
+  // The hoster's termination notice: when the service ends and why.
+  term?: { end: number; now: boolean; reason: TerminateReason | null };
+  // Support desk (40-support/desk.ts): the channel that imported the ticket, how it came in, the number the desk shows,
+  // its department, the agent's priority override, internal notes, and the ticket a duplicate was merged into.
+  channelId?: string | null; via?: "email" | "web"; ref?: string; deptId?: string | null; priority?: Priority;
+  notes?: DeskNote[]; mergedInto?: string;
 }
+// System events carry a key and params, shown in the player's language; typed notes carry text.
+export interface DeskNote { hour: number; by: string; key?: string; params?: Record<string, string | number>; text?: string }
 
 export const HOURS_PER_MONTH = 730;
 // Hours a waiting ticket stays open before the customer's silence counts as solved.
 export const WAITING_CLOSE_HOURS = 48;
 
 // economy.md, Tickets and work rates.
-export const MINUTES: Record<TicketKind, number> = { outage: 10, howTo: 20, billing: 15, upgrade: 20, cancellation: 15, abuse: 30, appeal: 15, notice: 15, legal: 30, refund: 10, order: 10, extortion: 10, migration: 10, maintenance: 10, sponsor: 10, pear: 0, mail: 0 };
+export const MINUTES: Record<TicketKind, number> = { outage: 10, howTo: 20, billing: 15, upgrade: 20, cancellation: 15, abuse: 30, appeal: 15, notice: 15, legal: 30, refund: 10, order: 10, extortion: 10, migration: 10, maintenance: 10, sponsor: 10, pear: 0, mail: 0, spam: 0 };
 export const MONTHLY_RATES: Record<"howTo" | "billing" | "abuse", Record<Budget, number>> = {
-  howTo: { low: 0.18, medium: 0.06, high: 0.02 },
-  billing: { low: 0.04, medium: 0.04, high: 0.02 },
-  abuse: { low: 0.005, medium: 0.005, high: 0.02 },
+  howTo: { low: 0.09, medium: 0.03, high: 0.01 },
+  billing: { low: 0.02, medium: 0.02, high: 0.01 },
+  abuse: { low: 0.0025, medium: 0.0025, high: 0.01 },
 };
 // Customers ask most while they set up and rarely once settled: ×2.5 at signup, ×0.85 per month, never below ×0.15.
 export const tenureFactor = (s: GameState, c: Customer): number => Math.max(0.15, 2.5 * 0.85 ** ((s.hour - c.since) / HOURS_PER_MONTH));
-export const GAMER_ABUSE_RATE = 0.02;
+export const GAMER_ABUSE_RATE = 0.01;
 export const UPGRADE_CHANCE: Record<Budget, number> = { low: 0.02, medium: 0.03, high: 0.04 };
 export const OUTAGE_WRITE_CHANCE: Record<Budget, number> = { low: 0.3, medium: 0.6, high: 0.9 };
 
 // How-to questions by the services the customer runs and their months with us: newcomers ask how to set things up,
 // long-standing customers ask about what changes over the years. basic: answered by a Knowledge base article.
-export interface HowTo { on: Product[]; without?: Product; minMonths?: number; maxMonths?: number; basic?: true }
+// elsewhere: asked only about a domain registered at another registrar, since ours already uses our nameservers.
+export interface HowTo { on: Product[]; without?: Product; minMonths?: number; maxMonths?: number; basic?: true; elsewhere?: true }
 const SERVERS: Product[] = ["vps", "dedicated", "cloud", "gpu"];
 export const HOW_TO: Record<string, HowTo> = {
   upload: { on: ["webHosting"], maxMonths: 6, basic: true },
   email: { on: ["webHosting"], maxMonths: 12, basic: true },
-  dns: { on: ["webHosting"], maxMonths: 3, basic: true },
+  dns: { on: ["webHosting"], maxMonths: 3, basic: true, elsewhere: true },
   ssl: { on: ["webHosting"], without: "ssl", basic: true },
   ssh: { on: SERVERS, maxMonths: 6, basic: true },
   panel: { on: ["webHosting", ...SERVERS] },
@@ -77,7 +90,7 @@ export function pickHowTo(s: GameState, c: Customer): { topic: string; serviceId
   const services = activeServices(s.services, c.id), months = (s.hour - c.since) / HOURS_PER_MONTH;
   const fits = Object.entries(HOW_TO).flatMap(([topic, h]) => {
     if (months < (h.minMonths ?? 0) || months >= (h.maxMonths ?? Infinity) || (h.without && services.some((v) => v.product === h.without))) return [];
-    const on = services.filter((v) => h.on.includes(v.product));
+    const on = services.filter((v) => h.on.includes(v.product) && !(h.elsewhere && s.domains.some((d) => d.name === v.domain && !d.lapsed)));
     return on.length ? [{ topic, on }] : [];
   });
   if (!fits.length) return null;
@@ -88,23 +101,28 @@ export function pickHowTo(s: GameState, c: Customer): { topic: string; serviceId
 export const TOPICS: Record<TicketKind, string[]> = {
   outage: ["down"], howTo: Object.keys(HOW_TO), billing: ["charge", "copy", "delay"],
   upgrade: ["grow"], cancellation: ["leave"], abuse: ["spam", "attack"], appeal: ["forgot", "boss", "access", "onWay"],
-  notice: ["movie", "music", "youtuber", "phishing", "spam"], legal: ["data", "takedown"], refund: ["outage", "dataLoss"], order: [], extortion: ["data"], migration: ["offer"], maintenance: ["notice", "moved", "move", "declined"], sponsor: [], pear: [], mail: [],
+  notice: ["movie", "music", "youtuber", "phishing", "spam"], legal: ["data", "takedown"], refund: ["outage", "dataLoss"], order: [], extortion: ["data"], migration: ["offer"], maintenance: ["notice", "moved", "move", "declined"], sponsor: [], pear: [], mail: [], spam: [],
 };
 export const TEMPLATES: Record<TicketKind, string[]> = {
   outage: ["ack", "back", "askDetails"], howTo: ["ftp", "mail", "dns", "ssl", "ssh", "panel", "addon", "php", "askDetails"],
   billing: ["explain", "resend", "extension", "newPrice", "foundPayment", "askDetails"], upgrade: [], cancellation: [], abuse: ["warn", "askDetails"],
-  appeal: ["awaitPayment", "askDetails"], notice: [], legal: [], refund: [], order: [], extortion: [], migration: [], maintenance: [], sponsor: [], pear: [], mail: [],
+  appeal: ["awaitPayment", "askDetails"], notice: [], legal: [], refund: [], order: [], extortion: [], migration: [], maintenance: [], sponsor: [], pear: [], mail: [], spam: [],
 };
 export const ACTIONS: Record<TicketKind, TicketAction[]> = {
   outage: ["credit"], howTo: [], billing: ["credit", "revert"], upgrade: [], cancellation: ["cancel"], abuse: [], appeal: ["unsuspend", "keep"],
-  notice: ["forward", "takedown", "reject"], legal: ["comply", "object"], refund: ["refund", "credit", "reject"], order: ["accept", "reject"], extortion: ["pay", "refuse"], migration: [], maintenance: [], sponsor: [], pear: [], mail: [],
+  notice: ["forward", "takedown", "reject"], legal: ["comply", "object"], refund: ["refund", "credit", "reject"], order: ["accept", "reject"], extortion: ["pay", "refuse"], migration: [], maintenance: [], sponsor: [], pear: [], mail: [], spam: [],
 };
-// Actions only tickets of one topic offer: the customer asks for help with an outdated site, or a defaced site waits for clean-up.
-export const TOPIC_ACTIONS: Record<string, TicketAction[]> = { "howTo.update": ["offerOnce", "offerManaged", "free"], "howTo.hacked": ["clean", "noBackup"] };
+// Actions only tickets of one topic offer: the customer asks for help with an outdated site, or a defaced site waits for
+// clean-up, found by the customer or held by the player for its spam.
+const CLEAN_ACTIONS: TicketAction[] = ["clean", "cleanPaid", "noBackup"];
+export const TOPIC_ACTIONS: Record<string, TicketAction[]> = { "howTo.update": ["offerOnce", "offerManaged", "free"], "howTo.hacked": CLEAN_ACTIONS, "howTo.abuseHold": CLEAN_ACTIONS };
+// Topics with replies of their own and no actions: a suspended customer only needs the invoice to pay it. A transfer
+// request is answered with the auth code or refused (90-actions/registrar.ts).
+export const TOPIC_TEMPLATES: Record<string, string[]> = { "billing.suspended": ["resend", "askDetails"], "billing.domainOut": [] };
 export const ACTION_MINUTES: Partial<Record<TicketAction, number>> = { clean: CLEAN_MINUTES };
-export const actionsOf = (t: Pick<Ticket, "kind" | "topic">): TicketAction[] => [...ACTIONS[t.kind], ...(TOPIC_ACTIONS[`${t.kind}.${t.topic}`] ?? [])];
+export const actionsOf = (t: Pick<Ticket, "kind" | "topic">): TicketAction[] => (`${t.kind}.${t.topic}` in TOPIC_TEMPLATES ? [] : [...ACTIONS[t.kind], ...(TOPIC_ACTIONS[`${t.kind}.${t.topic}`] ?? [])]);
 // Tickets with their own actions have no reply templates.
-export const templatesOf = (t: Pick<Ticket, "kind" | "topic">): string[] => (`${t.kind}.${t.topic}` in TOPIC_ACTIONS ? [] : TEMPLATES[t.kind]);
+export const templatesOf = (t: Pick<Ticket, "kind" | "topic">): string[] => TOPIC_TEMPLATES[`${t.kind}.${t.topic}`] ?? (`${t.kind}.${t.topic}` in TOPIC_ACTIONS ? [] : TEMPLATES[t.kind]);
 // A service that can grow in place: it runs on hardware and bills by the hour. Upgrade requests are only about these.
 export const expandable = (v: Service): boolean => PRODUCTS[v.product].runsOn !== "none" && PRODUCTS[v.product].period === "hour";
 export const canEscalate = (kind: TicketKind): boolean => kind === "outage";
@@ -120,7 +138,7 @@ export function shownTemplates(s: GameState, t: Ticket, all: boolean): string[] 
 // A customer who cannot pay yet (boss, access) has no right reply: only unsuspending or keeping the suspension settles it.
 const RIGHT: Record<string, string> = {
   gameVersion: "panel", suspended: "resend", upload: "ftp", email: "mail", phone: "mail", dns: "dns", ssl: "ssl", ssh: "ssh", panel: "panel", addon: "addon", php: "php", charge: "explain", alreadyPaid: "foundPayment", copy: "resend", delay: "extension", price: "newPrice", grow: "offer", disk: "offer", cpu: "offer", full: "offer", more: "offer",
-  spam: "warn", attack: "warn", forgot: "awaitPayment", onWay: "awaitPayment", bounce: "mail", mailFull: "offer", quotaFull: "offer", dnsChange: "dns", certLost: "offer", bucketPublic: "offer", linkExpired: "offer", phpBroken: "php", certExpired: "ssl", lockedOut: "panel", updateBroke: "php", transferFailed: "php",
+  spam: "warn", attack: "warn", forgot: "awaitPayment", onWay: "awaitPayment", bounce: "mail", mailFull: "offer", quotaFull: "offer", dnsChange: "dns", certLost: "offer", bucketPublic: "offer", linkExpired: "offer", phpBroken: "php", licence: "panel", certExpired: "ssl", lockedOut: "panel", updateBroke: "php", transferFailed: "php",
 };
 
 export function rightTemplate(s: GameState, t: Ticket): string {
@@ -156,12 +174,22 @@ export const bump = (c: Customer, delta: number): void => {
   c.happiness = next;
 };
 
-// economy.md, Usage: per hour a slowed service costs SLOW_PENALTY × the share of performance lost, and some write in.
+// economy.md, Usage: per hour a slowed service costs SLOW_PENALTY × the share of performance lost × who is looking × how long it
+// has dragged on, and some write in. Business customers at full attention pay the base rate.
 export const SLOW_PENALTY = 0.1;
 export const SLOW_TICKET_CHANCE = 0.1;
+export const SLOW_RAMP_HOURS = 24;
+export const SLOW_RAMP_MAX = 3;
+export const slowWeight = (seg: Segment, hour: number, hours: number): number =>
+  attention(seg, hour) * Math.min(1, SENSITIVITY[seg] / SENSITIVITY.business) * (1 + ((SLOW_RAMP_MAX - 1) * Math.min(hours, SLOW_RAMP_HOURS)) / SLOW_RAMP_HOURS);
 export function slowed(s: GameState, c: Customer, serviceId: string, lost: number): void {
-  bump(c, -SLOW_PENALTY * lost);
-  if (s.tickets.some((t) => t.serviceId === serviceId && !isFinal(t)) || !chance(s.rng, SLOW_TICKET_CHANCE * lost)) return;
+  const v = s.services.find((x) => x.id === serviceId);
+  if (!v) return;
+  const run = v.slowRun && v.slowRun.last >= s.hour - 1 ? v.slowRun : { since: s.hour, last: s.hour };
+  s.services = s.services.map((x) => (x === v ? { ...v, slowRun: { since: run.since, last: s.hour } } : x));
+  const felt = lost * slowWeight(segmentOf(c.profile, v.product), s.hour, s.hour - run.since);
+  bump(c, -SLOW_PENALTY * felt);
+  if (s.tickets.some((t) => t.serviceId === serviceId && !isFinal(t)) || !chance(s.rng, SLOW_TICKET_CHANCE * felt)) return;
   createTicket(s, c, "outage", serviceId).topic = "slow";
 }
 

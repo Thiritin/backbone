@@ -9,6 +9,7 @@ import { linkStatus } from "../../../../sim/60-infra/status";
 import { dropPortShare, reserveAddress, setPortShare, setRouterLan, viewDevices } from "../../../../sim/90-actions/lan";
 import { useSessionState } from "../../../session";
 import { noAutofill } from "../../../no-autofill";
+import { offerLogin, savedLogin } from "../../../vault";
 import "../consoles/consoles.css";
 import "../ipmi/ipmi.css";
 import { usePageAct } from "../pageAct";
@@ -18,8 +19,12 @@ type Page = "overview" | "devices" | "ipv4" | "shares" | "firmware";
 const FIRMWARE: Record<string, string> = { "home-router": "04.29", "fb-7050": "04.80", "fb-7390": "06.20", "fb-7590": "07.29", "fb-5690": "08.00" };
 
 function Login({ game, d, host, onLogin }: { game: GameState; d: Device; host: string; onLogin: () => void }) {
-  const [pass, setPass] = useState(""), [wrong, setWrong] = useState(false);
-  const submit = () => (pass === routerPassword(game, d.id) ? onLogin() : setWrong(true));
+  const site = `fritz:${d.id}`, [pass, setPass] = useState(() => savedLogin(game, site, 1)[0]), [wrong, setWrong] = useState(false);
+  const submit = () => {
+    if (pass !== routerPassword(game, d.id)) return setWrong(true);
+    offerLogin(game, site, host, [pass]);
+    onLogin();
+  };
   return (
     <div className="cx cx-login" data-look="fritz">
       <form className="cx-card" onSubmit={(e) => { e.preventDefault(); submit(); }}>

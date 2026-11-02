@@ -187,8 +187,8 @@ export default {
   "web.msg.open": () => "Apri",
   "sim.line.reseller": () => "Pacchetto rivenditore",
   "sim.spec.accounts": (p) => `${p.n} account`,
-  "sales.msg.reseller.0": (p) => `Rivendiamo hosting ai nostri clienti e ci serve un pacchetto da ${p.spec} a ${p.city}. Quanto costa al mese il pacchetto intero?`,
-  "sales.msg.reseller.1": (p) => `La nostra agenzia sposta i suoi clienti su un account rivenditore: ${p.spec}. Ci mandi un prezzo mensile per il pacchetto.`,
+  "sales.msg.reseller.0": (p) => `Rivendiamo hosting ai nostri clienti e ci serve un pacchetto da ${p.spec} a ${p.city}. Quanto costa al mese il pacchetto intero? Paghiamo lo spazio che usiamo.`,
+  "sales.msg.reseller.1": (p) => `La nostra agenzia sposta i suoi clienti su un account rivenditore: ${p.spec}. Ci mandi un prezzo mensile per il pacchetto. Paghiamo lo spazio che usiamo.`,
   "web.reseller.blurb": () => "Pacchetti rivenditore con spazio per i vostri clienti.",
   "web.reseller.feature.0": () => "Pacchetti da 20 a 100 account",
   "web.reseller.feature.1": () => "I vostri clienti e piani",
@@ -209,4 +209,6 @@ export default {
   "web.rs.question": (p) => `Domanda su ${p.domain}`,
   "web.rs.suspend": () => "Sospendi",
   "web.rs.resume": () => "Riattiva",
+  "ticket.howTo.licence.subject": () => "Il pannello di controllo dice che la licenza è scaduta",
+  "ticket.howTo.licence.text": (p) => `Quando accedo al pannello di controllo di ${p.domain || "il mio sito"} vedo solo una pagina che dice che la licenza è scaduta. Il sito funziona ancora, ma non posso gestire nulla. Puoi sistemarlo?`,
 } satisfies Dict;

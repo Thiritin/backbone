@@ -62,39 +62,46 @@ export function consoleFeatures(softwareId: string, year: number): ConsoleFeatur
     : cloud ? (year >= (sw.migration.same ?? sw.from) ? (sw.live ? "live" : "cold") : null) : null;
   return {
     look,
-    create: !mail, delete: !mail, stop: !mail, start: !mail,
+    // A web panel manages sites, never the host it runs on.
+    create: !mail, delete: !mail && !panel, stop: !mail, start: !mail,
     migrate,
-    resize: (panel && softwareId !== "freepanel") || cloud,
+    resize: cloud,
     // Every console with a backup server that reads it schedules its jobs there.
     backups: !mail && sw.kind !== "backup",
     update: true,
-    sitesOffline: panel || game,
+    sitesOffline: game,
     cleanUp: panel || game,
     cluster: !game && !mail && sw.cluster !== null && year >= sw.cluster,
   };
 }
 
-// Every cluster whose software answers at a hostname, the hypervisor first and then the panel: a server's, or those in
-// the player's own VM.
+// docs/design/software.md, section 10: the software that has no web console and is run from the machine's terminal.
+const NO_WEB_CONSOLE = new Set(["bound", "knut", "wireguarded", "vsftpeed", "postfixit", "backula"]);
+export const hasWebConsole = (family: string | null): boolean => !!family && !NO_WEB_CONSOLE.has(family);
+
+// Every cluster whose software answers at a hostname with a web console, the hypervisor first and then the panel: a
+// server's, or those in the player's own VM.
 export function consoleClusters(s: GameState, hostname: string): Cluster[] {
   const d = s.devices.find((x) => x.hostname === hostname);
   const vm = d ? undefined : s.workloads.find((w) => w.hostname === hostname && isOwnVm(w));
-  return (d ? clustersOf(s, d.id) : vm ? hostsOfVm(s, vm.id) : []).filter((c) => familyOf(c));
+  return (d ? clustersOf(s, d.id) : vm ? hostsOfVm(s, vm.id) : []).filter((c) => hasWebConsole(familyOf(c)));
 }
 
-// docs/design/software.md, 8.2: the port each console also answers on, next to the host's own address; Mailpig answers
-// on a path.
+// docs/design/software.md, 8.2: the port each console also answers on, next to the host's own address; Mailpig and the
+// mail front ends answer on a path (docs/design/plans/webmail-server.md, 2.3).
 const CONSOLE_AT: Record<string, string> = {
   proxmocks: ":8006", cpanic: ":2087", pleskit: ":8443", directadmen: ":2222", freepanel: ":10000", tcadmen: ":8880", multikraft: ":8080",
   pterodaktyl: ":8080", powerdnz: ":8081", openveepeen: ":943", minnio: ":9001", anyconnekt: ":443", mailpig: "/admin",
+  squirrelmeal: "/squirrelmeal", postfixitadmin: "/postfixadmin",
 };
 const atOf = (c: Cluster): string => CONSOLE_AT[familyOf(c) ?? ""] ?? "";
 
-// The console at a host's address: the one on the port when one is given, Mailpig on /admin, otherwise the first.
+// The console at a host's address: the one on the port when one is given, the one under the path, otherwise the first.
 export function consoleAt(s: GameState, hostname: string, port = "", path = "/"): Cluster | null {
   const all = consoleClusters(s, hostname);
   if (port) return all.find((c) => atOf(c) === port) ?? null;
-  return (/^\/admin(\/|$)/.test(path) ? all.find((c) => atOf(c) === "/admin") : undefined) ?? all[0] ?? null;
+  const under = (at: string) => at.startsWith("/") && (path === at || path.startsWith(`${at}/`) || path.startsWith(`${at}?`));
+  return all.find((c) => under(atOf(c))) ?? all[0] ?? null;
 }
 
 // What follows the host in a console's address (its port, its path, or nothing), or null when another console holds it.

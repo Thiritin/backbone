@@ -5,7 +5,6 @@ export default {
   "error.needsShopSkill": () => "Erforsche zuerst Shopsysteme.",
   "error.shopInUse": () => "Dieses Shopsystem verwaltet bereits deine Bestellungen.",
   "error.shopNotSold": () => "Dieses Shopsystem wird in diesem Jahr nicht verkauft.",
-  "error.shopNoOwn": () => "Dieses Shopsystem gibt es nur zur Miete.",
   "error.unknownModule": () => "Dieses Modul gibt es nicht.",
   "error.moduleOwned": () => "Du hast dieses Modul bereits.",
   "error.moduleNotSold": () => "Dein Shopsystem verkauft keine zusätzlichen Module.",
@@ -30,4 +29,10 @@ export default {
   "ledger.shopUpdates": (p) => `Shop-Updates: ${p.name}`,
   "ledger.shopCut": (p) => `Shop-Umsatzbeteiligung: ${p.name}`,
   "ledger.shopModule": (p) => `Shopmodul: ${p.module}`,
+  "error.shopNotInstalled": () => "Das Shopsystem ist nicht installiert.",
+  "error.shopDown": () => "Der Host des Shopsystems ist ausgefallen.",
+  "error.shopHostPanel": () => "Nur ein Webhosting-Panel-Host kann das Shopsystem betreiben.",
+  "error.noUpdate": () => "Kein Update verfügbar.",
+  "error.noUpdates": () => "Diese Lizenz enthält keine Updates.",
+  "ledger.shopUpgrade": (p) => `Shop-Upgrade: ${p.name} ${p.major}`,
 } satisfies Dict;

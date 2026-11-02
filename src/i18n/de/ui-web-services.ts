@@ -187,8 +187,8 @@ export default {
   "web.msg.open": () => "Öffnen",
   "sim.line.reseller": () => "Reseller-Paket",
   "sim.spec.accounts": (p) => `${p.n} Konten`,
-  "sales.msg.reseller.0": (p) => `Wir verkaufen Webspace an eigene Kunden und brauchen ein Paket mit ${p.spec} in ${p.city}. Was kostet das ganze Paket im Monat?`,
-  "sales.msg.reseller.1": (p) => `Unsere Agentur zieht ihre Kunden auf einen Reseller-Account um: ${p.spec}. Bitte nennen Sie uns einen Monatspreis für das Paket.`,
+  "sales.msg.reseller.0": (p) => `Wir verkaufen Webspace an eigene Kunden und brauchen ein Paket mit ${p.spec} in ${p.city}. Was kostet das ganze Paket im Monat? Abgerechnet wird der genutzte Speicher.`,
+  "sales.msg.reseller.1": (p) => `Unsere Agentur zieht ihre Kunden auf einen Reseller-Account um: ${p.spec}. Bitte nennen Sie uns einen Monatspreis für das Paket. Abgerechnet wird der genutzte Speicher.`,
   "web.reseller.blurb": () => "Reseller-Pakete mit Platz für Ihre eigenen Kunden.",
   "web.reseller.feature.0": () => "Pakete mit 20 bis 100 Konten",
   "web.reseller.feature.1": () => "Eigene Kunden und Tarife",
@@ -209,4 +209,6 @@ export default {
   "web.rs.question": (p) => `Frage zu ${p.domain}`,
   "web.rs.suspend": () => "Sperren",
   "web.rs.resume": () => "Entsperren",
+  "ticket.howTo.licence.subject": () => "Control Panel meldet abgelaufene Lizenz",
+  "ticket.howTo.licence.text": (p) => `Wenn ich mich im Control Panel für ${p.domain || "meine Website"} anmelde, sehe ich nur eine Seite, dass die Lizenz abgelaufen ist. Die Website läuft noch, aber ich kann nichts verwalten. Kannst du das beheben?`,
 } satisfies Dict;

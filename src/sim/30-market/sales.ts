@@ -17,7 +17,7 @@ import { phpNeeded } from "../60-infra/php";
 import { installedRamGb, locationOf } from "../60-infra/status";
 import { addAwareness } from "../80-business/marketing";
 import { mailShare } from "../80-business/mail";
-import { listed, siteFactor } from "../80-business/website";
+import { customOpen, listed, shopBlock, siteFactor } from "../80-business/website";
 import { forumAwareness } from "../47-staff/staff";
 import type { SimEvent } from "../88-tick/tick";
 import { addCustomer } from "../90-actions/customers";
@@ -27,12 +27,13 @@ import { CERT_SHARE, offerCertificate } from "../30-customers/certificates";
 import { shopPriceLevel } from "./cycles";
 import { emailFor, firstOrder, isStandard, orderLead, orderQueued } from "./orders";
 import { growSlots } from "../60-infra/games";
-import { LEAD_SHARE, resellerLeadsOpen } from "../30-customers/resellers";
+import { gameLeadLost } from "../60-infra/titles";
+import { AGENCY_LEAD_SHARE, LEAD_SHARE, resellerLeadsOpen } from "../30-customers/resellers";
 import { provisionService } from "../90-actions/clusters";
 import { addressesFit } from "../60-infra/addresses";
 import { withAddressNeeds } from "../10-catalog/addresses";
 import { grownSpec, setupPremium, sizeOf, specFor, specText } from "./spec";
-import { acceptQuote, resize, specParams } from "./manual";
+import { acceptQuote, issueInvoice, resize, specParams } from "./manual";
 import { answerQuote } from "./quotes";
 import { logActivity } from "../47-staff/activity";
 import type { ActionResult } from "../90-actions/hardware";
@@ -49,6 +50,8 @@ const DAYS_PER_MONTH = 30.4;
 const MAIL_HOUR = 8;
 // A shady request about every three months, from the fourth month on.
 const SHADY_PER_MONTH = 0.3;
+// Share of leads that ask anyway for a product you do not sell.
+const CUSTOM_ASK = 0.3;
 const EXPANSION_HOURS = 7 * 24;
 const RETRY_HOURS = 48;
 const KEEP_HOURS = 60 * 24;
@@ -111,24 +114,33 @@ export function shadyLead(s: GameState, city: string, events: SimEvent[]): Sales
 }
 
 function newLeads(s: GameState, events: SimEvent[]): void {
-  const cache = new Map<string, number>(), site = siteFactor(s);
+  const cache = new Map<string, number>(), site = siteFactor(s), closed = !!shopBlock(s);
   for (const f of leadFlows(s)) {
     const n = poisson(s.rng, (f.leads / DAYS_PER_MONTH / 24) * arrivalWeight(f.profile, s.hour));
     for (let i = 0; i < n; i++) {
+      // A line without custom requests sells its plans only: the visitor takes the basic plan or buys elsewhere.
+      const asked = needFor(s.rng, f.profile, yearOf(s.hour)), plain = listed(s, asked.product) && !customOpen(s, asked.product);
       // A shop order weighs the setup fee too.
-      const need = needFor(s.rng, f.profile, yearOf(s.hour)), shop = isStandard(f.profile, need.sla) && !emailFor(s), k = `${f.profile}/${need.product}/${f.city}/${shop}`;
+      const need = plain ? { ...asked, sla: "basic" as const } : asked, standard = plain || isStandard(f.profile, need.sla), shop = standard && !emailFor(s), k = `${f.profile}/${need.product}/${f.city}/${shop}`;
       if (!cache.has(k)) cache.set(k, share(s, f.profile, need.product, f.city, shop ? setupPremium(s, need.product) : 0, shop ? shopPriceLevel(s, f.profile, need.product) : undefined));
       if (rand(s.rng) >= Math.min(1, cache.get(k)! * f.conversion)) continue;
-      // Leads only write about lines on the website, which needs a control plane that sells them.
-      if (!lineOffered(s, need.product) || !listed(s, need.product)) continue;
-      // A few web hosting leads are resellers who want a block of accounts instead.
-      if (need.product === "webHosting" && resellerLeadsOpen(s) && rand(s.rng) < LEAD_SHARE) {
-        newLead(s, "reseller", f.city, events, { product: "reseller", size: Math.floor(rand(s.rng) * SIZES.reseller.length), sla: "business" });
+      // Leads order only lines on the website, which needs a control plane that sells them; some ask for the rest by email.
+      if (!lineOffered(s, need.product) || !listed(s, need.product)) {
+        if (s.marketing.customRequests && rand(s.rng) < CUSTOM_ASK * mailShare(s, f.profile)) newLead(s, f.profile, f.city, events, need);
+        continue;
+      }
+      // A gamer wants one game; when none of your panels runs it, they go elsewhere.
+      if (need.product === "gameServer" && gameLeadLost(s)) continue;
+      // A few web hosting leads, and many from agencies, want a reseller block instead.
+      if (need.product === "webHosting" && resellerLeadsOpen(s) && rand(s.rng) < (f.profile === "agency" ? AGENCY_LEAD_SHARE : LEAD_SHARE)) {
+        newLead(s, f.profile === "agency" ? "agency" : "reseller", f.city, events, { product: "reseller", size: Math.floor(rand(s.rng) * SIZES.reseller.length), sla: "business" });
         continue;
       }
       // The shop is part of the website: a down, slow or dated site loses its orders. Website leads already carry the factor in their count.
       if (shop && !f.site && site < 1 && rand(s.rng) >= site) continue;
-      if (!isStandard(f.profile, need.sla)) {
+      // A shop that takes no orders loses its visitors, as a down site does.
+      if (shop && closed) continue;
+      if (!standard) {
         newLead(s, f.profile, f.city, events, need);
         continue;
       }
@@ -282,6 +294,11 @@ function replyUpgrade(s: GameState, r: SalesRequest, events: SimEvent[]): void {
     if (!resize(s, v, r.spec!, r.route ?? "auto", r.city).ok) return loseRequest(s, r, "lost", "lost.noCapacity", { city: r.city });
     growSlots(s, v.id, r.spec!.ramGb / v.spec.ramGb);
     s.services = s.services.map((x) => (x.id === v.id ? { ...x, price: price / 730, before: undefined } : x));
+    // The prepaid rest of a term is billed at the new rate once the service has grown.
+    const left = (v.termEnd ?? 0) - s.hour, extra = Math.round((price / 730 - v.price) * left * 100) / 100;
+    if (v.cycle && left > 0 && extra > 0) {
+      issueInvoice(s, v.customerId, [{ serviceId: null, key: "invoice.line.upgradeTerm", params: { label: v.label, months: Math.max(1, Math.round(left / 730)) }, amount: extra }]);
+    }
     say(s, r.id, "you", "sales.you.upgradeDone", { price });
     editRequest(s, r.id, () => ({ status: "won", replyAt: null }));
     closeTicket(s, r);

@@ -1,5 +1,5 @@
 // The steps of a custom order, domain renewals and upgrades of custom services (30-market/manual.ts).
-import { authCode, DOMAIN_FEE, domainOf, extend } from "../30-customers/registry";
+import { authCode, domainFee, domainOf, extend } from "../30-customers/registry";
 import type { SalesRequest } from "../30-market/market";
 import type { Address } from "../30-customers/addresses";
 import { canAutomate, draftInvoice, firstLines, invoiceOf, issueInvoice, resize, shopRegisters, stepError, stepMinutes, type OrderStep } from "../30-market/manual";
@@ -215,7 +215,7 @@ export function renewDomain(s: GameState, name: string): ActionResult {
   const d = domainOf(s, name);
   if (!d?.customerId || !s.customers.some((c) => c.id === d.customerId && c.churnedAt === null)) return fail("error.unknownDomain");
   extend(s, name);
-  issueInvoice(s, d.customerId, [{ serviceId: null, key: "invoice.line.domainRenewal", params: { domain: name }, amount: DOMAIN_FEE }]);
+  issueInvoice(s, d.customerId, [{ serviceId: null, key: "invoice.line.domainRenewal", params: { domain: name }, amount: domainFee(yearOf(s.hour)) }]);
   logActivity(s, { customerId: d.customerId, serviceId: null, by: null, key: "activity.renewDomain", params: { domain: name }, minutes: 0 });
   return { ok: true };
 }

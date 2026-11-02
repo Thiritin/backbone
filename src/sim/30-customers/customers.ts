@@ -35,8 +35,13 @@ export interface Service { id: string; customerId: string; product: Product; lab
   pkgBook?: Resources;
   // Web hosting only: the account's login name.
   username?: string;
+  // Traffic over the plan (80-business/overuse.ts): held at the booked traffic, and the hour the last overage bill or upgrade offer went out.
+  throttled?: true;
+  overuseAt?: number;
   // The last hour the service ran slowed; a month without one earns a review.
   slowedAt?: number;
+  // The current run of hours a customer felt the service slow: first and last hour.
+  slowRun?: { since: number; last: number };
   // Hourly price from before the first of a run of raises; unset once the price is back at or below it.
   before?: number;
   // Hourly price invoiced until the next month start: a raise takes effect from the month after it is made.
@@ -54,5 +59,9 @@ export interface Service { id: string; customerId: string; product: Product; lab
   cycle?: Cycle;
   rolledAt?: number;
   // A retention discount: the hourly price from before it and the month starts left until the price returns.
-  discount?: { was: number; months: number } }
+  discount?: { was: number; months: number };
+  // The hour a termination with notice ends the service.
+  endsAt?: number }
+// Why the hoster terminates a contract.
+export type TerminateReason = "payment" | "abuse" | "usage" | "capacity";
 export const activeServices = (services: Service[], customerId: string): Service[] => services.filter((v) => v.customerId === customerId && v.endedAt === null);

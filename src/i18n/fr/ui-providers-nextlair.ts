@@ -1,0 +1,25 @@
+import type { Dict } from "../lang";
+
+export default {
+  "providers.nextlair.navHome": () => "Accueil",
+  "providers.nextlair.navSites": () => "Data center",
+  "providers.nextlair.navOrder": () => "Housing",
+  "providers.nextlair.navAccount": () => "Portail client",
+  "providers.nextlair.tagline": () => "Internet · Données · Vienne",
+  "providers.nextlair.news": () => "Actualités",
+  "providers.nextlair.news1": () => "Notre data center fait désormais du peering direct au point d'échange de Vienne.",
+  "providers.nextlair.news2": () => "De nouvelles baies avec alimentations A et B sont prêtes à accueillir vos serveurs.",
+  "providers.nextlair.hotline": () => "Hotline",
+  "providers.nextlair.hotlineText": () => "Notre centre d'exploitation réseau répond jour et nuit au +43 1 890 40 00.",
+  "providers.nextlair.heroEarly": () => "Hébergement de serveurs et connectivité depuis Vienne",
+  "providers.nextlair.heroLate": (p) => `Votre infrastructure à ${p.city}, sur notre réseau`,
+  "providers.nextlair.text": (p) => `Next Lair exploite son propre data center et son propre backbone à ${p.city}, vos serveurs sont donc à un saut des opérateurs autrichiens.`,
+  "providers.nextlair.svc1": () => "Housing",
+  "providers.nextlair.svc1Text": () => "Unités à l'unité, baies partagées et suites privées pour votre matériel.",
+  "providers.nextlair.svc2": () => "Connectivité",
+  "providers.nextlair.svc2Text": () => "Le transit et le peering passent par notre propre anneau de fibre dans la ville.",
+  "providers.nextlair.svc3": () => "Service",
+  "providers.nextlair.svc3Text": () => "Nos techniciens à Vienne assurent les remote hands dans des délais courts.",
+  "providers.nextlair.cta": () => "Demander un housing",
+  "providers.nextlair.footer": (p) => `© ${p.year} Next Lair Telecom Service GmbH`,
+} satisfies Dict;

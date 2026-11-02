@@ -4,7 +4,7 @@ import { dateOf, hourOf } from "../00-core/time";
 import { tiersOf, topTier, type LicenceTier } from "../10-catalog/licence-tiers";
 import { SOFTWARE } from "../10-catalog/platforms";
 import { eraAt, SERVER_OS } from "../10-catalog/server-os";
-import type { Look } from "../10-catalog/sites";
+import { SHOP_LICENCES } from "../10-catalog/shop-licences";
 import { UI_LOOKS, versionAt, versionInfo, versionsOf } from "../10-catalog/software-versions";
 import type { GameState, Licence } from "../50-state";
 import type { Cluster } from "./cluster";
@@ -12,16 +12,23 @@ import type { Cluster } from "./cluster";
 // unlicensed: the assigned key is for an older major version than the one installed.
 export type LicenceStatus = "trial" | "active" | "ended" | "lapsed" | "unlicensed";
 
-export const productOf = (id: string) => SERVER_OS.find((o) => o.id === id) ?? SOFTWARE.find((x) => x.id === id);
+export const productOf = (id: string) => SERVER_OS.find((o) => o.id === id) ?? SOFTWARE.find((x) => x.id === id) ?? SHOP_LICENCES.find((x) => x.id === id);
 export const nameOf = (product: string): string => productOf(product)?.name ?? product;
 // Free software has no licence terms.
 export const isLicensed = (product: string): boolean => productOf(product)?.trialDays !== undefined;
 // Days of the product's trial; null when it needs a key at install.
 export const trialDaysOf = (product: string): number | null => productOf(product)?.trialDays ?? null;
-// The editions a licence key can carry; VMwhere editions belong to its cluster instead.
-export const keyTiers = (product: string): LicenceTier[] => (SOFTWARE.find((x) => x.id === product)?.kind === "panel" ? tiersOf(product) : []);
+// The editions a licence key can carry: a panel's or a shop system's; VMwhere editions belong to its cluster instead.
+export const keyTiers = (product: string): LicenceTier[] =>
+  (SOFTWARE.find((x) => x.id === product)?.kind === "panel" || SHOP_LICENCES.some((x) => x.id === product) ? tiersOf(product) : []);
 // A panel with editions starts on a trial of its top tier instead of a key at install.
 export const hasTrialTiers = (product: string): boolean => keyTiers(product).length > 0 && trialDaysOf(product) !== null;
+
+// The shop system runs in a web space of a panel host (docs/design/plans/shop-software.md); its keys and trial belong to
+// this machine id.
+export const SHOP_MACHINE = "shop";
+export const shopMachine = (s: GameState): { id: string; os: null; software: { id: string; version: string }[] } | undefined =>
+  s.shop.variant && s.shop.install ? { id: SHOP_MACHINE, os: null, software: [{ id: s.shop.variant, version: s.shop.install.version }] } : undefined;
 
 export const assignedKey = (s: GameState, machineId: string, product: string): Licence | undefined =>
   s.licenses.find((k) => k.machineId === machineId && k.product === product);
@@ -32,13 +39,14 @@ export const trialOf = (s: GameState, machineId: string, product: string): GameS
 // The version the machine runs of an OS or software id, or null when it is not installed. Software runs the version it
 // upgrades from until the upgrade is done.
 export function installedVersion(s: GameState, machineId: string, product: string): string | null {
+  if (machineId === SHOP_MACHINE) return shopMachine(s)?.software.find((x) => x.id === product)?.version ?? null;
   const m = s.devices.find((x) => x.id === machineId) ?? s.workloads.find((x) => x.id === machineId);
   if (m?.os?.id === product) return m.os.version;
   const x = m?.software?.find((y) => y.id === product);
   return (x?.from && x.doneAt !== null && x.doneAt > s.hour ? x.from : x?.version) ?? null;
 }
-// The console look of the version the machine runs, or null when the version or its UI generations are unknown.
-export function lookOf(s: GameState, machineId: string, product: string): Look | null {
+// The console look id of the version the machine runs, or null when the version or its UI generations are unknown.
+export function lookOf(s: GameState, machineId: string, product: string): string | null {
   const vs = versionsOf(product), at = (v: string | null) => vs.findIndex((x) => x.version === v);
   const i = at(installedVersion(s, machineId, product));
   return i < 0 ? null : UI_LOOKS[product]?.filter(([from]) => at(from) <= i).at(-1)?.[1] ?? null;
@@ -67,7 +75,7 @@ export function licenceStatus(s: GameState, machineId: string, product: string):
 }
 
 // The same day and hour n months later, or the last day of a shorter month.
-const monthsAfter = (hour: number, n: number): number => {
+export const monthsAfter = (hour: number, n: number): number => {
   const d = dateOf(hour), y = d.getUTCFullYear(), m = d.getUTCMonth() + n;
   return hourOf(new Date(Date.UTC(y, m, Math.min(d.getUTCDate(), new Date(Date.UTC(y, m + 1, 0)).getUTCDate()), d.getUTCHours())));
 };
@@ -93,10 +101,11 @@ const majorAt = (product: string, hour: number): string => versionAt(product, ho
 export function issueKey(s: GameState, product: string, edition: string | null, orderId?: string, major?: string): Licence {
   const n = 1 + Math.max(0, ...s.licenses.map((k) => Number(k.id.slice(3))));
   const kind = keyTiers(product).find((x) => x.id === edition)?.kind ?? eraAt(productOf(product)!, s.hour).kind;
-  const term = kind === "once" ? null : termAfter(product, edition, s.hour, s.hour);
+  const term = kind === "once" ? null : termAfter(product, edition, s.hour, s.hour), updates = eraAt(productOf(product)!, s.hour).updates;
   const k: Licence = {
     id: `lic${n}`, product, edition, kind, key: keyCode(s.seed, n, 611), orderId: orderId ?? `ord${n}`, boughtAt: s.hour, machineId: null,
     covers: term === null ? { kind: "version", major: major ?? majorAt(product, s.hour) } : { kind: "term", until: term }, renewsAt: term, lapsedAt: null,
+    ...(term === null && updates ? { updatesUntil: monthsAfter(s.hour, updates) } : {}),
   };
   s.licenses = [...s.licenses, k];
   return k;
@@ -118,7 +127,7 @@ export function assignKey(s: GameState, keyId: string, machineId: string): void 
 export const releaseKey = (s: GameState, keyId: string): void => updateKey(s, keyId, { machineId: null });
 
 // Whether the key may license that version of its product: a one-time key covers its major and the ones before.
-const covers = (k: Licence, version: string): boolean => !(k.covers.kind === "version" && isNewer(k.product, version, k.covers.major));
+export const covers = (k: Licence, version: string): boolean => !(k.covers.kind === "version" && isNewer(k.product, version, k.covers.major));
 // The key of the product with that code, as typed, that covers the version: unassigned, or held by the machine already.
 export const keyFor = (s: GameState, machineId: string, product: string, code: string, version: string): Licence | undefined =>
   s.licenses.find((k) => k.product === product && (k.machineId === null || k.machineId === machineId) && k.key === code.trim().toUpperCase() && covers(k, version));
@@ -183,7 +192,9 @@ export function startTrial(s: GameState, machineId: string, product: string): vo
   s.trials = [...s.trials, { machineId, product, until: s.hour + days * 24 }];
 }
 
-export const accountsOn = (s: GameState, c: Cluster): number => s.workloads.filter((w) => w.clusterId === c.id).length;
+// Web spaces on the panel host, the installed shop system's and a self-hosted desk's included.
+export const accountsOn = (s: GameState, c: Cluster): number => s.workloads.filter((w) => w.clusterId === c.id).length + (s.shop.install?.clusterId === c.id ? 1 : 0)
+  + (s.desk?.hosting.kind === "self" && s.desk.hosting.clusterId === c.id ? 1 : 0);
 
 // The machine a panel host runs on: its VM or its one server.
 export const panelMachine = (c: Cluster): string | null => c.vm ?? c.nodes[0]?.deviceId ?? null;
@@ -208,6 +219,9 @@ export const licenceExpired = (s: GameState, c: Cluster): boolean => {
   const id = c.panel ?? c.platform;
   return !!id && isLicensed(id) && (c.vm ? [c.vm] : c.nodes.map((n) => n.deviceId)).some((m) => ["ended", "lapsed", "unlicensed"].includes(licenceStatus(s, m, id) ?? ""));
 };
+
+// A licensed panel whose licence ran out shows only its licence page; its sites keep serving.
+export const panelLocked = (s: GameState, c: Cluster): boolean => !!c.panel && isLicensed(c.panel) && licenceExpired(s, c);
 
 // The error that refuses one more account, VM or service on the cluster, or null.
 export function licenceBlock(s: GameState, c: Cluster): string | null {

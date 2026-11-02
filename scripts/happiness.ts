@@ -8,7 +8,7 @@ import { counts } from "../src/sim/00-core/workhours";
 import { authCode, domainDown } from "../src/sim/30-customers/registry";
 import { serviceOnline } from "../src/sim/40-support/status";
 import { isSuspended } from "../src/sim/45-billing/billing";
-import { lostDisk, workloadsOf, type Workload } from "../src/sim/60-infra/cluster";
+import { lostDisk, oomKilled, workloadsOf, type Workload } from "../src/sim/60-infra/cluster";
 import { takenDown } from "../src/sim/60-infra/ops";
 import { installedRamGb, linkStatus } from "../src/sim/60-infra/status";
 import { activeServices } from "../src/sim/30-customers/customers";
@@ -37,8 +37,11 @@ import { startGame } from "../src/sim/90-actions/start";
 import { fillLines } from "../src/sim/80-business/website";
 import { OWNED, owns } from "../src/sim/80-business/marketing";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
-import { chooseShop } from "../src/sim/90-actions/shop";
-import { SHOPS } from "../src/sim/10-catalog/shops";
+import { installShop } from "../src/sim/90-actions/shop";
+import { isLicensed, issueKey } from "../src/sim/60-infra/licence";
+import { shopCount } from "../src/sim/80-business/shop";
+import { SHOPS, type ShopId } from "../src/sim/10-catalog/shops";
+import { shopEditionFor, shopLease, shopOnSale, shopUpfront } from "../src/sim/10-catalog/shop-licences";
 import { bookMail } from "../src/sim/90-actions/mail";
 import { registerCompanyDomain, signRegistrar } from "../src/sim/90-actions/registrar";
 import { derivedDomain } from "../src/sim/30-customers/domains";
@@ -142,7 +145,7 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
     }
     const c = s.clusters[0];
     const ram = (f: (id: string) => number) => c.nodes.reduce((n, x) => n + f(x.deviceId), 0);
-    const booked = ram((id) => nodeUsed(s, id).ramGb) + controlPlaneUse(c).ramGb, installed = ram((id) => installedRamGb(s.devices.find((d) => d.id === id)!));
+    const booked = ram((id) => nodeUsed(s, id).ramGb) + controlPlaneUse(s, c).ramGb, installed = ram((id) => installedRamGb(s.devices.find((d) => d.id === id)!));
     needServer = (booked >= 0.8 * installed || booked + 2 > installed) && c.nodes.length < BASEMENT_SLOTS;
     if (!needServer) return;
     // Short of cash: the smallest preset loan that covers the server and a reserve, over five years.
@@ -159,12 +162,22 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
   // Product management, Marketing basics and Shop systems as know-how allows; web design and the cheapest shop once no server is due and
 // cash keeps a reserve.
   let needServer = false;
+  // The cheapest shop's key, or its lease, paid and installed on the first panel VM.
+  const buyShop = (id: ShopId) => {
+    const host = s.clusters.find((c) => c.kind === "panel" && c.panel);
+    if (!host) return;
+    const k = isLicensed(id) ? issueKey(s, id, shopLease(id, s.hour) === null ? null : shopEditionFor(id, s.hour, shopCount(s))?.id ?? null) : undefined;
+    if (!installShop(s, host.id, id, k?.key).ok) return;
+    const price = shopUpfront(id, s.hour);
+    s.cash -= price;
+    s.ledger = [...s.ledger, { hour: s.hour, category: "licenses", key: "ledger.order", params: { vendor: id, order: k?.orderId ?? id }, amount: -price }];
+  };
   const learn = () => {
     const next = ["products", "marketingBasics", "shops"].find((id) => !s.unlocks.includes(id));
     if (next && !s.training) research(s, next);
     if (!owns(s, "website") && !needServer && s.cash >= OWNED.website.setup + 2000) setUpChannel(s, "website");
-    const year = yearOf(s.hour), shop = SHOPS.filter((v) => year >= v.from && (v.until === undefined || year <= v.until)).sort((a, b) => a.setup - b.setup)[0];
-    if (owns(s, "website") && s.unlocks.includes("shops") && !s.shop.variant && !needServer && s.cash >= shop.setup + 2000) chooseShop(s, shop.id);
+    const upfront = (id: ShopId) => shopUpfront(id, s.hour), shop = SHOPS.filter((v) => shopOnSale(v.id, s.hour)).sort((a, b) => upfront(a.id) - upfront(b.id))[0];
+    if (owns(s, "website") && s.unlocks.includes("shops") && !s.shop.variant && !needServer && s.cash >= upfront(shop.id) + 2000) buyShop(shop.id);
     for (const k of ["products", "shop"]) if (!(k in reached) && (k === "shop" ? !!s.shop.variant : s.unlocks.includes(k))) reached[k] = Math.round((10 * s.hour) / MONTH) / 10;
   };
   // The cheapest line with more upload this year, once the basement's evening peak reaches 90% of the line.
@@ -209,10 +222,10 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
       for (const v of s.services) {
         if (v.endedAt !== null || isSuspended(s, v.customerId) || serviceOnline(s, v.id)) continue;
         const ws = workloadsOf(s, v.id), on = (f: (w: Workload) => boolean) => ws.some(f);
-        const why = takenDown(s, v.id) ? "takedown" : domainDown(s, v) ? "domain" : on((w) => !!w.deviceId && s.frozen.includes(w.deviceId)) ? "frozen"
+        const why = takenDown(s, v.id) ? "takedown" : domainDown(s, v) ? "domain" : on((w) => oomKilled(w, s.hour)) ? "oom"
           : on((w) => !!w.deviceId && (s.security.offline.includes(w.deviceId) || s.security.hacked.includes(w.deviceId))) ? "security"
           : on((w) => sitesDown(s, w.clusterId ?? "")) ? "panelSecurity" : on((w) => !!s.clusters.find((c) => c.id === w.clusterId)?.switching) ? "switching"
-          : on((w) => { const vm = vmOf(s, w); return !!vm && (vm.stopped || vm.busyUntil > s.hour); }) ? "vmBusy" : on((w) => { const vm = vmOf(s, w); return !!vm?.deviceId && s.frozen.includes(vm.deviceId); }) ? "vmFrozen"
+          : on((w) => { const vm = vmOf(s, w); return !!vm && (vm.stopped || vm.busyUntil > s.hour); }) ? "vmBusy" : on((w) => { const vm = vmOf(s, w); return !!vm && oomKilled(vm, s.hour); }) ? "vmOom"
           : on((w) => lostDisk(s, w)) ? "lostDisk" : on((w) => !!w.deviceId && !linkStatus(s, w.deviceId).online) ? "link" : on((w) => w.stopped || w.busyUntil > s.hour) ? "stopped" : "other";
         downHours[why] = (downHours[why] ?? 0) + 1;
       }

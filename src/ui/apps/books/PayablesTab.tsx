@@ -3,7 +3,7 @@ import { LOCALE } from "../../../i18n/lang";
 import { euroCents } from "../../../sim/00-core/money";
 import { dateOf } from "../../../sim/00-core/time";
 import { bankOf, hbci, ibanEra } from "../../../sim/46-finance/bank";
-import { overdue, supplierAccount, supplierCode, supplierIban, type Payable } from "../../../sim/46-finance/payables";
+import { lateInBooks, unbooked, supplierAccount, supplierCode, supplierIban, type Payable } from "../../../sim/46-finance/payables";
 import type { GameState } from "../../../sim/50-state";
 import { payAllDue, setAutoPay } from "../../../sim/90-actions/bank";
 import { useStore } from "../../store";
@@ -15,7 +15,7 @@ const left = (p: Payable) => Math.round((p.amount - p.sent) * 100) / 100;
 // The bank's transfer form, filled in for the invoice.
 export function payUrl(s: GameState, p: Payable): string {
   const iban = ibanEra(s), q = new URLSearchParams({
-    payable: p.id, name: p.name, account: iban ? supplierIban(p.supplier) : supplierAccount(p.supplier), ...(iban ? {} : { code: supplierCode }), amount: left(p).toFixed(2), reference: p.number,
+    payable: p.id, name: p.name, account: iban ? supplierIban(p.supplier) : supplierAccount(p.supplier), ...(iban ? {} : { code: supplierCode }), amount: (p.amount - p.booked).toFixed(2), reference: p.number,
   });
   return `www.${bankOf(s)!.host}/banking/transfer?${q}`;
 }
@@ -24,7 +24,9 @@ export function PayablesTab() {
   const game = useStore((s) => s.game);
   const openApp = useStore((s) => s.openApp), act = useStore((s) => s.act);
   const rows = [...game.payables].reverse();
-  const status = (p: Payable) => p.paidAt !== null ? t("bank.pay.paid") : p.sent >= p.amount - 0.005 ? t("bank.pay.sent") : overdue(game, p) ? t("bank.pay.overdue") : t("bank.pay.open");
+  // Books shows what the payments assigned to each invoice cover, as lexoffice does.
+  const status = (p: Payable) => !unbooked(p) ? t("bank.pay.paid") : p.booked > 0 ? t("bank.pay.partly", { amount: euroCents(p.amount - p.booked) })
+    : lateInBooks(game, p) ? t("bank.pay.overdue") : t("bank.pay.open");
   return (
     <div className="fin-scroll">
       {hbci(game) ? (
@@ -42,8 +44,8 @@ export function PayablesTab() {
               <td className="num">{p.number}</td>
               <td className="num">{day(p.dueAt)}</td>
               <td className="r num">{euroCents(p.amount)}</td>
-              <td className={overdue(game, p) ? "neg" : undefined}>{status(p)}</td>
-              <td className="r">{p.paidAt === null && left(p) > 0 && game.bank && <button className="btn" onClick={() => openApp("Browser", { kind: "url", id: payUrl(game, p) })}>{t("bank.pay.pay")}</button>}</td>
+              <td className={lateInBooks(game, p) ? "neg" : undefined}>{status(p)}</td>
+              <td className="r">{unbooked(p) && left(p) > 0 && game.bank &&<button className="btn" onClick={() => openApp("Browser", { kind: "url", id: payUrl(game, p) })}>{t("bank.pay.pay")}</button>}</td>
             </tr>
           ))}
           {!rows.length && <tr><td colSpan={6}>{t("bank.pay.none")}</td></tr>}

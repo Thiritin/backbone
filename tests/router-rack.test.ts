@@ -4,7 +4,7 @@ import { linkStatus } from "../src/sim/60-infra/status";
 import { addLocation, connect, moveRack, unmountDevice } from "../src/sim/90-actions/hardware";
 import { installRouter } from "../src/sim/90-actions/routers";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { buyDevice, freeFloor, skipTo, withServer, newGame } from "./fixtures";
+import { buyDevice, freeFloor, onSaleAt, withServer, newGame } from "./fixtures";
 
 const ok = (r: { ok: boolean; id?: string; error?: string }) => {
   if (!r.ok) throw new Error(r.error);
@@ -31,7 +31,7 @@ describe("the router in the rack", () => {
 
   it("swaps a bought router only for a mounted one", () => {
     const s = { ...newGame(1), cash: 10_000 };
-    skipTo(s, 2006);
+    s.hour = onSaleAt(["fb-7050", "AVN"]);
     const fb = ok(buyDevice(s, "fb-7050", "AVN", 1, "loc1"));
     expect(err(installRouter(s, fb))).toBe("error.noRouter");
   });

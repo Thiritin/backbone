@@ -13,6 +13,7 @@ import { connect } from "../src/sim/90-actions/hardware";
 import { buyDevice } from "./fixtures";
 import { mountDevice } from "./plugged";
 import { closeTicket, resolveTicket } from "../src/sim/90-actions/support";
+import { suspendService } from "../src/sim/90-actions/holds";
 import { join, readyGame } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { en } from "../src/i18n/en";
@@ -98,6 +99,27 @@ describe("copyright and abuse notices", () => {
     const legal = s.tickets.find((x) => x.kind === "legal")!;
     expect(legal.customerId).toBe(friend(s).id);
     expect(legal.notice!.url).toBe(first.notice!.url);
+  });
+
+  it("suspending the account after ignoring a notice stops the follow-up", () => {
+    const s = readyGame(1);
+    const t = spawnNotice(s, friend(s), true, createRng(3), "movie");
+    ok(closeTicket(s, t.id));
+    ok(suspendService(s, t.serviceId!, "manual"));
+    s.hour = ticket(s, t.id).notice!.followAt!;
+    opsTick(s);
+    expect(s.tickets.some((x) => x.kind === "notice" && x.notice!.round === 2)).toBe(false);
+    expect(domainOf(s, friend(s))?.serviceId).not.toBe(t.serviceId);
+  });
+
+  it("an open notice about a suspended account counts as taken down at its deadline", () => {
+    const s = readyGame(1);
+    const t = spawnNotice(s, friend(s), true, createRng(3), "spam");
+    ok(suspendService(s, t.serviceId!, "manual"));
+    s.hour = t.dueAt;
+    opsTick(s);
+    expect(ticket(s, t.id).outcome).toBe("takenDown");
+    expect(ticket(s, t.id).notice!.followAt).toBeNull();
   });
 
   it("forwarding a notice about a domain nobody hosts fails", () => {

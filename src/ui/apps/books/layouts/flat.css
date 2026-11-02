@@ -1,0 +1,9 @@
+/* sevDeck teal and lexoffize green: a flat sidebar in the brand colour beside a light page. */
+.bk-flat { flex: 1; min-height: 0; display: flex; background: #f4f6f8; font-family: "Helvetica Neue", Arial, sans-serif; }
+.bk-flat-side { width: 190px; flex: none; display: flex; flex-direction: column; gap: 2px; padding: 12px 8px; background: var(--bk-bar); color: var(--bk-ink); overflow: auto; }
+.bk-flat-brand { padding: 4px 10px 14px; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+.bk-flat-side button { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 0; border-radius: 8px; background: none; color: inherit; font: inherit; font-size: 13px; text-align: left; }
+.bk-flat-side button:hover { background: rgb(255 255 255 / 0.12); }
+.bk-flat-side button[aria-current] { background: rgb(255 255 255 / 0.22); font-weight: 600; }
+.bk-flat-side svg { width: 17px; height: 17px; }
+.bk-flat .bk-body { margin: 12px; border-radius: 10px; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 0.08); overflow: hidden; }
