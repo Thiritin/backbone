@@ -14,7 +14,6 @@
 .ps-facts div, .ps-kv div { display: flex; justify-content: space-between; gap: 12px; }
 .ps-facts dd, .ps-kv dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
 .ps-kv { margin: 0; max-width: 520px; }
-.ps-steps { display: flex; list-style: none; padding: 0; }
 .ps-field { display: grid; grid-template-columns: 140px minmax(0, 320px); align-items: center; gap: 10px; }
 .ps-field input, .ps-field select { font: inherit; }
 .ps-actions { display: flex; gap: 8px; }

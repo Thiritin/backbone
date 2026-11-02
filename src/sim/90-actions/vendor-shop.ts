@@ -3,7 +3,7 @@
 import { cents } from "../45-billing/billing";
 import type { GameState, PostalAddress } from "../50-state";
 import { cardDetails, cardReady, cardSpent } from "../46-finance/bank";
-import { addressComplete } from "./company";
+import { orderError } from "./company";
 import { invoice } from "../46-finance/payables";
 import { updateKey } from "../60-infra/licence";
 import { cartOf, editionBlock, editionChange, lineMajor, lineOffer, sendKeys, vendorName, type CartLine, type KeyLine } from "../80-business/vendor-shop";
@@ -61,8 +61,8 @@ export function checkout(s: GameState, host: string, details: OrderDetails): Act
   if (fees.some((f) => f === undefined)) return fail("error.notForSale");
   const total = cents(lines.reduce((n, l, i) => n + fees[i]! * l.qty, 0)), payment = details.payment;
   if (!s.bank && total > 0) return fail("error.noBank");
-  if (!details.name.trim()) return fail("error.orderName");
-  if (!addressComplete(details.address)) return fail("error.orderAddress");
+  const bad = orderError(details);
+  if (bad) return fail(bad);
   if (lines.some((l) => l.replaces && editionBlock(s, l.replaces, l.edition))) return fail("error.licenceCap");
   if (total > 0 && payment.kind === "card" && !cardReady(s)) return fail("error.noCard");
   if (total > 0 && payment.kind === "card" && !cardMatches(s, payment)) return fail("error.cardDeclined");

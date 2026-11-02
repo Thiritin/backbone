@@ -50,6 +50,8 @@ Milestones:
 5. **Services.** Per contract: extra power (`setExtraKw`), feed B (`setFeedB`), flat-rate power (`setFlatKw`), remote hands job list from `handwork.ts`. Each one shows price and the month it starts billing. Existing actions only.
 6. **Tickets.** Remote-hands requests the player already books appear as tickets with the provider's response time and status. Read-only in this lane; booking stays in the Locations app.
 
+The order form picks the space and then runs the shared checkout from the vendor shops, with billing details prefilled from the company and its trade office address, a choice of direct debit from the company account or invoice by bank transfer, and a review of site, space, power, monthly price, term and notice. A direct debit order gives the site a mandate, so its rent invoices are debited at once. The portal's profile page shows the billing address given with the latest order and the payment method of each site, with the same mandate toggle as the supplier portals.
+
 ## 6. Lane `services`
 
 Milestones:

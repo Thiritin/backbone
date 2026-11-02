@@ -28,6 +28,9 @@ export function setCompany(s: GameState, patch: Partial<Company>): ActionResult 
 }
 
 export const addressComplete = (a: PostalAddress): boolean => !!(a.street.trim() && a.zip.trim() && a.city.trim());
+// Why a web shop turns an order's billing contact down, if it would.
+export const orderError = (d: { name: string; address: PostalAddress }): string | null =>
+  !d.name.trim() ? "error.orderName" : !addressComplete(d.address) ? "error.orderAddress" : null;
 
 // Why the trade office would turn the application down, if it would.
 export function registrationError(s: GameState, name: string, owner: string, form: string, address: PostalAddress): string | null {
