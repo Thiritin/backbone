@@ -2,6 +2,7 @@ import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { hourOfMonth, nowMinutes } from "../src/sim/00-core/time";
 import { clientAccount } from "../src/sim/43-pear-mail/state";
+import { Assistant } from "../src/ui/apps/pear-mail/Assistant";
 import { PearMailApp } from "../src/ui/apps/pear-mail/PearMailApp";
 import { useStore } from "../src/ui/store";
 import { readyGame } from "./fixtures";
@@ -27,5 +28,17 @@ describe("Pear Mail window", () => {
   it("opens with the welcome while there is no account", () => {
     Object.assign(useStore.getInitialState().game, readyGame(1));
     expect(renderToString(<PearMailApp />)).toContain("Welcome to Pear Mail");
+  });
+
+  it("asks for host names in Pear Mail 2 and offers automatic setup from Pear Mail 3", () => {
+    for (const [os, month, auto] of [["aqua", "2009-01", false], ["leopard", "2009-01", true]] as const) {
+      const s = readyGame(1);
+      s.os = os;
+      s.hour = hourOfMonth(month);
+      Object.assign(useStore.getInitialState().game, s);
+      const html = renderToString(<Assistant onClose={() => {}} />);
+      for (const label of ["Add Account", "Full Name:", "Email Address:", "Password:", "Continue", "Cancel"]) expect(html).toContain(label);
+      expect(html.includes("Automatically set up account")).toBe(auto);
+    }
   });
 });

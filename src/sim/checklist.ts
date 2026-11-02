@@ -52,6 +52,7 @@ export const CHECKS: Record<string, (s: GameState) => boolean> = {
   hire: (s) => s.staff.some((e) => !e.bot),
   study: (s) => s.marketing.studies.length > 0,
   suite: (s) => s.locations.some((l) => l.space === "suite"),
+  pearMail: (s) => s.pearMail.accounts.length > 0,
 };
 
 export const tracked = (id: string): boolean => id in CHECKS;
@@ -61,8 +62,8 @@ export const checkDone = (s: GameState, id: string): boolean => CHECKS[id]?.(s) 
 export const TUTORIAL = ["bank", "register", "payBill", "books", "buyServer", "mountServer", "mountRouter", "internet", "setup", "findAddress", "shareWeb", "website", "domain", "launch", "email", "firstCustomer"] as const;
 
 // A step that belongs to an app shows once that app is installed.
-export const GUIDE = [...TUTORIAL, "loan", "tenCustomers", "research", "patch", "hire", "study"] as const;
+export const GUIDE = [...TUTORIAL, "pearMail", "loan", "tenCustomers", "research", "patch", "hire", "study"] as const;
 const AFTER: Partial<Record<(typeof GUIDE)[number], string>> = {
-  website: "Marketing", launch: "Marketing", research: "Research", patch: "Security", hire: "Staff", study: "Market",
+  website: "Marketing", launch: "Marketing", pearMail: "Pear Mail", research: "Research", patch: "Security", hire: "Staff", study: "Market",
 };
 export const guideSteps = (s: GameState) => GUIDE.filter((id) => !AFTER[id] || s.installed.includes(AFTER[id]!));

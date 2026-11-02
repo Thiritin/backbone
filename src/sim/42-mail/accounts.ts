@@ -1,5 +1,6 @@
 // Tenants, mailboxes, roles and sign-in (docs/design/plans/mail-core.md, Accounts and addresses).
 import { companyDomain } from "../30-customers/domains";
+import { mailServerDown } from "../80-business/mail";
 import { mailHost, mailboxCap, type MailProtocol } from "../10-catalog/mail-providers";
 import type { GameState } from "../50-state";
 import { capsOf, mxTarget } from "./caps";
@@ -80,12 +81,13 @@ export function checkMailLogin(s: GameState, address: string, password: string):
 
 export type ServerStatus = "ok" | "down" | "listed" | "installing" | "closed" | "locked" | "unresolved" | "auth" | "external" | "poll";
 
-// What a client connecting to the mailbox sees; gapMin is the minutes since its last check. The own server's down, listed
-// and installing come from webmail-server.
+// What a client connecting to the mailbox sees; gapMin is the minutes since its last check. The own server's listed and
+// installing come from webmail-server.
 export function serverStatus(s: GameState, accountId: string, protocol: MailProtocol, password?: string, gapMin?: number): ServerStatus {
   const a = s.mail.accounts.find((x) => x.id === accountId), t = a && tenantOf(s, a);
   if (!a || !t || a.closedAt !== null || !live(s, t)) return "closed";
   if (t.locked || a.suspended) return "locked";
+  if (t.host === "self" && mailServerDown(s, t.clusterId)) return "down";
   if (t.domain !== GMIX_DOMAIN && mxTarget(s)?.id !== t.id) return "unresolved";
   if (password !== undefined && password !== a.password) return "auth";
   const caps = capsOf(s, a);
