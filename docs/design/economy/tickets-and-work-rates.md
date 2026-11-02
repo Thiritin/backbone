@@ -34,6 +34,8 @@ A ticket someone is working on stays open. Cancellations are processed at the ne
 
 **Control panels** change the how-to rate: cPanic ×0.8, Pleskit ×0.9, DirectAdmen ×1.2, FreePanel ×1.5.
 
+**Web space tasks** (`web-hosting.md`, Customer behaviour on top of it). Each web hosting customer on a panel host wishes for a new database at 0.02 a month, a new mailbox at 0.02 and an FTP login for a helper at 0.015, rolled once a day, and only while no task or upgrade ticket of theirs is open. The wish becomes a how-to ticket that names the database, mailbox or FTP account; the ticket has no replies and closes by itself in the hour after the web space has it, a database once a user holds privileges on it. A wish the package has no room for becomes an upgrade request instead, which goes to Sales like any other. A site the player broke by deleting its config file or its database is reported by a visitor with a 25% chance each hour, and that ticket closes once the app runs again. A defaced site carries one PHP shell in its app's upload folder, and deleting it in the File Manager cleans the site like a restore.
+
 **Work rate.** A worker with skill s (0 to 100) finishes tasks of handling time t minutes at this rate and gets each one right with the given chance:
 
 ```math

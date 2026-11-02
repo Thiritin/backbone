@@ -41,6 +41,7 @@ import { forSale, inStock, soldOutVisit, type ShopProduct } from "../80-business
 import { orderProduct, productMonthly } from "../80-business/catalog";
 import { chooseProduct, packageSpec } from "../80-business/portal";
 import { belowFloor, bookingFor, packageNamed } from "../80-business/packages";
+import { LIMIT_TOPICS } from "../40-support/webspace-tickets";
 import {
   acceptChance, acceptMid, FORUM_AWARENESS, FORUM_PROFILES, leadFlows, missingFor, needFor, referenceFor,
   requestName, share, values, type Need, type SalesMessage, type SalesRequest,
@@ -188,7 +189,7 @@ export function expansionRequest(s: GameState, t: Ticket): boolean {
   }, cert ? "sales.msg.cert" : "sales.msg.upgrade");
   const params: Record<string, string | number> = cert ? { domain: v.domain ?? v.label } : { product: v.product, ...specParams(old, "0"), ...specParams(spec, "1") };
   editRequest(s, r.id, (x) => ({ thread: x.thread.map((m, n) => (n ? m : { ...m, params: { ...m.params, ...params } })) }));
-  if (!cert && t.kind === "upgrade") s.tickets = s.tickets.map((x) => (x.id === t.id ? { ...x, topic: "more" } : x));
+  if (!cert && t.kind === "upgrade" && !LIMIT_TOPICS.includes(t.topic)) s.tickets = s.tickets.map((x) => (x.id === t.id ? { ...x, topic: "more" } : x));
   return true;
 }
 

@@ -22,7 +22,7 @@ describe("lead arrivals", () => {
 
   it("spread over the day instead of arriving in one morning batch", () => {
     const hours = new Set<number>(), business: number[] = [];
-    for (const seed of [1, 2, 3]) {
+    for (const seed of [1, 2, 3, 4]) {
       const s = readyGame(seed);
       for (let i = 0; i < 90 * 24; i++) tick(s);
       for (const r of s.sales.requests) {
