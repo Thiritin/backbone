@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent, type MutableRefObject, type ReactNode } from "react";
 import { t } from "../../../../../../i18n/en";
 import { LOCALE } from "../../../../../../i18n/lang";
 import { dateOf, hourOfMonth } from "../../../../../../sim/00-core/time";
@@ -9,13 +9,16 @@ import { matchesConditions } from "../../../../../../sim/42-mail/deliver";
 import { boxOf, isRead, tenantOf, view } from "../../../../../../sim/42-mail/model";
 import type { Attachment, MailAccount, MailAct, MailCond, Message, ServerFilter } from "../../../../../../sim/42-mail/types";
 import type { GameState } from "../../../../../../sim/50-state";
+import {
+  GMIAL, gmialLook, gogglesLate, inboxType, keysOn, labOn, labsOpen, nextStar, smartReplies, snoozeChoices, starsOf, tabOf, tabsOf, themeOf, undoPeriod, type GmialLook,
+} from "../../../../../../sim/80-business/gmial";
 import { importantLabel, searchMailbox } from "../../../../../../sim/80-business/mail-search";
 import { applyFilter, markImportant } from "../../../../../../sim/90-actions/mail-provider";
 import {
   changePassword, deleteFetchRule, deleteFilter, runFetchRule, saveFetchRule, saveFilter, setAccountPrefs, setForward,
 } from "../../../../../../sim/90-actions/mailbox";
 import {
-  createMailFolder, deleteMailFolder, discardDraft, emptyFolder, expungeMessages, moveMailFolder, renameMailFolder, saveAttachment, saveDraft, sendMessage, setFolderStyle, setVacation,
+  createMailFolder, deleteMailFolder, discardDraft, emptyFolder, expungeMessages, moveMailFolder, renameMailFolder, saveAttachment, saveDraft, sendMessage, setFolderStyle, setVacation, snoozeMessages,
 } from "../../../../../../sim/90-actions/mailmsg";
 import { threadsOf, useMailActions } from "../../../../mail-kit/mail-kit";
 import { TicketSlot } from "../../../../mail-kit/TicketSlot";
@@ -24,12 +27,15 @@ import { usePageAct } from "../../../pageAct";
 import { seenAddresses } from "../gmix/GmixMail";
 import { GOGGLE_SESSION, SignIn } from "../goggle/GoggleSite";
 import "./gmial.css";
+import {
+  BlackBar, CheatSheet, flushSend, GogglesQuiz, holdSend, InboxSettings, LabsSettings, LaterGeneral, laterOf, laterPrefs, Side, Snakey, StarIcon, ThemeSettings, undoSend, useHeld, useSaved, WebClip,
+} from "./GmialEras";
 
-// docs/design/plans/webmail-consumer.md, section 4.5 and milestone 8: Gmial in the classic look of 2005 to 2010.
+// docs/design/plans/webmail-consumer.md, section 4.5 and milestones 8 and 9: Gmial, its looks by year in gmial-eras.css.
 const VIEWS: Record<string, string> = { inbox: "in:inbox", starred: "is:starred", sent: "in:sent", drafts: "in:drafts", all: "", spam: "in:spam", trash: "in:trash" };
 const RAIL = ["inbox", "starred", "sent", "drafts", "all", "spam", "trash"] as const;
 const PAGE_SIZES = [25, 50, 100];
-const TABS = ["general", "accounts", "labels", "filters", "forward"] as const;
+const TABS = ["general", "accounts", "labels", "inbox", "filters", "forward", "labs", "themes"] as const;
 const BETA_UNTIL = "2009-07", COLOURS_FROM = "2009-01", NESTED_FROM = "2010-01", IMAP_FROM = "2007-10", IMPORTANT_FROM = "2010-01";
 // Label chip colours by Folder.colour: background and text.
 export const LABEL_COLOURS: [string, string][] = [
@@ -39,7 +45,9 @@ export const LABEL_COLOURS: [string, string][] = [
 const ADS = 6;
 
 type To = (path: string) => void;
-interface P { game: GameState; account: MailAccount; to: To; go: (url: string) => void; params: URLSearchParams }
+// The open page's keyboard shortcuts; true when it used the key.
+type Keys = MutableRefObject<((k: string) => boolean) | null>;
+interface P { game: GameState; account: MailAccount; to: To; go: (url: string) => void; params: URLSearchParams; look: GmialLook; keys: Keys; say: (key: string) => void }
 
 const since = (game: GameState, ym: string) => game.hour >= hourOfMonth(ym);
 const addressOf = (a: MailAccount) => `${a.local}@${a.domain}`;
@@ -97,6 +105,11 @@ export function Gmial({ game, path, go }: { game: GameState; path: string; go: (
   const rest = segs[0] === "a" ? segs.slice(2) : segs;
   const [signedIn, setSession] = useSessionState<string | null>(GOGGLE_SESSION, null);
   const signIn = (id: string | null) => { writeSession(GOGGLE_SESSION, id); setSession(id); };
+  const keys: Keys = useRef(null), gPressed = useRef(false);
+  const [notice, say] = useState<string | null>(null), [dialog, setDialog] = useState<"help" | "snake" | null>(null);
+  const [welcomed, setWelcomed] = useSessionState("gmial.newLook", false);
+  useEffect(() => say(null), [path]);
+  useEffect(() => () => flushSend(), []);
   const account = game.mail.accounts.find((a) => a.id === signedIn && a.closedAt === null && tenantOf(game, a)?.host === "goggle");
   if (!account) {
     return (
@@ -106,7 +119,21 @@ export function Gmial({ game, path, go }: { game: GameState; path: string; go: (
     );
   }
   const to: To = (p) => go(gmialUrl(account.domain, p));
-  const p: P = { game, account, to, go, params };
+  const look = gmialLook(game.hour), p: P = { game, account, to, go, params, look, keys, say };
+  const shortcuts = keysOn(game.hour, account);
+  const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest("input, textarea, select, .gml-dialog")) return;
+    const k = e.key;
+    if (gPressed.current) { gPressed.current = false; if (k === "i" || k === "s") { e.preventDefault(); to(k === "i" ? "inbox" : "starred"); } return; }
+    if (keys.current?.(k)) { e.preventDefault(); return; }
+    if (k === "g") gPressed.current = true;
+    else if (k === "c") to("compose");
+    else if (k === "/") e.currentTarget.querySelector<HTMLInputElement>('[name="q"]')?.focus();
+    else if (k === "?") setDialog("help");
+    else if (k === "&" && labOn(game.hour, account, "snakey")) setDialog("snake");
+    else return;
+    e.preventDefault();
+  };
   const out = () => { signIn(null); go(gmialUrl(account.domain)); };
   const [head = "inbox", ...more] = rest;
   const page = (() => {
@@ -119,13 +146,19 @@ export function Gmial({ game, path, go }: { game: GameState; path: string; go: (
   })();
   const current = head === "label" || head === "search" ? `${head}/${more[0] ?? ""}` : head;
   return (
-    <div className="gml">
+    <div className={`gml gml-look-${look} gml-theme-${themeOf(game.hour, account)}`} data-look={look} tabIndex={shortcuts ? 0 : undefined} onKeyDown={shortcuts ? onKey : undefined}>
+      {(look === "redesign" || look === "tabs") && !since(game, GMIAL.blackBarUntil) && <BlackBar game={game} go={go} say={say} />}
       <Top {...p} out={out} q={head === "search" ? decodeURIComponent(more[0] ?? "") : ""} />
+      {look === "pill" && !welcomed && <p className="gml-note gml-welcome" role="status">{t("gmial.newLook")} <button type="button" onClick={() => setWelcomed(true)}>{t("gmial.newLook.ok")}</button></p>}
+      {notice && <p className="gml-note" role="status">{t(notice)}</p>}
       <div className="gml-body">
         <Rail {...p} current={current} />
         <main className="gml-main">{page}</main>
+        <Side game={game} account={account} look={look} say={say} />
       </div>
       <Storage {...p} />
+      {dialog === "help" && <CheatSheet close={() => setDialog(null)} />}
+      {dialog === "snake" && <Snakey close={() => setDialog(null)} />}
     </div>
   );
 }
@@ -148,7 +181,7 @@ function Top({ game, account, to, out, q }: P & { out: () => void; q: string }) 
 const unreadThreads = (game: GameState, accountId: string, q: string) => threadsOf(searchMailbox(game, accountId, `${q} is:unread`), (m) => m).length;
 
 function Rail({ game, account, to, current }: P & { current: string }) {
-  const [shut, setShut] = useState<string[]>([]), nested = since(game, NESTED_FROM);
+  const [shut, setShut] = useState<string[]>([]), nested = since(game, NESTED_FROM) || labOn(game.hour, account, "nested");
   const labels = userLabels(game, account.id).filter((f) => !f.hidden), imp = importantLabel(game, account.id);
   const count = (v: string) => (v === "inbox" || v === "spam" || v.startsWith("label/") ? unreadThreads(game, account.id, queryOf(v))
     : v === "drafts" ? searchMailbox(game, account.id, "in:drafts").length : 0);
@@ -197,7 +230,7 @@ function Storage({ game, account }: P) {
   );
 }
 
-function Toolbar({ game, account, to, v, ids, threads, done }: P & { v: string; ids: string[]; threads: string[]; done?: () => void }) {
+function Toolbar({ game, account, to, v, look, ids, threads, done }: P & { v: string; ids: string[]; threads: string[]; done?: () => void }) {
   const kit = useMailActions(account.id), act = usePageAct(), box = boxOf(game, account.id).filter((m) => ids.includes(m.id));
   const none = !ids.length, labels = userLabels(game, account.id), here = v.startsWith("label/") ? v.slice(6) : null;
   const run = (f: () => unknown) => { f(); done?.(); };
@@ -243,6 +276,14 @@ function Toolbar({ game, account, to, v, ids, threads, done }: P & { v: string; 
           <li><button type="button" disabled={!sender} onClick={() => to(`filter?from=${encodeURIComponent(sender ?? "")}`)}>{t("gmial.tool.filterLike")}</button></li>
         </ul>
       </details>
+      {(look === "material" || look === "pill") && (
+        <details className="gml-menu" data-menu="snooze">
+          <summary>{t("gmial.tool.snooze")} ▾</summary>
+          <ul>{snoozeChoices(game.hour).map(({ id, until }) => (
+            <li key={id}><button type="button" disabled={none} onClick={() => { if (act(snoozeMessages, account.id, ids, until).ok) to(`${v}?snoozed=${until}`); }}>{t(`gmial.snooze.${id}`)} <small>{full(until * 60)}</small></button></li>
+          ))}</ul>
+        </details>
+      )}
     </div>
   );
 }
@@ -259,31 +300,97 @@ function NewLabel({ account, onMade }: { account: MailAccount; onMade: (id: stri
 }
 
 function List(p: P & { v: string }) {
-  const { game, account, to, v, params } = p;
-  const kit = useMailActions(account.id), act = usePageAct();
-  const convs = threadsOf(searchMailbox(game, account.id, queryOf(v)), (m) => m);
+  const { game, account, to, v, params, look, keys } = p;
+  const kit = useMailActions(account.id), act = usePageAct(), held = useHeld();
+  const prio = v === "inbox" && inboxType(game.hour, account) === "priority", tabbed = v === "inbox" && !prio && since(game, "2013-05");
+  const tabs = tabsOf(account), tab = tabbed && tabs.includes(params.get("tab") as never) ? params.get("tab")! : "primary";
+  const tabFor = (c: Message[]) => { const x = tabOf(game, c[0]); return tabs.includes(x) ? x : "primary"; };
+  const convs = threadsOf(searchMailbox(game, account.id, queryOf(v)), (m) => m).filter((c) => !tabbed || tabFor(c) === tab);
   const size = Number(account.prefs?.pageSize ?? 50), start = Math.max(0, Math.min(Number(params.get("start")) || 0, Math.max(0, convs.length - 1)));
-  const shown = convs.slice(start, start + size), [sel, setSel] = useState<string[]>([]);
+  const shown = convs.slice(start, start + size), [sel, setSel] = useState<string[]>([]), [cur, setCur] = useState(0), [peek, setPeek] = useState<string | null>(null);
   const picked = sel.filter((th) => shown.some((c) => c[0].thread === th)), here = v.startsWith("label/") ? v.slice(6) : null;
-  const imp = importantLabel(game, account.id)?.id;
+  const imp = importantLabel(game, account.id)?.id, supers = labOn(game.hour, account, "superstars"), preview = labOn(game.hour, account, "preview");
   const pick = (f: (c: Message[]) => boolean) => setSel(shown.filter(f).map((c) => c[0].thread));
   const all = (th: string) => convOf(game, account.id, th, v);
   const title = v.startsWith("label/") ? labelName(game, v.slice(6)) : v.startsWith("search/") ? t("gmial.view.search") : t(`gmial.view.${v}`);
   const names = (c: Message[]) => [...new Set(c.map((m) => (m.from === `acct:${account.id}` ? t("gmial.me") : view(game, m).fromName || view(game, m).fromAddress)))].join(", ");
   const open = (c: Message[]) => (c[0].draft ? `compose?draft=${c[0].id}` : `${v}/${c[0].thread}`);
-  const empty = v === "inbox" ? t("gmial.empty.inbox") : v.startsWith("search/") ? t("gmial.empty.search") : t("gmial.empty.none");
-  const nav = (n: number) => `${v}?start=${n}`;
+  const show = (c: Message[]) => (preview && !c[0].draft ? setPeek(c[0].thread) : to(open(c)));
+  const empty = tabbed && tab !== "primary" ? t("gmial.tab.empty", { tab: t(`gmial.tab.${tab}`) }) : v === "inbox" ? t("gmial.empty.inbox") : v.startsWith("search/") ? t("gmial.empty.search") : t("gmial.empty.none");
+  const nav = (n: number) => `${v}?${tab !== "primary" ? `tab=${tab}&` : ""}start=${n}`;
+  const unread = (c: Message[]) => c.some((m) => !isRead(game, m)), starred = (c: Message[]) => all(c[0].thread).some((m) => m.star);
+  const important = (c: Message[]) => !!imp && all(c[0].thread).some((m) => m.labels?.includes(imp));
+  const star = (c: Message[]) => {
+    const on = all(c[0].thread).filter((m) => m.star);
+    if (supers) kit.mark([(on.at(-1) ?? c[0]).id], nextStar(on.at(-1) ?? c[0], starsOf(account)));
+    else kit.mark(on.length ? on.map((m) => m.id) : [c[0].id], { star: !on.length });
+  };
+  const tn = tenantOf(game, account)!, adRow = tab === "promotions" && !!mailPlan(tn.host, tn.plan)?.ads && !since(game, GMIAL.promoAdUntil);
+  const ad = gmialAd("", `${account.id}${Math.floor(game.hour / 24)}`);
+  useEffect(() => {
+    keys.current = (k) => {
+      const c = shown[cur], ids = idsOf(game, account.id, picked.length ? picked : c ? [c[0].thread] : [], v);
+      const inbox = boxOf(game, account.id).filter((m) => ids.includes(m.id) && m.folder === "inbox").map((m) => m.id);
+      if (k === "j" || k === "k") setCur(Math.max(0, Math.min(shown.length - 1, cur + (k === "j" ? 1 : -1))));
+      else if ((k === "o" || k === "Enter") && c) show(c);
+      else if (k === "x" && c) setSel(picked.includes(c[0].thread) ? picked.filter((x) => x !== c[0].thread) : [...picked, c[0].thread]);
+      else if (k === "s" && c) star(c);
+      else if (k === "e" && inbox.length) { kit.move(inbox, "archive"); setSel([]); }
+      else if (k === "#" && ids.length) { kit.remove(ids); setSel([]); }
+      else if (k === "!" && ids.length) { kit.junk(ids, true); setSel([]); }
+      else if (k === "l") { const d = document.querySelector<HTMLDetailsElement>('.gml-main [data-menu="labels"]'); if (!d) return false; d.open = true; }
+      else return false;
+      return true;
+    };
+    return () => { keys.current = null; };
+  });
+  const table = (list: Message[][], ads: boolean) => (
+    <table className="gml-list">
+      <tbody>
+        {ads && <tr className="gml-adrow"><td colSpan={6}><span className="gml-adchip">{t("gmial.adChip")}</span> <b>{t(`gmial.ad.${ad}.title`)}</b> - {t(`gmial.ad.${ad}.text`)}</td></tr>}
+        {list.map((c) => {
+          const th = c[0].thread, every = all(th), on = starred(c), marked = important(c);
+          const chips = [...new Set(every.flatMap((m) => m.labels ?? []))].filter((l) => l !== here && l !== imp);
+          const v0 = view(game, every[0] ?? c[0]), snippet = view(game, c[0]).text;
+          return (
+            <tr key={th} data-id={th} className={`${unread(c) ? "gml-unread" : "gml-read"}${picked.includes(th) ? " gml-picked" : ""}${shown[cur]?.[0].thread === th && keysOn(game.hour, account) ? " gml-cursor" : ""}`}>
+              <td><input type="checkbox" aria-label={t("gmial.select.one")} checked={picked.includes(th)} onChange={(e) => setSel(e.target.checked ? [...picked, th] : picked.filter((x) => x !== th))} /></td>
+              <td><button type="button" className={`gml-star${on ? " gml-star-on" : ""}`} aria-label={t(on ? "gmial.tool.unstar" : "gmial.tool.star")} aria-pressed={on}
+                onClick={() => star(c)}><StarIcon m={every.filter((m) => m.star).at(-1)} /></button>
+                {since(game, IMPORTANT_FROM) && <button type="button" className={`gml-imp${marked ? " gml-imp-on" : ""}`} aria-pressed={marked} aria-label={t(marked ? "gmial.tool.notImportant" : "gmial.tool.important")}
+                  onClick={() => act(markImportant, account.id, every.map((m) => m.id), !marked)} />}</td>
+              <td className="gml-who" onClick={() => show(c)}><span className="gml-names">{c[0].draft ? <span className="gml-draft">{t("gmial.draft")}</span> : names(every)}</span>{every.length > 1 && ` (${every.length})`}</td>
+              <td className="gml-what" onClick={() => show(c)}>
+                {chips.map((l) => <Chip key={l} game={game} id={l} />)}
+                <a href={`#${open(c)}`} onClick={(e) => e.preventDefault()}>{v0.subject || t("gmial.noSubject")}</a>
+                <span className="gml-snippet"> - {snippet.replace(/\s+/g, " ").slice(0, 80)}</span>
+              </td>
+              <td>{every.some((m) => m.att?.length) ? "📎" : ""}</td>
+              <td className="gml-when">{when(game, c[0].at)}</td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+  const first = shown.filter((c) => important(c) && unread(c)), second = shown.filter((c) => !first.includes(c) && starred(c));
+  const sections: [string, Message[][]][] = [["important", first], ["starred", second], ["rest", shown.filter((c) => !first.includes(c) && !second.includes(c))]];
   return (
     <>
-      {params.get("sent") && <p className="gml-note" role="status">{t("gmial.sent")}</p>}
+      {params.get("sent") && <p className="gml-note" role="status">{t("gmial.sent")}{held && <> <button type="button" className="gml-link" onClick={undoSend}>{t("gmial.undo")}</button></>}</p>}
+      {params.get("snoozed") && <p className="gml-note" role="status">{t("gmial.snoozed", { date: full(Number(params.get("snoozed")) * 60) })}</p>}
+      {v === "inbox" && look === "classic" && since(game, GMIAL.clips) && <WebClip game={game} />}
       <h1>{title}</h1>
       {wide(v) && (
         <p className="gml-purge">{t(`gmial.purge.${v}`)} {convs.length > 0 && <Confirm label={t(`gmial.purge.empty.${v}`)} onYes={() => act(emptyFolder, account.id, v === "spam" ? "junk" : "trash")} />}</p>
       )}
       <Toolbar {...p} ids={idsOf(game, account.id, picked, v)} threads={picked} done={() => setSel([])} />
+      {tabbed && <ul className="gml-cats">{tabs.map((c) => (
+        <li key={c} className={`gml-cat-${c}${c === tab ? " gml-on" : ""}`}><Go to={to} path={c === "primary" ? "inbox" : `inbox?tab=${c}`}>{t(`gmial.tab.${c}`)}</Go></li>
+      ))}</ul>}
       <p className="gml-select"><span>{t("gmial.select")}{" "}
-        {([["all", () => true], ["none", () => false], ["read", (c) => c.every((m) => isRead(game, m))], ["unread", (c) => c.some((m) => !isRead(game, m))],
-          ["starred", (c) => all(c[0].thread).some((m) => m.star)], ["unstarred", (c) => !all(c[0].thread).some((m) => m.star)]] as [string, (c: Message[]) => boolean][]).map(([k, f], i) => (
+        {([["all", () => true], ["none", () => false], ["read", (c) => c.every((m) => isRead(game, m))], ["unread", unread],
+          ["starred", starred], ["unstarred", (c) => !starred(c)]] as [string, (c: Message[]) => boolean][]).map(([k, f], i) => (
           <span key={k}>{i > 0 && ", "}<a href={`#${k}`} onClick={(e) => { e.preventDefault(); pick(f); }}>{t(`gmial.select.${k}`)}</a></span>
         ))}</span>
         {convs.length > 0 && (
@@ -294,32 +401,10 @@ function List(p: P & { v: string }) {
           </span>
         )}
       </p>
-      {shown.length === 0 ? <p className="gml-empty">{empty}</p> : (
-        <table className="gml-list">
-          <tbody>
-            {shown.map((c) => {
-              const th = c[0].thread, every = all(th), unread = c.some((m) => !isRead(game, m)), starred = every.some((m) => m.star);
-              const chips = [...new Set(every.flatMap((m) => m.labels ?? []))].filter((l) => l !== here && l !== imp);
-              const v0 = view(game, every[0] ?? c[0]), snippet = view(game, c[0]).text;
-              return (
-                <tr key={th} data-id={th} className={`${unread ? "gml-unread" : "gml-read"}${picked.includes(th) ? " gml-picked" : ""}`}>
-                  <td><input type="checkbox" aria-label={t("gmial.select.one")} checked={picked.includes(th)} onChange={(e) => setSel(e.target.checked ? [...picked, th] : picked.filter((x) => x !== th))} /></td>
-                  <td><button type="button" className={`gml-star${starred ? " gml-star-on" : ""}`} aria-label={t(starred ? "gmial.tool.unstar" : "gmial.tool.star")} aria-pressed={starred}
-                    onClick={() => kit.mark(starred ? every.map((m) => m.id) : [c[0].id], { star: !starred })}>{starred ? "★" : "☆"}</button></td>
-                  <td className="gml-who" onClick={() => to(open(c))}><span className="gml-names">{c[0].draft ? <span className="gml-draft">{t("gmial.draft")}</span> : names(every)}</span>{every.length > 1 && ` (${every.length})`}</td>
-                  <td className="gml-what" onClick={() => to(open(c))}>
-                    {chips.map((l) => <Chip key={l} game={game} id={l} />)}
-                    <Go to={to} path={open(c)}>{v0.subject || t("gmial.noSubject")}</Go>
-                    <span className="gml-snippet"> - {snippet.replace(/\s+/g, " ").slice(0, 80)}</span>
-                  </td>
-                  <td>{every.some((m) => m.att?.length) ? "📎" : ""}</td>
-                  <td className="gml-when">{when(game, c[0].at)}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      )}
+      {shown.length === 0 && !adRow ? <p className="gml-empty">{empty}</p>
+        : prio ? sections.map(([k, list]) => list.length > 0 && <section key={k} data-section={k}><h3 className="gml-prio">{t(`gmial.prio.${k}`)}</h3>{table(list, false)}</section>)
+          : table(shown, adRow)}
+      {peek && <div className="gml-peek"><Conversation key={peek} {...p} v={v} thread={peek} /></div>}
     </>
   );
 }
@@ -356,7 +441,7 @@ function Msg({ game, account, to, go, m, open, toggle }: P & { m: Message; open:
         <b>{v.fromName || v.fromAddress}</b> {v.fromName && v.fromName !== v.fromAddress && <span className="gml-addr">&lt;{v.fromAddress}&gt;</span>}
         <time>{full(m.at)}</time>
         <button type="button" className={`gml-star${m.star ? " gml-star-on" : ""}`} aria-label={t(m.star ? "gmial.tool.unstar" : "gmial.tool.star")}
-          onClick={(e) => { e.stopPropagation(); kit.mark([m.id], { star: !m.star }); }}>{m.star ? "★" : "☆"}</button>
+          onClick={(e) => { e.stopPropagation(); kit.mark([m.id], labOn(game.hour, account, "superstars") ? nextStar(m, starsOf(account)) : { star: !m.star }); }}><StarIcon m={m} /></button>
       </div>
       <p className="gml-to">{t("gmial.read.to", { to: [v.to, ...v.cc].join(", ") })}</p>
       <div className="gml-text">{body}</div>
@@ -379,16 +464,36 @@ export function gmialAd(subject: string, id: string): number {
 }
 
 function Conversation(p: P & { v: string; thread: string }) {
-  const { game, account, to, v, thread } = p;
+  const { game, account, to, v, thread, look, keys } = p;
   const kit = useMailActions(account.id), msgs = convOf(game, account.id, thread, v);
   const [opened, setOpened] = useState<string[]>(() => msgs.filter((m, i) => !isRead(game, m) || i === msgs.length - 1).map((m) => m.id));
   const unreadIds = msgs.filter((m) => !isRead(game, m)).map((m) => m.id).join(",");
   useEffect(() => { if (unreadIds) kit.mark(unreadIds.split(","), { read: true }); }, [unreadIds]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    keys.current = (k) => {
+      const last = msgs.at(-1), ids = msgs.map((m) => m.id), inbox = msgs.filter((m) => m.folder === "inbox").map((m) => m.id);
+      if (!last) return false;
+      if (k === "u") to(v);
+      else if (k === "r" || k === "a" || k === "f") to(`compose?re=${last.id}&mode=${k === "r" ? "reply" : k === "a" ? "all" : "fwd"}`);
+      else if (k === "s") kit.mark([last.id], labOn(game.hour, account, "superstars") ? nextStar(last, starsOf(account)) : { star: !last.star });
+      else if (k === "e" && inbox.length) { kit.move(inbox, "archive"); to(v); }
+      else if (k === "#") { kit.remove(ids); to(v); }
+      else if (k === "!") { kit.junk(ids, true); to(v); }
+      else if (k === "j" || k === "k") {
+        const list = threadsOf(searchMailbox(game, account.id, queryOf(v)), (m) => m).map((c) => c[0].thread), next = list[list.indexOf(thread) + (k === "j" ? 1 : -1)];
+        if (!next) return false;
+        to(`${v}/${next}`);
+      } else return false;
+      return true;
+    };
+    return () => { keys.current = null; };
+  });
   const back = v.startsWith("label/") ? labelName(game, v.slice(6)) : v.startsWith("search/") ? t("gmial.view.search") : t(`gmial.view.${v}`);
   if (!msgs.length) return <><p className="gml-empty">{t("gmial.gone")}</p><Go to={to} path={v}>{t("gmial.tool.back", { view: back })}</Go></>;
   const ids = msgs.map((m) => m.id), imp = importantLabel(game, account.id)?.id;
   const chips = [...new Set(msgs.flatMap((m) => m.labels ?? []))].filter((l) => l !== imp);
-  const tn = tenantOf(game, account)!, ads = !!mailPlan(tn.host, tn.plan)?.ads, subject = view(game, msgs[0]).subject;
+  const tn = tenantOf(game, account)!, ads = !!mailPlan(tn.host, tn.plan)?.ads && (look === "classic" || look === "redesign"), subject = view(game, msgs[0]).subject;
+  const last = msgs.at(-1)!, modern = look === "material" || look === "pill";
   const ad = gmialAd(subject, msgs[0].id);
   return (
     <div className="gml-conv">
@@ -397,6 +502,9 @@ function Conversation(p: P & { v: string; thread: string }) {
         <Toolbar {...p} ids={ids} threads={[thread]} done={() => to(v)} />
         <h2 className="gml-subject">{subject || t("gmial.noSubject")} {chips.map((l) => <Chip key={l} game={game} id={l} onRemove={() => kit.label(ids, [], [l])} />)}</h2>
         {msgs.map((m) => <Msg key={m.id} {...p} m={m} open={opened.includes(m.id)} toggle={() => setOpened(opened.includes(m.id) ? opened.filter((x) => x !== m.id) : [...opened, m.id])} />)}
+        {modern && last.from !== `acct:${account.id}` && !last.draft && (
+          <p className="gml-smart">{smartReplies(last.kind).map((k) => <Go key={k} to={to} path={`compose?re=${last.id}&mode=reply&smart=${k}`}>{t(`gmial.smart.${k}`)}</Go>)}</p>
+        )}
       </div>
       {ads && (
         <aside className="gml-ads" data-ad={ad}>
@@ -410,6 +518,10 @@ function Conversation(p: P & { v: string; thread: string }) {
 
 interface Form { from: string; to: string; cc: string; bcc: string; subject: string; text: string; att: Attachment[]; re?: string; fwd?: string; draftId?: string }
 
+const cannedOf = (a: MailAccount): { n: string; t: string }[] => {
+  try { const v = JSON.parse(String(a.prefs?.canned ?? "[]")); return Array.isArray(v) ? v : []; } catch { return []; }
+};
+
 function Compose({ game, account, to, params }: P) {
   const act = usePageAct(), own = [addressOf(account), ...account.aliases.map((l) => `${l}@${account.domain}`)];
   const [init] = useState((): Form => {
@@ -422,51 +534,77 @@ function Compose({ game, account, to, params }: P) {
     const quote = `\n\n${t("gmial.compose.wrote", { date: full(re.at), who })}\n${v.text.split("\n").map((l) => `> ${l}`).join("\n")}`;
     if (mode === "fwd") return { from, to: "", cc: "", bcc: "", subject: t("gmial.compose.fwdSubject", { subject: v.subject }), text: `${tail}\n\n${t("gmial.compose.fwdHead")}\n${v.text}`, att: re.att ?? [], fwd: re.id };
     const cc = mode === "all" ? [...v.to.split(","), ...v.cc].map((x) => x.trim().toLowerCase()).filter((x) => x && !own.includes(x) && x !== v.fromAddress) : [];
-    const sent = re.from === `acct:${account.id}`;
-    return { from, to: sent ? v.to : v.fromAddress, cc: cc.join(", "), bcc: "", subject: t("gmial.compose.reSubject", { subject: v.subject }), text: `${tail}${quote}`, att: [], re: re.id };
+    const sent = re.from === `acct:${account.id}`, smart = params.get("smart");
+    return { from, to: sent ? v.to : v.fromAddress, cc: cc.join(", "), bcc: "", subject: t("gmial.compose.reSubject", { subject: v.subject }), text: `${smart ? t(`gmial.smart.${smart}`) : ""}${tail}${quote}`, att: [], re: re.id };
   });
   const [f, setF] = useState(init), [saved, setSaved] = useState(false), [more, setMore] = useState({ cc: !!init.cc, bcc: !!init.bcc });
   const set = (k: "from" | "to" | "cc" | "bcc" | "subject" | "text", v: string) => { setF({ ...f, [k]: v }); setSaved(false); };
   const draft = { to: [f.to], cc: [f.cc], bcc: [f.bcc], subject: f.subject, text: f.text, att: f.att, re: f.re };
   const docs = game.docs.filter((d) => !f.att.some((a) => a.k === "doc" && a.id === d.id));
-  const send = () => { if (act(sendMessage, account.id, { ...draft, from: f.from, fwd: f.fwd, draftId: f.draftId }).ok) to("inbox?sent=1"); };
+  const [quiz, setQuiz] = useState(false), [cannedSaved, setCannedSaved] = useState(false);
+  const canned = labOn(game.hour, account, "canned") ? cannedOf(account) : null;
+  // Undo Send holds the message in the page for the period; Undo turns it back into a draft.
+  const deliver = () => {
+    const secs = undoPeriod(game.hour, account), m = { ...draft, from: f.from, fwd: f.fwd, draftId: f.draftId };
+    if (!secs) { if (act(sendMessage, account.id, m).ok) to("inbox?sent=1"); return; }
+    holdSend(() => act(sendMessage, account.id, m), () => { const r = act(saveDraft, account.id, { ...draft, id: f.draftId }); if (r.ok) to(`compose?draft=${r.id}&undone=1`); }, secs);
+    to("inbox?sent=1");
+  };
+  const send = () => (labOn(game.hour, account, "goggles") && gogglesLate(game.hour) ? setQuiz(true) : deliver());
+  const pickCanned = (x: string) => {
+    if (x !== "+") { if (canned?.[Number(x)]) set("text", `${f.text}${canned[Number(x)].t}`); return; }
+    const n = f.subject.trim(), list = [...(canned ?? []).filter((c) => c.n !== n), { n, t: f.text.slice(0, 2000) }].slice(-20);
+    setCannedSaved(act(setAccountPrefs, account.id, { canned: JSON.stringify(list) }).ok);
+  };
   const discard = () => { if (f.draftId) act(discardDraft, account.id, f.draftId); to("inbox"); };
   return (
-    <form className="gml-write" onSubmit={(e) => { e.preventDefault(); send(); }}>
-      <div className="gml-tools">
-        <button type="submit">{t("gmial.compose.send")}</button>
-        <button type="button" onClick={() => { const r = act(saveDraft, account.id, { ...draft, id: f.draftId }); if (r.ok) { setF({ ...f, draftId: r.id }); setSaved(true); } }}>{t("gmial.compose.saveNow")}</button>
-        <button type="button" onClick={discard}>{t("gmial.compose.discard")}</button>
-        {saved && <span className="gml-ok">{t("gmial.compose.saved")}</span>}
-      </div>
-      <datalist id="gml-seen">{seenAddresses(game, account).map((x) => <option key={x} value={x} />)}</datalist>
-      <table className="gml-fields">
-        <tbody>
-          {own.length > 1 && <tr><th>{t("gmial.compose.from")}</th><td><select name="from" value={f.from} onChange={(e) => set("from", e.target.value)}>{own.map((x) => <option key={x} value={x}>{x}</option>)}</select></td></tr>}
-          <tr><th>{t("gmial.compose.to")}</th><td><input name="to" list="gml-seen" value={f.to} onChange={(e) => set("to", e.target.value)} autoComplete="off" /></td></tr>
-          {more.cc && <tr><th>{t("gmial.compose.cc")}</th><td><input name="cc" list="gml-seen" value={f.cc} onChange={(e) => set("cc", e.target.value)} autoComplete="off" /></td></tr>}
-          {more.bcc && <tr><th>{t("gmial.compose.bcc")}</th><td><input name="bcc" list="gml-seen" value={f.bcc} onChange={(e) => set("bcc", e.target.value)} autoComplete="off" /></td></tr>}
-          {(!more.cc || !more.bcc) && <tr><th /><td className="gml-small">
-            {!more.cc && <a href="#cc" onClick={(e) => { e.preventDefault(); setMore({ ...more, cc: true }); }}>{t("gmial.compose.addCc")}</a>}{!more.cc && !more.bcc && " | "}
-            {!more.bcc && <a href="#bcc" onClick={(e) => { e.preventDefault(); setMore({ ...more, bcc: true }); }}>{t("gmial.compose.addBcc")}</a>}
-          </td></tr>}
-          <tr><th>{t("gmial.compose.subject")}</th><td><input name="subject" value={f.subject} onChange={(e) => set("subject", e.target.value)} autoComplete="off" /></td></tr>
-          <tr><th /><td>
-            {f.att.map((a, i) => (
-              <span key={i} className="gml-att">📎 {a.k === "file" ? a.name : a.k === "doc" ? game.docs.find((d) => d.id === a.id)?.title : t(`gmial.att.${a.k}`)}
-                <button type="button" className="gml-link" onClick={() => setF({ ...f, att: f.att.filter((_, j) => j !== i) })}>{t("gmial.compose.remove")}</button></span>
-            ))}
-            {docs.length > 0 && (
-              <select aria-label={t("gmial.compose.attach")} value="" onChange={(e) => { if (e.target.value) setF({ ...f, att: [...f.att, { k: "doc", id: e.target.value }] }); }}>
-                <option value="">{t("gmial.compose.attach")}</option>
-                {docs.map((d) => <option key={d.id} value={d.id}>{d.title || t("gmial.compose.untitled")}</option>)}
-              </select>
-            )}
-          </td></tr>
-        </tbody>
-      </table>
-      <textarea name="text" rows={16} value={f.text} onChange={(e) => set("text", e.target.value)} aria-label={t("gmial.compose.text")} />
-    </form>
+    <>
+      <form className="gml-write" onSubmit={(e) => { e.preventDefault(); send(); }}>
+        <div className="gml-tools">
+          <button type="submit">{t("gmial.compose.send")}</button>
+          <button type="button" onClick={() => { const r = act(saveDraft, account.id, { ...draft, id: f.draftId }); if (r.ok) { setF({ ...f, draftId: r.id }); setSaved(true); } }}>{t("gmial.compose.saveNow")}</button>
+          <button type="button" onClick={discard}>{t("gmial.compose.discard")}</button>
+          {canned && (
+            <select aria-label={t("gmial.canned")} value="" onChange={(e) => { if (e.target.value) pickCanned(e.target.value); }}>
+              <option value="">{t("gmial.canned")}</option>
+              {canned.map((c, i) => <option key={i} value={i}>{c.n}</option>)}
+              <option value="+" disabled={!f.subject.trim()}>{t("gmial.canned.save")}</option>
+            </select>
+          )}
+          {saved && <span className="gml-ok">{t("gmial.compose.saved")}</span>}
+          {cannedSaved && <span className="gml-ok">{t("gmial.canned.saved")}</span>}
+          {params.get("undone") && <span className="gml-ok" role="status">{t("gmial.undone")}</span>}
+        </div>
+        <datalist id="gml-seen">{seenAddresses(game, account).map((x) => <option key={x} value={x} />)}</datalist>
+        <table className="gml-fields">
+          <tbody>
+            {own.length > 1 && <tr><th>{t("gmial.compose.from")}</th><td><select name="from" value={f.from} onChange={(e) => set("from", e.target.value)}>{own.map((x) => <option key={x} value={x}>{x}</option>)}</select></td></tr>}
+            <tr><th>{t("gmial.compose.to")}</th><td><input name="to" list="gml-seen" value={f.to} onChange={(e) => set("to", e.target.value)} autoComplete="off" /></td></tr>
+            {more.cc && <tr><th>{t("gmial.compose.cc")}</th><td><input name="cc" list="gml-seen" value={f.cc} onChange={(e) => set("cc", e.target.value)} autoComplete="off" /></td></tr>}
+            {more.bcc && <tr><th>{t("gmial.compose.bcc")}</th><td><input name="bcc" list="gml-seen" value={f.bcc} onChange={(e) => set("bcc", e.target.value)} autoComplete="off" /></td></tr>}
+            {(!more.cc || !more.bcc) && <tr><th /><td className="gml-small">
+              {!more.cc && <a href="#cc" onClick={(e) => { e.preventDefault(); setMore({ ...more, cc: true }); }}>{t("gmial.compose.addCc")}</a>}{!more.cc && !more.bcc && " | "}
+              {!more.bcc && <a href="#bcc" onClick={(e) => { e.preventDefault(); setMore({ ...more, bcc: true }); }}>{t("gmial.compose.addBcc")}</a>}
+            </td></tr>}
+            <tr><th>{t("gmial.compose.subject")}</th><td><input name="subject" value={f.subject} onChange={(e) => set("subject", e.target.value)} autoComplete="off" /></td></tr>
+            <tr><th /><td>
+              {f.att.map((a, i) => (
+                <span key={i} className="gml-att">📎 {a.k === "file" ? a.name : a.k === "doc" ? game.docs.find((d) => d.id === a.id)?.title : t(`gmial.att.${a.k}`)}
+                  <button type="button" className="gml-link" onClick={() => setF({ ...f, att: f.att.filter((_, j) => j !== i) })}>{t("gmial.compose.remove")}</button></span>
+              ))}
+              {docs.length > 0 && (
+                <select aria-label={t("gmial.compose.attach")} value="" onChange={(e) => { if (e.target.value) setF({ ...f, att: [...f.att, { k: "doc", id: e.target.value }] }); }}>
+                  <option value="">{t("gmial.compose.attach")}</option>
+                  {docs.map((d) => <option key={d.id} value={d.id}>{d.title || t("gmial.compose.untitled")}</option>)}
+                </select>
+              )}
+            </td></tr>
+          </tbody>
+        </table>
+        <textarea name="text" rows={16} value={f.text} onChange={(e) => set("text", e.target.value)} aria-label={t("gmial.compose.text")} />
+      </form>
+      {quiz && <GogglesQuiz game={game} pass={() => { setQuiz(false); deliver(); }} close={() => setQuiz(false)} />}
+    </>
   );
 }
 
@@ -548,31 +686,30 @@ function FilterCreate({ game, account, to, params }: P) {
 }
 
 function Settings(p: P & { tab: string }) {
-  const { game, to, tab } = p;
+  const { game, account, to, tab } = p;
+  const shown = TABS.filter((k) => (k === "inbox" ? since(game, GMIAL.priority) : k === "labs" ? labsOpen(game.hour) : k === "themes" ? since(game, GMIAL.themes) : true));
   const name = (k: (typeof TABS)[number]) => k === "accounts" && since(game, "2010-01") ? t("gmial.set.accountsImport")
     : k === "forward" ? t(since(game, IMAP_FROM) ? "gmial.set.forwardImap" : "gmial.set.forward") : t(`gmial.set.${k}`);
-  const body = tab === "accounts" ? <AccountSettings {...p} /> : tab === "labels" ? <LabelSettings {...p} /> : tab === "filters" ? <FilterSettings {...p} />
-    : tab === "forward" ? <ForwardSettings {...p} /> : <GeneralSettings {...p} />;
+  const on = shown.includes(tab as never) ? tab : "general";
+  const body = on === "accounts" ? <AccountSettings {...p} /> : on === "labels" ? <LabelSettings {...p} /> : on === "filters" ? <FilterSettings {...p} />
+    : on === "forward" ? <ForwardSettings {...p} /> : on === "inbox" ? <InboxSettings game={game} account={account} /> : on === "labs" ? <LabsSettings game={game} account={account} />
+      : on === "themes" ? <ThemeSettings game={game} account={account} /> : <GeneralSettings {...p} />;
   return (
     <div className="gml-settings">
       <h1>{t("gmial.settings")}</h1>
-      <ul className="gml-tabs">{TABS.map((k) => <li key={k} className={(tab === k || (k === "general" && !TABS.includes(tab as never))) ? "gml-on" : undefined}><Go to={to} path={`settings/${k}`}>{name(k)}</Go></li>)}</ul>
+      <ul className="gml-tabs">{shown.map((k) => <li key={k} className={on === k ? "gml-on" : undefined}><Go to={to} path={`settings/${k}`}>{name(k)}</Go></li>)}</ul>
       <div className="gml-tab">{body}</div>
     </div>
   );
 }
 
-function useSaved(): [(ok: boolean) => void, ReactNode] {
-  const [saved, setSaved] = useState(false);
-  return [setSaved, saved ? <span className="gml-ok" role="status">{t("gmial.set.saved")}</span> : null];
-}
-
-function GeneralSettings({ account }: P) {
+function GeneralSettings({ game, account }: P) {
   const act = usePageAct(), [setSaved, mark] = useSaved();
   const [size, setSize] = useState(Number(account.prefs?.pageSize ?? 50)), [sig, setSig] = useState(String(account.prefs?.signature ?? ""));
+  const [later, setLater] = useState(() => laterOf(account));
   const vac = account.vacation, [on, setOn] = useState(!!vac?.on), [subject, setSubject] = useState(vac?.subject ?? ""), [text, setText] = useState(vac?.text ?? "");
   const save = () => {
-    const a = act(setAccountPrefs, account.id, { pageSize: size, signature: sig.slice(0, 500) });
+    const a = act(setAccountPrefs, account.id, { pageSize: size, signature: sig.slice(0, 500), ...laterPrefs(later) });
     const b = a.ok && act(setVacation, account.id, on || subject || text ? { on, subject, text, until: null } : null);
     setSaved(!!b && b.ok);
   };
@@ -582,6 +719,7 @@ function GeneralSettings({ account }: P) {
         <tr><th>{t("gmial.gen.pageSize")}</th><td><select name="pageSize" value={size} onChange={(e) => setSize(Number(e.target.value))}>
           {PAGE_SIZES.map((n) => <option key={n} value={n}>{t("gmial.gen.pageSizeOpt", { n })}</option>)}
         </select></td></tr>
+        <LaterGeneral game={game} account={account} v={later} set={setLater} />
         <tr><th>{t("gmial.gen.signature")}</th><td>
           <label><input type="radio" name="sig" checked={!sig} onChange={() => setSig("")} />{t("gmial.gen.noSig")}</label>
           <textarea name="signature" rows={3} value={sig} onChange={(e) => setSig(e.target.value)} />
