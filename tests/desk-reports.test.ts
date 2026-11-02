@@ -7,15 +7,15 @@ import { createTicket, type Ticket } from "../src/sim/40-support/tickets";
 import type { GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
 import { addCustomer } from "../src/sim/90-actions/customers";
+import { openDesk } from "../src/sim/40-support/desk";
 import { markSpam, mergeTickets } from "../src/sim/90-actions/desk";
-import { install } from "../src/sim/90-actions/store";
 import { replyTicket } from "../src/sim/90-actions/support";
 import { newGame, registered } from "./fixtures";
 
 // Tuesday 7 January 2020, 9:00, with OsTickit from the Pear Store.
 function withDesk(): GameState {
   const s = registered({ ...newGame(3), hour: hourOf(new Date(Date.UTC(2020, 0, 7, 9))), cash: 1e6 });
-  install(s, "ostickit");
+  openDesk(s, "ostickit");
   return s;
 }
 const reply = (t: Ticket, hour: number, by?: string) => { t.replies = [...t.replies, { hour, template: "ftp", right: true, ...(by && { by }) }]; };

@@ -1,7 +1,5 @@
 import { yearOf } from "../00-core/time";
 import { isAvailable, skillById } from "../10-catalog/research";
-import { DESKS, deskReady, type DeskId } from "../10-catalog/desks";
-import { dropDesk, legacyDesk } from "../40-support/desk";
 import { monthlyCharge, storeItem, subscriptionEntry } from "../10-catalog/store";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
@@ -34,22 +32,17 @@ export function install(s: GameState, id: string): ActionResult {
   const blocked = storeBlocker(s, id);
   if (blocked) return fail(blocked);
   if (s.installed.includes(id)) return fail("error.installed");
-  if (item.kind === "desk" && !deskReady(s, id)) return fail("error.deskNotYet");
   const price = monthlyCharge(s, item);
   if (price > 0 && s.cash < price) return fail("error.noCash");
   s.cash = Math.round((s.cash - price) * 100) / 100;
   if (price > 0) s.ledger = [...s.ledger, subscriptionEntry(s, item)];
-  // One desk at a time: the new desk replaces the one in use.
-  const rest = item.kind === "desk" ? s.installed.filter((x) => !DESKS.some((d) => d.id === x)) : s.installed;
-  s.installed = [...rest, id];
-  if (item.kind === "desk") { dropDesk(s); legacyDesk(s, id as DeskId); }
+  s.installed = [...s.installed, id];
   return { ok: true };
 }
 
 export function cancel(s: GameState, id: string): ActionResult {
   if (!storeItem(id) || !s.installed.includes(id)) return fail("error.notInstalled");
   s.installed = s.installed.filter((x) => x !== id);
-  if (s.desk?.id === id) dropDesk(s);
   return { ok: true };
 }
 

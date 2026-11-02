@@ -1,4 +1,5 @@
 // GDD, The desktop (Browser): what an address in the in-game browser leads to. Pure; the UI draws the page.
+import { DESKS, type DeskId } from "../10-catalog/desks";
 import { supplierHost } from "../46-finance/payables";
 import { monthIndexOf, yearOf } from "../00-core/time";
 import { SOFTWARE } from "../10-catalog/platforms";
@@ -48,6 +49,7 @@ export type Page =
   | { kind: "market"; channel: Channel }
   | { kind: "books"; id: BooksVendorId }
   | { kind: "shopVendor"; id: ShopId }
+  | { kind: "deskVendor"; id: DeskId }
   | { kind: "hosttoast" }
   | { kind: "host"; hostname: string }
   | { kind: "console"; hostname: string; clusterId: string; defaced: boolean; path: string }
@@ -102,7 +104,7 @@ export const dirSlug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]
 export const resellersUrl = (): string => `${HOME_URL}${dirSlug(t("sim.index.cat.resellers"))}`;
 // Domains the game's other companies hold in any year, and every name under them.
 export function providerDomain(name: string): boolean {
-  const hosts = [INDEX_HOST, OFFICE_HOST, DOHLE_HOST, WIKI_HOST, LEXWEAR_HOST, HOSTTOAST_HOST, BOARD_HOST, VIDEO_HOST, ...CHANNELS.map((c) => c.host), ...SOFTWARE.map((x) => x.site.host), ...SERVER_OS.map((x) => x.site.host),
+  const hosts = [INDEX_HOST, OFFICE_HOST, DOHLE_HOST, WIKI_HOST, LEXWEAR_HOST, HOSTTOAST_HOST, BOARD_HOST, VIDEO_HOST, ...CHANNELS.map((c) => c.host), ...SOFTWARE.map((x) => x.site.host), ...SERVER_OS.map((x) => x.site.host), ...DESKS.map((d) => d.hosts.vendor),
     ...VENDORS.map((m) => vendorHost(m.id)), ...BANKS.map((b) => b.host), ...REGISTRARS.map(registrarHost), ...PROVIDERS.map((p) => p.host)].map((h) => h.replace(/^www\./, ""));
   return hosts.some((h) => h === name || h.endsWith(`.${name}`));
 }
@@ -205,6 +207,8 @@ export function resolve(s: GameState, raw: string): Resolved {
   // Every shop system has its vendor's site, from the year it is sold.
   const shopSite = SHOPS.find((v) => v.from <= yearOf(s.hour) && named(shopHost(v.id)));
   if (shopSite) return out({ kind: "shopVendor", id: shopSite.id });
+  const deskSite = DESKS.find((d) => d.from <= yearOf(s.hour) && named(d.hosts.vendor));
+  if (deskSite) return out({ kind: "deskVendor", id: deskSite.id });
   if (named(HOSTTOAST_HOST)) return out({ kind: "hosttoast" });
   // A software's site exists from the year the software does; an operating system's always.
   const year = yearOf(s.hour), sw = SOFTWARE.find((x) => named(x.site.host) && x.from <= year);
