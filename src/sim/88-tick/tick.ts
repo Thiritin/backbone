@@ -4,7 +4,9 @@ import { lettersTick } from "../40-support/letters";
 import { paperworkTick } from "../80-business/paperwork";
 import { taxTick } from "../80-business/tax";
 import { netsvcTick } from "../60-infra/netsvc";
-import { binomial, rand } from "../00-core/rng";
+import { binomial, hashRng, rand } from "../00-core/rng";
+import { deliverMail } from "../40-support/tickets";
+import { targetName } from "../10-catalog/network";
 import { dateOf, isMonthStart, yearOf } from "../00-core/time";
 import { businessPowerPrice } from "../10-catalog/economy";
 import { billingTick } from "../45-billing/billing";
@@ -70,7 +72,7 @@ import { THERMAL, thermalTick, throttled } from "../60-infra/thermal";
 import { FAILURE_FACTOR, unsupported } from "../10-catalog/lifecycle";
 import { skillById } from "../10-catalog/research";
 import { KNOW_HOW, storeItem, subscriptionEntry } from "../10-catalog/store";
-import { capacityAt, DATACENTERS, datacenterById, flatMonthly, homeLineById, HOUSEHOLD_FACTOR } from "../20-world/datacenters";
+import { capacityAt, DATACENTERS, datacenterById, flatMonthly, homeLineById, HOUSEHOLD_FACTOR, PROVIDERS } from "../20-world/datacenters";
 import type { Component, Device, GameState, LedgerEntry, Location } from "../50-state";
 import { scoreTick } from "../80-business/scores";
 import { trendTick } from "../80-business/trend";
@@ -95,6 +97,16 @@ function contractsEnd(state: GameState, events: SimEvent[]): void {
     c.endsAt = noticeEnd(state.hour, 0);
     events.push({ app: "Locations", key: "event.contractRolled", params: { location: loc?.name ?? "" } });
   }
+}
+
+// Each January one provider raises its position price by 2 to 5% for new contracts, preferring one the player rents from,
+// and mails the player when they do.
+export function priceRaise(state: GameState): void {
+  const year = yearOf(state.hour), r = hashRng(state.seed, year, 0x9c);
+  const mine = PROVIDERS.filter((p) => state.contracts.some((c) => c.provider === p.id)), pool = mine.length ? mine : PROVIDERS;
+  const p = pool[Math.floor(rand(r) * pool.length)], percent = 2 + Math.floor(rand(r) * 4);
+  state.providerPrices = { ...state.providerPrices, [p.id]: Math.round((state.providerPrices[p.id] ?? 1) * (100 + percent) * 100) / 10000 };
+  if (mine.includes(p)) deliverMail(state, p.name, "priceRaise", { percent, year });
 }
 
 // Drops the lease and makes its devices owned.
@@ -298,6 +310,7 @@ export function tick(state: GameState): SimEvent[] {
   const monthStart = isMonthStart(state.hour);
   if (monthStart) {
     competitorsCancel(state);
+    if (dateOf(state.hour).getUTCMonth() === 0) priceRaise(state);
   }
   if (state.waitlist.length) updateHolds(state, events);
   contractsEnd(state, events);
@@ -323,6 +336,10 @@ export function tick(state: GameState): SimEvent[] {
     for (const r of state.racks.filter((x) => x.flatKw)) {
       const dc = datacenterById(state.locations.find((l) => l.id === r.locationId)!.dc!);
       bills.push({ hour: state.hour, category: "rent", key: "ledger.flatPower", params: { rack: r.name, kw: r.flatKw, dc: dc.id }, amount: -flatMonthly(dc, r.flatKw, yearOf(state.hour)) });
+    }
+    for (const x of state.crossConnects) {
+      const c = state.contracts.find((k) => k.id === x.contractId);
+      if (c) bills.push({ hour: state.hour, category: "rent", key: "ledger.crossConnect", params: { to: targetName(x.to), dc: c.dc }, amount: -x.monthly });
     }
     const line = homeLineById(state.homeLine.id);
     bills.push(...addressBills(state));

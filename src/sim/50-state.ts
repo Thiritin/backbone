@@ -161,6 +161,8 @@ export interface Lease { id: string; lessor: string; monthly: number; months: nu
 // A rented space's contract with its provider. monthly is the rent agreed at order time; endsAt is set once the player
 // gives notice and the location closes at that hour. retainedAt is when the player took the retention offer; the next month is free.
 export interface Contract { id: string; provider: string; dc: string; locationId: string; space: "share" | "cage" | "suite"; positions: number; since: number; monthly: number; endsAt: number | null; retainedAt: number | null }
+// A cross-connect from the contract's space to a carrier or exchange on site (to is its id); monthly is fixed at order time.
+export interface CrossConnect { id: string; contractId: string; to: string; monthly: number; since: number }
 export interface WaitlistEntry { id: string; dc: string; space: "share" | "cage" | "suite"; size: number; since: number; heldUntil: number | null }
 export interface End { device: string; port: number }
 export interface Cable { id: string; a: End; b: End; kind: CableKind; color: string | null }
@@ -276,6 +278,9 @@ export interface GameState {
   dcs: Record<string, { others: number }>;
   waitlist: WaitlistEntry[];
   contracts: Contract[];
+  crossConnects: CrossConnect[];
+  // Each provider's position price as a factor of its list price, raised once a game year; new contracts pay it.
+  providerPrices: Record<string, number>;
   // Learned research skills (SKILLS ids).
   unlocks: string[];
   // The skill in training and the hour it is learned.
@@ -452,7 +457,7 @@ export const newGame = (seed: number): GameState => ({
   racks: [{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null, overSince: { a: null, b: null } }],
   devices: [{ ...device("dev5", "home-router", "AVN", null, 0, null, "fra1-gw-01", 0), store: "loc1" }, device("dev6", "line-jack", "", null, 0, "loc1", "fra1-line-01", 0)],
   cables: [],
-  ledger: [], licenses: [], trials: [], cart: [], media: { images: [], stick: { os: null, in: null } }, leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], contracts: [], unlocks: [], training: null, knowHow: 0, installed: ["Browser", "Chat"], kbReads: {}, statusDays: [], checklist: [], seenChanges: [], undocked: [], os: "aqua",
+  ledger: [], licenses: [], trials: [], cart: [], media: { images: [], stick: { os: null, in: null } }, leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], contracts: [], crossConnects: [], providerPrices: {}, unlocks: [], training: null, knowHow: 0, installed: ["Browser", "Chat"], kbReads: {}, statusDays: [], checklist: [], seenChanges: [], undocked: [], os: "aqua",
   customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], files: {},
   invoices: [], transfers: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   quotes: [],
