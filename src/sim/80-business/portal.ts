@@ -4,6 +4,7 @@ import { shopById, type ShopId } from "../10-catalog/shops";
 import type { Spec } from "../10-catalog/products";
 import type { Product } from "../30-customers/customers";
 import { targetFor } from "../30-market/sales";
+import { companyDomain } from "../30-customers/domains";
 import type { GameState } from "../50-state";
 import { packageNamed } from "./packages";
 import { shopActive, type ShopProduct } from "./shop";
@@ -104,6 +105,10 @@ export function portalPath(variant: ShopId, area: PortalArea, ids: PortalIds = {
   const extra = new URLSearchParams(typeof screen === "string" ? { s: screen } : screen).toString();
   return extra ? `${path}${path.includes("?") ? "&" : "?"}${extra}` : path;
 }
+
+// The address of the active shop's admin screen, with its parameters.
+export const shopAdminUrl = (s: GameState, screen: Record<string, string>): string =>
+  `portal.${companyDomain(s)}${portalPath(s.shop.variant!, "admin", {}, screen)}`;
 
 export function parsePortal(variant: ShopId, path: string): PortalRoute | null {
   const query = new URLSearchParams(path.split("?")[1] ?? "");
