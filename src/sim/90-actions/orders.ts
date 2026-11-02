@@ -186,6 +186,8 @@ export function deleteQuote(s: GameState, quoteId: string): ActionResult {
 
 // Confirms the accepted quote with its first invoice as a draft; it goes out with the setup.
 export const confirmOrder = (s: GameState, ticketId: string): ActionResult => step(s, ticketId, "invoice");
+// Mails the customer the login of the service set up for the order.
+export const sendOrderAccess = (s: GameState, ticketId: string): ActionResult => step(s, ticketId, "access");
 
 // Switches the automatic run of accepted orders; it needs the provisioning skill.
 export function setAutoOrders(s: GameState, on: boolean): ActionResult {

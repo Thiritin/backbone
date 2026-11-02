@@ -4,6 +4,7 @@ import { mailPlan } from "../src/sim/10-catalog/mail-providers";
 import { checkMailLogin, seatsBilled } from "../src/sim/42-mail/accounts";
 import { mxTarget } from "../src/sim/42-mail/caps";
 import { deliver } from "../src/sim/42-mail/deliver";
+import { importTick } from "../src/sim/42-mail/imports";
 import type { GameState } from "../src/sim/50-state";
 import { goggleReport } from "../src/sim/80-business/mail-provider";
 import { removeCompanyRecord, setCompanyRecord } from "../src/sim/90-actions/domains";
@@ -100,13 +101,16 @@ describe("Goggle Admin console", () => {
     expect(err(hire(s, c.id))).toBe("ok");
   });
 
-  it("migrates a mailbox's Inbox once and refuses FreeMix over IMAP before 2012", () => {
+  it("migrates a mailbox's mail after the run and refuses FreeMix over IMAP before 2012", () => {
     const s = live(6, "2011-03");
     const ada = user(s, "ada"), box = idOf(signUpGmix(s, { local: "old.box", title: "Old", password: "old-pw", plan: "pro" }));
     setExternalAccess(s, box, true);
     for (let i = 0; i < 3; i++) deliver(s, { to: "old.box@gmix.com", from: "n:Bank", kind: "bank", topic: "x" });
     expect(err(migrateMailbox(s, ada, { source: "old.box@gmix.com", password: "wrong", proto: "imap" }))).toBe("error.mailLogin");
     expect(err(migrateMailbox(s, ada, { source: "old.box@gmix.com", password: "old-pw", proto: "imap" }))).toBe("ok");
+    expect(inbox(s, ada).length).toBe(0);
+    s.hour = s.mail.imports[0].doneAt;
+    importTick(s);
     expect(inbox(s, ada).length).toBe(3);
     expect(inbox(s, box).length).toBe(3);
     expect(s.mail.fetch.length).toBe(0);

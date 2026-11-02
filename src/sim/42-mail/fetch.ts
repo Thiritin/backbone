@@ -9,8 +9,8 @@ export const FETCH_BATCH = 50;
 const num = (id: string): number => Number(id.replace(/\D/g, "")) || 0;
 
 // The error a rule meets at its source now, null when the source answers.
-export function fetchError(s: GameState, r: Pick<FetchRule, "source" | "proto" | "password">): string | null {
-  const st = serverStatus(s, r.source, r.proto, r.password);
+export function fetchError(s: GameState, r: Pick<FetchRule, "source" | "proto" | "password">, byHost = false): string | null {
+  const st = serverStatus(s, r.source, r.proto, r.password, undefined, byHost);
   return st === "ok" ? null : st === "auth" ? "error.mailLogin" : st === "external" ? "error.mailExternal" : st === "locked" ? "error.mailLocked" : "error.mailClosed";
 }
 

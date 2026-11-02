@@ -31,7 +31,7 @@ import { sitesDown, supports, vmById, vmOf, vmRoom, type Cluster } from "../src/
 import { buyDevice, connect, orderHomeLine } from "../src/sim/90-actions/hardware";
 import { mountDevice } from "../tests/plugged";
 import { mailedAddress } from "../src/sim/30-customers/addresses";
-import { confirmOrder, createAccount, offerUpgrade, provisionOrder, registerOrderDomain, renewDomain } from "../src/sim/90-actions/orders";
+import { confirmOrder, createAccount, offerUpgrade, provisionOrder, registerOrderDomain, renewDomain, sendOrderAccess } from "../src/sim/90-actions/orders";
 import { quoteOrder } from "../tests/fixtures";
 import { closeTicket, replyTicket, resolveTicket } from "../src/sim/90-actions/support";
 import { startGame } from "../src/sim/90-actions/start";
@@ -96,7 +96,7 @@ export function play(seed: number, months: number, upgrades = false, buy = true)
   // An order is quoted at the market price (or the counter), then worked by hand; the setup picks the first host with disk room.
   const doStep = (t: string, step: string, r: SalesRequest) =>
     step === "quote" ? quoteOrder(s, t, r.status === "countered" ? r.counter! : r.reference)
-      : step === "account" ? createAccount(s, t, mailedAddress(s.seed, r)) : step === "invoice" ? confirmOrder(s, t) : step === "domain" ? registerOrderDomain(s, t, s.customers.find((c) => c.id === r.customerId)?.address, r.owned ? authCode(s.seed, r.id) : undefined) : provisionOrder(s, t, hostFor(s, r) ?? "");
+      : step === "account" ? createAccount(s, t, mailedAddress(s.seed, r)) : step === "invoice" ? confirmOrder(s, t) : step === "domain" ? registerOrderDomain(s, t, s.customers.find((c) => c.id === r.customerId)?.address, r.owned ? authCode(s.seed, r.id) : undefined) : step === "provision" ? provisionOrder(s, t, hostFor(s, r) ?? "") : sendOrderAccess(s, t);
   // The model's steady capacity rule: another basement server once the cluster's RAM is 80% booked and cash allows.
   // Web hosting lives in panel VMs: one 80% full grows by 2 GB, or a new one starts next to it once its node is full.
   const ramFits = (deviceId: string, gb: number) => nodeUsed(s, deviceId).ramGb + gb <= bookable(s, s.devices.find((d) => d.id === deviceId)!).ramGb;

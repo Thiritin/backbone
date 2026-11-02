@@ -14,6 +14,7 @@ import { VIDEO_URL } from "../../../../../../sim/80-business/browser";
 import { gmixSuggestions } from "../../../../../../sim/80-business/mail-provider";
 import { feed } from "../../../../../../sim/80-business/news";
 import { acceptGmixOffer, deleteGmixMailbox, setGmixTier, signUpGmix } from "../../../../../../sim/90-actions/mail-provider";
+import { LeftBehind } from "../switching";
 import { changePassword, requestPasswordReset, resetPassword } from "../../../../../../sim/90-actions/mailbox";
 import { GMixMark } from "../../../../../art/mailmarks";
 import { useSessionState, writeSession } from "../../../../../session";
@@ -299,6 +300,7 @@ function Account({ game, to, account }: { game: GameState; to: To; account: Mail
   return (
     <section className="gx-page">
       <h1>{t("gmix.account.title")}</h1>
+      <LeftBehind game={game} tenantId={tenant.id} className="gx-error" />
       <table className="gx-facts">
         <tbody>
           <tr><th>{t("gmix.account.address")}</th><td>{address}</td></tr>

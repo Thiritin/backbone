@@ -76,6 +76,7 @@ export default {
   "error.quoteInvoiced": () => "Dieses Angebot ist schon weitergeführt.",
   "error.needsInvoice": () => "Bestätige zuerst die Bestellung und sende die Rechnung.",
   "error.needsDomain": () => "Registriere zuerst die Domain.",
+  "error.needsSetup": () => "Richte zuerst den Dienst ein.",
   "error.stepDone": () => "Dieser Schritt ist erledigt.",
   "error.domainTaken": () => "Diese Domain gehört einem anderen Kunden.",
   "error.unknownDomain": () => "Diese Domain ist für keinen aktiven Kunden registriert.",

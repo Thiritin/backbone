@@ -14,12 +14,12 @@ import { mxHostsAt, recordAt } from "../../../../../../sim/60-infra/company-zone
 import { registrarUrl } from "../../../../../../sim/80-business/browser";
 import { endTenant, resubscribe, setTenantPlan } from "../../../../../../sim/90-actions/mail";
 import { addOrgRule, signUpLookout, verifyLookout } from "../../../../../../sim/90-actions/mail-hosted";
-import { importMail } from "../../../../../../sim/90-actions/mail-provider";
-import { createMailAccount, deleteFilter, deleteMailAccount, requestPasswordReset, resetPassword, setAccountPassword } from "../../../../../../sim/90-actions/mailbox";
+import { createMailAccount, deleteFilter, deleteMailAccount, importMail, requestPasswordReset, resetPassword, setAccountPassword } from "../../../../../../sim/90-actions/mailbox";
 import { LookoutMark } from "../../../../../art/mailmarks";
 import { useSessionState, writeSession } from "../../../../../session";
 import { offerLogin, savedLogin } from "../../../../../vault";
 import { usePageAct } from "../../../pageAct";
+import { ImportRuns, LeftBehind } from "../switching";
 import "./lookout.css";
 
 // docs/design/plans/webmail-server.md, 7.2: the sign-up site and the admin center of Lookout 365.
@@ -361,17 +361,17 @@ function Trace({ game, tenant }: AdminProps) {
 
 function Migration({ game, tenant }: AdminProps) {
   const act = usePageAct(), boxes = openBoxes(game, tenant.id);
-  const [target, setTarget] = useState(boxes[0]?.id ?? ""), [source, setSource] = useState(""), [password, setPassword] = useState(""), [done, setDone] = useState(false);
+  const [target, setTarget] = useState(boxes[0]?.id ?? ""), [source, setSource] = useState(""), [password, setPassword] = useState("");
   return (
     <>
       <h1>{t("lookout.page.migration")}</h1>
-      <form className="lk-form" onSubmit={(e) => { e.preventDefault(); setDone(act(importMail, target, { source, password, proto: "imap" }).ok); }}>
+      <form className="lk-form" onSubmit={(e) => { e.preventDefault(); if (act(importMail, target, { source, password, proto: "imap" }).ok) { setSource(""); setPassword(""); } }}>
         <label>{t("lookout.migration.source")}<input name="source" value={source} onChange={(e) => setSource(e.target.value)} autoComplete="off" /></label>
         <label>{t("lookout.signup.password")}<input name="sourcePassword" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="off" /></label>
         <label>{t("lookout.migration.target")}<select name="target" value={target} onChange={(e) => setTarget(e.target.value)}>{boxes.map((a) => <option key={a.id} value={a.id}>{addressOf(a)}</option>)}</select></label>
         <button type="submit" className="lk-cta">{t("lookout.migration.start")}</button>
-        {done && <p className="lk-ok">{t("lookout.migration.done")}</p>}
       </form>
+      <ImportRuns game={game} into={boxes.map((a) => a.id)} className="lk-table" />
     </>
   );
 }
@@ -391,6 +391,7 @@ function Billing({ game, tenant }: AdminProps) {
         <button key={p} type="button" className="lk-quiet" onClick={() => act(setTenantPlan, tenant.id, p)}>{t("lookout.billing.switch", { plan: t(`lookout.plan.${p}`), price: euroCents(price(p, game.hour)) })}</button>
       ))}</div>
       <h2>{t("lookout.billing.cancelTitle")}</h2>
+      <LeftBehind game={game} tenantId={tenant.id} className="lk-error" />
       {tenant.endsAt !== null ? <button type="button" className="lk-quiet" onClick={() => act(resubscribe, tenant.id)}>{t("lookout.billing.reactivate")}</button>
         : asking ? (
           <p className="lk-confirm">{t("lookout.billing.cancelConfirm", { days: GRACE_DAYS.lookout })}
