@@ -116,7 +116,7 @@ describe("orders by email", () => {
     const s = readyGame(1);
     s.cash = 1e6;
     openShop(s);
-    s.unlocks = [...s.unlocks, "products", "provisioning"];
+    s.unlocks = [...s.unlocks, "shops", "provisioning"];
     expect(setAutoOrders(s, true).ok).toBe(true);
     // Without a module for the panel the shop order waits in Support.
     const waiting = orderLead(s, "private", "Frankfurt", [], web, false);

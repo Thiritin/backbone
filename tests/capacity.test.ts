@@ -80,16 +80,16 @@ describe("early capacity (docs/design/economy/README.md, Home line)", () => {
     expect(clusterRam(s)).toBeCloseTo(ram + 8, 6);
   });
 
-  it("teaches Product management as a tier 1 skill for 100 know-how in a week", () => {
-    const s = { ...readyGame(1), knowHow: 99 };
-    expect(research(s, "products").ok).toBe(false);
-    s.knowHow = 100;
+  it("teaches Shop systems as a tier 1 skill for 60 know-how in four days", () => {
+    const s = { ...readyGame(1), knowHow: 59 };
+    expect(research(s, "shops").ok).toBe(false);
+    s.knowHow = 60;
     const at = s.hour;
-    ok(research(s, "products"));
+    ok(research(s, "shops"));
     expect(s.knowHow).toBeCloseTo(0, 6);
     while (s.training) tick(s);
-    expect(s.unlocks).toContain("products");
-    expect(s.hour - at).toBe(7 * 24);
+    expect(s.unlocks).toContain("shops");
+    expect(s.hour - at).toBe(4 * 24);
   });
 
   it("loads a save from before the full-line flag", () => {

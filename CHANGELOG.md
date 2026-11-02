@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- The Product management research is gone, so Provisioning automation, Fraud screening, High availability, GPU computing, Traffic billing, Documentation and Market research now need Shop systems, and saves that learned it keep working.
 - OsTickit and FreeScoot are now installed by hand like the shop: download the archive from the vendor's site, upload and extract it into your web space, create the database and run the real installer, then log in to the staff panel with the account you chose.
 - Softaculus offers OsTickit under Customer Support from 2009, and a help desk from an older save gets its files, database and a mailed staff login.
 - Server groups in the shop are now a name, a list of servers with an Active switch and an order you can rearrange, and WHMCache, HostBull and Blessta let each group spread orders evenly or fill one server first.

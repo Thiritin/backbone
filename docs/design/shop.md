@@ -7,7 +7,7 @@ The website stays the marketing presentation of product lines (Marketing > Produ
 ## 1. What exists today
 
 - Orders arrive by email until a shop system is active. Every shop system needs the research "Shop systems". Orders that are not email orders are shop orders: they buy a shop product at its price and bill the setup fee plus the first term at once. With a shop and email orders on, 25% of order leads still write an email; email orders can only be switched off with an active shop. Leads that need a quote (a higher SLA, a high budget, a reseller block or a line the shop does not sell) arrive as quote requests in the shop admin instead of by email, with the same 25% email share while email orders are on; with email orders off nothing arrives by email. A shop quote request has no envelope in the mailbox, and its notification opens the shop admin's Quotes page.
-- `s.autoOrders` places shop orders through the shop's module, otherwise they wait in Support as accepted orders, and it runs accepted quotes without the player, gated by `canAutomate` (research "Provisioning automation", 150 know-how, needs "Product management").
+- `s.autoOrders` places shop orders through the shop's module, otherwise they wait in Support as accepted orders, and it runs accepted quotes without the player, gated by `canAutomate` (research "Provisioning automation", 150 know-how, needs "Shop systems").
 - A shop order that cannot be placed is cancelled (`lost.noCapacity`). Lost sales carry no reputation hit, but they fill the lost-sales list and the market research reasons, which reads as a penalty, and the player has no way to say "sold out".
 - `targetFor` (`src/sim/30-market/sales.ts`) picks any fitting software installation in any zone. There is no way to keep a server out of sales.
 - Cordon, uncordon and drain are in the Locations device menu, keyed by server, and `setNodeState` writes the state into every software installation on that server.
@@ -146,4 +146,3 @@ The vSphere gaps are not part of this build. Each can become its own task after 
 
 ## 8. Open questions
 
-- Should "Shop systems" research stay without prerequisite, or need "Product management"?
