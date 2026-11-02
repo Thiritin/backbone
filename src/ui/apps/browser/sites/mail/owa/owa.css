@@ -1,0 +1,62 @@
+/* Lookout Web Access and Web App: the 2003 blue bars in Tahoma, the 2007 silver gradients, the 2010 light blue chrome,
+   the flat white 2013 tiles in Segoe and the modern blue bar. */
+.owa { --owa-ink: #000; --owa-bar: #3a6ea5; --owa-bar-ink: #fff; --owa-side: #d6e3f5; --owa-line: #7f9db9; --owa-sel: #ffd78a; --owa-font: Tahoma, Verdana, sans-serif;
+  min-height: 100%; display: flex; flex-direction: column; background: #fff; color: var(--owa-ink); font: 11px/1.4 var(--owa-font); }
+.owa-2007 { --owa-bar: linear-gradient(#f3f6fb, #c4d4ea); --owa-bar-ink: #15428b; --owa-side: #eef3fa; --owa-line: #a5bfe1; --owa-sel: #c1d8f5; }
+.owa-2010 { --owa-bar: #e7eef8; --owa-bar-ink: #1f3d6a; --owa-side: #f6f9fd; --owa-line: #c6d6ec; --owa-sel: #c9def5; --owa-font: "Segoe UI", Tahoma, sans-serif; font-size: 12px; }
+.owa-2013 { --owa-bar: #fff; --owa-bar-ink: #0072c6; --owa-side: #fff; --owa-line: #e1e1e1; --owa-sel: #cde6f7; --owa-font: "Segoe UI Light", "Segoe UI", sans-serif; font-size: 13px; }
+.owa-web { --owa-bar: #0078d4; --owa-bar-ink: #fff; --owa-side: #faf9f8; --owa-line: #edebe9; --owa-sel: #deecf9; --owa-font: "Segoe UI", sans-serif; font-size: 14px; }
+.owa a { color: #0645ad; }
+.owa button { font: inherit; padding: 2px 10px; border: 1px solid var(--owa-line); background: #f4f4f4; cursor: pointer; }
+.owa-2013 button, .owa-web button { border-radius: 2px; background: #fff; }
+.owa button:disabled { color: #999; cursor: default; }
+.owa-bar { display: flex; gap: 16px; align-items: center; padding: 6px 12px; background: var(--owa-bar); color: var(--owa-bar-ink); }
+.owa-bar b { font-size: 15px; margin-right: auto; }
+.owa-bar a { color: var(--owa-bar-ink); }
+.owa-body { flex: 1; display: grid; grid-template-columns: 180px 1fr; min-height: 0; }
+.owa-folders { background: var(--owa-side); border-right: 1px solid var(--owa-line); padding: 8px; display: flex; flex-direction: column; gap: 8px; }
+.owa-folders ul { list-style: none; margin: 0; padding: 0; }
+.owa-folders li a { display: block; padding: 3px 6px; text-decoration: none; color: var(--owa-ink); }
+.owa-folders li.on a, .owa-folders li.over a { background: var(--owa-sel); }
+.owa-new { align-self: flex-start; font-weight: bold; }
+.owa-newfolder input { width: 100%; box-sizing: border-box; font: inherit; }
+.owa-main { min-width: 0; overflow: auto; }
+.owa-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); height: 100%; }
+.owa-pane { border-left: 1px solid var(--owa-line); padding: 8px 12px; overflow: auto; }
+.owa-tools { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; padding: 6px 8px; border-bottom: 1px solid var(--owa-line); }
+.owa-tools h2 { font-size: 1.2em; margin: 0 12px 0 0; }
+.owa-rows { width: 100%; border-collapse: collapse; }
+.owa-rows th { text-align: left; background: var(--owa-side); border-bottom: 1px solid var(--owa-line); padding: 3px 6px; font-weight: normal; }
+.owa-rows td { padding: 3px 6px; border-bottom: 1px solid var(--owa-line); cursor: default; }
+.owa-rows tr.unread td { font-weight: bold; }
+.owa-rows tr.on td { background: var(--owa-sel); }
+.owa-split .owa-rows tr { cursor: pointer; }
+.owa-empty { padding: 12px; color: #666; }
+.owa-read h2 { font-size: 1.4em; margin: 10px 0; }
+.owa-head { display: grid; grid-template-columns: max-content 1fr; gap: 2px 10px; margin: 0 0 10px; }
+.owa-head dt { color: #666; }
+.owa-head dd { margin: 0; }
+.owa-text { white-space: pre-wrap; border-top: 1px solid var(--owa-line); padding-top: 10px; }
+.owa-compose, .owa-form { display: flex; flex-direction: column; gap: 6px; padding: 8px; max-width: 720px; }
+.owa-compose label, .owa-form > label { display: grid; grid-template-columns: 90px 1fr; gap: 6px; align-items: center; }
+.owa-form > label:has(input[type="radio"]) { display: flex; }
+.owa input, .owa select, .owa textarea { font: inherit; border: 1px solid var(--owa-line); padding: 2px 4px; }
+.owa-tabs { display: flex; gap: 4px; list-style: none; margin: 0; padding: 8px 8px 0; border-bottom: 1px solid var(--owa-line); }
+.owa-tabs li a { display: block; padding: 4px 10px; text-decoration: none; }
+.owa-tabs li.on a { background: var(--owa-sel); }
+.owa-error { color: #c00; }
+.owa-ok { color: #080; margin-left: 8px; }
+.owa-login-page { align-items: center; justify-content: center; background: #4a78b5; }
+.owa-2007.owa-login-page, .owa-2010.owa-login-page { background: linear-gradient(#5c8bc6, #1e3f72); }
+.owa-2013.owa-login-page, .owa-web.owa-login-page { background: #fff; }
+.owa-login { width: min(420px, calc(100% - 32px)); margin: 48px auto; padding: 20px; background: #fff; border: 1px solid var(--owa-line); display: flex; flex-direction: column; gap: 8px; }
+.owa-login h1 { font-size: 20px; margin: 0 0 8px; color: #15428b; font-weight: normal; }
+.owa-2013 .owa-login h1 { font-size: 36px; color: #0072c6; }
+.owa-login label { display: flex; flex-direction: column; gap: 2px; }
+.owa-login .owa-check, .owa-login fieldset label { flex-direction: row; gap: 6px; align-items: center; }
+.owa-login fieldset { border: 1px solid var(--owa-line); display: flex; flex-direction: column; gap: 2px; }
+.owa-premium { color: #999 !important; text-decoration: none; display: flex; gap: 6px; align-items: center; cursor: pointer; }
+.owa-login button { align-self: flex-start; padding: 3px 18px; }
+.owa-web .owa-login button { background: #0067b8; color: #fff; border: 0; padding: 6px 28px; }
+@media (max-width: 640px) { .owa-body { grid-template-columns: 1fr; } .owa-split { grid-template-columns: 1fr; } .owa-pane { border-left: 0; border-top: 1px solid var(--owa-line); } }
+.owa-main > .owa-read { padding: 0 12px 12px; }

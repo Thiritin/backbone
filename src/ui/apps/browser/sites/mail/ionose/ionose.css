@@ -1,0 +1,53 @@
+/* Ionose: the 2005 1&1 look with its navy bar and Verdana, then the flat 2014 pages with the white bar and blue buttons. */
+.io { --io-ink: #222; --io-navy: #003d8f; --io-link: #003d8f; --io-box: #eef3fa; --io-line: #b9c9e0; --io-cta: #ff6600; --io-radius: 0; --io-font: Verdana, Arial, sans-serif;
+  min-height: 100%; background: #fff; color: var(--io-ink); font: 12px/1.5 var(--io-font); }
+.io-late { --io-ink: #001b41; --io-link: #11c; --io-box: #f4f7fa; --io-line: #dbe2e8; --io-cta: #0b2a63; --io-radius: 24px; --io-font: "Open Sans", Arial, sans-serif; font-size: 14px; }
+.io a { color: var(--io-link); }
+.io h1 { font-size: 20px; margin: 0 0 12px; color: var(--io-navy); }
+.io h2 { font-size: 14px; margin: 18px 0 8px; }
+.io code { font: 12px "Courier New", monospace; word-break: break-all; }
+.io-head { display: flex; align-items: center; gap: 16px; padding: 8px 16px; background: var(--io-navy); color: #fff; }
+.io-late .io-head { background: #fff; color: var(--io-ink); border-bottom: 1px solid var(--io-line); }
+.io-logo { display: flex; align-items: center; gap: 8px; color: inherit !important; text-decoration: none; font-size: 20px; }
+.io-mark { width: 28px; height: 28px; background: var(--io-navy); border: 1px solid #fff; border-radius: 4px; }
+.io-nav { display: flex; gap: 16px; margin-left: auto; flex-wrap: wrap; }
+.io-head .io-nav a { color: inherit; }
+.io-main { padding: 16px; max-width: 980px; margin: 0 auto; }
+.io-foot { padding: 12px 16px; font-size: 11px; color: #666; text-align: center; border-top: 1px solid var(--io-line); }
+.io-hero { padding: 28px 24px; background: var(--io-box); border: 1px solid var(--io-line); border-radius: calc(var(--io-radius) / 2); }
+.io-cta, .io button { display: inline-block; padding: 5px 16px; border: 1px solid var(--io-cta); border-radius: var(--io-radius); background: var(--io-cta); color: #fff !important;
+  font: bold 12px var(--io-font); text-decoration: none; cursor: pointer; }
+.io .io-quiet { background: #fff; color: var(--io-link) !important; border-color: var(--io-line); font-weight: normal; }
+.io .io-danger { background: #c00; border-color: #c00; }
+.io button:disabled { opacity: 0.5; cursor: default; }
+.io-buttons { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; align-items: center; }
+.io-table { border-collapse: collapse; width: 100%; margin: 8px 0; }
+.io-table th, .io-table td { padding: 5px 8px; border: 1px solid var(--io-line); text-align: left; vertical-align: top; }
+.io-table thead th, .io-plans tbody th { background: var(--io-box); }
+.io-form { display: flex; flex-direction: column; gap: 8px; max-width: 520px; }
+.io-form label { display: flex; flex-direction: column; gap: 2px; }
+.io-form .io-check, .io-choice label { flex-direction: row; align-items: center; gap: 6px; }
+.io-form input, .io-form select, .io-form textarea { font: inherit; padding: 3px 5px; border: 1px solid var(--io-line); border-radius: calc(var(--io-radius) / 4); }
+.io-inline { margin-top: 16px; padding: 12px; background: var(--io-box); border: 1px solid var(--io-line); }
+.io-addr { display: flex; align-items: center; gap: 4px; }
+.io-summary { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 8px 0; }
+.io-summary dt { font-weight: bold; }
+.io-summary dd { margin: 0; }
+.io-error { color: #c00; }
+.io-ok { color: #080; }
+.io-small { font-size: 11px; }
+.io-login { max-width: 420px; }
+.io-control { display: grid; grid-template-columns: 200px 1fr; gap: 16px; }
+.io-side { background: var(--io-box); border: 1px solid var(--io-line); padding: 10px; display: flex; flex-direction: column; gap: 10px; }
+.io-side h2 { margin: 0; font-size: 13px; word-break: break-all; }
+.io-side ul { list-style: none; margin: 0; padding: 0; }
+.io-side li a { display: block; padding: 4px 6px; text-decoration: none; }
+.io-side li.on a { background: var(--io-navy); color: #fff; }
+.io-panel { min-width: 0; overflow-x: auto; }
+.io-roles { display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.io-roles label { display: flex; gap: 3px; align-items: center; }
+.io-row-tools { white-space: nowrap; }
+.io-confirm { display: inline-flex; gap: 6px; align-items: center; }
+.io-steps li { padding: 4px 0; }
+.io-steps li.done { color: #080; text-decoration: line-through; }
+@media (max-width: 640px) { .io-control { grid-template-columns: 1fr; } }

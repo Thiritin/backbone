@@ -72,6 +72,8 @@ const plan = (p: Partial<MailPlan> & Pick<MailPlan, "id" | "from" | "price" | "q
   folderMax: FOLDER_CAP, filterMax: FILTER_CAP, collectors: 0, footer: null, pollGapMin: flat(0), ads: false, ...p,
 });
 const one: Steps<number | null> = [["2005-01", 1]];
+const ionosePrice = (y: number) => Math.max(6, 10 - 0.4 * (y - 2005));
+const ionoseQuota: QuotaAnchor[] = [["2005-01", 500], ["2009-01", 2 * GB], ["2013-01", 10 * GB], ["2016-01", 50 * GB]];
 
 export const MAIL_HOSTS: MailHost[] = [
   {
@@ -100,7 +102,11 @@ export const MAIL_HOSTS: MailHost[] = [
   {
     id: "ionose", from: 2005, webmail: "ionose", labels: false, serverFilters: "rules", aliasMax: 10, catchAll: true, autoconfig: true, sharedFree: false,
     servers: { imap: "imap.ionose.de", pop: "pop.ionose.de", smtp: "smtp.ionose.de" }, mx: ["mx00.ionose.de", "mx01.ionose.de"],
-    plans: [plan({ id: "exchange", from: "2005-01", price: (y) => Math.max(6, 10 - 0.4 * (y - 2005)), quota: [["2005-01", 500], ["2009-01", 2 * GB], ["2013-01", 10 * GB], ["2016-01", 50 * GB]], attachMb: flat(20) })],
+    // Basic keeps the id "exchange" that older saves carry; Business adds a euro per mailbox and doubles the quota.
+    plans: [
+      plan({ id: "exchange", from: "2005-01", price: ionosePrice, mailboxes: [["2005-01", 10]], quota: ionoseQuota, attachMb: flat(20) }),
+      plan({ id: "business", from: "2005-01", price: (y) => ionosePrice(y) + 1, mailboxes: [["2005-01", 100]], quota: ionoseQuota.map(([m, mb]): QuotaAnchor => [m, 2 * mb]), attachMb: flat(20) }),
+    ],
   },
   {
     id: "lookout", from: 2011, webmail: "lookout", labels: false, serverFilters: "rules", aliasMax: 50, catchAll: true, autoconfig: true, sharedFree: true,

@@ -73,7 +73,7 @@ export function siteIndex(s: GameState): Category[] {
     { title: t("sim.index.cat.marketing"), rows: [row(FLYER_NAME, `${displayHost(FLYER_HOST)}/`, t("sim.index.flyers")), row(AGENCY_TITLE, AGENCY_URL, t("sim.index.agency"))] },
     { title: t("sim.index.cat.community"), rows: [row(BOARD_TITLE, BOARD_URL, t("sim.index.board")), row(HOSTTOAST, `www.${HOSTTOAST_HOST}/`, t("sim.index.hosttoast"))] },
     { title: t("sim.index.cat.hardware"), rows: VENDORS.filter((m) => vendorLive(m, monthIndexOf(s.hour))).map((m) => row(m.name, `${displayHost(vendorHost(m.id))}/`, m.kinds.map((k) => t(`sim.index.kind.${k}`)).join(", "))) },
-    { title: t("sim.index.cat.mailProviders"), rows: [row("GMix", mailSiteUrl("gmix"), t("sim.index.gmix")), row("Goggle", mailSiteUrl("goggle"), t("sim.index.goggle"))] },
+    { title: t("sim.index.cat.mailProviders"), rows: [row("GMix", mailSiteUrl("gmix"), t("sim.index.gmix")), row("Goggle", mailSiteUrl("goggle"), t("sim.index.goggle")), row("Ionose", mailSiteUrl("ionose"), t("sim.index.ionose"))] },
     { title: t("sim.index.cat.colocation"), rows: PROVIDERS.map((p) => row(p.name, providerUrl(p.id), [...new Set(DATACENTERS.filter((d) => d.provider === p.id).map((d) => d.city))].join(", "))) },
     { title: t("sim.index.cat.used"), rows: CHANNELS.map((c) => row(c.name, marketUrl(c.id), t(`sim.index.market.${c.id}`))) },
     { title: t("sim.index.cat.video"), rows: [row("YouTub", VIDEO_URL, VIDEO_TITLE)] },
