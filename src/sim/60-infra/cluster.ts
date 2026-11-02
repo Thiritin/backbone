@@ -121,8 +121,8 @@ export interface Workload extends Resources, Partial<MachineState> {
   // HyperVee: the virtual switch the adapter is plugged into; missing or null is the cluster's default switch (vswitch.ts).
   switchId?: string | null;
   // OpenVeeZee: failcnt per beancounter, the most RAM held, the extra RAM allowed while the node has room, hours of failing
-  // in a row, failcounts today, and a live checkpoint (beancounters.ts).
-  failcnt?: Record<string, number>; maxheld?: number; burstGb?: number; failStreak?: number; failDay?: number; frozen?: boolean;
+  // in a row, a live checkpoint and the hour the OOM killer lets the container start again (beancounters.ts).
+  failcnt?: Record<string, number>; maxheld?: number; burstGb?: number; failStreak?: number; frozen?: boolean; oomUntil?: number;
   // Own VMs only: the port macros the VM lets through (exposure.ts); missing or null is no firewall.
   firewall?: Firewall | null;
   // Horizont: the security groups of the instance (horizont.ts); missing is none.
@@ -162,6 +162,7 @@ export const clusterDefaults = (c: Partial<Cluster> & Pick<Cluster, "nodes">, ho
   ...(c.licence || c.panel || !topTier(c.platform ?? null) ? {} : { licence: { tier: topTier(c.platform ?? null)!.id, trialUntil: null, lapsedAt: null } }),
   controlPlane: c.controlPlane === undefined ? c.nodes[0]?.deviceId ?? null : c.controlPlane,
 }) as Cluster;
+export const oomKilled = (w: Workload, hour: number): boolean => (w.oomUntil ?? 0) > hour;
 export const workloadDefaults = (w: Partial<Workload>): Workload => ({ stopped: false, busyUntil: 0, backupAt: null, ...w }) as Workload;
 
 const ZERO: Resources = { vcpu: 0, ramGb: 0, diskGb: 0 };
@@ -538,7 +539,7 @@ export const sitesDown = (s: GameState, hostId: string): boolean => s.security.o
 // A web space in a panel VM is up while the VM is. Colocation is up while its rack has power.
 // ponytail: colocation ignores the customer's uplinks until colocation cabling lands.
 export function workloadOnline(s: GameState, w: Workload): boolean {
-  if (w.stopped || w.frozen || w.busyUntil > s.hour) return false;
+  if (w.stopped || w.frozen || w.busyUntil > s.hour || oomKilled(w, s.hour)) return false;
   const c = w.clusterId ? s.clusters.find((x) => x.id === w.clusterId) : undefined;
   if (c?.switching) return false;
   if (c && (c.kind === "panel" ? sitesDown(s, c.id) : s.security.hacked.includes(c.id))) return false;
