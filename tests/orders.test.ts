@@ -9,7 +9,7 @@ import { provisionService } from "../src/sim/90-actions/clusters";
 import { quoteOrder, setAutoOrders } from "../src/sim/90-actions/orders";
 import { buyModule } from "../src/sim/90-actions/shop";
 import { moduleFor } from "../src/sim/80-business/shop";
-import { hire } from "../src/sim/90-actions/staff";
+import { hire } from "./fixtures";
 import { openShop, readyGame } from "./fixtures";
 import { closeTicket, resolveTicket } from "../src/sim/90-actions/support";
 import { deserialize, serialize } from "../src/sim/91-save/save";

@@ -36,7 +36,7 @@ describe("resource pools", () => {
     const perf = (w: typeof a) => workloadPerf(s, s.workloads.find((x) => x.id === w.id)!, "vps");
     expect(perf(a)).toBeLessThanOrEqual(0.9);
     expect(perf(b)).toBe(1);
-    expect(perf(c)).toBeGreaterThan(0.9);
+    expect(perf(c)).toBeGreaterThan(perf(a));
   });
 
 

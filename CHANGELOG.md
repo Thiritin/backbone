@@ -6,12 +6,50 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - Customers no longer buy SSL certificates on their own until your shop sells them; before that, the few who want one write in and you quote an SSL upgrade to their web hosting, and offices, shops and enterprises ask far more often than small sites.
 - Every SSL certificate you sell is now bought from the certificate authority VeriSigh at close to its market price, so certificates earn a small margin.
+- Every cPanic customer account now has its own files, databases, mailboxes and limits on databases, FTP accounts and domains, which its customer pages show.
+- Your own virtual machines now take their operating system's time to boot, shut down and restart, and an open SSH session sees the shutdown broadcast before it is disconnected.
+- Shutting down, restarting or checkpointing a virtual machine now asks for confirmation first, and a checkpointed container keeps its last picture on the console.
+- Customer websites now have their own look: layouts, colour schemes and page blocks differ per customer and get redesigned as the years pass, so the first 30 customers never share a page.
+- The customer page and the defaced-sites list have an Open site button that shows the customer's site in the Browser.
+
+- A server with failed fans now runs its CPU hot under load: from 85 °C it slows down, and every hour above 90 °C wears its parts.
+- You can order cross-connects to carriers and exchanges in a provider's customer portal, and once a year a provider raises its rack prices for new contracts and tells its customers by email.
+- Dragging a browser tab out of its window now opens it in a new browser window, and dragging a tab onto another browser window moves it there.
+- SkyBlink, Boris Network, Digital Reality, CoreSpite, Telex and myLoch now each have a website in their own style, which changes from an early look to a modern one over the years.
+- SquirrelMeal is now configured over SSH with its real menu-driven configure script, which saves config.php on the server; until then the webmail shows its missing configuration error, and the configuration test reports what the saved configuration holds.
+- Busy servers now slow down gradually from 70% CPU instead of all at once at 100%, and only a server that stays badly overloaded for two hours lets its sites time out.
+- A server that runs out of memory no longer freezes with every workload on it: it slows down while it swaps, and past that only its largest VM is killed for an hour.
+- The web hosting panels no longer resize, remove or take the whole host offline and no longer set booking limits; the host's software page now restarts the server, and updates, the release channel and auto updates sit on their own Updates page where the panel supports them.
+- Web hosting panels gain a Services page to restart single services, a Components page to pick the mail, FTP and web server and install paid modules, and a Backup Manager that lists backups and restores single sites, which takes time and needs the backup server online.
+- Servers now draw power and heat up by how busy their CPUs are, and the server management page shows the CPU temperature and fans that speed up with it.
+- Bound, Knut DNS, WireGuarded, vsFTPeed, Postfixit and Backula no longer show a web page in the browser, and Backula's finished jobs and restores of lost machines now run from its command line tool in the terminal.
+- The command line tools of free software no longer list license commands or a license key option.
+- The Terminal editor shows light text on a dark background again instead of white on white.
+- Cancelling an invoice draft in the bookkeeping program now asks before it deletes the draft, and the Up and Down keys move through the invoices, quotes, bank bookings and customers.
+- The Mark as paid dialog now lists the open transfers in a list to pick from, and long names in the bank list no longer push the Accept button out of view.
+- The Terminal now finds a basement server by its name when it sits behind your own router, the same way it finds your VMs.
+- Every training in Research now has a How it works guide you can open before you start it, and each guide lists what the training unlocks and where to find it.
+- Every virtualization console now shows a VM's or container's public IP address next to its local one, and the VMwhere VM list has an IP address column.
+- A busy OpenVeeZee node no longer racks up memory failures from CPU load alone, and when it runs out of memory the OOM killer now stops only the largest container for an hour, shown as "OOM killed".
+- Slow sites now bother business customers most during business hours and more the longer the slowdown lasts, while private customers barely notice.
+- The new Traffic billing training lets you set one standing answer for customers who go over their traffic, and your books then throttle, bill or offer an upgrade every day on their own.
+- When a customer's traffic outgrows their plan, their customer page now lets you throttle the traffic, bill the overage or offer them a bigger plan.
+- Defaced customer sites now appear in the Security app, where you restore them from a backup, offer a paid clean-up billed at your hourly rate, remind the owner to clean up, or suspend the site with a notice that names the hack, and a clean site comes back online by itself.
+- Customers with a defaced site and no backup can buy a clean-up by the hour; the dearer your rate against the market, the more of them say no and some cancel.
+- Stopping a server or freezing a container now frees its memory, and OpenVeeZee containers take only the memory they actually use and are set up straight from an OS template without an install disc.
+- Right-clicking an invoice in the bookkeeping program now offers what its status allows: sending or cancelling a draft, marking it paid against a transfer or without one, sending the next dunning step, suspending, writing off and reopening.
+- The dunning levels overview is now part of the top editions only; every other edition handles reminders from the invoice list.
+- Help desks now list the domain records to add at your registrar for your support address and mail sending, show which of them already resolve, and check them all with a Verify button.
+- Each product listed on the company website now has its own switch for custom requests; with it off, visitors order the shop plans only, and the website says when custom packages are available.
 - The Research app now lists exactly what each training switches on, every entry takes you to where it is used, and an entry that depends on software names that software.
 - Your registrar's login now has a Register page where you order further domains of your own, and every domain has a page where you set its name servers: a domain parked at the registrar shows its parking page in the browser, one on your own name servers reaches your site, and a change takes an hour to spread.
 - Interaction, mainqubes, Tellyhouse, Global Snitch, Docklands Data and Iron Molehill now have their own websites in the style of their companies, with an early look and a modern one that arrives in later years.
 - Data5, NTD, Spree Colo, Arubaba, Next Lair and Green.chz now each have their own website, with one look in the early years and a modern one later.
+- Every hire now gets a mailbox under your company domain, so you can only hire once your domain mail has a free mailbox, and providers bill each mailbox.
+- Mail passwords can now be changed, and a forgotten one is reset with a code that arrives by post after two or three working days.
 - Every colocation provider's site now has a customer portal where you sign in to see your contracts, invoices and remote-hands tickets, book extra power, feed B and power contracts, and cancel a contract with its notice date, and the large providers offer a free month to stay.
 - Colocation provider sites now keep their own layout, including their facility lists and front page banner, after the Shop app has been opened.
+- Custom orders no longer offer to create the customer account before the customer has accepted the quote.
 - Colocation provider sites now keep their own layout after the Shop app has been opened.
 - Support desks now keep the numbers for their reports: first response times, how many tickets met the response time each customer expects, and tickets per agent, kind and month.
 - Every colocation provider now has its own website in the browser, listed on Yahoy, where you compare its data centers and prices, join a waitlist and order space, and the Visit site button in Locations opens that order form with your pick.
@@ -26,9 +64,13 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Ticket replies, retention offers and ticket actions are now built so the coming mail client can show them too.
 - Every company now holds a real mailbox on its mail service, with its own password and a welcome message from the provider.
 - Your registrar's login now has a DNS page for your company domain, where you add, edit and delete records such as MX and TXT, and each change reaches the world once the TTL of the record it replaces has run out.
+- Every abuse notice links to the reported address, and the Browser shows whether the file, mailer or page is really there before you decide.
+- Hosting panels, hypervisors and backup servers now take realistic CPU, RAM and disk, and panels and hypervisors need more RAM and disk each year.
+- Your own mail server now needs disk for every company mailbox it holds, while the webmail and mail admin tools take only a sliver of a server.
 
 ## 2026-11-01
 
+- Books product forms now show proper names for the semiannual and triennial billing periods.
 - A transfer to an account that does not exist now comes back within a few days, and a payment without an invoice number goes to the sender's oldest open invoice, at your suppliers and, when matching by reference is on, in your books.
 - The bank in your books lists money in and out with a suggested invoice to accept, and supplier invoices count as paid there once a payment is assigned to them, which you can undo and assign again.
 - Play immersive in the main menu runs the game in full screen with keyboard shortcuts such as Cmd+Tab and Alt+Tab kept inside the game, where they switch between windows, and Log out in the top left menu leaves it.

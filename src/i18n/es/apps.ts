@@ -21,4 +21,10 @@ export default {
   "error.noBackup": () => "Este sitio no tiene copia de seguridad que restaurar.",
   "error.unknownVulnerability": () => "Esta vulnerabilidad no se conoce.",
   "error.nobodyToNotify": () => "No hay clientes a los que avisar.",
+  "ticket.howTo.abuseHold.subject": () => "¿Por qué está suspendido mi sitio web?",
+  "ticket.howTo.abuseHold.text": (p) => `Escribiste que ${p.domain || "mi sitio web"} fue hackeado y envía spam, y lo suspendiste. ¿Qué tengo que hacer para que vuelva a estar en línea?`,
+  "outcome.cleanSold": () => "Limpieza vendida",
+  "ledger.siteCleanup": (p) => `Limpieza de ${p.site}, ${p.hours} h`,
+  "error.alreadyOffered": () => "El cliente ya rechazó esta oferta.",
+  "error.alreadyReminded": () => "Ya se avisó al cliente.",
 } satisfies Dict;

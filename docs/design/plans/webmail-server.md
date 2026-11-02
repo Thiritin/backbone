@@ -49,15 +49,15 @@ The front ends are new software of a new kind `mailweb`. `kind: "mail"` stays th
 
 | Id | Name | From | OS | Ports | Install | Control plane | Licence |
 |---|---|---|---|---|---|---|---|
-| `squirrelmeal` | SquirrelMeal | 2005 | lunix | 80, 443 | `apt-get install -y squirrelmeal` | 0.25 vCPU, 0.5 GB, 1 GB | free |
-| `postfixitadmin` | Postfixit Admin | 2005 | lunix | 80, 443 | `apt-get install -y postfixitadmin` | 0.25 vCPU, 0.5 GB, 2 GB | free |
+| `squirrelmeal` | SquirrelMeal | 2005 | lunix | 80, 443 | `apt-get install -y squirrelmeal` | 0.05 vCPU, 0.1 GB, 0.1 GB | free |
+| `postfixitadmin` | Postfixit Admin | 2005 | lunix | 80, 443 | `apt-get install -y postfixitadmin` | 0.05 vCPU, 0.1 GB, 0.5 GB | free |
 | `squarecube` | Squarecube | 2008 | lunix | 80, 443 | `apt-get install -y squarecube` | 0.25 vCPU, 0.5 GB, 2 GB | free |
 | `sogoat` | SOGoat | 2009 | lunix | 80, 443, 20000 | repo line, `apt-get update`, `apt-get install -y sogoat` | 1 vCPU, 2 GB, 10 GB | free |
 
 - The four share one web server, so `conflict(a, b)` ignores a shared port when both are of kind `mailweb`, and they answer under different paths. Mailpig and every web panel bind 80 and 443 for themselves, so the existing rule refuses a front end beside them. Mailpig does not need one, since it carries its own admin and SOGoat.
 - The `apt-get install` output lists the dependencies by year: the web server, the PHP package named by `phpAt(year)` for the PHP front ends, the database driver and `dbconfig-common`. SOGoat lists its database and cache.
 - Postfixit's install pulls in Dovecoat. Its ports gain 110, 143, 993 and 995, and the install output lists the Dovecoat packages. This is what makes a Postfixit server an IMAP host for `mail-core`, whose provider table says Postfixit offers IMAP and POP "once the server runs Dovecoat".
-- A cluster of kind `mailweb` carries `backend: string | null`, the id of the own-server mail cluster it talks to. The install takes the mail cluster on the same machine; without one, the setup page asks. When the backend is gone or its control plane is down, login shows the connection error of the product.
+- A cluster of kind `mailweb` carries `backend: string | null`, the id of the own-server mail cluster it talks to. The install takes the mail cluster on the same machine; without one, it names the company's mail server, and conf.pl changes it. When the backend is gone or its control plane is down, login shows the connection error of the product.
 - A front end serves the accounts of the own-server tenant and never fronts GMix, Goggle or the hosted providers.
 - Versions come from the lists in sections 3, 4 and 6. The development line of SquirrelMeal (rows named `devel`) is taken only by the Edge channel of the existing `channel` command; Stable and Release skip it.
 - Adding the kind touches `SERVES` in `platforms.ts`, `EXTRAS` in `vendor-cli.ts` (an empty command list), `VULN_RATE` in `vulns.ts` (rate 2, like panels), `needs()` in `exposure.ts` (the web macro), the kind labels in `products/parts.tsx` and `consoleLook`.
@@ -142,11 +142,20 @@ What follows from that:
 | Havelsieve | third party, offered when the server has Sieve | server-side filters in the same form as Squarecube's, so they run on delivery | `saveFilter` |
 | SquirrelSpelt | bundled | a spell check button in Compose; cosmetic | none |
 
-The Plugins list is an administrator choice in the setup menu. A plugin that is switched off has no entry in Options.
+The Plugins list is an administrator choice in conf.pl. A plugin that is switched off has no entry in Options.
 
-### 3.5 Setup menu and configuration test
+### 3.5 conf.pl and configuration test
 
-A fresh install opens the setup menu, drawn as the numbered text menu of the real configuration tool inside a monospace page: Organization Preferences (name, logo), Server Settings (domain, IMAP server and port, SMTP server and port), Folder Defaults (Trash, Sent, Drafts), General Options, Themes, Address Books, Plugins, Language. Every value is prefilled with the local mail server, so the player can leave with a few keystrokes. A wrong IMAP server gives the login error above. The configuration test page lists PHP, the paths and "Checking IMAP service.. OK" or the failure, and is the diagnostic for a front end that cannot sign in. The setup menu calls `configureWebmail`.
+SquirrelMeal is configured over ssh, as the real one is. `sudo squirrelmeal-configure` (the Debiant wrapper) or the full path `/usr/share/squirrelmeal/config/conf.pl` (also run as `perl <path>`) opens the menu-driven configuration script in the Terminal or a machine's console. With arguments, `squirrelmeal-configure` stays the vendor tool every software has (version, status, update).
+
+- The main menu lists Organization Preferences, Server Settings, Folder Defaults, General Options, Themes, Address Books, Message of the Day (MOTD), Plugins, Database and Languages, then D for the IMAP server presets, S to save and Q to quit. The title reads `config_default.php` until the first save, then `config.php`. Every screen redraws with a clear, as the real script does.
+- Server Settings shows Domain and Invert Time, with A and B opening the IMAP settings (server, port, authentication type, TLS, server software, delimiter) and the SMTP settings (server, port, POP before SMTP, authentication, TLS, header encryption key); H hides them again. The core items print the real help text before the `[value]:` prompt; true or false items ask `(y/n)`.
+- D lists the presets Currier, Cyrrus, Dovecoat, Macrosoft Exchainge and University of Washingtown and prints each value it sets (`imap_server_type`, the folder prefix, the Trash, Sent and Drafts folders, the delimiter), then "Press enter to continue...".
+- S prints "Data saved in config.php". Q with unsaved changes asks "Save? [Y/n]:" and then prints the real goodbye that points to `src/configtest.php`.
+- Saving runs `configureWebmail`, which sets the install's values and `Cluster.backend`, and then `editFiles`, which writes `/etc/squirrelmeal/config.php` into the machine's file system. Values outside the six core fields live in `WebmailInstall.conf` by config.php variable name; `CONF_ITEMS` in `80-business/webmail.ts` holds the items and their `config_default.php` values. The state stays the source of truth: hand edits to config.php are not read back.
+- Every value is prefilled with the local mail server, so the player can save and quit with a few keystrokes. A wrong IMAP server gives the login error above.
+- Until conf.pl has saved once (`Cluster.setupPending`), every SquirrelMeal page in the Browser shows the error box "Config file ../config/config.php is not found. You need to configure SquirrelMeal before you can use it."
+- `src/configtest.php` reports what the saved configuration holds: the config version, the data and attachment directories, the plugins, the default language and charset, the SMTP server and the IMAP server with its port and server type, or the failure. It is the diagnostic for a front end that cannot sign in.
 
 ## 4. Squarecube
 
@@ -233,7 +242,7 @@ s.webmail: {
 }
 ```
 
-Milestone 1 builds `installs` and `default` only. An install holds what the setup menu sets: `productName`, `domain`, `imapHost`, `imapPort`, `smtpHost`, `smtpPort` and `plugins`; the IMAP server it names decides `Cluster.backend`. `installerOpen`, `users`, `servers` and `subs` come with the milestones that use them.
+Milestone 1 builds `installs` and `default` only. An install holds what conf.pl sets: `productName`, `domain`, `imapHost`, `imapPort`, `smtpHost`, `smtpPort`, `plugins` and the other config.php values in `conf`; the IMAP server it names decides `Cluster.backend`. `installerOpen`, `users`, `servers` and `subs` come with the milestones that use them.
 
 `newGame` sets `webmail` to empty records and `deserialize` spreads it, so old saves load with no installs and no data. A user's entry is created on first sign-in with one identity from the account (title, address) and the defaults of the installed version. The backend id sits on the cluster (2.1). SOGoat keeps its calendar and address books under a `groupware` key per user, added in milestone 10. `Identity`, `Contact`, `ContactGroup` and `WebmailPrefs` are defined in `src/sim/80-business/webmail.ts`.
 
@@ -369,7 +378,7 @@ Web mail at `mail.lookout365.macrosoft.com`, always the current generation: the 
 Gameplay, because it changes delivery, money, risk or what the player can do:
 
 - Installing, upgrading and removing a front end: resources, port conflicts, version age, vulnerabilities, and the loss of the front end's own data.
-- Pointing the front end at the right backend in the setup page. A wrong IMAP server makes login fail.
+- Pointing the front end at the right backend in conf.pl over ssh. A wrong IMAP server makes login fail.
 - Creating and removing mailboxes, aliases, forwarders and the catch-all, and the seat bill and slots at the providers. A separate `info@` decides where licence orders land.
 - Passwords: the saved login in KeePassive, the reset in the admin on the own server and the letter at the providers.
 - Quotas, because a full mailbox bounces mail.
@@ -393,7 +402,7 @@ Each milestone is one pull request with its seeded tests and one or two changelo
 ### Milestone 1: front ends as installable software, SquirrelMeal first
 
 - Sim: the `mailweb` kind and the files in 2.1; the `conflict` exemption; catalog entries `squirrelmeal` and `postfixitadmin`; Postfixit's new ports and the Dovecoat package lines; `Cluster.backend`; the SquirrelMeal version line with its `devel` rows and the Edge rule; `WEBMAIL` rows; `installedWebmail` and `selfHostCaps`; `site()` entries; the routing of 2.3 (`webmail.<domain>`, the path table, `providerDomain`); `s.webmail` default and fill in `deserialize`; `configureWebmail` and `setWebmailDefault` in `90-actions/mail-server.ts`; `setupPending` on the new cluster.
-- UI: the SquirrelMeal and Postfixit Admin software sites on the `SoftwareSite` frame (home, download with the install lines, versions, news with the 2007 break-in); the console entries showing the setup menu and the configuration test, and the SquirrelMeal login page.
+- UI: the SquirrelMeal and Postfixit Admin software sites on the `SoftwareSite` frame (home, download with the install lines, versions, news with the 2007 break-in); conf.pl in the Terminal, the console entries showing the missing-config error and the configuration test, and the SquirrelMeal login page.
 - i18n: site copy `sim.site.squirrelmeal.*` and `sim.site.postfixitadmin.*`, setup and login strings in `ui-mail-server.ts`; `swnews.squirrelmeal.<version>` and `swnews.postfixitadmin.<version>` for every version in `ui-releases-mail.ts`, next to the other release news.
 - Tests: `tests/webmail-install.test.ts`. A seeded game installs SquirrelMeal on a Postfixit machine; it is refused beside Mailpig and a panel; the newest stable version for a given month is installed and Edge takes `devel`; `webmail.<domain>` resolves; `installedWebmail` returns it; an old save loads with an empty `webmail`.
 
@@ -483,7 +492,7 @@ Taken here, with the reason; each is open to change.
 
 - Skin eras follow the real releases (Classic to 0.7, Barry from August 2012, Plastic from November 2019), and the SOGoat look changes at 3.0 in January 2016, because those are the dates the vendors' pages give.
 - The Premium and Light joke has teeth. From 2005 to 2012 the Browser gets Basic or Light with no preview pane, drag and drop, spell check or rules, and folders can still be created. Pear Mail is the answer to the limits.
-- The Squarecube installer and the SquirrelMeal setup menu are required first visits with prefilled values, and an installer left enabled raises the exposure of the host.
+- The Squarecube installer and SquirrelMeal's conf.pl are required first steps with prefilled values, and an installer left enabled raises the exposure of the host.
 - Havelsieve and Message Filters differ on purpose: one runs on delivery, the other only when the player logs in.
 - Hosted providers have two plans each, with a mailbox cap, so the hire rule has something to bite.
 

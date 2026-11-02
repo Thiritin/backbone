@@ -5,7 +5,6 @@ import type { SimEvent } from "../88-tick/tick";
 import { renumber, renumberError } from "./addresses";
 import { pickNode, type Cluster, type Workload } from "./cluster";
 import { LAN_GB_PER_HOUR, moveGbit } from "../85-products/products";
-import { freezeTick } from "./usage";
 
 // economy.md, Workloads and migration: a web space moves between panel hosts as a hand task. Hours are a base (2 within the
 // same panel, 4 between different ones) plus 3 minutes per GB of web storage, halved by a migration tool; the site is
@@ -49,7 +48,6 @@ export function migrationTick(s: GameState): SimEvent[] {
       s.services = s.services.map((x) => (x.id === v.id ? { ...x, zone: to.az } : x));
       if (locs[0] && locs[1]) renumber(s, [v.id], locs[0], locs[1], () => !!w.migrating!.announced);
     }
-    freezeTick(s);
     events.push({ app: "Locations", key: "event.migrated", params: { service: v.label, cluster: to.name } });
   }
   return events;

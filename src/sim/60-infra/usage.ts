@@ -10,13 +10,13 @@ import { bump, createTicket, isFinal } from "../40-support/tickets";
 import { serviceHeld } from "../45-billing/billing";
 import type { Device, End, GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
-import { booked, clustersOn, controlPlanesOn, controlPlaneUp, controlPlaneUse, hostsOfVm, insideVm, isOwnVm, lostDisk, nodeVcpu, workloadsOf, workloadsOn, type Workload } from "./cluster";
+import { booked, liveRam, oomKilled, clustersOn, controlPlanesOn, controlPlaneUp, controlPlaneUse, hostsOfVm, insideVm, isOwnVm, lostDisk, nodeVcpu, workloadsOf, workloadsOn, type Workload } from "./cluster";
 import { serviceMbps } from "./network";
 import { interestAt, modById, titleById } from "../10-catalog/games";
 import { fillOf } from "../30-customers/resellers";
 import { machineScreen } from "./oob";
-import { installedRamGb, portPeers, raidUsable, working } from "./status";
-import { THERMAL, throttled } from "./thermal";
+import { cpuLoad, installedRamGb, portPeers, raidUsable, working } from "./status";
+import { heatOf } from "./thermal";
 
 // economy.md: memory stays mostly resident, disks fill from 30% of booked at signup at the customer's growth rate up to the booked limit.
 const RAM_BASE = 0.6;
@@ -35,7 +35,7 @@ const demand = (s: GameState, v: Service, hour: number) => 1 + growthRate(s.seed
 export const HELD_LOAD = 0.02;
 
 export function workloadLoad(s: GameState, w: Workload, hour: number): number {
-  if (w.stopped || w.busyUntil > hour || lostDisk(s, w)) return 0;
+  if (w.stopped || w.busyUntil > hour || oomKilled(w, hour) || lostDisk(s, w)) return 0;
   const v = s.services.find((x) => x.id === w.serviceId), c = v && s.customers.find((x) => x.id === v.customerId);
   if (!v || !c) return 0;
   if (serviceHeld(s, v)) return HELD_LOAD;
@@ -98,7 +98,7 @@ export function workloadUse(s: GameState, w: Workload, hour: number = s.hour): R
   if (isOwnVm(w)) {
     const hosts = hostsOfVm(s, w.id), u: Resources = { vcpu: 0, ramGb: 0, diskGb: 0 };
     if (w.stopped || lostDisk(s, w)) return u;
-    const parts = [...hosts.map(controlPlaneUse), ...insideVm(s, w.id).map((x) => workloadUse(s, x, hour)), osUse(s, w.id, w.vcpu, w.ramGb, hour)];
+    const parts = [...hosts.map((h) => controlPlaneUse(s, h)), ...insideVm(s, w.id).map((x) => workloadUse(s, x, hour)), osUse(s, w.id, w.vcpu, w.ramGb, hour)];
     for (const p of parts) { u.vcpu += p.vcpu; u.ramGb += p.ramGb; u.diskGb += p.diskGb; }
     return u;
   }
@@ -106,19 +106,47 @@ export function workloadUse(s: GameState, w: Workload, hour: number = s.hour): R
   const load = workloadLoad(s, w, hour), lost = lostDisk(s, w), mods = modLoad(s, w.serviceId), busy = Math.min(1, load * mods);
   const fill = fillOf(s, w.serviceId);
   const grow = (k: "vcpu" | "ramGb" | "diskGb") => fill * (w.promised && w[k] > 0 ? w.promised[k] / w[k] : 1);
-  return { vcpu: booked(s, w).vcpu * grow("vcpu") * load * mods, ramGb: w.stopped || lost ? 0 : w.ramGb * grow("ramGb") * (RAM_BASE + (1 - RAM_BASE) * busy), diskGb: lost ? 0 : w.diskGb * grow("diskGb") * diskFill(s, w, hour) };
+  return { vcpu: booked(s, w).vcpu * grow("vcpu") * load * mods, ramGb: w.stopped || lost || oomKilled(w, hour) ? 0 : w.ramGb * grow("ramGb") * (RAM_BASE + (1 - RAM_BASE) * busy), diskGb: lost ? 0 : w.diskGb * grow("diskGb") * diskFill(s, w, hour) };
 }
 
-// What a node physically has and uses at an hour, and the performance its workloads get: CPU contention slows everyone by
-// cores ÷ busy vCPUs, a disk pool over 100% stalls writes to 50%. RAM over 100% freezes the node instead (freezeTick).
+liveRam.of = (s, w) => workloadUse(s, w).ramGb;
+
+// What a node physically has and uses at an hour, and the performance its workloads get: CPU load slows everyone along
+// cpuPerf, a disk pool over 100% stalls writes to 50%, a full-VM node past its RAM swaps.
 // economy.md, RAID: the share of its performance a node keeps while its array rebuilds, by rebuild rate.
 export const REBUILD_PERF = { low: 0.95, medium: 0.8, high: 0.6 } as const;
 export interface NodeUsage { used: Resources; physical: Resources; perf: number }
 
 export function nodeUsage(s: GameState, deviceId: string, hour: number = s.hour): NodeUsage {
   const d = s.devices.find((x) => x.id === deviceId), v = d && modelById(d.model).server;
-  const used: Resources = { vcpu: 0, ramGb: 0, diskGb: 0 };
-  if (!d || !v) return { used, physical: { ...used }, perf: 1 };
+  if (!d || !v) { const used = { vcpu: 0, ramGb: 0, diskGb: 0 }; return { used, physical: { ...used }, perf: 1 }; }
+  const { used, physical } = nodeLoad(s, d, hour);
+  const cpu = cpuPerf(physical.vcpu ? used.vcpu / physical.vcpu : 0);
+  const disk = used.diskGb > physical.diskGb ? 0.5 : 1;
+  const heat = heatOf(s, d).perf;
+  const over = used.ramGb / physical.ramGb - 1, ovz = clustersOn(s, deviceId).some((c) => c.kind === "cloud" && c.platform === "openveezee");
+  const swap = over > 0 && !ovz ? 1 / (1 + SWAP_SLOW * over) : 1;
+  return { used, physical, perf: Math.min(cpu, disk, swap) * (d.rebuild ? REBUILD_PERF[d.rebuildRate] : 1) * heat };
+}
+
+// economy.md, What runs over: a full-VM node swaps up to SWAP_MAX of its RAM, losing SWAP_SLOW × the overcommit in speed;
+// past it the host OOM-kills its largest VM (vmOomTick). OpenVeeZee hands RAM pressure to its beancounters instead.
+export const SWAP_MAX = 1.1, SWAP_SLOW = 5;
+// economy.md, What runs over: performance by CPU utilisation u, like a queue: full to 70%, 85% at 100%, then 0.85 ÷ u.
+export const cpuPerf = (u: number): number => (u <= 0.7 ? 1 : u <= 1 ? 1 - 0.5 * (u - 0.7) : 0.85 / u);
+// Below SLOW_PERF a site loads visibly slowly; below TIMEOUT_PERF for TIMEOUT_HOURS in a row it times out (timedOut).
+export const SLOW_PERF = 0.95, TIMEOUT_PERF = 0.25;
+// Hourly: counts the hours each cluster node has run below TIMEOUT_PERF.
+export function timeoutTick(s: GameState): void {
+  const low: Record<string, number> = {};
+  for (const id of new Set(s.clusters.flatMap((c) => c.nodes.map((n) => n.deviceId)))) if (working(s, id) && nodeUsage(s, id).perf < TIMEOUT_PERF) low[id] = (s.lowPerf[id] ?? 0) + 1;
+  s.lowPerf = low;
+}
+export const ramShare = (u: NodeUsage) => u.used.ramGb / Math.max(1e-9, u.physical.ramGb);
+
+// What a node uses and physically has, before performance; heat reads this through power draw, so it cannot ask for perf.
+function nodeLoad(s: GameState, d: Device, hour: number): { used: Resources; physical: Resources } {
+  const deviceId = d.id, used: Resources = { vcpu: 0, ramGb: 0, diskGb: 0 };
   for (const cp of [controlPlanesOn(s, deviceId), osUse(s, deviceId, nodeVcpu(s, d), installedRamGb(d), hour)]) {
     used.vcpu += cp.vcpu; used.ramGb += cp.ramGb; used.diskGb += cp.diskGb;
   }
@@ -127,27 +155,26 @@ export function nodeUsage(s: GameState, deviceId: string, hour: number = s.hour)
     const u = workloadUse(s, w, hour);
     used.vcpu += u.vcpu; used.ramGb += u.ramGb; used.diskGb += u.diskGb;
   }
-  const physical = { vcpu: nodeVcpu(s, d), ramGb: installedRamGb(d), diskGb: raidUsable(d) };
-  const cpu = used.vcpu > physical.vcpu ? physical.vcpu / used.vcpu : 1;
-  const disk = used.diskGb > physical.diskGb ? 0.5 : 1;
-  const heat = throttled(s, d) ? THERMAL.throttlePerf : 1;
-  return { used, physical, perf: Math.min(cpu, disk) * (d.rebuild ? REBUILD_PERF[d.rebuildRate] : 1) * heat };
+  return { used, physical: { vcpu: nodeVcpu(s, d), ramGb: installedRamGb(d), diskGb: raidUsable(d) } };
 }
 
-// A working cluster node whose RAM in use exceeds its installed RAM freezes: every workload on it is down until it fits again.
-export const ramOver = (u: NodeUsage) => u.used.ramGb > u.physical.ramGb + 1e-9;
-
-// Hourly and after a stop or a move: recomputes the frozen nodes and reports each freeze and thaw.
-export function freezeTick(s: GameState): SimEvent[] {
-  const name = (id: string) => { const d = s.devices.find((x) => x.id === id)!; return d.label ?? d.name; };
-  const frozen = s.clusters.flatMap((c) => c.nodes.map((n) => n.deviceId)).filter((id) => working(s, id) && ramOver(nodeUsage(s, id)));
-  const events: SimEvent[] = [
-    ...frozen.filter((id) => !s.frozen.includes(id)).map((id) => ({ app: "Locations", key: "event.nodeFrozen", params: { device: name(id) } })),
-    ...s.frozen.filter((id) => !frozen.includes(id) && s.devices.some((d) => d.id === id)).map((id) => ({ app: "Locations", key: "event.nodeThawed", params: { device: name(id) } })),
-  ];
-  s.frozen = frozen;
-  return events;
+// A server's CPU utilisation from 0 to 1: its cluster share plus any whole-server rental on it.
+// ponytail: cached per hour and workloads array, so a workload edited in place changes the draw from the next hour.
+const utilCache = new WeakMap<GameState, { hour: number; workloads: Workload[]; by: Map<string, number> }>();
+export function cpuUtil(s: GameState, d: Device): number {
+  let c = utilCache.get(s);
+  if (!c || c.hour !== s.hour || c.workloads !== s.workloads) utilCache.set(s, (c = { hour: s.hour, workloads: s.workloads, by: new Map() }));
+  let u = c.by.get(d.id);
+  if (u === undefined) c.by.set(d.id, (u = computeCpuUtil(s, d)));
+  return u;
 }
+function computeCpuUtil(s: GameState, d: Device): number {
+  if (!modelById(d.model).server) return 1;
+  const u = nodeLoad(s, d, s.hour);
+  const v = s.workloads.reduce((n, w) => (w.deviceId === d.id && !w.clusterId && !w.stopped ? n + workloadUse(s, w).vcpu : n), u.used.vcpu);
+  return u.physical.vcpu ? Math.min(1, v / u.physical.vcpu) : 1;
+}
+cpuLoad.of = cpuUtil;
 
 // economy.md, Workloads: a workload is pegged when its CPU ran at 95% or more of its booking for over half of the last 24 hours.
 export const PEGGED_LOAD = 0.95;

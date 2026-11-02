@@ -5,6 +5,7 @@ import { subjectParams, TAKEDOWN_HOURS } from "../../../../../../sim/40-support/
 import { companyParams } from "../../../../../../sim/40-support/replies";
 import { retentionOptions, type Odds, type RetentionId } from "../../../../../../sim/40-support/retention";
 import { EXTENSION_DAYS } from "../../../../../../sim/45-billing/billing";
+import { cleanupPrice } from "../../../../../../sim/60-infra/apps";
 import { DOMAIN_OUT } from "../../../../../../sim/30-customers/registrar";
 import { specText } from "../../../../../../sim/30-market/spec";
 import { OVERDRAFT } from "../../../../../../sim/80-business/walk";
@@ -31,6 +32,7 @@ const ACTION_LABEL: Record<TicketAction, string> = {
   offerManaged: t("support.action.offerManaged"),
   free: t("support.action.free"),
   clean: t("support.action.clean"),
+  cleanPaid: t("support.action.cleanPaid"),
   noBackup: t("support.action.noBackup"),
 };
 const OFFER_TITLE: Record<RetentionId, string> = {
@@ -101,7 +103,7 @@ export function useTicketReplies(s: GameState, tk: Ticket, previews = false): Re
     actions: actionsOf(tk).filter((a) => (a !== "revert" || tk.topic === "price") && (!stray || a === "reject")).map((a) => ({
       id: a,
       label: tk.kind === "refund" && a === "reject" ? t("support.action.refuse") : ACTION_LABEL[a],
-      amount: amountOf(s, a, monthly, Number(p.ransom)),
+      amount: a === "cleanPaid" && c ? euroCents(cleanupPrice(s, c)) : amountOf(s, a, monthly, Number(p.ransom)),
       disabled: locked || ((a === "forward" || a === "takedown") && !c),
     })),
     answers,

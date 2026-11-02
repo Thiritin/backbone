@@ -56,7 +56,7 @@ describe("research", () => {
       expect(SKILL_PAGES[k.name]?.length).toBeGreaterThanOrEqual(2);
       expect(SKILL_PAGES[k.name].length).toBeLessThanOrEqual(4);
       const first = SKILL_PAGES[k.name][0];
-      expect(first.title).toBe("Now available");
+      expect(first.title).toBe("What it unlocks");
       expect(first.blocks[0]).toMatchObject({ kind: "checks" });
     }
   });

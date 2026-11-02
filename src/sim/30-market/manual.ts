@@ -91,8 +91,8 @@ export function stepError(s: GameState, t: Ticket, step: OrderStep, route?: stri
   const done = stepsDone(s, r);
   if (done[step]) return "error.stepDone";
   if (step === "quote") return r.replyAt !== null ? "error.quoteSent" : null;
-  if (step === "account") return null;
   if (!done.quote) return "error.needsQuote";
+  if (step === "account") return null;
   if (!done.account) return "error.needsAccount";
   if (step === "invoice") return r.quote && r.quote > 0 ? null : "error.quotePrice";
   if (step === "domain") {

@@ -9,7 +9,7 @@ import { APP_SUITE_FEE, imageParts, licensingAt, serverOsById, type OsImage } fr
 import type { GameState } from "../../../../sim/50-state";
 import { t } from "../../../../i18n/en";
 import { clusterSummary, type Alarm, type Amount, type Amounts, type Severity } from "../../../../sim/60-infra/alarms";
-import { machineAddress } from "../../../../sim/60-infra/addresses";
+import { addressesOf, machineAddress } from "../../../../sim/60-infra/addresses";
 import { balances, datastoreFits, datastoreUp, deltaGb, hostOfVm, insideVm, isOwnVm, KEYS, nodeTakes, withDatastore, workloadsOn, type Cluster, type ClusterNode, type Ha, type Workload } from "../../../../sim/60-infra/cluster";
 import { machineScreen } from "../../../../sim/60-infra/oob";
 import { deviceHealth, working } from "../../../../sim/60-infra/status";
@@ -20,7 +20,8 @@ import { addNode, cordon, createVm, deleteVm, drain, evacuate, uncordon, PANEL_V
 import { mountableImages } from "../../../../sim/90-actions/media";
 import { joinableServers } from "../../../../sim/90-actions/software";
 import { buyAppSuite, cancelAppSuite, deployFromSuite } from "../../../../sim/90-actions/suite";
-import { rescueTargets, rescueWorkload, restoreWorkload, startWorkload, stopWorkload } from "../../../../sim/90-actions/vms";
+import { rebootWorkload, rescueTargets, rescueWorkload, restoreWorkload, startWorkload, stopWorkload } from "../../../../sim/90-actions/vms";
+import { askPower } from "../../workload-menu";
 import { freezeWorkload, thawWorkload } from "../../../../sim/90-actions/openveezee";
 import { diskMoveDowntime, moveDisk } from "../../../../sim/90-actions/datastores";
 import { cloneHours, cloneTemplate, makeTemplate, makeVm } from "../../../../sim/90-actions/templates";
@@ -44,7 +45,8 @@ export const GLYPH: Record<string, string> = {
 
 export interface Vm {
   w: Workload; id: string; name: string; sub: string; st: VmState; state: string; tone: string; own: boolean;
-  node: string; ip: string; os: string; media: OsImage | null; use: Resources; actions: PanelAction[]; panel: ReactNode;
+  // ip is the LAN address, publicIp its own public one, ips every address the guest reports.
+  node: string; ip: string; publicIp: string; ips: string; os: string; media: OsImage | null; use: Resources; actions: PanelAction[]; panel: ReactNode;
   // The datastore its disk is on, or Local.
   storage: string;
 }
@@ -79,15 +81,15 @@ export function useVms(game: GameState, c: Cluster, f: ConsoleFeatures): { vms: 
   const [open, setOpen] = useState<{ id: string; kind: string } | null>(null), close = () => setOpen(null);
   const vms = game.workloads.filter((w) => w.clusterId === c.id).map((w): Vm => {
     const st = vmState(game, w), [state, tone] = VM_STATE[st], host = hostOfVm(game, w.id), own = isOwnVm(w), label = vmLabel(game, w);
-    const on = st === "running" || st === "down" || st === "frozen", rescue = rescueTargets(game, w.id), tpl = !!w.template;
+    const on = st === "running" || st === "down" || st === "booting" || st === "halting", rescue = rescueTargets(game, w.id), tpl = !!w.template;
     const templating = own && !!c.platform && !!softwareById(c.platform).datastores;
     const toggle = (kind: string) => () => setOpen(open?.id === w.id && open.kind === kind ? null : { id: w.id, kind });
     const actions: (PanelAction | false)[] = [
       f.start && st === "stopped" && !tpl && { id: "start", label: t("browser-consoles-1.hvStart"), run: () => act(startWorkload, w.id) },
-      c.platform === "openveezee" && st === "running" && !tpl && { id: "checkpoint", label: t("ovz.checkpoint"), run: () => act(freezeWorkload, w.id) },
+      c.platform === "openveezee" && st === "running" && !tpl && { id: "checkpoint", label: t("ovz.checkpoint"), run: () => askPower("checkpoint", host?.name ?? label.name, t("ovz.checkpoint"), () => act(freezeWorkload, w.id)) },
       st === "checkpointed" && { id: "thaw", label: t("ovz.restore"), run: () => act(thawWorkload, w.id) },
-      f.stop && on && { id: "stop", label: t("browser-consoles-1.vmShutdown"), run: () => act(stopWorkload, w.id) },
-      f.stop && on && own && { id: "reset", label: t("browser-consoles-1.hvReset"), run: () => { if (act(stopWorkload, w.id).ok) act(startWorkload, w.id); } },
+      f.stop && on && { id: "stop", label: t("browser-consoles-1.vmShutdown"), run: () => askPower("stop", host?.name ?? label.name, t("browser-consoles-1.vmShutdown"), () => act(stopWorkload, w.id)) },
+      f.stop && on && own && st !== "halting" && { id: "reset", label: t("browser-consoles-1.hvReset"), run: () => askPower("reboot", host?.name ?? label.name, t("browser-consoles-1.hvReset"), () => act(rebootWorkload, w.id)) },
       st === "lost" && { id: "restore", label: w.backupAt === null ? t("browser-consoles-1.startEmpty") : t("browser-consoles-1.hvRestore"), run: () => act(restoreWorkload, w.id) },
       rescue.length > 0 && { id: "recover", label: t("browser-consoles-1.hvRecover"), run: toggle("recover") },
       !!f.migrate && (on || st === "stopped") && !w.migrating && !tpl && { id: "migrate", label: t("browser-consoles-1.migrate"), run: toggle("migrate") },
@@ -121,9 +123,10 @@ export function useVms(game: GameState, c: Cluster, f: ConsoleFeatures): { vms: 
           <button className="cx-btn" onClick={close}>{t("browser-consoles-1.cancel")}</button>
         </div>
       ) : hold?.panel ?? null;
+    const ip = machineAddress(game, w.id) ?? "", pub = addressesOf(game, w.id).sort((a, b) => a.v - b.v).map((a) => a.ip);
     return {
       w, id: w.id, st, state: hold?.state?.[0] ?? state, tone: hold?.state?.[1] ?? tone, own, name: host?.name ?? label.name, sub: own ? (host ? consoleTitle(host.panel ?? host.platform ?? "") : "") : label.service,
-      node: nodeName(game, w.deviceId), ip: machineAddress(game, w.id) ?? "", os: own ? osText(w) : "", media: w.media ?? null,
+      node: nodeName(game, w.deviceId), ip, publicIp: pub[0] ?? "", ips: [ip, ...pub].filter(Boolean).join(", "), os: own ? osText(w) : "", media: w.media ?? null,
       use: workloadUse(game, w), actions: [...actions.filter((a): a is PanelAction => !!a), ...(hold?.actions ?? [])], panel, storage: w.datastore ? nodeName(game, w.datastore) : t("browser-consoles-1.local"),
     };
   });
@@ -133,7 +136,7 @@ export function useVms(game: GameState, c: Cluster, f: ConsoleFeatures): { vms: 
 // The facts a VM page lists; each console picks and labels its own.
 export function vmFacts(_game: GameState, v: Vm): Record<"status" | "node" | "ip" | "os" | "cpu" | "memory" | "disk" | "backup" | "media", Fact> {
   return {
-    status: { label: t("browser-consoles-1.status"), value: v.state }, node: { label: t("browser-consoles-1.node"), value: v.node }, ip: { label: t("browser-consoles-1.ipAddress"), value: v.ip || t("browser-consoles-1.none"), num: true },
+    status: { label: t("browser-consoles-1.status"), value: v.state }, node: { label: t("browser-consoles-1.node"), value: v.node }, ip: { label: t("browser-consoles-1.ipAddress"), value: v.ips || t("browser-consoles-1.none"), num: true },
     os: { label: t("browser-consoles-1.guestOs"), value: v.own ? v.os : v.sub }, cpu: { label: t("browser-consoles-1.hvProcessors"), value: `${v.w.vcpu} vCPU`, num: true },
     memory: { label: t("browser-consoles-1.memory"), value: ram(+v.w.ramGb.toFixed(2)), num: true }, disk: { label: t("browser-consoles-1.hardDisk"), value: disk(v.w.diskGb), num: true },
     backup: { label: t("browser-consoles-1.lastBackup"), value: v.w.backupAt === null ? t("browser-consoles-1.none") : day(v.w.backupAt), num: true },

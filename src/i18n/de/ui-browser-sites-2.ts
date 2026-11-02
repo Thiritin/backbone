@@ -466,5 +466,10 @@ export default {
   "browser-sites-2.cli.relay": () => "Schickt die Mails eines Panel-Hosts über diesen Server, und off schickt sie wieder direkt.",
   "browser-sites-2.cli.serverList": () => "Listet die Gameserver auf dieser Maschine auf und zeigt, ob sie laufen.",
   "browser-sites-2.cli.shareList": () => "Listet die geteilten Links auf diesem Speicherserver auf und zeigt, wann sie ablaufen.",
+  "browser-sites-2.cli.statusFree": () => "Zeigt, ob die Software läuft.",
+  "browser-sites-2.cli.upgradeFree": () => "Aktualisiert die Software auf die nächste Hauptversion.",
+  "browser-sites-2.cli.jobList": () => "Listet die beendeten Sicherungsjobs auf, die auf diesen Server schreiben, mit Endzeit und Ergebnis.",
+  "browser-sites-2.cli.restoreList": () => "Listet die verlorenen Maschinen mit einer Sicherung auf diesem Server und die Knoten auf, auf die sie zurückgespielt werden können.",
+  "browser-sites-2.cli.restore": () => "Spielt eine verlorene Maschine aus ihrer Sicherung auf den angegebenen Knoten zurück, sonst auf den ersten freien.",
   "browser-sites-2.keyFlag": () => "Hänge --key und deinen Lizenzschlüssel an den Befehl an, um mit Lizenz zu installieren.",
 } satisfies Dict;

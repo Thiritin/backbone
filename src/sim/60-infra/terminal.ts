@@ -4,7 +4,7 @@ import { t } from "../../i18n/en";
 import { hashRng, rand } from "../00-core/rng";
 import { dateOf } from "../00-core/time";
 import { BMC_NAME, modelById } from "../10-catalog/hardware";
-import { consoleScreen, consoleVia, osUp } from "./oob";
+import { consoleScreen, consoleVia, machineScreen, osUp, type MachineScreen } from "./oob";
 import { JITTER } from "../10-catalog/network";
 import { fqdn } from "../30-customers/domains";
 import type { Device, GameState } from "../50-state";
@@ -13,10 +13,10 @@ import { recover } from "../90-actions/vms";
 import { publicV4, publicV6, machineAddress } from "./addresses";
 import { addressOf, deskReaches, FRITZ_HOST, leasesOf, macOf, registersNames } from "./lan";
 import { netCommand } from "./netshell";
-import { isOwnVm, serverOf, vmOf, workloadOnline, type Workload } from "./cluster";
+import { isOwnVm, serverOf, vmById, vmOf, workloadOnline, type Workload } from "./cluster";
 import { latency } from "./network";
 import { hopDown, locationOf, pathTo, powered, working, type Hop } from "./status";
-import { mountedRouter } from "./routers";
+import { isOwnRouter, mountedRouter } from "./routers";
 import { nodeUsage, workloadUse } from "./usage";
 import { RECOVER_HOURS } from "./power";
 import { reboot, shutdown, type ActionResult } from "../90-actions/hardware";
@@ -24,16 +24,18 @@ import { apt, dpkg, installScript, installStep } from "./apt";
 import { DESK, homeOf, shortPath } from "./fs";
 import { binariesOn, cliWords, vendorCli } from "./vendor-cli";
 import { completePath, FILE_COMMANDS, fileCommand, parseLine, redirect, type Segment } from "./shell";
+import { confCommand, type ConfMenu } from "./squirrel-conf";
 
-// An open ssh session on a server; null at the desk.
-export interface Session { host: string; deviceId: string }
+// An open ssh session on a server; null at the desk. warned marks one that has shown the shutdown broadcast.
+export interface Session { host: string; deviceId: string; warned?: boolean }
 // A recovery the screen reports on once it is done, or an install whose progress lines it prints as they come due; step
 // is how many it printed.
 export interface Watch { workloadId?: string; host: string; install?: { machineId: string; softwareId: string; step: number } }
-// cwd is the new working directory; failed stops a && chain; confirm asks [Y/n] before the command runs again with -y.
+// cwd is the new working directory; failed stops a && chain; confirm asks [Y/n] before the command runs again with -y;
+// menu opens a menu program that takes the lines after it.
 export interface CommandResult {
   output: string[]; session?: Session | null; action?: Call; clear?: boolean; watch?: Watch;
-  cwd?: string; failed?: boolean; confirm?: boolean; edit?: Editing; dev?: boolean;
+  cwd?: string; failed?: boolean; confirm?: boolean; edit?: Editing; dev?: boolean; menu?: ConfMenu;
 }
 // A file open in the editor: its absolute path, the name as typed and its text.
 export interface Editing { path: string; name: string; text: string }
@@ -60,14 +62,17 @@ const targetIp = (s: GameState, id: string): string => {
   return (own && !own.shared ? own.ip : machineAddress(s, id)) ?? "0.0.0.0";
 };
 
-// The name the desk's resolver knows a server by. A basement server's short name resolves only through a Fritz!Bocks that
-// registers the names its DHCP clients send, as node001 and node001.fritz.bocks; a datacenter's is resolved as before.
+// The name the desk's resolver knows a server by. A basement server's short name resolves only through a router that
+// registers the names its DHCP clients send: an own router as node001, a Fritz!Bocks as node001 and node001.fritz.bocks;
+// a datacenter's is resolved as before.
 function localName(s: GameState, d: Device, key: string): string | null {
   const h = d.hostname!, local = `${h}.${FRITZ_HOST}`;
   if (key !== h && key !== local) return null;
   if (locationOf(s, d)?.dc) return key === h ? fqdn(s, h) : null;
-  const r = s.devices.find((x) => x.id === deskRouter(s)), mac = macOf(s, d.id);
-  return r && registersNames(modelById(r.model)) && leasesOf(s, r.id).some((l) => l.mac === mac) ? local : null;
+  const mac = macOf(s, d.id), leased = (r: Device) => leasesOf(s, r.id).some((l) => l.mac === mac);
+  if (key === h && s.devices.some((r) => isOwnRouter(r) && leased(r))) return h;
+  const r = s.devices.find((x) => x.id === deskRouter(s));
+  return r && registersNames(modelById(r.model)) && leased(r) ? local : null;
 }
 
 function resolveTarget(s: GameState, raw: string): Target | null {
@@ -308,6 +313,22 @@ function recoverCommand(s: GameState, { deviceId }: Session, arg: string | undef
   return { output: [t("term.recover.start", p), t("term.recover.eta", { ...p, minutes: RECOVER_HOURS * 60 })], action: [recover, w.id], watch: { workloadId: w.id, host: arg } };
 }
 
+const GONE = new Set<MachineScreen["kind"]>(["dark", "post", "booting", "setup", "stuck", "hung"]);
+
+// The remote session as the machine changes: the broadcast once its OS starts to shut down, then the connection drops when
+// it is off, booting again, hung or frozen. next is the session to keep, null once it has dropped.
+export function sessionStep(s: GameState, session: Session | null): { output: string[]; next: Session | null } {
+  if (!session) return { output: [], next: null };
+  const screen = machineScreen(s, session.deviceId).kind, vm = vmById(s, session.deviceId);
+  if (screen === "halting") {
+    return session.warned ? { output: [], next: session }
+      : { output: [t("term.ssh.broadcast", { host: session.host }), t(vm?.reboot ? "term.ssh.goingReboot" : "term.ssh.goingDown")], next: { ...session, warned: true } };
+  }
+  const frozen = !!vm?.frozen;
+  if (!GONE.has(screen) && !frozen) return { output: [], next: session };
+  return { output: [t("term.ssh.closed", { host: session.host })], next: null };
+}
+
 // The lines a watch prints on this refresh and the watch to keep, null once it is over.
 export function watchStep(s: GameState, watch: Watch): { output: string[]; next: Watch | null } {
   if (watch.install) return installStep(s, watch);
@@ -369,7 +390,7 @@ function runWords(s: GameState, session: Session | null, cwd: string, words: str
     if (!osUp(s, session.deviceId) || (server && !working(s, session.deviceId))) return { output: lines("term.ssh.lost", { host: session.host }), session: null };
     if (cmd === "exit" || (server && ["uptime", "df", "free", "top", "shutdown", "reboot", "recover"].includes(cmd))) return remote(s, session, cmd, args);
     if (cmd === "dpkg") return dpkg(s, session.deviceId, args);
-    const net = netCommand(s, session.deviceId, cmd, args) ?? vendorCli(s, session.deviceId, cmd, args, root);
+    const net = netCommand(s, session.deviceId, cmd, args) ?? confCommand(s, session.deviceId, cmd, args) ?? vendorCli(s, session.deviceId, cmd, args, root);
     if (net) return net;
     if (cmd === "curl" || cmd === "wget") return { output: lines(`term.${cmd}.resolve`, { host: urlHost(args) }), failed: true };
     if (cmd === "sh") return { output: lines("term.sh.open", { file: args[0] ?? "" }), failed: true };
@@ -389,12 +410,12 @@ export function runCommand(s: GameState, session: Session | null, line: string, 
   return seg ? runSegment(s, session, cwd ?? homeOf(hostOf(session)), seg, nonce) : { output: [] };
 }
 
-export interface LineResult { output: string[]; session: Session | null; cwd: string | null; watch: Watch[]; clear: boolean; confirm: string | null; edit: Editing | null; dev: boolean }
+export interface LineResult { output: string[]; session: Session | null; cwd: string | null; watch: Watch[]; clear: boolean; confirm: string | null; edit: Editing | null; dev: boolean; menu: ConfMenu | null }
 
 // Runs every command of a line in turn, each on the state the one before left: act applies a command's action. A
 // command that asks to confirm ends the run, and confirm holds the rest of the line to run once the player agrees.
 export function runLine(get: () => GameState, act: (a: Call) => ActionResult, session: Session | null, cwd: string | null, line: string, nonce = 0): LineResult {
-  const res: LineResult = { output: [], session, cwd, watch: [], clear: false, confirm: null, edit: null, dev: false };
+  const res: LineResult = { output: [], session, cwd, watch: [], clear: false, confirm: null, edit: null, dev: false, menu: null };
   // A software's install line is matched whole before the shell splits it at its && and ;.
   const whole = session ? installScript(get(), session.deviceId, line) : undefined;
   for (const seg of whole ? [null] : parseLine(line)) {
@@ -411,6 +432,7 @@ export function runLine(get: () => GameState, act: (a: Call) => ActionResult, se
     if (r.watch) res.watch.push(r.watch);
     if (r.edit) { res.edit = r.edit; break; }
     if (r.dev) { res.dev = true; break; }
+    if (r.menu) { res.menu = r.menu; break; }
     if (r.confirm && seg) { res.confirm = `${line.slice(seg.start, seg.end).trim()} -y${line.slice(seg.end)}`; break; }
     if (failed && seg?.then === "&&") break;
   }

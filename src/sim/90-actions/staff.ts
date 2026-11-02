@@ -1,4 +1,5 @@
 import { yearOf } from "../00-core/time";
+import { employeeMailbox, hireTenant, mailboxInUse, removeMailbox } from "../42-mail/accounts";
 import { cents } from "../45-billing/billing";
 import {
   AD, adCandidates, COURSE_PRICE, fullyTrained, MAX_SHIFT, needsTraining, salaryUpToNow, staffPrice, startTraining, TASKS, trainerFor, visibleCandidates, weekdays,
@@ -42,6 +43,8 @@ export function hire(s: GameState, candidateId: string, team = s.teams[0]?.id): 
   const c = visibleCandidates(s).find((x) => x.id === candidateId);
   if (!c) return fail("error.unknownCandidate");
   if (!s.teams.some((t) => t.id === team)) return fail("error.unknownTeam");
+  const mail = hireTenant(s);
+  if (!mail) return fail("error.hireNoMailbox");
   const e: Employee = {
     id: `emp${s.nextId++}`, name: c.name, role: c.role, skill: c.skill, talent: c.talent, salary: c.salary, hiredAt: s.hour, assignment: "queue",
     location: c.role === "technician" ? s.locations[0]?.id ?? null : null,
@@ -49,6 +52,7 @@ export function hire(s: GameState, candidateId: string, team = s.teams[0]?.id): 
   };
   s.candidates = s.candidates.filter((x) => x.id !== c.id);
   s.staff = [...s.staff, e];
+  employeeMailbox(s, mail, e.id, e.name);
   return { ok: true, id: e.id };
 }
 
@@ -56,6 +60,9 @@ export function hire(s: GameState, candidateId: string, team = s.teams[0]?.id): 
 export function fire(s: GameState, id: string): ActionResult {
   const e = s.staff.find((x) => x.id === id);
   if (!e) return fail("error.unknownEmployee");
+  const box = s.mail.accounts.find((a) => a.employee === id);
+  if (box && (box.roles.length || mailboxInUse(s, box))) return fail("error.mailInUse");
+  if (box) removeMailbox(s, box);
   const owed = salaryUpToNow(s, e);
   if (owed > 0) pay(s, "ledger.salary", { name: e.name, role: e.role }, owed);
   s.staff = s.staff.filter((x) => x.id !== id);

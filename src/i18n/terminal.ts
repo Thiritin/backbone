@@ -262,7 +262,6 @@ export const TERMINAL_EN: Record<string, (p: Params) => string> = {
   "term.vendor.version": (p) => `${p.name} ${p.version}, channel ${p.channel}`,
   "term.vendor.up": (p) => `${p.name} is running.`,
   "term.vendor.updating": (p) => `${p.name} is updating.`,
-  "term.vendor.licence.free": () => "License: free software",
   "term.vendor.licence.trial": (p) => `License: trial until ${p.until}`,
   "term.vendor.licence.active": () => "License: active",
   "term.vendor.licence.ended": () => "License: trial ended",
@@ -276,4 +275,10 @@ export const TERMINAL_EN: Record<string, (p: Params) => string> = {
   "term.vendor.secondary": () => "secondary",
   "term.vendor.noExpiry": () => "no expiry",
   "term.vendor.none": () => "No entries.",
+  "term.ssh.broadcast": (p) => `Broadcast message from root@${p.host}`,
+  "term.ssh.goingDown": () => "The system is going down for system halt NOW!",
+  "term.ssh.goingReboot": () => "The system is going down for reboot NOW!",
+  "term.vendor.jobOk": () => "OK",
+  "term.vendor.jobError": () => "Error",
+  "term.vendor.noNode": () => "no free node",
 };

@@ -22,7 +22,6 @@ import { Pterodaktyl } from "./pterodaktyl/Pterodaktyl";
 import { TCAdmen } from "./tcadmen/TCAdmen";
 import { AnyConnekt } from "./anyconnekt/AnyConnekt";
 import { BackupConsole } from "./backup/BackupConsole";
-import { CLI_ONLY, HostCli } from "./hostcli/HostCli";
 import { Mailpig } from "./mailpig/Mailpig";
 import { MinnIO } from "./minnio/MinnIO";
 import { OpenVeePeeN } from "./openveepeen/OpenVeePeeN";
@@ -53,7 +52,6 @@ export function ConsolePage({ game, hostname, host, cluster, defaced, path }: { 
   const [logins, setLogins] = useSessionState<string[]>("browser.logins", []);
   const family = cluster && familyOf(cluster), Panel = family ? CONSOLES[family] : undefined;
   if (!cluster || !family) return null;
-  if (CLI_ONLY.has(family)) return <HostCli game={game} c={cluster} family={family} host={host} name={hostname} />;
   if (defaced) return <Defaced />;
   if (!Panel) return null;
   if (cluster.kind !== "mailweb" && logins.includes(hostname) && (cluster.setupPending || panelLocked(game, cluster))) return <LicenceGate game={game} c={cluster} host={host} />;

@@ -3,14 +3,15 @@ import { t } from "../../../../../../i18n/en";
 import { LOCALE } from "../../../../../../i18n/lang";
 import { euro } from "../../../../../../sim/00-core/money";
 import {
-  DATACENTERS, datacenterById, EXTRA_POWER_LEAD_DAYS, EXTRA_STEP_KW, extraStepPrice, FLAT_CONTRACTS, flatMonthly, maxExtraKw,
+  crossConnectSetup, DATACENTERS, datacenterById, EXTRA_POWER_LEAD_DAYS, EXTRA_STEP_KW, extraStepPrice, FLAT_CONTRACTS, flatMonthly, maxExtraKw,
   NOTICE_MONTHS, PROVIDERS, rackUnits, RETENTION_PROVIDERS, SHARE_RACKS, type Provider,
 } from "../../../../../../sim/20-world/datacenters";
 import { yearOf } from "../../../../../../sim/00-core/time";
+import { crossConnectTargets, targetName } from "../../../../../../sim/10-catalog/network";
 import type { Contract, GameState, LedgerEntry } from "../../../../../../sim/50-state";
 import { flatOffer } from "../../../../../../sim/60-infra/status";
 import { FEED_PRICE } from "../../../../../../sim/88-tick/tick";
-import { cancelContract, noticeEnd, revokeCancel, setExtraPower, setFeed, setFlatPower } from "../../../../../../sim/90-actions/hardware";
+import { cancelContract, cancelCrossConnect, noticeEnd, orderCrossConnect, revokeCancel, setExtraPower, setFeed, setFlatPower } from "../../../../../../sim/90-actions/hardware";
 import { useSessionState } from "../../../../../session";
 import { Page } from "../../../../books/InvoicesTab";
 import { formatDay } from "../../../../billing/format";
@@ -23,7 +24,7 @@ import "./portal.css";
 // docs/design/plans/colo-portals.md, section 5: the customer portal under /account, shared by every provider's design.
 type Props = Pick<ProviderProps, "game" | "p" | "go"> & { route: Extract<Route, { page: "account" }>; className?: string };
 const SECTIONS = ["contracts", "invoices", "services", "tickets", "profile"] as const;
-const RENT = new Set(["ledger.space", "ledger.feed", "ledger.flatPower"]);
+const RENT = new Set(["ledger.space", "ledger.feed", "ledger.flatPower", "ledger.crossConnect", "ledger.crossConnectSetup"]);
 
 const byProvider = (id: string, e: LedgerEntry) => DATACENTERS.find((d) => d.id === e.params.dc)?.provider === id;
 export const contractNo = (c: Contract) => `C-${c.id.replace(/\D/g, "")}`;
@@ -93,6 +94,7 @@ function ContractDetail({ game, p, id }: Props & { id: string }) {
   if (!c) return <p className="ps-portal-empty">{t("providers.notFound")}</p>;
   const racks = game.racks.filter((r) => r.locationId === c.locationId);
   const offer = RETENTION_PROVIDERS.includes(p.id) && c.retainedAt === null;
+  const xcs = game.crossConnects.filter((x) => x.contractId === c.id);
   return (
     <div className="ps-contract">
       <h3 className="ps-portal-h">{t("portal.contractTitle", { n: contractNo(c), site: datacenterById(c.dc).name })}</h3>
@@ -125,6 +127,21 @@ function ContractDetail({ game, p, id }: Props & { id: string }) {
         </tbody>
       </table>
       {!racks.length && <p className="ps-portal-empty">{t("portal.noRacks")}</p>}
+      <h3 className="ps-portal-h">{t("portal.crossConnects")}</h3>
+      {xcs.length ? (
+        <table className="ps-table">
+          <thead><tr><th>{t("portal.partner")}</th><th>{t("portal.since")}</th><th className="ps-num">{t("providers.perMonth")}</th><th /></tr></thead>
+          <tbody>
+            {xcs.map((x) => (
+              <tr key={x.id}>
+                <td>{targetName(x.to)}</td><td>{day(x.since)}</td><td className="ps-num">{euro(x.monthly)}</td>
+                <td className="ps-num"><button className="ps-btn" onClick={() => act(cancelCrossConnect, x.id)}>{t("portal.disconnect")}</button></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : <p className="ps-portal-empty">{t("portal.noCrossConnects")}</p>}
+      <div className="ps-actions"><OrderCrossConnect game={game} c={c} /></div>
       {sheet && <CancelSheet game={game} c={c} onClose={() => setSheet(false)} />}
     </div>
   );
@@ -156,6 +173,41 @@ function CancelSheet({ game, c, onClose }: { game: GameState; c: Contract; onClo
       </div>
     </div>
   );
+}
+
+// The order step: the target, the setup fee and the monthly price before the player confirms.
+function CrossConnectSheet({ game, c, onClose }: { game: GameState; c: Contract; onClose: () => void }) {
+  const [act, error] = useFieldAct(), dc = datacenterById(c.dc), targets = crossConnectTargets(dc);
+  const [to, setTo] = useState(targets[0]?.id ?? "");
+  const confirm = () => { if (act(orderCrossConnect, c.id, to).ok) onClose(); };
+  return (
+    <div className="ps-sheet-veil">
+      <div className="ps-sheet" role="dialog" aria-label={t("portal.orderCrossConnect")}>
+        <h3 className="ps-sheet-h">{t("portal.orderCrossConnect")}</h3>
+        <div className="ps-sheet-b">
+          <Kv rows={[
+            [t("providers.site"), dc.name],
+            [t("portal.partner"), <select value={to} onChange={(e) => setTo(e.target.value)}>{targets.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select>],
+            [t("portal.setupFee"), euro(crossConnectSetup(dc))], [t("providers.perMonth"), euro(dc.crossConnect)], [t("portal.billedFrom"), monthYear(noticeEnd(game.hour, 0))],
+          ]} />
+          {error && <p className="ps-error">{t(error)}</p>}
+        </div>
+        <div className="ps-sheet-f ps-actions">
+          <button className="ps-btn" onClick={onClose}>{t("providers.back")}</button>
+          <button className="ps-btn pri" onClick={confirm}>{t("portal.order")}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function OrderCrossConnect({ game, c }: { game: GameState; c: Contract }) {
+  const [open, setOpen] = useState(false);
+  if (c.endsAt !== null) return null;
+  return <>
+    <button className="ps-btn" onClick={() => setOpen(true)}>{t("portal.orderCrossConnect")}</button>
+    {open && <CrossConnectSheet game={game} c={c} onClose={() => setOpen(false)} />}
+  </>;
 }
 
 function Invoices({ game, p, go }: Props) {
@@ -222,6 +274,13 @@ function Services({ game, p }: Props) {
         value: <select value={target} onChange={(e) => act(setFlatPower, r.id, Number(e.target.value))}>{kws.map((kw) => <option key={kw} value={kw}>{kw ? t("portal.flat", { kw }) : t("portal.metered")}</option>)}</select>,
       });
     }
+    for (const x of game.crossConnects.filter((k) => k.contractId === c.id)) {
+      rows.push({
+        key: x.id, name: t("ledger.crossConnect", { to: targetName(x.to) }), price: euro(x.monthly), from: noticeEnd(x.since, 0) > game.hour ? from(x.since) : "",
+        value: <button className="ps-btn" onClick={() => act(cancelCrossConnect, x.id)}>{t("portal.disconnect")}</button>,
+      });
+    }
+    rows.push({ key: `${c.id}-x`, name: t("portal.crossConnect"), value: <OrderCrossConnect game={game} c={c} />, price: euro(dc.crossConnect), from: "" });
     rows.push({ key: `${c.id}-h`, name: t("providers.remoteHands"), value: t("portal.response", { n: dc.remoteHands.responseHours }), price: t("portal.perHour", { price: euro(dc.remoteHands.perHour) }), from: "" });
     return (
       <section key={c.id} className="ps-services">

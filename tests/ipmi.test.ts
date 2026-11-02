@@ -10,7 +10,8 @@ import { tick } from "../src/sim/88-tick/tick";
 import { resolve } from "../src/sim/80-business/browser";
 import { atServer, powerCycle, reset, resetBmc, setPower, shutdown } from "../src/sim/90-actions/hardware";
 import { visibleCandidates } from "../src/sim/47-staff/staff";
-import { hire, queueOperation } from "../src/sim/90-actions/staff";
+import { queueOperation } from "../src/sim/90-actions/staff";
+import { hire } from "./fixtures";
 import { readyGame } from "./fixtures";
 
 const game = (model = "g2-compute", brand = "Dwell"): GameState => {
@@ -162,8 +163,6 @@ describe("hangs", () => {
     expect(hangChance(s, dev3(s))).toBeCloseTo(0.01 / year, 12);
     dev3(s).components.find((c) => c.kind === "fan")!.failedAt = s.hour;
     expect(hangChance(s, dev3(s))).toBeCloseTo(0.02 / year, 12);
-    s.frozen = ["dev3"];
-    expect(hangChance(s, dev3(s))).toBeCloseTo(0.06 / year, 12);
     expect(bmcHangChance(s, dev3(s))).toBeCloseTo(0.01 / year, 12);
     s.hour += 6 * year + 1;
     expect(bmcHangChance(s, dev3(s))).toBeCloseTo(0.03 / year, 12);

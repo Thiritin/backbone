@@ -1,7 +1,7 @@
 import { t } from "../../../../i18n/en";
+import { roleAddress } from "../../../../sim/42-mail/accounts";
 import type { Product } from "../../../../sim/30-customers/customers";
 import { addressFor } from "../../../../sim/30-customers/addresses";
-import { companyDomain } from "../../../../sim/30-customers/domains";
 import { datacenterById } from "../../../../sim/20-world/datacenters";
 import type { GameState } from "../../../../sim/50-state";
 import { v6Offered } from "../../../../sim/60-infra/addresses";
@@ -95,7 +95,7 @@ export function Legal({ game, title }: { game: GameState; title: string }) {
 }
 
 export function Contact({ game, title }: { game: GameState; title: string }) {
-  const support = game.company.mail.kind === "free" ? salesAddress(game) : `support@${companyDomain(game)}`;
+  const support = roleAddress(game, "support");
   const own = addressFor(game.seed, 0, game.registration?.owner ?? game.company.name, game.company.name, game.locations[0]?.city ?? "Frankfurt");
   return (
     <>

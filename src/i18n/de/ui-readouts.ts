@@ -174,6 +174,8 @@ export default {
   "readouts.sensor.warning": () => "Warnung",
   "readouts.sensor.critical": () => "Kritisch",
   "readouts.sensor.inlet": () => "Zulufttemperatur",
+  "readouts.sensor.cpu": () => "CPU-Temperatur",
+  "readouts.sensor.duty": () => "Lüfterdrehzahl",
   "readouts.sensor.fan": (p) => `Lüfter ${p.n}`,
   "readouts.sensor.psu": (p) => `Netzteil ${p.n}`,
   "readouts.sensor.power": () => "Systemleistungsaufnahme",

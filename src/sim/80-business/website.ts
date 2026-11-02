@@ -11,9 +11,9 @@ import { HOW_TO, KNOWLEDGE_BASE } from "../40-support/tickets";
 import { bookable, diskFits, lineOffered, noRoomError, nodeUsed, serverOf, vmRoom, workloadOnline, workloadsOf, type Cluster, type Workload } from "../60-infra/cluster";
 import { machineAddress } from "../60-infra/addresses";
 import { hostPerf } from "../60-infra/php";
-import { nodeUsage } from "../60-infra/usage";
+import { nodeUsage, SLOW_PERF } from "../60-infra/usage";
 import type { SimEvent } from "../88-tick/tick";
-import { owns } from "./marketing";
+import { owns, SITE_LINES } from "./marketing";
 import { salesAddress } from "./mail";
 import { CYCLE_MONTHS, CYCLES } from "../10-catalog/cycles";
 import { companyDomain } from "../30-customers/domains";
@@ -24,10 +24,13 @@ import { shopActive, shopCount, type ShopProduct } from "./shop";
 import { assignedKey, licenceStatus, SHOP_MACHINE, tiersOnSale } from "../60-infra/licence";
 import { tiersOf, type LicenceTier } from "../10-catalog/licence-tiers";
 import { offeredProducts, type CatalogProduct } from "./catalog";
+import { siteDesign, type SiteDesign } from "./site-design";
 
-export const SITE_LINES: Product[] = ["webHosting", "vps", "gameServer", "dns", "vpn", "storage", "cloud", "dedicated", "colocation", "gpu", "ssl"];
+export { SITE_LINES };
 
 export const listed = (s: GameState, p: Product): boolean => s.marketing.lines.includes(p);
+// Whether a listed line takes custom requests; otherwise its visitors order the shop plans or leave.
+export const customOpen = (s: GameState, p: Product): boolean => listed(s, p) && s.marketing.custom.includes(p);
 
 // The error key for why a line cannot go on the website, or null when it can. SSL is an add-on for web hosting customers.
 export function lineBlocker(s: GameState, p: Product): string | null {
@@ -115,10 +118,10 @@ function siteWorkload(c: Cluster, id = "site"): Workload {
   };
 }
 
-// Whether the workload's host runs it slowly: an overloaded node or a PHP upgrade on its panel host.
+// Whether the workload's host runs it noticeably slowly: an overloaded node or a PHP upgrade on its panel host.
 export function slowHost(s: GameState, w: Workload, c: Cluster | undefined): boolean {
   const at = serverOf(s, w);
-  return Math.min(at ? nodeUsage(s, at).perf : 1, hostPerf(s, c)) < 1;
+  return Math.min(at ? nodeUsage(s, at).perf : 1, hostPerf(s, c)) < SLOW_PERF;
 }
 
 // Whether a panel host has the disk for the site next to its web spaces, and whether its RAM is over 90% booked with the site.
@@ -199,7 +202,7 @@ export type CustomerSiteStatus = "up" | "slow" | "defaced" | "down";
 
 // A web hosting customer's own site, from the customer's name and the profile; blurb is an i18n key.
 // sponsored: a running sponsorship covers the site and its banner still hangs, so the company's logo shows on it.
-export function customerSite(s: GameState, serviceId: string): { title: string; blurb: string; status: CustomerSiteStatus; sponsored: boolean } | null {
+export function customerSite(s: GameState, serviceId: string): { title: string; blurb: string; status: CustomerSiteStatus; sponsored: boolean; design: SiteDesign } | null {
   const v = s.services.find((x) => x.id === serviceId), cus = v && s.customers.find((c) => c.id === v.customerId);
   if (!v || !cus || v.product !== "webHosting") return null;
   const ws = workloadsOf(s, serviceId);
@@ -209,7 +212,7 @@ export function customerSite(s: GameState, serviceId: string): { title: string; 
     : !serviceOnline(s, serviceId) ? "down"
     : ws.some((w) => slowHost(s, w, s.clusters.find((c) => c.id === w.clusterId))) ? "slow" : "up";
   const sponsored = s.sponsorships.some((x) => x.status === "running" && x.serviceIds.includes(serviceId) && !x.board?.dropped);
-  return { title: cus.name, blurb: `site.blurb.${cus.profile}`, status, sponsored };
+  return { title: cus.name, blurb: `site.blurb.${cus.profile}`, status, sponsored, design: siteDesign(s, cus.id) };
 }
 
 // Where a customer's site answers: its domain, or the private address of its account until it has one.

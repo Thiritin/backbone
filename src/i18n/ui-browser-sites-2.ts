@@ -466,5 +466,10 @@ export default {
   "browser-sites-2.cli.relay": () => "Sends the mail of a panel host through this server, and off sends it directly again.",
   "browser-sites-2.cli.serverList": () => "Lists the game servers on this machine and whether they are running.",
   "browser-sites-2.cli.shareList": () => "Lists the shared links on this storage server and when they expire.",
+  "browser-sites-2.cli.statusFree": () => "Shows whether the software is running.",
+  "browser-sites-2.cli.upgradeFree": () => "Upgrades the software to the next major version.",
+  "browser-sites-2.cli.jobList": () => "Lists the finished backup jobs that write to this server, with when they ended and whether they succeeded.",
+  "browser-sites-2.cli.restoreList": () => "Lists the lost machines that have a backup on this server and the nodes they can be restored to.",
+  "browser-sites-2.cli.restore": () => "Restores a lost machine from its backup onto the given node, or onto the first free one.",
   "browser-sites-2.keyFlag": () => "Add --key followed by your license key to the command to install with a license.",
 } satisfies Dict;

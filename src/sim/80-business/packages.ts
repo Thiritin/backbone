@@ -14,6 +14,8 @@ export interface PackageDef {
   // Reserved for game servers.
   title?: string;
   slots?: number;
+  // Web hosting: how many of each a web space may create; missing is WEB_LIMITS (60-infra/webspace.ts). Mailboxes come from spec.
+  databases?: number; ftpAccounts?: number; addonDomains?: number; subdomains?: number;
 }
 
 export const PACKAGE_LIMIT = 12;
