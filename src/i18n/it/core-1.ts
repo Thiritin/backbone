@@ -43,7 +43,7 @@ export default {
   "error.missingSkill": () => "Impara prima le competenze su cui si basa questa formazione.",
   "error.noKnowHow": () => "Non hai abbastanza know-how.",
   "error.needsResearch": () => "Impara prima la competenza necessaria in Ricerca.",
-  "error.deskNotYet": () => "Questa scrivania non è ancora in vendita.",
+  "error.deskNotYet": () => "Questo help desk non è ancora disponibile.",
   "error.installed": () => "È già installato.",
   "error.notInstalled": () => "Non è installato.",
   "ledger.hardware": (p) => `${Number(p.qty) > 1 ? `${p.qty} × ` : ""}${p.model}${p.device ? ` per ${p.device}` : ""}`,

@@ -8,7 +8,8 @@ import { yearOf } from "../../../../../sim/00-core/time";
 import { useStore } from "../../../../store";
 import { downloadMbps } from "../../../../../sim/90-actions/media";
 import { startDownload, useProgress } from "../../../../downloads";
-import type { Look, Site } from "../../../../../sim/10-catalog/sites";
+import { SITES, type Look, type Site } from "../../../../../sim/10-catalog/sites";
+import { deskById } from "../../../../../sim/10-catalog/desks";
 import { Releases } from "./Releases";
 import { isLicensed } from "../../../../../sim/60-infra/licence";
 import { Account, Cart, cartCount, Editions } from "../shop/VendorShop";
@@ -21,8 +22,8 @@ export interface SiteProps { p: Product; look: Look; page: SitePage; year: numbe
 
 export const productOf = (kind: "software" | "os", id: string): Product | null => {
   const sw = kind === "software" ? SOFTWARE.find((x) => x.id === id) : undefined, os = kind === "os" ? SERVER_OS.find((x) => x.id === id) : undefined;
-  const x = sw ?? os;
-  return x ? { id: x.id, name: x.name, site: x.site, sw, os } : null;
+  const x = sw ?? os ?? (kind === "software" && SITES[id] ? deskById(id) : undefined);
+  return x ? { id: x.id, name: x.name, site: sw?.site ?? os?.site ?? SITES[id], sw, os } : null;
 };
 
 const PAGES: SitePage[] = ["home", "features", "pricing", "download", "docs", "versions", "news", "cart", "account"];

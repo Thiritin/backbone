@@ -60,6 +60,7 @@ export default {
   "support.kind.migration": () => "Migrazione",
   "support.kind.maintenance": () => "Manutenzione",
   "support.kind.sponsor": () => "Sponsorizzazione",
+  "support.kind.spam": () => "Spam",
   "support.status.open": () => "Aperto",
   "support.status.waiting": () => "In attesa del cliente",
   "support.status.escalated": () => "Escalation",
