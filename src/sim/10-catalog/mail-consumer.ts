@@ -48,10 +48,12 @@ export const importantOf = (m: Message, wroteTo: Set<string>, answered: Set<stri
   IMPORTANT_KINDS.includes(m.kind) || wroteTo.has(m.from) || answered.has(m.id);
 
 // The hosts each provider site answers on; the first is its home.
-export const MAIL_SITES = { gmix: ["gmix.net", "gmix.com"], goggle: ["goggle.com", "accounts.goggle.com", "admin.goggle.com"] } as const;
+export const MAIL_SITES = { gmix: ["gmix.net", "gmix.com"], goggle: ["goggle.com", "accounts.goggle.com", "admin.goggle.com"], gmial: ["mail.goggle.com"] } as const;
 export type MailSiteId = keyof typeof MAIL_SITES;
 export const mailSiteUrl = (id: MailSiteId, path = ""): string => `www.${MAIL_SITES[id][0]}/${path}`;
 export const GOGGLE_ACCOUNTS = "accounts.goggle.com";
+// Gmial for a Goggle tenant answers under its domain, as the real product did on mail.<provider>/a/<domain>/.
+export const gmialUrl = (domain: string, page = ""): string => `mail.goggle.com/a/${domain}/${page}`;
 export const GOGGLE_ADMIN = "admin.goggle.com";
 // The Admin console: a path under the domain on goggle.com until 2012, a host of its own from 2013.
 export const consoleUrl = (hour: number, domain: string, page = ""): string =>

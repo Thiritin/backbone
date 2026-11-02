@@ -3,7 +3,7 @@ import { t } from "../../../../../../i18n/en";
 import { LOCALE } from "../../../../../../i18n/lang";
 import { dateOf, hourOfMonth, nextMonthStart, yearOf } from "../../../../../../sim/00-core/time";
 import { COMPETITORS } from "../../../../../../sim/10-catalog/economy";
-import { brandAt, consoleUrl, editionAt, GOGGLE_ACCOUNTS, GOGGLE_ADMIN, goggleToken, mailSiteUrl, verificationAt, type GoggleBrand } from "../../../../../../sim/10-catalog/mail-consumer";
+import { brandAt, consoleUrl, editionAt, gmialUrl, GOGGLE_ACCOUNTS, GOGGLE_ADMIN, goggleToken, mailSiteUrl, verificationAt, type GoggleBrand } from "../../../../../../sim/10-catalog/mail-consumer";
 import { mailboxCap, mailPlan, mxSetAt, onSale, quotaMbAt } from "../../../../../../sim/10-catalog/mail-providers";
 import { companyDomain } from "../../../../../../sim/30-customers/domains";
 import { checkMailLogin, mailboxTaken, openBoxes } from "../../../../../../sim/42-mail/accounts";
@@ -25,7 +25,9 @@ import "./goggle.css";
 
 // docs/design/plans/webmail-consumer.md, sections 4.1 to 4.3 and 5: the product site, the sign-up wizard and the sign-in.
 const LAUNCH = "2006-08";
-const SESSION = "goggle.account";
+// The shared Goggle login of the site, the Admin console and Gmial.
+export const GOGGLE_SESSION = "goggle.account";
+const SESSION = GOGGLE_SESSION;
 const PLANS = ["free", "paid"] as const;
 const SALES: Record<GoggleBrand, string[]> = { appsDomain: [], apps: ["education", "partner"], swoot: ["business", "enterprise"], workspace: ["standard", "plus", "enterprise"] };
 const SUGGESTED = ["info", "sales", "support"];
@@ -92,6 +94,7 @@ export function GoggleSite({ game, host, path, go }: SiteProps) {
           <nav className="gg-nav">
             <Link to={to} path="">{t("goggle.nav.product")}</Link>
             <Link to={to} path="pricing">{t("goggle.nav.pricing")}</Link>
+            {account && tenant && <a href="#mail" onClick={(e) => { e.preventDefault(); go(gmialUrl(tenant.domain)); }}>Gmial</a>}
             {admin && tenant && <a href="#console" onClick={(e) => { e.preventDefault(); go(consoleUrl(game.hour, tenant.domain)); }}>{t("goggle.nav.console")}</a>}
             {account ? <a href="#signout" onClick={(e) => { e.preventDefault(); out(); }}>{t("goggle.nav.signOut")}</a>
               : <a href="#signin" onClick={(e) => { e.preventDefault(); accounts(""); }}>{t("goggle.nav.signIn")}</a>}
@@ -347,7 +350,7 @@ function Users({ game, tenant }: { game: GameState; tenant: MailTenant }) {
   );
 }
 
-function SignIn({ game, accounts, signIn, next, go }: { game: GameState; accounts: To; signIn: (id: string) => void; next: string; go: (url: string) => void }) {
+export function SignIn({ game, accounts, signIn, next, go }: { game: GameState; accounts: To; signIn: (id: string) => void; next: string; go: (url: string) => void }) {
   const site = game.mail.accounts.filter((a) => tenantOf(game, a)).map((a) => `mail:${a.local}@${a.domain}`).find((k) => game.logins[k]) ?? "mail:";
   const [saved] = useState(() => savedLogin(game, site, 2));
   const [address, setAddress] = useState(saved[0]), [password, setPassword] = useState(saved[1]), [error, setError] = useState<string | null>(null);
@@ -359,7 +362,7 @@ function SignIn({ game, accounts, signIn, next, go }: { game: GameState; account
     signIn(r.account.id);
     const tn = tenantOf(game, r.account)!, admin = tn.admin === r.account.id;
     if (tn.locked && !admin) return setError(t("error.mailLocked"));
-    go(next || (admin ? consoleUrl(game.hour, r.account.domain) : mailSiteUrl("goggle")));
+    go(next || (admin ? consoleUrl(game.hour, r.account.domain) : gmialUrl(r.account.domain)));
   };
   return (
     <section className={`gg-signin ${card ? "gg-signin-card" : "gg-signin-box"}`}>

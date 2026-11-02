@@ -53,6 +53,7 @@ export function Favicon({ game, r }: { game: GameState; r: Resolved }) {
       return <Tile fill={v.skin.accent}><text x="8" y="11.8" textAnchor="middle" fontSize="10" fontWeight="800" fill="white" fontFamily="Verdana, sans-serif">{v.name[0].toUpperCase()}</text></Tile>;
     }
     case "mailProvider": return p.id === "goggle" ? <span className="fav fav-mark" style={{ "--tile": "#fff" } as CSSProperties}><GoggleMark /></span>
+      : p.id === "gmial" ? <Tile fill="#c00"><text x="8" y="11.8" textAnchor="middle" fontSize="10" fontWeight="800" fill="white" fontFamily="Arial, sans-serif">M</text></Tile>
       : <span className="fav fav-mark" style={{ "--tile": "#1c449b" } as CSSProperties}><GMixMark /></span>;
     case "deskVendor": case "desk": { const M = DESK[p.id].icon; return <span className="fav fav-mark" style={{ "--tile": DESK[p.id].tile } as CSSProperties}><M /></span>; }
     case "shopVendor": {

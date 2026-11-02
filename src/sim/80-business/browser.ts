@@ -40,7 +40,7 @@ import { SHOPS, type ShopId } from "../10-catalog/shops";
 import { shopHost } from "./shoplink";
 import { HOSTTOAST_HOST } from "../10-catalog/hosttoast";
 import { dcProvider, PROVIDERS, type Datacenter } from "../20-world/datacenters";
-import { MAIL_SITES, mailSiteUrl, type MailSiteId } from "../10-catalog/mail-consumer";
+import { gmialUrl, MAIL_SITES, mailSiteUrl, type MailSiteId } from "../10-catalog/mail-consumer";
 import { roleAccount } from "../42-mail/accounts";
 
 // fast loads at once, slow shows a progress bar first, down cannot be reached.
@@ -147,11 +147,11 @@ export const defaultBookmarks = (s: GameState): { title: string; url: string }[]
   ...webmailMark(s),
 ];
 
-// The webmail of the sales mailbox's provider, once that provider has a site.
+// The webmail of the sales mailbox's provider, once that provider has a site. Goggle's webmail is Gmial, a site of its own.
 function webmailMark(s: GameState): { title: string; url: string }[] {
-  const a = roleAccount(s, "sales"), host = a && s.mail.tenants.find((x) => x.id === a.tenant)?.host;
-  // Goggle's webmail is Gmial, a site of its own.
-  return host && host in MAIL_SITES && host !== "goggle" ? [{ title: t("sim.index.webmail"), url: mailSiteUrl(host as MailSiteId) }] : [];
+  const a = roleAccount(s, "sales"), tn = a && s.mail.tenants.find((x) => x.id === a.tenant), host = tn?.host;
+  if (host === "goggle") return [{ title: t("sim.index.webmail"), url: gmialUrl(tn!.domain) }];
+  return host && host in MAIL_SITES ? [{ title: t("sim.index.webmail"), url: mailSiteUrl(host as MailSiteId) }] : [];
 }
 
 // Splits what the player typed into a lowercase host and a path with its query; the scheme and a trailing dot fall away.

@@ -42,13 +42,14 @@ export function moveMessages(s: GameState, account: string, ids: string[], folde
 }
 
 // Outside Trash a delete moves to Trash; in Trash it removes for good. An IMAP client's delete follows prefs.imapDelete:
-// flag keeps the message where it is and marks it read.
+// flag keeps the message where it is and marks it read, archive takes it out of the Inbox, which label hosts do by default.
 export function deleteMessages(s: GameState, account: string, ids: string[], via?: "imap"): ActionResult {
   const a = box(s, account);
   if (!a) return fail("error.mailUnknown");
-  const mode = via === "imap" ? a.prefs?.imapDelete ?? "trash" : "trash";
+  const mode = via === "imap" ? a.prefs?.imapDelete ?? (capsOf(s, a).labels ? "archive" : "trash") : "trash";
   if (mode === "expunge") return expungeMessages(s, account, ids);
   if (mode === "flag") { edit(s, account, ids, (m) => ({ ...m, read: true })); return ok; }
+  if (mode === "archive") { edit(s, account, ids, (m) => (m.folder === "inbox" ? { ...m, folder: "archive" } : m)); return ok; }
   const want = new Set(ids);
   drop(s, account, new Set(msgsOf(s, account).filter((m) => want.has(m.id) && m.folder === "trash").map((m) => m.id)));
   edit(s, account, ids, toTrash);

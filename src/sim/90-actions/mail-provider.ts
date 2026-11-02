@@ -5,15 +5,17 @@ import { goggleToken, verificationAt } from "../10-catalog/mail-consumer";
 import { mailPlan, mxSetAt } from "../10-catalog/mail-providers";
 import { companyDomain } from "../30-customers/domains";
 import { checkMailLogin, mailboxInUse, removeMailbox } from "../42-mail/accounts";
+import { matchesConditions } from "../42-mail/deliver";
 import { FETCH_BATCH, runFetch } from "../42-mail/fetch";
 import type { MailAccount, MailTenant, Message } from "../42-mail/types";
 import type { GameState } from "../50-state";
 import { recordAt } from "../60-infra/company-zone";
+import { IMPORTANT, importantLabel } from "../80-business/mail-search";
 import type { ActionResult } from "./hardware";
 import { createTenant, setTenantLock, setTenantPlan, verifyTenant } from "./mail";
 import { removeCompanyRecord, setCompanyRecord } from "./domains";
 import { addAlias, createMailAccount, deleteFetchRule, deleteMailAccount, saveFetchRule } from "./mailbox";
-import { createMailFolder } from "./mailmsg";
+import { createMailFolder, deleteMessages, labelMessages, markMessages, moveMessages } from "./mailmsg";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 const tenantOn = (s: GameState, id: string, host: string): MailTenant | undefined => s.mail.tenants.find((t) => t.id === id && t.host === host);
@@ -188,4 +190,37 @@ export function migrateMailbox(s: GameState, targetId: string, o: { source: stri
   if (kept) s.mail = { ...s.mail, fetch: [...s.mail.fetch, kept] };
   if (!r.ok) return r;
   return err ? fail(err) : { ok: true, id: targetId };
+}
+
+// Gmial's "Also apply to matching conversations": a saved filter runs over the stored mail outside Spam and Trash.
+// Forwarding stays with new mail, as in the real product.
+export function applyFilter(s: GameState, id: string): ActionResult {
+  const f = s.mail.filters.find((x) => x.id === id);
+  if (!f) return fail("error.mailUnknown");
+  const box = () => (s.mail.msgs[f.accountId] ?? []).filter((m) => m.folder !== "trash" && m.folder !== "junk" && !m.draft && matchesConditions(s, m, f.match, f.conds));
+  const ids = box().map((m) => m.id), acc = f.accountId;
+  if (!ids.length) return { ok: true };
+  for (const a of f.acts) {
+    const r = a.do === "move" ? moveMessages(s, acc, a.folder === "archive" ? box().filter((m) => m.folder === "inbox").map((m) => m.id) : ids, a.folder)
+      : a.do === "label" ? labelMessages(s, acc, ids, [a.label], [])
+      : a.do === "star" || a.do === "read" ? markMessages(s, acc, ids, { [a.do]: true })
+      : a.do === "trash" ? deleteMessages(s, acc, ids)
+      : a.do === "junk" ? moveMessages(s, acc, ids, "junk") : { ok: true as const };
+    if (!r.ok) return r;
+    if (a.do === "trash" || a.do === "junk" || a.do === "stop") break;
+  }
+  return { ok: true };
+}
+
+// Gmial's Important marker is the system label of that name, created the first time it is used; the id comes back.
+export function markImportant(s: GameState, account: string, ids: string[], on: boolean): ActionResult {
+  let l = importantLabel(s, account);
+  if (!l && on) {
+    const r = createMailFolder(s, account, IMPORTANT);
+    if (!r.ok) return r;
+    l = importantLabel(s, account);
+  }
+  if (!l) return { ok: true };
+  const r = labelMessages(s, account, ids, on ? [l.id] : [], on ? [] : [l.id]);
+  return r.ok ? { ok: true, id: l.id } : r;
 }

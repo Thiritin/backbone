@@ -54,7 +54,8 @@ import { HostedDeskSite } from "./sites/desks/HostedDeskSite";
 import { SelfDeskSite } from "./sites/desks/SelfDeskSite";
 import { gmixTitle } from "./sites/mail/gmix/GmixMail";
 import { GmixSite } from "./sites/mail/gmix/GmixSite";
-import { GoggleSite, goggleTitle } from "./sites/mail/goggle/GoggleSite";
+import { GOGGLE_SESSION, GoggleSite, goggleTitle } from "./sites/mail/goggle/GoggleSite";
+import { Gmial, gmialTitle } from "./sites/mail/gmial/Gmial";
 import { HostToastSite } from "./sites/hosttoast/HostToastSite";
 import { HOSTTOAST } from "../../../sim/10-catalog/hosttoast";
 import { WikiSite } from "./sites/wiki/WikiSite";
@@ -130,7 +131,8 @@ function titleOf(game: GameState, r: Resolved): string {
     case "books": return booksVendor(p.id)!.program;
     case "shopVendor": return shopById(p.id).name;
     case "deskVendor": case "desk": return deskById(p.id)!.name;
-    case "mailProvider": return p.id === "goggle" ? goggleTitle(game, r.host, r.path) : gmixTitle(game, readSession<string | null>("gmix.account", null));
+    case "mailProvider": return p.id === "goggle" ? goggleTitle(game, r.host, r.path) : p.id === "gmial" ? gmialTitle(game, readSession<string | null>(GOGGLE_SESSION, null))
+      : gmixTitle(game, readSession<string | null>("gmix.account", null));
     case "hosttoast": return HOSTTOAST;
     case "wiki": return WIKI_TITLE;
     case "shop": return game.company.name;
@@ -179,7 +181,8 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "shopVendor") body = <ShopVendorSite game={game} id={p.id} path={r.path} go={go} />;
   else if (p.kind === "desk") body = <DeskSite game={game} id={p.id} host={r.host} path={r.path} go={go} />;
   else if (p.kind === "deskVendor") body = deskById(p.id)!.hosting === "self" ? <SelfDeskSite game={game} id={p.id} path={r.path} go={go} /> : <HostedDeskSite game={game} id={p.id} path={r.path} go={go} />;
-  else if (p.kind === "mailProvider") body = p.id === "goggle" ? <GoggleSite game={game} host={r.host} path={r.path} go={go} /> : <GmixSite game={game} path={r.path} go={go} />;
+  else if (p.kind === "mailProvider") body = p.id === "goggle" ? <GoggleSite game={game} host={r.host} path={r.path} go={go} />
+    : p.id === "gmial" ? <Gmial game={game} path={r.path} go={go} /> : <GmixSite game={game} path={r.path} go={go} />;
   else if (p.kind === "hosttoast") body = <HostToastSite game={game} path={r.path} go={go} />;
   else if (p.kind === "wiki") body = <WikiSite game={game} path={r.path} go={go} />;
   else if (p.kind === "index") body = <IndexSite game={game} path={r.path} go={go} />;

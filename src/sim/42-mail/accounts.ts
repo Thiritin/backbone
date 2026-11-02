@@ -93,7 +93,8 @@ export function serverStatus(s: GameState, accountId: string, protocol: MailProt
   if (password !== undefined && password !== a.password) return "auth";
   const caps = capsOf(s, a);
   // A protocol the plan does not offer is refused with the wording of the access switch, as GMix does.
-  if (protocol !== "smtp" && (!caps[protocol] || a.external === false)) return "external";
+  // Gmial switches POP and IMAP one by one through prefs.pop and prefs.imap.
+  if (protocol !== "smtp" && (!caps[protocol] || a.external === false || a.prefs?.[protocol] === "off")) return "external";
   if (gapMin !== undefined && gapMin < caps.pollGapMin) return "poll";
   return "ok";
 }

@@ -34,10 +34,11 @@ export const foldersOf = (s: GameState, accountId: string): Folder[] => [
   ...s.mail.folders.filter((f) => f.accountId === accountId),
 ];
 
-// Newest first. A label lists every message that carries it; snoozed mail is out of the list until it returns.
+// Newest first. A label lists every message that carries it outside Spam and Trash; snoozed mail is out of the list until it returns.
 export function listFolder(s: GameState, accountId: string, folderId: string): Message[] {
   const label = s.mail.folders.some((f) => f.id === folderId && f.label);
-  return boxOf(s, accountId).filter((m) => !m.snooze && (label ? m.labels?.includes(folderId) : m.folder === folderId)).reverse();
+  return boxOf(s, accountId).filter((m) => !m.snooze
+    && (label ? !!m.labels?.includes(folderId) && m.folder !== "trash" && m.folder !== "junk" : m.folder === folderId)).reverse();
 }
 
 // A ticket thread's read state is the ticket's, so a mailbox and a desk agree.
