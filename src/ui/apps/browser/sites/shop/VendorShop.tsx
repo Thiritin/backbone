@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { t } from "../../../../../i18n/en";
-import { euroPrice } from "../../../../../sim/00-core/money";
+import { euroCents, euroPrice } from "../../../../../sim/00-core/money";
 import { tiersOf } from "../../../../../sim/10-catalog/licence-tiers";
 import type { LicenseKind } from "../../../../../sim/10-catalog/server-os";
 import type { GameState, Licence } from "../../../../../sim/50-state";
 import { keyExpired, productOf } from "../../../../../sim/60-infra/licence";
 import { cartOf, keysOf, lineMajor, lineOffer, offers, orderKeys, upgradeOffers, type CartLine, type Offer } from "../../../../../sim/80-business/vendor-shop";
-import { addToCart, cancelLicence, checkout, removeFromCart, type LicencePayment } from "../../../../../sim/90-actions/vendor-shop";
-import { cardReady, cardSpent } from "../../../../../sim/46-finance/bank";
+import { addToCart, cancelLicence, checkout, removeFromCart } from "../../../../../sim/90-actions/vendor-shop";
+import { groupIban, ibanEra } from "../../../../../sim/46-finance/bank";
+import { supplierAccount, supplierCode, supplierIban } from "../../../../../sim/46-finance/payables";
+import { Checkout, type Confirmation, type PaymentKind } from "../shared/Checkout";
 import { useStore } from "../../../../store";
 import { day } from "../../../hw";
 import "./shop.css";
@@ -56,16 +58,33 @@ export function Editions({ product, btn }: ShopProps & { product: string }) {
 }
 
 export function Cart({ host, btn, account }: ShopProps & { host: string; account: () => void }) {
-  const game = useStore((s) => s.game), act = useStore((s) => s.act);
-  const [order, setOrder] = useState<string | null>(null);
-  const [pick, setPick] = useState<LicencePayment>("transfer");
+  const game = useStore((s) => s.game), act = useStore((s) => s.act), attempt = useStore((s) => s.attempt);
+  const [stage, setStage] = useState<"cart" | "checkout">("cart");
   const lines = cartOf(game, host);
-  if (!lines.length) {
-    if (!order) return <p>{t("vendor-shop.empty")}</p>;
-    return <p>{t("vendor-shop.placed", { order })} <a href="#account" onClick={(e) => { e.preventDefault(); account(); }}>{t("vendor-shop.myAccount")}</a></p>;
-  }
   const total = lines.reduce((n, l) => n + (lineOffer(game, l)?.fee ?? 0) * l.qty, 0);
-  const card = cardReady(game) && cardSpent(game) + total <= game.bank!.card!.limit, pay = card ? pick : "transfer";
+  if (stage === "checkout") {
+    // The order needs the vendor's invoice for a transfer, so the confirmation reads the state after placing it.
+    const confirm = (order: string, kind: PaymentKind): Confirmation => {
+      const s = useStore.getState().game, p = s.payables.find((x) => x.keys?.order === order);
+      if (kind === "card") return { bank: null, next: t("checkout.keysCard") };
+      if (!p || p.paidAt !== null) return { bank: null, next: t("checkout.keysDebit") };
+      const account: [string, string][] = ibanEra(s)
+        ? [[t("checkout.iban"), groupIban(supplierIban(p.supplier))]]
+        : [[t("checkout.accountNumber"), supplierAccount(p.supplier)], [t("checkout.bankCode"), supplierCode]];
+      return { bank: [[t("checkout.accountHolder"), p.name], ...account, [t("checkout.reference"), p.number], [t("checkout.amount"), euroCents(p.amount)]], next: t("checkout.keysTransfer") };
+    };
+    return (
+      <>
+        <Checkout game={game} btn={btn} total={euroPrice(total)}
+          lines={lines.map((l) => ({ label: lineName(l.product, l.edition, lineMajor(game, l), l.from), qty: l.qty, price: euroPrice((lineOffer(game, l)?.fee ?? 0) * l.qty) }))}
+          methods={[{ kind: "card", label: t("bank.shop.card") }, { kind: "transfer", label: t("bank.shop.prepay") }]}
+          place={(d) => attempt(checkout, host, { ...d, payment: d.payment.kind === "card" ? d.payment : { kind: "transfer" } })}
+          confirm={confirm} />
+        <p><a href="#account" onClick={(e) => { e.preventDefault(); account(); }}>{t("vendor-shop.myAccount")}</a></p>
+      </>
+    );
+  }
+  if (!lines.length) return <p>{t("vendor-shop.empty")}</p>;
   return (
     <>
       <table className="shop-table">
@@ -81,12 +100,7 @@ export function Cart({ host, btn, account }: ShopProps & { host: string; account
         })}</tbody>
         <tfoot><tr><th>{t("vendor-shop.total")}</th><td /><td className="num">{euroPrice(total)}</td><td /></tr></tfoot>
       </table>
-      <fieldset>
-        <legend>{t("shop.payment")}</legend>
-        <label><input type="radio" name="pay" checked={pay === "card"} disabled={!card} onChange={() => setPick("card")} /> {t("bank.shop.card")}</label>
-        <label><input type="radio" name="pay" checked={pay === "transfer"} onChange={() => setPick("transfer")} /> {t("bank.shop.prepay")}</label>
-      </fieldset>
-      <p><button type="button" className={btn} onClick={() => { const r = act(checkout, host, pay); if (r.ok) setOrder(r.id ?? null); }}>{t("vendor-shop.checkout")}</button></p>
+      <p><button type="button" className={btn} onClick={() => setStage("checkout")}>{t("vendor-shop.checkout")}</button></p>
     </>
   );
 }

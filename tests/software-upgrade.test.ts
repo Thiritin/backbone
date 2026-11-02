@@ -12,7 +12,7 @@ import { hostOf, upgradeOffers } from "../src/sim/80-business/vendor-shop";
 import { softwareTarget, upgradeSoftware } from "../src/sim/90-actions/console";
 import { type ActionResult } from "../src/sim/90-actions/hardware";
 import { addToCart, checkout } from "../src/sim/90-actions/vendor-shop";
-import { newGame, panelServer, withCard, withServer } from "./fixtures";
+import { newGame, panelServer, orderDetails, withCard, withServer } from "./fixtures";
 
 const ok = (r: ActionResult) => { if (!r.ok) throw new Error(r.error); return r.id!; };
 const err = (r: ActionResult) => (r.ok ? "ok" : r.error);
@@ -53,7 +53,7 @@ describe("software upgrade", () => {
     expect(vendorCli(s, "dev3", "da", ["upgrade"], true)).toMatchObject({ failed: true, output: [t("error.licenceKey")] });
     ok(addToCart(s, "directadmen", null, "1.24"));
     withCard(s);
-    ok(checkout(s, hostOf("directadmen")!, "card"));
+    ok(checkout(s, hostOf("directadmen")!, orderDetails(s, "card")));
     const up = s.licenses.at(-1)!;
     expect(up).toMatchObject({ covers: { kind: "version", major: "1.30" }, machineId: null });
     expect(cardSpent(s)).toBe(100);
@@ -85,7 +85,7 @@ describe("software upgrade", () => {
     s.hour = hourOfMonth("2016-10");
     expect(upgradeOffers(s, "windoors")).toEqual([]);
     expect(err(addToCart(s, "windoors", null, "2012 R2"))).toBe("error.notForSale");
-    expect(err(checkout(s, hostOf("windoors")!, "card"))).toBe("error.notForSale");
+    expect(err(checkout(s, hostOf("windoors")!, orderDetails(s, "card")))).toBe("error.notForSale");
   });
 
   it("upgrades a term licence that is paid without a new key", () => {

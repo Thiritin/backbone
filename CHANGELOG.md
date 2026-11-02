@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-02
 
+- The trade office registration now asks for the company address, and the online bank shows the credit card number, expiry date and security code.
+- Buying licences on vendor websites now goes through a checkout with billing details, payment and a review, and a card payment needs the card details from the online bank.
 - Colocation provider sites now keep their own layout, including their facility lists and front page banner, after the Shop app has been opened.
 - Colocation provider sites now keep their own layout after the Shop app has been opened.
 - Support desks now keep the numbers for their reports: first response times, how many tickets met the response time each customer expects, and tickets per agent, kind and month.

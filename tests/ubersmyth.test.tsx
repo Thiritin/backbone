@@ -9,7 +9,7 @@ import { addToCart, checkout } from "../src/sim/90-actions/vendor-shop";
 import { skinOf } from "../src/ui/apps/browser/sites/portal/skins";
 import { Ubersmyth } from "../src/ui/apps/browser/sites/shopvendors/ubersmyth";
 import { useStore } from "../src/ui/store";
-import { withCard } from "./fixtures";
+import { orderDetails, withCard } from "./fixtures";
 import { idOf, shopGame } from "./portal-helpers";
 
 const game = (year: number) => {
@@ -53,7 +53,7 @@ describe("ubersmyth.com", () => {
     expect(at("/releases")).toContain("3.0");
     expect(at("/addons")).toContain("Shop link");
     expect(addToCart(s, "ubersmyth", "standard").ok).toBe(true);
-    expect(checkout(s, "ubersmyth.com", "card").ok).toBe(true);
+    expect(checkout(s, "ubersmyth.com", orderDetails(s, "card")).ok).toBe(true);
     const account = at("/account");
     expect(account).toContain("Standard");
     expect(account).toContain("Copy key");
