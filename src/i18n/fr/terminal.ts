@@ -76,4 +76,5 @@ export default {
   "term.vendor.jobOk": () => `OK`,
   "term.vendor.jobError": () => `Erreur`,
   "term.vendor.noNode": () => `aucun nœud libre`,
+  "term.vendor.mailboxRow": (p) => `${p.quota} Mo  ${p.n} messages`,
 } satisfies Dict;

@@ -21,6 +21,8 @@ import { deleteVm, phpDue, removePanelHost, resizePanelVm, setBackup, upgradePhp
 import { setSitesOffline } from "../../../../sim/90-actions/security";
 import { reboot } from "../../../../sim/90-actions/hardware";
 import { setAutoUpdate, uninstallSoftware, updateDue, updateSoftware } from "../../../../sim/90-actions/software";
+import { serverMail } from "../../../../sim/80-business/mail-software";
+import { lossLine } from "./mail-admin/forms";
 import { migrateWebspace, migrateWorkload, migrationTargets, restoreWorkload, startWorkload, stopWorkload, webspaceTargets } from "../../../../sim/90-actions/vms";
 import { useStore } from "../../../store";
 import { usePageAct } from "../pageAct";
@@ -277,7 +279,7 @@ export function useSoftware(game: GameState, c: Cluster, f: ConsoleFeatures): { 
   ];
   return {
     facts: facts.filter((x): x is Fact => !!x), actions: actions.filter((a): a is PanelAction => !!a),
-    note: update && !due ? t("browser-consoles-2.upToDate") : null, panel: <>{sizing && c.vm ? <Resize game={game} host={c} done={() => setSizing(false)} /> : null}<HostSettings game={game} c={c} /></>,
+    note: removing && c.kind === "mail" ? lossLine(serverMail(game, c.id)) : update && !due ? t("browser-consoles-2.upToDate") : null, panel: <>{sizing && c.vm ? <Resize game={game} host={c} done={() => setSizing(false)} /> : null}<HostSettings game={game} c={c} /></>,
   };
 }
 

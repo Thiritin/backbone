@@ -7,7 +7,8 @@ import { installKeyBlock } from "./licence";
 import { versionAt } from "../10-catalog/software-versions";
 import { phpAt, SOFTWARE, softwareById, type Software } from "../10-catalog/platforms";
 import type { GameState } from "../50-state";
-import { installBlock, phpPackage, uninstallSoftware, upgradable, upgradeServer } from "../90-actions/software";
+import { installBlock, phpPackage, softwareOn, uninstallSoftware, upgradable, upgradeServer } from "../90-actions/software";
+import { serverMail } from "../80-business/mail-software";
 import { clustersOn, machineOf } from "./cluster";
 import { supportOf } from "./lifecycle";
 import { DESK, releaseOf, treeOf } from "./fs";
@@ -150,7 +151,9 @@ function remove(s: GameState, host: string, pkg: string): CommandResult {
   const sw = SOFTWARE.find((x) => pkgOf(x) === pkg);
   if (!sw) return { output: lines("term.apt.locate", { pkg }), failed: true };
   if (!machineOf(s, host)?.software?.some((x) => x.id === sw.id)) return { output: [...lines("term.apt.state"), t("term.apt.notInstalled", { pkg })] };
-  return { output: [...lines("term.apt.state"), t("term.apt.removing", { pkg })], action: [uninstallSoftware, host] };
+  const loss = sw.kind === "mail" ? softwareOn(s, host).find((x) => x.id === sw.id)?.cluster : undefined;
+  const mail = loss ? serverMail(s, loss.id) : null;
+  return { output: [...lines("term.apt.state"), ...(mail ? [t("mailserver.removeLoss", { ...mail, n: mail.mailboxes })] : []), t("term.apt.removing", { pkg })], action: [uninstallSoftware, host, sw.id] };
 }
 
 // A line that is one of a script software's install lines, after whitespace normalisation and with an optional

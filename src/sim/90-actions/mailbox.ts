@@ -187,3 +187,55 @@ export function setAccountPassword(s: GameState, adminId: string | null, id: str
   return patch(s, id, { password: newPassword, reset: null });
 }
 
+
+// Addresses on the company domain: aliases, the catch-all, forwarding and quotas (webmail-server.md, 5.1).
+const ADDRESS = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+const domainBox = (s: GameState, id: string) => {
+  const a = box(s, id), t = a && tenantOf(s, a);
+  return a && t && a.closedAt === null && a.domain !== GMIX_DOMAIN ? { a, t } : null;
+};
+
+export function addAlias(s: GameState, id: string, local: string): ActionResult {
+  const x = domainBox(s, id);
+  if (!x) return fail("error.mailNoAlias");
+  const l = local.trim().toLowerCase(), max = capsOf(s, x.a).aliasMax;
+  if (!LOCAL.test(l)) return fail("error.mailLocal");
+  if (mailboxTaken(s, x.t, l)) return fail("error.mailTaken");
+  if (openBoxes(s, x.t.id).reduce((n, b) => n + b.aliases.length, 0) >= max) return fail("error.mailAliasMax");
+  const address = `${l}@${x.a.domain}`;
+  s.mail = { ...s.mail, retired: s.mail.retired.filter((r) => r.address !== address) };
+  return patch(s, id, { aliases: [...x.a.aliases, l] });
+}
+
+export function removeAlias(s: GameState, id: string, local: string): ActionResult {
+  const a = box(s, id), l = local.trim().toLowerCase();
+  if (!a || !a.aliases.includes(l)) return fail("error.mailUnknown");
+  s.mail = { ...s.mail, retired: [...s.mail.retired, { address: `${l}@${a.domain}`, until: s.hour + RETIRE_HOURS }] };
+  return patch(s, id, { aliases: a.aliases.filter((x) => x !== l) });
+}
+
+export function setCatchAll(s: GameState, id: string | null): ActionResult {
+  if (id === null) {
+    s.mail = { ...s.mail, catchAll: null };
+    return { ok: true };
+  }
+  const x = domainBox(s, id);
+  if (!x || !capsOf(s, x.a).catchAll) return fail("error.mailNoCatchAll");
+  s.mail = { ...s.mail, catchAll: id };
+  return { ok: true, id };
+}
+
+export function setForward(s: GameState, id: string, to: string | null, keep: boolean): ActionResult {
+  const address = to?.trim().toLowerCase() ?? null;
+  if (address !== null && !ADDRESS.test(address)) return fail("error.mailForward");
+  return patch(s, id, { forward: address === null ? null : { to: address, keep } });
+}
+
+// Own servers only; the mailbox may be set below what it holds, and new mail then waits in the queue.
+export function setAccountQuota(s: GameState, id: string, mb: number): ActionResult {
+  const a = box(s, id), t = a && tenantOf(s, a);
+  if (!a || !t) return fail("error.mailUnknown");
+  if (t.host !== "self") return fail("error.mailQuotaHost");
+  if (!Number.isInteger(mb) || mb < 1) return fail("error.mailQuota");
+  return patch(s, id, { quotaMb: mb });
+}
