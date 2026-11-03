@@ -106,7 +106,7 @@ describe("racks", () => {
     const srv = ok(buyDevice(s, "g1-compute", "Dwell", 1, id));
     ok(mountDevice(s, srv, r, 1));
     expect(rackPower(s, r)).toEqual({ watts: 100, a: 100, b: 0, limitWatts: 6000, tripped: false });
-    ok(connect(s, { device: srv, port: 0 }, { device: handoffOf(s, id), port: 0 }));
+    ok(connect(s, { device: srv, port: 0 }, { device: handoffOf(s, id), port: 0 }, true));
     expect(linkStatus(s, srv).online).toBe(false);
     s.hour = 720;
     expect(linkStatus(s, srv).online).toBe(true);
@@ -126,9 +126,9 @@ describe("racks", () => {
   it("sells an empty rack at its resale value", () => {
     const s = rich(0);
     expect(err(sellRack(s, "rack2"))).toBe("error.rackNotEmpty");
-    ok(unmountDevice(s, "dev3"));
-    ok(unmountDevice(s, "dev4"));
-    ok(unmountDevice(s, "dev5"));
+    ok(unmountDevice(s, "dev3", true));
+    ok(unmountDevice(s, "dev4", true));
+    ok(unmountDevice(s, "dev5", true));
     s.hour = 730;
     ok(sellRack(s, "rack2"));
     expect(s.cash).toBe(280);
@@ -172,7 +172,7 @@ describe("moveRack", () => {
     expect(events).toContainEqual({ app: "Locations", key: "event.rackArrived", params: { rack: "fra1-rack-01", location: "Equinox FR5" } });
     expect(rack(s, "rack2").arriveAt).toBeNull();
     expect(linkStatus(s, "dev3").online).toBe(false);
-    ok(connect(s, { device: "dev4", port: 7 }, { device: handoffOf(s, fr5), port: 0 }));
+    ok(connect(s, { device: "dev4", port: 7 }, { device: handoffOf(s, fr5), port: 0 }, true));
     expect(linkStatus(s, "dev3")).toEqual({ online: true, gbit: 1, warning: null });
     expect(rackPower(s, "rack2")).toEqual({ watts: 108, a: 108, b: 0, limitWatts: 8000, tripped: false });
   });
@@ -217,7 +217,7 @@ describe("breakers", () => {
     expect(linkStatus(s, "dev5").online).toBe(false);
     expect(powerPerHour(s)).toBe(0);
     s.workloads = [];
-    ok(unmountDevice(s, "dev8"));
+    ok(unmountDevice(s, "dev8", true));
     expect(linkStatus(s, "dev3").online).toBe(true);
   });
   it("uses the datacenter's kW per position", () => {
@@ -285,7 +285,7 @@ describe("rack shares", () => {
     ok(mountStack(s, "g1-compute", "Dwell", r, 2));
     const srv = s.devices.find((d) => d.rackId === r)!;
     expect(srv.name).toBe("fra2-srv-01");
-    ok(connect(s, { device: srv.id, port: 0 }, { device: handoffOf(s, id), port: 0 }));
+    ok(connect(s, { device: srv.id, port: 0 }, { device: handoffOf(s, id), port: 0 }, true));
     runServers(s);
     expect(rackPower(s, r)).toEqual({ watts: 500, a: 500, b: 0, limitWatts: 500, tripped: false });
     expect(linkStatus(s, srv.id).online).toBe(true);

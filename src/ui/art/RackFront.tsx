@@ -6,7 +6,7 @@ import { Back, bayRects, Cord, portSpots, psuInlets, type Side, type Spot } from
 import { Defs, Front, ledProps, PortJack, portNo, type Lamp, type Parts, type PortLamp, type PortLight } from "./fronts";
 
 // plugs holds whether each power supply is plugged in.
-export interface RackItem { id: string; slot: number; model: DeviceModel; brand: string; name: string; state: Lamp; blink?: boolean; parts?: Parts; ports: PortLamp[]; lights?: PortLight[]; groups: number[][]; plugs?: boolean[]; chassisId?: string | null; stick?: boolean }
+export interface RackItem { id: string; slot: number; model: DeviceModel; brand: string; name: string; state: Lamp; badge?: string; blink?: boolean; parts?: Parts; ports: PortLamp[]; lights?: PortLight[]; groups: number[][]; plugs?: boolean[]; chassisId?: string | null; stick?: boolean }
 // One cable end in this rack and the end it leads to, in this rack or on a remote box.
 export interface RackLink { id: string; end: End; peer: End; color: string }
 // A device outside the rack that the rack is or can be cabled to, drawn as a small box above it.
@@ -120,6 +120,10 @@ export function RackFront({ units, items, links = [], remotes = [], side = "fron
         </g>,
       );
       if (moving && moving.to !== moving.from) out.push(<rect key="slide" x={pad - 2} y={y + dy - 1.5} width={w + 4} height={h + 3} rx="3" fill="none" stroke={fitsAt(it, moving.to) ? "var(--ok)" : "var(--bad)"} strokeWidth="2" pointerEvents="none" />);
+      if (it.badge) {
+        const bw = it.badge.length * fs * 0.62 + 8;
+        out.push(<g key={`b${it.id}`} className="rack-badge" pointerEvents="none"><rect x={pad + w - bw - 2} y={y + 2} width={bw} height={fs + 4} rx="2" fill="var(--accent)" /><text x={pad + w - bw / 2 - 2} y={y + fs + 2} textAnchor="middle" fontFamily={MONO} fontSize={fs} fill="var(--on-accent, #fff)">{it.badge}</text></g>);
+      }
       if (it.id === selected) out.push(<rect key="sel" x={pad - 2} y={y - 1.5} width={w + 4} height={h + 3} rx="3" fill="none" stroke="var(--accent)" strokeWidth="2" pointerEvents="none" />);
     }
     y += h;
