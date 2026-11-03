@@ -32,9 +32,9 @@ describe("post in the letterbox", () => {
 
   it("fetches only with the player in the basement, and takes every letter", () => {
     const s = withPost();
-    s.player = { at: "loc1", until: s.hour + 3, doing: "travel" };
+    s.player = { at: "loc1", until: s.hour + 3, doing: "travel", carrying: null };
     expect(fetchPost(s)).toEqual({ ok: false, error: "error.notThere" });
-    s.player = { at: "loc1", until: 0, doing: "work" };
+    s.player = { at: "loc1", until: 0, doing: "work", carrying: null };
     expect(fetchPost(s)).toEqual({ ok: true });
     expect(inLetterbox(s)).toEqual([]);
     expect(atDesk(s)).toHaveLength(2);

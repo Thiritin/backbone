@@ -17,10 +17,10 @@ Backbone has two surfaces. The desktop is the company: every piece of software, 
 | Thing | World | Desktop |
 | --- | --- | --- |
 | Rack placement, moving racks | Place a rack on a floor tile, turn it, push it | Locations app lists racks and their tiles |
-| Installing and removing devices | A rack opens a close-up panel over the room: pick a free unit to mount a device from the location's storage, pick a device to power it, open its lid or unmount it back to storage | Cabling and ports stay in the Locations app, opened from the panel |
+| Installing and removing devices | A rack opens a close-up panel over the room: pick a free unit to mount a device from the location's storage or the one in your hands, pick a device to power it, open its lid or unmount it back to storage | Cabling and ports stay in the Locations app, opened from the panel |
 | Server internals | Lid slides off at the rack, parts go in by hand | The lid view stays, opened from the rack |
 | Cabling | Cables run visibly between racks and into the wall | Port inspector, port groups, speeds |
-| Deliveries | Parcels arrive at the door; carry them to storage, unbox | Shop buys, tracking in Storage |
+| Deliveries | Parcels arrive at the door of the player's own place; pick one up and carry it to the shelf or straight into a rack. At a datacenter the receiving desk shelves them | Shop buys, tracking in Storage, an "At the door" group |
 | Post | Letters land in the letterbox of the basement and stay there, with their deadlines running, until the player walks over and fetches them; the letterbox shows how many wait | The Post app lists waiting letters greyed under "In the letterbox"; fetched letters are read, paid and scanned there |
 | Scanner | Beside the desk; using it lists the fetched letters not yet scanned, and a click files one | The scanned letter appears in DocuWhere, which holds only scanned letters |
 | Travel | Walk out the door, pick a destination on the map, watch the drive ([Travel](travel.md)) | Locations app shows where you are and when you arrive |
@@ -85,9 +85,9 @@ Each is its own feature with a seeded test and lands before the world depends on
 
 - **Rack tiles.** Every rack in a location has a tile and a facing. New racks take the next free wall tile. An action moves a rack. Old saves get tiles assigned on load.
 - **Presence rules.** Which hardware actions need the player in the room. The sim already knows where the player is; the world is where that rule becomes visible.
-- **Parcels at the door.** Arrived deliveries wait at the door until carried to storage, which is what makes a late unbox cost time.
+- **Parcels at the door.** Arrived deliveries wait at the door (`door` on the unit) until carried to the shelf or into a rack. A door item is outside storage, so the desktop cannot mount, sell or ship it. A datacenter location shelves arrivals itself so remote hands keep working.
 - **Post in the box.** Each letter knows whether it waits in a letterbox or lies at the desk, and whether it is scanned. Delivery puts it in the basement letterbox; fetching needs the player there and takes all of them. A letter in the letterbox cannot be read, and its bill is due all the same. Scanning a desk letter once files it in DocuWhere. Old saves keep their letters at the desk and filed.
-- **Carrying.** A hand slot in the sim so a carried server is not also in storage.
+- **Carrying.** `player.carrying` holds one unit, which is then in no store. `pickUp`, `putDown` and `installCarried` (90-actions/carry.ts) need the player in the unit's room; picking up and putting down cost no time, and the player cannot travel while carrying.
 
 ## Multiplayer, later
 

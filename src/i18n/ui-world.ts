@@ -21,4 +21,6 @@ export default {
   "world.obj.extinguisher": () => "Fire extinguisher",
   "world.obj.noc": () => "NOC desk",
   "world.obj.dock": () => "Loading dock",
+  "world.inHands": () => "In your hands",
+  "world.obj.parcels": (p) => `${p.n} parcels`,
 } satisfies Dict;

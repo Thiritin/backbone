@@ -344,4 +344,6 @@ export default {
   "locations-2.start": () => "Starten",
   "locations-2.stop": () => "Stoppen",
   "locations-2.openCustomer": () => "Kunde öffnen",
+  "locations-2.atDoor": () => "An der Tür",
+  "locations-2.arrived": (p) => `Angekommen ${p.day}`,
 } satisfies Dict;
