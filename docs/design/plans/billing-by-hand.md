@@ -4,7 +4,7 @@ Lane ids: `books`, `walk`, `bank`, `order-steps`, `vendor-sites`, `registrar-for
 
 ## 1. Decisions
 
-- The game starts with every billing step done by hand in one bookkeeping program, Lexwear Office (pun on Lexware), bought from the Pear Store as the app "Books". Lexware, WISO Mein Büro and Sage sold exactly this to one-person firms in 2005: customer master data, quotes, invoices, open items, bank matching, dunning levels.
+- The game starts with every billing step done by hand in one bookkeeping program, Lexwear Office, bought from the Pear Store as the app "Books". Desktop bookkeeping programs sold exactly this to one-person firms in 2005: customer master data, quotes, invoices, open items, bank matching, dunning levels.
 - Invoices go out as PDF by email. No paper, no postage.
 - Customers have a postal address. It arrives in the order email, is entered once by click-to-fill, and is printed on quotes, invoices and used as domain owner data.
 - Quotes exist. A quote is a document in Books, A4, with the default price prefilled. Without the Helpdesk link module the player drags it from Books onto the order ticket; with the module the ticket has a Create quote button and acceptance converts the quote to the first invoice on its own.
@@ -123,15 +123,15 @@ Milestones:
 
 The bookkeeping program is a choice, like the bank and the shop. The Pear Store gets a Bookkeeping category; installing one of its programs installs the Books app in that vendor's skin and with that vendor's module list and prices. Books leaves the starter set. Getting started gains the step "Install a bookkeeping program" before the first customer step. Old saves keep Lexwear.
 
-| Vendor (pun on) | From | Licence | Modules | Character |
+| Vendor | From | Licence | Modules | Character |
 | --- | --- | --- | --- | --- |
-| Lexwear Office (Lexware) | 2005 | 249 once, paid yearly updates 99 | all five at the plan's prices | market leader, grey Windows look |
-| WIZO Mein Büro (WISO Mein Büro) | 2005 | 149 once | Automatic reminders included, Monthly run 79, Match by reference 129, Helpdesk link 149, HBCI 49 | cheaper, friendlier, blue |
-| Saga Office Line (Sage) | 2005 | 599 once | all included except Helpdesk link 199 | business tier, higher support, slow start |
-| orgaMIN (orgaMAX) | 2005 | 199 once | Monthly run included, others 99 each | small-firm favourite, orange |
-| Collmix (Collmex) | 2005 | 0 once, 15 a month | HBCI and Match by reference included, no Helpdesk link ever | web based, runs in the Browser look inside the app frame |
-| sevDeck (sevDesk) | 2013 | 0 once, 19 a month | everything included, bank sync built in | fintech era, no licence keys, instant |
-| lexoffize (lexoffice) | 2014 | 0 once, 12 a month | everything included | Lexwear's cloud sibling |
+| Lexwear Office | 2005 | 249 once, paid yearly updates 99 | all five at the plan's prices | market leader, grey Windows look |
+| WIZO Mein Büro | 2005 | 149 once | Automatic reminders included, Monthly run 79, Match by reference 129, Helpdesk link 149, HBCI 49 | cheaper, friendlier, blue |
+| Saga Office Line | 2005 | 599 once | all included except Helpdesk link 199 | business tier, higher support, slow start |
+| orgaMIN | 2005 | 199 once | Monthly run included, others 99 each | small-firm favourite, orange |
+| Collmix | 2005 | 0 once, 15 a month | HBCI and Match by reference included, no Helpdesk link ever | web based, runs in the Browser look inside the app frame |
+| sevDeck | 2013 | 0 once, 19 a month | everything included, bank sync built in | fintech era, no licence keys, instant |
+| lexoffize | 2014 | 0 once, 12 a month | everything included | Lexwear's cloud sibling |
 
 Switching programs keeps every customer, invoice, quote and transfer, since the data is the state, and drops the old program's modules. The new program's monthly fee is a payable like the others. Each vendor has a site in the Browser selling its modules on the Lexwear pattern.
 
@@ -164,7 +164,7 @@ Features by edition, three tiers for every vendor where the vendor has three, na
 | Collmix | basic 15 a month | plus 29 a month | | HBCI already in basic; no Helpdesk link ever |
 | sevDeck (2013) | Rechnung 9 a month | Buchhaltung 19 a month | Warenwirtschaft 39 a month | bank sync in every edition |
 | lexoffize (2014) | S 7 a month | M 12 a month | L 19 a month | |
-| GnuCache (GnuCash) | free | | | desktop, single user, HBCI included, P&L and cash flow reports, quotes as unposted invoices, no monthly run, no matching by reference, no automatic reminders, no statistics; GTK grey look |
+| GnuCache | free | | | desktop, single user, HBCI included, P&L and cash flow reports, quotes as unposted invoices, no monthly run, no matching by reference, no automatic reminders, no statistics; GTK grey look |
 
 Deployment and seats:
 
