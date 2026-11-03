@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-03
 
+- Every hands-on action now offers doing it yourself or remote hands as separate buttons, and choosing yourself starts the drive there and does the job on arrival.
 - The rented office is a room of its own with desks, a reception and a server room, the staff come in during office hours and sit at them, and the post now arrives in the office letterbox.
 - The fuse box, letterbox, scanner and shelf now open as themselves, drawn large with their breakers, sheets of paper, buttons and boards to use, and the rack carries its name on a label plate with a turn arrow at its corner.
 - The trash can in the dock and the room icon on the desktop now change with the OS era like the other icons.
