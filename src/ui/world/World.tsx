@@ -170,13 +170,14 @@ export function World() {
         {things.map((x) => x.node)}
         <g className="w-near" style={{ opacity: nearY ? 0.2 : 1 }}>
           <polygon className="w-wall w-wall-near" points={pts(Y, XY, up(XY, LOW), up(Y, LOW))} />
-          {home && <Door at={FIXTURES.door.x} h={h} open={door} label={t("world.obj.door")} onClick={use(FIXTURES.door, () => { setDoor(true); setTimeout(() => openApp("Weather"), 700); })} />}
-          {home && <Letterbox at={FIXTURES.letterbox.x} h={h} count={unread} label={t("world.obj.letterbox")} onClick={use(FIXTURES.letterbox, () => openApp("Post"))} />}
         </g>
         <g className="w-near" style={{ opacity: nearX ? 0.2 : 1 }}>
           <polygon className="w-wall w-wall-near w-wall-x" points={pts(X, XY, up(XY, LOW), up(X, LOW))} />
-          {home && <FuseBox at={FIXTURES.fusebox.y} w={w} label={`${n(power)} W`} />}
         </g>
+        {/* Fixtures in the near walls stay solid while the walls give way. */}
+        {home && <Door at={FIXTURES.door.x} h={h} open={door} label={t("world.obj.door")} onClick={use(FIXTURES.door, () => { setDoor(true); setTimeout(() => openApp("Weather"), 700); })} />}
+        {home && <Letterbox at={FIXTURES.letterbox.x} h={h} count={unread} label={t("world.obj.letterbox")} onClick={use(FIXTURES.letterbox, () => openApp("Post"))} />}
+        {home && <FuseBox at={FIXTURES.fusebox.y} w={w} label={`${n(power)} W`} />}
       </svg>
     </div>
   );
