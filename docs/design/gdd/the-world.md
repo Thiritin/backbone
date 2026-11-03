@@ -8,9 +8,9 @@ Backbone has two surfaces. The desktop is the company: every piece of software, 
 
 - **The desktop is the source of truth.** Nothing exists only in the world. Every world interaction calls the same action in `src/sim/90-actions` the desktop would call.
 - **The world is a view over the simulation.** `src/sim` never imports anything from the world renderer. The world reads state and calls `act`, like any app.
-- **Presence costs time.** Walking to a rack, carrying a server, driving to the datacenter all take game time. The sim already tracks the player with `player: { at, until, doing }`. Presence is what makes the world worth visiting instead of a wallpaper.
+- **Presence costs time.** Driving to the datacenter and working on a rack by hand take game time. The sim already tracks the player with `player: { at, until, doing }`. Presence is what makes the world worth visiting instead of a wallpaper.
 - **Clean isometric.** The world is SVG drawn entirely in code, like every device front in `src/ui/art`, seen in flat 2:1 isometric. Every object is a few flat boxes in two or three tones of one hue, with no outlines, gradients or pixel art.
-- **Fake depth where it pays.** Doors swing, lids slide, racks open, walls cut away when the player stands behind them. Each is a drawn object with two or three flat frames swapped in place, so a flat 2D drawing reads as a door opening into the room. No 3D engine.
+- **Fake depth where it pays.** Doors swing, lids slide, racks open. Each is a drawn object with two or three flat frames swapped in place, so a flat 2D drawing reads as a door opening into the room. No 3D engine.
 
 ## What lives where
 
@@ -21,7 +21,7 @@ Backbone has two surfaces. The desktop is the company: every piece of software, 
 | Server internals | Lid slides off at the rack, parts go in by hand | The lid view stays, opened from the rack |
 | Cabling | Cables run visibly between racks and into the wall | Port inspector, port groups, speeds |
 | Deliveries | Parcels arrive at the door of the player's own place; pick one up and carry it to the shelf or straight into a rack. At a datacenter the receiving desk shelves them | Shop buys, tracking in Storage, an "At the door" group |
-| Post | Letters land in the letterbox of the basement and stay there, with their deadlines running, until the player walks over and fetches them; the letterbox shows how many wait | The Post app lists waiting letters greyed under "In the letterbox"; fetched letters are read, paid and scanned there |
+| Post | Letters land in the letterbox of the basement and stay there, with their deadlines running, until the player clicks the letterbox and fetches them; the letterbox shows how many wait | The Post app lists waiting letters greyed under "In the letterbox"; fetched letters are read, paid and scanned there |
 | Scanner | Beside the desk; using it lists the fetched letters not yet scanned, and a click files one | The scanned letter appears in DocuWhere, which holds only scanned letters |
 | Travel | Walk out the door, pick a destination on the map, watch the drive ([Travel](travel.md)) | Locations app shows where you are and when you arrive |
 | Faults | Blinking LED on the rack, the technician PC plugs into a port | Monitoring, alarms, the port inspector diagram |
@@ -34,7 +34,7 @@ The rule: if a real sysadmin in 2005 would have had to stand up for it, it is in
 
 The first room is the basement of the player's parents' house in Frankfurt, availability zone fra1. A floor of 12 by 9 diamond tiles in isometric view. Two walls rise along the far sides, the left wall along the first column and the right wall along the first row; the near sides are open, so nothing ever hides the player. Every fixed object stands against or hangs on a wall:
 
-- **Desk with the PC.** One wooden desk along the right wall carries the scanner at its left end and the monitor with its keyboard at its right end. Using the PC opens the desktop fullscreen. The world keeps running underneath and resumes where the player stood. Using the scanner opens the scanner panel with the fetched letters.
+- **Desk with the PC.** One wooden desk along the right wall carries the scanner at its left end and the monitor with its keyboard at its right end. Using the PC opens the desktop fullscreen. The world keeps running underneath and resumes at the same view. Using the scanner opens the scanner panel with the fetched letters.
 - **Door.** A wooden door in the left wall that swings into the room when used. The only exit. Using it opens the map, and picking a destination starts the trip described in [Travel](travel.md). Parcels stack on the floor beside it.
 - **Letterbox.** A brass box on the left wall next to the door. Waiting letters stick out of its slot, with their count beside it. Using it moves every letter to the desk and opens the Post app.
 - **Storage shelf.** Against the left wall, four boards high, one crate per stored device up to four. Using it opens the Storage view, or puts down a carried unit.
@@ -53,9 +53,15 @@ Every fixture with a desktop counterpart opens it: the cross-connect panel opens
 
 ## Movement and interaction
 
-The player clicks a tile and walks there along the grid, four or eight directions, avoiding objects. Clicking an object walks to its use tile first and then interacts. One action key does the same for the object the player faces, for keyboard play. Carried items ride in a hand slot above the player and show as a box or a letter.
+The room is played like a tycoon game. There is no figure to walk around: the player looks at the room and clicks objects directly, and a click acts at once. The arrow keys and WASD pan the view, the wheel zooms and a drag pans. Keys do nothing while a dialog or menu is open.
 
-Interaction opens a small radial or list menu with only what the sim allows: at a rack with a carried server it offers the free units, at a rack with empty hands it offers to open the front, at the door it offers the map. Every entry calls an existing action.
+Presence stays a sim rule: the room on screen is the one the player is at, the door starts the trip, and arriving shows the destination room.
+
+Parcels are carried with the hand cursor. Clicking a parcel at the door picks it up, and it follows the pointer as a small box. Clicking the shelf puts it in storage, and clicking a rack opens the rack panel with the carried unit offered for the free units it fits. Escape with a parcel in hand puts it on the shelf.
+
+Every click calls an existing action, and a fixture with a desktop counterpart opens it.
+
+Staff may later appear in rooms as figures at their desks, the way tycoon games show employees.
 
 ## Rendering
 
@@ -63,13 +69,12 @@ Interaction opens a small radial or list menu with only what the sim allows: at 
 - Style. Each object is built from boxes drawn by one shared helper: a top, a left and a right face in two or three tones of one hue, with a thin edge in a darker tone of the same hue where faces meet. No outlines, gradients or pixel art. Flat things on a wall, such as the letterbox, the breaker cabinet and the cross-connect panel, are drawn on the wall's plane.
 - Walls. Only the two far walls are drawn, in a light neutral with a lit top edge and a skirting line along the floor. The backdrop is a flat dark blue-grey.
 - Camera. The room opens fitted to fill the window at any screen density. The wheel zooms smoothly around the pointer between 0.75 and 3; drag pans. Standing up again or returning from a trip shows each room at the zoom and position it was left at.
-- The tile under the mouse is filled with a soft accent tint. An object under the mouse or just clicked glows in the accent colour.
-- The avatar is a rounded figure in an accent shirt, drawn facing each of the four directions, with a two-frame walk at one tile per 400 ms. A carried parcel rides above the head. Clicking a tile walks there; arrow keys and WASD step tile by tile with the same collision, and a held key keeps walking. Keys do nothing while a dialog or menu is open.
+- An object under the mouse or just clicked glows in the accent colour.
 - No text floats in the room; every number sits on an object, in the desktop font. The weather display shows the outside sky and temperature over the room temperature, the breaker cabinet and the PDU show the power draw, the letterbox shows its waiting letters, a parcel stack shows its count and the cross-connect panel has a plate with the carriers on site.
-- Objects sort by x + y for depth, with the player in the same sort, so a nearer object overlaps a farther one. A fixture several tiles wide sorts by its farthest tile.
+- Objects sort by x + y for depth, so a nearer object overlaps a farther one. A fixture several tiles wide sorts by its farthest tile.
 - A rack is a dark box with a lit top. Zoomed out a front facing the camera shows one LED per device; from zoom 2 it shows the game's `RackFront` art scaled to fit the front face, so the real contents show. Clicking a rack opens the rack panel with the full art.
 - The door swings shut, halfway, then into the room in turn.
-- One `requestAnimationFrame` loop drives walking, the leg frames and LED blink; everything else re-renders from the store like any app.
+- One `requestAnimationFrame` loop drives key panning and LED blink; everything else re-renders from the store like any app.
 - If SVG measurably stutters on the own hall, the world layer moves to a WebGL 2D renderer drawing the same shapes. Nothing above that layer changes.
 
 ## Switching between surfaces
@@ -95,4 +100,4 @@ Friends running their own companies in the same market is a later layer, and it 
 
 ## Demo scope
 
-The first demo is the basement with the player walking, the PC that opens the desktop, racks on their tiles that open a close-up of the rack inside the room, where devices are mounted, removed and opened, parcels at the door that open Storage, a letterbox that opens the post, a scanner that opens the document app, a door that swings open and opens the map. Everything else opened is the existing app. The sim change is rack tiles. The rest of the table above comes feature by feature.
+The first demo is the basement played by direct clicks, the PC that opens the desktop, racks on their tiles that open a close-up of the rack inside the room, where devices are mounted, removed and opened, parcels at the door that open Storage, a letterbox that opens the post, a scanner that opens the document app, a door that swings open and opens the map. Everything else opened is the existing app. The sim change is rack tiles. The rest of the table above comes feature by feature.
